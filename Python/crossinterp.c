@@ -1682,3 +1682,82 @@ _PyXI_FiniTypes(PyInterpreterState *interp)
 {
     fini_exceptions(interp);
 }
+
+
+/*************/
+/* other API */
+/*************/
+
+PyInterpreterState *
+_PyXI_NewInterpreter(PyInterpreterConfig *config,
+                     PyThreadState **p_tstate, PyThreadState **p_save_tstate)
+{
+    PyThreadState *save_tstate = PyThreadState_Swap(NULL);
+    assert(save_tstate != NULL);
+
+    PyThreadState *tstate;
+    PyStatus status = Py_NewInterpreterFromConfig(&tstate, config);
+    if (PyStatus_Exception(status)) {
+        // Since no new thread state was created, there is no exception
+        // to propagate; raise a fresh one after swapping back in the
+        // old thread state.
+        PyThreadState_Swap(save_tstate);
+        _PyErr_SetFromPyStatus(status);
+        PyObject *exc = PyErr_GetRaisedException();
+        PyErr_SetString(PyExc_InterpreterError,
+                        "sub-interpreter creation failed");
+        _PyErr_ChainExceptions1(exc);
+        return NULL;
+    }
+    assert(tstate != NULL);
+    PyInterpreterState *interp = PyThreadState_GetInterpreter(tstate);
+
+    if (p_tstate != NULL) {
+        // We leave the new thread state as the current one.
+        *p_tstate = tstate;
+    }
+    else {
+        // Throw away the initial tstate.
+        PyThreadState_Clear(tstate);
+        PyThreadState_Swap(save_tstate);
+        PyThreadState_Delete(tstate);
+        save_tstate = NULL;
+    }
+    if (p_save_tstate != NULL) {
+        *p_save_tstate = save_tstate;
+    }
+    return interp;
+}
+
+void
+_PyXI_EndInterpreter(PyInterpreterState *interp,
+                     PyThreadState *tstate, PyThreadState **p_save_tstate)
+{
+    PyThreadState *cur_tstate = PyThreadState_GET();
+    PyThreadState *save_tstate = NULL;
+    if (tstate == NULL) {
+        if (PyThreadState_GetInterpreter(cur_tstate) == interp) {
+            tstate = cur_tstate;
+        }
+        else {
+            tstate = PyThreadState_New(interp);
+            _PyThreadState_SetWhence(tstate, _PyThreadState_WHENCE_INTERP);
+            assert(tstate != NULL);
+            save_tstate = PyThreadState_Swap(tstate);
+        }
+    }
+    else {
+        assert(PyThreadState_GetInterpreter(tstate) == interp);
+        if (tstate != cur_tstate) {
+            assert(PyThreadState_GetInterpreter(cur_tstate) != interp);
+            save_tstate = PyThreadState_Swap(tstate);
+        }
+    }
+
+    Py_EndInterpreter(tstate);
+
+    if (p_save_tstate != NULL) {
+        save_tstate = *p_save_tstate;
+    }
+    PyThreadState_Swap(save_tstate);
+}

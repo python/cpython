@@ -1357,7 +1357,88 @@ dict_getitem_knownhash(PyObject *self, PyObject *args)
 }
 
 
-/* To run some code in a sub-interpreter. */
+static PyInterpreterState *
+_new_interpreter(PyObject *configobj,
+                 PyThreadState **p_tstate, PyThreadState **p_save_tstate)
+{
+    PyInterpreterConfig config;
+    if (configobj == NULL) {
+        config = (PyInterpreterConfig)_PyInterpreterConfig_INIT;
+    }
+    else {
+        PyObject *dict = PyObject_GetAttrString(configobj, "__dict__");
+        if (dict == NULL) {
+            PyErr_Format(PyExc_TypeError, "bad config %R", configobj);
+            return NULL;
+        }
+        int res = _PyInterpreterConfig_InitFromDict(&config, dict);
+        Py_DECREF(dict);
+        if (res < 0) {
+            return NULL;
+        }
+    }
+
+    return _PyXI_NewInterpreter(&config, p_tstate, p_save_tstate);
+}
+
+// This exists mostly for testing the _interpreters module, as an
+// alternative to _interpreters.create()
+static PyObject *
+create_interpreter(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+    static char *kwlist[] = {"config", NULL};
+    PyObject *configobj = NULL;
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
+                                     "|O:create_interpreter", kwlist,
+                                     &configobj))
+    {
+        return NULL;
+    }
+
+    PyInterpreterState *interp = _new_interpreter(configobj, NULL, NULL);
+    if (interp == NULL) {
+        return NULL;
+    }
+
+    PyObject *idobj = _PyInterpreterState_GetIDObject(interp);
+    if (idobj == NULL) {
+        _PyXI_EndInterpreter(interp, NULL, NULL);
+        return NULL;
+    }
+
+    return idobj;
+}
+
+// This exists mostly for testing the _interpreters module, as an
+// alternative to _interpreters.destroy()
+static PyObject *
+destroy_interpreter(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+    static char *kwlist[] = {"id", NULL};
+    PyObject *idobj = NULL;
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
+                                     "O:destroy_interpreter", kwlist,
+                                     &idobj))
+    {
+        return NULL;
+    }
+
+    PyInterpreterState *interp = _PyInterpreterState_LookUpIDObject(idobj);
+    if (interp == NULL) {
+        return NULL;
+    }
+
+    _PyXI_EndInterpreter(interp, NULL, NULL);
+    Py_RETURN_NONE;
+}
+
+
+/* To run some code in a sub-interpreter.
+
+Generally you can use test.support.interpreters,
+but we keep this helper as a distinct implementation.
+That's especially important for testing test.support.interpreters.
+*/
 static PyObject *
 run_in_subinterp_with_config(PyObject *self, PyObject *args, PyObject *kwargs)
 {
@@ -1371,42 +1452,18 @@ run_in_subinterp_with_config(PyObject *self, PyObject *args, PyObject *kwargs)
         return NULL;
     }
 
-    PyInterpreterConfig config;
-    PyObject *dict = PyObject_GetAttrString(configobj, "__dict__");
-    if (dict == NULL) {
-        PyErr_Format(PyExc_TypeError, "bad config %R", configobj);
-        return NULL;
-    }
-    int res = _PyInterpreterConfig_InitFromDict(&config, dict);
-    Py_DECREF(dict);
-    if (res < 0) {
-        return NULL;
-    }
-
-    PyThreadState *mainstate = PyThreadState_Get();
-
-    PyThreadState_Swap(NULL);
-
+    PyThreadState *save_tstate;
     PyThreadState *substate;
-    PyStatus status = Py_NewInterpreterFromConfig(&substate, &config);
-    if (PyStatus_Exception(status)) {
-        /* Since no new thread state was created, there is no exception to
-           propagate; raise a fresh one after swapping in the old thread
-           state. */
-        PyThreadState_Swap(mainstate);
-        _PyErr_SetFromPyStatus(status);
-        PyObject *exc = PyErr_GetRaisedException();
-        PyErr_SetString(PyExc_RuntimeError, "sub-interpreter creation failed");
-        _PyErr_ChainExceptions1(exc);
+    PyInterpreterState *interp = _new_interpreter(configobj, &substate, &save_tstate);
+    if (interp == NULL) {
         return NULL;
     }
-    assert(substate != NULL);
+
     /* only initialise 'cflags.cf_flags' to test backwards compatibility */
     PyCompilerFlags cflags = {0};
     int r = PyRun_SimpleStringFlags(code, &cflags);
-    Py_EndInterpreter(substate);
 
-    PyThreadState_Swap(mainstate);
+    _PyXI_EndInterpreter(interp, substate, &save_tstate);
 
     return PyLong_FromLong(r);
 }
@@ -1738,6 +1795,10 @@ static PyMethodDef module_functions[] = {
     {"get_object_dict_values", get_object_dict_values, METH_O},
     {"hamt", new_hamt, METH_NOARGS},
     {"dict_getitem_knownhash",  dict_getitem_knownhash,          METH_VARARGS},
+    {"create_interpreter", _PyCFunction_CAST(create_interpreter),
+     METH_VARARGS | METH_KEYWORDS},
+    {"destroy_interpreter", _PyCFunction_CAST(destroy_interpreter),
+     METH_VARARGS | METH_KEYWORDS},
     {"run_in_subinterp_with_config",
      _PyCFunction_CAST(run_in_subinterp_with_config),
      METH_VARARGS | METH_KEYWORDS},
