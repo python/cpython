@@ -136,6 +136,7 @@
     <ClCompile Include="..\Objects\exceptions.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\Python\executor_externals.c" />
     <ClCompile Include="..\Modules\faulthandler.c">
       <Filter>Source Files</Filter>
     </ClCompile>

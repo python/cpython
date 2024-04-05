@@ -226,6 +226,7 @@
     <ClInclude Include="..\Include\internal\pycore_dict_state.h" />
     <ClInclude Include="..\Include\internal\pycore_dtoa.h" />
     <ClInclude Include="..\Include\internal\pycore_exceptions.h" />
+    <ClInclude Include="..\Include\internal\pycore_executor_externals.h" />
     <ClInclude Include="..\Include\internal\pycore_faulthandler.h" />
     <ClInclude Include="..\Include\internal\pycore_fileutils.h" />
     <ClInclude Include="..\Include\internal\pycore_fileutils_windows.h" />
@@ -563,6 +564,7 @@
     <ClCompile Include="..\Python\dynamic_annotations.c" />
     <ClCompile Include="..\Python\dynload_win.c" />
     <ClCompile Include="..\Python\errors.c" />
+    <ClCompile Include="..\Python\executor_externals.c" />
     <ClCompile Include="..\Python\fileutils.c" />
     <ClCompile Include="..\Python\flowgraph.c" />
     <ClCompile Include="..\Python\formatter_unicode.c" />

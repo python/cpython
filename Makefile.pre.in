@@ -422,6 +422,7 @@ PYTHON_OBJS=	\
 		Python/crossinterp.o \
 		Python/dynamic_annotations.o \
 		Python/errors.o \
+		Python/executor_externals.o \
 		Python/flowgraph.o \
 		Python/frame.o \
 		Python/frozenmain.o \
@@ -1145,6 +1146,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/pycore_dict_state.h \
 		$(srcdir)/Include/internal/pycore_dtoa.h \
 		$(srcdir)/Include/internal/pycore_exceptions.h \
+		$(srcdir)/Include/internal/pycore_executor_externals.h \
 		$(srcdir)/Include/internal/pycore_faulthandler.h \
 		$(srcdir)/Include/internal/pycore_fileutils.h \
 		$(srcdir)/Include/internal/pycore_floatobject.h \
@@ -1905,8 +1907,10 @@ regen-generated-cases:
 .PHONY: regen-executor-cases
 regen-executor-cases:
 	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/cases_generator/tier2_generator.py \
-	    -o $(srcdir)/Python/executor_cases.c.h.new $(srcdir)/Python/bytecodes.c
+	    -o $(srcdir)/Python/executor_cases.c.h.new $(srcdir)/Python/executor_externals.c.new $(srcdir)/Include/internal/pycore_executor_externals.h.new $(srcdir)/Python/bytecodes.c
 	$(UPDATE_FILE) $(srcdir)/Python/executor_cases.c.h $(srcdir)/Python/executor_cases.c.h.new
+	$(UPDATE_FILE) $(srcdir)/Python/executor_externals.c $(srcdir)/Python/executor_externals.c.new
+	$(UPDATE_FILE) $(srcdir)/Include/internal/pycore_executor_externals.h $(srcdir)/Include/internal/pycore_executor_externals.h.new
 
 .PHONY: regen-optimizer-cases
 regen-optimizer-cases:

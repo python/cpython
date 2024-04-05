@@ -510,6 +510,9 @@
     <ClInclude Include="..\Include\cpython\initconfig.h">
       <Filter>Include\cpython</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_executor_externals.h">
+      <Filter>Include\internal</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_unicodeobject.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
@@ -1281,6 +1284,9 @@
       <Filter>Python</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\errors.c">
+      <Filter>Python</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Python\executor_externals.c">
       <Filter>Python</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\fileutils.c">

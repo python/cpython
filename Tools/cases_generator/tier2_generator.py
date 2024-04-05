@@ -6,6 +6,7 @@ Writes the cases to executor_cases.c.h, which is #included in ceval.c.
 import argparse
 import os.path
 import sys
+import textwrap
 
 from analyzer import (
     Analysis,
@@ -30,7 +31,11 @@ from typing import TextIO, Iterator
 from lexer import Token
 from stack import StackOffset, Stack, SizeMismatch
 
-DEFAULT_OUTPUT = ROOT / "Python/executor_cases.c.h"
+DEFAULT_OUTPUT = [
+    ROOT / "Python/executor_cases.c.h",
+    ROOT / "Python/executor_externals.c",
+    ROOT / "Include/internal/pycore_executor_externals.h"
+]
 
 
 def declare_variable(
@@ -150,12 +155,13 @@ TIER2_REPLACEMENT_FUNCTIONS["EXIT_IF"] = tier2_replace_exit_if
 def write_uop(uop: Uop, out: CWriter, stack: Stack) -> None:
     try:
         out.start_line()
-        if uop.properties.oparg:
+        if uop.properties.oparg and not uop.properties.externalize:
             out.emit("oparg = CURRENT_OPARG();\n")
             assert uop.properties.const_oparg < 0
         elif uop.properties.const_oparg >= 0:
             out.emit(f"oparg = {uop.properties.const_oparg};\n")
-            out.emit(f"assert(oparg == CURRENT_OPARG());\n")
+            if not uop.properties.externalize:
+                out.emit("assert(oparg == CURRENT_OPARG());\n")
         for var in reversed(uop.stack.inputs):
             out.emit(stack.pop(var))
         if not uop.properties.stores_sp:
@@ -192,6 +198,7 @@ def generate_tier2(
 #define TIER_TWO 2
 """
     )
+
     out = CWriter(outfile, 2, lines)
     out.emit("\n")
     for name, uop in analysis.uops.items():
@@ -207,12 +214,20 @@ def generate_tier2(
             out.emit(f"/* {uop.name} is not a viable micro-op for tier 2 because it {why_not_viable} */\n\n")
             continue
         out.emit(f"case {uop.name}: {{\n")
-        declare_variables(uop, out)
-        stack = Stack()
-        write_uop(uop, out, stack)
+        if uop.properties.externalize:
+            stack = None
+            out.emit(f"stack_pointer = {uop.name}_func(tstate, frame, stack_pointer")
+            if uop.properties.const_oparg < 0:
+                out.emit(", CURRENT_OPARG()")
+            out.emit(");\n")
+        else:
+            declare_variables(uop, out)
+            stack = Stack()
+            write_uop(uop, out, stack)
         out.start_line()
         if not uop.properties.always_exits:
-            stack.flush(out)
+            if stack is not None:
+                stack.flush(out)
             if uop.properties.ends_with_eval_breaker:
                 out.emit("CHECK_EVAL_BREAKER();\n")
             out.emit("break;\n")
@@ -222,13 +237,121 @@ def generate_tier2(
     outfile.write("#undef TIER_TWO\n")
 
 
+def get_external_signature(name: str, uop: Uop) -> str:
+    args = [
+        "PyThreadState *tstate",
+        "_PyInterpreterFrame *frame",
+        "PyObject **stack_pointer"
+    ]
+    if uop.properties.const_oparg < 0:
+        args.append("int oparg")
+    if not name.startswith("_"):
+        name = "_" + name
+    return f"PyObject ** {name}_func({', '.join(args)})"
+
+
+def generate_tier2_externals(
+    filenames: list[str], analysis: Analysis, outfile: TextIO, lines: bool
+) -> None:
+    write_header(__file__, filenames, outfile)
+    outfile.write(textwrap.dedent(
+        """
+        #include "Python.h"
+
+        #include "pycore_call.h"
+        #include "pycore_ceval.h"
+        #include "pycore_dict.h"
+        #include "pycore_emscripten_signal.h"
+        #include "pycore_executor_externals.h"
+        #include "pycore_intrinsics.h"
+        #include "pycore_long.h"
+        #include "pycore_opcode_metadata.h"
+        #include "pycore_opcode_utils.h"
+        #include "pycore_optimizer.h"
+        #include "pycore_range.h"
+        #include "pycore_setobject.h"
+        #include "pycore_sliceobject.h"
+        #include "pycore_descrobject.h"
+
+        #include "ceval_macros.h"
+
+        #define TIER_TWO 2
+        """
+    ))
+
+    out = CWriter(outfile, 2, lines)
+    out.emit("\n")
+    for name, uop in analysis.uops.items():
+        if uop.properties.tier == 1:
+            continue
+        if uop.properties.externalize:
+            out.emit(get_external_signature(name, uop))
+            out.emit(" {\n")
+
+            if uop.properties.const_oparg >= 0:
+                out.emit("int oparg;\n")
+            declare_variables(uop, out)
+            stack = Stack()
+            write_uop(uop, out, stack)
+            stack.flush(out)
+            out.start_line()
+            out.emit("return stack_pointer;\n")
+
+            out.emit("}\n\n")
+
+
+def generate_tier2_externals_header(
+    filenames: list[str], analysis: Analysis, outfile: TextIO, lines: bool
+) -> None:
+    write_header(__file__, filenames, outfile)
+
+    outfile.write(textwrap.dedent(
+        """
+        #ifndef Py_EXECUTOR_EXTERNALS_H
+        #define Py_EXECUTOR_EXTERNALS_H
+        #ifdef __cplusplus
+        extern "C" {
+        #endif
+
+        #ifndef Py_BUILD_CORE
+        #  error "this header requires Py_BUILD_CORE define"
+        #endif
+
+        #include "Python.h"
+
+        #include "pytypedefs.h"
+        #include "pycore_frame.h"
+        """
+    ))
+
+    out = CWriter(outfile, 2, lines)
+    out.emit("\n")
+    for name, uop in analysis.uops.items():
+        if uop.properties.tier == 1:
+            continue
+        if uop.properties.externalize:
+            out.emit(get_external_signature(name, uop))
+            out.emit(";\n\n")
+
+    out.start_line()
+    outfile.write(textwrap.dedent(
+        """
+        #ifdef __cplusplus
+        }
+        #endif
+
+        #endif
+        """
+    ))
+
+
 arg_parser = argparse.ArgumentParser(
     description="Generate the code for the tier 2 interpreter.",
     formatter_class=argparse.ArgumentDefaultsHelpFormatter,
 )
 
 arg_parser.add_argument(
-    "-o", "--output", type=str, help="Generated code", default=DEFAULT_OUTPUT
+    "-o", "--output", type=str, help="Generated code", nargs=3, default=DEFAULT_OUTPUT
 )
 
 arg_parser.add_argument(
@@ -244,5 +367,9 @@ if __name__ == "__main__":
     if len(args.input) == 0:
         args.input.append(DEFAULT_INPUT)
     data = analyze_files(args.input)
-    with open(args.output, "w") as outfile:
+    with open(args.output[0], "w") as outfile:
         generate_tier2(args.input, data, outfile, args.emit_line_directives)
+    with open(args.output[1], "w") as outfile:
+        generate_tier2_externals(args.input, data, outfile, args.emit_line_directives)
+    with open(args.output[2], "w") as outfile:
+        generate_tier2_externals_header(args.input, data, outfile, args.emit_line_directives)

@@ -1571,7 +1571,7 @@ dummy_func(
             Py_XDECREF(oldobj);
         }
 
-        inst(COPY_FREE_VARS, (--)) {
+        externalize inst(COPY_FREE_VARS, (--)) {
             /* Copy closure variables to free variables */
             PyCodeObject *co = _PyFrame_GetCode(frame);
             assert(PyFunction_Check(frame->f_funcobj));
@@ -3129,7 +3129,7 @@ dummy_func(
             DEOPT_IF(Py_TYPE(callable) != &PyMethod_Type);
         }
 
-        op(_INIT_CALL_BOUND_METHOD_EXACT_ARGS, (callable, unused, unused[oparg] -- func, self, unused[oparg])) {
+        externalize op(_INIT_CALL_BOUND_METHOD_EXACT_ARGS, (callable, unused, unused[oparg] -- func, self, unused[oparg])) {
             STAT_INC(CALL, hit);
             self = Py_NewRef(((PyMethodObject *)callable)->im_self);
             stack_pointer[-1 - oparg] = self;  // Patch stack as it is used by _INIT_CALL_PY_EXACT_ARGS
@@ -3157,7 +3157,7 @@ dummy_func(
             DEOPT_IF(tstate->py_recursion_remaining <= 1);
         }
 
-        replicate(5) pure op(_INIT_CALL_PY_EXACT_ARGS, (callable, self_or_null, args[oparg] -- new_frame: _PyInterpreterFrame*)) {
+        externalize replicate(5) pure op(_INIT_CALL_PY_EXACT_ARGS, (callable, self_or_null, args[oparg] -- new_frame: _PyInterpreterFrame*)) {
             int has_self = (self_or_null != NULL);
             STAT_INC(CALL, hit);
             PyFunctionObject *func = (PyFunctionObject *)callable;
@@ -3538,7 +3538,7 @@ dummy_func(
             DISPATCH();
         }
 
-         op(_CALL_METHOD_DESCRIPTOR_O, (callable, self_or_null, args[oparg] -- res)) {
+        op(_CALL_METHOD_DESCRIPTOR_O, (callable, self_or_null, args[oparg] -- res)) {
             int total_args = oparg;
             if (self_or_null != NULL) {
                 args--;
@@ -3847,7 +3847,7 @@ dummy_func(
             func = (PyObject *)func_obj;
         }
 
-        inst(SET_FUNCTION_ATTRIBUTE, (attr, func -- func)) {
+        externalize inst(SET_FUNCTION_ATTRIBUTE, (attr, func -- func)) {
             assert(PyFunction_Check(func));
             PyFunctionObject *func_obj = (PyFunctionObject *)func;
             switch(oparg) {

@@ -28,6 +28,7 @@ class Properties:
     tier: int | None = None
     oparg_and_1: bool = False
     const_oparg: int = -1
+    externalize: bool = False
 
     def dump(self, indent: str) -> None:
         print(indent, end="")
@@ -55,6 +56,7 @@ class Properties:
             side_exit=any(p.side_exit for p in properties),
             pure=all(p.pure for p in properties),
             passthrough=all(p.passthrough for p in properties),
+            externalize=all(p.externalize for p in properties),
         )
 
     @property
@@ -82,6 +84,7 @@ SKIP_PROPERTIES = Properties(
     side_exit=False,
     pure=False,
     passthrough=False,
+    externalize=False,
 )
 
 
@@ -559,6 +562,7 @@ def compute_properties(op: parser.InstDef) -> Properties:
         pure="pure" in op.annotations,
         passthrough=passthrough,
         tier=tier_variable(op),
+        externalize="externalize" in op.annotations,
     )
 
 
