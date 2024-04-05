@@ -213,15 +213,8 @@ def ismount(path):
     except (OSError, ValueError):
         return False
 
-    dev1 = s1.st_dev
-    dev2 = s2.st_dev
-    if dev1 != dev2:
-        return True     # path/.. on a different device as path
-    ino1 = s1.st_ino
-    ino2 = s2.st_ino
-    if ino1 == ino2:
-        return True     # path/.. is the same i-node as path
-    return False
+    # path/.. on a different device as path or the same i-node as path
+    return s1.st_dev != s2.st_dev or s1.st_ino == s2.st_ino
 
 
 # Expand paths beginning with '~' or '~user'.
@@ -270,7 +263,7 @@ def expanduser(path):
             return path
         name = path[1:i]
         if isinstance(name, bytes):
-            name = str(name, 'ASCII')
+            name = name.decode('ascii')
         try:
             pwent = pwd.getpwnam(name)
         except KeyError:
@@ -359,21 +352,19 @@ except ImportError:
         path = os.fspath(path)
         if isinstance(path, bytes):
             sep = b'/'
-            empty = b''
             dot = b'.'
             dotdot = b'..'
         else:
             sep = '/'
-            empty = ''
             dot = '.'
             dotdot = '..'
-        if path == empty:
+        if not path:
             return dot
         _, initial_slashes, path = splitroot(path)
         comps = path.split(sep)
         new_comps = []
         for comp in comps:
-            if comp in (empty, dot):
+            if not comp or comp == dot:
                 continue
             if (comp != dotdot or (not initial_slashes and not new_comps) or
                  (new_comps and new_comps[-1] == dotdot)):
@@ -396,12 +387,12 @@ else:
 def abspath(path):
     """Return an absolute path."""
     path = os.fspath(path)
-    if not isabs(path):
-        if isinstance(path, bytes):
-            cwd = os.getcwdb()
-        else:
-            cwd = os.getcwd()
-        path = join(cwd, path)
+    if isinstance(path, bytes):
+        if not path.startswith(b'/'):
+            path = join(os.getcwdb(), path)
+    else:
+        if not path.startswith('/'):
+            path = join(os.getcwd(), path)
     return normpath(path)
 
 
@@ -412,49 +403,66 @@ def realpath(filename, *, strict=False):
     """Return the canonical path of the specified filename, eliminating any
 symbolic links encountered in the path."""
     filename = os.fspath(filename)
-    path, ok = _joinrealpath(filename[:0], filename, strict, {})
-    return abspath(path)
-
-# Join two paths, normalizing and eliminating any symbolic links
-# encountered in the second path.
-def _joinrealpath(path, rest, strict, seen):
-    if isinstance(path, bytes):
+    if isinstance(filename, bytes):
         sep = b'/'
         curdir = b'.'
         pardir = b'..'
+        getcwd = os.getcwdb
     else:
         sep = '/'
         curdir = '.'
         pardir = '..'
+        getcwd = os.getcwd
 
-    if isabs(rest):
-        rest = rest[1:]
-        path = sep
+    # The stack of unresolved path parts. When popped, a special value of None
+    # indicates that a symlink target has been resolved, and that the original
+    # symlink path can be retrieved by popping again. The [::-1] slice is a
+    # very fast way of spelling list(reversed(...)).
+    rest = filename.split(sep)[::-1]
+
+    # The resolved path, which is absolute throughout this function.
+    # Note: getcwd() returns a normalized and symlink-free path.
+    path = sep if filename.startswith(sep) else getcwd()
+
+    # Mapping from symlink paths to *fully resolved* symlink targets. If a
+    # symlink is encountered but not yet resolved, the value is None. This is
+    # used both to detect symlink loops and to speed up repeated traversals of
+    # the same links.
+    seen = {}
+
+    # Whether we're calling lstat() and readlink() to resolve symlinks. If we
+    # encounter an OSError for a symlink loop in non-strict mode, this is
+    # switched off.
+    querying = True
 
     while rest:
-        name, _, rest = rest.partition(sep)
+        name = rest.pop()
+        if name is None:
+            # resolved symlink target
+            seen[rest.pop()] = path
+            continue
         if not name or name == curdir:
             # current dir
             continue
         if name == pardir:
             # parent dir
-            if path:
-                path, name = split(path)
-                if name == pardir:
-                    path = join(path, pardir, pardir)
-            else:
-                path = pardir
+            path = path[:path.rindex(sep)] or sep
             continue
-        newpath = join(path, name)
+        if path == sep:
+            newpath = path + name
+        else:
+            newpath = path + sep + name
+        if not querying:
+            path = newpath
+            continue
         try:
             st = os.lstat(newpath)
+            if not stat.S_ISLNK(st.st_mode):
+                path = newpath
+                continue
         except OSError:
             if strict:
                 raise
-            is_link = False
-        else:
-            is_link = stat.S_ISLNK(st.st_mode)
-        if not is_link:
             path = newpath
             continue
         # Resolve the symbolic link
@@ -470,14 +478,23 @@ def _joinrealpath(path, rest, strict, seen):
                 os.stat(newpath)
             else:
                 # Return already resolved part + rest of the path unchanged.
-                return join(newpath, rest), False
+                path = newpath
+                querying = False
+                continue
         seen[newpath] = None # not resolved symlink
-        path, ok = _joinrealpath(path, os.readlink(newpath), strict, seen)
-        if not ok:
-            return join(path, rest), False
-        seen[newpath] = path # resolved symlink
+        target = os.readlink(newpath)
+        if target.startswith(sep):
+            # Symlink target is absolute; reset resolved path.
+            path = sep
+        # Push the symlink path onto the stack, and signal its specialness by
+        # also pushing None. When these entries are popped, we'll record the
+        # fully-resolved symlink target in the 'seen' mapping.
+        rest.append(newpath)
+        rest.append(None)
+        # Push the unresolved symlink target parts onto the stack.
+        rest.extend(target.split(sep)[::-1])
 
-    return path, True
+    return path
 
 
 supports_unicode_filenames = (sys.platform == 'darwin')

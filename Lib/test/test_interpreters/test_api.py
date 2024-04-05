@@ -1,13 +1,14 @@
 import os
 import pickle
-import threading
 from textwrap import dedent
+import threading
+import types
 import unittest
 
 from test import support
 from test.support import import_helper
 # Raise SkipTest if subinterpreters not supported.
-import_helper.import_module('_xxsubinterpreters')
+_interpreters = import_helper.import_module('_xxsubinterpreters')
 from test.support import interpreters
 from test.support.interpreters import InterpreterNotFoundError
 from .utils import _captured_script, _run_output, _running, TestBase
@@ -363,11 +364,11 @@ class TestInterpreterClose(TestBase):
 
     def test_main(self):
         main, = interpreters.list_all()
-        with self.assertRaises(RuntimeError):
+        with self.assertRaises(interpreters.InterpreterError):
             main.close()
 
         def f():
-            with self.assertRaises(RuntimeError):
+            with self.assertRaises(interpreters.InterpreterError):
                 main.close()
 
         t = threading.Thread(target=f)
@@ -388,7 +389,7 @@ class TestInterpreterClose(TestBase):
             interp = interpreters.Interpreter({interp.id})
             try:
                 interp.close()
-            except RuntimeError:
+            except interpreters.InterpreterError:
                 print('failed')
             """))
         self.assertEqual(out.strip(), 'failed')
@@ -423,7 +424,7 @@ class TestInterpreterClose(TestBase):
         main, = interpreters.list_all()
         interp = interpreters.create()
         with _running(interp):
-            with self.assertRaises(RuntimeError):
+            with self.assertRaises(interpreters.InterpreterError):
                 interp.close()
             self.assertTrue(interp.is_running())
 
@@ -930,6 +931,212 @@ class TestIsShareable(TestBase):
             with self.subTest(repr(obj)):
                 self.assertFalse(
                     interpreters.is_shareable(obj))
+
+
+class LowLevelTests(TestBase):
+
+    # The behaviors in the low-level module are important in as much
+    # as they are exercised by the high-level module.  Therefore the
+    # most important testing happens in the high-level tests.
+    # These low-level tests cover corner cases that are not
+    # encountered by the high-level module, thus they
+    # mostly shouldn't matter as much.
+
+    def test_new_config(self):
+        # This test overlaps with
+        # test.test_capi.test_misc.InterpreterConfigTests.
+
+        default = _interpreters.new_config('isolated')
+        with self.subTest('no arg'):
+            config = _interpreters.new_config()
+            self.assert_ns_equal(config, default)
+            self.assertIsNot(config, default)
+
+        with self.subTest('default'):
+            config1 = _interpreters.new_config('default')
+            self.assert_ns_equal(config1, default)
+            self.assertIsNot(config1, default)
+
+            config2 = _interpreters.new_config('default')
+            self.assert_ns_equal(config2, config1)
+            self.assertIsNot(config2, config1)
+
+        for arg in ['', 'default']:
+            with self.subTest(f'default ({arg!r})'):
+                config = _interpreters.new_config(arg)
+                self.assert_ns_equal(config, default)
+                self.assertIsNot(config, default)
+
+        supported = {
+            'isolated': types.SimpleNamespace(
+                use_main_obmalloc=False,
+                allow_fork=False,
+                allow_exec=False,
+                allow_threads=True,
+                allow_daemon_threads=False,
+                check_multi_interp_extensions=True,
+                gil='own',
+            ),
+            'legacy': types.SimpleNamespace(
+                use_main_obmalloc=True,
+                allow_fork=True,
+                allow_exec=True,
+                allow_threads=True,
+                allow_daemon_threads=True,
+                check_multi_interp_extensions=False,
+                gil='shared',
+            ),
+            'empty': types.SimpleNamespace(
+                use_main_obmalloc=False,
+                allow_fork=False,
+                allow_exec=False,
+                allow_threads=False,
+                allow_daemon_threads=False,
+                check_multi_interp_extensions=False,
+                gil='default',
+            ),
+        }
+        gil_supported = ['default', 'shared', 'own']
+
+        for name, vanilla in supported.items():
+            with self.subTest(f'supported ({name})'):
+                expected = vanilla
+                config1 = _interpreters.new_config(name)
+                self.assert_ns_equal(config1, expected)
+                self.assertIsNot(config1, expected)
+
+                config2 = _interpreters.new_config(name)
+                self.assert_ns_equal(config2, config1)
+                self.assertIsNot(config2, config1)
+
+            with self.subTest(f'noop override ({name})'):
+                expected = vanilla
+                overrides = vars(vanilla)
+                config = _interpreters.new_config(name, **overrides)
+                self.assert_ns_equal(config, expected)
+
+            with self.subTest(f'override all ({name})'):
+                overrides = {k: not v for k, v in vars(vanilla).items()}
+                for gil in gil_supported:
+                    if vanilla.gil == gil:
+                        continue
+                    overrides['gil'] = gil
+                    expected = types.SimpleNamespace(**overrides)
+                    config = _interpreters.new_config(name, **overrides)
+                    self.assert_ns_equal(config, expected)
+
+            # Override individual fields.
+            for field, old in vars(vanilla).items():
+                if field == 'gil':
+                    values = [v for v in gil_supported if v != old]
+                else:
+                    values = [not old]
+                for val in values:
+                    with self.subTest(f'{name}.{field} ({old!r} -> {val!r})'):
+                        overrides = {field: val}
+                        expected = types.SimpleNamespace(
+                            **dict(vars(vanilla), **overrides),
+                        )
+                        config = _interpreters.new_config(name, **overrides)
+                        self.assert_ns_equal(config, expected)
+
+        with self.subTest('extra override'):
+            with self.assertRaises(ValueError):
+                _interpreters.new_config(spam=True)
+
+        # Bad values for bool fields.
+        for field, value in vars(supported['empty']).items():
+            if field == 'gil':
+                continue
+            assert isinstance(value, bool)
+            for value in [1, '', 'spam', 1.0, None, object()]:
+                with self.subTest(f'bad override ({field}={value!r})'):
+                    with self.assertRaises(TypeError):
+                        _interpreters.new_config(**{field: value})
+
+        # Bad values for .gil.
+        for value in [True, 1, 1.0, None, object()]:
+            with self.subTest(f'bad override (gil={value!r})'):
+                with self.assertRaises(TypeError):
+                    _interpreters.new_config(gil=value)
+        for value in ['', 'spam']:
+            with self.subTest(f'bad override (gil={value!r})'):
+                with self.assertRaises(ValueError):
+                    _interpreters.new_config(gil=value)
+
+    def test_get_config(self):
+        # This test overlaps with
+        # test.test_capi.test_misc.InterpreterConfigTests.
+
+        with self.subTest('main'):
+            expected = _interpreters.new_config('legacy')
+            expected.gil = 'own'
+            interpid = _interpreters.get_main()
+            config = _interpreters.get_config(interpid)
+            self.assert_ns_equal(config, expected)
+
+        with self.subTest('isolated'):
+            expected = _interpreters.new_config('isolated')
+            interpid = _interpreters.create('isolated')
+            config = _interpreters.get_config(interpid)
+            self.assert_ns_equal(config, expected)
+
+        with self.subTest('legacy'):
+            expected = _interpreters.new_config('legacy')
+            interpid = _interpreters.create('legacy')
+            config = _interpreters.get_config(interpid)
+            self.assert_ns_equal(config, expected)
+
+    def test_create(self):
+        isolated = _interpreters.new_config('isolated')
+        legacy = _interpreters.new_config('legacy')
+        default = isolated
+
+        with self.subTest('no arg'):
+            interpid = _interpreters.create()
+            config = _interpreters.get_config(interpid)
+            self.assert_ns_equal(config, default)
+
+        with self.subTest('arg: None'):
+            interpid = _interpreters.create(None)
+            config = _interpreters.get_config(interpid)
+            self.assert_ns_equal(config, default)
+
+        with self.subTest('arg: \'empty\''):
+            with self.assertRaises(interpreters.InterpreterError):
+                # The "empty" config isn't viable on its own.
+                _interpreters.create('empty')
+
+        for arg, expected in {
+            '': default,
+            'default': default,
+            'isolated': isolated,
+            'legacy': legacy,
+        }.items():
+            with self.subTest(f'str arg: {arg!r}'):
+                interpid = _interpreters.create(arg)
+                config = _interpreters.get_config(interpid)
+                self.assert_ns_equal(config, expected)
+
+        with self.subTest('custom'):
+            orig = _interpreters.new_config('empty')
+            orig.use_main_obmalloc = True
+            orig.gil = 'shared'
+            interpid = _interpreters.create(orig)
+            config = _interpreters.get_config(interpid)
+            self.assert_ns_equal(config, orig)
+
+        with self.subTest('missing fields'):
+            orig = _interpreters.new_config()
+            del orig.gil
+            with self.assertRaises(ValueError):
+                _interpreters.create(orig)
+
+        with self.subTest('extra fields'):
+            orig = _interpreters.new_config()
+            orig.spam = True
+            with self.assertRaises(ValueError):
+                _interpreters.create(orig)
 
 
 if __name__ == '__main__':

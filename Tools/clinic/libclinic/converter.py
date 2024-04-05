@@ -531,3 +531,19 @@ converters: ConverterDict = {}
 # these callables follow the same rules as those for "converters" above.
 # note however that they will never be called with keyword-only parameters.
 legacy_converters: ConverterDict = {}
+
+
+def add_legacy_c_converter(
+    format_unit: str,
+    **kwargs: Any
+) -> Callable[[CConverterClassT], CConverterClassT]:
+    def closure(f: CConverterClassT) -> CConverterClassT:
+        added_f: Callable[..., CConverter]
+        if not kwargs:
+            added_f = f
+        else:
+            added_f = functools.partial(f, **kwargs)
+        if format_unit:
+            legacy_converters[format_unit] = added_f
+        return f
+    return closure
