@@ -1,0 +1,3 @@
+Add additional flags to :c:func:`PyLong_AsNativeBytes` and
+:c:func:`PyLong_FromNativeBytes` to allow the caller to determine how to handle
+edge cases around values that fill the entire buffer.
