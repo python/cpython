@@ -1,2 +1,0 @@
-Fix :func:`inspect.unwrap` for types with the ``__wrapper__`` data
-descriptor.

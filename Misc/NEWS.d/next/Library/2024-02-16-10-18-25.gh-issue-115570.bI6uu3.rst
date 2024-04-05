@@ -1,3 +1,0 @@
-A :exc:`DeprecationWarning` is no longer omitted on access to the
-``__doc__`` attributes of the deprecated ``typing.io`` and ``typing.re``
-pseudo-modules.
