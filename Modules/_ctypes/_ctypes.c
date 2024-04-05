@@ -133,7 +133,7 @@ module _ctypes
 #include "clinic/_ctypes.c.h"
 
 #define clinic_state() (get_module_state_by_class(cls))
-#define clinic_state_sub() (get_module_state_by_class(cls->base))
+#define clinic_state_sub() (get_module_state_by_class(cls->tp_base))
 
 /****************************************************************/
 
