@@ -392,6 +392,28 @@ is also included in the exception group.
 The same special case is made for
 :exc:`KeyboardInterrupt` and :exc:`SystemExit` as in the previous paragraph.
 
+Task groups are careful not to drop outside cancellations
+when they collide with a cancellation internal to the task group.
+In particular, when one task group is syntactically nested in another,
+and both experience an exception in one of their child tasks simultaneously,
+the inner task group will process its exceptions, and then the outer task group
+will experience another cancellation and process its own exceptions.
+
+In the case where a task group is cancelled from the outside and also must
+raise an :exc:`ExceptionGroup`, it will call the parent task's
+:meth:`~asyncio.Task.cancel` method. This allows a :keyword:`try` /
+:keyword:`except* <except_star>` surrounding the task group to handle
+the exceptions in the ``ExceptionGroup`` without losing the cancellation.
+The :exc:`asyncio.CancelledError` will be raised at the next
+:keyword:`await` (which may be implied at the end of a surrounding
+:keyword:`async with` block).
+
+Task groups now preserve the cancellation count
+(as reported by :meth:`asyncio.Task.cancelling`).
+
+.. versionchaged:: 3.13
+
+   Improved handling of simultaneous inside and outside cancellation.
 
 Sleeping
 ========
