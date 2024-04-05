@@ -458,6 +458,15 @@ class PosixPathTest(unittest.TestCase):
 
     @os_helper.skip_unless_symlink
     @skip_if_ABSTFN_contains_backslash
+    def test_realpath_missing_pardir(self):
+        try:
+            os.symlink(os_helper.TESTFN + "1", os_helper.TESTFN)
+            self.assertEqual(realpath("nonexistent/../" + os_helper.TESTFN), ABSTFN + "1")
+        finally:
+            os_helper.unlink(os_helper.TESTFN)
+
+    @os_helper.skip_unless_symlink
+    @skip_if_ABSTFN_contains_backslash
     def test_realpath_symlink_loops(self):
         # Bug #930024, return the path unchanged if we get into an infinite
         # symlink loop in non-strict mode (default).

@@ -1,0 +1,1 @@
+Speed up :func:`os.path.realpath` on non-Windows platforms.
