@@ -1167,6 +1167,20 @@ PyInterpreterState_GetID(PyInterpreterState *interp)
     return interp->id;
 }
 
+PyObject *
+_PyInterpreterState_GetIDObject(PyInterpreterState *interp)
+{
+    if (_PyInterpreterState_IDInitref(interp) != 0) {
+        return NULL;
+    };
+    int64_t interpid = interp->id;
+    if (interpid < 0) {
+        return NULL;
+    }
+    assert(interpid < LLONG_MAX);
+    return PyLong_FromLongLong(interpid);
+}
+
 
 int
 _PyInterpreterState_IDInitref(PyInterpreterState *interp)

@@ -20,9 +20,7 @@
 
 #include "marshal.h"              // PyMarshal_ReadObjectFromString()
 
-#define RETURNS_INTERPID_OBJECT
 #include "_interpreters_common.h"
-#undef RETURNS_INTERPID_OBJECT
 
 
 #define MODULE_NAME _xxsubinterpreters
@@ -444,13 +442,9 @@ new_interpreter(PyInterpreterConfig *config, PyObject **p_idobj,  PyThreadState 
     assert(tstate != NULL);
     PyInterpreterState *interp = PyThreadState_GetInterpreter(tstate);
 
-    if (_PyInterpreterState_IDInitref(interp) < 0) {
-        goto error;
-    }
-
     if (p_idobj != NULL) {
         // We create the object using the original interpreter.
-        PyObject *idobj = get_interpid_obj(interp);
+        PyObject *idobj = _PyInterpreterState_GetIDObject(interp);
         if (idobj == NULL) {
             goto error;
         }
@@ -710,7 +704,7 @@ interp_list_all(PyObject *self, PyObject *Py_UNUSED(ignored))
 
     interp = PyInterpreterState_Head();
     while (interp != NULL) {
-        id = get_interpid_obj(interp);
+        id = _PyInterpreterState_GetIDObject(interp);
         if (id == NULL) {
             Py_DECREF(ids);
             return NULL;
@@ -742,7 +736,7 @@ interp_get_current(PyObject *self, PyObject *Py_UNUSED(ignored))
     if (interp == NULL) {
         return NULL;
     }
-    return get_interpid_obj(interp);
+    return _PyInterpreterState_GetIDObject(interp);
 }
 
 PyDoc_STRVAR(get_current_doc,
