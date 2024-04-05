@@ -62,7 +62,6 @@ Summary -- Release highlights
 .. This section singles out the most important changes in Python 3.13.
    Brevity is key.
 
-
 .. PEP-sized items next.
 
 Important deprecations, removals or restrictions:
@@ -111,6 +110,14 @@ Improved Error Messages
         "better error messages!".split(max_split=1)
         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
     TypeError: split() got an unexpected keyword argument 'max_split'. Did you mean 'maxsplit'?
+
+Incremental Garbage Collection
+------------------------------
+
+* The cycle garbage collector is now incremental.
+  This means that maximum pause times are reduced
+  by an order of magnitude or more for larger heaps.
+
 
 Other Language Changes
 ======================
@@ -174,6 +181,44 @@ Other Language Changes
 
   (Contributed by Victor Stinner in :gh:`114570`.)
 
+* Allow controlling Expat >=2.6.0 reparse deferral (CVE-2023-52425)
+  by adding five new methods:
+
+  * :meth:`xml.etree.ElementTree.XMLParser.flush`
+  * :meth:`xml.etree.ElementTree.XMLPullParser.flush`
+  * :meth:`xml.parsers.expat.xmlparser.GetReparseDeferralEnabled`
+  * :meth:`xml.parsers.expat.xmlparser.SetReparseDeferralEnabled`
+  * :meth:`!xml.sax.expatreader.ExpatParser.flush`
+
+  (Contributed by Sebastian Pipping in :gh:`115623`.)
+
+* When :func:`asyncio.TaskGroup.create_task` is called on an inactive
+  :class:`asyncio.TaskGroup`, the given coroutine will be closed (which
+  prevents a :exc:`RuntimeWarning` about the given coroutine being
+  never awaited).
+
+  (Contributed by Arthur Tacca and Jason Zhang in :gh:`115957`.)
+
+* The :func:`ssl.create_default_context` API now includes
+  :data:`ssl.VERIFY_X509_PARTIAL_CHAIN` and :data:`ssl.VERIFY_X509_STRICT`
+  in its default flags.
+
+  .. note::
+
+   :data:`ssl.VERIFY_X509_STRICT` may reject pre-:rfc:`5280` or malformed
+   certificates that the underlying OpenSSL implementation otherwise would
+   accept. While disabling this is not recommended, you can do so using::
+
+      ctx = ssl.create_default_context()
+      ctx.verify_flags &= ~ssl.VERIFY_X509_STRICT
+
+  (Contributed by William Woodruff in :gh:`112389`.)
+
+* The :class:`configparser.ConfigParser` now accepts unnamed sections before named
+   ones if configured to do so.
+
+   (Contributed by Pedro Sousa Lacerda in :gh:`66449`)
+
 
 New Modules
 ===========
@@ -206,6 +251,21 @@ array
 ast
 ---
 
+* The constructors of node types in the :mod:`ast` module are now stricter
+  in the arguments they accept, and have more intuitive behaviour when
+  arguments are omitted.
+
+  If an optional field on an AST node is not included as an argument when
+  constructing an instance, the field will now be set to ``None``. Similarly,
+  if a list field is omitted, that field will now be set to an empty list.
+  (Previously, in both cases, the attribute would be missing on the newly
+  constructed AST node instance.)
+
+  If other arguments are omitted, a :exc:`DeprecationWarning` is emitted.
+  This will cause an exception in Python 3.15. Similarly, passing a keyword
+  argument that does not map to a field on the AST node is now deprecated,
+  and will raise an exception in Python 3.15.
+
 * :func:`ast.parse` now accepts an optional argument ``optimize``
   which is passed on to the :func:`compile` built-in. This makes it
   possible to obtain an optimized ``AST``.
@@ -223,6 +283,26 @@ asyncio
   control also now accounts for the datagram header when calculating
   the buffer size.
   (Contributed by Jamie Phan in :gh:`115199`.)
+
+* Add :meth:`asyncio.Server.close_clients` and
+  :meth:`asyncio.Server.abort_clients` methods which allow to more
+  forcefully close an asyncio server.
+  (Contributed by Pierre Ossman in :gh:`113538`.)
+
+* :func:`asyncio.as_completed` now returns an object that is both an
+  :term:`asynchronous iterator` and a plain :term:`iterator` of awaitables.
+  The awaitables yielded by asynchronous iteration include original task or
+  future objects that were passed in, making it easier to associate results
+  with the tasks being completed.
+  (Contributed by Justin Arthur in :gh:`77714`.)
+
+base64
+------
+
+* Add :func:`base64.z85encode` and :func:`base64.z85decode` functions which allow encoding
+  and decoding z85 data.
+  See `Z85  specification <https://rfc.zeromq.org/spec/32/>`_ for more information.
+  (Contributed by Matan Perelman in :gh:`75299`.)
 
 copy
 ----
@@ -291,6 +371,28 @@ fractions
   sign handling, minimum width and grouping. (Contributed by Mark Dickinson
   in :gh:`111320`.)
 
+gc
+--
+
+* The cyclic garbage collector is now incremental, which changes the meanings
+  of the results of :meth:`gc.get_threshold` and :meth:`gc.get_threshold` as
+  well as :meth:`gc.get_count` and :meth:`gc.get_stats`.
+* :meth:`gc.get_threshold` returns a three-tuple for backwards compatibility,
+  the first value is the threshold for young collections, as before, the second
+  value determines the rate at which the old collection is scanned; the
+  default is 10 and higher values mean that the old collection is scanned more slowly.
+  The third value is meangless and is always zero.
+* :meth:`gc.set_threshold` ignores any items after the second.
+* :meth:`gc.get_count` and :meth:`gc.get_stats`.
+  These functions return the same format of results as before.
+  The only difference is that instead of the results refering to
+  the young, aging and old generations, the results refer to the
+  young generation and the aging and collecting spaces of the old generation.
+
+In summary, code that attempted to manipulate the behavior of the cycle GC may
+not work exactly as intended, but it is very unlikely to harmful.
+All other code will work just fine.
+
 glob
 ----
 
@@ -312,6 +414,16 @@ ipaddress
 
 * Add the :attr:`ipaddress.IPv4Address.ipv6_mapped` property, which returns the IPv4-mapped IPv6 address.
   (Contributed by Charles Machalow in :gh:`109466`.)
+* Fix ``is_global`` and ``is_private`` behavior in ``IPv4Address``, ``IPv6Address``, ``IPv4Network``
+  and ``IPv6Network``.
+
+itertools
+---------
+
+* Added a ``strict`` option to :func:`itertools.batched`.
+  This raises a :exc:`ValueError` if the final batch is shorter
+  than the specified batch size.
+  (Contributed by Raymond Hettinger in :gh:`113202`.)
 
 marshal
 -------
@@ -320,6 +432,16 @@ marshal
   Passing ``allow_code=False`` prevents serialization and de-serialization of
   code objects which are incompatible between Python versions.
   (Contributed by Serhiy Storchaka in :gh:`113626`.)
+
+math
+----
+
+A new function :func:`~math.fma` for fused multiply-add operations has been
+added. This function computes ``x * y + z`` with only a single round, and so
+avoids any intermediate loss of precision. It wraps the ``fma()`` function
+provided by C99, and follows the specification of the IEEE 754
+"fusedMultiplyAdd" operation for special cases.
+(Contributed by Mark Dickinson and Victor Stinner in :gh:`73468`.)
 
 mmap
 ----
@@ -409,6 +531,10 @@ pathlib
   shell-style wildcards, including the recursive wildcard "``**``".
   (Contributed by Barney Gale in :gh:`73435`.)
 
+* Add :attr:`pathlib.PurePath.parser` class attribute that stores the
+  implementation of :mod:`os.path` used for low-level path parsing and
+  joining: either ``posixpath`` or ``ntpath``.
+
 * Add *follow_symlinks* keyword-only argument to :meth:`pathlib.Path.glob`,
   :meth:`~pathlib.Path.rglob`, :meth:`~pathlib.Path.is_file`,
   :meth:`~pathlib.Path.is_dir`, :meth:`~pathlib.Path.owner`,
@@ -460,6 +586,14 @@ sqlite3
   for filtering database objects to dump.
   (Contributed by Mariusz Felisiak in :gh:`91602`.)
 
+statistics
+----------
+
+* Add :func:`statistics.kde` for kernel density estimation.
+  This makes it possible to estimate a continuous probability density function
+  from a fixed number of discrete samples.
+  (Contributed by Raymond Hettinger in :gh:`115863`.)
+
 subprocess
 ----------
 
@@ -481,6 +615,21 @@ sys
 * Add the :func:`sys._is_interned` function to test if the string was interned.
   This function is not guaranteed to exist in all implementations of Python.
   (Contributed by Serhiy Storchaka in :gh:`78573`.)
+
+time
+----
+
+* On Windows, :func:`time.monotonic()` now uses the
+  ``QueryPerformanceCounter()`` clock to have a resolution better than 1 us,
+  instead of the ``GetTickCount64()`` clock which has a resolution of 15.6 ms.
+  (Contributed by Victor Stinner in :gh:`88494`.)
+
+* On Windows, :func:`time.time()` now uses the
+  ``GetSystemTimePreciseAsFileTime()`` clock to have a resolution better
+  than 1 us, instead of the ``GetSystemTimeAsFileTime()`` clock which has a
+  resolution of 15.6 ms.
+  (Contributed by Victor Stinner in :gh:`63207`.)
+
 
 tkinter
 -------
@@ -532,6 +681,10 @@ typing
   check whether a class is a :class:`typing.Protocol`. (Contributed by Jelle Zijlstra in
   :gh:`104873`.)
 
+* Add :data:`typing.ReadOnly`, a special typing construct to mark
+  an item of a :class:`typing.TypedDict` as read-only for type checkers.
+  See :pep:`705` for more details.
+
 unicodedata
 -----------
 
@@ -563,6 +716,12 @@ xml.etree.ElementTree
 * Add the :meth:`!close` method for the iterator returned by
   :func:`~xml.etree.ElementTree.iterparse` for explicit cleaning up.
   (Contributed by Serhiy Storchaka in :gh:`69893`.)
+
+zipimport
+---------
+
+* Gains support for ZIP64 format files.  Everybody loves huge code right?
+  (Contributed by Tim Hatch in :gh:`94146`.)
 
 
 Optimizations
@@ -654,6 +813,11 @@ Deprecated
   translation was not found.
   (Contributed by Serhiy Storchaka in :gh:`88434`.)
 
+* :mod:`glob`: The undocumented :func:`!glob.glob0` and :func:`!glob.glob1`
+  functions are deprecated. Use :func:`glob.glob` and pass a directory to its
+  *root_dir* argument instead.
+  (Contributed by Barney Gale in :gh:`117337`.)
+
 * :mod:`http.server`: :class:`http.server.CGIHTTPRequestHandler` now emits a
   :exc:`DeprecationWarning` as it will be removed in 3.15.  Process-based CGI
   HTTP servers have been out of favor for a very long time.  This code was
@@ -741,6 +905,13 @@ Deprecated
   coroutine.
   (Contributed by Irit Katriel in :gh:`81137`.)
 
+* The undocumented and unused ``tarfile`` attribute of :class:`tarfile.TarFile`
+  is deprecated and scheduled for removal in Python 3.16.
+
+* :func:`platform.java_ver` is deprecated and will be removed in 3.15.
+  It was largely untested, had a confusing API,
+  and was only useful for Jython support.
+  (Contributed by Nikita Sobolev in :gh:`116349`.)
 
 Pending Removal in Python 3.14
 ------------------------------
@@ -899,6 +1070,11 @@ Pending Removal in Python 3.15
   methods of the :class:`wave.Wave_read` and :class:`wave.Wave_write` classes.
   They will be removed in Python 3.15.
   (Contributed by Victor Stinner in :gh:`105096`.)
+
+* :func:`platform.java_ver` is deprecated and will be removed in 3.15.
+  It was largely untested, had a confusing API,
+  and was only useful for Jython support.
+  (Contributed by Nikita Sobolev in :gh:`116349`.)
 
 Pending Removal in Python 3.16
 ------------------------------
@@ -1355,6 +1531,10 @@ Changes in the Python API
   than directories only. Users may add a trailing slash to match only
   directories.
 
+* :c:func:`!PyCode_GetFirstFree` is an ustable API now and has been renamed
+  to :c:func:`PyUnstable_Code_GetFirstFree`.
+  (Contributed by Bogdan Romanyuk in :gh:`115781`)
+
 
 Build Changes
 =============
@@ -1374,9 +1554,11 @@ Build Changes
 * Building CPython now requires a compiler with support for the C11 atomic
   library, GCC built-in atomic functions, or MSVC interlocked intrinsics.
 
-* The ``errno``, ``md5``, ``resource``, ``winsound``, ``_ctypes_test``,
-  ``_multiprocessing.posixshmem``, ``_scproxy``, ``_stat``,
-  ``_testimportmultiple`` and ``_uuid`` C extensions are now built with the
+* The ``errno``, ``fcntl``, ``grp``, ``md5``, ``pwd``, ``resource``,
+  ``termios``, ``winsound``,
+  ``_ctypes_test``, ``_multiprocessing.posixshmem``, ``_scproxy``, ``_stat``,
+  ``_statistics``, ``_testconsole``, ``_testimportmultiple`` and ``_uuid``
+  C extensions are now built with the
   :ref:`limited C API <limited-c-api>`.
   (Contributed by Victor Stinner in :gh:`85283`.)
 
@@ -1548,6 +1730,10 @@ New Features
 * Add :c:func:`Py_HashPointer` function to hash a pointer.
   (Contributed by Victor Stinner in :gh:`111545`.)
 
+* Add :c:func:`PyObject_GenericHash` function that implements the default
+  hashing function of a Python object.
+  (Contributed by Serhiy Storchaka in :gh:`113024`.)
+
 * Add PyTime C API:
 
   * :c:type:`PyTime_t` type.
@@ -1562,6 +1748,30 @@ New Features
   :c:func:`PyLong_FromUnsignedNativeBytes` functions to simplify converting
   between native integer types and Python :class:`int` objects.
   (Contributed by Steve Dower in :gh:`111140`.)
+
+* Add :c:func:`PyType_GetFullyQualifiedName` function to get the type's fully
+  qualified name. Equivalent to ``f"{type.__module__}.{type.__qualname__}"``,
+  or ``type.__qualname__`` if ``type.__module__`` is not a string or is equal
+  to ``"builtins"``.
+  (Contributed by Victor Stinner in :gh:`111696`.)
+
+* Add :c:func:`PyType_GetModuleName` function to get the type's module name.
+  Equivalent to getting the ``type.__module__`` attribute.
+  (Contributed by Eric Snow and Victor Stinner in :gh:`111696`.)
+
+* Add support for ``%T``, ``%T#``, ``%N`` and ``%N#`` formats to
+  :c:func:`PyUnicode_FromFormat`: format the fully qualified name of an object
+  type and of a type: call :c:func:`PyType_GetModuleName`. See :pep:`737` for
+  more information.
+  (Contributed by Victor Stinner in :gh:`111696`.)
+
+* Add :c:func:`Py_GetConstant` and :c:func:`Py_GetConstantBorrowed` functions
+  to get constants. For example, ``Py_GetConstant(Py_CONSTANT_ZERO)`` returns a
+  :term:`strong reference` to the constant zero.
+  (Contributed by Victor Stinner in :gh:`115754`.)
+
+* Add :c:func:`PyType_GetModuleByDef` to the limited C API
+  (Contributed by Victor Stinner in :gh:`116936`.)
 
 
 Porting to Python 3.13

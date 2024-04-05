@@ -7,7 +7,6 @@
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_namespace.h"     //_PyNamespace_New()
 #include "pycore_pyerrors.h"      // _PyErr_Clear()
-#include "pycore_typeobject.h"    // _PyType_GetModuleName()
 #include "pycore_weakref.h"       // _PyWeakref_GET_REF()
 
 
@@ -510,7 +509,7 @@ _excinfo_init_type(struct _excinfo_type *info, PyObject *exc)
     }
 
     // __module__
-    strobj = _PyType_GetModuleName(type);
+    strobj = PyType_GetModuleName(type);
     if (strobj == NULL) {
         return -1;
     }
@@ -846,7 +845,7 @@ _PyXI_ApplyErrorCode(_PyXI_errcode code, PyInterpreterState *interp)
         return 0;
     case _PyXI_ERR_OTHER:
         // XXX msg?
-        PyErr_SetNone(PyExc_RuntimeError);
+        PyErr_SetNone(PyExc_InterpreterError);
         break;
     case _PyXI_ERR_NO_MEMORY:
         PyErr_NoMemory();
@@ -857,11 +856,11 @@ _PyXI_ApplyErrorCode(_PyXI_errcode code, PyInterpreterState *interp)
         _PyInterpreterState_FailIfRunningMain(interp);
         break;
     case _PyXI_ERR_MAIN_NS_FAILURE:
-        PyErr_SetString(PyExc_RuntimeError,
+        PyErr_SetString(PyExc_InterpreterError,
                         "failed to get __main__ namespace");
         break;
     case _PyXI_ERR_APPLY_NS_FAILURE:
-        PyErr_SetString(PyExc_RuntimeError,
+        PyErr_SetString(PyExc_InterpreterError,
                         "failed to apply namespace to __main__");
         break;
     case _PyXI_ERR_NOT_SHAREABLE:
@@ -936,7 +935,7 @@ _PyXI_ApplyError(_PyXI_error *error)
         if (error->uncaught.type.name != NULL || error->uncaught.msg != NULL) {
             // __context__ will be set to a proxy of the propagated exception.
             PyObject *exc = PyErr_GetRaisedException();
-            _PyXI_excinfo_Apply(&error->uncaught, PyExc_RuntimeError);
+            _PyXI_excinfo_Apply(&error->uncaught, PyExc_InterpreterError);
             PyObject *exc2 = PyErr_GetRaisedException();
             PyException_SetContext(exc, exc2);
             PyErr_SetRaisedException(exc);
@@ -1672,6 +1671,7 @@ PyStatus
 _PyXI_InitTypes(PyInterpreterState *interp)
 {
     if (init_exceptions(interp) < 0) {
+        PyErr_PrintEx(0);
         return _PyStatus_ERR("failed to initialize an exception type");
     }
     return _PyStatus_OK();

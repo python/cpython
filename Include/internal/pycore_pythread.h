@@ -46,7 +46,8 @@ extern "C" {
 
 
 #if defined(HAVE_PTHREAD_STUBS)
-#include <stdbool.h>              // bool
+#include "cpython/pthread_stubs.h"  // PTHREAD_KEYS_MAX
+#include <stdbool.h>                // bool
 
 // pthread_key
 struct py_stub_tls_entry {
@@ -77,7 +78,7 @@ struct _pythread_runtime_state {
     } stubs;
 #endif
 
-    // Linked list of ThreadHandleObjects
+    // Linked list of ThreadHandles
     struct llist_node handles;
 };
 

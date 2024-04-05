@@ -85,7 +85,7 @@ typedef struct _rare_events {
    */
 struct _is {
 
-    /* This struct countains the eval_breaker,
+    /* This struct contains the eval_breaker,
      * which is by far the hottest field in this struct
      * and should be placed at the beginning. */
     struct _ceval_state ceval;
@@ -239,13 +239,6 @@ struct _is {
     _PyOptimizerObject *optimizer;
     _PyExecutorObject *executor_list_head;
 
-    /* These two values are shifted and offset to speed up check in JUMP_BACKWARD */
-    uint32_t optimizer_resume_threshold;
-    uint32_t optimizer_backedge_threshold;
-
-    uint16_t optimizer_side_threshold;
-
-    uint32_t next_func_version;
     _rare_events rare_events;
     PyDict_WatchCallback builtins_dict_watcher;
 
@@ -296,9 +289,11 @@ _PyInterpreterState_SetFinalizing(PyInterpreterState *interp, PyThreadState *tst
 }
 
 
-// Export for the _xxinterpchannels module.
-PyAPI_FUNC(PyInterpreterState *) _PyInterpreterState_LookUpID(int64_t);
 
+// Exports for the _testinternalcapi module.
+PyAPI_FUNC(int64_t) _PyInterpreterState_ObjectToID(PyObject *);
+PyAPI_FUNC(PyInterpreterState *) _PyInterpreterState_LookUpID(int64_t);
+PyAPI_FUNC(PyInterpreterState *) _PyInterpreterState_LookUpIDObject(PyObject *);
 PyAPI_FUNC(int) _PyInterpreterState_IDInitref(PyInterpreterState *);
 PyAPI_FUNC(int) _PyInterpreterState_IDIncref(PyInterpreterState *);
 PyAPI_FUNC(void) _PyInterpreterState_IDDecref(PyInterpreterState *);
