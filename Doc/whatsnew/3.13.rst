@@ -317,6 +317,8 @@ asyncio
   reset the undocumented ``_must_cancel`` flag when the cancellation count
   reaches zero.
 
+  (Inspired by an issue reported by Arthur Tacca in :gh:`116720`.)
+
 base64
 ------
 
