@@ -3936,7 +3936,7 @@ class TermsizeTests(unittest.TestCase):
                 # The Android testbed redirects the native stdout to a pipe,
                 # which returns a different error code.
                 known_errnos.append(errno.EACCES)
-            if (sys.platform == "win32") or (e.errno in known_errnos):
+            if sys.platform == "win32" or e.errno in known_errnos:
                 # Under win32 a generic OSError can be thrown if the
                 # handle cannot be retrieved
                 self.skipTest("failed to query terminal size")
