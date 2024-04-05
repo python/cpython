@@ -113,6 +113,7 @@ __all__ = [
     'geometric_mean',
     'harmonic_mean',
     'kde',
+    'kde_random',
     'linear_regression',
     'mean',
     'median',
