@@ -1028,8 +1028,8 @@ test_int_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     if (PyUnicode_GET_LENGTH(args[2]) != 1) {
-        PyErr_Format(PyExc_ValueError,
-            "test_int_converter(): argument 3 must be a single unicode character, not %T",
+        PyErr_Format(PyExc_TypeError,
+            "test_int_converter(): argument 3 must be exactly one character long, not %T",
             args[2]);
         goto exit;
     }
@@ -1050,7 +1050,7 @@ exit:
 
 static PyObject *
 test_int_converter_impl(PyObject *module, int a, int b, int c, myenum d)
-/*[clinic end generated code: output=fcb777a9311da2f5 input=d20541fc1ca0553e]*/
+/*[clinic end generated code: output=ef1676a7f1b18b1d input=d20541fc1ca0553e]*/
 
 
 /*[clinic input]

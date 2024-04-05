@@ -36,8 +36,8 @@ unicodedata_UCD_decimal(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     if (PyUnicode_GET_LENGTH(args[0]) != 1) {
-        PyErr_Format(PyExc_ValueError,
-            "decimal(): argument 1 must be a single unicode character, not %T",
+        PyErr_Format(PyExc_TypeError,
+            "decimal(): argument 1 must be exactly one character long, not %T",
             args[0]);
         goto exit;
     }
@@ -84,8 +84,8 @@ unicodedata_UCD_digit(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     if (PyUnicode_GET_LENGTH(args[0]) != 1) {
-        PyErr_Format(PyExc_ValueError,
-            "digit(): argument 1 must be a single unicode character, not %T",
+        PyErr_Format(PyExc_TypeError,
+            "digit(): argument 1 must be exactly one character long, not %T",
             args[0]);
         goto exit;
     }
@@ -133,8 +133,8 @@ unicodedata_UCD_numeric(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     if (PyUnicode_GET_LENGTH(args[0]) != 1) {
-        PyErr_Format(PyExc_ValueError,
-            "numeric(): argument 1 must be a single unicode character, not %T",
+        PyErr_Format(PyExc_TypeError,
+            "numeric(): argument 1 must be exactly one character long, not %T",
             args[0]);
         goto exit;
     }
@@ -173,8 +173,8 @@ unicodedata_UCD_category(PyObject *self, PyObject *arg)
         goto exit;
     }
     if (PyUnicode_GET_LENGTH(arg) != 1) {
-        PyErr_Format(PyExc_ValueError,
-            "category(): argument must be a single unicode character, not %T",
+        PyErr_Format(PyExc_TypeError,
+            "category(): argument must be exactly one character long, not %T",
             arg);
         goto exit;
     }
@@ -210,8 +210,8 @@ unicodedata_UCD_bidirectional(PyObject *self, PyObject *arg)
         goto exit;
     }
     if (PyUnicode_GET_LENGTH(arg) != 1) {
-        PyErr_Format(PyExc_ValueError,
-            "bidirectional(): argument must be a single unicode character, not %T",
+        PyErr_Format(PyExc_TypeError,
+            "bidirectional(): argument must be exactly one character long, not %T",
             arg);
         goto exit;
     }
@@ -248,8 +248,8 @@ unicodedata_UCD_combining(PyObject *self, PyObject *arg)
         goto exit;
     }
     if (PyUnicode_GET_LENGTH(arg) != 1) {
-        PyErr_Format(PyExc_ValueError,
-            "combining(): argument must be a single unicode character, not %T",
+        PyErr_Format(PyExc_TypeError,
+            "combining(): argument must be exactly one character long, not %T",
             arg);
         goto exit;
     }
@@ -291,8 +291,8 @@ unicodedata_UCD_mirrored(PyObject *self, PyObject *arg)
         goto exit;
     }
     if (PyUnicode_GET_LENGTH(arg) != 1) {
-        PyErr_Format(PyExc_ValueError,
-            "mirrored(): argument must be a single unicode character, not %T",
+        PyErr_Format(PyExc_TypeError,
+            "mirrored(): argument must be exactly one character long, not %T",
             arg);
         goto exit;
     }
@@ -330,8 +330,8 @@ unicodedata_UCD_east_asian_width(PyObject *self, PyObject *arg)
         goto exit;
     }
     if (PyUnicode_GET_LENGTH(arg) != 1) {
-        PyErr_Format(PyExc_ValueError,
-            "east_asian_width(): argument must be a single unicode character, not %T",
+        PyErr_Format(PyExc_TypeError,
+            "east_asian_width(): argument must be exactly one character long, not %T",
             arg);
         goto exit;
     }
@@ -367,8 +367,8 @@ unicodedata_UCD_decomposition(PyObject *self, PyObject *arg)
         goto exit;
     }
     if (PyUnicode_GET_LENGTH(arg) != 1) {
-        PyErr_Format(PyExc_ValueError,
-            "decomposition(): argument must be a single unicode character, not %T",
+        PyErr_Format(PyExc_TypeError,
+            "decomposition(): argument must be exactly one character long, not %T",
             arg);
         goto exit;
     }
@@ -491,8 +491,8 @@ unicodedata_UCD_name(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     if (PyUnicode_GET_LENGTH(args[0]) != 1) {
-        PyErr_Format(PyExc_ValueError,
-            "name(): argument 1 must be a single unicode character, not %T",
+        PyErr_Format(PyExc_TypeError,
+            "name(): argument 1 must be exactly one character long, not %T",
             args[0]);
         goto exit;
     }
@@ -539,4 +539,4 @@ unicodedata_UCD_lookup(PyObject *self, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=a523cb9d95c65999 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=88b439204c969e4d input=a9049054013a1b77]*/

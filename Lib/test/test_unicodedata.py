@@ -133,7 +133,7 @@ class UnicodeFunctionsTest(UnicodeDatabaseTest):
         self.assertEqual(self.db.digit('\U0001D7FD'), 7)
 
         self.assertRaises(TypeError, self.db.digit)
-        self.assertRaises(ValueError, self.db.digit, 'xx')
+        self.assertRaises(TypeError, self.db.digit, 'xx')
         self.assertRaises(ValueError, self.db.digit, 'x')
 
     def test_numeric(self):
@@ -146,7 +146,7 @@ class UnicodeFunctionsTest(UnicodeDatabaseTest):
         self.assertEqual(self.db.numeric('\U0001012A'), 9000)
 
         self.assertRaises(TypeError, self.db.numeric)
-        self.assertRaises(ValueError, self.db.numeric, 'xx')
+        self.assertRaises(TypeError, self.db.numeric, 'xx')
         self.assertRaises(ValueError, self.db.numeric, 'x')
 
     def test_decimal(self):
@@ -158,7 +158,7 @@ class UnicodeFunctionsTest(UnicodeDatabaseTest):
         self.assertEqual(self.db.decimal('\U0001D7FD'), 7)
 
         self.assertRaises(TypeError, self.db.decimal)
-        self.assertRaises(ValueError, self.db.decimal, 'xx')
+        self.assertRaises(TypeError, self.db.decimal, 'xx')
         self.assertRaises(ValueError, self.db.decimal, 'x')
 
     def test_category(self):
@@ -169,7 +169,7 @@ class UnicodeFunctionsTest(UnicodeDatabaseTest):
         self.assertEqual(self.db.category('\U0001012A'), 'No')
 
         self.assertRaises(TypeError, self.db.category)
-        self.assertRaises(ValueError, self.db.category, 'xx')
+        self.assertRaises(TypeError, self.db.category, 'xx')
 
     def test_bidirectional(self):
         self.assertEqual(self.db.bidirectional('\uFFFE'), '')
@@ -178,14 +178,14 @@ class UnicodeFunctionsTest(UnicodeDatabaseTest):
         self.assertEqual(self.db.bidirectional('\U00020000'), 'L')
 
         self.assertRaises(TypeError, self.db.bidirectional)
-        self.assertRaises(ValueError, self.db.bidirectional, 'xx')
+        self.assertRaises(TypeError, self.db.bidirectional, 'xx')
 
     def test_decomposition(self):
         self.assertEqual(self.db.decomposition('\uFFFE'),'')
         self.assertEqual(self.db.decomposition('\u00bc'), '<fraction> 0031 2044 0034')
 
         self.assertRaises(TypeError, self.db.decomposition)
-        self.assertRaises(ValueError, self.db.decomposition, 'xx')
+        self.assertRaises(TypeError, self.db.decomposition, 'xx')
 
     def test_mirrored(self):
         self.assertEqual(self.db.mirrored('\uFFFE'), 0)
@@ -194,7 +194,7 @@ class UnicodeFunctionsTest(UnicodeDatabaseTest):
         self.assertEqual(self.db.mirrored('\U00020000'), 0)
 
         self.assertRaises(TypeError, self.db.mirrored)
-        self.assertRaises(ValueError, self.db.mirrored, 'xx')
+        self.assertRaises(TypeError, self.db.mirrored, 'xx')
 
     def test_combining(self):
         self.assertEqual(self.db.combining('\uFFFE'), 0)
@@ -203,7 +203,7 @@ class UnicodeFunctionsTest(UnicodeDatabaseTest):
         self.assertEqual(self.db.combining('\U00020000'), 0)
 
         self.assertRaises(TypeError, self.db.combining)
-        self.assertRaises(ValueError, self.db.combining, 'xx')
+        self.assertRaises(TypeError, self.db.combining, 'xx')
 
     def test_pr29(self):
         # https://www.unicode.org/review/pr-29.html
@@ -239,8 +239,8 @@ class UnicodeFunctionsTest(UnicodeDatabaseTest):
         eaw = self.db.east_asian_width
         self.assertRaises(TypeError, eaw, b'a')
         self.assertRaises(TypeError, eaw, bytearray())
-        self.assertRaises(ValueError, eaw, '')
-        self.assertRaises(ValueError, eaw, 'ra')
+        self.assertRaises(TypeError, eaw, '')
+        self.assertRaises(TypeError, eaw, 'ra')
         self.assertEqual(eaw('\x1e'), 'N')
         self.assertEqual(eaw('\x20'), 'Na')
         self.assertEqual(eaw('\uC894'), 'W')
