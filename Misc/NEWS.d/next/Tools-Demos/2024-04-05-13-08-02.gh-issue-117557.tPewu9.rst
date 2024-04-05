@@ -1,0 +1,3 @@
+Argument Clinic now generates slightly more accurate error messages for
+``int(accept={str})`` converters if the given string is not exactly one
+character long.
