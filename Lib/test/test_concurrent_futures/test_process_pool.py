@@ -116,7 +116,7 @@ class ProcessPoolExecutorTest(ExecutorTest):
         for _ in range(job_count):
             sem.release()
 
-    @unittest.skipIf(support.Py_GIL_DISABLED, "gh-117344: test is flaky without the GIL")
+    @support.requires_gil_enabled("gh-117344: test is flaky without the GIL")
     def test_idle_process_reuse_one(self):
         executor = self.executor
         assert executor._max_workers >= 4
