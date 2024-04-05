@@ -431,7 +431,8 @@ symbolic links encountered in the path."""
     seen = {}
 
     # Whether we're calling lstat() and readlink() to resolve symlinks. If we
-    # encounter an OSError in non-strict mode, this is switched off.
+    # encounter an OSError for a symlink loop in non-strict mode, this is
+    # switched off.
     querying = True
 
     while rest:
