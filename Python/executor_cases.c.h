@@ -3984,8 +3984,14 @@
         case _CHECK_STACK_SPACE_OPERAND: {
             uint32_t framesize = (uint32_t)CURRENT_OPERAND();
             assert(framesize <= INT_MAX);
-            if (!_PyThreadState_HasStackSpace(tstate, framesize)) JUMP_TO_JUMP_TARGET();
-            if (tstate->py_recursion_remaining <= 1) JUMP_TO_JUMP_TARGET();
+            if (!_PyThreadState_HasStackSpace(tstate, framesize)) {
+                UOP_STAT_INC(uopcode, miss);
+                JUMP_TO_JUMP_TARGET();
+            }
+            if (tstate->py_recursion_remaining <= 1) {
+                UOP_STAT_INC(uopcode, miss);
+                JUMP_TO_JUMP_TARGET();
+            }
             break;
         }
 
