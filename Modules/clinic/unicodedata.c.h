@@ -36,7 +36,9 @@ unicodedata_UCD_decimal(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     if (PyUnicode_GET_LENGTH(args[0]) != 1) {
-        PyErr_SetString(PyExc_ValueError, "a single unicode character expected");
+        PyErr_Format(PyExc_ValueError,
+            "decimal(): argument 1 must be a single unicode character, not %T",
+            args[0]);
         goto exit;
     }
     chr = PyUnicode_READ_CHAR(args[0], 0);
@@ -82,7 +84,9 @@ unicodedata_UCD_digit(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     if (PyUnicode_GET_LENGTH(args[0]) != 1) {
-        PyErr_SetString(PyExc_ValueError, "a single unicode character expected");
+        PyErr_Format(PyExc_ValueError,
+            "digit(): argument 1 must be a single unicode character, not %T",
+            args[0]);
         goto exit;
     }
     chr = PyUnicode_READ_CHAR(args[0], 0);
@@ -129,7 +133,9 @@ unicodedata_UCD_numeric(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     if (PyUnicode_GET_LENGTH(args[0]) != 1) {
-        PyErr_SetString(PyExc_ValueError, "a single unicode character expected");
+        PyErr_Format(PyExc_ValueError,
+            "numeric(): argument 1 must be a single unicode character, not %T",
+            args[0]);
         goto exit;
     }
     chr = PyUnicode_READ_CHAR(args[0], 0);
@@ -167,7 +173,9 @@ unicodedata_UCD_category(PyObject *self, PyObject *arg)
         goto exit;
     }
     if (PyUnicode_GET_LENGTH(arg) != 1) {
-        PyErr_SetString(PyExc_ValueError, "a single unicode character expected");
+        PyErr_Format(PyExc_ValueError,
+            "category(): argument must be a single unicode character, not %T",
+            arg);
         goto exit;
     }
     chr = PyUnicode_READ_CHAR(arg, 0);
@@ -202,7 +210,9 @@ unicodedata_UCD_bidirectional(PyObject *self, PyObject *arg)
         goto exit;
     }
     if (PyUnicode_GET_LENGTH(arg) != 1) {
-        PyErr_SetString(PyExc_ValueError, "a single unicode character expected");
+        PyErr_Format(PyExc_ValueError,
+            "bidirectional(): argument must be a single unicode character, not %T",
+            arg);
         goto exit;
     }
     chr = PyUnicode_READ_CHAR(arg, 0);
@@ -238,7 +248,9 @@ unicodedata_UCD_combining(PyObject *self, PyObject *arg)
         goto exit;
     }
     if (PyUnicode_GET_LENGTH(arg) != 1) {
-        PyErr_SetString(PyExc_ValueError, "a single unicode character expected");
+        PyErr_Format(PyExc_ValueError,
+            "combining(): argument must be a single unicode character, not %T",
+            arg);
         goto exit;
     }
     chr = PyUnicode_READ_CHAR(arg, 0);
@@ -279,7 +291,9 @@ unicodedata_UCD_mirrored(PyObject *self, PyObject *arg)
         goto exit;
     }
     if (PyUnicode_GET_LENGTH(arg) != 1) {
-        PyErr_SetString(PyExc_ValueError, "a single unicode character expected");
+        PyErr_Format(PyExc_ValueError,
+            "mirrored(): argument must be a single unicode character, not %T",
+            arg);
         goto exit;
     }
     chr = PyUnicode_READ_CHAR(arg, 0);
@@ -316,7 +330,9 @@ unicodedata_UCD_east_asian_width(PyObject *self, PyObject *arg)
         goto exit;
     }
     if (PyUnicode_GET_LENGTH(arg) != 1) {
-        PyErr_SetString(PyExc_ValueError, "a single unicode character expected");
+        PyErr_Format(PyExc_ValueError,
+            "east_asian_width(): argument must be a single unicode character, not %T",
+            arg);
         goto exit;
     }
     chr = PyUnicode_READ_CHAR(arg, 0);
@@ -351,7 +367,9 @@ unicodedata_UCD_decomposition(PyObject *self, PyObject *arg)
         goto exit;
     }
     if (PyUnicode_GET_LENGTH(arg) != 1) {
-        PyErr_SetString(PyExc_ValueError, "a single unicode character expected");
+        PyErr_Format(PyExc_ValueError,
+            "decomposition(): argument must be a single unicode character, not %T",
+            arg);
         goto exit;
     }
     chr = PyUnicode_READ_CHAR(arg, 0);
@@ -473,7 +491,9 @@ unicodedata_UCD_name(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     if (PyUnicode_GET_LENGTH(args[0]) != 1) {
-        PyErr_SetString(PyExc_ValueError, "a single unicode character expected");
+        PyErr_Format(PyExc_ValueError,
+            "name(): argument 1 must be a single unicode character, not %T",
+            args[0]);
         goto exit;
     }
     chr = PyUnicode_READ_CHAR(args[0], 0);
@@ -519,4 +539,4 @@ unicodedata_UCD_lookup(PyObject *self, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=8f0ea4bd0e419f9a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a523cb9d95c65999 input=a9049054013a1b77]*/

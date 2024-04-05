@@ -272,11 +272,14 @@ class int_converter(CConverter):
                     goto exit;
                 }}}}
                 if (PyUnicode_GET_LENGTH({argname}) != 1) {{{{
-                    PyErr_SetString(PyExc_ValueError, "a single unicode character expected");
+                    PyErr_Format(PyExc_ValueError,
+                        "{{name}}(): {displayname} must be a single unicode character, not %T",
+                        {argname});
                     goto exit;
                 }}}}
                 {paramname} = PyUnicode_READ_CHAR({argname}, 0);
                 """,
+                displayname=displayname,
                 argname=argname,
                 bad_argument=self.bad_argument(displayname, 'a unicode character', limited_capi=limited_capi),
             )
