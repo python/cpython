@@ -272,9 +272,8 @@ class int_converter(CConverter):
                     goto exit;
                 }}}}
                 if (PyUnicode_GET_LENGTH({argname}) != 1) {{{{
-                    PyErr_Format(PyExc_TypeError,
-                        "{{name}}(): {displayname} must be exactly one character long, not %T",
-                        {argname});
+                    PyErr_SetString(PyExc_TypeError,
+                        "{{name}}(): {displayname} must be exactly one character long");
                     goto exit;
                 }}}}
                 {paramname} = PyUnicode_READ_CHAR({argname}, 0);

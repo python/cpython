@@ -648,9 +648,8 @@ int_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     if (PyUnicode_GET_LENGTH(args[2]) != 1) {
-        PyErr_Format(PyExc_TypeError,
-            "int_converter(): argument 3 must be exactly one character long, not %T",
-            args[2]);
+        PyErr_SetString(PyExc_TypeError,
+            "int_converter(): argument 3 must be exactly one character long");
         goto exit;
     }
     c = PyUnicode_READ_CHAR(args[2], 0);
@@ -3165,4 +3164,4 @@ _testclinic_TestClass_meth_method_no_params(PyObject *self, PyTypeObject *cls, P
     }
     return _testclinic_TestClass_meth_method_no_params_impl(self, cls);
 }
-/*[clinic end generated code: output=efbf18a3c23de5e3 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0cc42a88f33c93c0 input=a9049054013a1b77]*/

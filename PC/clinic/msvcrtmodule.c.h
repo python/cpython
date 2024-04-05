@@ -396,9 +396,8 @@ msvcrt_putwch(PyObject *module, PyObject *arg)
         goto exit;
     }
     if (PyUnicode_GET_LENGTH(arg) != 1) {
-        PyErr_Format(PyExc_TypeError,
-            "putwch(): argument must be exactly one character long, not %T",
-            arg);
+        PyErr_SetString(PyExc_TypeError,
+            "putwch(): argument must be exactly one character long");
         goto exit;
     }
     unicode_char = PyUnicode_READ_CHAR(arg, 0);
@@ -473,9 +472,8 @@ msvcrt_ungetwch(PyObject *module, PyObject *arg)
         goto exit;
     }
     if (PyUnicode_GET_LENGTH(arg) != 1) {
-        PyErr_Format(PyExc_TypeError,
-            "ungetwch(): argument must be exactly one character long, not %T",
-            arg);
+        PyErr_SetString(PyExc_TypeError,
+            "ungetwch(): argument must be exactly one character long");
         goto exit;
     }
     unicode_char = PyUnicode_READ_CHAR(arg, 0);
@@ -701,4 +699,4 @@ exit:
 #ifndef MSVCRT_GETERRORMODE_METHODDEF
     #define MSVCRT_GETERRORMODE_METHODDEF
 #endif /* !defined(MSVCRT_GETERRORMODE_METHODDEF) */
-/*[clinic end generated code: output=9635f1093e1136ca input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ca7f38fa5bf7043e input=a9049054013a1b77]*/
