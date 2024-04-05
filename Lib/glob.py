@@ -87,16 +87,12 @@ _deprecated_function_message = (
 def glob0(dirname, pattern):
     import warnings
     warnings._deprecated("glob.glob0", _deprecated_function_message, remove=(3, 15))
-    select = _literal_selector([pattern], recursive=False, include_hidden=False)
-    paths = _relative_glob(select, dirname, dir_fd=None)
-    return list(paths)
+    return list(_relative_glob(_literal_selector([pattern]), dirname))
 
 def glob1(dirname, pattern):
     import warnings
     warnings._deprecated("glob.glob1", _deprecated_function_message, remove=(3, 15))
-    select = _wildcard_selector([pattern], recursive=False, include_hidden=False)
-    paths = _relative_glob(select, dirname, dir_fd=None)
-    return list(paths)
+    return list(_relative_glob(_wildcard_selector([pattern]), dirname))
 
 magic_check = re.compile('([*?[])')
 magic_check_bytes = re.compile(b'([*?[])')
@@ -175,7 +171,7 @@ def translate(pat, *, recursive=False, include_hidden=False, seps=None):
 
 
 @functools.lru_cache(maxsize=32768)
-def _compile_pattern(pattern, include_hidden, recursive):
+def _compile_pattern(pattern, include_hidden=False, recursive=False):
     """Compile an re.Pattern object for the given glob-style pattern.
     """
     if include_hidden:
@@ -230,18 +226,16 @@ def _open_dir(path, rel_path, dir_fd):
         return fd, fd, True
 
 
-def _relative_glob(select, dirname, dir_fd):
+def _relative_glob(select, dirname, dir_fd=None):
     """Globs using a select function from the given dirname. The dirname
     prefix is removed from results.
     """
     dirname = _add_trailing_slash(dirname)
     slicer = operator.itemgetter(slice(len(dirname), None))
-    paths = select(dirname, dirname, dir_fd, exists=False)
-    paths = map(slicer, paths)
-    return paths
+    return map(slicer, select(dirname, dirname, dir_fd))
 
 
-def _selector(parts, include_hidden, recursive):
+def _selector(parts, include_hidden=False, recursive=False):
     """Returns a function that selects from a given path, walking and
     filtering according to the glob-style pattern parts in *parts*.
     """
@@ -256,7 +250,7 @@ def _selector(parts, include_hidden, recursive):
     return selector(parts, include_hidden, recursive)
 
 
-def _literal_selector(parts, include_hidden, recursive):
+def _literal_selector(parts, include_hidden=False, recursive=False):
     """Returns a function that selects a literal descendant of a given path.
     """
     part = parts.pop()
@@ -275,24 +269,24 @@ def _literal_selector(parts, include_hidden, recursive):
 
     select_next = _selector(parts, include_hidden, recursive)
 
-    def select_literal(path, rel_path, dir_fd, exists):
+    def select_literal(path, rel_path, dir_fd=None, exists=False):
         path = _add_trailing_slash(path) + part
         rel_path = _add_trailing_slash(rel_path) + part
         return select_next(path, rel_path, dir_fd, exists and is_special)
     return select_literal
 
 
-def _wildcard_selector(parts, include_hidden, recursive):
+def _wildcard_selector(parts, include_hidden=False, recursive=False):
     """Returns a function that selects direct children of a given path,
     filtering by pattern.
     """
-    match = _compile_pattern(parts.pop(), include_hidden, recursive=False)
+    match = _compile_pattern(parts.pop(), include_hidden)
 
     if not parts:
         # Optimization: use os.listdir() rather than os.scandir(), because we
         # don't need to distinguish between files and directories. We also
         # yield results directly rather than passing them through a selector.
-        def select_last_wildcard(path, rel_path, dir_fd, exists):
+        def select_last_wildcard(path, rel_path, dir_fd=None, exists=False):
             close_fd = False
             try:
                 arg, fd, close_fd = _open_dir(path, rel_path, dir_fd)
@@ -309,7 +303,7 @@ def _wildcard_selector(parts, include_hidden, recursive):
 
     select_next = _selector(parts, include_hidden, recursive)
 
-    def select_wildcard(path, rel_path, dir_fd, exists):
+    def select_wildcard(path, rel_path, dir_fd=None, exists=False):
         close_fd = False
         try:
             arg, fd, close_fd = _open_dir(path, rel_path, dir_fd)
@@ -338,7 +332,7 @@ def _wildcard_selector(parts, include_hidden, recursive):
     return select_wildcard
 
 
-def _recursive_selector(parts, include_hidden, recursive):
+def _recursive_selector(parts, include_hidden=False, recursive=False):
     """Returns a function that selects a given path and all its children,
     recursively, filtering by pattern.
     """
@@ -360,7 +354,7 @@ def _recursive_selector(parts, include_hidden, recursive):
     dir_only = bool(parts)
     select_next = _selector(parts, include_hidden, recursive)
 
-    def select_recursive(path, rel_path, dir_fd, exists):
+    def select_recursive(path, rel_path, dir_fd=None, exists=False):
         path = _add_trailing_slash(path)
         rel_path = _add_trailing_slash(rel_path)
         match_pos = len(path)
@@ -411,7 +405,7 @@ def _recursive_selector(parts, include_hidden, recursive):
     return select_recursive
 
 
-def _select_exists(path, rel_path, dir_fd, exists):
+def _select_exists(path, rel_path, dir_fd=None, exists=False):
     """Yields the given path, if it exists.
     """
     if exists:
