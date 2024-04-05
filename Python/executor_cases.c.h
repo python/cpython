@@ -1428,7 +1428,7 @@
         }
 
         case _COPY_FREE_VARS: {
-            stack_pointer = _COPY_FREE_VARS_func(tstate, frame, stack_pointer, CURRENT_OPARG());
+            stack_pointer = _Py_COPY_FREE_VARS_func(tstate, frame, stack_pointer, CURRENT_OPARG());
             break;
         }
 
@@ -2701,7 +2701,7 @@
         }
 
         case _INIT_CALL_BOUND_METHOD_EXACT_ARGS: {
-            stack_pointer = _INIT_CALL_BOUND_METHOD_EXACT_ARGS_func(tstate, frame, stack_pointer, CURRENT_OPARG());
+            stack_pointer = _Py_INIT_CALL_BOUND_METHOD_EXACT_ARGS_func(tstate, frame, stack_pointer, CURRENT_OPARG());
             break;
         }
 
@@ -2737,32 +2737,32 @@
         }
 
         case _INIT_CALL_PY_EXACT_ARGS_0: {
-            stack_pointer = _INIT_CALL_PY_EXACT_ARGS_0_func(tstate, frame, stack_pointer);
+            stack_pointer = _Py_INIT_CALL_PY_EXACT_ARGS_0_func(tstate, frame, stack_pointer);
             break;
         }
 
         case _INIT_CALL_PY_EXACT_ARGS_1: {
-            stack_pointer = _INIT_CALL_PY_EXACT_ARGS_1_func(tstate, frame, stack_pointer);
+            stack_pointer = _Py_INIT_CALL_PY_EXACT_ARGS_1_func(tstate, frame, stack_pointer);
             break;
         }
 
         case _INIT_CALL_PY_EXACT_ARGS_2: {
-            stack_pointer = _INIT_CALL_PY_EXACT_ARGS_2_func(tstate, frame, stack_pointer);
+            stack_pointer = _Py_INIT_CALL_PY_EXACT_ARGS_2_func(tstate, frame, stack_pointer);
             break;
         }
 
         case _INIT_CALL_PY_EXACT_ARGS_3: {
-            stack_pointer = _INIT_CALL_PY_EXACT_ARGS_3_func(tstate, frame, stack_pointer);
+            stack_pointer = _Py_INIT_CALL_PY_EXACT_ARGS_3_func(tstate, frame, stack_pointer);
             break;
         }
 
         case _INIT_CALL_PY_EXACT_ARGS_4: {
-            stack_pointer = _INIT_CALL_PY_EXACT_ARGS_4_func(tstate, frame, stack_pointer);
+            stack_pointer = _Py_INIT_CALL_PY_EXACT_ARGS_4_func(tstate, frame, stack_pointer);
             break;
         }
 
         case _INIT_CALL_PY_EXACT_ARGS: {
-            stack_pointer = _INIT_CALL_PY_EXACT_ARGS_func(tstate, frame, stack_pointer, CURRENT_OPARG());
+            stack_pointer = _Py_INIT_CALL_PY_EXACT_ARGS_func(tstate, frame, stack_pointer, CURRENT_OPARG());
             break;
         }
 
@@ -3258,7 +3258,7 @@
         }
 
         case _SET_FUNCTION_ATTRIBUTE: {
-            stack_pointer = _SET_FUNCTION_ATTRIBUTE_func(tstate, frame, stack_pointer, CURRENT_OPARG());
+            stack_pointer = _Py_SET_FUNCTION_ATTRIBUTE_func(tstate, frame, stack_pointer, CURRENT_OPARG());
             break;
         }
 

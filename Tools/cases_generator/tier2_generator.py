@@ -216,7 +216,7 @@ def generate_tier2(
         out.emit(f"case {uop.name}: {{\n")
         if uop.properties.externalize:
             stack = None
-            out.emit(f"stack_pointer = {uop.name}_func(tstate, frame, stack_pointer")
+            out.emit(f"stack_pointer = _Py{uop.name}_func(tstate, frame, stack_pointer")
             if uop.properties.const_oparg < 0:
                 out.emit(", CURRENT_OPARG()")
             out.emit(");\n")
@@ -247,7 +247,7 @@ def get_external_signature(name: str, uop: Uop) -> str:
         args.append("int oparg")
     if not name.startswith("_"):
         name = "_" + name
-    return f"PyObject ** {name}_func({', '.join(args)})"
+    return f"PyObject ** _Py{name}_func({', '.join(args)})"
 
 
 def generate_tier2_externals(
@@ -273,9 +273,9 @@ def generate_tier2_externals(
         #include "pycore_sliceobject.h"
         #include "pycore_descrobject.h"
 
-        #include "ceval_macros.h"
-
         #define TIER_TWO 2
+
+        #include "ceval_macros.h"
         """
     ))
 
@@ -330,7 +330,7 @@ def generate_tier2_externals_header(
         if uop.properties.tier == 1:
             continue
         if uop.properties.externalize:
-            out.emit(get_external_signature(name, uop))
+            out.emit("extern " + get_external_signature(name, uop))
             out.emit(";\n\n")
 
     out.start_line()

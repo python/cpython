@@ -20,11 +20,11 @@
 #include "pycore_sliceobject.h"
 #include "pycore_descrobject.h"
 
-#include "ceval_macros.h"
-
 #define TIER_TWO 2
 
-        PyObject ** _COPY_FREE_VARS_func(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObject **stack_pointer, int oparg) {
+#include "ceval_macros.h"
+
+        PyObject ** _Py_COPY_FREE_VARS_func(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObject **stack_pointer, int oparg) {
             /* Copy closure variables to free variables */
             PyCodeObject *co = _PyFrame_GetCode(frame);
             assert(PyFunction_Check(frame->f_funcobj));
@@ -38,7 +38,7 @@
             return stack_pointer;
         }
 
-        PyObject ** _INIT_CALL_BOUND_METHOD_EXACT_ARGS_func(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObject **stack_pointer, int oparg) {
+        PyObject ** _Py_INIT_CALL_BOUND_METHOD_EXACT_ARGS_func(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObject **stack_pointer, int oparg) {
             PyObject *callable;
             PyObject *func;
             PyObject *self;
@@ -54,7 +54,7 @@
             return stack_pointer;
         }
 
-        PyObject ** _INIT_CALL_PY_EXACT_ARGS_0_func(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObject **stack_pointer) {
+        PyObject ** _Py_INIT_CALL_PY_EXACT_ARGS_0_func(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObject **stack_pointer) {
             int oparg;
             PyObject **args;
             PyObject *self_or_null;
@@ -78,7 +78,7 @@
             return stack_pointer;
         }
 
-        PyObject ** _INIT_CALL_PY_EXACT_ARGS_1_func(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObject **stack_pointer) {
+        PyObject ** _Py_INIT_CALL_PY_EXACT_ARGS_1_func(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObject **stack_pointer) {
             int oparg;
             PyObject **args;
             PyObject *self_or_null;
@@ -102,7 +102,7 @@
             return stack_pointer;
         }
 
-        PyObject ** _INIT_CALL_PY_EXACT_ARGS_2_func(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObject **stack_pointer) {
+        PyObject ** _Py_INIT_CALL_PY_EXACT_ARGS_2_func(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObject **stack_pointer) {
             int oparg;
             PyObject **args;
             PyObject *self_or_null;
@@ -126,7 +126,7 @@
             return stack_pointer;
         }
 
-        PyObject ** _INIT_CALL_PY_EXACT_ARGS_3_func(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObject **stack_pointer) {
+        PyObject ** _Py_INIT_CALL_PY_EXACT_ARGS_3_func(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObject **stack_pointer) {
             int oparg;
             PyObject **args;
             PyObject *self_or_null;
@@ -150,7 +150,7 @@
             return stack_pointer;
         }
 
-        PyObject ** _INIT_CALL_PY_EXACT_ARGS_4_func(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObject **stack_pointer) {
+        PyObject ** _Py_INIT_CALL_PY_EXACT_ARGS_4_func(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObject **stack_pointer) {
             int oparg;
             PyObject **args;
             PyObject *self_or_null;
@@ -174,7 +174,7 @@
             return stack_pointer;
         }
 
-        PyObject ** _INIT_CALL_PY_EXACT_ARGS_func(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObject **stack_pointer, int oparg) {
+        PyObject ** _Py_INIT_CALL_PY_EXACT_ARGS_func(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObject **stack_pointer, int oparg) {
             PyObject **args;
             PyObject *self_or_null;
             PyObject *callable;
@@ -196,7 +196,7 @@
             return stack_pointer;
         }
 
-        PyObject ** _SET_FUNCTION_ATTRIBUTE_func(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObject **stack_pointer, int oparg) {
+        PyObject ** _Py_SET_FUNCTION_ATTRIBUTE_func(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObject **stack_pointer, int oparg) {
             PyObject *func;
             PyObject *attr;
             func = stack_pointer[-1];
