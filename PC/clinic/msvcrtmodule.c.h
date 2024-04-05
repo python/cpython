@@ -396,7 +396,7 @@ msvcrt_putwch(PyObject *module, PyObject *arg)
         goto exit;
     }
     if (PyUnicode_GET_LENGTH(arg) != 1) {
-        _PyArg_BadArgument("putwch", "argument", "a unicode character", arg);
+        PyErr_SetString(PyExc_ValueError, "a single unicode character expected");
         goto exit;
     }
     unicode_char = PyUnicode_READ_CHAR(arg, 0);
@@ -471,7 +471,7 @@ msvcrt_ungetwch(PyObject *module, PyObject *arg)
         goto exit;
     }
     if (PyUnicode_GET_LENGTH(arg) != 1) {
-        _PyArg_BadArgument("ungetwch", "argument", "a unicode character", arg);
+        PyErr_SetString(PyExc_ValueError, "a single unicode character expected");
         goto exit;
     }
     unicode_char = PyUnicode_READ_CHAR(arg, 0);
@@ -697,4 +697,4 @@ exit:
 #ifndef MSVCRT_GETERRORMODE_METHODDEF
     #define MSVCRT_GETERRORMODE_METHODDEF
 #endif /* !defined(MSVCRT_GETERRORMODE_METHODDEF) */
-/*[clinic end generated code: output=de9687b46212c2ed input=a9049054013a1b77]*/
+/*[clinic end generated code: output=3fd55f8b3d349250 input=a9049054013a1b77]*/

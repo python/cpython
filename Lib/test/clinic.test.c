@@ -1028,7 +1028,7 @@ test_int_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     if (PyUnicode_GET_LENGTH(args[2]) != 1) {
-        _PyArg_BadArgument("test_int_converter", "argument 3", "a unicode character", args[2]);
+        PyErr_SetString(PyExc_ValueError, "a single unicode character expected");
         goto exit;
     }
     c = PyUnicode_READ_CHAR(args[2], 0);
@@ -1048,7 +1048,7 @@ exit:
 
 static PyObject *
 test_int_converter_impl(PyObject *module, int a, int b, int c, myenum d)
-/*[clinic end generated code: output=5aed87a7589eefb2 input=d20541fc1ca0553e]*/
+/*[clinic end generated code: output=ec176dff0664c4a5 input=d20541fc1ca0553e]*/
 
 
 /*[clinic input]

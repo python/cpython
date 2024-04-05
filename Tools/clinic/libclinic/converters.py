@@ -272,7 +272,7 @@ class int_converter(CConverter):
                     goto exit;
                 }}}}
                 if (PyUnicode_GET_LENGTH({argname}) != 1) {{{{
-                    {bad_argument}
+                    PyErr_SetString(PyExc_ValueError, "a single unicode character expected");
                     goto exit;
                 }}}}
                 {paramname} = PyUnicode_READ_CHAR({argname}, 0);

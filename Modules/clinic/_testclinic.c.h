@@ -648,7 +648,7 @@ int_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     if (PyUnicode_GET_LENGTH(args[2]) != 1) {
-        _PyArg_BadArgument("int_converter", "argument 3", "a unicode character", args[2]);
+        PyErr_SetString(PyExc_ValueError, "a single unicode character expected");
         goto exit;
     }
     c = PyUnicode_READ_CHAR(args[2], 0);
@@ -3163,4 +3163,4 @@ _testclinic_TestClass_meth_method_no_params(PyObject *self, PyTypeObject *cls, P
     }
     return _testclinic_TestClass_meth_method_no_params_impl(self, cls);
 }
-/*[clinic end generated code: output=6520c1ca5392a3f0 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=3f752442d1ce8437 input=a9049054013a1b77]*/
