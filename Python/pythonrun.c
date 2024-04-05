@@ -1288,7 +1288,8 @@ run_eval_code_obj(PyThreadState *tstate, PyCodeObject *co, PyObject *globals, Py
     }
     if (!has_builtins) {
         if (PyDict_SetItemString(globals, "__builtins__",
-                                    tstate->interp->builtins) < 0) {
+                                 tstate->interp->builtins) < 0)
+        {
             return NULL;
         }
     }
