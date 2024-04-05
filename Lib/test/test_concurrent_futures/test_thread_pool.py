@@ -41,7 +41,7 @@ class ThreadPoolExecutorTest(ThreadPoolMixin, ExecutorTest, BaseTestCase):
             sem.release()
         executor.shutdown(wait=True)
 
-    @unittest.skipIf(support.Py_GIL_DISABLED, "gh-117344: test is flaky without the GIL")
+    @support.requires_gil_enabled("gh-117344: test is flaky without the GIL")
     def test_idle_thread_reuse(self):
         executor = self.executor_type()
         executor.submit(mul, 21, 2).result()

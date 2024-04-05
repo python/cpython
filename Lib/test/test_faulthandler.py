@@ -266,6 +266,7 @@ class FaultHandlerTests(unittest.TestCase):
             5,
             'Illegal instruction')
 
+    @unittest.skipIf(_testcapi is None, 'need _testcapi')
     def check_fatal_error_func(self, release_gil):
         # Test that Py_FatalError() dumps a traceback
         with support.SuppressCrashReport():
