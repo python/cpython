@@ -409,6 +409,30 @@ and only logged in :ref:`Python Development Mode <devmode>` or on :ref:`Python
 built on debug mode <debug-build>`.
 (Contributed by Victor Stinner in :gh:`62948`.)
 
+importlib
+---------
+
+Previously deprecated :mod:`importlib.resources` functions are un-deprecated:
+
+  * :func:`~importlib.resources.is_resource()`
+  * :func:`~importlib.resources.open_binary()`
+  * :func:`~importlib.resources.open_text()`
+  * :func:`~importlib.resources.path()`
+  * :func:`~importlib.resources.read_binary()`
+  * :func:`~importlib.resources.read_text()`
+
+All now allow for a directory (or tree) of resources, using multiple positional
+arguments.
+
+For text-reading functions, the *encoding* and *errors* must now be given as
+keyword arguments.
+
+The :func:`~importlib.resources.contents()` remains deprecated in favor of
+the full-featured :class:`~importlib.resources.abc.Traversable` API.
+However, there is now no plan to remove it.
+
+(Contributed by Petr Viktorin in :gh:`106532`.)
+
 ipaddress
 ---------
 
@@ -1356,21 +1380,6 @@ configparser
 
 importlib
 ---------
-
-* Remove :mod:`importlib.resources` deprecated methods:
-
-  * ``contents()``
-  * ``is_resource()``
-  * ``open_binary()``
-  * ``open_text()``
-  * ``path()``
-  * ``read_binary()``
-  * ``read_text()``
-
-  Use :func:`importlib.resources.files()` instead.  Refer to `importlib-resources: Migrating from Legacy
-  <https://importlib-resources.readthedocs.io/en/latest/using.html#migrating-from-legacy>`_
-  for migration advice.
-  (Contributed by Jason R. Coombs in :gh:`106532`.)
 
 * Remove deprecated :meth:`~object.__getitem__` access for
   :class:`!importlib.metadata.EntryPoint` objects.
