@@ -1692,14 +1692,25 @@ insert_combined_dict(PyInterpreterState *interp, PyDictObject *mp,
 }
 
 static int
+split_dict_resize_and_insert(PyInterpreterState *interp, PyDictObject *mp,
+                  Py_hash_t hash, PyObject *key, PyObject *value)
+{
+    /* Need to resize. */
+    int ins = insertion_resize(interp, mp, 1);
+    if (ins < 0) {
+        return -1;
+    }
+    assert(!_PyDict_HasSplitTable(mp));
+    return insert_combined_dict(interp, mp, hash, key, value);
+}
+
+static int
 insert_split_dict(PyInterpreterState *interp, PyDictObject *mp,
                   Py_hash_t hash, PyObject *key, PyObject *value)
 {
     PyDictKeysObject *keys = mp->ma_keys;
-    LOCK_KEYS(keys);
     if (keys->dk_usable <= 0) {
         /* Need to resize. */
-        UNLOCK_KEYS(keys);
         int ins = insertion_resize(interp, mp, 1);
         if (ins < 0) {
             return -1;
@@ -1722,9 +1733,33 @@ insert_split_dict(PyInterpreterState *interp, PyDictObject *mp,
 
     split_keys_entry_added(keys);
     assert(keys->dk_usable >= 0);
-    UNLOCK_KEYS(keys);
     return 0;
 }
+
+#ifdef Py_GIL_DISABLED
+
+static inline Py_ssize_t
+splitdict_lookup_threadsafe(PyDictObject *mp, PyDictKeysObject *dk,
+                            PyObject *key,  Py_ssize_t hash,
+                            PyObject **value)
+{
+    ASSERT_DICT_LOCKED(mp);
+
+    Py_ssize_t ix = unicodekeys_lookup_unicode_threadsafe(dk, key, hash);
+
+    if (ix >= 0) {
+        *value = mp->ma_values->values[ix];
+    }
+    else if (ix == DKIX_KEY_CHANGED) {
+        ix = _Py_dict_lookup(mp, key, hash, value);
+    }
+    else {
+        *value = 0;
+    }
+    return ix;
+}
+
+#endif
 
 /*
 Internal routine to insert a new item into the table.
@@ -1757,17 +1792,7 @@ insertdict(PyInterpreterState *interp, PyDictObject *mp,
         // half of _Py_dict_lookup_threadsafe and avoids locking the
         // shared keys if we can
         assert(PyUnicode_CheckExact(key));
-        ix = unicodekeys_lookup_unicode_threadsafe(dk, key, hash);
-
-        if (ix >= 0) {
-            old_value = mp->ma_values->values[ix];
-        }
-        else if (ix == DKIX_KEY_CHANGED) {
-            ix = _Py_dict_lookup(mp, key, hash, &old_value);
-        }
-        else {
-            old_value = NULL;
-        }
+        ix = splitdict_lookup_threadsafe(mp, dk, key, hash, &old_value);
     } else {
         ix = _Py_dict_lookup(mp, key, hash, &old_value);
     }
@@ -1780,20 +1805,47 @@ insertdict(PyInterpreterState *interp, PyDictObject *mp,
     MAINTAIN_TRACKING(mp, key, value);
 
     if (ix == DKIX_EMPTY) {
-        uint64_t new_version = _PyDict_NotifyEvent(
-                interp, PyDict_EVENT_ADDED, mp, key, value);
-        /* Insert into new slot. */
-        mp->ma_keys->dk_version = 0;
-        assert(old_value == NULL);
-
+        uint64_t new_version;
         if (!_PyDict_HasSplitTable(mp)) {
+            new_version = _PyDict_NotifyEvent(
+                    interp, PyDict_EVENT_ADDED, mp, key, value);
+            /* Insert into new slot. */
+            mp->ma_keys->dk_version = 0;
             if (insert_combined_dict(interp, mp, hash, key, value) < 0) {
                 goto Fail;
             }
         }
         else {
-            if (insert_split_dict(interp, mp, hash, key, value) < 0)
-                goto Fail;
+            LOCK_KEYS(mp->ma_keys);
+
+#ifdef Py_GIL_DISABLED
+            // We could have raced between our lookup before and the insert,
+            // so we need to lookup again with the keys locked
+            ix = splitdict_lookup_threadsafe(mp, dk, key, hash, &old_value);
+            if (ix >= 0) {
+                UNLOCK_KEYS(mp->ma_keys);
+                goto insert_on_split_race;
+            }
+#endif
+            new_version = _PyDict_NotifyEvent(
+                    interp, PyDict_EVENT_ADDED, mp, key, value);
+            /* Insert into new slot. */
+            mp->ma_keys->dk_version = 0;
+            if (mp->ma_keys->dk_usable <= 0) {
+                UNLOCK_KEYS(mp->ma_keys);
+
+                if (split_dict_resize_and_insert(interp, mp, hash, key, value) < 0) {
+                    goto Fail;
+                }
+            } else {
+                int insert = insert_split_dict(interp, mp, hash, key, value);
+                UNLOCK_KEYS(mp->ma_keys);
+
+                if (insert < 0) {
+                    goto Fail;
+                }
+            }
+            mp->ma_keys->dk_version = new_version;
         }
 
         mp->ma_used++;
@@ -1802,6 +1854,9 @@ insertdict(PyInterpreterState *interp, PyDictObject *mp,
         return 0;
     }
 
+#ifdef Py_GIL_DISABLED
+insert_on_split_race:
+#endif
     if (old_value != value) {
         uint64_t new_version = _PyDict_NotifyEvent(
                 interp, PyDict_EVENT_MODIFIED, mp, key, value);
@@ -4255,13 +4310,40 @@ dict_setdefault_ref_lock_held(PyObject *d, PyObject *key, PyObject *default_valu
             }
         }
         else {
-            if (insert_split_dict(interp, mp, hash, Py_NewRef(key), Py_NewRef(value)) < 0) {
-                Py_DECREF(key);
-                Py_DECREF(value);
-                if (result) {
-                    *result = NULL;
+            LOCK_KEYS(mp->ma_keys);
+#ifdef Py_GIL_DISABLED
+            // We could have raced between our lookup before and the insert,
+            // so we need to lookup again with the keys locked
+            ix = _Py_dict_lookup(mp, key, hash, &value);
+            if (ix >= 0) {
+                UNLOCK_KEYS(mp->ma_keys);
+                if (value != NULL) {
+                    if (result) {
+                        *result = incref_result ? Py_NewRef(value) : value;
+                    }
+                    return 0;
                 }
-                return -1;
+                goto insert_on_split_race;
+            }
+#endif
+            if (mp->ma_keys->dk_usable <= 0) {
+                UNLOCK_KEYS(mp->ma_keys);
+
+                if (split_dict_resize_and_insert(interp, mp, hash, key, value) < 0) {
+                    return -1;
+                }
+            } else {
+                int insert = insert_split_dict(interp, mp, hash, Py_NewRef(key), Py_NewRef(value));
+                UNLOCK_KEYS(mp->ma_keys);
+
+                if (insert < 0) {
+                    Py_DECREF(key);
+                    Py_DECREF(value);
+                    if (result) {
+                        *result = NULL;
+                    }
+                    return -1;
+                }
             }
         }
 
@@ -4276,6 +4358,9 @@ dict_setdefault_ref_lock_held(PyObject *d, PyObject *key, PyObject *default_valu
         return 0;
     }
     else if (value == NULL) {
+#ifdef Py_GIL_DISABLED
+insert_on_split_race:
+#endif
         uint64_t new_version = _PyDict_NotifyEvent(
                 interp, PyDict_EVENT_ADDED, mp, key, default_value);
         value = default_value;
