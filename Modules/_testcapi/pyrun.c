@@ -125,10 +125,10 @@ test_pyrun_fileex_null_globals_locals(PyObject *self, PyObject *Py_UNUSED(ignore
 }
 
 static PyMethodDef test_methods[] = {
-    {"test_pyrun_fileex",   test_pyrun_fileex,     METH_NOARGS},
-    {"test_pyrun_fileex_null_locals",   test_pyrun_fileex_null_locals,     METH_NOARGS},
-    {"test_pyrun_fileex_null_globals",   test_pyrun_fileex_null_globals,     METH_NOARGS},
-    {"test_pyrun_fileex_null_globals_locals",   test_pyrun_fileex_null_globals_locals,     METH_NOARGS},
+    {"test_pyrun_fileex", test_pyrun_fileex, METH_NOARGS},
+    {"test_pyrun_fileex_null_locals", test_pyrun_fileex_null_locals, METH_NOARGS},
+    {"test_pyrun_fileex_null_globals", test_pyrun_fileex_null_globals, METH_NOARGS},
+    {"test_pyrun_fileex_null_globals_locals", test_pyrun_fileex_null_globals_locals, METH_NOARGS},
     {NULL},
 };
 
