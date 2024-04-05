@@ -198,7 +198,7 @@ class UnicodeNamesTest(unittest.TestCase):
 
     def test_errors(self):
         self.assertRaises(TypeError, unicodedata.name)
-        self.assertRaises(TypeError, unicodedata.name, 'xx')
+        self.assertRaises(ValueError, unicodedata.name, 'xx')
         self.assertRaises(TypeError, unicodedata.lookup)
         self.assertRaises(KeyError, unicodedata.lookup, 'unknown')
 
