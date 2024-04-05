@@ -1928,6 +1928,7 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
             '2019-W53-1',       # No week 53 in 2019
             '2020-W54-1',       # No week 54
             '2009\ud80002\ud80028',     # Separators are surrogate codepoints
+            '0000W25',          # Invalid year
         ]
 
         for bad_str in bad_strs:
