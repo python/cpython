@@ -1229,6 +1229,11 @@ PyRun_FileExFlags(FILE *fp, const char *filename, int start, PyObject *globals,
         return NULL;
     }
 
+    if (!globals) {
+        PyErr_SetString(PyExc_SystemError, "globals cannot be NULL");
+        return NULL;
+    }
+
     PyObject *res = pyrun_file(fp, filename_obj, start, globals,
                                locals, closeit, flags);
     Py_DECREF(filename_obj);
@@ -1275,20 +1280,16 @@ run_eval_code_obj(PyThreadState *tstate, PyCodeObject *co, PyObject *globals, Py
     _PyRuntime.signals.unhandled_keyboard_interrupt = 0;
 
     /* Set globals['__builtins__'] if it doesn't exist */
-    if (globals == NULL) {
-        PyErr_SetString(PyExc_RuntimeError, "run_eval_code_obj(): globals = NULL");
+    assert(globals);
+
+    int has_builtins = PyDict_ContainsString(globals, "__builtins__");
+    if (has_builtins < 0) {
         return NULL;
     }
-    else {
-        int has_builtins = PyDict_ContainsString(globals, "__builtins__");
-        if (has_builtins < 0) {
+    if (!has_builtins) {
+        if (PyDict_SetItemString(globals, "__builtins__",
+                                    tstate->interp->builtins) < 0) {
             return NULL;
-        }
-        if (!has_builtins) {
-            if (PyDict_SetItemString(globals, "__builtins__",
-                                     tstate->interp->builtins) < 0) {
-                return NULL;
-            }
         }
     }
 
