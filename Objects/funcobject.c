@@ -634,7 +634,7 @@ func_get_name(PyFunctionObject *op, void *Py_UNUSED(ignored))
     else
     {
         PyErr_SetString(PyExc_InterpreterError,
-                        "got a null pointer in function 'func_get_qualname'");
+                        "got a null pointer in function 'func_get_name'");
         return nullptr;
     }
 }
@@ -701,7 +701,7 @@ func_get_defaults(PyFunctionObject *op, void *Py_UNUSED(ignored))
     else
     {
         PyErr_SetString(PyExc_InterpreterError,
-                        "got a null pointer in function 'func_get_qualname'");
+                        "got a null pointer in function 'func_get_defaults'");
         return nullptr;
     }
 }
@@ -744,7 +744,17 @@ func_get_kwdefaults(PyFunctionObject *op, void *Py_UNUSED(ignored))
     if (op->func_kwdefaults == NULL) {
         Py_RETURN_NONE;
     }
-    return Py_NewRef(op->func_kwdefaults);
+    /* Null pointer judgement. */
+    if (op != nullptr)
+    {
+        return Py_NewRef(op->func_kwdefaults);
+    }
+    else
+    {
+        PyErr_SetString(PyExc_InterpreterError,
+                        "got a null pointer in function 'func_get_kwdefaults'");
+        return nullptr;
+    }
 }
 
 static int
