@@ -619,7 +619,7 @@ class Path(_abc.PathBase, PurePath):
         path._tail_cached = tail + [name]
         return path
 
-    def glob(self, pattern, *, case_sensitive=None, follow_symlinks=None):
+    def glob(self, pattern, *, case_sensitive=None, recurse_symlinks=False):
         """Iterate over this subtree and yield all existing files (of any
         kind, including directories) matching the given relative pattern.
         """
@@ -627,9 +627,9 @@ class Path(_abc.PathBase, PurePath):
         if not isinstance(pattern, PurePath):
             pattern = self.with_segments(pattern)
         return _abc.PathBase.glob(
-            self, pattern, case_sensitive=case_sensitive, follow_symlinks=follow_symlinks)
+            self, pattern, case_sensitive=case_sensitive, recurse_symlinks=recurse_symlinks)
 
-    def rglob(self, pattern, *, case_sensitive=None, follow_symlinks=None):
+    def rglob(self, pattern, *, case_sensitive=None, recurse_symlinks=False):
         """Recursively yield all existing files (of any kind, including
         directories) matching the given relative pattern, anywhere in
         this subtree.
@@ -639,7 +639,7 @@ class Path(_abc.PathBase, PurePath):
             pattern = self.with_segments(pattern)
         pattern = '**' / pattern
         return _abc.PathBase.glob(
-            self, pattern, case_sensitive=case_sensitive, follow_symlinks=follow_symlinks)
+            self, pattern, case_sensitive=case_sensitive, recurse_symlinks=recurse_symlinks)
 
     def walk(self, top_down=True, on_error=None, follow_symlinks=False):
         """Walk the directory tree from this directory, similar to os.walk()."""
