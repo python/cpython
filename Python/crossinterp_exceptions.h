@@ -5,6 +5,9 @@ static PyTypeObject _PyExc_InterpreterError = {
     PyVarObject_HEAD_INIT(NULL, 0)
     .tp_name = "interpreters.InterpreterError",
     .tp_doc = PyDoc_STR("A cross-interpreter operation failed"),
+    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
+    //.tp_traverse = ((PyTypeObject *)PyExc_BaseException)->tp_traverse,
+    //.tp_clear = ((PyTypeObject *)PyExc_BaseException)->tp_clear,
     //.tp_base = (PyTypeObject *)PyExc_BaseException,
 };
 PyObject *PyExc_InterpreterError = (PyObject *)&_PyExc_InterpreterError;
@@ -15,6 +18,9 @@ static PyTypeObject _PyExc_InterpreterNotFoundError = {
     PyVarObject_HEAD_INIT(NULL, 0)
     .tp_name = "interpreters.InterpreterNotFoundError",
     .tp_doc = PyDoc_STR("An interpreter was not found"),
+    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
+    //.tp_traverse = ((PyTypeObject *)PyExc_BaseException)->tp_traverse,
+    //.tp_clear = ((PyTypeObject *)PyExc_BaseException)->tp_clear,
     .tp_base = &_PyExc_InterpreterError,
 };
 PyObject *PyExc_InterpreterNotFoundError = (PyObject *)&_PyExc_InterpreterNotFoundError;
@@ -55,16 +61,25 @@ _get_not_shareable_error_type(PyInterpreterState *interp)
 static int
 init_exceptions(PyInterpreterState *interp)
 {
+    PyTypeObject *base = (PyTypeObject *)PyExc_BaseException;
+
     // builtin static types
-    _PyExc_InterpreterError.tp_base = (PyTypeObject *)PyExc_BaseException;
+
+    _PyExc_InterpreterError.tp_base = base;
+    _PyExc_InterpreterError.tp_traverse = base->tp_traverse;
+    _PyExc_InterpreterError.tp_clear = base->tp_clear;
     if (_PyStaticType_InitBuiltin(interp, &_PyExc_InterpreterError) < 0) {
         return -1;
     }
+
+    _PyExc_InterpreterNotFoundError.tp_traverse = base->tp_traverse;
+    _PyExc_InterpreterNotFoundError.tp_clear = base->tp_clear;
     if (_PyStaticType_InitBuiltin(interp, &_PyExc_InterpreterNotFoundError) < 0) {
         return -1;
     }
 
     // heap types
+
     // We would  call _init_not_shareable_error_type() here too,
     // but that leads to ref leaks
 
