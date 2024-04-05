@@ -138,12 +138,13 @@ from decimal import Decimal
 from itertools import count, groupby, repeat
 from bisect import bisect_left, bisect_right
 from math import hypot, sqrt, fabs, exp, erf, tau, log, fsum, sumprod
-from math import isfinite, isinf, pi, cos, sin, cosh, atan
+from math import isfinite, isinf, pi, cos, sin, tan, cosh, asin, atan
 from functools import reduce
 from operator import itemgetter
 from collections import Counter, namedtuple, defaultdict
 
 _SQRT2 = sqrt(2.0)
+_random = random
 
 # === Exceptions ===
 
@@ -1697,3 +1698,92 @@ class NormalDist:
 
     def __setstate__(self, state):
         self._mu, self._sigma = state
+
+
+## kde_rand() ################################################################
+
+def _newton_raphson(f_inv_est, f, f_prime, tolerance=1e-12):
+    def f_inv(y):
+        "Return x such that f(x) ≈ y within the specified tolerance."
+        x = f_inv_est(y)
+        while abs(diff := y - f(x)) > tolerance:
+            x += diff / f_prime(x)
+        return x
+    return f_inv
+
+_parabolic_invcdf = _newton_raphson(
+    f_inv_est = lambda p: ((2.0 * p) ** 0.583367470424302 - 1.0
+                           if p <= 1/2 else
+                           1.0 - (2.0 - 2.0*p) ** 0.583367470424302),
+    f = lambda t: -1/4 * t**3 + 3/4 * t + 1/2,
+    f_prime = lambda t: 3/4 * (1.0 - t * t))
+
+_quartic_invcdf = _newton_raphson(
+    f_inv_est = lambda p: ((2.0 * p) ** 0.4258865685331 - 1.0
+                           if p <= 1/2 else
+                           1.0 - (2.0 - 2.0*p) ** 0.4258865685331),
+    f = lambda t: 3/16 * t**5 - 5/8 * t**3 + 15/16 * t + 1/2,
+    f_prime = lambda t: 15/16 * (1.0 - t * t) ** 2)
+
+_triweight_invcdf = _newton_raphson(
+    f_inv_est = lambda p: ((2.0 * p) ** 0.3400218741872791 - 1.0
+                           if p <= 1/2 else
+                           1.0 - (2.0 - 2.0*p) ** 0.3400218741872791),
+    f = lambda t: 35/32 * (-1/7*t**7 + 3/5*t**5 - t**3 + t) + 1/2,
+    f_prime = lambda t: 35/32 * (1.0 - t * t) ** 3)
+
+_kernel_invcdfs = {
+    'normal': NormalDist().inv_cdf,
+    'logisitic': lambda p: log(p / (1 - p)),
+    'sigmoid': lambda p: log(tan(p * pi/2)),
+    'rectangular': lambda p: 2*p - 1,
+    'parabolic': _parabolic_invcdf,
+    'quartic': _quartic_invcdf,
+    'triweight': _triweight_invcdf,
+    'triangular': lambda p: sqrt(2*p) - 1 if p < 0.5 else 1 - sqrt(2 - 2*p),
+    'cosine': lambda p: 2*asin(2*p - 1)/pi,
+}
+_kernel_invcdfs['gauss'] = _kernel_invcdfs['normal']
+_kernel_invcdfs['uniform'] = _kernel_invcdfs['rectangular']
+_kernel_invcdfs['epanechnikov'] = _kernel_invcdfs['parabolic']
+_kernel_invcdfs['biweight'] = _kernel_invcdfs['quartic']
+
+def kde_random(data, h, kernel='normal', *, seed=None):
+    """Return a function that makes a random selection from the estimated
+    probability density function created by:  kde(data, h, kernel)
+
+    For reproducible results, set *seed* to an integer, float, str, or bytes.
+    Not thread-safe without a lock around calls.
+
+    A StatisticsError will be raised if the data sequence is empty.
+
+    """
+    n = len(data)
+    if not n:
+        raise StatisticsError('Empty data sequence')
+
+    if not isinstance(data[0], (int, float)):
+        raise TypeError('Data sequence must contain ints or floats')
+
+    if h <= 0.0:
+        raise StatisticsError(f'Bandwidth h must be positive, not {h=!r}')
+
+    if seed is None:
+        random = _random.random
+        choice = _random.choice
+    else:
+        prng = _random.Random(seed)
+        random = prng.random
+        choice = prng.choice
+
+    try:
+        kernel_invcdf = _kernel_invcdfs[kernel]
+    except KeyError:
+        raise StatisticsError(f'Unknown kernel name: {kernel!r}')
+
+    def rand():
+        return choice(data) + h * kernel_invcdf(random())
+
+    rand.__doc__ = f'Random KDE selection with {h=!r} and {kernel=!r}'
+
+    return rand
