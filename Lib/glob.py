@@ -210,7 +210,7 @@ def _add_trailing_slash(pathname):
     return pathname + os.path.sep
 
 
-def _open_dir(path, rel_path, dir_fd):
+def _open_dir(path, rel_path=None, dir_fd=None):
     """Prepares the directory for scanning. Returns a 3-tuple with parts:
 
     1. A path or fd to supply to `os.scandir()`.
@@ -269,9 +269,10 @@ def _literal_selector(parts, include_hidden=False, recursive=False):
 
     select_next = _selector(parts, include_hidden, recursive)
 
-    def select_literal(path, rel_path, dir_fd=None, exists=False):
+    def select_literal(path, rel_path=None, dir_fd=None, exists=False):
         path = _add_trailing_slash(path) + part
-        rel_path = _add_trailing_slash(rel_path) + part
+        if dir_fd is not None:
+            rel_path = _add_trailing_slash(rel_path) + part
         return select_next(path, rel_path, dir_fd, exists and is_special)
     return select_literal
 
@@ -286,7 +287,7 @@ def _wildcard_selector(parts, include_hidden=False, recursive=False):
         # Optimization: use os.listdir() rather than os.scandir(), because we
         # don't need to distinguish between files and directories. We also
         # yield results directly rather than passing them through a selector.
-        def select_last_wildcard(path, rel_path, dir_fd=None, exists=False):
+        def select_last_wildcard(path, rel_path=None, dir_fd=None, exists=False):
             close_fd = False
             try:
                 arg, fd, close_fd = _open_dir(path, rel_path, dir_fd)
@@ -303,7 +304,7 @@ def _wildcard_selector(parts, include_hidden=False, recursive=False):
 
     select_next = _selector(parts, include_hidden, recursive)
 
-    def select_wildcard(path, rel_path, dir_fd=None, exists=False):
+    def select_wildcard(path, rel_path=None, dir_fd=None, exists=False):
         close_fd = False
         try:
             arg, fd, close_fd = _open_dir(path, rel_path, dir_fd)
@@ -354,9 +355,10 @@ def _recursive_selector(parts, include_hidden=False, recursive=False):
     dir_only = bool(parts)
     select_next = _selector(parts, include_hidden, recursive)
 
-    def select_recursive(path, rel_path, dir_fd=None, exists=False):
+    def select_recursive(path, rel_path=None, dir_fd=None, exists=False):
         path = _add_trailing_slash(path)
-        rel_path = _add_trailing_slash(rel_path)
+        if dir_fd is not None:
+            rel_path = _add_trailing_slash(rel_path)
         match_pos = len(path)
         if match is None or match(path, match_pos):
             yield from select_next(path, rel_path, dir_fd, exists)
@@ -405,7 +407,7 @@ def _recursive_selector(parts, include_hidden=False, recursive=False):
     return select_recursive
 
 
-def _select_exists(path, rel_path, dir_fd=None, exists=False):
+def _select_exists(path, rel_path=None, dir_fd=None, exists=False):
     """Yields the given path, if it exists.
     """
     if exists:
