@@ -1,0 +1,1 @@
+Disable GC during the _PyThread_CurrentFrames() and _PyThread_CurrentExceptions() calls to avoid the interpreter to deadlock.
