@@ -1369,6 +1369,15 @@ Task Object
       catching :exc:`CancelledError`, it needs to call this method to remove
       the cancellation state.
 
+      When this method decrements the cancellation count to zero,
+      if a previous :meth:`cancel` call had arranged for a
+      :exc:`CancelledError` to be thrown into the task,
+      but this hadn't been done yet, that arrangement will be
+      rescinded (by resetting the internal ``_must_cancel`` flag).
+
+   .. versionchanged:: 3.13
+      Changed to rescind pending cancellation requests upon reaching zero.
+
    .. method:: cancelling()
 
       Return the number of pending cancellation requests to this Task, i.e.,
