@@ -399,17 +399,21 @@ def abspath(path):
 # Return a canonical path (i.e. the absolute location of a file on the
 # filesystem).
 
+# A singleton with true boolean value
+ALL_BUT_LAST = ['ALL_BUT_LAST']
+
 def realpath(filename, *, strict=False):
     """Return the canonical path of the specified filename, eliminating any
 symbolic links encountered in the path."""
     filename = os.fspath(filename)
-    path, ok = _joinrealpath(filename[:0], filename, strict, {})
+    path = _joinrealpath(filename[:0], filename, {},
+                         strict, strict is ALL_BUT_LAST, False)
     return abspath(path)
 
 # Join two paths, normalizing and eliminating any symbolic links
 # encountered in the second path.
 # Two leading slashes are replaced by a single slash.
-def _joinrealpath(path, rest, strict, seen):
+def _joinrealpath(path, rest, seen, strict, last, isdir):
     if isinstance(path, bytes):
         sep = b'/'
         curdir = b'.'
@@ -424,7 +428,7 @@ def _joinrealpath(path, rest, strict, seen):
         path = sep
 
     while rest:
-        name, _, rest = rest.partition(sep)
+        name, hassep, rest = rest.partition(sep)
         if not name or name == curdir:
             # current dir
             continue
@@ -445,13 +449,18 @@ def _joinrealpath(path, rest, strict, seen):
         newpath = join(path, name)
         try:
             st = os.lstat(newpath)
-        except OSError:
+        except OSError as e:
+            if (last and not rest.strip(sep) and
+                    isinstance(e, FileNotFoundError)):
+                return newpath
             if strict:
                 raise
-            is_link = False
-        else:
-            is_link = stat.S_ISLNK(st.st_mode)
-        if not is_link:
+            path = newpath
+            continue
+        if not stat.S_ISLNK(st.st_mode):
+            if (strict and not stat.S_ISDIR(st.st_mode)
+                    and (isdir or hassep)):
+                os.lstat(newpath + sep)  # raises NotADirectoryError
             path = newpath
             continue
         # Resolve the symbolic link
@@ -465,16 +474,22 @@ def _joinrealpath(path, rest, strict, seen):
             if strict:
                 # Raise OSError(errno.ELOOP)
                 os.stat(newpath)
-            else:
-                # Return already resolved part + rest of the path unchanged.
-                return join(newpath, rest), False
+            path = newpath
+            continue
         seen[newpath] = None # not resolved symlink
-        path, ok = _joinrealpath(path, os.readlink(newpath), strict, seen)
-        if not ok:
-            return join(path, rest), False
+        try:
+            link = os.readlink(newpath)
+        except OSError:
+            if strict:
+                raise
+            path = newpath
+        else:
+            path = _joinrealpath(path, link, seen, strict,
+                                 last and not rest.strip(sep),
+                                 isdir or hassep)
         seen[newpath] = path # resolved symlink
 
-    return path, True
+    return path
 
 
 supports_unicode_filenames = (sys.platform == 'darwin')

@@ -1,8 +1,9 @@
+import errno
 import os
 import posixpath
 import sys
 import unittest
-from posixpath import realpath, abspath, dirname, basename
+from posixpath import realpath, abspath, dirname, basename, ALL_BUT_LAST
 from test import test_genericpath
 from test.support import import_helper
 from test.support import os_helper
@@ -475,7 +476,7 @@ class PosixPathTest(unittest.TestCase):
             self.assertEqual(realpath(ABSTFN+"1/../x"), dirname(ABSTFN) + "/x")
             os.symlink(ABSTFN+"x", ABSTFN+"y")
             self.assertEqual(realpath(ABSTFN+"1/../" + basename(ABSTFN) + "y"),
-                             ABSTFN + "y")
+                             ABSTFN + "x")
             self.assertEqual(realpath(ABSTFN+"1/../" + basename(ABSTFN) + "1"),
                              ABSTFN + "1")
 
@@ -636,6 +637,129 @@ class PosixPathTest(unittest.TestCase):
             os_helper.unlink(ABSTFN + "link")
             safe_rmdir(ABSTFN + "/k")
             safe_rmdir(ABSTFN)
+
+    @os_helper.skip_unless_symlink
+    @skip_if_ABSTFN_contains_backslash
+    def test_realpath_mode(self):
+        try:
+            os.mkdir(ABSTFN)
+            os.mkdir(ABSTFN + "/dir")
+            open(ABSTFN + "/file", "wb").close()
+            open(ABSTFN + "/dir/file2", "wb").close()
+            os.symlink("file", ABSTFN + "/link")
+            os.symlink("dir", ABSTFN + "/link2")
+            os.symlink("nonexisting", ABSTFN + "/broken")
+            os.symlink("cycle", ABSTFN + "/cycle")
+            def check(path, mode, expected, errno=None):
+                if isinstance(expected, str):
+                    assert errno is None
+                    self.assertEqual(realpath(path, strict=mode), ABSTFN + expected)
+                else:
+                    with self.assertRaises(expected) as cm:
+                        realpath(path, strict=mode)
+                    if errno is not None:
+                        self.assertEqual(cm.exception.errno, errno)
+
+            with os_helper.change_cwd(ABSTFN):
+                check("file", False, "/file")
+                check("file", ALL_BUT_LAST, "/file")
+                check("file", True, "/file")
+                check("file/", False, "/file")
+                check("file/", ALL_BUT_LAST, NotADirectoryError)
+                check("file/", True, NotADirectoryError)
+                check("file/file2", False, "/file/file2")
+                check("file/file2", ALL_BUT_LAST, NotADirectoryError)
+                check("file/file2", True, NotADirectoryError)
+                check("file/.", False, "/file")
+                check("file/.", ALL_BUT_LAST, NotADirectoryError)
+                check("file/.", True, NotADirectoryError)
+                check("file/../link", False, "/file")
+                check("file/../link", ALL_BUT_LAST, NotADirectoryError)
+                check("file/../link", True, NotADirectoryError)
+
+                check("dir", False, "/dir")
+                check("dir", ALL_BUT_LAST, "/dir")
+                check("dir", True, "/dir")
+                check("dir/", False, "/dir")
+                check("dir/", ALL_BUT_LAST, "/dir")
+                check("dir/", True, "/dir")
+                check("dir/file2", False, "/dir/file2")
+                check("dir/file2", ALL_BUT_LAST, "/dir/file2")
+                check("dir/file2", True, "/dir/file2")
+
+                check("link", False, "/file")
+                check("link", ALL_BUT_LAST, "/file")
+                check("link", True, "/file")
+                check("link/", False, "/file")
+                check("link/", ALL_BUT_LAST, NotADirectoryError)
+                check("link/", True, NotADirectoryError)
+                check("link/file2", False, "/file/file2")
+                check("link/file2", ALL_BUT_LAST, NotADirectoryError)
+                check("link/file2", True, NotADirectoryError)
+                check("link/.", False, "/file")
+                check("link/.", ALL_BUT_LAST, NotADirectoryError)
+                check("link/.", True, NotADirectoryError)
+                check("link/../link", False, "/file")
+                check("link/../link", ALL_BUT_LAST, NotADirectoryError)
+                check("link/../link", True, NotADirectoryError)
+
+                check("link2", False, "/dir")
+                check("link2", ALL_BUT_LAST, "/dir")
+                check("link2", True, "/dir")
+                check("link2/", False, "/dir")
+                check("link2/", ALL_BUT_LAST, "/dir")
+                check("link2/", True, "/dir")
+                check("link2/file2", False, "/dir/file2")
+                check("link2/file2", ALL_BUT_LAST, "/dir/file2")
+                check("link2/file2", True, "/dir/file2")
+
+                check("nonexisting", False, "/nonexisting")
+                check("nonexisting", ALL_BUT_LAST, "/nonexisting")
+                check("nonexisting", True, FileNotFoundError)
+                check("nonexisting/", False, "/nonexisting")
+                check("nonexisting/", ALL_BUT_LAST, "/nonexisting")
+                check("nonexisting/", True, FileNotFoundError)
+                check("nonexisting/file", False, "/nonexisting/file")
+                check("nonexisting/file", ALL_BUT_LAST, FileNotFoundError)
+                check("nonexisting/file", True, FileNotFoundError)
+                check("nonexisting/../link", False, "/file")
+                check("nonexisting/../link", ALL_BUT_LAST, FileNotFoundError)
+                check("nonexisting/../link", True, FileNotFoundError)
+
+                check("broken", False, "/nonexisting")
+                check("broken", ALL_BUT_LAST, "/nonexisting")
+                check("broken", True, FileNotFoundError)
+                check("broken/", False, "/nonexisting")
+                check("broken/", ALL_BUT_LAST, "/nonexisting")
+                check("broken/", True, FileNotFoundError)
+                check("broken/file", False, "/nonexisting/file")
+                check("broken/file", ALL_BUT_LAST, FileNotFoundError)
+                check("broken/file", True, FileNotFoundError)
+                check("broken/../link", False, "/file")
+                check("broken/../link", ALL_BUT_LAST, FileNotFoundError)
+                check("broken/../link", True, FileNotFoundError)
+
+                check("cycle", False, "/cycle")
+                check("cycle", ALL_BUT_LAST, OSError, errno.ELOOP)
+                check("cycle", True, OSError, errno.ELOOP)
+                check("cycle/", False, "/cycle")
+                check("cycle/", ALL_BUT_LAST, OSError, errno.ELOOP)
+                check("cycle/", True, OSError, errno.ELOOP)
+                check("cycle/file", False, "/cycle/file")
+                check("cycle/file", ALL_BUT_LAST, OSError, errno.ELOOP)
+                check("cycle/file", True, OSError, errno.ELOOP)
+                check("cycle/../link", False, "/file")
+                check("cycle/../link", ALL_BUT_LAST, OSError, errno.ELOOP)
+                check("cycle/../link", True, OSError, errno.ELOOP)
+        finally:
+            os_helper.unlink(ABSTFN + "/file")
+            os_helper.unlink(ABSTFN + "/dir/file2")
+            os_helper.unlink(ABSTFN + "/link")
+            os_helper.unlink(ABSTFN + "/link2")
+            os_helper.unlink(ABSTFN + "/broken")
+            os_helper.unlink(ABSTFN + "/cycle")
+            os_helper.rmdir(ABSTFN + "/dir")
+            os_helper.rmdir(ABSTFN)
 
     def test_relpath(self):
         (real_getcwd, os.getcwd) = (os.getcwd, lambda: r"/home/user/bar")
