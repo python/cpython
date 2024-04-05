@@ -273,7 +273,8 @@ class int_converter(CConverter):
                 }}}}
                 if (PyUnicode_GET_LENGTH({argname}) != 1) {{{{
                     PyErr_SetString(PyExc_TypeError,
-                        "{{name}}(): {displayname} must be exactly one character long");
+                        "{{name}}(): {displayname} must be a string containing "
+                        "exactly one unicode character");
                     goto exit;
                 }}}}
                 {paramname} = PyUnicode_READ_CHAR({argname}, 0);

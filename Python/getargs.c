@@ -575,10 +575,12 @@ static const char *
 converterr(const char *expected, PyObject *arg, char *msgbuf, size_t bufsize)
 {
     assert(expected != NULL);
-    assert(arg != NULL);
     if (expected[0] == '(') {
         PyOS_snprintf(msgbuf, bufsize,
                       "%.100s", expected);
+    }
+    else if (arg == NULL} {
+        PyOS_snprintf(msgbuf, bufsize, "must be %.100s", expected);
     }
     else {
         PyOS_snprintf(msgbuf, bufsize,
@@ -812,7 +814,8 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
             return converterr("a unicode character", arg, msgbuf, bufsize);
 
         if (PyUnicode_GET_LENGTH(arg) != 1)
-            return converterr("a unicode character", arg, msgbuf, bufsize);
+            return converterr("a string containing exactly one unicode character",
+                              NULL, msgbuf, bufsize);
 
         kind = PyUnicode_KIND(arg);
         data = PyUnicode_DATA(arg);

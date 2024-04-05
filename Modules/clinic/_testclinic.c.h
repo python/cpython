@@ -649,7 +649,8 @@ int_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     }
     if (PyUnicode_GET_LENGTH(args[2]) != 1) {
         PyErr_SetString(PyExc_TypeError,
-            "int_converter(): argument 3 must be exactly one character long");
+            "int_converter(): argument 3 must be a string containing "
+            "exactly one unicode character");
         goto exit;
     }
     c = PyUnicode_READ_CHAR(args[2], 0);
@@ -3164,4 +3165,4 @@ _testclinic_TestClass_meth_method_no_params(PyObject *self, PyTypeObject *cls, P
     }
     return _testclinic_TestClass_meth_method_no_params_impl(self, cls);
 }
-/*[clinic end generated code: output=0cc42a88f33c93c0 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=6abe2db2328c2ecc input=a9049054013a1b77]*/

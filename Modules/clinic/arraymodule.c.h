@@ -597,7 +597,8 @@ array__array_reconstructor(PyObject *module, PyObject *const *args, Py_ssize_t n
     }
     if (PyUnicode_GET_LENGTH(args[1]) != 1) {
         PyErr_SetString(PyExc_TypeError,
-            "_array_reconstructor(): argument 2 must be exactly one character long");
+            "_array_reconstructor(): argument 2 must be a string containing "
+            "exactly one unicode character");
         goto exit;
     }
     typecode = PyUnicode_READ_CHAR(args[1], 0);
@@ -686,4 +687,4 @@ PyDoc_STRVAR(array_arrayiterator___setstate____doc__,
 
 #define ARRAY_ARRAYITERATOR___SETSTATE___METHODDEF    \
     {"__setstate__", (PyCFunction)array_arrayiterator___setstate__, METH_O, array_arrayiterator___setstate____doc__},
-/*[clinic end generated code: output=777e73110300258f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=cdad784deb1e4c46 input=a9049054013a1b77]*/
