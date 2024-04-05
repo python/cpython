@@ -51,6 +51,8 @@ int _PyOpcode_num_popped(int opcode, int oparg)  {
             return 2;
         case BINARY_OP_II:
             return 2;
+        case BINARY_OP_INPLACE_ADD_UNICODE:
+            return 2;
         case BINARY_OP_IX:
             return 2;
         case BINARY_OP_X1:
@@ -480,6 +482,8 @@ int _PyOpcode_num_pushed(int opcode, int oparg)  {
             return 1;
         case BINARY_OP_II:
             return 1;
+        case BINARY_OP_INPLACE_ADD_UNICODE:
+            return 0;
         case BINARY_OP_IX:
             return 1;
         case BINARY_OP_X1:
@@ -965,6 +969,7 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[268] = {
     [BINARY_OP_1X] = { true, INSTR_FMT_IXC0, HAS_EXIT_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
     [BINARY_OP_I1] = { true, INSTR_FMT_IXC0, HAS_EXIT_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
     [BINARY_OP_II] = { true, INSTR_FMT_IXC0, HAS_EXIT_FLAG | HAS_ERROR_FLAG },
+    [BINARY_OP_INPLACE_ADD_UNICODE] = { true, INSTR_FMT_IXC0, HAS_LOCAL_FLAG | HAS_DEOPT_FLAG | HAS_EXIT_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
     [BINARY_OP_IX] = { true, INSTR_FMT_IXC0, HAS_EXIT_FLAG | HAS_ERROR_FLAG },
     [BINARY_OP_X1] = { true, INSTR_FMT_IXC0, HAS_EXIT_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
     [BINARY_OP_XI] = { true, INSTR_FMT_IXC0, HAS_EXIT_FLAG | HAS_ERROR_FLAG },
@@ -1361,6 +1366,7 @@ const char *_PyOpcode_OpName[268] = {
     [BINARY_OP_1X] = "BINARY_OP_1X",
     [BINARY_OP_I1] = "BINARY_OP_I1",
     [BINARY_OP_II] = "BINARY_OP_II",
+    [BINARY_OP_INPLACE_ADD_UNICODE] = "BINARY_OP_INPLACE_ADD_UNICODE",
     [BINARY_OP_IX] = "BINARY_OP_IX",
     [BINARY_OP_X1] = "BINARY_OP_X1",
     [BINARY_OP_XI] = "BINARY_OP_XI",
@@ -1614,6 +1620,7 @@ const uint8_t _PyOpcode_Deopt[256] = {
     [BINARY_OP_1X] = BINARY_OP,
     [BINARY_OP_I1] = BINARY_OP,
     [BINARY_OP_II] = BINARY_OP,
+    [BINARY_OP_INPLACE_ADD_UNICODE] = BINARY_OP,
     [BINARY_OP_IX] = BINARY_OP,
     [BINARY_OP_X1] = BINARY_OP,
     [BINARY_OP_XI] = BINARY_OP,
@@ -1853,7 +1860,6 @@ const uint8_t _PyOpcode_Deopt[256] = {
     case 146: \
     case 147: \
     case 148: \
-    case 222: \
     case 223: \
     case 224: \
     case 225: \
