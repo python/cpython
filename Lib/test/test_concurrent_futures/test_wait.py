@@ -142,7 +142,7 @@ class ThreadPoolWaitTests(ThreadPoolMixin, WaitTests, BaseTestCase):
         def future_func():
             event.wait()
         oldswitchinterval = sys.getswitchinterval()
-        sys.setswitchinterval(1e-6)
+        support.setswitchinterval(1e-6)
         try:
             fs = {self.executor.submit(future_func) for i in range(100)}
             event.set()

@@ -515,7 +515,7 @@ class ThreadTests(BaseTestCase):
         old_interval = sys.getswitchinterval()
         try:
             for i in range(1, 100):
-                sys.setswitchinterval(i * 0.0002)
+                support.setswitchinterval(i * 0.0002)
                 t = threading.Thread(target=lambda: None)
                 t.start()
                 t.join()

@@ -3934,7 +3934,12 @@ class TermsizeTests(unittest.TestCase):
         try:
             size = os.get_terminal_size()
         except OSError as e:
-            if sys.platform == "win32" or e.errno in (errno.EINVAL, errno.ENOTTY):
+            known_errnos = [errno.EINVAL, errno.ENOTTY]
+            if sys.platform == "android":
+                # The Android testbed redirects the native stdout to a pipe,
+                # which returns a different error code.
+                known_errnos.append(errno.EACCES)
+            if sys.platform == "win32" or e.errno in known_errnos:
                 # Under win32 a generic OSError can be thrown if the
                 # handle cannot be retrieved
                 self.skipTest("failed to query terminal size")
