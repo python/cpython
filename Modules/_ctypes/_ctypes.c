@@ -725,9 +725,9 @@ UnionType_init(PyObject *self, PyObject *args, PyObject *kwds)
 }
 
 /*[clinic input]
-class _ctypes.CDataType "PyObject *" ""
+class _ctypes.CDataType "PyObject *" "st->CType_Type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=50e231c00c3d5b3b]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=a5629668227ced6c]*/
 
 
 /*[clinic input]
@@ -1739,19 +1739,19 @@ class _ctypes.PyCSimpleType "PyObject *" "st->PyCSimpleType_Type"
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=d4e70c88c2b66eb4]*/
 
 /*[clinic input]
-class _ctypes.c_wchar_p "PyObject *" ""
+class _ctypes.c_wchar_p "PyObject *" "st->PyCSimpleType_Type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=9d20886e76c8d270]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=ad67842bc81b56a6]*/
 
 /*[clinic input]
-class _ctypes.c_char_p "PyObject *" ""
+class _ctypes.c_char_p "PyObject *" "st->PyCSimpleType_Type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=d001f38521ae2e8a]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=9a97029952caab32]*/
 
 /*[clinic input]
-class _ctypes.c_void_p "PyObject *" ""
+class _ctypes.c_void_p "PyObject *" "st->PyCSimpleType_Type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=2627dadc498784b7]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=fd4534ee51ddf049]*/
 
 static const char SIMPLE_TYPE_CHARS[] = "cbBhHiIlLdfuzZqQPXOv?g";
 
