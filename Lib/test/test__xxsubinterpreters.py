@@ -80,7 +80,7 @@ def clean_up_interpreters():
             continue
         try:
             interpreters.destroy(id)
-        except RuntimeError:
+        except interpreters.InterpreterError:
             pass  # already destroyed
 
 
@@ -464,11 +464,11 @@ class DestroyTests(TestBase):
 
     def test_main(self):
         main, = interpreters.list_all()
-        with self.assertRaises(RuntimeError):
+        with self.assertRaises(interpreters.InterpreterError):
             interpreters.destroy(main)
 
         def f():
-            with self.assertRaises(RuntimeError):
+            with self.assertRaises(interpreters.InterpreterError):
                 interpreters.destroy(main)
 
         t = threading.Thread(target=f)
@@ -496,7 +496,7 @@ class DestroyTests(TestBase):
             import _xxsubinterpreters as _interpreters
             try:
                 _interpreters.destroy({id})
-            except RuntimeError:
+            except interpreters.InterpreterError:
                 pass
             """)
 
@@ -531,7 +531,7 @@ class DestroyTests(TestBase):
             self.assertTrue(interpreters.is_running(interp),
                             msg=f"Interp {interp} should be running before destruction.")
 
-            with self.assertRaises(RuntimeError,
+            with self.assertRaises(interpreters.InterpreterError,
                                    msg=f"Should not be able to destroy interp {interp} while it's still running."):
                 interpreters.destroy(interp)
             self.assertTrue(interpreters.is_running(interp))
@@ -584,7 +584,7 @@ class RunStringTests(TestBase):
     def test_create_daemon_thread(self):
         with self.subTest('isolated'):
             expected = 'spam spam spam spam spam'
-            subinterp = interpreters.create(isolated=True)
+            subinterp = interpreters.create('isolated')
             script, file = _captured_script(f"""
                 import threading
                 def f():
@@ -604,7 +604,7 @@ class RunStringTests(TestBase):
             self.assertEqual(out, expected)
 
         with self.subTest('not isolated'):
-            subinterp = interpreters.create(isolated=False)
+            subinterp = interpreters.create('legacy')
             script, file = _captured_script("""
                 import threading
                 def f():
@@ -676,7 +676,7 @@ class RunStringTests(TestBase):
 
     def test_already_running(self):
         with _running(self.id):
-            with self.assertRaises(RuntimeError):
+            with self.assertRaises(interpreters.InterpreterError):
                 interpreters.run_string(self.id, 'print("spam")')
 
     def test_does_not_exist(self):
