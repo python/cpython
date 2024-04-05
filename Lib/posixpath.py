@@ -460,7 +460,7 @@ symbolic links encountered in the path."""
             if not stat.S_ISLNK(st.st_mode):
                 path = newpath
                 continue
-        except OSError:
+        except (OSError, ValueError):
             if strict:
                 raise
             path = newpath
