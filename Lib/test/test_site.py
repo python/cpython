@@ -183,6 +183,14 @@ class HelperFunctionsTests(unittest.TestCase):
             if isinstance(path, str):
                 self.assertNotIn("abc\x00def", path)
 
+    def test_pth_exc_namespacing(self):
+        # Issue 38937
+        contents = "import sys; x = 5; [print(x + i) for i in range(5)]\n"
+        pth_dir, pth_fn = self.make_pth(contents)
+        with captured_stderr() as err_out:
+            self.assertFalse(site.addpackage(pth_dir, pth_fn, set()))
+        self.assertEqual(err_out.getvalue(), "")
+
     def test_addsitedir(self):
         # Same tests for test_addpackage since addsitedir() essentially just
         # calls addpackage() for every .pth file in the directory
