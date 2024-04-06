@@ -184,6 +184,7 @@ def dirname(p):
 
 def ismount(path):
     """Test whether a path is a mount point"""
+    path = os.fspath(path)
     try:
         s1 = os.lstat(path)
     except (OSError, ValueError):
@@ -194,7 +195,6 @@ def ismount(path):
         if stat.S_ISLNK(s1.st_mode):
             return False
 
-    path = os.fspath(path)
     if isinstance(path, bytes):
         parent = join(path, b'..')
     else:
@@ -519,7 +519,7 @@ def relpath(path, start=None):
         rel_list = [pardir] * (len(start_list)-i) + path_list[i:]
         if not rel_list:
             return curdir
-        return join(*rel_list)
+        return sep.join(rel_list)
     except (TypeError, AttributeError, BytesWarning, DeprecationWarning):
         genericpath._check_arg_types('relpath', path, start)
         raise

@@ -822,7 +822,7 @@ def relpath(path, start=None):
         rel_list = [pardir] * (len(start_list)-i) + path_list[i:]
         if not rel_list:
             return curdir
-        return join(*rel_list)
+        return sep.join(rel_list)
     except (TypeError, ValueError, AttributeError, BytesWarning, DeprecationWarning):
         genericpath._check_arg_types('relpath', path, start)
         raise
