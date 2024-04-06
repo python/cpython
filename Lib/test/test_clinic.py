@@ -5,7 +5,7 @@
 from functools import partial
 from test import support, test_tools
 from test.support import os_helper
-from test.support.os_helper import TESTFN, unlink
+from test.support.os_helper import TESTFN, unlink, rmtree
 from textwrap import dedent
 from unittest import TestCase
 import inspect
@@ -677,6 +677,7 @@ class ClinicWholeFileTest(TestCase):
             [clinic start generated code]*/
         """)
         self.clinic.parse(block)
+        self.addCleanup(rmtree, "clinic")
         funcs = self.clinic.functions
         self.assertEqual(len(funcs), 2)
 
