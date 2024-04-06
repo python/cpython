@@ -1,19 +1,14 @@
 import os.path
-import re
 
 from c_common.clsutil import classonly
 from c_parser.info import (
     KIND,
-    DeclID,
     Declaration,
     TypeDeclaration,
-    TypeDef,
-    Struct,
     Member,
     FIXED_TYPE,
 )
 from c_parser.match import (
-    is_type_decl,
     is_pots,
     is_funcptr,
 )

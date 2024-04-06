@@ -1,7 +1,9 @@
 /* Iterator objects */
 
 #include "Python.h"
+#include "pycore_abstract.h"      // _PyObject_HasLen()
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
+#include "pycore_ceval.h"         // _PyEval_GetBuiltin()
 #include "pycore_object.h"        // _PyObject_GC_TRACK()
 
 typedef struct {
@@ -219,7 +221,7 @@ calliter_iternext(calliterobject *it)
     }
 
     result = _PyObject_CallNoArgs(it->it_callable);
-    if (result != NULL) {
+    if (result != NULL && it->it_sentinel != NULL){
         int ok;
 
         ok = PyObject_RichCompareBool(it->it_sentinel, result, Py_EQ);
@@ -227,7 +229,6 @@ calliter_iternext(calliterobject *it)
             return result; /* Common case, fast path */
         }
 
-        Py_DECREF(result);
         if (ok > 0) {
             Py_CLEAR(it->it_callable);
             Py_CLEAR(it->it_sentinel);
@@ -238,6 +239,7 @@ calliter_iternext(calliterobject *it)
         Py_CLEAR(it->it_callable);
         Py_CLEAR(it->it_sentinel);
     }
+    Py_XDECREF(result);
     return NULL;
 }
 

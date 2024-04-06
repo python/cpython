@@ -302,7 +302,7 @@ class TestCase(unittest.TestCase):
             # listiter_reduce_general
             self.assertEqual(
                 run("reversed", orig["reversed"](list(range(8)))),
-                (iter, ([],))
+                (reversed, ([],))
             )
 
             for case in types:
@@ -347,6 +347,31 @@ class TestCase(unittest.TestCase):
             state[0] = i+1
             return i
         self.check_iterator(iter(spam, 20), list(range(10)), pickle=False)
+
+    def test_iter_function_concealing_reentrant_exhaustion(self):
+        # gh-101892: Test two-argument iter() with a function that
+        # exhausts its associated iterator but forgets to either return
+        # a sentinel value or raise StopIteration.
+        HAS_MORE = 1
+        NO_MORE = 2
+
+        def exhaust(iterator):
+            """Exhaust an iterator without raising StopIteration."""
+            list(iterator)
+
+        def spam():
+            # Touching the iterator with exhaust() below will call
+            # spam() once again so protect against recursion.
+            if spam.is_recursive_call:
+                return NO_MORE
+            spam.is_recursive_call = True
+            exhaust(spam.iterator)
+            return HAS_MORE
+
+        spam.is_recursive_call = False
+        spam.iterator = iter(spam, NO_MORE)
+        with self.assertRaises(StopIteration):
+            next(spam.iterator)
 
     # Test exception propagation through function iterator
     def test_exception_function(self):

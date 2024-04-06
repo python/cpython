@@ -1,3 +1,0 @@
-Fix handling of drive-relative paths (like 'C:' and 'C:foo') in
-:meth:`pathlib.Path.absolute`. This method now uses the OS API
-to retrieve the correct current working directory for the drive.

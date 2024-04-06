@@ -1,0 +1,3 @@
+Change the old space bit of objects in the young generation from 0 to
+gcstate->visited, so that any objects created during GC will have the old
+bit set correctly if they get moved into the old generation.
