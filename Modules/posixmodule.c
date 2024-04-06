@@ -17452,6 +17452,15 @@ all_ins(PyObject *m)
 #endif
 #endif /* HAVE_MEMFD_CREATE */
 
+#ifdef HAVE_SHM_RENAME
+#ifdef SHM_RENAME_EXCHANGE
+    if (PyModule_AddIntMacro(m, SHM_RENAME_EXCHANGE)) return -1;
+#endif
+#ifdef SHM_RENAME_NOREPLACE
+    if (PyModule_AddIntMacro(m, SHM_RENAME_NOREPLACE)) return -1;
+#endif
+#endif /* HAVE_SHM_RENAME */
+
 #if defined(HAVE_EVENTFD) && defined(EFD_CLOEXEC)
     if (PyModule_AddIntMacro(m, EFD_CLOEXEC)) return -1;
 #ifdef EFD_NONBLOCK
