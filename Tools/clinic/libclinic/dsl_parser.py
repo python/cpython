@@ -666,6 +666,8 @@ class DSLParser:
         if equals:
             existing = existing.strip()
             if libclinic.is_legal_py_identifier(existing):
+                if self.forced_text_signature:
+                    fail("Cannot use @text_signature when cloning a function")
                 # we're cloning!
                 names = self.parse_function_names(before)
                 return self.parse_cloned_function(names, existing)

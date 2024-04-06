@@ -686,6 +686,24 @@ class ClinicWholeFileTest(TestCase):
         self.assertEqual(dst_docstring_lines[0], "dst($module, a[, b])")
         self.assertEqual(src_docstring_lines[1:], dst_docstring_lines[1:])
 
+    def test_cloned_forced_text_signature_illegal(self):
+        block = """
+            /*[clinic input]
+            @text_signature "($module, a[, b])"
+            src
+                a: object
+                b: object = NULL
+                /
+            [clinic start generated code]*/
+
+            /*[clinic input]
+            @text_signature "($module, a_override[, b])"
+            dst = src
+            [clinic start generated code]*/
+        """
+        err = "Cannot use @text_signature when cloning a function"
+        self.expect_failure(block, err, lineno=11)
+
 
 class ParseFileUnitTest(TestCase):
     def expect_parsing_failure(
