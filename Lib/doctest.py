@@ -1576,7 +1576,7 @@ class DocTestRunner:
         if verbose is None:
             verbose = self._verbose
 
-        no_tests, passed, failed = [], [], []
+        notests, passed, failed = [], [], []
         total_tries = total_failures = total_skips = 0
 
         for name, (failures, tries, skips) in self._stats.items():
@@ -1586,7 +1586,7 @@ class DocTestRunner:
             total_skips += skips
 
             if tries == 0:
-                no_tests.append(name)
+                notests.append(name)
             elif failures == 0:
                 passed.append((name, tries))
             else:
@@ -1608,10 +1608,10 @@ class DocTestRunner:
             yellow = ""
 
         if verbose:
-            if no_tests:
-                print(f"{_n_items(no_tests)} had no tests:")
-                no_tests.sort()
-                for name in no_tests:
+            if notests:
+                print(f"{_n_items(notests)} had no tests:")
+                notests.sort()
+                for name in notests:
                     print(f"    {name}")
 
             if passed:
