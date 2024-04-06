@@ -974,10 +974,14 @@ def kde(data, h, kernel='normal', *, cumulative=False):
     if support is None:
 
         def pdf(x):
+            n = len(data)
             return sum(K((x - x_i) / h) for x_i in data) / (n * h)
 
         def cdf(x):
+
+            n = len(data)
             return sum(W((x - x_i) / h) for x_i in data) / n
+
 
     else:
 
@@ -985,12 +989,20 @@ def kde(data, h, kernel='normal', *, cumulative=False):
         bandwidth = h * support
 
         def pdf(x):
+            nonlocal n, sample
+            if len(data) != n:
+                sample = sorted(data)
+                n = len(data)
             i = bisect_left(sample, x - bandwidth)
             j = bisect_right(sample, x + bandwidth)
             supported = sample[i : j]
             return sum(K((x - x_i) / h) for x_i in supported) / (n * h)
 
         def cdf(x):
+            nonlocal n, sample
+            if len(data) != n:
+                sample = sorted(data)
+                n = len(data)
             i = bisect_left(sample, x - bandwidth)
             j = bisect_right(sample, x + bandwidth)
             supported = sample[i : j]
