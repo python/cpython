@@ -1737,24 +1737,6 @@ class DummyPathTest(DummyPurePathTest):
         else:
             _check(p.glob("*/"), ["dirA/", "dirB/", "dirC/", "dirE/", "linkB/"])
 
-    @needs_posix
-    def test_glob_posix(self):
-        P = self.cls
-        p = P(self.base)
-        q = p / "FILEa"
-        given = set(p.glob("FILEa"))
-        expect = set(q) if q.exists() else set()
-        self.assertEqual(given, expect)
-        self.assertEqual(set(p.glob("FILEa*")), set())
-
-    @needs_windows
-    def test_glob_windows(self):
-        P = self.cls
-        p = P(self.base)
-        self.assertEqual(set(p.glob("FILEa")), { P(self.base, "fileA") })
-        self.assertEqual(set(p.glob("*a\\")), { P(self.base, "dirA/") })
-        self.assertEqual(set(p.glob("F*a")), { P(self.base, "fileA") })
-
     def test_glob_empty_pattern(self):
         P = self.cls
         p = P(self.base)
@@ -1851,23 +1833,6 @@ class DummyPathTest(DummyPurePathTest):
         # gh-91616, a re module regression
         _check(p, "*.txt", ["dirC/novel.txt"])
         _check(p, "*.*", ["dirC/novel.txt"])
-
-    @needs_posix
-    def test_rglob_posix(self):
-        P = self.cls
-        p = P(self.base, "dirC")
-        q = p / "FILEd"
-        given = set(p.rglob("FILEd"))
-        expect = set(q) if q.exists() else set()
-        self.assertEqual(given, expect)
-        self.assertEqual(set(p.rglob("FILEd*")), set())
-
-    @needs_windows
-    def test_rglob_windows(self):
-        P = self.cls
-        p = P(self.base, "dirC")
-        self.assertEqual(set(p.rglob("FILEd")), { P(self.base, "dirC/dirD/fileD") })
-        self.assertEqual(set(p.rglob("*\\")), { P(self.base, "dirC/dirD/") })
 
     @needs_symlinks
     def test_rglob_recurse_symlinks_common(self):
