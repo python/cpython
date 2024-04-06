@@ -627,7 +627,7 @@ static PyObject *
 func_get_name(PyFunctionObject *op, void *Py_UNUSED(ignored))
 {
     /* Null pointer judgement. */
-    if (op != nullptr)
+    if (op != NULL)
     {
         return Py_NewRef(op->func_name);
     }
@@ -635,7 +635,7 @@ func_get_name(PyFunctionObject *op, void *Py_UNUSED(ignored))
     {
         PyErr_SetString(PyExc_InterpreterError,
                         "got a null pointer in function 'func_get_name'");
-        return nullptr;
+        return NULL;
     }
 }
 
@@ -657,7 +657,7 @@ static PyObject *
 func_get_qualname(PyFunctionObject *op, void *Py_UNUSED(ignored))
 {
     /* Null pointer judgement. */
-    if (op != nullptr)
+    if (op != NULL)
     {
         return Py_NewRef(op->func_qualname);
     }
@@ -665,7 +665,7 @@ func_get_qualname(PyFunctionObject *op, void *Py_UNUSED(ignored))
     {
         PyErr_SetString(PyExc_InterpreterError,
                         "got a null pointer in function 'func_get_qualname'");
-        return nullptr;
+        return NULL;
     }
 }
 
@@ -694,7 +694,7 @@ func_get_defaults(PyFunctionObject *op, void *Py_UNUSED(ignored))
     }
     
     /* Null pointer judgement. */
-    if (op != nullptr)
+    if (op != NULL)
     {
         return Py_NewRef(op->func_defaults);
     }
@@ -702,7 +702,7 @@ func_get_defaults(PyFunctionObject *op, void *Py_UNUSED(ignored))
     {
         PyErr_SetString(PyExc_InterpreterError,
                         "got a null pointer in function 'func_get_defaults'");
-        return nullptr;
+        return NULL;
     }
 }
 
@@ -745,7 +745,7 @@ func_get_kwdefaults(PyFunctionObject *op, void *Py_UNUSED(ignored))
         Py_RETURN_NONE;
     }
     /* Null pointer judgement. */
-    if (op != nullptr)
+    if (op != NULL)
     {
         return Py_NewRef(op->func_kwdefaults);
     }
@@ -753,7 +753,7 @@ func_get_kwdefaults(PyFunctionObject *op, void *Py_UNUSED(ignored))
     {
         PyErr_SetString(PyExc_InterpreterError,
                         "got a null pointer in function 'func_get_kwdefaults'");
-        return nullptr;
+        return NULL;
     }
 }
 
