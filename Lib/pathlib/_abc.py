@@ -690,8 +690,6 @@ class PathBase(PurePathBase):
         return self.joinpath(name)
 
     def _glob_selector(self, parts, case_sensitive, recurse_symlinks):
-        if not self.is_dir():
-            return iter([])
         if case_sensitive is None:
             case_sensitive = _is_case_sensitive(self.parser)
         recursive = True if recurse_symlinks else glob._no_recurse_symlinks
@@ -707,6 +705,8 @@ class PathBase(PurePathBase):
         anchor, parts = pattern._stack
         if anchor:
             raise NotImplementedError("Non-relative patterns are unsupported")
+        if not self.is_dir():
+            return iter([])
         select = self._glob_selector(parts, case_sensitive, recurse_symlinks)
         return select(self, exists=True)
 

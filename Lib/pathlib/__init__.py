@@ -619,6 +619,8 @@ class Path(_abc.PathBase, PurePath):
             # GH-65238: pathlib doesn't preserve trailing slash. Add it back.
             parts.append('')
         parts.reverse()
+        if not self.is_dir():
+            return iter([])
         select = self._glob_selector(parts, case_sensitive, recurse_symlinks)
         return map(self.with_segments, select(str(self), exists=True))
 
