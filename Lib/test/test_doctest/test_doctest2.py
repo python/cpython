@@ -13,7 +13,6 @@ the example.  It should be ignored:
 
 import sys
 import unittest
-
 import _colorize
 
 if sys.flags.optimize >= 2:

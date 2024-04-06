@@ -16,7 +16,6 @@ import unittest
 import tempfile
 import types
 import contextlib
-
 import _colorize  # used in doctests
 
 
@@ -2636,7 +2635,7 @@ doctest examples in a given file.  In its simple invocation, it is
 called with the name of a file, which is taken to be relative to the
 calling module.  The return value is (#failures, #tests).
 
-We don't want colour or `-v` in sys.argv for these tests.
+We don't want color or `-v` in sys.argv for these tests.
 
     >>> save_colorize = _colorize.COLORIZE
     >>> _colorize.COLORIZE = False

@@ -104,7 +104,6 @@ import traceback
 import unittest
 from io import StringIO, IncrementalNewlineDecoder
 from collections import namedtuple
-
 import _colorize  # Used in doctests
 
 

@@ -28,7 +28,6 @@ import traceback
 import contextlib
 from functools import partial
 from pathlib import Path
-
 import _colorize
 
 MODULE_PREFIX = f'{__name__}.' if __name__ == '__main__' else ''

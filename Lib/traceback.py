@@ -7,7 +7,6 @@ import sys
 import textwrap
 import warnings
 from contextlib import suppress
-
 from _colorize import ANSIColors
 
 __all__ = ['extract_stack', 'extract_tb', 'format_exception',
