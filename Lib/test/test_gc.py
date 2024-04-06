@@ -1,7 +1,9 @@
 import unittest
 import unittest.mock
+from test import support
 from test.support import (verbose, refcount_test,
-                          cpython_only, requires_subprocess, Py_GIL_DISABLED)
+                          cpython_only, requires_subprocess,
+                          requires_gil_enabled)
 from test.support.import_helper import import_module
 from test.support.os_helper import temp_dir, TESTFN, unlink
 from test.support.script_helper import assert_python_ok, make_script
@@ -362,7 +364,7 @@ class GCTests(unittest.TestCase):
     # To minimize variations, though, we first store the get_count() results
     # and check them at the end.
     @refcount_test
-    @unittest.skipIf(Py_GIL_DISABLED, 'needs precise allocation counts')
+    @requires_gil_enabled('needs precise allocation counts')
     def test_get_count(self):
         gc.collect()
         a, b, c = gc.get_count()
@@ -469,7 +471,7 @@ class GCTests(unittest.TestCase):
                 make_nested()
 
         old_switchinterval = sys.getswitchinterval()
-        sys.setswitchinterval(1e-5)
+        support.setswitchinterval(1e-5)
         try:
             exit = []
             threads = []
@@ -815,7 +817,7 @@ class GCTests(unittest.TestCase):
                 any(l is element for element in gc.get_objects())
         )
 
-    @unittest.skipIf(Py_GIL_DISABLED, 'need generational GC')
+    @requires_gil_enabled('need generational GC')
     def test_get_objects_generations(self):
         gc.collect()
         l = []
@@ -1046,7 +1048,7 @@ class IncrementalGCTests(unittest.TestCase):
     def tearDown(self):
         gc.disable()
 
-    @unittest.skipIf(Py_GIL_DISABLED, "Free threading does not support incremental GC")
+    @requires_gil_enabled("Free threading does not support incremental GC")
     # Use small increments to emulate longer running process in a shorter time
     @gc_threshold(200, 10)
     def test_incremental_gc_handles_fast_cycle_creation(self):
