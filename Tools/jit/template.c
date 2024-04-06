@@ -88,7 +88,14 @@ _JIT_ENTRY(_PyInterpreterFrame *frame, PyObject **stack_pointer, PyThreadState *
     int uopcode = _JIT_OPCODE;
     // Other stuff we need handy:
     PATCH_VALUE(uint16_t, _oparg, _JIT_OPARG)
+#if SIZEOF_VOID_P == 8
     PATCH_VALUE(uint64_t, _operand, _JIT_OPERAND)
+#else
+    assert(SIZEOF_VOID_P == 4);
+    PATCH_VALUE(uint32_t, _operand_hi, _JIT_OPERAND_HI)
+    PATCH_VALUE(uint32_t, _operand_lo, _JIT_OPERAND_LO)
+    uint64_t _operand = ((uint64_t)_operand_hi << 32) | _operand_lo;
+#endif
     PATCH_VALUE(uint32_t, _target, _JIT_TARGET)
     PATCH_VALUE(uint16_t, _exit_index, _JIT_EXIT_INDEX)
 
