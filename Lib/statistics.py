@@ -1711,7 +1711,7 @@ class NormalDist:
         self._mu, self._sigma = state
 
 
-## kde_rand() ################################################################
+## kde_random() ##############################################################
 
 def _newton_raphson(f_inv_est, f, f_prime, tolerance=1e-12):
     def f_inv(y):
