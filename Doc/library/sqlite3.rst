@@ -394,29 +394,12 @@ Module functions
    will get tracebacks from callbacks on :data:`sys.stderr`. Use ``False``
    to disable the feature again.
 
-   Register an :func:`unraisable hook handler <sys.unraisablehook>` for an
-   improved debug experience:
+   .. note::
 
-   .. testsetup:: sqlite3.trace
-
-      import sqlite3
-
-   .. doctest:: sqlite3.trace
-
-      >>> sqlite3.enable_callback_tracebacks(True)
-      >>> con = sqlite3.connect(":memory:")
-      >>> def evil_trace(stmt):
-      ...     5/0
-      ...
-      >>> con.set_trace_callback(evil_trace)
-      >>> def debug(unraisable):
-      ...     print(f"{unraisable.exc_value!r} in callback {unraisable.object.__name__}")
-      ...     print(f"Error message: {unraisable.err_msg}")
-      >>> import sys
-      >>> sys.unraisablehook = debug
-      >>> cur = con.execute("SELECT 1")
-      ZeroDivisionError('division by zero') in callback evil_trace
-      Error message: None
+      Exceptions that are raised in user-defined function callbacks are
+      raised as unraisable exceptions.
+      Use an :func:`unraisable hook handler <sys.unraisablehook>` for
+      introspection of the failed callback.
 
 .. function:: register_adapter(type, adapter, /)
 
