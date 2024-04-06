@@ -12,8 +12,9 @@ __all__ = ["glob", "iglob", "escape"]
 
 
 _special_parts = ('', os.path.curdir, os.path.pardir)
-_pattern_flags = re.NOFLAG if os.path.normcase('Aa') == 'Aa' else re.IGNORECASE
+_case_sensitive = os.path.normcase('Aa') == 'Aa'
 _dir_open_flags = os.O_RDONLY | getattr(os, 'O_DIRECTORY', 0)
+_disable_recurse_symlinks = object()
 if os.path.altsep:
     _path_seps = (os.path.sep, os.path.altsep)
 else:
@@ -171,12 +172,13 @@ def translate(pat, *, recursive=False, include_hidden=False, seps=None):
 
 
 @functools.lru_cache(maxsize=32768)
-def _compile_pattern(include_hidden, recursive, sep, pattern):
+def _compile_pattern(include_hidden, recursive, case_sensitive, sep, pattern):
     """Compile an re.Pattern object for the given glob-style pattern.
     """
+    flags = re.NOFLAG if case_sensitive else re.IGNORECASE
     regex = translate(pattern, include_hidden=include_hidden,
                       recursive=recursive, seps=sep)
-    return re.compile(regex, flags=_pattern_flags).match
+    return re.compile(regex, flags=flags).match
 
 
 def _split_pathname(pathname):
@@ -233,12 +235,20 @@ def _relative_glob(select, dirname, dir_fd=None):
 
 
 class _Globber:
-    def __init__(self, include_hidden=False, recursive=False, sep=os.path.sep):
+    def __init__(self, include_hidden=False, recursive=False,
+                 case_sensitive=_case_sensitive, sep=os.path.sep):
         self.include_hidden = include_hidden
         self.recursive = recursive
+        self.case_sensitive = case_sensitive
         self.sep = sep
         self.compile = functools.partial(
-            _compile_pattern, include_hidden, recursive, sep)
+            _compile_pattern, include_hidden, recursive, case_sensitive, sep)
+
+    lstat = staticmethod(os.lstat)
+    scandir = staticmethod(os.scandir)
+    add_slash = staticmethod(_add_slash)
+    concat_path = operator.add
+    parse_entry = operator.attrgetter('path')
 
     def selector(self, parts):
         """Returns a function that selects from a given path, walking and
@@ -248,6 +258,8 @@ class _Globber:
             return self.select_exists
         elif self.recursive and parts[-1] == '**':
             selector = self.recursive_selector
+        elif self.case_sensitive != _case_sensitive:
+            selector = self.wildcard_selector
         elif magic_check.search(parts[-1]) is not None:
             selector = self.wildcard_selector
         else:
@@ -274,9 +286,9 @@ class _Globber:
         select_next = self.selector(parts)
 
         def select_literal(path, rel_path=None, dir_fd=None, exists=False):
-            path = _add_slash(path) + part
+            path = self.concat_path(self.add_slash(path), part)
             if dir_fd is not None:
-                rel_path = _add_slash(rel_path) + part
+                rel_path = self.concat_path(self.add_slash(rel_path), part)
             return select_next(path, rel_path, dir_fd, exists and is_special)
         return select_literal
 
@@ -298,10 +310,10 @@ class _Globber:
             try:
                 arg, fd, close_fd = _open_dir(path, rel_path, dir_fd)
                 if fd is not None:
-                    prefix = _add_slash(path)
+                    prefix = self.add_slash(path)
                 # Ensure we don't exhaust file descriptors when globbing deep
                 # trees by closing the directory *before* yielding anything.
-                with os.scandir(arg) as scandir_obj:
+                with self.scandir(arg) as scandir_obj:
                     entries = list(scandir_obj)
                 for entry in entries:
                     if match is None or match(entry.name):
@@ -311,9 +323,9 @@ class _Globber:
                                     continue
                             except OSError:
                                 continue
-                        entry_path = entry.path
+                        entry_path = self.parse_entry(entry)
                         if fd is not None:
-                            entry_path = prefix + entry_path
+                            entry_path = self.concat_path(prefix, entry_path)
                         if dir_only:
                             yield from select_next(
                                 entry_path, entry.name, fd, exists=True)
@@ -342,8 +354,10 @@ class _Globber:
         # the recursive walk. As a result, non-special pattern segments
         # following a '**' wildcard don't require additional filesystem access
         # to expand.
-        while parts and parts[-1] not in _special_parts:
-            part += self.sep + parts.pop()
+        follow_symlinks = self.recursive is not _disable_recurse_symlinks
+        if follow_symlinks:
+            while parts and parts[-1] not in _special_parts:
+                part += self.sep + parts.pop()
 
         dir_only = bool(parts)
         if self.include_hidden and part == '**':
@@ -353,9 +367,9 @@ class _Globber:
         select_next = self.selector(parts)
 
         def select_recursive(path, rel_path=None, dir_fd=None, exists=False):
-            path = _add_slash(path)
+            path = self.add_slash(path)
             if dir_fd is not None:
-                rel_path = _add_slash(rel_path)
+                rel_path = self.add_slash(rel_path)
             match_pos = len(str(path))
             if match is None or match(str(path), match_pos):
                 yield from select_next(path, rel_path, dir_fd, exists)
@@ -373,25 +387,25 @@ class _Globber:
                 return
             arg, fd, close_fd = _open_dir(path, rel_path, dir_fd)
             if fd is not None:
-                prefix = _add_slash(path)
+                prefix = self.add_slash(path)
                 if close_fd:
                     stack.append((None, None, fd))
             # Ensure we don't exhaust file descriptors when globbing deep
             # trees by closing the directory *before* yielding anything.
-            with os.scandir(arg) as scandir_obj:
+            with self.scandir(arg) as scandir_obj:
                 entries = list(scandir_obj)
             for entry in entries:
                 is_dir = False
                 try:
-                    if entry.is_dir():
+                    if entry.is_dir(follow_symlinks=follow_symlinks):
                         is_dir = True
                 except OSError:
                     pass
 
                 if is_dir or not dir_only:
-                    entry_path = entry.path
+                    entry_path = self.parse_entry(entry)
                     if fd is not None:
-                        entry_path = prefix + entry_path
+                        entry_path = self.concat_path(prefix, entry_path)
                     if match is None or match(str(entry_path), match_pos):
                         if dir_only:
                             yield from select_next(
@@ -414,13 +428,13 @@ class _Globber:
             yield path
         elif dir_fd is None:
             try:
-                os.lstat(path)
+                self.lstat(path)
                 yield path
             except OSError:
                 pass
         else:
             try:
-                os.lstat(rel_path, dir_fd=dir_fd)
+                self.lstat(rel_path, dir_fd=dir_fd)
                 yield path
             except OSError:
                 pass
