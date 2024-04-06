@@ -2,10 +2,10 @@ import io
 import os
 import sys
 
-_COLORIZE = True
+COLORIZE = True
 
 
-class _ANSIColors:
+class ANSIColors:
     BOLD_GREEN = "\x1b[1;32m"
     BOLD_MAGENTA = "\x1b[1;35m"
     BOLD_RED = "\x1b[1;31m"
@@ -17,7 +17,7 @@ class _ANSIColors:
     YELLOW = "\x1b[33m"
 
 
-def _can_colorize():
+def can_colorize():
     if sys.platform == "win32":
         try:
             import nt
