@@ -606,19 +606,13 @@ class Path(_abc.PathBase, PurePath):
         """Yields normalized path objects from the given iterable of string
         glob results."""
         sep = self.parser.sep
-        drive = self.drive
-        root = self.root
-        prefix = drive + root
-        prefix_len = len(prefix)
-        if not prefix_len and not self._tail_cached:
-            prefix_len = 2  # strip off leading "./"
-        for path in paths:
-            tail = path[prefix_len:].removesuffix(sep)
-            path = self.with_segments(path)
-            path._str = (prefix + tail) or '.'
-            path._drv = drive
-            path._root = root
-            path._tail_cached = tail.split(sep)
+        prefix_len = len(self.anchor)
+        for path_str in paths:
+            if len(path_str) > prefix_len and path_str[-1] == sep:
+                # Strip trailing slash.
+                path_str = path_str[:-1]
+            path = self.with_segments(path_str)
+            path._str = path_str or '.'
             yield path
 
     def glob(self, pattern, *, case_sensitive=None, recurse_symlinks=False):
@@ -641,7 +635,11 @@ class Path(_abc.PathBase, PurePath):
         if not self.is_dir():
             return iter([])
         select = self._glob_selector(parts, case_sensitive, recurse_symlinks)
-        paths = select(str(self), exists=True)
+        path = str(self)
+        paths = select(path, exists=True)
+        if path == '.':
+            # Strip leading './'.
+            paths = map(lambda p: p[2:], paths)
         paths = self._make_glob_paths(paths)
         return paths
 
