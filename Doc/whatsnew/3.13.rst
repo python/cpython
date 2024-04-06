@@ -296,6 +296,10 @@ asyncio
   with the tasks being completed.
   (Contributed by Justin Arthur in :gh:`77714`.)
 
+* Add :meth:`asyncio.Queue.shutdown` (along with
+  :exc:`asyncio.QueueShutDown`) for queue termination.
+  (Contributed by Laurie Opperman in :gh:`104228`.)
+
 base64
 ------
 
