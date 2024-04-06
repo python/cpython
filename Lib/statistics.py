@@ -1722,24 +1722,25 @@ def _newton_raphson(f_inv_est, f, f_prime, tolerance=1e-12):
         return x
     return f_inv
 
+def _simple_s_curve(power):
+    "S-curve that crosses (0, -1), (1/2, 0), (1, 1)."
+    # Approximates the invcdf for a kernels with support==1.0
+    return lambda p: ((2 * p) ** power - 1
+                      if p <= 1/2 else
+                      1 - (2 - 2*p) ** power)
+
 _parabolic_invcdf = _newton_raphson(
-    f_inv_est = lambda p: ((2.0 * p) ** 0.583367470424302 - 1.0
-                           if p <= 1/2 else
-                           1.0 - (2.0 - 2.0*p) ** 0.583367470424302),
+    f_inv_est = _simple_s_curve(0.583367470424302),
     f = lambda t: -1/4 * t**3 + 3/4 * t + 1/2,
     f_prime = lambda t: 3/4 * (1.0 - t * t))
 
 _quartic_invcdf = _newton_raphson(
-    f_inv_est = lambda p: ((2.0 * p) ** 0.4258865685331 - 1.0
-                           if p <= 1/2 else
-                           1.0 - (2.0 - 2.0*p) ** 0.4258865685331),
+    f_inv_est = _simple_s_curve(0.4258865685331),
     f = lambda t: 3/16 * t**5 - 5/8 * t**3 + 15/16 * t + 1/2,
     f_prime = lambda t: 15/16 * (1.0 - t * t) ** 2)
 
 _triweight_invcdf = _newton_raphson(
-    f_inv_est = lambda p: ((2.0 * p) ** 0.3400218741872791 - 1.0
-                           if p <= 1/2 else
-                           1.0 - (2.0 - 2.0*p) ** 0.3400218741872791),
+    f_inv_est = _simple_s_curve(0.3400218741872791),
     f = lambda t: 35/32 * (-1/7*t**7 + 3/5*t**5 - t**3 + t) + 1/2,
     f_prime = lambda t: 35/32 * (1.0 - t * t) ** 3)
 
@@ -1751,7 +1752,7 @@ _kernel_invcdfs = {
     'parabolic': _parabolic_invcdf,
     'quartic': _quartic_invcdf,
     'triweight': _triweight_invcdf,
-    'triangular': lambda p: sqrt(2*p) - 1 if p < 0.5 else 1 - sqrt(2 - 2*p),
+    'triangular': lambda p: sqrt(2*p) - 1 if p < 1/2 else 1 - sqrt(2 - 2*p),
     'cosine': lambda p: 2*asin(2*p - 1)/pi,
 }
 _kernel_invcdfs['gauss'] = _kernel_invcdfs['normal']
