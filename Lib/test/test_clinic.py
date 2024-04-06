@@ -662,6 +662,30 @@ class ClinicWholeFileTest(TestCase):
         err = "Illegal C basename: '.illegal.'"
         self.expect_failure(block, err, lineno=7)
 
+    def test_cloned_forced_text_signature(self):
+        block = dedent("""
+            /*[clinic input]
+            @text_signature "($module, a[, b])"
+            src
+                a: object
+                b: object = NULL
+                /
+            [clinic start generated code]*/
+
+            /*[clinic input]
+            dst = src
+            [clinic start generated code]*/
+        """)
+        self.clinic.parse(block)
+        funcs = self.clinic.functions
+        self.assertEqual(len(funcs), 2)
+
+        src_docstring_lines = funcs[0].docstring.split("\n")
+        dst_docstring_lines = funcs[1].docstring.split("\n")
+        self.assertEqual(src_docstring_lines[0], "src($module, a[, b])")
+        self.assertEqual(dst_docstring_lines[0], "dst($module, a[, b])")
+        self.assertEqual(src_docstring_lines[1:], dst_docstring_lines[1:])
+
 
 class ParseFileUnitTest(TestCase):
     def expect_parsing_failure(
