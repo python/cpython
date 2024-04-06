@@ -602,6 +602,25 @@ class Path(_abc.PathBase, PurePath):
         path._tail_cached = tail + [name]
         return path
 
+    def _make_glob_paths(self, paths):
+        """Yields normalized path objects from the given iterable of string
+        glob results."""
+        sep = self.parser.sep
+        drive = self.drive
+        root = self.root
+        prefix = drive + root
+        prefix_len = len(prefix)
+        if not prefix_len and not self._tail_cached:
+            prefix_len = 2  # strip off leading "./"
+        for path in paths:
+            tail = path[prefix_len:].removesuffix(sep)
+            path = self.with_segments(path)
+            path._str = (prefix + tail) or '.'
+            path._drv = drive
+            path._root = root
+            path._tail_cached = tail.split(sep)
+            yield path
+
     def glob(self, pattern, *, case_sensitive=None, recurse_symlinks=False):
         """Iterate over this subtree and yield all existing files (of any
         kind, including directories) matching the given relative pattern.
@@ -622,7 +641,9 @@ class Path(_abc.PathBase, PurePath):
         if not self.is_dir():
             return iter([])
         select = self._glob_selector(parts, case_sensitive, recurse_symlinks)
-        return map(self.with_segments, select(str(self), exists=True))
+        paths = select(str(self), exists=True)
+        paths = self._make_glob_paths(paths)
+        return paths
 
     def rglob(self, pattern, *, case_sensitive=None, recurse_symlinks=False):
         """Recursively yield all existing files (of any kind, including
