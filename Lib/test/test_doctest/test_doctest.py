@@ -43,6 +43,7 @@ def sample_func(v):
     """
     return v+v
 
+
 class SampleClass:
     """
     >>> print(1)
@@ -135,10 +136,13 @@ class SampleClass:
             0
             """
             self.val = val
+
         def square(self):
             return SampleClass.NestedClass(self.val*self.val)
+
         def get(self):
             return self.val
+
 
 class SampleNewStyleClass(object):
     r"""
@@ -167,6 +171,7 @@ class SampleNewStyleClass(object):
         -5
         """
         return self.val
+
 
 ######################################################################
 ## Test Cases
@@ -292,6 +297,7 @@ Compare `Example`:
     >>> example != other_example
     True
 """
+
 
 def test_DocTest(): r"""
 Unit tests for the `DocTest` class.
@@ -442,6 +448,7 @@ Compare `DocTestCase`:
     True
 
 """
+
 
 class test_DocTestFinder:
     def basics(): r"""
@@ -828,6 +835,7 @@ class TestDocTestFinder(unittest.TestCase):
             self.assertEqual(len(include_empty_finder.find(mod)), 1)
             self.assertEqual(len(exclude_empty_finder.find(mod)), 0)
 
+
 def test_DocTestParser(): r"""
 Unit tests for the `DocTestParser` class.
 
@@ -882,6 +890,7 @@ given arguments:
     ('if 1:\n    print(x)\n    print(y)\n', '2\n3\n', 2)
     ('x+y\n', '5\n', 9)
 """
+
 
 class test_DocTestRunner:
     def basics(): r"""
@@ -1928,6 +1937,7 @@ source:
     ValueError: line 0 of the doctest for s has an option directive on a line with no example: '# doctest: +ELLIPSIS'
 """
 
+
 def test_testsource(): r"""
 Unit tests for `testsource()`.
 
@@ -1968,6 +1978,7 @@ words and expected output are converted to comments:
     <BLANKLINE>
 """
 
+
 def test_debug(): r"""
 
 Create a docstring that we want to debug:
@@ -1997,6 +2008,7 @@ Run the debugger on the docstring, and then restore sys.stdin.
     (Pdb) continue
 
 """
+
 
 if not hasattr(sys, 'gettrace') or not sys.gettrace():
     def test_pdb_set_trace():
@@ -2219,6 +2231,7 @@ if not hasattr(sys, 'gettrace') or not sys.gettrace():
         TestResults(failed=0, attempted=2)
     """
 
+
 def test_DocTestSuite():
     """DocTestSuite creates a unittest test suite from a doctest.
 
@@ -2345,6 +2358,7 @@ def test_DocTestSuite():
        sample_doctest module dictionary.  The test globals are
        automatically cleared for us after a test.
        """
+
 
 def test_DocFileSuite():
     """We can test tests found in text files using a DocFileSuite.
@@ -2525,6 +2539,7 @@ def test_DocFileSuite():
 
        """
 
+
 def test_trailing_space_in_test():
     """
     Trailing spaces in expected output are significant:
@@ -2534,6 +2549,7 @@ def test_trailing_space_in_test():
       foo \n
     """
 
+
 class Wrapper:
     def __init__(self, func):
         self.func = func
@@ -2541,6 +2557,7 @@ class Wrapper:
 
     def __call__(self, *args, **kwargs):
         self.func(*args, **kwargs)
+
 
 @Wrapper
 def test_look_in_unwrapped():
@@ -2550,6 +2567,7 @@ def test_look_in_unwrapped():
     >>> 'one other test'
     'one other test'
     """
+
 
 def test_unittest_reportflags():
     """Default unittest reporting flags can be set to control reporting
@@ -2629,6 +2647,7 @@ def test_unittest_reportflags():
       >>> ignored = doctest.set_unittest_reportflags(old)
 
     """
+
 
 def test_testfile(): r"""
 Tests for the `testfile()` function.  This function runs all the
@@ -2809,6 +2828,7 @@ Test the verbose output:
     >>> _colorize._COLORIZE = save_colorize
 """
 
+
 class TestImporter(importlib.abc.MetaPathFinder, importlib.abc.ResourceLoader):
 
     def find_spec(self, fullname, path, target=None):
@@ -2817,6 +2837,7 @@ class TestImporter(importlib.abc.MetaPathFinder, importlib.abc.ResourceLoader):
     def get_data(self, path):
         with open(path, mode='rb') as f:
             return f.read()
+
 
 class TestHook:
 
@@ -2922,6 +2943,7 @@ whitespace if doctest does not correctly do the newline conversion.
 
 """
 
+
 def test_testmod(): r"""
 Tests for the testmod function.  More might be useful, but for now we're just
 testing the case raised by Issue 6195, where trying to doctest a C module would
@@ -2932,6 +2954,7 @@ out of the binary module.
     >>> doctest.testmod(unicodedata, verbose=False)
     TestResults(failed=0, attempted=0)
 """
+
 
 try:
     os.fsencode("foo-bär@baz.py")
@@ -2970,6 +2993,7 @@ Check doctest with a non-ascii filename:
         Exception: clé
     TestResults(failed=1, attempted=1)
     """
+
 
 def test_CLI(): r"""
 The doctest module can be used to run doctests against an arbitrary file.
@@ -3200,6 +3224,7 @@ Invalid doctest option:
     usage...invalid...nosuchoption...
 
 """
+
 
 def test_no_trailing_whitespace_stripping():
     r"""

@@ -147,9 +147,12 @@ class TestResults(namedtuple('TestResults', 'failed attempted')):
 # Option constants.
 
 OPTIONFLAGS_BY_NAME = {}
+
+
 def register_optionflag(name):
     # Create a new flag unless `name` is already known.
     return OPTIONFLAGS_BY_NAME.setdefault(name, 1 << len(OPTIONFLAGS_BY_NAME))
+
 
 DONT_ACCEPT_TRUE_FOR_1 = register_optionflag('DONT_ACCEPT_TRUE_FOR_1')
 DONT_ACCEPT_BLANKLINE = register_optionflag('DONT_ACCEPT_BLANKLINE')
@@ -194,6 +197,7 @@ ELLIPSIS_MARKER = '...'
 #  8. Debugging Support
 #  9. Example Usage
 
+
 ######################################################################
 ## 1. Utility Functions
 ######################################################################
@@ -209,6 +213,7 @@ def _extract_future_flags(globs):
         if feature is getattr(__future__, fname):
             flags |= feature.compiler_flag
     return flags
+
 
 def _normalize_module(module, depth=2):
     """
@@ -235,9 +240,11 @@ def _normalize_module(module, depth=2):
     else:
         raise TypeError("Expected a module, string, or None")
 
+
 def _newline_convert(data):
     # The IO module provides a handy decoder for universal newline conversion
     return IncrementalNewlineDecoder(None, True).decode(data, True)
+
 
 def _load_testfile(filename, package, module_relative, encoding):
     if module_relative:
@@ -257,6 +264,7 @@ def _load_testfile(filename, package, module_relative, encoding):
     with open(filename, encoding=encoding) as f:
         return f.read(), filename
 
+
 def _indent(s, indent=4):
     """
     Add the given number of space characters to the beginning of
@@ -264,6 +272,7 @@ def _indent(s, indent=4):
     """
     # This regexp matches the start of non-blank lines:
     return re.sub('(?m)^(?!$)', indent*' ', s)
+
 
 def _exception_traceback(exc_info):
     """
@@ -275,6 +284,7 @@ def _exception_traceback(exc_info):
     exc_type, exc_val, exc_tb = exc_info
     traceback.print_exception(exc_type, exc_val, exc_tb, file=excout)
     return excout.getvalue()
+
 
 # Override some StringIO methods.
 class _SpoofOut(StringIO):
@@ -290,6 +300,7 @@ class _SpoofOut(StringIO):
     def truncate(self, size=None):
         self.seek(size)
         StringIO.truncate(self)
+
 
 # Worst-case linear-time ellipsis matching.
 def _ellipsis_match(want, got):
@@ -341,6 +352,7 @@ def _ellipsis_match(want, got):
 
     return True
 
+
 def _comment_line(line):
     "Return a commented form of the given line"
     line = line.rstrip()
@@ -348,6 +360,7 @@ def _comment_line(line):
         return '# '+line
     else:
         return '#'
+
 
 def _strip_exception_details(msg):
     # Support for IGNORE_EXCEPTION_DETAIL.
@@ -374,6 +387,7 @@ def _strip_exception_details(msg):
     if i >= 0:
         start = i+1
     return msg[start: end]
+
 
 class _OutputRedirectingPdb(pdb.Pdb):
     """
@@ -411,6 +425,7 @@ class _OutputRedirectingPdb(pdb.Pdb):
         finally:
             sys.stdout = save_stdout
 
+
 # [XX] Normalize with respect to os.path.pardir?
 def _module_relative_path(module, test_path):
     if not inspect.ismodule(module):
@@ -445,6 +460,7 @@ def _module_relative_path(module, test_path):
 
     # Combine the base directory and the test path.
     return os.path.join(basedir, test_path)
+
 
 ######################################################################
 ## 2. Example & DocTest
@@ -526,6 +542,7 @@ class Example:
         return hash((self.source, self.want, self.lineno, self.indent,
                      self.exc_msg))
 
+
 class DocTest:
     """
     A collection of doctest examples that should be run in a single
@@ -598,6 +615,7 @@ class DocTest:
         return ((self.name, self.filename, self_lno, id(self))
                 <
                 (other.name, other.filename, other_lno, id(other)))
+
 
 ######################################################################
 ## 3. DocTestParser
@@ -1164,6 +1182,7 @@ class DocTestFinder:
         # We couldn't find the line number.
         return None
 
+
 ######################################################################
 ## 5. DocTest Runner
 ######################################################################
@@ -1483,6 +1502,7 @@ class DocTestRunner:
     __LINECACHE_FILENAME_RE = re.compile(r'<doctest '
                                          r'(?P<name>.+)'
                                          r'\[(?P<examplenum>\d+)\]>$')
+
     def __patched_linecache_getlines(self, filename, module_globals=None):
         m = self.__LINECACHE_FILENAME_RE.match(filename)
         if m and m.group('name') == self.test.name:
@@ -1819,6 +1839,7 @@ class OutputChecker:
         else:
             return 'Expected nothing\nGot nothing\n'
 
+
 class DocTestFailure(Exception):
     """A DocTest example has failed in debugging mode.
 
@@ -1838,6 +1859,7 @@ class DocTestFailure(Exception):
     def __str__(self):
         return str(self.test)
 
+
 class UnexpectedException(Exception):
     """A DocTest example has encountered an unexpected exception
 
@@ -1856,6 +1878,7 @@ class UnexpectedException(Exception):
 
     def __str__(self):
         return str(self.test)
+
 
 class DebugRunner(DocTestRunner):
     r"""Run doc tests but raise an exception as soon as there is a failure.
@@ -1960,6 +1983,7 @@ class DebugRunner(DocTestRunner):
     def report_failure(self, out, test, example, got):
         raise DocTestFailure(test, example, got)
 
+
 ######################################################################
 ## 6. Test Functions
 ######################################################################
@@ -1968,6 +1992,7 @@ class DebugRunner(DocTestRunner):
 # For backward compatibility, a global instance of a DocTestRunner
 # class, updated by testmod.
 master = None
+
 
 def testmod(m=None, name=None, globs=None, verbose=None,
             report=True, optionflags=0, extraglobs=None,
@@ -2221,11 +2246,13 @@ def run_docstring_examples(f, globs, verbose=False, name="NoName",
     for test in finder.find(f, name, globs=globs):
         runner.run(test, compileflags=compileflags)
 
+
 ######################################################################
 ## 7. Unittest Support
 ######################################################################
 
 _unittest_reportflags = 0
+
 
 def set_unittest_reportflags(flags):
     """Sets the unittest option flags.
@@ -2427,6 +2454,7 @@ class DocTestCase(unittest.TestCase):
     def shortDescription(self):
         return "Doctest: " + self._dt_test.name
 
+
 class SkipDocTestCase(DocTestCase):
     def __init__(self, module):
         self.module = module
@@ -2514,6 +2542,7 @@ def DocTestSuite(module=None, globs=None, extraglobs=None, test_finder=None,
 
     return suite
 
+
 class DocFileCase(DocTestCase):
 
     def id(self):
@@ -2526,6 +2555,7 @@ class DocFileCase(DocTestCase):
         return ('Failed doctest test for %s\n  File "%s", line 0\n\n%s'
                 % (self._dt_test.name, self._dt_test.filename, err)
                 )
+
 
 def DocFileTest(path, module_relative=True, package=None,
                 globs=None, parser=DocTestParser(),
@@ -2552,6 +2582,7 @@ def DocFileTest(path, module_relative=True, package=None,
     # Convert it to a test, and wrap it in a DocFileCase.
     test = parser.get_doctest(doc, globs, name, path, 0)
     return DocFileCase(test, **options)
+
 
 def DocFileSuite(*paths, **kw):
     """A unittest suite for one or more doctest files.
@@ -2621,6 +2652,7 @@ def DocFileSuite(*paths, **kw):
         suite.addTest(DocFileTest(path, **kw))
 
     return suite
+
 
 ######################################################################
 ## 8. Debugging Support
@@ -2708,6 +2740,7 @@ def script_from_examples(s):
     # Add a courtesy newline to prevent exec from choking (see bug #1172785)
     return '\n'.join(output) + '\n'
 
+
 def testsource(module, name):
     """Extract the test sources from a doctest docstring as a script.
 
@@ -2724,10 +2757,12 @@ def testsource(module, name):
     testsrc = script_from_examples(test.docstring)
     return testsrc
 
+
 def debug_src(src, pm=False, globs=None):
     """Debug a single doctest docstring, in argument `src`'"""
     testsrc = script_from_examples(src)
     debug_script(testsrc, pm, globs)
+
 
 def debug_script(src, pm=False, globs=None):
     "Debug a test script.  `src` is the script, as a string."
@@ -2749,6 +2784,7 @@ def debug_script(src, pm=False, globs=None):
     else:
         pdb.Pdb(nosigint=True).run("exec(%r)" % src, globs, globs)
 
+
 def debug(module, name, pm=False):
     """Debug a single doctest docstring.
 
@@ -2759,6 +2795,7 @@ def debug(module, name, pm=False):
     module = _normalize_module(module)
     testsrc = testsource(module, name)
     debug_script(testsrc, pm, module.__dict__)
+
 
 ######################################################################
 ## 9. Example Usage
@@ -2806,6 +2843,7 @@ class _TestClass:
         """
 
         return self.val
+
 
 __test__ = {"_TestClass": _TestClass,
             "string": r"""
