@@ -1414,7 +1414,7 @@ These can be used as types in annotations. They all support subscription using
    :data:`TypeGuard` as its return type to alert static type checkers to
    this intention.  ``TypeIs`` usually has more intuitive behavior than
    ``TypeGuard``, but it cannot be used when the input and output types
-   are incompatible (e.g., ``list[object]`` to ``list[int]``) and when the
+   are incompatible (e.g., ``list[object]`` to ``list[int]``) or when the
    function does not return ``True`` for all instances of the narrowed type.
 
    Using  ``-> TypeIs`` tells the static type checker that for a given
