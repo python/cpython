@@ -287,27 +287,9 @@ def _wildcard_selector(parts, include_hidden=False, recursive=False):
     filtering by pattern.
     """
     match = _compile_pattern(parts.pop(), include_hidden)
-
-    if not parts:
-        # Optimization: use os.listdir() rather than os.scandir(), because we
-        # don't need to distinguish between files and directories. We also
-        # yield results directly rather than passing them through a selector.
-        def select_last_wildcard(path, rel_path=None, dir_fd=None, exists=False):
-            close_fd = False
-            try:
-                arg, fd, close_fd = _open_dir(path, rel_path, dir_fd)
-                prefix = _add_trailing_slash(path)
-                for name in os.listdir(arg):
-                    if match is None or match(name):
-                        yield prefix + name
-            except OSError:
-                pass
-            finally:
-                if close_fd:
-                    os.close(fd)
-        return select_last_wildcard
-
-    select_next = _selector(parts, include_hidden, recursive)
+    dir_only = bool(parts)
+    if dir_only:
+        select_next = _selector(parts, include_hidden, recursive)
 
     def select_wildcard(path, rel_path=None, dir_fd=None, exists=False):
         close_fd = False
@@ -321,15 +303,20 @@ def _wildcard_selector(parts, include_hidden=False, recursive=False):
                 entries = list(scandir_it)
             for entry in entries:
                 if match is None or match(entry.name):
-                    try:
-                        if entry.is_dir():
-                            entry_path = entry.path
-                            if fd is not None:
-                                entry_path = prefix + entry_path
-                            yield from select_next(
-                                entry_path, entry.name, fd, exists=True)
-                    except OSError:
-                        pass
+                    if dir_only:
+                        try:
+                            if not entry.is_dir():
+                                continue
+                        except OSError:
+                            pass
+                    entry_path = entry.path
+                    if fd is not None:
+                        entry_path = prefix + entry_path
+                    if dir_only:
+                        yield from select_next(
+                            entry_path, entry.name, fd, exists=True)
+                    else:
+                        yield entry_path
         except OSError:
             pass
         finally:
