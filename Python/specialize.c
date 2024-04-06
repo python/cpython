@@ -2272,7 +2272,7 @@ static binary_function_entry binary_function_entry_table[] = {
 
     { NB_FLOOR_DIVIDE, _Py_TYPE_VERSION_INT, _Py_TYPE_VERSION_INT, 0, 0, 18},
 
-//    { NB_LSHIFT, _Py_TYPE_VERSION_INT, _Py_TYPE_VERSION_INT, 0, 0, 26 },
+    { NB_LSHIFT, _Py_TYPE_VERSION_INT, _Py_TYPE_VERSION_INT, 0, 0, 26 },
 
     { NB_MULTIPLY, _Py_TYPE_VERSION_INT, _Py_TYPE_VERSION_INT, 0, 0, 9},
     { NB_MULTIPLY, _Py_TYPE_VERSION_FLOAT, _Py_TYPE_VERSION_FLOAT, 10, 11, 12},
@@ -2443,61 +2443,70 @@ _Py_Specialize_BinaryOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
     }
     int left_version =  Py_TYPE(lhs)->tp_version_tag;
     int right_version = Py_TYPE(rhs)->tp_version_tag;
+    int func_index = 0;
+    if (left_version == _Py_TYPE_VERSION_STR && oparg == NB_ADD) {
+        _Py_CODEUNIT next = instr[INLINE_CACHE_ENTRIES_BINARY_OP + 1];
+        bool to_store = (next.op.code == STORE_FAST);
+        if (to_store && locals[next.op.arg] == lhs) {
+            instr->op.code = BINARY_OP_INPLACE_ADD_UNICODE;
+            goto success;
+        }
+    }
 #ifdef Py_STATS
     int original_refcounts = refcounts;
 #endif
-    int func_index = lookup_binary_function(left_version, right_version, &refcounts, oparg);
+    func_index = lookup_binary_function(left_version, right_version, &refcounts, oparg);
     assert(func_index >= 0 && func_index < 256);
     if (func_index == 0) {
         BINARY_SPECIALIZATION_FAIL(left_version, right_version, original_refcounts, oparg);
         SPECIALIZATION_FAIL(BINARY_OP, oparg);
         STAT_INC(BINARY_OP, failure);
         cache->counter = adaptive_counter_backoff(cache->counter);
+        return;
     }
-    else {
-        switch (refcounts) {
-            case REFCOUNTS_11:
-                Py_UNREACHABLE();
-                break;
-            case REFCOUNTS_1X:
+    switch (refcounts) {
+        case REFCOUNTS_11:
+            Py_UNREACHABLE();
+            break;
+        case REFCOUNTS_1X:
+            if (_Py_IsImmortal(rhs)) {
+                instr->op.code = BINARY_OP_1I;
+            }
+            else {
+                instr->op.code = BINARY_OP_1X;
+            }
+            break;
+        case REFCOUNTS_X1:
+            if (_Py_IsImmortal(lhs)) {
+                instr->op.code = BINARY_OP_I1;
+            }
+            else {
+                instr->op.code = BINARY_OP_X1;
+            }
+            break;
+        case REFCOUNTS_XX:
+            if (_Py_IsImmortal(lhs)) {
                 if (_Py_IsImmortal(rhs)) {
-                    instr->op.code = BINARY_OP_1I;
+                    instr->op.code = BINARY_OP_II;
                 }
                 else {
-                    instr->op.code = BINARY_OP_1X;
+                    instr->op.code = BINARY_OP_IX;
                 }
-                break;
-            case REFCOUNTS_X1:
-                if (_Py_IsImmortal(lhs)) {
-                    instr->op.code = BINARY_OP_I1;
-                }
-                else {
-                    instr->op.code = BINARY_OP_X1;
-                }
-                break;
-            case REFCOUNTS_XX:
-                if (_Py_IsImmortal(lhs)) {
-                    if (_Py_IsImmortal(rhs)) {
-                        instr->op.code = BINARY_OP_II;
-                    }
-                    else {
-                        instr->op.code = BINARY_OP_IX;
-                    }
+            }
+            else {
+                if (_Py_IsImmortal(rhs)) {
+                    instr->op.code = BINARY_OP_XI;
                 }
                 else {
-                    if (_Py_IsImmortal(rhs)) {
-                        instr->op.code = BINARY_OP_XI;
-                    }
-                    else {
-                        instr->op.code = BINARY_OP_XX;
-                    }
+                    instr->op.code = BINARY_OP_XX;
                 }
-                break;
-        }
-        STAT_INC(BINARY_OP, success);
-        cache->counter = adaptive_counter_cooldown();
-        cache->type_versions = (func_index << 8) | (left_version << 4) | right_version;
+            }
+            break;
     }
+success:
+    STAT_INC(BINARY_OP, success);
+    cache->counter = adaptive_counter_cooldown();
+    cache->type_versions = (func_index << 8) | (left_version << 4) | right_version;
 }
 
 
