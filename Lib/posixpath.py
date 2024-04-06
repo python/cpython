@@ -71,8 +71,6 @@ def join(a, *p):
     sep = b'/' if isinstance(a, bytes) else '/'
     path = a
     try:
-        if not p:
-            path[:0] + sep  #23780: Ensure compatible data type even if p is null.
         for b in map(os.fspath, p):
             if b.startswith(sep) or not path:  # startswith ensures no mixing
                 path = b
@@ -155,7 +153,7 @@ def splitroot(p):
     else:
         # Precisely two leading slashes, e.g.: '//foo'. Implementation defined per POSIX, see
         # https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap04.html#tag_04_13
-        return empty, p[:2], p[2:]
+        return empty, sep + sep, p[2:]
 
 
 # Return the tail (basename) part of a path, same as split(path)[1].
@@ -225,11 +223,11 @@ def expanduser(path):
     do nothing."""
     path = os.fspath(path)
     if isinstance(path, bytes):
-        tilde = b'~'
         sep = b'/'
+        tilde = b'~'
     else:
-        tilde = '~'
         sep = '/'
+        tilde = '~'
     if not path.startswith(tilde):
         return path
     i = path.find(sep, 1)
@@ -271,11 +269,8 @@ def expanduser(path):
         return path
     if isinstance(path, bytes):
         userhome = os.fsencode(userhome)
-        root = b'/'
-    else:
-        root = '/'
-    userhome = userhome.rstrip(root)
-    return (userhome + path[i:]) or root
+    userhome = userhome.rstrip(sep)
+    return (userhome + path[i:]) or sep
 
 
 # Expand paths containing shell variable substitutions.
