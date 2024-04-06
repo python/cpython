@@ -23,7 +23,7 @@ try:
 except ImportError:
     grp = None
 
-from . import _abc
+from . import _abc, _glob
 
 
 __all__ = [
@@ -111,6 +111,7 @@ class PurePath(_abc.PurePathBase):
         '_hash',
     )
     parser = os.path
+    _globber = _glob.Globber
 
     def __new__(cls, *args, **kwargs):
         """Construct a PurePath from one or several strings and or existing
@@ -454,21 +455,6 @@ class PurePath(_abc.PurePathBase):
         return prefix + quote_from_bytes(os.fsencode(path))
 
     @property
-    def _pattern_stack(self):
-        """Stack of path components, to be used with patterns in glob()."""
-        parts = self._tail.copy()
-        pattern = self._raw_path
-        if self.anchor:
-            raise NotImplementedError("Non-relative patterns are unsupported")
-        elif not parts:
-            raise ValueError("Unacceptable pattern: {!r}".format(pattern))
-        elif pattern[-1] in (self.parser.sep, self.parser.altsep):
-            # GH-65238: pathlib doesn't preserve trailing slash. Add it back.
-            parts.append('')
-        parts.reverse()
-        return parts
-
-    @property
     def _pattern_str(self):
         """The path expressed as a string, for use in pattern-matching."""
         # The string representation of an empty path is a single dot ('.'). Empty
@@ -587,13 +573,9 @@ class Path(_abc.PathBase, PurePath):
     def _scandir(self):
         return os.scandir(self)
 
-    def _direntry_str(self, entry):
-        # Transform an entry yielded from _scandir() into a path string.
-        return entry.name if str(self) == '.' else entry.path
-
     def _make_child_direntry(self, entry):
         # Transform an entry yielded from _scandir() into a path object.
-        path_str = self._direntry_str(entry)
+        path_str = entry.name if str(self) == '.' else entry.path
         path = self.with_segments(path_str)
         path._str = path_str
         path._drv = self.drive
@@ -626,8 +608,18 @@ class Path(_abc.PathBase, PurePath):
         sys.audit("pathlib.Path.glob", self, pattern)
         if not isinstance(pattern, PurePath):
             pattern = self.with_segments(pattern)
-        return _abc.PathBase.glob(
-            self, pattern, case_sensitive=case_sensitive, recurse_symlinks=recurse_symlinks)
+        if pattern.anchor:
+            raise NotImplementedError("Non-relative patterns are unsupported")
+        parts = pattern._tail.copy()
+        if not parts:
+            raise ValueError("Unacceptable pattern: {!r}".format(pattern))
+        raw = pattern._raw_path
+        if raw[-1] in (self.parser.sep, self.parser.altsep):
+            # GH-65238: pathlib doesn't preserve trailing slash. Add it back.
+            parts.append('')
+        parts.reverse()
+        select = self._glob_selector(parts, case_sensitive, recurse_symlinks)
+        return map(self.with_segments, select(str(self), exists=True))
 
     def rglob(self, pattern, *, case_sensitive=None, recurse_symlinks=False):
         """Recursively yield all existing files (of any kind, including
@@ -638,8 +630,7 @@ class Path(_abc.PathBase, PurePath):
         if not isinstance(pattern, PurePath):
             pattern = self.with_segments(pattern)
         pattern = '**' / pattern
-        return _abc.PathBase.glob(
-            self, pattern, case_sensitive=case_sensitive, recurse_symlinks=recurse_symlinks)
+        return self.glob(pattern, case_sensitive=case_sensitive, recurse_symlinks=recurse_symlinks)
 
     def walk(self, top_down=True, on_error=None, follow_symlinks=False):
         """Walk the directory tree from this directory, similar to os.walk()."""
