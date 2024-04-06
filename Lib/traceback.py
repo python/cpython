@@ -1,7 +1,5 @@
 """Extract, format and print information about Python stack traces."""
 
-import os
-import io
 import collections.abc
 import itertools
 import linecache
@@ -10,6 +8,8 @@ import textwrap
 import warnings
 from contextlib import suppress
 
+from _colorize import _ANSIColors
+
 __all__ = ['extract_stack', 'extract_tb', 'format_exception',
            'format_exception_only', 'format_list', 'format_stack',
            'format_tb', 'print_exc', 'format_exc', 'print_exception',
@@ -17,11 +17,10 @@ __all__ = ['extract_stack', 'extract_tb', 'format_exception',
            'FrameSummary', 'StackSummary', 'TracebackException',
            'walk_stack', 'walk_tb']
 
+
 #
 # Formatting and printing lists of traceback lines.
 #
-
-_COLORIZE = True
 
 def print_list(extracted_list, file=None):
     """Print the list of tuples as returned by extract_tb() or
@@ -133,33 +132,10 @@ def print_exception(exc, /, value=_sentinel, tb=_sentinel, limit=None, \
 
 BUILTIN_EXCEPTION_LIMIT = object()
 
-def _can_colorize():
-    if sys.platform == "win32":
-        try:
-            import nt
-            if not nt._supports_virtual_terminal():
-                return False
-        except (ImportError, AttributeError):
-            return False
-
-    if os.environ.get("PYTHON_COLORS") == "0":
-        return False
-    if os.environ.get("PYTHON_COLORS") == "1":
-        return True
-    if "NO_COLOR" in os.environ:
-        return False
-    if not _COLORIZE:
-        return False
-    if "FORCE_COLOR" in os.environ:
-        return True
-    if os.environ.get("TERM") == "dumb":
-        return False
-    try:
-        return os.isatty(sys.stderr.fileno())
-    except io.UnsupportedOperation:
-        return sys.stderr.isatty()
 
 def _print_exception_bltin(exc, /):
+    from _colorize import _can_colorize
+
     file = sys.stderr if sys.stderr is not None else sys.__stderr__
     colorize = _can_colorize()
     return print_exception(exc, limit=BUILTIN_EXCEPTION_LIMIT, file=file, colorize=colorize)
@@ -443,13 +419,6 @@ def _get_code_position(code, instruction_index):
 
 _RECURSIVE_CUTOFF = 3 # Also hardcoded in traceback.c.
 
-class _ANSIColors:
-    RED = '\x1b[31m'
-    BOLD_RED = '\x1b[1;31m'
-    MAGENTA = '\x1b[35m'
-    BOLD_MAGENTA = '\x1b[1;35m'
-    GREY = '\x1b[90m'
-    RESET = '\x1b[0m'
 
 class StackSummary(list):
     """A list of FrameSummary objects, representing a stack of frames."""
