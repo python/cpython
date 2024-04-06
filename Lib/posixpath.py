@@ -502,10 +502,10 @@ supports_unicode_filenames = (sys.platform == 'darwin')
 def relpath(path, start=None):
     """Return a relative version of a path"""
 
+    path = os.fspath(path)
     if not path:
         raise ValueError("no path specified")
 
-    path = os.fspath(path)
     if isinstance(path, bytes):
         curdir = b'.'
         sep = b'/'
