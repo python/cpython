@@ -3409,11 +3409,30 @@ _PyLong_Frexp(PyLongObject *a, Py_ssize_t *e)
    using the round-half-to-even rule in the case of a tie. */
 
 double
-PyLong_AsDouble(PyObject *v)
+_PyLong_AsDouble(PyLongObject *l)
 {
     Py_ssize_t exponent;
     double x;
 
+    if (_PyLong_IsCompact(l)) {
+        /* Fast path; single digit long (31 bits) will cast safely
+           to double.  This improves performance of FP/long operations
+           by 20%.
+        */
+        return (double)medium_value(l);
+    }
+    x = _PyLong_Frexp(l, &exponent);
+    if ((x == -1.0 && PyErr_Occurred()) || exponent > DBL_MAX_EXP) {
+        PyErr_SetString(PyExc_OverflowError,
+                        "int too large to convert to float");
+        return -1.0;
+    }
+    return ldexp(x, (int)exponent);
+}
+
+double
+PyLong_AsDouble(PyObject *v)
+{
     if (v == NULL) {
         PyErr_BadInternalCall();
         return -1.0;
@@ -3422,20 +3441,7 @@ PyLong_AsDouble(PyObject *v)
         PyErr_SetString(PyExc_TypeError, "an integer is required");
         return -1.0;
     }
-    if (_PyLong_IsCompact((PyLongObject *)v)) {
-        /* Fast path; single digit long (31 bits) will cast safely
-           to double.  This improves performance of FP/long operations
-           by 20%.
-        */
-        return (double)medium_value((PyLongObject *)v);
-    }
-    x = _PyLong_Frexp((PyLongObject *)v, &exponent);
-    if ((x == -1.0 && PyErr_Occurred()) || exponent > DBL_MAX_EXP) {
-        PyErr_SetString(PyExc_OverflowError,
-                        "int too large to convert to float");
-        return -1.0;
-    }
-    return ldexp(x, (int)exponent);
+    return _PyLong_AsDouble((PyLongObject *)v);
 }
 
 /* Methods */
@@ -5280,6 +5286,31 @@ long_rshift(PyObject *a, PyObject *b)
     return long_rshift1((PyLongObject *)a, wordshift, remshift);
 }
 
+/* Return a >> b. */
+PyObject *
+_PyLong_RShiftObject(PyLongObject *a, PyLongObject *b)
+{
+    if (_PyLong_IsNegative(b)) {
+        PyErr_SetString(PyExc_ValueError, "negative shift count");
+        return NULL;
+    }
+    if (_PyLong_BothAreCompact(a, b)) {
+        stwodigits shift = medium_value(b);
+        if (shift < (stwodigits)(sizeof(stwodigits) * 8)) {
+            stwodigits res = Py_ARITHMETIC_RIGHT_SHIFT(stwodigits, medium_value(a), shift);
+            return _PyLong_FromSTwoDigits(res);
+        }
+        else {
+            return _PyLong_GetZero();
+        }
+    }
+    Py_ssize_t wordshift;
+    digit remshift;
+    if (divmod_shift((PyObject *)b, &wordshift, &remshift) < 0)
+        return NULL;
+    return long_rshift1((PyLongObject *)a, wordshift, remshift);
+}
+
 /* Return a >> shiftby. */
 PyObject *
 _PyLong_Rshift(PyObject *a, size_t shiftby)
@@ -5353,6 +5384,31 @@ long_lshift(PyObject *a, PyObject *b)
         return PyLong_FromLong(0);
     }
     if (divmod_shift(b, &wordshift, &remshift) < 0)
+        return NULL;
+    return long_lshift1((PyLongObject *)a, wordshift, remshift);
+}
+
+
+/* Return a << b. */
+PyObject *
+_PyLong_LShiftObject(PyLongObject *a, PyLongObject *b)
+{
+    if (_PyLong_IsNegative(b)) {
+        PyErr_SetString(PyExc_ValueError, "negative shift count");
+        return NULL;
+    }
+    if (_PyLong_BothAreCompact(a, b)) {
+        stwodigits shift = medium_value(b);
+        /* A single digit number shifted left by up to
+         * the size of a single digit number will fit
+         * into two digits with no overflow */
+        if (shift <= (stwodigits)(sizeof(digit) * 8)) {
+            return _PyLong_FromSTwoDigits(medium_value(a) << shift);
+        }
+    }
+    Py_ssize_t wordshift;
+    digit remshift;
+    if (divmod_shift((PyObject *)b, &wordshift, &remshift) < 0)
         return NULL;
     return long_lshift1((PyLongObject *)a, wordshift, remshift);
 }
@@ -5516,6 +5572,7 @@ long_bitwise(PyLongObject *a,
 PyObject *
 _PyLong_And(PyLongObject *x, PyLongObject *y)
 {
+    assert(PyLong_Check(x) && PyLong_Check(y));
     if (_PyLong_IsCompact(x) && _PyLong_IsCompact(y)) {
         return _PyLong_FromSTwoDigits(medium_value(x) & medium_value(y));
     }
@@ -5531,12 +5588,10 @@ long_and(PyObject *a, PyObject *b)
     return _PyLong_And(x, y);
 }
 
-static PyObject *
-long_xor(PyObject *a, PyObject *b)
+PyObject *
+_PyLong_Xor(PyLongObject *x, PyLongObject *y)
 {
-    CHECK_BINOP(a, b);
-    PyLongObject *x = (PyLongObject*)a;
-    PyLongObject *y = (PyLongObject*)b;
+    assert(PyLong_Check(x) && PyLong_Check(y));
     if (_PyLong_IsCompact(x) && _PyLong_IsCompact(y)) {
         return _PyLong_FromSTwoDigits(medium_value(x) ^ medium_value(y));
     }
@@ -5544,15 +5599,27 @@ long_xor(PyObject *a, PyObject *b)
 }
 
 static PyObject *
-long_or(PyObject *a, PyObject *b)
+long_xor(PyObject *a, PyObject *b)
 {
     CHECK_BINOP(a, b);
-    PyLongObject *x = (PyLongObject*)a;
-    PyLongObject *y = (PyLongObject*)b;
+    return _PyLong_Xor((PyLongObject*)a, (PyLongObject*)b);
+}
+
+PyObject *
+_PyLong_Or(PyLongObject *x, PyLongObject *y)
+{
+    assert(PyLong_Check(x) && PyLong_Check(y));
     if (_PyLong_IsCompact(x) && _PyLong_IsCompact(y)) {
         return _PyLong_FromSTwoDigits(medium_value(x) | medium_value(y));
     }
     return long_bitwise(x, '|', y);
+}
+
+static PyObject *
+long_or(PyObject *a, PyObject *b)
+{
+    CHECK_BINOP(a, b);
+    return _PyLong_Or((PyLongObject*)a, (PyLongObject*)b);
 }
 
 static PyObject *

@@ -2118,18 +2118,24 @@ typedef struct {
 static inline double
 float_add(PyObject *left, PyObject *right)
 {
+    assert(PyFloat_CheckExact(left));
+    assert(PyFloat_CheckExact(right));
     return PyFloat_AS_DOUBLE(left) + PyFloat_AS_DOUBLE(right);
 }
 
 static inline double
 float_sub(PyObject *left, PyObject *right)
 {
+    assert(PyFloat_CheckExact(left));
+    assert(PyFloat_CheckExact(right));
     return PyFloat_AS_DOUBLE(left) - PyFloat_AS_DOUBLE(right);
 }
 
 static inline double
 float_mult(PyObject *left, PyObject *right)
 {
+    assert(PyFloat_CheckExact(left));
+    assert(PyFloat_CheckExact(right));
     return PyFloat_AS_DOUBLE(left) * PyFloat_AS_DOUBLE(right);
 }
 
@@ -2193,24 +2199,138 @@ binary_sub_float_float_x1(PyObject *left, PyObject *right)
     return right;
 }
 
+static PyObject *
+binary_add_float_int_xx(PyObject *left, PyObject *right)
+{
+    assert(PyFloat_CheckExact(left));
+    assert(PyLong_CheckExact(right));
+    double dleft = PyFloat_AS_DOUBLE(left);
+    double dright = _PyLong_AsDouble((PyLongObject *)right);
+    return PyFloat_FromDouble(dleft + dright);
+}
+
+static PyObject *
+binary_add_int_float_xx(PyObject *left, PyObject *right)
+{
+    assert(PyLong_CheckExact(left));
+    assert(PyFloat_CheckExact(right));
+    double dleft = _PyLong_AsDouble((PyLongObject *)left);
+    double dright = PyFloat_AS_DOUBLE(right);
+    return PyFloat_FromDouble(dleft + dright);
+}
+
+static PyObject *
+binary_sub_float_int_xx(PyObject *left, PyObject *right)
+{
+    assert(PyFloat_CheckExact(left));
+    assert(PyLong_CheckExact(right));
+    double dleft = PyFloat_AS_DOUBLE(left);
+    double dright = _PyLong_AsDouble((PyLongObject *)right);
+    return PyFloat_FromDouble(dleft - dright);
+}
+
+static PyObject *
+binary_sub_int_float_xx(PyObject *left, PyObject *right)
+{
+    assert(PyLong_CheckExact(left));
+    assert(PyFloat_CheckExact(right));
+    double dleft = _PyLong_AsDouble((PyLongObject *)left);
+    double dright = PyFloat_AS_DOUBLE(right);
+    return PyFloat_FromDouble(dleft - dright);
+}
+
+static PyObject *
+binary_mult_float_int_xx(PyObject *left, PyObject *right)
+{
+    assert(PyFloat_CheckExact(left));
+    assert(PyLong_CheckExact(right));
+    double dleft = PyFloat_AS_DOUBLE(left);
+    double dright = _PyLong_AsDouble((PyLongObject *)right);
+    return PyFloat_FromDouble(dleft * dright);
+}
+
+static PyObject *
+binary_mult_int_float_xx(PyObject *left, PyObject *right)
+{
+    assert(PyLong_CheckExact(left));
+    assert(PyFloat_CheckExact(right));
+    double dleft = _PyLong_AsDouble((PyLongObject *)left);
+    double dright = PyFloat_AS_DOUBLE(right);
+    return PyFloat_FromDouble(dleft * dright);
+}
+
+/* Must be sorted by operator */
 static binary_function_entry binary_function_entry_table[] = {
     { NB_ADD, _Py_TYPE_VERSION_INT, _Py_TYPE_VERSION_INT, 1, 2, 3},
     { NB_ADD, _Py_TYPE_VERSION_FLOAT, _Py_TYPE_VERSION_FLOAT, 4, 5, 6},
-    { NB_INPLACE_ADD, _Py_TYPE_VERSION_INT, _Py_TYPE_VERSION_INT, 1, 2, 3},
-    { NB_INPLACE_ADD, _Py_TYPE_VERSION_FLOAT, _Py_TYPE_VERSION_FLOAT, 4, 5, 6},
+    { NB_ADD, _Py_TYPE_VERSION_STR, _Py_TYPE_VERSION_STR, 0, 0, 16},
+    { NB_ADD, _Py_TYPE_VERSION_LIST, _Py_TYPE_VERSION_LIST, 0, 0, 17},
+    { NB_ADD, _Py_TYPE_VERSION_INT, _Py_TYPE_VERSION_FLOAT, 0, 0, 20},
+    { NB_ADD, _Py_TYPE_VERSION_FLOAT, _Py_TYPE_VERSION_INT, 0, 0, 19},
+
     { NB_AND, _Py_TYPE_VERSION_INT, _Py_TYPE_VERSION_INT, 0, 0, 7},
-    { NB_SUBTRACT, _Py_TYPE_VERSION_INT, _Py_TYPE_VERSION_INT, 0, 0, 8},
+
+    { NB_FLOOR_DIVIDE, _Py_TYPE_VERSION_INT, _Py_TYPE_VERSION_INT, 0, 0, 18},
+
+//    { NB_LSHIFT, _Py_TYPE_VERSION_INT, _Py_TYPE_VERSION_INT, 0, 0, 26 },
+
     { NB_MULTIPLY, _Py_TYPE_VERSION_INT, _Py_TYPE_VERSION_INT, 0, 0, 9},
     { NB_MULTIPLY, _Py_TYPE_VERSION_FLOAT, _Py_TYPE_VERSION_FLOAT, 10, 11, 12},
+    { NB_MULTIPLY, _Py_TYPE_VERSION_FLOAT, _Py_TYPE_VERSION_INT, 0, 0, 23},
+    { NB_MULTIPLY, _Py_TYPE_VERSION_INT, _Py_TYPE_VERSION_FLOAT, 0, 0, 24},
+
+    { NB_REMAINDER, _Py_TYPE_VERSION_STR, _Py_TYPE_VERSION_TUPLE, 0, 0, 28 },
+    { NB_REMAINDER, _Py_TYPE_VERSION_STR, _Py_TYPE_VERSION_DICT, 0, 0, 28 },
+    { NB_REMAINDER, _Py_TYPE_VERSION_STR, _Py_TYPE_VERSION_STR, 0, 0, 28 },
+    { NB_REMAINDER, _Py_TYPE_VERSION_STR, _Py_TYPE_VERSION_INT, 0, 0, 28 },
+
+    { NB_OR, _Py_TYPE_VERSION_INT, _Py_TYPE_VERSION_INT, 0, 0, 25 },
+
+    { NB_RSHIFT, _Py_TYPE_VERSION_INT, _Py_TYPE_VERSION_INT, 0, 0, 27 },
+
+    { NB_SUBTRACT, _Py_TYPE_VERSION_INT, _Py_TYPE_VERSION_INT, 0, 0, 8},
+    { NB_SUBTRACT, _Py_TYPE_VERSION_FLOAT, _Py_TYPE_VERSION_INT, 0, 0, 21},
+    { NB_SUBTRACT, _Py_TYPE_VERSION_FLOAT, _Py_TYPE_VERSION_FLOAT, 13, 14, 15},
+    { NB_SUBTRACT, _Py_TYPE_VERSION_INT, _Py_TYPE_VERSION_FLOAT, 0, 0, 22},
+
+    { NB_XOR, _Py_TYPE_VERSION_INT, _Py_TYPE_VERSION_INT, 0, 0, 29 },
+
+
+    { NB_INPLACE_ADD, _Py_TYPE_VERSION_STR, _Py_TYPE_VERSION_STR, 0, 0, 16},
+    { NB_INPLACE_ADD, _Py_TYPE_VERSION_INT, _Py_TYPE_VERSION_INT, 1, 2, 3},
+    { NB_INPLACE_ADD, _Py_TYPE_VERSION_FLOAT, _Py_TYPE_VERSION_FLOAT, 4, 5, 6},
+    { NB_INPLACE_ADD, _Py_TYPE_VERSION_FLOAT, _Py_TYPE_VERSION_INT, 0, 0, 19},
+    { NB_INPLACE_ADD, _Py_TYPE_VERSION_INT, _Py_TYPE_VERSION_FLOAT, 0, 0, 20},
+
+    { NB_INPLACE_AND, _Py_TYPE_VERSION_INT, _Py_TYPE_VERSION_INT, 0, 0, 7},
+
+    { NB_INPLACE_FLOOR_DIVIDE, _Py_TYPE_VERSION_INT, _Py_TYPE_VERSION_INT, 0, 0, 18},
+
+    { NB_INPLACE_LSHIFT, _Py_TYPE_VERSION_INT, _Py_TYPE_VERSION_INT, 0, 0, 26 },
+
     { NB_INPLACE_MULTIPLY, _Py_TYPE_VERSION_INT, _Py_TYPE_VERSION_INT, 0, 0, 9},
     { NB_INPLACE_MULTIPLY, _Py_TYPE_VERSION_FLOAT, _Py_TYPE_VERSION_FLOAT, 10, 11, 12},
-    { NB_SUBTRACT, _Py_TYPE_VERSION_FLOAT, _Py_TYPE_VERSION_FLOAT, 13, 14, 15},
+    { NB_INPLACE_MULTIPLY, _Py_TYPE_VERSION_FLOAT, _Py_TYPE_VERSION_INT, 0, 0, 23},
+    { NB_INPLACE_MULTIPLY, _Py_TYPE_VERSION_INT, _Py_TYPE_VERSION_FLOAT, 0, 0, 24},
+
+    { NB_INPLACE_REMAINDER, _Py_TYPE_VERSION_STR, _Py_TYPE_VERSION_STR, 0, 0, 28 },
+    { NB_INPLACE_REMAINDER, _Py_TYPE_VERSION_STR, _Py_TYPE_VERSION_INT, 0, 0, 28 },
+    { NB_INPLACE_REMAINDER, _Py_TYPE_VERSION_STR, _Py_TYPE_VERSION_DICT, 0, 0, 28 },
+    { NB_INPLACE_REMAINDER, _Py_TYPE_VERSION_STR, _Py_TYPE_VERSION_TUPLE, 0, 0, 28 },
+
+    { NB_INPLACE_OR, _Py_TYPE_VERSION_INT, _Py_TYPE_VERSION_INT, 0, 0, 25 },
+
+    { NB_INPLACE_RSHIFT, _Py_TYPE_VERSION_INT, _Py_TYPE_VERSION_INT, 0, 0, 27 },
+
+    { NB_INPLACE_SUBTRACT, _Py_TYPE_VERSION_INT, _Py_TYPE_VERSION_INT, 0, 0, 8},
     { NB_INPLACE_SUBTRACT, _Py_TYPE_VERSION_FLOAT, _Py_TYPE_VERSION_FLOAT, 13, 14, 15},
-    { NB_ADD, _Py_TYPE_VERSION_STR, _Py_TYPE_VERSION_STR, 0, 0, 16},
-    { NB_INPLACE_ADD, _Py_TYPE_VERSION_STR, _Py_TYPE_VERSION_STR, 0, 0, 16},
-    { NB_ADD, _Py_TYPE_VERSION_LIST, _Py_TYPE_VERSION_LIST, 0, 0, 17},
-    { NB_FLOOR_DIVIDE, _Py_TYPE_VERSION_INT, _Py_TYPE_VERSION_INT, 0, 0, 18},
-    { NB_INPLACE_FLOOR_DIVIDE, _Py_TYPE_VERSION_INT, _Py_TYPE_VERSION_INT, 0, 0, 18},
+    { NB_INPLACE_SUBTRACT, _Py_TYPE_VERSION_FLOAT, _Py_TYPE_VERSION_INT, 0, 0, 21},
+    { NB_INPLACE_SUBTRACT, _Py_TYPE_VERSION_INT, _Py_TYPE_VERSION_FLOAT, 0, 0, 22},
+
+    { NB_INPLACE_XOR, _Py_TYPE_VERSION_INT, _Py_TYPE_VERSION_INT, 0, 0, 29 },
+
+    /* Sentinel */
+    { NB_OPARG_LAST + 1 }
 };
 
 const binaryfunc _Py_BinaryFunctionTable[] = {
@@ -2224,15 +2344,26 @@ const binaryfunc _Py_BinaryFunctionTable[] = {
     [7] = (binaryfunc)_PyLong_And,
     [8] = (binaryfunc)_PyLong_Subtract,
     [9] = (binaryfunc)_PyLong_Multiply,
-    [10] = (binaryfunc)binary_mult_float_float_1x,
-    [11] = (binaryfunc)binary_mult_float_float_x1,
-    [12] = (binaryfunc)binary_mult_float_float_xx,
-    [13] = (binaryfunc)binary_sub_float_float_1x,
-    [14] = (binaryfunc)binary_sub_float_float_x1,
-    [15] = (binaryfunc)binary_sub_float_float_xx,
+    [10] = binary_mult_float_float_1x,
+    [11] = binary_mult_float_float_x1,
+    [12] = binary_mult_float_float_xx,
+    [13] = binary_sub_float_float_1x,
+    [14] = binary_sub_float_float_x1,
+    [15] = binary_sub_float_float_xx,
     [16] = PyUnicode_Concat,
     [17] = (binaryfunc)_PyList_Concat,
     [18] = (binaryfunc)_PyLong_FloorDiv,
+    [19] = binary_add_float_int_xx,
+    [20] = binary_add_int_float_xx,
+    [21] = binary_sub_float_int_xx,
+    [22] = binary_sub_int_float_xx,
+    [23] = binary_mult_float_int_xx,
+    [24] = binary_mult_int_float_xx,
+    [25] = (binaryfunc)_PyLong_Or,
+    [26] = (binaryfunc)_PyLong_LShiftObject,
+    [27] = (binaryfunc)_PyLong_RShiftObject,
+    [28] = PyUnicode_Format,
+    [29] = (binaryfunc)_PyLong_Xor,
 };
 
 static int
@@ -2244,9 +2375,16 @@ lookup_binary_function(int left_version, int right_version, int *refcounts, int 
     if (right_version >= _Py_TYPE_VERSIONS_PREALLOCATED) {
         return 0;
     }
-    for (int i = 0; i < (int)Py_ARRAY_LENGTH(binary_function_entry_table); i++) {
+    /* Skip a few entries for larger opargs */
+    int i = oparg;
+    assert(binary_function_entry_table[i].oparg < oparg || i == 0);
+    while (binary_function_entry_table[i].oparg < oparg) {
+        i++;
+    }
+    assert(binary_function_entry_table[i].oparg >= oparg);
+    for (; binary_function_entry_table[i].oparg == oparg; i++) {
         binary_function_entry *entry = &binary_function_entry_table[i];
-        if (entry->oparg == oparg && entry->left == left_version && entry->right == right_version) {
+        if (entry->left == left_version && entry->right == right_version) {
             switch (*refcounts) {
                 case REFCOUNTS_11:
                     if (entry->index_1x != 0) {
@@ -2273,6 +2411,8 @@ lookup_binary_function(int left_version, int right_version, int *refcounts, int 
             return entry->index_xx;
         }
     }
+    assert(i < (int)Py_ARRAY_LENGTH(binary_function_entry_table));
+    assert(binary_function_entry_table[i].oparg > oparg);
     return 0;
 }
 
