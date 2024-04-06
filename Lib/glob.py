@@ -403,6 +403,9 @@ class _Globber:
                 # avoid exhausting file descriptors when globbing deep trees.
                 with self.scandir(path) as scandir_it:
                     entries = list(scandir_it)
+            except OSError:
+                pass
+            else:
                 for entry in entries:
                     if match is None or match(entry.name):
                         if dir_only:
@@ -416,8 +419,6 @@ class _Globber:
                             yield from select_next(entry_path, exists=True)
                         else:
                             yield entry_path
-            except OSError:
-                pass
         return select_wildcard
 
     def recursive_selector(self, part, parts):
