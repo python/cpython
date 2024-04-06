@@ -131,9 +131,9 @@ class TestFcntl(unittest.TestCase):
             fcntl.fcntl(BadFile(INT_MIN - 1), fcntl.F_SETFL, os.O_NONBLOCK)
 
     @unittest.skipIf(
-        platform.machine().startswith(("arm", "aarch"))
-        and platform.system() in ("Linux", "Android"),
-        "ARM Linux returns EINVAL for F_NOTIFY DN_MULTISHOT")
+        (platform.machine().startswith("arm") and platform.system() == "Linux")
+        or platform.system() == "Android",
+        "this platform returns EINVAL for F_NOTIFY DN_MULTISHOT")
     def test_fcntl_64_bit(self):
         # Issue #1309352: fcntl shouldn't fail when the third arg fits in a
         # C 'long' but not in a C 'int'.
