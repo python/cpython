@@ -1417,15 +1417,14 @@ These can be used as types in annotations. They all support subscription using
    are incompatible (e.g., ``list[object]`` to ``list[int]``) or when the
    function does not return ``True`` for all instances of the narrowed type.
 
-   Using  ``-> TypeIs`` tells the static type checker that for a given
+   Using  ``-> TypeIs[NarrowedType]`` tells the static type checker that for a given
    function:
 
    1. The return value is a boolean.
    2. If the return value is ``True``, the type of its argument
-      is the intersection of the argument's original type and the
-      type inside ``TypeIs``.
+      is the intersection of the argument's original type and ``NarrowedType``.
    3. If the return value is ``False``, the type of its argument
-      is narrowed to exclude the type inside ``TypeIs``.
+      is narrowed to exclude ``NarrowedType``.
 
    For example::
 
