@@ -1032,7 +1032,7 @@ class DocTestFinder:
         # Look for tests in a module's contained objects.
         if inspect.ismodule(obj) and self._recurse:
             for valname, val in obj.__dict__.items():
-                valname = f'{name}.{valname}'
+                valname = '%s.%s' % (name, valname)
 
                 # Recurse to functions & classes.
                 if ((self._is_routine(val) or inspect.isclass(val)) and
@@ -1053,7 +1053,7 @@ class DocTestFinder:
                                      "must be strings, functions, methods, "
                                      "classes, or modules: %r" %
                                      (type(val),))
-                valname = f'{name}.__test__.{valname}'
+                valname = '%s.__test__.%s' % (name, valname)
                 self._find(tests, val, valname, module, source_lines,
                            globs, seen)
 
@@ -1068,7 +1068,7 @@ class DocTestFinder:
                 if ((inspect.isroutine(val) or inspect.isclass(val) or
                       isinstance(val, property)) and
                       self._from_module(module, val)):
-                    valname = f'{name}.{valname}'
+                    valname = '%s.%s' % (name, valname)
                     self._find(tests, val, valname, module, source_lines,
                                globs, seen)
 
@@ -1316,7 +1316,7 @@ class DocTestRunner:
             out.append('File "%s", line %s, in %s' %
                        (test.filename, lineno, test.name))
         else:
-            out.append(f'Line {example.lineno+1}, in {test.name}')
+            out.append('Line %s, in %s' % (example.lineno+1, test.name))
         out.append('Failed example:')
         source = example.source
         out.append(_indent(source))
@@ -1809,7 +1809,7 @@ class OutputChecker:
         # If we're not using diff, then simply list the expected
         # output followed by the actual output.
         if want and got:
-            return f'Expected:\n{_indent(want)}Got:\n{_indent(got)}'
+            return 'Expected:\n%sGot:\n%s' % (_indent(want), _indent(got))
         elif want:
             return 'Expected:\n%sGot nothing\n' % _indent(want)
         elif got:
@@ -2044,7 +2044,7 @@ def testmod(m=None, name=None, globs=None, verbose=None,
 
     # Check that we were actually given a module.
     if not inspect.ismodule(m):
-        raise TypeError(f"testmod: module required; {m!r}")
+        raise TypeError("testmod: module required; %r" % (m,))
 
     # If no name was given, then use the module's name.
     if name is None:
@@ -2418,7 +2418,7 @@ class DocTestCase(unittest.TestCase):
 
     def __repr__(self):
         name = self._dt_test.name.split('.')
-        return f"{name[-1]} ({'.'.join(name[:-1])})"
+        return "%s (%s)" % (name[-1], '.'.join(name[:-1]))
 
     __str__ = object.__str__
 

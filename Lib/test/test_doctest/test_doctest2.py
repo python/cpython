@@ -120,14 +120,13 @@ class Test(unittest.TestCase):
         _colorize.COLORIZE = self.colorize
 
     def test_testmod(self):
-        import doctest
-        import sys
+        import doctest, sys
         EXPECTED = 19
         f, t = doctest.testmod(sys.modules[__name__])
         if f:
-            self.fail(f"{f} of {t} doctests failed")
+            self.fail("%d of %d doctests failed" % (f, t))
         if t != EXPECTED:
-            self.fail(f"expected {EXPECTED} tests to run, not {t}")
+            self.fail("expected %d tests to run, not %d" % (EXPECTED, t))
 
 
 # Pollute the namespace with a bunch of imported functions and classes,
