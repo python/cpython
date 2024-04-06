@@ -1861,7 +1861,7 @@ type_call(PyObject *self, PyObject *args, PyObject *kwds)
 PyObject *
 _PyType_NewManagedObject(PyTypeObject *type)
 {
-    assert(type->tp_flags & Py_TPFLAGS_MANAGED_DICT);
+    assert(type->tp_flags & Py_TPFLAGS_INLINE_VALUES);
     assert(_PyType_IS_GC(type));
     assert(type->tp_new == PyBaseObject_Type.tp_new);
     assert(type->tp_alloc == PyType_GenericAlloc);
@@ -1869,11 +1869,6 @@ _PyType_NewManagedObject(PyTypeObject *type)
     PyObject *obj = PyType_GenericAlloc(type, 0);
     if (obj == NULL) {
         return PyErr_NoMemory();
-    }
-    _PyObject_DictOrValuesPointer(obj)->dict = NULL;
-    if (_PyObject_InitInlineValues(obj, type)) {
-        Py_DECREF(obj);
-        return NULL;
     }
     return obj;
 }
@@ -1888,9 +1883,13 @@ _PyType_AllocNoTrack(PyTypeObject *type, Py_ssize_t nitems)
      * flag to indicate when that is safe) it does not seem worth the memory
      * savings. An example type that doesn't need the +1 is a subclass of
      * tuple. See GH-100659 and GH-81381. */
-    const size_t size = _PyObject_VAR_SIZE(type, nitems+1);
+    size_t size = _PyObject_VAR_SIZE(type, nitems+1);
 
     const size_t presize = _PyType_PreHeaderSize(type);
+    if (type->tp_flags & Py_TPFLAGS_INLINE_VALUES) {
+        assert(type->tp_itemsize == 0);
+        size += _PyInlineValuesSize(type);
+    }
     char *alloc = _PyObject_MallocWithType(type, size + presize);
     if (alloc  == NULL) {
         return PyErr_NoMemory();
@@ -1910,6 +1909,9 @@ _PyType_AllocNoTrack(PyTypeObject *type, Py_ssize_t nitems)
     }
     else {
         _PyObject_InitVar((PyVarObject *)obj, type, nitems);
+    }
+    if (type->tp_flags & Py_TPFLAGS_INLINE_VALUES) {
+        _PyObject_InitInlineValues(obj, type);
     }
     return obj;
 }
@@ -2059,6 +2061,10 @@ subtype_clear(PyObject *self)
     if (type->tp_flags & Py_TPFLAGS_MANAGED_DICT) {
         if ((base->tp_flags & Py_TPFLAGS_MANAGED_DICT) == 0) {
             PyObject_ClearManagedDict(self);
+        }
+        else {
+            assert((base->tp_flags & Py_TPFLAGS_INLINE_VALUES) ==
+                   (type->tp_flags & Py_TPFLAGS_INLINE_VALUES));
         }
     }
     else if (type->tp_dictoffset != base->tp_dictoffset) {
@@ -2210,14 +2216,7 @@ subtype_dealloc(PyObject *self)
 
     /* If we added a dict, DECREF it, or free inline values. */
     if (type->tp_flags & Py_TPFLAGS_MANAGED_DICT) {
-        PyDictOrValues *dorv_ptr = _PyObject_DictOrValuesPointer(self);
-        if (_PyDictOrValues_IsValues(*dorv_ptr)) {
-            _PyObject_FreeInstanceAttributes(self);
-        }
-        else {
-            Py_XDECREF(_PyDictOrValues_GetDict(*dorv_ptr));
-        }
-        dorv_ptr->values = NULL;
+        PyObject_ClearManagedDict(self);
     }
     else if (type->tp_dictoffset && !base->tp_dictoffset) {
         PyObject **dictptr = _PyObject_ComputedDictPointer(self);
@@ -2341,14 +2340,7 @@ is_subtype_with_mro(PyObject *a_mro, PyTypeObject *a, PyTypeObject *b)
 int
 PyType_IsSubtype(PyTypeObject *a, PyTypeObject *b)
 {
-#ifdef Py_GIL_DISABLED
-    PyObject *mro = _PyType_GetMRO(a);
-    int res = is_subtype_with_mro(mro, a, b);
-    Py_XDECREF(mro);
-    return res;
-#else
-    return is_subtype_with_mro(lookup_tp_mro(a), a, b);
-#endif
+    return is_subtype_with_mro(a->tp_mro, a, b);
 }
 
 /* Routines to do a method lookup in the type without looking in the
@@ -3168,19 +3160,26 @@ subtype_setdict(PyObject *obj, PyObject *value, void *context)
         return func(descr, obj, value);
     }
     /* Almost like PyObject_GenericSetDict, but allow __dict__ to be deleted. */
-    dictptr = _PyObject_GetDictPtr(obj);
-    if (dictptr == NULL) {
-        PyErr_SetString(PyExc_AttributeError,
-                        "This object has no __dict__");
-        return -1;
-    }
     if (value != NULL && !PyDict_Check(value)) {
         PyErr_Format(PyExc_TypeError,
                      "__dict__ must be set to a dictionary, "
                      "not a '%.200s'", Py_TYPE(value)->tp_name);
         return -1;
     }
-    Py_XSETREF(*dictptr, Py_XNewRef(value));
+    if (Py_TYPE(obj)->tp_flags & Py_TPFLAGS_MANAGED_DICT) {
+        PyObject_ClearManagedDict(obj);
+        _PyObject_ManagedDictPointer(obj)->dict = (PyDictObject *)Py_XNewRef(value);
+    }
+    else {
+        dictptr = _PyObject_ComputedDictPointer(obj);
+        if (dictptr == NULL) {
+            PyErr_SetString(PyExc_AttributeError,
+                            "This object has no __dict__");
+            return -1;
+        }
+        Py_CLEAR(*dictptr);
+        *dictptr = Py_XNewRef(value);
+    }
     return 0;
 }
 
@@ -5856,10 +5855,6 @@ object_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     if (obj == NULL) {
         return NULL;
     }
-    if (_PyObject_InitializeDict(obj)) {
-        Py_DECREF(obj);
-        return NULL;
-    }
     return obj;
 }
 
@@ -6043,6 +6038,11 @@ compatible_for_assignment(PyTypeObject* oldto, PyTypeObject* newto, const char* 
          !same_slots_added(newbase, oldbase))) {
         goto differs;
     }
+    if ((oldto->tp_flags & Py_TPFLAGS_INLINE_VALUES) !=
+        ((newto->tp_flags & Py_TPFLAGS_INLINE_VALUES)))
+    {
+        goto differs;
+    }
     /* The above does not check for the preheader */
     if ((oldto->tp_flags & Py_TPFLAGS_PREHEADER) ==
         ((newto->tp_flags & Py_TPFLAGS_PREHEADER)))
@@ -6144,14 +6144,18 @@ object_set_class(PyObject *self, PyObject *value, void *closure)
     if (compatible_for_assignment(oldto, newto, "__class__")) {
         /* Changing the class will change the implicit dict keys,
          * so we must materialize the dictionary first. */
-        assert((oldto->tp_flags & Py_TPFLAGS_PREHEADER) == (newto->tp_flags & Py_TPFLAGS_PREHEADER));
-        _PyObject_GetDictPtr(self);
-        if (oldto->tp_flags & Py_TPFLAGS_MANAGED_DICT &&
-            _PyDictOrValues_IsValues(*_PyObject_DictOrValuesPointer(self)))
-        {
-            /* Was unable to convert to dict */
-            PyErr_NoMemory();
-            return -1;
+        if (oldto->tp_flags & Py_TPFLAGS_INLINE_VALUES) {
+            PyDictObject *dict = _PyObject_ManagedDictPointer(self)->dict;
+            if (dict == NULL) {
+                dict = (PyDictObject *)_PyObject_MakeDictFromInstanceAttributes(self);
+                if (dict == NULL) {
+                    return -1;
+                }
+                _PyObject_ManagedDictPointer(self)->dict = dict;
+            }
+            if (_PyDict_DetachFromObject(dict, self)) {
+                return -1;
+            }
         }
         if (newto->tp_flags & Py_TPFLAGS_HEAPTYPE) {
             Py_INCREF(newto);
@@ -7781,6 +7785,9 @@ type_ready_managed_dict(PyTypeObject *type)
             return -1;
         }
     }
+    if (type->tp_itemsize == 0 && type->tp_basicsize == sizeof(PyObject)) {
+        type->tp_flags |= Py_TPFLAGS_INLINE_VALUES;
+    }
     return 0;
 }
 
@@ -7908,6 +7915,8 @@ PyType_Ready(PyTypeObject *type)
     /* Historically, all static types were immutable. See bpo-43908 */
     if (!(type->tp_flags & Py_TPFLAGS_HEAPTYPE)) {
         type->tp_flags |= Py_TPFLAGS_IMMUTABLETYPE;
+        /* Static types must be immortal */
+        _Py_SetImmortalUntracked((PyObject *)type);
     }
 
     int res;
@@ -7954,6 +7963,7 @@ _PyStaticType_InitBuiltin(PyInterpreterState *interp, PyTypeObject *self)
     res = type_ready(self, !ismain);
     END_TYPE_LOCK()
     if (res < 0) {
+        _PyStaticType_ClearWeakRefs(interp, self);
         static_builtin_state_clear(interp, self);
     }
     return res;

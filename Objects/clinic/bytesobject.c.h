@@ -652,6 +652,108 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(bytes_startswith__doc__,
+"startswith($self, prefix[, start[, end]], /)\n"
+"--\n"
+"\n"
+"Return True if the bytes starts with the specified prefix, False otherwise.\n"
+"\n"
+"  prefix\n"
+"    A bytes or a tuple of bytes to try.\n"
+"  start\n"
+"    Optional start position. Default: start of the bytes.\n"
+"  end\n"
+"    Optional stop position. Default: end of the bytes.");
+
+#define BYTES_STARTSWITH_METHODDEF    \
+    {"startswith", _PyCFunction_CAST(bytes_startswith), METH_FASTCALL, bytes_startswith__doc__},
+
+static PyObject *
+bytes_startswith_impl(PyBytesObject *self, PyObject *subobj,
+                      Py_ssize_t start, Py_ssize_t end);
+
+static PyObject *
+bytes_startswith(PyBytesObject *self, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *subobj;
+    Py_ssize_t start = 0;
+    Py_ssize_t end = PY_SSIZE_T_MAX;
+
+    if (!_PyArg_CheckPositional("startswith", nargs, 1, 3)) {
+        goto exit;
+    }
+    subobj = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    if (!_PyEval_SliceIndex(args[1], &start)) {
+        goto exit;
+    }
+    if (nargs < 3) {
+        goto skip_optional;
+    }
+    if (!_PyEval_SliceIndex(args[2], &end)) {
+        goto exit;
+    }
+skip_optional:
+    return_value = bytes_startswith_impl(self, subobj, start, end);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(bytes_endswith__doc__,
+"endswith($self, suffix[, start[, end]], /)\n"
+"--\n"
+"\n"
+"Return True if the bytes ends with the specified suffix, False otherwise.\n"
+"\n"
+"  suffix\n"
+"    A bytes or a tuple of bytes to try.\n"
+"  start\n"
+"    Optional start position. Default: start of the bytes.\n"
+"  end\n"
+"    Optional stop position. Default: end of the bytes.");
+
+#define BYTES_ENDSWITH_METHODDEF    \
+    {"endswith", _PyCFunction_CAST(bytes_endswith), METH_FASTCALL, bytes_endswith__doc__},
+
+static PyObject *
+bytes_endswith_impl(PyBytesObject *self, PyObject *subobj, Py_ssize_t start,
+                    Py_ssize_t end);
+
+static PyObject *
+bytes_endswith(PyBytesObject *self, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *subobj;
+    Py_ssize_t start = 0;
+    Py_ssize_t end = PY_SSIZE_T_MAX;
+
+    if (!_PyArg_CheckPositional("endswith", nargs, 1, 3)) {
+        goto exit;
+    }
+    subobj = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    if (!_PyEval_SliceIndex(args[1], &start)) {
+        goto exit;
+    }
+    if (nargs < 3) {
+        goto skip_optional;
+    }
+    if (!_PyEval_SliceIndex(args[2], &end)) {
+        goto exit;
+    }
+skip_optional:
+    return_value = bytes_endswith_impl(self, subobj, start, end);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(bytes_decode__doc__,
 "decode($self, /, encoding=\'utf-8\', errors=\'strict\')\n"
 "--\n"
@@ -1029,4 +1131,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=8a49dbbd78914a6f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f2b10ccd2e3155c3 input=a9049054013a1b77]*/

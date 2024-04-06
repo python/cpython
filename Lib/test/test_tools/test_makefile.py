@@ -35,15 +35,24 @@ class TestMakefile(unittest.TestCase):
                     result.append(line.replace('\\', '').strip())
         return result
 
+    @unittest.skipUnless(support.TEST_MODULES_ENABLED, "requires test modules")
     def test_makefile_test_folders(self):
         test_dirs = self.list_test_dirs()
         idle_test = 'idlelib/idle_test'
         self.assertIn(idle_test, test_dirs)
 
         used = [idle_test]
-        for dirpath, _, _ in os.walk(support.TEST_HOME_DIR):
+        for dirpath, dirs, files in os.walk(support.TEST_HOME_DIR):
             dirname = os.path.basename(dirpath)
-            if dirname == '__pycache__':
+            # Skip temporary dirs:
+            if dirname == '__pycache__' or dirname.startswith('.'):
+                dirs.clear()  # do not process subfolders
+                continue
+            # Skip empty dirs:
+            if not dirs and not files:
+                continue
+            # Skip dirs with hidden-only files:
+            if files and all(filename.startswith('.') for filename in files):
                 continue
 
             relpath = os.path.relpath(dirpath, support.STDLIB_DIR)
