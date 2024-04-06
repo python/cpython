@@ -782,7 +782,11 @@ supports_unicode_filenames = True
 
 def relpath(path, start=None):
     """Return a relative version of a path"""
+
     path = os.fspath(path)
+    if not path:
+        raise ValueError("no path specified")
+
     if isinstance(path, bytes):
         sep = b'\\'
         curdir = b'.'
@@ -794,11 +798,9 @@ def relpath(path, start=None):
 
     if start is None:
         start = curdir
+    else:
+        start = os.fspath(start)
 
-    if not path:
-        raise ValueError("no path specified")
-
-    start = os.fspath(start)
     try:
         start_abs = abspath(normpath(start))
         path_abs = abspath(normpath(path))
