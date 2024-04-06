@@ -17,6 +17,8 @@ import tempfile
 import types
 import contextlib
 
+import _colorize  # used in doctests
+
 
 if not support.has_subprocess_support:
     raise unittest.SkipTest("test_CLI requires subprocess support.")
@@ -466,7 +468,7 @@ We'll simulate a __file__ attr that ends in pyc:
     >>> tests = finder.find(sample_func)
 
     >>> print(tests)  # doctest: +ELLIPSIS
-    [<DocTest sample_func from test_doctest.py:33 (1 example)>]
+    [<DocTest sample_func from test_doctest.py:35 (1 example)>]
 
 The exact name depends on how test_doctest was invoked, so allow for
 leading path components.
@@ -2634,8 +2636,10 @@ doctest examples in a given file.  In its simple invocation, it is
 called with the name of a file, which is taken to be relative to the
 calling module.  The return value is (#failures, #tests).
 
-We don't want `-v` in sys.argv for these tests.
+We don't want colour or `-v` in sys.argv for these tests.
 
+    >>> save_colorize = _colorize._COLORIZE
+    >>> _colorize._COLORIZE = False
     >>> save_argv = sys.argv
     >>> if '-v' in sys.argv:
     ...     sys.argv = [arg for arg in save_argv if arg != '-v']
@@ -2802,6 +2806,7 @@ Test the verbose output:
     TestResults(failed=0, attempted=2)
     >>> doctest.master = None  # Reset master.
     >>> sys.argv = save_argv
+    >>> _colorize._COLORIZE = save_colorize
 """
 
 class TestImporter(importlib.abc.MetaPathFinder, importlib.abc.ResourceLoader):

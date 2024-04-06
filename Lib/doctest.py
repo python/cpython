@@ -105,6 +105,8 @@ import unittest
 from io import StringIO, IncrementalNewlineDecoder
 from collections import namedtuple
 
+import _colorize  # Used in doctests
+
 
 class TestResults(namedtuple('TestResults', 'failed attempted')):
     def __new__(cls, failed, attempted, *, skipped=0):
@@ -1172,6 +1174,9 @@ class DocTestRunner:
     The `run` method is used to process a single DocTest case.  It
     returns a TestResults instance.
 
+        >>> save_colorize = _colorize._COLORIZE
+        >>> _colorize._COLORIZE = False
+
         >>> tests = DocTestFinder().find(_TestClass)
         >>> runner = DocTestRunner(verbose=False)
         >>> tests.sort(key = lambda test: test.name)
@@ -1222,6 +1227,8 @@ class DocTestRunner:
     can be also customized by subclassing DocTestRunner, and
     overriding the methods `report_start`, `report_success`,
     `report_unexpected_exception`, and `report_failure`.
+
+        >>> _colorize._COLORIZE = save_colorize
     """
     # This divider string is used to separate failure messages, and to
     # separate sections of the summary.
@@ -1566,10 +1573,12 @@ class DocTestRunner:
         summary is.  If the verbosity is not specified, then the
         DocTestRunner's verbosity is used.
         """
+        from _colorize import _ANSIColors, _can_colorize
+
         if verbose is None:
             verbose = self._verbose
 
-        notests, passed, failed = [], [], []
+        no_tests, passed, failed = [], [], []
         total_tries = total_failures = total_skips = 0
 
         for name, (failures, tries, skips) in self._stats.items():
@@ -1579,47 +1588,65 @@ class DocTestRunner:
             total_skips += skips
 
             if tries == 0:
-                notests.append(name)
+                no_tests.append(name)
             elif failures == 0:
                 passed.append((name, tries))
             else:
                 failed.append((name, (failures, tries, skips)))
 
+        if _can_colorize():
+            bold_green = _ANSIColors.BOLD_GREEN
+            bold_red = _ANSIColors.BOLD_RED
+            green = _ANSIColors.GREEN
+            red = _ANSIColors.RED
+            reset = _ANSIColors.RESET
+            yellow = _ANSIColors.YELLOW
+        else:
+            bold_green = ""
+            bold_red = ""
+            green = ""
+            red = ""
+            reset = ""
+            yellow = ""
+
         if verbose:
-            if notests:
-                print(f"{_n_items(notests)} had no tests:")
-                notests.sort()
-                for name in notests:
+            if no_tests:
+                print(f"{_n_items(no_tests)} had no tests:")
+                no_tests.sort()
+                for name in no_tests:
                     print(f"    {name}")
 
             if passed:
-                print(f"{_n_items(passed)} passed all tests:")
+                print(f"{green}{_n_items(passed)} passed all tests:{reset}")
                 for name, count in sorted(passed):
                     s = "" if count == 1 else "s"
-                    print(f" {count:3d} test{s} in {name}")
+                    print(f" {green}{count:3d} test{s} in {name}{reset}")
 
         if failed:
             print(self.DIVIDER)
-            print(f"{_n_items(failed)} had failures:")
+            print(f"{red}{_n_items(failed)} had failures:{reset}")
             for name, (failures, tries, skips) in sorted(failed):
-                print(f" {failures:3d} of {tries:3d} in {name}")
+                print(f"{red} {failures:3d} of {tries:3d} in {name}{reset}")
 
         if verbose:
             s = "" if total_tries == 1 else "s"
             print(f"{total_tries} test{s} in {_n_items(self._stats)}.")
 
-            and_f = f" and {total_failures} failed" if total_failures else ""
-            print(f"{total_tries - total_failures} passed{and_f}.")
+            and_f = (
+                f" and {red}{total_failures} failed{reset}"
+                if total_failures else ""
+            )
+            print(f"{green}{total_tries - total_failures} passed{reset}{and_f}.")
 
         if total_failures:
             s = "" if total_failures == 1 else "s"
-            msg = f"***Test Failed*** {total_failures} failure{s}"
+            msg = f"{bold_red}***Test Failed*** {total_failures} failure{s}{reset}"
             if total_skips:
                 s = "" if total_skips == 1 else "s"
-                msg = f"{msg} and {total_skips} skipped test{s}"
+                msg = f"{msg} and {yellow}{total_skips} skipped test{s}{reset}"
             print(f"{msg}.")
         elif verbose:
-            print("Test passed.")
+            print(f"{bold_green}Test passed.{reset}")
 
         return TestResults(total_failures, total_tries, skipped=total_skips)
 
@@ -1637,7 +1664,7 @@ class DocTestRunner:
             d[name] = (failures, tries, skips)
 
 
-def _n_items(items: list) -> str:
+def _n_items(items: list | dict) -> str:
     """
     Helper to pluralise the number of items in a list.
     """
@@ -1648,7 +1675,7 @@ def _n_items(items: list) -> str:
 
 class OutputChecker:
     """
-    A class used to check the whether the actual output from a doctest
+    A class used to check whether the actual output from a doctest
     example matches the expected output.  `OutputChecker` defines two
     methods: `check_output`, which compares a given pair of outputs,
     and returns true if they match; and `output_difference`, which
