@@ -105,6 +105,7 @@ import unittest
 from io import StringIO, IncrementalNewlineDecoder
 from collections import namedtuple
 import _colorize  # Used in doctests
+from _colorize import ANSIColors, can_colorize
 
 
 class TestResults(namedtuple('TestResults', 'failed attempted')):
@@ -1572,8 +1573,6 @@ class DocTestRunner:
         summary is.  If the verbosity is not specified, then the
         DocTestRunner's verbosity is used.
         """
-        from _colorize import ANSIColors, can_colorize
-
         if verbose is None:
             verbose = self._verbose
 
