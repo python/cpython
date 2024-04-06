@@ -28,9 +28,10 @@
    Copyright (c) 2002-2003 Fred L. Drake, Jr. <fdrake@users.sourceforge.net>
    Copyright (c) 2002-2006 Karl Waclawek <karl@waclawek.net>
    Copyright (c) 2003      Greg Stein <gstein@users.sourceforge.net>
-   Copyright (c) 2016-2022 Sebastian Pipping <sebastian@pipping.org>
+   Copyright (c) 2016-2023 Sebastian Pipping <sebastian@pipping.org>
    Copyright (c) 2018      Yury Gribov <tetra2005@gmail.com>
    Copyright (c) 2019      David Loffredo <loffredo@steptools.com>
+   Copyright (c) 2023      Sony Corporation / Snild Dolkow <snild@sony.com>
    Licensed under the MIT license:
 
    Permission is  hereby granted,  free of charge,  to any  person obtaining
@@ -154,11 +155,14 @@ extern "C" {
 void _INTERNAL_trim_to_complete_utf8_characters(const char *from,
                                                 const char **fromLimRef);
 
-#if defined(XML_DTD)
+#if XML_GE == 1
 unsigned long long testingAccountingGetCountBytesDirect(XML_Parser parser);
 unsigned long long testingAccountingGetCountBytesIndirect(XML_Parser parser);
 const char *unsignedCharToPrintable(unsigned char c);
 #endif
+
+extern XML_Bool g_reparseDeferralEnabledDefault; // written ONLY in runtests.c
+extern unsigned int g_parseAttempts;             // used for testing only
 
 #ifdef __cplusplus
 }

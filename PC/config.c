@@ -37,15 +37,14 @@ extern PyObject* PyInit__weakref(void);
 extern PyObject* PyInit_xxsubtype(void);
 extern PyObject* PyInit__xxsubinterpreters(void);
 extern PyObject* PyInit__xxinterpchannels(void);
+extern PyObject* PyInit__xxinterpqueues(void);
 extern PyObject* PyInit__random(void);
 extern PyObject* PyInit_itertools(void);
 extern PyObject* PyInit__collections(void);
 extern PyObject* PyInit__heapq(void);
 extern PyObject* PyInit__bisect(void);
 extern PyObject* PyInit__symtable(void);
-#if defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_GAMES)
 extern PyObject* PyInit_mmap(void);
-#endif
 extern PyObject* PyInit__csv(void);
 extern PyObject* PyInit__sre(void);
 #if defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM) || defined(MS_WINDOWS_GAMES)
@@ -142,6 +141,7 @@ struct _inittab _PyImport_Inittab[] = {
     {"xxsubtype", PyInit_xxsubtype},
     {"_xxsubinterpreters", PyInit__xxsubinterpreters},
     {"_xxinterpchannels", PyInit__xxinterpchannels},
+    {"_xxinterpqueues", PyInit__xxinterpqueues},
 #ifdef _Py_HAVE_ZLIB
     {"zlib", PyInit_zlib},
 #endif

@@ -156,6 +156,18 @@ class ListComprehensionTest(unittest.TestCase):
         self.assertEqual(C.y, [4, 4, 4, 4, 4])
         self.assertIs(C().method(), C)
 
+    def test_references_super(self):
+        code = """
+            res = [super for x in [1]]
+        """
+        self._check_in_scopes(code, outputs={"res": [super]})
+
+    def test_references___class__(self):
+        code = """
+            res = [__class__ for x in [1]]
+        """
+        self._check_in_scopes(code, raises=NameError)
+
     def test_inner_cell_shadows_outer(self):
         code = """
             items = [(lambda: i) for i in range(5)]

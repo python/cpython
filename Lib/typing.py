@@ -144,6 +144,7 @@ __all__ = [
     'override',
     'ParamSpecArgs',
     'ParamSpecKwargs',
+    'ReadOnly',
     'Required',
     'reveal_type',
     'runtime_checkable',
@@ -308,19 +309,33 @@ def _unpack_args(args):
             newargs.append(arg)
     return newargs
 
-def _deduplicate(params):
+def _deduplicate(params, *, unhashable_fallback=False):
     # Weed out strict duplicates, preserving the first of each occurrence.
-    all_params = set(params)
-    if len(all_params) < len(params):
-        new_params = []
-        for t in params:
-            if t in all_params:
-                new_params.append(t)
-                all_params.remove(t)
-        params = new_params
-        assert not all_params, all_params
-    return params
+    try:
+        return dict.fromkeys(params)
+    except TypeError:
+        if not unhashable_fallback:
+            raise
+        # Happens for cases like `Annotated[dict, {'x': IntValidator()}]`
+        return _deduplicate_unhashable(params)
 
+def _deduplicate_unhashable(unhashable_params):
+    new_unhashable = []
+    for t in unhashable_params:
+        if t not in new_unhashable:
+            new_unhashable.append(t)
+    return new_unhashable
+
+def _compare_args_orderless(first_args, second_args):
+    first_unhashable = _deduplicate_unhashable(first_args)
+    second_unhashable = _deduplicate_unhashable(second_args)
+    t = list(second_unhashable)
+    try:
+        for elem in first_unhashable:
+            t.remove(elem)
+    except ValueError:
+        return False
+    return not t
 
 def _remove_dups_flatten(parameters):
     """Internal helper for Union creation and substitution.
@@ -335,7 +350,7 @@ def _remove_dups_flatten(parameters):
         else:
             params.append(p)
 
-    return tuple(_deduplicate(params))
+    return tuple(_deduplicate(params, unhashable_fallback=True))
 
 
 def _flatten_literal_params(parameters):
@@ -524,7 +539,7 @@ class Any(metaclass=_AnyMeta):
     def __new__(cls, *args, **kwargs):
         if cls is Any:
             raise TypeError("Any cannot be instantiated")
-        return super().__new__(cls, *args, **kwargs)
+        return super().__new__(cls)
 
 
 @_SpecialForm
@@ -639,7 +654,7 @@ def ClassVar(self, parameters):
     Note that ClassVar is not a class itself, and should not
     be used with isinstance() or issubclass().
     """
-    item = _type_check(parameters, f'{self} accepts only single type.')
+    item = _type_check(parameters, f'{self} accepts only single type.', allow_special_forms=True)
     return _GenericAlias(self, (item,))
 
 @_SpecialForm
@@ -661,7 +676,7 @@ def Final(self, parameters):
 
     There is no runtime checking of these properties.
     """
-    item = _type_check(parameters, f'{self} accepts only single type.')
+    item = _type_check(parameters, f'{self} accepts only single type.', allow_special_forms=True)
     return _GenericAlias(self, (item,))
 
 @_SpecialForm
@@ -826,22 +841,25 @@ def TypeGuard(self, parameters):
     2. If the return value is ``True``, the type of its argument
        is the type inside ``TypeGuard``.
 
-       For example::
+    For example::
 
-           def is_str(val: Union[str, float]):
-               # "isinstance" type guard
-               if isinstance(val, str):
-                   # Type of ``val`` is narrowed to ``str``
-                   ...
-               else:
-                   # Else, type of ``val`` is narrowed to ``float``.
-                   ...
+         def is_str_list(val: list[object]) -> TypeGuard[list[str]]:
+             '''Determines whether all objects in the list are strings'''
+             return all(isinstance(x, str) for x in val)
+
+         def func1(val: list[object]):
+             if is_str_list(val):
+                 # Type of ``val`` is narrowed to ``list[str]``.
+                 print(" ".join(val))
+             else:
+                 # Type of ``val`` remains as ``list[object]``.
+                 print("Not a list of strings!")
 
     Strict type narrowing is not enforced -- ``TypeB`` need not be a narrower
     form of ``TypeA`` (it can even be a wider form) and this may lead to
     type-unsafe results.  The main reason is to allow for things like
-    narrowing ``List[object]`` to ``List[str]`` even though the latter is not
-    a subtype of the former, since ``List`` is invariant.  The responsibility of
+    narrowing ``list[object]`` to ``list[str]`` even though the latter is not
+    a subtype of the former, since ``list`` is invariant.  The responsibility of
     writing type-safe type guards is left to the user.
 
     ``TypeGuard`` also works with type variables.  For more information, see
@@ -866,7 +884,7 @@ class ForwardRef(_Final, _root=True):
         # If we do `def f(*args: *Ts)`, then we'll have `arg = '*Ts'`.
         # Unfortunately, this isn't a valid expression on its own, so we
         # do the unpacking manually.
-        if arg[0] == '*':
+        if arg.startswith('*'):
             arg_to_compile = f'({arg},)[0]'  # E.g. (*Ts,)[0] or (*tuple[int, int],)[0]
         else:
             arg_to_compile = arg
@@ -1127,7 +1145,9 @@ class _BaseGenericAlias(_Final, _root=True):
         result = self.__origin__(*args, **kwargs)
         try:
             result.__orig_class__ = self
-        except AttributeError:
+        # Some objects raise TypeError (or something even more exotic)
+        # if you try to set attributes on them; we guard against that here
+        except Exception:
             pass
         return result
 
@@ -1135,9 +1155,29 @@ class _BaseGenericAlias(_Final, _root=True):
         res = []
         if self.__origin__ not in bases:
             res.append(self.__origin__)
+
+        # Check if any base that occurs after us in `bases` is either itself a
+        # subclass of Generic, or something which will add a subclass of Generic
+        # to `__bases__` via its `__mro_entries__`. If not, add Generic
+        # ourselves. The goal is to ensure that Generic (or a subclass) will
+        # appear exactly once in the final bases tuple. If we let it appear
+        # multiple times, we risk "can't form a consistent MRO" errors.
         i = bases.index(self)
         for b in bases[i+1:]:
-            if isinstance(b, _BaseGenericAlias) or issubclass(b, Generic):
+            if isinstance(b, _BaseGenericAlias):
+                break
+            if not isinstance(b, type):
+                meth = getattr(b, "__mro_entries__", None)
+                new_bases = meth(bases) if meth else None
+                if (
+                    isinstance(new_bases, tuple) and
+                    any(
+                        isinstance(b2, type) and issubclass(b2, Generic)
+                        for b2 in new_bases
+                    )
+                ):
+                    break
+            elif issubclass(b, Generic):
                 break
         else:
             res.append(Generic)
@@ -1533,7 +1573,10 @@ class _UnionGenericAlias(_NotIterable, _GenericAlias, _root=True):
     def __eq__(self, other):
         if not isinstance(other, (_UnionGenericAlias, types.UnionType)):
             return NotImplemented
-        return set(self.__args__) == set(other.__args__)
+        try:  # fast path
+            return set(self.__args__) == set(other.__args__)
+        except TypeError:  # not hashable, slow path
+            return _compare_args_orderless(self.__args__, other.__args__)
 
     def __hash__(self):
         return hash(frozenset(self.__args__))
@@ -1670,14 +1713,14 @@ class _TypingEllipsis:
 _TYPING_INTERNALS = frozenset({
     '__parameters__', '__orig_bases__',  '__orig_class__',
     '_is_protocol', '_is_runtime_protocol', '__protocol_attrs__',
-    '__callable_proto_members_only__', '__type_params__',
+    '__non_callable_proto_members__', '__type_params__',
 })
 
 _SPECIAL_NAMES = frozenset({
     '__abstractmethods__', '__annotations__', '__dict__', '__doc__',
     '__init__', '__module__', '__new__', '__slots__',
     '__subclasshook__', '__weakref__', '__class_getitem__',
-    '__match_args__',
+    '__match_args__', '__static_attributes__',
 })
 
 # These special attributes will be not collected as protocol members.
@@ -1833,11 +1876,6 @@ class _ProtocolMeta(ABCMeta):
         super().__init__(*args, **kwargs)
         if getattr(cls, "_is_protocol", False):
             cls.__protocol_attrs__ = _get_protocol_attrs(cls)
-            # PEP 544 prohibits using issubclass()
-            # with protocols that have non-method members.
-            cls.__callable_proto_members_only__ = all(
-                callable(getattr(cls, attr, None)) for attr in cls.__protocol_attrs__
-            )
 
     def __subclasscheck__(cls, other):
         if cls is Protocol:
@@ -1846,24 +1884,22 @@ class _ProtocolMeta(ABCMeta):
             getattr(cls, '_is_protocol', False)
             and not _allow_reckless_class_checks()
         ):
-            if (
-                not cls.__callable_proto_members_only__
-                and cls.__dict__.get("__subclasshook__") is _proto_hook
-            ):
-                _type_check_issubclass_arg_1(other)
-                non_method_attrs = sorted(
-                    attr for attr in cls.__protocol_attrs__
-                    if not callable(getattr(cls, attr, None))
-                )
-                raise TypeError(
-                    "Protocols with non-method members don't support issubclass()."
-                    f" Non-method members: {str(non_method_attrs)[1:-1]}."
-                )
             if not getattr(cls, '_is_runtime_protocol', False):
                 _type_check_issubclass_arg_1(other)
                 raise TypeError(
                     "Instance and class checks can only be used with "
                     "@runtime_checkable protocols"
+                )
+            if (
+                # this attribute is set by @runtime_checkable:
+                cls.__non_callable_proto_members__
+                and cls.__dict__.get("__subclasshook__") is _proto_hook
+            ):
+                _type_check_issubclass_arg_1(other)
+                non_method_attrs = sorted(cls.__non_callable_proto_members__)
+                raise TypeError(
+                    "Protocols with non-method members don't support issubclass()."
+                    f" Non-method members: {str(non_method_attrs)[1:-1]}."
                 )
         return _abc_subclasscheck(cls, other)
 
@@ -1892,7 +1928,8 @@ class _ProtocolMeta(ABCMeta):
                 val = getattr_static(instance, attr)
             except AttributeError:
                 break
-            if val is None and callable(getattr(cls, attr, None)):
+            # this attribute is set by @runtime_checkable:
+            if val is None and attr not in cls.__non_callable_proto_members__:
                 break
         else:
             return True
@@ -2114,6 +2151,22 @@ def runtime_checkable(cls):
         raise TypeError('@runtime_checkable can be only applied to protocol classes,'
                         ' got %r' % cls)
     cls._is_runtime_protocol = True
+    # PEP 544 prohibits using issubclass()
+    # with protocols that have non-method members.
+    # See gh-113320 for why we compute this attribute here,
+    # rather than in `_ProtocolMeta.__init__`
+    cls.__non_callable_proto_members__ = set()
+    for attr in cls.__protocol_attrs__:
+        try:
+            is_callable = callable(getattr(cls, attr, None))
+        except Exception as e:
+            raise TypeError(
+                f"Failed to determine whether protocol member {attr!r} "
+                "is a method member"
+            ) from e
+        else:
+            if not is_callable:
+                cls.__non_callable_proto_members__.add(attr)
     return cls
 
 
@@ -2252,7 +2305,7 @@ def _strip_annotations(t):
     """Strip the annotations from a given type."""
     if isinstance(t, _AnnotatedAlias):
         return _strip_annotations(t.__origin__)
-    if hasattr(t, "__origin__") and t.__origin__ in (Required, NotRequired):
+    if hasattr(t, "__origin__") and t.__origin__ in (Required, NotRequired, ReadOnly):
         return _strip_annotations(t.__args__[0])
     if isinstance(t, _GenericAlias):
         stripped_args = tuple(_strip_annotations(a) for a in t.__args__)
@@ -2873,6 +2926,28 @@ def _namedtuple_mro_entries(bases):
 NamedTuple.__mro_entries__ = _namedtuple_mro_entries
 
 
+def _get_typeddict_qualifiers(annotation_type):
+    while True:
+        annotation_origin = get_origin(annotation_type)
+        if annotation_origin is Annotated:
+            annotation_args = get_args(annotation_type)
+            if annotation_args:
+                annotation_type = annotation_args[0]
+            else:
+                break
+        elif annotation_origin is Required:
+            yield Required
+            (annotation_type,) = get_args(annotation_type)
+        elif annotation_origin is NotRequired:
+            yield NotRequired
+            (annotation_type,) = get_args(annotation_type)
+        elif annotation_origin is ReadOnly:
+            yield ReadOnly
+            (annotation_type,) = get_args(annotation_type)
+        else:
+            break
+
+
 class _TypedDictMeta(type):
     def __new__(cls, name, bases, ns, total=True):
         """Create a new typed dict class object.
@@ -2906,6 +2981,8 @@ class _TypedDictMeta(type):
         }
         required_keys = set()
         optional_keys = set()
+        readonly_keys = set()
+        mutable_keys = set()
 
         for base in bases:
             annotations.update(base.__dict__.get('__annotations__', {}))
@@ -2918,18 +2995,15 @@ class _TypedDictMeta(type):
             required_keys -= base_optional
             optional_keys |= base_optional
 
+            readonly_keys.update(base.__dict__.get('__readonly_keys__', ()))
+            mutable_keys.update(base.__dict__.get('__mutable_keys__', ()))
+
         annotations.update(own_annotations)
         for annotation_key, annotation_type in own_annotations.items():
-            annotation_origin = get_origin(annotation_type)
-            if annotation_origin is Annotated:
-                annotation_args = get_args(annotation_type)
-                if annotation_args:
-                    annotation_type = annotation_args[0]
-                    annotation_origin = get_origin(annotation_type)
-
-            if annotation_origin is Required:
+            qualifiers = set(_get_typeddict_qualifiers(annotation_type))
+            if Required in qualifiers:
                 is_required = True
-            elif annotation_origin is NotRequired:
+            elif NotRequired in qualifiers:
                 is_required = False
             else:
                 is_required = total
@@ -2941,6 +3015,17 @@ class _TypedDictMeta(type):
                 optional_keys.add(annotation_key)
                 required_keys.discard(annotation_key)
 
+            if ReadOnly in qualifiers:
+                if annotation_key in mutable_keys:
+                    raise TypeError(
+                        f"Cannot override mutable key {annotation_key!r}"
+                        " with read-only key"
+                    )
+                readonly_keys.add(annotation_key)
+            else:
+                mutable_keys.add(annotation_key)
+                readonly_keys.discard(annotation_key)
+
         assert required_keys.isdisjoint(optional_keys), (
             f"Required keys overlap with optional keys in {name}:"
             f" {required_keys=}, {optional_keys=}"
@@ -2948,6 +3033,8 @@ class _TypedDictMeta(type):
         tp_dict.__annotations__ = annotations
         tp_dict.__required_keys__ = frozenset(required_keys)
         tp_dict.__optional_keys__ = frozenset(optional_keys)
+        tp_dict.__readonly_keys__ = frozenset(readonly_keys)
+        tp_dict.__mutable_keys__ = frozenset(mutable_keys)
         tp_dict.__total__ = total
         return tp_dict
 
@@ -3006,6 +3093,14 @@ def TypedDict(typename, fields=_sentinel, /, *, total=True):
             y: NotRequired[int]  # the "y" key can be omitted
 
     See PEP 655 for more details on Required and NotRequired.
+
+    The ReadOnly special form can be used
+    to mark individual keys as immutable for type checkers::
+
+        class DatabaseUser(TypedDict):
+            id: ReadOnly[int]  # the "id" key must not be modified
+            username: str      # the "username" key can be changed
+
     """
     if fields is _sentinel or fields is None:
         import warnings
@@ -3077,6 +3172,26 @@ def NotRequired(self, parameters):
             title='The Matrix',  # typechecker error if key is omitted
             year=1999,
         )
+    """
+    item = _type_check(parameters, f'{self._name} accepts only a single type.')
+    return _GenericAlias(self, (item,))
+
+
+@_SpecialForm
+def ReadOnly(self, parameters):
+    """A special typing construct to mark an item of a TypedDict as read-only.
+
+    For example::
+
+        class Movie(TypedDict):
+            title: ReadOnly[str]
+            year: int
+
+        def mutate_movie(m: Movie) -> None:
+            m["year"] = 1992  # allowed
+            m["title"] = "The Matrix"  # typechecker error
+
+    There is no runtime checking for this property.
     """
     item = _type_check(parameters, f'{self._name} accepts only a single type.')
     return _GenericAlias(self, (item,))
@@ -3301,7 +3416,7 @@ class TextIO(IO[str]):
 
 
 def reveal_type[T](obj: T, /) -> T:
-    """Reveal the inferred type of a variable.
+    """Ask a static type checker to reveal the inferred type of an expression.
 
     When a static type checker encounters a call to ``reveal_type()``,
     it will emit the inferred type of the argument::
@@ -3313,7 +3428,7 @@ def reveal_type[T](obj: T, /) -> T:
     will produce output similar to 'Revealed type is "builtins.int"'.
 
     At runtime, the function prints the runtime type of the
-    argument and returns it unchanged.
+    argument and returns the argument unchanged.
     """
     print(f"Runtime type is {type(obj).__name__!r}", file=sys.stderr)
     return obj

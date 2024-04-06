@@ -20,7 +20,8 @@ class DumpTests(MemoryDatabaseMixin, unittest.TestCase):
                 ,
                 "CREATE TABLE t1(id integer primary key, s1 text, " \
                 "t1_i1 integer not null, i2 integer, unique (s1), " \
-                "constraint t1_idx1 unique (i2));"
+                "constraint t1_idx1 unique (i2), " \
+                "constraint t1_i1_idx1 unique (t1_i1));"
                 ,
                 "INSERT INTO \"t1\" VALUES(1,'foo',10,20);"
                 ,
@@ -29,6 +30,9 @@ class DumpTests(MemoryDatabaseMixin, unittest.TestCase):
                 "CREATE TABLE t2(id integer, t2_i1 integer, " \
                 "t2_i2 integer, primary key (id)," \
                 "foreign key(t2_i1) references t1(t1_i1));"
+                ,
+                # Foreign key violation.
+                "INSERT INTO \"t2\" VALUES(1,2,3);"
                 ,
                 "CREATE TRIGGER trigger_1 update of t1_i1 on t1 " \
                 "begin " \
@@ -41,10 +45,84 @@ class DumpTests(MemoryDatabaseMixin, unittest.TestCase):
         [self.cu.execute(s) for s in expected_sqls]
         i = self.cx.iterdump()
         actual_sqls = [s for s in i]
-        expected_sqls = ['BEGIN TRANSACTION;'] + expected_sqls + \
-            ['COMMIT;']
+        expected_sqls = [
+            "PRAGMA foreign_keys=OFF;",
+            "BEGIN TRANSACTION;",
+            *expected_sqls,
+            "COMMIT;",
+        ]
         [self.assertEqual(expected_sqls[i], actual_sqls[i])
             for i in range(len(expected_sqls))]
+
+    def test_table_dump_filter(self):
+        all_table_sqls = [
+            """CREATE TABLE "some_table_2" ("id_1" INTEGER);""",
+            """INSERT INTO "some_table_2" VALUES(3);""",
+            """INSERT INTO "some_table_2" VALUES(4);""",
+            """CREATE TABLE "test_table_1" ("id_2" INTEGER);""",
+            """INSERT INTO "test_table_1" VALUES(1);""",
+            """INSERT INTO "test_table_1" VALUES(2);""",
+        ]
+        all_views_sqls = [
+            """CREATE VIEW "view_1" AS SELECT * FROM "some_table_2";""",
+            """CREATE VIEW "view_2" AS SELECT * FROM "test_table_1";""",
+        ]
+        # Create database structure.
+        for sql in [*all_table_sqls, *all_views_sqls]:
+            self.cu.execute(sql)
+        # %_table_% matches all tables.
+        dump_sqls = list(self.cx.iterdump(filter="%_table_%"))
+        self.assertEqual(
+            dump_sqls,
+            ["BEGIN TRANSACTION;", *all_table_sqls, "COMMIT;"],
+        )
+        # view_% matches all views.
+        dump_sqls = list(self.cx.iterdump(filter="view_%"))
+        self.assertEqual(
+            dump_sqls,
+            ["BEGIN TRANSACTION;", *all_views_sqls, "COMMIT;"],
+        )
+        # %_1 matches tables and views with the _1 suffix.
+        dump_sqls = list(self.cx.iterdump(filter="%_1"))
+        self.assertEqual(
+            dump_sqls,
+            [
+                "BEGIN TRANSACTION;",
+                """CREATE TABLE "test_table_1" ("id_2" INTEGER);""",
+                """INSERT INTO "test_table_1" VALUES(1);""",
+                """INSERT INTO "test_table_1" VALUES(2);""",
+                """CREATE VIEW "view_1" AS SELECT * FROM "some_table_2";""",
+                "COMMIT;"
+            ],
+        )
+        # some_% matches some_table_2.
+        dump_sqls = list(self.cx.iterdump(filter="some_%"))
+        self.assertEqual(
+            dump_sqls,
+            [
+                "BEGIN TRANSACTION;",
+                """CREATE TABLE "some_table_2" ("id_1" INTEGER);""",
+                """INSERT INTO "some_table_2" VALUES(3);""",
+                """INSERT INTO "some_table_2" VALUES(4);""",
+                "COMMIT;"
+            ],
+        )
+        # Only single object.
+        dump_sqls = list(self.cx.iterdump(filter="view_2"))
+        self.assertEqual(
+            dump_sqls,
+            [
+                "BEGIN TRANSACTION;",
+                """CREATE VIEW "view_2" AS SELECT * FROM "test_table_1";""",
+                "COMMIT;"
+            ],
+        )
+        # % matches all objects.
+        dump_sqls = list(self.cx.iterdump(filter="%"))
+        self.assertEqual(
+            dump_sqls,
+            ["BEGIN TRANSACTION;", *all_table_sqls, *all_views_sqls, "COMMIT;"],
+        )
 
     def test_dump_autoincrement(self):
         expected = [

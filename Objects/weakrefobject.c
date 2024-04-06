@@ -177,13 +177,13 @@ weakref_repr(PyObject *self)
     PyObject *repr;
     if (name == NULL || !PyUnicode_Check(name)) {
         repr = PyUnicode_FromFormat(
-            "<weakref at %p; to '%s' at %p>",
-            self, Py_TYPE(obj)->tp_name, obj);
+            "<weakref at %p; to '%T' at %p>",
+            self, obj, obj);
     }
     else {
         repr = PyUnicode_FromFormat(
-            "<weakref at %p; to '%s' at %p (%U)>",
-            self, Py_TYPE(obj)->tp_name, obj, name);
+            "<weakref at %p; to '%T' at %p (%U)>",
+            self, obj, obj, name);
     }
     Py_DECREF(obj);
     Py_XDECREF(name);
@@ -471,10 +471,18 @@ static PyObject *
 proxy_repr(PyObject *proxy)
 {
     PyObject *obj = _PyWeakref_GET_REF(proxy);
-    PyObject *repr = PyUnicode_FromFormat(
-        "<weakproxy at %p to %s at %p>",
-        proxy, Py_TYPE(obj)->tp_name, obj);
-    Py_DECREF(obj);
+    PyObject *repr;
+    if (obj != NULL) {
+        repr = PyUnicode_FromFormat(
+            "<weakproxy at %p; to '%T' at %p>",
+            proxy, obj, obj);
+        Py_DECREF(obj);
+    }
+    else {
+        repr = PyUnicode_FromFormat(
+            "<weakproxy at %p; dead>",
+            proxy);
+    }
     return repr;
 }
 
@@ -801,24 +809,14 @@ PyWeakref_NewRef(PyObject *ob, PyObject *callback)
     if (result != NULL)
         Py_INCREF(result);
     else {
-        /* Note: new_weakref() can trigger cyclic GC, so the weakref
-           list on ob can be mutated.  This means that the ref and
-           proxy pointers we got back earlier may have been collected,
-           so we need to compute these values again before we use
-           them. */
+        /* We do not need to recompute ref/proxy; new_weakref() cannot
+           trigger GC.
+        */
         result = new_weakref(ob, callback);
         if (result != NULL) {
-            get_basic_refs(*list, &ref, &proxy);
             if (callback == NULL) {
-                if (ref == NULL)
-                    insert_head(result, list);
-                else {
-                    /* Someone else added a ref without a callback
-                       during GC.  Return that one instead of this one
-                       to avoid violating the invariants of the list
-                       of weakrefs for ob. */
-                    Py_SETREF(result, (PyWeakReference*)Py_NewRef(ref));
-                }
+                assert(ref == NULL);
+                insert_head(result, list);
             }
             else {
                 PyWeakReference *prev;
@@ -858,11 +856,9 @@ PyWeakref_NewProxy(PyObject *ob, PyObject *callback)
     if (result != NULL)
         Py_INCREF(result);
     else {
-        /* Note: new_weakref() can trigger cyclic GC, so the weakref
-           list on ob can be mutated.  This means that the ref and
-           proxy pointers we got back earlier may have been collected,
-           so we need to compute these values again before we use
-           them. */
+        /* We do not need to recompute ref/proxy; new_weakref cannot
+           trigger GC.
+        */
         result = new_weakref(ob, callback);
         if (result != NULL) {
             PyWeakReference *prev;
@@ -873,16 +869,7 @@ PyWeakref_NewProxy(PyObject *ob, PyObject *callback)
             else {
                 Py_SET_TYPE(result, &_PyWeakref_ProxyType);
             }
-            get_basic_refs(*list, &ref, &proxy);
             if (callback == NULL) {
-                if (proxy != NULL) {
-                    /* Someone else added a proxy without a callback
-                       during GC.  Return that one instead of this one
-                       to avoid violating the invariants of the list
-                       of weakrefs for ob. */
-                    Py_SETREF(result, (PyWeakReference*)Py_NewRef(proxy));
-                    goto skip_insert;
-                }
                 prev = ref;
             }
             else
@@ -892,8 +879,6 @@ PyWeakref_NewProxy(PyObject *ob, PyObject *callback)
                 insert_head(result, list);
             else
                 insert_after(result, prev);
-        skip_insert:
-            ;
         }
     }
     return (PyObject *) result;

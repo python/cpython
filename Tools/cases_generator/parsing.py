@@ -138,13 +138,16 @@ class Family(Node):
 @dataclass
 class Pseudo(Node):
     name: str
-    flags: list[str]   # instr flags to set on the pseudo instruction
-    targets: list[str] # opcodes this can be replaced by
+    flags: list[str]  # instr flags to set on the pseudo instruction
+    targets: list[str]  # opcodes this can be replaced by
+
+
+AstNode = InstDef | Macro | Pseudo | Family
 
 
 class Parser(PLexer):
     @contextual
-    def definition(self) -> InstDef | Macro | Pseudo | Family | None:
+    def definition(self) -> AstNode | None:
         if macro := self.macro_def():
             return macro
         if family := self.family_def():
@@ -176,7 +179,13 @@ class Parser(PLexer):
         # | annotation* op(NAME, (inputs -- outputs))
         annotations = []
         while anno := self.expect(lx.ANNOTATION):
-            annotations.append(anno.text)
+            if anno.text == "replicate":
+                self.require(lx.LPAREN)
+                times = self.require(lx.NUMBER)
+                self.require(lx.RPAREN)
+                annotations.append(f"replicate({times.text})")
+            else:
+                annotations.append(anno.text)
         tkn = self.expect(lx.INST)
         if not tkn:
             tkn = self.expect(lx.OP)
@@ -252,7 +261,7 @@ class Parser(PLexer):
 
     @contextual
     def stack_effect(self) -> StackEffect | None:
-        #   IDENTIFIER [':' IDENTIFIER [TIMES]] ['if' '(' expression ')']
+        # IDENTIFIER [':' IDENTIFIER [TIMES]] ['if' '(' expression ')']
         # | IDENTIFIER '[' expression ']'
         if tkn := self.expect(lx.IDENTIFIER):
             type_text = ""
@@ -363,7 +372,9 @@ class Parser(PLexer):
                     if self.expect(lx.COMMA):
                         if not (size := self.expect(lx.IDENTIFIER)):
                             if not (size := self.expect(lx.NUMBER)):
-                                raise self.make_syntax_error("Expected identifier or number")
+                                raise self.make_syntax_error(
+                                    "Expected identifier or number"
+                                )
                     if self.expect(lx.RPAREN):
                         if self.expect(lx.EQUALS):
                             if not self.expect(lx.LBRACE):

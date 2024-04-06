@@ -5,7 +5,6 @@
 
 #include "pycore_ast.h"           // asdl_seq_GET()
 #include "pycore_call.h"          // _PyObject_CallMethodFormat()
-#include "pycore_compile.h"       // _PyAST_Optimize()
 #include "pycore_fileutils.h"     // _Py_BEGIN_SUPPRESS_IPH
 #include "pycore_frame.h"         // _PyFrame_GetCode()
 #include "pycore_interp.h"        // PyInterpreterState.gc
@@ -965,7 +964,11 @@ dump_traceback(int fd, PyThreadState *tstate, int write_header)
     unsigned int depth = 0;
     while (1) {
         if (MAX_FRAME_DEPTH <= depth) {
-            PUTS(fd, "  ...\n");
+            if (MAX_FRAME_DEPTH < depth) {
+                PUTS(fd, "plus ");
+                _Py_DumpDecimal(fd, depth);
+                PUTS(fd, " frames\n");
+            }
             break;
         }
         dump_frame(fd, frame);

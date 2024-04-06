@@ -6,18 +6,28 @@
 #endif
 
 #include "Python.h"
+#include "pycore_abstract.h"      // _PyIndex_Check()
 #include "pycore_crossinterp.h"   // struct _xid
-#include "pycore_pyerrors.h"      // _Py_excinfo
+#include "pycore_interp.h"        // _PyInterpreterState_IDIncref()
 #include "pycore_initconfig.h"    // _PyErr_SetFromPyStatus()
+#include "pycore_long.h"          // _PyLong_IsNegative()
 #include "pycore_modsupport.h"    // _PyArg_BadArgument()
-#include "pycore_pyerrors.h"      // _PyErr_ChainExceptions1()
+#include "pycore_namespace.h"     // _PyNamespace_New()
+#include "pycore_pybuffer.h"      // _PyBuffer_ReleaseInInterpreterAndRawFree()
+#include "pycore_pyerrors.h"      // _Py_excinfo
+#include "pycore_pylifecycle.h"   // _PyInterpreterConfig_AsDict()
 #include "pycore_pystate.h"       // _PyInterpreterState_SetRunningMain()
 
-#include "interpreteridobject.h"
 #include "marshal.h"              // PyMarshal_ReadObjectFromString()
 
+#define RETURNS_INTERPID_OBJECT
+#include "_interpreters_common.h"
+#undef RETURNS_INTERPID_OBJECT
 
-#define MODULE_NAME "_xxsubinterpreters"
+
+#define MODULE_NAME _xxsubinterpreters
+#define MODULE_NAME_STR Py_STRINGIFY(MODULE_NAME)
+#define MODINIT_FUNC_NAME RESOLVE_MODINIT_FUNC_NAME(MODULE_NAME)
 
 
 static PyInterpreterState *
@@ -28,11 +38,189 @@ _get_current_interp(void)
     return PyInterpreterState_Get();
 }
 
+#define look_up_interp _PyInterpreterState_LookUpIDObject
+
+
+static PyObject *
+_get_current_module(void)
+{
+    PyObject *name = PyUnicode_FromString(MODULE_NAME_STR);
+    if (name == NULL) {
+        return NULL;
+    }
+    PyObject *mod = PyImport_GetModule(name);
+    Py_DECREF(name);
+    if (mod == NULL) {
+        return NULL;
+    }
+    assert(mod != Py_None);
+    return mod;
+}
+
+
+static int
+is_running_main(PyInterpreterState *interp)
+{
+    if (_PyInterpreterState_IsRunningMain(interp)) {
+        return 1;
+    }
+    // Unlike with the general C-API, we can be confident that someone
+    // using this module for the main interpreter is doing so through
+    // the main program.  Thus we can make this extra check.  This benefits
+    // applications that embed Python but haven't been updated yet
+    // to call_PyInterpreterState_SetRunningMain().
+    if (_Py_IsMainInterpreter(interp)) {
+        return 1;
+    }
+    return 0;
+}
+
+
+/* Cross-interpreter Buffer Views *******************************************/
+
+// XXX Release when the original interpreter is destroyed.
+
+typedef struct {
+    PyObject_HEAD
+    Py_buffer *view;
+    int64_t interpid;
+} XIBufferViewObject;
+
+static PyObject *
+xibufferview_from_xid(PyTypeObject *cls, _PyCrossInterpreterData *data)
+{
+    assert(_PyCrossInterpreterData_DATA(data) != NULL);
+    assert(_PyCrossInterpreterData_OBJ(data) == NULL);
+    assert(_PyCrossInterpreterData_INTERPID(data) >= 0);
+    XIBufferViewObject *self = PyObject_Malloc(sizeof(XIBufferViewObject));
+    if (self == NULL) {
+        return NULL;
+    }
+    PyObject_Init((PyObject *)self, cls);
+    self->view = (Py_buffer *)_PyCrossInterpreterData_DATA(data);
+    self->interpid = _PyCrossInterpreterData_INTERPID(data);
+    return (PyObject *)self;
+}
+
+static void
+xibufferview_dealloc(XIBufferViewObject *self)
+{
+    PyInterpreterState *interp = _PyInterpreterState_LookUpID(self->interpid);
+    /* If the interpreter is no longer alive then we have problems,
+       since other objects may be using the buffer still. */
+    assert(interp != NULL);
+
+    if (_PyBuffer_ReleaseInInterpreterAndRawFree(interp, self->view) < 0) {
+        // XXX Emit a warning?
+        PyErr_Clear();
+    }
+
+    PyTypeObject *tp = Py_TYPE(self);
+    tp->tp_free(self);
+    /* "Instances of heap-allocated types hold a reference to their type."
+     * See: https://docs.python.org/3.11/howto/isolating-extensions.html#garbage-collection-protocol
+     * See: https://docs.python.org/3.11/c-api/typeobj.html#c.PyTypeObject.tp_traverse
+    */
+    // XXX Why don't we implement Py_TPFLAGS_HAVE_GC, e.g. Py_tp_traverse,
+    // like we do for _abc._abc_data?
+    Py_DECREF(tp);
+}
+
+static int
+xibufferview_getbuf(XIBufferViewObject *self, Py_buffer *view, int flags)
+{
+    /* Only PyMemoryView_FromObject() should ever call this,
+       via _memoryview_from_xid() below. */
+    *view = *self->view;
+    view->obj = (PyObject *)self;
+    // XXX Should we leave it alone?
+    view->internal = NULL;
+    return 0;
+}
+
+static PyType_Slot XIBufferViewType_slots[] = {
+    {Py_tp_dealloc, (destructor)xibufferview_dealloc},
+    {Py_bf_getbuffer, (getbufferproc)xibufferview_getbuf},
+    // We don't bother with Py_bf_releasebuffer since we don't need it.
+    {0, NULL},
+};
+
+static PyType_Spec XIBufferViewType_spec = {
+    .name = MODULE_NAME_STR ".CrossInterpreterBufferView",
+    .basicsize = sizeof(XIBufferViewObject),
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
+              Py_TPFLAGS_DISALLOW_INSTANTIATION | Py_TPFLAGS_IMMUTABLETYPE),
+    .slots = XIBufferViewType_slots,
+};
+
+
+static PyTypeObject * _get_current_xibufferview_type(void);
+
+static PyObject *
+_memoryview_from_xid(_PyCrossInterpreterData *data)
+{
+    PyTypeObject *cls = _get_current_xibufferview_type();
+    if (cls == NULL) {
+        return NULL;
+    }
+    PyObject *obj = xibufferview_from_xid(cls, data);
+    if (obj == NULL) {
+        return NULL;
+    }
+    return PyMemoryView_FromObject(obj);
+}
+
+static int
+_memoryview_shared(PyThreadState *tstate, PyObject *obj,
+                   _PyCrossInterpreterData *data)
+{
+    Py_buffer *view = PyMem_RawMalloc(sizeof(Py_buffer));
+    if (view == NULL) {
+        return -1;
+    }
+    if (PyObject_GetBuffer(obj, view, PyBUF_FULL_RO) < 0) {
+        PyMem_RawFree(view);
+        return -1;
+    }
+    _PyCrossInterpreterData_Init(data, tstate->interp, view, NULL,
+                                 _memoryview_from_xid);
+    return 0;
+}
+
+static int
+register_memoryview_xid(PyObject *mod, PyTypeObject **p_state)
+{
+    // XIBufferView
+    assert(*p_state == NULL);
+    PyTypeObject *cls = (PyTypeObject *)PyType_FromModuleAndSpec(
+                mod, &XIBufferViewType_spec, NULL);
+    if (cls == NULL) {
+        return -1;
+    }
+    if (PyModule_AddType(mod, cls) < 0) {
+        Py_DECREF(cls);
+        return -1;
+    }
+    *p_state = cls;
+
+    // Register XID for the builtin memoryview type.
+    if (ensure_xid_class(&PyMemoryView_Type, _memoryview_shared) < 0) {
+        return -1;
+    }
+    // We don't ever bother un-registering memoryview.
+
+    return 0;
+}
+
+
 
 /* module state *************************************************************/
 
 typedef struct {
     int _notused;
+
+    /* heap types */
+    PyTypeObject *XIBufferViewType;
 } module_state;
 
 static inline module_state *
@@ -44,16 +232,48 @@ get_module_state(PyObject *mod)
     return state;
 }
 
+static module_state *
+_get_current_module_state(void)
+{
+    PyObject *mod = _get_current_module();
+    if (mod == NULL) {
+        // XXX import it?
+        PyErr_SetString(PyExc_RuntimeError,
+                        MODULE_NAME_STR " module not imported yet");
+        return NULL;
+    }
+    module_state *state = get_module_state(mod);
+    Py_DECREF(mod);
+    return state;
+}
+
 static int
 traverse_module_state(module_state *state, visitproc visit, void *arg)
 {
+    /* heap types */
+    Py_VISIT(state->XIBufferViewType);
+
     return 0;
 }
 
 static int
 clear_module_state(module_state *state)
 {
+    /* heap types */
+    Py_CLEAR(state->XIBufferViewType);
+
     return 0;
+}
+
+
+static PyTypeObject *
+_get_current_xibufferview_type(void)
+{
+    module_state *state = _get_current_module_state();
+    if (state == NULL) {
+        return NULL;
+    }
+    return state->XIBufferViewType;
 }
 
 
@@ -88,9 +308,7 @@ check_code_object(PyCodeObject *code)
     }
     // We trust that no code objects under co_consts have unbound cell vars.
 
-    if (code->co_executors != NULL
-        || code->_co_instrumentation_version > 0)
-    {
+    if (_PyCode_HAS_EXECUTORS(code) || _PyCode_HAS_INSTRUMENTATION(code)) {
         return "only basic functions are supported";
     }
     if (code->_co_monitoring != NULL) {
@@ -150,6 +368,115 @@ get_code_str(PyObject *arg, Py_ssize_t *len_p, PyObject **bytes_p, int *flags_p)
 
 
 /* interpreter-specific code ************************************************/
+
+static int
+init_named_config(PyInterpreterConfig *config, const char *name)
+{
+    if (name == NULL
+            || strcmp(name, "") == 0
+            || strcmp(name, "default") == 0)
+    {
+        name = "isolated";
+    }
+
+    if (strcmp(name, "isolated") == 0) {
+        *config = (PyInterpreterConfig)_PyInterpreterConfig_INIT;
+    }
+    else if (strcmp(name, "legacy") == 0) {
+        *config = (PyInterpreterConfig)_PyInterpreterConfig_LEGACY_INIT;
+    }
+    else if (strcmp(name, "empty") == 0) {
+        *config = (PyInterpreterConfig){0};
+    }
+    else {
+        PyErr_Format(PyExc_ValueError,
+                     "unsupported config name '%s'", name);
+        return -1;
+    }
+    return 0;
+}
+
+static int
+config_from_object(PyObject *configobj, PyInterpreterConfig *config)
+{
+    if (configobj == NULL || configobj == Py_None) {
+        if (init_named_config(config, NULL) < 0) {
+            return -1;
+        }
+    }
+    else if (PyUnicode_Check(configobj)) {
+        if (init_named_config(config, PyUnicode_AsUTF8(configobj)) < 0) {
+            return -1;
+        }
+    }
+    else {
+        PyObject *dict = PyObject_GetAttrString(configobj, "__dict__");
+        if (dict == NULL) {
+            PyErr_Format(PyExc_TypeError, "bad config %R", configobj);
+            return -1;
+        }
+        int res = _PyInterpreterConfig_InitFromDict(config, dict);
+        Py_DECREF(dict);
+        if (res < 0) {
+            return -1;
+        }
+    }
+    return 0;
+}
+
+
+static PyInterpreterState *
+new_interpreter(PyInterpreterConfig *config, PyObject **p_idobj,  PyThreadState **p_tstate)
+{
+    PyThreadState *save_tstate = PyThreadState_Get();
+    assert(save_tstate != NULL);
+    PyThreadState *tstate = NULL;
+    // XXX Possible GILState issues?
+    PyStatus status = Py_NewInterpreterFromConfig(&tstate, config);
+    PyThreadState_Swap(save_tstate);
+    if (PyStatus_Exception(status)) {
+        /* Since no new thread state was created, there is no exception to
+           propagate; raise a fresh one after swapping in the old thread
+           state. */
+        _PyErr_SetFromPyStatus(status);
+        return NULL;
+    }
+    assert(tstate != NULL);
+    PyInterpreterState *interp = PyThreadState_GetInterpreter(tstate);
+
+    if (_PyInterpreterState_IDInitref(interp) < 0) {
+        goto error;
+    }
+
+    if (p_idobj != NULL) {
+        // We create the object using the original interpreter.
+        PyObject *idobj = get_interpid_obj(interp);
+        if (idobj == NULL) {
+            goto error;
+        }
+        *p_idobj = idobj;
+    }
+
+    if (p_tstate != NULL) {
+        *p_tstate = tstate;
+    }
+    else {
+        PyThreadState_Swap(tstate);
+        PyThreadState_Clear(tstate);
+        PyThreadState_Swap(save_tstate);
+        PyThreadState_Delete(tstate);
+    }
+
+    return interp;
+
+error:
+    // XXX Possible GILState issues?
+    save_tstate = PyThreadState_Swap(tstate);
+    Py_EndInterpreter(tstate);
+    PyThreadState_Swap(save_tstate);
+    return NULL;
+}
+
 
 static int
 _run_script(PyObject *ns, const char *codestr, Py_ssize_t codestrlen, int flags)
@@ -220,60 +547,98 @@ _run_in_interpreter(PyInterpreterState *interp,
 /* module level code ********************************************************/
 
 static PyObject *
-interp_create(PyObject *self, PyObject *args, PyObject *kwds)
+interp_new_config(PyObject *self, PyObject *args, PyObject *kwds)
 {
+    const char *name = NULL;
+    if (!PyArg_ParseTuple(args, "|s:" MODULE_NAME_STR ".new_config",
+                          &name))
+    {
+        return NULL;
+    }
+    PyObject *overrides = kwds;
 
-    static char *kwlist[] = {"isolated", NULL};
-    int isolated = 1;
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|$i:create", kwlist,
-                                     &isolated)) {
+    PyInterpreterConfig config;
+    if (init_named_config(&config, name) < 0) {
         return NULL;
     }
 
-    // Create and initialize the new interpreter.
-    PyThreadState *save_tstate = PyThreadState_Get();
-    assert(save_tstate != NULL);
-    const PyInterpreterConfig config = isolated
-        ? (PyInterpreterConfig)_PyInterpreterConfig_INIT
-        : (PyInterpreterConfig)_PyInterpreterConfig_LEGACY_INIT;
+    if (overrides != NULL && PyDict_GET_SIZE(overrides) > 0) {
+        if (_PyInterpreterConfig_UpdateFromDict(&config, overrides) < 0) {
+            return NULL;
+        }
+    }
 
-    // XXX Possible GILState issues?
-    PyThreadState *tstate = NULL;
-    PyStatus status = Py_NewInterpreterFromConfig(&tstate, &config);
-    PyThreadState_Swap(save_tstate);
-    if (PyStatus_Exception(status)) {
-        /* Since no new thread state was created, there is no exception to
-           propagate; raise a fresh one after swapping in the old thread
-           state. */
-        _PyErr_SetFromPyStatus(status);
+    PyObject *dict = _PyInterpreterConfig_AsDict(&config);
+    if (dict == NULL) {
+        return NULL;
+    }
+
+    PyObject *configobj = _PyNamespace_New(dict);
+    Py_DECREF(dict);
+    return configobj;
+}
+
+PyDoc_STRVAR(new_config_doc,
+"new_config(name='isolated', /, **overrides) -> type.SimpleNamespace\n\
+\n\
+Return a representation of a new PyInterpreterConfig.\n\
+\n\
+The name determines the initial values of the config.  Supported named\n\
+configs are: default, isolated, legacy, and empty.\n\
+\n\
+Any keyword arguments are set on the corresponding config fields,\n\
+overriding the initial values.");
+
+
+static PyObject *
+interp_create(PyObject *self, PyObject *args, PyObject *kwds)
+{
+    static char *kwlist[] = {"config", "reqrefs", NULL};
+    PyObject *configobj = NULL;
+    int reqrefs = 0;
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|O$p:create", kwlist,
+                                     &configobj, &reqrefs)) {
+        return NULL;
+    }
+
+    PyInterpreterConfig config;
+    if (config_from_object(configobj, &config) < 0) {
+        return NULL;
+    }
+
+    PyObject *idobj = NULL;
+    PyInterpreterState *interp = new_interpreter(&config, &idobj, NULL);
+    if (interp == NULL) {
+        // XXX Move the chained exception to interpreters.create()?
         PyObject *exc = PyErr_GetRaisedException();
-        PyErr_SetString(PyExc_RuntimeError, "interpreter creation failed");
+        assert(exc != NULL);
+        PyErr_SetString(PyExc_InterpreterError, "interpreter creation failed");
         _PyErr_ChainExceptions1(exc);
         return NULL;
     }
-    assert(tstate != NULL);
 
-    PyInterpreterState *interp = PyThreadState_GetInterpreter(tstate);
-    PyObject *idobj = PyInterpreterState_GetIDObject(interp);
-    if (idobj == NULL) {
-        // XXX Possible GILState issues?
-        save_tstate = PyThreadState_Swap(tstate);
-        Py_EndInterpreter(tstate);
-        PyThreadState_Swap(save_tstate);
-        return NULL;
+    if (reqrefs) {
+        // Decref to 0 will destroy the interpreter.
+        _PyInterpreterState_RequireIDRef(interp, 1);
     }
 
-    PyThreadState_Clear(tstate);
-    PyThreadState_Delete(tstate);
-
-    _PyInterpreterState_RequireIDRef(interp, 1);
     return idobj;
 }
 
+
 PyDoc_STRVAR(create_doc,
-"create() -> ID\n\
+"create([config], *, reqrefs=False) -> ID\n\
 \n\
-Create a new interpreter and return a unique generated ID.");
+Create a new interpreter and return a unique generated ID.\n\
+\n\
+The caller is responsible for destroying the interpreter before exiting,\n\
+typically by using _interpreters.destroy().  This can be managed \n\
+automatically by passing \"reqrefs=True\" and then using _incref() and\n\
+_decref()` appropriately.\n\
+\n\
+\"config\" must be a valid interpreter config or the name of a\n\
+predefined config (\"isolated\" or \"legacy\").  The default\n\
+is \"isolated\".");
 
 
 static PyObject *
@@ -288,7 +653,7 @@ interp_destroy(PyObject *self, PyObject *args, PyObject *kwds)
     }
 
     // Look up the interpreter.
-    PyInterpreterState *interp = PyInterpreterID_LookUp(id);
+    PyInterpreterState *interp = look_up_interp(id);
     if (interp == NULL) {
         return NULL;
     }
@@ -299,7 +664,7 @@ interp_destroy(PyObject *self, PyObject *args, PyObject *kwds)
         return NULL;
     }
     if (interp == current) {
-        PyErr_SetString(PyExc_RuntimeError,
+        PyErr_SetString(PyExc_InterpreterError,
                         "cannot destroy the current interpreter");
         return NULL;
     }
@@ -307,14 +672,14 @@ interp_destroy(PyObject *self, PyObject *args, PyObject *kwds)
     // Ensure the interpreter isn't running.
     /* XXX We *could* support destroying a running interpreter but
        aren't going to worry about it for now. */
-    if (_PyInterpreterState_IsRunningMain(interp)) {
-        PyErr_Format(PyExc_RuntimeError, "interpreter running");
+    if (is_running_main(interp)) {
+        PyErr_Format(PyExc_InterpreterError, "interpreter running");
         return NULL;
     }
 
     // Destroy the interpreter.
     PyThreadState *tstate = PyThreadState_New(interp);
-    tstate->_whence = _PyThreadState_WHENCE_INTERP;
+    _PyThreadState_SetWhence(tstate, _PyThreadState_WHENCE_INTERP);
     // XXX Possible GILState issues?
     PyThreadState *save_tstate = PyThreadState_Swap(tstate);
     Py_EndInterpreter(tstate);
@@ -328,7 +693,7 @@ PyDoc_STRVAR(destroy_doc,
 \n\
 Destroy the identified interpreter.\n\
 \n\
-Attempting to destroy the current interpreter results in a RuntimeError.\n\
+Attempting to destroy the current interpreter raises InterpreterError.\n\
 So does an unrecognized ID.");
 
 
@@ -345,7 +710,7 @@ interp_list_all(PyObject *self, PyObject *Py_UNUSED(ignored))
 
     interp = PyInterpreterState_Head();
     while (interp != NULL) {
-        id = PyInterpreterState_GetIDObject(interp);
+        id = get_interpid_obj(interp);
         if (id == NULL) {
             Py_DECREF(ids);
             return NULL;
@@ -377,7 +742,7 @@ interp_get_current(PyObject *self, PyObject *Py_UNUSED(ignored))
     if (interp == NULL) {
         return NULL;
     }
-    return PyInterpreterState_GetIDObject(interp);
+    return get_interpid_obj(interp);
 }
 
 PyDoc_STRVAR(get_current_doc,
@@ -391,13 +756,67 @@ interp_get_main(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     // Currently, 0 is always the main interpreter.
     int64_t id = 0;
-    return PyInterpreterID_New(id);
+    return PyLong_FromLongLong(id);
 }
 
 PyDoc_STRVAR(get_main_doc,
 "get_main() -> ID\n\
 \n\
 Return the ID of main interpreter.");
+
+static PyObject *
+interp_set___main___attrs(PyObject *self, PyObject *args)
+{
+    PyObject *id, *updates;
+    if (!PyArg_ParseTuple(args, "OO:" MODULE_NAME_STR ".set___main___attrs",
+                          &id, &updates))
+    {
+        return NULL;
+    }
+
+    // Look up the interpreter.
+    PyInterpreterState *interp = look_up_interp(id);
+    if (interp == NULL) {
+        return NULL;
+    }
+
+    // Check the updates.
+    if (updates != Py_None) {
+        Py_ssize_t size = PyObject_Size(updates);
+        if (size < 0) {
+            return NULL;
+        }
+        if (size == 0) {
+            PyErr_SetString(PyExc_ValueError,
+                            "arg 2 must be a non-empty mapping");
+            return NULL;
+        }
+    }
+
+    _PyXI_session session = {0};
+
+    // Prep and switch interpreters, including apply the updates.
+    if (_PyXI_Enter(&session, interp, updates) < 0) {
+        if (!PyErr_Occurred()) {
+            _PyXI_ApplyCapturedException(&session);
+            assert(PyErr_Occurred());
+        }
+        else {
+            assert(!_PyXI_HasCapturedException(&session));
+        }
+        return NULL;
+    }
+
+    // Clean up and switch back.
+    _PyXI_Exit(&session);
+
+    Py_RETURN_NONE;
+}
+
+PyDoc_STRVAR(set___main___attrs_doc,
+"set___main___attrs(id, ns)\n\
+\n\
+Bind the given attributes in the interpreter's __main__ module.");
 
 static PyUnicodeObject *
 convert_script_arg(PyObject *arg, const char *fname, const char *displayname,
@@ -481,7 +900,7 @@ _interp_exec(PyObject *self,
              PyObject **p_excinfo)
 {
     // Look up the interpreter.
-    PyInterpreterState *interp = PyInterpreterID_LookUp(id_arg);
+    PyInterpreterState *interp = look_up_interp(id_arg);
     if (interp == NULL) {
         return -1;
     }
@@ -514,18 +933,18 @@ interp_exec(PyObject *self, PyObject *args, PyObject *kwds)
     PyObject *id, *code;
     PyObject *shared = NULL;
     if (!PyArg_ParseTupleAndKeywords(args, kwds,
-                                     "OO|O:" MODULE_NAME ".exec", kwlist,
+                                     "OO|O:" MODULE_NAME_STR ".exec", kwlist,
                                      &id, &code, &shared)) {
         return NULL;
     }
 
     const char *expected = "a string, a function, or a code object";
     if (PyUnicode_Check(code)) {
-         code = (PyObject *)convert_script_arg(code, MODULE_NAME ".exec",
+         code = (PyObject *)convert_script_arg(code, MODULE_NAME_STR ".exec",
                                                "argument 2", expected);
     }
     else {
-         code = (PyObject *)convert_code_arg(code, MODULE_NAME ".exec",
+         code = (PyObject *)convert_code_arg(code, MODULE_NAME_STR ".exec",
                                              "argument 2", expected);
     }
     if (code == NULL) {
@@ -560,18 +979,68 @@ If a function is provided, its code object is used and all its state\n\
 is ignored, including its __globals__ dict.");
 
 static PyObject *
+interp_call(PyObject *self, PyObject *args, PyObject *kwds)
+{
+    static char *kwlist[] = {"id", "callable", "args", "kwargs", NULL};
+    PyObject *id, *callable;
+    PyObject *args_obj = NULL;
+    PyObject *kwargs_obj = NULL;
+    if (!PyArg_ParseTupleAndKeywords(args, kwds,
+                                     "OO|OO:" MODULE_NAME_STR ".call", kwlist,
+                                     &id, &callable, &args_obj, &kwargs_obj)) {
+        return NULL;
+    }
+
+    if (args_obj != NULL) {
+        PyErr_SetString(PyExc_ValueError, "got unexpected args");
+        return NULL;
+    }
+    if (kwargs_obj != NULL) {
+        PyErr_SetString(PyExc_ValueError, "got unexpected kwargs");
+        return NULL;
+    }
+
+    PyObject *code = (PyObject *)convert_code_arg(callable, MODULE_NAME_STR ".call",
+                                                  "argument 2", "a function");
+    if (code == NULL) {
+        return NULL;
+    }
+
+    PyObject *excinfo = NULL;
+    int res = _interp_exec(self, id, code, NULL, &excinfo);
+    Py_DECREF(code);
+    if (res < 0) {
+        assert((excinfo == NULL) != (PyErr_Occurred() == NULL));
+        return excinfo;
+    }
+    Py_RETURN_NONE;
+}
+
+PyDoc_STRVAR(call_doc,
+"call(id, callable, args=None, kwargs=None)\n\
+\n\
+Call the provided object in the identified interpreter.\n\
+Pass the given args and kwargs, if possible.\n\
+\n\
+\"callable\" may be a plain function with no free vars that takes\n\
+no arguments.\n\
+\n\
+The function's code object is used and all its state\n\
+is ignored, including its __globals__ dict.");
+
+static PyObject *
 interp_run_string(PyObject *self, PyObject *args, PyObject *kwds)
 {
     static char *kwlist[] = {"id", "script", "shared", NULL};
     PyObject *id, *script;
     PyObject *shared = NULL;
     if (!PyArg_ParseTupleAndKeywords(args, kwds,
-                                     "OU|O:" MODULE_NAME ".run_string", kwlist,
+                                     "OU|O:" MODULE_NAME_STR ".run_string", kwlist,
                                      &id, &script, &shared)) {
         return NULL;
     }
 
-    script = (PyObject *)convert_script_arg(script, MODULE_NAME ".exec",
+    script = (PyObject *)convert_script_arg(script, MODULE_NAME_STR ".exec",
                                             "argument 2", "a string");
     if (script == NULL) {
         return NULL;
@@ -592,7 +1061,7 @@ PyDoc_STRVAR(run_string_doc,
 \n\
 Execute the provided string in the identified interpreter.\n\
 \n\
-(See " MODULE_NAME ".exec().");
+(See " MODULE_NAME_STR ".exec().");
 
 static PyObject *
 interp_run_func(PyObject *self, PyObject *args, PyObject *kwds)
@@ -601,12 +1070,12 @@ interp_run_func(PyObject *self, PyObject *args, PyObject *kwds)
     PyObject *id, *func;
     PyObject *shared = NULL;
     if (!PyArg_ParseTupleAndKeywords(args, kwds,
-                                     "OO|O:" MODULE_NAME ".run_func", kwlist,
+                                     "OO|O:" MODULE_NAME_STR ".run_func", kwlist,
                                      &id, &func, &shared)) {
         return NULL;
     }
 
-    PyCodeObject *code = convert_code_arg(func, MODULE_NAME ".exec",
+    PyCodeObject *code = convert_code_arg(func, MODULE_NAME_STR ".exec",
                                           "argument 2",
                                           "a function or a code object");
     if (code == NULL) {
@@ -630,7 +1099,7 @@ Execute the body of the provided function in the identified interpreter.\n\
 Code objects are also supported.  In both cases, closures and args\n\
 are not supported.  Methods and other callables are not supported either.\n\
 \n\
-(See " MODULE_NAME ".exec().");
+(See " MODULE_NAME_STR ".exec().");
 
 
 static PyObject *
@@ -667,11 +1136,11 @@ interp_is_running(PyObject *self, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    PyInterpreterState *interp = PyInterpreterID_LookUp(id);
+    PyInterpreterState *interp = look_up_interp(id);
     if (interp == NULL) {
         return NULL;
     }
-    if (_PyInterpreterState_IsRunningMain(interp)) {
+    if (is_running_main(interp)) {
         Py_RETURN_TRUE;
     }
     Py_RETURN_FALSE;
@@ -683,7 +1152,99 @@ PyDoc_STRVAR(is_running_doc,
 Return whether or not the identified interpreter is running.");
 
 
+static PyObject *
+interp_get_config(PyObject *self, PyObject *args, PyObject *kwds)
+{
+    static char *kwlist[] = {"id", NULL};
+    PyObject *idobj = NULL;
+    if (!PyArg_ParseTupleAndKeywords(args, kwds,
+                                     "O:get_config", kwlist, &idobj))
+    {
+        return NULL;
+    }
+
+    PyInterpreterState *interp;
+    if (idobj == NULL) {
+        interp = PyInterpreterState_Get();
+    }
+    else {
+        interp = _PyInterpreterState_LookUpIDObject(idobj);
+        if (interp == NULL) {
+            return NULL;
+        }
+    }
+
+    PyInterpreterConfig config;
+    if (_PyInterpreterConfig_InitFromState(&config, interp) < 0) {
+        return NULL;
+    }
+    PyObject *dict = _PyInterpreterConfig_AsDict(&config);
+    if (dict == NULL) {
+        return NULL;
+    }
+
+    PyObject *configobj = _PyNamespace_New(dict);
+    Py_DECREF(dict);
+    return configobj;
+}
+
+PyDoc_STRVAR(get_config_doc,
+"get_config(id) -> types.SimpleNamespace\n\
+\n\
+Return a representation of the config used to initialize the interpreter.");
+
+
+static PyObject *
+interp_incref(PyObject *self, PyObject *args, PyObject *kwds)
+{
+    static char *kwlist[] = {"id", "implieslink",  NULL};
+    PyObject *id;
+    int implieslink = 0;
+    if (!PyArg_ParseTupleAndKeywords(args, kwds,
+                                     "O|$p:incref", kwlist,
+                                     &id, &implieslink))
+    {
+        return NULL;
+    }
+
+    PyInterpreterState *interp = look_up_interp(id);
+    if (interp == NULL) {
+        return NULL;
+    }
+
+    if (implieslink) {
+        // Decref to 0 will destroy the interpreter.
+        _PyInterpreterState_RequireIDRef(interp, 1);
+    }
+    _PyInterpreterState_IDIncref(interp);
+
+    Py_RETURN_NONE;
+}
+
+
+static PyObject *
+interp_decref(PyObject *self, PyObject *args, PyObject *kwds)
+{
+    static char *kwlist[] = {"id", NULL};
+    PyObject *id;
+    if (!PyArg_ParseTupleAndKeywords(args, kwds,
+                                     "O:decref", kwlist, &id)) {
+        return NULL;
+    }
+
+    PyInterpreterState *interp = look_up_interp(id);
+    if (interp == NULL) {
+        return NULL;
+    }
+    _PyInterpreterState_IDDecref(interp);
+
+    Py_RETURN_NONE;
+}
+
+
 static PyMethodDef module_functions[] = {
+    {"new_config",                _PyCFunction_CAST(interp_new_config),
+     METH_VARARGS | METH_KEYWORDS, new_config_doc},
     {"create",                    _PyCFunction_CAST(interp_create),
      METH_VARARGS | METH_KEYWORDS, create_doc},
     {"destroy",                   _PyCFunction_CAST(interp_destroy),
@@ -697,15 +1258,26 @@ static PyMethodDef module_functions[] = {
 
     {"is_running",                _PyCFunction_CAST(interp_is_running),
      METH_VARARGS | METH_KEYWORDS, is_running_doc},
+    {"get_config",                _PyCFunction_CAST(interp_get_config),
+     METH_VARARGS | METH_KEYWORDS, get_config_doc},
     {"exec",                      _PyCFunction_CAST(interp_exec),
      METH_VARARGS | METH_KEYWORDS, exec_doc},
+    {"call",                      _PyCFunction_CAST(interp_call),
+     METH_VARARGS | METH_KEYWORDS, call_doc},
     {"run_string",                _PyCFunction_CAST(interp_run_string),
      METH_VARARGS | METH_KEYWORDS, run_string_doc},
     {"run_func",                  _PyCFunction_CAST(interp_run_func),
      METH_VARARGS | METH_KEYWORDS, run_func_doc},
 
+    {"set___main___attrs",        _PyCFunction_CAST(interp_set___main___attrs),
+     METH_VARARGS, set___main___attrs_doc},
     {"is_shareable",              _PyCFunction_CAST(object_is_shareable),
      METH_VARARGS | METH_KEYWORDS, is_shareable_doc},
+
+    {"incref",                    _PyCFunction_CAST(interp_incref),
+     METH_VARARGS | METH_KEYWORDS, NULL},
+    {"decref",                    _PyCFunction_CAST(interp_decref),
+     METH_VARARGS | METH_KEYWORDS, NULL},
 
     {NULL,                        NULL}           /* sentinel */
 };
@@ -720,8 +1292,23 @@ The 'interpreters' module provides a more convenient interface.");
 static int
 module_exec(PyObject *mod)
 {
-    // PyInterpreterID
-    if (PyModule_AddType(mod, &PyInterpreterID_Type) < 0) {
+    PyInterpreterState *interp = PyInterpreterState_Get();
+    module_state *state = get_module_state(mod);
+
+    // exceptions
+    if (PyModule_AddType(mod, (PyTypeObject *)PyExc_InterpreterError) < 0) {
+        goto error;
+    }
+    if (PyModule_AddType(mod, (PyTypeObject *)PyExc_InterpreterNotFoundError) < 0) {
+        goto error;
+    }
+    PyObject *PyExc_NotShareableError = \
+                _PyInterpreterState_GetXIState(interp)->PyExc_NotShareableError;
+    if (PyModule_AddType(mod, (PyTypeObject *)PyExc_NotShareableError) < 0) {
+        goto error;
+    }
+
+    if (register_memoryview_xid(mod, &state->XIBufferViewType) < 0) {
         goto error;
     }
 
@@ -765,7 +1352,7 @@ module_free(void *mod)
 
 static struct PyModuleDef moduledef = {
     .m_base = PyModuleDef_HEAD_INIT,
-    .m_name = MODULE_NAME,
+    .m_name = MODULE_NAME_STR,
     .m_doc = module_doc,
     .m_size = sizeof(module_state),
     .m_methods = module_functions,
@@ -776,7 +1363,7 @@ static struct PyModuleDef moduledef = {
 };
 
 PyMODINIT_FUNC
-PyInit__xxsubinterpreters(void)
+MODINIT_FUNC_NAME(void)
 {
     return PyModuleDef_Init(&moduledef);
 }
