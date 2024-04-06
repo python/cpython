@@ -7,7 +7,8 @@ import sys
 import textwrap
 import warnings
 from contextlib import suppress
-from _colorize import ANSIColors
+
+from _colorize import ANSIColors, can_colorize
 
 __all__ = ['extract_stack', 'extract_tb', 'format_exception',
            'format_exception_only', 'format_list', 'format_stack',
@@ -133,8 +134,6 @@ BUILTIN_EXCEPTION_LIMIT = object()
 
 
 def _print_exception_bltin(exc, /):
-    from _colorize import can_colorize
-
     file = sys.stderr if sys.stderr is not None else sys.__stderr__
     colorize = can_colorize()
     return print_exception(exc, limit=BUILTIN_EXCEPTION_LIMIT, file=file, colorize=colorize)
