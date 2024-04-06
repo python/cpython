@@ -175,6 +175,8 @@ def translate(pat, *, recursive=False, include_hidden=False, seps=None):
 def _compile_pattern(include_hidden, recursive, case_sensitive, sep, pattern):
     """Compile an re.Pattern object for the given glob-style pattern.
     """
+    if case_sensitive is None:
+        case_sensitive = _case_sensitive
     flags = re.NOFLAG if case_sensitive else re.IGNORECASE
     regex = translate(pattern, include_hidden=include_hidden,
                       recursive=recursive, seps=sep)
@@ -236,7 +238,7 @@ def _relative_glob(select, dirname, dir_fd=None):
 
 class _Globber:
     def __init__(self, include_hidden=False, recursive=False,
-                 case_sensitive=_case_sensitive, sep=os.path.sep):
+                 case_sensitive=None, sep=os.path.sep):
         self.include_hidden = include_hidden
         self.recursive = recursive
         self.case_sensitive = case_sensitive
@@ -258,7 +260,7 @@ class _Globber:
             return self.select_exists
         elif self.recursive and parts[-1] == '**':
             selector = self.recursive_selector
-        elif self.case_sensitive != _case_sensitive:
+        elif self.case_sensitive is not None:
             selector = self.wildcard_selector
         elif magic_check.search(parts[-1]) is not None:
             selector = self.wildcard_selector

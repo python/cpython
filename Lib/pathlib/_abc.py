@@ -690,8 +690,6 @@ class PathBase(PurePathBase):
         return self.joinpath(name)
 
     def _glob_selector(self, parts, case_sensitive, recurse_symlinks):
-        if case_sensitive is None:
-            case_sensitive = _is_case_sensitive(self.parser)
         globber = self._globber(
             include_hidden=True,
             recursive=True if recurse_symlinks else glob._disable_recurse_symlinks,
