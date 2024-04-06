@@ -1724,7 +1724,7 @@ def _newton_raphson(f_inv_estimate, f, f_prime, tolerance=1e-12):
 
 def _simple_s_curve(power):
     "S-curve that crosses (0, -1), (1/2, 0), (1, 1)."
-    # Approximates the invcdf for a kernels with support==1.0
+    # Approximates the invcdf for kernels with support==1.0
     return lambda p: ((2 * p) ** power - 1
                       if p <= 1/2 else
                       1 - (2 - 2*p) ** power)
@@ -1753,7 +1753,7 @@ _kernel_invcdfs = {
     'quartic': _quartic_invcdf,
     'triweight': _triweight_invcdf,
     'triangular': lambda p: sqrt(2*p) - 1 if p < 1/2 else 1 - sqrt(2 - 2*p),
-    'cosine': lambda p: 2*asin(2*p - 1)/pi,
+    'cosine': lambda p: 2 * asin(2*p - 1) / pi,
 }
 _kernel_invcdfs['gauss'] = _kernel_invcdfs['normal']
 _kernel_invcdfs['uniform'] = _kernel_invcdfs['rectangular']
