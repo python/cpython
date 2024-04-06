@@ -81,7 +81,7 @@ class ParserBase:
         # A simple, practical version could look like: ((name|stringlit) S*) + '>'
         n = len(rawdata)
         if rawdata[j:j+2] == '--': #comment
-            # Locate --.*-- as the body of the comment
+            # Locate the body of the comment.
             return self.parse_comment(i)
         elif rawdata[j] == '[': #marked section
             # Locate [statusWord [...arbitrary SGML...]] as the body of the marked section
@@ -166,7 +166,7 @@ class ParserBase:
         rawdata = self.rawdata
         if rawdata[i:i+4] != '<!--':
             raise AssertionError('unexpected call to parse_comment()')
-        match = _commentclose.search(rawdata, i+4)
+        match = _commentclose.search(rawdata, i+2)
         if not match:
             return -1
         if report:
