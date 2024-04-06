@@ -329,6 +329,8 @@ text
                 '<!-->'
                 '<!--<!--->'
                 '<!--And I am so-called incorrectly-closed-comment--!>'
+                '<!--!>'
+                '<!---!>'
                 '<!--I have invalid attempt to close (space) -- >-->'
                 '<!--Me too (invalid character) --x>-->'
                 '<!--Me too (invalid characters) --cheese>-->')
@@ -343,6 +345,8 @@ text
                     ('comment', ''),
                     ('comment', '<!-'),
                     ('comment', 'And I am so-called incorrectly-closed-comment'),
+                    ('comment', ''),
+                    ('comment', ''),
                     ('comment', 'I have invalid attempt to close (space) -- >'),
                     ('comment', 'Me too (invalid character) --x>'),
                     ('comment', 'Me too (invalid characters) --cheese>')
