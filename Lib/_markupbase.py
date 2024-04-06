@@ -161,13 +161,19 @@ class ParserBase:
             self.unknown_decl(rawdata[i+3: j])
         return match.end(0)
 
-    # Internal -- parse comment, return length or -1 if not terminated
-    def parse_comment(self, i, report=1):
+    # Internal -- parse comment
+    # if end is True, returns EOF location if no close tag is found, otherwise
+    # return length or -1 if not terminated
+    def parse_comment(self, i, report=1, end=False):
         rawdata = self.rawdata
         if rawdata[i:i+4] != '<!--':
             raise AssertionError('unexpected call to parse_comment()')
         match = _commentclose.search(rawdata, i+2)
         if not match:
+            if end:
+                if report:
+                    self.handle_comment(rawdata[i+4:])
+                return len(rawdata)
             return -1
         if report:
             j = match.start(0)

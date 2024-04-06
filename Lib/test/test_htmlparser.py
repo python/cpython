@@ -333,7 +333,8 @@ text
                 '<!---!>'
                 '<!--I have invalid attempt to close (space) -- >-->'
                 '<!--Me too (invalid character) --x>-->'
-                '<!--Me too (invalid characters) --cheese>-->')
+                '<!--Me too (invalid characters) --cheese>-->'
+                '<!--EOF comment')
         expected = [('comment', " I'm a valid comment "),
                     ('comment', 'me too!'),
                     ('comment', '--'),
@@ -349,8 +350,8 @@ text
                     ('comment', ''),
                     ('comment', 'I have invalid attempt to close (space) -- >'),
                     ('comment', 'Me too (invalid character) --x>'),
-                    ('comment', 'Me too (invalid characters) --cheese>')
-                    ]
+                    ('comment', 'Me too (invalid characters) --cheese>'),
+                    ('comment', 'EOF comment')]
         self._run_check(html, expected)
 
     def test_condcoms(self):
