@@ -33,7 +33,7 @@ def can_colorize():
         return True
     if "NO_COLOR" in os.environ:
         return False
-    if not _COLORIZE:
+    if not COLORIZE:
         return False
     if "FORCE_COLOR" in os.environ:
         return True

@@ -114,12 +114,12 @@ class C(object):
 class Test(unittest.TestCase):
     def setUp(self):
         super().setUp()
-        self.colorize = _colorize._COLORIZE
-        _colorize._COLORIZE = False
+        self.colorize = _colorize.COLORIZE
+        _colorize.COLORIZE = False
 
     def tearDown(self):
         super().tearDown()
-        _colorize._COLORIZE = self.colorize
+        _colorize.COLORIZE = self.colorize
 
     def test_testmod(self):
         import doctest

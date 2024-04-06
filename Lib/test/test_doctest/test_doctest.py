@@ -2657,8 +2657,8 @@ calling module.  The return value is (#failures, #tests).
 
 We don't want colour or `-v` in sys.argv for these tests.
 
-    >>> save_colorize = _colorize._COLORIZE
-    >>> _colorize._COLORIZE = False
+    >>> save_colorize = _colorize.COLORIZE
+    >>> _colorize.COLORIZE = False
     >>> save_argv = sys.argv
     >>> if '-v' in sys.argv:
     ...     sys.argv = [arg for arg in save_argv if arg != '-v']
@@ -2825,7 +2825,7 @@ Test the verbose output:
     TestResults(failed=0, attempted=2)
     >>> doctest.master = None  # Reset master.
     >>> sys.argv = save_argv
-    >>> _colorize._COLORIZE = save_colorize
+    >>> _colorize.COLORIZE = save_colorize
 """
 
 

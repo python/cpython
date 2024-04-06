@@ -1193,8 +1193,8 @@ class DocTestRunner:
     The `run` method is used to process a single DocTest case.  It
     returns a TestResults instance.
 
-        >>> save_colorize = _colorize._COLORIZE
-        >>> _colorize._COLORIZE = False
+        >>> save_colorize = _colorize.COLORIZE
+        >>> _colorize.COLORIZE = False
 
         >>> tests = DocTestFinder().find(_TestClass)
         >>> runner = DocTestRunner(verbose=False)
@@ -1247,7 +1247,7 @@ class DocTestRunner:
     overriding the methods `report_start`, `report_success`,
     `report_unexpected_exception`, and `report_failure`.
 
-        >>> _colorize._COLORIZE = save_colorize
+        >>> _colorize.COLORIZE = save_colorize
     """
     # This divider string is used to separate failure messages, and to
     # separate sections of the summary.
@@ -1593,7 +1593,7 @@ class DocTestRunner:
         summary is.  If the verbosity is not specified, then the
         DocTestRunner's verbosity is used.
         """
-        from _colorize import _ANSIColors, _can_colorize
+        from _colorize import ANSIColors, can_colorize
 
         if verbose is None:
             verbose = self._verbose
@@ -1614,13 +1614,13 @@ class DocTestRunner:
             else:
                 failed.append((name, (failures, tries, skips)))
 
-        if _can_colorize():
-            bold_green = _ANSIColors.BOLD_GREEN
-            bold_red = _ANSIColors.BOLD_RED
-            green = _ANSIColors.GREEN
-            red = _ANSIColors.RED
-            reset = _ANSIColors.RESET
-            yellow = _ANSIColors.YELLOW
+        if can_colorize():
+            bold_green = ANSIColors.BOLD_GREEN
+            bold_red = ANSIColors.BOLD_RED
+            green = ANSIColors.GREEN
+            red = ANSIColors.RED
+            reset = ANSIColors.RESET
+            yellow = ANSIColors.YELLOW
         else:
             bold_green = ""
             bold_red = ""

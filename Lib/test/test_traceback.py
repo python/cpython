@@ -47,12 +47,12 @@ class TracebackCases(unittest.TestCase):
     # formatting of SyntaxErrors works based on changes for 2.1.
     def setUp(self):
         super().setUp()
-        self.colorize = _colorize._COLORIZE
-        _colorize._COLORIZE = False
+        self.colorize = _colorize.COLORIZE
+        _colorize.COLORIZE = False
 
     def tearDown(self):
         super().tearDown()
-        _colorize._COLORIZE = self.colorize
+        _colorize.COLORIZE = self.colorize
 
     def get_exception_format(self, func, exc):
         try:
@@ -4293,9 +4293,9 @@ class TestColorizedTraceback(unittest.TestCase):
                 e, capture_locals=True
             )
         lines = "".join(exc.format(colorize=True))
-        red = _colorize._ANSIColors.RED
-        boldr = _colorize._ANSIColors.BOLD_RED
-        reset = _colorize._ANSIColors.RESET
+        red = _colorize.ANSIColors.RED
+        boldr = _colorize.ANSIColors.BOLD_RED
+        reset = _colorize.ANSIColors.RESET
         self.assertIn("y = " + red + "x['a']['b']" + reset + boldr + "['c']" + reset, lines)
         self.assertIn("return " + red + "foo" + reset + boldr + "(1,2,3,4)" + reset, lines)
         self.assertIn("return " + red + "baz" + reset + boldr + "(1," + reset, lines)
@@ -4311,11 +4311,11 @@ class TestColorizedTraceback(unittest.TestCase):
                 e, capture_locals=True
             )
         actual = "".join(exc.format(colorize=True))
-        red = _colorize._ANSIColors.RED
-        magenta = _colorize._ANSIColors.MAGENTA
-        boldm = _colorize._ANSIColors.BOLD_MAGENTA
-        boldr = _colorize._ANSIColors.BOLD_RED
-        reset = _colorize._ANSIColors.RESET
+        red = _colorize.ANSIColors.RED
+        magenta = _colorize.ANSIColors.MAGENTA
+        boldm = _colorize.ANSIColors.BOLD_MAGENTA
+        boldr = _colorize.ANSIColors.BOLD_RED
+        reset = _colorize.ANSIColors.RESET
         expected = "".join([
         f'  File {magenta}"<string>"{reset}, line {magenta}1{reset}\n',
         f'    a {boldr}${reset} b\n',
@@ -4334,15 +4334,15 @@ class TestColorizedTraceback(unittest.TestCase):
             self.fail("No exception thrown.")
         except Exception as e:
             with captured_output("stderr") as tbstderr:
-                with unittest.mock.patch('_colorize._can_colorize', return_value=True):
+                with unittest.mock.patch('_colorize.can_colorize', return_value=True):
                     exception_print(e)
             actual = tbstderr.getvalue().splitlines()
 
-        red = _colorize._ANSIColors.RED
-        boldr = _colorize._ANSIColors.BOLD_RED
-        magenta = _colorize._ANSIColors.MAGENTA
-        boldm = _colorize._ANSIColors.BOLD_MAGENTA
-        reset = _colorize._ANSIColors.RESET
+        red = _colorize.ANSIColors.RED
+        boldr = _colorize.ANSIColors.BOLD_RED
+        magenta = _colorize.ANSIColors.MAGENTA
+        boldm = _colorize.ANSIColors.BOLD_MAGENTA
+        reset = _colorize.ANSIColors.RESET
         lno_foo = foo.__code__.co_firstlineno
         expected = ['Traceback (most recent call last):',
             f'  File {magenta}"{__file__}"{reset}, '
@@ -4365,23 +4365,23 @@ class TestColorizedTraceback(unittest.TestCase):
             with unittest.mock.patch("os.isatty") as isatty_mock:
                 isatty_mock.return_value = True
                 with unittest.mock.patch("os.environ", {'TERM': 'dumb'}):
-                    self.assertEqual(_colorize._can_colorize(), False)
+                    self.assertEqual(_colorize.can_colorize(), False)
                 with unittest.mock.patch("os.environ", {'PYTHON_COLORS': '1'}):
-                    self.assertEqual(_colorize._can_colorize(), True)
+                    self.assertEqual(_colorize.can_colorize(), True)
                 with unittest.mock.patch("os.environ", {'PYTHON_COLORS': '0'}):
-                    self.assertEqual(_colorize._can_colorize(), False)
+                    self.assertEqual(_colorize.can_colorize(), False)
                 with unittest.mock.patch("os.environ", {'NO_COLOR': '1'}):
-                    self.assertEqual(_colorize._can_colorize(), False)
+                    self.assertEqual(_colorize.can_colorize(), False)
                 with unittest.mock.patch("os.environ", {'NO_COLOR': '1', "PYTHON_COLORS": '1'}):
-                    self.assertEqual(_colorize._can_colorize(), True)
+                    self.assertEqual(_colorize.can_colorize(), True)
                 with unittest.mock.patch("os.environ", {'FORCE_COLOR': '1'}):
-                    self.assertEqual(_colorize._can_colorize(), True)
+                    self.assertEqual(_colorize.can_colorize(), True)
                 with unittest.mock.patch("os.environ", {'FORCE_COLOR': '1', 'NO_COLOR': '1'}):
-                    self.assertEqual(_colorize._can_colorize(), False)
+                    self.assertEqual(_colorize.can_colorize(), False)
                 with unittest.mock.patch("os.environ", {'FORCE_COLOR': '1', "PYTHON_COLORS": '0'}):
-                    self.assertEqual(_colorize._can_colorize(), False)
+                    self.assertEqual(_colorize.can_colorize(), False)
                 isatty_mock.return_value = False
-                self.assertEqual(_colorize._can_colorize(), False)
+                self.assertEqual(_colorize.can_colorize(), False)
 
 
 if __name__ == "__main__":

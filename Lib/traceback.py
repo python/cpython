@@ -8,7 +8,7 @@ import textwrap
 import warnings
 from contextlib import suppress
 
-from _colorize import _ANSIColors
+from _colorize import ANSIColors
 
 __all__ = ['extract_stack', 'extract_tb', 'format_exception',
            'format_exception_only', 'format_list', 'format_stack',
@@ -134,10 +134,10 @@ BUILTIN_EXCEPTION_LIMIT = object()
 
 
 def _print_exception_bltin(exc, /):
-    from _colorize import _can_colorize
+    from _colorize import can_colorize
 
     file = sys.stderr if sys.stderr is not None else sys.__stderr__
-    colorize = _can_colorize()
+    colorize = can_colorize()
     return print_exception(exc, limit=BUILTIN_EXCEPTION_LIMIT, file=file, colorize=colorize)
 
 
@@ -184,9 +184,9 @@ def _format_final_exc_line(etype, value, *, insert_final_newline=True, colorize=
     end_char = "\n" if insert_final_newline else ""
     if colorize:
         if value is None or not valuestr:
-            line = f"{_ANSIColors.BOLD_MAGENTA}{etype}{_ANSIColors.RESET}{end_char}"
+            line = f"{ANSIColors.BOLD_MAGENTA}{etype}{ANSIColors.RESET}{end_char}"
         else:
-            line = f"{_ANSIColors.BOLD_MAGENTA}{etype}{_ANSIColors.RESET}: {_ANSIColors.MAGENTA}{valuestr}{_ANSIColors.RESET}{end_char}"
+            line = f"{ANSIColors.BOLD_MAGENTA}{etype}{ANSIColors.RESET}: {ANSIColors.MAGENTA}{valuestr}{ANSIColors.RESET}{end_char}"
     else:
         if value is None or not valuestr:
             line = f"{etype}{end_char}"
@@ -523,15 +523,15 @@ class StackSummary(list):
             filename = "<stdin>"
         if colorize:
             row.append('  File {}"{}"{}, line {}{}{}, in {}{}{}\n'.format(
-                    _ANSIColors.MAGENTA,
+                    ANSIColors.MAGENTA,
                     filename,
-                    _ANSIColors.RESET,
-                    _ANSIColors.MAGENTA,
+                    ANSIColors.RESET,
+                    ANSIColors.MAGENTA,
                     frame_summary.lineno,
-                    _ANSIColors.RESET,
-                    _ANSIColors.MAGENTA,
+                    ANSIColors.RESET,
+                    ANSIColors.MAGENTA,
                     frame_summary.name,
-                    _ANSIColors.RESET,
+                    ANSIColors.RESET,
                     )
             )
         else:
@@ -658,11 +658,11 @@ class StackSummary(list):
                         for color, group in itertools.groupby(itertools.zip_longest(line, carets, fillvalue=""), key=lambda x: x[1]):
                             caret_group = list(group)
                             if color == "^":
-                                colorized_line_parts.append(_ANSIColors.BOLD_RED + "".join(char for char, _ in caret_group) + _ANSIColors.RESET)
-                                colorized_carets_parts.append(_ANSIColors.BOLD_RED + "".join(caret for _, caret in caret_group) + _ANSIColors.RESET)
+                                colorized_line_parts.append(ANSIColors.BOLD_RED + "".join(char for char, _ in caret_group) + ANSIColors.RESET)
+                                colorized_carets_parts.append(ANSIColors.BOLD_RED + "".join(caret for _, caret in caret_group) + ANSIColors.RESET)
                             elif color == "~":
-                                colorized_line_parts.append(_ANSIColors.RED + "".join(char for char, _ in caret_group) + _ANSIColors.RESET)
-                                colorized_carets_parts.append(_ANSIColors.RED + "".join(caret for _, caret in caret_group) + _ANSIColors.RESET)
+                                colorized_line_parts.append(ANSIColors.RED + "".join(char for char, _ in caret_group) + ANSIColors.RESET)
+                                colorized_carets_parts.append(ANSIColors.RED + "".join(caret for _, caret in caret_group) + ANSIColors.RESET)
                             else:
                                 colorized_line_parts.append("".join(char for char, _ in caret_group))
                                 colorized_carets_parts.append("".join(caret for _, caret in caret_group))
@@ -1238,12 +1238,12 @@ class TracebackException:
         if self.lineno is not None:
             if colorize:
                 yield '  File {}"{}"{}, line {}{}{}\n'.format(
-                    _ANSIColors.MAGENTA,
+                    ANSIColors.MAGENTA,
                     self.filename or "<string>",
-                    _ANSIColors.RESET,
-                    _ANSIColors.MAGENTA,
+                    ANSIColors.RESET,
+                    ANSIColors.MAGENTA,
                     self.lineno,
-                    _ANSIColors.RESET,
+                    ANSIColors.RESET,
                     )
             else:
                 yield '  File "{}", line {}\n'.format(
@@ -1283,11 +1283,11 @@ class TracebackException:
                         # colorize from colno to end_colno
                         ltext = (
                             ltext[:colno] +
-                            _ANSIColors.BOLD_RED + ltext[colno:end_colno] + _ANSIColors.RESET +
+                            ANSIColors.BOLD_RED + ltext[colno:end_colno] + ANSIColors.RESET +
                             ltext[end_colno:]
                         )
-                        start_color = _ANSIColors.BOLD_RED
-                        end_color = _ANSIColors.RESET
+                        start_color = ANSIColors.BOLD_RED
+                        end_color = ANSIColors.RESET
                     yield '    {}\n'.format(ltext)
                     yield '    {}{}{}{}\n'.format(
                         "".join(caretspace),
@@ -1300,12 +1300,12 @@ class TracebackException:
         msg = self.msg or "<no detail available>"
         if colorize:
             yield "{}{}{}: {}{}{}{}\n".format(
-                _ANSIColors.BOLD_MAGENTA,
+                ANSIColors.BOLD_MAGENTA,
                 stype,
-                _ANSIColors.RESET,
-                _ANSIColors.MAGENTA,
+                ANSIColors.RESET,
+                ANSIColors.MAGENTA,
                 msg,
-                _ANSIColors.RESET,
+                ANSIColors.RESET,
                 filename_suffix)
         else:
             yield "{}: {}{}\n".format(stype, msg, filename_suffix)
