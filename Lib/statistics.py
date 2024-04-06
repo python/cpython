@@ -1713,10 +1713,10 @@ class NormalDist:
 
 ## kde_random() ##############################################################
 
-def _newton_raphson(f_inv_est, f, f_prime, tolerance=1e-12):
+def _newton_raphson(f_inv_estimate, f, f_prime, tolerance=1e-12):
     def f_inv(y):
         "Return x such that f(x) ≈ y within the specified tolerance."
-        x = f_inv_est(y)
+        x = f_inv_estimate(y)
         while abs(diff := y - f(x)) > tolerance:
             x += diff / f_prime(x)
         return x
@@ -1730,17 +1730,17 @@ def _simple_s_curve(power):
                       1 - (2 - 2*p) ** power)
 
 _parabolic_invcdf = _newton_raphson(
-    f_inv_est = _simple_s_curve(0.583367470424302),
+    f_inv_estimate = _simple_s_curve(0.583367470424302),
     f = lambda t: -1/4 * t**3 + 3/4 * t + 1/2,
     f_prime = lambda t: 3/4 * (1.0 - t * t))
 
 _quartic_invcdf = _newton_raphson(
-    f_inv_est = _simple_s_curve(0.4258865685331),
+    f_inv_estimate = _simple_s_curve(0.4258865685331),
     f = lambda t: 3/16 * t**5 - 5/8 * t**3 + 15/16 * t + 1/2,
     f_prime = lambda t: 15/16 * (1.0 - t * t) ** 2)
 
 _triweight_invcdf = _newton_raphson(
-    f_inv_est = _simple_s_curve(0.3400218741872791),
+    f_inv_estimate = _simple_s_curve(0.3400218741872791),
     f = lambda t: 35/32 * (-1/7*t**7 + 3/5*t**5 - t**3 + t) + 1/2,
     f_prime = lambda t: 35/32 * (1.0 - t * t) ** 3)
 
