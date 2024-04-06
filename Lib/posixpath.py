@@ -38,12 +38,6 @@ __all__ = ["normcase","isabs","join","splitdrive","splitroot","split","splitext"
            "commonpath", "isjunction","isdevdrive"]
 
 
-def _get_sep(path):
-    if isinstance(path, bytes):
-        return b'/'
-    else:
-        return '/'
-
 # Normalize the case of a pathname.  Trivial in Posix, string.lower on Mac.
 # On MS-DOS this may also turn slashes into backslashes; however, other
 # normalizations (such as optimizing '../' away) are not allowed
@@ -60,7 +54,7 @@ def normcase(s):
 def isabs(s):
     """Test whether a path is absolute"""
     s = os.fspath(s)
-    sep = _get_sep(s)
+    sep = b'/' if isinstance(s, bytes) else '/'
     return s.startswith(sep)
 
 
@@ -74,15 +68,15 @@ def join(a, *p):
     will be discarded.  An empty last part will result in a path that
     ends with a separator."""
     a = os.fspath(a)
-    sep = _get_sep(a)
+    sep = b'/' if isinstance(a, bytes) else '/'
     path = a
     try:
         if not p:
             path[:0] + sep  #23780: Ensure compatible data type even if p is null.
         for b in map(os.fspath, p):
-            if b.startswith(sep):
+            if b.startswith(sep) or not path:  # startswith ensures no mixing
                 path = b
-            elif not path or path.endswith(sep):
+            elif path.endswith(sep):
                 path += b
             else:
                 path += sep + b
@@ -101,7 +95,7 @@ def split(p):
     """Split a pathname.  Returns tuple "(head, tail)" where "tail" is
     everything after the final slash.  Either part may be empty."""
     p = os.fspath(p)
-    sep = _get_sep(p)
+    sep = b'/' if isinstance(p, bytes) else '/'
     i = p.rfind(sep) + 1
     head, tail = p[:i], p[i:]
     if head and head != sep*len(head):
@@ -169,7 +163,7 @@ def splitroot(p):
 def basename(p):
     """Returns the final component of a pathname"""
     p = os.fspath(p)
-    sep = _get_sep(p)
+    sep = b'/' if isinstance(p, bytes) else '/'
     i = p.rfind(sep) + 1
     return p[i:]
 
@@ -179,7 +173,7 @@ def basename(p):
 def dirname(p):
     """Returns the directory component of a pathname"""
     p = os.fspath(p)
-    sep = _get_sep(p)
+    sep = b'/' if isinstance(p, bytes) else '/'
     i = p.rfind(sep) + 1
     head = p[:i]
     if head and head != sep*len(head):
@@ -232,11 +226,12 @@ def expanduser(path):
     path = os.fspath(path)
     if isinstance(path, bytes):
         tilde = b'~'
+        sep = b'/'
     else:
         tilde = '~'
+        sep = '/'
     if not path.startswith(tilde):
         return path
-    sep = _get_sep(path)
     i = path.find(sep, 1)
     if i < 0:
         i = len(path)
