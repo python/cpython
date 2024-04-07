@@ -791,10 +791,12 @@ def relpath(path, start=None):
         sep = b'\\'
         curdir = b'.'
         pardir = b'..'
+        getcwd = os.getcwdb
     else:
         sep = '\\'
         curdir = '.'
         pardir = '..'
+        getcwd = os.getcwd
 
     if start is None:
         start = curdir
@@ -802,8 +804,8 @@ def relpath(path, start=None):
         start = os.fspath(start)
 
     try:
-        start_abs = abspath(normpath(start))
-        path_abs = abspath(normpath(path))
+        start_abs = getcwd() if not start or start == curdir else abspath(start)
+        path_abs = abspath(path)
         start_drive, _, start_rest = splitroot(start_abs)
         path_drive, _, path_rest = splitroot(path_abs)
         if normcase(start_drive) != normcase(path_drive):
