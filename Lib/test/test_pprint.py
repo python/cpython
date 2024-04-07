@@ -497,6 +497,30 @@ OrderedDict([('the', 0),
              ('a', 6),
              ('lazy', 7),
              ('dog', 8)])""")
+        self.assertEqual(pprint.pformat(d.keys(), sort_dicts=False),
+"""\
+odict_keys(['the',
+ 'quick',
+ 'brown',
+ 'fox',
+ 'jumped',
+ 'over',
+ 'a',
+ 'lazy',
+ 'dog'])""")
+        self.assertEqual(pprint.pformat(d.items(), sort_dicts=False),
+"""\
+odict_items([('the', 0),
+ ('quick', 1),
+ ('brown', 2),
+ ('fox', 3),
+ ('jumped', 4),
+ ('over', 5),
+ ('a', 6),
+ ('lazy', 7),
+ ('dog', 8)])""")
+        self.assertEqual(pprint.pformat(d.values(), sort_dicts=False),
+                         "odict_values([0, 1, 2, 3, 4, 5, 6, 7, 8])")
 
     def test_mapping_proxy(self):
         words = 'the quick brown fox jumped over a lazy dog'.split()
