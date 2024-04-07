@@ -1722,7 +1722,7 @@ def _newton_raphson(f_inv_estimate, f, f_prime, tolerance=1e-12):
         return x
     return f_inv
 
-def _simple_s_curve(power=0.5):
+def _simple_s_curve(power):
     "S-curve that crosses (0, -1), (1/2, 0), (1, 1)."
     # Approximates the invcdf for kernels with support: -1 <= x <= 1.
     return lambda p: ((2 * p) ** power - 1
