@@ -788,8 +788,7 @@
             for (int i = 0; i < oparg; i++) {
                 _PyStackRef item = values[i];
                 if (err == 0) {
-                    // TODO steals reference, needs TO_OWNED
-                    err = PySet_Add(set, Py_STACK_UNTAG_BORROWED(item));
+                    err = PySet_Add(set, Py_STACK_UNTAG_OWNED(item));
                 }
                 Py_DECREF_STACKREF(item);
             }

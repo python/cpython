@@ -117,9 +117,9 @@ def write_uop(
                     out.emit(line)
         if not prototype.properties.stores_sp:
             for i, var in enumerate(prototype.stack.outputs):
-                res = stack.push(var)
+                temp = stack.push(var)
                 if not var.peek or is_override:
-                    out.emit(res)
+                    out.emit(temp)
         if debug:
             args = []
             for var in prototype.stack.inputs:
@@ -147,7 +147,8 @@ def write_uop(
         if prototype.properties.stores_sp:
             for i, var in enumerate(prototype.stack.outputs):
                 if not var.peek or is_override:
-                    out.emit(stack.push(var))
+                    for line in stack.push(var):
+                        out.emit(line)
         out.start_line()
         stack.flush(out, cast_type="_Py_UopsSymbol *", should_tag=False)
     except SizeMismatch as ex:

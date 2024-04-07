@@ -146,7 +146,8 @@ class Stack:
                         f"{var.name} = {indirect}stack_pointer[{self.top_offset.to_c()}];\n",
                     )
                 else:
-                    if var.type.strip() != "_PyStackRef":
+                    type = var.type or ""
+                    if type.strip() != "_PyStackRef":
                         return (
                             f"{var.name}_tagged = stack_pointer[{self.top_offset.to_c()}];\n",
                             f"{var.name} = {untag}({var.name}_tagged);\n",
@@ -159,10 +160,10 @@ class Stack:
                 return ("", )
             else:
                 self.defined.add(var.name)
-                res = f"{var.name} = {popped.name};\n"
+                res = [f"{var.name} = {popped.name};\n"]
                 if not var.type or var.type.strip() != "_PyStackRef":
-                    res += f"{var.name}_tagged = Py_STACK_TAG({popped.name});\n"
-                return res
+                    res.append(f"{var.name}_tagged = Py_STACK_TAG({popped.name});\n")
+                return tuple(res)
         self.base_offset.pop(var)
         if var.name in UNUSED:
             return ("", )
@@ -170,7 +171,7 @@ class Stack:
             self.defined.add(var.name)
         cast = f"({var.type})" if (not indirect and var.type and var.type.strip() != "_PyStackRef") else ""
         if indirect:
-            assign = (
+            assign: tuple[str, ...] = (
                 f"{var.name} = {indirect}stack_pointer[{self.base_offset.to_c()}];",
             )
         else:
@@ -187,7 +188,7 @@ class Stack:
             if var.condition == "1":
                 return (*assign, "\n")
             elif var.condition == "0":
-                return ""
+                return ("", )
             else:
                 return (f"if ({var.condition}) {{ {''.join(assign)} }}\n", )
         return (*assign, "\n")
