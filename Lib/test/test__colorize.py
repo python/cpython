@@ -30,12 +30,17 @@ class TestColorizedTraceback(unittest.TestCase):
         red = _colorize.ANSIColors.RED
         boldr = _colorize.ANSIColors.BOLD_RED
         reset = _colorize.ANSIColors.RESET
-        self.assertIn("y = " + red + "x['a']['b']" + reset + boldr + "['c']" + reset, lines)
-        self.assertIn("return " + red + "foo" + reset + boldr + "(1,2,3,4)" + reset, lines)
-        self.assertIn("return " + red + "baz" + reset + boldr + "(1," + reset, lines)
-        self.assertIn(boldr + "2,3" + reset, lines)
-        self.assertIn(boldr + ",4)" + reset, lines)
-        self.assertIn(red + "bar" + reset + boldr + "()" + reset, lines)
+
+        expected = [
+            "y = " + red + "x['a']['b']" + reset + boldr + "['c']" + reset,
+            "return " + red + "foo" + reset + boldr + "(1,2,3,4)" + reset,
+            "return " + red + "baz" + reset + boldr + "(1," + reset,
+            boldr + "2,3" + reset,
+            boldr + ",4)" + reset,
+            red + "bar" + reset + boldr + "()" + reset,
+        ]
+        for line in expected:
+            self.assertIn(line, lines)
 
     def test_colorized_syntax_error(self):
         try:
@@ -101,25 +106,26 @@ class TestColorizedTraceback(unittest.TestCase):
             )
         else:
             virtual_patching = contextlib.nullcontext()
+
+        env_vars_expected = [
+            ({'TERM': 'dumb'}, False),
+            ({'PYTHON_COLORS': '1'}, True),
+            ({'PYTHON_COLORS': '0'}, False),
+            ({'NO_COLOR': '1'}, False),
+            ({'NO_COLOR': '1', "PYTHON_COLORS": '1'}, True),
+            ({'FORCE_COLOR': '1'}, True),
+            ({'FORCE_COLOR': '1', 'NO_COLOR': '1'}, False),
+            ({'FORCE_COLOR': '1', "PYTHON_COLORS": '0'}, False),
+        ]
+
         with virtual_patching:
             with unittest.mock.patch("os.isatty") as isatty_mock:
                 isatty_mock.return_value = True
-                with unittest.mock.patch("os.environ", {'TERM': 'dumb'}):
-                    self.assertEqual(_colorize.can_colorize(), False)
-                with unittest.mock.patch("os.environ", {'PYTHON_COLORS': '1'}):
-                    self.assertEqual(_colorize.can_colorize(), True)
-                with unittest.mock.patch("os.environ", {'PYTHON_COLORS': '0'}):
-                    self.assertEqual(_colorize.can_colorize(), False)
-                with unittest.mock.patch("os.environ", {'NO_COLOR': '1'}):
-                    self.assertEqual(_colorize.can_colorize(), False)
-                with unittest.mock.patch("os.environ", {'NO_COLOR': '1', "PYTHON_COLORS": '1'}):
-                    self.assertEqual(_colorize.can_colorize(), True)
-                with unittest.mock.patch("os.environ", {'FORCE_COLOR': '1'}):
-                    self.assertEqual(_colorize.can_colorize(), True)
-                with unittest.mock.patch("os.environ", {'FORCE_COLOR': '1', 'NO_COLOR': '1'}):
-                    self.assertEqual(_colorize.can_colorize(), False)
-                with unittest.mock.patch("os.environ", {'FORCE_COLOR': '1', "PYTHON_COLORS": '0'}):
-                    self.assertEqual(_colorize.can_colorize(), False)
+
+                for env_vars, expected in env_vars_expected:
+                    with unittest.mock.patch("os.environ", env_vars):
+                        self.assertEqual(_colorize.can_colorize(), expected)
+
                 isatty_mock.return_value = False
                 self.assertEqual(_colorize.can_colorize(), False)
 
