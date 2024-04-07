@@ -409,7 +409,7 @@ NON_ESCAPING_FUNCTIONS = (
     "CALL_STAT_INC",
     "maybe_lltrace_resume_frame",
     "_PyUnicode_JoinArray",
-    "_PyUnicode_JoinTaggedArray",
+    "_PyUnicode_JoinStack",
     "Py_STACK_TAG",
     "Py_STACK_UNTAG_BORROWED",
     "Py_DECREF_STACKREF",

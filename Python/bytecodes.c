@@ -1587,7 +1587,7 @@ dummy_func(
         }
 
         inst(BUILD_STRING, (pieces[oparg] -- str)) {
-            str = _PyUnicode_JoinTaggedArray(&_Py_STR(empty), pieces, oparg);
+            str = _PyUnicode_JoinStack(&_Py_STR(empty), pieces, oparg);
             DECREF_INPUTS();
             ERROR_IF(str == NULL, error);
         }
@@ -1634,8 +1634,7 @@ dummy_func(
             for (int i = 0; i < oparg; i++) {
                 _PyStackRef item = values[i];
                 if (err == 0) {
-                    // TODO steals reference, needs TO_OWNED
-                    err = PySet_Add(set, Py_STACK_UNTAG_BORROWED(item));
+                    err = PySet_Add(set, Py_STACK_UNTAG_OWNED(item));
                 }
                 Py_DECREF_STACKREF(item);
             }

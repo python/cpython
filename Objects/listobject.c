@@ -3191,7 +3191,7 @@ _PyList_FromStackSteal(_PyStackRef const *src, Py_ssize_t n)
 
     PyObject **dst = list->ob_item;
     for (Py_ssize_t i = 0; i < n; i++) {
-        PyObject *item = Py_STACK_UNTAG_BORROWED(src[i]);
+        PyObject *item = Py_STACK_UNTAG_OWNED(src[i]);
         dst[i] = item;
     }
 

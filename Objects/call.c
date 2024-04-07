@@ -1059,7 +1059,7 @@ PyObject_VectorcallTaggedSlow(PyObject *callable,
         PyErr_NoMemory();
         return NULL;
     }
-    _Py_untag_stack(args + 1, tagged, nargs);
+    _Py_untag_stack_owned(args + 1, tagged, nargs);
     PyObject *res = PyObject_Vectorcall(callable, args + 1, nargsf, kwnames);
     PyMem_Free(args);
     return res;
@@ -1069,7 +1069,7 @@ PyObject *
 PyObject_Vectorcall_Tagged(PyObject *callable,
                            const _PyStackRef *tagged, size_t nargsf, PyObject *kwnames)
 {
-#if defined(Py_GIL_DISABLED) || defined(Py_TEST_TAG)
+#if defined(Py_GIL_DISABLED) || defined(Py_TAG_TEST)
     size_t nargs = nargsf & ~PY_VECTORCALL_ARGUMENTS_OFFSET;
     if (kwnames != NULL && PyTuple_CheckExact(kwnames)) {
         nargs += PyTuple_GET_SIZE(kwnames);
@@ -1079,7 +1079,7 @@ PyObject_Vectorcall_Tagged(PyObject *callable,
         return PyObject_VectorcallTaggedSlow(callable, tagged, nargsf, kwnames);
     }
     // + 1 to allow args[-1] to be used by PY_VECTORCALL_ARGUMENTS_OFFSET
-    _Py_untag_stack(args + 1, tagged, nargs);
+    _Py_untag_stack_owned(args + 1, tagged, nargs);
     return PyObject_Vectorcall(callable, args + 1, nargsf, kwnames);
 #else
     (void)(PyObject_VectorcallTaggedSlow);
@@ -1098,7 +1098,7 @@ PyObject_TypeVectorcall_TaggedSlow(PyTypeObject *callable,
         return NULL;
     }
     // + 1 to allow args[-1] to be used by PY_VECTORCALL_ARGUMENTS_OFFSET
-    _Py_untag_stack(args + 1, tagged, nargs);
+    _Py_untag_stack_owned(args + 1, tagged, nargs);
     PyObject *res = callable->tp_vectorcall((PyObject *)callable,
                                             args + 1, nargsf, kwnames);
     PyMem_Free(args);
@@ -1109,14 +1109,14 @@ PyObject *
 PyObject_TypeVectorcall_Tagged(PyTypeObject *callable,
                                const _PyStackRef *tagged, size_t nargsf, PyObject *kwnames)
 {
-#if defined(Py_GIL_DISABLED) || defined(Py_TEST_TAG)
+#if defined(Py_GIL_DISABLED) || defined(Py_TAG_TEST)
     size_t nargs = nargsf & ~PY_VECTORCALL_ARGUMENTS_OFFSET;
     PyObject *args[MAX_UNTAG_SCRATCH];
     if (nargs >= MAX_UNTAG_SCRATCH) {
         return PyObject_TypeVectorcall_TaggedSlow(callable, tagged, nargsf, kwnames);
     }
     // + 1 to allow args[-1] to be used by PY_VECTORCALL_ARGUMENTS_OFFSET
-    _Py_untag_stack(args + 1, tagged, nargs);
+    _Py_untag_stack_owned(args + 1, tagged, nargs);
     return callable->tp_vectorcall((PyObject *)callable, args + 1, nargsf, kwnames);
 #else
     (void)PyObject_TypeVectorcall_TaggedSlow;
@@ -1135,7 +1135,7 @@ PyObject_PyCFunctionFastCall_TaggedSlow(PyCFunctionFast cfunc,
         PyErr_NoMemory();
         return NULL;
     }
-    _Py_untag_stack(args + 1, tagged, nargs);
+    _Py_untag_stack_owned(args + 1, tagged, nargs);
     PyObject *res = cfunc(self, args + 1, nargsf);
     PyMem_Free(args);
     return res;
@@ -1146,13 +1146,13 @@ PyObject_PyCFunctionFastCall_Tagged(PyCFunctionFast cfunc,
                                     PyObject *self,
                                     const _PyStackRef *tagged, Py_ssize_t nargsf)
 {
-#if defined(Py_GIL_DISABLED) || defined(Py_TEST_TAG)
+#if defined(Py_GIL_DISABLED) || defined(Py_TAG_TEST)
     size_t nargs = nargsf & ~PY_VECTORCALL_ARGUMENTS_OFFSET;
     PyObject *args[MAX_UNTAG_SCRATCH];
     if (nargs >= MAX_UNTAG_SCRATCH) {
         return PyObject_PyCFunctionFastCall_TaggedSlow(cfunc, self, tagged, nargsf);
     }
-    _Py_untag_stack(args + 1, tagged, nargs);
+    _Py_untag_stack_owned(args + 1, tagged, nargs);
     return cfunc(self, args + 1, nargsf);
 #else
     (void)PyObject_PyCFunctionFastCall_TaggedSlow;
@@ -1172,7 +1172,7 @@ PyObject_PyCFunctionFastWithKeywordsCall_TaggedSlow(PyCFunctionFastWithKeywords 
         PyErr_NoMemory();
         return NULL;
     }
-    _Py_untag_stack(args + 1, tagged, nargs);
+    _Py_untag_stack_owned(args + 1, tagged, nargs);
     PyObject *res = cfunc(self, args + 1, nargsf, kwds);
     PyMem_Free(args);
     return res;
@@ -1184,7 +1184,7 @@ PyObject_PyCFunctionFastWithKeywordsCall_Tagged(PyCFunctionFastWithKeywords cfun
                                     const _PyStackRef *tagged, Py_ssize_t nargsf,
                                     PyObject *kwds)
 {
-#if defined(Py_GIL_DISABLED) || defined(Py_TEST_TAG)
+#if defined(Py_GIL_DISABLED) || defined(Py_TAG_TEST)
     size_t nargs = nargsf & ~PY_VECTORCALL_ARGUMENTS_OFFSET;
     PyObject *args[MAX_UNTAG_SCRATCH];
     if (nargs >= MAX_UNTAG_SCRATCH) {
@@ -1192,7 +1192,7 @@ PyObject_PyCFunctionFastWithKeywordsCall_Tagged(PyCFunctionFastWithKeywords cfun
             cfunc, self, tagged, nargsf, kwds
         );
     }
-    _Py_untag_stack(args + 1, tagged, nargs);
+    _Py_untag_stack_owned(args + 1, tagged, nargs);
     return cfunc(self, args + 1, nargsf, kwds);
 #else
     (void)PyObject_PyCFunctionFastWithKeywordsCall_TaggedSlow;

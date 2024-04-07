@@ -16,30 +16,58 @@ typedef union {
 } _PyStackRef;
 
 #define Py_TAG (0b0)
-#define Py_TEST_TAG (0b1)
+#define Py_TAG_TEST (0b1)
+#define Py_TAG_DEFERRED (0b1)
 
-#if defined(Py_TEST_TAG)
-    #define Py_STACK_UNTAG_BORROWED(tagged) ((PyObject *)(uintptr_t)((tagged).bits & (~Py_TEST_TAG)))
+#if defined(Py_TAG_TEST)
+    #define Py_STACK_UNTAG_BORROWED(tagged) ((PyObject *)(uintptr_t)((tagged).bits & (~Py_TAG_TEST)))
 #elif defined(Py_GIL_DISABLED)
     #define Py_STACK_UNTAG_BORROWED(tagged) ((PyObject *)((tagged).bits & (~Py_TAG)))
 #else
     #define Py_STACK_UNTAG_BORROWED(tagged) ((PyObject *)(uintptr_t)((tagged).bits))
 #endif
 
-#if defined(Py_TEST_TAG)
-    #define Py_STACK_TAG(obj) ((_PyStackRef){.bits = ((uintptr_t)(obj) | Py_TEST_TAG)})
+#if defined(Py_TAG_TEST)
+    #define Py_STACK_TAG(obj) ((_PyStackRef){.bits = ((uintptr_t)(obj) | Py_TAG_TEST)})
 #elif defined(Py_GIL_DISABLED)
     #define Py_STACK_TAG(obj) ((_PyStackRef){.bits = ((uintptr_t)(obj) | Py_TAG}))
 #else
     #define Py_STACK_TAG(obj) ((_PyStackRef){.bits = ((uintptr_t)(obj))})
 #endif
 
+static inline PyObject *
+_Py_Stack_Untag_Owned(_PyStackRef tagged) {
+#if defined(Py_TAG_TEST)
+    // Test tag takes up same tag as deferred tag!
+    Py_UNREACHABLE();
+#endif
+    if ((tagged.bits & Py_TAG_DEFERRED) == Py_TAG_DEFERRED) {
+        return Py_NewRef(Py_STACK_UNTAG_BORROWED(tagged));
+    }
+    return Py_STACK_UNTAG_BORROWED(tagged);
+}
+
+#if defined(Py_TAG_TEST)
+    #define Py_STACK_UNTAG_OWNED(tagged) Py_STACK_UNTAG_BORROWED(tagged)
+#elif defined(Py_GIL_DISABLED)
+    #define Py_STACK_UNTAG_OWNED(tagged) _Py_Stack_Untag_Owned(tagged)
+#else
+    #define Py_STACK_UNTAG_OWNED(tagged) Py_STACK_UNTAG_BORROWED(tagged)
+#endif
+
 #define MAX_UNTAG_SCRATCH 10
 
 static inline void
-_Py_untag_stack(PyObject **dst, const _PyStackRef *src, size_t length) {
+_Py_untag_stack_borrowed(PyObject **dst, const _PyStackRef *src, size_t length) {
     for (size_t i = 0; i < length; i++) {
         dst[i] = Py_STACK_UNTAG_BORROWED(src[i]);
+    }
+}
+
+static inline void
+_Py_untag_stack_owned(PyObject **dst, const _PyStackRef *src, size_t length) {
+    for (size_t i = 0; i < length; i++) {
+        dst[i] = Py_STACK_UNTAG_OWNED(src[i]);
     }
 }
 

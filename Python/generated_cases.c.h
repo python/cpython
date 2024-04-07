@@ -842,7 +842,7 @@ step = Py_STACK_UNTAG_BORROWED(step_tagged);
             _PyStackRef *pieces;
             PyObject *str;
             pieces = &stack_pointer[-oparg];
-            str = _PyUnicode_JoinTaggedArray(&_Py_STR(empty), pieces, oparg);
+            str = _PyUnicode_JoinStack(&_Py_STR(empty), pieces, oparg);
             for (int _i = oparg; --_i >= 0;) {
                 Py_DECREF_STACKREF(pieces[_i]);
             }

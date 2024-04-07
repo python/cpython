@@ -9739,31 +9739,31 @@ _PyUnicode_JoinArray(PyObject *separator, PyObject *const *items, Py_ssize_t seq
 }
 
 PyObject*
-_PyUnicode_JoinTaggedArray_Slow(PyObject *separator, _PyStackRef const *tagged, Py_ssize_t seqlen)
+_PyUnicode_JoinStack_Slow(PyObject *separator, _PyStackRef const *tagged, Py_ssize_t seqlen)
 {
     PyObject **args = PyMem_Malloc(seqlen * sizeof(PyObject *));
     if (args == NULL) {
         PyErr_NoMemory();
         return NULL;
     }
-    _Py_untag_stack(args, tagged, seqlen);
+    _Py_untag_stack_borrowed(args, tagged, seqlen);
     PyObject *res = _PyUnicode_JoinArray(separator, args, seqlen);
     PyMem_Free(args);
     return res;
 }
 
 PyObject *
-_PyUnicode_JoinTaggedArray(PyObject *separator, _PyStackRef const *items_tagged, Py_ssize_t seqlen)
+_PyUnicode_JoinStack(PyObject *separator, _PyStackRef const *items_tagged, Py_ssize_t seqlen)
 {
-#if defined(Py_GIL_DISABLED) || defined(Py_TEST_TAG)
+#if defined(Py_GIL_DISABLED) || defined(Py_TAG_TEST)
     PyObject *args[MAX_UNTAG_SCRATCH];
     if (seqlen > MAX_UNTAG_SCRATCH) {
-        return _PyUnicode_JoinTaggedArray_Slow(separator, items_tagged, seqlen);
+        return _PyUnicode_JoinStack_Slow(separator, items_tagged, seqlen);
     }
-    _Py_untag_stack(args, items_tagged, seqlen);
+    _Py_untag_stack_borrowed(args, items_tagged, seqlen);
     return _PyUnicode_JoinArray(separator, args, seqlen);
 #else
-    (void)_PyUnicode_JoinTaggedArray_Slow;
+    (void)_PyUnicode_JoinStack_Slow;
     return _PyUnicode_JoinArray(separator, (PyObject **)items_tagged, seqlen);
 #endif
 }

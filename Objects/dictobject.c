@@ -2136,8 +2136,8 @@ _PyDict_FromStackItems(_PyStackRef const *keys, Py_ssize_t keys_offset,
     _PyStackRef const *vs = values;
 
     for (Py_ssize_t i = 0; i < length; i++) {
-        PyObject *key = Py_STACK_UNTAG_BORROWED(*ks);
-        PyObject *value = Py_STACK_UNTAG_BORROWED(*vs);
+        PyObject *key = Py_STACK_UNTAG_OWNED(*ks);
+        PyObject *value = Py_STACK_UNTAG_OWNED(*vs);
         if (setitem_lock_held((PyDictObject *)dict, key, value) < 0) {
             Py_DECREF(dict);
             return NULL;
@@ -2177,7 +2177,7 @@ _PyDict_FromStackItemsUntaggedKeys(
 
     for (Py_ssize_t i = 0; i < length; i++) {
         PyObject *key = *ks;
-        PyObject *value = Py_STACK_UNTAG_BORROWED(*vs);
+        PyObject *value = Py_STACK_UNTAG_OWNED(*vs);
         if (setitem_lock_held((PyDictObject *)dict, key, value) < 0) {
             Py_DECREF(dict);
             return NULL;
