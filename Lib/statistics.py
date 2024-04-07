@@ -1724,7 +1724,7 @@ def _newton_raphson(f_inv_estimate, f, f_prime, tolerance=1e-12):
 
 def _simple_s_curve(power):
     "S-curve that crosses (0, -1), (1/2, 0), (1, 1)."
-    # Approximates the invcdf for kernels with support: -1 <= x <= 1.
+    # Approximates the inverse CDF for kernels with support: -1 < x < 1.
     return lambda p: ((2 * p) ** power - 1
                       if p <= 1/2 else
                       1 - (2 - 2*p) ** power)
@@ -1762,12 +1762,23 @@ _kernel_invcdfs['biweight'] = _kernel_invcdfs['quartic']
 
 def kde_random(data, h, kernel='normal', *, seed=None):
     """Return a function that makes a random selection from the estimated
-    probability density function created by:  kde(data, h, kernel)
+    probability density function created by kde(data, h, kernel).
 
-    For reproducible results, set *seed* to an integer, float, str, or bytes.
-    Not thread-safe without a lock around calls.
+    Providing a *seed* allows reproducible selections within a single
+    thread (or with a lock around calls).  In the future, the selection
+    method for the parabolic, quartic, and triweight kernels may be
+    replaced with faster algorithms that give different results.
+    The seed may be an integer, float, str, or bytes.
 
-    A StatisticsError will be raised if the data sequence is empty.
+    A StatisticsError will be raised if the *data* sequence is empty.
+
+    Example:
+
+    >>> data = [-2.1, -1.3, -0.4, 1.9, 5.1, 6.2]
+    >>> rand = kde_random(sample, h=1.5, seed=8675309)
+    >>> new_selections = [rand() for i in range(10)]
+    >>> [round(x, 1) for x in new_selections]
+    [0.7, 6.2, 1.2, 6.9, 7.0, 1.8, 2.5, -0.5, -1.8, 5.6]
 
     """
     n = len(data)
