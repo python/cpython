@@ -268,7 +268,7 @@ StreamReader
 
       .. versionadded:: 3.5.2
 
-      .. versionchanged:: 3.10
+      .. versionchanged:: 3.13
 
          The *separator* parameter may now be an :term:`iterable` of
          separators.
