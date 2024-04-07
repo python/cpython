@@ -525,7 +525,7 @@ class Stats:
     def get_rare_events(self) -> list[tuple[str, int]]:
         prefix = "Rare event "
         return [
-            (key[len(prefix) + 1: -1].replace("_", " "), val)
+            (key[len(prefix) + 1 : -1].replace("_", " "), val)
             for key, val in self._data.items()
             if key.startswith(prefix)
         ]
@@ -709,7 +709,7 @@ def execution_count_section() -> Section:
     )
 
 
-def pair_count_section(prefix: str) -> Section:
+def pair_count_section(prefix: str, title=None) -> Section:
     def calc_pair_count_table(stats: Stats) -> Rows:
         opcode_stats = stats.get_opcode_stats(prefix)
         pair_counts = opcode_stats.get_pair_counts()
@@ -733,7 +733,7 @@ def pair_count_section(prefix: str) -> Section:
 
     return Section(
         "Pair counts",
-        f"Pair counts for top 100 {prefix} pairs",
+        f"Pair counts for top 100 {title if title else prefix} pairs",
         [
             Table(
                 ("Pair", "Count:", "Self:", "Cumulative:"),
@@ -1186,7 +1186,7 @@ def optimization_section() -> Section:
                 )
             ],
         )
-        yield pair_count_section("uop")
+        yield pair_count_section(prefix="uop", title="Non-JIT uop")
         yield Section(
             "Unsupported opcodes",
             "",
