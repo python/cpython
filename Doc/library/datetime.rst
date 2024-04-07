@@ -646,20 +646,18 @@ Instance methods:
 
 .. method:: date.replace(year=self.year, month=self.month, day=self.day)
 
-   Return a date with the same value, except for those parameters given new
-   values by whichever keyword arguments are specified.
+   Return a new :class:`date` object with the same value as the original, except for any parameters specified as keyword arguments, which will have new values in the new object.
+
 
    Example::
 
        >>> from datetime import date
        >>> d = date(2002, 12, 31)
-       >>> d.replace(day=26)
+       >>> d2 = d.replace(day=26)
+       >>> d2
        datetime.date(2002, 12, 26)
 
-   :class:`date` objects are also supported by generic function
-   :func:`copy.replace`.
-
-
+   :class:`date` objects are also supported by the generic function :func:`copy.replace`.
 .. method:: date.timetuple()
 
    Return a :class:`time.struct_time` such as returned by :func:`time.localtime`.
