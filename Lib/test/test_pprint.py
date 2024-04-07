@@ -1214,6 +1214,36 @@ deque([('brown', 2),
  'over': 5,
  'quick': 1,
  'the': 0}""")
+        self.assertEqual(pprint.pformat(d.keys()), """\
+KeysView({'a': 6,
+ 'brown': 2,
+ 'dog': 8,
+ 'fox': 3,
+ 'jumped': 4,
+ 'lazy': 7,
+ 'over': 5,
+ 'quick': 1,
+ 'the': 0})""")
+        self.assertEqual(pprint.pformat(d.items()), """\
+ItemsView({'a': 6,
+ 'brown': 2,
+ 'dog': 8,
+ 'fox': 3,
+ 'jumped': 4,
+ 'lazy': 7,
+ 'over': 5,
+ 'quick': 1,
+ 'the': 0})""")
+        self.assertEqual(pprint.pformat(d.values()), """\
+ValuesView({'a': 6,
+ 'brown': 2,
+ 'dog': 8,
+ 'fox': 3,
+ 'jumped': 4,
+ 'lazy': 7,
+ 'over': 5,
+ 'quick': 1,
+ 'the': 0})""")
 
     def test_user_list(self):
         d = collections.UserList()
