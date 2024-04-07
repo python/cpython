@@ -553,9 +553,11 @@ def commonpath(paths):
     if isinstance(paths[0], bytes):
         sep = b'/'
         curdir = b'.'
+        empty = b''
     else:
         sep = '/'
         curdir = '.'
+        empty = ''
 
     try:
         split_paths = [path.split(sep) for path in paths]
@@ -572,7 +574,7 @@ def commonpath(paths):
                 common = s1[:i]
                 break
 
-        prefix = sep if paths[0].startswith(sep) else sep[:0]
+        prefix = sep if paths[0].startswith(sep) else empty
         return prefix + sep.join(common)
     except (TypeError, AttributeError):
         genericpath._check_arg_types('commonpath', *paths)
