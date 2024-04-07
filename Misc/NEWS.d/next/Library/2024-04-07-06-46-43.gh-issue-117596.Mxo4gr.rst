@@ -1,0 +1,1 @@
+Fix :exc:`ValueError` when :func:`os.path.realpath` is called with a path containing a null byte. Patch by Stefan Hoelzl.
