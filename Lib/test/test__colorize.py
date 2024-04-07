@@ -7,7 +7,7 @@ import _colorize
 from test.support import captured_output
 
 
-class TestColorizedTraceback(unittest.TestCase):
+class TestColorizeFunction(unittest.TestCase):
     def test_colorized_detection_checks_for_environment_variables(self):
         if sys.platform == "win32":
             virtual_patching = unittest.mock.patch(
@@ -32,8 +32,9 @@ class TestColorizedTraceback(unittest.TestCase):
                 isatty_mock.return_value = True
 
                 for env_vars, expected in env_vars_expected:
-                    with unittest.mock.patch("os.environ", env_vars):
-                        self.assertEqual(_colorize.can_colorize(), expected)
+                    with self.subTest(env_vars=env_vars, expected_color=expected):
+                        with unittest.mock.patch("os.environ", env_vars):
+                            self.assertEqual(_colorize.can_colorize(), expected)
 
                 isatty_mock.return_value = False
                 self.assertEqual(_colorize.can_colorize(), False)
