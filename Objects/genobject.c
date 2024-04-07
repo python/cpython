@@ -212,7 +212,7 @@ gen_send_ex2(PyGenObject *gen, PyObject *arg, PyObject **presult,
 
     /* Push arg onto the frame's value stack */
     PyObject *arg_obj = arg ? arg : Py_None;
-    _PyFrame_StackPush(frame, Py_NewRef_Tagged(Py_OBJ_TAG(arg_obj)));
+    _PyFrame_StackPush(frame, Py_NewRef_Tagged(Py_STACK_TAG(arg_obj)));
 
     _PyErr_StackItem *prev_exc_info = tstate->exc_info;
     gen->gi_exc_state.previous_item = prev_exc_info;
@@ -343,7 +343,7 @@ _PyGen_yf(PyGenObject *gen)
         _PyInterpreterFrame *frame = (_PyInterpreterFrame *)gen->gi_iframe;
         assert(is_resume(frame->instr_ptr));
         assert((frame->instr_ptr->op.arg & RESUME_OPARG_LOCATION_MASK) >= RESUME_AFTER_YIELD_FROM);
-        return Py_OBJ_UNTAG(Py_NewRef_Tagged(_PyFrame_StackPeek(frame)));
+        return Py_STACK_UNTAG_BORROWED(Py_NewRef_Tagged(_PyFrame_StackPeek(frame)));
     }
     return NULL;
 }

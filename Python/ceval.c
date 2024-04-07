@@ -113,7 +113,7 @@ dump_stack(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer)
         if (ptr != stack_base) {
             printf(", ");
         }
-        PyObject *obj = Py_OBJ_UNTAG(*ptr);
+        PyObject *obj = Py_STACK_UNTAG_BORROWED(*ptr);
         if (obj == NULL) {
             printf("<nil>");
             continue;
@@ -893,7 +893,7 @@ exception_unwind:
                 /* Pop remaining stack entries. */
                 _PyStackRef *stackbase = _PyFrame_Stackbase(frame);
                 while (stack_pointer > stackbase) {
-                    PyObject *o = Py_OBJ_UNTAG(POP());
+                    PyObject *o = Py_STACK_UNTAG_BORROWED(POP());
                     Py_XDECREF(o);
                 }
                 assert(STACK_LEVEL() == 0);
@@ -905,7 +905,7 @@ exception_unwind:
             assert(STACK_LEVEL() >= level);
             _PyStackRef *new_top = _PyFrame_Stackbase(frame) + level;
             while (stack_pointer > new_top) {
-                PyObject *v = Py_OBJ_UNTAG(POP());
+                PyObject *v = Py_STACK_UNTAG_BORROWED(POP());
                 Py_XDECREF(v);
             }
             if (lasti) {
@@ -914,7 +914,7 @@ exception_unwind:
                 if (lasti == NULL) {
                     goto exception_unwind;
                 }
-                PUSH(Py_OBJ_TAG(lasti));
+                PUSH(Py_STACK_TAG(lasti));
             }
 
             /* Make the raw exception data
@@ -922,7 +922,7 @@ exception_unwind:
                 so a program can emulate the
                 Python main loop. */
             PyObject *exc = _PyErr_GetRaisedException(tstate);
-            PUSH(Py_OBJ_TAG(exc));
+            PUSH(Py_STACK_TAG(exc));
             next_instr = _PyCode_CODE(_PyFrame_GetCode(frame)) + handler;
 
             if (monitor_handled(tstate, frame, next_instr, exc) < 0) {
@@ -1206,7 +1206,7 @@ missing_arguments(PyThreadState *tstate, PyCodeObject *co,
         end = start + co->co_kwonlyargcount;
     }
     for (i = start; i < end; i++) {
-        if (Py_OBJ_UNTAG(localsplus[i]) == NULL) {
+        if (Py_STACK_UNTAG_BORROWED(localsplus[i]) == NULL) {
             PyObject *raw = PyTuple_GET_ITEM(co->co_localsplusnames, i);
             PyObject *name = PyObject_Repr(raw);
             if (name == NULL) {
@@ -1235,7 +1235,7 @@ too_many_positional(PyThreadState *tstate, PyCodeObject *co,
     assert((co->co_flags & CO_VARARGS) == 0);
     /* Count missing keyword-only args. */
     for (i = co_argcount; i < co_argcount + co->co_kwonlyargcount; i++) {
-        if (Py_OBJ_UNTAG(localsplus[i]) != NULL) {
+        if (Py_STACK_UNTAG_BORROWED(localsplus[i]) != NULL) {
             kwonly_given++;
         }
     }
@@ -1431,8 +1431,8 @@ initialize_locals(PyThreadState *tstate, PyFunctionObject *func,
         if (co->co_flags & CO_VARARGS) {
             i++;
         }
-        assert(Py_OBJ_UNTAG(localsplus[i]) == NULL);
-        localsplus[i] = Py_OBJ_TAG(kwdict);
+        assert(Py_STACK_UNTAG_BORROWED(localsplus[i]) == NULL);
+        localsplus[i] = Py_STACK_TAG(kwdict);
     }
     else {
         kwdict = NULL;
@@ -1447,9 +1447,9 @@ initialize_locals(PyThreadState *tstate, PyFunctionObject *func,
         n = argcount;
     }
     for (j = 0; j < n; j++) {
-        PyObject *x = Py_OBJ_UNTAG(args[j]);
-        assert(Py_OBJ_UNTAG(localsplus[j]) == NULL);
-        localsplus[j] = Py_OBJ_TAG(x);
+        PyObject *x = Py_STACK_UNTAG_BORROWED(args[j]);
+        assert(Py_STACK_UNTAG_BORROWED(localsplus[j]) == NULL);
+        localsplus[j] = Py_STACK_TAG(x);
     }
 
     /* Pack other positional arguments into the *args argument */
@@ -1465,8 +1465,8 @@ initialize_locals(PyThreadState *tstate, PyFunctionObject *func,
         if (u == NULL) {
             goto fail_post_positional;
         }
-        assert(Py_OBJ_UNTAG(localsplus[total_args]) == NULL);
-        localsplus[total_args] = Py_OBJ_TAG(u);
+        assert(Py_STACK_UNTAG_BORROWED(localsplus[total_args]) == NULL);
+        localsplus[total_args] = Py_STACK_TAG(u);
     }
     else if (argcount > n) {
         /* Too many postional args. Error is reported later */
@@ -1481,7 +1481,7 @@ initialize_locals(PyThreadState *tstate, PyFunctionObject *func,
         for (i = 0; i < kwcount; i++) {
             PyObject **co_varnames;
             PyObject *keyword = PyTuple_GET_ITEM(kwnames, i);
-            PyObject *value = Py_OBJ_UNTAG(args[i+argcount]);
+            PyObject *value = Py_STACK_UNTAG_BORROWED(args[i+argcount]);
             Py_ssize_t j;
 
             if (keyword == NULL || !PyUnicode_Check(keyword)) {
@@ -1562,19 +1562,19 @@ initialize_locals(PyThreadState *tstate, PyFunctionObject *func,
 
         kw_fail:
             for (;i < kwcount; i++) {
-                PyObject *value = Py_OBJ_UNTAG(args[i+argcount]);
+                PyObject *value = Py_STACK_UNTAG_BORROWED(args[i+argcount]);
                 Py_DECREF(value);
             }
             goto fail_post_args;
 
         kw_found:
-            if (Py_OBJ_UNTAG(localsplus[j]) != NULL) {
+            if (Py_STACK_UNTAG_BORROWED(localsplus[j]) != NULL) {
                 _PyErr_Format(tstate, PyExc_TypeError,
                             "%U() got multiple values for argument '%S'",
                           func->func_qualname, keyword);
                 goto kw_fail;
             }
-            localsplus[j] = Py_OBJ_TAG(value);
+            localsplus[j] = Py_STACK_TAG(value);
         }
     }
 
@@ -1591,7 +1591,7 @@ initialize_locals(PyThreadState *tstate, PyFunctionObject *func,
         Py_ssize_t m = co->co_argcount - defcount;
         Py_ssize_t missing = 0;
         for (i = argcount; i < m; i++) {
-            if (Py_OBJ_UNTAG(localsplus[i]) == NULL) {
+            if (Py_STACK_UNTAG_BORROWED(localsplus[i]) == NULL) {
                 missing++;
             }
         }
@@ -1607,9 +1607,9 @@ initialize_locals(PyThreadState *tstate, PyFunctionObject *func,
         if (defcount) {
             PyObject **defs = &PyTuple_GET_ITEM(func->func_defaults, 0);
             for (; i < defcount; i++) {
-                if (Py_OBJ_UNTAG(localsplus[m+i]) == NULL) {
+                if (Py_STACK_UNTAG_BORROWED(localsplus[m+i]) == NULL) {
                     PyObject *def = defs[i];
-                    localsplus[m+i] = Py_NewRef_Tagged(Py_OBJ_TAG(def));
+                    localsplus[m+i] = Py_NewRef_Tagged(Py_STACK_TAG(def));
                 }
             }
         }
@@ -1619,7 +1619,7 @@ initialize_locals(PyThreadState *tstate, PyFunctionObject *func,
     if (co->co_kwonlyargcount > 0) {
         Py_ssize_t missing = 0;
         for (i = co->co_argcount; i < total_args; i++) {
-            if (Py_OBJ_UNTAG(localsplus[i]) != NULL)
+            if (Py_STACK_UNTAG_BORROWED(localsplus[i]) != NULL)
                 continue;
             PyObject *varname = PyTuple_GET_ITEM(co->co_localsplusnames, i);
             if (func->func_kwdefaults != NULL) {
@@ -1628,7 +1628,7 @@ initialize_locals(PyThreadState *tstate, PyFunctionObject *func,
                     goto fail_post_args;
                 }
                 if (def) {
-                    localsplus[i] = Py_OBJ_TAG(def);
+                    localsplus[i] = Py_STACK_TAG(def);
                     continue;
                 }
             }
@@ -2094,7 +2094,7 @@ _PyEval_UnpackTaggedIterable(PyThreadState *tstate, PyObject *v,
             }
             goto Error;
         }
-        *--sp = Py_OBJ_TAG(w);
+        *--sp = Py_STACK_TAG(w);
     }
 
     if (argcntafter == -1) {
@@ -2116,7 +2116,7 @@ _PyEval_UnpackTaggedIterable(PyThreadState *tstate, PyObject *v,
     l = PySequence_List(it);
     if (l == NULL)
         goto Error;
-    *--sp = Py_OBJ_TAG(l);
+    *--sp = Py_STACK_TAG(l);
     i++;
 
     ll = PyList_GET_SIZE(l);
@@ -2129,7 +2129,7 @@ _PyEval_UnpackTaggedIterable(PyThreadState *tstate, PyObject *v,
 
     /* Pop the "after-variable" args off the list. */
     for (j = argcntafter; j > 0; j--, i++) {
-        *--sp = Py_OBJ_TAG(PyList_GET_ITEM(l, ll - j));
+        *--sp = Py_STACK_TAG(PyList_GET_ITEM(l, ll - j));
     }
     /* Resize the list. */
     Py_SET_SIZE(l, ll - argcntafter);

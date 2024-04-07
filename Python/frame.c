@@ -20,7 +20,7 @@ _PyFrame_Traverse(_PyInterpreterFrame *frame, visitproc visit, void *arg)
     int i = 0;
     /* locals and stack */
     for (; i <frame->stacktop; i++) {
-        Py_VISIT(Py_OBJ_UNTAG(locals[i]));
+        Py_VISIT(Py_STACK_UNTAG_BORROWED(locals[i]));
     }
     return 0;
 }

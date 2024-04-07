@@ -43,7 +43,7 @@ def declare_variable(
     variables.add(var.name)
     if var.condition:
         if not dir_out and type.strip() != "_PyStackRef":
-            out.emit(f"_PyStackRef {var.name}_tagged = Py_OBJ_TAG(NULL);\n")
+            out.emit(f"_PyStackRef {var.name}_tagged = Py_STACK_TAG(NULL);\n")
         out.emit(f"{type}{var.name} = NULL;\n")
         if uop.replicates:
             # Replicas may not use all their conditional variables

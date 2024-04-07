@@ -3212,7 +3212,7 @@ _PyList_FromTaggedArraySteal(_PyStackRef const *src, Py_ssize_t n)
 
     PyObject **dst = list->ob_item;
     for (Py_ssize_t i = 0; i < n; i++) {
-        PyObject *item = Py_OBJ_UNTAG(src[i]);
+        PyObject *item = Py_STACK_UNTAG_BORROWED(src[i]);
         dst[i] = item;
     }
 

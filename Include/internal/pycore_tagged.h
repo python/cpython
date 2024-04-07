@@ -19,19 +19,19 @@ typedef union {
 #define Py_TEST_TAG (0b1)
 
 #if defined(Py_TEST_TAG)
-    #define Py_OBJ_UNTAG(tagged) ((PyObject *)(uintptr_t)((tagged).bits & (~Py_TEST_TAG)))
+    #define Py_STACK_UNTAG_BORROWED(tagged) ((PyObject *)(uintptr_t)((tagged).bits & (~Py_TEST_TAG)))
 #elif defined(Py_GIL_DISABLED)
-    #define Py_OBJ_UNTAG(tagged) ((PyObject *)((tagged).bits & (~Py_TAG)))
+    #define Py_STACK_UNTAG_BORROWED(tagged) ((PyObject *)((tagged).bits & (~Py_TAG)))
 #else
-    #define Py_OBJ_UNTAG(tagged) ((PyObject *)(uintptr_t)((tagged).bits))
+    #define Py_STACK_UNTAG_BORROWED(tagged) ((PyObject *)(uintptr_t)((tagged).bits))
 #endif
 
 #if defined(Py_TEST_TAG)
-    #define Py_OBJ_TAG(obj) ((_PyStackRef){.bits = ((uintptr_t)(obj) | Py_TEST_TAG)})
+    #define Py_STACK_TAG(obj) ((_PyStackRef){.bits = ((uintptr_t)(obj) | Py_TEST_TAG)})
 #elif defined(Py_GIL_DISABLED)
-    #define Py_OBJ_TAG(obj) ((_PyStackRef){.bits = ((uintptr_t)(obj) | Py_TAG}))
+    #define Py_STACK_TAG(obj) ((_PyStackRef){.bits = ((uintptr_t)(obj) | Py_TAG}))
 #else
-    #define Py_OBJ_TAG(obj) ((_PyStackRef){.bits = ((uintptr_t)(obj))})
+    #define Py_STACK_TAG(obj) ((_PyStackRef){.bits = ((uintptr_t)(obj))})
 #endif
 
 #define MAX_UNTAG_SCRATCH 10
@@ -39,7 +39,7 @@ typedef union {
 static inline void
 _Py_untag_stack(PyObject **dst, const _PyStackRef *src, size_t length) {
     for (size_t i = 0; i < length; i++) {
-        dst[i] = Py_OBJ_UNTAG(src[i]);
+        dst[i] = Py_STACK_UNTAG_BORROWED(src[i]);
     }
 }
 
@@ -49,7 +49,7 @@ _Py_untag_stack(PyObject **dst, const _PyStackRef *src, size_t length) {
         _PyStackRef *_tmp_dst_ptr = _Py_CAST(_PyStackRef*, &(dst)); \
         _PyStackRef _tmp_old_dst = (*_tmp_dst_ptr); \
         *_tmp_dst_ptr = (src); \
-        Py_XDECREF(Py_OBJ_UNTAG(_tmp_old_dst)); \
+        Py_XDECREF(Py_STACK_UNTAG_BORROWED(_tmp_old_dst)); \
     } while (0)
 
 #define Py_SETREF_TAGGED(dst, src) \
@@ -57,27 +57,27 @@ _Py_untag_stack(PyObject **dst, const _PyStackRef *src, size_t length) {
         _PyStackRef *_tmp_dst_ptr = _Py_CAST(_PyStackRef*, &(dst)); \
         _PyStackRef _tmp_old_dst = (*_tmp_dst_ptr); \
         *_tmp_dst_ptr = (src); \
-        Py_DECREF(Py_OBJ_UNTAG(_tmp_old_dst)); \
+        Py_DECREF(Py_STACK_UNTAG_BORROWED(_tmp_old_dst)); \
     } while (0)
 
 #define Py_CLEAR_TAGGED(op) \
     do { \
         _PyStackRef *_tmp_op_ptr = _Py_CAST(_PyStackRef*, &(op)); \
         _PyStackRef _tmp_old_op = (*_tmp_op_ptr); \
-        if (Py_OBJ_UNTAG(_tmp_old_op) != NULL) { \
-            *_tmp_op_ptr = Py_OBJ_TAG(_Py_NULL); \
-            Py_DECREF(Py_OBJ_UNTAG(_tmp_old_op)); \
+        if (Py_STACK_UNTAG_BORROWED(_tmp_old_op) != NULL) { \
+            *_tmp_op_ptr = Py_STACK_TAG(_Py_NULL); \
+            Py_DECREF(Py_STACK_UNTAG_BORROWED(_tmp_old_op)); \
         } \
     } while (0)
 
 // KJ: These can be replaced with a more efficient routine in the future with
 // deferred reference counting.
-#define Py_DECREF_TAGGED(op) Py_DECREF(Py_OBJ_UNTAG(op))
-#define Py_INCREF_TAGGED(op) Py_INCREF(Py_OBJ_UNTAG(op))
+#define Py_DECREF_TAGGED(op) Py_DECREF(Py_STACK_UNTAG_BORROWED(op))
+#define Py_INCREF_TAGGED(op) Py_INCREF(Py_STACK_UNTAG_BORROWED(op))
 
 #define Py_XDECREF_TAGGED(op) \
     do {                      \
-        if (Py_OBJ_UNTAG(op) != NULL) { \
+        if (Py_STACK_UNTAG_BORROWED(op) != NULL) { \
             Py_DECREF_TAGGED(op); \
         } \
     } while (0)
