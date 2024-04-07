@@ -233,6 +233,7 @@ class QueryTestCase(unittest.TestCase):
                        frozenset(), frozenset2(), frozenset3(),
                        {}, dict2(), dict3(),
                        {}.keys(), {}.values(), {}.items(),
+                       MappingView({}), KeysView({}), ItemsView({}), ValuesView({}),
                        self.assertTrue, pprint,
                        -6, -6, -6-6j, -1.5, "x", b"x", bytearray(b"x"),
                        (3,), [3], {3: 6},
@@ -243,6 +244,8 @@ class QueryTestCase(unittest.TestCase):
                        frozenset({8}), frozenset2({8}), frozenset3({8}),
                        dict2({5: 6}), dict3({5: 6}),
                        {5: 6}.keys(), {5: 6}.values(), {5: 6}.items(),
+                       MappingView({5: 6}), KeysView({5: 6}),
+                       ItemsView({5: 6}), ValuesView({5: 6}),
                        range(10, -11, -1),
                        True, False, None, ...,
                       ):
@@ -328,6 +331,26 @@ class QueryTestCase(unittest.TestCase):
         exp = 'odict_items([%s])' % ',\n '.join("(%s, %s)" % (i, i) for i in o)
         items = collections.OrderedDict({v: v for v in o}).items()
         self.assertEqual(pprint.pformat(items), exp)
+
+        o = range(100)
+        exp = 'KeysView({%s})' % (': None,\n '.join(map(str, o)) + ': None')
+        keys_view = KeysView(dict.fromkeys(o))
+        self.assertEqual(pprint.pformat(keys_view), exp)
+
+        o = range(100)
+        exp = 'ItemsView({%s})' % (': None,\n '.join(map(str, o)) + ': None')
+        items_view = ItemsView(dict.fromkeys(o))
+        self.assertEqual(pprint.pformat(items_view), exp)
+
+        o = range(100)
+        exp = 'MappingView({%s})' % (': None,\n '.join(map(str, o)) + ': None')
+        mapping_view = MappingView(dict.fromkeys(o))
+        self.assertEqual(pprint.pformat(mapping_view), exp)
+
+        o = range(100)
+        exp = 'ValuesView({%s})' % (': None,\n '.join(map(str, o)) + ': None')
+        values_view = ValuesView(dict.fromkeys(o))
+        self.assertEqual(pprint.pformat(values_view), exp)
 
         o = range(100)
         exp = '[%s]' % ',\n '.join(map(str, o))
