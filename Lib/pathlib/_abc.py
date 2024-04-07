@@ -48,12 +48,14 @@ class Globber(glob._Globber):
     scandir = operator.methodcaller('_scandir')
     add_slash = operator.methodcaller('joinpath', '')
 
-    def concat_path(self, path, text):
+    @staticmethod
+    def concat_path(path, text):
         """Appends text to the given path.
         """
         return path.with_segments(path._raw_path + text)
 
-    def parse_entry(self, entry):
+    @staticmethod
+    def parse_entry(entry):
         """Returns the path of an entry yielded from scandir().
         """
         return entry

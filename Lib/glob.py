@@ -327,19 +327,6 @@ def _compile_pattern(pat, sep, case_sensitive, recursive=True):
     return re.compile(regex, flags=flags).match
 
 
-if os.name == 'nt':
-    def _add_slash(pathname):
-        tail = os.path.splitroot(pathname)[2]
-        if not tail or tail[-1] in '\\/':
-            return pathname
-        return f'{pathname}\\'
-else:
-    def _add_slash(pathname):
-        if not pathname or pathname[-1] == '/':
-            return pathname
-        return f'{pathname}/'
-
-
 class _Globber:
     """Class providing shell-style pattern matching and globbing.
     """
@@ -353,9 +340,22 @@ class _Globber:
 
     lstat = staticmethod(os.lstat)
     scandir = staticmethod(os.scandir)
-    add_slash = staticmethod(_add_slash)
-    concat_path = operator.add
     parse_entry = operator.attrgetter('path')
+    concat_path = operator.add
+
+    if os.name == 'nt':
+        @staticmethod
+        def add_slash(pathname):
+            tail = os.path.splitroot(pathname)[2]
+            if not tail or tail[-1] in '\\/':
+                return pathname
+            return f'{pathname}\\'
+    else:
+        @staticmethod
+        def add_slash(pathname):
+            if not pathname or pathname[-1] == '/':
+                return pathname
+            return f'{pathname}/'
 
     # High-level methods
 
