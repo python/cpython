@@ -506,12 +506,10 @@ def relpath(path, start=None):
         curdir = b'.'
         sep = b'/'
         pardir = b'..'
-        getcwd = os.getcwdb
     else:
         curdir = '.'
         sep = '/'
         pardir = '..'
-        getcwd = os.getcwd
 
     if start is None:
         start = curdir
@@ -519,19 +517,15 @@ def relpath(path, start=None):
         start = os.fspath(start)
 
     try:
-        start_abs = getcwd() if not start or start == curdir else abspath(start)
-        path_abs = abspath(path)
-        start_tail = start_abs.lstrip(sep)
-        path_tail = path_abs.lstrip(sep)
-        start_list = start_tail.split(sep) if start_tail else []
-        path_list = path_tail.split(sep) if path_tail else []
+        start_list = [x for x in abspath(start).split(sep) if x]
+        path_list = [x for x in abspath(path).split(sep) if x]
         # Work out how much of the filepath is shared by start and path.
         i = len(commonprefix([start_list, path_list]))
 
         rel_list = [pardir] * (len(start_list)-i) + path_list[i:]
         if not rel_list:
             return curdir
-        return sep.join(rel_list)
+        return join(*rel_list)
     except (TypeError, AttributeError, BytesWarning, DeprecationWarning):
         genericpath._check_arg_types('relpath', path, start)
         raise
