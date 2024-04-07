@@ -587,9 +587,13 @@ def _abspath_fallback(path):
     path = os.fspath(path)
     if not isabs(path):
         if isinstance(path, bytes):
+            curdir = b'.'
             cwd = os.getcwdb()
         else:
+            curdir = '.'
             cwd = os.getcwd()
+        if not path or path == curdir:
+            return cwd
         path = join(cwd, path)
     return normpath(path)
 
@@ -716,7 +720,7 @@ else:
             prefix = b'\\\\?\\'
             unc_prefix = b'\\\\?\\UNC\\'
             new_unc_prefix = b'\\\\'
-            cwd = os.getcwdb()
+            getcwd = os.getcwdb
             # bpo-38081: Special case for realpath(b'nul')
             devnull = b'nul'
             if normcase(path) == devnull:
@@ -725,14 +729,14 @@ else:
             prefix = '\\\\?\\'
             unc_prefix = '\\\\?\\UNC\\'
             new_unc_prefix = '\\\\'
-            cwd = os.getcwd()
+            getcwd = os.getcwd
             # bpo-38081: Special case for realpath('nul')
             devnull = 'nul'
             if normcase(path) == devnull:
                 return '\\\\.\\NUL'
         had_prefix = path.startswith(prefix)
         if not had_prefix and not isabs(path):
-            path = join(cwd, path)
+            path = join(getcwd(), path)
         try:
             path = _getfinalpathname(path)
             initial_winerror = 0
