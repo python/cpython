@@ -563,10 +563,8 @@ except ImportError:
                     i += 1
             else:
                 i += 1
-        # If the path is now empty, substitute '.'
-        if not prefix and not comps:
-            comps.append(curdir)
-        return prefix + sep.join(comps)
+        path = prefix + sep.join(comps)
+        return path or curdir
 
 else:
     def normpath(path):
@@ -636,8 +634,9 @@ else:
         allowed_winerror = 1, 2, 3, 5, 21, 32, 50, 67, 87, 4390, 4392, 4393
 
         seen = set()
-        while normcase(path) not in seen:
-            seen.add(normcase(path))
+        normp = normcase(path)
+        while normp not in seen:
+            seen.add(normp)
             try:
                 old_path = path
                 path = _nt_readlink(path)
@@ -651,6 +650,7 @@ else:
                         path = old_path
                         break
                     path = normpath(join(dirname(old_path), path))
+                    normp = normcase(path)
             except OSError as ex:
                 if ex.winerror in allowed_winerror:
                     break
