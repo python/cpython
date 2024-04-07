@@ -240,35 +240,40 @@ class PrettyPrinter:
     _dispatch[_collections.OrderedDict.__repr__] = _pprint_ordered_dict
 
     def _pprint_dict_view(self, object, stream, indent, allowance, context, level):
-        if isinstance(object, (self._dict_items_view, _collections.abc.ItemsView)):
+        """Pretty print dict views (keys, values, items)."""
+        if isinstance(object, self._dict_items_view):
             key = _safe_tuple
         else:
             key = _safe_key
-        open_brace, close_brace = '([', '])'
-        if type(object) in ABC_VIEW_TYPES:
-            open_brace, close_brace = '({', '})'
         write = stream.write
-        write(object.__class__.__name__ + open_brace)
+        write(object.__class__.__name__ + '([')
         if self._indent_per_level > 1:
             write((self._indent_per_level - 1) * ' ')
         length = len(object)
         if length:
-            if hasattr(object, '_mapping'):
-                object = object._mapping.items()
-                if self._sort_dicts:
-                    entries = sorted(object, key=key)
-                else:
-                    entries = object
-                self._format_dict_items(entries, stream, indent, allowance + 1,
-                                        context, level)
+            if self._sort_dicts:
+                entries = sorted(object, key=key)
             else:
-                if self._sort_dicts:
-                    entries = sorted(object, key=key)
-                else:
-                    entries = object
-                self._format_items(entries, stream, indent, allowance + 1,
-                                   context, level)
-        write(close_brace)
+                entries = object
+            self._format_items(entries, stream, indent, allowance + 1,
+                               context, level)
+        write('])')
+
+    def _pprint_abc_view(self, object, stream, indent, allowance, context, level):
+        """Pretty print views from collections.abc."""
+        write = stream.write
+        write(object.__class__.__name__ + '({')
+        if self._indent_per_level > 1:
+            write((self._indent_per_level - 1) * ' ')
+        length = len(object)
+        if length:
+            if self._sort_dicts:
+                entries = sorted(object._mapping.items(), key=_safe_tuple)
+            else:
+                entries = object._mapping.items()
+            self._format_dict_items(entries, stream, indent, allowance + 1,
+                                    context, level)
+        write('})')
 
     _dict_keys_view = type({}.keys())
     _dispatch[_dict_keys_view.__repr__] = _pprint_dict_view
@@ -279,7 +284,7 @@ class PrettyPrinter:
     _dict_items_view = type({}.items())
     _dispatch[_dict_items_view.__repr__] = _pprint_dict_view
 
-    _dispatch[_collections.abc.MappingView.__repr__] = _pprint_dict_view
+    _dispatch[_collections.abc.MappingView.__repr__] = _pprint_abc_view
 
     def _pprint_list(self, object, stream, indent, allowance, context, level):
         stream.write('[')
