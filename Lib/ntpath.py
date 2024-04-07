@@ -790,11 +790,13 @@ def relpath(path, start=None):
 
     if isinstance(path, bytes):
         sep = b'\\'
+        alt_sep = b'/'
         curdir = b'.'
         pardir = b'..'
         getcwd = os.getcwdb
     else:
         sep = '\\'
+        alt_sep = '/'
         curdir = '.'
         pardir = '..'
         getcwd = os.getcwd
@@ -805,7 +807,11 @@ def relpath(path, start=None):
         start = os.fspath(start)
 
     try:
-        start_abs = getcwd() if not start or start == curdir else abspath(start)
+        if not start or start == curdir:
+            # Replacing / with \ is necessary for compatibily on Unix
+            start_abs = getcwd().replace(alt_sep, sep)
+        else:
+            start_abs = abspath(start)
         path_abs = abspath(path)
         start_drive, _, start_rest = splitroot(start_abs)
         path_drive, _, path_rest = splitroot(path_abs)
