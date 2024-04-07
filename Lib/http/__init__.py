@@ -115,9 +115,9 @@ class HTTPStatus:
         'Client must specify Content-Length')
     PRECONDITION_FAILED = (412, 'Precondition Failed',
         'Precondition in headers is false')
-    REQUEST_ENTITY_TOO_LARGE = (413, 'Request Entity Too Large',
-        'Entity is too large')
-    REQUEST_URI_TOO_LONG = (414, 'Request-URI Too Long',
+    PAYLOAD_TOO_LARGE = REQUEST_ENTITY_TOO_LARGE = (413,
+        'Request Entity Too Large', 'Entity is too large')
+    URI_TOO_LONG = REQUEST_URI_TOO_LONG = (414, 'Request-URI Too Long',
         'URI is too long')
     UNSUPPORTED_MEDIA_TYPE = (415, 'Unsupported Media Type',
         'Entity body in unsupported format')
