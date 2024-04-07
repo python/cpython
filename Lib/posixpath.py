@@ -511,8 +511,10 @@ def relpath(path, start=None):
         start = os.fspath(start)
 
     try:
-        start_list = [x for x in abspath(start).split(sep) if x]
-        path_list = [x for x in abspath(path).split(sep) if x]
+        start_rest = abspath(start).lstrip(sep)
+        path_rest = abspath(path).lstrip(sep)
+        start_list = start_rest.split(sep) if start_rest else []
+        path_list = path_rest.split(sep) if path_rest else []
         # Work out how much of the filepath is shared by start and path.
         i = len(commonprefix([start_list, path_list]))
 
