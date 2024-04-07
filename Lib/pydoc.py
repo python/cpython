@@ -313,7 +313,8 @@ def visiblename(name, all=None, obj=None):
     if name in {'__author__', '__builtins__', '__cached__', '__credits__',
                 '__date__', '__doc__', '__file__', '__spec__',
                 '__loader__', '__module__', '__name__', '__package__',
-                '__path__', '__qualname__', '__slots__', '__version__'}:
+                '__path__', '__qualname__', '__slots__', '__version__',
+                '__static_attributes__'}:
         return 0
     # Private names are hidden, but special names are displayed.
     if name.startswith('__') and name.endswith('__'): return 1
@@ -2504,6 +2505,7 @@ def _start_server(urlhandler, hostname, port):
             threading.Thread.__init__(self)
             self.serving = False
             self.error = None
+            self.docserver = None
 
         def run(self):
             """Start the server."""
@@ -2536,9 +2538,9 @@ def _start_server(urlhandler, hostname, port):
 
     thread = ServerThread(urlhandler, hostname, port)
     thread.start()
-    # Wait until thread.serving is True to make sure we are
-    # really up before returning.
-    while not thread.error and not thread.serving:
+    # Wait until thread.serving is True and thread.docserver is set
+    # to make sure we are really up before returning.
+    while not thread.error and not (thread.serving and thread.docserver):
         time.sleep(.01)
     return thread
 

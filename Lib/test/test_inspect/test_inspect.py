@@ -32,19 +32,19 @@ try:
 except ImportError:
     ThreadPoolExecutor = None
 
-from test.support import cpython_only
+from test.support import cpython_only, import_helper
 from test.support import MISSING_C_DOCSTRINGS, ALWAYS_EQ
 from test.support.import_helper import DirsOnSysPath, ready_to_import
-from test.support.os_helper import TESTFN
+from test.support.os_helper import TESTFN, temp_cwd
 from test.support.script_helper import assert_python_ok, assert_python_failure, kill_python
 from test.support import has_subprocess_support, SuppressCrashReport
 from test import support
 
-from . import inspect_fodder as mod
-from . import inspect_fodder2 as mod2
-from . import inspect_stock_annotations
-from . import inspect_stringized_annotations
-from . import inspect_stringized_annotations_2
+from test.test_inspect import inspect_fodder as mod
+from test.test_inspect import inspect_fodder2 as mod2
+from test.test_inspect import inspect_stock_annotations
+from test.test_inspect import inspect_stringized_annotations
+from test.test_inspect import inspect_stringized_annotations_2
 
 
 # Functions tested in this suite:
@@ -668,7 +668,10 @@ class TestRetrievingSourceCode(GetSourceBase):
 
     @cpython_only
     def test_c_cleandoc(self):
-        import _testinternalcapi
+        try:
+            import _testinternalcapi
+        except ImportError:
+            return unittest.skip("requires _testinternalcapi")
         func = _testinternalcapi.compiler_cleandoc
         for i, (input, expected) in enumerate(self.cleandoc_testdata):
             with self.subTest(i=i):
@@ -729,6 +732,18 @@ class TestRetrievingSourceCode(GetSourceBase):
             self.assertEqual(normcase(inspect.getsourcefile(co)), fn)
         finally:
             del linecache.cache[co.co_filename]
+
+    def test_getsource_empty_file(self):
+        with temp_cwd() as cwd:
+            with open('empty_file.py', 'w'):
+                pass
+            sys.path.insert(0, cwd)
+            try:
+                import empty_file
+                self.assertEqual(inspect.getsource(empty_file), '\n')
+                self.assertEqual(inspect.getsourcelines(empty_file), (['\n'], 0))
+            finally:
+                sys.path.remove(cwd)
 
     def test_getfile(self):
         self.assertEqual(inspect.getfile(mod.StupidGit), mod.__file__)
@@ -971,6 +986,9 @@ class TestBuggyCases(GetSourceBase):
     def test_getsource_on_method(self):
         self.assertSourceEqual(mod2.ClassWithMethod.method, 118, 119)
 
+    def test_getsource_on_class_code_object(self):
+        self.assertSourceEqual(mod2.ClassWithCodeObject.code, 315, 317)
+
     def test_nested_func(self):
         self.assertSourceEqual(mod2.cls135.func136, 136, 139)
 
@@ -991,7 +1009,11 @@ class TestBuggyCases(GetSourceBase):
         self.assertSourceEqual(mod2.cls196, 194, 201)
         self.assertSourceEqual(mod2.cls196.cls200, 198, 201)
 
+    @support.requires_docstrings
     def test_class_inside_conditional(self):
+        # We skip this test when docstrings are not present,
+        # because docstrings are one of the main factors of
+        # finding the correct class in the source code.
         self.assertSourceEqual(mod2.cls238.cls239, 239, 240)
 
     def test_multiple_children_classes(self):
@@ -1201,7 +1223,7 @@ class TestClassesAndFunctions(unittest.TestCase):
     @unittest.skipIf(MISSING_C_DOCSTRINGS,
                      "Signature information for builtins requires docstrings")
     def test_getfullargspec_builtin_func(self):
-        import _testcapi
+        _testcapi = import_helper.import_module("_testcapi")
         builtin = _testcapi.docstring_with_signature_with_defaults
         spec = inspect.getfullargspec(builtin)
         self.assertEqual(spec.defaults[0], 'avocado')
@@ -1210,7 +1232,7 @@ class TestClassesAndFunctions(unittest.TestCase):
     @unittest.skipIf(MISSING_C_DOCSTRINGS,
                      "Signature information for builtins requires docstrings")
     def test_getfullargspec_builtin_func_no_signature(self):
-        import _testcapi
+        _testcapi = import_helper.import_module("_testcapi")
         builtin = _testcapi.docstring_no_signature
         with self.assertRaises(TypeError):
             inspect.getfullargspec(builtin)
@@ -2871,7 +2893,7 @@ class TestSignatureObject(unittest.TestCase):
     @unittest.skipIf(MISSING_C_DOCSTRINGS,
                      "Signature information for builtins requires docstrings")
     def test_signature_on_builtins(self):
-        import _testcapi
+        _testcapi = import_helper.import_module("_testcapi")
 
         def test_unbound_method(o):
             """Use this to test unbound methods (things that should have a self)"""
@@ -2952,7 +2974,7 @@ class TestSignatureObject(unittest.TestCase):
     @unittest.skipIf(MISSING_C_DOCSTRINGS,
                      "Signature information for builtins requires docstrings")
     def test_signature_on_decorated_builtins(self):
-        import _testcapi
+        _testcapi = import_helper.import_module("_testcapi")
         func = _testcapi.docstring_with_signature_with_defaults
 
         def decorator(func):
@@ -2973,7 +2995,7 @@ class TestSignatureObject(unittest.TestCase):
 
     @cpython_only
     def test_signature_on_builtins_no_signature(self):
-        import _testcapi
+        _testcapi = import_helper.import_module("_testcapi")
         with self.assertRaisesRegex(ValueError,
                                     'no signature found for builtin'):
             inspect.signature(_testcapi.docstring_no_signature)
@@ -5284,6 +5306,7 @@ class TestSignatureDefinitions(unittest.TestCase):
         with self.assertRaises(ValueError):
             inspect.signature(func)
 
+    @support.requires_docstrings
     def test_base_class_have_text_signature(self):
         # see issue 43118
         from test.typinganndata.ann_module7 import BufferedReader

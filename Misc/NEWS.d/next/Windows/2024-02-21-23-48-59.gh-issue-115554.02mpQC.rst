@@ -1,6 +1,0 @@
-The installer now has more strict rules about updating the :ref:`launcher`.
-In general, most users only have a single launcher installed and will see no
-difference. When multiple launchers have been installed, the option to
-install the launcher is disabled until all but one have been removed.
-Downgrading the launcher (which was never allowed) is now more obviously
-blocked.

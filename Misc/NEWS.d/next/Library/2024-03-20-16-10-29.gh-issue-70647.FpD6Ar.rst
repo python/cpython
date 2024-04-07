@@ -1,0 +1,7 @@
+Start the deprecation period for the current behavior of
+:func:`datetime.datetime.strptime` and :func:`time.strptime` which always
+fails to parse a date string with a :exc:`ValueError` involving a day of
+month such as ``strptime("02-29", "%m-%d")`` when a year is **not**
+specified and the date happen to be February 29th.  This should help avoid
+users finding new bugs every four years due to a natural mistaken assumption
+about the API when parsing partial date values.

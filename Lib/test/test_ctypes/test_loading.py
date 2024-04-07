@@ -1,5 +1,4 @@
 import _ctypes
-import _ctypes_test
 import ctypes
 import os
 import shutil
@@ -10,6 +9,7 @@ import unittest
 from ctypes import CDLL, cdll, addressof, c_void_p, c_char_p
 from ctypes.util import find_library
 from test.support import import_helper, os_helper
+_ctypes_test = import_helper.import_module("_ctypes_test")
 
 
 libc_name = None

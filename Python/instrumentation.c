@@ -590,7 +590,7 @@ de_instrument(PyCodeObject *code, int i, int event)
     CHECK(_PyOpcode_Deopt[deinstrumented] == deinstrumented);
     *opcode_ptr = deinstrumented;
     if (_PyOpcode_Caches[deinstrumented]) {
-        instr[1].cache = adaptive_counter_warmup();
+        instr[1].counter = adaptive_counter_warmup();
     }
 }
 
@@ -611,7 +611,7 @@ de_instrument_line(PyCodeObject *code, int i)
     CHECK(original_opcode == _PyOpcode_Deopt[original_opcode]);
     instr->op.code = original_opcode;
     if (_PyOpcode_Caches[original_opcode]) {
-        instr[1].cache = adaptive_counter_warmup();
+        instr[1].counter = adaptive_counter_warmup();
     }
     assert(instr->op.code != INSTRUMENTED_LINE);
 }
@@ -634,7 +634,7 @@ de_instrument_per_instruction(PyCodeObject *code, int i)
     CHECK(original_opcode == _PyOpcode_Deopt[original_opcode]);
     *opcode_ptr = original_opcode;
     if (_PyOpcode_Caches[original_opcode]) {
-        instr[1].cache = adaptive_counter_warmup();
+        instr[1].counter = adaptive_counter_warmup();
     }
     assert(*opcode_ptr != INSTRUMENTED_INSTRUCTION);
     assert(instr->op.code != INSTRUMENTED_INSTRUCTION);
@@ -667,7 +667,7 @@ instrument(PyCodeObject *code, int i)
         assert(instrumented);
         *opcode_ptr = instrumented;
         if (_PyOpcode_Caches[deopt]) {
-            instr[1].cache = adaptive_counter_warmup();
+            instr[1].counter = adaptive_counter_warmup();
         }
     }
 }
@@ -891,8 +891,16 @@ static inline int most_significant_bit(uint8_t bits) {
 static uint32_t
 global_version(PyInterpreterState *interp)
 {
-    return (uint32_t)_Py_atomic_load_uintptr_relaxed(
+    uint32_t version = (uint32_t)_Py_atomic_load_uintptr_relaxed(
         &interp->ceval.instrumentation_version);
+#ifdef Py_DEBUG
+    PyThreadState *tstate = _PyThreadState_GET();
+    uint32_t thread_version =
+        (uint32_t)(_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) &
+                   ~_PY_EVAL_EVENTS_MASK);
+    assert(thread_version == version);
+#endif
+    return version;
 }
 
 /* Atomically set the given version in the given location, without touching

@@ -17,14 +17,26 @@ import unittest
 test_tools.skip_if_missing('clinic')
 with test_tools.imports_under_tool('clinic'):
     import libclinic
+    from libclinic import ClinicError, unspecified, NULL, fail
+    from libclinic.converters import int_converter, str_converter, self_converter
+    from libclinic.function import (
+        Module, Class, Function, FunctionKind, Parameter,
+        permute_optional_groups, permute_right_option_groups,
+        permute_left_option_groups)
     import clinic
-    from clinic import DSLParser
+    from libclinic.clanguage import CLanguage
+    from libclinic.converter import converters, legacy_converters
+    from libclinic.return_converters import return_converters, int_return_converter
+    from libclinic.block_parser import Block, BlockParser
+    from libclinic.codegen import BlockPrinter, Destination
+    from libclinic.dsl_parser import DSLParser
+    from libclinic.cli import parse_file, Clinic
 
 
-def _make_clinic(*, filename='clinic_tests'):
-    clang = clinic.CLanguage(filename)
-    c = clinic.Clinic(clang, filename=filename, limited_capi=False)
-    c.block_parser = clinic.BlockParser('', clang)
+def _make_clinic(*, filename='clinic_tests', limited_capi=False):
+    clang = CLanguage(filename)
+    c = Clinic(clang, filename=filename, limited_capi=limited_capi)
+    c.block_parser = BlockParser('', clang)
     return c
 
 
@@ -43,13 +55,27 @@ def _expect_failure(tc, parser, code, errmsg, *, filename=None, lineno=None,
     if strip:
         code = code.strip()
     errmsg = re.escape(errmsg)
-    with tc.assertRaisesRegex(clinic.ClinicError, errmsg) as cm:
+    with tc.assertRaisesRegex(ClinicError, errmsg) as cm:
         parser(code)
     if filename is not None:
         tc.assertEqual(cm.exception.filename, filename)
     if lineno is not None:
         tc.assertEqual(cm.exception.lineno, lineno)
     return cm.exception
+
+
+def restore_dict(converters, old_converters):
+    converters.clear()
+    converters.update(old_converters)
+
+
+def save_restore_converters(testcase):
+    testcase.addCleanup(restore_dict, converters,
+                        converters.copy())
+    testcase.addCleanup(restore_dict, legacy_converters,
+                        legacy_converters.copy())
+    testcase.addCleanup(restore_dict, return_converters,
+                        return_converters.copy())
 
 
 class ClinicWholeFileTest(TestCase):
@@ -60,6 +86,7 @@ class ClinicWholeFileTest(TestCase):
                         filename=filename, lineno=lineno)
 
     def setUp(self):
+        save_restore_converters(self)
         self.clinic = _make_clinic(filename="test.c")
 
     def test_eol(self):
@@ -121,11 +148,11 @@ class ClinicWholeFileTest(TestCase):
         self.expect_failure(raw, err, filename="test.c", lineno=2)
 
     def test_parse_with_body_prefix(self):
-        clang = clinic.CLanguage(None)
+        clang = CLanguage(None)
         clang.body_prefix = "//"
         clang.start_line = "//[{dsl_name} start]"
         clang.stop_line = "//[{dsl_name} stop]"
-        cl = clinic.Clinic(clang, filename="test.c", limited_capi=False)
+        cl = Clinic(clang, filename="test.c", limited_capi=False)
         raw = dedent("""
             //[clinic start]
             //module test
@@ -641,8 +668,8 @@ class ParseFileUnitTest(TestCase):
         self, *, filename, expected_error, verify=True, output=None
     ):
         errmsg = re.escape(dedent(expected_error).strip())
-        with self.assertRaisesRegex(clinic.ClinicError, errmsg):
-            clinic.parse_file(filename, limited_capi=False)
+        with self.assertRaisesRegex(ClinicError, errmsg):
+            parse_file(filename, limited_capi=False)
 
     def test_parse_file_no_extension(self) -> None:
         self.expect_parsing_failure(
@@ -663,7 +690,7 @@ class ParseFileUnitTest(TestCase):
 
 class ClinicGroupPermuterTest(TestCase):
     def _test(self, l, m, r, output):
-        computed = clinic.permute_optional_groups(l, m, r)
+        computed = permute_optional_groups(l, m, r)
         self.assertEqual(output, computed)
 
     def test_range(self):
@@ -705,7 +732,7 @@ class ClinicGroupPermuterTest(TestCase):
 
     def test_have_left_options_but_required_is_empty(self):
         def fn():
-            clinic.permute_optional_groups(['a'], [], [])
+            permute_optional_groups(['a'], [], [])
         self.assertRaises(ValueError, fn)
 
 
@@ -763,13 +790,13 @@ class ClinicLinearFormatTest(TestCase):
 
     def test_text_before_block_marker(self):
         regex = re.escape("found before '{marker}'")
-        with self.assertRaisesRegex(clinic.ClinicError, regex):
+        with self.assertRaisesRegex(ClinicError, regex):
             libclinic.linear_format("no text before marker for you! {marker}",
                                     marker="not allowed!")
 
     def test_text_after_block_marker(self):
         regex = re.escape("found after '{marker}'")
-        with self.assertRaisesRegex(clinic.ClinicError, regex):
+        with self.assertRaisesRegex(ClinicError, regex):
             libclinic.linear_format("{marker} no text after marker for you!",
                                     marker="not allowed!")
 
@@ -791,10 +818,10 @@ class CopyParser:
 
 class ClinicBlockParserTest(TestCase):
     def _test(self, input, output):
-        language = clinic.CLanguage(None)
+        language = CLanguage(None)
 
-        blocks = list(clinic.BlockParser(input, language))
-        writer = clinic.BlockPrinter(language)
+        blocks = list(BlockParser(input, language))
+        writer = BlockPrinter(language)
         c = _make_clinic()
         for block in blocks:
             writer.print_block(block, limited_capi=c.limited_capi, header_includes=c.includes)
@@ -822,8 +849,8 @@ xyz
 """)
 
     def _test_clinic(self, input, output):
-        language = clinic.CLanguage(None)
-        c = clinic.Clinic(language, filename="file", limited_capi=False)
+        language = CLanguage(None)
+        c = Clinic(language, filename="file", limited_capi=False)
         c.parsers['inert'] = InertParser(c)
         c.parsers['copy'] = CopyParser(c)
         computed = c.parse(input)
@@ -856,7 +883,7 @@ class ClinicParserTest(TestCase):
     def parse(self, text):
         c = _make_clinic()
         parser = DSLParser(c)
-        block = clinic.Block(text)
+        block = Block(text)
         parser.parse(block)
         return block
 
@@ -864,8 +891,8 @@ class ClinicParserTest(TestCase):
         block = self.parse(text)
         s = block.signatures
         self.assertEqual(len(s), signatures_in_block)
-        assert isinstance(s[0], clinic.Module)
-        assert isinstance(s[function_index], clinic.Function)
+        assert isinstance(s[0], Module)
+        assert isinstance(s[function_index], Function)
         return s[function_index]
 
     def expect_failure(self, block, err, *,
@@ -880,7 +907,7 @@ class ClinicParserTest(TestCase):
 
     def test_trivial(self):
         parser = DSLParser(_make_clinic())
-        block = clinic.Block("""
+        block = Block("""
             module os
             os.access
         """)
@@ -909,7 +936,7 @@ class ClinicParserTest(TestCase):
         self.assertEqual(2, len(function.parameters))
         p = function.parameters['path']
         self.assertEqual('path', p.name)
-        self.assertIsInstance(p.converter, clinic.int_converter)
+        self.assertIsInstance(p.converter, int_converter)
 
     def test_param_default(self):
         function = self.parse_function("""
@@ -1008,7 +1035,7 @@ class ClinicParserTest(TestCase):
         """)
         self.assertEqual(3, len(function.parameters))
         conv = function.parameters['something_else'].converter
-        self.assertIsInstance(conv, clinic.str_converter)
+        self.assertIsInstance(conv, str_converter)
 
     def test_param_default_parameters_out_of_order(self):
         err = (
@@ -1169,7 +1196,7 @@ class ClinicParserTest(TestCase):
             Function 'stat' has an invalid parameter declaration:
             \s+'invalid syntax: int = 42'
         """).strip()
-        with self.assertRaisesRegex(clinic.ClinicError, err):
+        with self.assertRaisesRegex(ClinicError, err):
             self.parse_function(block)
 
     def test_param_default_invalid_syntax(self):
@@ -1201,7 +1228,7 @@ class ClinicParserTest(TestCase):
             module os
             os.stat -> int
         """)
-        self.assertIsInstance(function.return_converter, clinic.int_return_converter)
+        self.assertIsInstance(function.return_converter, int_return_converter)
 
     def test_return_converter_invalid_syntax(self):
         block = """
@@ -2017,7 +2044,7 @@ class ClinicParserTest(TestCase):
         parser = DSLParser(_make_clinic())
         parser.flag = False
         parser.directives['setflag'] = lambda : setattr(parser, 'flag', True)
-        block = clinic.Block("setflag")
+        block = Block("setflag")
         parser.parse(block)
         self.assertTrue(parser.flag)
 
@@ -2025,7 +2052,7 @@ class ClinicParserTest(TestCase):
         block = self.parse('module os\nos.access\n   path: "s"')
         module, function = block.signatures
         conv = (function.parameters['path']).converter
-        self.assertIsInstance(conv, clinic.str_converter)
+        self.assertIsInstance(conv, str_converter)
 
     def test_legacy_converters_non_string_constant_annotation(self):
         err = "Annotations must be either a name, a function call, or a string"
@@ -2175,7 +2202,7 @@ class ClinicParserTest(TestCase):
                        obj: int
                        /
                 """
-                expected_error = f"{annotation} method cannot define parameters"
+                expected_error = f"{annotation} methods cannot define parameters"
                 self.expect_failure(block, expected_error)
 
     def test_setter_docstring(self):
@@ -2282,14 +2309,14 @@ class ClinicParserTest(TestCase):
 
     def test_scaffolding(self):
         # test repr on special values
-        self.assertEqual(repr(clinic.unspecified), '<Unspecified>')
-        self.assertEqual(repr(clinic.NULL), '<Null>')
+        self.assertEqual(repr(unspecified), '<Unspecified>')
+        self.assertEqual(repr(NULL), '<Null>')
 
         # test that fail fails
         with support.captured_stdout() as stdout:
             errmsg = 'The igloos are melting'
-            with self.assertRaisesRegex(clinic.ClinicError, errmsg) as cm:
-                clinic.fail(errmsg, filename='clown.txt', line_number=69)
+            with self.assertRaisesRegex(ClinicError, errmsg) as cm:
+                fail(errmsg, filename='clown.txt', line_number=69)
             exc = cm.exception
             self.assertEqual(exc.filename, 'clown.txt')
             self.assertEqual(exc.lineno, 69)
@@ -2430,6 +2457,9 @@ class ClinicParserTest(TestCase):
 
 class ClinicExternalTest(TestCase):
     maxDiff = None
+
+    def setUp(self):
+        save_restore_converters(self)
 
     def run_clinic(self, *args):
         with (
@@ -2655,9 +2685,9 @@ class ClinicExternalTest(TestCase):
                 bool()
                 double()
                 float()
-                init()
                 int()
                 long()
+                object()
                 Py_ssize_t()
                 size_t()
                 unsigned_int()
@@ -3615,6 +3645,46 @@ class ClinicFunctionalTest(unittest.TestCase):
         self.assertRaises(TypeError, fn, a="a", b="b", c="c", d="d", e="e", f="f", g="g")
 
 
+class LimitedCAPIOutputTests(unittest.TestCase):
+
+    def setUp(self):
+        self.clinic = _make_clinic(limited_capi=True)
+
+    @staticmethod
+    def wrap_clinic_input(block):
+        return dedent(f"""
+            /*[clinic input]
+            output everything buffer
+            {block}
+            [clinic start generated code]*/
+            /*[clinic input]
+            dump buffer
+            [clinic start generated code]*/
+        """)
+
+    def test_limited_capi_float(self):
+        block = self.wrap_clinic_input("""
+            func
+                f: float
+                /
+        """)
+        generated = self.clinic.parse(block)
+        self.assertNotIn("PyFloat_AS_DOUBLE", generated)
+        self.assertIn("float f;", generated)
+        self.assertIn("f = (float) PyFloat_AsDouble", generated)
+
+    def test_limited_capi_double(self):
+        block = self.wrap_clinic_input("""
+            func
+                f: double
+                /
+        """)
+        generated = self.clinic.parse(block)
+        self.assertNotIn("PyFloat_AS_DOUBLE", generated)
+        self.assertIn("double f;", generated)
+        self.assertIn("f = PyFloat_AsDouble", generated)
+
+
 try:
     import _testclinic_limited
 except ImportError:
@@ -3645,6 +3715,53 @@ class LimitedCAPIFunctionalTest(unittest.TestCase):
         with self.assertRaises(TypeError):
             _testclinic_limited.my_int_sum(1, "str")
 
+    def test_my_double_sum(self):
+        for func in (
+            _testclinic_limited.my_float_sum,
+            _testclinic_limited.my_double_sum,
+        ):
+            with self.subTest(func=func.__name__):
+                self.assertEqual(func(1.0, 2.5), 3.5)
+                with self.assertRaises(TypeError):
+                    func()
+                with self.assertRaises(TypeError):
+                    func(1)
+                with self.assertRaises(TypeError):
+                    func(1., "2")
+
+    def test_get_file_descriptor(self):
+        # test 'file descriptor' converter: call PyObject_AsFileDescriptor()
+        get_fd = _testclinic_limited.get_file_descriptor
+
+        class MyInt(int):
+            pass
+
+        class MyFile:
+            def __init__(self, fd):
+                self._fd = fd
+            def fileno(self):
+                return self._fd
+
+        for fd in (0, 1, 2, 5, 123_456):
+            self.assertEqual(get_fd(fd), fd)
+
+            myint = MyInt(fd)
+            self.assertEqual(get_fd(myint), fd)
+
+            myfile = MyFile(fd)
+            self.assertEqual(get_fd(myfile), fd)
+
+        with self.assertRaises(OverflowError):
+            get_fd(2**256)
+        with self.assertWarnsRegex(RuntimeWarning,
+                                   "bool is used as a file descriptor"):
+            get_fd(True)
+        with self.assertRaises(TypeError):
+            get_fd(1.0)
+        with self.assertRaises(TypeError):
+            get_fd("abc")
+        with self.assertRaises(TypeError):
+            get_fd(None)
 
 
 class PermutationTests(unittest.TestCase):
@@ -3658,7 +3775,7 @@ class PermutationTests(unittest.TestCase):
             (1, 2, 3),
         )
         data = list(zip([1, 2, 3]))  # Generate a list of 1-tuples.
-        actual = tuple(clinic.permute_left_option_groups(data))
+        actual = tuple(permute_left_option_groups(data))
         self.assertEqual(actual, expected)
 
     def test_permute_right_option_groups(self):
@@ -3669,7 +3786,7 @@ class PermutationTests(unittest.TestCase):
             (1, 2, 3),
         )
         data = list(zip([1, 2, 3]))  # Generate a list of 1-tuples.
-        actual = tuple(clinic.permute_right_option_groups(data))
+        actual = tuple(permute_right_option_groups(data))
         self.assertEqual(actual, expected)
 
     def test_permute_optional_groups(self):
@@ -3748,7 +3865,7 @@ class PermutationTests(unittest.TestCase):
         for params in dataset:
             with self.subTest(**params):
                 left, required, right, expected = params.values()
-                permutations = clinic.permute_optional_groups(left, required, right)
+                permutations = permute_optional_groups(left, required, right)
                 actual = tuple(permutations)
                 self.assertEqual(actual, expected)
 
@@ -3889,15 +4006,15 @@ class FormatHelperTests(unittest.TestCase):
 
 class ClinicReprTests(unittest.TestCase):
     def test_Block_repr(self):
-        block = clinic.Block("foo")
+        block = Block("foo")
         expected_repr = "<clinic.Block 'text' input='foo' output=None>"
         self.assertEqual(repr(block), expected_repr)
 
-        block2 = clinic.Block("bar", "baz", [], "eggs", "spam")
+        block2 = Block("bar", "baz", [], "eggs", "spam")
         expected_repr_2 = "<clinic.Block 'baz' input='bar' output='eggs'>"
         self.assertEqual(repr(block2), expected_repr_2)
 
-        block3 = clinic.Block(
+        block3 = Block(
             input="longboi_" * 100,
             dsl_name="wow_so_long",
             signatures=[],
@@ -3912,47 +4029,47 @@ class ClinicReprTests(unittest.TestCase):
     def test_Destination_repr(self):
         c = _make_clinic()
 
-        destination = clinic.Destination(
+        destination = Destination(
             "foo", type="file", clinic=c, args=("eggs",)
         )
         self.assertEqual(
             repr(destination), "<clinic.Destination 'foo' type='file' file='eggs'>"
         )
 
-        destination2 = clinic.Destination("bar", type="buffer", clinic=c)
+        destination2 = Destination("bar", type="buffer", clinic=c)
         self.assertEqual(repr(destination2), "<clinic.Destination 'bar' type='buffer'>")
 
     def test_Module_repr(self):
-        module = clinic.Module("foo", _make_clinic())
+        module = Module("foo", _make_clinic())
         self.assertRegex(repr(module), r"<clinic.Module 'foo' at \d+>")
 
     def test_Class_repr(self):
-        cls = clinic.Class("foo", _make_clinic(), None, 'some_typedef', 'some_type_object')
+        cls = Class("foo", _make_clinic(), None, 'some_typedef', 'some_type_object')
         self.assertRegex(repr(cls), r"<clinic.Class 'foo' at \d+>")
 
     def test_FunctionKind_repr(self):
         self.assertEqual(
-            repr(clinic.FunctionKind.INVALID), "<clinic.FunctionKind.INVALID>"
+            repr(FunctionKind.INVALID), "<clinic.FunctionKind.INVALID>"
         )
         self.assertEqual(
-            repr(clinic.FunctionKind.CLASS_METHOD), "<clinic.FunctionKind.CLASS_METHOD>"
+            repr(FunctionKind.CLASS_METHOD), "<clinic.FunctionKind.CLASS_METHOD>"
         )
 
     def test_Function_and_Parameter_reprs(self):
-        function = clinic.Function(
+        function = Function(
             name='foo',
             module=_make_clinic(),
             cls=None,
             c_basename=None,
             full_name='foofoo',
-            return_converter=clinic.init_return_converter(),
-            kind=clinic.FunctionKind.METHOD_INIT,
+            return_converter=int_return_converter(),
+            kind=FunctionKind.METHOD_INIT,
             coexist=False
         )
         self.assertEqual(repr(function), "<clinic.Function 'foo'>")
 
-        converter = clinic.self_converter('bar', 'bar', function)
-        parameter = clinic.Parameter(
+        converter = self_converter('bar', 'bar', function)
+        parameter = Parameter(
             "bar",
             kind=inspect.Parameter.POSITIONAL_OR_KEYWORD,
             function=function,
