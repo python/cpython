@@ -314,7 +314,7 @@ However, for reading convenience, most of the examples show sorted sequences.
 .. function:: kde_random(data, h, kernel='normal', *, seed=None)
 
    Return a function that makes a random selection from the estimated
-   probability density function created by ``kde(data, h, kernel)``.
+   probability density function produced by ``kde(data, h, kernel)``.
 
    For reproducible results, set *seed* to an integer, float, str, or bytes.
    Not thread-safe without a lock around calls.
