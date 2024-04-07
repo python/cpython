@@ -892,7 +892,7 @@ frame_dealloc(PyFrameObject *f)
         Py_CLEAR(frame->f_locals);
         _PyStackRef *locals = _PyFrame_GetLocalsArray(frame);
         for (int i = 0; i < frame->stacktop; i++) {
-            Py_CLEAR_TAGGED(locals[i]);
+            Py_CLEAR_STACKREF(locals[i]);
         }
     }
     Py_CLEAR(f->f_back);
@@ -923,7 +923,7 @@ frame_tp_clear(PyFrameObject *f)
     _PyStackRef *locals = _PyFrame_GetLocalsArray(f->f_frame);
     assert(f->f_frame->stacktop >= 0);
     for (int i = 0; i < f->f_frame->stacktop; i++) {
-        Py_CLEAR_TAGGED(locals[i]);
+        Py_CLEAR_STACKREF(locals[i]);
     }
     f->f_frame->stacktop = 0;
     Py_CLEAR(f->f_frame->f_locals);
@@ -1442,7 +1442,7 @@ _PyFrame_LocalsToFast(_PyInterpreterFrame *frame, int clear)
                 }
                 value = Py_NewRef(Py_None);
             }
-            Py_XSETREF_TAGGED(fast[i], Py_NewRef_Tagged(Py_STACK_TAG(value)));
+            Py_XSETREF_STACKREF(fast[i], Py_NewRef_Tagged(Py_STACK_TAG(value)));
         }
         Py_XDECREF(value);
     }

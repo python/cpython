@@ -44,7 +44,7 @@ _Py_untag_stack(PyObject **dst, const _PyStackRef *src, size_t length) {
 }
 
 
-#define Py_XSETREF_TAGGED(dst, src) \
+#define Py_XSETREF_STACKREF(dst, src) \
     do { \
         _PyStackRef *_tmp_dst_ptr = _Py_CAST(_PyStackRef*, &(dst)); \
         _PyStackRef _tmp_old_dst = (*_tmp_dst_ptr); \
@@ -52,7 +52,7 @@ _Py_untag_stack(PyObject **dst, const _PyStackRef *src, size_t length) {
         Py_XDECREF(Py_STACK_UNTAG_BORROWED(_tmp_old_dst)); \
     } while (0)
 
-#define Py_SETREF_TAGGED(dst, src) \
+#define Py_SETREF_STACKREF(dst, src) \
     do { \
         _PyStackRef *_tmp_dst_ptr = _Py_CAST(_PyStackRef*, &(dst)); \
         _PyStackRef _tmp_old_dst = (*_tmp_dst_ptr); \
@@ -60,7 +60,7 @@ _Py_untag_stack(PyObject **dst, const _PyStackRef *src, size_t length) {
         Py_DECREF(Py_STACK_UNTAG_BORROWED(_tmp_old_dst)); \
     } while (0)
 
-#define Py_CLEAR_TAGGED(op) \
+#define Py_CLEAR_STACKREF(op) \
     do { \
         _PyStackRef *_tmp_op_ptr = _Py_CAST(_PyStackRef*, &(op)); \
         _PyStackRef _tmp_old_op = (*_tmp_op_ptr); \
@@ -72,23 +72,23 @@ _Py_untag_stack(PyObject **dst, const _PyStackRef *src, size_t length) {
 
 // KJ: These can be replaced with a more efficient routine in the future with
 // deferred reference counting.
-#define Py_DECREF_TAGGED(op) Py_DECREF(Py_STACK_UNTAG_BORROWED(op))
-#define Py_INCREF_TAGGED(op) Py_INCREF(Py_STACK_UNTAG_BORROWED(op))
+#define Py_DECREF_STACKREF(op) Py_DECREF(Py_STACK_UNTAG_BORROWED(op))
+#define Py_INCREF_STACKREF(op) Py_INCREF(Py_STACK_UNTAG_BORROWED(op))
 
-#define Py_XDECREF_TAGGED(op) \
+#define Py_XDECREF_STACKREF(op) \
     do {                      \
         if (Py_STACK_UNTAG_BORROWED(op) != NULL) { \
-            Py_DECREF_TAGGED(op); \
+            Py_DECREF_STACKREF(op); \
         } \
     } while (0)
 
-static inline _PyStackRef _Py_NewRef_Tagged(_PyStackRef obj)
+static inline _PyStackRef Py_NewRef_StackRef(_PyStackRef obj)
 {
-    Py_INCREF_TAGGED(obj);
+    Py_INCREF_STACKREF(obj);
     return obj;
 }
 
-#define Py_NewRef_Tagged(op) _Py_NewRef_Tagged(op)
+#define Py_NewRef_Tagged(op) Py_NewRef_StackRef(op)
 
 #ifdef __cplusplus
 }

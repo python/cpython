@@ -412,9 +412,9 @@ NON_ESCAPING_FUNCTIONS = (
     "_PyUnicode_JoinTaggedArray",
     "Py_STACK_TAG",
     "Py_STACK_UNTAG_BORROWED",
-    "Py_DECREF_TAGGED",
-    "Py_XDECREF_TAGGED",
-    "Py_INCREF_TAGGED",
+    "Py_DECREF_STACKREF",
+    "Py_XDECREF_STACKREF",
+    "Py_INCREF_STACKREF",
     "Py_XINCREF_TAGGED",
     "Py_NewRef_Tagged",
 )

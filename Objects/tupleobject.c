@@ -421,7 +421,7 @@ _PyTuple_FromStackSteal(_PyStackRef const *src, Py_ssize_t n)
     PyTupleObject *tuple = tuple_alloc(n);
     if (tuple == NULL) {
         for (Py_ssize_t i = 0; i < n; i++) {
-            Py_DECREF_TAGGED(src[i]);
+            Py_DECREF_STACKREF(src[i]);
         }
         return NULL;
     }

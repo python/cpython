@@ -252,7 +252,7 @@ GETITEM(PyObject *v, Py_ssize_t i) {
    variable would be pointing to already-freed memory. */
 #define SETLOCAL(i, value)      do { _PyStackRef tmp = GETLOCAL(i); \
                                      GETLOCAL(i) = value; \
-                                     Py_XDECREF_TAGGED(tmp); } while (0)
+                                     Py_XDECREF_STACKREF(tmp); } while (0)
 
 #define GO_TO_INSTRUCTION(op) goto PREDICT_ID(op)
 
