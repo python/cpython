@@ -1186,7 +1186,7 @@ def optimization_section() -> Section:
                 )
             ],
         )
-        yield pair_count_section("Non-JIT Uop")
+        yield pair_count_section("uop")
         yield Section(
             "Unsupported opcodes",
             "",
@@ -1242,7 +1242,7 @@ def meta_stats_section() -> Section:
 
 LAYOUT = [
     execution_count_section(),
-    pair_count_section("Tier 1"),
+    pair_count_section("opcode"),
     pre_succ_pairs_section(),
     specialization_section(),
     specialization_effectiveness_section(),
