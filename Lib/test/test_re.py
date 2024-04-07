@@ -2282,6 +2282,8 @@ class ReTests(unittest.TestCase):
         with self.assertRaisesRegex(TypeError, "got 'type'"):
             re.search("x*", type)
 
+    # gh-117594: The test is not slow by itself, but it relies on
+    # the absolute computation time and can fail on very slow computers.
     @requires_resource('cpu')
     def test_search_anchor_at_beginning(self):
         s = 'x'*10**7
