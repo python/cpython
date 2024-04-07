@@ -41,6 +41,9 @@ import sys as _sys
 import types as _types
 from io import StringIO as _StringIO
 
+ABC_VIEW_TYPES = (_collections.abc.KeysView, _collections.abc.ItemsView,
+                  _collections.abc.ValuesView, _collections.abc.MappingView)
+
 __all__ = ["pprint","pformat","isreadable","isrecursive","saferepr",
            "PrettyPrinter", "pp"]
 
@@ -236,21 +239,36 @@ class PrettyPrinter:
 
     _dispatch[_collections.OrderedDict.__repr__] = _pprint_ordered_dict
 
-    def _pprint_dict_view(self, object, stream, indent, allowance, context, level, items=False):
-        key = _safe_tuple if items else _safe_key
+    def _pprint_dict_view(self, object, stream, indent, allowance, context, level):
+        if isinstance(object, (self._dict_items_view, _collections.abc.ItemsView)):
+            key = _safe_tuple
+        else:
+            key = _safe_key
+        open_brace, close_brace = '([', '])'
+        if type(object) in ABC_VIEW_TYPES:
+            open_brace, close_brace = '({', '})'
         write = stream.write
-        write(object.__class__.__name__ + '([')
+        write(object.__class__.__name__ + open_brace)
         if self._indent_per_level > 1:
             write((self._indent_per_level - 1) * ' ')
         length = len(object)
         if length:
-            if self._sort_dicts:
-                entries = sorted(object, key=key)
+            if hasattr(object, '_mapping'):
+                object = object._mapping.items()
+                if self._sort_dicts:
+                    entries = sorted(object, key=key)
+                else:
+                    entries = object
+                self._format_dict_items(entries, stream, indent, allowance + 1,
+                                        context, level)
             else:
-                entries = object
-            self._format_items(entries, stream, indent, allowance + 1,
-                               context, level)
-        write('])')
+                if self._sort_dicts:
+                    entries = sorted(object, key=key)
+                else:
+                    entries = object
+                self._format_items(entries, stream, indent, allowance + 1,
+                                   context, level)
+        write(close_brace)
 
     _dict_keys_view = type({}.keys())
     _dispatch[_dict_keys_view.__repr__] = _pprint_dict_view
@@ -258,11 +276,10 @@ class PrettyPrinter:
     _dict_values_view = type({}.values())
     _dispatch[_dict_values_view.__repr__] = _pprint_dict_view
 
-    def _pprint_dict_items_view(self, object, stream, indent, allowance, context, level):
-        self._pprint_dict_view(object, stream, indent, allowance, context, level, items=True)
-
     _dict_items_view = type({}.items())
-    _dispatch[_dict_items_view.__repr__] = _pprint_dict_items_view
+    _dispatch[_dict_items_view.__repr__] = _pprint_dict_view
+
+    _dispatch[_collections.abc.MappingView.__repr__] = _pprint_dict_view
 
     def _pprint_list(self, object, stream, indent, allowance, context, level):
         stream.write('[')
@@ -624,16 +641,25 @@ class PrettyPrinter:
             return "{%s}" % ", ".join(components), readable, recursive
 
         views = self._dict_keys_view, self._dict_values_view, self._dict_items_view
-        view_reprs = {cls.__repr__ for cls in views}
+        views += (_collections.abc.MappingView,)
+        mapping_view_repr = {_collections.abc.MappingView.__repr__}
+        view_reprs = {cls.__repr__ for cls in views}.union(mapping_view_repr)
         if issubclass(typ, views) and r in view_reprs:
             key = _safe_key
-            if isinstance(typ, self._dict_items_view):
+            if isinstance(typ, (self._dict_items_view, _collections.abc.ItemsView)):
                 key = _safe_tuple
+            format = typ.__name__ + '([%s])'
+            if typ in ABC_VIEW_TYPES:
+                format = typ.__name__ + '({%s})'
+                object = object._mapping.items()
             if self._sort_dicts:
                 object = sorted(object, key=key)
-            format = typ.__name__ + '([%s])'
+            if typ in ABC_VIEW_TYPES:
+                formatted = format % ", ".join(["%r: %r" % (k, v) for (k, v) in object])
+            else:
+                formatted = format % ', '.join(repr(x) for x in object)
             # TODO: Figure out whether we need to handle recursion here
-            return format % ', '.join(repr(x) for x in object), True, False
+            return formatted, True, False
 
         if (issubclass(typ, list) and r is list.__repr__) or \
            (issubclass(typ, tuple) and r is tuple.__repr__):
