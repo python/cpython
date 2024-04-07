@@ -526,12 +526,12 @@ mappingproxy(OrderedDict([('the', 0),
                           ('dog', 8)]))""")
 
     def test_dict_views(self):
-        for dict_class in (dict, collections.OrderedDict):
-            empty = dict_class()
-            short = dict_class(zip('edcba', 'edcba'))
-            long = dict_class((chr(x), chr(x)) for x in range(90, 64, -1))
+        for dict_class in (dict, collections.OrderedDict, collections.Counter):
+            empty = dict_class({})
+            short = dict_class(dict(zip('edcba', 'edcba')))
+            long = dict_class(dict((chr(x), chr(x)) for x in range(90, 64, -1)))
             lengths = {"empty": empty, "short": short, "long": long}
-            prefix = "dict" if dict_class is dict else "odict"
+            prefix = "odict" if dict_class is collections.OrderedDict else "dict"
             for name, d in lengths.items():
                 with self.subTest(length=name, prefix=prefix):
                     is_short = len(d) < 6
