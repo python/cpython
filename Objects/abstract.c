@@ -2770,7 +2770,7 @@ object_issubclass(PyThreadState *tstate, PyObject *derived, PyObject *cls)
     if((PyTypeObject*)derived == (PyTypeObject*)cls){
         return 1;
     }
-    
+
     PyObject *checker;
 
     /* We know what type's __subclasscheck__ does. */
