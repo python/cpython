@@ -124,7 +124,7 @@ class Stack:
         self.variables: list[StackItem] = []
         self.defined: set[str] = set()
 
-    def pop(self, var: StackItem, should_untag: bool = True) -> str:
+    def pop(self, var: StackItem, should_untag: bool = True) -> tuple[str, ...]:
         untag = "Py_OBJ_UNTAG" if should_untag else ""
         self.top_offset.pop(var)
         if not var.peek:
@@ -138,25 +138,25 @@ class Stack:
                     f"Expected {var.size} got {popped.size}"
                 )
             if popped.name == var.name:
-                return ""
+                return ("", )
             elif popped.name in UNUSED:
                 self.defined.add(var.name)
                 if indirect:
                     return (
-                        f"{var.name} = {indirect}stack_pointer[{self.top_offset.to_c()}];\n"
+                        f"{var.name} = {indirect}stack_pointer[{self.top_offset.to_c()}];\n",
                     )
                 else:
                     if var.type.strip() != "_PyTaggedPtr":
                         return (
-                            f"{var.name}_tagged = stack_pointer[{self.top_offset.to_c()}];\n"
-                            f"{var.name} = {untag}({var.name}_tagged);\n"
+                            f"{var.name}_tagged = stack_pointer[{self.top_offset.to_c()}];\n",
+                            f"{var.name} = {untag}({var.name}_tagged);\n",
                         )
                     else:
                         return (
-                            f"{var.name} = stack_pointer[{self.top_offset.to_c()}];\n"
+                            f"{var.name} = stack_pointer[{self.top_offset.to_c()}];\n",
                         )
             elif var.name in UNUSED:
-                return ""
+                return ("", )
             else:
                 self.defined.add(var.name)
                 res = f"{var.name} = {popped.name};\n"
@@ -165,32 +165,32 @@ class Stack:
                 return res
         self.base_offset.pop(var)
         if var.name in UNUSED:
-            return ""
+            return ("", )
         else:
             self.defined.add(var.name)
         cast = f"({var.type})" if (not indirect and var.type and var.type.strip() != "_PyTaggedPtr") else ""
         if indirect:
             assign = (
-                f"{var.name} = {indirect}stack_pointer[{self.base_offset.to_c()}];"
+                f"{var.name} = {indirect}stack_pointer[{self.base_offset.to_c()}];",
             )
         else:
             if (var.type or "").strip() != "_PyTaggedPtr":
                 assign = (
-                    f"{var.name}_tagged = stack_pointer[{self.base_offset.to_c()}];\n"
-                    f"{var.name} = {cast}{untag}({var.name}_tagged);\n"
+                    f"{var.name}_tagged = stack_pointer[{self.base_offset.to_c()}];\n",
+                    f"{var.name} = {cast}{untag}({var.name}_tagged);\n",
                 )
             else:
                 assign = (
-                    f"{var.name} = stack_pointer[{self.base_offset.to_c()}];\n"
+                    f"{var.name} = stack_pointer[{self.base_offset.to_c()}];\n",
                 )
         if var.condition:
             if var.condition == "1":
-                return f"{assign}\n"
+                return (*assign, "\n")
             elif var.condition == "0":
                 return ""
             else:
-                return f"if ({var.condition}) {{ {assign} }}\n"
-        return f"{assign}\n"
+                return (f"if ({var.condition}) {{ {''.join(assign)} }}\n", )
+        return (*assign, "\n")
 
     def push(self, var: StackItem) -> str:
         self.variables.append(var)

@@ -35,10 +35,10 @@ def validate_uop(override: Uop, uop: Uop) -> None:
     pass
 
 
-def type_name(var: StackItem) -> str:
+def type_name(var: StackItem, tagged: bool=False) -> str:
     if var.is_array():
         return f"_Py_UopsSymbol **"
-    if var.type and var.type.strip() != "_PyTaggedPtr":
+    if var.type and var.type.strip() != "_PyTaggedPtr" and not tagged:
         return var.type
     return f"_Py_UopsSymbol *"
 
@@ -50,10 +50,12 @@ def declare_variables(uop: Uop, out: CWriter, skip_inputs: bool) -> None:
             if var.name not in variables:
                 variables.add(var.name)
                 if var.condition:
-                    out.emit(f"{type_name(var)}{var.name}_tagged = NULL;\n")
+                    if not var.is_array():
+                        out.emit(f"{type_name(var, tagged=True)}{var.name}_tagged = NULL;\n")
                     out.emit(f"{type_name(var)}{var.name} = NULL;\n")
                 else:
-                    out.emit(f"{type_name(var)}{var.name}_tagged;\n")
+                    if not var.is_array():
+                        out.emit(f"{type_name(var, tagged=True)}{var.name}_tagged;\n")
                     out.emit(f"{type_name(var)}{var.name};\n")
     for var in uop.stack.outputs:
         if var.peek:
@@ -61,10 +63,8 @@ def declare_variables(uop: Uop, out: CWriter, skip_inputs: bool) -> None:
         if var.name not in variables:
             variables.add(var.name)
             if var.condition:
-                out.emit(f"{type_name(var)}{var.name}_tagged = NULL;\n")
                 out.emit(f"{type_name(var)}{var.name} = NULL;\n")
             else:
-                out.emit(f"{type_name(var)}{var.name}_tagged;\n")
                 out.emit(f"{type_name(var)}{var.name};\n")
 
 
@@ -113,7 +113,8 @@ def write_uop(
         for var in reversed(prototype.stack.inputs):
             res = stack.pop(var, should_untag=False)
             if not skip_inputs:
-                out.emit(res)
+                for line in res:
+                    out.emit(line)
         if not prototype.properties.stores_sp:
             for i, var in enumerate(prototype.stack.outputs):
                 res = stack.push(var)

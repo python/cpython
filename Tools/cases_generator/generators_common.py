@@ -133,11 +133,13 @@ def replace_decrefs(
             out.emit(f"Py_DECREF_TAGGED({var.name}[_i]);\n")
             out.emit("}\n")
         elif var.condition:
+            out.emit(f"(void){var.name};\n")
             if var.condition == "1":
                 out.emit(f"Py_DECREF_TAGGED({var.name}_tagged);\n")
             elif var.condition != "0":
                 out.emit(f"Py_XDECREF_TAGGED({var.name}_tagged);\n")
         else:
+            out.emit(f"(void){var.name};\n")
             out.emit(f"Py_DECREF_TAGGED({var.name}_tagged);\n")
 
 

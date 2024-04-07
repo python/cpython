@@ -280,8 +280,9 @@
             _PyTaggedPtr value_tagged;
             PyObject *value;
             value_tagged = stack_pointer[-1];
-value = Py_OBJ_UNTAG(value_tagged);
+            value = Py_OBJ_UNTAG(value_tagged);
 
+            (void)value;
             Py_DECREF_TAGGED(value_tagged);
             stack_pointer += -1;
             break;
@@ -301,11 +302,12 @@ value = Py_OBJ_UNTAG(value_tagged);
             _PyTaggedPtr receiver_tagged;
             PyObject *receiver;
             value_tagged = stack_pointer[-1];
-value = Py_OBJ_UNTAG(value_tagged);
+            value = Py_OBJ_UNTAG(value_tagged);
 
             receiver_tagged = stack_pointer[-2];
-receiver = Py_OBJ_UNTAG(receiver_tagged);
+            receiver = Py_OBJ_UNTAG(receiver_tagged);
 
+            (void)receiver;
             Py_DECREF_TAGGED(receiver_tagged);
             stack_pointer[-2] = Py_OBJ_TAG(value);
             stack_pointer += -1;
@@ -317,9 +319,10 @@ receiver = Py_OBJ_UNTAG(receiver_tagged);
             PyObject *value;
             PyObject *res;
             value_tagged = stack_pointer[-1];
-value = Py_OBJ_UNTAG(value_tagged);
+            value = Py_OBJ_UNTAG(value_tagged);
 
             res = PyNumber_Negative(value);
+            (void)value;
             Py_DECREF_TAGGED(value_tagged);
             if (res == NULL) JUMP_TO_ERROR();
             stack_pointer[-1] = Py_OBJ_TAG(res);
@@ -331,7 +334,7 @@ value = Py_OBJ_UNTAG(value_tagged);
             PyObject *value;
             PyObject *res;
             value_tagged = stack_pointer[-1];
-value = Py_OBJ_UNTAG(value_tagged);
+            value = Py_OBJ_UNTAG(value_tagged);
 
             assert(PyBool_Check(value));
             res = Py_IsFalse(value) ? Py_True : Py_False;
@@ -344,9 +347,10 @@ value = Py_OBJ_UNTAG(value_tagged);
             PyObject *value;
             PyObject *res;
             value_tagged = stack_pointer[-1];
-value = Py_OBJ_UNTAG(value_tagged);
+            value = Py_OBJ_UNTAG(value_tagged);
 
             int err = PyObject_IsTrue(value);
+            (void)value;
             Py_DECREF_TAGGED(value_tagged);
             if (err < 0) JUMP_TO_ERROR();
             res = err ? Py_True : Py_False;
@@ -358,7 +362,7 @@ value = Py_OBJ_UNTAG(value_tagged);
             _PyTaggedPtr value_tagged;
             PyObject *value;
             value_tagged = stack_pointer[-1];
-value = Py_OBJ_UNTAG(value_tagged);
+            value = Py_OBJ_UNTAG(value_tagged);
 
             if (!PyBool_Check(value)) {
                 UOP_STAT_INC(uopcode, miss);
@@ -373,7 +377,7 @@ value = Py_OBJ_UNTAG(value_tagged);
             PyObject *value;
             PyObject *res;
             value_tagged = stack_pointer[-1];
-value = Py_OBJ_UNTAG(value_tagged);
+            value = Py_OBJ_UNTAG(value_tagged);
 
             if (!PyLong_CheckExact(value)) {
                 UOP_STAT_INC(uopcode, miss);
@@ -385,6 +389,7 @@ value = Py_OBJ_UNTAG(value_tagged);
                 res = Py_False;
             }
             else {
+                (void)value;
                 Py_DECREF_TAGGED(value_tagged);
                 res = Py_True;
             }
@@ -397,7 +402,7 @@ value = Py_OBJ_UNTAG(value_tagged);
             PyObject *value;
             PyObject *res;
             value_tagged = stack_pointer[-1];
-value = Py_OBJ_UNTAG(value_tagged);
+            value = Py_OBJ_UNTAG(value_tagged);
 
             if (!PyList_CheckExact(value)) {
                 UOP_STAT_INC(uopcode, miss);
@@ -405,6 +410,7 @@ value = Py_OBJ_UNTAG(value_tagged);
             }
             STAT_INC(TO_BOOL, hit);
             res = Py_SIZE(value) ? Py_True : Py_False;
+            (void)value;
             Py_DECREF_TAGGED(value_tagged);
             stack_pointer[-1] = Py_OBJ_TAG(res);
             break;
@@ -415,7 +421,7 @@ value = Py_OBJ_UNTAG(value_tagged);
             PyObject *value;
             PyObject *res;
             value_tagged = stack_pointer[-1];
-value = Py_OBJ_UNTAG(value_tagged);
+            value = Py_OBJ_UNTAG(value_tagged);
 
             // This one is a bit weird, because we expect *some* failures:
             if (!Py_IsNone(value)) {
@@ -433,7 +439,7 @@ value = Py_OBJ_UNTAG(value_tagged);
             PyObject *value;
             PyObject *res;
             value_tagged = stack_pointer[-1];
-value = Py_OBJ_UNTAG(value_tagged);
+            value = Py_OBJ_UNTAG(value_tagged);
 
             if (!PyUnicode_CheckExact(value)) {
                 UOP_STAT_INC(uopcode, miss);
@@ -446,6 +452,7 @@ value = Py_OBJ_UNTAG(value_tagged);
             }
             else {
                 assert(Py_SIZE(value));
+                (void)value;
                 Py_DECREF_TAGGED(value_tagged);
                 res = Py_True;
             }
@@ -458,8 +465,9 @@ value = Py_OBJ_UNTAG(value_tagged);
             PyObject *value;
             PyObject *res;
             value_tagged = stack_pointer[-1];
-value = Py_OBJ_UNTAG(value_tagged);
+            value = Py_OBJ_UNTAG(value_tagged);
 
+            (void)value;
             Py_DECREF_TAGGED(value_tagged);
             res = Py_True;
             stack_pointer[-1] = Py_OBJ_TAG(res);
@@ -471,9 +479,10 @@ value = Py_OBJ_UNTAG(value_tagged);
             PyObject *value;
             PyObject *res;
             value_tagged = stack_pointer[-1];
-value = Py_OBJ_UNTAG(value_tagged);
+            value = Py_OBJ_UNTAG(value_tagged);
 
             res = PyNumber_Invert(value);
+            (void)value;
             Py_DECREF_TAGGED(value_tagged);
             if (res == NULL) JUMP_TO_ERROR();
             stack_pointer[-1] = Py_OBJ_TAG(res);
@@ -486,10 +495,10 @@ value = Py_OBJ_UNTAG(value_tagged);
             _PyTaggedPtr left_tagged;
             PyObject *left;
             right_tagged = stack_pointer[-1];
-right = Py_OBJ_UNTAG(right_tagged);
+            right = Py_OBJ_UNTAG(right_tagged);
 
             left_tagged = stack_pointer[-2];
-left = Py_OBJ_UNTAG(left_tagged);
+            left = Py_OBJ_UNTAG(left_tagged);
 
             if (!PyLong_CheckExact(left)) {
                 UOP_STAT_INC(uopcode, miss);
@@ -509,10 +518,10 @@ left = Py_OBJ_UNTAG(left_tagged);
             PyObject *left;
             PyObject *res;
             right_tagged = stack_pointer[-1];
-right = Py_OBJ_UNTAG(right_tagged);
+            right = Py_OBJ_UNTAG(right_tagged);
 
             left_tagged = stack_pointer[-2];
-left = Py_OBJ_UNTAG(left_tagged);
+            left = Py_OBJ_UNTAG(left_tagged);
 
             STAT_INC(BINARY_OP, hit);
             res = _PyLong_Multiply((PyLongObject *)left, (PyLongObject *)right);
@@ -531,10 +540,10 @@ left = Py_OBJ_UNTAG(left_tagged);
             PyObject *left;
             PyObject *res;
             right_tagged = stack_pointer[-1];
-right = Py_OBJ_UNTAG(right_tagged);
+            right = Py_OBJ_UNTAG(right_tagged);
 
             left_tagged = stack_pointer[-2];
-left = Py_OBJ_UNTAG(left_tagged);
+            left = Py_OBJ_UNTAG(left_tagged);
 
             STAT_INC(BINARY_OP, hit);
             res = _PyLong_Add((PyLongObject *)left, (PyLongObject *)right);
@@ -553,10 +562,10 @@ left = Py_OBJ_UNTAG(left_tagged);
             PyObject *left;
             PyObject *res;
             right_tagged = stack_pointer[-1];
-right = Py_OBJ_UNTAG(right_tagged);
+            right = Py_OBJ_UNTAG(right_tagged);
 
             left_tagged = stack_pointer[-2];
-left = Py_OBJ_UNTAG(left_tagged);
+            left = Py_OBJ_UNTAG(left_tagged);
 
             STAT_INC(BINARY_OP, hit);
             res = _PyLong_Subtract((PyLongObject *)left, (PyLongObject *)right);
@@ -574,10 +583,10 @@ left = Py_OBJ_UNTAG(left_tagged);
             _PyTaggedPtr left_tagged;
             PyObject *left;
             right_tagged = stack_pointer[-1];
-right = Py_OBJ_UNTAG(right_tagged);
+            right = Py_OBJ_UNTAG(right_tagged);
 
             left_tagged = stack_pointer[-2];
-left = Py_OBJ_UNTAG(left_tagged);
+            left = Py_OBJ_UNTAG(left_tagged);
 
             if (!PyFloat_CheckExact(left)) {
                 UOP_STAT_INC(uopcode, miss);
@@ -597,10 +606,10 @@ left = Py_OBJ_UNTAG(left_tagged);
             PyObject *left;
             PyObject *res;
             right_tagged = stack_pointer[-1];
-right = Py_OBJ_UNTAG(right_tagged);
+            right = Py_OBJ_UNTAG(right_tagged);
 
             left_tagged = stack_pointer[-2];
-left = Py_OBJ_UNTAG(left_tagged);
+            left = Py_OBJ_UNTAG(left_tagged);
 
             STAT_INC(BINARY_OP, hit);
             double dres =
@@ -619,10 +628,10 @@ left = Py_OBJ_UNTAG(left_tagged);
             PyObject *left;
             PyObject *res;
             right_tagged = stack_pointer[-1];
-right = Py_OBJ_UNTAG(right_tagged);
+            right = Py_OBJ_UNTAG(right_tagged);
 
             left_tagged = stack_pointer[-2];
-left = Py_OBJ_UNTAG(left_tagged);
+            left = Py_OBJ_UNTAG(left_tagged);
 
             STAT_INC(BINARY_OP, hit);
             double dres =
@@ -641,10 +650,10 @@ left = Py_OBJ_UNTAG(left_tagged);
             PyObject *left;
             PyObject *res;
             right_tagged = stack_pointer[-1];
-right = Py_OBJ_UNTAG(right_tagged);
+            right = Py_OBJ_UNTAG(right_tagged);
 
             left_tagged = stack_pointer[-2];
-left = Py_OBJ_UNTAG(left_tagged);
+            left = Py_OBJ_UNTAG(left_tagged);
 
             STAT_INC(BINARY_OP, hit);
             double dres =
@@ -662,10 +671,10 @@ left = Py_OBJ_UNTAG(left_tagged);
             _PyTaggedPtr left_tagged;
             PyObject *left;
             right_tagged = stack_pointer[-1];
-right = Py_OBJ_UNTAG(right_tagged);
+            right = Py_OBJ_UNTAG(right_tagged);
 
             left_tagged = stack_pointer[-2];
-left = Py_OBJ_UNTAG(left_tagged);
+            left = Py_OBJ_UNTAG(left_tagged);
 
             if (!PyUnicode_CheckExact(left)) {
                 UOP_STAT_INC(uopcode, miss);
@@ -685,10 +694,10 @@ left = Py_OBJ_UNTAG(left_tagged);
             PyObject *left;
             PyObject *res;
             right_tagged = stack_pointer[-1];
-right = Py_OBJ_UNTAG(right_tagged);
+            right = Py_OBJ_UNTAG(right_tagged);
 
             left_tagged = stack_pointer[-2];
-left = Py_OBJ_UNTAG(left_tagged);
+            left = Py_OBJ_UNTAG(left_tagged);
 
             STAT_INC(BINARY_OP, hit);
             res = PyUnicode_Concat(left, right);
@@ -707,13 +716,15 @@ left = Py_OBJ_UNTAG(left_tagged);
             PyObject *container;
             PyObject *res;
             sub_tagged = stack_pointer[-1];
-sub = Py_OBJ_UNTAG(sub_tagged);
+            sub = Py_OBJ_UNTAG(sub_tagged);
 
             container_tagged = stack_pointer[-2];
-container = Py_OBJ_UNTAG(container_tagged);
+            container = Py_OBJ_UNTAG(container_tagged);
 
             res = PyObject_GetItem(container, sub);
+            (void)container;
             Py_DECREF_TAGGED(container_tagged);
+            (void)sub;
             Py_DECREF_TAGGED(sub_tagged);
             if (res == NULL) JUMP_TO_ERROR();
             stack_pointer[-2] = Py_OBJ_TAG(res);
@@ -730,13 +741,13 @@ container = Py_OBJ_UNTAG(container_tagged);
             PyObject *container;
             PyObject *res;
             stop_tagged = stack_pointer[-1];
-stop = Py_OBJ_UNTAG(stop_tagged);
+            stop = Py_OBJ_UNTAG(stop_tagged);
 
             start_tagged = stack_pointer[-2];
-start = Py_OBJ_UNTAG(start_tagged);
+            start = Py_OBJ_UNTAG(start_tagged);
 
             container_tagged = stack_pointer[-3];
-container = Py_OBJ_UNTAG(container_tagged);
+            container = Py_OBJ_UNTAG(container_tagged);
 
             // TODO: make this support tagged pointers
             PyObject *slice = _PyBuildSlice_ConsumeRefs(start, stop);
@@ -766,16 +777,16 @@ container = Py_OBJ_UNTAG(container_tagged);
             _PyTaggedPtr v_tagged;
             PyObject *v;
             stop_tagged = stack_pointer[-1];
-stop = Py_OBJ_UNTAG(stop_tagged);
+            stop = Py_OBJ_UNTAG(stop_tagged);
 
             start_tagged = stack_pointer[-2];
-start = Py_OBJ_UNTAG(start_tagged);
+            start = Py_OBJ_UNTAG(start_tagged);
 
             container_tagged = stack_pointer[-3];
-container = Py_OBJ_UNTAG(container_tagged);
+            container = Py_OBJ_UNTAG(container_tagged);
 
             v_tagged = stack_pointer[-4];
-v = Py_OBJ_UNTAG(v_tagged);
+            v = Py_OBJ_UNTAG(v_tagged);
 
             // TODO make this support tageed pointers
             PyObject *slice = _PyBuildSlice_ConsumeRefs(start, stop);
@@ -801,10 +812,10 @@ v = Py_OBJ_UNTAG(v_tagged);
             PyObject *list;
             PyObject *res;
             sub_tagged = stack_pointer[-1];
-sub = Py_OBJ_UNTAG(sub_tagged);
+            sub = Py_OBJ_UNTAG(sub_tagged);
 
             list_tagged = stack_pointer[-2];
-list = Py_OBJ_UNTAG(list_tagged);
+            list = Py_OBJ_UNTAG(list_tagged);
 
             if (!PyLong_CheckExact(sub)) {
                 UOP_STAT_INC(uopcode, miss);
@@ -842,10 +853,10 @@ list = Py_OBJ_UNTAG(list_tagged);
             PyObject *str;
             PyObject *res;
             sub_tagged = stack_pointer[-1];
-sub = Py_OBJ_UNTAG(sub_tagged);
+            sub = Py_OBJ_UNTAG(sub_tagged);
 
             str_tagged = stack_pointer[-2];
-str = Py_OBJ_UNTAG(str_tagged);
+            str = Py_OBJ_UNTAG(str_tagged);
 
             if (!PyLong_CheckExact(sub)) {
                 UOP_STAT_INC(uopcode, miss);
@@ -886,10 +897,10 @@ str = Py_OBJ_UNTAG(str_tagged);
             PyObject *tuple;
             PyObject *res;
             sub_tagged = stack_pointer[-1];
-sub = Py_OBJ_UNTAG(sub_tagged);
+            sub = Py_OBJ_UNTAG(sub_tagged);
 
             tuple_tagged = stack_pointer[-2];
-tuple = Py_OBJ_UNTAG(tuple_tagged);
+            tuple = Py_OBJ_UNTAG(tuple_tagged);
 
             if (!PyLong_CheckExact(sub)) {
                 UOP_STAT_INC(uopcode, miss);
@@ -927,10 +938,10 @@ tuple = Py_OBJ_UNTAG(tuple_tagged);
             PyObject *dict;
             PyObject *res;
             sub_tagged = stack_pointer[-1];
-sub = Py_OBJ_UNTAG(sub_tagged);
+            sub = Py_OBJ_UNTAG(sub_tagged);
 
             dict_tagged = stack_pointer[-2];
-dict = Py_OBJ_UNTAG(dict_tagged);
+            dict = Py_OBJ_UNTAG(dict_tagged);
 
             if (!PyDict_CheckExact(dict)) {
                 UOP_STAT_INC(uopcode, miss);
@@ -941,7 +952,9 @@ dict = Py_OBJ_UNTAG(dict_tagged);
             if (rc == 0) {
                 _PyErr_SetKeyError(sub);
             }
+            (void)dict;
             Py_DECREF_TAGGED(dict_tagged);
+            (void)sub;
             Py_DECREF_TAGGED(sub_tagged);
             if (rc <= 0) JUMP_TO_ERROR();
             // not found or error
@@ -959,10 +972,10 @@ dict = Py_OBJ_UNTAG(dict_tagged);
             PyObject *list;
             oparg = CURRENT_OPARG();
             v_tagged = stack_pointer[-1];
-v = Py_OBJ_UNTAG(v_tagged);
+            v = Py_OBJ_UNTAG(v_tagged);
 
             list_tagged = stack_pointer[-2 - (oparg-1)];
-list = Py_OBJ_UNTAG(list_tagged);
+            list = Py_OBJ_UNTAG(list_tagged);
 
             if (_PyList_AppendTakeRef((PyListObject *)list, v) < 0) JUMP_TO_ERROR();
             stack_pointer += -1;
@@ -976,12 +989,13 @@ list = Py_OBJ_UNTAG(list_tagged);
             PyObject *set;
             oparg = CURRENT_OPARG();
             v_tagged = stack_pointer[-1];
-v = Py_OBJ_UNTAG(v_tagged);
+            v = Py_OBJ_UNTAG(v_tagged);
 
             set_tagged = stack_pointer[-2 - (oparg-1)];
-set = Py_OBJ_UNTAG(set_tagged);
+            set = Py_OBJ_UNTAG(set_tagged);
 
             int err = PySet_Add(set, v);
+            (void)v;
             Py_DECREF_TAGGED(v_tagged);
             if (err) JUMP_TO_ERROR();
             stack_pointer += -1;
@@ -996,18 +1010,21 @@ set = Py_OBJ_UNTAG(set_tagged);
             _PyTaggedPtr v_tagged;
             PyObject *v;
             sub_tagged = stack_pointer[-1];
-sub = Py_OBJ_UNTAG(sub_tagged);
+            sub = Py_OBJ_UNTAG(sub_tagged);
 
             container_tagged = stack_pointer[-2];
-container = Py_OBJ_UNTAG(container_tagged);
+            container = Py_OBJ_UNTAG(container_tagged);
 
             v_tagged = stack_pointer[-3];
-v = Py_OBJ_UNTAG(v_tagged);
+            v = Py_OBJ_UNTAG(v_tagged);
 
             /* container[sub] = v */
             int err = PyObject_SetItem(container, sub, v);
+            (void)v;
             Py_DECREF_TAGGED(v_tagged);
+            (void)container;
             Py_DECREF_TAGGED(container_tagged);
+            (void)sub;
             Py_DECREF_TAGGED(sub_tagged);
             if (err) JUMP_TO_ERROR();
             stack_pointer += -3;
@@ -1022,13 +1039,13 @@ v = Py_OBJ_UNTAG(v_tagged);
             _PyTaggedPtr value_tagged;
             PyObject *value;
             sub_tagged = stack_pointer[-1];
-sub = Py_OBJ_UNTAG(sub_tagged);
+            sub = Py_OBJ_UNTAG(sub_tagged);
 
             list_tagged = stack_pointer[-2];
-list = Py_OBJ_UNTAG(list_tagged);
+            list = Py_OBJ_UNTAG(list_tagged);
 
             value_tagged = stack_pointer[-3];
-value = Py_OBJ_UNTAG(value_tagged);
+            value = Py_OBJ_UNTAG(value_tagged);
 
             if (!PyLong_CheckExact(sub)) {
                 UOP_STAT_INC(uopcode, miss);
@@ -1068,13 +1085,13 @@ value = Py_OBJ_UNTAG(value_tagged);
             _PyTaggedPtr value_tagged;
             PyObject *value;
             sub_tagged = stack_pointer[-1];
-sub = Py_OBJ_UNTAG(sub_tagged);
+            sub = Py_OBJ_UNTAG(sub_tagged);
 
             dict_tagged = stack_pointer[-2];
-dict = Py_OBJ_UNTAG(dict_tagged);
+            dict = Py_OBJ_UNTAG(dict_tagged);
 
             value_tagged = stack_pointer[-3];
-value = Py_OBJ_UNTAG(value_tagged);
+            value = Py_OBJ_UNTAG(value_tagged);
 
             if (!PyDict_CheckExact(dict)) {
                 UOP_STAT_INC(uopcode, miss);
@@ -1094,14 +1111,16 @@ value = Py_OBJ_UNTAG(value_tagged);
             _PyTaggedPtr container_tagged;
             PyObject *container;
             sub_tagged = stack_pointer[-1];
-sub = Py_OBJ_UNTAG(sub_tagged);
+            sub = Py_OBJ_UNTAG(sub_tagged);
 
             container_tagged = stack_pointer[-2];
-container = Py_OBJ_UNTAG(container_tagged);
+            container = Py_OBJ_UNTAG(container_tagged);
 
             /* del container[sub] */
             int err = PyObject_DelItem(container, sub);
+            (void)container;
             Py_DECREF_TAGGED(container_tagged);
+            (void)sub;
             Py_DECREF_TAGGED(sub_tagged);
             if (err) JUMP_TO_ERROR();
             stack_pointer += -2;
@@ -1114,10 +1133,11 @@ container = Py_OBJ_UNTAG(container_tagged);
             PyObject *res;
             oparg = CURRENT_OPARG();
             value_tagged = stack_pointer[-1];
-value = Py_OBJ_UNTAG(value_tagged);
+            value = Py_OBJ_UNTAG(value_tagged);
 
             assert(oparg <= MAX_INTRINSIC_1);
             res = _PyIntrinsics_UnaryFunctions[oparg].func(tstate, value);
+            (void)value;
             Py_DECREF_TAGGED(value_tagged);
             if (res == NULL) JUMP_TO_ERROR();
             stack_pointer[-1] = Py_OBJ_TAG(res);
@@ -1132,14 +1152,16 @@ value = Py_OBJ_UNTAG(value_tagged);
             PyObject *res;
             oparg = CURRENT_OPARG();
             value1_tagged = stack_pointer[-1];
-value1 = Py_OBJ_UNTAG(value1_tagged);
+            value1 = Py_OBJ_UNTAG(value1_tagged);
 
             value2_tagged = stack_pointer[-2];
-value2 = Py_OBJ_UNTAG(value2_tagged);
+            value2 = Py_OBJ_UNTAG(value2_tagged);
 
             assert(oparg <= MAX_INTRINSIC_2);
             res = _PyIntrinsics_BinaryFunctions[oparg].func(tstate, value2, value1);
+            (void)value2;
             Py_DECREF_TAGGED(value2_tagged);
+            (void)value1;
             Py_DECREF_TAGGED(value1_tagged);
             if (res == NULL) JUMP_TO_ERROR();
             stack_pointer[-2] = Py_OBJ_TAG(res);
@@ -1183,7 +1205,7 @@ value2 = Py_OBJ_UNTAG(value2_tagged);
             PyObject *obj;
             PyObject *iter;
             obj_tagged = stack_pointer[-1];
-obj = Py_OBJ_UNTAG(obj_tagged);
+            obj = Py_OBJ_UNTAG(obj_tagged);
 
             unaryfunc getter = NULL;
             PyTypeObject *type = Py_TYPE(obj);
@@ -1195,10 +1217,12 @@ obj = Py_OBJ_UNTAG(obj_tagged);
                               "'async for' requires an object with "
                               "__aiter__ method, got %.100s",
                               type->tp_name);
+                (void)obj;
                 Py_DECREF_TAGGED(obj_tagged);
                 if (true) JUMP_TO_ERROR();
             }
             iter = (*getter)(obj);
+            (void)obj;
             Py_DECREF_TAGGED(obj_tagged);
             if (iter == NULL) JUMP_TO_ERROR();
             if (Py_TYPE(iter)->tp_as_async == NULL ||
@@ -1219,7 +1243,7 @@ obj = Py_OBJ_UNTAG(obj_tagged);
             PyObject *aiter;
             PyObject *awaitable;
             aiter_tagged = stack_pointer[-1];
-aiter = Py_OBJ_UNTAG(aiter_tagged);
+            aiter = Py_OBJ_UNTAG(aiter_tagged);
 
             unaryfunc getter = NULL;
             PyObject *next_iter = NULL;
@@ -1270,12 +1294,13 @@ aiter = Py_OBJ_UNTAG(aiter_tagged);
             PyObject *iter;
             oparg = CURRENT_OPARG();
             iterable_tagged = stack_pointer[-1];
-iterable = Py_OBJ_UNTAG(iterable_tagged);
+            iterable = Py_OBJ_UNTAG(iterable_tagged);
 
             iter = _PyCoro_GetAwaitableIter(iterable);
             if (iter == NULL) {
                 _PyEval_FormatAwaitableError(tstate, Py_TYPE(iterable), oparg);
             }
+            (void)iterable;
             Py_DECREF_TAGGED(iterable_tagged);
             if (iter != NULL && PyCoro_CheckExact(iter)) {
                 PyObject *yf = _PyGen_yf((PyGenObject*)iter);
@@ -1305,7 +1330,7 @@ iterable = Py_OBJ_UNTAG(iterable_tagged);
             _PyTaggedPtr exc_value_tagged;
             PyObject *exc_value;
             exc_value_tagged = stack_pointer[-1];
-exc_value = Py_OBJ_UNTAG(exc_value_tagged);
+            exc_value = Py_OBJ_UNTAG(exc_value_tagged);
 
             _PyErr_StackItem *exc_info = tstate->exc_info;
             Py_XSETREF(exc_info->exc_value, exc_value == Py_None ? NULL : exc_value);
@@ -1339,7 +1364,7 @@ exc_value = Py_OBJ_UNTAG(exc_value_tagged);
             PyObject *v;
             oparg = CURRENT_OPARG();
             v_tagged = stack_pointer[-1];
-v = Py_OBJ_UNTAG(v_tagged);
+            v = Py_OBJ_UNTAG(v_tagged);
 
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
             PyObject *ns = LOCALS();
@@ -1347,6 +1372,7 @@ v = Py_OBJ_UNTAG(v_tagged);
             if (ns == NULL) {
                 _PyErr_Format(tstate, PyExc_SystemError,
                               "no locals found when storing %R", name);
+                (void)v;
                 Py_DECREF_TAGGED(v_tagged);
                 if (true) JUMP_TO_ERROR();
             }
@@ -1354,6 +1380,7 @@ v = Py_OBJ_UNTAG(v_tagged);
             err = PyDict_SetItem(ns, name, v);
             else
             err = PyObject_SetItem(ns, name, v);
+            (void)v;
             Py_DECREF_TAGGED(v_tagged);
             if (err) JUMP_TO_ERROR();
             stack_pointer += -1;
@@ -1386,10 +1413,11 @@ v = Py_OBJ_UNTAG(v_tagged);
             PyObject *seq;
             oparg = CURRENT_OPARG();
             seq_tagged = stack_pointer[-1];
-seq = Py_OBJ_UNTAG(seq_tagged);
+            seq = Py_OBJ_UNTAG(seq_tagged);
 
             _PyTaggedPtr *top = stack_pointer + oparg - 1;
             int res = _PyEval_UnpackTaggedIterable(tstate, seq, oparg, -1, top);
+            (void)seq;
             Py_DECREF_TAGGED(seq_tagged);
             if (res == 0) JUMP_TO_ERROR();
             stack_pointer += -1 + oparg;
@@ -1403,7 +1431,7 @@ seq = Py_OBJ_UNTAG(seq_tagged);
             PyObject *val0;
             oparg = CURRENT_OPARG();
             seq_tagged = stack_pointer[-1];
-seq = Py_OBJ_UNTAG(seq_tagged);
+            seq = Py_OBJ_UNTAG(seq_tagged);
 
             assert(oparg == 2);
             if (!PyTuple_CheckExact(seq)) {
@@ -1417,6 +1445,7 @@ seq = Py_OBJ_UNTAG(seq_tagged);
             STAT_INC(UNPACK_SEQUENCE, hit);
             val0 = Py_NewRef(PyTuple_GET_ITEM(seq, 0));
             val1 = Py_NewRef(PyTuple_GET_ITEM(seq, 1));
+            (void)seq;
             Py_DECREF_TAGGED(seq_tagged);
             stack_pointer[-1] = Py_OBJ_TAG(val1);
             stack_pointer[0] = Py_OBJ_TAG(val0);
@@ -1430,7 +1459,7 @@ seq = Py_OBJ_UNTAG(seq_tagged);
             _PyTaggedPtr *values;
             oparg = CURRENT_OPARG();
             seq_tagged = stack_pointer[-1];
-seq = Py_OBJ_UNTAG(seq_tagged);
+            seq = Py_OBJ_UNTAG(seq_tagged);
 
             values = &stack_pointer[-1];
             if (!PyTuple_CheckExact(seq)) {
@@ -1446,6 +1475,7 @@ seq = Py_OBJ_UNTAG(seq_tagged);
             for (int i = oparg; --i >= 0; ) {
                 *values++ = Py_NewRef_Tagged(Py_OBJ_TAG(items[i]));
             }
+            (void)seq;
             Py_DECREF_TAGGED(seq_tagged);
             stack_pointer += -1 + oparg;
             break;
@@ -1457,7 +1487,7 @@ seq = Py_OBJ_UNTAG(seq_tagged);
             _PyTaggedPtr *values;
             oparg = CURRENT_OPARG();
             seq_tagged = stack_pointer[-1];
-seq = Py_OBJ_UNTAG(seq_tagged);
+            seq = Py_OBJ_UNTAG(seq_tagged);
 
             values = &stack_pointer[-1];
             if (!PyList_CheckExact(seq)) {
@@ -1473,6 +1503,7 @@ seq = Py_OBJ_UNTAG(seq_tagged);
             for (int i = oparg; --i >= 0; ) {
                 *values++ = Py_NewRef_Tagged(Py_OBJ_TAG(items[i]));
             }
+            (void)seq;
             Py_DECREF_TAGGED(seq_tagged);
             stack_pointer += -1 + oparg;
             break;
@@ -1483,11 +1514,12 @@ seq = Py_OBJ_UNTAG(seq_tagged);
             PyObject *seq;
             oparg = CURRENT_OPARG();
             seq_tagged = stack_pointer[-1];
-seq = Py_OBJ_UNTAG(seq_tagged);
+            seq = Py_OBJ_UNTAG(seq_tagged);
 
             int totalargs = 1 + (oparg & 0xFF) + (oparg >> 8);
             _PyTaggedPtr *top = stack_pointer + totalargs - 1;
             int res = _PyEval_UnpackTaggedIterable(tstate, seq, oparg & 0xFF, oparg >> 8, top);
+            (void)seq;
             Py_DECREF_TAGGED(seq_tagged);
             if (res == 0) JUMP_TO_ERROR();
             stack_pointer += (oparg >> 8) + (oparg & 0xFF);
@@ -1501,14 +1533,16 @@ seq = Py_OBJ_UNTAG(seq_tagged);
             PyObject *v;
             oparg = CURRENT_OPARG();
             owner_tagged = stack_pointer[-1];
-owner = Py_OBJ_UNTAG(owner_tagged);
+            owner = Py_OBJ_UNTAG(owner_tagged);
 
             v_tagged = stack_pointer[-2];
-v = Py_OBJ_UNTAG(v_tagged);
+            v = Py_OBJ_UNTAG(v_tagged);
 
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
             int err = PyObject_SetAttr(owner, name, v);
+            (void)v;
             Py_DECREF_TAGGED(v_tagged);
+            (void)owner;
             Py_DECREF_TAGGED(owner_tagged);
             if (err) JUMP_TO_ERROR();
             stack_pointer += -2;
@@ -1520,10 +1554,11 @@ v = Py_OBJ_UNTAG(v_tagged);
             PyObject *owner;
             oparg = CURRENT_OPARG();
             owner_tagged = stack_pointer[-1];
-owner = Py_OBJ_UNTAG(owner_tagged);
+            owner = Py_OBJ_UNTAG(owner_tagged);
 
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
             int err = PyObject_DelAttr(owner, name);
+            (void)owner;
             Py_DECREF_TAGGED(owner_tagged);
             if (err) JUMP_TO_ERROR();
             stack_pointer += -1;
@@ -1535,10 +1570,11 @@ owner = Py_OBJ_UNTAG(owner_tagged);
             PyObject *v;
             oparg = CURRENT_OPARG();
             v_tagged = stack_pointer[-1];
-v = Py_OBJ_UNTAG(v_tagged);
+            v = Py_OBJ_UNTAG(v_tagged);
 
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
             int err = PyDict_SetItem(GLOBALS(), name, v);
+            (void)v;
             Py_DECREF_TAGGED(v_tagged);
             if (err) JUMP_TO_ERROR();
             stack_pointer += -1;
@@ -1581,7 +1617,7 @@ v = Py_OBJ_UNTAG(v_tagged);
             PyObject *v;
             oparg = CURRENT_OPARG();
             mod_or_class_dict_tagged = stack_pointer[-1];
-mod_or_class_dict = Py_OBJ_UNTAG(mod_or_class_dict_tagged);
+            mod_or_class_dict = Py_OBJ_UNTAG(mod_or_class_dict_tagged);
 
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
             if (PyMapping_GetOptionalItem(mod_or_class_dict, name, &v) < 0) {
@@ -1603,6 +1639,7 @@ mod_or_class_dict = Py_OBJ_UNTAG(mod_or_class_dict_tagged);
                     }
                 }
             }
+            (void)mod_or_class_dict;
             Py_DECREF_TAGGED(mod_or_class_dict_tagged);
             stack_pointer[-1] = Py_OBJ_TAG(v);
             break;
@@ -1772,7 +1809,7 @@ mod_or_class_dict = Py_OBJ_UNTAG(mod_or_class_dict_tagged);
             PyObject *value;
             oparg = CURRENT_OPARG();
             class_dict_tagged = stack_pointer[-1];
-class_dict = Py_OBJ_UNTAG(class_dict_tagged);
+            class_dict = Py_OBJ_UNTAG(class_dict_tagged);
 
             PyObject *name;
             assert(class_dict);
@@ -1813,7 +1850,7 @@ class_dict = Py_OBJ_UNTAG(class_dict_tagged);
             PyObject *v;
             oparg = CURRENT_OPARG();
             v_tagged = stack_pointer[-1];
-v = Py_OBJ_UNTAG(v_tagged);
+            v = Py_OBJ_UNTAG(v_tagged);
 
             PyCellObject *cell = (PyCellObject *)Py_OBJ_UNTAG(GETLOCAL(oparg));
             PyCell_SetTakeRef(cell, v);
@@ -1837,7 +1874,6 @@ v = Py_OBJ_UNTAG(v_tagged);
         }
 
         case _BUILD_STRING: {
-            _PyTaggedPtr pieces_tagged;
             _PyTaggedPtr *pieces;
             PyObject *str;
             oparg = CURRENT_OPARG();
@@ -1853,7 +1889,6 @@ v = Py_OBJ_UNTAG(v_tagged);
         }
 
         case _BUILD_TUPLE: {
-            _PyTaggedPtr values_tagged;
             _PyTaggedPtr *values;
             PyObject *tup;
             oparg = CURRENT_OPARG();
@@ -1866,7 +1901,6 @@ v = Py_OBJ_UNTAG(v_tagged);
         }
 
         case _BUILD_LIST: {
-            _PyTaggedPtr values_tagged;
             _PyTaggedPtr *values;
             PyObject *list;
             oparg = CURRENT_OPARG();
@@ -1885,10 +1919,10 @@ v = Py_OBJ_UNTAG(v_tagged);
             PyObject *list;
             oparg = CURRENT_OPARG();
             iterable_tagged = stack_pointer[-1];
-iterable = Py_OBJ_UNTAG(iterable_tagged);
+            iterable = Py_OBJ_UNTAG(iterable_tagged);
 
             list_tagged = stack_pointer[-2 - (oparg-1)];
-list = Py_OBJ_UNTAG(list_tagged);
+            list = Py_OBJ_UNTAG(list_tagged);
 
             PyObject *none_val = _PyList_Extend((PyListObject *)list, iterable);
             if (none_val == NULL) {
@@ -1900,10 +1934,12 @@ list = Py_OBJ_UNTAG(list_tagged);
                                   "Value after * must be an iterable, not %.200s",
                                   Py_TYPE(iterable)->tp_name);
                 }
+                (void)iterable;
                 Py_DECREF_TAGGED(iterable_tagged);
                 if (true) JUMP_TO_ERROR();
             }
             assert(Py_IsNone(none_val));
+            (void)iterable;
             Py_DECREF_TAGGED(iterable_tagged);
             stack_pointer += -1;
             break;
@@ -1916,12 +1952,13 @@ list = Py_OBJ_UNTAG(list_tagged);
             PyObject *set;
             oparg = CURRENT_OPARG();
             iterable_tagged = stack_pointer[-1];
-iterable = Py_OBJ_UNTAG(iterable_tagged);
+            iterable = Py_OBJ_UNTAG(iterable_tagged);
 
             set_tagged = stack_pointer[-2 - (oparg-1)];
-set = Py_OBJ_UNTAG(set_tagged);
+            set = Py_OBJ_UNTAG(set_tagged);
 
             int err = _PySet_Update(set, iterable);
+            (void)iterable;
             Py_DECREF_TAGGED(iterable_tagged);
             if (err < 0) JUMP_TO_ERROR();
             stack_pointer += -1;
@@ -1931,7 +1968,6 @@ set = Py_OBJ_UNTAG(set_tagged);
         /* _BUILD_SET is not a viable micro-op for tier 2 because it has both popping and not-popping errors */
 
         case _BUILD_MAP: {
-            _PyTaggedPtr values_tagged;
             _PyTaggedPtr *values;
             PyObject *map;
             oparg = CURRENT_OPARG();
@@ -1976,12 +2012,11 @@ set = Py_OBJ_UNTAG(set_tagged);
         case _BUILD_CONST_KEY_MAP: {
             _PyTaggedPtr keys_tagged;
             PyObject *keys;
-            _PyTaggedPtr values_tagged;
             _PyTaggedPtr *values;
             PyObject *map;
             oparg = CURRENT_OPARG();
             keys_tagged = stack_pointer[-1];
-keys = Py_OBJ_UNTAG(keys_tagged);
+            keys = Py_OBJ_UNTAG(keys_tagged);
 
             values = &stack_pointer[-1 - oparg];
             assert(PyTuple_CheckExact(keys));
@@ -1992,6 +2027,7 @@ keys = Py_OBJ_UNTAG(keys_tagged);
             for (int _i = oparg; --_i >= 0;) {
                 Py_DECREF_TAGGED(values[_i]);
             }
+            (void)keys;
             Py_DECREF_TAGGED(keys_tagged);
             if (map == NULL) JUMP_TO_ERROR();
             stack_pointer[-1 - oparg] = Py_OBJ_TAG(map);
@@ -2006,10 +2042,10 @@ keys = Py_OBJ_UNTAG(keys_tagged);
             PyObject *dict;
             oparg = CURRENT_OPARG();
             update_tagged = stack_pointer[-1];
-update = Py_OBJ_UNTAG(update_tagged);
+            update = Py_OBJ_UNTAG(update_tagged);
 
             dict_tagged = stack_pointer[-2 - (oparg - 1)];
-dict = Py_OBJ_UNTAG(dict_tagged);
+            dict = Py_OBJ_UNTAG(dict_tagged);
 
             if (PyDict_Update(dict, update) < 0) {
                 if (_PyErr_ExceptionMatches(tstate, PyExc_AttributeError)) {
@@ -2017,9 +2053,11 @@ dict = Py_OBJ_UNTAG(dict_tagged);
                                   "'%.200s' object is not a mapping",
                                   Py_TYPE(update)->tp_name);
                 }
+                (void)update;
                 Py_DECREF_TAGGED(update_tagged);
                 if (true) JUMP_TO_ERROR();
             }
+            (void)update;
             Py_DECREF_TAGGED(update_tagged);
             stack_pointer += -1;
             break;
@@ -2034,19 +2072,21 @@ dict = Py_OBJ_UNTAG(dict_tagged);
             PyObject *callable;
             oparg = CURRENT_OPARG();
             update_tagged = stack_pointer[-1];
-update = Py_OBJ_UNTAG(update_tagged);
+            update = Py_OBJ_UNTAG(update_tagged);
 
             dict_tagged = stack_pointer[-2 - (oparg - 1)];
-dict = Py_OBJ_UNTAG(dict_tagged);
+            dict = Py_OBJ_UNTAG(dict_tagged);
 
             callable_tagged = stack_pointer[-5 - (oparg - 1)];
-callable = Py_OBJ_UNTAG(callable_tagged);
+            callable = Py_OBJ_UNTAG(callable_tagged);
 
             if (_PyDict_MergeEx(dict, update, 2) < 0) {
                 _PyEval_FormatKwargsError(tstate, callable, update);
+                (void)update;
                 Py_DECREF_TAGGED(update_tagged);
                 if (true) JUMP_TO_ERROR();
             }
+            (void)update;
             Py_DECREF_TAGGED(update_tagged);
             stack_pointer += -1;
             break;
@@ -2061,13 +2101,13 @@ callable = Py_OBJ_UNTAG(callable_tagged);
             PyObject *dict;
             oparg = CURRENT_OPARG();
             value_tagged = stack_pointer[-1];
-value = Py_OBJ_UNTAG(value_tagged);
+            value = Py_OBJ_UNTAG(value_tagged);
 
             key_tagged = stack_pointer[-2];
-key = Py_OBJ_UNTAG(key_tagged);
+            key = Py_OBJ_UNTAG(key_tagged);
 
             dict_tagged = stack_pointer[-3 - (oparg - 1)];
-dict = Py_OBJ_UNTAG(dict_tagged);
+            dict = Py_OBJ_UNTAG(dict_tagged);
 
             assert(PyDict_CheckExact(dict));
             /* dict[key] = value */
@@ -2089,13 +2129,13 @@ dict = Py_OBJ_UNTAG(dict_tagged);
             PyObject *attr;
             oparg = CURRENT_OPARG();
             self_tagged = stack_pointer[-1];
-self = Py_OBJ_UNTAG(self_tagged);
+            self = Py_OBJ_UNTAG(self_tagged);
 
             class_tagged = stack_pointer[-2];
-class = Py_OBJ_UNTAG(class_tagged);
+            class = Py_OBJ_UNTAG(class_tagged);
 
             global_super_tagged = stack_pointer[-3];
-global_super = Py_OBJ_UNTAG(global_super_tagged);
+            global_super = Py_OBJ_UNTAG(global_super_tagged);
 
             assert(!(oparg & 1));
             if (global_super != (PyObject *)&PySuper_Type) {
@@ -2109,8 +2149,11 @@ global_super = Py_OBJ_UNTAG(global_super_tagged);
             STAT_INC(LOAD_SUPER_ATTR, hit);
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg >> 2);
             attr = _PySuper_Lookup((PyTypeObject *)class, self, name, NULL);
+            (void)global_super;
             Py_DECREF_TAGGED(global_super_tagged);
+            (void)class;
             Py_DECREF_TAGGED(class_tagged);
+            (void)self;
             Py_DECREF_TAGGED(self_tagged);
             if (attr == NULL) JUMP_TO_ERROR();
             stack_pointer[-3] = Py_OBJ_TAG(attr);
@@ -2129,13 +2172,13 @@ global_super = Py_OBJ_UNTAG(global_super_tagged);
             PyObject *self_or_null;
             oparg = CURRENT_OPARG();
             self_tagged = stack_pointer[-1];
-self = Py_OBJ_UNTAG(self_tagged);
+            self = Py_OBJ_UNTAG(self_tagged);
 
             class_tagged = stack_pointer[-2];
-class = Py_OBJ_UNTAG(class_tagged);
+            class = Py_OBJ_UNTAG(class_tagged);
 
             global_super_tagged = stack_pointer[-3];
-global_super = Py_OBJ_UNTAG(global_super_tagged);
+            global_super = Py_OBJ_UNTAG(global_super_tagged);
 
             assert(oparg & 1);
             if (global_super != (PyObject *)&PySuper_Type) {
@@ -2177,7 +2220,7 @@ global_super = Py_OBJ_UNTAG(global_super_tagged);
             PyObject *self_or_null = NULL;
             oparg = CURRENT_OPARG();
             owner_tagged = stack_pointer[-1];
-owner = Py_OBJ_UNTAG(owner_tagged);
+            owner = Py_OBJ_UNTAG(owner_tagged);
 
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg >> 1);
             if (oparg & 1) {
@@ -2198,6 +2241,7 @@ owner = Py_OBJ_UNTAG(owner_tagged);
                        CALL that it's not a method call.
                        meth | NULL | arg1 | ... | argN
                      */
+                    (void)owner;
                     Py_DECREF_TAGGED(owner_tagged);
                     if (attr == NULL) JUMP_TO_ERROR();
                     self_or_null = NULL;
@@ -2206,6 +2250,7 @@ owner = Py_OBJ_UNTAG(owner_tagged);
             else {
                 /* Classic, pushes one value. */
                 attr = PyObject_GetAttr(owner, name);
+                (void)owner;
                 Py_DECREF_TAGGED(owner_tagged);
                 if (attr == NULL) JUMP_TO_ERROR();
             }
@@ -2219,7 +2264,7 @@ owner = Py_OBJ_UNTAG(owner_tagged);
             _PyTaggedPtr owner_tagged;
             PyObject *owner;
             owner_tagged = stack_pointer[-1];
-owner = Py_OBJ_UNTAG(owner_tagged);
+            owner = Py_OBJ_UNTAG(owner_tagged);
 
             uint32_t type_version = (uint32_t)CURRENT_OPERAND();
             PyTypeObject *tp = Py_TYPE(owner);
@@ -2235,7 +2280,7 @@ owner = Py_OBJ_UNTAG(owner_tagged);
             _PyTaggedPtr owner_tagged;
             PyObject *owner;
             owner_tagged = stack_pointer[-1];
-owner = Py_OBJ_UNTAG(owner_tagged);
+            owner = Py_OBJ_UNTAG(owner_tagged);
 
             assert(Py_TYPE(owner)->tp_dictoffset < 0);
             assert(Py_TYPE(owner)->tp_flags & Py_TPFLAGS_INLINE_VALUES);
@@ -2253,7 +2298,7 @@ owner = Py_OBJ_UNTAG(owner_tagged);
             PyObject *null = NULL;
             (void)null;
             owner_tagged = stack_pointer[-1];
-owner = Py_OBJ_UNTAG(owner_tagged);
+            owner = Py_OBJ_UNTAG(owner_tagged);
 
             uint16_t index = (uint16_t)CURRENT_OPERAND();
             attr = _PyObject_InlineValues(owner)->values[index];
@@ -2264,6 +2309,7 @@ owner = Py_OBJ_UNTAG(owner_tagged);
             STAT_INC(LOAD_ATTR, hit);
             Py_INCREF(attr);
             null = NULL;
+            (void)owner;
             Py_DECREF_TAGGED(owner_tagged);
             stack_pointer[-1] = Py_OBJ_TAG(attr);
             break;
@@ -2276,7 +2322,7 @@ owner = Py_OBJ_UNTAG(owner_tagged);
             PyObject *null = NULL;
             (void)null;
             owner_tagged = stack_pointer[-1];
-owner = Py_OBJ_UNTAG(owner_tagged);
+            owner = Py_OBJ_UNTAG(owner_tagged);
 
             uint16_t index = (uint16_t)CURRENT_OPERAND();
             attr = _PyObject_InlineValues(owner)->values[index];
@@ -2287,6 +2333,7 @@ owner = Py_OBJ_UNTAG(owner_tagged);
             STAT_INC(LOAD_ATTR, hit);
             Py_INCREF(attr);
             null = NULL;
+            (void)owner;
             Py_DECREF_TAGGED(owner_tagged);
             stack_pointer[-1] = Py_OBJ_TAG(attr);
             stack_pointer[0] = Py_OBJ_TAG(null);
@@ -2300,7 +2347,7 @@ owner = Py_OBJ_UNTAG(owner_tagged);
             _PyTaggedPtr owner_tagged;
             PyObject *owner;
             owner_tagged = stack_pointer[-1];
-owner = Py_OBJ_UNTAG(owner_tagged);
+            owner = Py_OBJ_UNTAG(owner_tagged);
 
             uint32_t dict_version = (uint32_t)CURRENT_OPERAND();
             if (!PyModule_CheckExact(owner)) {
@@ -2323,7 +2370,7 @@ owner = Py_OBJ_UNTAG(owner_tagged);
             PyObject *null = NULL;
             oparg = CURRENT_OPARG();
             owner_tagged = stack_pointer[-1];
-owner = Py_OBJ_UNTAG(owner_tagged);
+            owner = Py_OBJ_UNTAG(owner_tagged);
 
             uint16_t index = (uint16_t)CURRENT_OPERAND();
             PyDictObject *dict = (PyDictObject *)((PyModuleObject *)owner)->md_dict;
@@ -2338,6 +2385,7 @@ owner = Py_OBJ_UNTAG(owner_tagged);
             STAT_INC(LOAD_ATTR, hit);
             Py_INCREF(attr);
             null = NULL;
+            (void)owner;
             Py_DECREF_TAGGED(owner_tagged);
             stack_pointer[-1] = Py_OBJ_TAG(attr);
             if (oparg & 1) stack_pointer[0] = Py_OBJ_TAG(null);
@@ -2349,7 +2397,7 @@ owner = Py_OBJ_UNTAG(owner_tagged);
             _PyTaggedPtr owner_tagged;
             PyObject *owner;
             owner_tagged = stack_pointer[-1];
-owner = Py_OBJ_UNTAG(owner_tagged);
+            owner = Py_OBJ_UNTAG(owner_tagged);
 
             assert(Py_TYPE(owner)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
             PyManagedDictPointer *managed_dict = _PyObject_ManagedDictPointer(owner);
@@ -2369,7 +2417,7 @@ owner = Py_OBJ_UNTAG(owner_tagged);
             PyObject *null = NULL;
             oparg = CURRENT_OPARG();
             owner_tagged = stack_pointer[-1];
-owner = Py_OBJ_UNTAG(owner_tagged);
+            owner = Py_OBJ_UNTAG(owner_tagged);
 
             uint16_t hint = (uint16_t)CURRENT_OPERAND();
             PyManagedDictPointer *managed_dict = _PyObject_ManagedDictPointer(owner);
@@ -2402,6 +2450,7 @@ owner = Py_OBJ_UNTAG(owner_tagged);
             STAT_INC(LOAD_ATTR, hit);
             Py_INCREF(attr);
             null = NULL;
+            (void)owner;
             Py_DECREF_TAGGED(owner_tagged);
             stack_pointer[-1] = Py_OBJ_TAG(attr);
             if (oparg & 1) stack_pointer[0] = Py_OBJ_TAG(null);
@@ -2416,7 +2465,7 @@ owner = Py_OBJ_UNTAG(owner_tagged);
             PyObject *null = NULL;
             (void)null;
             owner_tagged = stack_pointer[-1];
-owner = Py_OBJ_UNTAG(owner_tagged);
+            owner = Py_OBJ_UNTAG(owner_tagged);
 
             uint16_t index = (uint16_t)CURRENT_OPERAND();
             char *addr = (char *)owner + index;
@@ -2428,6 +2477,7 @@ owner = Py_OBJ_UNTAG(owner_tagged);
             STAT_INC(LOAD_ATTR, hit);
             Py_INCREF(attr);
             null = NULL;
+            (void)owner;
             Py_DECREF_TAGGED(owner_tagged);
             stack_pointer[-1] = Py_OBJ_TAG(attr);
             break;
@@ -2440,7 +2490,7 @@ owner = Py_OBJ_UNTAG(owner_tagged);
             PyObject *null = NULL;
             (void)null;
             owner_tagged = stack_pointer[-1];
-owner = Py_OBJ_UNTAG(owner_tagged);
+            owner = Py_OBJ_UNTAG(owner_tagged);
 
             uint16_t index = (uint16_t)CURRENT_OPERAND();
             char *addr = (char *)owner + index;
@@ -2452,6 +2502,7 @@ owner = Py_OBJ_UNTAG(owner_tagged);
             STAT_INC(LOAD_ATTR, hit);
             Py_INCREF(attr);
             null = NULL;
+            (void)owner;
             Py_DECREF_TAGGED(owner_tagged);
             stack_pointer[-1] = Py_OBJ_TAG(attr);
             stack_pointer[0] = Py_OBJ_TAG(null);
@@ -2465,7 +2516,7 @@ owner = Py_OBJ_UNTAG(owner_tagged);
             _PyTaggedPtr owner_tagged;
             PyObject *owner;
             owner_tagged = stack_pointer[-1];
-owner = Py_OBJ_UNTAG(owner_tagged);
+            owner = Py_OBJ_UNTAG(owner_tagged);
 
             uint32_t type_version = (uint32_t)CURRENT_OPERAND();
             if (!PyType_Check(owner)) {
@@ -2487,13 +2538,14 @@ owner = Py_OBJ_UNTAG(owner_tagged);
             PyObject *null = NULL;
             (void)null;
             owner_tagged = stack_pointer[-1];
-owner = Py_OBJ_UNTAG(owner_tagged);
+            owner = Py_OBJ_UNTAG(owner_tagged);
 
             PyObject *descr = (PyObject *)CURRENT_OPERAND();
             STAT_INC(LOAD_ATTR, hit);
             assert(descr != NULL);
             attr = Py_NewRef(descr);
             null = NULL;
+            (void)owner;
             Py_DECREF_TAGGED(owner_tagged);
             stack_pointer[-1] = Py_OBJ_TAG(attr);
             break;
@@ -2506,13 +2558,14 @@ owner = Py_OBJ_UNTAG(owner_tagged);
             PyObject *null = NULL;
             (void)null;
             owner_tagged = stack_pointer[-1];
-owner = Py_OBJ_UNTAG(owner_tagged);
+            owner = Py_OBJ_UNTAG(owner_tagged);
 
             PyObject *descr = (PyObject *)CURRENT_OPERAND();
             STAT_INC(LOAD_ATTR, hit);
             assert(descr != NULL);
             attr = Py_NewRef(descr);
             null = NULL;
+            (void)owner;
             Py_DECREF_TAGGED(owner_tagged);
             stack_pointer[-1] = Py_OBJ_TAG(attr);
             stack_pointer[0] = Py_OBJ_TAG(null);
@@ -2530,7 +2583,7 @@ owner = Py_OBJ_UNTAG(owner_tagged);
             _PyTaggedPtr owner_tagged;
             PyObject *owner;
             owner_tagged = stack_pointer[-1];
-owner = Py_OBJ_UNTAG(owner_tagged);
+            owner = Py_OBJ_UNTAG(owner_tagged);
 
             assert(Py_TYPE(owner)->tp_dictoffset < 0);
             assert(Py_TYPE(owner)->tp_flags & Py_TPFLAGS_INLINE_VALUES);
@@ -2551,10 +2604,10 @@ owner = Py_OBJ_UNTAG(owner_tagged);
             _PyTaggedPtr value_tagged;
             PyObject *value;
             owner_tagged = stack_pointer[-1];
-owner = Py_OBJ_UNTAG(owner_tagged);
+            owner = Py_OBJ_UNTAG(owner_tagged);
 
             value_tagged = stack_pointer[-2];
-value = Py_OBJ_UNTAG(value_tagged);
+            value = Py_OBJ_UNTAG(value_tagged);
 
             uint16_t index = (uint16_t)CURRENT_OPERAND();
             STAT_INC(STORE_ATTR, hit);
@@ -2581,10 +2634,10 @@ value = Py_OBJ_UNTAG(value_tagged);
             _PyTaggedPtr value_tagged;
             PyObject *value;
             owner_tagged = stack_pointer[-1];
-owner = Py_OBJ_UNTAG(owner_tagged);
+            owner = Py_OBJ_UNTAG(owner_tagged);
 
             value_tagged = stack_pointer[-2];
-value = Py_OBJ_UNTAG(value_tagged);
+            value = Py_OBJ_UNTAG(value_tagged);
 
             uint16_t index = (uint16_t)CURRENT_OPERAND();
             char *addr = (char *)owner + index;
@@ -2605,14 +2658,16 @@ value = Py_OBJ_UNTAG(value_tagged);
             PyObject *res;
             oparg = CURRENT_OPARG();
             right_tagged = stack_pointer[-1];
-right = Py_OBJ_UNTAG(right_tagged);
+            right = Py_OBJ_UNTAG(right_tagged);
 
             left_tagged = stack_pointer[-2];
-left = Py_OBJ_UNTAG(left_tagged);
+            left = Py_OBJ_UNTAG(left_tagged);
 
             assert((oparg >> 5) <= Py_GE);
             res = PyObject_RichCompare(left, right, oparg >> 5);
+            (void)left;
             Py_DECREF_TAGGED(left_tagged);
+            (void)right;
             Py_DECREF_TAGGED(right_tagged);
             if (res == NULL) JUMP_TO_ERROR();
             if (oparg & 16) {
@@ -2634,10 +2689,10 @@ left = Py_OBJ_UNTAG(left_tagged);
             PyObject *res;
             oparg = CURRENT_OPARG();
             right_tagged = stack_pointer[-1];
-right = Py_OBJ_UNTAG(right_tagged);
+            right = Py_OBJ_UNTAG(right_tagged);
 
             left_tagged = stack_pointer[-2];
-left = Py_OBJ_UNTAG(left_tagged);
+            left = Py_OBJ_UNTAG(left_tagged);
 
             STAT_INC(COMPARE_OP, hit);
             double dleft = PyFloat_AS_DOUBLE(left);
@@ -2661,10 +2716,10 @@ left = Py_OBJ_UNTAG(left_tagged);
             PyObject *res;
             oparg = CURRENT_OPARG();
             right_tagged = stack_pointer[-1];
-right = Py_OBJ_UNTAG(right_tagged);
+            right = Py_OBJ_UNTAG(right_tagged);
 
             left_tagged = stack_pointer[-2];
-left = Py_OBJ_UNTAG(left_tagged);
+            left = Py_OBJ_UNTAG(left_tagged);
 
             if (!_PyLong_IsCompact((PyLongObject *)left)) {
                 UOP_STAT_INC(uopcode, miss);
@@ -2698,10 +2753,10 @@ left = Py_OBJ_UNTAG(left_tagged);
             PyObject *res;
             oparg = CURRENT_OPARG();
             right_tagged = stack_pointer[-1];
-right = Py_OBJ_UNTAG(right_tagged);
+            right = Py_OBJ_UNTAG(right_tagged);
 
             left_tagged = stack_pointer[-2];
-left = Py_OBJ_UNTAG(left_tagged);
+            left = Py_OBJ_UNTAG(left_tagged);
 
             STAT_INC(COMPARE_OP, hit);
             int eq = _PyUnicode_Equal(left, right);
@@ -2726,13 +2781,15 @@ left = Py_OBJ_UNTAG(left_tagged);
             PyObject *b;
             oparg = CURRENT_OPARG();
             right_tagged = stack_pointer[-1];
-right = Py_OBJ_UNTAG(right_tagged);
+            right = Py_OBJ_UNTAG(right_tagged);
 
             left_tagged = stack_pointer[-2];
-left = Py_OBJ_UNTAG(left_tagged);
+            left = Py_OBJ_UNTAG(left_tagged);
 
             int res = Py_Is(left, right) ^ oparg;
+            (void)left;
             Py_DECREF_TAGGED(left_tagged);
+            (void)right;
             Py_DECREF_TAGGED(right_tagged);
             b = res ? Py_True : Py_False;
             stack_pointer[-2] = Py_OBJ_TAG(b);
@@ -2748,13 +2805,15 @@ left = Py_OBJ_UNTAG(left_tagged);
             PyObject *b;
             oparg = CURRENT_OPARG();
             right_tagged = stack_pointer[-1];
-right = Py_OBJ_UNTAG(right_tagged);
+            right = Py_OBJ_UNTAG(right_tagged);
 
             left_tagged = stack_pointer[-2];
-left = Py_OBJ_UNTAG(left_tagged);
+            left = Py_OBJ_UNTAG(left_tagged);
 
             int res = PySequence_Contains(right, left);
+            (void)left;
             Py_DECREF_TAGGED(left_tagged);
+            (void)right;
             Py_DECREF_TAGGED(right_tagged);
             if (res < 0) JUMP_TO_ERROR();
             b = (res ^ oparg) ? Py_True : Py_False;
@@ -2771,10 +2830,10 @@ left = Py_OBJ_UNTAG(left_tagged);
             PyObject *b;
             oparg = CURRENT_OPARG();
             right_tagged = stack_pointer[-1];
-right = Py_OBJ_UNTAG(right_tagged);
+            right = Py_OBJ_UNTAG(right_tagged);
 
             left_tagged = stack_pointer[-2];
-left = Py_OBJ_UNTAG(left_tagged);
+            left = Py_OBJ_UNTAG(left_tagged);
 
             if (!(PySet_CheckExact(right) || PyFrozenSet_CheckExact(right))) {
                 UOP_STAT_INC(uopcode, miss);
@@ -2783,7 +2842,9 @@ left = Py_OBJ_UNTAG(left_tagged);
             STAT_INC(CONTAINS_OP, hit);
             // Note: both set and frozenset use the same seq_contains method!
             int res = _PySet_Contains((PySetObject *)right, left);
+            (void)left;
             Py_DECREF_TAGGED(left_tagged);
+            (void)right;
             Py_DECREF_TAGGED(right_tagged);
             if (res < 0) JUMP_TO_ERROR();
             b = (res ^ oparg) ? Py_True : Py_False;
@@ -2800,10 +2861,10 @@ left = Py_OBJ_UNTAG(left_tagged);
             PyObject *b;
             oparg = CURRENT_OPARG();
             right_tagged = stack_pointer[-1];
-right = Py_OBJ_UNTAG(right_tagged);
+            right = Py_OBJ_UNTAG(right_tagged);
 
             left_tagged = stack_pointer[-2];
-left = Py_OBJ_UNTAG(left_tagged);
+            left = Py_OBJ_UNTAG(left_tagged);
 
             if (!PyDict_CheckExact(right)) {
                 UOP_STAT_INC(uopcode, miss);
@@ -2811,7 +2872,9 @@ left = Py_OBJ_UNTAG(left_tagged);
             }
             STAT_INC(CONTAINS_OP, hit);
             int res = PyDict_Contains(right, left);
+            (void)left;
             Py_DECREF_TAGGED(left_tagged);
+            (void)right;
             Py_DECREF_TAGGED(right_tagged);
             if (res < 0) JUMP_TO_ERROR();
             b = (res ^ oparg) ? Py_True : Py_False;
@@ -2828,13 +2891,15 @@ left = Py_OBJ_UNTAG(left_tagged);
             PyObject *rest;
             PyObject *match;
             match_type_tagged = stack_pointer[-1];
-match_type = Py_OBJ_UNTAG(match_type_tagged);
+            match_type = Py_OBJ_UNTAG(match_type_tagged);
 
             exc_value_tagged = stack_pointer[-2];
-exc_value = Py_OBJ_UNTAG(exc_value_tagged);
+            exc_value = Py_OBJ_UNTAG(exc_value_tagged);
 
             if (_PyEval_CheckExceptStarTypeValid(tstate, match_type) < 0) {
+                (void)exc_value;
                 Py_DECREF_TAGGED(exc_value_tagged);
+                (void)match_type;
                 Py_DECREF_TAGGED(match_type_tagged);
                 if (true) JUMP_TO_ERROR();
             }
@@ -2842,7 +2907,9 @@ exc_value = Py_OBJ_UNTAG(exc_value_tagged);
             rest = NULL;
             int res = _PyEval_ExceptionGroupMatch(exc_value, match_type,
                 &match, &rest);
+            (void)exc_value;
             Py_DECREF_TAGGED(exc_value_tagged);
+            (void)match_type;
             Py_DECREF_TAGGED(match_type_tagged);
             if (res < 0) JUMP_TO_ERROR();
             assert((match == NULL) == (rest == NULL));
@@ -2862,17 +2929,19 @@ exc_value = Py_OBJ_UNTAG(exc_value_tagged);
             PyObject *left;
             PyObject *b;
             right_tagged = stack_pointer[-1];
-right = Py_OBJ_UNTAG(right_tagged);
+            right = Py_OBJ_UNTAG(right_tagged);
 
             left_tagged = stack_pointer[-2];
-left = Py_OBJ_UNTAG(left_tagged);
+            left = Py_OBJ_UNTAG(left_tagged);
 
             assert(PyExceptionInstance_Check(left));
             if (_PyEval_CheckExceptTypeValid(tstate, right) < 0) {
+                (void)right;
                 Py_DECREF_TAGGED(right_tagged);
                 if (true) JUMP_TO_ERROR();
             }
             int res = PyErr_GivenExceptionMatches(left, right);
+            (void)right;
             Py_DECREF_TAGGED(right_tagged);
             b = res ? Py_True : Py_False;
             stack_pointer[-1] = Py_OBJ_TAG(b);
@@ -2888,13 +2957,14 @@ left = Py_OBJ_UNTAG(left_tagged);
             PyObject *value;
             PyObject *b;
             value_tagged = stack_pointer[-1];
-value = Py_OBJ_UNTAG(value_tagged);
+            value = Py_OBJ_UNTAG(value_tagged);
 
             if (Py_IsNone(value)) {
                 b = Py_True;
             }
             else {
                 b = Py_False;
+                (void)value;
                 Py_DECREF_TAGGED(value_tagged);
             }
             stack_pointer[-1] = Py_OBJ_TAG(b);
@@ -2906,7 +2976,7 @@ value = Py_OBJ_UNTAG(value_tagged);
             PyObject *obj;
             PyObject *len_o;
             obj_tagged = stack_pointer[-1];
-obj = Py_OBJ_UNTAG(obj_tagged);
+            obj = Py_OBJ_UNTAG(obj_tagged);
 
             // PUSH(len(TOS))
             Py_ssize_t len_i = PyObject_Length(obj);
@@ -2928,20 +2998,23 @@ obj = Py_OBJ_UNTAG(obj_tagged);
             PyObject *attrs;
             oparg = CURRENT_OPARG();
             names_tagged = stack_pointer[-1];
-names = Py_OBJ_UNTAG(names_tagged);
+            names = Py_OBJ_UNTAG(names_tagged);
 
             type_tagged = stack_pointer[-2];
-type = Py_OBJ_UNTAG(type_tagged);
+            type = Py_OBJ_UNTAG(type_tagged);
 
             subject_tagged = stack_pointer[-3];
-subject = Py_OBJ_UNTAG(subject_tagged);
+            subject = Py_OBJ_UNTAG(subject_tagged);
 
             // Pop TOS and TOS1. Set TOS to a tuple of attributes on success, or
             // None on failure.
             assert(PyTuple_CheckExact(names));
             attrs = _PyEval_MatchClass(tstate, subject, type, oparg, names);
+            (void)subject;
             Py_DECREF_TAGGED(subject_tagged);
+            (void)type;
             Py_DECREF_TAGGED(type_tagged);
+            (void)names;
             Py_DECREF_TAGGED(names_tagged);
             if (attrs) {
                 assert(PyTuple_CheckExact(attrs));  // Success!
@@ -2961,7 +3034,7 @@ subject = Py_OBJ_UNTAG(subject_tagged);
             PyObject *subject;
             PyObject *res;
             subject_tagged = stack_pointer[-1];
-subject = Py_OBJ_UNTAG(subject_tagged);
+            subject = Py_OBJ_UNTAG(subject_tagged);
 
             int match = Py_TYPE(subject)->tp_flags & Py_TPFLAGS_MAPPING;
             res = match ? Py_True : Py_False;
@@ -2975,7 +3048,7 @@ subject = Py_OBJ_UNTAG(subject_tagged);
             PyObject *subject;
             PyObject *res;
             subject_tagged = stack_pointer[-1];
-subject = Py_OBJ_UNTAG(subject_tagged);
+            subject = Py_OBJ_UNTAG(subject_tagged);
 
             int match = Py_TYPE(subject)->tp_flags & Py_TPFLAGS_SEQUENCE;
             res = match ? Py_True : Py_False;
@@ -2991,10 +3064,10 @@ subject = Py_OBJ_UNTAG(subject_tagged);
             PyObject *subject;
             PyObject *values_or_none;
             keys_tagged = stack_pointer[-1];
-keys = Py_OBJ_UNTAG(keys_tagged);
+            keys = Py_OBJ_UNTAG(keys_tagged);
 
             subject_tagged = stack_pointer[-2];
-subject = Py_OBJ_UNTAG(subject_tagged);
+            subject = Py_OBJ_UNTAG(subject_tagged);
 
             // On successful match, PUSH(values). Otherwise, PUSH(None).
             values_or_none = _PyEval_MatchKeys(tstate, subject, keys);
@@ -3009,10 +3082,11 @@ subject = Py_OBJ_UNTAG(subject_tagged);
             PyObject *iterable;
             PyObject *iter;
             iterable_tagged = stack_pointer[-1];
-iterable = Py_OBJ_UNTAG(iterable_tagged);
+            iterable = Py_OBJ_UNTAG(iterable_tagged);
 
             /* before: [obj]; after [getiter(obj)] */
             iter = PyObject_GetIter(iterable);
+            (void)iterable;
             Py_DECREF_TAGGED(iterable_tagged);
             if (iter == NULL) JUMP_TO_ERROR();
             stack_pointer[-1] = Py_OBJ_TAG(iter);
@@ -3024,7 +3098,7 @@ iterable = Py_OBJ_UNTAG(iterable_tagged);
             PyObject *iterable;
             PyObject *iter;
             iterable_tagged = stack_pointer[-1];
-iterable = Py_OBJ_UNTAG(iterable_tagged);
+            iterable = Py_OBJ_UNTAG(iterable_tagged);
 
             /* before: [obj]; after [getiter(obj)] */
             if (PyCoro_CheckExact(iterable)) {
@@ -3048,6 +3122,7 @@ iterable = Py_OBJ_UNTAG(iterable_tagged);
                 if (iter == NULL) {
                     JUMP_TO_ERROR();
                 }
+                (void)iterable;
                 Py_DECREF_TAGGED(iterable_tagged);
             }
             stack_pointer[-1] = Py_OBJ_TAG(iter);
@@ -3061,7 +3136,7 @@ iterable = Py_OBJ_UNTAG(iterable_tagged);
             PyObject *iter;
             PyObject *next;
             iter_tagged = stack_pointer[-1];
-iter = Py_OBJ_UNTAG(iter_tagged);
+            iter = Py_OBJ_UNTAG(iter_tagged);
 
             /* before: [iter]; after: [iter, iter()] *or* [] (and jump over END_FOR.) */
             next = (*Py_TYPE(iter)->tp_iternext)(iter);
@@ -3093,7 +3168,7 @@ iter = Py_OBJ_UNTAG(iter_tagged);
             _PyTaggedPtr iter_tagged;
             PyObject *iter;
             iter_tagged = stack_pointer[-1];
-iter = Py_OBJ_UNTAG(iter_tagged);
+            iter = Py_OBJ_UNTAG(iter_tagged);
 
             if (Py_TYPE(iter) != &PyListIter_Type) {
                 UOP_STAT_INC(uopcode, miss);
@@ -3108,7 +3183,7 @@ iter = Py_OBJ_UNTAG(iter_tagged);
             _PyTaggedPtr iter_tagged;
             PyObject *iter;
             iter_tagged = stack_pointer[-1];
-iter = Py_OBJ_UNTAG(iter_tagged);
+            iter = Py_OBJ_UNTAG(iter_tagged);
 
             _PyListIterObject *it = (_PyListIterObject *)iter;
             assert(Py_TYPE(iter) == &PyListIter_Type);
@@ -3129,7 +3204,7 @@ iter = Py_OBJ_UNTAG(iter_tagged);
             PyObject *iter;
             PyObject *next;
             iter_tagged = stack_pointer[-1];
-iter = Py_OBJ_UNTAG(iter_tagged);
+            iter = Py_OBJ_UNTAG(iter_tagged);
 
             _PyListIterObject *it = (_PyListIterObject *)iter;
             assert(Py_TYPE(iter) == &PyListIter_Type);
@@ -3146,7 +3221,7 @@ iter = Py_OBJ_UNTAG(iter_tagged);
             _PyTaggedPtr iter_tagged;
             PyObject *iter;
             iter_tagged = stack_pointer[-1];
-iter = Py_OBJ_UNTAG(iter_tagged);
+            iter = Py_OBJ_UNTAG(iter_tagged);
 
             if (Py_TYPE(iter) != &PyTupleIter_Type) {
                 UOP_STAT_INC(uopcode, miss);
@@ -3161,7 +3236,7 @@ iter = Py_OBJ_UNTAG(iter_tagged);
             _PyTaggedPtr iter_tagged;
             PyObject *iter;
             iter_tagged = stack_pointer[-1];
-iter = Py_OBJ_UNTAG(iter_tagged);
+            iter = Py_OBJ_UNTAG(iter_tagged);
 
             _PyTupleIterObject *it = (_PyTupleIterObject *)iter;
             assert(Py_TYPE(iter) == &PyTupleIter_Type);
@@ -3182,7 +3257,7 @@ iter = Py_OBJ_UNTAG(iter_tagged);
             PyObject *iter;
             PyObject *next;
             iter_tagged = stack_pointer[-1];
-iter = Py_OBJ_UNTAG(iter_tagged);
+            iter = Py_OBJ_UNTAG(iter_tagged);
 
             _PyTupleIterObject *it = (_PyTupleIterObject *)iter;
             assert(Py_TYPE(iter) == &PyTupleIter_Type);
@@ -3199,7 +3274,7 @@ iter = Py_OBJ_UNTAG(iter_tagged);
             _PyTaggedPtr iter_tagged;
             PyObject *iter;
             iter_tagged = stack_pointer[-1];
-iter = Py_OBJ_UNTAG(iter_tagged);
+            iter = Py_OBJ_UNTAG(iter_tagged);
 
             _PyRangeIterObject *r = (_PyRangeIterObject *)iter;
             if (Py_TYPE(r) != &PyRangeIter_Type) {
@@ -3215,7 +3290,7 @@ iter = Py_OBJ_UNTAG(iter_tagged);
             _PyTaggedPtr iter_tagged;
             PyObject *iter;
             iter_tagged = stack_pointer[-1];
-iter = Py_OBJ_UNTAG(iter_tagged);
+            iter = Py_OBJ_UNTAG(iter_tagged);
 
             _PyRangeIterObject *r = (_PyRangeIterObject *)iter;
             assert(Py_TYPE(r) == &PyRangeIter_Type);
@@ -3231,7 +3306,7 @@ iter = Py_OBJ_UNTAG(iter_tagged);
             PyObject *iter;
             PyObject *next;
             iter_tagged = stack_pointer[-1];
-iter = Py_OBJ_UNTAG(iter_tagged);
+            iter = Py_OBJ_UNTAG(iter_tagged);
 
             _PyRangeIterObject *r = (_PyRangeIterObject *)iter;
             assert(Py_TYPE(r) == &PyRangeIter_Type);
@@ -3261,13 +3336,13 @@ iter = Py_OBJ_UNTAG(iter_tagged);
             PyObject *exit_func;
             PyObject *res;
             val_tagged = stack_pointer[-1];
-val = Py_OBJ_UNTAG(val_tagged);
+            val = Py_OBJ_UNTAG(val_tagged);
 
             lasti_tagged = stack_pointer[-3];
-lasti = Py_OBJ_UNTAG(lasti_tagged);
+            lasti = Py_OBJ_UNTAG(lasti_tagged);
 
             exit_func_tagged = stack_pointer[-4];
-exit_func = Py_OBJ_UNTAG(exit_func_tagged);
+            exit_func = Py_OBJ_UNTAG(exit_func_tagged);
 
             /* At the top of the stack are 4 values:
                - val: TOP = exc_info()
@@ -3303,7 +3378,7 @@ exit_func = Py_OBJ_UNTAG(exit_func_tagged);
             PyObject *new_exc;
             PyObject *prev_exc;
             new_exc_tagged = stack_pointer[-1];
-new_exc = Py_OBJ_UNTAG(new_exc_tagged);
+            new_exc = Py_OBJ_UNTAG(new_exc_tagged);
 
             _PyErr_StackItem *exc_info = tstate->exc_info;
             if (exc_info->exc_value != NULL) {
@@ -3324,7 +3399,7 @@ new_exc = Py_OBJ_UNTAG(new_exc_tagged);
             _PyTaggedPtr owner_tagged;
             PyObject *owner;
             owner_tagged = stack_pointer[-1];
-owner = Py_OBJ_UNTAG(owner_tagged);
+            owner = Py_OBJ_UNTAG(owner_tagged);
 
             assert(Py_TYPE(owner)->tp_flags & Py_TPFLAGS_INLINE_VALUES);
             if (!_PyObject_InlineValues(owner)->valid) {
@@ -3338,7 +3413,7 @@ owner = Py_OBJ_UNTAG(owner_tagged);
             _PyTaggedPtr owner_tagged;
             PyObject *owner;
             owner_tagged = stack_pointer[-1];
-owner = Py_OBJ_UNTAG(owner_tagged);
+            owner = Py_OBJ_UNTAG(owner_tagged);
 
             uint32_t keys_version = (uint32_t)CURRENT_OPERAND();
             PyTypeObject *owner_cls = Py_TYPE(owner);
@@ -3357,7 +3432,7 @@ owner = Py_OBJ_UNTAG(owner_tagged);
             PyObject *self = NULL;
             oparg = CURRENT_OPARG();
             owner_tagged = stack_pointer[-1];
-owner = Py_OBJ_UNTAG(owner_tagged);
+            owner = Py_OBJ_UNTAG(owner_tagged);
 
             PyObject *descr = (PyObject *)CURRENT_OPERAND();
             assert(oparg & 1);
@@ -3380,7 +3455,7 @@ owner = Py_OBJ_UNTAG(owner_tagged);
             PyObject *self = NULL;
             oparg = CURRENT_OPARG();
             owner_tagged = stack_pointer[-1];
-owner = Py_OBJ_UNTAG(owner_tagged);
+            owner = Py_OBJ_UNTAG(owner_tagged);
 
             PyObject *descr = (PyObject *)CURRENT_OPERAND();
             assert(oparg & 1);
@@ -3402,12 +3477,13 @@ owner = Py_OBJ_UNTAG(owner_tagged);
             PyObject *attr;
             oparg = CURRENT_OPARG();
             owner_tagged = stack_pointer[-1];
-owner = Py_OBJ_UNTAG(owner_tagged);
+            owner = Py_OBJ_UNTAG(owner_tagged);
 
             PyObject *descr = (PyObject *)CURRENT_OPERAND();
             assert((oparg & 1) == 0);
             STAT_INC(LOAD_ATTR, hit);
             assert(descr != NULL);
+            (void)owner;
             Py_DECREF_TAGGED(owner_tagged);
             attr = Py_NewRef(descr);
             stack_pointer[-1] = Py_OBJ_TAG(attr);
@@ -3420,13 +3496,14 @@ owner = Py_OBJ_UNTAG(owner_tagged);
             PyObject *attr;
             oparg = CURRENT_OPARG();
             owner_tagged = stack_pointer[-1];
-owner = Py_OBJ_UNTAG(owner_tagged);
+            owner = Py_OBJ_UNTAG(owner_tagged);
 
             PyObject *descr = (PyObject *)CURRENT_OPERAND();
             assert((oparg & 1) == 0);
             assert(Py_TYPE(owner)->tp_dictoffset == 0);
             STAT_INC(LOAD_ATTR, hit);
             assert(descr != NULL);
+            (void)owner;
             Py_DECREF_TAGGED(owner_tagged);
             attr = Py_NewRef(descr);
             stack_pointer[-1] = Py_OBJ_TAG(attr);
@@ -3437,7 +3514,7 @@ owner = Py_OBJ_UNTAG(owner_tagged);
             _PyTaggedPtr owner_tagged;
             PyObject *owner;
             owner_tagged = stack_pointer[-1];
-owner = Py_OBJ_UNTAG(owner_tagged);
+            owner = Py_OBJ_UNTAG(owner_tagged);
 
             uint16_t dictoffset = (uint16_t)CURRENT_OPERAND();
             char *ptr = ((char *)owner) + MANAGED_DICT_OFFSET + dictoffset;
@@ -3457,7 +3534,7 @@ owner = Py_OBJ_UNTAG(owner_tagged);
             PyObject *self = NULL;
             oparg = CURRENT_OPARG();
             owner_tagged = stack_pointer[-1];
-owner = Py_OBJ_UNTAG(owner_tagged);
+            owner = Py_OBJ_UNTAG(owner_tagged);
 
             PyObject *descr = (PyObject *)CURRENT_OPERAND();
             assert(oparg & 1);
@@ -3488,10 +3565,10 @@ owner = Py_OBJ_UNTAG(owner_tagged);
             PyObject *callable;
             oparg = CURRENT_OPARG();
             null_tagged = stack_pointer[-1 - oparg];
-null = Py_OBJ_UNTAG(null_tagged);
+            null = Py_OBJ_UNTAG(null_tagged);
 
             callable_tagged = stack_pointer[-2 - oparg];
-callable = Py_OBJ_UNTAG(callable_tagged);
+            callable = Py_OBJ_UNTAG(callable_tagged);
 
             if (null != NULL) {
                 UOP_STAT_INC(uopcode, miss);
@@ -3511,7 +3588,7 @@ callable = Py_OBJ_UNTAG(callable_tagged);
             PyObject *self;
             oparg = CURRENT_OPARG();
             callable_tagged = stack_pointer[-2 - oparg];
-callable = Py_OBJ_UNTAG(callable_tagged);
+            callable = Py_OBJ_UNTAG(callable_tagged);
 
             STAT_INC(CALL, hit);
             // Ugly tag and untag because the uop header needs to have consistent type with
@@ -3541,10 +3618,10 @@ callable = Py_OBJ_UNTAG(callable_tagged);
             PyObject *callable;
             oparg = CURRENT_OPARG();
             self_or_null_tagged = stack_pointer[-1 - oparg];
-self_or_null = Py_OBJ_UNTAG(self_or_null_tagged);
+            self_or_null = Py_OBJ_UNTAG(self_or_null_tagged);
 
             callable_tagged = stack_pointer[-2 - oparg];
-callable = Py_OBJ_UNTAG(callable_tagged);
+            callable = Py_OBJ_UNTAG(callable_tagged);
 
             uint32_t func_version = (uint32_t)CURRENT_OPERAND();
             if (!PyFunction_Check(callable)) {
@@ -3569,7 +3646,7 @@ callable = Py_OBJ_UNTAG(callable_tagged);
             PyObject *callable;
             oparg = CURRENT_OPARG();
             callable_tagged = stack_pointer[-2 - oparg];
-callable = Py_OBJ_UNTAG(callable_tagged);
+            callable = Py_OBJ_UNTAG(callable_tagged);
 
             PyFunctionObject *func = (PyFunctionObject *)callable;
             PyCodeObject *code = (PyCodeObject *)func->func_code;
@@ -3585,7 +3662,6 @@ callable = Py_OBJ_UNTAG(callable_tagged);
         }
 
         case _INIT_CALL_PY_EXACT_ARGS_0: {
-            _PyTaggedPtr args_tagged;
             _PyTaggedPtr *args;
             _PyTaggedPtr self_or_null_tagged;
             PyObject *self_or_null;
@@ -3596,10 +3672,10 @@ callable = Py_OBJ_UNTAG(callable_tagged);
             assert(oparg == CURRENT_OPARG());
             args = &stack_pointer[-oparg];
             self_or_null_tagged = stack_pointer[-1 - oparg];
-self_or_null = Py_OBJ_UNTAG(self_or_null_tagged);
+            self_or_null = Py_OBJ_UNTAG(self_or_null_tagged);
 
             callable_tagged = stack_pointer[-2 - oparg];
-callable = Py_OBJ_UNTAG(callable_tagged);
+            callable = Py_OBJ_UNTAG(callable_tagged);
 
             int has_self = (self_or_null != NULL);
             STAT_INC(CALL, hit);
@@ -3616,7 +3692,6 @@ callable = Py_OBJ_UNTAG(callable_tagged);
         }
 
         case _INIT_CALL_PY_EXACT_ARGS_1: {
-            _PyTaggedPtr args_tagged;
             _PyTaggedPtr *args;
             _PyTaggedPtr self_or_null_tagged;
             PyObject *self_or_null;
@@ -3627,10 +3702,10 @@ callable = Py_OBJ_UNTAG(callable_tagged);
             assert(oparg == CURRENT_OPARG());
             args = &stack_pointer[-oparg];
             self_or_null_tagged = stack_pointer[-1 - oparg];
-self_or_null = Py_OBJ_UNTAG(self_or_null_tagged);
+            self_or_null = Py_OBJ_UNTAG(self_or_null_tagged);
 
             callable_tagged = stack_pointer[-2 - oparg];
-callable = Py_OBJ_UNTAG(callable_tagged);
+            callable = Py_OBJ_UNTAG(callable_tagged);
 
             int has_self = (self_or_null != NULL);
             STAT_INC(CALL, hit);
@@ -3647,7 +3722,6 @@ callable = Py_OBJ_UNTAG(callable_tagged);
         }
 
         case _INIT_CALL_PY_EXACT_ARGS_2: {
-            _PyTaggedPtr args_tagged;
             _PyTaggedPtr *args;
             _PyTaggedPtr self_or_null_tagged;
             PyObject *self_or_null;
@@ -3658,10 +3732,10 @@ callable = Py_OBJ_UNTAG(callable_tagged);
             assert(oparg == CURRENT_OPARG());
             args = &stack_pointer[-oparg];
             self_or_null_tagged = stack_pointer[-1 - oparg];
-self_or_null = Py_OBJ_UNTAG(self_or_null_tagged);
+            self_or_null = Py_OBJ_UNTAG(self_or_null_tagged);
 
             callable_tagged = stack_pointer[-2 - oparg];
-callable = Py_OBJ_UNTAG(callable_tagged);
+            callable = Py_OBJ_UNTAG(callable_tagged);
 
             int has_self = (self_or_null != NULL);
             STAT_INC(CALL, hit);
@@ -3678,7 +3752,6 @@ callable = Py_OBJ_UNTAG(callable_tagged);
         }
 
         case _INIT_CALL_PY_EXACT_ARGS_3: {
-            _PyTaggedPtr args_tagged;
             _PyTaggedPtr *args;
             _PyTaggedPtr self_or_null_tagged;
             PyObject *self_or_null;
@@ -3689,10 +3762,10 @@ callable = Py_OBJ_UNTAG(callable_tagged);
             assert(oparg == CURRENT_OPARG());
             args = &stack_pointer[-oparg];
             self_or_null_tagged = stack_pointer[-1 - oparg];
-self_or_null = Py_OBJ_UNTAG(self_or_null_tagged);
+            self_or_null = Py_OBJ_UNTAG(self_or_null_tagged);
 
             callable_tagged = stack_pointer[-2 - oparg];
-callable = Py_OBJ_UNTAG(callable_tagged);
+            callable = Py_OBJ_UNTAG(callable_tagged);
 
             int has_self = (self_or_null != NULL);
             STAT_INC(CALL, hit);
@@ -3709,7 +3782,6 @@ callable = Py_OBJ_UNTAG(callable_tagged);
         }
 
         case _INIT_CALL_PY_EXACT_ARGS_4: {
-            _PyTaggedPtr args_tagged;
             _PyTaggedPtr *args;
             _PyTaggedPtr self_or_null_tagged;
             PyObject *self_or_null;
@@ -3720,10 +3792,10 @@ callable = Py_OBJ_UNTAG(callable_tagged);
             assert(oparg == CURRENT_OPARG());
             args = &stack_pointer[-oparg];
             self_or_null_tagged = stack_pointer[-1 - oparg];
-self_or_null = Py_OBJ_UNTAG(self_or_null_tagged);
+            self_or_null = Py_OBJ_UNTAG(self_or_null_tagged);
 
             callable_tagged = stack_pointer[-2 - oparg];
-callable = Py_OBJ_UNTAG(callable_tagged);
+            callable = Py_OBJ_UNTAG(callable_tagged);
 
             int has_self = (self_or_null != NULL);
             STAT_INC(CALL, hit);
@@ -3740,7 +3812,6 @@ callable = Py_OBJ_UNTAG(callable_tagged);
         }
 
         case _INIT_CALL_PY_EXACT_ARGS: {
-            _PyTaggedPtr args_tagged;
             _PyTaggedPtr *args;
             _PyTaggedPtr self_or_null_tagged;
             PyObject *self_or_null;
@@ -3750,10 +3821,10 @@ callable = Py_OBJ_UNTAG(callable_tagged);
             oparg = CURRENT_OPARG();
             args = &stack_pointer[-oparg];
             self_or_null_tagged = stack_pointer[-1 - oparg];
-self_or_null = Py_OBJ_UNTAG(self_or_null_tagged);
+            self_or_null = Py_OBJ_UNTAG(self_or_null_tagged);
 
             callable_tagged = stack_pointer[-2 - oparg];
-callable = Py_OBJ_UNTAG(callable_tagged);
+            callable = Py_OBJ_UNTAG(callable_tagged);
 
             int has_self = (self_or_null != NULL);
             STAT_INC(CALL, hit);
@@ -3773,7 +3844,7 @@ callable = Py_OBJ_UNTAG(callable_tagged);
             _PyTaggedPtr new_frame_tagged;
             _PyInterpreterFrame *new_frame;
             new_frame_tagged = stack_pointer[-1];
-new_frame = (_PyInterpreterFrame *)Py_OBJ_UNTAG(new_frame_tagged);
+            new_frame = (_PyInterpreterFrame *)Py_OBJ_UNTAG(new_frame_tagged);
 
             // Write it out explicitly because it's subtly different.
             // Eventually this should be the only occurrence of this code.
@@ -3807,13 +3878,13 @@ new_frame = (_PyInterpreterFrame *)Py_OBJ_UNTAG(new_frame_tagged);
             _PyTaggedPtr res;
             oparg = CURRENT_OPARG();
             arg_tagged = stack_pointer[-1];
-arg = Py_OBJ_UNTAG(arg_tagged);
+            arg = Py_OBJ_UNTAG(arg_tagged);
 
             null_tagged = stack_pointer[-2];
-null = Py_OBJ_UNTAG(null_tagged);
+            null = Py_OBJ_UNTAG(null_tagged);
 
             callable_tagged = stack_pointer[-3];
-callable = Py_OBJ_UNTAG(callable_tagged);
+            callable = Py_OBJ_UNTAG(callable_tagged);
 
             assert(oparg == 1);
             if (null != NULL) {
@@ -3842,13 +3913,13 @@ callable = Py_OBJ_UNTAG(callable_tagged);
             PyObject *res;
             oparg = CURRENT_OPARG();
             arg_tagged = stack_pointer[-1];
-arg = Py_OBJ_UNTAG(arg_tagged);
+            arg = Py_OBJ_UNTAG(arg_tagged);
 
             null_tagged = stack_pointer[-2];
-null = Py_OBJ_UNTAG(null_tagged);
+            null = Py_OBJ_UNTAG(null_tagged);
 
             callable_tagged = stack_pointer[-3];
-callable = Py_OBJ_UNTAG(callable_tagged);
+            callable = Py_OBJ_UNTAG(callable_tagged);
 
             assert(oparg == 1);
             if (null != NULL) {
@@ -3878,13 +3949,13 @@ callable = Py_OBJ_UNTAG(callable_tagged);
             PyObject *res;
             oparg = CURRENT_OPARG();
             arg_tagged = stack_pointer[-1];
-arg = Py_OBJ_UNTAG(arg_tagged);
+            arg = Py_OBJ_UNTAG(arg_tagged);
 
             null_tagged = stack_pointer[-2];
-null = Py_OBJ_UNTAG(null_tagged);
+            null = Py_OBJ_UNTAG(null_tagged);
 
             callable_tagged = stack_pointer[-3];
-callable = Py_OBJ_UNTAG(callable_tagged);
+            callable = Py_OBJ_UNTAG(callable_tagged);
 
             assert(oparg == 1);
             if (null != NULL) {
@@ -3910,7 +3981,7 @@ callable = Py_OBJ_UNTAG(callable_tagged);
             _PyTaggedPtr should_be_none_tagged;
             PyObject *should_be_none;
             should_be_none_tagged = stack_pointer[-1];
-should_be_none = Py_OBJ_UNTAG(should_be_none_tagged);
+            should_be_none = Py_OBJ_UNTAG(should_be_none_tagged);
 
             assert(STACK_LEVEL() == 2);
             if (should_be_none != Py_None) {
@@ -3924,7 +3995,6 @@ should_be_none = Py_OBJ_UNTAG(should_be_none_tagged);
         }
 
         case _CALL_BUILTIN_CLASS: {
-            _PyTaggedPtr args_tagged;
             _PyTaggedPtr *args;
             _PyTaggedPtr self_or_null_tagged;
             PyObject *self_or_null;
@@ -3934,10 +4004,10 @@ should_be_none = Py_OBJ_UNTAG(should_be_none_tagged);
             oparg = CURRENT_OPARG();
             args = &stack_pointer[-oparg];
             self_or_null_tagged = stack_pointer[-1 - oparg];
-self_or_null = Py_OBJ_UNTAG(self_or_null_tagged);
+            self_or_null = Py_OBJ_UNTAG(self_or_null_tagged);
 
             callable_tagged = stack_pointer[-2 - oparg];
-callable = Py_OBJ_UNTAG(callable_tagged);
+            callable = Py_OBJ_UNTAG(callable_tagged);
 
             int total_args = oparg;
             if (self_or_null != NULL) {
@@ -3967,7 +4037,6 @@ callable = Py_OBJ_UNTAG(callable_tagged);
         }
 
         case _CALL_BUILTIN_O: {
-            _PyTaggedPtr args_tagged;
             _PyTaggedPtr *args;
             _PyTaggedPtr self_or_null_tagged;
             PyObject *self_or_null;
@@ -3977,10 +4046,10 @@ callable = Py_OBJ_UNTAG(callable_tagged);
             oparg = CURRENT_OPARG();
             args = &stack_pointer[-oparg];
             self_or_null_tagged = stack_pointer[-1 - oparg];
-self_or_null = Py_OBJ_UNTAG(self_or_null_tagged);
+            self_or_null = Py_OBJ_UNTAG(self_or_null_tagged);
 
             callable_tagged = stack_pointer[-2 - oparg];
-callable = Py_OBJ_UNTAG(callable_tagged);
+            callable = Py_OBJ_UNTAG(callable_tagged);
 
             /* Builtin METH_O functions */
             int total_args = oparg;
@@ -4021,7 +4090,6 @@ callable = Py_OBJ_UNTAG(callable_tagged);
         }
 
         case _CALL_BUILTIN_FAST: {
-            _PyTaggedPtr args_tagged;
             _PyTaggedPtr *args;
             _PyTaggedPtr self_or_null_tagged;
             PyObject *self_or_null;
@@ -4031,10 +4099,10 @@ callable = Py_OBJ_UNTAG(callable_tagged);
             oparg = CURRENT_OPARG();
             args = &stack_pointer[-oparg];
             self_or_null_tagged = stack_pointer[-1 - oparg];
-self_or_null = Py_OBJ_UNTAG(self_or_null_tagged);
+            self_or_null = Py_OBJ_UNTAG(self_or_null_tagged);
 
             callable_tagged = stack_pointer[-2 - oparg];
-callable = Py_OBJ_UNTAG(callable_tagged);
+            callable = Py_OBJ_UNTAG(callable_tagged);
 
             /* Builtin METH_FASTCALL functions, without keywords */
             int total_args = oparg;
@@ -4071,7 +4139,6 @@ callable = Py_OBJ_UNTAG(callable_tagged);
         }
 
         case _CALL_BUILTIN_FAST_WITH_KEYWORDS: {
-            _PyTaggedPtr args_tagged;
             _PyTaggedPtr *args;
             _PyTaggedPtr self_or_null_tagged;
             PyObject *self_or_null;
@@ -4081,10 +4148,10 @@ callable = Py_OBJ_UNTAG(callable_tagged);
             oparg = CURRENT_OPARG();
             args = &stack_pointer[-oparg];
             self_or_null_tagged = stack_pointer[-1 - oparg];
-self_or_null = Py_OBJ_UNTAG(self_or_null_tagged);
+            self_or_null = Py_OBJ_UNTAG(self_or_null_tagged);
 
             callable_tagged = stack_pointer[-2 - oparg];
-callable = Py_OBJ_UNTAG(callable_tagged);
+            callable = Py_OBJ_UNTAG(callable_tagged);
 
             /* Builtin METH_FASTCALL | METH_KEYWORDS functions */
             int total_args = oparg;
@@ -4121,7 +4188,6 @@ callable = Py_OBJ_UNTAG(callable_tagged);
         }
 
         case _CALL_LEN: {
-            _PyTaggedPtr args_tagged;
             _PyTaggedPtr *args;
             _PyTaggedPtr self_or_null_tagged;
             PyObject *self_or_null;
@@ -4131,10 +4197,10 @@ callable = Py_OBJ_UNTAG(callable_tagged);
             oparg = CURRENT_OPARG();
             args = &stack_pointer[-oparg];
             self_or_null_tagged = stack_pointer[-1 - oparg];
-self_or_null = Py_OBJ_UNTAG(self_or_null_tagged);
+            self_or_null = Py_OBJ_UNTAG(self_or_null_tagged);
 
             callable_tagged = stack_pointer[-2 - oparg];
-callable = Py_OBJ_UNTAG(callable_tagged);
+            callable = Py_OBJ_UNTAG(callable_tagged);
 
             /* len(o) */
             int total_args = oparg;
@@ -4171,7 +4237,6 @@ callable = Py_OBJ_UNTAG(callable_tagged);
         }
 
         case _CALL_ISINSTANCE: {
-            _PyTaggedPtr args_tagged;
             _PyTaggedPtr *args;
             _PyTaggedPtr self_or_null_tagged;
             PyObject *self_or_null;
@@ -4181,10 +4246,10 @@ callable = Py_OBJ_UNTAG(callable_tagged);
             oparg = CURRENT_OPARG();
             args = &stack_pointer[-oparg];
             self_or_null_tagged = stack_pointer[-1 - oparg];
-self_or_null = Py_OBJ_UNTAG(self_or_null_tagged);
+            self_or_null = Py_OBJ_UNTAG(self_or_null_tagged);
 
             callable_tagged = stack_pointer[-2 - oparg];
-callable = Py_OBJ_UNTAG(callable_tagged);
+            callable = Py_OBJ_UNTAG(callable_tagged);
 
             /* isinstance(o, o2) */
             int total_args = oparg;
@@ -4222,7 +4287,6 @@ callable = Py_OBJ_UNTAG(callable_tagged);
         }
 
         case _CALL_METHOD_DESCRIPTOR_O: {
-            _PyTaggedPtr args_tagged;
             _PyTaggedPtr *args;
             _PyTaggedPtr self_or_null_tagged;
             PyObject *self_or_null;
@@ -4232,10 +4296,10 @@ callable = Py_OBJ_UNTAG(callable_tagged);
             oparg = CURRENT_OPARG();
             args = &stack_pointer[-oparg];
             self_or_null_tagged = stack_pointer[-1 - oparg];
-self_or_null = Py_OBJ_UNTAG(self_or_null_tagged);
+            self_or_null = Py_OBJ_UNTAG(self_or_null_tagged);
 
             callable_tagged = stack_pointer[-2 - oparg];
-callable = Py_OBJ_UNTAG(callable_tagged);
+            callable = Py_OBJ_UNTAG(callable_tagged);
 
             int total_args = oparg;
             if (self_or_null != NULL) {
@@ -4285,7 +4349,6 @@ callable = Py_OBJ_UNTAG(callable_tagged);
         }
 
         case _CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS: {
-            _PyTaggedPtr args_tagged;
             _PyTaggedPtr *args;
             _PyTaggedPtr self_or_null_tagged;
             PyObject *self_or_null;
@@ -4295,10 +4358,10 @@ callable = Py_OBJ_UNTAG(callable_tagged);
             oparg = CURRENT_OPARG();
             args = &stack_pointer[-oparg];
             self_or_null_tagged = stack_pointer[-1 - oparg];
-self_or_null = Py_OBJ_UNTAG(self_or_null_tagged);
+            self_or_null = Py_OBJ_UNTAG(self_or_null_tagged);
 
             callable_tagged = stack_pointer[-2 - oparg];
-callable = Py_OBJ_UNTAG(callable_tagged);
+            callable = Py_OBJ_UNTAG(callable_tagged);
 
             int total_args = oparg;
             if (self_or_null != NULL) {
@@ -4341,7 +4404,6 @@ callable = Py_OBJ_UNTAG(callable_tagged);
         }
 
         case _CALL_METHOD_DESCRIPTOR_NOARGS: {
-            _PyTaggedPtr args_tagged;
             _PyTaggedPtr *args;
             _PyTaggedPtr self_or_null_tagged;
             PyObject *self_or_null;
@@ -4351,10 +4413,10 @@ callable = Py_OBJ_UNTAG(callable_tagged);
             oparg = CURRENT_OPARG();
             args = &stack_pointer[-oparg];
             self_or_null_tagged = stack_pointer[-1 - oparg];
-self_or_null = Py_OBJ_UNTAG(self_or_null_tagged);
+            self_or_null = Py_OBJ_UNTAG(self_or_null_tagged);
 
             callable_tagged = stack_pointer[-2 - oparg];
-callable = Py_OBJ_UNTAG(callable_tagged);
+            callable = Py_OBJ_UNTAG(callable_tagged);
 
             assert(oparg == 0 || oparg == 1);
             int total_args = oparg;
@@ -4402,7 +4464,6 @@ callable = Py_OBJ_UNTAG(callable_tagged);
         }
 
         case _CALL_METHOD_DESCRIPTOR_FAST: {
-            _PyTaggedPtr args_tagged;
             _PyTaggedPtr *args;
             _PyTaggedPtr self_or_null_tagged;
             PyObject *self_or_null;
@@ -4412,10 +4473,10 @@ callable = Py_OBJ_UNTAG(callable_tagged);
             oparg = CURRENT_OPARG();
             args = &stack_pointer[-oparg];
             self_or_null_tagged = stack_pointer[-1 - oparg];
-self_or_null = Py_OBJ_UNTAG(self_or_null_tagged);
+            self_or_null = Py_OBJ_UNTAG(self_or_null_tagged);
 
             callable_tagged = stack_pointer[-2 - oparg];
-callable = Py_OBJ_UNTAG(callable_tagged);
+            callable = Py_OBJ_UNTAG(callable_tagged);
 
             int total_args = oparg;
             if (self_or_null != NULL) {
@@ -4470,7 +4531,7 @@ callable = Py_OBJ_UNTAG(callable_tagged);
             PyObject *codeobj;
             PyObject *func;
             codeobj_tagged = stack_pointer[-1];
-codeobj = Py_OBJ_UNTAG(codeobj_tagged);
+            codeobj = Py_OBJ_UNTAG(codeobj_tagged);
 
             PyFunctionObject *func_obj = (PyFunctionObject *)
             PyFunction_New(codeobj, GLOBALS());
@@ -4492,10 +4553,10 @@ codeobj = Py_OBJ_UNTAG(codeobj_tagged);
             PyObject *attr;
             oparg = CURRENT_OPARG();
             func_tagged = stack_pointer[-1];
-func = Py_OBJ_UNTAG(func_tagged);
+            func = Py_OBJ_UNTAG(func_tagged);
 
             attr_tagged = stack_pointer[-2];
-attr = Py_OBJ_UNTAG(attr_tagged);
+            attr = Py_OBJ_UNTAG(attr_tagged);
 
             assert(PyFunction_Check(func));
             PyFunctionObject *func_obj = (PyFunctionObject *)func;
@@ -4539,14 +4600,17 @@ attr = Py_OBJ_UNTAG(attr_tagged);
 step = Py_OBJ_UNTAG(step_tagged);
  }
             stop_tagged = stack_pointer[-1 - ((oparg == 3) ? 1 : 0)];
-stop = Py_OBJ_UNTAG(stop_tagged);
+            stop = Py_OBJ_UNTAG(stop_tagged);
 
             start_tagged = stack_pointer[-2 - ((oparg == 3) ? 1 : 0)];
-start = Py_OBJ_UNTAG(start_tagged);
+            start = Py_OBJ_UNTAG(start_tagged);
 
             slice = PySlice_New(start, stop, step);
+            (void)start;
             Py_DECREF_TAGGED(start_tagged);
+            (void)stop;
             Py_DECREF_TAGGED(stop_tagged);
+            (void)step;
             Py_XDECREF_TAGGED(step_tagged);
             if (slice == NULL) JUMP_TO_ERROR();
             stack_pointer[-2 - ((oparg == 3) ? 1 : 0)] = Py_OBJ_TAG(slice);
@@ -4560,7 +4624,7 @@ start = Py_OBJ_UNTAG(start_tagged);
             PyObject *result;
             oparg = CURRENT_OPARG();
             value_tagged = stack_pointer[-1];
-value = Py_OBJ_UNTAG(value_tagged);
+            value = Py_OBJ_UNTAG(value_tagged);
 
             conversion_func conv_fn;
             assert(oparg >= FVC_STR && oparg <= FVC_ASCII);
@@ -4577,7 +4641,7 @@ value = Py_OBJ_UNTAG(value_tagged);
             PyObject *value;
             PyObject *res;
             value_tagged = stack_pointer[-1];
-value = Py_OBJ_UNTAG(value_tagged);
+            value = Py_OBJ_UNTAG(value_tagged);
 
             /* If value is a unicode object, then we know the result
              * of format(value) is value itself. */
@@ -4600,10 +4664,10 @@ value = Py_OBJ_UNTAG(value_tagged);
             PyObject *value;
             PyObject *res;
             fmt_spec_tagged = stack_pointer[-1];
-fmt_spec = Py_OBJ_UNTAG(fmt_spec_tagged);
+            fmt_spec = Py_OBJ_UNTAG(fmt_spec_tagged);
 
             value_tagged = stack_pointer[-2];
-value = Py_OBJ_UNTAG(value_tagged);
+            value = Py_OBJ_UNTAG(value_tagged);
 
             res = PyObject_Format(value, fmt_spec);
             Py_DECREF_TAGGED(value_tagged);
@@ -4620,7 +4684,7 @@ value = Py_OBJ_UNTAG(value_tagged);
             PyObject *top;
             oparg = CURRENT_OPARG();
             bottom_tagged = stack_pointer[-1 - (oparg-1)];
-bottom = Py_OBJ_UNTAG(bottom_tagged);
+            bottom = Py_OBJ_UNTAG(bottom_tagged);
 
             assert(oparg > 0);
             top = Py_NewRef(bottom);
@@ -4637,14 +4701,16 @@ bottom = Py_OBJ_UNTAG(bottom_tagged);
             PyObject *res;
             oparg = CURRENT_OPARG();
             rhs_tagged = stack_pointer[-1];
-rhs = Py_OBJ_UNTAG(rhs_tagged);
+            rhs = Py_OBJ_UNTAG(rhs_tagged);
 
             lhs_tagged = stack_pointer[-2];
-lhs = Py_OBJ_UNTAG(lhs_tagged);
+            lhs = Py_OBJ_UNTAG(lhs_tagged);
 
             assert(_PyEval_BinaryOps[oparg]);
             res = _PyEval_BinaryOps[oparg](lhs, rhs);
+            (void)lhs;
             Py_DECREF_TAGGED(lhs_tagged);
+            (void)rhs;
             Py_DECREF_TAGGED(rhs_tagged);
             if (res == NULL) JUMP_TO_ERROR();
             stack_pointer[-2] = Py_OBJ_TAG(res);
@@ -4659,10 +4725,10 @@ lhs = Py_OBJ_UNTAG(lhs_tagged);
             PyObject *bottom;
             oparg = CURRENT_OPARG();
             top_tagged = stack_pointer[-1];
-top = Py_OBJ_UNTAG(top_tagged);
+            top = Py_OBJ_UNTAG(top_tagged);
 
             bottom_tagged = stack_pointer[-2 - (oparg-2)];
-bottom = Py_OBJ_UNTAG(bottom_tagged);
+            bottom = Py_OBJ_UNTAG(bottom_tagged);
 
             assert(oparg >= 2);
             stack_pointer[-2 - (oparg-2)] = Py_OBJ_TAG(top);
@@ -4688,7 +4754,7 @@ bottom = Py_OBJ_UNTAG(bottom_tagged);
             _PyTaggedPtr flag_tagged;
             PyObject *flag;
             flag_tagged = stack_pointer[-1];
-flag = Py_OBJ_UNTAG(flag_tagged);
+            flag = Py_OBJ_UNTAG(flag_tagged);
 
             stack_pointer += -1;
             if (!Py_IsTrue(flag)) {
@@ -4703,7 +4769,7 @@ flag = Py_OBJ_UNTAG(flag_tagged);
             _PyTaggedPtr flag_tagged;
             PyObject *flag;
             flag_tagged = stack_pointer[-1];
-flag = Py_OBJ_UNTAG(flag_tagged);
+            flag = Py_OBJ_UNTAG(flag_tagged);
 
             stack_pointer += -1;
             if (!Py_IsFalse(flag)) {
@@ -4718,7 +4784,7 @@ flag = Py_OBJ_UNTAG(flag_tagged);
             _PyTaggedPtr val_tagged;
             PyObject *val;
             val_tagged = stack_pointer[-1];
-val = Py_OBJ_UNTAG(val_tagged);
+            val = Py_OBJ_UNTAG(val_tagged);
 
             stack_pointer += -1;
             if (!Py_IsNone(val)) {
@@ -4735,7 +4801,7 @@ val = Py_OBJ_UNTAG(val_tagged);
             _PyTaggedPtr val_tagged;
             PyObject *val;
             val_tagged = stack_pointer[-1];
-val = Py_OBJ_UNTAG(val_tagged);
+            val = Py_OBJ_UNTAG(val_tagged);
 
             stack_pointer += -1;
             if (Py_IsNone(val)) {
@@ -4824,9 +4890,10 @@ val = Py_OBJ_UNTAG(val_tagged);
             PyObject *pop;
             PyObject *value;
             pop_tagged = stack_pointer[-1];
-pop = Py_OBJ_UNTAG(pop_tagged);
+            pop = Py_OBJ_UNTAG(pop_tagged);
 
             PyObject *ptr = (PyObject *)CURRENT_OPERAND();
+            (void)pop;
             Py_DECREF_TAGGED(pop_tagged);
             value = ptr;
             stack_pointer[-1] = Py_OBJ_TAG(value);
@@ -4871,7 +4938,7 @@ pop = Py_OBJ_UNTAG(pop_tagged);
             _PyTaggedPtr opt_tagged;
             PyObject *opt;
             opt_tagged = stack_pointer[-1];
-opt = Py_OBJ_UNTAG(opt_tagged);
+            opt = Py_OBJ_UNTAG(opt_tagged);
 
             _PyCounterOptimizerObject *exe = (_PyCounterOptimizerObject *)opt;
             exe->count++;

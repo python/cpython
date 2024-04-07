@@ -50,7 +50,7 @@ def declare_variable(
             # So avoid a compiler warning with a fake use
             out.emit(f"(void){var.name};\n")
     else:
-        if not dir_out and type.strip() != "_PyTaggedPtr":
+        if not dir_out and type.strip() != "_PyTaggedPtr" and not var.is_array():
             out.emit(f"_PyTaggedPtr {var.name}_tagged;\n")
         out.emit(f"{type}{var.name};\n")
 
@@ -168,7 +168,8 @@ def write_uop(uop: Uop, out: CWriter, stack: Stack) -> None:
             out.emit(f"oparg = {uop.properties.const_oparg};\n")
             out.emit(f"assert(oparg == CURRENT_OPARG());\n")
         for var in reversed(uop.stack.inputs):
-            out.emit(stack.pop(var))
+            for line in stack.pop(var):
+                out.emit(line)
         if not uop.properties.stores_sp:
             for i, var in enumerate(uop.stack.outputs):
                 out.emit(stack.push(var))

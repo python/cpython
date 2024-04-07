@@ -292,6 +292,7 @@ dummy_func(
         }
 
         pure inst(END_SEND, (receiver, value -- value)) {
+            (void)receiver;
             Py_DECREF_TAGGED(receiver_tagged);
         }
 
@@ -394,7 +395,7 @@ dummy_func(
         }
 
         op(_REPLACE_WITH_TRUE, (value -- res)) {
-            Py_DECREF_TAGGED(value_tagged);
+            DECREF_INPUTS();
             res = Py_True;
         }
 
@@ -663,7 +664,7 @@ dummy_func(
             ERROR_IF(rc <= 0, error); // not found or error
         }
 
-        inst(BINARY_SUBSCR_GETITEM, (unused/1, container, sub -- unused)) {
+        inst(BINARY_SUBSCR_GETITEM, (unused/1, container, sub: _PyTaggedPtr -- unused)) {
             DEOPT_IF(tstate->interp->eval_frame);
             PyTypeObject *tp = Py_TYPE(container);
             DEOPT_IF(!PyType_HasFeature(tp, Py_TPFLAGS_HEAPTYPE));
@@ -682,7 +683,7 @@ dummy_func(
             _PyInterpreterFrame *new_frame = _PyFrame_PushUnchecked(tstate, getitem, 2);
             STACK_SHRINK(2);
             new_frame->localsplus[0] = container_tagged;
-            new_frame->localsplus[1] = sub_tagged;
+            new_frame->localsplus[1] = sub;
             frame->return_offset = (uint16_t)(next_instr - this_instr);
             DISPATCH_INLINED(new_frame);
         }
@@ -1039,7 +1040,7 @@ dummy_func(
 
         macro(SEND) = _SPECIALIZE_SEND + _SEND;
 
-        inst(SEND_GEN, (unused/1, receiver, v -- receiver, unused)) {
+        inst(SEND_GEN, (unused/1, receiver, v: _PyTaggedPtr -- receiver, unused)) {
             DEOPT_IF(tstate->interp->eval_frame);
             PyGenObject *gen = (PyGenObject *)receiver;
             DEOPT_IF(Py_TYPE(gen) != &PyGen_Type && Py_TYPE(gen) != &PyCoro_Type);
@@ -1047,7 +1048,7 @@ dummy_func(
             STAT_INC(SEND, hit);
             _PyInterpreterFrame *gen_frame = (_PyInterpreterFrame *)gen->gi_iframe;
             STACK_SHRINK(1);
-            _PyFrame_StackPush(gen_frame, v_tagged);
+            _PyFrame_StackPush(gen_frame, v);
             gen->gi_frame_state = FRAME_EXECUTING;
             gen->gi_exc_state.previous_item = tstate->exc_info;
             tstate->exc_info = &gen->gi_exc_state;
@@ -1081,7 +1082,7 @@ dummy_func(
             goto resume_frame;
         }
 
-        tier1 inst(YIELD_VALUE, (retval -- unused)) {
+        tier1 inst(YIELD_VALUE, (retval: _PyTaggedPtr -- unused)) {
             // NOTE: It's important that YIELD_VALUE never raises an exception!
             // The compiler treats any exception raised here as a failed close()
             // or throw() call.
@@ -1098,7 +1099,7 @@ dummy_func(
             _PyInterpreterFrame *gen_frame = frame;
             frame = tstate->current_frame = frame->previous;
             gen_frame->previous = NULL;
-            _PyFrame_StackPush(frame, retval_tagged);
+            _PyFrame_StackPush(frame, retval);
             /* We don't know which of these is relevant here, so keep them equal */
             assert(INLINE_CACHE_ENTRIES_SEND == INLINE_CACHE_ENTRIES_FOR_ITER);
             LOAD_IP(1 + INLINE_CACHE_ENTRIES_SEND);
@@ -2397,6 +2398,7 @@ dummy_func(
         }
 
         replaced op(_POP_JUMP_IF_FALSE, (cond -- )) {
+            (void)cond_tagged;
             assert(PyBool_Check(cond));
             int flag = Py_IsFalse(cond);
             #if ENABLE_SPECIALIZATION
@@ -2406,6 +2408,7 @@ dummy_func(
         }
 
         replaced op(_POP_JUMP_IF_TRUE, (cond -- )) {
+            (void)cond_tagged;
             assert(PyBool_Check(cond));
             int flag = Py_IsTrue(cond);
             #if ENABLE_SPECIALIZATION
@@ -4142,7 +4145,7 @@ dummy_func(
         }
 
         tier2 pure op (_POP_TOP_LOAD_CONST_INLINE_BORROW, (ptr/4, pop -- value)) {
-            Py_DECREF_TAGGED(pop_tagged);
+            DECREF_INPUTS();
             value = ptr;
         }
 
