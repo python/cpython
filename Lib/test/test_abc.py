@@ -478,7 +478,7 @@ def test_factory(abc_ABCMeta, abc_get_cache_token):
             self.assertFalse(issubclass(C, A))
             self.assertFalse(issubclass(C, (A,)))
 
-        def test_class_is_sublcass_of_iteself(self):
+        def test_class_is_subclass_of_itself(self):
             class Meta(type):
                 def __subclasscheck__(self, other):
                     return False
