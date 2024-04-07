@@ -889,6 +889,9 @@ Unit tests for the `DocTestRunner` class.
 DocTestRunner is used to run DocTest test cases, and to accumulate
 statistics.  Here's a simple DocTest case we can use:
 
+    >>> save_colorize = _colorize.COLORIZE
+    >>> _colorize.COLORIZE = False
+
     >>> def f(x):
     ...     '''
     ...     >>> x = 12
@@ -943,6 +946,8 @@ the failure and proceeds to the next example:
         6
     ok
     TestResults(failed=1, attempted=3)
+
+    >>> _colorize.COLORIZE = save_colorize
 """
     def verbose_flag(): r"""
 The `verbose` flag makes the test runner generate more detailed
@@ -1017,6 +1022,9 @@ Tests of `DocTestRunner`'s exception handling.
 An expected exception is specified with a traceback message.  The
 lines between the first line and the type/value may be omitted or
 replaced with any other string:
+
+    >>> save_colorize = _colorize.COLORIZE
+    >>> _colorize.COLORIZE = False
 
     >>> def f(x):
     ...     '''
@@ -1248,6 +1256,8 @@ unexpected exception:
         ...
         ZeroDivisionError: integer division or modulo by zero
     TestResults(failed=1, attempted=1)
+
+    >>> _colorize.COLORIZE = save_colorize
 """
     def displayhook(): r"""
 Test that changing sys.displayhook doesn't matter for doctest.
@@ -1288,6 +1298,9 @@ together).
 
 The DONT_ACCEPT_TRUE_FOR_1 flag disables matches between True/False
 and 1/0:
+
+    >>> save_colorize = _colorize.COLORIZE
+    >>> _colorize.COLORIZE = False
 
     >>> def f(x):
     ...     '>>> True\n1\n'
@@ -1708,6 +1721,7 @@ more than one flag value.  Here we verify that's fixed:
 
 Clean up.
     >>> del doctest.OPTIONFLAGS_BY_NAME[unlikely]
+    >>> _colorize.COLORIZE = save_colorize
 
     """
 
@@ -1717,6 +1731,9 @@ Tests of `DocTestRunner`'s option directive mechanism.
 Option directives can be used to turn option flags on or off for a
 single example.  To turn an option on for an example, follow that
 example with a comment of the form ``# doctest: +OPTION``:
+
+    >>> save_colorize = _colorize.COLORIZE
+    >>> _colorize.COLORIZE = False
 
     >>> def f(x): r'''
     ...     >>> print(list(range(10)))      # should fail: no ellipsis
@@ -1925,6 +1942,8 @@ source:
     >>> test = doctest.DocTestParser().get_doctest(s, {}, 's', 's.py', 0)
     Traceback (most recent call last):
     ValueError: line 0 of the doctest for s has an option directive on a line with no example: '# doctest: +ELLIPSIS'
+
+    >>> _colorize.COLORIZE = save_colorize
 """
 
 def test_testsource(): r"""
@@ -2008,6 +2027,9 @@ if not hasattr(sys, 'gettrace') or not sys.gettrace():
         with a version that restores stdout.  This is necessary for you to
         see debugger output.
 
+          >>> save_colorize = _colorize.COLORIZE
+          >>> _colorize.COLORIZE = False
+
           >>> doc = '''
           ... >>> x = 42
           ... >>> raise Exception('clé')
@@ -2062,7 +2084,7 @@ if not hasattr(sys, 'gettrace') or not sys.gettrace():
           ... finally:
           ...     sys.stdin = real_stdin
           --Return--
-          > <doctest test.test_doctest.test_doctest.test_pdb_set_trace[7]>(3)calls_set_trace()->None
+          > <doctest test.test_doctest.test_doctest.test_pdb_set_trace[9]>(3)calls_set_trace()->None
           -> import pdb; pdb.set_trace()
           (Pdb) print(y)
           2
@@ -2130,6 +2152,8 @@ if not hasattr(sys, 'gettrace') or not sys.gettrace():
           Got:
               9
           TestResults(failed=1, attempted=3)
+
+          >>> _colorize.COLORIZE = save_colorize
           """
 
     def test_pdb_set_trace_nested():
@@ -2639,6 +2663,7 @@ We don't want color or `-v` in sys.argv for these tests.
 
     >>> save_colorize = _colorize.COLORIZE
     >>> _colorize.COLORIZE = False
+
     >>> save_argv = sys.argv
     >>> if '-v' in sys.argv:
     ...     sys.argv = [arg for arg in save_argv if arg != '-v']
@@ -2943,6 +2968,9 @@ if supports_unicode:
     def test_unicode(): """
 Check doctest with a non-ascii filename:
 
+    >>> save_colorize = _colorize.COLORIZE
+    >>> _colorize.COLORIZE = False
+
     >>> doc = '''
     ... >>> raise Exception('clé')
     ... '''
@@ -2968,7 +2996,10 @@ Check doctest with a non-ascii filename:
             raise Exception('clé')
         Exception: clé
     TestResults(failed=1, attempted=1)
+
+    >>> _colorize.COLORIZE = save_colorize
     """
+
 
 def test_CLI(): r"""
 The doctest module can be used to run doctests against an arbitrary file.
@@ -3260,6 +3291,9 @@ def test_run_doctestsuite_multiple_times():
 
 def test_exception_with_note(note):
     """
+    >>> save_colorize = _colorize.COLORIZE
+    >>> _colorize.COLORIZE = False
+
     >>> test_exception_with_note('Note')
     Traceback (most recent call last):
       ...
@@ -3309,6 +3343,8 @@ def test_exception_with_note(note):
         ValueError: message
         note
     TestResults(failed=1, attempted=...)
+
+    >>> _colorize.COLORIZE = save_colorize
     """
     exc = ValueError('Text')
     exc.add_note(note)
@@ -3389,6 +3425,9 @@ def test_syntax_error_subclass_from_stdlib():
 
 def test_syntax_error_with_incorrect_expected_note():
     """
+    >>> save_colorize = _colorize.COLORIZE
+    >>> _colorize.COLORIZE = False
+
     >>> def f(x):
     ...     r'''
     ...     >>> exc = SyntaxError("error", ("x.py", 23, None, "bad syntax"))
@@ -3417,6 +3456,8 @@ def test_syntax_error_with_incorrect_expected_note():
         note1
         note2
     TestResults(failed=1, attempted=...)
+
+    >>> _colorize.COLORIZE = save_colorize
     """
 
 
