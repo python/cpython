@@ -13,8 +13,6 @@ the example.  It should be ignored:
 
 import sys
 import unittest
-import _colorize
-
 if sys.flags.optimize >= 2:
     raise unittest.SkipTest("Cannot test docstrings with -O2")
 
@@ -110,15 +108,6 @@ class C(object):
 
 
 class Test(unittest.TestCase):
-    def setUp(self):
-        super().setUp()
-        self.colorize = _colorize.COLORIZE
-        _colorize.COLORIZE = False
-
-    def tearDown(self):
-        super().tearDown()
-        _colorize.COLORIZE = self.colorize
-
     def test_testmod(self):
         import doctest, sys
         EXPECTED = 19
