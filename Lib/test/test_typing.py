@@ -220,6 +220,10 @@ class NoReturnTests(BottomTypeTestsMixin, BaseTestCase):
     def test_repr(self):
         self.assertEqual(repr(NoReturn), 'typing.NoReturn')
 
+    def test_subclass_type_error(self):
+        with self.assertRaises(TypeError):
+            issubclass(Employee, self.bottom_type)
+
     def test_get_type_hints(self):
         def some(arg: NoReturn) -> NoReturn: ...
         def some_str(arg: 'NoReturn') -> 'typing.NoReturn': ...
@@ -4250,7 +4254,6 @@ class GenericTests(BaseTestCase):
             with self.subTest(typ=typ):
                 self.assertRaises(TypeError, issubclass, typ, object)
                 self.assertRaises(TypeError, issubclass, typ, type)
-                self.assertRaises(TypeError, issubclass, typ, typ)
                 self.assertRaises(TypeError, issubclass, object, typ)
 
                 # isinstance is fine:

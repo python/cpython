@@ -2766,13 +2766,15 @@ recursive_issubclass(PyObject *derived, PyObject *cls)
 static int
 object_issubclass(PyThreadState *tstate, PyObject *derived, PyObject *cls)
 {
+    /* Quick test for an exact match */
+    if((PyTypeObject*)derived == (PyTypeObject*)cls){
+        return 1;
+    }
+    
     PyObject *checker;
 
     /* We know what type's __subclasscheck__ does. */
     if (PyType_CheckExact(cls)) {
-        /* Quick test for an exact match */
-        if (derived == cls)
-            return 1;
         return recursive_issubclass(derived, cls);
     }
 

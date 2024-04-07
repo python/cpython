@@ -173,11 +173,14 @@ class Test_ErrSetAndRestore(unittest.TestCase):
             def __subclasscheck__(cls, sub):
                 1/0
 
-        class Broken(Exception, metaclass=Meta):
+        class SemiBroken(Exception, metaclass=Meta):
+            pass
+
+        class Broken(SemiBroken):
             pass
 
         with self.assertRaises(ZeroDivisionError) as e:
-            _testcapi.exc_set_object(Broken, Broken())
+            _testcapi.exc_set_object(SemiBroken, Broken())
 
     def test_set_object_and_fetch(self):
         class Broken(Exception):

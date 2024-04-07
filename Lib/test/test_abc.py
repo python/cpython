@@ -467,8 +467,8 @@ def test_factory(abc_ABCMeta, abc_get_cache_token):
                     if cls is A:
                         return 'foo' in C.__dict__
                     return NotImplemented
-            self.assertFalse(issubclass(A, A))
-            self.assertFalse(issubclass(A, (A,)))
+            self.assertTrue(issubclass(A, A))
+            self.assertTrue(issubclass(A, (A,)))
             class B:
                 foo = 42
             self.assertTrue(issubclass(B, A))
@@ -477,6 +477,21 @@ def test_factory(abc_ABCMeta, abc_get_cache_token):
                 spam = 42
             self.assertFalse(issubclass(C, A))
             self.assertFalse(issubclass(C, (A,)))
+
+        def test_class_is_sublcass_of_iteself(self):
+            class Meta(type):
+                def __subclasscheck__(self, other):
+                    return False
+
+            class X(metaclass=Meta):
+                pass
+
+            class Y(X):
+                pass
+
+            self.assertTrue(issubclass(X, X))
+            self.assertTrue(issubclass(Y, Y))
+            self.assertFalse(issubclass(Y, X))
 
         def test_all_new_methods_are_called(self):
             class A(metaclass=abc_ABCMeta):

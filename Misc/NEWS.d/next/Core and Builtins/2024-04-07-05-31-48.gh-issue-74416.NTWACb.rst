@@ -1,0 +1,3 @@
+Speed up ``PyObject_IsSubclass`` in the common case that both classes are
+same. Fixed behavior of function ``PyObject_IsSubclass`` in accordance with
+the fact that the class is considered a subclass of itself
