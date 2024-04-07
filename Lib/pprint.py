@@ -645,10 +645,9 @@ class PrettyPrinter:
             del context[objid]
             return "{%s}" % ", ".join(components), readable, recursive
 
-        views = self._dict_keys_view, self._dict_values_view, self._dict_items_view
-        views += (_collections.abc.MappingView,)
-        mapping_view_repr = {_collections.abc.MappingView.__repr__}
-        view_reprs = {cls.__repr__ for cls in views}.union(mapping_view_repr)
+        views = (self._dict_keys_view, self._dict_values_view, self._dict_items_view,
+                 _collections.abc.MappingView)
+        view_reprs = {cls.__repr__ for cls in views}
         if issubclass(typ, views) and r in view_reprs:
             key = _safe_key
             if isinstance(typ, (self._dict_items_view, _collections.abc.ItemsView)):
