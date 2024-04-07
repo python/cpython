@@ -2027,7 +2027,7 @@ Removed C APIs are :ref:`listed separately <whatsnew311-c-api-removed>`.
   (and corresponding :c:macro:`!EXPERIMENTAL_ISOLATED_SUBINTERPRETERS` macro)
   have been removed.
 
-* `Pynche <https://pypi.org/project/pynche/>`_
+* :pypi:`Pynche`
   --- The Pythonically Natural Color and Hue Editor --- has been moved out
   of ``Tools/scripts`` and is `being developed independently
   <https://gitlab.com/warsaw/pynche/-/tree/main>`_ from the Python source tree.

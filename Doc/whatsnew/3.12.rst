@@ -1659,11 +1659,9 @@ smtpd
 
 * The ``smtpd`` module has been removed according to the schedule in :pep:`594`,
   having been deprecated in Python 3.4.7 and 3.5.4.
-  Use aiosmtpd_ PyPI module or any other
+  Use :pypi:`aiosmtpd` PyPI module or any other
   :mod:`asyncio`-based server instead.
   (Contributed by Oleg Iarygin in :gh:`93243`.)
-
-.. _aiosmtpd: https://pypi.org/project/aiosmtpd/
 
 sqlite3
 -------
@@ -1831,7 +1829,7 @@ Changes in the Python API
 
 * Remove the ``asyncore``-based ``smtpd`` module deprecated in Python 3.4.7
   and 3.5.4.  A recommended replacement is the
-  :mod:`asyncio`-based aiosmtpd_ PyPI module.
+  :mod:`asyncio`-based :pypi:`aiosmtpd` PyPI module.
 
 * :func:`shlex.split`: Passing ``None`` for *s* argument now raises an
   exception, rather than reading :data:`sys.stdin`. The feature was deprecated

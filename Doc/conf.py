@@ -523,6 +523,7 @@ linkcheck_ignore = [
 extlinks = {
     "cve": ("https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-%s", "CVE-%s"),
     "cwe": ("https://cwe.mitre.org/data/definitions/%s.html", "CWE-%s"),
+    "pypi": ("https://pypi.org/project/%s/", "%s"),
 }
 extlinks_detect_hardcoded_links = True
 
