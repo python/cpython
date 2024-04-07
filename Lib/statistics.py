@@ -1775,7 +1775,7 @@ def kde_random(data, h, kernel='normal', *, seed=None):
     Example:
 
     >>> data = [-2.1, -1.3, -0.4, 1.9, 5.1, 6.2]
-    >>> rand = kde_random(sample, h=1.5, seed=8675309)
+    >>> rand = kde_random(data, h=1.5, seed=8675309)
     >>> new_selections = [rand() for i in range(10)]
     >>> [round(x, 1) for x in new_selections]
     [0.7, 6.2, 1.2, 6.9, 7.0, 1.8, 2.5, -0.5, -1.8, 5.6]
