@@ -1307,7 +1307,10 @@ class DocTestRunner:
             'Exception raised:\n' + _indent(_exception_traceback(exc_info)))
 
     def _failure_header(self, test, example):
-        out = [self.DIVIDER]
+        red, reset = (
+            (ANSIColors.RED, ANSIColors.RESET) if can_colorize() else ("", "")
+        )
+        out = [f"{red}{self.DIVIDER}{reset}"]
         if test.filename:
             if test.lineno is not None and example.lineno is not None:
                 lineno = test.lineno + example.lineno + 1
@@ -1621,7 +1624,7 @@ class DocTestRunner:
                     print(f" {green}{count:3d} test{s} in {name}{reset}")
 
         if failed:
-            print(self.DIVIDER)
+            print(f"{red}{self.DIVIDER}{reset}")
             print(f"{red}{_n_items(failed)} had failures:{reset}")
             for name, (failures, tries, skips) in sorted(failed):
                 print(f"{red} {failures:3d} of {tries:3d} in {name}{reset}")
