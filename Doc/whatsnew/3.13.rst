@@ -185,7 +185,7 @@ Other Language Changes
 
   (Contributed by Victor Stinner in :gh:`114570`.)
 
-* Allow controlling Expat >=2.6.0 reparse deferral (CVE-2023-52425)
+* Allow controlling Expat >=2.6.0 reparse deferral (:cve:`2023-52425`)
   by adding five new methods:
 
   * :meth:`xml.etree.ElementTree.XMLParser.flush`
@@ -393,7 +393,7 @@ email
   ``getattr(email.utils, 'supports_strict_parsing', False)`` can be use to
   check if the *strict* parameter is available.
   (Contributed by Thomas Dwyer and Victor Stinner for :gh:`102988` to improve
-  the CVE-2023-27043 fix.)
+  the :cve:`2023-27043` fix.)
 
 fractions
 ---------
