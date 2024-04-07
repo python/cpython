@@ -105,7 +105,10 @@ def tier2_replace_deopt(
     out.emit(next(tkn_iter))
     emit_to(out, tkn_iter, "RPAREN")
     next(tkn_iter)  # Semi colon
-    out.emit(") JUMP_TO_JUMP_TARGET();\n")
+    out.emit(") {\n")
+    out.emit("UOP_STAT_INC(uopcode, miss);\n")
+    out.emit("JUMP_TO_JUMP_TARGET();\n");
+    out.emit("}\n")
 
 
 def tier2_replace_exit_if(
@@ -120,7 +123,10 @@ def tier2_replace_exit_if(
     out.emit(next(tkn_iter))
     emit_to(out, tkn_iter, "RPAREN")
     next(tkn_iter)  # Semi colon
-    out.emit(") JUMP_TO_JUMP_TARGET();\n")
+    out.emit(") {\n")
+    out.emit("UOP_STAT_INC(uopcode, miss);\n")
+    out.emit("JUMP_TO_JUMP_TARGET();\n")
+    out.emit("}\n")
 
 
 def tier2_replace_oparg(

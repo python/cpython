@@ -8,6 +8,7 @@
 
 #include "Python.h"
 #include "pycore_abstract.h"      // _PyIndex_Check()
+#include "pycore_backoff.h"
 #include "pycore_cell.h"          // PyCell_GetRef()
 #include "pycore_code.h"
 #include "pycore_emscripten_signal.h"  // _Py_CHECK_EMSCRIPTEN_SIGNALS
@@ -327,13 +328,13 @@ dummy_func(
 
         specializing op(_SPECIALIZE_TO_BOOL, (counter/1, value -- value)) {
             #if ENABLE_SPECIALIZATION
-            if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
+            if (ADAPTIVE_COUNTER_TRIGGERS(counter)) {
                 next_instr = this_instr;
                 _Py_Specialize_ToBool(value, next_instr);
                 DISPATCH_SAME_OPARG();
             }
             STAT_INC(TO_BOOL, deferred);
-            DECREMENT_ADAPTIVE_COUNTER(this_instr[1].cache);
+            ADVANCE_ADAPTIVE_COUNTER(this_instr[1].counter);
             #endif  /* ENABLE_SPECIALIZATION */
         }
 
@@ -554,13 +555,13 @@ dummy_func(
 
         specializing op(_SPECIALIZE_BINARY_SUBSCR, (counter/1, container, sub -- container, sub)) {
             #if ENABLE_SPECIALIZATION
-            if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
+            if (ADAPTIVE_COUNTER_TRIGGERS(counter)) {
                 next_instr = this_instr;
                 _Py_Specialize_BinarySubscr(container, sub, next_instr);
                 DISPATCH_SAME_OPARG();
             }
             STAT_INC(BINARY_SUBSCR, deferred);
-            DECREMENT_ADAPTIVE_COUNTER(this_instr[1].cache);
+            ADVANCE_ADAPTIVE_COUNTER(this_instr[1].counter);
             #endif  /* ENABLE_SPECIALIZATION */
         }
 
@@ -703,13 +704,13 @@ dummy_func(
 
         specializing op(_SPECIALIZE_STORE_SUBSCR, (counter/1, container, sub -- container, sub)) {
             #if ENABLE_SPECIALIZATION
-            if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
+            if (ADAPTIVE_COUNTER_TRIGGERS(counter)) {
                 next_instr = this_instr;
                 _Py_Specialize_StoreSubscr(container, sub, next_instr);
                 DISPATCH_SAME_OPARG();
             }
             STAT_INC(STORE_SUBSCR, deferred);
-            DECREMENT_ADAPTIVE_COUNTER(this_instr[1].cache);
+            ADVANCE_ADAPTIVE_COUNTER(this_instr[1].counter);
             #endif  /* ENABLE_SPECIALIZATION */
         }
 
@@ -987,13 +988,13 @@ dummy_func(
 
         specializing op(_SPECIALIZE_SEND, (counter/1, receiver, unused -- receiver, unused)) {
             #if ENABLE_SPECIALIZATION
-            if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
+            if (ADAPTIVE_COUNTER_TRIGGERS(counter)) {
                 next_instr = this_instr;
                 _Py_Specialize_Send(receiver, next_instr);
                 DISPATCH_SAME_OPARG();
             }
             STAT_INC(SEND, deferred);
-            DECREMENT_ADAPTIVE_COUNTER(this_instr[1].cache);
+            ADVANCE_ADAPTIVE_COUNTER(this_instr[1].counter);
             #endif  /* ENABLE_SPECIALIZATION */
         }
 
@@ -1216,13 +1217,13 @@ dummy_func(
 
         specializing op(_SPECIALIZE_UNPACK_SEQUENCE, (counter/1, seq -- seq)) {
             #if ENABLE_SPECIALIZATION
-            if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
+            if (ADAPTIVE_COUNTER_TRIGGERS(counter)) {
                 next_instr = this_instr;
                 _Py_Specialize_UnpackSequence(seq, next_instr, oparg);
                 DISPATCH_SAME_OPARG();
             }
             STAT_INC(UNPACK_SEQUENCE, deferred);
-            DECREMENT_ADAPTIVE_COUNTER(this_instr[1].cache);
+            ADVANCE_ADAPTIVE_COUNTER(this_instr[1].counter);
             #endif  /* ENABLE_SPECIALIZATION */
             (void)seq;
             (void)counter;
@@ -1285,14 +1286,14 @@ dummy_func(
 
         specializing op(_SPECIALIZE_STORE_ATTR, (counter/1, owner -- owner)) {
             #if ENABLE_SPECIALIZATION
-            if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
+            if (ADAPTIVE_COUNTER_TRIGGERS(counter)) {
                 PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
                 next_instr = this_instr;
                 _Py_Specialize_StoreAttr(owner, next_instr, name);
                 DISPATCH_SAME_OPARG();
             }
             STAT_INC(STORE_ATTR, deferred);
-            DECREMENT_ADAPTIVE_COUNTER(this_instr[1].cache);
+            ADVANCE_ADAPTIVE_COUNTER(this_instr[1].counter);
             #endif  /* ENABLE_SPECIALIZATION */
         }
 
@@ -1403,14 +1404,14 @@ dummy_func(
 
         specializing op(_SPECIALIZE_LOAD_GLOBAL, (counter/1 -- )) {
             #if ENABLE_SPECIALIZATION
-            if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
+            if (ADAPTIVE_COUNTER_TRIGGERS(counter)) {
                 PyObject *name = GETITEM(FRAME_CO_NAMES, oparg>>1);
                 next_instr = this_instr;
                 _Py_Specialize_LoadGlobal(GLOBALS(), BUILTINS(), next_instr, name);
                 DISPATCH_SAME_OPARG();
             }
             STAT_INC(LOAD_GLOBAL, deferred);
-            DECREMENT_ADAPTIVE_COUNTER(this_instr[1].cache);
+            ADVANCE_ADAPTIVE_COUNTER(this_instr[1].counter);
             #endif  /* ENABLE_SPECIALIZATION */
         }
 
@@ -1431,7 +1432,6 @@ dummy_func(
                     }
                     ERROR_IF(true, error);
                 }
-                Py_INCREF(res);
             }
             else {
                 /* Slow-path if globals or builtins is not a dict */
@@ -1718,7 +1718,7 @@ dummy_func(
         inst(INSTRUMENTED_LOAD_SUPER_ATTR, (unused/1, unused, unused, unused -- unused, unused if (oparg & 1))) {
             // cancel out the decrement that will happen in LOAD_SUPER_ATTR; we
             // don't want to specialize instrumented instructions
-            INCREMENT_ADAPTIVE_COUNTER(this_instr[1].cache);
+            PAUSE_ADAPTIVE_COUNTER(this_instr[1].counter);
             GO_TO_INSTRUCTION(LOAD_SUPER_ATTR);
         }
 
@@ -1730,13 +1730,13 @@ dummy_func(
         specializing op(_SPECIALIZE_LOAD_SUPER_ATTR, (counter/1, global_super, class, unused -- global_super, class, unused)) {
             #if ENABLE_SPECIALIZATION
             int load_method = oparg & 1;
-            if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
+            if (ADAPTIVE_COUNTER_TRIGGERS(counter)) {
                 next_instr = this_instr;
                 _Py_Specialize_LoadSuperAttr(global_super, class, next_instr, load_method);
                 DISPATCH_SAME_OPARG();
             }
             STAT_INC(LOAD_SUPER_ATTR, deferred);
-            DECREMENT_ADAPTIVE_COUNTER(this_instr[1].cache);
+            ADVANCE_ADAPTIVE_COUNTER(this_instr[1].counter);
             #endif  /* ENABLE_SPECIALIZATION */
         }
 
@@ -1843,14 +1843,14 @@ dummy_func(
 
         specializing op(_SPECIALIZE_LOAD_ATTR, (counter/1, owner -- owner)) {
             #if ENABLE_SPECIALIZATION
-            if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
+            if (ADAPTIVE_COUNTER_TRIGGERS(counter)) {
                 PyObject *name = GETITEM(FRAME_CO_NAMES, oparg>>1);
                 next_instr = this_instr;
                 _Py_Specialize_LoadAttr(owner, next_instr, name);
                 DISPATCH_SAME_OPARG();
             }
             STAT_INC(LOAD_ATTR, deferred);
-            DECREMENT_ADAPTIVE_COUNTER(this_instr[1].cache);
+            ADVANCE_ADAPTIVE_COUNTER(this_instr[1].counter);
             #endif  /* ENABLE_SPECIALIZATION */
         }
 
@@ -1904,14 +1904,12 @@ dummy_func(
 
         op(_CHECK_MANAGED_OBJECT_HAS_VALUES, (owner -- owner)) {
             assert(Py_TYPE(owner)->tp_dictoffset < 0);
-            assert(Py_TYPE(owner)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
-            PyDictOrValues *dorv = _PyObject_DictOrValuesPointer(owner);
-            DEOPT_IF(!_PyDictOrValues_IsValues(*dorv) && !_PyObject_MakeInstanceAttributesFromDict(owner, dorv));
+            assert(Py_TYPE(owner)->tp_flags & Py_TPFLAGS_INLINE_VALUES);
+            DEOPT_IF(!_PyObject_InlineValues(owner)->valid);
         }
 
         split op(_LOAD_ATTR_INSTANCE_VALUE, (index/1, owner -- attr, null if (oparg & 1))) {
-            PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(owner);
-            attr = _PyDictOrValues_GetValues(dorv)->values[index];
+            attr = _PyObject_InlineValues(owner)->values[index];
             DEOPT_IF(attr == NULL);
             STAT_INC(LOAD_ATTR, hit);
             Py_INCREF(attr);
@@ -1954,16 +1952,15 @@ dummy_func(
 
         op(_CHECK_ATTR_WITH_HINT, (owner -- owner)) {
             assert(Py_TYPE(owner)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
-            PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(owner);
-            DEOPT_IF(_PyDictOrValues_IsValues(dorv));
-            PyDictObject *dict = (PyDictObject *)_PyDictOrValues_GetDict(dorv);
+            PyManagedDictPointer *managed_dict = _PyObject_ManagedDictPointer(owner);
+            PyDictObject *dict = managed_dict->dict;
             DEOPT_IF(dict == NULL);
             assert(PyDict_CheckExact((PyObject *)dict));
         }
 
         op(_LOAD_ATTR_WITH_HINT, (hint/1, owner -- attr, null if (oparg & 1))) {
-            PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(owner);
-            PyDictObject *dict = (PyDictObject *)_PyDictOrValues_GetDict(dorv);
+            PyManagedDictPointer *managed_dict = _PyObject_ManagedDictPointer(owner);
+            PyDictObject *dict = managed_dict->dict;
             DEOPT_IF(hint >= (size_t)dict->ma_keys->dk_nentries);
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg>>1);
             if (DK_IS_UNICODE(dict->ma_keys)) {
@@ -2077,16 +2074,17 @@ dummy_func(
             DISPATCH_INLINED(new_frame);
         }
 
-        op(_GUARD_DORV_VALUES, (owner -- owner)) {
-            assert(Py_TYPE(owner)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
-            PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(owner);
-            DEOPT_IF(!_PyDictOrValues_IsValues(dorv));
+        op(_GUARD_DORV_NO_DICT, (owner -- owner)) {
+            assert(Py_TYPE(owner)->tp_dictoffset < 0);
+            assert(Py_TYPE(owner)->tp_flags & Py_TPFLAGS_INLINE_VALUES);
+            DEOPT_IF(_PyObject_ManagedDictPointer(owner)->dict);
+            DEOPT_IF(_PyObject_InlineValues(owner)->valid == 0);
         }
 
         op(_STORE_ATTR_INSTANCE_VALUE, (index/1, value, owner --)) {
-            PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(owner);
             STAT_INC(STORE_ATTR, hit);
-            PyDictValues *values = _PyDictOrValues_GetValues(dorv);
+            assert(_PyObject_ManagedDictPointer(owner)->dict == NULL);
+            PyDictValues *values = _PyObject_InlineValues(owner);
             PyObject *old_value = values->values[index];
             values->values[index] = value;
             if (old_value == NULL) {
@@ -2101,7 +2099,7 @@ dummy_func(
         macro(STORE_ATTR_INSTANCE_VALUE) =
             unused/1 +
             _GUARD_TYPE_VERSION +
-            _GUARD_DORV_VALUES +
+            _GUARD_DORV_NO_DICT +
             _STORE_ATTR_INSTANCE_VALUE;
 
         inst(STORE_ATTR_WITH_HINT, (unused/1, type_version/2, hint/1, value, owner --)) {
@@ -2109,9 +2107,8 @@ dummy_func(
             assert(type_version != 0);
             DEOPT_IF(tp->tp_version_tag != type_version);
             assert(tp->tp_flags & Py_TPFLAGS_MANAGED_DICT);
-            PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(owner);
-            DEOPT_IF(_PyDictOrValues_IsValues(dorv));
-            PyDictObject *dict = (PyDictObject *)_PyDictOrValues_GetDict(dorv);
+            PyManagedDictPointer *managed_dict = _PyObject_ManagedDictPointer(owner);
+            PyDictObject *dict = managed_dict->dict;
             DEOPT_IF(dict == NULL);
             assert(PyDict_CheckExact((PyObject *)dict));
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
@@ -2167,13 +2164,13 @@ dummy_func(
 
         specializing op(_SPECIALIZE_COMPARE_OP, (counter/1, left, right -- left, right)) {
             #if ENABLE_SPECIALIZATION
-            if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
+            if (ADAPTIVE_COUNTER_TRIGGERS(counter)) {
                 next_instr = this_instr;
                 _Py_Specialize_CompareOp(left, right, next_instr, oparg);
                 DISPATCH_SAME_OPARG();
             }
             STAT_INC(COMPARE_OP, deferred);
-            DECREMENT_ADAPTIVE_COUNTER(this_instr[1].cache);
+            ADVANCE_ADAPTIVE_COUNTER(this_instr[1].counter);
             #endif  /* ENABLE_SPECIALIZATION */
         }
 
@@ -2264,13 +2261,13 @@ dummy_func(
 
         specializing op(_SPECIALIZE_CONTAINS_OP, (counter/1, left, right -- left, right)) {
             #if ENABLE_SPECIALIZATION
-            if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
+            if (ADAPTIVE_COUNTER_TRIGGERS(counter)) {
                 next_instr = this_instr;
                 _Py_Specialize_ContainsOp(right, next_instr);
                 DISPATCH_SAME_OPARG();
             }
             STAT_INC(CONTAINS_OP, deferred);
-            DECREMENT_ADAPTIVE_COUNTER(this_instr[1].cache);
+            ADVANCE_ADAPTIVE_COUNTER(this_instr[1].counter);
             #endif  /* ENABLE_SPECIALIZATION */
         }
 
@@ -2350,16 +2347,8 @@ dummy_func(
             assert(oparg <= INSTR_OFFSET());
             JUMPBY(-oparg);
             #if ENABLE_SPECIALIZATION
-            uint16_t counter = this_instr[1].cache;
-            this_instr[1].cache = counter + (1 << OPTIMIZER_BITS_IN_COUNTER);
-            /* We are using unsigned values, but we really want signed values, so
-             * do the 2s complement adjustment manually */
-            uint32_t offset_counter = counter ^ (1 << 15);
-            uint32_t threshold = tstate->interp->optimizer_backedge_threshold;
-            assert((threshold & OPTIMIZER_BITS_MASK) == 0);
-            // Use '>=' not '>' so that the optimizer/backoff bits do not effect the result.
-            // Double-check that the opcode isn't instrumented or something:
-            if (offset_counter >= threshold && this_instr->op.code == JUMP_BACKWARD) {
+            _Py_BackoffCounter counter = this_instr[1].counter;
+            if (backoff_counter_triggers(counter) && this_instr->op.code == JUMP_BACKWARD) {
                 _Py_CODEUNIT *start = this_instr;
                 /* Back up over EXTENDED_ARGs so optimizer sees the whole instruction */
                 while (oparg > 255) {
@@ -2375,16 +2364,11 @@ dummy_func(
                     GOTO_TIER_TWO(executor);
                 }
                 else {
-                    int backoff = this_instr[1].cache & OPTIMIZER_BITS_MASK;
-                    backoff++;
-                    if (backoff < MIN_TIER2_BACKOFF) {
-                        backoff = MIN_TIER2_BACKOFF;
-                    }
-                    else if (backoff > MAX_TIER2_BACKOFF) {
-                        backoff = MAX_TIER2_BACKOFF;
-                    }
-                    this_instr[1].cache = ((UINT16_MAX << OPTIMIZER_BITS_IN_COUNTER) << backoff) | backoff;
+                    this_instr[1].counter = restart_backoff_counter(counter);
                 }
+            }
+            else {
+                ADVANCE_ADAPTIVE_COUNTER(this_instr[1].counter);
             }
             #endif  /* ENABLE_SPECIALIZATION */
         }
@@ -2545,13 +2529,13 @@ dummy_func(
 
         specializing op(_SPECIALIZE_FOR_ITER, (counter/1, iter -- iter)) {
             #if ENABLE_SPECIALIZATION
-            if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
+            if (ADAPTIVE_COUNTER_TRIGGERS(counter)) {
                 next_instr = this_instr;
                 _Py_Specialize_ForIter(iter, next_instr, oparg);
                 DISPATCH_SAME_OPARG();
             }
             STAT_INC(FOR_ITER, deferred);
-            DECREMENT_ADAPTIVE_COUNTER(this_instr[1].cache);
+            ADVANCE_ADAPTIVE_COUNTER(this_instr[1].counter);
             #endif  /* ENABLE_SPECIALIZATION */
         }
 
@@ -2908,9 +2892,8 @@ dummy_func(
         }
 
         op(_GUARD_DORV_VALUES_INST_ATTR_FROM_DICT, (owner -- owner)) {
-            assert(Py_TYPE(owner)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
-            PyDictOrValues *dorv = _PyObject_DictOrValuesPointer(owner);
-            DEOPT_IF(!_PyDictOrValues_IsValues(*dorv) && !_PyObject_MakeInstanceAttributesFromDict(owner, dorv));
+            assert(Py_TYPE(owner)->tp_flags & Py_TPFLAGS_INLINE_VALUES);
+            DEOPT_IF(!_PyObject_InlineValues(owner)->valid);
         }
 
         op(_GUARD_KEYS_VERSION, (keys_version/2, owner -- owner)) {
@@ -2982,10 +2965,9 @@ dummy_func(
             unused/2 +
             _LOAD_ATTR_NONDESCRIPTOR_NO_DICT;
 
-        op(_CHECK_ATTR_METHOD_LAZY_DICT, (owner -- owner)) {
-            Py_ssize_t dictoffset = Py_TYPE(owner)->tp_dictoffset;
-            assert(dictoffset > 0);
-            PyObject *dict = *(PyObject **)((char *)owner + dictoffset);
+        op(_CHECK_ATTR_METHOD_LAZY_DICT, (dictoffset/1, owner -- owner)) {
+            char *ptr = ((char *)owner) + MANAGED_DICT_OFFSET + dictoffset;
+            PyObject *dict = *(PyObject **)ptr;
             /* This object has a __dict__, just not yet created */
             DEOPT_IF(dict != NULL);
         }
@@ -3003,7 +2985,7 @@ dummy_func(
             unused/1 +
             _GUARD_TYPE_VERSION +
             _CHECK_ATTR_METHOD_LAZY_DICT +
-            unused/2 +
+            unused/1 +
             _LOAD_ATTR_METHOD_LAZY_DICT;
 
         inst(INSTRUMENTED_CALL, (unused/3 -- )) {
@@ -3016,7 +2998,7 @@ dummy_func(
                     tstate, PY_MONITORING_EVENT_CALL,
                     frame, this_instr, function, arg);
             ERROR_IF(err, error);
-            INCREMENT_ADAPTIVE_COUNTER(this_instr[1].cache);
+            PAUSE_ADAPTIVE_COUNTER(this_instr[1].counter);
             GO_TO_INSTRUCTION(CALL);
         }
 
@@ -3045,13 +3027,13 @@ dummy_func(
 
         specializing op(_SPECIALIZE_CALL, (counter/1, callable, self_or_null, args[oparg] -- callable, self_or_null, args[oparg])) {
             #if ENABLE_SPECIALIZATION
-            if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
+            if (ADAPTIVE_COUNTER_TRIGGERS(counter)) {
                 next_instr = this_instr;
                 _Py_Specialize_Call(callable, next_instr, oparg + (self_or_null != NULL));
                 DISPATCH_SAME_OPARG();
             }
             STAT_INC(CALL, deferred);
-            DECREMENT_ADAPTIVE_COUNTER(this_instr[1].cache);
+            ADVANCE_ADAPTIVE_COUNTER(this_instr[1].counter);
             #endif  /* ENABLE_SPECIALIZATION */
         }
 
@@ -3307,6 +3289,7 @@ dummy_func(
             DEOPT_IF(!PyType_Check(callable));
             PyTypeObject *tp = (PyTypeObject *)callable;
             DEOPT_IF(tp->tp_version_tag != read_u32(cache->func_version));
+            assert(tp->tp_flags & Py_TPFLAGS_INLINE_VALUES);
             PyHeapTypeObject *cls = (PyHeapTypeObject *)callable;
             PyFunctionObject *init = (PyFunctionObject *)cls->_spec_cache.init;
             PyCodeObject *code = (PyCodeObject *)init->func_code;
@@ -3964,13 +3947,13 @@ dummy_func(
 
         specializing op(_SPECIALIZE_BINARY_OP, (counter/1, lhs, rhs -- lhs, rhs)) {
             #if ENABLE_SPECIALIZATION
-            if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
+            if (ADAPTIVE_COUNTER_TRIGGERS(counter)) {
                 next_instr = this_instr;
                 _Py_Specialize_BinaryOp(lhs, rhs, next_instr, oparg, LOCALS_ARRAY);
                 DISPATCH_SAME_OPARG();
             }
             STAT_INC(BINARY_OP, deferred);
-            DECREMENT_ADAPTIVE_COUNTER(this_instr[1].cache);
+            ADVANCE_ADAPTIVE_COUNTER(this_instr[1].counter);
             #endif  /* ENABLE_SPECIALIZATION */
             assert(NB_ADD <= oparg);
             assert(oparg <= NB_INPLACE_XOR);
@@ -3996,7 +3979,7 @@ dummy_func(
             ERROR_IF(next_opcode < 0, error);
             next_instr = this_instr;
             if (_PyOpcode_Caches[next_opcode]) {
-                INCREMENT_ADAPTIVE_COUNTER(this_instr[1].cache);
+                PAUSE_ADAPTIVE_COUNTER(next_instr[1].counter);
             }
             assert(next_opcode > 0 && next_opcode < 256);
             opcode = next_opcode;
@@ -4127,6 +4110,12 @@ dummy_func(
             frame->instr_ptr = (_Py_CODEUNIT *)instr_ptr;
         }
 
+        tier2 op(_CHECK_STACK_SPACE_OPERAND, (framesize/2 --)) {
+            assert(framesize <= INT_MAX);
+            DEOPT_IF(!_PyThreadState_HasStackSpace(tstate, framesize));
+            DEOPT_IF(tstate->py_recursion_remaining <= 1);
+        }
+
         op(_SAVE_RETURN_OFFSET, (--)) {
             #if TIER_ONE
             frame->return_offset = (uint16_t)(next_instr - this_instr);
@@ -4184,21 +4173,22 @@ dummy_func(
         tier2 op(_COLD_EXIT, (--)) {
             _PyExecutorObject *previous = (_PyExecutorObject *)tstate->previous_executor;
             _PyExitData *exit = &previous->exits[oparg];
-            exit->temperature++;
             PyCodeObject *code = _PyFrame_GetCode(frame);
             _Py_CODEUNIT *target = _PyCode_CODE(code) + exit->target;
-            if (exit->temperature < (int32_t)tstate->interp->optimizer_side_threshold) {
+            _Py_BackoffCounter temperature = exit->temperature;
+            if (!backoff_counter_triggers(temperature)) {
+                exit->temperature = advance_backoff_counter(temperature);
                 GOTO_TIER_ONE(target);
             }
             _PyExecutorObject *executor;
             if (target->op.code == ENTER_EXECUTOR) {
                 executor = code->co_executors->executors[target->op.arg];
                 Py_INCREF(executor);
-            } else {
+            }
+            else {
                 int optimized = _PyOptimizer_Optimize(frame, target, stack_pointer, &executor);
                 if (optimized <= 0) {
-                    int32_t new_temp = -1 * tstate->interp->optimizer_side_threshold;
-                    exit->temperature = (new_temp < INT16_MIN) ? INT16_MIN : new_temp;
+                    exit->temperature = restart_backoff_counter(temperature);
                     if (optimized < 0) {
                         Py_DECREF(previous);
                         tstate->previous_executor = Py_None;
@@ -4208,7 +4198,7 @@ dummy_func(
                 }
             }
             /* We need two references. One to store in exit->executor and
-             * one to keep the executor alive when executing. */
+            * one to keep the executor alive when executing. */
             Py_INCREF(executor);
             exit->executor = executor;
             GOTO_TIER_TWO(executor);

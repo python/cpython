@@ -1288,7 +1288,7 @@ owner = (owner_tagged);
 
         /* _LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN is not a viable micro-op for tier 2 */
 
-        case _GUARD_DORV_VALUES: {
+        case _GUARD_DORV_NO_DICT: {
             break;
         }
 
@@ -2239,6 +2239,10 @@ flag = (flag_tagged);
         }
 
         case _SET_IP: {
+            break;
+        }
+
+        case _CHECK_STACK_SPACE_OPERAND: {
             break;
         }
 
