@@ -662,7 +662,6 @@ class PrettyPrinter:
                 formatted = format % ", ".join(["%r: %r" % (k, v) for (k, v) in object])
             else:
                 formatted = format % ', '.join(repr(x) for x in object)
-            # TODO: Figure out whether we need to handle recursion here
             return formatted, True, False
 
         if (issubclass(typ, list) and r is list.__repr__) or \
