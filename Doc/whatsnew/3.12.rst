@@ -1701,9 +1701,8 @@ ssl
   instead, create a :class:`ssl.SSLContext` object and call its
   :class:`ssl.SSLContext.wrap_socket` method. Any package that still uses
   :func:`!ssl.wrap_socket` is broken and insecure. The function neither sends a
-  SNI TLS extension nor validates server hostname. Code is subject to `CWE-295
-  <https://cwe.mitre.org/data/definitions/295.html>`_: Improper Certificate
-  Validation.
+  SNI TLS extension nor validates server hostname. Code is subject to :cwe:`295`
+  Improper Certificate Validation.
   (Contributed by Victor Stinner in :gh:`94199`.)
 
 unittest

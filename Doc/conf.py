@@ -522,6 +522,7 @@ linkcheck_ignore = [
 # https://www.sphinx-doc.org/en/master/usage/extensions/extlinks.html
 extlinks = {
     "cve": ("https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-%s", "CVE-%s"),
+    "cwe": ("https://cwe.mitre.org/data/definitions/%s.html", "CWE-%s"),
 }
 extlinks_detect_hardcoded_links = True
 
