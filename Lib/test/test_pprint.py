@@ -69,6 +69,14 @@ class dict_custom_repr(dict):
     def __repr__(self):
         return '*'*len(dict.__repr__(self))
 
+class mappingview_custom_repr(MappingView):
+    def __repr__(self):
+        return '*'*len(MappingView.__repr__(self))
+
+class keysview_custom_repr(KeysView):
+    def __repr__(self):
+        return '*'*len(KeysView.__repr__(self))
+
 @dataclasses.dataclass
 class dataclass1:
     field1: str
@@ -283,6 +291,12 @@ class QueryTestCase(unittest.TestCase):
                      dict_custom_repr(),
                      dict_custom_repr({5: 6}),
                      dict_custom_repr(zip(range(N),range(N))),
+                     mappingview_custom_repr({}),
+                     mappingview_custom_repr({5: 6}),
+                     mappingview_custom_repr(dict(zip(range(N),range(N)))),
+                     keysview_custom_repr({}),
+                     keysview_custom_repr({5: 6}),
+                     keysview_custom_repr(dict(zip(range(N),range(N)))),
                     ):
             native = repr(cont)
             expected = '*' * len(native)
