@@ -16,7 +16,7 @@ typedef union {
 } _PyStackRef;
 
 #define Py_TAG (0b0)
-#define Py_TAG_TEST (0b1)
+// #define Py_TAG_TEST (0b1)
 #define Py_TAG_DEFERRED (0b1)
 
 #if defined(Py_TAG_TEST)
@@ -30,7 +30,7 @@ typedef union {
 #if defined(Py_TAG_TEST)
     #define Py_STACK_TAG(obj) ((_PyStackRef){.bits = ((uintptr_t)(obj) | Py_TAG_TEST)})
 #elif defined(Py_GIL_DISABLED)
-    #define Py_STACK_TAG(obj) ((_PyStackRef){.bits = ((uintptr_t)(obj) | Py_TAG}))
+    #define Py_STACK_TAG(obj) ((_PyStackRef){.bits = ((uintptr_t)(obj) | Py_TAG)})
 #else
     #define Py_STACK_TAG(obj) ((_PyStackRef){.bits = ((uintptr_t)(obj))})
 #endif
