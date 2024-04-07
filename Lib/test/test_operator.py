@@ -1,11 +1,17 @@
 import unittest
 import pickle
 import sys
+from decimal import Decimal
+from fractions import Fraction
 
 from test import support
+from test.support import import_helper
 
-py_operator = support.import_fresh_module('operator', blocked=['_operator'])
-c_operator = support.import_fresh_module('operator', fresh=['_operator'])
+
+py_operator = import_helper.import_fresh_module('operator',
+                                                blocked=['_operator'])
+c_operator = import_helper.import_fresh_module('operator',
+                                               fresh=['_operator'])
 
 class Seq1:
     def __init__(self, lst):
@@ -41,6 +47,18 @@ class BadIterable:
 
 
 class OperatorTestCase:
+    def test___all__(self):
+        operator = self.module
+        actual_all = set(operator.__all__)
+        computed_all = set()
+        for name in vars(operator):
+            if name.startswith('__'):
+                continue
+            value = getattr(operator, name)
+            if value.__module__ in ('operator', '_operator'):
+                computed_all.add(name)
+        self.assertSetEqual(computed_all, actual_all)
+
     def test_lt(self):
         operator = self.module
         self.assertRaises(TypeError, operator.lt)
@@ -149,6 +167,11 @@ class OperatorTestCase:
         self.assertRaises(ZeroDivisionError, operator.countOf, BadIterable(), 1)
         self.assertEqual(operator.countOf([1, 2, 1, 3, 1, 4], 3), 1)
         self.assertEqual(operator.countOf([1, 2, 1, 3, 1, 4], 5), 0)
+        # is but not ==
+        nan = float("nan")
+        self.assertEqual(operator.countOf([nan, nan, 21], nan), 2)
+        # == but not is
+        self.assertEqual(operator.countOf([{}, 1, {}, 2], {}), 2)
 
     def test_delitem(self):
         operator = self.module
@@ -184,6 +207,12 @@ class OperatorTestCase:
         self.assertRaises(ZeroDivisionError, operator.indexOf, BadIterable(), 1)
         self.assertEqual(operator.indexOf([4, 3, 2, 1], 3), 1)
         self.assertRaises(ValueError, operator.indexOf, [4, 3, 2, 1], 0)
+        nan = float("nan")
+        self.assertEqual(operator.indexOf([nan, nan, 21], nan), 0)
+        self.assertEqual(operator.indexOf([{}, 1, {}, 2], {}), 0)
+        it = iter('leave the iterator at exactly the position after the match')
+        self.assertEqual(operator.indexOf(it, 'a'), 2)
+        self.assertEqual(next(it), 'v')
 
     def test_invert(self):
         operator = self.module
@@ -481,6 +510,44 @@ class OperatorTestCase:
         self.assertEqual(operator.ixor     (c, 5), "ixor")
         self.assertEqual(operator.iconcat  (c, c), "iadd")
 
+    def test_iconcat_without_getitem(self):
+        operator = self.module
+
+        msg = "'int' object can't be concatenated"
+        with self.assertRaisesRegex(TypeError, msg):
+            operator.iconcat(1, 0.5)
+
+    def test_index(self):
+        operator = self.module
+        class X:
+            def __index__(self):
+                return 1
+
+        self.assertEqual(operator.index(X()), 1)
+        self.assertEqual(operator.index(0), 0)
+        self.assertEqual(operator.index(1), 1)
+        self.assertEqual(operator.index(2), 2)
+        with self.assertRaises((AttributeError, TypeError)):
+            operator.index(1.5)
+        with self.assertRaises((AttributeError, TypeError)):
+            operator.index(Fraction(3, 7))
+        with self.assertRaises((AttributeError, TypeError)):
+            operator.index(Decimal(1))
+        with self.assertRaises((AttributeError, TypeError)):
+            operator.index(None)
+
+    def test_not_(self):
+        operator = self.module
+        class C:
+            def __bool__(self):
+                raise SyntaxError
+        self.assertRaises(TypeError, operator.not_)
+        self.assertRaises(SyntaxError, operator.not_, C())
+        self.assertFalse(operator.not_(5))
+        self.assertFalse(operator.not_([0]))
+        self.assertTrue(operator.not_(0))
+        self.assertTrue(operator.not_([]))
+
     def test_length_hint(self):
         operator = self.module
         class X(object):
@@ -505,6 +572,25 @@ class OperatorTestCase:
             operator.length_hint(X(-2))
         with self.assertRaises(LookupError):
             operator.length_hint(X(LookupError))
+
+        class Y: pass
+
+        msg = "'str' object cannot be interpreted as an integer"
+        with self.assertRaisesRegex(TypeError, msg):
+            operator.length_hint(X(2), "abc")
+        self.assertEqual(operator.length_hint(Y(), 10), 10)
+
+    def test_call(self):
+        operator = self.module
+
+        def func(*args, **kwargs): return args, kwargs
+
+        self.assertEqual(operator.call(func), ((), {}))
+        self.assertEqual(operator.call(func, 0, 1), ((0, 1), {}))
+        self.assertEqual(operator.call(func, a=2, obj=3),
+                         ((), {"a": 2, "obj": 3}))
+        self.assertEqual(operator.call(func, 0, 1, a=2, obj=3),
+                         ((0, 1), {"a": 2, "obj": 3}))
 
     def test_dunder_is_original(self):
         operator = self.module

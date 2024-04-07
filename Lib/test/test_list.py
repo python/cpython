@@ -46,6 +46,34 @@ class ListTest(list_tests.CommonTest):
         with self.assertRaisesRegex(TypeError, 'keyword argument'):
             list(sequence=[])
 
+    def test_keywords_in_subclass(self):
+        class subclass(list):
+            pass
+        u = subclass([1, 2])
+        self.assertIs(type(u), subclass)
+        self.assertEqual(list(u), [1, 2])
+        with self.assertRaises(TypeError):
+            subclass(sequence=())
+
+        class subclass_with_init(list):
+            def __init__(self, seq, newarg=None):
+                super().__init__(seq)
+                self.newarg = newarg
+        u = subclass_with_init([1, 2], newarg=3)
+        self.assertIs(type(u), subclass_with_init)
+        self.assertEqual(list(u), [1, 2])
+        self.assertEqual(u.newarg, 3)
+
+        class subclass_with_new(list):
+            def __new__(cls, seq, newarg=None):
+                self = super().__new__(cls, seq)
+                self.newarg = newarg
+                return self
+        u = subclass_with_new([1, 2], newarg=3)
+        self.assertIs(type(u), subclass_with_new)
+        self.assertEqual(list(u), [1, 2])
+        self.assertEqual(u.newarg, 3)
+
     def test_truth(self):
         super().test_truth()
         self.assertTrue(not [])
@@ -67,6 +95,24 @@ class ListTest(list_tests.CommonTest):
         def imul(a, b): a *= b
         self.assertRaises((MemoryError, OverflowError), mul, lst, n)
         self.assertRaises((MemoryError, OverflowError), imul, lst, n)
+
+    def test_empty_slice(self):
+        x = []
+        x[:] = x
+        self.assertEqual(x, [])
+
+    def test_list_resize_overflow(self):
+        # gh-97616: test new_allocated * sizeof(PyObject*) overflow
+        # check in list_resize()
+        lst = [0] * 65
+        del lst[1:]
+        self.assertEqual(len(lst), 1)
+
+        size = sys.maxsize
+        with self.assertRaises((MemoryError, OverflowError)):
+            lst * size
+        with self.assertRaises((MemoryError, OverflowError)):
+            lst *= size
 
     def test_repr_large(self):
         # Check the repr of large list objects

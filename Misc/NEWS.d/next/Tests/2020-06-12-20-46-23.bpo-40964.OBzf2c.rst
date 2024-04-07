@@ -1,2 +1,0 @@
-Disable remote :mod:`imaplib` tests, host cyrus.andrew.cmu.edu is blocking
-incoming connections.

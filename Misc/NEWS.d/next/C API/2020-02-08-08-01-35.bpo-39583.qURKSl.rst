@@ -1,1 +1,0 @@
-Remove superfluous "extern C" declarations from ``Include/cpython/*.h``.

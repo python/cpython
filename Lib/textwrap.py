@@ -63,10 +63,7 @@ class TextWrapper:
         Append to the last line of truncated text.
     """
 
-    unicode_whitespace_trans = {}
-    uspace = ord(' ')
-    for x in _whitespace:
-        unicode_whitespace_trans[ord(x)] = uspace
+    unicode_whitespace_trans = dict.fromkeys(map(ord, _whitespace), ord(' '))
 
     # This funky little regex is just the trick for splitting
     # text up into word-wrappable chunks.  E.g.
@@ -215,8 +212,16 @@ class TextWrapper:
         # If we're allowed to break long words, then do so: put as much
         # of the next chunk onto the current line as will fit.
         if self.break_long_words:
-            cur_line.append(reversed_chunks[-1][:space_left])
-            reversed_chunks[-1] = reversed_chunks[-1][space_left:]
+            end = space_left
+            chunk = reversed_chunks[-1]
+            if self.break_on_hyphens and len(chunk) > space_left:
+                # break after last hyphen, but only if there are
+                # non-hyphens before it
+                hyphen = chunk.rfind('-', 0, space_left)
+                if hyphen > 0 and any(c != '-' for c in chunk[:hyphen]):
+                    end = hyphen + 1
+            cur_line.append(chunk[:end])
+            reversed_chunks[-1] = chunk[end:]
 
         # Otherwise, we have to preserve the long word intact.  Only add
         # it to the current line if there's nothing already there --
@@ -471,13 +476,19 @@ def indent(text, prefix, predicate=None):
     consist solely of whitespace characters.
     """
     if predicate is None:
-        def predicate(line):
-            return line.strip()
+        # str.splitlines(True) doesn't produce empty string.
+        #  ''.splitlines(True) => []
+        #  'foo\n'.splitlines(True) => ['foo\n']
+        # So we can use just `not s.isspace()` here.
+        predicate = lambda s: not s.isspace()
 
-    def prefixed_lines():
-        for line in text.splitlines(True):
-            yield (prefix + line if predicate(line) else line)
-    return ''.join(prefixed_lines())
+    prefixed_lines = []
+    for line in text.splitlines(True):
+        if predicate(line):
+            prefixed_lines.append(prefix)
+        prefixed_lines.append(line)
+
+    return ''.join(prefixed_lines)
 
 
 if __name__ == "__main__":

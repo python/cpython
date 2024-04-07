@@ -204,6 +204,22 @@ class TestDateHeader(TestHeaderBase):
         self.assertEqual(len(h.defects), 1)
         self.assertIsInstance(h.defects[0], errors.HeaderMissingRequiredValue)
 
+    def test_invalid_date_format(self):
+        s = 'Not a date header'
+        h = self.make_header('date', s)
+        self.assertEqual(h, s)
+        self.assertIsNone(h.datetime)
+        self.assertEqual(len(h.defects), 1)
+        self.assertIsInstance(h.defects[0], errors.InvalidDateDefect)
+
+    def test_invalid_date_value(self):
+        s = 'Tue, 06 Jun 2017 27:39:33 +0600'
+        h = self.make_header('date', s)
+        self.assertEqual(h, s)
+        self.assertIsNone(h.datetime)
+        self.assertEqual(len(h.defects), 1)
+        self.assertIsInstance(h.defects[0], errors.InvalidDateDefect)
+
     def test_datetime_read_only(self):
         h = self.make_header('date', self.datestring)
         with self.assertRaises(AttributeError):
@@ -696,6 +712,18 @@ class TestContentTypeHeader(TestHeaderBase):
             # reproduces the original, which is arguably fine.
             "Content-Type: text/plain;"
             " charset*=unknown-8bit''utf-8%E2%80%9D\n",
+            ),
+
+        'rfc2231_nonascii_in_charset_of_charset_parameter_value': (
+            "text/plain; charset*=utf-8”''utf-8%E2%80%9D",
+            'text/plain',
+            'text',
+            'plain',
+            {'charset': 'utf-8”'},
+            [],
+            'text/plain; charset="utf-8”"',
+            "Content-Type: text/plain;"
+            " charset*=utf-8''utf-8%E2%80%9D\n",
             ),
 
         'rfc2231_encoded_then_unencoded_segments': (

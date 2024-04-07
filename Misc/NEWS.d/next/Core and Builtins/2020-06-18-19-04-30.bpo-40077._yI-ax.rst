@@ -1,1 +1,0 @@
-Convert :mod:`_bz2` to use :c:func:`PyType_FromSpec`.

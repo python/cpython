@@ -20,8 +20,29 @@
                 <MsiProperty Name="TARGETDIR" Value="[TargetDir]" />
                 <MsiProperty Name="OPTIONALFEATURESREGISTRYKEY" Value="[OptionalFeaturesRegistryKey]" />
             </MsiPackage>
+
+            <MsiPackage Id="appendpath_AllUsers"
+                        SourceFile="appendpath.msi"
+                        Compressed="$(var.CompressMSI)"
+                        DownloadUrl="$(var.DownloadUrl)"
+                        ForcePerMachine="yes"
+                        InstallCondition="InstallAllUsers and AppendPath and not LauncherOnly">
+                <MsiProperty Name="TARGETDIR" Value="[TargetDir]" />
+                <MsiProperty Name="OPTIONALFEATURESREGISTRYKEY" Value="[OptionalFeaturesRegistryKey]" />
+            </MsiPackage>
+            <MsiPackage Id="appendpath_JustForMe"
+                        SourceFile="appendpath.msi"
+                        Compressed="$(var.CompressMSI)"
+                        DownloadUrl="$(var.DownloadUrl)"
+                        ForcePerMachine="no"
+                        InstallCondition="not InstallAllUsers and AppendPath and not LauncherOnly">
+                <MsiProperty Name="TARGETDIR" Value="[TargetDir]" />
+                <MsiProperty Name="OPTIONALFEATURESREGISTRYKEY" Value="[OptionalFeaturesRegistryKey]" />
+            </MsiPackage>
+
+
             
-            <?define CompileAllCommand=-E -s -Wi "[TargetDir]\Lib\compileall.py" -f -x "bad_coding|badsyntax|site-packages|py2_|lib2to3\\tests|venv\\scripts" "[TargetDir]\Lib"?>
+            <?define CompileAllCommand=-E -s -Wi "[TargetDir]\Lib\compileall.py" -f -x "bad_coding|badsyntax|site-packages|py2_|venv\\scripts" "[TargetDir]\Lib"?>
             <ExePackage Id="compileall_AllUsers"
                         SourceFile="py.exe"
                         Compressed="yes"

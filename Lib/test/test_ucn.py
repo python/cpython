@@ -7,6 +7,7 @@ Modified for Python 2.0 by Fredrik Lundh (fredrik@pythonware.com)
 
 """#"
 
+import ast
 import unittest
 import unicodedata
 
@@ -24,7 +25,7 @@ class UnicodeNamesTest(unittest.TestCase):
         # Helper that put all \N escapes inside eval'd raw strings,
         # to make sure this script runs even if the compiler
         # chokes on \N escapes
-        res = eval(r'"\N{%s}"' % name)
+        res = ast.literal_eval(r'"\N{%s}"' % name)
         self.assertEqual(res, code)
         return res
 

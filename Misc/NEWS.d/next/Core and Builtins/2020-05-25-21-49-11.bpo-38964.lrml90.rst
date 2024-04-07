@@ -1,1 +1,0 @@
-When there's a :exc:`SyntaxError` in the expression part of an fstring, the filename attribute of the :exc:`SyntaxError` gets correctly set to the name of the file the fstring resides in.

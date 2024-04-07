@@ -1,0 +1,995 @@
+.. bpo: 42814
+.. date: 2021-01-03-04-41-25
+.. nonce: sDvVbb
+.. release date: 2021-01-04
+.. section: Core and Builtins
+
+Fix undefined behavior in ``Objects/genericaliasobject.c``.
+
+..
+
+.. bpo: 42806
+.. date: 2021-01-03-00-20-38
+.. nonce: mLAobJ
+.. section: Core and Builtins
+
+Fix the column offsets for f-strings :mod:`ast` nodes surrounded by
+parentheses and for nodes that spawn multiple lines. Patch by Pablo Galindo.
+
+..
+
+.. bpo: 40631
+.. date: 2020-12-31-20-58-22
+.. nonce: deRMCx
+.. section: Core and Builtins
+
+Fix regression where a single parenthesized starred expression was a valid
+assignment target.
+
+..
+
+.. bpo: 27794
+.. date: 2020-12-27-18-07-43
+.. nonce: sxgfGi
+.. section: Core and Builtins
+
+Improve the error message for failed writes/deletes to property objects.
+When possible, the attribute name is now shown. Patch provided by Yurii
+Karabas.
+
+..
+
+.. bpo: 42745
+.. date: 2020-12-25-23-30-58
+.. nonce: XsFoHS
+.. section: Core and Builtins
+
+Make the type attribute lookup cache per-interpreter. Patch by Victor
+Stinner.
+
+..
+
+.. bpo: 42246
+.. date: 2020-12-22-20-30-11
+.. nonce: 7BrPLg
+.. section: Core and Builtins
+
+Jumps to jumps are not eliminated when it would break PEP 626.
+
+..
+
+.. bpo: 42246
+.. date: 2020-12-16-14-44-21
+.. nonce: RtIEY7
+.. section: Core and Builtins
+
+Make sure that the ``f_lasti`` and ``f_lineno`` attributes of a frame are
+set correctly when an exception is raised or re-raised. Required for PEP
+626.
+
+..
+
+.. bpo: 32381
+.. date: 2020-12-15-18-43-43
+.. nonce: 3tIofL
+.. section: Core and Builtins
+
+The coding cookie (ex: ``# coding: latin1``) is now ignored in the command
+passed to the :option:`-c` command line option. Patch by Victor Stinner.
+
+..
+
+.. bpo: 30858
+.. date: 2020-12-13-15-23-09
+.. nonce: -f9G4z
+.. section: Core and Builtins
+
+Improve error location in expressions that contain assignments. Patch by
+Pablo Galindo and Lysandros Nikolaou.
+
+..
+
+.. bpo: 42615
+.. date: 2020-12-10-17-06-52
+.. nonce: Je6Q-r
+.. section: Core and Builtins
+
+Remove jump commands made redundant by the deletion of unreachable bytecode
+blocks
+
+..
+
+.. bpo: 42639
+.. date: 2020-12-09-01-55-10
+.. nonce: 5pI5HG
+.. section: Core and Builtins
+
+Make the :mod:`atexit` module state per-interpreter. It is now safe have
+more than one :mod:`atexit` module instance. Patch by Donghee Na and Victor
+Stinner.
+
+..
+
+.. bpo: 32381
+.. date: 2020-12-04-17-17-44
+.. nonce: NY5t2S
+.. section: Core and Builtins
+
+Fix encoding name when running a ``.pyc`` file on Windows:
+:c:func:`PyRun_SimpleFileExFlags()` now uses the correct encoding to decode
+the filename.
+
+..
+
+.. bpo: 42195
+.. date: 2020-11-20-00-57-47
+.. nonce: HeqcpS
+.. section: Core and Builtins
+
+The ``__args__`` of the parameterized generics for :data:`typing.Callable`
+and :class:`collections.abc.Callable` are now consistent.  The ``__args__``
+for :class:`collections.abc.Callable` are now flattened while
+:data:`typing.Callable`'s have not changed.  To allow this change,
+:class:`types.GenericAlias` can now be subclassed and
+``collections.abc.Callable``'s ``__class_getitem__`` will now return a
+subclass of ``types.GenericAlias``.  Tests for typing were also updated to
+not subclass things like ``Callable[..., T]`` as that is not a valid base
+class.  Finally, both ``Callable``\ s no longer validate their ``argtypes``,
+in ``Callable[[argtypes], resulttype]`` to prepare for :pep:`612`.  Patch by
+Ken Jin.
+
+..
+
+.. bpo: 40137
+.. date: 2020-11-19-23-12-57
+.. nonce: bihl9O
+.. section: Core and Builtins
+
+Convert functools module to use :c:func:`PyType_FromModuleAndSpec`.
+
+..
+
+.. bpo: 40077
+.. date: 2020-11-03-13-46-10
+.. nonce: NfAIdj
+.. section: Core and Builtins
+
+Convert :mod:`array` to use heap types, and establish module state for
+these.
+
+..
+
+.. bpo: 42008
+.. date: 2020-10-12-14-51-59
+.. nonce: ijWw2I
+.. section: Core and Builtins
+
+Fix _random.Random() seeding.
+
+..
+
+.. bpo: 1635741
+.. date: 2020-09-12-19-21-52
+.. nonce: F2kDrU
+.. section: Core and Builtins
+
+Port the :mod:`pyexpat` extension module to multi-phase initialization
+(:pep:`489`).
+
+..
+
+.. bpo: 40521
+.. date: 2020-05-14-02-55-39
+.. nonce: dIlXsZ
+.. section: Core and Builtins
+
+Make the Unicode dictionary of interned strings compatible with
+subinterpreters. Patch by Victor Stinner.
+
+..
+
+.. bpo: 39465
+.. date: 2020-05-13-18-50-27
+.. nonce: j7nl6A
+.. section: Core and Builtins
+
+Make :c:func:`_PyUnicode_FromId` function compatible with subinterpreters.
+Each interpreter now has an array of identifier objects (interned strings
+decoded from UTF-8). Patch by Victor Stinner.
+
+..
+
+.. bpo: 42257
+.. date: 2020-12-31-23-05-53
+.. nonce: ALQy7B
+.. section: Library
+
+Handle empty string in variable executable in platform.libc_ver()
+
+..
+
+.. bpo: 42772
+.. date: 2020-12-30-17-16-43
+.. nonce: Xe7WFV
+.. section: Library
+
+randrange() now raises a TypeError when step is specified without a stop
+argument.  Formerly, it silently ignored the step argument.
+
+..
+
+.. bpo: 42759
+.. date: 2020-12-27-22-19-26
+.. nonce: lGi_03
+.. section: Library
+
+Fixed equality comparison of :class:`tkinter.Variable` and
+:class:`tkinter.font.Font`. Objects which belong to different Tcl
+interpreters are now always different, even if they have the same name.
+
+..
+
+.. bpo: 42756
+.. date: 2020-12-27-21-22-01
+.. nonce: dHMPJ9
+.. section: Library
+
+Configure LMTP Unix-domain socket to use socket global default timeout when
+a timeout is not explicitly provided.
+
+..
+
+.. bpo: 23328
+.. date: 2020-12-27-18-47-01
+.. nonce: _xqepZ
+.. section: Library
+
+Allow / character in username, password fields on _PROXY envars.
+
+..
+
+.. bpo: 42740
+.. date: 2020-12-25-23-23-11
+.. nonce: F0rQ_E
+.. section: Library
+
+:func:`typing.get_args` and :func:`typing.get_origin` now support :pep:`604`
+union types and :pep:`612` additions to ``Callable``.
+
+..
+
+.. bpo: 42655
+.. date: 2020-12-25-12-32-47
+.. nonce: W5ytpV
+.. section: Library
+
+:mod:`subprocess` *extra_groups* is now correctly passed into setgroups()
+system call.
+
+..
+
+.. bpo: 42727
+.. date: 2020-12-23-19-43-06
+.. nonce: WH3ODh
+.. section: Library
+
+``EnumMeta.__prepare__`` now accepts ``**kwds`` to properly support
+``__init_subclass__``
+
+..
+
+.. bpo: 38308
+.. date: 2020-12-23-15-16-12
+.. nonce: lB4Sv0
+.. section: Library
+
+Add optional *weights* to *statistics.harmonic_mean()*.
+
+..
+
+.. bpo: 42721
+.. date: 2020-12-22-22-47-22
+.. nonce: I5Ai5L
+.. section: Library
+
+When simple query dialogs (:mod:`tkinter.simpledialog`), message boxes
+(:mod:`tkinter.messagebox`) or color choose dialog
+(:mod:`tkinter.colorchooser`) are created without arguments *master* and
+*parent*, and the default root window is not yet created, and
+:func:`~tkinter.NoDefaultRoot` was not called, a new temporal hidden root
+window will be created automatically. It will not be set as the default root
+window and will be destroyed right after closing the dialog window. It will
+help to use these simple dialog windows in programs which do not need other
+GUI.
+
+..
+
+.. bpo: 25246
+.. date: 2020-12-22-13-16-43
+.. nonce: GhhCTl
+.. section: Library
+
+Optimized :meth:`collections.deque.remove`.
+
+..
+
+.. bpo: 35728
+.. date: 2020-12-21-23-34-57
+.. nonce: 9m-azF
+.. section: Library
+
+Added a root parameter to :func:`tkinter.font.nametofont`.
+
+..
+
+.. bpo: 15303
+.. date: 2020-12-21-22-59-26
+.. nonce: zozVrq
+.. section: Library
+
+:mod:`tkinter` supports now widgets with boolean value False.
+
+..
+
+.. bpo: 42681
+.. date: 2020-12-20-22-50-15
+.. nonce: lDO6jb
+.. section: Library
+
+Fixed range checks for color and pair numbers in :mod:`curses`.
+
+..
+
+.. bpo: 42685
+.. date: 2020-12-19-17-32-43
+.. nonce: kwZlwp
+.. section: Library
+
+Improved placing of simple query windows in Tkinter (such as
+:func:`tkinter.simpledialog.askinteger`). They are now centered at the
+center of the parent window if it is specified and shown, otherwise at the
+center of the screen.
+
+..
+
+.. bpo: 9694
+.. date: 2020-12-19-12-33-38
+.. nonce: CkKK9V
+.. section: Library
+
+Argparse help no longer uses the confusing phrase, "optional arguments". It
+uses "options" instead.
+
+..
+
+.. bpo: 1635741
+.. date: 2020-12-16-23-28-52
+.. nonce: Quy3zn
+.. section: Library
+
+Port the :mod:`_thread` extension module to the multiphase initialization
+API (:pep:`489`) and convert its static types to heap types.
+
+..
+
+.. bpo: 37961
+.. date: 2020-12-16-16-16-33
+.. nonce: jrESEq
+.. section: Library
+
+Fix crash in :func:`tracemalloc.Traceback.__repr__` (regressed in Python
+3.9).
+
+..
+
+.. bpo: 42630
+.. date: 2020-12-15-17-51-27
+.. nonce: jf4jBl
+.. section: Library
+
+:mod:`tkinter` functions and constructors which need a default root window
+raise now :exc:`RuntimeError` with descriptive message instead of obscure
+:exc:`AttributeError` or :exc:`NameError` if it is not created yet or cannot
+be created automatically.
+
+..
+
+.. bpo: 42639
+.. date: 2020-12-15-15-14-29
+.. nonce: uJ3h8I
+.. section: Library
+
+:func:`atexit._run_exitfuncs` now logs callback exceptions using
+:data:`sys.unraisablehook`, rather than logging them directly into
+:data:`sys.stderr` and raise the last exception.
+
+..
+
+.. bpo: 42644
+.. date: 2020-12-15-10-00-04
+.. nonce: XgLCNx
+.. section: Library
+
+``logging.disable`` will now validate the types and value of its parameter.
+It also now accepts strings representing the levels (as does
+``loging.setLevel``) instead of only the numerical values.
+
+..
+
+.. bpo: 42639
+.. date: 2020-12-14-22-31-22
+.. nonce: 5Z3iWX
+.. section: Library
+
+At Python exit, if a callback registered with :func:`atexit.register` fails,
+its exception is now logged. Previously, only some exceptions were logged,
+and the last exception was always silently ignored.
+
+..
+
+.. bpo: 36541
+.. date: 2020-12-14-08-23-57
+.. nonce: qdEtZv
+.. section: Library
+
+Fixed lib2to3.pgen2 to be able to parse PEP-570 positional only argument
+syntax.
+
+..
+
+.. bpo: 42382
+.. date: 2020-12-13-22-05-35
+.. nonce: 2YtKo5
+.. section: Library
+
+In ``importlib.metadata``: -  ``EntryPoint`` objects now expose a ``.dist``
+object referencing the ``Distribution`` when constructed from a
+``Distribution``. - Add support for package discovery under package
+normalization rules. - The object returned by ``metadata()`` now has a
+formally defined protocol called ``PackageMetadata`` with declared support
+for the ``.get_all()`` method. - Synced with importlib_metadata 3.3.
+
+..
+
+.. bpo: 41877
+.. date: 2020-12-10-19-49-52
+.. nonce: wiVlPc
+.. section: Library
+
+A check is added against misspellings of autospect, auto_spec and set_spec
+being passed as arguments to patch, patch.object and create_autospec.
+
+..
+
+.. bpo: 39717
+.. date: 2020-12-10-18-36-52
+.. nonce: sK2u0w
+.. section: Library
+
+[tarfile] update nested exception raising to use ``from None`` or ``from e``
+
+..
+
+.. bpo: 41877
+.. date: 2020-12-10-09-24-44
+.. nonce: iJSCvM
+.. section: Library
+
+AttributeError for suspected misspellings of assertions on mocks are now
+pointing out that the cause are misspelled assertions and also what to do if
+the misspelling is actually an intended attribute name. The unittest.mock
+document is also updated to reflect the current set of recognised
+misspellings.
+
+..
+
+.. bpo: 41559
+.. date: 2020-12-10-00-09-40
+.. nonce: 1l4yjP
+.. section: Library
+
+Implemented :pep:`612`: added ``ParamSpec`` and ``Concatenate`` to
+:mod:`typing`.  Patch by Ken Jin.
+
+..
+
+.. bpo: 42385
+.. date: 2020-12-09-19-45-32
+.. nonce: boGbjo
+.. section: Library
+
+StrEnum: fix _generate_next_value_ to return a str
+
+..
+
+.. bpo: 31904
+.. date: 2020-12-09-15-23-28
+.. nonce: g3k5k3
+.. section: Library
+
+Define THREAD_STACK_SIZE for VxWorks.
+
+..
+
+.. bpo: 34750
+.. date: 2020-12-09-14-15-48
+.. nonce: x8TASR
+.. section: Library
+
+[Enum] ``_EnumDict.update()`` is now supported.
+
+..
+
+.. bpo: 42517
+.. date: 2020-12-09-10-59-16
+.. nonce: FKEVcZ
+.. section: Library
+
+Enum: private names do not become members / do not generate errors -- they
+remain normal attributes
+
+..
+
+.. bpo: 42678
+.. date: 2020-12-08-22-43-35
+.. nonce: ba9ktU
+.. section: Library
+
+``Enum``: call ``__init_subclass__`` after members have been added
+
+..
+
+.. bpo: 28964
+.. date: 2020-12-07-13-21-00
+.. nonce: UTQikc
+.. section: Library
+
+:func:`ast.literal_eval` adds line number information (if available) in
+error message for malformed nodes.
+
+..
+
+.. bpo: 42470
+.. date: 2020-12-06-12-00-00
+.. nonce: iqtC4L
+.. section: Library
+
+:func:`random.sample` no longer warns on a sequence which is also a set.
+
+..
+
+.. bpo: 31904
+.. date: 2020-11-27-18-09-59
+.. nonce: g8k43d
+.. section: Library
+
+:func:`posixpath.expanduser` returns the input *path* unchanged if user home
+directory is None on VxWorks.
+
+..
+
+.. bpo: 42388
+.. date: 2020-11-22-11-22-28
+.. nonce: LMgM6B
+.. section: Library
+
+Fix subprocess.check_output(..., input=None) behavior when text=True to be
+consistent with that of the documentation and universal_newlines=True.
+
+..
+
+.. bpo: 34463
+.. date: 2020-11-20-19-00-27
+.. nonce: aJcm56
+.. section: Library
+
+Fixed discrepancy between :mod:`traceback` and the interpreter in formatting
+of SyntaxError with lineno not set (:mod:`traceback` was changed to match
+interpreter).
+
+..
+
+.. bpo: 42393
+.. date: 2020-11-17-22-06-15
+.. nonce: BB0oXc
+.. section: Library
+
+Raise :exc:`OverflowError` instead of silent truncation in
+:meth:`socket.ntohs` and :meth:`socket.htons`.  Silent truncation was
+deprecated in Python 3.7. Patch by Erlend E. Aasland
+
+..
+
+.. bpo: 42222
+.. date: 2020-10-31-10-28-32
+.. nonce: Cfl1eR
+.. section: Library
+
+Harmonized :func:`random.randrange` argument handling to match :func:`range`.
+
+* The integer test and conversion in ``randrange()`` now uses
+  :func:`operator.index`.
+* Non-integer arguments to ``randrange()`` are deprecated.
+* The ``ValueError`` is deprecated in favor of a ``TypeError``.
+* It now runs a little faster than before.
+
+(Contributed by Raymond Hettinger and Serhiy Storchaka.)
+
+..
+
+.. bpo: 42163
+.. date: 2020-10-29-09-22-56
+.. nonce: O4VcCY
+.. section: Library
+
+Restore compatibility for ``uname_result`` around deepcopy and _replace.
+
+..
+
+.. bpo: 42090
+.. date: 2020-10-25-14-48-57
+.. nonce: Ubuc0j
+.. section: Library
+
+``zipfile.Path.joinpath`` now accepts arbitrary arguments, same as
+``pathlib.Path.joinpath``.
+
+..
+
+.. bpo: 1635741
+.. date: 2020-10-20-23-28-55
+.. nonce: Iyka3r
+.. section: Library
+
+Port the _csv module to the multi-phase initialization API (:pep:`489`).
+
+..
+
+.. bpo: 42059
+.. date: 2020-10-17-12-42-08
+.. nonce: ZGMZ3D
+.. section: Library
+
+:class:`typing.TypedDict` types created using the alternative call-style
+syntax now correctly respect the ``total`` keyword argument when setting
+their ``__required_keys__`` and ``__optional_keys__`` class attributes.
+
+..
+
+.. bpo: 41960
+.. date: 2020-10-06-23-59-20
+.. nonce: icQ7Xd
+.. section: Library
+
+Add ``globalns`` and ``localns`` parameters to the :func:`inspect.signature`
+and :meth:`inspect.Signature.from_callable`.
+
+..
+
+.. bpo: 41907
+.. date: 2020-10-02-10-19-49
+.. nonce: wiIEsz
+.. section: Library
+
+fix ``format()`` behavior for ``IntFlag``
+
+..
+
+.. bpo: 41891
+.. date: 2020-09-30-13-35-29
+.. nonce: pNAeYI
+.. section: Library
+
+Ensure asyncio.wait_for waits for task completion
+
+..
+
+.. bpo: 24792
+.. date: 2020-09-11-16-07-00
+.. nonce: Z-ARra
+.. section: Library
+
+Fixed bug where :mod:`zipimporter` sometimes reports an incorrect cause of
+import errors.
+
+..
+
+.. bpo: 31904
+.. date: 2020-08-11-17-44-07
+.. nonce: cb13ea
+.. section: Library
+
+Fix site and sysconfig modules for VxWorks RTOS which has no home
+directories.
+
+..
+
+.. bpo: 41462
+.. date: 2020-08-03-17-54-32
+.. nonce: ek38d_
+.. section: Library
+
+Add :func:`os.set_blocking()` support for VxWorks RTOS.
+
+..
+
+.. bpo: 40219
+.. date: 2020-07-13-19-43-11
+.. nonce: MUoJEP
+.. section: Library
+
+Lowered :class:`tkinter.ttk.LabeledScale` dummy widget to prevent hiding
+part of the content label.
+
+..
+
+.. bpo: 37193
+.. date: 2020-06-12-21-23-20
+.. nonce: wJximU
+.. section: Library
+
+Fixed memory leak in ``socketserver.ThreadingMixIn`` introduced in Python
+3.7.
+
+..
+
+.. bpo: 39068
+.. date: 2019-12-16-17-55-31
+.. nonce: Ti3f9P
+.. section: Library
+
+Fix initialization race condition in :func:`a85encode` and :func:`b85encode`
+in :mod:`base64`. Patch by Brandon Stansbury.
+
+..
+
+.. bpo: 17140
+.. date: 2020-12-16-21-06-16
+.. nonce: 1leSEg
+.. section: Documentation
+
+Add documentation for the :class:`multiprocessing.pool.ThreadPool` class.
+
+..
+
+.. bpo: 34398
+.. date: 2019-03-04-18-51-21
+.. nonce: YedUqW
+.. section: Documentation
+
+Prominently feature listings from the glossary in documentation search
+results. Patch by Ammar Askar.
+
+..
+
+.. bpo: 42794
+.. date: 2021-01-01-08-52-36
+.. nonce: -7-XGz
+.. section: Tests
+
+Update test_nntplib to use official group name of news.aioe.org for testing.
+Patch by Donghee Na.
+
+..
+
+.. bpo: 31904
+.. date: 2020-12-17-15-42-44
+.. nonce: d8g3l0d5
+.. section: Tests
+
+Skip some asyncio tests on VxWorks.
+
+..
+
+.. bpo: 42641
+.. date: 2020-12-15-17-38-04
+.. nonce: uzwlF_
+.. section: Tests
+
+Enhance ``test_select.test_select()``: it now takes 500 milliseconds rather than 10
+seconds. Use Python rather than a shell to make the test more portable.
+
+..
+
+.. bpo: 31904
+.. date: 2020-12-09-15-23-28
+.. nonce: ghj38d
+.. section: Tests
+
+Skip some tests in _test_all_chown_common() on VxWorks.
+
+..
+
+.. bpo: 42199
+.. date: 2020-10-29-21-26-46
+.. nonce: KksGCV
+.. section: Tests
+
+Fix bytecode helper assertNotInBytecode.
+
+..
+
+.. bpo: 41443
+.. date: 2020-07-30-18-43-05
+.. nonce: 834gyg
+.. section: Tests
+
+Add more attribute checking in test_posix.py
+
+..
+
+.. bpo: 31904
+.. date: 2020-07-30-18-06-15
+.. nonce: y3d8dk
+.. section: Tests
+
+Disable os.popen and impacted tests on VxWorks
+
+..
+
+.. bpo: 41439
+.. date: 2020-07-30-14-08-58
+.. nonce: yhteoi
+.. section: Tests
+
+Port test_ssl and test_uuid to VxWorks RTOS.
+
+..
+
+.. bpo: 42692
+.. date: 2021-01-04-05-07-30
+.. nonce: OO11SN
+.. section: Build
+
+Fix __builtin_available check on older compilers. Patch by Joshua Root.
+
+..
+
+.. bpo: 27640
+.. date: 2020-12-22-17-57-04
+.. nonce: j3a8r0
+.. section: Build
+
+Added ``--disable-test-modules`` option to the ``configure`` script: don't
+build nor install test modules. Patch by Xavier de Gaye, Thomas Petazzoni
+and Peixing Xin.
+
+..
+
+.. bpo: 42604
+.. date: 2020-12-20-02-35-28
+.. nonce: gRd89w
+.. section: Build
+
+Now all platforms use a value for the "EXT_SUFFIX" build variable derived
+from SOABI (for instance in freeBSD, "EXT_SUFFIX" is now ".cpython-310d.so"
+instead of ".so"). Previously only Linux, Mac and VxWorks were using a value
+for "EXT_SUFFIX" that included "SOABI".
+
+..
+
+.. bpo: 42598
+.. date: 2020-12-13-14-43-10
+.. nonce: 7ipr5H
+.. section: Build
+
+Fix implicit function declarations in configure which could have resulted in
+incorrect configuration checks.  Patch contributed by Joshua Root.
+
+..
+
+.. bpo: 31904
+.. date: 2020-12-11-18-04-38
+.. nonce: j3j6d8
+.. section: Build
+
+Enable libpython3.so for VxWorks.
+
+..
+
+.. bpo: 29076
+.. date: 2020-02-28-14-33-15
+.. nonce: Gtixi5
+.. section: Build
+
+Add fish shell support to macOS installer.
+
+..
+
+.. bpo: 42361
+.. date: 2021-01-04-01-17-17
+.. nonce: eolZAi
+.. section: macOS
+
+Update macOS installer build to use Tcl/Tk 8.6.11 (rc2, expected to be final
+release).
+
+..
+
+.. bpo: 41837
+.. date: 2021-01-04-00-48-08
+.. nonce: dX-unJ
+.. section: macOS
+
+Update macOS installer build to use OpenSSL 1.1.1i.
+
+..
+
+.. bpo: 42584
+.. date: 2020-12-07-11-37-35
+.. nonce: LygmqQ
+.. section: macOS
+
+Update macOS installer to use SQLite 3.34.0.
+
+..
+
+.. bpo: 42726
+.. date: 2020-12-23-19-42-11
+.. nonce: a5EkTv
+.. section: Tools/Demos
+
+Fixed Python 3 compatibility issue with gdb/libpython.py handling of
+attribute dictionaries.
+
+..
+
+.. bpo: 42613
+.. date: 2020-12-16-09-10-32
+.. nonce: J-jnm5
+.. section: Tools/Demos
+
+Fix ``freeze.py`` tool to use the prope config and library directories.
+Patch by Victor Stinner.
+
+..
+
+.. bpo: 42591
+.. date: 2020-12-10-10-43-03
+.. nonce: CXNY8G
+.. section: C API
+
+Export the :c:func:`Py_FrozenMain` function: fix a Python 3.9.0 regression.
+Python 3.9 uses ``-fvisibility=hidden`` and the function was not exported
+explicitly and so not exported.
+
+..
+
+.. bpo: 32381
+.. date: 2020-12-09-00-35-25
+.. nonce: Je08Ny
+.. section: C API
+
+Remove the private :c:func:`_Py_fopen` function which is no longer needed.
+Use :c:func:`_Py_wfopen` or :c:func:`_Py_fopen_obj` instead. Patch by Victor
+Stinner.
+
+..
+
+.. bpo: 1635741
+.. date: 2020-11-22-13-46-06
+.. nonce: -fJLzA
+.. section: C API
+
+Port :mod:`resource` extension module to module state
+
+..
+
+.. bpo: 42111
+.. date: 2020-10-21-18-43-06
+.. nonce: 9pvtrc
+.. section: C API
+
+Update the ``xxlimited`` module to be a better example of how to use the
+limited C API.
+
+..
+
+.. bpo: 40052
+.. date: 2020-03-24-09-27-10
+.. nonce: 27P2KG
+.. section: C API
+
+Fix an alignment build warning/error in function
+``PyVectorcall_Function()``. Patch by Andreas Schneider, Antoine Pitrou and
+Petr Viktorin.

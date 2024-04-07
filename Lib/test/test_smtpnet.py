@@ -1,10 +1,11 @@
 import unittest
 from test import support
+from test.support import import_helper
 from test.support import socket_helper
 import smtplib
 import socket
 
-ssl = support.import_module("ssl")
+ssl = import_helper.import_module("ssl")
 
 support.requires("network")
 
@@ -60,6 +61,7 @@ class SmtpSSLTest(unittest.TestCase):
             server.ehlo()
             server.quit()
 
+    @support.requires_resource('walltime')
     def test_connect_using_sslcontext(self):
         context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
         context.check_hostname = False
