@@ -1625,9 +1625,9 @@ class DocTestRunner:
 
         if failed:
             print(f"{red}{self.DIVIDER}{reset}")
-            print(f"{red}{_n_items(failed)} had failures:{reset}")
+            print(f"{_n_items(failed)} had failures:")
             for name, (failures, tries, skips) in sorted(failed):
-                print(f"{red} {failures:3d} of {tries:3d} in {name}{reset}")
+                print(f" {failures:3d} of {tries:3d} in {name}")
 
         if verbose:
             s = "" if total_tries == 1 else "s"
