@@ -11,6 +11,7 @@ import re
 import test.support
 import types
 import unittest
+from collections.abc import KeysView, ItemsView, MappingView, ValuesView
 
 # list, tuple and dict subclasses that do or don't overwrite __repr__
 class list2(list):
@@ -511,6 +512,37 @@ mappingproxy(OrderedDict([('the', 0),
                     self.assertEqual(pprint.pformat(i, sort_dicts=False),
                                      prefix + "_items([%s])" %
                                      joiner.join(repr(item) for item in i))
+
+    def test_abc_views(self):
+        empty = {}
+        short = dict(zip('edcba', 'edcba'))
+        long = dict((chr(x), chr(x)) for x in range(90, 64, -1))
+        lengths = {"empty": empty, "short": short, "long": long}
+
+        for name, d in lengths.items():
+            with self.subTest(length=name, name="Views"):
+                is_short = len(d) < 6
+                joiner = ", " if is_short else ",\n "
+                i = d.items()
+                s = sorted(i)
+                joined_items = "({%s})" % joiner.join(["%r: %r" % (k, v) for (k, v) in i])
+                sorted_items = "({%s})" % joiner.join(["%r: %r" % (k, v) for (k, v) in s])
+                self.assertEqual(pprint.pformat(KeysView(d), sort_dicts=True),
+                                 KeysView.__name__ + sorted_items)
+                self.assertEqual(pprint.pformat(ItemsView(d), sort_dicts=True),
+                                 ItemsView.__name__ + sorted_items)
+                self.assertEqual(pprint.pformat(MappingView(d), sort_dicts=True),
+                                 MappingView.__name__ + sorted_items)
+                self.assertEqual(pprint.pformat(ValuesView(d), sort_dicts=True),
+                                 ValuesView.__name__ + sorted_items)
+                self.assertEqual(pprint.pformat(KeysView(d), sort_dicts=False),
+                                 KeysView.__name__ + joined_items)
+                self.assertEqual(pprint.pformat(ItemsView(d), sort_dicts=False),
+                                 ItemsView.__name__ + joined_items)
+                self.assertEqual(pprint.pformat(MappingView(d), sort_dicts=False),
+                                 MappingView.__name__ + joined_items)
+                self.assertEqual(pprint.pformat(ValuesView(d), sort_dicts=False),
+                                 ValuesView.__name__ + joined_items)
 
     def test_empty_simple_namespace(self):
         ns = types.SimpleNamespace()
