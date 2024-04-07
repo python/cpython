@@ -1765,10 +1765,10 @@ def kde_random(data, h, kernel='normal', *, seed=None):
     probability density function created by kde(data, h, kernel).
 
     Providing a *seed* allows reproducible selections within a single
-    thread (or with a lock around calls).  In the future, the selection
-    method for the parabolic, quartic, and triweight kernels may be
-    replaced with faster algorithms that give different results.
-    The seed may be an integer, float, str, or bytes.
+    thread.  In the future, the selection method for the parabolic,
+    quartic, and triweight kernels may be replaced with faster
+    algorithms that give different results.  The seed may be an
+    integer, float, str, or bytes.
 
     A StatisticsError will be raised if the *data* sequence is empty.
 
