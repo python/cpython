@@ -2133,7 +2133,7 @@ binary_op_fail_kind(int oparg, PyObject *lhs, PyObject *rhs)
 
 void
 _Py_Specialize_BinaryOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
-                        int oparg, _PyTaggedPtr *locals)
+                        int oparg, _PyStackRef *locals)
 {
     assert(ENABLE_SPECIALIZATION);
     assert(_PyOpcode_Caches[BINARY_OP] == INLINE_CACHE_ENTRIES_BINARY_OP);

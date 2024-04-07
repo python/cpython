@@ -42,16 +42,16 @@ def declare_variable(
     type = var.type if var.type else "PyObject *"
     variables.add(var.name)
     if var.condition:
-        if not dir_out and type.strip() != "_PyTaggedPtr":
-            out.emit(f"_PyTaggedPtr {var.name}_tagged = Py_OBJ_TAG(NULL);\n")
+        if not dir_out and type.strip() != "_PyStackRef":
+            out.emit(f"_PyStackRef {var.name}_tagged = Py_OBJ_TAG(NULL);\n")
         out.emit(f"{type}{var.name} = NULL;\n")
         if uop.replicates:
             # Replicas may not use all their conditional variables
             # So avoid a compiler warning with a fake use
             out.emit(f"(void){var.name};\n")
     else:
-        if not dir_out and type.strip() != "_PyTaggedPtr" and not var.is_array():
-            out.emit(f"_PyTaggedPtr {var.name}_tagged;\n")
+        if not dir_out and type.strip() != "_PyStackRef" and not var.is_array():
+            out.emit(f"_PyStackRef {var.name}_tagged;\n")
         out.emit(f"{type}{var.name};\n")
 
 

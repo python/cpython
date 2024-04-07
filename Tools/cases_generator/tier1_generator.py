@@ -44,12 +44,12 @@ def declare_variables(inst: Instruction, out: CWriter) -> None:
                     type = var.type if var.type else "PyObject *"
                     variables.add(var.name)
                     if var.condition:
-                        if type.strip() != "_PyTaggedPtr":
-                            out.emit(f"_PyTaggedPtr {var.name}_tagged = Py_OBJ_TAG(NULL);\n")
+                        if type.strip() != "_PyStackRef":
+                            out.emit(f"_PyStackRef {var.name}_tagged = Py_OBJ_TAG(NULL);\n")
                         out.emit(f"{type}{var.name} = NULL;\n")
                     else:
-                        if not var.is_array() and type.strip() != "_PyTaggedPtr":
-                            out.emit(f"_PyTaggedPtr {var.name}_tagged;\n")
+                        if not var.is_array() and type.strip() != "_PyStackRef":
+                            out.emit(f"_PyStackRef {var.name}_tagged;\n")
                         out.emit(f"{type}{var.name};\n")
             for var in uop.stack.outputs:
                 if var.name not in variables:

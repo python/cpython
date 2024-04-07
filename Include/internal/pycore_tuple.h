@@ -8,7 +8,7 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_tagged.h" // _PyTaggedPtr
+#include "pycore_tagged.h" // _PyStackRef
 
 extern void _PyTuple_MaybeUntrack(PyObject *);
 extern void _PyTuple_DebugMallocStats(FILE *out);
@@ -24,7 +24,7 @@ extern PyStatus _PyTuple_InitGlobalObjects(PyInterpreterState *);
 
 extern PyObject *_PyTuple_FromArray(PyObject *const *, Py_ssize_t);
 PyAPI_FUNC(PyObject *)_PyTuple_FromArraySteal(PyObject *const *, Py_ssize_t);
-PyAPI_FUNC(PyObject *)_PyTuple_FromTaggedArraySteal(_PyTaggedPtr const *, Py_ssize_t);
+PyAPI_FUNC(PyObject *)_PyTuple_FromTaggedArraySteal(_PyStackRef const *, Py_ssize_t);
 
 typedef struct {
     PyObject_HEAD

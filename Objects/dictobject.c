@@ -2111,12 +2111,12 @@ _PyDict_FromItems(PyObject *const *keys, Py_ssize_t keys_offset,
 
 
 PyObject*
-_PyDict_FromTaggedItems(_PyTaggedPtr const *keys, Py_ssize_t keys_offset,
-                        _PyTaggedPtr const *values, Py_ssize_t values_offset,
+_PyDict_FromTaggedItems(_PyStackRef const *keys, Py_ssize_t keys_offset,
+                        _PyStackRef const *values, Py_ssize_t values_offset,
                         Py_ssize_t length)
 {
     bool unicode = true;
-    _PyTaggedPtr const *ks = keys;
+    _PyStackRef const *ks = keys;
     PyInterpreterState *interp = _PyInterpreterState_GET();
 
     for (Py_ssize_t i = 0; i < length; i++) {
@@ -2133,7 +2133,7 @@ _PyDict_FromTaggedItems(_PyTaggedPtr const *keys, Py_ssize_t keys_offset,
     }
 
     ks = keys;
-    _PyTaggedPtr const *vs = values;
+    _PyStackRef const *vs = values;
 
     for (Py_ssize_t i = 0; i < length; i++) {
         PyObject *key = Py_OBJ_UNTAG(*ks);
@@ -2152,7 +2152,7 @@ _PyDict_FromTaggedItems(_PyTaggedPtr const *keys, Py_ssize_t keys_offset,
 PyObject*
 _PyDict_FromTaggedItemsUntaggedKeys(
     PyObject *const *keys, Py_ssize_t keys_offset,
-    _PyTaggedPtr const *values, Py_ssize_t values_offset,
+    _PyStackRef const *values, Py_ssize_t values_offset,
     Py_ssize_t length)
 {
     bool unicode = true;
@@ -2173,7 +2173,7 @@ _PyDict_FromTaggedItemsUntaggedKeys(
     }
 
     ks = keys;
-    _PyTaggedPtr const *vs = values;
+    _PyStackRef const *vs = values;
 
     for (Py_ssize_t i = 0; i < length; i++) {
         PyObject *key = *ks;

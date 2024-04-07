@@ -104,12 +104,12 @@
 
 #ifdef LLTRACE
 static void
-dump_stack(_PyInterpreterFrame *frame, _PyTaggedPtr *stack_pointer)
+dump_stack(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer)
 {
-    _PyTaggedPtr *stack_base = _PyFrame_Stackbase(frame);
+    _PyStackRef *stack_base = _PyFrame_Stackbase(frame);
     PyObject *exc = PyErr_GetRaisedException();
     printf("    stack=[");
-    for (_PyTaggedPtr *ptr = stack_base; ptr < stack_pointer; ptr++) {
+    for (_PyStackRef *ptr = stack_base; ptr < stack_pointer; ptr++) {
         if (ptr != stack_base) {
             printf(", ");
         }
@@ -140,7 +140,7 @@ dump_stack(_PyInterpreterFrame *frame, _PyTaggedPtr *stack_pointer)
 
 static void
 lltrace_instruction(_PyInterpreterFrame *frame,
-                    _PyTaggedPtr *stack_pointer,
+                    _PyStackRef *stack_pointer,
                     _Py_CODEUNIT *next_instr,
                     int opcode,
                     int oparg)
@@ -250,7 +250,7 @@ static int check_args_iterable(PyThreadState *, PyObject *func, PyObject *vararg
 static int get_exception_handler(PyCodeObject *, int, int*, int*, int*);
 static _PyInterpreterFrame *
 _PyEvalFramePushAndInit(PyThreadState *tstate, PyFunctionObject *func,
-                        PyObject *locals, _PyTaggedPtr const* args,
+                        PyObject *locals, _PyStackRef const* args,
                         size_t argcount, PyObject *kwnames);
 static  _PyInterpreterFrame *
 _PyEvalFramePushAndInit_Ex(PyThreadState *tstate, PyFunctionObject *func,
@@ -754,7 +754,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
     /* Local "register" variables.
      * These are cached values from the frame and code object.  */
     _Py_CODEUNIT *next_instr;
-    _PyTaggedPtr *stack_pointer;
+    _PyStackRef *stack_pointer;
 
 #ifndef _Py_JIT
     /* Tier 2 interpreter state */
@@ -891,7 +891,7 @@ exception_unwind:
                 assert(_PyErr_Occurred(tstate));
 
                 /* Pop remaining stack entries. */
-                _PyTaggedPtr *stackbase = _PyFrame_Stackbase(frame);
+                _PyStackRef *stackbase = _PyFrame_Stackbase(frame);
                 while (stack_pointer > stackbase) {
                     PyObject *o = Py_OBJ_UNTAG(POP());
                     Py_XDECREF(o);
@@ -903,7 +903,7 @@ exception_unwind:
             }
 
             assert(STACK_LEVEL() >= level);
-            _PyTaggedPtr *new_top = _PyFrame_Stackbase(frame) + level;
+            _PyStackRef *new_top = _PyFrame_Stackbase(frame) + level;
             while (stack_pointer > new_top) {
                 PyObject *v = Py_OBJ_UNTAG(POP());
                 Py_XDECREF(v);
@@ -1185,7 +1185,7 @@ format_missing(PyThreadState *tstate, const char *kind,
 static void
 missing_arguments(PyThreadState *tstate, PyCodeObject *co,
                   Py_ssize_t missing, Py_ssize_t defcount,
-                  _PyTaggedPtr *localsplus, PyObject *qualname)
+                  _PyStackRef *localsplus, PyObject *qualname)
 {
     Py_ssize_t i, j = 0;
     Py_ssize_t start, end;
@@ -1224,7 +1224,7 @@ missing_arguments(PyThreadState *tstate, PyCodeObject *co,
 static void
 too_many_positional(PyThreadState *tstate, PyCodeObject *co,
                     Py_ssize_t given, PyObject *defaults,
-                    _PyTaggedPtr *localsplus, PyObject *qualname)
+                    _PyStackRef *localsplus, PyObject *qualname)
 {
     int plural;
     Py_ssize_t kwonly_given = 0;
@@ -1413,7 +1413,7 @@ get_exception_handler(PyCodeObject *code, int index, int *level, int *handler, i
 
 static int
 initialize_locals(PyThreadState *tstate, PyFunctionObject *func,
-    _PyTaggedPtr *localsplus, _PyTaggedPtr const *args,
+    _PyStackRef *localsplus, _PyStackRef const *args,
     Py_ssize_t argcount, PyObject *kwnames)
 {
     PyCodeObject *co = (PyCodeObject*)func->func_code;
@@ -1706,7 +1706,7 @@ _PyEval_FrameClearAndPop(PyThreadState *tstate, _PyInterpreterFrame * frame)
 /* Consumes references to func, locals and all the args */
 static _PyInterpreterFrame *
 _PyEvalFramePushAndInit(PyThreadState *tstate, PyFunctionObject *func,
-                        PyObject *locals, _PyTaggedPtr const* args,
+                        PyObject *locals, _PyStackRef const* args,
                         size_t argcount, PyObject *kwnames)
 {
     PyCodeObject * code = (PyCodeObject *)func->func_code;
@@ -1763,7 +1763,7 @@ _PyEvalFramePushAndInit_Ex(PyThreadState *tstate, PyFunctionObject *func,
     }
     _PyInterpreterFrame *new_frame = _PyEvalFramePushAndInit(
         tstate, (PyFunctionObject *)func, locals,
-        (_PyTaggedPtr const *)newargs, nargs, kwnames
+        (_PyStackRef const *)newargs, nargs, kwnames
     );
     if (has_dict) {
         _PyStack_UnpackDict_FreeNoDecRef(newargs, kwnames);
@@ -1800,7 +1800,7 @@ _PyEval_Vector(PyThreadState *tstate, PyFunctionObject *func,
         }
     }
     _PyInterpreterFrame *frame = _PyEvalFramePushAndInit(
-        tstate, func, locals, (_PyTaggedPtr * const)args, argcount, kwnames);
+        tstate, func, locals, (_PyStackRef * const)args, argcount, kwnames);
     if (frame == NULL) {
         return NULL;
     }
@@ -2052,7 +2052,7 @@ _PyEval_ExceptionGroupMatch(PyObject* exc_value, PyObject *match_type,
 
 int
 _PyEval_UnpackTaggedIterable(PyThreadState *tstate, PyObject *v,
-                       int argcnt, int argcntafter, _PyTaggedPtr *sp)
+                       int argcnt, int argcntafter, _PyStackRef *sp)
 {
     int i = 0, j = 0;
     Py_ssize_t ll = 0;

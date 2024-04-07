@@ -117,7 +117,7 @@ class StackItem:
         return f"{type}{self.name}{size}{cond} {self.peek}"
 
     def is_array(self) -> bool:
-        return self.type == "_PyTaggedPtr *"
+        return self.type == "_PyStackRef *"
 
 
 @dataclass

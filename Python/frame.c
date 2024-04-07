@@ -16,7 +16,7 @@ _PyFrame_Traverse(_PyInterpreterFrame *frame, visitproc visit, void *arg)
     Py_VISIT(frame->f_funcobj);
     Py_VISIT(_PyFrame_GetCode(frame));
    /* locals */
-    _PyTaggedPtr *locals = _PyFrame_GetLocalsArray(frame);
+    _PyStackRef *locals = _PyFrame_GetLocalsArray(frame);
     int i = 0;
     /* locals and stack */
     for (; i <frame->stacktop; i++) {

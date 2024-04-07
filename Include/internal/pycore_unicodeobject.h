@@ -12,7 +12,7 @@ extern "C" {
 #include "pycore_fileutils.h"     // _Py_error_handler
 #include "pycore_identifier.h"    // _Py_Identifier
 #include "pycore_ucnhash.h"       // _PyUnicode_Name_CAPI
-#include "pycore_tagged.h" // _PyTaggedPtr
+#include "pycore_tagged.h" // _PyStackRef
 
 /* --- Characters Type APIs ----------------------------------------------- */
 
@@ -211,7 +211,7 @@ PyAPI_FUNC(PyObject*) _PyUnicode_JoinArray(
 
 PyAPI_FUNC(PyObject*) _PyUnicode_JoinTaggedArray(
     PyObject *separator,
-    _PyTaggedPtr const *items,
+    _PyStackRef const *items,
     Py_ssize_t seqlen
 );
 

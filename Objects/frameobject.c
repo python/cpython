@@ -890,7 +890,7 @@ frame_dealloc(PyFrameObject *f)
         frame->f_executable = NULL;
         Py_CLEAR(frame->f_funcobj);
         Py_CLEAR(frame->f_locals);
-        _PyTaggedPtr *locals = _PyFrame_GetLocalsArray(frame);
+        _PyStackRef *locals = _PyFrame_GetLocalsArray(frame);
         for (int i = 0; i < frame->stacktop; i++) {
             Py_CLEAR_TAGGED(locals[i]);
         }
@@ -920,7 +920,7 @@ frame_tp_clear(PyFrameObject *f)
     Py_CLEAR(f->f_trace);
 
     /* locals and stack */
-    _PyTaggedPtr *locals = _PyFrame_GetLocalsArray(f->f_frame);
+    _PyStackRef *locals = _PyFrame_GetLocalsArray(f->f_frame);
     assert(f->f_frame->stacktop >= 0);
     for (int i = 0; i < f->f_frame->stacktop; i++) {
         Py_CLEAR_TAGGED(locals[i]);
@@ -1380,7 +1380,7 @@ _PyFrame_LocalsToFast(_PyInterpreterFrame *frame, int clear)
 {
     /* Merge locals into fast locals */
     PyObject *locals;
-    _PyTaggedPtr *fast;
+    _PyStackRef *fast;
     PyCodeObject *co;
     locals = frame->f_locals;
     if (locals == NULL) {

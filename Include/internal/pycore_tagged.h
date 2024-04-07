@@ -13,7 +13,7 @@ extern "C" {
 
 typedef union {
     uintptr_t bits;
-} _PyTaggedPtr;
+} _PyStackRef;
 
 #define Py_TAG (0b0)
 #define Py_TEST_TAG (0b1)
@@ -27,17 +27,17 @@ typedef union {
 #endif
 
 #if defined(Py_TEST_TAG)
-    #define Py_OBJ_TAG(obj) ((_PyTaggedPtr){.bits = ((uintptr_t)(obj) | Py_TEST_TAG)})
+    #define Py_OBJ_TAG(obj) ((_PyStackRef){.bits = ((uintptr_t)(obj) | Py_TEST_TAG)})
 #elif defined(Py_GIL_DISABLED)
-    #define Py_OBJ_TAG(obj) ((_PyTaggedPtr){.bits = ((uintptr_t)(obj) | Py_TAG}))
+    #define Py_OBJ_TAG(obj) ((_PyStackRef){.bits = ((uintptr_t)(obj) | Py_TAG}))
 #else
-    #define Py_OBJ_TAG(obj) ((_PyTaggedPtr){.bits = ((uintptr_t)(obj))})
+    #define Py_OBJ_TAG(obj) ((_PyStackRef){.bits = ((uintptr_t)(obj))})
 #endif
 
 #define MAX_UNTAG_SCRATCH 10
 
 static inline void
-_Py_untag_stack(PyObject **dst, const _PyTaggedPtr *src, size_t length) {
+_Py_untag_stack(PyObject **dst, const _PyStackRef *src, size_t length) {
     for (size_t i = 0; i < length; i++) {
         dst[i] = Py_OBJ_UNTAG(src[i]);
     }
@@ -46,24 +46,24 @@ _Py_untag_stack(PyObject **dst, const _PyTaggedPtr *src, size_t length) {
 
 #define Py_XSETREF_TAGGED(dst, src) \
     do { \
-        _PyTaggedPtr *_tmp_dst_ptr = _Py_CAST(_PyTaggedPtr*, &(dst)); \
-        _PyTaggedPtr _tmp_old_dst = (*_tmp_dst_ptr); \
+        _PyStackRef *_tmp_dst_ptr = _Py_CAST(_PyStackRef*, &(dst)); \
+        _PyStackRef _tmp_old_dst = (*_tmp_dst_ptr); \
         *_tmp_dst_ptr = (src); \
         Py_XDECREF(Py_OBJ_UNTAG(_tmp_old_dst)); \
     } while (0)
 
 #define Py_SETREF_TAGGED(dst, src) \
     do { \
-        _PyTaggedPtr *_tmp_dst_ptr = _Py_CAST(_PyTaggedPtr*, &(dst)); \
-        _PyTaggedPtr _tmp_old_dst = (*_tmp_dst_ptr); \
+        _PyStackRef *_tmp_dst_ptr = _Py_CAST(_PyStackRef*, &(dst)); \
+        _PyStackRef _tmp_old_dst = (*_tmp_dst_ptr); \
         *_tmp_dst_ptr = (src); \
         Py_DECREF(Py_OBJ_UNTAG(_tmp_old_dst)); \
     } while (0)
 
 #define Py_CLEAR_TAGGED(op) \
     do { \
-        _PyTaggedPtr *_tmp_op_ptr = _Py_CAST(_PyTaggedPtr*, &(op)); \
-        _PyTaggedPtr _tmp_old_op = (*_tmp_op_ptr); \
+        _PyStackRef *_tmp_op_ptr = _Py_CAST(_PyStackRef*, &(op)); \
+        _PyStackRef _tmp_old_op = (*_tmp_op_ptr); \
         if (Py_OBJ_UNTAG(_tmp_old_op) != NULL) { \
             *_tmp_op_ptr = Py_OBJ_TAG(_Py_NULL); \
             Py_DECREF(Py_OBJ_UNTAG(_tmp_old_op)); \
@@ -82,7 +82,7 @@ _Py_untag_stack(PyObject **dst, const _PyTaggedPtr *src, size_t length) {
         } \
     } while (0)
 
-static inline _PyTaggedPtr _Py_NewRef_Tagged(_PyTaggedPtr obj)
+static inline _PyStackRef _Py_NewRef_Tagged(_PyStackRef obj)
 {
     Py_INCREF_TAGGED(obj);
     return obj;

@@ -206,7 +206,7 @@ dummy_func(
             LOAD_FAST,
         };
 
-        inst(LOAD_FAST_CHECK, (-- value: _PyTaggedPtr)) {
+        inst(LOAD_FAST_CHECK, (-- value: _PyStackRef)) {
             value = GETLOCAL(oparg);
             if (Py_OBJ_UNTAG(value) == NULL) {
                 _PyEval_FormatExcCheckArg(tstate, PyExc_UnboundLocalError,
@@ -218,19 +218,19 @@ dummy_func(
             Py_INCREF_TAGGED(value);
         }
 
-        replicate(8) pure inst(LOAD_FAST, (-- value: _PyTaggedPtr)) {
+        replicate(8) pure inst(LOAD_FAST, (-- value: _PyStackRef)) {
             value = GETLOCAL(oparg);
             assert(Py_OBJ_UNTAG(value) != NULL);
             Py_INCREF_TAGGED(value);
         }
 
-        inst(LOAD_FAST_AND_CLEAR, (-- value: _PyTaggedPtr)) {
+        inst(LOAD_FAST_AND_CLEAR, (-- value: _PyStackRef)) {
             value = GETLOCAL(oparg);
             // do not use SETLOCAL here, it decrefs the old value
             GETLOCAL(oparg) = Py_OBJ_TAG(NULL);
         }
 
-        inst(LOAD_FAST_LOAD_FAST, ( -- value1: _PyTaggedPtr, value2: _PyTaggedPtr)) {
+        inst(LOAD_FAST_LOAD_FAST, ( -- value1: _PyStackRef, value2: _PyStackRef)) {
             uint32_t oparg1 = oparg >> 4;
             uint32_t oparg2 = oparg & 15;
             value1 = GETLOCAL(oparg1);
@@ -239,13 +239,13 @@ dummy_func(
             Py_INCREF_TAGGED(value2);
         }
 
-        pure inst(LOAD_CONST, (-- value: _PyTaggedPtr)) {
+        pure inst(LOAD_CONST, (-- value: _PyStackRef)) {
             value = Py_OBJ_TAG(GETITEM(FRAME_CO_CONSTS, oparg));
             // Perhaps consider making co_consts tagged too?
             Py_INCREF_TAGGED(value);
         }
 
-        replicate(8) inst(STORE_FAST, (value: _PyTaggedPtr --)) {
+        replicate(8) inst(STORE_FAST, (value: _PyStackRef --)) {
             SETLOCAL(oparg, value);
         }
 
@@ -253,7 +253,7 @@ dummy_func(
             STORE_FAST,
         };
 
-        inst(STORE_FAST_LOAD_FAST, (value1: _PyTaggedPtr -- value2: _PyTaggedPtr)) {
+        inst(STORE_FAST_LOAD_FAST, (value1: _PyStackRef -- value2: _PyStackRef)) {
             uint32_t oparg1 = oparg >> 4;
             uint32_t oparg2 = oparg & 15;
             SETLOCAL(oparg1, value1);
@@ -261,7 +261,7 @@ dummy_func(
             Py_INCREF_TAGGED(value2);
         }
 
-        inst(STORE_FAST_STORE_FAST, (value2: _PyTaggedPtr, value1: _PyTaggedPtr --)) {
+        inst(STORE_FAST_STORE_FAST, (value2: _PyStackRef, value1: _PyStackRef --)) {
             uint32_t oparg1 = oparg >> 4;
             uint32_t oparg2 = oparg & 15;
             SETLOCAL(oparg1, value1);
@@ -517,7 +517,7 @@ dummy_func(
         // At the end we just skip over the STORE_FAST.
         tier1 op(_BINARY_OP_INPLACE_ADD_UNICODE, (left, right --)) {
             assert(next_instr->op.code == STORE_FAST);
-            _PyTaggedPtr *target_local = &GETLOCAL(next_instr->op.arg);
+            _PyStackRef *target_local = &GETLOCAL(next_instr->op.arg);
             DEOPT_IF(Py_OBJ_UNTAG(*target_local) != left);
             STAT_INC(BINARY_OP, hit);
             /* Handle `left = left + right` or `left += right` for str.
@@ -664,7 +664,7 @@ dummy_func(
             ERROR_IF(rc <= 0, error); // not found or error
         }
 
-        inst(BINARY_SUBSCR_GETITEM, (unused/1, container, sub: _PyTaggedPtr -- unused)) {
+        inst(BINARY_SUBSCR_GETITEM, (unused/1, container, sub: _PyStackRef -- unused)) {
             DEOPT_IF(tstate->interp->eval_frame);
             PyTypeObject *tp = Py_TYPE(container);
             DEOPT_IF(!PyType_HasFeature(tp, Py_TPFLAGS_HEAPTYPE));
@@ -810,7 +810,7 @@ dummy_func(
         // We definitely pop the return value off the stack on entry.
         // We also push it onto the stack on exit, but that's a
         // different frame, and it's accounted for by _PUSH_FRAME.
-        op(_POP_FRAME, (retval: _PyTaggedPtr --)) {
+        op(_POP_FRAME, (retval: _PyStackRef --)) {
             #if TIER_ONE
             assert(frame != &entry_frame);
             #endif
@@ -1040,7 +1040,7 @@ dummy_func(
 
         macro(SEND) = _SPECIALIZE_SEND + _SEND;
 
-        inst(SEND_GEN, (unused/1, receiver, v: _PyTaggedPtr -- receiver, unused)) {
+        inst(SEND_GEN, (unused/1, receiver, v: _PyStackRef -- receiver, unused)) {
             DEOPT_IF(tstate->interp->eval_frame);
             PyGenObject *gen = (PyGenObject *)receiver;
             DEOPT_IF(Py_TYPE(gen) != &PyGen_Type && Py_TYPE(gen) != &PyCoro_Type);
@@ -1082,7 +1082,7 @@ dummy_func(
             goto resume_frame;
         }
 
-        tier1 inst(YIELD_VALUE, (retval: _PyTaggedPtr -- unused)) {
+        tier1 inst(YIELD_VALUE, (retval: _PyStackRef -- unused)) {
             // NOTE: It's important that YIELD_VALUE never raises an exception!
             // The compiler treats any exception raised here as a failed close()
             // or throw() call.
@@ -1231,7 +1231,7 @@ dummy_func(
         }
 
         op(_UNPACK_SEQUENCE, (seq -- unused[oparg])) {
-            _PyTaggedPtr *top = stack_pointer + oparg - 1;
+            _PyStackRef *top = stack_pointer + oparg - 1;
             int res = _PyEval_UnpackTaggedIterable(tstate, seq, oparg, -1, top);
             DECREF_INPUTS();
             ERROR_IF(res == 0, error);
@@ -1273,7 +1273,7 @@ dummy_func(
 
         inst(UNPACK_EX, (seq -- unused[oparg & 0xFF], unused, unused[oparg >> 8])) {
             int totalargs = 1 + (oparg & 0xFF) + (oparg >> 8);
-            _PyTaggedPtr *top = stack_pointer + totalargs - 1;
+            _PyStackRef *top = stack_pointer + totalargs - 1;
             int res = _PyEval_UnpackTaggedIterable(tstate, seq, oparg & 0xFF, oparg >> 8, top);
             DECREF_INPUTS();
             ERROR_IF(res == 0, error);
@@ -1632,7 +1632,7 @@ dummy_func(
                 ERROR_NO_POP();
             int err = 0;
             for (int i = 0; i < oparg; i++) {
-                _PyTaggedPtr item = values[i];
+                _PyStackRef item = values[i];
                 if (err == 0) {
                     // TODO steals reference, needs TO_OWNED
                     err = PySet_Add(set, Py_OBJ_UNTAG(item));
@@ -2588,7 +2588,7 @@ dummy_func(
 
         inst(INSTRUMENTED_FOR_ITER, (unused/1 -- )) {
             _Py_CODEUNIT *target;
-            _PyTaggedPtr iter_tagged = TOP();
+            _PyStackRef iter_tagged = TOP();
             PyObject *iter = Py_OBJ_UNTAG(iter_tagged);
             PyObject *next = (*Py_TYPE(iter)->tp_iternext)(iter);
             if (next != NULL) {
@@ -2780,7 +2780,7 @@ dummy_func(
                 }
                 ERROR_NO_POP();
             }
-            _PyTaggedPtr enter_tagged = Py_OBJ_TAG(enter);
+            _PyStackRef enter_tagged = Py_OBJ_TAG(enter);
             exit = _PyObject_LookupSpecial(mgr, &_Py_ID(__aexit__));
             if (exit == NULL) {
                 if (!_PyErr_Occurred(tstate)) {
@@ -2807,7 +2807,7 @@ dummy_func(
              * value returned from calling its __enter__
              */
             PyObject *enter = _PyObject_LookupSpecial(mgr, &_Py_ID(__enter__));
-            _PyTaggedPtr enter_tagged = Py_OBJ_TAG(enter);
+            _PyStackRef enter_tagged = Py_OBJ_TAG(enter);
             if (enter == NULL) {
                 if (!_PyErr_Occurred(tstate)) {
                     _PyErr_Format(tstate, PyExc_TypeError,
@@ -3124,7 +3124,7 @@ dummy_func(
         op(_INIT_CALL_BOUND_METHOD_EXACT_ARGS, (callable, unused, unused[oparg] -- func, self, unused[oparg])) {
             STAT_INC(CALL, hit);
             // Ugly tag and untag because the uop header needs to have consistent type with
-            // the rest of the inst. So we can't change it to _PyTaggedPtr.
+            // the rest of the inst. So we can't change it to _PyStackRef.
             self = Py_OBJ_UNTAG(Py_NewRef_Tagged(Py_OBJ_TAG(((PyMethodObject *)callable)->im_self)));
             stack_pointer[-1 - oparg] = Py_OBJ_TAG(self);  // Patch stack as it is used by _INIT_CALL_PY_EXACT_ARGS
             func = Py_OBJ_UNTAG(Py_NewRef_Tagged(Py_OBJ_TAG(((PyMethodObject *)callable)->im_func)));
@@ -3156,7 +3156,7 @@ dummy_func(
             STAT_INC(CALL, hit);
             PyFunctionObject *func = (PyFunctionObject *)callable;
             new_frame = _PyFrame_PushUnchecked(tstate, func, oparg + has_self);
-            _PyTaggedPtr *first_non_self_local = new_frame->localsplus + has_self;
+            _PyStackRef *first_non_self_local = new_frame->localsplus + has_self;
             new_frame->localsplus[0] = self_or_null_tagged;
             for (int i = 0; i < oparg; i++) {
                 first_non_self_local[i] = args[i];
@@ -3240,7 +3240,7 @@ dummy_func(
             DISPATCH_INLINED(new_frame);
         }
 
-        inst(CALL_TYPE_1, (unused/1, unused/2, callable, null, arg -- res: _PyTaggedPtr)) {
+        inst(CALL_TYPE_1, (unused/1, unused/2, callable, null, arg -- res: _PyStackRef)) {
             assert(oparg == 1);
             DEOPT_IF(null != NULL);
             DEOPT_IF(callable != (PyObject *)&PyType_Type);
@@ -3381,7 +3381,7 @@ dummy_func(
             DEOPT_IF(tstate->c_recursion_remaining <= 0);
             STAT_INC(CALL, hit);
             PyCFunction cfunc = PyCFunction_GET_FUNCTION(callable);
-            _PyTaggedPtr arg = args[0];
+            _PyStackRef arg = args[0];
             _Py_EnterRecursiveCallTstateUnchecked(tstate);
             res = _PyCFunction_TrampolineCall(cfunc, PyCFunction_GET_SELF(callable), Py_OBJ_UNTAG(arg));
             _Py_LeaveRecursiveCallTstate(tstate);
@@ -3475,7 +3475,7 @@ dummy_func(
             PyInterpreterState *interp = tstate->interp;
             DEOPT_IF(callable != interp->callable_cache.len);
             STAT_INC(CALL, hit);
-            _PyTaggedPtr arg_tagged = args[0];
+            _PyStackRef arg_tagged = args[0];
             PyObject *arg = Py_OBJ_UNTAG(arg_tagged);
             Py_ssize_t len_i = PyObject_Length(arg);
             if (len_i < 0) {
@@ -3501,8 +3501,8 @@ dummy_func(
             PyInterpreterState *interp = tstate->interp;
             DEOPT_IF(callable != interp->callable_cache.isinstance);
             STAT_INC(CALL, hit);
-            _PyTaggedPtr cls_tagged = args[1];
-            _PyTaggedPtr inst_tagged = args[0];
+            _PyStackRef cls_tagged = args[1];
+            _PyStackRef inst_tagged = args[0];
             int retval = PyObject_IsInstance(Py_OBJ_UNTAG(inst_tagged), Py_OBJ_UNTAG(cls_tagged));
             if (retval < 0) {
                 ERROR_NO_POP();
@@ -3550,8 +3550,8 @@ dummy_func(
             DEOPT_IF(meth->ml_flags != METH_O);
             // CPython promises to check all non-vectorcall function calls.
             DEOPT_IF(tstate->c_recursion_remaining <= 0);
-            _PyTaggedPtr arg_tagged = args[1];
-            _PyTaggedPtr self_tagged = args[0];
+            _PyStackRef arg_tagged = args[1];
+            _PyStackRef self_tagged = args[0];
             PyObject *self = Py_OBJ_UNTAG(self_tagged);
             PyObject *arg = Py_OBJ_UNTAG(arg_tagged);
             DEOPT_IF(!Py_IS_TYPE(self, method->d_common.d_type));
@@ -3620,7 +3620,7 @@ dummy_func(
             PyMethodDescrObject *method = (PyMethodDescrObject *)callable;
             DEOPT_IF(!Py_IS_TYPE(method, &PyMethodDescr_Type));
             PyMethodDef *meth = method->d_method;
-            _PyTaggedPtr self_tagged = args[0];
+            _PyStackRef self_tagged = args[0];
             PyObject *self = Py_OBJ_UNTAG(self_tagged);
             DEOPT_IF(!Py_IS_TYPE(self, method->d_common.d_type));
             DEOPT_IF(meth->ml_flags != METH_NOARGS);
@@ -4021,7 +4021,7 @@ dummy_func(
         }
 
         inst(INSTRUMENTED_POP_JUMP_IF_NONE, (unused/1 -- )) {
-            _PyTaggedPtr value_tagged = POP();
+            _PyStackRef value_tagged = POP();
             PyObject *value = Py_OBJ_UNTAG(value_tagged);
             int flag = Py_IsNone(value);
             int offset;
@@ -4039,7 +4039,7 @@ dummy_func(
         }
 
         inst(INSTRUMENTED_POP_JUMP_IF_NOT_NONE, (unused/1 -- )) {
-            _PyTaggedPtr value_tagged = POP();
+            _PyStackRef value_tagged = POP();
             PyObject *value = Py_OBJ_UNTAG(value_tagged);
             int offset;
             int nflag = Py_IsNone(value);

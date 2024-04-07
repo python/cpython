@@ -33,7 +33,7 @@
         /* _INSTRUMENTED_RESUME is not a viable micro-op for tier 2 because it is instrumented */
 
         case _LOAD_FAST_CHECK: {
-            _PyTaggedPtr value;
+            _PyStackRef value;
             oparg = CURRENT_OPARG();
             value = GETLOCAL(oparg);
             if (Py_OBJ_UNTAG(value) == NULL) {
@@ -50,7 +50,7 @@
         }
 
         case _LOAD_FAST_0: {
-            _PyTaggedPtr value;
+            _PyStackRef value;
             oparg = 0;
             assert(oparg == CURRENT_OPARG());
             value = GETLOCAL(oparg);
@@ -62,7 +62,7 @@
         }
 
         case _LOAD_FAST_1: {
-            _PyTaggedPtr value;
+            _PyStackRef value;
             oparg = 1;
             assert(oparg == CURRENT_OPARG());
             value = GETLOCAL(oparg);
@@ -74,7 +74,7 @@
         }
 
         case _LOAD_FAST_2: {
-            _PyTaggedPtr value;
+            _PyStackRef value;
             oparg = 2;
             assert(oparg == CURRENT_OPARG());
             value = GETLOCAL(oparg);
@@ -86,7 +86,7 @@
         }
 
         case _LOAD_FAST_3: {
-            _PyTaggedPtr value;
+            _PyStackRef value;
             oparg = 3;
             assert(oparg == CURRENT_OPARG());
             value = GETLOCAL(oparg);
@@ -98,7 +98,7 @@
         }
 
         case _LOAD_FAST_4: {
-            _PyTaggedPtr value;
+            _PyStackRef value;
             oparg = 4;
             assert(oparg == CURRENT_OPARG());
             value = GETLOCAL(oparg);
@@ -110,7 +110,7 @@
         }
 
         case _LOAD_FAST_5: {
-            _PyTaggedPtr value;
+            _PyStackRef value;
             oparg = 5;
             assert(oparg == CURRENT_OPARG());
             value = GETLOCAL(oparg);
@@ -122,7 +122,7 @@
         }
 
         case _LOAD_FAST_6: {
-            _PyTaggedPtr value;
+            _PyStackRef value;
             oparg = 6;
             assert(oparg == CURRENT_OPARG());
             value = GETLOCAL(oparg);
@@ -134,7 +134,7 @@
         }
 
         case _LOAD_FAST_7: {
-            _PyTaggedPtr value;
+            _PyStackRef value;
             oparg = 7;
             assert(oparg == CURRENT_OPARG());
             value = GETLOCAL(oparg);
@@ -146,7 +146,7 @@
         }
 
         case _LOAD_FAST: {
-            _PyTaggedPtr value;
+            _PyStackRef value;
             oparg = CURRENT_OPARG();
             value = GETLOCAL(oparg);
             assert(Py_OBJ_UNTAG(value) != NULL);
@@ -157,7 +157,7 @@
         }
 
         case _LOAD_FAST_AND_CLEAR: {
-            _PyTaggedPtr value;
+            _PyStackRef value;
             oparg = CURRENT_OPARG();
             value = GETLOCAL(oparg);
             // do not use SETLOCAL here, it decrefs the old value
@@ -168,7 +168,7 @@
         }
 
         case _LOAD_CONST: {
-            _PyTaggedPtr value;
+            _PyStackRef value;
             oparg = CURRENT_OPARG();
             value = Py_OBJ_TAG(GETITEM(FRAME_CO_CONSTS, oparg));
             // Perhaps consider making co_consts tagged too?
@@ -179,7 +179,7 @@
         }
 
         case _STORE_FAST_0: {
-            _PyTaggedPtr value;
+            _PyStackRef value;
             oparg = 0;
             assert(oparg == CURRENT_OPARG());
             value = stack_pointer[-1];
@@ -190,7 +190,7 @@
         }
 
         case _STORE_FAST_1: {
-            _PyTaggedPtr value;
+            _PyStackRef value;
             oparg = 1;
             assert(oparg == CURRENT_OPARG());
             value = stack_pointer[-1];
@@ -201,7 +201,7 @@
         }
 
         case _STORE_FAST_2: {
-            _PyTaggedPtr value;
+            _PyStackRef value;
             oparg = 2;
             assert(oparg == CURRENT_OPARG());
             value = stack_pointer[-1];
@@ -212,7 +212,7 @@
         }
 
         case _STORE_FAST_3: {
-            _PyTaggedPtr value;
+            _PyStackRef value;
             oparg = 3;
             assert(oparg == CURRENT_OPARG());
             value = stack_pointer[-1];
@@ -223,7 +223,7 @@
         }
 
         case _STORE_FAST_4: {
-            _PyTaggedPtr value;
+            _PyStackRef value;
             oparg = 4;
             assert(oparg == CURRENT_OPARG());
             value = stack_pointer[-1];
@@ -234,7 +234,7 @@
         }
 
         case _STORE_FAST_5: {
-            _PyTaggedPtr value;
+            _PyStackRef value;
             oparg = 5;
             assert(oparg == CURRENT_OPARG());
             value = stack_pointer[-1];
@@ -245,7 +245,7 @@
         }
 
         case _STORE_FAST_6: {
-            _PyTaggedPtr value;
+            _PyStackRef value;
             oparg = 6;
             assert(oparg == CURRENT_OPARG());
             value = stack_pointer[-1];
@@ -256,7 +256,7 @@
         }
 
         case _STORE_FAST_7: {
-            _PyTaggedPtr value;
+            _PyStackRef value;
             oparg = 7;
             assert(oparg == CURRENT_OPARG());
             value = stack_pointer[-1];
@@ -267,7 +267,7 @@
         }
 
         case _STORE_FAST: {
-            _PyTaggedPtr value;
+            _PyStackRef value;
             oparg = CURRENT_OPARG();
             value = stack_pointer[-1];
 
@@ -277,7 +277,7 @@
         }
 
         case _POP_TOP: {
-            _PyTaggedPtr value_tagged;
+            _PyStackRef value_tagged;
             PyObject *value;
             value_tagged = stack_pointer[-1];
             value = Py_OBJ_UNTAG(value_tagged);
@@ -297,9 +297,9 @@
         }
 
         case _END_SEND: {
-            _PyTaggedPtr value_tagged;
+            _PyStackRef value_tagged;
             PyObject *value;
-            _PyTaggedPtr receiver_tagged;
+            _PyStackRef receiver_tagged;
             PyObject *receiver;
             value_tagged = stack_pointer[-1];
             value = Py_OBJ_UNTAG(value_tagged);
@@ -315,7 +315,7 @@
         }
 
         case _UNARY_NEGATIVE: {
-            _PyTaggedPtr value_tagged;
+            _PyStackRef value_tagged;
             PyObject *value;
             PyObject *res;
             value_tagged = stack_pointer[-1];
@@ -330,7 +330,7 @@
         }
 
         case _UNARY_NOT: {
-            _PyTaggedPtr value_tagged;
+            _PyStackRef value_tagged;
             PyObject *value;
             PyObject *res;
             value_tagged = stack_pointer[-1];
@@ -343,7 +343,7 @@
         }
 
         case _TO_BOOL: {
-            _PyTaggedPtr value_tagged;
+            _PyStackRef value_tagged;
             PyObject *value;
             PyObject *res;
             value_tagged = stack_pointer[-1];
@@ -359,7 +359,7 @@
         }
 
         case _TO_BOOL_BOOL: {
-            _PyTaggedPtr value_tagged;
+            _PyStackRef value_tagged;
             PyObject *value;
             value_tagged = stack_pointer[-1];
             value = Py_OBJ_UNTAG(value_tagged);
@@ -373,7 +373,7 @@
         }
 
         case _TO_BOOL_INT: {
-            _PyTaggedPtr value_tagged;
+            _PyStackRef value_tagged;
             PyObject *value;
             PyObject *res;
             value_tagged = stack_pointer[-1];
@@ -398,7 +398,7 @@
         }
 
         case _TO_BOOL_LIST: {
-            _PyTaggedPtr value_tagged;
+            _PyStackRef value_tagged;
             PyObject *value;
             PyObject *res;
             value_tagged = stack_pointer[-1];
@@ -417,7 +417,7 @@
         }
 
         case _TO_BOOL_NONE: {
-            _PyTaggedPtr value_tagged;
+            _PyStackRef value_tagged;
             PyObject *value;
             PyObject *res;
             value_tagged = stack_pointer[-1];
@@ -435,7 +435,7 @@
         }
 
         case _TO_BOOL_STR: {
-            _PyTaggedPtr value_tagged;
+            _PyStackRef value_tagged;
             PyObject *value;
             PyObject *res;
             value_tagged = stack_pointer[-1];
@@ -461,7 +461,7 @@
         }
 
         case _REPLACE_WITH_TRUE: {
-            _PyTaggedPtr value_tagged;
+            _PyStackRef value_tagged;
             PyObject *value;
             PyObject *res;
             value_tagged = stack_pointer[-1];
@@ -475,7 +475,7 @@
         }
 
         case _UNARY_INVERT: {
-            _PyTaggedPtr value_tagged;
+            _PyStackRef value_tagged;
             PyObject *value;
             PyObject *res;
             value_tagged = stack_pointer[-1];
@@ -490,9 +490,9 @@
         }
 
         case _GUARD_BOTH_INT: {
-            _PyTaggedPtr right_tagged;
+            _PyStackRef right_tagged;
             PyObject *right;
-            _PyTaggedPtr left_tagged;
+            _PyStackRef left_tagged;
             PyObject *left;
             right_tagged = stack_pointer[-1];
             right = Py_OBJ_UNTAG(right_tagged);
@@ -512,9 +512,9 @@
         }
 
         case _BINARY_OP_MULTIPLY_INT: {
-            _PyTaggedPtr right_tagged;
+            _PyStackRef right_tagged;
             PyObject *right;
-            _PyTaggedPtr left_tagged;
+            _PyStackRef left_tagged;
             PyObject *left;
             PyObject *res;
             right_tagged = stack_pointer[-1];
@@ -534,9 +534,9 @@
         }
 
         case _BINARY_OP_ADD_INT: {
-            _PyTaggedPtr right_tagged;
+            _PyStackRef right_tagged;
             PyObject *right;
-            _PyTaggedPtr left_tagged;
+            _PyStackRef left_tagged;
             PyObject *left;
             PyObject *res;
             right_tagged = stack_pointer[-1];
@@ -556,9 +556,9 @@
         }
 
         case _BINARY_OP_SUBTRACT_INT: {
-            _PyTaggedPtr right_tagged;
+            _PyStackRef right_tagged;
             PyObject *right;
-            _PyTaggedPtr left_tagged;
+            _PyStackRef left_tagged;
             PyObject *left;
             PyObject *res;
             right_tagged = stack_pointer[-1];
@@ -578,9 +578,9 @@
         }
 
         case _GUARD_BOTH_FLOAT: {
-            _PyTaggedPtr right_tagged;
+            _PyStackRef right_tagged;
             PyObject *right;
-            _PyTaggedPtr left_tagged;
+            _PyStackRef left_tagged;
             PyObject *left;
             right_tagged = stack_pointer[-1];
             right = Py_OBJ_UNTAG(right_tagged);
@@ -600,9 +600,9 @@
         }
 
         case _BINARY_OP_MULTIPLY_FLOAT: {
-            _PyTaggedPtr right_tagged;
+            _PyStackRef right_tagged;
             PyObject *right;
-            _PyTaggedPtr left_tagged;
+            _PyStackRef left_tagged;
             PyObject *left;
             PyObject *res;
             right_tagged = stack_pointer[-1];
@@ -622,9 +622,9 @@
         }
 
         case _BINARY_OP_ADD_FLOAT: {
-            _PyTaggedPtr right_tagged;
+            _PyStackRef right_tagged;
             PyObject *right;
-            _PyTaggedPtr left_tagged;
+            _PyStackRef left_tagged;
             PyObject *left;
             PyObject *res;
             right_tagged = stack_pointer[-1];
@@ -644,9 +644,9 @@
         }
 
         case _BINARY_OP_SUBTRACT_FLOAT: {
-            _PyTaggedPtr right_tagged;
+            _PyStackRef right_tagged;
             PyObject *right;
-            _PyTaggedPtr left_tagged;
+            _PyStackRef left_tagged;
             PyObject *left;
             PyObject *res;
             right_tagged = stack_pointer[-1];
@@ -666,9 +666,9 @@
         }
 
         case _GUARD_BOTH_UNICODE: {
-            _PyTaggedPtr right_tagged;
+            _PyStackRef right_tagged;
             PyObject *right;
-            _PyTaggedPtr left_tagged;
+            _PyStackRef left_tagged;
             PyObject *left;
             right_tagged = stack_pointer[-1];
             right = Py_OBJ_UNTAG(right_tagged);
@@ -688,9 +688,9 @@
         }
 
         case _BINARY_OP_ADD_UNICODE: {
-            _PyTaggedPtr right_tagged;
+            _PyStackRef right_tagged;
             PyObject *right;
-            _PyTaggedPtr left_tagged;
+            _PyStackRef left_tagged;
             PyObject *left;
             PyObject *res;
             right_tagged = stack_pointer[-1];
@@ -710,9 +710,9 @@
         }
 
         case _BINARY_SUBSCR: {
-            _PyTaggedPtr sub_tagged;
+            _PyStackRef sub_tagged;
             PyObject *sub;
-            _PyTaggedPtr container_tagged;
+            _PyStackRef container_tagged;
             PyObject *container;
             PyObject *res;
             sub_tagged = stack_pointer[-1];
@@ -733,11 +733,11 @@
         }
 
         case _BINARY_SLICE: {
-            _PyTaggedPtr stop_tagged;
+            _PyStackRef stop_tagged;
             PyObject *stop;
-            _PyTaggedPtr start_tagged;
+            _PyStackRef start_tagged;
             PyObject *start;
-            _PyTaggedPtr container_tagged;
+            _PyStackRef container_tagged;
             PyObject *container;
             PyObject *res;
             stop_tagged = stack_pointer[-1];
@@ -768,13 +768,13 @@
         }
 
         case _STORE_SLICE: {
-            _PyTaggedPtr stop_tagged;
+            _PyStackRef stop_tagged;
             PyObject *stop;
-            _PyTaggedPtr start_tagged;
+            _PyStackRef start_tagged;
             PyObject *start;
-            _PyTaggedPtr container_tagged;
+            _PyStackRef container_tagged;
             PyObject *container;
-            _PyTaggedPtr v_tagged;
+            _PyStackRef v_tagged;
             PyObject *v;
             stop_tagged = stack_pointer[-1];
             stop = Py_OBJ_UNTAG(stop_tagged);
@@ -806,9 +806,9 @@
         }
 
         case _BINARY_SUBSCR_LIST_INT: {
-            _PyTaggedPtr sub_tagged;
+            _PyStackRef sub_tagged;
             PyObject *sub;
-            _PyTaggedPtr list_tagged;
+            _PyStackRef list_tagged;
             PyObject *list;
             PyObject *res;
             sub_tagged = stack_pointer[-1];
@@ -847,9 +847,9 @@
         }
 
         case _BINARY_SUBSCR_STR_INT: {
-            _PyTaggedPtr sub_tagged;
+            _PyStackRef sub_tagged;
             PyObject *sub;
-            _PyTaggedPtr str_tagged;
+            _PyStackRef str_tagged;
             PyObject *str;
             PyObject *res;
             sub_tagged = stack_pointer[-1];
@@ -891,9 +891,9 @@
         }
 
         case _BINARY_SUBSCR_TUPLE_INT: {
-            _PyTaggedPtr sub_tagged;
+            _PyStackRef sub_tagged;
             PyObject *sub;
-            _PyTaggedPtr tuple_tagged;
+            _PyStackRef tuple_tagged;
             PyObject *tuple;
             PyObject *res;
             sub_tagged = stack_pointer[-1];
@@ -932,9 +932,9 @@
         }
 
         case _BINARY_SUBSCR_DICT: {
-            _PyTaggedPtr sub_tagged;
+            _PyStackRef sub_tagged;
             PyObject *sub;
-            _PyTaggedPtr dict_tagged;
+            _PyStackRef dict_tagged;
             PyObject *dict;
             PyObject *res;
             sub_tagged = stack_pointer[-1];
@@ -966,9 +966,9 @@
         /* _BINARY_SUBSCR_GETITEM is not a viable micro-op for tier 2 because it uses the 'this_instr' variable */
 
         case _LIST_APPEND: {
-            _PyTaggedPtr v_tagged;
+            _PyStackRef v_tagged;
             PyObject *v;
-            _PyTaggedPtr list_tagged;
+            _PyStackRef list_tagged;
             PyObject *list;
             oparg = CURRENT_OPARG();
             v_tagged = stack_pointer[-1];
@@ -983,9 +983,9 @@
         }
 
         case _SET_ADD: {
-            _PyTaggedPtr v_tagged;
+            _PyStackRef v_tagged;
             PyObject *v;
-            _PyTaggedPtr set_tagged;
+            _PyStackRef set_tagged;
             PyObject *set;
             oparg = CURRENT_OPARG();
             v_tagged = stack_pointer[-1];
@@ -1003,11 +1003,11 @@
         }
 
         case _STORE_SUBSCR: {
-            _PyTaggedPtr sub_tagged;
+            _PyStackRef sub_tagged;
             PyObject *sub;
-            _PyTaggedPtr container_tagged;
+            _PyStackRef container_tagged;
             PyObject *container;
-            _PyTaggedPtr v_tagged;
+            _PyStackRef v_tagged;
             PyObject *v;
             sub_tagged = stack_pointer[-1];
             sub = Py_OBJ_UNTAG(sub_tagged);
@@ -1032,11 +1032,11 @@
         }
 
         case _STORE_SUBSCR_LIST_INT: {
-            _PyTaggedPtr sub_tagged;
+            _PyStackRef sub_tagged;
             PyObject *sub;
-            _PyTaggedPtr list_tagged;
+            _PyStackRef list_tagged;
             PyObject *list;
-            _PyTaggedPtr value_tagged;
+            _PyStackRef value_tagged;
             PyObject *value;
             sub_tagged = stack_pointer[-1];
             sub = Py_OBJ_UNTAG(sub_tagged);
@@ -1078,11 +1078,11 @@
         }
 
         case _STORE_SUBSCR_DICT: {
-            _PyTaggedPtr sub_tagged;
+            _PyStackRef sub_tagged;
             PyObject *sub;
-            _PyTaggedPtr dict_tagged;
+            _PyStackRef dict_tagged;
             PyObject *dict;
-            _PyTaggedPtr value_tagged;
+            _PyStackRef value_tagged;
             PyObject *value;
             sub_tagged = stack_pointer[-1];
             sub = Py_OBJ_UNTAG(sub_tagged);
@@ -1106,9 +1106,9 @@
         }
 
         case _DELETE_SUBSCR: {
-            _PyTaggedPtr sub_tagged;
+            _PyStackRef sub_tagged;
             PyObject *sub;
-            _PyTaggedPtr container_tagged;
+            _PyStackRef container_tagged;
             PyObject *container;
             sub_tagged = stack_pointer[-1];
             sub = Py_OBJ_UNTAG(sub_tagged);
@@ -1128,7 +1128,7 @@
         }
 
         case _CALL_INTRINSIC_1: {
-            _PyTaggedPtr value_tagged;
+            _PyStackRef value_tagged;
             PyObject *value;
             PyObject *res;
             oparg = CURRENT_OPARG();
@@ -1145,9 +1145,9 @@
         }
 
         case _CALL_INTRINSIC_2: {
-            _PyTaggedPtr value1_tagged;
+            _PyStackRef value1_tagged;
             PyObject *value1;
-            _PyTaggedPtr value2_tagged;
+            _PyStackRef value2_tagged;
             PyObject *value2;
             PyObject *res;
             oparg = CURRENT_OPARG();
@@ -1170,7 +1170,7 @@
         }
 
         case _POP_FRAME: {
-            _PyTaggedPtr retval;
+            _PyStackRef retval;
             retval = stack_pointer[-1];
 
             #if TIER_ONE
@@ -1201,7 +1201,7 @@
         /* _INSTRUMENTED_RETURN_CONST is not a viable micro-op for tier 2 because it is instrumented */
 
         case _GET_AITER: {
-            _PyTaggedPtr obj_tagged;
+            _PyStackRef obj_tagged;
             PyObject *obj;
             PyObject *iter;
             obj_tagged = stack_pointer[-1];
@@ -1239,7 +1239,7 @@
         }
 
         case _GET_ANEXT: {
-            _PyTaggedPtr aiter_tagged;
+            _PyStackRef aiter_tagged;
             PyObject *aiter;
             PyObject *awaitable;
             aiter_tagged = stack_pointer[-1];
@@ -1289,7 +1289,7 @@
         }
 
         case _GET_AWAITABLE: {
-            _PyTaggedPtr iterable_tagged;
+            _PyStackRef iterable_tagged;
             PyObject *iterable;
             PyObject *iter;
             oparg = CURRENT_OPARG();
@@ -1327,7 +1327,7 @@
         /* _INSTRUMENTED_YIELD_VALUE is not a viable micro-op for tier 2 because it is instrumented */
 
         case _POP_EXCEPT: {
-            _PyTaggedPtr exc_value_tagged;
+            _PyStackRef exc_value_tagged;
             PyObject *exc_value;
             exc_value_tagged = stack_pointer[-1];
             exc_value = Py_OBJ_UNTAG(exc_value_tagged);
@@ -1360,7 +1360,7 @@
         }
 
         case _STORE_NAME: {
-            _PyTaggedPtr v_tagged;
+            _PyStackRef v_tagged;
             PyObject *v;
             oparg = CURRENT_OPARG();
             v_tagged = stack_pointer[-1];
@@ -1409,13 +1409,13 @@
         }
 
         case _UNPACK_SEQUENCE: {
-            _PyTaggedPtr seq_tagged;
+            _PyStackRef seq_tagged;
             PyObject *seq;
             oparg = CURRENT_OPARG();
             seq_tagged = stack_pointer[-1];
             seq = Py_OBJ_UNTAG(seq_tagged);
 
-            _PyTaggedPtr *top = stack_pointer + oparg - 1;
+            _PyStackRef *top = stack_pointer + oparg - 1;
             int res = _PyEval_UnpackTaggedIterable(tstate, seq, oparg, -1, top);
             (void)seq;
             Py_DECREF_TAGGED(seq_tagged);
@@ -1425,7 +1425,7 @@
         }
 
         case _UNPACK_SEQUENCE_TWO_TUPLE: {
-            _PyTaggedPtr seq_tagged;
+            _PyStackRef seq_tagged;
             PyObject *seq;
             PyObject *val1;
             PyObject *val0;
@@ -1454,9 +1454,9 @@
         }
 
         case _UNPACK_SEQUENCE_TUPLE: {
-            _PyTaggedPtr seq_tagged;
+            _PyStackRef seq_tagged;
             PyObject *seq;
-            _PyTaggedPtr *values;
+            _PyStackRef *values;
             oparg = CURRENT_OPARG();
             seq_tagged = stack_pointer[-1];
             seq = Py_OBJ_UNTAG(seq_tagged);
@@ -1482,9 +1482,9 @@
         }
 
         case _UNPACK_SEQUENCE_LIST: {
-            _PyTaggedPtr seq_tagged;
+            _PyStackRef seq_tagged;
             PyObject *seq;
-            _PyTaggedPtr *values;
+            _PyStackRef *values;
             oparg = CURRENT_OPARG();
             seq_tagged = stack_pointer[-1];
             seq = Py_OBJ_UNTAG(seq_tagged);
@@ -1510,14 +1510,14 @@
         }
 
         case _UNPACK_EX: {
-            _PyTaggedPtr seq_tagged;
+            _PyStackRef seq_tagged;
             PyObject *seq;
             oparg = CURRENT_OPARG();
             seq_tagged = stack_pointer[-1];
             seq = Py_OBJ_UNTAG(seq_tagged);
 
             int totalargs = 1 + (oparg & 0xFF) + (oparg >> 8);
-            _PyTaggedPtr *top = stack_pointer + totalargs - 1;
+            _PyStackRef *top = stack_pointer + totalargs - 1;
             int res = _PyEval_UnpackTaggedIterable(tstate, seq, oparg & 0xFF, oparg >> 8, top);
             (void)seq;
             Py_DECREF_TAGGED(seq_tagged);
@@ -1527,9 +1527,9 @@
         }
 
         case _STORE_ATTR: {
-            _PyTaggedPtr owner_tagged;
+            _PyStackRef owner_tagged;
             PyObject *owner;
-            _PyTaggedPtr v_tagged;
+            _PyStackRef v_tagged;
             PyObject *v;
             oparg = CURRENT_OPARG();
             owner_tagged = stack_pointer[-1];
@@ -1550,7 +1550,7 @@
         }
 
         case _DELETE_ATTR: {
-            _PyTaggedPtr owner_tagged;
+            _PyStackRef owner_tagged;
             PyObject *owner;
             oparg = CURRENT_OPARG();
             owner_tagged = stack_pointer[-1];
@@ -1566,7 +1566,7 @@
         }
 
         case _STORE_GLOBAL: {
-            _PyTaggedPtr v_tagged;
+            _PyStackRef v_tagged;
             PyObject *v;
             oparg = CURRENT_OPARG();
             v_tagged = stack_pointer[-1];
@@ -1612,7 +1612,7 @@
         }
 
         case _LOAD_FROM_DICT_OR_GLOBALS: {
-            _PyTaggedPtr mod_or_class_dict_tagged;
+            _PyStackRef mod_or_class_dict_tagged;
             PyObject *mod_or_class_dict;
             PyObject *v;
             oparg = CURRENT_OPARG();
@@ -1804,7 +1804,7 @@
         }
 
         case _LOAD_FROM_DICT_OR_DEREF: {
-            _PyTaggedPtr class_dict_tagged;
+            _PyStackRef class_dict_tagged;
             PyObject *class_dict;
             PyObject *value;
             oparg = CURRENT_OPARG();
@@ -1846,7 +1846,7 @@
         }
 
         case _STORE_DEREF: {
-            _PyTaggedPtr v_tagged;
+            _PyStackRef v_tagged;
             PyObject *v;
             oparg = CURRENT_OPARG();
             v_tagged = stack_pointer[-1];
@@ -1874,7 +1874,7 @@
         }
 
         case _BUILD_STRING: {
-            _PyTaggedPtr *pieces;
+            _PyStackRef *pieces;
             PyObject *str;
             oparg = CURRENT_OPARG();
             pieces = &stack_pointer[-oparg];
@@ -1889,7 +1889,7 @@
         }
 
         case _BUILD_TUPLE: {
-            _PyTaggedPtr *values;
+            _PyStackRef *values;
             PyObject *tup;
             oparg = CURRENT_OPARG();
             values = &stack_pointer[-oparg];
@@ -1901,7 +1901,7 @@
         }
 
         case _BUILD_LIST: {
-            _PyTaggedPtr *values;
+            _PyStackRef *values;
             PyObject *list;
             oparg = CURRENT_OPARG();
             values = &stack_pointer[-oparg];
@@ -1913,9 +1913,9 @@
         }
 
         case _LIST_EXTEND: {
-            _PyTaggedPtr iterable_tagged;
+            _PyStackRef iterable_tagged;
             PyObject *iterable;
-            _PyTaggedPtr list_tagged;
+            _PyStackRef list_tagged;
             PyObject *list;
             oparg = CURRENT_OPARG();
             iterable_tagged = stack_pointer[-1];
@@ -1946,9 +1946,9 @@
         }
 
         case _SET_UPDATE: {
-            _PyTaggedPtr iterable_tagged;
+            _PyStackRef iterable_tagged;
             PyObject *iterable;
-            _PyTaggedPtr set_tagged;
+            _PyStackRef set_tagged;
             PyObject *set;
             oparg = CURRENT_OPARG();
             iterable_tagged = stack_pointer[-1];
@@ -1968,7 +1968,7 @@
         /* _BUILD_SET is not a viable micro-op for tier 2 because it has both popping and not-popping errors */
 
         case _BUILD_MAP: {
-            _PyTaggedPtr *values;
+            _PyStackRef *values;
             PyObject *map;
             oparg = CURRENT_OPARG();
             values = &stack_pointer[-oparg*2];
@@ -2010,9 +2010,9 @@
         }
 
         case _BUILD_CONST_KEY_MAP: {
-            _PyTaggedPtr keys_tagged;
+            _PyStackRef keys_tagged;
             PyObject *keys;
-            _PyTaggedPtr *values;
+            _PyStackRef *values;
             PyObject *map;
             oparg = CURRENT_OPARG();
             keys_tagged = stack_pointer[-1];
@@ -2036,9 +2036,9 @@
         }
 
         case _DICT_UPDATE: {
-            _PyTaggedPtr update_tagged;
+            _PyStackRef update_tagged;
             PyObject *update;
-            _PyTaggedPtr dict_tagged;
+            _PyStackRef dict_tagged;
             PyObject *dict;
             oparg = CURRENT_OPARG();
             update_tagged = stack_pointer[-1];
@@ -2064,11 +2064,11 @@
         }
 
         case _DICT_MERGE: {
-            _PyTaggedPtr update_tagged;
+            _PyStackRef update_tagged;
             PyObject *update;
-            _PyTaggedPtr dict_tagged;
+            _PyStackRef dict_tagged;
             PyObject *dict;
-            _PyTaggedPtr callable_tagged;
+            _PyStackRef callable_tagged;
             PyObject *callable;
             oparg = CURRENT_OPARG();
             update_tagged = stack_pointer[-1];
@@ -2093,11 +2093,11 @@
         }
 
         case _MAP_ADD: {
-            _PyTaggedPtr value_tagged;
+            _PyStackRef value_tagged;
             PyObject *value;
-            _PyTaggedPtr key_tagged;
+            _PyStackRef key_tagged;
             PyObject *key;
-            _PyTaggedPtr dict_tagged;
+            _PyStackRef dict_tagged;
             PyObject *dict;
             oparg = CURRENT_OPARG();
             value_tagged = stack_pointer[-1];
@@ -2120,11 +2120,11 @@
         /* _INSTRUMENTED_LOAD_SUPER_ATTR is not a viable micro-op for tier 2 because it is instrumented */
 
         case _LOAD_SUPER_ATTR_ATTR: {
-            _PyTaggedPtr self_tagged;
+            _PyStackRef self_tagged;
             PyObject *self;
-            _PyTaggedPtr class_tagged;
+            _PyStackRef class_tagged;
             PyObject *class;
-            _PyTaggedPtr global_super_tagged;
+            _PyStackRef global_super_tagged;
             PyObject *global_super;
             PyObject *attr;
             oparg = CURRENT_OPARG();
@@ -2162,11 +2162,11 @@
         }
 
         case _LOAD_SUPER_ATTR_METHOD: {
-            _PyTaggedPtr self_tagged;
+            _PyStackRef self_tagged;
             PyObject *self;
-            _PyTaggedPtr class_tagged;
+            _PyStackRef class_tagged;
             PyObject *class;
-            _PyTaggedPtr global_super_tagged;
+            _PyStackRef global_super_tagged;
             PyObject *global_super;
             PyObject *attr;
             PyObject *self_or_null;
@@ -2214,7 +2214,7 @@
         }
 
         case _LOAD_ATTR: {
-            _PyTaggedPtr owner_tagged;
+            _PyStackRef owner_tagged;
             PyObject *owner;
             PyObject *attr;
             PyObject *self_or_null = NULL;
@@ -2261,7 +2261,7 @@
         }
 
         case _GUARD_TYPE_VERSION: {
-            _PyTaggedPtr owner_tagged;
+            _PyStackRef owner_tagged;
             PyObject *owner;
             owner_tagged = stack_pointer[-1];
             owner = Py_OBJ_UNTAG(owner_tagged);
@@ -2277,7 +2277,7 @@
         }
 
         case _CHECK_MANAGED_OBJECT_HAS_VALUES: {
-            _PyTaggedPtr owner_tagged;
+            _PyStackRef owner_tagged;
             PyObject *owner;
             owner_tagged = stack_pointer[-1];
             owner = Py_OBJ_UNTAG(owner_tagged);
@@ -2292,7 +2292,7 @@
         }
 
         case _LOAD_ATTR_INSTANCE_VALUE_0: {
-            _PyTaggedPtr owner_tagged;
+            _PyStackRef owner_tagged;
             PyObject *owner;
             PyObject *attr;
             PyObject *null = NULL;
@@ -2316,7 +2316,7 @@
         }
 
         case _LOAD_ATTR_INSTANCE_VALUE_1: {
-            _PyTaggedPtr owner_tagged;
+            _PyStackRef owner_tagged;
             PyObject *owner;
             PyObject *attr;
             PyObject *null = NULL;
@@ -2344,7 +2344,7 @@
         /* _LOAD_ATTR_INSTANCE_VALUE is split on (oparg & 1) */
 
         case _CHECK_ATTR_MODULE: {
-            _PyTaggedPtr owner_tagged;
+            _PyStackRef owner_tagged;
             PyObject *owner;
             owner_tagged = stack_pointer[-1];
             owner = Py_OBJ_UNTAG(owner_tagged);
@@ -2364,7 +2364,7 @@
         }
 
         case _LOAD_ATTR_MODULE: {
-            _PyTaggedPtr owner_tagged;
+            _PyStackRef owner_tagged;
             PyObject *owner;
             PyObject *attr;
             PyObject *null = NULL;
@@ -2394,7 +2394,7 @@
         }
 
         case _CHECK_ATTR_WITH_HINT: {
-            _PyTaggedPtr owner_tagged;
+            _PyStackRef owner_tagged;
             PyObject *owner;
             owner_tagged = stack_pointer[-1];
             owner = Py_OBJ_UNTAG(owner_tagged);
@@ -2411,7 +2411,7 @@
         }
 
         case _LOAD_ATTR_WITH_HINT: {
-            _PyTaggedPtr owner_tagged;
+            _PyStackRef owner_tagged;
             PyObject *owner;
             PyObject *attr;
             PyObject *null = NULL;
@@ -2459,7 +2459,7 @@
         }
 
         case _LOAD_ATTR_SLOT_0: {
-            _PyTaggedPtr owner_tagged;
+            _PyStackRef owner_tagged;
             PyObject *owner;
             PyObject *attr;
             PyObject *null = NULL;
@@ -2484,7 +2484,7 @@
         }
 
         case _LOAD_ATTR_SLOT_1: {
-            _PyTaggedPtr owner_tagged;
+            _PyStackRef owner_tagged;
             PyObject *owner;
             PyObject *attr;
             PyObject *null = NULL;
@@ -2513,7 +2513,7 @@
         /* _LOAD_ATTR_SLOT is split on (oparg & 1) */
 
         case _CHECK_ATTR_CLASS: {
-            _PyTaggedPtr owner_tagged;
+            _PyStackRef owner_tagged;
             PyObject *owner;
             owner_tagged = stack_pointer[-1];
             owner = Py_OBJ_UNTAG(owner_tagged);
@@ -2532,7 +2532,7 @@
         }
 
         case _LOAD_ATTR_CLASS_0: {
-            _PyTaggedPtr owner_tagged;
+            _PyStackRef owner_tagged;
             PyObject *owner;
             PyObject *attr;
             PyObject *null = NULL;
@@ -2552,7 +2552,7 @@
         }
 
         case _LOAD_ATTR_CLASS_1: {
-            _PyTaggedPtr owner_tagged;
+            _PyStackRef owner_tagged;
             PyObject *owner;
             PyObject *attr;
             PyObject *null = NULL;
@@ -2580,7 +2580,7 @@
         /* _LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN is not a viable micro-op for tier 2 because it uses the 'this_instr' variable */
 
         case _GUARD_DORV_NO_DICT: {
-            _PyTaggedPtr owner_tagged;
+            _PyStackRef owner_tagged;
             PyObject *owner;
             owner_tagged = stack_pointer[-1];
             owner = Py_OBJ_UNTAG(owner_tagged);
@@ -2599,9 +2599,9 @@
         }
 
         case _STORE_ATTR_INSTANCE_VALUE: {
-            _PyTaggedPtr owner_tagged;
+            _PyStackRef owner_tagged;
             PyObject *owner;
-            _PyTaggedPtr value_tagged;
+            _PyStackRef value_tagged;
             PyObject *value;
             owner_tagged = stack_pointer[-1];
             owner = Py_OBJ_UNTAG(owner_tagged);
@@ -2629,9 +2629,9 @@
         /* _STORE_ATTR_WITH_HINT is not a viable micro-op for tier 2 because it has unused cache entries */
 
         case _STORE_ATTR_SLOT: {
-            _PyTaggedPtr owner_tagged;
+            _PyStackRef owner_tagged;
             PyObject *owner;
-            _PyTaggedPtr value_tagged;
+            _PyStackRef value_tagged;
             PyObject *value;
             owner_tagged = stack_pointer[-1];
             owner = Py_OBJ_UNTAG(owner_tagged);
@@ -2651,9 +2651,9 @@
         }
 
         case _COMPARE_OP: {
-            _PyTaggedPtr right_tagged;
+            _PyStackRef right_tagged;
             PyObject *right;
-            _PyTaggedPtr left_tagged;
+            _PyStackRef left_tagged;
             PyObject *left;
             PyObject *res;
             oparg = CURRENT_OPARG();
@@ -2682,9 +2682,9 @@
         }
 
         case _COMPARE_OP_FLOAT: {
-            _PyTaggedPtr right_tagged;
+            _PyStackRef right_tagged;
             PyObject *right;
-            _PyTaggedPtr left_tagged;
+            _PyStackRef left_tagged;
             PyObject *left;
             PyObject *res;
             oparg = CURRENT_OPARG();
@@ -2709,9 +2709,9 @@
         }
 
         case _COMPARE_OP_INT: {
-            _PyTaggedPtr right_tagged;
+            _PyStackRef right_tagged;
             PyObject *right;
-            _PyTaggedPtr left_tagged;
+            _PyStackRef left_tagged;
             PyObject *left;
             PyObject *res;
             oparg = CURRENT_OPARG();
@@ -2746,9 +2746,9 @@
         }
 
         case _COMPARE_OP_STR: {
-            _PyTaggedPtr right_tagged;
+            _PyStackRef right_tagged;
             PyObject *right;
-            _PyTaggedPtr left_tagged;
+            _PyStackRef left_tagged;
             PyObject *left;
             PyObject *res;
             oparg = CURRENT_OPARG();
@@ -2774,9 +2774,9 @@
         }
 
         case _IS_OP: {
-            _PyTaggedPtr right_tagged;
+            _PyStackRef right_tagged;
             PyObject *right;
-            _PyTaggedPtr left_tagged;
+            _PyStackRef left_tagged;
             PyObject *left;
             PyObject *b;
             oparg = CURRENT_OPARG();
@@ -2798,9 +2798,9 @@
         }
 
         case _CONTAINS_OP: {
-            _PyTaggedPtr right_tagged;
+            _PyStackRef right_tagged;
             PyObject *right;
-            _PyTaggedPtr left_tagged;
+            _PyStackRef left_tagged;
             PyObject *left;
             PyObject *b;
             oparg = CURRENT_OPARG();
@@ -2823,9 +2823,9 @@
         }
 
         case _CONTAINS_OP_SET: {
-            _PyTaggedPtr right_tagged;
+            _PyStackRef right_tagged;
             PyObject *right;
-            _PyTaggedPtr left_tagged;
+            _PyStackRef left_tagged;
             PyObject *left;
             PyObject *b;
             oparg = CURRENT_OPARG();
@@ -2854,9 +2854,9 @@
         }
 
         case _CONTAINS_OP_DICT: {
-            _PyTaggedPtr right_tagged;
+            _PyStackRef right_tagged;
             PyObject *right;
-            _PyTaggedPtr left_tagged;
+            _PyStackRef left_tagged;
             PyObject *left;
             PyObject *b;
             oparg = CURRENT_OPARG();
@@ -2884,9 +2884,9 @@
         }
 
         case _CHECK_EG_MATCH: {
-            _PyTaggedPtr match_type_tagged;
+            _PyStackRef match_type_tagged;
             PyObject *match_type;
-            _PyTaggedPtr exc_value_tagged;
+            _PyStackRef exc_value_tagged;
             PyObject *exc_value;
             PyObject *rest;
             PyObject *match;
@@ -2923,9 +2923,9 @@
         }
 
         case _CHECK_EXC_MATCH: {
-            _PyTaggedPtr right_tagged;
+            _PyStackRef right_tagged;
             PyObject *right;
-            _PyTaggedPtr left_tagged;
+            _PyStackRef left_tagged;
             PyObject *left;
             PyObject *b;
             right_tagged = stack_pointer[-1];
@@ -2953,7 +2953,7 @@
         /* _POP_JUMP_IF_TRUE is not a viable micro-op for tier 2 because it is replaced */
 
         case _IS_NONE: {
-            _PyTaggedPtr value_tagged;
+            _PyStackRef value_tagged;
             PyObject *value;
             PyObject *b;
             value_tagged = stack_pointer[-1];
@@ -2972,7 +2972,7 @@
         }
 
         case _GET_LEN: {
-            _PyTaggedPtr obj_tagged;
+            _PyStackRef obj_tagged;
             PyObject *obj;
             PyObject *len_o;
             obj_tagged = stack_pointer[-1];
@@ -2989,11 +2989,11 @@
         }
 
         case _MATCH_CLASS: {
-            _PyTaggedPtr names_tagged;
+            _PyStackRef names_tagged;
             PyObject *names;
-            _PyTaggedPtr type_tagged;
+            _PyStackRef type_tagged;
             PyObject *type;
-            _PyTaggedPtr subject_tagged;
+            _PyStackRef subject_tagged;
             PyObject *subject;
             PyObject *attrs;
             oparg = CURRENT_OPARG();
@@ -3030,7 +3030,7 @@
         }
 
         case _MATCH_MAPPING: {
-            _PyTaggedPtr subject_tagged;
+            _PyStackRef subject_tagged;
             PyObject *subject;
             PyObject *res;
             subject_tagged = stack_pointer[-1];
@@ -3044,7 +3044,7 @@
         }
 
         case _MATCH_SEQUENCE: {
-            _PyTaggedPtr subject_tagged;
+            _PyStackRef subject_tagged;
             PyObject *subject;
             PyObject *res;
             subject_tagged = stack_pointer[-1];
@@ -3058,9 +3058,9 @@
         }
 
         case _MATCH_KEYS: {
-            _PyTaggedPtr keys_tagged;
+            _PyStackRef keys_tagged;
             PyObject *keys;
-            _PyTaggedPtr subject_tagged;
+            _PyStackRef subject_tagged;
             PyObject *subject;
             PyObject *values_or_none;
             keys_tagged = stack_pointer[-1];
@@ -3078,7 +3078,7 @@
         }
 
         case _GET_ITER: {
-            _PyTaggedPtr iterable_tagged;
+            _PyStackRef iterable_tagged;
             PyObject *iterable;
             PyObject *iter;
             iterable_tagged = stack_pointer[-1];
@@ -3094,7 +3094,7 @@
         }
 
         case _GET_YIELD_FROM_ITER: {
-            _PyTaggedPtr iterable_tagged;
+            _PyStackRef iterable_tagged;
             PyObject *iterable;
             PyObject *iter;
             iterable_tagged = stack_pointer[-1];
@@ -3132,7 +3132,7 @@
         /* _FOR_ITER is not a viable micro-op for tier 2 because it is replaced */
 
         case _FOR_ITER_TIER_TWO: {
-            _PyTaggedPtr iter_tagged;
+            _PyStackRef iter_tagged;
             PyObject *iter;
             PyObject *next;
             iter_tagged = stack_pointer[-1];
@@ -3165,7 +3165,7 @@
         /* _INSTRUMENTED_FOR_ITER is not a viable micro-op for tier 2 because it is instrumented */
 
         case _ITER_CHECK_LIST: {
-            _PyTaggedPtr iter_tagged;
+            _PyStackRef iter_tagged;
             PyObject *iter;
             iter_tagged = stack_pointer[-1];
             iter = Py_OBJ_UNTAG(iter_tagged);
@@ -3180,7 +3180,7 @@
         /* _ITER_JUMP_LIST is not a viable micro-op for tier 2 because it is replaced */
 
         case _GUARD_NOT_EXHAUSTED_LIST: {
-            _PyTaggedPtr iter_tagged;
+            _PyStackRef iter_tagged;
             PyObject *iter;
             iter_tagged = stack_pointer[-1];
             iter = Py_OBJ_UNTAG(iter_tagged);
@@ -3200,7 +3200,7 @@
         }
 
         case _ITER_NEXT_LIST: {
-            _PyTaggedPtr iter_tagged;
+            _PyStackRef iter_tagged;
             PyObject *iter;
             PyObject *next;
             iter_tagged = stack_pointer[-1];
@@ -3218,7 +3218,7 @@
         }
 
         case _ITER_CHECK_TUPLE: {
-            _PyTaggedPtr iter_tagged;
+            _PyStackRef iter_tagged;
             PyObject *iter;
             iter_tagged = stack_pointer[-1];
             iter = Py_OBJ_UNTAG(iter_tagged);
@@ -3233,7 +3233,7 @@
         /* _ITER_JUMP_TUPLE is not a viable micro-op for tier 2 because it is replaced */
 
         case _GUARD_NOT_EXHAUSTED_TUPLE: {
-            _PyTaggedPtr iter_tagged;
+            _PyStackRef iter_tagged;
             PyObject *iter;
             iter_tagged = stack_pointer[-1];
             iter = Py_OBJ_UNTAG(iter_tagged);
@@ -3253,7 +3253,7 @@
         }
 
         case _ITER_NEXT_TUPLE: {
-            _PyTaggedPtr iter_tagged;
+            _PyStackRef iter_tagged;
             PyObject *iter;
             PyObject *next;
             iter_tagged = stack_pointer[-1];
@@ -3271,7 +3271,7 @@
         }
 
         case _ITER_CHECK_RANGE: {
-            _PyTaggedPtr iter_tagged;
+            _PyStackRef iter_tagged;
             PyObject *iter;
             iter_tagged = stack_pointer[-1];
             iter = Py_OBJ_UNTAG(iter_tagged);
@@ -3287,7 +3287,7 @@
         /* _ITER_JUMP_RANGE is not a viable micro-op for tier 2 because it is replaced */
 
         case _GUARD_NOT_EXHAUSTED_RANGE: {
-            _PyTaggedPtr iter_tagged;
+            _PyStackRef iter_tagged;
             PyObject *iter;
             iter_tagged = stack_pointer[-1];
             iter = Py_OBJ_UNTAG(iter_tagged);
@@ -3302,7 +3302,7 @@
         }
 
         case _ITER_NEXT_RANGE: {
-            _PyTaggedPtr iter_tagged;
+            _PyStackRef iter_tagged;
             PyObject *iter;
             PyObject *next;
             iter_tagged = stack_pointer[-1];
@@ -3328,11 +3328,11 @@
         /* _BEFORE_WITH is not a viable micro-op for tier 2 because it has both popping and not-popping errors */
 
         case _WITH_EXCEPT_START: {
-            _PyTaggedPtr val_tagged;
+            _PyStackRef val_tagged;
             PyObject *val;
-            _PyTaggedPtr lasti_tagged;
+            _PyStackRef lasti_tagged;
             PyObject *lasti;
-            _PyTaggedPtr exit_func_tagged;
+            _PyStackRef exit_func_tagged;
             PyObject *exit_func;
             PyObject *res;
             val_tagged = stack_pointer[-1];
@@ -3374,7 +3374,7 @@
         }
 
         case _PUSH_EXC_INFO: {
-            _PyTaggedPtr new_exc_tagged;
+            _PyStackRef new_exc_tagged;
             PyObject *new_exc;
             PyObject *prev_exc;
             new_exc_tagged = stack_pointer[-1];
@@ -3396,7 +3396,7 @@
         }
 
         case _GUARD_DORV_VALUES_INST_ATTR_FROM_DICT: {
-            _PyTaggedPtr owner_tagged;
+            _PyStackRef owner_tagged;
             PyObject *owner;
             owner_tagged = stack_pointer[-1];
             owner = Py_OBJ_UNTAG(owner_tagged);
@@ -3410,7 +3410,7 @@
         }
 
         case _GUARD_KEYS_VERSION: {
-            _PyTaggedPtr owner_tagged;
+            _PyStackRef owner_tagged;
             PyObject *owner;
             owner_tagged = stack_pointer[-1];
             owner = Py_OBJ_UNTAG(owner_tagged);
@@ -3426,7 +3426,7 @@
         }
 
         case _LOAD_ATTR_METHOD_WITH_VALUES: {
-            _PyTaggedPtr owner_tagged;
+            _PyStackRef owner_tagged;
             PyObject *owner;
             PyObject *attr;
             PyObject *self = NULL;
@@ -3449,7 +3449,7 @@
         }
 
         case _LOAD_ATTR_METHOD_NO_DICT: {
-            _PyTaggedPtr owner_tagged;
+            _PyStackRef owner_tagged;
             PyObject *owner;
             PyObject *attr;
             PyObject *self = NULL;
@@ -3472,7 +3472,7 @@
         }
 
         case _LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES: {
-            _PyTaggedPtr owner_tagged;
+            _PyStackRef owner_tagged;
             PyObject *owner;
             PyObject *attr;
             oparg = CURRENT_OPARG();
@@ -3491,7 +3491,7 @@
         }
 
         case _LOAD_ATTR_NONDESCRIPTOR_NO_DICT: {
-            _PyTaggedPtr owner_tagged;
+            _PyStackRef owner_tagged;
             PyObject *owner;
             PyObject *attr;
             oparg = CURRENT_OPARG();
@@ -3511,7 +3511,7 @@
         }
 
         case _CHECK_ATTR_METHOD_LAZY_DICT: {
-            _PyTaggedPtr owner_tagged;
+            _PyStackRef owner_tagged;
             PyObject *owner;
             owner_tagged = stack_pointer[-1];
             owner = Py_OBJ_UNTAG(owner_tagged);
@@ -3528,7 +3528,7 @@
         }
 
         case _LOAD_ATTR_METHOD_LAZY_DICT: {
-            _PyTaggedPtr owner_tagged;
+            _PyStackRef owner_tagged;
             PyObject *owner;
             PyObject *attr;
             PyObject *self = NULL;
@@ -3559,9 +3559,9 @@
         }
 
         case _CHECK_CALL_BOUND_METHOD_EXACT_ARGS: {
-            _PyTaggedPtr null_tagged;
+            _PyStackRef null_tagged;
             PyObject *null;
-            _PyTaggedPtr callable_tagged;
+            _PyStackRef callable_tagged;
             PyObject *callable;
             oparg = CURRENT_OPARG();
             null_tagged = stack_pointer[-1 - oparg];
@@ -3582,7 +3582,7 @@
         }
 
         case _INIT_CALL_BOUND_METHOD_EXACT_ARGS: {
-            _PyTaggedPtr callable_tagged;
+            _PyStackRef callable_tagged;
             PyObject *callable;
             PyObject *func;
             PyObject *self;
@@ -3592,7 +3592,7 @@
 
             STAT_INC(CALL, hit);
             // Ugly tag and untag because the uop header needs to have consistent type with
-            // the rest of the inst. So we can't change it to _PyTaggedPtr.
+            // the rest of the inst. So we can't change it to _PyStackRef.
             self = Py_OBJ_UNTAG(Py_NewRef_Tagged(Py_OBJ_TAG(((PyMethodObject *)callable)->im_self)));
             stack_pointer[-1 - oparg] = Py_OBJ_TAG(self);  // Patch stack as it is used by _INIT_CALL_PY_EXACT_ARGS
             func = Py_OBJ_UNTAG(Py_NewRef_Tagged(Py_OBJ_TAG(((PyMethodObject *)callable)->im_func)));
@@ -3612,9 +3612,9 @@
         }
 
         case _CHECK_FUNCTION_EXACT_ARGS: {
-            _PyTaggedPtr self_or_null_tagged;
+            _PyStackRef self_or_null_tagged;
             PyObject *self_or_null;
-            _PyTaggedPtr callable_tagged;
+            _PyStackRef callable_tagged;
             PyObject *callable;
             oparg = CURRENT_OPARG();
             self_or_null_tagged = stack_pointer[-1 - oparg];
@@ -3642,7 +3642,7 @@
         }
 
         case _CHECK_STACK_SPACE: {
-            _PyTaggedPtr callable_tagged;
+            _PyStackRef callable_tagged;
             PyObject *callable;
             oparg = CURRENT_OPARG();
             callable_tagged = stack_pointer[-2 - oparg];
@@ -3662,10 +3662,10 @@
         }
 
         case _INIT_CALL_PY_EXACT_ARGS_0: {
-            _PyTaggedPtr *args;
-            _PyTaggedPtr self_or_null_tagged;
+            _PyStackRef *args;
+            _PyStackRef self_or_null_tagged;
             PyObject *self_or_null;
-            _PyTaggedPtr callable_tagged;
+            _PyStackRef callable_tagged;
             PyObject *callable;
             _PyInterpreterFrame *new_frame;
             oparg = 0;
@@ -3681,7 +3681,7 @@
             STAT_INC(CALL, hit);
             PyFunctionObject *func = (PyFunctionObject *)callable;
             new_frame = _PyFrame_PushUnchecked(tstate, func, oparg + has_self);
-            _PyTaggedPtr *first_non_self_local = new_frame->localsplus + has_self;
+            _PyStackRef *first_non_self_local = new_frame->localsplus + has_self;
             new_frame->localsplus[0] = self_or_null_tagged;
             for (int i = 0; i < oparg; i++) {
                 first_non_self_local[i] = args[i];
@@ -3692,10 +3692,10 @@
         }
 
         case _INIT_CALL_PY_EXACT_ARGS_1: {
-            _PyTaggedPtr *args;
-            _PyTaggedPtr self_or_null_tagged;
+            _PyStackRef *args;
+            _PyStackRef self_or_null_tagged;
             PyObject *self_or_null;
-            _PyTaggedPtr callable_tagged;
+            _PyStackRef callable_tagged;
             PyObject *callable;
             _PyInterpreterFrame *new_frame;
             oparg = 1;
@@ -3711,7 +3711,7 @@
             STAT_INC(CALL, hit);
             PyFunctionObject *func = (PyFunctionObject *)callable;
             new_frame = _PyFrame_PushUnchecked(tstate, func, oparg + has_self);
-            _PyTaggedPtr *first_non_self_local = new_frame->localsplus + has_self;
+            _PyStackRef *first_non_self_local = new_frame->localsplus + has_self;
             new_frame->localsplus[0] = self_or_null_tagged;
             for (int i = 0; i < oparg; i++) {
                 first_non_self_local[i] = args[i];
@@ -3722,10 +3722,10 @@
         }
 
         case _INIT_CALL_PY_EXACT_ARGS_2: {
-            _PyTaggedPtr *args;
-            _PyTaggedPtr self_or_null_tagged;
+            _PyStackRef *args;
+            _PyStackRef self_or_null_tagged;
             PyObject *self_or_null;
-            _PyTaggedPtr callable_tagged;
+            _PyStackRef callable_tagged;
             PyObject *callable;
             _PyInterpreterFrame *new_frame;
             oparg = 2;
@@ -3741,7 +3741,7 @@
             STAT_INC(CALL, hit);
             PyFunctionObject *func = (PyFunctionObject *)callable;
             new_frame = _PyFrame_PushUnchecked(tstate, func, oparg + has_self);
-            _PyTaggedPtr *first_non_self_local = new_frame->localsplus + has_self;
+            _PyStackRef *first_non_self_local = new_frame->localsplus + has_self;
             new_frame->localsplus[0] = self_or_null_tagged;
             for (int i = 0; i < oparg; i++) {
                 first_non_self_local[i] = args[i];
@@ -3752,10 +3752,10 @@
         }
 
         case _INIT_CALL_PY_EXACT_ARGS_3: {
-            _PyTaggedPtr *args;
-            _PyTaggedPtr self_or_null_tagged;
+            _PyStackRef *args;
+            _PyStackRef self_or_null_tagged;
             PyObject *self_or_null;
-            _PyTaggedPtr callable_tagged;
+            _PyStackRef callable_tagged;
             PyObject *callable;
             _PyInterpreterFrame *new_frame;
             oparg = 3;
@@ -3771,7 +3771,7 @@
             STAT_INC(CALL, hit);
             PyFunctionObject *func = (PyFunctionObject *)callable;
             new_frame = _PyFrame_PushUnchecked(tstate, func, oparg + has_self);
-            _PyTaggedPtr *first_non_self_local = new_frame->localsplus + has_self;
+            _PyStackRef *first_non_self_local = new_frame->localsplus + has_self;
             new_frame->localsplus[0] = self_or_null_tagged;
             for (int i = 0; i < oparg; i++) {
                 first_non_self_local[i] = args[i];
@@ -3782,10 +3782,10 @@
         }
 
         case _INIT_CALL_PY_EXACT_ARGS_4: {
-            _PyTaggedPtr *args;
-            _PyTaggedPtr self_or_null_tagged;
+            _PyStackRef *args;
+            _PyStackRef self_or_null_tagged;
             PyObject *self_or_null;
-            _PyTaggedPtr callable_tagged;
+            _PyStackRef callable_tagged;
             PyObject *callable;
             _PyInterpreterFrame *new_frame;
             oparg = 4;
@@ -3801,7 +3801,7 @@
             STAT_INC(CALL, hit);
             PyFunctionObject *func = (PyFunctionObject *)callable;
             new_frame = _PyFrame_PushUnchecked(tstate, func, oparg + has_self);
-            _PyTaggedPtr *first_non_self_local = new_frame->localsplus + has_self;
+            _PyStackRef *first_non_self_local = new_frame->localsplus + has_self;
             new_frame->localsplus[0] = self_or_null_tagged;
             for (int i = 0; i < oparg; i++) {
                 first_non_self_local[i] = args[i];
@@ -3812,10 +3812,10 @@
         }
 
         case _INIT_CALL_PY_EXACT_ARGS: {
-            _PyTaggedPtr *args;
-            _PyTaggedPtr self_or_null_tagged;
+            _PyStackRef *args;
+            _PyStackRef self_or_null_tagged;
             PyObject *self_or_null;
-            _PyTaggedPtr callable_tagged;
+            _PyStackRef callable_tagged;
             PyObject *callable;
             _PyInterpreterFrame *new_frame;
             oparg = CURRENT_OPARG();
@@ -3830,7 +3830,7 @@
             STAT_INC(CALL, hit);
             PyFunctionObject *func = (PyFunctionObject *)callable;
             new_frame = _PyFrame_PushUnchecked(tstate, func, oparg + has_self);
-            _PyTaggedPtr *first_non_self_local = new_frame->localsplus + has_self;
+            _PyStackRef *first_non_self_local = new_frame->localsplus + has_self;
             new_frame->localsplus[0] = self_or_null_tagged;
             for (int i = 0; i < oparg; i++) {
                 first_non_self_local[i] = args[i];
@@ -3841,7 +3841,7 @@
         }
 
         case _PUSH_FRAME: {
-            _PyTaggedPtr new_frame_tagged;
+            _PyStackRef new_frame_tagged;
             _PyInterpreterFrame *new_frame;
             new_frame_tagged = stack_pointer[-1];
             new_frame = (_PyInterpreterFrame *)Py_OBJ_UNTAG(new_frame_tagged);
@@ -3869,13 +3869,13 @@
         /* _CALL_PY_WITH_DEFAULTS is not a viable micro-op for tier 2 because it uses the 'this_instr' variable */
 
         case _CALL_TYPE_1: {
-            _PyTaggedPtr arg_tagged;
+            _PyStackRef arg_tagged;
             PyObject *arg;
-            _PyTaggedPtr null_tagged;
+            _PyStackRef null_tagged;
             PyObject *null;
-            _PyTaggedPtr callable_tagged;
+            _PyStackRef callable_tagged;
             PyObject *callable;
-            _PyTaggedPtr res;
+            _PyStackRef res;
             oparg = CURRENT_OPARG();
             arg_tagged = stack_pointer[-1];
             arg = Py_OBJ_UNTAG(arg_tagged);
@@ -3904,11 +3904,11 @@
         }
 
         case _CALL_STR_1: {
-            _PyTaggedPtr arg_tagged;
+            _PyStackRef arg_tagged;
             PyObject *arg;
-            _PyTaggedPtr null_tagged;
+            _PyStackRef null_tagged;
             PyObject *null;
-            _PyTaggedPtr callable_tagged;
+            _PyStackRef callable_tagged;
             PyObject *callable;
             PyObject *res;
             oparg = CURRENT_OPARG();
@@ -3940,11 +3940,11 @@
         }
 
         case _CALL_TUPLE_1: {
-            _PyTaggedPtr arg_tagged;
+            _PyStackRef arg_tagged;
             PyObject *arg;
-            _PyTaggedPtr null_tagged;
+            _PyStackRef null_tagged;
             PyObject *null;
-            _PyTaggedPtr callable_tagged;
+            _PyStackRef callable_tagged;
             PyObject *callable;
             PyObject *res;
             oparg = CURRENT_OPARG();
@@ -3978,7 +3978,7 @@
         /* _CALL_ALLOC_AND_ENTER_INIT is not a viable micro-op for tier 2 because it uses the 'this_instr' variable */
 
         case _EXIT_INIT_CHECK: {
-            _PyTaggedPtr should_be_none_tagged;
+            _PyStackRef should_be_none_tagged;
             PyObject *should_be_none;
             should_be_none_tagged = stack_pointer[-1];
             should_be_none = Py_OBJ_UNTAG(should_be_none_tagged);
@@ -3995,10 +3995,10 @@
         }
 
         case _CALL_BUILTIN_CLASS: {
-            _PyTaggedPtr *args;
-            _PyTaggedPtr self_or_null_tagged;
+            _PyStackRef *args;
+            _PyStackRef self_or_null_tagged;
             PyObject *self_or_null;
-            _PyTaggedPtr callable_tagged;
+            _PyStackRef callable_tagged;
             PyObject *callable;
             PyObject *res;
             oparg = CURRENT_OPARG();
@@ -4037,10 +4037,10 @@
         }
 
         case _CALL_BUILTIN_O: {
-            _PyTaggedPtr *args;
-            _PyTaggedPtr self_or_null_tagged;
+            _PyStackRef *args;
+            _PyStackRef self_or_null_tagged;
             PyObject *self_or_null;
-            _PyTaggedPtr callable_tagged;
+            _PyStackRef callable_tagged;
             PyObject *callable;
             PyObject *res;
             oparg = CURRENT_OPARG();
@@ -4076,7 +4076,7 @@
             }
             STAT_INC(CALL, hit);
             PyCFunction cfunc = PyCFunction_GET_FUNCTION(callable);
-            _PyTaggedPtr arg = args[0];
+            _PyStackRef arg = args[0];
             _Py_EnterRecursiveCallTstateUnchecked(tstate);
             res = _PyCFunction_TrampolineCall(cfunc, PyCFunction_GET_SELF(callable), Py_OBJ_UNTAG(arg));
             _Py_LeaveRecursiveCallTstate(tstate);
@@ -4090,10 +4090,10 @@
         }
 
         case _CALL_BUILTIN_FAST: {
-            _PyTaggedPtr *args;
-            _PyTaggedPtr self_or_null_tagged;
+            _PyStackRef *args;
+            _PyStackRef self_or_null_tagged;
             PyObject *self_or_null;
-            _PyTaggedPtr callable_tagged;
+            _PyStackRef callable_tagged;
             PyObject *callable;
             PyObject *res;
             oparg = CURRENT_OPARG();
@@ -4139,10 +4139,10 @@
         }
 
         case _CALL_BUILTIN_FAST_WITH_KEYWORDS: {
-            _PyTaggedPtr *args;
-            _PyTaggedPtr self_or_null_tagged;
+            _PyStackRef *args;
+            _PyStackRef self_or_null_tagged;
             PyObject *self_or_null;
-            _PyTaggedPtr callable_tagged;
+            _PyStackRef callable_tagged;
             PyObject *callable;
             PyObject *res;
             oparg = CURRENT_OPARG();
@@ -4188,10 +4188,10 @@
         }
 
         case _CALL_LEN: {
-            _PyTaggedPtr *args;
-            _PyTaggedPtr self_or_null_tagged;
+            _PyStackRef *args;
+            _PyStackRef self_or_null_tagged;
             PyObject *self_or_null;
-            _PyTaggedPtr callable_tagged;
+            _PyStackRef callable_tagged;
             PyObject *callable;
             PyObject *res;
             oparg = CURRENT_OPARG();
@@ -4218,7 +4218,7 @@
                 JUMP_TO_JUMP_TARGET();
             }
             STAT_INC(CALL, hit);
-            _PyTaggedPtr arg_tagged = args[0];
+            _PyStackRef arg_tagged = args[0];
             PyObject *arg = Py_OBJ_UNTAG(arg_tagged);
             Py_ssize_t len_i = PyObject_Length(arg);
             if (len_i < 0) {
@@ -4237,10 +4237,10 @@
         }
 
         case _CALL_ISINSTANCE: {
-            _PyTaggedPtr *args;
-            _PyTaggedPtr self_or_null_tagged;
+            _PyStackRef *args;
+            _PyStackRef self_or_null_tagged;
             PyObject *self_or_null;
-            _PyTaggedPtr callable_tagged;
+            _PyStackRef callable_tagged;
             PyObject *callable;
             PyObject *res;
             oparg = CURRENT_OPARG();
@@ -4267,8 +4267,8 @@
                 JUMP_TO_JUMP_TARGET();
             }
             STAT_INC(CALL, hit);
-            _PyTaggedPtr cls_tagged = args[1];
-            _PyTaggedPtr inst_tagged = args[0];
+            _PyStackRef cls_tagged = args[1];
+            _PyStackRef inst_tagged = args[0];
             int retval = PyObject_IsInstance(Py_OBJ_UNTAG(inst_tagged), Py_OBJ_UNTAG(cls_tagged));
             if (retval < 0) {
                 JUMP_TO_ERROR();
@@ -4287,10 +4287,10 @@
         }
 
         case _CALL_METHOD_DESCRIPTOR_O: {
-            _PyTaggedPtr *args;
-            _PyTaggedPtr self_or_null_tagged;
+            _PyStackRef *args;
+            _PyStackRef self_or_null_tagged;
             PyObject *self_or_null;
-            _PyTaggedPtr callable_tagged;
+            _PyStackRef callable_tagged;
             PyObject *callable;
             PyObject *res;
             oparg = CURRENT_OPARG();
@@ -4325,8 +4325,8 @@
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
             }
-            _PyTaggedPtr arg_tagged = args[1];
-            _PyTaggedPtr self_tagged = args[0];
+            _PyStackRef arg_tagged = args[1];
+            _PyStackRef self_tagged = args[0];
             PyObject *self = Py_OBJ_UNTAG(self_tagged);
             PyObject *arg = Py_OBJ_UNTAG(arg_tagged);
             if (!Py_IS_TYPE(self, method->d_common.d_type)) {
@@ -4349,10 +4349,10 @@
         }
 
         case _CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS: {
-            _PyTaggedPtr *args;
-            _PyTaggedPtr self_or_null_tagged;
+            _PyStackRef *args;
+            _PyStackRef self_or_null_tagged;
             PyObject *self_or_null;
-            _PyTaggedPtr callable_tagged;
+            _PyStackRef callable_tagged;
             PyObject *callable;
             PyObject *res;
             oparg = CURRENT_OPARG();
@@ -4404,10 +4404,10 @@
         }
 
         case _CALL_METHOD_DESCRIPTOR_NOARGS: {
-            _PyTaggedPtr *args;
-            _PyTaggedPtr self_or_null_tagged;
+            _PyStackRef *args;
+            _PyStackRef self_or_null_tagged;
             PyObject *self_or_null;
-            _PyTaggedPtr callable_tagged;
+            _PyStackRef callable_tagged;
             PyObject *callable;
             PyObject *res;
             oparg = CURRENT_OPARG();
@@ -4434,7 +4434,7 @@
                 JUMP_TO_JUMP_TARGET();
             }
             PyMethodDef *meth = method->d_method;
-            _PyTaggedPtr self_tagged = args[0];
+            _PyStackRef self_tagged = args[0];
             PyObject *self = Py_OBJ_UNTAG(self_tagged);
             if (!Py_IS_TYPE(self, method->d_common.d_type)) {
                 UOP_STAT_INC(uopcode, miss);
@@ -4464,10 +4464,10 @@
         }
 
         case _CALL_METHOD_DESCRIPTOR_FAST: {
-            _PyTaggedPtr *args;
-            _PyTaggedPtr self_or_null_tagged;
+            _PyStackRef *args;
+            _PyStackRef self_or_null_tagged;
             PyObject *self_or_null;
-            _PyTaggedPtr callable_tagged;
+            _PyStackRef callable_tagged;
             PyObject *callable;
             PyObject *res;
             oparg = CURRENT_OPARG();
@@ -4527,7 +4527,7 @@
         /* _CALL_FUNCTION_EX is not a viable micro-op for tier 2 because it uses the 'this_instr' variable */
 
         case _MAKE_FUNCTION: {
-            _PyTaggedPtr codeobj_tagged;
+            _PyStackRef codeobj_tagged;
             PyObject *codeobj;
             PyObject *func;
             codeobj_tagged = stack_pointer[-1];
@@ -4547,9 +4547,9 @@
         }
 
         case _SET_FUNCTION_ATTRIBUTE: {
-            _PyTaggedPtr func_tagged;
+            _PyStackRef func_tagged;
             PyObject *func;
-            _PyTaggedPtr attr_tagged;
+            _PyStackRef attr_tagged;
             PyObject *attr;
             oparg = CURRENT_OPARG();
             func_tagged = stack_pointer[-1];
@@ -4588,11 +4588,11 @@
         }
 
         case _BUILD_SLICE: {
-            _PyTaggedPtr step_tagged = Py_OBJ_TAG(NULL);
+            _PyStackRef step_tagged = Py_OBJ_TAG(NULL);
             PyObject *step = NULL;
-            _PyTaggedPtr stop_tagged;
+            _PyStackRef stop_tagged;
             PyObject *stop;
-            _PyTaggedPtr start_tagged;
+            _PyStackRef start_tagged;
             PyObject *start;
             PyObject *slice;
             oparg = CURRENT_OPARG();
@@ -4619,7 +4619,7 @@ step = Py_OBJ_UNTAG(step_tagged);
         }
 
         case _CONVERT_VALUE: {
-            _PyTaggedPtr value_tagged;
+            _PyStackRef value_tagged;
             PyObject *value;
             PyObject *result;
             oparg = CURRENT_OPARG();
@@ -4637,7 +4637,7 @@ step = Py_OBJ_UNTAG(step_tagged);
         }
 
         case _FORMAT_SIMPLE: {
-            _PyTaggedPtr value_tagged;
+            _PyStackRef value_tagged;
             PyObject *value;
             PyObject *res;
             value_tagged = stack_pointer[-1];
@@ -4658,9 +4658,9 @@ step = Py_OBJ_UNTAG(step_tagged);
         }
 
         case _FORMAT_WITH_SPEC: {
-            _PyTaggedPtr fmt_spec_tagged;
+            _PyStackRef fmt_spec_tagged;
             PyObject *fmt_spec;
-            _PyTaggedPtr value_tagged;
+            _PyStackRef value_tagged;
             PyObject *value;
             PyObject *res;
             fmt_spec_tagged = stack_pointer[-1];
@@ -4679,7 +4679,7 @@ step = Py_OBJ_UNTAG(step_tagged);
         }
 
         case _COPY: {
-            _PyTaggedPtr bottom_tagged;
+            _PyStackRef bottom_tagged;
             PyObject *bottom;
             PyObject *top;
             oparg = CURRENT_OPARG();
@@ -4694,9 +4694,9 @@ step = Py_OBJ_UNTAG(step_tagged);
         }
 
         case _BINARY_OP: {
-            _PyTaggedPtr rhs_tagged;
+            _PyStackRef rhs_tagged;
             PyObject *rhs;
-            _PyTaggedPtr lhs_tagged;
+            _PyStackRef lhs_tagged;
             PyObject *lhs;
             PyObject *res;
             oparg = CURRENT_OPARG();
@@ -4719,9 +4719,9 @@ step = Py_OBJ_UNTAG(step_tagged);
         }
 
         case _SWAP: {
-            _PyTaggedPtr top_tagged;
+            _PyStackRef top_tagged;
             PyObject *top;
-            _PyTaggedPtr bottom_tagged;
+            _PyStackRef bottom_tagged;
             PyObject *bottom;
             oparg = CURRENT_OPARG();
             top_tagged = stack_pointer[-1];
@@ -4751,7 +4751,7 @@ step = Py_OBJ_UNTAG(step_tagged);
         /* _INSTRUMENTED_POP_JUMP_IF_NOT_NONE is not a viable micro-op for tier 2 because it is instrumented */
 
         case _GUARD_IS_TRUE_POP: {
-            _PyTaggedPtr flag_tagged;
+            _PyStackRef flag_tagged;
             PyObject *flag;
             flag_tagged = stack_pointer[-1];
             flag = Py_OBJ_UNTAG(flag_tagged);
@@ -4766,7 +4766,7 @@ step = Py_OBJ_UNTAG(step_tagged);
         }
 
         case _GUARD_IS_FALSE_POP: {
-            _PyTaggedPtr flag_tagged;
+            _PyStackRef flag_tagged;
             PyObject *flag;
             flag_tagged = stack_pointer[-1];
             flag = Py_OBJ_UNTAG(flag_tagged);
@@ -4781,7 +4781,7 @@ step = Py_OBJ_UNTAG(step_tagged);
         }
 
         case _GUARD_IS_NONE_POP: {
-            _PyTaggedPtr val_tagged;
+            _PyStackRef val_tagged;
             PyObject *val;
             val_tagged = stack_pointer[-1];
             val = Py_OBJ_UNTAG(val_tagged);
@@ -4798,7 +4798,7 @@ step = Py_OBJ_UNTAG(step_tagged);
         }
 
         case _GUARD_IS_NOT_NONE_POP: {
-            _PyTaggedPtr val_tagged;
+            _PyStackRef val_tagged;
             PyObject *val;
             val_tagged = stack_pointer[-1];
             val = Py_OBJ_UNTAG(val_tagged);
@@ -4886,7 +4886,7 @@ step = Py_OBJ_UNTAG(step_tagged);
         }
 
         case _POP_TOP_LOAD_CONST_INLINE_BORROW: {
-            _PyTaggedPtr pop_tagged;
+            _PyStackRef pop_tagged;
             PyObject *pop;
             PyObject *value;
             pop_tagged = stack_pointer[-1];
@@ -4935,7 +4935,7 @@ step = Py_OBJ_UNTAG(step_tagged);
         }
 
         case _INTERNAL_INCREMENT_OPT_COUNTER: {
-            _PyTaggedPtr opt_tagged;
+            _PyStackRef opt_tagged;
             PyObject *opt;
             opt_tagged = stack_pointer[-1];
             opt = Py_OBJ_UNTAG(opt_tagged);
