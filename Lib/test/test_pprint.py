@@ -175,10 +175,17 @@ class QueryTestCase(unittest.TestCase):
         # Messy dict.
         self.d = {}
         self.d[0] = self.d[1] = self.d[2] = self.d
+        self.e = {}
+        self.v = ValuesView(self.e)
+        self.m = MappingView(self.e)
+        self.dv = self.e.values()
+        self.e["v"] = self.v
+        self.e["m"] = self.m
+        self.e["dv"] = self.dv
 
         pp = pprint.PrettyPrinter()
 
-        for icky in self.a, self.b, self.d, (self.d, self.d):
+        for icky in self.a, self.b, self.d, (self.d, self.d), self.e, self.v, self.m, self.dv:
             self.assertTrue(pprint.isrecursive(icky), "expected isrecursive")
             self.assertFalse(pprint.isreadable(icky), "expected not isreadable")
             self.assertTrue(pp.isrecursive(icky), "expected isrecursive")
@@ -186,10 +193,11 @@ class QueryTestCase(unittest.TestCase):
 
         # Break the cycles.
         self.d.clear()
+        self.e.clear()
         del self.a[:]
         del self.b[:]
 
-        for safe in self.a, self.b, self.d, (self.d, self.d):
+        for safe in self.a, self.b, self.d, (self.d, self.d), self.e, self.v, self.m, self.dv:
             # module-level convenience functions
             self.assertFalse(pprint.isrecursive(safe),
                              "expected not isrecursive for %r" % (safe,))

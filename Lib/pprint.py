@@ -648,7 +648,12 @@ class PrettyPrinter:
         views = (self._dict_keys_view, self._dict_values_view, self._dict_items_view,
                  _collections.abc.MappingView)
         view_reprs = {cls.__repr__ for cls in views}
-        if issubclass(typ, views) and r in view_reprs:
+        if issubclass(typ, _collections.abc.MappingView) and r in view_reprs:
+            objid = id(object)
+            if maxlevels and level >= maxlevels:
+                return "{...}", False, objid in context
+            if objid in context:
+                return _recursion(object), False, True
             key = _safe_key
             if isinstance(typ, (self._dict_items_view, _collections.abc.ItemsView)):
                 key = _safe_tuple
@@ -658,11 +663,28 @@ class PrettyPrinter:
                 object = object._mapping.items()
             if self._sort_dicts:
                 object = sorted(object, key=key)
-            if typ in ABC_VIEW_TYPES:
-                formatted = format % ", ".join(["%r: %r" % (k, v) for (k, v) in object])
-            else:
-                formatted = format % ', '.join(repr(x) for x in object)
-            return formatted, True, False
+            context[objid] = 1
+            readable = True
+            recursive = False
+            components = []
+            append = components.append
+            level += 1
+            for val in object:
+                krepr = ""
+                kreadable = krecur = False
+                if typ in ABC_VIEW_TYPES:
+                    key, val = val
+                    krepr, kreadable, krecur = self.format(
+                            key, context, maxlevels, level)
+                    krepr = "%s: " % krepr
+                vrepr, vreadable, vrecur = self.format(
+                    val, context, maxlevels, level)
+                append("%s%s" % (krepr, vrepr))
+                readable = readable and kreadable and vreadable
+                if krecur or vrecur:
+                    recursive = True
+            del context[objid]
+            return format % ", ".join(components), readable, recursive
 
         if (issubclass(typ, list) and r is list.__repr__) or \
            (issubclass(typ, tuple) and r is tuple.__repr__):
