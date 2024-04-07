@@ -1593,12 +1593,12 @@ dummy_func(
         }
 
         inst(BUILD_TUPLE, (values[oparg] -- tup)) {
-            tup = _PyTuple_FromTaggedArraySteal(values, oparg);
+            tup = _PyTuple_FromStackSteal(values, oparg);
             ERROR_IF(tup == NULL, error);
         }
 
         inst(BUILD_LIST, (values[oparg] -- list)) {
-            list = _PyList_FromTaggedArraySteal(values, oparg);
+            list = _PyList_FromStackSteal(values, oparg);
             ERROR_IF(list == NULL, error);
         }
 
@@ -1646,7 +1646,7 @@ dummy_func(
         }
 
         inst(BUILD_MAP, (values[oparg*2] -- map)) {
-            map = _PyDict_FromTaggedItems(
+            map = _PyDict_FromStackItems(
                     values, 2,
                     values+1, 2,
                     oparg);
@@ -1680,7 +1680,7 @@ dummy_func(
         inst(BUILD_CONST_KEY_MAP, (values[oparg], keys -- map)) {
             assert(PyTuple_CheckExact(keys));
             assert(PyTuple_GET_SIZE(keys) == (Py_ssize_t)oparg);
-            map = _PyDict_FromTaggedItemsUntaggedKeys(
+            map = _PyDict_FromStackItemsUntaggedKeys(
                     &PyTuple_GET_ITEM(keys, 0), 1,
                     values, 1, oparg);
             DECREF_INPUTS();

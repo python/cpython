@@ -413,7 +413,7 @@ _PyTuple_FromArraySteal(PyObject *const *src, Py_ssize_t n)
 }
 
 PyObject *
-_PyTuple_FromTaggedArraySteal(_PyStackRef const *src, Py_ssize_t n)
+_PyTuple_FromStackSteal(_PyStackRef const *src, Py_ssize_t n)
 {
     if (n == 0) {
         return tuple_get_empty();

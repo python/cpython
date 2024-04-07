@@ -726,7 +726,7 @@
             values = &stack_pointer[-1 - oparg];
             assert(PyTuple_CheckExact(keys));
             assert(PyTuple_GET_SIZE(keys) == (Py_ssize_t)oparg);
-            map = _PyDict_FromTaggedItemsUntaggedKeys(
+            map = _PyDict_FromStackItemsUntaggedKeys(
                 &PyTuple_GET_ITEM(keys, 0), 1,
                 values, 1, oparg);
             for (int _i = oparg; --_i >= 0;) {
@@ -747,7 +747,7 @@
             _PyStackRef *values;
             PyObject *list;
             values = &stack_pointer[-oparg];
-            list = _PyList_FromTaggedArraySteal(values, oparg);
+            list = _PyList_FromStackSteal(values, oparg);
             if (list == NULL) { stack_pointer += -oparg; goto error; }
             stack_pointer[-oparg] = Py_STACK_TAG(list);
             stack_pointer += 1 - oparg;
@@ -761,7 +761,7 @@
             _PyStackRef *values;
             PyObject *map;
             values = &stack_pointer[-oparg*2];
-            map = _PyDict_FromTaggedItems(
+            map = _PyDict_FromStackItems(
                 values, 2,
                 values+1, 2,
                 oparg);
@@ -859,7 +859,7 @@ step = Py_STACK_UNTAG_BORROWED(step_tagged);
             _PyStackRef *values;
             PyObject *tup;
             values = &stack_pointer[-oparg];
-            tup = _PyTuple_FromTaggedArraySteal(values, oparg);
+            tup = _PyTuple_FromStackSteal(values, oparg);
             if (tup == NULL) { stack_pointer += -oparg; goto error; }
             stack_pointer[-oparg] = Py_STACK_TAG(tup);
             stack_pointer += 1 - oparg;

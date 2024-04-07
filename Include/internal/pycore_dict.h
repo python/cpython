@@ -255,11 +255,11 @@ PyAPI_FUNC(PyObject *)_PyDict_FromItems(
         PyObject *const *keys, Py_ssize_t keys_offset,
         PyObject *const *values, Py_ssize_t values_offset,
         Py_ssize_t length);
-PyAPI_FUNC(PyObject *)_PyDict_FromTaggedItems(
+PyAPI_FUNC(PyObject *)_PyDict_FromStackItems(
     _PyStackRef const *keys, Py_ssize_t keys_offset,
     _PyStackRef const *values, Py_ssize_t values_offset,
     Py_ssize_t length);
-PyAPI_FUNC(PyObject *)_PyDict_FromTaggedItemsUntaggedKeys(
+PyAPI_FUNC(PyObject *)_PyDict_FromStackItemsUntaggedKeys(
     PyObject *const *keys, Py_ssize_t keys_offset,
     _PyStackRef const *values, Py_ssize_t values_offset,
     Py_ssize_t length);

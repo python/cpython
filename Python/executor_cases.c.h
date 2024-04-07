@@ -1893,7 +1893,7 @@
             PyObject *tup;
             oparg = CURRENT_OPARG();
             values = &stack_pointer[-oparg];
-            tup = _PyTuple_FromTaggedArraySteal(values, oparg);
+            tup = _PyTuple_FromStackSteal(values, oparg);
             if (tup == NULL) JUMP_TO_ERROR();
             stack_pointer[-oparg] = Py_STACK_TAG(tup);
             stack_pointer += 1 - oparg;
@@ -1905,7 +1905,7 @@
             PyObject *list;
             oparg = CURRENT_OPARG();
             values = &stack_pointer[-oparg];
-            list = _PyList_FromTaggedArraySteal(values, oparg);
+            list = _PyList_FromStackSteal(values, oparg);
             if (list == NULL) JUMP_TO_ERROR();
             stack_pointer[-oparg] = Py_STACK_TAG(list);
             stack_pointer += 1 - oparg;
@@ -1972,7 +1972,7 @@
             PyObject *map;
             oparg = CURRENT_OPARG();
             values = &stack_pointer[-oparg*2];
-            map = _PyDict_FromTaggedItems(
+            map = _PyDict_FromStackItems(
                 values, 2,
                 values+1, 2,
                 oparg);
@@ -2021,7 +2021,7 @@
             values = &stack_pointer[-1 - oparg];
             assert(PyTuple_CheckExact(keys));
             assert(PyTuple_GET_SIZE(keys) == (Py_ssize_t)oparg);
-            map = _PyDict_FromTaggedItemsUntaggedKeys(
+            map = _PyDict_FromStackItemsUntaggedKeys(
                 &PyTuple_GET_ITEM(keys, 0), 1,
                 values, 1, oparg);
             for (int _i = oparg; --_i >= 0;) {
