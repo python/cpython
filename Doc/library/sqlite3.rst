@@ -16,6 +16,8 @@
    src = sqlite3.connect(":memory:", isolation_level=None)
    dst = sqlite3.connect("tutorial.db", isolation_level=None)
    src.backup(dst)
+   src.close()
+   dst.close()
    del src, dst
 
 .. _sqlite3-intro:
@@ -220,6 +222,7 @@ creating a new cursor, then querying the database:
    >>> title, year = res.fetchone()
    >>> print(f'The highest scoring Monty Python movie is {title!r}, released in {year}')
    The highest scoring Monty Python movie is 'Monty Python and the Holy Grail', released in 1975
+   >>> new_con.close()
 
 You've now created an SQLite database using the :mod:`!sqlite3` module,
 inserted data and retrieved values from it in multiple ways.
@@ -735,6 +738,7 @@ Connection objects
          >>> for row in con.execute("SELECT md5(?)", (b"foo",)):
          ...     print(row)
          ('acbd18db4cc2f85cedef654fccc4a4d8',)
+         >>> con.close()
 
 
    .. method:: create_aggregate(name, n_arg, aggregate_class)
@@ -871,6 +875,7 @@ Connection objects
              FROM test ORDER BY x
          """)
          print(cur.fetchall())
+         con.close()
 
       .. testoutput::
          :hide:
@@ -1161,6 +1166,8 @@ Connection objects
          src = sqlite3.connect('example.db')
          dst = sqlite3.connect(':memory:')
          src.backup(dst)
+         dst.close()
+         src.close()
 
       .. versionadded:: 3.7
 
@@ -1226,6 +1233,10 @@ Connection objects
          10
          >>> con.getlimit(sqlite3.SQLITE_LIMIT_ATTACHED)
          1
+
+      .. testcleanup:: sqlite3.limits
+
+         con.close()
 
       .. versionadded:: 3.11
 
@@ -1508,6 +1519,10 @@ Cursor objects
          # cur is an sqlite3.Cursor object
          cur.executemany("INSERT INTO data VALUES(?)", rows)
 
+      .. testcleanup:: sqlite3.cursor
+
+         con.close()
+
       .. note::
 
          Any resulting rows are discarded,
@@ -1613,6 +1628,7 @@ Cursor objects
          >>> cur = con.cursor()
          >>> cur.connection == con
          True
+         >>> con.close()
 
    .. attribute:: description
 
@@ -1733,6 +1749,7 @@ Blob objects
           greeting = blob.read()
 
       print(greeting)  # outputs "b'Hello, world!'"
+      con.close()
 
    .. testoutput::
       :hide:
@@ -2045,6 +2062,7 @@ Here's an example of both styles:
    params = (1972,)
    cur.execute("SELECT * FROM lang WHERE first_appeared = ?", params)
    print(cur.fetchall())
+   con.close()
 
 .. testoutput::
    :hide:
@@ -2103,6 +2121,7 @@ The object passed to *protocol* will be of type :class:`PrepareProtocol`.
 
    cur.execute("SELECT ?", (Point(4.0, -3.2),))
    print(cur.fetchone()[0])
+   con.close()
 
 .. testoutput::
    :hide:
@@ -2133,6 +2152,7 @@ This function can then be registered using :func:`register_adapter`.
 
    cur.execute("SELECT ?", (Point(1.0, 2.5),))
    print(cur.fetchone()[0])
+   con.close()
 
 .. testoutput::
    :hide:
@@ -2217,6 +2237,8 @@ The following example illustrates the implicit and explicit approaches:
    cur.execute("INSERT INTO test(p) VALUES(?)", (p,))
    cur.execute('SELECT p AS "p [point]" FROM test')
    print("with column names:", cur.fetchone()[0])
+   cur.close()
+   con.close()
 
 .. testoutput::
    :hide:
@@ -2423,6 +2445,8 @@ Some useful URI tricks include:
    res = con2.execute("SELECT data FROM shared")
    assert res.fetchone() == (28,)
 
+   con1.close()
+   con2.close()
 
 More information about this feature, including a list of parameters,
 can be found in the `SQLite URI documentation`_.
@@ -2469,6 +2493,7 @@ Queries now return :class:`!Row` objects:
    'Earth'
    >>> row["RADIUS"]  # Column names are case-insensitive.
    6378
+   >>> con.close()
 
 .. note::
 
@@ -2495,6 +2520,7 @@ Using it, queries now return a :class:`!dict` instead of a :class:`!tuple`:
    >>> for row in con.execute("SELECT 1 AS a, 2 AS b"):
    ...     print(row)
    {'a': 1, 'b': 2}
+   >>> con.close()
 
 The following row factory returns a :term:`named tuple`:
 
@@ -2521,6 +2547,7 @@ The following row factory returns a :term:`named tuple`:
    1
    >>> row.b   # Attribute access.
    2
+   >>> con.close()
 
 With some adjustments, the above recipe can be adapted to use a
 :class:`~dataclasses.dataclass`, or any other custom class,
