@@ -13977,14 +13977,21 @@ formatchar(PyObject *v)
         if (PyUnicode_GET_LENGTH(v) == 1) {
             return PyUnicode_READ_CHAR(v, 0);
         }
-        goto onError;
+        PyErr_Format(PyExc_TypeError,
+                     "%%c requires int or unicode character, "
+                     "not a string of length %zd",
+                     PyUnicode_GET_LENGTH(v));
+        return (Py_UCS4) -1;
     }
     else {
         int overflow;
         long x = PyLong_AsLongAndOverflow(v, &overflow);
         if (x == -1 && PyErr_Occurred()) {
             if (PyErr_ExceptionMatches(PyExc_TypeError)) {
-                goto onError;
+                PyErr_Format(PyExc_TypeError,
+                             "%%c requires int or unicode character, not %s",
+                             Py_TYPE(v)->tp_name);
+                return (Py_UCS4) -1;
             }
             return (Py_UCS4) -1;
         }
@@ -13998,11 +14005,6 @@ formatchar(PyObject *v)
 
         return (Py_UCS4) x;
     }
-
-  onError:
-    PyErr_SetString(PyExc_TypeError,
-                    "%c requires int or char");
-    return (Py_UCS4) -1;
 }
 
 /* Parse options of an argument: flags, width, precision.

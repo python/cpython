@@ -233,11 +233,18 @@ static int
 PyCurses_ConvertToChtype(PyCursesWindowObject *win, PyObject *obj, chtype *ch)
 {
     long value;
-    if(PyBytes_Check(obj) && PyBytes_Size(obj) == 1) {
+    if (PyBytes_Check(obj)) {
+        if (PyBytes_GET_SIZE(obj) != 1) {
+            PyErr_Format(PyExc_TypeError,
+                         "expect bytes or str of length 1, or int, "
+                         "got a bytes of length %zd",
+                         PyBytes_GET_SIZE(obj));
+            return 0;
+        }
         value = (unsigned char)PyBytes_AsString(obj)[0];
     }
     else if (PyUnicode_Check(obj)) {
-        if (PyUnicode_GetLength(obj) != 1) {
+        if (PyUnicode_GET_LENGTH(obj) != 1) {
             PyErr_Format(PyExc_TypeError,
                          "expect bytes or str of length 1, or int, "
                          "got a str of length %zi",
@@ -326,7 +333,14 @@ PyCurses_ConvertToCchar_t(PyCursesWindowObject *win, PyObject *obj,
         return PyCurses_ConvertToChtype(win, obj, ch);
 #endif
     }
-    else if(PyBytes_Check(obj) && PyBytes_Size(obj) == 1) {
+    else if (PyBytes_Check(obj)) {
+        if (PyBytes_GET_SIZE(obj) != 1) {
+            PyErr_Format(PyExc_TypeError,
+                         "expect bytes or str of length 1, or int, "
+                         "got a bytes of length %zd",
+                         PyBytes_GET_SIZE(obj));
+            return 0;
+        }
         value = (unsigned char)PyBytes_AsString(obj)[0];
     }
     else if (PyLong_CheckExact(obj)) {
