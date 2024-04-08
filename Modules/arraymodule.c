@@ -262,7 +262,7 @@ u_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
 {
     if (!PyUnicode_Check(v)) {
         PyErr_Format(PyExc_TypeError,
-                     "array item must be unicode character, not %T",
+                     "array item must be a unicode character, not %T",
                      v);
         return -1;
     }
@@ -271,7 +271,7 @@ u_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
     if (len != 2) {
         if (PyUnicode_GET_LENGTH(v) != 1) {
             PyErr_Format(PyExc_TypeError,
-                         "array item must be unicode character, "
+                         "array item must be a unicode character, "
                          "not a string of length %zd",
                          PyUnicode_GET_LENGTH(v));
         }
@@ -305,14 +305,14 @@ w_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
 {
     if (!PyUnicode_Check(v)) {
         PyErr_Format(PyExc_TypeError,
-                     "array item must be unicode character, not %T",
+                     "array item must be a unicode character, not %T",
                      v);
         return -1;
     }
 
     if (PyUnicode_GET_LENGTH(v) != 1) {
         PyErr_Format(PyExc_TypeError,
-                     "array item must be unicode character, "
+                     "array item must be a unicode character, "
                      "not a string of length %zd",
                      PyUnicode_GET_LENGTH(v));
         return -1;

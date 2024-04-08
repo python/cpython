@@ -1103,7 +1103,7 @@ c_set(void *ptr, PyObject *value, Py_ssize_t size)
     if (PyBytes_Check(value)) {
         if (PyBytes_GET_SIZE(value) != 1) {
             PyErr_Format(PyExc_TypeError,
-                        "one character bytes, bytearray or integer "
+                        "one character bytes, bytearray or an integer "
                         "in range(256) expected, not bytes of length %zd",
                         PyBytes_GET_SIZE(value));
             return NULL;
@@ -1114,7 +1114,7 @@ c_set(void *ptr, PyObject *value, Py_ssize_t size)
     if (PyByteArray_Check(value)) {
         if (PyByteArray_GET_SIZE(value) != 1) {
             PyErr_Format(PyExc_TypeError,
-                        "one character bytes, bytearray or integer "
+                        "one character bytes, bytearray or an integer "
                         "in range(256) expected, not bytearray of length %zd",
                         PyByteArray_GET_SIZE(value));
             return NULL;
@@ -1136,7 +1136,7 @@ c_set(void *ptr, PyObject *value, Py_ssize_t size)
         _RET(value);
     }
     PyErr_Format(PyExc_TypeError,
-                 "one character bytes, bytearray or integer "
+                 "one character bytes, bytearray or an integer "
                  "in range(256) expected, not %T",
                  value);
     return NULL;
@@ -1157,7 +1157,7 @@ u_set(void *ptr, PyObject *value, Py_ssize_t size)
     wchar_t chars[2];
     if (!PyUnicode_Check(value)) {
         PyErr_Format(PyExc_TypeError,
-                     "unicode character expected instead of %T instance",
+                     "a unicode character expected, not instance of %T",
                      value);
         return NULL;
     }
@@ -1166,12 +1166,12 @@ u_set(void *ptr, PyObject *value, Py_ssize_t size)
     if (len != 1) {
         if (PyUnicode_GET_LENGTH(value) != 1) {
             PyErr_Format(PyExc_TypeError,
-                         "unicode character expected instead of string of length %zd",
+                         "a unicode character expected, not a string of length %zd",
                          PyUnicode_GET_LENGTH(value));
         }
         else {
             PyErr_Format(PyExc_TypeError,
-                         "string %A cannot be converted to a single wchar_t character",
+                         "the string %A cannot be converted to a single wchar_t character",
                          value);
         }
         return NULL;

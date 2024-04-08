@@ -13978,7 +13978,7 @@ formatchar(PyObject *v)
             return PyUnicode_READ_CHAR(v, 0);
         }
         PyErr_Format(PyExc_TypeError,
-                     "%%c requires int or unicode character, "
+                     "%%c requires an int or a unicode character, "
                      "not a string of length %zd",
                      PyUnicode_GET_LENGTH(v));
         return (Py_UCS4) -1;
@@ -13989,7 +13989,7 @@ formatchar(PyObject *v)
         if (x == -1 && PyErr_Occurred()) {
             if (PyErr_ExceptionMatches(PyExc_TypeError)) {
                 PyErr_Format(PyExc_TypeError,
-                             "%%c requires int or unicode character, not %T",
+                             "%%c requires an int or a unicode character, not %T",
                              v);
                 return (Py_UCS4) -1;
             }
