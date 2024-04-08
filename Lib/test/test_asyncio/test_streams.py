@@ -512,6 +512,13 @@ class StreamTests(test_utils.TestCase):
         self.assertEqual(b'dataZA', data)
         self.assertEqual(b'aaa', stream._buffer)
 
+    def test_readuntil_bytearray(self):
+        stream = asyncio.StreamReader(loop=self.loop)
+        stream.feed_data(b'some data\r\n')
+        data = self.loop.run_until_complete(stream.readuntil(bytearray(b'\r\n')))
+        self.assertEqual(b'some data\r\n', data)
+        self.assertEqual(b'', stream._buffer)
+
     def test_readexactly_zero_or_less(self):
         # Read exact number of bytes (zero or less).
         stream = asyncio.StreamReader(loop=self.loop)

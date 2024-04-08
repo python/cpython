@@ -2,7 +2,7 @@ __all__ = (
     'StreamReader', 'StreamWriter', 'StreamReaderProtocol',
     'open_connection', 'start_server')
 
-import collections
+import collections.abc
 import socket
 import sys
 import warnings
@@ -597,7 +597,7 @@ class StreamReader:
         the shortest possible separator is considered to be the one that
         matched.
         """
-        if isinstance(separator, bytes):
+        if isinstance(separator, collections.abc.Buffer):
             separator = [separator]
         else:
             # Makes sure shortest matches wins, and supports arbitrary iterables
