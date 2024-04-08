@@ -1,0 +1,1 @@
+Speed up several functions in :mod:`os.path` by 5-12%, and :func:`os.path.expanduser()` by 61% for long users.
