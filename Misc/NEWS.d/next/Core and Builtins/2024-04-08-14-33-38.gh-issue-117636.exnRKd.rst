@@ -1,1 +1,1 @@
-Speedup :func:`os.path.join()` by up to 1.1 times on Windows, up to 1.? times on Unix.
+Speedup :func:`os.path.join()` by up to 7% on Windows and ?% times on Unix.
