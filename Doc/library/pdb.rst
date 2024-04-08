@@ -334,7 +334,7 @@ can be overridden by the local file.
    yet).  The file is searched on :data:`sys.path`.  Accepatable form of *filename*
    includes ``/abspath/to/file.py``, ``relpath/file.py``, ``module`` or
    ``package.module``.
-   
+
    With a *function* argument, set a break at the first executable statement within
    that function. *function* can be any expression that evaluates to a function
    in the current namespace.
@@ -345,7 +345,7 @@ can be overridden by the local file.
    Without argument, list all breaks, including for each breakpoint, the number
    of times that breakpoint has been hit, the current ignore count, and the
    associated condition if any.
-   
+
    Note that each breakpoint is assigned a number to which all the other
    breakpoint commands refer.
 
