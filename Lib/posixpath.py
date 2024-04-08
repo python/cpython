@@ -388,11 +388,17 @@ def abspath(path):
     """Return an absolute path."""
     path = os.fspath(path)
     if isinstance(path, bytes):
-        if not path.startswith(b'/'):
-            path = join(os.getcwdb(), path)
+        sep = b'/'
+        curdir = b'.'
+        getcwd = os.getcwdb
     else:
-        if not path.startswith('/'):
-            path = join(os.getcwd(), path)
+        sep = '/'
+        curdir = '.'
+        getcwd = os.getcwd
+    if not path.startswith(sep):
+        if not path or path == curdir:
+            return getcwd()
+        path = join(getcwd(), path)
     return normpath(path)
 
 
