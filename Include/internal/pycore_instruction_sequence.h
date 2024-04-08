@@ -40,7 +40,7 @@ typedef struct instruction_sequence {
     /* Map of a label id to instruction offset (index into s_instrs).
      * If s_labelmap is NULL, then each label id is the offset itself.
      */
-    int *s_labelmap;       /* label id --> instr offset */
+    int *s_labelmap;
     int s_labelmap_size;
 
     /* PyList of instruction sequences of nested functions */
