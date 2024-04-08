@@ -11,7 +11,9 @@ from test.support import import_helper
 # Raise SkipTest if subinterpreters not supported.
 _interpreters = import_helper.import_module('_xxsubinterpreters')
 from test.support import interpreters
-from test.support.interpreters import InterpreterNotFoundError
+from test.support.interpreters import (
+    InterpreterError, InterpreterNotFoundError, ExecutionFailed,
+)
 from .utils import (
     _captured_script, _run_output, _running, TestBase,
     requires__testinternalcapi, _testinternalcapi,
@@ -162,12 +164,12 @@ class GetCurrentTests(TestBase):
             self.assertNotEqual(id1, id2)
 
     @requires__testinternalcapi
-    def test_unmanaged(self):
+    def test_not_owned(self):
         last = 0
         for id, *_ in _interpreters.list_all():
             last = max(last, id)
         expected = _testinternalcapi.next_interpreter_id()
-        err, text = self.run_external(f"""
+        err, text = self.run_temp_external(f"""
             import {interpreters.__name__} as interpreters
             interp = interpreters.get_current()
             print((interp.id, interp.owned))
@@ -219,7 +221,7 @@ class ListAllTests(TestBase):
         for interp1, interp2 in zip(actual, expected):
             self.assertIs(interp1, interp2)
 
-    def test_unmanaged(self):
+    def test_not_owned(self):
         mainid, _ = _interpreters.get_main()
         interpid1 = _interpreters.create()
         interpid2 = _interpreters.create()
@@ -235,7 +237,7 @@ class ListAllTests(TestBase):
             (interpid5, True),
         ]
         expected2 = expected[:-2]
-        err, text = self.run_external(f"""
+        err, text = self.run_temp_external(f"""
             import {interpreters.__name__} as interpreters
             interp = interpreters.create()
             print(
@@ -299,6 +301,33 @@ class InterpreterObjectTests(TestBase):
         with self.assertRaises(AttributeError):
             interp.id = 1_000_000
 
+    def test_owned(self):
+        main = interpreters.get_main()
+        interp = interpreters.create()
+
+        with self.subTest('main'):
+            self.assertFalse(main.owned)
+
+        with self.subTest('owned'):
+            self.assertTrue(interp.owned)
+
+        with self.subTest('not owned'):
+            err, text = self.run_temp_external(f"""
+                import {interpreters.__name__} as interpreters
+                interp = interpreters.get_current()
+                print(interp.owned)
+                """)
+            self.assertIsNone(err)
+            owned = eval(text)
+            self.assertTrue(owned)
+
+        with self.subTest('readonly'):
+            for value in (True, False):
+                with self.assertRaises(AttributeError):
+                    interp.id = value
+                with self.assertRaises(AttributeError):
+                    main.id = value
+
     def test_hashable(self):
         interp = interpreters.create()
         expected = hash(interp.id)
@@ -324,6 +353,7 @@ class TestInterpreterIsRunning(TestBase):
         main = interpreters.get_main()
         self.assertTrue(main.is_running())
 
+    # XXX Is this still true?
     @unittest.skip('Fails on FreeBSD')
     def test_subinterpreter(self):
         interp = interpreters.create()
@@ -385,6 +415,59 @@ class TestInterpreterIsRunning(TestBase):
         interp.exec('t.join()')
         self.assertEqual(os.read(r_interp, 1), FINISHED)
 
+    def test_not_owned(self):
+        script = dedent(f"""
+            import {interpreters.__name__} as interpreters
+            interp = interpreters.get_current()
+            print(interp.is_running())
+            """)
+        def resolve_results(err, text):
+            assert err is None, err
+            self.assertNotEqual(text, "")
+            try:
+                return eval(text)
+            except Exception:
+                raise Exception(repr(text))
+
+        with self.subTest('running __main__ (from self)'):
+            with self.unmanaged_interpreter() as interpid:
+                err, text = self.run_external(interpid, script, main=True)
+                running = resolve_results(err, text)
+                self.assertTrue(running)
+
+        with self.subTest('running, but not __main__ (from self)'):
+            err, text = self.run_temp_external(script)
+            running = resolve_results(err, text)
+            self.assertFalse(running)
+
+        with self.subTest('running __main__ (from other)'):
+            with self.unmanaged_interpreter() as interpid:
+                interp = interpreters.Interpreter(interpid, _owned=False)
+                before = interp.is_running()
+                with self.running_external(interpid, main=True):
+                    during = interp.is_running()
+                after = interp.is_running()
+            self.assertFalse(before)
+            self.assertTrue(during)
+            self.assertFalse(after)
+
+        with self.subTest('running, but not __main__ (from other)'):
+            with self.unmanaged_interpreter() as interpid:
+                interp = interpreters.Interpreter(interpid, _owned=False)
+                before = interp.is_running()
+                with self.running_external(interpid, main=False):
+                    during = interp.is_running()
+                after = interp.is_running()
+            self.assertFalse(before)
+            self.assertFalse(during)
+            self.assertFalse(after)
+
+        with self.subTest('not running (from other)'):
+            with self.unmanaged_interpreter() as interpid:
+                interp = interpreters.Interpreter(interpid, _owned=False)
+                running = interp.is_running()
+                self.assertFalse(running)
+
 
 class TestInterpreterClose(TestBase):
 
@@ -412,11 +495,11 @@ class TestInterpreterClose(TestBase):
 
     def test_main(self):
         main, = interpreters.list_all()
-        with self.assertRaises(interpreters.InterpreterError):
+        with self.assertRaises(InterpreterError):
             main.close()
 
         def f():
-            with self.assertRaises(interpreters.InterpreterError):
+            with self.assertRaises(InterpreterError):
                 main.close()
 
         t = threading.Thread(target=f)
@@ -467,12 +550,13 @@ class TestInterpreterClose(TestBase):
         t.start()
         t.join()
 
+    # XXX Is this still true?
     @unittest.skip('Fails on FreeBSD')
     def test_still_running(self):
         main, = interpreters.list_all()
         interp = interpreters.create()
         with _running(interp):
-            with self.assertRaises(interpreters.InterpreterError):
+            with self.assertRaises(InterpreterError):
                 interp.close()
             self.assertTrue(interp.is_running())
 
@@ -506,6 +590,57 @@ class TestInterpreterClose(TestBase):
         interp.close()
 
         self.assertEqual(os.read(r_interp, 1), FINISHED)
+
+    def test_not_owned(self):
+        script = dedent(f"""
+            import {interpreters.__name__} as interpreters
+            interp = interpreters.get_current()
+            interp.close()
+            """)
+        def check_results(err, text):
+            self.assertIsNot(err, None)
+            self.assertEqual(err.type.__name__, 'InterpreterError')
+            self.assertIn('current', err.msg)
+            self.assertEqual(text, '')
+
+        with self.subTest('running __main__ (from self)'):
+            with self.unmanaged_interpreter() as interpid:
+                err, text = self.run_external(interpid, script, main=True)
+                check_results(err, text)
+
+        with self.subTest('running, but not __main__ (from self)'):
+            err, text = self.run_temp_external(script)
+            check_results(err, text)
+
+        with self.subTest('running __main__ (from other)'):
+            with self.unmanaged_interpreter() as interpid:
+                interp = interpreters.Interpreter(interpid, _owned=False)
+                with self.running_external(interpid, main=True):
+                    with self.assertRaisesRegex(InterpreterError, 'running'):
+                        interp.close()
+                    # Make sure it wssn't closed.
+                    self.assertTrue(interp.is_running())
+
+        # The rest must be skipped until we deal with running threads when
+        # interp.close() is called.
+        return
+
+        with self.subTest('running, but not __main__ (from other)'):
+            with self.unmanaged_interpreter() as interpid:
+                interp = interpreters.Interpreter(interpid, _owned=False)
+                with self.running_external(interpid, main=False):
+                    with self.assertRaisesRegex(InterpreterError, 'not managed'):
+                        interp.close()
+                    # Make sure it wssn't closed.
+                    self.assertFalse(interp.is_running())
+
+        with self.subTest('not running (from other)'):
+            with self.unmanaged_interpreter() as interpid:
+                interp = interpreters.Interpreter(interpid, _owned=False)
+                with self.assertRaisesRegex(InterpreterError, 'not managed'):
+                    interp.close()
+                # Make sure it wssn't closed.
+                self.assertFalse(interp.is_running())
 
 
 class TestInterpreterPrepareMain(TestBase):
@@ -559,10 +694,27 @@ class TestInterpreterPrepareMain(TestBase):
             interp.prepare_main(spam={'spam': 'eggs', 'foo': 'bar'})
 
         # Make sure neither was actually bound.
-        with self.assertRaises(interpreters.ExecutionFailed):
+        with self.assertRaises(ExecutionFailed):
             interp.exec('print(foo)')
-        with self.assertRaises(interpreters.ExecutionFailed):
+        with self.assertRaises(ExecutionFailed):
             interp.exec('print(spam)')
+
+    def test_running(self):
+        interp = interpreters.create()
+        interp.prepare_main({'spam': True})
+        with self.running(interp):
+            with self.assertRaisesRegex(InterpreterError, 'running'):
+                interp.prepare_main({'spam': False})
+        interp.exec('assert spam is True')
+
+    @requires__testinternalcapi
+    def test_not_owned(self):
+        with self.unmanaged_interpreter() as interpid:
+            interp = interpreters.Interpreter(interpid, _owned=False)
+            interp.prepare_main({'spam': True})
+            rc = _testinternalcapi.exec_interpreter(interpid,
+                                                    'assert spam is True')
+            assert rc == 0, rc
 
 
 class TestInterpreterExec(TestBase):
@@ -578,7 +730,7 @@ class TestInterpreterExec(TestBase):
 
     def test_failure(self):
         interp = interpreters.create()
-        with self.assertRaises(interpreters.ExecutionFailed):
+        with self.assertRaises(ExecutionFailed):
             interp.exec('raise Exception')
 
     def test_display_preserved_exception(self):
@@ -666,6 +818,7 @@ class TestInterpreterExec(TestBase):
             content = file.read()
             self.assertEqual(content, expected)
 
+    # XXX Is this still true?
     @unittest.skip('Fails on FreeBSD')
     def test_already_running(self):
         interp = interpreters.create()
@@ -713,6 +866,13 @@ class TestInterpreterExec(TestBase):
         self.assertEqual(os.read(r_interp, 1), RAN)
         self.assertEqual(os.read(r_interp, 1), RAN)
         self.assertEqual(os.read(r_interp, 1), FINISHED)
+
+    @requires__testinternalcapi
+    def test_not_owned(self):
+        with self.unmanaged_interpreter() as interpid:
+            interp = interpreters.Interpreter(interpid, _owned=False)
+            with self.assertRaisesRegex(ExecutionFailed, 'it worked'):
+                interp.exec('raise Exception("it worked!")')
 
     # test_xxsubinterpreters covers the remaining
     # Interpreter.exec() behavior.
@@ -878,7 +1038,7 @@ class TestInterpreterCall(TestBase):
                         raise Exception((args, kwargs))
                     interp.call(callable)
 
-        with self.assertRaises(interpreters.ExecutionFailed):
+        with self.assertRaises(ExecutionFailed):
             interp.call(call_func_failure)
 
     def test_call_in_thread(self):
@@ -1156,12 +1316,12 @@ class LowLevelTests(TestBase):
             self.assertEqual(interpid, orig)
             self.assertTrue(owned)
 
-        with self.subTest('external'):
+        with self.subTest('not owned'):
             last = 0
             for id, *_ in _interpreters.list_all():
                 last = max(last, id)
             expected = last + 1
-            err, text = self.run_external(script)
+            err, text = self.run_temp_external(script)
             assert err is None, err
             interpid, owned = parse_stdout(text)
             self.assertEqual(interpid, expected)
@@ -1193,7 +1353,7 @@ class LowLevelTests(TestBase):
             res = eval(text)
             self.assertEqual(res, expected)
 
-        with self.subTest('external'):
+        with self.subTest('not owned'):
             interpid4 = interpid3 + 1
             interpid5 = interpid4 + 1
             expected2 = expected + [
@@ -1203,7 +1363,7 @@ class LowLevelTests(TestBase):
             expected3 = expected + [
                 (interpid5, True),
             ]
-            err, text = self.run_external(f"""
+            err, text = self.run_temp_external(f"""
                 import {_interpreters.__name__} as _interpreters
                 _interpreters.create()
                 print(
@@ -1231,7 +1391,7 @@ class LowLevelTests(TestBase):
             self.assert_ns_equal(config, default)
 
         with self.subTest('config: \'empty\''):
-            with self.assertRaises(interpreters.InterpreterError):
+            with self.assertRaises(InterpreterError):
                 # The "empty" config isn't viable on its own.
                 _interpreters.create('empty')
 
@@ -1267,15 +1427,28 @@ class LowLevelTests(TestBase):
                 _interpreters.create(orig)
 
     def test_destroy(self):
-        interpid = _interpreters.create()
-        before = [id for id, _ in _interpreters.list_all()]
-        _interpreters.destroy(interpid)
-        after = [id for id, _ in _interpreters.list_all()]
+        with self.subTest('owned'):
+            interpid = _interpreters.create()
+            before = [id for id, _ in _interpreters.list_all()]
+            _interpreters.destroy(interpid)
+            after = [id for id, _ in _interpreters.list_all()]
 
-        self.assertIn(interpid, before)
-        self.assertNotIn(interpid, after)
-        with self.assertRaises(interpreters.InterpreterNotFoundError):
-            _interpreters.is_running(interpid)
+            self.assertIn(interpid, before)
+            self.assertNotIn(interpid, after)
+            with self.assertRaises(InterpreterNotFoundError):
+                _interpreters.is_owned(interpid)
+
+        with self.subTest('main'):
+            interpid, _ = _interpreters.get_main()
+            with self.assertRaises(InterpreterError):
+                # It is the current interpreter.
+                _interpreters.destroy(interpid)
+
+        with self.subTest('not owned'):
+            interpid = _testinternalcapi.create_interpreter()
+            _interpreters.destroy(interpid)
+            with self.assertRaises(InterpreterNotFoundError):
+                _interpreters.is_running(interpid)
 
     def test_get_config(self):
         with self.subTest('main'):
@@ -1296,6 +1469,46 @@ class LowLevelTests(TestBase):
             interpid = _interpreters.create('legacy')
             config = _interpreters.get_config(interpid)
             self.assert_ns_equal(config, expected)
+
+        with self.subTest('not owned'):
+            orig = _interpreters.new_config('isolated')
+            with self.unmanaged_interpreter(orig) as interpid:
+                config = _interpreters.get_config(interpid)
+            self.assert_ns_equal(config, orig)
+
+    def test_is_running(self):
+        with self.subTest('main'):
+            interpid, _ = _interpreters.get_main()
+            running = _interpreters.is_running(interpid)
+            self.assertTrue(running)
+
+        with self.subTest('owned (running)'):
+            interpid = _interpreters.create()
+            with self.running(interpid):
+                running = _interpreters.is_running(interpid)
+            self.assertTrue(running)
+
+        with self.subTest('owned (not running)'):
+            interpid = _interpreters.create()
+            running = _interpreters.is_running(interpid)
+            self.assertFalse(running)
+
+        with self.subTest('not owned (running __main__)'):
+            with self.unmanaged_interpreter() as interpid:
+                with self.running_external(interpid, main=True):
+                    running = _interpreters.is_running(interpid)
+            self.assertTrue(running)
+
+        with self.subTest('not owned (running, but not __main__)'):
+            with self.unmanaged_interpreter() as interpid:
+                with self.running_external(interpid, main=False):
+                    running = _interpreters.is_running(interpid)
+            self.assertFalse(running)
+
+        with self.subTest('not owned (not running)'):
+            with self.unmanaged_interpreter() as interpid:
+                running = _interpreters.is_running(interpid)
+                self.assertFalse(running)
 
     def test_exec(self):
         with self.subTest('run script'):
@@ -1329,6 +1542,12 @@ class LowLevelTests(TestBase):
                 errdisplay=exc.errdisplay,
             ))
 
+        with self.subTest('not owned'):
+            with self.unmanaged_interpreter() as interpid:
+                exc = _interpreters.exec(interpid, 'raise Exception("it worked!")')
+            self.assertIsNot(exc, None)
+            self.assertEqual(exc.msg, 'it worked!')
+
     def test_call(self):
         with self.subTest('no args'):
             interpid = _interpreters.create()
@@ -1351,22 +1570,29 @@ class LowLevelTests(TestBase):
             ))
 
     def test_set___main___attrs(self):
-        interpid = _interpreters.create()
-        before1 = _interpreters.exec(interpid, 'assert spam == \'eggs\'')
-        before2 = _interpreters.exec(interpid, 'assert ham == 42')
-        self.assertEqual(before1.type.__name__, 'NameError')
-        self.assertEqual(before2.type.__name__, 'NameError')
+        with self.subTest('owned'):
+            interpid = _interpreters.create()
+            before1 = _interpreters.exec(interpid, 'assert spam == \'eggs\'')
+            before2 = _interpreters.exec(interpid, 'assert ham == 42')
+            self.assertEqual(before1.type.__name__, 'NameError')
+            self.assertEqual(before2.type.__name__, 'NameError')
 
-        _interpreters.set___main___attrs(interpid, dict(
-            spam='eggs',
-            ham=42,
-        ))
-        after1 = _interpreters.exec(interpid, 'assert spam == \'eggs\'')
-        after2 = _interpreters.exec(interpid, 'assert ham == 42')
-        after3 = _interpreters.exec(interpid, 'assert spam == 42')
-        self.assertIs(after1, None)
-        self.assertIs(after2, None)
-        self.assertEqual(after3.type.__name__, 'AssertionError')
+            _interpreters.set___main___attrs(interpid, dict(
+                spam='eggs',
+                ham=42,
+            ))
+            after1 = _interpreters.exec(interpid, 'assert spam == \'eggs\'')
+            after2 = _interpreters.exec(interpid, 'assert ham == 42')
+            after3 = _interpreters.exec(interpid, 'assert spam == 42')
+            self.assertIs(after1, None)
+            self.assertIs(after2, None)
+            self.assertEqual(after3.type.__name__, 'AssertionError')
+
+        with self.subTest('not owned'):
+            with self.unmanaged_interpreter() as interpid:
+                _interpreters.set___main___attrs(interpid, {'spam': True})
+                exc = _interpreters.exec(interpid, 'assert spam is True')
+            self.assertIsNone(exc)
 
 
 if __name__ == '__main__':
