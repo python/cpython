@@ -402,6 +402,7 @@ NON_ESCAPING_FUNCTIONS = (
     "CALL_STAT_INC",
     "maybe_lltrace_resume_frame",
     "_PyUnicode_JoinArray",
+    "Py_REFCNT",
 )
 
 ESCAPING_FUNCTIONS = (
