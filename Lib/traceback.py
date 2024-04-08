@@ -141,11 +141,12 @@ def _can_colorize():
                 return False
         except (ImportError, AttributeError):
             return False
-
-    if os.environ.get("PYTHON_COLORS") == "0":
-        return False
-    if os.environ.get("PYTHON_COLORS") == "1":
-        return True
+    
+    if not sys.flags.ignore_environment:
+        if os.environ.get("PYTHON_COLORS") == "0":
+            return False
+        if os.environ.get("PYTHON_COLORS") == "1":
+            return True
     if "NO_COLOR" in os.environ:
         return False
     if not _COLORIZE:

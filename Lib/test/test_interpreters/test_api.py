@@ -10,6 +10,7 @@ from test.support import import_helper
 # Raise SkipTest if subinterpreters not supported.
 _interpreters = import_helper.import_module('_xxsubinterpreters')
 from test.support import interpreters
+from test.support import force_not_colorized
 from test.support.interpreters import InterpreterNotFoundError
 from .utils import _captured_script, _run_output, _running, TestBase
 
@@ -533,6 +534,7 @@ class TestInterpreterExec(TestBase):
         with self.assertRaises(interpreters.ExecutionFailed):
             interp.exec('raise Exception')
 
+    @force_not_colorized
     def test_display_preserved_exception(self):
         tempdir = self.temp_dir()
         modfile = self.make_module('spam', tempdir, text="""

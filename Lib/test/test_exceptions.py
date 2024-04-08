@@ -12,7 +12,8 @@ from textwrap import dedent
 from test.support import (captured_stderr, check_impl_detail,
                           cpython_only, gc_collect,
                           no_tracing, script_helper,
-                          SuppressCrashReport)
+                          SuppressCrashReport,
+                          force_not_colorized)
 from test.support.import_helper import import_module
 from test.support.os_helper import TESTFN, unlink
 from test.support.warnings_helper import check_warnings
@@ -40,6 +41,7 @@ class BrokenStrException(Exception):
         raise Exception("str() is broken")
 
 # XXX This is not really enough, each *operation* should be tested!
+
 
 class ExceptionTests(unittest.TestCase):
 
@@ -1438,6 +1440,7 @@ class ExceptionTests(unittest.TestCase):
 
     @cpython_only
     @unittest.skipIf(_testcapi is None, "requires _testcapi")
+    @force_not_colorized
     def test_recursion_normalizing_infinite_exception(self):
         # Issue #30697. Test that a RecursionError is raised when
         # maximum recursion depth has been exceeded when creating
@@ -1993,6 +1996,7 @@ class AssertionErrorTests(unittest.TestCase):
         _rc, _out, err = script_helper.assert_python_failure('-Wd', '-X', 'utf8', TESTFN)
         return err.decode('utf-8').splitlines()
 
+    @force_not_colorized
     def test_assertion_error_location(self):
         cases = [
             ('assert None',
@@ -2069,6 +2073,7 @@ class AssertionErrorTests(unittest.TestCase):
                 result = self.write_source(source)
                 self.assertEqual(result[-3:], expected)
 
+    @force_not_colorized
     def test_multiline_not_highlighted(self):
         cases = [
             ("""
@@ -2101,6 +2106,7 @@ class AssertionErrorTests(unittest.TestCase):
 
 
 class SyntaxErrorTests(unittest.TestCase):
+    @force_not_colorized
     def test_range_of_offsets(self):
         cases = [
             # Basic range from 2->7
@@ -2191,6 +2197,7 @@ class SyntaxErrorTests(unittest.TestCase):
                     self.assertIn(expected, err.getvalue())
                     the_exception = exc
 
+    @force_not_colorized
     def test_encodings(self):
         source = (
             '# -*- coding: cp437 -*-\n'
@@ -2220,6 +2227,7 @@ class SyntaxErrorTests(unittest.TestCase):
         finally:
             unlink(TESTFN)
 
+    @force_not_colorized
     def test_non_utf8(self):
         # Check non utf-8 characters
         try:

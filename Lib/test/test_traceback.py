@@ -21,6 +21,7 @@ from test.support import (Error, captured_output, cpython_only, ALWAYS_EQ,
 from test.support.os_helper import TESTFN, unlink
 from test.support.script_helper import assert_python_ok, assert_python_failure
 from test.support.import_helper import forget
+from test.support import force_not_colorized
 
 import json
 import textwrap
@@ -39,6 +40,13 @@ test_tb = namedtuple('tb', ['tb_frame', 'tb_lineno', 'tb_next', 'tb_lasti'])
 
 LEVENSHTEIN_DATA_FILE = Path(__file__).parent / 'levenshtein_examples.json'
 
+ORIGINAL_CAN_COLORIZE = traceback._can_colorize
+
+def setUpModule():
+    traceback._can_colorize = lambda: False
+
+def tearDownModule():
+    traceback._can_colorize = ORIGINAL_CAN_COLORIZE
 
 class TracebackCases(unittest.TestCase):
     # For now, a very minimal set of tests.  I want to be sure that
@@ -124,6 +132,7 @@ class TracebackCases(unittest.TestCase):
         self.assertEqual(len(err), 3)
         self.assertEqual(err[1].strip(), "bad syntax")
 
+    @force_not_colorized
     def test_no_caret_with_no_debug_ranges_flag(self):
         # Make sure that if `-X no_debug_ranges` is used, there are no carets
         # in the traceback.
@@ -387,7 +396,7 @@ class TracebackCases(unittest.TestCase):
         process = subprocess.Popen([sys.executable, "-c",
                                     "import sys; print(sys.stdout.encoding)"],
                                    stdout=subprocess.PIPE,
-                                   stderr=subprocess.STDOUT)
+                                   stderr=subprocess.STDOUT, env={})
         stdout, stderr = process.communicate()
         output_encoding = str(stdout, 'ascii').splitlines()[0]
 
@@ -401,7 +410,7 @@ class TracebackCases(unittest.TestCase):
                         """.format(firstlines, message))
 
                 process = subprocess.Popen([sys.executable, TESTFN],
-                    stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+                    stdout=subprocess.PIPE, stderr=subprocess.STDOUT, env={})
                 stdout, stderr = process.communicate()
                 stdout = stdout.decode(output_encoding).splitlines()
             finally:
@@ -4360,7 +4369,8 @@ class TestColorizedTraceback(unittest.TestCase):
         else:
             virtual_patching = contextlib.nullcontext()
         with virtual_patching:
-            with unittest.mock.patch("os.isatty") as isatty_mock:
+            with (unittest.mock.patch("os.isatty") as isatty_mock, 
+                  unittest.mock.patch("traceback._can_colorize", ORIGINAL_CAN_COLORIZE)):
                 isatty_mock.return_value = True
                 with unittest.mock.patch("os.environ", {'TERM': 'dumb'}):
                     self.assertEqual(traceback._can_colorize(), False)
@@ -4379,7 +4389,8 @@ class TestColorizedTraceback(unittest.TestCase):
                 with unittest.mock.patch("os.environ", {'FORCE_COLOR': '1', "PYTHON_COLORS": '0'}):
                     self.assertEqual(traceback._can_colorize(), False)
                 isatty_mock.return_value = False
-                self.assertEqual(traceback._can_colorize(), False)
+                with unittest.mock.patch("os.environ", {}):
+                    self.assertEqual(traceback._can_colorize(), False)
 
 if __name__ == "__main__":
     unittest.main()

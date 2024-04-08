@@ -38,6 +38,7 @@ from test.support.import_helper import DirsOnSysPath, ready_to_import
 from test.support.os_helper import TESTFN, temp_cwd
 from test.support.script_helper import assert_python_ok, assert_python_failure, kill_python
 from test.support import has_subprocess_support, SuppressCrashReport
+from test.support import force_not_colorized
 from test import support
 
 from test.test_inspect import inspect_fodder as mod
@@ -816,6 +817,7 @@ class TestRetrievingSourceCode(GetSourceBase):
         self.assertSourceEqual(mod.eggs.__code__, 12, 18)
 
 class TestGetsourceInteractive(unittest.TestCase):
+    @force_not_colorized
     def test_getclasses_interactive(self):
         # bpo-44648: simulate a REPL session;
         # there is no `__file__` in the __main__ module

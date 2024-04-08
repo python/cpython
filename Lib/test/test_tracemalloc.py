@@ -8,6 +8,7 @@ from test.support.script_helper import (assert_python_ok, assert_python_failure,
                                         interpreter_requires_environment)
 from test import support
 from test.support import os_helper
+from test.support import force_not_colorized
 
 try:
     import _testcapi
@@ -942,7 +943,7 @@ class TestCommandLine(unittest.TestCase):
         with support.SuppressCrashReport():
             ok, stdout, stderr = assert_python_failure(
                 '-c', 'pass',
-                PYTHONTRACEMALLOC=str(nframe))
+                PYTHONTRACEMALLOC=str(nframe), __cleanenv=True)
 
         if b'ValueError: the number of frames must be in range' in stderr:
             return
@@ -979,6 +980,7 @@ class TestCommandLine(unittest.TestCase):
             return
         self.fail(f"unexpected output: {stderr!a}")
 
+    @force_not_colorized
     def test_sys_xoptions_invalid(self):
         for nframe in INVALID_NFRAME:
             with self.subTest(nframe=nframe):

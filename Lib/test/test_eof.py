@@ -5,6 +5,7 @@ from test import support
 from test.support import os_helper
 from test.support import script_helper
 from test.support import warnings_helper
+from test.support import force_not_colorized
 import unittest
 
 class EOFTestCase(unittest.TestCase):
@@ -58,6 +59,7 @@ class EOFTestCase(unittest.TestCase):
         self.assertEqual(str(excinfo.exception), expect)
 
     @unittest.skipIf(not sys.executable, "sys.executable required")
+    @force_not_colorized
     def test_line_continuation_EOF_from_file_bpo2180(self):
         """Ensure tok_nextc() does not add too many ending newlines."""
         with os_helper.temp_dir() as temp_dir:
