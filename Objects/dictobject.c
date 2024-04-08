@@ -1065,7 +1065,6 @@ compare_unicode_generic(PyDictObject *mp, PyDictKeysObject *dk,
     assert(ep->me_key != NULL);
     assert(PyUnicode_CheckExact(ep->me_key));
     assert(!PyUnicode_CheckExact(key));
-    // TODO: Thread safety
 
     if (unicode_get_hash(ep->me_key) == hash) {
         PyObject *startkey = ep->me_key;
@@ -1192,7 +1191,8 @@ _Py_dict_lookup(PyDictObject *mp, PyObject *key, Py_hash_t hash, PyObject **valu
     PyDictKeysObject *dk;
     DictKeysKind kind;
     Py_ssize_t ix;
-    // TODO: Thread safety
+
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(mp);
 start:
     dk = mp->ma_keys;
     kind = dk->dk_kind;
@@ -1390,7 +1390,7 @@ dictkeys_generic_lookup_threadsafe(PyDictObject *mp, PyDictKeysObject* dk, PyObj
     return do_lookup(mp, dk, key, hash, compare_generic_threadsafe);
 }
 
-static Py_ssize_t
+Py_ssize_t
 _Py_dict_lookup_threadsafe(PyDictObject *mp, PyObject *key, Py_hash_t hash, PyObject **value_addr)
 {
     PyDictKeysObject *dk;
@@ -1485,6 +1485,16 @@ read_failed:
         Py_INCREF(value);
     }
     Py_END_CRITICAL_SECTION();
+    return ix;
+}
+
+#else   // Py_GIL_DISABLED
+
+Py_ssize_t
+_Py_dict_lookup_threadsafe(PyDictObject *mp, PyObject *key, Py_hash_t hash, PyObject **value_addr)
+{
+    Py_ssize_t ix = _Py_dict_lookup(mp, key, hash, value_addr);
+    Py_XNewRef(*value_addr);
     return ix;
 }
 
@@ -2343,11 +2353,12 @@ _PyDict_GetItemStringWithError(PyObject *v, const char *key)
  * Raise an exception and return NULL if an error occurred (ex: computing the
  * key hash failed, key comparison failed, ...). Return NULL if the key doesn't
  * exist. Return the value if the key exists.
+ *
+ * Returns a new reference.
  */
 PyObject *
 _PyDict_LoadGlobal(PyDictObject *globals, PyDictObject *builtins, PyObject *key)
 {
-    // TODO: Thread safety
     Py_ssize_t ix;
     Py_hash_t hash;
     PyObject *value;
@@ -2359,14 +2370,14 @@ _PyDict_LoadGlobal(PyDictObject *globals, PyDictObject *builtins, PyObject *key)
     }
 
     /* namespace 1: globals */
-    ix = _Py_dict_lookup(globals, key, hash, &value);
+    ix = _Py_dict_lookup_threadsafe(globals, key, hash, &value);
     if (ix == DKIX_ERROR)
         return NULL;
     if (ix != DKIX_EMPTY && value != NULL)
         return value;
 
     /* namespace 2: builtins */
-    ix = _Py_dict_lookup(builtins, key, hash, &value);
+    ix = _Py_dict_lookup_threadsafe(builtins, key, hash, &value);
     assert(ix >= 0 || value == NULL);
     return value;
 }
@@ -3214,11 +3225,7 @@ dict_subscript(PyObject *self, PyObject *key)
         if (hash == -1)
             return NULL;
     }
-#ifdef Py_GIL_DISABLED
     ix = _Py_dict_lookup_threadsafe(mp, key, hash, &value);
-#else
-    ix = _Py_dict_lookup(mp, key, hash, &value);
-#endif
     if (ix == DKIX_ERROR)
         return NULL;
     if (ix == DKIX_EMPTY || value == NULL) {
@@ -3238,11 +3245,7 @@ dict_subscript(PyObject *self, PyObject *key)
         _PyErr_SetKeyError(key);
         return NULL;
     }
-#ifdef Py_GIL_DISABLED
     return value;
-#else
-    return Py_NewRef(value);
-#endif
 }
 
 static int
@@ -4109,24 +4112,13 @@ dict_get_impl(PyDictObject *self, PyObject *key, PyObject *default_value)
         if (hash == -1)
             return NULL;
     }
-#ifdef Py_GIL_DISABLED
     ix = _Py_dict_lookup_threadsafe(self, key, hash, &val);
-#else
-    ix = _Py_dict_lookup(self, key, hash, &val);
-#endif
     if (ix == DKIX_ERROR)
         return NULL;
-#ifdef Py_GIL_DISABLED
     if (ix == DKIX_EMPTY || val == NULL) {
         val = Py_NewRef(default_value);
     }
     return val;
-#else
-    if (ix == DKIX_EMPTY || val == NULL) {
-        val = default_value;
-    }
-    return Py_NewRef(val);
-#endif
 }
 
 static int

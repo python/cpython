@@ -24,7 +24,6 @@ class Properties:
     has_free: bool
     side_exit: bool
     pure: bool
-    passthrough: bool
     tier: int | None = None
     oparg_and_1: bool = False
     const_oparg: int = -1
@@ -54,7 +53,6 @@ class Properties:
             has_free=any(p.has_free for p in properties),
             side_exit=any(p.side_exit for p in properties),
             pure=all(p.pure for p in properties),
-            passthrough=all(p.passthrough for p in properties),
         )
 
     @property
@@ -81,7 +79,6 @@ SKIP_PROPERTIES = Properties(
     has_free=False,
     side_exit=False,
     pure=False,
-    passthrough=False,
 )
 
 
@@ -106,9 +103,6 @@ class StackItem:
     condition: str | None
     size: str
     peek: bool = False
-    type_prop: None | tuple[str, None | str] = field(
-        default_factory=lambda: None, init=True, compare=False, hash=False
-    )
 
     def __str__(self) -> str:
         cond = f" if ({self.condition})" if self.condition else ""
@@ -536,8 +530,6 @@ def compute_properties(op: parser.InstDef) -> Properties:
         )
     error_with_pop = has_error_with_pop(op)
     error_without_pop = has_error_without_pop(op)
-    infallible = not error_with_pop and not error_without_pop
-    passthrough = stack_effect_only_peeks(op) and infallible
     return Properties(
         escapes=makes_escaping_api_call(op),
         error_with_pop=error_with_pop,
@@ -557,7 +549,6 @@ def compute_properties(op: parser.InstDef) -> Properties:
         and not has_free,
         has_free=has_free,
         pure="pure" in op.annotations,
-        passthrough=passthrough,
         tier=tier_variable(op),
     )
 
