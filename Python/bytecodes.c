@@ -452,12 +452,14 @@ dummy_func(
         }
 
         op(_BINARY_OP_TABLE_NN, (type_version/1, left, right -- res)) {
+            // The NN sufix indicates that it does not decref the arguments */
             STAT_INC(BINARY_OP, hit);
             res = _Py_BinaryFunctionTable[type_version >> 8](left, right);
             ERROR_IF(res == NULL, error);
         }
 
         op(_BINARY_OP_TABLE_ND, (type_version/1, left, right -- res)) {
+            // The ND sufix indicates that it decrefs only the right argument */
             STAT_INC(BINARY_OP, hit);
             res = _Py_BinaryFunctionTable[type_version >> 8](left, right);
             Py_DECREF(right);
@@ -465,6 +467,7 @@ dummy_func(
         }
 
         op(_BINARY_OP_TABLE_DN, (type_version/1, left, right -- res)) {
+            // The DN sufix indicates that it decrefs only the left argument */
             STAT_INC(BINARY_OP, hit);
             res = _Py_BinaryFunctionTable[type_version >> 8](left, right);
             Py_DECREF(left);
@@ -472,6 +475,7 @@ dummy_func(
         }
 
         op(_BINARY_OP_TABLE_DD, (type_version/1, left, right -- res)) {
+            // The DD sufix indicates that it decrefs both arguments */
             STAT_INC(BINARY_OP, hit);
             res = _Py_BinaryFunctionTable[type_version >> 8](left, right);
             Py_DECREF(left);

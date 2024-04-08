@@ -519,6 +519,7 @@
             right = stack_pointer[-1];
             left = stack_pointer[-2];
             uint16_t type_version = (uint16_t)CURRENT_OPERAND();
+            // The NN sufix indicates that it does not decref the arguments */
             STAT_INC(BINARY_OP, hit);
             res = _Py_BinaryFunctionTable[type_version >> 8](left, right);
             if (res == NULL) JUMP_TO_ERROR();
@@ -534,6 +535,7 @@
             right = stack_pointer[-1];
             left = stack_pointer[-2];
             uint16_t type_version = (uint16_t)CURRENT_OPERAND();
+            // The ND sufix indicates that it decrefs only the right argument */
             STAT_INC(BINARY_OP, hit);
             res = _Py_BinaryFunctionTable[type_version >> 8](left, right);
             Py_DECREF(right);
@@ -550,6 +552,7 @@
             right = stack_pointer[-1];
             left = stack_pointer[-2];
             uint16_t type_version = (uint16_t)CURRENT_OPERAND();
+            // The DN sufix indicates that it decrefs only the left argument */
             STAT_INC(BINARY_OP, hit);
             res = _Py_BinaryFunctionTable[type_version >> 8](left, right);
             Py_DECREF(left);
@@ -566,6 +569,7 @@
             right = stack_pointer[-1];
             left = stack_pointer[-2];
             uint16_t type_version = (uint16_t)CURRENT_OPERAND();
+            // The DD sufix indicates that it decrefs both arguments */
             STAT_INC(BINARY_OP, hit);
             res = _Py_BinaryFunctionTable[type_version >> 8](left, right);
             Py_DECREF(left);

@@ -175,6 +175,7 @@
             // _BINARY_OP_TABLE_NN
             {
                 uint16_t type_version = read_u16(&this_instr[2].cache);
+                // The NN sufix indicates that it does not decref the arguments */
                 STAT_INC(BINARY_OP, hit);
                 res = _Py_BinaryFunctionTable[type_version >> 8](left, right);
                 if (res == NULL) goto pop_2_error;
@@ -213,6 +214,7 @@
             // _BINARY_OP_TABLE_ND
             {
                 uint16_t type_version = read_u16(&this_instr[2].cache);
+                // The ND sufix indicates that it decrefs only the right argument */
                 STAT_INC(BINARY_OP, hit);
                 res = _Py_BinaryFunctionTable[type_version >> 8](left, right);
                 Py_DECREF(right);
@@ -258,6 +260,7 @@
             // _BINARY_OP_TABLE_NN
             {
                 uint16_t type_version = read_u16(&this_instr[2].cache);
+                // The NN sufix indicates that it does not decref the arguments */
                 STAT_INC(BINARY_OP, hit);
                 res = _Py_BinaryFunctionTable[type_version >> 8](left, right);
                 if (res == NULL) goto pop_2_error;
@@ -302,6 +305,7 @@
             // _BINARY_OP_TABLE_NN
             {
                 uint16_t type_version = read_u16(&this_instr[2].cache);
+                // The NN sufix indicates that it does not decref the arguments */
                 STAT_INC(BINARY_OP, hit);
                 res = _Py_BinaryFunctionTable[type_version >> 8](left, right);
                 if (res == NULL) goto pop_2_error;
@@ -385,6 +389,7 @@
             // _BINARY_OP_TABLE_ND
             {
                 uint16_t type_version = read_u16(&this_instr[2].cache);
+                // The ND sufix indicates that it decrefs only the right argument */
                 STAT_INC(BINARY_OP, hit);
                 res = _Py_BinaryFunctionTable[type_version >> 8](left, right);
                 Py_DECREF(right);
@@ -424,6 +429,7 @@
             // _BINARY_OP_TABLE_DN
             {
                 uint16_t type_version = read_u16(&this_instr[2].cache);
+                // The DN sufix indicates that it decrefs only the left argument */
                 STAT_INC(BINARY_OP, hit);
                 res = _Py_BinaryFunctionTable[type_version >> 8](left, right);
                 Py_DECREF(left);
@@ -463,6 +469,7 @@
             // _BINARY_OP_TABLE_DN
             {
                 uint16_t type_version = read_u16(&this_instr[2].cache);
+                // The DN sufix indicates that it decrefs only the left argument */
                 STAT_INC(BINARY_OP, hit);
                 res = _Py_BinaryFunctionTable[type_version >> 8](left, right);
                 Py_DECREF(left);
@@ -496,6 +503,7 @@
             // _BINARY_OP_TABLE_DD
             {
                 uint16_t type_version = read_u16(&this_instr[2].cache);
+                // The DD sufix indicates that it decrefs both arguments */
                 STAT_INC(BINARY_OP, hit);
                 res = _Py_BinaryFunctionTable[type_version >> 8](left, right);
                 Py_DECREF(left);
