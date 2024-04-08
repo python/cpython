@@ -510,6 +510,11 @@ class TestBase(unittest.TestCase):
                 pass
 
     @contextlib.contextmanager
+    def unmanaged_interpreter_obj(self, config='legacy'):
+        with self.unmanaged_interpreter(config) as interpid:
+            yield interpreters.Interpreter(interpid), interpid
+
+    @contextlib.contextmanager
     def capturing(self, script):
         wrapped, capturing = _captured_script(script, stdout=True, exc=True)
         #_dump_script(wrapped)

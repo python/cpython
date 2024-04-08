@@ -164,7 +164,7 @@ class GetCurrentTests(TestBase):
             self.assertNotEqual(id1, id2)
 
     @requires__testinternalcapi
-    def test_not_owned(self):
+    def test_created_with_capi(self):
         last = 0
         for id, *_ in _interpreters.list_all():
             last = max(last, id)
@@ -172,12 +172,11 @@ class GetCurrentTests(TestBase):
         err, text = self.run_temp_external(f"""
             import {interpreters.__name__} as interpreters
             interp = interpreters.get_current()
-            print((interp.id, interp.owned))
+            print(interp.id)
             """)
         assert err is None, err
-        interpid, owned = eval(text)
+        interpid = eval(text)
         self.assertEqual(interpid, expected)
-        self.assertFalse(owned)
 
 
 class ListAllTests(TestBase):
@@ -221,31 +220,31 @@ class ListAllTests(TestBase):
         for interp1, interp2 in zip(actual, expected):
             self.assertIs(interp1, interp2)
 
-    def test_not_owned(self):
-        mainid, _ = _interpreters.get_main()
+    def test_created_with_capi(self):
+        mainid, *_ = _interpreters.get_main()
         interpid1 = _interpreters.create()
         interpid2 = _interpreters.create()
         interpid3 = _interpreters.create()
         interpid4 = interpid3 + 1
         interpid5 = interpid4 + 1
         expected = [
-            (mainid, False),
-            (interpid1, True),
-            (interpid2, True),
-            (interpid3, True),
-            (interpid4, False),
-            (interpid5, True),
+            (mainid,),
+            (interpid1,),
+            (interpid2,),
+            (interpid3,),
+            (interpid4,),
+            (interpid5,),
         ]
         expected2 = expected[:-2]
         err, text = self.run_temp_external(f"""
             import {interpreters.__name__} as interpreters
             interp = interpreters.create()
             print(
-                [(i.id, i.owned) for i in interpreters.list_all()])
+                [(i.id,) for i in interpreters.list_all()])
             """)
         assert err is None, err
         res = eval(text)
-        res2 = [(i.id, i.owned) for i in interpreters.list_all()]
+        res2 = [(i.id,) for i in interpreters.list_all()]
         self.assertEqual(res, expected)
         self.assertEqual(res2, expected2)
 
@@ -300,33 +299,6 @@ class InterpreterObjectTests(TestBase):
         interp = interpreters.create()
         with self.assertRaises(AttributeError):
             interp.id = 1_000_000
-
-    def test_owned(self):
-        main = interpreters.get_main()
-        interp = interpreters.create()
-
-        with self.subTest('main'):
-            self.assertFalse(main.owned)
-
-        with self.subTest('owned'):
-            self.assertTrue(interp.owned)
-
-        with self.subTest('not owned'):
-            err, text = self.run_temp_external(f"""
-                import {interpreters.__name__} as interpreters
-                interp = interpreters.get_current()
-                print(interp.owned)
-                """)
-            self.assertIsNone(err)
-            owned = eval(text)
-            self.assertTrue(owned)
-
-        with self.subTest('readonly'):
-            for value in (True, False):
-                with self.assertRaises(AttributeError):
-                    interp.id = value
-                with self.assertRaises(AttributeError):
-                    main.id = value
 
     def test_hashable(self):
         interp = interpreters.create()
@@ -415,7 +387,7 @@ class TestInterpreterIsRunning(TestBase):
         interp.exec('t.join()')
         self.assertEqual(os.read(r_interp, 1), FINISHED)
 
-    def test_not_owned(self):
+    def test_created_with_capi(self):
         script = dedent(f"""
             import {interpreters.__name__} as interpreters
             interp = interpreters.get_current()
@@ -432,8 +404,8 @@ class TestInterpreterIsRunning(TestBase):
         with self.subTest('running __main__ (from self)'):
             with self.unmanaged_interpreter() as interpid:
                 err, text = self.run_external(interpid, script, main=True)
-                running = resolve_results(err, text)
-                self.assertTrue(running)
+            running = resolve_results(err, text)
+            self.assertTrue(running)
 
         with self.subTest('running, but not __main__ (from self)'):
             err, text = self.run_temp_external(script)
@@ -441,8 +413,7 @@ class TestInterpreterIsRunning(TestBase):
             self.assertFalse(running)
 
         with self.subTest('running __main__ (from other)'):
-            with self.unmanaged_interpreter() as interpid:
-                interp = interpreters.Interpreter(interpid, _owned=False)
+            with self.unmanaged_interpreter_obj() as (interp, interpid):
                 before = interp.is_running()
                 with self.running_external(interpid, main=True):
                     during = interp.is_running()
@@ -452,8 +423,7 @@ class TestInterpreterIsRunning(TestBase):
             self.assertFalse(after)
 
         with self.subTest('running, but not __main__ (from other)'):
-            with self.unmanaged_interpreter() as interpid:
-                interp = interpreters.Interpreter(interpid, _owned=False)
+            with self.unmanaged_interpreter_obj() as (interp, interpid):
                 before = interp.is_running()
                 with self.running_external(interpid, main=False):
                     during = interp.is_running()
@@ -463,10 +433,9 @@ class TestInterpreterIsRunning(TestBase):
             self.assertFalse(after)
 
         with self.subTest('not running (from other)'):
-            with self.unmanaged_interpreter() as interpid:
-                interp = interpreters.Interpreter(interpid, _owned=False)
+            with self.unmanaged_interpreter_obj() as (interp, _):
                 running = interp.is_running()
-                self.assertFalse(running)
+            self.assertFalse(running)
 
 
 class TestInterpreterClose(TestBase):
@@ -591,7 +560,7 @@ class TestInterpreterClose(TestBase):
 
         self.assertEqual(os.read(r_interp, 1), FINISHED)
 
-    def test_not_owned(self):
+    def test_created_with_capi(self):
         script = dedent(f"""
             import {interpreters.__name__} as interpreters
             interp = interpreters.get_current()
@@ -613,21 +582,20 @@ class TestInterpreterClose(TestBase):
             check_results(err, text)
 
         with self.subTest('running __main__ (from other)'):
-            with self.unmanaged_interpreter() as interpid:
-                interp = interpreters.Interpreter(interpid, _owned=False)
+            with self.unmanaged_interpreter_obj() as (interp, interpid):
                 with self.running_external(interpid, main=True):
                     with self.assertRaisesRegex(InterpreterError, 'running'):
                         interp.close()
                     # Make sure it wssn't closed.
-                    self.assertTrue(interp.is_running())
+                    self.assertTrue(
+                        interp.is_running())
 
         # The rest must be skipped until we deal with running threads when
         # interp.close() is called.
         return
 
         with self.subTest('running, but not __main__ (from other)'):
-            with self.unmanaged_interpreter() as interpid:
-                interp = interpreters.Interpreter(interpid, _owned=False)
+            with self.unmanaged_interpreter_obj() as (interp, interpid):
                 with self.running_external(interpid, main=False):
                     with self.assertRaisesRegex(InterpreterError, 'not managed'):
                         interp.close()
@@ -635,8 +603,7 @@ class TestInterpreterClose(TestBase):
                     self.assertFalse(interp.is_running())
 
         with self.subTest('not running (from other)'):
-            with self.unmanaged_interpreter() as interpid:
-                interp = interpreters.Interpreter(interpid, _owned=False)
+            with self.unmanaged_interpreter_obj() as (interp, _):
                 with self.assertRaisesRegex(InterpreterError, 'not managed'):
                     interp.close()
                 # Make sure it wssn't closed.
@@ -708,9 +675,9 @@ class TestInterpreterPrepareMain(TestBase):
         interp.exec('assert spam is True')
 
     @requires__testinternalcapi
-    def test_not_owned(self):
+    def test_created_with_capi(self):
         with self.unmanaged_interpreter() as interpid:
-            interp = interpreters.Interpreter(interpid, _owned=False)
+            interp = interpreters.Interpreter(interpid)
             interp.prepare_main({'spam': True})
             rc = _testinternalcapi.exec_interpreter(interpid,
                                                     'assert spam is True')
@@ -867,10 +834,8 @@ class TestInterpreterExec(TestBase):
         self.assertEqual(os.read(r_interp, 1), RAN)
         self.assertEqual(os.read(r_interp, 1), FINISHED)
 
-    @requires__testinternalcapi
-    def test_not_owned(self):
-        with self.unmanaged_interpreter() as interpid:
-            interp = interpreters.Interpreter(interpid, _owned=False)
+    def test_created_with_capi(self):
+        with self.unmanaged_interpreter_obj() as (interp, _):
             with self.assertRaisesRegex(ExecutionFailed, 'it worked'):
                 interp.exec('raise Exception("it worked!")')
 
@@ -1150,6 +1115,14 @@ class LowLevelTests(TestBase):
     # encountered by the high-level module, thus they
     # mostly shouldn't matter as much.
 
+    def interp_exists(self, interpid):
+        try:
+            _interpreters.is_running(interpid)
+        except InterpreterNotFoundError:
+            return False
+        else:
+            return True
+
     def test_new_config(self):
         # This test overlaps with
         # test.test_capi.test_misc.InterpreterConfigTests.
@@ -1272,78 +1245,61 @@ class LowLevelTests(TestBase):
                 with self.assertRaises(ValueError):
                     _interpreters.new_config(gil=value)
 
-    def test_get_config(self):
-        # This test overlaps with
-        # test.test_capi.test_misc.InterpreterConfigTests.
-
-        with self.subTest('main'):
-            expected = _interpreters.new_config('legacy')
-            expected.gil = 'own'
-            interpid, _ = _interpreters.get_main()
-            config = _interpreters.get_config(interpid)
-            self.assert_ns_equal(config, expected)
-
     def test_get_main(self):
-        interpid, owned = _interpreters.get_main()
+        interpid, = _interpreters.get_main()
         self.assertEqual(interpid, 0)
-        self.assertFalse(owned)
 
     def test_get_current(self):
         with self.subTest('main'):
-            main, _ = _interpreters.get_main()
-            interpid, owned = _interpreters.get_current()
+            main, *_ = _interpreters.get_main()
+            interpid, = _interpreters.get_current()
             self.assertEqual(interpid, main)
-            self.assertFalse(owned)
 
         script = f"""
             import {_interpreters.__name__} as _interpreters
-            interpid, owned = _interpreters.get_current()
+            interpid, = _interpreters.get_current()
             print(interpid)
-            print(owned)
             """
         def parse_stdout(text):
             parts = text.split()
-            assert len(parts) == 2, parts
-            interpid, owned = parts
+            assert len(parts) == 1, parts
+            interpid, = parts
             interpid = int(interpid)
-            owned = eval(owned)
-            return interpid, owned
+            return interpid,
 
-        with self.subTest('owned'):
+        with self.subTest('from _interpreters'):
             orig = _interpreters.create()
             text = self.run_and_capture(orig, script)
-            interpid, owned = parse_stdout(text)
+            interpid, = parse_stdout(text)
             self.assertEqual(interpid, orig)
-            self.assertTrue(owned)
 
-        with self.subTest('not owned'):
+        with self.subTest('from C-API'):
             last = 0
             for id, *_ in _interpreters.list_all():
                 last = max(last, id)
             expected = last + 1
             err, text = self.run_temp_external(script)
             assert err is None, err
-            interpid, owned = parse_stdout(text)
+            interpid, = parse_stdout(text)
             self.assertEqual(interpid, expected)
-            self.assertFalse(owned)
 
     def test_list_all(self):
-        mainid, _ = _interpreters.get_main()
+        mainid, *_ = _interpreters.get_main()
         interpid1 = _interpreters.create()
         interpid2 = _interpreters.create()
         interpid3 = _interpreters.create()
         expected = [
-            (mainid, False),
-            (interpid1, True),
-            (interpid2, True),
-            (interpid3, True),
+            (mainid,),
+            (interpid1,),
+            (interpid2,),
+            (interpid3,),
         ]
 
         with self.subTest('main'):
             res = _interpreters.list_all()
             self.assertEqual(res, expected)
 
-        with self.subTest('owned'):
+        with self.subTest('from _interpreters'):
             text = self.run_and_capture(interpid2, f"""
                 import {_interpreters.__name__} as _interpreters
                 print(
@@ -1353,15 +1309,15 @@ class LowLevelTests(TestBase):
             res = eval(text)
             self.assertEqual(res, expected)
 
-        with self.subTest('not owned'):
+        with self.subTest('from C-API'):
             interpid4 = interpid3 + 1
             interpid5 = interpid4 + 1
             expected2 = expected + [
-                (interpid4, False),
-                (interpid5, True),
+                (interpid4,),
+                (interpid5,),
             ]
             expected3 = expected + [
-                (interpid5, True),
+                (interpid5,),
             ]
             err, text = self.run_temp_external(f"""
                 import {_interpreters.__name__} as _interpreters
@@ -1427,34 +1383,44 @@ class LowLevelTests(TestBase):
                 _interpreters.create(orig)
 
     def test_destroy(self):
-        with self.subTest('owned'):
+        with self.subTest('from _interpreters'):
             interpid = _interpreters.create()
-            before = [id for id, _ in _interpreters.list_all()]
+            before = [id for id, *_ in _interpreters.list_all()]
             _interpreters.destroy(interpid)
-            after = [id for id, _ in _interpreters.list_all()]
+            after = [id for id, *_ in _interpreters.list_all()]
 
             self.assertIn(interpid, before)
             self.assertNotIn(interpid, after)
-            with self.assertRaises(InterpreterNotFoundError):
-                _interpreters.is_owned(interpid)
+            self.assertFalse(
+                self.interp_exists(interpid))
 
         with self.subTest('main'):
-            interpid, _ = _interpreters.get_main()
+            interpid, *_ = _interpreters.get_main()
             with self.assertRaises(InterpreterError):
                 # It is the current interpreter.
                 _interpreters.destroy(interpid)
 
-        with self.subTest('not owned'):
+        with self.subTest('from C-API'):
             interpid = _testinternalcapi.create_interpreter()
             _interpreters.destroy(interpid)
-            with self.assertRaises(InterpreterNotFoundError):
-                _interpreters.is_running(interpid)
+            self.assertFalse(
+                self.interp_exists(interpid))
 
     def test_get_config(self):
+        # This test overlaps with
+        # test.test_capi.test_misc.InterpreterConfigTests.
+
         with self.subTest('main'):
             expected = _interpreters.new_config('legacy')
             expected.gil = 'own'
-            interpid, _ = _interpreters.get_main()
+            interpid, *_ = _interpreters.get_main()
+            config = _interpreters.get_config(interpid)
+            self.assert_ns_equal(config, expected)
+
+        with self.subTest('main'):
+            expected = _interpreters.new_config('legacy')
+            expected.gil = 'own'
+            interpid, *_ = _interpreters.get_main()
             config = _interpreters.get_config(interpid)
             self.assert_ns_equal(config, expected)
 
@@ -1470,7 +1436,7 @@ class LowLevelTests(TestBase):
             config = _interpreters.get_config(interpid)
             self.assert_ns_equal(config, expected)
 
-        with self.subTest('not owned'):
+        with self.subTest('from C-API'):
             orig = _interpreters.new_config('isolated')
             with self.unmanaged_interpreter(orig) as interpid:
                 config = _interpreters.get_config(interpid)
@@ -1478,34 +1444,34 @@ class LowLevelTests(TestBase):
 
     def test_is_running(self):
         with self.subTest('main'):
-            interpid, _ = _interpreters.get_main()
+            interpid, *_ = _interpreters.get_main()
             running = _interpreters.is_running(interpid)
             self.assertTrue(running)
 
-        with self.subTest('owned (running)'):
+        with self.subTest('from _interpreters (running)'):
             interpid = _interpreters.create()
             with self.running(interpid):
                 running = _interpreters.is_running(interpid)
             self.assertTrue(running)
 
-        with self.subTest('owned (not running)'):
+        with self.subTest('from _interpreters (not running)'):
             interpid = _interpreters.create()
             running = _interpreters.is_running(interpid)
             self.assertFalse(running)
 
-        with self.subTest('not owned (running __main__)'):
+        with self.subTest('from C-API (running __main__)'):
             with self.unmanaged_interpreter() as interpid:
                 with self.running_external(interpid, main=True):
                     running = _interpreters.is_running(interpid)
             self.assertTrue(running)
 
-        with self.subTest('not owned (running, but not __main__)'):
+        with self.subTest('from C-API (running, but not __main__)'):
             with self.unmanaged_interpreter() as interpid:
                 with self.running_external(interpid, main=False):
                     running = _interpreters.is_running(interpid)
             self.assertFalse(running)
 
-        with self.subTest('not owned (not running)'):
+        with self.subTest('from C-API (not running)'):
             with self.unmanaged_interpreter() as interpid:
                 running = _interpreters.is_running(interpid)
                 self.assertFalse(running)
@@ -1542,7 +1508,7 @@ class LowLevelTests(TestBase):
                 errdisplay=exc.errdisplay,
             ))
 
-        with self.subTest('not owned'):
+        with self.subTest('from C-API'):
             with self.unmanaged_interpreter() as interpid:
                 exc = _interpreters.exec(interpid, 'raise Exception("it worked!")')
             self.assertIsNot(exc, None)
@@ -1570,7 +1536,7 @@ class LowLevelTests(TestBase):
             ))
 
     def test_set___main___attrs(self):
-        with self.subTest('owned'):
+        with self.subTest('from _interpreters'):
             interpid = _interpreters.create()
             before1 = _interpreters.exec(interpid, 'assert spam == \'eggs\'')
             before2 = _interpreters.exec(interpid, 'assert ham == 42')
@@ -1588,7 +1554,7 @@ class LowLevelTests(TestBase):
             self.assertIs(after2, None)
             self.assertEqual(after3.type.__name__, 'AssertionError')
 
-        with self.subTest('not owned'):
+        with self.subTest('from C-API'):
             with self.unmanaged_interpreter() as interpid:
                 _interpreters.set___main___attrs(interpid, {'spam': True})
                 exc = _interpreters.exec(interpid, 'assert spam is True')

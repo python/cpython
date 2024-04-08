@@ -492,6 +492,19 @@ _run_in_interpreter(PyInterpreterState *interp,
 /* module level code ********************************************************/
 
 static PyObject *
+get_summary(PyInterpreterState *interp)
+{
+    PyObject *idobj = _PyInterpreterState_GetIDObject(interp);
+    if (idobj == NULL) {
+        return NULL;
+    }
+    PyObject *res = PyTuple_Pack(1, idobj);
+    Py_DECREF(idobj);
+    return res;
+}
+
+
+static PyObject *
 interp_new_config(PyObject *self, PyObject *args, PyObject *kwds)
 {
     const char *name = NULL;
@@ -645,7 +658,7 @@ So does an unrecognized ID.");
 static PyObject *
 interp_list_all(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *ids, *id;
+    PyObject *ids;
     PyInterpreterState *interp;
 
     ids = PyList_New(0);
@@ -655,14 +668,14 @@ interp_list_all(PyObject *self, PyObject *Py_UNUSED(ignored))
 
     interp = PyInterpreterState_Head();
     while (interp != NULL) {
-        id = _PyInterpreterState_GetIDObject(interp);
-        if (id == NULL) {
+        PyObject *item = get_summary(interp);
+        if (item == NULL) {
             Py_DECREF(ids);
             return NULL;
         }
         // insert at front of list
-        int res = PyList_Insert(ids, 0, id);
-        Py_DECREF(id);
+        int res = PyList_Insert(ids, 0, item);
+        Py_DECREF(item);
         if (res < 0) {
             Py_DECREF(ids);
             return NULL;
@@ -675,7 +688,7 @@ interp_list_all(PyObject *self, PyObject *Py_UNUSED(ignored))
 }
 
 PyDoc_STRVAR(list_all_doc,
-"list_all() -> [ID]\n\
+"list_all() -> [(ID,)]\n\
 \n\
 Return a list containing the ID of every existing interpreter.");
 
@@ -687,11 +700,11 @@ interp_get_current(PyObject *self, PyObject *Py_UNUSED(ignored))
     if (interp == NULL) {
         return NULL;
     }
-    return _PyInterpreterState_GetIDObject(interp);
+    return get_summary(interp);
 }
 
 PyDoc_STRVAR(get_current_doc,
-"get_current() -> ID\n\
+"get_current() -> (ID,)\n\
 \n\
 Return the ID of current interpreter.");
 
@@ -699,13 +712,12 @@ Return the ID of current interpreter.");
 static PyObject *
 interp_get_main(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    // Currently, 0 is always the main interpreter.
-    int64_t id = 0;
-    return PyLong_FromLongLong(id);
+    PyInterpreterState *interp = _PyInterpreterState_Main();
+    return get_summary(interp);
 }
 
 PyDoc_STRVAR(get_main_doc,
-"get_main() -> ID\n\
+"get_main() -> (ID,)\n\
 \n\
 Return the ID of main interpreter.");
 
