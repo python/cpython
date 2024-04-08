@@ -32,7 +32,7 @@
 #include "pycore_code.h"          // _PyCode_New()
 #include "pycore_compile.h"
 #include "pycore_flowgraph.h"
-#include "pycore_instruction_sequence.h" // PyInstructionSequence_New()
+#include "pycore_instruction_sequence.h" // _PyInstructionSequence_New()
 #include "pycore_intrinsics.h"
 #include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_pystate.h"       // _Py_GetConfig()
@@ -1253,7 +1253,7 @@ compiler_enter_scope(struct compiler *c, identifier name,
         u->u_static_attributes = NULL;
     }
 
-    u->u_instr_sequence = (instr_sequence*)PyInstructionSequence_New();
+    u->u_instr_sequence = (instr_sequence*)_PyInstructionSequence_New();
 
     /* Push the old compiler_unit on the stack. */
     if (c->u) {
@@ -7707,7 +7707,7 @@ error:
 static PyObject *
 cfg_to_instructions(cfg_builder *g)
 {
-    instr_sequence *seq = (instr_sequence *)PyInstructionSequence_New();
+    instr_sequence *seq = (instr_sequence *)_PyInstructionSequence_New();
     if (_PyCfg_ToInstructionSequence(g, seq) < 0) {
         return NULL;
     }

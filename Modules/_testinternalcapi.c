@@ -22,7 +22,7 @@
 #include "pycore_gc.h"            // PyGC_Head
 #include "pycore_hashtable.h"     // _Py_hashtable_new()
 #include "pycore_initconfig.h"    // _Py_GetConfigsAsDict()
-#include "pycore_instruction_sequence.h"  // PyInstructionSequence_New()
+#include "pycore_instruction_sequence.h"  // _PyInstructionSequence_New()
 #include "pycore_interp.h"        // _PyInterpreterState_GetConfigCopy()
 #include "pycore_long.h"          // _PyLong_Sign()
 #include "pycore_object.h"        // _PyObject_IsFreed()
@@ -735,7 +735,7 @@ static PyObject *
 _testinternalcapi_new_instruction_sequence_impl(PyObject *module)
 /*[clinic end generated code: output=ea4243fddb9057fd input=1dec2591b173be83]*/
 {
-    return PyInstructionSequence_New();
+    return _PyInstructionSequence_New();
 }
 
 /*[clinic input]

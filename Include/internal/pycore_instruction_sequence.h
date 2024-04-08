@@ -51,7 +51,8 @@ typedef struct {
     int id;
 } _PyJumpTargetLabel;
 
-PyAPI_FUNC(PyObject*)PyInstructionSequence_New(void);
+PyAPI_FUNC(PyObject*)_PyInstructionSequence_New(void);
+
 int _PyInstructionSequence_UseLabel(_PyInstructionSequence *seq, int lbl);
 int _PyInstructionSequence_Addop(_PyInstructionSequence *seq,
                                  int opcode, int oparg,

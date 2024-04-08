@@ -190,7 +190,7 @@ inst_seq_create_raw(void)
 }
 
 PyObject*
-PyInstructionSequence_New(void)
+_PyInstructionSequence_New(void)
 {
     _PyInstructionSequence *seq = inst_seq_create_raw();
     if (seq == NULL) {
