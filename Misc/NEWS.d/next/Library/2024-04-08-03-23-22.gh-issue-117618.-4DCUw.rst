@@ -1,1 +1,1 @@
-Support ``package.module`` as ``filename`` for :pdbcommand:`break`
+Support ``package.module`` as ``filename`` for ``break`` command
