@@ -1432,6 +1432,59 @@ destroy_interpreter(PyObject *self, PyObject *args, PyObject *kwargs)
     Py_RETURN_NONE;
 }
 
+// This exists mostly for testing the _interpreters module, as an
+// alternative to _interpreters.destroy()
+static PyObject *
+exec_interpreter(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+    static char *kwlist[] = {"id", "code", "main", NULL};
+    PyObject *idobj;
+    const char *code;
+    int runningmain = 0;
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
+                                     "Os|$p:exec_interpreter", kwlist,
+                                     &idobj, &code, &runningmain))
+    {
+        return NULL;
+    }
+
+    PyInterpreterState *interp = _PyInterpreterState_LookUpIDObject(idobj);
+    if (interp == NULL) {
+        return NULL;
+    }
+
+    PyObject *res = NULL;
+    PyThreadState *tstate = PyThreadState_New(interp);
+    _PyThreadState_SetWhence(tstate, _PyThreadState_WHENCE_EXEC);
+
+    PyThreadState *save_tstate = PyThreadState_Swap(tstate);
+
+    if (runningmain) {
+       if (_PyInterpreterState_SetRunningMain(interp) < 0) {
+           goto finally;
+       }
+    }
+
+    /* only initialise 'cflags.cf_flags' to test backwards compatibility */
+    PyCompilerFlags cflags = {0};
+    int r = PyRun_SimpleStringFlags(code, &cflags);
+    if (PyErr_Occurred()) {
+        PyErr_PrintEx(0);
+    }
+
+    if (runningmain) {
+        _PyInterpreterState_SetNotRunningMain(interp);
+    }
+
+    res = PyLong_FromLong(r);
+
+finally:
+    PyThreadState_Clear(tstate);
+    PyThreadState_Swap(save_tstate);
+    PyThreadState_Delete(tstate);
+    return res;
+}
+
 
 /* To run some code in a sub-interpreter.
 
@@ -1805,6 +1858,8 @@ static PyMethodDef module_functions[] = {
     {"create_interpreter", _PyCFunction_CAST(create_interpreter),
      METH_VARARGS | METH_KEYWORDS},
     {"destroy_interpreter", _PyCFunction_CAST(destroy_interpreter),
+     METH_VARARGS | METH_KEYWORDS},
+    {"exec_interpreter", _PyCFunction_CAST(exec_interpreter),
      METH_VARARGS | METH_KEYWORDS},
     {"run_in_subinterp_with_config",
      _PyCFunction_CAST(run_in_subinterp_with_config),
