@@ -1286,7 +1286,7 @@ Py_ssize_t compare_unicode_generic_threadsafe(PyDictObject *mp, PyDictKeysObject
     assert(!PyUnicode_CheckExact(key));
 
     if (startkey != NULL) {
-        if (!_Py_TryIncref(&ep->me_key, startkey)) {
+        if (!_Py_TryIncrefCompare(&ep->me_key, startkey)) {
             return DKIX_KEY_CHANGED;
         }
 
@@ -1334,7 +1334,7 @@ compare_unicode_unicode_threadsafe(PyDictObject *mp, PyDictKeysObject *dk,
             return unicode_get_hash(startkey) == hash && unicode_eq(startkey, key);
         }
         else {
-            if (!_Py_TryIncref(&ep->me_key, startkey)) {
+            if (!_Py_TryIncrefCompare(&ep->me_key, startkey)) {
                 return DKIX_KEY_CHANGED;
             }
             if (unicode_get_hash(startkey) == hash && unicode_eq(startkey, key)) {
@@ -1364,7 +1364,7 @@ Py_ssize_t compare_generic_threadsafe(PyDictObject *mp, PyDictKeysObject *dk,
     }
     Py_ssize_t ep_hash = _Py_atomic_load_ssize_relaxed(&ep->me_hash);
     if (ep_hash == hash) {
-        if (startkey == NULL || !_Py_TryIncref(&ep->me_key, startkey)) {
+        if (startkey == NULL || !_Py_TryIncrefCompare(&ep->me_key, startkey)) {
             return DKIX_KEY_CHANGED;
         }
         int cmp = PyObject_RichCompareBool(startkey, key, Py_EQ);
@@ -5308,7 +5308,7 @@ acquire_key_value(PyObject **key_loc, PyObject *value, PyObject **value_loc,
     }
 
     if (out_value) {
-        if (!_Py_TryIncref(value_loc, value)) {
+        if (!_Py_TryIncrefCompare(value_loc, value)) {
             if (out_key) {
                 Py_DECREF(*out_key);
             }

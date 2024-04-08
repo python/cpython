@@ -1907,6 +1907,25 @@ class MappingTestCase(TestBase):
                 self.assertEqual(len(d), 1)
                 o = None  # lose ref
 
+    @support.cpython_only
+    def test_weak_valued_consistency(self):
+        # A single-threaded, deterministic repro for issue #28427: old keys
+        # should not remove new values from WeakValueDictionary. This relies on
+        # an implementation detail of CPython's WeakValueDictionary (its
+        # underlying dictionary of KeyedRefs) to reproduce the issue.
+        d = weakref.WeakValueDictionary()
+        with support.disable_gc():
+            d[10] = RefCycle()
+            # Keep the KeyedRef alive after it's replaced so that GC will invoke
+            # the callback.
+            wr = d.data[10]
+            # Replace the value with something that isn't cyclic garbage
+            o = RefCycle()
+            d[10] = o
+            # Trigger GC, which will invoke the callback for `wr`
+            gc.collect()
+            self.assertEqual(len(d), 1)
+
     def check_threaded_weak_dict_copy(self, type_, deepcopy):
         # `type_` should be either WeakKeyDictionary or WeakValueDictionary.
         # `deepcopy` should be either True or False.

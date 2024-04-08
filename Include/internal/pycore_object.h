@@ -426,7 +426,7 @@ _Py_TryIncRefShared(PyObject *op)
 
 /* Tries to incref the object op and ensures that *src still points to it. */
 static inline int
-_Py_TryIncref(PyObject **src, PyObject *op)
+_Py_TryIncrefCompare(PyObject **src, PyObject *op)
 {
     if (_Py_TryIncrefFast(op)) {
         return 1;
@@ -452,7 +452,7 @@ _Py_XGetRef(PyObject **ptr)
         if (value == NULL) {
             return value;
         }
-        if (_Py_TryIncref(ptr, value)) {
+        if (_Py_TryIncrefCompare(ptr, value)) {
             return value;
         }
     }
@@ -467,7 +467,7 @@ _Py_TryXGetRef(PyObject **ptr)
     if (value == NULL) {
         return value;
     }
-    if (_Py_TryIncref(ptr, value)) {
+    if (_Py_TryIncrefCompare(ptr, value)) {
         return value;
     }
     return NULL;
@@ -506,7 +506,41 @@ _Py_XNewRefWithLock(PyObject *obj)
     return _Py_NewRefWithLock(obj);
 }
 
+static inline void
+_PyObject_SetMaybeWeakref(PyObject *op)
+{
+    if (_Py_IsImmortal(op)) {
+        return;
+    }
+    for (;;) {
+        Py_ssize_t shared = _Py_atomic_load_ssize_relaxed(&op->ob_ref_shared);
+        if ((shared & _Py_REF_SHARED_FLAG_MASK) != 0) {
+            // Nothing to do if it's in WEAKREFS, QUEUED, or MERGED states.
+            return;
+        }
+        if (_Py_atomic_compare_exchange_ssize(
+                &op->ob_ref_shared, &shared, shared | _Py_REF_MAYBE_WEAKREF)) {
+            return;
+        }
+    }
+}
+
 #endif
+
+/* Tries to incref op and returns 1 if successful or 0 otherwise. */
+static inline int
+_Py_TryIncref(PyObject *op)
+{
+#ifdef Py_GIL_DISABLED
+    return _Py_TryIncrefFast(op) || _Py_TryIncRefShared(op);
+#else
+    if (Py_REFCNT(op) > 0) {
+        Py_INCREF(op);
+        return 1;
+    }
+    return 0;
+#endif
+}
 
 #ifdef Py_REF_DEBUG
 extern void _PyInterpreterState_FinalizeRefTotal(PyInterpreterState *);
