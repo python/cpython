@@ -259,7 +259,7 @@ class PrettyPrinter:
                                context, level)
         write('])')
 
-    def _pprint_abc_view(self, object, stream, indent, allowance, context, level):
+    def _pprint_mapping_abc_view(self, object, stream, indent, allowance, context, level):
         """Pretty print views from collections.abc."""
         write = stream.write
         write(object.__class__.__name__ + '({')
@@ -284,7 +284,7 @@ class PrettyPrinter:
     _dict_items_view = type({}.items())
     _dispatch[_dict_items_view.__repr__] = _pprint_dict_view
 
-    _dispatch[_collections.abc.MappingView.__repr__] = _pprint_abc_view
+    _dispatch[_collections.abc.MappingView.__repr__] = _pprint_mapping_abc_view
 
     def _pprint_list(self, object, stream, indent, allowance, context, level):
         stream.write('[')
