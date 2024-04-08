@@ -222,10 +222,7 @@ creating a new cursor, then querying the database:
    >>> title, year = res.fetchone()
    >>> print(f'The highest scoring Monty Python movie is {title!r}, released in {year}')
    The highest scoring Monty Python movie is 'Monty Python and the Holy Grail', released in 1975
-
-.. testcleanup::
-
-   new_con.close()
+   >>> new_con.close()
 
 You've now created an SQLite database using the :mod:`!sqlite3` module,
 inserted data and retrieved values from it in multiple ways.
@@ -750,10 +747,7 @@ Connection objects
          >>> for row in con.execute("SELECT md5(?)", (b"foo",)):
          ...     print(row)
          ('acbd18db4cc2f85cedef654fccc4a4d8',)
-
-      .. testcleanup::
-
-         con.close()
+         >>> con.close()
 
       .. versionchanged:: 3.13
 
@@ -1248,10 +1242,6 @@ Connection objects
          >>> con.getlimit(sqlite3.SQLITE_LIMIT_SQL_LENGTH)
          1000000000
 
-      .. testcleanup:: sqlite3.limits
-
-         con.close()
-
       .. versionadded:: 3.11
 
 
@@ -1283,6 +1273,10 @@ Connection objects
          10
          >>> con.getlimit(sqlite3.SQLITE_LIMIT_ATTACHED)
          1
+
+      .. testcleanup:: sqlite3.limits
+
+         con.close()
 
       .. versionadded:: 3.11
 
@@ -1674,10 +1668,7 @@ Cursor objects
          >>> cur = con.cursor()
          >>> cur.connection == con
          True
-
-      .. testcleanup::
-
-         con.close()
+         >>> con.close()
 
    .. attribute:: description
 
@@ -2528,10 +2519,6 @@ assign it to the :attr:`!row_factory` attribute:
    >>> con = sqlite3.connect(":memory:")
    >>> con.row_factory = sqlite3.Row
 
-.. testcleanup::
-
-   con.close()
-
 Queries now return :class:`!Row` objects:
 
 .. doctest::
@@ -2546,10 +2533,7 @@ Queries now return :class:`!Row` objects:
    'Earth'
    >>> row["RADIUS"]  # Column names are case-insensitive.
    6378
-
-.. testcleanup::
-
-   con.close()
+   >>> con.close()
 
 .. note::
 
@@ -2576,10 +2560,7 @@ Using it, queries now return a :class:`!dict` instead of a :class:`!tuple`:
    >>> for row in con.execute("SELECT 1 AS a, 2 AS b"):
    ...     print(row)
    {'a': 1, 'b': 2}
-
-.. testcleanup::
-
-   con.close()
+   >>> con.close()
 
 The following row factory returns a :term:`named tuple`:
 
@@ -2606,10 +2587,7 @@ The following row factory returns a :term:`named tuple`:
    1
    >>> row.b   # Attribute access.
    2
-
-.. testcleanup::
-
-   con.close()
+   >>> con.close()
 
 With some adjustments, the above recipe can be adapted to use a
 :class:`~dataclasses.dataclass`, or any other custom class,
