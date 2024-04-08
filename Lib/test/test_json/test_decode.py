@@ -1,8 +1,8 @@
 import decimal
-from io import StringIO
 from collections import OrderedDict
-from test.test_json import PyTest, CTest
+from io import StringIO
 from test import support
+from test.test_json import CTest, PyTest
 
 
 class TestDecode:
@@ -66,12 +66,12 @@ class TestDecode:
     def test_extra_data(self):
         s = '[1, 2, 3]5'
         msg = 'Extra data'
-        self.assertRaisesRegex(self.JSONDecodeError, msg, self.loads, s)
+        self.assertRaisesRegex(self.JSONDecodeError, f"Got: {s} with type: {type(s)}.", self.loads, s)
 
     def test_invalid_escape(self):
         s = '["abc\\y"]'
         msg = 'escape'
-        self.assertRaisesRegex(self.JSONDecodeError, msg, self.loads, s)
+        self.assertRaisesRegex(self.JSONDecodeError, f"Got: {s} with type: {type(s)}.", self.loads, s)
 
     def test_invalid_input_type(self):
         msg = 'the JSON object must be str'
