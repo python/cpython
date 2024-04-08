@@ -515,8 +515,8 @@ byte_converter(PyObject *arg, char *p)
         return 1;
     }
     PyErr_Format(PyExc_TypeError,
-        "%%c requires an integer in range(256) or a single byte, not %s",
-        Py_TYPE(arg)->tp_name);
+        "%%c requires an integer in range(256) or a single byte, not %T",
+        arg);
     return 0;
 }
 

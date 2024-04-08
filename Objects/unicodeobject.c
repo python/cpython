@@ -13989,8 +13989,8 @@ formatchar(PyObject *v)
         if (x == -1 && PyErr_Occurred()) {
             if (PyErr_ExceptionMatches(PyExc_TypeError)) {
                 PyErr_Format(PyExc_TypeError,
-                             "%%c requires int or unicode character, not %s",
-                             Py_TYPE(v)->tp_name);
+                             "%%c requires int or unicode character, not %T",
+                             v);
                 return (Py_UCS4) -1;
             }
             return (Py_UCS4) -1;

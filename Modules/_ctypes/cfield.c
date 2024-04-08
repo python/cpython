@@ -1137,8 +1137,8 @@ c_set(void *ptr, PyObject *value, Py_ssize_t size)
     }
     PyErr_Format(PyExc_TypeError,
                  "one character bytes, bytearray or integer "
-                 "in range(256) expected, not %s",
-                 Py_TYPE(value)->tp_name);
+                 "in range(256) expected, not %T",
+                 value);
     return NULL;
 }
 
@@ -1157,8 +1157,8 @@ u_set(void *ptr, PyObject *value, Py_ssize_t size)
     wchar_t chars[2];
     if (!PyUnicode_Check(value)) {
         PyErr_Format(PyExc_TypeError,
-                     "unicode character expected instead of %s instance",
-                     Py_TYPE(value)->tp_name);
+                     "unicode character expected instead of %T instance",
+                     value);
         return NULL;
     }
 
