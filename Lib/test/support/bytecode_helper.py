@@ -3,6 +3,7 @@
 import unittest
 import dis
 import io
+import opcode
 try:
     import _testinternalcapi
 except ImportError:
@@ -68,16 +69,17 @@ class CompilationStepTestCase(unittest.TestCase):
     class Label:
         pass
 
-    def assertInstructionsMatch(self, actual_, expected_):
-        # get two lists where each entry is a label or
-        # an instruction tuple. Normalize the labels to the
-        # instruction count of the target, and compare the lists.
+    def assertInstructionsMatch(self, actual_seq, expected_):
+        # get an InstructionSequence and an expected list, where each
+        # entry is a label or an instruction tuple. Construct an expcted
+        # instruction sequence and compare with the one given.
 
-        self.assertIsInstance(actual_, list)
         self.assertIsInstance(expected_, list)
+        expected_seq = self.seq_from_insts(expected_)
+        self.assertIsInstance(actual_seq, type(expected_seq))
 
-        actual = self.normalize_insts(actual_)
-        expected = self.normalize_insts(expected_)
+        actual = actual_seq.get_instructions()
+        expected = expected_seq.get_instructions()
         self.assertEqual(len(actual), len(expected))
 
         # compare instructions
@@ -87,6 +89,8 @@ class CompilationStepTestCase(unittest.TestCase):
                 continue
             self.assertIsInstance(exp, tuple)
             self.assertIsInstance(act, tuple)
+            while exp[-1] == -1:
+                exp = exp[:-1]
             # crop comparison to the provided expected values
             if len(act) > len(exp):
                 act = act[:len(exp)]
@@ -104,6 +108,25 @@ class CompilationStepTestCase(unittest.TestCase):
                 res.append(item)
 
         return res
+
+    def seq_from_insts(self, insts):
+        labels = {item for item in insts if isinstance(item, self.Label)}
+        for i, lbl in enumerate(labels):
+            lbl.value = i
+
+        seq = _testinternalcapi.new_instruction_sequence()
+        for item in insts:
+            if isinstance(item, self.Label):
+                seq.use_label(item.value)
+            else:
+                op, arg, *loc = item
+                if isinstance(arg, self.Label):
+                    arg = arg.value
+                elif arg is None:
+                    arg = 0
+                loc = loc + [-1] * (4 - len(loc))
+                seq.addop(opcode.opmap[op], arg, *loc)
+        return seq
 
     def normalize_insts(self, insts):
         """ Map labels to instruction index.

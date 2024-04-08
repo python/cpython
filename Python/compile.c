@@ -32,6 +32,7 @@
 #include "pycore_code.h"          // _PyCode_New()
 #include "pycore_compile.h"
 #include "pycore_flowgraph.h"
+#include "pycore_instruction_sequence.h" // PyInstructionSequence_New()
 #include "pycore_intrinsics.h"
 #include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_pystate.h"       // _Py_GetConfig()
@@ -248,7 +249,7 @@ struct compiler_unit {
     PyObject *u_private;            /* for private name mangling */
     PyObject *u_static_attributes;  /* for class: attributes accessed via self.X */
 
-    instr_sequence u_instr_sequence; /* codegen output */
+    instr_sequence *u_instr_sequence; /* codegen output */
 
     int u_nfblocks;
     int u_in_inlined_comp;
@@ -281,12 +282,12 @@ struct compiler {
     int c_nestlevel;
     PyObject *c_const_cache;     /* Python dict holding all constants,
                                     including names tuple */
-    struct compiler_unit *u; /* compiler state for current block */
+    struct compiler_unit *u;     /* compiler state for current block */
     PyObject *c_stack;           /* Python list holding compiler_unit ptrs */
     PyArena *c_arena;            /* pointer to memory allocation arena */
 };
 
-#define INSTR_SEQUENCE(C) (&((C)->u->u_instr_sequence))
+#define INSTR_SEQUENCE(C) ((C)->u->u_instr_sequence)
 
 
 typedef struct {
@@ -567,7 +568,7 @@ dictbytype(PyObject *src, int scope_type, int flag, Py_ssize_t offset)
 static void
 compiler_unit_free(struct compiler_unit *u)
 {
-    PyInstructionSequence_Fini(&u->u_instr_sequence);
+    Py_XDECREF(u->u_instr_sequence);
     Py_CLEAR(u->u_ste);
     Py_CLEAR(u->u_metadata.u_name);
     Py_CLEAR(u->u_metadata.u_qualname);
@@ -976,7 +977,7 @@ compiler_addop_load_const(PyObject *const_cache, struct compiler_unit *u, locati
     if (arg < 0) {
         return ERROR;
     }
-    return codegen_addop_i(&u->u_instr_sequence, LOAD_CONST, arg, loc);
+    return codegen_addop_i(u->u_instr_sequence, LOAD_CONST, arg, loc);
 }
 
 static int
@@ -987,7 +988,7 @@ compiler_addop_o(struct compiler_unit *u, location loc,
     if (arg < 0) {
         return ERROR;
     }
-    return codegen_addop_i(&u->u_instr_sequence, opcode, arg, loc);
+    return codegen_addop_i(u->u_instr_sequence, opcode, arg, loc);
 }
 
 static int
@@ -1033,7 +1034,7 @@ compiler_addop_name(struct compiler_unit *u, location loc,
         arg <<= 2;
         arg |= 1;
     }
-    return codegen_addop_i(&u->u_instr_sequence, opcode, arg, loc);
+    return codegen_addop_i(u->u_instr_sequence, opcode, arg, loc);
 }
 
 /* Add an opcode with an integer argument */
@@ -1251,6 +1252,8 @@ compiler_enter_scope(struct compiler *c, identifier name,
     else {
         u->u_static_attributes = NULL;
     }
+
+    u->u_instr_sequence = (instr_sequence*)PyInstructionSequence_New();
 
     /* Push the old compiler_unit on the stack. */
     if (c->u) {
@@ -7526,7 +7529,7 @@ optimize_and_assemble_code_unit(struct compiler_unit *u, PyObject *const_cache,
     if (consts == NULL) {
         goto error;
     }
-    g = instr_sequence_to_cfg(&u->u_instr_sequence);
+    g = instr_sequence_to_cfg(u->u_instr_sequence);
     if (g == NULL) {
         goto error;
     }
@@ -7702,49 +7705,16 @@ error:
 }
 
 static PyObject *
-instr_sequence_to_instructions(instr_sequence *seq)
-{
-    PyObject *instructions = PyList_New(0);
-    if (instructions == NULL) {
-        return NULL;
-    }
-    for (int i = 0; i < seq->s_used; i++) {
-        instruction *instr = &seq->s_instrs[i];
-        location loc = instr->i_loc;
-        PyObject *inst_tuple = Py_BuildValue(
-            "(iiiiii)", instr->i_opcode, instr->i_oparg,
-            loc.lineno, loc.end_lineno,
-            loc.col_offset, loc.end_col_offset);
-        if (inst_tuple == NULL) {
-            goto error;
-        }
-
-        int res = PyList_Append(instructions, inst_tuple);
-        Py_DECREF(inst_tuple);
-        if (res != 0) {
-            goto error;
-        }
-    }
-    return instructions;
-error:
-    Py_XDECREF(instructions);
-    return NULL;
-}
-
-static PyObject *
 cfg_to_instructions(cfg_builder *g)
 {
-    instr_sequence seq;
-    memset(&seq, 0, sizeof(seq));
-    if (_PyCfg_ToInstructionSequence(g, &seq) < 0) {
+    instr_sequence *seq = (instr_sequence *)PyInstructionSequence_New();
+    if (_PyCfg_ToInstructionSequence(g, seq) < 0) {
         return NULL;
     }
-    if (_PyInstructionSequence_ApplyLabelMap(&seq) < 0) {
+    if (_PyInstructionSequence_ApplyLabelMap(seq) < 0) {
         return NULL;
     }
-    PyObject *res = instr_sequence_to_instructions(&seq);
-    PyInstructionSequence_Fini(&seq);
-    return res;
+    return (PyObject*)seq;
 }
 
 // C implementation of inspect.cleandoc()
@@ -7916,13 +7886,8 @@ _PyCompile_CodeGen(PyObject *ast, PyObject *filename, PyCompilerFlags *pflags,
     if (_PyInstructionSequence_ApplyLabelMap(INSTR_SEQUENCE(c)) < 0) {
         return NULL;
     }
-
-    PyObject *insts = instr_sequence_to_instructions(INSTR_SEQUENCE(c));
-    if (insts == NULL) {
-        goto finally;
-    }
-    res = PyTuple_Pack(2, insts, metadata);
-    Py_DECREF(insts);
+    /* Allocate a copy of the instruction sequence on the heap */
+    res = PyTuple_Pack(2, INSTR_SEQUENCE(c), metadata);
 
 finally:
     Py_XDECREF(metadata);
