@@ -29,6 +29,9 @@ extern "C" {
 #define _Py_TYPE_VERSION_BYTEARRAY 13
 
 #define _Py_TYPE_VERSIONS_PREALLOCATED 16
+
+extern PyTypeObject *const _Py_PreAllocatedTypes[_Py_TYPE_VERSIONS_PREALLOCATED];
+
 #define _Py_TYPE_BASE_VERSION_TAG (2<<16)
 #define _Py_MAX_GLOBAL_TYPE_VERSION_TAG (_Py_TYPE_BASE_VERSION_TAG - 1)
 

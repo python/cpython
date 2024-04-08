@@ -471,10 +471,9 @@
             break;
         }
 
-        case _BINARY_OP_TABLE_NN: {
+        case _GUARD_VERSION_TYPES: {
             PyObject *right;
             PyObject *left;
-            PyObject *res;
             right = stack_pointer[-1];
             left = stack_pointer[-2];
             uint16_t type_version = (uint16_t)CURRENT_OPERAND();
@@ -488,6 +487,38 @@
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
             }
+            break;
+        }
+
+        case _GUARD_TOS_VERSION: {
+            PyObject *value1;
+            value1 = stack_pointer[-1];
+            uint16_t type_version = (uint16_t)CURRENT_OPERAND();
+            if (Py_TYPE(value1)->tp_version_tag != type_version) {
+                UOP_STAT_INC(uopcode, miss);
+                JUMP_TO_JUMP_TARGET();
+            }
+            break;
+        }
+
+        case _GUARD_NOS_VERSION: {
+            PyObject *value2;
+            value2 = stack_pointer[-2];
+            uint16_t type_version = (uint16_t)CURRENT_OPERAND();
+            if (Py_TYPE(value2)->tp_version_tag != type_version) {
+                UOP_STAT_INC(uopcode, miss);
+                JUMP_TO_JUMP_TARGET();
+            }
+            break;
+        }
+
+        case _BINARY_OP_TABLE_NN: {
+            PyObject *right;
+            PyObject *left;
+            PyObject *res;
+            right = stack_pointer[-1];
+            left = stack_pointer[-2];
+            uint16_t type_version = (uint16_t)CURRENT_OPERAND();
             STAT_INC(BINARY_OP, hit);
             res = _Py_BinaryFunctionTable[type_version >> 8](left, right);
             if (res == NULL) JUMP_TO_ERROR();
@@ -503,16 +534,6 @@
             right = stack_pointer[-1];
             left = stack_pointer[-2];
             uint16_t type_version = (uint16_t)CURRENT_OPERAND();
-            PyTypeObject *lt = Py_TYPE(left);
-            PyTypeObject *rt = Py_TYPE(right);
-            if (lt->tp_version_tag != ((type_version & 0xf0) >> 4)) {
-                UOP_STAT_INC(uopcode, miss);
-                JUMP_TO_JUMP_TARGET();
-            }
-            if (rt->tp_version_tag != (type_version & 0xf)) {
-                UOP_STAT_INC(uopcode, miss);
-                JUMP_TO_JUMP_TARGET();
-            }
             STAT_INC(BINARY_OP, hit);
             res = _Py_BinaryFunctionTable[type_version >> 8](left, right);
             Py_DECREF(right);
@@ -529,16 +550,6 @@
             right = stack_pointer[-1];
             left = stack_pointer[-2];
             uint16_t type_version = (uint16_t)CURRENT_OPERAND();
-            PyTypeObject *lt = Py_TYPE(left);
-            PyTypeObject *rt = Py_TYPE(right);
-            if (lt->tp_version_tag != ((type_version & 0xf0) >> 4)) {
-                UOP_STAT_INC(uopcode, miss);
-                JUMP_TO_JUMP_TARGET();
-            }
-            if (rt->tp_version_tag != (type_version & 0xf)) {
-                UOP_STAT_INC(uopcode, miss);
-                JUMP_TO_JUMP_TARGET();
-            }
             STAT_INC(BINARY_OP, hit);
             res = _Py_BinaryFunctionTable[type_version >> 8](left, right);
             Py_DECREF(left);
@@ -555,16 +566,6 @@
             right = stack_pointer[-1];
             left = stack_pointer[-2];
             uint16_t type_version = (uint16_t)CURRENT_OPERAND();
-            PyTypeObject *lt = Py_TYPE(left);
-            PyTypeObject *rt = Py_TYPE(right);
-            if (lt->tp_version_tag != ((type_version & 0xf0) >> 4)) {
-                UOP_STAT_INC(uopcode, miss);
-                JUMP_TO_JUMP_TARGET();
-            }
-            if (rt->tp_version_tag != (type_version & 0xf)) {
-                UOP_STAT_INC(uopcode, miss);
-                JUMP_TO_JUMP_TARGET();
-            }
             STAT_INC(BINARY_OP, hit);
             res = _Py_BinaryFunctionTable[type_version >> 8](left, right);
             Py_DECREF(left);

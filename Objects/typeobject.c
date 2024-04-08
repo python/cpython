@@ -11093,3 +11093,18 @@ PyTypeObject PySuper_Type = {
     PyObject_GC_Del,                            /* tp_free */
     .tp_vectorcall = (vectorcallfunc)super_vectorcall,
 };
+
+PyTypeObject *const _Py_PreAllocatedTypes[_Py_TYPE_VERSIONS_PREALLOCATED] = {
+    [_Py_TYPE_VERSION_INT] = &PyLong_Type,
+    [_Py_TYPE_VERSION_FLOAT] = &PyFloat_Type,
+    [_Py_TYPE_VERSION_LIST] = &PyList_Type,
+    [_Py_TYPE_VERSION_TUPLE] = &PyTuple_Type,
+    [_Py_TYPE_VERSION_STR] = &PyUnicode_Type,
+    [_Py_TYPE_VERSION_SET] = &PySet_Type,
+    [_Py_TYPE_VERSION_FROZEN_SET] = &PyFrozenSet_Type,
+    [_Py_TYPE_VERSION_DICT] = &PyDict_Type,
+    [_Py_TYPE_VERSION_BYTES] = &PyBytes_Type,
+    [_Py_TYPE_VERSION_COMPLEX] = &PyComplex_Type,
+    [_Py_TYPE_VERSION_DICTITEMS] = &PyDictItems_Type,
+    [_Py_TYPE_VERSION_BYTEARRAY] = &PyByteArray_Type,
+};

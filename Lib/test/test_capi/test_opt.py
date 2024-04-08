@@ -542,7 +542,6 @@ class TestUops(unittest.TestCase):
         self.assertEqual(x, sum(range(10)) * 30)
 
         ex = get_first_executor(testfunc)
-        print_executor(ex)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
         self.assertIn("_FOR_ITER_TIER_TWO", uops)
@@ -700,7 +699,6 @@ class TestUopsOptimization(unittest.TestCase):
         uops = get_opnames(ex)
         self.assertNotIn("_GUARD_BOTH_INT", uops)
 
-    @unittest.skipIf(True, "Needs tier 2 optimizer to be updated to handle new binary ops.")
     def test_int_value_numbering(self):
         def testfunc(n):
 
@@ -717,8 +715,8 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertEqual(res, 4)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
-        self.assertIn("_GUARD_BOTH_INT", uops)
-        guard_count = [opname for opname in iter_opnames(ex) if opname == "_GUARD_BOTH_INT"]
+        self.assertIn("_GUARD_VERSION_TYPES", uops)
+        guard_count = [opname for opname in iter_opnames(ex) if opname == "_GUARD_VERSION_TYPES"]
         self.assertEqual(len(guard_count), 1)
 
     def test_comprehension(self):
@@ -954,7 +952,6 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIsNone(ex)
         ns['_test_global'] = ""
         _, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
-        print(get_opnames(ex))
         self.assertIsNone(ex)
 
     def test_combine_stack_space_checks_sequential(self):

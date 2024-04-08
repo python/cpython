@@ -436,21 +436,28 @@ dummy_func(
             EXIT_IF(!_Py_IsImmortal(value1));
         }
 
-        op(_BINARY_OP_TABLE_NN, (type_version/1, left, right -- res)) {
+        op(_GUARD_VERSION_TYPES, (type_version/1, left, right -- left, right)) {
             PyTypeObject *lt = Py_TYPE(left);
             PyTypeObject *rt = Py_TYPE(right);
             EXIT_IF(lt->tp_version_tag != ((type_version & 0xf0) >> 4));
             EXIT_IF(rt->tp_version_tag != (type_version & 0xf));
+        }
+
+        op(_GUARD_TOS_VERSION, (type_version/1, value1 -- value1)) {
+            EXIT_IF(Py_TYPE(value1)->tp_version_tag != type_version);
+        }
+
+        op(_GUARD_NOS_VERSION, (type_version/1, value2, unused -- value2, unused)) {
+            EXIT_IF(Py_TYPE(value2)->tp_version_tag != type_version);
+        }
+
+        op(_BINARY_OP_TABLE_NN, (type_version/1, left, right -- res)) {
             STAT_INC(BINARY_OP, hit);
             res = _Py_BinaryFunctionTable[type_version >> 8](left, right);
             ERROR_IF(res == NULL, error);
         }
 
         op(_BINARY_OP_TABLE_ND, (type_version/1, left, right -- res)) {
-            PyTypeObject *lt = Py_TYPE(left);
-            PyTypeObject *rt = Py_TYPE(right);
-            EXIT_IF(lt->tp_version_tag != ((type_version & 0xf0) >> 4));
-            EXIT_IF(rt->tp_version_tag != (type_version & 0xf));
             STAT_INC(BINARY_OP, hit);
             res = _Py_BinaryFunctionTable[type_version >> 8](left, right);
             Py_DECREF(right);
@@ -458,10 +465,6 @@ dummy_func(
         }
 
         op(_BINARY_OP_TABLE_DN, (type_version/1, left, right -- res)) {
-            PyTypeObject *lt = Py_TYPE(left);
-            PyTypeObject *rt = Py_TYPE(right);
-            EXIT_IF(lt->tp_version_tag != ((type_version & 0xf0) >> 4));
-            EXIT_IF(rt->tp_version_tag != (type_version & 0xf));
             STAT_INC(BINARY_OP, hit);
             res = _Py_BinaryFunctionTable[type_version >> 8](left, right);
             Py_DECREF(left);
@@ -469,10 +472,6 @@ dummy_func(
         }
 
         op(_BINARY_OP_TABLE_DD, (type_version/1, left, right -- res)) {
-            PyTypeObject *lt = Py_TYPE(left);
-            PyTypeObject *rt = Py_TYPE(right);
-            EXIT_IF(lt->tp_version_tag != ((type_version & 0xf0) >> 4));
-            EXIT_IF(rt->tp_version_tag != (type_version & 0xf));
             STAT_INC(BINARY_OP, hit);
             res = _Py_BinaryFunctionTable[type_version >> 8](left, right);
             Py_DECREF(left);
@@ -484,42 +483,58 @@ dummy_func(
             unused/1 +
             _GUARD_NOS_REFCNT1 +
             _GUARD_TOS_IMMORTAL +
+            _GUARD_VERSION_TYPES +
+            unused/-1 + /* Rewind the version */
             _BINARY_OP_TABLE_NN;
 
         macro(BINARY_OP_1X) =
             unused/1 +
             _GUARD_NOS_REFCNT1 +
+            _GUARD_VERSION_TYPES +
+            unused/-1 + /* Rewind the version */
             _BINARY_OP_TABLE_ND;
 
         macro(BINARY_OP_I1) =
             unused/1 +
             _GUARD_NOS_IMMORTAL +
             _GUARD_TOS_REFCNT1 +
+            _GUARD_VERSION_TYPES +
+            unused/-1 + /* Rewind the version */
             _BINARY_OP_TABLE_NN;
 
         macro(BINARY_OP_II) =
             unused/1 +
             _GUARD_NOS_IMMORTAL +
             _GUARD_TOS_IMMORTAL +
+            _GUARD_VERSION_TYPES +
+            unused/-1 + /* Rewind the version */
             _BINARY_OP_TABLE_NN;
 
         macro(BINARY_OP_IX) =
             unused/1 +
             _GUARD_NOS_IMMORTAL +
+            _GUARD_VERSION_TYPES +
+            unused/-1 + /* Rewind the version */
             _BINARY_OP_TABLE_ND;
 
         macro(BINARY_OP_X1) =
             unused/1 +
             _GUARD_TOS_REFCNT1 +
+            _GUARD_VERSION_TYPES +
+            unused/-1 + /* Rewind the version */
             _BINARY_OP_TABLE_DN;
 
         macro(BINARY_OP_XI) =
             unused/1 +
             _GUARD_TOS_IMMORTAL +
+            _GUARD_VERSION_TYPES +
+            unused/-1 + /* Rewind the version */
             _BINARY_OP_TABLE_DN;
 
         macro(BINARY_OP_XX) =
             unused/1 +
+            _GUARD_VERSION_TYPES +
+            unused/-1 + /* Rewind the version */
             _BINARY_OP_TABLE_DD;
 
         op(_GUARD_BOTH_INT, (left, right -- left, right)) {

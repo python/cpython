@@ -22,6 +22,7 @@ typedef struct _Py_UOpsAbstractFrame _Py_UOpsAbstractFrame;
 #define sym_new_null _Py_uop_sym_new_null
 #define sym_matches_type _Py_uop_sym_matches_type
 #define sym_has_type _Py_uop_sym_has_type
+#define sym_get_type _Py_uop_sym_get_type
 #define sym_set_null _Py_uop_sym_set_null
 #define sym_set_non_null _Py_uop_sym_set_non_null
 #define sym_set_type _Py_uop_sym_set_type
@@ -508,6 +509,38 @@ dummy_func(void) {
         else if (sym_has_type(flag)) {
             assert(!sym_matches_type(flag, &_PyNone_Type));
             eliminate_pop_guard(this_instr, false);
+        }
+    }
+
+
+    op(_GUARD_VERSION_TYPES, (type_version/1, left, right -- left, right)) {
+        PyTypeObject *lguard = _Py_PreAllocatedTypes[(type_version & 0xf0) >> 4];
+        PyTypeObject *rguard = _Py_PreAllocatedTypes[type_version & 0xf];
+        PyTypeObject *ltype = sym_get_type(left);
+        PyTypeObject *rtype = sym_get_type(right);
+        if (ltype != NULL && ltype == lguard) {
+            if (rtype != NULL && rtype == rguard) {
+                REPLACE_OP(this_instr, _NOP, 0 ,0);
+            }
+            else {
+                REPLACE_OP(this_instr, _GUARD_TOS_VERSION, 0, type_version & 0xf);
+
+            }
+        }
+        else {
+            if (rtype != NULL && rtype == rguard) {
+                REPLACE_OP(this_instr, _GUARD_NOS_VERSION, 0, (type_version & 0xf0) >> 4);
+            }
+        }
+        if (lguard != NULL) {
+            if (!sym_set_type(left, lguard)) {
+                goto hit_bottom;
+            }
+        }
+        if (rguard != NULL) {
+            if (!sym_set_type(right, rguard)) {
+                goto hit_bottom;
+            }
         }
     }
 

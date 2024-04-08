@@ -235,6 +235,50 @@
             break;
         }
 
+        case _GUARD_VERSION_TYPES: {
+            _Py_UopsSymbol *right;
+            _Py_UopsSymbol *left;
+            right = stack_pointer[-1];
+            left = stack_pointer[-2];
+            uint16_t type_version = (uint16_t)this_instr->operand;
+            PyTypeObject *lguard = _Py_PreAllocatedTypes[(type_version & 0xf0) >> 4];
+            PyTypeObject *rguard = _Py_PreAllocatedTypes[type_version & 0xf];
+            PyTypeObject *ltype = sym_get_type(left);
+            PyTypeObject *rtype = sym_get_type(right);
+            if (ltype != NULL && ltype == lguard) {
+                if (rtype != NULL && rtype == rguard) {
+                    REPLACE_OP(this_instr, _NOP, 0 ,0);
+                }
+                else {
+                    REPLACE_OP(this_instr, _GUARD_TOS_VERSION, 0, type_version & 0xf);
+                }
+            }
+            else {
+                if (rtype != NULL && rtype == rguard) {
+                    REPLACE_OP(this_instr, _GUARD_NOS_VERSION, 0, (type_version & 0xf0) >> 4);
+                }
+            }
+            if (lguard != NULL) {
+                if (!sym_set_type(left, lguard)) {
+                    goto hit_bottom;
+                }
+            }
+            if (rguard != NULL) {
+                if (!sym_set_type(right, rguard)) {
+                    goto hit_bottom;
+                }
+            }
+            break;
+        }
+
+        case _GUARD_TOS_VERSION: {
+            break;
+        }
+
+        case _GUARD_NOS_VERSION: {
+            break;
+        }
+
         case _BINARY_OP_TABLE_NN: {
             _Py_UopsSymbol *res;
             res = sym_new_not_null(ctx);
