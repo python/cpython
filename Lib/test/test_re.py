@@ -2294,10 +2294,9 @@ class ReTests(unittest.TestCase):
                 self.assertEqual(re.findall(p, s), [])
                 self.assertEqual(list(re.finditer(p, s)), [])
                 self.assertEqual(re.sub(p, '', s), s)
-        # Without optimization it takes 12 seconds on my computer.
+        # Without optimization it takes 1 second on my computer.
         # With optimization -- 0.0003 seconds.
-        print(stopwatch.seconds)
-        self.assertLess(stopwatch.seconds, 1)
+        self.assertLess(stopwatch.seconds, 0.1)
 
     def test_possessive_quantifiers(self):
         """Test Possessive Quantifiers
