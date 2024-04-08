@@ -382,14 +382,14 @@ def test_pdb_breakpoint_with_filename():
     > <doctest test.test_pdb.test_pdb_breakpoint_with_filename[0]>(5)test_function()
     -> mod2.func88()
     (Pdb) break test.test_inspect.inspect_fodder2:90
-    Breakpoint 1 at ...test/test_inspect/inspect_fodder2.py:90
+    Breakpoint 1 at ...inspect_fodder2.py:90
     (Pdb) continue
-    > ...test/test_inspect/inspect_fodder2.py(90)func88()
+    > ...inspect_fodder2.py(90)func88()
     -> return 90
     (Pdb) break test/test_inspect/inspect_fodder2.py:115
-    Breakpoint 2 at ...test/test_inspect/inspect_fodder2.py:115
+    Breakpoint 2 at ...inspect_fodder2.py:115
     (Pdb) continue
-    > ...test/test_inspect/inspect_fodder2.py(115)func114()
+    > ...inspect_fodder2.py(115)func114()
     -> return 115
     (Pdb) continue
     """
