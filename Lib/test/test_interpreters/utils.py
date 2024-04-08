@@ -1,3 +1,4 @@
+from collections import namedtuple
 import contextlib
 import json
 import io
@@ -36,6 +37,7 @@ def requires__testinternalcapi(func):
 
 def _dump_script(text):
     lines = text.splitlines()
+    print()
     print('-' * 20)
     for i, line in enumerate(lines, 1):
         print(f' {i:>{len(str(len(lines)))}}  {line}')
@@ -54,7 +56,7 @@ def _close_file(file):
         # It was closed already.
 
 
-class CapturedResults:
+class CapturingResults:
 
     STDIO = dedent("""\
         import contextlib, io
@@ -175,13 +177,23 @@ class CapturedResults:
         self._buf_exc = b''
         self._exc = None
 
+        self._closed = False
+
     def __enter__(self):
         return self
 
     def __exit__(self, *args):
         self.close()
 
+    @property
+    def closed(self):
+        return self._closed
+
     def close(self):
+        if self._closed:
+            return
+        self._closed = True
+
         if self._w_out is not None:
             _close_file(self._w_out)
             self._w_out = None
@@ -223,18 +235,15 @@ class CapturedResults:
                 self._buf_exc += chunk
                 chunk = self._rf_exc.read(100)
 
-    def stdout(self):
-        self._capture()
+    def _unpack_stdout(self):
         return self._buf_out.decode('utf-8')
 
-    def stderr(self):
-        self._capture()
+    def _unpack_stderr(self):
         return self._buf_err.decode('utf-8')
 
-    def exc(self):
+    def _unpack_exc(self):
         if self._exc is not None:
             return self._exc
-        self._capture()
         if not self._buf_exc:
             return None
         try:
@@ -247,9 +256,66 @@ class CapturedResults:
         exc.type = types.SimpleNamespace(**exc.type)
         return self._exc
 
+    def stdout(self):
+        if self.closed:
+            return self.final().stdout
+        self._capture()
+        return self._unpack_stdout()
+
+    def stderr(self):
+        if self.closed:
+            return self.final().stderr
+        self._capture()
+        return self._unpack_stderr()
+
+    def exc(self):
+        if self.closed:
+            return self.final().exc
+        self._capture()
+        return self._unpack_exc()
+
+    def final(self, *, force=False):
+        try:
+            return self._final
+        except AttributeError:
+            if not self._closed:
+                if not force:
+                    raise Exception('no final results available yet')
+                else:
+                    return CapturedResults.Proxy(self)
+            self._final = CapturedResults(
+                self._unpack_stdout(),
+                self._unpack_stderr(),
+                self._unpack_exc(),
+            )
+            return self._final
+
+
+class CapturedResults(namedtuple('CapturedResults', 'stdout stderr exc')):
+
+    class Proxy:
+        def __init__(self, capturing):
+            self._capturing = capturing
+        def _finish(self):
+            if self._capturing is None:
+                return
+            self._final = self._capturing.final()
+            self._capturing = None
+        def __iter__(self):
+            self._finish()
+            yield from self._final
+        def __len__(self):
+            self._finish()
+            return len(self._final)
+        def __getattr__(self, name):
+            self._finish()
+            if name.startswith('_'):
+                raise AttributeError(name)
+            return getattr(self._final, name)
+
 
 def _captured_script(script, *, stdout=True, stderr=False, exc=False):
-    return CapturedResults.wrap_script(
+    return CapturingResults.wrap_script(
         script,
         stdout=stdout,
         stderr=stderr,
@@ -430,14 +496,123 @@ class TestBase(unittest.TestCase):
             return text
 
     @requires__testinternalcapi
-    def run_external(self, script, config='legacy'):
+    @contextlib.contextmanager
+    def unmanaged_interpreter(self, config='legacy'):
         if isinstance(config, str):
             config = _interpreters.new_config(config)
-        wrapped, results = _captured_script(script, exc=True)
+        interpid = _testinternalcapi.create_interpreter()
+        try:
+            yield interpid
+        finally:
+            try:
+                _testinternalcapi.destroy_interpreter(interpid)
+            except _interpreters.InterpreterNotFoundError:
+                pass
+
+    @contextlib.contextmanager
+    def capturing(self, script):
+        wrapped, capturing = _captured_script(script, stdout=True, exc=True)
         #_dump_script(wrapped)
-        with results:
+        with capturing:
+            yield wrapped, capturing.final(force=True)
+
+    @requires__testinternalcapi
+    def run_external(self, interpid, script, *, main=False):
+        with self.capturing(script) as (wrapped, results):
+            rc = _testinternalcapi.exec_interpreter(interpid, wrapped, main=main)
+            assert rc == 0, rc
+        return results.exc, results.stdout
+
+    @contextlib.contextmanager
+    def _running(self, run_interp, exec_interp):
+        token = b'\0'
+        r_in, w_in = self.pipe()
+        r_out, w_out = self.pipe()
+
+        def close():
+            _close_file(r_in)
+            _close_file(w_in)
+            _close_file(r_out)
+            _close_file(w_out)
+
+        # Start running (and wait).
+        script = dedent(f"""
+            import os
+            # handshake
+            token = os.read({r_in}, 1)
+            os.write({w_out}, token)
+            # Wait for the "done" message.
+            os.read({r_in}, 1)
+            """)
+        failed = None
+        def run():
+            nonlocal failed
+            try:
+                run_interp(script)
+            except Exception as exc:
+                failed = exc
+                close()
+        t = threading.Thread(target=run)
+        t.start()
+
+        # handshake
+        try:
+            os.write(w_in, token)
+            token2 = os.read(r_out, 1)
+            assert token2 == token, (token2, token)
+        except OSError:
+            t.join()
+            if failed is not None:
+                raise failed
+
+        # CM __exit__()
+        try:
+            try:
+                yield
+            finally:
+                # Send "done".
+                os.write(w_in, b'\0')
+        finally:
+            close()
+            t.join()
+            if failed is not None:
+                raise failed
+
+    @contextlib.contextmanager
+    def running(self, interp):
+        if isinstance(interp, int):
+            interpid = interp
+            def exec_interp(script):
+                exc = _interpreters.exec(interpid, script)
+                assert exc is None, exc
+            run_interp = exec_interp
+        else:
+            def run_interp(script):
+                text = self.run_and_capture(interp, script)
+                assert text == '', repr(text)
+            def exec_interp(script):
+                interp.exec(script)
+        with self._running(run_interp, exec_interp):
+            yield
+
+    @requires__testinternalcapi
+    @contextlib.contextmanager
+    def running_external(self, interpid, *, main=False):
+        def run_interp(script):
+            err, text = self.run_external(interpid, script, main=main)
+            assert err is None, err
+            assert text == '', repr(text)
+        def exec_interp(script):
+            rc = _testinternalcapi.exec_interpreter(interpid, script)
+            assert rc == 0, rc
+        with self._running(run_interp, exec_interp):
+            yield
+
+    @requires__testinternalcapi
+    def run_temp_external(self, script, config='legacy'):
+        if isinstance(config, str):
+            config = _interpreters.new_config(config)
+        with self.capturing(script) as (wrapped, results):
             rc = run_in_interpreter(wrapped, config)
             assert rc == 0, rc
-        text = results.stdout()
-        err = results.exc()
-        return err, text
+        return results.exc, results.stdout
