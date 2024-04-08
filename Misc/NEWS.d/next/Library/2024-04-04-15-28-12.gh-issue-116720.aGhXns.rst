@@ -1,17 +1,14 @@
-Improved behavior of :class:`asyncio.TaskGroup` when an outside cancellation
+Improved behavior of :class:`asyncio.TaskGroup` when an external cancellation
 collides with an internal cancellation. For example, when two task groups
 are nested and both experience an exception in a child task simultaneously,
-it was possible that the outer task group would hang, because its internal
-cancellation was swallowed by the inner task group.
+it was possible that the outer task group would misbehave, because
+its internal cancellation was swallowed by the inner task group.
 
-In the case where a task group is cancelled from the outside and also must
+In the case where a task group is cancelled externally and also must
 raise an :exc:`ExceptionGroup`, it will now call the parent task's
-:meth:`~asyncio.Task.cancel` method. This allows a :keyword:`try` /
-:keyword:`except* <except_star>` surrounding the task group to handle
-the exceptions in the ``ExceptionGroup`` without losing the cancellation.
-The :exc:`asyncio.CancelledError` will be raised at the next
-:keyword:`await` (which may be implied at the end of a surrounding
-:keyword:`async with` block).
+:meth:`~asyncio.Task.cancel` method. This ensures that a
+:exc:`asyncio.CancelledError` will be raised at the next
+:keyword:`await`, so the cancellation is not lost.
 
 An added benefit of these changes is that task groups now preserve the
 cancellation count (:meth:`asyncio.Task.cancelling`).
