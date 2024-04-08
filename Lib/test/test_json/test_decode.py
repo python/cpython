@@ -108,7 +108,8 @@ class TestDecode:
             self.json.load(StringIO(bom_json))
         self.assertIn('BOM', str(cm.exception))
         # make sure that the BOM is not detected in the middle of a string
-        bom_in_str = f"\"{''.encode('utf-8-sig').decode('utf-8')}\""
+        bom = ''.encode('utf-8-sig').decode('utf-8')
+        bom_in_str = f'"{bom}"'
         self.assertEqual(self.loads(bom_in_str), '\ufeff')
         self.assertEqual(self.json.load(StringIO(bom_in_str)), '\ufeff')
 
