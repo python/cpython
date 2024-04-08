@@ -74,14 +74,16 @@ eval_pyrun_fileexflags(PyObject *mod, PyObject *pos_args)
 
     result = PyRun_FileExFlags(fp, filename, start, globals, locals, closeit, pflags);
 
-    fn = fileno(fp);
-    if (closeit && fn > 0) {
-        PyErr_SetString(PyExc_SystemError, "File was not closed after excution");
-        goto exit;
-    }
-    else if (!closeit && fn < 0) {
-        PyErr_SetString(PyExc_SystemError, "Bad file descriptor after excution");
-        goto exit;
+    if (result) {
+        fn = fileno(fp);
+        if (closeit && fn > 0) {
+            PyErr_SetString(PyExc_SystemError, "File was not closed after excution");
+            goto exit;
+        }
+        else if (!closeit && fn < 0) {
+            PyErr_SetString(PyExc_SystemError, "Bad file descriptor after excution");
+            goto exit;
+        }
     }
 
 exit:

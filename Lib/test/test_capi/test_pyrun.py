@@ -36,8 +36,12 @@ class PyRunTest(unittest.TestCase):
         self.assertIsNone(_testcapi.eval_pyrun_fileexflags(self.filename, Py_file_input, {}, NULL, 1, 0, 0))
         self.assertIsNone(_testcapi.eval_pyrun_fileexflags(self.filename, Py_file_input, {}, {}, 1, 0, 0))
         self.assertIsNone(_testcapi.eval_pyrun_fileexflags(self.filename, Py_file_input, {}, {}, 0, 0, 0))
+        self.assertIsNone(_testcapi.eval_pyrun_fileexflags(self.filename, Py_file_input, globals(), NULL, 1, 0, 0))
+        self.assertIsNone(_testcapi.eval_pyrun_fileexflags(self.filename, Py_file_input, globals(), locals(), 1, 0, 0))
+        self.assertIsNone(_testcapi.eval_pyrun_fileexflags(self.filename, Py_file_input, {}, {}, 1, 0, 0))
         self.assertRaises(SystemError, _testcapi.eval_pyrun_fileexflags, self.filename, Py_file_input, NULL, NULL, 1, 0, 0)
         self.assertRaises(SystemError, _testcapi.eval_pyrun_fileexflags, self.filename, Py_file_input, NULL, {}, 1, 0, 0)
+        self.assertRaises(SystemError, _testcapi.eval_pyrun_fileexflags, self.filename, Py_file_input, NULL, locals(), 1, 0, 0)
 
 if __name__ == "__main__":
     unittest.main()
