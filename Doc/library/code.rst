@@ -36,7 +36,7 @@ build applications which provide an interactive interpreter prompt.
    instance of :class:`InteractiveConsole` and sets *readfunc* to be used as
    the :meth:`InteractiveConsole.raw_input` method, if provided.  If *local* is
    provided, it is passed to the :class:`InteractiveConsole` constructor for
-   use as the default namespace for the interpreter loop.  The :meth:`interact`
+   use as the default namespace for the interpreter loop.  The :meth:`~InteractiveConsole.interact`
    method of the instance is then run with *banner* and *exitmsg* passed as the
    banner and exit message to use, if provided.  The console object is discarded
    after use.
