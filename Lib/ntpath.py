@@ -429,7 +429,6 @@ def expandvars(path):
         brace = b'{'
         rbrace = b'}'
         dollar = b'$'
-        empty = b''
         environ = getattr(os, 'environb', None)
     else:
         if '$' not in path and '%' not in path:
@@ -441,9 +440,8 @@ def expandvars(path):
         brace = '{'
         rbrace = '}'
         dollar = '$'
-        empty = ''
         environ = os.environ
-    res = empty
+    res = path[:0]
     index = 0
     pathlen = len(path)
     while index < pathlen:
@@ -502,7 +500,7 @@ def expandvars(path):
                         value = dollar + brace + var + rbrace
                     res += value
             else:
-                var = empty
+                var = path[:0]
                 index += 1
                 c = path[index:index + 1]
                 while c and c in varchars:
