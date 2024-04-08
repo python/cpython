@@ -14916,7 +14916,7 @@ _PyUnicode_InternInPlace(PyInterpreterState *interp, PyObject **p)
        decrements to these objects will not be registered so they
        need to be accounted for in here. */
     for (Py_ssize_t i = 0; i < Py_REFCNT(s) - 2; i++) {
-        _Py_DecRefTotal(_PyInterpreterState_GET());
+        _Py_DecRefTotal(_PyThreadState_GET());
     }
 #endif
     _Py_SetImmortal(s);
