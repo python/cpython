@@ -32,6 +32,12 @@ class FunctionalAPIBase:
             with self.subTest(path_parts=path_parts):
                 yield path_parts
 
+    def assertEndsWith(self, string, suffix):
+        """Assert that `string` ends with `suffix`.
+
+        Used to ignore an architecture-specific UTF-16 byte-order mark."""
+        self.assertEqual(string[-len(suffix):], suffix)
+
     def test_read_text(self):
         self.assertEqual(
             resources.read_text(self.anchor01, 'utf-8.file'),
@@ -65,12 +71,12 @@ class FunctionalAPIBase:
             ),
             '\x00\x01\x02\x03',
         )
-        self.assertEqual(
+        self.assertEndsWith(  # ignore the BOM
             resources.read_text(
                 self.anchor01, 'utf-16.file',
                 errors='backslashreplace',
             ),
-            'Hello, UTF-16 world!\n'.encode('utf-16').decode(
+            'Hello, UTF-16 world!\n'.encode('utf-16-le').decode(
                 errors='backslashreplace',
             ),
         )
@@ -112,9 +118,9 @@ class FunctionalAPIBase:
             self.anchor01, 'utf-16.file',
             errors='backslashreplace',
         ) as f:
-            self.assertEqual(
+            self.assertEndsWith(  # ignore the BOM
                 f.read(),
-                'Hello, UTF-16 world!\n'.encode('utf-16').decode(
+                'Hello, UTF-16 world!\n'.encode('utf-16-le').decode(
                     errors='backslashreplace',
                 ),
             )

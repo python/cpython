@@ -2747,3 +2747,11 @@ regardless of the value of :attr:`~Connection.isolation_level`.
 
 .. _SQLite transaction behaviour:
    https://www.sqlite.org/lang_transaction.html#deferred_immediate_and_exclusive_transactions
+
+.. testcleanup::
+
+   import os
+   os.remove("backup.db")
+   os.remove("dump.sql")
+   os.remove("example.db")
+   os.remove("tutorial.db")
