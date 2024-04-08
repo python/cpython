@@ -3169,7 +3169,9 @@ class ThreadedTests(unittest.TestCase):
             s.connect((HOST, server.port))
             with self.assertRaisesRegex(
                 OSError,
-                'alert unknown ca|EOF occurred|TLSV1_ALERT_UNKNOWN_CA|closed by the remote host|Connection reset by peer'
+                'alert unknown ca|EOF occurred|TLSV1_ALERT_UNKNOWN_CA|'
+                'closed by the remote host|Connection reset by peer|'
+                'Broken pipe'
             ):
                 # TLS 1.3 perform client cert exchange after handshake
                 s.write(b'data')
@@ -3867,7 +3869,7 @@ class ThreadedTests(unittest.TestCase):
                                             server_hostname=hostname) as s:
                 with self.assertRaises(ssl.SSLError) as e:
                     s.connect((HOST, server.port))
-                self.assertRegex("(alert|ALERT)", str(e.exception))
+                self.assertRegex(str(e.exception), "(alert|ALERT)")
 
     @requires_tls_version('SSLv3')
     def test_min_max_version_sslv3(self):
@@ -4182,7 +4184,7 @@ class ThreadedTests(unittest.TestCase):
 
             # Allow for flexible libssl error messages.
             regex = "(SSLV3_ALERT_HANDSHAKE_FAILURE|NO_PRIVATE_VALUE)"
-            self.assertRegex(regex, cm.exception.reason)
+            self.assertRegex(cm.exception.reason, regex)
             self.assertEqual(catch.unraisable.exc_type, ZeroDivisionError)
 
     def test_sni_callback_wrong_return_type(self):

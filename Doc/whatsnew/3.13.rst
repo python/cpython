@@ -214,6 +214,12 @@ Other Language Changes
 
   (Contributed by William Woodruff in :gh:`112389`.)
 
+* The :class:`configparser.ConfigParser` now accepts unnamed sections before named
+   ones if configured to do so.
+
+   (Contributed by Pedro Sousa Lacerda in :gh:`66449`)
+
+
 New Modules
 ===========
 
@@ -282,6 +288,17 @@ asyncio
   :meth:`asyncio.Server.abort_clients` methods which allow to more
   forcefully close an asyncio server.
   (Contributed by Pierre Ossman in :gh:`113538`.)
+
+* :func:`asyncio.as_completed` now returns an object that is both an
+  :term:`asynchronous iterator` and a plain :term:`iterator` of awaitables.
+  The awaitables yielded by asynchronous iteration include original task or
+  future objects that were passed in, making it easier to associate results
+  with the tasks being completed.
+  (Contributed by Justin Arthur in :gh:`77714`.)
+
+* Add :meth:`asyncio.Queue.shutdown` (along with
+  :exc:`asyncio.QueueShutDown`) for queue termination.
+  (Contributed by Laurie Opperman in :gh:`104228`.)
 
 base64
 ------
@@ -395,6 +412,30 @@ The :class:`io.IOBase` finalizer now logs the ``close()`` method errors with
 and only logged in :ref:`Python Development Mode <devmode>` or on :ref:`Python
 built on debug mode <debug-build>`.
 (Contributed by Victor Stinner in :gh:`62948`.)
+
+importlib
+---------
+
+Previously deprecated :mod:`importlib.resources` functions are un-deprecated:
+
+  * :func:`~importlib.resources.is_resource()`
+  * :func:`~importlib.resources.open_binary()`
+  * :func:`~importlib.resources.open_text()`
+  * :func:`~importlib.resources.path()`
+  * :func:`~importlib.resources.read_binary()`
+  * :func:`~importlib.resources.read_text()`
+
+All now allow for a directory (or tree) of resources, using multiple positional
+arguments.
+
+For text-reading functions, the *encoding* and *errors* must now be given as
+keyword arguments.
+
+The :func:`~importlib.resources.contents()` remains deprecated in favor of
+the full-featured :class:`~importlib.resources.abc.Traversable` API.
+However, there is now no plan to remove it.
+
+(Contributed by Petr Viktorin in :gh:`106532`.)
 
 ipaddress
 ---------
@@ -518,12 +559,19 @@ pathlib
   shell-style wildcards, including the recursive wildcard "``**``".
   (Contributed by Barney Gale in :gh:`73435`.)
 
-* Add *follow_symlinks* keyword-only argument to :meth:`pathlib.Path.glob`,
-  :meth:`~pathlib.Path.rglob`, :meth:`~pathlib.Path.is_file`,
+* Add :attr:`pathlib.PurePath.parser` class attribute that stores the
+  implementation of :mod:`os.path` used for low-level path parsing and
+  joining: either ``posixpath`` or ``ntpath``.
+
+* Add *recurse_symlinks* keyword-only argument to :meth:`pathlib.Path.glob`
+  and :meth:`~pathlib.Path.rglob`.
+  (Contributed by Barney Gale in :gh:`77609`).
+
+* Add *follow_symlinks* keyword-only argument to :meth:`~pathlib.Path.is_file`,
   :meth:`~pathlib.Path.is_dir`, :meth:`~pathlib.Path.owner`,
   :meth:`~pathlib.Path.group`.
-  (Contributed by Barney Gale in :gh:`77609` and :gh:`105793`, and
-  Kamil Turek in :gh:`107962`).
+  (Contributed by Barney Gale in :gh:`105793`, and Kamil Turek in
+  :gh:`107962`).
 
 * Return files and directories from :meth:`pathlib.Path.glob` and
   :meth:`~pathlib.Path.rglob` when given a pattern that ends with "``**``". In
@@ -795,6 +843,11 @@ Deprecated
   :mod:`gettext` functions and methods that consider plural forms even if the
   translation was not found.
   (Contributed by Serhiy Storchaka in :gh:`88434`.)
+
+* :mod:`glob`: The undocumented :func:`!glob.glob0` and :func:`!glob.glob1`
+  functions are deprecated. Use :func:`glob.glob` and pass a directory to its
+  *root_dir* argument instead.
+  (Contributed by Barney Gale in :gh:`117337`.)
 
 * :mod:`http.server`: :class:`http.server.CGIHTTPRequestHandler` now emits a
   :exc:`DeprecationWarning` as it will be removed in 3.15.  Process-based CGI
@@ -1334,21 +1387,6 @@ configparser
 
 importlib
 ---------
-
-* Remove :mod:`importlib.resources` deprecated methods:
-
-  * ``contents()``
-  * ``is_resource()``
-  * ``open_binary()``
-  * ``open_text()``
-  * ``path()``
-  * ``read_binary()``
-  * ``read_text()``
-
-  Use :func:`importlib.resources.files()` instead.  Refer to `importlib-resources: Migrating from Legacy
-  <https://importlib-resources.readthedocs.io/en/latest/using.html#migrating-from-legacy>`_
-  for migration advice.
-  (Contributed by Jason R. Coombs in :gh:`106532`.)
 
 * Remove deprecated :meth:`~object.__getitem__` access for
   :class:`!importlib.metadata.EntryPoint` objects.
