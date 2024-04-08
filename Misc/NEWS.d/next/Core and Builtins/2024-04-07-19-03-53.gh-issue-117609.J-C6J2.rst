@@ -1,0 +1,1 @@
+Speedup some functions in :mod:`os.path`.
