@@ -33,27 +33,27 @@ A small number of constants live in the built-in namespace.  They are:
    the other type; may be returned by the in-place binary special methods
    (e.g. :meth:`~object.__imul__`, :meth:`~object.__iand__`, etc.) for the same purpose.
    It should not be evaluated in a boolean context.
-   ``NotImplemented`` is the sole instance of the :data:`types.NotImplementedType` type.
+   :data:`!NotImplemented` is the sole instance of the :data:`types.NotImplementedType` type.
 
    .. note::
 
-      When a binary (or in-place) method returns ``NotImplemented`` the
+      When a binary (or in-place) method returns :data:`!NotImplemented` the
       interpreter will try the reflected operation on the other type (or some
       other fallback, depending on the operator).  If all attempts return
-      ``NotImplemented``, the interpreter will raise an appropriate exception.
-      Incorrectly returning ``NotImplemented`` will result in a misleading
-      error message or the ``NotImplemented`` value being returned to Python code.
+      :data:`!NotImplemented`, the interpreter will raise an appropriate exception.
+      Incorrectly returning :data:`!NotImplemented` will result in a misleading
+      error message or the :data:`!NotImplemented` value being returned to Python code.
 
       See :ref:`implementing-the-arithmetic-operations` for examples.
 
    .. note::
 
-      ``NotImplementedError`` and ``NotImplemented`` are not interchangeable,
+      ``NotImplementedError`` and :data:`!NotImplemented` are not interchangeable,
       even though they have similar names and purposes.
       See :exc:`NotImplementedError` for details on when to use it.
 
    .. versionchanged:: 3.9
-      Evaluating ``NotImplemented`` in a boolean context is deprecated. While
+      Evaluating :data:`!NotImplemented` in a boolean context is deprecated. While
       it currently evaluates as true, it will emit a :exc:`DeprecationWarning`.
       It will raise a :exc:`TypeError` in a future version of Python.
 

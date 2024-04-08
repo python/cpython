@@ -223,7 +223,8 @@ class HelpFormatter(object):
             # add the heading if the section was non-empty
             if self.heading is not SUPPRESS and self.heading is not None:
                 current_indent = self.formatter._current_indent
-                heading = '%*s%s:\n' % (current_indent, '', self.heading)
+                heading_text = _('%(heading)s:') % dict(heading=self.heading)
+                heading = '%*s%s\n' % (current_indent, '', heading_text)
             else:
                 heading = ''
 
@@ -413,6 +414,8 @@ class HelpFormatter(object):
                             suppressed_actions_count += 1
 
                     exposed_actions_count = group_action_count - suppressed_actions_count
+                    if not exposed_actions_count:
+                        continue
 
                     if not group.required:
                         if start in inserts:
@@ -698,14 +701,6 @@ class ArgumentDefaultsHelpFormatter(HelpFormatter):
     """
 
     def _get_help_string(self, action):
-        """
-        Add the default value to the option help message.
-
-        ArgumentDefaultsHelpFormatter and BooleanOptionalAction when it isn't
-        already present. This code will do that, detecting cornercases to
-        prevent duplicates or cases where it wouldn't make sense to the end
-        user.
-        """
         help = action.help
         if help is None:
             help = ''
@@ -714,7 +709,7 @@ class ArgumentDefaultsHelpFormatter(HelpFormatter):
             if action.default is not SUPPRESS:
                 defaulting_nargs = [OPTIONAL, ZERO_OR_MORE]
                 if action.option_strings or action.nargs in defaulting_nargs:
-                    help += ' (default: %(default)s)'
+                    help += _(' (default: %(default)s)')
         return help
 
 
@@ -1165,8 +1160,10 @@ class _VersionAction(Action):
                  version=None,
                  dest=SUPPRESS,
                  default=SUPPRESS,
-                 help="show program's version number and exit",
+                 help=None,
                  deprecated=False):
+        if help is None:
+            help = _("show program's version number and exit")
         super(_VersionAction, self).__init__(
             option_strings=option_strings,
             dest=dest,
@@ -2156,10 +2153,11 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
         while start_index <= max_option_string_index:
 
             # consume any Positionals preceding the next option
-            next_option_string_index = min([
-                index
-                for index in option_string_indices
-                if index >= start_index])
+            next_option_string_index = start_index
+            while next_option_string_index <= max_option_string_index:
+                if next_option_string_index in option_string_indices:
+                    break
+                next_option_string_index += 1
             if start_index != next_option_string_index:
                 positionals_end_index = consume_positionals(start_index)
 

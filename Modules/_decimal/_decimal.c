@@ -4780,7 +4780,7 @@ _dec_hash(PyDecObject *v)
             return -1;
         }
         else if (mpd_isnan(MPD(v))) {
-            return _Py_HashPointer(v);
+            return PyObject_GenericHash((PyObject *)v);
         }
         else {
             return py_hash_inf * mpd_arith_sign(MPD(v));

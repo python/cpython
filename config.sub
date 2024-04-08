@@ -4,6 +4,7 @@
 
 # shellcheck disable=SC2006,SC2268 # see below for rationale
 
+# Patched 2024-02-03 to include support for arm64_32 and iOS/tvOS/watchOS simulators
 timestamp='2024-01-01'
 
 # This file is free software; you can redistribute it and/or modify it
@@ -1127,7 +1128,7 @@ case $cpu-$vendor in
 	xscale-* | xscalee[bl]-*)
 		cpu=`echo "$cpu" | sed 's/^xscale/arm/'`
 		;;
-	arm64-* | aarch64le-*)
+	arm64-* | aarch64le-* | arm64_32-*)
 		cpu=aarch64
 		;;
 
@@ -1865,6 +1866,8 @@ case $kernel-$os-$obj in
 	os2-emx-)
 		;;
 	*-eabi*- | *-gnueabi*-)
+		;;
+	ios*-simulator- | tvos*-simulator- | watchos*-simulator- )
 		;;
 	none--*)
 		# None (no kernel, i.e. freestanding / bare metal),

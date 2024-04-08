@@ -1270,9 +1270,10 @@ class PosixTester(unittest.TestCase):
         self.assertIn(mine, possible_schedulers)
         try:
             parent = posix.sched_getscheduler(os.getppid())
-        except OSError as e:
-            if e.errno != errno.EPERM:
-                raise
+        except PermissionError:
+            # POSIX specifies EPERM, but Android returns EACCES. Both errno
+            # values are mapped to PermissionError.
+            pass
         else:
             self.assertIn(parent, possible_schedulers)
         self.assertRaises(OSError, posix.sched_getscheduler, -1)
@@ -1287,9 +1288,8 @@ class PosixTester(unittest.TestCase):
             try:
                 posix.sched_setscheduler(0, mine, param)
                 posix.sched_setparam(0, param)
-            except OSError as e:
-                if e.errno != errno.EPERM:
-                    raise
+            except PermissionError:
+                pass
             self.assertRaises(OSError, posix.sched_setparam, -1, param)
 
         self.assertRaises(OSError, posix.sched_setscheduler, -1, mine, param)
@@ -1335,12 +1335,21 @@ class PosixTester(unittest.TestCase):
     def test_sched_setaffinity(self):
         mask = posix.sched_getaffinity(0)
         self.addCleanup(posix.sched_setaffinity, 0, list(mask))
+
         if len(mask) > 1:
             # Empty masks are forbidden
             mask.pop()
         posix.sched_setaffinity(0, mask)
         self.assertEqual(posix.sched_getaffinity(0), mask)
-        self.assertRaises(OSError, posix.sched_setaffinity, 0, [])
+
+        try:
+            posix.sched_setaffinity(0, [])
+            # gh-117061: On RHEL9, sched_setaffinity(0, []) does not fail
+        except OSError:
+            # sched_setaffinity() manual page documents EINVAL error
+            # when the mask is empty.
+            pass
+
         self.assertRaises(ValueError, posix.sched_setaffinity, 0, [-10])
         self.assertRaises(ValueError, posix.sched_setaffinity, 0, map(int, "0X"))
         self.assertRaises(OverflowError, posix.sched_setaffinity, 0, [1<<128])

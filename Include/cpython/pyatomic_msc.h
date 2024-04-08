@@ -939,6 +939,18 @@ _Py_atomic_store_int_release(int *obj, int value)
 #endif
 }
 
+static inline void
+_Py_atomic_store_ssize_release(Py_ssize_t *obj, Py_ssize_t value)
+{
+#if defined(_M_X64) || defined(_M_IX86)
+    *(Py_ssize_t volatile *)obj = value;
+#elif defined(_M_ARM64)
+    __stlr64((unsigned __int64 volatile *)obj, (unsigned __int64)value);
+#else
+#  error "no implementation of _Py_atomic_store_ssize_release"
+#endif
+}
+
 static inline int
 _Py_atomic_load_int_acquire(const int *obj)
 {
@@ -987,6 +999,18 @@ _Py_atomic_load_uint32_acquire(const uint32_t *obj)
     return (uint32_t)__ldar32((uint32_t volatile *)obj);
 #else
 #  error "no implementation of _Py_atomic_load_uint32_acquire"
+#endif
+}
+
+static inline Py_ssize_t
+_Py_atomic_load_ssize_acquire(const Py_ssize_t *obj)
+{
+#if defined(_M_X64) || defined(_M_IX86)
+    return *(Py_ssize_t volatile *)obj;
+#elif defined(_M_ARM64)
+    return (Py_ssize_t)__ldar64((unsigned __int64 volatile *)obj);
+#else
+#  error "no implementation of _Py_atomic_load_ssize_acquire"
 #endif
 }
 
