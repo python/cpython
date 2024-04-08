@@ -585,13 +585,9 @@ def _abspath_fallback(path):
     path = os.fspath(path)
     if not isabs(path):
         if isinstance(path, bytes):
-            curdir = b'.'
             cwd = os.getcwdb()
         else:
-            curdir = '.'
             cwd = os.getcwd()
-        if not path or path == curdir:
-            return cwd
         path = join(cwd, path)
     return normpath(path)
 
@@ -650,7 +646,7 @@ else:
                         path = old_path
                         break
                     path = normpath(join(dirname(old_path), path))
-                    normp = normcase(path)
+                normp = normcase(path)
             except OSError as ex:
                 if ex.winerror in allowed_winerror:
                     break
