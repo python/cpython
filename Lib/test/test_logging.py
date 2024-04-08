@@ -2191,7 +2191,8 @@ class HTTPHandlerTest(BaseTest):
                 self.handled.clear()
                 msg = "sp\xe4m"
                 logger.error(msg)
-                self.handled.wait()
+                handled = self.handled.wait(support.SHORT_TIMEOUT)
+                self.assertTrue(handled, "HTTP request timed out")
                 self.assertEqual(self.log_data.path, '/frob')
                 self.assertEqual(self.command, method)
                 if method == 'GET':
