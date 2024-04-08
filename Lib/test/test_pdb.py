@@ -371,7 +371,7 @@ def test_pdb_breakpoint_with_filename():
 
     >>> reset_Breakpoint()
 
-    >>> with PdbTestInput([  # doctest: +NORMALIZE_WHITESPACE
+    >>> with PdbTestInput([  # doctest: +NORMALIZE_WHITESPACE +ELLIPSIS
     ...     'break test.test_inspect.inspect_fodder2:90',
     ...     'continue', # will stop at func88
     ...     'break test/test_inspect/inspect_fodder2.py:115',
@@ -382,14 +382,14 @@ def test_pdb_breakpoint_with_filename():
     > <doctest test.test_pdb.test_pdb_breakpoint_with_filename[0]>(5)test_function()
     -> mod2.func88()
     (Pdb) break test.test_inspect.inspect_fodder2:90
-    Breakpoint 1 at /home/gaogaotiantian/programs/mycpython/Lib/test/test_inspect/inspect_fodder2.py:90
+    Breakpoint 1 at ...test/test_inspect/inspect_fodder2.py:90
     (Pdb) continue
-    > /home/gaogaotiantian/programs/mycpython/Lib/test/test_inspect/inspect_fodder2.py(90)func88()
+    > ...test/test_inspect/inspect_fodder2.py(90)func88()
     -> return 90
     (Pdb) break test/test_inspect/inspect_fodder2.py:115
-    Breakpoint 2 at /home/gaogaotiantian/programs/mycpython/Lib/test/test_inspect/inspect_fodder2.py:115
+    Breakpoint 2 at ...test/test_inspect/inspect_fodder2.py:115
     (Pdb) continue
-    > /home/gaogaotiantian/programs/mycpython/Lib/test/test_inspect/inspect_fodder2.py(115)func114()
+    > ...test/test_inspect/inspect_fodder2.py(115)func114()
     -> return 115
     (Pdb) continue
     """
