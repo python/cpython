@@ -69,17 +69,13 @@ class CompilationStepTestCase(unittest.TestCase):
     class Label:
         pass
 
-    def assertInstructionsMatch(self, actual_seq, expected_):
+    def assertInstructionsMatch(self, actual_seq, expected):
         # get an InstructionSequence and an expected list, where each
         # entry is a label or an instruction tuple. Construct an expcted
         # instruction sequence and compare with the one given.
 
-        self.assertIsInstance(expected_, list)
-        expected_seq = self.seq_from_insts(expected_)
-        self.assertIsInstance(actual_seq, type(expected_seq))
-
+        self.assertIsInstance(expected, list)
         actual = actual_seq.get_instructions()
-        expected = expected_seq.get_instructions()
         self.assertEqual(len(actual), len(expected))
 
         # compare instructions
@@ -89,12 +85,16 @@ class CompilationStepTestCase(unittest.TestCase):
                 continue
             self.assertIsInstance(exp, tuple)
             self.assertIsInstance(act, tuple)
-            while exp[-1] == -1:
-                exp = exp[:-1]
-            # crop comparison to the provided expected values
-            if len(act) > len(exp):
-                act = act[:len(exp)]
-            self.assertEqual(exp, act)
+            exp, act = list(reversed(exp)), list(reversed(act))
+            op1, op2 = exp.pop(), opcode.opname[act.pop()]
+            self.assertEqual(op1, op2, "op mismatch")
+            if opcode.opmap[op1] in self.HAS_ARG:
+                arg1, arg2 = exp.pop(), act.pop()
+                self.assertEqual(arg1, arg2, "arg mismatch")
+            else:
+                act.pop()
+            loc1, loc2 = exp, act
+            self.assertEqual(loc1, loc2[-len(loc1):], "location mismatch")
 
     def resolveAndRemoveLabels(self, insts):
         idx = 0
@@ -119,11 +119,14 @@ class CompilationStepTestCase(unittest.TestCase):
             if isinstance(item, self.Label):
                 seq.use_label(item.value)
             else:
-                op, arg, *loc = item
-                if isinstance(arg, self.Label):
-                    arg = arg.value
-                elif arg is None:
+                op = item[0]
+                if op in self.HAS_ARG:
+                    arg, *loc = item[1:]
+                    if isinstance(arg, self.Label):
+                        arg = arg.value
+                else:
                     arg = 0
+                    loc = list(item[1:])
                 loc = loc + [-1] * (4 - len(loc))
                 seq.addop(opcode.opmap[op], arg, *loc)
         return seq

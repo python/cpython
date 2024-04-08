@@ -984,7 +984,6 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
         if expected_consts is None:
             expected_consts = consts
         opt_insts, opt_consts = self.get_optimized(insts, consts, nlocals)
-        expected_insts = self.normalize_insts(expected_insts)
         self.assertInstructionsMatch(opt_insts, expected_insts)
         self.assertEqual(opt_consts, expected_consts)
 
