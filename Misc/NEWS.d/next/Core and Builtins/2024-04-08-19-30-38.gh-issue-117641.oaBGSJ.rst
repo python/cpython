@@ -1,0 +1,1 @@
+Speedup :func:`os.path.commonpath()` by up to 9% on Unix.
