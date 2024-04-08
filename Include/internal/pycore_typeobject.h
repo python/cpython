@@ -22,8 +22,6 @@ extern "C" {
 #define _Py_TYPE_VERSION_SET 6
 #define _Py_TYPE_VERSION_FROZEN_SET 7
 #define _Py_TYPE_VERSION_ARRAY 8
-
-
 #define _Py_TYPE_VERSION_DICT 9
 #define _Py_TYPE_VERSION_BYTES 10
 #define _Py_TYPE_VERSION_COMPLEX 11

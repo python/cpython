@@ -1829,7 +1829,6 @@ const uint8_t _PyOpcode_Deopt[256] = {
 #endif // NEED_OPCODE_METADATA
 
 #define EXTRA_CASES \
-    case 118: \
     case 119: \
     case 120: \
     case 121: \
@@ -1860,6 +1859,7 @@ const uint8_t _PyOpcode_Deopt[256] = {
     case 146: \
     case 147: \
     case 148: \
+    case 222: \
     case 223: \
     case 224: \
     case 225: \
