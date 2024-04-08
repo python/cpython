@@ -650,6 +650,40 @@ class CAPITest(unittest.TestCase):
         check_format('\U0001f4bb+' if sizeof(c_wchar) > 2 else '\U0001f4bb',
                      b'%.2lV', None, c_wchar_p('\U0001f4bb+\U0001f40d'))
 
+        # test %T
+        check_format('type: str',
+                     b'type: %T', py_object("abc"))
+        check_format(f'type: st',
+                     b'type: %.2T', py_object("abc"))
+        check_format(f'type:        str',
+                     b'type: %10T', py_object("abc"))
+
+        class LocalType:
+            pass
+        obj = LocalType()
+        fullname = f'{__name__}.{LocalType.__qualname__}'
+        check_format(f'type: {fullname}',
+                     b'type: %T', py_object(obj))
+        fullname_alt = f'{__name__}:{LocalType.__qualname__}'
+        check_format(f'type: {fullname_alt}',
+                     b'type: %#T', py_object(obj))
+
+        # test %N
+        check_format('type: str',
+                     b'type: %N', py_object(str))
+        check_format(f'type: st',
+                     b'type: %.2N', py_object(str))
+        check_format(f'type:        str',
+                     b'type: %10N', py_object(str))
+
+        check_format(f'type: {fullname}',
+                     b'type: %N', py_object(type(obj)))
+        check_format(f'type: {fullname_alt}',
+                     b'type: %#N', py_object(type(obj)))
+        with self.assertRaisesRegex(TypeError, "%N argument must be a type"):
+            check_format('type: str',
+                         b'type: %N', py_object("abc"))
+
         # test variable width and precision
         check_format('  abc', b'%*s', c_int(5), b'abc')
         check_format('ab', b'%.*s', c_int(2), b'abc')
