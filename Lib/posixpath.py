@@ -558,10 +558,8 @@ def commonpath(paths):
     try:
         split_paths = [path.split(sep) for path in paths]
 
-        try:
-            isabs, = set(p[:1] == sep for p in paths)
-        except ValueError:
-            raise ValueError("Can't mix absolute and relative paths") from None
+        if len({p.startswith(sep) for p in paths}) != 1:
+            raise ValueError("Can't mix absolute and relative paths")
 
         split_paths = [[c for c in s if c and c != curdir] for s in split_paths]
         s1 = min(split_paths)
@@ -572,7 +570,7 @@ def commonpath(paths):
                 common = s1[:i]
                 break
 
-        prefix = sep if isabs else sep[:0]
+        prefix = sep if paths[0].startswith(sep) else sep[:0]
         return prefix + sep.join(common)
     except (TypeError, AttributeError):
         genericpath._check_arg_types('commonpath', *paths)
