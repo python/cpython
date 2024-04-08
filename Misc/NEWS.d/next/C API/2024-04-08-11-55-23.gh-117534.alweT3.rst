@@ -1,2 +1,0 @@
-Add checking for input parameter in :func:'iso_to_umd' to fix the assertion
-in :func:'days_before_year' due to wrong ISO date string.
