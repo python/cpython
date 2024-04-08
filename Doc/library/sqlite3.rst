@@ -406,8 +406,6 @@ Module functions
    .. testsetup:: sqlite3.trace
 
       import sqlite3
-      import sys
-      old_hook = sys.unraisablehook
 
    .. doctest:: sqlite3.trace
 
@@ -424,11 +422,6 @@ Module functions
       >>> cur = con.execute("SELECT 1")
       ZeroDivisionError('division by zero') in callback evil_trace
       Error message: None
-
-   .. testcleanup:: sqlite3.trace
-
-      con.close()
-      sys.unraisablehook = old_hook
 
 .. function:: register_adapter(type, adapter, /)
 
@@ -1086,7 +1079,6 @@ Connection objects
          Added the ``sqlite3.enable_load_extension`` auditing event.
 
       .. testsetup:: sqlite3.loadext
-         :skipif: True
 
          import sqlite3
          con = sqlite3.connect(":memory:")
@@ -1116,6 +1108,8 @@ Connection objects
          for row in con.execute("SELECT rowid, name, ingredients FROM recipe WHERE name MATCH 'pie'"):
              print(row)
 
+         con.close()
+
       .. testoutput:: sqlite3.loadext
          :hide:
 
@@ -1123,7 +1117,6 @@ Connection objects
          (3, 'pumpkin pie', 'pumpkin sugar flour butter')
 
       .. testcleanup::
-         :skipif: True
 
          con.close()
 
