@@ -1253,7 +1253,6 @@ import_find_extension(PyThreadState *tstate, PyObject *name,
             "module %s does not support the combination of free-threading "
             "and subinterpreters",
              name_buf);
-        return NULL;
     }
 #endif
 
