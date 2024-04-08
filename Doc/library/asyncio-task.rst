@@ -1392,9 +1392,9 @@ Task Object
       the cancellation state.
 
       When this method decrements the cancellation count to zero,
-      if a previous :meth:`cancel` call had arranged for a
-      :exc:`CancelledError` to be thrown into the task,
-      but this hadn't been done yet, that arrangement will be
+      the method checks if a previous :meth:`cancel` call had arranged
+      for :exc:`CancelledError` to be thrown into the task.
+      If it hasn't been thrown yet, that arrangement will be
       rescinded (by resetting the internal ``_must_cancel`` flag).
 
    .. versionchanged:: 3.13

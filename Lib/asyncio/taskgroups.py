@@ -140,8 +140,9 @@ class TaskGroup:
             self._errors.append(exc)
 
         if self._errors:
-            # If the parent task is being cancelled from the outside,
-            # re-cancel it, while keeping the cancel count stable.
+            # If the parent task is being cancelled from the outside
+            # of the taskgroup, un-cancel and re-cancel the parent task,
+            # which will keep the cancel count stable.
             if self._parent_task.cancelling():
                 self._parent_task.uncancel()
                 self._parent_task.cancel()
