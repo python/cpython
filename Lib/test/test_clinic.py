@@ -822,7 +822,6 @@ class ClinicBlockParserTest(TestCase):
 
         blocks = list(BlockParser(input, language))
         writer = BlockPrinter(language)
-        c = _make_clinic()
         for block in blocks:
             writer.print_block(block)
         output = writer.f.getvalue()
