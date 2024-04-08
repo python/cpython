@@ -394,29 +394,11 @@ Module functions
    will get tracebacks from callbacks on :data:`sys.stderr`. Use ``False``
    to disable the feature again.
 
-   Register an :func:`unraisable hook handler <sys.unraisablehook>` for an
-   improved debug experience:
+   .. note::
 
-   .. testsetup:: sqlite3.trace
-
-      import sqlite3
-
-   .. doctest:: sqlite3.trace
-
-      >>> sqlite3.enable_callback_tracebacks(True)
-      >>> con = sqlite3.connect(":memory:")
-      >>> def evil_trace(stmt):
-      ...     5/0
-      ...
-      >>> con.set_trace_callback(evil_trace)
-      >>> def debug(unraisable):
-      ...     print(f"{unraisable.exc_value!r} in callback {unraisable.object.__name__}")
-      ...     print(f"Error message: {unraisable.err_msg}")
-      >>> import sys
-      >>> sys.unraisablehook = debug
-      >>> cur = con.execute("SELECT 1")
-      ZeroDivisionError('division by zero') in callback evil_trace
-      Error message: None
+      Errors in user-defined function callbacks are logged as unraisable exceptions.
+      Use an :func:`unraisable hook handler <sys.unraisablehook>` for
+      introspection of the failed callback.
 
 .. function:: register_adapter(type, adapter, /)
 
@@ -1068,13 +1050,10 @@ Connection objects
       .. versionchanged:: 3.10
          Added the ``sqlite3.enable_load_extension`` auditing event.
 
-      .. testsetup:: sqlite3.loadext
+      .. We cannot doctest the load extension API, since there is no convenient
+         way to skip it.
 
-         import sqlite3
-         con = sqlite3.connect(":memory:")
-
-      .. testcode:: sqlite3.loadext
-         :skipif: True  # not testable at the moment
+      .. code-block::
 
          con.enable_load_extension(True)
 
@@ -1097,14 +1076,6 @@ Connection objects
              """)
          for row in con.execute("SELECT rowid, name, ingredients FROM recipe WHERE name MATCH 'pie'"):
              print(row)
-
-         con.close()
-
-      .. testoutput:: sqlite3.loadext
-         :hide:
-
-         (2, 'broccoli pie', 'broccoli cheese onions flour')
-         (3, 'pumpkin pie', 'pumpkin sugar flour butter')
 
    .. method:: load_extension(path, /, *, entrypoint=None)
 
