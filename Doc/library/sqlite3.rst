@@ -227,9 +227,6 @@ creating a new cursor, then querying the database:
 
    new_con.close()
 
-   import os
-   os.remove("tutorial.db")
-
 You've now created an SQLite database using the :mod:`!sqlite3` module,
 inserted data and retrieved values from it in multiple ways.
 
@@ -1147,11 +1144,6 @@ Connection objects
                  f.write('%s\n' % line)
          con.close()
 
-      .. testcleanup::
-
-         import os
-         os.remove('dump.sql')
-
       .. seealso::
 
          :ref:`sqlite3-howto-encoding`
@@ -1214,11 +1206,6 @@ Connection objects
 
          Copied 0 of 0 pages...
 
-      .. testcleanup::
-
-         import os
-         os.remove('backup.db')
-
       Example 2, copy an existing database into a transient copy:
 
       .. testcode::
@@ -1228,11 +1215,6 @@ Connection objects
          src.backup(dst)
          dst.close()
          src.close()
-
-      .. testcleanup::
-
-         import os
-         os.remove('example.db')
 
       .. versionadded:: 3.7
 
