@@ -1746,7 +1746,7 @@ _triweight_invcdf = _newton_raphson(
 
 _kernel_invcdfs = {
     'normal': NormalDist().inv_cdf,
-    'logisitic': lambda p: log(p / (1 - p)),
+    'logistic': lambda p: log(p / (1 - p)),
     'sigmoid': lambda p: log(tan(p * pi/2)),
     'rectangular': lambda p: 2*p - 1,
     'parabolic': _parabolic_invcdf,
