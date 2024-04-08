@@ -32,12 +32,6 @@ __all__ = ["normcase","isabs","join","splitdrive","splitroot","split","splitext"
            "samefile", "sameopenfile", "samestat", "commonpath", "isjunction",
            "isdevdrive"]
 
-def _get_bothseps(path):
-    if isinstance(path, bytes):
-        return b'\\/'
-    else:
-        return '\\/'
-
 # Normalize the case of a pathname and map slashes to backslashes.
 # Other normalizations (such as optimizing '../' away) are not done
 # (this is done by normpath).
@@ -232,7 +226,7 @@ def split(p):
     Return tuple (head, tail) where tail is everything after the final slash.
     Either part may be empty."""
     p = os.fspath(p)
-    seps = _get_bothseps(p)
+    seps = b'\\/' if isinstance(p, bytes) else '\\/'
     d, r, p = splitroot(p)
     # set i to index beyond p's last slash
     i = len(p)
@@ -303,7 +297,7 @@ def ismount(path):
     """Test whether a path is a mount point (a drive root, the root of a
     share, or a mounted volume)"""
     path = os.fspath(path)
-    seps = _get_bothseps(path)
+    seps = b'\\/' if isinstance(path, bytes) else '\\/'
     path = abspath(path)
     drive, root, rest = splitroot(path)
     if drive and drive[0] in seps:
@@ -368,13 +362,15 @@ def expanduser(path):
     If user or $HOME is unknown, do nothing."""
     path = os.fspath(path)
     if isinstance(path, bytes):
+        seps = b'\\/'
         tilde = b'~'
     else:
+        seps = '\\/'
         tilde = '~'
     if not path.startswith(tilde):
         return path
     i, n = 1, len(path)
-    while i < n and path[i] not in _get_bothseps(path):
+    while i < n and path[i] not in seps:
         i += 1
 
     if 'USERPROFILE' in os.environ:
