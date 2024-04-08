@@ -168,7 +168,7 @@ merge_refcount(PyObject *op, Py_ssize_t extra)
     refcount += extra;
 
 #ifdef Py_REF_DEBUG
-    _Py_AddRefTotal(_PyInterpreterState_GET(), extra);
+    _Py_AddRefTotal(_PyThreadState_GET(), extra);
 #endif
 
     // No atomics necessary; all other threads in this interpreter are paused.
@@ -307,7 +307,7 @@ merge_queued_objects(_PyThreadStateImpl *tstate, struct collection_state *state)
             // decref and deallocate the object once we start the world again.
             op->ob_ref_shared += (1 << _Py_REF_SHARED_SHIFT);
 #ifdef Py_REF_DEBUG
-            _Py_IncRefTotal(_PyInterpreterState_GET());
+            _Py_IncRefTotal(_PyThreadState_GET());
 #endif
             worklist_push(&state->objs_to_decref, op);
         }

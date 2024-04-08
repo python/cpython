@@ -1698,6 +1698,14 @@ tstate_delete_common(PyThreadState *tstate)
             decrement_stoptheworld_countdown(&runtime->stoptheworld);
         }
     }
+
+#if defined(Py_REF_DEBUG) && defined(Py_GIL_DISABLED)
+    // Add our portion of the total refcount to the interpreter's total.
+    _PyThreadStateImpl *tstate_impl = (_PyThreadStateImpl *)tstate;
+    tstate->interp->object_state.reftotal += tstate_impl->reftotal;
+    tstate_impl->reftotal = 0;
+#endif
+
     HEAD_UNLOCK(runtime);
 
 #ifdef Py_GIL_DISABLED
