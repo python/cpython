@@ -1,134 +1,96 @@
-//#include <unistd.h>
-//#include <stdio.h>
 #include "parts.h"
+#include "util.h"
+
+#include <stdio.h>
+#include <errno.h>
 
 char *filename = "pyrun_sample.py";
 
-static FILE *create_tempscript(void) {
-    FILE *fp;
-    const char *script = "import sysconfig\n\nconfig = sysconfig.get_config_vars()\n";
+/* XXX: Need to implement
+int PyRun_AnyFileExFlags(FILE *fp, const char *filename, int closeit, PyCompilerFlags *flags)
+int PyRun_SimpleStringFlags(const char *command, PyCompilerFlags *flags)
+int PyRun_SimpleFileExFlags(FILE *fp, const char *filename, int closeit, PyCompilerFlags *flags)
+int PyRun_InteractiveOneFlags(FILE *fp, const char *filename, PyCompilerFlags *flags)
+int PyRun_InteractiveLoopFlags(FILE *fp, const char *filename, PyCompilerFlags *flags)
+PyObject *PyRun_StringFlags(const char *str, int start, PyObject *globals, PyObject *locals, PyCompilerFlags *flags)
 
-    fp = tmpfile();
-    if (fp == NULL) {
-        PyErr_SetString(PyExc_LookupError, "tmpname");
-        return NULL;
-    }
-    fprintf(fp, script);
-    rewind(fp);
+XXX: implemented
+PyObject *PyRun_FileExFlags(FILE *fp, const char *filename, int start, PyObject *globals, PyObject *locals, int closeit, PyCompilerFlags *flags)
+*/
 
-    return fp;
-}
 
 static PyObject *
-test_pyrun_fileex(PyObject *self, PyObject *Py_UNUSED(ignored))
+eval_pyrun_fileexflags(PyObject *mod, PyObject *pos_args)
 {
-    PyObject *pdict, *pResult;
-    FILE *fp;
+    PyObject *result = NULL;
+    const char *filename = NULL;
+    int start;
+    PyObject *globals = NULL;
+    PyObject *locals = NULL;
+    int closeit = 1;
+    PyCompilerFlags flags = _PyCompilerFlags_INIT;
+    PyCompilerFlags *pflags = NULL;
+    int cf_flags = 0;
+    int cf_feature_version = 0;
+    int fn;
 
-    pdict = PyDict_New();
-    if (pdict == NULL) {
-        assert(PyErr_ExceptionMatches(PyExc_MemoryError));
-        return NULL;
+    FILE *fp = NULL;
+
+    if (!PyArg_ParseTuple(pos_args,
+                        "ziO|Oiii:eval_pyrun_fileexflags",
+                        &filename,
+                        &start,
+                        &globals,
+                        &locals,
+                        &closeit,
+                        &cf_flags,
+                        &cf_feature_version)) {
+        goto exit;
     }
 
-    fp = create_tempscript();
+    NULLABLE(globals);
+    NULLABLE(locals);
+    if (cf_flags || cf_feature_version) {
+        flags.cf_flags = cf_flags;
+        flags.cf_feature_version = cf_feature_version;
+        pflags = &flags;
+    }
+
+    if (globals && !PyDict_Check(globals)) {
+        PyErr_SetString(PyExc_TypeError, "globals must be a dict");
+        goto exit;
+    }
+
+    if (locals && !PyMapping_Check(locals)) {
+        PyErr_SetString(PyExc_TypeError, "locals must be a mapping");
+        goto exit;
+    }
+
+    fp = fopen(filename, "r");
     if (fp == NULL) {
-        return NULL;
+        PyErr_SetFromErrnoWithFilename(PyExc_OSError, filename);
+        goto exit;
     }
 
-    pResult = PyRun_FileEx(fp, filename, Py_file_input, pdict, pdict, 1);
-    if (pResult == NULL) {
-        return NULL;
+    result = PyRun_FileExFlags(fp, filename, start, globals, locals, closeit, pflags);
+
+    fn = fileno(fp);
+    if (closeit && fn > 0) {
+        PyErr_SetString(PyExc_SystemError, "File was not closed after excution");
+        goto exit;
+    }
+    else if (!closeit && fn < 0) {
+        PyErr_SetString(PyExc_SystemError, "Bad file descriptor after excution");
+        goto exit;
     }
 
-    Py_RETURN_NONE;
-}
+exit:
 
-static PyObject *
-test_pyrun_fileex_null_locals(PyObject *self, PyObject *Py_UNUSED(ignored))
-{
-    PyObject *pdict, *pResult;
-    FILE *fp;
-
-    pdict = PyDict_New();
-    if (pdict == NULL) {
-        assert(PyErr_ExceptionMatches(PyExc_MemoryError));
-        return NULL;
-    }
-
-    fp = create_tempscript();
-    if (fp == NULL) {
-        return NULL;
-    }
-
-    pResult = PyRun_FileEx(fp, filename, Py_file_input, pdict, NULL, 1);
-    if (pResult == NULL) {
-        return NULL;
-    }
-
-    Py_RETURN_NONE;
-}
-
-static PyObject *
-test_pyrun_fileex_null_globals(PyObject *self, PyObject *Py_UNUSED(ignored))
-{
-    PyObject *pdict, *pResult, *exc;
-    FILE *fp;
-    char *filename = "pyrun_sample.py";
-
-    pdict = PyDict_New();
-    if (pdict == NULL) {
-        assert(PyErr_ExceptionMatches(PyExc_MemoryError));
-        return NULL;
-    }
-
-    fp = create_tempscript();
-    if (fp == NULL) {
-        return NULL;
-    }
-
-    pResult = PyRun_FileEx(fp, filename, Py_file_input, NULL, pdict, 1);
-
-    exc = PyErr_GetRaisedException();
-    assert(exc);
-    assert(PyErr_GivenExceptionMatches(exc, PyExc_SystemError));
-    PyErr_Clear();
-
-    Py_RETURN_NONE;
-}
-
-static PyObject *
-test_pyrun_fileex_null_globals_locals(PyObject *self, PyObject *Py_UNUSED(ignored))
-{
-    PyObject *pdict, *pResult, *exc;
-    FILE *fp;
-    char *filename = "pyrun_sample.py";
-
-    pdict = PyDict_New();
-    if (pdict == NULL) {
-        assert(PyErr_ExceptionMatches(PyExc_MemoryError));
-        return NULL;
-    }
-
-    fp = create_tempscript();
-    if (fp == NULL) {
-        return NULL;
-    }
-
-    pResult = PyRun_FileEx(fp, filename, Py_file_input, NULL, NULL, 1);
-    exc = PyErr_GetRaisedException();
-    assert(exc);
-    assert(PyErr_GivenExceptionMatches(exc, PyExc_SystemError));
-    PyErr_Clear();
-
-    Py_RETURN_NONE;
+    return result;
 }
 
 static PyMethodDef test_methods[] = {
-    {"test_pyrun_fileex", test_pyrun_fileex, METH_NOARGS},
-    {"test_pyrun_fileex_null_locals", test_pyrun_fileex_null_locals, METH_NOARGS},
-    {"test_pyrun_fileex_null_globals", test_pyrun_fileex_null_globals, METH_NOARGS},
-    {"test_pyrun_fileex_null_globals_locals", test_pyrun_fileex_null_globals_locals, METH_NOARGS},
+    {"eval_pyrun_fileexflags", eval_pyrun_fileexflags, METH_VARARGS},
     {NULL},
 };
 
