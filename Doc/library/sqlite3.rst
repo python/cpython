@@ -396,8 +396,7 @@ Module functions
 
    .. note::
 
-      Exceptions that are raised in user-defined function callbacks are
-      raised as unraisable exceptions.
+      Errors in user-defined function callbacks are logged as unraisable exceptions.
       Use an :func:`unraisable hook handler <sys.unraisablehook>` for
       introspection of the failed callback.
 
