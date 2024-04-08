@@ -1085,10 +1085,14 @@ Connection objects
       .. versionchanged:: 3.10
          Added the ``sqlite3.enable_load_extension`` auditing event.
 
-      .. We cannot doctest the load extension API, since there is no convenient
-         way to skip it.
+      .. testsetup:: sqlite3.loadext
+         :skipif: True
 
-      .. code-block::
+         import sqlite3
+         con = sqlite3.connect(":memory:")
+
+      .. testcode:: sqlite3.loadext
+         :skipif: True  # not testable at the moment
 
          con.enable_load_extension(True)
 
@@ -1111,6 +1115,17 @@ Connection objects
              """)
          for row in con.execute("SELECT rowid, name, ingredients FROM recipe WHERE name MATCH 'pie'"):
              print(row)
+
+      .. testoutput:: sqlite3.loadext
+         :hide:
+
+         (2, 'broccoli pie', 'broccoli cheese onions flour')
+         (3, 'pumpkin pie', 'pumpkin sugar flour butter')
+
+      .. testcleanup::
+         :skipif: True
+
+         con.close()
 
    .. method:: load_extension(path, /, *, entrypoint=None)
 
