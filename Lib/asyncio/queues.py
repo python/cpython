@@ -256,8 +256,9 @@ class Queue(mixins._LoopBoundMixin):
         By default, gets will only raise once the queue is empty. Set
         'immediate' to True to make gets raise immediately instead.
 
-        All blocked callers of put() will be unblocked, and also get()
-        and join() if 'immediate'.
+        All blocked callers of put() and get() will be unblocked. If
+        'immediate', a task is marked as done for each item remaining in
+        the queue, which may unblock callers of join().
         """
         self._is_shutdown = True
         if immediate:
