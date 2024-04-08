@@ -824,7 +824,7 @@ class ClinicBlockParserTest(TestCase):
         writer = BlockPrinter(language)
         c = _make_clinic()
         for block in blocks:
-            writer.print_block(block, limited_capi=c.limited_capi, header_includes=c.includes)
+            writer.print_block(block)
         output = writer.f.getvalue()
         assert output == input, "output != input!\n\noutput " + repr(output) + "\n\n input " + repr(input)
 

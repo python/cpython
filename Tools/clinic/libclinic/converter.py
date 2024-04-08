@@ -7,7 +7,7 @@ from collections.abc import Callable
 import libclinic
 from libclinic import fail
 from libclinic import Sentinels, unspecified, unknown
-from libclinic.crenderdata import CRenderData, Include, TemplateDict
+from libclinic.codegen import CRenderData, Include, TemplateDict
 from libclinic.function import Function, Parameter
 
 
