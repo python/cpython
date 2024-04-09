@@ -294,7 +294,7 @@ extern void _PyStaticCode_Fini(PyCodeObject *co);
 /* Function to intern strings of codeobjects and quicken the bytecode */
 extern int _PyStaticCode_Init(PyCodeObject *co);
 
-extern const binaryfunc _Py_BinaryFunctionTable[];
+PyAPI_DATA(const binaryfunc) _Py_BinaryFunctionTable[];
 
 #ifdef Py_STATS
 
