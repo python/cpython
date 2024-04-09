@@ -668,8 +668,11 @@ class ClinicWholeFileTest(TestCase):
             @text_signature "($module, a[, b])"
             src
                 a: object
+                    param a
                 b: object = NULL
                 /
+
+            docstring
             [clinic start generated code]*/
 
             /*[clinic input]
@@ -683,9 +686,18 @@ class ClinicWholeFileTest(TestCase):
 
         src_docstring_lines = funcs[0].docstring.split("\n")
         dst_docstring_lines = funcs[1].docstring.split("\n")
+
+        # Signatures are copied.
         self.assertEqual(src_docstring_lines[0], "src($module, a[, b])")
         self.assertEqual(dst_docstring_lines[0], "dst($module, a[, b])")
-        self.assertEqual(src_docstring_lines[1:], dst_docstring_lines[1:])
+
+        # Param docstrings are copied.
+        self.assertIn("    param a", src_docstring_lines)
+        self.assertIn("    param a", dst_docstring_lines)
+
+        # Docstrings are not copied.
+        self.assertIn("docstring", src_docstring_lines)
+        self.assertNotIn("docstring", dst_docstring_lines)
 
     def test_cloned_forced_text_signature_illegal(self):
         block = """
