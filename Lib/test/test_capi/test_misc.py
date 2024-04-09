@@ -2065,7 +2065,7 @@ class SubinterpreterTest(unittest.TestCase):
                     _testinternalcapi.get_interp_settings()
                     raise NotImplementedError('unreachable')
                     ''')
-                with self.assertRaises(RuntimeError):
+                with self.assertRaises(_interpreters.InterpreterError):
                     support.run_in_subinterp_with_config(script, **kwargs)
 
     @unittest.skipIf(_testsinglephase is None, "test requires _testsinglephase module")
