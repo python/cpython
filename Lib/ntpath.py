@@ -111,7 +111,7 @@ def join(path, *paths):
         if not paths:
             path[:0] + sep  #23780: Ensure compatible data type even if p is null.
         result_drive, result_root, result_path = splitroot(path)
-        for p in map(os.fspath, paths):
+        for p in paths:
             p_drive, p_root, p_path = splitroot(p)
             if p_root:
                 # Second path is absolute
