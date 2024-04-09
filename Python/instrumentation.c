@@ -1197,7 +1197,7 @@ _Py_call_instrumentation_line(PyThreadState *tstate, _PyInterpreterFrame* frame,
     /* Special case sys.settrace to avoid boxing the line number,
      * only to immediately unbox it. */
     if (tools & (1 << PY_MONITORING_SYS_TRACE_ID)) {
-        if (tstate->c_tracefunc != NULL && line >= 0) {
+        if (tstate->c_tracefunc != NULL) {
             PyFrameObject *frame_obj = _PyFrame_GetFrameObject(frame);
             if (frame_obj == NULL) {
                 return -1;
