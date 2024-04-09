@@ -1,26 +1,20 @@
 import unittest, os
-from test.support import import_helper
-
-# Skip this test if the _testcapi module isn't available.
-_testcapi = import_helper.import_module('_testcapi')
+import _testcapi
 
 NULL = None
 Py_single_input = _testcapi.Py_single_input
 Py_file_input = _testcapi.Py_file_input
 Py_eval_input = _testcapi.Py_eval_input
 
+
 class PyRunTest(unittest.TestCase):
 
-    # create file
-    def __init__(self, *args, **kwargs):
+    def setUp(self):
         self.filename = "pyrun_fileexflags_sample.py"
         with open(self.filename, 'w') as fp:
             fp.write("import sysconfig\n\nconfig = sysconfig.get_config_vars()\n")
-            fp.close()
-            unittest.TestCase.__init__(self, *args, **kwargs)
 
-    # delete file
-    def __del__(self):
+    def tearDown(self):
         os.remove(self.filename)
 
     # test function args:
@@ -33,15 +27,25 @@ class PyRunTest(unittest.TestCase):
     # cf_feature_version -- compile flags feature version
     def test_pyrun_fileexflags_with_differents_args(self):
 
-        self.assertIsNone(_testcapi.eval_pyrun_fileexflags(self.filename, Py_file_input, {}, NULL, 1, 0, 0))
-        self.assertIsNone(_testcapi.eval_pyrun_fileexflags(self.filename, Py_file_input, {}, {}, 1, 0, 0))
-        self.assertIsNone(_testcapi.eval_pyrun_fileexflags(self.filename, Py_file_input, {}, {}, 0, 0, 0))
-        self.assertIsNone(_testcapi.eval_pyrun_fileexflags(self.filename, Py_file_input, globals(), NULL, 1, 0, 0))
-        self.assertIsNone(_testcapi.eval_pyrun_fileexflags(self.filename, Py_file_input, globals(), locals(), 1, 0, 0))
-        self.assertIsNone(_testcapi.eval_pyrun_fileexflags(self.filename, Py_file_input, {}, {}, 1, 0, 0))
-        self.assertRaises(SystemError, _testcapi.eval_pyrun_fileexflags, self.filename, Py_file_input, NULL, NULL, 1, 0, 0)
-        self.assertRaises(SystemError, _testcapi.eval_pyrun_fileexflags, self.filename, Py_file_input, NULL, {}, 1, 0, 0)
-        self.assertRaises(SystemError, _testcapi.eval_pyrun_fileexflags, self.filename, Py_file_input, NULL, locals(), 1, 0, 0)
+        def check(*args):
+            res = _testcapi.eval_pyrun_fileexflags(self.filename, Py_file_input, *args)
+            self.assertIsNone(res)
+
+        check({}, NULL, 1, 0, 0)
+        check({}, {}, 1, 0, 0)
+        check({}, {}, 0, 0, 0)
+        check(globals(), NULL, 1, 0, 0)
+        check(globals(), locals(), 1, 0, 0)
+        check({}, {}, 1, 0, 0)
+
+    def test_pyrun_fileexflags_globals_is_null(self):
+        def check(*args):
+            with self.assertRaises(SystemError):
+                _testcapi.eval_pyrun_fileexflags(self.filename, Py_file_input, *args)
+
+        check(NULL, NULL, 1, 0, 0)
+        check(NULL, {}, 1, 0, 0)
+        check(NULL, locals(), 1, 0, 0)
 
 if __name__ == "__main__":
     unittest.main()
