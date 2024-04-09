@@ -104,7 +104,7 @@ class BlockPrinter:
         self,
         block: Block,
         *,
-        header_includes: dict[str, Include] | None = None,
+        header_includes: list[Include] | None = None,
     ) -> None:
         input = block.input
         output = block.output
@@ -138,8 +138,7 @@ class BlockPrinter:
             output += '\n'
 
             current_condition: str | None = None
-            includes = sorted(header_includes.values(), key=Include.sort_key)
-            for include in includes:
+            for include in header_includes:
                 if include.condition != current_condition:
                     if current_condition:
                         output += '#endif\n'
@@ -270,20 +269,20 @@ DestinationDict = dict[str, Destination]
 class Codegen:
     def __init__(self, limited_capi: bool) -> None:
         self.limited_capi = limited_capi
-        self.ifndef_symbols: set[str] = set()
+        self._ifndef_symbols: set[str] = set()
         # dict: include name => Include instance
-        self.includes: dict[str, Include] = {}
+        self._includes: dict[str, Include] = {}
 
     def add_ifndef_symbol(self, name: str) -> bool:
-        if name in self.ifndef_symbols:
+        if name in self._ifndef_symbols:
             return False
-        self.ifndef_symbols.add(name)
+        self._ifndef_symbols.add(name)
         return True
 
     def add_include(self, name: str, reason: str,
                     *, condition: str | None = None) -> None:
         try:
-            existing = self.includes[name]
+            existing = self._includes[name]
         except KeyError:
             pass
         else:
@@ -296,4 +295,8 @@ class Codegen:
                 # no need to list all of them.
                 return
 
-        self.includes[name] = Include(name, reason, condition)
+        self._includes[name] = Include(name, reason, condition)
+
+    def get_includes(self) -> list[Include]:
+        return sorted(self._includes.values(),
+                      key=Include.sort_key)

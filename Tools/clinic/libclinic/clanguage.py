@@ -956,7 +956,7 @@ class CLanguage(Language):
         # Copy includes from parameters to Clinic after parse_arg() has been
         # called above.
         for converter in converters:
-            for include in converter.includes:
+            for include in converter.get_includes():
                 codegen.add_include(include.filename, include.reason,
                                     condition=include.condition)
 

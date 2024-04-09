@@ -230,9 +230,10 @@ impl_definition block
                         pass
 
                     block.input = 'preserve\n'
+                    includes = self.codegen.get_includes()
+
                     printer_2 = BlockPrinter(self.language)
-                    printer_2.print_block(block,
-                                          header_includes=self.codegen.includes)
+                    printer_2.print_block(block, header_includes=includes)
                     libclinic.write_file(destination.filename,
                                          printer_2.f.getvalue())
                     continue
