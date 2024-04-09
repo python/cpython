@@ -9,7 +9,7 @@ from test import support
 from test.support import import_helper
 # Raise SkipTest if subinterpreters not supported.
 _interpreters = import_helper.import_module('_xxsubinterpreters')
-from test.support import interpreters
+from test.support import interpreters, Py_GIL_DISABLED
 from test.support.interpreters import InterpreterNotFoundError
 from .utils import _captured_script, _run_output, _running, TestBase
 
@@ -983,7 +983,7 @@ class LowLevelTests(TestBase):
                 allow_exec=True,
                 allow_threads=True,
                 allow_daemon_threads=True,
-                check_multi_interp_extensions=False,
+                check_multi_interp_extensions=bool(Py_GIL_DISABLED),
                 gil='shared',
             ),
             'empty': types.SimpleNamespace(
@@ -1071,6 +1071,7 @@ class LowLevelTests(TestBase):
         with self.subTest('main'):
             expected = _interpreters.new_config('legacy')
             expected.gil = 'own'
+            expected.check_multi_interp_extensions = False
             interpid = _interpreters.get_main()
             config = _interpreters.get_config(interpid)
             self.assert_ns_equal(config, expected)
@@ -1121,6 +1122,7 @@ class LowLevelTests(TestBase):
         with self.subTest('custom'):
             orig = _interpreters.new_config('empty')
             orig.use_main_obmalloc = True
+            orig.check_multi_interp_extensions = bool(Py_GIL_DISABLED)
             orig.gil = 'shared'
             interpid = _interpreters.create(orig)
             config = _interpreters.get_config(interpid)

@@ -11,7 +11,6 @@ import pathlib
 import re
 import string
 import sys
-import sysconfig
 from test import support
 import textwrap
 import types
@@ -689,7 +688,7 @@ class IncompatibleExtensionModuleRestrictionsTests(unittest.TestCase):
             with _incompatible_extension_module_restrictions(disable_check=True):
                 import _testsinglephase
             ''')
-        if not sysconfig.get_config_var('Py_GIL_DISABLED'):
+        if not support.Py_GIL_DISABLED:
             with self.subTest('check disabled, shared GIL'):
                 self.run_with_shared_gil(script)
             with self.subTest('check disabled, per-interpreter GIL'):

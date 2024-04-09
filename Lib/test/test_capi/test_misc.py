@@ -27,6 +27,7 @@ from test.support import threading_helper
 from test.support import warnings_helper
 from test.support import requires_limited_api
 from test.support import requires_gil_enabled
+from test.support import Py_GIL_DISABLED
 from test.support.script_helper import assert_python_failure, assert_python_ok, run_python_until_end
 try:
     import _posixsubprocess
@@ -2034,6 +2035,9 @@ class SubinterpreterTest(unittest.TestCase):
                 (THREADS | EXTENSIONS, False),
         }.items():
             kwargs = dict(zip(kwlist, config))
+            if Py_GIL_DISABLED and not kwargs['check_multi_interp_extensions']:
+                # Skip unsupported configuration
+                continue
             exp_flags, exp_gil = expected
             expected = {
                 'feature_flags': exp_flags,
@@ -2226,7 +2230,7 @@ class InterpreterConfigTests(unittest.TestCase):
             allow_exec=True,
             allow_threads=True,
             allow_daemon_threads=True,
-            check_multi_interp_extensions=False,
+            check_multi_interp_extensions=bool(Py_GIL_DISABLED),
             gil='shared',
         ),
         'empty': types.SimpleNamespace(
@@ -2389,6 +2393,8 @@ class InterpreterConfigTests(unittest.TestCase):
                 check_multi_interp_extensions=False
             ),
         ]
+        if Py_GIL_DISABLED:
+            invalid.append(dict(check_multi_interp_extensions=False))
         def match(config, override_cases):
             ns = vars(config)
             for overrides in override_cases:
@@ -2430,6 +2436,7 @@ class InterpreterConfigTests(unittest.TestCase):
         with self.subTest('main'):
             expected = _interpreters.new_config('legacy')
             expected.gil = 'own'
+            expected.check_multi_interp_extensions = False
             interpid = _interpreters.get_main()
             config = _interpreters.get_config(interpid)
             self.assert_ns_equal(config, expected)
@@ -2451,6 +2458,7 @@ class InterpreterConfigTests(unittest.TestCase):
                 'empty',
                 use_main_obmalloc=True,
                 gil='shared',
+                check_multi_interp_extensions=bool(Py_GIL_DISABLED),
             )
             with new_interp(orig) as interpid:
                 config = _interpreters.get_config(interpid)

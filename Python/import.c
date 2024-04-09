@@ -1244,18 +1244,6 @@ import_find_extension(PyThreadState *tstate, PyObject *name,
         return NULL;
     }
 
-    /* gh-117649: The free-threaded build does not currently support
-       single-phase init modules in subinterpreters. */
-#ifdef Py_GIL_DISABLED
-    if (def->m_size == -1 && !_Py_IsMainInterpreter(tstate->interp)) {
-        return PyErr_Format(
-            PyExc_ImportError,
-            "module %s does not support the combination of free-threading "
-            "and subinterpreters",
-             name_buf);
-    }
-#endif
-
     PyObject *mod, *mdict;
     PyObject *modules = MODULES(tstate->interp);
 
@@ -3708,9 +3696,16 @@ _imp__override_multi_interp_extensions_check_impl(PyObject *module,
                         "cannot be used in the main interpreter");
         return NULL;
     }
+#ifdef Py_GIL_DISABLED
+    PyErr_SetString(PyExc_RuntimeError,
+                    "_imp._override_multi_interp_extensions_check() "
+                    "cannot be used in the free-threaded build");
+    return NULL;
+#else
     int oldvalue = OVERRIDE_MULTI_INTERP_EXTENSIONS_CHECK(interp);
     OVERRIDE_MULTI_INTERP_EXTENSIONS_CHECK(interp) = override;
     return PyLong_FromLong(oldvalue);
+#endif
 }
 
 #ifdef HAVE_DYNAMIC_LOADING
