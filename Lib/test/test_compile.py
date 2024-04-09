@@ -2442,7 +2442,7 @@ class TestInstructionSequence(unittest.TestCase):
                     ('LOAD_CONST', 1, 3, 0, 0, 0),
                     ('JUMP', 5, 4, 0, 0, 0),
                     ('LOAD_CONST', 2, 4, 0, 0, 0),
-                    ('RETURN_VALUE', 0, 3, 0, 0, 0),
+                    ('RETURN_VALUE', None, 3, 0, 0, 0),
                    ]
 
         self.compare_instructions(seq, expected)
