@@ -865,11 +865,10 @@ if check_impl_detail(cpython=True) and ctypes is not None:
                 def run(self):
                     del self.f
                     gc_collect()
-                    if Py_GIL_DISABLED:
-                        # gh-117683: The code object's destructor may still
-                        # be running concurrently in the main thread.
-                        self.test.assertIn(LAST_FREED, (None, 500))
-                    else:
+                    # gh-117683: In the free-threaded build, the code object's
+                    # destructor may still be running concurrently in the main
+                    # thread.
+                    if not Py_GIL_DISABLED:
                         self.test.assertEqual(LAST_FREED, 500)
 
             SetExtra(f.__code__, FREE_INDEX, ctypes.c_voidp(500))
