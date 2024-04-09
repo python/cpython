@@ -85,13 +85,20 @@
         </select>
         `;
 
-        const selectVersionElement = document.querySelector("li.switchers div.version_switcher_placeholder");
-        selectVersionElement.innerHTML = versionSelect;
-        document.querySelector("li.switchers div.version_switcher_placeholder").addEventListener("change", onSwitch);
+         // Query all the placeholders because there are different ones for Desktop/Mobile
+         let placeholders = document.querySelectorAll(".version_switcher_placeholder");
+         for (placeholder of placeholders) {
+             placeholder.innerHTML = versionSelect;
+             let selectElement = placeholder.querySelector("select");
+             selectElement.addEventListener("change", onSwitch);
+         }
 
-        const selectLanguageElement = document.querySelector("li.switchers div.language_switcher_placeholder");
-        selectLanguageElement.innerHTML = languageSelect;
-        document.querySelector("li.switchers div.language_switcher_placeholder select").addEventListener("change", onSwitch);
+         placeholders = document.querySelectorAll(".language_switcher_placeholder");
+         for (placeholder of placeholders) {
+             placeholder.innerHTML = languageSelect;
+             let selectElement = placeholder.querySelector("select");
+             selectElement.addEventListener("change", onSwitch);
+         }
      });
  });
 </script>
