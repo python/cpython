@@ -500,8 +500,7 @@ Install Options
 
 .. option:: --without-idle
 
-   Do not install IDLE, Python's Integrated Development and Learning Environment
-   (it is installed by default).
+   Do not install :term:`IDLE`.
 
    .. versionadded:: 3.13
 
