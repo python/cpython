@@ -11094,7 +11094,7 @@ PyTypeObject PySuper_Type = {
     .tp_vectorcall = (vectorcallfunc)super_vectorcall,
 };
 
-PyTypeObject *const _Py_PreAllocatedTypes[_Py_TYPE_VERSIONS_PREALLOCATED] = {
+const PyTypeObject *const _Py_PreAllocatedTypes[_Py_TYPE_VERSIONS_PREALLOCATED] = {
     [_Py_TYPE_VERSION_INT] = &PyLong_Type,
     [_Py_TYPE_VERSION_FLOAT] = &PyFloat_Type,
     [_Py_TYPE_VERSION_LIST] = &PyList_Type,

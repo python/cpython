@@ -2258,7 +2258,7 @@ binary_mult_int_float_xx(PyObject *left, PyObject *right)
 }
 
 /* Must be sorted by operator */
-static binary_function_entry binary_function_entry_table[] = {
+static const binary_function_entry binary_function_entry_table[] = {
     { NB_ADD, _Py_TYPE_VERSION_INT, _Py_TYPE_VERSION_INT, 1, 2, 3},
     { NB_ADD, _Py_TYPE_VERSION_FLOAT, _Py_TYPE_VERSION_FLOAT, 4, 5, 6},
     { NB_ADD, _Py_TYPE_VERSION_STR, _Py_TYPE_VERSION_STR, 0, 0, 16},
@@ -2381,7 +2381,7 @@ lookup_binary_function(int left_version, int right_version, int *refcounts, int 
     }
     assert(binary_function_entry_table[i].oparg >= oparg);
     for (; binary_function_entry_table[i].oparg == oparg; i++) {
-        binary_function_entry *entry = &binary_function_entry_table[i];
+        const binary_function_entry *entry = &binary_function_entry_table[i];
         if (entry->left == left_version && entry->right == right_version) {
             switch (*refcounts) {
                 case REFCOUNTS_11:
