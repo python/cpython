@@ -120,7 +120,7 @@ may name multiple exceptions as a parenthesized tuple, for example::
    ...     pass
 
 A class in an :keyword:`except` clause matches exceptions which are instances of the
-class itself or one of its derived classes. (but not the other way around --- an
+class itself or one of its derived classes (but not the other way around --- an
 *except clause* listing a derived class does not match instances of its base classes).
 For example, the following code will print B, C, D in that order::
 
