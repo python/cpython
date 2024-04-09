@@ -11,7 +11,7 @@ import re
 import test.support
 import types
 import unittest
-from collections.abc import KeysView, ItemsView, MappingView, ValuesView
+from collections.abc import ItemsView, KeysView, Mapping, MappingView, ValuesView
 
 # list, tuple and dict subclasses that do or don't overwrite __repr__
 class list2(list):
@@ -612,6 +612,44 @@ mappingproxy(OrderedDict([('the', 0),
                                  MappingView.__name__ + joined_items)
                 self.assertEqual(pprint.pformat(ValuesView(d), sort_dicts=False),
                                  ValuesView.__name__ + joined_items)
+
+    def test_mapping_subclass_repr(self):
+        """Test that mapping ABC views use their ._mapping's __repr__."""
+        class MyMapping(Mapping):
+            def __init__(self, keys=None):
+                self._keys = {} if keys is None else dict.fromkeys(keys)
+
+            def __getitem__(self, item):
+                return self._keys[item]
+
+            def __len__(self):
+                return len(self._keys)
+
+            def __iter__(self):
+                return iter(self._keys)
+
+            def __repr__(self):
+                return f"{self.__class__.__name__}([{', '.join(map(repr, self._keys.keys()))}])"
+
+        m = MyMapping(["test", 1])
+        self.assertEqual(repr(m), "MyMapping(['test', 1])")
+        short_view_repr = "%s(MyMapping(['test', 1]))"
+        self.assertEqual(repr(m.keys()), short_view_repr % "KeysView")
+        self.assertEqual(pprint.pformat(m.items()), short_view_repr % "ItemsView")
+        self.assertEqual(pprint.pformat(m.keys()), short_view_repr % "KeysView")
+        self.assertEqual(pprint.pformat(MappingView(m)), short_view_repr % "MappingView")
+        self.assertEqual(pprint.pformat(m.values()), short_view_repr % "ValuesView")
+
+        alpha = "abcdefghijklmnopqrstuvwxyz"
+        m = MyMapping(alpha)
+        alpha_repr = ", ".join(map(repr, list(alpha)))
+        long_view_repr = "%%s(MyMapping([%s]))" % alpha_repr
+        self.assertEqual(repr(m), "MyMapping([%s])" % alpha_repr)
+        self.assertEqual(repr(m.keys()), long_view_repr % "KeysView")
+        self.assertEqual(pprint.pformat(m.items()), long_view_repr % "ItemsView")
+        self.assertEqual(pprint.pformat(m.keys()), long_view_repr % "KeysView")
+        self.assertEqual(pprint.pformat(MappingView(m)), long_view_repr % "MappingView")
+        self.assertEqual(pprint.pformat(m.values()), long_view_repr % "ValuesView")
 
     def test_empty_simple_namespace(self):
         ns = types.SimpleNamespace()
@@ -1215,37 +1253,64 @@ ChainMap({'a': 6,
                       ('dog', 8)]))""")
         self.assertEqual(pprint.pformat(d.keys()),
 """\
-KeysView({'a': 6,
- 'brown': 2,
- 'dog': 8,
- 'fox': 3,
- 'jumped': 4,
- 'lazy': 7,
- 'over': 5,
- 'quick': 1,
- 'the': 0})""")
+KeysView(ChainMap({'a': 6,
+          'brown': 2,
+          'dog': 8,
+          'fox': 3,
+          'jumped': 4,
+          'lazy': 7,
+          'over': 5,
+          'quick': 1,
+          'the': 0},
+         OrderedDict([('the', 0),
+                      ('quick', 1),
+                      ('brown', 2),
+                      ('fox', 3),
+                      ('jumped', 4),
+                      ('over', 5),
+                      ('a', 6),
+                      ('lazy', 7),
+                      ('dog', 8)])))""")
         self.assertEqual(pprint.pformat(d.items()),
  """\
-ItemsView({'a': 6,
- 'brown': 2,
- 'dog': 8,
- 'fox': 3,
- 'jumped': 4,
- 'lazy': 7,
- 'over': 5,
- 'quick': 1,
- 'the': 0})""")
+ItemsView(ChainMap({'a': 6,
+          'brown': 2,
+          'dog': 8,
+          'fox': 3,
+          'jumped': 4,
+          'lazy': 7,
+          'over': 5,
+          'quick': 1,
+          'the': 0},
+         OrderedDict([('the', 0),
+                      ('quick', 1),
+                      ('brown', 2),
+                      ('fox', 3),
+                      ('jumped', 4),
+                      ('over', 5),
+                      ('a', 6),
+                      ('lazy', 7),
+                      ('dog', 8)])))""")
         self.assertEqual(pprint.pformat(d.values()),
  """\
-ValuesView({'a': 6,
- 'brown': 2,
- 'dog': 8,
- 'fox': 3,
- 'jumped': 4,
- 'lazy': 7,
- 'over': 5,
- 'quick': 1,
- 'the': 0})""")
+ValuesView(ChainMap({'a': 6,
+          'brown': 2,
+          'dog': 8,
+          'fox': 3,
+          'jumped': 4,
+          'lazy': 7,
+          'over': 5,
+          'quick': 1,
+          'the': 0},
+         OrderedDict([('the', 0),
+                      ('quick', 1),
+                      ('brown', 2),
+                      ('fox', 3),
+                      ('jumped', 4),
+                      ('over', 5),
+                      ('a', 6),
+                      ('lazy', 7),
+                      ('dog', 8)])))""")
 
     def test_deque(self):
         d = collections.deque()
