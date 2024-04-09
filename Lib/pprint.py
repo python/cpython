@@ -262,6 +262,12 @@ class PrettyPrinter:
     def _pprint_mapping_abc_view(self, object, stream, indent, allowance, context, level):
         """Pretty print views from collections.abc."""
         write = stream.write
+        # Dispatch formatting to the view's _mapping if it has a different __repr__
+        if object._mapping.__class__.__repr__ is not _collections.abc.MappingView.__repr__:
+            write(object.__class__.__name__ + '(')
+            self._format(object._mapping, stream, indent, allowance, context, level)
+            write(')')
+            return
         write(object.__class__.__name__ + '({')
         if self._indent_per_level > 1:
             write((self._indent_per_level - 1) * ' ')
@@ -659,6 +665,11 @@ class PrettyPrinter:
                 key = _safe_tuple
             format = typ.__name__ + '([%s])'
             if typ in ABC_VIEW_TYPES:
+                # Dispatch formatting to the view's _mapping if it has a different __repr__
+                if object._mapping.__class__.__repr__ is not _collections.abc.MappingView.__repr__:
+                    mapping_repr, readable, recursive = self.format(
+                        object._mapping, context, maxlevels, level)
+                    return (typ.__name__ + '(%s)' % mapping_repr), readable, recursive
                 format = typ.__name__ + '({%s})'
                 object = object._mapping.items()
             if self._sort_dicts:
