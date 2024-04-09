@@ -1199,9 +1199,78 @@ interp_decref(PyObject *self, PyObject *args, PyObject *kwds)
 }
 
 
+static PyObject *
+capture_exception(PyObject *self, PyObject *args, PyObject *kwds)
+{
+    static char *kwlist[] = {"exc", NULL};
+    PyObject *exc_arg = NULL;
+    if (!PyArg_ParseTupleAndKeywords(args, kwds,
+                                     "|O:capture_exception", kwlist,
+                                     &exc_arg))
+    {
+        return NULL;
+    }
+
+    PyObject *exc = exc_arg;
+    if (exc == NULL || exc == Py_None) {
+        exc = PyErr_GetRaisedException();
+        if (exc == NULL) {
+            Py_RETURN_NONE;
+        }
+    }
+    else if (!PyExceptionInstance_Check(exc)) {
+        PyErr_Format(PyExc_TypeError, "expected exception, got %R", exc);
+        return NULL;
+    }
+    PyObject *captured = NULL;
+
+    _PyXI_excinfo info = {0};
+    if (_PyXI_InitExcInfo(&info, exc) < 0) {
+        goto finally;
+    }
+    captured = _PyXI_ExcInfoAsObject(&info);
+    if (captured == NULL) {
+        goto finally;
+    }
+
+    PyObject *formatted = _PyXI_FormatExcInfo(&info);
+    if (formatted == NULL) {
+        Py_CLEAR(captured);
+        goto finally;
+    }
+    int res = PyObject_SetAttrString(captured, "formatted", formatted);
+    Py_DECREF(formatted);
+    if (res < 0) {
+        Py_CLEAR(captured);
+        goto finally;
+    }
+
+finally:
+    _PyXI_ClearExcInfo(&info);
+    if (exc != exc_arg) {
+        if (PyErr_Occurred()) {
+            PyErr_SetRaisedException(exc);
+        }
+        else {
+            _PyErr_ChainExceptions1(exc);
+        }
+    }
+    return captured;
+}
+
+PyDoc_STRVAR(capture_exception_doc,
+"capture_exception(exc=None) -> types.SimpleNamespace\n\
+\n\
+Return a snapshot of an exception.  If \"exc\" is None\n\
+then the current exception, if any, is used (but not cleared).\n\
+\n\
+The returned snapshot is the same as what _interpreters.exec() returns.");
+
+
 static PyMethodDef module_functions[] = {
     {"new_config",                _PyCFunction_CAST(interp_new_config),
      METH_VARARGS | METH_KEYWORDS, new_config_doc},
+
     {"create",                    _PyCFunction_CAST(interp_create),
      METH_VARARGS | METH_KEYWORDS, create_doc},
     {"destroy",                   _PyCFunction_CAST(interp_destroy),
@@ -1228,13 +1297,17 @@ static PyMethodDef module_functions[] = {
 
     {"set___main___attrs",        _PyCFunction_CAST(interp_set___main___attrs),
      METH_VARARGS, set___main___attrs_doc},
-    {"is_shareable",              _PyCFunction_CAST(object_is_shareable),
-     METH_VARARGS | METH_KEYWORDS, is_shareable_doc},
 
     {"incref",                    _PyCFunction_CAST(interp_incref),
      METH_VARARGS | METH_KEYWORDS, NULL},
     {"decref",                    _PyCFunction_CAST(interp_decref),
      METH_VARARGS | METH_KEYWORDS, NULL},
+
+    {"is_shareable",              _PyCFunction_CAST(object_is_shareable),
+     METH_VARARGS | METH_KEYWORDS, is_shareable_doc},
+
+    {"capture_exception",         _PyCFunction_CAST(capture_exception),
+     METH_VARARGS | METH_KEYWORDS, capture_exception_doc},
 
     {NULL,                        NULL}           /* sentinel */
 };

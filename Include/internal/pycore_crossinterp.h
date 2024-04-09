@@ -217,6 +217,11 @@ typedef struct _excinfo {
     const char *errdisplay;
 } _PyXI_excinfo;
 
+PyAPI_FUNC(int) _PyXI_InitExcInfo(_PyXI_excinfo *info, PyObject *exc);
+PyAPI_FUNC(PyObject *) _PyXI_FormatExcInfo(_PyXI_excinfo *info);
+PyAPI_FUNC(PyObject *) _PyXI_ExcInfoAsObject(_PyXI_excinfo *info);
+PyAPI_FUNC(void) _PyXI_ClearExcInfo(_PyXI_excinfo *info);
+
 
 typedef enum error_code {
     _PyXI_ERR_NO_ERROR = 0,
