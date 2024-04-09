@@ -1373,8 +1373,8 @@ class _patch(object):
         if isinstance(func, type):
             return self.decorate_class(func)
         if inspect.iscoroutinefunction(func):
-            return self.decorate_async_callable(func, is_inherited)
-        return self.decorate_callable(func, is_inherited)
+            return self.decorate_async_callable(func, is_inherited=is_inherited)
+        return self.decorate_callable(func, is_inherited=is_inherited)
 
 
     def decorate_class(self, klass):
@@ -1417,7 +1417,7 @@ class _patch(object):
             yield (patched, args, keywargs)
 
 
-    def decorate_callable(self, func, is_inherited=False):
+    def decorate_callable(self, func, *, is_inherited=False):
         # NB. Keep the method in sync with decorate_async_callable()
         if hasattr(func, 'patchings') and not is_inherited:
             func.patchings.append(self)
@@ -1433,7 +1433,7 @@ class _patch(object):
         return patched
 
 
-    def decorate_async_callable(self, func, is_inherited=False):
+    def decorate_async_callable(self, func, *, is_inherited=False):
         # NB. Keep the method in sync with decorate_callable()
         if hasattr(func, 'patchings') and not is_inherited:
             func.patchings.append(self)
