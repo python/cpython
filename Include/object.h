@@ -128,19 +128,13 @@ check by comparing the reference count field to the immortality reference count.
         0,                          \
         (type),                     \
     },
-#elif defined(Py_BUILD_CORE)
+#else
 #define PyObject_HEAD_INIT(type)    \
     {                               \
         { _Py_IMMORTAL_REFCNT },    \
         (type)                      \
     },
-#else
-#define PyObject_HEAD_INIT(type) \
-    {                            \
-        { 1 },                   \
-        (type)                   \
-    },
-#endif /* Py_BUILD_CORE */
+#endif
 
 #define PyVarObject_HEAD_INIT(type, size) \
     {                                     \
