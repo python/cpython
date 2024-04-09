@@ -178,15 +178,17 @@ class _LazyModule(types.ModuleType):
             # Only the first thread to get the lock should trigger the load
             # and reset the module's class. The rest can now getattr().
             if object.__getattribute__(self, '__class__') is _LazyModule:
+                __class__ = loader_state['__class__']
+
                 # Reentrant calls from the same thread must be allowed to proceed without
                 # triggering the load again.
                 # exec_module() and self-referential imports are the primary ways this can
                 # happen, but in any case we must return something to avoid deadlock.
                 if loader_state['is_loading']:
-                    return object.__getattribute__(self, attr)
+                    return __class__.__getattribute__(self, attr)
                 loader_state['is_loading'] = True
 
-                __dict__ = object.__getattribute__(self, '__dict__')
+                __dict__ = __class__.__getattribute__(self, '__dict__')
 
                 # All module metadata must be gathered from __spec__ in order to avoid
                 # using mutated values.
@@ -216,8 +218,10 @@ class _LazyModule(types.ModuleType):
                 # Update after loading since that's what would happen in an eager
                 # loading situation.
                 __dict__.update(attrs_updated)
-                # Finally, stop triggering this method.
-                self.__class__ = types.ModuleType
+                # Finally, stop triggering this method, if the module did not
+                # already update its own __class__.
+                if isinstance(self, _LazyModule):
+                    object.__setattr__(self, '__class__', __class__)
 
         return getattr(self, attr)
 

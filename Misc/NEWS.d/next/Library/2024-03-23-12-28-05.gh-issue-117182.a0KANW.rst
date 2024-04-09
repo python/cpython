@@ -1,0 +1,2 @@
+Lazy-loading of modules that modify their own ``__class__`` no longer
+reverts the ``__class__`` to :class:`types.ModuleType`.
