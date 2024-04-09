@@ -252,8 +252,8 @@ class Queue:
                         self.unfinished_tasks -= 1
                 # release all blocked threads in `join()`
                 self.all_tasks_done.notify_all()
-            self.not_empty.notify_all()
             # All getters need to re-check queue-empty to raise ShutDown
+            self.not_empty.notify_all()
             self.not_full.notify_all()
 
     # Override these methods to implement other queue organizations
