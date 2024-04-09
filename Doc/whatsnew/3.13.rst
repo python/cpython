@@ -87,6 +87,10 @@ Interpreter improvements:
   Performance improvements are modest -- we expect to be improving this
   over the next few releases.
 
+New typing features:
+
+* :pep:`742`: :data:`typing.TypeIs` was added, providing more intuitive
+  type narrowing behavior.
 
 New Features
 ============
@@ -298,7 +302,7 @@ asyncio
 
 * Add :meth:`asyncio.Queue.shutdown` (along with
   :exc:`asyncio.QueueShutDown`) for queue termination.
-  (Contributed by Laurie Opperman in :gh:`104228`.)
+  (Contributed by Laurie Opperman and Yves Duprat in :gh:`104228`.)
 
 base64
 ------
@@ -1775,7 +1779,7 @@ New Features
   Equivalent to getting the ``type.__module__`` attribute.
   (Contributed by Eric Snow and Victor Stinner in :gh:`111696`.)
 
-* Add support for ``%T``, ``%T#``, ``%N`` and ``%N#`` formats to
+* Add support for ``%T``, ``%#T``, ``%N`` and ``%#N`` formats to
   :c:func:`PyUnicode_FromFormat`: format the fully qualified name of an object
   type and of a type: call :c:func:`PyType_GetModuleName`. See :pep:`737` for
   more information.
@@ -2005,11 +2009,6 @@ Removed
   * or :c:func:`PyGILState_Ensure` and :c:func:`PyGILState_Release`.
 
   (Contributed by Victor Stinner in :gh:`105182`.)
-
-* Remove private ``_PyObject_FastCall()`` function:
-  use ``PyObject_Vectorcall()`` which is available since Python 3.8
-  (:pep:`590`).
-  (Contributed by Victor Stinner in :gh:`106023`.)
 
 * Remove ``cpython/pytime.h`` header file: it only contained private functions.
   (Contributed by Victor Stinner in :gh:`106316`.)
