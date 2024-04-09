@@ -1369,7 +1369,7 @@ class _patch(object):
         return patcher
 
 
-    def __call__(self, func, is_inherited=False):
+    def __call__(self, func, *, is_inherited=False):
         if isinstance(func, type):
             return self.decorate_class(func)
         if inspect.iscoroutinefunction(func):
