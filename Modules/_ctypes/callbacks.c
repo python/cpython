@@ -149,7 +149,6 @@ static void _CallPythonObject(ctypes_state *st,
     Py_ssize_t i = 0, j = 0, nargs = 0;
     PyObject *error_object = NULL;
     int *space;
-    PyGILState_STATE state = PyGILState_Ensure();
 
     assert(PyTuple_Check(converters));
     nargs = PyTuple_GET_SIZE(converters);
@@ -294,7 +293,6 @@ static void _CallPythonObject(ctypes_state *st,
     for (j = 0; j < i; j++) {
         Py_DECREF(args[j]);
     }
-    PyGILState_Release(state);
 }
 
 static void closure_fcn(ffi_cif *cif,
@@ -302,6 +300,9 @@ static void closure_fcn(ffi_cif *cif,
                         void **args,
                         void *userdata)
 {
+    // needs the GIL to get the module state
+    PyGILState_STATE state = PyGILState_Ensure();
+
     CThunkObject *p = (CThunkObject *)userdata;
     ctypes_state *st = get_module_state_by_class(Py_TYPE(p));
 
@@ -313,6 +314,8 @@ static void closure_fcn(ffi_cif *cif,
                       p->converters,
                       p->flags,
                       args);
+
+    PyGILState_Release(state);
 }
 
 static CThunkObject* CThunkObject_new(ctypes_state *st, Py_ssize_t nargs)
