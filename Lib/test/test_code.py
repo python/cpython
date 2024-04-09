@@ -141,7 +141,7 @@ except ImportError:
     ctypes = None
 from test.support import (cpython_only,
                           check_impl_detail, requires_debug_ranges,
-                          gc_collect)
+                          gc_collect, Py_GIL_DISABLED)
 from test.support.script_helper import assert_python_ok
 from test.support import threading_helper, import_helper
 from test.support.bytecode_helper import instructions_with_positions
@@ -865,7 +865,12 @@ if check_impl_detail(cpython=True) and ctypes is not None:
                 def run(self):
                     del self.f
                     gc_collect()
-                    self.test.assertEqual(LAST_FREED, 500)
+                    if Py_GIL_DISABLED:
+                        # gh-117683: The code object's destructor may still
+                        # be running concurrently in the main thread.
+                        self.test.assertIn(LAST_FREED, (None, 500))
+                    else:
+                        self.test.assertEqual(LAST_FREED, 500)
 
             SetExtra(f.__code__, FREE_INDEX, ctypes.c_voidp(500))
             tt = ThreadTest(f, self)
