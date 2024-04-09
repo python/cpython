@@ -1,1 +1,0 @@
-Raise :exc:`TypeError` for non-paths in :func:`posixpath.relpath()`.

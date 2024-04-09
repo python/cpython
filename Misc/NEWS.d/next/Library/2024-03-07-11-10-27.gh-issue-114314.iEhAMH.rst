@@ -1,3 +1,0 @@
-In :mod:`ctypes`, ctype data is now stored in type objects directly rather
-than in a dict subclass. This is an internal change that should not affect
-usage.

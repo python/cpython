@@ -1,3 +1,0 @@
-The ``fcntl``, ``grp``, ``pwd``, ``termios``, ``_statistics`` and
-``_testconsole`` C extensions are now built with the :ref:`limited C API
-<limited-c-api>`. Patch by Victor Stinner.

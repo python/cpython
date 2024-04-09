@@ -1,5 +1,0 @@
-In the limited C API version 3.13, getting ``Py_None``, ``Py_False``,
-``Py_True``, ``Py_Ellipsis`` and ``Py_NotImplemented`` singletons is now
-implemented as function calls at the stable ABI level to hide implementation
-details. Getting these constants still return borrowed references. Patch by
-Victor Stinner.

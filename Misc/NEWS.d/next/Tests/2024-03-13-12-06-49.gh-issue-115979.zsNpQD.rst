@@ -1,1 +1,0 @@
-Update test_importlib so that it passes under WASI SDK 21.

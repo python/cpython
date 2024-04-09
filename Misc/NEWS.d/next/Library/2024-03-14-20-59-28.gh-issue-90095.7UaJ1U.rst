@@ -1,1 +1,0 @@
-Ignore empty lines and comments in ``.pdbrc``
