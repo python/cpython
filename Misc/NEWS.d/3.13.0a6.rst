@@ -4,7 +4,7 @@
 .. release date: 2024-04-09
 .. section: Core and Builtins
 
-Speedup :func:`os.path.join` by up to 6% on Windows.
+Improve performance of :func:`os.path.join`.
 
 ..
 
