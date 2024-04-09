@@ -4,23 +4,9 @@
 #include <stdio.h>
 #include <errno.h>
 
-char *filename = "pyrun_sample.py";
-
-/* XXX: Need to implement
-int PyRun_AnyFileExFlags(FILE *fp, const char *filename, int closeit, PyCompilerFlags *flags)
-int PyRun_SimpleStringFlags(const char *command, PyCompilerFlags *flags)
-int PyRun_SimpleFileExFlags(FILE *fp, const char *filename, int closeit, PyCompilerFlags *flags)
-int PyRun_InteractiveOneFlags(FILE *fp, const char *filename, PyCompilerFlags *flags)
-int PyRun_InteractiveLoopFlags(FILE *fp, const char *filename, PyCompilerFlags *flags)
-PyObject *PyRun_StringFlags(const char *str, int start, PyObject *globals, PyObject *locals, PyCompilerFlags *flags)
-
-XXX: implemented
-PyObject *PyRun_FileExFlags(FILE *fp, const char *filename, int start, PyObject *globals, PyObject *locals, int closeit, PyCompilerFlags *flags)
-*/
-
 
 static PyObject *
-eval_pyrun_fileexflags(PyObject *mod, PyObject *pos_args)
+run_fileexflags(PyObject *mod, PyObject *pos_args)
 {
     PyObject *result = NULL;
     const char *filename = NULL;
@@ -92,7 +78,7 @@ exit:
 }
 
 static PyMethodDef test_methods[] = {
-    {"eval_pyrun_fileexflags", eval_pyrun_fileexflags, METH_VARARGS},
+    {"run_fileexflags", run_fileexflags, METH_VARARGS},
     {NULL},
 };
 

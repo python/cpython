@@ -28,7 +28,7 @@ class PyRunTest(unittest.TestCase):
     def test_pyrun_fileexflags_with_differents_args(self):
 
         def check(*args):
-            res = _testcapi.eval_pyrun_fileexflags(self.filename, Py_file_input, *args)
+            res = _testcapi.run_fileexflags(self.filename, Py_file_input, *args)
             self.assertIsNone(res)
 
         check({}, NULL, 1, 0, 0)
@@ -41,7 +41,7 @@ class PyRunTest(unittest.TestCase):
     def test_pyrun_fileexflags_globals_is_null(self):
         def check(*args):
             with self.assertRaises(SystemError):
-                _testcapi.eval_pyrun_fileexflags(self.filename, Py_file_input, *args)
+                _testcapi.run_fileexflags(self.filename, Py_file_input, *args)
 
         check(NULL, NULL, 1, 0, 0)
         check(NULL, {}, 1, 0, 0)
