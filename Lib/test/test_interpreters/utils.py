@@ -558,11 +558,18 @@ class TestBase(unittest.TestCase):
         # Start running (and wait).
         script = dedent(f"""
             import os
-            # handshake
-            token = os.read({r_in}, 1)
-            os.write({w_out}, token)
-            # Wait for the "done" message.
-            os.read({r_in}, 1)
+            try:
+                # handshake
+                token = os.read({r_in}, 1)
+                os.write({w_out}, token)
+                # Wait for the "done" message.
+                os.read({r_in}, 1)
+            except BrokenPipeError:
+                pass
+            except OSError as exc:
+                if exc.errno != 9:
+                    raise  # re-raise
+                # It was closed already.
             """)
         failed = None
         def run():
