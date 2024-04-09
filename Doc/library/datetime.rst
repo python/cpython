@@ -1079,6 +1079,24 @@ Other constructors, all class methods:
    time tuple.  See also :ref:`strftime-strptime-behavior` and
    :meth:`datetime.fromisoformat`.
 
+   .. versionchanged:: 3.13
+
+      If *format* specifies a day of month without a year a
+      :exc:`DeprecationWarning` is now emitted.  This is to avoid a quadrennial
+      leap year bug in code seeking to parse only a month and day as the
+      default year used in absence of one in the format is not a leap year.
+      Such *format* values may raise an error as of Python 3.15.  The
+      workaround is to always include a year in your *format*.  If parsing
+      *date_string* values that do not have a year, explicitly add a year that
+      is a leap year before parsing:
+
+      .. doctest::
+
+         >>> from datetime import datetime
+         >>> date_string = "02/29"
+         >>> when = datetime.strptime(f"{date_string};1984", "%m/%d;%Y")  # Avoids leap year bug.
+         >>> when.strftime("%B %d")  # doctest: +SKIP
+         'February 29'
 
 
 Class attributes:
@@ -2656,6 +2674,25 @@ Notes:
    When used with the :meth:`~.datetime.strptime` method, the leading zero is optional
    for  formats ``%d``, ``%m``, ``%H``, ``%I``, ``%M``, ``%S``, ``%j``, ``%U``,
    ``%W``, and ``%V``. Format ``%y`` does require a leading zero.
+
+(10)
+   When parsing a month and day using :meth:`~.datetime.strptime`, always
+   include a year in the format.  If the value you need to parse lacks a year,
+   append an explicit dummy leap year.  Otherwise your code will raise an
+   exception when it encounters leap day because the default year used by the
+   parser is not a leap year.  Users run into this bug every four years...
+
+   .. doctest::
+
+      >>> month_day = "02/29"
+      >>> datetime.strptime(f"{month_day};1984", "%m/%d;%Y")  # No leap year bug.
+      datetime.datetime(1984, 2, 29, 0, 0)
+
+   .. deprecated-removed:: 3.13 3.15
+      :meth:`~.datetime.strptime` calls using a format string containing
+      a day of month without a year now emit a
+      :exc:`DeprecationWarning`. In 3.15 or later we may change this into
+      an error or change the default year to a leap year. See :gh:`70647`.
 
 .. rubric:: Footnotes
 
