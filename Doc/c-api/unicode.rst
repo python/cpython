@@ -523,7 +523,7 @@ APIs:
         - Get the fully qualified name of an object type;
           call :c:func:`PyType_GetFullyQualifiedName`.
 
-      * - ``T#``
+      * - ``#T``
         - :c:expr:`PyObject*`
         - Similar to ``T`` format, but use a colon (``:``) as separator between
           the module name and the qualified name.
@@ -533,7 +533,7 @@ APIs:
         - Get the fully qualified name of a type;
           call :c:func:`PyType_GetFullyQualifiedName`.
 
-      * - ``N#``
+      * - ``#N``
         - :c:expr:`PyTypeObject*`
         - Similar to ``N`` format, but use a colon (``:``) as separator between
           the module name and the qualified name.
@@ -574,7 +574,7 @@ APIs:
       copied as-is to the result string, and any extra arguments discarded.
 
    .. versionchanged:: 3.13
-      Support for ``%T``, ``%T#``, ``%N`` and ``%N#`` formats added.
+      Support for ``%T``, ``%#T``, ``%N`` and ``%#N`` formats added.
 
 
 .. c:function:: PyObject* PyUnicode_FromFormatV(const char *format, va_list vargs)
