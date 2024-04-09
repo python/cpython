@@ -4880,7 +4880,7 @@ PyType_GetModuleByDef(PyTypeObject *type, PyModuleDef *def)
 
 PyObject *
 _PyType_GetModuleByDef2(PyTypeObject *left, PyTypeObject *right,
-                              PyModuleDef *def)
+                        PyModuleDef *def)
 {
     PyObject *module = type_get_module_by_def(left, def);
     if (module == NULL) {
