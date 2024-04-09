@@ -2403,7 +2403,7 @@ class InterpreterConfigTests(unittest.TestCase):
                 continue
             if match(config, invalid):
                 with self.subTest(f'invalid: {config}'):
-                    with self.assertRaises(RuntimeError):
+                    with self.assertRaises(_interpreters.InterpreterError):
                         check(config)
             elif match(config, questionable):
                 with self.subTest(f'questionable: {config}'):
@@ -2427,7 +2427,7 @@ class InterpreterConfigTests(unittest.TestCase):
         with self.subTest('main'):
             expected = _interpreters.new_config('legacy')
             expected.gil = 'own'
-            interpid = _interpreters.get_main()
+            interpid, *_ = _interpreters.get_main()
             config = _interpreters.get_config(interpid)
             self.assert_ns_equal(config, expected)
 
