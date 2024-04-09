@@ -4816,10 +4816,23 @@ PyType_GetModuleState(PyTypeObject *type)
 /* Get the module of the first superclass where the module has the
  * given PyModuleDef.
  */
-PyObject *
-PyType_GetModuleByDef(PyTypeObject *type, PyModuleDef *def)
+static inline PyObject *
+type_get_module_by_def(PyTypeObject *type, PyModuleDef *def)
 {
     assert(PyType_Check(type));
+
+    if (!_PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
+        // type_ready_mro() ensures that no heap type is
+        // contained in a static type MRO.
+        return NULL;
+    }
+    else {
+        PyHeapTypeObject *ht = (PyHeapTypeObject*)type;
+        PyObject *module = ht->ht_module;
+        if (module && _PyModule_GetDef(module) == def) {
+            return module;
+        }
+    }
 
     PyObject *res = NULL;
     BEGIN_TYPE_LOCK()
@@ -4831,9 +4844,10 @@ PyType_GetModuleByDef(PyTypeObject *type, PyModuleDef *def)
     // mro_invoke() ensures that the type MRO cannot be empty, so we don't have
     // to check i < PyTuple_GET_SIZE(mro) at the first loop iteration.
     assert(PyTuple_GET_SIZE(mro) >= 1);
+    assert(PyTuple_GET_ITEM(mro, 0) == (PyObject *)type);
 
     Py_ssize_t n = PyTuple_GET_SIZE(mro);
-    for (Py_ssize_t i = 0; i < n; i++) {
+    for (Py_ssize_t i = 1; i < n; i++) {
         PyObject *super = PyTuple_GET_ITEM(mro, i);
         if(!_PyType_HasFeature((PyTypeObject *)super, Py_TPFLAGS_HEAPTYPE)) {
             // Static types in the MRO need to be skipped
@@ -4848,14 +4862,37 @@ PyType_GetModuleByDef(PyTypeObject *type, PyModuleDef *def)
         }
     }
     END_TYPE_LOCK()
+    return res;
+}
 
-    if (res == NULL) {
+PyObject *
+PyType_GetModuleByDef(PyTypeObject *type, PyModuleDef *def)
+{
+    PyObject *module = type_get_module_by_def(type, def);
+    if (module == NULL) {
         PyErr_Format(
             PyExc_TypeError,
             "PyType_GetModuleByDef: No superclass of '%s' has the given module",
             type->tp_name);
     }
-    return res;
+    return module;
+}
+
+PyObject *
+_PyType_GetModuleByDefInPairs(PyTypeObject *left, PyTypeObject *right,
+                              PyModuleDef *def)
+{
+    PyObject *module = type_get_module_by_def(left, def);
+    if (module == NULL) {
+        module = type_get_module_by_def(right, def);
+        if (module == NULL) {
+            PyErr_Format(
+                PyExc_TypeError,
+                "PyType_GetModuleByDef: No superclass of '%s' and '%s' has"
+                "the given module", left->tp_name, right->tp_name);
+        }
+    }
+    return module;
 }
 
 void *

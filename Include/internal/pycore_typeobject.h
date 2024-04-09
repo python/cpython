@@ -126,6 +126,8 @@ PyAPI_FUNC(PyObject *) _PyType_GetDict(PyTypeObject *);
 extern PyObject * _PyType_GetBases(PyTypeObject *type);
 extern PyObject * _PyType_GetMRO(PyTypeObject *type);
 extern PyObject* _PyType_GetSubclasses(PyTypeObject *);
+extern PyObject* _PyType_GetModuleByDefInPairs(PyTypeObject *, PyTypeObject *,
+                                               PyModuleDef *);
 extern int _PyType_HasSubclasses(PyTypeObject *);
 
 // PyType_Ready() must be called if _PyType_IsReady() is false.
