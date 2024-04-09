@@ -77,7 +77,8 @@ def join(a, *p):
     sep = _get_sep(a)
     path = a
     try:
-        for b in map(os.fspath, p):
+        for b in p:
+            b = os.fspath(b)
             if b.startswith(sep) or not path:
                 path = b
             elif path.endswith(sep):

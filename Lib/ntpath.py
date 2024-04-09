@@ -109,7 +109,7 @@ def join(path, *paths):
         colon_seps = ':\\/'
     try:
         result_drive, result_root, result_path = splitroot(path)
-        for p in map(os.fspath, paths):
+        for p in paths:
             p_drive, p_root, p_path = splitroot(p)
             if p_root:
                 # Second path is absolute
