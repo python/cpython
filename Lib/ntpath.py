@@ -375,8 +375,11 @@ def expanduser(path):
         tilde = '~'
     if not path.startswith(tilde):
         return path
-    i, n = 1, len(path)
-    while i < n and path[i] not in seps:
+    i = 0
+    for i, char in enumerate(path[1:], start=1):
+        if char in seps:
+            break
+    else:
         i += 1
 
     if 'USERPROFILE' in os.environ:
