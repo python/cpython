@@ -809,7 +809,7 @@ interp_destroy(PyObject *self, PyObject *args, PyObject *kwds)
 {
     static char *kwlist[] = {"id", "require_owned", NULL};
     PyObject *id;
-    int reqowned = 1;
+    int reqowned = 0;
     // XXX Use "L" for id?
     if (!PyArg_ParseTupleAndKeywords(args, kwds,
                                      "O|$p:destroy", kwlist, &id, &reqowned))
@@ -852,7 +852,7 @@ interp_destroy(PyObject *self, PyObject *args, PyObject *kwds)
 }
 
 PyDoc_STRVAR(destroy_doc,
-"destroy(id, *, require_owned=True)\n\
+"destroy(id, *, require_owned=False)\n\
 \n\
 Destroy the identified interpreter.\n\
 \n\
@@ -930,7 +930,7 @@ interp_set___main___attrs(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     static char *kwlist[] = {"id", "updates", "require_owned", NULL};
     PyObject *id, *updates;
-    int reqowned = 1;
+    int reqowned = 0;
     if (!PyArg_ParseTupleAndKeywords(args, kwargs,
                                      "OO|$p:" MODULE_NAME_STR ".set___main___attrs",
                                      kwlist, &id, &updates, &reqowned))
@@ -979,7 +979,7 @@ interp_set___main___attrs(PyObject *self, PyObject *args, PyObject *kwargs)
 }
 
 PyDoc_STRVAR(set___main___attrs_doc,
-"set___main___attrs(id, ns, *, require_owned=True)\n\
+"set___main___attrs(id, ns, *, require_owned=False)\n\
 \n\
 Bind the given attributes in the interpreter's __main__ module.");
 
@@ -1091,7 +1091,7 @@ interp_exec(PyObject *self, PyObject *args, PyObject *kwds)
     static char *kwlist[] = {"id", "code", "shared", "require_owned", NULL};
     PyObject *id, *code;
     PyObject *shared = NULL;
-    int reqowned = 1;
+    int reqowned = 0;
     if (!PyArg_ParseTupleAndKeywords(args, kwds,
                                      "OO|O$p:" MODULE_NAME_STR ".exec", kwlist,
                                      &id, &code, &shared, &reqowned))
@@ -1128,7 +1128,7 @@ interp_exec(PyObject *self, PyObject *args, PyObject *kwds)
 }
 
 PyDoc_STRVAR(exec_doc,
-"exec(id, code, shared=None, *, require_owned=True)\n\
+"exec(id, code, shared=None, *, require_owned=False)\n\
 \n\
 Execute the provided code in the identified interpreter.\n\
 This is equivalent to running the builtin exec() under the target\n\
@@ -1152,7 +1152,7 @@ interp_call(PyObject *self, PyObject *args, PyObject *kwds)
     PyObject *id, *callable;
     PyObject *args_obj = NULL;
     PyObject *kwargs_obj = NULL;
-    int reqowned = 1;
+    int reqowned = 0;
     if (!PyArg_ParseTupleAndKeywords(args, kwds,
                                      "OO|OO$p:" MODULE_NAME_STR ".call", kwlist,
                                      &id, &callable, &args_obj, &kwargs_obj,
@@ -1192,7 +1192,7 @@ interp_call(PyObject *self, PyObject *args, PyObject *kwds)
 }
 
 PyDoc_STRVAR(call_doc,
-"call(id, callable, args=None, kwargs=None, *, require_owned=True)\n\
+"call(id, callable, args=None, kwargs=None, *, require_owned=False)\n\
 \n\
 Call the provided object in the identified interpreter.\n\
 Pass the given args and kwargs, if possible.\n\
@@ -1209,7 +1209,7 @@ interp_run_string(PyObject *self, PyObject *args, PyObject *kwds)
     static char *kwlist[] = {"id", "script", "shared", "require_owned", NULL};
     PyObject *id, *script;
     PyObject *shared = NULL;
-    int reqowned = 1;
+    int reqowned = 0;
     if (!PyArg_ParseTupleAndKeywords(args, kwds,
                                      "OU|O$p:" MODULE_NAME_STR ".run_string",
                                      kwlist, &id, &script, &shared, &reqowned))
@@ -1239,7 +1239,7 @@ interp_run_string(PyObject *self, PyObject *args, PyObject *kwds)
 }
 
 PyDoc_STRVAR(run_string_doc,
-"run_string(id, script, shared=None, *, require_owned=True)\n\
+"run_string(id, script, shared=None, *, require_owned=False)\n\
 \n\
 Execute the provided string in the identified interpreter.\n\
 \n\
@@ -1251,7 +1251,7 @@ interp_run_func(PyObject *self, PyObject *args, PyObject *kwds)
     static char *kwlist[] = {"id", "func", "shared", "require_owned", NULL};
     PyObject *id, *func;
     PyObject *shared = NULL;
-    int reqowned = 1;
+    int reqowned = 0;
     if (!PyArg_ParseTupleAndKeywords(args, kwds,
                                      "OO|O$p:" MODULE_NAME_STR ".run_func",
                                      kwlist, &id, &func, &shared, &reqowned))
@@ -1283,7 +1283,7 @@ interp_run_func(PyObject *self, PyObject *args, PyObject *kwds)
 }
 
 PyDoc_STRVAR(run_func_doc,
-"run_func(id, func, shared=None, *, require_owned=True)\n\
+"run_func(id, func, shared=None, *, require_owned=False)\n\
 \n\
 Execute the body of the provided function in the identified interpreter.\n\
 Code objects are also supported.  In both cases, closures and args\n\
@@ -1321,7 +1321,7 @@ interp_is_running(PyObject *self, PyObject *args, PyObject *kwds)
 {
     static char *kwlist[] = {"id", "require_owned", NULL};
     PyObject *id;
-    int reqowned = 1;
+    int reqowned = 0;
     if (!PyArg_ParseTupleAndKeywords(args, kwds,
                                      "O|$p:is_running", kwlist,
                                      &id, &reqowned))
@@ -1342,7 +1342,7 @@ interp_is_running(PyObject *self, PyObject *args, PyObject *kwds)
 }
 
 PyDoc_STRVAR(is_running_doc,
-"is_running(id, *, require_owned=True) -> bool\n\
+"is_running(id, *, require_owned=False) -> bool\n\
 \n\
 Return whether or not the identified interpreter is running.");
 
@@ -1352,7 +1352,7 @@ interp_get_config(PyObject *self, PyObject *args, PyObject *kwds)
 {
     static char *kwlist[] = {"id", "require_owned", NULL};
     PyObject *idobj = NULL;
-    int reqowned = 1;
+    int reqowned = 0;
     if (!PyArg_ParseTupleAndKeywords(args, kwds,
                                      "O|$p:get_config", kwlist,
                                      &idobj, &reqowned))
@@ -1384,7 +1384,7 @@ interp_get_config(PyObject *self, PyObject *args, PyObject *kwds)
 }
 
 PyDoc_STRVAR(get_config_doc,
-"get_config(id, *, require_owned=True) -> types.SimpleNamespace\n\
+"get_config(id, *, require_owned=False) -> types.SimpleNamespace\n\
 \n\
 Return a representation of the config used to initialize the interpreter.");
 
@@ -1446,7 +1446,7 @@ interp_incref(PyObject *self, PyObject *args, PyObject *kwds)
     static char *kwlist[] = {"id", "implieslink", "require_owned", NULL};
     PyObject *id;
     int implieslink = 0;
-    int reqowned = 1;
+    int reqowned = 0;
     if (!PyArg_ParseTupleAndKeywords(args, kwds,
                                      "O|$pp:incref", kwlist,
                                      &id, &implieslink, &reqowned))
@@ -1474,7 +1474,7 @@ interp_decref(PyObject *self, PyObject *args, PyObject *kwds)
 {
     static char *kwlist[] = {"id", "require_owned", NULL};
     PyObject *id;
-    int reqowned = 1;
+    int reqowned = 0;
     if (!PyArg_ParseTupleAndKeywords(args, kwds,
                                      "O|$p:decref", kwlist, &id, &reqowned))
     {

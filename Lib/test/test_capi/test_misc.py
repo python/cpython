@@ -2428,7 +2428,7 @@ class InterpreterConfigTests(unittest.TestCase):
             expected = _interpreters.new_config('legacy')
             expected.gil = 'own'
             interpid, *_ = _interpreters.get_main()
-            config = _interpreters.get_config(interpid, require_owned=False)
+            config = _interpreters.get_config(interpid)
             self.assert_ns_equal(config, expected)
 
         with self.subTest('isolated'):

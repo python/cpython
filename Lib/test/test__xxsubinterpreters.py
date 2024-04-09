@@ -309,7 +309,7 @@ class IsRunningTests(TestBase):
 
     def test_main(self):
         main, *_ = _interpreters.get_main()
-        self.assertTrue(_interpreters.is_running(main, require_owned=False))
+        self.assertTrue(_interpreters.is_running(main))
 
     @unittest.skip('Fails on FreeBSD')
     def test_subinterpreter(self):
