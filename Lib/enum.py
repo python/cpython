@@ -1812,9 +1812,9 @@ def _simple_enum(etype=Enum, *, boundary=None, use_args=None):
                     member._value_ = value
                 # now check if alias
                 try:
-                    contained = None
                     contained = value2member_map.get(member._value_)
                 except TypeError:
+                    contained = None
                     if member._value_ in unhashable_values:
                         for m in enum_class:
                             if m._value_ == member._value_:
@@ -1868,9 +1868,9 @@ def _simple_enum(etype=Enum, *, boundary=None, use_args=None):
                     member._value_ = value
                 # now check if alias
                 try:
-                    contained = None
                     contained = value2member_map.get(member._value_)
                 except TypeError:
+                    contained = None
                     if member._value_ in unhashable_values:
                         for m in enum_class:
                             if m._value_ == member._value_:
