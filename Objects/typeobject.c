@@ -4888,7 +4888,7 @@ _PyType_GetModuleByDef2(PyTypeObject *left, PyTypeObject *right,
         if (module == NULL) {
             PyErr_Format(
                 PyExc_TypeError,
-                "PyType_GetModuleByDef: No superclass of '%s' or '%s' has"
+                "PyType_GetModuleByDef: No superclass of '%s' or '%s' has "
                 "the given module", left->tp_name, right->tp_name);
         }
     }
