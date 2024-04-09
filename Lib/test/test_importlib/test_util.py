@@ -682,26 +682,17 @@ class IncompatibleExtensionModuleRestrictionsTests(unittest.TestCase):
                 raise ImportError(excsnap.msg)
 
     @unittest.skipIf(_testsinglephase is None, "test requires _testsinglephase module")
+    @support.requires_gil_enabled("gh-117649: not supported in free-threaded build")
     def test_single_phase_init_module(self):
         script = textwrap.dedent('''
             from importlib.util import _incompatible_extension_module_restrictions
             with _incompatible_extension_module_restrictions(disable_check=True):
                 import _testsinglephase
             ''')
-        if not support.Py_GIL_DISABLED:
-            with self.subTest('check disabled, shared GIL'):
-                self.run_with_shared_gil(script)
-            with self.subTest('check disabled, per-interpreter GIL'):
-                self.run_with_own_gil(script)
-        else:
-            # gh-117649: Py_GIL_DISABLED builds do not support legacy
-            # single-phase init extensions within subinterpreters.
-            with self.subTest('check disabled, shared GIL'):
-                with self.assertRaises(ImportError):
-                    self.run_with_shared_gil(script)
-            with self.subTest('check disabled, per-interpreter GIL'):
-                with self.assertRaises(ImportError):
-                    self.run_with_own_gil(script)
+        with self.subTest('check disabled, shared GIL'):
+            self.run_with_shared_gil(script)
+        with self.subTest('check disabled, per-interpreter GIL'):
+            self.run_with_own_gil(script)
 
         script = textwrap.dedent(f'''
             from importlib.util import _incompatible_extension_module_restrictions
@@ -716,6 +707,7 @@ class IncompatibleExtensionModuleRestrictionsTests(unittest.TestCase):
                 self.run_with_own_gil(script)
 
     @unittest.skipIf(_testmultiphase is None, "test requires _testmultiphase module")
+    @support.requires_gil_enabled("gh-117649: not supported in free-threaded build")
     def test_incomplete_multi_phase_init_module(self):
         # Apple extensions must be distributed as frameworks. This requires
         # a specialist loader.
