@@ -498,6 +498,13 @@ Install Options
 
    .. versionadded:: 3.6
 
+.. option:: --without-idle
+
+   Do not install IDLE, Python's Integrated Development and Learning Environment
+   (it is installed by default).
+
+   .. versionadded:: 3.13
+
 
 Performance options
 -------------------

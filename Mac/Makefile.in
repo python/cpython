@@ -6,6 +6,7 @@ VERSION=@VERSION@
 ABIFLAGS=@ABIFLAGS@
 LDVERSION=@LDVERSION@
 ENSUREPIP=@ENSUREPIP@
+IDLE=@IDLE@
 builddir = ..
 srcdir=@srcdir@
 prefix=@prefix@
@@ -63,7 +64,6 @@ installunixtools:
 	fi
 	cd "$(DESTDIR)$(FRAMEWORKUNIXTOOLSPREFIX)/bin" && \
 	for fn in \
-			idle3 \
 			pydoc3 \
 			python3 \
 			python3-config \
@@ -112,6 +112,16 @@ installunixtools:
 			$(LN) -s $(BINDIR)/$${fn} $${fn} ;\
 		done ;\
 	fi
+	-if test "x$(IDLE)" != "xno" ; then \
+		cd "$(DESTDIR)$(FRAMEWORKUNIXTOOLSPREFIX)/bin" && \
+		for fn in \
+				idle3 \
+				; \
+		do \
+			rm -f $${fn} ;\
+			$(LN) -s $(BINDIR)/$${fn} $${fn} ;\
+		done ;\
+	fi
 
 #
 # Like installunixtools, but only install links to the versioned binaries.
@@ -122,7 +132,6 @@ altinstallunixtools:
 	fi
 	cd "$(DESTDIR)$(FRAMEWORKUNIXTOOLSPREFIX)/bin" && \
 	for fn in \
-			idle$(VERSION) \
 			pydoc$(VERSION) \
 			python$(VERSION) \
 			python$(LDVERSION)-config \
@@ -165,6 +174,16 @@ altinstallunixtools:
 		cd "$(DESTDIR)$(FRAMEWORKUNIXTOOLSPREFIX)/bin" && \
 		for fn in \
 				pip$(VERSION) \
+				; \
+		do \
+			rm -f $${fn} ;\
+			$(LN) -s $(BINDIR)/$${fn} $${fn} ;\
+		done ;\
+	fi
+	-if test "x$(IDLE)" != "xno" ; then \
+		cd "$(DESTDIR)$(FRAMEWORKUNIXTOOLSPREFIX)/bin" && \
+		for fn in \
+				idle$(VERSION) \
 				; \
 		do \
 			rm -f $${fn} ;\
@@ -233,32 +252,38 @@ install_Python:
 
 
 install_IDLE:
-	test -d "$(DESTDIR)$(PYTHONAPPSDIR)" || mkdir -p "$(DESTDIR)$(PYTHONAPPSDIR)"
-	-test -d "$(DESTDIR)$(PYTHONAPPSDIR)/IDLE.app" && rm -rf "$(DESTDIR)$(PYTHONAPPSDIR)/IDLE.app"
-	/bin/cp -PR "$(srcdir)/IDLE/IDLE.app" "$(DESTDIR)$(PYTHONAPPSDIR)"
-	ln -sf "$(INSTALLED_PYTHONAPP)" "$(DESTDIR)$(PYTHONAPPSDIR)/IDLE.app/Contents/MacOS/Python"
-	sed -e "s!%prefix%!$(prefix)!g" -e 's!%exe%!$(PYTHONFRAMEWORK)!g' < "$(srcdir)/IDLE/IDLE.app/Contents/MacOS/IDLE" > "$(DESTDIR)$(PYTHONAPPSDIR)/IDLE.app/Contents/MacOS/IDLE"
-	sed "s!%version%!`$(RUNSHARED) $(BUILDPYTHON) -c 'import platform; print(platform.python_version())'`!g" < "$(srcdir)/IDLE/IDLE.app/Contents/Info.plist" > "$(DESTDIR)$(PYTHONAPPSDIR)/IDLE.app/Contents/Info.plist"
-	if [ -f "$(DESTDIR)$(LIBDEST)/idlelib/config-main.def" ]; then \
-		/bin/cp -p "$(DESTDIR)$(LIBDEST)/idlelib/config-main.def" \
-			"$(DESTDIR)$(LIBDEST)/idlelib/config-main.def~" ; \
-		sed -e 's!name= IDLE Classic Windows!name= IDLE Classic OSX!g' \
-			< "$(DESTDIR)$(LIBDEST)/idlelib/config-main.def~" \
-			> "$(DESTDIR)$(LIBDEST)/idlelib/config-main.def" ; \
-		rm "$(DESTDIR)$(LIBDEST)/idlelib/config-main.def~" ; \
+	if test "x$(IDLE)" != "xno" ; then \
+		test -d "$(DESTDIR)$(PYTHONAPPSDIR)" || mkdir -p "$(DESTDIR)$(PYTHONAPPSDIR)" ; \
 	fi
-	if [ -f "$(DESTDIR)$(LIBDEST)/idlelib/config-extensions.def" ]; then \
-		/bin/cp -p "$(DESTDIR)$(LIBDEST)/idlelib/config-extensions.def" \
-			"$(DESTDIR)$(LIBDEST)/idlelib/config-extensions.def~" ; \
-		sed -e 's!zoom-height=<Alt-Key-2>!zoom-height=<Option-Key-0>!g' \
-			-e 's!<Alt-Key-!<Option-Key-!g' \
-			< "$(DESTDIR)$(LIBDEST)/idlelib/config-extensions.def~" \
-			> "$(DESTDIR)$(LIBDEST)/idlelib/config-extensions.def" ; \
-		rm "$(DESTDIR)$(LIBDEST)/idlelib/config-extensions.def~" ; \
+	-if test "x$(IDLE)" != "xno" ; then \
+		test -d "$(DESTDIR)$(PYTHONAPPSDIR)/IDLE.app" && rm -rf "$(DESTDIR)$(PYTHONAPPSDIR)/IDLE.app" ; \
 	fi
-	touch "$(DESTDIR)$(PYTHONAPPSDIR)/IDLE.app"
-	chmod -R ugo+rX,go-w "$(DESTDIR)$(PYTHONAPPSDIR)/IDLE.app"
-	chmod ugo+x "$(DESTDIR)$(PYTHONAPPSDIR)/IDLE.app/Contents/MacOS/IDLE"
+	if test "x$(IDLE)" != "xno" ; then \
+		/bin/cp -PR "$(srcdir)/IDLE/IDLE.app" "$(DESTDIR)$(PYTHONAPPSDIR)" ; \
+		ln -sf "$(INSTALLED_PYTHONAPP)" "$(DESTDIR)$(PYTHONAPPSDIR)/IDLE.app/Contents/MacOS/Python" ; \
+		sed -e "s!%prefix%!$(prefix)!g" -e 's!%exe%!$(PYTHONFRAMEWORK)!g' < "$(srcdir)/IDLE/IDLE.app/Contents/MacOS/IDLE" > "$(DESTDIR)$(PYTHONAPPSDIR)/IDLE.app/Contents/MacOS/IDLE" ; \
+		sed "s!%version%!`$(RUNSHARED) $(BUILDPYTHON) -c 'import platform; print(platform.python_version())'`!g" < "$(srcdir)/IDLE/IDLE.app/Contents/Info.plist" > "$(DESTDIR)$(PYTHONAPPSDIR)/IDLE.app/Contents/Info.plist" ; \
+		if [ -f "$(DESTDIR)$(LIBDEST)/idlelib/config-main.def" ]; then \
+			/bin/cp -p "$(DESTDIR)$(LIBDEST)/idlelib/config-main.def" \
+				"$(DESTDIR)$(LIBDEST)/idlelib/config-main.def~" ; \
+			sed -e 's!name= IDLE Classic Windows!name= IDLE Classic OSX!g' \
+				< "$(DESTDIR)$(LIBDEST)/idlelib/config-main.def~" \
+				> "$(DESTDIR)$(LIBDEST)/idlelib/config-main.def" ; \
+			rm "$(DESTDIR)$(LIBDEST)/idlelib/config-main.def~" ; \
+		fi ; \
+		if [ -f "$(DESTDIR)$(LIBDEST)/idlelib/config-extensions.def" ]; then \
+			/bin/cp -p "$(DESTDIR)$(LIBDEST)/idlelib/config-extensions.def" \
+				"$(DESTDIR)$(LIBDEST)/idlelib/config-extensions.def~" ; \
+			sed -e 's!zoom-height=<Alt-Key-2>!zoom-height=<Option-Key-0>!g' \
+				-e 's!<Alt-Key-!<Option-Key-!g' \
+				< "$(DESTDIR)$(LIBDEST)/idlelib/config-extensions.def~" \
+				> "$(DESTDIR)$(LIBDEST)/idlelib/config-extensions.def" ; \
+			rm "$(DESTDIR)$(LIBDEST)/idlelib/config-extensions.def~" ; \
+		fi ; \
+		touch "$(DESTDIR)$(PYTHONAPPSDIR)/IDLE.app" ; \
+		chmod -R ugo+rX,go-w "$(DESTDIR)$(PYTHONAPPSDIR)/IDLE.app" ; \
+		chmod ugo+x "$(DESTDIR)$(PYTHONAPPSDIR)/IDLE.app/Contents/MacOS/IDLE" ; \
+	fi
 
 $(INSTALLED_PYTHONAPP): install_Python
 
