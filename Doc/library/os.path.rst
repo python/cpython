@@ -144,7 +144,7 @@ the :mod:`glob` module.)
 
 .. function:: lexists(path)
 
-   Return ``True`` if *path* refers to an existing path. Returns ``True`` for
+   Return ``True`` if *path* refers to an existing path, including
    broken symbolic links.   Equivalent to :func:`exists` on platforms lacking
    :func:`os.lstat`.
 
