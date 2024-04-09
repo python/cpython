@@ -136,6 +136,8 @@ TryAddRef(PyObject *cnv, CDataObject *obj)
  * Call the python object with all arguments
  *
  */
+
+// BEWARE: The GIL needs to be held throughout the function
 static void _CallPythonObject(ctypes_state *st,
                               void *mem,
                               ffi_type *restype,
@@ -300,7 +302,6 @@ static void closure_fcn(ffi_cif *cif,
                         void **args,
                         void *userdata)
 {
-    // needs the GIL to get the module state
     PyGILState_STATE state = PyGILState_Ensure();
 
     CThunkObject *p = (CThunkObject *)userdata;
