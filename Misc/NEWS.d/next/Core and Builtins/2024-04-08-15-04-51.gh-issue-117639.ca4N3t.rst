@@ -1,1 +1,1 @@
-Speedup :func:`os.path.abspath()` by up to 13% on Unix for the current directory.
+Speedup :func:`os.path.abspath()` by up to 13% on Unix for "" & ".".
