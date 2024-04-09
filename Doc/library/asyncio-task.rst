@@ -392,6 +392,27 @@ is also included in the exception group.
 The same special case is made for
 :exc:`KeyboardInterrupt` and :exc:`SystemExit` as in the previous paragraph.
 
+Task groups are careful not to mix up the internal cancellation used to
+"wake up" their :meth:`~object.__aexit__` with cancellation requests
+for the task in which they are running made by other parties.
+In particular, when one task group is syntactically nested in another,
+and both experience an exception in one of their child tasks simultaneously,
+the inner task group will process its exceptions, and then the outer task group
+will receive another cancellation and process its own exceptions.
+
+In the case where a task group is cancelled externally and also must
+raise an :exc:`ExceptionGroup`, it will call the parent task's
+:meth:`~asyncio.Task.cancel` method. This ensures that a
+:exc:`asyncio.CancelledError` will be raised at the next
+:keyword:`await`, so the cancellation is not lost.
+
+Task groups preserve the cancellation count
+reported by :meth:`asyncio.Task.cancelling`.
+
+.. versionchanged:: 3.13
+
+   Improved handling of simultaneous internal and external cancellations
+   and correct preservation of cancellation counts.
 
 Sleeping
 ========
@@ -1368,6 +1389,15 @@ Task Object
       If end-user code is, for some reason, suppresing cancellation by
       catching :exc:`CancelledError`, it needs to call this method to remove
       the cancellation state.
+
+      When this method decrements the cancellation count to zero,
+      the method checks if a previous :meth:`cancel` call had arranged
+      for :exc:`CancelledError` to be thrown into the task.
+      If it hasn't been thrown yet, that arrangement will be
+      rescinded (by resetting the internal ``_must_cancel`` flag).
+
+   .. versionchanged:: 3.13
+      Changed to rescind pending cancellation requests upon reaching zero.
 
    .. method:: cancelling()
 
