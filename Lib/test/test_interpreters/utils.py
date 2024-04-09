@@ -56,10 +56,28 @@ def _close_file(file):
         # It was closed already.
 
 
+def pack_exception(exc=None):
+    captured = _interpreters.capture_exception(exc)
+    data = dict(captured.__dict__)
+    data['type'] = dict(captured.type.__dict__)
+    return json.dumps(data)
+
+
+def unpack_exception(packed):
+    try:
+        data = json.loads(packed)
+    except json.decoder.JSONDecodeError:
+        warnings.warn('incomplete exception data', RuntimeWarning)
+        print(packed if isinstance(packed, str) else packed.decode('utf-8'))
+        return None
+    exc = types.SimpleNamespace(**data)
+    exc.type = types.SimpleNamespace(**exc.type)
+    return exc;
+
+
 class CapturingResults:
 
     STDIO = dedent("""\
-        import contextlib, io
         with open({w_pipe}, 'wb', buffering=0) as _spipe_{stream}:
             _captured_std{stream} = io.StringIO()
             with contextlib.redirect_std{stream}(_captured_std{stream}):
@@ -74,7 +92,6 @@ class CapturingResults:
             _spipe_{stream}.write(text.encode('utf-8'))
         """)[:-1]
     EXC = dedent("""\
-        import json, traceback
         with open({w_pipe}, 'wb', buffering=0) as _spipe_exc:
             try:
                 #########################
@@ -85,23 +102,16 @@ class CapturingResults:
                 # end wrapped script
                 #########################
             except Exception as exc:
-                # This matches what _interpreters.exec() returns.
-                text = json.dumps(dict(
-                    type=dict(
-                        __name__=type(exc).__name__,
-                        __qualname__=type(exc).__qualname__,
-                        __module__=type(exc).__module__,
-                    ),
-                    msg=str(exc),
-                    formatted=traceback.format_exception_only(exc),
-                    errdisplay=traceback.format_exception(exc),
-                ))
+                text = _interp_utils.pack_exception(exc)
                 _spipe_exc.write(text.encode('utf-8'))
         """)[:-1]
 
     @classmethod
     def wrap_script(cls, script, *, stdout=True, stderr=False, exc=False):
         script = dedent(script).strip(os.linesep)
+        imports = [
+            f'import {__name__} as _interp_utils',
+        ]
         wrapped = script
 
         # Handle exc.
@@ -118,6 +128,9 @@ class CapturingResults:
 
         # Handle stdout.
         if stdout:
+            imports.extend([
+                'import contextlib, io',
+            ])
             stdout = os.pipe()
             r_out, w_out = stdout
             indented = wrapped.replace('\n', '\n        ')
@@ -133,6 +146,10 @@ class CapturingResults:
         if stderr == 'stdout':
             stderr = None
         elif stderr:
+            if not stdout:
+                imports.extend([
+                    'import contextlib, io',
+                ])
             stderr = os.pipe()
             r_err, w_err = stderr
             indented = wrapped.replace('\n', '\n        ')
@@ -146,6 +163,10 @@ class CapturingResults:
 
         if wrapped == script:
             raise NotImplementedError
+        else:
+            for line in imports:
+                wrapped = f'{line}{os.linesep}{wrapped}'
+
         results = cls(stdout, stderr, exc)
         return wrapped, results
 
@@ -246,14 +267,7 @@ class CapturingResults:
             return self._exc
         if not self._buf_exc:
             return None
-        try:
-            data = json.loads(self._buf_exc)
-        except json.decoder.JSONDecodeError:
-            warnings.warn('incomplete exception data', RuntimeWarning)
-            print(self._buf_exc.decode('utf-8'))
-            return None
-        self._exc = exc = types.SimpleNamespace(**data)
-        exc.type = types.SimpleNamespace(**exc.type)
+        self._exc = unpack_exception(self._buf_exc)
         return self._exc
 
     def stdout(self):
@@ -312,6 +326,10 @@ class CapturedResults(namedtuple('CapturedResults', 'stdout stderr exc')):
             if name.startswith('_'):
                 raise AttributeError(name)
             return getattr(self._final, name)
+
+    def raise_if_failed(self):
+        if self.exc is not None:
+            raise interpreters.ExecutionFailed(self.exc)
 
 
 def _captured_script(script, *, stdout=True, stderr=False, exc=False):
@@ -487,11 +505,7 @@ class TestBase(unittest.TestCase):
     def run_and_capture(self, interp, script):
         text, err = self._run_string(interp, script)
         if err is not None:
-            print()
-            if not err.errdisplay.startswith('Traceback '):
-                print('Traceback (most recent call last):')
-            print(err.errdisplay, file=sys.stderr)
-            raise Exception(f'subinterpreter failed: {err.formatted}')
+            raise interpreters.ExecutionFailed(err)
         else:
             return text
 
@@ -526,7 +540,8 @@ class TestBase(unittest.TestCase):
         with self.capturing(script) as (wrapped, results):
             rc = _testinternalcapi.exec_interpreter(interpid, wrapped, main=main)
             assert rc == 0, rc
-        return results.exc, results.stdout
+        results.raise_if_failed()
+        return results.stdout
 
     @contextlib.contextmanager
     def _running(self, run_interp, exec_interp):
@@ -604,8 +619,7 @@ class TestBase(unittest.TestCase):
     @contextlib.contextmanager
     def running_from_capi(self, interpid, *, main=False):
         def run_interp(script):
-            err, text = self.run_from_capi(interpid, script, main=main)
-            assert err is None, err
+            text = self.run_from_capi(interpid, script, main=main)
             assert text == '', repr(text)
         def exec_interp(script):
             rc = _testinternalcapi.exec_interpreter(interpid, script)
@@ -620,4 +634,5 @@ class TestBase(unittest.TestCase):
         with self.capturing(script) as (wrapped, results):
             rc = run_in_interpreter(wrapped, config)
             assert rc == 0, rc
-        return results.exc, results.stdout
+        results.raise_if_failed()
+        return results.stdout

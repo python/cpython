@@ -169,12 +169,11 @@ class GetCurrentTests(TestBase):
         for id, *_ in _interpreters.list_all():
             last = max(last, id)
         expected = _testinternalcapi.next_interpreter_id()
-        err, text = self.run_temp_from_capi(f"""
+        text = self.run_temp_from_capi(f"""
             import {interpreters.__name__} as interpreters
             interp = interpreters.get_current()
             print(interp.id)
             """)
-        assert err is None, err
         interpid = eval(text)
         self.assertEqual(interpid, expected)
 
@@ -236,13 +235,12 @@ class ListAllTests(TestBase):
             (interpid5,),
         ]
         expected2 = expected[:-2]
-        err, text = self.run_temp_from_capi(f"""
+        text = self.run_temp_from_capi(f"""
             import {interpreters.__name__} as interpreters
             interp = interpreters.create()
             print(
                 [(i.id,) for i in interpreters.list_all()])
             """)
-        assert err is None, err
         res = eval(text)
         res2 = [(i.id,) for i in interpreters.list_all()]
         self.assertEqual(res, expected)
@@ -393,8 +391,7 @@ class TestInterpreterIsRunning(TestBase):
             interp = interpreters.get_current()
             print(interp.is_running())
             """)
-        def resolve_results(err, text):
-            assert err is None, err
+        def parse_results(text):
             self.assertNotEqual(text, "")
             try:
                 return eval(text)
@@ -403,13 +400,13 @@ class TestInterpreterIsRunning(TestBase):
 
         with self.subTest('running __main__ (from self)'):
             with self.interpreter_from_capi() as interpid:
-                err, text = self.run_from_capi(interpid, script, main=True)
-            running = resolve_results(err, text)
+                text = self.run_from_capi(interpid, script, main=True)
+            running = parse_results(text)
             self.assertTrue(running)
 
         with self.subTest('running, but not __main__ (from self)'):
-            err, text = self.run_temp_from_capi(script)
-            running = resolve_results(err, text)
+            text = self.run_temp_from_capi(script)
+            running = parse_results(text)
             self.assertFalse(running)
 
         with self.subTest('running __main__ (from other)'):
@@ -566,20 +563,17 @@ class TestInterpreterClose(TestBase):
             interp = interpreters.get_current()
             interp.close()
             """)
-        def check_results(err, text):
-            self.assertIsNot(err, None)
-            self.assertEqual(err.type.__name__, 'InterpreterError')
-            self.assertIn('current', err.msg)
-            self.assertEqual(text, '')
 
         with self.subTest('running __main__ (from self)'):
             with self.interpreter_from_capi() as interpid:
-                err, text = self.run_from_capi(interpid, script, main=True)
-                check_results(err, text)
+                with self.assertRaisesRegex(ExecutionFailed,
+                                            'InterpreterError.*current'):
+                    self.run_from_capi(interpid, script, main=True)
 
         with self.subTest('running, but not __main__ (from self)'):
-            err, text = self.run_temp_from_capi(script)
-            check_results(err, text)
+            with self.assertRaisesRegex(ExecutionFailed,
+                                        'InterpreterError.*current'):
+                self.run_temp_from_capi(script)
 
         with self.subTest('running __main__ (from other)'):
             with self.interpreter_obj_from_capi() as (interp, interpid):
@@ -691,7 +685,9 @@ class TestInterpreterExec(TestBase):
         script, results = _captured_script('print("it worked!", end="")')
         with results:
             interp.exec(script)
-            out = results.stdout()
+        results = results.final()
+        results.raise_if_failed()
+        out = results.stdout
 
         self.assertEqual(out, 'it worked!')
 
@@ -758,7 +754,9 @@ class TestInterpreterExec(TestBase):
             t = threading.Thread(target=f)
             t.start()
             t.join()
-            out = results.stdout()
+        results = results.final()
+        results.raise_if_failed()
+        out = results.stdout
 
         self.assertEqual(out, 'it worked!')
 
@@ -1278,8 +1276,7 @@ class LowLevelTests(TestBase):
             for id, *_ in _interpreters.list_all():
                 last = max(last, id)
             expected = last + 1
-            err, text = self.run_temp_from_capi(script)
-            assert err is None, err
+            text = self.run_temp_from_capi(script)
             interpid, = parse_stdout(text)
             self.assertEqual(interpid, expected)
 
@@ -1319,13 +1316,12 @@ class LowLevelTests(TestBase):
             expected3 = expected + [
                 (interpid5,),
             ]
-            err, text = self.run_temp_from_capi(f"""
+            text = self.run_temp_from_capi(f"""
                 import {_interpreters.__name__} as _interpreters
                 _interpreters.create()
                 print(
                     _interpreters.list_all())
                 """)
-            assert err is None, err
             res2 = eval(text)
             res3 = _interpreters.list_all()
             self.assertEqual(res2, expected2)
@@ -1483,8 +1479,9 @@ class LowLevelTests(TestBase):
             script, results = _captured_script('print("it worked!", end="")')
             with results:
                 exc = _interpreters.exec(interpid, script)
-                out = results.stdout()
-            self.assertIs(exc, None)
+            results = results.final()
+            results.raise_if_failed()
+            out = results.stdout
             self.assertEqual(out, 'it worked!')
 
         with self.subTest('uncaught exception'):
@@ -1497,7 +1494,7 @@ class LowLevelTests(TestBase):
                 exc = _interpreters.exec(interpid, script)
                 out = results.stdout()
             self.assertEqual(out, '')
-            self.assertEqual(exc, types.SimpleNamespace(
+            self.assert_ns_equal(exc, types.SimpleNamespace(
                 type=types.SimpleNamespace(
                     __name__='Exception',
                     __qualname__='Exception',
