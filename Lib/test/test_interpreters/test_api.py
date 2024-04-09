@@ -1382,6 +1382,7 @@ class LowLevelTests(TestBase):
             with self.assertRaises(ValueError):
                 _interpreters.create(orig)
 
+    @requires__testinternalcapi
     def test_destroy(self):
         with self.subTest('from _interpreters'):
             interpid = _interpreters.create()
