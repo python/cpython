@@ -2579,7 +2579,7 @@ class InterpreterIDTests(unittest.TestCase):
 
     def test_linked_lifecycle_initial(self):
         is_linked = _testinternalcapi.interpreter_refcount_linked
-        get_refcount = _testinternalcapi.get_interpreter_refcount
+        get_refcount, _, _ = self.get_refcount_helpers()
 
         # A new interpreter will start out not linked, with a refcount of 0.
         interpid = self.new_interpreter()
