@@ -1398,23 +1398,17 @@ class _patch(object):
 
     @contextlib.contextmanager
     def decoration_helper(self, patched, args, keywargs):
-        # patchings from the parent class should be applied first
-        patchings_chain = []
-        while hasattr(patched, 'patchings'):
-            patchings_chain.append(patched.patchings)
-            patched = patched.__wrapped__
         extra_args = []
         with contextlib.ExitStack() as exit_stack:
-            for patchings in reversed(patchings_chain):
-                for patching in patchings:
-                    arg = exit_stack.enter_context(patching)
-                    if patching.attribute_name is not None:
-                        keywargs.update(arg)
-                    elif patching.new is DEFAULT:
-                        extra_args.append(arg)
+            for patching in patched.patchings:
+                arg = exit_stack.enter_context(patching)
+                if patching.attribute_name is not None:
+                    keywargs.update(arg)
+                elif patching.new is DEFAULT:
+                    extra_args.append(arg)
 
             args += tuple(extra_args)
-            yield (patched, args, keywargs)
+            yield (args, keywargs)
 
 
     def decorate_callable(self, func, is_inherited=False):
@@ -1425,9 +1419,10 @@ class _patch(object):
 
         @wraps(func)
         def patched(*args, **keywargs):
-            with self.decoration_helper(patched, args, keywargs) as (
-                    newfunc, newargs, newkeywargs):
-                return newfunc(*newargs, **newkeywargs)
+            with self.decoration_helper(patched,
+                                        args,
+                                        keywargs) as (newargs, newkeywargs):
+                return func(*newargs, **newkeywargs)
 
         patched.patchings = [self]
         return patched
@@ -1441,9 +1436,10 @@ class _patch(object):
 
         @wraps(func)
         async def patched(*args, **keywargs):
-            with self.decoration_helper(patched, args, keywargs) as (
-                    newfunc, newargs, newkeywargs):
-                return await newfunc(*newargs, **newkeywargs)
+            with self.decoration_helper(patched,
+                                        args,
+                                        keywargs) as (newargs, newkeywargs):
+                return await func(*newargs, **newkeywargs)
 
         patched.patchings = [self]
         return patched
