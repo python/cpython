@@ -329,7 +329,7 @@ def clean_up_interpreters():
             continue
         try:
             interp.close()
-        except RuntimeError:
+        except _interpreters.InterpreterError:
             pass  # already destroyed
 
 
