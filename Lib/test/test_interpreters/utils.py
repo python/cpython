@@ -497,7 +497,7 @@ class TestBase(unittest.TestCase):
 
     @requires__testinternalcapi
     @contextlib.contextmanager
-    def unmanaged_interpreter(self, config='legacy'):
+    def interpreter_from_capi(self, config='legacy'):
         if isinstance(config, str):
             config = _interpreters.new_config(config)
         interpid = _testinternalcapi.create_interpreter()
@@ -510,8 +510,8 @@ class TestBase(unittest.TestCase):
                 pass
 
     @contextlib.contextmanager
-    def unmanaged_interpreter_obj(self, config='legacy'):
-        with self.unmanaged_interpreter(config) as interpid:
+    def interpreter_obj_from_capi(self, config='legacy'):
+        with self.interpreter_from_capi(config) as interpid:
             yield interpreters.Interpreter(interpid), interpid
 
     @contextlib.contextmanager
@@ -522,7 +522,7 @@ class TestBase(unittest.TestCase):
             yield wrapped, capturing.final(force=True)
 
     @requires__testinternalcapi
-    def run_external(self, interpid, script, *, main=False):
+    def run_from_capi(self, interpid, script, *, main=False):
         with self.capturing(script) as (wrapped, results):
             rc = _testinternalcapi.exec_interpreter(interpid, wrapped, main=main)
             assert rc == 0, rc
@@ -602,9 +602,9 @@ class TestBase(unittest.TestCase):
 
     @requires__testinternalcapi
     @contextlib.contextmanager
-    def running_external(self, interpid, *, main=False):
+    def running_from_capi(self, interpid, *, main=False):
         def run_interp(script):
-            err, text = self.run_external(interpid, script, main=main)
+            err, text = self.run_from_capi(interpid, script, main=main)
             assert err is None, err
             assert text == '', repr(text)
         def exec_interp(script):
@@ -614,7 +614,7 @@ class TestBase(unittest.TestCase):
             yield
 
     @requires__testinternalcapi
-    def run_temp_external(self, script, config='legacy'):
+    def run_temp_from_capi(self, script, config='legacy'):
         if isinstance(config, str):
             config = _interpreters.new_config(config)
         with self.capturing(script) as (wrapped, results):

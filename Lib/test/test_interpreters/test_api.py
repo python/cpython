@@ -169,7 +169,7 @@ class GetCurrentTests(TestBase):
         for id, *_ in _interpreters.list_all():
             last = max(last, id)
         expected = _testinternalcapi.next_interpreter_id()
-        err, text = self.run_temp_external(f"""
+        err, text = self.run_temp_from_capi(f"""
             import {interpreters.__name__} as interpreters
             interp = interpreters.get_current()
             print(interp.id)
@@ -236,7 +236,7 @@ class ListAllTests(TestBase):
             (interpid5,),
         ]
         expected2 = expected[:-2]
-        err, text = self.run_temp_external(f"""
+        err, text = self.run_temp_from_capi(f"""
             import {interpreters.__name__} as interpreters
             interp = interpreters.create()
             print(
@@ -402,20 +402,20 @@ class TestInterpreterIsRunning(TestBase):
                 raise Exception(repr(text))
 
         with self.subTest('running __main__ (from self)'):
-            with self.unmanaged_interpreter() as interpid:
-                err, text = self.run_external(interpid, script, main=True)
+            with self.interpreter_from_capi() as interpid:
+                err, text = self.run_from_capi(interpid, script, main=True)
             running = resolve_results(err, text)
             self.assertTrue(running)
 
         with self.subTest('running, but not __main__ (from self)'):
-            err, text = self.run_temp_external(script)
+            err, text = self.run_temp_from_capi(script)
             running = resolve_results(err, text)
             self.assertFalse(running)
 
         with self.subTest('running __main__ (from other)'):
-            with self.unmanaged_interpreter_obj() as (interp, interpid):
+            with self.interpreter_obj_from_capi() as (interp, interpid):
                 before = interp.is_running()
-                with self.running_external(interpid, main=True):
+                with self.running_from_capi(interpid, main=True):
                     during = interp.is_running()
                 after = interp.is_running()
             self.assertFalse(before)
@@ -423,9 +423,9 @@ class TestInterpreterIsRunning(TestBase):
             self.assertFalse(after)
 
         with self.subTest('running, but not __main__ (from other)'):
-            with self.unmanaged_interpreter_obj() as (interp, interpid):
+            with self.interpreter_obj_from_capi() as (interp, interpid):
                 before = interp.is_running()
-                with self.running_external(interpid, main=False):
+                with self.running_from_capi(interpid, main=False):
                     during = interp.is_running()
                 after = interp.is_running()
             self.assertFalse(before)
@@ -433,7 +433,7 @@ class TestInterpreterIsRunning(TestBase):
             self.assertFalse(after)
 
         with self.subTest('not running (from other)'):
-            with self.unmanaged_interpreter_obj() as (interp, _):
+            with self.interpreter_obj_from_capi() as (interp, _):
                 running = interp.is_running()
             self.assertFalse(running)
 
@@ -573,17 +573,17 @@ class TestInterpreterClose(TestBase):
             self.assertEqual(text, '')
 
         with self.subTest('running __main__ (from self)'):
-            with self.unmanaged_interpreter() as interpid:
-                err, text = self.run_external(interpid, script, main=True)
+            with self.interpreter_from_capi() as interpid:
+                err, text = self.run_from_capi(interpid, script, main=True)
                 check_results(err, text)
 
         with self.subTest('running, but not __main__ (from self)'):
-            err, text = self.run_temp_external(script)
+            err, text = self.run_temp_from_capi(script)
             check_results(err, text)
 
         with self.subTest('running __main__ (from other)'):
-            with self.unmanaged_interpreter_obj() as (interp, interpid):
-                with self.running_external(interpid, main=True):
+            with self.interpreter_obj_from_capi() as (interp, interpid):
+                with self.running_from_capi(interpid, main=True):
                     with self.assertRaisesRegex(InterpreterError, 'running'):
                         interp.close()
                     # Make sure it wssn't closed.
@@ -595,15 +595,15 @@ class TestInterpreterClose(TestBase):
         return
 
         with self.subTest('running, but not __main__ (from other)'):
-            with self.unmanaged_interpreter_obj() as (interp, interpid):
-                with self.running_external(interpid, main=False):
+            with self.interpreter_obj_from_capi() as (interp, interpid):
+                with self.running_from_capi(interpid, main=False):
                     with self.assertRaisesRegex(InterpreterError, 'not managed'):
                         interp.close()
                     # Make sure it wssn't closed.
                     self.assertFalse(interp.is_running())
 
         with self.subTest('not running (from other)'):
-            with self.unmanaged_interpreter_obj() as (interp, _):
+            with self.interpreter_obj_from_capi() as (interp, _):
                 with self.assertRaisesRegex(InterpreterError, 'not managed'):
                     interp.close()
                 # Make sure it wssn't closed.
@@ -676,7 +676,7 @@ class TestInterpreterPrepareMain(TestBase):
 
     @requires__testinternalcapi
     def test_created_with_capi(self):
-        with self.unmanaged_interpreter() as interpid:
+        with self.interpreter_from_capi() as interpid:
             interp = interpreters.Interpreter(interpid)
             interp.prepare_main({'spam': True})
             rc = _testinternalcapi.exec_interpreter(interpid,
@@ -835,7 +835,7 @@ class TestInterpreterExec(TestBase):
         self.assertEqual(os.read(r_interp, 1), FINISHED)
 
     def test_created_with_capi(self):
-        with self.unmanaged_interpreter_obj() as (interp, _):
+        with self.interpreter_obj_from_capi() as (interp, _):
             with self.assertRaisesRegex(ExecutionFailed, 'it worked'):
                 interp.exec('raise Exception("it worked!")')
 
@@ -1278,7 +1278,7 @@ class LowLevelTests(TestBase):
             for id, *_ in _interpreters.list_all():
                 last = max(last, id)
             expected = last + 1
-            err, text = self.run_temp_external(script)
+            err, text = self.run_temp_from_capi(script)
             assert err is None, err
             interpid, = parse_stdout(text)
             self.assertEqual(interpid, expected)
@@ -1319,7 +1319,7 @@ class LowLevelTests(TestBase):
             expected3 = expected + [
                 (interpid5,),
             ]
-            err, text = self.run_temp_external(f"""
+            err, text = self.run_temp_from_capi(f"""
                 import {_interpreters.__name__} as _interpreters
                 _interpreters.create()
                 print(
@@ -1438,7 +1438,7 @@ class LowLevelTests(TestBase):
 
         with self.subTest('from C-API'):
             orig = _interpreters.new_config('isolated')
-            with self.unmanaged_interpreter(orig) as interpid:
+            with self.interpreter_from_capi(orig) as interpid:
                 config = _interpreters.get_config(interpid)
             self.assert_ns_equal(config, orig)
 
@@ -1460,19 +1460,19 @@ class LowLevelTests(TestBase):
             self.assertFalse(running)
 
         with self.subTest('from C-API (running __main__)'):
-            with self.unmanaged_interpreter() as interpid:
-                with self.running_external(interpid, main=True):
+            with self.interpreter_from_capi() as interpid:
+                with self.running_from_capi(interpid, main=True):
                     running = _interpreters.is_running(interpid)
             self.assertTrue(running)
 
         with self.subTest('from C-API (running, but not __main__)'):
-            with self.unmanaged_interpreter() as interpid:
-                with self.running_external(interpid, main=False):
+            with self.interpreter_from_capi() as interpid:
+                with self.running_from_capi(interpid, main=False):
                     running = _interpreters.is_running(interpid)
             self.assertFalse(running)
 
         with self.subTest('from C-API (not running)'):
-            with self.unmanaged_interpreter() as interpid:
+            with self.interpreter_from_capi() as interpid:
                 running = _interpreters.is_running(interpid)
                 self.assertFalse(running)
 
@@ -1509,7 +1509,7 @@ class LowLevelTests(TestBase):
             ))
 
         with self.subTest('from C-API'):
-            with self.unmanaged_interpreter() as interpid:
+            with self.interpreter_from_capi() as interpid:
                 exc = _interpreters.exec(interpid, 'raise Exception("it worked!")')
             self.assertIsNot(exc, None)
             self.assertEqual(exc.msg, 'it worked!')
@@ -1555,7 +1555,7 @@ class LowLevelTests(TestBase):
             self.assertEqual(after3.type.__name__, 'AssertionError')
 
         with self.subTest('from C-API'):
-            with self.unmanaged_interpreter() as interpid:
+            with self.interpreter_from_capi() as interpid:
                 _interpreters.set___main___attrs(interpid, {'spam': True})
                 exc = _interpreters.exec(interpid, 'assert spam is True')
             self.assertIsNone(exc)
