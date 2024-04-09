@@ -679,25 +679,25 @@ class CacheTests(unittest.TestCase):
     def test_time_re_recreation(self):
         # Make sure cache is recreated when current locale does not match what
         # cached object was created with.
-        _strptime._strptime_time("10", "%d")
+        _strptime._strptime_time("10 2004", "%d %Y")
         _strptime._strptime_time("2005", "%Y")
         _strptime._TimeRE_cache.locale_time.lang = "Ni"
         original_time_re = _strptime._TimeRE_cache
-        _strptime._strptime_time("10", "%d")
+        _strptime._strptime_time("10 2004", "%d %Y")
         self.assertIsNot(original_time_re, _strptime._TimeRE_cache)
         self.assertEqual(len(_strptime._regex_cache), 1)
 
     def test_regex_cleanup(self):
         # Make sure cached regexes are discarded when cache becomes "full".
         try:
-            del _strptime._regex_cache['%d']
+            del _strptime._regex_cache['%d %Y']
         except KeyError:
             pass
         bogus_key = 0
         while len(_strptime._regex_cache) <= _strptime._CACHE_MAX_SIZE:
             _strptime._regex_cache[bogus_key] = None
             bogus_key += 1
-        _strptime._strptime_time("10", "%d")
+        _strptime._strptime_time("10 2004", "%d %Y")
         self.assertEqual(len(_strptime._regex_cache), 1)
 
     def test_new_localetime(self):
@@ -705,7 +705,7 @@ class CacheTests(unittest.TestCase):
         # is created.
         locale_time_id = _strptime._TimeRE_cache.locale_time
         _strptime._TimeRE_cache.locale_time.lang = "Ni"
-        _strptime._strptime_time("10", "%d")
+        _strptime._strptime_time("10 2004", "%d %Y")
         self.assertIsNot(locale_time_id, _strptime._TimeRE_cache.locale_time)
 
     def test_TimeRE_recreation_locale(self):
@@ -716,13 +716,13 @@ class CacheTests(unittest.TestCase):
         except locale.Error:
             self.skipTest('test needs en_US.UTF8 locale')
         try:
-            _strptime._strptime_time('10', '%d')
+            _strptime._strptime_time('10 2004', '%d %Y')
             # Get id of current cache object.
             first_time_re = _strptime._TimeRE_cache
             try:
                 # Change the locale and force a recreation of the cache.
                 locale.setlocale(locale.LC_TIME, ('de_DE', 'UTF8'))
-                _strptime._strptime_time('10', '%d')
+                _strptime._strptime_time('10 2004', '%d %Y')
                 # Get the new cache object's id.
                 second_time_re = _strptime._TimeRE_cache
                 # They should not be equal.
