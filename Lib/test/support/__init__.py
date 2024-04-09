@@ -56,7 +56,7 @@ __all__ = [
     "run_with_tz", "PGO", "missing_compiler_executable",
     "ALWAYS_EQ", "NEVER_EQ", "LARGEST", "SMALLEST",
     "LOOPBACK_TIMEOUT", "INTERNET_TIMEOUT", "SHORT_TIMEOUT", "LONG_TIMEOUT",
-    "Py_DEBUG", "EXCEEDS_RECURSION_LIMIT", "Py_C_RECURSION_LIMIT",
+    "Py_DEBUG", "exceeds_recursion_limit", "get_c_recursion_limit",
     "skip_on_s390x",
     "without_optimizer",
     ]
@@ -2490,22 +2490,18 @@ def adjust_int_max_str_digits(max_digits):
         sys.set_int_max_str_digits(current)
 
 
-def _get_c_recursion_limit():
+def get_c_recursion_limit():
     try:
         import _testcapi
         return _testcapi.Py_C_RECURSION_LIMIT
-    except (ImportError, AttributeError):
-        # Originally taken from Include/cpython/pystate.h .
-        if sys.platform == 'win32':
-            return 4000
-        else:
-            return 10000
+    except ImportError:
+        raise unittest.SkipTest('requires _testcapi')
 
-# The default C recursion limit.
-Py_C_RECURSION_LIMIT = _get_c_recursion_limit()
 
-#For recursion tests, easily exceeds default recursion limit
-EXCEEDS_RECURSION_LIMIT = Py_C_RECURSION_LIMIT * 3
+def exceeds_recursion_limit():
+    """For recursion tests, easily exceeds default recursion limit."""
+    return get_c_recursion_limit() * 3
+
 
 #Windows doesn't have os.uname() but it doesn't support s390x.
 skip_on_s390x = unittest.skipIf(hasattr(os, 'uname') and os.uname().machine == 's390x',
