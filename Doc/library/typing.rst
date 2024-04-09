@@ -1476,7 +1476,7 @@ These can be used as types in annotations. They all support subscription using
    Type predicate functions are user-defined functions that return whether their
    argument is an instance of a particular type.
    ``TypeGuard`` works similarly to :data:`TypeIs`, but has subtly different
-   effects on type checking behavior.
+   effects on type checking behavior (see below).
 
    Using  ``-> TypeGuard`` tells the static type checker that for a given
    function:
@@ -1484,6 +1484,8 @@ These can be used as types in annotations. They all support subscription using
    1. The return value is a boolean.
    2. If the return value is ``True``, the type of its argument
       is the type inside ``TypeGuard``.
+
+   ``TypeGuard`` also works with type variables.  See :pep:`647` for more details.
 
    For example::
 
@@ -1512,8 +1514,6 @@ These can be used as types in annotations. They all support subscription using
    * When a ``TypeGuard`` function returns ``False``, type checkers cannot narrow the type of
      the variable at all. When a ``TypeIs`` function returns ``False``, type checkers can narrow
      the type of the variable to exclude the ``TypeIs`` type.
-
-   ``TypeGuard`` also works with type variables.  See :pep:`647` for more details.
 
    .. versionadded:: 3.10
 
