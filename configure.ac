@@ -2359,9 +2359,10 @@ AS_CASE([$ac_sys_system],
       AS_VAR_APPEND([LDFLAGS_NODIST], [" -Wl,--max-memory=10485760"])
     ])
 
-    dnl increase initial memory and stack size, move stack first
+    dnl gh-117645: increase initial memory to 20 MiB and stack size to 8 MiB,
+    dnl move stack first.
     dnl https://github.com/WebAssembly/wasi-libc/issues/233
-    AS_VAR_APPEND([LDFLAGS_NODIST], [" -z stack-size=524288 -Wl,--stack-first -Wl,--initial-memory=10485760"])
+    AS_VAR_APPEND([LDFLAGS_NODIST], [" -z stack-size=8388608 -Wl,--stack-first -Wl,--initial-memory=20971520"])
   ]
 )
 
