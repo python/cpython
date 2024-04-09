@@ -7,7 +7,7 @@ import re
 import os
 import sys
 from test import support
-from test.support import skip_if_buggy_ucrt_strfptime
+from test.support import skip_if_buggy_ucrt_strfptime, warnings_helper
 from datetime import date as datetime_date
 
 import _strptime
@@ -499,9 +499,11 @@ class StrptimeTests(unittest.TestCase):
         need_escaping = r".^$*+?{}\[]|)("
         self.assertTrue(_strptime._strptime_time(need_escaping, need_escaping))
 
+    @warnings_helper.ignore_warnings(category=DeprecationWarning)  # gh-70647
     def test_feb29_on_leap_year_without_year(self):
         time.strptime("Feb 29", "%b %d")
 
+    @warnings_helper.ignore_warnings(category=DeprecationWarning)  # gh-70647
     def test_mar1_comes_after_feb29_even_when_omitting_the_year(self):
         self.assertLess(
                 time.strptime("Feb 29", "%b %d"),
