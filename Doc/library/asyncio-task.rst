@@ -392,28 +392,27 @@ is also included in the exception group.
 The same special case is made for
 :exc:`KeyboardInterrupt` and :exc:`SystemExit` as in the previous paragraph.
 
-Task groups are careful not to drop outside cancellations
-when they collide with a cancellation internal to the task group.
+Task groups are careful not to mix up the internal cancellation used to
+"wake up" their :meth:`~object.__aexit__` with cancellation requests
+for the task in which they are running made by other parties.
 In particular, when one task group is syntactically nested in another,
 and both experience an exception in one of their child tasks simultaneously,
 the inner task group will process its exceptions, and then the outer task group
-will experience another cancellation and process its own exceptions.
+will receive another cancellation and process its own exceptions.
 
-In the case where a task group is cancelled from the outside and also must
+In the case where a task group is cancelled externally and also must
 raise an :exc:`ExceptionGroup`, it will call the parent task's
-:meth:`~asyncio.Task.cancel` method. This allows a :keyword:`try` /
-:keyword:`except* <except_star>` surrounding the task group to handle
-the exceptions in the ``ExceptionGroup`` without losing the cancellation.
-The :exc:`asyncio.CancelledError` will be raised at the next
-:keyword:`await` (which may be implied at the end of a surrounding
-:keyword:`async with` block).
+:meth:`~asyncio.Task.cancel` method. This ensures that a
+:exc:`asyncio.CancelledError` will be raised at the next
+:keyword:`await`, so the cancellation is not lost.
 
-Task groups now preserve the cancellation count
-(as reported by :meth:`asyncio.Task.cancelling`).
+Task groups preserve the cancellation count
+reported by :meth:`asyncio.Task.cancelling`.
 
 .. versionchanged:: 3.13
 
-   Improved handling of simultaneous inside and outside cancellation.
+   Improved handling of simultaneous internal and external cancellations
+   and correct preservation of cancellation counts.
 
 Sleeping
 ========
