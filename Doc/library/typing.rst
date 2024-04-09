@@ -857,7 +857,7 @@ using ``[]``.
    a type that has no members.
 
    This can be used to define a function that should never be
-   called, or a function that never returns::
+   called, as there are no valid arguments::
 
       from typing import Never
 
@@ -874,10 +874,15 @@ using ``[]``.
               case _:
                   never_call_me(arg)  # OK, arg is of type Never
 
+   ``Never`` can also be used to indicate that a function never returns,
+   but ``NoReturn`` is more explicit.
+
    .. versionadded:: 3.11
 
-      On older Python versions, :data:`NoReturn` may be used to express the
-      same concept. ``Never`` was added to make the intended meaning more explicit.
+      On older Python versions, :data:`NoReturn` may be used as a
+      replacement for ``Never``, which was added to make the use as a
+      `bottom type <https://en.wikipedia.org/wiki/Bottom_type>`_ more
+      explicit. Type checkers should treat the two equivalently.
 
 .. data:: NoReturn
 
@@ -893,8 +898,8 @@ using ``[]``.
    ``NoReturn`` can also be used as a
    `bottom type <https://en.wikipedia.org/wiki/Bottom_type>`_, a type that
    has no values. Starting in Python 3.11, the :data:`Never` type should
-   be used for this concept instead. Type checkers should treat the two
-   equivalently.
+   be used for this instead, and ``Never`` should only be used as return
+   annotation. Type checkers should treat the two equivalently.
 
    .. versionadded:: 3.6.2
 
