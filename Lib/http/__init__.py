@@ -26,6 +26,7 @@ class HTTPStatus:
     def __new__(cls, value, phrase, description=''):
         obj = int.__new__(cls, value)
         obj._value_ = value
+
         obj.phrase = phrase
         obj.description = description
         return obj
