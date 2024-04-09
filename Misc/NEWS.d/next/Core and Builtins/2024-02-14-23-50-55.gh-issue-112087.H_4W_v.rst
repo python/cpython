@@ -1,2 +1,0 @@
-For an empty reverse iterator for list will be reduced to :func:`reversed`.
-Patch by Donghee Na.

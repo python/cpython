@@ -1,3 +1,0 @@
-Respect the status of the garbage collector when indirect calls are made via
-:c:func:`PyErr_CheckSignals` and the evaluation breaker. Patch by Pablo
-Galindo
