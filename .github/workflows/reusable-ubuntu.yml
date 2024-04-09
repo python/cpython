@@ -16,6 +16,7 @@ jobs:
     env:
       OPENSSL_VER: 3.0.13
       PYTHONSTRICTEXTENSIONBUILD: 1
+      FORCE_COLOR: 1
     steps:
     - uses: actions/checkout@v4
     - name: Register gcc problem matcher
