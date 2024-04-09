@@ -63,7 +63,7 @@ int _PyInstructionSequence_InsertInstruction(_PyInstructionSequence *seq, int po
                                              int opcode, int oparg, _Py_SourceLocation loc);
 void PyInstructionSequence_Fini(_PyInstructionSequence *seq);
 
-PyTypeObject PyInstructionSequence_Type;
+extern PyTypeObject PyInstructionSequence_Type;
 #define _PyInstructionSequence_Check(v) Py_IS_TYPE((v), &PyInstructionSequence_Type)
 
 #ifdef __cplusplus
