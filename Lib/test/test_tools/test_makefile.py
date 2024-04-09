@@ -38,10 +38,10 @@ class TestMakefile(unittest.TestCase):
     @unittest.skipUnless(support.TEST_MODULES_ENABLED, "requires test modules")
     def test_makefile_test_folders(self):
         test_dirs = self.list_test_dirs()
-        idle_test = 'idlelib/idle_test'
-        self.assertIn(idle_test, test_dirs)
+        test_capi = 'test/test_capi'
+        self.assertIn(test_capi, test_dirs)
 
-        used = [idle_test]
+        used = [test_capi]
         for dirpath, dirs, files in os.walk(support.TEST_HOME_DIR):
             dirname = os.path.basename(dirpath)
             # Skip temporary dirs:
