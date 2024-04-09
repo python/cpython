@@ -4369,7 +4369,7 @@ class TestColorizedTraceback(unittest.TestCase):
         else:
             virtual_patching = contextlib.nullcontext()
         with virtual_patching:
-            with (unittest.mock.patch("os.isatty") as isatty_mock, 
+            with (unittest.mock.patch("os.isatty") as isatty_mock,
                   unittest.mock.patch("traceback._can_colorize", ORIGINAL_CAN_COLORIZE)):
                 isatty_mock.return_value = True
                 with unittest.mock.patch("os.environ", {'TERM': 'dumb'}):

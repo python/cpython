@@ -58,7 +58,7 @@ __all__ = [
     "LOOPBACK_TIMEOUT", "INTERNET_TIMEOUT", "SHORT_TIMEOUT", "LONG_TIMEOUT",
     "Py_DEBUG", "EXCEEDS_RECURSION_LIMIT", "Py_C_RECURSION_LIMIT",
     "skip_on_s390x",
-    "without_optimizer", "set_not_colorized_globally", "reset_colorized_globally",
+    "without_optimizer", "reset_colorized_globally",
     "force_not_colorized"
     ]
 
