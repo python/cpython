@@ -76,6 +76,7 @@ class CompilationStepTestCase(unittest.TestCase):
 
         self.assertIsInstance(expected, list)
         actual = actual_seq.get_instructions()
+        expected = self.seq_from_insts(expected).get_instructions()
         self.assertEqual(len(actual), len(expected))
 
         # compare instructions
@@ -85,16 +86,8 @@ class CompilationStepTestCase(unittest.TestCase):
                 continue
             self.assertIsInstance(exp, tuple)
             self.assertIsInstance(act, tuple)
-            exp, act = list(reversed(exp)), list(reversed(act))
-            op1, op2 = exp.pop(), opcode.opname[act.pop()]
-            self.assertEqual(op1, op2, "op mismatch")
-            if opcode.opmap[op1] in self.HAS_ARG:
-                arg1, arg2 = exp.pop(), act.pop()
-                self.assertEqual(arg1, arg2, "arg mismatch")
-            else:
-                act.pop()
-            loc1, loc2 = exp, act
-            self.assertEqual(loc1, loc2[-len(loc1):], "location mismatch")
+            idx = max([p[0] for p in enumerate(exp) if p[1] != -1])
+            self.assertEqual(exp[:idx], act[:idx])
 
     def resolveAndRemoveLabels(self, insts):
         idx = 0
@@ -120,46 +113,26 @@ class CompilationStepTestCase(unittest.TestCase):
                 seq.use_label(item.value)
             else:
                 op = item[0]
-                if op in self.HAS_ARG:
-                    arg, *loc = item[1:]
-                    if isinstance(arg, self.Label):
-                        arg = arg.value
-                else:
-                    arg = 0
-                    loc = list(item[1:])
+                if isinstance(op, str):
+                    op = opcode.opmap[op]
+                arg, *loc = item[1:]
+                if isinstance(arg, self.Label):
+                    arg = arg.value
                 loc = loc + [-1] * (4 - len(loc))
-                seq.addop(opcode.opmap[op], arg, *loc)
+                seq.addop(op, arg or 0, *loc)
         return seq
 
-    def normalize_insts(self, insts):
-        """ Map labels to instruction index.
-            Map opcodes to opnames.
-        """
-        insts = self.resolveAndRemoveLabels(insts)
-        res = []
-        for item in insts:
-            assert isinstance(item, tuple)
-            opcode, oparg, *loc = item
-            opcode = dis.opmap.get(opcode, opcode)
-            if isinstance(oparg, self.Label):
-                arg = oparg.value
-            else:
-                arg = oparg if opcode in self.HAS_ARG else None
-            opcode = dis.opname[opcode]
-            res.append((opcode, arg, *loc))
-        return res
-
-    def complete_insts_info(self, insts):
-        # fill in omitted fields in location, and oparg 0 for ops with no arg.
-        res = []
-        for item in insts:
-            assert isinstance(item, tuple)
-            inst = list(item)
-            opcode = dis.opmap[inst[0]]
-            oparg = inst[1]
-            loc = inst[2:] + [-1] * (6 - len(inst))
-            res.append((opcode, oparg, *loc))
-        return res
+    def check_instructions(self, insts):
+        for inst in insts:
+            if isinstance(inst, self.Label):
+                continue
+            op, arg, *loc = inst
+            if isinstance(op, str):
+                op = opcode.opmap[op]
+            self.assertEqual(op in opcode.hasarg,
+                             arg is not None,
+                             f"{opcode.opname[op]=} {arg=}")
+            self.assertTrue(all(isinstance(l, int) for l in loc))
 
 
 @unittest.skipIf(_testinternalcapi is None, "requires _testinternalcapi")
@@ -173,10 +146,8 @@ class CodegenTestCase(CompilationStepTestCase):
 @unittest.skipIf(_testinternalcapi is None, "requires _testinternalcapi")
 class CfgOptimizationTestCase(CompilationStepTestCase):
 
-    def get_optimized(self, insts, consts, nlocals=0):
-        insts = self.normalize_insts(insts)
-        insts = self.complete_insts_info(insts)
-        insts = _testinternalcapi.optimize_cfg(insts, consts, nlocals)
+    def get_optimized(self, seq, consts, nlocals=0):
+        insts = _testinternalcapi.optimize_cfg(seq, consts, nlocals)
         return insts, consts
 
 @unittest.skipIf(_testinternalcapi is None, "requires _testinternalcapi")

@@ -334,10 +334,20 @@ InstructionSequenceType_get_instructions_impl(_PyInstructionSequence *self)
     for (int i = 0; i < self->s_used; i++) {
         instruction *instr = &self->s_instrs[i];
         location loc = instr->i_loc;
-        PyObject *inst_tuple = Py_BuildValue(
-            "(iiiiii)", instr->i_opcode, instr->i_oparg,
-            loc.lineno, loc.end_lineno,
-            loc.col_offset, loc.end_col_offset);
+        PyObject *inst_tuple;
+
+        if (OPCODE_HAS_ARG(instr->i_opcode)) {
+            inst_tuple = Py_BuildValue(
+                "(iiiiii)", instr->i_opcode, instr->i_oparg,
+                loc.lineno, loc.end_lineno,
+                loc.col_offset, loc.end_col_offset);
+        }
+        else {
+            inst_tuple = Py_BuildValue(
+                "(iOiiii)", instr->i_opcode, Py_None,
+                loc.lineno, loc.end_lineno,
+                loc.col_offset, loc.end_col_offset);
+        }
         if (inst_tuple == NULL) {
             goto error;
         }

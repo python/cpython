@@ -7596,116 +7596,9 @@ optimize_and_assemble(struct compiler *c, int addNone)
  * a jump target label marking the beginning of a basic block.
  */
 
-static int
-instructions_to_instr_sequence(PyObject *instructions, instr_sequence *seq)
-{
-    assert(PyList_Check(instructions));
-
-    Py_ssize_t num_insts = PyList_GET_SIZE(instructions);
-    bool *is_target = PyMem_Calloc(num_insts, sizeof(bool));
-    if (is_target == NULL) {
-        return ERROR;
-    }
-    for (Py_ssize_t i = 0; i < num_insts; i++) {
-        PyObject *item = PyList_GET_ITEM(instructions, i);
-        if (!PyTuple_Check(item) || PyTuple_GET_SIZE(item) != 6) {
-            PyErr_SetString(PyExc_ValueError, "expected a 6-tuple");
-            goto error;
-        }
-        int opcode = PyLong_AsLong(PyTuple_GET_ITEM(item, 0));
-        if (PyErr_Occurred()) {
-            goto error;
-        }
-        if (HAS_TARGET(opcode)) {
-            int oparg = PyLong_AsLong(PyTuple_GET_ITEM(item, 1));
-            if (PyErr_Occurred()) {
-                goto error;
-            }
-            if (oparg < 0 || oparg >= num_insts) {
-                PyErr_SetString(PyExc_ValueError, "label out of range");
-                goto error;
-            }
-            is_target[oparg] = true;
-        }
-    }
-
-    for (int i = 0; i < num_insts; i++) {
-        if (is_target[i]) {
-            if (_PyInstructionSequence_UseLabel(seq, i) < 0) {
-                goto error;
-            }
-        }
-        PyObject *item = PyList_GET_ITEM(instructions, i);
-        if (!PyTuple_Check(item) || PyTuple_GET_SIZE(item) != 6) {
-            PyErr_SetString(PyExc_ValueError, "expected a 6-tuple");
-            goto error;
-        }
-        int opcode = PyLong_AsLong(PyTuple_GET_ITEM(item, 0));
-        if (PyErr_Occurred()) {
-            goto error;
-        }
-        int oparg;
-        if (OPCODE_HAS_ARG(opcode)) {
-            oparg = PyLong_AsLong(PyTuple_GET_ITEM(item, 1));
-            if (PyErr_Occurred()) {
-                goto error;
-            }
-        }
-        else {
-            oparg = 0;
-        }
-        location loc;
-        loc.lineno = PyLong_AsLong(PyTuple_GET_ITEM(item, 2));
-        if (PyErr_Occurred()) {
-            goto error;
-        }
-        loc.end_lineno = PyLong_AsLong(PyTuple_GET_ITEM(item, 3));
-        if (PyErr_Occurred()) {
-            goto error;
-        }
-        loc.col_offset = PyLong_AsLong(PyTuple_GET_ITEM(item, 4));
-        if (PyErr_Occurred()) {
-            goto error;
-        }
-        loc.end_col_offset = PyLong_AsLong(PyTuple_GET_ITEM(item, 5));
-        if (PyErr_Occurred()) {
-            goto error;
-        }
-        if (_PyInstructionSequence_Addop(seq, opcode, oparg, loc) < 0) {
-            goto error;
-        }
-    }
-    PyMem_Free(is_target);
-    return SUCCESS;
-error:
-    PyMem_Free(is_target);
-    return ERROR;
-}
-
-static cfg_builder*
-instructions_to_cfg(PyObject *instructions)
-{
-    cfg_builder *g = NULL;
-    instr_sequence seq;
-    memset(&seq, 0, sizeof(instr_sequence));
-
-    if (instructions_to_instr_sequence(instructions, &seq) < 0) {
-        goto error;
-    }
-    g = instr_sequence_to_cfg(&seq);
-    if (g == NULL) {
-        goto error;
-    }
-    PyInstructionSequence_Fini(&seq);
-    return g;
-error:
-    _PyCfgBuilder_Free(g);
-    PyInstructionSequence_Fini(&seq);
-    return NULL;
-}
 
 static PyObject *
-cfg_to_instructions(cfg_builder *g)
+cfg_to_instruction_sequence(cfg_builder *g)
 {
     instr_sequence *seq = (instr_sequence *)_PyInstructionSequence_New();
     if (_PyCfg_ToInstructionSequence(g, seq) < 0) {
@@ -7898,16 +7791,19 @@ finally:
 }
 
 PyObject *
-_PyCompile_OptimizeCfg(PyObject *instructions, PyObject *consts, int nlocals)
+_PyCompile_OptimizeCfg(PyObject *seq, PyObject *consts, int nlocals)
 {
-    cfg_builder *g = NULL;
-    PyObject *res = NULL;
+    if (!_PyInstructionSequence_Check(seq)) {
+        PyErr_SetString(PyExc_ValueError, "expected an instruction sequence");
+        return NULL;
+    }
     PyObject *const_cache = PyDict_New();
     if (const_cache == NULL) {
         return NULL;
     }
 
-    g = instructions_to_cfg(instructions);
+    PyObject *res = NULL;
+    cfg_builder *g = instr_sequence_to_cfg((instr_sequence*)seq);
     if (g == NULL) {
         goto error;
     }
@@ -7916,7 +7812,7 @@ _PyCompile_OptimizeCfg(PyObject *instructions, PyObject *consts, int nlocals)
                                 nparams, firstlineno) < 0) {
         goto error;
     }
-    res = cfg_to_instructions(g);
+    res = cfg_to_instruction_sequence(g);
 error:
     Py_DECREF(const_cache);
     _PyCfgBuilder_Free(g);
@@ -7927,8 +7823,12 @@ int _PyCfg_JumpLabelsToTargets(cfg_builder *g);
 
 PyCodeObject *
 _PyCompile_Assemble(_PyCompile_CodeUnitMetadata *umd, PyObject *filename,
-                    PyObject *instructions)
+                    PyObject *seq)
 {
+    if (!_PyInstructionSequence_Check(seq)) {
+        PyErr_SetString(PyExc_ValueError, "expected an instruction sequence");
+        return NULL;
+    }
     cfg_builder *g = NULL;
     PyCodeObject *co = NULL;
     instr_sequence optimized_instrs;
@@ -7939,7 +7839,7 @@ _PyCompile_Assemble(_PyCompile_CodeUnitMetadata *umd, PyObject *filename,
         return NULL;
     }
 
-    g = instructions_to_cfg(instructions);
+    g = instr_sequence_to_cfg((instr_sequence*)seq);
     if (g == NULL) {
         goto error;
     }
