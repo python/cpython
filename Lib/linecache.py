@@ -11,6 +11,7 @@ __all__ = ["getline", "clearcache", "checkcache", "lazycache"]
 # The cache. Maps filenames to either a thunk which will provide source code,
 # or a tuple (size, mtime, lines, fullname) once loaded.
 cache = {}
+_interactive_cache = {}
 
 
 def clearcache():
@@ -42,6 +43,21 @@ def getlines(filename, module_globals=None):
     except MemoryError:
         clearcache()
         return []
+
+
+def _getline_from_code(filename, lineno, module_globals=None):
+    lines = _getlines_from_code(filename, module_globals)
+    if 1 <= lineno <= len(lines):
+        return lines[lineno - 1]
+    return ''
+
+
+def _getlines_from_code(code, module_globals=None):
+    if code in _interactive_cache:
+        entry = _interactive_cache[code]
+        if len(entry) != 1:
+            return _interactive_cache[code][2]
+    return []
 
 
 def checkcache(filename=None):
@@ -196,8 +212,14 @@ def lazycache(filename, module_globals):
 
 
 def _register_code(code, string, name):
-    cache[code] = (
-            len(string),
-            None,
-            [line + '\n' for line in string.splitlines()],
-            name)
+    entry = (len(string),
+             None,
+             [line + '\n' for line in string.splitlines()],
+             name)
+    stack = [code]
+    while stack:
+        code = stack.pop()
+        for const in code.co_consts:
+            if isinstance(const, type(code)):
+                stack.append(const)
+        _interactive_cache[code] = entry
