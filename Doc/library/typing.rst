@@ -1756,7 +1756,9 @@ without the dedicated syntax, as documented below.
 
    .. attribute:: __default__
 
-      The default value of the type variable, if any.
+      The default value of the type variable, if any. This attribute is ``None``
+      if the type variable has no default, and :class:`types.NoneType`
+      if the default is set to ``None``.
 
       .. versionadded:: 3.13
 
@@ -1884,7 +1886,9 @@ without the dedicated syntax, as documented below.
 
    .. attribute:: __default__
 
-      The default value of the type variable, if any.
+      The default value of the type variable tuple, if any. This attribute is ``None``
+      if the type variable tuple has no default, and :class:`types.NoneType`
+      if the default is set to ``None``.
 
       .. versionadded:: 3.13
 
@@ -1970,7 +1974,9 @@ without the dedicated syntax, as documented below.
 
    .. attribute:: __default__
 
-      The default value of the type variable, if any.
+      The default value of the parameter specification, if any. This attribute is ``None``
+      if the parameter specification has no default, and :class:`types.NoneType`
+      if the default is set to ``None``.
 
       .. versionadded:: 3.13
 
