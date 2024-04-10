@@ -2343,7 +2343,7 @@ capi_call_instrumentation(PyMonitoringState *state, PyObject *codelike, int offs
     return err;
 }
 
-void
+int
 PyMonitoring_EnterScope(PyMonitoringState *state_array, uint64_t *version,
                          const uint8_t *event_types, Py_ssize_t length)
 {
@@ -2358,11 +2358,13 @@ PyMonitoring_EnterScope(PyMonitoringState *state_array, uint64_t *version,
         state_array[i].active = m->tools[event];
     }
     *version = global_version(interp);
+    return 0;
 }
 
-void
+int
 PyMonitoring_ExitScope(void)
 {
+    return 0;
 }
 
 int
