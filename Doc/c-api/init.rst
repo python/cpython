@@ -53,6 +53,11 @@ The following functions can be safely called before Python is initialized:
   * :c:func:`PyMem_RawCalloc`
   * :c:func:`PyMem_RawFree`
 
+* Synchronization
+
+  * :c:func:`PyMutex_Lock`
+  * :c:func:`PyMutex_Unlock`
+
 .. note::
 
    The following functions **should not be called** before
@@ -1942,3 +1947,31 @@ be used in new code.
 .. c:function:: void PyThread_delete_key_value(int key)
 .. c:function:: void PyThread_ReInitTLS()
 
+Synchronization Primitives
+==========================
+
+The C-API provides a basic mutual exclusion lock.
+
+.. c:type:: PyMutex
+
+   A mutual exclusion lock.  The ``PyMutex`` should be initialized to zero to
+   represent the unlocked state.  For example::
+
+      PyMutex mutex = {0};
+
+   .. versionadded:: 3.13
+
+.. c:function:: void PyMutex_Lock(PyMutex *m)
+
+   Lock the mutex.  If another thread has already locked it, the calling
+   thread will block until the mutex is unlocked.  While blocked, the thread
+   will temporarily release the :term:`GIL` if it is held.
+
+   .. versionadded:: 3.13
+
+.. c:function:: void PyMutex_Unlock(PyMutex *m)
+
+   Unlock the mutex. The mutex must be locked --- otherwise, the function will
+   issue a fatal error.
+
+   .. versionadded:: 3.13

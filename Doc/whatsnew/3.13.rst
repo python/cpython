@@ -1813,6 +1813,11 @@ New Features
 * Add :c:func:`PyType_GetModuleByDef` to the limited C API
   (Contributed by Victor Stinner in :gh:`116936`.)
 
+* Add :c:type:`PyMutex` API, a lightweight mutex that occupies a single byte.
+  The :c:func:`PyMutex_Lock` function will release the GIL (if currently held)
+  if the operation needs to block.
+  (Contributed by Sam Gross in :gh:`108724`.)
+
 
 Porting to Python 3.13
 ----------------------

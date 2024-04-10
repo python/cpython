@@ -207,10 +207,6 @@ struct _object {
 // Create a shared field from a refcnt and desired flags
 #define _Py_REF_SHARED(refcnt, flags) (((refcnt) << _Py_REF_SHARED_SHIFT) + (flags))
 
-// NOTE: In non-free-threaded builds, `struct _PyMutex` is defined in
-// pycore_lock.h. See pycore_lock.h for more details.
-struct _PyMutex { uint8_t v; };
-
 struct _object {
     // ob_tid stores the thread id (or zero). It is also used by the GC and the
     // trashcan mechanism as a linked list pointer and by the GC to store the
