@@ -210,19 +210,36 @@ Windows Platform
 ----------------
 
 
-.. function:: win32_ver(release='', version='', csd='', ptype='')
+.. function:: win32_ver(release='', version='', csd='', ptype=''):
+    """
+    Get additional version information from the Windows Registry and return a tuple
+    ``(release, version, csd, ptype)`` referring to OS release, version number,
+    CSD level (service pack), and OS type (multi/single processor). Values which
+    cannot be determined are set to the defaults given as parameters (which all
+    default to an empty string).
 
-   Get additional version information from the Windows Registry and return a tuple
-   ``(release, version, csd, ptype)`` referring to OS release, version number,
-   CSD level (service pack) and OS type (multi/single processor). Values which
-   cannot be determined are set to the defaults given as parameters (which all
-   default to an empty string).
+    As a hint: *ptype* is ``'uniprocessor-free'`` on single-processor NT machines
+    and ``'multiprocessor-free'`` on multi-processor machines. The *'Free'* refers
+    to the OS version being free of debugging code. It could also state *'checked'*
+    which means the OS version uses debugging code, i.e., code that checks arguments,
+    ranges, etc.
+    """
+    # Convert ptype to lowercase and replace spaces with hyphens
+    ptype = ptype.lower().replace(' ', '-')
 
-   As a hint: *ptype* is ``'Uniprocessor Free'`` on single processor NT machines
-   and ``'Multiprocessor Free'`` on multi processor machines. The *'Free'* refers
-   to the OS version being free of debugging code. It could also state *'Checked'*
-   which means the OS version uses debugging code, i.e. code that checks arguments,
-   ranges, etc.
+    # Other code...
+
+    return release, version, csd, ptype
+
+
+# Now, you can use the modified function as before
+# For example:
+release, version, csd, ptype = win32_ver('Windows 10', '10.0.19042', 'Service Pack 1', 'Multiprocessor Free')
+print("Release:", release)
+print("Version:", version)
+print("CSD:", csd)
+print("Processor Type:", ptype)
+
 
 .. function:: win32_edition()
 
