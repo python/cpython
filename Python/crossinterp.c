@@ -1868,8 +1868,8 @@ void
 _PyXI_EndInterpreter(PyInterpreterState *interp,
                      PyThreadState *tstate, PyThreadState **p_save_tstate)
 {
-    PyThreadState *cur_tstate = PyThreadState_GET();
     PyThreadState *save_tstate = NULL;
+    PyThreadState *cur_tstate = PyThreadState_GET();
     if (tstate == NULL) {
         if (PyThreadState_GetInterpreter(cur_tstate) == interp) {
             tstate = cur_tstate;
@@ -1889,7 +1889,18 @@ _PyXI_EndInterpreter(PyInterpreterState *interp,
         }
     }
 
-    Py_EndInterpreter(tstate);
+    long whence = _PyInterpreterState_GetWhence(interp);
+    assert(whence != _PyInterpreterState_WHENCE_RUNTIME);
+    if (whence == _PyInterpreterState_WHENCE_UNKNOWN) {
+        assert(!interp->_ready);
+        PyThreadState *tstate = PyThreadState_New(interp);
+        save_tstate = PyThreadState_Swap(tstate);
+        _PyInterpreterState_Clear(tstate);
+        PyInterpreterState_Delete(interp);
+    }
+    else {
+        Py_EndInterpreter(tstate);
+    }
 
     if (p_save_tstate != NULL) {
         save_tstate = *p_save_tstate;

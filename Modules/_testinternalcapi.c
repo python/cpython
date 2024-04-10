@@ -1443,17 +1443,20 @@ create_interpreter(PyObject *self, PyObject *args, PyObject *kwargs)
     PyObject *configobj = NULL;
     long whence = _PyInterpreterState_WHENCE_XI;
     if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-                                     "|O$p:create_interpreter", kwlist,
+                                     "|O$l:create_interpreter", kwlist,
                                      &configobj, &whence))
     {
         return NULL;
+    }
+    if (configobj == Py_None) {
+        configobj = NULL;
     }
 
     // Resolve the config.
     PyInterpreterConfig *config = NULL;
     PyInterpreterConfig _config;
     if (whence == _PyInterpreterState_WHENCE_UNKNOWN
-            || whence == _PyInterpreterState_WHENCE_UNKNOWN)
+            || whence == _PyInterpreterState_WHENCE_LEGACY_CAPI)
     {
         if (configobj != NULL) {
             PyErr_SetString(PyExc_ValueError, "got unexpected config");

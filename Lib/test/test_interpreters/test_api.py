@@ -16,7 +16,7 @@ from test.support.interpreters import (
 )
 from .utils import (
     _captured_script, _run_output, _running, TestBase,
-    requires__testinternalcapi, _testinternalcapi,
+    requires_test_modules, _testinternalcapi,
 )
 
 
@@ -163,7 +163,7 @@ class GetCurrentTests(TestBase):
             id2 = id(interp)
             self.assertNotEqual(id1, id2)
 
-    @requires__testinternalcapi
+    @requires_test_modules
     def test_created_with_capi(self):
         last = 0
         for id, *_ in _interpreters.list_all():
@@ -668,7 +668,7 @@ class TestInterpreterPrepareMain(TestBase):
                 interp.prepare_main({'spam': False})
         interp.exec('assert spam is True')
 
-    @requires__testinternalcapi
+    @requires_test_modules
     def test_created_with_capi(self):
         with self.interpreter_from_capi() as interpid:
             interp = interpreters.Interpreter(interpid)
@@ -1378,7 +1378,7 @@ class LowLevelTests(TestBase):
             with self.assertRaises(ValueError):
                 _interpreters.create(orig)
 
-    @requires__testinternalcapi
+    @requires_test_modules
     def test_destroy(self):
         with self.subTest('from _interpreters'):
             interpid = _interpreters.create()
@@ -1438,6 +1438,50 @@ class LowLevelTests(TestBase):
             with self.interpreter_from_capi(orig) as interpid:
                 config = _interpreters.get_config(interpid)
             self.assert_ns_equal(config, orig)
+
+    @requires_test_modules
+    def test_whence(self):
+        with self.subTest('main'):
+            interpid, *_ = _interpreters.get_main()
+            whence = _interpreters.whence(interpid)
+            self.assertEqual(whence, _interpreters.WHENCE_RUNTIME)
+
+        with self.subTest('stdlib'):
+            interpid = _interpreters.create()
+            whence = _interpreters.whence(interpid)
+            self.assertEqual(whence, _interpreters.WHENCE_XI)
+
+        for orig, name in {
+            # XXX Also check WHENCE_UNKNOWN.
+            _interpreters.WHENCE_LEGACY_CAPI: 'legacy C-API',
+            _interpreters.WHENCE_CAPI: 'C-API',
+            _interpreters.WHENCE_XI: 'cross-interpreter C-API',
+        }.items():
+            with self.subTest(f'from C-API ({orig}: {name})'):
+                with self.interpreter_from_capi(whence=orig) as interpid:
+                    whence = _interpreters.whence(interpid)
+                self.assertEqual(whence, orig)
+
+        with self.subTest('from C-API, running'):
+            text = self.run_temp_from_capi(dedent(f"""
+                import {_interpreters.__name__} as _interpreters
+                interpid, *_ = _interpreters.get_current()
+                print(_interpreters.whence(interpid))
+                """),
+                config=True)
+            whence = eval(text)
+            self.assertEqual(whence, _interpreters.WHENCE_CAPI)
+
+        with self.subTest('from legacy C-API, running'):
+            ...
+            text = self.run_temp_from_capi(dedent(f"""
+                import {_interpreters.__name__} as _interpreters
+                interpid, *_ = _interpreters.get_current()
+                print(_interpreters.whence(interpid))
+                """),
+                config=False)
+            whence = eval(text)
+            self.assertEqual(whence, _interpreters.WHENCE_LEGACY_CAPI)
 
     def test_is_running(self):
         with self.subTest('main'):

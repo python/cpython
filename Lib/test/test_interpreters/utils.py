@@ -26,12 +26,12 @@ from test.support import interpreters
 
 try:
     import _testinternalcapi
+    import _testcapi
 except ImportError:
     _testinternalcapi = None
-else:
-    run_in_interpreter = _testinternalcapi.run_in_subinterp_with_config
+    _testcapi = None
 
-def requires__testinternalcapi(func):
+def requires_test_modules(func):
     return unittest.skipIf(_testinternalcapi is None, "test requires _testinternalcapi module")(func)
 
 
@@ -509,12 +509,31 @@ class TestBase(unittest.TestCase):
         else:
             return text
 
-    @requires__testinternalcapi
+    @requires_test_modules
     @contextlib.contextmanager
-    def interpreter_from_capi(self, config='legacy'):
-        if isinstance(config, str):
+    def interpreter_from_capi(self, config=None, whence=None):
+        if config is False:
+            if whence is None:
+                whence = _interpreters.WHENCE_LEGACY_CAPI
+            else:
+                assert whence in (_interpreters.WHENCE_LEGACY_CAPI,
+                                  _interpreters.WHENCE_UNKNOWN), repr(whence)
+            config = None
+        elif config is True:
+            config = _interpreters.new_config('default')
+        elif config is None:
+            if whence not in (
+                _interpreters.WHENCE_LEGACY_CAPI,
+                _interpreters.WHENCE_UNKNOWN,
+            ):
+                config = _interpreters.new_config('legacy')
+        elif isinstance(config, str):
             config = _interpreters.new_config(config)
-        interpid = _testinternalcapi.create_interpreter()
+
+        if whence is None:
+            whence = _interpreters.WHENCE_XI
+
+        interpid = _testinternalcapi.create_interpreter(config, whence=whence)
         try:
             yield interpid
         finally:
@@ -535,7 +554,7 @@ class TestBase(unittest.TestCase):
         with capturing:
             yield wrapped, capturing.final(force=True)
 
-    @requires__testinternalcapi
+    @requires_test_modules
     def run_from_capi(self, interpid, script, *, main=False):
         with self.capturing(script) as (wrapped, results):
             rc = _testinternalcapi.exec_interpreter(interpid, wrapped, main=main)
@@ -622,7 +641,7 @@ class TestBase(unittest.TestCase):
         with self._running(run_interp, exec_interp):
             yield
 
-    @requires__testinternalcapi
+    @requires_test_modules
     @contextlib.contextmanager
     def running_from_capi(self, interpid, *, main=False):
         def run_interp(script):
@@ -634,12 +653,20 @@ class TestBase(unittest.TestCase):
         with self._running(run_interp, exec_interp):
             yield
 
-    @requires__testinternalcapi
+    @requires_test_modules
     def run_temp_from_capi(self, script, config='legacy'):
-        if isinstance(config, str):
-            config = _interpreters.new_config(config)
+        if config is False:
+            # Force using Py_NewInterpreter().
+            run_in_interp = (lambda s, c: _testcapi.run_in_subinterp(s))
+            config = None
+        else:
+            run_in_interp = _testinternalcapi.run_in_subinterp_with_config
+            if config is True:
+                config = 'default'
+            if isinstance(config, str):
+                config = _interpreters.new_config(config)
         with self.capturing(script) as (wrapped, results):
-            rc = run_in_interpreter(wrapped, config)
+            rc = run_in_interp(wrapped, config)
             assert rc == 0, rc
         results.raise_if_failed()
         return results.stdout
