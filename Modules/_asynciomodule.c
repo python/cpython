@@ -1601,23 +1601,25 @@ static void
 FutureIter_dealloc(futureiterobject *it)
 {
     PyTypeObject *tp = Py_TYPE(it);
-    asyncio_state *state = get_asyncio_state_by_def((PyObject *)it);
 
     assert(_PyType_HasFeature((PyTypeObject *)tp, Py_TPFLAGS_HEAPTYPE));
 
     PyHeapTypeObject *ht = (PyHeapTypeObject*)tp;
     PyObject *module = ht->ht_module;
+    asyncio_state *state = NULL;
 
     if (module && _PyModule_GetDef(module) == &_asynciomodule) {
+        state = get_asyncio_state(module);
         PyObject_GC_UnTrack(it);
         tp->tp_clear((PyObject *)it);
     }
 
-    if (state->fi_freelist_len < FI_FREELIST_MAXLEN) {
+    if (state && state->fi_freelist_len < FI_FREELIST_MAXLEN) {
         state->fi_freelist_len++;
         it->future = (FutureObj*) state->fi_freelist;
         state->fi_freelist = it;
     }
+
     else {
         PyObject_GC_Del(it);
         Py_DECREF(tp);
