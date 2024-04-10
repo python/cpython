@@ -160,7 +160,7 @@ import types
 import functools
 import builtins
 from keyword import iskeyword
-from operator import attrgetter
+from operator import attrgetter, or_
 from collections import namedtuple, OrderedDict
 
 # Create constants for the compiler flags in Include/code.h
@@ -2058,6 +2058,9 @@ def _signature_get_partial(wrapped_sig, partial, extra_args=()):
     on it.
     """
 
+    if isinstance(wrapped_sig, MultiSignature):
+        return _multisignature_get_partial(wrapped_sig, partial, extra_args)
+
     old_params = wrapped_sig.parameters
     new_params = OrderedDict(old_params.items())
 
@@ -2128,10 +2131,28 @@ def _signature_get_partial(wrapped_sig, partial, extra_args=()):
     return wrapped_sig.replace(parameters=new_params.values())
 
 
+def _multisignature_get_partial(wrapped_sig, partial, extra_args=()):
+    last_exc = None
+    signatures = []
+    for sig in wrapped_sig:
+        try:
+            signatures.append(_signature_get_partial(sig, partial, extra_args))
+        except (TypeError, ValueError) as e:
+            last_exc = e
+    if not signatures:
+        raise last_exc
+    if len(signatures) == 1:
+        return signatures[0]
+    return MultiSignature(signatures)
+
+
 def _signature_bound_method(sig):
     """Private helper to transform signatures for unbound
     functions to bound methods.
     """
+
+    if isinstance(sig, MultiSignature):
+        return MultiSignature([_signature_bound_method(s) for s in sig])
 
     params = tuple(sig.parameters.values())
 
@@ -2599,6 +2620,15 @@ def _signature_from_callable(obj, *,
                 # First argument of the wrapped callable is `*args`, as in
                 # `partialmethod(lambda *args)`.
                 return sig
+            elif isinstance(sig, MultiSignature):
+                new_sigs = []
+                for s in sig:
+                    sig_params = tuple(s.parameters.values())
+                    assert (not sig_params or
+                            first_wrapped_param is not sig_params[0])
+                    new_params = (first_wrapped_param,) + sig_params
+                    new_sigs.append(s.replace(parameters=new_params))
+                return MultiSignature(new_sigs)
             else:
                 sig_params = tuple(sig.parameters.values())
                 assert (not sig_params or
@@ -3405,9 +3435,18 @@ class MultiSignature(Signature):
             return self._return_annotation
         except AttributeError:
             pass
-        self._return_annotation = types.UnionType(tuple(s.return_annotation
-                                    for s in self._signatures
-                                    if s.return_annotation != _empty))
+        return_annotations = []
+        for s in self._signatures:
+            ann = s.return_annotation
+            if ann != _empty:
+                if ann is None:
+                    ann = type(ann)
+                elif isinstance(ann, str):
+                    from typing import ForwardRef
+                    ann = ForwardRef(ann)
+                return_annotations.append(ann)
+        self._return_annotation = (functools.reduce(or_, return_annotations)
+                                   if return_annotations else _empty)
         return self._return_annotation
 
     def replace(self):
@@ -3432,14 +3471,34 @@ class MultiSignature(Signature):
             return self._signatures[0] == other
         return NotImplemented
 
-    def _bind(self, args, kwargs, *, partial=False):
-        """Private method. Don't use directly."""
-        for i, s in enumerate(self._signatures):
+    def bind(self, /, *args, **kwargs):
+        last_exc = None
+        for s in self._signatures:
             try:
-                return s._bind(args, kwargs, partial=partial)
-            except TypeError:
-                if i == len(self._signatures) - 1:
-                    raise
+                return s.bind(*args, **kwargs)
+            except TypeError as e:
+                last_exc = e
+        raise last_exc
+
+    def bind_partial(self, /, *args, **kwargs):
+        last_exc = None
+        bas = []
+        for s in self._signatures:
+            try:
+                bas.append(s.bind_partial(*args, **kwargs))
+            except TypeError as e:
+                last_exc = e
+        if not bas:
+            raise last_exc
+        if len(bas) == 1:
+            return bas[0]
+        arguments = bas[0].arguments
+        for ba in bas:
+            if ba.arguments != arguments:
+                raise TypeError('ambiguous binding')
+        sig = (self if len(bas) == len(self._signatures) else
+               self.__class__([ba.signature for ba in bas]))
+        return BoundArguments(sig, arguments)
 
     def __reduce__(self):
         return type(self), (self._signatures,)
