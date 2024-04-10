@@ -814,8 +814,7 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno, void *Py_UNUSED(ignore
             Py_XSETREF(tstate->exc_info->exc_value, exc == Py_None ? NULL : exc);
         }
         else {
-            PyObject *v = Py_STACK_UNTAG_BORROWED(_PyFrame_StackPop(f->f_frame));
-            Py_XDECREF(v);
+            Py_XDECREF_STACKREF(_PyFrame_StackPop(f->f_frame));
         }
         start_stack = pop_value(start_stack);
     }

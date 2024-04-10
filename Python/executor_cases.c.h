@@ -987,29 +987,23 @@
         }
 
         case _STORE_SUBSCR: {
-            _PyStackRef sub_tagged;
-            PyObject *sub;
-            _PyStackRef container_tagged;
-            PyObject *container;
-            _PyStackRef v_tagged;
-            PyObject *v;
-            sub_tagged = stack_pointer[-1];
-            sub = Py_STACK_UNTAG_BORROWED(sub_tagged);
+            _PyStackRef sub;
+            _PyStackRef container;
+            _PyStackRef v;
+            sub = stack_pointer[-1];
 
-            container_tagged = stack_pointer[-2];
-            container = Py_STACK_UNTAG_BORROWED(container_tagged);
+            container = stack_pointer[-2];
 
-            v_tagged = stack_pointer[-3];
-            v = Py_STACK_UNTAG_BORROWED(v_tagged);
+            v = stack_pointer[-3];
 
             /* container[sub] = v */
-            int err = PyObject_SetItem(container, sub, v);
+            int err = PyObject_SetItem(Py_STACK_UNTAG_BORROWED(container), Py_STACK_UNTAG_OWNED(sub), Py_STACK_UNTAG_OWNED(v));
             (void)v;
-            Py_DECREF_STACKREF(v_tagged);
+            Py_DECREF_STACKREF(v);
             (void)container;
-            Py_DECREF_STACKREF(container_tagged);
+            Py_DECREF_STACKREF(container);
             (void)sub;
-            Py_DECREF_STACKREF(sub_tagged);
+            Py_DECREF_STACKREF(sub);
             if (err) JUMP_TO_ERROR();
             stack_pointer += -3;
             break;
@@ -1020,16 +1014,14 @@
             PyObject *sub;
             _PyStackRef list_tagged;
             PyObject *list;
-            _PyStackRef value_tagged;
-            PyObject *value;
+            _PyStackRef value;
             sub_tagged = stack_pointer[-1];
             sub = Py_STACK_UNTAG_BORROWED(sub_tagged);
 
             list_tagged = stack_pointer[-2];
             list = Py_STACK_UNTAG_BORROWED(list_tagged);
 
-            value_tagged = stack_pointer[-3];
-            value = Py_STACK_UNTAG_BORROWED(value_tagged);
+            value = stack_pointer[-3];
 
             if (!PyLong_CheckExact(sub)) {
                 UOP_STAT_INC(uopcode, miss);
@@ -1052,7 +1044,7 @@
             }
             STAT_INC(STORE_SUBSCR, hit);
             PyObject *old_value = PyList_GET_ITEM(list, index);
-            PyList_SET_ITEM(list, index, value);
+            PyList_SET_ITEM(list, index, Py_STACK_UNTAG_OWNED(value));
             assert(old_value != NULL);
             Py_DECREF(old_value);
             _Py_DECREF_SPECIALIZED(sub, (destructor)PyObject_Free);
@@ -1062,27 +1054,24 @@
         }
 
         case _STORE_SUBSCR_DICT: {
-            _PyStackRef sub_tagged;
-            PyObject *sub;
+            _PyStackRef sub;
             _PyStackRef dict_tagged;
             PyObject *dict;
-            _PyStackRef value_tagged;
-            PyObject *value;
-            sub_tagged = stack_pointer[-1];
-            sub = Py_STACK_UNTAG_BORROWED(sub_tagged);
+            _PyStackRef value;
+            sub = stack_pointer[-1];
 
             dict_tagged = stack_pointer[-2];
             dict = Py_STACK_UNTAG_BORROWED(dict_tagged);
 
-            value_tagged = stack_pointer[-3];
-            value = Py_STACK_UNTAG_BORROWED(value_tagged);
+            value = stack_pointer[-3];
 
             if (!PyDict_CheckExact(dict)) {
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
             }
             STAT_INC(STORE_SUBSCR, hit);
-            int err = _PyDict_SetItem_Take2((PyDictObject *)dict, sub, value);
+            int err = _PyDict_SetItem_Take2((PyDictObject *)dict,
+                Py_STACK_UNTAG_OWNED(sub), Py_STACK_UNTAG_OWNED(value));
             Py_DECREF_STACKREF(dict_tagged);
             if (err) JUMP_TO_ERROR();
             stack_pointer += -3;

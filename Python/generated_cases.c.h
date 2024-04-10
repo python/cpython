@@ -3901,10 +3901,8 @@ kwargs = Py_STACK_UNTAG_BORROWED(kwargs_tagged);
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(INTERPRETER_EXIT);
-            _PyStackRef retval_tagged;
-            PyObject *retval;
-            retval_tagged = stack_pointer[-1];
-            retval = Py_STACK_UNTAG_BORROWED(retval_tagged);
+            _PyStackRef retval;
+            retval = stack_pointer[-1];
 
             assert(frame == &entry_frame);
             assert(_PyFrame_IsIncomplete(frame));
@@ -3912,7 +3910,7 @@ kwargs = Py_STACK_UNTAG_BORROWED(kwargs_tagged);
             tstate->current_frame = frame->previous;
             assert(!_PyErr_Occurred(tstate));
             tstate->c_recursion_remaining += PY_EVAL_C_STACK_UNITS;
-            return retval;
+            return Py_STACK_UNTAG_OWNED(retval);
         }
 
         TARGET(IS_OP) {
@@ -6324,18 +6322,13 @@ kwargs = Py_STACK_UNTAG_BORROWED(kwargs_tagged);
             PREDICTED(STORE_SUBSCR);
             _Py_CODEUNIT *this_instr = next_instr - 2;
             (void)this_instr;
-            _PyStackRef sub_tagged;
-            PyObject *sub;
-            _PyStackRef container_tagged;
-            PyObject *container;
-            _PyStackRef v_tagged;
-            PyObject *v;
+            _PyStackRef sub;
+            _PyStackRef container;
+            _PyStackRef v;
             // _SPECIALIZE_STORE_SUBSCR
-            sub_tagged = stack_pointer[-1];
-            sub = Py_STACK_UNTAG_BORROWED(sub_tagged);
+            sub = stack_pointer[-1];
 
-            container_tagged = stack_pointer[-2];
-            container = Py_STACK_UNTAG_BORROWED(container_tagged);
+            container = stack_pointer[-2];
 
             {
                 uint16_t counter = read_u16(&this_instr[1].cache);
@@ -6343,7 +6336,8 @@ kwargs = Py_STACK_UNTAG_BORROWED(kwargs_tagged);
                 #if ENABLE_SPECIALIZATION
                 if (ADAPTIVE_COUNTER_TRIGGERS(counter)) {
                     next_instr = this_instr;
-                    _Py_Specialize_StoreSubscr(container, sub, next_instr);
+                    _Py_Specialize_StoreSubscr(Py_STACK_UNTAG_BORROWED(container),
+                        Py_STACK_UNTAG_BORROWED(sub), next_instr);
                     DISPATCH_SAME_OPARG();
                 }
                 STAT_INC(STORE_SUBSCR, deferred);
@@ -6351,18 +6345,17 @@ kwargs = Py_STACK_UNTAG_BORROWED(kwargs_tagged);
                 #endif  /* ENABLE_SPECIALIZATION */
             }
             // _STORE_SUBSCR
-            v_tagged = stack_pointer[-3];
-            v = Py_STACK_UNTAG_BORROWED(v_tagged);
+            v = stack_pointer[-3];
 
             {
                 /* container[sub] = v */
-                int err = PyObject_SetItem(container, sub, v);
+                int err = PyObject_SetItem(Py_STACK_UNTAG_BORROWED(container), Py_STACK_UNTAG_OWNED(sub), Py_STACK_UNTAG_OWNED(v));
                 (void)v;
-                Py_DECREF_STACKREF(v_tagged);
+                Py_DECREF_STACKREF(v);
                 (void)container;
-                Py_DECREF_STACKREF(container_tagged);
+                Py_DECREF_STACKREF(container);
                 (void)sub;
-                Py_DECREF_STACKREF(sub_tagged);
+                Py_DECREF_STACKREF(sub);
                 if (err) goto pop_3_error;
             }
             stack_pointer += -3;
@@ -6374,25 +6367,22 @@ kwargs = Py_STACK_UNTAG_BORROWED(kwargs_tagged);
             next_instr += 2;
             INSTRUCTION_STATS(STORE_SUBSCR_DICT);
             static_assert(INLINE_CACHE_ENTRIES_STORE_SUBSCR == 1, "incorrect cache size");
-            _PyStackRef sub_tagged;
-            PyObject *sub;
+            _PyStackRef sub;
             _PyStackRef dict_tagged;
             PyObject *dict;
-            _PyStackRef value_tagged;
-            PyObject *value;
+            _PyStackRef value;
             /* Skip 1 cache entry */
-            sub_tagged = stack_pointer[-1];
-            sub = Py_STACK_UNTAG_BORROWED(sub_tagged);
+            sub = stack_pointer[-1];
 
             dict_tagged = stack_pointer[-2];
             dict = Py_STACK_UNTAG_BORROWED(dict_tagged);
 
-            value_tagged = stack_pointer[-3];
-            value = Py_STACK_UNTAG_BORROWED(value_tagged);
+            value = stack_pointer[-3];
 
             DEOPT_IF(!PyDict_CheckExact(dict), STORE_SUBSCR);
             STAT_INC(STORE_SUBSCR, hit);
-            int err = _PyDict_SetItem_Take2((PyDictObject *)dict, sub, value);
+            int err = _PyDict_SetItem_Take2((PyDictObject *)dict,
+                Py_STACK_UNTAG_OWNED(sub), Py_STACK_UNTAG_OWNED(value));
             Py_DECREF_STACKREF(dict_tagged);
             if (err) goto pop_3_error;
             stack_pointer += -3;
@@ -6408,8 +6398,7 @@ kwargs = Py_STACK_UNTAG_BORROWED(kwargs_tagged);
             PyObject *sub;
             _PyStackRef list_tagged;
             PyObject *list;
-            _PyStackRef value_tagged;
-            PyObject *value;
+            _PyStackRef value;
             /* Skip 1 cache entry */
             sub_tagged = stack_pointer[-1];
             sub = Py_STACK_UNTAG_BORROWED(sub_tagged);
@@ -6417,8 +6406,7 @@ kwargs = Py_STACK_UNTAG_BORROWED(kwargs_tagged);
             list_tagged = stack_pointer[-2];
             list = Py_STACK_UNTAG_BORROWED(list_tagged);
 
-            value_tagged = stack_pointer[-3];
-            value = Py_STACK_UNTAG_BORROWED(value_tagged);
+            value = stack_pointer[-3];
 
             DEOPT_IF(!PyLong_CheckExact(sub), STORE_SUBSCR);
             DEOPT_IF(!PyList_CheckExact(list), STORE_SUBSCR);
@@ -6429,7 +6417,7 @@ kwargs = Py_STACK_UNTAG_BORROWED(kwargs_tagged);
             DEOPT_IF(index >= PyList_GET_SIZE(list), STORE_SUBSCR);
             STAT_INC(STORE_SUBSCR, hit);
             PyObject *old_value = PyList_GET_ITEM(list, index);
-            PyList_SET_ITEM(list, index, value);
+            PyList_SET_ITEM(list, index, Py_STACK_UNTAG_OWNED(value));
             assert(old_value != NULL);
             Py_DECREF(old_value);
             _Py_DECREF_SPECIALIZED(sub, (destructor)PyObject_Free);

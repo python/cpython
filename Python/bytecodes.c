@@ -701,11 +701,12 @@ dummy_func(
             STORE_SUBSCR_LIST_INT,
         };
 
-        specializing op(_SPECIALIZE_STORE_SUBSCR, (counter/1, container, sub -- container, sub)) {
+        specializing op(_SPECIALIZE_STORE_SUBSCR, (counter/1, container: _PyStackRef, sub: _PyStackRef -- container: _PyStackRef, sub: _PyStackRef)) {
             #if ENABLE_SPECIALIZATION
             if (ADAPTIVE_COUNTER_TRIGGERS(counter)) {
                 next_instr = this_instr;
-                _Py_Specialize_StoreSubscr(container, sub, next_instr);
+                _Py_Specialize_StoreSubscr(Py_STACK_UNTAG_BORROWED(container),
+                                           Py_STACK_UNTAG_BORROWED(sub), next_instr);
                 DISPATCH_SAME_OPARG();
             }
             STAT_INC(STORE_SUBSCR, deferred);
@@ -713,16 +714,16 @@ dummy_func(
             #endif  /* ENABLE_SPECIALIZATION */
         }
 
-        op(_STORE_SUBSCR, (v, container, sub -- )) {
+        op(_STORE_SUBSCR, (v: _PyStackRef, container: _PyStackRef, sub: _PyStackRef -- )) {
             /* container[sub] = v */
-            int err = PyObject_SetItem(container, sub, v);
+            int err = PyObject_SetItem(Py_STACK_UNTAG_BORROWED(container), Py_STACK_UNTAG_OWNED(sub), Py_STACK_UNTAG_OWNED(v));
             DECREF_INPUTS();
             ERROR_IF(err, error);
         }
 
         macro(STORE_SUBSCR) = _SPECIALIZE_STORE_SUBSCR + _STORE_SUBSCR;
 
-        inst(STORE_SUBSCR_LIST_INT, (unused/1, value, list, sub -- )) {
+        inst(STORE_SUBSCR_LIST_INT, (unused/1, value: _PyStackRef, list, sub -- )) {
             DEOPT_IF(!PyLong_CheckExact(sub));
             DEOPT_IF(!PyList_CheckExact(list));
 
@@ -734,17 +735,18 @@ dummy_func(
             STAT_INC(STORE_SUBSCR, hit);
 
             PyObject *old_value = PyList_GET_ITEM(list, index);
-            PyList_SET_ITEM(list, index, value);
+            PyList_SET_ITEM(list, index, Py_STACK_UNTAG_OWNED(value));
             assert(old_value != NULL);
             Py_DECREF(old_value);
             _Py_DECREF_SPECIALIZED(sub, (destructor)PyObject_Free);
             Py_DECREF_STACKREF(list_tagged);
         }
 
-        inst(STORE_SUBSCR_DICT, (unused/1, value, dict, sub -- )) {
+        inst(STORE_SUBSCR_DICT, (unused/1, value: _PyStackRef, dict, sub: _PyStackRef -- )) {
             DEOPT_IF(!PyDict_CheckExact(dict));
             STAT_INC(STORE_SUBSCR, hit);
-            int err = _PyDict_SetItem_Take2((PyDictObject *)dict, sub, value);
+            int err = _PyDict_SetItem_Take2((PyDictObject *)dict,
+                                            Py_STACK_UNTAG_OWNED(sub), Py_STACK_UNTAG_OWNED(value));
             Py_DECREF_STACKREF(dict_tagged);
             ERROR_IF(err, error);
         }
@@ -794,14 +796,14 @@ dummy_func(
             ERROR_IF(true, error);
         }
 
-        tier1 inst(INTERPRETER_EXIT, (retval --)) {
+        tier1 inst(INTERPRETER_EXIT, (retval: _PyStackRef --)) {
             assert(frame == &entry_frame);
             assert(_PyFrame_IsIncomplete(frame));
             /* Restore previous frame and return. */
             tstate->current_frame = frame->previous;
             assert(!_PyErr_Occurred(tstate));
             tstate->c_recursion_remaining += PY_EVAL_C_STACK_UNITS;
-            return retval;
+            return Py_STACK_UNTAG_OWNED(retval);
         }
 
         // The stack effect here is ambiguous.

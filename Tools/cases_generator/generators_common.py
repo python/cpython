@@ -126,6 +126,8 @@ def replace_decrefs(
     next(tkn_iter)
     out.emit_at("", tkn)
     for var in uop.stack.inputs:
+        typ = var.type or ""
+        tagged = "_tagged" if typ.strip() != "_PyStackRef" else ""
         if var.name == "unused" or var.name == "null" or var.peek:
             continue
         if var.size != "1":
@@ -135,12 +137,12 @@ def replace_decrefs(
         elif var.condition:
             out.emit(f"(void){var.name};\n")
             if var.condition == "1":
-                out.emit(f"Py_DECREF_STACKREF({var.name}_tagged);\n")
+                out.emit(f"Py_DECREF_STACKREF({var.name}{tagged});\n")
             elif var.condition != "0":
-                out.emit(f"Py_XDECREF_STACKREF({var.name}_tagged);\n")
+                out.emit(f"Py_XDECREF_STACKREF({var.name}{tagged});\n")
         else:
             out.emit(f"(void){var.name};\n")
-            out.emit(f"Py_DECREF_STACKREF({var.name}_tagged);\n")
+            out.emit(f"Py_DECREF_STACKREF({var.name}{tagged});\n")
 
 
 def replace_sync_sp(
