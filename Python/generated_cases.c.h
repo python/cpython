@@ -459,34 +459,27 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(BINARY_SLICE);
-            _PyStackRef stop_tagged;
-            PyObject *stop;
-            _PyStackRef start_tagged;
-            PyObject *start;
-            _PyStackRef container_tagged;
-            PyObject *container;
+            _PyStackRef stop;
+            _PyStackRef start;
+            _PyStackRef container;
             PyObject *res;
-            stop_tagged = stack_pointer[-1];
-            stop = Py_STACK_UNTAG_BORROWED(stop_tagged);
+            stop = stack_pointer[-1];
 
-            start_tagged = stack_pointer[-2];
-            start = Py_STACK_UNTAG_BORROWED(start_tagged);
+            start = stack_pointer[-2];
 
-            container_tagged = stack_pointer[-3];
-            container = Py_STACK_UNTAG_BORROWED(container_tagged);
+            container = stack_pointer[-3];
 
-            // TODO: make this support tagged pointers
-            PyObject *slice = _PyBuildSlice_ConsumeRefs(start, stop);
+            PyObject *slice = _PyBuildSlice_ConsumeStackRefs(start, stop);
             // Can't use ERROR_IF() here, because we haven't
             // DECREF'ed container yet, and we still own slice.
             if (slice == NULL) {
                 res = NULL;
             }
             else {
-                res = PyObject_GetItem(container, slice);
+                res = PyObject_GetItem(Py_STACK_UNTAG_BORROWED(container), slice);
                 Py_DECREF(slice);
             }
-            Py_DECREF_STACKREF(container_tagged);
+            Py_DECREF_STACKREF(container);
             if (res == NULL) goto pop_3_error;
             stack_pointer[-3] = Py_STACK_TAG(res);
             stack_pointer += -2;
@@ -6296,38 +6289,29 @@ kwargs = Py_STACK_UNTAG_BORROWED(kwargs_tagged);
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(STORE_SLICE);
-            _PyStackRef stop_tagged;
-            PyObject *stop;
-            _PyStackRef start_tagged;
-            PyObject *start;
-            _PyStackRef container_tagged;
-            PyObject *container;
-            _PyStackRef v_tagged;
-            PyObject *v;
-            stop_tagged = stack_pointer[-1];
-            stop = Py_STACK_UNTAG_BORROWED(stop_tagged);
+            _PyStackRef stop;
+            _PyStackRef start;
+            _PyStackRef container;
+            _PyStackRef v;
+            stop = stack_pointer[-1];
 
-            start_tagged = stack_pointer[-2];
-            start = Py_STACK_UNTAG_BORROWED(start_tagged);
+            start = stack_pointer[-2];
 
-            container_tagged = stack_pointer[-3];
-            container = Py_STACK_UNTAG_BORROWED(container_tagged);
+            container = stack_pointer[-3];
 
-            v_tagged = stack_pointer[-4];
-            v = Py_STACK_UNTAG_BORROWED(v_tagged);
+            v = stack_pointer[-4];
 
-            // TODO make this support tageed pointers
-            PyObject *slice = _PyBuildSlice_ConsumeRefs(start, stop);
+            PyObject *slice = _PyBuildSlice_ConsumeStackRefs(start, stop);
             int err;
             if (slice == NULL) {
                 err = 1;
             }
             else {
-                err = PyObject_SetItem(container, slice, v);
+                err = PyObject_SetItem(Py_STACK_UNTAG_BORROWED(container), slice, Py_STACK_UNTAG_OWNED(v));
                 Py_DECREF(slice);
             }
-            Py_DECREF_STACKREF(v_tagged);
-            Py_DECREF_STACKREF(container_tagged);
+            Py_DECREF_STACKREF(v);
+            Py_DECREF_STACKREF(container);
             if (err) goto pop_4_error;
             stack_pointer += -4;
             DISPATCH();

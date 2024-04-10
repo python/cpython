@@ -574,35 +574,33 @@ dummy_func(
 
         macro(BINARY_SUBSCR) = _SPECIALIZE_BINARY_SUBSCR + _BINARY_SUBSCR;
 
-        inst(BINARY_SLICE, (container, start, stop -- res)) {
-            // TODO: make this support tagged pointers
-            PyObject *slice = _PyBuildSlice_ConsumeRefs(start, stop);
+        inst(BINARY_SLICE, (container: _PyStackRef, start: _PyStackRef, stop: _PyStackRef -- res)) {
+            PyObject *slice = _PyBuildSlice_ConsumeStackRefs(start, stop);
             // Can't use ERROR_IF() here, because we haven't
             // DECREF'ed container yet, and we still own slice.
             if (slice == NULL) {
                 res = NULL;
             }
             else {
-                res = PyObject_GetItem(container, slice);
+                res = PyObject_GetItem(Py_STACK_UNTAG_BORROWED(container), slice);
                 Py_DECREF(slice);
             }
-            Py_DECREF_STACKREF(container_tagged);
+            Py_DECREF_STACKREF(container);
             ERROR_IF(res == NULL, error);
         }
 
-        inst(STORE_SLICE, (v, container, start, stop -- )) {
-            // TODO make this support tageed pointers
-            PyObject *slice = _PyBuildSlice_ConsumeRefs(start, stop);
+        inst(STORE_SLICE, (v: _PyStackRef, container: _PyStackRef, start: _PyStackRef, stop: _PyStackRef -- )) {
+            PyObject *slice = _PyBuildSlice_ConsumeStackRefs(start, stop);
             int err;
             if (slice == NULL) {
                 err = 1;
             }
             else {
-                err = PyObject_SetItem(container, slice, v);
+                err = PyObject_SetItem(Py_STACK_UNTAG_BORROWED(container), slice, Py_STACK_UNTAG_OWNED(v));
                 Py_DECREF(slice);
             }
-            Py_DECREF_STACKREF(v_tagged);
-            Py_DECREF_STACKREF(container_tagged);
+            Py_DECREF_STACKREF(v);
+            Py_DECREF_STACKREF(container);
             ERROR_IF(err, error);
         }
 

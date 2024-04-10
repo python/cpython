@@ -12,7 +12,7 @@ extern "C" {
 /* runtime lifecycle */
 
 PyAPI_FUNC(PyObject *)
-_PyBuildSlice_ConsumeRefs(PyObject *start, PyObject *stop);
+_PyBuildSlice_ConsumeStackRefs(_PyStackRef start, _PyStackRef stop);
 
 #ifdef __cplusplus
 }
