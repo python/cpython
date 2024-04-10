@@ -696,6 +696,9 @@ class PathBase(PurePathBase):
             case_sensitive = _is_case_sensitive(self.parser)
             case_pedantic = False
         else:
+            # The user has expressed a case sensitivity choice, but we don't
+            # know the case sensitivity of the underlying filesystem, so we
+            # must use scandir() for everything, including non-wildcard parts.
             case_pedantic = True
         recursive = True if recurse_symlinks else glob._no_recurse_symlinks
         globber = self._globber(self.parser.sep, case_sensitive, case_pedantic, recursive)
