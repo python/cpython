@@ -1152,6 +1152,32 @@ Return a representation of the config used to initialize the interpreter.");
 
 
 static PyObject *
+interp_whence(PyObject *self, PyObject *args, PyObject *kwds)
+{
+    static char *kwlist[] = {"id", NULL};
+    PyObject *id;
+    if (!PyArg_ParseTupleAndKeywords(args, kwds,
+                                     "O:whence", kwlist, &id))
+    {
+        return NULL;
+    }
+
+    PyInterpreterState *interp = look_up_interp(id);
+    if (interp == NULL) {
+        return NULL;
+    }
+
+    long whence = _PyInterpreterState_GetWhence(interp);
+    return PyLong_FromLong(whence);
+}
+
+PyDoc_STRVAR(whence_doc,
+"whence(id) -> int\n\
+\n\
+Return an identifier for where the interpreter was created.");
+
+
+static PyObject *
 interp_incref(PyObject *self, PyObject *args, PyObject *kwds)
 {
     static char *kwlist[] = {"id", "implieslink",  NULL};
@@ -1286,6 +1312,8 @@ static PyMethodDef module_functions[] = {
      METH_VARARGS | METH_KEYWORDS, is_running_doc},
     {"get_config",                _PyCFunction_CAST(interp_get_config),
      METH_VARARGS | METH_KEYWORDS, get_config_doc},
+    {"whence",                    _PyCFunction_CAST(interp_whence),
+     METH_VARARGS | METH_KEYWORDS, whence_doc},
     {"exec",                      _PyCFunction_CAST(interp_exec),
      METH_VARARGS | METH_KEYWORDS, exec_doc},
     {"call",                      _PyCFunction_CAST(interp_call),
@@ -1324,6 +1352,19 @@ module_exec(PyObject *mod)
 {
     PyInterpreterState *interp = PyInterpreterState_Get();
     module_state *state = get_module_state(mod);
+
+#define ADD_WHENCE(NAME) \
+    if (PyModule_AddIntConstant(mod, "WHENCE_" #NAME,                   \
+                                _PyInterpreterState_WHENCE_##NAME) < 0) \
+    {                                                                   \
+        goto error;                                                     \
+    }
+    ADD_WHENCE(UNKNOWN)
+    ADD_WHENCE(RUNTIME)
+    ADD_WHENCE(LEGACY_CAPI)
+    ADD_WHENCE(CAPI)
+    ADD_WHENCE(XI)
+#undef ADD_WHENCE
 
     // exceptions
     if (PyModule_AddType(mod, (PyTypeObject *)PyExc_InterpreterError) < 0) {

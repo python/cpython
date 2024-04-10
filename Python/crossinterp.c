@@ -1845,6 +1845,8 @@ _PyXI_NewInterpreter(PyInterpreterConfig *config,
     assert(tstate != NULL);
     PyInterpreterState *interp = PyThreadState_GetInterpreter(tstate);
 
+    _PyInterpreterState_SetWhence(interp, _PyInterpreterState_WHENCE_XI);
+
     if (p_tstate != NULL) {
         // We leave the new thread state as the current one.
         *p_tstate = tstate;
