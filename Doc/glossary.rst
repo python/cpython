@@ -547,12 +547,10 @@ Glossary
       tasks such as compression or hashing.  Also, the GIL is always released
       when doing I/O.
 
-      Past efforts to create a "free-threaded" interpreter (one which locks
-      shared data at a much finer granularity) have not been successful
-      because performance suffered in the common single-processor case. It
-      is believed that overcoming this performance issue would make the
-      implementation much more complicated and therefore costlier to maintain.
-
+      As of Python 3.13, the GIL can be disabled using the `--disable-gil` build
+      configuration or `PYTHON_GIL=0` environment variable. This feature enables
+      improved performance for multi-threaded applications or on multi-core
+      systems. For more details, see :pep:`703`.
 
    hash-based pyc
       A bytecode cache file that uses the hash rather than the last-modified
