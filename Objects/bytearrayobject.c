@@ -1147,7 +1147,6 @@ bytearray_find_impl(PyByteArrayObject *self, PyObject *sub, Py_ssize_t start,
 }
 
 /*[clinic input]
-@text_signature "($self, sub[, start[, end]], /)"
 bytearray.count = bytearray.find
 
 Return the number of non-overlapping occurrences of subsection 'sub' in bytes B[start:end].
@@ -1156,7 +1155,7 @@ Return the number of non-overlapping occurrences of subsection 'sub' in bytes B[
 static PyObject *
 bytearray_count_impl(PyByteArrayObject *self, PyObject *sub,
                      Py_ssize_t start, Py_ssize_t end)
-/*[clinic end generated code: output=a21ee2692e4f1233 input=f4582e0f6bc42fd7]*/
+/*[clinic end generated code: output=a21ee2692e4f1233 input=4deb529db38deda8]*/
 {
     return _Py_bytes_count(PyByteArray_AS_STRING(self), PyByteArray_GET_SIZE(self),
                            sub, start, end);
@@ -1192,7 +1191,6 @@ bytearray_copy_impl(PyByteArrayObject *self)
 }
 
 /*[clinic input]
-@text_signature "($self, sub[, start[, end]], /)"
 bytearray.index = bytearray.find
 
 Return the lowest index in B where subsection 'sub' is found, such that 'sub' is contained within B[start,end].
@@ -1203,14 +1201,13 @@ Raise ValueError if the subsection is not found.
 static PyObject *
 bytearray_index_impl(PyByteArrayObject *self, PyObject *sub,
                      Py_ssize_t start, Py_ssize_t end)
-/*[clinic end generated code: output=067a1e78efc672a7 input=5dab02095748cc92]*/
+/*[clinic end generated code: output=067a1e78efc672a7 input=78239d5ea77ce955]*/
 {
     return _Py_bytes_index(PyByteArray_AS_STRING(self), PyByteArray_GET_SIZE(self),
                            sub, start, end);
 }
 
 /*[clinic input]
-@text_signature "($self, sub[, start[, end]], /)"
 bytearray.rfind = bytearray.find
 
 Return the highest index in B where subsection 'sub' is found, such that 'sub' is contained within B[start,end].
@@ -1221,14 +1218,13 @@ Return -1 on failure.
 static PyObject *
 bytearray_rfind_impl(PyByteArrayObject *self, PyObject *sub,
                      Py_ssize_t start, Py_ssize_t end)
-/*[clinic end generated code: output=51bf886f932b283c input=0c059ef74263f94b]*/
+/*[clinic end generated code: output=51bf886f932b283c input=235e5579a8e22f17]*/
 {
     return _Py_bytes_rfind(PyByteArray_AS_STRING(self), PyByteArray_GET_SIZE(self),
                            sub, start, end);
 }
 
 /*[clinic input]
-@text_signature "($self, sub[, start[, end]], /)"
 bytearray.rindex = bytearray.find
 
 Return the highest index in B where subsection 'sub' is found, such that 'sub' is contained within B[start,end].
@@ -1239,7 +1235,7 @@ Raise ValueError if the subsection is not found.
 static PyObject *
 bytearray_rindex_impl(PyByteArrayObject *self, PyObject *sub,
                       Py_ssize_t start, Py_ssize_t end)
-/*[clinic end generated code: output=38e1cf66bafb08b9 input=b1e0254a85220795]*/
+/*[clinic end generated code: output=38e1cf66bafb08b9 input=dcf4f35717461bff]*/
 {
     return _Py_bytes_rindex(PyByteArray_AS_STRING(self), PyByteArray_GET_SIZE(self),
                             sub, start, end);

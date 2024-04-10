@@ -1889,7 +1889,6 @@ bytes_find_impl(PyBytesObject *self, PyObject *sub, Py_ssize_t start,
 }
 
 /*[clinic input]
-@text_signature "($self, sub[, start[, end]], /)"
 bytes.index = bytes.find
 
 Return the lowest index in B where subsection 'sub' is found, such that 'sub' is contained within B[start,end].
@@ -1900,14 +1899,13 @@ Raise ValueError if the subsection is not found.
 static PyObject *
 bytes_index_impl(PyBytesObject *self, PyObject *sub, Py_ssize_t start,
                  Py_ssize_t end)
-/*[clinic end generated code: output=0da25cc74683ba42 input=712ec82ceee77c06]*/
+/*[clinic end generated code: output=0da25cc74683ba42 input=aa34ad71ba0bafe3]*/
 {
     return _Py_bytes_index(PyBytes_AS_STRING(self), PyBytes_GET_SIZE(self),
                            sub, start, end);
 }
 
 /*[clinic input]
-@text_signature "($self, sub[, start[, end]], /)"
 bytes.rfind = bytes.find
 
 Return the highest index in B where subsection 'sub' is found, such that 'sub' is contained within B[start,end].
@@ -1918,14 +1916,13 @@ Return -1 on failure.
 static PyObject *
 bytes_rfind_impl(PyBytesObject *self, PyObject *sub, Py_ssize_t start,
                  Py_ssize_t end)
-/*[clinic end generated code: output=51b60fa4ad011c09 input=19e2e378ffb1cad1]*/
+/*[clinic end generated code: output=51b60fa4ad011c09 input=864c3e7f3010b33c]*/
 {
     return _Py_bytes_rfind(PyBytes_AS_STRING(self), PyBytes_GET_SIZE(self),
                            sub, start, end);
 }
 
 /*[clinic input]
-@text_signature "($self, sub[, start[, end]], /)"
 bytes.rindex = bytes.find
 
 Return the highest index in B where subsection 'sub' is found, such that 'sub' is contained within B[start,end].
@@ -1936,7 +1933,7 @@ Raise ValueError if the subsection is not found.
 static PyObject *
 bytes_rindex_impl(PyBytesObject *self, PyObject *sub, Py_ssize_t start,
                   Py_ssize_t end)
-/*[clinic end generated code: output=42bf674e0a0aabf6 input=3a398f4797c1ab93]*/
+/*[clinic end generated code: output=42bf674e0a0aabf6 input=21051fc5cfeacf2c]*/
 {
     return _Py_bytes_rindex(PyBytes_AS_STRING(self), PyBytes_GET_SIZE(self),
                             sub, start, end);
@@ -2077,7 +2074,6 @@ bytes_rstrip_impl(PyBytesObject *self, PyObject *bytes)
 
 
 /*[clinic input]
-@text_signature "($self, sub[, start[, end]], /)"
 bytes.count = bytes.find
 
 Return the number of non-overlapping occurrences of subsection 'sub' in bytes B[start:end].
@@ -2086,7 +2082,7 @@ Return the number of non-overlapping occurrences of subsection 'sub' in bytes B[
 static PyObject *
 bytes_count_impl(PyBytesObject *self, PyObject *sub, Py_ssize_t start,
                  Py_ssize_t end)
-/*[clinic end generated code: output=9848140b9be17d0f input=e620ca81fb49f0de]*/
+/*[clinic end generated code: output=9848140b9be17d0f input=b6e4a5ed515e1e59]*/
 {
     return _Py_bytes_count(PyBytes_AS_STRING(self), PyBytes_GET_SIZE(self),
                            sub, start, end);
