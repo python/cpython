@@ -155,10 +155,15 @@ def _can_colorize():
             return True
         if os.environ.get("TERM") == "dumb":
             return False
+
+    if not hasattr(sys.stderr, "fileno"):
+        return False
+
     try:
         return os.isatty(sys.stderr.fileno())
     except io.UnsupportedOperation:
         return sys.stderr.isatty()
+
 
 def _print_exception_bltin(exc, /):
     file = sys.stderr if sys.stderr is not None else sys.__stderr__
