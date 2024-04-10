@@ -1,4 +1,5 @@
-## reference: https://github.com/google/sanitizers/wiki/ThreadSanitizerSuppressions
+# This file contains suppressions for the default (with GIL) build.
+# reference: https://github.com/google/sanitizers/wiki/ThreadSanitizerSuppressions
 race:get_allocator_unlocked
 race:set_allocator_unlocked
 race:mi_heap_visit_pages
