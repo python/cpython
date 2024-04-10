@@ -89,6 +89,8 @@ Interpreter improvements:
 
 New typing features:
 
+* :pep:`696`: Type parameters (:data:`typing.TypeVar`, :data:`typing.ParamSpec`,
+  and :data:`typing.TypeVarTuple`) now support defaults.
 * :pep:`742`: :data:`typing.TypeIs` was added, providing more intuitive
   type narrowing behavior.
 
