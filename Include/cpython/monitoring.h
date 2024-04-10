@@ -11,7 +11,7 @@ typedef struct _PyMonitoringState {
 
 PyAPI_FUNC(void)
 PyMonitoring_EnterScope(PyMonitoringState *state_array, uint64_t *version,
-                         const uint8_t *event_types, uint32_t length);
+                         const uint8_t *event_types, Py_ssize_t length);
 
 PyAPI_FUNC(void)
 PyMonitoring_ExitScope(void);

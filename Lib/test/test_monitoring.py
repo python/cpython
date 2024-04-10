@@ -1900,10 +1900,10 @@ class TestCApiEventGeneration(MonitoringTestBase, unittest.TestCase):
             self.args = args
 
         def __enter__(self):
-            _testcapi.enter_scope(*self.args)
+            _testcapi.monitoring_enter_scope(*self.args)
 
         def __exit__(self, *args):
-            _testcapi.exit_scope()
+            _testcapi.monitoring_exit_scope()
 
     def setUp(self):
         super(TestCApiEventGeneration, self).setUp()

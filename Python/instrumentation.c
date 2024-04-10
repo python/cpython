@@ -2345,7 +2345,7 @@ capi_call_instrumentation(PyMonitoringState *state, PyObject *codelike, int offs
 
 void
 PyMonitoring_EnterScope(PyMonitoringState *state_array, uint64_t *version,
-                         const uint8_t *event_types, uint32_t length)
+                         const uint8_t *event_types, Py_ssize_t length)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
     if (global_version(interp) == *version) {
@@ -2353,7 +2353,7 @@ PyMonitoring_EnterScope(PyMonitoringState *state_array, uint64_t *version,
     }
 
     _Py_GlobalMonitors *m = &interp->monitors;
-    for (uint32_t i = 0; i < length; i++) {
+    for (Py_ssize_t i = 0; i < length; i++) {
         int event = event_types[i];
         state_array[i].active = m->tools[event];
     }
