@@ -1587,7 +1587,8 @@ dummy_func(
         }
 
         inst(BUILD_TUPLE, (values[oparg] -- tup)) {
-            tup = _PyTuple_FromArraySteal(values, oparg);
+            assert(oparg != 0);
+            tup = _PyTuple_FromNonEmptyArraySteal(values, oparg);
             ERROR_IF(tup == NULL, error);
         }
 

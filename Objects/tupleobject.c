@@ -34,14 +34,7 @@ static inline int maybe_freelist_push(PyTupleObject *);
 static PyTupleObject *
 tuple_alloc(Py_ssize_t size)
 {
-    if (size < 0) {
-        PyErr_BadInternalCall();
-        return NULL;
-    }
-#ifdef Py_DEBUG
-    assert(size != 0);    // The empty tuple is statically allocated.
-#endif
-
+    assert(size > 0);
     PyTupleObject *op = maybe_freelist_pop(size);
     if (op == NULL) {
         /* Check for overflow */
@@ -78,7 +71,7 @@ PyTuple_New(Py_ssize_t size)
         return NULL;
     }
     for (Py_ssize_t i = 0; i < size; i++) {
-        op->ob_item[i] = NULL;
+        op->ob_item[i] = Py_None;
     }
     _PyObject_GC_TRACK(op);
     return (PyObject *) op;
@@ -205,7 +198,8 @@ tupledealloc(PyTupleObject *op)
 
     Py_ssize_t i = Py_SIZE(op);
     while (--i >= 0) {
-        Py_XDECREF(op->ob_item[i]);
+        assert(op->ob_item[i] != NULL);
+        Py_DECREF(op->ob_item[i]);
     }
     // This will abort on the empty singleton (if there is one).
     if (!maybe_freelist_push(op)) {
@@ -391,11 +385,8 @@ _PyTuple_FromArray(PyObject *const *src, Py_ssize_t n)
 }
 
 PyObject *
-_PyTuple_FromArraySteal(PyObject *const *src, Py_ssize_t n)
+_PyTuple_FromNonEmptyArraySteal(PyObject *const *src, Py_ssize_t n)
 {
-    if (n == 0) {
-        return tuple_get_empty();
-    }
     PyTupleObject *tuple = tuple_alloc(n);
     if (tuple == NULL) {
         for (Py_ssize_t i = 0; i < n; i++) {

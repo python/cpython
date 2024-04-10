@@ -1002,7 +1002,7 @@ PyObject_ClearWeakRefs(PyObject *object)
                 PyObject *callback = PyTuple_GET_ITEM(tuple, i * 2 + 1);
 
                 /* The tuple may have slots left to NULL */
-                if (callback != NULL) {
+                if (callback != Py_None) {
                     PyObject *item = PyTuple_GET_ITEM(tuple, i * 2);
                     handle_callback((PyWeakReference *)item, callback);
                 }

@@ -369,7 +369,7 @@ uop_item(_PyExecutorObject *self, Py_ssize_t index)
         return NULL;
     }
     PyObject *args[4] = { oname, oparg, target, operand };
-    return _PyTuple_FromArraySteal(args, 4);
+    return _PyTuple_FromNonEmptyArraySteal(args, 4);
 }
 
 PySequenceMethods uop_as_sequence = {

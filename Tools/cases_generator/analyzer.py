@@ -396,7 +396,7 @@ NON_ESCAPING_FUNCTIONS = (
     "_PyType_HasFeature",
     "PyUnicode_Concat",
     "_PyList_FromArraySteal",
-    "_PyTuple_FromArraySteal",
+    "_PyTuple_FromNonEmptyArraySteal",
     "PySlice_New",
     "_Py_LeaveRecursiveCallPy",
     "CALL_STAT_INC",

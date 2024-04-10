@@ -4473,7 +4473,7 @@ zip_longest_next(ziplongestobject *lz)
         Py_INCREF(result);
         for (i=0 ; i < tuplesize ; i++) {
             it = PyTuple_GET_ITEM(lz->ittuple, i);
-            if (it == NULL) {
+            if (it == Py_None) {
                 item = Py_NewRef(lz->fillvalue);
             } else {
                 item = PyIter_Next(it);
@@ -4485,7 +4485,7 @@ zip_longest_next(ziplongestobject *lz)
                         return NULL;
                     } else {
                         item = Py_NewRef(lz->fillvalue);
-                        PyTuple_SET_ITEM(lz->ittuple, i, NULL);
+                        PyTuple_SET_ITEM(lz->ittuple, i, Py_None);
                         Py_DECREF(it);
                     }
                 }
@@ -4505,7 +4505,7 @@ zip_longest_next(ziplongestobject *lz)
             return NULL;
         for (i=0 ; i < tuplesize ; i++) {
             it = PyTuple_GET_ITEM(lz->ittuple, i);
-            if (it == NULL) {
+            if (it == Py_None) {
                 item = Py_NewRef(lz->fillvalue);
             } else {
                 item = PyIter_Next(it);
@@ -4517,7 +4517,7 @@ zip_longest_next(ziplongestobject *lz)
                         return NULL;
                     } else {
                         item = Py_NewRef(lz->fillvalue);
-                        PyTuple_SET_ITEM(lz->ittuple, i, NULL);
+                        PyTuple_SET_ITEM(lz->ittuple, i, Py_None);
                         Py_DECREF(it);
                     }
                 }
@@ -4542,7 +4542,7 @@ zip_longest_reduce(ziplongestobject *lz, PyObject *Py_UNUSED(ignored))
         return NULL;
     for (i=0; i<PyTuple_GET_SIZE(lz->ittuple); i++) {
         PyObject *elem = PyTuple_GET_ITEM(lz->ittuple, i);
-        if (elem == NULL) {
+        if (elem == Py_None) {
             elem = PyTuple_New(0);
             if (elem == NULL) {
                 Py_DECREF(args);

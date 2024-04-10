@@ -725,7 +725,8 @@
             PyObject **values;
             PyObject *tup;
             values = &stack_pointer[-oparg];
-            tup = _PyTuple_FromArraySteal(values, oparg);
+            assert(oparg != 0);
+            tup = _PyTuple_FromNonEmptyArraySteal(values, oparg);
             if (tup == NULL) { stack_pointer += -oparg; goto error; }
             stack_pointer[-oparg] = tup;
             stack_pointer += 1 - oparg;
