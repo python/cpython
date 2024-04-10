@@ -80,7 +80,7 @@ def create():
 def list_all():
     """Return all existing interpreters."""
     return [Interpreter(id, _whence=whence)
-            for id, whence in _interpreters.list_all()]
+            for id, whence in _interpreters.list_all(require_ready=True)]
 
 
 def get_current():

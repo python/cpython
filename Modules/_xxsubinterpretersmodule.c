@@ -719,8 +719,17 @@ So does an unrecognized ID.");
 
 
 static PyObject *
-interp_list_all(PyObject *self, PyObject *Py_UNUSED(ignored))
+interp_list_all(PyObject *self, PyObject *args, PyObject *kwargs)
 {
+    static char *kwlist[] = {"require_ready", NULL};
+    int reqready = 0;
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
+                                     "|$p:" MODULE_NAME_STR ".list_all",
+                                     kwlist, &reqready))
+    {
+        return NULL;
+    }
+
     PyObject *ids = PyList_New(0);
     if (ids == NULL) {
         return NULL;
@@ -728,20 +737,21 @@ interp_list_all(PyObject *self, PyObject *Py_UNUSED(ignored))
 
     PyInterpreterState *interp = PyInterpreterState_Head();
     while (interp != NULL) {
-        PyObject *item = get_summary(interp);
-        if (item == NULL) {
-            Py_DECREF(ids);
-            return NULL;
-        }
+        if (!reqready || _PyInterpreterState_IsReady(interp)) {
+            PyObject *item = get_summary(interp);
+            if (item == NULL) {
+                Py_DECREF(ids);
+                return NULL;
+            }
 
-        // insert at front of list
-        int res = PyList_Insert(ids, 0, item);
-        Py_DECREF(item);
-        if (res < 0) {
-            Py_DECREF(ids);
-            return NULL;
+            // insert at front of list
+            int res = PyList_Insert(ids, 0, item);
+            Py_DECREF(item);
+            if (res < 0) {
+                Py_DECREF(ids);
+                return NULL;
+            }
         }
-
         interp = PyInterpreterState_Next(interp);
     }
 
@@ -1417,8 +1427,8 @@ static PyMethodDef module_functions[] = {
      METH_VARARGS | METH_KEYWORDS, create_doc},
     {"destroy",                   _PyCFunction_CAST(interp_destroy),
      METH_VARARGS | METH_KEYWORDS, destroy_doc},
-    {"list_all",                  interp_list_all,
-     METH_NOARGS, list_all_doc},
+    {"list_all",                  _PyCFunction_CAST(interp_list_all),
+     METH_VARARGS | METH_KEYWORDS, list_all_doc},
     {"get_current",               interp_get_current,
      METH_NOARGS, get_current_doc},
     {"get_main",                  interp_get_main,
