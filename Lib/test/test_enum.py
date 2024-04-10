@@ -5170,7 +5170,57 @@ class TestStdLib(unittest.TestCase):
         self.assertIn('python', Unhashable)
         self.assertEqual(Unhashable.name.value, 'python')
         self.assertEqual(Unhashable.name.name, 'name')
-        _test_simple_enum(Unhashable, Unhashable)
+        _test_simple_enum(CheckedUnhashable, Unhashable)
+        ##
+        class CheckedComplexStatus(IntEnum):
+            def __new__(cls, value, phrase, description=''):
+                obj = int.__new__(cls, value)
+                obj._value_ = value
+                obj.phrase = phrase
+                obj.description = description
+                return obj
+            CONTINUE = 100, 'Continue', 'Request received, please continue'
+            PROCESSING = 102, 'Processing'
+            EARLY_HINTS = 103, 'Early Hints'
+            SOME_HINTS = 103, 'Some Early Hints'
+        #
+        @_simple_enum(IntEnum)
+        class ComplexStatus:
+            def __new__(cls, value, phrase, description=''):
+                obj = int.__new__(cls, value)
+                obj._value_ = value
+                obj.phrase = phrase
+                obj.description = description
+                return obj
+            CONTINUE = 100, 'Continue', 'Request received, please continue'
+            PROCESSING = 102, 'Processing'
+            EARLY_HINTS = 103, 'Early Hints'
+            SOME_HINTS = 103, 'Some Early Hints'
+        _test_simple_enum(CheckedComplexStatus, ComplexStatus)
+        #
+        #
+        class CheckedComplexFlag(IntFlag):
+            def __new__(cls, value, label):
+                obj = int.__new__(cls, value)
+                obj._value_ = value
+                obj.label = label
+                return obj
+            SHIRT = 1, 'upper half'
+            VEST = 1, 'outer upper half'
+            PANTS = 2, 'lower half'
+        self.assertIs(CheckedComplexFlag.SHIRT, CheckedComplexFlag.VEST)
+        #
+        @_simple_enum(IntFlag)
+        class ComplexFlag:
+            def __new__(cls, value, label):
+                obj = int.__new__(cls, value)
+                obj._value_ = value
+                obj.label = label
+                return obj
+            SHIRT = 1, 'upper half'
+            VEST = 1, 'uppert half'
+            PANTS = 2, 'lower half'
+        _test_simple_enum(CheckedComplexFlag, ComplexFlag)
 
 
 class MiscTestCase(unittest.TestCase):

@@ -74,21 +74,16 @@ get_legacy_reftotal(void)
     interp->object_state.reftotal
 
 static inline void
-reftotal_increment(PyInterpreterState *interp)
+reftotal_add(PyThreadState *tstate, Py_ssize_t n)
 {
-    REFTOTAL(interp)++;
-}
-
-static inline void
-reftotal_decrement(PyInterpreterState *interp)
-{
-    REFTOTAL(interp)--;
-}
-
-static inline void
-reftotal_add(PyInterpreterState *interp, Py_ssize_t n)
-{
-    REFTOTAL(interp) += n;
+#ifdef Py_GIL_DISABLED
+    _PyThreadStateImpl *tstate_impl = (_PyThreadStateImpl *)tstate;
+    // relaxed store to avoid data race with read in get_reftotal()
+    Py_ssize_t reftotal = tstate_impl->reftotal + n;
+    _Py_atomic_store_ssize_relaxed(&tstate_impl->reftotal, reftotal);
+#else
+    REFTOTAL(tstate->interp) += n;
+#endif
 }
 
 static inline Py_ssize_t get_global_reftotal(_PyRuntimeState *);
@@ -118,7 +113,15 @@ get_reftotal(PyInterpreterState *interp)
 {
     /* For a single interpreter, we ignore the legacy _Py_RefTotal,
        since we can't determine which interpreter updated it. */
-    return REFTOTAL(interp);
+    Py_ssize_t total = REFTOTAL(interp);
+#ifdef Py_GIL_DISABLED
+    for (PyThreadState *p = interp->threads.head; p != NULL; p = p->next) {
+        /* This may race with other threads modifications to their reftotal */
+        _PyThreadStateImpl *tstate_impl = (_PyThreadStateImpl *)p;
+        total += _Py_atomic_load_ssize_relaxed(&tstate_impl->reftotal);
+    }
+#endif
+    return total;
 }
 
 static inline Py_ssize_t
@@ -130,7 +133,7 @@ get_global_reftotal(_PyRuntimeState *runtime)
     HEAD_LOCK(&_PyRuntime);
     PyInterpreterState *interp = PyInterpreterState_Head();
     for (; interp != NULL; interp = PyInterpreterState_Next(interp)) {
-        total += REFTOTAL(interp);
+        total += get_reftotal(interp);
     }
     HEAD_UNLOCK(&_PyRuntime);
 
@@ -223,32 +226,32 @@ _Py_NegativeRefcount(const char *filename, int lineno, PyObject *op)
 void
 _Py_INCREF_IncRefTotal(void)
 {
-    reftotal_increment(_PyInterpreterState_GET());
+    reftotal_add(_PyThreadState_GET(), 1);
 }
 
 /* This is used strictly by Py_DECREF(). */
 void
 _Py_DECREF_DecRefTotal(void)
 {
-    reftotal_decrement(_PyInterpreterState_GET());
+    reftotal_add(_PyThreadState_GET(), -1);
 }
 
 void
-_Py_IncRefTotal(PyInterpreterState *interp)
+_Py_IncRefTotal(PyThreadState *tstate)
 {
-    reftotal_increment(interp);
+    reftotal_add(tstate, 1);
 }
 
 void
-_Py_DecRefTotal(PyInterpreterState *interp)
+_Py_DecRefTotal(PyThreadState *tstate)
 {
-    reftotal_decrement(interp);
+    reftotal_add(tstate, -1);
 }
 
 void
-_Py_AddRefTotal(PyInterpreterState *interp, Py_ssize_t n)
+_Py_AddRefTotal(PyThreadState *tstate, Py_ssize_t n)
 {
-    reftotal_add(interp, n);
+    reftotal_add(tstate, n);
 }
 
 /* This includes the legacy total
@@ -268,7 +271,10 @@ _Py_GetLegacyRefTotal(void)
 Py_ssize_t
 _PyInterpreterState_GetRefTotal(PyInterpreterState *interp)
 {
-    return get_reftotal(interp);
+    HEAD_LOCK(&_PyRuntime);
+    Py_ssize_t total = get_reftotal(interp);
+    HEAD_UNLOCK(&_PyRuntime);
+    return total;
 }
 
 #endif /* Py_REF_DEBUG */
@@ -346,7 +352,7 @@ _Py_DecRefSharedDebug(PyObject *o, const char *filename, int lineno)
 
     if (should_queue) {
 #ifdef Py_REF_DEBUG
-        _Py_IncRefTotal(_PyInterpreterState_GET());
+        _Py_IncRefTotal(_PyThreadState_GET());
 #endif
         _Py_brc_queue_object(o);
     }
@@ -406,7 +412,7 @@ _Py_ExplicitMergeRefcount(PyObject *op, Py_ssize_t extra)
                                                 &shared, new_shared));
 
 #ifdef Py_REF_DEBUG
-    _Py_AddRefTotal(_PyInterpreterState_GET(), extra);
+    _Py_AddRefTotal(_PyThreadState_GET(), extra);
 #endif
 
     _Py_atomic_store_uint32_relaxed(&op->ob_ref_local, 0);
@@ -2378,7 +2384,7 @@ void
 _Py_NewReference(PyObject *op)
 {
 #ifdef Py_REF_DEBUG
-    reftotal_increment(_PyInterpreterState_GET());
+    _Py_IncRefTotal(_PyThreadState_GET());
 #endif
     new_reference(op);
 }
