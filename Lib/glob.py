@@ -10,17 +10,6 @@ import sys
 
 __all__ = ["glob", "iglob", "escape"]
 
-
-_special_parts = ('', os.path.curdir, os.path.pardir)
-_case_sensitive = os.path.normcase('Aa') == 'Aa'
-_dir_open_flags = os.O_RDONLY | getattr(os, 'O_DIRECTORY', 0)
-_disable_recurse_symlinks = object()
-if os.path.altsep:
-    _path_seps = (os.path.sep, os.path.altsep)
-else:
-    _path_seps = os.path.sep
-
-
 def glob(pathname, *, root_dir=None, dir_fd=None, recursive=False,
         include_hidden=False):
     """Return a list of paths matching a pathname pattern.
@@ -61,7 +50,8 @@ def iglob(pathname, *, root_dir=None, dir_fd=None, recursive=False,
             root_dir = os.fsdecode(root_dir)
     anchor, parts = _split_pathname(pathname)
 
-    select = _Globber(include_hidden, recursive).selector(parts)
+    globber = _Globber(recursive=recursive, include_hidden=include_hidden)
+    select = globber.selector(parts)
     if anchor:
         # Non-relative pattern. The anchor is guaranteed to exist unless it
         # has a Windows drive component.
@@ -88,12 +78,33 @@ _deprecated_function_message = (
 def glob0(dirname, pattern):
     import warnings
     warnings._deprecated("glob.glob0", _deprecated_function_message, remove=(3, 15))
-    return list(_relative_glob(_Globber().literal_selector([pattern]), dirname))
+    return list(_relative_glob(_Globber().literal_selector(pattern, []), dirname))
 
 def glob1(dirname, pattern):
     import warnings
     warnings._deprecated("glob.glob1", _deprecated_function_message, remove=(3, 15))
-    return list(_relative_glob(_Globber().wildcard_selector([pattern]), dirname))
+    return list(_relative_glob(_Globber().wildcard_selector(pattern, []), dirname))
+
+def _split_pathname(pathname):
+    """Split the given path into a pair (anchor, parts), where *anchor* is the
+    path drive and root (if any), and *parts* is a reversed list of path parts.
+    """
+    parts = []
+    split = os.path.split
+    dirname, part = split(pathname)
+    while dirname != pathname:
+        parts.append(part)
+        pathname = dirname
+        dirname, part = split(pathname)
+    return dirname, parts
+
+def _relative_glob(select, dirname, dir_fd=None):
+    """Globs using a select function from the given dirname. The dirname
+    prefix is removed from results.
+    """
+    dirname = _Globber.add_slash(dirname)
+    slicer = operator.itemgetter(slice(len(dirname), None))
+    return map(slicer, select(dirname, dirname, dir_fd))
 
 magic_check = re.compile('([*?[])')
 magic_check_bytes = re.compile(b'([*?[])')
@@ -119,6 +130,12 @@ def escape(pathname):
     return drive + pathname
 
 
+_special_parts = ('', '.', '..')
+_case_sensitive = os.path.normcase('Aa') == 'Aa'
+_dir_open_flags = os.O_RDONLY | getattr(os, 'O_DIRECTORY', 0)
+_no_recurse_symlinks = object()
+
+
 def translate(pat, *, recursive=False, include_hidden=False, seps=None):
     """Translate a pathname with shell wildcards to a regular expression.
 
@@ -133,7 +150,10 @@ def translate(pat, *, recursive=False, include_hidden=False, seps=None):
     given, os.path.sep and os.path.altsep (where available) are used.
     """
     if not seps:
-        seps = _path_seps
+        if os.path.altsep:
+            seps = (os.path.sep, os.path.altsep)
+        else:
+            seps = os.path.sep
     escaped_seps = ''.join(map(re.escape, seps))
     any_sep = f'[{escaped_seps}]' if len(seps) > 1 else escaped_seps
     not_sep = f'[^{escaped_seps}]'
@@ -171,86 +191,49 @@ def translate(pat, *, recursive=False, include_hidden=False, seps=None):
     return fr'(?s:{res})\Z'
 
 
-@functools.lru_cache(maxsize=32768)
-def _compile_pattern(include_hidden, recursive, case_sensitive, sep, pattern):
-    """Compile an re.Pattern object for the given glob-style pattern.
-    """
-    if case_sensitive is None:
-        case_sensitive = _case_sensitive
+@functools.lru_cache(maxsize=512)
+def _compile_pattern(pat, sep, case_sensitive, recursive=True):
+    """Compile given glob pattern to a re.Pattern object (observing case
+    sensitivity)."""
     flags = re.NOFLAG if case_sensitive else re.IGNORECASE
-    regex = translate(pattern, include_hidden=include_hidden,
-                      recursive=recursive, seps=sep)
+    regex = translate(pat, recursive=recursive, include_hidden=True, seps=sep)
     return re.compile(regex, flags=flags).match
 
 
-def _split_pathname(pathname):
-    """Split the given path into a pair (anchor, parts), where *anchor* is the
-    path drive and root (if any), and *parts* is a reversed list of path parts.
-    """
-    parts = []
-    split = os.path.split
-    dirname, part = split(pathname)
-    while dirname != pathname:
-        parts.append(part)
-        pathname = dirname
-        dirname, part = split(pathname)
-    return dirname, parts
-
-
-# Returns the given path with a trailing slash added, where possible.
-if os.name == 'nt':
-    def _add_slash(pathname):
-        tail = os.path.splitroot(pathname)[2]
-        if not tail or tail[-1] in '\\/':
-            return pathname
-        return f'{pathname}\\'
-else:
-    def _add_slash(pathname):
-        if not pathname or pathname[-1] == '/':
-            return pathname
-        return f'{pathname}/'
-
-
-def _open_dir(path, rel_path=None, dir_fd=None):
-    """Prepares the directory for scanning. Returns a 3-tuple with parts:
-
-    1. A path or fd to supply to `os.scandir()`.
-    2. The file descriptor for the directory, or None.
-    3. Whether the caller should close the fd (bool).
-    """
-    if dir_fd is None:
-        return path, None, False
-    elif rel_path == './':
-        return dir_fd, dir_fd, False
-    else:
-        fd = os.open(rel_path, _dir_open_flags, dir_fd=dir_fd)
-        return fd, fd, True
-
-
-def _relative_glob(select, dirname, dir_fd=None):
-    """Globs using a select function from the given dirname. The dirname
-    prefix is removed from results.
-    """
-    dirname = _add_slash(dirname)
-    slicer = operator.itemgetter(slice(len(dirname), None))
-    return map(slicer, select(dirname, dirname, dir_fd))
-
-
 class _Globber:
-    def __init__(self, include_hidden=False, recursive=False,
-                 case_sensitive=None, sep=os.path.sep):
-        self.include_hidden = include_hidden
-        self.recursive = recursive
-        self.case_sensitive = case_sensitive
+    """Class providing shell-style pattern matching and globbing.
+    """
+
+    def __init__(self, sep=os.path.sep, case_sensitive=_case_sensitive, recursive=False):
         self.sep = sep
-        self.compile = functools.partial(
-            _compile_pattern, include_hidden, recursive, case_sensitive, sep)
+        self.case_sensitive = case_sensitive
+        self.recursive = recursive
+
+    # Low-level methods
 
     lstat = staticmethod(os.lstat)
     scandir = staticmethod(os.scandir)
-    add_slash = staticmethod(_add_slash)
-    concat_path = operator.add
     parse_entry = operator.attrgetter('path')
+    concat_path = operator.add
+
+    if os.name == 'nt':
+        @staticmethod
+        def add_slash(pathname):
+            tail = os.path.splitroot(pathname)[2]
+            if not tail or tail[-1] in '\\/':
+                return pathname
+            return f'{pathname}\\'
+    else:
+        @staticmethod
+        def add_slash(pathname):
+            if not pathname or pathname[-1] == '/':
+                return pathname
+            return f'{pathname}/'
+
+    # High-level methods
+
+    def compile(self, pat):
+        return _compile_pattern(pat, self.sep, self.case_sensitive, self.recursive)
 
     def selector(self, parts):
         """Returns a function that selects from a given path, walking and
@@ -258,65 +241,44 @@ class _Globber:
         """
         if not parts:
             return self.select_exists
-        elif self.recursive and parts[-1] == '**':
-            selector = self.recursive_selector
-        elif self.case_sensitive is not None:
-            selector = self.wildcard_selector
-        elif magic_check.search(parts[-1]) is not None:
-            selector = self.wildcard_selector
-        else:
-            selector = self.literal_selector
-        return selector(parts)
-
-    def literal_selector(self, parts):
-        """Returns a function that selects a literal descendant of a path.
-        """
         part = parts.pop()
+        if self.recursive and part == '**':
+            selector = self.recursive_selector
+        elif part in _special_parts:
+            selector = self.special_selector
+        else:
+            selector = self.wildcard_selector
+        return selector(part, parts)
 
-        # Optimization: if the part is special, it doesn't affect whether
-        # paths are known to exist.
-        is_special = part in _special_parts
-
-        # Optimization: consume and join any subsequent literal parts here,
-        # rather than leaving them for the next selector. This reduces the
-        # number of string concatenation operations and calls to add_slash().
-        while parts and magic_check.search(parts[-1]) is None:
-            next_part = parts.pop()
-            is_special = is_special and next_part in _special_parts
-            part += self.sep + next_part
-
+    def special_selector(self, part, parts):
+        """Returns a function that selects special children of the given path.
+        """
         select_next = self.selector(parts)
 
-        def select_literal(path, rel_path=None, dir_fd=None, exists=False):
+        def select_special(path, exists=False):
             path = self.concat_path(self.add_slash(path), part)
-            if dir_fd is not None:
-                rel_path = self.concat_path(self.add_slash(rel_path), part)
-            return select_next(path, rel_path, dir_fd, exists and is_special)
-        return select_literal
+            return select_next(path, exists)
+        return select_special
 
-    def wildcard_selector(self, parts):
+    def wildcard_selector(self, part, parts):
         """Returns a function that selects direct children of a given path,
         filtering by pattern.
         """
-        part = parts.pop()
-        if self.include_hidden and part == '*':
-            match = None
-        else:
-            match = self.compile(part)
+
+        match = None if part == '*' else self.compile(part)
         dir_only = bool(parts)
         if dir_only:
             select_next = self.selector(parts)
 
-        def select_wildcard(path, rel_path=None, dir_fd=None, exists=False):
-            close_fd = False
+        def select_wildcard(path, exists=False):
             try:
-                arg, fd, close_fd = _open_dir(path, rel_path, dir_fd)
-                if fd is not None:
-                    prefix = self.add_slash(path)
-                # Ensure we don't exhaust file descriptors when globbing deep
-                # trees by closing the directory *before* yielding anything.
-                with self.scandir(arg) as scandir_obj:
-                    entries = list(scandir_obj)
+                # We must close the scandir() object before proceeding to
+                # avoid exhausting file descriptors when globbing deep trees.
+                with self.scandir(path) as scandir_it:
+                    entries = list(scandir_it)
+            except OSError:
+                pass
+            else:
                 for entry in entries:
                     if match is None or match(entry.name):
                         if dir_only:
@@ -326,26 +288,16 @@ class _Globber:
                             except OSError:
                                 continue
                         entry_path = self.parse_entry(entry)
-                        if fd is not None:
-                            entry_path = self.concat_path(prefix, entry_path)
                         if dir_only:
-                            yield from select_next(
-                                entry_path, entry.name, fd, exists=True)
+                            yield from select_next(entry_path, exists=True)
                         else:
                             yield entry_path
-            except OSError:
-                pass
-            finally:
-                if close_fd:
-                    os.close(fd)
         return select_wildcard
 
-    def recursive_selector(self, parts):
+    def recursive_selector(self, part, parts):
         """Returns a function that selects a given path and all its children,
         recursively, filtering by pattern.
         """
-        part = parts.pop()
-
         # Optimization: consume following '**' parts, which have no effect.
         while parts and parts[-1] == '**':
             parts.pop()
@@ -356,87 +308,66 @@ class _Globber:
         # the recursive walk. As a result, non-special pattern segments
         # following a '**' wildcard don't require additional filesystem access
         # to expand.
-        follow_symlinks = self.recursive is not _disable_recurse_symlinks
+        follow_symlinks = self.recursive is not _no_recurse_symlinks
         if follow_symlinks:
             while parts and parts[-1] not in _special_parts:
                 part += self.sep + parts.pop()
 
+        match = None if part == '**' else self.compile(part)
         dir_only = bool(parts)
-        if self.include_hidden and part == '**':
-            match = None
-        else:
-            match = self.compile(part)
         select_next = self.selector(parts)
 
-        def select_recursive(path, rel_path=None, dir_fd=None, exists=False):
+        def select_recursive(path, exists=False):
             path = self.add_slash(path)
-            if dir_fd is not None:
-                rel_path = self.add_slash(rel_path)
             match_pos = len(str(path))
             if match is None or match(str(path), match_pos):
-                yield from select_next(path, rel_path, dir_fd, exists)
-            stack = [(path, rel_path, dir_fd)]
+                yield from select_next(path, exists)
+            stack = [path]
             while stack:
-                try:
-                    yield from select_recursive_step(stack, match_pos)
-                except OSError:
-                    pass
+                yield from select_recursive_step(stack, match_pos)
 
         def select_recursive_step(stack, match_pos):
-            path, rel_path, dir_fd = stack.pop()
-            if path is None:
-                os.close(dir_fd)
-                return
-            arg, fd, close_fd = _open_dir(path, rel_path, dir_fd)
-            if fd is not None:
-                prefix = self.add_slash(path)
-                if close_fd:
-                    stack.append((None, None, fd))
-            # Ensure we don't exhaust file descriptors when globbing deep
-            # trees by closing the directory *before* yielding anything.
-            with self.scandir(arg) as scandir_obj:
-                entries = list(scandir_obj)
-            for entry in entries:
-                is_dir = False
-                try:
-                    if entry.is_dir(follow_symlinks=follow_symlinks):
-                        is_dir = True
-                except OSError:
-                    pass
+            path = stack.pop()
+            try:
+                # We must close the scandir() object before proceeding to
+                # avoid exhausting file descriptors when globbing deep trees.
+                with self.scandir(path) as scandir_it:
+                    entries = list(scandir_it)
+            except OSError:
+                pass
+            else:
+                for entry in entries:
+                    is_dir = False
+                    try:
+                        if entry.is_dir(follow_symlinks=follow_symlinks):
+                            is_dir = True
+                    except OSError:
+                        pass
 
-                if is_dir or not dir_only:
-                    entry_path = self.parse_entry(entry)
-                    if fd is not None:
-                        entry_path = self.concat_path(prefix, entry_path)
-                    if match is None or match(str(entry_path), match_pos):
-                        if dir_only:
-                            yield from select_next(
-                                entry_path, entry.name, fd, exists=True)
-                        else:
-                            # Optimization: directly yield the path if this is
-                            # last pattern part.
-                            yield entry_path
-                    if is_dir:
-                        stack.append((entry_path, entry.name, fd))
+                    if is_dir or not dir_only:
+                        entry_path = self.parse_entry(entry)
+                        if match is None or match(str(entry_path), match_pos):
+                            if dir_only:
+                                yield from select_next(entry_path, exists=True)
+                            else:
+                                # Optimization: directly yield the path if this is
+                                # last pattern part.
+                                yield entry_path
+                        if is_dir:
+                            stack.append(entry_path)
 
         return select_recursive
 
-    def select_exists(self, path, rel_path=None, dir_fd=None, exists=False):
+    def select_exists(self, path, exists=False):
         """Yields the given path, if it exists.
         """
         if exists:
             # Optimization: this path is already known to exist, e.g. because
             # it was returned from os.scandir(), so we skip calling lstat().
             yield path
-        elif dir_fd is None:
-            try:
-                self.lstat(path)
-                yield path
-            except OSError:
-                pass
         else:
             try:
-                self.lstat(rel_path, dir_fd=dir_fd)
+                self.lstat(path)
                 yield path
             except OSError:
                 pass

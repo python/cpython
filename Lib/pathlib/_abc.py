@@ -43,15 +43,21 @@ def _is_case_sensitive(parser):
     return parser.normcase('Aa') == 'Aa'
 
 
-class _Globber(glob._Globber):
+class Globber(glob._Globber):
     lstat = operator.methodcaller('lstat')
     scandir = operator.methodcaller('_scandir')
     add_slash = operator.methodcaller('joinpath', '')
 
-    def concat_path(self, path, text):
+    @staticmethod
+    def concat_path(path, text):
+        """Appends text to the given path.
+        """
         return path.with_segments(path._raw_path + text)
 
-    def parse_entry(self, entry):
+    @staticmethod
+    def parse_entry(entry):
+        """Returns the path of an entry yielded from scandir().
+        """
         return entry
 
 
@@ -128,7 +134,7 @@ class PurePathBase:
         '_resolving',
     )
     parser = ParserBase()
-    _globber = _Globber
+    _globber = Globber
 
     def __init__(self, path, *paths):
         self._raw_path = self.parser.join(path, *paths) if paths else path
@@ -390,7 +396,7 @@ class PurePathBase:
             return False
         if len(path_parts) > len(pattern_parts) and path_pattern.anchor:
             return False
-        globber = self._globber(include_hidden=True, case_sensitive=case_sensitive, sep=sep)
+        globber = self._globber(sep, case_sensitive)
         for path_part, pattern_part in zip(path_parts, pattern_parts):
             match = globber.compile(pattern_part)
             if match(path_part) is None:
@@ -406,11 +412,7 @@ class PurePathBase:
             pattern = self.with_segments(pattern)
         if case_sensitive is None:
             case_sensitive = _is_case_sensitive(self.parser)
-        globber = self._globber(
-            include_hidden=True,
-            recursive=True,
-            case_sensitive=case_sensitive,
-            sep=pattern.parser.sep)
+        globber = self._globber(pattern.parser.sep, case_sensitive, recursive=True)
         match = globber.compile(pattern._pattern_str)
         return match(self._pattern_str) is not None
 
@@ -690,11 +692,10 @@ class PathBase(PurePathBase):
         return self.joinpath(name)
 
     def _glob_selector(self, parts, case_sensitive, recurse_symlinks):
-        globber = self._globber(
-            include_hidden=True,
-            recursive=True if recurse_symlinks else glob._disable_recurse_symlinks,
-            case_sensitive=case_sensitive,
-            sep=self.parser.sep)
+        if case_sensitive is None:
+            case_sensitive = _is_case_sensitive(self.parser)
+        recursive = True if recurse_symlinks else glob._no_recurse_symlinks
+        globber = self._globber(self.parser.sep, case_sensitive, recursive)
         return globber.selector(parts)
 
     def glob(self, pattern, *, case_sensitive=None, recurse_symlinks=True):
@@ -706,7 +707,10 @@ class PathBase(PurePathBase):
         anchor, parts = pattern._stack
         if anchor:
             raise NotImplementedError("Non-relative patterns are unsupported")
-        return self._glob_selector(parts, case_sensitive, recurse_symlinks)(self)
+        if not self.is_dir():
+            return iter([])
+        select = self._glob_selector(parts, case_sensitive, recurse_symlinks)
+        return select(self, exists=True)
 
     def rglob(self, pattern, *, case_sensitive=None, recurse_symlinks=True):
         """Recursively yield all existing files (of any kind, including

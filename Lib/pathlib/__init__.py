@@ -8,6 +8,7 @@ operating systems.
 import glob
 import io
 import ntpath
+import operator
 import os
 import posixpath
 import sys
@@ -255,12 +256,15 @@ class PurePath(_abc.PurePathBase):
         return cls.parser.sep.join(tail)
 
     def _from_parsed_parts(self, drv, root, tail):
-        path_str = self._format_parsed_parts(drv, root, tail)
-        path = self.with_segments(path_str)
-        path._str = path_str or '.'
+        path = self._from_parsed_string(self._format_parsed_parts(drv, root, tail))
         path._drv = drv
         path._root = root
         path._tail_cached = tail
+        return path
+
+    def _from_parsed_string(self, path_str):
+        path = self.with_segments(path_str)
+        path._str = path_str or '.'
         return path
 
     @classmethod
@@ -563,6 +567,17 @@ class Path(_abc.PathBase, PurePath):
         encoding = io.text_encoding(encoding)
         return _abc.PathBase.write_text(self, data, encoding, errors, newline)
 
+    _remove_leading_dot = operator.itemgetter(slice(2, None))
+    _remove_trailing_slash = operator.itemgetter(slice(-1))
+
+    def _filter_trailing_slash(self, paths):
+        sep = self.parser.sep
+        anchor_len = len(self.anchor)
+        for path_str in paths:
+            if len(path_str) > anchor_len and path_str[-1] == sep:
+                path_str = path_str[:-1]
+            yield path_str
+
     def iterdir(self):
         """Yield path objects of the directory contents.
 
@@ -575,7 +590,7 @@ class Path(_abc.PathBase, PurePath):
         return os.scandir(self)
 
     def _make_child_direntry(self, entry):
-        # Transform an entry yielded from os.scandir() into a path object.
+        # Transform an entry yielded from _scandir() into a path object.
         path_str = entry.name if str(self) == '.' else entry.path
         path = self.with_segments(path_str)
         path._str = path_str
@@ -618,9 +633,21 @@ class Path(_abc.PathBase, PurePath):
         if raw[-1] in (self.parser.sep, self.parser.altsep):
             # GH-65238: pathlib doesn't preserve trailing slash. Add it back.
             parts.append('')
-        parts.reverse()
-        select = self._glob_selector(parts, case_sensitive, recurse_symlinks)
-        return map(self.with_segments, select(str(self)))
+        if not self.is_dir():
+            return iter([])
+        select = self._glob_selector(parts[::-1], case_sensitive, recurse_symlinks)
+        root = str(self)
+        paths = select(root, exists=True)
+
+        # Normalize results
+        if root == '.':
+            paths = map(self._remove_leading_dot, paths)
+        if parts[-1] == '':
+            paths = map(self._remove_trailing_slash, paths)
+        elif parts[-1] == '**':
+            paths = self._filter_trailing_slash(paths)
+        paths = map(self._from_parsed_string, paths)
+        return paths
 
     def rglob(self, pattern, *, case_sensitive=None, recurse_symlinks=False):
         """Recursively yield all existing files (of any kind, including
@@ -661,9 +688,7 @@ class Path(_abc.PathBase, PurePath):
             # of joining, and we exploit the fact that getcwd() returns a
             # fully-normalized string by storing it in _str. This is used to
             # implement Path.cwd().
-            result = self.with_segments(cwd)
-            result._str = cwd
-            return result
+            return self._from_parsed_string(cwd)
         drive, root, rel = os.path.splitroot(cwd)
         if not rel:
             return self._from_parsed_parts(drive, root, self._tail)
