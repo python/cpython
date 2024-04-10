@@ -729,9 +729,9 @@ class ManualASTCreationTestCase(unittest.TestCase):
             args=ast.arguments(),
             body=[ast.Pass()],
             type_params=[
-                ast.TypeVar("T", default_=ast.Constant(value=1)),
-                ast.TypeVarTuple("Ts", default_=ast.Constant(value=1)),
-                ast.ParamSpec("P", default_=ast.Constant(value=1)),
+                ast.TypeVar("T", default_value=ast.Constant(value=1)),
+                ast.TypeVarTuple("Ts", default_value=ast.Constant(value=1)),
+                ast.ParamSpec("P", default_value=ast.Constant(value=1)),
             ],
         )
         ast.fix_missing_locations(node)
@@ -766,9 +766,9 @@ class ManualASTCreationTestCase(unittest.TestCase):
             args=ast.arguments(),
             body=[ast.Pass()],
             type_params=[
-                ast.TypeVar("T", default_=ast.Constant(value=1)),
-                ast.TypeVarTuple("Ts", default_=ast.Constant(value=1)),
-                ast.ParamSpec("P", default_=ast.Constant(value=1)),
+                ast.TypeVar("T", default_value=ast.Constant(value=1)),
+                ast.TypeVarTuple("Ts", default_value=ast.Constant(value=1)),
+                ast.ParamSpec("P", default_value=ast.Constant(value=1)),
             ],
         )
         ast.fix_missing_locations(node)

@@ -1012,18 +1012,18 @@ validate_typeparam(struct validator *state, type_param_ty tp)
             ret = validate_name(tp->v.TypeVar.name) &&
                 (!tp->v.TypeVar.bound ||
                  validate_expr(state, tp->v.TypeVar.bound, Load)) &&
-                (!tp->v.TypeVar.default_ ||
-                 validate_expr(state, tp->v.TypeVar.default_, Load));
+                (!tp->v.TypeVar.default_value ||
+                 validate_expr(state, tp->v.TypeVar.default_value, Load));
             break;
         case ParamSpec_kind:
             ret = validate_name(tp->v.ParamSpec.name) &&
-                (!tp->v.ParamSpec.default_ ||
-                 validate_expr(state, tp->v.ParamSpec.default_, Load));
+                (!tp->v.ParamSpec.default_value ||
+                 validate_expr(state, tp->v.ParamSpec.default_value, Load));
             break;
         case TypeVarTuple_kind:
             ret = validate_name(tp->v.TypeVarTuple.name) &&
-                (!tp->v.TypeVarTuple.default_ ||
-                 validate_expr(state, tp->v.TypeVarTuple.default_, Load));
+                (!tp->v.TypeVarTuple.default_value ||
+                 validate_expr(state, tp->v.TypeVarTuple.default_value, Load));
             break;
     }
     return ret;

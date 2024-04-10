@@ -2147,9 +2147,9 @@ compiler_type_params(struct compiler *c, asdl_type_param_seq *type_params)
             else {
                 ADDOP_I(c, loc, CALL_INTRINSIC_1, INTRINSIC_TYPEVAR);
             }
-            if (typeparam->v.TypeVar.default_) {
+            if (typeparam->v.TypeVar.default_value) {
                 seen_default = true;
-                expr_ty default_ = typeparam->v.TypeVar.default_;
+                expr_ty default_ = typeparam->v.TypeVar.default_value;
                 if (compiler_type_param_bound_or_default(c, default_, typeparam->v.TypeVar.name,
                                                          (void *)(typeparam + 1)) < 0) {
                     return ERROR;
@@ -2167,8 +2167,8 @@ compiler_type_params(struct compiler *c, asdl_type_param_seq *type_params)
         case TypeVarTuple_kind:
             ADDOP_LOAD_CONST(c, loc, typeparam->v.TypeVarTuple.name);
             ADDOP_I(c, loc, CALL_INTRINSIC_1, INTRINSIC_TYPEVARTUPLE);
-            if (typeparam->v.TypeVarTuple.default_) {
-                expr_ty default_ = typeparam->v.TypeVarTuple.default_;
+            if (typeparam->v.TypeVarTuple.default_value) {
+                expr_ty default_ = typeparam->v.TypeVarTuple.default_value;
                 if (compiler_type_param_bound_or_default(c, default_, typeparam->v.TypeVarTuple.name,
                                                          (void *)typeparam) < 0) {
                     return ERROR;
@@ -2187,8 +2187,8 @@ compiler_type_params(struct compiler *c, asdl_type_param_seq *type_params)
         case ParamSpec_kind:
             ADDOP_LOAD_CONST(c, loc, typeparam->v.ParamSpec.name);
             ADDOP_I(c, loc, CALL_INTRINSIC_1, INTRINSIC_PARAMSPEC);
-            if (typeparam->v.ParamSpec.default_) {
-                expr_ty default_ = typeparam->v.ParamSpec.default_;
+            if (typeparam->v.ParamSpec.default_value) {
+                expr_ty default_ = typeparam->v.ParamSpec.default_value;
                 if (compiler_type_param_bound_or_default(c, default_, typeparam->v.ParamSpec.name,
                                                          (void *)typeparam) < 0) {
                     return ERROR;

@@ -2325,7 +2325,7 @@ symtable_visit_type_param(struct symtable *st, type_param_ty tp)
                                                         (void *)tp)) {
             VISIT_QUIT(st, 0);
         }
-        if (!symtable_visit_type_param_bound_or_default(st, tp->v.TypeVar.default_, tp->v.TypeVar.name,
+        if (!symtable_visit_type_param_bound_or_default(st, tp->v.TypeVar.default_value, tp->v.TypeVar.name,
                                                         (void *)(tp + 1))) {
             VISIT_QUIT(st, 0);
         }
@@ -2334,7 +2334,7 @@ symtable_visit_type_param(struct symtable *st, type_param_ty tp)
         if (!symtable_add_def(st, tp->v.TypeVarTuple.name, DEF_TYPE_PARAM | DEF_LOCAL, LOCATION(tp))) {
             VISIT_QUIT(st, 0);
         }
-        if (!symtable_visit_type_param_bound_or_default(st, tp->v.TypeVarTuple.default_, tp->v.TypeVarTuple.name,
+        if (!symtable_visit_type_param_bound_or_default(st, tp->v.TypeVarTuple.default_value, tp->v.TypeVarTuple.name,
                                                         (void *)tp)) {
             VISIT_QUIT(st, 0);
         }
@@ -2343,7 +2343,7 @@ symtable_visit_type_param(struct symtable *st, type_param_ty tp)
         if (!symtable_add_def(st, tp->v.ParamSpec.name, DEF_TYPE_PARAM | DEF_LOCAL, LOCATION(tp))) {
             VISIT_QUIT(st, 0);
         }
-        if (!symtable_visit_type_param_bound_or_default(st, tp->v.ParamSpec.default_, tp->v.ParamSpec.name,
+        if (!symtable_visit_type_param_bound_or_default(st, tp->v.ParamSpec.default_value, tp->v.ParamSpec.name,
                                                         (void *)tp)) {
             VISIT_QUIT(st, 0);
         }
