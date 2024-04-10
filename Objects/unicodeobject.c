@@ -14617,6 +14617,134 @@ unicode_new_impl(PyTypeObject *type, PyObject *x, const char *encoding,
     return unicode;
 }
 
+static const char *
+as_const_char(PyObject *obj)
+{
+    if (!PyUnicode_Check(obj)) {
+        _PyArg_BadArgument("str", "argument", "str", obj);
+        return NULL;
+    }
+    Py_ssize_t sz;
+    const char *str = PyUnicode_AsUTF8AndSize(obj, &sz);
+    if (str == NULL) {
+        return NULL;
+    }
+    if (strlen(str) != (size_t)sz) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
+        return NULL;
+    }
+    return str;
+}
+
+static PyObject *
+fallback_to_tp_call(PyObject *type, Py_ssize_t nargs, Py_ssize_t nkwargs,
+                    PyObject *const *args, PyObject *kwnames)
+{
+    PyObject *tuple = PyTuple_New(nargs);
+    if (tuple == NULL) {
+        return NULL;
+    }
+    for (Py_ssize_t i = 0; i < nargs; i++) {
+        PyObject *value = Py_NewRef(args[i]);
+        PyTuple_SET_ITEM(tuple, i, value);
+    }
+    PyObject *dict = PyDict_New();
+    if (dict == NULL) {
+        Py_DECREF(tuple);
+        return NULL;
+    }
+    for (Py_ssize_t j = 0; j < nkwargs; j++) {
+        PyObject *key = PyTuple_GET_ITEM(kwnames, j);
+        PyObject *value = args[nargs + j];
+        if (PyDict_SetItem(dict, key, value) < 0) {
+            Py_DECREF(tuple);
+            Py_DECREF(dict);
+            return NULL;
+        }
+    }
+    return unicode_new(_PyType_CAST(type), tuple, dict);
+}
+
+static PyObject *
+unicode_vectorcall(PyObject *type, PyObject *const *args,
+                   size_t nargsf, PyObject *kwnames)
+{
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+    Py_ssize_t nkwargs = (kwnames) ? PyTuple_GET_SIZE(kwnames) : 0;
+    if (nargs == 0 && nkwargs == 0) {
+        return unicode_get_empty();
+    }
+    PyObject *object = args[0];
+    if (nargs == 1 && nkwargs == 0) {
+        return unicode_new_impl(_PyType_CAST(type), object, NULL, NULL);
+    }
+    if (nargs + nkwargs == 2) {
+        const char *encoding;
+        const char *errors;
+        if (nkwargs == 1) {
+            PyObject *kw0 = PyTuple_GET_ITEM(kwnames, 0);
+            if (_PyUnicode_EqualToASCIIString(kw0, "encoding")) {
+                encoding = as_const_char(args[1]);
+                if (encoding == NULL) {
+                    return NULL;
+                }
+                errors = NULL;
+            }
+            else if (_PyUnicode_EqualToASCIIString(kw0, "errors")) {
+                errors = as_const_char(args[1]);
+                if (errors == NULL) {
+                    return NULL;
+                }
+                encoding = NULL;
+            }
+            else {
+                PyErr_Format(PyExc_TypeError,
+                    "'%S' is an invalid keyword argument for str()", kw0);
+                return NULL;
+            }
+        }
+        else if (nkwargs == 0) {
+            encoding = as_const_char(args[1]);
+            errors = NULL;
+        }
+        else {
+            return fallback_to_tp_call(type, nargs, nkwargs, args, kwnames);
+        }
+        PyObject *object = args[0];
+        return unicode_new_impl(_PyType_CAST(type), object, encoding, errors);
+    }
+    if (nargs + nkwargs == 3) {
+        if (nkwargs == 1) {
+            PyObject *kw0 = PyTuple_GET_ITEM(kwnames, 0);
+            if (!_PyUnicode_EqualToASCIIString(kw0, "errors")) {
+                PyErr_Format(PyExc_TypeError,
+                    "'%S' is an invalid keyword argument for str()", kw0);
+                return NULL;
+            }
+        }
+        else if (nkwargs != 0) {
+            return fallback_to_tp_call(type, nargs, nkwargs, args, kwnames);
+        }
+        PyObject *object = args[0];
+        const char *encoding = as_const_char(args[1]);
+        if (encoding == NULL) {
+            return NULL;
+        }
+        const char *errors = as_const_char(args[2]);
+        if (errors == NULL) {
+            return NULL;
+        }
+        return unicode_new_impl(_PyType_CAST(type), object, encoding, errors);
+    }
+    if (nargs > 3) {
+        PyErr_Format(PyExc_TypeError,
+            "str() takes at most 3 arguments (%d given)", nargs + nkwargs);
+        return NULL;
+    }
+
+    return fallback_to_tp_call(type, nargs, nkwargs, args, kwnames);
+}
+
 static PyObject *
 unicode_subtype_new(PyTypeObject *type, PyObject *unicode)
 {
@@ -14758,6 +14886,7 @@ PyTypeObject PyUnicode_Type = {
     0,                            /* tp_alloc */
     unicode_new,                  /* tp_new */
     PyObject_Del,                 /* tp_free */
+    .tp_vectorcall = unicode_vectorcall,
 };
 
 /* Initialize the Unicode implementation */
