@@ -1,0 +1,1 @@
+Added the *follow_symlinks* parameter to :func:`os.path.exists`.
