@@ -1989,9 +1989,14 @@ class PatchTest(unittest.TestCase):
         class Bar(Foo):
             pass
 
+        @patch('%s.something' % __name__, 3)
+        class Baz(Foo):
+            pass
+
         self.assertEqual(Foo().test(), 1)
         self.assertEqual(Bar().test(), 2)
-
+        self.assertEqual(Baz().test(), 3)
+    
 
     def test_method_patched_by_subclass2(self):
         class Foo:
@@ -2002,11 +2007,13 @@ class PatchTest(unittest.TestCase):
         class Bar(Foo):
             pass
 
+        self.assertEqual(Foo().test(), something)
         self.assertEqual(Bar().test(), 2)
 
 
     def test_method_patched_by_subclass3(self):
-        class Foo: ...
+        class Foo:
+            pass
 
         class Mixin:
             def test(self):
@@ -2030,8 +2037,13 @@ class AsyncPatchTest(unittest.IsolatedAsyncioTestCase):
         class Bar(Foo):
             pass
 
+        @patch('%s.something' % __name__, 3)
+        class Baz(Foo):
+            pass
+
         self.assertEqual(await Foo().test_async(), 1)
         self.assertEqual(await Bar().test_async(), 2)
+        self.assertEqual(await Baz().test_async(), 3)
 
 
     async def test_async_method_patched_by_subclass2(self):
@@ -2043,11 +2055,13 @@ class AsyncPatchTest(unittest.IsolatedAsyncioTestCase):
         class Bar(Foo):
             pass
 
+        self.assertEqual(await Foo().test_async(), something)
         self.assertEqual(await Bar().test_async(), 2)
 
 
     async def test_async_method_patched_by_subclass3(self):
-        class Foo: ...
+        class Foo:
+            pass
 
         class Mixin:
             async def test_async(self):
