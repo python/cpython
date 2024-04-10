@@ -1616,7 +1616,7 @@ without the dedicated syntax, as documented below.
 
 .. _typevar:
 
-.. class:: TypeVar(name, *constraints, bound=None, covariant=False, contravariant=False, infer_variance=False, default=None)
+.. class:: TypeVar(name, *constraints, bound=None, covariant=False, contravariant=False, infer_variance=False, default=<unrepresentable>)
 
    Type variable.
 
@@ -1772,7 +1772,7 @@ without the dedicated syntax, as documented below.
 
 .. _typevartuple:
 
-.. class:: TypeVarTuple(name, default=None)
+.. class:: TypeVarTuple(name, default=<unrepresentable>)
 
    Type variable tuple. A specialized form of :ref:`type variable <typevar>`
    that enables *variadic* generics.
@@ -1899,7 +1899,7 @@ without the dedicated syntax, as documented below.
 
       Support for default values was added.
 
-.. class:: ParamSpec(name, *, bound=None, covariant=False, contravariant=False, default=None)
+.. class:: ParamSpec(name, *, bound=None, covariant=False, contravariant=False, default=<unrepresentable>)
 
    Parameter specification variable.  A specialized version of
    :ref:`type variables <typevar>`.
