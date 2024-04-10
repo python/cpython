@@ -114,7 +114,7 @@ def load_raw_data(input: Path) -> RawData:
         return data
 
     else:
-        raise ValueError(f"{input:r} is not a file or directory path")
+        raise ValueError(f"{input} is not a file or directory path")
 
 
 def save_raw_data(data: RawData, json_output: TextIO):
@@ -394,7 +394,7 @@ class Stats:
         return result
 
     def get_object_stats(self) -> dict[str, tuple[int, int]]:
-        total_materializations = self._data.get("Object new values", 0)
+        total_materializations = self._data.get("Object inline values", 0)
         total_allocations = self._data.get("Object allocations", 0) + self._data.get(
             "Object allocations from freelist", 0
         )
@@ -1094,8 +1094,7 @@ def object_stats_section() -> Section:
         Below, "allocations" means "allocations that are not from a freelist".
         Total allocations = "Allocations from freelist" + "Allocations".
 
-        "New values" is the number of values arrays created for objects with
-        managed dicts.
+        "Inline values" is the number of values arrays inlined into objects.
 
         The cache hit/miss numbers are for the MRO cache, split into dunder and
         other names.

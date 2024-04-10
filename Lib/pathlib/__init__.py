@@ -110,7 +110,7 @@ class PurePath(_abc.PurePathBase):
         # path. It's set when `__hash__()` is called for the first time.
         '_hash',
     )
-    pathmod = os.path
+    parser = os.path
 
     def __new__(cls, *args, **kwargs):
         """Construct a PurePath from one or several strings and or existing
@@ -126,7 +126,7 @@ class PurePath(_abc.PurePathBase):
         paths = []
         for arg in args:
             if isinstance(arg, PurePath):
-                if arg.pathmod is ntpath and self.pathmod is posixpath:
+                if arg.parser is ntpath and self.parser is posixpath:
                     # GH-103631: Convert separators for backwards compatibility.
                     paths.extend(path.replace('\\', '/') for path in arg._raw_paths)
                 else:
@@ -187,7 +187,7 @@ class PurePath(_abc.PurePathBase):
         try:
             return self._str_normcase_cached
         except AttributeError:
-            if _abc._is_case_sensitive(self.pathmod):
+            if _abc._is_case_sensitive(self.parser):
                 self._str_normcase_cached = str(self)
             else:
                 self._str_normcase_cached = str(self).lower()
@@ -203,7 +203,7 @@ class PurePath(_abc.PurePathBase):
     def __eq__(self, other):
         if not isinstance(other, PurePath):
             return NotImplemented
-        return self._str_normcase == other._str_normcase and self.pathmod is other.pathmod
+        return self._str_normcase == other._str_normcase and self.parser is other.parser
 
     @property
     def _parts_normcase(self):
@@ -211,26 +211,26 @@ class PurePath(_abc.PurePathBase):
         try:
             return self._parts_normcase_cached
         except AttributeError:
-            self._parts_normcase_cached = self._str_normcase.split(self.pathmod.sep)
+            self._parts_normcase_cached = self._str_normcase.split(self.parser.sep)
             return self._parts_normcase_cached
 
     def __lt__(self, other):
-        if not isinstance(other, PurePath) or self.pathmod is not other.pathmod:
+        if not isinstance(other, PurePath) or self.parser is not other.parser:
             return NotImplemented
         return self._parts_normcase < other._parts_normcase
 
     def __le__(self, other):
-        if not isinstance(other, PurePath) or self.pathmod is not other.pathmod:
+        if not isinstance(other, PurePath) or self.parser is not other.parser:
             return NotImplemented
         return self._parts_normcase <= other._parts_normcase
 
     def __gt__(self, other):
-        if not isinstance(other, PurePath) or self.pathmod is not other.pathmod:
+        if not isinstance(other, PurePath) or self.parser is not other.parser:
             return NotImplemented
         return self._parts_normcase > other._parts_normcase
 
     def __ge__(self, other):
-        if not isinstance(other, PurePath) or self.pathmod is not other.pathmod:
+        if not isinstance(other, PurePath) or self.parser is not other.parser:
             return NotImplemented
         return self._parts_normcase >= other._parts_normcase
 
@@ -247,10 +247,10 @@ class PurePath(_abc.PurePathBase):
     @classmethod
     def _format_parsed_parts(cls, drv, root, tail):
         if drv or root:
-            return drv + root + cls.pathmod.sep.join(tail)
-        elif tail and cls.pathmod.splitdrive(tail[0])[0]:
+            return drv + root + cls.parser.sep.join(tail)
+        elif tail and cls.parser.splitdrive(tail[0])[0]:
             tail = ['.'] + tail
-        return cls.pathmod.sep.join(tail)
+        return cls.parser.sep.join(tail)
 
     def _from_parsed_parts(self, drv, root, tail):
         path_str = self._format_parsed_parts(drv, root, tail)
@@ -265,11 +265,11 @@ class PurePath(_abc.PurePathBase):
     def _parse_path(cls, path):
         if not path:
             return '', '', []
-        sep = cls.pathmod.sep
-        altsep = cls.pathmod.altsep
+        sep = cls.parser.sep
+        altsep = cls.parser.altsep
         if altsep:
             path = path.replace(altsep, sep)
-        drv, root, rel = cls.pathmod.splitroot(path)
+        drv, root, rel = cls.parser.splitroot(path)
         if not root and drv.startswith(sep) and not drv.endswith(sep):
             drv_parts = drv.split(sep)
             if len(drv_parts) == 4 and drv_parts[2] not in '?.':
@@ -290,7 +290,7 @@ class PurePath(_abc.PurePathBase):
         elif len(paths) == 1:
             path = paths[0]
         else:
-            path = self.pathmod.join(*paths)
+            path = self.parser.join(*paths)
         return path
 
     @property
@@ -360,8 +360,8 @@ class PurePath(_abc.PurePathBase):
 
     def with_name(self, name):
         """Return a new path with the file name changed."""
-        m = self.pathmod
-        if not name or m.sep in name or (m.altsep and m.altsep in name) or name == '.':
+        p = self.parser
+        if not name or p.sep in name or (p.altsep and p.altsep in name) or name == '.':
             raise ValueError(f"Invalid name {name!r}")
         tail = self._tail.copy()
         if not tail:
@@ -413,13 +413,13 @@ class PurePath(_abc.PurePathBase):
     def is_absolute(self):
         """True if the path is absolute (has both a root and, if applicable,
         a drive)."""
-        if self.pathmod is posixpath:
+        if self.parser is posixpath:
             # Optimization: work with raw paths on POSIX.
             for path in self._raw_paths:
                 if path.startswith('/'):
                     return True
             return False
-        return self.pathmod.isabs(self)
+        return self.parser.isabs(self)
 
     def is_reserved(self):
         """Return True if the path contains one of the special names reserved
@@ -428,8 +428,8 @@ class PurePath(_abc.PurePathBase):
                "for removal in Python 3.15. Use os.path.isreserved() to "
                "detect reserved paths on Windows.")
         warnings.warn(msg, DeprecationWarning, stacklevel=2)
-        if self.pathmod is ntpath:
-            return self.pathmod.isreserved(self)
+        if self.parser is ntpath:
+            return self.parser.isreserved(self)
         return False
 
     def as_uri(self):
@@ -462,7 +462,7 @@ class PurePath(_abc.PurePathBase):
             raise NotImplementedError("Non-relative patterns are unsupported")
         elif not parts:
             raise ValueError("Unacceptable pattern: {!r}".format(pattern))
-        elif pattern[-1] in (self.pathmod.sep, self.pathmod.altsep):
+        elif pattern[-1] in (self.parser.sep, self.parser.altsep):
             # GH-65238: pathlib doesn't preserve trailing slash. Add it back.
             parts.append('')
         parts.reverse()
@@ -487,7 +487,7 @@ class PurePosixPath(PurePath):
     On a POSIX system, instantiating a PurePath should return this object.
     However, you can also instantiate it directly on any system.
     """
-    pathmod = posixpath
+    parser = posixpath
     __slots__ = ()
 
 
@@ -497,7 +497,7 @@ class PureWindowsPath(PurePath):
     On a Windows system, instantiating a PurePath should return this object.
     However, you can also instantiate it directly on any system.
     """
-    pathmod = ntpath
+    parser = ntpath
     __slots__ = ()
 
 
@@ -607,7 +607,7 @@ class Path(_abc.PathBase, PurePath):
         path_str = str(self)
         tail = self._tail
         if tail:
-            path_str = f'{path_str}{self.pathmod.sep}{name}'
+            path_str = f'{path_str}{self.parser.sep}{name}'
         elif path_str != '.':
             path_str = f'{path_str}{name}'
         else:
@@ -619,7 +619,7 @@ class Path(_abc.PathBase, PurePath):
         path._tail_cached = tail + [name]
         return path
 
-    def glob(self, pattern, *, case_sensitive=None, follow_symlinks=None):
+    def glob(self, pattern, *, case_sensitive=None, recurse_symlinks=False):
         """Iterate over this subtree and yield all existing files (of any
         kind, including directories) matching the given relative pattern.
         """
@@ -627,9 +627,9 @@ class Path(_abc.PathBase, PurePath):
         if not isinstance(pattern, PurePath):
             pattern = self.with_segments(pattern)
         return _abc.PathBase.glob(
-            self, pattern, case_sensitive=case_sensitive, follow_symlinks=follow_symlinks)
+            self, pattern, case_sensitive=case_sensitive, recurse_symlinks=recurse_symlinks)
 
-    def rglob(self, pattern, *, case_sensitive=None, follow_symlinks=None):
+    def rglob(self, pattern, *, case_sensitive=None, recurse_symlinks=False):
         """Recursively yield all existing files (of any kind, including
         directories) matching the given relative pattern, anywhere in
         this subtree.
@@ -639,7 +639,7 @@ class Path(_abc.PathBase, PurePath):
             pattern = self.with_segments(pattern)
         pattern = '**' / pattern
         return _abc.PathBase.glob(
-            self, pattern, case_sensitive=case_sensitive, follow_symlinks=follow_symlinks)
+            self, pattern, case_sensitive=case_sensitive, recurse_symlinks=recurse_symlinks)
 
     def walk(self, top_down=True, on_error=None, follow_symlinks=False):
         """Walk the directory tree from this directory, similar to os.walk()."""
@@ -675,7 +675,7 @@ class Path(_abc.PathBase, PurePath):
         drive, root, rel = os.path.splitroot(cwd)
         if not rel:
             return self._from_parsed_parts(drive, root, self._tail)
-        tail = rel.split(self.pathmod.sep)
+        tail = rel.split(self.parser.sep)
         tail.extend(self._tail)
         return self._from_parsed_parts(drive, root, tail)
 
