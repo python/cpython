@@ -18,7 +18,7 @@ run_fileexflags(PyObject *mod, PyObject *pos_args)
     PyCompilerFlags *pflags = NULL;
     int cf_flags = 0;
     int cf_feature_version = 0;
-    int fn;
+    int fn = -1;
 
     FILE *fp = NULL;
 
@@ -42,16 +42,6 @@ run_fileexflags(PyObject *mod, PyObject *pos_args)
         pflags = &flags;
     }
 
-    if (globals && !PyDict_Check(globals)) {
-        PyErr_SetString(PyExc_TypeError, "globals must be a dict");
-        goto exit;
-    }
-
-    if (locals && !PyMapping_Check(locals)) {
-        PyErr_SetString(PyExc_TypeError, "locals must be a mapping");
-        goto exit;
-    }
-
     fp = fopen(filename, "r");
     if (fp == NULL) {
         PyErr_SetFromErrnoWithFilename(PyExc_OSError, filename);
@@ -60,19 +50,28 @@ run_fileexflags(PyObject *mod, PyObject *pos_args)
 
     result = PyRun_FileExFlags(fp, filename, start, globals, locals, closeit, pflags);
 
+/* Test fails in WASI */
+#if !defined(__wasi__)
+    fn = fileno(fp);
     if (result) {
-        fn = fileno(fp);
-        if (closeit && fn > 0) {
-            PyErr_SetString(PyExc_SystemError, "File was not closed after excution");
+        if (closeit && fn >= 0) {
+            PyErr_SetString(PyExc_AssertionError, "File was not closed after excution");
             goto exit;
         }
         else if (!closeit && fn < 0) {
-            PyErr_SetString(PyExc_SystemError, "Bad file descriptor after excution");
+            PyErr_SetString(PyExc_AssertionError, "Bad file descriptor after excution");
             goto exit;
         }
     }
+#endif
 
 exit:
+
+#if !defined(__wasi__)
+    if (fn >= 0) {
+        fclose(fp); /* don't need open file any more*/
+    }
+#endif
 
     return result;
 }

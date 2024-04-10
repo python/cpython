@@ -3951,13 +3951,13 @@ PyInit__testcapi(void)
     PyModule_AddIntConstant(m, "the_number_three", 3);
     PyModule_AddIntMacro(m, Py_C_RECURSION_LIMIT);
 
-    if (PyModule_AddIntConstant(m, "Py_single_input", Py_single_input)) {
+    if (PyModule_AddIntMacro(m, Py_single_input)) {
         return NULL;
     }
-    if (PyModule_AddIntConstant(m, "Py_file_input", Py_file_input)) {
+    if (PyModule_AddIntMacro(m, Py_file_input)) {
         return NULL;
     }
-    if (PyModule_AddIntConstant(m, "Py_eval_input", Py_eval_input)) {
+    if (PyModule_AddIntMacro(m, Py_eval_input)) {
         return NULL;
     }
 
