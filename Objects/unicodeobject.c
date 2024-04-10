@@ -14674,7 +14674,7 @@ unicode_vectorcall(PyObject *type, PyObject *const *args,
     Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
     Py_ssize_t nkwargs = (kwnames) ? PyTuple_GET_SIZE(kwnames) : 0;
     if (nargs == 0 && nkwargs == 0) {
-        return unicode_get_empty();
+        return unicode_new_impl(_PyType_CAST(type), NULL, NULL, NULL);
     }
     PyObject *object = args[0];
     if (nargs == 1 && nkwargs == 0) {
@@ -14712,7 +14712,6 @@ unicode_vectorcall(PyObject *type, PyObject *const *args,
         else {
             return fallback_to_tp_call(type, nargs, nkwargs, args, kwnames);
         }
-        PyObject *object = args[0];
         return unicode_new_impl(_PyType_CAST(type), object, encoding, errors);
     }
     if (nargs + nkwargs == 3) {
@@ -14727,7 +14726,6 @@ unicode_vectorcall(PyObject *type, PyObject *const *args,
         else if (nkwargs != 0) {
             return fallback_to_tp_call(type, nargs, nkwargs, args, kwnames);
         }
-        PyObject *object = args[0];
         const char *encoding = as_const_char(args[1], "encoding");
         if (encoding == NULL) {
             return NULL;
