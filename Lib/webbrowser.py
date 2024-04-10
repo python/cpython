@@ -682,9 +682,11 @@ def parse_args(arg_list: list[str] | None):
     parser.add_argument("url", help="URL to open")
 
     group = parser.add_mutually_exclusive_group()
-    group.add_argument("-n", "--new-window", action="store_true",
+    group.add_argument("-n", "--new-window", action="store_const",
+                       const=1, dest="new_win",
                        help="open new window")
-    group.add_argument("-t", "--new-tab", action="store_true",
+    group.add_argument("-t", "--new-tab", action="store_const",
+                       const=2, dest="new_win",
                        help="open new tab")
 
     args = parser.parse_args(arg_list)
@@ -695,13 +697,7 @@ def parse_args(arg_list: list[str] | None):
 def main(arg_list: list[str] | None = None):
     args = parse_args(arg_list)
 
-    new_win = 0
-    if args.new_window:
-        new_win = 1
-    elif args.new_tab:
-        new_win = 2
-
-    open(args.url, new_win)
+    open(args.url, args.new_win)
 
     print("\a")
 
