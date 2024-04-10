@@ -435,25 +435,24 @@ class ImportTest(unittest.TestCase):
 
 class CliTest(unittest.TestCase):
     def test_parse_args(self):
-        for command, url, new_window, new_tab in [
+        for command, url, new_win in [
             # No optional arguments
-            ("https://example.com", "https://example.com", False, False),
+            ("https://example.com", "https://example.com", 0),
             # Each optional argument
-            ("https://example.com -n", "https://example.com", True, False),
-            ("-n https://example.com", "https://example.com", True, False),
-            ("https://example.com -t", "https://example.com", False, True),
-            ("-t https://example.com", "https://example.com", False, True),
+            ("https://example.com -n", "https://example.com", 1),
+            ("-n https://example.com", "https://example.com", 1),
+            ("https://example.com -t", "https://example.com", 2),
+            ("-t https://example.com", "https://example.com", 2),
             # Long form
-            ("https://example.com --new-window", "https://example.com", True, False),
-            ("--new-window https://example.com", "https://example.com", True, False),
-            ("https://example.com --new-tab", "https://example.com", False, True),
-            ("--new-tab https://example.com", "https://example.com", False, True),
+            ("https://example.com --new-window", "https://example.com", 1),
+            ("--new-window https://example.com", "https://example.com", 1),
+            ("https://example.com --new-tab", "https://example.com", 2),
+            ("--new-tab https://example.com", "https://example.com", 2),
         ]:
             args = webbrowser.parse_args(shlex.split(command))
 
             self.assertEqual(args.url, url)
-            self.assertEqual(args.new_window, new_window)
-            self.assertEqual(args.new_tab, new_tab)
+            self.assertEqual(args.new_win, new_win)
 
     def test_parse_args_error(self):
         for command in [

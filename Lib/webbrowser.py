@@ -684,10 +684,10 @@ def parse_args(arg_list: list[str] | None):
 
     group = parser.add_mutually_exclusive_group()
     group.add_argument("-n", "--new-window", action="store_const",
-                       const=1, dest="new_win",
+                       const=1, default=0, dest="new_win",
                        help="open new window")
     group.add_argument("-t", "--new-tab", action="store_const",
-                       const=2, dest="new_win",
+                       const=2, default=0, dest="new_win",
                        help="open new tab")
 
     args = parser.parse_args(arg_list)
