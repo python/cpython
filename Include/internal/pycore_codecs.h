@@ -10,6 +10,11 @@ extern "C" {
 
 #include "pycore_lock.h"          // PyMutex
 
+/* Initialize codecs-related state for the given interpreter. Must be called
+   before any other _PyCodec* functions, and while only one thread is
+   active. */
+extern PyStatus _PyCodec_InitRegistry(PyInterpreterState *interp);
+
 extern PyObject* _PyCodec_Lookup(const char *encoding);
 
 /* Text codec specific encoding and decoding API.
@@ -65,15 +70,9 @@ struct codecs_state {
 #ifdef Py_GIL_DISABLED
     // Used to safely delete a specific item from search_path.
     PyMutex search_path_mutex;
-
-    // Used to synchronize initialization of the PyObject* members above.
-    PyMutex init_mutex;
 #endif
 
-    // If an acquire load of initialized yields 1, all of the PyObject* members
-    // above will be set, and their values will not change until interpreter
-    // finalization. This allows common operations to freely read them without
-    // additional synchronization.
+    // Whether or not the rest of the state is initialized.
     int initialized;
 };
 

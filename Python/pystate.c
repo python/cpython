@@ -824,6 +824,7 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
     Py_CLEAR(interp->codecs.search_path);
     Py_CLEAR(interp->codecs.search_cache);
     Py_CLEAR(interp->codecs.error_registry);
+    interp->codecs.initialized = 0;
 
     assert(interp->imports.modules == NULL);
     assert(interp->imports.modules_by_index == NULL);
