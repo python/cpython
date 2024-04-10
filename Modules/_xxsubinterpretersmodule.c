@@ -677,7 +677,7 @@ get_whence(PyInterpreterState *interp)
 
 
 static PyInterpreterState *
-resolve_interp(PyObject *idobj, int reqowned, const char *op)
+resolve_interp(PyObject *idobj, int restricted, const char *op)
 {
     PyInterpreterState *interp;
     if (idobj == NULL) {
@@ -690,7 +690,7 @@ resolve_interp(PyObject *idobj, int reqowned, const char *op)
         }
     }
 
-    if (reqowned && get_whence(interp) != _PyInterpreterState_WHENCE_STDLIB) {
+    if (restricted && get_whence(interp) != _PyInterpreterState_WHENCE_STDLIB) {
         if (idobj == NULL) {
             PyErr_Format(PyExc_InterpreterError,
                          "cannot %s unrecognized current interpreter", op);
@@ -831,18 +831,18 @@ is \"isolated\".");
 static PyObject *
 interp_destroy(PyObject *self, PyObject *args, PyObject *kwds)
 {
-    static char *kwlist[] = {"id", "require_owned", NULL};
+    static char *kwlist[] = {"id", "restrict", NULL};
     PyObject *id;
-    int reqowned = 0;
+    int restricted = 0;
     // XXX Use "L" for id?
     if (!PyArg_ParseTupleAndKeywords(args, kwds,
-                                     "O|$p:destroy", kwlist, &id, &reqowned))
+                                     "O|$p:destroy", kwlist, &id, &restricted))
     {
         return NULL;
     }
 
     // Look up the interpreter.
-    PyInterpreterState *interp = resolve_interp(id, reqowned, "destroy");
+    PyInterpreterState *interp = resolve_interp(id, restricted, "destroy");
     if (interp == NULL) {
         return NULL;
     }
@@ -876,7 +876,7 @@ interp_destroy(PyObject *self, PyObject *args, PyObject *kwds)
 }
 
 PyDoc_STRVAR(destroy_doc,
-"destroy(id, *, require_owned=False)\n\
+"destroy(id, *, restrict=False)\n\
 \n\
 Destroy the identified interpreter.\n\
 \n\
@@ -952,18 +952,18 @@ Return the ID of main interpreter.");
 static PyObject *
 interp_set___main___attrs(PyObject *self, PyObject *args, PyObject *kwargs)
 {
-    static char *kwlist[] = {"id", "updates", "require_owned", NULL};
+    static char *kwlist[] = {"id", "updates", "restrict", NULL};
     PyObject *id, *updates;
-    int reqowned = 0;
+    int restricted = 0;
     if (!PyArg_ParseTupleAndKeywords(args, kwargs,
                                      "OO|$p:" MODULE_NAME_STR ".set___main___attrs",
-                                     kwlist, &id, &updates, &reqowned))
+                                     kwlist, &id, &updates, &restricted))
     {
         return NULL;
     }
 
     // Look up the interpreter.
-    PyInterpreterState *interp = resolve_interp(id, reqowned,
+    PyInterpreterState *interp = resolve_interp(id, restricted,
                                                 "update __main__ for");
     if (interp == NULL) {
         return NULL;
@@ -1003,7 +1003,7 @@ interp_set___main___attrs(PyObject *self, PyObject *args, PyObject *kwargs)
 }
 
 PyDoc_STRVAR(set___main___attrs_doc,
-"set___main___attrs(id, ns, *, require_owned=False)\n\
+"set___main___attrs(id, ns, *, restrict=False)\n\
 \n\
 Bind the given attributes in the interpreter's __main__ module.");
 
@@ -1112,18 +1112,18 @@ _interp_exec(PyObject *self, PyInterpreterState *interp,
 static PyObject *
 interp_exec(PyObject *self, PyObject *args, PyObject *kwds)
 {
-    static char *kwlist[] = {"id", "code", "shared", "require_owned", NULL};
+    static char *kwlist[] = {"id", "code", "shared", "restrict", NULL};
     PyObject *id, *code;
     PyObject *shared = NULL;
-    int reqowned = 0;
+    int restricted = 0;
     if (!PyArg_ParseTupleAndKeywords(args, kwds,
                                      "OO|O$p:" MODULE_NAME_STR ".exec", kwlist,
-                                     &id, &code, &shared, &reqowned))
+                                     &id, &code, &shared, &restricted))
     {
         return NULL;
     }
 
-    PyInterpreterState *interp = resolve_interp(id, reqowned, "exec code for");
+    PyInterpreterState *interp = resolve_interp(id, restricted, "exec code for");
     if (interp == NULL) {
         return NULL;
     }
@@ -1152,7 +1152,7 @@ interp_exec(PyObject *self, PyObject *args, PyObject *kwds)
 }
 
 PyDoc_STRVAR(exec_doc,
-"exec(id, code, shared=None, *, require_owned=False)\n\
+"exec(id, code, shared=None, *, restrict=False)\n\
 \n\
 Execute the provided code in the identified interpreter.\n\
 This is equivalent to running the builtin exec() under the target\n\
@@ -1172,20 +1172,20 @@ static PyObject *
 interp_call(PyObject *self, PyObject *args, PyObject *kwds)
 {
     static char *kwlist[] = {"id", "callable", "args", "kwargs",
-                             "require_owned", NULL};
+                             "restrict", NULL};
     PyObject *id, *callable;
     PyObject *args_obj = NULL;
     PyObject *kwargs_obj = NULL;
-    int reqowned = 0;
+    int restricted = 0;
     if (!PyArg_ParseTupleAndKeywords(args, kwds,
                                      "OO|OO$p:" MODULE_NAME_STR ".call", kwlist,
                                      &id, &callable, &args_obj, &kwargs_obj,
-                                     &reqowned))
+                                     &restricted))
     {
         return NULL;
     }
 
-    PyInterpreterState *interp = resolve_interp(id, reqowned, "make a call in");
+    PyInterpreterState *interp = resolve_interp(id, restricted, "make a call in");
     if (interp == NULL) {
         return NULL;
     }
@@ -1216,7 +1216,7 @@ interp_call(PyObject *self, PyObject *args, PyObject *kwds)
 }
 
 PyDoc_STRVAR(call_doc,
-"call(id, callable, args=None, kwargs=None, *, require_owned=False)\n\
+"call(id, callable, args=None, kwargs=None, *, restrict=False)\n\
 \n\
 Call the provided object in the identified interpreter.\n\
 Pass the given args and kwargs, if possible.\n\
@@ -1230,18 +1230,18 @@ is ignored, including its __globals__ dict.");
 static PyObject *
 interp_run_string(PyObject *self, PyObject *args, PyObject *kwds)
 {
-    static char *kwlist[] = {"id", "script", "shared", "require_owned", NULL};
+    static char *kwlist[] = {"id", "script", "shared", "restrict", NULL};
     PyObject *id, *script;
     PyObject *shared = NULL;
-    int reqowned = 0;
+    int restricted = 0;
     if (!PyArg_ParseTupleAndKeywords(args, kwds,
                                      "OU|O$p:" MODULE_NAME_STR ".run_string",
-                                     kwlist, &id, &script, &shared, &reqowned))
+                                     kwlist, &id, &script, &shared, &restricted))
     {
         return NULL;
     }
 
-    PyInterpreterState *interp = resolve_interp(id, reqowned, "run a string in");
+    PyInterpreterState *interp = resolve_interp(id, restricted, "run a string in");
     if (interp == NULL) {
         return NULL;
     }
@@ -1263,7 +1263,7 @@ interp_run_string(PyObject *self, PyObject *args, PyObject *kwds)
 }
 
 PyDoc_STRVAR(run_string_doc,
-"run_string(id, script, shared=None, *, require_owned=False)\n\
+"run_string(id, script, shared=None, *, restrict=False)\n\
 \n\
 Execute the provided string in the identified interpreter.\n\
 \n\
@@ -1272,18 +1272,18 @@ Execute the provided string in the identified interpreter.\n\
 static PyObject *
 interp_run_func(PyObject *self, PyObject *args, PyObject *kwds)
 {
-    static char *kwlist[] = {"id", "func", "shared", "require_owned", NULL};
+    static char *kwlist[] = {"id", "func", "shared", "restrict", NULL};
     PyObject *id, *func;
     PyObject *shared = NULL;
-    int reqowned = 0;
+    int restricted = 0;
     if (!PyArg_ParseTupleAndKeywords(args, kwds,
                                      "OO|O$p:" MODULE_NAME_STR ".run_func",
-                                     kwlist, &id, &func, &shared, &reqowned))
+                                     kwlist, &id, &func, &shared, &restricted))
     {
         return NULL;
     }
 
-    PyInterpreterState *interp = resolve_interp(id, reqowned,
+    PyInterpreterState *interp = resolve_interp(id, restricted,
                                                 "run a function in");
     if (interp == NULL) {
         return NULL;
@@ -1307,7 +1307,7 @@ interp_run_func(PyObject *self, PyObject *args, PyObject *kwds)
 }
 
 PyDoc_STRVAR(run_func_doc,
-"run_func(id, func, shared=None, *, require_owned=False)\n\
+"run_func(id, func, shared=None, *, restrict=False)\n\
 \n\
 Execute the body of the provided function in the identified interpreter.\n\
 Code objects are also supported.  In both cases, closures and args\n\
@@ -1343,17 +1343,17 @@ False otherwise.");
 static PyObject *
 interp_is_running(PyObject *self, PyObject *args, PyObject *kwds)
 {
-    static char *kwlist[] = {"id", "require_owned", NULL};
+    static char *kwlist[] = {"id", "restrict", NULL};
     PyObject *id;
-    int reqowned = 0;
+    int restricted = 0;
     if (!PyArg_ParseTupleAndKeywords(args, kwds,
                                      "O|$p:is_running", kwlist,
-                                     &id, &reqowned))
+                                     &id, &restricted))
     {
         return NULL;
     }
 
-    PyInterpreterState *interp = resolve_interp(id, reqowned,
+    PyInterpreterState *interp = resolve_interp(id, restricted,
                                                 "check if running for");
     if (interp == NULL) {
         return NULL;
@@ -1366,7 +1366,7 @@ interp_is_running(PyObject *self, PyObject *args, PyObject *kwds)
 }
 
 PyDoc_STRVAR(is_running_doc,
-"is_running(id, *, require_owned=False) -> bool\n\
+"is_running(id, *, restrict=False) -> bool\n\
 \n\
 Return whether or not the identified interpreter is running.");
 
@@ -1374,12 +1374,12 @@ Return whether or not the identified interpreter is running.");
 static PyObject *
 interp_get_config(PyObject *self, PyObject *args, PyObject *kwds)
 {
-    static char *kwlist[] = {"id", "require_owned", NULL};
+    static char *kwlist[] = {"id", "restrict", NULL};
     PyObject *idobj = NULL;
-    int reqowned = 0;
+    int restricted = 0;
     if (!PyArg_ParseTupleAndKeywords(args, kwds,
                                      "O|$p:get_config", kwlist,
-                                     &idobj, &reqowned))
+                                     &idobj, &restricted))
     {
         return NULL;
     }
@@ -1387,7 +1387,7 @@ interp_get_config(PyObject *self, PyObject *args, PyObject *kwds)
         idobj = NULL;
     }
 
-    PyInterpreterState *interp = resolve_interp(idobj, reqowned,
+    PyInterpreterState *interp = resolve_interp(idobj, restricted,
                                                 "get the config of");
     if (interp == NULL) {
         return NULL;
@@ -1408,7 +1408,7 @@ interp_get_config(PyObject *self, PyObject *args, PyObject *kwds)
 }
 
 PyDoc_STRVAR(get_config_doc,
-"get_config(id, *, require_owned=False) -> types.SimpleNamespace\n\
+"get_config(id, *, restrict=False) -> types.SimpleNamespace\n\
 \n\
 Return a representation of the config used to initialize the interpreter.");
 
@@ -1442,18 +1442,18 @@ Return an identifier for where the interpreter was created.");
 static PyObject *
 interp_incref(PyObject *self, PyObject *args, PyObject *kwds)
 {
-    static char *kwlist[] = {"id", "implieslink", "require_owned", NULL};
+    static char *kwlist[] = {"id", "implieslink", "restrict", NULL};
     PyObject *id;
     int implieslink = 0;
-    int reqowned = 0;
+    int restricted = 0;
     if (!PyArg_ParseTupleAndKeywords(args, kwds,
                                      "O|$pp:incref", kwlist,
-                                     &id, &implieslink, &reqowned))
+                                     &id, &implieslink, &restricted))
     {
         return NULL;
     }
 
-    PyInterpreterState *interp = resolve_interp(id, reqowned, "incref");
+    PyInterpreterState *interp = resolve_interp(id, restricted, "incref");
     if (interp == NULL) {
         return NULL;
     }
@@ -1471,16 +1471,16 @@ interp_incref(PyObject *self, PyObject *args, PyObject *kwds)
 static PyObject *
 interp_decref(PyObject *self, PyObject *args, PyObject *kwds)
 {
-    static char *kwlist[] = {"id", "require_owned", NULL};
+    static char *kwlist[] = {"id", "restrict", NULL};
     PyObject *id;
-    int reqowned = 0;
+    int restricted = 0;
     if (!PyArg_ParseTupleAndKeywords(args, kwds,
-                                     "O|$p:decref", kwlist, &id, &reqowned))
+                                     "O|$p:decref", kwlist, &id, &restricted))
     {
         return NULL;
     }
 
-    PyInterpreterState *interp = resolve_interp(id, reqowned, "decref");
+    PyInterpreterState *interp = resolve_interp(id, restricted, "decref");
     if (interp == NULL) {
         return NULL;
     }
