@@ -266,6 +266,8 @@ def _collect_parameters(args):
         >>> _collect_parameters((T, Callable[P, T]))
         (~T, ~P)
     """
+    # required TypeVarLike cannot appear after TypeVarLike with default
+    default_encountered = False
     parameters = []
     for t in args:
         if isinstance(t, type):
@@ -280,6 +282,12 @@ def _collect_parameters(args):
                         parameters.append(collected)
         elif hasattr(t, '__typing_subst__'):
             if t not in parameters:
+                if getattr(t, '__default__', None) is not None:
+                    default_encountered = True
+                elif default_encountered:
+                    raise TypeError(f'Type parameter {t!r} without a default'
+                                    ' follows type parameter with a default')
+
                 parameters.append(t)
         else:
             for x in getattr(t, '__parameters__', ()):
@@ -297,8 +305,27 @@ def _check_generic(cls, parameters, elen):
         raise TypeError(f"{cls} is not a generic class")
     alen = len(parameters)
     if alen != elen:
-        raise TypeError(f"Too {'many' if alen > elen else 'few'} arguments for {cls};"
-                        f" actual {alen}, expected {elen}")
+        expect_val = elen
+        if hasattr(cls, "__parameters__"):
+            parameters = [p for p in cls.__parameters__ if get_origin(p) is not Unpack]
+
+            # deal with TypeVarLike defaults
+            # required TypeVarLikes cannot appear after a defaulted one.
+            if alen < elen:
+                # since we validate TypeVarLike default in _collect_type_vars
+                # or _collect_parameters we can safely check parameters[alen]
+                if getattr(parameters[alen], '__default__', None) is not None:
+                    return
+
+                num_default_tv = sum(getattr(p, '__default__', None)
+                                        is not None for p in parameters)
+
+                elen -= num_default_tv
+
+                expect_val = f"at least {elen}"
+
+        raise TypeError(f"Too {'many' if alen > elen else 'few'} arguments"
+                        f" for {cls}; actual {alen}, expected {expect_val}")
 
 def _unpack_args(args):
     newargs = []

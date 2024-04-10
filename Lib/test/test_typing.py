@@ -626,6 +626,27 @@ class TypeVarLikeDefaultsTests(BaseTestCase):
         self.assertEqual(U.__default__, None)
         self.assertEqual(U_None.__default__, type(None))
 
+    def test_erroneous_generic(self):
+        DefaultStrT = TypeVar('DefaultStrT', default=str)
+        T = TypeVar('T')
+
+        with self.assertRaises(TypeError):
+            Test = Generic[DefaultStrT, T]
+
+    def test_need_more_params(self):
+        DefaultStrT = TypeVar('DefaultStrT', default=str)
+        T = TypeVar('T')
+        U = TypeVar('U')
+
+        class A(Generic[T, U, DefaultStrT]): ...
+        A[int, bool]
+        A[int, bool, str]
+
+        with self.assertRaises(
+            TypeError, msg="Too few arguments for .+; actual 1, expected at least 2"
+        ):
+            Test = A[int]
+
     def test_pickle(self):
         global U, U_co, U_contra, U_default  # pickle wants to reference the class by name
         U = TypeVar('U')
@@ -640,7 +661,6 @@ class TypeVarLikeDefaultsTests(BaseTestCase):
                 self.assertEqual(z.__contravariant__, typevar.__contravariant__)
                 self.assertEqual(z.__bound__, typevar.__bound__)
                 self.assertEqual(z.__default__, typevar.__default__)
-
 
 
 def template_replace(templates: list[str], replacements: dict[str, list[str]]) -> list[tuple[str]]:
