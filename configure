@@ -31185,7 +31185,7 @@ printf %s "checking for stdlib extension module xxlimited... " >&6; }
         if test "$py_cv_module_xxlimited" != "n/a"
 then :
 
-    if true
+    if test "$TEST_MODULES" = yes
 then :
   if test "$ac_cv_func_dlopen" = yes
 then :
@@ -31223,7 +31223,7 @@ printf %s "checking for stdlib extension module xxlimited_35... " >&6; }
         if test "$py_cv_module_xxlimited_35" != "n/a"
 then :
 
-    if true
+    if test "$TEST_MODULES" = yes
 then :
   if test "$ac_cv_func_dlopen" = yes
 then :

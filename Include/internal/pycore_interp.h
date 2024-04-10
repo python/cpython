@@ -59,6 +59,12 @@ struct _stoptheworld_state {
     PyThreadState *requester; // Thread that requested the pause (may be NULL).
 };
 
+#ifdef Py_GIL_DISABLED
+// This should be prime but otherwise the choice is arbitrary. A larger value
+// increases concurrency at the expense of memory.
+#  define NUM_WEAKREF_LIST_LOCKS 127
+#endif
+
 /* cross-interpreter data registry */
 
 /* Tracks some rare events per-interpreter, used by the optimizer to turn on/off
@@ -203,6 +209,7 @@ struct _is {
 #if defined(Py_GIL_DISABLED)
     struct _mimalloc_interp_state mimalloc;
     struct _brc_state brc;  // biased reference counting state
+    PyMutex weakref_locks[NUM_WEAKREF_LIST_LOCKS];
 #endif
 
     // Per-interpreter state for the obmalloc allocator.  For the main
@@ -238,12 +245,6 @@ struct _is {
     struct callable_cache callable_cache;
     _PyOptimizerObject *optimizer;
     _PyExecutorObject *executor_list_head;
-
-    /* These two values are shifted and offset to speed up check in JUMP_BACKWARD */
-    uint32_t optimizer_resume_threshold;
-    uint32_t optimizer_backedge_threshold;
-
-    uint16_t optimizer_side_threshold;
 
     _rare_events rare_events;
     PyDict_WatchCallback builtins_dict_watcher;
