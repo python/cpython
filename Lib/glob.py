@@ -319,11 +319,11 @@ def translate(pat, *, recursive=False, include_hidden=False, seps=None):
 
 
 @functools.lru_cache(maxsize=512)
-def _compile_pattern(pat, sep, case_sensitive, recursive=True):
+def _compile_pattern(pat, sep, case_sensitive, recursive=True, include_hidden=False):
     """Compile given glob pattern to a re.Pattern object (observing case
     sensitivity)."""
     flags = re.NOFLAG if case_sensitive else re.IGNORECASE
-    regex = translate(pat, recursive=recursive, include_hidden=True, seps=sep)
+    regex = translate(pat, recursive=recursive, include_hidden=include_hidden, seps=sep)
     return re.compile(regex, flags=flags).match
 
 
@@ -331,10 +331,11 @@ class _Globber:
     """Class providing shell-style pattern matching and globbing.
     """
 
-    def __init__(self,  sep, case_sensitive, recursive=False):
+    def __init__(self,  sep, case_sensitive, recursive=False, include_hidden=False):
         self.sep = sep
         self.case_sensitive = case_sensitive
         self.recursive = recursive
+        self.include_hidden = include_hidden
 
     # Low-level methods
 
@@ -360,7 +361,7 @@ class _Globber:
     # High-level methods
 
     def compile(self, pat):
-        return _compile_pattern(pat, self.sep, self.case_sensitive, self.recursive)
+        return _compile_pattern(pat, self.sep, self.case_sensitive, self.recursive, self.include_hidden)
 
     def selector(self, parts):
         """Returns a function that selects from a given path, walking and
@@ -392,7 +393,7 @@ class _Globber:
         filtering by pattern.
         """
 
-        match = None if part == '*' else self.compile(part)
+        match = None if self.include_hidden and part == '*' else self.compile(part)
         dir_only = bool(parts)
         if dir_only:
             select_next = self.selector(parts)
@@ -440,7 +441,7 @@ class _Globber:
             while parts and parts[-1] not in _special_parts:
                 part += self.sep + parts.pop()
 
-        match = None if part == '**' else self.compile(part)
+        match = None if self.include_hidden and part == '**' else self.compile(part)
         dir_only = bool(parts)
         select_next = self.selector(parts)
 
