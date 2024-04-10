@@ -2299,8 +2299,8 @@ memoryview_tobytes_impl(PyMemoryViewObject *self, const char *order)
 }
 
 /*[clinic input]
-@text_signature "($self, *, bytes_per_sep=1, /)"
-@text_signature "($self, sep, bytes_per_sep=1, /)"
+@text_signature "($self, /, *, bytes_per_sep=1)"
+@text_signature "($self, /, sep, bytes_per_sep=1)"
 memoryview.hex
 
     sep: object = NULL
@@ -2326,7 +2326,7 @@ Example:
 static PyObject *
 memoryview_hex_impl(PyMemoryViewObject *self, PyObject *sep,
                     int bytes_per_sep)
-/*[clinic end generated code: output=430ca760f94f3ca7 input=10129bce3c852fc3]*/
+/*[clinic end generated code: output=430ca760f94f3ca7 input=fdf8251033d71260]*/
 {
     Py_buffer *src = VIEW_ADDR(self);
     PyObject *bytes;

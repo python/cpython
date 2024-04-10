@@ -2479,8 +2479,8 @@ _PyBytes_FromHex(PyObject *string, int use_bytearray)
 }
 
 /*[clinic input]
-@text_signature "($self, *, bytes_per_sep=1, /)"
-@text_signature "($self, sep, bytes_per_sep=1, /)"
+@text_signature "($self, /, *, bytes_per_sep=1)"
+@text_signature "($self, /, sep, bytes_per_sep=1)"
 bytes.hex
 
     sep: object = NULL
@@ -2505,7 +2505,7 @@ Example:
 
 static PyObject *
 bytes_hex_impl(PyBytesObject *self, PyObject *sep, int bytes_per_sep)
-/*[clinic end generated code: output=1f134da504064139 input=9c31b616d1648899]*/
+/*[clinic end generated code: output=1f134da504064139 input=a896de1af0991eda]*/
 {
     const char *argbuf = PyBytes_AS_STRING(self);
     Py_ssize_t arglen = PyBytes_GET_SIZE(self);

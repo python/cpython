@@ -2111,8 +2111,8 @@ bytearray_fromhex_impl(PyTypeObject *type, PyObject *string)
 }
 
 /*[clinic input]
-@text_signature "($self, *, bytes_per_sep=1, /)"
-@text_signature "($self, sep, bytes_per_sep=1, /)"
+@text_signature "($self, /, *, bytes_per_sep=1)"
+@text_signature "($self, /, sep, bytes_per_sep=1)"
 bytearray.hex
 
     sep: object = NULL
@@ -2137,7 +2137,7 @@ Example:
 
 static PyObject *
 bytearray_hex_impl(PyByteArrayObject *self, PyObject *sep, int bytes_per_sep)
-/*[clinic end generated code: output=29c4e5ef72c565a0 input=719afde525c65958]*/
+/*[clinic end generated code: output=29c4e5ef72c565a0 input=4d67f552fc1c4eee]*/
 {
     char* argbuf = PyByteArray_AS_STRING(self);
     Py_ssize_t arglen = PyByteArray_GET_SIZE(self);

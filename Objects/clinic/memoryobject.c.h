@@ -328,8 +328,8 @@ exit:
 }
 
 PyDoc_STRVAR(memoryview_hex__doc__,
-"hex($self, *, bytes_per_sep=1, /)\n"
-"($self, sep, bytes_per_sep=1, /)\n"
+"hex($self, /, *, bytes_per_sep=1)\n"
+"($self, /, sep, bytes_per_sep=1)\n"
 "--\n"
 "\n"
 "Return the data in the buffer as a str of hexadecimal numbers.\n"
@@ -415,4 +415,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=7b6a89244a5f026c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=2a03415900028ba0 input=a9049054013a1b77]*/
