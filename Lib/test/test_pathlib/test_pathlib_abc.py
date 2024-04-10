@@ -1429,10 +1429,10 @@ class DummyPath(PathBase):
         return "{}({!r})".format(self.__class__.__name__, self.as_posix())
 
     def stat(self, *, follow_symlinks=True):
-        if follow_symlinks:
-            path = str(self.resolve())
+        if follow_symlinks or self.name in ('', '.', '..'):
+            path = str(self.resolve(strict=True))
         else:
-            path = str(self.parent.resolve() / self.name)
+            path = str(self.parent.resolve(strict=True) / self.name)
         if path in self._files:
             st_mode = stat.S_IFREG
         elif path in self._directories:

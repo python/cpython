@@ -694,8 +694,11 @@ class PathBase(PurePathBase):
     def _glob_selector(self, parts, case_sensitive, recurse_symlinks):
         if case_sensitive is None:
             case_sensitive = _is_case_sensitive(self.parser)
+            case_pedantic = False
+        else:
+            case_pedantic = True
         recursive = True if recurse_symlinks else glob._no_recurse_symlinks
-        globber = self._globber(self.parser.sep, case_sensitive, recursive)
+        globber = self._globber(self.parser.sep, case_sensitive, case_pedantic, recursive)
         return globber.selector(parts)
 
     def glob(self, pattern, *, case_sensitive=None, recurse_symlinks=True):
