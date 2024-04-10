@@ -177,6 +177,9 @@ inst_seq_create_raw(void)
 {
     _PyInstructionSequence *seq;
     seq = PyObject_GC_New(_PyInstructionSequence, &PyInstructionSequence_Type);
+    if (seq == NULL) {
+        return NULL;
+    }
     seq->s_instrs = NULL;
     seq->s_allocated = 0;
     seq->s_used = 0;
