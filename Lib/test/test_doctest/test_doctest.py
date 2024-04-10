@@ -2496,6 +2496,20 @@ def test_look_in_unwrapped():
     'one other test'
     """
 
+if support.check_impl_detail(cpython=True):
+    def test_wrapped_c_func():
+        """
+        # https://github.com/python/cpython/issues/117692
+        >>> import binascii
+        >>> from test.test_doctest.decorator_mod import decorator
+
+        >>> c_func_wrapped = decorator(binascii.b2a_hex)
+        >>> tests = doctest.DocTestFinder(exclude_empty=False).find(c_func_wrapped)
+        >>> for test in tests:
+        ...    print(test.lineno, test.name)
+        None b2a_hex
+        """
+
 def test_unittest_reportflags():
     """Default unittest reporting flags can be set to control reporting
 
