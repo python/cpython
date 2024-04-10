@@ -580,6 +580,69 @@ class TypeVarTests(BaseTestCase):
         self.assertIs(T.__bound__, None)
 
 
+class TypeVarLikeDefaultsTests(BaseTestCase):
+    def test_typevar(self):
+        T = TypeVar('T', default=int)
+        self.assertEqual(T.__default__, int)
+        self.assertIsInstance(T, TypeVar)
+
+        class A(Generic[T]): ...
+        Alias = Optional[T]
+
+    def test_typevar_none(self):
+        U = TypeVar('U')
+        U_None = TypeVar('U_None', default=None)
+        self.assertEqual(U.__default__, None)
+        self.assertEqual(U_None.__default__, type(None))
+
+    def test_paramspec(self):
+        P = ParamSpec('P', default=(str, int))
+        self.assertEqual(P.__default__, (str, int))
+        self.assertIsInstance(P, ParamSpec)
+
+        class A(Generic[P]): ...
+        Alias = typing.Callable[P, None]
+
+        P_default = ParamSpec('P_default', default=...)
+        self.assertIs(P_default.__default__, ...)
+
+    def test_paramspec_none(self):
+        U = ParamSpec('U')
+        U_None = ParamSpec('U_None', default=None)
+        self.assertEqual(U.__default__, None)
+        self.assertEqual(U_None.__default__, type(None))
+
+    def test_typevartuple(self):
+        Ts = TypeVarTuple('Ts', default=Unpack[Tuple[str, int]])
+        self.assertEqual(Ts.__default__, Unpack[Tuple[str, int]])
+        self.assertIsInstance(Ts, TypeVarTuple)
+
+        class A(Generic[Unpack[Ts]]): ...
+        Alias = Optional[Unpack[Ts]]
+
+    def test_typevartuple_none(self):
+        U = TypeVarTuple('U')
+        U_None = TypeVarTuple('U_None', default=None)
+        self.assertEqual(U.__default__, None)
+        self.assertEqual(U_None.__default__, type(None))
+
+    def test_pickle(self):
+        global U, U_co, U_contra, U_default  # pickle wants to reference the class by name
+        U = TypeVar('U')
+        U_co = TypeVar('U_co', covariant=True)
+        U_contra = TypeVar('U_contra', contravariant=True)
+        U_default = TypeVar('U_default', default=int)
+        for proto in range(pickle.HIGHEST_PROTOCOL):
+            for typevar in (U, U_co, U_contra, U_default):
+                z = pickle.loads(pickle.dumps(typevar, proto))
+                self.assertEqual(z.__name__, typevar.__name__)
+                self.assertEqual(z.__covariant__, typevar.__covariant__)
+                self.assertEqual(z.__contravariant__, typevar.__contravariant__)
+                self.assertEqual(z.__bound__, typevar.__bound__)
+                self.assertEqual(z.__default__, typevar.__default__)
+
+
+
 def template_replace(templates: list[str], replacements: dict[str, list[str]]) -> list[tuple[str]]:
     """Renders templates with possible combinations of replacements.
 

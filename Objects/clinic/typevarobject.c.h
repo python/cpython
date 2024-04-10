@@ -9,8 +9,8 @@ preserve
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywordsWithVararg()
 
 PyDoc_STRVAR(typevar_new__doc__,
-"typevar(name, *constraints, bound=None, default=None, covariant=False,\n"
-"        contravariant=False, infer_variance=False)\n"
+"typevar(name, *constraints, bound=None, default=<unrepresentable>,\n"
+"        covariant=False, contravariant=False, infer_variance=False)\n"
 "--\n"
 "\n"
 "Create a TypeVar.");
@@ -56,7 +56,7 @@ typevar_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject *name;
     PyObject *constraints = NULL;
     PyObject *bound = Py_None;
-    PyObject *default_ = Py_None;
+    PyObject *default_ = NULL;
     int covariant = 0;
     int contravariant = 0;
     int infer_variance = 0;
@@ -250,8 +250,8 @@ exit:
 }
 
 PyDoc_STRVAR(paramspec_new__doc__,
-"paramspec(name, *, bound=None, default=None, covariant=False,\n"
-"          contravariant=False, infer_variance=False)\n"
+"paramspec(name, *, bound=None, default=<unrepresentable>,\n"
+"          covariant=False, contravariant=False, infer_variance=False)\n"
 "--\n"
 "\n"
 "Create a ParamSpec object.");
@@ -296,7 +296,7 @@ paramspec_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 1;
     PyObject *name;
     PyObject *bound = Py_None;
-    PyObject *default_ = Py_None;
+    PyObject *default_ = NULL;
     int covariant = 0;
     int contravariant = 0;
     int infer_variance = 0;
@@ -410,7 +410,7 @@ paramspec_reduce(paramspecobject *self, PyObject *Py_UNUSED(ignored))
 }
 
 PyDoc_STRVAR(typevartuple__doc__,
-"typevartuple(name, *, default=None)\n"
+"typevartuple(name, *, default=<unrepresentable>)\n"
 "--\n"
 "\n"
 "Create a new TypeVarTuple with the given name.");
@@ -452,7 +452,7 @@ typevartuple(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
     Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 1;
     PyObject *name;
-    PyObject *default_ = Py_None;
+    PyObject *default_ = NULL;
 
     fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 1, 1, 0, argsbuf);
     if (!fastargs) {
@@ -613,4 +613,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=ffa565a98d42b033 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=6e8c6062a9909896 input=a9049054013a1b77]*/

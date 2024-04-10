@@ -361,7 +361,7 @@ typevar.__new__ as typevar_new
     name: object(subclass_of="&PyUnicode_Type")
     *constraints: object
     bound: object = None
-    default as default_: object = None
+    default as default_: object = NULL
     covariant: bool = False
     contravariant: bool = False
     infer_variance: bool = False
@@ -373,7 +373,7 @@ static PyObject *
 typevar_new_impl(PyTypeObject *type, PyObject *name, PyObject *constraints,
                  PyObject *bound, PyObject *default_, int covariant,
                  int contravariant, int infer_variance)
-/*[clinic end generated code: output=74ee963663330604 input=7c2c5d1317165573]*/
+/*[clinic end generated code: output=74ee963663330604 input=2962ee79d92972fc]*/
 {
     if (covariant && contravariant) {
         PyErr_SetString(PyExc_ValueError,
@@ -855,7 +855,7 @@ paramspec_default(paramspecobject *self, void *unused)
     }
     PyObject *default_ = PyObject_CallNoArgs(self->evaluate_default);
     if (Py_IsNone(default_)) {
-        default_ = Py_XNewRef(Py_TYPE(default_));
+        default_ = (PyObject *)Py_TYPE(default_);
     }
     self->default_ = Py_XNewRef(default_);
     return default_;
@@ -882,7 +882,7 @@ paramspec_alloc(PyObject *name, PyObject *bound, PyObject *default_, bool covari
     ps->covariant = covariant;
     ps->contravariant = contravariant;
     ps->infer_variance = infer_variance;
-    ps->default_ = default_;
+    ps->default_ = Py_XNewRef(default_);
     ps->evaluate_default = NULL;
     _PyObject_GC_TRACK(ps);
     if (module != NULL) {
@@ -901,7 +901,7 @@ paramspec.__new__ as paramspec_new
     name: object(subclass_of="&PyUnicode_Type")
     *
     bound: object = None
-    default as default_: object = None
+    default as default_: object = NULL
     covariant: bool = False
     contravariant: bool = False
     infer_variance: bool = False
@@ -913,7 +913,7 @@ static PyObject *
 paramspec_new_impl(PyTypeObject *type, PyObject *name, PyObject *bound,
                    PyObject *default_, int covariant, int contravariant,
                    int infer_variance)
-/*[clinic end generated code: output=b6be5856624d7b5d input=d95d455b87d263d6]*/
+/*[clinic end generated code: output=b6be5856624d7b5d input=5f16268ae6237a50]*/
 {
     if (covariant && contravariant) {
         PyErr_SetString(PyExc_ValueError, "Bivariant types are not supported.");
@@ -1157,14 +1157,14 @@ typevartuple.__new__
 
     name: object(subclass_of="&PyUnicode_Type")
     *
-    default as default_: object = None
+    default as default_: object = NULL
 
 Create a new TypeVarTuple with the given name.
 [clinic start generated code]*/
 
 static PyObject *
 typevartuple_impl(PyTypeObject *type, PyObject *name, PyObject *default_)
-/*[clinic end generated code: output=eb847fe0acd69560 input=701651f2d692f6ae]*/
+/*[clinic end generated code: output=eb847fe0acd69560 input=b2f0ecf512371a75]*/
 {
     PyObject *module = caller();
     if (module == NULL) {
