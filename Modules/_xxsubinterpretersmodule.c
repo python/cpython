@@ -489,173 +489,6 @@ _run_in_interpreter(PyInterpreterState *interp,
 }
 
 
-/* "owned" interpreters *****************************************************/
-
-struct owned_id {
-    int64_t id;
-    struct owned_id *next;
-};
-
-typedef struct {
-    PyMutex mutex;
-    struct owned_id *head;
-    Py_ssize_t count;
-} owned_ids;
-
-static int
-init_owned(owned_ids *owned)
-{
-    return 0;
-}
-
-static void
-clear_owned(owned_ids *owned)
-{
-    PyMutex_Lock(&owned->mutex);
-    struct owned_id *cur = owned->head;
-    Py_ssize_t count = 0;
-    while (cur != NULL) {
-        struct owned_id *next = cur->next;
-        PyMem_RawFree(cur);
-        cur = next;
-        count += 1;
-    }
-    assert(count == owned->count);
-    owned->head = NULL;
-    owned->count = 0;
-    PyMutex_Unlock(&owned->mutex);
-}
-
-static struct owned_id *
-_find_owned(owned_ids *owned, int64_t interpid, struct owned_id **p_prev)
-{
-    // The caller must manage the lock.
-    if (owned->head == NULL) {
-        return NULL;
-    }
-
-    struct owned_id *prev = NULL;
-    struct owned_id *cur = owned->head;
-    while (cur != NULL) {
-        if (cur->id == interpid) {
-            break;
-        }
-        prev = cur;
-        cur = cur->next;
-    }
-    if (cur == NULL) {
-        return NULL;
-    }
-
-    if (p_prev != NULL) {
-        *p_prev = prev;
-    }
-    return cur;
-}
-
-static void
-add_owned(owned_ids *owned, PyInterpreterState *interp)
-{
-    PyMutex_Lock(&owned->mutex);
-    int64_t id = PyInterpreterState_GetID(interp);
-    struct owned_id *new = PyMem_RawMalloc(sizeof(struct owned_id));
-    assert(new != NULL);
-    new->id = id;
-    new->next = owned->head;
-    owned->head = new;
-    owned->count += 1;
-    PyMutex_Unlock(&owned->mutex);
-}
-
-static void
-drop_owned(owned_ids *owned, int64_t interpid)
-{
-    PyMutex_Lock(&owned->mutex);
-
-    struct owned_id *prev;
-    struct owned_id *found = _find_owned(owned, interpid, &prev);
-    if (found != NULL) {
-        if (prev == NULL) {
-            assert(found == owned->head);
-            owned->head = found->next;
-        }
-        else {
-            assert(found != owned->head);
-            prev->next = found->next;
-        }
-        PyMem_RawFree(found);
-        owned->count -= 1;
-    }
-
-    PyMutex_Unlock(&owned->mutex);
-}
-
-static int
-is_owned(owned_ids *owned, PyInterpreterState *interp)
-{
-    int64_t interpid = PyInterpreterState_GetID(interp);
-    PyMutex_Lock(&owned->mutex);
-
-    struct owned_id *found = _find_owned(owned, interpid, NULL);
-    int res = found != NULL;
-
-    PyMutex_Unlock(&owned->mutex);
-    return res;
-}
-
-
-/* global state *************************************************************/
-
-/* globals is the process-global state for the module.  It holds all
-   the data that we need to share between interpreters, so it cannot
-   hold PyObject values. */
-static struct globals {
-    PyMutex mutex;
-    int module_count;
-    owned_ids owned;
-} _globals = {0};
-
-static int
-_globals_init(void)
-{
-    int res = -1;
-    PyMutex_Lock(&_globals.mutex);
-
-    _globals.module_count++;
-    if (_globals.module_count > 1) {
-        // Already initialized.
-        res = 0;
-        goto finally;
-    }
-
-    if (init_owned(&_globals.owned) < 0) {
-        goto finally;
-    }
-
-    res = 0;
-
-finally:
-    PyMutex_Unlock(&_globals.mutex);
-    return res;
-}
-
-static void
-_globals_fini(void)
-{
-    PyMutex_Lock(&_globals.mutex);
-
-    _globals.module_count--;
-    if (_globals.module_count > 0) {
-        goto finally;
-    }
-
-    clear_owned(&_globals.owned);
-
-finally:
-    PyMutex_Unlock(&_globals.mutex);
-}
-
-
 /* module level code ********************************************************/
 
 static long
@@ -793,8 +626,6 @@ interp_create(PyObject *self, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    add_owned(&_globals.owned, interp);
-
     if (reqrefs) {
         // Decref to 0 will destroy the interpreter.
         _PyInterpreterState_RequireIDRef(interp, 1);
@@ -837,7 +668,6 @@ interp_destroy(PyObject *self, PyObject *args, PyObject *kwds)
     if (interp == NULL) {
         return NULL;
     }
-    int64_t interpid = PyInterpreterState_GetID(interp);
 
     // Ensure we don't try to destroy the current interpreter.
     PyInterpreterState *current = _get_current_interp();
@@ -860,8 +690,6 @@ interp_destroy(PyObject *self, PyObject *args, PyObject *kwds)
 
     // Destroy the interpreter.
     _PyXI_EndInterpreter(interp, NULL, NULL);
-
-    drop_owned(&_globals.owned, interpid);
 
     Py_RETURN_NONE;
 }
@@ -1612,10 +1440,6 @@ module_exec(PyObject *mod)
     PyInterpreterState *interp = PyInterpreterState_Get();
     module_state *state = get_module_state(mod);
 
-    if (_globals_init() != 0) {
-        return -1;
-    }
-
 #define ADD_WHENCE(NAME) \
     if (PyModule_AddIntConstant(mod, "WHENCE_" #NAME,                   \
                                 _PyInterpreterState_WHENCE_##NAME) < 0) \
@@ -1650,7 +1474,6 @@ module_exec(PyObject *mod)
     return 0;
 
 error:
-    _globals_fini();
     return -1;
 }
 
@@ -1684,8 +1507,6 @@ module_free(void *mod)
     module_state *state = get_module_state(mod);
     assert(state != NULL);
     clear_module_state(state);
-
-    _globals_fini();
 }
 
 static struct PyModuleDef moduledef = {
