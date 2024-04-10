@@ -612,7 +612,7 @@ interp_create(PyObject *self, PyObject *args, PyObject *kwds)
         // XXX Move the chained exception to interpreters.create()?
         PyObject *exc = PyErr_GetRaisedException();
         assert(exc != NULL);
-        PyErr_SetString(PyExc_RuntimeError, "interpreter creation failed");
+        PyErr_SetString(PyExc_InterpreterError, "interpreter creation failed");
         _PyErr_ChainExceptions1(exc);
         return NULL;
     }
@@ -664,7 +664,7 @@ interp_destroy(PyObject *self, PyObject *args, PyObject *kwds)
         return NULL;
     }
     if (interp == current) {
-        PyErr_SetString(PyExc_RuntimeError,
+        PyErr_SetString(PyExc_InterpreterError,
                         "cannot destroy the current interpreter");
         return NULL;
     }
@@ -673,7 +673,7 @@ interp_destroy(PyObject *self, PyObject *args, PyObject *kwds)
     /* XXX We *could* support destroying a running interpreter but
        aren't going to worry about it for now. */
     if (is_running_main(interp)) {
-        PyErr_Format(PyExc_RuntimeError, "interpreter running");
+        PyErr_Format(PyExc_InterpreterError, "interpreter running");
         return NULL;
     }
 
@@ -693,7 +693,7 @@ PyDoc_STRVAR(destroy_doc,
 \n\
 Destroy the identified interpreter.\n\
 \n\
-Attempting to destroy the current interpreter results in a RuntimeError.\n\
+Attempting to destroy the current interpreter raises InterpreterError.\n\
 So does an unrecognized ID.");
 
 

@@ -10,6 +10,7 @@
 #undef NDEBUG
 
 #include "Python.h"
+#include "pycore_backoff.h"       // JUMP_BACKWARD_INITIAL_VALUE
 #include "pycore_bitutils.h"      // _Py_bswap32()
 #include "pycore_bytesobject.h"   // _PyBytes_Find()
 #include "pycore_ceval.h"         // _PyEval_AddPendingCall()
@@ -960,6 +961,17 @@ iframe_getlasti(PyObject *self, PyObject *frame)
 }
 
 static PyObject *
+get_co_framesize(PyObject *self, PyObject *arg)
+{
+    if (!PyCode_Check(arg)) {
+        PyErr_SetString(PyExc_TypeError, "argument must be a code object");
+        return NULL;
+    }
+    PyCodeObject *code = (PyCodeObject *)arg;
+    return PyLong_FromLong(code->co_framesize);
+}
+
+static PyObject *
 new_counter_optimizer(PyObject *self, PyObject *arg)
 {
     return PyUnstable_Optimizer_NewCounter();
@@ -1715,6 +1727,7 @@ static PyMethodDef module_functions[] = {
     {"iframe_getcode", iframe_getcode, METH_O, NULL},
     {"iframe_getline", iframe_getline, METH_O, NULL},
     {"iframe_getlasti", iframe_getlasti, METH_O, NULL},
+    {"get_co_framesize", get_co_framesize, METH_O, NULL},
     {"get_optimizer", get_optimizer,  METH_NOARGS, NULL},
     {"set_optimizer", set_optimizer,  METH_O, NULL},
     {"new_counter_optimizer", new_counter_optimizer, METH_NOARGS, NULL},
@@ -1804,6 +1817,11 @@ module_exec(PyObject *module)
 
     if (PyModule_Add(module, "SIZEOF_TIME_T",
                         PyLong_FromSsize_t(sizeof(time_t))) < 0) {
+        return 1;
+    }
+
+    if (PyModule_Add(module, "TIER2_THRESHOLD",
+                        PyLong_FromLong(JUMP_BACKWARD_INITIAL_VALUE)) < 0) {
         return 1;
     }
 
