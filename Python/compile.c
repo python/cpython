@@ -568,7 +568,7 @@ dictbytype(PyObject *src, int scope_type, int flag, Py_ssize_t offset)
 static void
 compiler_unit_free(struct compiler_unit *u)
 {
-    Py_XDECREF(u->u_instr_sequence);
+    Py_CLEAR(u->u_instr_sequence);
     Py_CLEAR(u->u_ste);
     Py_CLEAR(u->u_metadata.u_name);
     Py_CLEAR(u->u_metadata.u_qualname);
