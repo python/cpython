@@ -1357,28 +1357,81 @@ dict_getitem_knownhash(PyObject *self, PyObject *args)
 }
 
 
-static PyInterpreterState *
-_new_interpreter(PyObject *configobj,
-                 PyThreadState **p_tstate, PyThreadState **p_save_tstate)
+static int
+_init_interp_config_from_object(PyInterpreterConfig *config, PyObject *obj)
 {
-    PyInterpreterConfig config;
-    if (configobj == NULL) {
-        config = (PyInterpreterConfig)_PyInterpreterConfig_INIT;
-    }
-    else {
-        PyObject *dict = PyObject_GetAttrString(configobj, "__dict__");
-        if (dict == NULL) {
-            PyErr_Format(PyExc_TypeError, "bad config %R", configobj);
-            return NULL;
-        }
-        int res = _PyInterpreterConfig_InitFromDict(&config, dict);
-        Py_DECREF(dict);
-        if (res < 0) {
-            return NULL;
-        }
+    if (obj == NULL) {
+        *config = (PyInterpreterConfig)_PyInterpreterConfig_INIT;
+        return 0;
     }
 
-    return _PyXI_NewInterpreter(&config, p_tstate, p_save_tstate);
+    PyObject *dict = PyObject_GetAttrString(obj, "__dict__");
+    if (dict == NULL) {
+        PyErr_Format(PyExc_TypeError, "bad config %R", obj);
+        return -1;
+    }
+    int res = _PyInterpreterConfig_InitFromDict(config, dict);
+    Py_DECREF(dict);
+    if (res < 0) {
+        return -1;
+    }
+    return 0;
+}
+
+static PyInterpreterState *
+_new_interpreter(PyInterpreterConfig *config, long whence)
+{
+    if (whence == _PyInterpreterState_WHENCE_XI) {
+        return _PyXI_NewInterpreter(config, NULL, NULL);
+    }
+    PyObject *exc = NULL;
+    PyInterpreterState *interp = NULL;
+    if (whence == _PyInterpreterState_WHENCE_UNKNOWN) {
+        assert(config == NULL);
+        interp = PyInterpreterState_New();
+    }
+    else if (whence == _PyInterpreterState_WHENCE_CAPI
+             || whence == _PyInterpreterState_WHENCE_LEGACY_CAPI)
+    {
+        PyThreadState *tstate = NULL;
+        PyThreadState *save_tstate = PyThreadState_Swap(NULL);
+        if (whence == _PyInterpreterState_WHENCE_LEGACY_CAPI) {
+            assert(config == NULL);
+            tstate = Py_NewInterpreter();
+            PyThreadState_Swap(save_tstate);
+        }
+        else {
+            PyStatus status = Py_NewInterpreterFromConfig(&tstate, config);
+            PyThreadState_Swap(save_tstate);
+            if (PyStatus_Exception(status)) {
+                assert(tstate == NULL);
+                _PyErr_SetFromPyStatus(status);
+                exc = PyErr_GetRaisedException();
+            }
+        }
+        if (tstate != NULL) {
+            interp = PyThreadState_GetInterpreter(tstate);
+            // Throw away the initial tstate.
+            PyThreadState_Swap(tstate);
+            PyThreadState_Clear(tstate);
+            PyThreadState_Swap(save_tstate);
+            PyThreadState_Delete(tstate);
+        }
+    }
+    else {
+        PyErr_Format(PyExc_ValueError,
+                     "unsupported whence %ld", whence);
+        return NULL;
+    }
+
+    if (interp == NULL) {
+        PyErr_SetString(PyExc_InterpreterError,
+                        "sub-interpreter creation failed");
+        if (exc != NULL) {
+            _PyErr_ChainExceptions1(exc);
+        }
+    }
+    return interp;
 }
 
 // This exists mostly for testing the _interpreters module, as an
@@ -1386,20 +1439,41 @@ _new_interpreter(PyObject *configobj,
 static PyObject *
 create_interpreter(PyObject *self, PyObject *args, PyObject *kwargs)
 {
-    static char *kwlist[] = {"config", NULL};
+    static char *kwlist[] = {"config", "whence", NULL};
     PyObject *configobj = NULL;
+    long whence = _PyInterpreterState_WHENCE_XI;
     if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-                                     "|O:create_interpreter", kwlist,
-                                     &configobj))
+                                     "|O$p:create_interpreter", kwlist,
+                                     &configobj, &whence))
     {
         return NULL;
     }
 
-    PyInterpreterState *interp = _new_interpreter(configobj, NULL, NULL);
+    // Resolve the config.
+    PyInterpreterConfig *config = NULL;
+    PyInterpreterConfig _config;
+    if (whence == _PyInterpreterState_WHENCE_UNKNOWN
+            || whence == _PyInterpreterState_WHENCE_UNKNOWN)
+    {
+        if (configobj != NULL) {
+            PyErr_SetString(PyExc_ValueError, "got unexpected config");
+            return NULL;
+        }
+    }
+    else {
+        config = &_config;
+        if (_init_interp_config_from_object(config, configobj) < 0) {
+            return NULL;
+        }
+    }
+
+    // Create the interpreter.
+    PyInterpreterState *interp = _new_interpreter(config, whence);
     if (interp == NULL) {
         return NULL;
     }
 
+    // Return the ID.
     PyObject *idobj = _PyInterpreterState_GetIDObject(interp);
     if (idobj == NULL) {
         _PyXI_EndInterpreter(interp, NULL, NULL);
@@ -1497,26 +1571,67 @@ run_in_subinterp_with_config(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     const char *code;
     PyObject *configobj;
-    static char *kwlist[] = {"code", "config", NULL};
+    int xi = 0;
+    static char *kwlist[] = {"code", "config", "xi", NULL};
     if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-                    "sO:run_in_subinterp_with_config", kwlist,
-                    &code, &configobj))
+                    "sO|$p:run_in_subinterp_with_config", kwlist,
+                    &code, &configobj, &xi))
     {
         return NULL;
     }
 
-    PyThreadState *save_tstate;
-    PyThreadState *substate;
-    PyInterpreterState *interp = _new_interpreter(configobj, &substate, &save_tstate);
-    if (interp == NULL) {
+    PyInterpreterConfig config;
+    if (_init_interp_config_from_object(&config, configobj) < 0) {
         return NULL;
     }
 
     /* only initialise 'cflags.cf_flags' to test backwards compatibility */
     PyCompilerFlags cflags = {0};
-    int r = PyRun_SimpleStringFlags(code, &cflags);
 
-    _PyXI_EndInterpreter(interp, substate, &save_tstate);
+    int r;
+    if (xi) {
+        PyThreadState *save_tstate;
+        PyThreadState *tstate;
+
+        /* Create an interpreter, staying switched to it. */
+        PyInterpreterState *interp = \
+                _PyXI_NewInterpreter(&config, &tstate, &save_tstate);
+        if (interp == NULL) {
+            return NULL;
+        }
+
+        /* Exec the code in the new interpreter. */
+        r = PyRun_SimpleStringFlags(code, &cflags);
+
+        /* clean up post-exec. */
+        _PyXI_EndInterpreter(interp, tstate, &save_tstate);
+    }
+    else {
+        PyThreadState *substate;
+        PyThreadState *mainstate = PyThreadState_Swap(NULL);
+
+        /* Create an interpreter, staying switched to it. */
+        PyStatus status = Py_NewInterpreterFromConfig(&substate, &config);
+        if (PyStatus_Exception(status)) {
+            /* Since no new thread state was created, there is no exception to
+               propagate; raise a fresh one after swapping in the old thread
+               state. */
+            PyThreadState_Swap(mainstate);
+            _PyErr_SetFromPyStatus(status);
+            PyObject *exc = PyErr_GetRaisedException();
+            PyErr_SetString(PyExc_InterpreterError,
+                            "sub-interpreter creation failed");
+            _PyErr_ChainExceptions1(exc);
+            return NULL;
+        }
+
+        /* Exec the code in the new interpreter. */
+        r = PyRun_SimpleStringFlags(code, &cflags);
+
+        /* clean up post-exec. */
+        Py_EndInterpreter(substate);
+        PyThreadState_Swap(mainstate);
+    }
 
     return PyLong_FromLong(r);
 }
