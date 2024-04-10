@@ -2146,6 +2146,7 @@ new_interpreter(PyThreadState **tstate_p,
         return _PyStatus_OK();
     }
     _PyInterpreterState_SetWhence(interp, whence);
+    interp->_ready = 1;
 
     // XXX Might new_interpreter() have been called without the GIL held?
     PyThreadState *save_tstate = _PyThreadState_GET();

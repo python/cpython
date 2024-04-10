@@ -111,6 +111,8 @@ struct _is {
        In order to be effective, this must be set to 0 during or right
        after allocation. */
     int _initialized;
+    /* Has been fully initialized via pylifecycle.c. */
+    int _ready;
     int finalizing;
 
     uintptr_t last_restart_version;
