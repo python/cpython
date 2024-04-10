@@ -738,6 +738,17 @@ class TestGzip(BaseTest):
         compressed_data = gzip.compress(data1)
         self.assertRaises(EOFError, gzip.decompress, compressed_data[:-8])
 
+    def test_trailing_garbage_decompress(self):
+        compressed_data = gzip.compress(data1) + b"garbage"
+        self.assertWarns(UserWarning, gzip.decompress, compressed_data )
+
+    def test_trailing_garbage_gzipfile(self):
+        compressed_data = gzip.compress(data1) + b"garbage"
+        fileobj = io.BytesIO(compressed_data)
+        with gzip.GzipFile(fileobj=fileobj, mode="rb") as g:
+            with self.assertWarns(UserWarning):
+                g.read()
+
     def test_read_truncated(self):
         data = data1*50
         # Drop the CRC (4 bytes) and file size (4 bytes).

@@ -9,6 +9,7 @@ import struct, sys, time, os
 import zlib
 import builtins
 import io
+import warnings
 import _compression
 
 __all__ = ["BadGzipFile", "GzipFile", "open", "compress", "decompress"]
@@ -444,18 +445,22 @@ def _read_exact(fp, n):
     return data
 
 
-def _read_gzip_header(fp):
+def _read_gzip_header(fp, first_member=True):
     '''Read a gzip header from `fp` and progress to the end of the header.
 
-    Returns last mtime if header was present or None otherwise.
+    Returns last mtime if header was present or None otherwise. Raises an
+    error if the magic does not match the gzip magic, unless first_member is
+    False, in which case it only warns about trailing garbage.
     '''
     magic = fp.read(2)
     if magic == b'':
         return None
 
     if magic != b'\037\213':
-        raise BadGzipFile('Not a gzipped file (%r)' % magic)
-
+        if first_member:
+            raise BadGzipFile('Not a gzipped file (%r)' % magic)
+        warnings.warn("Trailing garbage in gzip data ignored.")
+        return None
     (method, flag, last_mtime) = struct.unpack("<BBIxx", _read_exact(fp, 8))
     if method != 8:
         raise BadGzipFile('Unknown compression method')
@@ -488,13 +493,15 @@ class _GzipReader(_compression.DecompressReader):
         # Set flag indicating start of a new member
         self._new_member = True
         self._last_mtime = None
+        self._decompressed_members = 0
 
     def _init_read(self):
         self._crc = zlib.crc32(b"")
         self._stream_size = 0  # Decompressed size of unconcatenated stream
 
     def _read_gzip_header(self):
-        last_mtime = _read_gzip_header(self._fp)
+        last_mtime = _read_gzip_header(self._fp,
+                                       not self._decompressed_members)
         if last_mtime is None:
             return False
         self._last_mtime = last_mtime
@@ -564,6 +571,7 @@ class _GzipReader(_compression.DecompressReader):
                                                              hex(self._crc)))
         elif isize != (self._stream_size & 0xffffffff):
             raise BadGzipFile("Incorrect length of data produced")
+        self._decompressed_members += 1
 
         # Gzip files can be padded with zeroes and still have archives.
         # Consume all zero bytes and set the file position to the first
@@ -625,7 +633,7 @@ def decompress(data):
     decompressed_members = []
     while True:
         fp = io.BytesIO(data)
-        if _read_gzip_header(fp) is None:
+        if _read_gzip_header(fp, not decompressed_members) is None:
             return b"".join(decompressed_members)
         # Use a zlib raw deflate compressor
         do = zlib.decompressobj(wbits=-zlib.MAX_WBITS)
