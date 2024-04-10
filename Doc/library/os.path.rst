@@ -127,10 +127,11 @@ the :mod:`glob` module.)
       Accepts a :term:`path-like object`.
 
 
-.. function:: exists(path)
+.. function:: exists(path, *, follow_symlinks=True)
 
    Return ``True`` if *path* refers to an existing path or an open
-   file descriptor.  Returns ``False`` for broken symbolic links.  On
+   file descriptor.  Returns ``False`` for broken symbolic links if
+   follow_symlinks is set, otherwise ``True``.  On
    some platforms, this function may return ``False`` if permission is
    not granted to execute :func:`os.stat` on the requested file, even
    if the *path* physically exists.
@@ -142,6 +143,8 @@ the :mod:`glob` module.)
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
 
+   .. versionchanged:: 3.13
+      Added the *follow_symlinks* parameter.
 
 .. function:: lexists(path)
 
