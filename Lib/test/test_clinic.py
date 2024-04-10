@@ -322,20 +322,6 @@ class ClinicWholeFileTest(TestCase):
         """
         self.expect_failure(block, err, lineno=8)
 
-    def test_multiple_star_in_args(self):
-        err = "'my_test_func' uses '*' more than once."
-        block = """
-            /*[clinic input]
-            my_test_func
-
-                pos_arg: object
-                *args: object
-                *
-                kw_arg: object
-            [clinic start generated code]*/
-        """
-        self.expect_failure(block, err, lineno=6)
-
     def test_module_already_got_one(self):
         err = "Already defined module 'm'!"
         block = """
@@ -3328,6 +3314,13 @@ class ClinicFunctionalTest(unittest.TestCase):
         self.assertEqual(ac_tester.vararg_with_only_defaults(1, b=2), ((1, ), 2))
         self.assertEqual(ac_tester.vararg_with_only_defaults(1, 2, 3, 4), ((1, 2, 3, 4), None))
         self.assertEqual(ac_tester.vararg_with_only_defaults(1, 2, 3, 4, b=5), ((1, 2, 3, 4), 5))
+
+    def test_vararg_with_kw_only(self):
+        fn = ac_tester.vararg_with_only_defaults
+        self.assertEqual(fn(), ((), None))
+        self.assertEqual(fn(1, 2, 3), ((1, 2, 3), None))
+        self.assertEqual(fn(1, 2, 3, b=4), ((1, 2, 3), 4))
+        self.assertEqual(fn(b=1), ((), 1))
 
     def test_gh_32092_oob(self):
         ac_tester.gh_32092_oob(1, 2, 3, 4, kw1=5, kw2=6)

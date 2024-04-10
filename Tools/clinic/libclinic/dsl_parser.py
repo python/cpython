@@ -1576,7 +1576,7 @@ class DSLParser:
         assert isinstance(self.function, Function)
 
         for p in self.function.parameters.values():
-            if p.kind == inspect.Parameter.VAR_POSITIONAL:
+            if p.is_keyword_only():
                 fail(f"Function {self.function.name!r} uses '*' more than once.")
 
 

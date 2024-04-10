@@ -2605,6 +2605,63 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(vararg_with_kw_only__doc__,
+"vararg_with_kw_only($module, /, *args, *, b)\n"
+"--\n"
+"\n");
+
+#define VARARG_WITH_KW_ONLY_METHODDEF    \
+    {"vararg_with_kw_only", _PyCFunction_CAST(vararg_with_kw_only), METH_FASTCALL|METH_KEYWORDS, vararg_with_kw_only__doc__},
+
+static PyObject *
+vararg_with_kw_only_impl(PyObject *module, PyObject *args, PyObject *b);
+
+static PyObject *
+vararg_with_kw_only(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(b), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"b", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "vararg_with_kw_only",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[2];
+    PyObject *__clinic_args = NULL;
+    PyObject *b;
+
+    args = _PyArg_UnpackKeywordsWithVararg(args, nargs, NULL, kwnames, &_parser, 0, 0, 2, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    __clinic_args = args[0];
+    b = args[1];
+    return_value = vararg_with_kw_only_impl(module, __clinic_args, b);
+
+exit:
+    Py_XDECREF(__clinic_args);
+    return return_value;
+}
+
 PyDoc_STRVAR(gh_32092_oob__doc__,
 "gh_32092_oob($module, /, pos1, pos2, *varargs, kw1=None, kw2=None)\n"
 "--\n"
@@ -3163,4 +3220,4 @@ _testclinic_TestClass_meth_method_no_params(PyObject *self, PyTypeObject *cls, P
     }
     return _testclinic_TestClass_meth_method_no_params_impl(self, cls);
 }
-/*[clinic end generated code: output=6520c1ca5392a3f0 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ebd1430bed0c2ac8 input=a9049054013a1b77]*/

@@ -1049,6 +1049,22 @@ vararg_with_only_defaults_impl(PyObject *module, PyObject *args, PyObject *b)
 }
 
 
+/*[clinic input]
+vararg_with_kw_only
+
+    *args: object
+    *
+    b: object
+
+[clinic start generated code]*/
+
+static PyObject *
+vararg_with_kw_only_impl(PyObject *module, PyObject *args, PyObject *b)
+/*[clinic end generated code: output=1d00b50179cb1f17 input=c9bddac62eb5f5c5]*/
+{
+    return pack_arguments_newref(2, args, b);
+}
+
 
 /*[clinic input]
 gh_32092_oob
@@ -1893,6 +1909,7 @@ static PyMethodDef tester_methods[] = {
     VARARG_METHODDEF
     VARARG_WITH_DEFAULT_METHODDEF
     VARARG_WITH_ONLY_DEFAULTS_METHODDEF
+    VARARG_WITH_KW_ONLY_METHODDEF
     GH_32092_OOB_METHODDEF
     GH_32092_KW_PASS_METHODDEF
     GH_99233_REFCOUNT_METHODDEF
