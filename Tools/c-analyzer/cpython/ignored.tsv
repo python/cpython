@@ -198,6 +198,7 @@ Python/pystate.c	-	_Py_tss_tstate	-
 
 Include/internal/pycore_blocks_output_buffer.h	-	BUFFER_BLOCK_SIZE	-
 Modules/_csv.c	-	quote_styles	-
+Modules/_ctypes/_ctypes.c	-	_ctypesmodule	-
 Modules/_ctypes/cfield.c	-	ffi_type_double	-
 Modules/_ctypes/cfield.c	-	ffi_type_float	-
 Modules/_ctypes/cfield.c	-	ffi_type_longdouble	-
