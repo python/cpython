@@ -516,26 +516,28 @@ _abc__abc_init(PyObject *module, PyObject *self)
         PyTypeObject *cls = (PyTypeObject *)self;
         PyObject *dict = _PyType_GetDict(cls);
         PyObject *flags = NULL;
-        int flags_result = PyDict_GetItemRef(dict, &_Py_ID(__abc_tpflags__), &flags);
-        if (flags_result < 0) {
+        if (PyDict_GetItemRef(dict, &_Py_ID(__abc_tpflags__), &flags) < 0) {
             return NULL;
         }
-        else if (flags_result == 1) {
-            if (PyLong_CheckExact(flags)) {
-                long val = PyLong_AsLong(flags);
-                Py_DECREF(flags);
-                if (val == -1 && PyErr_Occurred()) {
-                    return NULL;
-                }
-                if ((val & COLLECTION_FLAGS) == COLLECTION_FLAGS) {
-                    PyErr_SetString(PyExc_TypeError, "__abc_tpflags__ cannot be both Py_TPFLAGS_SEQUENCE and Py_TPFLAGS_MAPPING");
-                    return NULL;
-                }
-                _PyType_SetFlags((PyTypeObject *)self, 0, val & COLLECTION_FLAGS);
-            }
-            if (PyDict_DelItem(dict, &_Py_ID(__abc_tpflags__)) < 0) {
+        if (flags == NULL) {
+            Py_RETURN_NONE;
+        }
+        if (PyLong_CheckExact(flags)) {
+            long val = PyLong_AsLong(flags);
+            Py_DECREF(flags);
+            if (val == -1 && PyErr_Occurred()) {
                 return NULL;
             }
+            if ((val & COLLECTION_FLAGS) == COLLECTION_FLAGS) {
+                PyErr_SetString(PyExc_TypeError, "__abc_tpflags__ cannot be both Py_TPFLAGS_SEQUENCE and Py_TPFLAGS_MAPPING");
+                return NULL;
+            }
+            _PyType_SetFlags((PyTypeObject *)self, 0, val & COLLECTION_FLAGS);
+        } else {
+            Py_DECREF(flags);
+        }
+        if (PyDict_DelItem(dict, &_Py_ID(__abc_tpflags__)) < 0) {
+            return NULL;
         }
     }
     Py_RETURN_NONE;
@@ -809,15 +811,10 @@ _abc__abc_subclasscheck_impl(PyObject *module, PyObject *self,
         goto end;
     }
     for (pos = 0; pos < PyList_GET_SIZE(subclasses); pos++) {
-#ifdef Py_GIL_DISABLED
         PyObject *scls = PyList_GetItemRef(subclasses, pos);
         if (scls == NULL) {
             goto end;
         }
-#else
-        PyObject *scls = PyList_GET_ITEM(subclasses, pos);
-        Py_INCREF(scls);
-#endif
         int r = PyObject_IsSubclass(subclass, scls);
         Py_DECREF(scls);
         if (r > 0) {
