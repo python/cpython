@@ -143,16 +143,18 @@ ConfigParser -- responsible for parsing a list of
         between keys and values are surrounded by spaces.
 """
 
+# Do not import dataclasses; overhead is unacceptable (gh-117703)
+
 from collections.abc import Iterable, MutableMapping
 from collections import ChainMap as _ChainMap
 import contextlib
-from dataclasses import dataclass, field
 import functools
 import io
 import itertools
 import os
 import re
 import sys
+import types
 
 __all__ = ("NoSectionError", "DuplicateOptionError", "DuplicateSectionError",
            "NoOptionError", "InterpolationError", "InterpolationDepthError",
@@ -537,19 +539,21 @@ class ExtendedInterpolation(Interpolation):
                     "found: %r" % (rest,))
 
 
-@dataclass
-class _ReadState:
-    elements_added : set[str] = field(default_factory=set)
+class _ReadState(types.SimpleNamespace):
+    elements_added : set[str]
     cursect : dict[str, str] | None = None
     sectname : str | None = None
     optname : str | None = None
     lineno : int = 0
     indent_level : int = 0
-    errors : list[ParsingError] = field(default_factory=list)
+    errors : list[ParsingError]
+
+    def __init__(self):
+        self.elements_added = set()
+        self.errors = list()
 
 
-@dataclass
-class _Prefixes:
+class _Prefixes(types.SimpleNamespace):
     full : Iterable[str]
     inline : Iterable[str]
 
