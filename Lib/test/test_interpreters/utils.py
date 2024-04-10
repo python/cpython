@@ -511,7 +511,7 @@ class TestBase(unittest.TestCase):
 
     def interp_exists(self, interpid):
         try:
-            _interpreters.is_owned(interpid)
+            _interpreters.whence(interpid)
         except _interpreters.InterpreterNotFoundError:
             return False
         else:
@@ -553,7 +553,11 @@ class TestBase(unittest.TestCase):
     @contextlib.contextmanager
     def interpreter_obj_from_capi(self, config='legacy'):
         with self.interpreter_from_capi(config) as interpid:
-            interp = interpreters.Interpreter(interpid, _owned=False)
+            interp = interpreters.Interpreter(
+                interpid,
+                _whence=_interpreters.WHENCE_CAPI,
+                _ownsref=False,
+            )
             yield interp, interpid
 
     @contextlib.contextmanager

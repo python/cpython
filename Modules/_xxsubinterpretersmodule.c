@@ -658,6 +658,24 @@ finally:
 
 /* module level code ********************************************************/
 
+#define _PyInterpreterState_WHENCE_STDLIB 5
+
+static long
+get_whence(PyInterpreterState *interp)
+{
+    long whence = _PyInterpreterState_GetWhence(interp);
+    if (whence == _PyInterpreterState_WHENCE_XI) {
+        if (is_owned(&_globals.owned, interp)) {
+            whence = _PyInterpreterState_WHENCE_STDLIB;
+        }
+    }
+    else {
+        assert(!is_owned(&_globals.owned, interp));
+    }
+    return whence;
+}
+
+
 static PyInterpreterState *
 resolve_interp(PyObject *idobj, int reqowned, const char *op)
 {
@@ -672,7 +690,7 @@ resolve_interp(PyObject *idobj, int reqowned, const char *op)
         }
     }
 
-    if (reqowned && !is_owned(&_globals.owned, interp)) {
+    if (reqowned && get_whence(interp) != _PyInterpreterState_WHENCE_STDLIB) {
         if (idobj == NULL) {
             PyErr_Format(PyExc_InterpreterError,
                          "cannot %s unrecognized current interpreter", op);
@@ -695,9 +713,15 @@ get_summary(PyInterpreterState *interp)
     if (idobj == NULL) {
         return NULL;
     }
-    PyObject *owned = is_owned(&_globals.owned, interp) ? Py_True : Py_False;
-    PyObject *res = PyTuple_Pack(2, idobj, owned);
+    PyObject *whenceobj = PyLong_FromLong(
+                            get_whence(interp));
+    if (whenceobj == NULL) {
+        Py_DECREF(idobj);
+        return NULL;
+    }
+    PyObject *res = PyTuple_Pack(2, idobj, whenceobj);
     Py_DECREF(idobj);
+    Py_DECREF(whenceobj);
     return res;
 }
 
@@ -891,7 +915,7 @@ interp_list_all(PyObject *self, PyObject *Py_UNUSED(ignored))
 }
 
 PyDoc_STRVAR(list_all_doc,
-"list_all() -> [(ID, owned)]\n\
+"list_all() -> [(ID, whence)]\n\
 \n\
 Return a list containing the ID of every existing interpreter.");
 
@@ -907,7 +931,7 @@ interp_get_current(PyObject *self, PyObject *Py_UNUSED(ignored))
 }
 
 PyDoc_STRVAR(get_current_doc,
-"get_current() -> (ID, owned)\n\
+"get_current() -> (ID, whence)\n\
 \n\
 Return the ID of current interpreter.");
 
@@ -920,7 +944,7 @@ interp_get_main(PyObject *self, PyObject *Py_UNUSED(ignored))
 }
 
 PyDoc_STRVAR(get_main_doc,
-"get_main() -> (ID, owned)\n\
+"get_main() -> (ID, whence)\n\
 \n\
 Return the ID of main interpreter.");
 
@@ -1405,7 +1429,7 @@ interp_whence(PyObject *self, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    long whence = _PyInterpreterState_GetWhence(interp);
+    long whence = get_whence(interp);
     return PyLong_FromLong(whence);
 }
 
@@ -1413,31 +1437,6 @@ PyDoc_STRVAR(whence_doc,
 "whence(id) -> int\n\
 \n\
 Return an identifier for where the interpreter was created.");
-
-
-static PyObject *
-interp_is_owned(PyObject *self, PyObject *args, PyObject *kwds)
-{
-    static char *kwlist[] = {"id", NULL};
-    PyObject *id;
-    if (!PyArg_ParseTupleAndKeywords(args, kwds,
-                                     "O:is_owned", kwlist, &id))
-    {
-        return NULL;
-    }
-
-    PyInterpreterState *interp = look_up_interp(id);
-    if (interp == NULL) {
-        return NULL;
-    }
-
-    return is_owned(&_globals.owned, interp) ? Py_True : Py_False;
-}
-
-PyDoc_STRVAR(is_owned_doc,
-"is_owned(id) -> bool\n\
-\n\
-Return True if the interpreter was created by this module.");
 
 
 static PyObject *
@@ -1575,8 +1574,8 @@ static PyMethodDef module_functions[] = {
     {"get_main",                  interp_get_main,
      METH_NOARGS, get_main_doc},
 
-    {"is_owned",                  _PyCFunction_CAST(interp_is_owned),
-     METH_VARARGS | METH_KEYWORDS, is_owned_doc},
+    {"whence",                    _PyCFunction_CAST(interp_whence),
+     METH_VARARGS | METH_KEYWORDS, whence_doc},
     {"is_running",                _PyCFunction_CAST(interp_is_running),
      METH_VARARGS | METH_KEYWORDS, is_running_doc},
     {"get_config",                _PyCFunction_CAST(interp_get_config),
@@ -1637,6 +1636,7 @@ module_exec(PyObject *mod)
     ADD_WHENCE(LEGACY_CAPI)
     ADD_WHENCE(CAPI)
     ADD_WHENCE(XI)
+    ADD_WHENCE(STDLIB)
 #undef ADD_WHENCE
 
     // exceptions

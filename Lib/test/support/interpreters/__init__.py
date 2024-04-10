@@ -74,26 +74,26 @@ class ExecutionFailed(InterpreterError):
 def create():
     """Return a new (idle) Python interpreter."""
     id = _interpreters.create(reqrefs=True)
-    return Interpreter(id, _owned=True)
+    return Interpreter(id, _ownsref=True)
 
 
 def list_all():
     """Return all existing interpreters."""
-    return [Interpreter(id, _owned=owned)
-            for id, owned in _interpreters.list_all()]
+    return [Interpreter(id, _whence=whence)
+            for id, whence in _interpreters.list_all()]
 
 
 def get_current():
     """Return the currently running interpreter."""
-    id, owned = _interpreters.get_current()
-    return Interpreter(id, _owned=owned)
+    id, whence = _interpreters.get_current()
+    return Interpreter(id, _whence=whence)
 
 
 def get_main():
     """Return the main interpreter."""
-    id, owned = _interpreters.get_main()
-    assert owned is False
-    return Interpreter(id, _owned=owned)
+    id, whence = _interpreters.get_main()
+    assert whence == _interpreters.WHENCE_RUNTIME, repr(whence)
+    return Interpreter(id, _whence=whence)
 
 
 _known = weakref.WeakValueDictionary()
@@ -104,21 +104,35 @@ class Interpreter:
     Attributes:
 
     "id" - the unique process-global ID number for the interpreter
-    "owned" - indicates whether or not the interpreter was created
-              by interpreters.create()
+    "whence" - indicates where the interpreter was created
 
-    If interp.owned is false then any method that modifies the
-    interpreter will fail, i.e. .close(), .prepare_main(), .exec(),
-    and .call()
+    If the interpreter wasn't created by this module
+    then any method that modifies the interpreter will fail,
+    i.e. .close(), .prepare_main(), .exec(), and .call()
     """
 
-    def __new__(cls, id, /, _owned=None):
+    _WHENCE_TO_STR = {
+       _interpreters.WHENCE_UNKNOWN: 'unknown',
+       _interpreters.WHENCE_RUNTIME: 'runtime init',
+       _interpreters.WHENCE_LEGACY_CAPI: 'legacy C-API',
+       _interpreters.WHENCE_CAPI: 'C-API',
+       _interpreters.WHENCE_XI: 'cross-interpreter C-API',
+       _interpreters.WHENCE_STDLIB: '_interpreters module',
+    }
+
+    def __new__(cls, id, /, _whence=None, _ownsref=None):
         # There is only one instance for any given ID.
         if not isinstance(id, int):
             raise TypeError(f'id must be an int, got {id!r}')
         id = int(id)
-        if _owned is None:
-            _owned = _interpreters.is_owned(id)
+        if _whence is None:
+            if _ownsref:
+                _whence = _interpreters.WHENCE_STDLIB
+            else:
+                _whence = _interpreters.whence(id)
+        assert _whence in cls._WHENCE_TO_STR, repr(_whence)
+        if _ownsref is None:
+            _ownsref = (_whence == _interpreters.WHENCE_STDLIB)
         try:
             self = _known[id]
             assert hasattr(self, '_ownsref')
@@ -126,9 +140,9 @@ class Interpreter:
             self = super().__new__(cls)
             _known[id] = self
             self._id = id
-            self._owned = _owned
-            self._ownsref = _owned
-            if _owned:
+            self._whence = _whence
+            self._ownsref = _ownsref
+            if _ownsref:
                 # This may raise InterpreterNotFoundError:
                 _interpreters.incref(id)
         return self
@@ -163,10 +177,9 @@ class Interpreter:
     def id(self):
         return self._id
 
-    # XXX Is this the right name?
     @property
-    def owned(self):
-        return self._owned
+    def whence(self):
+        return self._WHENCE_TO_STR[self._whence]
 
     def is_running(self):
         """Return whether or not the identified interpreter is running."""

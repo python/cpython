@@ -20,6 +20,14 @@ from .utils import (
 )
 
 
+WHENCE_STR_UNKNOWN = 'unknown'
+WHENCE_STR_RUNTIME = 'runtime init'
+WHENCE_STR_LEGACY_CAPI = 'legacy C-API'
+WHENCE_STR_CAPI = 'C-API'
+WHENCE_STR_XI = 'cross-interpreter C-API'
+WHENCE_STR_STDLIB = '_interpreters module'
+
+
 class ModuleTests(TestBase):
 
     def test_queue_aliases(self):
@@ -172,11 +180,11 @@ class GetCurrentTests(TestBase):
         text = self.run_temp_from_capi(f"""
             import {interpreters.__name__} as interpreters
             interp = interpreters.get_current()
-            print((interp.id, interp.owned))
+            print((interp.id, interp.whence))
             """)
-        interpid, owned = eval(text)
+        interpid, whence = eval(text)
         self.assertEqual(interpid, expected)
-        self.assertFalse(owned)
+        self.assertEqual(whence, WHENCE_STR_CAPI)
 
 
 class ListAllTests(TestBase):
@@ -228,22 +236,22 @@ class ListAllTests(TestBase):
         interpid4 = interpid3 + 1
         interpid5 = interpid4 + 1
         expected = [
-            (mainid, False),
-            (interpid1, True),
-            (interpid2, True),
-            (interpid3, True),
-            (interpid4, False),
-            (interpid5, True),
+            (mainid, WHENCE_STR_RUNTIME),
+            (interpid1, WHENCE_STR_STDLIB),
+            (interpid2, WHENCE_STR_STDLIB),
+            (interpid3, WHENCE_STR_STDLIB),
+            (interpid4, WHENCE_STR_CAPI),
+            (interpid5, WHENCE_STR_STDLIB),
         ]
         expected2 = expected[:-2]
         text = self.run_temp_from_capi(f"""
             import {interpreters.__name__} as interpreters
             interp = interpreters.create()
             print(
-                [(i.id, i.owned) for i in interpreters.list_all()])
+                [(i.id, i.whence) for i in interpreters.list_all()])
             """)
         res = eval(text)
-        res2 = [(i.id, i.owned) for i in interpreters.list_all()]
+        res2 = [(i.id, i.whence) for i in interpreters.list_all()]
         self.assertEqual(res, expected)
         self.assertEqual(res2, expected2)
 
@@ -299,31 +307,37 @@ class InterpreterObjectTests(TestBase):
         with self.assertRaises(AttributeError):
             interp.id = 1_000_000
 
-    def test_owned(self):
+    def test_whence(self):
         main = interpreters.get_main()
         interp = interpreters.create()
 
         with self.subTest('main'):
-            self.assertFalse(main.owned)
+            self.assertEqual(main.whence, WHENCE_STR_RUNTIME)
 
         with self.subTest('from _interpreters'):
-            self.assertTrue(interp.owned)
+            self.assertEqual(interp.whence, WHENCE_STR_STDLIB)
 
         with self.subTest('from C-API'):
             text = self.run_temp_from_capi(f"""
                 import {interpreters.__name__} as interpreters
                 interp = interpreters.get_current()
-                print(interp.owned)
+                print(repr(interp.whence))
                 """)
-            owned = eval(text)
-            self.assertFalse(owned)
+            whence = eval(text)
+            self.assertEqual(whence, WHENCE_STR_CAPI)
 
         with self.subTest('readonly'):
-            for value in (True, False):
+            for value in [
+                None,
+                WHENCE_STR_UNKNOWN,
+                WHENCE_STR_RUNTIME,
+                WHENCE_STR_STDLIB,
+                WHENCE_STR_CAPI,
+            ]:
                 with self.assertRaises(AttributeError):
-                    interp.owned = value
+                    interp.whence = value
                 with self.assertRaises(AttributeError):
-                    main.owned = value
+                    main.whence = value
 
     def test_hashable(self):
         interp = interpreters.create()
@@ -612,7 +626,7 @@ class TestInterpreterClose(TestBase):
                         self.interp_exists(interpid))
 
         # The rest would be skipped until we deal with running threads when
-        # interp.close() is called.  However, the "owned" restrictions
+        # interp.close() is called.  However, the "whence" restrictions
         # trigger first.
 
         with self.subTest('running, but not __main__ (from other)'):
@@ -1263,38 +1277,35 @@ class LowLevelTests(TestBase):
                     _interpreters.new_config(gil=value)
 
     def test_get_main(self):
-        interpid, owned = _interpreters.get_main()
+        interpid, whence = _interpreters.get_main()
         self.assertEqual(interpid, 0)
-        self.assertFalse(owned)
-        self.assertFalse(
-            _interpreters.is_owned(interpid))
+        self.assertEqual(whence, _interpreters.WHENCE_RUNTIME)
+        self.assertEqual(
+            _interpreters.whence(interpid),
+            _interpreters.WHENCE_RUNTIME)
 
     def test_get_current(self):
         with self.subTest('main'):
             main, *_ = _interpreters.get_main()
-            interpid, owned = _interpreters.get_current()
+            interpid, whence = _interpreters.get_current()
             self.assertEqual(interpid, main)
-            self.assertFalse(owned)
+            self.assertEqual(whence, _interpreters.WHENCE_RUNTIME)
 
         script = f"""
             import {_interpreters.__name__} as _interpreters
-            interpid, owned = _interpreters.get_current()
-            print(interpid, owned)
+            interpid, whence = _interpreters.get_current()
+            print((interpid, whence))
             """
         def parse_stdout(text):
-            parts = text.split()
-            assert len(parts) == 2, parts
-            interpid, owned = parts
-            interpid = int(interpid)
-            owned = eval(owned)
-            return interpid, owned
+            interpid, whence = eval(text)
+            return interpid, whence
 
         with self.subTest('from _interpreters'):
             orig = _interpreters.create()
             text = self.run_and_capture(orig, script)
-            interpid, owned = parse_stdout(text)
+            interpid, whence = parse_stdout(text)
             self.assertEqual(interpid, orig)
-            self.assertTrue(owned)
+            self.assertEqual(whence, _interpreters.WHENCE_STDLIB)
 
         with self.subTest('from C-API'):
             last = 0
@@ -1302,9 +1313,9 @@ class LowLevelTests(TestBase):
                 last = max(last, id)
             expected = last + 1
             text = self.run_temp_from_capi(script)
-            interpid, owned = parse_stdout(text)
+            interpid, whence = parse_stdout(text)
             self.assertEqual(interpid, expected)
-            self.assertFalse(owned)
+            self.assertEqual(whence, _interpreters.WHENCE_CAPI)
 
     def test_list_all(self):
         mainid, *_ = _interpreters.get_main()
@@ -1312,10 +1323,10 @@ class LowLevelTests(TestBase):
         interpid2 = _interpreters.create()
         interpid3 = _interpreters.create()
         expected = [
-            (mainid, False),
-            (interpid1, True),
-            (interpid2, True),
-            (interpid3, True),
+            (mainid, _interpreters.WHENCE_RUNTIME),
+            (interpid1, _interpreters.WHENCE_STDLIB),
+            (interpid2, _interpreters.WHENCE_STDLIB),
+            (interpid3, _interpreters.WHENCE_STDLIB),
         ]
 
         with self.subTest('main'):
@@ -1336,11 +1347,11 @@ class LowLevelTests(TestBase):
             interpid4 = interpid3 + 1
             interpid5 = interpid4 + 1
             expected2 = expected + [
-                (interpid4, False),
-                (interpid5, True),
+                (interpid4, _interpreters.WHENCE_CAPI),
+                (interpid5, _interpreters.WHENCE_STDLIB),
             ]
             expected3 = expected + [
-                (interpid5, True),
+                (interpid5, _interpreters.WHENCE_STDLIB),
             ]
             text = self.run_temp_from_capi(f"""
                 import {_interpreters.__name__} as _interpreters
@@ -1404,10 +1415,11 @@ class LowLevelTests(TestBase):
             with self.assertRaises(ValueError):
                 _interpreters.create(orig)
 
-        with self.subTest('is owned'):
+        with self.subTest('whence'):
             interpid = _interpreters.create()
-            self.assertTrue(
-                _interpreters.is_owned(interpid))
+            self.assertEqual(
+                _interpreters.whence(interpid),
+                _interpreters.WHENCE_STDLIB)
 
     @requires_test_modules
     def test_destroy(self):
@@ -1479,7 +1491,7 @@ class LowLevelTests(TestBase):
         with self.subTest('stdlib'):
             interpid = _interpreters.create()
             whence = _interpreters.whence(interpid)
-            self.assertEqual(whence, _interpreters.WHENCE_XI)
+            self.assertEqual(whence, _interpreters.WHENCE_STDLIB)
 
         for orig, name in {
             # XXX Also check WHENCE_UNKNOWN.
