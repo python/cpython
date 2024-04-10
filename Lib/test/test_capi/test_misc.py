@@ -2436,7 +2436,8 @@ class InterpreterConfigTests(unittest.TestCase):
         with self.subTest('main'):
             expected = _interpreters.new_config('legacy')
             expected.gil = 'own'
-            expected.check_multi_interp_extensions = False
+            if Py_GIL_DISABLED:
+                expected.check_multi_interp_extensions = False
             interpid = _interpreters.get_main()
             config = _interpreters.get_config(interpid)
             self.assert_ns_equal(config, expected)
