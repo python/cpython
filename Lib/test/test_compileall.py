@@ -29,7 +29,6 @@ except (NotImplementedError, ModuleNotFoundError):
 from test import support
 from test.support import os_helper
 from test.support import script_helper
-from test.support import force_not_colorized
 from test.test_py_compile import without_source_date_epoch
 from test.test_py_compile import SourceDateEpochTestMeta
 
@@ -761,7 +760,6 @@ class CommandLineTestsBase:
         rc, out, err = self.assertRunNotOK('-q', '-d', 'dinsdale', self.pkgdir)
         self.assertRegex(out, b'File "dinsdale')
 
-    @force_not_colorized
     def test_d_runtime_error(self):
         bazfn = script_helper.make_script(self.pkgdir, 'baz', 'raise Exception')
         self.assertRunOK('-q', '-d', 'dinsdale', self.pkgdir)

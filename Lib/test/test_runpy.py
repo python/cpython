@@ -13,8 +13,7 @@ import textwrap
 import unittest
 import warnings
 from test.support import (infinite_recursion, no_tracing, verbose,
-                          requires_subprocess, requires_resource,
-                          force_not_colorized)
+                          requires_subprocess, requires_resource)
 from test.support.import_helper import forget, make_legacy_pyc, unload
 from test.support.os_helper import create_empty_file, temp_dir
 from test.support.script_helper import make_script, make_zip_script
@@ -787,7 +786,6 @@ class TestExit(unittest.TestCase):
             super().run(*args, **kwargs)
 
     @requires_subprocess()
-    @force_not_colorized
     def assertSigInt(self, cmd, *args, **kwargs):
         # Use -E to ignore PYTHONSAFEPATH
         cmd = [sys.executable, '-E', *cmd]
@@ -798,7 +796,6 @@ class TestExit(unittest.TestCase):
     def test_pymain_run_file(self):
         self.assertSigInt([self.ham])
 
-    @force_not_colorized
     def test_pymain_run_file_runpy_run_module(self):
         tmp = self.ham.parent
         run_module = tmp / "run_module.py"
@@ -812,7 +809,6 @@ class TestExit(unittest.TestCase):
         )
         self.assertSigInt([run_module], cwd=tmp)
 
-    @force_not_colorized
     def test_pymain_run_file_runpy_run_module_as_main(self):
         tmp = self.ham.parent
         run_module_as_main = tmp / "run_module_as_main.py"
@@ -826,22 +822,18 @@ class TestExit(unittest.TestCase):
         )
         self.assertSigInt([run_module_as_main], cwd=tmp)
 
-    @force_not_colorized
     def test_pymain_run_command_run_module(self):
         self.assertSigInt(
             ["-c", "import runpy; runpy.run_module('ham')"],
             cwd=self.ham.parent,
         )
 
-    @force_not_colorized
     def test_pymain_run_command(self):
         self.assertSigInt(["-c", "import ham"], cwd=self.ham.parent)
 
-    @force_not_colorized
     def test_pymain_run_stdin(self):
         self.assertSigInt([], input="import ham", cwd=self.ham.parent)
 
-    @force_not_colorized
     def test_pymain_run_module(self):
         ham = self.ham
         self.assertSigInt(["-m", ham.stem], cwd=ham.parent)

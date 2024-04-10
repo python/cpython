@@ -23,7 +23,6 @@ import textwrap
 import unittest
 from test import support
 from test.support import os_helper, without_optimizer
-from test.support import force_not_colorized
 from test.libregrtest import cmdline
 from test.libregrtest import main
 from test.libregrtest import setup
@@ -1836,7 +1835,6 @@ class ArgsTestCase(BaseTestCase):
         self.assertIn("Warning -- Unraisable exception", output)
         self.assertIn("Exception: weakref callback bug", output)
 
-    @force_not_colorized
     def test_threading_excepthook(self):
         # --fail-env-changed must catch uncaught thread exception.
         # The exception must be displayed even if sys.stderr is redirected.

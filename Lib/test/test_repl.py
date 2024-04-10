@@ -7,7 +7,6 @@ import subprocess
 from textwrap import dedent
 from test import support
 from test.support import cpython_only, has_subprocess_support, SuppressCrashReport
-from test.support import force_not_colorized
 from test.support.script_helper import kill_python
 from test.support.import_helper import import_module
 
@@ -16,7 +15,6 @@ if not has_subprocess_support:
     raise unittest.SkipTest("test module requires subprocess")
 
 
-@force_not_colorized
 def spawn_repl(*args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, **kw):
     """Run the Python REPL with the given arguments.
 
@@ -45,7 +43,6 @@ def spawn_repl(*args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, **kw):
                             stdout=stdout, stderr=stderr,
                             **kw)
 
-@force_not_colorized
 def run_on_interactive_mode(source):
     """Spawn a new Python interpreter, pass the given
     input source code from the stdin and return the

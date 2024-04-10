@@ -1440,7 +1440,6 @@ class ExceptionTests(unittest.TestCase):
 
     @cpython_only
     @unittest.skipIf(_testcapi is None, "requires _testcapi")
-    @force_not_colorized
     def test_recursion_normalizing_infinite_exception(self):
         # Issue #30697. Test that a RecursionError is raised when
         # maximum recursion depth has been exceeded when creating
@@ -2197,7 +2196,6 @@ class SyntaxErrorTests(unittest.TestCase):
                     self.assertIn(expected, err.getvalue())
                     the_exception = exc
 
-    @force_not_colorized
     def test_encodings(self):
         source = (
             '# -*- coding: cp437 -*-\n'
@@ -2227,7 +2225,6 @@ class SyntaxErrorTests(unittest.TestCase):
         finally:
             unlink(TESTFN)
 
-    @force_not_colorized
     def test_non_utf8(self):
         # Check non utf-8 characters
         try:

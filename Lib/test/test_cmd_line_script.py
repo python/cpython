@@ -14,7 +14,7 @@ import io
 
 import textwrap
 from test import support
-from test.support import import_helper, is_apple, os_helper, force_not_colorized
+from test.support import import_helper, is_apple, os_helper
 from test.support.script_helper import (
     make_pkg, make_script, make_zip_pkg, make_zip_script,
     assert_python_ok, assert_python_failure, spawn_python, kill_python)
@@ -195,7 +195,6 @@ class CmdLineTest(unittest.TestCase):
             p.stdin.flush()
             self.assertEqual(b'foo', p.stdout.readline().strip())
 
-    @force_not_colorized
     def check_repl_stderr_flush(self, separate_stderr=False):
         with self.interactive_python(separate_stderr) as p:
             p.stdin.write(b"1/0\n")
@@ -538,7 +537,6 @@ class CmdLineTest(unittest.TestCase):
             self.assertIn(b'Exception in __main__ module', err)
             self.assertIn(b'Traceback', err)
 
-    @force_not_colorized
     def test_pep_409_verbiage(self):
         # Make sure PEP 409 syntax properly suppresses
         # the context of an exception
@@ -604,7 +602,6 @@ class CmdLineTest(unittest.TestCase):
             text = stderr.decode('ascii')
             self.assertEqual(text.rstrip(), "some text")
 
-    @force_not_colorized
     def test_syntaxerror_unindented_caret_position(self):
         script = "1 + 1 = 2\n"
         with os_helper.temp_dir() as script_dir:
@@ -614,7 +611,6 @@ class CmdLineTest(unittest.TestCase):
             # Confirm that the caret is located under the '=' sign
             self.assertIn("\n    ^^^^^\n", text)
 
-    @force_not_colorized
     def test_syntaxerror_indented_caret_position(self):
         script = textwrap.dedent("""\
             if True:
@@ -638,7 +634,6 @@ class CmdLineTest(unittest.TestCase):
             self.assertNotIn("\f", text)
             self.assertIn("\n    1 + 1 = 2\n    ^^^^^\n", text)
 
-    @force_not_colorized
     def test_syntaxerror_multi_line_fstring(self):
         script = 'foo = f"""{}\nfoo"""\n'
         with os_helper.temp_dir() as script_dir:
@@ -653,7 +648,6 @@ class CmdLineTest(unittest.TestCase):
                 ],
             )
 
-    @force_not_colorized
     def test_syntaxerror_invalid_escape_sequence_multi_line(self):
         script = 'foo = """\\q"""\n'
         with os_helper.temp_dir() as script_dir:
@@ -669,7 +663,6 @@ class CmdLineTest(unittest.TestCase):
                 ],
             )
 
-    @force_not_colorized
     def test_syntaxerror_null_bytes(self):
         script = "x = '\0' nothing to see here\n';import os;os.system('echo pwnd')\n"
         with os_helper.temp_dir() as script_dir:
@@ -682,7 +675,6 @@ class CmdLineTest(unittest.TestCase):
                 ],
             )
 
-    @force_not_colorized
     def test_syntaxerror_null_bytes_in_multiline_string(self):
         scripts = ["\n'''\nmultilinestring\0\n'''", "\nf'''\nmultilinestring\0\n'''"] # Both normal and f-strings
         with os_helper.temp_dir() as script_dir:
@@ -696,7 +688,6 @@ class CmdLineTest(unittest.TestCase):
                     ]
                 )
 
-    @force_not_colorized
     def test_source_lines_are_shown_when_running_source(self):
         _, _, stderr = assert_python_failure("-c", "1/0")
         expected_lines = [
@@ -707,7 +698,6 @@ class CmdLineTest(unittest.TestCase):
             b'ZeroDivisionError: division by zero']
         self.assertEqual(stderr.splitlines(), expected_lines)
 
-    @force_not_colorized
     def test_syntaxerror_does_not_crash(self):
         script = "nonlocal x\n"
         with os_helper.temp_dir() as script_dir:

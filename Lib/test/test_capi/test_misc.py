@@ -25,7 +25,6 @@ from test.support import MISSING_C_DOCSTRINGS
 from test.support import import_helper
 from test.support import threading_helper
 from test.support import warnings_helper
-from test.support import force_not_colorized
 from test.support import requires_limited_api
 from test.support.script_helper import assert_python_failure, assert_python_ok, run_python_until_end
 try:
@@ -206,7 +205,6 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(o.__ipow__(1), (1, None))
         self.assertEqual(o.__ipow__(2, 2), (2, 2))
 
-    @force_not_colorized
     def test_return_null_without_error(self):
         # Issue #23571: A function must not return NULL without setting an
         # error
@@ -236,7 +234,6 @@ class CAPITest(unittest.TestCase):
                              'return_null_without_error.* '
                              'returned NULL without setting an exception')
 
-    @force_not_colorized
     def test_return_result_with_error(self):
         # Issue #23571: A function must not return a result with an error set
         if support.Py_DEBUG:
@@ -271,7 +268,6 @@ class CAPITest(unittest.TestCase):
                              'return_result_with_error.* '
                              'returned a result with an exception set')
 
-    @force_not_colorized
     def test_getitem_with_error(self):
         # Test _Py_CheckSlotResult(). Raise an exception and then calls
         # PyObject_GetItem(): check that the assertion catches the bug.

@@ -396,7 +396,7 @@ class TracebackCases(unittest.TestCase):
         process = subprocess.Popen([sys.executable, "-c",
                                     "import sys; print(sys.stdout.encoding)"],
                                    stdout=subprocess.PIPE,
-                                   stderr=subprocess.STDOUT, env={})
+                                   stderr=subprocess.STDOUT)
         stdout, stderr = process.communicate()
         output_encoding = str(stdout, 'ascii').splitlines()[0]
 
