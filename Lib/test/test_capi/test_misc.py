@@ -2205,6 +2205,256 @@ class SubinterpreterTest(unittest.TestCase):
 
 
 @requires_subinterpreters
+class InterpreterConfigTests(unittest.TestCase):
+
+    supported = {
+        'isolated': types.SimpleNamespace(
+            use_main_obmalloc=False,
+            allow_fork=False,
+            allow_exec=False,
+            allow_threads=True,
+            allow_daemon_threads=False,
+            check_multi_interp_extensions=True,
+            gil='own',
+        ),
+        'legacy': types.SimpleNamespace(
+            use_main_obmalloc=True,
+            allow_fork=True,
+            allow_exec=True,
+            allow_threads=True,
+            allow_daemon_threads=True,
+            check_multi_interp_extensions=False,
+            gil='shared',
+        ),
+        'empty': types.SimpleNamespace(
+            use_main_obmalloc=False,
+            allow_fork=False,
+            allow_exec=False,
+            allow_threads=False,
+            allow_daemon_threads=False,
+            check_multi_interp_extensions=False,
+            gil='default',
+        ),
+    }
+    gil_supported = ['default', 'shared', 'own']
+
+    def iter_all_configs(self):
+        for use_main_obmalloc in (True, False):
+            for allow_fork in (True, False):
+                for allow_exec in (True, False):
+                    for allow_threads in (True, False):
+                        for allow_daemon in (True, False):
+                            for checkext in (True, False):
+                                for gil in ('shared', 'own', 'default'):
+                                    yield types.SimpleNamespace(
+                                        use_main_obmalloc=use_main_obmalloc,
+                                        allow_fork=allow_fork,
+                                        allow_exec=allow_exec,
+                                        allow_threads=allow_threads,
+                                        allow_daemon_threads=allow_daemon,
+                                        check_multi_interp_extensions=checkext,
+                                        gil=gil,
+                                    )
+
+    def assert_ns_equal(self, ns1, ns2, msg=None):
+        # This is mostly copied from TestCase.assertDictEqual.
+        self.assertEqual(type(ns1), type(ns2))
+        if ns1 == ns2:
+            return
+
+        import difflib
+        import pprint
+        from unittest.util import _common_shorten_repr
+        standardMsg = '%s != %s' % _common_shorten_repr(ns1, ns2)
+        diff = ('\n' + '\n'.join(difflib.ndiff(
+                       pprint.pformat(vars(ns1)).splitlines(),
+                       pprint.pformat(vars(ns2)).splitlines())))
+        diff = f'namespace({diff})'
+        standardMsg = self._truncateMessage(standardMsg, diff)
+        self.fail(self._formatMessage(msg, standardMsg))
+
+    def test_predefined_config(self):
+        def check(name, expected):
+            expected = self.supported[expected]
+            args = (name,) if name else ()
+
+            config1 = _interpreters.new_config(*args)
+            self.assert_ns_equal(config1, expected)
+            self.assertIsNot(config1, expected)
+
+            config2 = _interpreters.new_config(*args)
+            self.assert_ns_equal(config2, expected)
+            self.assertIsNot(config2, expected)
+            self.assertIsNot(config2, config1)
+
+        with self.subTest('default'):
+            check(None, 'isolated')
+
+        for name in self.supported:
+            with self.subTest(name):
+                check(name, name)
+
+    def test_update_from_dict(self):
+        for name, vanilla in self.supported.items():
+            with self.subTest(f'noop ({name})'):
+                expected = vanilla
+                overrides = vars(vanilla)
+                config = _interpreters.new_config(name, **overrides)
+                self.assert_ns_equal(config, expected)
+
+            with self.subTest(f'change all ({name})'):
+                overrides = {k: not v for k, v in vars(vanilla).items()}
+                for gil in self.gil_supported:
+                    if vanilla.gil == gil:
+                        continue
+                    overrides['gil'] = gil
+                    expected = types.SimpleNamespace(**overrides)
+                    config = _interpreters.new_config(
+                                                            name, **overrides)
+                    self.assert_ns_equal(config, expected)
+
+            # Override individual fields.
+            for field, old in vars(vanilla).items():
+                if field == 'gil':
+                    values = [v for v in self.gil_supported if v != old]
+                else:
+                    values = [not old]
+                for val in values:
+                    with self.subTest(f'{name}.{field} ({old!r} -> {val!r})'):
+                        overrides = {field: val}
+                        expected = types.SimpleNamespace(
+                            **dict(vars(vanilla), **overrides),
+                        )
+                        config = _interpreters.new_config(
+                                                            name, **overrides)
+                        self.assert_ns_equal(config, expected)
+
+        with self.subTest('unsupported field'):
+            for name in self.supported:
+                with self.assertRaises(ValueError):
+                    _interpreters.new_config(name, spam=True)
+
+        # Bad values for bool fields.
+        for field, value in vars(self.supported['empty']).items():
+            if field == 'gil':
+                continue
+            assert isinstance(value, bool)
+            for value in [1, '', 'spam', 1.0, None, object()]:
+                with self.subTest(f'unsupported value ({field}={value!r})'):
+                    with self.assertRaises(TypeError):
+                        _interpreters.new_config(**{field: value})
+
+        # Bad values for .gil.
+        for value in [True, 1, 1.0, None, object()]:
+            with self.subTest(f'unsupported value(gil={value!r})'):
+                with self.assertRaises(TypeError):
+                    _interpreters.new_config(gil=value)
+        for value in ['', 'spam']:
+            with self.subTest(f'unsupported value (gil={value!r})'):
+                with self.assertRaises(ValueError):
+                    _interpreters.new_config(gil=value)
+
+    def test_interp_init(self):
+        questionable = [
+            # strange
+            dict(
+                allow_fork=True,
+                allow_exec=False,
+            ),
+            dict(
+                gil='shared',
+                use_main_obmalloc=False,
+            ),
+            # risky
+            dict(
+                allow_fork=True,
+                allow_threads=True,
+            ),
+            # ought to be invalid?
+            dict(
+                allow_threads=False,
+                allow_daemon_threads=True,
+            ),
+            dict(
+                gil='own',
+                use_main_obmalloc=True,
+            ),
+        ]
+        invalid = [
+            dict(
+                use_main_obmalloc=False,
+                check_multi_interp_extensions=False
+            ),
+        ]
+        def match(config, override_cases):
+            ns = vars(config)
+            for overrides in override_cases:
+                if dict(ns, **overrides) == ns:
+                    return True
+            return False
+
+        def check(config):
+            script = 'pass'
+            rc = _testinternalcapi.run_in_subinterp_with_config(script, config)
+            self.assertEqual(rc, 0)
+
+        for config in self.iter_all_configs():
+            if config.gil == 'default':
+                continue
+            if match(config, invalid):
+                with self.subTest(f'invalid: {config}'):
+                    with self.assertRaises(RuntimeError):
+                        check(config)
+            elif match(config, questionable):
+                with self.subTest(f'questionable: {config}'):
+                    check(config)
+            else:
+                with self.subTest(f'valid: {config}'):
+                    check(config)
+
+    def test_get_config(self):
+        @contextlib.contextmanager
+        def new_interp(config):
+            interpid = _interpreters.create(config, reqrefs=False)
+            try:
+                yield interpid
+            finally:
+                try:
+                    _interpreters.destroy(interpid)
+                except _interpreters.InterpreterNotFoundError:
+                    pass
+
+        with self.subTest('main'):
+            expected = _interpreters.new_config('legacy')
+            expected.gil = 'own'
+            interpid = _interpreters.get_main()
+            config = _interpreters.get_config(interpid)
+            self.assert_ns_equal(config, expected)
+
+        with self.subTest('isolated'):
+            expected = _interpreters.new_config('isolated')
+            with new_interp('isolated') as interpid:
+                config = _interpreters.get_config(interpid)
+            self.assert_ns_equal(config, expected)
+
+        with self.subTest('legacy'):
+            expected = _interpreters.new_config('legacy')
+            with new_interp('legacy') as interpid:
+                config = _interpreters.get_config(interpid)
+            self.assert_ns_equal(config, expected)
+
+        with self.subTest('custom'):
+            orig = _interpreters.new_config(
+                'empty',
+                use_main_obmalloc=True,
+                gil='shared',
+            )
+            with new_interp(orig) as interpid:
+                config = _interpreters.get_config(interpid)
+            self.assert_ns_equal(config, orig)
+
+
+@requires_subinterpreters
 class InterpreterIDTests(unittest.TestCase):
 
     def add_interp_cleanup(self, interpid):
@@ -2278,14 +2528,19 @@ class InterpreterIDTests(unittest.TestCase):
         self.assertFalse(
             _testinternalcapi.interpreter_exists(interpid))
 
+    def get_refcount_helpers(self):
+        return (
+            _testinternalcapi.get_interpreter_refcount,
+            (lambda id: _interpreters.incref(id, implieslink=False)),
+            _interpreters.decref,
+        )
+
     def test_linked_lifecycle_does_not_exist(self):
         exists = _testinternalcapi.interpreter_exists
         is_linked = _testinternalcapi.interpreter_refcount_linked
         link = _testinternalcapi.link_interpreter_refcount
         unlink = _testinternalcapi.unlink_interpreter_refcount
-        get_refcount = _testinternalcapi.get_interpreter_refcount
-        incref = _testinternalcapi.interpreter_incref
-        decref = _testinternalcapi.interpreter_decref
+        get_refcount, incref, decref = self.get_refcount_helpers()
 
         with self.subTest('never existed'):
             interpid = _testinternalcapi.unused_interpreter_id()
@@ -2327,8 +2582,7 @@ class InterpreterIDTests(unittest.TestCase):
         get_refcount = _testinternalcapi.get_interpreter_refcount
 
         # A new interpreter will start out not linked, with a refcount of 0.
-        interpid = _testinternalcapi.new_interpreter()
-        self.add_interp_cleanup(interpid)
+        interpid = self.new_interpreter()
         linked = is_linked(interpid)
         refcount = get_refcount(interpid)
 
@@ -2338,12 +2592,9 @@ class InterpreterIDTests(unittest.TestCase):
     def test_linked_lifecycle_never_linked(self):
         exists = _testinternalcapi.interpreter_exists
         is_linked = _testinternalcapi.interpreter_refcount_linked
-        get_refcount = _testinternalcapi.get_interpreter_refcount
-        incref = _testinternalcapi.interpreter_incref
-        decref = _testinternalcapi.interpreter_decref
+        get_refcount, incref, decref = self.get_refcount_helpers()
 
-        interpid = _testinternalcapi.new_interpreter()
-        self.add_interp_cleanup(interpid)
+        interpid = self.new_interpreter()
 
         # Incref will not automatically link it.
         incref(interpid)
@@ -2367,8 +2618,7 @@ class InterpreterIDTests(unittest.TestCase):
         link = _testinternalcapi.link_interpreter_refcount
         unlink = _testinternalcapi.unlink_interpreter_refcount
 
-        interpid = _testinternalcapi.new_interpreter()
-        self.add_interp_cleanup(interpid)
+        interpid = self.new_interpreter()
 
         # Linking at refcount 0 does not destroy the interpreter.
         link(interpid)
@@ -2388,12 +2638,9 @@ class InterpreterIDTests(unittest.TestCase):
         exists = _testinternalcapi.interpreter_exists
         is_linked = _testinternalcapi.interpreter_refcount_linked
         link = _testinternalcapi.link_interpreter_refcount
-        get_refcount = _testinternalcapi.get_interpreter_refcount
-        incref = _testinternalcapi.interpreter_incref
-        decref = _testinternalcapi.interpreter_decref
+        get_refcount, incref, decref = self.get_refcount_helpers()
 
-        interpid = _testinternalcapi.new_interpreter()
-        self.add_interp_cleanup(interpid)
+        interpid = self.new_interpreter()
 
         # Linking it will not change the refcount.
         link(interpid)
@@ -2415,11 +2662,9 @@ class InterpreterIDTests(unittest.TestCase):
     def test_linked_lifecycle_incref_link(self):
         is_linked = _testinternalcapi.interpreter_refcount_linked
         link = _testinternalcapi.link_interpreter_refcount
-        get_refcount = _testinternalcapi.get_interpreter_refcount
-        incref = _testinternalcapi.interpreter_incref
+        get_refcount, incref, _ = self.get_refcount_helpers()
 
-        interpid = _testinternalcapi.new_interpreter()
-        self.add_interp_cleanup(interpid)
+        interpid = self.new_interpreter()
 
         incref(interpid)
         self.assertEqual(
@@ -2437,12 +2682,9 @@ class InterpreterIDTests(unittest.TestCase):
         is_linked = _testinternalcapi.interpreter_refcount_linked
         link = _testinternalcapi.link_interpreter_refcount
         unlink = _testinternalcapi.unlink_interpreter_refcount
-        get_refcount = _testinternalcapi.get_interpreter_refcount
-        incref = _testinternalcapi.interpreter_incref
-        decref = _testinternalcapi.interpreter_decref
+        get_refcount, incref, decref = self.get_refcount_helpers()
 
-        interpid = _testinternalcapi.new_interpreter()
-        self.add_interp_cleanup(interpid)
+        interpid = self.new_interpreter()
 
         link(interpid)
         self.assertTrue(

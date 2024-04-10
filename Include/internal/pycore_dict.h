@@ -11,7 +11,7 @@ extern "C" {
 
 #include "pycore_freelist.h"      // _PyFreeListState
 #include "pycore_identifier.h"    // _Py_Identifier
-#include "pycore_object.h"        // PyDictOrValues
+#include "pycore_object.h"        // PyManagedDictPointer
 
 // Unsafe flavor of PyDict_GetItemWithError(): no error checking
 extern PyObject* _PyDict_GetItemWithError(PyObject *dp, PyObject *key);
@@ -97,6 +97,7 @@ extern void _PyDictKeys_DecRef(PyDictKeysObject *keys);
  * -1 when no entry found, -3 when compare raises error.
  */
 extern Py_ssize_t _Py_dict_lookup(PyDictObject *mp, PyObject *key, Py_hash_t hash, PyObject **value_addr);
+extern Py_ssize_t _Py_dict_lookup_threadsafe(PyDictObject *mp, PyObject *key, Py_hash_t hash, PyObject **value_addr);
 
 extern Py_ssize_t _PyDict_LookupIndex(PyDictObject *, PyObject *);
 extern Py_ssize_t _PyDictKeys_StringLookup(PyDictKeysObject* dictkeys, PyObject *key);
@@ -181,6 +182,10 @@ struct _dictkeysobject {
  * [-1] = prefix size. [-2] = used size. size[-2-n...] = insertion order.
  */
 struct _dictvalues {
+    uint8_t capacity;
+    uint8_t size;
+    uint8_t embedded;
+    uint8_t valid;
     PyObject *values[1];
 };
 
@@ -196,6 +201,7 @@ static inline void* _DK_ENTRIES(PyDictKeysObject *dk) {
     size_t index = (size_t)1 << dk->dk_log2_index_bytes;
     return (&indices[index]);
 }
+
 static inline PyDictKeyEntry* DK_ENTRIES(PyDictKeysObject *dk) {
     assert(dk->dk_kind == DICT_KEYS_GENERAL);
     return (PyDictKeyEntry*)_DK_ENTRIES(dk);
@@ -210,9 +216,6 @@ static inline PyDictUnicodeEntry* DK_UNICODE_ENTRIES(PyDictKeysObject *dk) {
 #define DICT_VERSION_INCREMENT (1 << (DICT_MAX_WATCHERS + DICT_WATCHED_MUTATION_BITS))
 #define DICT_WATCHER_MASK ((1 << DICT_MAX_WATCHERS) - 1)
 #define DICT_WATCHER_AND_MODIFICATION_MASK ((1 << (DICT_MAX_WATCHERS + DICT_WATCHED_MUTATION_BITS)) - 1)
-
-#define DICT_VALUES_SIZE(values) ((uint8_t *)values)[-1]
-#define DICT_VALUES_USED_SIZE(values) ((uint8_t *)values)[-2]
 
 #ifdef Py_GIL_DISABLED
 #define DICT_NEXT_VERSION(INTERP) \
@@ -246,24 +249,62 @@ _PyDict_NotifyEvent(PyInterpreterState *interp,
     return DICT_NEXT_VERSION(interp) | (mp->ma_version_tag & DICT_WATCHER_AND_MODIFICATION_MASK);
 }
 
-extern PyObject *_PyObject_MakeDictFromInstanceAttributes(PyObject *obj, PyDictValues *values);
-PyAPI_FUNC(bool) _PyObject_MakeInstanceAttributesFromDict(PyObject *obj, PyDictOrValues *dorv);
+extern PyDictObject *_PyObject_MakeDictFromInstanceAttributes(PyObject *obj);
+
 PyAPI_FUNC(PyObject *)_PyDict_FromItems(
         PyObject *const *keys, Py_ssize_t keys_offset,
         PyObject *const *values, Py_ssize_t values_offset,
         Py_ssize_t length);
 
+static inline uint8_t *
+get_insertion_order_array(PyDictValues *values)
+{
+    return (uint8_t *)&values->values[values->capacity];
+}
+
 static inline void
 _PyDictValues_AddToInsertionOrder(PyDictValues *values, Py_ssize_t ix)
 {
     assert(ix < SHARED_KEYS_MAX_SIZE);
-    uint8_t *size_ptr = ((uint8_t *)values)-2;
-    int size = *size_ptr;
-    assert(size+2 < DICT_VALUES_SIZE(values));
-    size++;
-    size_ptr[-size] = (uint8_t)ix;
-    *size_ptr = size;
+    int size = values->size;
+    uint8_t *array = get_insertion_order_array(values);
+    assert(size < values->capacity);
+    assert(((uint8_t)ix) == ix);
+    array[size] = (uint8_t)ix;
+    values->size = size+1;
 }
+
+static inline size_t
+shared_keys_usable_size(PyDictKeysObject *keys)
+{
+#ifdef Py_GIL_DISABLED
+    // dk_usable will decrease for each instance that is created and each
+    // value that is added.  dk_nentries will increase for each value that
+    // is added.  We want to always return the right value or larger.
+    // We therefore increase dk_nentries first and we decrease dk_usable
+    // second, and conversely here we read dk_usable first and dk_entries
+    // second (to avoid the case where we read entries before the increment
+    // and read usable after the decrement)
+    return (size_t)(_Py_atomic_load_ssize_acquire(&keys->dk_usable) +
+                    _Py_atomic_load_ssize_acquire(&keys->dk_nentries));
+#else
+    return (size_t)keys->dk_nentries + (size_t)keys->dk_usable;
+#endif
+}
+
+static inline size_t
+_PyInlineValuesSize(PyTypeObject *tp)
+{
+    PyDictKeysObject *keys = ((PyHeapTypeObject*)tp)->ht_cached_keys;
+    assert(keys != NULL);
+    size_t size = shared_keys_usable_size(keys);
+    size_t prefix_size = _Py_SIZE_ROUND_UP(size, sizeof(PyObject *));
+    assert(prefix_size < 256);
+    return prefix_size + (size + 1) * sizeof(PyObject *);
+}
+
+int
+_PyDict_DetachFromObject(PyDictObject *dict, PyObject *obj);
 
 #ifdef __cplusplus
 }

@@ -11,6 +11,7 @@ import unittest
 import asyncio
 from test import support
 from test.support import requires_specialization, script_helper
+from test.support.import_helper import import_module
 
 PAIR = (0,1)
 
@@ -1829,15 +1830,15 @@ class TestRegressions(MonitoringTestBase, unittest.TestCase):
 class TestOptimizer(MonitoringTestBase, unittest.TestCase):
 
     def setUp(self):
-        import _testinternalcapi
+        _testinternalcapi = import_module("_testinternalcapi")
         self.old_opt = _testinternalcapi.get_optimizer()
         opt = _testinternalcapi.new_counter_optimizer()
         _testinternalcapi.set_optimizer(opt)
         super(TestOptimizer, self).setUp()
 
     def tearDown(self):
-        import _testinternalcapi
         super(TestOptimizer, self).tearDown()
+        import _testinternalcapi
         _testinternalcapi.set_optimizer(self.old_opt)
 
     def test_for_loop(self):
