@@ -1856,7 +1856,7 @@ class DummyPathTest(DummyPurePathTest):
     def test_rglob_posix(self):
         P = self.cls
         p = P(self.base, "dirC")
-        q = p / "dirC" / "dirD" / "FILEd"
+        q = p / "dirD" / "FILEd"
         given = set(p.rglob("FILEd"))
         expect = {q} if q.exists() else set()
         self.assertEqual(given, expect)
