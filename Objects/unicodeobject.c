@@ -14618,10 +14618,12 @@ unicode_new_impl(PyTypeObject *type, PyObject *x, const char *encoding,
 }
 
 static const char *
-as_const_char(PyObject *obj)
+as_const_char(PyObject *obj, const char *name)
 {
     if (!PyUnicode_Check(obj)) {
-        _PyArg_BadArgument("str", "argument", "str", obj);
+        PyErr_Format(PyExc_TypeError,
+                     "str() argument '%s' must be str, not %T",
+                     name, obj);
         return NULL;
     }
     Py_ssize_t sz;
@@ -14684,14 +14686,14 @@ unicode_vectorcall(PyObject *type, PyObject *const *args,
         if (nkwargs == 1) {
             PyObject *kw0 = PyTuple_GET_ITEM(kwnames, 0);
             if (_PyUnicode_EqualToASCIIString(kw0, "encoding")) {
-                encoding = as_const_char(args[1]);
+                encoding = as_const_char(args[1], "encoding");
                 if (encoding == NULL) {
                     return NULL;
                 }
                 errors = NULL;
             }
             else if (_PyUnicode_EqualToASCIIString(kw0, "errors")) {
-                errors = as_const_char(args[1]);
+                errors = as_const_char(args[1], "errors");
                 if (errors == NULL) {
                     return NULL;
                 }
@@ -14704,7 +14706,7 @@ unicode_vectorcall(PyObject *type, PyObject *const *args,
             }
         }
         else if (nkwargs == 0) {
-            encoding = as_const_char(args[1]);
+            encoding = as_const_char(args[1], "encoding");
             errors = NULL;
         }
         else {
@@ -14726,11 +14728,11 @@ unicode_vectorcall(PyObject *type, PyObject *const *args,
             return fallback_to_tp_call(type, nargs, nkwargs, args, kwnames);
         }
         PyObject *object = args[0];
-        const char *encoding = as_const_char(args[1]);
+        const char *encoding = as_const_char(args[1], "encoding");
         if (encoding == NULL) {
             return NULL;
         }
-        const char *errors = as_const_char(args[2]);
+        const char *errors = as_const_char(args[2], "errors");
         if (errors == NULL) {
             return NULL;
         }
