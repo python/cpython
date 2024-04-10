@@ -2502,7 +2502,7 @@ if support.check_impl_detail(cpython=True):
         # https://github.com/python/cpython/issues/117692
         >>> import binascii
         >>> from test.test_doctest.decorator_mod import decorator
-    
+
         >>> c_func_wrapped = decorator(binascii.b2a_hex)
         >>> tests = doctest.DocTestFinder(exclude_empty=False).find(c_func_wrapped)
         >>> for test in tests:
