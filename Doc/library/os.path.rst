@@ -131,7 +131,7 @@ the :mod:`glob` module.)
 
    Return ``True`` if *path* refers to an existing path or an open
    file descriptor.  Returns ``False`` for broken symbolic links if
-   follow_symlinks is set, otherwise ``True``.  On
+   *follow_symlinks* is set, otherwise ``True``.  On
    some platforms, this function may return ``False`` if permission is
    not granted to execute :func:`os.stat` on the requested file, even
    if the *path* physically exists.
