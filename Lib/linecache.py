@@ -66,12 +66,13 @@ def checkcache(filename=None):
         try:
             # This import can fail if the interpreter is shutting down
             import os
+        except ImportError:
+            return
+        try:
             stat = os.stat(fullname)
         except OSError:
             cache.pop(filename, None)
             continue
-        except ImportError:
-            return
         if size != stat.st_size or mtime != stat.st_mtime:
             cache.pop(filename, None)
 
