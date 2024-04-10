@@ -13,8 +13,6 @@ extern "C" {
    and coroutine objects. */
 #define _PyGenObject_HEAD(prefix)                                           \
     PyObject_HEAD                                                           \
-    /* The code object backing the generator */                             \
-    PyCodeObject *prefix##_code;                                            \
     /* List of weak reference. */                                           \
     PyObject *prefix##_weakreflist;                                         \
     /* Name of the generator. */                                            \
@@ -28,7 +26,7 @@ extern "C" {
     char prefix##_running_async;                                            \
     /* The frame */                                                         \
     int8_t prefix##_frame_state;                                            \
-    PyObject *prefix##_iframe[1];
+    PyObject *prefix##_iframe[1];                                           \
 
 typedef struct {
     /* The gi_ prefix is intended to remind of generator-iterator. */
@@ -43,9 +41,7 @@ PyAPI_DATA(PyTypeObject) PyGen_Type;
 PyAPI_FUNC(PyObject *) PyGen_New(PyFrameObject *);
 PyAPI_FUNC(PyObject *) PyGen_NewWithQualName(PyFrameObject *,
     PyObject *name, PyObject *qualname);
-PyAPI_FUNC(int) _PyGen_SetStopIterationValue(PyObject *);
-PyAPI_FUNC(int) _PyGen_FetchStopIterationValue(PyObject **);
-PyAPI_FUNC(void) _PyGen_Finalize(PyObject *self);
+PyAPI_FUNC(PyCodeObject *) PyGen_GetCode(PyGenObject *gen);
 
 
 /* --- PyCoroObject ------------------------------------------------------- */
@@ -55,7 +51,6 @@ typedef struct {
 } PyCoroObject;
 
 PyAPI_DATA(PyTypeObject) PyCoro_Type;
-PyAPI_DATA(PyTypeObject) _PyCoroWrapper_Type;
 
 #define PyCoro_CheckExact(op) Py_IS_TYPE((op), &PyCoro_Type)
 PyAPI_FUNC(PyObject *) PyCoro_New(PyFrameObject *,
@@ -70,13 +65,13 @@ typedef struct {
 
 PyAPI_DATA(PyTypeObject) PyAsyncGen_Type;
 PyAPI_DATA(PyTypeObject) _PyAsyncGenASend_Type;
-PyAPI_DATA(PyTypeObject) _PyAsyncGenWrappedValue_Type;
-PyAPI_DATA(PyTypeObject) _PyAsyncGenAThrow_Type;
 
 PyAPI_FUNC(PyObject *) PyAsyncGen_New(PyFrameObject *,
     PyObject *name, PyObject *qualname);
 
 #define PyAsyncGen_CheckExact(op) Py_IS_TYPE((op), &PyAsyncGen_Type)
+
+#define PyAsyncGenASend_CheckExact(op) Py_IS_TYPE((op), &_PyAsyncGenASend_Type)
 
 
 #undef _PyGenObject_HEAD

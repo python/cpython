@@ -1,2 +1,0 @@
-Set a default value of 1.0 for the ``lambd`` parameter in
-random.expovariate().

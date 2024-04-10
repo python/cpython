@@ -1,1 +1,0 @@
-Improve the performance of :func:`hasattr` for type objects with a missing attribute.
