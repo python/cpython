@@ -2375,7 +2375,7 @@ _PyMonitoring_FirePyStartEvent(PyMonitoringState *state, PyObject *codelike, int
 }
 
 int
-_PyMonitoring_FirePyResumeEvent(PyMonitoringState *state, PyObject *codelike, int offset)
+_PyMonitoring_FirePyResumeEvent(PyMonitoringState *state, PyObject *codelike, int32_t offset)
 {
     assert(state->active);
     PyObject *args[3] = { NULL, NULL, NULL };
@@ -2386,7 +2386,7 @@ _PyMonitoring_FirePyResumeEvent(PyMonitoringState *state, PyObject *codelike, in
 
 
 int
-_PyMonitoring_FirePyReturnEvent(PyMonitoringState *state, PyObject *codelike, int offset,
+_PyMonitoring_FirePyReturnEvent(PyMonitoringState *state, PyObject *codelike, int32_t offset,
                                 PyObject* retval)
 {
     assert(state->active);
@@ -2396,7 +2396,7 @@ _PyMonitoring_FirePyReturnEvent(PyMonitoringState *state, PyObject *codelike, in
 }
 
 int
-_PyMonitoring_FirePyYieldEvent(PyMonitoringState *state, PyObject *codelike, int offset,
+_PyMonitoring_FirePyYieldEvent(PyMonitoringState *state, PyObject *codelike, int32_t offset,
                                PyObject* retval)
 {
     assert(state->active);
@@ -2406,7 +2406,7 @@ _PyMonitoring_FirePyYieldEvent(PyMonitoringState *state, PyObject *codelike, int
 }
 
 int
-_PyMonitoring_FireCallEvent(PyMonitoringState *state, PyObject *codelike, int offset,
+_PyMonitoring_FireCallEvent(PyMonitoringState *state, PyObject *codelike, int32_t offset,
                             PyObject* callable, PyObject *arg0)
 {
     assert(state->active);
@@ -2416,7 +2416,7 @@ _PyMonitoring_FireCallEvent(PyMonitoringState *state, PyObject *codelike, int of
 }
 
 int
-_PyMonitoring_FireLineEvent(PyMonitoringState *state, PyObject *codelike, int offset,
+_PyMonitoring_FireLineEvent(PyMonitoringState *state, PyObject *codelike, int32_t offset,
                             int lineno)
 {
     assert(state->active);
@@ -2432,7 +2432,7 @@ _PyMonitoring_FireLineEvent(PyMonitoringState *state, PyObject *codelike, int of
 }
 
 int
-_PyMonitoring_FireJumpEvent(PyMonitoringState *state, PyObject *codelike, int offset,
+_PyMonitoring_FireJumpEvent(PyMonitoringState *state, PyObject *codelike, int32_t offset,
                             PyObject *target_offset)
 {
     assert(state->active);
@@ -2442,7 +2442,7 @@ _PyMonitoring_FireJumpEvent(PyMonitoringState *state, PyObject *codelike, int of
 }
 
 int
-_PyMonitoring_FireBranchEvent(PyMonitoringState *state, PyObject *codelike, int offset,
+_PyMonitoring_FireBranchEvent(PyMonitoringState *state, PyObject *codelike, int32_t offset,
                               PyObject *target_offset)
 {
     assert(state->active);
@@ -2452,7 +2452,7 @@ _PyMonitoring_FireBranchEvent(PyMonitoringState *state, PyObject *codelike, int 
 }
 
 int
-_PyMonitoring_FireCReturnEvent(PyMonitoringState *state, PyObject *codelike, int offset,
+_PyMonitoring_FireCReturnEvent(PyMonitoringState *state, PyObject *codelike, int32_t offset,
                                PyObject *retval)
 {
     assert(state->active);
@@ -2462,7 +2462,7 @@ _PyMonitoring_FireCReturnEvent(PyMonitoringState *state, PyObject *codelike, int
 }
 
 int
-_PyMonitoring_FirePyThrowEvent(PyMonitoringState *state, PyObject *codelike, int offset,
+_PyMonitoring_FirePyThrowEvent(PyMonitoringState *state, PyObject *codelike, int32_t offset,
                                PyObject *exception)
 {
     assert(state->active);
@@ -2472,7 +2472,7 @@ _PyMonitoring_FirePyThrowEvent(PyMonitoringState *state, PyObject *codelike, int
 }
 
 int
-_PyMonitoring_FireRaiseEvent(PyMonitoringState *state, PyObject *codelike, int offset,
+_PyMonitoring_FireRaiseEvent(PyMonitoringState *state, PyObject *codelike, int32_t offset,
                              PyObject *exception)
 {
     assert(state->active);
@@ -2482,7 +2482,7 @@ _PyMonitoring_FireRaiseEvent(PyMonitoringState *state, PyObject *codelike, int o
 }
 
 int
-_PyMonitoring_FireCRaiseEvent(PyMonitoringState *state, PyObject *codelike, int offset,
+_PyMonitoring_FireCRaiseEvent(PyMonitoringState *state, PyObject *codelike, int32_t offset,
                               PyObject *exception)
 {
     assert(state->active);
@@ -2492,7 +2492,7 @@ _PyMonitoring_FireCRaiseEvent(PyMonitoringState *state, PyObject *codelike, int 
 }
 
 int
-_PyMonitoring_FireReraiseEvent(PyMonitoringState *state, PyObject *codelike, int offset,
+_PyMonitoring_FireReraiseEvent(PyMonitoringState *state, PyObject *codelike, int32_t offset,
                                PyObject *exception)
 {
     assert(state->active);
@@ -2502,7 +2502,7 @@ _PyMonitoring_FireReraiseEvent(PyMonitoringState *state, PyObject *codelike, int
 }
 
 int
-_PyMonitoring_FireExceptionHandledEvent(PyMonitoringState *state, PyObject *codelike, int offset,
+_PyMonitoring_FireExceptionHandledEvent(PyMonitoringState *state, PyObject *codelike, int32_t offset,
                                         PyObject *exception)
 {
     assert(state->active);
@@ -2512,7 +2512,7 @@ _PyMonitoring_FireExceptionHandledEvent(PyMonitoringState *state, PyObject *code
 }
 
 int
-_PyMonitoring_FirePyUnwindEvent(PyMonitoringState *state, PyObject *codelike, int offset,
+_PyMonitoring_FirePyUnwindEvent(PyMonitoringState *state, PyObject *codelike, int32_t offset,
                                 PyObject *exception)
 {
     assert(state->active);
@@ -2522,7 +2522,7 @@ _PyMonitoring_FirePyUnwindEvent(PyMonitoringState *state, PyObject *codelike, in
 }
 
 int
-_PyMonitoring_FireStopIterationEvent(PyMonitoringState *state, PyObject *codelike, int offset,
+_PyMonitoring_FireStopIterationEvent(PyMonitoringState *state, PyObject *codelike, int32_t offset,
                                      PyObject *exception)
 {
     assert(state->active);
