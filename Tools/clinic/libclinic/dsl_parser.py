@@ -666,6 +666,8 @@ class DSLParser:
         if equals:
             existing = existing.strip()
             if libclinic.is_legal_py_identifier(existing):
+                if self.forced_text_signature:
+                    fail("Cannot use @text_signature when cloning a function")
                 # we're cloning!
                 names = self.parse_function_names(before)
                 return self.parse_cloned_function(names, existing)
@@ -689,7 +691,8 @@ class DSLParser:
             kind=self.kind,
             coexist=self.coexist,
             critical_section=self.critical_section,
-            target_critical_section=self.target_critical_section
+            target_critical_section=self.target_critical_section,
+            forced_text_signature=self.forced_text_signature
         )
         self.add_function(func)
 
@@ -1324,13 +1327,14 @@ class DSLParser:
 
         self.docstring_append(self.function, line)
 
+    @staticmethod
     def format_docstring_signature(
-        self, f: Function, parameters: list[Parameter]
+        f: Function, parameters: list[Parameter]
     ) -> str:
         lines = []
         lines.append(f.displayname)
-        if self.forced_text_signature:
-            lines.append(self.forced_text_signature)
+        if f.forced_text_signature:
+            lines.append(f.forced_text_signature)
         elif f.kind in {GETTER, SETTER}:
             # @getter and @setter do not need signatures like a method or a function.
             return ''

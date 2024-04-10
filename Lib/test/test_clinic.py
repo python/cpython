@@ -5,7 +5,7 @@
 from functools import partial
 from test import support, test_tools
 from test.support import os_helper
-from test.support.os_helper import TESTFN, unlink
+from test.support.os_helper import TESTFN, unlink, rmtree
 from textwrap import dedent
 from unittest import TestCase
 import inspect
@@ -661,6 +661,61 @@ class ClinicWholeFileTest(TestCase):
         """
         err = "Illegal C basename: '.illegal.'"
         self.expect_failure(block, err, lineno=7)
+
+    def test_cloned_forced_text_signature(self):
+        block = dedent("""
+            /*[clinic input]
+            @text_signature "($module, a[, b])"
+            src
+                a: object
+                    param a
+                b: object = NULL
+                /
+
+            docstring
+            [clinic start generated code]*/
+
+            /*[clinic input]
+            dst = src
+            [clinic start generated code]*/
+        """)
+        self.clinic.parse(block)
+        self.addCleanup(rmtree, "clinic")
+        funcs = self.clinic.functions
+        self.assertEqual(len(funcs), 2)
+
+        src_docstring_lines = funcs[0].docstring.split("\n")
+        dst_docstring_lines = funcs[1].docstring.split("\n")
+
+        # Signatures are copied.
+        self.assertEqual(src_docstring_lines[0], "src($module, a[, b])")
+        self.assertEqual(dst_docstring_lines[0], "dst($module, a[, b])")
+
+        # Param docstrings are copied.
+        self.assertIn("    param a", src_docstring_lines)
+        self.assertIn("    param a", dst_docstring_lines)
+
+        # Docstrings are not copied.
+        self.assertIn("docstring", src_docstring_lines)
+        self.assertNotIn("docstring", dst_docstring_lines)
+
+    def test_cloned_forced_text_signature_illegal(self):
+        block = """
+            /*[clinic input]
+            @text_signature "($module, a[, b])"
+            src
+                a: object
+                b: object = NULL
+                /
+            [clinic start generated code]*/
+
+            /*[clinic input]
+            @text_signature "($module, a_override[, b])"
+            dst = src
+            [clinic start generated code]*/
+        """
+        err = "Cannot use @text_signature when cloning a function"
+        self.expect_failure(block, err, lineno=11)
 
 
 class ParseFileUnitTest(TestCase):

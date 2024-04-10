@@ -107,6 +107,7 @@ class Function:
     # functions with optional groups because we can't represent
     # those accurately with inspect.Signature in 3.4.
     docstring_only: bool = False
+    forced_text_signature: str | None = None
     critical_section: bool = False
     target_critical_section: list[str] = dc.field(default_factory=list)
 
