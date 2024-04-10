@@ -935,7 +935,7 @@ paramspec_new_impl(PyTypeObject *type, PyObject *name, PyObject *bound,
         return NULL;
     }
     if (Py_IsNone(default_)) {
-        default_ = Py_NewRef(Py_TYPE(default_));
+        default_ = (PyObject *)Py_TYPE(default_);
     }
     PyObject *ps = (PyObject *)paramspec_alloc(
         name, bound, default_, covariant, contravariant, infer_variance, module);
