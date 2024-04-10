@@ -213,7 +213,7 @@ struct _object {
     // computed "gc_refs" refcount.
     uintptr_t ob_tid;
     uint16_t _padding;
-    struct _PyMutex ob_mutex;   // per-object lock
+    PyMutex ob_mutex;           // per-object lock
     uint8_t ob_gc_bits;         // gc-related state
     uint32_t ob_ref_local;      // local reference count
     Py_ssize_t ob_ref_shared;   // shared (atomic) reference count

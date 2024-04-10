@@ -24,7 +24,7 @@
 //   PyMutex_Lock(&m);
 //   ...
 //   PyMutex_Unlock(&m);
-typedef struct _PyMutex {
+typedef struct PyMutex {
     uint8_t v;
 } PyMutex;
 
