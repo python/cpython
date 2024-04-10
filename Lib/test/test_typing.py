@@ -38,7 +38,7 @@ from typing import Annotated, ForwardRef
 from typing import Self, LiteralString
 from typing import TypeAlias
 from typing import ParamSpec, Concatenate, ParamSpecArgs, ParamSpecKwargs
-from typing import TypeGuard
+from typing import TypeGuard, TypeIs
 import abc
 import textwrap
 import typing
@@ -5207,6 +5207,7 @@ class GenericTests(BaseTestCase):
             Literal[1, 2],
             Concatenate[int, ParamSpec("P")],
             TypeGuard[int],
+            TypeIs[range],
         ):
             with self.subTest(msg=obj):
                 with self.assertRaisesRegex(
@@ -6748,6 +6749,7 @@ class GetUtilitiesTestCase(TestCase):
         self.assertEqual(get_args(NotRequired[int]), (int,))
         self.assertEqual(get_args(TypeAlias), ())
         self.assertEqual(get_args(TypeGuard[int]), (int,))
+        self.assertEqual(get_args(TypeIs[range]), (range,))
         Ts = TypeVarTuple('Ts')
         self.assertEqual(get_args(Ts), ())
         self.assertEqual(get_args((*Ts,)[0]), (Ts,))
@@ -9592,6 +9594,56 @@ class TypeGuardTests(BaseTestCase):
             issubclass(int, TypeGuard)
 
 
+class TypeIsTests(BaseTestCase):
+    def test_basics(self):
+        TypeIs[int]  # OK
+
+        def foo(arg) -> TypeIs[int]: ...
+        self.assertEqual(gth(foo), {'return': TypeIs[int]})
+
+        with self.assertRaises(TypeError):
+            TypeIs[int, str]
+
+    def test_repr(self):
+        self.assertEqual(repr(TypeIs), 'typing.TypeIs')
+        cv = TypeIs[int]
+        self.assertEqual(repr(cv), 'typing.TypeIs[int]')
+        cv = TypeIs[Employee]
+        self.assertEqual(repr(cv), 'typing.TypeIs[%s.Employee]' % __name__)
+        cv = TypeIs[tuple[int]]
+        self.assertEqual(repr(cv), 'typing.TypeIs[tuple[int]]')
+
+    def test_cannot_subclass(self):
+        with self.assertRaisesRegex(TypeError, CANNOT_SUBCLASS_TYPE):
+            class C(type(TypeIs)):
+                pass
+        with self.assertRaisesRegex(TypeError, CANNOT_SUBCLASS_TYPE):
+            class D(type(TypeIs[int])):
+                pass
+        with self.assertRaisesRegex(TypeError,
+                                    r'Cannot subclass typing\.TypeIs'):
+            class E(TypeIs):
+                pass
+        with self.assertRaisesRegex(TypeError,
+                                    r'Cannot subclass typing\.TypeIs\[int\]'):
+            class F(TypeIs[int]):
+                pass
+
+    def test_cannot_init(self):
+        with self.assertRaises(TypeError):
+            TypeIs()
+        with self.assertRaises(TypeError):
+            type(TypeIs)()
+        with self.assertRaises(TypeError):
+            type(TypeIs[Optional[int]])()
+
+    def test_no_isinstance(self):
+        with self.assertRaises(TypeError):
+            isinstance(1, TypeIs[int])
+        with self.assertRaises(TypeError):
+            issubclass(int, TypeIs)
+
+
 SpecialAttrsP = typing.ParamSpec('SpecialAttrsP')
 SpecialAttrsT = typing.TypeVar('SpecialAttrsT', int, float, complex)
 
@@ -9691,6 +9743,7 @@ class SpecialAttrsTests(BaseTestCase):
             typing.Optional: 'Optional',
             typing.TypeAlias: 'TypeAlias',
             typing.TypeGuard: 'TypeGuard',
+            typing.TypeIs: 'TypeIs',
             typing.TypeVar: 'TypeVar',
             typing.Union: 'Union',
             typing.Self: 'Self',
@@ -9705,6 +9758,7 @@ class SpecialAttrsTests(BaseTestCase):
             typing.Literal[True, 2]: 'Literal',
             typing.Optional[Any]: 'Optional',
             typing.TypeGuard[Any]: 'TypeGuard',
+            typing.TypeIs[Any]: 'TypeIs',
             typing.Union[Any]: 'Any',
             typing.Union[int, float]: 'Union',
             # Incompatible special forms (tested in test_special_attrs2)
