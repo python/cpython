@@ -13,11 +13,11 @@ __all__ = ['commonprefix', 'exists', 'getatime', 'getctime', 'getmtime',
 
 # Does a path exist?
 # This is false for dangling symbolic links on systems that support them.
-def exists(path):
+def exists(path, *, follow_symlinks=True):
     """Test whether a path exists.  Returns False for broken symbolic links
     if follow_symlinks is set, otherwise True"""
     try:
-        os.stat(path)
+        os.stat(path, follow_symlinks=follow_symlinks)
     except (OSError, ValueError):
         return False
     return True
