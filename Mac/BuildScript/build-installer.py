@@ -264,11 +264,11 @@ def library_recipes():
             tk_patches = ['backport_gh71383_fix.patch', 'tk868_on_10_8_10_9.patch', 'backport_gh110950_fix.patch']
 
         else:
-            tcl_tk_ver='8.6.13'
-            tcl_checksum='43a1fae7412f61ff11de2cfd05d28cfc3a73762f354a417c62370a54e2caf066'
+            tcl_tk_ver='8.6.14'
+            tcl_checksum='5880225babf7954c58d4fb0f5cf6279104ce1cd6aa9b71e9a6322540e1c4de66'
 
-            tk_checksum='2e65fa069a23365440a3c56c556b8673b5e32a283800d8d9b257e3f584ce0675'
-            tk_patches = ['backport_gh92603_fix.patch', 'backport_gh71383_fix.patch', 'backport_gh110950_fix.patch']
+            tk_checksum='8ffdb720f47a6ca6107eac2dd877e30b0ef7fac14f3a84ebbd0b3612cee41a94'
+            tk_patches = []
 
 
         base_url = "https://prdownloads.sourceforge.net/tcl/{what}{version}-src.tar.gz"

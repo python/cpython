@@ -590,7 +590,7 @@ de_instrument(PyCodeObject *code, int i, int event)
     CHECK(_PyOpcode_Deopt[deinstrumented] == deinstrumented);
     *opcode_ptr = deinstrumented;
     if (_PyOpcode_Caches[deinstrumented]) {
-        instr[1].cache = adaptive_counter_warmup();
+        instr[1].counter = adaptive_counter_warmup();
     }
 }
 
@@ -611,7 +611,7 @@ de_instrument_line(PyCodeObject *code, int i)
     CHECK(original_opcode == _PyOpcode_Deopt[original_opcode]);
     instr->op.code = original_opcode;
     if (_PyOpcode_Caches[original_opcode]) {
-        instr[1].cache = adaptive_counter_warmup();
+        instr[1].counter = adaptive_counter_warmup();
     }
     assert(instr->op.code != INSTRUMENTED_LINE);
 }
@@ -634,7 +634,7 @@ de_instrument_per_instruction(PyCodeObject *code, int i)
     CHECK(original_opcode == _PyOpcode_Deopt[original_opcode]);
     *opcode_ptr = original_opcode;
     if (_PyOpcode_Caches[original_opcode]) {
-        instr[1].cache = adaptive_counter_warmup();
+        instr[1].counter = adaptive_counter_warmup();
     }
     assert(*opcode_ptr != INSTRUMENTED_INSTRUCTION);
     assert(instr->op.code != INSTRUMENTED_INSTRUCTION);
@@ -667,7 +667,7 @@ instrument(PyCodeObject *code, int i)
         assert(instrumented);
         *opcode_ptr = instrumented;
         if (_PyOpcode_Caches[deopt]) {
-            instr[1].cache = adaptive_counter_warmup();
+            instr[1].counter = adaptive_counter_warmup();
         }
     }
 }
@@ -891,8 +891,16 @@ static inline int most_significant_bit(uint8_t bits) {
 static uint32_t
 global_version(PyInterpreterState *interp)
 {
-    return (uint32_t)_Py_atomic_load_uintptr_relaxed(
+    uint32_t version = (uint32_t)_Py_atomic_load_uintptr_relaxed(
         &interp->ceval.instrumentation_version);
+#ifdef Py_DEBUG
+    PyThreadState *tstate = _PyThreadState_GET();
+    uint32_t thread_version =
+        (uint32_t)(_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) &
+                   ~_PY_EVAL_EVENTS_MASK);
+    assert(thread_version == version);
+#endif
+    return version;
 }
 
 /* Atomically set the given version in the given location, without touching
@@ -1156,13 +1164,15 @@ int
 _Py_call_instrumentation_line(PyThreadState *tstate, _PyInterpreterFrame* frame, _Py_CODEUNIT *instr, _Py_CODEUNIT *prev)
 {
     PyCodeObject *code = _PyFrame_GetCode(frame);
-    assert(tstate->tracing == 0);
     assert(is_version_up_to_date(code, tstate->interp));
     assert(instrumentation_cross_checks(tstate->interp, code));
     int i = (int)(instr - _PyCode_CODE(code));
 
     _PyCoMonitoringData *monitoring = code->_co_monitoring;
     _PyCoLineInstrumentationData *line_data = &monitoring->lines[i];
+    if (tstate->tracing) {
+        goto done;
+    }
     PyInterpreterState *interp = tstate->interp;
     int8_t line_delta = line_data->line_delta;
     int line = compute_line(code, i, line_delta);
@@ -1187,7 +1197,7 @@ _Py_call_instrumentation_line(PyThreadState *tstate, _PyInterpreterFrame* frame,
     /* Special case sys.settrace to avoid boxing the line number,
      * only to immediately unbox it. */
     if (tools & (1 << PY_MONITORING_SYS_TRACE_ID)) {
-        if (tstate->c_tracefunc != NULL && line >= 0) {
+        if (tstate->c_tracefunc != NULL) {
             PyFrameObject *frame_obj = _PyFrame_GetFrameObject(frame);
             if (frame_obj == NULL) {
                 return -1;

@@ -334,8 +334,10 @@ class TestPartial:
             f.__setstate__((f, (), {}, {}))
             try:
                 for proto in range(pickle.HIGHEST_PROTOCOL + 1):
-                    with self.assertRaises(RecursionError):
-                        pickle.dumps(f, proto)
+                    # gh-117008: Small limit since pickle uses C stack memory
+                    with support.infinite_recursion(100):
+                        with self.assertRaises(RecursionError):
+                            pickle.dumps(f, proto)
             finally:
                 f.__setstate__((capture, (), {}, {}))
 
@@ -1865,7 +1867,7 @@ class TestLRU:
             return fib(n-1) + fib(n-2)
 
         if not support.Py_DEBUG:
-            depth = support.Py_C_RECURSION_LIMIT*2//7
+            depth = support.get_c_recursion_limit()*2//7
             with support.infinite_recursion():
                 fib(depth)
         if self.module == c_functools:
@@ -2696,7 +2698,10 @@ class TestSingleDispatch(unittest.TestCase):
             A().static_func
         ):
             with self.subTest(meth=meth):
-                self.assertEqual(meth.__doc__, 'My function docstring')
+                self.assertEqual(meth.__doc__,
+                                 ('My function docstring'
+                                  if support.HAVE_DOCSTRINGS
+                                  else None))
                 self.assertEqual(meth.__annotations__['arg'], int)
 
         self.assertEqual(A.func.__name__, 'func')
@@ -2785,7 +2790,10 @@ class TestSingleDispatch(unittest.TestCase):
             WithSingleDispatch().decorated_classmethod
         ):
             with self.subTest(meth=meth):
-                self.assertEqual(meth.__doc__, 'My function docstring')
+                self.assertEqual(meth.__doc__,
+                                 ('My function docstring'
+                                  if support.HAVE_DOCSTRINGS
+                                  else None))
                 self.assertEqual(meth.__annotations__['arg'], int)
 
         self.assertEqual(
@@ -3128,7 +3136,10 @@ class TestCachedProperty(unittest.TestCase):
         self.assertIsInstance(CachedCostItem.cost, py_functools.cached_property)
 
     def test_doc(self):
-        self.assertEqual(CachedCostItem.cost.__doc__, "The cost of the item.")
+        self.assertEqual(CachedCostItem.cost.__doc__,
+                         ("The cost of the item."
+                          if support.HAVE_DOCSTRINGS
+                          else None))
 
     def test_module(self):
         self.assertEqual(CachedCostItem.cost.__module__, CachedCostItem.__module__)

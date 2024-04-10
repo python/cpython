@@ -9,6 +9,9 @@ import textwrap
 import types
 import unittest
 import asyncio
+from test import support
+from test.support import requires_specialization, script_helper
+from test.support.import_helper import import_module
 
 PAIR = (0,1)
 
@@ -815,6 +818,9 @@ class ExceptionMonitoringTest(CheckEvents):
 
         self.check_events(func1, [("raise", KeyError)])
 
+    # gh-116090: This test doesn't really require specialization, but running
+    # it without specialization exposes a monitoring bug.
+    @requires_specialization
     def test_implicit_stop_iteration(self):
 
         def gen():
@@ -963,6 +969,7 @@ class ExceptionMonitoringTest(CheckEvents):
         )
         self.assertEqual(events[0], ("throw", IndexError))
 
+    @requires_specialization
     def test_no_unwind_for_shim_frame(self):
 
         class B:
@@ -1801,19 +1808,37 @@ class TestRegressions(MonitoringTestBase, unittest.TestCase):
         sys.monitoring.set_events(0, E.LINE | E.INSTRUCTION)
         sys.monitoring.set_events(0, 0)
 
+    def test_call_function_ex(self):
+        def f(a=1, b=2):
+            return a + b
+        args = (1, 2)
+        empty_args = []
+
+        call_data = []
+        sys.monitoring.use_tool_id(0, "test")
+        self.addCleanup(sys.monitoring.free_tool_id, 0)
+        sys.monitoring.set_events(0, 0)
+        sys.monitoring.register_callback(0, E.CALL, lambda code, offset, callable, arg0: call_data.append((callable, arg0)))
+        sys.monitoring.set_events(0, E.CALL)
+        f(*args)
+        f(*empty_args)
+        sys.monitoring.set_events(0, 0)
+        self.assertEqual(call_data[0], (f, 1))
+        self.assertEqual(call_data[1], (f, sys.monitoring.MISSING))
+
 
 class TestOptimizer(MonitoringTestBase, unittest.TestCase):
 
     def setUp(self):
-        import _testinternalcapi
+        _testinternalcapi = import_module("_testinternalcapi")
         self.old_opt = _testinternalcapi.get_optimizer()
         opt = _testinternalcapi.new_counter_optimizer()
         _testinternalcapi.set_optimizer(opt)
         super(TestOptimizer, self).setUp()
 
     def tearDown(self):
-        import _testinternalcapi
         super(TestOptimizer, self).tearDown()
+        import _testinternalcapi
         _testinternalcapi.set_optimizer(self.old_opt)
 
     def test_for_loop(self):
@@ -1853,3 +1878,12 @@ class TestTier2Optimizer(CheckEvents):
             sys.monitoring.register_callback(TEST_TOOL, E.LINE, None)
             sys.monitoring.set_events(TEST_TOOL, 0)
         self.assertGreater(len(events), 250)
+
+class TestMonitoringAtShutdown(unittest.TestCase):
+
+    def test_monitoring_live_at_shutdown(self):
+        # gh-115832: An object destructor running during the final GC of
+        # interpreter shutdown triggered an infinite loop in the
+        # instrumentation code.
+        script = support.findfile("_test_monitoring_shutdown.py")
+        script_helper.run_test_script(script)

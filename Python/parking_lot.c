@@ -194,14 +194,16 @@ _PySemaphore_Wait(_PySemaphore *sema, PyTime_t timeout, int detach)
     PyThreadState *tstate = NULL;
     if (detach) {
         tstate = _PyThreadState_GET();
-        if (tstate) {
+        if (tstate && tstate->state == _Py_THREAD_ATTACHED) {
+            // Only detach if we are attached
             PyEval_ReleaseThread(tstate);
         }
+        else {
+            tstate = NULL;
+        }
     }
-
     int res = _PySemaphore_PlatformWait(sema, timeout);
-
-    if (detach && tstate) {
+    if (tstate) {
         PyEval_AcquireThread(tstate);
     }
     return res;

@@ -13,7 +13,7 @@ import textwrap
 import warnings
 from test import support
 from test.support import (script_helper, requires_debug_ranges,
-                          requires_specialization, Py_C_RECURSION_LIMIT)
+                          requires_specialization, get_c_recursion_limit)
 from test.support.bytecode_helper import instructions_with_positions
 from test.support.os_helper import FakePath
 
@@ -114,7 +114,7 @@ class TestSpecifics(unittest.TestCase):
 
     @unittest.skipIf(support.is_wasi, "exhausts limited stack on WASI")
     def test_extended_arg(self):
-        repeat = int(Py_C_RECURSION_LIMIT * 0.9)
+        repeat = int(get_c_recursion_limit() * 0.9)
         longexpr = 'x = x or ' + '-x' * repeat
         g = {}
         code = textwrap.dedent('''
@@ -634,9 +634,10 @@ class TestSpecifics(unittest.TestCase):
     @unittest.skipIf(support.is_wasi, "exhausts limited stack on WASI")
     def test_compiler_recursion_limit(self):
         # Expected limit is Py_C_RECURSION_LIMIT
-        fail_depth = Py_C_RECURSION_LIMIT + 1
-        crash_depth = Py_C_RECURSION_LIMIT * 100
-        success_depth = int(Py_C_RECURSION_LIMIT * 0.8)
+        limit = get_c_recursion_limit()
+        fail_depth = limit + 1
+        crash_depth = limit * 100
+        success_depth = int(limit * 0.8)
 
         def check_limit(prefix, repeated, mode="single"):
             expect_ok = prefix + repeated * success_depth
@@ -1958,6 +1959,64 @@ class TestSourcePositions(unittest.TestCase):
         self.assertOpcodeSourcePositionIs(
             code, "LOAD_GLOBAL", line=3, end_line=3, column=4, end_column=9
         )
+
+
+class TestExpectedAttributes(unittest.TestCase):
+
+    def test_basic(self):
+        class C:
+            def f(self):
+                self.a = self.b = 42
+
+        self.assertIsInstance(C.__static_attributes__, tuple)
+        self.assertEqual(sorted(C.__static_attributes__), ['a', 'b'])
+
+    def test_nested_function(self):
+        class C:
+            def f(self):
+                self.x = 1
+                self.y = 2
+                self.x = 3   # check deduplication
+
+            def g(self, obj):
+                self.y = 4
+                self.z = 5
+
+                def h(self, a):
+                    self.u = 6
+                    self.v = 7
+
+                obj.self = 8
+
+        self.assertEqual(sorted(C.__static_attributes__), ['u', 'v', 'x', 'y', 'z'])
+
+    def test_nested_class(self):
+        class C:
+            def f(self):
+                self.x = 42
+                self.y = 42
+
+            class D:
+                def g(self):
+                    self.y = 42
+                    self.z = 42
+
+        self.assertEqual(sorted(C.__static_attributes__), ['x', 'y'])
+        self.assertEqual(sorted(C.D.__static_attributes__), ['y', 'z'])
+
+    def test_subclass(self):
+        class C:
+            def f(self):
+                self.x = 42
+                self.y = 42
+
+        class D(C):
+            def g(self):
+                self.y = 42
+                self.z = 42
+
+        self.assertEqual(sorted(C.__static_attributes__), ['x', 'y'])
+        self.assertEqual(sorted(D.__static_attributes__), ['y', 'z'])
 
 
 class TestExpressionStackSize(unittest.TestCase):

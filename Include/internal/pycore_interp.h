@@ -59,6 +59,12 @@ struct _stoptheworld_state {
     PyThreadState *requester; // Thread that requested the pause (may be NULL).
 };
 
+#ifdef Py_GIL_DISABLED
+// This should be prime but otherwise the choice is arbitrary. A larger value
+// increases concurrency at the expense of memory.
+#  define NUM_WEAKREF_LIST_LOCKS 127
+#endif
+
 /* cross-interpreter data registry */
 
 /* Tracks some rare events per-interpreter, used by the optimizer to turn on/off
@@ -85,7 +91,7 @@ typedef struct _rare_events {
    */
 struct _is {
 
-    /* This struct countains the eval_breaker,
+    /* This struct contains the eval_breaker,
      * which is by far the hottest field in this struct
      * and should be placed at the beginning. */
     struct _ceval_state ceval;
@@ -203,6 +209,7 @@ struct _is {
 #if defined(Py_GIL_DISABLED)
     struct _mimalloc_interp_state mimalloc;
     struct _brc_state brc;  // biased reference counting state
+    PyMutex weakref_locks[NUM_WEAKREF_LIST_LOCKS];
 #endif
 
     // Per-interpreter state for the obmalloc allocator.  For the main
@@ -239,13 +246,6 @@ struct _is {
     _PyOptimizerObject *optimizer;
     _PyExecutorObject *executor_list_head;
 
-    /* These two values are shifted and offset to speed up check in JUMP_BACKWARD */
-    uint32_t optimizer_resume_threshold;
-    uint32_t optimizer_backedge_threshold;
-
-    uint16_t optimizer_side_threshold;
-
-    uint32_t next_func_version;
     _rare_events rare_events;
     PyDict_WatchCallback builtins_dict_watcher;
 
@@ -296,9 +296,11 @@ _PyInterpreterState_SetFinalizing(PyInterpreterState *interp, PyThreadState *tst
 }
 
 
-// Export for the _xxinterpchannels module.
-PyAPI_FUNC(PyInterpreterState *) _PyInterpreterState_LookUpID(int64_t);
 
+// Exports for the _testinternalcapi module.
+PyAPI_FUNC(int64_t) _PyInterpreterState_ObjectToID(PyObject *);
+PyAPI_FUNC(PyInterpreterState *) _PyInterpreterState_LookUpID(int64_t);
+PyAPI_FUNC(PyInterpreterState *) _PyInterpreterState_LookUpIDObject(PyObject *);
 PyAPI_FUNC(int) _PyInterpreterState_IDInitref(PyInterpreterState *);
 PyAPI_FUNC(int) _PyInterpreterState_IDIncref(PyInterpreterState *);
 PyAPI_FUNC(void) _PyInterpreterState_IDDecref(PyInterpreterState *);

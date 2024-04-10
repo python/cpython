@@ -1,15 +1,16 @@
 import contextlib
-import opcode
 import sys
 import textwrap
 import unittest
 import gc
 import os
 
+import _opcode
 import _testinternalcapi
 
-from test.support import script_helper
+from test.support import script_helper, requires_specialization
 
+from _testinternalcapi import TIER2_THRESHOLD
 
 @contextlib.contextmanager
 def temporary_optimizer(opt):
@@ -31,6 +32,7 @@ def clear_executors(func):
         func.__code__ = func.__code__.replace()
 
 
+@requires_specialization
 class TestOptimizerAPI(unittest.TestCase):
 
     def test_new_counter_optimizer_dealloc(self):
@@ -68,7 +70,8 @@ class TestOptimizerAPI(unittest.TestCase):
                 self.assertEqual(opt.get_count(), 0)
                 with clear_executors(loop):
                     loop()
-                self.assertEqual(opt.get_count(), 1000)
+                # Subtract because optimizer doesn't kick in sooner
+                self.assertEqual(opt.get_count(), 1000 - TIER2_THRESHOLD)
 
     def test_long_loop(self):
         "Check that we aren't confused by EXTENDED_ARG"
@@ -80,7 +83,7 @@ class TestOptimizerAPI(unittest.TestCase):
                 pass
 
             def long_loop():
-                for _ in range(10):
+                for _ in range(20):
                     nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop();
                     nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop();
                     nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop();
@@ -95,7 +98,7 @@ class TestOptimizerAPI(unittest.TestCase):
         with temporary_optimizer(opt):
             self.assertEqual(opt.get_count(), 0)
             long_loop()
-            self.assertEqual(opt.get_count(), 10)
+            self.assertEqual(opt.get_count(), 20 - TIER2_THRESHOLD)  # Need iterations to warm up
 
     def test_code_restore_for_ENTER_EXECUTOR(self):
         def testfunc(x):
@@ -114,13 +117,11 @@ class TestOptimizerAPI(unittest.TestCase):
 def get_first_executor(func):
     code = func.__code__
     co_code = code.co_code
-    JUMP_BACKWARD = opcode.opmap["JUMP_BACKWARD"]
     for i in range(0, len(co_code), 2):
-        if co_code[i] == JUMP_BACKWARD:
-            try:
-                return _testinternalcapi.get_executor(code, i)
-            except ValueError:
-                pass
+        try:
+            return _opcode.get_executor(code, i)
+        except ValueError:
+            pass
     return None
 
 
@@ -133,6 +134,7 @@ def get_opnames(ex):
     return set(iter_opnames(ex))
 
 
+@requires_specialization
 class TestExecutorInvalidation(unittest.TestCase):
 
     def setUp(self):
@@ -211,6 +213,7 @@ class TestExecutorInvalidation(unittest.TestCase):
         self.assertIsNone(exe)
 
 
+@requires_specialization
 @unittest.skipIf(os.getenv("PYTHON_UOPS_OPTIMIZE") == "0", "Needs uop optimizer to run.")
 class TestUops(unittest.TestCase):
 
@@ -328,7 +331,8 @@ class TestUops(unittest.TestCase):
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
-        self.assertIn("_GUARD_IS_NOT_NONE_POP", uops)
+        self.assertNotIn("_GUARD_IS_NONE_POP", uops)
+        self.assertNotIn("_GUARD_IS_NOT_NONE_POP", uops)
 
     def test_pop_jump_if_not_none(self):
         def testfunc(a):
@@ -344,7 +348,8 @@ class TestUops(unittest.TestCase):
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
-        self.assertIn("_GUARD_IS_NONE_POP", uops)
+        self.assertNotIn("_GUARD_IS_NONE_POP", uops)
+        self.assertNotIn("_GUARD_IS_NOT_NONE_POP", uops)
 
     def test_pop_jump_if_true(self):
         def testfunc(n):
@@ -572,6 +577,7 @@ class TestUops(unittest.TestCase):
         self.assertLessEqual(count, 2)
 
 
+@requires_specialization
 @unittest.skipIf(os.getenv("PYTHON_UOPS_OPTIMIZE") == "0", "Needs uop optimizer to run.")
 class TestUopsOptimization(unittest.TestCase):
 
@@ -754,17 +760,16 @@ class TestUopsOptimization(unittest.TestCase):
         result = script_helper.run_python_until_end('-c', textwrap.dedent("""
         import _testinternalcapi
         import opcode
+        import _opcode
 
         def get_first_executor(func):
             code = func.__code__
             co_code = code.co_code
-            JUMP_BACKWARD = opcode.opmap["JUMP_BACKWARD"]
             for i in range(0, len(co_code), 2):
-                if co_code[i] == JUMP_BACKWARD:
-                    try:
-                        return _testinternalcapi.get_executor(code, i)
-                    except ValueError:
-                        pass
+                try:
+                    return _opcode.get_executor(code, i)
+                except ValueError:
+                    pass
             return None
 
         def get_opnames(ex):
@@ -791,11 +796,14 @@ class TestUopsOptimization(unittest.TestCase):
         def testfunc(n):
             a = 1.0
             for _ in range(n):
-                a = a + 0.1
+                a = a + 0.25
+                a = a + 0.25
+                a = a + 0.25
+                a = a + 0.25
             return a
 
         res, ex = self._run_with_optimizer(testfunc, 32)
-        self.assertAlmostEqual(res, 4.2)
+        self.assertAlmostEqual(res, 33.0)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
         guard_both_float_count = [opname for opname in iter_opnames(ex) if opname == "_GUARD_BOTH_FLOAT"]
@@ -808,11 +816,14 @@ class TestUopsOptimization(unittest.TestCase):
         def testfunc(n):
             a = 1.0
             for _ in range(n):
-                a = a - 0.1
+                a = a - 0.25
+                a = a - 0.25
+                a = a - 0.25
+                a = a - 0.25
             return a
 
         res, ex = self._run_with_optimizer(testfunc, 32)
-        self.assertAlmostEqual(res, -2.2)
+        self.assertAlmostEqual(res, -31.0)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
         guard_both_float_count = [opname for opname in iter_opnames(ex) if opname == "_GUARD_BOTH_FLOAT"]
@@ -825,11 +836,14 @@ class TestUopsOptimization(unittest.TestCase):
         def testfunc(n):
             a = 1.0
             for _ in range(n):
-                a = a * 2.0
+                a = a * 1.0
+                a = a * 1.0
+                a = a * 1.0
+                a = a * 1.0
             return a
 
         res, ex = self._run_with_optimizer(testfunc, 32)
-        self.assertAlmostEqual(res, 2 ** 32)
+        self.assertAlmostEqual(res, 1.0)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
         guard_both_float_count = [opname for opname in iter_opnames(ex) if opname == "_GUARD_BOTH_FLOAT"]
@@ -837,6 +851,24 @@ class TestUopsOptimization(unittest.TestCase):
         # TODO gh-115506: this assertion may change after propagating constants.
         # We'll also need to verify that propagation actually occurs.
         self.assertIn("_BINARY_OP_MULTIPLY_FLOAT", uops)
+
+    def test_add_unicode_propagation(self):
+        def testfunc(n):
+            a = ""
+            for _ in range(n):
+                a + a
+                a + a
+                a + a
+                a + a
+            return a
+
+        res, ex = self._run_with_optimizer(testfunc, 32)
+        self.assertEqual(res, "")
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        guard_both_unicode_count = [opname for opname in iter_opnames(ex) if opname == "_GUARD_BOTH_UNICODE"]
+        self.assertLessEqual(len(guard_both_unicode_count), 1)
+        self.assertIn("_BINARY_OP_ADD_UNICODE", uops)
 
     def test_compare_op_type_propagation_float(self):
         def testfunc(n):
@@ -894,24 +926,324 @@ class TestUopsOptimization(unittest.TestCase):
 
     def test_type_inconsistency(self):
         ns = {}
-        exec(textwrap.dedent("""
+        src = textwrap.dedent("""
             def testfunc(n):
                 for i in range(n):
                     x = _test_global + _test_global
-        """), globals(), ns)
+        """)
+        exec(src, ns, ns)
         testfunc = ns['testfunc']
-        # Must be a real global else it won't be optimized to _LOAD_CONST_INLINE
-        global _test_global
-        _test_global = 0
-        _, ex = self._run_with_optimizer(testfunc, 16)
+        ns['_test_global'] = 0
+        _, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
         self.assertIsNone(ex)
-        _test_global = 1.2
-        _, ex = self._run_with_optimizer(testfunc, 16)
+        ns['_test_global'] = 1
+        _, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
-        self.assertIn("_GUARD_BOTH_INT", uops)
+        self.assertNotIn("_GUARD_BOTH_INT", uops)
         self.assertIn("_BINARY_OP_ADD_INT", uops)
+        # Try again, but between the runs, set the global to a float.
+        # This should result in no executor the second time.
+        ns = {}
+        exec(src, ns, ns)
+        testfunc = ns['testfunc']
+        ns['_test_global'] = 0
+        _, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertIsNone(ex)
+        ns['_test_global'] = 3.14
+        _, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertIsNone(ex)
 
+    def test_combine_stack_space_checks_sequential(self):
+        def dummy12(x):
+            return x - 1
+        def dummy13(y):
+            z = y + 2
+            return y, z
+        def testfunc(n):
+            a = 0
+            for _ in range(n):
+                b = dummy12(7)
+                c, d = dummy13(9)
+                a += b + c + d
+            return a
+
+        res, ex = self._run_with_optimizer(testfunc, 32)
+        self.assertEqual(res, 832)
+        self.assertIsNotNone(ex)
+
+        uops_and_operands = [(opcode, operand) for opcode, _, _, operand in ex]
+        uop_names = [uop[0] for uop in uops_and_operands]
+        self.assertEqual(uop_names.count("_PUSH_FRAME"), 2)
+        self.assertEqual(uop_names.count("_POP_FRAME"), 2)
+        self.assertEqual(uop_names.count("_CHECK_STACK_SPACE"), 0)
+        self.assertEqual(uop_names.count("_CHECK_STACK_SPACE_OPERAND"), 1)
+        # sequential calls: max(12, 13) == 13
+        largest_stack = _testinternalcapi.get_co_framesize(dummy13.__code__)
+        self.assertIn(("_CHECK_STACK_SPACE_OPERAND", largest_stack), uops_and_operands)
+
+    def test_combine_stack_space_checks_nested(self):
+        def dummy12(x):
+            return x + 3
+        def dummy15(y):
+            z = dummy12(y)
+            return y, z
+        def testfunc(n):
+            a = 0
+            for _ in range(n):
+                b, c = dummy15(2)
+                a += b + c
+            return a
+
+        res, ex = self._run_with_optimizer(testfunc, 32)
+        self.assertEqual(res, 224)
+        self.assertIsNotNone(ex)
+
+        uops_and_operands = [(opcode, operand) for opcode, _, _, operand in ex]
+        uop_names = [uop[0] for uop in uops_and_operands]
+        self.assertEqual(uop_names.count("_PUSH_FRAME"), 2)
+        self.assertEqual(uop_names.count("_POP_FRAME"), 2)
+        self.assertEqual(uop_names.count("_CHECK_STACK_SPACE"), 0)
+        self.assertEqual(uop_names.count("_CHECK_STACK_SPACE_OPERAND"), 1)
+        # nested calls: 15 + 12 == 27
+        largest_stack = (
+            _testinternalcapi.get_co_framesize(dummy15.__code__) +
+            _testinternalcapi.get_co_framesize(dummy12.__code__)
+        )
+        self.assertIn(("_CHECK_STACK_SPACE_OPERAND", largest_stack), uops_and_operands)
+
+    def test_combine_stack_space_checks_several_calls(self):
+        def dummy12(x):
+            return x + 3
+        def dummy13(y):
+            z = y + 2
+            return y, z
+        def dummy18(y):
+            z = dummy12(y)
+            x, w = dummy13(z)
+            return z, x, w
+        def testfunc(n):
+            a = 0
+            for _ in range(n):
+                b = dummy12(5)
+                c, d, e = dummy18(2)
+                a += b + c + d + e
+            return a
+
+        res, ex = self._run_with_optimizer(testfunc, 32)
+        self.assertEqual(res, 800)
+        self.assertIsNotNone(ex)
+
+        uops_and_operands = [(opcode, operand) for opcode, _, _, operand in ex]
+        uop_names = [uop[0] for uop in uops_and_operands]
+        self.assertEqual(uop_names.count("_PUSH_FRAME"), 4)
+        self.assertEqual(uop_names.count("_POP_FRAME"), 4)
+        self.assertEqual(uop_names.count("_CHECK_STACK_SPACE"), 0)
+        self.assertEqual(uop_names.count("_CHECK_STACK_SPACE_OPERAND"), 1)
+        # max(12, 18 + max(12, 13)) == 31
+        largest_stack = (
+            _testinternalcapi.get_co_framesize(dummy18.__code__) +
+            _testinternalcapi.get_co_framesize(dummy13.__code__)
+        )
+        self.assertIn(("_CHECK_STACK_SPACE_OPERAND", largest_stack), uops_and_operands)
+
+    def test_combine_stack_space_checks_several_calls_different_order(self):
+        # same as `several_calls` but with top-level calls reversed
+        def dummy12(x):
+            return x + 3
+        def dummy13(y):
+            z = y + 2
+            return y, z
+        def dummy18(y):
+            z = dummy12(y)
+            x, w = dummy13(z)
+            return z, x, w
+        def testfunc(n):
+            a = 0
+            for _ in range(n):
+                c, d, e = dummy18(2)
+                b = dummy12(5)
+                a += b + c + d + e
+            return a
+
+        res, ex = self._run_with_optimizer(testfunc, 32)
+        self.assertEqual(res, 800)
+        self.assertIsNotNone(ex)
+
+        uops_and_operands = [(opcode, operand) for opcode, _, _, operand in ex]
+        uop_names = [uop[0] for uop in uops_and_operands]
+        self.assertEqual(uop_names.count("_PUSH_FRAME"), 4)
+        self.assertEqual(uop_names.count("_POP_FRAME"), 4)
+        self.assertEqual(uop_names.count("_CHECK_STACK_SPACE"), 0)
+        self.assertEqual(uop_names.count("_CHECK_STACK_SPACE_OPERAND"), 1)
+        # max(18 + max(12, 13), 12) == 31
+        largest_stack = (
+            _testinternalcapi.get_co_framesize(dummy18.__code__) +
+            _testinternalcapi.get_co_framesize(dummy13.__code__)
+        )
+        self.assertIn(("_CHECK_STACK_SPACE_OPERAND", largest_stack), uops_and_operands)
+
+    def test_combine_stack_space_complex(self):
+        def dummy0(x):
+            return x
+        def dummy1(x):
+            return dummy0(x)
+        def dummy2(x):
+            return dummy1(x)
+        def dummy3(x):
+            return dummy0(x)
+        def dummy4(x):
+            y = dummy0(x)
+            return dummy3(y)
+        def dummy5(x):
+            return dummy2(x)
+        def dummy6(x):
+            y = dummy5(x)
+            z = dummy0(y)
+            return dummy4(z)
+        def testfunc(n):
+            a = 0;
+            for _ in range(32):
+                b = dummy5(1)
+                c = dummy0(1)
+                d = dummy6(1)
+                a += b + c + d
+            return a
+
+        res, ex = self._run_with_optimizer(testfunc, 32)
+        self.assertEqual(res, 96)
+        self.assertIsNotNone(ex)
+
+        uops_and_operands = [(opcode, operand) for opcode, _, _, operand in ex]
+        uop_names = [uop[0] for uop in uops_and_operands]
+        self.assertEqual(uop_names.count("_PUSH_FRAME"), 15)
+        self.assertEqual(uop_names.count("_POP_FRAME"), 15)
+
+        self.assertEqual(uop_names.count("_CHECK_STACK_SPACE"), 0)
+        self.assertEqual(uop_names.count("_CHECK_STACK_SPACE_OPERAND"), 1)
+        largest_stack = (
+            _testinternalcapi.get_co_framesize(dummy6.__code__) +
+            _testinternalcapi.get_co_framesize(dummy5.__code__) +
+            _testinternalcapi.get_co_framesize(dummy2.__code__) +
+            _testinternalcapi.get_co_framesize(dummy1.__code__) +
+            _testinternalcapi.get_co_framesize(dummy0.__code__)
+        )
+        self.assertIn(
+            ("_CHECK_STACK_SPACE_OPERAND", largest_stack), uops_and_operands
+        )
+
+    def test_combine_stack_space_checks_large_framesize(self):
+        # Create a function with a large framesize. This ensures _CHECK_STACK_SPACE is
+        # actually doing its job. Note that the resulting trace hits
+        # UOP_MAX_TRACE_LENGTH, but since all _CHECK_STACK_SPACEs happen early, this
+        # test is still meaningful.
+        repetitions = 10000
+        ns = {}
+        header = """
+            def dummy_large(a0):
+        """
+        body = "".join([f"""
+                a{n+1} = a{n} + 1
+        """ for n in range(repetitions)])
+        return_ = f"""
+                return a{repetitions-1}
+        """
+        exec(textwrap.dedent(header + body + return_), ns, ns)
+        dummy_large = ns['dummy_large']
+
+        # this is something like:
+        #
+        # def dummy_large(a0):
+        #     a1 = a0 + 1
+        #     a2 = a1 + 1
+        #     ....
+        #     a9999 = a9998 + 1
+        #     return a9999
+
+        def dummy15(z):
+            y = dummy_large(z)
+            return y + 3
+
+        def testfunc(n):
+            b = 0
+            for _ in range(n):
+                b += dummy15(7)
+            return b
+
+        res, ex = self._run_with_optimizer(testfunc, 32)
+        self.assertEqual(res, 32 * (repetitions + 9))
+        self.assertIsNotNone(ex)
+
+        uops_and_operands = [(opcode, operand) for opcode, _, _, operand in ex]
+        uop_names = [uop[0] for uop in uops_and_operands]
+        self.assertEqual(uop_names.count("_PUSH_FRAME"), 2)
+        self.assertEqual(uop_names.count("_CHECK_STACK_SPACE_OPERAND"), 1)
+
+        # this hits a different case during trace projection in refcount test runs only,
+        # so we need to account for both possibilities
+        self.assertIn(uop_names.count("_CHECK_STACK_SPACE"), [0, 1])
+        if uop_names.count("_CHECK_STACK_SPACE") == 0:
+            largest_stack = (
+                _testinternalcapi.get_co_framesize(dummy15.__code__) +
+                _testinternalcapi.get_co_framesize(dummy_large.__code__)
+            )
+        else:
+            largest_stack = _testinternalcapi.get_co_framesize(dummy15.__code__)
+        self.assertIn(
+            ("_CHECK_STACK_SPACE_OPERAND", largest_stack), uops_and_operands
+        )
+
+    def test_combine_stack_space_checks_recursion(self):
+        def dummy15(x):
+            while x > 0:
+                return dummy15(x - 1)
+            return 42
+        def testfunc(n):
+            a = 0
+            for _ in range(n):
+                a += dummy15(n)
+            return a
+
+        res, ex = self._run_with_optimizer(testfunc, 32)
+        self.assertEqual(res, 42 * 32)
+        self.assertIsNotNone(ex)
+
+        uops_and_operands = [(opcode, operand) for opcode, _, _, operand in ex]
+        uop_names = [uop[0] for uop in uops_and_operands]
+        self.assertEqual(uop_names.count("_PUSH_FRAME"), 2)
+        self.assertEqual(uop_names.count("_POP_FRAME"), 0)
+        self.assertEqual(uop_names.count("_CHECK_STACK_SPACE"), 1)
+        self.assertEqual(uop_names.count("_CHECK_STACK_SPACE_OPERAND"), 1)
+        largest_stack = _testinternalcapi.get_co_framesize(dummy15.__code__)
+        self.assertIn(("_CHECK_STACK_SPACE_OPERAND", largest_stack), uops_and_operands)
+
+    def test_many_nested(self):
+        # overflow the trace_stack
+        def dummy_a(x):
+            return x
+        def dummy_b(x):
+            return dummy_a(x)
+        def dummy_c(x):
+            return dummy_b(x)
+        def dummy_d(x):
+            return dummy_c(x)
+        def dummy_e(x):
+            return dummy_d(x)
+        def dummy_f(x):
+            return dummy_e(x)
+        def dummy_g(x):
+            return dummy_f(x)
+        def dummy_h(x):
+            return dummy_g(x)
+        def testfunc(n):
+            a = 0
+            for _ in range(n):
+                a += dummy_h(n)
+            return a
+
+        res, ex = self._run_with_optimizer(testfunc, 32)
+        self.assertEqual(res, 32 * 32)
+        self.assertIsNone(ex)
 
 if __name__ == "__main__":
     unittest.main()

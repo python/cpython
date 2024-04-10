@@ -27,7 +27,7 @@ terms of the MIT license. A copy of the license can be found in the file
 // ------------------------------------------------------
 
 #if (MI_DEBUG>0)
-static void mi_debug_fill(mi_page_t* page, mi_block_t* block, int c, size_t size) {
+static inline void mi_debug_fill(mi_page_t* page, mi_block_t* block, int c, size_t size) {
   size_t offset = (size_t)page->debug_offset;
   if (offset < size) {
     memset((char*)block + offset, c, size - offset);
@@ -609,7 +609,10 @@ bool _mi_free_delayed_block(mi_block_t* block) {
   // get segment and page
   const mi_segment_t* const segment = _mi_ptr_segment(block);
   mi_assert_internal(_mi_ptr_cookie(segment) == segment->cookie);
+#ifndef Py_GIL_DISABLED
+  // The GC traverses heaps of other threads, which can trigger this assert.
   mi_assert_internal(_mi_thread_id() == segment->thread_id);
+#endif
   mi_page_t* const page = _mi_segment_page_of(segment, block);
 
   // Clear the no-delayed flag so delayed freeing is used again for this page.
