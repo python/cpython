@@ -21,7 +21,7 @@ static PyObject *
 inst_seq_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    PyTypeObject *base_tp = &PyInstructionSequence_Type;
+    PyTypeObject *base_tp = &_PyInstructionSequence_Type;
 
     if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
         !_PyArg_NoPositional("InstructionSequenceType", args)) {
@@ -301,4 +301,4 @@ InstructionSequenceType_get_instructions(_PyInstructionSequence *self, PyObject 
 {
     return InstructionSequenceType_get_instructions_impl(self);
 }
-/*[clinic end generated code: output=530661b1c7820520 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8809d7aa11d9b2bb input=a9049054013a1b77]*/

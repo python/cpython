@@ -166,9 +166,9 @@ PyInstructionSequence_Fini(instr_sequence *seq) {
 }
 
 /*[clinic input]
-class InstructionSequenceType "_PyInstructionSequence *" "&PyInstructionSequence_Type"
+class InstructionSequenceType "_PyInstructionSequence *" "&_PyInstructionSequence_Type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=62b593e603622574]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=589963e07480390f]*/
 
 #include "clinic/instruction_sequence.c.h"
 
@@ -176,7 +176,7 @@ static _PyInstructionSequence*
 inst_seq_create_raw(void)
 {
     _PyInstructionSequence *seq;
-    seq = PyObject_GC_New(_PyInstructionSequence, &PyInstructionSequence_Type);
+    seq = PyObject_GC_New(_PyInstructionSequence, &_PyInstructionSequence_Type);
     if (seq == NULL) {
         return NULL;
     }
@@ -409,7 +409,7 @@ inst_seq_clear(_PyInstructionSequence *seq)
     return 0;
 }
 
-PyTypeObject PyInstructionSequence_Type = {
+PyTypeObject _PyInstructionSequence_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "InstructionSequence",
     sizeof(_PyInstructionSequence),
