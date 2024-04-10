@@ -4049,9 +4049,6 @@ class ClinicReprTests(unittest.TestCase):
 
     def test_FunctionKind_repr(self):
         self.assertEqual(
-            repr(FunctionKind.INVALID), "<clinic.FunctionKind.INVALID>"
-        )
-        self.assertEqual(
             repr(FunctionKind.CLASS_METHOD), "<clinic.FunctionKind.CLASS_METHOD>"
         )
 
