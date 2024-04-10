@@ -658,21 +658,10 @@ finally:
 
 /* module level code ********************************************************/
 
-#define _PyInterpreterState_WHENCE_STDLIB 5
-
 static long
 get_whence(PyInterpreterState *interp)
 {
-    long whence = _PyInterpreterState_GetWhence(interp);
-    if (whence == _PyInterpreterState_WHENCE_XI) {
-        if (is_owned(&_globals.owned, interp)) {
-            whence = _PyInterpreterState_WHENCE_STDLIB;
-        }
-    }
-    else {
-        assert(!is_owned(&_globals.owned, interp));
-    }
-    return whence;
+    return _PyInterpreterState_GetWhence(interp);
 }
 
 
@@ -786,7 +775,9 @@ interp_create(PyObject *self, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    PyInterpreterState *interp = _PyXI_NewInterpreter(&config, NULL, NULL);
+    long whence = _PyInterpreterState_WHENCE_STDLIB;
+    PyInterpreterState *interp = \
+            _PyXI_NewInterpreter(&config, &whence, NULL, NULL);
     if (interp == NULL) {
         // XXX Move the chained exception to interpreters.create()?
         PyObject *exc = PyErr_GetRaisedException();

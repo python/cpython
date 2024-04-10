@@ -1822,7 +1822,7 @@ _PyXI_FiniTypes(PyInterpreterState *interp)
 /*************/
 
 PyInterpreterState *
-_PyXI_NewInterpreter(PyInterpreterConfig *config,
+_PyXI_NewInterpreter(PyInterpreterConfig *config, long *maybe_whence,
                      PyThreadState **p_tstate, PyThreadState **p_save_tstate)
 {
     PyThreadState *save_tstate = PyThreadState_Swap(NULL);
@@ -1845,7 +1845,11 @@ _PyXI_NewInterpreter(PyInterpreterConfig *config,
     assert(tstate != NULL);
     PyInterpreterState *interp = PyThreadState_GetInterpreter(tstate);
 
-    _PyInterpreterState_SetWhence(interp, _PyInterpreterState_WHENCE_XI);
+    long whence = _PyInterpreterState_WHENCE_XI;
+    if (maybe_whence != NULL) {
+        whence = *maybe_whence;
+    }
+    _PyInterpreterState_SetWhence(interp, whence);
 
     if (p_tstate != NULL) {
         // We leave the new thread state as the current one.

@@ -109,7 +109,8 @@ struct _is {
 #define _PyInterpreterState_WHENCE_LEGACY_CAPI 2
 #define _PyInterpreterState_WHENCE_CAPI 3
 #define _PyInterpreterState_WHENCE_XI 4
-#define _PyInterpreterState_WHENCE_MAX 4
+#define _PyInterpreterState_WHENCE_STDLIB 5
+#define _PyInterpreterState_WHENCE_MAX 5
     long _whence;
 
     /* Has been initialized to a safe state.
