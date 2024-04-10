@@ -3581,6 +3581,8 @@ type_new_alloc(type_new_ctx *ctx)
     et->ht_module = NULL;
     et->_ht_tpname = NULL;
 
+    _PyObject_SetDeferredRefcount((PyObject *)et);
+
     return type;
 }
 
