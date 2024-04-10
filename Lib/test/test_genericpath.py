@@ -147,6 +147,7 @@ class GenericTest:
                           expected)
 
         filename = os_helper.TESTFN
+        bfilename = os.fsencode(filename)
         self.addCleanup(os_helper.unlink, filename)
 
         check_exists(filename, False)
@@ -155,11 +156,13 @@ class GenericTest:
         create_file(filename)
 
         check_exists(filename, True)
-        check_exists(filename + '\udfff', False)
+        self.assertIs(self.pathmodule.exists(filename + '\udfff'), False)
+        self.assertIs(self.pathmodule.exists(bfilename + b'\xff'), False)
         check_exists(filename + '\x00', False)
 
         check_lexists(filename, True)
-        check_lexists(filename + '\udfff', False)
+        self.assertIs(self.pathmodule.lexists(filename + '\udfff'), False)
+        self.assertIs(self.pathmodule.lexists(bfilename + b'\xff'), False)
         check_lexists(filename + '\x00', False)
 
     @unittest.skipUnless(hasattr(os, "pipe"), "requires os.pipe()")
