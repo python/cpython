@@ -291,8 +291,8 @@ InstructionSequenceType_add_nested_impl(_PyInstructionSequence *self,
 {
     if (!_PyInstructionSequence_Check(nested)) {
         PyErr_Format(PyExc_TypeError,
-                     "expected an instruction sequence, not '%.100s'",
-                     Py_TYPE(nested)->tp_name);
+                     "expected an instruction sequence, not %T",
+                     Py_TYPE(nested));
         return NULL;
     }
     if (_PyInstructionSequence_AddNested(self, (_PyInstructionSequence*)nested) < 0) {
