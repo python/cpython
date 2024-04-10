@@ -1393,8 +1393,6 @@ static PyMethodDef module_functions[] = {
     {"get_main",                  interp_get_main,
      METH_NOARGS, get_main_doc},
 
-    {"whence",                    _PyCFunction_CAST(interp_whence),
-     METH_VARARGS | METH_KEYWORDS, whence_doc},
     {"is_running",                _PyCFunction_CAST(interp_is_running),
      METH_VARARGS | METH_KEYWORDS, is_running_doc},
     {"get_config",                _PyCFunction_CAST(interp_get_config),
