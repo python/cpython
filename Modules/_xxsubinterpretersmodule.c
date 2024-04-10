@@ -499,7 +499,7 @@ get_whence(PyInterpreterState *interp)
 
 
 static PyInterpreterState *
-resolve_interp(PyObject *idobj, int restricted, const char *op)
+resolve_interp(PyObject *idobj, int restricted, int reqready, const char *op)
 {
     PyInterpreterState *interp;
     if (idobj == NULL) {
@@ -510,6 +510,18 @@ resolve_interp(PyObject *idobj, int restricted, const char *op)
         if (interp == NULL) {
             return NULL;
         }
+    }
+
+    if (reqready && !_PyInterpreterState_IsReady(interp)) {
+        if (idobj == NULL) {
+            PyErr_Format(PyExc_InterpreterError,
+                         "cannot %s current interpreter (not ready)", op);
+        }
+        else {
+            PyErr_Format(PyExc_InterpreterError,
+                         "cannot %s interpreter %R (not ready)", op, idobj);
+        }
+        return NULL;
     }
 
     if (restricted && get_whence(interp) != _PyInterpreterState_WHENCE_STDLIB) {
@@ -619,6 +631,7 @@ interp_create(PyObject *self, PyObject *args, PyObject *kwds)
         _PyErr_ChainExceptions1(exc);
         return NULL;
     }
+    assert(_PyInterpreterState_IsReady(interp));
 
     PyObject *idobj = _PyInterpreterState_GetIDObject(interp);
     if (idobj == NULL) {
@@ -664,7 +677,9 @@ interp_destroy(PyObject *self, PyObject *args, PyObject *kwds)
     }
 
     // Look up the interpreter.
-    PyInterpreterState *interp = resolve_interp(id, restricted, "destroy");
+    int reqready = 0;
+    PyInterpreterState *interp = \
+            resolve_interp(id, restricted, reqready, "destroy");
     if (interp == NULL) {
         return NULL;
     }
@@ -746,6 +761,7 @@ interp_get_current(PyObject *self, PyObject *Py_UNUSED(ignored))
     if (interp == NULL) {
         return NULL;
     }
+    assert(_PyInterpreterState_IsReady(interp));
     return get_summary(interp);
 }
 
@@ -759,6 +775,7 @@ static PyObject *
 interp_get_main(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     PyInterpreterState *interp = _PyInterpreterState_Main();
+    assert(_PyInterpreterState_IsReady(interp));
     return get_summary(interp);
 }
 
@@ -782,8 +799,9 @@ interp_set___main___attrs(PyObject *self, PyObject *args, PyObject *kwargs)
     }
 
     // Look up the interpreter.
-    PyInterpreterState *interp = resolve_interp(id, restricted,
-                                                "update __main__ for");
+    int reqready = 1;
+    PyInterpreterState *interp = \
+            resolve_interp(id, restricted, reqready, "update __main__ for");
     if (interp == NULL) {
         return NULL;
     }
@@ -942,7 +960,9 @@ interp_exec(PyObject *self, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    PyInterpreterState *interp = resolve_interp(id, restricted, "exec code for");
+    int reqready = 1;
+    PyInterpreterState *interp = \
+            resolve_interp(id, restricted, reqready, "exec code for");
     if (interp == NULL) {
         return NULL;
     }
@@ -1004,7 +1024,9 @@ interp_call(PyObject *self, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    PyInterpreterState *interp = resolve_interp(id, restricted, "make a call in");
+    int reqready = 1;
+    PyInterpreterState *interp = \
+            resolve_interp(id, restricted, reqready, "make a call in");
     if (interp == NULL) {
         return NULL;
     }
@@ -1060,7 +1082,9 @@ interp_run_string(PyObject *self, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    PyInterpreterState *interp = resolve_interp(id, restricted, "run a string in");
+    int reqready = 1;
+    PyInterpreterState *interp = \
+            resolve_interp(id, restricted, reqready, "run a string in");
     if (interp == NULL) {
         return NULL;
     }
@@ -1102,8 +1126,9 @@ interp_run_func(PyObject *self, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    PyInterpreterState *interp = resolve_interp(id, restricted,
-                                                "run a function in");
+    int reqready = 1;
+    PyInterpreterState *interp = \
+            resolve_interp(id, restricted, reqready, "run a function in");
     if (interp == NULL) {
         return NULL;
     }
@@ -1172,8 +1197,9 @@ interp_is_running(PyObject *self, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    PyInterpreterState *interp = resolve_interp(id, restricted,
-                                                "check if running for");
+    int reqready = 1;
+    PyInterpreterState *interp = \
+            resolve_interp(id, restricted, reqready, "check if running for");
     if (interp == NULL) {
         return NULL;
     }
@@ -1206,8 +1232,9 @@ interp_get_config(PyObject *self, PyObject *args, PyObject *kwds)
         idobj = NULL;
     }
 
-    PyInterpreterState *interp = resolve_interp(idobj, restricted,
-                                                "get the config of");
+    int reqready = 0;
+    PyInterpreterState *interp = \
+            resolve_interp(idobj, restricted, reqready, "get the config of");
     if (interp == NULL) {
         return NULL;
     }
@@ -1272,7 +1299,9 @@ interp_incref(PyObject *self, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    PyInterpreterState *interp = resolve_interp(id, restricted, "incref");
+    int reqready = 1;
+    PyInterpreterState *interp = \
+            resolve_interp(id, restricted, reqready, "incref");
     if (interp == NULL) {
         return NULL;
     }
@@ -1299,7 +1328,9 @@ interp_decref(PyObject *self, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    PyInterpreterState *interp = resolve_interp(id, restricted, "decref");
+    int reqready = 1;
+    PyInterpreterState *interp = \
+            resolve_interp(id, restricted, reqready, "decref");
     if (interp == NULL) {
         return NULL;
     }

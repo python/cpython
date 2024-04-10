@@ -1896,7 +1896,7 @@ _PyXI_EndInterpreter(PyInterpreterState *interp,
     long whence = _PyInterpreterState_GetWhence(interp);
     assert(whence != _PyInterpreterState_WHENCE_RUNTIME);
     if (whence == _PyInterpreterState_WHENCE_UNKNOWN) {
-        assert(!interp->_ready);
+        assert(!_PyInterpreterState_IsReady(interp));
         PyThreadState *tstate = PyThreadState_New(interp);
         save_tstate = PyThreadState_Swap(tstate);
         _PyInterpreterState_Clear(tstate);

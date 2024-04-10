@@ -317,6 +317,8 @@ PyAPI_FUNC(int) _PyInterpreterState_IDInitref(PyInterpreterState *);
 PyAPI_FUNC(int) _PyInterpreterState_IDIncref(PyInterpreterState *);
 PyAPI_FUNC(void) _PyInterpreterState_IDDecref(PyInterpreterState *);
 
+PyAPI_FUNC(int) _PyInterpreterState_IsReady(PyInterpreterState *interp);
+
 PyAPI_FUNC(long) _PyInterpreterState_GetWhence(PyInterpreterState *interp);
 extern void _PyInterpreterState_SetWhence(
     PyInterpreterState *interp,
