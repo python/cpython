@@ -26,19 +26,19 @@
 #endif
 
 #define PyDate_Check(st, op) PyObject_TypeCheck(op, (st)->PyDateTime_DateType)
-#define PyDate_CheckExact(st, op) Py_IS_TYPE((op, (st)->PyDateTime_DateType)
+#define PyDate_CheckExact(st, op) Py_IS_TYPE(op, (st)->PyDateTime_DateType)
 
 #define PyDateTime_Check(st, op) PyObject_TypeCheck(op, (st)->PyDateTime_DateTimeType)
-#define PyDateTime_CheckExact(st, op) Py_IS_TYPE((op, (st)->PyDateTime_DateTimeType)
+#define PyDateTime_CheckExact(st, op) Py_IS_TYPE(op, (st)->PyDateTime_DateTimeType)
 
 #define PyTime_Check(st, op) PyObject_TypeCheck(op, (st)->PyDateTime_TimeType)
-#define PyTime_CheckExact(st, op) Py_IS_TYPE((op, (st)->PyDateTime_TimeType)
+#define PyTime_CheckExact(st, op) Py_IS_TYPE(op, (st)->PyDateTime_TimeType)
 
 #define PyDelta_Check(st, op) PyObject_TypeCheck(op, (st)->PyDateTime_DeltaType)
-#define PyDelta_CheckExact(st, op) Py_IS_TYPE((op, (st)->PyDateTime_DeltaType)
+#define PyDelta_CheckExact(st, op) Py_IS_TYPE(op, (st)->PyDateTime_DeltaType)
 
 #define PyTZInfo_Check(st, op) PyObject_TypeCheck(op, (st)->PyDateTime_TZInfoType)
-#define PyTZInfo_CheckExact(st, op) Py_IS_TYPE((op, (st)->PyDateTime_TZInfoType)
+#define PyTZInfo_CheckExact(st, op) Py_IS_TYPE(op, (st)->PyDateTime_TZInfoType)
 
 #define PyTimezone_Check(st, op) PyObject_TypeCheck(op, (st)->PyDateTime_TimeZoneType)
 
