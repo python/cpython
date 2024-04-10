@@ -368,13 +368,15 @@ def expanduser(path):
     If user or $HOME is unknown, do nothing."""
     path = os.fspath(path)
     if isinstance(path, bytes):
+        seps = b'\\/'
         tilde = b'~'
     else:
+        seps = '\\/'
         tilde = '~'
     if not path.startswith(tilde):
         return path
     i, n = 1, len(path)
-    while i < n and path[i] not in _get_bothseps(path):
+    while i < n and path[i] not in seps:
         i += 1
 
     if 'USERPROFILE' in os.environ:
