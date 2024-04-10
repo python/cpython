@@ -3689,7 +3689,6 @@ _imp__override_multi_interp_extensions_check_impl(PyObject *module,
                                                   int override)
 /*[clinic end generated code: output=3ff043af52bbf280 input=e086a2ea181f92ae]*/
 {
-    printf("_imp__override_multi_interp_extensions_check_impl: %d\n", override);
     PyInterpreterState *interp = _PyInterpreterState_GET();
     if (_Py_IsMainInterpreter(interp)) {
         PyErr_SetString(PyExc_RuntimeError,
