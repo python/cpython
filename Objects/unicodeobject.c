@@ -2468,6 +2468,7 @@ unicode_fromformat_arg(_PyUnicodeWriter *writer,
         switch (*f++) {
         case '-': flags |= F_LJUST; continue;
         case '0': flags |= F_ZERO; continue;
+        case '#': flags |= F_ALT; continue;
         }
         f--;
         break;
@@ -2797,9 +2798,8 @@ unicode_fromformat_arg(_PyUnicodeWriter *writer,
         PyTypeObject *type = (PyTypeObject *)Py_NewRef(Py_TYPE(obj));
 
         PyObject *type_name;
-        if (f[1] == '#') {
+        if (flags & F_ALT) {
             type_name = _PyType_GetFullyQualifiedName(type, ':');
-            f++;
         }
         else {
             type_name = PyType_GetFullyQualifiedName(type);
@@ -2830,9 +2830,8 @@ unicode_fromformat_arg(_PyUnicodeWriter *writer,
         PyTypeObject *type = (PyTypeObject*)type_raw;
 
         PyObject *type_name;
-        if (f[1] == '#') {
+        if (flags & F_ALT) {
             type_name = _PyType_GetFullyQualifiedName(type, ':');
-            f++;
         }
         else {
             type_name = PyType_GetFullyQualifiedName(type);
@@ -14946,7 +14945,7 @@ _PyUnicode_InternInPlace(PyInterpreterState *interp, PyObject **p)
        decrements to these objects will not be registered so they
        need to be accounted for in here. */
     for (Py_ssize_t i = 0; i < Py_REFCNT(s) - 2; i++) {
-        _Py_DecRefTotal(_PyInterpreterState_GET());
+        _Py_DecRefTotal(_PyThreadState_GET());
     }
 #endif
     _Py_SetImmortal(s);

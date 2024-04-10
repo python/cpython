@@ -79,7 +79,8 @@ def join(a, *p):
     try:
         if not p:
             path[:0] + sep  #23780: Ensure compatible data type even if p is null.
-        for b in map(os.fspath, p):
+        for b in p:
+            b = os.fspath(b)
             if b.startswith(sep):
                 path = b
             elif not path or path.endswith(sep):
@@ -430,11 +431,6 @@ symbolic links encountered in the path."""
     # the same links.
     seen = {}
 
-    # Whether we're calling lstat() and readlink() to resolve symlinks. If we
-    # encounter an OSError for a symlink loop in non-strict mode, this is
-    # switched off.
-    querying = True
-
     while rest:
         name = rest.pop()
         if name is None:
@@ -452,9 +448,6 @@ symbolic links encountered in the path."""
             newpath = path + name
         else:
             newpath = path + sep + name
-        if not querying:
-            path = newpath
-            continue
         try:
             st = os.lstat(newpath)
             if not stat.S_ISLNK(st.st_mode):
@@ -476,11 +469,8 @@ symbolic links encountered in the path."""
             if strict:
                 # Raise OSError(errno.ELOOP)
                 os.stat(newpath)
-            else:
-                # Return already resolved part + rest of the path unchanged.
-                path = newpath
-                querying = False
-                continue
+            path = newpath
+            continue
         seen[newpath] = None # not resolved symlink
         target = os.readlink(newpath)
         if target.startswith(sep):
@@ -502,10 +492,10 @@ supports_unicode_filenames = (sys.platform == 'darwin')
 def relpath(path, start=None):
     """Return a relative version of a path"""
 
+    path = os.fspath(path)
     if not path:
         raise ValueError("no path specified")
 
-    path = os.fspath(path)
     if isinstance(path, bytes):
         curdir = b'.'
         sep = b'/'
