@@ -56,7 +56,7 @@ def iglob(pathname, *, root_dir=None, dir_fd=None, recursive=False,
         # Non-relative pattern. The anchor is guaranteed to exist unless it
         # has a Windows drive component.
         exists = not os.path.splitdrive(anchor)[0]
-        paths = select(anchor, anchor, dir_fd, exists)
+        paths = select(anchor, dir_fd, anchor, exists)
     else:
         # Relative pattern.
         if root_dir is None:
@@ -104,7 +104,7 @@ def _relative_glob(select, dirname, dir_fd=None):
     """
     dirname = _Globber.add_slash(dirname)
     slicer = operator.itemgetter(slice(len(dirname), None))
-    return map(slicer, select(dirname, dirname, dir_fd))
+    return map(slicer, select(dirname, dir_fd, dirname))
 
 magic_check = re.compile('([*?[])')
 magic_check_bytes = re.compile(b'([*?[])')
