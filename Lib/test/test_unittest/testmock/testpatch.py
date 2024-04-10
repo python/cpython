@@ -1996,7 +1996,7 @@ class PatchTest(unittest.TestCase):
         self.assertEqual(Foo().test(), 1)
         self.assertEqual(Bar().test(), 2)
         self.assertEqual(Baz().test(), 3)
-    
+
 
     def test_method_patched_by_subclass2(self):
         class Foo:
