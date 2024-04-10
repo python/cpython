@@ -101,6 +101,11 @@ def collect_in_thread(period=0.0001):
             t.join()
 
 
+skip_if_tsan_and_gil_disabled = unittest.skipIf(
+    support.check_sanitizer(thread=True) and support.Py_GIL_DISABLED,
+    "Test is prohibitively slow with TSAN enabled and the GIL disabled")
+
+
 class ReferencesTestCase(TestBase):
 
     def test_basic_ref(self):
@@ -1877,6 +1882,7 @@ class MappingTestCase(TestBase):
         self.assertRegex(repr(dict), '<WeakKeyDictionary at 0x.*>')
 
     @threading_helper.requires_working_threading()
+    @skip_if_tsan_and_gil_disabled
     def test_threaded_weak_valued_setdefault(self):
         d = weakref.WeakValueDictionary()
         with collect_in_thread():
@@ -1886,6 +1892,7 @@ class MappingTestCase(TestBase):
                 del x
 
     @threading_helper.requires_working_threading()
+    @skip_if_tsan_and_gil_disabled
     def test_threaded_weak_valued_pop(self):
         d = weakref.WeakValueDictionary()
         with collect_in_thread():
@@ -1895,6 +1902,7 @@ class MappingTestCase(TestBase):
                 self.assertIsNot(x, None)  # we never put None in there!
 
     @threading_helper.requires_working_threading()
+    @skip_if_tsan_and_gil_disabled
     def test_threaded_weak_valued_consistency(self):
         # Issue #28427: old keys should not remove new values from
         # WeakValueDictionary when collecting from another thread.
