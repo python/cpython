@@ -1,0 +1,1 @@
+Speed up :meth:`pathlib.Path.glob` by working with strings internally.
