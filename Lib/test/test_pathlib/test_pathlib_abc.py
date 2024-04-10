@@ -1856,7 +1856,7 @@ class DummyPathTest(DummyPurePathTest):
     def test_rglob_posix(self):
         P = self.cls
         p = P(self.base, "dirC")
-        q = p / "dirC" / "FILEd"
+        q = p / "dirC" / "dirD" / "FILEd"
         given = set(p.rglob("FILEd"))
         expect = {q} if q.exists() else set()
         self.assertEqual(given, expect)
@@ -1934,7 +1934,7 @@ class DummyPathTest(DummyPurePathTest):
             self.assertEqual(set(p.glob("xyzzy/..")), set())
         else:
             # ".." segments are normalized first on Windows, so this path is stat()able.
-            self.assertEqual(set(p.glob("xyzzy/..")), { P(self.base, "zyzzy", "..") })
+            self.assertEqual(set(p.glob("xyzzy/..")), { P(self.base, "xyzzy", "..") })
         self.assertEqual(set(p.glob("/".join([".."] * 50))), { P(self.base, *[".."] * 50)})
 
     @needs_symlinks
