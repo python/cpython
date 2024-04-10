@@ -1872,6 +1872,20 @@ void
 _PyXI_EndInterpreter(PyInterpreterState *interp,
                      PyThreadState *tstate, PyThreadState **p_save_tstate)
 {
+    long whence = _PyInterpreterState_GetWhence(interp);
+    assert(whence != _PyInterpreterState_WHENCE_RUNTIME);
+
+    if (!_PyInterpreterState_IsReady(interp)) {
+        assert(whence == _PyInterpreterState_WHENCE_UNKNOWN);
+        // PyInterpreterState_Clear() requires the GIL,
+        // which a not-ready does not have, so we don't clear it.
+        // That means there may be leaks here until clearing the
+        // interpreter is fixed.
+        PyInterpreterState_Delete(interp);
+        return;
+    }
+    assert(whence != _PyInterpreterState_WHENCE_UNKNOWN);
+
     PyThreadState *save_tstate = NULL;
     PyThreadState *cur_tstate = PyThreadState_GET();
     if (tstate == NULL) {
@@ -1893,18 +1907,7 @@ _PyXI_EndInterpreter(PyInterpreterState *interp,
         }
     }
 
-    long whence = _PyInterpreterState_GetWhence(interp);
-    assert(whence != _PyInterpreterState_WHENCE_RUNTIME);
-    if (whence == _PyInterpreterState_WHENCE_UNKNOWN) {
-        assert(!_PyInterpreterState_IsReady(interp));
-        PyThreadState *tstate = PyThreadState_New(interp);
-        save_tstate = PyThreadState_Swap(tstate);
-        _PyInterpreterState_Clear(tstate);
-        PyInterpreterState_Delete(interp);
-    }
-    else {
-        Py_EndInterpreter(tstate);
-    }
+    Py_EndInterpreter(tstate);
 
     if (p_save_tstate != NULL) {
         save_tstate = *p_save_tstate;

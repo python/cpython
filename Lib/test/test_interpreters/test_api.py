@@ -1494,7 +1494,7 @@ class LowLevelTests(TestBase):
             self.assertEqual(whence, _interpreters.WHENCE_STDLIB)
 
         for orig, name in {
-            # XXX Also check WHENCE_UNKNOWN.
+            _interpreters.WHENCE_UNKNOWN: 'not ready',
             _interpreters.WHENCE_LEGACY_CAPI: 'legacy C-API',
             _interpreters.WHENCE_CAPI: 'C-API',
             _interpreters.WHENCE_XI: 'cross-interpreter C-API',
