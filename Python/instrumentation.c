@@ -2287,7 +2287,7 @@ error:
 
 
 static int
-capi_call_instrumentation(PyMonitoringState *state, PyObject *codelike, int offset,
+capi_call_instrumentation(PyMonitoringState *state, PyObject *codelike, int32_t offset,
                           PyObject **args, Py_ssize_t nargs, int event)
 {
     PyThreadState *tstate = _PyThreadState_GET();
@@ -2368,7 +2368,7 @@ PyMonitoring_ExitScope(void)
 }
 
 int
-_PyMonitoring_FirePyStartEvent(PyMonitoringState *state, PyObject *codelike, int offset)
+_PyMonitoring_FirePyStartEvent(PyMonitoringState *state, PyObject *codelike, int32_t offset)
 {
     assert(state->active);
     PyObject *args[3] = { NULL, NULL, NULL };
