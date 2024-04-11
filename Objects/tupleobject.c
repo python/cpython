@@ -895,7 +895,6 @@ _PyTuple_Resize(PyObject **pv, Py_ssize_t newsize)
 {
     PyTupleObject *v;
     PyTupleObject *sv;
-    Py_ssize_t i;
     Py_ssize_t oldsize;
 
     v = (PyTupleObject *) *pv;
@@ -934,7 +933,7 @@ _PyTuple_Resize(PyObject **pv, Py_ssize_t newsize)
     _Py_ForgetReference((PyObject *) v);
 #endif
     /* DECREF items deleted by shrinkage */
-    for (i = newsize; i < oldsize; i++) {
+    for (Py_ssize_t i = newsize; i < oldsize; i++) {
         Py_CLEAR(v->ob_item[i]);
     }
     sv = PyObject_GC_Resize(PyTupleObject, v, newsize);
@@ -947,10 +946,10 @@ _PyTuple_Resize(PyObject **pv, Py_ssize_t newsize)
         return -1;
     }
     _Py_NewReferenceNoTotal((PyObject *) sv);
-    /* Zero out items added by growing */
-    if (newsize > oldsize)
-        memset(&sv->ob_item[oldsize], 0,
-               sizeof(*sv->ob_item) * (newsize - oldsize));
+    /* Set items added by growing to None */
+    for (Py_ssize_t i = oldsize; i < newsize; i++) {
+        sv->ob_item[i] = Py_None;
+    }
     *pv = (PyObject *) sv;
     _PyObject_GC_TRACK(sv);
     return 0;
