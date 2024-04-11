@@ -3187,7 +3187,7 @@ _PyList_AsTupleStealItems(PyObject *v)
         return PyTuple_New(0);
     }
     Py_BEGIN_CRITICAL_SECTION(self);
-    ret = _PyTuple_FromNonEmptyArraySteal(self->ob_item, Py_SIZE(v));
+    ret = _PyTuple_FromArraySteal(self->ob_item, Py_SIZE(v));
     Py_SET_SIZE(v, 0);
     Py_END_CRITICAL_SECTION();
     return ret;
