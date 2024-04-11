@@ -3434,8 +3434,8 @@ class MultiSignature(Signature):
             return True
         if isinstance(other, MultiSignature):
             return self._signatures == other._signatures
-        if len(self._signatures) == 1 and isinstance(other, Signature):
-            return self._signatures[0] == other
+        if isinstance(other, Signature):
+            return len(self._signatures) == 1 and self._signatures[0] == other
         return NotImplemented
 
     def bind(self, /, *args, **kwargs):
