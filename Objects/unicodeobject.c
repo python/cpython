@@ -14626,13 +14626,8 @@ as_const_char(PyObject *obj, const char *name)
                      name, obj);
         return NULL;
     }
-    Py_ssize_t sz;
-    const char *str = PyUnicode_AsUTF8AndSize(obj, &sz);
+    const char *str = _PyUnicode_AsUTF8NoNUL(obj);
     if (str == NULL) {
-        return NULL;
-    }
-    if (strlen(str) != (size_t)sz) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
         return NULL;
     }
     return str;
@@ -14642,27 +14637,14 @@ static PyObject *
 fallback_to_tp_call(PyObject *type, Py_ssize_t nargs, Py_ssize_t nkwargs,
                     PyObject *const *args, PyObject *kwnames)
 {
-    PyObject *tuple = PyTuple_New(nargs);
+    PyObject *tuple = _PyTuple_FromArray(args, nargs);
     if (tuple == NULL) {
         return NULL;
     }
-    for (Py_ssize_t i = 0; i < nargs; i++) {
-        PyObject *value = Py_NewRef(args[i]);
-        PyTuple_SET_ITEM(tuple, i, value);
-    }
-    PyObject *dict = PyDict_New();
+    PyObject *dict = _PyStack_AsDict(args + nargs, kwnames);
     if (dict == NULL) {
         Py_DECREF(tuple);
         return NULL;
-    }
-    for (Py_ssize_t j = 0; j < nkwargs; j++) {
-        PyObject *key = PyTuple_GET_ITEM(kwnames, j);
-        PyObject *value = args[nargs + j];
-        if (PyDict_SetItem(dict, key, value) < 0) {
-            Py_DECREF(tuple);
-            Py_DECREF(dict);
-            return NULL;
-        }
     }
     return unicode_new(_PyType_CAST(type), tuple, dict);
 }
