@@ -87,101 +87,101 @@ def declare_parser(
     return libclinic.normalize_snippet(declarations)
 
 
+NO_VARARG: Final[str] = "PY_SSIZE_T_MAX"
+PARSER_PROTOTYPE_KEYWORD: Final[str] = libclinic.normalize_snippet("""
+    static PyObject *
+    {c_basename}({self_type}{self_name}, PyObject *args, PyObject *kwargs)
+""")
+PARSER_PROTOTYPE_KEYWORD___INIT__: Final[str] = libclinic.normalize_snippet("""
+    static int
+    {c_basename}({self_type}{self_name}, PyObject *args, PyObject *kwargs)
+""")
+PARSER_PROTOTYPE_VARARGS: Final[str] = libclinic.normalize_snippet("""
+    static PyObject *
+    {c_basename}({self_type}{self_name}, PyObject *args)
+""")
+PARSER_PROTOTYPE_FASTCALL: Final[str] = libclinic.normalize_snippet("""
+    static PyObject *
+    {c_basename}({self_type}{self_name}, PyObject *const *args, Py_ssize_t nargs)
+""")
+PARSER_PROTOTYPE_FASTCALL_KEYWORDS: Final[str] = libclinic.normalize_snippet("""
+    static PyObject *
+    {c_basename}({self_type}{self_name}, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+""")
+PARSER_PROTOTYPE_DEF_CLASS: Final[str] = libclinic.normalize_snippet("""
+    static PyObject *
+    {c_basename}({self_type}{self_name}, PyTypeObject *{defining_class_name}, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+""")
+PARSER_PROTOTYPE_NOARGS: Final[str] = libclinic.normalize_snippet("""
+    static PyObject *
+    {c_basename}({self_type}{self_name}, PyObject *Py_UNUSED(ignored))
+""")
+PARSER_PROTOTYPE_GETTER: Final[str] = libclinic.normalize_snippet("""
+    static PyObject *
+    {c_basename}({self_type}{self_name}, void *Py_UNUSED(context))
+""")
+PARSER_PROTOTYPE_SETTER: Final[str] = libclinic.normalize_snippet("""
+    static int
+    {c_basename}({self_type}{self_name}, PyObject *value, void *Py_UNUSED(context))
+""")
+METH_O_PROTOTYPE: Final[str] = libclinic.normalize_snippet("""
+    static PyObject *
+    {c_basename}({impl_parameters})
+""")
+DOCSTRING_PROTOTYPE_VAR: Final[str] = libclinic.normalize_snippet("""
+    PyDoc_VAR({c_basename}__doc__);
+""")
+DOCSTRING_PROTOTYPE_STRVAR: Final[str] = libclinic.normalize_snippet("""
+    PyDoc_STRVAR({c_basename}__doc__,
+    {docstring});
+""")
+GETSET_DOCSTRING_PROTOTYPE_STRVAR: Final[str] = libclinic.normalize_snippet("""
+    PyDoc_STRVAR({getset_basename}__doc__,
+    {docstring});
+    #define {getset_basename}_HAS_DOCSTR
+""")
+IMPL_DEFINITION_PROTOTYPE: Final[str] = libclinic.normalize_snippet("""
+    static {impl_return_type}
+    {c_basename}_impl({impl_parameters})
+""")
+METHODDEF_PROTOTYPE_DEFINE: Final[str] = libclinic.normalize_snippet(r"""
+    #define {methoddef_name}    \
+        {{"{name}", {methoddef_cast}{c_basename}{methoddef_cast_end}, {methoddef_flags}, {c_basename}__doc__}},
+""")
+GETTERDEF_PROTOTYPE_DEFINE: Final[str] = libclinic.normalize_snippet(r"""
+    #if defined({getset_basename}_HAS_DOCSTR)
+    #  define {getset_basename}_DOCSTR {getset_basename}__doc__
+    #else
+    #  define {getset_basename}_DOCSTR NULL
+    #endif
+    #if defined({getset_name}_GETSETDEF)
+    #  undef {getset_name}_GETSETDEF
+    #  define {getset_name}_GETSETDEF {{"{name}", (getter){getset_basename}_get, (setter){getset_basename}_set, {getset_basename}_DOCSTR}},
+    #else
+    #  define {getset_name}_GETSETDEF {{"{name}", (getter){getset_basename}_get, NULL, {getset_basename}_DOCSTR}},
+    #endif
+""")
+SETTERDEF_PROTOTYPE_DEFINE: Final[str] = libclinic.normalize_snippet(r"""
+    #if defined({getset_name}_HAS_DOCSTR)
+    #  define {getset_basename}_DOCSTR {getset_basename}__doc__
+    #else
+    #  define {getset_basename}_DOCSTR NULL
+    #endif
+    #if defined({getset_name}_GETSETDEF)
+    #  undef {getset_name}_GETSETDEF
+    #  define {getset_name}_GETSETDEF {{"{name}", (getter){getset_basename}_get, (setter){getset_basename}_set, {getset_basename}_DOCSTR}},
+    #else
+    #  define {getset_name}_GETSETDEF {{"{name}", NULL, (setter){getset_basename}_set, NULL}},
+    #endif
+""")
+METHODDEF_PROTOTYPE_IFNDEF: Final[str] = libclinic.normalize_snippet("""
+    #ifndef {methoddef_name}
+        #define {methoddef_name}
+    #endif /* !defined({methoddef_name}) */
+""")
+
+
 class ParseArgsCodeGen:
-    NO_VARARG: Final[str] = "PY_SSIZE_T_MAX"
-
-    PARSER_PROTOTYPE_KEYWORD: Final[str] = libclinic.normalize_snippet("""
-        static PyObject *
-        {c_basename}({self_type}{self_name}, PyObject *args, PyObject *kwargs)
-    """)
-    PARSER_PROTOTYPE_KEYWORD___INIT__: Final[str] = libclinic.normalize_snippet("""
-        static int
-        {c_basename}({self_type}{self_name}, PyObject *args, PyObject *kwargs)
-    """)
-    PARSER_PROTOTYPE_VARARGS: Final[str] = libclinic.normalize_snippet("""
-        static PyObject *
-        {c_basename}({self_type}{self_name}, PyObject *args)
-    """)
-    PARSER_PROTOTYPE_FASTCALL: Final[str] = libclinic.normalize_snippet("""
-        static PyObject *
-        {c_basename}({self_type}{self_name}, PyObject *const *args, Py_ssize_t nargs)
-    """)
-    PARSER_PROTOTYPE_FASTCALL_KEYWORDS: Final[str] = libclinic.normalize_snippet("""
-        static PyObject *
-        {c_basename}({self_type}{self_name}, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
-    """)
-    PARSER_PROTOTYPE_DEF_CLASS: Final[str] = libclinic.normalize_snippet("""
-        static PyObject *
-        {c_basename}({self_type}{self_name}, PyTypeObject *{defining_class_name}, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
-    """)
-    PARSER_PROTOTYPE_NOARGS: Final[str] = libclinic.normalize_snippet("""
-        static PyObject *
-        {c_basename}({self_type}{self_name}, PyObject *Py_UNUSED(ignored))
-    """)
-    PARSER_PROTOTYPE_GETTER: Final[str] = libclinic.normalize_snippet("""
-        static PyObject *
-        {c_basename}({self_type}{self_name}, void *Py_UNUSED(context))
-    """)
-    PARSER_PROTOTYPE_SETTER: Final[str] = libclinic.normalize_snippet("""
-        static int
-        {c_basename}({self_type}{self_name}, PyObject *value, void *Py_UNUSED(context))
-    """)
-    METH_O_PROTOTYPE: Final[str] = libclinic.normalize_snippet("""
-        static PyObject *
-        {c_basename}({impl_parameters})
-    """)
-    DOCSTRING_PROTOTYPE_VAR: Final[str] = libclinic.normalize_snippet("""
-        PyDoc_VAR({c_basename}__doc__);
-    """)
-    DOCSTRING_PROTOTYPE_STRVAR: Final[str] = libclinic.normalize_snippet("""
-        PyDoc_STRVAR({c_basename}__doc__,
-        {docstring});
-    """)
-    GETSET_DOCSTRING_PROTOTYPE_STRVAR: Final[str] = libclinic.normalize_snippet("""
-        PyDoc_STRVAR({getset_basename}__doc__,
-        {docstring});
-        #define {getset_basename}_HAS_DOCSTR
-    """)
-    IMPL_DEFINITION_PROTOTYPE: Final[str] = libclinic.normalize_snippet("""
-        static {impl_return_type}
-        {c_basename}_impl({impl_parameters})
-    """)
-    METHODDEF_PROTOTYPE_DEFINE: Final[str] = libclinic.normalize_snippet(r"""
-        #define {methoddef_name}    \
-            {{"{name}", {methoddef_cast}{c_basename}{methoddef_cast_end}, {methoddef_flags}, {c_basename}__doc__}},
-    """)
-    GETTERDEF_PROTOTYPE_DEFINE: Final[str] = libclinic.normalize_snippet(r"""
-        #if defined({getset_basename}_HAS_DOCSTR)
-        #  define {getset_basename}_DOCSTR {getset_basename}__doc__
-        #else
-        #  define {getset_basename}_DOCSTR NULL
-        #endif
-        #if defined({getset_name}_GETSETDEF)
-        #  undef {getset_name}_GETSETDEF
-        #  define {getset_name}_GETSETDEF {{"{name}", (getter){getset_basename}_get, (setter){getset_basename}_set, {getset_basename}_DOCSTR}},
-        #else
-        #  define {getset_name}_GETSETDEF {{"{name}", (getter){getset_basename}_get, NULL, {getset_basename}_DOCSTR}},
-        #endif
-    """)
-    SETTERDEF_PROTOTYPE_DEFINE: Final[str] = libclinic.normalize_snippet(r"""
-        #if defined({getset_name}_HAS_DOCSTR)
-        #  define {getset_basename}_DOCSTR {getset_basename}__doc__
-        #else
-        #  define {getset_basename}_DOCSTR NULL
-        #endif
-        #if defined({getset_name}_GETSETDEF)
-        #  undef {getset_name}_GETSETDEF
-        #  define {getset_name}_GETSETDEF {{"{name}", (getter){getset_basename}_get, (setter){getset_basename}_set, {getset_basename}_DOCSTR}},
-        #else
-        #  define {getset_name}_GETSETDEF {{"{name}", NULL, (setter){getset_basename}_set, NULL}},
-        #endif
-    """)
-    METHODDEF_PROTOTYPE_IFNDEF: Final[str] = libclinic.normalize_snippet("""
-        #ifndef {methoddef_name}
-            #define {methoddef_name}
-        #endif /* !defined({methoddef_name}) */
-    """)
-
     func: Function
     codegen: CodeGen
     limited_capi: bool = False
@@ -259,7 +259,7 @@ class ParseArgsCodeGen:
                 self.pseudo_args += 1
                 self.vararg = i - 1
             else:
-                if self.vararg == self.NO_VARARG:
+                if self.vararg == NO_VARARG:
                     self.max_pos = i
                 if p.is_positional_only():
                     self.pos_only = i
@@ -287,23 +287,23 @@ class ParseArgsCodeGen:
     def select_prototypes(self) -> None:
         self.docstring_prototype = ''
         self.docstring_definition = ''
-        self.methoddef_define = self.METHODDEF_PROTOTYPE_DEFINE
+        self.methoddef_define = METHODDEF_PROTOTYPE_DEFINE
         self.return_value_declaration = "PyObject *return_value = NULL;"
 
         if self.is_new_or_init() and not self.func.docstring:
             pass
         elif self.func.kind is GETTER:
-            self.methoddef_define = self.GETTERDEF_PROTOTYPE_DEFINE
+            self.methoddef_define = GETTERDEF_PROTOTYPE_DEFINE
             if self.func.docstring:
-                self.docstring_definition = self.GETSET_DOCSTRING_PROTOTYPE_STRVAR
+                self.docstring_definition = GETSET_DOCSTRING_PROTOTYPE_STRVAR
         elif self.func.kind is SETTER:
             if self.func.docstring:
                 fail("docstrings are only supported for @getter, not @setter")
             self.return_value_declaration = "int {return_value};"
-            self.methoddef_define = self.SETTERDEF_PROTOTYPE_DEFINE
+            self.methoddef_define = SETTERDEF_PROTOTYPE_DEFINE
         else:
-            self.docstring_prototype = self.DOCSTRING_PROTOTYPE_VAR
-            self.docstring_definition = self.DOCSTRING_PROTOTYPE_STRVAR
+            self.docstring_prototype = DOCSTRING_PROTOTYPE_VAR
+            self.docstring_definition = DOCSTRING_PROTOTYPE_STRVAR
 
     def init_limited_capi(self) -> None:
         self.limited_capi = self.codegen.limited_capi
@@ -352,21 +352,21 @@ class ParseArgsCodeGen:
         parser_code: list[str] | None
         simple_return = self.use_simple_return()
         if self.func.kind is GETTER:
-            self.parser_prototype = self.PARSER_PROTOTYPE_GETTER
+            self.parser_prototype = PARSER_PROTOTYPE_GETTER
             parser_code = []
         elif self.func.kind is SETTER:
-            self.parser_prototype = self.PARSER_PROTOTYPE_SETTER
+            self.parser_prototype = PARSER_PROTOTYPE_SETTER
             parser_code = []
         elif not self.requires_defining_class:
             # no self.parameters, METH_NOARGS
             self.flags = "METH_NOARGS"
-            self.parser_prototype = self.PARSER_PROTOTYPE_NOARGS
+            self.parser_prototype = PARSER_PROTOTYPE_NOARGS
             parser_code = []
         else:
             assert self.fastcall
 
             self.flags = "METH_METHOD|METH_FASTCALL|METH_KEYWORDS"
-            self.parser_prototype = self.PARSER_PROTOTYPE_DEF_CLASS
+            self.parser_prototype = PARSER_PROTOTYPE_DEF_CLASS
             return_error = ('return NULL;' if simple_return
                             else 'goto exit;')
             parser_code = [libclinic.normalize_snippet("""
@@ -391,7 +391,7 @@ class ParseArgsCodeGen:
 
         if (isinstance(self.converters[0], object_converter) and
             self.converters[0].format_unit == 'O'):
-            meth_o_prototype = self.METH_O_PROTOTYPE
+            meth_o_prototype = METH_O_PROTOTYPE
 
             if self.use_simple_return():
                 # maps perfectly to METH_O, doesn't need a return converter.
@@ -435,7 +435,7 @@ class ParseArgsCodeGen:
         #  in a big switch statement)
 
         self.flags = "METH_VARARGS"
-        self.parser_prototype = self.PARSER_PROTOTYPE_VARARGS
+        self.parser_prototype = PARSER_PROTOTYPE_VARARGS
         parser_code = '    {option_group_parsing}'
         self.parser_body(parser_code)
 
@@ -445,7 +445,7 @@ class ParseArgsCodeGen:
             # we only need one call to _PyArg_ParseStack
 
             self.flags = "METH_FASTCALL"
-            self.parser_prototype = self.PARSER_PROTOTYPE_FASTCALL
+            self.parser_prototype = PARSER_PROTOTYPE_FASTCALL
             nargs = 'nargs'
             argname_fmt = 'args[%d]'
         else:
@@ -453,7 +453,7 @@ class ParseArgsCodeGen:
             # we only need one call to PyArg_ParseTuple
 
             self.flags = "METH_VARARGS"
-            self.parser_prototype = self.PARSER_PROTOTYPE_VARARGS
+            self.parser_prototype = PARSER_PROTOTYPE_VARARGS
             if self.limited_capi:
                 nargs = 'PyTuple_Size(args)'
                 argname_fmt = 'PyTuple_GetItem(args, %d)'
@@ -462,7 +462,7 @@ class ParseArgsCodeGen:
                 argname_fmt = 'PyTuple_GET_ITEM(args, %d)'
 
         left_args = f"{nargs} - {self.max_pos}"
-        max_args = self.NO_VARARG if (self.vararg != self.NO_VARARG) else self.max_pos
+        max_args = NO_VARARG if (self.vararg != NO_VARARG) else self.max_pos
         if self.limited_capi:
             parser_code = []
             if nargs != 'nargs':
@@ -488,7 +488,7 @@ class ParseArgsCodeGen:
                         }}}}
                         """,
                         indent=4))
-                if max_args != self.NO_VARARG:
+                if max_args != NO_VARARG:
                     pl = '' if max_args == 1 else 's'
                     parser_code.append(libclinic.normalize_snippet(f"""
                         if ({nargs} > {max_args}) {{{{
@@ -573,7 +573,7 @@ class ParseArgsCodeGen:
                     """, indent=4)]
             else:
                 self.flags = "METH_VARARGS"
-                self.parser_prototype = self.PARSER_PROTOTYPE_VARARGS
+                self.parser_prototype = PARSER_PROTOTYPE_VARARGS
                 parser_code = [libclinic.normalize_snippet("""
                     if (!PyArg_ParseTuple(args, "{format_units}:{name}",
                         {parse_arguments})) {{
@@ -594,7 +594,7 @@ class ParseArgsCodeGen:
 
         has_optional_kw = (
             max(self.pos_only, self.min_pos) + self.min_kw_only
-            < len(self.converters) - int(self.vararg != self.NO_VARARG)
+            < len(self.converters) - int(self.vararg != NO_VARARG)
         )
 
         use_parser_code = True
@@ -603,7 +603,7 @@ class ParseArgsCodeGen:
             use_parser_code = False
             self.fastcall = False
         else:
-            if self.vararg == self.NO_VARARG:
+            if self.vararg == NO_VARARG:
                 self.codegen.add_include('pycore_modsupport.h',
                                          '_PyArg_UnpackKeywords()')
                 args_declaration = "_PyArg_UnpackKeywords", "%s, %s, %s" % (
@@ -625,7 +625,7 @@ class ParseArgsCodeGen:
 
             if self.fastcall:
                 self.flags = "METH_FASTCALL|METH_KEYWORDS"
-                self.parser_prototype = self.PARSER_PROTOTYPE_FASTCALL_KEYWORDS
+                self.parser_prototype = PARSER_PROTOTYPE_FASTCALL_KEYWORDS
                 argname_fmt = 'args[%d]'
                 self.declarations = declare_parser(self.func, codegen=self.codegen)
                 self.declarations += "\nPyObject *argsbuf[%s];" % len(self.converters)
@@ -640,7 +640,7 @@ class ParseArgsCodeGen:
             else:
                 # positional-or-keyword arguments
                 self.flags = "METH_VARARGS|METH_KEYWORDS"
-                self.parser_prototype = self.PARSER_PROTOTYPE_KEYWORD
+                self.parser_prototype = PARSER_PROTOTYPE_KEYWORD
                 argname_fmt = 'fastargs[%d]'
                 self.declarations = declare_parser(self.func, codegen=self.codegen)
                 self.declarations += "\nPyObject *argsbuf[%s];" % len(self.converters)
@@ -657,7 +657,7 @@ class ParseArgsCodeGen:
 
         if self.requires_defining_class:
             self.flags = 'METH_METHOD|' + self.flags
-            self.parser_prototype = self.PARSER_PROTOTYPE_DEF_CLASS
+            self.parser_prototype = PARSER_PROTOTYPE_DEF_CLASS
 
         if use_parser_code:
             if deprecated_keywords:
@@ -702,7 +702,7 @@ class ParseArgsCodeGen:
                     else:
                         label = 'skip_optional_kwonly'
                         first_opt = self.max_pos + self.min_kw_only
-                        if self.vararg != self.NO_VARARG:
+                        if self.vararg != NO_VARARG:
                             first_opt += 1
                     if i == first_opt:
                         add_label = label
@@ -739,7 +739,7 @@ class ParseArgsCodeGen:
                 # positional-or-keyword arguments
                 assert not self.fastcall
                 self.flags = "METH_VARARGS|METH_KEYWORDS"
-                self.parser_prototype = self.PARSER_PROTOTYPE_KEYWORD
+                self.parser_prototype = PARSER_PROTOTYPE_KEYWORD
                 parser_code = [libclinic.normalize_snippet("""
                     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "{format_units}:{name}", _keywords,
                         {parse_arguments}))
@@ -797,10 +797,10 @@ class ParseArgsCodeGen:
         self.methoddef_define = ''
 
         if self.func.kind is METHOD_NEW:
-            self.parser_prototype = self.PARSER_PROTOTYPE_KEYWORD
+            self.parser_prototype = PARSER_PROTOTYPE_KEYWORD
         else:
             self.return_value_declaration = "int return_value = -1;"
-            self.parser_prototype = self.PARSER_PROTOTYPE_KEYWORD___INIT__
+            self.parser_prototype = PARSER_PROTOTYPE_KEYWORD___INIT__
 
         fields: list[str] = list(self.parser_body_fields)
         parses_positional = 'METH_NOARGS' not in self.flags
@@ -859,7 +859,7 @@ class ParseArgsCodeGen:
             self.cpp_endif = "#endif /* " + conditional + " */"
 
             if self.methoddef_define and self.codegen.add_ifndef_symbol(self.func.full_name):
-                self.methoddef_ifndef = self.METHODDEF_PROTOTYPE_IFNDEF
+                self.methoddef_ifndef = METHODDEF_PROTOTYPE_IFNDEF
 
     def finalize(self, clang: CLanguage) -> None:
         # add ';' to the end of self.parser_prototype and self.impl_prototype
@@ -913,7 +913,7 @@ class ParseArgsCodeGen:
         self.parser_prototype = ""
         self.parser_definition = ""
         self.impl_prototype = None
-        self.impl_definition = self.IMPL_DEFINITION_PROTOTYPE
+        self.impl_definition = IMPL_DEFINITION_PROTOTYPE
 
         # parser_body_fields remembers the fields passed in to the
         # previous call to parser_body. this is used for an awful hack.
