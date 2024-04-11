@@ -14686,15 +14686,15 @@ unicode_vectorcall(PyObject *type, PyObject *const *args,
         const char *encoding;
         const char *errors;
         if (nkwargs == 1) {
-            PyObject *kw0 = PyTuple_GET_ITEM(kwnames, 0);
-            if (_PyUnicode_EqualToASCIIString(kw0, "encoding")) {
+            PyObject *key = PyTuple_GET_ITEM(kwnames, 0);
+            if (_PyUnicode_EqualToASCIIString(key, "encoding")) {
                 encoding = as_const_char(args[1], "encoding");
                 if (encoding == NULL) {
                     return NULL;
                 }
                 errors = NULL;
             }
-            else if (_PyUnicode_EqualToASCIIString(kw0, "errors")) {
+            else if (_PyUnicode_EqualToASCIIString(key, "errors")) {
                 errors = as_const_char(args[1], "errors");
                 if (errors == NULL) {
                     return NULL;
@@ -14703,7 +14703,7 @@ unicode_vectorcall(PyObject *type, PyObject *const *args,
             }
             else {
                 PyErr_Format(PyExc_TypeError,
-                    "'%S' is an invalid keyword argument for str()", kw0);
+                    "'%S' is an invalid keyword argument for str()", key);
                 return NULL;
             }
         }
@@ -14718,10 +14718,10 @@ unicode_vectorcall(PyObject *type, PyObject *const *args,
     }
     if (nargs + nkwargs == 3) {
         if (nkwargs == 1) {
-            PyObject *kw0 = PyTuple_GET_ITEM(kwnames, 0);
-            if (!_PyUnicode_EqualToASCIIString(kw0, "errors")) {
+            PyObject *key = PyTuple_GET_ITEM(kwnames, 0);
+            if (!_PyUnicode_EqualToASCIIString(key, "errors")) {
                 PyErr_Format(PyExc_TypeError,
-                    "'%S' is an invalid keyword argument for str()", kw0);
+                    "'%S' is an invalid keyword argument for str()", key);
                 return NULL;
             }
         }
