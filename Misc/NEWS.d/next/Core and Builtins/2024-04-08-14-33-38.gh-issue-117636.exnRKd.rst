@@ -1,1 +1,1 @@
-Speedup :func:`os.path.join()`.
+Speedup :func:`os.path.join`.
