@@ -258,7 +258,7 @@ Per code object events
 Events can also be controlled on a per code object basis. The functions
 defined below which accept a :class:`types.CodeType` should be prepared
 to accept a look-alike object from functions which are not defined
-in Python (see :ref:`_monitoring`).
+in Python (see :ref:`monitoring`).
 
 .. function:: get_local_events(tool_id: int, code: CodeType, /) -> int
 
