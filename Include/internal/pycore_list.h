@@ -55,6 +55,7 @@ typedef struct {
 } _PyListIterObject;
 
 PyAPI_FUNC(PyObject *)_PyList_FromArraySteal(PyObject *const *src, Py_ssize_t n);
+
 /* Creates tuple from the list, leaving the list empty */
 PyObject *_PyList_AsTupleTakeItems(PyObject *);
 
