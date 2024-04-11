@@ -2052,31 +2052,13 @@ def _signature_get_user_defined_method(cls, method_name):
     return meth
 
 
-def _signature_get_partial(wrapped_sig, partial, extra_args=()):
-    """Private helper to calculate how 'wrapped_sig' signature will
-    look like after applying a 'functools.partial' object (or alike)
-    on it.
-    """
+def _signature_partial(sig, args, kwargs):
+    if isinstance(sig, MultiSignature):
+        return _multisignature_partial(sig, args, kwargs)
 
-    if isinstance(wrapped_sig, MultiSignature):
-        return _multisignature_get_partial(wrapped_sig, partial, extra_args)
-
-    old_params = wrapped_sig.parameters
-    new_params = OrderedDict(old_params.items())
-
-    partial_args = partial.args or ()
-    partial_keywords = partial.keywords or {}
-
-    if extra_args:
-        partial_args = extra_args + partial_args
-
-    try:
-        ba = wrapped_sig.bind_partial(*partial_args, **partial_keywords)
-    except TypeError as ex:
-        msg = 'partial object {!r} has incorrect arguments'.format(partial)
-        raise ValueError(msg) from ex
-
-
+    ba = sig.bind_partial(*args, **kwargs)
+    old_params = sig.parameters
+    new_params = OrderedDict(old_params)
     transform_to_kwonly = False
     for param_name, param in old_params.items():
         try:
@@ -2091,7 +2073,7 @@ def _signature_get_partial(wrapped_sig, partial, extra_args=()):
                 continue
 
             if param.kind is _POSITIONAL_OR_KEYWORD:
-                if param_name in partial_keywords:
+                if param_name in kwargs:
                     # This means that this parameter, and all parameters
                     # after it should be keyword-only (and var-positional
                     # should be removed). Here's why. Consider the following
@@ -2128,22 +2110,38 @@ def _signature_get_partial(wrapped_sig, partial, extra_args=()):
             elif param.kind is _VAR_POSITIONAL:
                 new_params.pop(param.name)
 
-    return wrapped_sig.replace(parameters=new_params.values())
+    return sig.replace(parameters=new_params.values())
 
 
-def _multisignature_get_partial(wrapped_sig, partial, extra_args=()):
+def _multisignature_partial(sig, args, kwargs, partial=_signature_partial):
     last_exc = None
     signatures = []
-    for sig in wrapped_sig:
+    for s in sig:
         try:
-            signatures.append(_signature_get_partial(sig, partial, extra_args))
-        except (TypeError, ValueError) as e:
+            signatures.append(partial(s, args, kwargs))
+        except TypeError as e:
             last_exc = e
     if not signatures:
         raise last_exc
     if len(signatures) == 1:
         return signatures[0]
-    return MultiSignature(signatures)
+    return sig.__class__(signatures)
+
+
+def _signature_partialmethod(sig, args, kwargs):
+    if isinstance(sig, MultiSignature):
+        return _multisignature_partial(sig, args, kwargs, _signature_partialmethod)
+
+    new_sig = _signature_partial(sig, (None, *args), kwargs)
+    first_wrapped_param = tuple(sig.parameters.values())[0]
+    if first_wrapped_param.kind is Parameter.VAR_POSITIONAL:
+        # First argument of the wrapped callable is `*args`, as in
+        # `partialmethod(lambda *args)`.
+        return new_sig
+    sig_params = tuple(new_sig.parameters.values())
+    assert not sig_params or first_wrapped_param is not sig_params[0]
+    new_params = (first_wrapped_param, *sig_params)
+    return new_sig.replace(parameters=new_params)
 
 
 def _signature_bound_method(sig):
@@ -2151,28 +2149,10 @@ def _signature_bound_method(sig):
     functions to bound methods.
     """
 
-    if isinstance(sig, MultiSignature):
-        return MultiSignature([_signature_bound_method(s) for s in sig])
-
-    params = tuple(sig.parameters.values())
-
-    if not params or params[0].kind in (_VAR_KEYWORD, _KEYWORD_ONLY):
+    try:
+        return _signature_partial(sig, (None,), {})
+    except TypeError:
         raise ValueError('invalid method signature')
-
-    kind = params[0].kind
-    if kind in (_POSITIONAL_OR_KEYWORD, _POSITIONAL_ONLY):
-        # Drop first parameter:
-        # '(p1, p2[, ...])' -> '(p2[, ...])'
-        params = params[1:]
-    else:
-        if kind is not _VAR_POSITIONAL:
-            # Unless we add a new parameter type we never
-            # get here
-            raise ValueError('invalid argument type')
-        # It's a var-positional parameter.
-        # Do nothing. '(*args[, ...])' -> '(*args[, ...])'
-
-    return sig.replace(parameters=params)
 
 
 def _signature_is_builtin(obj):
@@ -2613,28 +2593,11 @@ def _signature_from_callable(obj, *,
             # automatically (as for boundmethods)
 
             wrapped_sig = _get_signature_of(partialmethod.func)
-
-            sig = _signature_get_partial(wrapped_sig, partialmethod, (None,))
-            first_wrapped_param = tuple(wrapped_sig.parameters.values())[0]
-            if first_wrapped_param.kind is Parameter.VAR_POSITIONAL:
-                # First argument of the wrapped callable is `*args`, as in
-                # `partialmethod(lambda *args)`.
-                return sig
-            elif isinstance(sig, MultiSignature):
-                new_sigs = []
-                for s in sig:
-                    sig_params = tuple(s.parameters.values())
-                    assert (not sig_params or
-                            first_wrapped_param is not sig_params[0])
-                    new_params = (first_wrapped_param,) + sig_params
-                    new_sigs.append(s.replace(parameters=new_params))
-                return MultiSignature(new_sigs)
-            else:
-                sig_params = tuple(sig.parameters.values())
-                assert (not sig_params or
-                        first_wrapped_param is not sig_params[0])
-                new_params = (first_wrapped_param,) + sig_params
-                return sig.replace(parameters=new_params)
+            try:
+                return _signature_partialmethod(wrapped_sig, partialmethod.args, partialmethod.keywords)
+            except TypeError as ex:
+                msg = f'partial object {partialmethod!r} has incorrect arguments'
+                raise ValueError(msg) from ex
 
     if isfunction(obj) or _signature_is_functionlike(obj):
         # If it's a pure Python function, or an object that is duck type
@@ -2649,7 +2612,11 @@ def _signature_from_callable(obj, *,
 
     if isinstance(obj, functools.partial):
         wrapped_sig = _get_signature_of(obj.func)
-        return _signature_get_partial(wrapped_sig, obj)
+        try:
+            return _signature_partial(wrapped_sig, obj.args, obj.keywords)
+        except TypeError as ex:
+            msg = f'partial object {obj!r} has incorrect arguments'
+            raise ValueError(msg) from ex
 
     if isinstance(obj, type):
         # obj is a class or a metaclass
