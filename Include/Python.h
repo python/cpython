@@ -45,6 +45,9 @@
 #  endif
 #endif
 
+#if defined(Py_LIMITED_API) && defined(Py_GIL_DISABLED)
+#  error "The limited API is not currently supported in the free-threaded build"
+#endif
 
 // Include Python header files
 #include "pyport.h"
