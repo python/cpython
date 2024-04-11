@@ -821,7 +821,8 @@ signal_set_wakeup_fd(PyObject *self, PyObject *args, PyObject *kwds)
 }
 
 PyDoc_STRVAR(set_wakeup_fd_doc,
-"set_wakeup_fd(fd, *, warn_on_full_buffer=True) -> fd\n\
+"set_wakeup_fd($module, /, fd, *, warn_on_full_buffer=True)\n\
+--\n\
 \n\
 Sets the fd to be written to (with the signal number) when a signal\n\
 comes in.  A library can use this to wakeup select or poll.\n\
