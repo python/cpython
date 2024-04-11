@@ -1050,7 +1050,7 @@ class BaseEventLoopTests(test_utils.TestCase):
         # calling shutdown_asyncgens().
 
         ns = {'state': 'not started'}
-        async def agen():
+        async def agen_basic():
             try:
                 ns['state'] = 'started'
                 yield 0
@@ -1062,7 +1062,7 @@ class BaseEventLoopTests(test_utils.TestCase):
             async for item in agen():
                 break
 
-        asyncio.run(reproducer(agen))
+        asyncio.run(reproducer(agen_basic))
         self.assertEqual(ns['state'], 'finalized')
 
         # Similar than previous test, but the generator uses 'await' in the
