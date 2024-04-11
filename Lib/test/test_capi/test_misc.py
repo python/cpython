@@ -2139,6 +2139,9 @@ class SubinterpreterTest(unittest.TestCase):
             }
 
             r, w = os.pipe()
+            if Py_GIL_DISABLED:
+                # gh-117649: The test fails before `w` is closed
+                self.addCleanup(os.close, w)
             script = textwrap.dedent(f'''
                 from test.test_capi.check_config import run_singlephase_check
                 run_singlephase_check({override}, {w})
