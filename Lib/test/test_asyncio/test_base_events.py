@@ -1058,11 +1058,27 @@ class BaseEventLoopTests(test_utils.TestCase):
             finally:
                 ns['state'] = 'finalized'
 
-        async def reproducer():
+        async def reproducer(agen):
             async for item in agen():
                 break
 
-        asyncio.run(reproducer())
+        asyncio.run(reproducer(agen))
+        self.assertEqual(ns['state'], 'finalized')
+
+        # Similar than previous test, but the generator uses 'await' in the
+        # finally block.
+        ns['state'] = 'not started'
+        async def agen_await():
+            try:
+                ns['state'] = 'started'
+                yield 0
+                yield 1
+            finally:
+                ns['state'] = 'await'
+                await asyncio.sleep(0)
+                ns['state'] = 'finalized'
+
+        asyncio.run(reproducer(agen_await))
         self.assertEqual(ns['state'], 'finalized')
 
 
