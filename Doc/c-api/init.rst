@@ -1954,7 +1954,7 @@ The C-API provides a basic mutual exclusion lock.
 
 .. c:type:: PyMutex
 
-   A mutual exclusion lock.  The ``PyMutex`` should be initialized to zero to
+   A mutual exclusion lock.  The :c:type:`!PyMutex` should be initialized to zero to
    represent the unlocked state.  For example::
 
       PyMutex mutex = {0};
