@@ -1,1 +1,1 @@
-Improve performance of :func:`str.startswith` and `str.endswith`.
+Improve performance of :func:`str.startswith` and :func:`str.endswith`.
