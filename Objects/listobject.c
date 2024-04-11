@@ -3186,7 +3186,7 @@ _PyList_AsTupleTakeItems(PyObject *v)
     Py_ssize_t size;
     PyObject **items;
     Py_BEGIN_CRITICAL_SECTION(self);
-    size = Py_SIZE(v);
+    size = PyList_GET_SIZE(v);
     items = self->ob_item;
     Py_SET_SIZE(v, 0);
     self->ob_item = NULL;

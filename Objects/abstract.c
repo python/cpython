@@ -2059,21 +2059,21 @@ PySequence_Tuple(PyObject *v)
         return NULL;
 
     PyObject *temp = PyList_New(0);
-    if (temp == NULL)
-        goto Fail;
+    if (temp == NULL) {
+        Py_DECREF(it);
+        return NULL;
+    }
 
     /* Fill the temporary list. */
     for (;;) {
         PyObject *item = PyIter_Next(it);
         if (item == NULL) {
             if (PyErr_Occurred()) {
-                Py_DECREF(temp);
                 goto Fail;
             }
             break;
         }
         if (_PyList_AppendTakeRef((PyListObject *)temp, item)) {
-            Py_DECREF(temp);
             goto Fail;
         }
     }
@@ -2083,6 +2083,7 @@ PySequence_Tuple(PyObject *v)
     return result;
 
 Fail:
+    Py_DECREF(temp);
     Py_DECREF(it);
     return NULL;
 }
