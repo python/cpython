@@ -1193,4 +1193,63 @@ builtin_issubclass(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=6d15edfc194b2c08 input=a9049054013a1b77]*/
+
+static PyObject *
+zip_new_impl(PyTypeObject *type, PyObject *args, int strict);
+
+static PyObject *
+zip_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(strict), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"strict", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "zip",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[2];
+    PyObject * const *fastargs;
+    Py_ssize_t nargs = PyTuple_GET_SIZE(args);
+    Py_ssize_t noptargs = 0 + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 0;
+    PyObject *__clinic_args = NULL;
+    int strict = 0;
+
+    fastargs = _PyArg_UnpackKeywordsWithVararg(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 0, 0, 0, 0, argsbuf);
+    if (!fastargs) {
+        goto exit;
+    }
+    __clinic_args = fastargs[0];
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    strict = PyObject_IsTrue(fastargs[1]);
+    if (strict < 0) {
+        goto exit;
+    }
+skip_optional_kwonly:
+    return_value = zip_new_impl(type, __clinic_args, strict);
+
+exit:
+    Py_XDECREF(__clinic_args);
+    return return_value;
+}
+/*[clinic end generated code: output=017d535e4e9a57aa input=a9049054013a1b77]*/

@@ -2777,35 +2777,28 @@ typedef struct {
     int strict;
 } zipobject;
 
+/*[clinic input]
+class zip "zipobject *" "&PyZip_Type"
+@classmethod
+zip.__new__ as zip_new
+
+    *args: object
+    strict: bool = False
+
+[clinic start generated code]*/
+
 static PyObject *
-zip_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+zip_new_impl(PyTypeObject *type, PyObject *args, int strict)
+/*[clinic end generated code: output=7896892bc521fb36 input=ed19dddfd1c952a1]*/
 {
     zipobject *lz;
     Py_ssize_t i;
     PyObject *ittuple;  /* tuple of iterators */
     PyObject *result;
     Py_ssize_t tuplesize;
-    int strict = 0;
-
-    if (kwds) {
-        PyObject *empty = PyTuple_New(0);
-        if (empty == NULL) {
-            return NULL;
-        }
-        static char *kwlist[] = {"strict", NULL};
-        int parsed = PyArg_ParseTupleAndKeywords(
-                empty, kwds, "|$p:zip", kwlist, &strict);
-        Py_DECREF(empty);
-        if (!parsed) {
-            return NULL;
-        }
-    }
-
-    /* args must be a tuple */
-    assert(PyTuple_Check(args));
-    tuplesize = PyTuple_GET_SIZE(args);
 
     /* obtain iterators */
+    tuplesize = PyTuple_GET_SIZE(args);
     ittuple = PyTuple_New(tuplesize);
     if (ittuple == NULL)
         return NULL;
