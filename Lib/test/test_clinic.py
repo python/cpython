@@ -2508,6 +2508,15 @@ class ClinicParserTest(TestCase):
         """
         self.expect_failure(block, err, lineno=7)
 
+    def test_kind_defining_class(self):
+        function = self.parse_function("""
+            module m
+            m.func
+                cls: defining_class
+        """)
+        p = function.parameters['cls']
+        self.assertEqual(p.kind, inspect.Parameter.POSITIONAL_ONLY)
+
 
 class ClinicExternalTest(TestCase):
     maxDiff = None
