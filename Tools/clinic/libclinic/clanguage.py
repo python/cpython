@@ -11,7 +11,7 @@ from libclinic import (
     unspecified, fail, warn, Sentinels, VersionTuple)
 from libclinic.function import (
     GETTER, SETTER, METHOD_INIT, METHOD_NEW)
-from libclinic.codegen import CRenderData, TemplateDict, Codegen
+from libclinic.codegen import CRenderData, TemplateDict, CodeGen
 from libclinic.language import Language
 from libclinic.function import (
     Module, Class, Function, Parameter,
@@ -27,7 +27,7 @@ def declare_parser(
     f: Function,
     *,
     hasformat: bool = False,
-    codegen: Codegen,
+    codegen: CodeGen,
 ) -> str:
     """
     Generates the code template for a static local PyArg_Parser variable,
@@ -321,7 +321,7 @@ class CLanguage(Language):
         argname_fmt: str | None = None,
         *,
         fastcall: bool,
-        codegen: Codegen,
+        codegen: CodeGen,
     ) -> str:
         assert len(params) > 0
         last_param = next(reversed(params.values()))
@@ -400,7 +400,7 @@ class CLanguage(Language):
     def output_templates(
         self,
         f: Function,
-        codegen: Codegen,
+        codegen: CodeGen,
     ) -> dict[str, str]:
         args = ParseArgsCodeGen(f, codegen)
         args.select_prototypes()
@@ -707,7 +707,7 @@ class CLanguage(Language):
 
 class ParseArgsCodeGen:
     func: Function
-    codegen: Codegen
+    codegen: CodeGen
     limited_capi: bool = False
 
     # Function parameters
@@ -749,7 +749,7 @@ class ParseArgsCodeGen:
 
     parser_body_fields: tuple[str, ...]
 
-    def __init__(self, func: Function, codegen: Codegen) -> None:
+    def __init__(self, func: Function, codegen: CodeGen) -> None:
         self.func = func
         self.codegen = codegen
 
