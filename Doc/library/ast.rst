@@ -1841,12 +1841,13 @@ aliases.
                 TypeAlias(
                     name=Name(id='Alias', ctx=Store()),
                     type_params=[
-                        ParamSpec(name='P',
-                                  default_value=Tuple(
-                                      elts=[
-                                          Name(id='int', ctx=Load()),
-                                          Name(id='str', ctx=Load())],
-                                      ctx=Load()))],
+                        ParamSpec(
+                            name='P',
+                            default_value=Tuple(
+                                elts=[
+                                    Name(id='int', ctx=Load()),
+                                    Name(id='str', ctx=Load())],
+                                ctx=Load()))],
                     value=Subscript(
                         value=Name(id='Callable', ctx=Load()),
                         slice=Tuple(
@@ -1875,8 +1876,9 @@ aliases.
                 TypeAlias(
                     name=Name(id='Alias', ctx=Store()),
                     type_params=[
-                        TypeVarTuple(name='Ts',
-                                     default_value=Tuple(elts=[], ctx=Load()))],
+                        TypeVarTuple(
+                            name='Ts',
+                            default_value=Tuple(elts=[], ctx=Load()))],
                     value=Subscript(
                         value=Name(id='tuple', ctx=Load()),
                         slice=Tuple(
