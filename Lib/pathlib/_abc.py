@@ -45,8 +45,14 @@ def _is_case_sensitive(parser):
 
 class Globber(glob._Globber):
     lstat = operator.methodcaller('lstat')
-    scandir = operator.methodcaller('_scandir')
     add_slash = operator.methodcaller('joinpath', '')
+
+    @staticmethod
+    def scandir(path):
+        # Emulate os.scandir(), which returns an object that can be used as a
+        # context manager. This method is called by walk() and glob().
+        from contextlib import nullcontext
+        return nullcontext(path.iterdir())
 
     @staticmethod
     def concat_path(path, text):
@@ -677,20 +683,6 @@ class PathBase(PurePathBase):
         """
         raise UnsupportedOperation(self._unsupported_msg('iterdir()'))
 
-    def _scandir(self):
-        # Emulate os.scandir(), which returns an object that can be used as a
-        # context manager. This method is called by walk() and glob().
-        from contextlib import nullcontext
-        return nullcontext(self.iterdir())
-
-    def _make_child_direntry(self, entry):
-        # Transform an entry yielded from _scandir() into a path object.
-        # PathBase._scandir() yields PathBase objects, so this is a no-op.
-        return entry
-
-    def _make_child_relpath(self, name):
-        return self.joinpath(name)
-
     def _glob_selector(self, parts, case_sensitive, recurse_symlinks):
         if case_sensitive is None:
             case_sensitive = _is_case_sensitive(self.parser)
@@ -724,48 +716,7 @@ class PathBase(PurePathBase):
 
     def walk(self, top_down=True, on_error=None, follow_symlinks=False):
         """Walk the directory tree from this directory, similar to os.walk()."""
-        paths = [self]
-
-        while paths:
-            path = paths.pop()
-            if isinstance(path, tuple):
-                yield path
-                continue
-
-            # We may not have read permission for self, in which case we can't
-            # get a list of the files the directory contains. os.walk()
-            # always suppressed the exception in that instance, rather than
-            # blow up for a minor reason when (say) a thousand readable
-            # directories are still left to visit. That logic is copied here.
-            try:
-                scandir_obj = path._scandir()
-            except OSError as error:
-                if on_error is not None:
-                    on_error(error)
-                continue
-
-            with scandir_obj as scandir_it:
-                dirnames = []
-                filenames = []
-                if not top_down:
-                    paths.append((path, dirnames, filenames))
-                for entry in scandir_it:
-                    try:
-                        is_dir = entry.is_dir(follow_symlinks=follow_symlinks)
-                    except OSError:
-                        # Carried over from os.path.isdir().
-                        is_dir = False
-
-                    if is_dir:
-                        if not top_down:
-                            paths.append(path._make_child_direntry(entry))
-                        dirnames.append(entry.name)
-                    else:
-                        filenames.append(entry.name)
-
-            if top_down:
-                yield path, dirnames, filenames
-                paths += [path._make_child_relpath(d) for d in reversed(dirnames)]
+        return self._globber.walk(self, top_down, on_error, follow_symlinks)
 
     def absolute(self):
         """Return an absolute version of this path
