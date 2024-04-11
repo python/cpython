@@ -516,29 +516,24 @@ _abc__abc_init(PyObject *module, PyObject *self)
         PyTypeObject *cls = (PyTypeObject *)self;
         PyObject *dict = _PyType_GetDict(cls);
         PyObject *flags = NULL;
-        if (PyDict_GetItemRef(dict, &_Py_ID(__abc_tpflags__), &flags) < 0) {
+        if (PyDict_Pop(dict, &_Py_ID(__abc_tpflags__), &flags) < 0) {
             return NULL;
         }
-        if (flags == NULL) {
+        if (flags == NULL || !PyLong_CheckExact(flags)) {
+            Py_XDECREF(flags);
             Py_RETURN_NONE;
         }
-        if (PyLong_CheckExact(flags)) {
-            long val = PyLong_AsLong(flags);
-            Py_DECREF(flags);
-            if (val == -1 && PyErr_Occurred()) {
-                return NULL;
-            }
-            if ((val & COLLECTION_FLAGS) == COLLECTION_FLAGS) {
-                PyErr_SetString(PyExc_TypeError, "__abc_tpflags__ cannot be both Py_TPFLAGS_SEQUENCE and Py_TPFLAGS_MAPPING");
-                return NULL;
-            }
-            _PyType_SetFlags((PyTypeObject *)self, 0, val & COLLECTION_FLAGS);
-        } else {
-            Py_DECREF(flags);
-        }
-        if (PyDict_DelItem(dict, &_Py_ID(__abc_tpflags__)) < 0) {
+
+        long val = PyLong_AsLong(flags);
+        Py_DECREF(flags);
+        if (val == -1 && PyErr_Occurred()) {
             return NULL;
         }
+        if ((val & COLLECTION_FLAGS) == COLLECTION_FLAGS) {
+            PyErr_SetString(PyExc_TypeError, "__abc_tpflags__ cannot be both Py_TPFLAGS_SEQUENCE and Py_TPFLAGS_MAPPING");
+            return NULL;
+        }
+        _PyType_SetFlags((PyTypeObject *)self, 0, val & COLLECTION_FLAGS);
     }
     Py_RETURN_NONE;
 }
