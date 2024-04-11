@@ -421,22 +421,23 @@ class TupleTest(seq_tests.CommonTest):
         # would create incomplete tuples which were visible
         # to the cycle GC
         TAG = object()
+        tuples = []
 
-        def monitor():
-            lst = [x for x in gc.get_referrers(TAG)
+        def referrer_tuples():
+            return [x for x in gc.get_referrers(TAG)
                 if isinstance(x, tuple)]
-            t = lst[0]   # this *is* the result tuple
-            print(t)     # full of nulls !
-            return t     # Keep it alive for some time
 
         def my_iter():
+            nonlocal tuples
             yield TAG    # 'tag' gets stored in the result tuple
-            t = monitor()
+            tuples += referrer_tuples()
             for x in range(10):
-                yield x  # SystemError when the tuple needs to be resized
+                tuples += referrer_tuples()
+                # Prior to 3.13 would raise a SystemError when the tuple needs to be resized
+                yield x
 
-        with self.assertRaises(IndexError):
-            tuple(my_iter())
+        self.assertEqual(tuple(my_iter()), (TAG, *range(10)))
+        self.assertEqual(tuples, [])
 
 # Notes on testing hash codes.  The primary thing is that Python doesn't
 # care about "random" hash codes.  To the contrary, we like them to be
