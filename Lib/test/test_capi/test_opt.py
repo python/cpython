@@ -6,9 +6,10 @@ import gc
 import os
 
 import _opcode
-import _testinternalcapi
 
-from test.support import script_helper, requires_specialization
+from test.support import script_helper, requires_specialization, import_helper
+
+_testinternalcapi = import_helper.import_module("_testinternalcapi")
 
 from _testinternalcapi import TIER2_THRESHOLD
 
