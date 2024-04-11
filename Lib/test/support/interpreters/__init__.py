@@ -79,18 +79,19 @@ def create():
 
 def list_all():
     """Return all existing interpreters."""
-    return [Interpreter(id) for id in _interpreters.list_all()]
+    return [Interpreter(id)
+            for id, in _interpreters.list_all()]
 
 
 def get_current():
     """Return the currently running interpreter."""
-    id = _interpreters.get_current()
+    id, = _interpreters.get_current()
     return Interpreter(id)
 
 
 def get_main():
     """Return the main interpreter."""
-    id = _interpreters.get_main()
+    id, = _interpreters.get_main()
     return Interpreter(id)
 
 
