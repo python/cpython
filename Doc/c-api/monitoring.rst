@@ -18,6 +18,8 @@ about the activation state of events, as well as the event arguments, which
 include a ``PyObject*`` representing the code object, the instruction offset
 and sometimes additional, event-specific arguments (see :mod:`sys.monitoring`
 for details about the signatures of the different event callbacks).
+The ``codelike`` argument should be an instance of :class:`types.CodeType`
+or of a  type that emulates it.
 
 .. c:type:: PyMonitoringState
 
@@ -119,7 +121,8 @@ would typically correspond to a python function.
 
    Enter a monitoring scope. ``event_types`` is an array of the event IDs for
    events that may be fired from the scope. For example, the ID of a ``PY_START``
-   event is the value ``PY_MONITORING_EVENT_PY_START``.
+   event is the value ``PY_MONITORING_EVENT_PY_START``, which is numerically equal
+   to the base-2 logarithm of ``sys.monitoring.events.PY_START``.
    ``state_array`` is an array with a monitoring state entry for each event in
    ``event_types``, it is allocated by the user but populated by
    ``PyMonitoring_EnterScope`` with information about the activation state of
@@ -130,3 +133,8 @@ would typically correspond to a python function.
    to 0 and then set only by ``PyMonitoring_EnterScope`` itelf. It allows this
    function to determine whether event states have changed since the previous call,
    and to return quickly if they have not.
+
+
+.. :c:function:: int PyMonitoring_ExitScope(void)
+
+   Exit the last scope that was entered with :c:function:`PyMonitoring_EnterScope`.
