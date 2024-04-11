@@ -66,6 +66,10 @@ class TestMakefile(unittest.TestCase):
                 )
                 used.append(relpath)
 
+        # Don't check the wheel dir when Python is built --with-wheel-pkg-dir
+        if sysconfig.get_config_var('WHEEL_PKG_DIR'):
+            test_dirs.remove('test/wheeldata')
+
         # Check that there are no extra entries:
         unique_test_dirs = set(test_dirs)
         self.assertSetEqual(unique_test_dirs, set(used))
