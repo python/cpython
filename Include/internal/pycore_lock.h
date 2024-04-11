@@ -28,7 +28,7 @@ PyMutex_LockFast(uint8_t *lock_bits)
 static inline int
 PyMutex_IsLocked(PyMutex *m)
 {
-    return (_Py_atomic_load_uint8(&m->v) & _Py_LOCKED) != 0;
+    return (_Py_atomic_load_uint8(&m->_bits) & _Py_LOCKED) != 0;
 }
 
 // Re-initializes the mutex after a fork to the unlocked state.
@@ -59,7 +59,7 @@ static inline void
 PyMutex_LockFlags(PyMutex *m, _PyLockFlags flags)
 {
     uint8_t expected = _Py_UNLOCKED;
-    if (!_Py_atomic_compare_exchange_uint8(&m->v, &expected, _Py_LOCKED)) {
+    if (!_Py_atomic_compare_exchange_uint8(&m->_bits, &expected, _Py_LOCKED)) {
         _PyMutex_LockTimed(m, -1, flags);
     }
 }
