@@ -137,4 +137,4 @@ would typically correspond to a python function.
 
 .. :c:function:: int PyMonitoring_ExitScope(void)
 
-   Exit the last scope that was entered with :c:function:`PyMonitoring_EnterScope`.
+   Exit the last scope that was entered with ``PyMonitoring_EnterScope``.
