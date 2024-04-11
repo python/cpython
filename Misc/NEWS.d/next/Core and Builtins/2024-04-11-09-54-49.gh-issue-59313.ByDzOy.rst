@@ -1,0 +1,3 @@
+Make sure that all tuple elements are valid and never NULL. Ensuring that
+tuples are always valid reduces the risk of cycle GC bugs and prevents
+``gc.get_referrers`` from returning invalid tuples.
