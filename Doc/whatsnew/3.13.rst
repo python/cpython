@@ -87,6 +87,10 @@ Interpreter improvements:
   Performance improvements are modest -- we expect to be improving this
   over the next few releases.
 
+New typing features:
+
+* :pep:`742`: :data:`typing.TypeIs` was added, providing more intuitive
+  type narrowing behavior.
 
 New Features
 ============
@@ -192,13 +196,6 @@ Other Language Changes
 
   (Contributed by Sebastian Pipping in :gh:`115623`.)
 
-* When :func:`asyncio.TaskGroup.create_task` is called on an inactive
-  :class:`asyncio.TaskGroup`, the given coroutine will be closed (which
-  prevents a :exc:`RuntimeWarning` about the given coroutine being
-  never awaited).
-
-  (Contributed by Arthur Tacca and Jason Zhang in :gh:`115957`.)
-
 * The :func:`ssl.create_default_context` API now includes
   :data:`ssl.VERIFY_X509_PARTIAL_CHAIN` and :data:`ssl.VERIFY_X509_STRICT`
   in its default flags.
@@ -295,6 +292,41 @@ asyncio
   future objects that were passed in, making it easier to associate results
   with the tasks being completed.
   (Contributed by Justin Arthur in :gh:`77714`.)
+
+* When :func:`asyncio.TaskGroup.create_task` is called on an inactive
+  :class:`asyncio.TaskGroup`, the given coroutine will be closed (which
+  prevents a :exc:`RuntimeWarning` about the given coroutine being
+  never awaited).
+  (Contributed by Arthur Tacca and Jason Zhang in :gh:`115957`.)
+
+* Improved behavior of :class:`asyncio.TaskGroup` when an external cancellation
+  collides with an internal cancellation. For example, when two task groups
+  are nested and both experience an exception in a child task simultaneously,
+  it was possible that the outer task group would hang, because its internal
+  cancellation was swallowed by the inner task group.
+
+  In the case where a task group is cancelled externally and also must
+  raise an :exc:`ExceptionGroup`, it will now call the parent task's
+  :meth:`~asyncio.Task.cancel` method.  This ensures that a
+  :exc:`asyncio.CancelledError` will be raised at the next
+  :keyword:`await`, so the cancellation is not lost.
+
+  An added benefit of these changes is that task groups now preserve the
+  cancellation count (:meth:`asyncio.Task.cancelling`).
+
+  In order to handle some corner cases, :meth:`asyncio.Task.uncancel` may now
+  reset the undocumented ``_must_cancel`` flag when the cancellation count
+  reaches zero.
+
+  (Inspired by an issue reported by Arthur Tacca in :gh:`116720`.)
+
+* Add :meth:`asyncio.Queue.shutdown` (along with
+  :exc:`asyncio.QueueShutDown`) for queue termination.
+  (Contributed by Laurie Opperman and Yves Duprat in :gh:`104228`.)
+
+* Accept a tuple of separators in :meth:`asyncio.StreamReader.readuntil`,
+  stopping when one of them is encountered.
+  (Contributed by Bruce Merry in :gh:`81322`.)
 
 base64
 ------
@@ -408,6 +440,30 @@ The :class:`io.IOBase` finalizer now logs the ``close()`` method errors with
 and only logged in :ref:`Python Development Mode <devmode>` or on :ref:`Python
 built on debug mode <debug-build>`.
 (Contributed by Victor Stinner in :gh:`62948`.)
+
+importlib
+---------
+
+Previously deprecated :mod:`importlib.resources` functions are un-deprecated:
+
+  * :func:`~importlib.resources.is_resource()`
+  * :func:`~importlib.resources.open_binary()`
+  * :func:`~importlib.resources.open_text()`
+  * :func:`~importlib.resources.path()`
+  * :func:`~importlib.resources.read_binary()`
+  * :func:`~importlib.resources.read_text()`
+
+All now allow for a directory (or tree) of resources, using multiple positional
+arguments.
+
+For text-reading functions, the *encoding* and *errors* must now be given as
+keyword arguments.
+
+The :func:`~importlib.resources.contents()` remains deprecated in favor of
+the full-featured :class:`~importlib.resources.abc.Traversable` API.
+However, there is now no plan to remove it.
+
+(Contributed by Petr Viktorin in :gh:`106532`.)
 
 ipaddress
 ---------
@@ -535,12 +591,15 @@ pathlib
   implementation of :mod:`os.path` used for low-level path parsing and
   joining: either ``posixpath`` or ``ntpath``.
 
-* Add *follow_symlinks* keyword-only argument to :meth:`pathlib.Path.glob`,
-  :meth:`~pathlib.Path.rglob`, :meth:`~pathlib.Path.is_file`,
+* Add *recurse_symlinks* keyword-only argument to :meth:`pathlib.Path.glob`
+  and :meth:`~pathlib.Path.rglob`.
+  (Contributed by Barney Gale in :gh:`77609`).
+
+* Add *follow_symlinks* keyword-only argument to :meth:`~pathlib.Path.is_file`,
   :meth:`~pathlib.Path.is_dir`, :meth:`~pathlib.Path.owner`,
   :meth:`~pathlib.Path.group`.
-  (Contributed by Barney Gale in :gh:`77609` and :gh:`105793`, and
-  Kamil Turek in :gh:`107962`).
+  (Contributed by Barney Gale in :gh:`105793`, and Kamil Turek in
+  :gh:`107962`).
 
 * Return files and directories from :meth:`pathlib.Path.glob` and
   :meth:`~pathlib.Path.rglob` when given a pattern that ends with "``**``". In
@@ -1357,21 +1416,6 @@ configparser
 importlib
 ---------
 
-* Remove :mod:`importlib.resources` deprecated methods:
-
-  * ``contents()``
-  * ``is_resource()``
-  * ``open_binary()``
-  * ``open_text()``
-  * ``path()``
-  * ``read_binary()``
-  * ``read_text()``
-
-  Use :func:`importlib.resources.files()` instead.  Refer to `importlib-resources: Migrating from Legacy
-  <https://importlib-resources.readthedocs.io/en/latest/using.html#migrating-from-legacy>`_
-  for migration advice.
-  (Contributed by Jason R. Coombs in :gh:`106532`.)
-
 * Remove deprecated :meth:`~object.__getitem__` access for
   :class:`!importlib.metadata.EntryPoint` objects.
   (Contributed by Jason R. Coombs in :gh:`113175`.)
@@ -1759,7 +1803,7 @@ New Features
   Equivalent to getting the ``type.__module__`` attribute.
   (Contributed by Eric Snow and Victor Stinner in :gh:`111696`.)
 
-* Add support for ``%T``, ``%T#``, ``%N`` and ``%N#`` formats to
+* Add support for ``%T``, ``%#T``, ``%N`` and ``%#N`` formats to
   :c:func:`PyUnicode_FromFormat`: format the fully qualified name of an object
   type and of a type: call :c:func:`PyType_GetModuleName`. See :pep:`737` for
   more information.
