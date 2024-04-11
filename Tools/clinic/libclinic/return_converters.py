@@ -1,6 +1,6 @@
 import sys
 from collections.abc import Callable
-from libclinic.crenderdata import CRenderData
+from libclinic.codegen import CRenderData
 from libclinic.function import Function
 from typing import Any
 
