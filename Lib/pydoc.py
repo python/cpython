@@ -210,9 +210,6 @@ def _getargspecs(object):
     text_signature = getattr(object, '__text_signature__', None)
     if text_signature:
         argspecs = []
-        #for argspec in re.split(r'(?<=\))\n(?=\()', text_signature):
-        #    if argspec[:2] == '($':
-        #        argspec = '(' + argspec[2:]
         for argspec, _ in inspect._signature_split(text_signature):
             if getattr(object, '__self__', None) is not None:
                 # Strip the bound argument.
@@ -221,7 +218,6 @@ def _getargspecs(object):
                     argspec = '(' + argspec[m.end():]
             argspecs.append(argspec)
         return argspecs
-    #print('>>>>>>>>', object, file=sys.stderr)
     return None
 
 def classname(object, modname):
