@@ -1872,7 +1872,9 @@ void
 _PyXI_EndInterpreter(PyInterpreterState *interp,
                      PyThreadState *tstate, PyThreadState **p_save_tstate)
 {
+#ifndef NDEBUG
     long whence = _PyInterpreterState_GetWhence(interp);
+#endif
     assert(whence != _PyInterpreterState_WHENCE_RUNTIME);
 
     if (!_PyInterpreterState_IsReady(interp)) {
