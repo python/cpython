@@ -2777,6 +2777,35 @@ typedef struct {
     int strict;
 } zipobject;
 
+static PyObject *
+zip_from_ittuple(PyTypeObject *type, PyObject *ittuple, Py_ssize_t tuplesize,
+                 int strict)
+{
+    /* create a result holder */
+    PyObject *result = PyTuple_New(tuplesize);
+    if (result == NULL) {
+        Py_DECREF(ittuple);
+        return NULL;
+    }
+    for (Py_ssize_t i = 0 ; i < tuplesize ; i++) {
+        PyTuple_SET_ITEM(result, i, Py_None);
+    }
+
+    /* create zipobject structure */
+    zipobject *lz = (zipobject *)type->tp_alloc(type, 0);
+    if (lz == NULL) {
+        Py_DECREF(ittuple);
+        Py_DECREF(result);
+        return NULL;
+    }
+    lz->ittuple = ittuple;
+    lz->tuplesize = tuplesize;
+    lz->result = result;
+    lz->strict = strict;
+
+    return (PyObject *)lz;
+}
+
 /*[clinic input]
 class zip "zipobject *" "&PyZip_Type"
 @classmethod
@@ -2791,18 +2820,13 @@ static PyObject *
 zip_new_impl(PyTypeObject *type, PyObject *args, int strict)
 /*[clinic end generated code: output=7896892bc521fb36 input=ed19dddfd1c952a1]*/
 {
-    zipobject *lz;
-    Py_ssize_t i;
-    PyObject *ittuple;  /* tuple of iterators */
-    PyObject *result;
-    Py_ssize_t tuplesize;
-
     /* obtain iterators */
-    tuplesize = PyTuple_GET_SIZE(args);
-    ittuple = PyTuple_New(tuplesize);
-    if (ittuple == NULL)
+    Py_ssize_t tuplesize = PyTuple_GET_SIZE(args);
+    PyObject *ittuple = PyTuple_New(tuplesize);
+    if (ittuple == NULL) {
         return NULL;
-    for (i=0; i < tuplesize; ++i) {
+    }
+    for (Py_ssize_t i = 0; i < tuplesize; ++i) {
         PyObject *item = PyTuple_GET_ITEM(args, i);
         PyObject *it = PyObject_GetIter(item);
         if (it == NULL) {
@@ -2812,29 +2836,44 @@ zip_new_impl(PyTypeObject *type, PyObject *args, int strict)
         PyTuple_SET_ITEM(ittuple, i, it);
     }
 
-    /* create a result holder */
-    result = PyTuple_New(tuplesize);
-    if (result == NULL) {
-        Py_DECREF(ittuple);
+    return zip_from_ittuple(type, ittuple, tuplesize, strict);
+}
+
+static PyObject *
+zip_vectorcall(PyObject *type, PyObject * const*args,
+               size_t nargsf, PyObject *kwnames)
+{
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+    Py_ssize_t nkwargs = (kwnames) ? PyTuple_GET_SIZE(kwnames) : 0;
+    int strict = 0;
+
+    if (nkwargs == 1) {
+        PyObject *key = PyTuple_GET_ITEM(kwnames, 0);
+        if (!_PyUnicode_EqualToASCIIString(key, "strict")) {
+            PyErr_Format(PyExc_TypeError,
+                    "zip() got an unexpected keyword argument %R", key);
+            return NULL;
+        }
+        strict = PyObject_IsTrue(args[nargs]);
+    }
+    else if (nkwargs != 0) {
+        PyErr_Format(PyExc_TypeError,
+                "zip() takes at most 1 keyword argument (%d given)", nkwargs);
         return NULL;
     }
-    for (i=0 ; i < tuplesize ; i++) {
-        PyTuple_SET_ITEM(result, i, Py_NewRef(Py_None));
+
+    /* obtain iterators */
+    PyObject *ittuple = PyTuple_New(nargs);
+    for (Py_ssize_t i = 0; i < nargs; i++) {
+        PyObject *it = PyObject_GetIter(args[i]);
+        if (it == NULL) {
+            Py_DECREF(ittuple);
+            return NULL;
+        }
+        PyTuple_SET_ITEM(ittuple, i, it);
     }
 
-    /* create zipobject structure */
-    lz = (zipobject *)type->tp_alloc(type, 0);
-    if (lz == NULL) {
-        Py_DECREF(ittuple);
-        Py_DECREF(result);
-        return NULL;
-    }
-    lz->ittuple = ittuple;
-    lz->tuplesize = tuplesize;
-    lz->result = result;
-    lz->strict = strict;
-
-    return (PyObject *)lz;
+    return zip_from_ittuple(_PyType_CAST(type), ittuple, nargs, strict);
 }
 
 static void
@@ -3030,6 +3069,7 @@ PyTypeObject PyZip_Type = {
     PyType_GenericAlloc,                /* tp_alloc */
     zip_new,                            /* tp_new */
     PyObject_GC_Del,                    /* tp_free */
+    .tp_vectorcall = zip_vectorcall,
 };
 
 
