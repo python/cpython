@@ -14618,7 +14618,7 @@ unicode_new_impl(PyTypeObject *type, PyObject *x, const char *encoding,
 }
 
 static const char *
-as_const_char(PyObject *obj, const char *name)
+arg_as_utf8(PyObject *obj, const char *name)
 {
     if (!PyUnicode_Check(obj)) {
         PyErr_Format(PyExc_TypeError,
@@ -14640,9 +14640,8 @@ unicode_vectorcall(PyObject *type, PyObject *const *args,
     assert(Py_Is(_PyType_CAST(type), &PyUnicode_Type));
 
     Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
-    Py_ssize_t nkwargs = (kwnames) ? PyTuple_GET_SIZE(kwnames) : 0;
-    if (nkwargs) {
-        // Fallback to tp_call()
+    if (kwnames != NULL && PyTuple_GET_SIZE(kwnames) != 0) {
+        // Fallback to unicode_new()
         PyObject *tuple = _PyTuple_FromArray(args, nargs);
         if (tuple == NULL) {
             return NULL;
@@ -14652,11 +14651,14 @@ unicode_vectorcall(PyObject *type, PyObject *const *args,
             Py_DECREF(tuple);
             return NULL;
         }
-        return unicode_new(_PyType_CAST(type), tuple, dict);
+        PyObject *ret = unicode_new(_PyType_CAST(type), tuple, dict);
+        Py_DECREF(tuple);
+        Py_DECREF(dict);
+        return ret;
     }
     if (nargs > 3) {
         PyErr_Format(PyExc_TypeError,
-            "str() takes at most 3 arguments (%d given)", nargs + nkwargs);
+            "str() takes at most 3 arguments (%d given)", nargs);
         return NULL;
     }
     if (nargs == 0) {
@@ -14666,8 +14668,8 @@ unicode_vectorcall(PyObject *type, PyObject *const *args,
     if (nargs == 1) {
         return PyObject_Str(object);
     }
-    const char *encoding = as_const_char(args[1], "encoding");
-    const char *errors = (nargs == 2) ? NULL : as_const_char(args[2], "errors");
+    const char *encoding = arg_as_utf8(args[1], "encoding");
+    const char *errors = (nargs == 2) ? NULL : arg_as_utf8(args[2], "errors");
     return PyUnicode_FromEncodedObject(object, encoding, errors);
 }
 
