@@ -9272,12 +9272,13 @@ tailmatch(PyObject *self,
     else
         offset = start;
 
-    int last_character_matches = PyUnicode_READ(kind_self, data_self, offset + end_sub) ==
-        PyUnicode_READ(kind_sub, data_sub, end_sub);
+    int match_last = PyUnicode_READ(kind_self, data_self, offset + end_sub) ==
+                        PyUnicode_READ(kind_sub, data_sub, end_sub);
 
-    if (last_character_matches) {
-        if (end_sub==0)
+    if (match_last) {
+        if (end_sub==0) {
             return 1;
+        }
         /* If both are of the same kind, memcmp is sufficient */
         if (kind_self == kind_sub) {
             return ! memcmp((char *)data_self + (offset * kind_sub),
