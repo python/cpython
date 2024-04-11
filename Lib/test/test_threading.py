@@ -1527,6 +1527,7 @@ class SubinterpThreadingTests(BaseTestCase):
             {before_start}
             t.start()
             """)
+        check_multi_interp_extensions = bool(support.Py_GIL_DISABLED)
         script = textwrap.dedent(f"""
             import test.support
             test.support.run_in_subinterp_with_config(
@@ -1536,7 +1537,7 @@ class SubinterpThreadingTests(BaseTestCase):
                 allow_exec=True,
                 allow_threads={allowed},
                 allow_daemon_threads={daemon_allowed},
-                check_multi_interp_extensions=False,
+                check_multi_interp_extensions={check_multi_interp_extensions},
                 own_gil=False,
             )
             """)

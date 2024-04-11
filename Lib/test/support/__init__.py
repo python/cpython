@@ -842,6 +842,12 @@ def requires_gil_enabled(msg="needs the GIL enabled"):
     """Decorator for skipping tests on the free-threaded build."""
     return unittest.skipIf(Py_GIL_DISABLED, msg)
 
+def expected_failure_if_gil_disabled():
+    """Expect test failure if the GIL is disabled."""
+    if Py_GIL_DISABLED:
+        return unittest.expectedFailure
+    return lambda test_case: test_case
+
 if Py_GIL_DISABLED:
     _header = 'PHBBInP'
 else:
