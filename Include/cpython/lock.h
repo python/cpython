@@ -21,7 +21,7 @@
 //
 // The contents of the PyMutex are not part of the public API, but are
 // described to aid in understanding the implementation and debugging. Only
-// the least significant bits are used. The remaining bits are always zero:
+// the two least significant bits are used. The remaining bits are always zero:
 // 0b00: unlocked
 // 0b01: locked
 // 0b10: unlocked and has parked threads
