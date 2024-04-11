@@ -14666,15 +14666,8 @@ unicode_vectorcall(PyObject *type, PyObject *const *args,
     if (nargs == 1) {
         return PyObject_Str(object);
     }
-    const char *encoding = NULL;
-    const char *errors = NULL;
-    if (nargs == 2) {
-        encoding = as_const_char(args[1], "encoding");
-    }
-    if (nargs == 3) {
-        encoding = as_const_char(args[1], "encoding");
-        errors = as_const_char(args[1], "errors");
-    }
+    const char *encoding = as_const_char(args[1], "encoding");
+    const char *errors = (nargs == 2) ? NULL : as_const_char(args[2], "errors");
     return PyUnicode_FromEncodedObject(object, encoding, errors);
 }
 
