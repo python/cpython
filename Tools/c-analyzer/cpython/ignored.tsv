@@ -164,7 +164,7 @@ Python/pylifecycle.c	_Py_FatalErrorFormat	reentrant	-
 Python/pylifecycle.c	fatal_error	reentrant	-
 
 # explicitly protected, internal-only
-Modules/_xxinterpchannelsmodule.c	-	_globals	-
+Modules/_interpchannelsmodule.c	-	_globals	-
 Modules/_interpqueuesmodule.c	-	_globals	-
 
 # set once during module init
@@ -246,8 +246,8 @@ Modules/_struct.c	-	bigendian_table	-
 Modules/_struct.c	-	lilendian_table	-
 Modules/_struct.c	-	native_table	-
 Modules/_tkinter.c	-	state_key	-
-Modules/_xxinterpchannelsmodule.c	-	_channelid_end_recv	-
-Modules/_xxinterpchannelsmodule.c	-	_channelid_end_send	-
+Modules/_interpchannelsmodule.c	-	_channelid_end_recv	-
+Modules/_interpchannelsmodule.c	-	_channelid_end_send	-
 Modules/_zoneinfo.c	-	DAYS_BEFORE_MONTH	-
 Modules/_zoneinfo.c	-	DAYS_IN_MONTH	-
 Modules/_interpretersmodule.c	-	no_exception	-

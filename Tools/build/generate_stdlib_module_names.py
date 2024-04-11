@@ -36,7 +36,6 @@ IGNORE = {
     '_testmultiphase',
     '_testsinglephase',
     '_testexternalinspection',
-    '_xxinterpchannels',
     '_xxtestfuzz',
     'idlelib.idle_test',
     'test',

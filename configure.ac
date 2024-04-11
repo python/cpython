@@ -7393,7 +7393,7 @@ AS_CASE([$ac_sys_system],
       [_scproxy],
       [_tkinter],
       [_interpreters],
-      [_xxinterpchannels],
+      [_interpchannels],
       [_interpqueues],
       [grp],
       [pwd],
@@ -7518,7 +7518,7 @@ PY_STDLIB_MOD_SIMPLE([select])
 PY_STDLIB_MOD_SIMPLE([_struct])
 PY_STDLIB_MOD_SIMPLE([_typing])
 PY_STDLIB_MOD_SIMPLE([_interpreters])
-PY_STDLIB_MOD_SIMPLE([_xxinterpchannels])
+PY_STDLIB_MOD_SIMPLE([_interpchannels])
 PY_STDLIB_MOD_SIMPLE([_interpqueues])
 PY_STDLIB_MOD_SIMPLE([_zoneinfo])
 

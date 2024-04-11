@@ -1550,7 +1550,7 @@
     <ClCompile Include="..\Modules\_interpretersmodule.c">
       <Filter>Modules</Filter>
     </ClCompile>
-    <ClCompile Include="..\Modules\_xxinterpchannelsmodule.c">
+    <ClCompile Include="..\Modules\_interpchannelsmodule.c">
       <Filter>Modules</Filter>
     </ClCompile>
     <ClCompile Include="..\Modules\_interpqueuesmodule.c">
