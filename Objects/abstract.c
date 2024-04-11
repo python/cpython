@@ -2069,7 +2069,7 @@ PySequence_Tuple(PyObject *v)
     if (temp == NULL)
         goto Fail;
 
-    /* Fill the tuple. */
+    /* Fill the temporary list. */
     for (;;) {
         PyObject *item = PyIter_Next(it);
         if (item == NULL) {
@@ -2085,7 +2085,7 @@ PySequence_Tuple(PyObject *v)
         }
     }
     Py_DECREF(it);
-    PyObject *result = PyList_AsTuple(temp);
+    PyObject *result = _PyList_AsTupleStealItems(temp);
     Py_DECREF(temp);
     return result;
 
