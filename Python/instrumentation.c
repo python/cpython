@@ -2349,7 +2349,7 @@ PyMonitoring_EnterScope(PyMonitoringState *state_array, uint64_t *version,
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
     if (global_version(interp) == *version) {
-        return;
+        return 0;
     }
 
     _Py_GlobalMonitors *m = &interp->monitors;
