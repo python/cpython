@@ -2038,9 +2038,6 @@ PySequence_DelSlice(PyObject *s, Py_ssize_t i1, Py_ssize_t i2)
 PyObject *
 PySequence_Tuple(PyObject *v)
 {
-    PyObject *it;  /* iter(v) */
-    Py_ssize_t n;             /* guess for result tuple size */
-
     if (v == NULL) {
         return null_error();
     }
@@ -2057,7 +2054,7 @@ PySequence_Tuple(PyObject *v)
         return PyList_AsTuple(v);
 
     /* Get iterator. */
-    it = PyObject_GetIter(v);
+    PyObject *it = PyObject_GetIter(v);
     if (it == NULL)
         return NULL;
 
