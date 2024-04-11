@@ -500,7 +500,8 @@ sys_addaudithook_impl(PyObject *module, PyObject *hook)
 }
 
 PyDoc_STRVAR(audit_doc,
-"audit(event, *args)\n\
+"audit($module, event, /, *args)\n\
+--\n\
 \n\
 Passes the event to any audit hooks that are attached.");
 
@@ -644,7 +645,8 @@ sys_breakpointhook(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyOb
 }
 
 PyDoc_STRVAR(breakpointhook_doc,
-"breakpointhook(*args, **kws)\n"
+"breakpointhook($module, /, *args, **kwargs)\n"
+"--\n"
 "\n"
 "This hook function is called by built-in breakpoint().\n"
 );
@@ -1103,7 +1105,8 @@ sys_settrace(PyObject *self, PyObject *args)
 }
 
 PyDoc_STRVAR(settrace_doc,
-"settrace(function)\n\
+"settrace($module, function, /)\n\
+--\n\
 \n\
 Set the global debug tracing function.  It will be called on each\n\
 function call.  See the debugger chapter in the library manual."
@@ -1177,7 +1180,8 @@ sys_setprofile(PyObject *self, PyObject *args)
 }
 
 PyDoc_STRVAR(setprofile_doc,
-"setprofile(function)\n\
+"setprofile($module, function, /)\n\
+--\n\
 \n\
 Set the profiling function.  It will be called on each function call\n\
 and return.  See the profiler chapter in the library manual."
