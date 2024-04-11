@@ -109,7 +109,8 @@ struct _is {
 #define _PyInterpreterState_WHENCE_LEGACY_CAPI 2
 #define _PyInterpreterState_WHENCE_CAPI 3
 #define _PyInterpreterState_WHENCE_XI 4
-#define _PyInterpreterState_WHENCE_MAX 4
+#define _PyInterpreterState_WHENCE_STDLIB 5
+#define _PyInterpreterState_WHENCE_MAX 5
     long _whence;
 
     /* Has been initialized to a safe state.
@@ -315,6 +316,8 @@ PyAPI_FUNC(PyInterpreterState *) _PyInterpreterState_LookUpIDObject(PyObject *);
 PyAPI_FUNC(int) _PyInterpreterState_IDInitref(PyInterpreterState *);
 PyAPI_FUNC(int) _PyInterpreterState_IDIncref(PyInterpreterState *);
 PyAPI_FUNC(void) _PyInterpreterState_IDDecref(PyInterpreterState *);
+
+PyAPI_FUNC(int) _PyInterpreterState_IsReady(PyInterpreterState *interp);
 
 PyAPI_FUNC(long) _PyInterpreterState_GetWhence(PyInterpreterState *interp);
 extern void _PyInterpreterState_SetWhence(
