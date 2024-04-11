@@ -14656,9 +14656,7 @@ unicode_vectorcall(PyObject *type, PyObject *const *args,
         Py_DECREF(dict);
         return ret;
     }
-    if (nargs > 3) {
-        PyErr_Format(PyExc_TypeError,
-            "str() takes at most 3 arguments (%d given)", nargs);
+    if (!_PyArg_CheckPositional("str", nargs, 0, 3)) {
         return NULL;
     }
     if (nargs == 0) {
