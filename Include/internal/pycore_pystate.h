@@ -286,6 +286,16 @@ static inline struct _Py_object_freelists* _Py_object_freelists_GET(void)
 #endif
 }
 
+extern PyInterpreterState *_Py_interp_for_stop_the_world(struct _stoptheworld_state *stw);
+
+// Loops over threads for a stop-the-world event.
+// For global: all threads in all interpreters
+// For per-interpreter: all threads in the interpreter
+#define _Py_FOR_EACH_THREAD(stw, i, t)                                      \
+    for (i = _Py_interp_for_stop_the_world((stw));                              \
+            i != NULL; i = ((stw->is_global) ? i->next : NULL))             \
+        for (t = i->threads.head; t; t = t->next)
+
 #ifdef __cplusplus
 }
 #endif

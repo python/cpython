@@ -252,6 +252,10 @@ static _PyInterpreterFrame *
 _PyEvalFramePushAndInit(PyThreadState *tstate, PyFunctionObject *func,
                         PyObject *locals, _PyStackRef const* args,
                         size_t argcount, PyObject *kwnames);
+static _PyInterpreterFrame *
+_PyEvalFramePushAndInit_UnTagged(PyThreadState *tstate, PyFunctionObject *func,
+                        PyObject *locals, PyObject *const* args,
+                        size_t argcount, PyObject *kwnames);
 static  _PyInterpreterFrame *
 _PyEvalFramePushAndInit_Ex(PyThreadState *tstate, PyFunctionObject *func,
     PyObject *locals, Py_ssize_t nargs, PyObject *callargs, PyObject *kwargs);
@@ -1481,7 +1485,7 @@ initialize_locals(PyThreadState *tstate, PyFunctionObject *func,
         for (i = 0; i < kwcount; i++) {
             PyObject **co_varnames;
             PyObject *keyword = PyTuple_GET_ITEM(kwnames, i);
-            PyObject *value = Py_STACK_UNTAG_BORROWED(args[i+argcount]);
+            _PyStackRef value_tagged = args[i+argcount];
             Py_ssize_t j;
 
             if (keyword == NULL || !PyUnicode_Check(keyword)) {
@@ -1554,16 +1558,15 @@ initialize_locals(PyThreadState *tstate, PyFunctionObject *func,
                 goto kw_fail;
             }
 
-            if (PyDict_SetItem(kwdict, keyword, value) == -1) {
+            if (PyDict_SetItem(kwdict, keyword, Py_STACK_UNTAG_OWNED(value_tagged)) == -1) {
                 goto kw_fail;
             }
-            Py_DECREF(value);
+            Py_DECREF_STACKREF(value_tagged);
             continue;
 
         kw_fail:
             for (;i < kwcount; i++) {
-                PyObject *value = Py_STACK_UNTAG_BORROWED(args[i+argcount]);
-                Py_DECREF(value);
+                Py_DECREF_STACKREF(args[i+argcount]);
             }
             goto fail_post_args;
 
@@ -1574,7 +1577,7 @@ initialize_locals(PyThreadState *tstate, PyFunctionObject *func,
                           func->func_qualname, keyword);
                 goto kw_fail;
             }
-            localsplus[j] = Py_STACK_TAG(value);
+            localsplus[j] = value_tagged;
         }
     }
 
@@ -1737,6 +1740,27 @@ fail:
     return NULL;
 }
 
+static _PyInterpreterFrame *
+_PyEvalFramePushAndInit_UnTagged(PyThreadState *tstate, PyFunctionObject *func,
+                        PyObject *locals, PyObject *const* args,
+                        size_t argcount, PyObject *kwnames)
+{
+#if defined(Py_GIL_DISABLED) || defined(Py_TAG_TEST)
+    _PyStackRef *tagged_args_buffer = PyMem_Malloc(sizeof(_PyStackRef) * argcount);
+    if (tagged_args_buffer == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+    for (size_t i = 0; i < argcount; i++) {
+        tagged_args_buffer[i] = Py_STACK_TAG(args[i]);
+    }
+    return _PyEvalFramePushAndInit(tstate, func, locals, (_PyStackRef const *)tagged_args_buffer, argcount, kwnames);
+#else
+    assert(Py_TAG == 0);
+    return _PyEvalFramePushAndInit(tstate, func, locals, (_PyStackRef const *)args, argcount, kwnames);
+#endif
+}
+
 /* Same as _PyEvalFramePushAndInit but takes an args tuple and kwargs dict.
    Steals references to func, callargs and kwargs.
 */
@@ -1761,9 +1785,9 @@ _PyEvalFramePushAndInit_Ex(PyThreadState *tstate, PyFunctionObject *func,
             Py_INCREF(PyTuple_GET_ITEM(callargs, i));
         }
     }
-    _PyInterpreterFrame *new_frame = _PyEvalFramePushAndInit(
+    _PyInterpreterFrame *new_frame = _PyEvalFramePushAndInit_UnTagged(
         tstate, (PyFunctionObject *)func, locals,
-        (_PyStackRef const *)newargs, nargs, kwnames
+        newargs, nargs, kwnames
     );
     if (has_dict) {
         _PyStack_UnpackDict_FreeNoDecRef(newargs, kwnames);
@@ -1799,8 +1823,8 @@ _PyEval_Vector(PyThreadState *tstate, PyFunctionObject *func,
             Py_INCREF(args[i+argcount]);
         }
     }
-    _PyInterpreterFrame *frame = _PyEvalFramePushAndInit(
-        tstate, func, locals, (_PyStackRef * const)args, argcount, kwnames);
+    _PyInterpreterFrame *frame = _PyEvalFramePushAndInit_UnTagged(
+        tstate, func, locals, args, argcount, kwnames);
     if (frame == NULL) {
         return NULL;
     }

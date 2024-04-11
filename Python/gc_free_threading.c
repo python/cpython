@@ -15,6 +15,7 @@
 #include "pycore_tstate.h"        // _PyThreadStateImpl
 #include "pycore_weakref.h"       // _PyWeakref_ClearRef()
 #include "pydtrace.h"
+#include "pycore_tagged.h"
 
 #ifdef Py_GIL_DISABLED
 
@@ -309,6 +310,27 @@ gc_visit_heaps(PyInterpreterState *interp, mi_block_visit_fun *visitor,
 }
 
 static void
+gc_visit_thread_stacks(struct _stoptheworld_state *stw)
+{
+    HEAD_LOCK(&_PyRuntime);
+    PyInterpreterState *interp;
+    PyThreadState *tstate;
+    _Py_FOR_EACH_THREAD(stw, interp, tstate) {
+        _PyStackChunk *curr_chunk = tstate->datastack_chunk;
+        while (curr_chunk != NULL) {
+            for (size_t curr_i = 0; curr_i < curr_chunk->top; curr_i++) {
+                _PyStackRef curr_o = Py_STACK_TAG_UNSAFE(curr_chunk->data[curr_i]);
+                if ((curr_o.bits & Py_TAG_DEFERRED) == Py_TAG_DEFERRED) {
+                    gc_add_refs(Py_STACK_UNTAG_OWNED(curr_o), 1);
+                }
+            }
+            curr_chunk = curr_chunk->previous;
+        }
+    }
+    HEAD_UNLOCK(&_PyRuntime);
+}
+
+static void
 merge_queued_objects(_PyThreadStateImpl *tstate, struct collection_state *state)
 {
     struct _brc_thread_state *brc = &tstate->brc;
@@ -565,6 +587,8 @@ deduce_unreachable_heap(PyInterpreterState *interp,
     // reference count difference (stored in `ob_tid`) is non-negative.
     gc_visit_heaps(interp, &validate_gc_objects, &state->base);
 #endif
+
+    gc_visit_thread_stacks(&interp->stoptheworld);
 
     // Transitively mark reachable objects by clearing the
     // _PyGC_BITS_UNREACHABLE flag.

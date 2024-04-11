@@ -50,6 +50,7 @@ typedef union {
     #define Py_STACK_TAG(obj) ((_PyStackRef){.bits = ((uintptr_t)(obj))})
 #endif
 
+#define Py_STACK_TAG_UNSAFE(obj) ((_PyStackRef){.bits = ((uintptr_t)(obj))})
 
 #if defined(Py_TAG_TEST)
     #define Py_STACK_UNTAG_OWNED(tagged) Py_STACK_UNTAG_BORROWED(tagged)
@@ -60,6 +61,7 @@ typedef union {
             assert(_PyObject_HasDeferredRefcount(Py_STACK_UNTAG_BORROWED(tagged)));
             return Py_NewRef(Py_STACK_UNTAG_BORROWED(tagged));
         }
+        assert(!_PyObject_HasDeferredRefcount(Py_STACK_UNTAG_BORROWED(tagged)));
         return Py_STACK_UNTAG_BORROWED(tagged);
     }
     #define Py_STACK_UNTAG_OWNED(tagged) _Py_Stack_Untag_Owned(tagged)
@@ -128,11 +130,11 @@ _Py_untag_stack_owned(PyObject **dst, const _PyStackRef *src, size_t length) {
 #if defined(Py_GIL_DISABLED)
     static inline void
     _Py_IncRef_StackRef(_PyStackRef tagged) {
-        if ((tagged.bits & Py_TAG_DEFERRED) == Py_TAG_DEFERRED) {
-            assert(_PyObject_HasDeferredRefcount(Py_STACK_UNTAG_BORROWED(tagged)));
-            return;
-        }
-        assert(!_PyObject_HasDeferredRefcount(Py_STACK_UNTAG_BORROWED(tagged)));
+//        if ((tagged.bits & Py_TAG_DEFERRED) == Py_TAG_DEFERRED) {
+//            assert(_PyObject_HasDeferredRefcount(Py_STACK_UNTAG_BORROWED(tagged)));
+//            return;
+//        }
+//        assert(!_PyObject_HasDeferredRefcount(Py_STACK_UNTAG_BORROWED(tagged)));
         return Py_INCREF(Py_STACK_UNTAG_BORROWED(tagged));
     }
     #define Py_INCREF_STACKREF(op) _Py_IncRef_StackRef(op)

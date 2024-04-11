@@ -2079,22 +2079,13 @@ decrement_stoptheworld_countdown(struct _stoptheworld_state *stw)
 // we start with the first interpreter and then iterate over all interpreters.
 // For per-interpreter stop-the-world events, we only operate on the one
 // interpreter.
-static PyInterpreterState *
-interp_for_stop_the_world(struct _stoptheworld_state *stw)
+PyInterpreterState *
+_Py_interp_for_stop_the_world(struct _stoptheworld_state *stw)
 {
     return (stw->is_global
         ? PyInterpreterState_Head()
         : _Py_CONTAINER_OF(stw, PyInterpreterState, stoptheworld));
 }
-
-// Loops over threads for a stop-the-world event.
-// For global: all threads in all interpreters
-// For per-interpreter: all threads in the interpreter
-#define _Py_FOR_EACH_THREAD(stw, i, t)                                      \
-    for (i = interp_for_stop_the_world((stw));                              \
-            i != NULL; i = ((stw->is_global) ? i->next : NULL))             \
-        for (t = i->threads.head; t; t = t->next)
-
 
 // Try to transition threads atomically from the "detached" state to the
 // "gc stopped" state. Returns true if all threads are in the "gc stopped"
