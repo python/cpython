@@ -2070,7 +2070,7 @@ class SubinterpreterTest(unittest.TestCase):
                     _testinternalcapi.get_interp_settings()
                     raise NotImplementedError('unreachable')
                     ''')
-                with self.assertRaises(RuntimeError):
+                with self.assertRaises(_interpreters.InterpreterError):
                     support.run_in_subinterp_with_config(script, **kwargs)
 
     @unittest.skipIf(_testsinglephase is None, "test requires _testsinglephase module")
@@ -2412,7 +2412,7 @@ class InterpreterConfigTests(unittest.TestCase):
                 continue
             if match(config, invalid):
                 with self.subTest(f'invalid: {config}'):
-                    with self.assertRaises(RuntimeError):
+                    with self.assertRaises(_interpreters.InterpreterError):
                         check(config)
             elif match(config, questionable):
                 with self.subTest(f'questionable: {config}'):
@@ -2438,7 +2438,7 @@ class InterpreterConfigTests(unittest.TestCase):
             expected.gil = 'own'
             if Py_GIL_DISABLED:
                 expected.check_multi_interp_extensions = False
-            interpid = _interpreters.get_main()
+            interpid, *_ = _interpreters.get_main()
             config = _interpreters.get_config(interpid)
             self.assert_ns_equal(config, expected)
 
@@ -2591,7 +2591,7 @@ class InterpreterIDTests(unittest.TestCase):
 
     def test_linked_lifecycle_initial(self):
         is_linked = _testinternalcapi.interpreter_refcount_linked
-        get_refcount = _testinternalcapi.get_interpreter_refcount
+        get_refcount, _, _ = self.get_refcount_helpers()
 
         # A new interpreter will start out not linked, with a refcount of 0.
         interpid = self.new_interpreter()

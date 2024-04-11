@@ -103,11 +103,22 @@ struct _is {
     int requires_idref;
     PyThread_type_lock id_mutex;
 
+#define _PyInterpreterState_WHENCE_NOTSET -1
+#define _PyInterpreterState_WHENCE_UNKNOWN 0
+#define _PyInterpreterState_WHENCE_RUNTIME 1
+#define _PyInterpreterState_WHENCE_LEGACY_CAPI 2
+#define _PyInterpreterState_WHENCE_CAPI 3
+#define _PyInterpreterState_WHENCE_XI 4
+#define _PyInterpreterState_WHENCE_MAX 4
+    long _whence;
+
     /* Has been initialized to a safe state.
 
        In order to be effective, this must be set to 0 during or right
        after allocation. */
     int _initialized;
+    /* Has been fully initialized via pylifecycle.c. */
+    int _ready;
     int finalizing;
 
     uintptr_t last_restart_version;
@@ -304,6 +315,11 @@ PyAPI_FUNC(PyInterpreterState *) _PyInterpreterState_LookUpIDObject(PyObject *);
 PyAPI_FUNC(int) _PyInterpreterState_IDInitref(PyInterpreterState *);
 PyAPI_FUNC(int) _PyInterpreterState_IDIncref(PyInterpreterState *);
 PyAPI_FUNC(void) _PyInterpreterState_IDDecref(PyInterpreterState *);
+
+PyAPI_FUNC(long) _PyInterpreterState_GetWhence(PyInterpreterState *interp);
+extern void _PyInterpreterState_SetWhence(
+    PyInterpreterState *interp,
+    long whence);
 
 extern const PyConfig* _PyInterpreterState_GetConfig(PyInterpreterState *interp);
 

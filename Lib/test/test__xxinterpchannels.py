@@ -9,7 +9,7 @@ import unittest
 from test.support import import_helper
 
 from test.test__xxsubinterpreters import (
-    interpreters,
+    _interpreters,
     _run_output,
     clean_up_interpreters,
 )
@@ -49,14 +49,15 @@ def run_interp(id, source, **shared):
 
 def _run_interp(id, source, shared, _mainns={}):
     source = dedent(source)
-    main = interpreters.get_main()
+    main, *_ = _interpreters.get_main()
     if main == id:
-        if interpreters.get_current() != main:
+        cur, *_ = _interpreters.get_current()
+        if cur != main:
             raise RuntimeError
         # XXX Run a func?
         exec(source, _mainns)
     else:
-        interpreters.run_string(id, source, shared)
+        _interpreters.run_string(id, source, shared)
 
 
 class Interpreter(namedtuple('Interpreter', 'name id')):
@@ -71,7 +72,7 @@ class Interpreter(namedtuple('Interpreter', 'name id')):
             raise NotImplementedError
 
     def __new__(cls, name=None, id=None):
-        main = interpreters.get_main()
+        main, *_ = _interpreters.get_main()
         if id == main:
             if not name:
                 name = 'main'
@@ -89,7 +90,7 @@ class Interpreter(namedtuple('Interpreter', 'name id')):
             name = 'main'
             id = main
         else:
-            id = interpreters.create()
+            id = _interpreters.create()
         self = super().__new__(cls, name, id)
         return self
 
@@ -370,7 +371,7 @@ class ChannelTests(TestBase):
         self.assertEqual(set(after) - set(before), {id1, id2, id3})
 
     def test_ids_global(self):
-        id1 = interpreters.create()
+        id1 = _interpreters.create()
         out = _run_output(id1, dedent("""
             import _xxinterpchannels as _channels
             cid = _channels.create()
@@ -378,7 +379,7 @@ class ChannelTests(TestBase):
             """))
         cid1 = int(out.strip())
 
-        id2 = interpreters.create()
+        id2 = _interpreters.create()
         out = _run_output(id2, dedent("""
             import _xxinterpchannels as _channels
             cid = _channels.create()
@@ -390,7 +391,7 @@ class ChannelTests(TestBase):
 
     def test_channel_list_interpreters_none(self):
         """Test listing interpreters for a channel with no associations."""
-        # Test for channel with no associated interpreters.
+        # Test for channel with no associated _interpreters.
         cid = channels.create()
         send_interps = channels.list_interpreters(cid, send=True)
         recv_interps = channels.list_interpreters(cid, send=False)
@@ -398,8 +399,8 @@ class ChannelTests(TestBase):
         self.assertEqual(recv_interps, [])
 
     def test_channel_list_interpreters_basic(self):
-        """Test basic listing channel interpreters."""
-        interp0 = interpreters.get_main()
+        """Test basic listing channel _interpreters."""
+        interp0, *_ = _interpreters.get_main()
         cid = channels.create()
         channels.send(cid, "send", blocking=False)
         # Test for a channel that has one end associated to an interpreter.
@@ -408,7 +409,7 @@ class ChannelTests(TestBase):
         self.assertEqual(send_interps, [interp0])
         self.assertEqual(recv_interps, [])
 
-        interp1 = interpreters.create()
+        interp1 = _interpreters.create()
         _run_output(interp1, dedent(f"""
             import _xxinterpchannels as _channels
             obj = _channels.recv({cid})
@@ -421,10 +422,10 @@ class ChannelTests(TestBase):
 
     def test_channel_list_interpreters_multiple(self):
         """Test listing interpreters for a channel with many associations."""
-        interp0 = interpreters.get_main()
-        interp1 = interpreters.create()
-        interp2 = interpreters.create()
-        interp3 = interpreters.create()
+        interp0, *_ = _interpreters.get_main()
+        interp1 = _interpreters.create()
+        interp2 = _interpreters.create()
+        interp3 = _interpreters.create()
         cid = channels.create()
 
         channels.send(cid, "send", blocking=False)
@@ -447,8 +448,8 @@ class ChannelTests(TestBase):
 
     def test_channel_list_interpreters_destroyed(self):
         """Test listing channel interpreters with a destroyed interpreter."""
-        interp0 = interpreters.get_main()
-        interp1 = interpreters.create()
+        interp0, *_ = _interpreters.get_main()
+        interp1 = _interpreters.create()
         cid = channels.create()
         channels.send(cid, "send", blocking=False)
         _run_output(interp1, dedent(f"""
@@ -461,7 +462,7 @@ class ChannelTests(TestBase):
         self.assertEqual(send_interps, [interp0])
         self.assertEqual(recv_interps, [interp1])
 
-        interpreters.destroy(interp1)
+        _interpreters.destroy(interp1)
         # Destroyed interpreter should not be listed.
         send_interps = channels.list_interpreters(cid, send=True)
         recv_interps = channels.list_interpreters(cid, send=False)
@@ -472,9 +473,9 @@ class ChannelTests(TestBase):
         """Test listing channel interpreters with a released channel."""
         # Set up one channel with main interpreter on the send end and two
         # subinterpreters on the receive end.
-        interp0 = interpreters.get_main()
-        interp1 = interpreters.create()
-        interp2 = interpreters.create()
+        interp0, *_ = _interpreters.get_main()
+        interp1 = _interpreters.create()
+        interp2 = _interpreters.create()
         cid = channels.create()
         channels.send(cid, "data", blocking=False)
         _run_output(interp1, dedent(f"""
@@ -494,7 +495,7 @@ class ChannelTests(TestBase):
 
         # Release the main interpreter from the send end.
         channels.release(cid, send=True)
-        # Send end should have no associated interpreters.
+        # Send end should have no associated _interpreters.
         send_interps = channels.list_interpreters(cid, send=True)
         recv_interps = channels.list_interpreters(cid, send=False)
         self.assertEqual(len(send_interps), 0)
@@ -513,8 +514,8 @@ class ChannelTests(TestBase):
 
     def test_channel_list_interpreters_closed(self):
         """Test listing channel interpreters with a closed channel."""
-        interp0 = interpreters.get_main()
-        interp1 = interpreters.create()
+        interp0, *_ = _interpreters.get_main()
+        interp1 = _interpreters.create()
         cid = channels.create()
         # Put something in the channel so that it's not empty.
         channels.send(cid, "send", blocking=False)
@@ -535,8 +536,8 @@ class ChannelTests(TestBase):
 
     def test_channel_list_interpreters_closed_send_end(self):
         """Test listing channel interpreters with a channel's send end closed."""
-        interp0 = interpreters.get_main()
-        interp1 = interpreters.create()
+        interp0, *_ = _interpreters.get_main()
+        interp1 = _interpreters.create()
         cid = channels.create()
         # Put something in the channel so that it's not empty.
         channels.send(cid, "send", blocking=False)
@@ -589,9 +590,9 @@ class ChannelTests(TestBase):
 
     def test_run_string_arg_unresolved(self):
         cid = channels.create()
-        interp = interpreters.create()
+        interp = _interpreters.create()
 
-        interpreters.set___main___attrs(interp, dict(cid=cid.send))
+        _interpreters.set___main___attrs(interp, dict(cid=cid.send))
         out = _run_output(interp, dedent("""
             import _xxinterpchannels as _channels
             print(cid.end)
@@ -609,7 +610,7 @@ class ChannelTests(TestBase):
     def test_run_string_arg_resolved(self):
         cid = channels.create()
         cid = channels._channel_id(cid, _resolve=True)
-        interp = interpreters.create()
+        interp = _interpreters.create()
 
         out = _run_output(interp, dedent("""
             import _xxinterpchannels as _channels
@@ -635,7 +636,7 @@ class ChannelTests(TestBase):
         self.assertIsNot(obj, orig)
 
     def test_send_recv_same_interpreter(self):
-        id1 = interpreters.create()
+        id1 = _interpreters.create()
         out = _run_output(id1, dedent("""
             import _xxinterpchannels as _channels
             cid = _channels.create()
@@ -648,7 +649,7 @@ class ChannelTests(TestBase):
 
     def test_send_recv_different_interpreters(self):
         cid = channels.create()
-        id1 = interpreters.create()
+        id1 = _interpreters.create()
         out = _run_output(id1, dedent(f"""
             import _xxinterpchannels as _channels
             _channels.send({cid}, b'spam', blocking=False)
@@ -674,7 +675,7 @@ class ChannelTests(TestBase):
 
     def test_send_recv_different_interpreters_and_threads(self):
         cid = channels.create()
-        id1 = interpreters.create()
+        id1 = _interpreters.create()
         out = None
 
         def f():
@@ -737,12 +738,12 @@ class ChannelTests(TestBase):
     def test_recv_sending_interp_destroyed(self):
         with self.subTest('closed'):
             cid1 = channels.create()
-            interp = interpreters.create()
-            interpreters.run_string(interp, dedent(f"""
+            interp = _interpreters.create()
+            _interpreters.run_string(interp, dedent(f"""
                 import _xxinterpchannels as _channels
                 _channels.send({cid1}, b'spam', blocking=False)
                 """))
-            interpreters.destroy(interp)
+            _interpreters.destroy(interp)
 
             with self.assertRaisesRegex(RuntimeError,
                                         f'channel {cid1} is closed'):
@@ -750,13 +751,13 @@ class ChannelTests(TestBase):
             del cid1
         with self.subTest('still open'):
             cid2 = channels.create()
-            interp = interpreters.create()
-            interpreters.run_string(interp, dedent(f"""
+            interp = _interpreters.create()
+            _interpreters.run_string(interp, dedent(f"""
                 import _xxinterpchannels as _channels
                 _channels.send({cid2}, b'spam', blocking=False)
                 """))
             channels.send(cid2, b'eggs', blocking=False)
-            interpreters.destroy(interp)
+            _interpreters.destroy(interp)
 
             channels.recv(cid2)
             with self.assertRaisesRegex(RuntimeError,
@@ -1010,24 +1011,24 @@ class ChannelTests(TestBase):
 
     def test_close_multiple_users(self):
         cid = channels.create()
-        id1 = interpreters.create()
-        id2 = interpreters.create()
-        interpreters.run_string(id1, dedent(f"""
+        id1 = _interpreters.create()
+        id2 = _interpreters.create()
+        _interpreters.run_string(id1, dedent(f"""
             import _xxinterpchannels as _channels
             _channels.send({cid}, b'spam', blocking=False)
             """))
-        interpreters.run_string(id2, dedent(f"""
+        _interpreters.run_string(id2, dedent(f"""
             import _xxinterpchannels as _channels
             _channels.recv({cid})
             """))
         channels.close(cid)
 
-        excsnap = interpreters.run_string(id1, dedent(f"""
+        excsnap = _interpreters.run_string(id1, dedent(f"""
                 _channels.send({cid}, b'spam')
                 """))
         self.assertEqual(excsnap.type.__name__, 'ChannelClosedError')
 
-        excsnap = interpreters.run_string(id2, dedent(f"""
+        excsnap = _interpreters.run_string(id2, dedent(f"""
                 _channels.send({cid}, b'spam')
                 """))
         self.assertEqual(excsnap.type.__name__, 'ChannelClosedError')
@@ -1154,8 +1155,8 @@ class ChannelTests(TestBase):
     def test_close_by_unassociated_interp(self):
         cid = channels.create()
         channels.send(cid, b'spam', blocking=False)
-        interp = interpreters.create()
-        interpreters.run_string(interp, dedent(f"""
+        interp = _interpreters.create()
+        _interpreters.run_string(interp, dedent(f"""
             import _xxinterpchannels as _channels
             _channels.close({cid}, force=True)
             """))
@@ -1251,9 +1252,9 @@ class ChannelReleaseTests(TestBase):
 
     def test_multiple_users(self):
         cid = channels.create()
-        id1 = interpreters.create()
-        id2 = interpreters.create()
-        interpreters.run_string(id1, dedent(f"""
+        id1 = _interpreters.create()
+        id2 = _interpreters.create()
+        _interpreters.run_string(id1, dedent(f"""
             import _xxinterpchannels as _channels
             _channels.send({cid}, b'spam', blocking=False)
             """))
@@ -1263,7 +1264,7 @@ class ChannelReleaseTests(TestBase):
             _channels.release({cid})
             print(repr(obj))
             """))
-        interpreters.run_string(id1, dedent(f"""
+        _interpreters.run_string(id1, dedent(f"""
             _channels.release({cid})
             """))
 
@@ -1310,8 +1311,8 @@ class ChannelReleaseTests(TestBase):
     def test_by_unassociated_interp(self):
         cid = channels.create()
         channels.send(cid, b'spam', blocking=False)
-        interp = interpreters.create()
-        interpreters.run_string(interp, dedent(f"""
+        interp = _interpreters.create()
+        _interpreters.run_string(interp, dedent(f"""
             import _xxinterpchannels as _channels
             _channels.release({cid})
             """))
@@ -1325,8 +1326,8 @@ class ChannelReleaseTests(TestBase):
     def test_close_if_unassociated(self):
         # XXX Something's not right with this test...
         cid = channels.create()
-        interp = interpreters.create()
-        interpreters.run_string(interp, dedent(f"""
+        interp = _interpreters.create()
+        _interpreters.run_string(interp, dedent(f"""
             import _xxinterpchannels as _channels
             obj = _channels.send({cid}, b'spam', blocking=False)
             _channels.release({cid})
