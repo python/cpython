@@ -25,7 +25,9 @@ for details about the signatures of the different event callbacks).
   while its contents are maintained by the monitoring API functions described below.
 
 
-All of the functions below return 0 on success and -1 on error.
+All of the functions below return 0 on success and -1 (with an exception set) on error.
+
+See :mod:`sys.monitoring` for descriptions of the events.
 
 .. c:function:: int PyMonitoring_FirePyStartEvent(PyMonitoringState *state, PyObject *codelike, int32_t offset)
 
