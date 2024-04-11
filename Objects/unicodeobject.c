@@ -14626,11 +14626,7 @@ arg_as_utf8(PyObject *obj, const char *name)
                      name, obj);
         return NULL;
     }
-    const char *str = _PyUnicode_AsUTF8NoNUL(obj);
-    if (str == NULL) {
-        return NULL;
-    }
-    return str;
+    return _PyUnicode_AsUTF8NoNUL(obj);
 }
 
 static PyObject *
