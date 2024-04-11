@@ -6871,7 +6871,7 @@ static PyMethodDef object_methods[] = {
     OBJECT___REDUCE_EX___METHODDEF
     OBJECT___REDUCE___METHODDEF
     OBJECT___GETSTATE___METHODDEF
-    {"__subclasshook__", object_subclasshook, METH_CLASS | METH_VARARGS,
+    {"__subclasshook__", object_subclasshook, METH_CLASS | METH_O,
      object_subclasshook_doc},
     {"__init_subclass__", object_init_subclass, METH_CLASS | METH_NOARGS,
      object_init_subclass_doc},
@@ -9882,7 +9882,8 @@ static pytype_slotdef slotdefs[] = {
     TPSLOT(__new__, tp_new, slot_tp_new, NULL,
            "__new__(type, /, *args, **kwargs)\n--\n\n"
            "Create and return new object.  See help(type) for accurate signature."),
-    TPSLOT(__del__, tp_finalize, slot_tp_finalize, (wrapperfunc)wrap_del, ""),
+    TPSLOT(__del__, tp_finalize, slot_tp_finalize, (wrapperfunc)wrap_del,
+           "__del__($self)\n--\n\n"),
 
     BUFSLOT(__buffer__, bf_getbuffer, slot_bf_getbuffer, wrap_buffer,
             "__buffer__($self, flags, /)\n--\n\n"

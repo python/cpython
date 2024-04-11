@@ -3259,6 +3259,8 @@ PyDoc_STRVAR(memory_f_contiguous_doc,
              "A bool indicating whether the memory is Fortran contiguous.");
 PyDoc_STRVAR(memory_contiguous_doc,
              "A bool indicating whether the memory is contiguous.");
+PyDoc_STRVAR(memory_exit_doc,
+             "__exit__($self, *exc_info)\n--\n\n");
 
 
 static PyGetSetDef memory_getsetlist[] = {
@@ -3287,7 +3289,7 @@ static PyMethodDef memory_methods[] = {
     MEMORYVIEW_TOREADONLY_METHODDEF
     MEMORYVIEW__FROM_FLAGS_METHODDEF
     {"__enter__",   memory_enter, METH_NOARGS, NULL},
-    {"__exit__",    memory_exit, METH_VARARGS, NULL},
+    {"__exit__",    memory_exit, METH_VARARGS, memory_exit_doc},
     {NULL,          NULL}
 };
 

@@ -5718,7 +5718,7 @@ class TestSignatureDefinitions(unittest.TestCase):
     @cpython_only
     @unittest.skipIf(MISSING_C_DOCSTRINGS,
                      "Signature information for builtins requires docstrings")
-    def test_builtins_have_signatures(self):
+    def _test_builtins_have_signatures(self, module, no_signature=(), methods_no_signature={}):
         # This checks all builtin callables in CPython have signatures
         # A few have signatures Signature can't yet handle, so we skip those
         # since they will have to wait until PEP 457 adds the required
@@ -5727,34 +5727,25 @@ class TestSignatureDefinitions(unittest.TestCase):
         # reasons, so we also skip those for the time being, but design
         # the test to fail in order to indicate when it needs to be
         # updated.
-        no_signature = set()
-        # These builtin types are expected to provide introspection info
-        types_with_signatures = {
-            '__loader__', 'bool', 'bytearray', 'bytes', 'classmethod',
-            'complex', 'dict', 'enumerate', 'filter', 'float', 'frozenset',
-            'int', 'list', 'map', 'memoryview', 'object', 'property', 'range',
-            'reversed', 'set', 'slice', 'staticmethod', 'str', 'tuple', 'zip'
-        }
+        no_signature = no_signature or set()
         # Check the signatures we expect to be there
-        ns = vars(builtins)
+        ns = vars(module)
         for name, obj in sorted(ns.items()):
             if not callable(obj):
                 continue
-            # The builtin types haven't been converted to AC yet
-            if isinstance(obj, type) and (name not in types_with_signatures):
-                # Note that this also skips all the exception types
+            if isinstance(obj, type) and issubclass(obj, BaseException):
                 no_signature.add(name)
-            if (name in no_signature):
-                # Not yet converted
-                with self.subTest(builtin=name):
-                    self.assertRaises(ValueError, inspect.signature, obj)
-                continue
-            if name in {'classmethod', 'staticmethod'}:
-                # Bug gh-112006: inspect.unwrap() does not work with types
-                # with the __wrapped__ data descriptor.
-                continue
             with self.subTest(builtin=name):
-                self.assertIsNotNone(inspect.signature(obj))
+                if name in no_signature:
+                    self.assertRaises(ValueError, inspect.signature, obj)
+                    self.assertRaises(ValueError, inspect.signatures, obj)
+                else:
+                    self.assertIsNotNone(inspect.signature(obj))
+                    self.assertIsNotNone(inspect.signatures(obj))
+            if isinstance(obj, type):
+                with self.subTest(type=name):
+                    self._test_builtin_methods_have_signatures(obj,
+                            methods_no_signature.get(name, ()))
         # Check callables that haven't been converted don't claim a signature
         # This ensures this test will start failing as more signatures are
         # added, so the affected items can be moved into the scope of the
@@ -5762,6 +5753,36 @@ class TestSignatureDefinitions(unittest.TestCase):
         for name in no_signature:
             with self.subTest(builtin=name):
                 self.assertIsNone(ns[name].__text_signature__)
+
+    def _test_builtin_methods_have_signatures(self, cls, no_signature):
+        ns = vars(cls)
+        for name in ns:
+            obj = getattr(cls, name, None)
+            if not callable(obj):
+                continue
+            with self.subTest(method=name):
+                if name in no_signature:
+                    self.assertRaises(ValueError, inspect.signature, obj)
+                    self.assertRaises(ValueError, inspect.signatures, obj)
+                else:
+                    self.assertIsNotNone(inspect.signature(obj))
+                    self.assertIsNotNone(inspect.signatures(obj))
+
+    def test_builtins_have_signatures(self):
+        no_signature = {'type', 'super'}
+        methods_no_signature = {
+            'bytearray': {'count', 'endswith', 'find', 'index', 'rfind', 'rindex', 'startswith'},
+            'bytes': {'count', 'endswith', 'find', 'index', 'rfind', 'rindex', 'startswith'},
+            'str': {'count', 'endswith', 'startswith'},
+            'object': {'__class__'},
+        }
+        self._test_builtins_have_signatures(builtins, no_signature, methods_no_signature)
+
+    def test_types_builtins_have_signatures(self):
+        self._test_builtins_have_signatures(types)
+
+    def test_sys_builtins_have_signatures(self):
+        self._test_builtins_have_signatures(sys)
 
     def test_python_function_override_signature(self):
         def func(*args, **kwargs):

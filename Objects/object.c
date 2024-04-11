@@ -2028,7 +2028,7 @@ PyTypeObject _PyNone_Type = {
     0,                  /*tp_setattro */
     0,                  /*tp_as_buffer */
     Py_TPFLAGS_DEFAULT, /*tp_flags */
-    0,                  /*tp_doc */
+    PyDoc_STR("NoneType()\n--\n\n"),  /*tp_doc */
     0,                  /*tp_traverse */
     0,                  /*tp_clear */
     _Py_BaseObject_RichCompare, /*tp_richcompare */
@@ -2127,7 +2127,7 @@ PyTypeObject _PyNotImplemented_Type = {
     0,                  /*tp_setattro */
     0,                  /*tp_as_buffer */
     Py_TPFLAGS_DEFAULT, /*tp_flags */
-    0,                  /*tp_doc */
+    PyDoc_STR("NotImplementedType()\n--\n\n"),  /*tp_doc */
     0,                  /*tp_traverse */
     0,                  /*tp_clear */
     0,                  /*tp_richcompare */

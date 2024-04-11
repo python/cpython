@@ -20,7 +20,8 @@ PyCell_New(PyObject *obj)
 }
 
 PyDoc_STRVAR(cell_new_doc,
-"cell([contents])\n"
+"cell()\n"
+"cell(contents)\n"
 "--\n"
 "\n"
 "Create a new cell object.\n"
