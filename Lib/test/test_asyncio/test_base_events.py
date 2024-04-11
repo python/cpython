@@ -1044,6 +1044,27 @@ class BaseEventLoopTests(test_utils.TestCase):
             test_utils.run_briefly(self.loop)
             self.assertTrue(status['finalized'])
 
+    def test_shutdown_asyncgens(self):
+        # gh-117536: Test shutdown_asyncgens() using asyncio.run() which
+        # may cancel the task which closes the asynchronous generator before
+        # calling shutdown_asyncgens().
+
+        ns = {'state': 'not started'}
+        async def agen():
+            try:
+                ns['state'] = 'started'
+                yield 0
+                yield 1
+            finally:
+                ns['state'] = 'finalized'
+
+        async def reproducer():
+            async for item in agen():
+                break
+
+        asyncio.run(reproducer())
+        self.assertEqual(ns['state'], 'finalized')
+
 
 class MyProto(asyncio.Protocol):
     done = None

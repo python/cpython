@@ -1,0 +1,2 @@
+:mod:`asyncio`: Make the finalization of asynchronous generators more
+reliable. Patch by Victor Stinner.

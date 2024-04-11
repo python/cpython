@@ -444,6 +444,11 @@ class BaseEventLoop(events.AbstractEventLoop):
         # A weak set of all asynchronous generators that are
         # being iterated by the loop.
         self._asyncgens = weakref.WeakSet()
+
+        # Strong references to asynchronous generators which are being being
+        # closed by the loop: see _asyncgen_finalizer_hook().
+        self._close_asyncgens = set()
+
         # Set to True when `loop.shutdown_asyncgens` is called.
         self._asyncgens_shutdown_called = False
         # Set to True when `loop.shutdown_default_executor` is called.
@@ -555,10 +560,22 @@ class BaseEventLoop(events.AbstractEventLoop):
         if self._executor_shutdown_called:
             raise RuntimeError('Executor shutdown has been called')
 
+    async def _asyncgen_close(self, agen):
+        await agen.aclose()
+        self._close_asyncgens.discard(agen)
+
     def _asyncgen_finalizer_hook(self, agen):
+        if self.is_closed():
+            self._asyncgens.discard(agen)
+            return
+
+        # gh-117536: Store a strong reference to the asynchronous generator
+        # to make sure that shutdown_asyncgens() can close it even if
+        # asyncio.run() cancels all tasks.
+        self._close_asyncgens.add(agen)
         self._asyncgens.discard(agen)
-        if not self.is_closed():
-            self.call_soon_threadsafe(self.create_task, agen.aclose())
+
+        self.call_soon_threadsafe(self.create_task, self._asyncgen_close(agen))
 
     def _asyncgen_firstiter_hook(self, agen):
         if self._asyncgens_shutdown_called:
@@ -573,12 +590,12 @@ class BaseEventLoop(events.AbstractEventLoop):
         """Shutdown all active asynchronous generators."""
         self._asyncgens_shutdown_called = True
 
-        if not len(self._asyncgens):
+        closing_agens = list(set(self._asyncgens) | self._close_asyncgens)
+        if not closing_agens:
             # If Python version is <3.6 or we don't have any asynchronous
             # generators alive.
             return
 
-        closing_agens = list(self._asyncgens)
         self._asyncgens.clear()
 
         results = await tasks.gather(
