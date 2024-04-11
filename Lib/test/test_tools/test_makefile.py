@@ -67,6 +67,11 @@ class TestMakefile(unittest.TestCase):
                 )
                 used.append(relpath)
 
+        # gh-117711: Fedora removes Lib/test/wheeldata/*.whl which makes the
+        # directory empty.
+        if not os.listdir(os.path.join(support.TEST_HOME_DIR, 'wheeldata')):
+            test_dirs.remove('test/wheeldata')
+
         # Check that there are no extra entries:
         unique_test_dirs = set(test_dirs)
         self.assertSetEqual(unique_test_dirs, set(used))
