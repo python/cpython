@@ -461,6 +461,8 @@ class CliTest(unittest.TestCase):
             "https://example.com --new-window --new-tab",
             "https://example.com -n --new-tab",
             "https://example.com --new-window -t",
+            # Ensure ambiguous shortening fails
+            "https://example.com --new",
         ]:
             with self.assertRaises(SystemExit):
                 webbrowser.parse_args(shlex.split(command))
