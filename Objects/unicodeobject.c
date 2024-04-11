@@ -14665,8 +14665,8 @@ unicode_vectorcall(PyObject *type, PyObject *const *args,
         return PyObject_Str(object);
     }
     if (nargs + nkwargs == 2) {
-        const char *encoding;
-        const char *errors;
+        const char *encoding = NULL;
+        const char *errors = NULL;
         if (nkwargs == 1) {
             PyObject *key = PyTuple_GET_ITEM(kwnames, 0);
             if (_PyUnicode_EqualToASCIIString(key, "encoding")) {
@@ -14674,14 +14674,12 @@ unicode_vectorcall(PyObject *type, PyObject *const *args,
                 if (encoding == NULL) {
                     return NULL;
                 }
-                errors = NULL;
             }
             else if (_PyUnicode_EqualToASCIIString(key, "errors")) {
                 errors = as_const_char(args[1], "errors");
                 if (errors == NULL) {
                     return NULL;
                 }
-                encoding = NULL;
             }
             else {
                 PyErr_Format(PyExc_TypeError,
@@ -14691,7 +14689,6 @@ unicode_vectorcall(PyObject *type, PyObject *const *args,
         }
         else if (nkwargs == 0) {
             encoding = as_const_char(args[1], "encoding");
-            errors = NULL;
         }
         else {
             return fallback_to_tp_call(type, nargs, nkwargs, args, kwnames);
