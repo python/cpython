@@ -26,6 +26,8 @@ from test.support import import_helper
 from test.support import threading_helper
 from test.support import warnings_helper
 from test.support import requires_limited_api
+from test.support import requires_gil_enabled, expected_failure_if_gil_disabled
+from test.support import Py_GIL_DISABLED
 from test.support.script_helper import assert_python_failure, assert_python_ok, run_python_until_end
 try:
     import _posixsubprocess
@@ -2023,15 +2025,30 @@ class SubinterpreterTest(unittest.TestCase):
         kwlist[-2] = 'check_multi_interp_extensions'
         kwlist[-1] = 'own_gil'
 
-        # expected to work
-        for config, expected in {
+        expected_to_work = {
             (True, True, True, True, True, True, True):
                 (ALL_FLAGS, True),
             (True, False, False, False, False, False, False):
                 (OBMALLOC, False),
             (False, False, False, True, False, True, False):
                 (THREADS | EXTENSIONS, False),
-        }.items():
+        }
+
+        expected_to_fail = {
+            (False, False, False, False, False, False, False),
+        }
+
+        # gh-117649: The free-threaded build does not currently allow
+        # setting check_multi_interp_extensions to False.
+        if Py_GIL_DISABLED:
+            for config in list(expected_to_work.keys()):
+                kwargs = dict(zip(kwlist, config))
+                if not kwargs['check_multi_interp_extensions']:
+                    del expected_to_work[config]
+                    expected_to_fail.add(config)
+
+        # expected to work
+        for config, expected in expected_to_work.items():
             kwargs = dict(zip(kwlist, config))
             exp_flags, exp_gil = expected
             expected = {
@@ -2055,9 +2072,7 @@ class SubinterpreterTest(unittest.TestCase):
                 self.assertEqual(settings, expected)
 
         # expected to fail
-        for config in [
-            (False, False, False, False, False, False, False),
-        ]:
+        for config in expected_to_fail:
             kwargs = dict(zip(kwlist, config))
             with self.subTest(config):
                 script = textwrap.dedent(f'''
@@ -2070,6 +2085,9 @@ class SubinterpreterTest(unittest.TestCase):
 
     @unittest.skipIf(_testsinglephase is None, "test requires _testsinglephase module")
     @unittest.skipUnless(hasattr(os, "pipe"), "requires os.pipe()")
+    # gh-117649: The free-threaded build does not currently allow overriding
+    # the check_multi_interp_extensions setting.
+    @expected_failure_if_gil_disabled()
     def test_overridden_setting_extensions_subinterp_check(self):
         """
         PyInterpreterConfig.check_multi_interp_extensions can be overridden
@@ -2165,6 +2183,9 @@ class SubinterpreterTest(unittest.TestCase):
         self.assertFalse(hasattr(binascii.Error, "foobar"))
 
     @unittest.skipIf(_testmultiphase is None, "test requires _testmultiphase module")
+    # gh-117649: The free-threaded build does not currently support sharing
+    # extension module state between interpreters.
+    @expected_failure_if_gil_disabled()
     def test_module_state_shared_in_global(self):
         """
         bpo-44050: Extension module state should be shared between interpreters
@@ -2223,7 +2244,7 @@ class InterpreterConfigTests(unittest.TestCase):
             allow_exec=True,
             allow_threads=True,
             allow_daemon_threads=True,
-            check_multi_interp_extensions=False,
+            check_multi_interp_extensions=bool(Py_GIL_DISABLED),
             gil='shared',
         ),
         'empty': types.SimpleNamespace(
@@ -2386,6 +2407,8 @@ class InterpreterConfigTests(unittest.TestCase):
                 check_multi_interp_extensions=False
             ),
         ]
+        if Py_GIL_DISABLED:
+            invalid.append(dict(check_multi_interp_extensions=False))
         def match(config, override_cases):
             ns = vars(config)
             for overrides in override_cases:
@@ -2427,6 +2450,8 @@ class InterpreterConfigTests(unittest.TestCase):
         with self.subTest('main'):
             expected = _interpreters.new_config('legacy')
             expected.gil = 'own'
+            if Py_GIL_DISABLED:
+                expected.check_multi_interp_extensions = False
             interpid, *_ = _interpreters.get_main()
             config = _interpreters.get_config(interpid)
             self.assert_ns_equal(config, expected)
@@ -2448,6 +2473,7 @@ class InterpreterConfigTests(unittest.TestCase):
                 'empty',
                 use_main_obmalloc=True,
                 gil='shared',
+                check_multi_interp_extensions=bool(Py_GIL_DISABLED),
             )
             with new_interp(orig) as interpid:
                 config = _interpreters.get_config(interpid)
