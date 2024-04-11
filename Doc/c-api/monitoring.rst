@@ -19,7 +19,7 @@ include a ``PyObject*`` representing the code object, the instruction offset
 and sometimes additional, event-specific arguments (see :mod:`sys.monitoring`
 for details about the signatures of the different event callbacks).
 The ``codelike`` argument should be an instance of :class:`types.CodeType`
-or of a  type that emulates it.
+or of a type that emulates it.
 
 .. c:type:: PyMonitoringState
 
