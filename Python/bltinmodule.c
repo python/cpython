@@ -239,8 +239,8 @@ error:
 }
 
 PyDoc_STRVAR(build_class_doc,
-"__build_class__(func, name, /, *bases, **kwds)\n\
-(func, name, /, *bases, metaclass, **kwds)\n\
+"__build_class__($module, func, name, /, *bases, **kwds)\n\
+($module, func, name, /, *bases, metaclass, **kwds)\n\
 --\n\
 \n\
 Internal helper function used by the class statement.");
@@ -477,7 +477,7 @@ builtin_breakpoint(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyOb
 }
 
 PyDoc_STRVAR(breakpoint_doc,
-"breakpoint(*args, **kws)\n\
+"breakpoint($module, /, *args, **kws)\n\
 --\n\
 \n\
 Call sys.breakpointhook(*args, **kws).  sys.breakpointhook() must accept\n\
@@ -892,8 +892,8 @@ builtin_dir(PyObject *self, PyObject *args)
 }
 
 PyDoc_STRVAR(dir_doc,
-"dir()\n"
-"(object, /)\n"
+"dir($module, /)\n"
+"($module, object, /)\n"
 "--\n"
 "\n"
 "If called without an argument, return the names in the current scope.\n"
@@ -1557,8 +1557,8 @@ builtin_next(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 }
 
 PyDoc_STRVAR(next_doc,
-"next(iterator, /)\n\
-next(iterator, default, /)\n\
+"next($module, iterator, /)\n\
+next($module, iterator, default, /)\n\
 --\n\
 \n\
 Return the next item from the iterator. If default is given and the iterator\n\
@@ -1678,8 +1678,8 @@ builtin_iter(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 }
 
 PyDoc_STRVAR(iter_doc,
-"iter(iterable, /)\n\
-(callable, sentinel)\n\
+"iter($module, iterable, /)\n\
+($module, callable, sentinel)\n\
 --\n\
 \n\
 Get an iterator from an object.  In the first form, the argument must\n\
@@ -1706,8 +1706,8 @@ builtin_aiter(PyObject *module, PyObject *async_iterable)
 PyObject *PyAnextAwaitable_New(PyObject *, PyObject *);
 
 /*[clinic input]
-@text_signature "(aiterator, /)"
-@text_signature "(aiterator, default, /)"
+@text_signature "($module, aiterator, /)"
+@text_signature "($module, aiterator, default, /)"
 anext as builtin_anext
 
     aiterator: object
@@ -1723,7 +1723,7 @@ it is returned instead of raising StopAsyncIteration.
 static PyObject *
 builtin_anext_impl(PyObject *module, PyObject *aiterator,
                    PyObject *default_value)
-/*[clinic end generated code: output=f02c060c163a81fa input=2215abe23cb47877]*/
+/*[clinic end generated code: output=f02c060c163a81fa input=0a1ca4f26c511583]*/
 {
     PyTypeObject *t;
     PyObject *awaitable;
@@ -1916,9 +1916,9 @@ builtin_min(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *k
 }
 
 PyDoc_STRVAR(min_doc,
-"min(iterable, /, *, key=None)\n\
-(iterable, /, *, default, key=None)\n\
-(arg1, arg2, /, *args, key=None)\n\
+"min($module, iterable, /, *, key=None)\n\
+($module, iterable, /, *, default, key=None)\n\
+($module, arg1, arg2, /, *args, key=None)\n\
 --\n\
 \n\
 With a single iterable argument, return its smallest item. The\n\
@@ -1935,9 +1935,9 @@ builtin_max(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *k
 }
 
 PyDoc_STRVAR(max_doc,
-"max(iterable, /, *, key=None)\n\
-(iterable, /, *, default, key=None)\n\
-(arg1, arg2, /, *args, key=None)\n\
+"max($module, iterable, /, *, key=None)\n\
+($module, iterable, /, *, default, key=None)\n\
+($module, arg1, arg2, /, *args, key=None)\n\
 --\n\
 \n\
 With a single iterable argument, return its biggest item. The\n\
@@ -2512,8 +2512,8 @@ builtin_vars(PyObject *self, PyObject *args)
 }
 
 PyDoc_STRVAR(vars_doc,
-"vars()\n\
-vars(object, /)\n\
+"vars($module, /)\n\
+vars($module, object, /)\n\
 --\n\
 \n\
 Without arguments, equivalent to locals().\n\
