@@ -5773,7 +5773,7 @@ class TestSignatureDefinitions(unittest.TestCase):
         methods_no_signature = {
             'bytearray': {'count', 'endswith', 'find', 'index', 'rfind', 'rindex', 'startswith'},
             'bytes': {'count', 'endswith', 'find', 'index', 'rfind', 'rindex', 'startswith'},
-            'str': {'count', 'endswith', 'startswith'},
+            'str': {'count', 'endswith', 'find', 'index', 'rfind', 'rindex', 'startswith'},
             'object': {'__class__'},
         }
         self._test_builtins_have_signatures(builtins, no_signature, methods_no_signature)

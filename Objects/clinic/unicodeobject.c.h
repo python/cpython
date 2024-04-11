@@ -357,7 +357,7 @@ exit:
 }
 
 PyDoc_STRVAR(unicode_find__doc__,
-"find($self, sub, start=None, end=None, /)\n"
+"find($self, sub[, start[, end]], /)\n"
 "--\n"
 "\n"
 "Return the lowest index in S where substring sub is found, such that sub is contained within S[start:end].\n"
@@ -413,7 +413,7 @@ exit:
 }
 
 PyDoc_STRVAR(unicode_index__doc__,
-"index($self, sub, start=None, end=None, /)\n"
+"index($self, sub[, start[, end]], /)\n"
 "--\n"
 "\n"
 "Return the lowest index in S where substring sub is found, such that sub is contained within S[start:end].\n"
@@ -1060,7 +1060,7 @@ exit:
 }
 
 PyDoc_STRVAR(unicode_rfind__doc__,
-"rfind($self, sub, start=None, end=None, /)\n"
+"rfind($self, sub[, start[, end]], /)\n"
 "--\n"
 "\n"
 "Return the highest index in S where substring sub is found, such that sub is contained within S[start:end].\n"
@@ -1116,7 +1116,7 @@ exit:
 }
 
 PyDoc_STRVAR(unicode_rindex__doc__,
-"rindex($self, sub, start=None, end=None, /)\n"
+"rindex($self, sub[, start[, end]], /)\n"
 "--\n"
 "\n"
 "Return the highest index in S where substring sub is found, such that sub is contained within S[start:end].\n"
@@ -1889,4 +1889,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=d1a9ade94836dfaa input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5ad71a0e28b28391 input=a9049054013a1b77]*/

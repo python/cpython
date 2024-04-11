@@ -1,0 +1,2 @@
+Fix issue where :func:`os.path.realpath` stopped resolving symlinks after
+encountering a symlink loop on POSIX.
