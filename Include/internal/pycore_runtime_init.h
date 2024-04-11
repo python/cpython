@@ -162,6 +162,7 @@ extern PyTypeObject _PyExc_MemoryError;
 #define _PyInterpreterState_INIT(INTERP) \
     { \
         .id_refcount = -1, \
+        ._whence = _PyInterpreterState_WHENCE_NOTSET, \
         .imports = IMPORTS_INIT, \
         .ceval = { \
             .recursion_limit = Py_DEFAULT_RECURSION_LIMIT, \
