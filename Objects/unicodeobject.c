@@ -14703,7 +14703,7 @@ unicode_vectorcall(PyObject *type, PyObject *const *args,
             }
             else {
                 PyErr_Format(PyExc_TypeError,
-                    "'%S' is an invalid keyword argument for str()", key);
+                    "str() got an unexpected keyword argument %R", key);
                 return NULL;
             }
         }
@@ -14721,7 +14721,7 @@ unicode_vectorcall(PyObject *type, PyObject *const *args,
             PyObject *key = PyTuple_GET_ITEM(kwnames, 0);
             if (!_PyUnicode_EqualToASCIIString(key, "errors")) {
                 PyErr_Format(PyExc_TypeError,
-                    "'%S' is an invalid keyword argument for str()", key);
+                    "str() got an unexpected keyword argument %R", key);
                 return NULL;
             }
         }
