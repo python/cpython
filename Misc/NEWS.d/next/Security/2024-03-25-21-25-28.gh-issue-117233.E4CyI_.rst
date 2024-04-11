@@ -1,0 +1,3 @@
+Detect BLAKE2, SHA3, Shake, & truncated SHA512 support in the OpenSSL-ish
+libcrypto library at build time.  This allows :mod:`hashlib` to be used with
+libraries that do not to support every algorithm that upstream OpenSSL does.
