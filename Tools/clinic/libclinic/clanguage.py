@@ -11,7 +11,7 @@ from libclinic import (
     unspecified, fail, warn, Sentinels, VersionTuple)
 from libclinic.function import (
     GETTER, SETTER, METHOD_INIT, METHOD_NEW)
-from libclinic.crenderdata import CRenderData, TemplateDict
+from libclinic.codegen import CRenderData, TemplateDict, Codegen
 from libclinic.language import Language
 from libclinic.function import (
     Module, Class, Function, Parameter,
@@ -26,8 +26,7 @@ def declare_parser(
     f: Function,
     *,
     hasformat: bool = False,
-    clinic: Clinic,
-    limited_capi: bool,
+    codegen: Codegen,
 ) -> str:
     """
     Generates the code template for a static local PyArg_Parser variable,
@@ -35,6 +34,7 @@ def declare_parser(
     kwtuple field is also statically initialized.  Otherwise
     it is initialized at runtime.
     """
+    limited_capi = codegen.limited_capi
     if hasformat:
         fname = ''
         format_ = '.format = "{format_units}:{name}",'
@@ -80,8 +80,8 @@ def declare_parser(
         """ % num_keywords
 
         condition = '#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)'
-        clinic.add_include('pycore_gc.h', 'PyGC_Head', condition=condition)
-        clinic.add_include('pycore_runtime.h', '_Py_ID()', condition=condition)
+        codegen.add_include('pycore_gc.h', 'PyGC_Head', condition=condition)
+        codegen.add_include('pycore_runtime.h', '_Py_ID()', condition=condition)
 
     declarations += """
             static const char * const _keywords[] = {{{keywords_c} NULL}};
@@ -317,14 +317,14 @@ class CLanguage(Language):
         self,
         func: Function,
         params: dict[int, Parameter],
-        argname_fmt: str | None,
+        argname_fmt: str | None = None,
         *,
         fastcall: bool,
-        limited_capi: bool,
-        clinic: Clinic,
+        codegen: Codegen,
     ) -> str:
         assert len(params) > 0
         last_param = next(reversed(params.values()))
+        limited_capi = codegen.limited_capi
 
         # Format the deprecation message.
         containscheck = ""
@@ -336,11 +336,11 @@ class CLanguage(Language):
                 elif fastcall:
                     conditions.append(f"nargs < {i+1} && PySequence_Contains(kwnames, &_Py_ID({p.name}))")
                     containscheck = "PySequence_Contains"
-                    clinic.add_include('pycore_runtime.h', '_Py_ID()')
+                    codegen.add_include('pycore_runtime.h', '_Py_ID()')
                 else:
                     conditions.append(f"nargs < {i+1} && PyDict_Contains(kwargs, &_Py_ID({p.name}))")
                     containscheck = "PyDict_Contains"
-                    clinic.add_include('pycore_runtime.h', '_Py_ID()')
+                    codegen.add_include('pycore_runtime.h', '_Py_ID()')
             else:
                 conditions = [f"nargs < {i+1}"]
         condition = ") || (".join(conditions)
@@ -399,7 +399,7 @@ class CLanguage(Language):
     def output_templates(
         self,
         f: Function,
-        clinic: Clinic
+        codegen: Codegen,
     ) -> dict[str, str]:
         parameters = list(f.parameters.values())
         assert parameters
@@ -412,7 +412,7 @@ class CLanguage(Language):
         converters = [p.converter for p in parameters]
 
         if f.critical_section:
-            clinic.add_include('pycore_critical_section.h', 'Py_BEGIN_CRITICAL_SECTION()')
+            codegen.add_include('pycore_critical_section.h', 'Py_BEGIN_CRITICAL_SECTION()')
         has_option_groups = parameters and (parameters[0].group or parameters[-1].group)
         simple_return = (f.return_converter.type == 'PyObject *'
                          and not f.critical_section)
@@ -517,7 +517,7 @@ class CLanguage(Language):
                                            parser_declarations=declarations)
 
         fastcall = not new_or_init
-        limited_capi = clinic.limited_capi
+        limited_capi = codegen.limited_capi
         if limited_capi and (pseudo_args or
                 (any(p.is_optional() for p in parameters) and
                  any(p.is_keyword_only() and not p.is_optional() for p in parameters)) or
@@ -673,8 +673,8 @@ class CLanguage(Language):
                             """,
                         indent=4))
             else:
-                clinic.add_include('pycore_modsupport.h',
-                                   '_PyArg_CheckPositional()')
+                codegen.add_include('pycore_modsupport.h',
+                                    '_PyArg_CheckPositional()')
                 parser_code = [libclinic.normalize_snippet(f"""
                     if (!_PyArg_CheckPositional("{{name}}", {nargs}, {min_pos}, {max_args})) {{{{
                         goto exit;
@@ -735,8 +735,8 @@ class CLanguage(Language):
                 if limited_capi:
                     fastcall = False
                 if fastcall:
-                    clinic.add_include('pycore_modsupport.h',
-                                       '_PyArg_ParseStack()')
+                    codegen.add_include('pycore_modsupport.h',
+                                        '_PyArg_ParseStack()')
                     parser_code = [libclinic.normalize_snippet("""
                         if (!_PyArg_ParseStack(args, nargs, "{format_units}:{name}",
                             {parse_arguments})) {{
@@ -773,8 +773,8 @@ class CLanguage(Language):
                 fastcall = False
             else:
                 if vararg == self.NO_VARARG:
-                    clinic.add_include('pycore_modsupport.h',
-                                       '_PyArg_UnpackKeywords()')
+                    codegen.add_include('pycore_modsupport.h',
+                                        '_PyArg_UnpackKeywords()')
                     args_declaration = "_PyArg_UnpackKeywords", "%s, %s, %s" % (
                         min_pos,
                         max_pos,
@@ -782,8 +782,8 @@ class CLanguage(Language):
                     )
                     nargs = "nargs"
                 else:
-                    clinic.add_include('pycore_modsupport.h',
-                                       '_PyArg_UnpackKeywordsWithVararg()')
+                    codegen.add_include('pycore_modsupport.h',
+                                        '_PyArg_UnpackKeywordsWithVararg()')
                     args_declaration = "_PyArg_UnpackKeywordsWithVararg", "%s, %s, %s, %s" % (
                         min_pos,
                         max_pos,
@@ -796,8 +796,7 @@ class CLanguage(Language):
                     flags = "METH_FASTCALL|METH_KEYWORDS"
                     parser_prototype = self.PARSER_PROTOTYPE_FASTCALL_KEYWORDS
                     argname_fmt = 'args[%d]'
-                    declarations = declare_parser(f, clinic=clinic,
-                                                  limited_capi=clinic.limited_capi)
+                    declarations = declare_parser(f, codegen=codegen)
                     declarations += "\nPyObject *argsbuf[%s];" % len(converters)
                     if has_optional_kw:
                         declarations += "\nPy_ssize_t noptargs = %s + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - %d;" % (nargs, min_pos + min_kw_only)
@@ -812,8 +811,7 @@ class CLanguage(Language):
                     flags = "METH_VARARGS|METH_KEYWORDS"
                     parser_prototype = self.PARSER_PROTOTYPE_KEYWORD
                     argname_fmt = 'fastargs[%d]'
-                    declarations = declare_parser(f, clinic=clinic,
-                                                  limited_capi=clinic.limited_capi)
+                    declarations = declare_parser(f, codegen=codegen)
                     declarations += "\nPyObject *argsbuf[%s];" % len(converters)
                     declarations += "\nPyObject * const *fastargs;"
                     declarations += "\nPy_ssize_t nargs = PyTuple_GET_SIZE(args);"
@@ -832,10 +830,10 @@ class CLanguage(Language):
 
             if parser_code is not None:
                 if deprecated_keywords:
-                    code = self.deprecate_keyword_use(f, deprecated_keywords, argname_fmt,
-                                                      clinic=clinic,
-                                                      fastcall=fastcall,
-                                                      limited_capi=limited_capi)
+                    code = self.deprecate_keyword_use(f, deprecated_keywords,
+                                                      argname_fmt,
+                                                      codegen=codegen,
+                                                      fastcall=fastcall)
                     parser_code.append(code)
 
                 add_label: str | None = None
@@ -903,9 +901,8 @@ class CLanguage(Language):
                 for parameter in parameters:
                     parameter.converter.use_converter()
 
-                declarations = declare_parser(f, clinic=clinic,
-                                              hasformat=True,
-                                              limited_capi=limited_capi)
+                declarations = declare_parser(f, codegen=codegen,
+                                              hasformat=True)
                 if limited_capi:
                     # positional-or-keyword arguments
                     assert not fastcall
@@ -921,8 +918,8 @@ class CLanguage(Language):
                         declarations += "\nPy_ssize_t nargs = PyTuple_Size(args);"
 
                 elif fastcall:
-                    clinic.add_include('pycore_modsupport.h',
-                                       '_PyArg_ParseStackAndKeywords()')
+                    codegen.add_include('pycore_modsupport.h',
+                                        '_PyArg_ParseStackAndKeywords()')
                     parser_code = [libclinic.normalize_snippet("""
                         if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser{parse_arguments_comma}
                             {parse_arguments})) {{
@@ -930,8 +927,8 @@ class CLanguage(Language):
                         }}
                         """, indent=4)]
                 else:
-                    clinic.add_include('pycore_modsupport.h',
-                                       '_PyArg_ParseTupleAndKeywordsFast()')
+                    codegen.add_include('pycore_modsupport.h',
+                                        '_PyArg_ParseTupleAndKeywordsFast()')
                     parser_code = [libclinic.normalize_snippet("""
                         if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
                             {parse_arguments})) {{
@@ -941,10 +938,9 @@ class CLanguage(Language):
                     if deprecated_positionals or deprecated_keywords:
                         declarations += "\nPy_ssize_t nargs = PyTuple_GET_SIZE(args);"
                 if deprecated_keywords:
-                    code = self.deprecate_keyword_use(f, deprecated_keywords, None,
-                                                      clinic=clinic,
-                                                      fastcall=fastcall,
-                                                      limited_capi=limited_capi)
+                    code = self.deprecate_keyword_use(f, deprecated_keywords,
+                                                      codegen=codegen,
+                                                      fastcall=fastcall)
                     parser_code.append(code)
 
             if deprecated_positionals:
@@ -960,9 +956,9 @@ class CLanguage(Language):
         # Copy includes from parameters to Clinic after parse_arg() has been
         # called above.
         for converter in converters:
-            for include in converter.includes:
-                clinic.add_include(include.filename, include.reason,
-                                   condition=include.condition)
+            for include in converter.get_includes():
+                codegen.add_include(include.filename, include.reason,
+                                    condition=include.condition)
 
         if new_or_init:
             methoddef_define = ''
@@ -984,16 +980,16 @@ class CLanguage(Language):
 
             if not parses_keywords:
                 declarations = '{base_type_ptr}'
-                clinic.add_include('pycore_modsupport.h',
-                                   '_PyArg_NoKeywords()')
+                codegen.add_include('pycore_modsupport.h',
+                                    '_PyArg_NoKeywords()')
                 fields.insert(0, libclinic.normalize_snippet("""
                     if ({self_type_check}!_PyArg_NoKeywords("{name}", kwargs)) {{
                         goto exit;
                     }}
                     """, indent=4))
                 if not parses_positional:
-                    clinic.add_include('pycore_modsupport.h',
-                                       '_PyArg_NoPositional()')
+                    codegen.add_include('pycore_modsupport.h',
+                                        '_PyArg_NoPositional()')
                     fields.insert(0, libclinic.normalize_snippet("""
                         if ({self_type_check}!_PyArg_NoPositional("{name}", args)) {{
                             goto exit;
@@ -1030,8 +1026,7 @@ class CLanguage(Language):
             cpp_if = "#if " + conditional
             cpp_endif = "#endif /* " + conditional + " */"
 
-            if methoddef_define and f.full_name not in clinic.ifndef_symbols:
-                clinic.ifndef_symbols.add(f.full_name)
+            if methoddef_define and codegen.add_ifndef_symbol(f.full_name):
                 methoddef_ifndef = self.METHODDEF_PROTOTYPE_IFNDEF
 
         # add ';' to the end of parser_prototype and impl_prototype
@@ -1190,16 +1185,17 @@ class CLanguage(Language):
         clinic: Clinic,
         f: Function | None
     ) -> str:
-        if f is None or clinic is None:
+        if f is None:
             return ""
 
+        codegen = clinic.codegen
         data = CRenderData()
 
         assert f.parameters, "We should always have a 'self' at this point!"
         parameters = f.render_parameters
         converters = [p.converter for p in parameters]
 
-        templates = self.output_templates(f, clinic)
+        templates = self.output_templates(f, codegen)
 
         f_self = parameters[0]
         selfless = parameters[1:]
@@ -1323,7 +1319,7 @@ class CLanguage(Language):
 
         if has_option_groups:
             self.render_option_group_parsing(f, template_dict,
-                                             limited_capi=clinic.limited_capi)
+                                             limited_capi=codegen.limited_capi)
 
         # buffers, not destination
         for name, destination in clinic.destination_buffers.items():
