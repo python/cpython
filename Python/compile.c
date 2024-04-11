@@ -70,11 +70,11 @@
         ((C)->c_flags.cf_flags & PyCF_ALLOW_TOP_LEVEL_AWAIT) \
         && ((C)->u->u_ste->ste_type == ModuleBlock))
 
-typedef _PyCompilerSrcLocation location;
+typedef _Py_SourceLocation location;
 typedef struct _PyCfgBuilder cfg_builder;
 
 #define LOCATION(LNO, END_LNO, COL, END_COL) \
-    ((const _PyCompilerSrcLocation){(LNO), (END_LNO), (COL), (END_COL)})
+    ((const _Py_SourceLocation){(LNO), (END_LNO), (COL), (END_COL)})
 
 /* Return true if loc1 starts after loc2 ends. */
 static inline bool
@@ -86,7 +86,7 @@ location_is_after(location loc1, location loc2) {
 
 #define LOC(x) SRC_LOCATION_FROM_AST(x)
 
-typedef _PyCfgJumpTargetLabel jump_target_label;
+typedef _PyJumpTargetLabel jump_target_label;
 
 static jump_target_label NO_LABEL = {-1};
 
@@ -94,13 +94,13 @@ static jump_target_label NO_LABEL = {-1};
 #define IS_LABEL(L) (!SAME_LABEL((L), (NO_LABEL)))
 
 #define NEW_JUMP_TARGET_LABEL(C, NAME) \
-    jump_target_label NAME = instr_sequence_new_label(INSTR_SEQUENCE(C)); \
+    jump_target_label NAME = _PyInstructionSequence_NewLabel(INSTR_SEQUENCE(C)); \
     if (!IS_LABEL(NAME)) { \
         return ERROR; \
     }
 
 #define USE_LABEL(C, LBL) \
-    RETURN_IF_ERROR(_PyCompile_InstructionSequence_UseLabel(INSTR_SEQUENCE(C), (LBL).id))
+    RETURN_IF_ERROR(_PyInstructionSequence_UseLabel(INSTR_SEQUENCE(C), (LBL).id))
 
 
 /* fblockinfo tracks the current frame block.
@@ -134,8 +134,8 @@ enum {
 };
 
 
-typedef _PyCompile_Instruction instruction;
-typedef _PyCompile_InstructionSequence instr_sequence;
+typedef _PyInstruction instruction;
+typedef _PyInstructionSequence instr_sequence;
 
 #define INITIAL_INSTR_SEQUENCE_SIZE 100
 #define INITIAL_INSTR_SEQUENCE_LABELS_MAP_SIZE 10
@@ -195,146 +195,35 @@ _PyCompile_EnsureArrayLargeEnough(int idx, void **array, int *alloc,
     return SUCCESS;
 }
 
-static int
-instr_sequence_next_inst(instr_sequence *seq) {
-    assert(seq->s_instrs != NULL || seq->s_used == 0);
-
-    RETURN_IF_ERROR(
-        _PyCompile_EnsureArrayLargeEnough(seq->s_used + 1,
-                                          (void**)&seq->s_instrs,
-                                          &seq->s_allocated,
-                                          INITIAL_INSTR_SEQUENCE_SIZE,
-                                          sizeof(instruction)));
-    assert(seq->s_allocated >= 0);
-    assert(seq->s_used < seq->s_allocated);
-    return seq->s_used++;
-}
-
-static jump_target_label
-instr_sequence_new_label(instr_sequence *seq)
-{
-    jump_target_label lbl = {++seq->s_next_free_label};
-    return lbl;
-}
-
-int
-_PyCompile_InstructionSequence_UseLabel(instr_sequence *seq, int lbl)
-{
-    int old_size = seq->s_labelmap_size;
-    RETURN_IF_ERROR(
-        _PyCompile_EnsureArrayLargeEnough(lbl,
-                                          (void**)&seq->s_labelmap,
-                                           &seq->s_labelmap_size,
-                                           INITIAL_INSTR_SEQUENCE_LABELS_MAP_SIZE,
-                                           sizeof(int)));
-
-    for(int i = old_size; i < seq->s_labelmap_size; i++) {
-        seq->s_labelmap[i] = -111;  /* something weird, for debugging */
-    }
-    seq->s_labelmap[lbl] = seq->s_used; /* label refers to the next instruction */
-    return SUCCESS;
-}
-
-
-#define MAX_OPCODE 511
-
-int
-_PyCompile_InstructionSequence_Addop(instr_sequence *seq, int opcode, int oparg,
-                                     location loc)
-{
-    assert(0 <= opcode && opcode <= MAX_OPCODE);
-    assert(IS_WITHIN_OPCODE_RANGE(opcode));
-    assert(OPCODE_HAS_ARG(opcode) || HAS_TARGET(opcode) || oparg == 0);
-    assert(0 <= oparg && oparg < (1 << 30));
-
-    int idx = instr_sequence_next_inst(seq);
-    RETURN_IF_ERROR(idx);
-    instruction *ci = &seq->s_instrs[idx];
-    ci->i_opcode = opcode;
-    ci->i_oparg = oparg;
-    ci->i_loc = loc;
-    return SUCCESS;
-}
-
-static int
-instr_sequence_insert_instruction(instr_sequence *seq, int pos,
-                                  int opcode, int oparg, location loc)
-{
-    assert(pos >= 0 && pos <= seq->s_used);
-    int last_idx = instr_sequence_next_inst(seq);
-    RETURN_IF_ERROR(last_idx);
-    for (int i=last_idx-1; i >= pos; i--) {
-        seq->s_instrs[i+1] = seq->s_instrs[i];
-    }
-    instruction *ci = &seq->s_instrs[pos];
-    ci->i_opcode = opcode;
-    ci->i_oparg = oparg;
-    ci->i_loc = loc;
-
-    /* fix the labels map */
-    for(int lbl=0; lbl < seq->s_labelmap_size; lbl++) {
-        if (seq->s_labelmap[lbl] >= pos) {
-            seq->s_labelmap[lbl]++;
-        }
-    }
-    return SUCCESS;
-}
-
-static void
-instr_sequence_fini(instr_sequence *seq) {
-    PyMem_Free(seq->s_labelmap);
-    seq->s_labelmap = NULL;
-
-    PyMem_Free(seq->s_instrs);
-    seq->s_instrs = NULL;
-}
-
 static cfg_builder*
 instr_sequence_to_cfg(instr_sequence *seq) {
+    if (_PyInstructionSequence_ApplyLabelMap(seq) < 0) {
+        return NULL;
+    }
     cfg_builder *g = _PyCfgBuilder_New();
     if (g == NULL) {
         return NULL;
     }
-
-    /* There can be more than one label for the same offset. The
-     * offset2lbl maping selects one of them which we use consistently.
-     */
-
-    int *offset2lbl = PyMem_Malloc(seq->s_used * sizeof(int));
-    if (offset2lbl == NULL) {
-        PyErr_NoMemory();
-        goto error;
+    for (int i = 0; i < seq->s_used; i++) {
+        seq->s_instrs[i].i_target = 0;
     }
     for (int i = 0; i < seq->s_used; i++) {
-        offset2lbl[i] = -1;
-    }
-    for (int lbl=0; lbl < seq->s_labelmap_size; lbl++) {
-        int offset = seq->s_labelmap[lbl];
-        if (offset >= 0) {
-            assert(offset < seq->s_used);
-            offset2lbl[offset] = lbl;
+        instruction *instr = &seq->s_instrs[i];
+        if (HAS_TARGET(instr->i_opcode)) {
+            assert(instr->i_oparg >= 0 && instr->i_oparg < seq->s_used);
+            seq->s_instrs[instr->i_oparg].i_target = 1;
         }
     }
-
     for (int i = 0; i < seq->s_used; i++) {
-        int lbl = offset2lbl[i];
-        if (lbl >= 0) {
-            assert (lbl < seq->s_labelmap_size);
-            jump_target_label lbl_ = {lbl};
+        instruction *instr = &seq->s_instrs[i];
+        if (instr->i_target) {
+            jump_target_label lbl_ = {i};
             if (_PyCfgBuilder_UseLabel(g, lbl_) < 0) {
                 goto error;
             }
         }
-        instruction *instr = &seq->s_instrs[i];
         int opcode = instr->i_opcode;
         int oparg = instr->i_oparg;
-        if (HAS_TARGET(opcode)) {
-            int offset = seq->s_labelmap[oparg];
-            assert(offset >= 0 && offset < seq->s_used);
-            int lbl = offset2lbl[offset];
-            assert(lbl >= 0 && lbl < seq->s_labelmap_size);
-            oparg = lbl;
-        }
         if (_PyCfgBuilder_Addop(g, opcode, oparg, instr->i_loc) < 0) {
             goto error;
         }
@@ -342,11 +231,9 @@ instr_sequence_to_cfg(instr_sequence *seq) {
     if (_PyCfgBuilder_CheckSize(g) < 0) {
         goto error;
     }
-    PyMem_Free(offset2lbl);
     return g;
 error:
     _PyCfgBuilder_Free(g);
-    PyMem_Free(offset2lbl);
     return NULL;
 }
 
@@ -358,7 +245,8 @@ struct compiler_unit {
 
     int u_scope_type;
 
-    PyObject *u_private;        /* for private name mangling */
+    PyObject *u_private;            /* for private name mangling */
+    PyObject *u_static_attributes;  /* for class: attributes accessed via self.X */
 
     instr_sequence u_instr_sequence; /* codegen output */
 
@@ -385,7 +273,7 @@ handled by the symbol analysis pass.
 struct compiler {
     PyObject *c_filename;
     struct symtable *c_st;
-    PyFutureFeatures c_future;   /* module's __future__ */
+    _PyFutureFeatures c_future;  /* module's __future__ */
     PyCompilerFlags c_flags;
 
     int c_optimize;              /* optimization level */
@@ -562,7 +450,7 @@ int
 _PyCompile_AstOptimize(mod_ty mod, PyObject *filename, PyCompilerFlags *cf,
                        int optimize, PyArena *arena)
 {
-    PyFutureFeatures future;
+    _PyFutureFeatures future;
     if (!_PyFuture_FromAST(mod, filename, &future)) {
         return -1;
     }
@@ -679,7 +567,7 @@ dictbytype(PyObject *src, int scope_type, int flag, Py_ssize_t offset)
 static void
 compiler_unit_free(struct compiler_unit *u)
 {
-    instr_sequence_fini(&u->u_instr_sequence);
+    PyInstructionSequence_Fini(&u->u_instr_sequence);
     Py_CLEAR(u->u_ste);
     Py_CLEAR(u->u_metadata.u_name);
     Py_CLEAR(u->u_metadata.u_qualname);
@@ -690,7 +578,24 @@ compiler_unit_free(struct compiler_unit *u)
     Py_CLEAR(u->u_metadata.u_cellvars);
     Py_CLEAR(u->u_metadata.u_fasthidden);
     Py_CLEAR(u->u_private);
+    Py_CLEAR(u->u_static_attributes);
     PyMem_Free(u);
+}
+
+static struct compiler_unit *
+get_class_compiler_unit(struct compiler *c)
+{
+    Py_ssize_t stack_size = PyList_GET_SIZE(c->c_stack);
+    for (Py_ssize_t i = stack_size - 1; i >= 0; i--) {
+        PyObject *capsule = PyList_GET_ITEM(c->c_stack, i);
+        struct compiler_unit *u = (struct compiler_unit *)PyCapsule_GetPointer(
+                                                              capsule, CAPSULE_NAME);
+        assert(u);
+        if (u->u_scope_type == COMPILER_SCOPE_CLASS) {
+            return u;
+        }
+    }
+    return NULL;
 }
 
 static int
@@ -912,7 +817,7 @@ codegen_addop_noarg(instr_sequence *seq, int opcode, location loc)
 {
     assert(!OPCODE_HAS_ARG(opcode));
     assert(!IS_ASSEMBLER_OPCODE(opcode));
-    return _PyCompile_InstructionSequence_Addop(seq, opcode, 0, loc);
+    return _PyInstructionSequence_Addop(seq, opcode, 0, loc);
 }
 
 static Py_ssize_t
@@ -1145,7 +1050,7 @@ codegen_addop_i(instr_sequence *seq, int opcode, Py_ssize_t oparg, location loc)
 
     int oparg_ = Py_SAFE_DOWNCAST(oparg, Py_ssize_t, int);
     assert(!IS_ASSEMBLER_OPCODE(opcode));
-    return _PyCompile_InstructionSequence_Addop(seq, opcode, oparg_, loc);
+    return _PyInstructionSequence_Addop(seq, opcode, oparg_, loc);
 }
 
 static int
@@ -1155,7 +1060,7 @@ codegen_addop_j(instr_sequence *seq, location loc,
     assert(IS_LABEL(target));
     assert(OPCODE_HAS_JUMP(opcode) || IS_BLOCK_PUSH_OPCODE(opcode));
     assert(!IS_ASSEMBLER_OPCODE(opcode));
-    return _PyCompile_InstructionSequence_Addop(seq, opcode, target.id, loc);
+    return _PyInstructionSequence_Addop(seq, opcode, target.id, loc);
 }
 
 #define RETURN_IF_ERROR_IN_SCOPE(C, CALL) { \
@@ -1336,6 +1241,16 @@ compiler_enter_scope(struct compiler *c, identifier name,
     }
 
     u->u_private = NULL;
+    if (scope_type == COMPILER_SCOPE_CLASS) {
+        u->u_static_attributes = PySet_New(0);
+        if (!u->u_static_attributes) {
+            compiler_unit_free(u);
+            return ERROR;
+        }
+    }
+    else {
+        u->u_static_attributes = NULL;
+    }
 
     /* Push the old compiler_unit on the stack. */
     if (c->u) {
@@ -2167,7 +2082,7 @@ wrap_in_stopiteration_handler(struct compiler *c)
 
     /* Insert SETUP_CLEANUP at start */
     RETURN_IF_ERROR(
-        instr_sequence_insert_instruction(
+        _PyInstructionSequence_InsertInstruction(
             INSTR_SEQUENCE(c), 0,
             SETUP_CLEANUP, handler.id, NO_LOCATION));
 
@@ -2517,6 +2432,18 @@ compiler_class_body(struct compiler *c, stmt_ty s, int firstlineno)
         compiler_exit_scope(c);
         return ERROR;
     }
+    assert(c->u->u_static_attributes);
+    PyObject *static_attributes = PySequence_Tuple(c->u->u_static_attributes);
+    if (static_attributes == NULL) {
+        compiler_exit_scope(c);
+        return ERROR;
+    }
+    ADDOP_LOAD_CONST(c, NO_LOCATION, static_attributes);
+    Py_CLEAR(static_attributes);
+    if (compiler_nameop(c, NO_LOCATION, &_Py_ID(__static_attributes__), Store) < 0) {
+        compiler_exit_scope(c);
+        return ERROR;
+    }
     /* The following code is artificial */
     /* Set __classdictcell__ if necessary */
     if (c->u->u_ste->ste_needs_classdict) {
@@ -2657,6 +2584,7 @@ compiler_class(struct compiler *c, stmt_ty s)
                                                          s->v.ClassDef.keywords));
 
         PyCodeObject *co = optimize_and_assemble(c, 0);
+
         compiler_exit_scope(c);
         if (co == NULL) {
             return ERROR;
@@ -6246,6 +6174,17 @@ compiler_visit_expr1(struct compiler *c, expr_ty e)
             ADDOP(c, loc, NOP);
             return SUCCESS;
         }
+        if (e->v.Attribute.value->kind == Name_kind &&
+            _PyUnicode_EqualToASCIIString(e->v.Attribute.value->v.Name.id, "self"))
+        {
+            struct compiler_unit *class_u = get_class_compiler_unit(c);
+            if (class_u != NULL) {
+                assert(class_u->u_scope_type == COMPILER_SCOPE_CLASS);
+                assert(class_u->u_static_attributes);
+                RETURN_IF_ERROR(
+                    PySet_Add(class_u->u_static_attributes, e->v.Attribute.attr));
+            }
+        }
         VISIT(c, expr, e->v.Attribute.value);
         loc = LOC(e);
         loc = update_start_location_to_match_attr(c, loc, e);
@@ -7616,7 +7555,7 @@ optimize_and_assemble_code_unit(struct compiler_unit *u, PyObject *const_cache,
 
 error:
     Py_XDECREF(consts);
-    instr_sequence_fini(&optimized_instrs);
+    PyInstructionSequence_Fini(&optimized_instrs);
     _PyCfgBuilder_Free(g);
     return co;
 }
@@ -7689,7 +7628,7 @@ instructions_to_instr_sequence(PyObject *instructions, instr_sequence *seq)
 
     for (int i = 0; i < num_insts; i++) {
         if (is_target[i]) {
-            if (_PyCompile_InstructionSequence_UseLabel(seq, i) < 0) {
+            if (_PyInstructionSequence_UseLabel(seq, i) < 0) {
                 goto error;
             }
         }
@@ -7729,7 +7668,7 @@ instructions_to_instr_sequence(PyObject *instructions, instr_sequence *seq)
         if (PyErr_Occurred()) {
             goto error;
         }
-        if (_PyCompile_InstructionSequence_Addop(seq, opcode, oparg, loc) < 0) {
+        if (_PyInstructionSequence_Addop(seq, opcode, oparg, loc) < 0) {
             goto error;
         }
     }
@@ -7754,11 +7693,11 @@ instructions_to_cfg(PyObject *instructions)
     if (g == NULL) {
         goto error;
     }
-    instr_sequence_fini(&seq);
+    PyInstructionSequence_Fini(&seq);
     return g;
 error:
     _PyCfgBuilder_Free(g);
-    instr_sequence_fini(&seq);
+    PyInstructionSequence_Fini(&seq);
     return NULL;
 }
 
@@ -7772,11 +7711,8 @@ instr_sequence_to_instructions(instr_sequence *seq)
     for (int i = 0; i < seq->s_used; i++) {
         instruction *instr = &seq->s_instrs[i];
         location loc = instr->i_loc;
-        int arg = HAS_TARGET(instr->i_opcode) ?
-                  seq->s_labelmap[instr->i_oparg] : instr->i_oparg;
-
         PyObject *inst_tuple = Py_BuildValue(
-            "(iiiiii)", instr->i_opcode, arg,
+            "(iiiiii)", instr->i_opcode, instr->i_oparg,
             loc.lineno, loc.end_lineno,
             loc.col_offset, loc.end_col_offset);
         if (inst_tuple == NULL) {
@@ -7803,8 +7739,11 @@ cfg_to_instructions(cfg_builder *g)
     if (_PyCfg_ToInstructionSequence(g, &seq) < 0) {
         return NULL;
     }
+    if (_PyInstructionSequence_ApplyLabelMap(&seq) < 0) {
+        return NULL;
+    }
     PyObject *res = instr_sequence_to_instructions(&seq);
-    instr_sequence_fini(&seq);
+    PyInstructionSequence_Fini(&seq);
     return res;
 }
 
@@ -7974,6 +7913,10 @@ _PyCompile_CodeGen(PyObject *ast, PyObject *filename, PyCompilerFlags *pflags,
         goto finally;
     }
 
+    if (_PyInstructionSequence_ApplyLabelMap(INSTR_SEQUENCE(c)) < 0) {
+        return NULL;
+    }
+
     PyObject *insts = instr_sequence_to_instructions(INSTR_SEQUENCE(c));
     if (insts == NULL) {
         goto finally;
@@ -8060,7 +8003,7 @@ _PyCompile_Assemble(_PyCompile_CodeUnitMetadata *umd, PyObject *filename,
 error:
     Py_DECREF(const_cache);
     _PyCfgBuilder_Free(g);
-    instr_sequence_fini(&optimized_instrs);
+    PyInstructionSequence_Fini(&optimized_instrs);
     return co;
 }
 

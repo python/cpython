@@ -24,6 +24,9 @@
 #  endif
 #endif
 
+#include "config_common.h"
+
+
 /* --- PyConfig spec ---------------------------------------------- */
 
 typedef enum {
@@ -195,6 +198,11 @@ The following implementation-specific options are available:\n\
 -X frozen_modules=[on|off]: whether to use frozen modules; the default is \"on\"\n\
          for installed Python and \"off\" for a local build;\n\
          also PYTHON_FROZEN_MODULES\n\
+"
+#ifdef Py_GIL_DISABLED
+"-X gil=[0|1]: enable (1) or disable (0) the GIL; also PYTHON_GIL\n"
+#endif
+"\
 -X importtime: show how long each import takes; also PYTHONPROFILEIMPORTTIME\n\
 -X int_max_str_digits=N: limit the size of int<->str conversions;\n\
          0 disables the limit; also PYTHONINTMAXSTRDIGITS\n\
@@ -1093,32 +1101,10 @@ _PyConfig_AsDict(const PyConfig *config)
 }
 
 
-static PyObject*
-config_dict_get(PyObject *dict, const char *name)
-{
-    PyObject *item;
-    if (PyDict_GetItemStringRef(dict, name, &item) < 0) {
-        return NULL;
-    }
-    if (item == NULL) {
-        PyErr_Format(PyExc_ValueError, "missing config key: %s", name);
-        return NULL;
-    }
-    return item;
-}
-
-
 static void
 config_dict_invalid_value(const char *name)
 {
     PyErr_Format(PyExc_ValueError, "invalid config value: %s", name);
-}
-
-
-static void
-config_dict_invalid_type(const char *name)
-{
-    PyErr_Format(PyExc_TypeError, "invalid config type: %s", name);
 }
 
 

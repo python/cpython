@@ -30,19 +30,66 @@ typedef struct {
     PyCodeObject *code;  // Weak (NULL if no corresponding ENTER_EXECUTOR).
 } _PyVMData;
 
+#define UOP_FORMAT_TARGET 0
+#define UOP_FORMAT_EXIT 1
+#define UOP_FORMAT_JUMP 2
+#define UOP_FORMAT_UNUSED 3
+
+/* Depending on the format,
+ * the 32 bits between the oparg and operand are:
+ * UOP_FORMAT_TARGET:
+ *    uint32_t target;
+ * UOP_FORMAT_EXIT
+ *    uint16_t exit_index;
+ *    uint16_t error_target;
+ * UOP_FORMAT_JUMP
+ *    uint16_t jump_target;
+ *    uint16_t error_target;
+ */
 typedef struct {
-    uint16_t opcode;
+    uint16_t opcode:14;
+    uint16_t format:2;
     uint16_t oparg;
     union {
         uint32_t target;
-        uint32_t exit_index;
+        struct {
+            union {
+                uint16_t exit_index;
+                uint16_t jump_target;
+            };
+            uint16_t error_target;
+        };
     };
     uint64_t operand;  // A cache entry
 } _PyUOpInstruction;
 
+static inline uint32_t uop_get_target(const _PyUOpInstruction *inst)
+{
+    assert(inst->format == UOP_FORMAT_TARGET);
+    return inst->target;
+}
+
+static inline uint16_t uop_get_exit_index(const _PyUOpInstruction *inst)
+{
+    assert(inst->format == UOP_FORMAT_EXIT);
+    return inst->exit_index;
+}
+
+static inline uint16_t uop_get_jump_target(const _PyUOpInstruction *inst)
+{
+    assert(inst->format == UOP_FORMAT_JUMP);
+    return inst->jump_target;
+}
+
+static inline uint16_t uop_get_error_target(const _PyUOpInstruction *inst)
+{
+    assert(inst->format != UOP_FORMAT_TARGET);
+    return inst->error_target;
+}
+
 typedef struct _exit_data {
     uint32_t target;
-    int16_t temperature;
+    _Py_BackoffCounter temperature;
     const struct _PyExecutorObject *executor;
 } _PyExitData;
 
@@ -68,11 +115,6 @@ typedef int (*optimize_func)(
 struct _PyOptimizerObject {
     PyObject_HEAD
     optimize_func optimize;
-    /* These thresholds are treated as signed so do not exceed INT16_MAX
-     * Use INT16_MAX to indicate that the optimizer should never be called */
-    uint16_t resume_threshold;
-    uint16_t side_threshold;
-    uint16_t backedge_threshold;
     /* Data needed by the optimizer goes here, but is opaque to the VM */
 };
 
@@ -103,14 +145,6 @@ extern void _Py_Executors_InvalidateAll(PyInterpreterState *interp, int is_inval
 /* For testing */
 PyAPI_FUNC(PyObject *)PyUnstable_Optimizer_NewCounter(void);
 PyAPI_FUNC(PyObject *)PyUnstable_Optimizer_NewUOpOptimizer(void);
-
-#define OPTIMIZER_BITS_IN_COUNTER 4
-/* Minimum of 16 additional executions before retry */
-#define MIN_TIER2_BACKOFF 4
-#define MAX_TIER2_BACKOFF (15 - OPTIMIZER_BITS_IN_COUNTER)
-#define OPTIMIZER_BITS_MASK ((1 << OPTIMIZER_BITS_IN_COUNTER) - 1)
-/* A value <= UINT16_MAX but large enough that when shifted is > UINT16_MAX */
-#define OPTIMIZER_UNREACHABLE_THRESHOLD UINT16_MAX
 
 #define _Py_MAX_ALLOWED_BUILTINS_MODIFICATIONS 3
 #define _Py_MAX_ALLOWED_GLOBALS_MODIFICATIONS 6
