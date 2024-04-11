@@ -461,30 +461,29 @@ passed as second argument to Py_TRASHCAN_BEGIN().
 /* Python 3.9 private API, invoked by the macros below. */
 PyAPI_FUNC(int) _PyTrash_begin(PyThreadState *tstate, PyObject *op);
 PyAPI_FUNC(void) _PyTrash_end(PyThreadState *tstate);
-/* Python 3.10 private API, invoked by the Py_TRASHCAN_BEGIN(). */
-PyAPI_FUNC(int) _PyTrash_cond(PyObject *op, destructor dealloc);
 
-#define Py_TRASHCAN_BEGIN_CONDITION(op, cond) \
-    do { \
-        PyThreadState *_tstate = NULL; \
-        /* If "cond" is false, then _tstate remains NULL and the deallocator \
-         * is run normally without involving the trashcan */ \
-        if (cond) { \
-            _tstate = PyThreadState_GetUnchecked(); \
-            if (_PyTrash_begin(_tstate, _PyObject_CAST(op))) { \
-                break; \
-            } \
-        }
-        /* The body of the deallocator is here. */
-#define Py_TRASHCAN_END \
-        if (_tstate) { \
-            _PyTrash_end(_tstate); \
-        } \
-    } while (0);
+PyAPI_FUNC(void) PyTrash_thread_deposit_object(PyThreadState *tstate, PyObject *op);
+PyAPI_FUNC(void) PyTrash_thread_destroy_chain(PyThreadState *tstate);
+
+
+/* Python 3.10 private API, invoked by the Py_TRASHCAN_BEGIN(). */
 
 #define Py_TRASHCAN_BEGIN(op, dealloc) \
-    Py_TRASHCAN_BEGIN_CONDITION((op), \
-        _PyTrash_cond(_PyObject_CAST(op), (destructor)(dealloc)))
+do { \
+    PyThreadState *tstate = PyThreadState_Get(); \
+    if (tstate->c_recursion_remaining <= 0 && Py_TYPE(op)->tp_dealloc == (destructor)dealloc) { \
+        PyTrash_thread_deposit_object(tstate, (PyObject *)op); \
+        break; \
+    } \
+    tstate->c_recursion_remaining--;
+    /* The body of the deallocator is here. */
+#define Py_TRASHCAN_END \
+    tstate->c_recursion_remaining++; \
+    if (tstate->delete_later && tstate->c_recursion_remaining > 50) { \
+        PyTrash_thread_destroy_chain(tstate); \
+    } \
+} while (0);
+
 
 
 PyAPI_FUNC(void *) PyObject_GetItemData(PyObject *obj);
