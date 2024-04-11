@@ -26,7 +26,7 @@ from test.support import import_helper
 from test.support import threading_helper
 from test.support import warnings_helper
 from test.support import requires_limited_api
-from test.support import requires_gil_enabled
+from test.support import requires_gil_enabled, expected_failure_if_gil_disabled
 from test.support import Py_GIL_DISABLED
 from test.support.script_helper import assert_python_failure, assert_python_ok, run_python_until_end
 try:
@@ -2025,19 +2025,31 @@ class SubinterpreterTest(unittest.TestCase):
         kwlist[-2] = 'check_multi_interp_extensions'
         kwlist[-1] = 'own_gil'
 
-        # expected to work
-        for config, expected in {
+        expected_to_work = {
             (True, True, True, True, True, True, True):
                 (ALL_FLAGS, True),
             (True, False, False, False, False, False, False):
                 (OBMALLOC, False),
             (False, False, False, True, False, True, False):
                 (THREADS | EXTENSIONS, False),
-        }.items():
+        }
+
+        expected_to_fail = {
+            (False, False, False, False, False, False, False),
+        }
+
+        # gh-117649: The free-threaded build does not currently allow
+        # setting check_multi_interp_extensions to False.
+        if Py_GIL_DISABLED:
+            for config in list(expected_to_work.keys()):
+                kwargs = dict(zip(kwlist, config))
+                if not kwargs['check_multi_interp_extensions']:
+                    del expected_to_work[config]
+                    expected_to_fail.add(config)
+
+        # expected to work
+        for config, expected in expected_to_work.items():
             kwargs = dict(zip(kwlist, config))
-            if Py_GIL_DISABLED and not kwargs['check_multi_interp_extensions']:
-                # Skip unsupported configuration
-                continue
             exp_flags, exp_gil = expected
             expected = {
                 'feature_flags': exp_flags,
@@ -2060,9 +2072,7 @@ class SubinterpreterTest(unittest.TestCase):
                 self.assertEqual(settings, expected)
 
         # expected to fail
-        for config in [
-            (False, False, False, False, False, False, False),
-        ]:
+        for config in expected_to_fail:
             kwargs = dict(zip(kwlist, config))
             with self.subTest(config):
                 script = textwrap.dedent(f'''
@@ -2075,7 +2085,9 @@ class SubinterpreterTest(unittest.TestCase):
 
     @unittest.skipIf(_testsinglephase is None, "test requires _testsinglephase module")
     @unittest.skipUnless(hasattr(os, "pipe"), "requires os.pipe()")
-    @requires_gil_enabled("gh-117649: test does not work in free-threaded build")
+    # gh-117649: The free-threaded build does not currently allow overriding
+    # the check_multi_interp_extensions setting.
+    @expected_failure_if_gil_disabled()
     def test_overridden_setting_extensions_subinterp_check(self):
         """
         PyInterpreterConfig.check_multi_interp_extensions can be overridden
@@ -2171,7 +2183,9 @@ class SubinterpreterTest(unittest.TestCase):
         self.assertFalse(hasattr(binascii.Error, "foobar"))
 
     @unittest.skipIf(_testmultiphase is None, "test requires _testmultiphase module")
-    @requires_gil_enabled("gh-117649: test does not work in free-threaded build")
+    # gh-117649: The free-threaded build does not currently support sharing
+    # extension module state between interpreters.
+    @expected_failure_if_gil_disabled()
     def test_module_state_shared_in_global(self):
         """
         bpo-44050: Extension module state should be shared between interpreters

@@ -682,7 +682,9 @@ class IncompatibleExtensionModuleRestrictionsTests(unittest.TestCase):
                 raise ImportError(excsnap.msg)
 
     @unittest.skipIf(_testsinglephase is None, "test requires _testsinglephase module")
-    @support.requires_gil_enabled("gh-117649: not supported in free-threaded build")
+    # gh-117649: single-phase init modules are not currently supported in
+    # subinterpreters in the free-threaded build
+    @support.expected_failure_if_gil_disabled()
     def test_single_phase_init_module(self):
         script = textwrap.dedent('''
             from importlib.util import _incompatible_extension_module_restrictions
