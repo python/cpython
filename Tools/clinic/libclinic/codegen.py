@@ -266,7 +266,7 @@ class Destination:
 DestinationDict = dict[str, Destination]
 
 
-class Codegen:
+class CodeGen:
     def __init__(self, limited_capi: bool) -> None:
         self.limited_capi = limited_capi
         self._ifndef_symbols: set[str] = set()

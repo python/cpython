@@ -9,7 +9,7 @@ import libclinic
 from libclinic import fail, warn
 from libclinic.function import Class
 from libclinic.block_parser import Block, BlockParser
-from libclinic.codegen import BlockPrinter, Destination, Codegen
+from libclinic.codegen import BlockPrinter, Destination, CodeGen
 from libclinic.parser import Parser, PythonParser
 from libclinic.dsl_parser import DSLParser
 if TYPE_CHECKING:
@@ -101,7 +101,7 @@ impl_definition block
         self.modules: ModuleDict = {}
         self.classes: ClassDict = {}
         self.functions: list[Function] = []
-        self.codegen = Codegen(self.limited_capi)
+        self.codegen = CodeGen(self.limited_capi)
 
         self.line_prefix = self.line_suffix = ''
 
