@@ -1165,7 +1165,7 @@ mappingproxy_reversed(PyObject *self, PyObject *Py_UNUSED(ignored))
 
 static PyMethodDef mappingproxy_methods[] = {
     {"get",       _PyCFunction_CAST(mappingproxy_get), METH_FASTCALL,
-     PyDoc_STR("get(self, key, default=None, /)\n--\n\n"
+     PyDoc_STR("get($self, key, default=None, /)\n--\n\n"
         "Return the value for key if key is in the mapping, else default.")},
     {"keys",      mappingproxy_keys,       METH_NOARGS,
      PyDoc_STR("D.keys() -> a set-like object providing a view on D's keys")},
