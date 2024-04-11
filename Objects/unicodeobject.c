@@ -14634,22 +14634,6 @@ as_const_char(PyObject *obj, const char *name)
 }
 
 static PyObject *
-fallback_to_tp_call(PyObject *type, Py_ssize_t nargs, Py_ssize_t nkwargs,
-                    PyObject *const *args, PyObject *kwnames)
-{
-    PyObject *tuple = _PyTuple_FromArray(args, nargs);
-    if (tuple == NULL) {
-        return NULL;
-    }
-    PyObject *dict = _PyStack_AsDict(args + nargs, kwnames);
-    if (dict == NULL) {
-        Py_DECREF(tuple);
-        return NULL;
-    }
-    return unicode_new(_PyType_CAST(type), tuple, dict);
-}
-
-static PyObject *
 unicode_vectorcall(PyObject *type, PyObject *const *args,
                    size_t nargsf, PyObject *kwnames)
 {
@@ -14657,73 +14641,41 @@ unicode_vectorcall(PyObject *type, PyObject *const *args,
 
     Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
     Py_ssize_t nkwargs = (kwnames) ? PyTuple_GET_SIZE(kwnames) : 0;
-    if (nargs == 0 && nkwargs == 0) {
-        return unicode_get_empty();
-    }
-    PyObject *object = args[0];
-    if (nargs == 1 && nkwargs == 0) {
-        return PyObject_Str(object);
-    }
-    if (nargs + nkwargs == 2) {
-        const char *encoding = NULL;
-        const char *errors = NULL;
-        if (nkwargs == 1) {
-            PyObject *key = PyTuple_GET_ITEM(kwnames, 0);
-            if (_PyUnicode_EqualToASCIIString(key, "encoding")) {
-                encoding = as_const_char(args[1], "encoding");
-                if (encoding == NULL) {
-                    return NULL;
-                }
-            }
-            else if (_PyUnicode_EqualToASCIIString(key, "errors")) {
-                errors = as_const_char(args[1], "errors");
-                if (errors == NULL) {
-                    return NULL;
-                }
-            }
-            else {
-                PyErr_Format(PyExc_TypeError,
-                    "str() got an unexpected keyword argument %R", key);
-                return NULL;
-            }
-        }
-        else if (nkwargs == 0) {
-            encoding = as_const_char(args[1], "encoding");
-        }
-        else {
-            return fallback_to_tp_call(type, nargs, nkwargs, args, kwnames);
-        }
-        return PyUnicode_FromEncodedObject(object, encoding, errors);
-    }
-    if (nargs + nkwargs == 3) {
-        if (nkwargs == 1) {
-            PyObject *key = PyTuple_GET_ITEM(kwnames, 0);
-            if (!_PyUnicode_EqualToASCIIString(key, "errors")) {
-                PyErr_Format(PyExc_TypeError,
-                    "str() got an unexpected keyword argument %R", key);
-                return NULL;
-            }
-        }
-        else if (nkwargs != 0) {
-            return fallback_to_tp_call(type, nargs, nkwargs, args, kwnames);
-        }
-        const char *encoding = as_const_char(args[1], "encoding");
-        if (encoding == NULL) {
+    if (nkwargs) {
+        // Fallback to tp_call()
+        PyObject *tuple = _PyTuple_FromArray(args, nargs);
+        if (tuple == NULL) {
             return NULL;
         }
-        const char *errors = as_const_char(args[2], "errors");
-        if (errors == NULL) {
+        PyObject *dict = _PyStack_AsDict(args + nargs, kwnames);
+        if (dict == NULL) {
+            Py_DECREF(tuple);
             return NULL;
         }
-        return PyUnicode_FromEncodedObject(object, encoding, errors);
+        return unicode_new(_PyType_CAST(type), tuple, dict);
     }
     if (nargs > 3) {
         PyErr_Format(PyExc_TypeError,
             "str() takes at most 3 arguments (%d given)", nargs + nkwargs);
         return NULL;
     }
-
-    return fallback_to_tp_call(type, nargs, nkwargs, args, kwnames);
+    if (nargs == 0) {
+        return unicode_get_empty();
+    }
+    PyObject *object = args[0];
+    if (nargs == 1) {
+        return PyObject_Str(object);
+    }
+    const char *encoding = NULL;
+    const char *errors = NULL;
+    if (nargs == 2) {
+        encoding = as_const_char(args[1], "encoding");
+    }
+    if (nargs == 3) {
+        encoding = as_const_char(args[1], "encoding");
+        errors = as_const_char(args[1], "errors");
+    }
+    return PyUnicode_FromEncodedObject(object, encoding, errors);
 }
 
 static PyObject *
