@@ -164,7 +164,11 @@ static_builtin_state_init(PyInterpreterState *interp, PyTypeObject *self)
 {
     if (!static_builtin_index_is_set(self)) {
         assert(_Py_IsMainInterpreter(interp));
-        static_builtin_index_set(self, interp->types.num_builtins_initialized);
+        assert(interp->types.num_builtins_initialized == \
+                interp->runtime->types.next_builtin_index);
+        static_builtin_index_set(self,
+                                 interp->runtime->types.next_builtin_index);
+        interp->runtime->types.next_builtin_index++;
     }
     else {
         assert(!_Py_IsMainInterpreter(interp));
