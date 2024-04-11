@@ -36,7 +36,6 @@ IGNORE = {
     '_testmultiphase',
     '_testsinglephase',
     '_testexternalinspection',
-    '_xxsubinterpreters',
     '_xxinterpchannels',
     '_xxinterpqueues',
     '_xxtestfuzz',

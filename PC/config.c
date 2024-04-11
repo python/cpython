@@ -35,7 +35,7 @@ extern PyObject* PyInit__codecs(void);
 extern PyObject* PyInit__weakref(void);
 /* XXX: These two should really be extracted to standalone extensions. */
 extern PyObject* PyInit_xxsubtype(void);
-extern PyObject* PyInit__xxsubinterpreters(void);
+extern PyObject* PyInit__interpreters(void);
 extern PyObject* PyInit__xxinterpchannels(void);
 extern PyObject* PyInit__xxinterpqueues(void);
 extern PyObject* PyInit__random(void);
@@ -139,7 +139,7 @@ struct _inittab _PyImport_Inittab[] = {
     {"_json", PyInit__json},
 
     {"xxsubtype", PyInit_xxsubtype},
-    {"_xxsubinterpreters", PyInit__xxsubinterpreters},
+    {"_interpreters", PyInit__interpreters},
     {"_xxinterpchannels", PyInit__xxinterpchannels},
     {"_xxinterpqueues", PyInit__xxinterpqueues},
 #ifdef _Py_HAVE_ZLIB

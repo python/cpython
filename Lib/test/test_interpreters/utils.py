@@ -20,7 +20,7 @@ from test import support
 from test.support import os_helper
 from test.support import import_helper
 
-_interpreters = import_helper.import_module('_xxsubinterpreters')
+_interpreters = import_helper.import_module('_interpreters')
 from test.support import interpreters
 
 

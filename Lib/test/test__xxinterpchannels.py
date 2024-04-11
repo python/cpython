@@ -8,7 +8,7 @@ import unittest
 
 from test.support import import_helper
 
-from test.test__xxsubinterpreters import (
+from test.test__interpreters import (
     _interpreters,
     _run_output,
     clean_up_interpreters,
@@ -1432,12 +1432,12 @@ class ChannelCloseFixture(namedtuple('ChannelCloseFixture',
         else:
             ch = channels.create()
             run_interp(creator.id, f"""
-                import _xxsubinterpreters
+                import _interpreters
                 cid = _xxsubchannels.create()
                 # We purposefully send back an int to avoid tying the
                 # channel to the other interpreter.
                 _xxsubchannels.send({ch}, int(cid), blocking=False)
-                del _xxsubinterpreters
+                del _interpreters
                 """)
             self._cid = channels.recv(ch)
         return self._cid

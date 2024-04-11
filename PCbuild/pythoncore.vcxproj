@@ -465,7 +465,7 @@
     <ClCompile Include="..\Modules\_typingmodule.c" />
     <ClCompile Include="..\Modules\timemodule.c" />
     <ClCompile Include="..\Modules\xxsubtype.c" />
-    <ClCompile Include="..\Modules\_xxsubinterpretersmodule.c" />
+    <ClCompile Include="..\Modules\_interpretersmodule.c" />
     <ClCompile Include="..\Modules\_xxinterpchannelsmodule.c" />
     <ClCompile Include="..\Modules\_xxinterpqueuesmodule.c" />
     <ClCompile Include="..\Modules\_io\fileio.c" />
