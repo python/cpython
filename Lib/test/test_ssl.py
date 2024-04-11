@@ -4364,14 +4364,14 @@ class ThreadedTests(unittest.TestCase):
     def test_psk(self):
         psk = bytes.fromhex('deadbeef')
 
-        client_context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+        client_context, server_context, _ = testing_context()
+
         client_context.check_hostname = False
         client_context.verify_mode = ssl.CERT_NONE
         client_context.maximum_version = ssl.TLSVersion.TLSv1_2
         client_context.set_ciphers('PSK')
         client_context.set_psk_client_callback(lambda hint: (None, psk))
 
-        server_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
         server_context.maximum_version = ssl.TLSVersion.TLSv1_2
         server_context.set_ciphers('PSK')
         server_context.set_psk_server_callback(lambda identity: psk)
@@ -4443,14 +4443,14 @@ class ThreadedTests(unittest.TestCase):
             self.assertEqual(identity, client_identity)
             return psk
 
-        client_context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+        client_context, server_context, _ = testing_context()
+
         client_context.check_hostname = False
         client_context.verify_mode = ssl.CERT_NONE
         client_context.minimum_version = ssl.TLSVersion.TLSv1_3
         client_context.set_ciphers('PSK')
         client_context.set_psk_client_callback(client_callback)
 
-        server_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
         server_context.minimum_version = ssl.TLSVersion.TLSv1_3
         server_context.set_ciphers('PSK')
         server_context.set_psk_server_callback(server_callback, identity_hint)
