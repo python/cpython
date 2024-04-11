@@ -2061,10 +2061,6 @@ PySequence_Tuple(PyObject *v)
     if (it == NULL)
         return NULL;
 
-    /* Guess result size and allocate space. */
-    n = PyObject_LengthHint(v, 10);
-    if (n == -1)
-        goto Fail;
     PyObject *temp = PyList_New(0);
     if (temp == NULL)
         goto Fail;
@@ -2085,7 +2081,7 @@ PySequence_Tuple(PyObject *v)
         }
     }
     Py_DECREF(it);
-    PyObject *result = _PyList_AsTupleStealItems(temp);
+    PyObject *result = _PyList_AsTupleTakeItems(temp);
     Py_DECREF(temp);
     return result;
 
