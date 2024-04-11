@@ -1963,7 +1963,7 @@ The C-API provides a basic mutual exclusion lock.
 
 .. c:function:: void PyMutex_Lock(PyMutex *m)
 
-   Lock the mutex.  If another thread has already locked it, the calling
+   Lock mutex *m*.  If another thread has already locked it, the calling
    thread will block until the mutex is unlocked.  While blocked, the thread
    will temporarily release the :term:`GIL` if it is held.
 
@@ -1971,7 +1971,7 @@ The C-API provides a basic mutual exclusion lock.
 
 .. c:function:: void PyMutex_Unlock(PyMutex *m)
 
-   Unlock the mutex. The mutex must be locked --- otherwise, the function will
+   Unlock mutex *m*. The mutex must be locked --- otherwise, the function will
    issue a fatal error.
 
    .. versionadded:: 3.13
