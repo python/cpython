@@ -19,6 +19,12 @@ include a ``PyObject*`` representing the code object, the instruction offset
 and sometimes additional, event-specific arguments (see :mod:`sys.monitoring`
 for details about the signatures of the different event callbacks).
 
+.. c:type:: PyMonitoringState
+
+  Representation of the state of an event type. It is allocated by the user
+  while its contents are maintained by the monitoring API functions described below.
+
+
 All of the functions below return 0 on success and -1 on error.
 
 .. c:function:: int PyMonitoring_FirePyStartEvent(PyMonitoringState *state, PyObject *codelike, int32_t offset)
