@@ -3697,7 +3697,6 @@ _imp__override_multi_interp_extensions_check_impl(PyObject *module,
         return NULL;
     }
 #ifdef Py_GIL_DISABLED
-    printf("Setting exception\n");
     PyErr_SetString(PyExc_RuntimeError,
                     "_imp._override_multi_interp_extensions_check() "
                     "cannot be used in the free-threaded build");
