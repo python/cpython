@@ -586,18 +586,6 @@ class Path(_abc.PathBase, PurePath):
         """
         return (self._make_child_relpath(name) for name in os.listdir(self))
 
-    def _scandir(self):
-        return os.scandir(self)
-
-    def _make_child_direntry(self, entry):
-        # Transform an entry yielded from _scandir() into a path object.
-        path_str = entry.name if str(self) == '.' else entry.path
-        path = self.with_segments(path_str)
-        path._str = path_str
-        path._drv = self.drive
-        path._root = self.root
-        path._tail_cached = self._tail + [entry.name]
-        return path
 
     def _make_child_relpath(self, name):
         if not name:
@@ -663,8 +651,12 @@ class Path(_abc.PathBase, PurePath):
     def walk(self, top_down=True, on_error=None, follow_symlinks=False):
         """Walk the directory tree from this directory, similar to os.walk()."""
         sys.audit("pathlib.Path.walk", self, on_error, follow_symlinks)
-        return _abc.PathBase.walk(
-            self, top_down=top_down, on_error=on_error, follow_symlinks=follow_symlinks)
+        root_dir = str(self)
+        results = self._globber.walk(root_dir, top_down, on_error, follow_symlinks)
+        for path_str, dirnames, filenames in results:
+            if root_dir == '.':
+                path_str = path_str[2:]
+            yield self._from_parsed_string(path_str), dirnames, filenames
 
     def absolute(self):
         """Return an absolute version of this path
