@@ -2,6 +2,9 @@
 
 .. _monitoring:
 
+Monitorong C API
+================
+
 Added in version 3.13.
 
 An extension may need to interact with the event monitoring system. Subscribing
