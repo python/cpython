@@ -113,9 +113,9 @@ The :mod:`urllib.request` module defines the following functions:
       ``http/1.1`` when no *context* is given. Custom *context* should set
       ALPN protocols with :meth:`~ssl.SSLContext.set_alpn_protocols`.
 
-    .. versionchanged:: 3.13
-       Remove *cafile*, *capath* and *cadefault* parameters: use the *context*
-       parameter instead.
+   .. versionchanged:: 3.13
+      Remove *cafile*, *capath* and *cadefault* parameters: use the *context*
+      parameter instead.
 
 
 .. function:: install_opener(opener)
