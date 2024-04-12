@@ -22,9 +22,6 @@ struct _types_runtime_state {
     // bpo-42745: next_version_tag remains shared by all interpreters
     // because of static types.
     unsigned int next_version_tag;
-
-    /* See the note in struct types_state below. */
-    size_t next_builtin_index;
 };
 
 
@@ -99,9 +96,8 @@ struct types_state {
        Instead it is calculated the first time a type is initialized
        (by the main interpreter).  The index matches the order in which
        the type was initialized relative to the others.  The actual
-       value comes from the current value of
-       _PyRuntimeState.types.next_builtin_index as each type
-       is initialized for the main interpreter.
+       value comes from the current value of num_builtins_initialized,
+       as each type is initialized for the main interpreter.
 
        num_builtins_initialized is incremented once for each static
        builtin type.  Once initialization is over for a subinterpreter,
