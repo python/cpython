@@ -898,7 +898,8 @@ using ``[]``.
    ``NoReturn`` can also be used as a
    `bottom type <https://en.wikipedia.org/wiki/Bottom_type>`_, a type that
    has no values. Starting in Python 3.11, the :data:`Never` type should
-   be used for this instead. Type checkers should treat the two equivalently.
+   be used for this concept instead. Type checkers should treat the two
+   equivalently.
 
    .. versionadded:: 3.6.2
 
