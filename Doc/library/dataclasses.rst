@@ -60,7 +60,7 @@ Module contents
    The order of the fields in all of the generated methods is the
    order in which they appear in the class definition.
 
-   The :func:``!@dataclass` decorator will add various "dunder" methods to
+   The :func:`!@dataclass` decorator will add various "dunder" methods to
    the class, described below.  If any of the added methods already
    exist in the class, the behavior depends on the parameter, as documented
    below. The decorator returns the same class that it is called on; no new
@@ -513,7 +513,7 @@ Post-init processing
 .. function:: __post_init__()
 
    When defined on the class, it will be called by the generated
-   :meth:`~object.__init__`, normally as :meth:`self.__post_init__`.
+   :meth:`~object.__init__`, normally as :meth:`!self.__post_init__`.
    However, if any ``InitVar`` fields are defined, they will also be
    passed to :meth:`!__post_init__` in the order they were defined in the
    class.  If no :meth:`!__init__` method is generated, then
@@ -572,7 +572,7 @@ Init-only variables
 
 Another place where :func:`@dataclass <dataclass>` inspects a type annotation is to
 determine if a field is an init-only variable.  It does this by seeing
-if the type of a field is of type :data:`dataclasses.InitVar`.  If a field
+if the type of a field is of type :data:`!dataclasses.InitVar`.  If a field
 is an ``InitVar``, it is considered a pseudo-field called an init-only
 field.  As it is not a true field, it is not returned by the
 module-level :func:`fields` function.  Init-only fields are added as
