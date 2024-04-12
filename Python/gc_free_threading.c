@@ -306,7 +306,7 @@ gc_visit_thread_stacks(struct _stoptheworld_state *stw)
     PyInterpreterState *interp = _PyInterpreterState_GET();
     PyThreadState *tstate = _PyThreadState_GET();
     for (PyThreadState *p = interp->threads.head; p != NULL; p = p->next) {
-        _PyInterpreterFrame *curr_frame = tstate->current_frame;
+        _PyInterpreterFrame *curr_frame = p->current_frame;
         while (curr_frame != NULL) {
             PyCodeObject *co = (PyCodeObject *)curr_frame->f_executable;
             for (int i = 0; i < co->co_nlocalsplus + co->co_stacksize; i++) {

@@ -1760,7 +1760,9 @@ _PyEvalFramePushAndInit_UnTagged(PyThreadState *tstate, PyFunctionObject *func,
         for (size_t i = 0; i < kw_count; i++) {
             tagged_args_buffer[argcount + i] = Py_STACK_TAG(args[argcount + i]);
         }
-        return _PyEvalFramePushAndInit(tstate, func, locals, (_PyStackRef const *)tagged_args_buffer, argcount, kwnames);
+        _PyInterpreterFrame *res = _PyEvalFramePushAndInit(tstate, func, locals, (_PyStackRef const *)tagged_args_buffer, argcount, kwnames);
+        PyMem_Free(tagged_args_buffer);
+        return res;
 //    }
 //    for (size_t i = 0; i < argcount; i++) {
 //        tagged_args[i] = Py_STACK_TAG(args[i]);
