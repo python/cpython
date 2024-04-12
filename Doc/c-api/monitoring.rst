@@ -122,7 +122,7 @@ would typically correspond to a python function.
 
 .. :c:function:: int PyMonitoring_EnterScope(PyMonitoringState *state_array, uint64_t *version, const uint8_t *event_types, Py_ssize_t length)
 
-   Enter a monitoring scope. ``event_types`` is an array of the event IDs for
+   Enter a monitored scope. ``event_types`` is an array of the event IDs for
    events that may be fired from the scope. For example, the ID of a ``PY_START``
    event is the value ``PY_MONITORING_EVENT_PY_START``, which is numerically equal
    to the base-2 logarithm of ``sys.monitoring.events.PY_START``.
