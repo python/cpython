@@ -3260,7 +3260,8 @@ PyDoc_STRVAR(memory_f_contiguous_doc,
 PyDoc_STRVAR(memory_contiguous_doc,
              "A bool indicating whether the memory is contiguous.");
 PyDoc_STRVAR(memory_exit_doc,
-             "__exit__($self, *exc_info)\n--\n\n");
+             "__exit__($self, /, *exc_info)\n--\n\n"
+             "Release the underlying buffer exposed by the memoryview object.");
 
 
 static PyGetSetDef memory_getsetlist[] = {
