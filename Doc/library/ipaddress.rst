@@ -292,13 +292,13 @@ write code that handles both IP versions correctly.  Address objects are
    .. attribute:: is_multicast
    .. attribute:: is_private
    .. attribute:: is_global
+
+      .. versionadded:: 3.4
+
    .. attribute:: is_unspecified
    .. attribute:: is_reserved
    .. attribute:: is_loopback
    .. attribute:: is_link_local
-
-      .. versionadded:: 3.4
-         is_global
 
    .. attribute:: is_site_local
 
