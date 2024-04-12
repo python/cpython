@@ -1491,6 +1491,22 @@ finalize_modules_delete_special(PyThreadState *tstate, int verbose)
     }
 }
 
+static void
+swap_module_dict(PyModuleObject *mod)
+{
+    if (_Py_IsImmortal(mod->md_dict)) {
+        // gh-117783: Immortalizing module dicts can cause some finalizers to
+        // run much later than typical leading to attribute errors due to
+        // partially cleared modules. To avoid this, we copy the module dict
+        // if it was immortalized.
+        PyObject *copy = PyDict_Copy(mod->md_dict);
+        if (copy == NULL) {
+            PyErr_FormatUnraisable("Exception ignored on removing modules");
+            return;
+        }
+        Py_SETREF(mod->md_dict, copy);
+    }
+}
 
 static PyObject*
 finalize_remove_modules(PyObject *modules, int verbose)
@@ -1521,6 +1537,7 @@ finalize_remove_modules(PyObject *modules, int verbose)
             if (verbose && PyUnicode_Check(name)) { \
                 PySys_FormatStderr("# cleanup[2] removing %U\n", name); \
             } \
+            swap_module_dict((PyModuleObject *)mod); \
             STORE_MODULE_WEAKREF(name, mod); \
             if (PyObject_SetItem(modules, name, Py_None) < 0) { \
                 PyErr_FormatUnraisable("Exception ignored on removing modules"); \
