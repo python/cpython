@@ -2133,19 +2133,99 @@ exit:
 #if defined(MS_WINDOWS)
 
 PyDoc_STRVAR(os__path_exists__doc__,
-"_path_exists($module, /, path)\n"
+"_path_exists($module, /, path, follow_symlinks=True)\n"
 "--\n"
 "\n"
-"Test whether a path exists.  Returns False for broken symbolic links");
+"Test whether a path exists.  Returns False for broken symbolic links\n"
+"\n"
+"  path\n"
+"    Path to be tested; can be a string, bytes object, a path-like object,\n"
+"    or an integer that references an open file descriptor.\n"
+"  follow_symlinks\n"
+"    If False, and the last element of the path is a symbolic link, do not\n"
+"    test the target of the symbolic link.");
 
 #define OS__PATH_EXISTS_METHODDEF    \
     {"_path_exists", _PyCFunction_CAST(os__path_exists), METH_FASTCALL|METH_KEYWORDS, os__path_exists__doc__},
 
 static PyObject *
-os__path_exists_impl(PyObject *module, PyObject *path);
+os__path_exists_impl(PyObject *module, PyObject *path, int follow_symlinks);
 
 static PyObject *
 os__path_exists(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 2
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(path), &_Py_ID(follow_symlinks), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"path", "follow_symlinks", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "_path_exists",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[2];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
+    PyObject *path;
+    int follow_symlinks = 1;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    path = args[0];
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    follow_symlinks = PyObject_IsTrue(args[1]);
+    if (follow_symlinks < 0) {
+        goto exit;
+    }
+skip_optional_pos:
+    return_value = os__path_exists_impl(module, path, follow_symlinks);
+
+exit:
+    return return_value;
+}
+
+#endif /* defined(MS_WINDOWS) */
+
+#if defined(MS_WINDOWS)
+
+PyDoc_STRVAR(os__path_lexists__doc__,
+"_path_lexists($module, /, path)\n"
+"--\n"
+"\n"
+"Test whether a path exists.  Returns True for broken symbolic links\n"
+"\n"
+"  path\n"
+"    Path to be tested; can be a string, bytes object, a path-like object,\n"
+"    or an integer that references an open file descriptor.");
+
+#define OS__PATH_LEXISTS_METHODDEF    \
+    {"_path_lexists", _PyCFunction_CAST(os__path_lexists), METH_FASTCALL|METH_KEYWORDS, os__path_lexists__doc__},
+
+static PyObject *
+os__path_lexists_impl(PyObject *module, PyObject *path);
+
+static PyObject *
+os__path_lexists(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -2169,7 +2249,7 @@ os__path_exists(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
     static const char * const _keywords[] = {"path", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
-        .fname = "_path_exists",
+        .fname = "_path_lexists",
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
@@ -2181,7 +2261,7 @@ os__path_exists(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
         goto exit;
     }
     path = args[0];
-    return_value = os__path_exists_impl(module, path);
+    return_value = os__path_lexists_impl(module, path);
 
 exit:
     return return_value;
@@ -12051,6 +12131,10 @@ os__supports_virtual_terminal(PyObject *module, PyObject *Py_UNUSED(ignored))
     #define OS__PATH_EXISTS_METHODDEF
 #endif /* !defined(OS__PATH_EXISTS_METHODDEF) */
 
+#ifndef OS__PATH_LEXISTS_METHODDEF
+    #define OS__PATH_LEXISTS_METHODDEF
+#endif /* !defined(OS__PATH_LEXISTS_METHODDEF) */
+
 #ifndef OS__PATH_ISLINK_METHODDEF
     #define OS__PATH_ISLINK_METHODDEF
 #endif /* !defined(OS__PATH_ISLINK_METHODDEF) */
@@ -12602,4 +12686,4 @@ os__supports_virtual_terminal(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF
     #define OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF
 #endif /* !defined(OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF) */
-/*[clinic end generated code: output=511f0788a6b90db0 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=3cfe2a1ba37c496d input=a9049054013a1b77]*/

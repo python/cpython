@@ -898,12 +898,8 @@ try:
     from nt import _path_isdir as isdir
     from nt import _path_isfile as isfile
     from nt import _path_islink as islink
-    from nt import _path_exists
-
-    def exists(path, *, follow_symlinks=True):
-        """Test whether a path exists.  Returns False for broken symbolic links
-        if follow_symlinks is set, otherwise True"""
-        return _path_exists(path) if follow_symlinks else lexists(path)
+    from nt import _path_exists as exists
+    from nt import _path_lexists as lexists
 except ImportError:
     # Use genericpath.* as imported above
     pass

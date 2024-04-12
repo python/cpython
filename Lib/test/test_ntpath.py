@@ -1,4 +1,3 @@
-import genericpath
 import inspect
 import ntpath
 import os
@@ -1114,7 +1113,10 @@ class TestNtpath(NtpathTestCase):
         self.assertFalse(inspect.isfunction(os.path.isfile))
         self.assertTrue(os.path.islink is nt._path_islink)
         self.assertFalse(inspect.isfunction(os.path.islink))
-        self.assertFalse(os.path.exists is genericpath.exists)
+        self.assertTrue(os.path.exists is nt._path_exists)
+        self.assertFalse(inspect.isfunction(os.path.exists))
+        self.assertTrue(os.path.lexists is nt._path_lexists)
+        self.assertFalse(inspect.isfunction(os.path.lexists))
 
     @unittest.skipIf(os.name != 'nt', "Dev Drives only exist on Win32")
     def test_isdevdrive(self):

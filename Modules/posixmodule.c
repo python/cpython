@@ -5284,21 +5284,24 @@ os__path_isfile_impl(PyObject *module, PyObject *path)
 os._path_exists
 
     path: 'O'
+        Path to be tested; can be a string, bytes object, a path-like object,
+        or an integer that references an open file descriptor.
+
+    follow_symlinks: bool = True
+        If False, and the last element of the path is a symbolic link, do not
+        test the target of the symbolic link.
 
 Test whether a path exists.  Returns False for broken symbolic links
 
 [clinic start generated code]*/
 
 static PyObject *
-os__path_exists_impl(PyObject *module, PyObject *path)
-/*[clinic end generated code: output=f508c3b35e13a249 input=380f77cdfa0f7ae8]*/
+os__path_exists_impl(PyObject *module, PyObject *path, int follow_symlinks)
+/*[clinic end generated code: output=f31130f636d45dcc input=26779f82ae9d4f5a]*/
 {
-    HANDLE hfile;
-    BOOL close_file = TRUE;
     path_t _path = PATH_T_INITIALIZE("exists", "path", 0, 1);
-    int result;
-    BOOL slow_path = TRUE;
-    FILE_STAT_BASIC_INFORMATION statInfo;
+    HANDLE hfile;
+    int result = 0;
 
     if (!path_converter(path, &_path)) {
         path_cleanup(&_path);
@@ -5310,49 +5313,56 @@ os__path_exists_impl(PyObject *module, PyObject *path)
     }
 
     Py_BEGIN_ALLOW_THREADS
-    if (_path.wide) {
+    if (_path.fd != -1) {
+        hfile = _Py_get_osfhandle_noraise(_path.fd);
+        if (hfile != INVALID_HANDLE_VALUE) {
+            result = 1;
+        }
+    }
+    else if (_path.wide) {
+        BOOL slow_path = TRUE;
+        FILE_STAT_BASIC_INFORMATION statInfo;
         if (_Py_GetFileInformationByName(_path.wide, FileStatBasicByNameInfo,
-                                         &statInfo, sizeof(statInfo))) {
-            if (!(statInfo.FileAttributes & FILE_ATTRIBUTE_REPARSE_POINT)) {
+                                         &statInfo, sizeof(statInfo)))
+        {
+            if (!(statInfo.FileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) ||
+                !follow_symlinks &&
+                IsReparseTagNameSurrogate(statInfo.ReparseTag))
+            {
                 slow_path = FALSE;
                 result = 1;
             }
-        } else if (_Py_GetFileInformationByName_ErrorIsTrustworthy(GetLastError())) {
-                    slow_path = FALSE;
-                    result = 0;
+        } else if (_Py_GetFileInformationByName_ErrorIsTrustworthy(
+                        GetLastError()))
+        {
+            slow_path = FALSE;
         }
-    }
-    if (slow_path) {
-        if (_path.fd != -1) {
-            hfile = _Py_get_osfhandle_noraise(_path.fd);
-            close_file = FALSE;
-        }
-        else {
-            hfile = CreateFileW(_path.wide, FILE_READ_ATTRIBUTES, 0, NULL,
-                                OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL);
-        }
-        if (hfile != INVALID_HANDLE_VALUE) {
-            result = 1;
-            if (close_file) {
-                CloseHandle(hfile);
-            }
-        }
-        else {
+        if (slow_path) {
             STRUCT_STAT st;
-            switch (GetLastError()) {
-            case ERROR_ACCESS_DENIED:
-            case ERROR_SHARING_VIOLATION:
-            case ERROR_CANT_ACCESS_FILE:
-            case ERROR_INVALID_PARAMETER:
-                if (STAT(_path.wide, &st)) {
-                    result = 0;
-                }
-                else {
+            if (!follow_symlinks) {
+                if (!LSTAT(_path.wide, &st)) {
                     result = 1;
                 }
-                break;
-            default:
-                result = 0;
+            }
+            else {
+                hfile = CreateFileW(_path.wide, FILE_READ_ATTRIBUTES, 0, NULL,
+                                    OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS,
+                                    NULL);
+                if (hfile != INVALID_HANDLE_VALUE) {
+                    CloseHandle(hfile);
+                    result = 1;
+                }
+                else {
+                    switch (GetLastError()) {
+                    case ERROR_ACCESS_DENIED:
+                    case ERROR_SHARING_VIOLATION:
+                    case ERROR_CANT_ACCESS_FILE:
+                    case ERROR_INVALID_PARAMETER:
+                        if (!STAT(_path.wide, &st)) {
+                            result = 1;
+                        }
+                    }
+                }
             }
         }
     }
@@ -5363,6 +5373,25 @@ os__path_exists_impl(PyObject *module, PyObject *path)
         Py_RETURN_TRUE;
     }
     Py_RETURN_FALSE;
+}
+
+
+/*[clinic input]
+os._path_lexists
+
+    path: 'O'
+        Path to be tested; can be a string, bytes object, a path-like object,
+        or an integer that references an open file descriptor.
+
+Test whether a path exists.  Returns True for broken symbolic links
+
+[clinic start generated code]*/
+
+static PyObject *
+os__path_lexists_impl(PyObject *module, PyObject *path)
+/*[clinic end generated code: output=b9a42a50b1df6651 input=96bc06e253ad0cd7]*/
+{
+    return os__path_exists_impl(module, path, 0);
 }
 
 
@@ -16843,6 +16872,7 @@ static PyMethodDef posix_methods[] = {
     OS__PATH_ISFILE_METHODDEF
     OS__PATH_ISLINK_METHODDEF
     OS__PATH_EXISTS_METHODDEF
+    OS__PATH_LEXISTS_METHODDEF
 
     OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF
     {NULL,              NULL}            /* Sentinel */
