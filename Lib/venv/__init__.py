@@ -120,8 +120,14 @@ class EnvBuilder:
                 return True
             # gh-90329: Don't display a warning for short/long names
             import _winapi
-            path1 = _winapi.GetLongPathName(os.fsdecode(path1))
-            path2 = _winapi.GetLongPathName(os.fsdecode(path2))
+            try:
+                path1 = _winapi.GetLongPathName(os.fsdecode(path1))
+            except OSError:
+                pass
+            try:
+                path2 = _winapi.GetLongPathName(os.fsdecode(path2))
+            except OSError:
+                pass
             if os.path.normcase(path1) == os.path.normcase(path2):
                 return True
             return False
