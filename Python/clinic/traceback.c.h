@@ -9,7 +9,7 @@ preserve
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 PyDoc_STRVAR(tb_new__doc__,
-"TracebackType(tb_next, tb_frame, tb_lasti, tb_lineno)\n"
+"traceback(tb_next, tb_frame, tb_lasti, tb_lineno)\n"
 "--\n"
 "\n"
 "Create a new traceback object.");
@@ -43,7 +43,7 @@ tb_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     static const char * const _keywords[] = {"tb_next", "tb_frame", "tb_lasti", "tb_lineno", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
-        .fname = "TracebackType",
+        .fname = "traceback",
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
@@ -61,7 +61,7 @@ tb_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     }
     tb_next = fastargs[0];
     if (!PyObject_TypeCheck(fastargs[1], &PyFrame_Type)) {
-        _PyArg_BadArgument("TracebackType", "argument 'tb_frame'", (&PyFrame_Type)->tp_name, fastargs[1]);
+        _PyArg_BadArgument("traceback", "argument 'tb_frame'", (&PyFrame_Type)->tp_name, fastargs[1]);
         goto exit;
     }
     tb_frame = (PyFrameObject *)fastargs[1];
@@ -78,4 +78,4 @@ tb_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=4e2f6b935841b09c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=916a759875507c5a input=a9049054013a1b77]*/

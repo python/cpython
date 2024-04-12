@@ -227,9 +227,9 @@ static PyMethodDef namespace_methods[] = {
 
 
 PyDoc_STRVAR(namespace_doc,
-"A simple attribute-based namespace.\n\
-\n\
-SimpleNamespace(**kwargs)");
+"SimpleNamespace(**kwargs)\n\
+--\n\n\
+A simple attribute-based namespace.");
 
 PyTypeObject _PyNamespace_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
