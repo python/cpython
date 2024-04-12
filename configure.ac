@@ -1987,8 +1987,12 @@ case $CC in
   *clang*)
     # Any changes made here should be reflected in the GCC+Darwin case below
     PGO_PROF_GEN_FLAG="-fprofile-instr-generate"
-    PGO_PROF_USE_FLAG="-fprofile-instr-use=code.profclangd"
-    LLVM_PROF_MERGER="${LLVM_PROFDATA} merge -output=code.profclangd *.profclangr"
+    PGO_PROF_USE_FLAG="-fprofile-instr-use=\"\$(shell pwd)/code.profclangd\""
+    LLVM_PROF_MERGER=m4_normalize("
+        ${LLVM_PROFDATA} merge
+            -output=\"\$(shell pwd)/code.profclangd\"
+            \"\$(shell pwd)\"/*.profclangr
+    ")
     LLVM_PROF_FILE="LLVM_PROFILE_FILE=\"\$(shell pwd)/code-%p.profclangr\""
     if test $LLVM_PROF_FOUND = not-found
     then
@@ -2003,8 +2007,12 @@ case $CC in
     case $ac_sys_system in
       Darwin*)
         PGO_PROF_GEN_FLAG="-fprofile-instr-generate"
-        PGO_PROF_USE_FLAG="-fprofile-instr-use=code.profclangd"
-        LLVM_PROF_MERGER="${LLVM_PROFDATA} merge -output=code.profclangd *.profclangr"
+        PGO_PROF_USE_FLAG="-fprofile-instr-use=\"\$(shell pwd)/code.profclangd\""
+        LLVM_PROF_MERGER=m4_normalize("
+            ${LLVM_PROFDATA} merge
+                -output=\"\$(shell pwd)/code.profclangd\"
+                \"\$(shell pwd)\"/*.profclangr
+        ")
         LLVM_PROF_FILE="LLVM_PROFILE_FILE=\"\$(shell pwd)/code-%p.profclangr\""
         if test "${LLVM_PROF_FOUND}" = "not-found"
         then
