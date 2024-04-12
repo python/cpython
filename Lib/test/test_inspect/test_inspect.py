@@ -5221,10 +5221,17 @@ class TestSignatureDefinitions(unittest.TestCase):
     # This test case provides a home for checking that particular APIs
     # have signatures available for introspection
 
+    @staticmethod
+    def is_public(name):
+        return not name.startswith('_') or name.startswith('__') and name.endswith('__')
+
     @cpython_only
     @unittest.skipIf(MISSING_C_DOCSTRINGS,
                      "Signature information for builtins requires docstrings")
-    def test_builtins_have_signatures(self):
+    def _test_module_has_signatures(self, module,
+                no_signature=(), unsupported_signature=(),
+                methods_no_signature={}, methods_unsupported_signature={},
+                good_exceptions=()):
         # This checks all builtin callables in CPython have signatures
         # A few have signatures Signature can't yet handle, so we skip those
         # since they will have to wait until PEP 457 adds the required
@@ -5233,48 +5240,272 @@ class TestSignatureDefinitions(unittest.TestCase):
         # reasons, so we also skip those for the time being, but design
         # the test to fail in order to indicate when it needs to be
         # updated.
-        no_signature = set()
+        no_signature = no_signature or set()
+        # Check the signatures we expect to be there
+        ns = vars(module)
+        try:
+            names = set(module.__all__)
+        except AttributeError:
+            names = set(name for name in ns if self.is_public(name))
+        for name, obj in sorted(ns.items()):
+            if name not in names:
+                continue
+            if not callable(obj):
+                continue
+            if (isinstance(obj, type) and
+                issubclass(obj, BaseException) and
+                name not in good_exceptions):
+                no_signature.add(name)
+            if name not in no_signature and name not in unsupported_signature:
+                with self.subTest('supported', builtin=name):
+                    self.assertIsNotNone(inspect.signature(obj))
+            if isinstance(obj, type):
+                with self.subTest(type=name):
+                    self._test_builtin_methods_have_signatures(obj,
+                            methods_no_signature.get(name, ()),
+                            methods_unsupported_signature.get(name, ()))
+        # Check callables that haven't been converted don't claim a signature
+        # This ensures this test will start failing as more signatures are
+        # added, so the affected items can be moved into the scope of the
+        # regression test above
+        for name in no_signature:
+            with self.subTest('none', builtin=name):
+                obj = ns[name]
+                self.assertIsNone(obj.__text_signature__)
+                self.assertRaises(ValueError, inspect.signature, obj)
+        for name in unsupported_signature:
+            with self.subTest('unsupported', builtin=name):
+                obj = ns[name]
+                self.assertIsNotNone(obj.__text_signature__)
+                self.assertRaises(ValueError, inspect.signature, obj)
+
+    def _test_builtin_methods_have_signatures(self, cls, no_signature, unsupported_signature):
+        ns = vars(cls)
+        for name in ns:
+            obj = getattr(cls, name, None)
+            if not callable(obj) or isinstance(obj, type):
+                continue
+            if name not in no_signature and name not in unsupported_signature:
+                with self.subTest('supported', method=name):
+                    self.assertIsNotNone(inspect.signature(obj))
+        for name in no_signature:
+            with self.subTest('none', method=name):
+                self.assertIsNone(getattr(cls, name).__text_signature__)
+                self.assertRaises(ValueError, inspect.signature, getattr(cls, name))
+        for name in unsupported_signature:
+            with self.subTest('unsupported', method=name):
+                self.assertIsNotNone(getattr(cls, name).__text_signature__)
+                self.assertRaises(ValueError, inspect.signature, getattr(cls, name))
+
+    def test_builtins_have_signatures(self):
+        no_signature = {'type', 'super', 'bytearray', 'bytes', 'dict', 'int', 'str'}
         # These need PEP 457 groups
         needs_groups = {"range", "slice", "dir", "getattr",
                         "next", "iter", "vars"}
         no_signature |= needs_groups
         # These have unrepresentable parameter default values of NULL
-        needs_null = {"anext"}
-        no_signature |= needs_null
+        unsupported_signature = {"anext"}
         # These need *args support in Argument Clinic
         needs_varargs = {"min", "max", "__build_class__"}
         no_signature |= needs_varargs
-        # These builtin types are expected to provide introspection info
-        types_with_signatures = {
-            'bool', 'classmethod', 'complex', 'enumerate', 'filter', 'float',
-            'frozenset', 'list', 'map', 'memoryview', 'object', 'property',
-            'reversed', 'set', 'staticmethod', 'tuple', 'zip'
+
+        methods_no_signature = {
+            'dict': {'update'},
+            'object': {'__class__'},
         }
-        # Check the signatures we expect to be there
-        ns = vars(builtins)
-        for name, obj in sorted(ns.items()):
-            if not callable(obj):
-                continue
-            # The builtin types haven't been converted to AC yet
-            if isinstance(obj, type) and (name not in types_with_signatures):
-                # Note that this also skips all the exception types
-                no_signature.add(name)
-            if (name in no_signature):
-                # Not yet converted
-                continue
-            if name in {'classmethod', 'staticmethod'}:
-                # Bug gh-112006: inspect.unwrap() does not work with types
-                # with the __wrapped__ data descriptor.
-                continue
-            with self.subTest(builtin=name):
-                self.assertIsNotNone(inspect.signature(obj))
-        # Check callables that haven't been converted don't claim a signature
-        # This ensures this test will start failing as more signatures are
-        # added, so the affected items can be moved into the scope of the
-        # regression test above
-        for name in no_signature - needs_null:
-            with self.subTest(builtin=name):
-                self.assertIsNone(ns[name].__text_signature__)
+        methods_unsupported_signature = {
+            'bytearray': {'count', 'endswith', 'find', 'hex', 'index', 'rfind', 'rindex', 'startswith'},
+            'bytes': {'count', 'endswith', 'find', 'hex', 'index', 'rfind', 'rindex', 'startswith'},
+            'dict': {'pop'},
+            'int': {'__round__'},
+            'memoryview': {'cast', 'hex'},
+            'str': {'count', 'endswith', 'find', 'index', 'maketrans', 'rfind', 'rindex', 'startswith'},
+        }
+        self._test_module_has_signatures(builtins,
+                no_signature, unsupported_signature,
+                methods_no_signature, methods_unsupported_signature)
+
+    def test_types_module_has_signatures(self):
+        unsupported_signature = {'CellType'}
+        methods_no_signature = {
+            'AsyncGeneratorType': {'athrow'},
+            'CoroutineType': {'throw'},
+            'GeneratorType': {'throw'},
+        }
+        self._test_module_has_signatures(types,
+                unsupported_signature=unsupported_signature,
+                methods_no_signature=methods_no_signature)
+
+    def test_sys_module_has_signatures(self):
+        no_signature = {'getsizeof', 'set_asyncgen_hooks'}
+        self._test_module_has_signatures(sys, no_signature)
+
+    def test_abc_module_has_signatures(self):
+        import abc
+        self._test_module_has_signatures(abc)
+
+    def test_atexit_module_has_signatures(self):
+        import atexit
+        self._test_module_has_signatures(atexit)
+
+    def test_codecs_module_has_signatures(self):
+        import codecs
+        methods_no_signature = {'StreamReader': {'charbuffertype'}}
+        self._test_module_has_signatures(codecs,
+                methods_no_signature=methods_no_signature)
+
+    def test_collections_module_has_signatures(self):
+        no_signature = {'OrderedDict', 'defaultdict'}
+        unsupported_signature = {'deque'}
+        methods_no_signature = {
+            'OrderedDict': {'update'},
+        }
+        methods_unsupported_signature = {
+            'deque': {'index'},
+            'OrderedDict': {'pop'},
+            'UserString': {'maketrans'},
+        }
+        self._test_module_has_signatures(collections,
+                no_signature, unsupported_signature,
+                methods_no_signature, methods_unsupported_signature)
+
+    def test_collections_abc_module_has_signatures(self):
+        import collections.abc
+        self._test_module_has_signatures(collections.abc)
+
+    def test_errno_module_has_signatures(self):
+        import errno
+        self._test_module_has_signatures(errno)
+
+    def test_faulthandler_module_has_signatures(self):
+        import faulthandler
+        unsupported_signature = {'dump_traceback', 'dump_traceback_later', 'enable'}
+        unsupported_signature |= {name for name in ['register']
+                                  if hasattr(faulthandler, name)}
+        self._test_module_has_signatures(faulthandler, unsupported_signature=unsupported_signature)
+
+    def test_functools_module_has_signatures(self):
+        no_signature = {'reduce'}
+        self._test_module_has_signatures(functools, no_signature)
+
+    def test_gc_module_has_signatures(self):
+        import gc
+        no_signature = {'set_threshold'}
+        self._test_module_has_signatures(gc, no_signature)
+
+    def test_io_module_has_signatures(self):
+        methods_no_signature = {
+            'BufferedRWPair': {'read', 'peek', 'read1', 'readinto', 'readinto1', 'write'},
+        }
+        self._test_module_has_signatures(io,
+                methods_no_signature=methods_no_signature)
+
+    def test_itertools_module_has_signatures(self):
+        import itertools
+        no_signature = {'islice', 'repeat'}
+        self._test_module_has_signatures(itertools, no_signature)
+
+    def test_locale_module_has_signatures(self):
+        import locale
+        self._test_module_has_signatures(locale)
+
+    def test_marshal_module_has_signatures(self):
+        import marshal
+        self._test_module_has_signatures(marshal)
+
+    def test_operator_module_has_signatures(self):
+        import operator
+        self._test_module_has_signatures(operator)
+
+    def test_os_module_has_signatures(self):
+        unsupported_signature = {'chmod', 'utime'}
+        unsupported_signature |= {name for name in
+            ['get_terminal_size', 'posix_spawn', 'posix_spawnp',
+             'register_at_fork', 'startfile']
+            if hasattr(os, name)}
+        self._test_module_has_signatures(os, unsupported_signature=unsupported_signature)
+
+    def test_pwd_module_has_signatures(self):
+        pwd = import_helper.import_module('pwd')
+        self._test_module_has_signatures(pwd)
+
+    def test_re_module_has_signatures(self):
+        import re
+        methods_no_signature = {'Match': {'group'}}
+        self._test_module_has_signatures(re,
+                methods_no_signature=methods_no_signature,
+                good_exceptions={'error', 'PatternError'})
+
+    def test_signal_module_has_signatures(self):
+        import signal
+        self._test_module_has_signatures(signal)
+
+    def test_stat_module_has_signatures(self):
+        import stat
+        self._test_module_has_signatures(stat)
+
+    def test_string_module_has_signatures(self):
+        import string
+        self._test_module_has_signatures(string)
+
+    def test_symtable_module_has_signatures(self):
+        import symtable
+        self._test_module_has_signatures(symtable)
+
+    def test_sysconfig_module_has_signatures(self):
+        import sysconfig
+        self._test_module_has_signatures(sysconfig)
+
+    def test_threading_module_has_signatures(self):
+        import threading
+        self._test_module_has_signatures(threading)
+
+    def test_thread_module_has_signatures(self):
+        import _thread
+        no_signature = {'RLock'}
+        self._test_module_has_signatures(_thread, no_signature)
+
+    def test_time_module_has_signatures(self):
+        no_signature = {
+            'asctime', 'ctime', 'get_clock_info', 'gmtime', 'localtime',
+            'strftime', 'strptime'
+        }
+        no_signature |= {name for name in
+            ['clock_getres', 'clock_settime', 'clock_settime_ns',
+             'pthread_getcpuclockid']
+            if hasattr(time, name)}
+        self._test_module_has_signatures(time, no_signature)
+
+    def test_tokenize_module_has_signatures(self):
+        import tokenize
+        self._test_module_has_signatures(tokenize)
+
+    def test_tracemalloc_module_has_signatures(self):
+        import tracemalloc
+        self._test_module_has_signatures(tracemalloc)
+
+    def test_typing_module_has_signatures(self):
+        import typing
+        no_signature = {'ParamSpec', 'ParamSpecArgs', 'ParamSpecKwargs',
+                        'Text', 'TypeAliasType', 'TypeVar', 'TypeVarTuple'}
+        methods_no_signature = {
+            'Generic': {'__class_getitem__', '__init_subclass__'},
+        }
+        methods_unsupported_signature = {
+            'Text': {'count', 'find', 'index', 'rfind', 'rindex', 'startswith', 'endswith', 'maketrans'},
+        }
+        self._test_module_has_signatures(typing, no_signature,
+                methods_no_signature=methods_no_signature,
+                methods_unsupported_signature=methods_unsupported_signature)
+
+    def test_warnings_module_has_signatures(self):
+        unsupported_signature = {'warn', 'warn_explicit'}
+        self._test_module_has_signatures(warnings, unsupported_signature=unsupported_signature)
+
+    def test_weakref_module_has_signatures(self):
+        import weakref
+        no_signature = {'ReferenceType', 'ref'}
+        self._test_module_has_signatures(weakref, no_signature)
 
     def test_python_function_override_signature(self):
         def func(*args, **kwargs):
