@@ -2390,7 +2390,7 @@ _Py_find_basename(const wchar_t *filename)
    to be the end of the path. 'normsize' will be set to contain the
    length of the resulting normalized path. */
 wchar_t *
-_Py_normpath_and_size(wchar_t *path, Py_ssize_t size, Py_ssize_t *normsize)
+_Py_normpath_and_size(wchar_t *path, Py_ssize_t size, Py_ssize_t start, Py_ssize_t *normsize)
 {
     assert(path != NULL);
     if ((size < 0 && !path[0]) || size == 0) {
@@ -2454,6 +2454,11 @@ _Py_normpath_and_size(wchar_t *path, Py_ssize_t size, Py_ssize_t *normsize)
         lastC = SEP;
     }
 #endif /* MS_WINDOWS */
+
+    if (path + start > p1) {
+        p1 = p2 = path + start;
+        lastC = *(p1-1);
+    }
 
     /* if pEnd is specified, check that. Else, check for null terminator */
     for (; !IS_END(p1); ++p1) {
@@ -2522,7 +2527,7 @@ wchar_t *
 _Py_normpath(wchar_t *path, Py_ssize_t size)
 {
     Py_ssize_t norm_length;
-    return _Py_normpath_and_size(path, size, &norm_length);
+    return _Py_normpath_and_size(path, size, 0, &norm_length);
 }
 
 

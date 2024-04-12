@@ -2303,6 +2303,79 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(os__path_abspath__doc__,
+"_path_abspath($module, /, path, start=0)\n"
+"--\n"
+"\n"
+"Make path absolute.");
+
+#define OS__PATH_ABSPATH_METHODDEF    \
+    {"_path_abspath", _PyCFunction_CAST(os__path_abspath), METH_FASTCALL|METH_KEYWORDS, os__path_abspath__doc__},
+
+static PyObject *
+os__path_abspath_impl(PyObject *module, PyObject *path, Py_ssize_t start);
+
+static PyObject *
+os__path_abspath(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 2
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(path), &_Py_ID(start), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"path", "start", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "_path_abspath",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[2];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
+    PyObject *path;
+    Py_ssize_t start = 0;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    path = args[0];
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = _PyNumber_Index(args[1]);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        start = ival;
+    }
+skip_optional_pos:
+    return_value = os__path_abspath_impl(module, path, start);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(os_mkdir__doc__,
 "mkdir($module, /, path, mode=511, *, dir_fd=None)\n"
 "--\n"
@@ -12602,4 +12675,4 @@ os__supports_virtual_terminal(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF
     #define OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF
 #endif /* !defined(OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF) */
-/*[clinic end generated code: output=511f0788a6b90db0 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=9d08024d1d89c702 input=a9049054013a1b77]*/

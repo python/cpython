@@ -5490,8 +5490,39 @@ os__path_normpath_impl(PyObject *module, PyObject *path)
         return NULL;
     }
     Py_ssize_t norm_len;
-    wchar_t *norm_path = _Py_normpath_and_size(buffer, len, &norm_len);
+    wchar_t *norm_path = _Py_normpath_and_size(buffer, len, 0, &norm_len);
     PyObject *result = PyUnicode_FromWideChar(norm_path, norm_len);
+    PyMem_Free(buffer);
+    return result;
+}
+
+/*[clinic input]
+os._path_abspath
+
+    path: object
+
+    start: Py_ssize_t=0
+
+Make path absolute.
+[clinic start generated code]*/
+
+static PyObject *
+os__path_abspath_impl(PyObject *module, PyObject *path, Py_ssize_t start)
+/*[clinic end generated code: output=69e536dbe18ecf3a input=29df0995bc21a9cf]*/
+{
+    if (!PyUnicode_Check(path)) {
+        PyErr_Format(PyExc_TypeError, "expected 'str', not '%.200s'",
+            Py_TYPE(path)->tp_name);
+        return NULL;
+    }
+    Py_ssize_t len;
+    wchar_t *buffer = PyUnicode_AsWideCharString(path, &len);
+    if (!buffer) {
+        return NULL;
+    }
+    Py_ssize_t abs_len;
+    wchar_t *abs_path = _Py_normpath_and_size(buffer, len, start, &abs_len);
+    PyObject *result = PyUnicode_FromWideChar(abs_path, abs_len);
     PyMem_Free(buffer);
     return result;
 }
@@ -16800,6 +16831,7 @@ static PyMethodDef posix_methods[] = {
     OS__GETVOLUMEPATHNAME_METHODDEF
     OS__PATH_SPLITROOT_METHODDEF
     OS__PATH_NORMPATH_METHODDEF
+    OS__PATH_ABSPATH_METHODDEF
     OS_GETLOADAVG_METHODDEF
     OS_URANDOM_METHODDEF
     OS_SETRESUID_METHODDEF
