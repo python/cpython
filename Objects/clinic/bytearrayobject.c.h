@@ -292,7 +292,7 @@ PyDoc_STRVAR(bytearray_rfind__doc__,
 "rfind($self, sub[, start[, end]], /)\n"
 "--\n"
 "\n"
-"Return the highest index in B where subsection \'sub\' is found, such that \'sub\' is contained within B[start,end].\n"
+"Return the highest index in B where subsection \'sub\' is found, such that \'sub\' is contained within B[start:end].\n"
 "\n"
 "  start\n"
 "    Optional start position. Default: start of the bytes.\n"
@@ -1616,4 +1616,4 @@ bytearray_sizeof(PyByteArrayObject *self, PyObject *Py_UNUSED(ignored))
 {
     return bytearray_sizeof_impl(self);
 }
-/*[clinic end generated code: output=77ba9ddf79f9b124 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5f861b02e3fa278b input=a9049054013a1b77]*/

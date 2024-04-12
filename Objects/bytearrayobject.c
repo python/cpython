@@ -1218,7 +1218,7 @@ Return -1 on failure.
 static PyObject *
 bytearray_rfind_impl(PyByteArrayObject *self, PyObject *sub,
                      Py_ssize_t start, Py_ssize_t end)
-/*[clinic end generated code: output=51bf886f932b283c input=235e5579a8e22f17]*/
+/*[clinic end generated code: output=51bf886f932b283c input=eaa107468a158423]*/
 {
     return _Py_bytes_rfind(PyByteArray_AS_STRING(self), PyByteArray_GET_SIZE(self),
                            sub, start, end);
