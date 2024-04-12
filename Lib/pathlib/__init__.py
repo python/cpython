@@ -591,7 +591,6 @@ class Path(_abc.PathBase, PurePath):
             paths = map(self._remove_leading_dot, paths)
         return map(self._from_parsed_string, paths)
 
-
     def glob(self, pattern, *, case_sensitive=None, recurse_symlinks=False):
         """Iterate over this subtree and yield all existing files (of any
         kind, including directories) matching the given relative pattern.
