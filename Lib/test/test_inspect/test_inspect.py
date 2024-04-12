@@ -5473,7 +5473,7 @@ class TestSignatureDefinitions(unittest.TestCase):
         if os.name == 'posix':
             no_signature |= {'clock_getres', 'clock_settime', 'clock_settime_ns'}
             for name in ['pthread_getcpuclockid']:
-                if hasattr(os, name):
+                if hasattr(time, name):
                     no_signature.add(name)
         self._test_module_has_signatures(time, no_signature)
 
