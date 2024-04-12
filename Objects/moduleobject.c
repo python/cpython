@@ -715,16 +715,7 @@ static int
 module___init___impl(PyModuleObject *self, PyObject *name, PyObject *doc)
 /*[clinic end generated code: output=e7e721c26ce7aad7 input=57f9e177401e5e1e]*/
 {
-    PyObject *dict = self->md_dict;
-    if (dict == NULL) {
-        dict = PyDict_New();
-        if (dict == NULL)
-            return -1;
-        self->md_dict = dict;
-    }
-    if (module_init_dict(self, dict, name, doc) < 0)
-        return -1;
-    return 0;
+    return module_init_dict(self, self->md_dict, name, doc);
 }
 
 static void

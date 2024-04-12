@@ -160,16 +160,6 @@ gc_decref(PyObject *op)
     op->ob_tid -= 1;
 }
 
-static inline Py_ssize_t
-gc_refcount(PyObject *op)
-{
-    Py_ssize_t refcount = Py_REFCNT(op);
-    if (_PyObject_HasDeferredRefcount(op)) {
-        refcount -= 1;
-    }
-    return refcount;
-}
-
 static void
 disable_deferred_refcounting(PyObject *op)
 {
