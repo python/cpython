@@ -1087,35 +1087,40 @@ trace_trampoline(PyObject *self, PyFrameObject *frame,
     return 0;
 }
 
+/*[clinic input]
+sys.settrace
+
+    function: object
+    /
+
+Set the global debug tracing function.
+
+It will be called on each function call.  See the debugger chapter
+in the library manual.
+[clinic start generated code]*/
+
 static PyObject *
-sys_settrace(PyObject *self, PyObject *args)
+sys_settrace(PyObject *module, PyObject *function)
+/*[clinic end generated code: output=999d12e9d6ec4678 input=8107feb01c5f1c4e]*/
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    if (args == Py_None) {
+    if (function == Py_None) {
         if (_PyEval_SetTrace(tstate, NULL, NULL) < 0) {
             return NULL;
         }
     }
     else {
-        if (_PyEval_SetTrace(tstate, trace_trampoline, args) < 0) {
+        if (_PyEval_SetTrace(tstate, trace_trampoline, function) < 0) {
             return NULL;
         }
     }
     Py_RETURN_NONE;
 }
 
-PyDoc_STRVAR(settrace_doc,
-"settrace($module, function, /)\n\
---\n\
-\n\
-Set the global debug tracing function.  It will be called on each\n\
-function call.  See the debugger chapter in the library manual."
-);
-
 /*[clinic input]
 sys._settraceallthreads
 
-    arg: object
+    function as arg: object
     /
 
 Set the global debug tracing function in all running threads belonging to the current interpreter.
@@ -1126,7 +1131,7 @@ in the library manual.
 
 static PyObject *
 sys__settraceallthreads(PyObject *module, PyObject *arg)
-/*[clinic end generated code: output=161cca30207bf3ca input=5906aa1485a50289]*/
+/*[clinic end generated code: output=161cca30207bf3ca input=d4bde1f810d73675]*/
 {
     PyObject* argument = NULL;
     Py_tracefunc func = NULL;
@@ -1162,46 +1167,51 @@ sys_gettrace_impl(PyObject *module)
     return Py_NewRef(temp);
 }
 
+/*[clinic input]
+sys.setprofile
+
+    function: object
+    /
+
+Set the profiling function.
+
+It will be called on each function call and return.  See the profiler
+chapter in the library manual.
+[clinic start generated code]*/
+
 static PyObject *
-sys_setprofile(PyObject *self, PyObject *args)
+sys_setprofile(PyObject *module, PyObject *function)
+/*[clinic end generated code: output=1c3503105939db9c input=055d0d7961413a62]*/
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    if (args == Py_None) {
+    if (function == Py_None) {
         if (_PyEval_SetProfile(tstate, NULL, NULL) < 0) {
             return NULL;
         }
     }
     else {
-        if (_PyEval_SetProfile(tstate, profile_trampoline, args) < 0) {
+        if (_PyEval_SetProfile(tstate, profile_trampoline, function) < 0) {
             return NULL;
         }
     }
     Py_RETURN_NONE;
 }
 
-PyDoc_STRVAR(setprofile_doc,
-"setprofile($module, function, /)\n\
---\n\
-\n\
-Set the profiling function.  It will be called on each function call\n\
-and return.  See the profiler chapter in the library manual."
-);
-
 /*[clinic input]
 sys._setprofileallthreads
 
-    arg: object
+    function as arg: object
     /
 
 Set the profiling function in all running threads belonging to the current interpreter.
 
-It will be called on each function call and return.  See the profiler chapter
-in the library manual.
+It will be called on each function call and return.  See the profiler
+chapter in the library manual.
 [clinic start generated code]*/
 
 static PyObject *
 sys__setprofileallthreads(PyObject *module, PyObject *arg)
-/*[clinic end generated code: output=2d61319e27b309fe input=d1a356d3f4f9060a]*/
+/*[clinic end generated code: output=2d61319e27b309fe input=a10589439ba20cee]*/
 {
     PyObject* argument = NULL;
     Py_tracefunc func = NULL;
@@ -2529,11 +2539,11 @@ static PyMethodDef sys_methods[] = {
     SYS_SETSWITCHINTERVAL_METHODDEF
     SYS_GETSWITCHINTERVAL_METHODDEF
     SYS_SETDLOPENFLAGS_METHODDEF
-    {"setprofile", sys_setprofile, METH_O, setprofile_doc},
+    SYS_SETPROFILE_METHODDEF
     SYS__SETPROFILEALLTHREADS_METHODDEF
     SYS_GETPROFILE_METHODDEF
     SYS_SETRECURSIONLIMIT_METHODDEF
-    {"settrace", sys_settrace, METH_O, settrace_doc},
+    SYS_SETTRACE_METHODDEF
     SYS__SETTRACEALLTHREADS_METHODDEF
     SYS_GETTRACE_METHODDEF
     SYS_CALL_TRACING_METHODDEF
