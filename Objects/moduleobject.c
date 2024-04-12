@@ -88,21 +88,31 @@ new_module_notrack(PyTypeObject *mt)
     m->md_weaklist = NULL;
     m->md_name = NULL;
     m->md_dict = PyDict_New();
-    if (m->md_dict != NULL) {
-        return m;
+    if (m->md_dict == NULL) {
+        Py_DECREF(m);
+        return NULL;
     }
-    Py_DECREF(m);
-    return NULL;
+    return m;
+}
+
+static void
+track_module(PyModuleObject *m)
+{
+    _PyObject_SetDeferredRefcount(m->md_dict);
+    PyObject_GC_Track(m->md_dict);
+
+    _PyObject_SetDeferredRefcount((PyObject *)m);
+    PyObject_GC_Track(m);
 }
 
 static PyObject *
 new_module(PyTypeObject *mt, PyObject *args, PyObject *kws)
 {
-    PyObject *m = (PyObject *)new_module_notrack(mt);
+    PyModuleObject *m = new_module_notrack(mt);
     if (m != NULL) {
-        PyObject_GC_Track(m);
+        track_module(m);
     }
-    return m;
+    return (PyObject *)m;
 }
 
 PyObject *
@@ -113,7 +123,7 @@ PyModule_NewObject(PyObject *name)
         return NULL;
     if (module_init_dict(m, m->md_dict, name, NULL) != 0)
         goto fail;
-    PyObject_GC_Track(m);
+    track_module(m);
     return (PyObject *)m;
 
  fail:
@@ -705,16 +715,7 @@ static int
 module___init___impl(PyModuleObject *self, PyObject *name, PyObject *doc)
 /*[clinic end generated code: output=e7e721c26ce7aad7 input=57f9e177401e5e1e]*/
 {
-    PyObject *dict = self->md_dict;
-    if (dict == NULL) {
-        dict = PyDict_New();
-        if (dict == NULL)
-            return -1;
-        self->md_dict = dict;
-    }
-    if (module_init_dict(self, dict, name, doc) < 0)
-        return -1;
-    return 0;
+    return module_init_dict(self, self->md_dict, name, doc);
 }
 
 static void

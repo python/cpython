@@ -39,12 +39,13 @@ static inline PyObject* _Py_FROM_GC(PyGC_Head *gc) {
 
 /* Bit flags for ob_gc_bits (in Py_GIL_DISABLED builds) */
 #ifdef Py_GIL_DISABLED
-#  define _PyGC_BITS_TRACKED        (1)
-#  define _PyGC_BITS_FINALIZED      (2)
+#  define _PyGC_BITS_TRACKED        (1)     // Tracked by the GC
+#  define _PyGC_BITS_FINALIZED      (2)     // tp_finalize was called
 #  define _PyGC_BITS_UNREACHABLE    (4)
 #  define _PyGC_BITS_FROZEN         (8)
 #  define _PyGC_BITS_SHARED         (16)
 #  define _PyGC_BITS_SHARED_INLINE  (32)
+#  define _PyGC_BITS_DEFERRED       (64)    // Use deferred reference counting
 #endif
 
 /* True if the object is currently tracked by the GC. */
