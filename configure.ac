@@ -2014,7 +2014,6 @@ case "$CC_BASENAME" in
     PGO_PROF_USE_FLAG=m4_normalize("
         -fprofile-instr-use=code.profclangd
         -Wno-profile-instr-unprofiled
-        -Wno-profile-instr-out-of-date
     ")
     LLVM_PROF_MERGER="${LLVM_PROFDATA} merge -output=code.profclangd *.profclangr"
     LLVM_PROF_FILE="LLVM_PROFILE_FILE=\"\$(shell pwd)/code-%p.profclangr\""
@@ -2034,7 +2033,6 @@ case "$CC_BASENAME" in
         PGO_PROF_USE_FLAG=m4_normalize("
             -fprofile-instr-use=code.profclangd
             -Wno-profile-instr-unprofiled
-            -Wno-profile-instr-out-of-date
         ")
         LLVM_PROF_MERGER="${LLVM_PROFDATA} merge -output=code.profclangd *.profclangr"
         LLVM_PROF_FILE="LLVM_PROFILE_FILE=\"\$(shell pwd)/code-%p.profclangr\""
