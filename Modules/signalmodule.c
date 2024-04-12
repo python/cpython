@@ -706,35 +706,43 @@ signal_siginterrupt_impl(PyObject *module, int signalnum, int flag)
 #endif
 
 
-static PyObject*
-signal_set_wakeup_fd(PyObject *self, PyObject *args, PyObject *kwds)
+/*[clinic input]
+signal.set_wakeup_fd
+
+    fd as fdobj: object
+    /
+    *
+    warn_on_full_buffer: bool = True
+
+Sets the fd to be written to (with the signal number) when a signal comes in.
+
+A library can use this to wakeup select or poll.
+The previous fd or -1 is returned.
+
+The fd must be non-blocking.
+[clinic start generated code]*/
+
+static PyObject *
+signal_set_wakeup_fd_impl(PyObject *module, PyObject *fdobj,
+                          int warn_on_full_buffer)
+/*[clinic end generated code: output=2280d72dd2a54c4f input=5b545946a28b8339]*/
 {
     struct _Py_stat_struct status;
-    static char *kwlist[] = {
-        "", "warn_on_full_buffer", NULL,
-    };
-    int warn_on_full_buffer = 1;
 #ifdef MS_WINDOWS
-    PyObject *fdobj;
     SOCKET_T sockfd, old_sockfd;
     int res;
     int res_size = sizeof res;
     PyObject *mod;
     int is_socket;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|$p:set_wakeup_fd", kwlist,
-                                     &fdobj, &warn_on_full_buffer))
-        return NULL;
-
     sockfd = PyLong_AsSocket_t(fdobj);
     if (sockfd == (SOCKET_T)(-1) && PyErr_Occurred())
         return NULL;
 #else
-    int fd;
-
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "i|$p:set_wakeup_fd", kwlist,
-                                     &fd, &warn_on_full_buffer))
+    int fd = PyLong_AsInt(fdobj);
+    if (fd == -1 && PyErr_Occurred()) {
         return NULL;
+    }
 #endif
 
     PyThreadState *tstate = _PyThreadState_GET();
@@ -819,15 +827,6 @@ signal_set_wakeup_fd(PyObject *self, PyObject *args, PyObject *kwds)
     return PyLong_FromLong(old_fd);
 #endif
 }
-
-PyDoc_STRVAR(set_wakeup_fd_doc,
-"set_wakeup_fd(fd, *, warn_on_full_buffer=True) -> fd\n\
-\n\
-Sets the fd to be written to (with the signal number) when a signal\n\
-comes in.  A library can use this to wakeup select or poll.\n\
-The previous fd or -1 is returned.\n\
-\n\
-The fd must be non-blocking.");
 
 /* C API for the same, without all the error checking */
 int
@@ -1344,7 +1343,7 @@ static PyMethodDef signal_methods[] = {
     SIGNAL_RAISE_SIGNAL_METHODDEF
     SIGNAL_STRSIGNAL_METHODDEF
     SIGNAL_GETSIGNAL_METHODDEF
-    {"set_wakeup_fd", _PyCFunction_CAST(signal_set_wakeup_fd), METH_VARARGS | METH_KEYWORDS, set_wakeup_fd_doc},
+    SIGNAL_SET_WAKEUP_FD_METHODDEF
     SIGNAL_SIGINTERRUPT_METHODDEF
     SIGNAL_PAUSE_METHODDEF
     SIGNAL_PIDFD_SEND_SIGNAL_METHODDEF

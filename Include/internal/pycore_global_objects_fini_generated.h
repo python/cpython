@@ -1275,6 +1275,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(version));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(volume));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(wait_all));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(warn_on_full_buffer));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(warnings));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(warnoptions));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(wbits));

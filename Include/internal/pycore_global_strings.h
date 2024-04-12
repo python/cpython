@@ -764,6 +764,7 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(version)
         STRUCT_FOR_ID(volume)
         STRUCT_FOR_ID(wait_all)
+        STRUCT_FOR_ID(warn_on_full_buffer)
         STRUCT_FOR_ID(warnings)
         STRUCT_FOR_ID(warnoptions)
         STRUCT_FOR_ID(wbits)
