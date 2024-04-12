@@ -2008,6 +2008,11 @@ static PyNumberMethods none_as_number = {
     0,                          /* nb_index */
 };
 
+PyDoc_STRVAR(none_doc,
+"NoneType()\n"
+"--\n\n"
+"The type of the None singleton.");
+
 PyTypeObject _PyNone_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "NoneType",
@@ -2029,7 +2034,7 @@ PyTypeObject _PyNone_Type = {
     0,                  /*tp_setattro */
     0,                  /*tp_as_buffer */
     Py_TPFLAGS_DEFAULT, /*tp_flags */
-    0,                  /*tp_doc */
+    none_doc,           /*tp_doc */
     0,                  /*tp_traverse */
     0,                  /*tp_clear */
     _Py_BaseObject_RichCompare, /*tp_richcompare */
@@ -2107,6 +2112,11 @@ static PyNumberMethods notimplemented_as_number = {
     .nb_bool = notimplemented_bool,
 };
 
+PyDoc_STRVAR(notimplemented_doc,
+"NotImplementedType()\n"
+"--\n\n"
+"The type of the NotImplemented singleton.");
+
 PyTypeObject _PyNotImplemented_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "NotImplementedType",
@@ -2128,7 +2138,7 @@ PyTypeObject _PyNotImplemented_Type = {
     0,                  /*tp_setattro */
     0,                  /*tp_as_buffer */
     Py_TPFLAGS_DEFAULT, /*tp_flags */
-    0,                  /*tp_doc */
+    notimplemented_doc, /*tp_doc */
     0,                  /*tp_traverse */
     0,                  /*tp_clear */
     0,                  /*tp_richcompare */
@@ -2414,6 +2424,19 @@ _Py_SetImmortal(PyObject *op)
         _PyObject_GC_UNTRACK(op);
     }
     _Py_SetImmortalUntracked(op);
+}
+
+void
+_PyObject_SetDeferredRefcount(PyObject *op)
+{
+#ifdef Py_GIL_DISABLED
+    assert(PyType_IS_GC(Py_TYPE(op)));
+    assert(_Py_IsOwnedByCurrentThread(op));
+    assert(op->ob_ref_shared == 0);
+    op->ob_gc_bits |= _PyGC_BITS_DEFERRED;
+    op->ob_ref_local += 1;
+    op->ob_ref_shared = _Py_REF_QUEUED;
+#endif
 }
 
 void

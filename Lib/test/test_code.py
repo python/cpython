@@ -834,6 +834,7 @@ if check_impl_detail(cpython=True) and ctypes is not None:
 
             SetExtra(f.__code__, FREE_INDEX, ctypes.c_voidp(100))
             del f
+            gc_collect()  # For free-threaded build
             self.assertEqual(LAST_FREED, 100)
 
         def test_get_set(self):
@@ -872,6 +873,7 @@ if check_impl_detail(cpython=True) and ctypes is not None:
             del f
             tt.start()
             tt.join()
+            gc_collect()  # For free-threaded build
             self.assertEqual(LAST_FREED, 500)
 
 

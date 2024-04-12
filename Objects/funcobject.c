@@ -127,6 +127,9 @@ _PyFunction_FromConstructor(PyFrameConstructor *constr)
     op->func_typeparams = NULL;
     op->vectorcall = _PyFunction_Vectorcall;
     op->func_version = 0;
+    // NOTE: functions created via FrameConstructor do not use deferred
+    // reference counting because they are typically not part of cycles
+    // nor accessed by multiple threads.
     _PyObject_GC_TRACK(op);
     handle_func_event(PyFunction_EVENT_CREATE, op, NULL);
     return op;
@@ -202,6 +205,12 @@ PyFunction_NewWithQualName(PyObject *code, PyObject *globals, PyObject *qualname
     op->func_typeparams = NULL;
     op->vectorcall = _PyFunction_Vectorcall;
     op->func_version = 0;
+    if ((code_obj->co_flags & CO_NESTED) == 0) {
+        // Use deferred reference counting for top-level functions, but not
+        // nested functions because they are more likely to capture variables,
+        // which makes prompt deallocation more important.
+        _PyObject_SetDeferredRefcount((PyObject *)op);
+    }
     _PyObject_GC_TRACK(op);
     handle_func_event(PyFunction_EVENT_CREATE, op, NULL);
     return (PyObject *)op;

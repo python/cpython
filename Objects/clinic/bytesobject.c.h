@@ -294,6 +294,210 @@ PyDoc_STRVAR(bytes_join__doc__,
 #define BYTES_JOIN_METHODDEF    \
     {"join", (PyCFunction)bytes_join, METH_O, bytes_join__doc__},
 
+PyDoc_STRVAR(bytes_find__doc__,
+"find($self, sub[, start[, end]], /)\n"
+"--\n"
+"\n"
+"Return the lowest index in B where subsection \'sub\' is found, such that \'sub\' is contained within B[start,end].\n"
+"\n"
+"  start\n"
+"    Optional start position. Default: start of the bytes.\n"
+"  end\n"
+"    Optional stop position. Default: end of the bytes.\n"
+"\n"
+"Return -1 on failure.");
+
+#define BYTES_FIND_METHODDEF    \
+    {"find", _PyCFunction_CAST(bytes_find), METH_FASTCALL, bytes_find__doc__},
+
+static PyObject *
+bytes_find_impl(PyBytesObject *self, PyObject *sub, Py_ssize_t start,
+                Py_ssize_t end);
+
+static PyObject *
+bytes_find(PyBytesObject *self, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *sub;
+    Py_ssize_t start = 0;
+    Py_ssize_t end = PY_SSIZE_T_MAX;
+
+    if (!_PyArg_CheckPositional("find", nargs, 1, 3)) {
+        goto exit;
+    }
+    sub = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    if (!_PyEval_SliceIndex(args[1], &start)) {
+        goto exit;
+    }
+    if (nargs < 3) {
+        goto skip_optional;
+    }
+    if (!_PyEval_SliceIndex(args[2], &end)) {
+        goto exit;
+    }
+skip_optional:
+    return_value = bytes_find_impl(self, sub, start, end);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(bytes_index__doc__,
+"index($self, sub[, start[, end]], /)\n"
+"--\n"
+"\n"
+"Return the lowest index in B where subsection \'sub\' is found, such that \'sub\' is contained within B[start,end].\n"
+"\n"
+"  start\n"
+"    Optional start position. Default: start of the bytes.\n"
+"  end\n"
+"    Optional stop position. Default: end of the bytes.\n"
+"\n"
+"Raise ValueError if the subsection is not found.");
+
+#define BYTES_INDEX_METHODDEF    \
+    {"index", _PyCFunction_CAST(bytes_index), METH_FASTCALL, bytes_index__doc__},
+
+static PyObject *
+bytes_index_impl(PyBytesObject *self, PyObject *sub, Py_ssize_t start,
+                 Py_ssize_t end);
+
+static PyObject *
+bytes_index(PyBytesObject *self, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *sub;
+    Py_ssize_t start = 0;
+    Py_ssize_t end = PY_SSIZE_T_MAX;
+
+    if (!_PyArg_CheckPositional("index", nargs, 1, 3)) {
+        goto exit;
+    }
+    sub = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    if (!_PyEval_SliceIndex(args[1], &start)) {
+        goto exit;
+    }
+    if (nargs < 3) {
+        goto skip_optional;
+    }
+    if (!_PyEval_SliceIndex(args[2], &end)) {
+        goto exit;
+    }
+skip_optional:
+    return_value = bytes_index_impl(self, sub, start, end);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(bytes_rfind__doc__,
+"rfind($self, sub[, start[, end]], /)\n"
+"--\n"
+"\n"
+"Return the highest index in B where subsection \'sub\' is found, such that \'sub\' is contained within B[start,end].\n"
+"\n"
+"  start\n"
+"    Optional start position. Default: start of the bytes.\n"
+"  end\n"
+"    Optional stop position. Default: end of the bytes.\n"
+"\n"
+"Return -1 on failure.");
+
+#define BYTES_RFIND_METHODDEF    \
+    {"rfind", _PyCFunction_CAST(bytes_rfind), METH_FASTCALL, bytes_rfind__doc__},
+
+static PyObject *
+bytes_rfind_impl(PyBytesObject *self, PyObject *sub, Py_ssize_t start,
+                 Py_ssize_t end);
+
+static PyObject *
+bytes_rfind(PyBytesObject *self, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *sub;
+    Py_ssize_t start = 0;
+    Py_ssize_t end = PY_SSIZE_T_MAX;
+
+    if (!_PyArg_CheckPositional("rfind", nargs, 1, 3)) {
+        goto exit;
+    }
+    sub = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    if (!_PyEval_SliceIndex(args[1], &start)) {
+        goto exit;
+    }
+    if (nargs < 3) {
+        goto skip_optional;
+    }
+    if (!_PyEval_SliceIndex(args[2], &end)) {
+        goto exit;
+    }
+skip_optional:
+    return_value = bytes_rfind_impl(self, sub, start, end);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(bytes_rindex__doc__,
+"rindex($self, sub[, start[, end]], /)\n"
+"--\n"
+"\n"
+"Return the highest index in B where subsection \'sub\' is found, such that \'sub\' is contained within B[start,end].\n"
+"\n"
+"  start\n"
+"    Optional start position. Default: start of the bytes.\n"
+"  end\n"
+"    Optional stop position. Default: end of the bytes.\n"
+"\n"
+"Raise ValueError if the subsection is not found.");
+
+#define BYTES_RINDEX_METHODDEF    \
+    {"rindex", _PyCFunction_CAST(bytes_rindex), METH_FASTCALL, bytes_rindex__doc__},
+
+static PyObject *
+bytes_rindex_impl(PyBytesObject *self, PyObject *sub, Py_ssize_t start,
+                  Py_ssize_t end);
+
+static PyObject *
+bytes_rindex(PyBytesObject *self, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *sub;
+    Py_ssize_t start = 0;
+    Py_ssize_t end = PY_SSIZE_T_MAX;
+
+    if (!_PyArg_CheckPositional("rindex", nargs, 1, 3)) {
+        goto exit;
+    }
+    sub = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    if (!_PyEval_SliceIndex(args[1], &start)) {
+        goto exit;
+    }
+    if (nargs < 3) {
+        goto skip_optional;
+    }
+    if (!_PyEval_SliceIndex(args[2], &end)) {
+        goto exit;
+    }
+skip_optional:
+    return_value = bytes_rindex_impl(self, sub, start, end);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(bytes_strip__doc__,
 "strip($self, bytes=None, /)\n"
 "--\n"
@@ -391,6 +595,55 @@ bytes_rstrip(PyBytesObject *self, PyObject *const *args, Py_ssize_t nargs)
     bytes = args[0];
 skip_optional:
     return_value = bytes_rstrip_impl(self, bytes);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(bytes_count__doc__,
+"count($self, sub[, start[, end]], /)\n"
+"--\n"
+"\n"
+"Return the number of non-overlapping occurrences of subsection \'sub\' in bytes B[start:end].\n"
+"\n"
+"  start\n"
+"    Optional start position. Default: start of the bytes.\n"
+"  end\n"
+"    Optional stop position. Default: end of the bytes.");
+
+#define BYTES_COUNT_METHODDEF    \
+    {"count", _PyCFunction_CAST(bytes_count), METH_FASTCALL, bytes_count__doc__},
+
+static PyObject *
+bytes_count_impl(PyBytesObject *self, PyObject *sub, Py_ssize_t start,
+                 Py_ssize_t end);
+
+static PyObject *
+bytes_count(PyBytesObject *self, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *sub;
+    Py_ssize_t start = 0;
+    Py_ssize_t end = PY_SSIZE_T_MAX;
+
+    if (!_PyArg_CheckPositional("count", nargs, 1, 3)) {
+        goto exit;
+    }
+    sub = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    if (!_PyEval_SliceIndex(args[1], &start)) {
+        goto exit;
+    }
+    if (nargs < 3) {
+        goto skip_optional;
+    }
+    if (!_PyEval_SliceIndex(args[2], &end)) {
+        goto exit;
+    }
+skip_optional:
+    return_value = bytes_count_impl(self, sub, start, end);
 
 exit:
     return return_value;
@@ -1131,4 +1384,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=f2b10ccd2e3155c3 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d6801c6001e57f91 input=a9049054013a1b77]*/
