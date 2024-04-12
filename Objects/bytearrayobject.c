@@ -1132,7 +1132,7 @@ bytearray.find
          Optional stop position. Default: end of the bytes.
     /
 
-Return the lowest index in B where subsection 'sub' is found, such that 'sub' is contained within B[start,end].
+Return the lowest index in B where subsection 'sub' is found, such that 'sub' is contained within B[start:end].
 
 Return -1 on failure.
 [clinic start generated code]*/
@@ -1193,7 +1193,7 @@ bytearray_copy_impl(PyByteArrayObject *self)
 /*[clinic input]
 bytearray.index = bytearray.find
 
-Return the lowest index in B where subsection 'sub' is found, such that 'sub' is contained within B[start,end].
+Return the lowest index in B where subsection 'sub' is found, such that 'sub' is contained within B[start:end].
 
 Raise ValueError if the subsection is not found.
 [clinic start generated code]*/
@@ -1227,7 +1227,7 @@ bytearray_rfind_impl(PyByteArrayObject *self, PyObject *sub,
 /*[clinic input]
 bytearray.rindex = bytearray.find
 
-Return the highest index in B where subsection 'sub' is found, such that 'sub' is contained within B[start,end].
+Return the highest index in B where subsection 'sub' is found, such that 'sub' is contained within B[start:end].
 
 Raise ValueError if the subsection is not found.
 [clinic start generated code]*/
