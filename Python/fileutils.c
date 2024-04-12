@@ -2397,6 +2397,11 @@ _Py_normpath_and_size(wchar_t *path, Py_ssize_t size, Py_ssize_t start, Py_ssize
         *normsize = 0;
         return path;
     }
+    // Start beyond end of path
+    if (start >= size) {
+        *normsize = size;
+        return path;
+    }
     wchar_t *pEnd = size >= 0 ? &path[size] : NULL;
     wchar_t *p1 = path;     // sequentially scanned address in the path
     wchar_t *p2 = path;     // destination of a scanned character to be ljusted
@@ -2455,11 +2460,11 @@ _Py_normpath_and_size(wchar_t *path, Py_ssize_t size, Py_ssize_t start, Py_ssize
     }
 #endif /* MS_WINDOWS */
 
+    // Skip past cwd
     if (path + start > p1) {
         p1 = p2 = path + start;
         lastC = *(p1-1);
     }
-
     /* if pEnd is specified, check that. Else, check for null terminator */
     for (; !IS_END(p1); ++p1) {
         wchar_t c = *p1;
