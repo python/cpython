@@ -1612,6 +1612,11 @@ Build Changes
 * ``wasm32-emscripten`` is no longer a supported platform.
   (Contributed by Brett Cannon in :gh:`115192`.)
 
+* Python now bundles the `mimalloc library <https://github.com/microsoft/mimalloc>`__.
+  It is licensed under the MIT license, see :ref:`mimalloc license <mimalloc-license>`.
+  The bundled mimalloc has custom changes.
+  (Contributed by Dino Viehland in :gh:`109914`.)
+
 
 C API Changes
 =============
