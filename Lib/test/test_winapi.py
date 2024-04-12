@@ -111,8 +111,7 @@ class WinAPITests(unittest.TestCase):
 
         # Can't assume that PROGRA~1 expands to any particular variation, so
         # ensure it matches any one of them.
-        candidates = {pathlib.Path(v) for k, v in os.environ.items()
-                      if k.lower().startswith("programfiles")}
+        candidates = set(testfn.parent.glob("Progra*"))
         self.assertIn(pathlib.Path(actual), candidates)
 
     def test_getshortpathname(self):
