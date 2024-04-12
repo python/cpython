@@ -2011,7 +2011,11 @@ case "$CC_BASENAME" in
   *clang*)
     # Any changes made here should be reflected in the GCC+Darwin case below
     PGO_PROF_GEN_FLAG="-fprofile-instr-generate"
-    PGO_PROF_USE_FLAG="-fprofile-instr-use=code.profclangd"
+    PGO_PROF_USE_FLAG=m4_normalize("
+        -fprofile-instr-use=code.profclangd
+        -Wno-profile-instr-unprofiled
+        -Wno-profile-instr-out-of-date
+    ")
     LLVM_PROF_MERGER="${LLVM_PROFDATA} merge -output=code.profclangd *.profclangr"
     LLVM_PROF_FILE="LLVM_PROFILE_FILE=\"code-%p.profclangr\""
     if test $LLVM_PROF_FOUND = not-found
@@ -2027,7 +2031,11 @@ case "$CC_BASENAME" in
     case $ac_sys_system in
       Darwin*)
         PGO_PROF_GEN_FLAG="-fprofile-instr-generate"
-        PGO_PROF_USE_FLAG="-fprofile-instr-use=code.profclangd"
+        PGO_PROF_USE_FLAG=m4_normalize("
+            -fprofile-instr-use=code.profclangd
+            -Wno-profile-instr-unprofiled
+            -Wno-profile-instr-out-of-date
+        ")
         LLVM_PROF_MERGER="${LLVM_PROFDATA} merge -output=code.profclangd *.profclangr"
         LLVM_PROF_FILE="LLVM_PROFILE_FILE=\"code-%p.profclangr\""
         if test "${LLVM_PROF_FOUND}" = "not-found"
