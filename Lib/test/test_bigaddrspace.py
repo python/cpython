@@ -11,9 +11,25 @@ be enabled.
 from test import support
 from test.support import bigaddrspacetest, MAX_Py_ssize_t
 
-import unittest
+import contextlib
 import operator
+import os
 import sys
+import unittest
+
+
+@contextlib.contextmanager
+def ignore_stderr():
+    fd = 2
+    old_stderr = os.dup(fd)
+    try:
+        # Redirect stderr to /dev/null
+        with open(os.devnull, 'wb') as null:
+            os.dup2(null.fileno(), fd)
+            yield
+    finally:
+        os.dup2(old_stderr, fd)
+        os.close(old_stderr)
 
 
 class BytesTest(unittest.TestCase):
@@ -51,6 +67,50 @@ class BytesTest(unittest.TestCase):
             self.assertRaises(OverflowError, operator.mul, x, 128)
         finally:
             x = None
+
+    @unittest.skipUnless(sys.maxsize >= 0x7FFFFFFF_FFFFFFFF,
+                         'need 64-bit size')
+    def test_large_alloc(self):
+        debug_bytes = 0
+        if support.check_impl_detail(cpython=True) and support.Py_DEBUG:
+            try:
+                from _testcapi import SIZEOF_SIZE_T
+            except ImportError:
+                if sys.maxsize > 0xffff_ffff:
+                    SIZEOF_SIZE_T = 8
+                else:
+                    SIZEOF_SIZE_T = 4
+
+            # The debug hook on memory allocator adds 3 size_t per memory block
+            # See PYMEM_DEBUG_EXTRA_BYTES in Objects/obmalloc.c.
+            debug_bytes = SIZEOF_SIZE_T * 3
+
+            try:
+                from _testinternalcapi import pymem_getallocatorsname
+                if not pymem_getallocatorsname().endswith('_debug'):
+                    # PYTHONMALLOC env var is used and disables the debug hook
+                    debug_bytes = 0
+            except (ImportError, RuntimeError):
+                pass
+
+        def allocate(size):
+            length = size - sys.getsizeof(b'') - debug_bytes
+            # allocate 'size' bytes
+            return b'x' * length
+
+        # 64-bit size which cannot be allocated on any reasonable hardware
+        # (in 2024) and must fail immediately with MemoryError.
+        for size in (
+            # gh-114331: test_decimal.test_maxcontext_exact_arith()
+            0x0BAFC246_72035E58,
+            # gh-117755: test_io.test_constructor()
+            0x7FFFFFFF_FFFFFFFF,
+        ):
+            with self.subTest(size=size):
+                with self.assertRaises(MemoryError):
+                    # ignore "mimalloc: error: unable to allocate memory"
+                    with ignore_stderr():
+                        allocate(size)
 
 
 class StrTest(unittest.TestCase):
