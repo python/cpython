@@ -167,7 +167,7 @@ static_builtin_state_init(PyInterpreterState *interp, PyTypeObject *self)
         static_builtin_index_set(self, interp->types.num_builtins_initialized);
     }
     else {
-        assert(static_builtin_index_get(self) == \
+        assert(static_builtin_index_get(self) ==
                 interp->types.num_builtins_initialized);
     }
     static_builtin_state *state = static_builtin_state_get(interp, self);
