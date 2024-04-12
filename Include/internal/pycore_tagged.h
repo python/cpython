@@ -29,9 +29,13 @@ typedef union {
     uintptr_t bits;
 } _PyStackRef;
 
+#ifdef Py_GIL_DISABLED
 // #define Py_TAG_TEST (0b1)
 #define Py_TAG_DEFERRED (0b1)
 #define Py_TAG (Py_TAG_DEFERRED)
+#else
+#define Py_TAG 0
+#endif
 
 #if defined(Py_TAG_TEST)
     #define Py_STACK_UNTAG_BORROWED(tagged) ((PyObject *)(uintptr_t)((tagged).bits & (~Py_TAG_TEST)))

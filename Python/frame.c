@@ -62,6 +62,12 @@ _PyFrame_Copy(_PyInterpreterFrame *src, _PyInterpreterFrame *dest)
     // Don't leave a dangling pointer to the old frame when creating generators
     // and coroutines:
     dest->previous = NULL;
+#ifdef Py_GIL_DISABLED
+    PyCodeObject *co = (PyCodeObject *)dest->f_executable;
+    for (int i = src->stacktop; i < co->co_nlocalsplus + co->co_stacksize; i++) {
+        dest->localsplus[i] = Py_STACK_TAG(NULL);
+    }
+#endif
 }
 
 
