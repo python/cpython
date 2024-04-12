@@ -1687,10 +1687,10 @@ class ClassPropertiesAndMethods(unittest.TestCase):
         self.assertEqual(d.foo(1), (d, 1))
         self.assertEqual(D.foo(d, 1), (d, 1))
         sm = staticmethod(None)
-        self.assertEqual(sm.__dict__, {'__doc__': None})
+        self.assertEqual(sm.__dict__, {'__doc__': None.__doc__})
         sm.x = 42
         self.assertEqual(sm.x, 42)
-        self.assertEqual(sm.__dict__, {"x" : 42, '__doc__': None})
+        self.assertEqual(sm.__dict__, {"x" : 42, '__doc__': None.__doc__})
         del sm.x
         self.assertNotHasAttr(sm, "x")
 
