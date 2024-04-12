@@ -21,6 +21,14 @@ from .utils import (
 )
 
 
+WHENCE_STR_UNKNOWN = 'unknown'
+WHENCE_STR_RUNTIME = 'runtime init'
+WHENCE_STR_LEGACY_CAPI = 'legacy C-API'
+WHENCE_STR_CAPI = 'C-API'
+WHENCE_STR_XI = 'cross-interpreter C-API'
+WHENCE_STR_STDLIB = '_interpreters module'
+
+
 class ModuleTests(TestBase):
 
     def test_queue_aliases(self):
@@ -173,10 +181,11 @@ class GetCurrentTests(TestBase):
         text = self.run_temp_from_capi(f"""
             import {interpreters.__name__} as interpreters
             interp = interpreters.get_current()
-            print(interp.id)
+            print((interp.id, interp.whence))
             """)
-        interpid = eval(text)
+        interpid, whence = eval(text)
         self.assertEqual(interpid, expected)
+        self.assertEqual(whence, WHENCE_STR_CAPI)
 
 
 class ListAllTests(TestBase):
@@ -228,22 +237,22 @@ class ListAllTests(TestBase):
         interpid4 = interpid3 + 1
         interpid5 = interpid4 + 1
         expected = [
-            (mainid,),
-            (interpid1,),
-            (interpid2,),
-            (interpid3,),
-            (interpid4,),
-            (interpid5,),
+            (mainid, WHENCE_STR_RUNTIME),
+            (interpid1, WHENCE_STR_STDLIB),
+            (interpid2, WHENCE_STR_STDLIB),
+            (interpid3, WHENCE_STR_STDLIB),
+            (interpid4, WHENCE_STR_CAPI),
+            (interpid5, WHENCE_STR_STDLIB),
         ]
         expected2 = expected[:-2]
         text = self.run_temp_from_capi(f"""
             import {interpreters.__name__} as interpreters
             interp = interpreters.create()
             print(
-                [(i.id,) for i in interpreters.list_all()])
+                [(i.id, i.whence) for i in interpreters.list_all()])
             """)
         res = eval(text)
-        res2 = [(i.id,) for i in interpreters.list_all()]
+        res2 = [(i.id, i.whence) for i in interpreters.list_all()]
         self.assertEqual(res, expected)
         self.assertEqual(res2, expected2)
 
@@ -298,6 +307,38 @@ class InterpreterObjectTests(TestBase):
         interp = interpreters.create()
         with self.assertRaises(AttributeError):
             interp.id = 1_000_000
+
+    def test_whence(self):
+        main = interpreters.get_main()
+        interp = interpreters.create()
+
+        with self.subTest('main'):
+            self.assertEqual(main.whence, WHENCE_STR_RUNTIME)
+
+        with self.subTest('from _interpreters'):
+            self.assertEqual(interp.whence, WHENCE_STR_STDLIB)
+
+        with self.subTest('from C-API'):
+            text = self.run_temp_from_capi(f"""
+                import {interpreters.__name__} as interpreters
+                interp = interpreters.get_current()
+                print(repr(interp.whence))
+                """)
+            whence = eval(text)
+            self.assertEqual(whence, WHENCE_STR_CAPI)
+
+        with self.subTest('readonly'):
+            for value in [
+                None,
+                WHENCE_STR_UNKNOWN,
+                WHENCE_STR_RUNTIME,
+                WHENCE_STR_STDLIB,
+                WHENCE_STR_CAPI,
+            ]:
+                with self.assertRaises(AttributeError):
+                    interp.whence = value
+                with self.assertRaises(AttributeError):
+                    main.whence = value
 
     def test_hashable(self):
         interp = interpreters.create()
@@ -568,41 +609,42 @@ class TestInterpreterClose(TestBase):
         with self.subTest('running __main__ (from self)'):
             with self.interpreter_from_capi() as interpid:
                 with self.assertRaisesRegex(ExecutionFailed,
-                                            'InterpreterError.*current'):
+                                            'InterpreterError.*unrecognized'):
                     self.run_from_capi(interpid, script, main=True)
 
         with self.subTest('running, but not __main__ (from self)'):
             with self.assertRaisesRegex(ExecutionFailed,
-                                        'InterpreterError.*current'):
+                                        'InterpreterError.*unrecognized'):
                 self.run_temp_from_capi(script)
 
         with self.subTest('running __main__ (from other)'):
             with self.interpreter_obj_from_capi() as (interp, interpid):
                 with self.running_from_capi(interpid, main=True):
-                    with self.assertRaisesRegex(InterpreterError, 'running'):
+                    with self.assertRaisesRegex(InterpreterError, 'unrecognized'):
                         interp.close()
                     # Make sure it wssn't closed.
                     self.assertTrue(
-                        interp.is_running())
+                        self.interp_exists(interpid))
 
-        # The rest must be skipped until we deal with running threads when
-        # interp.close() is called.
-        return
+        # The rest would be skipped until we deal with running threads when
+        # interp.close() is called.  However, the "whence" restrictions
+        # trigger first.
 
         with self.subTest('running, but not __main__ (from other)'):
             with self.interpreter_obj_from_capi() as (interp, interpid):
                 with self.running_from_capi(interpid, main=False):
-                    with self.assertRaisesRegex(InterpreterError, 'not managed'):
+                    with self.assertRaisesRegex(InterpreterError, 'unrecognized'):
                         interp.close()
                     # Make sure it wssn't closed.
-                    self.assertFalse(interp.is_running())
+                    self.assertTrue(
+                        self.interp_exists(interpid))
 
         with self.subTest('not running (from other)'):
-            with self.interpreter_obj_from_capi() as (interp, _):
-                with self.assertRaisesRegex(InterpreterError, 'not managed'):
+            with self.interpreter_obj_from_capi() as (interp, interpid):
+                with self.assertRaisesRegex(InterpreterError, 'unrecognized'):
                     interp.close()
-                # Make sure it wssn't closed.
-                self.assertFalse(interp.is_running())
+                self.assertTrue(
+                    self.interp_exists(interpid))
 
 
 class TestInterpreterPrepareMain(TestBase):
@@ -671,12 +713,11 @@ class TestInterpreterPrepareMain(TestBase):
 
     @requires_test_modules
     def test_created_with_capi(self):
-        with self.interpreter_from_capi() as interpid:
-            interp = interpreters.Interpreter(interpid)
-            interp.prepare_main({'spam': True})
-            rc = _testinternalcapi.exec_interpreter(interpid,
-                                                    'assert spam is True')
-            assert rc == 0, rc
+        with self.interpreter_obj_from_capi() as (interp, interpid):
+            with self.assertRaisesRegex(InterpreterError, 'unrecognized'):
+                interp.prepare_main({'spam': True})
+            with self.assertRaisesRegex(ExecutionFailed, 'NameError'):
+                self.run_from_capi(interpid, 'assert spam is True')
 
 
 class TestInterpreterExec(TestBase):
@@ -835,7 +876,7 @@ class TestInterpreterExec(TestBase):
 
     def test_created_with_capi(self):
         with self.interpreter_obj_from_capi() as (interp, _):
-            with self.assertRaisesRegex(ExecutionFailed, 'it worked'):
+            with self.assertRaisesRegex(InterpreterError, 'unrecognized'):
                 interp.exec('raise Exception("it worked!")')
 
     # test_xxsubinterpreters covers the remaining
@@ -1114,14 +1155,6 @@ class LowLevelTests(TestBase):
     # encountered by the high-level module, thus they
     # mostly shouldn't matter as much.
 
-    def interp_exists(self, interpid):
-        try:
-            _interpreters.is_running(interpid)
-        except InterpreterNotFoundError:
-            return False
-        else:
-            return True
-
     def test_new_config(self):
         # This test overlaps with
         # test.test_capi.test_misc.InterpreterConfigTests.
@@ -1245,32 +1278,35 @@ class LowLevelTests(TestBase):
                     _interpreters.new_config(gil=value)
 
     def test_get_main(self):
-        interpid, = _interpreters.get_main()
+        interpid, whence = _interpreters.get_main()
         self.assertEqual(interpid, 0)
+        self.assertEqual(whence, _interpreters.WHENCE_RUNTIME)
+        self.assertEqual(
+            _interpreters.whence(interpid),
+            _interpreters.WHENCE_RUNTIME)
 
     def test_get_current(self):
         with self.subTest('main'):
             main, *_ = _interpreters.get_main()
-            interpid, = _interpreters.get_current()
+            interpid, whence = _interpreters.get_current()
             self.assertEqual(interpid, main)
+            self.assertEqual(whence, _interpreters.WHENCE_RUNTIME)
 
         script = f"""
             import {_interpreters.__name__} as _interpreters
-            interpid, = _interpreters.get_current()
-            print(interpid)
+            interpid, whence = _interpreters.get_current()
+            print((interpid, whence))
             """
         def parse_stdout(text):
-            parts = text.split()
-            assert len(parts) == 1, parts
-            interpid, = parts
-            interpid = int(interpid)
-            return interpid,
+            interpid, whence = eval(text)
+            return interpid, whence
 
         with self.subTest('from _interpreters'):
             orig = _interpreters.create()
             text = self.run_and_capture(orig, script)
-            interpid, = parse_stdout(text)
+            interpid, whence = parse_stdout(text)
             self.assertEqual(interpid, orig)
+            self.assertEqual(whence, _interpreters.WHENCE_STDLIB)
 
         with self.subTest('from C-API'):
             last = 0
@@ -1278,8 +1314,9 @@ class LowLevelTests(TestBase):
                 last = max(last, id)
             expected = last + 1
             text = self.run_temp_from_capi(script)
-            interpid, = parse_stdout(text)
+            interpid, whence = parse_stdout(text)
             self.assertEqual(interpid, expected)
+            self.assertEqual(whence, _interpreters.WHENCE_CAPI)
 
     def test_list_all(self):
         mainid, *_ = _interpreters.get_main()
@@ -1287,17 +1324,17 @@ class LowLevelTests(TestBase):
         interpid2 = _interpreters.create()
         interpid3 = _interpreters.create()
         expected = [
-            (mainid,),
-            (interpid1,),
-            (interpid2,),
-            (interpid3,),
+            (mainid, _interpreters.WHENCE_RUNTIME),
+            (interpid1, _interpreters.WHENCE_STDLIB),
+            (interpid2, _interpreters.WHENCE_STDLIB),
+            (interpid3, _interpreters.WHENCE_STDLIB),
         ]
 
         with self.subTest('main'):
             res = _interpreters.list_all()
             self.assertEqual(res, expected)
 
-        with self.subTest('from _interpreters'):
+        with self.subTest('via interp from _interpreters'):
             text = self.run_and_capture(interpid2, f"""
                 import {_interpreters.__name__} as _interpreters
                 print(
@@ -1307,15 +1344,15 @@ class LowLevelTests(TestBase):
             res = eval(text)
             self.assertEqual(res, expected)
 
-        with self.subTest('from C-API'):
+        with self.subTest('via interp from C-API'):
             interpid4 = interpid3 + 1
             interpid5 = interpid4 + 1
             expected2 = expected + [
-                (interpid4,),
-                (interpid5,),
+                (interpid4, _interpreters.WHENCE_CAPI),
+                (interpid5, _interpreters.WHENCE_STDLIB),
             ]
             expected3 = expected + [
-                (interpid5,),
+                (interpid5, _interpreters.WHENCE_STDLIB),
             ]
             text = self.run_temp_from_capi(f"""
                 import {_interpreters.__name__} as _interpreters
@@ -1380,6 +1417,12 @@ class LowLevelTests(TestBase):
             with self.assertRaises(ValueError):
                 _interpreters.create(orig)
 
+        with self.subTest('whence'):
+            interpid = _interpreters.create()
+            self.assertEqual(
+                _interpreters.whence(interpid),
+                _interpreters.WHENCE_STDLIB)
+
     @requires_test_modules
     def test_destroy(self):
         with self.subTest('from _interpreters'):
@@ -1401,6 +1444,10 @@ class LowLevelTests(TestBase):
 
         with self.subTest('from C-API'):
             interpid = _testinternalcapi.create_interpreter()
+            with self.assertRaisesRegex(InterpreterError, 'unrecognized'):
+                _interpreters.destroy(interpid, restrict=True)
+            self.assertTrue(
+                self.interp_exists(interpid))
             _interpreters.destroy(interpid)
             self.assertFalse(
                 self.interp_exists(interpid))
@@ -1433,6 +1480,8 @@ class LowLevelTests(TestBase):
         with self.subTest('from C-API'):
             orig = _interpreters.new_config('isolated')
             with self.interpreter_from_capi(orig) as interpid:
+                with self.assertRaisesRegex(InterpreterError, 'unrecognized'):
+                    _interpreters.get_config(interpid, restrict=True)
                 config = _interpreters.get_config(interpid)
             self.assert_ns_equal(config, orig)
 
@@ -1446,10 +1495,10 @@ class LowLevelTests(TestBase):
         with self.subTest('stdlib'):
             interpid = _interpreters.create()
             whence = _interpreters.whence(interpid)
-            self.assertEqual(whence, _interpreters.WHENCE_XI)
+            self.assertEqual(whence, _interpreters.WHENCE_STDLIB)
 
         for orig, name in {
-            # XXX Also check WHENCE_UNKNOWN.
+            _interpreters.WHENCE_UNKNOWN: 'not ready',
             _interpreters.WHENCE_LEGACY_CAPI: 'legacy C-API',
             _interpreters.WHENCE_CAPI: 'C-API',
             _interpreters.WHENCE_XI: 'cross-interpreter C-API',
@@ -1481,38 +1530,40 @@ class LowLevelTests(TestBase):
             self.assertEqual(whence, _interpreters.WHENCE_LEGACY_CAPI)
 
     def test_is_running(self):
-        with self.subTest('main'):
-            interpid, *_ = _interpreters.get_main()
+        def check(interpid, expected):
+            with self.assertRaisesRegex(InterpreterError, 'unrecognized'):
+                _interpreters.is_running(interpid, restrict=True)
             running = _interpreters.is_running(interpid)
-            self.assertTrue(running)
+            self.assertIs(running, expected)
 
         with self.subTest('from _interpreters (running)'):
             interpid = _interpreters.create()
             with self.running(interpid):
                 running = _interpreters.is_running(interpid)
-            self.assertTrue(running)
+                self.assertTrue(running)
 
         with self.subTest('from _interpreters (not running)'):
             interpid = _interpreters.create()
             running = _interpreters.is_running(interpid)
             self.assertFalse(running)
 
+        with self.subTest('main'):
+            interpid, *_ = _interpreters.get_main()
+            check(interpid, True)
+
         with self.subTest('from C-API (running __main__)'):
             with self.interpreter_from_capi() as interpid:
                 with self.running_from_capi(interpid, main=True):
-                    running = _interpreters.is_running(interpid)
-            self.assertTrue(running)
+                    check(interpid, True)
 
         with self.subTest('from C-API (running, but not __main__)'):
             with self.interpreter_from_capi() as interpid:
                 with self.running_from_capi(interpid, main=False):
-                    running = _interpreters.is_running(interpid)
-            self.assertFalse(running)
+                    check(interpid, False)
 
         with self.subTest('from C-API (not running)'):
             with self.interpreter_from_capi() as interpid:
-                running = _interpreters.is_running(interpid)
-                self.assertFalse(running)
+                check(interpid, False)
 
     def test_exec(self):
         with self.subTest('run script'):
@@ -1549,6 +1600,9 @@ class LowLevelTests(TestBase):
 
         with self.subTest('from C-API'):
             with self.interpreter_from_capi() as interpid:
+                with self.assertRaisesRegex(InterpreterError, 'unrecognized'):
+                    _interpreters.exec(interpid, 'raise Exception("it worked!")',
+                                       restrict=True)
                 exc = _interpreters.exec(interpid, 'raise Exception("it worked!")')
             self.assertIsNot(exc, None)
             self.assertEqual(exc.msg, 'it worked!')
@@ -1574,6 +1628,7 @@ class LowLevelTests(TestBase):
                 errdisplay=exc.errdisplay,
             ))
 
+    @requires_test_modules
     def test_set___main___attrs(self):
         with self.subTest('from _interpreters'):
             interpid = _interpreters.create()
@@ -1595,9 +1650,15 @@ class LowLevelTests(TestBase):
 
         with self.subTest('from C-API'):
             with self.interpreter_from_capi() as interpid:
+                with self.assertRaisesRegex(InterpreterError, 'unrecognized'):
+                    _interpreters.set___main___attrs(interpid, {'spam': True},
+                                                     restrict=True)
                 _interpreters.set___main___attrs(interpid, {'spam': True})
-                exc = _interpreters.exec(interpid, 'assert spam is True')
-            self.assertIsNone(exc)
+                rc = _testinternalcapi.exec_interpreter(
+                    interpid,
+                    'assert spam is True',
+                )
+            self.assertEqual(rc, 0)
 
 
 if __name__ == '__main__':
