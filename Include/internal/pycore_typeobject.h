@@ -152,6 +152,18 @@ PyAPI_FUNC(PyObject*) _PySuper_Lookup(PyTypeObject *su_type, PyObject *su_obj,
 
 extern PyObject* _PyType_GetFullyQualifiedName(PyTypeObject *type, char sep);
 
+// Perform the following operation, in a thread-safe way when required by the
+// build mode.
+//
+// self->tp_flags = (self->tp_flags & ~mask) | flags;
+extern void _PyType_SetFlags(PyTypeObject *self, unsigned long mask,
+                             unsigned long flags);
+
+// Like _PyType_SetFlags(), but apply the operation to self and any of its
+// subclasses without Py_TPFLAGS_IMMUTABLETYPE set.
+extern void _PyType_SetFlagsRecursive(PyTypeObject *self, unsigned long mask,
+                                      unsigned long flags);
+
 
 #ifdef __cplusplus
 }

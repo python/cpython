@@ -1273,6 +1273,7 @@ extern "C" {
     INIT_ID(version), \
     INIT_ID(volume), \
     INIT_ID(wait_all), \
+    INIT_ID(warn_on_full_buffer), \
     INIT_ID(warnings), \
     INIT_ID(warnoptions), \
     INIT_ID(wbits), \

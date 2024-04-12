@@ -347,9 +347,10 @@ class _Globber:
     """Class providing shell-style pattern matching and globbing.
     """
 
-    def __init__(self,  sep, case_sensitive, recursive=False):
+    def __init__(self, sep, case_sensitive, case_pedantic=False, recursive=False):
         self.sep = sep
         self.case_sensitive = case_sensitive
+        self.case_pedantic = case_pedantic
         self.recursive = recursive
 
     # Low-level methods
@@ -389,6 +390,8 @@ class _Globber:
             selector = self.recursive_selector
         elif part in _special_parts:
             selector = self.special_selector
+        elif not self.case_pedantic and magic_check.search(part) is None:
+            selector = self.literal_selector
         else:
             selector = self.wildcard_selector
         return selector(part, parts)
@@ -404,6 +407,25 @@ class _Globber:
                 rel_path = self.concat_path(self.add_slash(rel_path), part)
             return select_next(path, dir_fd, rel_path, exists)
         return select_special
+
+    def literal_selector(self, part, parts):
+        """Returns a function that selects a literal descendant of a path.
+        """
+
+        # Optimization: consume and join any subsequent literal parts here,
+        # rather than leaving them for the next selector. This reduces the
+        # number of string concatenation operations and calls to add_slash().
+        while parts and magic_check.search(parts[-1]) is None:
+            part += self.sep + parts.pop()
+
+        select_next = self.selector(parts)
+
+        def select_literal(path, dir_fd=None, rel_path=None, exists=False):
+            path = self.concat_path(self.add_slash(path), part)
+            if dir_fd is not None:
+                rel_path = self.concat_path(self.add_slash(rel_path), part)
+            return select_next(path, dir_fd, rel_path, exists=False)
+        return select_literal
 
     def wildcard_selector(self, part, parts):
         """Returns a function that selects direct children of a given path,
@@ -545,3 +567,40 @@ class _Globber:
                 yield path
             except OSError:
                 pass
+
+    @classmethod
+    def walk(cls, root, top_down, on_error, follow_symlinks):
+        """Walk the directory tree from the given root, similar to os.walk().
+        """
+        paths = [root]
+        while paths:
+            path = paths.pop()
+            if isinstance(path, tuple):
+                yield path
+                continue
+            try:
+                with cls.scandir(path) as scandir_it:
+                    dirnames = []
+                    filenames = []
+                    if not top_down:
+                        paths.append((path, dirnames, filenames))
+                    for entry in scandir_it:
+                        name = entry.name
+                        try:
+                            if entry.is_dir(follow_symlinks=follow_symlinks):
+                                if not top_down:
+                                    paths.append(cls.parse_entry(entry))
+                                dirnames.append(name)
+                            else:
+                                filenames.append(name)
+                        except OSError:
+                            filenames.append(name)
+            except OSError as error:
+                if on_error is not None:
+                    on_error(error)
+            else:
+                if top_down:
+                    yield path, dirnames, filenames
+                    if dirnames:
+                        prefix = cls.add_slash(path)
+                        paths += [cls.concat_path(prefix, d) for d in reversed(dirnames)]
