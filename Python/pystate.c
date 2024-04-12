@@ -1111,6 +1111,13 @@ _PyInterpreterState_ReinitRunningMain(PyThreadState *tstate)
 // accessors
 //----------
 
+int
+_PyInterpreterState_IsReady(PyInterpreterState *interp)
+{
+    return interp->_ready;
+}
+
+
 static inline int
 check_interpreter_whence(long whence)
 {
