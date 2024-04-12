@@ -2666,7 +2666,6 @@ AS_VAR_IF([ac_cv_gcc_compat], [yes], [
 	BASECFLAGS="$BASECFLAGS -belf -Ki486 -DSCO5"
 	;;
     esac
-    ;;
 ])
 
 case "$ac_cv_cc_name" in
