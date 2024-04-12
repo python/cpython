@@ -2015,7 +2015,7 @@ case "$CC_BASENAME" in
     LLVM_PROF_MERGER=m4_normalize("
         ${LLVM_PROFDATA} merge
             -output=\"\$(shell pwd)/code.profclangd\"
-            \"\$(shell pwd)/*.profclangr\"
+            \"\$(shell pwd)\"/*.profclangr
     ")
     LLVM_PROF_FILE="LLVM_PROFILE_FILE=\"\$(shell pwd)/code-%p.profclangr\""
     if test $LLVM_PROF_FOUND = not-found
@@ -2035,7 +2035,7 @@ case "$CC_BASENAME" in
         LLVM_PROF_MERGER=m4_normalize("
             ${LLVM_PROFDATA} merge
                 -output=\"\$(shell pwd)/code.profclangd\"
-                \"\$(shell pwd)/*.profclangr\"
+                \"\$(shell pwd)\"/*.profclangr
         ")
         LLVM_PROF_FILE="LLVM_PROFILE_FILE=\"\$(shell pwd)/code-%p.profclangr\""
         if test "${LLVM_PROF_FOUND}" = "not-found"
