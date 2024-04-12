@@ -1140,7 +1140,7 @@ Return -1 on failure.
 static PyObject *
 bytearray_find_impl(PyByteArrayObject *self, PyObject *sub, Py_ssize_t start,
                     Py_ssize_t end)
-/*[clinic end generated code: output=413e1cab2ae87da0 input=27dce3d6f4f24c31]*/
+/*[clinic end generated code: output=413e1cab2ae87da0 input=793dfad803e2952f]*/
 {
     return _Py_bytes_find(PyByteArray_AS_STRING(self), PyByteArray_GET_SIZE(self),
                           sub, start, end);
@@ -1201,7 +1201,7 @@ Raise ValueError if the subsection is not found.
 static PyObject *
 bytearray_index_impl(PyByteArrayObject *self, PyObject *sub,
                      Py_ssize_t start, Py_ssize_t end)
-/*[clinic end generated code: output=067a1e78efc672a7 input=78239d5ea77ce955]*/
+/*[clinic end generated code: output=067a1e78efc672a7 input=8cbaf6836dbd2a9a]*/
 {
     return _Py_bytes_index(PyByteArray_AS_STRING(self), PyByteArray_GET_SIZE(self),
                            sub, start, end);
@@ -1235,7 +1235,7 @@ Raise ValueError if the subsection is not found.
 static PyObject *
 bytearray_rindex_impl(PyByteArrayObject *self, PyObject *sub,
                       Py_ssize_t start, Py_ssize_t end)
-/*[clinic end generated code: output=38e1cf66bafb08b9 input=dcf4f35717461bff]*/
+/*[clinic end generated code: output=38e1cf66bafb08b9 input=81cf49d0af4d5bd0]*/
 {
     return _Py_bytes_rindex(PyByteArray_AS_STRING(self), PyByteArray_GET_SIZE(self),
                             sub, start, end);

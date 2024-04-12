@@ -105,7 +105,7 @@ PyDoc_STRVAR(bytearray_find__doc__,
 "find($self, sub[, start[, end]], /)\n"
 "--\n"
 "\n"
-"Return the lowest index in B where subsection \'sub\' is found, such that \'sub\' is contained within B[start,end].\n"
+"Return the lowest index in B where subsection \'sub\' is found, such that \'sub\' is contained within B[start:end].\n"
 "\n"
 "  start\n"
 "    Optional start position. Default: start of the bytes.\n"
@@ -241,7 +241,7 @@ PyDoc_STRVAR(bytearray_index__doc__,
 "index($self, sub[, start[, end]], /)\n"
 "--\n"
 "\n"
-"Return the lowest index in B where subsection \'sub\' is found, such that \'sub\' is contained within B[start,end].\n"
+"Return the lowest index in B where subsection \'sub\' is found, such that \'sub\' is contained within B[start:end].\n"
 "\n"
 "  start\n"
 "    Optional start position. Default: start of the bytes.\n"
@@ -343,7 +343,7 @@ PyDoc_STRVAR(bytearray_rindex__doc__,
 "rindex($self, sub[, start[, end]], /)\n"
 "--\n"
 "\n"
-"Return the highest index in B where subsection \'sub\' is found, such that \'sub\' is contained within B[start,end].\n"
+"Return the highest index in B where subsection \'sub\' is found, such that \'sub\' is contained within B[start:end].\n"
 "\n"
 "  start\n"
 "    Optional start position. Default: start of the bytes.\n"
@@ -1616,4 +1616,4 @@ bytearray_sizeof(PyByteArrayObject *self, PyObject *Py_UNUSED(ignored))
 {
     return bytearray_sizeof_impl(self);
 }
-/*[clinic end generated code: output=5a5c9cdc24858a0a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=77ba9ddf79f9b124 input=a9049054013a1b77]*/
