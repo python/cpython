@@ -318,12 +318,13 @@ def translate(pat, *, recursive=False, include_hidden=False, seps=None):
     return fr'(?s:{res})\Z'
 
 
-@functools.lru_cache(maxsize=512)
-def _compile_pattern(pat, sep, case_sensitive, recursive=True, include_hidden=False):
+@functools.lru_cache(maxsize=1024)
+def _compile_pattern(pat, sep, case_sensitive, recursive, include_hidden):
     """Compile given glob pattern to a re.Pattern object (observing case
     sensitivity)."""
     flags = re.NOFLAG if case_sensitive else re.IGNORECASE
-    regex = translate(pat, recursive=recursive, include_hidden=include_hidden, seps=sep)
+    regex = translate(pat, recursive=recursive,
+                      include_hidden=include_hidden, seps=sep)
     return re.compile(regex, flags=flags).match
 
 
@@ -331,8 +332,8 @@ class _Globber:
     """Class providing shell-style pattern matching and globbing.
     """
 
-    def __init__(self, sep, case_sensitive, case_pedantic=False,
-                 recursive=False, include_hidden=False):
+    def __init__(self, sep, case_sensitive,
+                 case_pedantic=False, recursive=False, include_hidden=False):
         self.sep = sep
         self.case_sensitive = case_sensitive
         self.case_pedantic = case_pedantic
@@ -363,7 +364,8 @@ class _Globber:
     # High-level methods
 
     def compile(self, pat):
-        return _compile_pattern(pat, self.sep, self.case_sensitive, self.recursive, self.include_hidden)
+        return _compile_pattern(pat, self.sep, self.case_sensitive,
+                                self.recursive, self.include_hidden)
 
     def selector(self, parts):
         """Returns a function that selects from a given path, walking and
