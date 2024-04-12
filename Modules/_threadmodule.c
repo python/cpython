@@ -2257,7 +2257,7 @@ thread_excepthook(PyObject *module, PyObject *args)
 }
 
 PyDoc_STRVAR(excepthook_doc,
-"excepthook($module, exc_type, exc_value, exc_traceback, thread, /)\n\
+"_excepthook($module, (exc_type, exc_value, exc_traceback, thread), /)\n\
 --\n\
 \n\
 Handle uncaught Thread.run() exception.");
