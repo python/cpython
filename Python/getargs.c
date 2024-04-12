@@ -21,6 +21,7 @@ PyAPI_FUNC(int) _PyArg_VaParseTupleAndKeywords_SizeT(PyObject *, PyObject *,
                                               const char *, const char * const *, va_list);
 
 #define FLAG_COMPAT 1
+#define FLAG_NULLABLE 4
 
 typedef int (*destr_t)(PyObject *, void *);
 
@@ -487,8 +488,9 @@ converttuple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
     if (!PySequence_Check(arg) || PyBytes_Check(arg)) {
         levels[0] = 0;
         PyOS_snprintf(msgbuf, bufsize,
-                      "must be %d-item sequence, not %.50s",
+                      "must be %d-item sequence%s, not %.50s",
                   n,
+                  (flags & FLAG_NULLABLE) ? " or None" : "",
                   arg == Py_None ? "None" : Py_TYPE(arg)->tp_name);
         return msgbuf;
     }
@@ -502,6 +504,7 @@ converttuple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
         return msgbuf;
     }
 
+    flags &= ~FLAG_NULLABLE;
     format = *p_format;
     for (i = 0; i < n; i++) {
         const char *msg;
@@ -538,6 +541,20 @@ convertitem(PyObject *arg, const char **p_format, va_list *p_va, int flags,
     const char *msg;
     const char *format = *p_format;
 
+    if (*format == '?') {
+        format++;
+        if (arg == Py_None) {
+            msg = skipitem(&format, p_va, flags);
+            if (msg == NULL) {
+                *p_format = format;
+            }
+            else {
+                levels[0] = 0;
+            }
+            return msg;
+        }
+        flags |= FLAG_NULLABLE;
+    }
     if (*format == '(' /* ')' */) {
         format++;
         msg = converttuple(arg, &format, p_va, flags, levels, msgbuf,
@@ -573,7 +590,7 @@ _PyArg_BadArgument(const char *fname, const char *displayname,
 }
 
 static const char *
-converterr(const char *expected, PyObject *arg, char *msgbuf, size_t bufsize)
+converterr(int flags, const char *expected, PyObject *arg, char *msgbuf, size_t bufsize)
 {
     assert(expected != NULL);
     assert(arg != NULL);
@@ -583,20 +600,25 @@ converterr(const char *expected, PyObject *arg, char *msgbuf, size_t bufsize)
     }
     else {
         PyOS_snprintf(msgbuf, bufsize,
-                      "must be %.50s, not %.50s", expected,
+                      "must be %.50s%s, not %.50s", expected,
+                      ((flags & FLAG_NULLABLE) && !strstr(expected, " or None"))
+                      ? " or None" : "",
                       arg == Py_None ? "None" : Py_TYPE(arg)->tp_name);
     }
     return msgbuf;
 }
 
 static const char *
-convertcharerr(const char *expected, const char *what, Py_ssize_t size,
+convertcharerr(int flags, const char *expected, const char *what, Py_ssize_t size,
                char *msgbuf, size_t bufsize)
 {
     assert(expected != NULL);
     PyOS_snprintf(msgbuf, bufsize,
-                  "must be %.50s, not %.50s of length %zd",
-                  expected, what, size);
+                  "must be %.50s%s, not %.50s of length %zd",
+                  expected,
+                  ((flags & FLAG_NULLABLE) && !strstr(expected, " or None"))
+                  ? " or None" : "",
+                  what, size);
     return msgbuf;
 }
 
@@ -747,7 +769,7 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
         if (PyLong_Check(arg))
             ival = PyLong_AsUnsignedLongMask(arg);
         else
-            return converterr("int", arg, msgbuf, bufsize);
+            return converterr(flags, "int", arg, msgbuf, bufsize);
         *p = ival;
         break;
     }
@@ -768,7 +790,7 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
         if (PyLong_Check(arg))
             ival = PyLong_AsUnsignedLongLongMask(arg);
         else
-            return converterr("int", arg, msgbuf, bufsize);
+            return converterr(flags, "int", arg, msgbuf, bufsize);
         *p = ival;
         break;
     }
@@ -808,7 +830,7 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
         char *p = va_arg(*p_va, char *);
         if (PyBytes_Check(arg)) {
             if (PyBytes_GET_SIZE(arg) != 1) {
-                return convertcharerr("a byte string of length 1",
+                return convertcharerr(flags, "a byte string of length 1",
                                       "a bytes object", PyBytes_GET_SIZE(arg),
                                       msgbuf, bufsize);
             }
@@ -816,14 +838,14 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
         }
         else if (PyByteArray_Check(arg)) {
             if (PyByteArray_GET_SIZE(arg) != 1) {
-                return convertcharerr("a byte string of length 1",
+                return convertcharerr(flags, "a byte string of length 1",
                                       "a bytearray object", PyByteArray_GET_SIZE(arg),
                                       msgbuf, bufsize);
             }
             *p = PyByteArray_AS_STRING(arg)[0];
         }
         else
-            return converterr("a byte string of length 1", arg, msgbuf, bufsize);
+            return converterr(flags, "a byte string of length 1", arg, msgbuf, bufsize);
         break;
     }
 
@@ -833,10 +855,10 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
         const void *data;
 
         if (!PyUnicode_Check(arg))
-            return converterr("a unicode character", arg, msgbuf, bufsize);
+            return converterr(flags, "a unicode character", arg, msgbuf, bufsize);
 
         if (PyUnicode_GET_LENGTH(arg) != 1) {
-            return convertcharerr("a unicode character",
+            return convertcharerr(flags, "a unicode character",
                                   "a string", PyUnicode_GET_LENGTH(arg),
                                   msgbuf, bufsize);
         }
@@ -868,18 +890,18 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
         Py_ssize_t count;
         if (*format == '*') {
             if (getbuffer(arg, (Py_buffer*)p, &buf) < 0)
-                return converterr(buf, arg, msgbuf, bufsize);
+                return converterr(flags, buf, arg, msgbuf, bufsize);
             format++;
             if (addcleanup(p, freelist, cleanup_buffer)) {
                 return converterr(
-                    "(cleanup problem)",
+                    flags, "(cleanup problem)",
                     arg, msgbuf, bufsize);
             }
             break;
         }
         count = convertbuffer(arg, (const void **)p, &buf);
         if (count < 0)
-            return converterr(buf, arg, msgbuf, bufsize);
+            return converterr(flags, buf, arg, msgbuf, bufsize);
         if (*format == '#') {
             Py_ssize_t *psize = va_arg(*p_va, Py_ssize_t*);
             *psize = count;
@@ -906,18 +928,18 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
                 Py_ssize_t len;
                 sarg = PyUnicode_AsUTF8AndSize(arg, &len);
                 if (sarg == NULL)
-                    return converterr(CONV_UNICODE,
+                    return converterr(flags, CONV_UNICODE,
                                       arg, msgbuf, bufsize);
                 PyBuffer_FillInfo(p, arg, (void *)sarg, len, 1, 0);
             }
             else { /* any bytes-like object */
                 const char *buf;
                 if (getbuffer(arg, p, &buf) < 0)
-                    return converterr(buf, arg, msgbuf, bufsize);
+                    return converterr(flags, buf, arg, msgbuf, bufsize);
             }
             if (addcleanup(p, freelist, cleanup_buffer)) {
                 return converterr(
-                    "(cleanup problem)",
+                    flags, "(cleanup problem)",
                     arg, msgbuf, bufsize);
             }
             format++;
@@ -934,7 +956,7 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
                 Py_ssize_t len;
                 sarg = PyUnicode_AsUTF8AndSize(arg, &len);
                 if (sarg == NULL)
-                    return converterr(CONV_UNICODE,
+                    return converterr(flags, CONV_UNICODE,
                                       arg, msgbuf, bufsize);
                 *p = sarg;
                 *psize = len;
@@ -944,7 +966,7 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
                 const char *buf;
                 Py_ssize_t count = convertbuffer(arg, p, &buf);
                 if (count < 0)
-                    return converterr(buf, arg, msgbuf, bufsize);
+                    return converterr(flags, buf, arg, msgbuf, bufsize);
                 *psize = count;
             }
             format++;
@@ -959,7 +981,7 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
             else if (PyUnicode_Check(arg)) {
                 sarg = PyUnicode_AsUTF8AndSize(arg, &len);
                 if (sarg == NULL)
-                    return converterr(CONV_UNICODE,
+                    return converterr(flags, CONV_UNICODE,
                                       arg, msgbuf, bufsize);
                 if (strlen(sarg) != (size_t)len) {
                     PyErr_SetString(PyExc_ValueError, "embedded null character");
@@ -968,7 +990,7 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
                 *p = sarg;
             }
             else
-                return converterr(c == 'z' ? "str or None" : "str",
+                return converterr(flags, c == 'z' ? "str or None" : "str",
                                   arg, msgbuf, bufsize);
         }
         break;
@@ -997,12 +1019,12 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
             recode_strings = 0;
         else
             return converterr(
-                "(unknown parser marker combination)",
+                flags, "(unknown parser marker combination)",
                 arg, msgbuf, bufsize);
         buffer = (char **)va_arg(*p_va, char **);
         format++;
         if (buffer == NULL)
-            return converterr("(buffer is NULL)",
+            return converterr(flags, "(buffer is NULL)",
                               arg, msgbuf, bufsize);
 
         /* Encode object */
@@ -1024,7 +1046,7 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
                                           encoding,
                                           NULL);
             if (s == NULL)
-                return converterr("(encoding failed)",
+                return converterr(flags, "(encoding failed)",
                                   arg, msgbuf, bufsize);
             assert(PyBytes_Check(s));
             size = PyBytes_GET_SIZE(s);
@@ -1034,7 +1056,7 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
         }
         else {
             return converterr(
-                recode_strings ? "str" : "str, bytes or bytearray",
+                flags, recode_strings ? "str" : "str, bytes or bytearray",
                 arg, msgbuf, bufsize);
         }
 
@@ -1067,7 +1089,7 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
             if (psize == NULL) {
                 Py_DECREF(s);
                 return converterr(
-                    "(buffer_len is NULL)",
+                    flags, "(buffer_len is NULL)",
                     arg, msgbuf, bufsize);
             }
             if (*buffer == NULL) {
@@ -1080,7 +1102,7 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
                 if (addcleanup(buffer, freelist, cleanup_ptr)) {
                     Py_DECREF(s);
                     return converterr(
-                        "(cleanup problem)",
+                        flags, "(cleanup problem)",
                         arg, msgbuf, bufsize);
                 }
             } else {
@@ -1114,7 +1136,7 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
             if ((Py_ssize_t)strlen(ptr) != size) {
                 Py_DECREF(s);
                 return converterr(
-                    "encoded string without null bytes",
+                    flags, "encoded string without null bytes",
                     arg, msgbuf, bufsize);
             }
             *buffer = PyMem_NEW(char, size + 1);
@@ -1125,7 +1147,7 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
             }
             if (addcleanup(buffer, freelist, cleanup_ptr)) {
                 Py_DECREF(s);
-                return converterr("(cleanup problem)",
+                return converterr(flags, "(cleanup problem)",
                                 arg, msgbuf, bufsize);
             }
             memcpy(*buffer, ptr, size+1);
@@ -1139,7 +1161,7 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
         if (PyBytes_Check(arg))
             *p = arg;
         else
-            return converterr("bytes", arg, msgbuf, bufsize);
+            return converterr(flags, "bytes", arg, msgbuf, bufsize);
         break;
     }
 
@@ -1148,7 +1170,7 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
         if (PyByteArray_Check(arg))
             *p = arg;
         else
-            return converterr("bytearray", arg, msgbuf, bufsize);
+            return converterr(flags, "bytearray", arg, msgbuf, bufsize);
         break;
     }
 
@@ -1158,7 +1180,7 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
             *p = arg;
         }
         else
-            return converterr("str", arg, msgbuf, bufsize);
+            return converterr(flags, "str", arg, msgbuf, bufsize);
         break;
     }
 
@@ -1172,7 +1194,7 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
             if (PyType_IsSubtype(Py_TYPE(arg), type))
                 *p = arg;
             else
-                return converterr(type->tp_name, arg, msgbuf, bufsize);
+                return converterr(flags, type->tp_name, arg, msgbuf, bufsize);
 
         }
         else if (*format == '&') {
@@ -1182,11 +1204,11 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
             int res;
             format++;
             if (! (res = (*convert)(arg, addr)))
-                return converterr("(unspecified)",
+                return converterr(flags, "(unspecified)",
                                   arg, msgbuf, bufsize);
             if (res == Py_CLEANUP_SUPPORTED &&
                 addcleanup(addr, freelist, convert) == -1)
-                return converterr("(cleanup problem)",
+                return converterr(flags, "(cleanup problem)",
                                 arg, msgbuf, bufsize);
         }
         else {
@@ -1202,7 +1224,7 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
 
         if (*format != '*')
             return converterr(
-                "(invalid use of 'w' format character)",
+                flags, "(invalid use of 'w' format character)",
                 arg, msgbuf, bufsize);
         format++;
 
@@ -1211,20 +1233,20 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
            result is C-contiguous with format 'B'. */
         if (PyObject_GetBuffer(arg, (Py_buffer*)p, PyBUF_WRITABLE) < 0) {
             PyErr_Clear();
-            return converterr("read-write bytes-like object",
+            return converterr(flags, "read-write bytes-like object",
                               arg, msgbuf, bufsize);
         }
         assert(PyBuffer_IsContiguous((Py_buffer *)p, 'C'));
         if (addcleanup(p, freelist, cleanup_buffer)) {
             return converterr(
-                "(cleanup problem)",
+                flags, "(cleanup problem)",
                 arg, msgbuf, bufsize);
         }
         break;
     }
 
     default:
-        return converterr("(impossible<bad format char>)", arg, msgbuf, bufsize);
+        return converterr(flags, "(impossible<bad format char>)", arg, msgbuf, bufsize);
 
     }
 
@@ -2630,6 +2652,9 @@ skipitem(const char **p_format, va_list *p_va, int flags)
     const char *format = *p_format;
     char c = *format++;
 
+    if (c == '?') {
+        c = *format++;
+    }
     switch (c) {
 
     /*
