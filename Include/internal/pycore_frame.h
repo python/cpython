@@ -305,6 +305,12 @@ _PyFrame_PushTrampolineUnchecked(PyThreadState *tstate, PyCodeObject *code, int 
     frame->instr_ptr = _PyCode_CODE(code);
     frame->owner = FRAME_OWNED_BY_THREAD;
     frame->return_offset = 0;
+#ifdef Py_GIL_DISABLED
+    assert(code->co_nlocalsplus == 0);
+    for (int i = 0; i < code->co_stacksize; i++) {
+        frame->localsplus[i] = Py_STACK_TAG(NULL);
+    }
+#endif
     return frame;
 }
 
