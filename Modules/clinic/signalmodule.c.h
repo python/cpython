@@ -281,7 +281,7 @@ exit:
 #endif /* defined(HAVE_SIGINTERRUPT) */
 
 PyDoc_STRVAR(signal_set_wakeup_fd__doc__,
-"set_wakeup_fd($module, fd, /, warn_on_full_buffer=True)\n"
+"set_wakeup_fd($module, fd, /, *, warn_on_full_buffer=True)\n"
 "--\n"
 "\n"
 "Sets the fd to be written to (with the signal number) when a signal comes in.\n"
@@ -332,19 +332,19 @@ signal_set_wakeup_fd(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
     PyObject *fdobj;
     int warn_on_full_buffer = 1;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
     if (!args) {
         goto exit;
     }
     fdobj = args[0];
     if (!noptargs) {
-        goto skip_optional_pos;
+        goto skip_optional_kwonly;
     }
     warn_on_full_buffer = PyObject_IsTrue(args[1]);
     if (warn_on_full_buffer < 0) {
         goto exit;
     }
-skip_optional_pos:
+skip_optional_kwonly:
     return_value = signal_set_wakeup_fd_impl(module, fdobj, warn_on_full_buffer);
 
 exit:
@@ -776,4 +776,4 @@ exit:
 #ifndef SIGNAL_PIDFD_SEND_SIGNAL_METHODDEF
     #define SIGNAL_PIDFD_SEND_SIGNAL_METHODDEF
 #endif /* !defined(SIGNAL_PIDFD_SEND_SIGNAL_METHODDEF) */
-/*[clinic end generated code: output=797203c24e6a051d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=1c11c1b6f12f26be input=a9049054013a1b77]*/

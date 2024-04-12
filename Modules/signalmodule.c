@@ -711,6 +711,7 @@ signal.set_wakeup_fd
 
     fd as fdobj: object
     /
+    *
     warn_on_full_buffer: bool = True
 
 Sets the fd to be written to (with the signal number) when a signal comes in.
@@ -724,7 +725,7 @@ The fd must be non-blocking.
 static PyObject *
 signal_set_wakeup_fd_impl(PyObject *module, PyObject *fdobj,
                           int warn_on_full_buffer)
-/*[clinic end generated code: output=2280d72dd2a54c4f input=188c4bb61c472c32]*/
+/*[clinic end generated code: output=2280d72dd2a54c4f input=5b545946a28b8339]*/
 {
     struct _Py_stat_struct status;
 #ifdef MS_WINDOWS
