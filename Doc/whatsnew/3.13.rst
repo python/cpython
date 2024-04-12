@@ -324,6 +324,10 @@ asyncio
   :exc:`asyncio.QueueShutDown`) for queue termination.
   (Contributed by Laurie Opperman and Yves Duprat in :gh:`104228`.)
 
+* Accept a tuple of separators in :meth:`asyncio.StreamReader.readuntil`,
+  stopping when one of them is encountered.
+  (Contributed by Bruce Merry in :gh:`81322`.)
+
 base64
 ------
 

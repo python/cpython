@@ -431,11 +431,6 @@ symbolic links encountered in the path."""
     # the same links.
     seen = {}
 
-    # Whether we're calling lstat() and readlink() to resolve symlinks. If we
-    # encounter an OSError for a symlink loop in non-strict mode, this is
-    # switched off.
-    querying = True
-
     while rest:
         name = rest.pop()
         if name is None:
@@ -453,9 +448,6 @@ symbolic links encountered in the path."""
             newpath = path + name
         else:
             newpath = path + sep + name
-        if not querying:
-            path = newpath
-            continue
         try:
             st = os.lstat(newpath)
             if not stat.S_ISLNK(st.st_mode):
@@ -477,11 +469,8 @@ symbolic links encountered in the path."""
             if strict:
                 # Raise OSError(errno.ELOOP)
                 os.stat(newpath)
-            else:
-                # Return already resolved part + rest of the path unchanged.
-                path = newpath
-                querying = False
-                continue
+            path = newpath
+            continue
         seen[newpath] = None # not resolved symlink
         target = os.readlink(newpath)
         if target.startswith(sep):
