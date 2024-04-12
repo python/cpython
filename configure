@@ -6316,7 +6316,7 @@ fi
 preset_cxx="$CXX"
 if test -z "$CXX"
 then
-        case "$CC" in
+        case "$ac_cv_cc_name" in
         gcc)    if test -n "$ac_tool_prefix"; then
   # Extract the first word of "${ac_tool_prefix}g++", so it can be a program name with args.
 set dummy ${ac_tool_prefix}g++; ac_word=$2
@@ -6533,7 +6533,7 @@ else
   CXX="$ac_cv_path_CXX"
 fi
  ;;
-        clang|*/clang)     if test -n "$ac_tool_prefix"; then
+        clang)             if test -n "$ac_tool_prefix"; then
   # Extract the first word of "${ac_tool_prefix}clang++", so it can be a program name with args.
 set dummy ${ac_tool_prefix}clang++; ac_word=$2
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
@@ -6641,7 +6641,7 @@ else
   CXX="$ac_cv_path_CXX"
 fi
  ;;
-        icc|*/icc)         if test -n "$ac_tool_prefix"; then
+        icc)               if test -n "$ac_tool_prefix"; then
   # Extract the first word of "${ac_tool_prefix}icpc", so it can be a program name with args.
 set dummy ${ac_tool_prefix}icpc; ac_word=$2
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
@@ -7332,7 +7332,7 @@ printf "%s\n" "$EXPORTSYMS" >&6; }
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for GNU ld" >&5
 printf %s "checking for GNU ld... " >&6; }
 ac_prog=ld
-if test "$GCC" = yes; then
+if test "$ac_cv_cc_name" = "gcc"; then
        ac_prog=`$CC -print-prog-name=ld`
 fi
 case `"$ac_prog" -V 2>&1 < /dev/null` in
@@ -8237,8 +8237,8 @@ if test "$Py_OPT" = 'true' ; then
   DEF_MAKE_ALL_RULE="profile-opt"
   REQUIRE_PGO="yes"
   DEF_MAKE_RULE="build_all"
-  case $CC in
-    *gcc*)
+  case $ac_cv_cc_name in
+    gcc)
       { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -fno-semantic-interposition" >&5
 printf %s "checking whether C compiler accepts -fno-semantic-interposition... " >&6; }
 if test ${ax_cv_check_cflags__Werror__fno_semantic_interposition+y}
@@ -8308,7 +8308,7 @@ printf "%s\n" "$PROFILE_TASK" >&6; }
 
 llvm_bin_dir=''
 llvm_path="${PATH}"
-if test "${CC}" = "clang"
+if test "${ac_cv_cc_name}" = "clang"
 then
   clang_bin=`which clang`
   # Some systems install clang elsewhere as a symlink to the real path
@@ -8366,8 +8366,8 @@ printf "%s\n" "no" >&6; }
 fi
 
 if test "$Py_LTO" = 'true' ; then
-  case $CC in
-    *clang*)
+  case $ac_cv_cc_name in
+    clang)
       LDFLAGS_NOLTO="-fno-lto"
                   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -flto=thin" >&5
 printf %s "checking whether C compiler accepts -flto=thin... " >&6; }
@@ -8654,7 +8654,7 @@ fi
       LTOFLAGS="-flto"
       LTOCFLAGS="-flto"
       ;;
-    *gcc*)
+    gcc)
       if test $Py_LTO_POLICY = thin
       then
         as_fn_error $? "thin lto is not supported under gcc compiler." "$LINENO" 5
@@ -8820,10 +8820,8 @@ printf "%s\n" "$as_me: llvm-profdata found via xcrun: ${LLVM_PROFDATA}" >&6;}
 fi
 LLVM_PROF_ERR=no
 
-# GNU Autoconf recommends the use of expr instead of basename.
-CC_BASENAME=$(expr "//$CC" : '.*/\(.*\)')
-case "$CC_BASENAME" in
-  *clang*)
+case "$ac_cv_cc_name" in
+  clang)
     # Any changes made here should be reflected in the GCC+Darwin case below
     PGO_PROF_GEN_FLAG="-fprofile-instr-generate"
     PGO_PROF_USE_FLAG="-fprofile-instr-use=\"\$(shell pwd)/code.profclangd\""
@@ -8838,31 +8836,13 @@ case "$CC_BASENAME" in
       fi
     fi
     ;;
-  *gcc*)
-    case $ac_sys_system in
-      Darwin*)
-        PGO_PROF_GEN_FLAG="-fprofile-instr-generate"
-        PGO_PROF_USE_FLAG="-fprofile-instr-use=\"\$(shell pwd)/code.profclangd\""
-        LLVM_PROF_MERGER=" ${LLVM_PROFDATA} merge -output=\"\$(shell pwd)/code.profclangd\" \"\$(shell pwd)\"/*.profclangr "
-        LLVM_PROF_FILE="LLVM_PROFILE_FILE=\"\$(shell pwd)/code-%p.profclangr\""
-        if test "${LLVM_PROF_FOUND}" = "not-found"
-        then
-          LLVM_PROF_ERR=yes
-          if test "${REQUIRE_PGO}" = "yes"
-	  then
-	    as_fn_error $? "llvm-profdata is required for a --enable-optimizations build but could not be found." "$LINENO" 5
-	  fi
-        fi
-        ;;
-      *)
-        PGO_PROF_GEN_FLAG="-fprofile-generate"
-        PGO_PROF_USE_FLAG="-fprofile-use -fprofile-correction"
-        LLVM_PROF_MERGER="true"
-        LLVM_PROF_FILE=""
-        ;;
-    esac
+  gcc)
+    PGO_PROF_GEN_FLAG="-fprofile-generate"
+    PGO_PROF_USE_FLAG="-fprofile-use -fprofile-correction"
+    LLVM_PROF_MERGER="true"
+    LLVM_PROF_FILE=""
     ;;
-  *icc*)
+  icc)
     PGO_PROF_GEN_FLAG="-prof-gen"
     PGO_PROF_USE_FLAG="-prof-use"
     LLVM_PROF_MERGER="true"
@@ -9228,19 +9208,6 @@ printf "%s\n" "$BOLT_APPLY_FLAGS" >&6; }
 # compiler and platform.  BASECFLAGS tweaks need to be made even if the
 # user set OPT.
 
-case $CC in
-    *clang*)
-        cc_is_clang=1
-        ;;
-    *)
-        if $CC --version 2>&1 | grep -q clang
-        then
-            cc_is_clang=1
-        else
-            cc_is_clang=
-        fi
-esac
-
 save_CFLAGS=$CFLAGS
 CFLAGS="-fstrict-overflow -fno-strict-overflow"
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking if $CC supports -fstrict-overflow and -fno-strict-overflow" >&5
@@ -9359,7 +9326,7 @@ if test "${OPT-unset}" = "unset"
 then
     case $GCC in
     yes)
-        if test -n "${cc_is_clang}"
+        if test "${ac_cv_cc_name}" != "clang"
         then
             # bpo-30104: disable strict aliasing to compile correctly dtoa.c,
             # see Makefile.pre.in for more information
@@ -9537,8 +9504,8 @@ else $as_nop
   BASECFLAGS="$BASECFLAGS $NO_STRICT_OVERFLOW_CFLAGS"
 fi
 
-case $GCC in
-yes)
+case "$ac_cv_cc_name" in
+gcc)
     CFLAGS_NODIST="$CFLAGS_NODIST -std=c11"
 
 
@@ -9656,8 +9623,8 @@ fi
 
     # ICC doesn't recognize the option, but only emits a warning
     ## XXX does it emit an unused result warning and can it be disabled?
-    case "$CC_BASENAME" in #(
-  *icc*) :
+    case "$ac_cv_cc_name" in #(
+  icc) :
     ac_cv_disable_unused_result_warning=no
 
 
@@ -10062,22 +10029,19 @@ fi
     Darwin*)
         # -Wno-long-double, -no-cpp-precomp, and -mno-fused-madd
         # used to be here, but non-Apple gcc doesn't accept them.
-        if test "${CC}" = gcc
-        then
-            { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking which compiler should be used" >&5
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking which compiler should be used" >&5
 printf %s "checking which compiler should be used... " >&6; }
-            case "${UNIVERSALSDK}" in
-            */MacOSX10.4u.sdk)
-                # Build using 10.4 SDK, force usage of gcc when the
-                # compiler is gcc, otherwise the user will get very
-                # confusing error messages when building on OSX 10.6
-                CC=gcc-4.0
-                CPP=cpp-4.0
-                ;;
-            esac
-            { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $CC" >&5
+        case "${UNIVERSALSDK}" in
+        */MacOSX10.4u.sdk)
+            # Build using 10.4 SDK, force usage of gcc when the
+            # compiler is gcc, otherwise the user will get very
+            # confusing error messages when building on OSX 10.6
+            CC=gcc-4.0
+            CPP=cpp-4.0
+            ;;
+        esac
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $CC" >&5
 printf "%s\n" "$CC" >&6; }
-        fi
 
         LIPO_INTEL64_FLAGS=""
         if test "${enable_universalsdk}"
@@ -10237,15 +10201,15 @@ rm -f core conftest.err conftest.$ac_objext conftest.beam \
     ;;
 esac
 
-case "$CC_BASENAME" in
-*mpicc*)
+case "$ac_cv_cc_name" in
+mpicc)
     CFLAGS_NODIST="$CFLAGS_NODIST"
     ;;
-*icc*)
+icc)
     # ICC needs -fp-model strict or floats behave badly
     CFLAGS_NODIST="$CFLAGS_NODIST -fp-model strict"
     ;;
-*xlc*)
+xlc)
     CFLAGS_NODIST="$CFLAGS_NODIST -qalias=noansi -qmaxmem=-1"
     ;;
 esac
@@ -12763,7 +12727,7 @@ then
 		LDSHARED="\$(LIBPL)/ld_so_aix \$(CC) -bI:\$(LIBPL)/python.exp"
 		;;
 	SunOS/5*)
-		if test "$GCC" = "yes" ; then
+		if test "$ac_cv_cc_name" = "gcc" ; then
 			LDSHARED='$(CC) -shared'
 			LDCXXSHARED='$(CXX) -shared'
 		else
@@ -12771,7 +12735,7 @@ then
 			LDCXXSHARED='$(CXX) -G'
 		fi ;;
 	hp*|HP*)
-		if test "$GCC" = "yes" ; then
+		if test "$ac_cv_cc_name" = "gcc" ; then
 			LDSHARED='$(CC) -shared'
 			LDCXXSHARED='$(CXX) -shared'
 		else
@@ -12864,7 +12828,7 @@ then
 		LDSHARED='$(CC) -shared'
 		LDCXXSHARED='$(CXX) -shared';;
 	OpenUNIX*|UnixWare*)
-		if test "$GCC" = "yes" ; then
+		if test "$ac_cv_cc_name" = "gcc" ; then
 			LDSHARED='$(CC) -shared'
 			LDCXXSHARED='$(CXX) -shared'
 		else
@@ -12908,13 +12872,13 @@ printf %s "checking CCSHARED... " >&6; }
 if test -z "$CCSHARED"
 then
 	case $ac_sys_system/$ac_sys_release in
-	SunOS*) if test "$GCC" = yes;
+	SunOS*) if test "$ac_cv_cc_name" = "gcc";
 		then CCSHARED="-fPIC";
 		elif test `uname -p` = sparc;
 		then CCSHARED="-xcode=pic32";
 		else CCSHARED="-Kpic";
 		fi;;
-	hp*|HP*) if test "$GCC" = yes;
+	hp*|HP*) if test "$ac_cv_cc_name" = "gcc";
 		 then CCSHARED="-fPIC";
 		 else CCSHARED="+z";
 		 fi;;
@@ -12929,12 +12893,12 @@ fi;;
 	FreeBSD*|NetBSD*|OpenBSD*|DragonFly*) CCSHARED="-fPIC";;
 	Haiku*) CCSHARED="-fPIC";;
 	OpenUNIX*|UnixWare*)
-		if test "$GCC" = "yes"
+		if test "$ac_cv_cc_name" = "gcc"
 		then CCSHARED="-fPIC"
 		else CCSHARED="-KPIC"
 		fi;;
 	SCO_SV*)
-		if test "$GCC" = "yes"
+		if test "$ac_cv_cc_name" = "gcc"
 		then CCSHARED="-fPIC"
 		else CCSHARED="-Kpic -belf"
 		fi;;
@@ -12994,8 +12958,8 @@ printf "%s\n" "#define THREAD_STACK_SIZE 0x$stack_size" >>confdefs.h
 		then
 			LINKFORSHARED="-Wl,--export-dynamic"
 		fi;;
-	SunOS/5*) case $CC in
-		  *gcc*)
+	SunOS/5*) case $ac_cv_cc_name in
+		  gcc)
 		    if $CC -Xlinker --help 2>&1 | grep export-dynamic >/dev/null
 		    then
 			LINKFORSHARED="-Xlinker --export-dynamic"
@@ -14632,10 +14596,10 @@ elif test $ac_cv_sizeof_size_t -eq 8; then
     fi
 elif test $ac_cv_sizeof_size_t -eq 4; then
     if test "$ac_cv_gcc_asm_for_x87" = yes -a "$libmpdec_system" != sunos; then
-        case $CC in #(
-  *gcc*) :
+        case $ac_cv_cc_name in #(
+  gcc) :
     libmpdec_machine=ppro ;; #(
-  *clang*) :
+  clang) :
     libmpdec_machine=ppro ;; #(
   *) :
     libmpdec_machine=ansi32
@@ -27433,8 +27397,8 @@ if test "$ac_cv_gcc_asm_for_x87" = yes; then
     # Some versions of gcc miscompile inline asm:
     # http://gcc.gnu.org/bugzilla/show_bug.cgi?id=46491
     # http://gcc.gnu.org/ml/gcc/2010-11/msg00366.html
-    case $CC in
-        *gcc*)
+    case $ac_cv_cc_name in
+        gcc)
             { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for gcc ipa-pure-const bug" >&5
 printf %s "checking for gcc ipa-pure-const bug... " >&6; }
             saved_cflags="$CFLAGS"
