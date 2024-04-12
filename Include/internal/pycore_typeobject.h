@@ -89,7 +89,7 @@ struct types_state {
        Those objects are stored in the PyInterpreterState.types.builtins
        array, at the index corresponding to each specific static builtin
        type.  That index (a size_t value) is stored in the tp_subclasses
-       field (defined as PyObject*).  We re-purposed the now-unused
+       field (defined as void*).  We re-purposed the now-unused
        tp_subclasses to avoid adding another field to PyTypeObject.
 
        The index for each static builtin type isn't statically assigned.
