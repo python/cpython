@@ -5380,8 +5380,8 @@ class TestSignatureDefinitions(unittest.TestCase):
     def test_faulthandler_module_has_signatures(self):
         import faulthandler
         unsupported_signature = {'dump_traceback', 'dump_traceback_later', 'enable'}
-        if os.name == 'posix':
-            unsupported_signature |= {'register'}
+        unsupported_signature |= {name for name in ['register']
+                                  if hasattr(faulthandler, name)}
         self._test_module_has_signatures(faulthandler, unsupported_signature=unsupported_signature)
 
     def test_functools_module_has_signatures(self):
@@ -5419,10 +5419,10 @@ class TestSignatureDefinitions(unittest.TestCase):
 
     def test_os_module_has_signatures(self):
         unsupported_signature = {'chmod', 'get_terminal_size', 'utime'}
-        if os.name == 'posix':
-            unsupported_signature |= {'posix_spawn', 'posix_spawnp', 'register_at_fork'}
-        if os.name == 'nt':
-            unsupported_signature |= {'startfile'}
+        unsupported_signature |= {name for name in
+            ['get_terminal_size', 'posix_spawn', 'posix_spawnp',
+             'register_at_fork', 'startfile']
+            if hasattr(os, name)}
         self._test_module_has_signatures(os, unsupported_signature=unsupported_signature)
 
     def test_pwd_module_has_signatures(self):
@@ -5470,11 +5470,10 @@ class TestSignatureDefinitions(unittest.TestCase):
             'asctime', 'ctime', 'get_clock_info', 'gmtime', 'localtime',
             'strftime', 'strptime'
         }
-        if os.name == 'posix':
-            no_signature |= {'clock_getres', 'clock_settime', 'clock_settime_ns'}
-            for name in ['pthread_getcpuclockid']:
-                if hasattr(time, name):
-                    no_signature.add(name)
+        no_signature |= {name for name in
+            ['clock_getres', 'clock_settime', 'clock_settime_ns',
+             'pthread_getcpuclockid']
+            if hasattr(time, name)}
         self._test_module_has_signatures(time, no_signature)
 
     def test_tokenize_module_has_signatures(self):
