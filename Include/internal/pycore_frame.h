@@ -136,6 +136,16 @@ _PyFrame_Initialize(
     for (int i = null_locals_from; i < code->co_nlocalsplus; i++) {
         frame->localsplus[i] = Py_STACK_TAG(NULL);
     }
+
+#ifdef Py_GIL_DISABLED
+    // On GIL disabled, we walk the entire stack in GC. Since stacktop
+    // is not always in sync with the real stack pointer, we have
+    // no choice but to traverse the entire stack.
+    // This just makes sure we don't pass the GC invalid stack values.
+    for (int i = code->co_nlocalsplus; i < code->co_nlocalsplus + code->co_stacksize; i++) {
+        frame->localsplus[i] = Py_STACK_TAG(NULL);
+    }
+#endif
 }
 
 /* Gets the pointer to the locals array

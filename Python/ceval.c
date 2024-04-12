@@ -1451,9 +1451,8 @@ initialize_locals(PyThreadState *tstate, PyFunctionObject *func,
         n = argcount;
     }
     for (j = 0; j < n; j++) {
-        PyObject *x = Py_STACK_UNTAG_BORROWED(args[j]);
         assert(Py_STACK_UNTAG_BORROWED(localsplus[j]) == NULL);
-        localsplus[j] = Py_STACK_TAG(x);
+        localsplus[j] = args[j];
     }
 
     /* Pack other positional arguments into the *args argument */
@@ -1612,7 +1611,7 @@ initialize_locals(PyThreadState *tstate, PyFunctionObject *func,
             for (; i < defcount; i++) {
                 if (Py_STACK_UNTAG_BORROWED(localsplus[m+i]) == NULL) {
                     PyObject *def = defs[i];
-                    localsplus[m+i] = Py_NewRef_Tagged(Py_STACK_TAG(def));
+                    localsplus[m+i] = Py_NewRef_StackRef(Py_STACK_TAG(def));
                 }
             }
         }
@@ -1746,15 +1745,31 @@ _PyEvalFramePushAndInit_UnTagged(PyThreadState *tstate, PyFunctionObject *func,
                         size_t argcount, PyObject *kwnames)
 {
 #if defined(Py_GIL_DISABLED) || defined(Py_TAG_TEST)
-    _PyStackRef *tagged_args_buffer = PyMem_Malloc(sizeof(_PyStackRef) * argcount);
-    if (tagged_args_buffer == NULL) {
-        PyErr_NoMemory();
-        return NULL;
-    }
-    for (size_t i = 0; i < argcount; i++) {
-        tagged_args_buffer[i] = Py_STACK_TAG(args[i]);
-    }
-    return _PyEvalFramePushAndInit(tstate, func, locals, (_PyStackRef const *)tagged_args_buffer, argcount, kwnames);
+//    _PyStackRef tagged_args[MAX_UNTAG_SCRATCH];
+    size_t kw_count = kwnames == NULL ? 0 : PyTuple_GET_SIZE(kwnames);
+    size_t total_argcount = argcount + kw_count;
+//    if (total_argcount < MAX_UNTAG_SCRATCH) {
+        _PyStackRef *tagged_args_buffer = PyMem_Malloc(sizeof(_PyStackRef) * total_argcount);
+        if (tagged_args_buffer == NULL) {
+            PyErr_NoMemory();
+            return NULL;
+        }
+        for (size_t i = 0; i < argcount; i++) {
+            tagged_args_buffer[i] = Py_STACK_TAG(args[i]);
+        }
+        for (size_t i = 0; i < kw_count; i++) {
+            tagged_args_buffer[argcount + i] = Py_STACK_TAG(args[argcount + i]);
+        }
+        return _PyEvalFramePushAndInit(tstate, func, locals, (_PyStackRef const *)tagged_args_buffer, argcount, kwnames);
+//    }
+//    for (size_t i = 0; i < argcount; i++) {
+//        tagged_args[i] = Py_STACK_TAG(args[i]);
+//    }
+//    for (size_t i = 0; i < kw_count; i++) {
+//        tagged_args[argcount + i] = Py_STACK_TAG(args[argcount + i]);
+//    }
+//    return _PyEvalFramePushAndInit(tstate, func, locals, (_PyStackRef const *)tagged_args, argcount, kwnames);
+
 #else
     assert(Py_TAG == 0);
     return _PyEvalFramePushAndInit(tstate, func, locals, (_PyStackRef const *)args, argcount, kwnames);

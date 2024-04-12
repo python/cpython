@@ -313,18 +313,23 @@ static void
 gc_visit_thread_stacks(struct _stoptheworld_state *stw)
 {
     HEAD_LOCK(&_PyRuntime);
-    PyInterpreterState *interp;
-    PyThreadState *tstate;
-    _Py_FOR_EACH_THREAD(stw, interp, tstate) {
-        _PyStackChunk *curr_chunk = tstate->datastack_chunk;
-        while (curr_chunk != NULL) {
-            for (size_t curr_i = 0; curr_i < curr_chunk->top; curr_i++) {
-                _PyStackRef curr_o = Py_STACK_TAG_UNSAFE(curr_chunk->data[curr_i]);
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    PyThreadState *tstate = _PyThreadState_GET();
+    for (PyThreadState *p = interp->threads.head; p != NULL; p = p->next) {
+        _PyInterpreterFrame *curr_frame = tstate->current_frame;
+        while (curr_frame != NULL) {
+            PyCodeObject *co = (PyCodeObject *)curr_frame->f_executable;
+            for (int i = 0; i < co->co_nlocalsplus + co->co_stacksize; i++) {
+                _PyStackRef curr_o = curr_frame->localsplus[i];
+                // Note: we MUST check that it has deferred bit set before checking the rest.
+                // Otherwise we might read into invalid memory due to non-deferred references
+                // being dead already.
                 if ((curr_o.bits & Py_TAG_DEFERRED) == Py_TAG_DEFERRED) {
-                    gc_add_refs(Py_STACK_UNTAG_OWNED(curr_o), 1);
+//                    fprintf(stderr, "PTR: %p\n", (void *)curr_o.bits);
+                    gc_add_refs(Py_STACK_UNTAG_BORROWED(curr_o), 1);
                 }
             }
-            curr_chunk = curr_chunk->previous;
+            curr_frame = curr_frame->previous;
         }
     }
     HEAD_UNLOCK(&_PyRuntime);

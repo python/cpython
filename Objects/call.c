@@ -1071,7 +1071,8 @@ PyObject_Vectorcall_Tagged(PyObject *callable,
 {
 #if defined(Py_GIL_DISABLED) || defined(Py_TAG_TEST)
     size_t nargs = nargsf & ~PY_VECTORCALL_ARGUMENTS_OFFSET;
-    if (kwnames != NULL && PyTuple_CheckExact(kwnames)) {
+    if (kwnames != NULL) {
+        assert(PyTuple_CheckExact(kwnames));
         nargs += PyTuple_GET_SIZE(kwnames);
     }
     PyObject *args[MAX_UNTAG_SCRATCH];
