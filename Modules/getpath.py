@@ -310,7 +310,10 @@ if ENV_PYTHONEXECUTABLE or ENV___PYVENV_LAUNCHER__:
         # and should not affect base_executable.
         base_executable = f"{dirname(library)}/bin/python{VERSION_MAJOR}.{VERSION_MINOR}"
     else:
-        base_executable = real_executable
+        # Use the real executable as our base, or argv[0] otherwise
+        # (on Windows, argv[0] is likely to be ENV___PYVENV_LAUNCHER__; on
+        # other platforms, real_executable is likely to be empty)
+        base_executable = real_executable or executable
 
     if not real_executable:
         real_executable = base_executable
