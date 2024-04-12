@@ -336,8 +336,8 @@ partial_call(partialobject *pto, PyObject *args, PyObject *kwargs)
 
 PyDoc_STRVAR(partial_doc,
 "partial(func, /, *args, **keywords)\n--\n\n\
-Create a new function with partial application\n\
-of the given arguments and keywords.\n");
+Create a new function with partial application of the given arguments\n\
+and keywords.");
 
 #define OFF(x) offsetof(partialobject, x)
 static PyMemberDef partial_memberlist[] = {
