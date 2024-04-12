@@ -2430,7 +2430,7 @@ _PyObject_SetDeferredRefcount(PyObject *op)
 #ifdef Py_GIL_DISABLED
     assert(PyType_IS_GC(Py_TYPE(op)));
     assert(_Py_IsOwnedByCurrentThread(op));
-    assert( op->ob_ref_shared == 0);
+    assert(op->ob_ref_shared == 0);
     op->ob_gc_bits |= _PyGC_BITS_DEFERRED;
     op->ob_ref_local += 1;
     op->ob_ref_shared = _Py_REF_QUEUED;
