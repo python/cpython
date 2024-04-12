@@ -4594,18 +4594,16 @@ class ClassPropertiesAndMethods(unittest.TestCase):
     def test_not_implemented(self):
         # Testing NotImplemented...
         # all binary methods should be able to return a NotImplemented
-        import operator
 
         def specialmethod(self, other):
             return NotImplemented
 
         def check(expr, x, y):
-            try:
-                exec(expr, {'x': x, 'y': y, 'operator': operator})
-            except TypeError:
-                pass
-            else:
-                self.fail("no TypeError from %r" % (expr,))
+            with (
+                self.subTest(expr=expr, x=x, y=y),
+                self.assertRaises(TypeError)
+            ):
+                exec(expr, {'x': x, 'y': y})
 
         N1 = sys.maxsize + 1    # might trigger OverflowErrors instead of
                                 # TypeErrors
@@ -4632,6 +4630,15 @@ class ClassPropertiesAndMethods(unittest.TestCase):
             check(expr, a, a)
             check(expr, a, N1)
             check(expr, a, N2)
+            B = type('B', (), {rname: specialmethod})
+            b = B()
+            check(expr, b, b)
+            check(expr, a, b)
+            check(expr, b, a)
+            check(expr, b, N1)
+            check(expr, b, N2)
+            check(expr, N1, b)
+            check(expr, N2, b)
             if iexpr:
                 check(iexpr, a, a)
                 check(iexpr, a, N1)
