@@ -162,12 +162,11 @@ _PyStaticType_GetState(PyInterpreterState *interp, PyTypeObject *self)
 static void
 static_builtin_state_init(PyInterpreterState *interp, PyTypeObject *self)
 {
-    if (!static_builtin_index_is_set(self)) {
-        assert(_Py_IsMainInterpreter(interp));
+    if (_Py_IsMainInterpreter(interp)) {
+        assert(!static_builtin_index_is_set(self));
         static_builtin_index_set(self, interp->types.num_builtins_initialized);
     }
     else {
-        assert(!_Py_IsMainInterpreter(interp));
         assert(static_builtin_index_get(self) == \
                 interp->types.num_builtins_initialized);
     }
