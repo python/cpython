@@ -10233,7 +10233,6 @@ else $as_nop
 	BASECFLAGS="$BASECFLAGS -belf -Ki486 -DSCO5"
 	;;
     esac
-    ;;
 
 fi
 
