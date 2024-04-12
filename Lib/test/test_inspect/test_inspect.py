@@ -5379,7 +5379,9 @@ class TestSignatureDefinitions(unittest.TestCase):
 
     def test_faulthandler_module_has_signatures(self):
         import faulthandler
-        unsupported_signature = {'dump_traceback', 'dump_traceback_later', 'enable', 'register'}
+        unsupported_signature = {'dump_traceback', 'dump_traceback_later', 'enable'}
+        if os.name == 'posix':
+            unsupported_signature |= {'register'}
         self._test_module_has_signatures(faulthandler, unsupported_signature=unsupported_signature)
 
     def test_functools_module_has_signatures(self):
@@ -5416,11 +5418,15 @@ class TestSignatureDefinitions(unittest.TestCase):
         self._test_module_has_signatures(operator)
 
     def test_os_module_has_signatures(self):
-        unsupported_signature = {'chmod', 'get_terminal_size', 'posix_spawn', 'posix_spawnp', 'register_at_fork', 'utime'}
+        unsupported_signature = {'chmod', 'get_terminal_size', 'utime'}
+        if os.name == 'posix':
+            unsupported_signature |= {'posix_spawn', 'posix_spawnp', 'register_at_fork'}
+        if os.name == 'nt':
+            unsupported_signature |= {'startfile'}
         self._test_module_has_signatures(os, unsupported_signature=unsupported_signature)
 
     def test_pwd_module_has_signatures(self):
-        import pwd
+        pwd = import_helper.import_module('pwd')
         self._test_module_has_signatures(pwd)
 
     def test_re_module_has_signatures(self):
@@ -5461,10 +5467,14 @@ class TestSignatureDefinitions(unittest.TestCase):
 
     def test_time_module_has_signatures(self):
         no_signature = {
-            'asctime', 'clock_getres', 'clock_settime', 'clock_settime_ns',
-            'ctime', 'get_clock_info', 'gmtime', 'localtime',
-            'pthread_getcpuclockid', 'strftime', 'strptime'
+            'asctime', 'ctime', 'get_clock_info', 'gmtime', 'localtime',
+            'strftime', 'strptime'
         }
+        if os.name == 'posix':
+            no_signature |= {'clock_getres', 'clock_settime', 'clock_settime_ns'}
+            for name in ['pthread_getcpuclockid']:
+                if hasattr(os, name):
+                    no_signature.add(name)
         self._test_module_has_signatures(time, no_signature)
 
     def test_tokenize_module_has_signatures(self):
