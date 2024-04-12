@@ -6110,7 +6110,9 @@ then :
 else $as_nop
 
 cat > conftest.c <<EOF
-#if defined(__INTEL_COMPILER) || defined(__ICC)
+#if defined(__EMSCRIPTEN__)
+  emcc
+#elif defined(__INTEL_COMPILER) || defined(__ICC)
   icc
 #elif defined(__ibmxl__) || defined(__xlc__) || defined(__xlC__)
   xlc
@@ -8650,7 +8652,7 @@ fi
           ;;
       esac
       ;;
-    *emcc*)
+    emcc)
       if test "$Py_LTO_POLICY" != "default"; then
         as_fn_error $? "emcc supports only default lto." "$LINENO" 5
       fi
