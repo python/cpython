@@ -410,7 +410,7 @@ NON_ESCAPING_FUNCTIONS = (
     "Py_XDECREF_STACKREF",
     "Py_INCREF_STACKREF",
     "Py_XINCREF_TAGGED",
-    "Py_NewRef_Tagged",
+    "Py_NewRef_StackRef",
 )
 
 ESCAPING_FUNCTIONS = (

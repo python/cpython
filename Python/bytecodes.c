@@ -1255,7 +1255,7 @@ dummy_func(
             STAT_INC(UNPACK_SEQUENCE, hit);
             PyObject **items = _PyTuple_ITEMS(seq);
             for (int i = oparg; --i >= 0; ) {
-                *values++ = Py_NewRef_Tagged(Py_STACK_TAG(items[i]));
+                *values++ = Py_NewRef_StackRef(Py_STACK_TAG(items[i]));
             }
             DECREF_INPUTS();
         }
@@ -1266,7 +1266,7 @@ dummy_func(
             STAT_INC(UNPACK_SEQUENCE, hit);
             PyObject **items = _PyList_ITEMS(seq);
             for (int i = oparg; --i >= 0; ) {
-                *values++ = Py_NewRef_Tagged(Py_STACK_TAG(items[i]));
+                *values++ = Py_NewRef_StackRef(Py_STACK_TAG(items[i]));
             }
             DECREF_INPUTS();
         }
@@ -1582,7 +1582,7 @@ dummy_func(
             int offset = co->co_nlocalsplus - oparg;
             for (int i = 0; i < oparg; ++i) {
                 PyObject *o = PyTuple_GET_ITEM(closure, i);
-                frame->localsplus[offset + i] = Py_NewRef_Tagged(Py_STACK_TAG(o));
+                frame->localsplus[offset + i] = Py_NewRef_StackRef(Py_STACK_TAG(o));
             }
         }
 
@@ -2069,7 +2069,7 @@ dummy_func(
             // Manipulate stack directly because we exit with DISPATCH_INLINED().
             STACK_SHRINK(1);
             new_frame->localsplus[0] = owner_tagged;
-            new_frame->localsplus[1] = Py_NewRef_Tagged(Py_STACK_TAG(name));
+            new_frame->localsplus[1] = Py_NewRef_StackRef(Py_STACK_TAG(name));
             frame->return_offset = (uint16_t)(next_instr - this_instr);
             DISPATCH_INLINED(new_frame);
         }
@@ -3051,9 +3051,9 @@ dummy_func(
                 args--;
                 total_args++;
                 PyObject *self = ((PyMethodObject *)callable)->im_self;
-                args[0] = Py_NewRef_Tagged(Py_STACK_TAG(self));
+                args[0] = Py_NewRef_StackRef(Py_STACK_TAG(self));
                 PyObject *method = ((PyMethodObject *)callable)->im_func;
-                args[-1] = Py_NewRef_Tagged(Py_STACK_TAG(method));
+                args[-1] = Py_NewRef_StackRef(Py_STACK_TAG(method));
                 Py_DECREF_STACKREF(callable_tagged);
                 callable = method;
                 callable_tagged = Py_STACK_TAG(method);
@@ -3124,9 +3124,9 @@ dummy_func(
             STAT_INC(CALL, hit);
             // Ugly tag and untag because the uop header needs to have consistent type with
             // the rest of the inst. So we can't change it to _PyStackRef.
-            self = Py_STACK_UNTAG_BORROWED(Py_NewRef_Tagged(Py_STACK_TAG(((PyMethodObject *)callable)->im_self)));
+            self = Py_STACK_UNTAG_BORROWED(Py_NewRef_StackRef(Py_STACK_TAG(((PyMethodObject *)callable)->im_self)));
             stack_pointer[-1 - oparg] = Py_STACK_TAG(self);  // Patch stack as it is used by _INIT_CALL_PY_EXACT_ARGS
-            func = Py_STACK_UNTAG_BORROWED(Py_NewRef_Tagged(Py_STACK_TAG(((PyMethodObject *)callable)->im_func)));
+            func = Py_STACK_UNTAG_BORROWED(Py_NewRef_StackRef(Py_STACK_TAG(((PyMethodObject *)callable)->im_func)));
             stack_pointer[-2 - oparg] = Py_STACK_TAG(func);  // This is used by CALL, upon deoptimization
             Py_DECREF_STACKREF(callable_tagged);
         }
@@ -3231,7 +3231,7 @@ dummy_func(
             }
             for (int i = argcount; i < code->co_argcount; i++) {
                 PyObject *def = PyTuple_GET_ITEM(func->func_defaults, i - min_args);
-                new_frame->localsplus[i] = Py_NewRef_Tagged(Py_STACK_TAG(def));
+                new_frame->localsplus[i] = Py_NewRef_StackRef(Py_STACK_TAG(def));
             }
             // Manipulate stack and cache directly since we leave using DISPATCH_INLINED().
             STACK_SHRINK(oparg + 2);
@@ -3244,7 +3244,7 @@ dummy_func(
             DEOPT_IF(null != NULL);
             DEOPT_IF(callable != (PyObject *)&PyType_Type);
             STAT_INC(CALL, hit);
-            res = Py_NewRef_Tagged(Py_STACK_TAG(Py_TYPE(arg)));
+            res = Py_NewRef_StackRef(Py_STACK_TAG(Py_TYPE(arg)));
             Py_DECREF_STACKREF(arg_tagged);
         }
 
@@ -3702,9 +3702,9 @@ dummy_func(
                 args--;
                 total_args++;
                 PyObject *self = ((PyMethodObject *)callable)->im_self;
-                args[0] = Py_NewRef_Tagged(Py_STACK_TAG(self));
+                args[0] = Py_NewRef_StackRef(Py_STACK_TAG(self));
                 PyObject *method = ((PyMethodObject *)callable)->im_func;
-                args[-1] = Py_NewRef_Tagged(Py_STACK_TAG(method));
+                args[-1] = Py_NewRef_StackRef(Py_STACK_TAG(method));
                 Py_DECREF_STACKREF(callable_tagged);
                 callable = method;
                 callable_tagged = Py_STACK_TAG(method);

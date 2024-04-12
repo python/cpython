@@ -181,8 +181,8 @@ Py_NewRef_StackRef_Test(_PyStackRef obj)
     return obj;
 }
 
-#define Py_NewRef_Tagged(op) Py_NewRef_StackRef(op)
-// #define Py_NewRef_Tagged(op) Py_NewRef_StackRef_Test(op)
+#define Py_NewRef_StackRef(op) Py_NewRef_StackRef(op)
+// #define Py_NewRef_StackRef(op) Py_NewRef_StackRef_Test(op)
 
 #ifdef __cplusplus
 }
