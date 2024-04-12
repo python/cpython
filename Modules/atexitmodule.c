@@ -164,7 +164,8 @@ _PyAtExit_Call(PyInterpreterState *interp)
 
 
 PyDoc_STRVAR(atexit_register__doc__,
-"register(func, *args, **kwargs) -> func\n\
+"register($module, func, /, *args, **kwargs)\n\
+--\n\
 \n\
 Register a function to be executed upon normal program termination\n\
 \n\
@@ -221,7 +222,8 @@ atexit_register(PyObject *module, PyObject *args, PyObject *kwargs)
 }
 
 PyDoc_STRVAR(atexit_run_exitfuncs__doc__,
-"_run_exitfuncs() -> None\n\
+"_run_exitfuncs($module, /)\n\
+--\n\
 \n\
 Run all registered exit functions.\n\
 \n\
@@ -236,7 +238,8 @@ atexit_run_exitfuncs(PyObject *module, PyObject *unused)
 }
 
 PyDoc_STRVAR(atexit_clear__doc__,
-"_clear() -> None\n\
+"_clear($module, /)\n\
+--\n\
 \n\
 Clear the list of previously registered exit functions.");
 
@@ -248,7 +251,8 @@ atexit_clear(PyObject *module, PyObject *unused)
 }
 
 PyDoc_STRVAR(atexit_ncallbacks__doc__,
-"_ncallbacks() -> int\n\
+"_ncallbacks($module, /)\n\
+--\n\
 \n\
 Return the number of registered exit functions.");
 
@@ -260,7 +264,8 @@ atexit_ncallbacks(PyObject *module, PyObject *unused)
 }
 
 PyDoc_STRVAR(atexit_unregister__doc__,
-"unregister(func) -> None\n\
+"unregister($module, func, /)\n\
+--\n\
 \n\
 Unregister an exit function which was previously registered using\n\
 atexit.register\n\
