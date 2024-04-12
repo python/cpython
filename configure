@@ -8270,8 +8270,9 @@ if test "$Py_OPT" = 'true' ; then
   DEF_MAKE_ALL_RULE="profile-opt"
   REQUIRE_PGO="yes"
   DEF_MAKE_RULE="build_all"
-  case $ac_cv_cc_name in
-    gcc)
+  if test "x$ac_cv_gcc_compat" = xyes
+then :
+
       { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -fno-semantic-interposition" >&5
 printf %s "checking whether C compiler accepts -fno-semantic-interposition... " >&6; }
 if test ${ax_cv_check_cflags__Werror__fno_semantic_interposition+y}
@@ -8313,8 +8314,8 @@ else $as_nop
   :
 fi
 
-      ;;
-  esac
+
+fi
 elif test "$ac_sys_system" = "Emscripten" -o "$ac_sys_system" = "WASI"; then
       DEF_MAKE_ALL_RULE="build_wasm"
   REQUIRE_PGO="no"
@@ -9537,8 +9538,9 @@ else $as_nop
   BASECFLAGS="$BASECFLAGS $NO_STRICT_OVERFLOW_CFLAGS"
 fi
 
-case "$ac_cv_cc_name" in
-gcc)
+if test "x$ac_cv_gcc_compat" = xyes
+then :
+
     CFLAGS_NODIST="$CFLAGS_NODIST -std=c11"
 
 
@@ -10220,9 +10222,9 @@ rm -f core conftest.err conftest.$ac_objext conftest.beam \
         # end of Darwin* tests
         ;;
     esac
-    ;;
 
-*)
+else $as_nop
+
     case $ac_sys_system in
     OpenUNIX*|UnixWare*)
 	BASECFLAGS="$BASECFLAGS -K pentium,host,inline,loop_unroll,alloca "
@@ -10232,7 +10234,8 @@ rm -f core conftest.err conftest.$ac_objext conftest.beam \
 	;;
     esac
     ;;
-esac
+
+fi
 
 case "$ac_cv_cc_name" in
 mpicc)
@@ -12759,7 +12762,7 @@ then
 		LDSHARED="\$(LIBPL)/ld_so_aix \$(CC) -bI:\$(LIBPL)/python.exp"
 		;;
 	SunOS/5*)
-		if test "$ac_cv_cc_name" = "gcc" ; then
+		if test "$ac_cv_gcc_compat" = "yes" ; then
 			LDSHARED='$(CC) -shared'
 			LDCXXSHARED='$(CXX) -shared'
 		else
@@ -12767,7 +12770,7 @@ then
 			LDCXXSHARED='$(CXX) -G'
 		fi ;;
 	hp*|HP*)
-		if test "$ac_cv_cc_name" = "gcc" ; then
+		if test "$ac_cv_gcc_compat" = "yes" ; then
 			LDSHARED='$(CC) -shared'
 			LDCXXSHARED='$(CXX) -shared'
 		else
@@ -12860,7 +12863,7 @@ then
 		LDSHARED='$(CC) -shared'
 		LDCXXSHARED='$(CXX) -shared';;
 	OpenUNIX*|UnixWare*)
-		if test "$ac_cv_cc_name" = "gcc" ; then
+		if test "$ac_cv_gcc_compat" = "yes" ; then
 			LDSHARED='$(CC) -shared'
 			LDCXXSHARED='$(CXX) -shared'
 		else
@@ -12904,13 +12907,13 @@ printf %s "checking CCSHARED... " >&6; }
 if test -z "$CCSHARED"
 then
 	case $ac_sys_system/$ac_sys_release in
-	SunOS*) if test "$ac_cv_cc_name" = "gcc";
+	SunOS*) if test "$ac_cv_gcc_compat" = "yes";
 		then CCSHARED="-fPIC";
 		elif test `uname -p` = sparc;
 		then CCSHARED="-xcode=pic32";
 		else CCSHARED="-Kpic";
 		fi;;
-	hp*|HP*) if test "$ac_cv_cc_name" = "gcc";
+	hp*|HP*) if test "$ac_cv_gcc_compat" = "yes";
 		 then CCSHARED="-fPIC";
 		 else CCSHARED="+z";
 		 fi;;
@@ -12925,12 +12928,12 @@ fi;;
 	FreeBSD*|NetBSD*|OpenBSD*|DragonFly*) CCSHARED="-fPIC";;
 	Haiku*) CCSHARED="-fPIC";;
 	OpenUNIX*|UnixWare*)
-		if test "$ac_cv_cc_name" = "gcc"
+		if test "$ac_cv_gcc_compat" = "yes"
 		then CCSHARED="-fPIC"
 		else CCSHARED="-KPIC"
 		fi;;
 	SCO_SV*)
-		if test "$ac_cv_cc_name" = "gcc"
+		if test "$ac_cv_gcc_compat" = "yes"
 		then CCSHARED="-fPIC"
 		else CCSHARED="-Kpic -belf"
 		fi;;
@@ -12990,13 +12993,13 @@ printf "%s\n" "#define THREAD_STACK_SIZE 0x$stack_size" >>confdefs.h
 		then
 			LINKFORSHARED="-Wl,--export-dynamic"
 		fi;;
-	SunOS/5*) case $ac_cv_cc_name in
-		  gcc)
+    SunOS/5*) if test "$ac_cv_gcc_compat" = "yes"; then
 		    if $CC -Xlinker --help 2>&1 | grep export-dynamic >/dev/null
 		    then
 			LINKFORSHARED="-Xlinker --export-dynamic"
 		    fi;;
-		  esac;;
+        fi
+		;;
 	CYGWIN*)
 		if test $enable_shared = "no"
 		then

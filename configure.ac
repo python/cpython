@@ -1811,14 +1811,12 @@ if test "$Py_OPT" = 'true' ; then
   DEF_MAKE_ALL_RULE="profile-opt"
   REQUIRE_PGO="yes"
   DEF_MAKE_RULE="build_all"
-  case $ac_cv_cc_name in
-    gcc)
+  AS_VAR_IF([ac_cv_gcc_compat], [yes], [
       AX_CHECK_COMPILE_FLAG([-fno-semantic-interposition],[
       CFLAGS_NODIST="$CFLAGS_NODIST -fno-semantic-interposition"
       LDFLAGS_NODIST="$LDFLAGS_NODIST -fno-semantic-interposition"
       ], [], [-Werror])
-      ;;
-  esac
+  ])
 elif test "$ac_sys_system" = "Emscripten" -o "$ac_sys_system" = "WASI"; then
   dnl Emscripten does not support shared extensions yet. Build
   dnl "python.[js,wasm]", "pybuilddir.txt", and "platform" files.
@@ -2389,8 +2387,7 @@ AS_VAR_IF([with_strict_overflow], [yes],
           [BASECFLAGS="$BASECFLAGS $STRICT_OVERFLOW_CFLAGS"],
           [BASECFLAGS="$BASECFLAGS $NO_STRICT_OVERFLOW_CFLAGS"])
 
-case "$ac_cv_cc_name" in
-gcc)
+AS_VAR_IF([ac_cv_gcc_compat], [yes], [
     CFLAGS_NODIST="$CFLAGS_NODIST -std=c11"
 
     PY_CHECK_CC_WARNING([enable], [extra], [if we can add -Wextra])
@@ -2660,9 +2657,7 @@ gcc)
         # end of Darwin* tests
         ;;
     esac
-    ;;
-
-*)
+], [
     case $ac_sys_system in
     OpenUNIX*|UnixWare*)
 	BASECFLAGS="$BASECFLAGS -K pentium,host,inline,loop_unroll,alloca "
@@ -2672,7 +2667,7 @@ gcc)
 	;;
     esac
     ;;
-esac
+])
 
 case "$ac_cv_cc_name" in
 mpicc)
@@ -3290,7 +3285,7 @@ then
 		LDSHARED="\$(LIBPL)/ld_so_aix \$(CC) -bI:\$(LIBPL)/python.exp"
 		;;
 	SunOS/5*)
-		if test "$ac_cv_cc_name" = "gcc" ; then
+		if test "$ac_cv_gcc_compat" = "yes" ; then
 			LDSHARED='$(CC) -shared'
 			LDCXXSHARED='$(CXX) -shared'
 		else
@@ -3298,7 +3293,7 @@ then
 			LDCXXSHARED='$(CXX) -G'
 		fi ;;
 	hp*|HP*)
-		if test "$ac_cv_cc_name" = "gcc" ; then
+		if test "$ac_cv_gcc_compat" = "yes" ; then
 			LDSHARED='$(CC) -shared'
 			LDCXXSHARED='$(CXX) -shared'
 		else
@@ -3391,7 +3386,7 @@ then
 		LDSHARED='$(CC) -shared'
 		LDCXXSHARED='$(CXX) -shared';;
 	OpenUNIX*|UnixWare*)
-		if test "$ac_cv_cc_name" = "gcc" ; then
+		if test "$ac_cv_gcc_compat" = "yes" ; then
 			LDSHARED='$(CC) -shared'
 			LDCXXSHARED='$(CXX) -shared'
 		else
@@ -3431,13 +3426,13 @@ AC_MSG_CHECKING([CCSHARED])
 if test -z "$CCSHARED"
 then
 	case $ac_sys_system/$ac_sys_release in
-	SunOS*) if test "$ac_cv_cc_name" = "gcc";
+	SunOS*) if test "$ac_cv_gcc_compat" = "yes";
 		then CCSHARED="-fPIC";
 		elif test `uname -p` = sparc;
 		then CCSHARED="-xcode=pic32";
 		else CCSHARED="-Kpic";
 		fi;;
-	hp*|HP*) if test "$ac_cv_cc_name" = "gcc";
+	hp*|HP*) if test "$ac_cv_gcc_compat" = "yes";
 		 then CCSHARED="-fPIC";
 		 else CCSHARED="+z";
 		 fi;;
@@ -3449,12 +3444,12 @@ then
 	FreeBSD*|NetBSD*|OpenBSD*|DragonFly*) CCSHARED="-fPIC";;
 	Haiku*) CCSHARED="-fPIC";;
 	OpenUNIX*|UnixWare*)
-		if test "$ac_cv_cc_name" = "gcc"
+		if test "$ac_cv_gcc_compat" = "yes"
 		then CCSHARED="-fPIC"
 		else CCSHARED="-KPIC"
 		fi;;
 	SCO_SV*)
-		if test "$ac_cv_cc_name" = "gcc"
+		if test "$ac_cv_gcc_compat" = "yes"
 		then CCSHARED="-fPIC"
 		else CCSHARED="-Kpic -belf"
 		fi;;
@@ -3512,13 +3507,13 @@ then
 		then
 			LINKFORSHARED="-Wl,--export-dynamic"
 		fi;;
-	SunOS/5*) case $ac_cv_cc_name in
-		  gcc)
+    SunOS/5*) if test "$ac_cv_gcc_compat" = "yes"; then
 		    if $CC -Xlinker --help 2>&1 | grep export-dynamic >/dev/null
 		    then
 			LINKFORSHARED="-Xlinker --export-dynamic"
 		    fi;;
-		  esac;;
+        fi
+		;;
 	CYGWIN*)
 		if test $enable_shared = "no"
 		then
