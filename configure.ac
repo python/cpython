@@ -3511,7 +3511,7 @@ then
 		    if $CC -Xlinker --help 2>&1 | grep export-dynamic >/dev/null
 		    then
 			LINKFORSHARED="-Xlinker --export-dynamic"
-		    fi;;
+		    fi
         fi
 		;;
 	CYGWIN*)

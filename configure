@@ -12997,7 +12997,7 @@ printf "%s\n" "#define THREAD_STACK_SIZE 0x$stack_size" >>confdefs.h
 		    if $CC -Xlinker --help 2>&1 | grep export-dynamic >/dev/null
 		    then
 			LINKFORSHARED="-Xlinker --export-dynamic"
-		    fi;;
+		    fi
         fi
 		;;
 	CYGWIN*)
