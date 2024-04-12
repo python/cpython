@@ -548,9 +548,11 @@ Glossary
       when doing I/O.
 
       As of Python 3.13, the GIL can be disabled using the :option:`--disable-gil`
-      build configuration or :envvar:`PYTHON_GIL=0 <PYTHON_GIL>` environment variable. This feature
-      enables improved performance for multi-threaded applications or on
-      multi-core systems. For more details, see :pep:`703`.
+      build configuration. After building Python with this option, code must be
+      run with :option:`-X gil 0` or after setting the :envvar:`PYTHON_GIL=0`
+      environment variable. This feature enables improved performance for
+      multi-threaded applications and makes it easier to use multi-core CPUs
+      efficiently. For more details, see :pep:`703`.
 
    hash-based pyc
       A bytecode cache file that uses the hash rather than the last-modified
