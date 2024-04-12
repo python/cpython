@@ -2723,7 +2723,7 @@ PyTrash_thread_destroy_chain(PyThreadState *tstate)
                tups = [(tup,) for tup in tups]
            del tups
     */
-    assert(tstate->c_recursion_remaining > 50);
+    assert(tstate->c_recursion_remaining > 100);
     tstate->c_recursion_remaining--;
     while (tstate->delete_later) {
         PyObject *op = tstate->delete_later;

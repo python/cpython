@@ -31,8 +31,6 @@ def replaced_module(name, replacement):
 
 class OrderedDictTests:
 
-    maxDiff = None
-
     def test_init(self):
         OrderedDict = self.OrderedDict
         with self.assertRaises(TypeError):
