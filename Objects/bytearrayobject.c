@@ -1210,7 +1210,7 @@ bytearray_index_impl(PyByteArrayObject *self, PyObject *sub,
 /*[clinic input]
 bytearray.rfind = bytearray.find
 
-Return the highest index in B where subsection 'sub' is found, such that 'sub' is contained within B[start,end].
+Return the highest index in B where subsection 'sub' is found, such that 'sub' is contained within B[start:end].
 
 Return -1 on failure.
 [clinic start generated code]*/
