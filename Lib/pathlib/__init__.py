@@ -584,26 +584,12 @@ class Path(_abc.PathBase, PurePath):
         The children are yielded in arbitrary order, and the
         special entries '.' and '..' are not included.
         """
-        return (self._make_child_relpath(name) for name in os.listdir(self))
-
-
-    def _make_child_relpath(self, name):
-        if not name:
-            return self
-        path_str = str(self)
-        tail = self._tail
-        if tail:
-            path_str = f'{path_str}{self.parser.sep}{name}'
-        elif path_str != '.':
-            path_str = f'{path_str}{name}'
-        else:
-            path_str = name
-        path = self.with_segments(path_str)
-        path._str = path_str
-        path._drv = self.drive
-        path._root = self.root
-        path._tail_cached = tail + [name]
-        return path
+        root_dir = str(self)
+        with os.scandir(root_dir) as scandir_it:
+            paths = [entry.path for entry in scandir_it]
+        if root_dir == '.':
+            paths = map(self._remove_leading_dot, paths)
+        return map(self._from_parsed_string, paths)
 
     def glob(self, pattern, *, case_sensitive=None, recurse_symlinks=False):
         """Iterate over this subtree and yield all existing files (of any
