@@ -569,7 +569,7 @@ from consideration as a field and is ignored by the dataclass
 mechanisms.  Such ``ClassVar`` pseudo-fields are not returned by the
 module-level :func:`fields` function.
 
-.. _dataclasses-init-only:
+.. _dataclasses-init-only-variables:
 
 Init-only variables
 -------------------
