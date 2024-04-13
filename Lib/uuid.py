@@ -579,6 +579,14 @@ except ImportError:
     _UuidCreate = None
 
 
+def _load_system_functions():
+    """[DEPRECATED] no-op since Python 3.9."""
+    import warnings
+    warnings.warn("This private function will go away by Python 3.15;"
+                  " it has been a no-op since 3.9.", DeprecationWarning,
+                  stacklevel=2)
+
+
 def _unix_getnode():
     """Get the hardware address on Unix using the _uuid extension module."""
     if _generate_time_safe:
