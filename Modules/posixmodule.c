@@ -5470,20 +5470,16 @@ os__path_islink_impl(PyObject *module, PyObject *path)
 /*[clinic input]
 os._path_normpath
 
-    path: object
+    path: unicode
+    /
 
 Basic path normalization.
 [clinic start generated code]*/
 
 static PyObject *
 os__path_normpath_impl(PyObject *module, PyObject *path)
-/*[clinic end generated code: output=b94d696d828019da input=5e90c39e12549dc0]*/
+/*[clinic end generated code: output=b94d696d828019da input=41e8ebf762cdbef5]*/
 {
-    if (!PyUnicode_Check(path)) {
-        PyErr_Format(PyExc_TypeError, "expected 'str', not '%.200s'",
-            Py_TYPE(path)->tp_name);
-        return NULL;
-    }
     Py_ssize_t len;
     wchar_t *buffer = PyUnicode_AsWideCharString(path, &len);
     if (!buffer) {
@@ -5499,22 +5495,17 @@ os__path_normpath_impl(PyObject *module, PyObject *path)
 /*[clinic input]
 os._path_abspath
 
-    path: object
-
-    start: Py_ssize_t=0
+    path: unicode
+    start: Py_ssize_t
+    /
 
 Make path absolute from character start.
 [clinic start generated code]*/
 
 static PyObject *
 os__path_abspath_impl(PyObject *module, PyObject *path, Py_ssize_t start)
-/*[clinic end generated code: output=69e536dbe18ecf3a input=29df0995bc21a9cf]*/
+/*[clinic end generated code: output=69e536dbe18ecf3a input=ab404a44d616f24a]*/
 {
-    if (!PyUnicode_Check(path)) {
-        PyErr_Format(PyExc_TypeError, "expected 'str', not '%.200s'",
-            Py_TYPE(path)->tp_name);
-        return NULL;
-    }
     Py_ssize_t len;
     wchar_t *buffer = PyUnicode_AsWideCharString(path, &len);
     if (!buffer) {

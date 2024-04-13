@@ -404,14 +404,14 @@ else:
         path = os.fspath(path)
         if isinstance(path, bytes):
             if path.startswith(b'/'):
-                return os.fsencode(_path_abspath(os.fsdecode(path)))
+                return os.fsencode(_path_abspath(os.fsdecode(path), 0))
             else:
                 cwd = os.fsdecode(os.getcwdb())
                 path = join(cwd, os.fsdecode(path))
                 return os.fsencode(_path_abspath(path, len(cwd)))
         else:
             if path.startswith('/'):
-                return _path_abspath(path)
+                return _path_abspath(path, 0)
             else:
                 cwd = os.getcwd()
                 path = join(cwd, path)
