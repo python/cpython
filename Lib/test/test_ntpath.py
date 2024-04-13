@@ -1115,6 +1115,8 @@ class TestNtpath(NtpathTestCase):
         self.assertFalse(inspect.isfunction(os.path.islink))
         self.assertTrue(os.path.exists is nt._path_exists)
         self.assertFalse(inspect.isfunction(os.path.exists))
+        self.assertTrue(os.path.lexists is nt._path_lexists)
+        self.assertFalse(inspect.isfunction(os.path.lexists))
 
     @unittest.skipIf(os.name != 'nt', "Dev Drives only exist on Win32")
     def test_isdevdrive(self):

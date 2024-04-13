@@ -899,6 +899,7 @@ try:
     from nt import _path_isfile as isfile
     from nt import _path_islink as islink
     from nt import _path_exists as exists
+    from nt import _path_lexists as lexists
 except ImportError:
     # Use genericpath.* as imported above
     pass
