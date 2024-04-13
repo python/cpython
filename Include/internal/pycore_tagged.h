@@ -43,7 +43,9 @@ typedef union {
     static inline PyObject *
     _Py_STACK_UNTAG_BORROWED(_PyStackRef tagged) {
         PyObject *cleared = ((PyObject *)((tagged).bits & (~Py_TAG)));
-    #ifdef Py_DEBUG
+    // Note: this is useful for debugging, but may not be a valid invariant
+    // as when finalizing things in the GC, references may no longer be valid.
+    #if 0
         if (cleared != NULL && _PyObject_HasDeferredRefcount(cleared)) {
             // Make sure we point to a valid Python object.
             assert(Py_TYPE(cleared) != NULL);
@@ -71,6 +73,8 @@ typedef union {
 #else
     #define Py_STACK_TAG(obj) ((_PyStackRef){.bits = ((uintptr_t)(obj))})
 #endif
+
+#define Py_STACK_TAG_UNSAFE(obj) ((_PyStackRef){.bits = ((uintptr_t)(obj))})
 
 #if defined(Py_TAG_TEST)
     #define Py_STACK_UNTAG_OWNED(tagged) Py_STACK_UNTAG_BORROWED(tagged)
@@ -164,12 +168,15 @@ _Py_untag_stack_owned(PyObject **dst, const _PyStackRef *src, size_t length) {
     #define Py_INCREF_STACKREF(op) Py_INCREF(Py_STACK_UNTAG_BORROWED(op))
 #endif
 
-#define Py_XDECREF_STACKREF(op) \
-    do {                      \
-        if (Py_STACK_UNTAG_BORROWED(op) != NULL) { \
-            Py_DECREF_STACKREF(op); \
-        } \
-    } while (0)
+static inline void
+_Py_XDECREF_STACKREF(_PyStackRef op)
+{
+    if (Py_STACK_UNTAG_BORROWED(op) != NULL) {
+        Py_DECREF_STACKREF(op);
+    }
+}
+
+#define Py_XDECREF_STACKREF(op) _Py_XDECREF_STACKREF(op)
 
 static inline _PyStackRef
 Py_NewRef_StackRef(_PyStackRef obj)

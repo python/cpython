@@ -66,13 +66,13 @@ struct collection_state {
 
 // iterate over a worklist
 #define WORKSTACK_FOR_EACH(stack, op) \
-    for ((op) = (PyObject *)(stack)->head; (op) != NULL; (op) = (PyObject *)(op)->ob_tid)
+    for ((op) = Py_STACK_TAG_UNSAFE((stack)->head); Py_STACK_UNTAG_BORROWED(op) != NULL; (op) = Py_STACK_TAG_UNSAFE(Py_STACK_UNTAG_BORROWED(op)->ob_tid))
 
 // iterate over a worklist with support for removing the current object
 #define WORKSTACK_FOR_EACH_ITER(stack, iter, op) \
-    for (worklist_iter_init((iter), &(stack)->head), (op) = (PyObject *)(*(iter)->ptr); \
-         (op) != NULL; \
-         worklist_iter_init((iter), (iter)->next), (op) = (PyObject *)(*(iter)->ptr))
+    for (worklist_iter_init((iter), &(stack)->head), (op) = Py_STACK_TAG_UNSAFE(*(iter)->ptr); \
+         Py_STACK_UNTAG_BORROWED(op) != NULL; \
+         worklist_iter_init((iter), (iter)->next), (op) = Py_STACK_TAG_UNSAFE(*(iter)->ptr))
 
 static void
 worklist_push(struct worklist *worklist, PyObject *op)
@@ -304,7 +304,6 @@ gc_visit_thread_stacks(struct _stoptheworld_state *stw)
 {
     HEAD_LOCK(&_PyRuntime);
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    PyThreadState *tstate = _PyThreadState_GET();
     for (PyThreadState *p = interp->threads.head; p != NULL; p = p->next) {
         _PyInterpreterFrame *curr_frame = p->current_frame;
         while (curr_frame != NULL) {
@@ -315,7 +314,6 @@ gc_visit_thread_stacks(struct _stoptheworld_state *stw)
                 // Otherwise we might read into invalid memory due to non-deferred references
                 // being dead already.
                 if ((curr_o.bits & Py_TAG_DEFERRED) == Py_TAG_DEFERRED) {
-//                    fprintf(stderr, "PTR: %p\n", (void *)curr_o.bits);
                     gc_add_refs(Py_STACK_UNTAG_BORROWED(curr_o), 1);
                 }
             }
@@ -378,8 +376,8 @@ process_delayed_frees(PyInterpreterState *interp)
 }
 
 // Subtract an incoming reference from the computed "gc_refs" refcount.
-static int
-visit_decref(PyObject *op, void *arg)
+int
+_Py_visit_decref(PyObject *op, void *arg)
 {
     if (_PyObject_GC_IS_TRACKED(op) && !_Py_IsImmortal(op)) {
         // If update_refs hasn't reached this object yet, mark it
@@ -446,7 +444,7 @@ update_refs(const mi_heap_t *heap, const mi_heap_area_t *area,
     // Subtract internal references from ob_tid. Objects with ob_tid > 0
     // are directly reachable from outside containers, and so can't be
     // collected.
-    Py_TYPE(op)->tp_traverse(op, visit_decref, NULL);
+    Py_TYPE(op)->tp_traverse(op, _Py_visit_decref, NULL);
     return true;
 }
 
@@ -611,9 +609,9 @@ move_legacy_finalizer_reachable(struct collection_state *state)
 {
     // Clear the reachable bit on all objects transitively reachable
     // from the objects with legacy finalizers.
-    PyObject *op;
+    _PyStackRef op;
     WORKSTACK_FOR_EACH(&state->legacy_finalizers, op) {
-        if (mark_reachable(op) < 0) {
+        if (mark_reachable(Py_STACK_UNTAG_BORROWED(op)) < 0) {
             return -1;
         }
     }
@@ -622,9 +620,9 @@ move_legacy_finalizer_reachable(struct collection_state *state)
     // finalizer worklist.
     struct worklist_iter iter;
     WORKSTACK_FOR_EACH_ITER(&state->unreachable, &iter, op) {
-        if (!gc_is_unreachable(op)) {
+        if (!gc_is_unreachable(Py_STACK_UNTAG_BORROWED(op))) {
             worklist_remove(&iter);
-            worklist_push(&state->legacy_finalizers, op);
+            worklist_push(&state->legacy_finalizers, Py_STACK_UNTAG_BORROWED(op));
         }
     }
 
@@ -636,8 +634,27 @@ move_legacy_finalizer_reachable(struct collection_state *state)
 static void
 clear_weakrefs(struct collection_state *state)
 {
-    PyObject *op;
-    WORKSTACK_FOR_EACH(&state->unreachable, op) {
+    _PyStackRef op_tagged;
+    WORKSTACK_FOR_EACH(&state->unreachable, op_tagged) {
+        PyObject *op = Py_STACK_UNTAG_BORROWED(op_tagged);
+        if (PyGen_CheckExact(op) ||
+            PyCoro_CheckExact(op) ||
+            PyAsyncGen_CheckExact(op)) {
+            // Ensure any non-refcounted pointers to cyclic trash are converted
+            // to refcounted pointers. This prevents bugs where the generator is
+            // freed after its function object.
+            PyGenObject *gen = (PyGenObject *)op;
+            _PyInterpreterFrame *frame = (_PyInterpreterFrame *)(gen->gi_iframe);
+            for (int i = 0; i < frame->stacktop; i++) {
+                _PyStackRef curr_o = frame->localsplus[i];
+                // Note: we MUST check that it has deferred bit set before checking the rest.
+                // Otherwise we might read into invalid memory due to non-deferred references
+                // being dead already.
+                if ((curr_o.bits & Py_TAG_DEFERRED) == Py_TAG_DEFERRED) {
+                    gc_add_refs(Py_STACK_UNTAG_OWNED(curr_o), 1);
+                }
+            }
+        }
         if (PyWeakref_Check(op)) {
             // Clear weakrefs that are themselves unreachable to ensure their
             // callbacks will not be executed later from a `tp_clear()`
@@ -762,8 +779,9 @@ finalize_garbage(struct collection_state *state)
 {
     // NOTE: the unreachable worklist holds a strong reference to the object
     // to prevent it from being deallocated while we are holding on to it.
-    PyObject *op;
-    WORKSTACK_FOR_EACH(&state->unreachable, op) {
+    _PyStackRef op_tagged;
+    WORKSTACK_FOR_EACH(&state->unreachable, op_tagged) {
+        PyObject *op = Py_STACK_UNTAG_BORROWED(op_tagged);
         if (!_PyGC_FINALIZED(op)) {
             destructor finalize = Py_TYPE(op)->tp_finalize;
             if (finalize != NULL) {
@@ -855,8 +873,8 @@ show_stats_each_generations(GCState *gcstate)
 }
 
 // Traversal callback for handle_resurrected_objects.
-static int
-visit_decref_unreachable(PyObject *op, void *data)
+int
+_Py_visit_decref_unreachable(PyObject *op, void *data)
 {
     if (gc_is_unreachable(op) && _PyObject_GC_IS_TRACKED(op)) {
         op->ob_ref_local -= 1;
@@ -872,8 +890,10 @@ handle_resurrected_objects(struct collection_state *state)
     // count difference in ob_ref_local. We can't use ob_tid here because
     // that's already used to store the unreachable worklist.
     PyObject *op;
+    _PyStackRef op_tagged;
     struct worklist_iter iter;
-    WORKSTACK_FOR_EACH_ITER(&state->unreachable, &iter, op) {
+    WORKSTACK_FOR_EACH_ITER(&state->unreachable, &iter, op_tagged) {
+        op = Py_STACK_UNTAG_BORROWED(op_tagged);
         assert(gc_is_unreachable(op));
         assert(_Py_REF_IS_MERGED(op->ob_ref_shared));
 
@@ -903,13 +923,14 @@ handle_resurrected_objects(struct collection_state *state)
 
         traverseproc traverse = Py_TYPE(op)->tp_traverse;
         (void) traverse(op,
-            (visitproc)visit_decref_unreachable,
+            (visitproc)_Py_visit_decref_unreachable,
             NULL);
     }
 
     // Find resurrected objects
     bool any_resurrected = false;
-    WORKSTACK_FOR_EACH(&state->unreachable, op) {
+    WORKSTACK_FOR_EACH(&state->unreachable, op_tagged) {
+        op = Py_STACK_UNTAG_BORROWED(op_tagged);
         int32_t gc_refs = (int32_t)op->ob_ref_local;
         op->ob_ref_local = 0;  // restore ob_ref_local
 
@@ -928,7 +949,8 @@ handle_resurrected_objects(struct collection_state *state)
 
     if (any_resurrected) {
         // Remove resurrected objects from the unreachable list.
-        WORKSTACK_FOR_EACH_ITER(&state->unreachable, &iter, op) {
+        WORKSTACK_FOR_EACH_ITER(&state->unreachable, &iter, op_tagged) {
+            op = Py_STACK_UNTAG_BORROWED(op_tagged);
             if (!gc_is_unreachable(op)) {
                 _PyObject_ASSERT(op, Py_REFCNT(op) > 1);
                 worklist_remove(&iter);
@@ -938,7 +960,8 @@ handle_resurrected_objects(struct collection_state *state)
     }
 
 #ifdef GC_DEBUG
-    WORKSTACK_FOR_EACH(&state->unreachable, op) {
+    WORKSTACK_FOR_EACH(&state->unreachable, op_tagged) {
+        op = Py_STACK_UNTAG_BORROWED(op_tagged);
         _PyObject_ASSERT(op, gc_is_unreachable(op));
         _PyObject_ASSERT(op, _PyObject_GC_IS_TRACKED(op));
         _PyObject_ASSERT(op, op->ob_ref_local == 0);
@@ -1083,8 +1106,10 @@ gc_collect_internal(PyInterpreterState *interp, struct collection_state *state)
 
     // Print debugging information.
     if (interp->gc.debug & _PyGC_DEBUG_COLLECTABLE) {
+        _PyStackRef op_tagged;
         PyObject *op;
-        WORKSTACK_FOR_EACH(&state->unreachable, op) {
+        WORKSTACK_FOR_EACH(&state->unreachable, op_tagged) {
+            op = Py_STACK_UNTAG_BORROWED(op_tagged);
             debug_cycle("collectable", op);
         }
     }
