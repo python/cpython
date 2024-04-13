@@ -180,11 +180,12 @@ _deepcopy_dispatch = d = {}
 def _deepcopy_list(x, memo, deepcopy=deepcopy):
     y = []
     memo[id(x)] = y
-    append = y.append
-    for a in x:
-        append(deepcopy(a, memo))
+    y += [deepcopy(a, memo) for a in x]
     return y
+
 d[list] = _deepcopy_list
+
+_nil = object()
 
 def _deepcopy_tuple(x, memo, deepcopy=deepcopy):
     y = [deepcopy(a, memo) for a in x]
@@ -194,6 +195,7 @@ def _deepcopy_tuple(x, memo, deepcopy=deepcopy):
         return memo[id(x)]
     except KeyError:
         pass
+
     for k, j in zip(x, y):
         if k is not j:
             y = tuple(y)
