@@ -399,11 +399,8 @@ class AsyncGenTest(unittest.TestCase):
 
         with self.assertWarns(DeprecationWarning):
             x = gen().athrow(GeneratorExit, GeneratorExit(), None)
-        with self.assertWarnsRegex(RuntimeWarning,
-                f"coroutine method 'athrow' of '{gen.__qualname__}' "
-                f"was never awaited"):
-            del x
-            gc_collect()
+        with self.assertRaises(GeneratorExit):
+            x.send(None)
 
     def test_async_gen_api_01(self):
         async def gen():
