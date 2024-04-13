@@ -1025,6 +1025,18 @@ rm -f conftest.c conftest.out
 # _POSIX_SOURCE, _POSIX_1_SOURCE, and more
 AC_USE_SYSTEM_EXTENSIONS
 
+AC_CACHE_CHECK([for GCC compatible compiler],
+               [ac_cv_gcc_compat],
+               [AC_PREPROC_IFELSE([AC_LANG_SOURCE([
+                #if !defined(__GNUC__)
+                  #error "not GCC compatible"
+                #else
+                  /* GCC compatible! */
+                #endif
+               ], [])],
+               [ac_cv_gcc_compat=yes],
+               [ac_cv_gcc_compat=no])])
+
 AC_SUBST([CXX])
 
 preset_cxx="$CXX"
