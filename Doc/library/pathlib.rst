@@ -1004,9 +1004,7 @@ call fails (for example because the path doesn't exist).
    .. seealso::
       :ref:`pathlib-pattern-language` documentation.
 
-   This method calls :meth:`Path.is_dir` on the top-level directory and
-   propagates any :exc:`OSError` exception that is raised. Subsequent
-   :exc:`OSError` exceptions from scanning directories are suppressed.
+   This method suppresses any :exc:`OSError` exceptions raised while scanning.
 
    By default, or when the *case_sensitive* keyword-only argument is set to
    ``None``, this method matches paths using platform-specific casing rules:
