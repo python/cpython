@@ -1037,12 +1037,16 @@ AC_CACHE_CHECK([for GCC compatible compiler],
                [ac_cv_gcc_compat=yes],
                [ac_cv_gcc_compat=no])])
 
+
+dnl GNU Autoconf recommends the use of expr instead of basename.
+AS_VAR_SET([CC_BASENAME], [$(expr "//$CC" : '.*/\(.*\)')])
+
 AC_SUBST([CXX])
 
 preset_cxx="$CXX"
 if test -z "$CXX"
 then
-        case "$ac_cv_cc_name" in
+        case "$CC_BASENAME" in
         gcc)    AC_PATH_TOOL([CXX], [g++], [g++], [notfound]) ;;
         cc)     AC_PATH_TOOL([CXX], [c++], [c++], [notfound]) ;;
         clang)             AC_PATH_TOOL([CXX], [clang++], [clang++], [notfound]) ;;
