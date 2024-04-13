@@ -874,8 +874,15 @@ using ``[]``.
               case _:
                   never_call_me(arg)  # OK, arg is of type Never
 
-   ``Never`` can also be used to indicate that a function never returns,
-   but ``NoReturn`` is more explicit.
+   ``Never`` can also be used to indicate that a function never returns::
+
+      from typing import Never
+
+      def stop() -> Never:
+          raise RuntimeError('no way')
+
+   You can also use :data:`NoReturn` for this purpose. Decide which notation
+   you prefer.
 
    .. versionadded:: 3.11
 
@@ -894,6 +901,9 @@ using ``[]``.
 
       def stop() -> NoReturn:
           raise RuntimeError('no way')
+
+   You can also use :data:`Never` for this purpose. Decide which notation
+   you prefer.
 
    ``NoReturn`` can also be used as a
    `bottom type <https://en.wikipedia.org/wiki/Bottom_type>`_, a type that
