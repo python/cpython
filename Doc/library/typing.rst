@@ -1,4 +1,4 @@
-========================================https://github.com/nineteendo/cpython/blob/improve-typing.never-docs/Doc/library/typing.rst
+========================================
 :mod:`typing` --- Support for type hints
 ========================================
 
