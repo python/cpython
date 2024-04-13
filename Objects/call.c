@@ -1059,7 +1059,7 @@ PyObject_VectorcallTaggedSlow(PyObject *callable,
         PyErr_NoMemory();
         return NULL;
     }
-    _Py_untag_stack_owned(args + 1, tagged, nargs);
+    _Py_untag_stack_borrowed(args + 1, tagged, nargs);
     PyObject *res = PyObject_Vectorcall(callable, args + 1, nargsf, kwnames);
     PyMem_Free(args);
     return res;
@@ -1080,7 +1080,7 @@ PyObject_Vectorcall_Tagged(PyObject *callable,
         return PyObject_VectorcallTaggedSlow(callable, tagged, nargsf, kwnames);
     }
     // + 1 to allow args[-1] to be used by PY_VECTORCALL_ARGUMENTS_OFFSET
-    _Py_untag_stack_owned(args + 1, tagged, nargs);
+    _Py_untag_stack_borrowed(args + 1, tagged, nargs);
     return PyObject_Vectorcall(callable, args + 1, nargsf, kwnames);
 #else
     (void)(PyObject_VectorcallTaggedSlow);
@@ -1099,7 +1099,7 @@ PyObject_TypeVectorcall_TaggedSlow(PyTypeObject *callable,
         return NULL;
     }
     // + 1 to allow args[-1] to be used by PY_VECTORCALL_ARGUMENTS_OFFSET
-    _Py_untag_stack_owned(args + 1, tagged, nargs);
+    _Py_untag_stack_borrowed(args + 1, tagged, nargs);
     PyObject *res = callable->tp_vectorcall((PyObject *)callable,
                                             args + 1, nargsf, kwnames);
     PyMem_Free(args);
@@ -1117,7 +1117,7 @@ PyObject_TypeVectorcall_Tagged(PyTypeObject *callable,
         return PyObject_TypeVectorcall_TaggedSlow(callable, tagged, nargsf, kwnames);
     }
     // + 1 to allow args[-1] to be used by PY_VECTORCALL_ARGUMENTS_OFFSET
-    _Py_untag_stack_owned(args + 1, tagged, nargs);
+    _Py_untag_stack_borrowed(args + 1, tagged, nargs);
     return callable->tp_vectorcall((PyObject *)callable, args + 1, nargsf, kwnames);
 #else
     (void)PyObject_TypeVectorcall_TaggedSlow;
@@ -1136,7 +1136,7 @@ PyObject_PyCFunctionFastCall_TaggedSlow(PyCFunctionFast cfunc,
         PyErr_NoMemory();
         return NULL;
     }
-    _Py_untag_stack_owned(args + 1, tagged, nargs);
+    _Py_untag_stack_borrowed(args + 1, tagged, nargs);
     PyObject *res = cfunc(self, args + 1, nargsf);
     PyMem_Free(args);
     return res;
@@ -1153,7 +1153,7 @@ PyObject_PyCFunctionFastCall_Tagged(PyCFunctionFast cfunc,
     if (nargs >= MAX_UNTAG_SCRATCH) {
         return PyObject_PyCFunctionFastCall_TaggedSlow(cfunc, self, tagged, nargsf);
     }
-    _Py_untag_stack_owned(args + 1, tagged, nargs);
+    _Py_untag_stack_borrowed(args + 1, tagged, nargs);
     return cfunc(self, args + 1, nargsf);
 #else
     (void)PyObject_PyCFunctionFastCall_TaggedSlow;
@@ -1173,7 +1173,7 @@ PyObject_PyCFunctionFastWithKeywordsCall_TaggedSlow(PyCFunctionFastWithKeywords 
         PyErr_NoMemory();
         return NULL;
     }
-    _Py_untag_stack_owned(args + 1, tagged, nargs);
+    _Py_untag_stack_borrowed(args + 1, tagged, nargs);
     PyObject *res = cfunc(self, args + 1, nargsf, kwds);
     PyMem_Free(args);
     return res;
@@ -1193,7 +1193,7 @@ PyObject_PyCFunctionFastWithKeywordsCall_Tagged(PyCFunctionFastWithKeywords cfun
             cfunc, self, tagged, nargsf, kwds
         );
     }
-    _Py_untag_stack_owned(args + 1, tagged, nargs);
+    _Py_untag_stack_borrowed(args + 1, tagged, nargs);
     return cfunc(self, args + 1, nargsf, kwds);
 #else
     (void)PyObject_PyCFunctionFastWithKeywordsCall_TaggedSlow;

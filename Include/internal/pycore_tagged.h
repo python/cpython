@@ -102,13 +102,6 @@ _Py_untag_stack_borrowed(PyObject **dst, const _PyStackRef *src, size_t length) 
     }
 }
 
-static inline void
-_Py_untag_stack_owned(PyObject **dst, const _PyStackRef *src, size_t length) {
-    for (size_t i = 0; i < length; i++) {
-        dst[i] = Py_STACK_UNTAG_OWNED(src[i]);
-    }
-}
-
 
 #define Py_XSETREF_STACKREF(dst, src) \
     do { \
@@ -152,6 +145,8 @@ _Py_untag_stack_owned(PyObject **dst, const _PyStackRef *src, size_t length) {
 #else
     #define Py_DECREF_STACKREF(op) Py_DECREF(Py_STACK_UNTAG_BORROWED(op))
 #endif
+
+#define Py_DECREF_STACKREF_OWNED(op) Py_DECREF(Py_STACK_UNTAG_BORROWED(op));
 
 #if defined(Py_GIL_DISABLED)
     static inline void
