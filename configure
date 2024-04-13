@@ -6979,14 +6979,14 @@ case $host/$ac_cv_cc_name in #(
     PY_SUPPORT_TIER=1 ;; #(
     x86_64-apple-darwin*/clang) :
     PY_SUPPORT_TIER=1 ;; #(
+    aarch64-apple-darwin*/clang) :
+    PY_SUPPORT_TIER=1 ;; #(
     i686-pc-windows-msvc/msvc) :
     PY_SUPPORT_TIER=1 ;; #(
     x86_64-pc-windows-msvc/msvc) :
     PY_SUPPORT_TIER=1 ;; #(
 
-  aarch64-apple-darwin*/clang) :
-    PY_SUPPORT_TIER=2 ;; #(
-    aarch64-*-linux-gnu/gcc) :
+  aarch64-*-linux-gnu/gcc) :
     PY_SUPPORT_TIER=2 ;; #(
     aarch64-*-linux-gnu/clang) :
     PY_SUPPORT_TIER=2 ;; #(
