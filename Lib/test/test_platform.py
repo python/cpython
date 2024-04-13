@@ -10,6 +10,14 @@ from unittest import mock
 from test import support
 from test.support import os_helper
 
+try:
+    # Some of the iOS tests need ctypes to operate.
+    # Confirm that the ctypes module is available
+    # is available.
+    import _ctypes
+except ImportError:
+    _ctypes = None
+
 FEDORA_OS_RELEASE = """\
 NAME=Fedora
 VERSION="32 (Thirty Two)"
@@ -228,9 +236,20 @@ class PlatformTest(unittest.TestCase):
             if sys.platform == "android":
                 self.assertEqual(res.system, "Android")
                 self.assertEqual(res.release, platform.android_ver().release)
+            elif sys.platform == "ios":
+                # Platform module needs ctypes for full operation. If ctypes
+                # isn't available, there's no ObjC module, and dummy values are
+                # returned.
+                if _ctypes:
+                    self.assertIn(res.system, {"iOS", "iPadOS"})
+                    self.assertEqual(res.release, platform.ios_ver().release)
+                else:
+                    self.assertEqual(res.system, "")
+                    self.assertEqual(res.release, "")
             else:
                 self.assertEqual(res.system, uname.sysname)
                 self.assertEqual(res.release, uname.release)
+
 
     @unittest.skipUnless(sys.platform.startswith('win'), "windows only test")
     def test_uname_win32_without_wmi(self):
@@ -421,6 +440,56 @@ class PlatformTest(unittest.TestCase):
         else:
             # parent
             support.wait_process(pid, exitcode=0)
+
+    def test_ios_ver(self):
+        result = platform.ios_ver()
+
+        # ios_ver is only fully available on iOS where ctypes is available.
+        if sys.platform == "ios" and _ctypes:
+            system, release, model, is_simulator = result
+            # Result is a namedtuple
+            self.assertEqual(result.system, system)
+            self.assertEqual(result.release, release)
+            self.assertEqual(result.model, model)
+            self.assertEqual(result.is_simulator, is_simulator)
+
+            # We can't assert specific values without reproducing the logic of
+            # ios_ver(), so we check that the values are broadly what we expect.
+
+            # System is either iOS or iPadOS, depending on the test device
+            self.assertIn(system, {"iOS", "iPadOS"})
+
+            # Release is a numeric version specifier with at least 2 parts
+            parts = release.split(".")
+            self.assertGreaterEqual(len(parts), 2)
+            self.assertTrue(all(part.isdigit() for part in parts))
+
+            # If this is a simulator, we get a high level device descriptor
+            # with no identifying model number. If this is a physical device,
+            # we get a model descriptor like "iPhone13,1"
+            if is_simulator:
+                self.assertIn(model, {"iPhone", "iPad"})
+            else:
+                self.assertTrue(
+                    (model.startswith("iPhone") or model.startswith("iPad"))
+                    and "," in model
+                )
+
+            self.assertEqual(type(is_simulator), bool)
+        else:
+            # On non-iOS platforms, calling ios_ver doesn't fail; you get
+            # default values
+            self.assertEqual(result.system, "")
+            self.assertEqual(result.release, "")
+            self.assertEqual(result.model, "")
+            self.assertFalse(result.is_simulator)
+
+            # Check the fallback values can be overridden by arguments
+            override = platform.ios_ver("Foo", "Bar", "Whiz", True)
+            self.assertEqual(override.system, "Foo")
+            self.assertEqual(override.release, "Bar")
+            self.assertEqual(override.model, "Whiz")
+            self.assertTrue(override.is_simulator)
 
     @unittest.skipIf(support.is_emscripten, "Does not apply to Emscripten")
     def test_libc_ver(self):

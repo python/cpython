@@ -29,7 +29,6 @@
 #include "pycore_fileutils.h"     // _PyIsSelectable_fd()
 #include "pycore_pyerrors.h"      // _PyErr_ChainExceptions1()
 #include "pycore_time.h"          // _PyDeadline_Init()
-#include "pycore_weakref.h"       // _PyWeakref_GET_REF()
 
 /* Include symbols from _socket module */
 #include "socketmodule.h"
@@ -392,8 +391,8 @@ typedef enum {
 // Return a borrowed reference.
 static inline PySocketSockObject* GET_SOCKET(PySSLSocket *obj) {
     if (obj->Socket) {
-        PyObject *sock = _PyWeakref_GET_REF(obj->Socket);
-        if (sock != NULL) {
+        PyObject *sock;
+        if (PyWeakref_GetRef(obj->Socket, &sock)) {
             // GET_SOCKET() returns a borrowed reference
             Py_DECREF(sock);
         }
@@ -2205,8 +2204,8 @@ PySSL_get_owner(PySSLSocket *self, void *c)
     if (self->owner == NULL) {
         Py_RETURN_NONE;
     }
-    PyObject *owner = _PyWeakref_GET_REF(self->owner);
-    if (owner == NULL) {
+    PyObject *owner;
+    if (!PyWeakref_GetRef(self->owner, &owner)) {
         Py_RETURN_NONE;
     }
     return owner;
@@ -3166,7 +3165,6 @@ _ssl__SSLContext_impl(PyTypeObject *type, int proto_version)
         result = SSL_CTX_set_cipher_list(ctx, "HIGH:!aNULL:!eNULL");
     }
     if (result == 0) {
-        Py_DECREF(self);
         ERR_clear_error();
         PyErr_SetString(get_state_ctx(self)->PySSLErrorObject,
                         "No cipher can be selected.");
@@ -4434,9 +4432,9 @@ _servername_callback(SSL *s, int *al, void *args)
      * will be passed. If both do not exist only then the C-level object is
      * passed. */
     if (ssl->owner)
-        ssl_socket = _PyWeakref_GET_REF(ssl->owner);
+        PyWeakref_GetRef(ssl->owner, &ssl_socket);
     else if (ssl->Socket)
-        ssl_socket = _PyWeakref_GET_REF(ssl->Socket);
+        PyWeakref_GetRef(ssl->Socket, &ssl_socket);
     else
         ssl_socket = Py_NewRef(ssl);
 

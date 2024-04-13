@@ -1,7 +1,9 @@
 import unittest
 import unittest.mock
+from test import support
 from test.support import (verbose, refcount_test,
-                          cpython_only, requires_subprocess, Py_GIL_DISABLED)
+                          cpython_only, requires_subprocess,
+                          requires_gil_enabled)
 from test.support.import_helper import import_module
 from test.support.os_helper import temp_dir, TESTFN, unlink
 from test.support.script_helper import assert_python_ok, make_script
@@ -16,17 +18,16 @@ import time
 import weakref
 
 try:
+    import _testcapi
     from _testcapi import with_tp_del
+    from _testcapi import ContainerNoGC
 except ImportError:
+    _testcapi = None
     def with_tp_del(cls):
         class C(object):
             def __new__(cls, *args, **kwargs):
-                raise TypeError('requires _testcapi.with_tp_del')
+                raise unittest.SkipTest('requires _testcapi.with_tp_del')
         return C
-
-try:
-    from _testcapi import ContainerNoGC
-except ImportError:
     ContainerNoGC = None
 
 ### Support code
@@ -363,7 +364,7 @@ class GCTests(unittest.TestCase):
     # To minimize variations, though, we first store the get_count() results
     # and check them at the end.
     @refcount_test
-    @unittest.skipIf(Py_GIL_DISABLED, 'needs precise allocation counts')
+    @requires_gil_enabled('needs precise allocation counts')
     def test_get_count(self):
         gc.collect()
         a, b, c = gc.get_count()
@@ -470,7 +471,7 @@ class GCTests(unittest.TestCase):
                 make_nested()
 
         old_switchinterval = sys.getswitchinterval()
-        sys.setswitchinterval(1e-5)
+        support.setswitchinterval(1e-5)
         try:
             exit = []
             threads = []
@@ -681,6 +682,7 @@ class GCTests(unittest.TestCase):
 
     @cpython_only
     @requires_subprocess()
+    @unittest.skipIf(_testcapi is None, "requires _testcapi")
     def test_garbage_at_shutdown(self):
         import subprocess
         code = """if 1:
@@ -815,7 +817,7 @@ class GCTests(unittest.TestCase):
                 any(l is element for element in gc.get_objects())
         )
 
-    @unittest.skipIf(Py_GIL_DISABLED, 'need generational GC')
+    @requires_gil_enabled('need generational GC')
     def test_get_objects_generations(self):
         gc.collect()
         l = []
@@ -1046,7 +1048,7 @@ class IncrementalGCTests(unittest.TestCase):
     def tearDown(self):
         gc.disable()
 
-    @unittest.skipIf(Py_GIL_DISABLED, "Free threading does not support incremental GC")
+    @requires_gil_enabled("Free threading does not support incremental GC")
     # Use small increments to emulate longer running process in a shorter time
     @gc_threshold(200, 10)
     def test_incremental_gc_handles_fast_cycle_creation(self):
@@ -1223,6 +1225,7 @@ class GCCallbackTests(unittest.TestCase):
         self.assertEqual(len(gc.garbage), 0)
 
 
+    @requires_subprocess()
     @unittest.skipIf(BUILD_WITH_NDEBUG,
                      'built with -NDEBUG')
     def test_refcount_errors(self):
