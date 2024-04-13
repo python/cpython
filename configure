@@ -6317,6 +6317,34 @@ fi
 
 
 
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for GCC compatible compiler" >&5
+printf %s "checking for GCC compatible compiler... " >&6; }
+if test ${ac_cv_gcc_compat+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+                #if !defined(__GNUC__)
+                  #error "not GCC compatible"
+                #else
+                  /* GCC compatible! */
+                #endif
+
+_ACEOF
+if ac_fn_c_try_cpp "$LINENO"
+then :
+  ac_cv_gcc_compat=yes
+else $as_nop
+  ac_cv_gcc_compat=no
+fi
+rm -f conftest.err conftest.i conftest.$ac_ext
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_gcc_compat" >&5
+printf "%s\n" "$ac_cv_gcc_compat" >&6; }
+
+
 
 preset_cxx="$CXX"
 if test -z "$CXX"
@@ -11578,7 +11606,6 @@ else $as_nop
 printf "%s\n" "#define size_t unsigned int" >>confdefs.h
 
 fi
-
 
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for uid_t in sys/types.h" >&5
 printf %s "checking for uid_t in sys/types.h... " >&6; }
