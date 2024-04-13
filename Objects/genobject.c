@@ -2222,6 +2222,9 @@ async_gen_athrow_throw(PyAsyncGenAThrow *o, PyObject *const *args, Py_ssize_t na
             PyErr_SetString(PyExc_RuntimeError, ASYNC_GEN_IGNORED_EXIT_MSG);
             return NULL;
         }
+        if (retval == NULL) {
+            o->agt_state = AWAITABLE_STATE_CLOSED;
+        }
         if (PyErr_ExceptionMatches(PyExc_StopAsyncIteration) ||
             PyErr_ExceptionMatches(PyExc_GeneratorExit))
         {
@@ -2232,7 +2235,6 @@ async_gen_athrow_throw(PyAsyncGenAThrow *o, PyObject *const *args, Py_ssize_t na
             */
             PyErr_Clear();
             PyErr_SetNone(PyExc_StopIteration);
-            o->agt_state = AWAITABLE_STATE_CLOSED;
         }
         return retval;
     }
