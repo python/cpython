@@ -892,8 +892,8 @@ def commonpath(paths):
 
 
 try:
-    # The isdir(), isfile(), islink() and exists() implementations in
-    # genericpath use os.stat(). This is overkill on Windows. Use simpler
+    # The isdir(), isfile(), islink(), exists() and lexists() implementations
+    # in genericpath use os.stat(). This is overkill on Windows. Use simpler
     # builtin functions if they are available.
     from nt import _path_isdir as isdir
     from nt import _path_isfile as isfile
