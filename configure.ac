@@ -986,6 +986,9 @@ AC_PROG_GREP
 AC_PROG_SED
 AC_PROG_EGREP
 
+dnl GNU Autoconf recommends the use of expr instead of basename.
+AS_VAR_SET([CC_BASENAME], [$(expr "//$CC" : '.*/\(.*\)')])
+
 dnl detect compiler name
 dnl check for xlc before clang, newer xlc's can use clang as frontend.
 dnl check for GCC last, other compilers set __GNUC__, too.
@@ -1011,9 +1014,7 @@ EOF
 
 if $CPP $CPPFLAGS conftest.c >conftest.out 2>/dev/null; then
   ac_cv_cc_name=`grep -v '^#' conftest.out | grep -v '^ *$' | tr -d ' 	'`
-  if test $(expr "//$CC" : '.*/\(.*\)') = "mpicc"; then
-    ac_cv_cc_name="mpicc"
-  fi
+  AS_VAR_IF([CC_BASENAME], [mpicc], [ac_cv_cc_name=mpicc])
 else
   ac_cv_cc_name="unknown"
 fi
@@ -1036,10 +1037,6 @@ AC_CACHE_CHECK([for GCC compatible compiler],
                ], [])],
                [ac_cv_gcc_compat=yes],
                [ac_cv_gcc_compat=no])])
-
-
-dnl GNU Autoconf recommends the use of expr instead of basename.
-AS_VAR_SET([CC_BASENAME], [$(expr "//$CC" : '.*/\(.*\)')])
 
 AC_SUBST([CXX])
 

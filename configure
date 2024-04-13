@@ -6102,6 +6102,8 @@ printf "%s\n" "$ac_cv_path_EGREP" >&6; }
 
 
 
+CC_BASENAME=$(expr "//$CC" : '.*/\(.*\)')
+
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for CC compiler name" >&5
 printf %s "checking for CC compiler name... " >&6; }
 if test ${ac_cv_cc_name+y}
@@ -6129,9 +6131,10 @@ EOF
 
 if $CPP $CPPFLAGS conftest.c >conftest.out 2>/dev/null; then
   ac_cv_cc_name=`grep -v '^#' conftest.out | grep -v '^ *$' | tr -d ' 	'`
-  if test $(expr "//$CC" : '.*/\(.*\)') = "mpicc"; then
-    ac_cv_cc_name="mpicc"
-  fi
+  if test "x$CC_BASENAME" = xmpicc
+then :
+  ac_cv_cc_name=mpicc
+fi
 else
   ac_cv_cc_name="unknown"
 fi
@@ -6349,7 +6352,7 @@ printf "%s\n" "$ac_cv_gcc_compat" >&6; }
 preset_cxx="$CXX"
 if test -z "$CXX"
 then
-        case "$ac_cv_cc_name" in
+        case "$CC_BASENAME" in
         gcc)    if test -n "$ac_tool_prefix"; then
   # Extract the first word of "${ac_tool_prefix}g++", so it can be a program name with args.
 set dummy ${ac_tool_prefix}g++; ac_word=$2
