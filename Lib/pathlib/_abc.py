@@ -44,8 +44,16 @@ def _is_case_sensitive(parser):
 
 
 class Globber(glob._Globber):
-    lstat = operator.methodcaller('lstat')
     add_slash = operator.methodcaller('joinpath', '')
+
+    @staticmethod
+    def lexists(path):
+        # Emulate os.path.lexists(), which never raises OSError.
+        try:
+            path.stat(follow_symlinks=False)
+        except (OSError, ValueError):
+            return False
+        return True
 
     @staticmethod
     def scandir(path):

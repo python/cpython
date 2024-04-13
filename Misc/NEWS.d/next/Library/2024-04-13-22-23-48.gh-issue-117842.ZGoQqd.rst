@@ -1,0 +1,2 @@
+Speed up :meth:`pathlib.Path.glob` on Windows by using fast implementation
+of :func:`os.path.lexists`.
