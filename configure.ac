@@ -1011,7 +1011,7 @@ EOF
 
 if $CPP $CPPFLAGS conftest.c >conftest.out 2>/dev/null; then
   ac_cv_cc_name=`grep -v '^#' conftest.out | grep -v '^ *$' | tr -d ' 	'`
-  if $(expr "//$CC" : '.*/\(.*\)') = "mpicc"; then
+  if test $(expr "//$CC" : '.*/\(.*\)') = "mpicc"; then
     ac_cv_cc_name="mpicc"
   fi
 else
