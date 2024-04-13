@@ -705,10 +705,8 @@ class PathBase(PurePathBase):
         anchor, parts = pattern._stack
         if anchor:
             raise NotImplementedError("Non-relative patterns are unsupported")
-        if not self.is_dir():
-            return iter([])
         select = self._glob_selector(parts, case_sensitive, recurse_symlinks)
-        return select(self, exists=True)
+        return select(self)
 
     def rglob(self, pattern, *, case_sensitive=None, recurse_symlinks=True):
         """Recursively yield all existing files (of any kind, including

@@ -1,0 +1,3 @@
+Speed up :meth:`pathlib.Path.glob` by omitting an initial
+:meth:`~pathlib.Path.is_dir` call. As a result of this change,
+:meth:`~pathlib.Path.glob` can no longer raise :exc:`OSError`.
