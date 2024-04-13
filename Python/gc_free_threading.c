@@ -651,7 +651,7 @@ clear_weakrefs(struct collection_state *state)
                 // Otherwise we might read into invalid memory due to non-deferred references
                 // being dead already.
                 if ((curr_o.bits & Py_TAG_DEFERRED) == Py_TAG_DEFERRED) {
-                    gc_add_refs(Py_STACK_UNTAG_OWNED(curr_o), 1);
+                    gc_add_refs(Py_STACK_UNTAG_BORROWED(curr_o), 1);
                 }
             }
         }
