@@ -1752,6 +1752,17 @@ class TestUnawaitedWarnings(unittest.TestCase):
             g.aclose()
             gc_collect()
 
+    def test_aclose_throw(self):
+        async def gen():
+            return
+            yield
+
+        class MyException(Exception):
+            pass
+
+        g = gen()
+        with self.assertRaises(MyException):
+            gen.aclose().throw(MyException)
 
 
 if __name__ == "__main__":
