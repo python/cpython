@@ -2393,6 +2393,7 @@ wchar_t *
 _Py_normpath_and_size(wchar_t *path, Py_ssize_t size, Py_ssize_t start, Py_ssize_t *normsize)
 {
     assert(path != NULL);
+    assert(start>=0);
     if ((size < 0 && !path[0]) || size == 0) {
         *normsize = 0;
         return path;
