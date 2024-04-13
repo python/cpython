@@ -54,21 +54,21 @@ Module contents
    The :func:`@dataclass <dataclass>` decorator examines the class to find
    ``field``\s.  A ``field`` is defined as a class variable that has a
    :term:`type annotation <variable annotation>`.  With two
-   exceptions described below, nothing in :func:`@dataclass <!dataclass>`
+   exceptions described below, nothing in :func:`@dataclass <dataclass>`
    examines the type specified in the variable annotation.
 
    The order of the fields in all of the generated methods is the
    order in which they appear in the class definition.
 
-   The :func:`@dataclass <!dataclass>` decorator will add various "dunder" methods to
+   The :func:`@dataclass <dataclass>` decorator will add various "dunder" methods to
    the class, described below.  If any of the added methods already
    exist in the class, the behavior depends on the parameter, as documented
    below. The decorator returns the same class that it is called on; no new
    class is created.
 
-   If :func:`@dataclass <!dataclass>` is used just as a simple decorator with no parameters,
+   If :func:`@dataclass <dataclass>` is used just as a simple decorator with no parameters,
    it acts as if it has the default values documented in this
-   signature.  That is, these three uses of :func:`@dataclass <!dataclass>` are
+   signature.  That is, these three uses of :func:`@dataclass <dataclass>` are
    equivalent::
 
      @dataclass
@@ -131,7 +131,7 @@ Module contents
      intent, the existence and behavior of :meth:`!__eq__`, and the values of
      the *eq* and *frozen* flags in the :func:`@dataclass <dataclass>` decorator.
 
-     By default, :func:`@dataclass <!dataclass>` will not implicitly add a :meth:`~object.__hash__`
+     By default, :func:`@dataclass <dataclass>` will not implicitly add a :meth:`~object.__hash__`
      method unless it is safe to do so.  Neither will it add or change an
      existing explicitly defined :meth:`!__hash__` method.  Setting the class
      attribute ``__hash__ = None`` has a specific meaning to Python, as
@@ -139,7 +139,7 @@ Module contents
 
      If :meth:`!__hash__` is not explicitly defined, or if it is set to ``None``,
      then :func:`@dataclass <dataclass>` *may* add an implicit :meth:`!__hash__` method.
-     Although not recommended, you can force :func:`@dataclass <!dataclass>` to create a
+     Although not recommended, you can force :func:`@dataclass <dataclass>` to create a
      :meth:`!__hash__` method with ``unsafe_hash=True``. This might be the case
      if your class is logically immutable but can still be mutated.
      This is a specialized use case and should be considered carefully.
@@ -572,7 +572,7 @@ Init-only variables
 
 Another place where :func:`@dataclass <dataclass>` inspects a type annotation is to
 determine if a field is an init-only variable.  It does this by seeing
-if the type of a field is of type :data:`!dataclasses.InitVar`.  If a field
+if the type of a field is of type :data:`dataclasses.InitVar`.  If a field
 is an ``InitVar``, it is considered a pseudo-field called an init-only
 field.  As it is not a true field, it is not returned by the
 module-level :func:`fields` function.  Init-only fields are added as
