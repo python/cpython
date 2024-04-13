@@ -2398,7 +2398,7 @@ _Py_normpath_and_size(wchar_t *path, Py_ssize_t size, Py_ssize_t start, Py_ssize
         return path;
     }
     // Start beyond end of path
-    if (start >= size) {
+    if (size >= 0 && start >= size) {
         *normsize = size;
         return path;
     }
@@ -2460,8 +2460,8 @@ _Py_normpath_and_size(wchar_t *path, Py_ssize_t size, Py_ssize_t start, Py_ssize
     }
 #endif /* MS_WINDOWS */
 
-    // Skip past cwd
-    if (path + start > p1) {
+    // Skip past cwd, not allowed if size is unknown
+    if (size >= 0 && path + start > p1) {
         p1 = p2 = path + start;
         lastC = *(p1-1);
     }
