@@ -1956,13 +1956,6 @@ if test "$Py_LTO" = 'true' ; then
           ;;
       esac
       ;;
-    *emcc*)
-      if test "$Py_LTO_POLICY" != "default"; then
-        AC_MSG_ERROR([emcc supports only default lto.])
-      fi
-      LTOFLAGS="-flto"
-      LTOCFLAGS="-flto"
-      ;;
     *gcc*)
       if test $Py_LTO_POLICY = thin
       then

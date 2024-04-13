@@ -8680,13 +8680,6 @@ fi
           ;;
       esac
       ;;
-    *emcc*)
-      if test "$Py_LTO_POLICY" != "default"; then
-        as_fn_error $? "emcc supports only default lto." "$LINENO" 5
-      fi
-      LTOFLAGS="-flto"
-      LTOCFLAGS="-flto"
-      ;;
     *gcc*)
       if test $Py_LTO_POLICY = thin
       then
