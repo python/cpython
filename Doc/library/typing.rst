@@ -874,12 +874,8 @@ using ``[]``.
               case _:
                   never_call_me(arg)  # OK, arg is of type Never
 
-   ``Never`` can also be used to indicate that a function never returns::
-
-      from typing import Never
-
-      def stop() -> Never:
-          raise RuntimeError('no way')
+   ``Never`` can also be used to indicate that a function never returns,
+   but ``NoReturn`` is more explicit.
 
    .. versionadded:: 3.11
 
@@ -906,10 +902,6 @@ using ``[]``.
    equivalently.
 
    .. versionadded:: 3.6.2
-
-   .. deprecated-removed:: 3.13 3.18
-      :data:`NoReturn` is deprecated in favor of the :data:`Never` type.
-      ``NoReturn`` will be removed from ``typing`` in Python 3.18.
 
 .. data:: Self
 
