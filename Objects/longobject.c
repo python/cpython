@@ -6291,7 +6291,7 @@ int.to_bytes
         the most significant byte is at the beginning of the byte array.  If
         byteorder is 'little', the most significant byte is at the end of the
         byte array.  To request the native byte order of the host system, use
-        `sys.byteorder' as the byte order value.  Default is to use 'big'.
+        `sys.byteorder` as the byte order value.  Default is to use 'big'.
     *
     signed as is_signed: bool = False
         Determines whether two's complement is used to represent the integer.
@@ -6304,7 +6304,7 @@ Return an array of bytes representing an integer.
 static PyObject *
 int_to_bytes_impl(PyObject *self, Py_ssize_t length, PyObject *byteorder,
                   int is_signed)
-/*[clinic end generated code: output=89c801df114050a3 input=d42ecfb545039d71]*/
+/*[clinic end generated code: output=89c801df114050a3 input=4d7913fefed31ca7]*/
 {
     int little_endian;
     PyObject *bytes;
@@ -6355,7 +6355,7 @@ int.from_bytes
         the most significant byte is at the beginning of the byte array.  If
         byteorder is 'little', the most significant byte is at the end of the
         byte array.  To request the native byte order of the host system, use
-        `sys.byteorder' as the byte order value.  Default is to use 'big'.
+        `sys.byteorder` as the byte order value.  Default is to use 'big'.
     *
     signed as is_signed: bool = False
         Indicates whether two's complement is used to represent the integer.
@@ -6366,7 +6366,7 @@ Return the integer represented by the given array of bytes.
 static PyObject *
 int_from_bytes_impl(PyTypeObject *type, PyObject *bytes_obj,
                     PyObject *byteorder, int is_signed)
-/*[clinic end generated code: output=efc5d68e31f9314f input=33326dccdd655553]*/
+/*[clinic end generated code: output=efc5d68e31f9314f input=116f52524870b1eb]*/
 {
     int little_endian;
     PyObject *long_obj, *bytes;
