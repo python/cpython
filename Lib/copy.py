@@ -191,10 +191,9 @@ def _deepcopy_tuple(x, memo, deepcopy=deepcopy):
     y = [deepcopy(a, memo) for a in x]
     # We're not going to put the tuple in the memo, but it's still important we
     # check for it, in case the tuple contains recursive mutable structures.
-    try:
-        return memo[id(x)]
-    except KeyError:
-        pass
+    d = memo.get(id(x), _nil)
+    if d is not _nil:
+        return d
 
     for k, j in zip(x, y):
         if k is not j:
