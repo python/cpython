@@ -5503,7 +5503,7 @@ os._path_abspath
 
     start: Py_ssize_t=0
 
-Make path absolute.
+Make path absolute from character start.
 [clinic start generated code]*/
 
 static PyObject *
