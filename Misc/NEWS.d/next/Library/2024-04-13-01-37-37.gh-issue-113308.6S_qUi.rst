@@ -1,0 +1,3 @@
+The do nothing private ``uuid._load_system_functions()`` function has been
+restored to appease a PyPI library that calls it to unblock 3.13 testing by
+others.  It now triggers a :exc:`DeprecationWarning` instead.
