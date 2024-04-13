@@ -1604,6 +1604,7 @@ FutureIter_dealloc(futureiterobject *it)
 
     assert(_PyType_HasFeature((PyTypeObject *)tp, Py_TPFLAGS_HEAPTYPE));
 
+    
     PyHeapTypeObject *ht = (PyHeapTypeObject*)tp;
     PyObject *module = ht->ht_module;
     asyncio_state *state = NULL;
@@ -1611,6 +1612,9 @@ FutureIter_dealloc(futureiterobject *it)
     PyObject_GC_UnTrack(it);
     tp->tp_clear((PyObject *)it);
 
+    // GH-115874: We can't use PyType_GetModuleByDef here as the type might have
+    // already been cleared. This is also why we must check if ht_module != NULL.
+    // Subclasses also cannot make use of the free list.
     if (module && _PyModule_GetDef(module) == &_asynciomodule) {
         state = get_asyncio_state(module);
     }
