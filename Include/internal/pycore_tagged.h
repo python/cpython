@@ -69,7 +69,6 @@ typedef union {
         return ((_PyStackRef){.bits = ((uintptr_t)(obj) | tag)});
     }
     #define Py_STACK_TAG(obj) _Py_STACK_TAG(_PyObject_CAST(obj))
-    // #define Py_STACK_TAG(obj) ((_PyStackRef){.bits = ((uintptr_t)(obj) | Py_TAG_DEFERRED)})
 #else
     #define Py_STACK_TAG(obj) ((_PyStackRef){.bits = ((uintptr_t)(obj))})
 #endif
@@ -180,12 +179,6 @@ Py_NewRef_StackRef(_PyStackRef obj)
     return obj;
 }
 
-static inline _PyStackRef
-Py_NewRef_StackRef_Test(_PyStackRef obj)
-{
-    Py_INCREF(Py_STACK_UNTAG_BORROWED(obj));
-    return obj;
-}
 
 #define Py_NewRef_StackRef(op) Py_NewRef_StackRef(op)
 // #define Py_NewRef_StackRef(op) Py_NewRef_StackRef_Test(op)

@@ -1746,33 +1746,22 @@ _PyEvalFramePushAndInit_UnTagged(PyThreadState *tstate, PyFunctionObject *func,
                         size_t argcount, PyObject *kwnames)
 {
 #if defined(Py_GIL_DISABLED) || defined(Py_TAG_TEST)
-//    _PyStackRef tagged_args[MAX_UNTAG_SCRATCH];
     size_t kw_count = kwnames == NULL ? 0 : PyTuple_GET_SIZE(kwnames);
     size_t total_argcount = argcount + kw_count;
-//    if (total_argcount < MAX_UNTAG_SCRATCH) {
-        _PyStackRef *tagged_args_buffer = PyMem_Malloc(sizeof(_PyStackRef) * total_argcount);
-        if (tagged_args_buffer == NULL) {
-            PyErr_NoMemory();
-            return NULL;
-        }
-        for (size_t i = 0; i < argcount; i++) {
-            tagged_args_buffer[i] = Py_STACK_TAG(args[i]);
-        }
-        for (size_t i = 0; i < kw_count; i++) {
-            tagged_args_buffer[argcount + i] = Py_STACK_TAG(args[argcount + i]);
-        }
-        _PyInterpreterFrame *res = _PyEvalFramePushAndInit(tstate, func, locals, (_PyStackRef const *)tagged_args_buffer, argcount, kwnames);
-        PyMem_Free(tagged_args_buffer);
-        return res;
-//    }
-//    for (size_t i = 0; i < argcount; i++) {
-//        tagged_args[i] = Py_STACK_TAG(args[i]);
-//    }
-//    for (size_t i = 0; i < kw_count; i++) {
-//        tagged_args[argcount + i] = Py_STACK_TAG(args[argcount + i]);
-//    }
-//    return _PyEvalFramePushAndInit(tstate, func, locals, (_PyStackRef const *)tagged_args, argcount, kwnames);
-
+    _PyStackRef *tagged_args_buffer = PyMem_Malloc(sizeof(_PyStackRef) * total_argcount);
+    if (tagged_args_buffer == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+    for (size_t i = 0; i < argcount; i++) {
+        tagged_args_buffer[i] = Py_STACK_TAG(args[i]);
+    }
+    for (size_t i = 0; i < kw_count; i++) {
+        tagged_args_buffer[argcount + i] = Py_STACK_TAG(args[argcount + i]);
+    }
+    _PyInterpreterFrame *res = _PyEvalFramePushAndInit(tstate, func, locals, (_PyStackRef const *)tagged_args_buffer, argcount, kwnames);
+    PyMem_Free(tagged_args_buffer);
+    return res;
 #else
     assert(Py_TAG == 0);
     return _PyEvalFramePushAndInit(tstate, func, locals, (_PyStackRef const *)args, argcount, kwnames);
