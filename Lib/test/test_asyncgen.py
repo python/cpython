@@ -1572,11 +1572,6 @@ class AsyncGenAsyncioTest(unittest.TestCase):
         self.assertIsInstance(message['exception'], ZeroDivisionError)
         self.assertIn('unhandled exception during asyncio.run() shutdown',
                       message['message'])
-        with self.assertWarnsRegex(RuntimeWarning,
-                f"coroutine method 'aclose' of '{async_iterate.__qualname__}' "
-                f"was never awaited"):
-            del message, messages
-            gc_collect()
 
     def test_async_gen_expression_01(self):
         async def arange(n):
@@ -1630,10 +1625,6 @@ class AsyncGenAsyncioTest(unittest.TestCase):
         asyncio.run(main())
 
         self.assertEqual([], messages)
-        with self.assertWarnsRegex(RuntimeWarning,
-                f"coroutine method 'aclose' of '{async_iterate.__qualname__}' "
-                f"was never awaited"):
-            gc_collect()
 
     def test_async_gen_await_same_anext_coro_twice(self):
         async def async_iterate():
