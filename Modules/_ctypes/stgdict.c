@@ -431,11 +431,11 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
     int ms_struct = 0;
     #endif
 
-    if (_PyObject_LookupAttr(type, &_Py_ID(_ms_struct_), &tmp) < 0) {
+    if (PyObject_GetOptionalAttr(type, &_Py_ID(_ms_struct_), &tmp) < 0) {
         return -1;
     }
     if (tmp) {
-        ms_struct = _PyLong_AsInt(tmp);
+        ms_struct = PyLong_AsInt(tmp);
         Py_DECREF(tmp);
         if (PyErr_Occurred()) {
             if (PyErr_ExceptionMatches(PyExc_TypeError) ||
