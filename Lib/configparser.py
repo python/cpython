@@ -553,17 +553,12 @@ class _ReadState:
         self.errors = list()
 
 
-class _Prefixes(types.SimpleNamespace):
-    full : Iterable[str]
-    inline : Iterable[str]
-
-
 class _Line(str):
 
     def __new__(cls, val, *args, **kwargs):
         return super().__new__(cls, val)
 
-    def __init__(self, val, prefixes: _Prefixes):
+    def __init__(self, val, prefixes):
         self.prefixes = prefixes
 
     @functools.cached_property
@@ -656,7 +651,7 @@ class RawConfigParser(MutableMapping):
             else:
                 self._optcre = re.compile(self._OPT_TMPL.format(delim=d),
                                           re.VERBOSE)
-        self._prefixes = _Prefixes(
+        self._prefixes = types.SimpleNamespace(
             full=tuple(comment_prefixes or ()),
             inline=tuple(inline_comment_prefixes or ()),
         )
