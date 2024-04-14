@@ -2303,50 +2303,18 @@ exit:
     return return_value;
 }
 
+#if !defined(MS_WINDOWS)
+
 PyDoc_STRVAR(os__path_abspath__doc__,
-"_path_abspath($module, path, start, /)\n"
+"_path_abspath($module, path, /)\n"
 "--\n"
 "\n"
 "Make path absolute from character start.");
 
 #define OS__PATH_ABSPATH_METHODDEF    \
-    {"_path_abspath", _PyCFunction_CAST(os__path_abspath), METH_FASTCALL, os__path_abspath__doc__},
+    {"_path_abspath", (PyCFunction)os__path_abspath, METH_O, os__path_abspath__doc__},
 
-static PyObject *
-os__path_abspath_impl(PyObject *module, PyObject *path, Py_ssize_t start);
-
-static PyObject *
-os__path_abspath(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
-{
-    PyObject *return_value = NULL;
-    PyObject *path;
-    Py_ssize_t start;
-
-    if (!_PyArg_CheckPositional("_path_abspath", nargs, 2, 2)) {
-        goto exit;
-    }
-    if (!PyUnicode_Check(args[0])) {
-        _PyArg_BadArgument("_path_abspath", "argument 1", "str", args[0]);
-        goto exit;
-    }
-    path = args[0];
-    {
-        Py_ssize_t ival = -1;
-        PyObject *iobj = _PyNumber_Index(args[1]);
-        if (iobj != NULL) {
-            ival = PyLong_AsSsize_t(iobj);
-            Py_DECREF(iobj);
-        }
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        start = ival;
-    }
-    return_value = os__path_abspath_impl(module, path, start);
-
-exit:
-    return return_value;
-}
+#endif /* !defined(MS_WINDOWS) */
 
 PyDoc_STRVAR(os_mkdir__doc__,
 "mkdir($module, /, path, mode=511, *, dir_fd=None)\n"
@@ -12100,6 +12068,10 @@ os__supports_virtual_terminal(PyObject *module, PyObject *Py_UNUSED(ignored))
     #define OS__PATH_ISLINK_METHODDEF
 #endif /* !defined(OS__PATH_ISLINK_METHODDEF) */
 
+#ifndef OS__PATH_ABSPATH_METHODDEF
+    #define OS__PATH_ABSPATH_METHODDEF
+#endif /* !defined(OS__PATH_ABSPATH_METHODDEF) */
+
 #ifndef OS_NICE_METHODDEF
     #define OS_NICE_METHODDEF
 #endif /* !defined(OS_NICE_METHODDEF) */
@@ -12647,4 +12619,4 @@ os__supports_virtual_terminal(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF
     #define OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF
 #endif /* !defined(OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF) */
-/*[clinic end generated code: output=7d41b1bbfe849fe8 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d11f54d12df1df85 input=a9049054013a1b77]*/

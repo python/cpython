@@ -5496,31 +5496,80 @@ os__path_normpath_impl(PyObject *module, PyObject *path)
     return result;
 }
 
+#ifndef MS_WINDOWS
+
 /*[clinic input]
 os._path_abspath
 
-    path: unicode
-    start: Py_ssize_t
+    path: object
     /
 
-Make path absolute from character start.
+Make path absolute.
 [clinic start generated code]*/
 
 static PyObject *
-os__path_abspath_impl(PyObject *module, PyObject *path, Py_ssize_t start)
-/*[clinic end generated code: output=69e536dbe18ecf3a input=ab404a44d616f24a]*/
+os__path_abspath(PyObject *module, PyObject *path)
+/*[clinic end generated code: output=6a6bb40f1ebe86f2 input=21e4ac322da1a31e]*/
 {
-    Py_ssize_t len;
-    wchar_t *buffer = PyUnicode_AsWideCharString(path, &len);
-    if (!buffer) {
+    if (!PyUnicode_Check(path)) {
+        PyErr_Format(PyExc_TypeError, "expected 'str', not '%.200s'",
+            Py_TYPE(path)->tp_name);
         return NULL;
     }
-    Py_ssize_t abs_len;
-    wchar_t *abs_path = _Py_normpath_and_size(buffer, len, start, &abs_len);
-    PyObject *result = PyUnicode_FromWideChar(abs_path, abs_len);
-    PyMem_Free(buffer);
+
+    Py_ssize_t rel_path_len;
+    wchar_t *rel_path = PyUnicode_AsWideCharString(path, &rel_path_len);
+    if (!rel_path) {
+        return NULL;
+    }
+
+    size_t cwd_len;
+    wchar_t *abs_path;
+    Py_ssize_t abs_path_len;
+    if (_Py_isabs(rel_path)) {
+        cwd_len = 0;
+        abs_path = rel_path;
+        abs_path_len = rel_path_len;
+    } else {
+        wchar_t cwd[MAXPATHLEN + 1];
+        cwd[Py_ARRAY_LENGTH(cwd) - 1] = 0;
+        if (!_Py_wgetcwd(cwd, Py_ARRAY_LENGTH(cwd) - 1)) {
+            /* unable to get the current directory */
+            return posix_error();
+        }
+
+        cwd_len = wcslen(cwd);
+        abs_path_len = cwd_len + 1 + rel_path_len + 1;
+        if (abs_path_len > (size_t)PY_SSIZE_T_MAX / sizeof(wchar_t)) {
+            return posix_error();
+        }
+
+        abs_path = *PyMem_RawMalloc(abs_path_len * sizeof(wchar_t));
+        if (!abs_path) {
+            return NULL;
+        }
+
+        // Join cwd & path
+        wchar_t *abs_path_dup = abs_path;
+        memcpy(abs_path_dup, cwd, cwd_len * sizeof(wchar_t));
+        abs_path_dup += cwd_len;
+
+        *abs_path_dup = SEP;
+        abs_path_dup++;
+
+        memcpy(abs_path_dup, rel_path, rel_path_len * sizeof(wchar_t));
+        abs_path_dup += rel_path_len;
+
+        *abs_path_dup = '\0';
+    }
+
+    abs_path = _Py_normpath_and_size(abs_path, abs_path_len, cwd_len, &abs_path_len);
+    PyObject *result = PyUnicode_FromWideChar(abs_path, abs_path_len);
+    PyMem_Free(rel_path);
     return result;
 }
+
+#endif
 
 /*[clinic input]
 os.mkdir
