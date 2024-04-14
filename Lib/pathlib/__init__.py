@@ -169,7 +169,7 @@ class PurePath(_abc.PurePathBase):
             return NotImplemented
 
     def __reduce__(self):
-        return (self.__class__, tuple(self._raw_paths))
+        return self.__class__, tuple(self._raw_paths)
 
     def __repr__(self):
         return "{}({!r})".format(self.__class__.__name__, self.as_posix())
