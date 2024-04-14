@@ -5470,16 +5470,20 @@ os__path_islink_impl(PyObject *module, PyObject *path)
 /*[clinic input]
 os._path_normpath
 
-    path: unicode
-    /
+    path: object
 
 Basic path normalization.
 [clinic start generated code]*/
 
 static PyObject *
 os__path_normpath_impl(PyObject *module, PyObject *path)
-/*[clinic end generated code: output=b94d696d828019da input=41e8ebf762cdbef5]*/
+/*[clinic end generated code: output=b94d696d828019da input=5e90c39e12549dc0]*/
 {
+    if (!PyUnicode_Check(path)) {
+        PyErr_Format(PyExc_TypeError, "expected 'str', not '%.200s'",
+            Py_TYPE(path)->tp_name);
+        return NULL;
+    }
     Py_ssize_t len;
     wchar_t *buffer = PyUnicode_AsWideCharString(path, &len);
     if (!buffer) {

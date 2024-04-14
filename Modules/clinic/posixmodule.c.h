@@ -2249,28 +2249,54 @@ exit:
 #endif /* defined(MS_WINDOWS) */
 
 PyDoc_STRVAR(os__path_normpath__doc__,
-"_path_normpath($module, path, /)\n"
+"_path_normpath($module, /, path)\n"
 "--\n"
 "\n"
 "Basic path normalization.");
 
 #define OS__PATH_NORMPATH_METHODDEF    \
-    {"_path_normpath", (PyCFunction)os__path_normpath, METH_O, os__path_normpath__doc__},
+    {"_path_normpath", _PyCFunction_CAST(os__path_normpath), METH_FASTCALL|METH_KEYWORDS, os__path_normpath__doc__},
 
 static PyObject *
 os__path_normpath_impl(PyObject *module, PyObject *path);
 
 static PyObject *
-os__path_normpath(PyObject *module, PyObject *arg)
+os__path_normpath(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(path), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"path", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "_path_normpath",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
     PyObject *path;
 
-    if (!PyUnicode_Check(arg)) {
-        _PyArg_BadArgument("_path_normpath", "argument", "str", arg);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
-    path = arg;
+    path = args[0];
     return_value = os__path_normpath_impl(module, path);
 
 exit:
@@ -12621,4 +12647,4 @@ os__supports_virtual_terminal(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF
     #define OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF
 #endif /* !defined(OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF) */
-/*[clinic end generated code: output=9fab569d9946cccb input=a9049054013a1b77]*/
+/*[clinic end generated code: output=7d41b1bbfe849fe8 input=a9049054013a1b77]*/
