@@ -1,7 +1,6 @@
 import os
 import sys
 import unittest
-from ctypes import *
 from ctypes import (CDLL, Structure, sizeof, POINTER, byref, alignment,
                     LittleEndianStructure, BigEndianStructure,
                     c_byte, c_ubyte, c_char, c_char_p, c_void_p, c_wchar,
@@ -58,8 +57,6 @@ class BITS_msvc(Structure):
 func_msvc = CDLL(_ctypes_test.__file__).unpack_bitfields_msvc
 func_msvc.argtypes = POINTER(BITS_msvc), c_char
 
-##for n in "ABCDEFGHIMNOPQRS":
-##    print n, hex(getattr(BITS, n).size), getattr(BITS, n).offset
 
 class C_Test(unittest.TestCase):
 
