@@ -56,6 +56,8 @@ class PosixPathTest(unittest.TestCase):
         self.assertEqual(fn(b"/foo", b"bar", b"baz"),          b"/foo/bar/baz")
         self.assertEqual(fn(b"/foo/", b"bar/", b"baz/"),       b"/foo/bar/baz/")
 
+        self.assertEqual(fn("a", ""),          "a/")
+        self.assertEqual(fn("a", "", ""),      "a/")
         self.assertEqual(fn("a", "b"),         "a/b")
         self.assertEqual(fn("a", "b/"),        "a/b/")
         self.assertEqual(fn("a/", "b"),        "a/b")
