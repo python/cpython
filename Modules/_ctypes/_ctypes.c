@@ -5721,7 +5721,11 @@ _ctypes_add_types(PyObject *mod)
        tp_base is the base type, defaults to 'object' aka PyBaseObject_Type.
     */
     CREATE_TYPE(st->PyCArg_Type, &carg_spec, NULL, NULL);
+#ifdef USING_MALLOC_CLOSURE_DOT_C
     CREATE_TYPE(st->PyCThunkType_Type, &cthunk_type_spec, NULL, &PyType_Type);
+#else
+    st->PyCThunkType_Type = NULL;
+#endif
     CREATE_TYPE(st->PyCThunk_Type, &cthunk_spec, st->PyCThunkType_Type, NULL);
     CREATE_TYPE(st->PyCData_Type, &pycdata_spec, NULL, NULL);
 

@@ -119,8 +119,10 @@ get_module_state_by_def_final(PyTypeObject *cls)
 
 extern PyType_Spec carg_spec;
 extern PyType_Spec cfield_spec;
-extern PyType_Spec cthunk_type_spec;
 extern PyType_Spec cthunk_spec;
+#ifdef USING_MALLOC_CLOSURE_DOT_C
+extern PyType_Spec cthunk_type_spec;
+#endif
 
 typedef struct tagPyCArgObject PyCArgObject;
 typedef struct tagCDataObject CDataObject;

@@ -130,8 +130,9 @@ class ModuleIsolationTest(unittest.TestCase):
             "pyfunc = lambda: 0;"
             "cfunc_type = ctypes.CFUNCTYPE(ctypes.c_int);"
             "cfuncs = [cfunc_type(pyfunc) for i in range(500)];"
-            "cthunk = cfuncs[0]._objects['0'];"
-            "n_containers = type(cthunk).ffi_closure_containers_count;"
+            "cthunk_tp = type(cfuncs[0]._objects['0']);"
+            "ismeta = type(cthunk_tp) is not type;"
+            "n_containers = ismeta and cthunk_tp.ffi_closure_containers_count;"
             "exit(n_containers and n_containers < 2)"
         )
         script_helper.assert_python_ok("-c", script)
