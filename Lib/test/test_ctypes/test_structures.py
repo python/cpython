@@ -881,7 +881,6 @@ class StructureTestCase(unittest.TestCase):
         self.assertEqual(ctx.exception.args[0], 'item 1 in _argtypes_ passes '
                          'a union by value, which is unsupported.')
 
-<<<<<<< HEAD
     def test_bitfield_matches_c(self):
         class Test9(Structure):
             _pack_ = 1
@@ -905,8 +904,6 @@ class StructureTestCase(unittest.TestCase):
             setattr(test9,field[0], 1)
             self.assertEqual(func(test9, ind), 1)
             ind += 1
-=======
->>>>>>> 698a0da7d440856a90b45964e9082b5a55387b80
 
 class PointerMemberTestCase(unittest.TestCase):
 
