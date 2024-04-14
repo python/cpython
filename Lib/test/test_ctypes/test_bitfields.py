@@ -4,7 +4,7 @@ import unittest
 from ctypes import (CDLL, Structure, sizeof, POINTER, byref, alignment,
                     LittleEndianStructure, BigEndianStructure,
                     c_byte, c_ubyte, c_char, c_char_p, c_void_p, c_wchar,
-                    c_uint32, c_uint64,
+                    c_uint8, c_uint16, c_uint32, c_uint64,
                     c_short, c_ushort, c_int, c_uint, c_long, c_ulong, c_longlong, c_ulonglong)
 from test import support
 from test.support import import_helper
