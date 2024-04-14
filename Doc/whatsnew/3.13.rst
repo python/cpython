@@ -284,7 +284,7 @@ asyncio
   (Contributed by Pierre Ossman in :gh:`113538`.)
 
 base64
----
+------
 
 * Add :func:`base64.z85encode` and :func:`base64.z85decode` functions which allow encoding
   and decoding z85 data.
@@ -401,6 +401,8 @@ ipaddress
 
 * Add the :attr:`ipaddress.IPv4Address.ipv6_mapped` property, which returns the IPv4-mapped IPv6 address.
   (Contributed by Charles Machalow in :gh:`109466`.)
+* Fix ``is_global`` and ``is_private`` behavior in ``IPv4Address``, ``IPv6Address``, ``IPv4Network``
+  and ``IPv6Network``.
 
 itertools
 ---------
@@ -697,6 +699,12 @@ xml.etree.ElementTree
 * Add the :meth:`!close` method for the iterator returned by
   :func:`~xml.etree.ElementTree.iterparse` for explicit cleaning up.
   (Contributed by Serhiy Storchaka in :gh:`69893`.)
+
+zipimport
+---------
+
+* Gains support for ZIP64 format files.  Everybody loves huge code right?
+  (Contributed by Tim Hatch in :gh:`94146`.)
 
 
 Optimizations
@@ -1527,7 +1535,7 @@ Build Changes
 * The ``errno``, ``fcntl``, ``grp``, ``md5``, ``pwd``, ``resource``,
   ``termios``, ``winsound``,
   ``_ctypes_test``, ``_multiprocessing.posixshmem``, ``_scproxy``, ``_stat``,
-  ``_statistics``, ``_testimportmultiple`` and ``_uuid``
+  ``_statistics``, ``_testconsole``, ``_testimportmultiple`` and ``_uuid``
   C extensions are now built with the
   :ref:`limited C API <limited-c-api>`.
   (Contributed by Victor Stinner in :gh:`85283`.)
@@ -1700,6 +1708,10 @@ New Features
 * Add :c:func:`Py_HashPointer` function to hash a pointer.
   (Contributed by Victor Stinner in :gh:`111545`.)
 
+* Add :c:func:`PyObject_GenericHash` function that implements the default
+  hashing function of a Python object.
+  (Contributed by Serhiy Storchaka in :gh:`113024`.)
+
 * Add PyTime C API:
 
   * :c:type:`PyTime_t` type.
@@ -1730,6 +1742,14 @@ New Features
   type and of a type: call :c:func:`PyType_GetModuleName`. See :pep:`737` for
   more information.
   (Contributed by Victor Stinner in :gh:`111696`.)
+
+* Add :c:func:`Py_GetConstant` and :c:func:`Py_GetConstantBorrowed` functions
+  to get constants. For example, ``Py_GetConstant(Py_CONSTANT_ZERO)`` returns a
+  :term:`strong reference` to the constant zero.
+  (Contributed by Victor Stinner in :gh:`115754`.)
+
+* Add :c:func:`PyType_GetModuleByDef` to the limited C API
+  (Contributed by Victor Stinner in :gh:`116936`.)
 
 
 Porting to Python 3.13

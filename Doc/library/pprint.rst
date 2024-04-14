@@ -44,6 +44,17 @@ Functions
    *args* and *kwargs* will be passed to :func:`~pprint.pprint` as formatting
    parameters.
 
+      >>> import pprint
+      >>> stuff = ['spam', 'eggs', 'lumberjack', 'knights', 'ni']
+      >>> stuff.insert(0, stuff)
+      >>> pprint.pp(stuff)
+      [<Recursion on list with id=...>,
+       'spam',
+       'eggs',
+       'lumberjack',
+       'knights',
+       'ni']
+
    .. versionadded:: 3.8
 
 
@@ -61,16 +72,8 @@ Functions
    :class:`PrettyPrinter` constructor and their meanings are as
    described in its documentation below.
 
-      >>> import pprint
-      >>> stuff = ['spam', 'eggs', 'lumberjack', 'knights', 'ni']
-      >>> stuff.insert(0, stuff)
-      >>> pprint.pprint(stuff)
-      [<Recursion on list with id=...>,
-       'spam',
-       'eggs',
-       'lumberjack',
-       'knights',
-       'ni']
+   Note that *sort_dicts* is ``True`` by default and you might want to use
+   :func:`~pprint.pp` instead where it is ``False`` by default.
 
 .. function:: pformat(object, indent=1, width=80, depth=None, *, \
                       compact=False, sort_dicts=True, underscore_numbers=False)
@@ -261,7 +264,7 @@ are converted to strings.  The default implementation uses the internals of the
 Example
 -------
 
-To demonstrate several uses of the :func:`~pprint.pprint` function and its parameters,
+To demonstrate several uses of the :func:`~pprint.pp` function and its parameters,
 let's fetch information about a project from `PyPI <https://pypi.org>`_::
 
    >>> import json
@@ -270,9 +273,9 @@ let's fetch information about a project from `PyPI <https://pypi.org>`_::
    >>> with urlopen('https://pypi.org/pypi/sampleproject/json') as resp:
    ...     project_info = json.load(resp)['info']
 
-In its basic form, :func:`~pprint.pprint` shows the whole object::
+In its basic form, :func:`~pprint.pp` shows the whole object::
 
-   >>> pprint.pprint(project_info)
+   >>> pprint.pp(project_info)
    {'author': 'The Python Packaging Authority',
     'author_email': 'pypa-dev@googlegroups.com',
     'bugtrack_url': None,
@@ -329,7 +332,7 @@ In its basic form, :func:`~pprint.pprint` shows the whole object::
 The result can be limited to a certain *depth* (ellipsis is used for deeper
 contents)::
 
-   >>> pprint.pprint(project_info, depth=1)
+   >>> pprint.pp(project_info, depth=1)
    {'author': 'The Python Packaging Authority',
     'author_email': 'pypa-dev@googlegroups.com',
     'bugtrack_url': None,
@@ -375,7 +378,7 @@ contents)::
 Additionally, maximum character *width* can be suggested. If a long object
 cannot be split, the specified width will be exceeded::
 
-   >>> pprint.pprint(project_info, depth=1, width=60)
+   >>> pprint.pp(project_info, depth=1, width=60)
    {'author': 'The Python Packaging Authority',
     'author_email': 'pypa-dev@googlegroups.com',
     'bugtrack_url': None,
