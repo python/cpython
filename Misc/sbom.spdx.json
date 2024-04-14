@@ -48,28 +48,14 @@
       "checksums": [
         {
           "algorithm": "SHA1",
-          "checksumValue": "ab7bb32514d170592dfb3f76e41bbdc075a4e7e0"
+          "checksumValue": "90c06411f131e777e2b5c3d22b7ccf50bc46f617"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "f521acdad222644365b0e81a33bcd6939a98c91b225c47582cc84bd73d96febc"
+          "checksumValue": "3045f9176950aa13a54e53fa096385670c676c492705d636e977f888e4c72d48"
         }
       ],
       "fileName": "Modules/expat/expat.h"
-    },
-    {
-      "SPDXID": "SPDXRef-FILE-Modules-expat-expat-config.h",
-      "checksums": [
-        {
-          "algorithm": "SHA1",
-          "checksumValue": "73627287302ee3e84347c4fe21f37a9cb828bc3b"
-        },
-        {
-          "algorithm": "SHA256",
-          "checksumValue": "f17e59f9d95eeb05694c02508aa284d332616c22cbe2e6a802d8a0710310eaab"
-        }
-      ],
-      "fileName": "Modules/expat/expat_config.h"
     },
     {
       "SPDXID": "SPDXRef-FILE-Modules-expat-expat-external.h",
@@ -104,11 +90,11 @@
       "checksums": [
         {
           "algorithm": "SHA1",
-          "checksumValue": "2790d37e7de2f13dccc4f4fb352cbdf9ed6abaa2"
+          "checksumValue": "9f6d9211a7b627785d5c48d10cc8eda66255113f"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "d2efe5a1018449968a689f444cca432e3d5875aba6ad08ee18ca235d64f41bb9"
+          "checksumValue": "9f0bdd346dd94ac4359c636a4e60bc768f4ae53ce0e836eb05fb9246ee36c7f2"
         }
       ],
       "fileName": "Modules/expat/internal.h"
@@ -160,11 +146,11 @@
       "checksums": [
         {
           "algorithm": "SHA1",
-          "checksumValue": "2b984f806f10fbfbf72d8d1b7ba2992413c15299"
+          "checksumValue": "4c49b5df2bc702f663ba3b5a52d1940ec363226b"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "fbce56cd680e690043bbf572188cc2d0a25dbfc0d47ac8cb98eb3de768d4e694"
+          "checksumValue": "b5ec29f6560acc183f1ee8ab92bb3aea17b87b4c2120cd2e3f78deba7a12491e"
         }
       ],
       "fileName": "Modules/expat/siphash.h"
@@ -188,11 +174,11 @@
       "checksums": [
         {
           "algorithm": "SHA1",
-          "checksumValue": "e774ae6ee9391aa6ffb8f775fb74e48f4b428959"
+          "checksumValue": "a3a8c44efd55dbf2cfea8fcee009ec63120ec0a3"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "3c71cea9a6174718542331971a35db317902b2433be9d8dd1cb24239b635c0cc"
+          "checksumValue": "e70948500d34dfcba4e9f0b305319dfe2a937c7cbfb687905128b56e1a6f8b33"
         }
       ],
       "fileName": "Modules/expat/winconfig.h"
@@ -202,11 +188,11 @@
       "checksums": [
         {
           "algorithm": "SHA1",
-          "checksumValue": "b580e827e16baa6b035586ffcd4d90301e5a353f"
+          "checksumValue": "3b5de0ed1de33cad85b46230707403247f2851df"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "483518bbd69338eefc706cd7fc0b6039df2d3e347f64097989059ed6d2385a1e"
+          "checksumValue": "a03abd531601eef61a87e06113d218ff139b6969e15a3d4668cd85d65fc6f79b"
         }
       ],
       "fileName": "Modules/expat/xmlparse.c"
@@ -216,11 +202,11 @@
       "checksums": [
         {
           "algorithm": "SHA1",
-          "checksumValue": "5ef21312af73deb2428be3fe97a65244608e76de"
+          "checksumValue": "ef767128d2dda99436712dcf3465dde5dbaab876"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "6fcf8c72ac0112c1b98bd2039c632a66b4c3dc516ce7c1f981390951121ef3c0"
+          "checksumValue": "71fb52aa302cf6f56e41943009965804f49ff2210d9bd15b258f70aaf70db772"
         }
       ],
       "fileName": "Modules/expat/xmlrole.c"
@@ -230,11 +216,11 @@
       "checksums": [
         {
           "algorithm": "SHA1",
-          "checksumValue": "c1a4ea6356643d0820edb9c024c20ad2aaf562dc"
+          "checksumValue": "c961fb1a80f7b0601a63e69fba793fe5f6dff157"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "2b5d674be6ef20c7e3f69295176d75e68c5616e4dfce0a186fdd5e2ed8315f7a"
+          "checksumValue": "228470eb9181a9a7575b63137edcb61b817ee4e0923faffdbeba29e07c939713"
         }
       ],
       "fileName": "Modules/expat/xmlrole.h"
@@ -244,11 +230,11 @@
       "checksums": [
         {
           "algorithm": "SHA1",
-          "checksumValue": "e6d66ae9fd61d7950c62c5d87693c30a707e8577"
+          "checksumValue": "8394790c0199c8f88108542ad78f23095d28a3fe"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "1110f651bdccfa765ad3d6f3857a35887ab35fc0fe7f3f3488fde2b238b482e3"
+          "checksumValue": "5b16c671ccc42496374762768e4bf48f614aecfd2025a07925b8d94244aec645"
         }
       ],
       "fileName": "Modules/expat/xmltok.c"
@@ -258,11 +244,11 @@
       "checksums": [
         {
           "algorithm": "SHA1",
-          "checksumValue": "9c2a544875fd08ba9c2397296c97263518a410aa"
+          "checksumValue": "7d2943a0128094455004b1a98007b98734221bae"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "4299a03828b98bfe47ec6809f6e279252954a9a911dc7e0f19551bd74e3af971"
+          "checksumValue": "6b8919dc951606dc6f2b0175f8955a9ced901ce8bd08db47f291b6c04227ae7f"
         }
       ],
       "fileName": "Modules/expat/xmltok.h"
@@ -272,11 +258,11 @@
       "checksums": [
         {
           "algorithm": "SHA1",
-          "checksumValue": "aa96882de8e3d1d3083124b595aa911efe44e5ad"
+          "checksumValue": "7756f7c0d3625ae7dde6cf7d386685ffacb57c7e"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "0fbcba7931707c60301305dab78d2298d96447d0a5513926d8b18135228c0818"
+          "checksumValue": "a3fe18ff32b21fbcb7c190895c68158404e1b9fb449db6431bc08b261dc03938"
         }
       ],
       "fileName": "Modules/expat/xmltok_impl.c"
@@ -1568,20 +1554,6 @@
         }
       ],
       "fileName": "Modules/_decimal/libmpdec/vcdiv64.asm"
-    },
-    {
-      "SPDXID": "SPDXRef-FILE-Lib-ensurepip-bundled-pip-23.3.2-py3-none-any.whl",
-      "checksums": [
-        {
-          "algorithm": "SHA1",
-          "checksumValue": "8e48f55ab2965ee64bd55cc91a8077d184a33e30"
-        },
-        {
-          "algorithm": "SHA256",
-          "checksumValue": "5052d7889c1f9d05224cd41741acb7c5d6fa735ab34e339624a614eaaa7e7d76"
-        }
-      ],
-      "fileName": "Lib/ensurepip/_bundled/pip-23.3.2-py3-none-any.whl"
     }
   ],
   "packages": [
@@ -1590,22 +1562,22 @@
       "checksums": [
         {
           "algorithm": "SHA256",
-          "checksumValue": "6b902ab103843592be5e99504f846ec109c1abb692e85347587f237a4ffa1033"
+          "checksumValue": "a13447b9aa67d7c860783fdf6820f33ebdea996900d6d8bbc50a628f55f099f7"
         }
       ],
-      "downloadLocation": "https://github.com/libexpat/libexpat/releases/download/R_2_5_0/expat-2.5.0.tar.gz",
+      "downloadLocation": "https://github.com/libexpat/libexpat/releases/download/R_2_6_0/expat-2.6.0.tar.gz",
       "externalRefs": [
         {
           "referenceCategory": "SECURITY",
-          "referenceLocator": "cpe:2.3:a:libexpat_project:libexpat:2.5.0:*:*:*:*:*:*:*",
+          "referenceLocator": "cpe:2.3:a:libexpat_project:libexpat:2.6.0:*:*:*:*:*:*:*",
           "referenceType": "cpe23Type"
         }
       ],
-      "licenseConcluded": "MIT",
+      "licenseConcluded": "NOASSERTION",
       "name": "expat",
       "originator": "Organization: Expat development team",
       "primaryPackagePurpose": "SOURCE",
-      "versionInfo": "2.5.0"
+      "versionInfo": "2.6.0"
     },
     {
       "SPDXID": "SPDXRef-PACKAGE-hacl-star",
@@ -1623,7 +1595,7 @@
           "referenceType": "cpe23Type"
         }
       ],
-      "licenseConcluded": "Apache-2.0",
+      "licenseConcluded": "NOASSERTION",
       "name": "hacl-star",
       "originator": "Organization: HACL* Developers",
       "primaryPackagePurpose": "SOURCE",
@@ -1645,7 +1617,7 @@
           "referenceType": "cpe23Type"
         }
       ],
-      "licenseConcluded": "CC0-1.0",
+      "licenseConcluded": "NOASSERTION",
       "name": "libb2",
       "originator": "Organization: BLAKE2 - fast secure hashing",
       "primaryPackagePurpose": "SOURCE",
@@ -1667,7 +1639,7 @@
           "referenceType": "purl"
         }
       ],
-      "licenseConcluded": "MIT",
+      "licenseConcluded": "NOASSERTION",
       "name": "macholib",
       "originator": "Person: Ronald Oussoren (ronaldoussoren@mac.com)",
       "primaryPackagePurpose": "SOURCE",
@@ -1689,38 +1661,11 @@
           "referenceType": "cpe23Type"
         }
       ],
-      "licenseConcluded": "BSD-2-Clause",
+      "licenseConcluded": "NOASSERTION",
       "name": "mpdecimal",
       "originator": "Organization: bytereef.org",
       "primaryPackagePurpose": "SOURCE",
       "versionInfo": "2.5.1"
-    },
-    {
-      "SPDXID": "SPDXRef-PACKAGE-pip",
-      "checksums": [
-        {
-          "algorithm": "SHA256",
-          "checksumValue": "5052d7889c1f9d05224cd41741acb7c5d6fa735ab34e339624a614eaaa7e7d76"
-        }
-      ],
-      "downloadLocation": "https://files.pythonhosted.org/packages/15/aa/3f4c7bcee2057a76562a5b33ecbd199be08cdb4443a02e26bd2c3cf6fc39/pip-23.3.2-py3-none-any.whl",
-      "externalRefs": [
-        {
-          "referenceCategory": "SECURITY",
-          "referenceLocator": "cpe:2.3:a:pypa:pip:23.3.2:*:*:*:*:*:*:*",
-          "referenceType": "cpe23Type"
-        },
-        {
-          "referenceCategory": "PACKAGE_MANAGER",
-          "referenceLocator": "pkg:pypi/pip@23.3.2",
-          "referenceType": "purl"
-        }
-      ],
-      "licenseConcluded": "MIT",
-      "name": "pip",
-      "originator": "Organization: Python Packaging Authority",
-      "primaryPackagePurpose": "SOURCE",
-      "versionInfo": "23.3.2"
     }
   ],
   "relationships": [
@@ -1741,11 +1686,6 @@
     },
     {
       "relatedSpdxElement": "SPDXRef-FILE-Modules-expat-expat.h",
-      "relationshipType": "CONTAINS",
-      "spdxElementId": "SPDXRef-PACKAGE-expat"
-    },
-    {
-      "relatedSpdxElement": "SPDXRef-FILE-Modules-expat-expat-config.h",
       "relationshipType": "CONTAINS",
       "spdxElementId": "SPDXRef-PACKAGE-expat"
     },
@@ -2283,11 +2223,6 @@
       "relatedSpdxElement": "SPDXRef-FILE-Modules-decimal-libmpdec-vcdiv64.asm",
       "relationshipType": "CONTAINS",
       "spdxElementId": "SPDXRef-PACKAGE-mpdecimal"
-    },
-    {
-      "relatedSpdxElement": "SPDXRef-FILE-Lib-ensurepip-bundled-pip-23.3.2-py3-none-any.whl",
-      "relationshipType": "CONTAINS",
-      "spdxElementId": "SPDXRef-PACKAGE-pip"
     }
   ],
   "spdxVersion": "SPDX-2.3"

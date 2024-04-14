@@ -1,0 +1,2 @@
+Fix support of explicit option value "--" in :mod:`argparse` (e.g.
+``--option=--``).

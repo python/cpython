@@ -1,7 +1,7 @@
 import unittest
 import unittest.mock
 from test.support import (verbose, refcount_test,
-                          cpython_only, requires_subprocess)
+                          cpython_only, requires_subprocess, Py_GIL_DISABLED)
 from test.support.import_helper import import_module
 from test.support.os_helper import temp_dir, TESTFN, unlink
 from test.support.script_helper import assert_python_ok, make_script
@@ -819,6 +819,15 @@ class GCTests(unittest.TestCase):
         l = []
         l.append(l)
         self.assertTrue(
+                any(l is element for element in gc.get_objects())
+        )
+
+    @unittest.skipIf(Py_GIL_DISABLED, 'need generational GC')
+    def test_get_objects_generations(self):
+        gc.collect()
+        l = []
+        l.append(l)
+        self.assertTrue(
                 any(l is element for element in gc.get_objects(generation=0))
         )
         self.assertFalse(
@@ -1225,7 +1234,7 @@ class GCCallbackTests(unittest.TestCase):
         p.stderr.close()
         # Verify that stderr has a useful error message:
         self.assertRegex(stderr,
-            br'gc\.c:[0-9]+: gc_decref: Assertion "gc_get_refs\(g\) > 0" failed.')
+            br'gc.*\.c:[0-9]+: .*: Assertion "gc_get_refs\(.+\) .*" failed.')
         self.assertRegex(stderr,
             br'refcount is too small')
         # "address : 0x7fb5062efc18"

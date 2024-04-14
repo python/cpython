@@ -132,7 +132,7 @@ class TaskGroup:
 
         # Propagate CancelledError if there is one, except if there
         # are other errors -- those have priority.
-        if propagate_cancellation_error and not self._errors:
+        if propagate_cancellation_error is not None and not self._errors:
             raise propagate_cancellation_error
 
         if et is not None and not issubclass(et, exceptions.CancelledError):

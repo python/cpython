@@ -22,6 +22,8 @@ from functools import total_ordering
 import typing       # Needed for the string "typing.ClassVar[int]" to work as an annotation.
 import dataclasses  # Needed for the string "dataclasses.InitVar[int]" to work as an annotation.
 
+from test import support
+
 # Just any custom exception we can catch.
 class CustomError(Exception): pass
 
@@ -2216,6 +2218,7 @@ class TestDocString(unittest.TestCase):
         #  whitespace stripped.
         self.assertEqual(a.replace(' ', ''), b.replace(' ', ''))
 
+    @support.requires_docstrings
     def test_existing_docstring_not_overridden(self):
         @dataclass
         class C:

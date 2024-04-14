@@ -8,7 +8,7 @@ class IsolatedCodeGenTests(CodegenTestCase):
 
     def codegen_test(self, snippet, expected_insts):
         import ast
-        a = ast.parse(snippet, "my_file.py", "exec");
+        a = ast.parse(snippet, "my_file.py", "exec")
         insts = self.generate_code(a)
         self.assertInstructionsMatch(insts, expected_insts)
 
@@ -49,7 +49,13 @@ class IsolatedCodeGenTests(CodegenTestCase):
             ('JUMP', loop_lbl),
             exit_lbl,
             ('END_FOR', None),
+            ('POP_TOP', None),
             ('LOAD_CONST', 0),
             ('RETURN_VALUE', None),
         ]
         self.codegen_test(snippet, expected)
+
+    def test_syntax_error__return_not_in_function(self):
+        snippet = "return 42"
+        with self.assertRaisesRegex(SyntaxError, "'return' outside function"):
+            self.codegen_test(snippet, None)

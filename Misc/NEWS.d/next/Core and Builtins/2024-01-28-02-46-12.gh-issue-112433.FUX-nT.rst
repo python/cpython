@@ -1,0 +1,1 @@
+Add ability to force alignment of :mod:`ctypes.Structure` by way of the new ``_align_`` attribute on the class.

@@ -393,7 +393,7 @@ method_vectorcall_FASTCALL(
     if (method_check_args(func, args, nargs, kwnames)) {
         return NULL;
     }
-    _PyCFunctionFast meth = (_PyCFunctionFast)
+    PyCFunctionFast meth = (PyCFunctionFast)
                             method_enter_call(tstate, func);
     if (meth == NULL) {
         return NULL;
@@ -412,7 +412,7 @@ method_vectorcall_FASTCALL_KEYWORDS(
     if (method_check_args(func, args, nargs, NULL)) {
         return NULL;
     }
-    _PyCFunctionFastWithKeywords meth = (_PyCFunctionFastWithKeywords)
+    PyCFunctionFastWithKeywords meth = (PyCFunctionFastWithKeywords)
                                         method_enter_call(tstate, func);
     if (meth == NULL) {
         return NULL;

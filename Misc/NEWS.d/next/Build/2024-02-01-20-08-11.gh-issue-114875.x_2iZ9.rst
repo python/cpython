@@ -1,0 +1,1 @@
+Add :c:func:`!getgrent` as a prerequisite for building the :mod:`grp` module.

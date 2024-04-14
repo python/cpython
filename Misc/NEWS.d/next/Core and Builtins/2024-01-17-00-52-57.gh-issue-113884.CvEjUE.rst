@@ -1,0 +1,1 @@
+Make :class:`queue.SimpleQueue` thread safe when the GIL is disabled.

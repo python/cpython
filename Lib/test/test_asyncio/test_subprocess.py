@@ -47,6 +47,7 @@ class TestSubprocessTransport(base_subprocess.BaseSubprocessTransport):
         self._proc.pid = -1
 
 
+@support.requires_subprocess()
 class SubprocessTransportTests(test_utils.TestCase):
     def setUp(self):
         super().setUp()
@@ -110,6 +111,7 @@ class SubprocessTransportTests(test_utils.TestCase):
         transport.close()
 
 
+@support.requires_subprocess()
 class SubprocessMixin:
 
     def test_stdin_stdout(self):
@@ -207,7 +209,7 @@ class SubprocessMixin:
 
     def test_kill_issue43884(self):
         if sys.platform == 'win32':
-            blocking_shell_command = f'{sys.executable} -c "import time; time.sleep(2)"'
+            blocking_shell_command = f'"{sys.executable}" -c "import time; time.sleep(2)"'
         else:
             blocking_shell_command = 'sleep 1; sleep 1'
         creationflags = 0
@@ -745,7 +747,10 @@ class SubprocessMixin:
 
     def test_create_subprocess_env_shell(self) -> None:
         async def main() -> None:
-            cmd = f'''{sys.executable} -c "import os, sys; sys.stdout.write(os.getenv('FOO'))"'''
+            executable = sys.executable
+            if sys.platform == "win32":
+                executable = f'"{executable}"'
+            cmd = f'''{executable} -c "import os, sys; sys.stdout.write(os.getenv('FOO'))"'''
             env = os.environ.copy()
             env["FOO"] = "bar"
             proc = await asyncio.create_subprocess_shell(

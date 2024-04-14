@@ -1,0 +1,2 @@
+Fix tests for :class:`~xml.etree.ElementTree.XMLPullParser` with Expat
+2.6.0.

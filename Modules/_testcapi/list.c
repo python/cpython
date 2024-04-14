@@ -60,6 +60,18 @@ list_get_item(PyObject *Py_UNUSED(module), PyObject *args)
 }
 
 static PyObject *
+list_get_item_ref(PyObject *Py_UNUSED(module), PyObject *args)
+{
+    PyObject *obj;
+    Py_ssize_t i;
+    if (!PyArg_ParseTuple(args, "On", &obj, &i)) {
+        return NULL;
+    }
+    NULLABLE(obj);
+    return PyList_GetItemRef(obj, i);
+}
+
+static PyObject *
 list_setitem(PyObject *Py_UNUSED(module), PyObject *args)
 {
     PyObject *obj, *value;
@@ -191,6 +203,7 @@ static PyMethodDef test_methods[] = {
     {"list_get_size", list_get_size, METH_O},
     {"list_getitem", list_getitem, METH_VARARGS},
     {"list_get_item", list_get_item, METH_VARARGS},
+    {"list_get_item_ref", list_get_item_ref, METH_VARARGS},
     {"list_setitem", list_setitem, METH_VARARGS},
     {"list_set_item", list_set_item, METH_VARARGS},
     {"list_insert", list_insert, METH_VARARGS},

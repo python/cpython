@@ -1,0 +1,3 @@
+:c:func:`PyObject_GetBuffer` now raises a :exc:`SystemError` if called with
+:c:macro:`PyBUF_READ` or :c:macro:`PyBUF_WRITE` as flags. These flags should
+only be used with the ``PyMemoryView_*`` C API.

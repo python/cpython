@@ -1,0 +1,2 @@
+Limit the number of versions that a single class can use. Prevents a few
+wayward classes using up all the version numbers.

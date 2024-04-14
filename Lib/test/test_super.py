@@ -1,8 +1,9 @@
 """Unit tests for zero-argument super() & related machinery."""
 
+import textwrap
 import unittest
 from unittest.mock import patch
-from test import shadowed_super
+from test.support import import_helper
 
 
 ADAPTIVE_WARMUP_DELAY = 2
@@ -342,7 +343,20 @@ class TestSuper(unittest.TestCase):
             super(1, int)
 
     def test_shadowed_global(self):
+        source = textwrap.dedent(
+            """
+            class super:
+                msg = "truly super"
+
+            class C:
+                def method(self):
+                    return super().msg
+            """,
+        )
+        with import_helper.ready_to_import(name="shadowed_super", source=source):
+            import shadowed_super
         self.assertEqual(shadowed_super.C().method(), "truly super")
+        import_helper.unload("shadowed_super")
 
     def test_shadowed_local(self):
         class super:

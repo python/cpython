@@ -11,6 +11,7 @@
 #include "pycore_function.h"
 #include "pycore_instruments.h"
 #include "pycore_intrinsics.h"
+#include "pycore_jit.h"
 #include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_moduleobject.h"  // PyModuleObject
 #include "pycore_object.h"        // _PyObject_GC_TRACK()
@@ -955,8 +956,23 @@ resume_with_error:
 
 
 
-// The Tier 2 interpreter is also here!
+// Tier 2 is also here!
 enter_tier_two:
+
+#ifdef _Py_JIT
+
+    ;  // ;)
+    jit_func jitted = current_executor->jit_code;
+    next_instr = jitted(frame, stack_pointer, tstate);
+    frame = tstate->current_frame;
+    Py_DECREF(current_executor);
+    if (next_instr == NULL) {
+        goto resume_with_error;
+    }
+    stack_pointer = _PyFrame_GetStackPointer(frame);
+    DISPATCH();
+
+#else
 
 #undef LOAD_IP
 #define LOAD_IP(UNUSED) (void)0
@@ -1072,6 +1088,8 @@ deoptimize:
     UOP_STAT_INC(uopcode, miss);
     Py_DECREF(current_executor);
     DISPATCH();
+
+#endif  // _Py_JIT
 
 }
 #if defined(__GNUC__)

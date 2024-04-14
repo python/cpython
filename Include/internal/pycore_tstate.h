@@ -10,6 +10,14 @@ extern "C" {
 
 #include "pycore_freelist.h"      // struct _Py_freelist_state
 #include "pycore_mimalloc.h"      // struct _mimalloc_thread_state
+#include "pycore_brc.h"           // struct _brc_thread_state
+
+
+static inline void
+_PyThreadState_SetWhence(PyThreadState *tstate, int whence)
+{
+    tstate->_whence = whence;
+}
 
 
 // Every PyThreadState is actually allocated as a _PyThreadStateImpl. The
@@ -21,7 +29,8 @@ typedef struct _PyThreadStateImpl {
 
 #ifdef Py_GIL_DISABLED
     struct _mimalloc_thread_state mimalloc;
-    struct _Py_freelist_state freelist_state;
+    struct _Py_object_freelists freelists;
+    struct _brc_thread_state brc;
 #endif
 
 } _PyThreadStateImpl;

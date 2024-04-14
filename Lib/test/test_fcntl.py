@@ -6,7 +6,9 @@ import os
 import struct
 import sys
 import unittest
-from test.support import verbose, cpython_only, get_pagesize
+from test.support import (
+    cpython_only, get_pagesize, is_apple, requires_subprocess, verbose
+)
 from test.support.import_helper import import_module
 from test.support.os_helper import TESTFN, unlink
 
@@ -56,8 +58,10 @@ class TestFcntl(unittest.TestCase):
         else:
             start_len = "qq"
 
-        if (sys.platform.startswith(('netbsd', 'freebsd', 'openbsd'))
-            or sys.platform == 'darwin'):
+        if (
+            sys.platform.startswith(('netbsd', 'freebsd', 'openbsd'))
+            or is_apple
+        ):
             if struct.calcsize('l') == 8:
                 off_t = 'l'
                 pid_t = 'i'
@@ -157,6 +161,7 @@ class TestFcntl(unittest.TestCase):
         self.assertRaises(TypeError, fcntl.flock, 'spam', fcntl.LOCK_SH)
 
     @unittest.skipIf(platform.system() == "AIX", "AIX returns PermissionError")
+    @requires_subprocess()
     def test_lockf_exclusive(self):
         self.f = open(TESTFN, 'wb+')
         cmd = fcntl.LOCK_EX | fcntl.LOCK_NB
@@ -169,6 +174,7 @@ class TestFcntl(unittest.TestCase):
         self.assertEqual(p.exitcode, 0)
 
     @unittest.skipIf(platform.system() == "AIX", "AIX returns PermissionError")
+    @requires_subprocess()
     def test_lockf_share(self):
         self.f = open(TESTFN, 'wb+')
         cmd = fcntl.LOCK_SH | fcntl.LOCK_NB

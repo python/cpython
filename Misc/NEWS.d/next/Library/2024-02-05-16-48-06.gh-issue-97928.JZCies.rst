@@ -1,0 +1,5 @@
+Partially revert the behavior of :meth:`tkinter.Text.count`. By default it
+preserves the behavior of older Python versions, except that setting
+``wantobjects`` to 0 no longer has effect. Add a new parameter *return_ints*:
+specifying ``return_ints=True`` makes ``Text.count()`` always returning the
+single count as an integer instead of a 1-tuple or ``None``.

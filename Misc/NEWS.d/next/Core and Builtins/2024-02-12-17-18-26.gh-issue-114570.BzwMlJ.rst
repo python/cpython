@@ -1,0 +1,3 @@
+Add :exc:`PythonFinalizationError` exception. This exception derived from
+:exc:`RuntimeError` is raised when an operation is blocked during the
+:term:`Python finalization <interpreter shutdown>`. Patch by Victor Stinner.

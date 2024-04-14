@@ -2,6 +2,12 @@
 
 import types
 
+def global_func(x, y):
+    """Module global function"""
+
+def global_func2(x, y):
+    """Module global function 2"""
+
 class A:
     "A class."
 
@@ -26,7 +32,7 @@ class A:
         "A class method defined in A."
     A_classmethod = classmethod(A_classmethod)
 
-    def A_staticmethod():
+    def A_staticmethod(x, y):
         "A static method defined in A."
     A_staticmethod = staticmethod(A_staticmethod)
 
@@ -60,6 +66,28 @@ class B(A):
         "Method defined in B and D."
     def BCD_method(self):
         "Method defined in B, C and D."
+
+    @classmethod
+    def B_classmethod(cls, x):
+        "A class method defined in B."
+
+    global_func = global_func  # same name
+    global_func_alias = global_func
+    global_func2_alias = global_func2
+    B_classmethod_alias = B_classmethod
+    A_classmethod_ref = A.A_classmethod
+    A_staticmethod = A.A_staticmethod  # same name
+    A_staticmethod_alias = A.A_staticmethod
+    A_method_ref = A().A_method
+    A_method_alias = A.A_method
+    B_method_alias = B_method
+    __repr__ = object.__repr__  # same name
+    object_repr = object.__repr__
+    get = {}.get  # same name
+    dict_get = {}.get
+
+B.B_classmethod_ref = B.B_classmethod
+
 
 class C(A):
     "A class, derived from A."
@@ -136,3 +164,21 @@ class FunkyProperties(object):
 
 submodule = types.ModuleType(__name__ + '.submodule',
     """A submodule, which should appear in its parent's summary""")
+
+global_func_alias = global_func
+A_classmethod = A.A_classmethod  # same name
+A_classmethod2 = A.A_classmethod
+A_classmethod3 = B.A_classmethod
+A_staticmethod = A.A_staticmethod  # same name
+A_staticmethod_alias = A.A_staticmethod
+A_staticmethod_ref = A().A_staticmethod
+A_staticmethod_ref2 = B().A_staticmethod
+A_method = A().A_method  # same name
+A_method2 = A().A_method
+A_method3 = B().A_method
+B_method = B.B_method  # same name
+B_method2 = B.B_method
+count = list.count  # same name
+list_count = list.count
+get = {}.get  # same name
+dict_get = {}.get

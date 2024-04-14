@@ -1,0 +1,2 @@
+Add option to calendar module CLI to specify the weekday to start each week.
+Patch by Steven Ward.

@@ -1032,7 +1032,7 @@ subprocess_fork_exec_impl(PyObject *module, PyObject *process_args,
 
     PyInterpreterState *interp = _PyInterpreterState_GET();
     if ((preexec_fn != Py_None) && interp->finalizing) {
-        PyErr_SetString(PyExc_RuntimeError,
+        PyErr_SetString(PyExc_PythonFinalizationError,
                         "preexec_fn not supported at interpreter shutdown");
         return NULL;
     }

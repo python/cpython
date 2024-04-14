@@ -384,6 +384,7 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
     Py_ssize_t bitofs = 0;
     PyObject *tmp;
     int pack;
+    int forced_alignment = 1;
     Py_ssize_t ffi_ofs;
     int big_endian;
     int arrays_seen = 0;
@@ -446,6 +447,27 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
             return -1;
         }
     }
+    if (PyObject_GetOptionalAttr(type, &_Py_ID(_align_), &tmp) < 0) {
+        return -1;
+    }
+    if (tmp) {
+        forced_alignment = PyLong_AsInt(tmp);
+        Py_DECREF(tmp);
+        if (forced_alignment < 0) {
+            if (!PyErr_Occurred() ||
+                PyErr_ExceptionMatches(PyExc_TypeError) ||
+                PyErr_ExceptionMatches(PyExc_OverflowError))
+            {
+                PyErr_SetString(PyExc_ValueError,
+                                "_align_ must be a non-negative integer");
+            }
+            return -1;
+        }
+    }
+    else {
+        /* Setting `_align_ = 0` amounts to using the default alignment */
+        forced_alignment = 1;
+    }
 
     len = PySequence_Size(fields);
     if (len == -1) {
@@ -492,6 +514,7 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
         align = basedict->align;
         union_size = 0;
         total_align = align ? align : 1;
+        total_align = max(total_align, forced_alignment);
         stgdict->ffi_type_pointer.type = FFI_TYPE_STRUCT;
         stgdict->ffi_type_pointer.elements = PyMem_New(ffi_type *, basedict->length + len + 1);
         if (stgdict->ffi_type_pointer.elements == NULL) {
@@ -511,7 +534,7 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
         size = 0;
         align = 0;
         union_size = 0;
-        total_align = 1;
+        total_align = forced_alignment;
         stgdict->ffi_type_pointer.type = FFI_TYPE_STRUCT;
         stgdict->ffi_type_pointer.elements = PyMem_New(ffi_type *, len + 1);
         if (stgdict->ffi_type_pointer.elements == NULL) {
@@ -732,7 +755,7 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
 /*
  * The value of MAX_STRUCT_SIZE depends on the platform Python is running on.
  */
-#if defined(__aarch64__) || defined(__arm__)
+#if defined(__aarch64__) || defined(__arm__) || defined(_M_ARM64)
 #  define MAX_STRUCT_SIZE 32
 #elif defined(__powerpc64__)
 #  define MAX_STRUCT_SIZE 64

@@ -176,7 +176,7 @@ int _PyOpcode_num_popped(int opcode, int oparg)  {
         case END_ASYNC_FOR:
             return 2;
         case END_FOR:
-            return 2;
+            return 1;
         case END_SEND:
             return 2;
         case ENTER_EXECUTOR:
@@ -647,7 +647,7 @@ int _PyOpcode_num_pushed(int opcode, int oparg)  {
         case INSTRUMENTED_CALL_KW:
             return 0;
         case INSTRUMENTED_END_FOR:
-            return 0;
+            return 1;
         case INSTRUMENTED_END_SEND:
             return 1;
         case INSTRUMENTED_FOR_ITER:
@@ -1094,7 +1094,7 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[268] = {
     [MATCH_KEYS] = { true, INSTR_FMT_IX, HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
     [MATCH_MAPPING] = { true, INSTR_FMT_IX, 0 },
     [MATCH_SEQUENCE] = { true, INSTR_FMT_IX, 0 },
-    [NOP] = { true, INSTR_FMT_IX, 0 },
+    [NOP] = { true, INSTR_FMT_IX, HAS_PURE_FLAG },
     [POP_EXCEPT] = { true, INSTR_FMT_IX, HAS_ESCAPES_FLAG },
     [POP_JUMP_IF_FALSE] = { true, INSTR_FMT_IBC, HAS_ARG_FLAG | HAS_JUMP_FLAG },
     [POP_JUMP_IF_NONE] = { true, INSTR_FMT_IBC, HAS_ARG_FLAG | HAS_JUMP_FLAG },
@@ -1156,10 +1156,10 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[268] = {
     [LOAD_SUPER_METHOD] = { true, -1, HAS_ARG_FLAG | HAS_NAME_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
     [LOAD_ZERO_SUPER_ATTR] = { true, -1, HAS_ARG_FLAG | HAS_NAME_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
     [LOAD_ZERO_SUPER_METHOD] = { true, -1, HAS_ARG_FLAG | HAS_NAME_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
-    [POP_BLOCK] = { true, -1, 0 },
-    [SETUP_CLEANUP] = { true, -1, HAS_ARG_FLAG },
-    [SETUP_FINALLY] = { true, -1, HAS_ARG_FLAG },
-    [SETUP_WITH] = { true, -1, HAS_ARG_FLAG },
+    [POP_BLOCK] = { true, -1, HAS_PURE_FLAG },
+    [SETUP_CLEANUP] = { true, -1, HAS_PURE_FLAG | HAS_ARG_FLAG },
+    [SETUP_FINALLY] = { true, -1, HAS_PURE_FLAG | HAS_ARG_FLAG },
+    [SETUP_WITH] = { true, -1, HAS_PURE_FLAG | HAS_ARG_FLAG },
     [STORE_FAST_MAYBE_NULL] = { true, -1, HAS_ARG_FLAG | HAS_LOCAL_FLAG },
 };
 #endif
@@ -1232,7 +1232,7 @@ _PyOpcode_macro_expansion[256] = {
     [DELETE_SUBSCR] = { .nuops = 1, .uops = { { _DELETE_SUBSCR, 0, 0 } } },
     [DICT_MERGE] = { .nuops = 1, .uops = { { _DICT_MERGE, 0, 0 } } },
     [DICT_UPDATE] = { .nuops = 1, .uops = { { _DICT_UPDATE, 0, 0 } } },
-    [END_FOR] = { .nuops = 2, .uops = { { _POP_TOP, 0, 0 }, { _POP_TOP, 0, 0 } } },
+    [END_FOR] = { .nuops = 1, .uops = { { _POP_TOP, 0, 0 } } },
     [END_SEND] = { .nuops = 1, .uops = { { _END_SEND, 0, 0 } } },
     [EXIT_INIT_CHECK] = { .nuops = 1, .uops = { { _EXIT_INIT_CHECK, 0, 0 } } },
     [FORMAT_SIMPLE] = { .nuops = 1, .uops = { { _FORMAT_SIMPLE, 0, 0 } } },

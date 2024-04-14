@@ -9,6 +9,7 @@ extern "C" {
 #endif
 
 #include "dynamic_annotations.h" // _Py_ANNOTATE_PURE_HAPPENS_BEFORE_MUTEX
+#include "pycore_llist.h"        // struct llist_node
 
 // Get _POSIX_THREADS and _POSIX_SEMAPHORES macros if available
 #if (defined(HAVE_UNISTD_H) && !defined(_POSIX_THREADS) \
@@ -75,14 +76,22 @@ struct _pythread_runtime_state {
         struct py_stub_tls_entry tls_entries[PTHREAD_KEYS_MAX];
     } stubs;
 #endif
+
+    // Linked list of ThreadHandleObjects
+    struct llist_node handles;
 };
 
+#define _pythread_RUNTIME_INIT(pythread) \
+    { \
+        .handles = LLIST_INIT(pythread.handles), \
+    }
 
 #ifdef HAVE_FORK
 /* Private function to reinitialize a lock at fork in the child process.
    Reset the lock to the unlocked state.
    Return 0 on success, return -1 on error. */
 extern int _PyThread_at_fork_reinit(PyThread_type_lock *lock);
+extern void _PyThread_AfterFork(struct _pythread_runtime_state *state);
 #endif  /* HAVE_FORK */
 
 
@@ -142,12 +151,6 @@ PyAPI_FUNC(int) PyThread_join_thread(PyThread_handle_t);
  * a non-zero value on failure.
  */
 PyAPI_FUNC(int) PyThread_detach_thread(PyThread_handle_t);
-
-/*
- * Obtain the new thread ident and handle in a forked child process.
- */
-PyAPI_FUNC(void) PyThread_update_thread_after_fork(PyThread_ident_t* ident,
-                                                   PyThread_handle_t* handle);
 
 #ifdef __cplusplus
 }
