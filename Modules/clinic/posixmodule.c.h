@@ -2309,7 +2309,7 @@ PyDoc_STRVAR(os__path_abspath__doc__,
 "_path_abspath($module, path, /)\n"
 "--\n"
 "\n"
-"Make path absolute from character start.");
+"Make path absolute.");
 
 #define OS__PATH_ABSPATH_METHODDEF    \
     {"_path_abspath", (PyCFunction)os__path_abspath, METH_O, os__path_abspath__doc__},
@@ -12619,4 +12619,4 @@ os__supports_virtual_terminal(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF
     #define OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF
 #endif /* !defined(OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF) */
-/*[clinic end generated code: output=d11f54d12df1df85 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=9391700f4021fd83 input=a9049054013a1b77]*/

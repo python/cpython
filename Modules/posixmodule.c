@@ -5509,7 +5509,7 @@ Make path absolute.
 
 static PyObject *
 os__path_abspath(PyObject *module, PyObject *path)
-/*[clinic end generated code: output=6a6bb40f1ebe86f2 input=21e4ac322da1a31e]*/
+/*[clinic end generated code: output=6a6bb40f1ebe86f2 input=6f97dcc93c4bd71f]*/
 {
     if (!PyUnicode_Check(path)) {
         PyErr_Format(PyExc_TypeError, "expected 'str', not %T",
@@ -5539,12 +5539,12 @@ os__path_abspath(PyObject *module, PyObject *path)
         }
 
         cwd_len = wcslen(cwd);
-        abs_path_len = cwd_len + 1 + rel_path_len + 1;
-        if (abs_path_len > (size_t)PY_SSIZE_T_MAX / sizeof(wchar_t)) {
+        abs_path_len = cwd_len + 1 + rel_path_len;
+        if (abs_path_len + 1 > PY_SSIZE_T_MAX / sizeof(wchar_t)) {
             return posix_error();
         }
 
-        abs_path = PyMem_RawMalloc(abs_path_len * sizeof(wchar_t));
+        abs_path = PyMem_RawMalloc((abs_path_len + 1) * sizeof(wchar_t));
         if (!abs_path) {
             return NULL;
         }
