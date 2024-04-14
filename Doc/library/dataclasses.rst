@@ -362,7 +362,7 @@ Module contents
 
    To create a shallow copy, the following workaround may be used::
 
-     dict((field.name, getattr(obj, field.name)) for field in fields(obj))
+     {field.name: getattr(obj, field.name) for field in fields(obj)}
 
    :func:`!asdict` raises :exc:`TypeError` if ``obj`` is not a dataclass
    instance.
