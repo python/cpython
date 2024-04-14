@@ -1,0 +1,19 @@
+# Cancel a rule from the repository's top-level .gitignore file.
+!.idea
+
+*.iml
+.gradle
+/local.properties
+/.idea/caches
+/.idea/deploymentTargetDropdown.xml
+/.idea/libraries
+/.idea/modules.xml
+/.idea/workspace.xml
+/.idea/navEditor.xml
+/.idea/assetWizardSettings.xml
+.DS_Store
+/build
+/captures
+.externalNativeBuild
+.cxx
+local.properties
