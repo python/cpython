@@ -43,9 +43,10 @@ The discrete steps for building via `android.py` are:
 ./android.py make-host HOST
 ```
 
-To see the possible values of HOST, run `./android.py configure-host --help`.
+`HOST` identifies which architecture to build. To see the possible values, run
+`./android.py configure-host --help`.
 
-Or to do it all in a single command, run:
+To do all steps in a single command, run:
 
 ```sh
 ./android.py build HOST
@@ -62,3 +63,20 @@ call. For example, if you want a pydebug build that also caches the results from
 ```sh
 ./android.py build HOST -- -C --with-pydebug
 ```
+
+
+## Testing
+
+To run the Python test suite on Android:
+
+* Follow the instructions in the previous section to build all supported
+  architectures.
+* Open the `testbed` directory in Android Studio.
+* Connect a device, or start an emulator, and select it from the drop-down list
+  in the toolbar.
+* Click the "Run" button in the toolbar.
+* The testbed app displays nothing on screen while running. To see its output,
+  open the [Logcat window](https://developer.android.com/studio/debug/logcat).
+
+To run specific tests, or pass any other arguments to the test suite, edit the
+command line in testbed/app/src/main/python/main.py.
