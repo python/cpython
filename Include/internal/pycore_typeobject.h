@@ -136,6 +136,17 @@ _PyStaticType_GET_WEAKREFS_LISTPTR(static_builtin_state *state)
     return &state->tp_weaklist;
 }
 
+/* Like PyType_GetModule, but skips verification
+ * that type is a heap type */
+static inline PyObject *
+_PyType_GetModule(PyTypeObject *type)
+{
+    assert(PyType_Check(type));
+    assert(type->tp_flags & Py_TPFLAGS_HEAPTYPE);
+    PyHeapTypeObject *et = (PyHeapTypeObject *)type;
+    return et->ht_module;
+}
+
 /* Like PyType_GetModuleState, but skips verification
  * that type is a heap type with an associated module */
 static inline void *
