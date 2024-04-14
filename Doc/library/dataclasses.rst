@@ -131,7 +131,7 @@ Module contents
      intent, the existence and behavior of :meth:`!__eq__`, and the values of
      the *eq* and *frozen* flags in the ``@dataclass`` decorator.
 
-     By default, :func:`@dataclass <dataclass>` will not implicitly add a :meth:`~object.__hash__`
+     By default, ``@dataclass`` will not implicitly add a :meth:`~object.__hash__`
      method unless it is safe to do so.  Neither will it add or change an
      existing explicitly defined :meth:`!__hash__` method.  Setting the class
      attribute ``__hash__ = None`` has a specific meaning to Python, as
@@ -163,7 +163,7 @@ Module contents
      :exc:`TypeError` is raised.  See the discussion below.
 
    - *match_args*: If true (the default is ``True``), the
-     :attr:`!__match_args__` tuple will be created from the list of
+     :attr:`~object.__match_args__` tuple will be created from the list of
      parameters to the generated :meth:`~object.__init__` method (even if
      :meth:`!__init__` is not generated, see above).  If false, or if
      :attr:`!__match_args__` is already defined in the class, then
