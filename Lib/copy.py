@@ -180,7 +180,9 @@ _deepcopy_dispatch = d = {}
 def _deepcopy_list(x, memo, deepcopy=deepcopy):
     y = []
     memo[id(x)] = y
-    y += [deepcopy(a, memo) for a in x]
+    append = y.append
+    for a in x:
+        append(deepcopy(a, memo))
     return y
 
 d[list] = _deepcopy_list
@@ -191,10 +193,10 @@ def _deepcopy_tuple(x, memo, deepcopy=deepcopy):
     y = [deepcopy(a, memo) for a in x]
     # We're not going to put the tuple in the memo, but it's still important we
     # check for it, in case the tuple contains recursive mutable structures.
-    d = memo.get(id(x), _nil)
-    if d is not _nil:
-        return d
-
+    try:
+        return memo[id(x)]
+    except KeyError:
+        pass
     for k, j in zip(x, y):
         if k is not j:
             y = tuple(y)
