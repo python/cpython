@@ -406,7 +406,7 @@ else:
             if path.startswith(b'/'):
                 return os.fsencode(_path_abspath(os.fsdecode(path), 0))
             else:
-                cwd = os.fsdecode(os.getcwdb())
+                cwd = os.getcwd()
                 path = join(cwd, os.fsdecode(path))
                 return os.fsencode(_path_abspath(path, len(cwd)))
         else:
