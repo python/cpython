@@ -415,9 +415,9 @@ init_code(PyCodeObject *co, struct _PyCodeConstructor *con)
     co->co_ncellvars = ncellvars;
     co->co_nfreevars = nfreevars;
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    co->co_version = interp->next_func_version;
-    if (interp->next_func_version != 0) {
-        interp->next_func_version++;
+    co->co_version = interp->func_state.next_version;
+    if (interp->func_state.next_version != 0) {
+        interp->func_state.next_version++;
     }
     co->_co_monitoring = NULL;
     co->_co_instrumentation_version = 0;
@@ -1489,27 +1489,19 @@ PyCode_GetFreevars(PyCodeObject *code)
 static void
 clear_executors(PyCodeObject *co)
 {
+    assert(co->co_executors);
     for (int i = 0; i < co->co_executors->size; i++) {
-        Py_CLEAR(co->co_executors->executors[i]);
+        if (co->co_executors->executors[i]) {
+            _Py_ExecutorClear(co->co_executors->executors[i]);
+        }
     }
     PyMem_Free(co->co_executors);
     co->co_executors = NULL;
 }
 
 void
-_PyCode_Clear_Executors(PyCodeObject *code) {
-    int code_len = (int)Py_SIZE(code);
-    for (int i = 0; i < code_len; i += _PyInstruction_GetLength(code, i)) {
-        _Py_CODEUNIT *instr = &_PyCode_CODE(code)[i];
-        uint8_t opcode = instr->op.code;
-        uint8_t oparg = instr->op.arg;
-        if (opcode == ENTER_EXECUTOR) {
-            _PyExecutorObject *exec = code->co_executors->executors[oparg];
-            assert(exec->vm_data.opcode != ENTER_EXECUTOR);
-            instr->op.code = exec->vm_data.opcode;
-            instr->op.arg = exec->vm_data.oparg;
-        }
-    }
+_PyCode_Clear_Executors(PyCodeObject *code)
+{
     clear_executors(code);
 }
 
@@ -1718,6 +1710,7 @@ code_dealloc(PyCodeObject *co)
     }
     Py_SET_REFCNT(co, 0);
 
+    _PyFunction_ClearCodeByVersion(co->co_version);
     if (co->co_extra != NULL) {
         PyInterpreterState *interp = _PyInterpreterState_GET();
         _PyCodeObjectExtra *co_extra = co->co_extra;
@@ -2177,7 +2170,8 @@ static struct PyMethodDef code_methods[] = {
     {"co_positions", (PyCFunction)code_positionsiterator, METH_NOARGS},
     CODE_REPLACE_METHODDEF
     CODE__VARNAME_FROM_OPARG_METHODDEF
-    {"__replace__", _PyCFunction_CAST(code_replace), METH_FASTCALL|METH_KEYWORDS},
+    {"__replace__", _PyCFunction_CAST(code_replace), METH_FASTCALL|METH_KEYWORDS,
+     PyDoc_STR("__replace__($self, /, **changes)\n--\n\nThe same as replace().")},
     {NULL, NULL}                /* sentinel */
 };
 
@@ -2356,49 +2350,3 @@ _PyCode_ConstantKey(PyObject *op)
     }
     return key;
 }
-
-void
-_PyStaticCode_Fini(PyCodeObject *co)
-{
-    deopt_code(co, _PyCode_CODE(co));
-    if (co->co_executors != NULL) {
-        clear_executors(co);
-    }
-    PyMem_Free(co->co_extra);
-    if (co->_co_cached != NULL) {
-        Py_CLEAR(co->_co_cached->_co_code);
-        Py_CLEAR(co->_co_cached->_co_cellvars);
-        Py_CLEAR(co->_co_cached->_co_freevars);
-        Py_CLEAR(co->_co_cached->_co_varnames);
-        PyMem_Free(co->_co_cached);
-        co->_co_cached = NULL;
-    }
-    co->co_extra = NULL;
-    if (co->co_weakreflist != NULL) {
-        PyObject_ClearWeakRefs((PyObject *)co);
-        co->co_weakreflist = NULL;
-    }
-    free_monitoring_data(co->_co_monitoring);
-    co->_co_monitoring = NULL;
-}
-
-int
-_PyStaticCode_Init(PyCodeObject *co)
-{
-    int res = intern_strings(co->co_names);
-    if (res < 0) {
-        return -1;
-    }
-    res = intern_string_constants(co->co_consts, NULL);
-    if (res < 0) {
-        return -1;
-    }
-    res = intern_strings(co->co_localsplusnames);
-    if (res < 0) {
-        return -1;
-    }
-    _PyCode_Quicken(co);
-    return 0;
-}
-
-#define MAX_CODE_UNITS_PER_LOC_ENTRY 8

@@ -13,6 +13,7 @@
 #include "pycore_pymem.h"         // _PyMem_SetDefaultAllocator()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_sysmodule.h"     // _PySys_Audit()
+#include "pycore_time.h"          // _PyTime_PerfCounterUnchecked()
 #include "pycore_weakref.h"       // _PyWeakref_GET_REF()
 
 #include "marshal.h"              // PyMarshal_ReadObjectFromString()
@@ -1030,7 +1031,7 @@ _extensions_cache_set(PyObject *filename, PyObject *name, PyModuleDef *def)
     if (!already_set) {
         /* We assume that all module defs are statically allocated
            and will never be freed.  Otherwise, we would incref here. */
-        _Py_SetImmortal(def);
+        _Py_SetImmortal((PyObject *)def);
     }
     res = 0;
 
@@ -2719,7 +2720,7 @@ import_find_and_load(PyThreadState *tstate, PyObject *abs_name)
 #define import_level FIND_AND_LOAD(interp).import_level
 #define accumulated FIND_AND_LOAD(interp).accumulated
 
-    _PyTime_t t1 = 0, accumulated_copy = accumulated;
+    PyTime_t t1 = 0, accumulated_copy = accumulated;
 
     PyObject *sys_path = PySys_GetObject("path");
     PyObject *sys_meta_path = PySys_GetObject("meta_path");
@@ -2747,7 +2748,7 @@ import_find_and_load(PyThreadState *tstate, PyObject *abs_name)
 #undef header
 
         import_level++;
-        t1 = _PyTime_GetPerfCounter();
+        t1 = _PyTime_PerfCounterUnchecked();
         accumulated = 0;
     }
 
@@ -2762,7 +2763,7 @@ import_find_and_load(PyThreadState *tstate, PyObject *abs_name)
                                        mod != NULL);
 
     if (import_time) {
-        _PyTime_t cum = _PyTime_GetPerfCounter() - t1;
+        PyTime_t cum = _PyTime_PerfCounterUnchecked() - t1;
 
         import_level--;
         fprintf(stderr, "import time: %9ld | %10ld | %*s%s\n",
@@ -3544,7 +3545,7 @@ _imp_get_frozen_object_impl(PyObject *module, PyObject *name,
     struct frozen_info info = {0};
     Py_buffer buf = {0};
     if (PyObject_CheckBuffer(dataobj)) {
-        if (PyObject_GetBuffer(dataobj, &buf, PyBUF_READ) != 0) {
+        if (PyObject_GetBuffer(dataobj, &buf, PyBUF_SIMPLE) != 0) {
             return NULL;
         }
         info.data = (const char *)buf.buf;
@@ -3695,9 +3696,16 @@ _imp__override_multi_interp_extensions_check_impl(PyObject *module,
                         "cannot be used in the main interpreter");
         return NULL;
     }
+#ifdef Py_GIL_DISABLED
+    PyErr_SetString(PyExc_RuntimeError,
+                    "_imp._override_multi_interp_extensions_check() "
+                    "cannot be used in the free-threaded build");
+    return NULL;
+#else
     int oldvalue = OVERRIDE_MULTI_INTERP_EXTENSIONS_CHECK(interp);
     OVERRIDE_MULTI_INTERP_EXTENSIONS_CHECK(interp) = override;
     return PyLong_FromLong(oldvalue);
+#endif
 }
 
 #ifdef HAVE_DYNAMIC_LOADING

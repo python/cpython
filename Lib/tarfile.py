@@ -330,10 +330,11 @@ class _LowLevelFile:
 class _Stream:
     """Class that serves as an adapter between TarFile and
        a stream-like object.  The stream-like object only
-       needs to have a read() or write() method and is accessed
-       blockwise.  Use of gzip or bzip2 compression is possible.
-       A stream-like object could be for example: sys.stdin,
-       sys.stdout, a socket, a tape device etc.
+       needs to have a read() or write() method that works with bytes,
+       and the method is accessed blockwise.
+       Use of gzip or bzip2 compression is possible.
+       A stream-like object could be for example: sys.stdin.buffer,
+       sys.stdout.buffer, a socket, a tape device etc.
 
        _Stream is intended to be used only internally.
     """
@@ -871,7 +872,7 @@ class TarInfo(object):
         pax_headers = ('A dictionary containing key-value pairs of an '
                        'associated pax extended header.'),
         sparse = 'Sparse member information.',
-        tarfile = None,
+        _tarfile = None,
         _sparse_structs = None,
         _link_target = None,
         )
@@ -899,6 +900,24 @@ class TarInfo(object):
 
         self.sparse = None      # sparse member information
         self.pax_headers = {}   # pax header information
+
+    @property
+    def tarfile(self):
+        import warnings
+        warnings.warn(
+            'The undocumented "tarfile" attribute of TarInfo objects '
+            + 'is deprecated and will be removed in Python 3.16',
+            DeprecationWarning, stacklevel=2)
+        return self._tarfile
+
+    @tarfile.setter
+    def tarfile(self, tarfile):
+        import warnings
+        warnings.warn(
+            'The undocumented "tarfile" attribute of TarInfo objects '
+            + 'is deprecated and will be removed in Python 3.16',
+            DeprecationWarning, stacklevel=2)
+        self._tarfile = tarfile
 
     @property
     def path(self):
@@ -2029,7 +2048,7 @@ class TarFile(object):
         # Now, fill the TarInfo object with
         # information specific for the file.
         tarinfo = self.tarinfo()
-        tarinfo.tarfile = self  # Not needed
+        tarinfo._tarfile = self  # To be removed in 3.16.
 
         # Use os.stat or os.lstat, depending on if symlinks shall be resolved.
         if fileobj is None:
@@ -2410,7 +2429,7 @@ class TarFile(object):
         if upperdirs and not os.path.exists(upperdirs):
             # Create directories that are not part of the archive with
             # default permissions.
-            os.makedirs(upperdirs)
+            os.makedirs(upperdirs, exist_ok=True)
 
         if tarinfo.islnk() or tarinfo.issym():
             self._dbg(1, "%s -> %s" % (tarinfo.name, tarinfo.linkname))
@@ -2455,7 +2474,8 @@ class TarFile(object):
                 # later in _extract_member().
                 os.mkdir(targetpath, 0o700)
         except FileExistsError:
-            pass
+            if not os.path.isdir(targetpath):
+                raise
 
     def makefile(self, tarinfo, targetpath):
         """Make a file called targetpath.

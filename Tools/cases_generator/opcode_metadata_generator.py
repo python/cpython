@@ -1,6 +1,6 @@
-"""Generate uop metedata.
+"""Generate opcode metadata.
 Reads the instruction definitions from bytecodes.c.
-Writes the metadata to pycore_uop_metadata.h by default.
+Writes the metadata to pycore_opcode_metadata.h by default.
 """
 
 import argparse
@@ -50,6 +50,11 @@ FLAGS = [
     "DEOPT",
     "ERROR",
     "ESCAPES",
+    "EXIT",
+    "PURE",
+    "PASSTHROUGH",
+    "OPARG_AND_1",
+    "ERROR_NO_POP",
 ]
 
 
@@ -280,7 +285,7 @@ def is_viable_expansion(inst: Instruction) -> bool:
                 continue
             if "replaced" in part.annotations:
                 continue
-            if part.properties.tier_one_only or not part.is_viable():
+            if part.properties.tier == 1 or not part.is_viable():
                 return False
     return True
 

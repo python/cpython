@@ -48,6 +48,11 @@ Body.enum.converters['loweralpha'] = \
     Body.enum.converters['lowerroman'] = \
     Body.enum.converters['upperroman'] = lambda x: None
 
+# monkey-patch the productionlist directive to allow hyphens in group names
+# https://github.com/sphinx-doc/sphinx/issues/11854
+from sphinx.domains import std
+
+std.token_re = re.compile(r'`((~?[\w-]*:)?\w+)`')
 
 # Support for marking up and linking to bugs.python.org issues
 
@@ -128,7 +133,7 @@ class Availability(SphinxDirective):
     known_platforms = frozenset({
         "AIX", "Android", "BSD", "DragonFlyBSD", "Emscripten", "FreeBSD",
         "GNU/kFreeBSD", "Linux", "NetBSD", "OpenBSD", "POSIX", "Solaris",
-        "Unix", "VxWorks", "WASI", "Windows", "macOS",
+        "Unix", "VxWorks", "WASI", "Windows", "macOS", "iOS",
         # libc
         "BSD libc", "glibc", "musl",
         # POSIX platforms with pthreads
@@ -159,7 +164,7 @@ class Availability(SphinxDirective):
 
         Example::
 
-           .. availability:: Windows, Linux >= 4.2, not Emscripten, not WASI
+           .. availability:: Windows, Linux >= 4.2, not WASI
 
         Arguments like "Linux >= 3.17 with glibc >= 2.27" are currently not
         parsed into separate tokens.

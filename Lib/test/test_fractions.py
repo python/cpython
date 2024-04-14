@@ -261,6 +261,30 @@ class FractionTest(unittest.TestCase):
         self.assertRaisesMessage(
             ValueError, "Invalid literal for Fraction: '1.1e+1__1'",
             F, "1.1e+1__1")
+        self.assertRaisesMessage(
+            ValueError, "Invalid literal for Fraction: '123.dd'",
+            F, "123.dd")
+        self.assertRaisesMessage(
+            ValueError, "Invalid literal for Fraction: '123.5_dd'",
+            F, "123.5_dd")
+        self.assertRaisesMessage(
+            ValueError, "Invalid literal for Fraction: 'dd.5'",
+            F, "dd.5")
+        self.assertRaisesMessage(
+            ValueError, "Invalid literal for Fraction: '7_dd'",
+            F, "7_dd")
+        self.assertRaisesMessage(
+            ValueError, "Invalid literal for Fraction: '1/dd'",
+            F, "1/dd")
+        self.assertRaisesMessage(
+            ValueError, "Invalid literal for Fraction: '1/123_dd'",
+            F, "1/123_dd")
+        self.assertRaisesMessage(
+            ValueError, "Invalid literal for Fraction: '789edd'",
+            F, "789edd")
+        self.assertRaisesMessage(
+            ValueError, "Invalid literal for Fraction: '789e2_dd'",
+            F, "789e2_dd")
         # Test catastrophic backtracking.
         val = "9"*50 + "_"
         self.assertRaisesMessage(
@@ -1289,6 +1313,33 @@ class FractionTest(unittest.TestCase):
                     f = F(arg)
                     self.assertEqual(float(format(f, fmt2)), float(rhs))
                     self.assertEqual(float(format(-f, fmt2)), float('-' + rhs))
+
+    def test_complex_handling(self):
+        # See issue gh-102840 for more details.
+
+        a = F(1, 2)
+        b = 1j
+        message = "unsupported operand type(s) for %s: '%s' and '%s'"
+        # test forward
+        self.assertRaisesMessage(TypeError,
+                                 message % ("%", "Fraction", "complex"),
+                                 operator.mod, a, b)
+        self.assertRaisesMessage(TypeError,
+                                 message % ("//", "Fraction", "complex"),
+                                 operator.floordiv, a, b)
+        self.assertRaisesMessage(TypeError,
+                                 message % ("divmod()", "Fraction", "complex"),
+                                 divmod, a, b)
+        # test reverse
+        self.assertRaisesMessage(TypeError,
+                                 message % ("%", "complex", "Fraction"),
+                                 operator.mod, b, a)
+        self.assertRaisesMessage(TypeError,
+                                 message % ("//", "complex", "Fraction"),
+                                 operator.floordiv, b, a)
+        self.assertRaisesMessage(TypeError,
+                                 message % ("divmod()", "complex", "Fraction"),
+                                 divmod, b, a)
 
 
 if __name__ == '__main__':

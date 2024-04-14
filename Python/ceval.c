@@ -4,17 +4,21 @@
 
 #include "Python.h"
 #include "pycore_abstract.h"      // _PyIndex_Check()
+#include "pycore_backoff.h"
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
-#include "pycore_ceval.h"         // _PyEval_SignalAsyncExc()
+#include "pycore_cell.h"          // PyCell_GetRef()
+#include "pycore_ceval.h"
 #include "pycore_code.h"
 #include "pycore_emscripten_signal.h"  // _Py_CHECK_EMSCRIPTEN_SIGNALS
 #include "pycore_function.h"
 #include "pycore_instruments.h"
 #include "pycore_intrinsics.h"
+#include "pycore_jit.h"
 #include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_moduleobject.h"  // PyModuleObject
 #include "pycore_object.h"        // _PyObject_GC_TRACK()
 #include "pycore_opcode_metadata.h" // EXTRA_CASES
+#include "pycore_optimizer.h"     // _PyUOpExecutor_Type
 #include "pycore_opcode_utils.h"  // MAKE_FUNCTION_*
 #include "pycore_pyerrors.h"      // _PyErr_GetRaisedException()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
@@ -25,7 +29,6 @@
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
 #include "pycore_typeobject.h"    // _PySuper_Lookup()
 #include "pycore_uop_ids.h"       // Uops
-#include "pycore_uops.h"          // _PyUOpExecutorObject
 #include "pycore_pyerrors.h"
 
 #include "pycore_dict.h"
@@ -336,6 +339,12 @@ const binaryfunc _PyEval_BinaryOps[] = {
     [NB_INPLACE_XOR] = PyNumber_InPlaceXor,
 };
 
+const conversion_func _PyEval_ConversionFuncs[4] = {
+    [FVC_STR] = PyObject_Str,
+    [FVC_REPR] = PyObject_Repr,
+    [FVC_ASCII] = PyObject_ASCII
+};
+
 
 // PEP 634: Structural Pattern Matching
 
@@ -635,7 +644,6 @@ int _Py_CheckRecursiveCallPy(
     return 0;
 }
 
-
 static const _Py_CODEUNIT _Py_INTERPRETER_TRAMPOLINE_INSTRUCTIONS[] = {
     /* Put a NOP at the start, so that the IP points into
     * the code, rather than before it */
@@ -648,7 +656,10 @@ static const _Py_CODEUNIT _Py_INTERPRETER_TRAMPOLINE_INSTRUCTIONS[] = {
 
 extern const struct _PyCode_DEF(8) _Py_InitCleanup;
 
-extern const char *_PyUOpName(int index);
+#ifdef Py_DEBUG
+extern void _PyUOpPrint(const _PyUOpInstruction *uop);
+#endif
+
 
 /* Disable unused label warnings.  They are handy for debugging, even
    if computed gotos aren't used. */
@@ -738,15 +749,16 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
         goto resume_with_error;
     }
 
-    /* State shared between Tier 1 and Tier 2 interpreter */
-    _PyUOpExecutorObject *current_executor = NULL;
-
     /* Local "register" variables.
      * These are cached values from the frame and code object.  */
-
     _Py_CODEUNIT *next_instr;
     PyObject **stack_pointer;
 
+#ifndef _Py_JIT
+    /* Tier 2 interpreter state */
+    _PyExecutorObject *current_executor = NULL;
+    const _PyUOpInstruction *next_uop = NULL;
+#endif
 
 start_frame:
     if (_Py_EnterRecursivePy(tstate)) {
@@ -811,7 +823,7 @@ resume_frame:
             _PyBinaryOpCache *cache = (_PyBinaryOpCache *)(next_instr+1);
             /* Prevent the underlying instruction from specializing
              * and overwriting the instrumentation. */
-            INCREMENT_ADAPTIVE_COUNTER(cache->counter);
+            PAUSE_ADAPTIVE_COUNTER(cache->counter);
         }
         opcode = original_opcode;
         DISPATCH_GOTO();
@@ -838,15 +850,6 @@ resume_frame:
         /* This should never be reached. Every opcode should end with DISPATCH()
            or goto error. */
         Py_UNREACHABLE();
-
-unbound_local_error:
-        {
-            _PyEval_FormatExcCheckArg(tstate, PyExc_UnboundLocalError,
-                UNBOUNDLOCAL_ERROR_MSG,
-                PyTuple_GetItem(_PyFrame_GetCode(frame)->co_localsplusnames, oparg)
-            );
-            goto error;
-        }
 
 pop_4_error:
     STACK_SHRINK(1);
@@ -956,20 +959,18 @@ resume_with_error:
 
 
 
-// The Tier 2 interpreter is also here!
+// Tier 2 is also here!
 enter_tier_two:
+
+#ifdef _Py_JIT
+    assert(0);
+#else
 
 #undef LOAD_IP
 #define LOAD_IP(UNUSED) (void)0
 
 #undef GOTO_ERROR
 #define GOTO_ERROR(LABEL) goto LABEL ## _tier_two
-
-#undef DEOPT_IF
-#define DEOPT_IF(COND, INSTNAME) \
-    if ((COND)) {                \
-        goto deoptimize;\
-    }
 
 #ifdef Py_STATS
 // Disable these macros that apply to Tier 1 stats when we are in Tier 2
@@ -991,23 +992,29 @@ enter_tier_two:
     #define DPRINTF(level, ...)
 #endif
 
-    OPT_STAT_INC(traces_executed);
-    _PyUOpInstruction *next_uop = current_executor->trace;
+    ; // dummy statement after a label, before a declaration
     uint16_t uopcode;
 #ifdef Py_STATS
     uint64_t trace_uop_execution_counter = 0;
 #endif
 
+    assert(next_uop->opcode == _START_EXECUTOR || next_uop->opcode == _COLD_EXIT);
+tier2_dispatch:
     for (;;) {
         uopcode = next_uop->opcode;
-        DPRINTF(3,
-                "%4d: uop %s, oparg %d, operand %" PRIu64 ", target %d, stack_level %d\n",
-                (int)(next_uop - current_executor->trace),
-                _PyUOpName(uopcode),
-                next_uop->oparg,
-                next_uop->operand,
-                next_uop->target,
+#ifdef Py_DEBUG
+        if (lltrace >= 3) {
+            if (next_uop->opcode == _START_EXECUTOR || next_uop->opcode == _COLD_EXIT) {
+                printf("%4d uop: ", 0);
+            }
+            else {
+                printf("%4d uop: ", (int)(next_uop - current_executor->trace));
+            }
+            _PyUOpPrint(next_uop);
+            printf(" stack_level=%d\n",
                 (int)(stack_pointer - _PyFrame_Stackbase(frame)));
+        }
+#endif
         next_uop++;
         OPT_STAT_INC(uops_executed);
         UOP_STAT_INC(uopcode, execution_count);
@@ -1022,9 +1029,9 @@ enter_tier_two:
             default:
 #ifdef Py_DEBUG
             {
-                fprintf(stderr, "Unknown uop %d, oparg %d, operand %" PRIu64 " @ %d\n",
-                        opcode, next_uop[-1].oparg, next_uop[-1].operand,
-                        (int)(next_uop - current_executor->trace - 1));
+                printf("Unknown uop: ");
+                _PyUOpPrint(&next_uop[-1]);
+                printf(" @ %d\n", (int)(next_uop - current_executor->trace - 1));
                 Py_FatalError("Unknown uop");
             }
 #else
@@ -1034,47 +1041,75 @@ enter_tier_two:
         }
     }
 
-// Jump here from ERROR_IF(..., unbound_local_error)
-unbound_local_error_tier_two:
-    _PyEval_FormatExcCheckArg(tstate, PyExc_UnboundLocalError,
-        UNBOUNDLOCAL_ERROR_MSG,
-        PyTuple_GetItem(_PyFrame_GetCode(frame)->co_localsplusnames, oparg)
-    );
-    goto error_tier_two;
+jump_to_error_target:
+#ifdef Py_DEBUG
+    if (lltrace >= 2) {
+        printf("Error: [UOp ");
+        _PyUOpPrint(&next_uop[-1]);
+        printf(" @ %d -> %s]\n",
+               (int)(next_uop - current_executor->trace - 1),
+               _PyOpcode_OpName[frame->instr_ptr->op.code]);
+    }
+#endif
+    assert (next_uop[-1].format == UOP_FORMAT_JUMP);
+    uint16_t target = uop_get_error_target(&next_uop[-1]);
+    next_uop = current_executor->trace + target;
+    goto tier2_dispatch;
 
-// JUMP to any of these from ERROR_IF(..., error)
-pop_4_error_tier_two:
-    STACK_SHRINK(1);
-pop_3_error_tier_two:
-    STACK_SHRINK(1);
-pop_2_error_tier_two:
-    STACK_SHRINK(1);
-pop_1_error_tier_two:
-    STACK_SHRINK(1);
 error_tier_two:
-    DPRINTF(2, "Error: [UOp %d (%s), oparg %d, operand %" PRIu64 ", target %d @ %d -> %s]\n",
-            uopcode, _PyUOpName(uopcode), next_uop[-1].oparg, next_uop[-1].operand, next_uop[-1].target,
-            (int)(next_uop - current_executor->trace - 1),
-            _PyOpcode_OpName[frame->instr_ptr->op.code]);
     OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
+    assert(next_uop[-1].format == UOP_FORMAT_TARGET);
     frame->return_offset = 0;  // Don't leave this random
     _PyFrame_SetStackPointer(frame, stack_pointer);
     Py_DECREF(current_executor);
+    tstate->previous_executor = NULL;
     goto resume_with_error;
 
-// Jump here from DEOPT_IF()
-deoptimize:
+jump_to_jump_target:
+    assert(next_uop[-1].format == UOP_FORMAT_JUMP);
+    target = uop_get_jump_target(&next_uop[-1]);
+    next_uop = current_executor->trace + target;
+    goto tier2_dispatch;
+
+exit_to_tier1:
+    assert(next_uop[-1].format == UOP_FORMAT_TARGET);
     next_instr = next_uop[-1].target + _PyCode_CODE(_PyFrame_GetCode(frame));
-    DPRINTF(2, "DEOPT: [UOp %d (%s), oparg %d, operand %" PRIu64 ", target %d @ %d -> %s]\n",
-            uopcode, _PyUOpName(uopcode), next_uop[-1].oparg, next_uop[-1].operand, next_uop[-1].target,
-            (int)(next_uop - current_executor->trace - 1),
-            _PyOpcode_OpName[frame->instr_ptr->op.code]);
+#ifdef Py_DEBUG
+    if (lltrace >= 2) {
+        printf("DEOPT: [UOp ");
+        _PyUOpPrint(&next_uop[-1]);
+        printf(" -> %s]\n",
+               _PyOpcode_OpName[next_instr->op.code]);
+    }
+#endif
     OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
-    UOP_STAT_INC(uopcode, miss);
     Py_DECREF(current_executor);
+    tstate->previous_executor = NULL;
     DISPATCH();
 
+exit_to_trace:
+    assert(next_uop[-1].format == UOP_FORMAT_EXIT);
+    OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
+    uint32_t exit_index = next_uop[-1].exit_index;
+    assert(exit_index < current_executor->exit_count);
+    _PyExitData *exit = &current_executor->exits[exit_index];
+#ifdef Py_DEBUG
+    if (lltrace >= 2) {
+        printf("SIDE EXIT: [UOp ");
+        _PyUOpPrint(&next_uop[-1]);
+        printf(", exit %u, temp %d, target %d -> %s]\n",
+               exit_index, exit->temperature.as_counter, exit->target,
+               _PyOpcode_OpName[_PyCode_CODE(_PyFrame_GetCode(frame))[exit->target].op.code]);
+    }
+#endif
+    Py_INCREF(exit->executor);
+    tstate->previous_executor = (PyObject *)current_executor;
+    GOTO_TIER_TWO(exit->executor);
+
+#endif  // _Py_JIT
+
 }
+
 #if defined(__GNUC__)
 #  pragma GCC diagnostic pop
 #elif defined(_MSC_VER) /* MS_WINDOWS */
@@ -2111,6 +2146,9 @@ do_monitor_exc(PyThreadState *tstate, _PyInterpreterFrame *frame,
                _Py_CODEUNIT *instr, int event)
 {
     assert(event < _PY_MONITORING_UNGROUPED_EVENTS);
+    if (_PyFrame_GetCode(frame)->co_flags & CO_NO_MONITORING_EVENTS) {
+        return 0;
+    }
     PyObject *exc = PyErr_GetRaisedException();
     assert(exc != NULL);
     int err = _Py_call_instrumentation_arg(tstate, event, frame, instr, exc);
@@ -2846,7 +2884,7 @@ _PyEval_FormatExcUnbound(PyThreadState *tstate, PyCodeObject *co, int oparg)
     if (_PyErr_Occurred(tstate))
         return;
     name = PyTuple_GET_ITEM(co->co_localsplusnames, oparg);
-    if (oparg < PyCode_GetFirstFree(co)) {
+    if (oparg < PyUnstable_Code_GetFirstFree(co)) {
         _PyEval_FormatExcCheckArg(tstate, PyExc_UnboundLocalError,
                                   UNBOUNDLOCAL_ERROR_MSG, name);
     } else {

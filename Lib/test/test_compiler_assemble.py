@@ -1,3 +1,6 @@
+import dis
+import io
+import textwrap
 import types
 
 from test.support.bytecode_helper import AssemblerTestCase
@@ -22,11 +25,13 @@ class IsolatedAssembleTests(AssemblerTestCase):
         metadata.setdefault('filename', filename)
         return metadata
 
-    def assemble_test(self, insts, metadata, expected):
+    def insts_to_code_object(self, insts, metadata):
         metadata = self.complete_metadata(metadata)
         insts = self.complete_insts_info(insts)
+        return self.get_code_object(metadata['filename'], insts, metadata)
 
-        co = self.get_code_object(metadata['filename'], insts, metadata)
+    def assemble_test(self, insts, metadata, expected):
+        co = self.insts_to_code_object(insts, metadata)
         self.assertIsInstance(co, types.CodeType)
 
         expected_metadata = {}
@@ -108,3 +113,35 @@ class IsolatedAssembleTests(AssemblerTestCase):
 
         expected = {(0,): 0, (1,): 1, (2,): 0, (120,): 0, (121,): 1}
         self.assemble_test(instructions, metadata, expected)
+
+
+    def test_exception_table(self):
+        metadata = {
+            'filename' : 'exc.py',
+            'name'     : 'exc',
+            'consts'   : {2 : 0},
+        }
+
+        # code for "try: pass\n except: pass"
+        insts = [
+            ('RESUME', 0),
+            ('SETUP_FINALLY', 3),
+            ('RETURN_CONST', 0),
+            ('SETUP_CLEANUP', 8),
+            ('PUSH_EXC_INFO', 0),
+            ('POP_TOP', 0),
+            ('POP_EXCEPT', 0),
+            ('RETURN_CONST', 0),
+            ('COPY', 3),
+            ('POP_EXCEPT', 0),
+            ('RERAISE', 1),
+        ]
+        co = self.insts_to_code_object(insts, metadata)
+        output = io.StringIO()
+        dis.dis(co, file=output)
+        exc_table = textwrap.dedent("""
+                                       ExceptionTable:
+                                         L1 to L2 -> L2 [0]
+                                         L2 to L3 -> L3 [1] lasti
+                                    """)
+        self.assertTrue(output.getvalue().endswith(exc_table))

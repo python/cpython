@@ -116,10 +116,12 @@ Some facts and figures:
    ``'filemode|[compression]'``.  :func:`tarfile.open` will return a :class:`TarFile`
    object that processes its data as a stream of blocks.  No random seeking will
    be done on the file. If given, *fileobj* may be any object that has a
-   :meth:`~io.TextIOBase.read` or :meth:`~io.TextIOBase.write` method (depending on the *mode*). *bufsize*
-   specifies the blocksize and defaults to ``20 * 512`` bytes. Use this variant
-   in combination with e.g. ``sys.stdin``, a socket :term:`file object` or a tape
-   device. However, such a :class:`TarFile` object is limited in that it does
+   :meth:`~io.RawIOBase.read` or :meth:`~io.RawIOBase.write` method
+   (depending on the *mode*) that works with bytes.
+   *bufsize* specifies the blocksize and defaults to ``20 * 512`` bytes.
+   Use this variant in combination with e.g. ``sys.stdin.buffer``, a socket
+   :term:`file object` or a tape device.
+   However, such a :class:`TarFile` object is limited in that it does
    not allow random access, see :ref:`tar-examples`.  The currently
    possible modes:
 
@@ -671,6 +673,7 @@ be finalized; only the internally used file object will be closed. See the
 
 
 .. attribute:: TarFile.pax_headers
+   :type: dict
 
    A dictionary containing key-value pairs of pax global headers.
 
@@ -834,6 +837,41 @@ A ``TarInfo`` object has the following public data attributes:
       Can be set to ``None`` for :meth:`~TarFile.extract` and
       :meth:`~TarFile.extractall`, causing extraction to skip applying this
       attribute.
+
+.. attribute:: TarInfo.chksum
+   :type: int
+
+   Header checksum.
+
+
+.. attribute:: TarInfo.devmajor
+   :type: int
+
+   Device major number.
+
+
+.. attribute:: TarInfo.devminor
+   :type: int
+
+   Device minor number.
+
+
+.. attribute:: TarInfo.offset
+   :type: int
+
+   The tar header starts here.
+
+
+.. attribute:: TarInfo.offset_data
+   :type: int
+
+   The file's data starts here.
+
+
+.. attribute:: TarInfo.sparse
+
+   Sparse member information.
+
 
 .. attribute:: TarInfo.pax_headers
    :type: dict

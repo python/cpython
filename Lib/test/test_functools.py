@@ -31,10 +31,6 @@ c_functools = import_helper.import_fresh_module('functools',
 
 decimal = import_helper.import_fresh_module('decimal', fresh=['_decimal'])
 
-_partial_types = [py_functools.partial]
-if c_functools:
-    _partial_types.append(c_functools.partial)
-
 
 @contextlib.contextmanager
 def replaced_module(name, replacement):
@@ -207,10 +203,7 @@ class TestPartial:
         kwargs = {'a': object(), 'b': object()}
         kwargs_reprs = ['a={a!r}, b={b!r}'.format_map(kwargs),
                         'b={b!r}, a={a!r}'.format_map(kwargs)]
-        if self.partial in _partial_types:
-            name = 'functools.partial'
-        else:
-            name = self.partial.__name__
+        name = f"{self.partial.__module__}.{self.partial.__qualname__}"
 
         f = self.partial(capture)
         self.assertEqual(f'{name}({capture!r})', repr(f))
@@ -229,10 +222,7 @@ class TestPartial:
                        for kwargs_repr in kwargs_reprs])
 
     def test_recursive_repr(self):
-        if self.partial in _partial_types:
-            name = 'functools.partial'
-        else:
-            name = self.partial.__name__
+        name = f"{self.partial.__module__}.{self.partial.__qualname__}"
 
         f = self.partial(capture)
         f.__setstate__((f, (), {}, {}))
@@ -344,8 +334,10 @@ class TestPartial:
             f.__setstate__((f, (), {}, {}))
             try:
                 for proto in range(pickle.HIGHEST_PROTOCOL + 1):
-                    with self.assertRaises(RecursionError):
-                        pickle.dumps(f, proto)
+                    # gh-117008: Small limit since pickle uses C stack memory
+                    with support.infinite_recursion(100):
+                        with self.assertRaises(RecursionError):
+                            pickle.dumps(f, proto)
             finally:
                 f.__setstate__((capture, (), {}, {}))
 
@@ -939,6 +931,8 @@ class TestCmpToKey:
         self.assertRaises(TypeError, hash, k)
         self.assertNotIsInstance(k, collections.abc.Hashable)
 
+    @unittest.skipIf(support.MISSING_C_DOCSTRINGS,
+                     "Signature information for builtins requires docstrings")
     def test_cmp_to_signature(self):
         self.assertEqual(str(Signature.from_callable(self.cmp_to_key)),
                          '(mycmp)')
@@ -1873,8 +1867,14 @@ class TestLRU:
             return fib(n-1) + fib(n-2)
 
         if not support.Py_DEBUG:
+            depth = support.get_c_recursion_limit()*2//7
             with support.infinite_recursion():
-                fib(2500)
+                fib(depth)
+        if self.module == c_functools:
+            fib.cache_clear()
+            with support.infinite_recursion():
+                with self.assertRaises(RecursionError):
+                    fib(10000)
 
 
 @py_functools.lru_cache()
@@ -2698,7 +2698,10 @@ class TestSingleDispatch(unittest.TestCase):
             A().static_func
         ):
             with self.subTest(meth=meth):
-                self.assertEqual(meth.__doc__, 'My function docstring')
+                self.assertEqual(meth.__doc__,
+                                 ('My function docstring'
+                                  if support.HAVE_DOCSTRINGS
+                                  else None))
                 self.assertEqual(meth.__annotations__['arg'], int)
 
         self.assertEqual(A.func.__name__, 'func')
@@ -2787,7 +2790,10 @@ class TestSingleDispatch(unittest.TestCase):
             WithSingleDispatch().decorated_classmethod
         ):
             with self.subTest(meth=meth):
-                self.assertEqual(meth.__doc__, 'My function docstring')
+                self.assertEqual(meth.__doc__,
+                                 ('My function docstring'
+                                  if support.HAVE_DOCSTRINGS
+                                  else None))
                 self.assertEqual(meth.__annotations__['arg'], int)
 
         self.assertEqual(
@@ -2859,11 +2865,26 @@ class TestSingleDispatch(unittest.TestCase):
 
     def test_invalid_positional_argument(self):
         @functools.singledispatch
-        def f(*args):
+        def f(*args, **kwargs):
             pass
         msg = 'f requires at least 1 positional argument'
         with self.assertRaisesRegex(TypeError, msg):
             f()
+        msg = 'f requires at least 1 positional argument'
+        with self.assertRaisesRegex(TypeError, msg):
+            f(a=1)
+
+    def test_invalid_positional_argument_singledispatchmethod(self):
+        class A:
+            @functools.singledispatchmethod
+            def t(self, *args, **kwargs):
+                pass
+        msg = 't requires at least 1 positional argument'
+        with self.assertRaisesRegex(TypeError, msg):
+            A().t()
+        msg = 't requires at least 1 positional argument'
+        with self.assertRaisesRegex(TypeError, msg):
+            A().t(a=1)
 
     def test_union(self):
         @functools.singledispatch
@@ -3115,7 +3136,10 @@ class TestCachedProperty(unittest.TestCase):
         self.assertIsInstance(CachedCostItem.cost, py_functools.cached_property)
 
     def test_doc(self):
-        self.assertEqual(CachedCostItem.cost.__doc__, "The cost of the item.")
+        self.assertEqual(CachedCostItem.cost.__doc__,
+                         ("The cost of the item."
+                          if support.HAVE_DOCSTRINGS
+                          else None))
 
     def test_module(self):
         self.assertEqual(CachedCostItem.cost.__module__, CachedCostItem.__module__)
