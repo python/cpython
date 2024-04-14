@@ -1867,7 +1867,7 @@ class TestLRU:
             return fib(n-1) + fib(n-2)
 
         if not support.Py_DEBUG:
-            depth = support.Py_C_RECURSION_LIMIT*2//7
+            depth = support.get_c_recursion_limit()*2//7
             with support.infinite_recursion():
                 fib(depth)
         if self.module == c_functools:

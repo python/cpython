@@ -1,1 +1,0 @@
-Fix instances of ``<_overlapped.Overlapped object at 0xXXX> still has pending operation at deallocation, the process may crash``.

@@ -86,9 +86,9 @@ PyAPI_FUNC(void) _Py_NO_RETURN _Py_FatalRefcountErrorFunc(
    built against the pre-3.12 stable ABI. */
 PyAPI_DATA(Py_ssize_t) _Py_RefTotal;
 
-extern void _Py_AddRefTotal(PyInterpreterState *, Py_ssize_t);
-extern void _Py_IncRefTotal(PyInterpreterState *);
-extern void _Py_DecRefTotal(PyInterpreterState *);
+extern void _Py_AddRefTotal(PyThreadState *, Py_ssize_t);
+extern void _Py_IncRefTotal(PyThreadState *);
+extern void _Py_DecRefTotal(PyThreadState *);
 
 #  define _Py_DEC_REFTOTAL(interp) \
     interp->object_state.reftotal--
@@ -101,7 +101,7 @@ static inline void _Py_RefcntAdd(PyObject* op, Py_ssize_t n)
         return;
     }
 #ifdef Py_REF_DEBUG
-    _Py_AddRefTotal(_PyInterpreterState_GET(), n);
+    _Py_AddRefTotal(_PyThreadState_GET(), n);
 #endif
 #if !defined(Py_GIL_DISABLED)
     op->ob_refcnt += n;
@@ -157,6 +157,21 @@ static inline void _Py_ClearImmortal(PyObject *op)
         _Py_ClearImmortal(_PyObject_CAST(op)); \
         op = NULL; \
     } while (0)
+
+// Mark an object as supporting deferred reference counting. This is a no-op
+// in the default (with GIL) build. Objects that use deferred reference
+// counting should be tracked by the GC so that they are eventually collected.
+extern void _PyObject_SetDeferredRefcount(PyObject *op);
+
+static inline int
+_PyObject_HasDeferredRefcount(PyObject *op)
+{
+#ifdef Py_GIL_DISABLED
+    return (op->ob_gc_bits & _PyGC_BITS_DEFERRED) != 0;
+#else
+    return 0;
+#endif
+}
 
 #if !defined(Py_GIL_DISABLED)
 static inline void
@@ -393,7 +408,7 @@ _Py_TryIncrefFast(PyObject *op) {
         _Py_INCREF_STAT_INC();
         _Py_atomic_store_uint32_relaxed(&op->ob_ref_local, local);
 #ifdef Py_REF_DEBUG
-        _Py_IncRefTotal(_PyInterpreterState_GET());
+        _Py_IncRefTotal(_PyThreadState_GET());
 #endif
         return 1;
     }
@@ -416,7 +431,7 @@ _Py_TryIncRefShared(PyObject *op)
                 &shared,
                 shared + (1 << _Py_REF_SHARED_SHIFT))) {
 #ifdef Py_REF_DEBUG
-            _Py_IncRefTotal(_PyInterpreterState_GET());
+            _Py_IncRefTotal(_PyThreadState_GET());
 #endif
             _Py_INCREF_STAT_INC();
             return 1;
@@ -426,7 +441,7 @@ _Py_TryIncRefShared(PyObject *op)
 
 /* Tries to incref the object op and ensures that *src still points to it. */
 static inline int
-_Py_TryIncref(PyObject **src, PyObject *op)
+_Py_TryIncrefCompare(PyObject **src, PyObject *op)
 {
     if (_Py_TryIncrefFast(op)) {
         return 1;
@@ -452,7 +467,7 @@ _Py_XGetRef(PyObject **ptr)
         if (value == NULL) {
             return value;
         }
-        if (_Py_TryIncref(ptr, value)) {
+        if (_Py_TryIncrefCompare(ptr, value)) {
             return value;
         }
     }
@@ -467,7 +482,7 @@ _Py_TryXGetRef(PyObject **ptr)
     if (value == NULL) {
         return value;
     }
-    if (_Py_TryIncref(ptr, value)) {
+    if (_Py_TryIncrefCompare(ptr, value)) {
         return value;
     }
     return NULL;
@@ -506,7 +521,41 @@ _Py_XNewRefWithLock(PyObject *obj)
     return _Py_NewRefWithLock(obj);
 }
 
+static inline void
+_PyObject_SetMaybeWeakref(PyObject *op)
+{
+    if (_Py_IsImmortal(op)) {
+        return;
+    }
+    for (;;) {
+        Py_ssize_t shared = _Py_atomic_load_ssize_relaxed(&op->ob_ref_shared);
+        if ((shared & _Py_REF_SHARED_FLAG_MASK) != 0) {
+            // Nothing to do if it's in WEAKREFS, QUEUED, or MERGED states.
+            return;
+        }
+        if (_Py_atomic_compare_exchange_ssize(
+                &op->ob_ref_shared, &shared, shared | _Py_REF_MAYBE_WEAKREF)) {
+            return;
+        }
+    }
+}
+
 #endif
+
+/* Tries to incref op and returns 1 if successful or 0 otherwise. */
+static inline int
+_Py_TryIncref(PyObject *op)
+{
+#ifdef Py_GIL_DISABLED
+    return _Py_TryIncrefFast(op) || _Py_TryIncRefShared(op);
+#else
+    if (Py_REFCNT(op) > 0) {
+        Py_INCREF(op);
+        return 1;
+    }
+    return 0;
+#endif
+}
 
 #ifdef Py_REF_DEBUG
 extern void _PyInterpreterState_FinalizeRefTotal(PyInterpreterState *);

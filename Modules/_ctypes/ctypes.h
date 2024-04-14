@@ -2,6 +2,9 @@
 #   include <alloca.h>
 #endif
 
+#include "pycore_moduleobject.h"  // _PyModule_GetState()
+#include "pycore_typeobject.h"    // _PyType_GetModuleState()
+
 #ifndef MS_WIN32
 #define max(a, b) ((a) > (b) ? (a) : (b))
 #define min(a, b) ((a) < (b) ? (a) : (b))
@@ -70,9 +73,48 @@ typedef struct {
     PyObject *swapped_suffix;
 } ctypes_state;
 
-extern ctypes_state global_state;
 
-#define GLOBAL_STATE() (&global_state)
+extern struct PyModuleDef _ctypesmodule;
+
+
+static inline ctypes_state *
+get_module_state(PyObject *module)
+{
+    void *state = _PyModule_GetState(module);
+    assert(state != NULL);
+    return (ctypes_state *)state;
+}
+
+static inline ctypes_state *
+get_module_state_by_class(PyTypeObject *cls)
+{
+    ctypes_state *state = (ctypes_state *)_PyType_GetModuleState(cls);
+    assert(state != NULL);
+    return state;
+}
+
+static inline ctypes_state *
+get_module_state_by_def(PyTypeObject *cls)
+{
+    PyObject *mod = PyType_GetModuleByDef(cls, &_ctypesmodule);
+    assert(mod != NULL);
+    return get_module_state(mod);
+}
+
+static inline ctypes_state *
+get_module_state_by_def_final(PyTypeObject *cls)
+{
+    if (cls->tp_mro == NULL) {
+        return NULL;
+    }
+    PyObject *mod = PyType_GetModuleByDef(cls, &_ctypesmodule);
+    if (mod == NULL) {
+        PyErr_Clear();
+        return NULL;
+    }
+    return get_module_state(mod);
+}
+
 
 extern PyType_Spec carg_spec;
 extern PyType_Spec cfield_spec;

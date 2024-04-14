@@ -111,7 +111,7 @@ def join(path, *paths):
         if not paths:
             path[:0] + sep  #23780: Ensure compatible data type even if p is null.
         result_drive, result_root, result_path = splitroot(path)
-        for p in map(os.fspath, paths):
+        for p in paths:
             p_drive, p_root, p_path = splitroot(p)
             if p_root:
                 # Second path is absolute
@@ -368,13 +368,15 @@ def expanduser(path):
     If user or $HOME is unknown, do nothing."""
     path = os.fspath(path)
     if isinstance(path, bytes):
+        seps = b'\\/'
         tilde = b'~'
     else:
+        seps = '\\/'
         tilde = '~'
     if not path.startswith(tilde):
         return path
     i, n = 1, len(path)
-    while i < n and path[i] not in _get_bothseps(path):
+    while i < n and path[i] not in seps:
         i += 1
 
     if 'USERPROFILE' in os.environ:

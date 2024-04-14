@@ -1,15 +1,17 @@
-import webbrowser
-import unittest
 import os
-import sys
+import re
+import shlex
 import subprocess
-from unittest import mock
+import sys
+import unittest
+import webbrowser
 from test import support
-from test.support import is_apple_mobile
 from test.support import import_helper
+from test.support import is_apple_mobile
 from test.support import os_helper
 from test.support import requires_subprocess
 from test.support import threading_helper
+from unittest import mock
 
 # The webbrowser module uses threading locks
 threading_helper.requires_working_threading(module=True)
@@ -97,6 +99,15 @@ class ChromeCommandTest(CommandTestMixin, unittest.TestCase):
         self._test('open_new_tab',
                    options=[],
                    arguments=[URL])
+
+    def test_open_bad_new_parameter(self):
+        with self.assertRaisesRegex(webbrowser.Error,
+                                    re.escape("Bad 'new' parameter to open(); "
+                                              "expected 0, 1, or 2, got 999")):
+            self._test('open',
+                       options=[],
+                       arguments=[URL],
+                       kw=dict(new=999))
 
 
 class EdgeCommandTest(CommandTestMixin, unittest.TestCase):
@@ -205,22 +216,22 @@ class ELinksCommandTest(CommandTestMixin, unittest.TestCase):
 
     def test_open(self):
         self._test('open', options=['-remote'],
-                           arguments=['openURL({})'.format(URL)])
+                   arguments=[f'openURL({URL})'])
 
     def test_open_with_autoraise_false(self):
         self._test('open',
                    options=['-remote'],
-                   arguments=['openURL({})'.format(URL)])
+                   arguments=[f'openURL({URL})'])
 
     def test_open_new(self):
         self._test('open_new',
                    options=['-remote'],
-                   arguments=['openURL({},new-window)'.format(URL)])
+                   arguments=[f'openURL({URL},new-window)'])
 
     def test_open_new_tab(self):
         self._test('open_new_tab',
                    options=['-remote'],
-                   arguments=['openURL({},new-tab)'.format(URL)])
+                   arguments=[f'openURL({URL},new-tab)'])
 
 
 @unittest.skipUnless(sys.platform == "ios", "Test only applicable to iOS")
@@ -342,7 +353,6 @@ class BrowserRegistrationTest(unittest.TestCase):
     def test_register_preferred(self):
         self._check_registration(preferred=True)
 
-
     @unittest.skipUnless(sys.platform == "darwin", "macOS specific test")
     def test_no_xdg_settings_on_macOS(self):
         # On macOS webbrowser should not use xdg-settings to
@@ -423,5 +433,62 @@ class ImportTest(unittest.TestCase):
             self.assertEqual(webbrowser.get().name, sys.executable)
 
 
-if __name__=='__main__':
+class CliTest(unittest.TestCase):
+    def test_parse_args(self):
+        for command, url, new_win in [
+            # No optional arguments
+            ("https://example.com", "https://example.com", 0),
+            # Each optional argument
+            ("https://example.com -n", "https://example.com", 1),
+            ("-n https://example.com", "https://example.com", 1),
+            ("https://example.com -t", "https://example.com", 2),
+            ("-t https://example.com", "https://example.com", 2),
+            # Long form
+            ("https://example.com --new-window", "https://example.com", 1),
+            ("--new-window https://example.com", "https://example.com", 1),
+            ("https://example.com --new-tab", "https://example.com", 2),
+            ("--new-tab https://example.com", "https://example.com", 2),
+        ]:
+            args = webbrowser.parse_args(shlex.split(command))
+
+            self.assertEqual(args.url, url)
+            self.assertEqual(args.new_win, new_win)
+
+    def test_parse_args_error(self):
+        for command in [
+            # Arguments must not both be given
+            "https://example.com -n -t",
+            "https://example.com --new-window --new-tab",
+            "https://example.com -n --new-tab",
+            "https://example.com --new-window -t",
+            # Ensure ambiguous shortening fails
+            "https://example.com --new",
+        ]:
+            with self.assertRaises(SystemExit):
+                webbrowser.parse_args(shlex.split(command))
+
+    def test_main(self):
+        for command, expected_url, expected_new_win in [
+            # No optional arguments
+            ("https://example.com", "https://example.com", 0),
+            # Each optional argument
+            ("https://example.com -n", "https://example.com", 1),
+            ("-n https://example.com", "https://example.com", 1),
+            ("https://example.com -t", "https://example.com", 2),
+            ("-t https://example.com", "https://example.com", 2),
+            # Long form
+            ("https://example.com --new-window", "https://example.com", 1),
+            ("--new-window https://example.com", "https://example.com", 1),
+            ("https://example.com --new-tab", "https://example.com", 2),
+            ("--new-tab https://example.com", "https://example.com", 2),
+        ]:
+            with (
+                mock.patch("webbrowser.open", return_value=None) as mock_open,
+                mock.patch("builtins.print", return_value=None),
+            ):
+                webbrowser.main(shlex.split(command))
+                mock_open.assert_called_once_with(expected_url, expected_new_win)
+
+
+if __name__ == '__main__':
     unittest.main()

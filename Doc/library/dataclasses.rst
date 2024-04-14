@@ -362,7 +362,7 @@ Module contents
 
    To create a shallow copy, the following workaround may be used::
 
-     dict((field.name, getattr(obj, field.name)) for field in fields(obj))
+     {field.name: getattr(obj, field.name) for field in fields(obj)}
 
    :func:`!asdict` raises :exc:`TypeError` if ``obj`` is not a dataclass
    instance.
@@ -430,8 +430,8 @@ Module contents
 
    Creates a new object of the same type as ``obj``, replacing
    fields with values from ``changes``.  If ``obj`` is not a Data
-   Class, raises :exc:`TypeError`.  If values in ``changes`` do not
-   specify fields, raises :exc:`TypeError`.
+   Class, raises :exc:`TypeError`.  If keys in ``changes`` are not
+   field names of the given dataclass, raises :exc:`TypeError`.
 
    The newly returned object is created by calling the :meth:`~object.__init__`
    method of the dataclass.  This ensures that

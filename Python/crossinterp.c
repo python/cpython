@@ -468,7 +468,7 @@ _release_xid_data(_PyCrossInterpreterData *data, int rawfree)
 /***********************/
 
 static int
-_excinfo_init_type(struct _excinfo_type *info, PyObject *exc)
+_excinfo_init_type_from_exception(struct _excinfo_type *info, PyObject *exc)
 {
     /* Note that this copies directly rather than into an intermediate
        struct and does not clear on error.  If we need that then we
@@ -504,7 +504,7 @@ _excinfo_init_type(struct _excinfo_type *info, PyObject *exc)
     }
     info->qualname = _copy_string_obj_raw(strobj, NULL);
     Py_DECREF(strobj);
-    if (info->name == NULL) {
+    if (info->qualname == NULL) {
         return -1;
     }
 
@@ -515,7 +515,48 @@ _excinfo_init_type(struct _excinfo_type *info, PyObject *exc)
     }
     info->module = _copy_string_obj_raw(strobj, NULL);
     Py_DECREF(strobj);
+    if (info->module == NULL) {
+        return -1;
+    }
+
+    return 0;
+}
+
+static int
+_excinfo_init_type_from_object(struct _excinfo_type *info, PyObject *exctype)
+{
+    PyObject *strobj = NULL;
+
+    // __name__
+    strobj = PyObject_GetAttrString(exctype, "__name__");
+    if (strobj == NULL) {
+        return -1;
+    }
+    info->name = _copy_string_obj_raw(strobj, NULL);
+    Py_DECREF(strobj);
     if (info->name == NULL) {
+        return -1;
+    }
+
+    // __qualname__
+    strobj = PyObject_GetAttrString(exctype, "__qualname__");
+    if (strobj == NULL) {
+        return -1;
+    }
+    info->qualname = _copy_string_obj_raw(strobj, NULL);
+    Py_DECREF(strobj);
+    if (info->qualname == NULL) {
+        return -1;
+    }
+
+    // __module__
+    strobj = PyObject_GetAttrString(exctype, "__module__");
+    if (strobj == NULL) {
+        return -1;
+    }
+    info->module = _copy_string_obj_raw(strobj, NULL);
+    Py_DECREF(strobj);
+    if (info->module == NULL) {
         return -1;
     }
 
@@ -584,7 +625,7 @@ _PyXI_excinfo_Clear(_PyXI_excinfo *info)
     *info = (_PyXI_excinfo){{NULL}};
 }
 
-static PyObject *
+PyObject *
 _PyXI_excinfo_format(_PyXI_excinfo *info)
 {
     const char *module, *qualname;
@@ -627,7 +668,7 @@ _PyXI_excinfo_InitFromException(_PyXI_excinfo *info, PyObject *exc)
     }
     const char *failure = NULL;
 
-    if (_excinfo_init_type(&info->type, exc) < 0) {
+    if (_excinfo_init_type_from_exception(&info->type, exc) < 0) {
         failure = "error while initializing exception type snapshot";
         goto error;
     }
@@ -662,6 +703,57 @@ _PyXI_excinfo_InitFromException(_PyXI_excinfo *info, PyObject *exc)
 #endif
             PyErr_Clear();
         }
+    }
+
+    return NULL;
+
+error:
+    assert(failure != NULL);
+    _PyXI_excinfo_Clear(info);
+    return failure;
+}
+
+static const char *
+_PyXI_excinfo_InitFromObject(_PyXI_excinfo *info, PyObject *obj)
+{
+    const char *failure = NULL;
+
+    PyObject *exctype = PyObject_GetAttrString(obj, "type");
+    if (exctype == NULL) {
+        failure = "exception snapshot missing 'type' attribute";
+        goto error;
+    }
+    int res = _excinfo_init_type_from_object(&info->type, exctype);
+    Py_DECREF(exctype);
+    if (res < 0) {
+        failure = "error while initializing exception type snapshot";
+        goto error;
+    }
+
+    // Extract the exception message.
+    PyObject *msgobj = PyObject_GetAttrString(obj, "msg");
+    if (msgobj == NULL) {
+        failure = "exception snapshot missing 'msg' attribute";
+        goto error;
+    }
+    info->msg = _copy_string_obj_raw(msgobj, NULL);
+    Py_DECREF(msgobj);
+    if (info->msg == NULL) {
+        failure = "error while copying exception message";
+        goto error;
+    }
+
+    // Pickle a traceback.TracebackException.
+    PyObject *errdisplay = PyObject_GetAttrString(obj, "errdisplay");
+    if (errdisplay == NULL) {
+        failure = "exception snapshot missing 'errdisplay' attribute";
+        goto error;
+    }
+    info->errdisplay = _copy_string_obj_raw(errdisplay, NULL);
+    Py_DECREF(errdisplay);
+    if (info->errdisplay == NULL) {
+        failure = "error while copying exception error display";
+        goto error;
     }
 
     return NULL;
@@ -825,6 +917,47 @@ error:
 }
 
 
+int
+_PyXI_InitExcInfo(_PyXI_excinfo *info, PyObject *exc)
+{
+    assert(!PyErr_Occurred());
+    if (exc == NULL || exc == Py_None) {
+        PyErr_SetString(PyExc_ValueError, "missing exc");
+        return -1;
+    }
+    const char *failure;
+    if (PyExceptionInstance_Check(exc) || PyExceptionClass_Check(exc)) {
+        failure = _PyXI_excinfo_InitFromException(info, exc);
+    }
+    else {
+        failure = _PyXI_excinfo_InitFromObject(info, exc);
+    }
+    if (failure != NULL) {
+        PyErr_SetString(PyExc_Exception, failure);
+        return -1;
+    }
+    return 0;
+}
+
+PyObject *
+_PyXI_FormatExcInfo(_PyXI_excinfo *info)
+{
+    return _PyXI_excinfo_format(info);
+}
+
+PyObject *
+_PyXI_ExcInfoAsObject(_PyXI_excinfo *info)
+{
+    return _PyXI_excinfo_AsObject(info);
+}
+
+void
+_PyXI_ClearExcInfo(_PyXI_excinfo *info)
+{
+    _PyXI_excinfo_Clear(info);
+}
+
+
 /***************************/
 /* short-term data sharing */
 /***************************/
@@ -845,7 +978,7 @@ _PyXI_ApplyErrorCode(_PyXI_errcode code, PyInterpreterState *interp)
         return 0;
     case _PyXI_ERR_OTHER:
         // XXX msg?
-        PyErr_SetNone(PyExc_RuntimeError);
+        PyErr_SetNone(PyExc_InterpreterError);
         break;
     case _PyXI_ERR_NO_MEMORY:
         PyErr_NoMemory();
@@ -856,11 +989,11 @@ _PyXI_ApplyErrorCode(_PyXI_errcode code, PyInterpreterState *interp)
         _PyInterpreterState_FailIfRunningMain(interp);
         break;
     case _PyXI_ERR_MAIN_NS_FAILURE:
-        PyErr_SetString(PyExc_RuntimeError,
+        PyErr_SetString(PyExc_InterpreterError,
                         "failed to get __main__ namespace");
         break;
     case _PyXI_ERR_APPLY_NS_FAILURE:
-        PyErr_SetString(PyExc_RuntimeError,
+        PyErr_SetString(PyExc_InterpreterError,
                         "failed to apply namespace to __main__");
         break;
     case _PyXI_ERR_NOT_SHAREABLE:
@@ -935,7 +1068,7 @@ _PyXI_ApplyError(_PyXI_error *error)
         if (error->uncaught.type.name != NULL || error->uncaught.msg != NULL) {
             // __context__ will be set to a proxy of the propagated exception.
             PyObject *exc = PyErr_GetRaisedException();
-            _PyXI_excinfo_Apply(&error->uncaught, PyExc_RuntimeError);
+            _PyXI_excinfo_Apply(&error->uncaught, PyExc_InterpreterError);
             PyObject *exc2 = PyErr_GetRaisedException();
             PyException_SetContext(exc, exc2);
             PyErr_SetRaisedException(exc);
@@ -1671,6 +1804,7 @@ PyStatus
 _PyXI_InitTypes(PyInterpreterState *interp)
 {
     if (init_exceptions(interp) < 0) {
+        PyErr_PrintEx(0);
         return _PyStatus_ERR("failed to initialize an exception type");
     }
     return _PyStatus_OK();
@@ -1680,4 +1814,105 @@ void
 _PyXI_FiniTypes(PyInterpreterState *interp)
 {
     fini_exceptions(interp);
+}
+
+
+/*************/
+/* other API */
+/*************/
+
+PyInterpreterState *
+_PyXI_NewInterpreter(PyInterpreterConfig *config, long *maybe_whence,
+                     PyThreadState **p_tstate, PyThreadState **p_save_tstate)
+{
+    PyThreadState *save_tstate = PyThreadState_Swap(NULL);
+    assert(save_tstate != NULL);
+
+    PyThreadState *tstate;
+    PyStatus status = Py_NewInterpreterFromConfig(&tstate, config);
+    if (PyStatus_Exception(status)) {
+        // Since no new thread state was created, there is no exception
+        // to propagate; raise a fresh one after swapping back in the
+        // old thread state.
+        PyThreadState_Swap(save_tstate);
+        _PyErr_SetFromPyStatus(status);
+        PyObject *exc = PyErr_GetRaisedException();
+        PyErr_SetString(PyExc_InterpreterError,
+                        "sub-interpreter creation failed");
+        _PyErr_ChainExceptions1(exc);
+        return NULL;
+    }
+    assert(tstate != NULL);
+    PyInterpreterState *interp = PyThreadState_GetInterpreter(tstate);
+
+    long whence = _PyInterpreterState_WHENCE_XI;
+    if (maybe_whence != NULL) {
+        whence = *maybe_whence;
+    }
+    _PyInterpreterState_SetWhence(interp, whence);
+
+    if (p_tstate != NULL) {
+        // We leave the new thread state as the current one.
+        *p_tstate = tstate;
+    }
+    else {
+        // Throw away the initial tstate.
+        PyThreadState_Clear(tstate);
+        PyThreadState_Swap(save_tstate);
+        PyThreadState_Delete(tstate);
+        save_tstate = NULL;
+    }
+    if (p_save_tstate != NULL) {
+        *p_save_tstate = save_tstate;
+    }
+    return interp;
+}
+
+void
+_PyXI_EndInterpreter(PyInterpreterState *interp,
+                     PyThreadState *tstate, PyThreadState **p_save_tstate)
+{
+#ifndef NDEBUG
+    long whence = _PyInterpreterState_GetWhence(interp);
+#endif
+    assert(whence != _PyInterpreterState_WHENCE_RUNTIME);
+
+    if (!_PyInterpreterState_IsReady(interp)) {
+        assert(whence == _PyInterpreterState_WHENCE_UNKNOWN);
+        // PyInterpreterState_Clear() requires the GIL,
+        // which a not-ready does not have, so we don't clear it.
+        // That means there may be leaks here until clearing the
+        // interpreter is fixed.
+        PyInterpreterState_Delete(interp);
+        return;
+    }
+    assert(whence != _PyInterpreterState_WHENCE_UNKNOWN);
+
+    PyThreadState *save_tstate = NULL;
+    PyThreadState *cur_tstate = PyThreadState_GET();
+    if (tstate == NULL) {
+        if (PyThreadState_GetInterpreter(cur_tstate) == interp) {
+            tstate = cur_tstate;
+        }
+        else {
+            tstate = PyThreadState_New(interp);
+            _PyThreadState_SetWhence(tstate, _PyThreadState_WHENCE_INTERP);
+            assert(tstate != NULL);
+            save_tstate = PyThreadState_Swap(tstate);
+        }
+    }
+    else {
+        assert(PyThreadState_GetInterpreter(tstate) == interp);
+        if (tstate != cur_tstate) {
+            assert(PyThreadState_GetInterpreter(cur_tstate) != interp);
+            save_tstate = PyThreadState_Swap(tstate);
+        }
+    }
+
+    Py_EndInterpreter(tstate);
+
+    if (p_save_tstate != NULL) {
+        save_tstate = *p_save_tstate;
+    }
+    PyThreadState_Swap(save_tstate);
 }
