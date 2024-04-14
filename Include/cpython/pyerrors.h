@@ -88,33 +88,7 @@ typedef PyOSErrorObject PyEnvironmentErrorObject;
 typedef PyOSErrorObject PyWindowsErrorObject;
 #endif
 
-/* Error handling definitions */
-
-PyAPI_FUNC(void) _PyErr_SetKeyError(PyObject *);
-PyAPI_FUNC(_PyErr_StackItem*) _PyErr_GetTopmostException(PyThreadState *tstate);
-PyAPI_FUNC(PyObject*) _PyErr_GetHandledException(PyThreadState *);
-PyAPI_FUNC(void) _PyErr_SetHandledException(PyThreadState *, PyObject *);
-PyAPI_FUNC(void) _PyErr_GetExcInfo(PyThreadState *, PyObject **, PyObject **, PyObject **);
-
-/* Context manipulation (PEP 3134) */
-
-Py_DEPRECATED(3.12) PyAPI_FUNC(void) _PyErr_ChainExceptions(PyObject *, PyObject *, PyObject *);
-PyAPI_FUNC(void) _PyErr_ChainExceptions1(PyObject *);
-
-/* Like PyErr_Format(), but saves current exception as __context__ and
-   __cause__.
- */
-PyAPI_FUNC(PyObject *) _PyErr_FormatFromCause(
-    PyObject *exception,
-    const char *format,   /* ASCII-encoded string  */
-    ...
-    );
-
 /* In exceptions.c */
-
-PyAPI_FUNC(int) _PyException_AddNote(
-     PyObject *exc,
-     PyObject *note);
 
 PyAPI_FUNC(PyObject*) PyUnstable_Exc_PrepReraiseStar(
      PyObject *orig,
@@ -123,7 +97,6 @@ PyAPI_FUNC(PyObject*) PyUnstable_Exc_PrepReraiseStar(
 /* In signalmodule.c */
 
 int PySignal_SetWakeupFd(int fd);
-PyAPI_FUNC(int) _PyErr_CheckSignals(void);
 
 /* Support for adding program text to SyntaxErrors */
 
@@ -143,36 +116,10 @@ PyAPI_FUNC(PyObject *) PyErr_ProgramTextObject(
     PyObject *filename,
     int lineno);
 
-PyAPI_FUNC(PyObject *) _PyErr_ProgramDecodedTextObject(
-    PyObject *filename,
-    int lineno,
-    const char* encoding);
-
-PyAPI_FUNC(PyObject *) _PyUnicodeTranslateError_Create(
-    PyObject *object,
-    Py_ssize_t start,
-    Py_ssize_t end,
-    const char *reason          /* UTF-8 encoded string */
-    );
-
-PyAPI_FUNC(void) _PyErr_WriteUnraisableMsg(
-    const char *err_msg,
-    PyObject *obj);
-
 PyAPI_FUNC(void) _Py_NO_RETURN _Py_FatalErrorFunc(
     const char *func,
     const char *message);
 
-PyAPI_FUNC(void) _Py_NO_RETURN _Py_FatalErrorFormat(
-    const char *func,
-    const char *format,
-    ...);
-
-extern PyObject *_PyErr_SetImportErrorWithNameFrom(
-        PyObject *,
-        PyObject *,
-        PyObject *,
-        PyObject *);
-
+PyAPI_FUNC(void) PyErr_FormatUnraisable(const char *, ...);
 
 #define Py_FatalError(message) _Py_FatalErrorFunc(__func__, (message))

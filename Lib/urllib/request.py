@@ -2490,7 +2490,7 @@ def getproxies_environment():
     # select only environment variables which end in (after making lowercase) _proxy
     proxies = {}
     environment = []
-    for name in os.environ.keys():
+    for name in os.environ:
         # fast screen underscore position before more expensive case-folding
         if len(name) > 5 and name[-6] == "_" and name[-5:].lower() == "proxy":
             value = os.environ[name]

@@ -1,5 +1,7 @@
 /* Socket module header file */
 
+#include "pycore_time.h"          // _PyTime_t
+
 /* Includes needed for the sockaddr_* symbols below */
 #ifndef MS_WINDOWS
 #ifdef __VMS
@@ -98,6 +100,8 @@ typedef int socklen_t;
 #  include <asm/types.h>
 # endif
 # include <linux/netlink.h>
+#elif defined(HAVE_NETLINK_NETLINK_H)
+# include <netlink/netlink.h>
 #else
 #  undef AF_NETLINK
 #endif

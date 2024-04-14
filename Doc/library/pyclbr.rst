@@ -58,106 +58,115 @@ of these classes.
 
 Function Objects
 ----------------
-Class :class:`Function` instances describe functions defined by def
-statements.  They have the following attributes:
+
+.. class:: Function
+
+   Class :class:`!Function` instances describe functions defined by def
+   statements.  They have the following attributes:
 
 
-.. attribute:: Function.file
+   .. attribute:: file
 
-   Name of the file in which the function is defined.
-
-
-.. attribute:: Function.module
-
-   The name of the module defining the function described.
+      Name of the file in which the function is defined.
 
 
-.. attribute:: Function.name
+   .. attribute:: module
 
-   The name of the function.
-
-
-.. attribute:: Function.lineno
-
-   The line number in the file where the definition starts.
+      The name of the module defining the function described.
 
 
-.. attribute:: Function.parent
+   .. attribute:: name
 
-   For top-level functions, None.  For nested functions, the parent.
-
-   .. versionadded:: 3.7
+      The name of the function.
 
 
-.. attribute:: Function.children
+   .. attribute:: lineno
 
-   A dictionary mapping names to descriptors for nested functions and
-   classes.
-
-   .. versionadded:: 3.7
+      The line number in the file where the definition starts.
 
 
-.. attribute:: Function.is_async
+   .. attribute:: parent
 
-   ``True`` for functions that are defined with the ``async`` prefix, ``False`` otherwise.
+      For top-level functions, ``None``.  For nested functions, the parent.
 
-   .. versionadded:: 3.10
+      .. versionadded:: 3.7
+
+
+   .. attribute:: children
+
+      A :class:`dictionary <dict>` mapping names to descriptors for nested functions and
+      classes.
+
+      .. versionadded:: 3.7
+
+
+   .. attribute:: is_async
+
+      ``True`` for functions that are defined with the
+      :keyword:`async <async def>` prefix, ``False`` otherwise.
+
+      .. versionadded:: 3.10
 
 
 .. _pyclbr-class-objects:
 
 Class Objects
 -------------
-Class :class:`Class` instances describe classes defined by class
-statements.  They have the same attributes as Functions and two more.
+
+.. class:: Class
+
+   Class :class:`!Class` instances describe classes defined by class
+   statements.  They have the same attributes as :class:`Functions <Function>`
+   and two more.
 
 
-.. attribute:: Class.file
+   .. attribute:: file
 
-   Name of the file in which the class is defined.
-
-
-.. attribute:: Class.module
-
-   The name of the module defining the class described.
+      Name of the file in which the class is defined.
 
 
-.. attribute:: Class.name
+   .. attribute:: module
 
-   The name of the class.
-
-
-.. attribute:: Class.lineno
-
-   The line number in the file where the definition starts.
+      The name of the module defining the class described.
 
 
-.. attribute:: Class.parent
+   .. attribute:: name
 
-   For top-level classes, None.  For nested classes, the parent.
-
-   .. versionadded:: 3.7
+      The name of the class.
 
 
-.. attribute:: Class.children
+   .. attribute:: lineno
 
-   A dictionary mapping names to descriptors for nested functions and
-   classes.
-
-   .. versionadded:: 3.7
+      The line number in the file where the definition starts.
 
 
-.. attribute:: Class.super
+   .. attribute:: parent
 
-   A list of :class:`Class` objects which describe the immediate base
-   classes of the class being described.  Classes which are named as
-   superclasses but which are not discoverable by :func:`readmodule_ex`
-   are listed as a string with the class name instead of as
-   :class:`Class` objects.
+      For top-level classes, None.  For nested classes, the parent.
+
+      .. versionadded:: 3.7
 
 
-.. attribute:: Class.methods
+   .. attribute:: children
 
-   A dictionary mapping method names to line numbers.  This can be
-   derived from the newer children dictionary, but remains for
-   back-compatibility.
+      A dictionary mapping names to descriptors for nested functions and
+      classes.
+
+      .. versionadded:: 3.7
+
+
+   .. attribute:: super
+
+      A list of :class:`!Class` objects which describe the immediate base
+      classes of the class being described.  Classes which are named as
+      superclasses but which are not discoverable by :func:`readmodule_ex`
+      are listed as a string with the class name instead of as
+      :class:`!Class` objects.
+
+
+   .. attribute:: methods
+
+      A :class:`dictionary <dict>` mapping method names to line numbers.
+      This can be derived from the newer :attr:`children` dictionary,
+      but remains for
+      back-compatibility.

@@ -402,6 +402,21 @@ PyContextVar_Reset:int:::
 PyContextVar_Reset:PyObject*:var:0:
 PyContextVar_Reset:PyObject*:token:-1:
 
+PyCFunction_New:PyObject*::+1:
+PyCFunction_New:PyMethodDef*:ml::
+PyCFunction_New:PyObject*:self:+1:
+
+PyCFunction_NewEx:PyObject*::+1:
+PyCFunction_NewEx:PyMethodDef*:ml::
+PyCFunction_NewEx:PyObject*:self:+1:
+PyCFunction_NewEx:PyObject*:module:+1:
+
+PyCMethod_New:PyObject*::+1:
+PyCMethod_New:PyMethodDef*:ml::
+PyCMethod_New:PyObject*:self:+1:
+PyCMethod_New:PyObject*:module:+1:
+PyCMethod_New:PyObject*:cls:+1:
+
 PyDate_Check:int:::
 PyDate_Check:PyObject*:ob:0:
 
@@ -973,6 +988,9 @@ PyCoro_New:PyObject*::+1:
 PyCoro_New:PyFrameObject*:frame:0:
 PyCoro_New:PyObject*:name:0:
 PyCoro_New:PyObject*:qualname:0:
+
+PyImport_AddModuleRef:PyObject*::+1:
+PyImport_AddModuleRef:const char*:name::
 
 PyImport_AddModule:PyObject*::0:reference borrowed from sys.modules
 PyImport_AddModule:const char*:name::
@@ -1586,6 +1604,13 @@ PyObject_Call:PyObject*:callable_object:0:
 PyObject_Call:PyObject*:args:0:
 PyObject_Call:PyObject*:kw:0:
 
+PyObject_CallNoArgs:PyObject*::+1:
+PyObject_CallNoArgs:PyObject*:callable_object:0:
+
+PyObject_CallOneArg:PyObject*::+1:
+PyObject_CallOneArg:PyObject*:callable_object:0:
+PyObject_CallOneArg:PyObject*:arg:0:
+
 PyObject_CallFunction:PyObject*::+1:
 PyObject_CallFunction:PyObject*:callable_object:0:
 PyObject_CallFunction:const char*:format::
@@ -1793,6 +1818,9 @@ PyObject_Size:PyObject*:o:0:
 
 PyObject_Str:PyObject*::+1:
 PyObject_Str:PyObject*:o:0:
+
+Py_TYPE:PyObject*::0:
+Py_TYPE:PyObject*:ob:0:
 
 PyObject_Type:PyObject*::+1:
 PyObject_Type:PyObject*:o:0:
@@ -2806,6 +2834,10 @@ PyWeakref_GET_OBJECT:PyObject*:ref:0:
 
 PyWeakref_GetObject:PyObject*::0:
 PyWeakref_GetObject:PyObject*:ref:0:
+
+PyWeakref_GetRef:int:::
+PyWeakref_GetRef:PyObject*:ref:0:
+PyWeakref_GetRef:PyObject**:pobj:+1:
 
 PyWeakref_NewProxy:PyObject*::+1:
 PyWeakref_NewProxy:PyObject*:ob:0:

@@ -6,7 +6,6 @@ import types
 import pickle
 from test import support
 from test.support import import_helper
-import test.test_importlib.util
 
 import unittest
 import unittest.mock
@@ -572,7 +571,7 @@ class TestDiscovery(unittest.TestCase):
         result = unittest.TestResult()
         suite.run(result)
         self.assertEqual(len(result.skipped), 1)
-        self.assertEqual(result.testsRun, 1)
+        self.assertEqual(result.testsRun, 0)
         self.assertEqual(import_calls, ['my_package'])
 
         # Check picklability
@@ -826,6 +825,8 @@ class TestDiscovery(unittest.TestCase):
                          'as dotted module names')
 
     def test_discovery_failed_discovery(self):
+        from test.test_importlib import util
+
         loader = unittest.TestLoader()
         package = types.ModuleType('package')
 
@@ -837,7 +838,7 @@ class TestDiscovery(unittest.TestCase):
             # Since loader.discover() can modify sys.path, restore it when done.
             with import_helper.DirsOnSysPath():
                 # Make sure to remove 'package' from sys.modules when done.
-                with test.test_importlib.util.uncache('package'):
+                with util.uncache('package'):
                     with self.assertRaises(TypeError) as cm:
                         loader.discover('package')
                     self.assertEqual(str(cm.exception),

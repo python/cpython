@@ -46,7 +46,7 @@ Cross Platform
       universal files containing multiple architectures.
 
       To get at the "64-bitness" of the current interpreter, it is more
-      reliable to query the :attr:`sys.maxsize` attribute::
+      reliable to query the :data:`sys.maxsize` attribute::
 
          is_64bits = sys.maxsize > 2**32
 

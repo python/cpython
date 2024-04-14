@@ -5,7 +5,11 @@
  * See the xxlimited module for an extension module template.
  */
 
+#include "pyconfig.h"   // Py_GIL_DISABLED
+
+#ifndef Py_GIL_DISABLED
 #define Py_LIMITED_API 0x03050000
+#endif
 
 #include "Python.h"
 
@@ -293,7 +297,6 @@ xx_modexec(PyObject *m)
 
 static PyModuleDef_Slot xx_slots[] = {
     {Py_mod_exec, xx_modexec},
-    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL}
 };
 

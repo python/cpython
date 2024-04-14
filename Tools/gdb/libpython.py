@@ -1065,9 +1065,9 @@ class PyFramePtr:
 
     def _f_lasti(self):
         codeunit_p = gdb.lookup_type("_Py_CODEUNIT").pointer()
-        prev_instr = self._gdbval["prev_instr"]
+        instr_ptr = self._gdbval["instr_ptr"]
         first_instr = self._f_code().field("co_code_adaptive").cast(codeunit_p)
-        return int(prev_instr - first_instr)
+        return int(instr_ptr - first_instr)
 
     def is_shim(self):
         return self._f_special("owner", int) == FRAME_OWNED_BY_CSTACK

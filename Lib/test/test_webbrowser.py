@@ -272,6 +272,17 @@ class BrowserRegistrationTest(unittest.TestCase):
         self._check_registration(preferred=True)
 
 
+    @unittest.skipUnless(sys.platform == "darwin", "macOS specific test")
+    def test_no_xdg_settings_on_macOS(self):
+        # On macOS webbrowser should not use xdg-settings to
+        # look for X11 based browsers (for those users with
+        # XQuartz installed)
+        with mock.patch("subprocess.check_output") as ck_o:
+            webbrowser.register_standard_browsers()
+
+        ck_o.assert_not_called()
+
+
 class ImportTest(unittest.TestCase):
     def test_register(self):
         webbrowser = import_helper.import_fresh_module('webbrowser')

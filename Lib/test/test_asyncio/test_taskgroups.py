@@ -8,6 +8,8 @@ import contextlib
 from asyncio import taskgroups
 import unittest
 
+from test.test_asyncio.utils import await_without_task
+
 
 # To prevent a warning "test altered the execution environment"
 def tearDownModule():
@@ -778,6 +780,49 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
                 self.fail('CustomException not raised')
 
         await asyncio.create_task(main())
+
+    async def test_taskgroup_already_entered(self):
+        tg = taskgroups.TaskGroup()
+        async with tg:
+            with self.assertRaisesRegex(RuntimeError, "has already been entered"):
+                async with tg:
+                    pass
+
+    async def test_taskgroup_double_enter(self):
+        tg = taskgroups.TaskGroup()
+        async with tg:
+            pass
+        with self.assertRaisesRegex(RuntimeError, "has already been entered"):
+            async with tg:
+                pass
+
+    async def test_taskgroup_finished(self):
+        tg = taskgroups.TaskGroup()
+        async with tg:
+            pass
+        coro = asyncio.sleep(0)
+        with self.assertRaisesRegex(RuntimeError, "is finished"):
+            tg.create_task(coro)
+        # We still have to await coro to avoid a warning
+        await coro
+
+    async def test_taskgroup_not_entered(self):
+        tg = taskgroups.TaskGroup()
+        coro = asyncio.sleep(0)
+        with self.assertRaisesRegex(RuntimeError, "has not been entered"):
+            tg.create_task(coro)
+        # We still have to await coro to avoid a warning
+        await coro
+
+    async def test_taskgroup_without_parent_task(self):
+        tg = taskgroups.TaskGroup()
+        with self.assertRaisesRegex(RuntimeError, "parent task"):
+            await await_without_task(tg.__aenter__())
+        coro = asyncio.sleep(0)
+        with self.assertRaisesRegex(RuntimeError, "has not been entered"):
+            tg.create_task(coro)
+        # We still have to await coro to avoid a warning
+        await coro
 
 
 if __name__ == "__main__":

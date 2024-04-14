@@ -89,13 +89,15 @@ struct _longobject {
     _PyLongValue long_value;
 };
 
-PyAPI_FUNC(PyLongObject *) _PyLong_New(Py_ssize_t);
+PyAPI_FUNC(PyLongObject*) _PyLong_New(Py_ssize_t);
 
-/* Return a copy of src. */
-PyAPI_FUNC(PyObject *) _PyLong_Copy(PyLongObject *src);
+// Return a copy of src.
+PyAPI_FUNC(PyObject*) _PyLong_Copy(PyLongObject *src);
 
-PyAPI_FUNC(PyLongObject *)
-_PyLong_FromDigits(int negative, Py_ssize_t digit_count, digit *digits);
+PyAPI_FUNC(PyLongObject*) _PyLong_FromDigits(
+    int negative,
+    Py_ssize_t digit_count,
+    digit *digits);
 
 
 /* Inline some internals for speed. These should be in pycore_long.h

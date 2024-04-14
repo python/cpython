@@ -82,6 +82,13 @@
     <?endif ?>
     <Variable Name="Include_symbols" Value="0" bal:Overridable="yes" />
     <Variable Name="Include_debug" Value="0" bal:Overridable="yes" />
+    <?if $(var.IncludeFreethreaded)~="true" ?>
+    <Variable Name="Include_freethreaded" Value="0" bal:Overridable="yes" />
+    <Variable Name="Include_freethreadedState" Value="enabled" />
+    <?else ?>
+    <Variable Name="Include_freethreaded" Value="0" />
+    <Variable Name="Include_freethreadedState" Value="disable" />
+    <?endif ?>
 
     <Variable Name="LauncherOnly" Value="0" bal:Overridable="yes" />
     <Variable Name="DetectedLauncher" Value="0" />
@@ -104,6 +111,9 @@
       <PackageGroupRef Id="exe" />
       <PackageGroupRef Id="dev" />
       <PackageGroupRef Id="lib" />
+      <?if $(var.IncludeFreethreaded)~="true" ?>
+      <PackageGroupRef Id="freethreaded" />
+      <?endif ?>
       <PackageGroupRef Id="test" />
       <PackageGroupRef Id="doc" />
       <PackageGroupRef Id="tcltk" />

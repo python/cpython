@@ -112,12 +112,16 @@ class EncodingDetails(_EncodingDetails):
     ])
 
     @classmethod
-    def get_expected_details(cls, coercion_expected, fs_encoding, stream_encoding, env_vars):
+    def get_expected_details(cls, coercion_expected, fs_encoding, stream_encoding, stream_errors, env_vars):
         """Returns expected child process details for a given encoding"""
         _stream = stream_encoding + ":{}"
-        # stdin and stdout should use surrogateescape either because the
-        # coercion triggered, or because the C locale was detected
-        stream_info = 2*[_stream.format("surrogateescape")]
+        if stream_errors is None:
+            # stdin and stdout should use surrogateescape either because the
+            # coercion triggered, or because the C locale was detected
+            stream_errors = "surrogateescape"
+
+        stream_info = [_stream.format(stream_errors)] * 2
+
         # stderr should always use backslashreplace
         stream_info.append(_stream.format("backslashreplace"))
         expected_lang = env_vars.get("LANG", "not set")
@@ -210,6 +214,7 @@ class _LocaleHandlingTestCase(unittest.TestCase):
                                       env_vars,
                                       expected_fs_encoding,
                                       expected_stream_encoding,
+                                      expected_stream_errors,
                                       expected_warnings,
                                       coercion_expected):
         """Check the C locale handling for the given process environment
@@ -225,6 +230,7 @@ class _LocaleHandlingTestCase(unittest.TestCase):
             coercion_expected,
             expected_fs_encoding,
             expected_stream_encoding,
+            expected_stream_errors,
             env_vars
         )
         self.assertEqual(encoding_details, expected_details)
@@ -257,6 +263,7 @@ class LocaleConfigurationTests(_LocaleHandlingTestCase):
             "LC_CTYPE": "",
             "LC_ALL": "",
             "PYTHONCOERCECLOCALE": "",
+            "PYTHONIOENCODING": "",
         }
         for env_var in ("LANG", "LC_CTYPE"):
             for locale_to_set in AVAILABLE_TARGETS:
@@ -273,10 +280,43 @@ class LocaleConfigurationTests(_LocaleHandlingTestCase):
                     self._check_child_encoding_details(var_dict,
                                                        expected_fs_encoding,
                                                        expected_stream_encoding,
+                                                       expected_stream_errors=None,
                                                        expected_warnings=None,
                                                        coercion_expected=False)
 
+    def test_with_ioencoding(self):
+        # Explicitly setting a target locale should give the same behaviour as
+        # is seen when implicitly coercing to that target locale
+        self.maxDiff = None
 
+        expected_fs_encoding = "utf-8"
+        expected_stream_encoding = "utf-8"
+
+        base_var_dict = {
+            "LANG": "",
+            "LC_CTYPE": "",
+            "LC_ALL": "",
+            "PYTHONCOERCECLOCALE": "",
+            "PYTHONIOENCODING": "UTF-8",
+        }
+        for env_var in ("LANG", "LC_CTYPE"):
+            for locale_to_set in AVAILABLE_TARGETS:
+                # XXX (ncoghlan): LANG=UTF-8 doesn't appear to work as
+                #                 expected, so skip that combination for now
+                # See https://bugs.python.org/issue30672 for discussion
+                if env_var == "LANG" and locale_to_set == "UTF-8":
+                    continue
+
+                with self.subTest(env_var=env_var,
+                                  configured_locale=locale_to_set):
+                    var_dict = base_var_dict.copy()
+                    var_dict[env_var] = locale_to_set
+                    self._check_child_encoding_details(var_dict,
+                                                       expected_fs_encoding,
+                                                       expected_stream_encoding,
+                                                       expected_stream_errors="strict",
+                                                       expected_warnings=None,
+                                                       coercion_expected=False)
 
 @support.cpython_only
 @unittest.skipUnless(sysconfig.get_config_var("PY_COERCE_C_LOCALE"),
@@ -316,6 +356,7 @@ class LocaleCoercionTests(_LocaleHandlingTestCase):
             "LC_CTYPE": "",
             "LC_ALL": "",
             "PYTHONCOERCECLOCALE": "",
+            "PYTHONIOENCODING": "",
         }
         base_var_dict.update(extra_vars)
         if coerce_c_locale is not None:
@@ -340,6 +381,7 @@ class LocaleCoercionTests(_LocaleHandlingTestCase):
             self._check_child_encoding_details(base_var_dict,
                                                fs_encoding,
                                                stream_encoding,
+                                               None,
                                                _expected_warnings,
                                                _coercion_expected)
 
@@ -348,13 +390,15 @@ class LocaleCoercionTests(_LocaleHandlingTestCase):
             for env_var in ("LANG", "LC_CTYPE"):
                 with self.subTest(env_var=env_var,
                                   nominal_locale=locale_to_set,
-                                  PYTHONCOERCECLOCALE=coerce_c_locale):
+                                  PYTHONCOERCECLOCALE=coerce_c_locale,
+                                  PYTHONIOENCODING=""):
                     var_dict = base_var_dict.copy()
                     var_dict[env_var] = locale_to_set
                     # Check behaviour on successful coercion
                     self._check_child_encoding_details(var_dict,
                                                        fs_encoding,
                                                        stream_encoding,
+                                                       None,
                                                        expected_warnings,
                                                        coercion_expected)
 

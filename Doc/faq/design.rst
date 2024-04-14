@@ -451,7 +451,7 @@ on the key and a per-process seed; for example, ``'Python'`` could hash to
 to ``1142331976``.  The hash code is then used to calculate a location in an
 internal array where the value will be stored.  Assuming that you're storing
 keys that all have different hash values, this means that dictionaries take
-constant time -- O(1), in Big-O notation -- to retrieve a key.
+constant time -- *O*\ (1), in Big-O notation -- to retrieve a key.
 
 
 Why must dictionary keys be immutable?
@@ -584,9 +584,9 @@ exhaustive test suites that exercise every line of code in a module.
 An appropriate testing discipline can help build large complex applications in
 Python as well as having interface specifications would.  In fact, it can be
 better because an interface specification cannot test certain properties of a
-program.  For example, the :meth:`list.append` method is expected to add new elements
+program.  For example, the :meth:`!list.append` method is expected to add new elements
 to the end of some internal list; an interface specification cannot test that
-your :meth:`list.append` implementation will actually do this correctly, but it's
+your :meth:`!list.append` implementation will actually do this correctly, but it's
 trivial to check this property in a test suite.
 
 Writing test suites is very helpful, and you might want to design your code to

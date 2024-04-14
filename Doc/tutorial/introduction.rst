@@ -52,8 +52,8 @@ Numbers
 
 The interpreter acts as a simple calculator: you can type an expression at it
 and it will write the value.  Expression syntax is straightforward: the
-operators ``+``, ``-``, ``*`` and ``/`` work just like in most other languages
-(for example, Pascal or C); parentheses (``()``) can be used for grouping.
+operators ``+``, ``-``, ``*`` and ``/`` can be used to perform
+arithmetic; parentheses (``()``) can be used for grouping.
 For example::
 
    >>> 2 + 2
@@ -138,16 +138,25 @@ and uses the ``j`` or ``J`` suffix to indicate the imaginary part
 
 .. _tut-strings:
 
-Strings
--------
+Text
+----
 
-Besides numbers, Python can also manipulate strings, which can be expressed
-in several ways.  They can be enclosed in single quotes (``'...'``) or
-double quotes (``"..."``) with the same result [#]_.  ``\`` can be used
-to escape quotes::
+Python can manipulate text (represented by type :class:`str`, so-called
+"strings") as well as numbers.  This includes characters "``!``", words
+"``rabbit``", names "``Paris``", sentences "``Got your back.``", etc.
+"``Yay! :)``". They can be enclosed in single quotes (``'...'``) or double
+quotes (``"..."``) with the same result [#]_.
 
    >>> 'spam eggs'  # single quotes
    'spam eggs'
+   >>> "Paris rabbit got your back :)! Yay!"  # double quotes
+   'Paris rabbit got your back :)! Yay!'
+   >>> '1975'  # digits and numerals enclosed in quotes are also strings
+   '1975'
+
+To quote a quote, we need to "escape" it, by preceding it with ``\``.
+Alternatively, we can use the other type of quotation marks::
+
    >>> 'doesn\'t'  # use \' to escape the single quote...
    "doesn't"
    >>> "doesn't"  # ...or use double quotes instead
@@ -159,23 +168,14 @@ to escape quotes::
    >>> '"Isn\'t," they said.'
    '"Isn\'t," they said.'
 
-In the interactive interpreter, the output string is enclosed in quotes and
-special characters are escaped with backslashes.  While this might sometimes
-look different from the input (the enclosing quotes could change), the two
-strings are equivalent.  The string is enclosed in double quotes if
-the string contains a single quote and no double quotes, otherwise it is
-enclosed in single quotes.  The :func:`print` function produces a more
-readable output, by omitting the enclosing quotes and by printing escaped
-and special characters::
+In the Python shell, the string definition and output string can look
+different.  The :func:`print` function produces a more readable output, by
+omitting the enclosing quotes and by printing escaped and special characters::
 
-   >>> '"Isn\'t," they said.'
-   '"Isn\'t," they said.'
-   >>> print('"Isn\'t," they said.')
-   "Isn't," they said.
    >>> s = 'First line.\nSecond line.'  # \n means newline
-   >>> s  # without print(), \n is included in the output
+   >>> s  # without print(), special characters are included in the string
    'First line.\nSecond line.'
-   >>> print(s)  # with print(), \n produces a new line
+   >>> print(s)  # with print(), special characters are interpreted, so \n produces new line
    First line.
    Second line.
 
@@ -428,7 +428,7 @@ type, i.e. it is possible to change their content::
     [1, 8, 27, 64, 125]
 
 You can also add new items at the end of the list, by using
-the :meth:`~list.append` *method* (we will see more about methods later)::
+the :meth:`!list.append` *method* (we will see more about methods later)::
 
    >>> cubes.append(216)  # add the cube of 6
    >>> cubes.append(7 ** 3)  # and the cube of 7
@@ -480,7 +480,7 @@ First Steps Towards Programming
 
 Of course, we can use Python for more complicated tasks than adding two and two
 together.  For instance, we can write an initial sub-sequence of the
-`Fibonacci series <https://en.wikipedia.org/wiki/Fibonacci_number>`_
+`Fibonacci series <https://en.wikipedia.org/wiki/Fibonacci_sequence>`_
 as follows::
 
    >>> # Fibonacci series:

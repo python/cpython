@@ -22,7 +22,7 @@ random UUID.
 Depending on support from the underlying platform, :func:`uuid1` may or may
 not return a "safe" UUID.  A safe UUID is one which is generated using
 synchronization methods that ensure no two processes can obtain the same
-UUID.  All instances of :class:`UUID` have an :attr:`is_safe` attribute
+UUID.  All instances of :class:`UUID` have an :attr:`~UUID.is_safe` attribute
 which relays any information about the UUID's safety, using this enumeration:
 
 .. class:: SafeUUID
@@ -95,25 +95,34 @@ which relays any information about the UUID's safety, using this enumeration:
    A tuple of the six integer fields of the UUID, which are also available as six
    individual attributes and two derived attributes:
 
-   +------------------------------+-------------------------------+
-   | Field                        | Meaning                       |
-   +==============================+===============================+
-   | :attr:`time_low`             | the first 32 bits of the UUID |
-   +------------------------------+-------------------------------+
-   | :attr:`time_mid`             | the next 16 bits of the UUID  |
-   +------------------------------+-------------------------------+
-   | :attr:`time_hi_version`      | the next 16 bits of the UUID  |
-   +------------------------------+-------------------------------+
-   | :attr:`clock_seq_hi_variant` | the next 8 bits of the UUID   |
-   +------------------------------+-------------------------------+
-   | :attr:`clock_seq_low`        | the next 8 bits of the UUID   |
-   +------------------------------+-------------------------------+
-   | :attr:`node`                 | the last 48 bits of the UUID  |
-   +------------------------------+-------------------------------+
-   | :attr:`time`                 | the 60-bit timestamp          |
-   +------------------------------+-------------------------------+
-   | :attr:`clock_seq`            | the 14-bit sequence number    |
-   +------------------------------+-------------------------------+
+.. list-table::
+
+   * - Field
+     - Meaning
+
+   * - .. attribute:: UUID.time_low
+     - The first 32 bits of the UUID.
+
+   * - .. attribute:: UUID.time_mid
+     - The next 16 bits of the UUID.
+
+   * - .. attribute:: UUID.time_hi_version
+     - The next 16 bits of the UUID.
+
+   * - .. attribute:: UUID.clock_seq_hi_variant
+     - The next 8 bits of the UUID.
+
+   * - .. attribute:: UUID.clock_seq_low
+     - The next 8 bits of the UUID.
+
+   * - .. attribute:: UUID.node
+     - The last 48 bits of the UUID.
+
+   * - .. attribute:: UUID.time
+     - The 60-bit timestamp.
+
+   * - .. attribute:: UUID.clock_seq
+     - The 14-bit sequence number.
 
 
 .. attribute:: UUID.hex
@@ -233,7 +242,7 @@ The :mod:`uuid` module defines the following namespace identifiers for use with
    text output format.
 
 The :mod:`uuid` module defines the following constants for the possible values
-of the :attr:`variant` attribute:
+of the :attr:`~UUID.variant` attribute:
 
 
 .. data:: RESERVED_NCS
@@ -280,25 +289,25 @@ The following options are accepted:
 
 .. program:: uuid
 
-.. cmdoption:: -h, --help
+.. option:: -h, --help
 
    Show the help message and exit.
 
-.. cmdoption:: -u <uuid>
-               --uuid <uuid>
+.. option:: -u <uuid>
+            --uuid <uuid>
 
    Specify the function name to use to generate the uuid. By default :func:`uuid4`
    is used.
 
-.. cmdoption:: -n <namespace>
-               --namespace <namespace>
+.. option:: -n <namespace>
+            --namespace <namespace>
 
    The namespace is a ``UUID``, or ``@ns`` where ``ns`` is a well-known predefined UUID
    addressed by namespace name. Such as ``@dns``, ``@url``, ``@oid``, and ``@x500``.
    Only required for :func:`uuid3` / :func:`uuid5` functions.
 
-.. cmdoption:: -N <name>
-               --name <name>
+.. option:: -N <name>
+            --name <name>
 
    The name used as part of generating the uuid. Only required for
    :func:`uuid3` / :func:`uuid5` functions.

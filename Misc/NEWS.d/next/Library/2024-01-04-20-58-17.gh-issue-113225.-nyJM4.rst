@@ -1,0 +1,2 @@
+Speed up :meth:`pathlib.Path.walk` by using :attr:`os.DirEntry.path` where
+possible.

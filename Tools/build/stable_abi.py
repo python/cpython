@@ -40,7 +40,6 @@ EXCLUDED_HEADERS = {
     "longintrepr.h",
     "parsetok.h",
     "pyatomic.h",
-    "pytime.h",
     "token.h",
     "ucnhash.h",
 }
@@ -522,7 +521,7 @@ def gcc_get_limited_api_macros(headers):
 
     api_hexversion = sys.version_info.major << 24 | sys.version_info.minor << 16
 
-    preprocesor_output_with_macros = subprocess.check_output(
+    preprocessor_output_with_macros = subprocess.check_output(
         sysconfig.get_config_var("CC").split()
         + [
             # Prevent the expansion of the exported macros so we can
@@ -541,7 +540,7 @@ def gcc_get_limited_api_macros(headers):
     return {
         target
         for target in re.findall(
-            r"#define (\w+)", preprocesor_output_with_macros
+            r"#define (\w+)", preprocessor_output_with_macros
         )
     }
 
@@ -562,7 +561,7 @@ def gcc_get_limited_api_definitions(headers):
     Requires Python built with a GCC-compatible compiler. (clang might work)
     """
     api_hexversion = sys.version_info.major << 24 | sys.version_info.minor << 16
-    preprocesor_output = subprocess.check_output(
+    preprocessor_output = subprocess.check_output(
         sysconfig.get_config_var("CC").split()
         + [
             # Prevent the expansion of the exported macros so we can capture
@@ -582,13 +581,13 @@ def gcc_get_limited_api_definitions(headers):
         stderr=subprocess.DEVNULL,
     )
     stable_functions = set(
-        re.findall(r"__PyAPI_FUNC\(.*?\)\s*(.*?)\s*\(", preprocesor_output)
+        re.findall(r"__PyAPI_FUNC\(.*?\)\s*(.*?)\s*\(", preprocessor_output)
     )
     stable_exported_data = set(
-        re.findall(r"__EXPORT_DATA\((.*?)\)", preprocesor_output)
+        re.findall(r"__EXPORT_DATA\((.*?)\)", preprocessor_output)
     )
     stable_data = set(
-        re.findall(r"__PyAPI_DATA\(.*?\)[\s\*\(]*([^);]*)\)?.*;", preprocesor_output)
+        re.findall(r"__PyAPI_DATA\(.*?\)[\s\*\(]*([^);]*)\)?.*;", preprocessor_output)
     )
     return stable_data | stable_exported_data | stable_functions
 

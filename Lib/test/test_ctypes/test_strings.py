@@ -1,5 +1,6 @@
 import unittest
-from ctypes import create_string_buffer, sizeof, byref, c_char, c_wchar
+from ctypes import (create_string_buffer, create_unicode_buffer,
+                    sizeof, byref, c_char, c_wchar)
 
 
 class StringArrayTestCase(unittest.TestCase):
@@ -88,41 +89,35 @@ class WStringTestCase(unittest.TestCase):
         repr(byref(c_wchar("x")))
         c_wchar("x")
 
-    @unittest.skip('test disabled')
     def test_basic_wstrings(self):
-        cs = c_wstring("abcdef")
-
-        # XXX This behaviour is about to change:
-        # len returns the size of the internal buffer in bytes.
-        # This includes the terminating NUL character.
-        self.assertEqual(sizeof(cs), 14)
-
-        # The value property is the string up to the first terminating NUL.
+        cs = create_unicode_buffer("abcdef")
         self.assertEqual(cs.value, "abcdef")
-        self.assertEqual(c_wstring("abc\000def").value, "abc")
 
-        self.assertEqual(c_wstring("abc\000def").value, "abc")
+        # value can be changed
+        cs.value = "abc"
+        self.assertEqual(cs.value, "abc")
 
-        # The raw property is the total buffer contents:
-        self.assertEqual(cs.raw, "abcdef\000")
-        self.assertEqual(c_wstring("abc\000def").raw, "abc\000def\000")
+        # string is truncated at NUL character
+        cs.value = "def\0z"
+        self.assertEqual(cs.value, "def")
 
-        # We can change the value:
-        cs.value = "ab"
-        self.assertEqual(cs.value, "ab")
-        self.assertEqual(cs.raw, "ab\000\000\000\000\000")
+        self.assertEqual(create_unicode_buffer("abc\0def").value, "abc")
 
-        self.assertRaises(TypeError, c_wstring, "123")
-        self.assertRaises(ValueError, c_wstring, 0)
+        # created with an empty string
+        cs = create_unicode_buffer(3)
+        self.assertEqual(cs.value, "")
 
-    @unittest.skip('test disabled')
+        cs.value = "abc"
+        self.assertEqual(cs.value, "abc")
+
     def test_toolong(self):
-        cs = c_wstring("abcdef")
-        # Much too long string:
-        self.assertRaises(ValueError, setattr, cs, "value", "123456789012345")
+        cs = create_unicode_buffer("abc")
+        with self.assertRaises(ValueError):
+            cs.value = "abcdef"
 
-        # One char too long values:
-        self.assertRaises(ValueError, setattr, cs, "value", "1234567")
+        cs = create_unicode_buffer(4)
+        with self.assertRaises(ValueError):
+            cs.value = "abcdef"
 
 
 def run_test(rep, msg, func, arg):

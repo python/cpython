@@ -370,8 +370,9 @@ class GzipFile(_compression.BaseStream):
     def flush(self,zlib_mode=zlib.Z_SYNC_FLUSH):
         self._check_not_closed()
         if self.mode == WRITE:
-            # Ensure the compressor's buffer is flushed
             self._buffer.flush()
+            # Ensure the compressor's buffer is flushed
+            self.fileobj.write(self.compress.flush(zlib_mode))
             self.fileobj.flush()
 
     def fileno(self):
@@ -400,6 +401,9 @@ class GzipFile(_compression.BaseStream):
 
     def seek(self, offset, whence=io.SEEK_SET):
         if self.mode == WRITE:
+            self._check_not_closed()
+            # Flush buffer to ensure validity of self.offset
+            self._buffer.flush()
             if whence != io.SEEK_SET:
                 if whence == io.SEEK_CUR:
                     offset = self.offset + offset

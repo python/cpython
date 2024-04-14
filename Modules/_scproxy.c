@@ -2,6 +2,14 @@
  * Helper method for urllib to fetch the proxy configuration settings
  * using the SystemConfiguration framework.
  */
+
+#include "pyconfig.h"   // Py_GIL_DISABLED
+
+#ifndef Py_GIL_DISABLED
+// Need limited C API version 3.12 for Py_MOD_PER_INTERPRETER_GIL_SUPPORTED
+#define Py_LIMITED_API 0x030c0000
+#endif
+
 #include <Python.h>
 #include <SystemConfiguration/SystemConfiguration.h>
 
@@ -21,8 +29,7 @@ cfstring_to_pystring(CFStringRef ref)
 
     s = CFStringGetCStringPtr(ref, kCFStringEncodingUTF8);
     if (s) {
-        return PyUnicode_DecodeUTF8(
-                        s, strlen(s), NULL);
+        return PyUnicode_DecodeUTF8(s, strlen(s), NULL);
 
     } else {
         CFIndex len = CFStringGetLength(ref);
@@ -43,8 +50,7 @@ cfstring_to_pystring(CFStringRef ref)
             PyMem_Free(buf);
             return NULL;
         } else {
-            result = PyUnicode_DecodeUTF8(
-                            buf, strlen(buf), NULL);
+            result = PyUnicode_DecodeUTF8(buf, strlen(buf), NULL);
             PyMem_Free(buf);
         }
         return result;
@@ -84,7 +90,7 @@ get_proxy_settings(PyObject* Py_UNUSED(mod), PyObject *Py_UNUSED(ignored))
     if (v == NULL) goto error;
 
     r = PyDict_SetItemString(result, "exclude_simple", v);
-    Py_SETREF(v, NULL);
+    Py_CLEAR(v);
     if (r == -1) goto error;
 
     anArray = CFDictionaryGetValue(proxyDict,
@@ -104,13 +110,11 @@ get_proxy_settings(PyObject* Py_UNUSED(mod), PyObject *Py_UNUSED(ignored))
 
             aString = CFArrayGetValueAtIndex(anArray, i);
             if (aString == NULL) {
-                PyTuple_SetItem(v, i, Py_None);
-                Py_INCREF(Py_None);
+                PyTuple_SetItem(v, i, Py_NewRef(Py_None));
             } else {
                 PyObject* t = cfstring_to_pystring(aString);
                 if (!t) {
-                    PyTuple_SetItem(v, i, Py_None);
-                    Py_INCREF(Py_None);
+                    PyTuple_SetItem(v, i, Py_NewRef(Py_None));
                 } else {
                     PyTuple_SetItem(v, i, t);
                 }
@@ -148,15 +152,13 @@ set_proxy(PyObject* proxies, const char* proto, CFDictionaryRef proxyDict,
             if (h) {
                 if (aNum) {
                     int32_t port = cfnum_to_int32(aNum);
-                    v = PyUnicode_FromFormat("http://%U:%ld",
-                        h, (long)port);
+                    v = PyUnicode_FromFormat("http://%U:%ld", h, (long)port);
                 } else {
                     v = PyUnicode_FromFormat("http://%U", h);
                 }
                 Py_DECREF(h);
                 if (!v) return -1;
-                r = PyDict_SetItemString(proxies, proto,
-                    v);
+                r = PyDict_SetItemString(proxies, proto, v);
                 Py_DECREF(v);
                 return r;
             }
@@ -249,16 +251,8 @@ static struct PyModuleDef _scproxy_module = {
     .m_slots = _scproxy_slots,
 };
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 PyMODINIT_FUNC
 PyInit__scproxy(void)
 {
     return PyModuleDef_Init(&_scproxy_module);
 }
-
-#ifdef __cplusplus
-}
-#endif

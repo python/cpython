@@ -8,7 +8,7 @@ import unittest
 from _ctypes import CTYPES_MAX_ARGCOUNT
 from ctypes import (CDLL, cdll, Structure, CFUNCTYPE,
                     ArgumentError, POINTER, sizeof,
-                    c_byte, c_ubyte, c_char, c_char_p,
+                    c_byte, c_ubyte, c_char,
                     c_short, c_ushort, c_int, c_uint,
                     c_long, c_longlong, c_ulonglong, c_ulong,
                     c_float, c_double, c_longdouble, py_object)
@@ -92,14 +92,6 @@ class Callbacks(unittest.TestCase):
         self.check_type(c_char, b"x")
         self.check_type(c_char, b"a")
 
-    # disabled: would now (correctly) raise a RuntimeWarning about
-    # a memory leak.  A callback function cannot return a non-integral
-    # C type without causing a memory leak.
-    @unittest.skip('test disabled')
-    def test_char_p(self):
-        self.check_type(c_char_p, "abc")
-        self.check_type(c_char_p, "def")
-
     def test_pyobject(self):
         o = ()
         for o in (), [], object():
@@ -128,7 +120,7 @@ class Callbacks(unittest.TestCase):
     def test_issue_7959(self):
         proto = self.functype.__func__(None)
 
-        class X(object):
+        class X:
             def func(self): pass
             def __init__(self):
                 self.v = proto(self.func)
@@ -330,9 +322,9 @@ class SampleCallbacksTestCase(unittest.TestCase):
 
             self.assertIsInstance(cm.unraisable.exc_value, TypeError)
             self.assertEqual(cm.unraisable.err_msg,
-                             "Exception ignored on converting result "
-                             "of ctypes callback function")
-            self.assertIs(cm.unraisable.object, func)
+                             f"Exception ignored on converting result "
+                             f"of ctypes callback function {func!r}")
+            self.assertIsNone(cm.unraisable.object)
 
 
 if __name__ == '__main__':

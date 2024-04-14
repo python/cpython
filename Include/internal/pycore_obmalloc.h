@@ -665,7 +665,9 @@ struct _obmalloc_global_state {
 struct _obmalloc_state {
     struct _obmalloc_pools pools;
     struct _obmalloc_mgmt mgmt;
+#if WITH_PYMALLOC_RADIX_TREE
     struct _obmalloc_usage usage;
+#endif
 };
 
 
@@ -687,7 +689,7 @@ extern void _PyInterpreterState_FinalizeAllocatedBlocks(PyInterpreterState *);
 
 
 #ifdef WITH_PYMALLOC
-// Export the symbol for the 3rd party guppy3 project
+// Export the symbol for the 3rd party 'guppy3' project
 PyAPI_FUNC(int) _PyObject_DebugMallocStats(FILE *out);
 #endif
 

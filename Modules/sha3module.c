@@ -61,8 +61,8 @@ class _sha3.shake_256 "SHA3object *" "&SHAKE256type"
 typedef struct {
     PyObject_HEAD
     // Prevents undefined behavior via multiple threads entering the C API.
-    // The lock will be NULL before threaded access has been enabled.
-    PyThread_type_lock lock;
+    bool use_mutex;
+    PyMutex mutex;
     Hacl_Streaming_Keccak_state *hash_state;
 } SHA3object;
 
@@ -76,7 +76,8 @@ newSHA3object(PyTypeObject *type)
     if (newobj == NULL) {
         return NULL;
     }
-    newobj->lock = NULL;
+    HASHLIB_INIT_MUTEX(newobj);
+
     return newobj;
 }
 
@@ -169,9 +170,6 @@ static void
 SHA3_dealloc(SHA3object *self)
 {
     Hacl_Streaming_Keccak_free(self->hash_state);
-    if (self->lock != NULL) {
-        PyThread_free_lock(self->lock);
-    }
     PyTypeObject *tp = Py_TYPE(self);
     PyObject_Free(self);
     Py_DECREF(tp);
@@ -257,19 +255,22 @@ _sha3_sha3_224_update(SHA3object *self, PyObject *data)
 /*[clinic end generated code: output=d3223352286ed357 input=a887f54dcc4ae227]*/
 {
     Py_buffer buf;
+
     GET_BUFFER_VIEW_OR_ERROUT(data, &buf);
-    if (self->lock == NULL && buf.len >= HASHLIB_GIL_MINSIZE) {
-        self->lock = PyThread_allocate_lock();
+
+    if (!self->use_mutex && buf.len >= HASHLIB_GIL_MINSIZE) {
+        self->use_mutex = true;
     }
-    if (self->lock != NULL) {
+    if (self->use_mutex) {
         Py_BEGIN_ALLOW_THREADS
-        PyThread_acquire_lock(self->lock, 1);
+        PyMutex_Lock(&self->mutex);
         sha3_update(self->hash_state, buf.buf, buf.len);
-        PyThread_release_lock(self->lock);
+        PyMutex_Unlock(&self->mutex);
         Py_END_ALLOW_THREADS
     } else {
         sha3_update(self->hash_state, buf.buf, buf.len);
     }
+
     PyBuffer_Release(&buf);
     Py_RETURN_NONE;
 }

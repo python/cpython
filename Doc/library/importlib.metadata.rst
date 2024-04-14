@@ -41,7 +41,7 @@ and metadata defined by the `Core metadata specifications <https://packaging.pyt
    and one top-level *import package*
    may map to multiple *distribution packages*
    if it is a namespace package.
-   You can use :ref:`package_distributions() <package-distributions>`
+   You can use :ref:`packages_distributions() <package-distributions>`
    to get a mapping between them.
 
 By default, distribution metadata can live on the file system
@@ -171,16 +171,18 @@ group.  Read `the setuptools docs
 <https://setuptools.pypa.io/en/latest/userguide/entry_point.html>`_
 for more information on entry points, their definition, and usage.
 
-*Compatibility Note*
+.. versionchanged:: 3.12
+   The "selectable" entry points were introduced in ``importlib_metadata``
+   3.6 and Python 3.10. Prior to those changes, ``entry_points`` accepted
+   no parameters and always returned a dictionary of entry points, keyed
+   by group. With ``importlib_metadata`` 5.0 and Python 3.12,
+   ``entry_points`` always returns an ``EntryPoints`` object. See
+   `backports.entry_points_selectable <https://pypi.org/project/backports.entry-points-selectable>`_
+   for compatibility options.
 
-The "selectable" entry points were introduced in ``importlib_metadata``
-3.6 and Python 3.10. Prior to those changes, ``entry_points`` accepted
-no parameters and always returned a dictionary of entry points, keyed
-by group. With ``importlib_metadata`` 5.0 and Python 3.12,
-``entry_points`` always returns an ``EntryPoints`` object. See
-`backports.entry_points_selectable <https://pypi.org/project/backports.entry-points-selectable>`_
-for compatibility options.
-
+.. versionchanged:: 3.13
+   ``EntryPoint`` objects no longer present a tuple-like interface
+   (:meth:`~object.__getitem__`).
 
 .. _metadata:
 
@@ -342,9 +344,17 @@ instance::
     >>> dist.metadata['License']  # doctest: +SKIP
     'MIT'
 
+For editable packages, an origin property may present :pep:`610`
+metadata::
+
+    >>> dist.origin.url
+    'file:///path/to/wheel-0.32.3.editable-py3-none-any.whl'
+
 The full set of available metadata is not described here.
 See the `Core metadata specifications <https://packaging.python.org/en/latest/specifications/core-metadata/#core-metadata>`_ for additional details.
 
+.. versionadded:: 3.13
+   The ``.origin`` property was added.
 
 Distribution Discovery
 ======================

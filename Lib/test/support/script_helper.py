@@ -8,7 +8,6 @@ import os
 import os.path
 import subprocess
 import py_compile
-import zipfile
 
 from importlib.util import source_from_cache
 from test import support
@@ -93,13 +92,28 @@ class _PythonRunResult(collections.namedtuple("_PythonRunResult",
 # Executing the interpreter in a subprocess
 @support.requires_subprocess()
 def run_python_until_end(*args, **env_vars):
+    """Used to implement assert_python_*.
+
+    *args are the command line flags to pass to the python interpreter.
+    **env_vars keyword arguments are environment variables to set on the process.
+
+    If __run_using_command= is supplied, it must be a list of
+    command line arguments to prepend to the command line used.
+    Useful when you want to run another command that should launch the
+    python interpreter via its own arguments. ["/bin/echo", "--"] for
+    example could print the unquoted python command line instead of
+    run it.
+    """
     env_required = interpreter_requires_environment()
+    run_using_command = env_vars.pop('__run_using_command', None)
     cwd = env_vars.pop('__cwd', None)
     if '__isolated' in env_vars:
         isolated = env_vars.pop('__isolated')
     else:
         isolated = not env_vars and not env_required
     cmd_line = [sys.executable, '-X', 'faulthandler']
+    if run_using_command:
+        cmd_line = run_using_command + cmd_line
     if isolated:
         # isolated mode: ignore Python environment variables, ignore user
         # site-packages, and don't add the current directory to sys.path
@@ -226,6 +240,7 @@ def make_script(script_dir, script_basename, source, omit_suffix=False):
 
 
 def make_zip_script(zip_dir, zip_basename, script_name, name_in_zip=None):
+    import zipfile
     zip_filename = zip_basename+os.extsep+'zip'
     zip_name = os.path.join(zip_dir, zip_filename)
     with zipfile.ZipFile(zip_name, 'w') as zip_file:
@@ -252,6 +267,7 @@ def make_pkg(pkg_dir, init_source=''):
 
 def make_zip_pkg(zip_dir, zip_basename, pkg_name, script_basename,
                  source, depth=1, compiled=False):
+    import zipfile
     unlink = []
     init_name = make_script(zip_dir, '__init__', '')
     unlink.append(init_name)

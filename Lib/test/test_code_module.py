@@ -10,11 +10,7 @@ from test.support import import_helper
 code = import_helper.import_module('code')
 
 
-class TestInteractiveConsole(unittest.TestCase):
-
-    def setUp(self):
-        self.console = code.InteractiveConsole()
-        self.mock_sys()
+class MockSys:
 
     def mock_sys(self):
         "Mock system environment for InteractiveConsole"
@@ -31,6 +27,13 @@ class TestInteractiveConsole(unittest.TestCase):
             self.sysmod.excepthook = self.sysmod.__excepthook__
         del self.sysmod.ps1
         del self.sysmod.ps2
+
+
+class TestInteractiveConsole(unittest.TestCase, MockSys):
+
+    def setUp(self):
+        self.console = code.InteractiveConsole()
+        self.mock_sys()
 
     def test_ps1(self):
         self.infunc.side_effect = EOFError('Finished')
@@ -149,6 +152,22 @@ class TestInteractiveConsole(unittest.TestCase):
         NameError: name 'eggs' is not defined
         """)
         self.assertIn(expected, output)
+
+
+class TestInteractiveConsoleLocalExit(unittest.TestCase, MockSys):
+
+    def setUp(self):
+        self.console = code.InteractiveConsole(local_exit=True)
+        self.mock_sys()
+
+    def test_exit(self):
+        # default exit message
+        self.infunc.side_effect = ["exit()"]
+        self.console.interact(banner='')
+        self.assertEqual(len(self.stderr.method_calls), 2)
+        err_msg = self.stderr.method_calls[1]
+        expected = 'now exiting InteractiveConsole...\n'
+        self.assertEqual(err_msg, ['write', (expected,), {}])
 
 
 if __name__ == "__main__":

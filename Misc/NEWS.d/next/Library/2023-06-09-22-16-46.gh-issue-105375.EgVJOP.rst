@@ -1,2 +1,0 @@
-Fix bugs in :mod:`!_ssl` initialisation which could lead to leaked
-references and overwritten exceptions.

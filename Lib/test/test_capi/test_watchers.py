@@ -110,9 +110,11 @@ class TestDictWatchers(unittest.TestCase):
             with catch_unraisable_exception() as cm:
                 d["foo"] = "bar"
                 self.assertIn(
-                    "PyDict_EVENT_ADDED watcher callback for <dict at",
-                    cm.unraisable.object
+                    "Exception ignored in "
+                    "PyDict_EVENT_ADDED watcher callback for <dict at ",
+                    cm.unraisable.err_msg
                 )
+                self.assertIsNone(cm.unraisable.object)
                 self.assertEqual(str(cm.unraisable.exc_value), "boom!")
             self.assert_events([])
 
@@ -278,7 +280,9 @@ class TestTypeWatchers(unittest.TestCase):
             self.watch(wid, C)
             with catch_unraisable_exception() as cm:
                 C.foo = "bar"
-                self.assertIs(cm.unraisable.object, C)
+                self.assertEqual(cm.unraisable.err_msg,
+                    f"Exception ignored in type watcher callback #0 for {C!r}")
+                self.assertIs(cm.unraisable.object, None)
                 self.assertEqual(str(cm.unraisable.exc_value), "boom!")
             self.assert_events([])
 
@@ -293,6 +297,18 @@ class TestTypeWatchers(unittest.TestCase):
                 C1.foo = "bar"
                 C2.hmm = "baz"
                 self.assert_events([C1, [C2]])
+
+    def test_all_watchers(self):
+        class C: pass
+        with ExitStack() as stack:
+            last_wid = -1
+            # don't make assumptions about how many watchers are already
+            # registered, just go until we reach the max ID
+            while last_wid < self.TYPE_MAX_WATCHERS - 1:
+                last_wid = stack.enter_context(self.watcher())
+            self.watch(last_wid, C)
+            C.foo = "bar"
+            self.assert_events([C])
 
     def test_watch_non_type(self):
         with self.watcher() as wid:
@@ -339,12 +355,10 @@ class TestTypeWatchers(unittest.TestCase):
             self.clear_watcher(1)
 
     def test_no_more_ids_available(self):
-        contexts = [self.watcher() for i in range(self.TYPE_MAX_WATCHERS)]
-        with ExitStack() as stack:
-            for ctx in contexts:
-                stack.enter_context(ctx)
-            with self.assertRaisesRegex(RuntimeError, r"no more type watcher IDs"):
-                self.add_watcher()
+        with self.assertRaisesRegex(RuntimeError, r"no more type watcher IDs"):
+            with ExitStack() as stack:
+                for _ in range(self.TYPE_MAX_WATCHERS + 1):
+                    stack.enter_context(self.watcher())
 
 
 class TestCodeObjectWatchers(unittest.TestCase):
@@ -406,9 +420,11 @@ class TestCodeObjectWatchers(unittest.TestCase):
                 co = _testcapi.code_newempty("test_watchers", "dummy0", 0)
 
                 self.assertEqual(
-                    cm.unraisable.object,
+                    cm.unraisable.err_msg,
+                    f"Exception ignored in "
                     f"PY_CODE_EVENT_CREATE watcher callback for {co!r}"
                 )
+                self.assertIsNone(cm.unraisable.object)
                 self.assertEqual(str(cm.unraisable.exc_value), "boom!")
 
     def test_dealloc_error(self):
@@ -510,9 +526,11 @@ class TestFuncWatchers(unittest.TestCase):
                     pass
 
                 self.assertEqual(
-                    cm.unraisable.object,
-                    f"PyFunction_EVENT_CREATE watcher callback for {myfunc!r}"
+                    cm.unraisable.err_msg,
+                    f"Exception ignored in "
+                    f"PyFunction_EVENT_CREATE watcher callback for {repr(myfunc)[1:-1]}"
                 )
+                self.assertIsNone(cm.unraisable.object)
 
     def test_dealloc_watcher_raises_error(self):
         class MyError(Exception):

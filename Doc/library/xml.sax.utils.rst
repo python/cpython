@@ -92,5 +92,5 @@ or as base classes.
    reading.  The input source can be given as a string, a file-like object, or
    an :class:`~xml.sax.xmlreader.InputSource` object; parsers will use this
    function to implement the polymorphic *source* argument to their
-   :meth:`parse` method.
+   :meth:`~xml.sax.xmlreader.XMLReader.parse` method.
 

@@ -37,6 +37,7 @@ set -gx VIRTUAL_ENV "__VENV_DIR__"
 
 set -gx _OLD_VIRTUAL_PATH $PATH
 set -gx PATH "$VIRTUAL_ENV/__VENV_BIN_NAME__" $PATH
+set -gx VIRTUAL_ENV_PROMPT "__VENV_PROMPT__"
 
 # Unset PYTHONHOME if set.
 if set -q PYTHONHOME
@@ -65,5 +66,4 @@ if test -z "$VIRTUAL_ENV_DISABLE_PROMPT"
     end
 
     set -gx _OLD_FISH_PROMPT_OVERRIDE "$VIRTUAL_ENV"
-    set -gx VIRTUAL_ENV_PROMPT "__VENV_PROMPT__"
 end

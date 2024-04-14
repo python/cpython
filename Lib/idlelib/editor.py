@@ -1748,6 +1748,7 @@ def _editor_window(parent):  # htest #
     # Does not stop error, neither does following
     # edit.text.bind("<<close-window>>", edit.close_event)
 
+
 if __name__ == '__main__':
     from unittest import main
     main('idlelib.idle_test.test_editor', verbosity=2, exit=False)

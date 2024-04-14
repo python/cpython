@@ -8,6 +8,7 @@
 //#include <time.h>
 #include "Python.h"
 #include "pycore_namespace.h"     // _PyNamespace_New()
+#include "pycore_time.h"          // _PyTime_t
 
 
 typedef struct {
@@ -136,13 +137,7 @@ init_module(PyObject *module, module_state *state)
     }
 
     double d = _PyTime_AsSecondsDouble(state->initialized);
-    PyObject *initialized = PyFloat_FromDouble(d);
-    if (initialized == NULL) {
-        return -1;
-    }
-    int rc = PyModule_AddObjectRef(module, "_module_initialized", initialized);
-    Py_DECREF(initialized);
-    if (rc < 0) {
+    if (PyModule_Add(module, "_module_initialized", PyFloat_FromDouble(d)) < 0) {
         return -1;
     }
 

@@ -90,6 +90,7 @@ class IntTestCases(unittest.TestCase):
 
 
         self.assertRaises(TypeError, int, 1, 12)
+        self.assertRaises(TypeError, int, "10", 2, 1)
 
         self.assertEqual(int('0o123', 0), 83)
         self.assertEqual(int('0x123', 16), 291)

@@ -345,6 +345,10 @@ The :mod:`pickle` module exports three classes, :class:`Pickler`,
 
       See :ref:`pickle-persistent` for details and examples of uses.
 
+      .. versionchanged:: 3.13
+         Add the default implementation of this method in the C implementation
+         of :class:`!Pickler`.
+
    .. attribute:: dispatch_table
 
       A pickler object's dispatch table is a registry of *reduction
@@ -446,6 +450,10 @@ The :mod:`pickle` module exports three classes, :class:`Pickler`,
 
       See :ref:`pickle-persistent` for details and examples of uses.
 
+      .. versionchanged:: 3.13
+         Add the default implementation of this method in the C implementation
+         of :class:`!Unpickler`.
+
    .. method:: find_class(module, name)
 
       Import *module* if necessary and return the object called *name* from it,
@@ -494,7 +502,8 @@ What can be pickled and unpickled?
 
 The following types can be pickled:
 
-* ``None``, ``True``, and ``False``;
+* built-in constants (``None``, ``True``, ``False``, ``Ellipsis``, and
+  ``NotImplemented``);
 
 * integers, floating-point numbers, complex numbers;
 

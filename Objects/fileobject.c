@@ -1,19 +1,22 @@
 /* File object implementation (what's left of it -- see io.py) */
 
-#define PY_SSIZE_T_CLEAN
 #include "Python.h"
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_runtime.h"       // _PyRuntime
 
+#ifdef HAVE_UNISTD_H
+#  include <unistd.h>             // isatty()
+#endif
+
 #if defined(HAVE_GETC_UNLOCKED) && !defined(_Py_MEMORY_SANITIZER)
-/* clang MemorySanitizer doesn't yet understand getc_unlocked. */
-#define GETC(f) getc_unlocked(f)
-#define FLOCKFILE(f) flockfile(f)
-#define FUNLOCKFILE(f) funlockfile(f)
+   /* clang MemorySanitizer doesn't yet understand getc_unlocked. */
+#  define GETC(f) getc_unlocked(f)
+#  define FLOCKFILE(f) flockfile(f)
+#  define FUNLOCKFILE(f) funlockfile(f)
 #else
-#define GETC(f) getc(f)
-#define FLOCKFILE(f)
-#define FUNLOCKFILE(f)
+#  define GETC(f) getc(f)
+#  define FLOCKFILE(f)
+#  define FUNLOCKFILE(f)
 #endif
 
 /* Newline flags */
@@ -21,10 +24,6 @@
 #define NEWLINE_CR 1            /* \r newline seen */
 #define NEWLINE_LF 2            /* \n newline seen */
 #define NEWLINE_CRLF 4          /* \r\n newline seen */
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 /* External C interface */
 
@@ -175,9 +174,9 @@ PyObject_AsFileDescriptor(PyObject *o)
     PyObject *meth;
 
     if (PyLong_Check(o)) {
-        fd = _PyLong_AsInt(o);
+        fd = PyLong_AsInt(o);
     }
-    else if (_PyObject_LookupAttr(o, &_Py_ID(fileno), &meth) < 0) {
+    else if (PyObject_GetOptionalAttr(o, &_Py_ID(fileno), &meth) < 0) {
         return -1;
     }
     else if (meth != NULL) {
@@ -187,7 +186,7 @@ PyObject_AsFileDescriptor(PyObject *o)
             return -1;
 
         if (PyLong_Check(fno)) {
-            fd = _PyLong_AsInt(fno);
+            fd = PyLong_AsInt(fno);
             Py_DECREF(fno);
         }
         else {
@@ -530,6 +529,13 @@ PyFile_OpenCode(const char *utf8path)
 }
 
 
-#ifdef __cplusplus
+int
+_PyFile_Flush(PyObject *file)
+{
+    PyObject *tmp = PyObject_CallMethodNoArgs(file, &_Py_ID(flush));
+    if (tmp == NULL) {
+        return -1;
+    }
+    Py_DECREF(tmp);
+    return 0;
 }
-#endif

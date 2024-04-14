@@ -197,7 +197,7 @@ PyCField_FromDesc(PyObject *desc, Py_ssize_t index,
     */
     SETFUNC setfunc = NULL;
     GETFUNC getfunc = NULL;
-    if (PyCArrayTypeObject_Check(proto)) {
+    if (PyCArrayTypeObject_Check(st, proto)) {
         StgDictObject *adict = PyType_stgdict(proto);
         StgDictObject *idict;
         if (adict && adict->proto) {
@@ -267,7 +267,8 @@ PyCField_set(CFieldObject *self, PyObject *inst, PyObject *value)
 {
     CDataObject *dst;
     char *ptr;
-    if (!CDataObject_Check(inst)) {
+    ctypes_state *st = GLOBAL_STATE();
+    if (!CDataObject_Check(st, inst)) {
         PyErr_SetString(PyExc_TypeError,
                         "not a ctype instance");
         return -1;
@@ -290,7 +291,8 @@ PyCField_get(CFieldObject *self, PyObject *inst, PyTypeObject *type)
     if (inst == NULL) {
         return Py_NewRef(self);
     }
-    if (!CDataObject_Check(inst)) {
+    ctypes_state *st = GLOBAL_STATE();
+    if (!CDataObject_Check(st, inst)) {
         PyErr_SetString(PyExc_TypeError,
                         "not a ctype instance");
         return NULL;
@@ -313,8 +315,8 @@ PyCField_get_size(PyObject *self, void *data)
 }
 
 static PyGetSetDef PyCField_getset[] = {
-    { "offset", PyCField_get_offset, NULL, "offset in bytes of this field" },
-    { "size", PyCField_get_size, NULL, "size in bytes of this field" },
+    { "offset", PyCField_get_offset, NULL, PyDoc_STR("offset in bytes of this field") },
+    { "size", PyCField_get_size, NULL, PyDoc_STR("size in bytes of this field") },
     { NULL, NULL, NULL, NULL },
 };
 
