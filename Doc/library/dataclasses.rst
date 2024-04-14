@@ -12,7 +12,7 @@
 --------------
 
 This module provides a decorator and functions for automatically
-adding generated :term:`special method`\s such as :meth:`~object.__init__` and
+adding generated :term:`special methods <special method>` such as :meth:`~object.__init__` and
 :meth:`~object.__repr__` to user-defined classes.  It was originally described
 in :pep:`557`.
 
@@ -39,7 +39,7 @@ will add, among other things, a :meth:`!__init__` that looks like::
       self.quantity_on_hand = quantity_on_hand
 
 Note that this method is automatically added to the class: it is not
-directly specified in the ``InventoryItem`` definition shown above.
+directly specified in the :class:`!InventoryItem` definition shown above.
 
 .. versionadded:: 3.7
 
@@ -86,13 +86,13 @@ Module contents
 
    The parameters to ``@dataclass`` are:
 
-   - ``init``: If true (the default), a :meth:`~object.__init__` method will be
+   - *init*: If true (the default), a :meth:`~object.__init__` method will be
      generated.
 
      If the class already defines :meth:`!__init__`, this parameter is
      ignored.
 
-   - ``repr``: If true (the default), a :meth:`~object.__repr__` method will be
+   - *repr*: If true (the default), a :meth:`~object.__repr__` method will be
      generated.  The generated repr string will have the class name and
      the name and repr of each field, in the order they are defined in
      the class.  Fields that are marked as being excluded from the repr
@@ -102,7 +102,7 @@ Module contents
      If the class already defines :meth:`!__repr__`, this parameter is
      ignored.
 
-   - ``eq``: If true (the default), an :meth:`~object.__eq__` method will be
+   - *eq*: If true (the default), an :meth:`~object.__eq__` method will be
      generated.  This method compares the class as if it were a tuple
      of its fields, in order.  Both instances in the comparison must
      be of the identical type.
@@ -110,26 +110,26 @@ Module contents
      If the class already defines :meth:`!__eq__`, this parameter is
      ignored.
 
-   - ``order``: If true (the default is ``False``), :meth:`~object.__lt__`,
+   - *order*: If true (the default is ``False``), :meth:`~object.__lt__`,
      :meth:`~object.__le__`, :meth:`~object.__gt__`, and :meth:`~object.__ge__` methods will be
      generated.  These compare the class as if it were a tuple of its
      fields, in order.  Both instances in the comparison must be of the
-     identical type.  If ``order`` is true and ``eq`` is false, a
+     identical type.  If *order* is true and *eq* is false, a
      :exc:`ValueError` is raised.
 
      If the class already defines any of :meth:`!__lt__`,
      :meth:`!__le__`, :meth:`!__gt__`, or :meth:`!__ge__`, then
      :exc:`TypeError` is raised.
 
-   - ``unsafe_hash``: If ``False`` (the default), a :meth:`~object.__hash__` method
-     is generated according to how ``eq`` and ``frozen`` are set.
+   - *unsafe_hash*: If ``False`` (the default), a :meth:`~object.__hash__` method
+     is generated according to how *eq* and *frozen* are set.
 
      :meth:`!__hash__` is used by built-in :meth:`hash()`, and when objects are
      added to hashed collections such as dictionaries and sets.  Having a
      :meth:`!__hash__` implies that instances of the class are immutable.
      Mutability is a complicated property that depends on the programmer's
      intent, the existence and behavior of :meth:`!__eq__`, and the values of
-     the ``eq`` and ``frozen`` flags in the ``@dataclass`` decorator.
+     the *eq* and *frozen* flags in the ``@dataclass`` decorator.
 
      By default, ``@dataclass`` will not implicitly add a :meth:`~object.__hash__`
      method unless it is safe to do so.  Neither will it add or change an
@@ -149,29 +149,29 @@ Module contents
      method in your dataclass and set ``unsafe_hash=True``; this will result
      in a :exc:`TypeError`.
 
-     If ``eq`` and ``frozen`` are both true, by default ``@dataclass`` will
-     generate a :meth:`!__hash__` method for you.  If ``eq`` is true and
-     ``frozen`` is false, :meth:`!__hash__` will be set to ``None``, marking it
-     unhashable (which it is, since it is mutable).  If ``eq`` is false,
+     If *eq* and *frozen* are both true, by default ``@dataclass`` will
+     generate a :meth:`!__hash__` method for you.  If *eq* is true and
+     *frozen* is false, :meth:`!__hash__` will be set to ``None``, marking it
+     unhashable (which it is, since it is mutable).  If *eq* is false,
      :meth:`!__hash__` will be left untouched meaning the :meth:`!__hash__`
      method of the superclass will be used (if the superclass is
      :class:`object`, this means it will fall back to id-based hashing).
 
-   - ``frozen``: If true (the default is ``False``), assigning to fields will
+   - *frozen*: If true (the default is ``False``), assigning to fields will
      generate an exception.  This emulates read-only frozen instances.  If
      :meth:`~object.__setattr__` or :meth:`~object.__delattr__` is defined in the class, then
      :exc:`TypeError` is raised.  See the discussion below.
 
-   - ``match_args``: If true (the default is ``True``), the
-     ``__match_args__`` tuple will be created from the list of
+   - *match_args*: If true (the default is ``True``), the
+     :attr:`~object.__match_args__` tuple will be created from the list of
      parameters to the generated :meth:`~object.__init__` method (even if
      :meth:`!__init__` is not generated, see above).  If false, or if
-     ``__match_args__`` is already defined in the class, then
-     ``__match_args__`` will not be generated.
+     :attr:`!__match_args__` is already defined in the class, then
+     :attr:`!__match_args__` will not be generated.
 
     .. versionadded:: 3.10
 
-   - ``kw_only``: If true (the default value is ``False``), then all
+   - *kw_only*: If true (the default value is ``False``), then all
      fields will be marked as keyword-only.  If a field is marked as
      keyword-only, then the only effect is that the :meth:`~object.__init__`
      parameter generated from a keyword-only field must be specified
@@ -182,7 +182,7 @@ Module contents
 
     .. versionadded:: 3.10
 
-   - ``slots``: If true (the default is ``False``), :attr:`~object.__slots__` attribute
+   - *slots*: If true (the default is ``False``), :attr:`~object.__slots__` attribute
      will be generated and new class will be returned instead of the original one.
      If :attr:`!__slots__` is already defined in the class, then :exc:`TypeError`
      is raised.
@@ -190,16 +190,16 @@ Module contents
     .. versionadded:: 3.10
 
     .. versionchanged:: 3.11
-       If a field name is already included in the ``__slots__``
-       of a base class, it will not be included in the generated ``__slots__``
+       If a field name is already included in the :attr:`!__slots__`
+       of a base class, it will not be included in the generated :attr:`!__slots__`
        to prevent :ref:`overriding them <datamodel-note-slots>`.
-       Therefore, do not use ``__slots__`` to retrieve the field names of a
+       Therefore, do not use :attr:`!__slots__` to retrieve the field names of a
        dataclass. Use :func:`fields` instead.
        To be able to determine inherited slots,
-       base class ``__slots__`` may be any iterable, but *not* an iterator.
+       base class :attr:`!__slots__` may be any iterable, but *not* an iterator.
 
 
-   - ``weakref_slot``: If true (the default is ``False``), add a slot
+   - *weakref_slot*: If true (the default is ``False``), add a slot
      named "__weakref__", which is required to make an instance
      weakref-able.  It is an error to specify ``weakref_slot=True``
      without also specifying ``slots=True``.
@@ -214,7 +214,7 @@ Module contents
          a: int       # 'a' has no default value
          b: int = 0   # assign a default value for 'b'
 
-   In this example, both ``a`` and ``b`` will be included in the added
+   In this example, both :attr:`!a` and :attr:`!b` will be included in the added
    :meth:`~object.__init__` method, which will be defined as::
 
      def __init__(self, a: int, b: int = 0):
@@ -245,25 +245,25 @@ Module contents
 
    The parameters to :func:`!field` are:
 
-   - ``default``: If provided, this will be the default value for this
+   - *default*: If provided, this will be the default value for this
      field.  This is needed because the :func:`!field` call itself
      replaces the normal position of the default value.
 
-   - ``default_factory``: If provided, it must be a zero-argument
+   - *default_factory*: If provided, it must be a zero-argument
      callable that will be called when a default value is needed for
      this field.  Among other purposes, this can be used to specify
      fields with mutable default values, as discussed below.  It is an
-     error to specify both ``default`` and ``default_factory``.
+     error to specify both *default* and *default_factory*.
 
-   - ``init``: If true (the default), this field is included as a
+   - *init*: If true (the default), this field is included as a
      parameter to the generated :meth:`~object.__init__` method.
 
-   - ``repr``: If true (the default), this field is included in the
+   - *repr*: If true (the default), this field is included in the
      string returned by the generated :meth:`~object.__repr__` method.
 
-   - ``hash``: This can be a bool or ``None``.  If true, this field is
+   - *hash*: This can be a bool or ``None``.  If true, this field is
      included in the generated :meth:`~object.__hash__` method.  If ``None`` (the
-     default), use the value of ``compare``: this would normally be
+     default), use the value of *compare*: this would normally be
      the expected behavior.  A field should be considered in the hash
      if it's used for comparisons.  Setting this value to anything
      other than ``None`` is discouraged.
@@ -274,11 +274,11 @@ Module contents
      fields that contribute to the type's hash value.  Even if a field
      is excluded from the hash, it will still be used for comparisons.
 
-   - ``compare``: If true (the default), this field is included in the
+   - *compare*: If true (the default), this field is included in the
      generated equality and comparison methods (:meth:`~object.__eq__`,
      :meth:`~object.__gt__`, et al.).
 
-   - ``metadata``: This can be a mapping or None. None is treated as
+   - *metadata*: This can be a mapping or None. None is treated as
      an empty dict.  This value is wrapped in
      :func:`~types.MappingProxyType` to make it read-only, and exposed
      on the :class:`Field` object. It is not used at all by Data
@@ -286,7 +286,7 @@ Module contents
      Multiple third-parties can each have their own key, to use as a
      namespace in the metadata.
 
-   - ``kw_only``: If true, this field will be marked as keyword-only.
+   - *kw_only*: If true, this field will be marked as keyword-only.
      This is used when the generated :meth:`~object.__init__` method's
      parameters are computed.
 
@@ -294,7 +294,7 @@ Module contents
 
    If the default value of a field is specified by a call to
    :func:`!field`, then the class attribute for this field will be
-   replaced by the specified ``default`` value.  If no ``default`` is
+   replaced by the specified *default* value.  If *default* is not
    provided, then the class attribute will be deleted.  The intent is
    that after the :func:`@dataclass <dataclass>` decorator runs, the class
    attributes will all contain the default values for the fields, just
@@ -308,9 +308,9 @@ Module contents
          z: int = field(repr=False, default=10)
          t: int = 20
 
-   The class attribute ``C.z`` will be ``10``, the class attribute
-   ``C.t`` will be ``20``, and the class attributes ``C.x`` and
-   ``C.y`` will not be set.
+   The class attribute :attr:`!C.z` will be ``10``, the class attribute
+   :attr:`!C.t` will be ``20``, and the class attributes :attr:`!C.x` and
+   :attr:`!C.y` will not be set.
 
 .. class:: Field
 
@@ -319,10 +319,10 @@ Module contents
    module-level method (see below).  Users should never instantiate a
    :class:`!Field` object directly.  Its documented attributes are:
 
-   - ``name``: The name of the field.
-   - ``type``: The type of the field.
-   - ``default``, ``default_factory``, ``init``, ``repr``, ``hash``,
-     ``compare``, ``metadata``, and ``kw_only`` have the identical
+   - :attr:`!name`: The name of the field.
+   - :attr:`!type`: The type of the field.
+   - :attr:`!default`, :attr:`!default_factory`, :attr:`!init`, :attr:`!repr`, :attr:`!hash`,
+     :attr:`!compare`, :attr:`!metadata`, and :attr:`!kw_only` have the identical
      meaning and values as they do in the :func:`field` function.
 
    Other attributes may exist, but they are private and must not be
@@ -337,8 +337,8 @@ Module contents
 
 .. function:: asdict(obj, *, dict_factory=dict)
 
-   Converts the dataclass ``obj`` to a dict (by using the
-   factory function ``dict_factory``).  Each dataclass is converted
+   Converts the dataclass *obj* to a dict (by using the
+   factory function *dict_factory*).  Each dataclass is converted
    to a dict of its fields, as ``name: value`` pairs.  dataclasses, dicts,
    lists, and tuples are recursed into.  Other objects are copied with
    :func:`copy.deepcopy`.
@@ -364,13 +364,13 @@ Module contents
 
      {field.name: getattr(obj, field.name) for field in fields(obj)}
 
-   :func:`!asdict` raises :exc:`TypeError` if ``obj`` is not a dataclass
+   :func:`!asdict` raises :exc:`TypeError` if *obj* is not a dataclass
    instance.
 
 .. function:: astuple(obj, *, tuple_factory=tuple)
 
-   Converts the dataclass ``obj`` to a tuple (by using the
-   factory function ``tuple_factory``).  Each dataclass is converted
+   Converts the dataclass *obj* to a tuple (by using the
+   factory function *tuple_factory*).  Each dataclass is converted
    to a tuple of its field values.  dataclasses, dicts, lists, and
    tuples are recursed into. Other objects are copied with
    :func:`copy.deepcopy`.
@@ -384,28 +384,28 @@ Module contents
 
      tuple(getattr(obj, field.name) for field in dataclasses.fields(obj))
 
-   :func:`!astuple` raises :exc:`TypeError` if ``obj`` is not a dataclass
+   :func:`!astuple` raises :exc:`TypeError` if *obj* is not a dataclass
    instance.
 
 .. function:: make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False, match_args=True, kw_only=False, slots=False, weakref_slot=False, module=None)
 
-   Creates a new dataclass with name ``cls_name``, fields as defined
-   in ``fields``, base classes as given in ``bases``, and initialized
-   with a namespace as given in ``namespace``.  ``fields`` is an
+   Creates a new dataclass with name *cls_name*, fields as defined
+   in *fields*, base classes as given in *bases*, and initialized
+   with a namespace as given in *namespace*.  *fields* is an
    iterable whose elements are each either ``name``, ``(name, type)``,
    or ``(name, type, Field)``.  If just ``name`` is supplied,
-   ``typing.Any`` is used for ``type``.  The values of ``init``,
-   ``repr``, ``eq``, ``order``, ``unsafe_hash``, ``frozen``,
-   ``match_args``, ``kw_only``, ``slots``, and ``weakref_slot`` have
+   :data:`typing.Any` is used for ``type``.  The values of *init*,
+   *repr*, *eq*, *order*, *unsafe_hash*, *frozen*,
+   *match_args*, *kw_only*, *slots*, and *weakref_slot* have
    the same meaning as they do in :func:`@dataclass <dataclass>`.
 
-   If ``module`` is defined, the ``__module__`` attribute
+   If *module* is defined, the :attr:`!__module__` attribute
    of the dataclass is set to that value.
    By default, it is set to the module name of the caller.
 
    This function is not strictly required, because any Python
-   mechanism for creating a new class with ``__annotations__`` can
-   then apply the ``@dataclass`` function to convert that class to
+   mechanism for creating a new class with :attr:`!__annotations__` can
+   then apply the :func:`@dataclass <dataclass>` function to convert that class to
    a dataclass.  This function is provided as a convenience.  For
    example::
 
@@ -428,9 +428,9 @@ Module contents
 
 .. function:: replace(obj, /, **changes)
 
-   Creates a new object of the same type as ``obj``, replacing
-   fields with values from ``changes``.  If ``obj`` is not a Data
-   Class, raises :exc:`TypeError`.  If keys in ``changes`` are not
+   Creates a new object of the same type as *obj*, replacing
+   fields with values from *changes*.  If *obj* is not a Data
+   Class, raises :exc:`TypeError`.  If keys in *changes* are not
    field names of the given dataclass, raises :exc:`TypeError`.
 
    The newly returned object is created by calling the :meth:`~object.__init__`
@@ -441,7 +441,7 @@ Module contents
    specified on the call to :func:`!replace` so that they can be passed to
    :meth:`!__init__` and :meth:`__post_init__`.
 
-   It is an error for ``changes`` to contain any fields that are
+   It is an error for *changes* to contain any fields that are
    defined as having ``init=False``.  A :exc:`ValueError` will be raised
    in this case.
 
@@ -451,7 +451,7 @@ Module contents
    initialized at all.  It is expected that ``init=False`` fields will
    be rarely and judiciously used.  If they are used, it might be wise
    to have alternate class constructors, or perhaps a custom
-   ``replace()`` (or similarly named) method which handles instance
+   :func:`!replace` (or similarly named) method which handles instance
    copying.
 
    Dataclass instances are also supported by generic function :func:`copy.replace`.
@@ -513,7 +513,7 @@ Post-init processing
 .. function:: __post_init__()
 
    When defined on the class, it will be called by the generated
-   :meth:`~object.__init__`, normally as ``self.__post_init__()``.
+   :meth:`~object.__init__`, normally as :meth:`!self.__post_init__`.
    However, if any ``InitVar`` fields are defined, they will also be
    passed to :meth:`!__post_init__` in the order they were defined in the
    class.  If no :meth:`!__init__` method is generated, then
@@ -564,7 +564,7 @@ Class variables
 One of the few places where :func:`@dataclass <dataclass>` actually inspects the type
 of a field is to determine if a field is a class variable as defined
 in :pep:`526`.  It does this by checking if the type of the field is
-``typing.ClassVar``.  If a field is a ``ClassVar``, it is excluded
+:data:`typing.ClassVar`.  If a field is a ``ClassVar``, it is excluded
 from consideration as a field and is ignored by the dataclass
 mechanisms.  Such ``ClassVar`` pseudo-fields are not returned by the
 module-level :func:`fields` function.
@@ -599,8 +599,8 @@ value is not provided when creating the class::
 
   c = C(10, database=my_database)
 
-In this case, :func:`fields` will return :class:`Field` objects for ``i`` and
-``j``, but not for ``database``.
+In this case, :func:`fields` will return :class:`Field` objects for :attr:`!i` and
+:attr:`!j`, but not for :attr:`!database`.
 
 .. _dataclasses-frozen:
 
@@ -642,10 +642,10 @@ example::
       z: int = 10
       x: int = 15
 
-The final list of fields is, in order, ``x``, ``y``, ``z``.  The final
-type of ``x`` is ``int``, as specified in class ``C``.
+The final list of fields is, in order, :attr:`!x`, :attr:`!y`, :attr:`!z`.  The final
+type of :attr:`!x` is :class:`int`, as specified in class :class:`!C`.
 
-The generated :meth:`~object.__init__` method for ``C`` will look like::
+The generated :meth:`~object.__init__` method for :class:`!C` will look like::
 
   def __init__(self, x: int = 15, y: int = 0, z: int = 10):
 
@@ -658,8 +658,8 @@ keyword-only parameters are moved to come after all regular
 keyword-only parameters are implemented in Python: they must come
 after non-keyword-only parameters.
 
-In this example, ``Base.y``, ``Base.w``, and ``D.t`` are keyword-only
-fields, and ``Base.x`` and ``D.z`` are regular fields::
+In this example, :attr:`!Base.y`, :attr:`!Base.w`, and :attr:`!D.t` are keyword-only
+fields, and :attr:`!Base.x` and :attr:`!D.z` are regular fields::
 
   @dataclass
   class Base:
@@ -673,7 +673,7 @@ fields, and ``Base.x`` and ``D.z`` are regular fields::
       z: int = 10
       t: int = field(kw_only=True, default=0)
 
-The generated :meth:`!__init__` method for ``D`` will look like::
+The generated :meth:`!__init__` method for :class:`!D` will look like::
 
   def __init__(self, x: Any = 15.0, z: int = 10, *, y: int = 0, w: int = 1, t: int = 0):
 
@@ -688,14 +688,14 @@ re-ordered :meth:`!__init__` parameter list.
 Default factory functions
 -------------------------
 
-If a :func:`field` specifies a ``default_factory``, it is called with
+If a :func:`field` specifies a *default_factory*, it is called with
 zero arguments when a default value for the field is needed.  For
 example, to create a new instance of a list, use::
 
   mylist: list = field(default_factory=list)
 
 If a field is excluded from :meth:`~object.__init__` (using ``init=False``)
-and the field also specifies ``default_factory``, then the default
+and the field also specifies *default_factory*, then the default
 factory function will always be called from the generated
 :meth:`!__init__` function.  This happens because there is no other
 way to give the field an initial value.
@@ -718,8 +718,8 @@ Consider this example, not using dataclasses::
   assert o1.x == [1, 2]
   assert o1.x is o2.x
 
-Note that the two instances of class ``C`` share the same class
-variable ``x``, as expected.
+Note that the two instances of class :class:`!C` share the same class
+variable :attr:`!x`, as expected.
 
 Using dataclasses, *if* this code was valid::
 
@@ -740,10 +740,10 @@ it would generate code similar to::
 
   assert D().x is D().x
 
-This has the same issue as the original example using class ``C``.
-That is, two instances of class ``D`` that do not specify a value
-for ``x`` when creating a class instance will share the same copy
-of ``x``.  Because dataclasses just use normal Python class
+This has the same issue as the original example using class :class:`!C`.
+That is, two instances of class :class:`!D` that do not specify a value
+for :attr:`!x` when creating a class instance will share the same copy
+of :attr:`!x`.  Because dataclasses just use normal Python class
 creation they also share this behavior.  There is no general way
 for Data Classes to detect this condition.  Instead, the
 :func:`@dataclass <dataclass>` decorator will raise a :exc:`ValueError` if it
@@ -761,8 +761,8 @@ mutable types as default values for fields::
   assert D().x is not D().x
 
 .. versionchanged:: 3.11
-   Instead of looking for and disallowing objects of type ``list``,
-   ``dict``, or ``set``, unhashable objects are now not allowed as
+   Instead of looking for and disallowing objects of type :class:`list`,
+   :class:`dict`, or :class:`set`, unhashable objects are now not allowed as
    default values.  Unhashability is used to approximate
    mutability.
 
