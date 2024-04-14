@@ -5721,7 +5721,8 @@ _ctypes_add_types(PyObject *mod)
        tp_base is the base type, defaults to 'object' aka PyBaseObject_Type.
     */
     CREATE_TYPE(st->PyCArg_Type, &carg_spec, NULL, NULL);
-    CREATE_TYPE(st->PyCThunk_Type, &cthunk_spec, NULL, NULL);
+    CREATE_TYPE(st->PyCThunkType_Type, &cthunk_type_spec, NULL, &PyType_Type);
+    CREATE_TYPE(st->PyCThunk_Type, &cthunk_spec, st->PyCThunkType_Type, NULL);
     CREATE_TYPE(st->PyCData_Type, &pycdata_spec, NULL, NULL);
 
     // Common Metaclass
@@ -5900,6 +5901,7 @@ module_traverse(PyObject *module, visitproc visit, void *arg) {
 #ifdef MS_WIN32
     Py_VISIT(st->PyComError_Type);
 #endif
+    Py_VISIT(st->PyCThunkType_Type);
     Py_VISIT(st->PyCType_Type);
     return 0;
 }
@@ -5935,6 +5937,7 @@ module_clear(PyObject *module) {
 #ifdef MS_WIN32
     Py_CLEAR(st->PyComError_Type);
 #endif
+    Py_CLEAR(st->PyCThunkType_Type);
     Py_CLEAR(st->PyCType_Type);
     return 0;
 }

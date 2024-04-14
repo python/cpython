@@ -43,6 +43,7 @@ typedef struct {
     PyTypeObject *DictRemover_Type;
     PyTypeObject *PyCArg_Type;
     PyTypeObject *PyCField_Type;
+    PyTypeObject *PyCThunkType_Type;
     PyTypeObject *PyCThunk_Type;
     PyTypeObject *StructParam_Type;
     PyTypeObject *PyCType_Type;
@@ -118,6 +119,7 @@ get_module_state_by_def_final(PyTypeObject *cls)
 
 extern PyType_Spec carg_spec;
 extern PyType_Spec cfield_spec;
+extern PyType_Spec cthunk_type_spec;
 extern PyType_Spec cthunk_spec;
 
 typedef struct tagPyCArgObject PyCArgObject;
@@ -450,11 +452,11 @@ extern int _ctypes_simple_instance(ctypes_state *st, PyObject *obj);
 PyObject *_ctypes_get_errobj(ctypes_state *st, int **pspace);
 
 #ifdef USING_MALLOC_CLOSURE_DOT_C
-void Py_ffi_closure_free(void *p);
-void *Py_ffi_closure_alloc(size_t size, void** codeloc);
+void Py_ffi_closure_free(PyTypeObject *thunk_tp, void *p);
+void *Py_ffi_closure_alloc(PyTypeObject *thunk_tp, size_t size, void** codeloc);
 #else
-#define Py_ffi_closure_free ffi_closure_free
-#define Py_ffi_closure_alloc ffi_closure_alloc
+#define Py_ffi_closure_free(tp, p) ffi_closure_free(p)
+#define Py_ffi_closure_alloc(tp, size, codeloc) ffi_closure_alloc(size, codeloc)
 #endif
 
 
