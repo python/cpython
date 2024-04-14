@@ -31,57 +31,47 @@ class Test(unittest.TestCase):
         for tp, fmt, shape, itemtp in native_types:
             ob = tp()
             v = memoryview(ob)
-            try:
-                self.assertEqual(normalize(v.format), normalize(fmt))
-                if shape:
-                    self.assertEqual(len(v), shape[0])
-                else:
-                    self.assertRaises(TypeError, len, v)
-                self.assertEqual(v.itemsize, sizeof(itemtp))
-                self.assertEqual(v.shape, shape)
-                # XXX Issue #12851: PyCData_NewGetBuffer() must provide strides
-                #     if requested. memoryview currently reconstructs missing
-                #     stride information, so this assert will fail.
-                # self.assertEqual(v.strides, ())
+            self.assertEqual(normalize(v.format), normalize(fmt))
+            if shape:
+                self.assertEqual(len(v), shape[0])
+            else:
+                self.assertRaises(TypeError, len, v)
+            self.assertEqual(v.itemsize, sizeof(itemtp))
+            self.assertEqual(v.shape, shape)
+            # XXX Issue #12851: PyCData_NewGetBuffer() must provide strides
+            #     if requested. memoryview currently reconstructs missing
+            #     stride information, so this assert will fail.
+            # self.assertEqual(v.strides, ())
 
-                # they are always read/write
-                self.assertFalse(v.readonly)
+            # they are always read/write
+            self.assertFalse(v.readonly)
 
-                n = 1
-                for dim in v.shape:
-                    n = n * dim
-                self.assertEqual(n * v.itemsize, len(v.tobytes()))
-            except:
-                # so that we can see the failing type
-                print(tp)
-                raise
+            n = 1
+            for dim in v.shape:
+                n = n * dim
+            self.assertEqual(n * v.itemsize, len(v.tobytes()))
 
     def test_endian_types(self):
         for tp, fmt, shape, itemtp in endian_types:
             ob = tp()
             v = memoryview(ob)
-            try:
-                self.assertEqual(v.format, fmt)
-                if shape:
-                    self.assertEqual(len(v), shape[0])
-                else:
-                    self.assertRaises(TypeError, len, v)
-                self.assertEqual(v.itemsize, sizeof(itemtp))
-                self.assertEqual(v.shape, shape)
-                # XXX Issue #12851
-                # self.assertEqual(v.strides, ())
+            self.assertEqual(v.format, fmt)
+            if shape:
+                self.assertEqual(len(v), shape[0])
+            else:
+                self.assertRaises(TypeError, len, v)
+            self.assertEqual(v.itemsize, sizeof(itemtp))
+            self.assertEqual(v.shape, shape)
+            # XXX Issue #12851
+            # self.assertEqual(v.strides, ())
 
-                # they are always read/write
-                self.assertFalse(v.readonly)
+            # they are always read/write
+            self.assertFalse(v.readonly)
 
-                n = 1
-                for dim in v.shape:
-                    n = n * dim
-                self.assertEqual(n * v.itemsize, len(v.tobytes()))
-            except:
-                # so that we can see the failing type
-                print(tp)
-                raise
+            n = 1
+            for dim in v.shape:
+                n = n * dim
+            self.assertEqual(n * v.itemsize, len(v.tobytes()))
 
 
 # define some structure classes

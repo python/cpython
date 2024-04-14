@@ -80,9 +80,6 @@ class ObjectsTestCase(unittest.TestCase):
         y = Y()
         y.x = x
         self.assertEqual(y._objects, {"0": {"0": s1, "1": s2}})
-##        x = y.x
-##        del y
-##        print x._b_base_._objects
 
     def test_ptr_struct(self):
         class X(Structure):
@@ -94,9 +91,6 @@ class ObjectsTestCase(unittest.TestCase):
 
         x = X()
         x.data = a
-##XXX        print x._objects
-##XXX        print x.data[0]
-##XXX        print x.data._objects
 
 
 if __name__ == '__main__':

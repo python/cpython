@@ -103,8 +103,6 @@ class SimpleTypesTestCase(unittest.TestCase):
     def test_int_pointers(self):
         LPINT = POINTER(c_int)
 
-##        p = pointer(c_int(42))
-##        x = LPINT.from_param(p)
         x = LPINT.from_param(pointer(c_int(42)))
         self.assertEqual(x.contents.value, 42)
         self.assertEqual(LPINT(c_int(42)).contents.value, 42)

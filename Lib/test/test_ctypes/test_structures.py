@@ -381,9 +381,6 @@ class StructureTestCase(unittest.TestCase):
         self.assertEqual((cls, msg), (TypeError, "abstract class"))
 
     def test_methods(self):
-##        class X(Structure):
-##            _fields_ = []
-
         self.assertIn("in_dll", dir(type(Structure)))
         self.assertIn("from_address", dir(type(Structure)))
         self.assertIn("in_dll", dir(type(Structure)))
@@ -795,8 +792,6 @@ class PointerMemberTestCase(unittest.TestCase):
         self.assertEqual(items, [42, 2, 3])
 
         s.array[0] = 1
-
-##        s.array[1] = 42
 
         items = [s.array[i] for i in range(3)]
         self.assertEqual(items, [1, 2, 3])

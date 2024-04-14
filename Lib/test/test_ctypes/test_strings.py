@@ -46,13 +46,10 @@ class StringArrayTestCase(unittest.TestCase):
     def test_param_1(self):
         BUF = c_char * 4
         buf = BUF()
-##        print c_char_p.from_param(buf)
 
     def test_param_2(self):
         BUF = c_char * 4
         buf = BUF()
-##        print BUF.from_param(c_char_p("python"))
-##        print BUF.from_param(BUF(*"pyth"))
 
     def test_del_segfault(self):
         BUF = c_char * 4

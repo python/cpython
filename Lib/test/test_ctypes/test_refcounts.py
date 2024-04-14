@@ -20,7 +20,6 @@ class RefcountTestCase(unittest.TestCase):
         f.argtypes = [ctypes.c_int, MyCallback]
 
         def callback(value):
-            #print "called back with", value
             return value
 
         self.assertEqual(sys.getrefcount(callback), 2)

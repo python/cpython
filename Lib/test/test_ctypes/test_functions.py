@@ -227,7 +227,6 @@ class FunctionTestCase(unittest.TestCase):
         result = f(byref(c_int(99)))
         self.assertNotEqual(result.contents, 99)
 
-    ################################################################
     def test_shorts(self):
         f = dll._testfunc_callback_i_if
 
@@ -245,9 +244,6 @@ class FunctionTestCase(unittest.TestCase):
         f(2**18, cb)
         self.assertEqual(args, expected)
 
-    ################################################################
-
-
     def test_callbacks(self):
         f = dll._testfunc_callback_i_if
         f.restype = c_int
@@ -256,7 +252,6 @@ class FunctionTestCase(unittest.TestCase):
         MyCallback = CFUNCTYPE(c_int, c_int)
 
         def callback(value):
-            #print "called back with", value
             return value
 
         cb = MyCallback(callback)
@@ -289,7 +284,6 @@ class FunctionTestCase(unittest.TestCase):
         f.argtypes = [c_int, MyCallback]
 
         def callback(value):
-            #print "called back with", value
             self.assertEqual(type(value), int)
             return value
 

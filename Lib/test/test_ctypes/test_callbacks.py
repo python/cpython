@@ -19,9 +19,6 @@ from test import support
 class Callbacks(unittest.TestCase):
     functype = CFUNCTYPE
 
-##    def tearDown(self):
-##        gc.collect()
-
     def callback(self, *args):
         self.got_args = args
         return args[-1]
@@ -42,8 +39,6 @@ class Callbacks(unittest.TestCase):
         else:
             self.assertEqual(self.got_args, (-3, arg))
             self.assertEqual(result, arg)
-
-    ################
 
     def test_byte(self):
         self.check_type(c_byte, 42)
