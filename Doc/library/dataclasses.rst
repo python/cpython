@@ -362,7 +362,7 @@ Module contents
 
    To create a shallow copy, the following workaround may be used::
 
-     dict((field.name, getattr(obj, field.name)) for field in fields(obj))
+     {field.name: getattr(obj, field.name) for field in fields(obj)}
 
    :func:`!asdict` raises :exc:`TypeError` if *obj* is not a dataclass
    instance.
@@ -430,8 +430,8 @@ Module contents
 
    Creates a new object of the same type as *obj*, replacing
    fields with values from *changes*.  If *obj* is not a Data
-   Class, raises :exc:`TypeError`.  If values in *changes* do not
-   specify fields, raises :exc:`TypeError`.
+   Class, raises :exc:`TypeError`.  If keys in *changes* are not
+   field names of the given dataclass, raises :exc:`TypeError`.
 
    The newly returned object is created by calling the :meth:`~object.__init__`
    method of the dataclass.  This ensures that
@@ -556,6 +556,8 @@ See the section below on init-only variables for ways to pass
 parameters to :meth:`!__post_init__`.  Also see the warning about how
 :func:`replace` handles ``init=False`` fields.
 
+.. _dataclasses-class-variables:
+
 Class variables
 ---------------
 
@@ -566,6 +568,8 @@ in :pep:`526`.  It does this by checking if the type of the field is
 from consideration as a field and is ignored by the dataclass
 mechanisms.  Such ``ClassVar`` pseudo-fields are not returned by the
 module-level :func:`fields` function.
+
+.. _dataclasses-init-only-variables:
 
 Init-only variables
 -------------------
@@ -598,6 +602,8 @@ value is not provided when creating the class::
 In this case, :func:`fields` will return :class:`Field` objects for :attr:`!i` and
 :attr:`!j`, but not for :attr:`!database`.
 
+.. _dataclasses-frozen:
+
 Frozen instances
 ----------------
 
@@ -610,6 +616,8 @@ methods will raise a :exc:`FrozenInstanceError` when invoked.
 There is a tiny performance penalty when using ``frozen=True``:
 :meth:`~object.__init__` cannot use simple assignment to initialize fields, and
 must use :meth:`!__setattr__`.
+
+.. _dataclasses-inheritance:
 
 Inheritance
 -----------
