@@ -12,7 +12,7 @@
 --------------
 
 This module provides a decorator and functions for automatically
-adding generated :term:`special method`\s such as :meth:`~object.__init__` and
+adding generated :term:`special methods <special method>` such as :meth:`~object.__init__` and
 :meth:`~object.__repr__` to user-defined classes.  It was originally described
 in :pep:`557`.
 
