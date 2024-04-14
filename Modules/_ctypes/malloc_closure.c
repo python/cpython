@@ -32,8 +32,8 @@ typedef union _tagITEM {
     union _tagITEM *next;
 } ITEM;
 
-typedef struct _arena {
-    struct _arena *prev_arena;
+typedef struct _tagARENA {
+    struct _tagARENA *prev_arena;
     ITEM items[1];
 } ARENA;
 
