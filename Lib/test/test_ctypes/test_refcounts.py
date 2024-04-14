@@ -123,7 +123,6 @@ class ModuleIsolationTest(unittest.TestCase):
         )
         script_helper.assert_python_ok("-c", script)
 
-    @unittest.skipUnless(support.Py_DEBUG, 'a method requires Py_DEBUG')
     def test_many_closures_per_module(self):
         # check if mmap() and munmap() get called multiple times
         script = (
@@ -131,7 +130,8 @@ class ModuleIsolationTest(unittest.TestCase):
             "pyfunc = lambda: 0;"
             "cfunc_type = ctypes.CFUNCTYPE(ctypes.c_int);"
             "cfuncs = [cfunc_type(pyfunc) for i in range(500)];"
-            "n_containers = _ctypes._get_ffi_closure_containers_count();"
+            "f = getattr(_ctypes, '_get_ffi_closure_containers_count', None);"
+            "n_containers = f and f();"
             "exit(n_containers and n_containers < 2)"
         )
         script_helper.assert_python_ok("-c", script)

@@ -2071,7 +2071,7 @@ get_malloc_closure_narenas(PyObject *self, PyObject *args)
     ctypes_state *st = get_module_state(self);
     return PyLong_FromSsize_t(st->malloc_closure.narenas);
 #else
-    return PyLong_FromLong(0);
+    Py_RETURN_NONE;
 #endif
 }
 #endif
