@@ -39,6 +39,24 @@
 #include <Unknwn.h> // for IUnknown interface
 #endif
 
+typedef union _tagITEM {
+    ffi_closure closure;
+    union _tagITEM *next;
+} malloc_closure_item;
+
+typedef struct _tag_arena {
+    struct _tag_arena *prev_arena;
+    malloc_closure_item items[1];
+} malloc_closure_arena;
+
+typedef struct {
+    int pagesize;
+    malloc_closure_item *free_list;
+    malloc_closure_arena *last_arena;
+    Py_ssize_t arena_size;
+    Py_ssize_t narenas;
+} malloc_closure_state;
+
 typedef struct {
     PyTypeObject *DictRemover_Type;
     PyTypeObject *PyCArg_Type;
@@ -71,6 +89,7 @@ typedef struct {
     PyObject *error_object_name;  // callproc.c
     PyObject *PyExc_ArgError;
     PyObject *swapped_suffix;
+    malloc_closure_state malloc_closure;
 } ctypes_state;
 
 
@@ -450,12 +469,13 @@ extern int _ctypes_simple_instance(ctypes_state *st, PyObject *obj);
 PyObject *_ctypes_get_errobj(ctypes_state *st, int **pspace);
 
 #ifdef USING_MALLOC_CLOSURE_DOT_C
-void Py_ffi_closure_free(void *p);
-void *Py_ffi_closure_alloc(size_t size, void** codeloc);
+void Py_ffi_closure_free(ctypes_state *st, void *p);
+void *Py_ffi_closure_alloc(ctypes_state *st, size_t size, void** codeloc);
 #else
-#define Py_ffi_closure_free ffi_closure_free
-#define Py_ffi_closure_alloc ffi_closure_alloc
+#define Py_ffi_closure_free(st, p) ffi_closure_free(p)
+#define Py_ffi_closure_alloc(st, size, codeloc) ffi_closure_alloc(size, codeloc)
 #endif
+void clear_malloc_closure_free_list(ctypes_state *st);
 
 
 /****************************************************************

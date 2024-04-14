@@ -56,7 +56,11 @@ CThunkObject_dealloc(PyObject *myself)
     PyObject_GC_UnTrack(self);
     (void)CThunkObject_clear(myself);
     if (self->pcl_write) {
-        Py_ffi_closure_free(self->pcl_write);
+        PyObject *module = _PyType_GetModule(tp);
+        if (module) {
+            ctypes_state *st = _PyModule_GetState(module);
+            Py_ffi_closure_free(st, self->pcl_write);
+        }
     }
     PyObject_GC_Del(self);
     Py_DECREF(tp);
@@ -364,7 +368,7 @@ CThunkObject *_ctypes_alloc_callback(ctypes_state *st,
 
     assert(CThunk_CheckExact(st, (PyObject *)p));
 
-    p->pcl_write = Py_ffi_closure_alloc(sizeof(ffi_closure), &p->pcl_exec);
+    p->pcl_write = Py_ffi_closure_alloc(st, sizeof(ffi_closure), &p->pcl_exec);
     if (p->pcl_write == NULL) {
         PyErr_NoMemory();
         goto error;

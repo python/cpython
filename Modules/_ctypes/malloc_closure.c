@@ -27,18 +27,15 @@
 
 /******************************************************************/
 
-typedef union _tagITEM {
-    ffi_closure closure;
-    union _tagITEM *next;
-} ITEM;
+typedef malloc_closure_item ITEM;
+typedef malloc_closure_arena ARENA;
 
-static ITEM *free_list;
-static int _pagesize;
-
-static void more_core(void)
+static void
+more_core(malloc_closure_state *st)
 {
     ITEM *item;
     int count, i;
+    int _pagesize = st->pagesize;
 
 /* determine the pagesize */
 #ifdef MS_WIN32
@@ -56,28 +53,38 @@ static void more_core(void)
 #endif
     }
 #endif
+    st->pagesize = _pagesize;
 
     /* calculate the number of nodes to allocate */
-    count = BLOCKSIZE / sizeof(ITEM);
+    count = (BLOCKSIZE - sizeof(ARENA *)) / sizeof(ITEM);
+    if (count <= 0) {
+        return;
+    }
+    st->arena_size = sizeof(ARENA *) + count * sizeof(ITEM);
 
     /* allocate a memory block */
 #ifdef MS_WIN32
-    item = (ITEM *)VirtualAlloc(NULL,
-                                           count * sizeof(ITEM),
+    ARENA *arena = (ARENA *)VirtualAlloc(NULL,
+                                           st->arena_size,
                                            MEM_COMMIT,
                                            PAGE_EXECUTE_READWRITE);
-    if (item == NULL)
+    if (arena == NULL)
         return;
 #else
-    item = (ITEM *)mmap(NULL,
-                        count * sizeof(ITEM),
+    ARENA *arena = (ARENA *)mmap(NULL,
+                        st->arena_size,
                         PROT_READ | PROT_WRITE | PROT_EXEC,
                         MAP_PRIVATE | MAP_ANONYMOUS,
                         -1,
                         0);
-    if (item == (void *)MAP_FAILED)
+    if (arena == (void *)MAP_FAILED)
         return;
 #endif
+
+    arena->prev_arena = st->last_arena;
+    st->last_arena = arena;
+    ++st->narenas;
+    item = arena->items;
 
 #ifdef MALLOC_CLOSURE_DEBUG
     printf("block at %p allocated (%d bytes), %d ITEMs\n",
@@ -85,16 +92,35 @@ static void more_core(void)
 #endif
     /* put them into the free list */
     for (i = 0; i < count; ++i) {
-        item->next = free_list;
-        free_list = item;
+        item->next = st->free_list;
+        st->free_list = item;
         ++item;
     }
+}
+
+void
+clear_malloc_closure_free_list(ctypes_state *state)
+{
+    malloc_closure_state *st = &state->malloc_closure;
+    while (st->narenas > 0) {
+        ARENA *arena = st->last_arena;
+        assert(arena != NULL);
+        st->last_arena = arena->prev_arena;
+#ifdef MS_WIN32
+        VirtualFree(arena, 0, MEM_RELEASE);
+#else
+        munmap(arena, st->arena_size);
+#endif
+        st->narenas--;
+    }
+    assert(st->last_arena == NULL);
 }
 
 /******************************************************************/
 
 /* put the item back into the free list */
-void Py_ffi_closure_free(void *p)
+void
+Py_ffi_closure_free(ctypes_state *state, void *p)
 {
 #ifdef HAVE_FFI_CLOSURE_ALLOC
 #ifdef USING_APPLE_OS_LIBFFI
@@ -110,13 +136,18 @@ void Py_ffi_closure_free(void *p)
     }
 #endif
 #endif
+    malloc_closure_state *st = &state->malloc_closure;
+    if (st->narenas <= 0) {
+        return;
+    }
     ITEM *item = (ITEM *)p;
-    item->next = free_list;
-    free_list = item;
+    item->next = st->free_list;
+    st->free_list = item;
 }
 
 /* return one item from the free list, allocating more if needed */
-void *Py_ffi_closure_alloc(size_t size, void** codeloc)
+void *
+Py_ffi_closure_alloc(ctypes_state *state, size_t size, void** codeloc)
 {
 #ifdef HAVE_FFI_CLOSURE_ALLOC
 #ifdef USING_APPLE_OS_LIBFFI
@@ -132,12 +163,15 @@ void *Py_ffi_closure_alloc(size_t size, void** codeloc)
 #endif
 #endif
     ITEM *item;
-    if (!free_list)
-        more_core();
-    if (!free_list)
+    malloc_closure_state *st = &state->malloc_closure;
+    if (!st->free_list) {
+        more_core(st);
+    }
+    if (!st->free_list) {
         return NULL;
-    item = free_list;
-    free_list = item->next;
+    }
+    item = st->free_list;
+    st->free_list = item->next;
 #ifdef _M_ARM
     // set Thumb bit so that blx is called correctly
     *codeloc = (ITEM*)((uintptr_t)item | 1);
