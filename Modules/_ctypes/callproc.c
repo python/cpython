@@ -2063,12 +2063,18 @@ buffer_info(PyObject *self, PyObject *arg)
     return Py_BuildValue("siN", info->format, info->ndim, shape);
 }
 
+#ifdef Py_DEBUG
 static PyObject *
 get_malloc_closure_narenas(PyObject *self, PyObject *args)
 {
+#ifdef USING_MALLOC_CLOSURE_DOT_C
     ctypes_state *st = get_module_state(self);
     return PyLong_FromSsize_t(st->malloc_closure.narenas);
+#else
+    return PyLong_FromLong(0);
+#endif
 }
+#endif
 
 PyMethodDef _ctypes_module_methods[] = {
     {"get_errno", get_errno, METH_NOARGS},

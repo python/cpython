@@ -120,7 +120,7 @@ clear_malloc_closure_free_list(ctypes_state *state)
 
 /* put the item back into the free list */
 void
-Py_ffi_closure_free(ctypes_state *state, void *p)
+Py_ffi_closure_free(PyTypeObject *thunk_tp, void *p)
 {
 #ifdef HAVE_FFI_CLOSURE_ALLOC
 #ifdef USING_APPLE_OS_LIBFFI
@@ -136,6 +136,12 @@ Py_ffi_closure_free(ctypes_state *state, void *p)
     }
 #endif
 #endif
+    PyObject *module = _PyType_GetModule(thunk_tp);
+    if (module == NULL) {
+        return;
+    }
+    ctypes_state *state = get_module_state(module);
+
     malloc_closure_state *st = &state->malloc_closure;
     if (st->narenas <= 0) {
         return;

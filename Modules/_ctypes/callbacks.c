@@ -56,11 +56,7 @@ CThunkObject_dealloc(PyObject *myself)
     PyObject_GC_UnTrack(self);
     (void)CThunkObject_clear(myself);
     if (self->pcl_write) {
-        PyObject *module = _PyType_GetModule(tp);
-        if (module) {
-            ctypes_state *st = _PyModule_GetState(module);
-            Py_ffi_closure_free(st, self->pcl_write);
-        }
+        Py_ffi_closure_free(tp, self->pcl_write);
     }
     PyObject_GC_Del(self);
     Py_DECREF(tp);

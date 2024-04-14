@@ -5936,8 +5936,10 @@ module_clear(PyObject *module) {
     Py_CLEAR(st->PyComError_Type);
 #endif
     Py_CLEAR(st->PyCType_Type);
+#ifdef USING_MALLOC_CLOSURE_DOT_C
     clear_malloc_closure_free_list(st);
     memset(&st->malloc_closure, 0, sizeof(malloc_closure_state));
+#endif
     return 0;
 }
 
