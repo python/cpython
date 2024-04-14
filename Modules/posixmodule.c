@@ -5512,8 +5512,8 @@ os__path_abspath(PyObject *module, PyObject *path)
 /*[clinic end generated code: output=6a6bb40f1ebe86f2 input=21e4ac322da1a31e]*/
 {
     if (!PyUnicode_Check(path)) {
-        PyErr_Format(PyExc_TypeError, "expected 'str', not '%.200s'",
-            Py_TYPE(path)->tp_name);
+        PyErr_Format(PyExc_TypeError, "expected 'str', not %T",
+                     Py_TYPE(path));
         return NULL;
     }
 
