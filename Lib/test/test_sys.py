@@ -562,7 +562,8 @@ class SysModuleTest(unittest.TestCase):
             # And the next record must be for g456().
             filename, lineno, funcname, sourceline = stack[i+1]
             self.assertEqual(funcname, "g456")
-            self.assertTrue(sourceline.startswith("if leave_g.wait("))
+            self.assertTrue((sourceline.startswith("if leave_g.wait(") or
+                             sourceline.startswith("g_raised.set()")))
         finally:
             # Reap the spawned thread.
             leave_g.set()
@@ -1389,7 +1390,7 @@ class SizeofTest(unittest.TestCase):
     def setUp(self):
         self.P = struct.calcsize('P')
         self.longdigit = sys.int_info.sizeof_digit
-        import _testinternalcapi
+        _testinternalcapi = import_helper.import_module("_testinternalcapi")
         self.gc_headsize = _testinternalcapi.SIZEOF_PYGC_HEAD
         self.managed_pre_header_size = _testinternalcapi.SIZEOF_MANAGED_PRE_HEADER
 

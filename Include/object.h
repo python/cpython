@@ -629,13 +629,18 @@ given type object has a specified feature.
 /* Track types initialized using _PyStaticType_InitBuiltin(). */
 #define _Py_TPFLAGS_STATIC_BUILTIN (1 << 1)
 
+/* The values array is placed inline directly after the rest of
+ * the object. Implies Py_TPFLAGS_HAVE_GC.
+ */
+#define Py_TPFLAGS_INLINE_VALUES (1 << 2)
+
 /* Placement of weakref pointers are managed by the VM, not by the type.
  * The VM will automatically set tp_weaklistoffset.
  */
 #define Py_TPFLAGS_MANAGED_WEAKREF (1 << 3)
 
 /* Placement of dict (and values) pointers are managed by the VM, not by the type.
- * The VM will automatically set tp_dictoffset.
+ * The VM will automatically set tp_dictoffset. Implies Py_TPFLAGS_HAVE_GC.
  */
 #define Py_TPFLAGS_MANAGED_DICT (1 << 4)
 
