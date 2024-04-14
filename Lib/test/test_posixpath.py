@@ -648,6 +648,7 @@ class PosixPathTest(unittest.TestCase):
 
     def test_relpath(self):
         (real_getcwd, os.getcwd) = (os.getcwd, lambda: r"/home/user/bar")
+        (real_getcwdb, os.getcwdb) = (os.getcwdb, lambda: br"/home/user/bar")
         try:
             curdir = os.path.split(os.getcwd())[-1]
             self.assertRaises(TypeError, posixpath.relpath, None)
@@ -671,9 +672,10 @@ class PosixPathTest(unittest.TestCase):
             self.assertEqual(posixpath.relpath("/a", "/a"), '.')
             self.assertEqual(posixpath.relpath("/a/b", "/a/b"), '.')
         finally:
-            os.getcwd = real_getcwd
+            (os.getcwd, os.getcwdb) = (real_getcwd, real_getcwdb)
 
     def test_relpath_bytes(self):
+        (real_getcwd, os.getcwd) = (os.getcwd, lambda: r"/home/user/bar")
         (real_getcwdb, os.getcwdb) = (os.getcwdb, lambda: br"/home/user/bar")
         try:
             curdir = os.path.split(os.getcwdb())[-1]
@@ -701,7 +703,7 @@ class PosixPathTest(unittest.TestCase):
             self.assertRaises(TypeError, posixpath.relpath, b"bytes", "str")
             self.assertRaises(TypeError, posixpath.relpath, "str", b"bytes")
         finally:
-            os.getcwdb = real_getcwdb
+            (os.getcwd, os.getcwdb) = (real_getcwd, real_getcwdb)
 
     def test_commonpath(self):
         def check(paths, expected):
