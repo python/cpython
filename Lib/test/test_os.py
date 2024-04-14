@@ -4640,6 +4640,12 @@ class TestPEP519(unittest.TestCase):
     def test_pathlike_class_getitem(self):
         self.assertIsInstance(os.PathLike[bytes], types.GenericAlias)
 
+    def test_pathlike_subclass_slots(self):
+        class A(os.PathLike):
+            __slots__ = ()
+            def __fspath__(self):
+                return ''
+        self.assertFalse(hasattr(A(), '__dict__'))
 
 class TimesTests(unittest.TestCase):
     def test_times(self):
@@ -4699,6 +4705,22 @@ class ForkTests(unittest.TestCase):
         _, out, err = assert_python_ok("-c", code, PYTHONOPTIMIZE='0')
         self.assertEqual(err.decode("utf-8"), "")
         self.assertEqual(out.decode("utf-8"), "")
+
+    def test_fork_at_exit(self):
+        code = """if 1:
+            import atexit
+            import os
+
+            def exit_handler():
+                pid = os.fork()
+                if pid != 0:
+                    print("shouldn't be printed")
+
+            atexit.register(exit_handler)
+        """
+        _, out, err = assert_python_ok("-c", code)
+        self.assertEqual(b"", out)
+        self.assertIn(b"can't fork at interpreter shutdown", err)
 
 
 # Only test if the C version is provided, otherwise TestPEP519 already tested

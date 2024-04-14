@@ -447,19 +447,6 @@ adaptive_counter_backoff(uint16_t counter) {
     return adaptive_counter_bits(value, backoff);
 }
 
-
-/* Line array cache for tracing */
-
-typedef struct _PyShimCodeDef {
-    const uint8_t *code;
-    int codelen;
-    int stacksize;
-    const char *cname;
-} _PyShimCodeDef;
-
-extern PyCodeObject *
-_Py_MakeShimCode(const _PyShimCodeDef *code);
-
 extern uint32_t _Py_next_func_version;
 
 
@@ -487,6 +474,7 @@ extern int _Py_Instrument(PyCodeObject *co, PyInterpreterState *interp);
 
 extern int _Py_GetBaseOpcode(PyCodeObject *code, int offset);
 
+extern int _PyInstruction_GetLength(PyCodeObject *code, int offset);
 
 #ifdef __cplusplus
 }

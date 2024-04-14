@@ -1,0 +1,1 @@
+Remove mentions of old Python versions in :class:`typing.NamedTuple`.

@@ -1,0 +1,2 @@
+Improve performance of :class:`pathlib.PurePath` initialisation by
+deferring joining of paths when multiple arguments are given.

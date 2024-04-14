@@ -153,10 +153,6 @@ intern_string_constants(PyObject *tuple, int *modified)
     for (Py_ssize_t i = PyTuple_GET_SIZE(tuple); --i >= 0; ) {
         PyObject *v = PyTuple_GET_ITEM(tuple, i);
         if (PyUnicode_CheckExact(v)) {
-            if (PyUnicode_READY(v) == -1) {
-                return -1;
-            }
-
             if (all_name_chars(v)) {
                 PyObject *w = v;
                 PyUnicode_InternInPlace(&v);
@@ -437,6 +433,7 @@ init_code(PyCodeObject *co, struct _PyCodeConstructor *con)
     co->co_weakreflist = NULL;
     co->co_extra = NULL;
     co->_co_cached = NULL;
+    co->co_executors = NULL;
 
     memcpy(_PyCode_CODE(co), PyBytes_AS_STRING(con->code),
            PyBytes_GET_SIZE(con->code));
@@ -546,17 +543,6 @@ remove_column_info(PyObject *locations)
 PyCodeObject *
 _PyCode_New(struct _PyCodeConstructor *con)
 {
-    /* Ensure that strings are ready Unicode string */
-    if (PyUnicode_READY(con->name) < 0) {
-        return NULL;
-    }
-    if (PyUnicode_READY(con->qualname) < 0) {
-        return NULL;
-    }
-    if (PyUnicode_READY(con->filename) < 0) {
-        return NULL;
-    }
-
     if (intern_strings(con->names) < 0) {
         return NULL;
     }
@@ -1692,6 +1678,12 @@ code_dealloc(PyCodeObject *co)
 
         PyMem_Free(co_extra);
     }
+    if (co->co_executors != NULL) {
+        for (int i = 0; i < co->co_executors->size; i++) {
+            Py_CLEAR(co->co_executors->executors[i]);
+        }
+        PyMem_Free(co->co_executors);
+    }
 
     Py_XDECREF(co->co_consts);
     Py_XDECREF(co->co_names);
@@ -2324,76 +2316,3 @@ _PyStaticCode_Init(PyCodeObject *co)
 }
 
 #define MAX_CODE_UNITS_PER_LOC_ENTRY 8
-
-PyCodeObject *
-_Py_MakeShimCode(const _PyShimCodeDef *codedef)
-{
-    PyObject *name = NULL;
-    PyObject *co_code = NULL;
-    PyObject *lines = NULL;
-    PyCodeObject *codeobj = NULL;
-    uint8_t *loc_table = NULL;
-
-    name = _PyUnicode_FromASCII(codedef->cname, strlen(codedef->cname));
-    if (name == NULL) {
-        goto cleanup;
-    }
-    co_code = PyBytes_FromStringAndSize(
-        (const char *)codedef->code, codedef->codelen);
-    if (co_code == NULL) {
-        goto cleanup;
-    }
-    int code_units = codedef->codelen / sizeof(_Py_CODEUNIT);
-    int loc_entries = (code_units + MAX_CODE_UNITS_PER_LOC_ENTRY - 1) /
-                      MAX_CODE_UNITS_PER_LOC_ENTRY;
-    loc_table = PyMem_Malloc(loc_entries);
-    if (loc_table == NULL) {
-        PyErr_NoMemory();
-        goto cleanup;
-    }
-    for (int i = 0; i < loc_entries-1; i++) {
-         loc_table[i] = 0x80 | (PY_CODE_LOCATION_INFO_NONE << 3) | 7;
-         code_units -= MAX_CODE_UNITS_PER_LOC_ENTRY;
-    }
-    assert(loc_entries > 0);
-    assert(code_units > 0 && code_units <= MAX_CODE_UNITS_PER_LOC_ENTRY);
-    loc_table[loc_entries-1] = 0x80 |
-        (PY_CODE_LOCATION_INFO_NONE << 3) | (code_units-1);
-    lines = PyBytes_FromStringAndSize((const char *)loc_table, loc_entries);
-    PyMem_Free(loc_table);
-    if (lines == NULL) {
-        goto cleanup;
-    }
-    _Py_DECLARE_STR(shim_name, "<shim>");
-    struct _PyCodeConstructor con = {
-        .filename = &_Py_STR(shim_name),
-        .name = name,
-        .qualname = name,
-        .flags = CO_NEWLOCALS | CO_OPTIMIZED,
-
-        .code = co_code,
-        .firstlineno = 1,
-        .linetable = lines,
-
-        .consts = (PyObject *)&_Py_SINGLETON(tuple_empty),
-        .names = (PyObject *)&_Py_SINGLETON(tuple_empty),
-
-        .localsplusnames = (PyObject *)&_Py_SINGLETON(tuple_empty),
-        .localspluskinds = (PyObject *)&_Py_SINGLETON(bytes_empty),
-
-        .argcount = 0,
-        .posonlyargcount = 0,
-        .kwonlyargcount = 0,
-
-        .stacksize = codedef->stacksize,
-
-        .exceptiontable = (PyObject *)&_Py_SINGLETON(bytes_empty),
-    };
-
-    codeobj = _PyCode_New(&con);
-cleanup:
-    Py_XDECREF(name);
-    Py_XDECREF(co_code);
-    Py_XDECREF(lines);
-    return codeobj;
-}

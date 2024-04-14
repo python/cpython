@@ -76,6 +76,13 @@ typedef struct {
     int8_t line_delta;
 } _PyCoLineInstrumentationData;
 
+
+typedef struct {
+    int size;
+    int capacity;
+    struct _PyExecutorObject *executors[1];
+} _PyExecutorArray;
+
 /* Main data structure used for instrumentation.
  * This is allocated when needed for instrumentation
  */
@@ -153,6 +160,7 @@ typedef struct {
     PyObject *co_qualname;        /* unicode (qualname, for reference) */      \
     PyObject *co_linetable;       /* bytes object that holds location info */  \
     PyObject *co_weakreflist;     /* to support weakrefs to code objects */    \
+    _PyExecutorArray *co_executors;      /* executors from optimizer */        \
     _PyCoCached *_co_cached;      /* cached co_* attributes */                 \
     uint64_t _co_instrumentation_version; /* current instrumentation version */  \
     _PyCoMonitoringData *_co_monitoring; /* Monitoring data */                 \

@@ -22,6 +22,8 @@ PyAPI_FUNC(PyObject *) _PyEval_EvalFrameDefault(PyThreadState *tstate, struct _P
 PyAPI_FUNC(void) _PyEval_SetSwitchInterval(unsigned long microseconds);
 PyAPI_FUNC(unsigned long) _PyEval_GetSwitchInterval(void);
 
+PyAPI_FUNC(int) _PyEval_MakePendingCalls(PyThreadState *);
+
 PyAPI_FUNC(Py_ssize_t) PyUnstable_Eval_RequestCodeExtraIndex(freefunc);
 // Old name -- remove when this API changes:
 _Py_DEPRECATED_EXTERNALLY(3.12) static inline Py_ssize_t

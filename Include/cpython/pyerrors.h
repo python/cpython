@@ -116,6 +116,10 @@ PyAPI_FUNC(int) _PyException_AddNote(
      PyObject *exc,
      PyObject *note);
 
+PyAPI_FUNC(PyObject*) PyUnstable_Exc_PrepReraiseStar(
+     PyObject *orig,
+     PyObject *excs);
+
 /* In signalmodule.c */
 
 int PySignal_SetWakeupFd(int fd);

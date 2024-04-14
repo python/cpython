@@ -447,9 +447,6 @@ readline_replace_history_item(PyObject *module, PyObject *const *args, Py_ssize_
         _PyArg_BadArgument("replace_history_item", "argument 2", "str", args[1]);
         goto exit;
     }
-    if (PyUnicode_READY(args[1]) == -1) {
-        goto exit;
-    }
     line = args[1];
     return_value = readline_replace_history_item_impl(module, entry_number, line);
 
@@ -691,4 +688,4 @@ readline_redisplay(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef READLINE_CLEAR_HISTORY_METHODDEF
     #define READLINE_CLEAR_HISTORY_METHODDEF
 #endif /* !defined(READLINE_CLEAR_HISTORY_METHODDEF) */
-/*[clinic end generated code: output=9097fcb749c19e27 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d66c3df7e72f93c4 input=a9049054013a1b77]*/

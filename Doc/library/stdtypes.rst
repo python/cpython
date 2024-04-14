@@ -5162,6 +5162,14 @@ enables cleaner type hinting syntax compared to :data:`typing.Union`.
       def square(number: int | float) -> int | float:
           return number ** 2
 
+   .. note::
+
+      The ``|`` operand cannot be used at runtime to define unions where one or
+      more members is a forward reference. For example, ``int | "Foo"``, where
+      ``"Foo"`` is a reference to a class not yet defined, will fail at
+      runtime. For unions which include forward references, present the
+      whole expression as a string, e.g. ``"int | Foo"``.
+
 .. describe:: union_object == other
 
    Union objects can be tested for equality with other union objects.  Details:
@@ -5474,6 +5482,14 @@ types, where they are relevant.  Some of these are not reported by the
    or generator instance.
 
    .. versionadded:: 3.3
+
+
+.. attribute:: definition.__type_params__
+
+   The :ref:`type parameters <type-params>` of generic classes, functions,
+   and :ref:`type aliases <type-aliases>`.
+
+   .. versionadded:: 3.12
 
 
 .. attribute:: class.__mro__

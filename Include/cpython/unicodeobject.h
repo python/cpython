@@ -6,8 +6,8 @@
    Python and represents a single Unicode element in the Unicode type.
    With PEP 393, Py_UNICODE is deprecated and replaced with a
    typedef to wchar_t. */
-#define PY_UNICODE_TYPE wchar_t
-/* Py_DEPRECATED(3.3) */ typedef wchar_t Py_UNICODE;
+Py_DEPRECATED(3.13) typedef wchar_t PY_UNICODE_TYPE;
+Py_DEPRECATED(3.13) typedef wchar_t Py_UNICODE;
 
 /* --- Internal Unicode Operations ---------------------------------------- */
 
@@ -378,8 +378,6 @@ static inline Py_UCS4 PyUnicode_MAX_CHAR_VALUE(PyObject *op)
     PyUnicode_MAX_CHAR_VALUE(_PyObject_CAST(op))
 
 /* === Public API ========================================================= */
-
-/* --- Plain Py_UNICODE --------------------------------------------------- */
 
 /* With PEP 393, this is the recommended way to allocate a new unicode object.
    This function will allocate the object and its buffer in a single memory
@@ -827,15 +825,15 @@ PyAPI_FUNC(int) _PyUnicode_IsLinebreak(
     const Py_UCS4 ch         /* Unicode character */
     );
 
-/* Py_DEPRECATED(3.3) */ PyAPI_FUNC(Py_UCS4) _PyUnicode_ToLowercase(
+PyAPI_FUNC(Py_UCS4) _PyUnicode_ToLowercase(
     Py_UCS4 ch       /* Unicode character */
     );
 
-/* Py_DEPRECATED(3.3) */ PyAPI_FUNC(Py_UCS4) _PyUnicode_ToUppercase(
+PyAPI_FUNC(Py_UCS4) _PyUnicode_ToUppercase(
     Py_UCS4 ch       /* Unicode character */
     );
 
-Py_DEPRECATED(3.3) PyAPI_FUNC(Py_UCS4) _PyUnicode_ToTitlecase(
+PyAPI_FUNC(Py_UCS4) _PyUnicode_ToTitlecase(
     Py_UCS4 ch       /* Unicode character */
     );
 

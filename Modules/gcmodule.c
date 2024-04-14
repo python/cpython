@@ -68,11 +68,9 @@ module gc
 // most gc_list_* functions for it.
 #define NEXT_MASK_UNREACHABLE  (1)
 
-/* Get an object's GC head */
-#define AS_GC(o) ((PyGC_Head *)(((char *)(o))-sizeof(PyGC_Head)))
+#define AS_GC(op) _Py_AS_GC(op)
+#define FROM_GC(gc) _Py_FROM_GC(gc)
 
-/* Get the object given the GC head */
-#define FROM_GC(g) ((PyObject *)(((char *)(g))+sizeof(PyGC_Head)))
 
 static inline int
 gc_is_collecting(PyGC_Head *g)
@@ -861,7 +859,7 @@ handle_weakrefs(PyGC_Head *unreachable, PyGC_Head *old)
              * to imagine how calling it later could create a problem for us.  wr
              * is moved to wrcb_to_call in this case.
              */
-            if (gc_is_collecting(AS_GC(wr))) {
+            if (gc_is_collecting(AS_GC((PyObject *)wr))) {
                 /* it should already have been cleared above */
                 assert(wr->wr_object == Py_None);
                 continue;
@@ -873,7 +871,7 @@ handle_weakrefs(PyGC_Head *unreachable, PyGC_Head *old)
             Py_INCREF(wr);
 
             /* Move wr to wrcb_to_call, for the next pass. */
-            wrasgc = AS_GC(wr);
+            wrasgc = AS_GC((PyObject *)wr);
             assert(wrasgc != next); /* wrasgc is reachable, but
                                        next isn't, so they can't
                                        be the same */
@@ -1909,7 +1907,7 @@ static PyObject *
 gc_is_finalized(PyObject *module, PyObject *obj)
 /*[clinic end generated code: output=e1516ac119a918ed input=201d0c58f69ae390]*/
 {
-    if (_PyObject_IS_GC(obj) && _PyGCHead_FINALIZED(AS_GC(obj))) {
+    if (_PyObject_IS_GC(obj) && _PyGC_FINALIZED(obj)) {
          Py_RETURN_TRUE;
     }
     Py_RETURN_FALSE;
@@ -2409,7 +2407,7 @@ PyObject_GC_IsTracked(PyObject* obj)
 int
 PyObject_GC_IsFinalized(PyObject *obj)
 {
-    if (_PyObject_IS_GC(obj) && _PyGCHead_FINALIZED(AS_GC(obj))) {
+    if (_PyObject_IS_GC(obj) && _PyGC_FINALIZED(obj)) {
          return 1;
     }
     return 0;

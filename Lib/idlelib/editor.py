@@ -1571,7 +1571,7 @@ class EditorWindow:
     # blocks are found).
 
     def guess_indent(self):
-        opener, indented = IndentSearcher(self.text, self.tabwidth).run()
+        opener, indented = IndentSearcher(self.text).run()
         if opener and indented:
             raw, indentsmall = get_line_indent(opener, self.tabwidth)
             raw, indentlarge = get_line_indent(indented, self.tabwidth)
@@ -1609,15 +1609,10 @@ def get_line_indent(line, tabwidth):
 
 
 class IndentSearcher:
+    "Manage initial indent guess, returned by run method."
 
-    # .run() chews over the Text widget, looking for a block opener
-    # and the stmt following it.  Returns a pair,
-    #     (line containing block opener, line containing stmt)
-    # Either or both may be None.
-
-    def __init__(self, text, tabwidth):
+    def __init__(self, text):
         self.text = text
-        self.tabwidth = tabwidth
         self.i = self.finished = 0
         self.blkopenline = self.indentedline = None
 
@@ -1633,7 +1628,8 @@ class IndentSearcher:
     def tokeneater(self, type, token, start, end, line,
                    INDENT=tokenize.INDENT,
                    NAME=tokenize.NAME,
-                   OPENERS=('class', 'def', 'for', 'if', 'try', 'while')):
+                   OPENERS=('class', 'def', 'for', 'if', 'match', 'try',
+                            'while', 'with')):
         if self.finished:
             pass
         elif type == NAME and token in OPENERS:
@@ -1643,6 +1639,10 @@ class IndentSearcher:
             self.finished = 1
 
     def run(self):
+        """Return 2 lines containing block opener and and indent.
+
+        Either the indent line or both may be None.
+        """
         try:
             tokens = tokenize.generate_tokens(self.readline)
             for token in tokens:
@@ -1653,6 +1653,7 @@ class IndentSearcher:
         return self.blkopenline, self.indentedline
 
 ### end autoindent code ###
+
 
 def prepstr(s):
     """Extract the underscore from a string.

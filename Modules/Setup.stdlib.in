@@ -46,7 +46,6 @@
 @MODULE__ZONEINFO_TRUE@_zoneinfo _zoneinfo.c
 
 # needs libm
-@MODULE_AUDIOOP_TRUE@audioop audioop.c
 @MODULE_MATH_TRUE@math mathmodule.c
 @MODULE_CMATH_TRUE@cmath cmathmodule.c
 @MODULE__STATISTICS_TRUE@_statistics _statisticsmodule.c
@@ -78,7 +77,7 @@
 # hashing builtins, can be disabled with --without-builtin-hashlib-hashes
 @MODULE__MD5_TRUE@_md5 md5module.c -I$(srcdir)/Modules/_hacl/include _hacl/Hacl_Hash_MD5.c -D_BSD_SOURCE -D_DEFAULT_SOURCE
 @MODULE__SHA1_TRUE@_sha1 sha1module.c -I$(srcdir)/Modules/_hacl/include _hacl/Hacl_Hash_SHA1.c -D_BSD_SOURCE -D_DEFAULT_SOURCE
-@MODULE__SHA2_TRUE@_sha2 sha2module.c -I$(srcdir)/Modules/_hacl/include Modules/_hacl/libHacl_Streaming_SHA2.a
+@MODULE__SHA2_TRUE@_sha2 sha2module.c -I$(srcdir)/Modules/_hacl/include Modules/_hacl/libHacl_Hash_SHA2.a
 @MODULE__SHA3_TRUE@_sha3 sha3module.c -I$(srcdir)/Modules/_hacl/include _hacl/Hacl_Hash_SHA3.c -D_BSD_SOURCE -D_DEFAULT_SOURCE
 @MODULE__BLAKE2_TRUE@_blake2 _blake2/blake2module.c _blake2/blake2b_impl.c _blake2/blake2s_impl.c
 
@@ -106,22 +105,14 @@
 # Modules with some UNIX dependencies
 #
 
-# needs -lcrypt on some systems
-@MODULE__CRYPT_TRUE@_crypt _cryptmodule.c
 @MODULE_FCNTL_TRUE@fcntl fcntlmodule.c
 @MODULE_GRP_TRUE@grp grpmodule.c
 @MODULE_MMAP_TRUE@mmap mmapmodule.c
-# FreeBSD: nis/yp APIs are in libc
-# Linux: glibc has deprecated SUN RPC, APIs are in libnsl and libtirpc (bpo-32521)
-@MODULE_NIS_TRUE@nis nismodule.c
 # needs sys/soundcard.h or linux/soundcard.h (Linux, FreeBSD)
-@MODULE_OSSAUDIODEV_TRUE@ossaudiodev ossaudiodev.c
 @MODULE__POSIXSUBPROCESS_TRUE@_posixsubprocess _posixsubprocess.c
 @MODULE_RESOURCE_TRUE@resource resource.c
 @MODULE_SELECT_TRUE@select selectmodule.c
 @MODULE__SOCKET_TRUE@_socket socketmodule.c
-# AIX has shadow passwords, but does not provide getspent API
-@MODULE_SPWD_TRUE@spwd spwdmodule.c
 @MODULE_SYSLOG_TRUE@syslog syslogmodule.c
 @MODULE_TERMIOS_TRUE@termios termios.c
 

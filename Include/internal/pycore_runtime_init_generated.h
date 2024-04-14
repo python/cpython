@@ -557,7 +557,6 @@ extern "C" {
     INIT_STR(newline, "\n"), \
     INIT_STR(open_br, "{"), \
     INIT_STR(percent, "%"), \
-    INIT_STR(shim_name, "<shim>"), \
     INIT_STR(type_params, ".type_params"), \
     INIT_STR(utf_8, "utf-8"), \
 }
@@ -776,6 +775,7 @@ extern "C" {
     INIT_ID(a), \
     INIT_ID(abs_tol), \
     INIT_ID(access), \
+    INIT_ID(aclose), \
     INIT_ID(add), \
     INIT_ID(add_done_callback), \
     INIT_ID(after_in_child), \
@@ -789,7 +789,9 @@ extern "C" {
     INIT_ID(arguments), \
     INIT_ID(argv), \
     INIT_ID(as_integer_ratio), \
+    INIT_ID(asend), \
     INIT_ID(ast), \
+    INIT_ID(athrow), \
     INIT_ID(attribute), \
     INIT_ID(authorizer_callback), \
     INIT_ID(autocommit), \
@@ -911,6 +913,7 @@ extern "C" {
     INIT_ID(exc_value), \
     INIT_ID(excepthook), \
     INIT_ID(exception), \
+    INIT_ID(existing_file_name), \
     INIT_ID(exp), \
     INIT_ID(extend), \
     INIT_ID(extra_tokens), \
@@ -1063,6 +1066,7 @@ extern "C" {
     INIT_ID(namespaces), \
     INIT_ID(narg), \
     INIT_ID(ndigits), \
+    INIT_ID(new_file_name), \
     INIT_ID(new_limit), \
     INIT_ID(newline), \
     INIT_ID(newlines), \
@@ -1117,6 +1121,7 @@ extern "C" {
     INIT_ID(priority), \
     INIT_ID(progress), \
     INIT_ID(progress_handler), \
+    INIT_ID(progress_routine), \
     INIT_ID(proto), \
     INIT_ID(protocol), \
     INIT_ID(ps1), \

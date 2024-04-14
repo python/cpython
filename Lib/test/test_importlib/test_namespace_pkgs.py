@@ -6,7 +6,6 @@ import os
 import sys
 import tempfile
 import unittest
-import warnings
 
 from test.test_importlib import util
 

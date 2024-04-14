@@ -3,7 +3,7 @@
 .. _floatobjects:
 
 Floating Point Objects
-----------------------
+======================
 
 .. index:: pair: object; floating point
 
@@ -79,7 +79,7 @@ Floating Point Objects
 
 
 Pack and Unpack functions
-=========================
+-------------------------
 
 The pack and unpack functions provide an efficient platform-independent way to
 store floating-point values as byte strings. The Pack routines produce a bytes
@@ -104,7 +104,7 @@ happens in such cases is partly accidental (alas).
 .. versionadded:: 3.11
 
 Pack functions
---------------
+^^^^^^^^^^^^^^
 
 The pack routines write 2, 4 or 8 bytes, starting at *p*. *le* is an
 :c:expr:`int` argument, non-zero if you want the bytes string in little-endian
@@ -135,7 +135,7 @@ There are two problems on non-IEEE platforms:
 
 
 Unpack functions
-----------------
+^^^^^^^^^^^^^^^^
 
 The unpack routines read 2, 4 or 8 bytes, starting at *p*.  *le* is an
 :c:expr:`int` argument, non-zero if the bytes string is in little-endian format

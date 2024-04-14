@@ -11,7 +11,6 @@ import hashlib
 from test import support
 from test.support import hashlib_helper
 from test.support import threading_helper
-from test.support import warnings_helper
 
 try:
     import ssl
@@ -567,31 +566,6 @@ class TestUrlopen(unittest.TestCase):
         context = ssl.create_default_context(cafile=CERT_localhost)
         data = self.urlopen("https://localhost:%s/bizarre" % handler.port, context=context)
         self.assertEqual(data, b"we care a bit")
-
-    def test_https_with_cafile(self):
-        handler = self.start_https_server(certfile=CERT_localhost)
-        with warnings_helper.check_warnings(('', DeprecationWarning)):
-            # Good cert
-            data = self.urlopen("https://localhost:%s/bizarre" % handler.port,
-                                cafile=CERT_localhost)
-            self.assertEqual(data, b"we care a bit")
-            # Bad cert
-            with self.assertRaises(urllib.error.URLError) as cm:
-                self.urlopen("https://localhost:%s/bizarre" % handler.port,
-                             cafile=CERT_fakehostname)
-            # Good cert, but mismatching hostname
-            handler = self.start_https_server(certfile=CERT_fakehostname)
-            with self.assertRaises(urllib.error.URLError) as cm:
-                self.urlopen("https://localhost:%s/bizarre" % handler.port,
-                             cafile=CERT_fakehostname)
-
-    def test_https_with_cadefault(self):
-        handler = self.start_https_server(certfile=CERT_localhost)
-        # Self-signed cert should fail verification with system certificate store
-        with warnings_helper.check_warnings(('', DeprecationWarning)):
-            with self.assertRaises(urllib.error.URLError) as cm:
-                self.urlopen("https://localhost:%s/bizarre" % handler.port,
-                             cadefault=True)
 
     def test_https_sni(self):
         if ssl is None:

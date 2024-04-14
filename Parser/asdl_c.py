@@ -632,29 +632,38 @@ class Obj2ModVisitor(PickleVisitor):
         self.emit(line % field.name, depth)
         self.emit("return 1;", depth+1)
         self.emit("}", depth)
-        if not field.opt:
+        if field.seq:
             self.emit("if (tmp == NULL) {", depth)
-            message = "required field \\\"%s\\\" missing from %s" % (field.name, name)
-            format = "PyErr_SetString(PyExc_TypeError, \"%s\");"
-            self.emit(format % message, depth+1, reflow=False)
-            self.emit("return 1;", depth+1)
+            self.emit("tmp = PyList_New(0);", depth+1)
+            self.emit("if (tmp == NULL) {", depth+1)
+            self.emit("return 1;", depth+2)
+            self.emit("}", depth+1)
+            self.emit("}", depth)
+            self.emit("{", depth)
         else:
-            self.emit("if (tmp == NULL || tmp == Py_None) {", depth)
-            self.emit("Py_CLEAR(tmp);", depth+1)
-            if self.isNumeric(field):
-                if field.name in self.attribute_special_defaults:
-                    self.emit(
-                        "%s = %s;" % (field.name, self.attribute_special_defaults[field.name]),
-                        depth+1,
-                    )
-                else:
-                    self.emit("%s = 0;" % field.name, depth+1)
-            elif not self.isSimpleType(field):
-                self.emit("%s = NULL;" % field.name, depth+1)
+            if not field.opt:
+                self.emit("if (tmp == NULL) {", depth)
+                message = "required field \\\"%s\\\" missing from %s" % (field.name, name)
+                format = "PyErr_SetString(PyExc_TypeError, \"%s\");"
+                self.emit(format % message, depth+1, reflow=False)
+                self.emit("return 1;", depth+1)
             else:
-                raise TypeError("could not determine the default value for %s" % field.name)
-        self.emit("}", depth)
-        self.emit("else {", depth)
+                self.emit("if (tmp == NULL || tmp == Py_None) {", depth)
+                self.emit("Py_CLEAR(tmp);", depth+1)
+                if self.isNumeric(field):
+                    if field.name in self.attribute_special_defaults:
+                        self.emit(
+                            "%s = %s;" % (field.name, self.attribute_special_defaults[field.name]),
+                            depth+1,
+                        )
+                    else:
+                        self.emit("%s = 0;" % field.name, depth+1)
+                elif not self.isSimpleType(field):
+                    self.emit("%s = NULL;" % field.name, depth+1)
+                else:
+                    raise TypeError("could not determine the default value for %s" % field.name)
+            self.emit("}", depth)
+            self.emit("else {", depth)
 
         self.emit("int res;", depth+1)
         if field.seq:

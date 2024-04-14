@@ -115,7 +115,11 @@ def join_thread(thread, timeout=None):
 
 @contextlib.contextmanager
 def start_threads(threads, unlock=None):
-    import faulthandler
+    try:
+        import faulthandler
+    except ImportError:
+        # It isn't supported on subinterpreters yet.
+        faulthandler = None
     threads = list(threads)
     started = []
     try:
@@ -147,7 +151,8 @@ def start_threads(threads, unlock=None):
         finally:
             started = [t for t in started if t.is_alive()]
             if started:
-                faulthandler.dump_traceback(sys.stdout)
+                if faulthandler is not None:
+                    faulthandler.dump_traceback(sys.stdout)
                 raise AssertionError('Unable to join %d threads' % len(started))
 
 

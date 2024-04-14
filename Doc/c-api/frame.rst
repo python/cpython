@@ -134,7 +134,7 @@ See also :ref:`Reflection <reflection>`.
 
 
 Internal Frames
----------------
+^^^^^^^^^^^^^^^
 
 Unless using :pep:`523`, you will not need this.
 

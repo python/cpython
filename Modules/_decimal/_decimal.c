@@ -1934,10 +1934,6 @@ numeric_as_ascii(PyObject *u, int strip_ws, int ignore_underscores)
     Py_ssize_t j, len;
     int d;
 
-    if (PyUnicode_READY(u) == -1) {
-        return NULL;
-    }
-
     kind = PyUnicode_KIND(u);
     data = PyUnicode_DATA(u);
     len =  PyUnicode_GET_LENGTH(u);
@@ -3615,9 +3611,13 @@ dec_as_integer_ratio(PyObject *self, PyObject *args UNUSED)
             goto error;
         }
         Py_SETREF(numerator, _py_long_floor_divide(numerator, tmp));
+        if (numerator == NULL) {
+            Py_DECREF(tmp);
+            goto error;
+        }
         Py_SETREF(denominator, _py_long_floor_divide(denominator, tmp));
         Py_DECREF(tmp);
-        if (numerator == NULL || denominator == NULL) {
+        if (denominator == NULL) {
             goto error;
         }
     }

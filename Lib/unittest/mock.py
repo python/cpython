@@ -204,6 +204,33 @@ def _set_signature(mock, original, instance=False):
     _setup_func(funcopy, mock, sig)
     return funcopy
 
+def _set_async_signature(mock, original, instance=False, is_async_mock=False):
+    # creates an async function with signature (*args, **kwargs) that delegates to a
+    # mock. It still does signature checking by calling a lambda with the same
+    # signature as the original.
+
+    skipfirst = isinstance(original, type)
+    result = _get_signature_object(original, instance, skipfirst)
+    if result is None:
+        return mock
+    func, sig = result
+    def checksig(*args, **kwargs):
+        sig.bind(*args, **kwargs)
+    _copy_func_details(func, checksig)
+
+    name = original.__name__
+    if not name.isidentifier():
+        name = 'funcopy'
+    context = {'_checksig_': checksig, 'mock': mock}
+    src = """async def %s(*args, **kwargs):
+    _checksig_(*args, **kwargs)
+    return await mock(*args, **kwargs)""" % name
+    exec (src, context)
+    funcopy = context[name]
+    _setup_func(funcopy, mock, sig)
+    _setup_async_mock(funcopy)
+    return funcopy
+
 
 def _setup_func(funcopy, mock, sig):
     funcopy.mock = mock
@@ -2745,9 +2772,10 @@ def create_autospec(spec, spec_set=False, instance=False, _parent=None,
     if isinstance(spec, FunctionTypes):
         # should only happen at the top level because we don't
         # recurse for functions
-        mock = _set_signature(mock, spec)
         if is_async_func:
-            _setup_async_mock(mock)
+            mock = _set_async_signature(mock, spec)
+        else:
+            mock = _set_signature(mock, spec)
     else:
         _check_signature(spec, mock, is_type, instance)
 
@@ -2913,6 +2941,9 @@ def mock_open(mock=None, read_data=''):
             return handle.readline.return_value
         return next(_state[0])
 
+    def _exit_side_effect(exctype, excinst, exctb):
+        handle.close()
+
     global file_spec
     if file_spec is None:
         import _io
@@ -2939,6 +2970,7 @@ def mock_open(mock=None, read_data=''):
     handle.readlines.side_effect = _readlines_side_effect
     handle.__iter__.side_effect = _iter_side_effect
     handle.__next__.side_effect = _next_side_effect
+    handle.__exit__.side_effect = _exit_side_effect
 
     def reset_data(*args, **kwargs):
         _state[0] = _to_stream(read_data)

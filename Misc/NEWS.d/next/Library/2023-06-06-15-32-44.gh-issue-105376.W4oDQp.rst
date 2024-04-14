@@ -1,0 +1,4 @@
+Remove the undocumented and untested ``logging.Logger.warn()`` method,
+deprecated since Python 3.3, which was an alias to the
+:meth:`logging.Logger.warning` method: use the :meth:`logging.Logger.warning`
+method instead. Patch by Victor Stinner.

@@ -166,7 +166,6 @@ Turtle state
       | :func:`resizemode`
       | :func:`shapesize` | :func:`turtlesize`
       | :func:`shearfactor`
-      | :func:`settiltangle`
       | :func:`tiltangle`
       | :func:`tilt`
       | :func:`shapetransform`
@@ -1299,28 +1298,6 @@ Appearance
       >>> turtle.fd(50)
       >>> turtle.tilt(30)
       >>> turtle.fd(50)
-
-
-.. function:: settiltangle(angle)
-
-   :param angle: a number
-
-   Rotate the turtleshape to point in the direction specified by *angle*,
-   regardless of its current tilt-angle.  *Do not* change the turtle's heading
-   (direction of movement).
-
-   .. doctest::
-      :skipif: _tkinter is None or 'always; deprecated method'
-
-      >>> turtle.reset()
-      >>> turtle.shape("circle")
-      >>> turtle.shapesize(5,2)
-      >>> turtle.settiltangle(45)
-      >>> turtle.fd(50)
-      >>> turtle.settiltangle(-45)
-      >>> turtle.fd(50)
-
-   .. deprecated:: 3.1
 
 
 .. function:: tiltangle(angle=None)
@@ -2529,8 +2506,7 @@ Changes since Python 3.0
   :func:`get_shapepoly` have been added. Thus the full range of
   regular linear transforms is now available for transforming turtle shapes.
   :func:`tiltangle` has been enhanced in functionality: it now can
-  be used to get or set the tilt angle. :func:`settiltangle` has been
-  deprecated.
+  be used to get or set the tilt angle.
 
 - The :class:`Screen` method :func:`onkeypress` has been added as a complement to
   :func:`onkey`. As the latter binds actions to the key release event,

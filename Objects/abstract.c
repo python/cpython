@@ -294,11 +294,17 @@ PyObject_CheckBuffer(PyObject *obj)
     return (tp_as_buffer != NULL && tp_as_buffer->bf_getbuffer != NULL);
 }
 
+// Old buffer protocols (deprecated, abi only)
 
-/* We release the buffer right after use of this function which could
+/* Checks whether an arbitrary object supports the (character, single segment)
+   buffer interface.
+
+   Returns 1 on success, 0 on failure.
+
+   We release the buffer right after use of this function which could
    cause issues later on.  Don't use these functions in new code.
  */
-int
+PyAPI_FUNC(int) /* abi_only */
 PyObject_CheckReadBuffer(PyObject *obj)
 {
     PyBufferProcs *pb = Py_TYPE(obj)->tp_as_buffer;
@@ -333,7 +339,13 @@ as_read_buffer(PyObject *obj, const void **buffer, Py_ssize_t *buffer_len)
     return 0;
 }
 
-int
+/* Takes an arbitrary object which must support the (character, single segment)
+   buffer interface and returns a pointer to a read-only memory location
+   usable as character based input for subsequent processing.
+
+   Return 0 on success.  buffer and buffer_len are only set in case no error
+   occurs. Otherwise, -1 is returned and an exception set. */
+PyAPI_FUNC(int) /* abi_only */
 PyObject_AsCharBuffer(PyObject *obj,
                       const char **buffer,
                       Py_ssize_t *buffer_len)
@@ -341,16 +353,30 @@ PyObject_AsCharBuffer(PyObject *obj,
     return as_read_buffer(obj, (const void **)buffer, buffer_len);
 }
 
-int PyObject_AsReadBuffer(PyObject *obj,
-                          const void **buffer,
-                          Py_ssize_t *buffer_len)
+/* Same as PyObject_AsCharBuffer() except that this API expects (readable,
+   single segment) buffer interface and returns a pointer to a read-only memory
+   location which can contain arbitrary data.
+
+   0 is returned on success.  buffer and buffer_len are only set in case no
+   error occurs.  Otherwise, -1 is returned and an exception set. */
+PyAPI_FUNC(int) /* abi_only */
+PyObject_AsReadBuffer(PyObject *obj,
+                      const void **buffer,
+                      Py_ssize_t *buffer_len)
 {
     return as_read_buffer(obj, buffer, buffer_len);
 }
 
-int PyObject_AsWriteBuffer(PyObject *obj,
-                           void **buffer,
-                           Py_ssize_t *buffer_len)
+/* Takes an arbitrary object which must support the (writable, single segment)
+   buffer interface and returns a pointer to a writable memory location in
+   buffer of size 'buffer_len'.
+
+   Return 0 on success.  buffer and buffer_len are only set in case no error
+   occurs. Otherwise, -1 is returned and an exception set. */
+PyAPI_FUNC(int) /* abi_only */
+PyObject_AsWriteBuffer(PyObject *obj,
+                       void **buffer,
+                       Py_ssize_t *buffer_len)
 {
     PyBufferProcs *pb;
     Py_buffer view;

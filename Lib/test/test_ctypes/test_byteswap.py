@@ -1,10 +1,21 @@
-import sys, unittest, struct, math, ctypes
-from binascii import hexlify
+import binascii
+import ctypes
+import math
+import struct
+import sys
+import unittest
+from ctypes import (Structure, Union, LittleEndianUnion, BigEndianUnion,
+                    BigEndianStructure, LittleEndianStructure,
+                    POINTER, sizeof, cast,
+                    c_byte, c_ubyte, c_char, c_wchar, c_void_p,
+                    c_short, c_ushort, c_int, c_uint,
+                    c_long, c_ulong, c_longlong, c_ulonglong,
+                    c_uint32, c_float, c_double)
 
-from ctypes import *
 
 def bin(s):
-    return hexlify(memoryview(s)).decode().upper()
+    return binascii.hexlify(memoryview(s)).decode().upper()
+
 
 # Each *simple* type that supports different byte orders has an
 # __ctype_be__ attribute that specifies the same type in BIG ENDIAN
@@ -359,6 +370,7 @@ class Test(unittest.TestCase):
                 del ctypes._pointer_type_cache[TestUnion]
                 self.assertEqual(s.point.x, 1)
                 self.assertEqual(s.point.y, 2)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -374,8 +374,6 @@ getstring(PyObject* string, Py_ssize_t* p_length,
     /* Unicode objects do not support the buffer API. So, get the data
        directly instead. */
     if (PyUnicode_Check(string)) {
-        if (PyUnicode_READY(string) == -1)
-            return NULL;
         *p_length = PyUnicode_GET_LENGTH(string);
         *p_charsize = PyUnicode_KIND(string);
         *p_isbytes = 0;
@@ -1337,7 +1335,6 @@ pattern_repr(PatternObject *obj)
         const char *name;
         int value;
     } flag_names[] = {
-        {"re.TEMPLATE", SRE_FLAG_TEMPLATE},
         {"re.IGNORECASE", SRE_FLAG_IGNORECASE},
         {"re.LOCALE", SRE_FLAG_LOCALE},
         {"re.MULTILINE", SRE_FLAG_MULTILINE},

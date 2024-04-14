@@ -21,7 +21,7 @@ enum decoding_state {
 };
 
 enum interactive_underflow_t {
-    /* Normal mode of operation: return a new token when asked in interactie mode */
+    /* Normal mode of operation: return a new token when asked in interactive mode */
     IUNDERFLOW_NORMAL,
     /* Forcefully return ENDMARKER when asked for a new token in interactive mode. This
      * can be used to prevent the tokenizer to prompt the user for new tokens */
@@ -68,7 +68,7 @@ typedef struct _tokenizer_mode {
 struct tok_state {
     /* Input state; buf <= cur <= inp <= end */
     /* NB an entire line is held in the buffer */
-    char *buf;          /* Input buffer, or NULL; malloc'ed if fp != NULL */
+    char *buf;          /* Input buffer, or NULL; malloc'ed if fp != NULL or readline != NULL */
     char *cur;          /* Next character in buffer */
     char *inp;          /* End of data in buffer */
     int fp_interactive; /* If the file descriptor is interactive */
@@ -109,6 +109,7 @@ struct tok_state {
                                      expression (cf. issue 16806) */
     PyObject *decoding_readline; /* open(...).readline */
     PyObject *decoding_buffer;
+    PyObject *readline;     /* readline() function */
     const char* enc;        /* Encoding for the current str. */
     char* str;          /* Source string being tokenized (if tokenizing from a string)*/
     char* input;       /* Tokenizer's newline translated copy of the string. */
@@ -130,13 +131,15 @@ struct tok_state {
     int tok_report_warnings;
     int tok_extra_tokens;
     int comment_newline;
+    int implicit_newline;
 #ifdef Py_DEBUG
     int debug;
 #endif
 };
 
-extern struct tok_state *_PyTokenizer_FromString(const char *, int);
-extern struct tok_state *_PyTokenizer_FromUTF8(const char *, int);
+extern struct tok_state *_PyTokenizer_FromString(const char *, int, int);
+extern struct tok_state *_PyTokenizer_FromUTF8(const char *, int, int);
+extern struct tok_state *_PyTokenizer_FromReadline(PyObject*, const char*, int, int);
 extern struct tok_state *_PyTokenizer_FromFile(FILE *, const char*,
                                               const char *, const char *);
 extern void _PyTokenizer_Free(struct tok_state *);

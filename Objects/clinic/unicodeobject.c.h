@@ -770,15 +770,9 @@ unicode_replace(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
         _PyArg_BadArgument("replace", "argument 1", "str", args[0]);
         goto exit;
     }
-    if (PyUnicode_READY(args[0]) == -1) {
-        goto exit;
-    }
     old = args[0];
     if (!PyUnicode_Check(args[1])) {
         _PyArg_BadArgument("replace", "argument 2", "str", args[1]);
-        goto exit;
-    }
-    if (PyUnicode_READY(args[1]) == -1) {
         goto exit;
     }
     new = args[1];
@@ -829,9 +823,6 @@ unicode_removeprefix(PyObject *self, PyObject *arg)
         _PyArg_BadArgument("removeprefix", "argument", "str", arg);
         goto exit;
     }
-    if (PyUnicode_READY(arg) == -1) {
-        goto exit;
-    }
     prefix = arg;
     return_value = unicode_removeprefix_impl(self, prefix);
 
@@ -863,9 +854,6 @@ unicode_removesuffix(PyObject *self, PyObject *arg)
 
     if (!PyUnicode_Check(arg)) {
         _PyArg_BadArgument("removesuffix", "argument", "str", arg);
-        goto exit;
-    }
-    if (PyUnicode_READY(arg) == -1) {
         goto exit;
     }
     suffix = arg;
@@ -1261,18 +1249,12 @@ unicode_maketrans(void *null, PyObject *const *args, Py_ssize_t nargs)
         _PyArg_BadArgument("maketrans", "argument 2", "str", args[1]);
         goto exit;
     }
-    if (PyUnicode_READY(args[1]) == -1) {
-        goto exit;
-    }
     y = args[1];
     if (nargs < 3) {
         goto skip_optional;
     }
     if (!PyUnicode_Check(args[2])) {
         _PyArg_BadArgument("maketrans", "argument 3", "str", args[2]);
-        goto exit;
-    }
-    if (PyUnicode_READY(args[2]) == -1) {
         goto exit;
     }
     z = args[2];
@@ -1376,9 +1358,6 @@ unicode___format__(PyObject *self, PyObject *arg)
 
     if (!PyUnicode_Check(arg)) {
         _PyArg_BadArgument("__format__", "argument", "str", arg);
-        goto exit;
-    }
-    if (PyUnicode_READY(arg) == -1) {
         goto exit;
     }
     format_spec = arg;
@@ -1497,4 +1476,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=05d942840635dadf input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0a71c4aeffdf0bc5 input=a9049054013a1b77]*/

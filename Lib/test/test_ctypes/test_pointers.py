@@ -1,15 +1,24 @@
-import unittest, sys
-
-from ctypes import *
 import _ctypes_test
+import array
+import ctypes
+import sys
+import unittest
+from ctypes import (CDLL, CFUNCTYPE, Structure,
+                    POINTER, pointer, _Pointer, _pointer_type_cache,
+                    byref, sizeof,
+                    c_void_p, c_char_p,
+                    c_byte, c_ubyte, c_short, c_ushort, c_int, c_uint,
+                    c_long, c_ulong, c_longlong, c_ulonglong,
+                    c_float, c_double)
+
 
 ctype_types = [c_byte, c_ubyte, c_short, c_ushort, c_int, c_uint,
                  c_long, c_ulong, c_longlong, c_ulonglong, c_double, c_float]
 python_types = [int, int, int, int, int, int,
                 int, int, int, int, float, float]
 
-class PointersTestCase(unittest.TestCase):
 
+class PointersTestCase(unittest.TestCase):
     def test_pointer_crash(self):
 
         class A(POINTER(c_ulong)):
@@ -93,7 +102,6 @@ class PointersTestCase(unittest.TestCase):
 ##        print self.result
 
     def test_basics(self):
-        from operator import delitem
         for ct, pt in zip(ctype_types, python_types):
             i = ct(42)
             p = pointer(i)
@@ -104,11 +112,11 @@ class PointersTestCase(unittest.TestCase):
 ##            self.assertEqual(p.contents, 42)
 ##            self.assertEqual(p[0], 42)
 
-            self.assertRaises(TypeError, delitem, p, 0)
+            with self.assertRaises(TypeError):
+                del p[0]
 
     def test_from_address(self):
-        from array import array
-        a = array('i', [100, 200, 300, 400, 500])
+        a = array.array('i', [100, 200, 300, 400, 500])
         addr = a.buffer_info()[0]
 
         p = POINTER(POINTER(c_int))
@@ -130,7 +138,6 @@ class PointersTestCase(unittest.TestCase):
 
         pt.contents.c = 33
 
-        from ctypes import _pointer_type_cache
         del _pointer_type_cache[Table]
 
     def test_basic(self):
@@ -193,7 +200,7 @@ class PointersTestCase(unittest.TestCase):
 
         # COM methods are boolean True:
         if sys.platform == "win32":
-            mth = WINFUNCTYPE(None)(42, "name", (), None)
+            mth = ctypes.WINFUNCTYPE(None)(42, "name", (), None)
             self.assertEqual(bool(mth), True)
 
     def test_pointer_type_name(self):
@@ -201,7 +208,6 @@ class PointersTestCase(unittest.TestCase):
         self.assertTrue(POINTER(LargeNamedType))
 
         # to not leak references, we must clean _pointer_type_cache
-        from ctypes import _pointer_type_cache
         del _pointer_type_cache[LargeNamedType]
 
     def test_pointer_type_str_name(self):
@@ -210,12 +216,9 @@ class PointersTestCase(unittest.TestCase):
         self.assertTrue(P)
 
         # to not leak references, we must clean _pointer_type_cache
-        from ctypes import _pointer_type_cache
         del _pointer_type_cache[id(P)]
 
     def test_abstract(self):
-        from ctypes import _Pointer
-
         self.assertRaises(TypeError, _Pointer.set_type, 42)
 
 

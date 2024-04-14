@@ -29,7 +29,7 @@ static const char *ASYNC_GEN_IGNORED_EXIT_MSG =
 static inline PyCodeObject *
 _PyGen_GetCode(PyGenObject *gen) {
     _PyInterpreterFrame *frame = (_PyInterpreterFrame *)(gen->gi_iframe);
-    return frame->f_code;
+    return _PyFrame_GetCode(frame);
 }
 
 PyCodeObject *
@@ -222,7 +222,7 @@ gen_send_ex2(PyGenObject *gen, PyObject *arg, PyObject **presult,
 
     if (exc) {
         assert(_PyErr_Occurred(tstate));
-        _PyErr_ChainStackItem(NULL);
+        _PyErr_ChainStackItem();
     }
 
     gen->gi_frame_state = FRAME_EXECUTING;
@@ -331,6 +331,18 @@ gen_close_iter(PyObject *yf)
     return 0;
 }
 
+static inline bool
+is_resume(_Py_CODEUNIT *instr)
+{
+    return instr->op.code == RESUME || instr->op.code == INSTRUMENTED_RESUME;
+}
+
+static inline bool
+is_yield(_Py_CODEUNIT *instr)
+{
+    return instr->op.code == YIELD_VALUE || instr->op.code == INSTRUMENTED_YIELD_VALUE;
+}
+
 PyObject *
 _PyGen_yf(PyGenObject *gen)
 {
@@ -347,7 +359,7 @@ _PyGen_yf(PyGenObject *gen)
             return NULL;
         }
         _Py_CODEUNIT next = frame->prev_instr[1];
-        if (next.op.code != RESUME || next.op.arg < 2)
+        if (!is_resume(&next) || next.op.arg < 2)
         {
             /* Not in a yield from */
             return NULL;
@@ -382,8 +394,8 @@ gen_close(PyGenObject *gen, PyObject *args)
     _PyInterpreterFrame *frame = (_PyInterpreterFrame *)gen->gi_iframe;
     /* It is possible for the previous instruction to not be a
      * YIELD_VALUE if the debugger has changed the lineno. */
-    if (err == 0 && frame->prev_instr[0].op.code == YIELD_VALUE) {
-        assert(frame->prev_instr[1].op.code == RESUME);
+    if (err == 0 && is_yield(frame->prev_instr)) {
+        assert(is_resume(frame->prev_instr + 1));
         int exception_handler_depth = frame->prev_instr[0].op.code;
         assert(exception_handler_depth > 0);
         /* We can safely ignore the outermost try block
@@ -945,7 +957,7 @@ static PyObject *
 gen_new_with_qualname(PyTypeObject *type, PyFrameObject *f,
                       PyObject *name, PyObject *qualname)
 {
-    PyCodeObject *code = f->f_frame->f_code;
+    PyCodeObject *code = _PyFrame_GetCode(f->f_frame);
     int size = code->co_nlocalsplus + code->co_stacksize;
     PyGenObject *gen = PyObject_GC_NewVar(PyGenObject, type, size);
     if (gen == NULL) {
@@ -1327,7 +1339,7 @@ compute_cr_origin(int origin_depth, _PyInterpreterFrame *current_frame)
     }
     frame = current_frame;
     for (int i = 0; i < frame_count; ++i) {
-        PyCodeObject *code = frame->f_code;
+        PyCodeObject *code = _PyFrame_GetCode(frame);
         int line = PyUnstable_InterpreterFrame_GetLine(frame);
         PyObject *frameinfo = Py_BuildValue("OiO", code->co_filename, line,
                                             code->co_name);
@@ -1735,6 +1747,10 @@ async_gen_unwrap_value(PyAsyncGenObject *gen, PyObject *result)
 static void
 async_gen_asend_dealloc(PyAsyncGenASend *o)
 {
+    if (PyObject_CallFinalizerFromDealloc((PyObject *)o)) {
+        return;
+    }
+
     _PyObject_GC_UNTRACK((PyObject *)o);
     Py_CLEAR(o->ags_gen);
     Py_CLEAR(o->ags_sendval);
@@ -1839,6 +1855,13 @@ async_gen_asend_close(PyAsyncGenASend *o, PyObject *args)
     Py_RETURN_NONE;
 }
 
+static void
+async_gen_asend_finalize(PyAsyncGenASend *o)
+{
+    if (o->ags_state == AWAITABLE_STATE_INIT) {
+        _PyErr_WarnUnawaitedAgenMethod(o->ags_gen, &_Py_ID(asend));
+    }
+}
 
 static PyMethodDef async_gen_asend_methods[] = {
     {"send", (PyCFunction)async_gen_asend_send, METH_O, send_doc},
@@ -1896,6 +1919,7 @@ PyTypeObject _PyAsyncGenASend_Type = {
     0,                                          /* tp_init */
     0,                                          /* tp_alloc */
     0,                                          /* tp_new */
+    .tp_finalize = (destructor)async_gen_asend_finalize,
 };
 
 
@@ -2053,6 +2077,10 @@ _PyAsyncGenValueWrapperNew(PyThreadState *tstate, PyObject *val)
 static void
 async_gen_athrow_dealloc(PyAsyncGenAThrow *o)
 {
+    if (PyObject_CallFinalizerFromDealloc((PyObject *)o)) {
+        return;
+    }
+
     _PyObject_GC_UNTRACK((PyObject *)o);
     Py_CLEAR(o->agt_gen);
     Py_CLEAR(o->agt_args);
@@ -2256,6 +2284,15 @@ async_gen_athrow_close(PyAsyncGenAThrow *o, PyObject *args)
 }
 
 
+static void
+async_gen_athrow_finalize(PyAsyncGenAThrow *o)
+{
+    if (o->agt_state == AWAITABLE_STATE_INIT) {
+        PyObject *method = o->agt_args ? &_Py_ID(athrow) : &_Py_ID(aclose);
+        _PyErr_WarnUnawaitedAgenMethod(o->agt_gen, method);
+    }
+}
+
 static PyMethodDef async_gen_athrow_methods[] = {
     {"send", (PyCFunction)async_gen_athrow_send, METH_O, send_doc},
     {"throw", _PyCFunction_CAST(async_gen_athrow_throw),
@@ -2313,6 +2350,7 @@ PyTypeObject _PyAsyncGenAThrow_Type = {
     0,                                          /* tp_init */
     0,                                          /* tp_alloc */
     0,                                          /* tp_new */
+    .tp_finalize = (destructor)async_gen_athrow_finalize,
 };
 
 

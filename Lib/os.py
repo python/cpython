@@ -1079,6 +1079,8 @@ class PathLike(abc.ABC):
 
     """Abstract base class for implementing the file system path protocol."""
 
+    __slots__ = ()
+
     @abc.abstractmethod
     def __fspath__(self):
         """Return the file system path representation of the object."""

@@ -5,6 +5,7 @@ from test.support import check_sanitizer
 from test.support import import_helper
 from test.support import os_helper
 from test.support import warnings_helper
+from test.support.script_helper import assert_python_ok
 import subprocess
 import sys
 import signal
@@ -1691,6 +1692,14 @@ class RunFuncTestCase(BaseTestCase):
         res = subprocess.run(args)
         self.assertEqual(res.returncode, 57)
 
+    @unittest.skipUnless(mswindows, "Maybe test trigger a leak on Ubuntu")
+    def test_run_with_an_empty_env(self):
+        # gh-105436: fix subprocess.run(..., env={}) broken on Windows
+        args = [sys.executable, "-c", 'pass']
+        # Ignore subprocess errors - we only care that the API doesn't
+        # raise an OSError
+        subprocess.run(args, env={})
+
     def test_capture_output(self):
         cp = self.run_python(("import sys;"
                               "sys.stdout.write('BDFL'); "
@@ -3328,6 +3337,24 @@ class POSIXProcessTestCase(BaseTestCase):
                 return
             except subprocess.TimeoutExpired:
                 pass
+
+    def test_preexec_at_exit(self):
+        code = f"""if 1:
+        import atexit
+        import subprocess
+
+        def dummy():
+            pass
+
+        def exit_handler():
+            subprocess.Popen({ZERO_RETURN_CMD}, preexec_fn=dummy)
+            print("shouldn't be printed")
+
+        atexit.register(exit_handler)
+        """
+        _, out, err = assert_python_ok("-c", code)
+        self.assertEqual(out, b'')
+        self.assertIn(b"preexec_fn not supported at interpreter shutdown", err)
 
 
 @unittest.skipUnless(mswindows, "Windows specific tests")

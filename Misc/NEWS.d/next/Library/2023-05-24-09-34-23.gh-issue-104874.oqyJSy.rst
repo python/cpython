@@ -1,0 +1,2 @@
+Document the ``__name__`` and ``__supertype__`` attributes of
+:class:`typing.NewType`. Patch by Jelle Zijlstra.

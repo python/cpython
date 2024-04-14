@@ -273,3 +273,20 @@ def deco_factory(**kwargs):
 @deco_factory(foo=(1 + 2), bar=lambda: 1)
 def complex_decorated(foo=0, bar=lambda: 0):
     return foo + bar()
+
+# line 276
+parenthesized_lambda = (
+    lambda: ())
+parenthesized_lambda2 = [
+    lambda: ()][0]
+parenthesized_lambda3 = {0:
+    lambda: ()}[0]
+
+# line 285
+post_line_parenthesized_lambda1 = (lambda: ()
+)
+
+# line 289
+nested_lambda = (
+    lambda right: [].map(
+        lambda length: ()))

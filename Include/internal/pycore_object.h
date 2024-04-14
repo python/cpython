@@ -76,6 +76,21 @@ static inline void _Py_SetImmortal(PyObject *op)
 }
 #define _Py_SetImmortal(op) _Py_SetImmortal(_PyObject_CAST(op))
 
+/* _Py_ClearImmortal() should only be used during runtime finalization. */
+static inline void _Py_ClearImmortal(PyObject *op)
+{
+    if (op) {
+        assert(op->ob_refcnt == _Py_IMMORTAL_REFCNT);
+        op->ob_refcnt = 1;
+        Py_DECREF(op);
+    }
+}
+#define _Py_ClearImmortal(op) \
+    do { \
+        _Py_ClearImmortal(_PyObject_CAST(op)); \
+        op = NULL; \
+    } while (0)
+
 static inline void
 _Py_DECREF_SPECIALIZED(PyObject *op, const destructor destruct)
 {
@@ -311,9 +326,9 @@ _PyObject_GET_WEAKREFS_LISTPTR_FROM_OFFSET(PyObject *op)
 static inline int
 _PyObject_IS_GC(PyObject *obj)
 {
-    return (PyType_IS_GC(Py_TYPE(obj))
-            && (Py_TYPE(obj)->tp_is_gc == NULL
-                || Py_TYPE(obj)->tp_is_gc(obj)));
+    PyTypeObject *type = Py_TYPE(obj);
+    return (PyType_IS_GC(type)
+            && (type->tp_is_gc == NULL || type->tp_is_gc(obj)));
 }
 
 // Fast inlined version of PyType_IS_GC()

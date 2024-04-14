@@ -1,11 +1,16 @@
-from ctypes import *
-from test.test_ctypes import need_symbol
-from test import support
-import unittest
+import _ctypes_test
 import os
 import sys
+import unittest
+from ctypes import *
+from ctypes import (CDLL, Structure, sizeof, POINTER, byref, alignment,
+                    LittleEndianStructure, BigEndianStructure,
+                    c_byte, c_ubyte, c_char, c_char_p, c_void_p, c_wchar,
+                    c_uint32, c_uint64,
+                    c_short, c_ushort, c_int, c_uint, c_long, c_ulong, c_longlong, c_ulonglong)
+from test import support
+from test.test_ctypes import need_symbol
 
-import _ctypes_test
 
 class BITS(Structure):
     _fields_ = [("A", c_int, 1),
@@ -103,6 +108,7 @@ class C_Test(unittest.TestCase):
                     func_msvc(byref(b), name.encode('ascii')),
                     (name, i))
 
+
 signed_int_types = (c_byte, c_short, c_int, c_long, c_longlong)
 unsigned_int_types = (c_ubyte, c_ushort, c_uint, c_ulong, c_ulonglong)
 int_types = unsigned_int_types + signed_int_types
@@ -164,7 +170,6 @@ class BitFieldTest(unittest.TestCase):
             x.a, x.b = 0, -1
             self.assertEqual((c_typ, x.a, x.b, x.c), (c_typ, 0, 7, 0))
 
-
     def fail_fields(self, *fields):
         return self.get_except(type(Structure), "X", (),
                                {"_fields_": fields})
@@ -190,7 +195,6 @@ class BitFieldTest(unittest.TestCase):
         result = self.fail_fields(("a", Dummy, 1))
         self.assertEqual(result, (TypeError, 'bit fields not allowed for type Dummy'))
 
-    @need_symbol('c_wchar')
     def test_c_wchar(self):
         result = self.fail_fields(("a", c_wchar, 1))
         self.assertEqual(result,
@@ -241,7 +245,6 @@ class BitFieldTest(unittest.TestCase):
         self.assertEqual(X.a.offset, sizeof(c_short)*0)
         self.assertEqual(X.b.offset, sizeof(c_short)*1)
         self.assertEqual(X.c.offset, sizeof(c_short)*2)
-
 
     def get_except(self, func, *args, **kw):
         try:
@@ -446,7 +449,6 @@ class BitFieldTest(unittest.TestCase):
             _anonymous_ = ["_"]
             _fields_ = [("_", X)]
 
-    @need_symbol('c_uint32')
     def test_uint32(self):
         class X(Structure):
             _fields_ = [("a", c_uint32, 32)]
@@ -456,7 +458,6 @@ class BitFieldTest(unittest.TestCase):
         x.a = 0xFDCBA987
         self.assertEqual(x.a, 0xFDCBA987)
 
-    @need_symbol('c_uint64')
     def test_uint64(self):
         class X(Structure):
             _fields_ = [("a", c_uint64, 64)]
@@ -466,7 +467,6 @@ class BitFieldTest(unittest.TestCase):
         x.a = 0xFEDCBA9876543211
         self.assertEqual(x.a, 0xFEDCBA9876543211)
 
-    @need_symbol('c_uint32')
     def test_uint32_swap_little_endian(self):
         # Issue #23319
         class Little(LittleEndianStructure):
@@ -480,7 +480,6 @@ class BitFieldTest(unittest.TestCase):
         x.c = 2
         self.assertEqual(b, b'\xef\xcd\xab\x21')
 
-    @need_symbol('c_uint32')
     def test_uint32_swap_big_endian(self):
         # Issue #23319
         class Big(BigEndianStructure):
@@ -493,6 +492,7 @@ class BitFieldTest(unittest.TestCase):
         x.b = 1
         x.c = 2
         self.assertEqual(b, b'\xab\xcd\xef\x12')
+
 
 if __name__ == "__main__":
     unittest.main()

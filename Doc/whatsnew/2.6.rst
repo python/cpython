@@ -1805,15 +1805,15 @@ changes, or look through the Subversion logs for all the details.
   available, instead of restricting itself to protocol 1.
   (Contributed by W. Barnes.)
 
-* The :mod:`cgi` module will now read variables from the query string
+* The :mod:`!cgi` module will now read variables from the query string
   of an HTTP POST request.  This makes it possible to use form actions
   with URLs that include query strings such as
   "/cgi-bin/add.py?category=1".  (Contributed by Alexandre Fiori and
   Nubis; :issue:`1817`.)
 
   The :func:`parse_qs` and :func:`parse_qsl` functions have been
-  relocated from the :mod:`cgi` module to the :mod:`urlparse` module.
-  The versions still available in the :mod:`cgi` module will
+  relocated from the :mod:`!cgi` module to the :mod:`urlparse` module.
+  The versions still available in the :mod:`!cgi` module will
   trigger :exc:`PendingDeprecationWarning` messages in 2.6
   (:issue:`600362`).
 
@@ -3135,7 +3135,7 @@ Port-Specific Changes: Windows
   registry reflection for 32-bit processes running on 64-bit systems.
   (:issue:`1753245`)
 
-* The :mod:`msilib` module's :class:`Record` object
+* The :mod:`!msilib` module's :class:`Record` object
   gained :meth:`GetInteger` and :meth:`GetString` methods that
   return field values as an integer or a string.
   (Contributed by Floris Bruynooghe; :issue:`2125`.)

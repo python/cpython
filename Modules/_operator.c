@@ -823,9 +823,6 @@ _operator__compare_digest_impl(PyObject *module, PyObject *a, PyObject *b)
 
     /* ASCII unicode string */
     if(PyUnicode_Check(a) && PyUnicode_Check(b)) {
-        if (PyUnicode_READY(a) == -1 || PyUnicode_READY(b) == -1) {
-            return NULL;
-        }
         if (!PyUnicode_IS_ASCII(a) || !PyUnicode_IS_ASCII(b)) {
             PyErr_SetString(PyExc_TypeError,
                             "comparing strings with non-ASCII characters is "
@@ -1231,10 +1228,6 @@ attrgetter_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         if (!PyUnicode_Check(item)) {
             PyErr_SetString(PyExc_TypeError,
                             "attribute name must be a string");
-            Py_DECREF(attr);
-            return NULL;
-        }
-        if (PyUnicode_READY(item)) {
             Py_DECREF(attr);
             return NULL;
         }

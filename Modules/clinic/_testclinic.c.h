@@ -135,9 +135,6 @@ unicode_converter(PyObject *module, PyObject *arg)
         _PyArg_BadArgument("unicode_converter", "argument", "str", arg);
         goto exit;
     }
-    if (PyUnicode_READY(arg) == -1) {
-        goto exit;
-    }
     a = arg;
     return_value = unicode_converter_impl(module, a);
 
@@ -646,9 +643,6 @@ int_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     }
     if (!PyUnicode_Check(args[2])) {
         _PyArg_BadArgument("int_converter", "argument 3", "a unicode character", args[2]);
-        goto exit;
-    }
-    if (PyUnicode_READY(args[2])) {
         goto exit;
     }
     if (PyUnicode_GET_LENGTH(args[2]) != 1) {
@@ -3075,4 +3069,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=f58202a6e5df2d16 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0de394419fefe7cf input=a9049054013a1b77]*/

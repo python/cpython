@@ -65,9 +65,6 @@ complex___format__(PyComplexObject *self, PyObject *arg)
         _PyArg_BadArgument("__format__", "argument", "str", arg);
         goto exit;
     }
-    if (PyUnicode_READY(arg) == -1) {
-        goto exit;
-    }
     format_spec = arg;
     return_value = complex___format___impl(self, format_spec);
 
@@ -160,4 +157,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=52e85a1e258425d6 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d438b7ed87f8459e input=a9049054013a1b77]*/

@@ -66,11 +66,17 @@ Summary -- Release highlights
 
 .. PEP-sized items next.
 
+New grammar features:
+
+* :pep:`701`: Syntactic formalization of f-strings
+
 New typing features:
 
 * :pep:`688`: Making the buffer protocol accessible in Python
 
 * :ref:`whatsnew312-pep692`
+
+* :ref:`whatsnew312-pep695`
 
 * :pep:`698`: Override Decorator for Static Typing
 
@@ -136,22 +142,95 @@ Improved Error Messages
 New Features
 ============
 
-* Add :ref:`perf_profiling` through the new
-  environment variable :envvar:`PYTHONPERFSUPPORT`,
-  the new command-line option :option:`-X perf <-X>`,
-  as well as the new :func:`sys.activate_stack_trampoline`,
-  :func:`sys.deactivate_stack_trampoline`,
-  and :func:`sys.is_stack_trampoline_active` APIs.
-  (Design by Pablo Galindo. Contributed by Pablo Galindo and Christian Heimes
-  with contributions from Gregory P. Smith [Google] and Mark Shannon
-  in :gh:`96123`.)
-* The extraction methods in :mod:`tarfile`, and :func:`shutil.unpack_archive`,
-  have a new a *filter* argument that allows limiting tar features than may be
-  surprising or dangerous, such as creating files outside the destination
-  directory.
-  See :ref:`tarfile-extraction-filter` for details.
-  In Python 3.14, the default will switch to ``'data'``.
-  (Contributed by Petr Viktorin in :pep:`706`.)
+.. _whatsnew312-pep701:
+
+PEP 701: Syntactic formalization of f-strings
+---------------------------------------------
+
+:pep:`701` lifts some restrictions on the usage of f-strings. Expression components
+inside f-strings can now be any valid Python expression including backslashes,
+unicode escaped sequences, multi-line expressions, comments and strings reusing the
+same quote as the containing f-string. Let's cover these in detail:
+
+* Quote reuse: in Python 3.11, reusing the same quotes as the containing f-string
+  raises a :exc:`SyntaxError`, forcing the user to either use other available
+  quotes (like using double quotes or triple quotes if the f-string uses single
+  quotes). In Python 3.12, you can now do things like this:
+
+    >>> songs = ['Take me back to Eden', 'Alkaline', 'Ascensionism']
+    >>> f"This is the playlist: {", ".join(songs)}"
+    'This is the playlist: Take me back to Eden, Alkaline, Ascensionism'
+
+  Note that before this change there was no explicit limit in how f-strings can
+  be nested, but the fact that string quotes cannot be reused inside the
+  expression component of f-strings made it impossible to nest f-strings
+  arbitrarily. In fact, this is the most nested f-string that could be written:
+
+    >>> f"""{f'''{f'{f"{1+1}"}'}'''}"""
+    '2'
+
+  As now f-strings can contain any valid Python expression inside expression
+  components, it is now possible to nest f-strings arbitrarily:
+
+    >>> f"{f"{f"{f"{f"{f"{1+1}"}"}"}"}"}"
+    '2'
+
+* Multi-line expressions and comments: In Python 3.11, f-strings expressions
+  must be defined in a single line even if outside f-strings expressions could
+  span multiple lines (like literal lists being defined over multiple lines),
+  making them harder to read. In Python 3.12 you can now define expressions
+  spanning multiple lines and include comments on them:
+
+    >>> f"This is the playlist: {", ".join([
+    ...     'Take me back to Eden',  # My, my, those eyes like fire
+    ...     'Alkaline',              # Not acid nor alkaline
+    ...     'Ascensionism'           # Take to the broken skies at last
+    ... ])}"
+    'This is the playlist: Take me back to Eden, Alkaline, Ascensionism'
+
+* Backslashes and unicode characters: before Python 3.12 f-string expressions
+  couldn't contain any ``\`` character. This also affected unicode escaped
+  sequences (such as ``\N{snowman}``) as these contain the ``\N`` part that
+  previously could not be part of expression components of f-strings. Now, you
+  can define expressions like this:
+
+    >>> print(f"This is the playlist: {"\n".join(songs)}")
+    This is the playlist: Take me back to Eden
+    Alkaline
+    Ascensionism
+    >>> print(f"This is the playlist: {"\N{BLACK HEART SUIT}".join(songs)}")
+    This is the playlist: Take me back to Eden♥Alkaline♥Ascensionism
+
+See :pep:`701` for more details.
+
+As a positive side-effect of how this feature has been implemented (by parsing f-strings
+with the PEG parser (see :pep:`617`), now error messages for f-strings are more precise
+and include the exact location of the error. For example, in Python 3.11, the following
+f-string raises a :exc:`SyntaxError`:
+
+.. code-block:: python
+
+    >>> my_string = f"{x z y}" + f"{1 + 1}"
+      File "<stdin>", line 1
+        (x z y)
+         ^^^
+    SyntaxError: f-string: invalid syntax. Perhaps you forgot a comma?
+
+but the error message doesn't include the exact location of the error within the line and
+also has the expression artificially surrounded by parentheses. In Python 3.12, as f-strings
+are parsed with the PEG parser, error messages can be more precise and show the entire line:
+
+.. code-block:: python
+
+    >>> my_string = f"{x z y}" + f"{1 + 1}"
+      File "<stdin>", line 1
+        my_string = f"{x z y}" + f"{1 + 1}"
+                       ^^^
+    SyntaxError: invalid syntax. Perhaps you forgot a comma?
+
+(Contributed by Pablo Galindo, Batuhan Taskaya, Lysandros Nikolaou, Cristián
+Maureira-Fredes and Marta Gómez in :gh:`102856`. PEP written by Pablo Galindo,
+Batuhan Taskaya, Lysandros Nikolaou and Marta Gómez).
 
 .. _whatsnew312-pep709:
 
@@ -218,10 +297,121 @@ typed dictionaries::
 
 See :pep:`692` for more details.
 
-(PEP written by Franek Magiera)
+(Contributed by Franek Magiera in :gh:`103629`.)
+
+PEP 698: Override Decorator for Static Typing
+---------------------------------------------
+
+A new decorator :func:`typing.override` has been added to the :mod:`typing`
+module. It indicates to type checkers that the method is intended to override
+a method in a superclass. This allows type checkers to catch mistakes where
+a method that is intended to override something in a base class
+does not in fact do so.
+
+Example::
+
+   from typing import override
+
+   class Base:
+     def get_color(self) -> str:
+       return "blue"
+
+   class GoodChild(Base):
+     @override  # ok: overrides Base.get_color
+     def get_color(self) -> str:
+       return "yellow"
+
+   class BadChild(Base):
+     @override  # type checker error: does not override Base.get_color
+     def get_colour(self) -> str:
+       return "red"
+
+(Contributed by Steven Troxler in :gh:`101561`.)
+
+.. _whatsnew312-pep695:
+
+PEP 695: Type Parameter Syntax
+------------------------------
+
+Generic classes and functions under :pep:`484` were declared using a verbose syntax
+that left the scope of type parameters unclear and required explicit declarations of
+variance.
+
+:pep:`695` introduces a new, more compact and explicit way to create
+:ref:`generic classes <generic-classes>` and :ref:`functions <generic-functions>`::
+
+   def max[T](args: Iterable[T]) -> T:
+       ...
+
+   class list[T]:
+       def __getitem__(self, index: int, /) -> T:
+           ...
+
+       def append(self, element: T) -> None:
+           ...
+
+In addition, the PEP introduces a new way to declare :ref:`type aliases <type-aliases>`
+using the :keyword:`type` statement, which creates an instance of
+:class:`~typing.TypeAliasType`::
+
+   type Point = tuple[float, float]
+
+Type aliases can also be :ref:`generic <generic-type-aliases>`::
+
+   type Point[T] = tuple[T, T]
+
+The new syntax allows declaring :class:`~typing.TypeVarTuple`
+and :class:`~typing.ParamSpec` parameters, as well as :class:`~typing.TypeVar`
+parameters with bounds or constraints::
+
+   type IntFunc[**P] = Callable[P, int]  # ParamSpec
+   type LabeledTuple[*Ts] = tuple[str, *Ts]  # TypeVarTuple
+   type HashableSequence[T: Hashable] = Sequence[T]  # TypeVar with bound
+   type IntOrStrSequence[T: (int, str)] = Sequence[T]  # TypeVar with constraints
+
+The value of type aliases and the bound and constraints of type variables
+created through this syntax are evaluated only on demand (see
+:ref:`lazy-evaluation`). This means type aliases are able to refer to other
+types defined later in the file.
+
+Type parameters declared through a type parameter list are visible within the
+scope of the declaration and any nested scopes, but not in the outer scope. For
+example, they can be used in the type annotations for the methods of a generic
+class or in the class body. However, they cannot be used in the module scope after
+the class is defined. See :ref:`type-params` for a detailed description of the
+runtime semantics of type parameters.
+
+In order to support these scoping semantics, a new kind of scope is introduced,
+the :ref:`annotation scope <annotation-scopes>`. Annotation scopes behave for the
+most part like function scopes, but interact differently with enclosing class scopes.
+In Python 3.13, :term:`annotations <annotation>` will also be evaluated in
+annotation scopes.
+
+See :pep:`695` for more details.
+
+(PEP written by Eric Traut. Implementation by Jelle Zijlstra, Eric Traut,
+and others in :gh:`103764`.)
 
 Other Language Changes
 ======================
+
+* Add :ref:`perf_profiling` through the new
+  environment variable :envvar:`PYTHONPERFSUPPORT`,
+  the new command-line option :option:`-X perf <-X>`,
+  as well as the new :func:`sys.activate_stack_trampoline`,
+  :func:`sys.deactivate_stack_trampoline`,
+  and :func:`sys.is_stack_trampoline_active` APIs.
+  (Design by Pablo Galindo. Contributed by Pablo Galindo and Christian Heimes
+  with contributions from Gregory P. Smith [Google] and Mark Shannon
+  in :gh:`96123`.)
+
+* The extraction methods in :mod:`tarfile`, and :func:`shutil.unpack_archive`,
+  have a new a *filter* argument that allows limiting tar features than may be
+  surprising or dangerous, such as creating files outside the destination
+  directory.
+  See :ref:`tarfile-extraction-filter` for details.
+  In Python 3.14, the default will switch to ``'data'``.
+  (Contributed by Petr Viktorin in :pep:`706`.)
 
 * :class:`types.MappingProxyType` instances are now hashable if the underlying
   mapping is hashable.
@@ -271,7 +461,11 @@ Other Language Changes
   (Contributed by Nikita Sobolev in :gh:`100581`.)
 
 * :class:`slice` objects are now hashable, allowing them to be used as dict keys and
-  set items. (Contributed by Will Bradshaw and Furkan Onder in :gh:`101264`.)
+  set items. (Contributed by Will Bradshaw, Furkan Onder, and Raymond Hettinger in :gh:`101264`.)
+
+* :func:`sum` now uses Neumaier summation to improve accuracy when summing
+  floats or mixed ints and floats.
+  (Contributed by Raymond Hettinger in :gh:`100425`.)
 
 * Exceptions raised in a typeobject's ``__set_name__`` method are no longer
   wrapped by a :exc:`RuntimeError`. Context information is added to the
@@ -359,46 +553,6 @@ csv
   provide finer grained control of ``None`` and empty strings by
   :class:`~csv.writer` objects.
 
-inspect
--------
-
-* Add :func:`inspect.markcoroutinefunction` to mark sync functions that return
-  a :term:`coroutine` for use with :func:`inspect.iscoroutinefunction`.
-  (Contributed Carlton Gibson in :gh:`99247`.)
-
-* Add :func:`inspect.getasyncgenstate` and :func:`inspect.getasyncgenlocals`
-  for determining the current state of asynchronous generators.
-  (Contributed by Thomas Krennwallner in :issue:`35759`.)
-
-* The performance of :func:`inspect.getattr_static` has been considerably
-  improved. Most calls to the function should be at least 2x faster than they
-  were in Python 3.11, and some may be 6x faster or more. (Contributed by Alex
-  Waygood in :gh:`103193`.)
-
-pathlib
--------
-
-* Add support for subclassing :class:`pathlib.PurePath` and
-  :class:`~pathlib.Path`, plus their Posix- and Windows-specific variants.
-  Subclasses may override the :meth:`~pathlib.PurePath.with_segments` method
-  to pass information between path instances.
-
-* Add :meth:`~pathlib.Path.walk` for walking the directory trees and generating
-  all file or directory names within them, similar to :func:`os.walk`.
-  (Contributed by Stanislav Zmiev in :gh:`90385`.)
-
-* Add *walk_up* optional parameter to :meth:`pathlib.PurePath.relative_to`
-  to allow the insertion of ``..`` entries in the result; this behavior is
-  more consistent with :func:`os.path.relpath`.
-  (Contributed by Domenico Ragusa in :issue:`40358`.)
-
-* Add :meth:`pathlib.Path.is_junction` as a proxy to :func:`os.path.isjunction`.
-  (Contributed by Charles Machalow in :gh:`99547`.)
-
-* Add *case_sensitive* optional parameter to :meth:`pathlib.Path.glob`,
-  :meth:`pathlib.Path.rglob` and :meth:`pathlib.PurePath.match` for matching
-  the path's case sensitivity, allowing for more precise control over the matching process.
-
 dis
 ---
 
@@ -416,6 +570,22 @@ fractions
 * Objects of type :class:`fractions.Fraction` now support float-style
   formatting. (Contributed by Mark Dickinson in :gh:`100161`.)
 
+inspect
+-------
+
+* Add :func:`inspect.markcoroutinefunction` to mark sync functions that return
+  a :term:`coroutine` for use with :func:`inspect.iscoroutinefunction`.
+  (Contributed Carlton Gibson in :gh:`99247`.)
+
+* Add :func:`inspect.getasyncgenstate` and :func:`inspect.getasyncgenlocals`
+  for determining the current state of asynchronous generators.
+  (Contributed by Thomas Krennwallner in :issue:`35759`.)
+
+* The performance of :func:`inspect.getattr_static` has been considerably
+  improved. Most calls to the function should be at least 2x faster than they
+  were in Python 3.11, and some may be 6x faster or more. (Contributed by Alex
+  Waygood in :gh:`103193`.)
+
 itertools
 ---------
 
@@ -423,11 +593,23 @@ itertools
   tuples where the last batch may be shorter than the rest.
   (Contributed by Raymond Hettinger in :gh:`98363`.)
 
+json
+----
+
+* Added :class:`json.AttrDict` for use with ``object_hook`` in :func:`json.load`
+  or :func:`json.loads`.  This is a subclass of :class:`dict` that also supports
+  attribute style dotted access.
+  (Contributed by Raymond Hettinger in :gh:`96145`.)
+
 math
 ----
 
 * Added :func:`math.sumprod` for computing a sum of products.
   (Contributed by Raymond Hettinger in :gh:`100485`.)
+
+* Extended :func:`math.nextafter` to include a *steps* argument
+  for moving up or down multiple steps at a time.
+  (By Matthias Goergens, Mark Dickinson, and Raymond Hettinger in :gh:`94906`.)
 
 os
 --
@@ -463,6 +645,30 @@ os.path
 * Add :func:`os.path.splitroot` to split a path into a triad
   ``(drive, root, tail)``. (Contributed by Barney Gale in :gh:`101000`.)
 
+pathlib
+-------
+
+* Add support for subclassing :class:`pathlib.PurePath` and
+  :class:`~pathlib.Path`, plus their Posix- and Windows-specific variants.
+  Subclasses may override the :meth:`~pathlib.PurePath.with_segments` method
+  to pass information between path instances.
+
+* Add :meth:`~pathlib.Path.walk` for walking the directory trees and generating
+  all file or directory names within them, similar to :func:`os.walk`.
+  (Contributed by Stanislav Zmiev in :gh:`90385`.)
+
+* Add *walk_up* optional parameter to :meth:`pathlib.PurePath.relative_to`
+  to allow the insertion of ``..`` entries in the result; this behavior is
+  more consistent with :func:`os.path.relpath`.
+  (Contributed by Domenico Ragusa in :issue:`40358`.)
+
+* Add :meth:`pathlib.Path.is_junction` as a proxy to :func:`os.path.isjunction`.
+  (Contributed by Charles Machalow in :gh:`99547`.)
+
+* Add *case_sensitive* optional parameter to :meth:`pathlib.Path.glob`,
+  :meth:`pathlib.Path.rglob` and :meth:`pathlib.PurePath.match` for matching
+  the path's case sensitivity, allowing for more precise control over the matching process.
+
 pdb
 ---
 
@@ -470,6 +676,15 @@ pdb
   and provide quick access to values like the current frame or the return
   value.
   (Contributed by Tian Gao in :gh:`103693`.)
+
+random
+------
+
+* Added :func:`random.binomialvariate`.
+  (Contributed by Raymond Hettinger in :gh:`81620`.)
+
+* Added a default of ``lamb=1.0`` to :func:`random.expovariate`.
+  (Contributed by Raymond Hettinger in :gh:`100234`.)
 
 shutil
 ------
@@ -524,6 +739,45 @@ sqlite3
   to make configuration changes to a database connection.
   (Contributed by Erlend E. Aasland in :gh:`103489`.)
 
+statistics
+----------
+
+* Extended :func:`statistics.correlation` to include as a ``ranked`` method
+  for computing the Spearman correlation of ranked data.
+  (Contributed by Raymond Hettinger in :gh:`95861`.)
+
+sys
+---
+
+* Add :func:`sys.activate_stack_trampoline` and
+  :func:`sys.deactivate_stack_trampoline` for activating and deactivating
+  stack profiler trampolines,
+  and :func:`sys.is_stack_trampoline_active` for querying if stack profiler
+  trampolines are active.
+  (Contributed by Pablo Galindo and Christian Heimes
+  with contributions from Gregory P. Smith [Google] and Mark Shannon
+  in :gh:`96123`.)
+
+* Add :data:`sys.last_exc` which holds the last unhandled exception that
+  was raised (for post-mortem debugging use cases). Deprecate the
+  three fields that have the same information in its legacy form:
+  :data:`sys.last_type`, :data:`sys.last_value` and :data:`sys.last_traceback`.
+  (Contributed by Irit Katriel in :gh:`102778`.)
+
+* :func:`sys._current_exceptions` now returns a mapping from thread-id to an
+  exception instance, rather than to a ``(typ, exc, tb)`` tuple.
+  (Contributed by Irit Katriel in :gh:`103176`.)
+
+tempfile
+--------
+
+* The :class:`tempfile.NamedTemporaryFile` function has a new optional parameter
+  *delete_on_close* (Contributed by Evgeny Zorin in :gh:`58451`.)
+* :func:`tempfile.mkdtemp` now always returns an absolute path, even if the
+  argument provided to the *dir* parameter is a relative path.
+
+.. _whatsnew-typing-py312:
+
 threading
 ---------
 
@@ -543,6 +797,14 @@ tkinter
   like ``create_*()`` methods.
   (Contributed by Serhiy Storchaka in :gh:`94473`.)
 
+tokenize
+--------
+
+* The :mod:`tokenize` module includes the changes introduced in :pep:`701`. (
+  Contributed by Marta Gómez Macías and Pablo Galindo in :gh:`102856`.)
+  See :ref:`whatsnew312-porting-to-python312` for more information on the
+  changes to the :mod:`tokenize` module.
+
 types
 -----
 
@@ -550,56 +812,8 @@ types
   :ref:`user-defined-generics` when subclassed. (Contributed by
   James Hilton-Balfe and Alex Waygood in :gh:`101827`.)
 
-unicodedata
------------
-
-* The Unicode database has been updated to version 15.0.0. (Contributed by
-  Benjamin Peterson in :gh:`96734`).
-
-unittest
---------
-
-Added ``--durations`` command line option, showing the N slowest test cases::
-
-  python3 -m unittest --durations=3 lib.tests.test_threading
-  .....
-  Slowest test durations
-  ----------------------------------------------------------------------
-  1.210s     test_timeout (Lib.test.test_threading.BarrierTests)
-  1.003s     test_default_timeout (Lib.test.test_threading.BarrierTests)
-  0.518s     test_timeout (Lib.test.test_threading.EventTests)
-
-  (0.000 durations hidden.  Use -v to show these durations.)
-  ----------------------------------------------------------------------
-  Ran 158 tests in 9.869s
-
-  OK (skipped=3)
-
-(Contributed by Giampaolo Rodola in :issue:`4080`)
-
-uuid
-----
-
-* Add a :ref:`command-line interface <uuid-cli>`.
-  (Contributed by Adam Chhina in :gh:`88597`.)
-
-tempfile
---------
-
-* The :class:`tempfile.NamedTemporaryFile` function has a new optional parameter
-  *delete_on_close* (Contributed by Evgeny Zorin in :gh:`58451`.)
-* :func:`tempfile.mkdtemp` now always returns an absolute path, even if the
-  argument provided to the *dir* parameter is a relative path.
-
-.. _whatsnew-typing-py312:
-
 typing
 ------
-
-* Add :func:`typing.override`, an override decorator telling to static type
-  checkers to verify that a method overrides some method or attribute of the
-  same name on a base class, as per :pep:`698`. (Contributed by Steven Troxler in
-  :gh:`101564`.)
 
 * :func:`isinstance` checks against
   :func:`runtime-checkable protocols <typing.runtime_checkable>` now use
@@ -645,27 +859,45 @@ typing
   or more members may be slower than in Python 3.11. (Contributed by Alex
   Waygood in :gh:`74690` and :gh:`103193`.)
 
-sys
----
+* All :data:`typing.TypedDict` and :data:`typing.NamedTuple` classes now have the
+  ``__orig_bases__`` attribute. (Contributed by Adrian Garcia Badaracco in
+  :gh:`103699`.)
 
-* Add :func:`sys.activate_stack_trampoline` and
-  :func:`sys.deactivate_stack_trampoline` for activating and deactivating
-  stack profiler trampolines,
-  and :func:`sys.is_stack_trampoline_active` for querying if stack profiler
-  trampolines are active.
-  (Contributed by Pablo Galindo and Christian Heimes
-  with contributions from Gregory P. Smith [Google] and Mark Shannon
-  in :gh:`96123`.)
+* Add ``frozen_default`` parameter to :func:`typing.dataclass_transform`.
+  (Contributed by Erik De Bonte in :gh:`99957`.)
 
-* Add :data:`sys.last_exc` which holds the last unhandled exception that
-  was raised (for post-mortem debugging use cases). Deprecate the
-  three fields that have the same information in its legacy form:
-  :data:`sys.last_type`, :data:`sys.last_value` and :data:`sys.last_traceback`.
-  (Contributed by Irit Katriel in :gh:`102778`.)
+unicodedata
+-----------
 
-* :func:`sys._current_exceptions` now returns a mapping from thread-id to an
-  exception instance, rather than to a ``(typ, exc, tb)`` tuple.
-  (Contributed by Irit Katriel in :gh:`103176`.)
+* The Unicode database has been updated to version 15.0.0. (Contributed by
+  Benjamin Peterson in :gh:`96734`).
+
+unittest
+--------
+
+Added ``--durations`` command line option, showing the N slowest test cases::
+
+  python3 -m unittest --durations=3 lib.tests.test_threading
+  .....
+  Slowest test durations
+  ----------------------------------------------------------------------
+  1.210s     test_timeout (Lib.test.test_threading.BarrierTests)
+  1.003s     test_default_timeout (Lib.test.test_threading.BarrierTests)
+  0.518s     test_timeout (Lib.test.test_threading.EventTests)
+
+  (0.000 durations hidden.  Use -v to show these durations.)
+  ----------------------------------------------------------------------
+  Ran 158 tests in 9.869s
+
+  OK (skipped=3)
+
+(Contributed by Giampaolo Rodola in :issue:`4080`)
+
+uuid
+----
+
+* Add a :ref:`command-line interface <uuid-cli>`.
+  (Contributed by Adam Chhina in :gh:`88597`.)
 
 
 Optimizations
@@ -687,18 +919,38 @@ Optimizations
 * Speed up :class:`asyncio.Task` creation by deferring expensive string formatting.
   (Contributed by Itamar O in :gh:`103793`.)
 
+* The :func:`tokenize.tokenize` and :func:`tokenize.generate_tokens` functions are
+  up to 64% faster as a side effect of the changes required to cover :pep:`701` in
+  the :mod:`tokenize` module. (Contributed by Marta Gómez Macías and Pablo Galindo
+  in :gh:`102856`.)
+
+* Speed up :func:`super` method calls and attribute loads via the
+  new :opcode:`LOAD_SUPER_ATTR` instruction. (Contributed by Carl Meyer and
+  Vladimir Matveev in :gh:`103497`.)
+
 
 CPython bytecode changes
 ========================
 
-* Removed the :opcode:`LOAD_METHOD` instruction. It has been merged into
+* Remove the :opcode:`LOAD_METHOD` instruction. It has been merged into
   :opcode:`LOAD_ATTR`. :opcode:`LOAD_ATTR` will now behave like the old
   :opcode:`LOAD_METHOD` instruction if the low bit of its oparg is set.
   (Contributed by Ken Jin in :gh:`93429`.)
 
-* Removed the :opcode:`!JUMP_IF_FALSE_OR_POP` and :opcode:`!JUMP_IF_TRUE_OR_POP`
+* Remove the :opcode:`!JUMP_IF_FALSE_OR_POP` and :opcode:`!JUMP_IF_TRUE_OR_POP`
   instructions. (Contributed by Irit Katriel in :gh:`102859`.)
 
+* Add the :opcode:`LOAD_FAST_AND_CLEAR` instruction as part of the
+  implementation of :pep:`709`. (Contributed by Carl Meyer in :gh:`101441`.)
+
+* Add the :opcode:`LOAD_FROM_DICT_OR_DEREF`, :opcode:`LOAD_FROM_DICT_OR_GLOBALS`,
+  and :opcode:`LOAD_LOCALS` opcodes as part of the implementation of :pep:`695`.
+  Remove the :opcode:`!LOAD_CLASSDEREF` opcode, which can be replaced with
+  :opcode:`LOAD_LOCALS` plus :opcode:`LOAD_FROM_DICT_OR_DEREF`. (Contributed
+  by Jelle Zijlstra in :gh:`103764`.)
+
+* Add the :opcode:`LOAD_SUPER_ATTR` instruction. (Contributed by Carl Meyer and
+  Vladimir Matveev in :gh:`103497`.)
 
 Demos and Tools
 ===============
@@ -803,35 +1055,38 @@ and will be removed in Python 3.13.
 
 Modules (see :pep:`594`):
 
-* :mod:`aifc`
-* :mod:`audioop`
-* :mod:`cgi`
-* :mod:`cgitb`
-* :mod:`chunk`
-* :mod:`crypt`
-* :mod:`imghdr`
-* :mod:`mailcap`
-* :mod:`msilib`
-* :mod:`nis`
-* :mod:`nntplib`
-* :mod:`ossaudiodev`
-* :mod:`pipes`
-* :mod:`sndhdr`
-* :mod:`spwd`
-* :mod:`sunau`
+* :mod:`!aifc`
+* :mod:`!audioop`
+* :mod:`!cgi`
+* :mod:`!cgitb`
+* :mod:`!chunk`
+* :mod:`!crypt`
+* :mod:`!imghdr`
+* :mod:`!mailcap`
+* :mod:`!msilib`
+* :mod:`!nis`
+* :mod:`!nntplib`
+* :mod:`!ossaudiodev`
+* :mod:`!pipes`
+* :mod:`!sndhdr`
+* :mod:`!spwd`
+* :mod:`!sunau`
 * :mod:`!telnetlib`
-* :mod:`uu`
-* :mod:`xdrlib`
+* :mod:`!uu`
+* :mod:`!xdrlib`
 
 APIs:
 
 * :class:`!configparser.LegacyInterpolation` (:gh:`90765`)
 * :func:`locale.getdefaultlocale` (:gh:`90817`)
+* ``locale.resetlocale()`` (:gh:`90817`)
 * :meth:`!turtle.RawTurtle.settiltangle` (:gh:`50096`)
 * :func:`!unittest.findTestCases` (:gh:`50096`)
-* :func:`!unittest.makeSuite` (:gh:`50096`)
 * :func:`!unittest.getTestCaseNames` (:gh:`50096`)
+* :func:`!unittest.makeSuite` (:gh:`50096`)
+* :meth:`!unittest.TestProgram.usageExit` (:gh:`67048`)
 * :class:`!webbrowser.MacOSX` (:gh:`86421`)
+* :class:`classmethod` descriptor chaining (:gh:`89519`)
 
 Pending Removal in Python 3.14
 ------------------------------
@@ -881,6 +1136,12 @@ Pending Removal in Python 3.14
 * :mod:`pty` has two undocumented ``master_open()`` and ``slave_open()``
   functions that have been deprecated since Python 2 but only gained a
   proper :exc:`DeprecationWarning` in 3.12. Remove them in 3.14.
+
+* :mod:`itertools` had undocumented, inefficient, historically buggy,
+  and inconsistent support for copy, deepcopy, and pickle operations.
+  This will be removed in 3.14 for a significant reduction in code
+  volume and maintenance burden.
+  (Contributed by Raymond Hettinger in :gh:`101588`.)
 
 * Accessing ``co_lnotab`` was deprecated in :pep:`626` since 3.10
   and was planned to be removed in 3.12
@@ -1102,11 +1363,13 @@ Removed
   * Support for ``find_loader()`` and ``find_module()`` APIs have been
     removed.  (Contributed by Barry Warsaw in :gh:`98040`.)
 
-  * ``importlib.abc.Finder``, ``pkg.ImpImporter``, and ``pkg.ImpLoader`` have
-    been removed.  (Contributed by Barry Warsaw in :gh:`98040`.)
+  * ``importlib.abc.Finder``, ``pkgutil.ImpImporter``, and ``pkgutil.ImpLoader``
+    have been removed.  (Contributed by Barry Warsaw in :gh:`98040`.)
 
   * The :mod:`!imp` module has been removed.  (Contributed by Barry Warsaw in
     :gh:`98040`.)
+
+  * Replace ``imp.new_module(name)`` with ``types.ModuleType(name)``.
 
 * Removed the ``suspicious`` rule from the documentation Makefile, and
   removed ``Doc/tools/rstlint.py``, both in favor of `sphinx-lint
@@ -1129,6 +1392,8 @@ Removed
   Removed browsers include: Grail, Mosaic, Netscape, Galeon, Skipstone,
   Iceape, Firebird, and Firefox versions 35 and below (:gh:`102871`).
 
+
+.. _whatsnew312-porting-to-python312:
 
 Porting to Python 3.12
 ======================
@@ -1201,6 +1466,44 @@ Changes in the Python API
   that may be surprising or dangerous.
   See :ref:`tarfile-extraction-filter` for details.
 
+* The output of the :func:`tokenize.tokenize` and :func:`tokenize.generate_tokens`
+  functions is now changed due to the changes introduced in :pep:`701`. This
+  means that ``STRING`` tokens are not emitted any more for f-strings and the
+  tokens described in :pep:`701` are now produced instead: ``FSTRING_START``,
+  ``FSRING_MIDDLE`` and ``FSTRING_END`` are now emitted for f-string "string"
+  parts in addition to the appropriate tokens for the tokenization in the
+  expression components. For example for the f-string ``f"start {1+1} end"``
+  the old version of the tokenizer emitted::
+
+    1,0-1,18:           STRING         'f"start {1+1} end"'
+
+  while the new version emits::
+
+      1,0-1,2:            FSTRING_START  'f"'
+      1,2-1,8:            FSTRING_MIDDLE 'start '
+      1,8-1,9:            OP             '{'
+      1,9-1,10:           NUMBER         '1'
+      1,10-1,11:          OP             '+'
+      1,11-1,12:          NUMBER         '1'
+      1,12-1,13:          OP             '}'
+      1,13-1,17:          FSTRING_MIDDLE ' end'
+      1,17-1,18:          FSTRING_END    '"'
+
+  Additionally, there may be some minor behavioral changes as a consecuence of the
+  changes required to support :pep:`701`. Some of these changes include:
+
+  * The ``type`` attribute of the tokens emitted when tokenizing some invalid Python
+    characters such as ``!`` has changed from ``ERRORTOKEN`` to ``OP``.
+
+  * Incomplete single-line strings now also raise :exc:`tokenize.TokenError` as incomplete
+    multiline strings do.
+
+  * Some incomplete or invalid Python code now raises :exc:`tokenize.TokenError` instead of
+    returning arbitrary ``ERRORTOKEN`` tokens when tokenizing it.
+
+  * Mixing tabs and spaces as indentation in the same file is not supported anymore and will
+    raise a :exc:`TabError`.
+
 Build Changes
 =============
 
@@ -1234,6 +1537,10 @@ Build Changes
   (Contributed by Zhang Na in :gh:`90656`.)
 
 * ``PYTHON_FOR_REGEN`` now require Python 3.10 or newer.
+
+* Autoconf 2.71 and aclocal 1.16.4 is now required to regenerate
+  :file:`!configure`.
+  (Contributed by Christian Heimes in :gh:`89886`.)
 
 
 C API Changes
@@ -1280,7 +1587,7 @@ New Features
 
   (Contributed by Petr Viktorin in :gh:`103509`.)
 
-* Added the new limited C API function :c:func:`PyType_FromMetaclass`,
+* Added the new :ref:`limited C API <limited-c-api>` function :c:func:`PyType_FromMetaclass`,
   which generalizes the existing :c:func:`PyType_FromModuleAndSpec` using
   an additional metaclass argument.
   (Contributed by Wenzel Jakob in :gh:`93012`.)
@@ -1387,6 +1694,11 @@ New Features
 
   (Contributed by Eddie Elizondo in :gh:`84436`.)
 
+* In the limited C API version 3.12, :c:func:`Py_INCREF` and
+  :c:func:`Py_DECREF` functions are now implemented as opaque function calls to
+  hide implementation details.
+  (Contributed by Victor Stinner in :gh:`105387`.)
+
 Porting to Python 3.12
 ----------------------
 
@@ -1457,7 +1769,7 @@ Porting to Python 3.12
   before storing it. (Contributed by Mark Shannon in :gh:`101578`.)
 
 * ``_Py_RefTotal`` is no longer authoritative and only kept around
-  for ABI compabitility.  Note that it is an internal global and only
+  for ABI compatibility.  Note that it is an internal global and only
   available on debug builds.  If you happen to be using it then you'll
   need to start using ``_Py_GetGlobalRefTotal()``.
 

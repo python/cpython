@@ -867,3 +867,19 @@ try:
 except ImportError:
     # Use genericpath.* as imported above
     pass
+
+
+try:
+    from nt import _path_isdevdrive
+except ImportError:
+    def isdevdrive(path):
+        """Determines whether the specified path is on a Windows Dev Drive."""
+        # Never a Dev Drive
+        return False
+else:
+    def isdevdrive(path):
+        """Determines whether the specified path is on a Windows Dev Drive."""
+        try:
+            return _path_isdevdrive(abspath(path))
+        except OSError:
+            return False

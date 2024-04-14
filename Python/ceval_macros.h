@@ -138,14 +138,20 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 /* Code access macros */
 
 /* The integer overflow is checked by an assertion below. */
-#define INSTR_OFFSET() ((int)(next_instr - _PyCode_CODE(frame->f_code)))
+#define INSTR_OFFSET() ((int)(next_instr - _PyCode_CODE(_PyFrame_GetCode(frame))))
 #define NEXTOPARG()  do { \
         _Py_CODEUNIT word = *next_instr; \
         opcode = word.op.code; \
         oparg = word.op.arg; \
     } while (0)
-#define JUMPTO(x)       (next_instr = _PyCode_CODE(frame->f_code) + (x))
+#define JUMPTO(x)       (next_instr = _PyCode_CODE(_PyFrame_GetCode(frame)) + (x))
+
+/* JUMPBY makes the generator identify the instruction as a jump. SKIP_OVER is
+ * for advancing to the next instruction, taking into account cache entries
+ * and skipped instructions.
+ */
 #define JUMPBY(x)       (next_instr += (x))
+#define SKIP_OVER(x)    (next_instr += (x))
 
 /* OpCode prediction macros
     Some opcodes tend to come in pairs thus making it possible to
@@ -174,21 +180,6 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 */
 
 #define PREDICT_ID(op)          PRED_##op
-
-#if USE_COMPUTED_GOTOS
-#define PREDICT(op)             if (0) goto PREDICT_ID(op)
-#else
-#define PREDICT(next_op) \
-    do { \
-        _Py_CODEUNIT word = *next_instr; \
-        opcode = word.op.code; \
-        if (opcode == next_op) { \
-            oparg = word.op.arg; \
-            INSTRUCTION_START(next_op); \
-            goto PREDICT_ID(next_op); \
-        } \
-    } while(0)
-#endif
 #define PREDICTED(op)           PREDICT_ID(op):
 
 
@@ -197,7 +188,7 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 /* The stack can grow at most MAXINT deep, as co_nlocals and
    co_stacksize are ints. */
 #define STACK_LEVEL()     ((int)(stack_pointer - _PyFrame_Stackbase(frame)))
-#define STACK_SIZE()      (frame->f_code->co_stacksize)
+#define STACK_SIZE()      (_PyFrame_GetCode(frame)->co_stacksize)
 #define EMPTY()           (STACK_LEVEL() == 0)
 #define TOP()             (stack_pointer[-1])
 #define SECOND()          (stack_pointer[-2])
@@ -233,6 +224,11 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 #define STACK_GROW(n)          BASIC_STACKADJ(n)
 #define STACK_SHRINK(n)        BASIC_STACKADJ(-(n))
 #endif
+
+
+/* Data access macros */
+#define FRAME_CO_CONSTS (_PyFrame_GetCode(frame)->co_consts)
+#define FRAME_CO_NAMES  (_PyFrame_GetCode(frame)->co_names)
 
 /* Local variable macros */
 
@@ -280,6 +276,8 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 #define GLOBALS() frame->f_globals
 #define BUILTINS() frame->f_builtins
 #define LOCALS() frame->f_locals
+#define CONSTS() _PyFrame_GetCode(frame)->co_consts
+#define NAMES() _PyFrame_GetCode(frame)->co_names
 
 #define DTRACE_FUNCTION_ENTRY()  \
     if (PyDTrace_FUNCTION_ENTRY_ENABLED()) { \
@@ -300,7 +298,6 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 
 #define INCREMENT_ADAPTIVE_COUNTER(COUNTER)          \
     do {                                             \
-        assert(!ADAPTIVE_COUNTER_IS_MAX((COUNTER))); \
         (COUNTER) += (1 << ADAPTIVE_BACKOFF_BITS);   \
     } while (0);
 

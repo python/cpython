@@ -71,8 +71,8 @@ Number-theoretic and representation functions
    Return *n* factorial as an integer.  Raises :exc:`ValueError` if *n* is not integral or
    is negative.
 
-   .. deprecated:: 3.9
-      Accepting floats with integral values (like ``5.0``) is deprecated.
+   .. versionchanged:: 3.10
+      Floats with integral values (like ``5.0``) are no longer accepted.
 
 
 .. function:: floor(x)

@@ -235,7 +235,6 @@ epub_publisher = 'Python Software Foundation'
 # match any of the following regexes (using re.match).
 coverage_ignore_modules = [
     r'[T|t][k|K]',
-    r'Tix',
 ]
 
 coverage_ignore_functions = [

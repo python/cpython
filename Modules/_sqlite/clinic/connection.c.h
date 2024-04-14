@@ -966,9 +966,6 @@ pysqlite_connection_execute(pysqlite_Connection *self, PyObject *const *args, Py
         _PyArg_BadArgument("execute", "argument 1", "str", args[0]);
         goto exit;
     }
-    if (PyUnicode_READY(args[0]) == -1) {
-        goto exit;
-    }
     sql = args[0];
     if (nargs < 2) {
         goto skip_optional;
@@ -1006,9 +1003,6 @@ pysqlite_connection_executemany(pysqlite_Connection *self, PyObject *const *args
     }
     if (!PyUnicode_Check(args[0])) {
         _PyArg_BadArgument("executemany", "argument 1", "str", args[0]);
-        goto exit;
-    }
-    if (PyUnicode_READY(args[0]) == -1) {
         goto exit;
     }
     sql = args[0];
@@ -1665,4 +1659,4 @@ exit:
 #ifndef DESERIALIZE_METHODDEF
     #define DESERIALIZE_METHODDEF
 #endif /* !defined(DESERIALIZE_METHODDEF) */
-/*[clinic end generated code: output=834a99827555bf1a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d3c6cb9326736ea5 input=a9049054013a1b77]*/

@@ -1,9 +1,10 @@
 from test import support
 from test.support import os_helper
-from tokenize import (tokenize, _tokenize, untokenize, NUMBER, NAME, OP,
+from tokenize import (tokenize, untokenize, NUMBER, NAME, OP,
                      STRING, ENDMARKER, ENCODING, tok_name, detect_encoding,
                      open as tokenize_open, Untokenizer, generate_tokens,
-                     NEWLINE, _generate_tokens_from_c_tokenizer, DEDENT, TokenInfo)
+                     NEWLINE, _generate_tokens_from_c_tokenizer, DEDENT, TokenInfo,
+                     TokenError)
 from io import BytesIO, StringIO
 import unittest
 from textwrap import dedent
@@ -51,6 +52,25 @@ class TokenizeTest(TestCase):
                          ["    ENCODING   'utf-8'       (0, 0) (0, 0)"] +
                          expected.rstrip().splitlines())
 
+    def test_invalid_readline(self):
+        def gen():
+            yield "sdfosdg"
+            yield "sdfosdg"
+        with self.assertRaises(TypeError):
+            list(tokenize(gen().__next__))
+
+        def gen():
+            yield b"sdfosdg"
+            yield b"sdfosdg"
+        with self.assertRaises(TypeError):
+            list(generate_tokens(gen().__next__))
+
+        def gen():
+            yield "sdfosdg"
+            1/0
+        with self.assertRaises(ZeroDivisionError):
+            list(generate_tokens(gen().__next__))
+
     def test_implicit_newline(self):
         # Make sure that the tokenizer puts in an implicit NEWLINE
         # when the input lacks a trailing new line.
@@ -82,8 +102,34 @@ class TokenizeTest(TestCase):
     NAME       'False'       (4, 11) (4, 16)
     COMMENT    '# NEWLINE'   (4, 17) (4, 26)
     NEWLINE    '\\n'          (4, 26) (4, 27)
-    DEDENT     ''            (4, 27) (4, 27)
+    DEDENT     ''            (5, 0) (5, 0)
     """)
+
+        self.check_tokenize("if True:\r\n    # NL\r\n    foo='bar'\r\n\r\n", """\
+    NAME       'if'          (1, 0) (1, 2)
+    NAME       'True'        (1, 3) (1, 7)
+    OP         ':'           (1, 7) (1, 8)
+    NEWLINE    '\\r\\n'        (1, 8) (1, 10)
+    COMMENT    '# NL'        (2, 4) (2, 8)
+    NL         '\\r\\n'        (2, 8) (2, 10)
+    INDENT     '    '        (3, 0) (3, 4)
+    NAME       'foo'         (3, 4) (3, 7)
+    OP         '='           (3, 7) (3, 8)
+    STRING     "\'bar\'"       (3, 8) (3, 13)
+    NEWLINE    '\\r\\n'        (3, 13) (3, 15)
+    NL         '\\r\\n'        (4, 0) (4, 2)
+    DEDENT     ''            (5, 0) (5, 0)
+            """)
+
+        self.check_tokenize("x = 1 + \\\r\n1\r\n", """\
+    NAME       'x'           (1, 0) (1, 1)
+    OP         '='           (1, 2) (1, 3)
+    NUMBER     '1'           (1, 4) (1, 5)
+    OP         '+'           (1, 6) (1, 7)
+    NUMBER     '1'           (2, 0) (2, 1)
+    NEWLINE    '\\r\\n'        (2, 1) (2, 3)
+            """)
+
         indent_error_file = b"""\
 def k(x):
     x += 2
@@ -103,7 +149,7 @@ def k(x):
             e.exception.msg,
             'unindent does not match any outer indentation level')
         self.assertEqual(e.exception.offset, 9)
-        self.assertEqual(e.exception.text, '  x += 5\n')
+        self.assertEqual(e.exception.text, '  x += 5')
 
     def test_int(self):
         # Ordinary integers and binary operators
@@ -238,10 +284,15 @@ def k(x):
                 # this won't work with compound complex inputs
                 continue
             self.assertEqual(number_token(lit), lit)
+        # Valid cases with extra underscores in the tokenize module
+        # See gh-105549 for context
+        extra_valid_cases = {"0_7", "09_99"}
         for lit in INVALID_UNDERSCORE_LITERALS:
+            if lit in extra_valid_cases:
+                continue
             try:
                 number_token(lit)
-            except SyntaxError:
+            except TokenError:
                 continue
             self.assertNotEqual(number_token(lit), lit)
 
@@ -755,8 +806,8 @@ def"', """\
     NEWLINE    '\\n'          (2, 5) (2, 6)
     INDENT     '        \\t'  (3, 0) (3, 9)
     NAME       'pass'        (3, 9) (3, 13)
-    DEDENT     ''            (3, 14) (3, 14)
-    DEDENT     ''            (3, 14) (3, 14)
+    DEDENT     ''            (4, 0) (4, 0)
+    DEDENT     ''            (4, 0) (4, 0)
     """)
 
     def test_non_ascii_identifiers(self):
@@ -968,7 +1019,7 @@ async def foo():
     NUMBER     '1'           (2, 17) (2, 18)
     OP         ':'           (2, 18) (2, 19)
     NAME       'pass'        (2, 20) (2, 24)
-    DEDENT     ''            (2, 25) (2, 25)
+    DEDENT     ''            (3, 0) (3, 0)
     """)
 
         self.check_tokenize('''async def foo(async): await''', """\
@@ -1016,7 +1067,7 @@ def f():
     NAME       'await'       (6, 2) (6, 7)
     OP         '='           (6, 8) (6, 9)
     NUMBER     '2'           (6, 10) (6, 11)
-    DEDENT     ''            (6, 12) (6, 12)
+    DEDENT     ''            (7, 0) (7, 0)
     """)
 
         self.check_tokenize('''\
@@ -1054,7 +1105,31 @@ async def f():
     NAME       'await'       (6, 2) (6, 7)
     OP         '='           (6, 8) (6, 9)
     NUMBER     '2'           (6, 10) (6, 11)
-    DEDENT     ''            (6, 12) (6, 12)
+    DEDENT     ''            (7, 0) (7, 0)
+    """)
+
+    def test_newline_after_parenthesized_block_with_comment(self):
+        self.check_tokenize('''\
+[
+    # A comment here
+    1
+]
+''', """\
+    OP         '['           (1, 0) (1, 1)
+    NL         '\\n'          (1, 1) (1, 2)
+    COMMENT    '# A comment here' (2, 4) (2, 20)
+    NL         '\\n'          (2, 20) (2, 21)
+    NUMBER     '1'           (3, 4) (3, 5)
+    NL         '\\n'          (3, 5) (3, 6)
+    OP         ']'           (4, 0) (4, 1)
+    NEWLINE    '\\n'          (4, 1) (4, 2)
+    """)
+
+    def test_closing_parenthesis_from_different_line(self):
+        self.check_tokenize("); x", """\
+    OP         ')'           (1, 0) (1, 1)
+    OP         ';'           (1, 1) (1, 2)
+    NAME       'x'           (1, 3) (1, 4)
     """)
 
 class GenerateTokensTest(TokenizeTest):
@@ -1111,7 +1186,8 @@ class TestTokenizerAdheresToPep0263(TestCase):
 
     def _testFile(self, filename):
         path = os.path.join(os.path.dirname(__file__), filename)
-        TestRoundtrip.check_roundtrip(self, open(path, 'rb'))
+        with open(path, 'rb') as f:
+            TestRoundtrip.check_roundtrip(self, f)
 
     def test_utf8_coding_cookie_and_no_utf8_bom(self):
         f = 'tokenize_tests-utf8-coding-cookie-and-no-utf8-bom-sig.txt'
@@ -1156,8 +1232,9 @@ class Test_Tokenize(TestCase):
                 yield b''
 
         # skip the initial encoding token and the end tokens
-        tokens = list(_tokenize(readline(), encoding='utf-8'))[:-2]
-        expected_tokens = [TokenInfo(3, '"ЉЊЈЁЂ"', (1, 0), (1, 7), '"ЉЊЈЁЂ"\n')]
+        tokens = list(_generate_tokens_from_c_tokenizer(readline().__next__, encoding='utf-8',
+                      extra_tokens=True))[:-2]
+        expected_tokens = [TokenInfo(3, '"ЉЊЈЁЂ"', (1, 0), (1, 7), '"ЉЊЈЁЂ"')]
         self.assertEqual(tokens, expected_tokens,
                          "bytes not decoded with encoding")
 
@@ -1308,7 +1385,7 @@ class TestDetectEncoding(TestCase):
                 self.assertEqual(found, "iso-8859-1")
 
     def test_syntaxerror_latin1(self):
-        # Issue 14629: need to raise SyntaxError if the first
+        # Issue 14629: need to raise TokenError if the first
         # line(s) have non-UTF-8 characters
         lines = (
             b'print("\xdf")', # Latin-1: LATIN SMALL LETTER SHARP S
@@ -1425,13 +1502,13 @@ class TestTokenize(TestCase):
         def mock_detect_encoding(readline):
             return encoding, [b'first', b'second']
 
-        def mock__tokenize(readline, encoding):
+        def mock__tokenize(readline, encoding, **kwargs):
             nonlocal encoding_used
             encoding_used = encoding
             out = []
             while True:
                 try:
-                    next_line = next(readline)
+                    next_line = readline()
                 except StopIteration:
                     return out
                 if next_line:
@@ -1448,16 +1525,16 @@ class TestTokenize(TestCase):
             return str(counter).encode()
 
         orig_detect_encoding = tokenize_module.detect_encoding
-        orig__tokenize = tokenize_module._tokenize
+        orig_c_token = tokenize_module._generate_tokens_from_c_tokenizer
         tokenize_module.detect_encoding = mock_detect_encoding
-        tokenize_module._tokenize = mock__tokenize
+        tokenize_module._generate_tokens_from_c_tokenizer = mock__tokenize
         try:
             results = tokenize(mock_readline)
             self.assertEqual(list(results)[1:],
                              [b'first', b'second', b'1', b'2', b'3', b'4'])
         finally:
             tokenize_module.detect_encoding = orig_detect_encoding
-            tokenize_module._tokenize = orig__tokenize
+            tokenize_module._generate_tokens_from_c_tokenizer = orig_c_token
 
         self.assertEqual(encoding_used, encoding)
 
@@ -1559,13 +1636,34 @@ class TestTokenize(TestCase):
     def test_comment_at_the_end_of_the_source_without_newline(self):
         # See http://bugs.python.org/issue44667
         source = 'b = 1\n\n#test'
-        expected_tokens = [token.NAME, token.EQUAL, token.NUMBER, token.NEWLINE, token.NL, token.COMMENT]
+        expected_tokens = [
+            TokenInfo(type=token.ENCODING, string='utf-8', start=(0, 0), end=(0, 0), line=''),
+            TokenInfo(type=token.NAME, string='b', start=(1, 0), end=(1, 1), line='b = 1\n'),
+            TokenInfo(type=token.OP, string='=', start=(1, 2), end=(1, 3), line='b = 1\n'),
+            TokenInfo(type=token.NUMBER, string='1', start=(1, 4), end=(1, 5), line='b = 1\n'),
+            TokenInfo(type=token.NEWLINE, string='\n', start=(1, 5), end=(1, 6), line='b = 1\n'),
+            TokenInfo(type=token.NL, string='\n', start=(2, 0), end=(2, 1), line='\n'),
+            TokenInfo(type=token.COMMENT, string='#test', start=(3, 0), end=(3, 5), line='#test'),
+            TokenInfo(type=token.NL, string='', start=(3, 5), end=(3, 6), line='#test'),
+            TokenInfo(type=token.ENDMARKER, string='', start=(4, 0), end=(4, 0), line='')
+        ]
 
         tokens = list(tokenize(BytesIO(source.encode('utf-8')).readline))
-        self.assertEqual(tok_name[tokens[0].exact_type], tok_name[ENCODING])
-        for i in range(6):
-            self.assertEqual(tok_name[tokens[i + 1].exact_type], tok_name[expected_tokens[i]])
-        self.assertEqual(tok_name[tokens[-1].exact_type], tok_name[token.ENDMARKER])
+        self.assertEqual(tokens, expected_tokens)
+
+    def test_newline_and_space_at_the_end_of_the_source_without_newline(self):
+        # See https://github.com/python/cpython/issues/105435
+        source = 'a\n '
+        expected_tokens = [
+            TokenInfo(token.ENCODING, string='utf-8', start=(0, 0), end=(0, 0), line=''),
+            TokenInfo(token.NAME, string='a', start=(1, 0), end=(1, 1), line='a\n'),
+            TokenInfo(token.NEWLINE, string='\n', start=(1, 1), end=(1, 2), line='a\n'),
+            TokenInfo(token.NL, string='', start=(2, 1), end=(2, 2), line=' '),
+            TokenInfo(token.ENDMARKER, string='', start=(3, 0), end=(3, 0), line='')
+        ]
+
+        tokens = list(tokenize(BytesIO(source.encode('utf-8')).readline))
+        self.assertEqual(tokens, expected_tokens)
 
     def test_invalid_character_in_fstring_middle(self):
         # See gh-103824
@@ -1640,7 +1738,6 @@ class TestRoundtrip(TestCase):
             code = f.encode('utf-8')
         else:
             code = f.read()
-            f.close()
         readline = iter(code.splitlines(keepends=True)).__next__
         tokens5 = list(tokenize(readline))
         tokens2 = [tok[:2] for tok in tokens5]
@@ -1654,6 +1751,17 @@ class TestRoundtrip(TestCase):
         readline5 = iter(bytes_from5.splitlines(keepends=True)).__next__
         tokens2_from5 = [tok[:2] for tok in tokenize(readline5)]
         self.assertEqual(tokens2_from5, tokens2)
+
+    def check_line_extraction(self, f):
+        if isinstance(f, str):
+            code = f.encode('utf-8')
+        else:
+            code = f.read()
+        readline = iter(code.splitlines(keepends=True)).__next__
+        for tok in tokenize(readline):
+            if tok.type in  {ENCODING, ENDMARKER}:
+                continue
+            self.assertEqual(tok.string, tok.line[tok.start[1]: tok.end[1]])
 
     def test_roundtrip(self):
         # There are some standard formatting practices that are easy to get right.
@@ -1749,8 +1857,9 @@ class TestRoundtrip(TestCase):
             if support.verbose >= 2:
                 print('tokenize', testfile)
             with open(testfile, 'rb') as f:
-                # with self.subTest(file=testfile):
-                self.check_roundtrip(f)
+                with self.subTest(file=testfile):
+                    self.check_roundtrip(f)
+                    self.check_line_extraction(f)
 
 
     def roundtrip(self, code):
@@ -1769,15 +1878,64 @@ class TestRoundtrip(TestCase):
         self.check_roundtrip(code)
 
 
+class InvalidPythonTests(TestCase):
+    def test_number_followed_by_name(self):
+        # See issue #gh-105549
+        source = "2sin(x)"
+        expected_tokens = [
+            TokenInfo(type=token.NUMBER, string='2', start=(1, 0), end=(1, 1), line='2sin(x)'),
+            TokenInfo(type=token.NAME, string='sin', start=(1, 1), end=(1, 4), line='2sin(x)'),
+            TokenInfo(type=token.OP, string='(', start=(1, 4), end=(1, 5), line='2sin(x)'),
+            TokenInfo(type=token.NAME, string='x', start=(1, 5), end=(1, 6), line='2sin(x)'),
+            TokenInfo(type=token.OP, string=')', start=(1, 6), end=(1, 7), line='2sin(x)'),
+            TokenInfo(type=token.NEWLINE, string='', start=(1, 7), end=(1, 8), line='2sin(x)'),
+            TokenInfo(type=token.ENDMARKER, string='', start=(2, 0), end=(2, 0), line='')
+        ]
+
+        tokens = list(generate_tokens(StringIO(source).readline))
+        self.assertEqual(tokens, expected_tokens)
+
+    def test_number_starting_with_zero(self):
+        source = "01234"
+        expected_tokens = [
+            TokenInfo(type=token.NUMBER, string='01234', start=(1, 0), end=(1, 5), line='01234'),
+            TokenInfo(type=token.NEWLINE, string='', start=(1, 5), end=(1, 6), line='01234'),
+            TokenInfo(type=token.ENDMARKER, string='', start=(2, 0), end=(2, 0), line='')
+        ]
+
+        tokens = list(generate_tokens(StringIO(source).readline))
+        self.assertEqual(tokens, expected_tokens)
+
 class CTokenizeTest(TestCase):
     def check_tokenize(self, s, expected):
         # Format the tokens in s in a table format.
         # The ENDMARKER and final NEWLINE are omitted.
+        f = StringIO(s)
         with self.subTest(source=s):
             result = stringify_tokens_from_source(
-                _generate_tokens_from_c_tokenizer(s), s
+                _generate_tokens_from_c_tokenizer(f.readline), s
             )
             self.assertEqual(result, expected.rstrip().splitlines())
+
+    def test_encoding(self):
+        def readline(encoding):
+            yield "1+1".encode(encoding)
+
+        expected = [
+            TokenInfo(type=NUMBER, string='1', start=(1, 0), end=(1, 1), line='1+1'),
+            TokenInfo(type=OP, string='+', start=(1, 1), end=(1, 2), line='1+1'),
+            TokenInfo(type=NUMBER, string='1', start=(1, 2), end=(1, 3), line='1+1'),
+            TokenInfo(type=NEWLINE, string='', start=(1, 3), end=(1, 4), line='1+1'),
+            TokenInfo(type=ENDMARKER, string='', start=(2, 0), end=(2, 0), line='')
+        ]
+        for encoding in ["utf-8", "latin-1", "utf-16"]:
+            with self.subTest(encoding=encoding):
+                tokens = list(_generate_tokens_from_c_tokenizer(
+                    readline(encoding).__next__,
+                    extra_tokens=True,
+                    encoding=encoding,
+                ))
+                self.assertEqual(tokens, expected)
 
     def test_int(self):
 
@@ -2050,6 +2208,10 @@ c"""', """\
     STRING     'rb"\""a\\\\\\nb\\\\\\nc"\""' (1, 0) (3, 4)
     """)
 
+        self.check_tokenize(r'"hola\\\r\ndfgf"', """\
+    STRING     \'"hola\\\\\\\\\\\\r\\\\ndfgf"\' (1, 0) (1, 16)
+    """)
+
         self.check_tokenize('f"abc"', """\
     FSTRING_START 'f"'          (1, 0) (1, 2)
     FSTRING_MIDDLE 'abc'         (1, 2) (1, 5)
@@ -2079,11 +2241,27 @@ def"', """\
     FSTRING_END '"'           (2, 3) (2, 4)
     """)
 
+        self.check_tokenize('''\
+f"{
+a}"''', """\
+    FSTRING_START 'f"'          (1, 0) (1, 2)
+    LBRACE     '{'           (1, 2) (1, 3)
+    NAME       'a'           (2, 0) (2, 1)
+    RBRACE     '}'           (2, 1) (2, 2)
+    FSTRING_END '"'           (2, 2) (2, 3)
+    """)
+
         self.check_tokenize(r'Rf"abc\
 def"', """\
     FSTRING_START 'Rf"'         (1, 0) (1, 3)
     FSTRING_MIDDLE 'abc\\\\\\ndef'  (1, 3) (2, 3)
     FSTRING_END '"'           (2, 3) (2, 4)
+    """)
+
+        self.check_tokenize(r'f"hola\\\r\ndfgf"', """\
+    FSTRING_START \'f"\'          (1, 0) (1, 2)
+    FSTRING_MIDDLE 'hola\\\\\\\\\\\\r\\\\ndfgf' (1, 2) (1, 16)
+    FSTRING_END \'"\'           (1, 16) (1, 17)
     """)
 
     def test_function(self):
@@ -2604,43 +2782,44 @@ async def f():
 
     def test_invalid_syntax(self):
         def get_tokens(string):
-            return list(_generate_tokens_from_c_tokenizer(string))
+            the_string = StringIO(string)
+            return list(_generate_tokens_from_c_tokenizer(the_string.readline))
 
-        self.assertRaises(SyntaxError, get_tokens, "(1+2]")
-        self.assertRaises(SyntaxError, get_tokens, "(1+2}")
-        self.assertRaises(SyntaxError, get_tokens, "{1+2]")
+        for case in [
+            "(1+2]",
+            "(1+2}",
+            "{1+2]",
+            "1_",
+            "1.2_",
+            "1e2_",
+            "1e+",
 
-        self.assertRaises(SyntaxError, get_tokens, "1_")
-        self.assertRaises(SyntaxError, get_tokens, "1.2_")
-        self.assertRaises(SyntaxError, get_tokens, "1e2_")
-        self.assertRaises(SyntaxError, get_tokens, "1e+")
-
-        self.assertRaises(SyntaxError, get_tokens, "\xa0")
-        self.assertRaises(SyntaxError, get_tokens, "€")
-
-        self.assertRaises(SyntaxError, get_tokens, "0b12")
-        self.assertRaises(SyntaxError, get_tokens, "0b1_2")
-        self.assertRaises(SyntaxError, get_tokens, "0b2")
-        self.assertRaises(SyntaxError, get_tokens, "0b1_")
-        self.assertRaises(SyntaxError, get_tokens, "0b")
-        self.assertRaises(SyntaxError, get_tokens, "0o18")
-        self.assertRaises(SyntaxError, get_tokens, "0o1_8")
-        self.assertRaises(SyntaxError, get_tokens, "0o8")
-        self.assertRaises(SyntaxError, get_tokens, "0o1_")
-        self.assertRaises(SyntaxError, get_tokens, "0o")
-        self.assertRaises(SyntaxError, get_tokens, "0x1_")
-        self.assertRaises(SyntaxError, get_tokens, "0x")
-        self.assertRaises(SyntaxError, get_tokens, "1_")
-        self.assertRaises(SyntaxError, get_tokens, "012")
-        self.assertRaises(SyntaxError, get_tokens, "1.2_")
-        self.assertRaises(SyntaxError, get_tokens, "1e2_")
-        self.assertRaises(SyntaxError, get_tokens, "1e+")
-
-        self.assertRaises(SyntaxError, get_tokens, "'sdfsdf")
-        self.assertRaises(SyntaxError, get_tokens, "'''sdfsdf''")
-
-        self.assertRaises(SyntaxError, get_tokens, "("*1000+"a"+")"*1000)
-        self.assertRaises(SyntaxError, get_tokens, "]")
+            "\xa0",
+            "€",
+            "0b12",
+            "0b1_2",
+            "0b2",
+            "0b1_",
+            "0b",
+            "0o18",
+            "0o1_8",
+            "0o8",
+            "0o1_",
+            "0o",
+            "0x1_",
+            "0x",
+            "1_",
+            "012",
+            "1.2_",
+            "1e2_",
+            "1e+",
+            "'sdfsdf",
+            "'''sdfsdf''",
+            "("*1000+"a"+")"*1000,
+            "]",
+        ]:
+            with self.subTest(case=case):
+                self.assertRaises(TokenError, get_tokens, case)
 
     def test_max_indent(self):
         MAXINDENT = 100
@@ -2651,19 +2830,24 @@ async def f():
             return source
 
         valid = generate_source(MAXINDENT - 1)
-        tokens = list(_generate_tokens_from_c_tokenizer(valid))
-        self.assertEqual(tokens[-1].type, DEDENT)
+        the_input = StringIO(valid)
+        tokens = list(_generate_tokens_from_c_tokenizer(the_input.readline))
+        self.assertEqual(tokens[-2].type, DEDENT)
+        self.assertEqual(tokens[-1].type, ENDMARKER)
         compile(valid, "<string>", "exec")
 
         invalid = generate_source(MAXINDENT)
-        self.assertRaises(SyntaxError, lambda: list(_generate_tokens_from_c_tokenizer(invalid)))
+        the_input = StringIO(invalid)
+        self.assertRaises(IndentationError, lambda: list(_generate_tokens_from_c_tokenizer(the_input.readline)))
         self.assertRaises(
             IndentationError, compile, invalid, "<string>", "exec"
         )
 
     def test_continuation_lines_indentation(self):
         def get_tokens(string):
-            return [(kind, string) for (kind, string, *_) in _generate_tokens_from_c_tokenizer(string)]
+            the_string = StringIO(string)
+            return [(kind, string) for (kind, string, *_)
+                    in _generate_tokens_from_c_tokenizer(the_string.readline)]
 
         code = dedent("""
             def fib(n):

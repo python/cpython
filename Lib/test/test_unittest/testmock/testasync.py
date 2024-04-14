@@ -232,7 +232,9 @@ class AsyncAutospecTest(unittest.TestCase):
         run(main())
 
         self.assertTrue(iscoroutinefunction(spec))
+        self.assertTrue(inspect.iscoroutinefunction(spec))
         self.assertTrue(asyncio.iscoroutine(awaitable))
+        self.assertTrue(inspect.iscoroutine(awaitable))
         self.assertEqual(spec.await_count, 1)
         self.assertEqual(spec.await_args, call(1, 2, c=3))
         self.assertEqual(spec.await_args_list, [call(1, 2, c=3)])
@@ -244,6 +246,25 @@ class AsyncAutospecTest(unittest.TestCase):
         with self.assertRaises(AssertionError):
             spec.assert_any_await(e=1)
 
+    def test_autospec_checks_signature(self):
+        spec = create_autospec(async_func_args)
+        # signature is not checked when called
+        awaitable = spec()
+        self.assertListEqual(spec.mock_calls, [])
+
+        async def main():
+            await awaitable
+
+        # but it is checked when awaited
+        with self.assertRaises(TypeError):
+            run(main())
+
+        # _checksig_ raises before running or awaiting the mock
+        self.assertListEqual(spec.mock_calls, [])
+        self.assertEqual(spec.await_count, 0)
+        self.assertIsNone(spec.await_args)
+        self.assertEqual(spec.await_args_list, [])
+        spec.assert_not_awaited()
 
     def test_patch_with_autospec(self):
 
@@ -253,7 +274,9 @@ class AsyncAutospecTest(unittest.TestCase):
                 self.assertIsInstance(mock_method.mock, AsyncMock)
 
                 self.assertTrue(iscoroutinefunction(mock_method))
+                self.assertTrue(inspect.iscoroutinefunction(mock_method))
                 self.assertTrue(asyncio.iscoroutine(awaitable))
+                self.assertTrue(inspect.iscoroutine(awaitable))
                 self.assertTrue(inspect.isawaitable(awaitable))
 
                 # Verify the default values during mock setup

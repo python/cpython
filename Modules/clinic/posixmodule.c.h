@@ -1715,6 +1715,70 @@ exit:
 
 #if defined(MS_WINDOWS)
 
+PyDoc_STRVAR(os__path_isdevdrive__doc__,
+"_path_isdevdrive($module, /, path)\n"
+"--\n"
+"\n"
+"Determines whether the specified path is on a Windows Dev Drive.");
+
+#define OS__PATH_ISDEVDRIVE_METHODDEF    \
+    {"_path_isdevdrive", _PyCFunction_CAST(os__path_isdevdrive), METH_FASTCALL|METH_KEYWORDS, os__path_isdevdrive__doc__},
+
+static PyObject *
+os__path_isdevdrive_impl(PyObject *module, path_t *path);
+
+static PyObject *
+os__path_isdevdrive(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(path), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"path", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "_path_isdevdrive",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    path_t path = PATH_T_INITIALIZE("_path_isdevdrive", "path", 0, 0);
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (!path_converter(args[0], &path)) {
+        goto exit;
+    }
+    return_value = os__path_isdevdrive_impl(module, &path);
+
+exit:
+    /* Cleanup for path */
+    path_cleanup(&path);
+
+    return return_value;
+}
+
+#endif /* defined(MS_WINDOWS) */
+
+#if defined(MS_WINDOWS)
+
 PyDoc_STRVAR(os__getfullpathname__doc__,
 "_getfullpathname($module, path, /)\n"
 "--\n"
@@ -2729,7 +2793,7 @@ PyDoc_STRVAR(os_system__doc__,
     {"system", _PyCFunction_CAST(os_system), METH_FASTCALL|METH_KEYWORDS, os_system__doc__},
 
 static long
-os_system_impl(PyObject *module, const Py_UNICODE *command);
+os_system_impl(PyObject *module, const wchar_t *command);
 
 static PyObject *
 os_system(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -2761,7 +2825,7 @@ os_system(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *k
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
-    const Py_UNICODE *command = NULL;
+    const wchar_t *command = NULL;
     long _return_value;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
@@ -8218,15 +8282,9 @@ os_putenv(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         _PyArg_BadArgument("putenv", "argument 1", "str", args[0]);
         goto exit;
     }
-    if (PyUnicode_READY(args[0]) == -1) {
-        goto exit;
-    }
     name = args[0];
     if (!PyUnicode_Check(args[1])) {
         _PyArg_BadArgument("putenv", "argument 2", "str", args[1]);
-        goto exit;
-    }
-    if (PyUnicode_READY(args[1]) == -1) {
         goto exit;
     }
     value = args[1];
@@ -8303,9 +8361,6 @@ os_unsetenv(PyObject *module, PyObject *arg)
 
     if (!PyUnicode_Check(arg)) {
         _PyArg_BadArgument("unsetenv", "argument", "str", arg);
-        goto exit;
-    }
-    if (PyUnicode_READY(arg) == -1) {
         goto exit;
     }
     name = arg;
@@ -9303,7 +9358,7 @@ PyDoc_STRVAR(os_startfile__doc__,
 
 static PyObject *
 os_startfile_impl(PyObject *module, path_t *filepath,
-                  const Py_UNICODE *operation, const Py_UNICODE *arguments,
+                  const wchar_t *operation, const wchar_t *arguments,
                   path_t *cwd, int show_cmd);
 
 static PyObject *
@@ -9338,8 +9393,8 @@ os_startfile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
     PyObject *argsbuf[5];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     path_t filepath = PATH_T_INITIALIZE("startfile", "filepath", 0, 0);
-    const Py_UNICODE *operation = NULL;
-    const Py_UNICODE *arguments = NULL;
+    const wchar_t *operation = NULL;
+    const wchar_t *arguments = NULL;
     path_t cwd = PATH_T_INITIALIZE("startfile", "cwd", 1, 0);
     int show_cmd = 1;
 
@@ -11379,6 +11434,10 @@ exit:
     #define OS_LISTMOUNTS_METHODDEF
 #endif /* !defined(OS_LISTMOUNTS_METHODDEF) */
 
+#ifndef OS__PATH_ISDEVDRIVE_METHODDEF
+    #define OS__PATH_ISDEVDRIVE_METHODDEF
+#endif /* !defined(OS__PATH_ISDEVDRIVE_METHODDEF) */
+
 #ifndef OS__GETFULLPATHNAME_METHODDEF
     #define OS__GETFULLPATHNAME_METHODDEF
 #endif /* !defined(OS__GETFULLPATHNAME_METHODDEF) */
@@ -11922,4 +11981,4 @@ exit:
 #ifndef OS_WAITSTATUS_TO_EXITCODE_METHODDEF
     #define OS_WAITSTATUS_TO_EXITCODE_METHODDEF
 #endif /* !defined(OS_WAITSTATUS_TO_EXITCODE_METHODDEF) */
-/*[clinic end generated code: output=47750e0e29c8d707 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a7e8c3df2db09717 input=a9049054013a1b77]*/
