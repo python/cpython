@@ -17,6 +17,7 @@
 
 #include <stdlib.h> // rand()
 
+extern const char *_PyUOpName(int index);
 
 /* For guidance on adding or extending families of instructions see
  * ./adaptive.md
@@ -102,6 +103,7 @@ _Py_GetSpecializationStats(void) {
         return NULL;
     }
     int err = 0;
+    err += add_stat_dict(stats, CONTAINS_OP, "contains_op");
     err += add_stat_dict(stats, LOAD_SUPER_ATTR, "load_super_attr");
     err += add_stat_dict(stats, LOAD_ATTR, "load_attr");
     err += add_stat_dict(stats, LOAD_GLOBAL, "load_global");
@@ -235,6 +237,7 @@ print_optimization_stats(FILE *out, OptimizationStats *stats)
     fprintf(out, "Optimization inner loop: %" PRIu64 "\n", stats->inner_loop);
     fprintf(out, "Optimization recursive call: %" PRIu64 "\n", stats->recursive_call);
     fprintf(out, "Optimization low confidence: %" PRIu64 "\n", stats->low_confidence);
+    fprintf(out, "Executors invalidated: %" PRIu64 "\n", stats->executors_invalidated);
 
     print_histogram(out, "Trace length", stats->trace_length_hist);
     print_histogram(out, "Trace run length", stats->trace_run_length_hist);
@@ -246,17 +249,12 @@ print_optimization_stats(FILE *out, OptimizationStats *stats)
             stats->optimizer_failure_reason_no_memory);
 
     const char* const* names;
-    for (int i = 0; i < 512; i++) {
-        if (i < 256) {
-            names = _PyOpcode_OpName;
-        } else {
-            names = _PyOpcode_uop_name;
-        }
+    for (int i = 0; i <= MAX_UOP_ID; i++) {
         if (stats->opcode[i].execution_count) {
-            fprintf(out, "uops[%s].execution_count : %" PRIu64 "\n", names[i], stats->opcode[i].execution_count);
+            fprintf(out, "uops[%s].execution_count : %" PRIu64 "\n", _PyUOpName(i), stats->opcode[i].execution_count);
         }
         if (stats->opcode[i].miss) {
-            fprintf(out, "uops[%s].specialization.miss : %" PRIu64 "\n", names[i], stats->opcode[i].miss);
+            fprintf(out, "uops[%s].specialization.miss : %" PRIu64 "\n", _PyUOpName(i), stats->opcode[i].miss);
         }
     }
 
@@ -601,6 +599,12 @@ _PyCode_Quicken(PyCodeObject *code)
 #define SPEC_FAIL_TO_BOOL_SEQUENCE    16
 #define SPEC_FAIL_TO_BOOL_SET         17
 #define SPEC_FAIL_TO_BOOL_TUPLE       18
+
+// CONTAINS_OP
+#define SPEC_FAIL_CONTAINS_OP_STR        9
+#define SPEC_FAIL_CONTAINS_OP_TUPLE      10
+#define SPEC_FAIL_CONTAINS_OP_LIST       11
+#define SPEC_FAIL_CONTAINS_OP_USER_CLASS 12
 
 static int function_kind(PyCodeObject *code);
 static bool function_check_args(PyObject *o, int expected_argcount, int opcode);
@@ -2561,6 +2565,49 @@ failure:
     return;
 success:
     STAT_INC(TO_BOOL, success);
+    cache->counter = adaptive_counter_cooldown();
+}
+
+#ifdef Py_STATS
+static int containsop_fail_kind(PyObject *value) {
+    if (PyUnicode_CheckExact(value)) {
+        return SPEC_FAIL_CONTAINS_OP_STR;
+    }
+    if (PyList_CheckExact(value)) {
+        return SPEC_FAIL_CONTAINS_OP_LIST;
+    }
+    if (PyTuple_CheckExact(value)) {
+        return SPEC_FAIL_CONTAINS_OP_TUPLE;
+    }
+    if (PyType_Check(value)) {
+        return SPEC_FAIL_CONTAINS_OP_USER_CLASS;
+    }
+    return SPEC_FAIL_OTHER;
+}
+#endif   // Py_STATS
+
+void
+_Py_Specialize_ContainsOp(PyObject *value, _Py_CODEUNIT *instr)
+{
+    assert(ENABLE_SPECIALIZATION);
+    assert(_PyOpcode_Caches[CONTAINS_OP] == INLINE_CACHE_ENTRIES_COMPARE_OP);
+    _PyContainsOpCache *cache = (_PyContainsOpCache  *)(instr + 1);
+    if (PyDict_CheckExact(value)) {
+        instr->op.code = CONTAINS_OP_DICT;
+        goto success;
+    }
+    if (PySet_CheckExact(value) || PyFrozenSet_CheckExact(value)) {
+        instr->op.code = CONTAINS_OP_SET;
+        goto success;
+    }
+
+    SPECIALIZATION_FAIL(CONTAINS_OP, containsop_fail_kind(value));
+    STAT_INC(CONTAINS_OP, failure);
+    instr->op.code = CONTAINS_OP;
+    cache->counter = adaptive_counter_backoff(cache->counter);
+    return;
+success:
+    STAT_INC(CONTAINS_OP, success);
     cache->counter = adaptive_counter_cooldown();
 }
 

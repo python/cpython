@@ -365,6 +365,8 @@ partial_repr(partialobject *pto)
 {
     PyObject *result = NULL;
     PyObject *arglist;
+    PyObject *mod;
+    PyObject *name;
     Py_ssize_t i, n;
     PyObject *key, *value;
     int status;
@@ -399,13 +401,28 @@ partial_repr(partialobject *pto)
         if (arglist == NULL)
             goto done;
     }
-    result = PyUnicode_FromFormat("%s(%R%U)", Py_TYPE(pto)->tp_name,
-                                  pto->fn, arglist);
+
+    mod = PyType_GetModuleName(Py_TYPE(pto));
+    if (mod == NULL) {
+        goto error;
+    }
+    name = PyType_GetQualName(Py_TYPE(pto));
+    if (name == NULL) {
+        Py_DECREF(mod);
+        goto error;
+    }
+    result = PyUnicode_FromFormat("%S.%S(%R%U)", mod, name, pto->fn, arglist);
+    Py_DECREF(mod);
+    Py_DECREF(name);
     Py_DECREF(arglist);
 
  done:
     Py_ReprLeave((PyObject *)pto);
     return result;
+ error:
+    Py_DECREF(arglist);
+    Py_ReprLeave((PyObject *)pto);
+    return NULL;
 }
 
 /* Pickle strategy:

@@ -293,7 +293,8 @@ _PyCriticalSection_SuspendAll(PyThreadState *tstate);
 #ifdef Py_GIL_DISABLED
 
 static inline void
-_PyCriticalSection_AssertHeld(PyMutex *mutex) {
+_PyCriticalSection_AssertHeld(PyMutex *mutex)
+{
 #ifdef Py_DEBUG
     PyThreadState *tstate = _PyThreadState_GET();
     uintptr_t prev = tstate->critical_section;

@@ -259,13 +259,15 @@ random_seed_urandom(RandomObject *self)
     return 0;
 }
 
-static void
+static int
 random_seed_time_pid(RandomObject *self)
 {
     PyTime_t now;
-    uint32_t key[5];
+    if (PyTime_Time(&now) < 0) {
+        return -1;
+    }
 
-    now = _PyTime_GetSystemClock();
+    uint32_t key[5];
     key[0] = (uint32_t)(now & 0xffffffffU);
     key[1] = (uint32_t)(now >> 32);
 
@@ -277,11 +279,14 @@ random_seed_time_pid(RandomObject *self)
     key[2] = 0;
 #endif
 
-    now = _PyTime_GetMonotonicClock();
+    if (PyTime_Monotonic(&now) < 0) {
+        return -1;
+    }
     key[3] = (uint32_t)(now & 0xffffffffU);
     key[4] = (uint32_t)(now >> 32);
 
     init_by_array(self, key, Py_ARRAY_LENGTH(key));
+    return 0;
 }
 
 static int
@@ -299,7 +304,9 @@ random_seed(RandomObject *self, PyObject *arg)
 
             /* Reading system entropy failed, fall back on the worst entropy:
                use the current time and process identifier. */
-            random_seed_time_pid(self);
+            if (random_seed_time_pid(self) < 0) {
+                return -1;
+            }
         }
         return 0;
     }

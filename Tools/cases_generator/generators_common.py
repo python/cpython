@@ -119,7 +119,10 @@ def replace_decrefs(
             out.emit(f"Py_DECREF({var.name}[_i]);\n")
             out.emit("}\n")
         elif var.condition:
-            out.emit(f"Py_XDECREF({var.name});\n")
+            if var.condition == "1":
+                out.emit(f"Py_DECREF({var.name});\n")
+            elif var.condition != "0":
+                out.emit(f"Py_XDECREF({var.name});\n")
         else:
             out.emit(f"Py_DECREF({var.name});\n")
 
@@ -154,6 +157,7 @@ def replace_check_eval_breaker(
 
 
 REPLACEMENT_FUNCTIONS = {
+    "EXIT_IF": replace_deopt,
     "DEOPT_IF": replace_deopt,
     "ERROR_IF": replace_error,
     "DECREF_INPUTS": replace_decrefs,
@@ -205,6 +209,8 @@ def cflags(p: Properties) -> str:
         flags.append("HAS_EVAL_BREAK_FLAG")
     if p.deopts:
         flags.append("HAS_DEOPT_FLAG")
+    if p.side_exit:
+        flags.append("HAS_EXIT_FLAG")
     if not p.infallible:
         flags.append("HAS_ERROR_FLAG")
     if p.escapes:
@@ -213,6 +219,8 @@ def cflags(p: Properties) -> str:
         flags.append("HAS_PURE_FLAG")
     if p.passthrough:
         flags.append("HAS_PASSTHROUGH_FLAG")
+    if p.oparg_and_1:
+        flags.append("HAS_OPARG_AND_1_FLAG")
     if flags:
         return " | ".join(flags)
     else:

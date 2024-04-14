@@ -164,6 +164,7 @@ class Namespace(argparse.Namespace):
         self.match_tests: TestFilter = []
         self.pgo = False
         self.pgo_extended = False
+        self.tsan = False
         self.worker_json = None
         self.start = None
         self.timeout = None
@@ -333,6 +334,8 @@ def _create_parser():
                        help='enable Profile Guided Optimization (PGO) training')
     group.add_argument('--pgo-extended', action='store_true',
                        help='enable extended PGO training (slower training)')
+    group.add_argument('--tsan', dest='tsan', action='store_true',
+                       help='run a subset of test cases that are proper for the TSAN test')
     group.add_argument('--fail-env-changed', action='store_true',
                        help='if a test file alters the environment, mark '
                             'the test as failed')
@@ -347,6 +350,8 @@ def _create_parser():
                        help='override the working directory for the test run')
     group.add_argument('--cleanup', action='store_true',
                        help='remove old test_python_* directories')
+    group.add_argument('--bisect', action='store_true',
+                       help='if some tests fail, run test.bisect_cmd on them')
     group.add_argument('--dont-add-python-opts', dest='_add_python_opts',
                        action='store_false',
                        help="internal option, don't use it")

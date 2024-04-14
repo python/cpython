@@ -77,5 +77,12 @@ class TestRareEventCounters(unittest.TestCase):
                 _testinternalcapi.get_rare_event_counters()["func_modification"]
             )
 
+
+class TestOptimizerSymbols(unittest.TestCase):
+
+    def test_optimizer_symbols(self):
+        _testinternalcapi.uop_symbols_test()
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -4,10 +4,9 @@ import copy
 import types
 import inspect
 import keyword
-import functools
 import itertools
 import abc
-import _thread
+from reprlib import recursive_repr
 from types import FunctionType, GenericAlias
 
 
@@ -245,25 +244,6 @@ _ATOMIC_TYPES = frozenset({
     property,
 })
 
-# This function's logic is copied from "recursive_repr" function in
-# reprlib module to avoid dependency.
-def _recursive_repr(user_function):
-    # Decorator to make a repr function return "..." for a recursive
-    # call.
-    repr_running = set()
-
-    @functools.wraps(user_function)
-    def wrapper(self):
-        key = id(self), _thread.get_ident()
-        if key in repr_running:
-            return '...'
-        repr_running.add(key)
-        try:
-            result = user_function(self)
-        finally:
-            repr_running.discard(key)
-        return result
-    return wrapper
 
 class InitVar:
     __slots__ = ('type', )
@@ -322,7 +302,7 @@ class Field:
         self.kw_only = kw_only
         self._field_type = None
 
-    @_recursive_repr
+    @recursive_repr()
     def __repr__(self):
         return ('Field('
                 f'name={self.name!r},'
@@ -632,7 +612,7 @@ def _repr_fn(fields, globals):
                                 for f in fields]) +
                      ')"'],
                      globals=globals)
-    return _recursive_repr(fn)
+    return recursive_repr()(fn)
 
 
 def _frozen_get_del_attr(cls, fields, globals):
@@ -1095,7 +1075,9 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
         cmp_fields = (field for field in field_list if field.compare)
         terms = [f'self.{field.name}==other.{field.name}' for field in cmp_fields]
         field_comparisons = ' and '.join(terms) or 'True'
-        body =  [f'if other.__class__ is self.__class__:',
+        body =  [f'if self is other:',
+                 f' return True',
+                 f'if other.__class__ is self.__class__:',
                  f' return {field_comparisons}',
                  f'return NotImplemented']
         func = _create_fn('__eq__',
@@ -1179,8 +1161,10 @@ def _dataclass_setstate(self, state):
 
 def _get_slots(cls):
     match cls.__dict__.get('__slots__'):
+        # A class which does not define __slots__ at all is equivalent
+        # to a class defining __slots__ = ('__dict__', '__weakref__')
         case None:
-            return
+            yield from ('__dict__', '__weakref__')
         case str(slot):
             yield slot
         # Slots may be any iterable, but we cannot handle an iterator

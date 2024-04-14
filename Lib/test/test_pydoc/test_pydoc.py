@@ -693,6 +693,30 @@ class PydocDocTest(unittest.TestCase):
         finally:
             pydoc.getpager = getpager_old
 
+    def test_lambda_with_return_annotation(self):
+        func = lambda a, b, c: 1
+        func.__annotations__ = {"return": int}
+        with captured_output('stdout') as help_io:
+            pydoc.help(func)
+        helptext = help_io.getvalue()
+        self.assertIn("lambda (a, b, c) -> int", helptext)
+
+    def test_lambda_without_return_annotation(self):
+        func = lambda a, b, c: 1
+        func.__annotations__ = {"a": int, "b": int, "c": int}
+        with captured_output('stdout') as help_io:
+            pydoc.help(func)
+        helptext = help_io.getvalue()
+        self.assertIn("lambda (a: int, b: int, c: int)", helptext)
+
+    def test_lambda_with_return_and_params_annotation(self):
+        func = lambda a, b, c: 1
+        func.__annotations__ = {"a": int, "b": int, "c": int, "return": int}
+        with captured_output('stdout') as help_io:
+            pydoc.help(func)
+        helptext = help_io.getvalue()
+        self.assertIn("lambda (a: int, b: int, c: int) -> int", helptext)
+
     def test_namedtuple_fields(self):
         Person = namedtuple('Person', ['nickname', 'firstname'])
         with captured_stdout() as help_io:
@@ -1138,6 +1162,17 @@ class PydocImportTest(PydocBaseTest):
         self.assertEqual(loaded_pydoc.__spec__, pydoc.__spec__)
 
 
+class Rect:
+    @property
+    def area(self):
+        '''Area of the rect'''
+        return self.w * self.h
+
+
+class Square(Rect):
+    area = property(lambda self: self.side**2)
+
+
 class TestDescriptions(unittest.TestCase):
 
     def test_module(self):
@@ -1526,13 +1561,13 @@ cm(x) class method of test.test_pydoc.test_pydoc.X
 
     @requires_docstrings
     def test_property(self):
-        class Rect:
-            @property
-            def area(self):
-                '''Area of the rect'''
-                return self.w * self.h
-
         self.assertEqual(self._get_summary_lines(Rect.area), """\
+area
+    Area of the rect
+""")
+        # inherits the docstring from Rect.area
+        self.assertEqual(self._get_summary_lines(Square.area), """\
+area
     Area of the rect
 """)
         self.assertIn("""
@@ -1651,6 +1686,8 @@ class PydocFodderTest(unittest.TestCase):
         self.assertIn(' |  global_func(x, y) from test.test_pydoc.pydocfodder', lines)
         self.assertIn(' |  global_func_alias = global_func(x, y)', lines)
         self.assertIn(' |  global_func2_alias = global_func2(x, y) from test.test_pydoc.pydocfodder', lines)
+        self.assertIn(' |  count(self, value, /) from builtins.list', lines)
+        self.assertIn(' |  list_count = count(self, value, /)', lines)
         self.assertIn(' |  __repr__(self, /) from builtins.object', lines)
         self.assertIn(' |  object_repr = __repr__(self, /)', lines)
 
@@ -1679,6 +1716,8 @@ class PydocFodderTest(unittest.TestCase):
         self.assertIn('global_func(x, y) from test.test_pydoc.pydocfodder', lines)
         self.assertIn('global_func_alias = global_func(x, y)', lines)
         self.assertIn('global_func2_alias = global_func2(x, y) from test.test_pydoc.pydocfodder', lines)
+        self.assertIn('count(self, value, /) from builtins.list', lines)
+        self.assertIn('list_count = count(self, value, /)', lines)
         self.assertIn('__repr__(self, /) from builtins.object', lines)
         self.assertIn('object_repr = __repr__(self, /)', lines)
 
@@ -1722,6 +1761,10 @@ class PydocFodderTest(unittest.TestCase):
         # unbound methods
         self.assertIn('    B_method(self)', lines)
         self.assertIn('    B_method2 = B_method(self)', lines)
+        self.assertIn('    count(self, value, /) unbound builtins.list method', lines)
+        self.assertIn('    list_count = count(self, value, /) unbound builtins.list method', lines)
+        self.assertIn('    __repr__(self, /) unbound builtins.object method', lines)
+        self.assertIn('    object_repr = __repr__(self, /) unbound builtins.object method', lines)
 
     def test_html_doc_routines_in_module(self):
         doc = pydoc.HTMLDoc()
@@ -1747,6 +1790,10 @@ class PydocFodderTest(unittest.TestCase):
         # unbound methods
         self.assertIn(' B_method(self)', lines)
         self.assertIn(' B_method2 = B_method(self)', lines)
+        self.assertIn(' count(self, value, /) unbound builtins.list method', lines)
+        self.assertIn(' list_count = count(self, value, /) unbound builtins.list method', lines)
+        self.assertIn(' __repr__(self, /) unbound builtins.object method', lines)
+        self.assertIn(' object_repr = __repr__(self, /) unbound builtins.object method', lines)
 
 
 @unittest.skipIf(

@@ -8,7 +8,9 @@
 #include "Python.h"
 #include "pycore_crossinterp.h"   // struct _xid
 
+#define REGISTERS_HEAP_TYPES
 #include "_interpreters_common.h"
+#undef REGISTERS_HEAP_TYPES
 
 
 #define MODULE_NAME _xxinterpqueues
@@ -128,6 +130,22 @@ idarg_int64_converter(PyObject *arg, void *ptr)
 }
 
 
+static int
+ensure_highlevel_module_loaded(void)
+{
+    PyObject *highlevel = PyImport_ImportModule("interpreters.queues");
+    if (highlevel == NULL) {
+        PyErr_Clear();
+        highlevel = PyImport_ImportModule("test.support.interpreters.queues");
+        if (highlevel == NULL) {
+            return -1;
+        }
+    }
+    Py_DECREF(highlevel);
+    return 0;
+}
+
+
 /* module state *************************************************************/
 
 typedef struct {
@@ -169,6 +187,9 @@ static int
 clear_module_state(module_state *state)
 {
     /* external types */
+    if (state->queue_type != NULL) {
+        (void)clear_xid_class(state->queue_type);
+    }
     Py_CLEAR(state->queue_type);
 
     /* QueueError */
@@ -192,6 +213,9 @@ clear_module_state(module_state *state)
 // single-queue errors
 #define ERR_QUEUE_EMPTY (-21)
 #define ERR_QUEUE_FULL (-22)
+#define ERR_QUEUE_NEVER_BOUND (-23)
+
+static int ensure_external_exc_types(module_state *);
 
 static int
 resolve_module_errcode(module_state *state, int errcode, int64_t qid,
@@ -209,12 +233,22 @@ resolve_module_errcode(module_state *state, int errcode, int64_t qid,
         msg = PyUnicode_FromFormat("queue %" PRId64 " not found", qid);
         break;
     case ERR_QUEUE_EMPTY:
+        if (ensure_external_exc_types(state) < 0) {
+            return -1;
+        }
         exctype = state->QueueEmpty;
         msg = PyUnicode_FromFormat("queue %" PRId64 " is empty", qid);
         break;
     case ERR_QUEUE_FULL:
+        if (ensure_external_exc_types(state) < 0) {
+            return -1;
+        }
         exctype = state->QueueFull;
         msg = PyUnicode_FromFormat("queue %" PRId64 " is full", qid);
+        break;
+    case ERR_QUEUE_NEVER_BOUND:
+        exctype = state->QueueError;
+        msg = PyUnicode_FromFormat("queue %" PRId64 " never bound", qid);
         break;
     default:
         PyErr_Format(PyExc_ValueError,
@@ -264,17 +298,56 @@ add_QueueError(PyObject *mod)
 
 #define PREFIX "test.support.interpreters."
 #define ADD_EXCTYPE(NAME, BASE, DOC)                                    \
+    assert(state->NAME == NULL);                                        \
     if (add_exctype(mod, &state->NAME, PREFIX #NAME, DOC, BASE) < 0) {  \
         return -1;                                                      \
     }
     ADD_EXCTYPE(QueueError, PyExc_RuntimeError,
                 "Indicates that a queue-related error happened.")
     ADD_EXCTYPE(QueueNotFoundError, state->QueueError, NULL)
-    ADD_EXCTYPE(QueueEmpty, state->QueueError, NULL)
-    ADD_EXCTYPE(QueueFull, state->QueueError, NULL)
+    // QueueEmpty and QueueFull are set by set_external_exc_types().
+    state->QueueEmpty = NULL;
+    state->QueueFull = NULL;
 #undef ADD_EXCTYPE
 #undef PREFIX
 
+    return 0;
+}
+
+static int
+set_external_exc_types(module_state *state,
+                       PyObject *emptyerror, PyObject *fullerror)
+{
+    if (state->QueueEmpty != NULL) {
+        assert(state->QueueFull != NULL);
+        Py_CLEAR(state->QueueEmpty);
+        Py_CLEAR(state->QueueFull);
+    }
+    else {
+        assert(state->QueueFull == NULL);
+    }
+    assert(PyObject_IsSubclass(emptyerror, state->QueueError));
+    assert(PyObject_IsSubclass(fullerror, state->QueueError));
+    state->QueueEmpty = Py_NewRef(emptyerror);
+    state->QueueFull = Py_NewRef(fullerror);
+    return 0;
+}
+
+static int
+ensure_external_exc_types(module_state *state)
+{
+    if (state->QueueEmpty != NULL) {
+        assert(state->QueueFull != NULL);
+        return 0;
+    }
+    assert(state->QueueFull == NULL);
+
+    // Force the module to be loaded, to register the type.
+    if (ensure_highlevel_module_loaded() < 0) {
+        return -1;
+    }
+    assert(state->QueueEmpty != NULL);
+    assert(state->QueueFull != NULL);
     return 0;
 }
 
@@ -294,6 +367,8 @@ handle_queue_error(int err, PyObject *mod, int64_t qid)
     case ERR_QUEUES_ALLOC:
         PyErr_NoMemory();
         break;
+    case -1:
+        return -1;
     default:
         state = get_module_state(mod);
         assert(state->QueueError != NULL);
@@ -320,14 +395,17 @@ struct _queueitem;
 
 typedef struct _queueitem {
     _PyCrossInterpreterData *data;
+    int fmt;
     struct _queueitem *next;
 } _queueitem;
 
 static void
-_queueitem_init(_queueitem *item, _PyCrossInterpreterData *data)
+_queueitem_init(_queueitem *item,
+                _PyCrossInterpreterData *data, int fmt)
 {
     *item = (_queueitem){
         .data = data,
+        .fmt = fmt,
     };
 }
 
@@ -344,14 +422,14 @@ _queueitem_clear(_queueitem *item)
 }
 
 static _queueitem *
-_queueitem_new(_PyCrossInterpreterData *data)
+_queueitem_new(_PyCrossInterpreterData *data, int fmt)
 {
     _queueitem *item = GLOBAL_MALLOC(_queueitem);
     if (item == NULL) {
         PyErr_NoMemory();
         return NULL;
     }
-    _queueitem_init(item, data);
+    _queueitem_init(item, data, fmt);
     return item;
 }
 
@@ -373,9 +451,11 @@ _queueitem_free_all(_queueitem *item)
 }
 
 static void
-_queueitem_popped(_queueitem *item, _PyCrossInterpreterData **p_data)
+_queueitem_popped(_queueitem *item,
+                  _PyCrossInterpreterData **p_data, int *p_fmt)
 {
     *p_data = item->data;
+    *p_fmt = item->fmt;
     // We clear them here, so they won't be released in _queueitem_clear().
     item->data = NULL;
     _queueitem_free(item);
@@ -383,6 +463,7 @@ _queueitem_popped(_queueitem *item, _PyCrossInterpreterData **p_data)
 
 
 /* the queue */
+
 typedef struct _queue {
     Py_ssize_t num_waiters;  // protected by global lock
     PyThread_type_lock mutex;
@@ -393,10 +474,11 @@ typedef struct _queue {
         _queueitem *first;
         _queueitem *last;
     } items;
+    int fmt;
 } _queue;
 
 static int
-_queue_init(_queue *queue, Py_ssize_t maxsize)
+_queue_init(_queue *queue, Py_ssize_t maxsize, int fmt)
 {
     PyThread_type_lock mutex = PyThread_allocate_lock();
     if (mutex == NULL) {
@@ -408,6 +490,7 @@ _queue_init(_queue *queue, Py_ssize_t maxsize)
         .items = {
             .maxsize = maxsize,
         },
+        .fmt = fmt,
     };
     return 0;
 }
@@ -422,6 +505,8 @@ _queue_clear(_queue *queue)
     PyThread_free_lock(queue->mutex);
     *queue = (_queue){0};
 }
+
+static void _queue_free(_queue *);
 
 static void
 _queue_kill_and_wait(_queue *queue)
@@ -486,7 +571,7 @@ _queue_unlock(_queue *queue)
 }
 
 static int
-_queue_add(_queue *queue, _PyCrossInterpreterData *data)
+_queue_add(_queue *queue, _PyCrossInterpreterData *data, int fmt)
 {
     int err = _queue_lock(queue);
     if (err < 0) {
@@ -502,7 +587,7 @@ _queue_add(_queue *queue, _PyCrossInterpreterData *data)
         return ERR_QUEUE_FULL;
     }
 
-    _queueitem *item = _queueitem_new(data);
+    _queueitem *item = _queueitem_new(data, fmt);
     if (item == NULL) {
         _queue_unlock(queue);
         return -1;
@@ -522,7 +607,8 @@ _queue_add(_queue *queue, _PyCrossInterpreterData *data)
 }
 
 static int
-_queue_next(_queue *queue, _PyCrossInterpreterData **p_data)
+_queue_next(_queue *queue,
+            _PyCrossInterpreterData **p_data, int *p_fmt)
 {
     int err = _queue_lock(queue);
     if (err < 0) {
@@ -541,7 +627,7 @@ _queue_next(_queue *queue, _PyCrossInterpreterData **p_data)
     }
     queue->items.count -= 1;
 
-    _queueitem_popped(item, p_data);
+    _queueitem_popped(item, p_data, p_fmt);
 
     _queue_unlock(queue);
     return 0;
@@ -654,6 +740,32 @@ _queuerefs_find(_queueref *first, int64_t qid, _queueref **pprev)
     return ref;
 }
 
+static void
+_queuerefs_clear(_queueref *head)
+{
+    _queueref *next = head;
+    while (next != NULL) {
+        _queueref *ref = next;
+        next = ref->next;
+
+#ifdef Py_DEBUG
+        int64_t qid = ref->qid;
+        fprintf(stderr, "queue %" PRId64 " still exists\n", qid);
+#endif
+        _queue *queue = ref->queue;
+        GLOBAL_FREE(ref);
+
+        _queue_kill_and_wait(queue);
+#ifdef Py_DEBUG
+    if (queue->items.count > 0) {
+        fprintf(stderr, "queue %" PRId64 " still holds %zd items\n",
+                qid, queue->items.count);
+    }
+#endif
+        _queue_free(queue);
+    }
+}
+
 
 /* a collection of queues ***************************************************/
 
@@ -676,8 +788,15 @@ _queues_init(_queues *queues, PyThread_type_lock mutex)
 static void
 _queues_fini(_queues *queues)
 {
-    assert(queues->count == 0);
-    assert(queues->head == NULL);
+    if (queues->count > 0) {
+        PyThread_acquire_lock(queues->mutex, WAIT_LOCK);
+        assert((queues->count == 0) != (queues->head != NULL));
+        _queueref *head = queues->head;
+        queues->head = NULL;
+        queues->count = 0;
+        PyThread_release_lock(queues->mutex);
+        _queuerefs_clear(head);
+    }
     if (queues->mutex != NULL) {
         PyThread_free_lock(queues->mutex);
         queues->mutex = NULL;
@@ -809,19 +928,21 @@ done:
     return res;
 }
 
-static void _queue_free(_queue *);
-
-static void
+static int
 _queues_decref(_queues *queues, int64_t qid)
 {
+    int res = -1;
     PyThread_acquire_lock(queues->mutex, WAIT_LOCK);
 
     _queueref *prev = NULL;
     _queueref *ref = _queuerefs_find(queues->head, qid, &prev);
     if (ref == NULL) {
         assert(!PyErr_Occurred());
-        // Already destroyed.
-        // XXX Warn?
+        res = ERR_QUEUE_NOT_FOUND;
+        goto finally;
+    }
+    if (ref->refcount == 0) {
+        res = ERR_QUEUE_NEVER_BOUND;
         goto finally;
     }
     assert(ref->refcount > 0);
@@ -836,25 +957,35 @@ _queues_decref(_queues *queues, int64_t qid)
 
         _queue_kill_and_wait(queue);
         _queue_free(queue);
-        return;
+        return 0;
     }
 
+    res = 0;
 finally:
     PyThread_release_lock(queues->mutex);
+    return res;
 }
 
-static int64_t *
+struct queue_id_and_fmt {
+    int64_t id;
+    int fmt;
+};
+
+static struct queue_id_and_fmt *
 _queues_list_all(_queues *queues, int64_t *count)
 {
-    int64_t *qids = NULL;
+    struct queue_id_and_fmt *qids = NULL;
     PyThread_acquire_lock(queues->mutex, WAIT_LOCK);
-    int64_t *ids = PyMem_NEW(int64_t, (Py_ssize_t)(queues->count));
+    struct queue_id_and_fmt *ids = PyMem_NEW(struct queue_id_and_fmt,
+                                             (Py_ssize_t)(queues->count));
     if (ids == NULL) {
         goto done;
     }
     _queueref *ref = queues->head;
     for (int64_t i=0; ref != NULL; ref = ref->next, i++) {
-        ids[i] = ref->qid;
+        ids[i].id = ref->qid;
+        assert(ref->queue != NULL);
+        ids[i].fmt = ref->queue->fmt;
     }
     *count = queues->count;
 
@@ -890,13 +1021,13 @@ _queue_free(_queue *queue)
 
 // Create a new queue.
 static int64_t
-queue_create(_queues *queues, Py_ssize_t maxsize)
+queue_create(_queues *queues, Py_ssize_t maxsize, int fmt)
 {
     _queue *queue = GLOBAL_MALLOC(_queue);
     if (queue == NULL) {
         return ERR_QUEUE_ALLOC;
     }
-    int err = _queue_init(queue, maxsize);
+    int err = _queue_init(queue, maxsize, fmt);
     if (err < 0) {
         GLOBAL_FREE(queue);
         return (int64_t)err;
@@ -925,7 +1056,7 @@ queue_destroy(_queues *queues, int64_t qid)
 
 // Push an object onto the queue.
 static int
-queue_put(_queues *queues, int64_t qid, PyObject *obj)
+queue_put(_queues *queues, int64_t qid, PyObject *obj, int fmt)
 {
     // Look up the queue.
     _queue *queue = NULL;
@@ -948,7 +1079,7 @@ queue_put(_queues *queues, int64_t qid, PyObject *obj)
     }
 
     // Add the data to the queue.
-    int res = _queue_add(queue, data);
+    int res = _queue_add(queue, data, fmt);
     _queue_unmark_waiter(queue, queues->mutex);
     if (res != 0) {
         // We may chain an exception here:
@@ -963,7 +1094,7 @@ queue_put(_queues *queues, int64_t qid, PyObject *obj)
 // Pop the next object off the queue.  Fail if empty.
 // XXX Support a "wait" mutex?
 static int
-queue_get(_queues *queues, int64_t qid, PyObject **res)
+queue_get(_queues *queues, int64_t qid, PyObject **res, int *p_fmt)
 {
     int err;
     *res = NULL;
@@ -979,7 +1110,7 @@ queue_get(_queues *queues, int64_t qid, PyObject **res)
 
     // Pop off the next item from the queue.
     _PyCrossInterpreterData *data = NULL;
-    err = _queue_next(queue, &data);
+    err = _queue_next(queue, &data, p_fmt);
     _queue_unmark_waiter(queue, queues->mutex);
     if (err != 0) {
         return err;
@@ -1056,19 +1187,19 @@ static int _queueobj_shared(PyThreadState *,
                             PyObject *, _PyCrossInterpreterData *);
 
 static int
-set_external_queue_type(PyObject *module, PyTypeObject *queue_type)
+set_external_queue_type(module_state *state, PyTypeObject *queue_type)
 {
-    module_state *state = get_module_state(module);
-
+    // Clear the old value if the .py module was reloaded.
     if (state->queue_type != NULL) {
-        PyErr_SetString(PyExc_TypeError, "already registered");
-        return -1;
+        (void)clear_xid_class(state->queue_type);
+        Py_CLEAR(state->queue_type);
     }
-    state->queue_type = (PyTypeObject *)Py_NewRef(queue_type);
 
+    // Add and register the new type.
     if (ensure_xid_class(queue_type, _queueobj_shared) < 0) {
         return -1;
     }
+    state->queue_type = (PyTypeObject *)Py_NewRef(queue_type);
 
     return 0;
 }
@@ -1081,15 +1212,9 @@ get_external_queue_type(PyObject *module)
     PyTypeObject *cls = state->queue_type;
     if (cls == NULL) {
         // Force the module to be loaded, to register the type.
-        PyObject *highlevel = PyImport_ImportModule("interpreters.queue");
-        if (highlevel == NULL) {
-            PyErr_Clear();
-            highlevel = PyImport_ImportModule("test.support.interpreters.queue");
-            if (highlevel == NULL) {
-                return NULL;
-            }
+        if (ensure_highlevel_module_loaded() < 0) {
+            return NULL;
         }
-        Py_DECREF(highlevel);
         cls = state->queue_type;
         assert(cls != NULL);
     }
@@ -1128,7 +1253,14 @@ _queueid_xid_free(void *data)
     int64_t qid = ((struct _queueid_xid *)data)->qid;
     PyMem_RawFree(data);
     _queues *queues = _get_global_queues();
-    _queues_decref(queues, qid);
+    int res = _queues_decref(queues, qid);
+    if (res == ERR_QUEUE_NOT_FOUND) {
+        // Already destroyed.
+        // XXX Warn?
+    }
+    else {
+        assert(res == 0);
+    }
 }
 
 static PyObject *
@@ -1171,7 +1303,7 @@ _queueobj_shared(PyThreadState *tstate, PyObject *queueobj,
         .label = "queue ID",
     };
     int res = idarg_int64_converter(qidobj, &converted);
-    Py_DECREF(qidobj);
+    Py_CLEAR(qidobj);
     if (!res) {
         assert(PyErr_Occurred());
         return -1;
@@ -1179,12 +1311,10 @@ _queueobj_shared(PyThreadState *tstate, PyObject *queueobj,
 
     void *raw = _queueid_xid_new(converted.id);
     if (raw == NULL) {
-        Py_DECREF(qidobj);
         return -1;
     }
     _PyCrossInterpreterData_Init(data, tstate->interp, raw, NULL,
                                  _queueobj_from_xid);
-    Py_DECREF(qidobj);
     _PyCrossInterpreterData_SET_FREE(data, _queueid_xid_free);
     return 0;
 }
@@ -1267,14 +1397,15 @@ qidarg_converter(PyObject *arg, void *ptr)
 static PyObject *
 queuesmod_create(PyObject *self, PyObject *args, PyObject *kwds)
 {
-    static char *kwlist[] = {"maxsize", NULL};
-    Py_ssize_t maxsize = -1;
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|n:create", kwlist,
-                                     &maxsize)) {
+    static char *kwlist[] = {"maxsize", "fmt", NULL};
+    Py_ssize_t maxsize;
+    int fmt;
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "ni:create", kwlist,
+                                     &maxsize, &fmt)) {
         return NULL;
     }
 
-    int64_t qid = queue_create(&_globals.queues, maxsize);
+    int64_t qid = queue_create(&_globals.queues, maxsize, fmt);
     if (qid < 0) {
         (void)handle_queue_error((int)qid, self, qid);
         return NULL;
@@ -1296,10 +1427,13 @@ queuesmod_create(PyObject *self, PyObject *args, PyObject *kwds)
 }
 
 PyDoc_STRVAR(queuesmod_create_doc,
-"create() -> qid\n\
+"create(maxsize, fmt) -> qid\n\
 \n\
 Create a new cross-interpreter queue and return its unique generated ID.\n\
-It is a new reference as though bind() had been called on the queue.");
+It is a new reference as though bind() had been called on the queue.\n\
+\n\
+The caller is responsible for calling destroy() for the new queue\n\
+before the runtime is finalized.");
 
 static PyObject *
 queuesmod_destroy(PyObject *self, PyObject *args, PyObject *kwds)
@@ -1329,7 +1463,7 @@ static PyObject *
 queuesmod_list_all(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     int64_t count = 0;
-    int64_t *qids = _queues_list_all(&_globals.queues, &count);
+    struct queue_id_and_fmt *qids = _queues_list_all(&_globals.queues, &count);
     if (qids == NULL) {
         if (count == 0) {
             return PyList_New(0);
@@ -1340,14 +1474,14 @@ queuesmod_list_all(PyObject *self, PyObject *Py_UNUSED(ignored))
     if (ids == NULL) {
         goto finally;
     }
-    int64_t *cur = qids;
+    struct queue_id_and_fmt *cur = qids;
     for (int64_t i=0; i < count; cur++, i++) {
-        PyObject *qidobj = PyLong_FromLongLong(*cur);
-        if (qidobj == NULL) {
+        PyObject *item = Py_BuildValue("Li", cur->id, cur->fmt);
+        if (item == NULL) {
             Py_SETREF(ids, NULL);
             break;
         }
-        PyList_SET_ITEM(ids, (Py_ssize_t)i, qidobj);
+        PyList_SET_ITEM(ids, (Py_ssize_t)i, item);
     }
 
 finally:
@@ -1356,24 +1490,27 @@ finally:
 }
 
 PyDoc_STRVAR(queuesmod_list_all_doc,
-"list_all() -> [qid]\n\
+"list_all() -> [(qid, fmt)]\n\
 \n\
-Return the list of IDs for all queues.");
+Return the list of IDs for all queues.\n\
+Each corresponding default format is also included.");
 
 static PyObject *
 queuesmod_put(PyObject *self, PyObject *args, PyObject *kwds)
 {
-    static char *kwlist[] = {"qid", "obj", NULL};
+    static char *kwlist[] = {"qid", "obj", "fmt", NULL};
     qidarg_converter_data qidarg;
     PyObject *obj;
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&O:put", kwlist,
-                                     qidarg_converter, &qidarg, &obj)) {
+    int fmt;
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&Oi:put", kwlist,
+                                     qidarg_converter, &qidarg, &obj, &fmt)) {
         return NULL;
     }
     int64_t qid = qidarg.id;
 
     /* Queue up the object. */
-    int err = queue_put(&_globals.queues, qid, obj);
+    int err = queue_put(&_globals.queues, qid, obj, fmt);
+    // This is the only place that raises QueueFull.
     if (handle_queue_error(err, self, qid)) {
         return NULL;
     }
@@ -1382,41 +1519,41 @@ queuesmod_put(PyObject *self, PyObject *args, PyObject *kwds)
 }
 
 PyDoc_STRVAR(queuesmod_put_doc,
-"put(qid, obj)\n\
+"put(qid, obj, fmt)\n\
 \n\
 Add the object's data to the queue.");
 
 static PyObject *
 queuesmod_get(PyObject *self, PyObject *args, PyObject *kwds)
 {
-    static char *kwlist[] = {"qid", "default", NULL};
+    static char *kwlist[] = {"qid", NULL};
     qidarg_converter_data qidarg;
-    PyObject *dflt = NULL;
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&|O:get", kwlist,
-                                     qidarg_converter, &qidarg, &dflt)) {
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&:get", kwlist,
+                                     qidarg_converter, &qidarg)) {
         return NULL;
     }
     int64_t qid = qidarg.id;
 
     PyObject *obj = NULL;
-    int err = queue_get(&_globals.queues, qid, &obj);
-    if (err == ERR_QUEUE_EMPTY && dflt != NULL) {
-        assert(obj == NULL);
-        obj = Py_NewRef(dflt);
-    }
-    else if (handle_queue_error(err, self, qid)) {
+    int fmt = 0;
+    int err = queue_get(&_globals.queues, qid, &obj, &fmt);
+    // This is the only place that raises QueueEmpty.
+    if (handle_queue_error(err, self, qid)) {
         return NULL;
     }
-    return obj;
+
+    PyObject *res = Py_BuildValue("Oi", obj, fmt);
+    Py_DECREF(obj);
+    return res;
 }
 
 PyDoc_STRVAR(queuesmod_get_doc,
-"get(qid, [default]) -> obj\n\
+"get(qid) -> (obj, fmt)\n\
 \n\
 Return a new object from the data at the front of the queue.\n\
+The object's format is also returned.\n\
 \n\
-If there is nothing to receive then raise QueueEmpty, unless\n\
-a default value is provided.  In that case return it.");
+If there is nothing to receive then raise QueueEmpty.");
 
 static PyObject *
 queuesmod_bind(PyObject *self, PyObject *args, PyObject *kwds)
@@ -1463,7 +1600,10 @@ queuesmod_release(PyObject *self, PyObject *args, PyObject *kwds)
     // XXX Check module state if bound already.
     // XXX Update module state.
 
-    _queues_decref(&_globals.queues, qid);
+    int err = _queues_decref(&_globals.queues, qid);
+    if (handle_queue_error(err, self, qid)) {
+        return NULL;
+    }
 
     Py_RETURN_NONE;
 }
@@ -1498,6 +1638,41 @@ PyDoc_STRVAR(queuesmod_get_maxsize_doc,
 "get_maxsize(qid)\n\
 \n\
 Return the maximum number of items in the queue.");
+
+static PyObject *
+queuesmod_get_queue_defaults(PyObject *self, PyObject *args, PyObject *kwds)
+{
+    static char *kwlist[] = {"qid", NULL};
+    qidarg_converter_data qidarg;
+    if (!PyArg_ParseTupleAndKeywords(args, kwds,
+                                     "O&:get_queue_defaults", kwlist,
+                                     qidarg_converter, &qidarg)) {
+        return NULL;
+    }
+    int64_t qid = qidarg.id;
+
+    _queue *queue = NULL;
+    int err = _queues_lookup(&_globals.queues, qid, &queue);
+    if (handle_queue_error(err, self, qid)) {
+        return NULL;
+    }
+    int fmt = queue->fmt;
+    _queue_unmark_waiter(queue, _globals.queues.mutex);
+
+    PyObject *fmt_obj = PyLong_FromLong(fmt);
+    if (fmt_obj == NULL) {
+        return NULL;
+    }
+    // For now queues only have one default.
+    PyObject *res = PyTuple_Pack(1, fmt_obj);
+    Py_DECREF(fmt_obj);
+    return res;
+}
+
+PyDoc_STRVAR(queuesmod_get_queue_defaults_doc,
+"get_queue_defaults(qid)\n\
+\n\
+Return the queue's default values, set when it was created.");
 
 static PyObject *
 queuesmod_is_full(PyObject *self, PyObject *args, PyObject *kwds)
@@ -1554,22 +1729,39 @@ PyDoc_STRVAR(queuesmod_get_count_doc,
 Return the number of items in the queue.");
 
 static PyObject *
-queuesmod__register_queue_type(PyObject *self, PyObject *args, PyObject *kwds)
+queuesmod__register_heap_types(PyObject *self, PyObject *args, PyObject *kwds)
 {
-    static char *kwlist[] = {"queuetype", NULL};
+    static char *kwlist[] = {"queuetype", "emptyerror", "fullerror", NULL};
     PyObject *queuetype;
+    PyObject *emptyerror;
+    PyObject *fullerror;
     if (!PyArg_ParseTupleAndKeywords(args, kwds,
-                                     "O:_register_queue_type", kwlist,
-                                     &queuetype)) {
+                                     "OOO:_register_heap_types", kwlist,
+                                     &queuetype, &emptyerror, &fullerror)) {
         return NULL;
     }
     if (!PyType_Check(queuetype)) {
-        PyErr_SetString(PyExc_TypeError, "expected a type for 'queuetype'");
+        PyErr_SetString(PyExc_TypeError,
+                        "expected a type for 'queuetype'");
         return NULL;
     }
-    PyTypeObject *cls_queue = (PyTypeObject *)queuetype;
+    if (!PyExceptionClass_Check(emptyerror)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "expected an exception type for 'emptyerror'");
+        return NULL;
+    }
+    if (!PyExceptionClass_Check(fullerror)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "expected an exception type for 'fullerror'");
+        return NULL;
+    }
 
-    if (set_external_queue_type(self, cls_queue) < 0) {
+    module_state *state = get_module_state(self);
+
+    if (set_external_queue_type(state, (PyTypeObject *)queuetype) < 0) {
+        return NULL;
+    }
+    if (set_external_exc_types(state, emptyerror, fullerror) < 0) {
         return NULL;
     }
 
@@ -1583,21 +1775,23 @@ static PyMethodDef module_functions[] = {
      METH_VARARGS | METH_KEYWORDS, queuesmod_destroy_doc},
     {"list_all",                   queuesmod_list_all,
      METH_NOARGS,                  queuesmod_list_all_doc},
-    {"put",                       _PyCFunction_CAST(queuesmod_put),
+    {"put",                        _PyCFunction_CAST(queuesmod_put),
      METH_VARARGS | METH_KEYWORDS, queuesmod_put_doc},
-    {"get",                       _PyCFunction_CAST(queuesmod_get),
+    {"get",                        _PyCFunction_CAST(queuesmod_get),
      METH_VARARGS | METH_KEYWORDS, queuesmod_get_doc},
-    {"bind",                      _PyCFunction_CAST(queuesmod_bind),
+    {"bind",                       _PyCFunction_CAST(queuesmod_bind),
      METH_VARARGS | METH_KEYWORDS, queuesmod_bind_doc},
     {"release",                    _PyCFunction_CAST(queuesmod_release),
      METH_VARARGS | METH_KEYWORDS, queuesmod_release_doc},
     {"get_maxsize",                _PyCFunction_CAST(queuesmod_get_maxsize),
      METH_VARARGS | METH_KEYWORDS, queuesmod_get_maxsize_doc},
+    {"get_queue_defaults",         _PyCFunction_CAST(queuesmod_get_queue_defaults),
+     METH_VARARGS | METH_KEYWORDS, queuesmod_get_queue_defaults_doc},
     {"is_full",                    _PyCFunction_CAST(queuesmod_is_full),
      METH_VARARGS | METH_KEYWORDS, queuesmod_is_full_doc},
     {"get_count",                  _PyCFunction_CAST(queuesmod_get_count),
      METH_VARARGS | METH_KEYWORDS, queuesmod_get_count_doc},
-    {"_register_queue_type",       _PyCFunction_CAST(queuesmod__register_queue_type),
+    {"_register_heap_types",       _PyCFunction_CAST(queuesmod__register_heap_types),
      METH_VARARGS | METH_KEYWORDS, NULL},
 
     {NULL,                        NULL}           /* sentinel */
@@ -1651,10 +1845,6 @@ static int
 module_clear(PyObject *mod)
 {
     module_state *state = get_module_state(mod);
-
-    if (state->queue_type != NULL) {
-        (void)_PyCrossInterpreterData_UnregisterClass(state->queue_type);
-    }
 
     // Now we clear the module state.
     clear_module_state(state);

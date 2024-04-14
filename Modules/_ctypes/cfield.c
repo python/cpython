@@ -89,7 +89,7 @@ PyCField_FromDesc manages:
 static void
 PyCField_FromDesc_gcc(Py_ssize_t bitsize, Py_ssize_t *pbitofs,
                 Py_ssize_t *psize, Py_ssize_t *poffset, Py_ssize_t *palign,
-                CFieldObject* self, StgDictObject* dict,
+                CFieldObject* self, StgInfo* dict,
                 int is_bitfield
                 )
 {
@@ -127,7 +127,7 @@ PyCField_FromDesc_msvc(
                 Py_ssize_t *pfield_size, Py_ssize_t bitsize,
                 Py_ssize_t *pbitofs, Py_ssize_t *psize, Py_ssize_t *poffset,
                 Py_ssize_t *palign, int pack,
-                CFieldObject* self, StgDictObject* dict,
+                CFieldObject* self, StgInfo* dict,
                 int is_bitfield
                 )
 {
@@ -182,8 +182,15 @@ PyCField_FromDesc(PyObject *desc, Py_ssize_t index,
     CFieldObject* self = (CFieldObject *)tp->tp_alloc(tp, 0);
     if (self == NULL)
         return NULL;
-    StgDictObject* dict = PyType_stgdict(desc);
-    if (!dict) {
+    // Note(Matthias): We get most of what used to be `dict` out of `info` now.
+    // StgDictObject* dict = PyType_stgdict(desc);
+    // if (!dict) {
+    StgInfo *info;
+    if (PyStgInfo_FromType(st, desc, &info) < 0) {
+        Py_DECREF(self);
+        return NULL;
+    }
+    if (!info) {
         PyErr_SetString(PyExc_TypeError,
                         "has no _stginfo_");
         Py_DECREF(self);
@@ -198,22 +205,30 @@ PyCField_FromDesc(PyObject *desc, Py_ssize_t index,
     SETFUNC setfunc = NULL;
     GETFUNC getfunc = NULL;
     if (PyCArrayTypeObject_Check(st, proto)) {
-        StgDictObject *adict = PyType_stgdict(proto);
-        StgDictObject *idict;
-        if (adict && adict->proto) {
-            idict = PyType_stgdict(adict->proto);
-            if (!idict) {
+        StgInfo *ainfo;
+        if (PyStgInfo_FromType(st, proto, &ainfo) < 0) {
+            Py_DECREF(self);
+            return NULL;
+        }
+
+        if (ainfo && ainfo->proto) {
+            StgInfo *iinfo;
+            if (PyStgInfo_FromType(st, ainfo->proto, &iinfo) < 0) {
+                Py_DECREF(self);
+                return NULL;
+            }
+            if (!iinfo) {
                 PyErr_SetString(PyExc_TypeError,
                                 "has no _stginfo_");
                 Py_DECREF(self);
                 return NULL;
             }
-            if (idict->getfunc == _ctypes_get_fielddesc("c")->getfunc) {
+            if (iinfo->getfunc == _ctypes_get_fielddesc("c")->getfunc) {
                 struct fielddesc *fd = _ctypes_get_fielddesc("s");
                 getfunc = fd->getfunc;
                 setfunc = fd->setfunc;
             }
-            if (idict->getfunc == _ctypes_get_fielddesc("u")->getfunc) {
+            if (iinfo->getfunc == _ctypes_get_fielddesc("u")->getfunc) {
                 struct fielddesc *fd = _ctypes_get_fielddesc("U");
                 getfunc = fd->getfunc;
                 setfunc = fd->setfunc;
@@ -229,14 +244,14 @@ PyCField_FromDesc(PyObject *desc, Py_ssize_t index,
 
     int is_bitfield = !!bitsize;
     if(!is_bitfield) {
-        assert(dict->size >= 0);
+        assert(info->size >= 0);
         // assert: no overflow;
-        assert((unsigned long long int) dict->size
+        assert((unsigned long long int) info->size
             < (1ULL << (8*sizeof(Py_ssize_t)-1)) / 8);
-        bitsize = 8 * dict->size;
+        bitsize = 8 * info->size;
         // Caution: bitsize might still be 0 now.
     }
-    assert(bitsize <= dict->size * 8);
+    assert(bitsize <= info->size * 8);
 
     // `pack` only makes sense in msvc compatibility mode.
     if (ms_struct || pack != 0) {
@@ -244,20 +259,20 @@ PyCField_FromDesc(PyObject *desc, Py_ssize_t index,
                 pfield_size, bitsize, pbitofs,
                 psize, poffset, palign,
                 pack,
-                self, dict,
+                self, info,
                 is_bitfield
                 );
     } else {
         PyCField_FromDesc_gcc(
                 bitsize, pbitofs,
                 psize, poffset, palign,
-                self, dict,
+                self, info,
                 is_bitfield
                 );
     }
     assert(!is_bitfield || (LOW_BIT(self->size) <= self->size * 8));
     if(big_endian && is_bitfield) {
-        self->size = BUILD_SIZE(NUM_BITS(self->size), 8*dict->size - LOW_BIT(self->size) - bitsize);
+        self->size = BUILD_SIZE(NUM_BITS(self->size), 8*info->size - LOW_BIT(self->size) - bitsize);
     }
     return (PyObject *)self;
 }

@@ -232,8 +232,8 @@ FTP objects
    .. method:: FTP.voidcmd(cmd)
 
       Send a simple command string to the server and handle the response.  Return
-      nothing if a response code corresponding to success (codes in the range
-      200--299) is received.  Raise :exc:`error_reply` otherwise.
+      the response string if the response code corresponds to success (codes in
+      the range 200--299).  Raise :exc:`error_reply` otherwise.
 
       .. audit-event:: ftplib.sendcmd self,cmd ftplib.FTP.voidcmd
 

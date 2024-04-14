@@ -103,19 +103,14 @@ Node classes
    For example, to create and populate an :class:`ast.UnaryOp` node, you could
    use ::
 
-      node = ast.UnaryOp()
-      node.op = ast.USub()
-      node.operand = ast.Constant()
-      node.operand.value = 5
-      node.operand.lineno = 0
-      node.operand.col_offset = 0
-      node.lineno = 0
-      node.col_offset = 0
-
-   or the more compact ::
-
       node = ast.UnaryOp(ast.USub(), ast.Constant(5, lineno=0, col_offset=0),
                          lineno=0, col_offset=0)
+
+   If a field that is optional in the grammar is omitted from the constructor,
+   it defaults to ``None``. If a list field is omitted, it defaults to the empty
+   list. If any other field is omitted, a :exc:`DeprecationWarning` is raised
+   and the AST node will not have this field. In Python 3.15, this condition will
+   raise an error.
 
 .. versionchanged:: 3.8
 
@@ -139,6 +134,14 @@ Node classes
    available, but they will be removed in future Python releases.
    In the meantime, instantiating them will return an instance of
    a different class.
+
+.. deprecated-removed:: 3.13 3.15
+
+   Previous versions of Python allowed the creation of AST nodes that were missing
+   required fields. Similarly, AST node constructors allowed arbitrary keyword
+   arguments that were set as attributes of the AST node, even if they did not
+   match any of the fields of the AST node. This behavior is deprecated and will
+   be removed in Python 3.15.
 
 .. note::
     The descriptions of the specific node classes displayed here
@@ -2180,14 +2183,17 @@ and classes for traversing abstract syntax trees:
    modified to correspond to :pep:`484` "signature type comments",
    e.g. ``(str, int) -> List[str]``.
 
-   Also, setting ``feature_version`` to a tuple ``(major, minor)``
-   will attempt to parse using that Python version's grammar.
-   Currently ``major`` must equal to ``3``.  For example, setting
-   ``feature_version=(3, 4)`` will allow the use of ``async`` and
-   ``await`` as variable names.  The lowest supported version is
-   ``(3, 7)``; the highest is ``sys.version_info[0:2]``.
+   Setting ``feature_version`` to a tuple ``(major, minor)`` will result in
+   a "best-effort" attempt to parse using that Python version's grammar.
+   For example, setting ``feature_version=(3, 9)`` will attempt to disallow
+   parsing of :keyword:`match` statements.
+   Currently ``major`` must equal to ``3``. The lowest supported version is
+   ``(3, 7)`` (and this may increase in future Python versions);
+   the highest is ``sys.version_info[0:2]``. "Best-effort" attempt means there
+   is no guarantee that the parse (or success of the parse) is the same as
+   when run on the Python version corresponding to ``feature_version``.
 
-   If source contains a null character ('\0'), :exc:`ValueError` is raised.
+   If source contains a null character (``\0``), :exc:`ValueError` is raised.
 
    .. warning::
       Note that successfully parsing source code into an AST object doesn't

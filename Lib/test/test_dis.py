@@ -1986,6 +1986,22 @@ class InstructionTests(InstructionTestCase):
         self.assertEqual(f(opcode.opmap["BINARY_OP"], 3, *args), (3, '<<'))
         self.assertEqual(f(opcode.opmap["CALL_INTRINSIC_1"], 2, *args), (2, 'INTRINSIC_IMPORT_STAR'))
 
+    def test_custom_arg_resolver(self):
+        class MyArgResolver(dis.ArgResolver):
+            def offset_from_jump_arg(self, op, arg, offset):
+                return arg + 1
+
+            def get_label_for_offset(self, offset):
+                return 2 * offset
+
+        def f(opcode, oparg, offset, *init_args):
+            arg_resolver = MyArgResolver(*init_args)
+            return arg_resolver.get_argval_argrepr(opcode, oparg, offset)
+        offset = 42
+        self.assertEqual(f(opcode.opmap["JUMP_BACKWARD"], 1, offset), (2, 'to L4'))
+        self.assertEqual(f(opcode.opmap["SETUP_FINALLY"], 2, offset), (3, 'to L6'))
+
+
     def get_instructions(self, code):
         return dis._get_instructions_bytes(code)
 

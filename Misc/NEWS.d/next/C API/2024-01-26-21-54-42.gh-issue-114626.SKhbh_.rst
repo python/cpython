@@ -1,1 +1,0 @@
-Add ``PyCFunctionFast`` and ``PyCFunctionFastWithKeywords`` typedefs (identical to the existing ``_PyCFunctionFast`` and ``_PyCFunctionFastWithKeywords`` typedefs, just without a leading ``_`` prefix).

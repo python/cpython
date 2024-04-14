@@ -101,11 +101,13 @@ nitpick_ignore = [
     ('c:func', 'dlopen'),
     ('c:func', 'exec'),
     ('c:func', 'fcntl'),
+    ('c:func', 'flock'),
     ('c:func', 'fork'),
     ('c:func', 'free'),
     ('c:func', 'gettimeofday'),
     ('c:func', 'gmtime'),
     ('c:func', 'grantpt'),
+    ('c:func', 'ioctl'),
     ('c:func', 'localeconv'),
     ('c:func', 'localtime'),
     ('c:func', 'main'),
@@ -275,6 +277,7 @@ nitpick_ignore += [
     ('py:attr', '__annotations__'),
     ('py:meth', '__missing__'),
     ('py:attr', '__wrapped__'),
+    ('py:attr', 'decimal.Context.clamp'),
     ('py:meth', 'index'),  # list.index, tuple.index, etc.
 ]
 
