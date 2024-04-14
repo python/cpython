@@ -24,6 +24,7 @@
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_signal.h"        // Py_NSIG
 #include "pycore_time.h"          // _PyLong_FromTime_t()
+#include "osdefs.h"               // SEP
 
 #ifdef HAVE_UNISTD_H
 #  include <unistd.h>             // symlink()
@@ -36,7 +37,6 @@
 #  endif
 #  include <winioctl.h>
 #  include <lmcons.h>             // UNLEN
-#  include "osdefs.h"             // SEP
 #  if defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM)
 #    define HAVE_SYMLINK
 #  endif /* MS_WINDOWS_DESKTOP | MS_WINDOWS_SYSTEM */
@@ -5523,7 +5523,7 @@ os__path_abspath(PyObject *module, PyObject *path)
         return NULL;
     }
 
-    size_t cwd_len;
+    Py_ssize_t cwd_len;
     wchar_t *abs_path;
     Py_ssize_t abs_path_len;
     if (_Py_isabs(rel_path)) {
@@ -5544,7 +5544,7 @@ os__path_abspath(PyObject *module, PyObject *path)
             return posix_error();
         }
 
-        abs_path = *PyMem_RawMalloc(abs_path_len * sizeof(wchar_t));
+        abs_path = PyMem_RawMalloc(abs_path_len * sizeof(wchar_t));
         if (!abs_path) {
             return NULL;
         }
