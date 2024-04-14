@@ -136,7 +136,10 @@ TryAddRef(PyObject *cnv, CDataObject *obj)
  * Call the python object with all arguments
  *
  */
-static void _CallPythonObject(void *mem,
+
+// BEWARE: The GIL needs to be held throughout the function
+static void _CallPythonObject(ctypes_state *st,
+                              void *mem,
                               ffi_type *restype,
                               SETFUNC setfunc,
                               PyObject *callable,
@@ -148,14 +151,12 @@ static void _CallPythonObject(void *mem,
     Py_ssize_t i = 0, j = 0, nargs = 0;
     PyObject *error_object = NULL;
     int *space;
-    PyGILState_STATE state = PyGILState_Ensure();
 
     assert(PyTuple_Check(converters));
     nargs = PyTuple_GET_SIZE(converters);
     assert(nargs <= CTYPES_MAX_ARGCOUNT);
     PyObject **args = alloca(nargs * sizeof(PyObject *));
     PyObject **cnvs = PySequence_Fast_ITEMS(converters);
-    ctypes_state *st = GLOBAL_STATE();
     for (i = 0; i < nargs; i++) {
         PyObject *cnv = cnvs[i]; // borrowed ref
 
@@ -164,7 +165,7 @@ static void _CallPythonObject(void *mem,
             goto Done;
         }
 
-        if (info && info->getfunc && !_ctypes_simple_instance(cnv)) {
+        if (info && info->getfunc && !_ctypes_simple_instance(st, cnv)) {
             PyObject *v = info->getfunc(*pArgs, info->size);
             if (!v) {
                 PrintError("create argument %zd:\n", i);
@@ -205,7 +206,7 @@ static void _CallPythonObject(void *mem,
     }
 
     if (flags & (FUNCFLAG_USE_ERRNO | FUNCFLAG_USE_LASTERROR)) {
-        error_object = _ctypes_get_errobj(&space);
+        error_object = _ctypes_get_errobj(st, &space);
         if (error_object == NULL)
             goto Done;
         if (flags & FUNCFLAG_USE_ERRNO) {
@@ -294,7 +295,6 @@ static void _CallPythonObject(void *mem,
     for (j = 0; j < i; j++) {
         Py_DECREF(args[j]);
     }
-    PyGILState_Release(state);
 }
 
 static void closure_fcn(ffi_cif *cif,
@@ -302,23 +302,28 @@ static void closure_fcn(ffi_cif *cif,
                         void **args,
                         void *userdata)
 {
-    CThunkObject *p = (CThunkObject *)userdata;
+    PyGILState_STATE state = PyGILState_Ensure();
 
-    _CallPythonObject(resp,
+    CThunkObject *p = (CThunkObject *)userdata;
+    ctypes_state *st = get_module_state_by_class(Py_TYPE(p));
+
+    _CallPythonObject(st,
+                      resp,
                       p->ffi_restype,
                       p->setfunc,
                       p->callable,
                       p->converters,
                       p->flags,
                       args);
+
+    PyGILState_Release(state);
 }
 
-static CThunkObject* CThunkObject_new(Py_ssize_t nargs)
+static CThunkObject* CThunkObject_new(ctypes_state *st, Py_ssize_t nargs)
 {
     CThunkObject *p;
     Py_ssize_t i;
 
-    ctypes_state *st = GLOBAL_STATE();
     p = PyObject_GC_NewVar(CThunkObject, st->PyCThunk_Type, nargs);
     if (p == NULL) {
         return NULL;
@@ -340,7 +345,8 @@ static CThunkObject* CThunkObject_new(Py_ssize_t nargs)
     return p;
 }
 
-CThunkObject *_ctypes_alloc_callback(PyObject *callable,
+CThunkObject *_ctypes_alloc_callback(ctypes_state *st,
+                                    PyObject *callable,
                                     PyObject *converters,
                                     PyObject *restype,
                                     int flags)
@@ -352,11 +358,10 @@ CThunkObject *_ctypes_alloc_callback(PyObject *callable,
 
     assert(PyTuple_Check(converters));
     nargs = PyTuple_GET_SIZE(converters);
-    p = CThunkObject_new(nargs);
+    p = CThunkObject_new(st, nargs);
     if (p == NULL)
         return NULL;
 
-    ctypes_state *st = GLOBAL_STATE();
     assert(CThunk_CheckExact(st, (PyObject *)p));
 
     p->pcl_write = Py_ffi_closure_alloc(sizeof(ffi_closure), &p->pcl_exec);
@@ -369,7 +374,7 @@ CThunkObject *_ctypes_alloc_callback(PyObject *callable,
     PyObject **cnvs = PySequence_Fast_ITEMS(converters);
     for (i = 0; i < nargs; ++i) {
         PyObject *cnv = cnvs[i]; // borrowed ref
-        p->atypes[i] = _ctypes_get_ffi_type(cnv);
+        p->atypes[i] = _ctypes_get_ffi_type(st, cnv);
     }
     p->atypes[i] = NULL;
 

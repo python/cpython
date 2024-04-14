@@ -30,10 +30,11 @@ import _imp
 from test.support import os_helper
 from test.support import (
     STDLIB_DIR, swap_attr, swap_item, cpython_only, is_apple_mobile, is_emscripten,
-    is_wasi, run_in_subinterp, run_in_subinterp_with_config, Py_TRACE_REFS)
+    is_wasi, run_in_subinterp, run_in_subinterp_with_config, Py_TRACE_REFS,
+    requires_gil_enabled, Py_GIL_DISABLED)
 from test.support.import_helper import (
     forget, make_legacy_pyc, unlink, unload, ready_to_import,
-    DirsOnSysPath, CleanImport)
+    DirsOnSysPath, CleanImport, import_module)
 from test.support.os_helper import (
     TESTFN, rmtree, temp_umask, TESTFN_UNENCODABLE)
 from test.support import script_helper
@@ -158,6 +159,9 @@ def requires_singlephase_init(meth):
             finally:
                 restore__testsinglephase()
     meth = cpython_only(meth)
+    # gh-117649: free-threaded build does not currently support single-phase
+    # init modules in subinterpreters.
+    meth = requires_gil_enabled(meth)
     return unittest.skipIf(_testsinglephase is None,
                            'test requires _testsinglephase module')(meth)
 
@@ -363,7 +367,7 @@ class ImportTests(unittest.TestCase):
 
     @cpython_only
     def test_from_import_missing_attr_has_name_and_so_path(self):
-        import _testcapi
+        _testcapi = import_module("_testcapi")
         with self.assertRaises(ImportError) as cm:
             from _testcapi import i_dont_exist
         self.assertEqual(cm.exception.name, '_testcapi')
@@ -1823,15 +1827,19 @@ class SubinterpImportTests(unittest.TestCase):
             **(self.ISOLATED if isolated else self.NOT_ISOLATED),
             check_multi_interp_extensions=strict,
         )
+        gil = kwargs['gil']
+        kwargs['gil'] = 'default' if gil == 0 else (
+            'shared' if gil == 1 else 'own' if gil == 2 else gil)
         _, out, err = script_helper.assert_python_ok('-c', textwrap.dedent(f'''
             import _testinternalcapi, sys
             assert (
                 {name!r} in sys.builtin_module_names or
                 {name!r} not in sys.modules
             ), repr({name!r})
+            config = type(sys.implementation)(**{kwargs})
             ret = _testinternalcapi.run_in_subinterp_with_config(
                 {self.import_script(name, "sys.stdout.fileno()")!r},
-                **{kwargs},
+                config,
             )
             assert ret == 0, ret
             '''))
@@ -1847,12 +1855,16 @@ class SubinterpImportTests(unittest.TestCase):
             **(self.ISOLATED if isolated else self.NOT_ISOLATED),
             check_multi_interp_extensions=True,
         )
+        gil = kwargs['gil']
+        kwargs['gil'] = 'default' if gil == 0 else (
+            'shared' if gil == 1 else 'own' if gil == 2 else gil)
         _, out, err = script_helper.assert_python_ok('-c', textwrap.dedent(f'''
             import _testinternalcapi, sys
             assert {name!r} not in sys.modules, {name!r}
+            config = type(sys.implementation)(**{kwargs})
             ret = _testinternalcapi.run_in_subinterp_with_config(
                 {self.import_script(name, "sys.stdout.fileno()")!r},
-                **{kwargs},
+                config,
             )
             assert ret == 0, ret
             '''))
@@ -1862,24 +1874,28 @@ class SubinterpImportTests(unittest.TestCase):
             f'ImportError: module {name} does not support loading in subinterpreters',
         )
 
+    @unittest.skipIf(_testinternalcapi is None, "requires _testinternalcapi")
     def test_builtin_compat(self):
         # For now we avoid using sys or builtins
         # since they still don't implement multi-phase init.
         module = '_imp'
         require_builtin(module)
-        with self.subTest(f'{module}: not strict'):
-            self.check_compatible_here(module, strict=False)
+        if not Py_GIL_DISABLED:
+            with self.subTest(f'{module}: not strict'):
+                self.check_compatible_here(module, strict=False)
         with self.subTest(f'{module}: strict, not fresh'):
             self.check_compatible_here(module, strict=True)
 
     @cpython_only
+    @unittest.skipIf(_testinternalcapi is None, "requires _testinternalcapi")
     def test_frozen_compat(self):
         module = '_frozen_importlib'
         require_frozen(module, skip=True)
         if __import__(module).__spec__.origin != 'frozen':
             raise unittest.SkipTest(f'{module} is unexpectedly not frozen')
-        with self.subTest(f'{module}: not strict'):
-            self.check_compatible_here(module, strict=False)
+        if not Py_GIL_DISABLED:
+            with self.subTest(f'{module}: not strict'):
+                self.check_compatible_here(module, strict=False)
         with self.subTest(f'{module}: strict, not fresh'):
             self.check_compatible_here(module, strict=True)
 
@@ -1898,8 +1914,9 @@ class SubinterpImportTests(unittest.TestCase):
     def test_multi_init_extension_compat(self):
         module = '_testmultiphase'
         require_extension(module)
-        with self.subTest(f'{module}: not strict'):
-            self.check_compatible_here(module, strict=False)
+        if not Py_GIL_DISABLED:
+            with self.subTest(f'{module}: not strict'):
+                self.check_compatible_here(module, strict=False)
         with self.subTest(f'{module}: strict, not fresh'):
             self.check_compatible_here(module, strict=True)
         with self.subTest(f'{module}: strict, fresh'):
@@ -1920,8 +1937,9 @@ class SubinterpImportTests(unittest.TestCase):
             self.check_incompatible_here(modname, filename, isolated=True)
         with self.subTest(f'{modname}: not isolated'):
             self.check_incompatible_here(modname, filename, isolated=False)
-        with self.subTest(f'{modname}: not strict'):
-            self.check_compatible_here(modname, filename, strict=False)
+        if not Py_GIL_DISABLED:
+            with self.subTest(f'{modname}: not strict'):
+                self.check_compatible_here(modname, filename, strict=False)
 
     @unittest.skipIf(_testmultiphase is None, "test requires _testmultiphase module")
     def test_multi_init_extension_per_interpreter_gil_compat(self):
@@ -1939,15 +1957,18 @@ class SubinterpImportTests(unittest.TestCase):
         with self.subTest(f'{modname}: not isolated, strict'):
             self.check_compatible_here(modname, filename,
                                        strict=True, isolated=False)
-        with self.subTest(f'{modname}: not isolated, not strict'):
-            self.check_compatible_here(modname, filename,
-                                       strict=False, isolated=False)
+        if not Py_GIL_DISABLED:
+            with self.subTest(f'{modname}: not isolated, not strict'):
+                self.check_compatible_here(modname, filename,
+                                           strict=False, isolated=False)
 
+    @unittest.skipIf(_testinternalcapi is None, "requires _testinternalcapi")
     def test_python_compat(self):
         module = 'threading'
         require_pure_python(module)
-        with self.subTest(f'{module}: not strict'):
-            self.check_compatible_here(module, strict=False)
+        if not Py_GIL_DISABLED:
+            with self.subTest(f'{module}: not strict'):
+                self.check_compatible_here(module, strict=False)
         with self.subTest(f'{module}: strict, not fresh'):
             self.check_compatible_here(module, strict=True)
         with self.subTest(f'{module}: strict, fresh'):
@@ -1988,6 +2009,7 @@ class SubinterpImportTests(unittest.TestCase):
         with self.subTest('config: check disabled; override: disabled'):
             check_compatible(False, -1)
 
+    @unittest.skipIf(_testinternalcapi is None, "requires _testinternalcapi")
     def test_isolated_config(self):
         module = 'threading'
         require_pure_python(module)
@@ -2155,7 +2177,7 @@ class SinglephaseInitTests(unittest.TestCase):
     # subinterpreters
 
     def add_subinterpreter(self):
-        interpid = _interpreters.create(isolated=False)
+        interpid = _interpreters.create('legacy')
         def ensure_destroyed():
             try:
                 _interpreters.destroy(interpid)
@@ -2733,7 +2755,7 @@ class CAPITests(unittest.TestCase):
     def test_pyimport_addmodule(self):
         # gh-105922: Test PyImport_AddModuleRef(), PyImport_AddModule()
         # and PyImport_AddModuleObject()
-        import _testcapi
+        _testcapi = import_module("_testcapi")
         for name in (
             'sys',     # frozen module
             'test',    # package
@@ -2743,7 +2765,7 @@ class CAPITests(unittest.TestCase):
 
     def test_pyimport_addmodule_create(self):
         # gh-105922: Test PyImport_AddModuleRef(), create a new module
-        import _testcapi
+        _testcapi = import_module("_testcapi")
         name = 'dontexist'
         self.assertNotIn(name, sys.modules)
         self.addCleanup(unload, name)
