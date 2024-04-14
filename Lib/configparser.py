@@ -539,7 +539,7 @@ class ExtendedInterpolation(Interpolation):
                     "found: %r" % (rest,))
 
 
-class _ReadState(types.SimpleNamespace):
+class _ReadState:
     elements_added : set[str]
     cursect : dict[str, str] | None = None
     sectname : str | None = None
