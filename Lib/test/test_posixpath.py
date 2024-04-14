@@ -648,56 +648,64 @@ class PosixPathTest(unittest.TestCase):
 
     @skip_if_ABSTFN_contains_backslash
     def test_relpath(self):
-        self.assertRaises(TypeError, posixpath.relpath, None)
-        self.assertRaises(ValueError, posixpath.relpath, "")
-        self.assertEqual(posixpath.relpath("a"), "a")
-        self.assertEqual(posixpath.relpath(posixpath.abspath("a")), "a")
-        self.assertEqual(posixpath.relpath("a/b"), "a/b")
-        self.assertEqual(posixpath.relpath("../a/b"), "../a/b")
-        with os_helper.change_cwd(ABSTFN):
-            curdir = basename(ABSTFN)
-            self.assertEqual(posixpath.relpath("a", "../b"), "../"+curdir+"/a")
-            self.assertEqual(posixpath.relpath("a/b", "../c"),
-                             "../"+curdir+"/a/b")
-        self.assertEqual(posixpath.relpath("a", "b/c"), "../../a")
-        self.assertEqual(posixpath.relpath("a", "a"), ".")
-        self.assertEqual(posixpath.relpath("/foo/bar/bat", "/x/y/z"), '../../../foo/bar/bat')
-        self.assertEqual(posixpath.relpath("/foo/bar/bat", "/foo/bar"), 'bat')
-        self.assertEqual(posixpath.relpath("/foo/bar/bat", "/"), 'foo/bar/bat')
-        self.assertEqual(posixpath.relpath("/", "/foo/bar/bat"), '../../..')
-        self.assertEqual(posixpath.relpath("/foo/bar/bat", "/x"), '../foo/bar/bat')
-        self.assertEqual(posixpath.relpath("/x", "/foo/bar/bat"), '../../../x')
-        self.assertEqual(posixpath.relpath("/", "/"), '.')
-        self.assertEqual(posixpath.relpath("/a", "/a"), '.')
-        self.assertEqual(posixpath.relpath("/a/b", "/a/b"), '.')
+        try:
+            os.mkdir(ABSTFN)
+            self.assertRaises(TypeError, posixpath.relpath, None)
+            self.assertRaises(ValueError, posixpath.relpath, "")
+            self.assertEqual(posixpath.relpath("a"), "a")
+            self.assertEqual(posixpath.relpath(posixpath.abspath("a")), "a")
+            self.assertEqual(posixpath.relpath("a/b"), "a/b")
+            self.assertEqual(posixpath.relpath("../a/b"), "../a/b")
+            with os_helper.change_cwd(ABSTFN):
+                curdir = basename(ABSTFN)
+                self.assertEqual(posixpath.relpath("a", "../b"), "../"+curdir+"/a")
+                self.assertEqual(posixpath.relpath("a/b", "../c"),
+                                "../"+curdir+"/a/b")
+            self.assertEqual(posixpath.relpath("a", "b/c"), "../../a")
+            self.assertEqual(posixpath.relpath("a", "a"), ".")
+            self.assertEqual(posixpath.relpath("/foo/bar/bat", "/x/y/z"), '../../../foo/bar/bat')
+            self.assertEqual(posixpath.relpath("/foo/bar/bat", "/foo/bar"), 'bat')
+            self.assertEqual(posixpath.relpath("/foo/bar/bat", "/"), 'foo/bar/bat')
+            self.assertEqual(posixpath.relpath("/", "/foo/bar/bat"), '../../..')
+            self.assertEqual(posixpath.relpath("/foo/bar/bat", "/x"), '../foo/bar/bat')
+            self.assertEqual(posixpath.relpath("/x", "/foo/bar/bat"), '../../../x')
+            self.assertEqual(posixpath.relpath("/", "/"), '.')
+            self.assertEqual(posixpath.relpath("/a", "/a"), '.')
+            self.assertEqual(posixpath.relpath("/a/b", "/a/b"), '.')
+        finally:
+            safe_rmdir(ABSTFN)
 
     @skip_if_ABSTFN_contains_backslash
     def test_relpath_bytes(self):
-        self.assertRaises(ValueError, posixpath.relpath, b"")
-        self.assertEqual(posixpath.relpath(b"a"), b"a")
-        self.assertEqual(posixpath.relpath(posixpath.abspath(b"a")), b"a")
-        self.assertEqual(posixpath.relpath(b"a/b"), b"a/b")
-        self.assertEqual(posixpath.relpath(b"../a/b"), b"../a/b")
-        with os_helper.change_cwd(ABSTFN):
-            curdir = os.fsencode(basename(ABSTFN))
-            self.assertEqual(posixpath.relpath(b"a", b"../b"),
-                                b"../"+curdir+b"/a")
-            self.assertEqual(posixpath.relpath(b"a/b", b"../c"),
-                                b"../"+curdir+b"/a/b")
-        self.assertEqual(posixpath.relpath(b"a", b"b/c"), b"../../a")
-        self.assertEqual(posixpath.relpath(b"a", b"a"), b".")
-        self.assertEqual(posixpath.relpath(b"/foo/bar/bat", b"/x/y/z"), b'../../../foo/bar/bat')
-        self.assertEqual(posixpath.relpath(b"/foo/bar/bat", b"/foo/bar"), b'bat')
-        self.assertEqual(posixpath.relpath(b"/foo/bar/bat", b"/"), b'foo/bar/bat')
-        self.assertEqual(posixpath.relpath(b"/", b"/foo/bar/bat"), b'../../..')
-        self.assertEqual(posixpath.relpath(b"/foo/bar/bat", b"/x"), b'../foo/bar/bat')
-        self.assertEqual(posixpath.relpath(b"/x", b"/foo/bar/bat"), b'../../../x')
-        self.assertEqual(posixpath.relpath(b"/", b"/"), b'.')
-        self.assertEqual(posixpath.relpath(b"/a", b"/a"), b'.')
-        self.assertEqual(posixpath.relpath(b"/a/b", b"/a/b"), b'.')
+        try:
+            os.mkdir(ABSTFN)
+            self.assertRaises(ValueError, posixpath.relpath, b"")
+            self.assertEqual(posixpath.relpath(b"a"), b"a")
+            self.assertEqual(posixpath.relpath(posixpath.abspath(b"a")), b"a")
+            self.assertEqual(posixpath.relpath(b"a/b"), b"a/b")
+            self.assertEqual(posixpath.relpath(b"../a/b"), b"../a/b")
+            with os_helper.change_cwd(ABSTFN):
+                curdir = os.fsencode(basename(ABSTFN))
+                self.assertEqual(posixpath.relpath(b"a", b"../b"),
+                                    b"../"+curdir+b"/a")
+                self.assertEqual(posixpath.relpath(b"a/b", b"../c"),
+                                    b"../"+curdir+b"/a/b")
+            self.assertEqual(posixpath.relpath(b"a", b"b/c"), b"../../a")
+            self.assertEqual(posixpath.relpath(b"a", b"a"), b".")
+            self.assertEqual(posixpath.relpath(b"/foo/bar/bat", b"/x/y/z"), b'../../../foo/bar/bat')
+            self.assertEqual(posixpath.relpath(b"/foo/bar/bat", b"/foo/bar"), b'bat')
+            self.assertEqual(posixpath.relpath(b"/foo/bar/bat", b"/"), b'foo/bar/bat')
+            self.assertEqual(posixpath.relpath(b"/", b"/foo/bar/bat"), b'../../..')
+            self.assertEqual(posixpath.relpath(b"/foo/bar/bat", b"/x"), b'../foo/bar/bat')
+            self.assertEqual(posixpath.relpath(b"/x", b"/foo/bar/bat"), b'../../../x')
+            self.assertEqual(posixpath.relpath(b"/", b"/"), b'.')
+            self.assertEqual(posixpath.relpath(b"/a", b"/a"), b'.')
+            self.assertEqual(posixpath.relpath(b"/a/b", b"/a/b"), b'.')
 
-        self.assertRaises(TypeError, posixpath.relpath, b"bytes", "str")
-        self.assertRaises(TypeError, posixpath.relpath, "str", b"bytes")
+            self.assertRaises(TypeError, posixpath.relpath, b"bytes", "str")
+            self.assertRaises(TypeError, posixpath.relpath, "str", b"bytes")
+        finally:
+            safe_rmdir(ABSTFN)
 
     def test_commonpath(self):
         def check(paths, expected):

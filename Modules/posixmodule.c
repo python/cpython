@@ -5540,11 +5540,11 @@ os__path_abspath(PyObject *module, PyObject *path)
 
         cwd_len = wcslen(cwd);
         abs_path_len = cwd_len + 1 + rel_path_len;
-        if (abs_path_len + 1 > (Py_ssize_t)PY_SSIZE_T_MAX / sizeof(wchar_t)) {
+        if ((size_t)abs_path_len + 1 > (size_t)PY_SSIZE_T_MAX / sizeof(wchar_t)) {
             return posix_error();
         }
 
-        abs_path = PyMem_RawMalloc((abs_path_len + 1) * sizeof(wchar_t));
+        abs_path = PyMem_RawMalloc(((size_t)abs_path_len + 1) * sizeof(wchar_t));
         if (!abs_path) {
             return NULL;
         }
