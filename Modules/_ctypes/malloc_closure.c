@@ -231,23 +231,22 @@ CThunkType_dealloc(PyObject *self)
 }
 
 static PyObject *
-CThunkType_get_narenas(PyTypeObject *self, void *Py_UNUSED(ignored))
+CThunkType_get_narenas(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    thunk_type_state *st = get_type_state(self);
+    thunk_type_state *st = get_type_state((PyTypeObject *)self);
     return PyLong_FromSsize_t(st->narenas);
 }
 
-static PyGetSetDef CThunkType_getsets[] = {
-    {"ffi_closure_containers_count", (getter)CThunkType_get_narenas,
-        NULL, NULL, NULL},
-    {0}
+static PyMethodDef CThunkType_methods[] = {
+    {"get_ffi_closure_containers_count", CThunkType_get_narenas, METH_NOARGS, NULL},
+    {0},
 };
 
 static PyType_Slot cthunk_type_slots[] = {
-    {Py_tp_getset, CThunkType_getsets},
     {Py_tp_traverse, CThunkType_traverse},
     {Py_tp_clear, CThunkType_clear},
     {Py_tp_dealloc, CThunkType_dealloc},
+    {Py_tp_methods, CThunkType_methods},
     {0, NULL},
 };
 
