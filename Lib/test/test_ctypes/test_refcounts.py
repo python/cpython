@@ -123,6 +123,19 @@ class ModuleIsolationTest(unittest.TestCase):
         )
         script_helper.assert_python_ok("-c", script)
 
+    def test_many_closures_per_module(self):
+        # check if mmap() and munmap() get called multiple times
+        script = (
+            "import ctypes;"
+            "pyfunc = lambda: 0;"
+            "cfunc_type = ctypes.CFUNCTYPE(ctypes.c_int);"
+            "cfuncs = [cfunc_type(pyfunc) for i in range(500)];"
+            "cthunk = cfuncs[0]._objects['0'];"
+            "n_containers = type(cthunk).ffi_closure_containers_count;"
+            "exit(n_containers and n_containers < 2)"
+        )
+        script_helper.assert_python_ok("-c", script)
+
 
 if __name__ == '__main__':
     unittest.main()
