@@ -51,24 +51,24 @@ Module contents
    This function is a :term:`decorator` that is used to add generated
    :term:`special methods <special method>` to classes, as described below.
 
-   The :func:`@dataclass <!dataclass>` decorator examines the class to find
+   The ``@dataclass`` decorator examines the class to find
    ``field``\s.  A ``field`` is defined as a class variable that has a
    :term:`type annotation <variable annotation>`.  With two
-   exceptions described below, nothing in :func:`@dataclass <!dataclass>`
+   exceptions described below, nothing in ``@dataclass``
    examines the type specified in the variable annotation.
 
    The order of the fields in all of the generated methods is the
    order in which they appear in the class definition.
 
-   The :func:`@dataclass <!dataclass>` decorator will add various "dunder" methods to
+   The ``@dataclass`` decorator will add various "dunder" methods to
    the class, described below.  If any of the added methods already
    exist in the class, the behavior depends on the parameter, as documented
    below. The decorator returns the same class that it is called on; no new
    class is created.
 
-   If :func:`@dataclass <!dataclass>` is used just as a simple decorator with no parameters,
+   If ``@dataclass`` is used just as a simple decorator with no parameters,
    it acts as if it has the default values documented in this
-   signature.  That is, these three uses of :func:`@dataclass <!dataclass>` are
+   signature.  That is, these three uses of ``@dataclass`` are
    equivalent::
 
      @dataclass
@@ -84,7 +84,7 @@ Module contents
      class C:
          ...
 
-   The parameters to :func:`@dataclass <!dataclass>` are:
+   The parameters to ``@dataclass`` are:
 
    - *init*: If true (the default), a :meth:`~object.__init__` method will be
      generated.
@@ -129,7 +129,7 @@ Module contents
      :meth:`!__hash__` implies that instances of the class are immutable.
      Mutability is a complicated property that depends on the programmer's
      intent, the existence and behavior of :meth:`!__eq__`, and the values of
-     the *eq* and *frozen* flags in the :func:`@dataclass <!dataclass>` decorator.
+     the *eq* and *frozen* flags in the ``@dataclass`` decorator.
 
      By default, :func:`@dataclass <dataclass>` will not implicitly add a :meth:`~object.__hash__`
      method unless it is safe to do so.  Neither will it add or change an
@@ -138,8 +138,8 @@ Module contents
      described in the :meth:`!__hash__` documentation.
 
      If :meth:`!__hash__` is not explicitly defined, or if it is set to ``None``,
-     then :func:`@dataclass <!dataclass>` *may* add an implicit :meth:`!__hash__` method.
-     Although not recommended, you can force :func:`@dataclass <!dataclass>` to create a
+     then ``@dataclass`` *may* add an implicit :meth:`!__hash__` method.
+     Although not recommended, you can force ``@dataclass`` to create a
      :meth:`!__hash__` method with ``unsafe_hash=True``. This might be the case
      if your class is logically immutable but can still be mutated.
      This is a specialized use case and should be considered carefully.
@@ -149,7 +149,7 @@ Module contents
      method in your dataclass and set ``unsafe_hash=True``; this will result
      in a :exc:`TypeError`.
 
-     If *eq* and *frozen* are both true, by default :func:`@dataclass <!dataclass>` will
+     If *eq* and *frozen* are both true, by default ``@dataclass`` will
      generate a :meth:`!__hash__` method for you.  If *eq* is true and
      *frozen* is false, :meth:`!__hash__` will be set to ``None``, marking it
      unhashable (which it is, since it is mutable).  If *eq* is false,
