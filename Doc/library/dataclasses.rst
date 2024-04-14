@@ -556,6 +556,8 @@ See the section below on init-only variables for ways to pass
 parameters to :meth:`!__post_init__`.  Also see the warning about how
 :func:`replace` handles ``init=False`` fields.
 
+.. _dataclasses-class-variables:
+
 Class variables
 ---------------
 
@@ -566,6 +568,8 @@ in :pep:`526`.  It does this by checking if the type of the field is
 from consideration as a field and is ignored by the dataclass
 mechanisms.  Such ``ClassVar`` pseudo-fields are not returned by the
 module-level :func:`fields` function.
+
+.. _dataclasses-init-only-variables:
 
 Init-only variables
 -------------------
@@ -598,6 +602,8 @@ value is not provided when creating the class::
 In this case, :func:`fields` will return :class:`Field` objects for ``i`` and
 ``j``, but not for ``database``.
 
+.. _dataclasses-frozen:
+
 Frozen instances
 ----------------
 
@@ -610,6 +616,8 @@ methods will raise a :exc:`FrozenInstanceError` when invoked.
 There is a tiny performance penalty when using ``frozen=True``:
 :meth:`~object.__init__` cannot use simple assignment to initialize fields, and
 must use :meth:`!__setattr__`.
+
+.. _dataclasses-inheritance:
 
 Inheritance
 -----------
