@@ -128,34 +128,33 @@ class GenericTest:
         )
 
     def test_exists(self):
-        def check_exists(filename, expected):
-            bfilename = os.fsencode(filename)
-            self.assertIs(self.pathmodule.exists(filename), expected)
-            self.assertIs(self.pathmodule.exists(bfilename), expected)
-
-        def check_lexists(filename, expected):
-            bfilename = os.fsencode(filename)
-            self.assertIs(self.pathmodule.lexists(filename), expected)
-            self.assertIs(self.pathmodule.lexists(bfilename), expected)
-
         filename = os_helper.TESTFN
         bfilename = os.fsencode(filename)
         self.addCleanup(os_helper.unlink, filename)
 
-        check_exists(filename, False)
-        check_lexists(filename, False)
+        self.assertIs(self.pathmodule.exists(filename), False)
+        self.assertIs(self.pathmodule.exists(bfilename), False)
+
+        self.assertIs(self.pathmodule.lexists(filename), False)
+        self.assertIs(self.pathmodule.lexists(bfilename), False)
 
         create_file(filename)
 
-        check_exists(filename, True)
+        self.assertIs(self.pathmodule.exists(filename), True)
+        self.assertIs(self.pathmodule.exists(bfilename), True)
+
         self.assertIs(self.pathmodule.exists(filename + '\udfff'), False)
         self.assertIs(self.pathmodule.exists(bfilename + b'\xff'), False)
-        check_exists(filename + '\x00', False)
+        self.assertIs(self.pathmodule.exists(filename + '\x00'), False)
+        self.assertIs(self.pathmodule.exists(bfilename + b'\x00'), False)
 
-        check_lexists(filename, True)
+        self.assertIs(self.pathmodule.lexists(filename), True)
+        self.assertIs(self.pathmodule.lexists(bfilename), True)
+
         self.assertIs(self.pathmodule.lexists(filename + '\udfff'), False)
         self.assertIs(self.pathmodule.lexists(bfilename + b'\xff'), False)
-        check_lexists(filename + '\x00', False)
+        self.assertIs(self.pathmodule.lexists(filename + '\x00'), False)
+        self.assertIs(self.pathmodule.lexists(bfilename + b'\x00'), False)
 
     @unittest.skipUnless(hasattr(os, "pipe"), "requires os.pipe()")
     @unittest.skipIf(is_emscripten, "Emscripten pipe fds have no stat")
