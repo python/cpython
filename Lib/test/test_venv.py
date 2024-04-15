@@ -640,77 +640,6 @@ class BasicTest(BaseTest):
                 error_message = f"CR LF found in line {i}"
                 self.assertFalse(line.endswith(b'\r\n'), error_message)
 
-<<<<<<< HEAD
-=======
-    @requireVenvCreate
-    def test_scm_ignore_files_git(self):
-        """
-        Test that a .gitignore file is created when "git" is specified.
-        The file should contain a `*\n` line.
-        """
-        self.run_with_capture(venv.create, self.env_dir,
-                              scm_ignore_files={'git'})
-        file_lines = self.get_text_file_contents('.gitignore').splitlines()
-        self.assertIn('*', file_lines)
-
-    @requireVenvCreate
-    def test_create_scm_ignore_files_multiple(self):
-        """
-        Test that ``scm_ignore_files`` can work with multiple SCMs.
-        """
-        bzrignore_name = ".bzrignore"
-        contents = "# For Bazaar.\n*\n"
-
-        class BzrEnvBuilder(venv.EnvBuilder):
-            def create_bzr_ignore_file(self, context):
-                gitignore_path = os.path.join(context.env_dir, bzrignore_name)
-                with open(gitignore_path, 'w', encoding='utf-8') as file:
-                    file.write(contents)
-
-        builder = BzrEnvBuilder(scm_ignore_files={'git', 'bzr'})
-        self.run_with_capture(builder.create, self.env_dir)
-
-        gitignore_lines = self.get_text_file_contents('.gitignore').splitlines()
-        self.assertIn('*', gitignore_lines)
-
-        bzrignore = self.get_text_file_contents(bzrignore_name)
-        self.assertEqual(bzrignore, contents)
-
-    @requireVenvCreate
-    def test_create_scm_ignore_files_empty(self):
-        """
-        Test that no default ignore files are created when ``scm_ignore_files``
-        is empty.
-        """
-        # scm_ignore_files is set to frozenset() by default.
-        self.run_with_capture(venv.create, self.env_dir)
-        with self.assertRaises(FileNotFoundError):
-            self.get_text_file_contents('.gitignore')
-
-        self.assertIn("--without-scm-ignore-files",
-                      self.get_text_file_contents('pyvenv.cfg'))
-
-    @requireVenvCreate
-    def test_cli_with_scm_ignore_files(self):
-        """
-        Test that default SCM ignore files are created by default via the CLI.
-        """
-        self.run_with_capture(venv.main, ['--without-pip', self.env_dir])
-
-        gitignore_lines = self.get_text_file_contents('.gitignore').splitlines()
-        self.assertIn('*', gitignore_lines)
-
-    @requireVenvCreate
-    def test_cli_without_scm_ignore_files(self):
-        """
-        Test that ``--without-scm-ignore-files`` doesn't create SCM ignore files.
-        """
-        args = ['--without-pip', '--without-scm-ignore-files', self.env_dir]
-        self.run_with_capture(venv.main, args)
-
-        with self.assertRaises(FileNotFoundError):
-            self.get_text_file_contents('.gitignore')
-
     def test_venv_same_path(self):
         same_path = venv.EnvBuilder._same_path
         if sys.platform == 'win32':
@@ -741,7 +670,6 @@ class BasicTest(BaseTest):
                 else:
                     self.assertFalse(same_path(path1, path2))
 
->>>>>>> 185999bb3a (gh-90329: Add _winapi.GetLongPathName and GetShortPathName and use in venv to reduce warnings (GH-117817))
 @requireVenvCreate
 class EnsurePipTest(BaseTest):
     """Test venv module installation of pip."""
