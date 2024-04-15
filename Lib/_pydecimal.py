@@ -4733,8 +4733,7 @@ class Context(object):
         return a.is_signed()
 
     def is_snan(self, a):
-        """Return True if the operand is a signaling NaN;
-        otherwise return False.
+        """Return True if the operand is a signaling NaN; otherwise return False.
 
         >>> ExtendedContext.is_snan(Decimal('2.50'))
         False
