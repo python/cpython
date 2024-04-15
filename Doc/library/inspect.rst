@@ -1,6 +1,11 @@
 :mod:`inspect` --- Inspect live objects
 =======================================
 
+.. testsetup:: *
+
+   import inspect
+   from inspect import *
+
 .. module:: inspect
    :synopsis: Extract information and source code from live objects.
 
@@ -32,7 +37,7 @@ The :func:`getmembers` function retrieves the members of an object such as a
 class or module. The functions whose names begin with "is" are mainly
 provided as convenient choices for the second argument to :func:`getmembers`.
 They also help you determine when you can expect to find the following special
-attributes:
+attributes (see :ref:`import-mod-attrs` for module attributes):
 
 .. this function name is too big to fit in the ascii-art table below
 .. |coroutine-origin-link| replace:: :func:`sys.set_coroutine_origin_tracking_depth`
@@ -40,11 +45,6 @@ attributes:
 +-----------+-------------------+---------------------------+
 | Type      | Attribute         | Description               |
 +===========+===================+===========================+
-| module    | __doc__           | documentation string      |
-+-----------+-------------------+---------------------------+
-|           | __file__          | filename (missing for     |
-|           |                   | built-in modules)         |
-+-----------+-------------------+---------------------------+
 | class     | __doc__           | documentation string      |
 +-----------+-------------------+---------------------------+
 |           | __name__          | name with which this      |
@@ -54,6 +54,11 @@ attributes:
 +-----------+-------------------+---------------------------+
 |           | __module__        | name of module in which   |
 |           |                   | this class was defined    |
++-----------+-------------------+---------------------------+
+|           | __type_params__   | A tuple containing the    |
+|           |                   | :ref:`type parameters     |
+|           |                   | <type-params>` of         |
+|           |                   | a generic class           |
 +-----------+-------------------+---------------------------+
 | method    | __doc__           | documentation string      |
 +-----------+-------------------+---------------------------+
@@ -102,6 +107,11 @@ attributes:
 |           |                   | ``"return"`` key is       |
 |           |                   | reserved for return       |
 |           |                   | annotations.              |
++-----------+-------------------+---------------------------+
+|           | __type_params__   | A tuple containing the    |
+|           |                   | :ref:`type parameters     |
+|           |                   | <type-params>` of         |
+|           |                   | a generic function        |
 +-----------+-------------------+---------------------------+
 |           | __module__        | name of module in which   |
 |           |                   | this function was defined |
@@ -187,7 +197,7 @@ attributes:
 |           | co_name           | name with which this code |
 |           |                   | object was defined        |
 +-----------+-------------------+---------------------------+
-|           | co_qualname       | fully-qualified name with |
+|           | co_qualname       | fully qualified name with |
 |           |                   | which this code object    |
 |           |                   | was defined               |
 +-----------+-------------------+---------------------------+
@@ -273,7 +283,7 @@ attributes:
 
       :func:`getmembers` will only return class attributes defined in the
       metaclass when the argument is a class and those attributes have been
-      listed in the metaclass' custom :meth:`__dir__`.
+      listed in the metaclass' custom :meth:`~object.__dir__`.
 
 
 .. function:: getmembers_static(object[, predicate])
@@ -340,6 +350,9 @@ attributes:
       Functions wrapped in :func:`functools.partial` now return ``True`` if the
       wrapped function is a Python generator function.
 
+   .. versionchanged:: 3.13
+      Functions wrapped in :func:`functools.partialmethod` now return ``True``
+      if the wrapped function is a Python generator function.
 
 .. function:: isgenerator(object)
 
@@ -348,14 +361,39 @@ attributes:
 
 .. function:: iscoroutinefunction(object)
 
-   Return ``True`` if the object is a :term:`coroutine function`
-   (a function defined with an :keyword:`async def` syntax).
+   Return ``True`` if the object is a :term:`coroutine function` (a function
+   defined with an :keyword:`async def` syntax), a :func:`functools.partial`
+   wrapping a :term:`coroutine function`, or a sync function marked with
+   :func:`markcoroutinefunction`.
 
    .. versionadded:: 3.5
 
    .. versionchanged:: 3.8
       Functions wrapped in :func:`functools.partial` now return ``True`` if the
       wrapped function is a :term:`coroutine function`.
+
+   .. versionchanged:: 3.12
+      Sync functions marked with :func:`markcoroutinefunction` now return
+      ``True``.
+
+   .. versionchanged:: 3.13
+      Functions wrapped in :func:`functools.partialmethod` now return ``True``
+      if the wrapped function is a :term:`coroutine function`.
+
+
+.. function:: markcoroutinefunction(func)
+
+   Decorator to mark a callable as a :term:`coroutine function` if it would not
+   otherwise be detected by :func:`iscoroutinefunction`.
+
+   This may be of use for sync functions that return a :term:`coroutine`, if
+   the function is passed to an API that requires :func:`iscoroutinefunction`.
+
+   When possible, using an :keyword:`async def` function is preferred. Also
+   acceptable is calling the function and testing the return with
+   :func:`iscoroutine`.
+
+   .. versionadded:: 3.12
 
 
 .. function:: iscoroutine(object)
@@ -371,7 +409,11 @@ attributes:
    Return ``True`` if the object can be used in :keyword:`await` expression.
 
    Can also be used to distinguish generator-based coroutines from regular
-   generators::
+   generators:
+
+   .. testcode::
+
+      import types
 
       def gen():
           yield
@@ -388,13 +430,15 @@ attributes:
 .. function:: isasyncgenfunction(object)
 
    Return ``True`` if the object is an :term:`asynchronous generator` function,
-   for example::
+   for example:
 
-    >>> async def agen():
-    ...     yield 1
-    ...
-    >>> inspect.isasyncgenfunction(agen)
-    True
+   .. doctest::
+
+      >>> async def agen():
+      ...     yield 1
+      ...
+      >>> inspect.isasyncgenfunction(agen)
+      True
 
    .. versionadded:: 3.6
 
@@ -402,6 +446,9 @@ attributes:
       Functions wrapped in :func:`functools.partial` now return ``True`` if the
       wrapped function is a :term:`asynchronous generator` function.
 
+   .. versionchanged:: 3.13
+      Functions wrapped in :func:`functools.partialmethod` now return ``True``
+      if the wrapped function is a :term:`coroutine function`.
 
 .. function:: isasyncgen(object)
 
@@ -434,8 +481,10 @@ attributes:
 
    Return ``True`` if the type of object is a :class:`~types.MethodWrapperType`.
 
-   These are instances of :class:`~types.MethodWrapperType`, such as :meth:`~object().__str__`,
-   :meth:`~object().__eq__` and :meth:`~object().__repr__`
+   These are instances of :class:`~types.MethodWrapperType`, such as :meth:`~object.__str__`,
+   :meth:`~object.__eq__` and :meth:`~object.__repr__`.
+
+   .. versionadded:: 3.11
 
 
 .. function:: isroutine(object)
@@ -458,12 +507,13 @@ attributes:
    has a :meth:`~object.__get__` method but not a :meth:`~object.__set__`
    method, but beyond that the set of attributes varies.  A
    :attr:`~definition.__name__` attribute is usually
-   sensible, and :attr:`__doc__` often is.
+   sensible, and :attr:`!__doc__` often is.
 
    Methods implemented via descriptors that also pass one of the other tests
    return ``False`` from the :func:`ismethoddescriptor` test, simply because the
    other tests promise more -- you can, e.g., count on having the
-   :attr:`__func__` attribute (etc) when an object passes :func:`ismethod`.
+   :attr:`~method.__func__` attribute (etc) when an object passes
+   :func:`ismethod`.
 
 
 .. function:: isdatadescriptor(object)
@@ -474,7 +524,7 @@ attributes:
    Examples are properties (defined in Python), getsets, and members.  The
    latter two are defined in C and there are more specific tests available for
    those types, which is robust across Python implementations.  Typically, data
-   descriptors will also have :attr:`~definition.__name__` and :attr:`__doc__` attributes
+   descriptors will also have :attr:`~definition.__name__` and :attr:`!__doc__` attributes
    (properties, getsets, and members have both of these attributes), but this is
    not guaranteed.
 
@@ -512,6 +562,7 @@ Retrieving source code
    If the documentation string for an object is not provided and the object is
    a class, a method, a property or a descriptor, retrieve the documentation
    string from the inheritance hierarchy.
+   Return ``None`` if the documentation string is invalid or missing.
 
    .. versionchanged:: 3.5
       Documentation strings are now inherited if not overridden.
@@ -535,12 +586,14 @@ Retrieving source code
 
 .. function:: getmodule(object)
 
-   Try to guess which module an object was defined in.
+   Try to guess which module an object was defined in. Return ``None``
+   if the module cannot be determined.
 
 
 .. function:: getsourcefile(object)
 
-   Return the name of the Python source file in which an object was defined.  This
+   Return the name of the Python source file in which an object was defined
+   or ``None`` if no way can be identified to get the source.  This
    will fail with a :exc:`TypeError` if the object is a built-in module, class, or
    function.
 
@@ -553,6 +606,8 @@ Retrieving source code
    object and the line number indicates where in the original source file the first
    line of code was found.  An :exc:`OSError` is raised if the source code cannot
    be retrieved.
+   A :exc:`TypeError` is raised if the object is a built-in module, class, or
+   function.
 
    .. versionchanged:: 3.3
       :exc:`OSError` is raised instead of :exc:`IOError`, now an alias of the
@@ -565,6 +620,8 @@ Retrieving source code
    class, method, function, traceback, frame, or code object.  The source code is
    returned as a single string.  An :exc:`OSError` is raised if the source code
    cannot be retrieved.
+   A :exc:`TypeError` is raised if the object is a built-in module, class, or
+   function.
 
    .. versionchanged:: 3.3
       :exc:`OSError` is raised instead of :exc:`IOError`, now an alias of the
@@ -589,13 +646,16 @@ Introspecting callables with the Signature object
 
 .. versionadded:: 3.3
 
-The Signature object represents the call signature of a callable object and its
-return annotation.  To retrieve a Signature object, use the :func:`signature`
+The :class:`Signature` object represents the call signature of a callable object
+and its return annotation. To retrieve a :class:`!Signature` object,
+use the :func:`!signature`
 function.
 
 .. function:: signature(callable, *, follow_wrapped=True, globals=None, locals=None, eval_str=False)
 
-   Return a :class:`Signature` object for the given ``callable``::
+   Return a :class:`Signature` object for the given *callable*:
+
+   .. doctest::
 
       >>> from inspect import signature
       >>> def foo(a, *, b:int, **kwargs):
@@ -604,10 +664,10 @@ function.
       >>> sig = signature(foo)
 
       >>> str(sig)
-      '(a, *, b:int, **kwargs)'
+      '(a, *, b: int, **kwargs)'
 
       >>> str(sig.parameters['b'])
-      'b:int'
+      'b: int'
 
       >>> sig.parameters['b'].annotation
       <class 'int'>
@@ -618,29 +678,30 @@ function.
    For objects defined in modules using stringized annotations
    (``from __future__ import annotations``), :func:`signature` will
    attempt to automatically un-stringize the annotations using
-   :func:`inspect.get_annotations()`.  The
-   ``global``, ``locals``, and ``eval_str`` parameters are passed
-   into :func:`inspect.get_annotations()` when resolving the
-   annotations; see the documentation for :func:`inspect.get_annotations()`
+   :func:`get_annotations`.  The
+   *globals*, *locals*, and *eval_str* parameters are passed
+   into :func:`get_annotations` when resolving the
+   annotations; see the documentation for :func:`get_annotations`
    for instructions on how to use these parameters.
 
    Raises :exc:`ValueError` if no signature can be provided, and
    :exc:`TypeError` if that type of object is not supported.  Also,
-   if the annotations are stringized, and ``eval_str`` is not false,
-   the ``eval()`` call(s) to un-stringize the annotations could
-   potentially raise any kind of exception.
+   if the annotations are stringized, and *eval_str* is not false,
+   the ``eval()`` call(s) to un-stringize the annotations in :func:`get_annotations`
+   could potentially raise any kind of exception.
 
    A slash(/) in the signature of a function denotes that the parameters prior
    to it are positional-only. For more info, see
    :ref:`the FAQ entry on positional-only parameters <faq-positional-only-arguments>`.
 
-   .. versionadded:: 3.5
-      ``follow_wrapped`` parameter. Pass ``False`` to get a signature of
-      ``callable`` specifically (``callable.__wrapped__`` will not be used to
+   .. versionchanged:: 3.5
+      The *follow_wrapped* parameter was added.
+      Pass ``False`` to get a signature of
+      *callable* specifically (``callable.__wrapped__`` will not be used to
       unwrap decorated callables.)
 
-   .. versionadded:: 3.10
-      ``globals``, ``locals``, and ``eval_str`` parameters.
+   .. versionchanged:: 3.10
+      The *globals*, *locals*, and *eval_str* parameters were added.
 
    .. note::
 
@@ -648,10 +709,18 @@ function.
       Python.  For example, in CPython, some built-in functions defined in
       C provide no metadata about their arguments.
 
+   .. impl-detail::
+
+      If the passed object has a :attr:`!__signature__` attribute,
+      we may use it to create the signature.
+      The exact semantics are an implementation detail and are subject to
+      unannounced changes. Consult the source code for current semantics.
+
 
 .. class:: Signature(parameters=None, *, return_annotation=Signature.empty)
 
-   A Signature object represents the call signature of a function and its return
+   A :class:`!Signature` object represents the call signature of a function
+   and its return
    annotation.  For each parameter accepted by the function it stores a
    :class:`Parameter` object in its :attr:`parameters` collection.
 
@@ -661,14 +730,14 @@ function.
    positional-only first, then positional-or-keyword, and that parameters with
    defaults follow parameters without defaults.
 
-   The optional *return_annotation* argument, can be an arbitrary Python object,
-   is the "return" annotation of the callable.
+   The optional *return_annotation* argument can be an arbitrary Python object.
+   It represents the "return" annotation of the callable.
 
-   Signature objects are *immutable*.  Use :meth:`Signature.replace` to make a
-   modified copy.
+   :class:`!Signature` objects are *immutable*.  Use :meth:`Signature.replace` or
+   :func:`copy.replace` to make a modified copy.
 
    .. versionchanged:: 3.5
-      Signature objects are picklable and hashable.
+      :class:`!Signature` objects are now picklable and :term:`hashable`.
 
    .. attribute:: Signature.empty
 
@@ -705,48 +774,68 @@ function.
 
    .. method:: Signature.replace(*[, parameters][, return_annotation])
 
-      Create a new Signature instance based on the instance replace was invoked
-      on.  It is possible to pass different ``parameters`` and/or
-      ``return_annotation`` to override the corresponding properties of the base
-      signature.  To remove return_annotation from the copied Signature, pass in
+      Create a new :class:`Signature` instance based on the instance
+      :meth:`replace` was invoked on.
+      It is possible to pass different *parameters* and/or
+      *return_annotation* to override the corresponding properties of the base
+      signature.  To remove ``return_annotation`` from the copied
+      :class:`!Signature`, pass in
       :attr:`Signature.empty`.
 
-      ::
+      .. doctest::
 
          >>> def test(a, b):
          ...     pass
+         ...
          >>> sig = signature(test)
          >>> new_sig = sig.replace(return_annotation="new return anno")
          >>> str(new_sig)
          "(a, b) -> 'new return anno'"
 
-   .. classmethod:: Signature.from_callable(obj, *, follow_wrapped=True, globalns=None, localns=None)
+      :class:`Signature` objects are also supported by the generic function
+      :func:`copy.replace`.
+
+   .. method:: format(*, max_width=None)
+
+      Create a string representation of the :class:`Signature` object.
+
+      If *max_width* is passed, the method will attempt to fit
+      the signature into lines of at most *max_width* characters.
+      If the signature is longer than *max_width*,
+      all parameters will be on separate lines.
+
+      .. versionadded:: 3.13
+
+   .. classmethod:: Signature.from_callable(obj, *, follow_wrapped=True, globals=None, locals=None, eval_str=False)
 
        Return a :class:`Signature` (or its subclass) object for a given callable
-       ``obj``.  Pass ``follow_wrapped=False`` to get a signature of ``obj``
-       without unwrapping its ``__wrapped__`` chain. ``globalns`` and
-       ``localns`` will be used as the namespaces when resolving annotations.
+       *obj*.
 
-       This method simplifies subclassing of :class:`Signature`::
+       This method simplifies subclassing of :class:`Signature`:
 
-         class MySignature(Signature):
-             pass
-         sig = MySignature.from_callable(min)
-         assert isinstance(sig, MySignature)
+       .. testcode::
+
+          class MySignature(Signature):
+              pass
+          sig = MySignature.from_callable(sum)
+          assert isinstance(sig, MySignature)
+
+       Its behavior is otherwise identical to that of :func:`signature`.
 
        .. versionadded:: 3.5
 
-       .. versionadded:: 3.10
-          ``globalns`` and ``localns`` parameters.
+       .. versionchanged:: 3.10
+         The *globals*, *locals*, and *eval_str* parameters were added.
 
 
 .. class:: Parameter(name, kind, *, default=Parameter.empty, annotation=Parameter.empty)
 
-   Parameter objects are *immutable*.  Instead of modifying a Parameter object,
-   you can use :meth:`Parameter.replace` to create a modified copy.
+   :class:`!Parameter` objects are *immutable*.
+   Instead of modifying a :class:`!Parameter` object,
+   you can use :meth:`Parameter.replace` or :func:`copy.replace` to create a modified copy.
 
    .. versionchanged:: 3.5
-      Parameter objects are picklable and hashable.
+      Parameter objects are now picklable and :term:`hashable`.
 
    .. attribute:: Parameter.empty
 
@@ -765,7 +854,7 @@ function.
          expressions.
 
          .. versionchanged:: 3.6
-            These parameter names are exposed by this module as names like
+            These parameter names are now exposed by this module as names like
             ``implicit0``.
 
    .. attribute:: Parameter.default
@@ -780,8 +869,9 @@ function.
 
    .. attribute:: Parameter.kind
 
-      Describes how argument values are bound to the parameter.  Possible values
-      (accessible via :class:`Parameter`, like ``Parameter.KEYWORD_ONLY``):
+      Describes how argument values are bound to the parameter.  The possible
+      values are accessible via :class:`Parameter` (like ``Parameter.KEYWORD_ONLY``),
+      and support comparison and ordering, in the following order:
 
       .. tabularcolumns:: |l|L|
 
@@ -814,7 +904,9 @@ function.
       |                        | definition.                                  |
       +------------------------+----------------------------------------------+
 
-      Example: print all keyword-only arguments without default values::
+      Example: print all keyword-only arguments without default values:
+
+      .. doctest::
 
          >>> def foo(a, b, *, c, d=10):
          ...     pass
@@ -828,11 +920,13 @@ function.
 
    .. attribute:: Parameter.kind.description
 
-      Describes a enum value of Parameter.kind.
+      Describes a enum value of :attr:`Parameter.kind`.
 
       .. versionadded:: 3.8
 
-      Example: print all descriptions of arguments::
+      Example: print all descriptions of arguments:
+
+      .. doctest::
 
          >>> def foo(a, b, *, c, d=10):
          ...     pass
@@ -847,12 +941,12 @@ function.
 
    .. method:: Parameter.replace(*[, name][, kind][, default][, annotation])
 
-      Create a new Parameter instance based on the instance replaced was invoked
-      on.  To override a :class:`Parameter` attribute, pass the corresponding
+      Create a new :class:`Parameter` instance based on the instance replaced was invoked
+      on.  To override a :class:`!Parameter` attribute, pass the corresponding
       argument.  To remove a default value or/and an annotation from a
-      Parameter, pass :attr:`Parameter.empty`.
+      :class:`!Parameter`, pass :attr:`Parameter.empty`.
 
-      ::
+      .. doctest::
 
          >>> from inspect import Parameter
          >>> param = Parameter('foo', Parameter.KEYWORD_ONLY, default=42)
@@ -863,10 +957,13 @@ function.
          'foo=42'
 
          >>> str(param.replace(default=Parameter.empty, annotation='spam'))
-         "foo:'spam'"
+         "foo: 'spam'"
+
+      :class:`Parameter` objects are also supported by the generic function
+      :func:`copy.replace`.
 
    .. versionchanged:: 3.4
-      In Python 3.3 Parameter objects were allowed to have ``name`` set
+      In Python 3.3 :class:`Parameter` objects were allowed to have ``name`` set
       to ``None`` if their ``kind`` was set to ``POSITIONAL_ONLY``.
       This is no longer permitted.
 
@@ -919,18 +1016,20 @@ function.
       For variable-keyword arguments (``**kwargs``) the default is an
       empty dict.
 
-      ::
+      .. doctest::
 
-        >>> def foo(a, b='ham', *args): pass
-        >>> ba = inspect.signature(foo).bind('spam')
-        >>> ba.apply_defaults()
-        >>> ba.arguments
-        {'a': 'spam', 'b': 'ham', 'args': ()}
+         >>> def foo(a, b='ham', *args): pass
+         >>> ba = inspect.signature(foo).bind('spam')
+         >>> ba.apply_defaults()
+         >>> ba.arguments
+         {'a': 'spam', 'b': 'ham', 'args': ()}
 
       .. versionadded:: 3.5
 
    The :attr:`args` and :attr:`kwargs` properties can be used to invoke
-   functions::
+   functions:
+
+   .. testcode::
 
       def test(a, *, b):
           ...
@@ -1049,19 +1148,22 @@ Classes and functions
    ``**`` arguments, if any) to their values from *args* and *kwds*. In case of
    invoking *func* incorrectly, i.e. whenever ``func(*args, **kwds)`` would raise
    an exception because of incompatible signature, an exception of the same type
-   and the same or similar message is raised. For example::
+   and the same or similar message is raised. For example:
 
-    >>> from inspect import getcallargs
-    >>> def f(a, b=1, *pos, **named):
-    ...     pass
-    >>> getcallargs(f, 1, 2, 3) == {'a': 1, 'named': {}, 'b': 2, 'pos': (3,)}
-    True
-    >>> getcallargs(f, a=2, x=4) == {'a': 2, 'named': {'x': 4}, 'b': 1, 'pos': ()}
-    True
-    >>> getcallargs(f)
-    Traceback (most recent call last):
-    ...
-    TypeError: f() missing 1 required positional argument: 'a'
+   .. doctest::
+
+      >>> from inspect import getcallargs
+      >>> def f(a, b=1, *pos, **named):
+      ...     pass
+      ...
+      >>> getcallargs(f, 1, 2, 3) == {'a': 1, 'named': {}, 'b': 2, 'pos': (3,)}
+      True
+      >>> getcallargs(f, a=2, x=4) == {'a': 2, 'named': {'x': 4}, 'b': 1, 'pos': ()}
+      True
+      >>> getcallargs(f)
+      Traceback (most recent call last):
+      ...
+      TypeError: f() missing 1 required positional argument: 'a'
 
    .. versionadded:: 3.2
 
@@ -1127,7 +1229,7 @@ Classes and functions
      doesn't have its own annotations dict, returns an empty dict.
    * All accesses to object members and dict values are done
      using ``getattr()`` and ``dict.get()`` for safety.
-   * Always, always, always returns a freshly-created dict.
+   * Always, always, always returns a freshly created dict.
 
    ``eval_str`` controls whether or not values of type ``str`` are replaced
    with the result of calling :func:`eval()` on those values:
@@ -1147,9 +1249,10 @@ Classes and functions
    * If ``obj`` is a class, ``globals`` defaults to
      ``sys.modules[obj.__module__].__dict__`` and ``locals`` defaults
      to the ``obj`` class namespace.
-   * If ``obj`` is a callable, ``globals`` defaults to ``obj.__globals__``,
+   * If ``obj`` is a callable, ``globals`` defaults to
+     :attr:`obj.__globals__ <function.__globals__>`,
      although if ``obj`` is a wrapped function (using
-     ``functools.update_wrapper()``) it is first unwrapped.
+     :func:`functools.update_wrapper`) it is first unwrapped.
 
    Calling ``get_annotations`` is best practice for accessing the
    annotations dict of any object.  See :ref:`annotations-howto` for
@@ -1163,16 +1266,90 @@ Classes and functions
 The interpreter stack
 ---------------------
 
-When the following functions return "frame records," each record is a
-:term:`named tuple`
-``FrameInfo(frame, filename, lineno, function, code_context, index)``.
-The tuple contains the frame object, the filename, the line number of the
-current line,
-the function name, a list of lines of context from the source code, and the
-index of the current line within that list.
+Some of the following functions return
+:class:`FrameInfo` objects. For backwards compatibility these objects allow
+tuple-like operations on all attributes except ``positions``. This behavior
+is considered deprecated and may be removed in the future.
 
-.. versionchanged:: 3.5
-   Return a named tuple instead of a tuple.
+.. class:: FrameInfo
+
+   .. attribute:: frame
+
+      The :ref:`frame object <frame-objects>` that the record corresponds to.
+
+   .. attribute:: filename
+
+      The file name associated with the code being executed by the frame this record
+      corresponds to.
+
+   .. attribute:: lineno
+
+      The line number of the current line associated with the code being
+      executed by the frame this record corresponds to.
+
+   .. attribute:: function
+
+      The function name that is being executed by the frame this record corresponds to.
+
+   .. attribute:: code_context
+
+      A list of lines of context from the source code that's being executed by the frame
+      this record corresponds to.
+
+   .. attribute:: index
+
+      The index of the current line being executed in the :attr:`code_context` list.
+
+   .. attribute:: positions
+
+      A :class:`dis.Positions` object containing the start line number, end line
+      number, start column offset, and end column offset associated with the
+      instruction being executed by the frame this record corresponds to.
+
+   .. versionchanged:: 3.5
+      Return a :term:`named tuple` instead of a :class:`tuple`.
+
+   .. versionchanged:: 3.11
+      :class:`!FrameInfo` is now a class instance
+      (that is backwards compatible with the previous :term:`named tuple`).
+
+
+.. class:: Traceback
+
+   .. attribute:: filename
+
+      The file name associated with the code being executed by the frame this traceback
+      corresponds to.
+
+   .. attribute:: lineno
+
+      The line number of the current line associated with the code being
+      executed by the frame this traceback corresponds to.
+
+   .. attribute:: function
+
+      The function name that is being executed by the frame this traceback corresponds to.
+
+   .. attribute:: code_context
+
+      A list of lines of context from the source code that's being executed by the frame
+      this traceback corresponds to.
+
+   .. attribute:: index
+
+      The index of the current line being executed in the :attr:`code_context` list.
+
+   .. attribute:: positions
+
+      A :class:`dis.Positions` object containing the start line number, end
+      line number, start column offset, and end column offset associated with
+      the instruction being executed by the frame this traceback corresponds
+      to.
+
+   .. versionchanged:: 3.11
+      :class:`!Traceback` is now a class instance
+      (that is backwards compatible with the previous :term:`named tuple`).
+
 
 .. note::
 
@@ -1207,35 +1384,41 @@ line.
 
 .. function:: getframeinfo(frame, context=1)
 
-   Get information about a frame or traceback object.  A :term:`named tuple`
-   ``Traceback(filename, lineno, function, code_context, index)`` is returned.
+   Get information about a frame or traceback object.  A :class:`Traceback` object
+   is returned.
 
+   .. versionchanged:: 3.11
+      A :class:`Traceback` object is returned instead of a named tuple.
 
 .. function:: getouterframes(frame, context=1)
 
-   Get a list of frame records for a frame and all outer frames.  These frames
-   represent the calls that lead to the creation of *frame*. The first entry in the
-   returned list represents *frame*; the last entry represents the outermost call
-   on *frame*'s stack.
+   Get a list of :class:`FrameInfo` objects for a frame and all outer frames.
+   These frames represent the calls that lead to the creation of *frame*. The
+   first entry in the returned list represents *frame*; the last entry
+   represents the outermost call on *frame*'s stack.
 
    .. versionchanged:: 3.5
       A list of :term:`named tuples <named tuple>`
       ``FrameInfo(frame, filename, lineno, function, code_context, index)``
       is returned.
 
+   .. versionchanged:: 3.11
+      A list of :class:`FrameInfo` objects is returned.
 
 .. function:: getinnerframes(traceback, context=1)
 
-   Get a list of frame records for a traceback's frame and all inner frames.  These
-   frames represent calls made as a consequence of *frame*.  The first entry in the
-   list represents *traceback*; the last entry represents where the exception was
-   raised.
+   Get a list of :class:`FrameInfo` objects for a traceback's frame and all
+   inner frames.  These frames represent calls made as a consequence of *frame*.
+   The first entry in the list represents *traceback*; the last entry represents
+   where the exception was raised.
 
    .. versionchanged:: 3.5
       A list of :term:`named tuples <named tuple>`
       ``FrameInfo(frame, filename, lineno, function, code_context, index)``
       is returned.
 
+   .. versionchanged:: 3.11
+      A list of :class:`FrameInfo` objects is returned.
 
 .. function:: currentframe()
 
@@ -1251,35 +1434,40 @@ line.
 
 .. function:: stack(context=1)
 
-   Return a list of frame records for the caller's stack.  The first entry in the
-   returned list represents the caller; the last entry represents the outermost
-   call on the stack.
+   Return a list of :class:`FrameInfo` objects for the caller's stack.  The
+   first entry in the returned list represents the caller; the last entry
+   represents the outermost call on the stack.
 
    .. versionchanged:: 3.5
       A list of :term:`named tuples <named tuple>`
       ``FrameInfo(frame, filename, lineno, function, code_context, index)``
       is returned.
 
+   .. versionchanged:: 3.11
+      A list of :class:`FrameInfo` objects is returned.
 
 .. function:: trace(context=1)
 
-   Return a list of frame records for the stack between the current frame and the
-   frame in which an exception currently being handled was raised in.  The first
-   entry in the list represents the caller; the last entry represents where the
-   exception was raised.
+   Return a list of :class:`FrameInfo` objects for the stack between the current
+   frame and the frame in which an exception currently being handled was raised
+   in.  The first entry in the list represents the caller; the last entry
+   represents where the exception was raised.
 
    .. versionchanged:: 3.5
       A list of :term:`named tuples <named tuple>`
       ``FrameInfo(frame, filename, lineno, function, code_context, index)``
       is returned.
 
+   .. versionchanged:: 3.11
+      A list of :class:`FrameInfo` objects is returned.
 
 Fetching attributes statically
 ------------------------------
 
 Both :func:`getattr` and :func:`hasattr` can trigger code execution when
 fetching or checking for the existence of attributes. Descriptors, like
-properties, will be invoked and :meth:`__getattr__` and :meth:`__getattribute__`
+properties, will be invoked and :meth:`~object.__getattr__` and
+:meth:`~object.__getattribute__`
 may be called.
 
 For cases where you want passive introspection, like documentation tools, this
@@ -1289,7 +1477,8 @@ but avoids executing code when it fetches attributes.
 .. function:: getattr_static(obj, attr, default=None)
 
    Retrieve attributes without triggering dynamic lookup via the
-   descriptor protocol, :meth:`__getattr__` or :meth:`__getattribute__`.
+   descriptor protocol, :meth:`~object.__getattr__`
+   or :meth:`~object.__getattribute__`.
 
    Note: this function may not be able to retrieve all attributes
    that getattr can fetch (like dynamically created attributes)
@@ -1332,8 +1521,8 @@ code execution::
            pass
 
 
-Current State of Generators and Coroutines
-------------------------------------------
+Current State of Generators, Coroutines, and Asynchronous Generators
+--------------------------------------------------------------------
 
 When implementing coroutine schedulers and for other advanced uses of
 generators, it is useful to determine whether a generator is currently
@@ -1346,10 +1535,11 @@ generator to be determined easily.
    Get current state of a generator-iterator.
 
    Possible states are:
-    * GEN_CREATED: Waiting to start execution.
-    * GEN_RUNNING: Currently being executed by the interpreter.
-    * GEN_SUSPENDED: Currently suspended at a yield expression.
-    * GEN_CLOSED: Execution has completed.
+
+   * GEN_CREATED: Waiting to start execution.
+   * GEN_RUNNING: Currently being executed by the interpreter.
+   * GEN_SUSPENDED: Currently suspended at a yield expression.
+   * GEN_CLOSED: Execution has completed.
 
    .. versionadded:: 3.2
 
@@ -1361,12 +1551,30 @@ generator to be determined easily.
    ``cr_frame`` attributes.
 
    Possible states are:
-    * CORO_CREATED: Waiting to start execution.
-    * CORO_RUNNING: Currently being executed by the interpreter.
-    * CORO_SUSPENDED: Currently suspended at an await expression.
-    * CORO_CLOSED: Execution has completed.
+
+   * CORO_CREATED: Waiting to start execution.
+   * CORO_RUNNING: Currently being executed by the interpreter.
+   * CORO_SUSPENDED: Currently suspended at an await expression.
+   * CORO_CLOSED: Execution has completed.
 
    .. versionadded:: 3.5
+
+.. function:: getasyncgenstate(agen)
+
+   Get current state of an asynchronous generator object.  The function is
+   intended to be used with asynchronous iterator objects created by
+   :keyword:`async def` functions which use the :keyword:`yield` statement,
+   but will accept any asynchronous generator-like object that has
+   ``ag_running`` and ``ag_frame`` attributes.
+
+   Possible states are:
+
+   * AGEN_CREATED: Waiting to start execution.
+   * AGEN_RUNNING: Currently being executed by the interpreter.
+   * AGEN_SUSPENDED: Currently suspended at a yield expression.
+   * AGEN_CLOSED: Execution has completed.
+
+   .. versionadded:: 3.12
 
 The current internal state of the generator can also be queried. This is
 mostly useful for testing purposes, to ensure that internal state is being
@@ -1399,14 +1607,22 @@ updated as expected:
 
    .. versionadded:: 3.5
 
+.. function:: getasyncgenlocals(agen)
+
+   This function is analogous to :func:`~inspect.getgeneratorlocals`, but
+   works for asynchronous generator objects created by :keyword:`async def`
+   functions which use the :keyword:`yield` statement.
+
+   .. versionadded:: 3.12
+
 
 .. _inspect-module-co-flags:
 
 Code Objects Bit Flags
 ----------------------
 
-Python code objects have a ``co_flags`` attribute, which is a bitmap of
-the following flags:
+Python code objects have a :attr:`~codeobject.co_flags` attribute,
+which is a bitmap of the following flags:
 
 .. data:: CO_OPTIMIZED
 
@@ -1414,8 +1630,8 @@ the following flags:
 
 .. data:: CO_NEWLOCALS
 
-   If set, a new dict will be created for the frame's ``f_locals`` when
-   the code object is executed.
+   If set, a new dict will be created for the frame's :attr:`~frame.f_locals`
+   when the code object is executed.
 
 .. data:: CO_VARARGS
 
@@ -1467,6 +1683,39 @@ the following flags:
    for any introspection needs.
 
 
+Buffer flags
+------------
+
+.. class:: BufferFlags
+
+   This is an :class:`enum.IntFlag` that represents the flags that
+   can be passed to the :meth:`~object.__buffer__` method of objects
+   implementing the :ref:`buffer protocol <bufferobjects>`.
+
+   The meaning of the flags is explained at :ref:`buffer-request-types`.
+
+   .. attribute:: BufferFlags.SIMPLE
+   .. attribute:: BufferFlags.WRITABLE
+   .. attribute:: BufferFlags.FORMAT
+   .. attribute:: BufferFlags.ND
+   .. attribute:: BufferFlags.STRIDES
+   .. attribute:: BufferFlags.C_CONTIGUOUS
+   .. attribute:: BufferFlags.F_CONTIGUOUS
+   .. attribute:: BufferFlags.ANY_CONTIGUOUS
+   .. attribute:: BufferFlags.INDIRECT
+   .. attribute:: BufferFlags.CONTIG
+   .. attribute:: BufferFlags.CONTIG_RO
+   .. attribute:: BufferFlags.STRIDED
+   .. attribute:: BufferFlags.STRIDED_RO
+   .. attribute:: BufferFlags.RECORDS
+   .. attribute:: BufferFlags.RECORDS_RO
+   .. attribute:: BufferFlags.FULL
+   .. attribute:: BufferFlags.FULL_RO
+   .. attribute:: BufferFlags.READ
+   .. attribute:: BufferFlags.WRITE
+
+   .. versionadded:: 3.12
+
 .. _inspect-module-cli:
 
 Command Line Interface
@@ -1481,6 +1730,6 @@ By default, accepts the name of a module and prints the source of that
 module. A class or function within the module can be printed instead by
 appended a colon and the qualified name of the target object.
 
-.. cmdoption:: --details
+.. option:: --details
 
    Print information about the specified object rather than the source code

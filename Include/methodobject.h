@@ -13,18 +13,25 @@ extern "C" {
 
 PyAPI_DATA(PyTypeObject) PyCFunction_Type;
 
-#define PyCFunction_CheckExact(op) Py_IS_TYPE(op, &PyCFunction_Type)
-#define PyCFunction_Check(op) PyObject_TypeCheck(op, &PyCFunction_Type)
+#define PyCFunction_CheckExact(op) Py_IS_TYPE((op), &PyCFunction_Type)
+#define PyCFunction_Check(op) PyObject_TypeCheck((op), &PyCFunction_Type)
 
 typedef PyObject *(*PyCFunction)(PyObject *, PyObject *);
-typedef PyObject *(*_PyCFunctionFast) (PyObject *, PyObject *const *, Py_ssize_t);
+typedef PyObject *(*PyCFunctionFast) (PyObject *, PyObject *const *, Py_ssize_t);
 typedef PyObject *(*PyCFunctionWithKeywords)(PyObject *, PyObject *,
                                              PyObject *);
-typedef PyObject *(*_PyCFunctionFastWithKeywords) (PyObject *,
-                                                   PyObject *const *, Py_ssize_t,
-                                                   PyObject *);
+typedef PyObject *(*PyCFunctionFastWithKeywords) (PyObject *,
+                                                  PyObject *const *, Py_ssize_t,
+                                                  PyObject *);
 typedef PyObject *(*PyCMethod)(PyObject *, PyTypeObject *, PyObject *const *,
                                size_t, PyObject *);
+
+// For backwards compatibility. `METH_FASTCALL` was added to the stable API in
+// 3.10 alongside `_PyCFunctionFastWithKeywords` and `_PyCFunctionFast`.
+// Note that the underscore-prefixed names were documented in public docs;
+// people may be using them.
+typedef PyCFunctionFast _PyCFunctionFast;
+typedef PyCFunctionFastWithKeywords _PyCFunctionFastWithKeywords;
 
 // Cast an function to the PyCFunction type to use it with PyMethodDef.
 //
@@ -42,13 +49,12 @@ typedef PyObject *(*PyCMethod)(PyObject *, PyTypeObject *, PyObject *const *,
 // used to prevent a compiler warning. If the function has a single parameter,
 // it triggers an undefined behavior when Python calls it with 2 parameters
 // (bpo-33012).
-#define _PyCFunction_CAST(func) ((PyCFunction)(void(*)(void))(func))
+#define _PyCFunction_CAST(func) \
+    _Py_CAST(PyCFunction, _Py_CAST(void(*)(void), (func)))
 
 PyAPI_FUNC(PyCFunction) PyCFunction_GetFunction(PyObject *);
 PyAPI_FUNC(PyObject *) PyCFunction_GetSelf(PyObject *);
 PyAPI_FUNC(int) PyCFunction_GetFlags(PyObject *);
-
-Py_DEPRECATED(3.9) PyAPI_FUNC(PyObject *) PyCFunction_Call(PyObject *, PyObject *, PyObject *);
 
 struct PyMethodDef {
     const char  *ml_name;   /* The name of the built-in function/method */

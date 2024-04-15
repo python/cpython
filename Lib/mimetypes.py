@@ -120,7 +120,13 @@ class MimeTypes:
         but non-standard types.
         """
         url = os.fspath(url)
-        scheme, url = urllib.parse._splittype(url)
+        p = urllib.parse.urlparse(url)
+        if p.scheme and len(p.scheme) > 1:
+            scheme = p.scheme
+            url = p.path
+        else:
+            scheme = None
+            url = os.path.splitdrive(url)[1]
         if scheme == 'data':
             # syntax of data URLs:
             # dataurl   := "data:" [ mediatype ] [ ";base64" ] "," data
@@ -217,10 +223,7 @@ class MimeTypes:
         list of standard types, else to the list of non-standard
         types.
         """
-        while 1:
-            line = fp.readline()
-            if not line:
-                break
+        while line := fp.readline():
             words = line.split()
             for i in range(len(words)):
                 if words[i][0] == '#':
@@ -427,8 +430,8 @@ def _default_mime_types():
     # Make sure the entry with the preferred file extension for a particular mime type
     # appears before any others of the same mimetype.
     types_map = _types_map_default = {
-        '.js'     : 'application/javascript',
-        '.mjs'    : 'application/javascript',
+        '.js'     : 'text/javascript',
+        '.mjs'    : 'text/javascript',
         '.json'   : 'application/json',
         '.webmanifest': 'application/manifest+json',
         '.doc'    : 'application/msword',
@@ -517,6 +520,7 @@ def _default_mime_types():
         '.aiff'   : 'audio/x-aiff',
         '.ra'     : 'audio/x-pn-realaudio',
         '.wav'    : 'audio/x-wav',
+        '.avif'   : 'image/avif',
         '.bmp'    : 'image/bmp',
         '.gif'    : 'image/gif',
         '.ief'    : 'image/ief',
@@ -530,6 +534,7 @@ def _default_mime_types():
         '.tiff'   : 'image/tiff',
         '.tif'    : 'image/tiff',
         '.ico'    : 'image/vnd.microsoft.icon',
+        '.webp'   : 'image/webp',
         '.ras'    : 'image/x-cmu-raster',
         '.pnm'    : 'image/x-portable-anymap',
         '.pbm'    : 'image/x-portable-bitmap',
@@ -556,6 +561,7 @@ def _default_mime_types():
         '.pl'     : 'text/plain',
         '.srt'    : 'text/plain',
         '.rtx'    : 'text/richtext',
+        '.rtf'    : 'text/rtf',
         '.tsv'    : 'text/tab-separated-values',
         '.vtt'    : 'text/vtt',
         '.py'     : 'text/x-python',

@@ -15,9 +15,9 @@ PyAPI_DATA(PyTypeObject) PyContextToken_Type;
 typedef struct _pycontexttokenobject PyContextToken;
 
 
-#define PyContext_CheckExact(o) Py_IS_TYPE(o, &PyContext_Type)
-#define PyContextVar_CheckExact(o) Py_IS_TYPE(o, &PyContextVar_Type)
-#define PyContextToken_CheckExact(o) Py_IS_TYPE(o, &PyContextToken_Type)
+#define PyContext_CheckExact(o) Py_IS_TYPE((o), &PyContext_Type)
+#define PyContextVar_CheckExact(o) Py_IS_TYPE((o), &PyContextVar_Type)
+#define PyContextToken_CheckExact(o) Py_IS_TYPE((o), &PyContextToken_Type)
 
 
 PyAPI_FUNC(PyObject *) PyContext_New(void);
@@ -65,10 +65,6 @@ PyAPI_FUNC(PyObject *) PyContextVar_Set(PyObject *var, PyObject *value);
    Returns 0 on success, -1 on error.
 */
 PyAPI_FUNC(int) PyContextVar_Reset(PyObject *var, PyObject *token);
-
-
-/* This method is exposed only for CPython tests. Don not use it. */
-PyAPI_FUNC(PyObject *) _PyContext_NewHamtForTests(void);
 
 
 #ifdef __cplusplus

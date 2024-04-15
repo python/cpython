@@ -47,21 +47,6 @@ class NewLoader(TestLoader):
         module.eggs = self.EGGS
 
 
-class LegacyLoader(TestLoader):
-
-    HAM = -1
-
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", DeprecationWarning)
-
-        frozen_util = util['Frozen']
-
-        @frozen_util.module_for_loader
-        def load_module(self, module):
-            module.ham = self.HAM
-            return module
-
-
 class ModuleSpecTests:
 
     def setUp(self):
@@ -302,26 +287,6 @@ class ModuleSpecMethodsTests:
                 loaded = self.bootstrap._load(self.spec)
             self.assertNotIn(self.spec.name, sys.modules)
 
-    def test_load_legacy(self):
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", ImportWarning)
-            self.spec.loader = LegacyLoader()
-            with CleanImport(self.spec.name):
-                loaded = self.bootstrap._load(self.spec)
-
-            self.assertEqual(loaded.ham, -1)
-
-    def test_load_legacy_attributes(self):
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", ImportWarning)
-            self.spec.loader = LegacyLoader()
-            with CleanImport(self.spec.name):
-                loaded = self.bootstrap._load(self.spec)
-
-            self.assertIs(loaded.__loader__, self.spec.loader)
-            self.assertEqual(loaded.__package__, self.spec.parent)
-            self.assertIs(loaded.__spec__, self.spec)
-
     def test_load_legacy_attributes_immutable(self):
         module = object()
         with warnings.catch_warnings():
@@ -387,118 +352,10 @@ class ModuleSpecMethodsTests:
         self.assertFalse(hasattr(loaded, '__file__'))
         self.assertFalse(hasattr(loaded, '__cached__'))
 
-    def test_reload_legacy(self):
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", ImportWarning)
-            self.spec.loader = LegacyLoader()
-            with CleanImport(self.spec.name):
-                loaded = self.bootstrap._load(self.spec)
-                reloaded = self.bootstrap._exec(self.spec, loaded)
-                installed = sys.modules[self.spec.name]
-
-        self.assertEqual(loaded.ham, -1)
-        self.assertIs(reloaded, loaded)
-        self.assertIs(installed, loaded)
-
 
 (Frozen_ModuleSpecMethodsTests,
  Source_ModuleSpecMethodsTests
  ) = test_util.test_both(ModuleSpecMethodsTests, init=init, util=util,
-                         machinery=machinery)
-
-
-class ModuleReprTests:
-
-    @property
-    def bootstrap(self):
-        return self.init._bootstrap
-
-    def setUp(self):
-        self.module = type(os)('spam')
-        self.spec = self.machinery.ModuleSpec('spam', TestLoader())
-
-    def test_module___loader___module_repr(self):
-        class Loader:
-            def module_repr(self, module):
-                return '<delicious {}>'.format(module.__name__)
-        self.module.__loader__ = Loader()
-        modrepr = self.bootstrap._module_repr(self.module)
-
-        self.assertEqual(modrepr, '<delicious spam>')
-
-    def test_module___loader___module_repr_bad(self):
-        class Loader(TestLoader):
-            def module_repr(self, module):
-                raise Exception
-        self.module.__loader__ = Loader()
-        modrepr = self.bootstrap._module_repr(self.module)
-
-        self.assertEqual(modrepr,
-                         '<module {!r} (<TestLoader object>)>'.format('spam'))
-
-    def test_module___spec__(self):
-        origin = 'in a hole, in the ground'
-        self.spec.origin = origin
-        self.module.__spec__ = self.spec
-        modrepr = self.bootstrap._module_repr(self.module)
-
-        self.assertEqual(modrepr, '<module {!r} ({})>'.format('spam', origin))
-
-    def test_module___spec___location(self):
-        location = 'in_a_galaxy_far_far_away.py'
-        self.spec.origin = location
-        self.spec._set_fileattr = True
-        self.module.__spec__ = self.spec
-        modrepr = self.bootstrap._module_repr(self.module)
-
-        self.assertEqual(modrepr,
-                         '<module {!r} from {!r}>'.format('spam', location))
-
-    def test_module___spec___no_origin(self):
-        self.spec.loader = TestLoader()
-        self.module.__spec__ = self.spec
-        modrepr = self.bootstrap._module_repr(self.module)
-
-        self.assertEqual(modrepr,
-                         '<module {!r} (<TestLoader object>)>'.format('spam'))
-
-    def test_module___spec___no_origin_no_loader(self):
-        self.spec.loader = None
-        self.module.__spec__ = self.spec
-        modrepr = self.bootstrap._module_repr(self.module)
-
-        self.assertEqual(modrepr, '<module {!r}>'.format('spam'))
-
-    def test_module_no_name(self):
-        del self.module.__name__
-        modrepr = self.bootstrap._module_repr(self.module)
-
-        self.assertEqual(modrepr, '<module {!r}>'.format('?'))
-
-    def test_module_with_file(self):
-        filename = 'e/i/e/i/o/spam.py'
-        self.module.__file__ = filename
-        modrepr = self.bootstrap._module_repr(self.module)
-
-        self.assertEqual(modrepr,
-                         '<module {!r} from {!r}>'.format('spam', filename))
-
-    def test_module_no_file(self):
-        self.module.__loader__ = TestLoader()
-        modrepr = self.bootstrap._module_repr(self.module)
-
-        self.assertEqual(modrepr,
-                         '<module {!r} (<TestLoader object>)>'.format('spam'))
-
-    def test_module_no_file_no_loader(self):
-        modrepr = self.bootstrap._module_repr(self.module)
-
-        self.assertEqual(modrepr, '<module {!r}>'.format('spam'))
-
-
-(Frozen_ModuleReprTests,
- Source_ModuleReprTests
- ) = test_util.test_both(ModuleReprTests, init=init, util=util,
                          machinery=machinery)
 
 
@@ -645,7 +502,8 @@ class FactoryTests:
         self.assertEqual(spec.loader, self.fileloader)
         self.assertEqual(spec.origin, self.path)
         self.assertIs(spec.loader_state, None)
-        self.assertEqual(spec.submodule_search_locations, [os.getcwd()])
+        location = cwd if (cwd := os.getcwd()) != '/' else ''
+        self.assertEqual(spec.submodule_search_locations, [location])
         self.assertEqual(spec.cached, self.cached)
         self.assertTrue(spec.has_location)
 
@@ -744,7 +602,8 @@ class FactoryTests:
         self.assertEqual(spec.loader, self.fileloader)
         self.assertEqual(spec.origin, self.path)
         self.assertIs(spec.loader_state, None)
-        self.assertEqual(spec.submodule_search_locations, [os.getcwd()])
+        location = cwd if (cwd := os.getcwd()) != '/' else ''
+        self.assertEqual(spec.submodule_search_locations, [location])
         self.assertEqual(spec.cached, self.cached)
         self.assertTrue(spec.has_location)
 
@@ -769,7 +628,8 @@ class FactoryTests:
         self.assertEqual(spec.loader, self.pkgloader)
         self.assertEqual(spec.origin, self.path)
         self.assertIs(spec.loader_state, None)
-        self.assertEqual(spec.submodule_search_locations, [os.getcwd()])
+        location = cwd if (cwd := os.getcwd()) != '/' else ''
+        self.assertEqual(spec.submodule_search_locations, [location])
         self.assertEqual(spec.cached, self.cached)
         self.assertTrue(spec.has_location)
 

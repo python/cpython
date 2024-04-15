@@ -11,6 +11,7 @@ from _ctypes import CFuncPtr as _CFuncPtr
 from _ctypes import __version__ as _ctypes_version
 from _ctypes import RTLD_LOCAL, RTLD_GLOBAL
 from _ctypes import ArgumentError
+from _ctypes import SIZEOF_TIME_T
 
 from struct import calcsize as _calcsize
 
@@ -301,8 +302,9 @@ def create_unicode_buffer(init, size=None):
     raise TypeError(init)
 
 
-# XXX Deprecated
 def SetPointerType(pointer, cls):
+    import warnings
+    warnings._deprecated("ctypes.SetPointerType", remove=(3, 15))
     if _pointer_type_cache.get(cls, None) is not None:
         raise RuntimeError("This type already exists in the cache")
     if id(pointer) not in _pointer_type_cache:
@@ -311,8 +313,9 @@ def SetPointerType(pointer, cls):
     _pointer_type_cache[cls] = pointer
     del _pointer_type_cache[id(pointer)]
 
-# XXX Deprecated
 def ARRAY(typ, len):
+    import warnings
+    warnings._deprecated("ctypes.ARRAY", remove=(3, 15))
     return typ * len
 
 ################################################################
@@ -343,6 +346,19 @@ class CDLL(object):
                  use_errno=False,
                  use_last_error=False,
                  winmode=None):
+        if name:
+            name = _os.fspath(name)
+
+            # If the filename that has been provided is an iOS/tvOS/watchOS
+            # .fwork file, dereference the location to the true origin of the
+            # binary.
+            if name.endswith(".fwork"):
+                with open(name) as f:
+                    name = _os.path.join(
+                        _os.path.dirname(_sys.executable),
+                        f.read().strip()
+                    )
+
         self._name = name
         flags = self._func_flags_
         if use_errno:
@@ -443,7 +459,10 @@ class LibraryLoader(object):
     def __getattr__(self, name):
         if name[0] == '_':
             raise AttributeError(name)
-        dll = self._dlltype(name)
+        try:
+            dll = self._dlltype(name)
+        except OSError:
+            raise AttributeError(name)
         setattr(self, name, dll)
         return dll
 
@@ -460,6 +479,8 @@ pydll = LibraryLoader(PyDLL)
 
 if _os.name == "nt":
     pythonapi = PyDLL("python dll", None, _sys.dllhandle)
+elif _sys.platform == "android":
+    pythonapi = PyDLL("libpython%d.%d.so" % _sys.version_info[:2])
 elif _sys.platform == "cygwin":
     pythonapi = PyDLL("libpython%d.%d.dll" % _sys.version_info[:2])
 else:
@@ -562,5 +583,12 @@ for kind in [c_ushort, c_uint, c_ulong, c_ulonglong]:
     elif sizeof(kind) == 4: c_uint32 = kind
     elif sizeof(kind) == 8: c_uint64 = kind
 del(kind)
+
+if SIZEOF_TIME_T == 8:
+    c_time_t = c_int64
+elif SIZEOF_TIME_T == 4:
+    c_time_t = c_int32
+else:
+    raise SystemError(f"Unexpected sizeof(time_t): {SIZEOF_TIME_T=}")
 
 _reset_cache()

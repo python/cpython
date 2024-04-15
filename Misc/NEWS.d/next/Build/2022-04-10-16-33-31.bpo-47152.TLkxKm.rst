@@ -1,1 +1,0 @@
-Add script and make target for generating ``sre_constants.h``.

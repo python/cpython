@@ -1,10 +1,7 @@
 import logging
-import os.path
 import sys
 
-from c_common import fsutil
 from c_common.scriptutil import (
-    CLIArgSpec as Arg,
     add_verbosity_cli,
     add_traceback_cli,
     add_kind_filtering_cli,
@@ -15,7 +12,6 @@ from c_common.scriptutil import (
     get_prog,
     main_for_filenames,
 )
-from .preprocessor import get_preprocessor
 from .preprocessor.__main__ import (
     add_common_cli as add_preprocessor_cli,
 )

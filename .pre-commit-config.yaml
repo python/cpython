@@ -1,0 +1,38 @@
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.3.4
+    hooks:
+      - id: ruff
+        name: Run Ruff on Lib/test/
+        args: [--exit-non-zero-on-fix]
+        files: ^Lib/test/
+      - id: ruff
+        name: Run Ruff on Argument Clinic
+        args: [--exit-non-zero-on-fix, --config=Tools/clinic/.ruff.toml]
+        files: ^Tools/clinic/|Lib/test/test_clinic.py
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: check-case-conflict
+      - id: check-merge-conflict
+      - id: check-toml
+        exclude: ^Lib/test/test_tomllib/
+      - id: check-yaml
+      - id: end-of-file-fixer
+        types: [python]
+        exclude: Lib/test/tokenizedata/coding20731.py
+      - id: trailing-whitespace
+        types_or: [c, inc, python, rst]
+
+  - repo: https://github.com/sphinx-contrib/sphinx-lint
+    rev: v0.9.1
+    hooks:
+      - id: sphinx-lint
+        args: [--enable=default-role]
+        files: ^Doc/|^Misc/NEWS.d/
+
+  - repo: meta
+    hooks:
+      - id: check-hooks-apply
+      - id: check-useless-excludes

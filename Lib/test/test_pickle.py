@@ -122,6 +122,7 @@ class PyIdPersPicklerTests(AbstractIdentityPersistentPicklerTests,
 
     pickler = pickle._Pickler
     unpickler = pickle._Unpickler
+    persistent_load_error = pickle.UnpicklingError
 
     @support.cpython_only
     def test_pickler_reference_cycle(self):
@@ -155,6 +156,28 @@ class PyIdPersPicklerTests(AbstractIdentityPersistentPicklerTests,
         check(PersPickler)
 
     @support.cpython_only
+    def test_custom_pickler_dispatch_table_memleak(self):
+        # See https://github.com/python/cpython/issues/89988
+
+        class Pickler(self.pickler):
+            def __init__(self, *args, **kwargs):
+                self.dispatch_table = table
+                super().__init__(*args, **kwargs)
+
+        class DispatchTable:
+            pass
+
+        table = DispatchTable()
+        pickler = Pickler(io.BytesIO())
+        self.assertIs(pickler.dispatch_table, table)
+        table_ref = weakref.ref(table)
+        self.assertIsNotNone(table_ref())
+        del pickler
+        del table
+        support.gc_collect()
+        self.assertIsNone(table_ref())
+
+    @support.cpython_only
     def test_unpickler_reference_cycle(self):
         def check(Unpickler):
             for proto in range(pickle.HIGHEST_PROTOCOL + 1):
@@ -183,6 +206,28 @@ class PyIdPersPicklerTests(AbstractIdentityPersistentPicklerTests,
                 return pid
         check(PersUnpickler)
 
+    def test_pickler_super(self):
+        class PersPickler(self.pickler):
+            def persistent_id(subself, obj):
+                self.assertIsNone(super().persistent_id(obj))
+                return obj
+
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            f = io.BytesIO()
+            pickler = PersPickler(f, proto)
+            pickler.dump('abc')
+            self.assertEqual(self.loads(f.getvalue()), 'abc')
+
+    def test_unpickler_super(self):
+        class PersUnpickler(self.unpickler):
+            def persistent_load(subself, pid):
+                with self.assertRaises(self.persistent_load_error):
+                    super().persistent_load(pid)
+                return pid
+
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            unpickler = PersUnpickler(io.BytesIO(self.dumps('abc', proto)))
+            self.assertEqual(unpickler.load(), 'abc')
 
 class PyPicklerUnpicklerObjectTests(AbstractPicklerUnpicklerObjectTests, unittest.TestCase):
 
@@ -233,6 +278,7 @@ if has_c_implementation:
     class CIdPersPicklerTests(PyIdPersPicklerTests):
         pickler = _pickle.Pickler
         unpickler = _pickle.Unpickler
+        persistent_load_error = _pickle.UnpicklingError
 
     class CDumpPickle_LoadPickle(PyPicklerTests):
         pickler = _pickle.Pickler
@@ -271,11 +317,39 @@ if has_c_implementation:
         pickler_class = CustomCPicklerClass
 
     @support.cpython_only
+    class HeapTypesTests(unittest.TestCase):
+        def setUp(self):
+            pickler = _pickle.Pickler(io.BytesIO())
+            unpickler = _pickle.Unpickler(io.BytesIO())
+
+            self._types = (
+                _pickle.Pickler,
+                _pickle.Unpickler,
+                type(pickler.memo),
+                type(unpickler.memo),
+
+                # We cannot test the _pickle.Pdata;
+                # there's no way to get to it.
+            )
+
+        def test_have_gc(self):
+            import gc
+            for tp in self._types:
+                with self.subTest(tp=tp):
+                    self.assertTrue(gc.is_tracked(tp))
+
+        def test_immutable(self):
+            for tp in self._types:
+                with self.subTest(tp=tp):
+                    with self.assertRaisesRegex(TypeError, "immutable"):
+                        tp.foo = "bar"
+
+    @support.cpython_only
     class SizeofTests(unittest.TestCase):
         check_sizeof = support.check_sizeof
 
         def test_pickler(self):
-            basesize = support.calcobjsize('7P2n3i2n3i2P')
+            basesize = support.calcobjsize('6P2n3i2n3i2P')
             p = _pickle.Pickler(io.BytesIO())
             self.assertEqual(object.__sizeof__(p), basesize)
             MT_size = struct.calcsize('3nP0n')
@@ -292,7 +366,7 @@ if has_c_implementation:
                 0)  # Write buffer is cleared after every dump().
 
         def test_unpickler(self):
-            basesize = support.calcobjsize('2P2n2P 2P2n2i5P 2P3n8P2n2i')
+            basesize = support.calcobjsize('2P2nP 2P2n2i5P 2P3n8P2n2i')
             unpickler = _pickle.Unpickler
             P = struct.calcsize('P')  # Size of memo table entry.
             n = struct.calcsize('n')  # Size of mark table entry.
@@ -328,7 +402,9 @@ if has_c_implementation:
             check_unpickler(recurse(1), 32, 20)
             check_unpickler(recurse(20), 32, 20)
             check_unpickler(recurse(50), 64, 60)
-            check_unpickler(recurse(100), 128, 140)
+            if not (support.is_wasi and support.Py_DEBUG):
+                # stack depth too shallow in pydebug WASI.
+                check_unpickler(recurse(100), 128, 140)
 
             u = unpickler(io.BytesIO(pickle.dumps('a', 0)),
                           encoding='ASCII', errors='strict')
@@ -488,10 +564,12 @@ class CompatPickleTests(unittest.TestCase):
                 if exc in (BlockingIOError,
                            ResourceWarning,
                            StopAsyncIteration,
+                           PythonFinalizationError,
                            RecursionError,
                            EncodingWarning,
                            BaseExceptionGroup,
-                           ExceptionGroup):
+                           ExceptionGroup,
+                           IncompleteInputError):
                     continue
                 if exc is not OSError and issubclass(exc, OSError):
                     self.assertEqual(reverse_mapping('builtins', name),
@@ -510,6 +588,8 @@ class CompatPickleTests(unittest.TestCase):
     def test_multiprocessing_exceptions(self):
         module = import_helper.import_module('multiprocessing.context')
         for name, exc in get_exceptions(module):
+            if issubclass(exc, Warning):
+                continue
             with self.subTest(name):
                 self.assertEqual(reverse_mapping('multiprocessing.context', name),
                                  ('multiprocessing', name))
