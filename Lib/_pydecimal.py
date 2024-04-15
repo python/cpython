@@ -2547,24 +2547,59 @@ class Decimal(object):
         return _dec_from_triple(dup._sign, dup._int[:end], exp)
 
     def quantize(self, exp, rounding=None, context=None):
-        """Return a value equal to the first operand after rounding and having the
-        exponent of the second operand.
+        """Similar to self._rescale(exp._exp) but with error checking.
+        Return a value equal to 'a' (rounded), having the exponent of 'b'.
 
-        >>> Decimal('1.41421356').quantize(Decimal('1.000'))
-        Decimal('1.414')
+        The coefficient of the result is derived from that of the left-hand
+        operand. It may be rounded using the current rounding setting (if the
+        exponent is being increased), multiplied by a positive power of ten (if
+        the exponent is being decreased), or is unchanged (if the exponent is
+        already equal to that of the right-hand operand).
 
-        Unlike other operations, if the length of the coefficient after the quantize
-        operation would be greater than precision, then an InvalidOperation is signaled.
-        This guarantees that, unless there is an error condition, the quantized exponent
-        is always equal to that of the right-hand operand.
+        Unlike other operations, if the length of the coefficient after the
+        quantize operation would be greater than precision then an Invalid
+        operation condition is raised. This guarantees that, unless there is
+        an error condition, the exponent of the result of a quantize is always
+        equal to that of the right-hand operand.
+        Also unlike other operations, quantize will never raise Underflow, even
+        if the result is subnormal and inexact.
 
-        Also unlike other operations, quantize never signals Underflow, even if the
-        result is subnormal and inexact.
-
-        If the exponent of the second operand is larger than that of the first, then
-        rounding may be necessary. In this case, the rounding mode is determined by the
-        rounding argument if given, else by the given context argument; if neither
-        argument is given, the rounding mode of the current thread's context is used.
+            >>> ExtendedContext.quantize(Decimal('2.17'), Decimal('0.001'))
+            Decimal('2.170')
+            >>> ExtendedContext.quantize(Decimal('2.17'), Decimal('0.01'))
+            Decimal('2.17')
+            >>> ExtendedContext.quantize(Decimal('2.17'), Decimal('0.1'))
+            Decimal('2.2')
+            >>> ExtendedContext.quantize(Decimal('2.17'), Decimal('1e+0'))
+            Decimal('2')
+            >>> ExtendedContext.quantize(Decimal('2.17'), Decimal('1e+1'))
+            Decimal('0E+1')
+            >>> ExtendedContext.quantize(Decimal('-Inf'), Decimal('Infinity'))
+            Decimal('-Infinity')
+            >>> ExtendedContext.quantize(Decimal('2'), Decimal('Infinity'))
+            Decimal('NaN')
+            >>> ExtendedContext.quantize(Decimal('-0.1'), Decimal('1'))
+            Decimal('-0')
+            >>> ExtendedContext.quantize(Decimal('-0'), Decimal('1e+5'))
+            Decimal('-0E+5')
+            >>> ExtendedContext.quantize(Decimal('+35236450.6'), Decimal('1e-2'))
+            Decimal('NaN')
+            >>> ExtendedContext.quantize(Decimal('-35236450.6'), Decimal('1e-2'))
+            Decimal('NaN')
+            >>> ExtendedContext.quantize(Decimal('217'), Decimal('1e-1'))
+            Decimal('217.0')
+            >>> ExtendedContext.quantize(Decimal('217'), Decimal('1e-0'))
+            Decimal('217')
+            >>> ExtendedContext.quantize(Decimal('217'), Decimal('1e+1'))
+            Decimal('2.2E+2')
+            >>> ExtendedContext.quantize(Decimal('217'), Decimal('1e+2'))
+            Decimal('2E+2')
+            >>> ExtendedContext.quantize(1, 2)
+            Decimal('1')
+            >>> ExtendedContext.quantize(Decimal(1), 2)
+            Decimal('1')
+            >>> ExtendedContext.quantize(1, Decimal(2))
+            Decimal('1')
         """
         exp = _convert_other(exp, raiseit=True)
 
