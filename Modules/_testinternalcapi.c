@@ -1394,7 +1394,7 @@ static PyInterpreterState *
 _new_interpreter(PyInterpreterConfig *config, long whence)
 {
     if (whence == _PyInterpreterState_WHENCE_XI) {
-        return _PyXI_NewInterpreter(config, NULL, NULL);
+        return _PyXI_NewInterpreter(config, &whence, NULL, NULL);
     }
     PyObject *exc = NULL;
     PyInterpreterState *interp = NULL;
@@ -1610,7 +1610,7 @@ run_in_subinterp_with_config(PyObject *self, PyObject *args, PyObject *kwargs)
 
         /* Create an interpreter, staying switched to it. */
         PyInterpreterState *interp = \
-                _PyXI_NewInterpreter(&config, &tstate, &save_tstate);
+                _PyXI_NewInterpreter(&config, NULL, &tstate, &save_tstate);
         if (interp == NULL) {
             return NULL;
         }
