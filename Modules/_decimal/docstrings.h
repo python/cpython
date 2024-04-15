@@ -285,7 +285,7 @@ zero or negative zero, or '1' if the result is greater than zero.\n\
 
 PyDoc_STRVAR(doc_compare_signal,
 "compare_signal($self, /, other, context=None)\n--\n\n\
-Compares the values of the two operands numerically.\n\
+Compare the values of the two operands numerically.\n\
 \n\
 It's pretty much like compare(), but all NaNs signal, with signaling\n\
 NaNs taking precedence over quiet NaNs.\n\
