@@ -3119,7 +3119,18 @@ class Decimal(object):
         return s.compare_total(o)
 
     def copy_abs(self):
-        """Returns a copy with the sign set to 0. """
+        """Return the absolute value of the argument.
+
+        This operation is unaffected by context and is quiet: no flags are changed
+        and no rounding is performed.
+
+            >>> ExtendedContext.copy_abs(Decimal('2.1'))
+            Decimal('2.1')
+            >>> ExtendedContext.copy_abs(Decimal('-100'))
+            Decimal('100')
+            >>> ExtendedContext.copy_abs(-1)
+            Decimal('1')
+        """
         return _dec_from_triple(0, self._int, self._exp, self._is_special)
 
     def copy_negate(self):
@@ -4410,16 +4421,7 @@ class Context(object):
         return a.compare_total_mag(b)
 
     def copy_abs(self, a):
-        """Return the absolute value of the argument. This operation is unaffected by
-        context and is quiet: no flags are changed and no rounding is performed.
-
-        >>> ExtendedContext.copy_abs(Decimal('2.1'))
-        Decimal('2.1')
-        >>> ExtendedContext.copy_abs(Decimal('-100'))
-        Decimal('100')
-        >>> ExtendedContext.copy_abs(-1)
-        Decimal('1')
-        """
+        """Return a copy of a with the sign set to 0."""
         a = _convert_other(a, raiseit=True)
         return a.copy_abs()
 
