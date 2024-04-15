@@ -148,12 +148,12 @@ class PyMemDebugTests(unittest.TestCase):
             self.assertIn(b'MemoryError', out)
             *_, count = line.split(b' ')
             count = int(count)
-            self.assertLessEqual(count, i*5)
-            self.assertGreaterEqual(count, i*5-2)
+            self.assertLessEqual(count, i*10)
+            self.assertGreaterEqual(count, i*10-4)
 
 
-# Py_GIL_DISABLED requires mimalloc (not malloc)
-@unittest.skipIf(support.Py_GIL_DISABLED, 'need malloc')
+# free-threading requires mimalloc (not malloc)
+@support.requires_gil_enabled
 class PyMemMallocDebugTests(PyMemDebugTests):
     PYTHONMALLOC = 'malloc_debug'
 

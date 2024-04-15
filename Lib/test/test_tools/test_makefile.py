@@ -35,6 +35,7 @@ class TestMakefile(unittest.TestCase):
                     result.append(line.replace('\\', '').strip())
         return result
 
+    @unittest.skipUnless(support.TEST_MODULES_ENABLED, "requires test modules")
     def test_makefile_test_folders(self):
         test_dirs = self.list_test_dirs()
         idle_test = 'idlelib/idle_test'
@@ -65,6 +66,10 @@ class TestMakefile(unittest.TestCase):
                     )
                 )
                 used.append(relpath)
+
+        # Don't check the wheel dir when Python is built --with-wheel-pkg-dir
+        if sysconfig.get_config_var('WHEEL_PKG_DIR'):
+            test_dirs.remove('test/wheeldata')
 
         # Check that there are no extra entries:
         unique_test_dirs = set(test_dirs)
