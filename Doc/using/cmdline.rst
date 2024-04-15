@@ -622,6 +622,12 @@ Miscellaneous options
 
    .. versionadded:: 3.2
 
+   .. versionchanged:: 3.9
+      Removed the ``-X showalloccount`` option.
+
+   .. versionchanged:: 3.10
+      Removed the ``-X oldparser`` option.
+
 .. _using-on-controlling-color:
 
 Controlling color
