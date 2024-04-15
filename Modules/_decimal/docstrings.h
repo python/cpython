@@ -1157,7 +1157,7 @@ either operand.\n\
 
 PyDoc_STRVAR(doc_scaleb,
 "scaleb($self, /, other, context=None)\n--\n\n\
-Returns the first operand after adding the second value its exp.\n\
+Return the first operand after adding the second value its exp.\n\
 \n\
     >>> ExtendedContext.scaleb(Decimal('7.50'), Decimal('-2'))\n\
     Decimal('0.0750')\n\
