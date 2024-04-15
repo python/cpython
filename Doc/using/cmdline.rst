@@ -539,13 +539,6 @@ Miscellaneous options
 
      .. versionadded:: 3.7
 
-     .. versionchanged:: 3.8
-        The :class:`io.IOBase` destructor logs ``close()`` exceptions.
-
-     .. versionchanged:: 3.9
-        Check the *encoding* and *errors* arguments for string encoding
-        and decoding operations.
-
    * ``-X utf8`` enables the :ref:`Python UTF-8 Mode <utf8-mode>`.
      ``-X utf8=0`` explicitly disables :ref:`Python UTF-8 Mode <utf8-mode>`
      (even when it would otherwise activate automatically).
