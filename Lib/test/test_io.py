@@ -40,7 +40,8 @@ from test import support
 from test.support.script_helper import (
     assert_python_ok, assert_python_failure, run_python_until_end)
 from test.support import (
-    import_helper, is_apple, os_helper, skip_if_sanitizer, threading_helper, warnings_helper
+    import_helper, is_apple, os_helper, skip_if_sanitizer, threading_helper, warnings_helper,
+    skip_on_s390x
 )
 from test.support.os_helper import FakePath
 
@@ -1700,6 +1701,9 @@ class CBufferedReaderTest(BufferedReaderTest, SizeofTest):
     @skip_if_sanitizer(memory=True, address=True, thread=True,
                        reason="sanitizer defaults to crashing "
                        "instead of returning NULL for malloc failure.")
+    # gh-117755: The test allocates 9 223 372 036 854 775 807 bytes
+    # (0x7fffffffffffffff) and mimalloc fails with a division by zero on s390x.
+    @skip_on_s390x
     def test_constructor(self):
         BufferedReaderTest.test_constructor(self)
         # The allocation can succeed on 32-bit builds, e.g. with more
@@ -2068,6 +2072,9 @@ class CBufferedWriterTest(BufferedWriterTest, SizeofTest):
     @skip_if_sanitizer(memory=True, address=True, thread=True,
                        reason="sanitizer defaults to crashing "
                        "instead of returning NULL for malloc failure.")
+    # gh-117755: The test allocates 9 223 372 036 854 775 807 bytes
+    # (0x7fffffffffffffff) and mimalloc fails with a division by zero on s390x.
+    @skip_on_s390x
     def test_constructor(self):
         BufferedWriterTest.test_constructor(self)
         # The allocation can succeed on 32-bit builds, e.g. with more
@@ -2590,6 +2597,9 @@ class CBufferedRandomTest(BufferedRandomTest, SizeofTest):
     @skip_if_sanitizer(memory=True, address=True, thread=True,
                        reason="sanitizer defaults to crashing "
                        "instead of returning NULL for malloc failure.")
+    # gh-117755: The test allocates 9 223 372 036 854 775 807 bytes
+    # (0x7fffffffffffffff) and mimalloc fails with a division by zero on s390x.
+    @skip_on_s390x
     def test_constructor(self):
         BufferedRandomTest.test_constructor(self)
         # The allocation can succeed on 32-bit builds, e.g. with more
