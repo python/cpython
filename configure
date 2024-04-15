@@ -6129,7 +6129,7 @@ EOF
 
 if $CPP $CPPFLAGS conftest.c >conftest.out 2>/dev/null; then
   ac_cv_cc_name=`grep -v '^#' conftest.out | grep -v '^ *$' | tr -d ' 	'`
-  if $(expr "//$CC" : '.*/\(.*\)') = "mpicc"; then
+  if test $(expr "//$CC" : '.*/\(.*\)') = "mpicc"; then
     ac_cv_cc_name="mpicc"
   fi
 else
@@ -6315,6 +6315,34 @@ then :
 
 fi
 
+
+
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for GCC compatible compiler" >&5
+printf %s "checking for GCC compatible compiler... " >&6; }
+if test ${ac_cv_gcc_compat+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+                #if !defined(__GNUC__)
+                  #error "not GCC compatible"
+                #else
+                  /* GCC compatible! */
+                #endif
+
+_ACEOF
+if ac_fn_c_try_cpp "$LINENO"
+then :
+  ac_cv_gcc_compat=yes
+else $as_nop
+  ac_cv_gcc_compat=no
+fi
+rm -f conftest.err conftest.i conftest.$ac_ext
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_gcc_compat" >&5
+printf "%s\n" "$ac_cv_gcc_compat" >&6; }
 
 
 
@@ -6951,14 +6979,14 @@ case $host/$ac_cv_cc_name in #(
     PY_SUPPORT_TIER=1 ;; #(
     x86_64-apple-darwin*/clang) :
     PY_SUPPORT_TIER=1 ;; #(
+    aarch64-apple-darwin*/clang) :
+    PY_SUPPORT_TIER=1 ;; #(
     i686-pc-windows-msvc/msvc) :
     PY_SUPPORT_TIER=1 ;; #(
     x86_64-pc-windows-msvc/msvc) :
     PY_SUPPORT_TIER=1 ;; #(
 
-  aarch64-apple-darwin*/clang) :
-    PY_SUPPORT_TIER=2 ;; #(
-    aarch64-*-linux-gnu/gcc) :
+  aarch64-*-linux-gnu/gcc) :
     PY_SUPPORT_TIER=2 ;; #(
     aarch64-*-linux-gnu/clang) :
     PY_SUPPORT_TIER=2 ;; #(
@@ -11578,7 +11606,6 @@ else $as_nop
 printf "%s\n" "#define size_t unsigned int" >>confdefs.h
 
 fi
-
 
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for uid_t in sys/types.h" >&5
 printf %s "checking for uid_t in sys/types.h... " >&6; }
