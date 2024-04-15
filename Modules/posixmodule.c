@@ -5403,9 +5403,10 @@ nt_exists(PyObject *path, int follow_symlinks)
 /*[clinic input]
 os._path_exists
 
-    path: 'O'
+    path: object
+    /
 
-Test whether a path exists.  Returns False for broken symbolic links
+Test whether a path exists.  Returns False for broken symbolic links.
 
 [clinic start generated code]*/
 
@@ -5420,9 +5421,10 @@ os__path_exists_impl(PyObject *module, PyObject *path)
 /*[clinic input]
 os._path_lexists
 
-    path: 'O'
+    path: object
+    /
 
-Test whether a path exists.  Returns True for broken symbolic links
+Test whether a path exists.  Returns True for broken symbolic links.
 
 [clinic start generated code]*/
 
