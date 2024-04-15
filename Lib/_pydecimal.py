@@ -1048,9 +1048,8 @@ class Decimal(object):
         return -2 if ans == -1 else ans
 
     def as_tuple(self):
-        """Represents the number as a triple tuple.
-
-        To show the internals exactly as they are.
+        """Represents the number as a triple tuple, to show the internals exactly as
+        they are.
         """
         return DecimalTuple(self._sign, tuple(map(int, self._int)), self._exp)
 

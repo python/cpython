@@ -247,9 +247,8 @@ Defined as exp + digits - 1.\n\
 
 PyDoc_STRVAR(doc_as_tuple,
 "as_tuple($self, /)\n--\n\n\
-Represent the number as a triple tuple.\n\
-\n\
-To show the internals exactly as they are.\n\
+Represents the number as a triple tuple, to show the internals exactly as\n\
+they are.\n\
 \n");
 
 PyDoc_STRVAR(doc_as_integer_ratio,
