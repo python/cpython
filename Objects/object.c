@@ -73,21 +73,16 @@ get_legacy_reftotal(void)
     interp->object_state.reftotal
 
 static inline void
-reftotal_increment(PyInterpreterState *interp)
+reftotal_add(PyThreadState *tstate, Py_ssize_t n)
 {
-    REFTOTAL(interp)++;
-}
-
-static inline void
-reftotal_decrement(PyInterpreterState *interp)
-{
-    REFTOTAL(interp)--;
-}
-
-static inline void
-reftotal_add(PyInterpreterState *interp, Py_ssize_t n)
-{
-    REFTOTAL(interp) += n;
+#ifdef Py_GIL_DISABLED
+    _PyThreadStateImpl *tstate_impl = (_PyThreadStateImpl *)tstate;
+    // relaxed store to avoid data race with read in get_reftotal()
+    Py_ssize_t reftotal = tstate_impl->reftotal + n;
+    _Py_atomic_store_ssize_relaxed(&tstate_impl->reftotal, reftotal);
+#else
+    REFTOTAL(tstate->interp) += n;
+#endif
 }
 
 static inline Py_ssize_t get_global_reftotal(_PyRuntimeState *);
@@ -117,7 +112,15 @@ get_reftotal(PyInterpreterState *interp)
 {
     /* For a single interpreter, we ignore the legacy _Py_RefTotal,
        since we can't determine which interpreter updated it. */
-    return REFTOTAL(interp);
+    Py_ssize_t total = REFTOTAL(interp);
+#ifdef Py_GIL_DISABLED
+    for (PyThreadState *p = interp->threads.head; p != NULL; p = p->next) {
+        /* This may race with other threads modifications to their reftotal */
+        _PyThreadStateImpl *tstate_impl = (_PyThreadStateImpl *)p;
+        total += _Py_atomic_load_ssize_relaxed(&tstate_impl->reftotal);
+    }
+#endif
+    return total;
 }
 
 static inline Py_ssize_t
@@ -129,7 +132,7 @@ get_global_reftotal(_PyRuntimeState *runtime)
     HEAD_LOCK(&_PyRuntime);
     PyInterpreterState *interp = PyInterpreterState_Head();
     for (; interp != NULL; interp = PyInterpreterState_Next(interp)) {
-        total += REFTOTAL(interp);
+        total += get_reftotal(interp);
     }
     HEAD_UNLOCK(&_PyRuntime);
 
@@ -222,32 +225,32 @@ _Py_NegativeRefcount(const char *filename, int lineno, PyObject *op)
 void
 _Py_INCREF_IncRefTotal(void)
 {
-    reftotal_increment(_PyInterpreterState_GET());
+    reftotal_add(_PyThreadState_GET(), 1);
 }
 
 /* This is used strictly by Py_DECREF(). */
 void
 _Py_DECREF_DecRefTotal(void)
 {
-    reftotal_decrement(_PyInterpreterState_GET());
+    reftotal_add(_PyThreadState_GET(), -1);
 }
 
 void
-_Py_IncRefTotal(PyInterpreterState *interp)
+_Py_IncRefTotal(PyThreadState *tstate)
 {
-    reftotal_increment(interp);
+    reftotal_add(tstate, 1);
 }
 
 void
-_Py_DecRefTotal(PyInterpreterState *interp)
+_Py_DecRefTotal(PyThreadState *tstate)
 {
-    reftotal_decrement(interp);
+    reftotal_add(tstate, -1);
 }
 
 void
-_Py_AddRefTotal(PyInterpreterState *interp, Py_ssize_t n)
+_Py_AddRefTotal(PyThreadState *tstate, Py_ssize_t n)
 {
-    reftotal_add(interp, n);
+    reftotal_add(tstate, n);
 }
 
 /* This includes the legacy total
@@ -267,7 +270,10 @@ _Py_GetLegacyRefTotal(void)
 Py_ssize_t
 _PyInterpreterState_GetRefTotal(PyInterpreterState *interp)
 {
-    return get_reftotal(interp);
+    HEAD_LOCK(&_PyRuntime);
+    Py_ssize_t total = get_reftotal(interp);
+    HEAD_UNLOCK(&_PyRuntime);
+    return total;
 }
 
 #endif /* Py_REF_DEBUG */
@@ -345,7 +351,7 @@ _Py_DecRefSharedDebug(PyObject *o, const char *filename, int lineno)
 
     if (should_queue) {
 #ifdef Py_REF_DEBUG
-        _Py_IncRefTotal(_PyInterpreterState_GET());
+        _Py_IncRefTotal(_PyThreadState_GET());
 #endif
         _Py_brc_queue_object(o);
     }
@@ -405,7 +411,7 @@ _Py_ExplicitMergeRefcount(PyObject *op, Py_ssize_t extra)
                                                 &shared, new_shared));
 
 #ifdef Py_REF_DEBUG
-    _Py_AddRefTotal(_PyInterpreterState_GET(), extra);
+    _Py_AddRefTotal(_PyThreadState_GET(), extra);
 #endif
 
     _Py_atomic_store_uint32_relaxed(&op->ob_ref_local, 0);
@@ -2001,6 +2007,11 @@ static PyNumberMethods none_as_number = {
     0,                          /* nb_index */
 };
 
+PyDoc_STRVAR(none_doc,
+"NoneType()\n"
+"--\n\n"
+"The type of the None singleton.");
+
 PyTypeObject _PyNone_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "NoneType",
@@ -2022,7 +2033,7 @@ PyTypeObject _PyNone_Type = {
     0,                  /*tp_setattro */
     0,                  /*tp_as_buffer */
     Py_TPFLAGS_DEFAULT, /*tp_flags */
-    0,                  /*tp_doc */
+    none_doc,           /*tp_doc */
     0,                  /*tp_traverse */
     0,                  /*tp_clear */
     _Py_BaseObject_RichCompare, /*tp_richcompare */
@@ -2100,6 +2111,11 @@ static PyNumberMethods notimplemented_as_number = {
     .nb_bool = notimplemented_bool,
 };
 
+PyDoc_STRVAR(notimplemented_doc,
+"NotImplementedType()\n"
+"--\n\n"
+"The type of the NotImplemented singleton.");
+
 PyTypeObject _PyNotImplemented_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "NotImplementedType",
@@ -2121,7 +2137,7 @@ PyTypeObject _PyNotImplemented_Type = {
     0,                  /*tp_setattro */
     0,                  /*tp_as_buffer */
     Py_TPFLAGS_DEFAULT, /*tp_flags */
-    0,                  /*tp_doc */
+    notimplemented_doc, /*tp_doc */
     0,                  /*tp_traverse */
     0,                  /*tp_clear */
     0,                  /*tp_richcompare */
@@ -2376,7 +2392,7 @@ void
 _Py_NewReference(PyObject *op)
 {
 #ifdef Py_REF_DEBUG
-    reftotal_increment(_PyInterpreterState_GET());
+    _Py_IncRefTotal(_PyThreadState_GET());
 #endif
     new_reference(op);
 }
@@ -2406,6 +2422,19 @@ _Py_SetImmortal(PyObject *op)
         _PyObject_GC_UNTRACK(op);
     }
     _Py_SetImmortalUntracked(op);
+}
+
+void
+_PyObject_SetDeferredRefcount(PyObject *op)
+{
+#ifdef Py_GIL_DISABLED
+    assert(PyType_IS_GC(Py_TYPE(op)));
+    assert(_Py_IsOwnedByCurrentThread(op));
+    assert(op->ob_ref_shared == 0);
+    op->ob_gc_bits |= _PyGC_BITS_DEFERRED;
+    op->ob_ref_local += 1;
+    op->ob_ref_shared = _Py_REF_QUEUED;
+#endif
 }
 
 void
