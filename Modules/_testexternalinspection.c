@@ -17,6 +17,11 @@
 
 #if defined(__APPLE__)
 #  include <TargetConditionals.h>
+// TARGET_OS_OSX is not defined by older macOS SDKs. It is always
+// defined to 0 when targeting iOS.
+#  ifndef TARGET_OS_OSX
+#    define TARGET_OS_OSX 1
+#  endif
 #  if TARGET_OS_OSX
 #    include <libproc.h>
 #    include <mach-o/fat.h>
