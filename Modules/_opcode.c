@@ -394,6 +394,14 @@ _opcode_exec(PyObject *m) {
     if (PyModule_AddIntMacro(m, ENABLE_SPECIALIZATION) < 0) {
         return -1;
     }
+#ifdef _Py_NOTIER2
+    int notier2 = 1;
+#else
+    int notier2 = 0;
+#endif
+    if (PyModule_AddIntConstant(m, "NOTIER2", notier2) < 0) {
+        return -1;
+    }
     return 0;
 }
 

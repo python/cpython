@@ -1188,6 +1188,10 @@ def requires_specialization(test):
         _opcode.ENABLE_SPECIALIZATION, "requires specialization")(test)
 
 
+def requires_tier2(test):
+    return unittest.skipIf(_opcode.NOTIER2, "requires tier2")(test)
+
+
 #=======================================================================
 # Check for the presence of docstrings.
 

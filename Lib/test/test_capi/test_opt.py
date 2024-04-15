@@ -7,7 +7,7 @@ import os
 
 import _opcode
 
-from test.support import script_helper, requires_specialization, import_helper
+from test.support import script_helper, requires_specialization, requires_tier2, import_helper
 
 _testinternalcapi = import_helper.import_module("_testinternalcapi")
 
@@ -33,6 +33,7 @@ def clear_executors(func):
         func.__code__ = func.__code__.replace()
 
 
+@requires_tier2
 @requires_specialization
 class TestOptimizerAPI(unittest.TestCase):
 
@@ -136,6 +137,7 @@ def get_opnames(ex):
 
 
 @requires_specialization
+@requires_tier2
 class TestExecutorInvalidation(unittest.TestCase):
 
     def setUp(self):
@@ -215,6 +217,7 @@ class TestExecutorInvalidation(unittest.TestCase):
 
 
 @requires_specialization
+@requires_tier2
 @unittest.skipIf(os.getenv("PYTHON_UOPS_OPTIMIZE") == "0", "Needs uop optimizer to run.")
 class TestUops(unittest.TestCase):
 
@@ -579,6 +582,7 @@ class TestUops(unittest.TestCase):
 
 
 @requires_specialization
+@requires_tier2
 @unittest.skipIf(os.getenv("PYTHON_UOPS_OPTIMIZE") == "0", "Needs uop optimizer to run.")
 class TestUopsOptimization(unittest.TestCase):
 
