@@ -1,1 +1,2 @@
 Fix a :exc:`RuntimeWarning` when calling ``agen.aclose().throw(Exception)``
+Prevent ``agen.aclose()`` objects being re-used after ``.throw()``
