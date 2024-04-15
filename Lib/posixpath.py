@@ -77,13 +77,11 @@ def join(a, *p):
     sep = _get_sep(a)
     path = a
     try:
-        if not p:
-            path[:0] + sep  #23780: Ensure compatible data type even if p is null.
         for b in p:
             b = os.fspath(b)
-            if b.startswith(sep):
+            if b.startswith(sep) or not path:
                 path = b
-            elif not path or path.endswith(sep):
+            elif path.endswith(sep):
                 path += b
             else:
                 path += sep + b
