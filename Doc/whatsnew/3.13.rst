@@ -407,7 +407,7 @@ gc
 --
 
 * The cyclic garbage collector is now incremental, which changes the meanings
-  of the results of :meth:`gc.get_threshold` and :meth:`gc.get_threshold` as
+  of the results of :meth:`gc.get_threshold` and :meth:`gc.set_threshold` as
   well as :meth:`gc.get_count` and :meth:`gc.get_stats`.
 * :meth:`gc.get_threshold` returns a three-tuple for backwards compatibility,
   the first value is the threshold for young collections, as before, the second

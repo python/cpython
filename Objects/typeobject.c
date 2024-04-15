@@ -162,8 +162,13 @@ _PyStaticType_GetState(PyInterpreterState *interp, PyTypeObject *self)
 static void
 static_builtin_state_init(PyInterpreterState *interp, PyTypeObject *self)
 {
-    if (!static_builtin_index_is_set(self)) {
+    if (_Py_IsMainInterpreter(interp)) {
+        assert(!static_builtin_index_is_set(self));
         static_builtin_index_set(self, interp->types.num_builtins_initialized);
+    }
+    else {
+        assert(static_builtin_index_get(self) ==
+                interp->types.num_builtins_initialized);
     }
     static_builtin_state *state = static_builtin_state_get(interp, self);
 
@@ -3580,6 +3585,8 @@ type_new_alloc(type_new_ctx *ctx)
     et->ht_name = Py_NewRef(ctx->name);
     et->ht_module = NULL;
     et->_ht_tpname = NULL;
+
+    _PyObject_SetDeferredRefcount((PyObject *)et);
 
     return type;
 }
