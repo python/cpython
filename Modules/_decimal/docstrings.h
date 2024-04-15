@@ -355,24 +355,40 @@ Decimal('-1')\n\
 
 PyDoc_STRVAR(doc_compare_total,
 "compare_total($self, /, other, context=None)\n--\n\n\
-Compare two operands using their abstract representation rather than\n\
-their numerical value.  Similar to the compare() method, but the result\n\
-gives a total ordering on Decimal instances.  Two Decimal instances with\n\
-the same numeric value but different representations compare unequal\n\
-in this ordering:\n\
+Compare two operands using their abstract representation rather\n\
+than their numerical value.\n\
 \n\
-    >>> Decimal('12.0').compare_total(Decimal('12'))\n\
-    Decimal('-1')\n\
+Similar to the compare() method, but the result gives a total ordering\n\
+on Decimal instances.\n\
 \n\
-Quiet and signaling NaNs are also included in the total ordering. The result\n\
-of this function is Decimal('0') if both operands have the same representation,\n\
-Decimal('-1') if the first operand is lower in the total order than the second,\n\
-and Decimal('1') if the first operand is higher in the total order than the\n\
-second operand. See the specification for details of the total order.\n\
+Quiet and signaling NaNs are also included in the total ordering.\n\
+The result of this function is Decimal('0') if both operands have the\n\
+same representation, Decimal('-1') if the first operand is lower in\n\
+the total order than the second, and Decimal('1') if the first\n\
+operand is higher in the total order than the second operand. See\n\
+the specification for details of the total order.\n\
 \n\
-This operation is unaffected by context and is quiet: no flags are changed\n\
-and no rounding is performed. As an exception, the C version may raise\n\
-InvalidOperation if the second operand cannot be converted exactly.\n\
+This operation is unaffected by context and is quiet: no flags are\n\
+changed and no rounding is performed.\n\
+\n\
+>>> ExtendedContext.compare_total(Decimal('12.73'), Decimal('127.9'))\n\
+Decimal('-1')\n\
+>>> ExtendedContext.compare_total(Decimal('-127'),  Decimal('12'))\n\
+Decimal('-1')\n\
+>>> ExtendedContext.compare_total(Decimal('12.30'), Decimal('12.3'))\n\
+Decimal('-1')\n\
+>>> ExtendedContext.compare_total(Decimal('12.30'), Decimal('12.30'))\n\
+Decimal('0')\n\
+>>> ExtendedContext.compare_total(Decimal('12.3'),  Decimal('12.300'))\n\
+Decimal('1')\n\
+>>> ExtendedContext.compare_total(Decimal('12.3'),  Decimal('NaN'))\n\
+Decimal('-1')\n\
+>>> ExtendedContext.compare_total(1, 2)\n\
+Decimal('-1')\n\
+>>> ExtendedContext.compare_total(Decimal(1), 2)\n\
+Decimal('-1')\n\
+>>> ExtendedContext.compare_total(1, Decimal(2))\n\
+Decimal('-1')\n\
 \n");
 
 PyDoc_STRVAR(doc_compare_total_mag,

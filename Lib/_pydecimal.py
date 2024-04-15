@@ -4417,11 +4417,21 @@ class Context(object):
         return a.compare_signal(b, context=self)
 
     def compare_total(self, a, b):
-        """Compares two operands using their abstract representation.
+        """Compare two operands using their abstract representation rather
+        than their numerical value.
 
-        This is not like the standard compare, which use their numerical
-        value. Note that a total ordering is defined for all possible abstract
-        representations.
+        Similar to the compare() method, but the result gives a total ordering
+        on Decimal instances.
+
+        Quiet and signaling NaNs are also included in the total ordering.
+        The result of this function is Decimal('0') if both operands have the
+        same representation, Decimal('-1') if the first operand is lower in
+        the total order than the second, and Decimal('1') if the first
+        operand is higher in the total order than the second operand. See
+        the specification for details of the total order.
+
+        This operation is unaffected by context and is quiet: no flags are
+        changed and no rounding is performed.
 
         >>> ExtendedContext.compare_total(Decimal('12.73'), Decimal('127.9'))
         Decimal('-1')
