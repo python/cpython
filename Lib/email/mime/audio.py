@@ -6,7 +6,6 @@
 
 __all__ = ['MIMEAudio']
 
-from io import BytesIO
 from email import encoders
 from email.mime.nonmultipart import MIMENonMultipart
 
@@ -59,10 +58,8 @@ def _what(data):
     # sndhdr.what() had a pretty cruddy interface, unfortunately.  This is why
     # we re-do it here.  It would be easier to reverse engineer the Unix 'file'
     # command and use the standard 'magic' file, as shipped with a modern Unix.
-    hdr = data[:512]
-    fakefile = BytesIO(hdr)
     for testfn in _rules:
-        if res := testfn(hdr, fakefile):
+        if res := testfn(data):
             return res
     else:
         return None
@@ -74,7 +71,7 @@ def rule(rulefunc):
 
 
 @rule
-def _aiff(h, f):
+def _aiff(h):
     if not h.startswith(b'FORM'):
         return None
     if h[8:12] in {b'AIFC', b'AIFF'}:
@@ -84,7 +81,7 @@ def _aiff(h, f):
 
 
 @rule
-def _au(h, f):
+def _au(h):
     if h.startswith(b'.snd'):
         return 'basic'
     else:
@@ -92,7 +89,7 @@ def _au(h, f):
 
 
 @rule
-def _wav(h, f):
+def _wav(h):
     # 'RIFF' <len> 'WAVE' 'fmt ' <len>
     if not h.startswith(b'RIFF') or h[8:12] != b'WAVE' or h[12:16] != b'fmt ':
         return None

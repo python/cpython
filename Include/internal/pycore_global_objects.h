@@ -8,10 +8,11 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_gc.h"              // PyGC_Head
+#include "pycore_context.h"         // _PyContextTokenMissing
+#include "pycore_gc.h"              // _PyGC_Head_UNUSED
 #include "pycore_global_strings.h"  // struct _Py_global_strings
 #include "pycore_hamt.h"            // PyHamtNode_Bitmap
-#include "pycore_context.h"         // _PyContextTokenMissing
+#include "pycore_hashtable.h"       // _Py_hashtable_t
 #include "pycore_typeobject.h"      // pytype_slotdef
 
 
@@ -27,6 +28,11 @@ extern "C" {
     _PyRuntime.static_objects.NAME
 #define _Py_SINGLETON(NAME) \
     _Py_GLOBAL_OBJECT(singletons.NAME)
+
+struct _Py_cached_objects {
+    // XXX We could statically allocate the hashtable.
+    _Py_hashtable_t *interned_strings;
+};
 
 struct _Py_static_objects {
     struct {
@@ -68,6 +74,13 @@ struct _Py_interp_cached_objects {
     PyObject *type_slots_pname;
     pytype_slotdef *type_slots_ptrs[MAX_EQUIV];
 
+    /* TypeVar and related types */
+    PyTypeObject *generic_type;
+    PyTypeObject *typevar_type;
+    PyTypeObject *typevartuple_type;
+    PyTypeObject *paramspec_type;
+    PyTypeObject *paramspecargs_type;
+    PyTypeObject *paramspeckwargs_type;
 };
 
 #define _Py_INTERP_STATIC_OBJECT(interp, NAME) \

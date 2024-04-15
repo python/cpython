@@ -408,9 +408,6 @@ STRINGLIB(utf8_encoder)(_PyBytesWriter *writer,
                 }
                 else {
                     /* rep is unicode */
-                    if (PyUnicode_READY(rep) < 0)
-                        goto error;
-
                     if (!PyUnicode_IS_ASCII(rep)) {
                         raise_encode_exception(&exc, "utf-8", unicode,
                                                startpos, endpos,

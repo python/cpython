@@ -43,6 +43,7 @@ __all__ = [
     "Attribute",
     "BlockFinder",
     "BoundArguments",
+    "BufferFlags",
     "CORO_CLOSED",
     "CORO_CREATED",
     "CORO_RUNNING",
@@ -382,8 +383,10 @@ def isfunction(object):
 
 def _has_code_flag(f, flag):
     """Return true if ``f`` is a function (or a method or functools.partial
-    wrapper wrapping a function) whose code object has the given ``flag``
+    wrapper wrapping a function or a functools.partialmethod wrapping a
+    function) whose code object has the given ``flag``
     set in its flags."""
+    f = functools._unwrap_partialmethod(f)
     while ismethod(f):
         f = f.__func__
     f = functools._unwrap_partial(f)
@@ -759,18 +762,14 @@ def unwrap(func, *, stop=None):
    :exc:`ValueError` is raised if a cycle is encountered.
 
     """
-    if stop is None:
-        def _is_wrapper(f):
-            return hasattr(f, '__wrapped__')
-    else:
-        def _is_wrapper(f):
-            return hasattr(f, '__wrapped__') and not stop(f)
     f = func  # remember the original func for error reporting
     # Memoise by id to tolerate non-hashable objects, but store objects to
     # ensure they aren't destroyed, which would allow their IDs to be reused.
     memo = {id(f): f}
     recursion_limit = sys.getrecursionlimit()
-    while _is_wrapper(func):
+    while not isinstance(func, type) and hasattr(func, '__wrapped__'):
+        if stop is not None and stop(func):
+            break
         func = func.__wrapped__
         id_func = id(func)
         if (id_func in memo) or (len(memo) >= recursion_limit):
@@ -831,9 +830,8 @@ def _finddoc(obj):
             cls = self.__class__
     # Should be tested before isdatadescriptor().
     elif isinstance(obj, property):
-        func = obj.fget
-        name = func.__name__
-        cls = _findclass(func)
+        name = obj.__name__
+        cls = _findclass(obj.fget)
         if cls is None or getattr(cls, name) is not obj:
             return None
     elif ismethoddescriptor(obj) or isdatadescriptor(obj):
@@ -880,29 +878,28 @@ def cleandoc(doc):
 
     Any whitespace that can be uniformly removed from the second line
     onwards is removed."""
-    try:
-        lines = doc.expandtabs().split('\n')
-    except UnicodeError:
-        return None
-    else:
-        # Find minimum indentation of any non-blank lines after first line.
-        margin = sys.maxsize
-        for line in lines[1:]:
-            content = len(line.lstrip())
-            if content:
-                indent = len(line) - content
-                margin = min(margin, indent)
-        # Remove indentation.
-        if lines:
-            lines[0] = lines[0].lstrip()
-        if margin < sys.maxsize:
-            for i in range(1, len(lines)): lines[i] = lines[i][margin:]
-        # Remove any trailing or leading blank lines.
-        while lines and not lines[-1]:
-            lines.pop()
-        while lines and not lines[0]:
-            lines.pop(0)
-        return '\n'.join(lines)
+    lines = doc.expandtabs().split('\n')
+
+    # Find minimum indentation of any non-blank lines after first line.
+    margin = sys.maxsize
+    for line in lines[1:]:
+        content = len(line.lstrip(' '))
+        if content:
+            indent = len(line) - content
+            margin = min(margin, indent)
+    # Remove indentation.
+    if lines:
+        lines[0] = lines[0].lstrip(' ')
+    if margin < sys.maxsize:
+        for i in range(1, len(lines)):
+            lines[i] = lines[i][margin:]
+    # Remove any trailing or leading blank lines.
+    while lines and not lines[-1]:
+        lines.pop()
+    while lines and not lines[0]:
+        lines.pop(0)
+    return '\n'.join(lines)
+
 
 def getfile(object):
     """Work out which source or compiled file an object was defined in."""
@@ -957,6 +954,10 @@ def getsourcefile(object):
     elif any(filename.endswith(s) for s in
                  importlib.machinery.EXTENSION_SUFFIXES):
         return None
+    elif filename.endswith(".fwork"):
+        # Apple mobile framework markers are another type of non-source file
+        return None
+
     # return a filename found in the linecache even if it doesn't exist on disk
     if filename in linecache.cache:
         return filename
@@ -987,6 +988,7 @@ def getmodule(object, _filename=None):
         return object
     if hasattr(object, '__module__'):
         return sys.modules.get(object.__module__)
+
     # Try the filename to modulename cache
     if _filename is not None and _filename in modulesbyfile:
         return sys.modules.get(modulesbyfile[_filename])
@@ -1034,9 +1036,13 @@ class ClassFoundException(Exception):
 
 class _ClassFinder(ast.NodeVisitor):
 
-    def __init__(self, qualname):
+    def __init__(self, cls, tree, lines, qualname):
         self.stack = []
+        self.cls = cls
+        self.tree = tree
+        self.lines = lines
         self.qualname = qualname
+        self.lineno_found = []
 
     def visit_FunctionDef(self, node):
         self.stack.append(node.name)
@@ -1057,10 +1063,48 @@ class _ClassFinder(ast.NodeVisitor):
                 line_number = node.lineno
 
             # decrement by one since lines starts with indexing by zero
-            line_number -= 1
-            raise ClassFoundException(line_number)
+            self.lineno_found.append((line_number - 1, node.end_lineno))
         self.generic_visit(node)
         self.stack.pop()
+
+    def get_lineno(self):
+        self.visit(self.tree)
+        lineno_found_number = len(self.lineno_found)
+        if lineno_found_number == 0:
+            raise OSError('could not find class definition')
+        elif lineno_found_number == 1:
+            return self.lineno_found[0][0]
+        else:
+            # We have multiple candidates for the class definition.
+            # Now we have to guess.
+
+            # First, let's see if there are any method definitions
+            for member in self.cls.__dict__.values():
+                if (isinstance(member, types.FunctionType) and
+                    member.__module__ == self.cls.__module__):
+                    for lineno, end_lineno in self.lineno_found:
+                        if lineno <= member.__code__.co_firstlineno <= end_lineno:
+                            return lineno
+
+            class_strings = [(''.join(self.lines[lineno: end_lineno]), lineno)
+                             for lineno, end_lineno in self.lineno_found]
+
+            # Maybe the class has a docstring and it's unique?
+            if self.cls.__doc__:
+                ret = None
+                for candidate, lineno in class_strings:
+                    if self.cls.__doc__.strip() in candidate:
+                        if ret is None:
+                            ret = lineno
+                        else:
+                            break
+                else:
+                    if ret is not None:
+                        return ret
+
+            # We are out of ideas, just return the last one found, which is
+            # slightly better than previous ones
+            return self.lineno_found[-1][0]
 
 
 def findsource(object):
@@ -1080,7 +1124,7 @@ def findsource(object):
         # Allow filenames in form of "<something>" to pass through.
         # `doctest` monkeypatches `linecache` module to enable
         # inspection, so let `linecache.getlines` to be called.
-        if not (file.startswith('<') and file.endswith('>')):
+        if (not (file.startswith('<') and file.endswith('>'))) or file.endswith('.fwork'):
             raise OSError('source code not available')
 
     module = getmodule(object, file)
@@ -1098,14 +1142,8 @@ def findsource(object):
         qualname = object.__qualname__
         source = ''.join(lines)
         tree = ast.parse(source)
-        class_finder = _ClassFinder(qualname)
-        try:
-            class_finder.visit(tree)
-        except ClassFoundException as e:
-            line_number = e.args[0]
-            return lines, line_number
-        else:
-            raise OSError('could not find class definition')
+        class_finder = _ClassFinder(object, tree, lines, qualname)
+        return lines, class_finder.get_lineno()
 
     if ismethod(object):
         object = object.__func__
@@ -1119,15 +1157,8 @@ def findsource(object):
         if not hasattr(object, 'co_firstlineno'):
             raise OSError('could not find function definition')
         lnum = object.co_firstlineno - 1
-        pat = re.compile(r'^(\s*def\s)|(\s*async\s+def\s)|(.*(?<!\w)lambda(:|\s))|^(\s*@)')
-        while lnum > 0:
-            try:
-                line = lines[lnum]
-            except IndexError:
-                raise OSError('lineno is out of bounds')
-            if pat.match(line):
-                break
-            lnum = lnum - 1
+        if lnum >= len(lines):
+            raise OSError('lineno is out of bounds')
         return lines, lnum
     raise OSError('could not find code object')
 
@@ -1241,6 +1272,14 @@ def getblock(lines):
             blockfinder.tokeneater(*_token)
     except (EndOfBlock, IndentationError):
         pass
+    except SyntaxError as e:
+        if "unmatched" not in e.msg:
+            raise e from None
+        _, *_token_info = _token
+        try:
+            blockfinder.tokeneater(tokenize.NEWLINE, *_token_info)
+        except (EndOfBlock, IndentationError):
+            pass
     return lines[:blockfinder.last]
 
 def getsourcelines(object):
@@ -1766,7 +1805,9 @@ def stack(context=1):
 
 def trace(context=1):
     """Return a list of records for the stack below the current exception."""
-    return getinnerframes(sys.exc_info()[2], context)
+    exc = sys.exception()
+    tb = None if exc is None else exc.__traceback__
+    return getinnerframes(tb, context)
 
 
 # ------------------------------------------------ static version of getattr
@@ -1787,32 +1828,24 @@ def _check_instance(obj, attr):
 
 def _check_class(klass, attr):
     for entry in _static_getmro(klass):
-        if _shadowed_dict(type(entry)) is _sentinel:
-            try:
-                return entry.__dict__[attr]
-            except KeyError:
-                pass
+        if _shadowed_dict(type(entry)) is _sentinel and attr in entry.__dict__:
+            return entry.__dict__[attr]
     return _sentinel
 
-def _is_type(obj):
-    try:
-        _static_getmro(obj)
-    except TypeError:
-        return False
-    return True
-
-def _shadowed_dict(klass):
-    for entry in _static_getmro(klass):
-        try:
-            class_dict = _get_dunder_dict_of_class(entry)["__dict__"]
-        except KeyError:
-            pass
-        else:
+@functools.lru_cache()
+def _shadowed_dict_from_mro_tuple(mro):
+    for entry in mro:
+        dunder_dict = _get_dunder_dict_of_class(entry)
+        if '__dict__' in dunder_dict:
+            class_dict = dunder_dict['__dict__']
             if not (type(class_dict) is types.GetSetDescriptorType and
                     class_dict.__name__ == "__dict__" and
                     class_dict.__objclass__ is entry):
                 return class_dict
     return _sentinel
+
+def _shadowed_dict(klass):
+    return _shadowed_dict_from_mro_tuple(_static_getmro(klass))
 
 def getattr_static(obj, attr, default=_sentinel):
     """Retrieve attributes without triggering dynamic lookup via the
@@ -1826,8 +1859,10 @@ def getattr_static(obj, attr, default=_sentinel):
        documentation for details.
     """
     instance_result = _sentinel
-    if not _is_type(obj):
-        klass = type(obj)
+
+    objtype = type(obj)
+    if type not in _static_getmro(objtype):
+        klass = objtype
         dict_attr = _shadowed_dict(klass)
         if (dict_attr is _sentinel or
             type(dict_attr) is types.MemberDescriptorType):
@@ -1838,8 +1873,10 @@ def getattr_static(obj, attr, default=_sentinel):
     klass_result = _check_class(klass, attr)
 
     if instance_result is not _sentinel and klass_result is not _sentinel:
-        if (_check_class(type(klass_result), '__get__') is not _sentinel and
-            _check_class(type(klass_result), '__set__') is not _sentinel):
+        if _check_class(type(klass_result), "__get__") is not _sentinel and (
+            _check_class(type(klass_result), "__set__") is not _sentinel
+            or _check_class(type(klass_result), "__delete__") is not _sentinel
+        ):
             return klass_result
 
     if instance_result is not _sentinel:
@@ -1850,11 +1887,11 @@ def getattr_static(obj, attr, default=_sentinel):
     if obj is klass:
         # for types we check the metaclass too
         for entry in _static_getmro(type(klass)):
-            if _shadowed_dict(type(entry)) is _sentinel:
-                try:
-                    return entry.__dict__[attr]
-                except KeyError:
-                    pass
+            if (
+                _shadowed_dict(type(entry)) is _sentinel
+                and attr in entry.__dict__
+            ):
+                return entry.__dict__[attr]
     if default is not _sentinel:
         return default
     raise AttributeError(attr)
@@ -2000,15 +2037,17 @@ def _signature_get_user_defined_method(cls, method_name):
     named ``method_name`` and returns it only if it is a
     pure python function.
     """
-    try:
-        meth = getattr(cls, method_name)
-    except AttributeError:
-        return
+    if method_name == '__new__':
+        meth = getattr(cls, method_name, None)
     else:
-        if not isinstance(meth, _NonUserDefinedCallables):
-            # Once '__signature__' will be added to 'C'-level
-            # callables, this check won't be necessary
-            return meth
+        meth = getattr_static(cls, method_name, None)
+    if meth is None or isinstance(meth, _NonUserDefinedCallables):
+        # Once '__signature__' will be added to 'C'-level
+        # callables, this check won't be necessary
+        return None
+    if method_name != '__new__':
+        meth = _descriptor_get(meth, cls)
+    return meth
 
 
 def _signature_get_partial(wrapped_sig, partial, extra_args=()):
@@ -2188,7 +2227,7 @@ def _signature_strip_non_python_syntax(signature):
             if string == ',':
                 current_parameter += 1
 
-        if (type == ERRORTOKEN) and (string == '$'):
+        if (type == OP) and (string == '$'):
             assert self_parameter is None
             self_parameter = current_parameter
             continue
@@ -2196,7 +2235,7 @@ def _signature_strip_non_python_syntax(signature):
         add(string)
         if (string == ','):
             add(' ')
-    clean_signature = ''.join(text)
+    clean_signature = ''.join(text).strip().replace("\n", "")
     return clean_signature, self_parameter
 
 
@@ -2453,6 +2492,15 @@ def _signature_from_function(cls, func, skip_bound_arg=True,
                __validate_parameters__=is_duck_function)
 
 
+def _descriptor_get(descriptor, obj):
+    if isclass(descriptor):
+        return descriptor
+    get = getattr(type(descriptor), '__get__', _sentinel)
+    if get is _sentinel:
+        return descriptor
+    return get(descriptor, obj, type(obj))
+
+
 def _signature_from_callable(obj, *,
                              follow_wrapper_chains=True,
                              skip_bound_arg=True,
@@ -2519,7 +2567,7 @@ def _signature_from_callable(obj, *,
             return sig
 
     try:
-        partialmethod = obj._partialmethod
+        partialmethod = obj.__partialmethod__
     except AttributeError:
         pass
     else:
@@ -2561,7 +2609,6 @@ def _signature_from_callable(obj, *,
         wrapped_sig = _get_signature_of(obj.func)
         return _signature_get_partial(wrapped_sig, obj)
 
-    sig = None
     if isinstance(obj, type):
         # obj is a class or a metaclass
 
@@ -2569,87 +2616,65 @@ def _signature_from_callable(obj, *,
         # in its metaclass
         call = _signature_get_user_defined_method(type(obj), '__call__')
         if call is not None:
-            sig = _get_signature_of(call)
-        else:
-            factory_method = None
-            new = _signature_get_user_defined_method(obj, '__new__')
-            init = _signature_get_user_defined_method(obj, '__init__')
+            return _get_signature_of(call)
+
+        new = _signature_get_user_defined_method(obj, '__new__')
+        init = _signature_get_user_defined_method(obj, '__init__')
+
+        # Go through the MRO and see if any class has user-defined
+        # pure Python __new__ or __init__ method
+        for base in obj.__mro__:
             # Now we check if the 'obj' class has an own '__new__' method
-            if '__new__' in obj.__dict__:
-                factory_method = new
+            if new is not None and '__new__' in base.__dict__:
+                sig = _get_signature_of(new)
+                if skip_bound_arg:
+                    sig = _signature_bound_method(sig)
+                return sig
             # or an own '__init__' method
-            elif '__init__' in obj.__dict__:
-                factory_method = init
-            # If not, we take inherited '__new__' or '__init__', if present
-            elif new is not None:
-                factory_method = new
-            elif init is not None:
-                factory_method = init
+            elif init is not None and '__init__' in base.__dict__:
+                return _get_signature_of(init)
 
-            if factory_method is not None:
-                sig = _get_signature_of(factory_method)
+        # At this point we know, that `obj` is a class, with no user-
+        # defined '__init__', '__new__', or class-level '__call__'
 
-        if sig is None:
-            # At this point we know, that `obj` is a class, with no user-
-            # defined '__init__', '__new__', or class-level '__call__'
-
-            for base in obj.__mro__[:-1]:
-                # Since '__text_signature__' is implemented as a
-                # descriptor that extracts text signature from the
-                # class docstring, if 'obj' is derived from a builtin
-                # class, its own '__text_signature__' may be 'None'.
-                # Therefore, we go through the MRO (except the last
-                # class in there, which is 'object') to find the first
-                # class with non-empty text signature.
-                try:
-                    text_sig = base.__text_signature__
-                except AttributeError:
-                    pass
-                else:
-                    if text_sig:
-                        # If 'base' class has a __text_signature__ attribute:
-                        # return a signature based on it
-                        return _signature_fromstr(sigcls, base, text_sig)
-
-            # No '__text_signature__' was found for the 'obj' class.
-            # Last option is to check if its '__init__' is
-            # object.__init__ or type.__init__.
-            if type not in obj.__mro__:
-                # We have a class (not metaclass), but no user-defined
-                # __init__ or __new__ for it
-                if (obj.__init__ is object.__init__ and
-                    obj.__new__ is object.__new__):
-                    # Return a signature of 'object' builtin.
-                    return sigcls.from_callable(object)
-                else:
-                    raise ValueError(
-                        'no signature found for builtin type {!r}'.format(obj))
-
-    elif not isinstance(obj, _NonUserDefinedCallables):
-        # An object with __call__
-        # We also check that the 'obj' is not an instance of
-        # types.WrapperDescriptorType or types.MethodWrapperType to avoid
-        # infinite recursion (and even potential segfault)
-        call = _signature_get_user_defined_method(type(obj), '__call__')
-        if call is not None:
+        for base in obj.__mro__[:-1]:
+            # Since '__text_signature__' is implemented as a
+            # descriptor that extracts text signature from the
+            # class docstring, if 'obj' is derived from a builtin
+            # class, its own '__text_signature__' may be 'None'.
+            # Therefore, we go through the MRO (except the last
+            # class in there, which is 'object') to find the first
+            # class with non-empty text signature.
             try:
-                sig = _get_signature_of(call)
-            except ValueError as ex:
-                msg = 'no signature found for {!r}'.format(obj)
-                raise ValueError(msg) from ex
+                text_sig = base.__text_signature__
+            except AttributeError:
+                pass
+            else:
+                if text_sig:
+                    # If 'base' class has a __text_signature__ attribute:
+                    # return a signature based on it
+                    return _signature_fromstr(sigcls, base, text_sig)
 
-    if sig is not None:
-        # For classes and objects we skip the first parameter of their
-        # __call__, __new__, or __init__ methods
-        if skip_bound_arg:
-            return _signature_bound_method(sig)
-        else:
-            return sig
+        # No '__text_signature__' was found for the 'obj' class.
+        # Last option is to check if its '__init__' is
+        # object.__init__ or type.__init__.
+        if type not in obj.__mro__:
+            # We have a class (not metaclass), but no user-defined
+            # __init__ or __new__ for it
+            if (obj.__init__ is object.__init__ and
+                obj.__new__ is object.__new__):
+                # Return a signature of 'object' builtin.
+                return sigcls.from_callable(object)
+            else:
+                raise ValueError(
+                    'no signature found for builtin type {!r}'.format(obj))
 
-    if isinstance(obj, types.BuiltinFunctionType):
-        # Raise a nicer error message for builtins
-        msg = 'no signature found for builtin function {!r}'.format(obj)
-        raise ValueError(msg)
+    else:
+        # An object with __call__
+        call = getattr_static(type(obj), '__call__', None)
+        if call is not None:
+            call = _descriptor_get(call, obj)
+            return _get_signature_of(call)
 
     raise ValueError('callable {!r} is not supported by signature'.format(obj))
 
@@ -2826,6 +2851,8 @@ class Parameter:
             formatted = '**' + formatted
 
         return formatted
+
+    __replace__ = replace
 
     def __repr__(self):
         return '<{} "{}">'.format(self.__class__.__name__, self)
@@ -3016,7 +3043,7 @@ class Signature:
             if __validate_parameters__:
                 params = OrderedDict()
                 top_kind = _POSITIONAL_ONLY
-                kind_defaults = False
+                seen_default = False
 
                 for param in parameters:
                     kind = param.kind
@@ -3031,21 +3058,19 @@ class Signature:
                                          kind.description)
                         raise ValueError(msg)
                     elif kind > top_kind:
-                        kind_defaults = False
                         top_kind = kind
 
                     if kind in (_POSITIONAL_ONLY, _POSITIONAL_OR_KEYWORD):
                         if param.default is _empty:
-                            if kind_defaults:
+                            if seen_default:
                                 # No default for this parameter, but the
-                                # previous parameter of the same kind had
-                                # a default
+                                # previous parameter of had a default
                                 msg = 'non-default argument follows default ' \
                                       'argument'
                                 raise ValueError(msg)
                         else:
                             # There is a default for this parameter.
-                            kind_defaults = True
+                            seen_default = True
 
                     if name in params:
                         msg = 'duplicate parameter name: {!r}'.format(name)
@@ -3088,6 +3113,8 @@ class Signature:
 
         return type(self)(parameters,
                           return_annotation=return_annotation)
+
+    __replace__ = replace
 
     def _hash_basis(self):
         params = tuple(param for param in self.parameters.values()
@@ -3271,6 +3298,16 @@ class Signature:
         return '<{} {}>'.format(self.__class__.__name__, self)
 
     def __str__(self):
+        return self.format()
+
+    def format(self, *, max_width=None):
+        """Create a string representation of the Signature object.
+
+        If *max_width* integer is passed,
+        signature will try to fit into the *max_width*.
+        If signature is longer than *max_width*,
+        all parameters will be on separate lines.
+        """
         result = []
         render_pos_only_separator = False
         render_kw_only_separator = True
@@ -3308,6 +3345,8 @@ class Signature:
             result.append('/')
 
         rendered = '({})'.format(', '.join(result))
+        if max_width is not None and len(rendered) > max_width:
+            rendered = '(\n    {}\n)'.format(',\n    '.join(result))
 
         if self.return_annotation is not _empty:
             anno = formatannotation(self.return_annotation)
@@ -3320,6 +3359,28 @@ def signature(obj, *, follow_wrapped=True, globals=None, locals=None, eval_str=F
     """Get a signature object for the passed callable."""
     return Signature.from_callable(obj, follow_wrapped=follow_wrapped,
                                    globals=globals, locals=locals, eval_str=eval_str)
+
+
+class BufferFlags(enum.IntFlag):
+    SIMPLE = 0x0
+    WRITABLE = 0x1
+    FORMAT = 0x4
+    ND = 0x8
+    STRIDES = 0x10 | ND
+    C_CONTIGUOUS = 0x20 | STRIDES
+    F_CONTIGUOUS = 0x40 | STRIDES
+    ANY_CONTIGUOUS = 0x80 | STRIDES
+    INDIRECT = 0x100 | STRIDES
+    CONTIG = ND | WRITABLE
+    CONTIG_RO = ND
+    STRIDED = STRIDES | WRITABLE
+    STRIDED_RO = STRIDES
+    RECORDS = STRIDES | WRITABLE | FORMAT
+    RECORDS_RO = STRIDES | FORMAT
+    FULL = INDIRECT | WRITABLE | FORMAT
+    FULL_RO = INDIRECT | FORMAT
+    READ = 0x100
+    WRITE = 0x200
 
 
 def _main():

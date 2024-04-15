@@ -118,6 +118,15 @@
  */
 #if defined(__GNUC__) || defined(__clang__)
 #  define Py_UNUSED(name) _unused_ ## name __attribute__((unused))
+#elif defined(_MSC_VER)
+   // Disable warning C4100: unreferenced formal parameter,
+   // declare the parameter,
+   // restore old compiler warnings.
+#  define Py_UNUSED(name) \
+        __pragma(warning(push)) \
+        __pragma(warning(suppress: 4100)) \
+        _unused_ ## name \
+        __pragma(warning(pop))
 #else
 #  define Py_UNUSED(name) _unused_ ## name
 #endif
@@ -150,6 +159,9 @@
 #  define Py_UNREACHABLE() \
     Py_FatalError("Unreachable C code path reached")
 #endif
+
+#define _Py_CONTAINER_OF(ptr, type, member) \
+    (type*)((char*)ptr - offsetof(type, member))
 
 // Prevent using an expression as a l-value.
 // For example, "int x; _Py_RVALUE(x) = 1;" fails with a compiler error.
