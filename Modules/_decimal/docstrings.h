@@ -536,9 +536,7 @@ otherwise return False.\n\
 
 PyDoc_STRVAR(doc_is_normal,
 "is_normal($self, /, context=None)\n--\n\n\
-Return True if the argument is a normal finite non-zero number with an\n\
-adjusted exponent greater than or equal to Emin. Return False if the\n\
-argument is zero, subnormal, infinite or a NaN.\n\
+Return True if the operand is a normal number; otherwise return False.\n\
 \n\
     >>> c = ExtendedContext.copy()\n\
     >>> c.Emin = -999\n\
