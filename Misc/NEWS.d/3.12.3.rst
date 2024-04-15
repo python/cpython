@@ -4,7 +4,7 @@
 .. release date: 2024-04-09
 .. section: Security
 
-Allow controlling Expat >=2.6.0 reparse deferral (CVE-2023-52425) by adding
+Allow controlling Expat >=2.6.0 reparse deferral (:cve:`2023-52425`) by adding
 five new methods:
 
 * :meth:`xml.etree.ElementTree.XMLParser.flush`
@@ -844,7 +844,7 @@ Add 'default' and 'version' help text for localization in argparse.
 .. nonce: fb9a0R
 .. section: Documentation
 
-Document CVE-2023-52425 of Expat <2.6.0 under "XML vulnerabilities".
+Document :cve:`2023-52425` of Expat <2.6.0 under "XML vulnerabilities".
 
 ..
 

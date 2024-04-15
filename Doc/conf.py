@@ -12,6 +12,8 @@ import time
 sys.path.append(os.path.abspath('tools/extensions'))
 sys.path.append(os.path.abspath('includes'))
 
+from pyspecific import SOURCE_URI
+
 # General configuration
 # ---------------------
 
@@ -24,6 +26,7 @@ extensions = [
     'pyspecific',
     'sphinx.ext.coverage',
     'sphinx.ext.doctest',
+    'sphinx.ext.extlinks',
 ]
 
 # Skip if downstream redistributors haven't installed it
@@ -499,6 +502,19 @@ linkcheck_ignore = [
     r'https://unix.org/version2/whatsnew/lp64_wp.html',
 ]
 
+# Options for sphinx.ext.extlinks
+# -------------------------------
+
+# This config is a dictionary of external sites,
+# mapping unique short aliases to a base URL and a prefix.
+# https://www.sphinx-doc.org/en/master/usage/extensions/extlinks.html
+extlinks = {
+    "cve": ("https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-%s", "CVE-%s"),
+    "cwe": ("https://cwe.mitre.org/data/definitions/%s.html", "CWE-%s"),
+    "pypi": ("https://pypi.org/project/%s/", "%s"),
+    "source": (SOURCE_URI, "%s"),
+}
+extlinks_detect_hardcoded_links = True
 
 # Options for extensions
 # ----------------------

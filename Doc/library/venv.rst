@@ -27,7 +27,7 @@ optionally be isolated from the packages in the base environment,
 so only those explicitly installed in the virtual environment are available.
 
 When used from within a virtual environment, common installation tools such as
-`pip`_ will install Python packages into a virtual environment
+:pypi:`pip` will install Python packages into a virtual environment
 without needing to be told to do so explicitly.
 
 A virtual environment is (amongst other things):
@@ -594,7 +594,3 @@ subclass which installs setuptools and pip into a created virtual environment::
 
 This script is also available for download `online
 <https://gist.github.com/vsajip/4673395>`_.
-
-
-.. _setuptools: https://pypi.org/project/setuptools/
-.. _pip: https://pypi.org/project/pip/

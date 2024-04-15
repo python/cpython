@@ -26,7 +26,6 @@ from sphinx.errors import NoUri
 from sphinx.locale import _ as sphinx_gettext
 from sphinx.util import logging
 from sphinx.util.docutils import SphinxDirective
-from sphinx.util.nodes import split_explicit_title
 from sphinx.writers.text import TextWriter, TextTranslator
 
 try:
@@ -39,6 +38,7 @@ except ImportError:
 
 ISSUE_URI = 'https://bugs.python.org/issue?@action=redirect&bpo=%s'
 GH_ISSUE_URI = 'https://github.com/python/cpython/issues/%s'
+# Used in conf.py and updated here by python/release-tools/run_release.py
 SOURCE_URI = 'https://github.com/python/cpython/tree/3.12/%s'
 
 # monkey-patch reST parser to disable alphabetic and roman enumerated lists
@@ -53,6 +53,7 @@ Body.enum.converters['loweralpha'] = \
 from sphinx.domains import std
 
 std.token_re = re.compile(r'`((~?[\w-]*:)?\w+)`')
+
 
 # Support for marking up and linking to bugs.python.org issues
 
@@ -82,16 +83,6 @@ def gh_issue_role(typ, rawtext, text, lineno, inliner, options={}, content=[]):
         return [prb], [msg]
     text = 'gh-' + issue
     refnode = nodes.reference(text, text, refuri=GH_ISSUE_URI % issue)
-    return [refnode], []
-
-
-# Support for linking to Python source files easily
-
-def source_role(typ, rawtext, text, lineno, inliner, options={}, content=[]):
-    has_t, title, target = split_explicit_title(text)
-    title = utils.unescape(title)
-    target = utils.unescape(target)
-    refnode = nodes.reference(title, title, refuri=SOURCE_URI % target)
     return [refnode], []
 
 
@@ -192,7 +183,6 @@ class Availability(SphinxDirective):
             )
 
         return platforms
-
 
 
 # Support for documenting audit event
@@ -710,7 +700,6 @@ def patch_pairindextypes(app, _env) -> None:
 def setup(app):
     app.add_role('issue', issue_role)
     app.add_role('gh', gh_issue_role)
-    app.add_role('source', source_role)
     app.add_directive('impl-detail', ImplementationDetail)
     app.add_directive('availability', Availability)
     app.add_directive('audit-event', AuditEvent)

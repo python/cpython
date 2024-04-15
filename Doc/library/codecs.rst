@@ -1479,7 +1479,7 @@ Internationalized Domain Names (IDN)). It builds upon the ``punycode`` encoding
 and :mod:`stringprep`.
 
 If you need the IDNA 2008 standard from :rfc:`5891` and :rfc:`5895`, use the
-third-party `idna module <https://pypi.org/project/idna/>`_.
+third-party :pypi:`idna` module.
 
 These RFCs together define a protocol to support non-ASCII characters in domain
 names. A domain name containing non-ASCII characters (such as

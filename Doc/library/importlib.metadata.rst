@@ -26,7 +26,7 @@ this package can eliminate the need to use the older and less efficient
 
 ``importlib.metadata`` operates on third-party *distribution packages*
 installed into Python's ``site-packages`` directory via tools such as
-`pip <https://pypi.org/project/pip/>`_.
+:pypi:`pip`.
 Specifically, it works with distributions with discoverable
 ``dist-info`` or ``egg-info`` directories,
 and metadata defined by the `Core metadata specifications <https://packaging.python.org/en/latest/specifications/core-metadata/#core-metadata>`_.
@@ -178,7 +178,7 @@ The "selectable" entry points were introduced in ``importlib_metadata``
 no parameters and always returned a dictionary of entry points, keyed
 by group. With ``importlib_metadata`` 5.0 and Python 3.12,
 ``entry_points`` always returns an ``EntryPoints`` object. See
-`backports.entry_points_selectable <https://pypi.org/project/backports.entry-points-selectable>`_
+:pypi:`backports.entry_points_selectable`
 for compatibility options.
 
 

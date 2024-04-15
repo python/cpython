@@ -760,7 +760,7 @@ Process-wide parameters
       It is recommended that applications embedding the Python interpreter
       for purposes other than executing a single script pass ``0`` as *updatepath*,
       and update :data:`sys.path` themselves if desired.
-      See `CVE-2008-5983 <https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2008-5983>`_.
+      See :cve:`2008-5983`.
 
       On versions before 3.1.3, you can achieve the same effect by manually
       popping the first :data:`sys.path` element after having called

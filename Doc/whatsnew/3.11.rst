@@ -544,8 +544,7 @@ Other CPython Implementation Changes
   (binary), 4, 8 (octal), 16 (hexadecimal), or 32 such as base 10 (decimal)
   now raises a :exc:`ValueError` if the number of digits in string form is
   above a limit to avoid potential denial of service attacks due to the
-  algorithmic complexity. This is a mitigation for `CVE-2020-10735
-  <https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2020-10735>`_.
+  algorithmic complexity. This is a mitigation for :cve:`2020-10735`.
   This limit can be configured or disabled by environment variable, command
   line flag, or :mod:`sys` APIs. See the :ref:`integer string conversion
   length limitation <int_max_str_digits>` documentation.  The default limit
@@ -2028,7 +2027,7 @@ Removed C APIs are :ref:`listed separately <whatsnew311-c-api-removed>`.
   (and corresponding :c:macro:`!EXPERIMENTAL_ISOLATED_SUBINTERPRETERS` macro)
   have been removed.
 
-* `Pynche <https://pypi.org/project/pynche/>`_
+* :pypi:`Pynche`
   --- The Pythonically Natural Color and Hue Editor --- has been moved out
   of ``Tools/scripts`` and is `being developed independently
   <https://gitlab.com/warsaw/pynche/-/tree/main>`_ from the Python source tree.
