@@ -2603,7 +2603,7 @@ static int
 delitemif_lock_held(PyObject *op, PyObject *key,
                     int (*predicate)(PyObject *value))
 {
-    Py_ssize_t hashpos, ix;
+    Py_ssize_t ix;
     PyDictObject *mp;
     Py_hash_t hash;
     PyObject *old_value;
@@ -2632,14 +2632,11 @@ delitemif_lock_held(PyObject *op, PyObject *key,
     if (res == -1)
         return -1;
 
-    hashpos = lookdict_index(mp->ma_keys, hash, ix);
-    assert(hashpos >= 0);
-
     if (res > 0) {
         PyInterpreterState *interp = _PyInterpreterState_GET();
         uint64_t new_version = _PyDict_NotifyEvent(
                 interp, PyDict_EVENT_DELETED, mp, key, NULL);
-        return delitem_common(mp, hashpos, ix, old_value, new_version);
+        return delitem_common(mp, hash, ix, old_value, new_version);
     } else {
         return 0;
     }
