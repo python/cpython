@@ -82,7 +82,7 @@ Important deprecations, removals or restrictions:
 
 Interpreter improvements:
 
-* A basic :ref:`JIT compiler <whatsnew313-jit-compiler>` was added.
+* :pep:`744`: A basic :ref:`JIT compiler <whatsnew313-jit-compiler>` was added.
   It is currently disabled by default (though we may turn it on later).
   Performance improvements are modest -- we expect to be improving this
   over the next few releases.
