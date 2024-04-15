@@ -1636,7 +1636,7 @@ hold:\n\
 
 PyDoc_STRVAR(doc_ctx_quantize,
 "quantize($self, a, b, /)\n--\n\n\
-Returns a value equal to 'a' (rounded), having the exponent of 'b'.\n\
+Return a value equal to 'a' (rounded), having the exponent of 'b'.\n\
 \n\
 The coefficient of the result is derived from that of the left-hand\n\
 operand.  It may be rounded using the current rounding setting (if the\n\
