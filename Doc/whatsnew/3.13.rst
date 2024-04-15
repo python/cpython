@@ -1845,6 +1845,13 @@ Porting to Python 3.13
   and ``setitimer()`` functions.
   (Contributed by Victor Stinner in :gh:`108765`.)
 
+* On Windows, ``Python.h`` no longer includes the ``<stddef.h>`` standard
+  header file. If needed, it should now be included explicitly. For example, it
+  provides ``offsetof()`` function, and ``size_t`` and ``ptrdiff_t`` types.
+  Including ``<stddef.h>`` explicitly was already needed by all other
+  platforms, the ``HAVE_STDDEF_H`` macro is only defined on Windows.
+  (Contributed by Victor Stinner in :gh:`108765`.)
+
 * If the :c:macro:`Py_LIMITED_API` macro is defined, :c:macro:`!Py_BUILD_CORE`,
   :c:macro:`!Py_BUILD_CORE_BUILTIN` and :c:macro:`!Py_BUILD_CORE_MODULE` macros
   are now undefined by ``<Python.h>``.
@@ -1878,13 +1885,6 @@ Porting to Python 3.13
 
   Note that ``Py_TRASHCAN_BEGIN`` has a second argument which
   should be the deallocation function it is in.
-
-* On Windows, ``Python.h`` no longer includes the ``<stddef.h>`` standard
-  header file. If needed, it should now be included explicitly. For example, it
-  provides ``offsetof()`` function, and ``size_t`` and ``ptrdiff_t`` types.
-  Including ``<stddef.h>`` explicitly was already needed by all other
-  platforms, the ``HAVE_STDDEF_H`` macro is only defined on Windows.
-  (Contributed by Victor Stinner in :gh:`108765`.)
 
 Deprecated
 ----------
