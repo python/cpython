@@ -233,12 +233,10 @@ Raise OverflowError on infinities and a ValueError on NaNs.\n\
 
 PyDoc_STRVAR(doc_canonical,
 "canonical($self, /)\n--\n\n\
-Return the same Decimal object.\n\
-As we do not have different encodings for the same number, the received\n\
-object already is in its canonical form.\n\
+Return the canonical encoding of the argument.\n\
 \n\
-    >>> ExtendedContext.canonical(Decimal('2.50'))\n\
-    Decimal('2.50')\n\
+Currently, the encoding of a Decimal instance is always canonical,\n\
+so this operation returns its argument unchanged.\n\
 \n");
 
 PyDoc_STRVAR(doc_compare,

@@ -2978,9 +2978,10 @@ class Decimal(object):
             return 0
 
     def canonical(self):
-        """Return the canonical encoding of the argument. Currently, the encoding
-        of a Decimal instance is always canonical, so this operation returns its
-        argument unchanged.
+        """Return the canonical encoding of the argument.
+
+        Currently, the encoding of a Decimal instance is always canonical,
+        so this operation returns its argument unchanged.
         """
         return self
 
