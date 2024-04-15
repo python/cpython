@@ -21,8 +21,8 @@ class PyRunTest(unittest.TestCase):
     # cf_flags -- compile flags bitmap
     # cf_feature_version -- compile flags feature version
     def test_pyrun_fileexflags(self):
-        def run(*args, filename=TESTFN):
-            return _testcapi.run_fileexflags(filename, Py_file_input, *args)
+        def run(*args):
+            return _testcapi.run_fileexflags(TESTFN, Py_file_input, *args)
 
         with open(TESTFN, 'w') as fp:
             fp.write("a\n")
@@ -33,12 +33,6 @@ class PyRunTest(unittest.TestCase):
         self.assertIsNone(run({}, dict(a=1)))
         self.assertIsNone(run({}, UserDict(a=1)))
         self.assertIsNone(run(dict(a=1), {}, 1))  # closeit = True
-
-        if TESTFN_UNDECODABLE is not None:
-            with open(TESTFN_UNDECODABLE, 'w') as fp:
-                fp.write("b\n")
-            self.addCleanup(unlink, TESTFN_UNDECODABLE)
-            self.assertIsNone(run(dict(b=1), filename=TESTFN_UNDECODABLE))
 
         self.assertRaises(NameError, run, {})
         self.assertRaises(NameError, run, {}, {})
@@ -51,6 +45,17 @@ class PyRunTest(unittest.TestCase):
         self.assertRaises(SystemError, run, UserDict())
         self.assertRaises(SystemError, run, UserDict(), {})
         self.assertRaises(SystemError, run, UserDict(), dict(a=1))
+
+    @unittest.skipUnless(TESTFN_UNDECODABLE, "only works if there are undecodable paths")
+    def test_pyrun_fileexflags_with_undecodable_filename(self):
+        run = _testcapi.run_fileexflags
+        try:
+            with open(TESTFN_UNDECODABLE, 'w') as fp:
+                fp.write("b\n")
+            self.addCleanup(unlink, TESTFN_UNDECODABLE)
+        except OSError:
+            self.skipTest("undecodable paths are not supported")
+        self.assertIsNone(run(TESTFN_UNDECODABLE, Py_file_input, dict(b=1)))
 
 
 if __name__ == "__main__":
