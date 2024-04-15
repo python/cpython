@@ -411,8 +411,9 @@ InvalidOperation if the second operand cannot be converted exactly.\n\
 
 PyDoc_STRVAR(doc_exp,
 "exp($self, /, context=None)\n--\n\n\
-Return the value of the (natural) exponential function e**a at the given\n\
-number.  The function always uses the ROUND_HALF_EVEN mode and the result\n\
+Return the value of the (natural) exponential function e ** a.\n\
+\n\
+The function always uses the ROUND_HALF_EVEN mode and the result\n\
 is correctly rounded.\n\
 \n\
     >>> c = ExtendedContext.copy()\n\
