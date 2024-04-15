@@ -108,10 +108,8 @@ def join(path, *paths):
         seps = '\\/'
         colon_seps = ':\\/'
     try:
-        if not paths:
-            path[:0] + sep  #23780: Ensure compatible data type even if p is null.
         result_drive, result_root, result_path = splitroot(path)
-        for p in map(os.fspath, paths):
+        for p in paths:
             p_drive, p_root, p_path = splitroot(p)
             if p_root:
                 # Second path is absolute
@@ -368,13 +366,15 @@ def expanduser(path):
     If user or $HOME is unknown, do nothing."""
     path = os.fspath(path)
     if isinstance(path, bytes):
+        seps = b'\\/'
         tilde = b'~'
     else:
+        seps = '\\/'
         tilde = '~'
     if not path.startswith(tilde):
         return path
     i, n = 1, len(path)
-    while i < n and path[i] not in _get_bothseps(path):
+    while i < n and path[i] not in seps:
         i += 1
 
     if 'USERPROFILE' in os.environ:
@@ -857,9 +857,6 @@ def commonpath(paths):
         drivesplits = [splitroot(p.replace(altsep, sep).lower()) for p in paths]
         split_paths = [p.split(sep) for d, r, p in drivesplits]
 
-        if len({r for d, r, p in drivesplits}) != 1:
-            raise ValueError("Can't mix absolute and relative paths")
-
         # Check that all drive letters or UNC paths match. The check is made only
         # now otherwise type errors for mixing strings and bytes would not be
         # caught.
@@ -867,6 +864,12 @@ def commonpath(paths):
             raise ValueError("Paths don't have the same drive")
 
         drive, root, path = splitroot(paths[0].replace(altsep, sep))
+        if len({r for d, r, p in drivesplits}) != 1:
+            if drive:
+                raise ValueError("Can't mix absolute and relative paths")
+            else:
+                raise ValueError("Can't mix rooted and not-rooted paths")
+
         common = path.split(sep)
         common = [c for c in common if c and c != curdir]
 
