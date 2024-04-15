@@ -191,6 +191,8 @@ def addpackage(sitedir, name, known_paths):
         # We will deprecate this fallback in the future.
         import locale
         pth_content = pth_content.decode(locale.getencoding())
+        _trace(f"Cannot read {fullname!r} as UTF-8. "
+               f"Using fallback encoding {locale.getencoding()!r}")
 
     for n, line in enumerate(pth_content.splitlines(), 1):
         if line.startswith("#"):
