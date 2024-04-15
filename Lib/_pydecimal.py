@@ -3647,7 +3647,10 @@ class Decimal(object):
         return ans._fix(context)
 
     def next_minus(self, context=None):
-        """Returns the largest representable number smaller than itself."""
+        """Return the largest number representable in the given context (or in the
+        current default context if no context is given) that is smaller than the\
+        given operand.
+        """
         if context is None:
             context = getcontext()
 
@@ -5153,23 +5156,21 @@ class Context(object):
             return r
 
     def next_minus(self, a):
-        """Return the largest number representable in the given context (or in the
-        current default context if no context is given) that is smaller than the
-        given operand.
+        """Returns the largest representable number smaller than a.\n\
 
-        >>> c = ExtendedContext.copy()
-        >>> c.Emin = -999
-        >>> c.Emax = 999
-        >>> ExtendedContext.next_minus(Decimal('1'))
-        Decimal('0.999999999')
-        >>> c.next_minus(Decimal('1E-1007'))
-        Decimal('0E-1007')
-        >>> ExtendedContext.next_minus(Decimal('-1.00000003'))
-        Decimal('-1.00000004')
-        >>> c.next_minus(Decimal('Infinity'))
-        Decimal('9.99999999E+999')
-        >>> c.next_minus(1)
-        Decimal('0.999999999')
+            >>> c = ExtendedContext.copy()
+            >>> c.Emin = -999
+            >>> c.Emax = 999
+            >>> ExtendedContext.next_minus(Decimal('1'))
+            Decimal('0.999999999')
+            >>> c.next_minus(Decimal('1E-1007'))
+            Decimal('0E-1007')
+            >>> ExtendedContext.next_minus(Decimal('-1.00000003'))
+            Decimal('-1.00000004')
+            >>> c.next_minus(Decimal('Infinity'))
+            Decimal('9.99999999E+999')
+            >>> c.next_minus(1)
+            Decimal('0.999999999')
         """
         a = _convert_other(a, raiseit=True)
         return a.next_minus(context=self)
