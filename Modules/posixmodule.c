@@ -5534,7 +5534,8 @@ os__path_abspath(PyObject *module, PyObject *path)
         cwd_len = 0;
         abs_path = rel_path;
         abs_path_len = rel_path_len;
-    } else {
+    }
+    else {
         wchar_t cwd[MAXPATHLEN + 1];
         cwd[Py_ARRAY_LENGTH(cwd) - 1] = 0;
         if (!_Py_wgetcwd(cwd, Py_ARRAY_LENGTH(cwd) - 1)) {
