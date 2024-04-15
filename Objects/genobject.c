@@ -2241,7 +2241,11 @@ async_gen_athrow_throw(PyAsyncGenAThrow *o, PyObject *const *args, Py_ssize_t na
 
     retval = gen_throw((PyGenObject*)o->agt_gen, args, nargs);
     if (o->agt_args) {
-        return async_gen_unwrap_value(o->agt_gen, retval);
+        retval = async_gen_unwrap_value(o->agt_gen, retval);
+        if (retval == NULL) {
+            o->agt_gen->ag_running_async = 0;
+        }
+        return retval;
     } else {
         /* aclose() mode */
         if (retval && _PyAsyncGenWrappedValue_CheckExact(retval)) {
