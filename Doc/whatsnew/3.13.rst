@@ -185,7 +185,7 @@ Other Language Changes
 
   (Contributed by Victor Stinner in :gh:`114570`.)
 
-* Allow controlling Expat >=2.6.0 reparse deferral (CVE-2023-52425)
+* Allow controlling Expat >=2.6.0 reparse deferral (:cve:`2023-52425`)
   by adding five new methods:
 
   * :meth:`xml.etree.ElementTree.XMLParser.flush`
@@ -385,7 +385,7 @@ email
   ``getattr(email.utils, 'supports_strict_parsing', False)`` can be used to
   check if the *strict* parameter is available.
   (Contributed by Thomas Dwyer and Victor Stinner for :gh:`102988` to improve
-  the CVE-2023-27043 fix.)
+  the :cve:`2023-27043` fix.)
 
 fractions
 ---------
@@ -1316,9 +1316,8 @@ PEP 594: dead batteries
 
     * ``cgi.FieldStorage`` can typically be replaced with
       :func:`urllib.parse.parse_qsl` for ``GET`` and ``HEAD`` requests,
-      and the :mod:`email.message` module or `multipart
-      <https://pypi.org/project/multipart/>`__ PyPI project for ``POST`` and
-      ``PUT``.
+      and the :mod:`email.message` module or :pypi:`multipart`
+      PyPI project for ``POST`` and ``PUT``.
 
     * ``cgi.parse()`` can be replaced by calling :func:`urllib.parse.parse_qs`
       directly on the desired query string, except for ``multipart/form-data``
@@ -1336,7 +1335,7 @@ PEP 594: dead batteries
     * ``cgi.parse_multipart()`` can be replaced with the functionality in the
       :mod:`email` package (e.g. :class:`email.message.EmailMessage` and
       :class:`email.message.Message`) which implements the same MIME RFCs, or
-      with the `multipart <https://pypi.org/project/multipart/>`__ PyPI project.
+      with the :pypi:`multipart` PyPI project.
 
     (Contributed by Victor Stinner in :gh:`104773`.)
 
@@ -1344,21 +1343,19 @@ PEP 594: dead batteries
     The :mod:`hashlib` module is a potential replacement for certain use cases.
     Otherwise, the following PyPI projects can be used:
 
-    * `bcrypt <https://pypi.org/project/bcrypt/>`_:
+    * :pypi:`bcrypt`:
       Modern password hashing for your software and your servers.
-    * `passlib <https://pypi.org/project/passlib/>`_:
+    * :pypi:`passlib`:
       Comprehensive password hashing framework supporting over 30 schemes.
-    * `argon2-cffi <https://pypi.org/project/argon2-cffi/>`_:
+    * :pypi:`argon2-cffi`:
       The secure Argon2 password hashing algorithm.
-    * `legacycrypt <https://pypi.org/project/legacycrypt/>`_:
+    * :pypi:`legacycrypt`:
       Wrapper to the POSIX crypt library call and associated functionality.
 
     (Contributed by Victor Stinner in :gh:`104773`.)
 
-  * :mod:`!imghdr`: use the projects
-    `filetype <https://pypi.org/project/filetype/>`_,
-    `puremagic <https://pypi.org/project/puremagic/>`_,
-    or `python-magic <https://pypi.org/project/python-magic/>`_ instead.
+  * :mod:`!imghdr`: use the projects :pypi:`filetype`,
+    :pypi:`puremagic`, or :pypi:`python-magic` instead.
     (Contributed by Victor Stinner in :gh:`104773`.)
 
   * :mod:`!mailcap`.
@@ -1372,8 +1369,7 @@ PEP 594: dead batteries
     (Contributed by Victor Stinner in :gh:`104773`.)
 
   * :mod:`!nntplib`:
-    the `PyPI nntplib project <https://pypi.org/project/nntplib/>`_
-    can be used instead.
+    the :pypi:`nntplib` PyPI project can be used instead.
     (Contributed by Victor Stinner in :gh:`104773`.)
 
   * :mod:`!ossaudiodev`: use the
@@ -1383,23 +1379,19 @@ PEP 594: dead batteries
   * :mod:`!pipes`: use the :mod:`subprocess` module instead.
     (Contributed by Victor Stinner in :gh:`104773`.)
 
-  * :mod:`!sndhdr`: use the projects
-    `filetype <https://pypi.org/project/filetype/>`_,
-    `puremagic <https://pypi.org/project/puremagic/>`_, or
-    `python-magic <https://pypi.org/project/python-magic/>`_ instead.
+  * :mod:`!sndhdr`: use the projects :pypi:`filetype_,
+    :pypi:`puremagic`, or :pypi:`python-magic` instead.
     (Contributed by Victor Stinner in :gh:`104773`.)
 
   * :mod:`!spwd`:
-    the `python-pam project <https://pypi.org/project/python-pam/>`_
-    can be used instead.
+    the :pypi:`python-pam` project can be used instead.
     (Contributed by Victor Stinner in :gh:`104773`.)
 
   * :mod:`!sunau`.
     (Contributed by Victor Stinner in :gh:`104773`.)
 
-  * :mod:`!telnetlib`, use the projects
-    `telnetlib3 <https://pypi.org/project/telnetlib3/>`_ or
-    `Exscript <https://pypi.org/project/Exscript/>`_ instead.
+  * :mod:`!telnetlib`, use the projects :pypi:`telnetlib3 ` or
+    :pypi:`Exscript` instead.
     (Contributed by Victor Stinner in :gh:`104773`.)
 
   * :mod:`!uu`: the :mod:`base64` module is a modern alternative.
