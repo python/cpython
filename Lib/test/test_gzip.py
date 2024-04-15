@@ -567,7 +567,7 @@ class TestGzip(BaseTest):
         for mtime in (0, 42):
             with self.subTest(mtime=mtime):
                 compress = gzip.compress(data1, compresslevel=1, mtime=mtime)
-                assert struct.unpack("IxB", compress[4:10]) == (mtime, 255)
+                assert struct.unpack("<IxB", compress[4:10]) == (mtime, 255)
 
     def test_decompress(self):
         for data in (data1, data2):
