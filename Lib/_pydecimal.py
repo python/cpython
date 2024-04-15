@@ -4388,30 +4388,29 @@ class Context(object):
         It's pretty much like compare(), but all NaNs signal, with signaling
         NaNs taking precedence over quiet NaNs.
 
-        >>> c = ExtendedContext
-        >>> c.compare_signal(Decimal('2.1'), Decimal('3'))
+        >>> ExtendedContext.compare_signal(Decimal('2.1'), Decimal('3'))
         Decimal('-1')
-        >>> c.compare_signal(Decimal('2.1'), Decimal('2.1'))
+        >>> ExtendedContext.compare_signal(Decimal('2.1'), Decimal('2.1'))
         Decimal('0')
-        >>> c.flags[InvalidOperation] = 0
-        >>> print(c.flags[InvalidOperation])
+        >>> ExtendedContext.flags[InvalidOperation] = 0
+        >>> print(ExtendedContext.flags[InvalidOperation])
         0
-        >>> c.compare_signal(Decimal('NaN'), Decimal('2.1'))
+        >>> ExtendedContext.compare_signal(Decimal('NaN'), Decimal('2.1'))
         Decimal('NaN')
-        >>> print(c.flags[InvalidOperation])
+        >>> print(ExtendedContext.flags[InvalidOperation])
         1
-        >>> c.flags[InvalidOperation] = 0
-        >>> print(c.flags[InvalidOperation])
+        >>> ExtendedContext.flags[InvalidOperation] = 0
+        >>> print(ExtendedContext.flags[InvalidOperation])
         0
-        >>> c.compare_signal(Decimal('sNaN'), Decimal('2.1'))
+        >>> ExtendedContext.compare_signal(Decimal('sNaN'), Decimal('2.1'))
         Decimal('NaN')
-        >>> print(c.flags[InvalidOperation])
+        >>> print(ExtendedContext.flags[InvalidOperation])
         1
-        >>> c.compare_signal(-1, 2)
+        >>> ExtendedContext.compare_signal(-1, 2)
         Decimal('-1')
-        >>> c.compare_signal(Decimal(-1), 2)
+        >>> ExtendedContext.compare_signal(Decimal(-1), 2)
         Decimal('-1')
-        >>> c.compare_signal(-1, Decimal(2))
+        >>> ExtendedContext.compare_signal(-1, Decimal(2))
         Decimal('-1')
         """
         a = _convert_other(a, raiseit=True)

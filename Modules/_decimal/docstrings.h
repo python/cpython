@@ -322,36 +322,35 @@ zero or negative zero, or '1' if the result is greater than zero.\n\
 
 PyDoc_STRVAR(doc_compare_signal,
 "compare_signal($self, /, other, context=None)\n--\n\n\
-Compare the values of the two operands numerically.\n\
+Compares the values of the two operands numerically.\n\
 \n\
 It's pretty much like compare(), but all NaNs signal, with signaling\n\
 NaNs taking precedence over quiet NaNs.\n\
 \n\
-    >>> c = ExtendedContext\n\
-    >>> c.compare_signal(Decimal('2.1'), Decimal('3'))\n\
-    Decimal('-1')\n\
-    >>> c.compare_signal(Decimal('2.1'), Decimal('2.1'))\n\
-    Decimal('0')\n\
-    >>> c.flags[InvalidOperation] = 0\n\
-    >>> print(c.flags[InvalidOperation])\n\
-    0\n\
-    >>> c.compare_signal(Decimal('NaN'), Decimal('2.1'))\n\
-    Decimal('NaN')\n\
-    >>> print(c.flags[InvalidOperation])\n\
-    1\n\
-    >>> c.flags[InvalidOperation] = 0\n\
-    >>> print(c.flags[InvalidOperation])\n\
-    0\n\
-    >>> c.compare_signal(Decimal('sNaN'), Decimal('2.1'))\n\
-    Decimal('NaN')\n\
-    >>> print(c.flags[InvalidOperation])\n\
-    1\n\
-    >>> c.compare_signal(-1, 2)\n\
-    Decimal('-1')\n\
-    >>> c.compare_signal(Decimal(-1), 2)\n\
-    Decimal('-1')\n\
-    >>> c.compare_signal(-1, Decimal(2))\n\
-    Decimal('-1')\n\
+>>> ExtendedContext.compare_signal(Decimal('2.1'), Decimal('3'))\n\
+Decimal('-1')\n\
+>>> ExtendedContext.compare_signal(Decimal('2.1'), Decimal('2.1'))\n\
+Decimal('0')\n\
+>>> ExtendedContext.flags[InvalidOperation] = 0\n\
+>>> print(ExtendedContext.flags[InvalidOperation])\n\
+0\n\
+>>> ExtendedContext.compare_signal(Decimal('NaN'), Decimal('2.1'))\n\
+Decimal('NaN')\n\
+>>> print(ExtendedContext.flags[InvalidOperation])\n\
+1\n\
+>>> ExtendedContext.flags[InvalidOperation] = 0\n\
+>>> print(ExtendedContext.flags[InvalidOperation])\n\
+0\n\
+>>> ExtendedContext.compare_signal(Decimal('sNaN'), Decimal('2.1'))\n\
+Decimal('NaN')\n\
+>>> print(ExtendedContext.flags[InvalidOperation])\n\
+1\n\
+>>> ExtendedContext.compare_signal(-1, 2)\n\
+Decimal('-1')\n\
+>>> ExtendedContext.compare_signal(Decimal(-1), 2)\n\
+Decimal('-1')\n\
+>>> ExtendedContext.compare_signal(-1, Decimal(2))\n\
+Decimal('-1')\n\
 \n");
 
 PyDoc_STRVAR(doc_compare_total,
