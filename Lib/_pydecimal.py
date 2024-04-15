@@ -565,18 +565,22 @@ class Decimal(object):
 
     # We're immutable, so use __new__ not __init__
     def __new__(cls, value="0", context=None):
-        """Create a decimal point instance.
+        """Construct a new Decimal object.
 
-        >>> Decimal('3.14')              # string input
-        Decimal('3.14')
-        >>> Decimal((0, (3, 1, 4), -2))  # tuple (sign, digit_tuple, exponent)
-        Decimal('3.14')
-        >>> Decimal(314)                 # int
-        Decimal('314')
-        >>> Decimal(Decimal(314))        # another decimal instance
-        Decimal('314')
-        >>> Decimal('  3.14  \\n')        # leading and trailing whitespace okay
-        Decimal('3.14')
+        'value' can be an integer, string, tuple, or another Decimal object. If no value
+        is given, return Decimal('0'). The context does not affect the conversion and
+        is only passed to determine if the InvalidOperation trap is active.
+
+            >>> Decimal('3.14')              # string input
+            Decimal('3.14')
+            >>> Decimal((0, (3, 1, 4), -2))  # tuple (sign, digit_tuple, exponent)
+            Decimal('3.14')
+            >>> Decimal(314)                 # int
+            Decimal('314')
+            >>> Decimal(Decimal(314))        # another decimal instance
+            Decimal('314')
+            >>> Decimal('  3.14  \\\\n')     # leading and trailing whitespace okay
+            Decimal('3.14')
         """
 
         # Note that the coefficient, self._int, is actually stored as

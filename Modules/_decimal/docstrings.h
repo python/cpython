@@ -220,10 +220,11 @@ DECIMAL32, DECIMAL64 and DECIMAL128 are provided.\n\
 
 PyDoc_STRVAR(doc_decimal,
 "Decimal(value=\"0\", context=None)\n--\n\n\
-Construct a new Decimal object. 'value' can be an integer, string, tuple,\n\
-or another Decimal object. If no value is given, return Decimal('0'). The\n\
-context does not affect the conversion and is only passed to determine if\n\
-the InvalidOperation trap is active.\n\
+Construct a new Decimal object.\n\
+\n\
+'value' can be an integer, string, tuple, or another Decimal object. If no value\n\
+is given, return Decimal('0'). The context does not affect the conversion and\n\
+is only passed to determine if the InvalidOperation trap is active.\n\
 \n\
     >>> Decimal('3.14')              # string input\n\
     Decimal('3.14')\n\
