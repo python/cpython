@@ -1585,15 +1585,15 @@ Changes in the Python API
   than directories only. Users may add a trailing slash to match only
   directories.
 
-* :c:func:`!PyCode_GetFirstFree` is an ustable API now and has been renamed
+* :c:func:`!PyCode_GetFirstFree` is an unstable API now and has been renamed
   to :c:func:`PyUnstable_Code_GetFirstFree`.
-  (Contributed by Bogdan Romanyuk in :gh:`115781`)
+  (Contributed by Bogdan Romanyuk in :gh:`115781`.)
 
 
 Build Changes
 =============
 
-* Autoconf 2.71 and aclocal 1.16.4 is now required to regenerate
+* Autoconf 2.71 and aclocal 1.16.4 are now required to regenerate
   the :file:`configure` script.
   (Contributed by Christian Heimes in :gh:`89886`.)
 
@@ -1616,10 +1616,10 @@ Build Changes
   :ref:`limited C API <limited-c-api>`.
   (Contributed by Victor Stinner in :gh:`85283`.)
 
-* ``wasm32-wasi`` is now a tier 2 platform.
+* ``wasm32-wasi`` is now a :pep:`11` tier 2 platform.
   (Contributed by Brett Cannon in :gh:`115192`.)
 
-* ``wasm32-emscripten`` is no longer a supported platform.
+* ``wasm32-emscripten`` is no longer a :pep:`11` supported platform.
   (Contributed by Brett Cannon in :gh:`115192`.)
 
 
@@ -1854,7 +1854,7 @@ Porting to Python 3.13
   were removed. They should be replaced by the new macros ``Py_TRASHCAN_BEGIN``
   and ``Py_TRASHCAN_END``.
 
-  A tp_dealloc function that has the old macros, such as::
+  A ``tp_dealloc`` function that has the old macros, such as::
 
     static void
     mytype_dealloc(mytype *p)
