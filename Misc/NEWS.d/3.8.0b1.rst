@@ -4,7 +4,7 @@
 .. release date: 2019-06-04
 .. section: Security
 
-CVE-2019-9948: Avoid file reading by disallowing ``local-file://`` and
+:cve:`2019-9948`: Avoid file reading by disallowing ``local-file://`` and
 ``local_file://`` URL schemes in ``URLopener().open()`` and
 ``URLopener().retrieve()`` of :mod:`urllib.request`.
 

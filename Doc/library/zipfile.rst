@@ -626,7 +626,7 @@ Path objects are traversable using the ``/`` operator or ``joinpath``.
       Prior to 3.10, ``joinpath`` was undocumented and accepted
       exactly one parameter.
 
-The `zipp <https://pypi.org/project/zipp>`_ project provides backports
+The :pypi:`zipp` project provides backports
 of the latest path object functionality to older Pythons. Use
 ``zipp.Path`` in place of ``zipfile.Path`` for early access to
 changes.

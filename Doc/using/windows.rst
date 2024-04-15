@@ -1217,7 +1217,7 @@ The Windows-specific standard modules are documented in
 PyWin32
 -------
 
-The `PyWin32 <https://pypi.org/project/pywin32>`_ module by Mark Hammond
+The :pypi:`PyWin32` module by Mark Hammond
 is a collection of modules for advanced Windows-specific support.  This includes
 utilities for:
 

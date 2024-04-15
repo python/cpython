@@ -783,7 +783,7 @@ recipes.  Currently, the ``sliding_window()``, ``iter_index()``, and ``sieve()``
 recipes are being tested to see whether they prove their worth.
 
 Substantially all of these recipes and many, many others can be installed from
-the `more-itertools project <https://pypi.org/project/more-itertools/>`_ found
+the :pypi:`more-itertools` project found
 on the Python Package Index::
 
     python -m pip install more-itertools

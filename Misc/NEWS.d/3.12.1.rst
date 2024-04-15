@@ -420,7 +420,7 @@ Also fixed a related 3.12 security regression: If a value of
 ``extra_groups=[]`` was passed to :mod:`subprocess.Popen` or related APIs,
 the underlying ``setgroups(0, NULL)`` system call to clear the groups list
 would not be made in the child process prior to ``exec()``.  This has been
-assigned CVE-2023-6507.
+assigned :cve:`2023-6507`.
 
 This was identified via code inspection in the process of fixing the first
 bug.

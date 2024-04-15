@@ -610,8 +610,7 @@ use ``p.read(n)``.
    ("ptys") instead of pipes. Or you can use a Python interface to Don Libes'
    "expect" library.  A Python extension that interfaces to expect is called
    "expy" and available from https://expectpy.sourceforge.net.  A pure Python
-   solution that works like expect is `pexpect
-   <https://pypi.org/project/pexpect/>`_.
+   solution that works like expect is :pypi:`pexpect`.
 
 
 How do I access the serial (RS232) port?
@@ -619,7 +618,7 @@ How do I access the serial (RS232) port?
 
 For Win32, OSX, Linux, BSD, Jython, IronPython:
 
-   https://pypi.org/project/pyserial/
+   :pypi:`pyserial`
 
 For Unix, see a Usenet post by Mitch Chapman:
 

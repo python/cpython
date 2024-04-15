@@ -8,9 +8,7 @@ Fixed an issue where instances of :class:`ssl.SSLSocket` were vulnerable to
 a bypass of the TLS handshake and included protections (like certificate
 verification) and treating sent unencrypted data as if it were
 post-handshake TLS encrypted data.  Security issue reported as
-`CVE-2023-40217
-<https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2023-40217>`_ by Aapo
-Oksman. Patch by Gregory P. Smith.
+:cve:`2023-40217` by Aapo Oksman. Patch by Gregory P. Smith.
 
 ..
 

@@ -20,7 +20,7 @@
    The :mod:`crypt` module is deprecated
    (see :pep:`PEP 594 <594#crypt>` for details and alternatives).
    The :mod:`hashlib` module is a potential replacement for certain use cases.
-   The `passlib <https://pypi.org/project/passlib/>`_ package can replace all use cases of this module.
+   The :pypi:`passlib` package can replace all use cases of this module.
 
 --------------
 
