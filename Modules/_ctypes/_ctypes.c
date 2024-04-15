@@ -571,12 +571,8 @@ _ctypes_CType_Type_get_ffi_closure_containers_count_impl(PyTypeObject *type,
                                                          PyTypeObject *cls)
 /*[clinic end generated code: output=619f776a42f7c3aa input=285058c2f984defc]*/
 {
-#ifdef USING_MALLOC_CLOSURE_DOT_C
     ctypes_state *st = get_module_state_by_class(cls);
     return PyLong_FromSsize_t(st->malloc_closure.narenas);
-#else
-    Py_RETURN_NONE;
-#endif
 }
 
 static PyObject *
@@ -5958,10 +5954,8 @@ module_clear(PyObject *module) {
     Py_CLEAR(st->PyComError_Type);
 #endif
     Py_CLEAR(st->PyCType_Type);
-#ifdef USING_MALLOC_CLOSURE_DOT_C
     clear_malloc_closure_free_list(st);
     memset(&st->malloc_closure, 0, sizeof(malloc_closure_state));
-#endif
     return 0;
 }
 
