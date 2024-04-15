@@ -1,1 +1,1 @@
-Fix a :exc:`RuntimeWarning` when calling ``agen.aclose().throw(Exception)``
+Fix a :exc:`RuntimeWarning` when calling ``agen.aclose().throw(Exception)``.
