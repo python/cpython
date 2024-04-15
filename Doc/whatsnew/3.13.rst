@@ -402,10 +402,10 @@ gc
   of the results of :meth:`gc.get_threshold` and :meth:`gc.set_threshold` as
   well as :meth:`gc.get_count` and :meth:`gc.get_stats`.
 
-  * :meth:`gc.get_threshold` returns a three-tuple for backwards compatibility,
-    the first value is the threshold for young collections, as before, the second
-    value determines the rate at which the old collection is scanned; the
-    default is 10 and higher values mean that the old collection is scanned more slowly.
+  * :meth:`gc.get_threshold` returns a three-item tuple for backwards compatibility.
+    The first value is the threshold for young collections, as before; the second
+    value determines the rate at which the old collection is scanned (the
+    default is 10, and higher values mean that the old collection is scanned more slowly).
     The third value is meaningless and is always zero.
   * :meth:`gc.set_threshold` ignores any items after the second.
   * :meth:`gc.get_count` and :meth:`gc.get_stats`
@@ -415,7 +415,7 @@ gc
     young generation and the aging and collecting spaces of the old generation.
 
   In summary, code that attempted to manipulate the behavior of the cycle GC may
-  not work exactly as intended, but it is very unlikely to harmful.
+  not work exactly as intended, but it is very unlikely to be harmful.
   All other code will work just fine.
 
 glob
