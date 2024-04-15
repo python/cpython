@@ -355,6 +355,9 @@ dbm
   from the database.
   (Contributed by Donghee Na in :gh:`107122`.)
 
+* Add new :mod:`dbm.sqlite3` backend, and make it the default :mod:`!dbm` backend.
+  (Contributed by Raymond Hettinger and Erlend E. Aasland in :gh:`100414`.)
+
 dis
 ---
 
@@ -363,16 +366,6 @@ dis
   The offsets can be added with the new ``-O`` command line option or
   the ``show_offsets`` parameter.
   (Contributed by Irit Katriel in :gh:`112137`.)
-
-dbm
----
-
-* Add :meth:`dbm.gnu.gdbm.clear` and :meth:`dbm.ndbm.ndbm.clear`  methods that remove all items
-  from the database.
-  (Contributed by Donghee Na in :gh:`107122`.)
-
-* Add new :mod:`dbm.sqlite3` backend, and make it the default :mod:`!dbm` backend.
-  (Contributed by Raymond Hettinger and Erlend E. Aasland in :gh:`100414`.)
 
 doctest
 -------
@@ -417,7 +410,7 @@ gc
 * :meth:`gc.set_threshold` ignores any items after the second.
 * :meth:`gc.get_count` and :meth:`gc.get_stats`.
   These functions return the same format of results as before.
-  The only difference is that instead of the results refering to
+  The only difference is that instead of the results referring to
   the young, aging and old generations, the results refer to the
   young generation and the aging and collecting spaces of the old generation.
 
@@ -431,15 +424,6 @@ glob
 * Add :func:`glob.translate` function that converts a path specification with
   shell-style wildcards to a regular expression.
   (Contributed by Barney Gale in :gh:`72904`.)
-
-io
---
-
-The :class:`io.IOBase` finalizer now logs the ``close()`` method errors with
-:data:`sys.unraisablehook`. Previously, errors were ignored silently by default,
-and only logged in :ref:`Python Development Mode <devmode>` or on :ref:`Python
-built on debug mode <debug-build>`.
-(Contributed by Victor Stinner in :gh:`62948`.)
 
 importlib
 ---------
@@ -464,6 +448,15 @@ the full-featured :class:`~importlib.resources.abc.Traversable` API.
 However, there is now no plan to remove it.
 
 (Contributed by Petr Viktorin in :gh:`106532`.)
+
+io
+--
+
+The :class:`io.IOBase` finalizer now logs the ``close()`` method errors with
+:data:`sys.unraisablehook`. Previously, errors were ignored silently by default,
+and only logged in :ref:`Python Development Mode <devmode>` or on :ref:`Python
+built on debug mode <debug-build>`.
+(Contributed by Victor Stinner in :gh:`62948`.)
 
 ipaddress
 ---------
