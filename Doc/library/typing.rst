@@ -39,7 +39,7 @@ they can also be more complex. The :mod:`typing` module provides a vocabulary of
 more advanced type hints.
 
 New features are frequently added to the ``typing`` module.
-The `typing_extensions <https://pypi.org/project/typing-extensions/>`_ package
+The :pypi:`typing_extensions` package
 provides backports of these new features to older versions of Python.
 
 .. seealso::

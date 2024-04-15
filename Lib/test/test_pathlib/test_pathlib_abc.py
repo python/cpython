@@ -8,6 +8,7 @@ import unittest
 from pathlib._abc import UnsupportedOperation, ParserBase, PurePathBase, PathBase
 import posixpath
 
+from test.support import is_wasi
 from test.support.os_helper import TESTFN
 
 
@@ -1920,6 +1921,8 @@ class DummyPathTest(DummyPurePathTest):
                   }
         self.assertEqual(given, {p / x for x in expect})
 
+    # See https://github.com/WebAssembly/wasi-filesystem/issues/26
+    @unittest.skipIf(is_wasi, "WASI resolution of '..' parts doesn't match POSIX")
     def test_glob_dotdot(self):
         # ".." is not special in globs.
         P = self.cls

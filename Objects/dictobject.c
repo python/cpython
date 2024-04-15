@@ -2603,7 +2603,7 @@ static int
 delitemif_lock_held(PyObject *op, PyObject *key,
                     int (*predicate)(PyObject *value))
 {
-    Py_ssize_t hashpos, ix;
+    Py_ssize_t ix;
     PyDictObject *mp;
     Py_hash_t hash;
     PyObject *old_value;
@@ -2632,14 +2632,11 @@ delitemif_lock_held(PyObject *op, PyObject *key,
     if (res == -1)
         return -1;
 
-    hashpos = lookdict_index(mp->ma_keys, hash, ix);
-    assert(hashpos >= 0);
-
     if (res > 0) {
         PyInterpreterState *interp = _PyInterpreterState_GET();
         uint64_t new_version = _PyDict_NotifyEvent(
                 interp, PyDict_EVENT_DELETED, mp, key, NULL);
-        return delitem_common(mp, hashpos, ix, old_value, new_version);
+        return delitem_common(mp, hash, ix, old_value, new_version);
     } else {
         return 0;
     }
@@ -2684,24 +2681,27 @@ clear_lock_held(PyObject *op)
             interp, PyDict_EVENT_CLEARED, mp, NULL, NULL);
     // We don't inc ref empty keys because they're immortal
     ensure_shared_on_resize(mp);
-
-    set_keys(mp, Py_EMPTY_KEYS);
-    set_values(mp, NULL);
-    mp->ma_used = 0;
     mp->ma_version_tag = new_version;
-    /* ...then clear the keys and values */
-    if (oldvalues != NULL) {
-        if (!oldvalues->embedded) {
-            n = oldkeys->dk_nentries;
-            for (i = 0; i < n; i++)
-                Py_CLEAR(oldvalues->values[i]);
-            free_values(oldvalues, IS_DICT_SHARED(mp));
-        }
-        dictkeys_decref(interp, oldkeys, false);
-    }
-    else {
+    mp->ma_used = 0;
+    if (oldvalues == NULL) {
+        set_keys(mp, Py_EMPTY_KEYS);
         assert(oldkeys->dk_refcnt == 1);
         dictkeys_decref(interp, oldkeys, IS_DICT_SHARED(mp));
+    }
+    else {
+        n = oldkeys->dk_nentries;
+        for (i = 0; i < n; i++) {
+            Py_CLEAR(oldvalues->values[i]);
+        }
+        if (oldvalues->embedded) {
+            oldvalues->size = 0;
+        }
+        else {
+            set_values(mp, NULL);
+            set_keys(mp, Py_EMPTY_KEYS);
+            free_values(oldvalues, IS_DICT_SHARED(mp));
+            dictkeys_decref(interp, oldkeys, false);
+        }
     }
     ASSERT_CONSISTENT(mp);
 }
