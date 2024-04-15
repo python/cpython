@@ -5501,22 +5501,16 @@ os__path_normpath_impl(PyObject *module, PyObject *path)
 /*[clinic input]
 os._path_abspath
 
-    path: object
+    path: unicode
     /
 
 Make path absolute.
 [clinic start generated code]*/
 
 static PyObject *
-os__path_abspath(PyObject *module, PyObject *path)
-/*[clinic end generated code: output=6a6bb40f1ebe86f2 input=6f97dcc93c4bd71f]*/
+os__path_abspath_impl(PyObject *module, PyObject *path)
+/*[clinic end generated code: output=b58956d662b60be0 input=577ecb3473d22113]*/
 {
-    if (!PyUnicode_Check(path)) {
-        PyErr_Format(PyExc_TypeError, "expected 'str', not %T",
-                     Py_TYPE(path));
-        return NULL;
-    }
-
     Py_ssize_t rel_path_len;
     wchar_t *rel_path = PyUnicode_AsWideCharString(path, &rel_path_len);
     if (!rel_path) {
