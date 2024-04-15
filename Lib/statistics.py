@@ -919,13 +919,13 @@ def kde(data, h, kernel='normal', *, cumulative=False):
             sqrt2pi = sqrt(2 * pi)
             sqrt2 = sqrt(2)
             K = lambda t: exp(-1/2 * t * t) / sqrt2pi
-            I = lambda t: 1/2 * (1.0 + erf(t / sqrt2))
+            W = lambda t: 1/2 * (1.0 + erf(t / sqrt2))
             support = None
 
         case 'logistic':
             # 1.0 / (exp(t) + 2.0 + exp(-t))
             K = lambda t: 1/2 / (1.0 + cosh(t))
-            I = lambda t: 1.0 - 1.0 / (exp(t) + 1.0)
+            W = lambda t: 1.0 - 1.0 / (exp(t) + 1.0)
             support = None
 
         case 'sigmoid':
@@ -933,39 +933,39 @@ def kde(data, h, kernel='normal', *, cumulative=False):
             c1 = 1 / pi
             c2 = 2 / pi
             K = lambda t: c1 / cosh(t)
-            I = lambda t: c2 * atan(exp(t))
+            W = lambda t: c2 * atan(exp(t))
             support = None
 
         case 'rectangular' | 'uniform':
             K = lambda t: 1/2
-            I = lambda t: 1/2 * t + 1/2
+            W = lambda t: 1/2 * t + 1/2
             support = 1.0
 
         case 'triangular':
             K = lambda t: 1.0 - abs(t)
-            I = lambda t: t*t * (1/2 if t < 0.0 else -1/2) + t + 1/2
+            W = lambda t: t*t * (1/2 if t < 0.0 else -1/2) + t + 1/2
             support = 1.0
 
         case 'parabolic' | 'epanechnikov':
             K = lambda t: 3/4 * (1.0 - t * t)
-            I = lambda t: -1/4 * t**3 + 3/4 * t + 1/2
+            W = lambda t: -1/4 * t**3 + 3/4 * t + 1/2
             support = 1.0
 
         case 'quartic' | 'biweight':
             K = lambda t: 15/16 * (1.0 - t * t) ** 2
-            I = lambda t: 3/16 * t**5 - 5/8 * t**3 + 15/16 * t + 1/2
+            W = lambda t: 3/16 * t**5 - 5/8 * t**3 + 15/16 * t + 1/2
             support = 1.0
 
         case 'triweight':
             K = lambda t: 35/32 * (1.0 - t * t) ** 3
-            I = lambda t: 35/32 * (-1/7*t**7 + 3/5*t**5 - t**3 + t) + 1/2
+            W = lambda t: 35/32 * (-1/7*t**7 + 3/5*t**5 - t**3 + t) + 1/2
             support = 1.0
 
         case 'cosine':
             c1 = pi / 4
             c2 = pi / 2
             K = lambda t: c1 * cos(c2 * t)
-            I = lambda t: 1/2 * sin(c2 * t) + 1/2
+            W = lambda t: 1/2 * sin(c2 * t) + 1/2
             support = 1.0
 
         case _:
@@ -974,10 +974,14 @@ def kde(data, h, kernel='normal', *, cumulative=False):
     if support is None:
 
         def pdf(x):
+            n = len(data)
             return sum(K((x - x_i) / h) for x_i in data) / (n * h)
 
         def cdf(x):
-            return sum(I((x - x_i) / h) for x_i in data) / n
+
+            n = len(data)
+            return sum(W((x - x_i) / h) for x_i in data) / n
+
 
     else:
 
@@ -985,16 +989,24 @@ def kde(data, h, kernel='normal', *, cumulative=False):
         bandwidth = h * support
 
         def pdf(x):
+            nonlocal n, sample
+            if len(data) != n:
+                sample = sorted(data)
+                n = len(data)
             i = bisect_left(sample, x - bandwidth)
             j = bisect_right(sample, x + bandwidth)
             supported = sample[i : j]
             return sum(K((x - x_i) / h) for x_i in supported) / (n * h)
 
         def cdf(x):
+            nonlocal n, sample
+            if len(data) != n:
+                sample = sorted(data)
+                n = len(data)
             i = bisect_left(sample, x - bandwidth)
             j = bisect_right(sample, x + bandwidth)
             supported = sample[i : j]
-            return sum((I((x - x_i) / h) for x_i in supported), i) / n
+            return sum((W((x - x_i) / h) for x_i in supported), i) / n
 
     if cumulative:
         cdf.__doc__ = f'CDF estimate with {h=!r} and {kernel=!r}'
