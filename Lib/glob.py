@@ -510,7 +510,7 @@ class _Globber:
         """
         if exists:
             # Optimization: this path is already known to exist, e.g. because
-            # it was returned from os.scandir(), so we skip calling lstat().
+            # it was returned from os.scandir(), so we skip calling lexists().
             yield path
         elif self.lexists(path):
             yield path
