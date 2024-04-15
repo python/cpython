@@ -117,7 +117,7 @@ Here are some examples of using the decimal module:\n\
 
 PyDoc_STRVAR(doc_getcontext,
 "getcontext($module, /)\n--\n\n\
-Returns this thread's context.\n\
+Return this thread's context.\n\
 \n\
 If this thread does not yet have a context, returns\n\
 a new context and sets this thread's context.\n\
