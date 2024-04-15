@@ -1175,7 +1175,7 @@ Return the first operand after adding the second value its exp.\n\
 
 PyDoc_STRVAR(doc_shift,
 "shift($self, /, other, context=None)\n--\n\n\
-Returns a shifted copy of a, b times.\n\
+Return a shifted copy of a, b times.\n\
 \n\
 The coefficient of the result is a shifted copy of the digits\n\
 in the coefficient of the first operand.  The number of places\n\
