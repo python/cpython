@@ -660,10 +660,10 @@ extern PyObject* _PyType_GetDocFromInternalDoc(const char *, const char *);
 extern PyObject* _PyType_GetTextSignatureFromInternalDoc(const char *, const char *, int);
 
 void _PyObject_InitInlineValues(PyObject *obj, PyTypeObject *tp);
-extern int _PyObject_TryStoreInstanceAttribute(PyObject *obj,
+extern int _PyObject_StoreInstanceAttribute(PyObject *obj,
                                                PyObject *name, PyObject *value);
-extern int _PyObject_TryGetInstanceAttribute(PyObject *obj, PyObject *name,
-                                             PyObject **attr);
+extern bool _PyObject_TryGetInstanceAttribute(PyObject *obj, PyObject *name,
+                                              PyObject **attr);
 
 #ifdef Py_GIL_DISABLED
 #  define MANAGED_DICT_OFFSET    (((Py_ssize_t)sizeof(PyObject *))*-1)

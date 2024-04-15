@@ -1483,7 +1483,7 @@ _PyObject_GetMethod(PyObject *obj, PyObject *name, PyObject **method)
     }
     PyObject *dict, *attr;
     if ((tp->tp_flags & Py_TPFLAGS_INLINE_VALUES) &&
-         !_PyObject_TryGetInstanceAttribute(obj, name, &attr)) {
+         _PyObject_TryGetInstanceAttribute(obj, name, &attr)) {
         if (attr != NULL) {
             *method = attr;
             Py_XDECREF(descr);
@@ -1587,7 +1587,7 @@ _PyObject_GenericGetAttrWithDict(PyObject *obj, PyObject *name,
     if (dict == NULL) {
         if ((tp->tp_flags & Py_TPFLAGS_INLINE_VALUES)) {
             if (PyUnicode_CheckExact(name) &&
-                !_PyObject_TryGetInstanceAttribute(obj, name, &res)) {
+                _PyObject_TryGetInstanceAttribute(obj, name, &res)) {
                 if (res != NULL) {
                     goto done;
                 }
@@ -1698,7 +1698,7 @@ _PyObject_GenericSetAttrWithDict(PyObject *obj, PyObject *name,
         PyObject **dictptr;
 
         if ((tp->tp_flags & Py_TPFLAGS_INLINE_VALUES)) {
-            res = _PyObject_TryStoreInstanceAttribute(obj, name, value);
+            res = _PyObject_StoreInstanceAttribute(obj, name, value);
             goto error_check;
         }
 

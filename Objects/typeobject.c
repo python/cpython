@@ -6199,7 +6199,7 @@ object_set_class(PyObject *self, PyObject *value, void *closure)
 
             Py_BEGIN_CRITICAL_SECTION2(self, dict);
 
-            if (dict == NULL || _PyDict_DetachFromObject(dict, self)) {
+            if (dict == NULL || _PyDict_DetachFromObject(dict, self) < 0) {
                 error = true;
             }
 
