@@ -772,6 +772,7 @@ value of that digit and without limiting the resulting exponent).\n\
 PyDoc_STRVAR(doc_logical_and,
 "logical_and($self, /, other, context=None)\n--\n\n\
 Applies the logical operation 'and' between each operand's digits.\n\
+\n\
 The operands must be both logical numbers.\n\
 \n\
     >>> ExtendedContext.logical_and(Decimal('0'), Decimal('0'))\n\
