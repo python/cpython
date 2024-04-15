@@ -2501,6 +2501,9 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(ENTER_EXECUTOR);
+            #ifdef _Py_NOTIER2
+            assert(0);
+            #else
             CHECK_EVAL_BREAKER();
             PyCodeObject *code = _PyFrame_GetCode(frame);
             _PyExecutorObject *executor = code->co_executors->executors[oparg & 255];
@@ -2511,6 +2514,7 @@
             tstate->previous_executor = Py_None;
             Py_INCREF(executor);
             GOTO_TIER_TWO(executor);
+            #endif  // _Py_NOTIER2
             DISPATCH();
         }
 
@@ -3414,6 +3418,7 @@
             CHECK_EVAL_BREAKER();
             assert(oparg <= INSTR_OFFSET());
             JUMPBY(-oparg);
+            #ifndef _Py_NOTIER2
             #if ENABLE_SPECIALIZATION
             _Py_BackoffCounter counter = this_instr[1].counter;
             if (backoff_counter_triggers(counter) && this_instr->op.code == JUMP_BACKWARD) {
@@ -3439,6 +3444,7 @@
                 ADVANCE_ADAPTIVE_COUNTER(this_instr[1].counter);
             }
             #endif  /* ENABLE_SPECIALIZATION */
+            #endif  /* _Py_NOTIER2 */
             DISPATCH();
         }
 
