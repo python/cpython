@@ -432,6 +432,13 @@ glob
   shell-style wildcards to a regular expression.
   (Contributed by Barney Gale in :gh:`72904`.)
 
+gzip
+---
+
+* :func:`gzip.open` now accepts an optional argument ``mtime``
+  which is passed on to the init constructor of the GzipFile class.
+  (Contributed by Marin Misur in :gh:`91372`.)
+
 io
 --
 

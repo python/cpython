@@ -1,0 +1,2 @@
+Added a mtime option to gzip open().
+open() didn't have it, while init of class GzipFile has mtime as an optional argument.

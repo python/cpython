@@ -26,7 +26,7 @@ Note that additional file formats which can be decompressed by the
 The module defines the following items:
 
 
-.. function:: open(filename, mode='rb', compresslevel=9, encoding=None, errors=None, newline=None)
+.. function:: open(filename, mode='rb', compresslevel=9, encoding=None, errors=None, newline=None, *, mtime=None)
 
    Open a gzip-compressed file in binary or text mode, returning a :term:`file
    object`.
