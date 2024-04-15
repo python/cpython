@@ -219,15 +219,17 @@ namespace_replace(PyObject *self, PyObject *args, PyObject *kwargs)
 static PyMethodDef namespace_methods[] = {
     {"__reduce__", (PyCFunction)namespace_reduce, METH_NOARGS,
      namespace_reduce__doc__},
-    {"__replace__", _PyCFunction_CAST(namespace_replace), METH_VARARGS|METH_KEYWORDS, NULL},
+    {"__replace__", _PyCFunction_CAST(namespace_replace), METH_VARARGS|METH_KEYWORDS,
+     PyDoc_STR("__replace__($self, /, **changes)\n--\n\n"
+        "Return a copy of the namespace object with new values for the specified attributes.")},
     {NULL,         NULL}  // sentinel
 };
 
 
 PyDoc_STRVAR(namespace_doc,
-"A simple attribute-based namespace.\n\
-\n\
-SimpleNamespace(**kwargs)");
+"SimpleNamespace(**kwargs)\n\
+--\n\n\
+A simple attribute-based namespace.");
 
 PyTypeObject _PyNamespace_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)

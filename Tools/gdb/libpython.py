@@ -66,9 +66,11 @@ def _type_unsigned_short_ptr():
 def _type_unsigned_int_ptr():
     return gdb.lookup_type('unsigned int').pointer()
 
-
 def _sizeof_void_p():
     return gdb.lookup_type('void').pointer().sizeof
+
+def _sizeof_pyobject():
+    return gdb.lookup_type('PyObject').sizeof
 
 def _managed_dict_offset():
     # See pycore_object.h
@@ -79,6 +81,7 @@ def _managed_dict_offset():
         return -3 * _sizeof_void_p()
 
 
+Py_TPFLAGS_INLINE_VALUES     = (1 << 2)
 Py_TPFLAGS_MANAGED_DICT      = (1 << 4)
 Py_TPFLAGS_HEAPTYPE          = (1 << 9)
 Py_TPFLAGS_LONG_SUBCLASS     = (1 << 24)
@@ -493,11 +496,12 @@ class HeapTypeObjectPtr(PyObjectPtr):
         has_values =  int_from_int(typeobj.field('tp_flags')) & Py_TPFLAGS_MANAGED_DICT
         if not has_values:
             return None
-        ptr = self._gdbval.cast(_type_char_ptr()) + _managed_dict_offset()
-        char_ptr = ptr.cast(_type_char_ptr().pointer()).dereference()
-        if (int(char_ptr) & 1) == 0:
+        obj_ptr = self._gdbval.cast(_type_char_ptr())
+        dict_ptr_ptr = obj_ptr + _managed_dict_offset()
+        dict_ptr = dict_ptr_ptr.cast(_type_char_ptr().pointer()).dereference()
+        if int(dict_ptr):
             return None
-        char_ptr += 1
+        char_ptr = obj_ptr + _sizeof_pyobject()
         values_ptr = char_ptr.cast(gdb.lookup_type("PyDictValues").pointer())
         values = values_ptr['values']
         return PyKeysValuesPair(self.get_cached_keys(), values)
@@ -1753,8 +1757,11 @@ class Frame(object):
             return (name == 'take_gil')
 
     def is_gc_collect(self):
-        '''Is this frame gc_collect_main() within the garbage-collector?'''
-        return self._gdbframe.name() in ('collect', 'gc_collect_main')
+        '''Is this frame a collector within the garbage-collector?'''
+        return self._gdbframe.name() in (
+            'collect', 'gc_collect_full', 'gc_collect_main',
+            'gc_collect_young', 'gc_collect_increment',
+        )
 
     def get_pyop(self):
         try:
