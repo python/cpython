@@ -387,9 +387,7 @@ changed and no rounding is performed.\n\
 
 PyDoc_STRVAR(doc_copy_sign,
 "copy_sign($self, /, other, context=None)\n--\n\n\
-Copies the second operand's sign to the first one.\n\
-In detail, it returns a copy of the first operand with the sign\n\
-equal to the sign of the second operand.\n\
+Return a copy of the first operand with the sign equal to the second operand.\n\
 \n\
     >>> ExtendedContext.copy_sign(Decimal( '1.50'), Decimal('7.33'))\n\
     Decimal('1.50')\n\
