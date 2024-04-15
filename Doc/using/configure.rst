@@ -302,6 +302,15 @@ also be used to improve performance.
    GCC is used: add ``-fno-semantic-interposition`` to the compiler and linker
    flags.
 
+   .. note::
+
+      During the build, you may encounter compiler warnings about
+      profile data not being available for some source files.
+      These warnings are harmless, as only a subset of the code is exercised
+      during profile data acquisition.
+      To disable these warnings on Clang, manually suppress them by adding
+      ``-Wno-profile-instr-unprofiled`` to :envvar:`CFLAGS`.
+
    .. versionadded:: 3.6
 
    .. versionchanged:: 3.10
