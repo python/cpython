@@ -933,12 +933,44 @@ class Decimal(object):
         return self._cmp(other) >= 0
 
     def compare(self, other, context=None):
-        """Compare self to other.  Return a decimal value:
+        """Compare values numerically.
 
-        a or b is a NaN ==> Decimal('NaN')
-        a < b           ==> Decimal('-1')
-        a == b          ==> Decimal('0')
-        a > b           ==> Decimal('1')
+        If the signs of the operands differ, a value representing each operand
+        ('-1' if the operand is less than zero, '0' if the operand is zero or
+        negative zero, or '1' if the operand is greater than zero) is used in
+        place of that operand for the comparison instead of the actual
+        operand.
+
+        The comparison is then effected by subtracting the second operand from
+        the first and then returning a value according to the result of the
+        subtraction: '-1' if the result is less than zero, '0' if the result is
+        zero or negative zero, or '1' if the result is greater than zero.
+
+            a or b is a NaN ==> Decimal('NaN')
+            a < b           ==> Decimal('-1')
+            a == b          ==> Decimal('0')
+            a > b           ==> Decimal('1')
+
+            >>> ExtendedContext.compare(Decimal('2.1'), Decimal('3'))
+            Decimal('-1')
+            >>> ExtendedContext.compare(Decimal('2.1'), Decimal('2.1'))
+            Decimal('0')
+            >>> ExtendedContext.compare(Decimal('2.1'), Decimal('2.10'))
+            Decimal('0')
+            >>> ExtendedContext.compare(Decimal('3'), Decimal('2.1'))
+            Decimal('1')
+            >>> ExtendedContext.compare(Decimal('2.1'), Decimal('-3'))
+            Decimal('1')
+            >>> ExtendedContext.compare(Decimal('-3'), Decimal('2.1'))
+            Decimal('-1')
+            >>> ExtendedContext.compare(1, 2)
+            Decimal('-1')
+            >>> ExtendedContext.compare(Decimal(1), 2)
+            Decimal('-1')
+            >>> ExtendedContext.compare(1, Decimal(2))
+            Decimal('-1')
+            >>> ExtendedContext.compare(Decimal('2'), Decimal('NaN'))
+            Decimal('NaN')
         """
         other = _convert_other(other, raiseit=True)
 

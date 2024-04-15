@@ -255,10 +255,10 @@ the first and then returning a value according to the result of the\n\
 subtraction: '-1' if the result is less than zero, '0' if the result is\n\
 zero or negative zero, or '1' if the result is greater than zero.\n\
 \n\
-        a or b is a NaN ==> Decimal('NaN')\n\
-        a < b           ==> Decimal('-1')\n\
-        a == b          ==> Decimal('0')\n\
-        a > b           ==> Decimal('1')\n\
+    a or b is a NaN ==> Decimal('NaN')\n\
+    a < b           ==> Decimal('-1')\n\
+    a == b          ==> Decimal('0')\n\
+    a > b           ==> Decimal('1')\n\
 \n\
     >>> ExtendedContext.compare(Decimal('2.1'), Decimal('3'))\n\
     Decimal('-1')\n\
