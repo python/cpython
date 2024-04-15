@@ -2063,19 +2063,6 @@ buffer_info(PyObject *self, PyObject *arg)
     return Py_BuildValue("siN", info->format, info->ndim, shape);
 }
 
-#ifdef Py_DEBUG
-static PyObject *
-get_malloc_closure_narenas(PyObject *self, PyObject *args)
-{
-#ifdef USING_MALLOC_CLOSURE_DOT_C
-    ctypes_state *st = get_module_state(self);
-    return PyLong_FromSsize_t(st->malloc_closure.narenas);
-#else
-    Py_RETURN_NONE;
-#endif
-}
-#endif
-
 PyMethodDef _ctypes_module_methods[] = {
     {"get_errno", get_errno, METH_NOARGS},
     {"set_errno", set_errno, METH_VARARGS},
@@ -2110,9 +2097,6 @@ PyMethodDef _ctypes_module_methods[] = {
     {"PyObj_FromPtr", My_PyObj_FromPtr, METH_VARARGS },
     {"Py_INCREF", My_Py_INCREF, METH_O },
     {"Py_DECREF", My_Py_DECREF, METH_O },
-#ifdef Py_DEBUG
-    {"_get_ffi_closure_containers_count", get_malloc_closure_narenas, METH_NOARGS},
-#endif
     {NULL,      NULL}        /* Sentinel */
 };
 

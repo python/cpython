@@ -27,6 +27,28 @@ _ctypes_CType_Type___sizeof__(PyObject *self, PyTypeObject *cls, PyObject *const
     return _ctypes_CType_Type___sizeof___impl(self, cls);
 }
 
+PyDoc_STRVAR(_ctypes_CType_Type_get_ffi_closure_containers_count__doc__,
+"get_ffi_closure_containers_count($type, /)\n"
+"--\n"
+"\n");
+
+#define _CTYPES_CTYPE_TYPE_GET_FFI_CLOSURE_CONTAINERS_COUNT_METHODDEF    \
+    {"get_ffi_closure_containers_count", _PyCFunction_CAST(_ctypes_CType_Type_get_ffi_closure_containers_count), METH_METHOD|METH_FASTCALL|METH_KEYWORDS|METH_CLASS, _ctypes_CType_Type_get_ffi_closure_containers_count__doc__},
+
+static PyObject *
+_ctypes_CType_Type_get_ffi_closure_containers_count_impl(PyTypeObject *type,
+                                                         PyTypeObject *cls);
+
+static PyObject *
+_ctypes_CType_Type_get_ffi_closure_containers_count(PyTypeObject *type, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
+        PyErr_SetString(PyExc_TypeError, "get_ffi_closure_containers_count() takes no arguments");
+        return NULL;
+    }
+    return _ctypes_CType_Type_get_ffi_closure_containers_count_impl(type, cls);
+}
+
 PyDoc_STRVAR(CDataType_from_address__doc__,
 "from_address($self, value, /)\n"
 "--\n"
@@ -607,4 +629,4 @@ Simple_from_outparm(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py
     }
     return Simple_from_outparm_impl(self, cls);
 }
-/*[clinic end generated code: output=9c6539a3559e6088 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=21ed02205e81ab88 input=a9049054013a1b77]*/

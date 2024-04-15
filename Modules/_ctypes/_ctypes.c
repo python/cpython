@@ -558,12 +558,34 @@ _ctypes_CType_Type___sizeof___impl(PyObject *self, PyTypeObject *cls)
     return PyLong_FromSsize_t(size);
 }
 
+/*[clinic input]
+@classmethod
+_ctypes.CType_Type.get_ffi_closure_containers_count
+
+    cls: defining_class
+    /
+[clinic start generated code]*/
+
+static PyObject *
+_ctypes_CType_Type_get_ffi_closure_containers_count_impl(PyTypeObject *type,
+                                                         PyTypeObject *cls)
+/*[clinic end generated code: output=619f776a42f7c3aa input=285058c2f984defc]*/
+{
+#ifdef USING_MALLOC_CLOSURE_DOT_C
+    ctypes_state *st = get_module_state_by_class(cls);
+    return PyLong_FromSsize_t(st->malloc_closure.narenas);
+#else
+    Py_RETURN_NONE;
+#endif
+}
+
 static PyObject *
 CType_Type_repeat(PyObject *self, Py_ssize_t length);
 
 
 static PyMethodDef ctype_methods[] = {
     _CTYPES_CTYPE_TYPE___SIZEOF___METHODDEF
+    _CTYPES_CTYPE_TYPE_GET_FFI_CLOSURE_CONTAINERS_COUNT_METHODDEF
     {0},
 };
 
