@@ -1268,7 +1268,7 @@ kept for compatibility with older versions.\n\
 
 PyDoc_STRVAR(doc_to_integral_exact,
 "to_integral_exact($self, /, rounding=None, context=None)\n--\n\n\
-Rounds to an integer.\n\
+Round to an integer.\n\
 \n\
 When the operand has a negative exponent, the result is the same\n\
 as using the quantize() operation using the given operand as the\n\
