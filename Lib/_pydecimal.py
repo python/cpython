@@ -4842,7 +4842,7 @@ class Context(object):
         return a.log10(context=self)
 
     def logb(self, a):
-        """ Returns the exponent of the magnitude of the operand's MSD.
+        """Return the exponent of the magnitude of the operand's MSD.
 
         The result is the integer which is the exponent of the magnitude
         of the most significant digit of the operand (as though the

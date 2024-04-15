@@ -693,7 +693,8 @@ ROUND_HALF_EVEN mode and the result is correctly rounded.\n\
 
 PyDoc_STRVAR(doc_logb,
 "logb($self, /, context=None)\n--\n\n\
-Returns the exponent of the magnitude of the operand's MSD.\n\
+Return the exponent of the magnitude of the operand's MSD.\n\
+\n\
 The result is the integer which is the exponent of the magnitude\n\
 of the most significant digit of the operand (as though the\n\
 operand were truncated to a single digit while maintaining the\n\
