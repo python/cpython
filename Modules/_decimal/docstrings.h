@@ -405,7 +405,7 @@ InvalidOperation if the second operand cannot be converted exactly.\n\
 
 PyDoc_STRVAR(doc_conjugate,
 "conjugate($self, /)\n--\n\n\
-Returns self.\n\
+Return self.\n\
 \n");
 
 PyDoc_STRVAR(doc_copy_abs,

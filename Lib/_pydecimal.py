@@ -1722,7 +1722,7 @@ class Decimal(object):
         return Decimal(0)
 
     def conjugate(self):
-        """Returns self"""
+        """Return self"""
         return self
 
     def __complex__(self):
