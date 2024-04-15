@@ -2248,7 +2248,8 @@ start_the_world(struct _stoptheworld_state *stw)
     PyThreadState *t;
     _Py_FOR_EACH_THREAD(stw, i, t) {
         if (t != stw->requester) {
-            assert(t->state == _Py_THREAD_SUSPENDED);
+            assert(_Py_atomic_load_int_relaxed(&t->state) ==
+                   _Py_THREAD_SUSPENDED);
             _Py_atomic_store_int(&t->state, _Py_THREAD_DETACHED);
             _PyParkingLot_UnparkAll(&t->state);
         }
