@@ -686,8 +686,14 @@ class PathBase(PurePathBase):
     def _glob_selector(self, parts, case_sensitive, recurse_symlinks):
         if case_sensitive is None:
             case_sensitive = _is_case_sensitive(self.parser)
+            case_pedantic = False
+        else:
+            # The user has expressed a case sensitivity choice, but we don't
+            # know the case sensitivity of the underlying filesystem, so we
+            # must use scandir() for everything, including non-wildcard parts.
+            case_pedantic = True
         recursive = True if recurse_symlinks else glob._no_recurse_symlinks
-        globber = self._globber(self.parser.sep, case_sensitive, recursive)
+        globber = self._globber(self.parser.sep, case_sensitive, case_pedantic, recursive)
         return globber.selector(parts)
 
     def glob(self, pattern, *, case_sensitive=None, recurse_symlinks=True):
@@ -699,10 +705,8 @@ class PathBase(PurePathBase):
         anchor, parts = pattern._stack
         if anchor:
             raise NotImplementedError("Non-relative patterns are unsupported")
-        if not self.is_dir():
-            return iter([])
         select = self._glob_selector(parts, case_sensitive, recurse_symlinks)
-        return select(self, exists=True)
+        return select(self)
 
     def rglob(self, pattern, *, case_sensitive=None, recurse_symlinks=True):
         """Recursively yield all existing files (of any kind, including
