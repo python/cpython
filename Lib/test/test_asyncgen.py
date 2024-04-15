@@ -393,7 +393,7 @@ class AsyncGenTest(unittest.TestCase):
                 r'anext\(\): asynchronous generator is already running'):
             an.__next__()
 
-    def test_async_gen_asend_throw_concurrent(self):
+    def test_async_gen_asend_throw_concurrent_with_send(self):
         import types
 
         @types.coroutine
@@ -422,7 +422,7 @@ class AsyncGenTest(unittest.TestCase):
                 r'anext\(\): asynchronous generator is already running'):
             gen2.throw(MyExc)
 
-    def test_async_gen_athrow_throw_concurrent(self):
+    def test_async_gen_athrow_throw_concurrent_with_send(self):
         import types
 
         @types.coroutine
@@ -446,6 +446,73 @@ class AsyncGenTest(unittest.TestCase):
         gen = agen.asend(None)
         gen.send(None)
         gen2 = agen.athrow(MyExc)
+
+        with self.assertRaisesRegex(RuntimeError,
+                r'athrow\(\): asynchronous generator is already running'):
+            gen2.throw(MyExc)
+
+    def test_async_gen_asend_throw_concurrent_with_throw(self):
+        import types
+
+        @types.coroutine
+        def _async_yield(v):
+            return (yield v)
+
+        class MyExc(Exception):
+            pass
+
+        async def agenfn():
+            try:
+                yield
+            except MyExc:
+                pass
+            while True:
+                try:
+                    await _async_yield(None)
+                except MyExc:
+                    pass
+
+
+        agen = agenfn()
+        with self.assertRaises(StopIteration):
+            agen.asend(None).send(None)
+
+        gen = agen.athrow(MyExc)
+        gen.throw(MyExc)
+        gen2 = agen.asend(MyExc)
+
+        with self.assertRaisesRegex(RuntimeError,
+                r'anext\(\): asynchronous generator is already running'):
+            gen2.throw(MyExc)
+
+    def test_async_gen_athrow_throw_concurrent_with_throw(self):
+        import types
+
+        @types.coroutine
+        def _async_yield(v):
+            return (yield v)
+
+        class MyExc(Exception):
+            pass
+
+        async def agenfn():
+            try:
+                yield
+            except MyExc:
+                pass
+            while True:
+                try:
+                    await _async_yield(None)
+                except MyExc:
+                    pass
+
+        agen = agenfn()
+        with self.assertRaises(StopIteration):
+            agen.asend(None).send(None)
+
+        gen = agen.athrow(MyExc)
+        gen.throw(MyExc)
+        gen2 = agen.athrow(None)
 
         with self.assertRaisesRegex(RuntimeError,
                 r'athrow\(\): asynchronous generator is already running'):
