@@ -2133,118 +2133,26 @@ exit:
 #if defined(MS_WINDOWS)
 
 PyDoc_STRVAR(os__path_exists__doc__,
-"_path_exists($module, /, path)\n"
+"_path_exists($module, path, /)\n"
 "--\n"
 "\n"
-"Test whether a path exists.  Returns False for broken symbolic links");
+"Test whether a path exists.  Returns False for broken symbolic links.");
 
 #define OS__PATH_EXISTS_METHODDEF    \
-    {"_path_exists", _PyCFunction_CAST(os__path_exists), METH_FASTCALL|METH_KEYWORDS, os__path_exists__doc__},
-
-static PyObject *
-os__path_exists_impl(PyObject *module, PyObject *path);
-
-static PyObject *
-os__path_exists(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
-{
-    PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    #define NUM_KEYWORDS 1
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(path), },
-    };
-    #undef NUM_KEYWORDS
-    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #else  // !Py_BUILD_CORE
-    #  define KWTUPLE NULL
-    #endif  // !Py_BUILD_CORE
-
-    static const char * const _keywords[] = {"path", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "_path_exists",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[1];
-    PyObject *path;
-
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
-    if (!args) {
-        goto exit;
-    }
-    path = args[0];
-    return_value = os__path_exists_impl(module, path);
-
-exit:
-    return return_value;
-}
+    {"_path_exists", (PyCFunction)os__path_exists, METH_O, os__path_exists__doc__},
 
 #endif /* defined(MS_WINDOWS) */
 
 #if defined(MS_WINDOWS)
 
 PyDoc_STRVAR(os__path_lexists__doc__,
-"_path_lexists($module, /, path)\n"
+"_path_lexists($module, path, /)\n"
 "--\n"
 "\n"
-"Test whether a path exists.  Returns True for broken symbolic links");
+"Test whether a path exists.  Returns True for broken symbolic links.");
 
 #define OS__PATH_LEXISTS_METHODDEF    \
-    {"_path_lexists", _PyCFunction_CAST(os__path_lexists), METH_FASTCALL|METH_KEYWORDS, os__path_lexists__doc__},
-
-static PyObject *
-os__path_lexists_impl(PyObject *module, PyObject *path);
-
-static PyObject *
-os__path_lexists(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
-{
-    PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    #define NUM_KEYWORDS 1
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(path), },
-    };
-    #undef NUM_KEYWORDS
-    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #else  // !Py_BUILD_CORE
-    #  define KWTUPLE NULL
-    #endif  // !Py_BUILD_CORE
-
-    static const char * const _keywords[] = {"path", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "_path_lexists",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[1];
-    PyObject *path;
-
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
-    if (!args) {
-        goto exit;
-    }
-    path = args[0];
-    return_value = os__path_lexists_impl(module, path);
-
-exit:
-    return return_value;
-}
+    {"_path_lexists", (PyCFunction)os__path_lexists, METH_O, os__path_lexists__doc__},
 
 #endif /* defined(MS_WINDOWS) */
 
@@ -12665,4 +12573,4 @@ os__supports_virtual_terminal(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF
     #define OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF
 #endif /* !defined(OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF) */
-/*[clinic end generated code: output=a2b2651b67aa67fa input=a9049054013a1b77]*/
+/*[clinic end generated code: output=66245167be59b12f input=a9049054013a1b77]*/

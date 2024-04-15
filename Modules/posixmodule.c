@@ -5411,8 +5411,8 @@ Test whether a path exists.  Returns False for broken symbolic links.
 [clinic start generated code]*/
 
 static PyObject *
-os__path_exists_impl(PyObject *module, PyObject *path)
-/*[clinic end generated code: output=f508c3b35e13a249 input=380f77cdfa0f7ae8]*/
+os__path_exists(PyObject *module, PyObject *path)
+/*[clinic end generated code: output=617b7575ba0644bc input=242708cabb67c407]*/
 {
     return nt_exists(path, 1);
 }
@@ -5429,8 +5429,8 @@ Test whether a path exists.  Returns True for broken symbolic links.
 [clinic start generated code]*/
 
 static PyObject *
-os__path_lexists_impl(PyObject *module, PyObject *path)
-/*[clinic end generated code: output=b9a42a50b1df6651 input=5f14942c64196ba2]*/
+os__path_lexists(PyObject *module, PyObject *path)
+/*[clinic end generated code: output=c7c89aa6d6e341df input=536ed4b0a7d4f723]*/
 {
     return nt_exists(path, 0);
 }
