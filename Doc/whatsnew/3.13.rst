@@ -1078,7 +1078,8 @@ Pending Removal in Python 3.14
 * :mod:`typing`: :class:`~typing.ByteString`, deprecated since Python 3.9,
   now causes a :exc:`DeprecationWarning` to be emitted when it is used.
 
-* :class:`!urllib.parse.Quoter` is deprecated: it was not intended to be a
+* :mod:`urllib`:
+  :class:`!urllib.parse.Quoter` is deprecated: it was not intended to be a
   public API.
   (Contributed by Gregory P. Smith in :gh:`88168`.)
 
@@ -1106,6 +1107,12 @@ Pending Removal in Python 3.15
   removal in Python 3.15. Use :func:`os.path.isreserved` to detect reserved
   paths on Windows.
 
+* :mod:`platform`:
+  :func:`~platform.java_ver` is deprecated and will be removed in 3.15.
+  It was largely untested, had a confusing API,
+  and was only useful for Jython support.
+  (Contributed by Nikita Sobolev in :gh:`116349`.)
+
 * :mod:`threading`:
   Passing any arguments to :func:`threading.RLock` is now deprecated.
   C version allows any numbers of args and kwargs,
@@ -1115,33 +1122,28 @@ Pending Removal in Python 3.15
 
 * :class:`typing.NamedTuple`:
 
-  * The undocumented keyword argument syntax for creating NamedTuple classes
+  * The undocumented keyword argument syntax for creating :class:`!NamedTuple` classes
     (``NT = NamedTuple("NT", x=int)``) is deprecated, and will be disallowed in
     3.15. Use the class-based syntax or the functional syntax instead.
 
-  * When using the functional syntax to create a NamedTuple class, failing to
-    pass a value to the 'fields' parameter (``NT = NamedTuple("NT")``) is
-    deprecated. Passing ``None`` to the 'fields' parameter
+  * When using the functional syntax to create a :class:`!NamedTuple` class, failing to
+    pass a value to the *fields* parameter (``NT = NamedTuple("NT")``) is
+    deprecated. Passing ``None`` to the *fields* parameter
     (``NT = NamedTuple("NT", None)``) is also deprecated. Both will be
-    disallowed in Python 3.15. To create a NamedTuple class with 0 fields, use
+    disallowed in Python 3.15. To create a :class:`!NamedTuple` class with 0 fields, use
     ``class NT(NamedTuple): pass`` or ``NT = NamedTuple("NT", [])``.
 
 * :class:`typing.TypedDict`: When using the functional syntax to create a
-  TypedDict class, failing to pass a value to the 'fields' parameter (``TD =
-  TypedDict("TD")``) is deprecated. Passing ``None`` to the 'fields' parameter
+  :class:`!TypedDict` class, failing to pass a value to the *fields* parameter (``TD =
+  TypedDict("TD")``) is deprecated. Passing ``None`` to the *fields* parameter
   (``TD = TypedDict("TD", None)``) is also deprecated. Both will be disallowed
-  in Python 3.15. To create a TypedDict class with 0 fields, use ``class
+  in Python 3.15. To create a :class:`!TypedDict` class with 0 fields, use ``class
   TD(TypedDict): pass`` or ``TD = TypedDict("TD", {})``.
 
 * :mod:`wave`: Deprecate the ``getmark()``, ``setmark()`` and ``getmarkers()``
   methods of the :class:`wave.Wave_read` and :class:`wave.Wave_write` classes.
   They will be removed in Python 3.15.
   (Contributed by Victor Stinner in :gh:`105096`.)
-
-* :func:`platform.java_ver` is deprecated and will be removed in 3.15.
-  It was largely untested, had a confusing API,
-  and was only useful for Jython support.
-  (Contributed by Nikita Sobolev in :gh:`116349`.)
 
 Pending Removal in Python 3.16
 ------------------------------
