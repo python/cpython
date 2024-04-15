@@ -5523,6 +5523,10 @@ os__path_abspath(PyObject *module, PyObject *path)
         return NULL;
     }
 
+    if (rel_path[0] == '\0' || !wcscmp(rel_path, L".")) {
+        return posix_getcwd(0);
+    }
+
     Py_ssize_t cwd_len;
     wchar_t *abs_path;
     Py_ssize_t abs_path_len;
@@ -5539,7 +5543,8 @@ os__path_abspath(PyObject *module, PyObject *path)
         }
 
         cwd_len = wcslen(cwd);
-        abs_path_len = cwd_len + 1 + rel_path_len;
+        int add_sep = cwd[cwd_len - 1] != SEP;
+        abs_path_len = cwd_len + add_sep + rel_path_len;
         if ((size_t)abs_path_len + 1 > (size_t)PY_SSIZE_T_MAX / sizeof(wchar_t)) {
             return posix_error();
         }
@@ -5554,8 +5559,10 @@ os__path_abspath(PyObject *module, PyObject *path)
         memcpy(abs_path_dup, cwd, cwd_len * sizeof(wchar_t));
         abs_path_dup += cwd_len;
 
-        *abs_path_dup = SEP;
-        abs_path_dup++;
+        if (add_sep) {
+            *abs_path_dup = SEP;
+            abs_path_dup++;
+        }
 
         memcpy(abs_path_dup, rel_path, rel_path_len * sizeof(wchar_t));
         abs_path_dup += rel_path_len;
