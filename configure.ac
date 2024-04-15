@@ -6345,14 +6345,14 @@ AS_VAR_IF([with_readline], [no], [
     AC_CACHE_CHECK([if rl_startup_hook takes arguments], [ac_cv_readline_rl_startup_hook_takes_args], [
         AC_COMPILE_IFELSE(
             [AC_LANG_PROGRAM([readline_includes]
-                [[extern int test_hook_func(const char *text, int state);]],
-                [[rl_startup_hook=test_hook_func;]])],
+                [extern int test_hook_func(const char *text, int state);],
+                [rl_startup_hook=test_hook_func;])],
             [ac_cv_readline_rl_startup_hook_takes_args=yes],
             [ac_cv_readline_rl_startup_hook_takes_args=no]
         )
     ])
     AS_VAR_IF([ac_cv_readline_rl_startup_hook_takes_args], [yes], [
-      AC_DEFINE([RL_STARTUP_HOOK_TAKES_ARGS], [1], [Define if rl_startup_hook takes arguments])
+      AC_DEFINE([Py_RL_STARTUP_HOOK_TAKES_ARGS], [1], [Define if rl_startup_hook takes arguments])
     ])
 
     m4_undefine([readline_includes])
