@@ -799,8 +799,7 @@ Glossary
 
    method resolution order
       Method Resolution Order is the order in which base classes are searched
-      for a member during lookup. See `The Python 2.3 Method Resolution Order
-      <https://www.python.org/download/releases/2.3/mro/>`_ for details of the
+      for a member during lookup. See :ref:`python_2.3_mro` for details of the
       algorithm used by the Python interpreter since the 2.3 release.
 
    module

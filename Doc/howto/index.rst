@@ -32,4 +32,7 @@ Currently, the HOWTOs are:
    perf_profiling.rst
    annotations.rst
    isolating-extensions.rst
+   timerfd.rst
+   timerfd.rst
+   mro.rst
 
