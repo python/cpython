@@ -2063,6 +2063,8 @@ buffer_info(PyObject *self, PyObject *arg)
     return Py_BuildValue("siN", info->format, info->ndim, shape);
 }
 
+
+
 PyMethodDef _ctypes_module_methods[] = {
     {"get_errno", get_errno, METH_NOARGS},
     {"set_errno", set_errno, METH_VARARGS},
