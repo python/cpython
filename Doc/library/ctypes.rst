@@ -93,7 +93,6 @@ Accessing functions from loaded dlls
 
 Functions are accessed as attributes of dll objects::
 
-   >>> from ctypes import *
    >>> libc.printf
    <_FuncPtr object at 0x...>
    >>> print(windll.kernel32.GetModuleHandleA)  # doctest: +WINDOWS
@@ -1335,8 +1334,9 @@ Here are some examples::
    'libbz2.so.1.0'
    >>>
 
-On macOS, :func:`~ctypes.util.find_library` tries several predefined naming schemes and paths
-to locate the library, and returns a full pathname if successful::
+On macOS and Android, :func:`~ctypes.util.find_library` uses the system's
+standard naming schemes and paths to locate the library, and returns a full
+pathname if successful::
 
    >>> from ctypes.util import find_library
    >>> find_library("c")
