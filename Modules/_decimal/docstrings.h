@@ -341,11 +341,10 @@ InvalidOperation if the second operand cannot be converted exactly.\n\
 PyDoc_STRVAR(doc_compare_total_mag,
 "compare_total_mag($self, /, other, context=None)\n--\n\n\
 Compare two operands using their abstract representation rather than their\n\
-numerical value and with their sign ignored. Like compare_total, but with\n\
-operand's sign ignored and assumed to be 0.\n\
+numerical value and with their sign ignored.\n\
 \n\
+Like compare_total, but with operand's sign ignored and assumed to be 0.\n\
 x.compare_total_mag(y) is equivalent to x.copy_abs().compare_total(y.copy_abs()).\n\
-\n\
 This operation is unaffected by context and is quiet: no flags are changed\n\
 and no rounding is performed. As an exception, the C version may raise\n\
 InvalidOperation if the second operand cannot be converted exactly.\n\
