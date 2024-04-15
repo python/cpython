@@ -572,6 +572,7 @@ Return True if the argument is a quiet NaN; otherwise return False.\n\
 PyDoc_STRVAR(doc_is_signed,
 "is_signed($self, /)\n--\n\n\
 Return True if the argument has a negative sign and False otherwise.\n\
+\n\
 Note that both zeros and NaNs can carry signs.\n\
 \n\
     >>> ExtendedContext.is_signed(Decimal('2.50'))\n\

@@ -4715,6 +4715,7 @@ class Context(object):
 
     def is_signed(self, a):
         """Return True if the argument has a negative sign and False otherwise.
+
         Note that both zeros and NaNs can carry signs.
 
         >>> ExtendedContext.is_signed(Decimal('2.50'))
