@@ -1825,6 +1825,7 @@ async_gen_asend_throw(PyAsyncGenASend *o, PyObject *const *args, Py_ssize_t narg
         }
 
         o->ags_state = AWAITABLE_STATE_ITER;
+        o->ags_gen->ag_running_async = 1;
     }
 
     result = gen_throw((PyGenObject*)o->ags_gen, args, nargs);
@@ -2237,6 +2238,7 @@ async_gen_athrow_throw(PyAsyncGenAThrow *o, PyObject *const *args, Py_ssize_t na
         }
 
         o->agt_state = AWAITABLE_STATE_ITER;
+        o->agt_gen->ag_running_async = 1;
     }
 
     retval = gen_throw((PyGenObject*)o->agt_gen, args, nargs);
