@@ -3103,9 +3103,14 @@ class Decimal(object):
 
 
     def compare_total_mag(self, other, context=None):
-        """Compares self to other using abstract repr., ignoring sign.
+        """Compare two operands using their abstract representation rather than their
+        numerical value and with their sign ignored. Like compare_total, but with
+        operand's sign ignored and assumed to be 0.
 
-        Like compare_total, but with operand's sign ignored and assumed to be 0.
+        x.compare_total_mag(y) is equivalent to x.copy_abs().compare_total(y.copy_abs()).
+        This operation is unaffected by context and is quiet: no flags are changed
+        and no rounding is performed. As an exception, the C version may raise
+        InvalidOperation if the second operand cannot be converted exactly.
         """
         other = _convert_other(other, raiseit=True)
 
@@ -4393,15 +4398,13 @@ class Context(object):
         return a.compare_total(b)
 
     def compare_total_mag(self, a, b):
-        """Compare two operands using their abstract representation rather than their
-        value as in compare_total(), but ignoring the sign of each operand. Like
-        compare_total, but with operand's sign ignored and assumed to be 0.
+        """Compare two operands using their abstract representation rather
+        than their numerical value and with their sign ignored.
 
+        Like compare_total, but with operand's sign ignored and assumed to be 0.
         x.compare_total_mag(y) is equivalent to  x.copy_abs().compare_total(y.copy_abs())
-
-        This operation is unaffected by context and is quiet: no flags are changed
-        and no rounding is performed. As an exception, the C version may raise
-        InvalidOperation if the second operand cannot be converted exactly.
+        This operation is unaffected by context and is quiet: no flags are
+        changed and no rounding is performed.
         """
         a = _convert_other(a, raiseit=True)
         return a.compare_total_mag(b)

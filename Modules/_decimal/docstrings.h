@@ -341,8 +341,8 @@ InvalidOperation if the second operand cannot be converted exactly.\n\
 PyDoc_STRVAR(doc_compare_total_mag,
 "compare_total_mag($self, /, other, context=None)\n--\n\n\
 Compare two operands using their abstract representation rather than their\n\
-value as in compare_total(), but ignoring the sign of each operand.Like\n\
-compare_total, but with operand's sign ignored and assumed to be 0.\n\
+numerical value and with their sign ignored. Like compare_total, but with\n\
+operand's sign ignored and assumed to be 0.\n\
 \n\
 x.compare_total_mag(y) is equivalent to x.copy_abs().compare_total(y.copy_abs()).\n\
 \n\
