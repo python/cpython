@@ -4366,7 +4366,7 @@ class Context(object):
         return Decimal(a)
 
     def copy_negate(self, a):
-        """Returns a copy of the operand with the sign inverted. This operation is
+        """Return a copy of the operand with the sign inverted. This operation is
         unaffected by context and is quiet: no flags are changed and no rounding
         is performed.
 
