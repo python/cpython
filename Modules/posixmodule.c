@@ -5285,6 +5285,7 @@ nt_exists(PyObject *path, int follow_symlinks)
 {
     path_t _path = PATH_T_INITIALIZE("exists", "path", 0, 1);
     HANDLE hfile;
+    BOOL traverse = follow_symlinks;
     int result = 0;
 
     if (!path_converter(path, &_path)) {
@@ -5307,7 +5308,7 @@ nt_exists(PyObject *path, int follow_symlinks)
         BOOL slow_path = TRUE;
         FILE_STAT_BASIC_INFORMATION statInfo;
         if (_Py_GetFileInformationByName(_path.wide, FileStatBasicByNameInfo,
-                                         &statInfo, sizeof(statInfo)))
+                &statInfo, sizeof(statInfo)))
         {
             if (!(statInfo.FileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) ||
                 !follow_symlinks &&
@@ -5316,27 +5317,66 @@ nt_exists(PyObject *path, int follow_symlinks)
                 slow_path = FALSE;
                 result = 1;
             }
-        } else if (_Py_GetFileInformationByName_ErrorIsTrustworthy(
+            else {
+                // reparse point but not name-surrogate
+                traverse = TRUE;
+            }
+        }
+        else if (_Py_GetFileInformationByName_ErrorIsTrustworthy(
                         GetLastError()))
         {
             slow_path = FALSE;
         }
         if (slow_path) {
-            STRUCT_STAT st;
-            if (!follow_symlinks) {
-                if (!LSTAT(_path.wide, &st)) {
-                    result = 1;
+            BOOL traverse = follow_symlinks;
+            if (!traverse) {
+                hfile = CreateFileW(_path.wide, FILE_READ_ATTRIBUTES, 0, NULL,
+                            OPEN_EXISTING, FILE_FLAG_OPEN_REPARSE_POINT |
+                            FILE_FLAG_BACKUP_SEMANTICS, NULL);
+                if (hfile != INVALID_HANDLE_VALUE) {
+                    FILE_ATTRIBUTE_TAG_INFO info;
+                    if (GetFileInformationByHandleEx(hfile,
+                            FileAttributeTagInfo, &info, sizeof(info)))
+                    {
+                        if (!(info.FileAttributes &
+                                FILE_ATTRIBUTE_REPARSE_POINT) ||
+                            IsReparseTagNameSurrogate(info.ReparseTag))
+                        {
+                            result = 1;
+                        }
+                        else {
+                            // reparse point but not name-surrogate
+                            traverse = TRUE;
+                        }
+                    }
+                    else {
+                        // device or legacy filesystem
+                        result = 1;
+                    }
+                    CloseHandle(hfile);
+                }
+                else {
+                    STRUCT_STAT st;
+                    switch (GetLastError()) {
+                    case ERROR_ACCESS_DENIED:
+                    case ERROR_SHARING_VIOLATION:
+                    case ERROR_CANT_ACCESS_FILE:
+                    case ERROR_INVALID_PARAMETER:
+                        if (!LSTAT(_path.wide, &st)) {
+                            result = 1;
+                        }
+                    }
                 }
             }
-            else {
+            if (traverse) {
                 hfile = CreateFileW(_path.wide, FILE_READ_ATTRIBUTES, 0, NULL,
-                                    OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS,
-                                    NULL);
+                            OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL);
                 if (hfile != INVALID_HANDLE_VALUE) {
                     CloseHandle(hfile);
                     result = 1;
                 }
                 else {
+                    STRUCT_STAT st;
                     switch (GetLastError()) {
                     case ERROR_ACCESS_DENIED:
                     case ERROR_SHARING_VIOLATION:
