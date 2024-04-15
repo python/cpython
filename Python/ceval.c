@@ -754,10 +754,12 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
     _Py_CODEUNIT *next_instr;
     PyObject **stack_pointer;
 
+#ifndef _Py_NOTIER2
 #ifndef _Py_JIT
     /* Tier 2 interpreter state */
     _PyExecutorObject *current_executor = NULL;
     const _PyUOpInstruction *next_uop = NULL;
+#endif
 #endif
 
 start_frame:
@@ -958,6 +960,7 @@ resume_with_error:
     goto error;
 
 
+#ifndef _Py_NOTIER2
 
 // Tier 2 is also here!
 enter_tier_two:
@@ -1107,6 +1110,8 @@ exit_to_trace:
     GOTO_TIER_TWO(exit->executor);
 
 #endif  // _Py_JIT
+
+#endif  // _Py_NOTIER2
 
 }
 
