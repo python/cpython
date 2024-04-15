@@ -605,7 +605,7 @@ PyDoc_STRVAR(doc_is_subnormal,
 "is_subnormal($self, /, context=None)\n--\n\n\
 Return True if the argument is subnormal; otherwise return False.\n\
 \n\
-A number is subnormal if it is non-zero, finite, and has an adjusted
+A number is subnormal if it is non-zero, finite, and has an adjusted\n\
 exponent less than Emin.\n\
 \n\
     >>> c = ExtendedContext.copy()\n\
