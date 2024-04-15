@@ -2616,13 +2616,13 @@ class Decimal(object):
         return _dec_from_triple(dup._sign, dup._int[:end], exp)
 
     def quantize(self, exp, rounding=None, context=None):
-        """Similar to self._rescale(exp._exp) but with error checking.
-        Return a value equal to 'a' (rounded), having the exponent of 'b'.
+        """Return a value equal to 'a' (rounded), having the exponent of 'b'.
 
-        The coefficient of the result is derived from that of the left-hand
-        operand. It may be rounded using the current rounding setting (if the
-        exponent is being increased), multiplied by a positive power of ten (if
-        the exponent is being decreased), or is unchanged (if the exponent is
+        Similar to self._rescale(exp._exp) but with error checking.The 
+        coefficient of the result is derived from that of the left-hand operand.
+        It may be rounded using the current rounding setting (if the exponent is
+        being increased), multiplied by a positive power of ten (if the exponent
+        is being decreased), or is unchanged (if the exponent is
         already equal to that of the right-hand operand).
 
         Unlike other operations, if the length of the coefficient after the

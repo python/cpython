@@ -1097,13 +1097,13 @@ is one of the following ten strings:\n\
 
 PyDoc_STRVAR(doc_quantize,
 "quantize($self, /, exp, rounding=None, context=None)\n--\n\n\
-Similar to self._rescale(exp._exp) but with error checking.\n\
 Return a value equal to 'a' (rounded), having the exponent of 'b'.\n\
 \n\
-The coefficient of the result is derived from that of the left-hand\n\
-operand. It may be rounded using the current rounding setting (if the\n\
-exponent is being increased), multiplied by a positive power of ten (if\n\
-the exponent is being decreased), or is unchanged (if the exponent is\n\
+Similar to self._rescale(exp._exp) but with error checking.The\n\
+coefficient of the result is derived from that of the left-hand operand.\n\
+It may be rounded using the current rounding setting (if the exponent is\n\
+being increased), multiplied by a positive power of ten (if the exponent\n\
+is being decreased), or is unchanged (if the exponent is\n\
 already equal to that of the right-hand operand).\n\
 \n\
 Unlike other operations, if the length of the coefficient after the\n\
