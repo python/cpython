@@ -555,15 +555,15 @@ class _Globber:
             # Optimization: this path is already known to exist, e.g. because
             # it was returned from os.scandir(), so we skip calling lstat().
             yield path
-        elif dir_fd is None:
+        elif dir_fd is not None:
             try:
-                self.lstat(path)
+                os.lstat(rel_path, dir_fd=dir_fd)
                 yield path
             except OSError:
                 pass
         else:
             try:
-                self.lstat(rel_path, dir_fd=dir_fd)
+                self.lstat(path)
                 yield path
             except OSError:
                 pass
