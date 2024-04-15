@@ -469,40 +469,75 @@ def setcontext(context):
 del contextvars        # Don't contaminate the namespace
 
 def localcontext(ctx=None, **kwargs):
-    """Return a context manager for a copy of the supplied context
+    """"Return a context manager that will set the default context to a copy of ctx
+    on entry to the with-statement and restore the previous default context when
+    exiting the with-statement.
 
-    Uses a copy of the current context if no context is specified
+    If no context is specified, a copy of the current default context is used.
     The returned context manager creates a local decimal context
     in a with statement:
         def sin(x):
-             with localcontext() as ctx:
-                 ctx.prec += 2
-                 # Rest of sin calculation algorithm
-                 # uses a precision 2 greater than normal
-             return +s  # Convert result to normal precision
+            with localcontext() as ctx:
+                ctx.prec += 2
+                # Rest of sin calculation algorithm
+                # uses a precision 2 greater than normal
+            return +s  # Convert result to normal precision
 
-         def sin(x):
-             with localcontext(ExtendedContext):
-                 # Rest of sin calculation algorithm
-                 # uses the Extended Context from the
-                 # General Decimal Arithmetic Specification
-             return +s  # Convert result to normal context
+        def sin(x):
+            with localcontext(ExtendedContext):
+                # Rest of sin calculation algorithm
+                # uses the Extended Context from the
+                # General Decimal Arithmetic Specification
+            return +s  # Convert result to normal context
 
-    >>> setcontext(DefaultContext)
-    >>> print(getcontext().prec)
-    28
-    >>> with localcontext():
-    ...     ctx = getcontext()
-    ...     ctx.prec += 2
-    ...     print(ctx.prec)
-    ...
-    30
-    >>> with localcontext(ExtendedContext):
-    ...     print(getcontext().prec)
-    ...
-    9
-    >>> print(getcontext().prec)
-    28
+        >>> setcontext(DefaultContext)
+        >>> print(getcontext().prec) # Return a context manager for a copy of the supplied context
+
+    Uses a copy of the current context if no context is specified.
+    The returned context manager creates a local decimal context
+    in a with statement:
+        def sin(x):
+            with localcontext() as ctx:
+                ctx.prec += 2
+                # Rest of sin calculation algorithm
+                # uses a precision 2 greater than normal
+            return +s  # Convert result to normal precision
+
+        def sin(x):
+            with localcontext(ExtendedContext):
+                # Rest of sin calculation algorithm
+                # uses the Extended Context from the
+                # General Decimal Arithmetic Specification
+            return +s  # Convert result to normal context
+
+        >>> setcontext(DefaultContext)
+        >>> print(getcontext().prec)
+        28
+        >>> with localcontext():
+        ...     ctx = getcontext()
+        ...     ctx.prec += 2
+        ...     print(ctx.prec)
+        ...
+        30
+        >>> with localcontext(ExtendedContext):
+        ...     print(getcontext().prec)
+        ...
+        9
+        >>> print(getcontext().prec)
+        28
+        28
+        >>> with localcontext():
+        ...     ctx = getcontext()
+        ...     ctx.prec += 2
+        ...     print(ctx.prec)
+        ...
+        30
+        >>> with localcontext(ExtendedContext):
+        ...     print(getcontext().prec)
+        ...
+        9
+        >>> print(getcontext().prec)
+        28
     """
     if ctx is None:
         ctx = getcontext()

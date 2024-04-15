@@ -132,9 +132,11 @@ Set a new default context.\n\
 
 PyDoc_STRVAR(doc_localcontext,
 "localcontext($module, /, ctx=None, **kwargs)\n--\n\n\
-Return a context manager for a copy of the supplied context\n\
+Return a context manager that will set the default context to a copy of ctx\n\
+on entry to the with-statement and restore the previous default context when\n\
+exiting the with-statement.\n\
 \n\
-Uses a copy of the current context if no context is specified.\n\
+If no context is specified, a copy of the current default context is used.\n\
 The returned context manager creates a local decimal context\n\
 in a with statement:\n\
     def sin(x):\n\
@@ -144,6 +146,26 @@ in a with statement:\n\
              # uses a precision 2 greater than normal\n\
          return +s  # Convert result to normal precision\n\
 \n\
+     def sin(x):\n\
+         with localcontext(ExtendedContext):\n\
+             # Rest of sin calculation algorithm\n\
+             # uses the Extended Context from the\n\
+             # General Decimal Arithmetic Specification\n\
+         return +s  # Convert result to normal context\n\
+\n\
+    >>> setcontext(DefaultContext)\n\
+    >>> print(getcontext().prec) # Return a context manager for a copy of the supplied context\n\
+\n\
+Uses a copy of the current context if no context is specified.\n\
+The returned context manager creates a local decimal context\n\
+in a with statement:\n\
+    def sin(x):\n\
+         with localcontext() as ctx:\n\
+             ctx.prec += 2\n\
+             # Rest of sin calculation algorithm\n\
+             # uses a precision 2 greater than normal\n\
+        return +s  # Convert result to normal precision\n\
+\n\
     def sin(x):\n\
         with localcontext(ExtendedContext):\n\
             # Rest of sin calculation algorithm\n\
@@ -151,7 +173,21 @@ in a with statement:\n\
             # General Decimal Arithmetic Specification\n\
         return +s  # Convert result to normal context\n\
 \n\
+    >>> setcontext(DefaultContext)\n\
     >>> print(getcontext().prec)\n\
+    28\n\
+    >>> with localcontext():\n\
+    ...     ctx = getcontext()\n\
+    ...     ctx.prec += 2\n\
+    ...     print(ctx.prec)\n\
+    ...\n\
+    30\n\
+    >>> with localcontext(ExtendedContext):\n\
+    ...     print(getcontext().prec)\n\
+    ...\n\
+    9\n\
+    >>> print(getcontext().prec)\n\
+    28\n\
     28\n\
     >>> with localcontext():\n\
     ...     ctx = getcontext()\n\
