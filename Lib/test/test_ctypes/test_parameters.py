@@ -87,24 +87,24 @@ class SimpleTypesTestCase(unittest.TestCase):
         with self.assertRaises(TypeError) as cm:
             c_char.from_param(b"abc")
         self.assertEqual(str(cm.exception),
-                         "one character bytes, bytearray or integer "
+                         "one character bytes, bytearray, or an integer "
                          "in range(256) expected, not bytes of length 3")
 
     def test_c_wchar(self):
         with self.assertRaises(TypeError) as cm:
             c_wchar.from_param("abc")
         self.assertEqual(str(cm.exception),
-                         "unicode character expected instead of string of length 3")
+                         "a unicode character expected, not a string of length 3")
 
         with self.assertRaises(TypeError) as cm:
             c_wchar.from_param("")
         self.assertEqual(str(cm.exception),
-                         "unicode character expected instead of string of length 0")
+                         "a unicode character expected, not a string of length 0")
 
         with self.assertRaises(TypeError) as cm:
             c_wchar.from_param(123)
         self.assertEqual(str(cm.exception),
-                         "unicode character expected instead of int instance")
+                         "a unicode character expected, not instance of int")
 
         if sizeof(c_wchar) < 4:
             with self.assertRaises(TypeError) as cm:

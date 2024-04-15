@@ -72,7 +72,7 @@ class FunctionTestCase(unittest.TestCase):
 
         self.assertEqual(str(cm.exception),
                          "argument 1: TypeError: one character bytes, "
-                         "bytearray or integer in range(256) expected, "
+                         "bytearray, or an integer in range(256) expected, "
                          "not bytes of length 3")
 
     def test_wchar_parm(self):
@@ -85,18 +85,20 @@ class FunctionTestCase(unittest.TestCase):
         with self.assertRaises(ArgumentError) as cm:
             f(1, 2, 3, 4, 5.0, 6.0)
         self.assertEqual(str(cm.exception),
-                         "argument 2: TypeError: unicode character expected "
-                         "instead of int instance")
+                         "argument 2: TypeError: a unicode character expected, "
+                         "not instance of int")
 
         with self.assertRaises(ArgumentError) as cm:
             f(1, "abc", 3, 4, 5.0, 6.0)
         self.assertEqual(str(cm.exception),
-                         "argument 2: TypeError: unicode character expected instead of string of length 3")
+                         "argument 2: TypeError: a unicode character expected, "
+                         "not a string of length 3")
 
         with self.assertRaises(ArgumentError) as cm:
             f(1, "", 3, 4, 5.0, 6.0)
         self.assertEqual(str(cm.exception),
-                         "argument 2: TypeError: unicode character expected instead of string of length 0")
+                         "argument 2: TypeError: a unicode character expected, "
+                         "not a string of length 0")
 
         if sizeof(c_wchar) < 4:
             with self.assertRaises(ArgumentError) as cm:

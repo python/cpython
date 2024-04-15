@@ -1103,7 +1103,7 @@ c_set(void *ptr, PyObject *value, Py_ssize_t size)
     if (PyBytes_Check(value)) {
         if (PyBytes_GET_SIZE(value) != 1) {
             PyErr_Format(PyExc_TypeError,
-                        "one character bytes, bytearray or an integer "
+                        "one character bytes, bytearray, or an integer "
                         "in range(256) expected, not bytes of length %zd",
                         PyBytes_GET_SIZE(value));
             return NULL;
@@ -1114,7 +1114,7 @@ c_set(void *ptr, PyObject *value, Py_ssize_t size)
     if (PyByteArray_Check(value)) {
         if (PyByteArray_GET_SIZE(value) != 1) {
             PyErr_Format(PyExc_TypeError,
-                        "one character bytes, bytearray or an integer "
+                        "one character bytes, bytearray, or an integer "
                         "in range(256) expected, not bytearray of length %zd",
                         PyByteArray_GET_SIZE(value));
             return NULL;
@@ -1136,7 +1136,7 @@ c_set(void *ptr, PyObject *value, Py_ssize_t size)
         _RET(value);
     }
     PyErr_Format(PyExc_TypeError,
-                 "one character bytes, bytearray or an integer "
+                 "one character bytes, bytearray, or an integer "
                  "in range(256) expected, not %T",
                  value);
     return NULL;
