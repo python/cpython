@@ -446,7 +446,7 @@ _context_attributes = frozenset(
 )
 
 def getcontext():
-    """Returns this thread's context.
+    """Return this thread's context.
 
     If this thread does not yet have a context, returns
     a new context and sets this thread's context.
