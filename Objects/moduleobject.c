@@ -239,6 +239,9 @@ _PyModule_CreateInitialized(PyModuleDef* module, int module_api_version)
         }
     }
     m->md_def = module;
+#ifdef Py_GIL_DISABLE
+    m->md_gil = Py_MOD_GIL_USED;
+#endif
     return (PyObject*)m;
 }
 
@@ -247,7 +250,7 @@ PyModule_FromDefAndSpec2(PyModuleDef* def, PyObject *spec, int module_api_versio
 {
     PyModuleDef_Slot* cur_slot;
     PyObject *(*create)(PyObject *, PyModuleDef*) = NULL;
-    PyObject *nameobj;
+    PyObject *nameobj = NULL;
     PyObject *m = NULL;
     int has_multiple_interpreters_slot = 0;
     void *multiple_interpreters = (void *)0;
@@ -262,7 +265,7 @@ PyModule_FromDefAndSpec2(PyModuleDef* def, PyObject *spec, int module_api_versio
 
     nameobj = PyObject_GetAttrString(spec, "name");
     if (nameobj == NULL) {
-        return NULL;
+        goto error;
     }
     name = PyUnicode_AsUTF8(nameobj);
     if (name == NULL) {
@@ -349,26 +352,7 @@ PyModule_FromDefAndSpec2(PyModuleDef* def, PyObject *spec, int module_api_versio
     }
 
 #ifdef Py_GIL_DISABLED
-    // TODO: We should figure out a way to fit this logic somewhere that it
-    // more naturally fits, like import.c or importdl.c.
-    PyThreadState *tstate = _PyThreadState_GET();
-    const PyConfig *config = _PyInterpreterState_GetConfig(interp);
-    if (gil_slot == Py_MOD_GIL_USED && config->enable_gil == _PyConfig_GIL_DEFAULT) {
-        if (_PyEval_EnableGIL(tstate)) {
-            PyErr_WarnFormat(
-                PyExc_RuntimeWarning,
-                1,
-                "The global interpreter lock (GIL) has been enabled to load "
-                "module '%s', which has not declared that it can run safely "
-                "without the GIL. To override this behavior and keep the GIL "
-                "disabled (at your own risk), run with PYTHON_GIL=0 or -Xgil=0.",
-                name
-            );
-        }
-        if (config->verbose) {
-            PySys_FormatStderr("# loading module '%s', which requires the GIL\n", name);
-        }
-    }
+    _PyImport_CheckGILForModule(gil_slot, nameobj);
 #else
     (void)gil_slot;
 #endif
@@ -438,9 +422,22 @@ PyModule_FromDefAndSpec2(PyModuleDef* def, PyObject *spec, int module_api_versio
     return m;
 
 error:
-    Py_DECREF(nameobj);
+    Py_XDECREF(nameobj);
     Py_XDECREF(m);
     return NULL;
+}
+
+int
+PyModule_SetGIL(PyObject *module, void *gil)
+{
+    if (!PyModule_Check(module)) {
+        PyErr_BadInternalCall();
+        return -1;
+    }
+#ifdef Py_GIL_DISABLED
+    ((PyModuleObject *)module)->md_gil = gil;
+#endif
+    return 0;
 }
 
 int

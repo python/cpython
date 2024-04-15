@@ -634,6 +634,19 @@ state:
 
    .. versionadded:: 3.9
 
+.. c:function:: int PyModule_SetGIL(PyObject *module, void *gil)
+
+   In Python builds not configured with :option:`--disable-gil`, do
+   nothing. Otherwise, indicate that *module* does or does not support running
+   without the global interpreter lock (GIL), using one of the values from
+   :c:macro:`Py_mod_gil`. It must be called during *module*'s initialization
+   function. If this function is not called during module initialization, the
+   import machinery assumes the module does not support running without the
+   GIL.
+   Return ``-1`` on error, ``0`` on success.
+
+   .. versionadded:: 3.13
+
 
 Module lookup
 ^^^^^^^^^^^^^

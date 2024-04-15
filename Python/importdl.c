@@ -3,6 +3,7 @@
 
 #include "Python.h"
 #include "pycore_call.h"
+#include "pycore_ceval.h"
 #include "pycore_import.h"
 #include "pycore_pyerrors.h"      // _PyErr_FormatFromCause()
 #include "pycore_pystate.h"
@@ -165,6 +166,10 @@ _PyImport_LoadDynamicModuleWithSpec(PyObject *spec, FILE *fp)
 
     p0 = (PyModInitFunction)exportfunc;
 
+#ifdef Py_GIL_DISABLED
+    _PyEval_EnableGILTransient(_PyThreadState_GET());
+#endif
+
     /* Package context is needed for single-phase init */
     oldcontext = _PyImport_SwapPackageContext(newcontext);
     m = p0();
@@ -241,9 +246,15 @@ _PyImport_LoadDynamicModuleWithSpec(PyObject *spec, FILE *fp)
     Py_DECREF(name);
     Py_DECREF(path);
 
+#ifdef Py_GIL_DISABLED
+    _PyImport_CheckGILForModule(((PyModuleObject*)m)->md_gil, name_unicode);
+#endif
     return m;
 
 error:
+#ifdef Py_GIL_DISABLED
+    _PyEval_DisableGIL(_PyThreadState_GET());
+#endif
     Py_DECREF(name_unicode);
     Py_XDECREF(name);
     Py_XDECREF(path);

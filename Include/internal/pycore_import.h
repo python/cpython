@@ -206,6 +206,17 @@ extern int _PyImport_CheckSubinterpIncompatibleExtensionAllowed(
 // Export for '_testinternalcapi' shared extension
 PyAPI_FUNC(int) _PyImport_ClearExtension(PyObject *name, PyObject *filename);
 
+#ifdef Py_GIL_DISABLED
+// Assuming that the GIL is enabled from a call to
+// _PyEval_EnableGILTransient(), either enable the GIL permanently or disable
+// the GIL, depending on the value of the gil argument, which should be one of
+// the values of the Py_mod_gil slot.
+//
+// If the GIL is enabled permanently, a warning will be issued referencing the
+// module's name.
+extern void _PyImport_CheckGILForModule(void *gil, PyObject *module_name);
+#endif
+
 #ifdef __cplusplus
 }
 #endif
