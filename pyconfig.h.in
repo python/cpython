@@ -1923,6 +1923,9 @@
 /* framework name */
 #undef _PYTHONFRAMEWORK
 
+/* Define if you want to disable the tier 2 interpreter entirely */
+#undef _Py_NOTIER2
+
 /* Define to force use of thread-safe errno, h_errno, and other functions */
 #undef _REENTRANT
 

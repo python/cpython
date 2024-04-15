@@ -1087,6 +1087,7 @@ with_pydebug
 with_trace_refs
 enable_pystats
 with_assertions
+enable_tier2
 enable_experimental_jit
 enable_optimizations
 with_lto
@@ -1815,6 +1816,7 @@ Optional Features:
   --disable-gil           enable experimental support for running without the
                           GIL (default is no)
   --enable-pystats        enable internal statistics gathering (default is no)
+  --disable-tier2         disable tier 2 interpreter support (default is no)
   --enable-experimental-jit
                           build the experimental just-in-time compiler
                           (default is no)
@@ -8206,6 +8208,34 @@ printf "%s\n" "implied by --with-pydebug" >&6; }
 else
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
 printf "%s\n" "no" >&6; }
+fi
+
+# Check for --disable-tier2
+# --disable-tier2
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --disable-tier2" >&5
+printf %s "checking for --disable-tier2... " >&6; }
+# Check whether --enable-tier2 was given.
+if test ${enable_tier2+y}
+then :
+  enableval=$enable_tier2; if test "x$enable_tier2" = xyes
+then :
+  disable_tier2=no
+else $as_nop
+  disable_tier2=yes
+fi
+else $as_nop
+  disable_tier2=no
+
+fi
+
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $disable_tier2" >&5
+printf "%s\n" "$disable_tier2" >&6; }
+
+if test "$disable_tier2" = "yes"
+then
+
+printf "%s\n" "#define _Py_NOTIER2 1" >>confdefs.h
+
 fi
 
 # Check for --enable-experimental-jit:

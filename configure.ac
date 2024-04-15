@@ -1762,6 +1762,21 @@ else
   AC_MSG_RESULT([no])
 fi
 
+# Check for --disable-tier2
+# --disable-tier2
+AC_MSG_CHECKING([for --disable-tier2])
+AC_ARG_ENABLE([tier2],
+  [AS_HELP_STRING([--disable-tier2], [disable tier 2 interpreter support (default is no)])],
+  [AS_VAR_IF([enable_tier2], [yes], [disable_tier2=no], [disable_tier2=yes])], [disable_tier2=no]
+)
+AC_MSG_RESULT([$disable_tier2])
+
+if test "$disable_tier2" = "yes"
+then
+  AC_DEFINE([_Py_NOTIER2], [1],
+            [Define if you want to disable the tier 2 interpreter entirely])
+fi
+
 # Check for --enable-experimental-jit:
 AC_MSG_CHECKING([for --enable-experimental-jit])
 AC_ARG_ENABLE([experimental-jit],
