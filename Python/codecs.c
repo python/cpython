@@ -20,17 +20,6 @@ const char *Py_hexdigits = "0123456789abcdef";
 
 /* --- Codec Registry ----------------------------------------------------- */
 
-/* Import the standard encodings package which will register the first
-   codec search function.
-
-   This is done in a lazy way so that the Unicode implementation does
-   not downgrade startup time of scripts not needing it.
-
-   ImportErrors are silently ignored by this function. Only one try is
-   made.
-
-*/
-
 int PyCodec_Register(PyObject *search_function)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
@@ -1389,7 +1378,8 @@ static PyObject *surrogateescape_errors(PyObject *self, PyObject *exc)
     return PyCodec_SurrogateEscapeErrors(exc);
 }
 
-PyStatus _PyCodec_InitRegistry(PyInterpreterState *interp)
+PyStatus
+_PyCodec_InitRegistry(PyInterpreterState *interp)
 {
     static struct {
         const char *name;
@@ -1515,4 +1505,13 @@ PyStatus _PyCodec_InitRegistry(PyInterpreterState *interp)
     Py_DECREF(mod);
 
     return PyStatus_Ok();
+}
+
+void
+_PyCodec_Fini(PyInterpreterState *interp)
+{
+    Py_CLEAR(interp->codecs.search_path);
+    Py_CLEAR(interp->codecs.search_cache);
+    Py_CLEAR(interp->codecs.error_registry);
+    interp->codecs.initialized = 0;
 }

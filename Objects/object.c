@@ -473,6 +473,7 @@ void
 PyObject_CallFinalizer(PyObject *self)
 {
     PyTypeObject *tp = Py_TYPE(self);
+
     if (tp->tp_finalize == NULL)
         return;
     /* tp_finalize should only be called once. */

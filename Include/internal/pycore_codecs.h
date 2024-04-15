@@ -10,10 +10,14 @@ extern "C" {
 
 #include "pycore_lock.h"          // PyMutex
 
-/* Initialize codecs-related state for the given interpreter. Must be called
-   before any other _PyCodec* functions, and while only one thread is
-   active. */
+/* Initialize codecs-related state for the given interpreter, including
+   registering the first codec search function. Must be called before any other
+   PyCodec-related functions, and while only one thread is active. */
 extern PyStatus _PyCodec_InitRegistry(PyInterpreterState *interp);
+
+/* Finalize codecs-related state for the given interpreter. No PyCodec-related
+   functions other than PyCodec_Unregister() may be called after this. */
+extern void _PyCodec_Fini(PyInterpreterState *interp);
 
 extern PyObject* _PyCodec_Lookup(const char *encoding);
 
