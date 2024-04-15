@@ -4439,9 +4439,10 @@ class Context(object):
         return Decimal(a)
 
     def copy_negate(self, a):
-        """Return a copy of the operand with the sign inverted. This operation is
-        unaffected by context and is quiet: no flags are changed and no rounding
-        is performed.
+        """Return a copy of the operand with the sign inverted.
+
+        This operation is unaffected by context and is quiet: no flags are
+        changed and no rounding is performed.
 
         >>> ExtendedContext.copy_negate(Decimal('101.5'))
         Decimal('-101.5')

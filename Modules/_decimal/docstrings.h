@@ -372,9 +372,10 @@ and no rounding is performed.\n\
 
 PyDoc_STRVAR(doc_copy_negate,
 "copy_negate($self, /)\n--\n\n\
-Returns a copy of the operand with the sign inverted. This operation is\n\
-unaffected by context and is quiet: no flags are changed and no rounding\n\
-is performed.\n\
+Return a copy of the operand with the sign inverted.\n\
+\n\
+This operation is unaffected by context and is quiet: no flags are\n\
+changed and no rounding is performed.\n\
 \n\
     >>> ExtendedContext.copy_negate(Decimal('101.5'))\n\
     Decimal('-101.5')\n\
