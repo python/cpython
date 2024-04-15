@@ -11,6 +11,10 @@ extern "C" {
 
 #ifdef _Py_JIT
 
+#ifdef _Py_NOTIER2
+#  error "can't define _Py_JIT and _Py_NOTIER2 at the same time"
+#endif
+
 typedef _Py_CODEUNIT *(*jit_func)(_PyInterpreterFrame *frame, PyObject **stack_pointer, PyThreadState *tstate);
 
 int _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction *trace, size_t length);
