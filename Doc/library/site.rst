@@ -74,7 +74,7 @@ with ``import`` (followed by space or tab) are executed.
    Limiting a code chunk to a single line is a deliberate measure
    to discourage putting anything more complex here.
 
-.. versionchangedd:: 3.13
+.. versionchanged:: 3.13
    The :file:`.pth` files are now decoded by UTF-8 at first and then by the
    :term:`locale encoding` if it fails.
 
