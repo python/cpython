@@ -445,7 +445,7 @@ dictkeys_incref(PyDictKeysObject *dk)
         return;
     }
 #ifdef Py_REF_DEBUG
-    _Py_IncRefTotal(_PyInterpreterState_GET());
+    _Py_IncRefTotal(_PyThreadState_GET());
 #endif
     INCREF_KEYS(dk);
 }
@@ -458,7 +458,7 @@ dictkeys_decref(PyInterpreterState *interp, PyDictKeysObject *dk, bool use_qsbr)
     }
     assert(dk->dk_refcnt > 0);
 #ifdef Py_REF_DEBUG
-    _Py_DecRefTotal(_PyInterpreterState_GET());
+    _Py_DecRefTotal(_PyThreadState_GET());
 #endif
     if (DECREF_KEYS(dk) == 1) {
         if (DK_IS_UNICODE(dk)) {
@@ -790,7 +790,7 @@ new_keys_object(PyInterpreterState *interp, uint8_t log2_size, bool unicode)
         }
     }
 #ifdef Py_REF_DEBUG
-    _Py_IncRefTotal(_PyInterpreterState_GET());
+    _Py_IncRefTotal(_PyThreadState_GET());
 #endif
     dk->dk_refcnt = 1;
     dk->dk_log2_size = log2_size;
@@ -978,7 +978,7 @@ clone_combined_dict_keys(PyDictObject *orig)
        we have it now; calling dictkeys_incref would be an error as
        keys->dk_refcnt is already set to 1 (after memcpy). */
 #ifdef Py_REF_DEBUG
-    _Py_IncRefTotal(_PyInterpreterState_GET());
+    _Py_IncRefTotal(_PyThreadState_GET());
 #endif
     return keys;
 }
@@ -1286,7 +1286,7 @@ Py_ssize_t compare_unicode_generic_threadsafe(PyDictObject *mp, PyDictKeysObject
     assert(!PyUnicode_CheckExact(key));
 
     if (startkey != NULL) {
-        if (!_Py_TryIncref(&ep->me_key, startkey)) {
+        if (!_Py_TryIncrefCompare(&ep->me_key, startkey)) {
             return DKIX_KEY_CHANGED;
         }
 
@@ -1334,7 +1334,7 @@ compare_unicode_unicode_threadsafe(PyDictObject *mp, PyDictKeysObject *dk,
             return unicode_get_hash(startkey) == hash && unicode_eq(startkey, key);
         }
         else {
-            if (!_Py_TryIncref(&ep->me_key, startkey)) {
+            if (!_Py_TryIncrefCompare(&ep->me_key, startkey)) {
                 return DKIX_KEY_CHANGED;
             }
             if (unicode_get_hash(startkey) == hash && unicode_eq(startkey, key)) {
@@ -1364,7 +1364,7 @@ Py_ssize_t compare_generic_threadsafe(PyDictObject *mp, PyDictKeysObject *dk,
     }
     Py_ssize_t ep_hash = _Py_atomic_load_ssize_relaxed(&ep->me_hash);
     if (ep_hash == hash) {
-        if (startkey == NULL || !_Py_TryIncref(&ep->me_key, startkey)) {
+        if (startkey == NULL || !_Py_TryIncrefCompare(&ep->me_key, startkey)) {
             return DKIX_KEY_CHANGED;
         }
         int cmp = PyObject_RichCompareBool(startkey, key, Py_EQ);
@@ -2021,7 +2021,7 @@ dictresize(PyInterpreterState *interp, PyDictObject *mp,
 
         if (oldkeys != Py_EMPTY_KEYS) {
 #ifdef Py_REF_DEBUG
-            _Py_DecRefTotal(_PyInterpreterState_GET());
+            _Py_DecRefTotal(_PyThreadState_GET());
 #endif
             assert(oldkeys->dk_kind != DICT_KEYS_SPLIT);
             assert(oldkeys->dk_refcnt == 1);
@@ -2603,7 +2603,7 @@ static int
 delitemif_lock_held(PyObject *op, PyObject *key,
                     int (*predicate)(PyObject *value))
 {
-    Py_ssize_t hashpos, ix;
+    Py_ssize_t ix;
     PyDictObject *mp;
     Py_hash_t hash;
     PyObject *old_value;
@@ -2632,14 +2632,11 @@ delitemif_lock_held(PyObject *op, PyObject *key,
     if (res == -1)
         return -1;
 
-    hashpos = lookdict_index(mp->ma_keys, hash, ix);
-    assert(hashpos >= 0);
-
     if (res > 0) {
         PyInterpreterState *interp = _PyInterpreterState_GET();
         uint64_t new_version = _PyDict_NotifyEvent(
                 interp, PyDict_EVENT_DELETED, mp, key, NULL);
-        return delitem_common(mp, hashpos, ix, old_value, new_version);
+        return delitem_common(mp, hash, ix, old_value, new_version);
     } else {
         return 0;
     }
@@ -2684,24 +2681,27 @@ clear_lock_held(PyObject *op)
             interp, PyDict_EVENT_CLEARED, mp, NULL, NULL);
     // We don't inc ref empty keys because they're immortal
     ensure_shared_on_resize(mp);
-
-    set_keys(mp, Py_EMPTY_KEYS);
-    set_values(mp, NULL);
-    mp->ma_used = 0;
     mp->ma_version_tag = new_version;
-    /* ...then clear the keys and values */
-    if (oldvalues != NULL) {
-        if (!oldvalues->embedded) {
-            n = oldkeys->dk_nentries;
-            for (i = 0; i < n; i++)
-                Py_CLEAR(oldvalues->values[i]);
-            free_values(oldvalues, IS_DICT_SHARED(mp));
-        }
-        dictkeys_decref(interp, oldkeys, false);
-    }
-    else {
+    mp->ma_used = 0;
+    if (oldvalues == NULL) {
+        set_keys(mp, Py_EMPTY_KEYS);
         assert(oldkeys->dk_refcnt == 1);
         dictkeys_decref(interp, oldkeys, IS_DICT_SHARED(mp));
+    }
+    else {
+        n = oldkeys->dk_nentries;
+        for (i = 0; i < n; i++) {
+            Py_CLEAR(oldvalues->values[i]);
+        }
+        if (oldvalues->embedded) {
+            oldvalues->size = 0;
+        }
+        else {
+            set_values(mp, NULL);
+            set_keys(mp, Py_EMPTY_KEYS);
+            free_values(oldvalues, IS_DICT_SHARED(mp));
+            dictkeys_decref(interp, oldkeys, false);
+        }
     }
     ASSERT_CONSISTENT(mp);
 }
@@ -5308,7 +5308,7 @@ acquire_key_value(PyObject **key_loc, PyObject *value, PyObject **value_loc,
     }
 
     if (out_value) {
-        if (!_Py_TryIncref(value_loc, value)) {
+        if (!_Py_TryIncrefCompare(value_loc, value)) {
             if (out_key) {
                 Py_DECREF(*out_key);
             }

@@ -87,6 +87,10 @@ Interpreter improvements:
   Performance improvements are modest -- we expect to be improving this
   over the next few releases.
 
+New typing features:
+
+* :pep:`742`: :data:`typing.TypeIs` was added, providing more intuitive
+  type narrowing behavior.
 
 New Features
 ============
@@ -192,13 +196,6 @@ Other Language Changes
 
   (Contributed by Sebastian Pipping in :gh:`115623`.)
 
-* When :func:`asyncio.TaskGroup.create_task` is called on an inactive
-  :class:`asyncio.TaskGroup`, the given coroutine will be closed (which
-  prevents a :exc:`RuntimeWarning` about the given coroutine being
-  never awaited).
-
-  (Contributed by Arthur Tacca and Jason Zhang in :gh:`115957`.)
-
 * The :func:`ssl.create_default_context` API now includes
   :data:`ssl.VERIFY_X509_PARTIAL_CHAIN` and :data:`ssl.VERIFY_X509_STRICT`
   in its default flags.
@@ -296,9 +293,40 @@ asyncio
   with the tasks being completed.
   (Contributed by Justin Arthur in :gh:`77714`.)
 
+* When :func:`asyncio.TaskGroup.create_task` is called on an inactive
+  :class:`asyncio.TaskGroup`, the given coroutine will be closed (which
+  prevents a :exc:`RuntimeWarning` about the given coroutine being
+  never awaited).
+  (Contributed by Arthur Tacca and Jason Zhang in :gh:`115957`.)
+
+* Improved behavior of :class:`asyncio.TaskGroup` when an external cancellation
+  collides with an internal cancellation. For example, when two task groups
+  are nested and both experience an exception in a child task simultaneously,
+  it was possible that the outer task group would hang, because its internal
+  cancellation was swallowed by the inner task group.
+
+  In the case where a task group is cancelled externally and also must
+  raise an :exc:`ExceptionGroup`, it will now call the parent task's
+  :meth:`~asyncio.Task.cancel` method.  This ensures that a
+  :exc:`asyncio.CancelledError` will be raised at the next
+  :keyword:`await`, so the cancellation is not lost.
+
+  An added benefit of these changes is that task groups now preserve the
+  cancellation count (:meth:`asyncio.Task.cancelling`).
+
+  In order to handle some corner cases, :meth:`asyncio.Task.uncancel` may now
+  reset the undocumented ``_must_cancel`` flag when the cancellation count
+  reaches zero.
+
+  (Inspired by an issue reported by Arthur Tacca in :gh:`116720`.)
+
 * Add :meth:`asyncio.Queue.shutdown` (along with
   :exc:`asyncio.QueueShutDown`) for queue termination.
-  (Contributed by Laurie Opperman in :gh:`104228`.)
+  (Contributed by Laurie Opperman and Yves Duprat in :gh:`104228`.)
+
+* Accept a tuple of separators in :meth:`asyncio.StreamReader.readuntil`,
+  stopping when one of them is encountered.
+  (Contributed by Bruce Merry in :gh:`81322`.)
 
 base64
 ------
@@ -379,7 +407,7 @@ gc
 --
 
 * The cyclic garbage collector is now incremental, which changes the meanings
-  of the results of :meth:`gc.get_threshold` and :meth:`gc.get_threshold` as
+  of the results of :meth:`gc.get_threshold` and :meth:`gc.set_threshold` as
   well as :meth:`gc.get_count` and :meth:`gc.get_stats`.
 * :meth:`gc.get_threshold` returns a three-tuple for backwards compatibility,
   the first value is the threshold for young collections, as before, the second
@@ -1775,7 +1803,7 @@ New Features
   Equivalent to getting the ``type.__module__`` attribute.
   (Contributed by Eric Snow and Victor Stinner in :gh:`111696`.)
 
-* Add support for ``%T``, ``%T#``, ``%N`` and ``%N#`` formats to
+* Add support for ``%T``, ``%#T``, ``%N`` and ``%#N`` formats to
   :c:func:`PyUnicode_FromFormat`: format the fully qualified name of an object
   type and of a type: call :c:func:`PyType_GetModuleName`. See :pep:`737` for
   more information.

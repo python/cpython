@@ -56,6 +56,8 @@ class PosixPathTest(unittest.TestCase):
         self.assertEqual(fn(b"/foo", b"bar", b"baz"),          b"/foo/bar/baz")
         self.assertEqual(fn(b"/foo/", b"bar/", b"baz/"),       b"/foo/bar/baz/")
 
+        self.assertEqual(fn("a", ""),          "a/")
+        self.assertEqual(fn("a", "", ""),      "a/")
         self.assertEqual(fn("a", "b"),         "a/b")
         self.assertEqual(fn("a", "b/"),        "a/b/")
         self.assertEqual(fn("a/", "b"),        "a/b")
@@ -484,7 +486,7 @@ class PosixPathTest(unittest.TestCase):
             self.assertEqual(realpath(ABSTFN+"1/../x"), dirname(ABSTFN) + "/x")
             os.symlink(ABSTFN+"x", ABSTFN+"y")
             self.assertEqual(realpath(ABSTFN+"1/../" + basename(ABSTFN) + "y"),
-                             ABSTFN + "y")
+                             ABSTFN + "x")
             self.assertEqual(realpath(ABSTFN+"1/../" + basename(ABSTFN) + "1"),
                              ABSTFN + "1")
 

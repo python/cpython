@@ -506,6 +506,15 @@ _PyRuntimeState_ReInitThreads(_PyRuntimeState *runtime)
     for (size_t i = 0; i < Py_ARRAY_LENGTH(locks); i++) {
         _PyMutex_at_fork_reinit(locks[i]);
     }
+#ifdef Py_GIL_DISABLED
+    for (PyInterpreterState *interp = runtime->interpreters.head;
+         interp != NULL; interp = interp->next)
+    {
+        for (int i = 0; i < NUM_WEAKREF_LIST_LOCKS; i++) {
+            _PyMutex_at_fork_reinit(&interp->weakref_locks[i]);
+        }
+    }
+#endif
 
     _PyTypes_AfterFork();
 
@@ -574,6 +583,8 @@ free_interpreter(PyInterpreterState *interp)
     }
 }
 
+static inline int check_interpreter_whence(long);
+
 /* Get the interpreter state to a minimal consistent state.
    Further init happens in pylifecycle.c before it can be used.
    All fields not initialized here are expected to be zeroed out,
@@ -596,11 +607,16 @@ free_interpreter(PyInterpreterState *interp)
 static PyStatus
 init_interpreter(PyInterpreterState *interp,
                  _PyRuntimeState *runtime, int64_t id,
-                 PyInterpreterState *next)
+                 PyInterpreterState *next,
+                 long whence)
 {
     if (interp->_initialized) {
         return _PyStatus_ERR("interpreter already initialized");
     }
+
+    assert(interp->_whence == _PyInterpreterState_WHENCE_NOTSET);
+    assert(check_interpreter_whence(whence) == 0);
+    interp->_whence = whence;
 
     assert(runtime != NULL);
     interp->runtime = runtime;
@@ -709,8 +725,9 @@ _PyInterpreterState_New(PyThreadState *tstate, PyInterpreterState **pinterp)
     }
     interpreters->head = interp;
 
+    long whence = _PyInterpreterState_WHENCE_UNKNOWN;
     status = init_interpreter(interp, runtime,
-                              id, old_head);
+                              id, old_head, whence);
     if (_PyStatus_EXCEPTION(status)) {
         goto error;
     }
@@ -1094,6 +1111,41 @@ _PyInterpreterState_ReinitRunningMain(PyThreadState *tstate)
 // accessors
 //----------
 
+int
+_PyInterpreterState_IsReady(PyInterpreterState *interp)
+{
+    return interp->_ready;
+}
+
+
+static inline int
+check_interpreter_whence(long whence)
+{
+    if(whence < 0) {
+        return -1;
+    }
+    if (whence > _PyInterpreterState_WHENCE_MAX) {
+        return -1;
+    }
+    return 0;
+}
+
+long
+_PyInterpreterState_GetWhence(PyInterpreterState *interp)
+{
+    assert(check_interpreter_whence(interp->_whence) == 0);
+    return interp->_whence;
+}
+
+void
+_PyInterpreterState_SetWhence(PyInterpreterState *interp, long whence)
+{
+    assert(interp->_whence != _PyInterpreterState_WHENCE_NOTSET);
+    assert(check_interpreter_whence(whence) == 0);
+    interp->_whence = whence;
+}
+
+
 PyObject *
 PyUnstable_InterpreterState_GetMainModule(PyInterpreterState *interp)
 {
@@ -1104,6 +1156,7 @@ PyUnstable_InterpreterState_GetMainModule(PyInterpreterState *interp)
     }
     return PyMapping_GetItemString(modules, "__main__");
 }
+
 
 PyObject *
 PyInterpreterState_GetDict(PyInterpreterState *interp)
@@ -1165,6 +1218,20 @@ PyInterpreterState_GetID(PyInterpreterState *interp)
         return -1;
     }
     return interp->id;
+}
+
+PyObject *
+_PyInterpreterState_GetIDObject(PyInterpreterState *interp)
+{
+    if (_PyInterpreterState_IDInitref(interp) != 0) {
+        return NULL;
+    };
+    int64_t interpid = interp->id;
+    if (interpid < 0) {
+        return NULL;
+    }
+    assert(interpid < LLONG_MAX);
+    return PyLong_FromLongLong(interpid);
 }
 
 
@@ -1689,6 +1756,14 @@ tstate_delete_common(PyThreadState *tstate)
             decrement_stoptheworld_countdown(&runtime->stoptheworld);
         }
     }
+
+#if defined(Py_REF_DEBUG) && defined(Py_GIL_DISABLED)
+    // Add our portion of the total refcount to the interpreter's total.
+    _PyThreadStateImpl *tstate_impl = (_PyThreadStateImpl *)tstate;
+    tstate->interp->object_state.reftotal += tstate_impl->reftotal;
+    tstate_impl->reftotal = 0;
+#endif
+
     HEAD_UNLOCK(runtime);
 
 #ifdef Py_GIL_DISABLED

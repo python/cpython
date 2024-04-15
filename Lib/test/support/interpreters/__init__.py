@@ -74,50 +74,77 @@ class ExecutionFailed(InterpreterError):
 def create():
     """Return a new (idle) Python interpreter."""
     id = _interpreters.create(reqrefs=True)
-    return Interpreter(id)
+    return Interpreter(id, _ownsref=True)
 
 
 def list_all():
     """Return all existing interpreters."""
-    return [Interpreter(id) for id in _interpreters.list_all()]
+    return [Interpreter(id, _whence=whence)
+            for id, whence in _interpreters.list_all(require_ready=True)]
 
 
 def get_current():
     """Return the currently running interpreter."""
-    id = _interpreters.get_current()
-    return Interpreter(id)
+    id, whence = _interpreters.get_current()
+    return Interpreter(id, _whence=whence)
 
 
 def get_main():
     """Return the main interpreter."""
-    id = _interpreters.get_main()
-    return Interpreter(id)
+    id, whence = _interpreters.get_main()
+    assert whence == _interpreters.WHENCE_RUNTIME, repr(whence)
+    return Interpreter(id, _whence=whence)
 
 
 _known = weakref.WeakValueDictionary()
 
 class Interpreter:
-    """A single Python interpreter."""
+    """A single Python interpreter.
 
-    def __new__(cls, id, /):
+    Attributes:
+
+    "id" - the unique process-global ID number for the interpreter
+    "whence" - indicates where the interpreter was created
+
+    If the interpreter wasn't created by this module
+    then any method that modifies the interpreter will fail,
+    i.e. .close(), .prepare_main(), .exec(), and .call()
+    """
+
+    _WHENCE_TO_STR = {
+       _interpreters.WHENCE_UNKNOWN: 'unknown',
+       _interpreters.WHENCE_RUNTIME: 'runtime init',
+       _interpreters.WHENCE_LEGACY_CAPI: 'legacy C-API',
+       _interpreters.WHENCE_CAPI: 'C-API',
+       _interpreters.WHENCE_XI: 'cross-interpreter C-API',
+       _interpreters.WHENCE_STDLIB: '_interpreters module',
+    }
+
+    def __new__(cls, id, /, _whence=None, _ownsref=None):
         # There is only one instance for any given ID.
         if not isinstance(id, int):
             raise TypeError(f'id must be an int, got {id!r}')
         id = int(id)
+        if _whence is None:
+            if _ownsref:
+                _whence = _interpreters.WHENCE_STDLIB
+            else:
+                _whence = _interpreters.whence(id)
+        assert _whence in cls._WHENCE_TO_STR, repr(_whence)
+        if _ownsref is None:
+            _ownsref = (_whence == _interpreters.WHENCE_STDLIB)
         try:
             self = _known[id]
             assert hasattr(self, '_ownsref')
         except KeyError:
-            # This may raise InterpreterNotFoundError:
-            _interpreters.incref(id)
-            try:
-                self = super().__new__(cls)
-                self._id = id
-                self._ownsref = True
-            except BaseException:
-                _interpreters.decref(id)
-                raise
+            self = super().__new__(cls)
             _known[id] = self
+            self._id = id
+            self._whence = _whence
+            self._ownsref = _ownsref
+            if _ownsref:
+                # This may raise InterpreterNotFoundError:
+                _interpreters.incref(id)
         return self
 
     def __repr__(self):
@@ -142,7 +169,7 @@ class Interpreter:
             return
         self._ownsref = False
         try:
-            _interpreters.decref(self.id)
+            _interpreters.decref(self._id)
         except InterpreterNotFoundError:
             pass
 
@@ -150,9 +177,16 @@ class Interpreter:
     def id(self):
         return self._id
 
+    @property
+    def whence(self):
+        return self._WHENCE_TO_STR[self._whence]
+
     def is_running(self):
         """Return whether or not the identified interpreter is running."""
         return _interpreters.is_running(self._id)
+
+    # Everything past here is available only to interpreters created by
+    # interpreters.create().
 
     def close(self):
         """Finalize and destroy the interpreter.
@@ -160,7 +194,7 @@ class Interpreter:
         Attempting to destroy the current interpreter results
         in an InterpreterError.
         """
-        return _interpreters.destroy(self._id)
+        return _interpreters.destroy(self._id, restrict=True)
 
     def prepare_main(self, ns=None, /, **kwargs):
         """Bind the given values into the interpreter's __main__.
@@ -168,7 +202,7 @@ class Interpreter:
         The values must be shareable.
         """
         ns = dict(ns, **kwargs) if ns is not None else kwargs
-        _interpreters.set___main___attrs(self._id, ns)
+        _interpreters.set___main___attrs(self._id, ns, restrict=True)
 
     def exec(self, code, /):
         """Run the given source code in the interpreter.
@@ -188,7 +222,7 @@ class Interpreter:
         that time, the previous interpreter is allowed to run
         in other threads.
         """
-        excinfo = _interpreters.exec(self._id, code)
+        excinfo = _interpreters.exec(self._id, code, restrict=True)
         if excinfo is not None:
             raise ExecutionFailed(excinfo)
 
@@ -208,7 +242,7 @@ class Interpreter:
         # XXX Support args and kwargs.
         # XXX Support arbitrary callables.
         # XXX Support returning the return value (e.g. via pickle).
-        excinfo = _interpreters.call(self._id, callable)
+        excinfo = _interpreters.call(self._id, callable, restrict=True)
         if excinfo is not None:
             raise ExecutionFailed(excinfo)
 
