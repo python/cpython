@@ -507,8 +507,6 @@ Decimal.from_float(0.1) is not the same as Decimal('0.1').\n\
 
 PyDoc_STRVAR(doc_fma,
 "fma($self, /, other, third, context=None)\n--\n\n\
-Returns a multiplied by b, plus c.\n\
-\n\
 Fused multiply-add. The first two operands are multiplied together,\n\
 using multiply, the third operand is then added to the result of that\n\
 multiplication, using add, all with only one final rounding.\n\
