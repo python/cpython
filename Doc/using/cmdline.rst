@@ -500,43 +500,73 @@ Miscellaneous options
 
    * ``-X faulthandler`` to enable :mod:`faulthandler`.
      See also :envvar:`PYTHONFAULTHANDLER`.
+
+     .. versionadded:: 3.3
+
    * ``-X showrefcount`` to output the total reference count and number of used
      memory blocks when the program finishes or after each statement in the
      interactive interpreter. This only works on :ref:`debug builds
      <debug-build>`.
+
+     .. versionadded:: 3.4
+
    * ``-X tracemalloc`` to start tracing Python memory allocations using the
      :mod:`tracemalloc` module. By default, only the most recent frame is
      stored in a traceback of a trace. Use ``-X tracemalloc=NFRAME`` to start
      tracing with a traceback limit of *NFRAME* frames.
      See :func:`tracemalloc.start` and :envvar:`PYTHONTRACEMALLOC`
      for more information.
+
+     .. versionadded:: 3.4
+
    * ``-X int_max_str_digits`` configures the :ref:`integer string conversion
      length limitation <int_max_str_digits>`.  See also
      :envvar:`PYTHONINTMAXSTRDIGITS`.
+
+     .. versionadded:: 3.11
+
    * ``-X importtime`` to show how long each import takes. It shows module
      name, cumulative time (including nested imports) and self time (excluding
      nested imports).  Note that its output may be broken in multi-threaded
      application.  Typical usage is ``python3 -X importtime -c 'import
      asyncio'``.  See also :envvar:`PYTHONPROFILEIMPORTTIME`.
+
+     .. versionadded:: 3.7
+
    * ``-X dev``: enable :ref:`Python Development Mode <devmode>`, introducing
      additional runtime checks that are too expensive to be enabled by
      default.  See also :envvar:`PYTHONDEVMODE`.
+
+     .. versionadded:: 3.7
+
    * ``-X utf8`` enables the :ref:`Python UTF-8 Mode <utf8-mode>`.
      ``-X utf8=0`` explicitly disables :ref:`Python UTF-8 Mode <utf8-mode>`
      (even when it would otherwise activate automatically).
      See also :envvar:`PYTHONUTF8`.
+
+     .. versionadded:: 3.7
+
    * ``-X pycache_prefix=PATH`` enables writing ``.pyc`` files to a parallel
      tree rooted at the given directory instead of to the code tree. See also
      :envvar:`PYTHONPYCACHEPREFIX`.
+
+     .. versionadded:: 3.8
+
    * ``-X warn_default_encoding`` issues a :class:`EncodingWarning` when the
      locale-specific default encoding is used for opening files.
      See also :envvar:`PYTHONWARNDEFAULTENCODING`.
+
+     .. versionadded:: 3.10
+
    * ``-X no_debug_ranges`` disables the inclusion of the tables mapping extra
      location information (end line, start column offset and end column offset)
      to every instruction in code objects. This is useful when smaller code
      objects and pyc files are desired as well as suppressing the extra visual
      location indicators when the interpreter displays tracebacks. See also
      :envvar:`PYTHONNODEBUGRANGES`.
+
+     .. versionadded:: 3.11
+
    * ``-X frozen_modules`` determines whether or not frozen modules are
      ignored by the import machinery.  A value of "on" means they get
      imported and "off" means they are ignored.  The default is "on"
@@ -544,49 +574,27 @@ Miscellaneous options
      development (running from the source tree) then the default is "off".
      Note that the "importlib_bootstrap" and "importlib_bootstrap_external"
      frozen modules are always used, even if this flag is set to "off".
+
+     .. versionadded:: 3.11
+
    * ``-X perf`` enables support for the Linux ``perf`` profiler.
      When this option is provided, the ``perf`` profiler will be able to
      report Python calls. This option is only available on some platforms and
      will do nothing if is not supported on the current system. The default value
      is "off". See also :envvar:`PYTHONPERFSUPPORT` and :ref:`perf_profiling`.
 
+     .. versionadded:: 3.12
+
    It also allows passing arbitrary values and retrieving them through the
    :data:`sys._xoptions` dictionary.
 
    .. versionadded:: 3.2
 
-   .. versionchanged:: 3.3
-      Added the ``-X faulthandler`` option.
-
-   .. versionchanged:: 3.4
-      Added the ``-X showrefcount`` and ``-X tracemalloc`` options.
-
-   .. versionchanged:: 3.6
-      Added the ``-X showalloccount`` option.
-
-   .. versionchanged:: 3.7
-      Added the ``-X importtime``, ``-X dev`` and ``-X utf8`` options.
-
-   .. versionchanged:: 3.8
-      Added the ``-X pycache_prefix`` option. The ``-X dev`` option now logs
-      ``close()`` exceptions in :class:`io.IOBase` destructor.
-
    .. versionchanged:: 3.9
-      Using ``-X dev`` option, check *encoding* and *errors* arguments on
-      string encoding and decoding operations.
-
-      The ``-X showalloccount`` option has been removed.
+      Removed the ``-X showalloccount`` option.
 
    .. versionchanged:: 3.10
-      Added the ``-X warn_default_encoding`` option.
       Removed the ``-X oldparser`` option.
-
-   .. versionchanged:: 3.11
-      Added the ``-X no_debug_ranges``, ``-X frozen_modules`` and
-      ``-X int_max_str_digits`` options.
-
-   .. versionchanged:: 3.12
-      Added the ``-X perf`` option.
 
 
 Options you shouldn't use
