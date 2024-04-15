@@ -780,6 +780,7 @@ zipimport
 * Gains support for ZIP64 format files.  Everybody loves huge code right?
   (Contributed by Tim Hatch in :gh:`94146`.)
 
+.. Add improved modules above alphabetically, not here at the end.
 
 Optimizations
 =============
@@ -845,7 +846,7 @@ Deprecated
   emits :exc:`DeprecationWarning` since 3.13
   and will be removed in Python 3.16.
   Use the ``'w'`` format code instead.
-  (contributed by Hugo van Kemenade in :gh:`80480`)
+  (Contributed by Hugo van Kemenade in :gh:`80480`.)
 
 * :mod:`ctypes`: Deprecate undocumented :func:`!ctypes.SetPointerType`
   and :func:`!ctypes.ARRAY` functions.
@@ -860,6 +861,11 @@ Deprecated
 * :mod:`dis`: The ``dis.HAVE_ARGUMENT`` separator is deprecated. Check
   membership in :data:`~dis.hasarg` instead.
   (Contributed by Irit Katriel in :gh:`109319`.)
+
+* :ref:`frame-objects`:
+  Calling :meth:`frame.clear` on a suspended frame raises :exc:`RuntimeError`
+  (as has always been the case for an executing frame).
+  (Contributed by Irit Katriel in :gh:`79932`.)
 
 * :mod:`getopt` and :mod:`optparse` modules: They are now
   :term:`soft deprecated`: the :mod:`argparse` module should be used for new projects.
@@ -890,6 +896,12 @@ Deprecated
   removal in Python 3.15. Use :func:`os.path.isreserved` to detect reserved
   paths on Windows.
 
+* :mod:`platform`:
+  :func:`~platform.java_ver` is deprecated and will be removed in 3.15.
+  It was largely untested, had a confusing API,
+  and was only useful for Jython support.
+  (Contributed by Nikita Sobolev in :gh:`116349`.)
+
 * :mod:`pydoc`: Deprecate undocumented :func:`!pydoc.ispackage` function.
   (Contributed by Zackery Spytz in :gh:`64020`.)
 
@@ -917,6 +929,10 @@ Deprecated
 * :mod:`sys`: :func:`sys._enablelegacywindowsfsencoding` function.
   Replace it with the :envvar:`PYTHONLEGACYWINDOWSFSENCODING` environment variable.
   (Contributed by Inada Naoki in :gh:`73427`.)
+
+* :mod:`tarfile`:
+  The undocumented and unused ``tarfile`` attribute of :class:`tarfile.TarFile`
+  is deprecated and scheduled for removal in Python 3.16.
 
 * :mod:`traceback`: The field *exc_type* of :class:`traceback.TracebackException`
   is deprecated. Use *exc_type_str* instead.
@@ -950,28 +966,19 @@ Deprecated
     the new :ref:`type parameter syntax <type-params>` instead.
     (Contributed by Michael The in :gh:`107116`.)
 
-* :mod:`wave`: Deprecate the ``getmark()``, ``setmark()`` and ``getmarkers()``
-  methods of the :class:`wave.Wave_read` and :class:`wave.Wave_write` classes.
-  They will be removed in Python 3.15.
-  (Contributed by Victor Stinner in :gh:`105096`.)
-
-* Calling :meth:`frame.clear` on a suspended frame raises :exc:`RuntimeError`
-  (as has always been the case for an executing frame).
-  (Contributed by Irit Katriel in :gh:`79932`.)
-
-* Assignment to a function's :attr:`~function.__code__` attribute where the new code
+* :ref:`user-defined-funcs`:
+  Assignment to a function's :attr:`~function.__code__` attribute where the new code
   object's type does not match the function's type, is deprecated. The
   different types are: plain function, generator, async generator and
   coroutine.
   (Contributed by Irit Katriel in :gh:`81137`.)
 
-* The undocumented and unused ``tarfile`` attribute of :class:`tarfile.TarFile`
-  is deprecated and scheduled for removal in Python 3.16.
+* :mod:`wave`: Deprecate the ``getmark()``, ``setmark()`` and ``getmarkers()``
+  methods of the :class:`wave.Wave_read` and :class:`wave.Wave_write` classes.
+  They will be removed in Python 3.15.
+  (Contributed by Victor Stinner in :gh:`105096`.)
 
-* :func:`platform.java_ver` is deprecated and will be removed in 3.15.
-  It was largely untested, had a confusing API,
-  and was only useful for Jython support.
-  (Contributed by Nikita Sobolev in :gh:`116349`.)
+.. Add deprecations above alphabetically, not here at the end.
 
 Pending Removal in Python 3.14
 ------------------------------
