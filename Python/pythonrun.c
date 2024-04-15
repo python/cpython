@@ -1229,8 +1229,9 @@ PyRun_FileExFlags(FILE *fp, const char *filename, int start, PyObject *globals,
         return NULL;
     }
 
-    if (!globals) {
-        PyErr_SetString(PyExc_SystemError, "globals cannot be NULL");
+    if (!globals || !PyDict_Check(globals)) {
+        PyErr_SetString(PyExc_SystemError, "globals must be a real dict");
+        Py_DECREF(filename_obj);
         return NULL;
     }
 

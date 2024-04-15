@@ -1,21 +1,16 @@
 import unittest, os
-import _testcapi
-from test.support.os_helper import unlink, TESTFN
+from collections import UserDict
+from test.support import import_helper
+from test.support.os_helper import unlink, TESTFN, TESTFN_UNDECODABLE
 
 NULL = None
+_testcapi = import_helper.import_module('_testcapi')
 Py_single_input = _testcapi.Py_single_input
 Py_file_input = _testcapi.Py_file_input
 Py_eval_input = _testcapi.Py_eval_input
 
 
 class PyRunTest(unittest.TestCase):
-
-    def setUp(self):
-        with open(TESTFN, 'w') as fp:
-            fp.write("import sysconfig\n\nconfig = sysconfig.get_config_vars()\n")
-
-    def tearDown(self):
-        unlink(TESTFN)
 
     # run_fileexflags args:
     # filename -- filename to run script from
@@ -25,27 +20,38 @@ class PyRunTest(unittest.TestCase):
     # closeit -- whether close file or not true/false
     # cf_flags -- compile flags bitmap
     # cf_feature_version -- compile flags feature version
-    def test_pyrun_fileexflags_with_differents_args(self):
+    def test_pyrun_fileexflags(self):
+        def run(*args, filename=TESTFN):
+            return _testcapi.run_fileexflags(filename, Py_file_input, *args)
 
-        def check(*args):
-            res = _testcapi.run_fileexflags(TESTFN, Py_file_input, *args)
-            self.assertIsNone(res)
+        with open(TESTFN, 'w') as fp:
+            fp.write("a\n")
+        self.addCleanup(unlink, TESTFN)
 
-        check({}, NULL, 1, 0, 0)
-        check({}, {}, 1, 0, 0)
-        check({}, {}, 0, 0, 0)
-        check(globals(), NULL, 1, 0, 0)
-        check(globals(), locals(), 1, 0, 0)
-        check({}, {}, 1, 0, 0)
+        self.assertIsNone(run(dict(a=1)))
+        self.assertIsNone(run(dict(a=1), {}))
+        self.assertIsNone(run({}, dict(a=1)))
+        self.assertIsNone(run({}, UserDict(a=1)))
+        self.assertIsNone(run(dict(a=1), {}, 1))  # closeit = True
 
-    def test_pyrun_fileexflags_globals_is_null(self):
-        def check(*args):
-            with self.assertRaises(SystemError):
-                _testcapi.run_fileexflags(TESTFN, Py_file_input, *args)
+        if TESTFN_UNDECODABLE is not None:
+            with open(TESTFN_UNDECODABLE, 'w') as fp:
+                fp.write("b\n")
+            self.addCleanup(unlink, TESTFN_UNDECODABLE)
+            self.assertIsNone(run(dict(b=1), filename=TESTFN_UNDECODABLE))
 
-        check(NULL, NULL, 1, 0, 0)
-        check(NULL, {}, 1, 0, 0)
-        check(NULL, locals(), 1, 0, 0)
+        self.assertRaises(NameError, run, {})
+        self.assertRaises(NameError, run, {}, {})
+        self.assertRaises(TypeError, run, dict(a=1), [])
+        self.assertRaises(TypeError, run, dict(a=1), 1)
+
+        self.assertRaises(SystemError, run, NULL)
+        self.assertRaises(SystemError, run, NULL, {})
+        self.assertRaises(SystemError, run, NULL, dict(a=1))
+        self.assertRaises(SystemError, run, UserDict())
+        self.assertRaises(SystemError, run, UserDict(), {})
+        self.assertRaises(SystemError, run, UserDict(), dict(a=1))
+
 
 if __name__ == "__main__":
     unittest.main()
