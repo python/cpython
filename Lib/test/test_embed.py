@@ -749,7 +749,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
                 del expected[key]
             # Resolve bool/int mismatches to reduce noise in diffs
             if isinstance(value, (bool, int)) and isinstance(config.get(key), (bool, int)):
-                expected[key] = int(expected[key])
+                expected[key] = type(config[key])(expected[key])
         self.assertEqual(config, expected)
 
     def check_global_config(self, configs):
