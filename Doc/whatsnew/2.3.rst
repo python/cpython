@@ -1084,7 +1084,7 @@ Here are all of the changes that Python 2.3 makes to the core Python language.
   C3 algorithm as described in the paper `"A Monotonic Superclass Linearization
   for Dylan" <https://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.19.3910>`_. To
   understand the motivation for this change,  read Michele Simionato's article
-  `"Python 2.3 Method Resolution Order" <http://www.phyast.pitt.edu/~micheles/mro.html>`_, or
+  :ref:`python_2.3_mro`, or
   read the thread on python-dev starting with the message at
   https://mail.python.org/pipermail/python-dev/2002-October/029035.html. Samuele
   Pedroni first pointed out the problem and also implemented the fix by coding the

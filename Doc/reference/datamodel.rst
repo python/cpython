@@ -932,11 +932,8 @@ name is not found there, the attribute search continues in the base classes.
 This search of the base classes uses the C3 method resolution order which
 behaves correctly even in the presence of 'diamond' inheritance structures
 where there are multiple inheritance paths leading back to a common ancestor.
-Additional details on the C3 MRO used by Python can be found in the
-documentation accompanying the 2.3 release at
-https://www.python.org/download/releases/2.3/mro/.
-
-.. XXX: Could we add that MRO doc as an appendix to the language ref?
+Additional details on the C3 MRO used by Python can be found at
+:ref:`python_2.3_mro`.
 
 .. index::
    pair: object; class
