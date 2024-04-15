@@ -1452,6 +1452,49 @@ _winapi_GetLastError_impl(PyObject *module)
     return GetLastError();
 }
 
+
+/*[clinic input]
+_winapi.GetLongPathName
+
+    path: LPCWSTR
+
+Return the long version of the provided path.
+
+If the path is already in its long form, returns the same value.
+
+The path must already be a 'str'. If the type is not known, use
+os.fsdecode before calling this function.
+[clinic start generated code]*/
+
+static PyObject *
+_winapi_GetLongPathName_impl(PyObject *module, LPCWSTR path)
+/*[clinic end generated code: output=c4774b080275a2d0 input=9872e211e3a4a88f]*/
+{
+    DWORD cchBuffer;
+    PyObject *result = NULL;
+
+    Py_BEGIN_ALLOW_THREADS
+    cchBuffer = GetLongPathNameW(path, NULL, 0);
+    Py_END_ALLOW_THREADS
+    if (cchBuffer) {
+        WCHAR *buffer = (WCHAR *)PyMem_Malloc(cchBuffer * sizeof(WCHAR));
+        if (buffer) {
+            Py_BEGIN_ALLOW_THREADS
+            cchBuffer = GetLongPathNameW(path, buffer, cchBuffer);
+            Py_END_ALLOW_THREADS
+            if (cchBuffer) {
+                result = PyUnicode_FromWideChar(buffer, cchBuffer);
+            } else {
+                PyErr_SetFromWindowsErr(0);
+            }
+            PyMem_Free((void *)buffer);
+        }
+    } else {
+        PyErr_SetFromWindowsErr(0);
+    }
+    return result;
+}
+
 /*[clinic input]
 _winapi.GetModuleFileName
 
@@ -1484,6 +1527,48 @@ _winapi_GetModuleFileName_impl(PyObject *module, HMODULE module_handle)
         return PyErr_SetFromWindowsErr(GetLastError());
 
     return PyUnicode_FromWideChar(filename, wcslen(filename));
+}
+
+/*[clinic input]
+_winapi.GetShortPathName
+
+    path: LPCWSTR
+
+Return the short version of the provided path.
+
+If the path is already in its short form, returns the same value.
+
+The path must already be a 'str'. If the type is not known, use
+os.fsdecode before calling this function.
+[clinic start generated code]*/
+
+static PyObject *
+_winapi_GetShortPathName_impl(PyObject *module, LPCWSTR path)
+/*[clinic end generated code: output=dab6ae494c621e81 input=43fa349aaf2ac718]*/
+{
+    DWORD cchBuffer;
+    PyObject *result = NULL;
+
+    Py_BEGIN_ALLOW_THREADS
+    cchBuffer = GetShortPathNameW(path, NULL, 0);
+    Py_END_ALLOW_THREADS
+    if (cchBuffer) {
+        WCHAR *buffer = (WCHAR *)PyMem_Malloc(cchBuffer * sizeof(WCHAR));
+        if (buffer) {
+            Py_BEGIN_ALLOW_THREADS
+            cchBuffer = GetShortPathNameW(path, buffer, cchBuffer);
+            Py_END_ALLOW_THREADS
+            if (cchBuffer) {
+                result = PyUnicode_FromWideChar(buffer, cchBuffer);
+            } else {
+                PyErr_SetFromWindowsErr(0);
+            }
+            PyMem_Free((void *)buffer);
+        }
+    } else {
+        PyErr_SetFromWindowsErr(0);
+    }
+    return result;
 }
 
 /*[clinic input]
@@ -2345,7 +2430,9 @@ static PyMethodDef winapi_functions[] = {
     _WINAPI_GETCURRENTPROCESS_METHODDEF
     _WINAPI_GETEXITCODEPROCESS_METHODDEF
     _WINAPI_GETLASTERROR_METHODDEF
+    _WINAPI_GETLONGPATHNAME_METHODDEF
     _WINAPI_GETMODULEFILENAME_METHODDEF
+    _WINAPI_GETSHORTPATHNAME_METHODDEF
     _WINAPI_GETSTDHANDLE_METHODDEF
     _WINAPI_GETVERSION_METHODDEF
     _WINAPI_MAPVIEWOFFILE_METHODDEF
