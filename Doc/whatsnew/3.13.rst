@@ -1359,7 +1359,7 @@ PEP 594: dead batteries
     (Contributed by Victor Stinner in :gh:`104773`.)
 
   * :mod:`!nntplib`:
-    the PyPI :pypi:`nntplib` project can be used instead.
+    the :pypi:`nntplib` PyPI project can be used instead.
     (Contributed by Victor Stinner in :gh:`104773`.)
 
   * :mod:`!ossaudiodev`: use the
