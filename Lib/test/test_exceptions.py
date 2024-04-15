@@ -1424,7 +1424,7 @@ class ExceptionTests(unittest.TestCase):
             next(generator)
             recursionlimit = sys.getrecursionlimit()
             try:
-                recurse(support.EXCEEDS_RECURSION_LIMIT)
+                recurse(support.exceeds_recursion_limit())
             finally:
                 sys.setrecursionlimit(recursionlimit)
                 print('Done.')
@@ -1451,7 +1451,8 @@ class ExceptionTests(unittest.TestCase):
         """
         rc, out, err = script_helper.assert_python_failure("-c", code)
         self.assertEqual(rc, 1)
-        self.assertIn(b'RecursionError: maximum recursion depth exceeded', err)
+        expected = b'RecursionError: maximum recursion depth exceeded'
+        self.assertTrue(expected in err, msg=f"{expected!r} not found in {err[:3_000]!r}... (truncated)")
         self.assertIn(b'Done.', out)
 
 

@@ -515,7 +515,7 @@ class ThreadTests(BaseTestCase):
         old_interval = sys.getswitchinterval()
         try:
             for i in range(1, 100):
-                sys.setswitchinterval(i * 0.0002)
+                support.setswitchinterval(i * 0.0002)
                 t = threading.Thread(target=lambda: None)
                 t.start()
                 t.join()
@@ -1527,6 +1527,7 @@ class SubinterpThreadingTests(BaseTestCase):
             {before_start}
             t.start()
             """)
+        check_multi_interp_extensions = bool(support.Py_GIL_DISABLED)
         script = textwrap.dedent(f"""
             import test.support
             test.support.run_in_subinterp_with_config(
@@ -1536,7 +1537,7 @@ class SubinterpThreadingTests(BaseTestCase):
                 allow_exec=True,
                 allow_threads={allowed},
                 allow_daemon_threads={daemon_allowed},
-                check_multi_interp_extensions=False,
+                check_multi_interp_extensions={check_multi_interp_extensions},
                 own_gil=False,
             )
             """)

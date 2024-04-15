@@ -927,8 +927,6 @@ tempfile
 * :func:`tempfile.mkdtemp` now always returns an absolute path, even if the
   argument provided to the *dir* parameter is a relative path.
 
-.. _whatsnew-typing-py312:
-
 threading
 ---------
 
@@ -962,6 +960,8 @@ types
 * Add :func:`types.get_original_bases` to allow for further introspection of
   :ref:`user-defined-generics` when subclassed. (Contributed by
   James Hilton-Balfe and Alex Waygood in :gh:`101827`.)
+
+.. _whatsnew-typing-py312:
 
 typing
 ------
@@ -1659,11 +1659,9 @@ smtpd
 
 * The ``smtpd`` module has been removed according to the schedule in :pep:`594`,
   having been deprecated in Python 3.4.7 and 3.5.4.
-  Use aiosmtpd_ PyPI module or any other
+  Use the :pypi:`aiosmtpd` PyPI module or any other
   :mod:`asyncio`-based server instead.
   (Contributed by Oleg Iarygin in :gh:`93243`.)
-
-.. _aiosmtpd: https://pypi.org/project/aiosmtpd/
 
 sqlite3
 -------
@@ -1701,9 +1699,8 @@ ssl
   instead, create a :class:`ssl.SSLContext` object and call its
   :class:`ssl.SSLContext.wrap_socket` method. Any package that still uses
   :func:`!ssl.wrap_socket` is broken and insecure. The function neither sends a
-  SNI TLS extension nor validates server hostname. Code is subject to `CWE-295
-  <https://cwe.mitre.org/data/definitions/295.html>`_: Improper Certificate
-  Validation.
+  SNI TLS extension nor validates the server hostname. Code is subject to :cwe:`295`
+  (Improper Certificate Validation).
   (Contributed by Victor Stinner in :gh:`94199`.)
 
 unittest
@@ -1832,7 +1829,7 @@ Changes in the Python API
 
 * Remove the ``asyncore``-based ``smtpd`` module deprecated in Python 3.4.7
   and 3.5.4.  A recommended replacement is the
-  :mod:`asyncio`-based aiosmtpd_ PyPI module.
+  :mod:`asyncio`-based :pypi:`aiosmtpd` PyPI module.
 
 * :func:`shlex.split`: Passing ``None`` for *s* argument now raises an
   exception, rather than reading :data:`sys.stdin`. The feature was deprecated
