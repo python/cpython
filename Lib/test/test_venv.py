@@ -22,7 +22,8 @@ from test.support import (captured_stdout, captured_stderr,
                           requires_subprocess, is_emscripten, is_wasi,
                           requires_venv_with_pip, TEST_HOME_DIR,
                           requires_resource, copy_python_src_ignore)
-from test.support.os_helper import (can_symlink, EnvironmentVarGuard, rmtree)
+from test.support.os_helper import (can_symlink, EnvironmentVarGuard, rmtree,
+                                    TESTFN)
 import unittest
 import venv
 from unittest.mock import patch, Mock
@@ -638,6 +639,36 @@ class BasicTest(BaseTest):
             for i, line in enumerate(script, 1):
                 error_message = f"CR LF found in line {i}"
                 self.assertFalse(line.endswith(b'\r\n'), error_message)
+
+    def test_venv_same_path(self):
+        same_path = venv.EnvBuilder._same_path
+        if sys.platform == 'win32':
+            # Case-insensitive, and handles short/long names
+            tests = [
+                (True, TESTFN, TESTFN),
+                (True, TESTFN.lower(), TESTFN.upper()),
+            ]
+            import _winapi
+            # ProgramFiles is the most reliable path that will have short/long
+            progfiles = os.getenv('ProgramFiles')
+            if progfiles:
+                tests = [
+                    *tests,
+                    (True, progfiles, progfiles),
+                    (True, _winapi.GetShortPathName(progfiles), _winapi.GetLongPathName(progfiles)),
+                ]
+        else:
+            # Just a simple case-sensitive comparison
+            tests = [
+                (True, TESTFN, TESTFN),
+                (False, TESTFN.lower(), TESTFN.upper()),
+            ]
+        for r, path1, path2 in tests:
+            with self.subTest(f"{path1}-{path2}"):
+                if r:
+                    self.assertTrue(same_path(path1, path2))
+                else:
+                    self.assertFalse(same_path(path1, path2))
 
 @requireVenvCreate
 class EnsurePipTest(BaseTest):
