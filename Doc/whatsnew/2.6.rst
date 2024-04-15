@@ -3015,8 +3015,7 @@ Changes to Python's build process and to the C API include:
   ``PyRun_SimpleString("sys.path.pop(0)\n")`` afterwards to discard
   the first ``sys.path`` component.
 
-  Security issue reported as `CVE-2008-5983
-  <http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2008-5983>`_;
+  Security issue reported as :cve:`2008-5983`;
   discussed in :gh:`50003`, and fixed by Antoine Pitrou.
 
 * The BerkeleyDB module now has a C API object, available as

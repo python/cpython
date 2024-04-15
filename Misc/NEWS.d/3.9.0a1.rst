@@ -44,7 +44,7 @@ rendering the document page as HTML. (Contributed by Donghee Na in
 .. section: Security
 
 Update vendorized expat library version to 2.2.8, which resolves
-CVE-2019-15903.
+:cve:`2019-15903`.
 
 ..
 
