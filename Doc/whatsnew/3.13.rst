@@ -115,7 +115,7 @@ Improved Error Messages
         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
     TypeError: split() got an unexpected keyword argument 'max_split'. Did you mean 'maxsplit'?
 
-* Classes have a new ``__static_attributes__``, populated by the compiler,
+* Classes have a new ``__static_attributes__`` attribute, populated by the compiler,
   with a tuple of names of attributes of this class which are accessed
   through ``self.X`` from any function in its body.
 
