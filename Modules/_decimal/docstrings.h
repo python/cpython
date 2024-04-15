@@ -603,9 +603,10 @@ Return True if the operand is a signaling NaN; otherwise return False.\n\
 
 PyDoc_STRVAR(doc_is_subnormal,
 "is_subnormal($self, /, context=None)\n--\n\n\
-Return True if the argument is subnormal, and False otherwise. A number is\n\
-subnormal if it is non-zero, finite, and has an adjusted exponent less\n\
-than Emin.\n\
+Return True if the argument is subnormal; otherwise return False.\n\
+\n\
+A number is subnormal if it is non-zero, finite, and has an adjusted
+exponent less than Emin.\n\
 \n\
     >>> c = ExtendedContext.copy()\n\
     >>> c.Emin = -999\n\

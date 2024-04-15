@@ -4748,9 +4748,10 @@ class Context(object):
         return a.is_snan()
 
     def is_subnormal(self, a):
-        """Return True if the argument is subnormal, and False otherwise. A number is
-        subnormal if it is non-zero, finite, and has an adjusted exponent less
-        than Emin.
+        """Return True if the operand is subnormal; otherwise return False.
+
+        A number is subnormal if it is non-zero, finite, and has an adjusted
+        exponent less than Emin.
 
         >>> c = ExtendedContext.copy()
         >>> c.Emin = -999
