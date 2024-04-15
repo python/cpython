@@ -997,7 +997,6 @@ class Decimal(object):
         (-12300000, 1)
         >>> Decimal('0.00').as_integer_ratio()
         (0, 1)
-
         """
         if self._is_special:
             if self.is_nan():
