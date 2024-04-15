@@ -411,7 +411,7 @@ The available slot types are:
 
    .. versionadded:: 3.12
 
-.. c:macro: Py_mod_gil
+.. c:macro:: Py_mod_gil
 
    Specifies one of the following values:
 
