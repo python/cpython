@@ -1717,8 +1717,8 @@ def _newton_raphson(f_inv_estimate, f, f_prime, tolerance=1e-12):
     def f_inv(y):
         "Return x such that f(x) ≈ y within the specified tolerance."
         x = f_inv_estimate(y)
-        while abs(diff := y - f(x)) > tolerance:
-            x += diff / f_prime(x)
+        while abs(diff := f(x) - y) > tolerance:
+            x -= diff / f_prime(x)
         return x
     return f_inv
 
