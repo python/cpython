@@ -1532,11 +1532,11 @@ maybe_switch_to_main_interpreter(PyThreadState *tstate)
     PyThreadState *main_tstate = tstate;
     if (check_multi_interp_extensions(tstate->interp)) {
         /*
-        If the module is single-phase init then the import
-        will fail.  However, the module's init function will still
-        get run.  That means it may still store state in the
-        shared-object/DLL address space (which never gets
-        closed/cleared), including objects (e.g. static types).
+        If the module is single-phase init then the import will fail.
+        However, the module's init function will still get run.
+        That means it may still store state in the shared-object/DLL
+        address space (which never gets closed/cleared), including
+        objects (e.g. static types).
 
         This is a problem for isolated subinterpreters since each
         has its own object allocator.  If the loaded shared-object
@@ -1545,13 +1545,14 @@ maybe_switch_to_main_interpreter(PyThreadState *tstate)
         or else any later use of that object by another interpreter
         (or across multiple init-fini cycles) will crash the process.
 
-        We avoid the problem by first loading the module in the main
-        interpreter.
+        We avoid the problem by first loading the module
+        in the main interpreter.
 
-        Here's another complication: the module's init function might
-        register callbacks, whether in Python (e.g. sys.stdin, atexit)
-        or in linked libraries.  Thus we cannot just dlclose() the
-        module in this error case.
+        Here's another complication we avoid: the module's init
+        function might register callbacks, whether in Python
+        (e.g. sys.stdin, atexit) or in linked libraries.
+        Thus we cannot just dlclose() the module
+        in this error case.
         */
         main_tstate = PyThreadState_New(_PyInterpreterState_Main());
         if (main_tstate == NULL) {
