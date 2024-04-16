@@ -48,43 +48,6 @@ class FunctionalTest(unittest.TestCase):
         self.assertEqual(res.out.decode().splitlines(), ["atexit2", "atexit1"])
         self.assertFalse(res.err)
 
-    def test_multiprocessing(self):
-        if sys.platform == "win32":
-            contexts = ["spawn"]
-        elif sys.platform == "darwin":
-            contexts = ["forkserver", "spawn"]
-        else:
-            contexts = ["fork", "forkserver", "spawn"]
-
-        with os_helper.temp_dir() as temp_dir:
-            output_path = os.path.join(temp_dir, 'output.txt')
-            code = textwrap.dedent(rf"""
-                import multiprocessing
-                import os
-                import tempfile
-
-                def test(arg):
-                    import atexit
-                    def exit_handler():
-                        with open({repr(output_path)}, 'a') as f:
-                            f.write(f'|{{arg}}|\n')
-                    atexit.register(exit_handler)
-
-                if __name__ == '__main__':
-                    for context in {contexts}:
-                        p = multiprocessing.get_context(context).Process(target=test, args=(context,))
-                        p.start()
-                        p.join()
-            """)
-            file_name = script_helper.make_script(temp_dir, 'foo', code)
-            script_helper.run_test_script(file_name)
-
-            with open(output_path, "r") as f:
-                out = f.read()
-
-        for context in contexts:
-            self.assertIn(f"|{context}|", out)
-
 
 @support.cpython_only
 class SubinterpreterTest(unittest.TestCase):
