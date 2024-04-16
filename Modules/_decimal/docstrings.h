@@ -813,7 +813,7 @@ The operand must be a logical number.\n\
 
 PyDoc_STRVAR(doc_logical_or,
 "logical_or($self, /, other, context=None)\n--\n\n\
-Applies the logical operation 'or' between each operand's digits.\n\
+Apply the logical operation 'or' between each operand's digits.\n\
 The operands must be both logical numbers.\n\
 \n\
     >>> ExtendedContext.logical_or(Decimal('0'), Decimal('0'))\n\
