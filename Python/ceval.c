@@ -1110,6 +1110,17 @@ exit_to_trace:
 
 #endif  // _Py_JIT
 
+// Undefine the macros we redefined, to avoid using the wrong ones below
+#undef LOAD_IP
+#undef GOTO_ERROR
+#undef ENABLE_SPECIALIZATION
+#undef STAT_INC
+#undef STAT_DEC
+#undef CALL_STAT_INC
+
+// Restore this one
+#define CALL_STAT_INC(name) REAL_CALL_STAT_INC(name)
+
 }
 
 #if defined(__GNUC__)

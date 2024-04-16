@@ -300,7 +300,7 @@ extern int _PyStaticCode_Init(PyCodeObject *co);
 #define STAT_INC(opname, name) do { if (_Py_stats) _Py_stats->opcode_stats[opname].specialization.name++; } while (0)
 #define STAT_DEC(opname, name) do { if (_Py_stats) _Py_stats->opcode_stats[opname].specialization.name--; } while (0)
 #define OPCODE_EXE_INC(opname) do { if (_Py_stats) _Py_stats->opcode_stats[opname].execution_count++; } while (0)
-#define CALL_STAT_INC(name) do { if (_Py_stats) _Py_stats->call_stats.name++; } while (0)
+#define REAL_CALL_STAT_INC(name) do { if (_Py_stats) _Py_stats->call_stats.name++; } while (0)
 #define OBJECT_STAT_INC(name) do { if (_Py_stats) _Py_stats->object_stats.name++; } while (0)
 #define OBJECT_STAT_INC_COND(name, cond) \
     do { if (_Py_stats && cond) _Py_stats->object_stats.name++; } while (0)
@@ -336,7 +336,7 @@ PyAPI_FUNC(PyObject*) _Py_GetSpecializationStats(void);
 #define STAT_INC(opname, name) ((void)0)
 #define STAT_DEC(opname, name) ((void)0)
 #define OPCODE_EXE_INC(opname) ((void)0)
-#define CALL_STAT_INC(name) ((void)0)
+#define REAL_CALL_STAT_INC(name) ((void)0)
 #define OBJECT_STAT_INC(name) ((void)0)
 #define OBJECT_STAT_INC_COND(name, cond) ((void)0)
 #define EVAL_CALL_STAT_INC(name) ((void)0)
@@ -350,6 +350,9 @@ PyAPI_FUNC(PyObject*) _Py_GetSpecializationStats(void);
 #define OPT_HIST(length, name) ((void)0)
 #define RARE_EVENT_STAT_INC(name) ((void)0)
 #endif  // !Py_STATS
+
+// We do a little dance here so we can redefine and restore CALL_STAT_INC
+#define CALL_STAT_INC(name) REAL_CALL_STAT_INC(name)
 
 // Utility functions for reading/writing 32/64-bit values in the inline caches.
 // Great care should be taken to ensure that these functions remain correct and
