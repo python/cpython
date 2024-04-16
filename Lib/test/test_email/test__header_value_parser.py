@@ -2698,6 +2698,12 @@ class TestParser(TestParserMixin, TestEmailBase):
         )
         self.assertEqual(msg_id.token_type, 'msg-id')
 
+    def test_get_msg_id_with_brackets(self):
+        # Microsof Outlook generates non-standard one-off addresses:
+        # https://learn.microsoft.com/en-us/office/client-developer/outlook/mapi/one-off-addresses
+        with self.assertRaises(errors.HeaderParseError):
+            parser.get_msg_id("<[abrakadabra@microsoft.com]>")
+
 
 
 @parameterize

@@ -1514,6 +1514,9 @@ def get_obs_local_part(value):
                 raise
             token, value = get_cfws(value)
         obs_local_part.append(token)
+    if not obs_local_part:
+        raise errors.HeaderParseError(
+            "expected obs-local-part but found '{}'".format(value))
     if (obs_local_part[0].token_type == 'dot' or
             obs_local_part[0].token_type=='cfws' and
             obs_local_part[1].token_type=='dot'):
