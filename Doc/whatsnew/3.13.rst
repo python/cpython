@@ -117,7 +117,8 @@ Improved Error Messages
 
 * Classes have a new ``__static_attributes__`` attribute, populated by the compiler,
   with a tuple of names of attributes of this class which are accessed
-  through ``self.X`` from any function in its body.
+  through ``self.X`` from any function in its body. (Contributed by Irit Katriel
+  in :gh:`115775`.)
 
 Incremental Garbage Collection
 ------------------------------
