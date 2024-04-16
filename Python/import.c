@@ -3769,6 +3769,9 @@ _imp_create_dynamic_impl(PyObject *module, PyObject *spec, PyObject *file)
 
     /* Is multi-phase init or this is the first time being loaded. */
 
+    /* We would move this (and the fclose() below) into
+     * _PyImport_GetModInitFunc(), but it isn't clear if the intervening
+     * code relies on fp still being open. */
     if (file != NULL) {
         fp = _Py_fopen_obj(filename, "r");
         if (fp == NULL) {
