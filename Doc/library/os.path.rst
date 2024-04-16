@@ -302,7 +302,7 @@ the :mod:`glob` module.)
    always mount points, and for any other path ``GetVolumePathName`` is called
    to see if it is different from the input path.
 
-   .. versionadded:: 3.4
+   .. versionchanged:: 3.4
       Support for detecting non-root mount points on Windows.
 
    .. versionchanged:: 3.6
