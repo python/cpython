@@ -99,6 +99,13 @@ Tuple Objects
       is being replaced; any reference in the tuple at position *pos* will be
       leaked.
 
+   .. warning::
+
+      This macro should *only* be used on tuples that are newly created.
+      Using this macro on a tuple that is already in use (or in other words, has
+      a refcount > 1) could lead to undefined behavior and
+      potential issues with memory management.
+
 
 .. c:function:: int _PyTuple_Resize(PyObject **p, Py_ssize_t newsize)
 
