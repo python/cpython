@@ -4601,7 +4601,7 @@ class ClassPropertiesAndMethods(unittest.TestCase):
         def check(expr, x, y):
             with (
                 self.subTest(expr=expr, x=x, y=y),
-                self.assertRaises(TypeError)
+                self.assertRaises(TypeError),
             ):
                 exec(expr, {'x': x, 'y': y})
 
@@ -4624,7 +4624,7 @@ class ClassPropertiesAndMethods(unittest.TestCase):
                 ('__and__',      'x & y',                   'x &= y'),
                 ('__or__',       'x | y',                   'x |= y'),
                 ('__xor__',      'x ^ y',                   'x ^= y')]:
-            # Defined 'left' magic method:
+            # Defines 'left' magic method:
             A = type('A', (), {name: specialmethod})
             a = A()
             check(expr, a, a)
