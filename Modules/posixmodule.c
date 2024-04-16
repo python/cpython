@@ -5511,63 +5511,69 @@ static PyObject *
 os__path_abspath_impl(PyObject *module, PyObject *path)
 /*[clinic end generated code: output=b58956d662b60be0 input=577ecb3473d22113]*/
 {
-    Py_ssize_t rel_path_len;
-    wchar_t *rel_path = PyUnicode_AsWideCharString(path, &rel_path_len);
-    if (!rel_path) {
-        return NULL;
+    Py_ssize_t path_buf_len;
+    wchar_t *path_buf = PyUnicode_AsWideCharString(path, &path_buf_len);
+    wchar_t *path_buf2 = NULL;
+    PyObject *result = NULL;
+    if (!path_buf) {
+        goto exit;
     }
 
-    if (rel_path[0] == '\0' || !wcscmp(rel_path, L".")) {
-        return posix_getcwd(0);
+    if (path_buf[0] == '\0' || !wcscmp(path_buf, L".")) {
+        result = posix_getcwd(0);
+        goto exit;
     }
 
-    Py_ssize_t cwd_len;
     wchar_t *abs_path;
     Py_ssize_t abs_path_len;
-    if (_Py_isabs(rel_path)) {
-        cwd_len = 0;
-        abs_path = rel_path;
-        abs_path_len = rel_path_len;
+    if (_Py_isabs(path_buf)) {
+        abs_path = _Py_normpath_and_size(path_buf, path_buf_len, 0, &abs_path_len);
     }
     else {
         wchar_t cwd[MAXPATHLEN + 1];
         cwd[Py_ARRAY_LENGTH(cwd) - 1] = 0;
         if (!_Py_wgetcwd(cwd, Py_ARRAY_LENGTH(cwd) - 1)) {
             /* unable to get the current directory */
-            return posix_error();
+            result = posix_error();
+            goto exit;
         }
 
-        cwd_len = wcslen(cwd);
+        Py_ssize_t cwd_len = wcslen(cwd);
         int add_sep = cwd[cwd_len - 1] != SEP;
-        abs_path_len = cwd_len + add_sep + rel_path_len;
-        if ((size_t)abs_path_len + 1 > (size_t)PY_SSIZE_T_MAX / sizeof(wchar_t)) {
-            return posix_error();
+        Py_ssize_t path_buf2_len = cwd_len + add_sep + path_buf_len;
+        if ((size_t)path_buf2_len + 1 > (size_t)PY_SSIZE_T_MAX / sizeof(wchar_t)) {
+            result = posix_error();
+            goto exit;
         }
 
-        abs_path = PyMem_RawMalloc(((size_t)abs_path_len + 1) * sizeof(wchar_t));
-        if (!abs_path) {
-            return NULL;
+        path_buf2 = PyMem_RawMalloc(((size_t)path_buf2_len + 1) * sizeof(wchar_t));
+        if (!path_buf2) {
+            goto exit;
         }
 
         // Join cwd & path
-        wchar_t *abs_path_dup = abs_path;
-        memcpy(abs_path_dup, cwd, cwd_len * sizeof(wchar_t));
-        abs_path_dup += cwd_len;
+        wchar_t *p = path_buf2;
+        memcpy(p, cwd, cwd_len * sizeof(wchar_t));
+        p += cwd_len;
 
         if (add_sep) {
-            *abs_path_dup = SEP;
-            abs_path_dup++;
+            *p = SEP;
+            p++;
         }
 
-        memcpy(abs_path_dup, rel_path, rel_path_len * sizeof(wchar_t));
-        abs_path_dup += rel_path_len;
+        memcpy(p, path_buf, path_buf_len * sizeof(wchar_t));
+        p += path_buf_len;
 
-        *abs_path_dup = '\0';
+        *p = '\0';
+        abs_path = _Py_normpath_and_size(path_buf2, path_buf2_len, cwd_len + add_sep, &abs_path_len);
     }
 
-    abs_path = _Py_normpath_and_size(abs_path, abs_path_len, cwd_len, &abs_path_len);
-    PyObject *result = PyUnicode_FromWideChar(abs_path, abs_path_len);
-    PyMem_Free(rel_path);
+    result = PyUnicode_FromWideChar(abs_path, abs_path_len);
+exit:
+    if (path_buf)
+        PyMem_Free(path_buf);
+    if (path_buf2)
+        PyMem_Free(path_buf2);
     return result;
 }
 
