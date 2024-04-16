@@ -105,8 +105,9 @@ _Py_ext_module_loader_info_clear(struct _Py_ext_module_loader_info *info)
 }
 
 int
-_Py_ext_module_loader_info_from_spec(PyObject *spec,
-                                     struct _Py_ext_module_loader_info *p_info)
+_Py_ext_module_loader_info_init_from_spec(
+                            struct _Py_ext_module_loader_info *p_info,
+                            PyObject *spec)
 {
     struct _Py_ext_module_loader_info info = {0};
 
