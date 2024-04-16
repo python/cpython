@@ -3787,6 +3787,9 @@ _imp_create_dynamic_impl(PyObject *module, PyObject *spec, PyObject *file)
 
     /* Is multi-phase init or this is the first time being loaded. */
 
+    /* We would move this (and the fclose() below) into
+     * _PyImport_GetModInitFunc(), but it isn't clear if the intervening
+     * code relies on fp still being open. */
     if (file != NULL) {
         fp = _Py_fopen_obj(info.path, "r");
         if (fp == NULL) {
@@ -3797,18 +3800,22 @@ _imp_create_dynamic_impl(PyObject *module, PyObject *spec, PyObject *file)
         fp = NULL;
     }
 
-    if (_PyImport_RunDynamicModule(&info, fp, &res) < 0) {
+    PyModInitFunction p0 = _PyImport_GetModInitFunc(&info, fp);
+    if (p0 == NULL) {
         goto finally;
     }
-    mod = res.module;
-
-    if (mod == NULL) {
-        /* multi-phase init */
-
-        mod = PyModule_FromDefAndSpec(res.def, spec);
+    if (_PyImport_RunModInitFunc(p0, &info, &res) < 0) {
+        _Py_ext_module_loader_result_apply_error(&res);
+        return NULL;
     }
-    else {
-        /* Fall back to single-phase init mechanism */
+
+    if (res.singlephase) {
+        mod = Py_NewRef(res.module);
+
+        /* Remember the filename as the __file__ attribute */
+        if (PyModule_AddObjectRef(mod, "__file__", info.path) < 0) {
+            PyErr_Clear(); /* Not important enough to report */
+        }
 
         const char *name_buf = PyBytes_AS_STRING(info.name_encoded);
         if (_PyImport_CheckSubinterpIncompatibleExtensionAllowed(name_buf) < 0) {
@@ -3821,7 +3828,11 @@ _imp_create_dynamic_impl(PyObject *module, PyObject *spec, PyObject *file)
             goto finally;
         }
     }
+    else {
+        mod = PyModule_FromDefAndSpec(res.def, spec);
+    }
 
+    // XXX This should happen in the error cases too.
     if (fp) {
         fclose(fp);
     }

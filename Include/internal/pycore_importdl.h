@@ -38,10 +38,15 @@ struct _Py_ext_module_loader_result {
     int singlephase;
     char err[200];
 };
-extern int _PyImport_RunDynamicModule(
-    struct _Py_ext_module_loader_info *info,
-    FILE *fp,
+extern void _Py_ext_module_loader_result_apply_error(
     struct _Py_ext_module_loader_result *res);
+extern PyModInitFunction _PyImport_GetModInitFunc(
+    struct _Py_ext_module_loader_info *info,
+    FILE *fp);
+extern int _PyImport_RunModInitFunc(
+    PyModInitFunction p0,
+    struct _Py_ext_module_loader_info *info,
+    struct _Py_ext_module_loader_result *p_res);
 
 /* Max length of module suffix searched for -- accommodates "module.slb" */
 #define MAXSUFFIXSIZE 12

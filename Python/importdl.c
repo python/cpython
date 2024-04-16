@@ -152,7 +152,7 @@ _Py_ext_module_loader_info_init_from_spec(
     return 0;
 }
 
-static void
+void
 _Py_ext_module_loader_result_apply_error(
                             struct _Py_ext_module_loader_result *res)
 {
@@ -169,7 +169,7 @@ _Py_ext_module_loader_result_apply_error(
     }
 }
 
-static PyModInitFunction
+PyModInitFunction
 _PyImport_GetModInitFunc(struct _Py_ext_module_loader_info *info,
                          FILE *fp)
 {
@@ -204,7 +204,7 @@ _PyImport_GetModInitFunc(struct _Py_ext_module_loader_info *info,
     return (PyModInitFunction)exportfunc;
 }
 
-static int
+int
 _PyImport_RunModInitFunc(PyModInitFunction p0,
                          struct _Py_ext_module_loader_info *info,
                          struct _Py_ext_module_loader_result *p_res)
@@ -296,34 +296,6 @@ error:
     res.def = NULL;
     *p_res = res;
     return -1;
-}
-
-int
-_PyImport_RunDynamicModule(struct _Py_ext_module_loader_info *info,
-                           FILE *fp,
-                           struct _Py_ext_module_loader_result *res)
-{
-    PyModInitFunction p0 = _PyImport_GetModInitFunc(info, fp);
-    if (p0 == NULL) {
-        return -1;
-    }
-
-    if (_PyImport_RunModInitFunc(p0, info, res) < 0) {
-        _Py_ext_module_loader_result_apply_error(res);
-        return -1;
-    }
-
-    if (res->singlephase) {
-        /* Remember the filename as the __file__ attribute */
-        if (PyModule_AddObjectRef(res->module, "__file__", info->path) < 0) {
-            PyErr_Clear(); /* Not important enough to report */
-        }
-
-        /* Run _PyImport_FixupExtensionObject() to finish loading the module. */
-    }
-    /* else: Run PyModule_FromDefAndSpec() to finish loading the module. */
-
-    return 0;
 }
 
 #endif /* HAVE_DYNAMIC_LOADING */
