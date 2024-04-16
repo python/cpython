@@ -3955,11 +3955,6 @@ _imp_create_dynamic_impl(PyObject *module, PyObject *spec, PyObject *file)
             goto finally;
         }
 
-        /* Remember the filename as the __file__ attribute */
-        if (PyModule_AddObjectRef(mod, "__file__", info.filename) < 0) {
-            PyErr_Clear(); /* Not important enough to report */
-        }
-
         PyObject *modules = get_modules_dict(tstate, true);
         if (_PyImport_FixupExtensionObject(
                 mod, info.name, info.filename, modules) < 0)
