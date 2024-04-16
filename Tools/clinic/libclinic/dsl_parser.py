@@ -1102,6 +1102,8 @@ class DSLParser:
                     fail("A 'defining_class' parameter cannot have a default value.")
                 if self.group:
                     fail("A 'defining_class' parameter cannot be in an optional group.")
+                if self.block.signatures[-1].cls is None:
+                    fail("A 'defining_class' parameter can be specified inside a class method.")
                 kind = inspect.Parameter.POSITIONAL_ONLY
             else:
                 fail("A 'defining_class' parameter, if specified, must either "
