@@ -1255,6 +1255,12 @@ class MappingTestCase(TestBase):
 
     COUNT = 10
 
+    if support.check_sanitizer(thread=True) and support.Py_GIL_DISABLED:
+        # Reduce iteration count to get acceptable latency
+        NUM_THREADED_ITERATIONS = 1000
+    else:
+        NUM_THREADED_ITERATIONS = 100000
+
     def check_len_cycles(self, dict_type, cons):
         N = 20
         items = [RefCycle() for i in range(N)]
@@ -1880,7 +1886,7 @@ class MappingTestCase(TestBase):
     def test_threaded_weak_valued_setdefault(self):
         d = weakref.WeakValueDictionary()
         with collect_in_thread():
-            for i in range(100000):
+            for i in range(self.NUM_THREADED_ITERATIONS):
                 x = d.setdefault(10, RefCycle())
                 self.assertIsNot(x, None)  # we never put None in there!
                 del x
@@ -1889,7 +1895,7 @@ class MappingTestCase(TestBase):
     def test_threaded_weak_valued_pop(self):
         d = weakref.WeakValueDictionary()
         with collect_in_thread():
-            for i in range(100000):
+            for i in range(self.NUM_THREADED_ITERATIONS):
                 d[10] = RefCycle()
                 x = d.pop(10, 10)
                 self.assertIsNot(x, None)  # we never put None in there!
@@ -1900,7 +1906,7 @@ class MappingTestCase(TestBase):
         # WeakValueDictionary when collecting from another thread.
         d = weakref.WeakValueDictionary()
         with collect_in_thread():
-            for i in range(200000):
+            for i in range(2 * self.NUM_THREADED_ITERATIONS):
                 o = RefCycle()
                 d[10] = o
                 # o is still alive, so the dict can't be empty

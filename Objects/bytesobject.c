@@ -1863,30 +1863,80 @@ _PyBytes_Join(PyObject *sep, PyObject *x)
     return bytes_join((PyBytesObject*)sep, x);
 }
 
+/*[clinic input]
+@text_signature "($self, sub[, start[, end]], /)"
+bytes.find
+
+    sub: object
+    start: slice_index(accept={int, NoneType}, c_default='0') = None
+         Optional start position. Default: start of the bytes.
+    end: slice_index(accept={int, NoneType}, c_default='PY_SSIZE_T_MAX') = None
+         Optional stop position. Default: end of the bytes.
+    /
+
+Return the lowest index in B where subsection 'sub' is found, such that 'sub' is contained within B[start,end].
+
+Return -1 on failure.
+[clinic start generated code]*/
+
 static PyObject *
-bytes_find(PyBytesObject *self, PyObject *args)
+bytes_find_impl(PyBytesObject *self, PyObject *sub, Py_ssize_t start,
+                Py_ssize_t end)
+/*[clinic end generated code: output=d5961a1c77b472a1 input=3171e62a8ae7f240]*/
 {
-    return _Py_bytes_find(PyBytes_AS_STRING(self), PyBytes_GET_SIZE(self), args);
+    return _Py_bytes_find(PyBytes_AS_STRING(self), PyBytes_GET_SIZE(self),
+                          sub, start, end);
 }
 
+/*[clinic input]
+bytes.index = bytes.find
+
+Return the lowest index in B where subsection 'sub' is found, such that 'sub' is contained within B[start,end].
+
+Raise ValueError if the subsection is not found.
+[clinic start generated code]*/
+
 static PyObject *
-bytes_index(PyBytesObject *self, PyObject *args)
+bytes_index_impl(PyBytesObject *self, PyObject *sub, Py_ssize_t start,
+                 Py_ssize_t end)
+/*[clinic end generated code: output=0da25cc74683ba42 input=aa34ad71ba0bafe3]*/
 {
-    return _Py_bytes_index(PyBytes_AS_STRING(self), PyBytes_GET_SIZE(self), args);
+    return _Py_bytes_index(PyBytes_AS_STRING(self), PyBytes_GET_SIZE(self),
+                           sub, start, end);
 }
 
+/*[clinic input]
+bytes.rfind = bytes.find
+
+Return the highest index in B where subsection 'sub' is found, such that 'sub' is contained within B[start,end].
+
+Return -1 on failure.
+[clinic start generated code]*/
 
 static PyObject *
-bytes_rfind(PyBytesObject *self, PyObject *args)
+bytes_rfind_impl(PyBytesObject *self, PyObject *sub, Py_ssize_t start,
+                 Py_ssize_t end)
+/*[clinic end generated code: output=51b60fa4ad011c09 input=864c3e7f3010b33c]*/
 {
-    return _Py_bytes_rfind(PyBytes_AS_STRING(self), PyBytes_GET_SIZE(self), args);
+    return _Py_bytes_rfind(PyBytes_AS_STRING(self), PyBytes_GET_SIZE(self),
+                           sub, start, end);
 }
 
+/*[clinic input]
+bytes.rindex = bytes.find
+
+Return the highest index in B where subsection 'sub' is found, such that 'sub' is contained within B[start,end].
+
+Raise ValueError if the subsection is not found.
+[clinic start generated code]*/
 
 static PyObject *
-bytes_rindex(PyBytesObject *self, PyObject *args)
+bytes_rindex_impl(PyBytesObject *self, PyObject *sub, Py_ssize_t start,
+                  Py_ssize_t end)
+/*[clinic end generated code: output=42bf674e0a0aabf6 input=21051fc5cfeacf2c]*/
 {
-    return _Py_bytes_rindex(PyBytes_AS_STRING(self), PyBytes_GET_SIZE(self), args);
+    return _Py_bytes_rindex(PyBytes_AS_STRING(self), PyBytes_GET_SIZE(self),
+                            sub, start, end);
 }
 
 
@@ -2023,10 +2073,19 @@ bytes_rstrip_impl(PyBytesObject *self, PyObject *bytes)
 }
 
 
+/*[clinic input]
+bytes.count = bytes.find
+
+Return the number of non-overlapping occurrences of subsection 'sub' in bytes B[start:end].
+[clinic start generated code]*/
+
 static PyObject *
-bytes_count(PyBytesObject *self, PyObject *args)
+bytes_count_impl(PyBytesObject *self, PyObject *sub, Py_ssize_t start,
+                 Py_ssize_t end)
+/*[clinic end generated code: output=9848140b9be17d0f input=b6e4a5ed515e1e59]*/
 {
-    return _Py_bytes_count(PyBytes_AS_STRING(self), PyBytes_GET_SIZE(self), args);
+    return _Py_bytes_count(PyBytes_AS_STRING(self), PyBytes_GET_SIZE(self),
+                           sub, start, end);
 }
 
 
@@ -2524,16 +2583,14 @@ bytes_methods[] = {
     {"capitalize", stringlib_capitalize, METH_NOARGS,
      _Py_capitalize__doc__},
     STRINGLIB_CENTER_METHODDEF
-    {"count", (PyCFunction)bytes_count, METH_VARARGS,
-     _Py_count__doc__},
+    BYTES_COUNT_METHODDEF
     BYTES_DECODE_METHODDEF
     BYTES_ENDSWITH_METHODDEF
     STRINGLIB_EXPANDTABS_METHODDEF
-    {"find", (PyCFunction)bytes_find, METH_VARARGS,
-     _Py_find__doc__},
+    BYTES_FIND_METHODDEF
     BYTES_FROMHEX_METHODDEF
     BYTES_HEX_METHODDEF
-    {"index", (PyCFunction)bytes_index, METH_VARARGS, _Py_index__doc__},
+    BYTES_INDEX_METHODDEF
     {"isalnum", stringlib_isalnum, METH_NOARGS,
      _Py_isalnum__doc__},
     {"isalpha", stringlib_isalpha, METH_NOARGS,
@@ -2559,8 +2616,8 @@ bytes_methods[] = {
     BYTES_REPLACE_METHODDEF
     BYTES_REMOVEPREFIX_METHODDEF
     BYTES_REMOVESUFFIX_METHODDEF
-    {"rfind", (PyCFunction)bytes_rfind, METH_VARARGS, _Py_rfind__doc__},
-    {"rindex", (PyCFunction)bytes_rindex, METH_VARARGS, _Py_rindex__doc__},
+    BYTES_RFIND_METHODDEF
+    BYTES_RINDEX_METHODDEF
     STRINGLIB_RJUST_METHODDEF
     BYTES_RPARTITION_METHODDEF
     BYTES_RSPLIT_METHODDEF
@@ -3118,7 +3175,7 @@ _PyBytes_Resize(PyObject **pv, Py_ssize_t newsize)
         PyObject_Realloc(v, PyBytesObject_SIZE + newsize);
     if (*pv == NULL) {
 #ifdef Py_REF_DEBUG
-        _Py_DecRefTotal(_PyInterpreterState_GET());
+        _Py_DecRefTotal(_PyThreadState_GET());
 #endif
         PyObject_Free(v);
         PyErr_NoMemory();

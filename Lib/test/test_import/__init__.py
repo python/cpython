@@ -30,7 +30,8 @@ import _imp
 from test.support import os_helper
 from test.support import (
     STDLIB_DIR, swap_attr, swap_item, cpython_only, is_apple_mobile, is_emscripten,
-    is_wasi, run_in_subinterp, run_in_subinterp_with_config, Py_TRACE_REFS)
+    is_wasi, run_in_subinterp, run_in_subinterp_with_config, Py_TRACE_REFS,
+    requires_gil_enabled, Py_GIL_DISABLED)
 from test.support.import_helper import (
     forget, make_legacy_pyc, unlink, unload, ready_to_import,
     DirsOnSysPath, CleanImport, import_module)
@@ -158,6 +159,9 @@ def requires_singlephase_init(meth):
             finally:
                 restore__testsinglephase()
     meth = cpython_only(meth)
+    # gh-117649: free-threaded build does not currently support single-phase
+    # init modules in subinterpreters.
+    meth = requires_gil_enabled(meth)
     return unittest.skipIf(_testsinglephase is None,
                            'test requires _testsinglephase module')(meth)
 
@@ -1876,8 +1880,9 @@ class SubinterpImportTests(unittest.TestCase):
         # since they still don't implement multi-phase init.
         module = '_imp'
         require_builtin(module)
-        with self.subTest(f'{module}: not strict'):
-            self.check_compatible_here(module, strict=False)
+        if not Py_GIL_DISABLED:
+            with self.subTest(f'{module}: not strict'):
+                self.check_compatible_here(module, strict=False)
         with self.subTest(f'{module}: strict, not fresh'):
             self.check_compatible_here(module, strict=True)
 
@@ -1888,8 +1893,9 @@ class SubinterpImportTests(unittest.TestCase):
         require_frozen(module, skip=True)
         if __import__(module).__spec__.origin != 'frozen':
             raise unittest.SkipTest(f'{module} is unexpectedly not frozen')
-        with self.subTest(f'{module}: not strict'):
-            self.check_compatible_here(module, strict=False)
+        if not Py_GIL_DISABLED:
+            with self.subTest(f'{module}: not strict'):
+                self.check_compatible_here(module, strict=False)
         with self.subTest(f'{module}: strict, not fresh'):
             self.check_compatible_here(module, strict=True)
 
@@ -1908,8 +1914,9 @@ class SubinterpImportTests(unittest.TestCase):
     def test_multi_init_extension_compat(self):
         module = '_testmultiphase'
         require_extension(module)
-        with self.subTest(f'{module}: not strict'):
-            self.check_compatible_here(module, strict=False)
+        if not Py_GIL_DISABLED:
+            with self.subTest(f'{module}: not strict'):
+                self.check_compatible_here(module, strict=False)
         with self.subTest(f'{module}: strict, not fresh'):
             self.check_compatible_here(module, strict=True)
         with self.subTest(f'{module}: strict, fresh'):
@@ -1930,8 +1937,9 @@ class SubinterpImportTests(unittest.TestCase):
             self.check_incompatible_here(modname, filename, isolated=True)
         with self.subTest(f'{modname}: not isolated'):
             self.check_incompatible_here(modname, filename, isolated=False)
-        with self.subTest(f'{modname}: not strict'):
-            self.check_compatible_here(modname, filename, strict=False)
+        if not Py_GIL_DISABLED:
+            with self.subTest(f'{modname}: not strict'):
+                self.check_compatible_here(modname, filename, strict=False)
 
     @unittest.skipIf(_testmultiphase is None, "test requires _testmultiphase module")
     def test_multi_init_extension_per_interpreter_gil_compat(self):
@@ -1949,16 +1957,18 @@ class SubinterpImportTests(unittest.TestCase):
         with self.subTest(f'{modname}: not isolated, strict'):
             self.check_compatible_here(modname, filename,
                                        strict=True, isolated=False)
-        with self.subTest(f'{modname}: not isolated, not strict'):
-            self.check_compatible_here(modname, filename,
-                                       strict=False, isolated=False)
+        if not Py_GIL_DISABLED:
+            with self.subTest(f'{modname}: not isolated, not strict'):
+                self.check_compatible_here(modname, filename,
+                                           strict=False, isolated=False)
 
     @unittest.skipIf(_testinternalcapi is None, "requires _testinternalcapi")
     def test_python_compat(self):
         module = 'threading'
         require_pure_python(module)
-        with self.subTest(f'{module}: not strict'):
-            self.check_compatible_here(module, strict=False)
+        if not Py_GIL_DISABLED:
+            with self.subTest(f'{module}: not strict'):
+                self.check_compatible_here(module, strict=False)
         with self.subTest(f'{module}: strict, not fresh'):
             self.check_compatible_here(module, strict=True)
         with self.subTest(f'{module}: strict, fresh'):
