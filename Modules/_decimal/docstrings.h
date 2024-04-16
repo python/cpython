@@ -838,7 +838,7 @@ The operands must be both logical numbers.\n\
 
 PyDoc_STRVAR(doc_logical_xor,
 "logical_xor($self, /, other, context=None)\n--\n\n\
-Applies the logical operation 'xor' between each operand's digits.\n\
+Apply the logical operation 'xor' between each operand's digits.\n\
 \n\
 The operands must be both logical numbers.\n\
 \n\
@@ -1194,7 +1194,7 @@ remainder cannot be calculated).\n\
 
 PyDoc_STRVAR(doc_rotate,
 "rotate($self, /, other, context=None)\n--\n\n\
-Returns a rotated copy of a, b times.\n\
+Return a rotated copy of a, b times.\n\
 \n\
 The coefficient of the result is a rotated copy of the digits in\n\
 the coefficient of the first operand.  The number of places of\n\
@@ -1222,7 +1222,7 @@ positive or to the right otherwise.\n\
 
 PyDoc_STRVAR(doc_same_quantum,
 "same_quantum($self, /, other, context=None)\n--\n\n\
-Returns True if the two operands have the same exponent.\n\
+Return True if the two operands have the same exponent.\n\
 \n\
 The result is never affected by either the sign or the coefficient of\n\
 either operand.\n\

@@ -4991,7 +4991,7 @@ class Context(object):
         return a.logical_or(b, context=self)
 
     def logical_xor(self, a, b):
-        """Applies the logical operation 'xor' between each operand's digits.
+        """Apply the logical operation 'xor' between each operand's digits.
 
         The operands must be both logical numbers.
 
@@ -5543,7 +5543,7 @@ class Context(object):
         return a.remainder_near(b, context=self)
 
     def rotate(self, a, b):
-        """Returns a rotated copy of a, b times.
+        """Return a rotated copy of a, b times.
 
         The coefficient of the result is a rotated copy of the digits in
         the coefficient of the first operand.  The number of places of
@@ -5572,7 +5572,7 @@ class Context(object):
         return a.rotate(b, context=self)
 
     def same_quantum(self, a, b):
-        """Returns True if the two operands have the same exponent.
+        """Return True if the two operands have the same exponent.
 
         The result is never affected by either the sign or the coefficient of
         either operand.
