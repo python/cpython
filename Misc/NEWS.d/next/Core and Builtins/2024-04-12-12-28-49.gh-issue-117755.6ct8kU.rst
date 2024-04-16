@@ -1,0 +1,2 @@
+Fix mimalloc allocator for huge memory allocation (around 8,589,934,592 GiB) on
+s390x. Patch by Victor Stinner.
