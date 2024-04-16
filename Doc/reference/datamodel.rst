@@ -1000,6 +1000,10 @@ Special attributes:
       A tuple containing the :ref:`type parameters <type-params>` of
       a :ref:`generic class <generic-classes>`.
 
+   :attr:`__static_attributes__`
+      A tuple containing names of attributes of this class which are accessed
+      through ``self.X`` from any function in its body.
+
 
 Class instances
 ---------------
