@@ -5063,7 +5063,7 @@ class Context(object):
         return a.max_mag(b, context=self)
 
     def min(self, a, b):
-        """min compares two values numerically and returns the minimum.
+        """Compare two values numerically and return the minimum.
 
         If either operand is a NaN then the general rules apply.
         Otherwise, the operands are compared as though by the compare

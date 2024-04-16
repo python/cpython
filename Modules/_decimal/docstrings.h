@@ -906,7 +906,7 @@ values of the operands.\n\
 
 PyDoc_STRVAR(doc_min,
 "min($self, /, other, context=None)\n--\n\n\
-min compares two values numerically and returns the minimum.\n\
+Compare two values numerically and return the minimum.\n\
 \n\
 If either operand is a NaN then the general rules apply.\n\
 Otherwise, the operands are compared as though by the compare\n\
