@@ -338,9 +338,8 @@ _PyImport_RunModInitFunc(PyModInitFunction p0,
         res.module = m;
 
         if (!PyModule_Check(m)) {
-            PyErr_Format(PyExc_SystemError,
-                         "initialization of %s did not return an extension "
-                         "module", name_buf);
+            SET_ERROR("initialization of %s did not return an extension "
+                      "module", name_buf);
             goto error;
         }
 
