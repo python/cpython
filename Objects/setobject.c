@@ -866,16 +866,12 @@ static PyObject *setiter_iternext(setiterobject *si)
     Py_END_CRITICAL_SECTION();
     si->si_pos = i+1;
     if (key == NULL) {
-        goto fail;
+        si->si_set = NULL;
+        Py_DECREF(so);
+        return NULL;
     }
     si->len--;
     return key;
-
-fail:
-    si->si_set = NULL;
-    Py_DECREF(so);
-    Py_XDECREF(key);
-    return NULL;
 }
 
 PyTypeObject PySetIter_Type = {
