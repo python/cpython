@@ -61,7 +61,7 @@ class RCEntry:
 class Annotations:
     def __init__(self, refcount_filename, stable_abi_file):
         self.refcount_data = {}
-        with open(refcount_filename) as fp:
+        with open(refcount_filename, encoding='utf8') as fp:
             for line in fp:
                 line = line.strip()
                 if line[:1] in ("", "#"):
@@ -89,7 +89,7 @@ class Annotations:
                     entry.result_refs = refcount
 
         self.stable_abi_data = {}
-        with open(stable_abi_file) as fp:
+        with open(stable_abi_file, encoding='utf8') as fp:
             for record in csv.DictReader(fp):
                 name = record['name']
                 self.stable_abi_data[name] = record
