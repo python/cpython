@@ -65,12 +65,26 @@ typedef union {
     _Py_STACKREF_TAG(PyObject *obj) {
         // Make sure we don't take an already tagged value
         assert(Py_STACKREF_UNTAG_BORROWED(((_PyStackRef){.bits = ((uintptr_t)(obj))})) == obj);
-        int tag = ((obj != NULL && _PyObject_HasDeferredRefcount(obj)) ? Py_TAG_DEFERRED : 0);
-        return ((_PyStackRef){.bits = ((uintptr_t)(obj) | tag)});
+        return ((_PyStackRef){.bits = ((uintptr_t)(obj))});
     }
     #define Py_STACKREF_TAG(obj) _Py_STACKREF_TAG(_PyObject_CAST(obj))
 #else
     #define Py_STACKREF_TAG(obj) ((_PyStackRef){.bits = ((uintptr_t)(obj))})
+#endif
+
+#if defined(Py_TAG_TEST)
+    #define Py_STACKREF_TAG_DEFERRED(obj) ((_PyStackRef){.bits = ((uintptr_t)(obj) | Py_TAG_TEST)})
+#elif defined(Py_GIL_DISABLED)
+    static inline _PyStackRef
+    _Py_STACKREF_TAG_DEFERRED(PyObject *obj) {
+        // Make sure we don't take an already tagged value
+        assert(Py_STACKREF_UNTAG_BORROWED(((_PyStackRef){.bits = ((uintptr_t)(obj))})) == obj);
+        int tag = ((obj != NULL && _PyObject_HasDeferredRefcount(obj)) ? Py_TAG_DEFERRED : 0);
+        return ((_PyStackRef){.bits = ((uintptr_t)(obj) | tag)});
+    }
+#define Py_STACKREF_TAG_DEFERRED(obj) _Py_STACKREF_TAG_DEFERRED(_PyObject_CAST(obj))
+#else
+#define Py_STACKREF_TAG_DEFERRED(obj) ((_PyStackRef){.bits = ((uintptr_t)(obj))})
 #endif
 
 #if defined(Py_TAG_TEST)
@@ -82,7 +96,6 @@ typedef union {
             assert(_PyObject_HasDeferredRefcount(Py_STACKREF_UNTAG_BORROWED(tagged)));
             return Py_NewRef(Py_STACKREF_UNTAG_BORROWED(tagged));
         }
-        assert(!_PyObject_HasDeferredRefcount(Py_STACKREF_UNTAG_BORROWED(tagged)));
         return Py_STACKREF_UNTAG_BORROWED(tagged);
     }
     #define Py_STACKREF_UNTAG_OWNED(tagged) _Py_STACKREF_UNTAG_OWNED(tagged)
@@ -96,6 +109,13 @@ static inline void
 _Py_untag_stack_borrowed(PyObject **dst, const _PyStackRef *src, size_t length) {
     for (size_t i = 0; i < length; i++) {
         dst[i] = Py_STACKREF_UNTAG_BORROWED(src[i]);
+    }
+}
+
+static inline void
+_Py_untag_stack_owned(PyObject **dst, const _PyStackRef *src, size_t length) {
+    for (size_t i = 0; i < length; i++) {
+        dst[i] = Py_STACKREF_UNTAG_OWNED(src[i]);
     }
 }
 
@@ -135,7 +155,6 @@ _Py_untag_stack_borrowed(PyObject **dst, const _PyStackRef *src, size_t length) 
             // assert(_PyObject_HasDeferredRefcount(Py_STACKREF_UNTAG_BORROWED(tagged)));
             return;
         }
-        assert(!_PyObject_HasDeferredRefcount(Py_STACKREF_UNTAG_BORROWED(tagged)));
         return Py_DECREF(Py_STACKREF_UNTAG_BORROWED(tagged));
     }
     #define Py_DECREF_STACKREF(op) _Py_DecRef_StackRef(op)
@@ -152,7 +171,6 @@ _Py_untag_stack_borrowed(PyObject **dst, const _PyStackRef *src, size_t length) 
             assert(_PyObject_HasDeferredRefcount(Py_STACKREF_UNTAG_BORROWED(tagged)));
             return;
         }
-        assert(!_PyObject_HasDeferredRefcount(Py_STACKREF_UNTAG_BORROWED(tagged)));
         return Py_INCREF(Py_STACKREF_UNTAG_BORROWED(tagged));
     }
     #define Py_INCREF_STACKREF(op) _Py_IncRef_StackRef(op)

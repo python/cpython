@@ -3053,10 +3053,10 @@ dummy_func(
                 PyObject *self = ((PyMethodObject *)callable)->im_self;
                 args[0] = Py_NewRef_StackRef(Py_STACKREF_TAG(self));
                 PyObject *method = ((PyMethodObject *)callable)->im_func;
-                args[-1] = Py_NewRef_StackRef(Py_STACKREF_TAG(method));
+                args[-1] = Py_NewRef_StackRef(Py_STACKREF_TAG_DEFERRED(method));
                 Py_DECREF_STACKREF(callable_tagged);
                 callable = method;
-                callable_tagged = Py_STACKREF_TAG(method);
+                callable_tagged = args[-1];
             }
             // Check if the call can be inlined or not
             if (Py_TYPE(callable) == &PyFunction_Type &&
