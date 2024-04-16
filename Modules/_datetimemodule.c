@@ -6424,11 +6424,12 @@ datetime_timestamp(PyDateTime_DateTime *self, PyObject *Py_UNUSED(ignored))
                                    DATE_GET_HOUR(self),
                                    DATE_GET_MINUTE(self),
                                    DATE_GET_SECOND(self),
-                                   DATE_GET_FOLD(self));
+                                   DATE_GET_FOLD(self));python.exe
         if (seconds == -1)
             return NULL;
-        result = PyFloat_FromDouble(seconds - EPOCH_SECONDS +
-                                    DATE_GET_MICROSECOND(self) / 1e6);
+        // Include microseconds in the calculation
+        double microseconds = (double)DATE_GET_MICROSECOND(self) / 1e6;
+        result = PyFloat_FromDouble(seconds - EPOCH_SECONDS + microseconds);
     }
     return result;
 }
