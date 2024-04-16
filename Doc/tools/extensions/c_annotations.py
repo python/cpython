@@ -180,13 +180,17 @@ class Annotations:
                 continue
             elif not entry.result_type.endswith("Object*"):
                 continue
+            classes = ['refcount']
             if entry.result_refs is None:
                 rc = sphinx_gettext('Return value: Always NULL.')
+                classes.append('return_null')
             elif entry.result_refs:
                 rc = sphinx_gettext('Return value: New reference.')
+                classes.append('return_new_ref')
             else:
                 rc = sphinx_gettext('Return value: Borrowed reference.')
-            node.insert(0, nodes.emphasis(rc, rc, classes=['refcount']))
+                classes.append('return_borrowed_ref')
+            node.insert(0, nodes.emphasis(rc, rc, classes=classes))
 
 
 def init_annotations(app):
