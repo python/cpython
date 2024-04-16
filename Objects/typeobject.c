@@ -6195,11 +6195,21 @@ object_set_class(PyObject *self, PyObject *value, void *closure)
          * so we must materialize the dictionary first. */
         if (oldto->tp_flags & Py_TPFLAGS_INLINE_VALUES) {
             PyDictObject *dict = _PyObject_MaterializeManagedDict(self);
+            if (dict == NULL) {
+                return -1;
+            }
+
             bool error = false;
 
             Py_BEGIN_CRITICAL_SECTION2(self, dict);
 
-            if (dict == NULL || _PyDict_DetachFromObject(dict, self) < 0) {
+            // If we raced after materialization and replaced the dict
+            // then the materialized dict should no longer have the
+            // inline values in which case detach is a nop.
+            assert(_PyObject_GetManagedDict(self) == dict ||
+                   dict->ma_values != _PyObject_InlineValues(self));
+
+            if (_PyDict_DetachFromObject(dict, self) < 0) {
                 error = true;
             }
 
