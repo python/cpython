@@ -1369,6 +1369,68 @@ clear_singlephase_extension(PyInterpreterState *interp,
     return 0;
 }
 
+static PyObject *
+create_dynamic(struct _Py_ext_module_loader_info *info, PyObject *file,
+               PyObject *spec)
+{
+    FILE *fp;
+    struct _Py_ext_module_loader_result res;
+    PyObject *mod = NULL;
+
+    /* We would move this (and the fclose() below) into
+     * _PyImport_GetModInitFunc(), but it isn't clear if the intervening
+     * code relies on fp still being open. */
+    if (file != NULL) {
+        fp = _Py_fopen_obj(info->path, "r");
+        if (fp == NULL) {
+            goto finally;
+        }
+    }
+    else {
+        fp = NULL;
+    }
+
+    PyModInitFunction p0 = _PyImport_GetModInitFunc(info, fp);
+    if (p0 == NULL) {
+        goto finally;
+    }
+    if (_PyImport_RunModInitFunc(p0, info, &res) < 0) {
+        _Py_ext_module_loader_result_apply_error(&res);
+        goto finally;
+    }
+
+    if (res.singlephase) {
+        mod = Py_NewRef(res.module);
+
+        /* Remember the filename as the __file__ attribute */
+        if (PyModule_AddObjectRef(mod, "__file__", info->path) < 0) {
+            PyErr_Clear(); /* Not important enough to report */
+        }
+
+        const char *name_buf = PyBytes_AS_STRING(info->name_encoded);
+        if (_PyImport_CheckSubinterpIncompatibleExtensionAllowed(name_buf) < 0) {
+            Py_CLEAR(mod);
+            goto finally;
+        }
+
+        if (fix_up_extension(mod, res.def, info->name, info->path, NULL) < 0) {
+            Py_CLEAR(mod);
+            goto finally;
+        }
+    }
+    else {
+        mod = PyModule_FromDefAndSpec(res.def, spec);
+    }
+
+    // XXX Shouldn't this happen in the error cases too.
+    if (fp) {
+        fclose(fp);
+    }
+
+finally:
+    return mod;
+}
+
 
 /*******************/
 /* builtin modules */
@@ -3764,9 +3826,7 @@ _imp_create_dynamic_impl(PyObject *module, PyObject *spec, PyObject *file)
 /*[clinic end generated code: output=83249b827a4fde77 input=c31b954f4cf4e09d]*/
 {
     PyObject *mod = NULL;
-    FILE *fp;
     struct _Py_ext_module_loader_info info;
-    struct _Py_ext_module_loader_result res;
 
     if (_Py_ext_module_loader_info_init_from_spec(&info, spec) < 0) {
         return NULL;
@@ -3786,55 +3846,9 @@ _imp_create_dynamic_impl(PyObject *module, PyObject *spec, PyObject *file)
     }
 
     /* Is multi-phase init or this is the first time being loaded. */
-
-    /* We would move this (and the fclose() below) into
-     * _PyImport_GetModInitFunc(), but it isn't clear if the intervening
-     * code relies on fp still being open. */
-    if (file != NULL) {
-        fp = _Py_fopen_obj(info.path, "r");
-        if (fp == NULL) {
-            goto finally;
-        }
-    }
-    else {
-        fp = NULL;
-    }
-
-    PyModInitFunction p0 = _PyImport_GetModInitFunc(&info, fp);
-    if (p0 == NULL) {
+    mod = create_dynamic(&info, file, spec);
+    if (mod == NULL) {
         goto finally;
-    }
-    if (_PyImport_RunModInitFunc(p0, &info, &res) < 0) {
-        _Py_ext_module_loader_result_apply_error(&res);
-        return NULL;
-    }
-
-    if (res.singlephase) {
-        mod = Py_NewRef(res.module);
-
-        /* Remember the filename as the __file__ attribute */
-        if (PyModule_AddObjectRef(mod, "__file__", info.path) < 0) {
-            PyErr_Clear(); /* Not important enough to report */
-        }
-
-        const char *name_buf = PyBytes_AS_STRING(info.name_encoded);
-        if (_PyImport_CheckSubinterpIncompatibleExtensionAllowed(name_buf) < 0) {
-            Py_CLEAR(mod);
-            goto finally;
-        }
-
-        if (fix_up_extension(mod, res.def, info.name, info.path, NULL) < 0) {
-            Py_CLEAR(mod);
-            goto finally;
-        }
-    }
-    else {
-        mod = PyModule_FromDefAndSpec(res.def, spec);
-    }
-
-    // XXX Shouldn't this happen in the error cases too.
-    if (fp) {
-        fclose(fp);
     }
 
 finally:
