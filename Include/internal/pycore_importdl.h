@@ -24,6 +24,7 @@ struct _Py_ext_module_loader_info {
     PyObject *name;
     PyObject *name_encoded;
     const char *hook_prefix;
+    const char *newcontext;
 };
 extern void _Py_ext_module_loader_info_clear(
     struct _Py_ext_module_loader_info *info);
