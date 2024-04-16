@@ -60,6 +60,7 @@ import warnings
 import weakref
 
 from http.server import HTTPServer, BaseHTTPRequestHandler
+from unittest.mock import patch
 from urllib.parse import urlparse, parse_qs
 from socketserver import (ThreadingUDPServer, DatagramRequestHandler,
                           ThreadingTCPServer, StreamRequestHandler)
@@ -4551,6 +4552,44 @@ class FormatterTest(unittest.TestCase, AssertErrorMessage):
             r = logging.makeLogRecord({'msg': 'Message %d' % (i + 1)})
             s = f.format(r)
             self.assertNotIn('.1000', s)
+
+    def test_msecs_has_no_floating_point_precision_loss(self):
+        # See issue gh-102402
+        tests = (
+            # time_ns is approx. 2023-03-04 04:25:20 UTC
+            # (time_ns, expected_msecs_value)
+            (1_677_902_297_100_000_000, 100.0),  # exactly 100ms
+            (1_677_903_920_999_998_503, 999.0),  # check truncating doesn't round
+            (1_677_903_920_000_998_503, 0.0),  # check truncating doesn't round
+        )
+        for ns, want in tests:
+            with patch('time.time_ns') as patched_ns:
+                patched_ns.return_value = ns
+                record = logging.makeLogRecord({'msg': 'test'})
+            self.assertEqual(record.msecs, want)
+            self.assertEqual(record.created, ns / 1e9)
+
+    def test_relativeCreated_has_higher_precision(self):
+        # See issue gh-102402
+        ns = 1_677_903_920_000_998_503  # approx. 2023-03-04 04:25:20 UTC
+        offsets_ns = (200, 500, 12_354, 99_999, 1_677_903_456_999_123_456)
+        orig_modules = import_helper._save_and_remove_modules(['logging'])
+        try:
+            with patch("time.time_ns") as patched_ns:
+                # mock for module import
+                patched_ns.return_value = ns
+                import logging
+                for offset_ns in offsets_ns:
+                    new_ns = ns + offset_ns
+                    # mock for log record creation
+                    patched_ns.return_value = new_ns
+                    record = logging.makeLogRecord({'msg': 'test'})
+                    self.assertAlmostEqual(record.created, new_ns / 1e9, places=6)
+                    # After PR gh-102412, precision (places) increases from 3 to 7
+                    self.assertAlmostEqual(record.relativeCreated, offset_ns / 1e6, places=7)
+        finally:
+            import_helper._save_and_remove_modules(['logging'])
+            sys.modules.update(orig_modules)
 
 
 class TestBufferingFormatter(logging.BufferingFormatter):
