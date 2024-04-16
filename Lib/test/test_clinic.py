@@ -1357,7 +1357,7 @@ class ClinicParserTest(_ParserBase):
         p = function.parameters['cls']
         self.assertEqual(p.kind, inspect.Parameter.POSITIONAL_ONLY)
 
-    def test_disallow_defining_class_inside_module(self):
+    def test_disallow_defining_class_at_module_level(self):
         expected_error_msg = (
             "Error on line 0:\n"
             "A 'defining_class' parameter cannot be defined at module level.\n"
