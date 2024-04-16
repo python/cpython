@@ -162,11 +162,6 @@ _PyImport_RunDynamicModule(struct _Py_ext_module_loader_info *info,
         return -1;
     }
 
-    if (PySys_Audit("import", "OOOOO", info->name, info->path,
-                    Py_None, Py_None, Py_None) < 0) {
-        return -1;
-    }
-
 #ifdef MS_WINDOWS
     exportfunc = _PyImport_FindSharedFuncptrWindows(
                     info->hook_prefix, name_buf, info->path, fp);
