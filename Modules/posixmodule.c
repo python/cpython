@@ -5520,7 +5520,7 @@ os__path_abspath_impl(PyObject *module, PyObject *path)
         goto exit;
     }
 
-    if (path_len == 0 || !wcscmp(path_buf, L".")) {
+    if (path_len == 0 || (path_len == 1 && path_buf[0] == L'.')) {
         result = posix_getcwd(0);
         goto exit;
     }
