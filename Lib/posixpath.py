@@ -509,8 +509,19 @@ def relpath(path, start=None):
         start = os.fspath(start)
 
     try:
-        start_list = [x for x in abspath(start).split(sep) if x]
-        path_list = [x for x in abspath(path).split(sep) if x]
+        start_abs = abspath(normpath(start))
+        path_abs = abspath(normpath(path))
+
+        _, start_root, start_rest = splitroot(start_abs)
+        _, path_root, path_rest = splitroot(path_abs)
+
+        if start_root != path_root:
+            raise ValueError(
+                f"Path is on root {path_root!r}, start on root {start_root!r}"
+            )
+
+        start_list = [x for x in start_rest.split(sep) if x]
+        path_list = [x for x in path_rest.split(sep) if x]
         # Work out how much of the filepath is shared by start and path.
         i = len(commonprefix([start_list, path_list]))
 
@@ -518,7 +529,7 @@ def relpath(path, start=None):
         if not rel_list:
             return curdir
         return join(*rel_list)
-    except (TypeError, AttributeError, BytesWarning, DeprecationWarning):
+    except (TypeError, ValueError, AttributeError, BytesWarning, DeprecationWarning):
         genericpath._check_arg_types('relpath', path, start)
         raise
 
