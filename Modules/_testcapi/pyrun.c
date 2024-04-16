@@ -6,31 +6,21 @@
 
 
 static PyObject *
-run_fileexflags(PyObject *mod, PyObject *pos_args)
+run_stringflags(PyObject *mod, PyObject *pos_args)
 {
-    PyObject *result = NULL;
-    PyObject *filenamebytes;
-    const char *filename = NULL;
+    const char *str;
+    Py_ssize_t size;
     int start;
     PyObject *globals = NULL;
     PyObject *locals = NULL;
-    int closeit = 0;
     PyCompilerFlags flags = _PyCompilerFlags_INIT;
     PyCompilerFlags *pflags = NULL;
     int cf_flags = 0;
     int cf_feature_version = 0;
 
-    FILE *fp = NULL;
-
-    if (!PyArg_ParseTuple(pos_args,
-                        "O&iO|Oiii:eval_pyrun_fileexflags",
-                        PyUnicode_FSConverter, &filenamebytes,
-                        &start,
-                        &globals,
-                        &locals,
-                        &closeit,
-                        &cf_flags,
-                        &cf_feature_version)) {
+    if (!PyArg_ParseTuple(pos_args, "z#iO|Oii",
+                          &str, &size, &start, &globals, &locals,
+                          &cf_flags, &cf_feature_version)) {
         return NULL;
     }
 
@@ -42,11 +32,44 @@ run_fileexflags(PyObject *mod, PyObject *pos_args)
         pflags = &flags;
     }
 
-    filename = PyBytes_AS_STRING(filenamebytes);
+    return PyRun_StringFlags(str, start, globals, locals, pflags);
+}
+
+static PyObject *
+run_fileexflags(PyObject *mod, PyObject *pos_args)
+{
+    PyObject *result = NULL;
+    const char *filename = NULL;
+    Py_ssize_t filename_size;
+    int start;
+    PyObject *globals = NULL;
+    PyObject *locals = NULL;
+    int closeit = 0;
+    PyCompilerFlags flags = _PyCompilerFlags_INIT;
+    PyCompilerFlags *pflags = NULL;
+    int cf_flags = 0;
+    int cf_feature_version = 0;
+
+    FILE *fp = NULL;
+
+    if (!PyArg_ParseTuple(pos_args, "z#iO|Oiii",
+                          &filename, &filename_size, &start, &globals, &locals,
+                          &closeit, &cf_flags, &cf_feature_version)) {
+        return NULL;
+    }
+
+    NULLABLE(globals);
+    NULLABLE(locals);
+    if (cf_flags || cf_feature_version) {
+        flags.cf_flags = cf_flags;
+        flags.cf_feature_version = cf_feature_version;
+        pflags = &flags;
+    }
+
     fp = fopen(filename, "r");
     if (fp == NULL) {
         PyErr_SetFromErrnoWithFilename(PyExc_OSError, filename);
-        goto exit;
+        return NULL;
     }
 
     result = PyRun_FileExFlags(fp, filename, start, globals, locals, closeit, pflags);
@@ -55,27 +78,26 @@ run_fileexflags(PyObject *mod, PyObject *pos_args)
     /* The behavior of fileno() after fclose() is undefined. */
     if (closeit && result && fileno(fp) >= 0) {
         PyErr_SetString(PyExc_AssertionError, "File was not closed after excution");
-        Py_CLEAR(result);
+        Py_DECREF(result);
         fclose(fp);
-        goto exit;
+        return NULL;
     }
 #endif
     if (!closeit && fileno(fp) < 0) {
         PyErr_SetString(PyExc_AssertionError, "Bad file descriptor after excution");
-        Py_CLEAR(result);
-        goto exit;
+        Py_XDECREF(result);
+        return NULL;
     }
 
     if (!closeit) {
         fclose(fp); /* don't need open file any more*/
     }
 
-exit:
-    Py_DECREF(filenamebytes);
     return result;
 }
 
 static PyMethodDef test_methods[] = {
+    {"run_stringflags", run_stringflags, METH_VARARGS},
     {"run_fileexflags", run_fileexflags, METH_VARARGS},
     {NULL},
 };

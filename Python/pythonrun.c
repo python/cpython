@@ -1229,12 +1229,6 @@ PyRun_FileExFlags(FILE *fp, const char *filename, int start, PyObject *globals,
         return NULL;
     }
 
-    if (!globals || !PyDict_Check(globals)) {
-        PyErr_SetString(PyExc_SystemError, "globals must be a real dict");
-        Py_DECREF(filename_obj);
-        return NULL;
-    }
-
     PyObject *res = pyrun_file(fp, filename_obj, start, globals,
                                locals, closeit, flags);
     Py_DECREF(filename_obj);
@@ -1281,8 +1275,10 @@ run_eval_code_obj(PyThreadState *tstate, PyCodeObject *co, PyObject *globals, Py
     _PyRuntime.signals.unhandled_keyboard_interrupt = 0;
 
     /* Set globals['__builtins__'] if it doesn't exist */
-    assert(globals);
-
+    if (!globals || !PyDict_Check(globals)) {
+        PyErr_SetString(PyExc_SystemError, "globals must be a real dict");
+        return NULL;
+    }
     int has_builtins = PyDict_ContainsString(globals, "__builtins__");
     if (has_builtins < 0) {
         return NULL;

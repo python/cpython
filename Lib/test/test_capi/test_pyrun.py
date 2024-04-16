@@ -11,16 +11,57 @@ Py_eval_input = _testcapi.Py_eval_input
 
 
 class PyRunTest(unittest.TestCase):
+    # TODO: Test the following functions:
+    #
+    #   PyRun_SimpleStringFlags
+    #   PyRun_AnyFileExFlags
+    #   PyRun_SimpleFileExFlags
+    #   PyRun_InteractiveOneFlags
+    #   PyRun_InteractiveOneObject
+    #   PyRun_InteractiveLoopFlags
+    #   PyRun_String (may be a macro)
+    #   PyRun_AnyFile (may be a macro)
+    #   PyRun_AnyFileEx (may be a macro)
+    #   PyRun_AnyFileFlags (may be a macro)
+    #   PyRun_SimpleString (may be a macro)
+    #   PyRun_SimpleFile (may be a macro)
+    #   PyRun_SimpleFileEx (may be a macro)
+    #   PyRun_InteractiveOne (may be a macro)
+    #   PyRun_InteractiveLoop (may be a macro)
+    #   PyRun_File (may be a macro)
+    #   PyRun_FileEx (may be a macro)
+    #   PyRun_FileFlags (may be a macro)
 
-    # run_fileexflags args:
-    # filename -- filename to run script from
-    # start -- Py_single_input, Py_file_input, Py_eval_input
-    # globals -- dict
-    # locals -- mapping (dict)
-    # closeit -- whether close file or not true/false
-    # cf_flags -- compile flags bitmap
-    # cf_feature_version -- compile flags feature version
+    def test_pyrun_stringflags(self):
+        # Test PyRun_StringFlags().
+        def run(s, *args):
+            return _testcapi.run_stringflags(s, Py_file_input, *args)
+        source = b'a\n'
+
+        self.assertIsNone(run(b'a\n', dict(a=1)))
+        self.assertIsNone(run(b'a\n', dict(a=1), {}))
+        self.assertIsNone(run(b'a\n', {}, dict(a=1)))
+        self.assertIsNone(run(b'a\n', {}, UserDict(a=1)))
+
+        self.assertRaises(NameError, run, b'a\n', {})
+        self.assertRaises(NameError, run, b'a\n', {}, {})
+        self.assertRaises(TypeError, run, b'a\n', dict(a=1), [])
+        self.assertRaises(TypeError, run, b'a\n', dict(a=1), 1)
+
+        self.assertIsNone(run(b'\xc3\xa4\n', {'\xe4': 1}))
+        self.assertRaises(SyntaxError, run, b'\xe4\n', {})
+
+        self.assertRaises(SystemError, run, b'a\n', NULL)
+        self.assertRaises(SystemError, run, b'a\n', NULL, {})
+        self.assertRaises(SystemError, run, b'a\n', NULL, dict(a=1))
+        self.assertRaises(SystemError, run, b'a\n', UserDict())
+        self.assertRaises(SystemError, run, b'a\n', UserDict(), {})
+        self.assertRaises(SystemError, run, b'a\n', UserDict(), dict(a=1))
+
+        # CRASHES run(NULL, {})
+
     def test_pyrun_fileexflags(self):
+        # Test PyRun_FileExFlags().
         def run(*args):
             return _testcapi.run_fileexflags(TESTFN, Py_file_input, *args)
 
