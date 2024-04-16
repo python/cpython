@@ -2398,8 +2398,10 @@ dummy_func(
         replaced op(_POP_JUMP_IF_FALSE, (cond -- )) {
             assert(PyBool_Check(cond));
             int flag = Py_IsFalse(cond);
+            #ifndef _Py_NOTIER2
             #if ENABLE_SPECIALIZATION
             this_instr[1].cache = (this_instr[1].cache << 1) | flag;
+            #endif
             #endif
             JUMPBY(oparg * flag);
         }
@@ -2407,8 +2409,10 @@ dummy_func(
         replaced op(_POP_JUMP_IF_TRUE, (cond -- )) {
             assert(PyBool_Check(cond));
             int flag = Py_IsTrue(cond);
+            #ifndef _Py_NOTIER2
             #if ENABLE_SPECIALIZATION
             this_instr[1].cache = (this_instr[1].cache << 1) | flag;
+            #endif
             #endif
             JUMPBY(oparg * flag);
         }
@@ -3979,8 +3983,10 @@ dummy_func(
             assert(PyBool_Check(cond));
             int flag = Py_IsTrue(cond);
             int offset = flag * oparg;
+            #ifndef _Py_NOTIER2
             #if ENABLE_SPECIALIZATION
             this_instr[1].cache = (this_instr[1].cache << 1) | flag;
+            #endif
             #endif
             INSTRUMENTED_JUMP(this_instr, next_instr + offset, PY_MONITORING_EVENT_BRANCH);
         }
@@ -3990,8 +3996,10 @@ dummy_func(
             assert(PyBool_Check(cond));
             int flag = Py_IsFalse(cond);
             int offset = flag * oparg;
+            #ifndef _Py_NOTIER2
             #if ENABLE_SPECIALIZATION
             this_instr[1].cache = (this_instr[1].cache << 1) | flag;
+            #endif
             #endif
             INSTRUMENTED_JUMP(this_instr, next_instr + offset, PY_MONITORING_EVENT_BRANCH);
         }
@@ -4007,8 +4015,10 @@ dummy_func(
                 Py_DECREF(value);
                 offset = 0;
             }
+            #ifndef _Py_NOTIER2
             #if ENABLE_SPECIALIZATION
             this_instr[1].cache = (this_instr[1].cache << 1) | flag;
+            #endif
             #endif
             INSTRUMENTED_JUMP(this_instr, next_instr + offset, PY_MONITORING_EVENT_BRANCH);
         }
@@ -4024,8 +4034,10 @@ dummy_func(
                 Py_DECREF(value);
                 offset = oparg;
             }
+            #ifndef _Py_NOTIER2
             #if ENABLE_SPECIALIZATION
             this_instr[1].cache = (this_instr[1].cache << 1) | !nflag;
+            #endif
             #endif
             INSTRUMENTED_JUMP(this_instr, next_instr + offset, PY_MONITORING_EVENT_BRANCH);
         }
