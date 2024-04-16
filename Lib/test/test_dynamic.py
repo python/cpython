@@ -4,7 +4,7 @@ import builtins
 import sys
 import unittest
 
-from test.support import is_wasi, swap_item, swap_attr
+from test.support import swap_item, swap_attr
 
 
 class RebindBuiltinsTests(unittest.TestCase):
@@ -134,7 +134,6 @@ class RebindBuiltinsTests(unittest.TestCase):
 
         self.assertEqual(foo(), 7)
 
-    @unittest.skipIf(is_wasi, "stack depth too shallow in WASI")
     def test_load_global_specialization_failure_keeps_oparg(self):
         # https://github.com/python/cpython/issues/91625
         class MyGlobals(dict):
