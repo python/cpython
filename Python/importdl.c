@@ -97,47 +97,51 @@ void
 _Py_ext_module_loader_info_clear(struct _Py_ext_module_loader_info *info)
 {
     Py_CLEAR(info->path);
+#ifndef MS_WINDOWS
+    Py_CLEAR(info->path_encoded);
+#endif
     Py_CLEAR(info->name);
     Py_CLEAR(info->name_encoded);
 }
 
 int
 _Py_ext_module_loader_info_from_spec(PyObject *spec,
-                                     struct _Py_ext_module_loader_info *info)
+                                     struct _Py_ext_module_loader_info *p_info)
 {
-    PyObject *name_unicode = NULL, *name = NULL, *path = NULL;
-    const char *hook_prefix;
+    struct _Py_ext_module_loader_info info = {0};
 
-    name_unicode = PyObject_GetAttrString(spec, "name");
-    if (name_unicode == NULL) {
+    info.name = PyObject_GetAttrString(spec, "name");
+    if (info.name == NULL) {
         return -1;
     }
-    if (!PyUnicode_Check(name_unicode)) {
+    if (!PyUnicode_Check(info.name)) {
         PyErr_SetString(PyExc_TypeError,
                         "spec.name must be a string");
-        Py_DECREF(name_unicode);
+        _Py_ext_module_loader_info_clear(&info);
         return -1;
     }
 
-    name = get_encoded_name(name_unicode, &hook_prefix);
-    if (name == NULL) {
-        Py_DECREF(name_unicode);
+    info.name_encoded = get_encoded_name(info.name, &info.hook_prefix);
+    if (info.name_encoded == NULL) {
+        _Py_ext_module_loader_info_clear(&info);
         return -1;
     }
 
-    path = PyObject_GetAttrString(spec, "origin");
-    if (path == NULL) {
-        Py_DECREF(name_unicode);
-        Py_DECREF(name);
+    info.path = PyObject_GetAttrString(spec, "origin");
+    if (info.path == NULL) {
+        _Py_ext_module_loader_info_clear(&info);
         return -1;
     }
 
-    *info = (struct _Py_ext_module_loader_info){
-        .path=path,
-        .name=name_unicode,
-        .name_encoded=name,
-        .hook_prefix=hook_prefix,
-    };
+#ifndef MS_WINDOWS
+    info.path_encoded = PyUnicode_EncodeFSDefault(info.path);
+    if (info.path_encoded == NULL) {
+        _Py_ext_module_loader_info_clear(&info);
+        return -1;
+    }
+#endif
+
+    *p_info = info;
     return 0;
 }
 
@@ -146,10 +150,6 @@ _PyImport_RunDynamicModule(struct _Py_ext_module_loader_info *info,
                            FILE *fp,
                            struct _Py_ext_module_loader_result *res)
 {
-#ifndef MS_WINDOWS
-    PyObject *pathbytes = NULL;
-    const char *path_buf;
-#endif
     PyObject *m = NULL;
     const char *name_buf = PyBytes_AS_STRING(info->name_encoded);
     const char *oldcontext, *newcontext;
@@ -171,14 +171,11 @@ _PyImport_RunDynamicModule(struct _Py_ext_module_loader_info *info,
     exportfunc = _PyImport_FindSharedFuncptrWindows(
                     info->hook_prefix, name_buf, info->path, fp);
 #else
-    pathbytes = PyUnicode_EncodeFSDefault(info->path);
-    if (pathbytes == NULL) {
-        return -1;
+    {
+        const char *path_buf = PyBytes_AS_STRING(info->path_encoded);
+        exportfunc = _PyImport_FindSharedFuncptr(
+                        info->hook_prefix, name_buf, path_buf, fp);
     }
-    path_buf = PyBytes_AS_STRING(pathbytes);
-    exportfunc = _PyImport_FindSharedFuncptr(
-                    info->hook_prefix, name_buf, path_buf, fp);
-    Py_DECREF(pathbytes);
 #endif
 
     if (exportfunc == NULL) {
