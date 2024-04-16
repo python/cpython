@@ -3832,10 +3832,12 @@ _imp_create_dynamic_impl(PyObject *module, PyObject *spec, PyObject *file)
         mod = PyModule_FromDefAndSpec(res.def, spec);
     }
 
-finally:
+    // XXX Shouldn't this happen in the error cases too.
     if (fp) {
         fclose(fp);
     }
+
+finally:
     _Py_ext_module_loader_info_clear(&info);
     return mod;
 }
