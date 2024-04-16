@@ -17,10 +17,13 @@ import unittest
 import warnings
 
 from test import support
-from test.support import os_helper
-from test.support import import_helper
 
-_interpreters = import_helper.import_module('_xxsubinterpreters')
+# We would use test.support.import_helper.import_module(),
+# but the indirect import of test.support.os_helper causes refleaks.
+try:
+    import _xxsubinterpreters as _interpreters
+except ImportError as exc:
+    raise unittest.SkipTest(str(exc))
 from test.support import interpreters
 
 
@@ -399,6 +402,7 @@ class TestBase(unittest.TestCase):
     def temp_dir(self):
         tempdir = tempfile.mkdtemp()
         tempdir = os.path.realpath(tempdir)
+        from test.support import os_helper
         self.addCleanup(lambda: os_helper.rmtree(tempdir))
         return tempdir
 
