@@ -6110,7 +6110,9 @@ then :
 else $as_nop
 
 cat > conftest.c <<EOF
-#if defined(__INTEL_COMPILER) || defined(__ICC)
+#if defined(__EMSCRIPTEN__)
+  emcc
+#elif defined(__INTEL_COMPILER) || defined(__ICC)
   icc
 #elif defined(__ibmxl__) || defined(__xlc__) || defined(__xlC__)
   xlc
@@ -6127,6 +6129,9 @@ EOF
 
 if $CPP $CPPFLAGS conftest.c >conftest.out 2>/dev/null; then
   ac_cv_cc_name=`grep -v '^#' conftest.out | grep -v '^ *$' | tr -d ' 	'`
+  if test $(expr "//$CC" : '.*/\(.*\)') = "mpicc"; then
+    ac_cv_cc_name="mpicc"
+  fi
 else
   ac_cv_cc_name="unknown"
 fi
@@ -6310,6 +6315,34 @@ then :
 
 fi
 
+
+
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for GCC compatible compiler" >&5
+printf %s "checking for GCC compatible compiler... " >&6; }
+if test ${ac_cv_gcc_compat+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+                #if !defined(__GNUC__)
+                  #error "not GCC compatible"
+                #else
+                  /* GCC compatible! */
+                #endif
+
+_ACEOF
+if ac_fn_c_try_cpp "$LINENO"
+then :
+  ac_cv_gcc_compat=yes
+else $as_nop
+  ac_cv_gcc_compat=no
+fi
+rm -f conftest.err conftest.i conftest.$ac_ext
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_gcc_compat" >&5
+printf "%s\n" "$ac_cv_gcc_compat" >&6; }
 
 
 
@@ -6946,14 +6979,14 @@ case $host/$ac_cv_cc_name in #(
     PY_SUPPORT_TIER=1 ;; #(
     x86_64-apple-darwin*/clang) :
     PY_SUPPORT_TIER=1 ;; #(
+    aarch64-apple-darwin*/clang) :
+    PY_SUPPORT_TIER=1 ;; #(
     i686-pc-windows-msvc/msvc) :
     PY_SUPPORT_TIER=1 ;; #(
     x86_64-pc-windows-msvc/msvc) :
     PY_SUPPORT_TIER=1 ;; #(
 
-  aarch64-apple-darwin*/clang) :
-    PY_SUPPORT_TIER=2 ;; #(
-    aarch64-*-linux-gnu/gcc) :
+  aarch64-*-linux-gnu/gcc) :
     PY_SUPPORT_TIER=2 ;; #(
     aarch64-*-linux-gnu/clang) :
     PY_SUPPORT_TIER=2 ;; #(
@@ -8241,13 +8274,13 @@ if test "$Py_OPT" = 'true' ; then
     *gcc*)
       { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -fno-semantic-interposition" >&5
 printf %s "checking whether C compiler accepts -fno-semantic-interposition... " >&6; }
-if test ${ax_cv_check_cflags___fno_semantic_interposition+y}
+if test ${ax_cv_check_cflags__Werror__fno_semantic_interposition+y}
 then :
   printf %s "(cached) " >&6
 else $as_nop
 
   ax_check_save_flags=$CFLAGS
-  CFLAGS="$CFLAGS  -fno-semantic-interposition"
+  CFLAGS="$CFLAGS -Werror -fno-semantic-interposition"
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -8261,16 +8294,16 @@ main (void)
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"
 then :
-  ax_cv_check_cflags___fno_semantic_interposition=yes
+  ax_cv_check_cflags__Werror__fno_semantic_interposition=yes
 else $as_nop
-  ax_cv_check_cflags___fno_semantic_interposition=no
+  ax_cv_check_cflags__Werror__fno_semantic_interposition=no
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
   CFLAGS=$ax_check_save_flags
 fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags___fno_semantic_interposition" >&5
-printf "%s\n" "$ax_cv_check_cflags___fno_semantic_interposition" >&6; }
-if test "x$ax_cv_check_cflags___fno_semantic_interposition" = xyes
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags__Werror__fno_semantic_interposition" >&5
+printf "%s\n" "$ax_cv_check_cflags__Werror__fno_semantic_interposition" >&6; }
+if test "x$ax_cv_check_cflags__Werror__fno_semantic_interposition" = xyes
 then :
 
       CFLAGS_NODIST="$CFLAGS_NODIST -fno-semantic-interposition"
@@ -8826,9 +8859,9 @@ case "$CC_BASENAME" in
   *clang*)
     # Any changes made here should be reflected in the GCC+Darwin case below
     PGO_PROF_GEN_FLAG="-fprofile-instr-generate"
-    PGO_PROF_USE_FLAG="-fprofile-instr-use=code.profclangd"
-    LLVM_PROF_MERGER="${LLVM_PROFDATA} merge -output=code.profclangd *.profclangr"
-    LLVM_PROF_FILE="LLVM_PROFILE_FILE=\"code-%p.profclangr\""
+    PGO_PROF_USE_FLAG="-fprofile-instr-use=\"\$(shell pwd)/code.profclangd\""
+    LLVM_PROF_MERGER=" ${LLVM_PROFDATA} merge -output=\"\$(shell pwd)/code.profclangd\" \"\$(shell pwd)\"/*.profclangr "
+    LLVM_PROF_FILE="LLVM_PROFILE_FILE=\"\$(shell pwd)/code-%p.profclangr\""
     if test $LLVM_PROF_FOUND = not-found
     then
       LLVM_PROF_ERR=yes
@@ -8842,9 +8875,9 @@ case "$CC_BASENAME" in
     case $ac_sys_system in
       Darwin*)
         PGO_PROF_GEN_FLAG="-fprofile-instr-generate"
-        PGO_PROF_USE_FLAG="-fprofile-instr-use=code.profclangd"
-        LLVM_PROF_MERGER="${LLVM_PROFDATA} merge -output=code.profclangd *.profclangr"
-        LLVM_PROF_FILE="LLVM_PROFILE_FILE=\"code-%p.profclangr\""
+        PGO_PROF_USE_FLAG="-fprofile-instr-use=\"\$(shell pwd)/code.profclangd\""
+        LLVM_PROF_MERGER=" ${LLVM_PROFDATA} merge -output=\"\$(shell pwd)/code.profclangd\" \"\$(shell pwd)\"/*.profclangr "
+        LLVM_PROF_FILE="LLVM_PROFILE_FILE=\"\$(shell pwd)/code-%p.profclangr\""
         if test "${LLVM_PROF_FOUND}" = "not-found"
         then
           LLVM_PROF_ERR=yes
@@ -11573,7 +11606,6 @@ else $as_nop
 printf "%s\n" "#define size_t unsigned int" >>confdefs.h
 
 fi
-
 
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for uid_t in sys/types.h" >&5
 printf %s "checking for uid_t in sys/types.h... " >&6; }
@@ -24334,7 +24366,7 @@ if test "$PY_ENABLE_SHARED" = "1" && ( test -n "$ANDROID_API_LEVEL" || test "$MA
 fi
 
 # On iOS the shared libraries must be linked with the Python framework
-if test "$ac_sys_system" == "iOS"; then
+if test "$ac_sys_system" = "iOS"; then
   MODULE_DEPS_SHARED="$MODULE_DEPS_SHARED \$(PYTHONFRAMEWORKDIR)/\$(PYTHONFRAMEWORK)"
 fi
 

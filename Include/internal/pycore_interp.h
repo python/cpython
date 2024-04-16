@@ -59,6 +59,12 @@ struct _stoptheworld_state {
     PyThreadState *requester; // Thread that requested the pause (may be NULL).
 };
 
+#ifdef Py_GIL_DISABLED
+// This should be prime but otherwise the choice is arbitrary. A larger value
+// increases concurrency at the expense of memory.
+#  define NUM_WEAKREF_LIST_LOCKS 127
+#endif
+
 /* cross-interpreter data registry */
 
 /* Tracks some rare events per-interpreter, used by the optimizer to turn on/off
@@ -97,11 +103,23 @@ struct _is {
     int requires_idref;
     PyThread_type_lock id_mutex;
 
+#define _PyInterpreterState_WHENCE_NOTSET -1
+#define _PyInterpreterState_WHENCE_UNKNOWN 0
+#define _PyInterpreterState_WHENCE_RUNTIME 1
+#define _PyInterpreterState_WHENCE_LEGACY_CAPI 2
+#define _PyInterpreterState_WHENCE_CAPI 3
+#define _PyInterpreterState_WHENCE_XI 4
+#define _PyInterpreterState_WHENCE_STDLIB 5
+#define _PyInterpreterState_WHENCE_MAX 5
+    long _whence;
+
     /* Has been initialized to a safe state.
 
        In order to be effective, this must be set to 0 during or right
        after allocation. */
     int _initialized;
+    /* Has been fully initialized via pylifecycle.c. */
+    int _ready;
     int finalizing;
 
     uintptr_t last_restart_version;
@@ -203,6 +221,7 @@ struct _is {
 #if defined(Py_GIL_DISABLED)
     struct _mimalloc_interp_state mimalloc;
     struct _brc_state brc;  // biased reference counting state
+    PyMutex weakref_locks[NUM_WEAKREF_LIST_LOCKS];
 #endif
 
     // Per-interpreter state for the obmalloc allocator.  For the main
@@ -297,6 +316,13 @@ PyAPI_FUNC(PyInterpreterState *) _PyInterpreterState_LookUpIDObject(PyObject *);
 PyAPI_FUNC(int) _PyInterpreterState_IDInitref(PyInterpreterState *);
 PyAPI_FUNC(int) _PyInterpreterState_IDIncref(PyInterpreterState *);
 PyAPI_FUNC(void) _PyInterpreterState_IDDecref(PyInterpreterState *);
+
+PyAPI_FUNC(int) _PyInterpreterState_IsReady(PyInterpreterState *interp);
+
+PyAPI_FUNC(long) _PyInterpreterState_GetWhence(PyInterpreterState *interp);
+extern void _PyInterpreterState_SetWhence(
+    PyInterpreterState *interp,
+    long whence);
 
 extern const PyConfig* _PyInterpreterState_GetConfig(PyInterpreterState *interp);
 

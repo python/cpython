@@ -145,7 +145,7 @@ the :mod:`glob` module.)
 
 .. function:: lexists(path)
 
-   Return ``True`` if *path* refers to an existing path. Returns ``True`` for
+   Return ``True`` if *path* refers to an existing path, including
    broken symbolic links.   Equivalent to :func:`exists` on platforms lacking
    :func:`os.lstat`.
 
@@ -409,9 +409,8 @@ the :mod:`glob` module.)
    style names such as ``C:\\PROGRA~1`` to ``C:\\Program Files``.
 
    If a path doesn't exist or a symlink loop is encountered, and *strict* is
-   ``True``, :exc:`OSError` is raised. If *strict* is ``False``, the path is
-   resolved as far as possible and any remainder is appended without checking
-   whether it exists.
+   ``True``, :exc:`OSError` is raised. If *strict* is ``False`` these errors
+   are ignored, and so the result might be missing or otherwise inaccessible.
 
    .. note::
       This function emulates the operating system's procedure for making a path

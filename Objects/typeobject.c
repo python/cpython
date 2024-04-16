@@ -162,8 +162,13 @@ _PyStaticType_GetState(PyInterpreterState *interp, PyTypeObject *self)
 static void
 static_builtin_state_init(PyInterpreterState *interp, PyTypeObject *self)
 {
-    if (!static_builtin_index_is_set(self)) {
+    if (_Py_IsMainInterpreter(interp)) {
+        assert(!static_builtin_index_is_set(self));
         static_builtin_index_set(self, interp->types.num_builtins_initialized);
+    }
+    else {
+        assert(static_builtin_index_get(self) ==
+                interp->types.num_builtins_initialized);
     }
     static_builtin_state *state = static_builtin_state_get(interp, self);
 
@@ -378,7 +383,7 @@ _PyType_GetMRO(PyTypeObject *self)
     if (mro == NULL) {
         return NULL;
     }
-    if (_Py_TryIncref(&self->tp_mro, mro)) {
+    if (_Py_TryIncrefCompare(&self->tp_mro, mro)) {
         return mro;
     }
 
@@ -2193,15 +2198,7 @@ subtype_dealloc(PyObject *self)
            finalizers since they might rely on part of the object
            being finalized that has already been destroyed. */
         if (type->tp_weaklistoffset && !base->tp_weaklistoffset) {
-            /* Modeled after GET_WEAKREFS_LISTPTR().
-
-               This is never triggered for static types so we can avoid the
-               (slightly) more costly _PyObject_GET_WEAKREFS_LISTPTR(). */
-            PyWeakReference **list = \
-                _PyObject_GET_WEAKREFS_LISTPTR_FROM_OFFSET(self);
-            while (*list) {
-                _PyWeakref_ClearRef(*list);
-            }
+            _PyWeakref_ClearWeakRefsExceptCallbacks(self);
         }
     }
 
@@ -3588,6 +3585,8 @@ type_new_alloc(type_new_ctx *ctx)
     et->ht_name = Py_NewRef(ctx->name);
     et->ht_module = NULL;
     et->_ht_tpname = NULL;
+
+    _PyObject_SetDeferredRefcount((PyObject *)et);
 
     return type;
 }
@@ -5123,6 +5122,52 @@ _PyType_LookupId(PyTypeObject *type, _Py_Identifier *name)
     if (oname == NULL)
         return NULL;
     return _PyType_Lookup(type, oname);
+}
+
+static void
+set_flags(PyTypeObject *self, unsigned long mask, unsigned long flags)
+{
+    ASSERT_TYPE_LOCK_HELD();
+    self->tp_flags = (self->tp_flags & ~mask) | flags;
+}
+
+void
+_PyType_SetFlags(PyTypeObject *self, unsigned long mask, unsigned long flags)
+{
+    BEGIN_TYPE_LOCK();
+    set_flags(self, mask, flags);
+    END_TYPE_LOCK();
+}
+
+static void
+set_flags_recursive(PyTypeObject *self, unsigned long mask, unsigned long flags)
+{
+    if (PyType_HasFeature(self, Py_TPFLAGS_IMMUTABLETYPE) ||
+        (self->tp_flags & mask) == flags)
+    {
+        return;
+    }
+
+    set_flags(self, mask, flags);
+
+    PyObject *children = _PyType_GetSubclasses(self);
+    if (children == NULL) {
+        return;
+    }
+
+    for (Py_ssize_t i = 0; i < PyList_GET_SIZE(children); i++) {
+        PyObject *child = PyList_GET_ITEM(children, i);
+        set_flags_recursive((PyTypeObject *)child, mask, flags);
+    }
+    Py_DECREF(children);
+}
+
+void
+_PyType_SetFlagsRecursive(PyTypeObject *self, unsigned long mask, unsigned long flags)
+{
+    BEGIN_TYPE_LOCK();
+    set_flags_recursive(self, mask, flags);
+    END_TYPE_LOCK();
 }
 
 /* This is similar to PyObject_GenericGetAttr(),
@@ -6879,7 +6924,7 @@ static PyMethodDef object_methods[] = {
     OBJECT___REDUCE_EX___METHODDEF
     OBJECT___REDUCE___METHODDEF
     OBJECT___GETSTATE___METHODDEF
-    {"__subclasshook__", object_subclasshook, METH_CLASS | METH_VARARGS,
+    {"__subclasshook__", object_subclasshook, METH_CLASS | METH_O,
      object_subclasshook_doc},
     {"__init_subclass__", object_init_subclass, METH_CLASS | METH_NOARGS,
      object_init_subclass_doc},
@@ -9855,7 +9900,8 @@ static pytype_slotdef slotdefs[] = {
     TPSLOT(__getattribute__, tp_getattro, _Py_slot_tp_getattr_hook,
            wrap_binaryfunc,
            "__getattribute__($self, name, /)\n--\n\nReturn getattr(self, name)."),
-    TPSLOT(__getattr__, tp_getattro, _Py_slot_tp_getattr_hook, NULL, ""),
+    TPSLOT(__getattr__, tp_getattro, _Py_slot_tp_getattr_hook, NULL,
+           "__getattr__($self, name, /)\n--\n\nImplement getattr(self, name)."),
     TPSLOT(__setattr__, tp_setattro, slot_tp_setattro, wrap_setattr,
            "__setattr__($self, name, value, /)\n--\n\nImplement setattr(self, name, value)."),
     TPSLOT(__delattr__, tp_setattro, slot_tp_setattro, wrap_delattr,
@@ -9890,7 +9936,9 @@ static pytype_slotdef slotdefs[] = {
     TPSLOT(__new__, tp_new, slot_tp_new, NULL,
            "__new__(type, /, *args, **kwargs)\n--\n\n"
            "Create and return new object.  See help(type) for accurate signature."),
-    TPSLOT(__del__, tp_finalize, slot_tp_finalize, (wrapperfunc)wrap_del, ""),
+    TPSLOT(__del__, tp_finalize, slot_tp_finalize, (wrapperfunc)wrap_del,
+           "__del__($self, /)\n--\n\n"
+           "Called when the instance is about to be destroyed."),
 
     BUFSLOT(__buffer__, bf_getbuffer, slot_bf_getbuffer, wrap_buffer,
             "__buffer__($self, flags, /)\n--\n\n"

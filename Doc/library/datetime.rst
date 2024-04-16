@@ -37,7 +37,7 @@ on efficient attribute extraction for output formatting and manipulation.
    Package `dateutil <https://dateutil.readthedocs.io/en/stable/>`_
       Third-party library with expanded time zone and parsing support.
 
-   Package `DateType <https://pypi.org/project/datetype/>`_
+   Package :pypi:`DateType`
       Third-party library that introduces distinct static types to e.g. allow
       :term:`static type checkers <static type checker>`
       to differentiate between naive and aware datetimes.
