@@ -143,6 +143,7 @@ def dump(
         if isinstance(node, AST):
             cls = type(node)
             args = []
+            args_buffer = []
             allsimple = True
             keywords = annotate_fields
             for name in node._fields:
@@ -161,7 +162,11 @@ def dump(
                     # `Constant(value=None)` and `MatchSingleton(value=None)`
                     and not isinstance(node, (Constant, MatchSingleton))
                 ):
+                    args_buffer.append(repr(value))
                     continue
+                elif not keywords:
+                    args.extend(args_buffer)
+                    args_buffer = []
                 value, simple = _format(value, level)
                 allsimple = allsimple and simple
                 if keywords:

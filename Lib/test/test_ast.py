@@ -1326,6 +1326,41 @@ Module(
         self.assertEqual(ast.dump(node, annotate_fields=False),
             "Raise(cause=Name('e', Load()))"
         )
+        # Arguments:
+        node = ast.arguments(args=[ast.arg("x")])
+        self.assertEqual(ast.dump(node, annotate_fields=False),
+            "arguments([], [arg('x')])",
+        )
+        node = ast.arguments(posonlyargs=[ast.arg("x")])
+        self.assertEqual(ast.dump(node, annotate_fields=False),
+            "arguments([arg('x')])",
+        )
+        node = ast.arguments(posonlyargs=[ast.arg("x")], kwonlyargs=[ast.arg('y')])
+        self.assertEqual(ast.dump(node, annotate_fields=False),
+            "arguments([arg('x')], kwonlyargs=[arg('y')])",
+        )
+        node = ast.arguments(args=[ast.arg("x")], kwonlyargs=[ast.arg('y')])
+        self.assertEqual(ast.dump(node, annotate_fields=False),
+            "arguments([], [arg('x')], kwonlyargs=[arg('y')])",
+        )
+        node = ast.arguments()
+        self.assertEqual(ast.dump(node, annotate_fields=False),
+            "arguments()",
+        )
+        # Classes:
+        node = ast.ClassDef(
+            'T',
+            [],
+            [ast.keyword('a', ast.Constant(None))],
+            [],
+            [ast.Name('dataclass')],
+        )
+        self.assertEqual(ast.dump(node),
+            "ClassDef(name='T', keywords=[keyword(arg='a', value=Constant(value=None))], decorator_list=[Name(id='dataclass')])",
+        )
+        self.assertEqual(ast.dump(node, annotate_fields=False),
+            "ClassDef('T', [], [keyword('a', Constant(None))], [], [Name('dataclass')])",
+        )
 
     def test_dump_show_empty(self):
         def check_node(node, empty, full, **kwargs):
