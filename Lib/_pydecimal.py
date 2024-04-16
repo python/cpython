@@ -5018,7 +5018,7 @@ class Context(object):
         return a.logical_xor(b, context=self)
 
     def max(self, a, b):
-        """max compares two values numerically and returns the maximum.
+        """Compare two values numerically and return the maximum.
 
         If either operand is a NaN then the general rules apply.
         Otherwise, the operands are compared as though by the compare
