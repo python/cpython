@@ -1285,47 +1285,6 @@ finish_singlephase_extension(PyThreadState *tstate,
     return 0;
 }
 
-int
-_PyImport_FixupExtensionObject(PyObject *mod, PyObject *name,
-                               PyObject *filename, PyObject *modules)
-{
-    PyThreadState *tstate = _PyThreadState_GET();
-
-    if (mod == NULL || !PyModule_Check(mod)) {
-        PyErr_BadInternalCall();
-        return -1;
-    }
-    PyModuleDef *def = PyModule_GetDef(mod);
-    if (def == NULL) {
-        PyErr_BadInternalCall();
-        return -1;
-    }
-
-    /* Only single-phase init extension modules can reach here. */
-    assert(is_singlephase(def));
-    assert(!is_core_module(tstate->interp, name, filename));
-    assert(!is_core_module(tstate->interp, name, name));
-
-    struct singlephase_global_update singlephase = {0};
-    // gh-88216: Extensions and def->m_base.m_copy can be updated
-    // when the extension module doesn't support sub-interpreters.
-    if (def->m_size == -1) {
-        singlephase.m_dict = PyModule_GetDict(mod);
-        assert(singlephase.m_dict != NULL);
-    }
-    if (update_global_state_for_extension(
-            tstate, filename, name, def, &singlephase) < 0)
-    {
-        return -1;
-    }
-
-    if (finish_singlephase_extension(tstate, mod, def, name, modules) < 0) {
-        return -1;
-    }
-
-    return 0;
-}
-
 
 static PyObject *
 import_find_extension(PyThreadState *tstate,
