@@ -5573,7 +5573,7 @@ exit:
     if (path_buf)
         PyMem_Free(path_buf);
     if (path_buf2)
-        PyMem_Free(path_buf2);
+        PyMem_RawFree(path_buf2);
     return result;
 }
 
