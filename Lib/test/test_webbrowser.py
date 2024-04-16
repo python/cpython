@@ -461,11 +461,25 @@ class CliTest(unittest.TestCase):
             "https://example.com --new-window --new-tab",
             "https://example.com -n --new-tab",
             "https://example.com --new-window -t",
-            # Ensure ambiguous shortening fails
-            "https://example.com --new",
         ]:
+            with support.captured_stderr() as stderr:
+                with self.assertRaises(SystemExit):
+                    webbrowser.parse_args(shlex.split(command))
+                self.assertEqual(
+                    stderr.getvalue(),
+                    "usage: __main__.py [-h] [-n | -t] url\n"
+                    "__main__.py: error: argument -t/--new-tab: not allowed with argument -n/--new-window\n"
+                )
+
+        # Ensure ambiguous shortening fails
+        with support.captured_stderr() as stderr:
             with self.assertRaises(SystemExit):
-                webbrowser.parse_args(shlex.split(command))
+                webbrowser.parse_args(shlex.split("https://example.com --new"))
+            self.assertEqual(
+                stderr.getvalue(),
+                "usage: __main__.py [-h] [-n | -t] url\n"
+                "__main__.py: error: ambiguous option: --new could match --new-window, --new-tab\n"
+            )
 
     def test_main(self):
         for command, expected_url, expected_new_win in [
