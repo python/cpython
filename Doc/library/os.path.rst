@@ -303,7 +303,7 @@ the :mod:`glob` module.)
    to see if it is different from the input path.
 
    .. versionchanged:: 3.4
-      Support for detecting non-root mount points on Windows.
+      Added support for detecting non-root mount points on Windows.
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
