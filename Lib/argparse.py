@@ -929,13 +929,28 @@ class BooleanOptionalAction(Action):
             metavar=metavar,
             deprecated=deprecated)
 
+import argparse
 
+import argparse
+
+class NegatableAction(argparse.Action):
     def __call__(self, parser, namespace, values, option_string=None):
-        if option_string in self.option_strings:
-            setattr(namespace, self.dest, not option_string.startswith('--no-'))
+        if option_string and option_string.startswith('--no-'):
+            setattr(namespace, self.dest, not True)  # Set to False for '--no-foo'
+        else:
+            setattr(namespace, self.dest, True)  # Set to True by default
 
     def format_usage(self):
         return ' | '.join(self.option_strings)
+
+parser = argparse.ArgumentParser()
+parser.register('action', 'negatable', NegatableAction)
+parser.add_argument('--no-foo', action='negatable', default=False)
+
+# Test the code
+args = parser.parse_args(['--no-no-foo'])
+print(args.no_foo)  # Output: False
+
 
 
 class _StoreAction(Action):
