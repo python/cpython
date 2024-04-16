@@ -1530,7 +1530,10 @@ static PyThreadState *
 maybe_switch_to_main_interpreter(PyThreadState *tstate)
 {
     PyThreadState *main_tstate = tstate;
-    if (check_multi_interp_extensions(tstate->interp)) {
+    if (_Py_IsMainInterpreter(tstate->interp)) {
+        /* There's no need to switch. */
+    }
+    else if (check_multi_interp_extensions(tstate->interp)) {
         /*
         If the module is single-phase init then the import will fail.
         However, the module's init function will still get run.
