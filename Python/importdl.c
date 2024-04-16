@@ -205,6 +205,24 @@ _Py_ext_module_loader_info_init_from_spec(
 }
 
 
+void
+_Py_ext_module_loader_result_apply_error(
+                            struct _Py_ext_module_loader_result *res)
+{
+    if (res->err[0] != '\0') {
+        if (PyErr_Occurred()) {
+            _PyErr_FormatFromCause(PyExc_SystemError, res->err);
+        }
+        else {
+            PyErr_SetString(PyExc_SystemError, res->err);
+        }
+    }
+    else {
+        assert(PyErr_Occurred());
+    }
+}
+
+
 PyModInitFunction
 _PyImport_GetModInitFunc(struct _Py_ext_module_loader_info *info,
                          FILE *fp)
@@ -259,19 +277,27 @@ _PyImport_RunModInitFunc(PyModInitFunction p0,
 
     /* Validate the result (and populate "res". */
 
+#ifdef NDEBUG
+#  define SET_ERROR(...) \
+    (void)snprintf(res.err, Py_ARRAY_LENGTH(res.err),  __VA_ARGS__)
+#else
+#  define SET_ERROR(...) \
+    do { \
+        int n = snprintf(res.err, Py_ARRAY_LENGTH(res.err),  __VA_ARGS__); \
+        assert(n < Py_ARRAY_LENGTH(res.err)); \
+    } while (0)
+#endif
+
     if (m == NULL) {
         if (!PyErr_Occurred()) {
-            PyErr_Format(
-                PyExc_SystemError,
+            SET_ERROR(
                 "initialization of %s failed without raising an exception",
                 name_buf);
         }
         goto error;
     } else if (PyErr_Occurred()) {
-        _PyErr_FormatFromCause(
-            PyExc_SystemError,
-            "initialization of %s raised unreported exception",
-            name_buf);
+        SET_ERROR("initialization of %s raised unreported exception",
+                  name_buf);
         /* We would probably be correct to decref m here,
          * but we weren't doing so before,
          * so we stick with doing nothing. */
@@ -284,9 +310,8 @@ _PyImport_RunModInitFunc(PyModInitFunction p0,
          * PyModuleDef_Init on it
          */
         res.kind = _Py_ext_module_loader_result_INVALID;
-        PyErr_Format(PyExc_SystemError,
-                     "init function of %s returned uninitialized object",
-                     name_buf);
+        SET_ERROR("init function of %s returned uninitialized object",
+                  name_buf);
         /* Likewise, decref'ing here makes sense.  However, the original
          * code has a note about "prevent segfault in DECREF",
          * so we play it safe and leave it alone. */
@@ -303,12 +328,9 @@ _PyImport_RunModInitFunc(PyModInitFunction p0,
     else if (info->hook_prefix == nonascii_prefix) {
         /* It should have been multi-phase init? */
         /* Don't allow legacy init for non-ASCII module names. */
-        PyErr_Format(
-            PyExc_SystemError,
-            "initialization of %s did not return PyModuleDef",
-            name_buf);
-        Py_DECREF(m);
-        return -1;
+        SET_ERROR("initialization of %s did not return PyModuleDef",
+                  name_buf);
+        goto error;
     }
     else {
         /* single-phase init (legacy) */
@@ -324,19 +346,19 @@ _PyImport_RunModInitFunc(PyModInitFunction p0,
 
         res.def = _PyModule_GetDef(m);
         if (res.def == NULL) {
-            PyErr_Format(PyExc_SystemError,
-                         "initialization of %s did not return a valid extension "
-                         "module", name_buf);
+            SET_ERROR("initialization of %s did not return a valid extension "
+                      "module", name_buf);
             goto error;
         }
     }
+#undef SET_ERROR
 
     assert(!PyErr_Occurred());
     *p_res = res;
     return 0;
 
 error:
-    assert(PyErr_Occurred());
+    assert(PyErr_Occurred() || res.err[0] != '\0');
     Py_CLEAR(res.module);
     res.def = NULL;
     *p_res = res;

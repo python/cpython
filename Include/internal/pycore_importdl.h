@@ -52,7 +52,11 @@ struct _Py_ext_module_loader_result {
         _Py_ext_module_loader_result_MULTIPHASE = 2,
         _Py_ext_module_loader_result_INVALID = 3,
     } kind;
+    char err[200];
 };
+extern void _Py_ext_module_loader_result_apply_error(
+    struct _Py_ext_module_loader_result *res);
+
 extern PyModInitFunction _PyImport_GetModInitFunc(
     struct _Py_ext_module_loader_info *info,
     FILE *fp);

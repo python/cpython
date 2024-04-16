@@ -1369,6 +1369,7 @@ import_find_extension(PyThreadState *tstate,
         }
         struct _Py_ext_module_loader_result res;
         if (_PyImport_RunModInitFunc(def->m_base.m_init, info, &res) < 0) {
+            _Py_ext_module_loader_result_apply_error(&res);
             return NULL;
         }
         assert(!PyErr_Occurred());
@@ -1405,7 +1406,7 @@ import_run_extension(PyThreadState *tstate, PyModInitFunction p0,
     if (_PyImport_RunModInitFunc(p0, info, &res) < 0) {
         /* We discard res.def. */
         assert(res.module == NULL);
-        assert(PyErr_Occurred());
+        _Py_ext_module_loader_result_apply_error(&res);
         goto finally;
     }
     assert(!PyErr_Occurred());
