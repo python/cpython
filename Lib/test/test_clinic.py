@@ -2511,9 +2511,10 @@ class ClinicParserTest(TestCase):
     def test_kind_defining_class(self):
         function = self.parse_function("""
             module m
-            m.func
+            class m.C "PyObject *" ""
+            m.C.meth
                 cls: defining_class
-        """)
+        """, signatures_in_block=3, function_index=2)
         p = function.parameters['cls']
         self.assertEqual(p.kind, inspect.Parameter.POSITIONAL_ONLY)
 
