@@ -2618,7 +2618,7 @@ class Decimal(object):
     def quantize(self, exp, rounding=None, context=None):
         """Return a value equal to 'a' (rounded), having the exponent of 'b'.
 
-        Similar to self._rescale(exp._exp) but with error checking.The 
+        Similar to self._rescale(exp._exp) but with error checking. The
         coefficient of the result is derived from that of the left-hand operand.
         It may be rounded using the current rounding setting (if the exponent is
         being increased), multiplied by a positive power of ten (if the exponent
@@ -4386,7 +4386,7 @@ class Context(object):
         return a.compare(b, context=self)
 
     def compare_signal(self, a, b):
-        """Compares the values of the two operands numerically.
+        """Compare the values of the two operands numerically.
 
         It's pretty much like compare(), but all NaNs signal, with signaling
         NaNs taking precedence over quiet NaNs.
@@ -4918,7 +4918,7 @@ class Context(object):
         return a.logb(context=self)
 
     def logical_and(self, a, b):
-        """Applies the logical operation 'and' between each operand's digits.
+        """Apply the logical operation 'and' between each operand's digits.
 
         The operands must be both logical numbers.
 
