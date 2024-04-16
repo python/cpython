@@ -198,14 +198,6 @@ struct _ts {
 #ifdef Py_DEBUG
    // A debug build is likely built with low optimization level which implies
    // higher stack memory usage than a release build: use a lower limit.
-#  if defined(__wasi__)
-     // Based on wasmtime 16.
-#    define Py_C_RECURSION_LIMIT 150
-#  else
-#    define Py_C_RECURSION_LIMIT 500
-#  endif
-#elif defined(__wasi__)
-   // Based on wasmtime 16.
 #  define Py_C_RECURSION_LIMIT 500
 #elif defined(__s390x__)
 #  define Py_C_RECURSION_LIMIT 800
@@ -219,6 +211,9 @@ struct _ts {
 #  define Py_C_RECURSION_LIMIT 3000
 #elif defined(_Py_ADDRESS_SANITIZER)
 #  define Py_C_RECURSION_LIMIT 4000
+#elif defined(__wasi__)
+   // Based on wasmtime 16.
+#  define Py_C_RECURSION_LIMIT 5000
 #else
    // This value is duplicated in Lib/test/support/__init__.py
 #  define Py_C_RECURSION_LIMIT 10000
