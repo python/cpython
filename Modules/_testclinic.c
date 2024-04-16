@@ -1219,21 +1219,36 @@ class _testclinic.TestClass "PyObject *" "PyObject"
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=668a591c65bec947]*/
 
 /*[clinic input]
-_testclinic.TestClass.meth_method_no_params
+_testclinic.TestClass.get_defining_class
     cls: defining_class
-    /
 [clinic start generated code]*/
 
 static PyObject *
-_testclinic_TestClass_meth_method_no_params_impl(PyObject *self,
-                                                 PyTypeObject *cls)
-/*[clinic end generated code: output=c140f100080c2fc8 input=6bd34503d11c63c1]*/
+_testclinic_TestClass_get_defining_class_impl(PyObject *self,
+                                              PyTypeObject *cls)
+/*[clinic end generated code: output=94f9b0b5f7add930 input=537c59417471dee3]*/
 {
-    Py_RETURN_NONE;
+    return Py_NewRef(cls);
+}
+
+/*[clinic input]
+_testclinic.TestClass.get_defining_class_arg
+    cls: defining_class
+    arg: object
+[clinic start generated code]*/
+
+static PyObject *
+_testclinic_TestClass_get_defining_class_arg_impl(PyObject *self,
+                                                  PyTypeObject *cls,
+                                                  PyObject *arg)
+/*[clinic end generated code: output=fe7e49d96cbb7718 input=d1b83d3b853af6d9]*/
+{
+    return Py_BuildValue("(OO)", cls, arg);
 }
 
 static struct PyMethodDef test_class_methods[] = {
-    _TESTCLINIC_TESTCLASS_METH_METHOD_NO_PARAMS_METHODDEF
+    _TESTCLINIC_TESTCLASS_GET_DEFINING_CLASS_METHODDEF
+    _TESTCLINIC_TESTCLASS_GET_DEFINING_CLASS_ARG_METHODDEF
     {NULL, NULL}
 };
 

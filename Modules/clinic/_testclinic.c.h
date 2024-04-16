@@ -3142,25 +3142,81 @@ exit:
     return return_value;
 }
 
-PyDoc_STRVAR(_testclinic_TestClass_meth_method_no_params__doc__,
-"meth_method_no_params($self, /)\n"
+PyDoc_STRVAR(_testclinic_TestClass_get_defining_class__doc__,
+"get_defining_class($self, /)\n"
 "--\n"
 "\n");
 
-#define _TESTCLINIC_TESTCLASS_METH_METHOD_NO_PARAMS_METHODDEF    \
-    {"meth_method_no_params", _PyCFunction_CAST(_testclinic_TestClass_meth_method_no_params), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _testclinic_TestClass_meth_method_no_params__doc__},
+#define _TESTCLINIC_TESTCLASS_GET_DEFINING_CLASS_METHODDEF    \
+    {"get_defining_class", _PyCFunction_CAST(_testclinic_TestClass_get_defining_class), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _testclinic_TestClass_get_defining_class__doc__},
 
 static PyObject *
-_testclinic_TestClass_meth_method_no_params_impl(PyObject *self,
-                                                 PyTypeObject *cls);
+_testclinic_TestClass_get_defining_class_impl(PyObject *self,
+                                              PyTypeObject *cls);
 
 static PyObject *
-_testclinic_TestClass_meth_method_no_params(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_testclinic_TestClass_get_defining_class(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
-        PyErr_SetString(PyExc_TypeError, "meth_method_no_params() takes no arguments");
+        PyErr_SetString(PyExc_TypeError, "get_defining_class() takes no arguments");
         return NULL;
     }
-    return _testclinic_TestClass_meth_method_no_params_impl(self, cls);
+    return _testclinic_TestClass_get_defining_class_impl(self, cls);
 }
-/*[clinic end generated code: output=6520c1ca5392a3f0 input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(_testclinic_TestClass_get_defining_class_arg__doc__,
+"get_defining_class_arg($self, /, arg)\n"
+"--\n"
+"\n");
+
+#define _TESTCLINIC_TESTCLASS_GET_DEFINING_CLASS_ARG_METHODDEF    \
+    {"get_defining_class_arg", _PyCFunction_CAST(_testclinic_TestClass_get_defining_class_arg), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _testclinic_TestClass_get_defining_class_arg__doc__},
+
+static PyObject *
+_testclinic_TestClass_get_defining_class_arg_impl(PyObject *self,
+                                                  PyTypeObject *cls,
+                                                  PyObject *arg);
+
+static PyObject *
+_testclinic_TestClass_get_defining_class_arg(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 2
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(arg), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"arg", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "get_defining_class_arg",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    PyObject *arg;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    arg = args[0];
+    return_value = _testclinic_TestClass_get_defining_class_arg_impl(self, cls, arg);
+
+exit:
+    return return_value;
+}
+/*[clinic end generated code: output=71b2a15aa86c2bcf input=a9049054013a1b77]*/

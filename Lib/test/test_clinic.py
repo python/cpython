@@ -3393,25 +3393,49 @@ class ClinicFunctionalTest(unittest.TestCase):
                 func = getattr(ac_tester, name)
                 self.assertEqual(func(), name)
 
-    def test_meth_method_no_params(self):
+    def test_get_defining_class(self):
         obj = ac_tester.TestClass()
-        meth = obj.meth_method_no_params
+        meth = obj.get_defining_class
+        self.assertIs(obj.get_defining_class(), ac_tester.TestClass)
+
+        # 'defining_class' argument is a positional only argument
+        with self.assertRaises(TypeError):
+            obj.get_defining_class_arg(cls=ac_tester.TestClass)
+
         check = partial(self.assertRaisesRegex, TypeError, "no arguments")
         check(meth, 1)
         check(meth, a=1)
 
-    def test_meth_method_no_params_capi(self):
+    def test_get_defining_class_capi(self):
         from _testcapi import pyobject_vectorcall
         obj = ac_tester.TestClass()
-        meth = obj.meth_method_no_params
+        meth = obj.get_defining_class
         pyobject_vectorcall(meth, None, None)
         pyobject_vectorcall(meth, (), None)
         pyobject_vectorcall(meth, (), ())
         pyobject_vectorcall(meth, None, ())
+        self.assertIs(pyobject_vectorcall(meth, (), ()), ac_tester.TestClass)
 
         check = partial(self.assertRaisesRegex, TypeError, "no arguments")
         check(pyobject_vectorcall, meth, (1,), None)
         check(pyobject_vectorcall, meth, (1,), ("a",))
+
+    def test_get_defining_class_arg(self):
+        obj = ac_tester.TestClass()
+        self.assertEqual(obj.get_defining_class_arg("arg"),
+                         (ac_tester.TestClass, "arg"))
+        self.assertEqual(obj.get_defining_class_arg(arg=123),
+                         (ac_tester.TestClass, 123))
+
+        # 'defining_class' argument is a positional only argument
+        with self.assertRaises(TypeError):
+            obj.get_defining_class_arg(cls=ac_tester.TestClass, arg="arg")
+
+        # wrong number of arguments
+        with self.assertRaises(TypeError):
+            obj.get_defining_class_arg()
+        with self.assertRaises(TypeError):
+            obj.get_defining_class_arg("arg1", "arg2")
 
     def test_depr_star_new(self):
         cls = ac_tester.DeprStarNew
