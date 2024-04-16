@@ -1360,7 +1360,7 @@ class ClinicParserTest(_ParserBase):
     def test_disallow_defining_class_inside_module(self):
         expected_error_msg = (
             "Error on line 0:\n"
-            "A 'defining_class' parameter can be specified inside a class method.\n"
+            "A 'defining_class' parameter cannot be defined at module level.\n"
         )
         out = self.parse_function_should_fail("""
             module m
