@@ -28,9 +28,9 @@ struct _Py_ext_module_loader_info {
 };
 extern void _Py_ext_module_loader_info_clear(
     struct _Py_ext_module_loader_info *info);
-extern int _Py_ext_module_loader_info_from_spec(
-    PyObject *spec,
-    struct _Py_ext_module_loader_info *info);
+extern int _Py_ext_module_loader_info_init_from_spec(
+    struct _Py_ext_module_loader_info *info,
+    PyObject *spec);
 
 extern PyObject *_PyImport_LoadDynamicModuleWithSpec(
     struct _Py_ext_module_loader_info *info,

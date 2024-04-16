@@ -3882,7 +3882,7 @@ _imp_create_dynamic_impl(PyObject *module, PyObject *spec, PyObject *file)
     FILE *fp;
 
     struct _Py_ext_module_loader_info info;
-    if (_Py_ext_module_loader_info_from_spec(spec, &info) < 0) {
+    if (_Py_ext_module_loader_info_init_from_spec(&info, spec) < 0) {
         return NULL;
     }
 
