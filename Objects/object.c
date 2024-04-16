@@ -2686,8 +2686,6 @@ finally:
 
 /* Trashcan support. */
 
-#define _PyTrash_UNWIND_LEVEL 50
-
 /* Add op to the gcstate->trash_delete_later list.  Called when the current
  * call-stack depth gets large.  op must be a currently untracked gc'ed
  * object, with refcount 0.  Py_DECREF must already have been called on it.
@@ -2723,7 +2721,7 @@ _PyTrash_thread_destroy_chain(PyThreadState *tstate)
                tups = [(tup,) for tup in tups]
            del tups
     */
-    assert(tstate->c_recursion_remaining > 100);
+    assert(tstate->c_recursion_remaining > Py_TRASHCAN_HEADROOM);
     tstate->c_recursion_remaining--;
     while (tstate->delete_later) {
         PyObject *op = tstate->delete_later;
