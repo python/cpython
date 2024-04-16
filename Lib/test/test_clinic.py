@@ -1357,6 +1357,18 @@ class ClinicParserTest(_ParserBase):
         p = function.parameters['cls']
         self.assertEqual(p.kind, inspect.Parameter.POSITIONAL_ONLY)
 
+    def test_disallow_defining_class_inside_module(self):
+        expected_error_msg = (
+            "Error on line 0:\n"
+            "A 'defining_class' parameter can be specified inside a class method.\n"
+        )
+        out = self.parse_function_should_fail("""
+            module m
+            m.func
+                cls: defining_class
+        """)
+        self.assertEqual(out, expected_error_msg)
+
     def parse(self, text):
         c = FakeClinic()
         parser = DSLParser(c)
