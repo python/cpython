@@ -630,6 +630,13 @@ re
 * Rename :exc:`!re.error` to :exc:`re.PatternError` for improved clarity.
   :exc:`!re.error` is kept for backward compatibility.
 
+site
+----
+
+* :file:`.pth` files are now decoded by UTF-8 first, and then by the
+  :term:`locale encoding` if the UTF-8 decoding fails.
+  (Contributed by Inada Naoki in :gh:`117802`.)
+
 sqlite3
 -------
 
