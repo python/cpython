@@ -3764,10 +3764,12 @@ _imp_create_dynamic_impl(PyObject *module, PyObject *spec, PyObject *file)
 
     mod = _PyImport_LoadDynamicModuleWithSpec(spec, fp);
 
-finally:
+    // XXX Shouldn't this happen in the error cases too.
     if (fp) {
         fclose(fp);
     }
+
+finally:
     Py_DECREF(name);
     Py_DECREF(path);
     return mod;
