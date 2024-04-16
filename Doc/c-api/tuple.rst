@@ -59,6 +59,12 @@ Tuple Objects
    Return the object at position *pos* in the tuple pointed to by *p*.  If *pos* is
    negative or out of bounds, return ``NULL`` and set an :exc:`IndexError` exception.
 
+   Return a :term:`borrowed reference`. It is borrowed from the tuple *p*:
+   it remains valid as long as you hold a strong reference to *p*.
+   To get a :term:`strong reference`, use
+   :c:func:`Py_NewRef(PyTuple_GetItem(...)) <Py_NewRef>`
+   or :c:func:`PySequence_GetItem`.
+
 
 .. c:function:: PyObject* PyTuple_GET_ITEM(PyObject *p, Py_ssize_t pos)
 
