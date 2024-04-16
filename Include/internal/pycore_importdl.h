@@ -35,6 +35,8 @@ extern int _Py_ext_module_loader_info_init_from_spec(
 struct _Py_ext_module_loader_result {
     PyModuleDef *def;
     PyObject *module;
+    int singlephase;
+    char err[200];
 };
 extern int _PyImport_RunDynamicModule(
     struct _Py_ext_module_loader_info *info,
