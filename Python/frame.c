@@ -26,7 +26,7 @@ _PyFrame_Traverse(_PyInterpreterFrame *frame, visitproc visit, void *arg)
             continue;
         }
 #endif
-        Py_VISIT(Py_STACK_UNTAG_BORROWED(locals[i]));
+        Py_VISIT(Py_STACKREF_UNTAG_BORROWED(locals[i]));
     }
     return 0;
 }
@@ -71,7 +71,7 @@ _PyFrame_Copy(_PyInterpreterFrame *src, _PyInterpreterFrame *dest)
 #ifdef Py_GIL_DISABLED
     PyCodeObject *co = (PyCodeObject *)dest->f_executable;
     for (int i = src->stacktop; i < co->co_nlocalsplus + co->co_stacksize; i++) {
-        dest->localsplus[i] = Py_STACK_TAG(NULL);
+        dest->localsplus[i] = Py_STACKREF_TAG(NULL);
     }
 #endif
 }

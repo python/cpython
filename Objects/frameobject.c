@@ -783,7 +783,7 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno, void *Py_UNUSED(ignore
     for (int i = 0; i < code->co_nlocalsplus; i++) {
         // Counting every unbound local is overly-cautious, but a full flow
         // analysis (like we do in the compiler) is probably too expensive:
-        unbound += Py_STACK_UNTAG_BORROWED(f->f_frame->localsplus[i]) == NULL;
+        unbound += Py_STACKREF_UNTAG_BORROWED(f->f_frame->localsplus[i]) == NULL;
     }
     if (unbound) {
         const char *e = "assigning None to %d unbound local%s";
@@ -794,8 +794,8 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno, void *Py_UNUSED(ignore
         // Do this in a second pass to avoid writing a bunch of Nones when
         // warnings are being treated as errors and the previous bit raises:
         for (int i = 0; i < code->co_nlocalsplus; i++) {
-            if (Py_STACK_UNTAG_BORROWED(f->f_frame->localsplus[i]) == NULL) {
-                f->f_frame->localsplus[i] = Py_STACK_TAG(Py_NewRef(Py_None));
+            if (Py_STACKREF_UNTAG_BORROWED(f->f_frame->localsplus[i]) == NULL) {
+                f->f_frame->localsplus[i] = Py_STACKREF_TAG(Py_NewRef(Py_None));
                 unbound--;
             }
         }
@@ -808,7 +808,7 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno, void *Py_UNUSED(ignore
     while (start_stack > best_stack) {
         if (top_of_stack(start_stack) == Except) {
             /* Pop exception stack as well as the evaluation stack */
-            PyObject *exc = Py_STACK_UNTAG_BORROWED(_PyFrame_StackPop(f->f_frame));
+            PyObject *exc = Py_STACKREF_UNTAG_BORROWED(_PyFrame_StackPop(f->f_frame));
             assert(PyExceptionInstance_Check(exc) || exc == Py_None);
             PyThreadState *tstate = _PyThreadState_GET();
             Py_XSETREF(tstate->exc_info->exc_value, exc == Py_None ? NULL : exc);
@@ -1142,7 +1142,7 @@ frame_init_get_vars(_PyInterpreterFrame *frame)
     int offset = PyUnstable_Code_GetFirstFree(co);
     for (int i = 0; i < co->co_nfreevars; ++i) {
         PyObject *o = PyTuple_GET_ITEM(closure, i);
-        frame->localsplus[offset + i] = Py_NewRef_StackRef(Py_STACK_TAG(o));
+        frame->localsplus[offset + i] = Py_NewRef_StackRef(Py_STACKREF_TAG(o));
     }
     // COPY_FREE_VARS doesn't have inline CACHEs, either:
     frame->instr_ptr = _PyCode_CODE(_PyFrame_GetCode(frame));
@@ -1167,7 +1167,7 @@ frame_get_var(_PyInterpreterFrame *frame, PyCodeObject *co, int i,
         return 0;
     }
 
-    PyObject *value = Py_STACK_UNTAG_BORROWED(frame->localsplus[i]);
+    PyObject *value = Py_STACKREF_UNTAG_BORROWED(frame->localsplus[i]);
     if (frame->stacktop) {
         if (kind & CO_FAST_FREE) {
             // The cell was set by COPY_FREE_VARS.
@@ -1405,7 +1405,7 @@ _PyFrame_LocalsToFast(_PyInterpreterFrame *frame, int clear)
                 continue;
             }
         }
-        PyObject *oldvalue = Py_STACK_UNTAG_BORROWED(fast[i]);
+        PyObject *oldvalue = Py_STACKREF_UNTAG_BORROWED(fast[i]);
         PyObject *cell = NULL;
         if (kind == CO_FAST_FREE) {
             // The cell was set when the frame was created from
@@ -1441,7 +1441,7 @@ _PyFrame_LocalsToFast(_PyInterpreterFrame *frame, int clear)
                 }
                 value = Py_NewRef(Py_None);
             }
-            Py_XSETREF_STACKREF(fast[i], Py_NewRef_StackRef(Py_STACK_TAG(value)));
+            Py_XSETREF_STACKREF(fast[i], Py_NewRef_StackRef(Py_STACKREF_TAG(value)));
         }
         Py_XDECREF(value);
     }

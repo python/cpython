@@ -113,7 +113,7 @@ dump_stack(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer)
         if (ptr != stack_base) {
             printf(", ");
         }
-        PyObject *obj = Py_STACK_UNTAG_BORROWED(*ptr);
+        PyObject *obj = Py_STACKREF_UNTAG_BORROWED(*ptr);
         if (obj == NULL) {
             printf("<nil>");
             continue;
@@ -897,7 +897,7 @@ exception_unwind:
                 /* Pop remaining stack entries. */
                 _PyStackRef *stackbase = _PyFrame_Stackbase(frame);
                 while (stack_pointer > stackbase) {
-                    PyObject *o = Py_STACK_UNTAG_BORROWED(POP());
+                    PyObject *o = Py_STACKREF_UNTAG_BORROWED(POP());
                     Py_XDECREF(o);
                 }
                 assert(STACK_LEVEL() == 0);
@@ -909,7 +909,7 @@ exception_unwind:
             assert(STACK_LEVEL() >= level);
             _PyStackRef *new_top = _PyFrame_Stackbase(frame) + level;
             while (stack_pointer > new_top) {
-                PyObject *v = Py_STACK_UNTAG_BORROWED(POP());
+                PyObject *v = Py_STACKREF_UNTAG_BORROWED(POP());
                 Py_XDECREF(v);
             }
             if (lasti) {
@@ -918,7 +918,7 @@ exception_unwind:
                 if (lasti == NULL) {
                     goto exception_unwind;
                 }
-                PUSH(Py_STACK_TAG(lasti));
+                PUSH(Py_STACKREF_TAG(lasti));
             }
 
             /* Make the raw exception data
@@ -926,7 +926,7 @@ exception_unwind:
                 so a program can emulate the
                 Python main loop. */
             PyObject *exc = _PyErr_GetRaisedException(tstate);
-            PUSH(Py_STACK_TAG(exc));
+            PUSH(Py_STACKREF_TAG(exc));
             next_instr = _PyCode_CODE(_PyFrame_GetCode(frame)) + handler;
 
             if (monitor_handled(tstate, frame, next_instr, exc) < 0) {
@@ -1210,7 +1210,7 @@ missing_arguments(PyThreadState *tstate, PyCodeObject *co,
         end = start + co->co_kwonlyargcount;
     }
     for (i = start; i < end; i++) {
-        if (Py_STACK_UNTAG_BORROWED(localsplus[i]) == NULL) {
+        if (Py_STACKREF_UNTAG_BORROWED(localsplus[i]) == NULL) {
             PyObject *raw = PyTuple_GET_ITEM(co->co_localsplusnames, i);
             PyObject *name = PyObject_Repr(raw);
             if (name == NULL) {
@@ -1239,7 +1239,7 @@ too_many_positional(PyThreadState *tstate, PyCodeObject *co,
     assert((co->co_flags & CO_VARARGS) == 0);
     /* Count missing keyword-only args. */
     for (i = co_argcount; i < co_argcount + co->co_kwonlyargcount; i++) {
-        if (Py_STACK_UNTAG_BORROWED(localsplus[i]) != NULL) {
+        if (Py_STACKREF_UNTAG_BORROWED(localsplus[i]) != NULL) {
             kwonly_given++;
         }
     }
@@ -1435,8 +1435,8 @@ initialize_locals(PyThreadState *tstate, PyFunctionObject *func,
         if (co->co_flags & CO_VARARGS) {
             i++;
         }
-        assert(Py_STACK_UNTAG_BORROWED(localsplus[i]) == NULL);
-        localsplus[i] = Py_STACK_TAG(kwdict);
+        assert(Py_STACKREF_UNTAG_BORROWED(localsplus[i]) == NULL);
+        localsplus[i] = Py_STACKREF_TAG(kwdict);
     }
     else {
         kwdict = NULL;
@@ -1451,7 +1451,7 @@ initialize_locals(PyThreadState *tstate, PyFunctionObject *func,
         n = argcount;
     }
     for (j = 0; j < n; j++) {
-        assert(Py_STACK_UNTAG_BORROWED(localsplus[j]) == NULL);
+        assert(Py_STACKREF_UNTAG_BORROWED(localsplus[j]) == NULL);
         localsplus[j] = args[j];
     }
 
@@ -1468,8 +1468,8 @@ initialize_locals(PyThreadState *tstate, PyFunctionObject *func,
         if (u == NULL) {
             goto fail_post_positional;
         }
-        assert(Py_STACK_UNTAG_BORROWED(localsplus[total_args]) == NULL);
-        localsplus[total_args] = Py_STACK_TAG(u);
+        assert(Py_STACKREF_UNTAG_BORROWED(localsplus[total_args]) == NULL);
+        localsplus[total_args] = Py_STACKREF_TAG(u);
     }
     else if (argcount > n) {
         /* Too many postional args. Error is reported later */
@@ -1557,7 +1557,7 @@ initialize_locals(PyThreadState *tstate, PyFunctionObject *func,
                 goto kw_fail;
             }
 
-            if (PyDict_SetItem(kwdict, keyword, Py_STACK_UNTAG_OWNED(value_tagged)) == -1) {
+            if (PyDict_SetItem(kwdict, keyword, Py_STACKREF_UNTAG_OWNED(value_tagged)) == -1) {
                 goto kw_fail;
             }
             Py_DECREF_STACKREF(value_tagged);
@@ -1570,7 +1570,7 @@ initialize_locals(PyThreadState *tstate, PyFunctionObject *func,
             goto fail_post_args;
 
         kw_found:
-            if (Py_STACK_UNTAG_BORROWED(localsplus[j]) != NULL) {
+            if (Py_STACKREF_UNTAG_BORROWED(localsplus[j]) != NULL) {
                 _PyErr_Format(tstate, PyExc_TypeError,
                             "%U() got multiple values for argument '%S'",
                           func->func_qualname, keyword);
@@ -1593,7 +1593,7 @@ initialize_locals(PyThreadState *tstate, PyFunctionObject *func,
         Py_ssize_t m = co->co_argcount - defcount;
         Py_ssize_t missing = 0;
         for (i = argcount; i < m; i++) {
-            if (Py_STACK_UNTAG_BORROWED(localsplus[i]) == NULL) {
+            if (Py_STACKREF_UNTAG_BORROWED(localsplus[i]) == NULL) {
                 missing++;
             }
         }
@@ -1609,9 +1609,9 @@ initialize_locals(PyThreadState *tstate, PyFunctionObject *func,
         if (defcount) {
             PyObject **defs = &PyTuple_GET_ITEM(func->func_defaults, 0);
             for (; i < defcount; i++) {
-                if (Py_STACK_UNTAG_BORROWED(localsplus[m+i]) == NULL) {
+                if (Py_STACKREF_UNTAG_BORROWED(localsplus[m+i]) == NULL) {
                     PyObject *def = defs[i];
-                    localsplus[m+i] = Py_NewRef_StackRef(Py_STACK_TAG(def));
+                    localsplus[m+i] = Py_NewRef_StackRef(Py_STACKREF_TAG(def));
                 }
             }
         }
@@ -1621,7 +1621,7 @@ initialize_locals(PyThreadState *tstate, PyFunctionObject *func,
     if (co->co_kwonlyargcount > 0) {
         Py_ssize_t missing = 0;
         for (i = co->co_argcount; i < total_args; i++) {
-            if (Py_STACK_UNTAG_BORROWED(localsplus[i]) != NULL)
+            if (Py_STACKREF_UNTAG_BORROWED(localsplus[i]) != NULL)
                 continue;
             PyObject *varname = PyTuple_GET_ITEM(co->co_localsplusnames, i);
             if (func->func_kwdefaults != NULL) {
@@ -1630,7 +1630,7 @@ initialize_locals(PyThreadState *tstate, PyFunctionObject *func,
                     goto fail_post_args;
                 }
                 if (def) {
-                    localsplus[i] = Py_STACK_TAG(def);
+                    localsplus[i] = Py_STACKREF_TAG(def);
                     continue;
                 }
             }
@@ -1754,10 +1754,10 @@ _PyEvalFramePushAndInit_UnTagged(PyThreadState *tstate, PyFunctionObject *func,
         return NULL;
     }
     for (size_t i = 0; i < argcount; i++) {
-        tagged_args_buffer[i] = Py_STACK_TAG(args[i]);
+        tagged_args_buffer[i] = Py_STACKREF_TAG(args[i]);
     }
     for (size_t i = 0; i < kw_count; i++) {
-        tagged_args_buffer[argcount + i] = Py_STACK_TAG(args[argcount + i]);
+        tagged_args_buffer[argcount + i] = Py_STACKREF_TAG(args[argcount + i]);
     }
     _PyInterpreterFrame *res = _PyEvalFramePushAndInit(tstate, func, locals, (_PyStackRef const *)tagged_args_buffer, argcount, kwnames);
     PyMem_Free(tagged_args_buffer);
@@ -2125,7 +2125,7 @@ _PyEval_UnpackTaggedIterable(PyThreadState *tstate, PyObject *v,
             }
             goto Error;
         }
-        *--sp = Py_STACK_TAG(w);
+        *--sp = Py_STACKREF_TAG(w);
     }
 
     if (argcntafter == -1) {
@@ -2147,7 +2147,7 @@ _PyEval_UnpackTaggedIterable(PyThreadState *tstate, PyObject *v,
     l = PySequence_List(it);
     if (l == NULL)
         goto Error;
-    *--sp = Py_STACK_TAG(l);
+    *--sp = Py_STACKREF_TAG(l);
     i++;
 
     ll = PyList_GET_SIZE(l);
@@ -2160,7 +2160,7 @@ _PyEval_UnpackTaggedIterable(PyThreadState *tstate, PyObject *v,
 
     /* Pop the "after-variable" args off the list. */
     for (j = argcntafter; j > 0; j--, i++) {
-        *--sp = Py_STACK_TAG(PyList_GET_ITEM(l, ll - j));
+        *--sp = Py_STACKREF_TAG(PyList_GET_ITEM(l, ll - j));
     }
     /* Resize the list. */
     Py_SET_SIZE(l, ll - argcntafter);

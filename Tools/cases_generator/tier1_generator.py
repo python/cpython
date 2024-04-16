@@ -45,7 +45,7 @@ def declare_variables(inst: Instruction, out: CWriter) -> None:
                     variables.add(var.name)
                     if var.condition:
                         if type.strip() != "_PyStackRef":
-                            out.emit(f"_PyStackRef {var.name}_tagged = Py_STACK_TAG(NULL);\n")
+                            out.emit(f"_PyStackRef {var.name}_tagged = Py_STACKREF_TAG(NULL);\n")
                         out.emit(f"{type}{var.name} = NULL;\n")
                     else:
                         if not var.is_array() and type.strip() != "_PyStackRef":

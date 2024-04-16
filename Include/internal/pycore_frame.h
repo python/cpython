@@ -85,7 +85,7 @@ static inline _PyStackRef *_PyFrame_Stackbase(_PyInterpreterFrame *f) {
 
 static inline _PyStackRef _PyFrame_StackPeek(_PyInterpreterFrame *f) {
     assert(f->stacktop > _PyFrame_GetCode(f)->co_nlocalsplus);
-    assert(Py_STACK_UNTAG_BORROWED(f->localsplus[f->stacktop-1]) != NULL);
+    assert(Py_STACKREF_UNTAG_BORROWED(f->localsplus[f->stacktop-1]) != NULL);
     return f->localsplus[f->stacktop-1];
 }
 
@@ -134,7 +134,7 @@ _PyFrame_Initialize(
     frame->owner = FRAME_OWNED_BY_THREAD;
 
     for (int i = null_locals_from; i < code->co_nlocalsplus; i++) {
-        frame->localsplus[i] = Py_STACK_TAG(NULL);
+        frame->localsplus[i] = Py_STACKREF_TAG(NULL);
     }
 
 #ifdef Py_GIL_DISABLED
@@ -143,7 +143,7 @@ _PyFrame_Initialize(
     // no choice but to traverse the entire stack.
     // This just makes sure we don't pass the GC invalid stack values.
     for (int i = code->co_nlocalsplus; i < code->co_nlocalsplus + code->co_stacksize; i++) {
-        frame->localsplus[i] = Py_STACK_TAG(NULL);
+        frame->localsplus[i] = Py_STACKREF_TAG(NULL);
     }
 #endif
 }
@@ -308,7 +308,7 @@ _PyFrame_PushTrampolineUnchecked(PyThreadState *tstate, PyCodeObject *code, int 
 #ifdef Py_GIL_DISABLED
     assert(code->co_nlocalsplus == 0);
     for (int i = 0; i < code->co_stacksize; i++) {
-        frame->localsplus[i] = Py_STACK_TAG(NULL);
+        frame->localsplus[i] = Py_STACKREF_TAG(NULL);
     }
 #endif
     return frame;

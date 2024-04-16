@@ -176,9 +176,9 @@ PySlice_New(PyObject *start, PyObject *stop, PyObject *step)
 PyObject *
 _PyBuildSlice_ConsumeStackRefs(_PyStackRef start, _PyStackRef stop)
 {
-    assert(Py_STACK_UNTAG_BORROWED(start) != NULL && Py_STACK_UNTAG_BORROWED(stop) != NULL);
-    PyObject *res = (PyObject *)_PyBuildSlice_Steal3(Py_STACK_UNTAG_OWNED(start),
-                                                     Py_STACK_UNTAG_OWNED(stop),
+    assert(Py_STACKREF_UNTAG_BORROWED(start) != NULL && Py_STACKREF_UNTAG_BORROWED(stop) != NULL);
+    PyObject *res = (PyObject *)_PyBuildSlice_Steal3(Py_STACKREF_UNTAG_OWNED(start),
+                                                     Py_STACKREF_UNTAG_OWNED(stop),
                                                      Py_None);
     if (res == NULL) {
         Py_DECREF_STACKREF_OWNED(start);
