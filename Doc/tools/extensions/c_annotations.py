@@ -69,7 +69,7 @@ class Annotations:
                     continue
                 parts = line.split(":", 4)
                 if len(parts) != 5:
-                    raise ValueError("Wrong field count in %r" % line)
+                    raise ValueError(f"Wrong field count in {line!r}")
                 function, type, arg, refcount, comment = parts
                 # Get the entry, creating it if needed:
                 try:
