@@ -26,6 +26,13 @@ interface.
    key; it defaults to :kbd:`Tab`. If *completekey* is not :const:`None` and
    :mod:`readline` is available, command completion is done automatically.
 
+   The default, ``'tab'``, is treated specially, so that it refers to the
+   :kbd:`Tab` key on every :data:`readline.backend`.
+   Specifically, if :data:`readline.backend` is ``editline``,
+   ``Cmd`` will use ``'^I'`` instead of ``'tab'``.
+   Note that other values are not treated this way, and might only work
+   with a specific backend.
+
    The optional arguments *stdin* and *stdout* specify the  input and output file
    objects that the Cmd instance or subclass  instance will use for input and
    output. If not specified, they will default to :data:`sys.stdin` and
@@ -34,6 +41,9 @@ interface.
    If you want a given *stdin* to be used, make sure to set the instance's
    :attr:`use_rawinput` attribute to ``False``, otherwise *stdin* will be
    ignored.
+
+   .. versionchanged:: 3.13
+      ``completekey='tab'`` is replaced by ``'^I'`` for ``editline``.
 
 
 .. _cmd-objects:
@@ -66,29 +76,32 @@ A :class:`Cmd` instance has the following methods:
       single: ! (exclamation); in a command interpreter
 
    An interpreter instance will recognize a command name ``foo`` if and only if it
-   has a method :meth:`do_foo`.  As a special case, a line beginning with the
+   has a method :meth:`!do_foo`.  As a special case, a line beginning with the
    character ``'?'`` is dispatched to the method :meth:`do_help`.  As another
    special case, a line beginning with the character ``'!'`` is dispatched to the
-   method :meth:`do_shell` (if such a method is defined).
+   method :meth:`!do_shell` (if such a method is defined).
 
    This method will return when the :meth:`postcmd` method returns a true value.
    The *stop* argument to :meth:`postcmd` is the return value from the command's
-   corresponding :meth:`do_\*` method.
+   corresponding :meth:`!do_\*` method.
 
    If completion is enabled, completing commands will be done automatically, and
-   completing of commands args is done by calling :meth:`complete_foo` with
+   completing of commands args is done by calling :meth:`!complete_foo` with
    arguments *text*, *line*, *begidx*, and *endidx*.  *text* is the string prefix
    we are attempting to match: all returned matches must begin with it. *line* is
    the current input line with leading whitespace removed, *begidx* and *endidx*
    are the beginning and ending indexes of the prefix text, which could be used to
    provide different completion depending upon which position the argument is in.
 
-   All subclasses of :class:`Cmd` inherit a predefined :meth:`do_help`.  This
+
+.. method:: Cmd.do_help(arg)
+
+   All subclasses of :class:`Cmd` inherit a predefined :meth:`!do_help`.  This
    method, called with an argument ``'bar'``, invokes the corresponding method
-   :meth:`help_bar`, and if that is not present, prints the docstring of
-   :meth:`do_bar`, if available.  With no argument, :meth:`do_help` lists all
+   :meth:`!help_bar`, and if that is not present, prints the docstring of
+   :meth:`!do_bar`, if available.  With no argument, :meth:`!do_help` lists all
    available help topics (that is, all commands with corresponding
-   :meth:`help_\*` methods or commands that have docstrings), and also lists any
+   :meth:`!help_\*` methods or commands that have docstrings), and also lists any
    undocumented commands.
 
 
@@ -98,7 +111,7 @@ A :class:`Cmd` instance has the following methods:
    This may be overridden, but should not normally need to be; see the
    :meth:`precmd` and :meth:`postcmd` methods for useful execution hooks.  The
    return value is a flag indicating whether interpretation of commands by the
-   interpreter should stop.  If there is a :meth:`do_\*` method for the command
+   interpreter should stop.  If there is a :meth:`!do_\*` method for the command
    *str*, the return value of that method is returned, otherwise the return value
    from the :meth:`default` method is returned.
 
@@ -118,7 +131,7 @@ A :class:`Cmd` instance has the following methods:
 .. method:: Cmd.completedefault(text, line, begidx, endidx)
 
    Method called to complete an input line when no command-specific
-   :meth:`complete_\*` method is available.  By default, it returns an empty list.
+   :meth:`!complete_\*` method is available.  By default, it returns an empty list.
 
 
 .. method:: Cmd.columnize(list, displaywidth=80)
@@ -199,14 +212,14 @@ Instances of :class:`Cmd` subclasses have some public instance variables:
 .. attribute:: Cmd.misc_header
 
    The header to issue if the help output has a section for miscellaneous  help
-   topics (that is, there are :meth:`help_\*` methods without corresponding
-   :meth:`do_\*` methods).
+   topics (that is, there are :meth:`!help_\*` methods without corresponding
+   :meth:`!do_\*` methods).
 
 
 .. attribute:: Cmd.undoc_header
 
    The header to issue if the help output has a section for undocumented  commands
-   (that is, there are :meth:`do_\*` methods without corresponding :meth:`help_\*`
+   (that is, there are :meth:`!do_\*` methods without corresponding :meth:`!help_\*`
    methods).
 
 
@@ -219,8 +232,8 @@ Instances of :class:`Cmd` subclasses have some public instance variables:
 .. attribute:: Cmd.use_rawinput
 
    A flag, defaulting to true.  If true, :meth:`cmdloop` uses :func:`input` to
-   display a prompt and read the next command; if false, :meth:`sys.stdout.write`
-   and :meth:`sys.stdin.readline` are used. (This means that by importing
+   display a prompt and read the next command; if false, :data:`sys.stdout.write() <sys.stdout>`
+   and :data:`sys.stdin.readline() <sys.stdin>` are used. (This means that by importing
    :mod:`readline`, on systems that support it, the interpreter will automatically
    support :program:`Emacs`\ -like line editing  and command-history keystrokes.)
 
@@ -239,14 +252,14 @@ This section presents a simple example of how to build a shell around a few of
 the commands in the :mod:`turtle` module.
 
 Basic turtle commands such as :meth:`~turtle.forward` are added to a
-:class:`Cmd` subclass with method named :meth:`do_forward`.  The argument is
+:class:`Cmd` subclass with method named :meth:`!do_forward`.  The argument is
 converted to a number and dispatched to the turtle module.  The docstring is
 used in the help utility provided by the shell.
 
 The example also includes a basic record and playback facility implemented with
 the :meth:`~Cmd.precmd` method which is responsible for converting the input to
-lowercase and writing the commands to a file.  The :meth:`do_playback` method
-reads the file and adds the recorded commands to the :attr:`cmdqueue` for
+lowercase and writing the commands to a file.  The :meth:`!do_playback` method
+reads the file and adds the recorded commands to the :attr:`~Cmd.cmdqueue` for
 immediate playback::
 
     import cmd, sys

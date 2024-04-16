@@ -85,17 +85,25 @@ make_timezones_capi(PyObject *self, PyObject *args)
 {
     PyObject *offset = PyDelta_FromDSU(0, -18000, 0);
     PyObject *name = PyUnicode_FromString("EST");
+    if (offset == NULL || name == NULL) {
+        Py_XDECREF(offset);
+        Py_XDECREF(name);
+        return NULL;
+    }
 
     PyObject *est_zone_capi = PyDateTimeAPI->TimeZone_FromTimeZone(offset, name);
     PyObject *est_zone_macro = PyTimeZone_FromOffsetAndName(offset, name);
     PyObject *est_zone_macro_noname = PyTimeZone_FromOffset(offset);
-
-    Py_DecRef(offset);
-    Py_DecRef(name);
-
+    Py_DECREF(offset);
+    Py_DECREF(name);
+    if (est_zone_capi == NULL || est_zone_macro == NULL ||
+        est_zone_macro_noname == NULL)
+    {
+        goto error;
+    }
     PyObject *rv = PyTuple_New(3);
     if (rv == NULL) {
-        return NULL;
+        goto error;
     }
 
     PyTuple_SET_ITEM(rv, 0, est_zone_capi);
@@ -103,6 +111,11 @@ make_timezones_capi(PyObject *self, PyObject *args)
     PyTuple_SET_ITEM(rv, 2, est_zone_macro_noname);
 
     return rv;
+error:
+    Py_XDECREF(est_zone_capi);
+    Py_XDECREF(est_zone_macro);
+    Py_XDECREF(est_zone_macro_noname);
+    return NULL;
 }
 
 static PyObject *
@@ -110,6 +123,11 @@ get_timezones_offset_zero(PyObject *self, PyObject *args)
 {
     PyObject *offset = PyDelta_FromDSU(0, 0, 0);
     PyObject *name = PyUnicode_FromString("");
+    if (offset == NULL || name == NULL) {
+        Py_XDECREF(offset);
+        Py_XDECREF(name);
+        return NULL;
+    }
 
     // These two should return the UTC singleton
     PyObject *utc_singleton_0 = PyTimeZone_FromOffset(offset);
@@ -117,16 +135,28 @@ get_timezones_offset_zero(PyObject *self, PyObject *args)
 
     // This one will return +00:00 zone, but not the UTC singleton
     PyObject *non_utc_zone = PyTimeZone_FromOffsetAndName(offset, name);
-
-    Py_DecRef(offset);
-    Py_DecRef(name);
+    Py_DECREF(offset);
+    Py_DECREF(name);
+    if (utc_singleton_0 == NULL || utc_singleton_1 == NULL ||
+        non_utc_zone == NULL)
+    {
+        goto error;
+    }
 
     PyObject *rv = PyTuple_New(3);
+    if (rv == NULL) {
+        goto error;
+    }
     PyTuple_SET_ITEM(rv, 0, utc_singleton_0);
     PyTuple_SET_ITEM(rv, 1, utc_singleton_1);
     PyTuple_SET_ITEM(rv, 2, non_utc_zone);
 
     return rv;
+error:
+    Py_XDECREF(utc_singleton_0);
+    Py_XDECREF(utc_singleton_1);
+    Py_XDECREF(non_utc_zone);
+    return NULL;
 }
 
 static PyObject *

@@ -1,6 +1,0 @@
-Fix bug where a :class:`typing.Protocol` class that had one or more
-non-callable members would raise :exc:`TypeError` when :func:`issubclass`
-was called against it, even if it defined a custom ``__subclasshook__``
-method. The behaviour in Python 3.11 and lower -- which has now been
-restored -- was not to raise :exc:`TypeError` in these situations if a
-custom ``__subclasshook__`` method was defined. Patch by Alex Waygood.

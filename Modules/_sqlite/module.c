@@ -21,6 +21,10 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
 #include "connection.h"
 #include "statement.h"
 #include "cursor.h"
@@ -28,6 +32,8 @@
 #include "microprotocols.h"
 #include "row.h"
 #include "blob.h"
+
+#include "pycore_import.h"        // _PyImport_GetModuleAttrString()
 
 #if SQLITE_VERSION_NUMBER < 3015002
 #error "SQLite 3.15.2 or higher required"
@@ -42,31 +48,33 @@ module _sqlite3
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=81e330492d57488e]*/
 
-// NB: This needs to be in sync with the Connection.__init__ docstring.
-PyDoc_STRVAR(module_connect_doc,
-"connect($module, /, database, timeout=5.0, detect_types=0,\n"
-"        isolation_level='', check_same_thread=True,\n"
-"        factory=ConnectionType, cached_statements=128, uri=False, *,\n"
-"        autocommit=sqlite3.LEGACY_TRANSACTION_CONTROL)\n"
-"--\n"
-"\n"
-"Opens a connection to the SQLite database file database.\n"
-"\n"
-"You can use \":memory:\" to open a database connection to a database that resides\n"
-"in RAM instead of on disk.");
-
-#define PYSQLITE_CONNECT_METHODDEF    \
-    {"connect", _PyCFunction_CAST(module_connect), METH_FASTCALL|METH_KEYWORDS, module_connect_doc},
+/*
+ * We create 'clinic/_sqlite3.connect.c.h' in connection.c, in order to
+ * keep the signatures of sqlite3.Connection.__init__ and
+ * sqlite3.connect() synchronised.
+ */
+#include "clinic/_sqlite3.connect.c.h"
 
 static PyObject *
-module_connect(PyObject *module, PyObject *const *args, Py_ssize_t nargsf,
-               PyObject *kwnames)
+pysqlite_connect(PyObject *module, PyObject *const *args, Py_ssize_t nargsf,
+                 PyObject *kwnames)
 {
     pysqlite_state *state = pysqlite_get_state(module);
     PyObject *factory = (PyObject *)state->ConnectionType;
 
     static const int FACTORY_POS = 5;
     Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+    if (nargs > 1 && nargs <= 8) {
+        if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                "Passing more than 1 positional argument to sqlite3.connect()"
+                " is deprecated. Parameters 'timeout', 'detect_types', "
+                "'isolation_level', 'check_same_thread', 'factory', "
+                "'cached_statements' and 'uri' will become keyword-only "
+                "parameters in Python 3.15.", 1))
+        {
+                return NULL;
+        }
+    }
     if (nargs > FACTORY_POS) {
         factory = args[FACTORY_POS];
     }
@@ -236,7 +244,7 @@ load_functools_lru_cache(PyObject *module)
 static PyMethodDef module_methods[] = {
     PYSQLITE_ADAPT_METHODDEF
     PYSQLITE_COMPLETE_STATEMENT_METHODDEF
-    PYSQLITE_CONNECT_METHODDEF
+    {"connect", _PyCFunction_CAST(pysqlite_connect), METH_FASTCALL|METH_KEYWORDS, pysqlite_connect__doc__},
     PYSQLITE_ENABLE_CALLBACK_TRACE_METHODDEF
     PYSQLITE_REGISTER_ADAPTER_METHODDEF
     PYSQLITE_REGISTER_CONVERTER_METHODDEF
