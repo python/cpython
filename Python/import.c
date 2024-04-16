@@ -1252,20 +1252,6 @@ fix_up_extension(PyObject *mod, PyModuleDef *def,
     return 0;
 }
 
-int
-_PyImport_FixupExtensionObject(PyObject *mod, PyObject *name,
-                               PyObject *filename, PyObject *modules)
-{
-    if (mod == NULL || !PyModule_Check(mod)) {
-        PyErr_BadInternalCall();
-        return -1;
-    }
-    if (fix_up_extension(mod, NULL, name, filename, modules) < 0) {
-        return -1;
-    }
-    return 0;
-}
-
 
 static PyObject *
 import_find_extension(PyThreadState *tstate, PyObject *name,
