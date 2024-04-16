@@ -1103,7 +1103,7 @@ class DSLParser:
                 if self.group:
                     fail("A 'defining_class' parameter cannot be in an optional group.")
                 if self.block.signatures[-1].cls is None:
-                    fail("A 'defining_class' parameter can be specified inside a class method.")
+                    fail("A 'defining_class' parameter cannot be defined at module level.")
                 kind = inspect.Parameter.POSITIONAL_ONLY
             else:
                 fail("A 'defining_class' parameter, if specified, must either "

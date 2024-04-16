@@ -2519,7 +2519,7 @@ class ClinicParserTest(TestCase):
         self.assertEqual(p.kind, inspect.Parameter.POSITIONAL_ONLY)
 
     def test_disallow_defining_class_inside_module(self):
-        err = "A 'defining_class' parameter can be specified inside a class method."
+        err = "A 'defining_class' parameter cannot be defined at module level."
         block = """
             module m
             m.func
