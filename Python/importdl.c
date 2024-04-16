@@ -245,7 +245,9 @@ _PyImport_RunModInitFunc(PyModInitFunction p0,
                          struct _Py_ext_module_loader_info *info,
                          struct _Py_ext_module_loader_result *p_res)
 {
-    struct _Py_ext_module_loader_result res = {0};
+    struct _Py_ext_module_loader_result res = {
+        .singlephase=-1,
+    };
     const char *name_buf = PyBytes_AS_STRING(info->name_encoded);
 
     /* Call the module init function. */
@@ -293,6 +295,7 @@ _PyImport_RunModInitFunc(PyModInitFunction p0,
 
     if (PyObject_TypeCheck(m, &PyModuleDef_Type)) {
         /* multi-phase init */
+        res.singlephase = 0;
         res.def = (PyModuleDef *)m;
         /* Run PyModule_FromDefAndSpec() to finish loading the module. */
     }
@@ -308,6 +311,7 @@ _PyImport_RunModInitFunc(PyModInitFunction p0,
     }
     else {
         /* single-phase init (legacy) */
+        res.singlephase = 1;
         res.module = m;
 
         if (!PyModule_Check(m)) {

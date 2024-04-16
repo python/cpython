@@ -46,6 +46,7 @@ extern int _Py_ext_module_loader_info_init_from_spec(
 struct _Py_ext_module_loader_result {
     PyModuleDef *def;
     PyObject *module;
+    int singlephase;
 };
 extern PyModInitFunction _PyImport_GetModInitFunc(
     struct _Py_ext_module_loader_info *info,
