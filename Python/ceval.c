@@ -678,6 +678,7 @@ extern void _PyUOpPrint(const _PyUOpInstruction *uop);
  * so consume 3 units of C stack */
 #define PY_EVAL_C_STACK_UNITS 2
 
+#ifndef _Py_NOTIER2
 #if defined(_MSC_VER) && defined(_Py_USING_PGO)
 /* gh-111786: _PyEval_EvalFrameDefault is too large to optimize for speed with
    PGO on MSVC. Disable that optimization temporarily. If this is fixed
@@ -685,6 +686,7 @@ extern void _PyUOpPrint(const _PyUOpInstruction *uop);
  */
 #  pragma optimize("t", off)
 /* This setting is reversed below following _PyEval_EvalFrameDefault */
+#endif
 #endif
 
 PyObject* _Py_HOT_FUNCTION
@@ -1119,7 +1121,9 @@ exit_to_trace:
 #  pragma GCC diagnostic pop
 #elif defined(_MSC_VER) /* MS_WINDOWS */
 #  pragma warning(pop)
+#ifdef _Py_NOTIER2
 #  pragma optimize("", on)
+#endif
 #endif
 
 static void
