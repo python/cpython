@@ -1102,6 +1102,7 @@ class DSLParser:
                     fail("A 'defining_class' parameter cannot have a default value.")
                 if self.group:
                     fail("A 'defining_class' parameter cannot be in an optional group.")
+                kind = inspect.Parameter.POSITIONAL_ONLY
             else:
                 fail("A 'defining_class' parameter, if specified, must either "
                      "be the first thing in the parameter block, or come just "
