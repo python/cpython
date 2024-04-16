@@ -864,7 +864,7 @@ The operands must be both logical numbers.\n\
 
 PyDoc_STRVAR(doc_max,
 "max($self, /, other, context=None)\n--\n\n\
-max compares two values numerically and returns the maximum.\n\
+Compare two values numerically and return the maximum.\n\
 \n\
 If either operand is a NaN then the general rules apply.\n\
 Otherwise, the operands are compared as though by the compare\n\
