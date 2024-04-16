@@ -2693,7 +2693,7 @@ finally:
  * object, with refcount 0.  Py_DECREF must already have been called on it.
  */
 void
-PyTrash_thread_deposit_object(PyThreadState *tstate, PyObject *op)
+_PyTrash_thread_deposit_object(PyThreadState *tstate, PyObject *op)
 {
     _PyObject_ASSERT(op, _PyObject_IS_GC(op));
     _PyObject_ASSERT(op, !_PyObject_GC_IS_TRACKED(op));
@@ -2710,7 +2710,7 @@ PyTrash_thread_deposit_object(PyThreadState *tstate, PyObject *op)
 /* Deallocate all the objects in the gcstate->trash_delete_later list.
  * Called when the call-stack unwinds again. */
 void
-PyTrash_thread_destroy_chain(PyThreadState *tstate)
+_PyTrash_thread_destroy_chain(PyThreadState *tstate)
 {
     /* We need to increase c_recursion_remaining here, otherwise,
        _PyTrash_thread_destroy_chain will be called recursively
