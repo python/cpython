@@ -34,11 +34,10 @@ from sphinx.domains.c import CObject
 
 REST_ROLE_MAP = {
     'function': 'func',
-    'var': 'data',
-    'type': 'type',
     'macro': 'macro',
-    'type': 'type',
     'member': 'member',
+    'type': 'type',
+    'var': 'data',
 }
 
 
@@ -93,7 +92,6 @@ class Annotations:
         self.stable_abi_data = {}
         with open(stable_abi_file, 'r') as fp:
             for record in csv.DictReader(fp):
-                role = record['role']
                 name = record['name']
                 self.stable_abi_data[name] = record
 
@@ -232,6 +230,7 @@ def setup(app):
         'stableabi': directives.flag,
     }
     old_handle_signature = CObject.handle_signature
+
     def new_handle_signature(self, sig, signode):
         signode.parent['stableabi'] = 'stableabi' in self.options
         return old_handle_signature(self, sig, signode)
