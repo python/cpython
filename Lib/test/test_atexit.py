@@ -1,11 +1,9 @@
 import atexit
 import os
-import sys
-import tempfile
 import textwrap
 import unittest
 from test import support
-from test.support import script_helper, os_helper
+from test.support import script_helper
 
 
 class GeneralTest(unittest.TestCase):
