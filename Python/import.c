@@ -3764,10 +3764,10 @@ _imp_create_dynamic_impl(PyObject *module, PyObject *spec, PyObject *file)
 
     mod = _PyImport_LoadDynamicModuleWithSpec(spec, fp);
 
-    if (fp)
-        fclose(fp);
-
 finally:
+    if (fp) {
+        fclose(fp);
+    }
     Py_DECREF(name);
     Py_DECREF(path);
     return mod;
