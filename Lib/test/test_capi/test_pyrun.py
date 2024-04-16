@@ -62,12 +62,12 @@ class PyRunTest(unittest.TestCase):
 
     def test_pyrun_fileexflags(self):
         # Test PyRun_FileExFlags().
+        filename = os.fsencode(TESTFN)
+        with open(filename, 'wb') as fp:
+            fp.write(b'a\n')
+        self.addCleanup(unlink, filename)
         def run(*args):
-            return _testcapi.run_fileexflags(TESTFN, Py_file_input, *args)
-
-        with open(TESTFN, 'w') as fp:
-            fp.write("a\n")
-        self.addCleanup(unlink, TESTFN)
+            return _testcapi.run_fileexflags(filename, Py_file_input, *args)
 
         self.assertIsNone(run(dict(a=1)))
         self.assertIsNone(run(dict(a=1), {}))
@@ -87,17 +87,17 @@ class PyRunTest(unittest.TestCase):
         self.assertRaises(SystemError, run, UserDict(), {})
         self.assertRaises(SystemError, run, UserDict(), dict(a=1))
 
-    @unittest.skipUnless(TESTFN_UNDECODABLE, "only works if there are undecodable paths")
+    @unittest.skipUnless(TESTFN_UNDECODABLE, 'only works if there are undecodable paths')
     def test_pyrun_fileexflags_with_undecodable_filename(self):
         run = _testcapi.run_fileexflags
         try:
-            with open(TESTFN_UNDECODABLE, 'w') as fp:
-                fp.write("b\n")
+            with open(TESTFN_UNDECODABLE, 'wb') as fp:
+                fp.write(b'a\n')
             self.addCleanup(unlink, TESTFN_UNDECODABLE)
         except OSError:
-            self.skipTest("undecodable paths are not supported")
-        self.assertIsNone(run(TESTFN_UNDECODABLE, Py_file_input, dict(b=1)))
+            self.skipTest('undecodable paths are not supported')
+        self.assertIsNone(run(TESTFN_UNDECODABLE, Py_file_input, dict(a=1)))
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     unittest.main()
