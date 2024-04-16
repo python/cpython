@@ -405,13 +405,6 @@ indexed and sliced::
    >>> squares[-3:]  # slicing returns a new list
    [9, 16, 25]
 
-All slice operations return a new list containing the requested elements.  This
-means that the following slice returns a
-:ref:`shallow copy <shallow_vs_deep_copy>` of the list::
-
-   >>> squares[:]
-   [1, 4, 9, 16, 25]
-
 Lists also support operations like concatenation::
 
    >>> squares + [36, 49, 64, 81, 100]
@@ -428,12 +421,36 @@ type, i.e. it is possible to change their content::
     [1, 8, 27, 64, 125]
 
 You can also add new items at the end of the list, by using
-the :meth:`~list.append` *method* (we will see more about methods later)::
+the :meth:`!list.append` *method* (we will see more about methods later)::
 
    >>> cubes.append(216)  # add the cube of 6
    >>> cubes.append(7 ** 3)  # and the cube of 7
    >>> cubes
    [1, 8, 27, 64, 125, 216, 343]
+
+Simple assignment in Python never copies data. When you assign a list
+to a variable, the variable refers to the *existing list*.
+Any changes you make to the list through one variable will be seen
+through all other variables that refer to it.::
+
+   >>> rgb = ["Red", "Green", "Blue"]
+   >>> rgba = rgb
+   >>> id(rgb) == id(rgba)  # they reference the same object
+   True
+   >>> rgba.append("Alph")
+   >>> rgb
+   ["Red", "Green", "Blue", "Alph"]
+
+All slice operations return a new list containing the requested elements.  This
+means that the following slice returns a
+:ref:`shallow copy <shallow_vs_deep_copy>` of the list::
+
+   >>> correct_rgba = rgba[:]
+   >>> correct_rgba[-1] = "Alpha"
+   >>> correct_rgba
+   ["Red", "Green", "Blue", "Alpha"]
+   >>> rgba
+   ["Red", "Green", "Blue", "Alph"]
 
 Assignment to slices is also possible, and this can even change the size of the
 list or clear it entirely::
@@ -480,7 +497,7 @@ First Steps Towards Programming
 
 Of course, we can use Python for more complicated tasks than adding two and two
 together.  For instance, we can write an initial sub-sequence of the
-`Fibonacci series <https://en.wikipedia.org/wiki/Fibonacci_number>`_
+`Fibonacci series <https://en.wikipedia.org/wiki/Fibonacci_sequence>`_
 as follows::
 
    >>> # Fibonacci series:

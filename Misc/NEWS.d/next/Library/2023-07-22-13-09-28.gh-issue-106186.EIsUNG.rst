@@ -1,3 +1,0 @@
-Do not report ``MultipartInvariantViolationDefect`` defect
-when the :class:`email.parser.Parser` class is used
-to parse emails with ``headersonly=True``.

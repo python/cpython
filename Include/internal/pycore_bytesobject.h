@@ -28,34 +28,37 @@ PyAPI_FUNC(PyObject*) _PyBytes_DecodeEscape(const char *, Py_ssize_t,
 extern PyObject* _PyBytes_Join(PyObject *sep, PyObject *x);
 
 
-/* Substring Search.
-
-   Returns the index of the first occurrence of
-   a substring ("needle") in a larger text ("haystack").
-   If the needle is not found, return -1.
-   If the needle is found, add offset to the index.
-*/
-
+// Substring Search.
+//
+// Returns the index of the first occurrence of
+// a substring ("needle") in a larger text ("haystack").
+// If the needle is not found, return -1.
+// If the needle is found, add offset to the index.
+//
+// Export for 'mmap' shared extension.
 PyAPI_FUNC(Py_ssize_t)
 _PyBytes_Find(const char *haystack, Py_ssize_t len_haystack,
               const char *needle, Py_ssize_t len_needle,
               Py_ssize_t offset);
 
-/* Same as above, but search right-to-left */
+// Same as above, but search right-to-left.
+// Export for 'mmap' shared extension.
 PyAPI_FUNC(Py_ssize_t)
 _PyBytes_ReverseFind(const char *haystack, Py_ssize_t len_haystack,
                      const char *needle, Py_ssize_t len_needle,
                      Py_ssize_t offset);
 
 
-/** Helper function to implement the repeat and inplace repeat methods on a buffer
- *
- * len_dest is assumed to be an integer multiple of len_src.
- * If src equals dest, then assume the operation is inplace.
- *
- * This method repeately doubles the number of bytes copied to reduce
- * the number of invocations of memcpy.
- */
+// Helper function to implement the repeat and inplace repeat methods on a
+// buffer.
+//
+// len_dest is assumed to be an integer multiple of len_src.
+// If src equals dest, then assume the operation is inplace.
+//
+// This method repeately doubles the number of bytes copied to reduce
+// the number of invocations of memcpy.
+//
+// Export for 'array' shared extension.
 PyAPI_FUNC(void)
 _PyBytes_Repeat(char* dest, Py_ssize_t len_dest,
     const char* src, Py_ssize_t len_src);
@@ -91,7 +94,9 @@ typedef struct {
 /* Initialize a bytes writer
 
    By default, the overallocation is disabled. Set the overallocate attribute
-   to control the allocation of the buffer. */
+   to control the allocation of the buffer.
+
+   Export _PyBytesWriter API for '_pickle' shared extension. */
 PyAPI_FUNC(void) _PyBytesWriter_Init(_PyBytesWriter *writer);
 
 /* Get the buffer content and reset the writer.

@@ -322,7 +322,7 @@ the same library that the Python runtime is using.
 
 .. c:var:: int Py_eval_input
 
-   .. index:: single: Py_CompileString()
+   .. index:: single: Py_CompileString (C function)
 
    The start symbol from the Python grammar for isolated expressions; for use with
    :c:func:`Py_CompileString`.
@@ -330,7 +330,7 @@ the same library that the Python runtime is using.
 
 .. c:var:: int Py_file_input
 
-   .. index:: single: Py_CompileString()
+   .. index:: single: Py_CompileString (C function)
 
    The start symbol from the Python grammar for sequences of statements as read
    from a file or other source; for use with :c:func:`Py_CompileString`.  This is
@@ -339,7 +339,7 @@ the same library that the Python runtime is using.
 
 .. c:var:: int Py_single_input
 
-   .. index:: single: Py_CompileString()
+   .. index:: single: Py_CompileString (C function)
 
    The start symbol from the Python grammar for a single statement; for use with
    :c:func:`Py_CompileString`. This is the symbol used for the interactive
@@ -353,7 +353,7 @@ the same library that the Python runtime is using.
    executed, it is passed as ``PyCompilerFlags *flags``.  In this case, ``from
    __future__ import`` can modify *flags*.
 
-   Whenever ``PyCompilerFlags *flags`` is ``NULL``, :attr:`cf_flags` is treated as
+   Whenever ``PyCompilerFlags *flags`` is ``NULL``, :c:member:`~PyCompilerFlags.cf_flags` is treated as
    equal to ``0``, and any modification due to ``from __future__ import`` is
    discarded.
 
@@ -367,7 +367,7 @@ the same library that the Python runtime is using.
       initialized to ``PY_MINOR_VERSION``.
 
       The field is ignored by default, it is used if and only if
-      ``PyCF_ONLY_AST`` flag is set in *cf_flags*.
+      ``PyCF_ONLY_AST`` flag is set in :c:member:`~PyCompilerFlags.cf_flags`.
 
    .. versionchanged:: 3.8
       Added *cf_feature_version* field.

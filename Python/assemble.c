@@ -3,9 +3,10 @@
 #include "Python.h"
 #include "pycore_code.h"            // write_location_entry_start()
 #include "pycore_compile.h"
-#include "pycore_opcode.h"          // _PyOpcode_Caches[] and opcode category macros
+#include "pycore_instruction_sequence.h"
 #include "pycore_opcode_utils.h"    // IS_BACKWARDS_JUMP_OPCODE
-#include "pycore_opcode_metadata.h" // IS_PSEUDO_INSTR
+#include "pycore_opcode_metadata.h" // is_pseudo_target, _PyOpcode_Caches
+#include "pycore_symtable.h"        // _Py_SourceLocation
 
 
 #define DEFAULT_CODE_SIZE 128
@@ -18,13 +19,13 @@
 #define ERROR -1
 
 #define RETURN_IF_ERROR(X)  \
-    if ((X) == -1) {        \
+    if ((X) < 0) {          \
         return ERROR;       \
     }
 
-typedef _PyCompilerSrcLocation location;
-typedef _PyCompile_Instruction instruction;
-typedef _PyCompile_InstructionSequence instr_sequence;
+typedef _Py_SourceLocation location;
+typedef _PyInstruction instruction;
+typedef _PyInstructionSequence instr_sequence;
 
 static inline bool
 same_location(location a, location b)
@@ -132,7 +133,7 @@ assemble_emit_exception_table_item(struct assembler *a, int value, int msb)
 static int
 assemble_emit_exception_table_entry(struct assembler *a, int start, int end,
                                     int handler_offset,
-                                    _PyCompile_ExceptHandlerInfo *handler)
+                                    _PyExceptHandlerInfo *handler)
 {
     Py_ssize_t len = PyBytes_GET_SIZE(a->a_except_table);
     if (a->a_except_table_off + MAX_SIZE_OF_ENTRY >= len) {
@@ -158,7 +159,7 @@ static int
 assemble_exception_table(struct assembler *a, instr_sequence *instrs)
 {
     int ioffset = 0;
-    _PyCompile_ExceptHandlerInfo handler;
+    _PyExceptHandlerInfo handler;
     handler.h_label = -1;
     handler.h_startdepth = -1;
     handler.h_preserve_lasti = -1;
@@ -448,13 +449,17 @@ static PyObject *
 dict_keys_inorder(PyObject *dict, Py_ssize_t offset)
 {
     PyObject *tuple, *k, *v;
-    Py_ssize_t i, pos = 0, size = PyDict_GET_SIZE(dict);
+    Py_ssize_t pos = 0, size = PyDict_GET_SIZE(dict);
 
     tuple = PyTuple_New(size);
     if (tuple == NULL)
         return NULL;
     while (PyDict_Next(dict, &pos, &k, &v)) {
-        i = PyLong_AS_LONG(v);
+        Py_ssize_t i = PyLong_AsSsize_t(v);
+        if (i == -1 && PyErr_Occurred()) {
+            Py_DECREF(tuple);
+            return NULL;
+        }
         assert((i - offset) < size);
         assert((i - offset) >= 0);
         PyTuple_SET_ITEM(tuple, i - offset, Py_NewRef(k));
@@ -466,24 +471,34 @@ dict_keys_inorder(PyObject *dict, Py_ssize_t offset)
 extern void _Py_set_localsplus_info(int, PyObject *, unsigned char,
                                    PyObject *, PyObject *);
 
-static void
+static int
 compute_localsplus_info(_PyCompile_CodeUnitMetadata *umd, int nlocalsplus,
                         PyObject *names, PyObject *kinds)
 {
     PyObject *k, *v;
     Py_ssize_t pos = 0;
     while (PyDict_Next(umd->u_varnames, &pos, &k, &v)) {
-        int offset = (int)PyLong_AS_LONG(v);
+        int offset = PyLong_AsInt(v);
+        if (offset == -1 && PyErr_Occurred()) {
+            return ERROR;
+        }
         assert(offset >= 0);
         assert(offset < nlocalsplus);
+
         // For now we do not distinguish arg kinds.
         _PyLocals_Kind kind = CO_FAST_LOCAL;
-        if (PyDict_Contains(umd->u_fasthidden, k)) {
+        int has_key = PyDict_Contains(umd->u_fasthidden, k);
+        RETURN_IF_ERROR(has_key);
+        if (has_key) {
             kind |= CO_FAST_HIDDEN;
         }
-        if (PyDict_GetItem(umd->u_cellvars, k) != NULL) {
+
+        has_key = PyDict_Contains(umd->u_cellvars, k);
+        RETURN_IF_ERROR(has_key);
+        if (has_key) {
             kind |= CO_FAST_CELL;
         }
+
         _Py_set_localsplus_info(offset, k, kind, names, kinds);
     }
     int nlocals = (int)PyDict_GET_SIZE(umd->u_varnames);
@@ -492,12 +507,18 @@ compute_localsplus_info(_PyCompile_CodeUnitMetadata *umd, int nlocalsplus,
     int numdropped = 0;
     pos = 0;
     while (PyDict_Next(umd->u_cellvars, &pos, &k, &v)) {
-        if (PyDict_GetItem(umd->u_varnames, k) != NULL) {
+        int has_name = PyDict_Contains(umd->u_varnames, k);
+        RETURN_IF_ERROR(has_name);
+        if (has_name) {
             // Skip cells that are already covered by locals.
             numdropped += 1;
             continue;
         }
-        int offset = (int)PyLong_AS_LONG(v);
+
+        int offset = PyLong_AsInt(v);
+        if (offset == -1 && PyErr_Occurred()) {
+            return ERROR;
+        }
         assert(offset >= 0);
         offset += nlocals - numdropped;
         assert(offset < nlocalsplus);
@@ -506,12 +527,16 @@ compute_localsplus_info(_PyCompile_CodeUnitMetadata *umd, int nlocalsplus,
 
     pos = 0;
     while (PyDict_Next(umd->u_freevars, &pos, &k, &v)) {
-        int offset = (int)PyLong_AS_LONG(v);
+        int offset = PyLong_AsInt(v);
+        if (offset == -1 && PyErr_Occurred()) {
+            return ERROR;
+        }
         assert(offset >= 0);
         offset += nlocals - numdropped;
         assert(offset < nlocalsplus);
         _Py_set_localsplus_info(offset, k, CO_FAST_FREE, names, kinds);
     }
+    return SUCCESS;
 }
 
 static PyCodeObject *
@@ -556,7 +581,10 @@ makecode(_PyCompile_CodeUnitMetadata *umd, struct assembler *a, PyObject *const_
     if (localspluskinds == NULL) {
         goto error;
     }
-    compute_localsplus_info(umd, nlocalsplus, localsplusnames, localspluskinds);
+    if (compute_localsplus_info(umd, nlocalsplus,
+                                localsplusnames, localspluskinds) == ERROR) {
+        goto error;
+    }
 
     struct _PyCodeConstructor con = {
         .filename = filename,
@@ -684,13 +712,13 @@ resolve_unconditional_jumps(instr_sequence *instrs)
         bool is_forward = (instr->i_oparg > i);
         switch(instr->i_opcode) {
             case JUMP:
-                assert(SAME_OPCODE_METADATA(JUMP, JUMP_FORWARD));
-                assert(SAME_OPCODE_METADATA(JUMP, JUMP_BACKWARD));
+                assert(is_pseudo_target(JUMP, JUMP_FORWARD));
+                assert(is_pseudo_target(JUMP, JUMP_BACKWARD));
                 instr->i_opcode = is_forward ? JUMP_FORWARD : JUMP_BACKWARD;
                 break;
             case JUMP_NO_INTERRUPT:
-                assert(SAME_OPCODE_METADATA(JUMP_NO_INTERRUPT, JUMP_FORWARD));
-                assert(SAME_OPCODE_METADATA(JUMP_NO_INTERRUPT, JUMP_BACKWARD_NO_INTERRUPT));
+                assert(is_pseudo_target(JUMP_NO_INTERRUPT, JUMP_FORWARD));
+                assert(is_pseudo_target(JUMP_NO_INTERRUPT, JUMP_BACKWARD_NO_INTERRUPT));
                 instr->i_opcode = is_forward ?
                     JUMP_FORWARD : JUMP_BACKWARD_NO_INTERRUPT;
                 break;
@@ -709,7 +737,9 @@ _PyAssemble_MakeCodeObject(_PyCompile_CodeUnitMetadata *umd, PyObject *const_cac
                            PyObject *consts, int maxdepth, instr_sequence *instrs,
                            int nlocalsplus, int code_flags, PyObject *filename)
 {
-
+    if (_PyInstructionSequence_ApplyLabelMap(instrs) < 0) {
+        return NULL;
+    }
     if (resolve_unconditional_jumps(instrs) < 0) {
         return NULL;
     }

@@ -2,6 +2,7 @@
 
 #include "Python.h"
 #include "pycore_call.h"          // _PyObject_VectorcallTstate()
+#include "pycore_ceval.h"         // _PyEval_GetBuiltin()
 #include "pycore_object.h"
 #include "pycore_pyerrors.h"
 #include "pycore_pystate.h"       // _PyThreadState_GET()
@@ -48,6 +49,7 @@ method_vectorcall(PyObject *method, PyObject *const *args,
     PyObject *self = PyMethod_GET_SELF(method);
     PyObject *func = PyMethod_GET_FUNCTION(method);
     Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+    assert(nargs == 0 || args[nargs-1]);
 
     PyObject *result;
     if (nargsf & PY_VECTORCALL_ARGUMENTS_OFFSET) {
@@ -56,6 +58,7 @@ method_vectorcall(PyObject *method, PyObject *const *args,
         nargs += 1;
         PyObject *tmp = newargs[0];
         newargs[0] = self;
+        assert(newargs[nargs-1]);
         result = _PyObject_VectorcallTstate(tstate, func, newargs,
                                             nargs, kwnames);
         newargs[0] = tmp;
@@ -298,7 +301,7 @@ static Py_hash_t
 method_hash(PyMethodObject *a)
 {
     Py_hash_t x, y;
-    x = _Py_HashPointer(a->im_self);
+    x = PyObject_GenericHash(a->im_self);
     y = PyObject_Hash(a->im_func);
     if (y == -1)
         return -1;
@@ -314,6 +317,13 @@ method_traverse(PyMethodObject *im, visitproc visit, void *arg)
     Py_VISIT(im->im_func);
     Py_VISIT(im->im_self);
     return 0;
+}
+
+static PyObject *
+method_descr_get(PyObject *meth, PyObject *obj, PyObject *cls)
+{
+    Py_INCREF(meth);
+    return meth;
 }
 
 PyTypeObject PyMethod_Type = {
@@ -336,6 +346,7 @@ PyTypeObject PyMethod_Type = {
     .tp_methods = method_methods,
     .tp_members = method_memberlist,
     .tp_getset = method_getset,
+    .tp_descr_get = method_descr_get,
     .tp_new = method_new,
 };
 

@@ -173,9 +173,11 @@ class TestTracemallocEnabled(unittest.TestCase):
         self.assertEqual(len(traceback), 1)
         self.assertEqual(traceback, obj_traceback)
 
-    def find_trace(self, traces, traceback):
+    def find_trace(self, traces, traceback, size):
+        # filter also by size to ignore the memory allocated by
+        # _PyRefchain_Trace() if Python is built with Py_TRACE_REFS.
         for trace in traces:
-            if trace[2] == traceback._frames:
+            if trace[2] == traceback._frames and trace[1] == size:
                 return trace
 
         self.fail("trace not found")
@@ -186,11 +188,10 @@ class TestTracemallocEnabled(unittest.TestCase):
         obj, obj_traceback = allocate_bytes(obj_size)
 
         traces = tracemalloc._get_traces()
-        trace = self.find_trace(traces, obj_traceback)
+        trace = self.find_trace(traces, obj_traceback, obj_size)
 
         self.assertIsInstance(trace, tuple)
         domain, size, traceback, length = trace
-        self.assertEqual(size, obj_size)
         self.assertEqual(traceback, obj_traceback._frames)
 
         tracemalloc.stop()
@@ -208,17 +209,18 @@ class TestTracemallocEnabled(unittest.TestCase):
         # Ensure that two identical tracebacks are not duplicated
         tracemalloc.stop()
         tracemalloc.start(4)
-        obj_size = 123
-        obj1, obj1_traceback = allocate_bytes4(obj_size)
-        obj2, obj2_traceback = allocate_bytes4(obj_size)
+        obj1_size = 123
+        obj2_size = 125
+        obj1, obj1_traceback = allocate_bytes4(obj1_size)
+        obj2, obj2_traceback = allocate_bytes4(obj2_size)
 
         traces = tracemalloc._get_traces()
 
         obj1_traceback._frames = tuple(reversed(obj1_traceback._frames))
         obj2_traceback._frames = tuple(reversed(obj2_traceback._frames))
 
-        trace1 = self.find_trace(traces, obj1_traceback)
-        trace2 = self.find_trace(traces, obj2_traceback)
+        trace1 = self.find_trace(traces, obj1_traceback, obj1_size)
+        trace2 = self.find_trace(traces, obj2_traceback, obj2_size)
         domain1, size1, traceback1, length1 = trace1
         domain2, size2, traceback2, length2 = trace2
         self.assertIs(traceback2, traceback1)

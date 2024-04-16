@@ -8,6 +8,12 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
+// Export for '_ctypes' shared extension
+PyAPI_FUNC(int) _Py_DisplaySourceLine(PyObject *, PyObject *, int, int, int *, PyObject **);
+
+// Export for 'pyexact' shared extension
+PyAPI_FUNC(void) _PyTraceback_Add(const char *, const char *, int);
+
 /* Write the Python traceback into the file 'fd'. For example:
 
        Traceback (most recent call first):
@@ -89,9 +95,8 @@ extern PyObject* _PyTraceBack_FromFrame(
 
 /* Write the traceback tb to file f. Prefix each line with
    indent spaces followed by the margin (if it is not NULL). */
-extern int _PyTraceBack_Print_Indented(
-    PyObject *tb, int indent, const char* margin,
-    const char *header_margin, const char *header, PyObject *f);
+extern int _PyTraceBack_Print(
+    PyObject *tb, const char *header, PyObject *f);
 extern int _Py_WriteIndentedMargin(int, const char*, PyObject *);
 extern int _Py_WriteIndent(int, PyObject *);
 

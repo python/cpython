@@ -19,7 +19,7 @@ sentinel value is returned.
    types.
 
 
-.. c:function:: int PySeqIter_Check(op)
+.. c:function:: int PySeqIter_Check(PyObject *op)
 
    Return true if the type of *op* is :c:data:`PySeqIter_Type`.  This function
    always succeeds.
@@ -38,7 +38,7 @@ sentinel value is returned.
    two-argument form of the :func:`iter` built-in function.
 
 
-.. c:function:: int PyCallIter_Check(op)
+.. c:function:: int PyCallIter_Check(PyObject *op)
 
    Return true if the type of *op* is :c:data:`PyCallIter_Type`.  This
    function always succeeds.

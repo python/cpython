@@ -1,2 +1,0 @@
-Tokens emitted by the :mod:`tokenize` module do not include an implicit
-``\n`` character in the ``line`` attribute anymore. Patch by Pablo Galindo

@@ -2,6 +2,7 @@
 
 #include "Python.h"
 #include "pycore_abstract.h"      // _PyIndex_Check()
+#include "pycore_ceval.h"         // _PyEval_GetBuiltin()
 #include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_modsupport.h"    // _PyArg_NoKwnames()
 #include "pycore_range.h"
@@ -106,8 +107,8 @@ range_from_array(PyTypeObject *type, PyObject *const *args, Py_ssize_t num_args)
             if (!stop) {
                 return NULL;
             }
-            start = Py_NewRef(_PyLong_GetZero());
-            step = Py_NewRef(_PyLong_GetOne());
+            start = _PyLong_GetZero();
+            step = _PyLong_GetOne();
             break;
         case 0:
             PyErr_SetString(PyExc_TypeError,
@@ -750,7 +751,7 @@ PyDoc_STRVAR(index_doc,
 
 static PyMethodDef range_methods[] = {
     {"__reversed__",    range_reverse,              METH_NOARGS, reverse_doc},
-    {"__reduce__",      (PyCFunction)range_reduce,  METH_VARARGS},
+    {"__reduce__",      (PyCFunction)range_reduce,  METH_NOARGS},
     {"count",           (PyCFunction)range_count,   METH_O,      count_doc},
     {"index",           (PyCFunction)range_index,   METH_O,      index_doc},
     {NULL,              NULL}           /* sentinel */

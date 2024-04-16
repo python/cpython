@@ -1,1 +1,0 @@
-Add a better, more introspect-able error message when setting attributes on classes without a ``__dict__`` and no slot member for the attribute.

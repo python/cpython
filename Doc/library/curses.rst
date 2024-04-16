@@ -21,6 +21,8 @@ for Windows, DOS, and possibly other systems as well.  This extension module is
 designed to match the API of ncurses, an open-source curses library hosted on
 Linux and the BSD variants of Unix.
 
+.. include:: ../includes/wasm-ios-notavail.rst
+
 .. note::
 
    Whenever the documentation mentions a *character* it can be specified
@@ -1648,6 +1650,8 @@ keys); also, the following keypad mappings are standard:
 | :kbd:`Page Down` | KEY_NPAGE |
 +------------------+-----------+
 
+.. _curses-acs-codes:
+
 The following table lists characters from the alternate character set. These are
 inherited from the VT100 terminal, and will generally be  available on software
 emulations such as X terminals.  When there is no graphic available, curses
@@ -1769,9 +1773,9 @@ The following table lists mouse button constants used by :meth:`getmouse`:
 | .. data:: BUTTON_ALT             | Control was down during button state change |
 +----------------------------------+---------------------------------------------+
 
-   .. versionchanged:: 3.10
-      The ``BUTTON5_*`` constants are now exposed if they are provided by the
-      underlying curses library.
+.. versionchanged:: 3.10
+   The ``BUTTON5_*`` constants are now exposed if they are provided by the
+   underlying curses library.
 
 The following table lists the predefined colors:
 

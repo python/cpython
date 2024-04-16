@@ -26,9 +26,9 @@ explicitly reset (Python emulates the BSD style interface regardless of the
 underlying implementation), with the exception of the handler for
 :const:`SIGCHLD`, which follows the underlying implementation.
 
-On WebAssembly platforms ``wasm32-emscripten`` and ``wasm32-wasi``, signals
-are emulated and therefore behave differently. Several functions and signals
-are not available on these platforms.
+On WebAssembly platforms, signals are emulated and therefore behave
+differently. Several functions and signals are not available on these
+platforms.
 
 Execution of Python signal handlers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -156,6 +156,8 @@ The variables defined in the :mod:`signal` module are:
 .. data:: SIGCLD
 
    Alias to :data:`SIGCHLD`.
+
+   .. availability:: not macOS.
 
 .. data:: SIGCONT
 
@@ -656,7 +658,7 @@ The :mod:`signal` module defines the following functions:
 .. function:: sigtimedwait(sigset, timeout)
 
    Like :func:`sigwaitinfo`, but takes an additional *timeout* argument
-   specifying a timeout. If *timeout* is specified as :const:`0`, a poll is
+   specifying a timeout. If *timeout* is specified as ``0``, a poll is
    performed. Returns :const:`None` if a timeout occurs.
 
    .. availability:: Unix.

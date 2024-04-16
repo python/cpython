@@ -1,5 +1,7 @@
 /* Common code for use by all hashlib related modules. */
 
+#include "pycore_lock.h"        // PyMutex
+
 /*
  * Given a PyObject* obj, fill in the Py_buffer* viewp with the result
  * of PyObject_GetBuffer.  Sets an exception and issues the erraction
@@ -48,17 +50,27 @@
 
 #include "pythread.h"
 #define ENTER_HASHLIB(obj) \
-    if ((obj)->lock) { \
-        if (!PyThread_acquire_lock((obj)->lock, 0)) { \
-            Py_BEGIN_ALLOW_THREADS \
-            PyThread_acquire_lock((obj)->lock, 1); \
-            Py_END_ALLOW_THREADS \
-        } \
+    if ((obj)->use_mutex) { \
+        PyMutex_Lock(&(obj)->mutex); \
     }
 #define LEAVE_HASHLIB(obj) \
-    if ((obj)->lock) { \
-        PyThread_release_lock((obj)->lock); \
+    if ((obj)->use_mutex) { \
+        PyMutex_Unlock(&(obj)->mutex); \
     }
+
+#ifdef Py_GIL_DISABLED
+#define HASHLIB_INIT_MUTEX(obj) \
+    do { \
+        (obj)->mutex = (PyMutex){0}; \
+        (obj)->use_mutex = true; \
+    } while (0)
+#else
+#define HASHLIB_INIT_MUTEX(obj) \
+    do { \
+        (obj)->mutex = (PyMutex){0}; \
+        (obj)->use_mutex = false; \
+    } while (0)
+#endif
 
 /* TODO(gpshead): We should make this a module or class attribute
  * to allow the user to optimize based on the platform they're using. */
