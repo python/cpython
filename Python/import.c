@@ -3745,6 +3745,14 @@ _imp_create_dynamic_impl(PyObject *module, PyObject *spec, PyObject *file)
         goto finally;
     }
 
+    if (PySys_Audit("import", "OOOOO", name, path,
+                    Py_None, Py_None, Py_None) < 0)
+    {
+        goto finally;
+    }
+
+    /* Is multi-phase init or this is the first time being loaded. */
+
     if (file != NULL) {
         fp = _Py_fopen_obj(path, "r");
         if (fp == NULL) {

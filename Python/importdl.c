@@ -130,11 +130,6 @@ _PyImport_LoadDynamicModuleWithSpec(PyObject *spec, FILE *fp)
     if (path == NULL)
         goto error;
 
-    if (PySys_Audit("import", "OOOOO", name_unicode, path,
-                    Py_None, Py_None, Py_None) < 0) {
-        goto error;
-    }
-
 #ifdef MS_WINDOWS
     exportfunc = _PyImport_FindSharedFuncptrWindows(hook_prefix, name_buf,
                                                     path, fp);
