@@ -2339,7 +2339,13 @@ String objects have one unique built-in operation: the ``%`` operator (modulo).
 This is also known as the string *formatting* or *interpolation* operator.
 Given ``format % values`` (where *format* is a string), ``%`` conversion
 specifications in *format* are replaced with zero or more elements of *values*.
-The effect is similar to using the :c:func:`sprintf` in the C language.
+The effect is similar to using the :c:func:`sprintf` function in the C language.
+For example:
+
+.. doctest::
+
+   >>> print('%s has %d quote types.' % ('Python', 2))
+   Python has 2 quote types.
 
 If *format* requires a single argument, *values* may be a single non-tuple
 object. [5]_  Otherwise, *values* must be a tuple with exactly the number of
@@ -5553,8 +5559,7 @@ a string to a binary integer or a binary integer to a string in linear time,
 have sub-quadratic complexity. Converting a large value such as ``int('1' *
 500_000)`` can take over a second on a fast CPU.
 
-Limiting conversion size offers a practical way to avoid `CVE-2020-10735
-<https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2020-10735>`_.
+Limiting conversion size offers a practical way to avoid :cve:`2020-10735`.
 
 The limit is applied to the number of digit characters in the input or output
 string when a non-linear conversion algorithm would be involved.  Underscores
