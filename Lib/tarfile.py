@@ -2222,7 +2222,7 @@ class TarFile(object):
                     'Python 3.14 will, by default, filter extracted tar '
                     + 'archives and reject files or modify their metadata. '
                     + 'Use the filter argument to control this behavior.',
-                    DeprecationWarning)
+                    DeprecationWarning, stacklevel=3)
                 return fully_trusted_filter
             if isinstance(filter, str):
                 raise TypeError(

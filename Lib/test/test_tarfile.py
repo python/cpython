@@ -718,6 +718,31 @@ class MiscReadTestBase(CommonReadTest):
         finally:
             os_helper.rmtree(DIR)
 
+    def test_deprecation_if_no_filter_passed_to_extractall(self):
+        DIR = pathlib.Path(TEMPDIR) / "extractall"
+        with (
+            os_helper.temp_dir(DIR),
+            tarfile.open(tarname, encoding="iso8859-1") as tar
+        ):
+            directories = [t for t in tar if t.isdir()]
+            with self.assertWarnsRegex(DeprecationWarning, "Use the filter argument") as cm:
+                tar.extractall(DIR, directories)
+            # check that the stacklevel of the deprecation warning is correct:
+            self.assertEqual(cm.filename, __file__)
+
+    def test_deprecation_if_no_filter_passed_to_extract(self):
+        dirtype = "ustar/dirtype"
+        DIR = pathlib.Path(TEMPDIR) / "extractall"
+        with (
+            os_helper.temp_dir(DIR),
+            tarfile.open(tarname, encoding="iso8859-1") as tar
+        ):
+            tarinfo = tar.getmember(dirtype)
+            with self.assertWarnsRegex(DeprecationWarning, "Use the filter argument") as cm:
+                tar.extract(tarinfo, path=DIR)
+            # check that the stacklevel of the deprecation warning is correct:
+            self.assertEqual(cm.filename, __file__)
+
     def test_extractall_pathlike_name(self):
         DIR = pathlib.Path(TEMPDIR) / "extractall"
         with os_helper.temp_dir(DIR), \
