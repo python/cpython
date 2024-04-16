@@ -128,6 +128,12 @@ _Py_ext_module_loader_info_init_from_spec(
         return -1;
     }
 
+    info.newcontext = PyUnicode_AsUTF8(info.name);
+    if (info.newcontext == NULL) {
+        _Py_ext_module_loader_info_clear(&info);
+        return -1;
+    }
+
     info.path = PyObject_GetAttrString(spec, "origin");
     if (info.path == NULL) {
         _Py_ext_module_loader_info_clear(&info);
@@ -152,15 +158,10 @@ _PyImport_LoadDynamicModuleWithSpec(struct _Py_ext_module_loader_info *info,
 {
     PyObject *m = NULL;
     const char *name_buf = PyBytes_AS_STRING(info->name_encoded);
-    const char *oldcontext, *newcontext;
+    const char *oldcontext;
     dl_funcptr exportfunc;
     PyModInitFunction p0;
     PyModuleDef *def;
-
-    newcontext = PyUnicode_AsUTF8(info->name);
-    if (newcontext == NULL) {
-        goto error;
-    }
 
 #ifdef MS_WINDOWS
     exportfunc = _PyImport_FindSharedFuncptrWindows(
@@ -191,7 +192,7 @@ _PyImport_LoadDynamicModuleWithSpec(struct _Py_ext_module_loader_info *info,
     p0 = (PyModInitFunction)exportfunc;
 
     /* Package context is needed for single-phase init */
-    oldcontext = _PyImport_SwapPackageContext(newcontext);
+    oldcontext = _PyImport_SwapPackageContext(info->newcontext);
     m = p0();
     _PyImport_SwapPackageContext(oldcontext);
 
