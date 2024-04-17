@@ -7826,7 +7826,7 @@ _PyCompile_Assemble(_PyCompile_CodeUnitMetadata *umd, PyObject *filename,
                     PyObject *seq)
 {
     if (!_PyInstructionSequence_Check(seq)) {
-        PyErr_SetString(PyExc_ValueError, "expected an instruction sequence");
+        PyErr_SetString(PyExc_TypeError, "expected an instruction sequence");
         return NULL;
     }
     cfg_builder *g = NULL;
