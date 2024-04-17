@@ -1213,7 +1213,7 @@ def get_bare_quoted_string(value):
     value is the text between the quote marks, with whitespace
     preserved and quoted pairs decoded.
     """
-    if value[0] != '"':
+    if not value or value[0] != '"':
         raise errors.HeaderParseError(
             "expected '\"' but found '{}'".format(value))
     bare_quoted_string = BareQuotedString()
@@ -1454,7 +1454,7 @@ def get_local_part(value):
     """
     local_part = LocalPart()
     leader = None
-    if value[0] in CFWS_LEADER:
+    if value and value[0] in CFWS_LEADER:
         leader, value = get_cfws(value)
     if not value:
         raise errors.HeaderParseError(
@@ -1613,10 +1613,7 @@ def get_domain(value):
     """
     domain = Domain()
     leader = None
-    if not value:
-        raise errors.HeaderParseError(
-            "expected domain but found '{}'".format(value))
-    if value[0] in CFWS_LEADER:
+    if value and value[0] in CFWS_LEADER:
         leader, value = get_cfws(value)
     if not value:
         raise errors.HeaderParseError(
@@ -1692,6 +1689,8 @@ def get_obs_route(value):
         if value[0] in CFWS_LEADER:
             token, value = get_cfws(value)
             obs_route.append(token)
+        if not value:
+            break
         if value[0] == '@':
             obs_route.append(RouteComponentMarker)
             token, value = get_domain(value[1:])
@@ -1710,10 +1709,7 @@ def get_angle_addr(value):
 
     """
     angle_addr = AngleAddr()
-    if not value:
-        raise errors.HeaderParseError(
-            "expected angle-addr but found '{}'".format(value))
-    if value[0] in CFWS_LEADER:
+    if value and value[0] in CFWS_LEADER:
         token, value = get_cfws(value)
         angle_addr.append(token)
     if not value or value[0] != '<':
@@ -1723,7 +1719,7 @@ def get_angle_addr(value):
     value = value[1:]
     # Although it is not legal per RFC5322, SMTP uses '<>' in certain
     # circumstances.
-    if value[0] == '>':
+    if value and value[0] == '>':
         angle_addr.append(ValueTerminal('>', 'angle-addr-end'))
         angle_addr.defects.append(errors.InvalidHeaderDefect(
             "null addr-spec in angle-addr"))
