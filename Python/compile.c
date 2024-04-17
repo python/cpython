@@ -7601,13 +7601,18 @@ static PyObject *
 cfg_to_instruction_sequence(cfg_builder *g)
 {
     instr_sequence *seq = (instr_sequence *)_PyInstructionSequence_New();
-    if (_PyCfg_ToInstructionSequence(g, seq) < 0) {
-        return NULL;
-    }
-    if (_PyInstructionSequence_ApplyLabelMap(seq) < 0) {
-        return NULL;
+    if (seq != NULL) {
+        if (_PyCfg_ToInstructionSequence(g, seq) < 0) {
+            goto error;
+        }
+        if (_PyInstructionSequence_ApplyLabelMap(seq) < 0) {
+            goto error;
+        }
     }
     return (PyObject*)seq;
+error:
+    PyInstructionSequence_Fini(seq);
+    return NULL;
 }
 
 // C implementation of inspect.cleandoc()
