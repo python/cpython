@@ -6659,6 +6659,22 @@ exit:
     return dict;
 }
 
+static int
+set_or_del_lock_held(PyDictObject *dict, PyObject *name, PyObject *value)
+{
+    if (value == NULL) {
+        Py_hash_t hash;
+        if (!PyUnicode_CheckExact(name) || (hash = unicode_get_hash(name)) == -1) {
+            hash = PyObject_Hash(name);
+            if (hash == -1)
+                return -1;
+        }
+        return delitem_knownhash_lock_held((PyObject *)dict, name, hash);
+    } else {
+        return setitem_lock_held(dict, name, value);
+    }
+}
+
 // Called with either the object's lock or the dict's lock held
 // depending on whether or not a dict has been materialized for
 // the object.
@@ -6713,33 +6729,22 @@ store_instance_attr_lock_held(PyObject *obj, PyDictValues *values,
     if (ix == DKIX_EMPTY) {
         int res;
         if (dict == NULL) {
-            dict = materialize_managed_dict_lock_held(obj);
-            if (dict == NULL) {
+            // Make the dict but don't publish it in the object
+            // so that no one else will see it.
+            dict = make_dict_from_instance_attributes(PyInterpreterState_Get(), keys, values);
+            if (dict == NULL ||
+                set_or_del_lock_held(dict, name, value) < 0) {
                 return -1;
             }
 
-            if (value == NULL) {
-                res = PyDict_DelItem((PyObject *)dict, name);
-            } else {
-                res = PyDict_SetItem((PyObject *)dict, name, value);
-            }
-
-            return res;
+            FT_ATOMIC_STORE_PTR_RELEASE(_PyObject_ManagedDictPointer(obj)->dict,
+                                        (PyDictObject *)dict);
+            return 0;
         }
 
         _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(dict);
 
-        if (value == NULL) {
-            Py_hash_t hash;
-            if (!PyUnicode_CheckExact(name) || (hash = unicode_get_hash(name)) == -1) {
-                hash = PyObject_Hash(name);
-                if (hash == -1)
-                    return -1;
-            }
-            res = delitem_knownhash_lock_held((PyObject *)dict, name, hash);
-        } else {
-            res = setitem_lock_held(dict, name, value);
-        }
+        res = set_or_del_lock_held (dict, name, value);
         return res;
     }
 
@@ -6782,11 +6787,7 @@ store_instance_attr_dict(PyObject *obj, PyDictObject *dict, PyObject *name, PyOb
         res = store_instance_attr_lock_held(obj, values, name, value);
     }
     else {
-        if (value == NULL) {
-            res = PyDict_DelItem((PyObject *)dict, name);
-        } else {
-            res = PyDict_SetItem((PyObject *)dict, name, value);
-        }
+        res = set_or_del_lock_held(dict, name, value);
     }
     Py_END_CRITICAL_SECTION();
     return res;
@@ -6870,9 +6871,8 @@ _PyObject_ManagedDictValidityCheck(PyObject *obj)
 }
 #endif
 
-// Attempts to get an instance attribute from the inline values.  Returns 0 if
-// the lookup from the inline values was successful or 1 if the inline values
-// are no longer valid.  No error is set in either case.
+// Attempts to get an instance attribute from the inline values. Returns true
+// if successful, or false if the caller needs to lookup in the dictionary.
 bool
 _PyObject_TryGetInstanceAttribute(PyObject *obj, PyObject *name, PyObject **attr)
 {
@@ -7048,27 +7048,22 @@ _PyObject_SetManagedDict(PyObject *obj, PyObject *new_dict)
 
         Py_BEGIN_CRITICAL_SECTION2(dict, obj);
 
-        // If the dict in the object has been replaced between when we
-        // got the dict and unlocked the objects then it's
-        // definitely no longer inline and there's no need to detach
-        // it, we can just replace it.
+#ifdef Py_DEBUG
+        // If the dict in the object has been replaced between when we got
+        // the dict and unlocked the objects then it's definitely no longer
+        // inline and there's no need to detach it, we can just replace it.
+        // The call to _PyDict_DetachFromObject will be a nop.
         PyDictObject *cur_dict = _PyObject_ManagedDictPointer(obj)->dict;
         assert(cur_dict == dict ||
                (cur_dict->ma_values != _PyObject_InlineValues(obj) &&
+                dict->ma_values != _PyObject_InlineValues(obj) &&
                 !_PyObject_InlineValues(obj)->valid));
+#endif
 
-        Py_XINCREF(new_dict);
         FT_ATOMIC_STORE_PTR(_PyObject_ManagedDictPointer(obj)->dict,
                             (PyDictObject *)Py_XNewRef(new_dict));
 
-        // If we got a replacement dict after locking the object and the dict
-        // then the old dict had to already have been detached.
-        assert(cur_dict == dict ||
-                dict->ma_values != _PyObject_InlineValues(obj));
-
-        if (cur_dict == dict) {
-            _PyDict_DetachFromObject(dict, obj);
-        }
+        _PyDict_DetachFromObject(dict, obj);
 
         Py_END_CRITICAL_SECTION2();
 
