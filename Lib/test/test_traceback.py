@@ -4363,13 +4363,17 @@ class TestColorizedTraceback(unittest.TestCase):
             f'{boldm}ZeroDivisionError{reset}: {magenta}division by zero{reset}']
         self.assertEqual(actual, expected)
 
+    @force_not_colorized
     def test_colorized_detection_checks_for_environment_variables(self):
         if sys.platform == "win32":
             virtual_patching = unittest.mock.patch("nt._supports_virtual_terminal", return_value=True)
         else:
             virtual_patching = contextlib.nullcontext()
         with virtual_patching:
+
+            flags = unittest.mock.MagicMock(ignore_environment=False)
             with (unittest.mock.patch("os.isatty") as isatty_mock,
+                  unittest.mock.patch("sys.flags", flags),
                   unittest.mock.patch("traceback._can_colorize", ORIGINAL_CAN_COLORIZE)):
                 isatty_mock.return_value = True
                 with unittest.mock.patch("os.environ", {'TERM': 'dumb'}):
