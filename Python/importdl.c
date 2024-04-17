@@ -246,7 +246,7 @@ _PyImport_RunModInitFunc(PyModInitFunction p0,
                          struct _Py_ext_module_loader_result *p_res)
 {
     struct _Py_ext_module_loader_result res = {
-        .singlephase=-1,
+        .kind=_Py_ext_module_loader_result_UNKNOWN,
     };
     const char *name_buf = PyBytes_AS_STRING(info->name_encoded);
 
@@ -283,6 +283,7 @@ _PyImport_RunModInitFunc(PyModInitFunction p0,
         /* This can happen when a PyModuleDef is returned without calling
          * PyModuleDef_Init on it
          */
+        res.kind = _Py_ext_module_loader_result_INVALID;
         PyErr_Format(PyExc_SystemError,
                      "init function of %s returned uninitialized object",
                      name_buf);
@@ -295,7 +296,7 @@ _PyImport_RunModInitFunc(PyModInitFunction p0,
 
     if (PyObject_TypeCheck(m, &PyModuleDef_Type)) {
         /* multi-phase init */
-        res.singlephase = 0;
+        res.kind = _Py_ext_module_loader_result_MULTIPHASE;
         res.def = (PyModuleDef *)m;
         /* Run PyModule_FromDefAndSpec() to finish loading the module. */
     }
@@ -311,7 +312,7 @@ _PyImport_RunModInitFunc(PyModInitFunction p0,
     }
     else {
         /* single-phase init (legacy) */
-        res.singlephase = 1;
+        res.kind = _Py_ext_module_loader_result_SINGLEPHASE;
         res.module = m;
 
         if (!PyModule_Check(m)) {

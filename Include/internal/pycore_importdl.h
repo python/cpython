@@ -46,7 +46,12 @@ extern int _Py_ext_module_loader_info_init_from_spec(
 struct _Py_ext_module_loader_result {
     PyModuleDef *def;
     PyObject *module;
-    int singlephase;
+    enum _Py_ext_module_loader_result_kind {
+        _Py_ext_module_loader_result_UNKNOWN = 0,
+        _Py_ext_module_loader_result_SINGLEPHASE = 1,
+        _Py_ext_module_loader_result_MULTIPHASE = 2,
+        _Py_ext_module_loader_result_INVALID = 3,
+    } kind;
 };
 extern PyModInitFunction _PyImport_GetModInitFunc(
     struct _Py_ext_module_loader_info *info,
