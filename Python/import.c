@@ -1223,6 +1223,17 @@ fix_up_extension(PyObject *mod, PyModuleDef *def,
                  PyObject *name, PyObject *filename,
                  PyObject *modules)
 {
+    if (filename != NULL) {
+        /* Remember the filename as the __file__ attribute */
+        if (PyModule_AddObjectRef(mod, "__file__", filename) < 0) {
+            PyErr_Clear(); /* Not important enough to report */
+        }
+    }
+    else {
+        /* It must be a builtin module. */
+        filename = name;
+    }
+
     PyInterpreterState *interp = _PyInterpreterState_GET();
     if (def == NULL) {
         def = PyModule_GetDef(mod);
@@ -1388,11 +1399,6 @@ create_dynamic(struct _Py_ext_module_loader_info *info, PyObject *file,
     if (res.singlephase) {
         mod = Py_NewRef(res.module);
 
-        /* Remember the filename as the __file__ attribute */
-        if (PyModule_AddObjectRef(mod, "__file__", info->path) < 0) {
-            PyErr_Clear(); /* Not important enough to report */
-        }
-
         const char *name_buf = PyBytes_AS_STRING(info->name_encoded);
         if (_PyImport_CheckSubinterpIncompatibleExtensionAllowed(name_buf) < 0) {
             Py_CLEAR(mod);
@@ -1432,7 +1438,7 @@ _PyImport_FixupBuiltin(PyObject *mod, const char *name, PyObject *modules)
         return -1;
     }
     assert(mod != NULL && PyModule_Check(mod));
-    if (fix_up_extension(mod, NULL, nameobj, nameobj, modules) < 0) {
+    if (fix_up_extension(mod, NULL, nameobj, NULL, modules) < 0) {
         goto finally;
     }
     res = 0;
@@ -1492,7 +1498,7 @@ create_builtin(PyThreadState *tstate, PyObject *name, PyObject *spec)
                 }
                 def->m_base.m_init = p->initfunc;
 
-                if (fix_up_extension(mod, def, name, name, modules) < 0) {
+                if (fix_up_extension(mod, def, name, NULL, modules) < 0) {
                     return NULL;
                 }
                 return mod;
