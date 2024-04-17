@@ -1,4 +1,4 @@
-Restore functions reomved in Python 3.13 alpha 1:
+Restore functions removed in Python 3.13 alpha 1:
 
 * :c:func:`Py_SetPythonHome`
 * :c:func:`Py_SetProgramName`
