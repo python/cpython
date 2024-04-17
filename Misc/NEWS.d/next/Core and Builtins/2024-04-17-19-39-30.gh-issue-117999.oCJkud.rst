@@ -1,0 +1,2 @@
+Fixed small nonnegative integer powers for complex numbers with special values
+(``±0.0``, infinities or nan's) in components.  Patch by Sergey B Kirpichev.

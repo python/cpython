@@ -6,6 +6,9 @@ from test.test_grammar import (VALID_UNDERSCORE_LITERALS,
 
 from random import random
 from math import atan2, isnan, copysign
+from cmath import log, exp, isclose, isnan as cisnan
+from functools import reduce
+from itertools import combinations
 import operator
 
 INF = float("inf")
@@ -329,6 +332,31 @@ class ComplexTest(unittest.TestCase):
                         complex_pow = "overflow"
                     self.assertEqual(str(float_pow), str(int_pow))
                     self.assertEqual(str(complex_pow), str(int_pow))
+
+        # Check that complex numbers with special components
+        # are correctly handled.
+        values = [complex(*_) for _ in combinations([1, -1, 0.0, -0.0, 2,
+                                                     -3, INF, -INF, NAN], 2)]
+        exponents = [0, 1, 2, 3, 4, 5, 6, 19]
+        for z in values:
+            for e in exponents:
+                try:
+                    r_pow = z**e
+                except OverflowError:
+                    continue
+                r_pro = reduce(lambda x, y: x*y, [z]*e) if e else 1+0j
+                test = str(r_pow) == str(r_pro)
+                if not test:
+                    # We might fail here, because associativity of multiplication
+                    # is broken already for floats.
+                    # Consider z = 1-1j.  Then z*z*z*z = ((z*z)*z)*z = -4+0j,
+                    # while in the algorithm for pow() a diffenent grouping
+                    # of operations is used: z**4 = (z*z)*(z*z) = -4-0j.
+                    r_pro = exp(e*log(z))
+                self.assertTrue(test or isclose(r_pow, r_pro))
+                if not cisnan(r_pow):
+                    self.assertEqual(copysign(1, r_pow.real), copysign(1, r_pro.real))
+                    self.assertEqual(copysign(1, r_pow.imag), copysign(1, r_pro.imag))
 
     def test_boolcontext(self):
         for i in range(100):

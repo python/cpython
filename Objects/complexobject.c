@@ -159,10 +159,8 @@ _Py_c_pow(Py_complex a, Py_complex b)
 static Py_complex
 c_powu(Py_complex x, long n)
 {
-    Py_complex r, p;
+    Py_complex p = x, r = n-- ? p : c_1;
     long mask = 1;
-    r = c_1;
-    p = x;
     while (mask > 0 && n >= mask) {
         if (n & mask)
             r = _Py_c_prod(r,p);
@@ -175,11 +173,10 @@ c_powu(Py_complex x, long n)
 static Py_complex
 c_powi(Py_complex x, long n)
 {
-    if (n > 0)
-        return c_powu(x,n);
-    else
+    if (n < 0)
         return _Py_c_quot(c_1, c_powu(x,-n));
-
+    else
+        return c_powu(x,n);
 }
 
 double
