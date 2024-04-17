@@ -986,6 +986,25 @@ hashtable_destroy_str(void *ptr)
 
 #define HTSEP ':'
 
+static int
+_extensions_cache_init(void)
+{
+    _Py_hashtable_allocator_t alloc = {PyMem_RawMalloc, PyMem_RawFree};
+    EXTENSIONS.hashtable = _Py_hashtable_new_full(
+        hashtable_hash_str,
+        hashtable_compare_str,
+        hashtable_destroy_str,  // key
+        /* There's no need to decref the def since it's immortal. */
+        NULL,  // value
+        &alloc
+    );
+    if (EXTENSIONS.hashtable == NULL) {
+        PyErr_NoMemory();
+        return -1;
+    }
+    return 0;
+}
+
 static PyModuleDef *
 _extensions_cache_get(PyObject *filename, PyObject *name)
 {
@@ -1023,17 +1042,7 @@ _extensions_cache_set(PyObject *filename, PyObject *name, PyModuleDef *def)
     extensions_lock_acquire();
 
     if (EXTENSIONS.hashtable == NULL) {
-        _Py_hashtable_allocator_t alloc = {PyMem_RawMalloc, PyMem_RawFree};
-        EXTENSIONS.hashtable = _Py_hashtable_new_full(
-            hashtable_hash_str,
-            hashtable_compare_str,
-            hashtable_destroy_str,  // key
-            /* There's no need to decref the def since it's immortal. */
-            NULL,  // value
-            &alloc
-        );
-        if (EXTENSIONS.hashtable == NULL) {
-            PyErr_NoMemory();
+        if (_extensions_cache_init() < 0) {
             goto finally;
         }
     }
