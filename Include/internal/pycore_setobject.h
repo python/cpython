@@ -15,6 +15,13 @@ PyAPI_FUNC(int) _PySet_NextEntry(
     PyObject **key,
     Py_hash_t *hash);
 
+// Export for 'Python/compile.c'
+PyAPI_FUNC(int) _PyFrozenSet_NextEntry(
+    PyObject *set,
+    Py_ssize_t *pos,
+    PyObject **key,
+    Py_hash_t *hash);
+
 // Export for '_pickle' shared extension
 PyAPI_FUNC(int) _PySet_Update(PyObject *set, PyObject *iterable);
 

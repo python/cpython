@@ -862,7 +862,7 @@ subclasscheck_check_registry(_abc_data *impl, PyObject *subclass,
 
     // Make a local copy of the registry to protect against concurrent
     // modifications of _abc_registry.
-    PyObject *registry = PySet_New(registry_shared);
+    PyObject *registry = PyFrozenSet_New(registry_shared);
     if (registry == NULL) {
         return -1;
     }
@@ -870,7 +870,7 @@ subclasscheck_check_registry(_abc_data *impl, PyObject *subclass,
     Py_ssize_t pos = 0;
     Py_hash_t hash;
 
-    while (_PySet_NextEntry(registry, &pos, &key, &hash)) {
+    while (_PyFrozenSet_NextEntry(registry, &pos, &key, &hash)) {
         PyObject *rkey;
         if (PyWeakref_GetRef(key, &rkey) < 0) {
             // Someone inject non-weakref type in the registry.

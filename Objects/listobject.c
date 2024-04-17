@@ -1282,12 +1282,19 @@ list_extend_set(PyListObject *self, PySetObject *other)
     if (list_resize(self, m + n) < 0) {
         return -1;
     }
+    int (*next_entry_ptr)(PyObject *, Py_ssize_t *, PyObject **, Py_hash_t *);
+    if (PyFrozenSet_CheckExact(other)) {
+        next_entry_ptr = &_PyFrozenSet_NextEntry;
+    }
+    else {
+        next_entry_ptr = &_PySet_NextEntry;
+    }
     /* populate the end of self with iterable's items */
     Py_ssize_t setpos = 0;
     Py_hash_t hash;
     PyObject *key;
     PyObject **dest = self->ob_item + m;
-    while (_PySet_NextEntry((PyObject *)other, &setpos, &key, &hash)) {
+    while ((*next_entry_ptr)((PyObject *)other, &setpos, &key, &hash)) {
         Py_INCREF(key);
         FT_ATOMIC_STORE_PTR_RELEASE(*dest, key);
         dest++;
