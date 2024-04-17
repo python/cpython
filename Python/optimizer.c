@@ -394,6 +394,29 @@ executor_traverse(PyObject *o, visitproc visit, void *arg)
     return 0;
 }
 
+static PyObject *
+get_jit_code(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    if (!Py_IS_TYPE(self, &_PyUOpExecutor_Type)) {
+        PyErr_SetString(PyExc_TypeError, "get_jit_code() requires a uop_executor object.");
+        return NULL;
+    }
+    _PyExecutorObject *executor = (_PyExecutorObject *)self;
+    if (executor->jit_code == NULL || executor->jit_size == 0) {
+        PyErr_SetString(PyExc_ValueError, "No JIT code available.");
+        return NULL;
+    }
+    return PyBytes_FromStringAndSize(executor->jit_code, executor->jit_size);
+}
+
+static PyMethodDef uop_executor_methods[] = {
+    { "is_valid", is_valid, METH_NOARGS, NULL },
+    { "get_jit_code", get_jit_code, METH_NOARGS, NULL},
+    { "get_opcode", get_opcode, METH_NOARGS, NULL },
+    { "get_oparg", get_oparg, METH_NOARGS, NULL },
+    { NULL, NULL },
+};
+
 PyTypeObject _PyUOpExecutor_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     .tp_name = "uop_executor",
@@ -402,7 +425,7 @@ PyTypeObject _PyUOpExecutor_Type = {
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION | Py_TPFLAGS_HAVE_GC,
     .tp_dealloc = (destructor)uop_dealloc,
     .tp_as_sequence = &uop_as_sequence,
-    .tp_methods = executor_methods,
+    .tp_methods = uop_executor_methods,
     .tp_traverse = executor_traverse,
     .tp_clear = executor_clear,
 };
