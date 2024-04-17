@@ -5077,8 +5077,10 @@ class DSLParser:
             for p in self.function.parameters.values():
                 if p.is_vararg():
                     continue
-                if (p.kind != inspect.Parameter.POSITIONAL_OR_KEYWORD and not isinstance(p.converter, self_converter)
-                        and not isinstance(p.converter, defining_class_converter)):
+                if (p.kind != inspect.Parameter.POSITIONAL_OR_KEYWORD and
+                    not isinstance(p.converter, self_converter) and
+                    not isinstance(p.converter, defining_class_converter)
+                ):
                     fail("Function " + self.function.name + " mixes keyword-only and positional-only parameters, which is unsupported.")
                 p.kind = inspect.Parameter.POSITIONAL_ONLY
 
