@@ -1,1 +1,0 @@
-Fix email.message.EmailMessage address parser handling empty domain e.g. ``"example@"``.
