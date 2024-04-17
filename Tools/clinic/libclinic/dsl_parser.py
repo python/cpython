@@ -1102,6 +1102,8 @@ class DSLParser:
                     fail("A 'defining_class' parameter cannot have a default value.")
                 if self.group:
                     fail("A 'defining_class' parameter cannot be in an optional group.")
+                if self.function.cls is None:
+                    fail("A 'defining_class' parameter cannot be defined at module level.")
                 kind = inspect.Parameter.POSITIONAL_ONLY
             else:
                 fail("A 'defining_class' parameter, if specified, must either "
