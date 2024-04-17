@@ -3759,10 +3759,17 @@ _imp_create_dynamic_impl(PyObject *module, PyObject *spec, PyObject *file)
             goto finally;
         }
     }
-    else
+    else {
         fp = NULL;
+    }
 
     mod = _PyImport_LoadDynamicModuleWithSpec(spec, fp);
+    if (mod != NULL) {
+        /* Remember the filename as the __file__ attribute */
+        if (PyModule_AddObjectRef(mod, "__file__", path) < 0) {
+            PyErr_Clear(); /* Not important enough to report */
+        }
+    }
 
     // XXX Shouldn't this happen in the error cases too.
     if (fp) {
