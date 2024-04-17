@@ -262,6 +262,11 @@ _PyImport_RunModInitFunc(PyModInitFunction p0,
 #endif
 
     if (m == NULL) {
+        /* The init func for multi-phase init modules is expected
+         * to return a PyModuleDef after calling PyModuleDef_Init().
+         * That function never raises an exception nor returns NULL,
+         * so at this point it must be a single-phase init modules. */
+        res.kind = _Py_ext_module_loader_result_SINGLEPHASE;
         if (!PyErr_Occurred()) {
             SET_ERROR(
                 "initialization of %s failed without raising an exception",
@@ -269,6 +274,8 @@ _PyImport_RunModInitFunc(PyModInitFunction p0,
         }
         goto error;
     } else if (PyErr_Occurred()) {
+        /* Likewise, we infer that this is a single-phase init module. */
+        res.kind = _Py_ext_module_loader_result_SINGLEPHASE;
         SET_ERROR("initialization of %s raised unreported exception",
                   name_buf);
         /* We would probably be correct to decref m here,
