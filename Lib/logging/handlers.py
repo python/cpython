@@ -1371,7 +1371,7 @@ class MemoryHandler(BufferingHandler):
         capacity exceeded. To prevent this, set ``flushOnClose`` to ``False``.
         """
         BufferingHandler.__init__(self, capacity)
-        self.flushLevel = flushLevel
+        self.flushLevel = logging._checkLevel(flushLevel)
         self.target = target
         # See Issue #26559 for why this has been added
         self.flushOnClose = flushOnClose
