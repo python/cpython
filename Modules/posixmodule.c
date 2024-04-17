@@ -5558,8 +5558,7 @@ os__path_abspath_impl(PyObject *module, PyObject *path)
         abs = abs_buf;
 
         // Join cwd & path
-        wchar_t *p = abs_buf;
-        memcpy(p, cwd_buf, cwd_len * sizeof(wchar_t));
+        wchar_t *p = memcpy(abs_buf, cwd_buf, cwd_len * sizeof(wchar_t));
         p += cwd_len;
         if (add_sep) {
             *(p++) = SEP;
