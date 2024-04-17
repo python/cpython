@@ -2724,6 +2724,31 @@ class TestParser(TestParserMixin, TestEmailBase):
         )
         self.assertEqual(msg_id.token_type, 'msg-id')
 
+    def test_get_msg_id_empty_id_left(self):
+        with self.assertRaises(errors.HeaderParseError):
+            parser.get_msg_id("<@domain>")
+
+    def test_get_msg_id_empty_id_right(self):
+        with self.assertRaises(errors.HeaderParseError):
+            parser.get_msg_id("<simplelocal@>")
+
+    def test_get_msg_id_with_brackets(self):
+        # Microsof Outlook generates non-standard one-off addresses:
+        # https://learn.microsoft.com/en-us/office/client-developer/outlook/mapi/one-off-addresses
+        with self.assertRaises(errors.HeaderParseError):
+            parser.get_msg_id("<[abrakadabra@microsoft.com]>")
+
+    def test_get_msg_id_ws_only_local(self):
+        msg_id = self._test_get_x(
+            parser.get_msg_id,
+            "< @domain>",
+            "< @domain>",
+            "< @domain>",
+            [errors.ObsoleteHeaderDefect],
+            ""
+        )
+        self.assertEqual(msg_id.token_type, 'msg-id')
+
 
 
 @parameterize
