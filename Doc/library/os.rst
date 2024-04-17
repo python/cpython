@@ -2068,7 +2068,7 @@ features:
 
    .. audit-event:: os.chmod path,mode,dir_fd os.chmod
 
-   .. versionadded:: 3.3
+   .. versionchanged:: 3.3
       Added support for specifying *path* as an open file descriptor,
       and the *dir_fd* and *follow_symlinks* arguments.
 
@@ -2095,7 +2095,7 @@ features:
       The function is limited on Emscripten and WASI, see
       :ref:`wasm-availability` for more information.
 
-   .. versionadded:: 3.3
+   .. versionchanged:: 3.3
       Added support for specifying *path* as an open file descriptor,
       and the *dir_fd* and *follow_symlinks* arguments.
 
@@ -2236,7 +2236,7 @@ features:
    .. versionchanged:: 3.2
       The *path* parameter became optional.
 
-   .. versionadded:: 3.3
+   .. versionchanged:: 3.3
       Added support for specifying *path* as an open file descriptor.
 
    .. versionchanged:: 3.6
