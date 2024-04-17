@@ -19,6 +19,9 @@ If you find a bug in this documentation or would like to propose an improvement,
 please submit a bug report on the :ref:`tracker <using-the-tracker>`.  If you
 have a suggestion on how to fix it, include that as well.
 
+You can also open a discussion item on our
+`Documentation Discourse forum <https://discuss.python.org/c/documentation/26>`_.
+
 If you're short on time, you can also email documentation bug reports to
 docs@python.org (behavioral bugs can be sent to python-list@python.org).
 'docs@' is a mailing list run by volunteers; your request will be noticed,
@@ -35,7 +38,7 @@ though it may take a while to be processed.
    `Helping with Documentation <https://devguide.python.org/docquality/#helping-with-documentation>`_
       Comprehensive guide for individuals that are interested in contributing to Python documentation.
 
-   `Documentation Translations <https://devguide.python.org/documenting/#translating>`_
+   `Documentation Translations <https://devguide.python.org/documentation/translating/>`_
       A list of GitHub pages for documentation translation and their primary contacts.
 
 
@@ -67,7 +70,7 @@ Click on the "New issue" button in the top bar to report a new issue.
 The submission form has two fields, "Title" and "Comment".
 
 For the "Title" field, enter a *very* short description of the problem;
-less than ten words is good.
+fewer than ten words is good.
 
 In the "Comment" field, describe the problem in detail, including what you
 expected to happen and what did happen.  Be sure to include whether any

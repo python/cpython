@@ -29,6 +29,8 @@ def recursive_repr(fillvalue='...'):
         wrapper.__name__ = getattr(user_function, '__name__')
         wrapper.__qualname__ = getattr(user_function, '__qualname__')
         wrapper.__annotations__ = getattr(user_function, '__annotations__', {})
+        wrapper.__type_params__ = getattr(user_function, '__type_params__', ())
+        wrapper.__wrapped__ = user_function
         return wrapper
 
     return decorating_function

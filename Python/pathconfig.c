@@ -1,21 +1,19 @@
 /* Path configuration like module_search_path (sys.path) */
 
 #include "Python.h"
-#include "marshal.h"              // PyMarshal_ReadObjectFromString
-#include "osdefs.h"               // DELIM
-#include "pycore_initconfig.h"
-#include "pycore_fileutils.h"
+#include "pycore_initconfig.h"    // _PyStatus_OK()
+#include "pycore_fileutils.h"     // _Py_wgetcwd()
 #include "pycore_pathconfig.h"
 #include "pycore_pymem.h"         // _PyMem_SetDefaultAllocator()
 #include <wchar.h>
+
+#include "marshal.h"              // PyMarshal_ReadObjectFromString
+#include "osdefs.h"               // DELIM
+
 #ifdef MS_WINDOWS
 #  include <windows.h>            // GetFullPathNameW(), MAX_PATH
 #  include <pathcch.h>
 #  include <shlwapi.h>
-#endif
-
-#ifdef __cplusplus
-extern "C" {
 #endif
 
 
@@ -211,7 +209,8 @@ path_out_of_memory(const char *func)
     _Py_FatalErrorFunc(func, "out of memory");
 }
 
-void
+// Removed in Python 3.13 API, but kept for the stable ABI
+PyAPI_FUNC(void)
 Py_SetPath(const wchar_t *path)
 {
     if (path == NULL) {
@@ -252,7 +251,8 @@ Py_SetPath(const wchar_t *path)
 }
 
 
-void
+// Removed in Python 3.13 API, but kept for the stable ABI
+PyAPI_FUNC(void)
 Py_SetPythonHome(const wchar_t *home)
 {
     int has_value = home && home[0];
@@ -275,7 +275,8 @@ Py_SetPythonHome(const wchar_t *home)
 }
 
 
-void
+// Removed in Python 3.13 API, but kept for the stable ABI
+PyAPI_FUNC(void)
 Py_SetProgramName(const wchar_t *program_name)
 {
     int has_value = program_name && program_name[0];
@@ -293,28 +294,6 @@ Py_SetProgramName(const wchar_t *program_name)
     PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
 
     if (has_value && _Py_path_config.program_name == NULL) {
-        path_out_of_memory(__func__);
-    }
-}
-
-void
-_Py_SetProgramFullPath(const wchar_t *program_full_path)
-{
-    int has_value = program_full_path && program_full_path[0];
-
-    PyMemAllocatorEx old_alloc;
-    _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
-
-    PyMem_RawFree(_Py_path_config.program_full_path);
-    _Py_path_config.program_full_path = NULL;
-
-    if (has_value) {
-        _Py_path_config.program_full_path = _PyMem_RawWcsdup(program_full_path);
-    }
-
-    PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
-
-    if (has_value && _Py_path_config.program_full_path == NULL) {
         path_out_of_memory(__func__);
     }
 }
@@ -517,8 +496,3 @@ _PyPathConfig_ComputeSysPath0(const PyWideStringList *argv, PyObject **path0_p)
     *path0_p = path0_obj;
     return 1;
 }
-
-
-#ifdef __cplusplus
-}
-#endif
