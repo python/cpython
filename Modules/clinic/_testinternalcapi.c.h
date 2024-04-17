@@ -67,6 +67,24 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(_testinternalcapi_new_instruction_sequence__doc__,
+"new_instruction_sequence($module, /)\n"
+"--\n"
+"\n"
+"Return a new, empty InstructionSequence.");
+
+#define _TESTINTERNALCAPI_NEW_INSTRUCTION_SEQUENCE_METHODDEF    \
+    {"new_instruction_sequence", (PyCFunction)_testinternalcapi_new_instruction_sequence, METH_NOARGS, _testinternalcapi_new_instruction_sequence__doc__},
+
+static PyObject *
+_testinternalcapi_new_instruction_sequence_impl(PyObject *module);
+
+static PyObject *
+_testinternalcapi_new_instruction_sequence(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return _testinternalcapi_new_instruction_sequence_impl(module);
+}
+
 PyDoc_STRVAR(_testinternalcapi_compiler_codegen__doc__,
 "compiler_codegen($module, /, ast, filename, optimize, compile_mode=0)\n"
 "--\n"
@@ -282,4 +300,4 @@ _testinternalcapi_test_long_numbits(PyObject *module, PyObject *Py_UNUSED(ignore
 {
     return _testinternalcapi_test_long_numbits_impl(module);
 }
-/*[clinic end generated code: output=679bf53bbae20085 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=9804015d77d36c77 input=a9049054013a1b77]*/

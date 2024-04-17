@@ -22,6 +22,7 @@
 #include "pycore_gc.h"            // PyGC_Head
 #include "pycore_hashtable.h"     // _Py_hashtable_new()
 #include "pycore_initconfig.h"    // _Py_GetConfigsAsDict()
+#include "pycore_instruction_sequence.h"  // _PyInstructionSequence_New()
 #include "pycore_interp.h"        // _PyInterpreterState_GetConfigCopy()
 #include "pycore_long.h"          // _PyLong_Sign()
 #include "pycore_object.h"        // _PyObject_IsFreed()
@@ -723,6 +724,19 @@ _testinternalcapi_compiler_cleandoc_impl(PyObject *module, PyObject *doc)
     return _PyCompile_CleanDoc(doc);
 }
 
+/*[clinic input]
+
+_testinternalcapi.new_instruction_sequence -> object
+
+Return a new, empty InstructionSequence.
+[clinic start generated code]*/
+
+static PyObject *
+_testinternalcapi_new_instruction_sequence_impl(PyObject *module)
+/*[clinic end generated code: output=ea4243fddb9057fd input=1dec2591b173be83]*/
+{
+    return _PyInstructionSequence_New();
+}
 
 /*[clinic input]
 
@@ -1952,6 +1966,7 @@ static PyMethodDef module_functions[] = {
     {"set_eval_frame_default", set_eval_frame_default, METH_NOARGS, NULL},
     {"set_eval_frame_record", set_eval_frame_record, METH_O, NULL},
     _TESTINTERNALCAPI_COMPILER_CLEANDOC_METHODDEF
+    _TESTINTERNALCAPI_NEW_INSTRUCTION_SEQUENCE_METHODDEF
     _TESTINTERNALCAPI_COMPILER_CODEGEN_METHODDEF
     _TESTINTERNALCAPI_OPTIMIZE_CFG_METHODDEF
     _TESTINTERNALCAPI_ASSEMBLE_CODE_OBJECT_METHODDEF
