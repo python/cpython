@@ -262,7 +262,7 @@ def expanduser(path):
             return path
         name = path[1:i]
         if isinstance(name, bytes):
-            name = name.decode('ascii')
+            name = os.fsdecode(name)
         try:
             pwent = pwd.getpwnam(name)
         except KeyError:
