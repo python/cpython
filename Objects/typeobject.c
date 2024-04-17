@@ -4974,13 +4974,15 @@ is_dunder_name(PyObject *name)
 static void
 update_cache(struct type_cache_entry *entry, PyObject *name, unsigned int version_tag, PyObject *value)
 {
-    entry->version = version_tag;
-    entry->value = value;  /* borrowed */
+    _Py_atomic_store_uint32_relaxed(&entry->version, version_tag);
+    _Py_atomic_store_ptr_relaxed(&entry->value, value); /* borrowed */
     assert(_PyASCIIObject_CAST(name)->hash != -1);
     OBJECT_STAT_INC_COND(type_cache_collisions, entry->name != Py_None && entry->name != name);
     // We're releasing this under the lock for simplicity sake because it's always a
     // exact unicode object or Py_None so it's safe to do so.
-    Py_SETREF(entry->name, Py_NewRef(name));
+    PyObject *old_name = entry->name;
+    _Py_atomic_store_ptr_relaxed(&entry->name, Py_NewRef(name));
+    Py_DECREF(old_name);
 }
 
 #if Py_GIL_DISABLED
