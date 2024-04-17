@@ -5512,7 +5512,7 @@ os__path_abspath_impl(PyObject *module, PyObject *path)
 /*[clinic end generated code: output=b58956d662b60be0 input=577ecb3473d22113]*/
 {
     Py_ssize_t path_len, start, abs_len;
-    wchar_t *abs, *abs_buf = NULL;
+    wchar_t *abs, *abs_buf = NULL, *cwd_buf = NULL;
     PyObject *result = NULL;
 
     wchar_t *path_buf = PyUnicode_AsWideCharString(path, &path_len);
@@ -5536,7 +5536,7 @@ os__path_abspath_impl(PyObject *module, PyObject *path)
             goto exit;
         }
         Py_ssize_t cwd_len;
-        wchar_t *cwd_buf = PyUnicode_AsWideCharString(cwd_obj, &cwd_len);
+        cwd_buf = PyUnicode_AsWideCharString(cwd_obj, &cwd_len);
         Py_DECREF(cwd_obj);
         if (!cwd_buf) {
             goto exit;
@@ -5566,8 +5566,6 @@ os__path_abspath_impl(PyObject *module, PyObject *path)
         }
         memcpy(p, path_buf, path_len * sizeof(wchar_t));
         p[path_len] = '\0';
-
-        PyMem_Free(cwd_buf);
     }
 
     abs = _Py_normpath_and_size(abs, abs_len, start, &abs_len);
@@ -5576,6 +5574,9 @@ os__path_abspath_impl(PyObject *module, PyObject *path)
 exit:
     if (path_buf) {
         PyMem_Free(path_buf);
+    }
+    if (cwd_buf) {
+        PyMem_Free(cwd_buf);
     }
     if (abs_buf) {
         PyMem_RawFree(abs_buf);
