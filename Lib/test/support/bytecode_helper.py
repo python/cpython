@@ -69,7 +69,7 @@ class CompilationStepTestCase(unittest.TestCase):
     class Label:
         pass
 
-    def assertInstructionsMatch(self, actual_seq, expected):
+    def assertInstructionsMatch(self, actual_seq, expected, expected_nested=None):
         # get an InstructionSequence and an expected list, where each
         # entry is a label or an instruction tuple. Construct an expcted
         # instruction sequence and compare with the one given.
