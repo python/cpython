@@ -1520,13 +1520,18 @@ def get_obs_local_part(value):
                 raise
             token, value = get_cfws(value)
         obs_local_part.append(token)
+    if not obs_local_part:
+        raise errors.HeaderParseError(
+            "expected obs-local-part but found '{}'".format(value))
     if (obs_local_part[0].token_type == 'dot' or
             obs_local_part[0].token_type=='cfws' and
+            len(obs_local_part) > 1 and
             obs_local_part[1].token_type=='dot'):
         obs_local_part.defects.append(errors.InvalidHeaderDefect(
             "Invalid leading '.' in local part"))
     if (obs_local_part[-1].token_type == 'dot' or
             obs_local_part[-1].token_type=='cfws' and
+            len(obs_local_part) > 1 and
             obs_local_part[-2].token_type=='dot'):
         obs_local_part.defects.append(errors.InvalidHeaderDefect(
             "Invalid trailing '.' in local part"))
