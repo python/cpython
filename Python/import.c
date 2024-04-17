@@ -1359,15 +1359,11 @@ finish_singlephase_extension(PyThreadState *tstate,
 
 
 static PyObject *
-import_find_extension(PyThreadState *tstate,
-                      struct _Py_ext_module_loader_info *info)
+reload_singlephase_extension(PyThreadState *tstate, PyModuleDef *def,
+                             struct _Py_ext_module_loader_info *info)
 {
-    /* Only single-phase init modules will be in the cache. */
-    PyModuleDef *def = _extensions_cache_get(info->path, info->name);
-    if (def == NULL) {
-        return NULL;
-    }
     assert_singlephase(def);
+    PyObject *mod = NULL;
 
     /* It may have been successfully imported previously
        in an interpreter that allows legacy modules
@@ -1378,9 +1374,7 @@ import_find_extension(PyThreadState *tstate,
         return NULL;
     }
 
-    PyObject *mod, *mdict;
     PyObject *modules = get_modules_dict(tstate, true);
-
     if (def->m_size == -1) {
         PyObject *m_copy = def->m_base.m_copy;
         /* Module does not support repeated initialization */
@@ -1390,6 +1384,7 @@ import_find_extension(PyThreadState *tstate,
             m_copy = get_core_module_dict(
                     tstate->interp, info->name, info->path);
             if (m_copy == NULL) {
+                assert(!PyErr_Occurred());
                 return NULL;
             }
         }
@@ -1397,7 +1392,7 @@ import_find_extension(PyThreadState *tstate,
         if (mod == NULL) {
             return NULL;
         }
-        mdict = PyModule_GetDict(mod);
+        PyObject *mdict = PyModule_GetDict(mod);
         if (mdict == NULL) {
             Py_DECREF(mod);
             return NULL;
@@ -1416,6 +1411,7 @@ import_find_extension(PyThreadState *tstate,
     }
     else {
         if (def->m_base.m_init == NULL) {
+            assert(!PyErr_Occurred());
             return NULL;
         }
         struct _Py_ext_module_loader_result res;
@@ -1445,9 +1441,38 @@ import_find_extension(PyThreadState *tstate,
             return NULL;
         }
     }
+
     if (_modules_by_index_set(tstate->interp, def, mod) < 0) {
         PyMapping_DelItem(modules, info->name);
         Py_DECREF(mod);
+        return NULL;
+    }
+
+    return mod;
+}
+
+static PyObject *
+import_find_extension(PyThreadState *tstate,
+                      struct _Py_ext_module_loader_info *info)
+{
+    /* Only single-phase init modules will be in the cache. */
+    PyModuleDef *def = _extensions_cache_get(info->path, info->name);
+    if (def == NULL) {
+        return NULL;
+    }
+    assert_singlephase(def);
+
+    /* It may have been successfully imported previously
+       in an interpreter that allows legacy modules
+       but is not allowed in the current interpreter. */
+    const char *name_buf = PyUnicode_AsUTF8(info->name);
+    assert(name_buf != NULL);
+    if (_PyImport_CheckSubinterpIncompatibleExtensionAllowed(name_buf) < 0) {
+        return NULL;
+    }
+
+    PyObject *mod = reload_singlephase_extension(tstate, def, info);
+    if (mod == NULL) {
         return NULL;
     }
 
