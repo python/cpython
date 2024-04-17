@@ -1527,48 +1527,22 @@ _PyImport_CheckSubinterpIncompatibleExtensionAllowed(const char *name)
 }
 
 static PyThreadState *
-maybe_switch_to_main_interpreter(PyThreadState *tstate)
+switch_to_main_interpreter(PyThreadState *tstate)
 {
-    PyThreadState *main_tstate = tstate;
     if (_Py_IsMainInterpreter(tstate->interp)) {
-        /* There's no need to switch. */
+        return tstate;
     }
-    else if (check_multi_interp_extensions(tstate->interp)) {
-        /*
-        If the module is single-phase init then the import will fail.
-        However, the module's init function will still get run.
-        That means it may still store state in the shared-object/DLL
-        address space (which never gets closed/cleared), including
-        objects (e.g. static types).
-
-        This is a problem for isolated subinterpreters since each
-        has its own object allocator.  If the loaded shared-object
-        still holds a reference to an object after the corresponding
-        interpreter has finalized then either we must let it leak
-        or else any later use of that object by another interpreter
-        (or across multiple init-fini cycles) will crash the process.
-
-        We avoid the problem by first loading the module
-        in the main interpreter.
-
-        Here's another complication we avoid: the module's init
-        function might register callbacks, whether in Python
-        (e.g. sys.stdin, atexit) or in linked libraries.
-        Thus we cannot just dlclose() the module
-        in this error case.
-        */
-        main_tstate = PyThreadState_New(_PyInterpreterState_Main());
-        if (main_tstate == NULL) {
-            return NULL;
-        }
-        main_tstate->_whence = _PyThreadState_WHENCE_EXEC;
+    PyThreadState *main_tstate = PyThreadState_New(_PyInterpreterState_Main());
+    if (main_tstate == NULL) {
+        return NULL;
+    }
+    main_tstate->_whence = _PyThreadState_WHENCE_EXEC;
 #ifndef NDEBUG
-        PyThreadState *old_tstate = PyThreadState_Swap(main_tstate);
-        assert(old_tstate == tstate);
+    PyThreadState *old_tstate = PyThreadState_Swap(main_tstate);
+    assert(old_tstate == tstate);
 #else
-        (void)PyThreadState_Swap(main_tstate);
+    (void)PyThreadState_Swap(main_tstate);
 #endif
-    }
     return main_tstate;
 }
 
@@ -1924,27 +1898,58 @@ import_run_extension(PyThreadState *tstate, PyModInitFunction p0,
      * multi-phase init until after we call its init function. Even
      * in isolated interpreters (that do not support single-phase init),
      * the init function will run without restriction.  For multi-phase
-     * init modules that isn't a problem because the init function runs
-     * PyModuleDef_Init() on the module's def and then returns it.
+     * init modules that isn't a problem because the init function only
+     * runs PyModuleDef_Init() on the module's def and then returns it.
      *
      * However, for single-phase init the module's init function will
      * create the module, create other objects (and allocate other
      * memory), populate it and its module state, and initialze static
      * types.  Some modules store other objects and data in global C
      * variables and register callbacks with the runtime/stdlib or
-     * event external libraries.  That's a problem for isolated
-     * interpreters since all of that happens and only then will
-     * the import fail.  Memory will leak, callbacks will still
-     * get used, and sometimes there will be memory access
-     * violations and use-after-free crashes.
+     * even external libraries (which is part of why we can't just
+     * dlclose() the module in the error case).  That's a problem
+     * for isolated interpreters since all of the above happens
+     * and only then * will the import fail.  Memory will leak,
+     * callbacks will still get used, and sometimes there
+     * will be crashes (memory access violations
+     * and use-after-free).
      *
-     * To avoid that, we make sure the module's init function is always
-     * run first with the main interpreter active.  If it was already
-     * the main interpreter then we can continue loading the module
-     * like normal.  Otherwise, right after the init function, we switch
-     * back to the subinterpreter, check for single-phase init, and
-     * then continue loading like normal. */
-    PyThreadState *main_tstate = maybe_switch_to_main_interpreter(tstate);
+     * To put it another way, if the module is single-phase init
+     * then the import will probably break interpreter isolation
+     * and should fail ASAP.  However, the module's init function
+     * will still get run.  That means it may still store state
+     * in the shared-object/DLL address space (which never gets
+     * closed/cleared), including objects (e.g. static types).
+     * This is a problem for isolated subinterpreters since each
+     * has its own object allocator.  If the loaded shared-object
+     * still holds a reference to an object after the corresponding
+     * interpreter has finalized then either we must let it leak
+     * or else any later use of that object by another interpreter
+     * (or across multiple init-fini cycles) will crash the process.
+     *
+     * To avoid all of that, we make sure the module's init function
+     * is always run first with the main interpreter active.  If it was
+     * already the main interpreter then we can continue loading the
+     * module like normal.  Otherwise, right after the init function,
+     * we take care of some import state bookkeeping, switch back
+     * to the subinterpreter, check for single-phase init,
+     * and then continue loading like normal. */
+
+    PyThreadState *main_tstate = NULL;
+    if (!_Py_IsMainInterpreter(tstate->interp)) {
+        /* We *could* leave in place a legacy interpreter here
+         * (one that shares obmalloc/GIL with main interp),
+         * but there isn't a big advantage, we anticipate
+         * such interpreters will be increasingly uncommon,
+         * and the code is a bit simpler if we always switch
+         * to the main interpreter. */
+        main_tstate = switch_to_main_interpreter(tstate);
+        if (main_tstate == NULL) {
+            return NULL;
+        }
+        assert(main_tstate != tstate);
+        // XXX Get import lock.
+    }
 
     struct _Py_ext_module_loader_result res;
     int rc = _PyImport_RunModInitFunc(p0, info, &res);
@@ -1984,6 +1989,8 @@ import_run_extension(PyThreadState *tstate, PyModInitFunction p0,
     if (res.kind == _Py_ext_module_kind_MULTIPHASE) {
         assert_multiphase_def(def);
         assert(mod == NULL);
+        /* Note that we cheat a little by not repeating the calls
+         * to _PyImport_GetModInitFunc() and _PyImport_RunModInitFunc(). */
         mod = PyModule_FromDefAndSpec(def, spec);
         if (mod == NULL) {
             goto error;
