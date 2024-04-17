@@ -769,7 +769,8 @@ operating system in a system shell regardless of the arguments passed to this
 library. This could result in arguments being parsed according to shell rules,
 but without any escaping added by Python. If you are intentionally launching a
 batch file with arguments from untrusted sources, consider passing
-``shell=True`` to allow Python to escape special characters.
+``shell=True`` to allow Python to escape special characters. See :gh:`114539`
+for additional discussion.
 
 
 Popen Objects
