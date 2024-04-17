@@ -1805,6 +1805,32 @@ class TestParser(TestParserMixin, TestEmailBase):
         self.assertIsNone(name_addr.route)
         self.assertEqual(name_addr.addr_spec, 'dinsdale@example.com')
 
+    def test_get_name_addr_ending_with_dot_without_space(self):
+        name_addr = self._test_get_x(parser.get_name_addr,
+            'John X.<jxd@example.com>',
+            'John X.<jxd@example.com>',
+            '"John X."<jxd@example.com>',
+            [errors.ObsoleteHeaderDefect],
+            '')
+        self.assertEqual(name_addr.display_name, 'John X.')
+        self.assertEqual(name_addr.local_part, 'jxd')
+        self.assertEqual(name_addr.domain, 'example.com')
+        self.assertIsNone(name_addr.route)
+        self.assertEqual(name_addr.addr_spec, 'jxd@example.com')
+
+    def test_get_name_addr_starting_with_dot(self):
+        name_addr = self._test_get_x(parser.get_name_addr,
+            '. Doe <jxd@example.com>',
+            '. Doe <jxd@example.com>',
+            '". Doe" <jxd@example.com>',
+            [errors.InvalidHeaderDefect, errors.ObsoleteHeaderDefect],
+            '')
+        self.assertEqual(name_addr.display_name, '. Doe')
+        self.assertEqual(name_addr.local_part, 'jxd')
+        self.assertEqual(name_addr.domain, 'example.com')
+        self.assertIsNone(name_addr.route)
+        self.assertEqual(name_addr.addr_spec, 'jxd@example.com')
+
     def test_get_name_addr_with_route(self):
         name_addr = self._test_get_x(parser.get_name_addr,
             '"Roy.A.Bear" <@two.example.com: dinsdale@example.com>',
