@@ -160,7 +160,7 @@
       "externalRefs": [
         {
           "referenceCategory": "SECURITY",
-          "referenceLocator": "cpe:2.3:a:xz_project:xz:5.2.5:*:*:*:*:*:*:*",
+          "referenceLocator": "cpe:2.3:a:tukaani:xz:5.2.5:*:*:*:*:*:*:*",
           "referenceType": "cpe23Type"
         }
       ],
