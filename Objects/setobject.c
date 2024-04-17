@@ -473,7 +473,7 @@ set_clear_internal(PySetObject *so)
  *     while (set_next(yourset, &pos, &entry)) {
  *              Refer to borrowed reference in entry->key.
  *     }
- *f
+ *
  * CAUTION:  In general, it isn't safe to use set_next in a loop that
  * mutates the table.
  */
