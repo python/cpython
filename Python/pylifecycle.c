@@ -71,6 +71,7 @@ static PyStatus add_main_module(PyInterpreterState *interp);
 static PyStatus init_import_site(void);
 static PyStatus init_set_builtins_open(void);
 static PyStatus init_sys_streams(PyThreadState *tstate);
+static void init_android_streams(PyThreadState *tstate);
 static void wait_for_thread_shutdown(PyThreadState *tstate);
 static void call_ll_exitfuncs(_PyRuntimeState *runtime);
 
@@ -1222,6 +1223,10 @@ init_interp_main(PyThreadState *tstate)
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
+
+#ifdef __ANDROID__
+    init_android_streams(tstate);
+#endif
 
 #ifdef Py_DEBUG
     run_presite(tstate);
@@ -2716,6 +2721,28 @@ error:
 done:
     Py_XDECREF(iomod);
     return res;
+}
+
+
+/* Redirecting streams to the log is a convenience, but won't be critical for
+   every app, so failures of this function are non-fatal. */
+static void
+init_android_streams(PyThreadState *tstate)
+{
+    PyObject *_android_support = PyImport_ImportModule("_android_support");
+    if (_android_support == NULL) {
+        fprintf(stderr, "_android_support import failed:\n");
+        _PyErr_Print(tstate);
+    } else {
+        PyObject *result = PyObject_CallMethod(_android_support,
+                                               "init_streams", NULL);
+        if (result == NULL) {
+            fprintf(stderr, "_android_support.init_streams failed:\n");
+            _PyErr_Print(tstate);
+        }
+        Py_XDECREF(result);
+    }
+    Py_XDECREF(_android_support);
 }
 
 
