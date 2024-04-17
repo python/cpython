@@ -408,6 +408,9 @@ def _eval_type(t, globalns, localns, recursive_guard=frozenset()):
     """
     if isinstance(t, ForwardRef):
         return t._evaluate(globalns, localns, recursive_guard)
+    if isinstance(t, NewType):
+        arg = ForwardRef(t.__supertype__) if isinstance(t.__supertype__, str) else t.__supertype__
+        return NewType(t.__name__, _eval_type(arg, globalns, localns, recursive_guard), t.__module__)
     if isinstance(t, (_GenericAlias, GenericAlias, types.UnionType)):
         if isinstance(t, GenericAlias):
             args = tuple(
@@ -3295,13 +3298,13 @@ class NewType:
 
     __call__ = _idfunc
 
-    def __init__(self, name, tp):
+    def __init__(self, name, tp, module=None):
         self.__qualname__ = name
         if '.' in name:
             name = name.rpartition('.')[-1]
         self.__name__ = name
         self.__supertype__ = tp
-        def_mod = _caller()
+        def_mod = module or _caller()
         if def_mod != 'typing':
             self.__module__ = def_mod
 
