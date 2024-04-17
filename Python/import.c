@@ -1270,6 +1270,63 @@ fix_up_extension(PyThreadState *tstate, PyObject *mod, PyModuleDef *def,
 
 
 static PyObject *
+reload_singlephase_extension(PyThreadState *tstate, PyModuleDef *def,
+                             PyObject *name, PyObject *filename)
+{
+    PyObject *mod;
+    PyObject *modules = get_modules_dict(tstate, true);
+
+    if (def->m_size == -1) {
+        PyObject *m_copy = def->m_base.m_copy;
+        /* Module does not support repeated initialization */
+        if (m_copy == NULL) {
+            /* It might be a core module (e.g. sys & builtins),
+               for which we don't set m_copy. */
+            m_copy = get_core_module_dict(tstate->interp, name, filename);
+            if (m_copy == NULL) {
+                assert(!PyErr_Occurred());
+                return NULL;
+            }
+        }
+        mod = import_add_module(tstate, name);
+        if (mod == NULL) {
+            return NULL;
+        }
+        PyObject *mdict = PyModule_GetDict(mod);
+        if (mdict == NULL) {
+            Py_DECREF(mod);
+            return NULL;
+        }
+        if (PyDict_Update(mdict, m_copy)) {
+            Py_DECREF(mod);
+            return NULL;
+        }
+    }
+    else {
+        if (def->m_base.m_init == NULL) {
+            assert(!PyErr_Occurred());
+            return NULL;
+        }
+        mod = def->m_base.m_init();
+        if (mod == NULL) {
+            return NULL;
+        }
+        if (PyObject_SetItem(modules, name, mod) == -1) {
+            Py_DECREF(mod);
+            return NULL;
+        }
+    }
+
+    if (_modules_by_index_set(tstate->interp, def, mod) < 0) {
+        PyMapping_DelItem(modules, name);
+        Py_DECREF(mod);
+        return NULL;
+    }
+
+    return mod;
+}
+
+static PyObject *
 import_find_extension(PyThreadState *tstate, PyObject *name,
                       PyObject *filename)
 {
@@ -1288,48 +1345,8 @@ import_find_extension(PyThreadState *tstate, PyObject *name,
         return NULL;
     }
 
-    PyObject *mod, *mdict;
-    PyObject *modules = get_modules_dict(tstate, true);
-
-    if (def->m_size == -1) {
-        PyObject *m_copy = def->m_base.m_copy;
-        /* Module does not support repeated initialization */
-        if (m_copy == NULL) {
-            /* It might be a core module (e.g. sys & builtins),
-               for which we don't set m_copy. */
-            m_copy = get_core_module_dict(tstate->interp, name, filename);
-            if (m_copy == NULL) {
-                return NULL;
-            }
-        }
-        mod = import_add_module(tstate, name);
-        if (mod == NULL) {
-            return NULL;
-        }
-        mdict = PyModule_GetDict(mod);
-        if (mdict == NULL) {
-            Py_DECREF(mod);
-            return NULL;
-        }
-        if (PyDict_Update(mdict, m_copy)) {
-            Py_DECREF(mod);
-            return NULL;
-        }
-    }
-    else {
-        if (def->m_base.m_init == NULL)
-            return NULL;
-        mod = def->m_base.m_init();
-        if (mod == NULL)
-            return NULL;
-        if (PyObject_SetItem(modules, name, mod) == -1) {
-            Py_DECREF(mod);
-            return NULL;
-        }
-    }
-    if (_modules_by_index_set(tstate->interp, def, mod) < 0) {
-        PyMapping_DelItem(modules, name);
-        Py_DECREF(mod);
+    PyObject *mod = reload_singlephase_extension(tstate, def, name, filename);
+    if (mod == NULL) {
         return NULL;
     }
 
