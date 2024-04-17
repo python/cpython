@@ -985,40 +985,53 @@ _extensions_cache_init(void)
     return 0;
 }
 
+static _Py_hashtable_entry_t *
+_extensions_cache_find_unlocked(PyObject *filename, PyObject *name,
+                                void **p_key)
+{
+    if (EXTENSIONS.hashtable == NULL) {
+        return NULL;
+    }
+    void *key = hashtable_key_from_2_strings(filename, name, HTSEP);
+    if (key == NULL) {
+        return NULL;
+    }
+    _Py_hashtable_entry_t *entry =
+            _Py_hashtable_get_entry(EXTENSIONS.hashtable, key);
+    if (p_key != NULL) {
+        *p_key = key;
+    }
+    else {
+        hashtable_destroy_str(key);
+    }
+    return entry;
+}
+
 static PyModuleDef *
 _extensions_cache_get(PyObject *filename, PyObject *name)
 {
     PyModuleDef *def = NULL;
-    void *key = NULL;
     extensions_lock_acquire();
 
-    if (EXTENSIONS.hashtable == NULL) {
-        goto finally;
-    }
-
-    key = hashtable_key_from_2_strings(filename, name, HTSEP);
-    if (key == NULL) {
-        goto finally;
-    }
-    _Py_hashtable_entry_t *entry = _Py_hashtable_get_entry(
-            EXTENSIONS.hashtable, key);
+    _Py_hashtable_entry_t *entry =
+            _extensions_cache_find_unlocked(filename, name, NULL);
     if (entry == NULL) {
+        /* It was never added. */
         goto finally;
     }
     def = (PyModuleDef *)entry->value;
 
 finally:
     extensions_lock_release();
-    if (key != NULL) {
-        PyMem_RawFree(key);
-    }
     return def;
 }
 
 static int
-_extensions_cache_set(PyObject *filename, PyObject *name, PyModuleDef *def)
+_extensions_cache_set(PyObject *filename, PyObject *name, PyModuleDef *def,
+                      bool replace)
 {
     int res = -1;
+    assert(def != NULL);
     extensions_lock_acquire();
 
     if (EXTENSIONS.hashtable == NULL) {
@@ -1027,32 +1040,33 @@ _extensions_cache_set(PyObject *filename, PyObject *name, PyModuleDef *def)
         }
     }
 
-    void *key = hashtable_key_from_2_strings(filename, name, HTSEP);
-    if (key == NULL) {
-        goto finally;
-    }
-
     int already_set = 0;
-    _Py_hashtable_entry_t *entry = _Py_hashtable_get_entry(
-            EXTENSIONS.hashtable, key);
+    void *key = NULL;
+    _Py_hashtable_entry_t *entry =
+            _extensions_cache_find_unlocked(filename, name, &key);
     if (entry == NULL) {
+        /* It was never added. */
         if (_Py_hashtable_set(EXTENSIONS.hashtable, key, def) < 0) {
-            PyMem_RawFree(key);
             PyErr_NoMemory();
             goto finally;
         }
+        /* The hashtable owns the key now. */
+        key = NULL;
+    }
+    else if (entry->value == NULL) {
+        /* It was previously deleted. */
+        entry->value = def;
+    }
+    /* We expect it to be static, so it must be the same pointer. */
+    else if ((PyModuleDef *)entry->value == def) {
+        /* It was already added. */
+        already_set = 1;
     }
     else {
-        if (entry->value == NULL) {
-            entry->value = def;
-        }
-        else {
-            /* We expect it to be static, so it must be the same pointer. */
-            assert((PyModuleDef *)entry->value == def);
-            already_set = 1;
-        }
-        PyMem_RawFree(key);
+        assert(replace);
+        entry->value = def;
     }
+
     if (!already_set) {
         /* We assume that all module defs are statically allocated
            and will never be freed.  Otherwise, we would incref here. */
@@ -1062,13 +1076,15 @@ _extensions_cache_set(PyObject *filename, PyObject *name, PyModuleDef *def)
 
 finally:
     extensions_lock_release();
+    if (key != NULL) {
+        hashtable_destroy_str(key);
+    }
     return res;
 }
 
 static void
 _extensions_cache_delete(PyObject *filename, PyObject *name)
 {
-    void *key = NULL;
     extensions_lock_acquire();
 
     if (EXTENSIONS.hashtable == NULL) {
@@ -1076,13 +1092,8 @@ _extensions_cache_delete(PyObject *filename, PyObject *name)
         goto finally;
     }
 
-    key = hashtable_key_from_2_strings(filename, name, HTSEP);
-    if (key == NULL) {
-        goto finally;
-    }
-
-    _Py_hashtable_entry_t *entry = _Py_hashtable_get_entry(
-            EXTENSIONS.hashtable, key);
+    _Py_hashtable_entry_t *entry =
+            _extensions_cache_find_unlocked(filename, name, NULL);
     if (entry == NULL) {
         /* It was never added. */
         goto finally;
@@ -1100,9 +1111,6 @@ _extensions_cache_delete(PyObject *filename, PyObject *name)
 
 finally:
     extensions_lock_release();
-    if (key != NULL) {
-        PyMem_RawFree(key);
-    }
 }
 
 static void
@@ -1263,7 +1271,7 @@ fix_up_extension(PyThreadState *tstate, PyObject *mod, PyModuleDef *def,
         PyModuleDef *cached = _extensions_cache_get(filename, name);
         assert(cached == NULL || cached == def);
 #endif
-        if (_extensions_cache_set(filename, name, def) < 0) {
+        if (_extensions_cache_set(filename, name, def, false) < 0) {
             return -1;
         }
     }
