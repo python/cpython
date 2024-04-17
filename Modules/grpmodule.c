@@ -114,6 +114,7 @@ mkgrent(PyObject *module, struct group *p)
 grp.getgrgid
 
     id: object
+    / [from 3.16]
 
 Return the group database entry for the given numeric group ID.
 
@@ -122,7 +123,7 @@ If id is not valid, raise KeyError.
 
 static PyObject *
 grp_getgrgid_impl(PyObject *module, PyObject *id)
-/*[clinic end generated code: output=30797c289504a1ba input=15fa0e2ccf5cda25]*/
+/*[clinic end generated code: output=30797c289504a1ba input=b0f482517fa9c22a]*/
 {
     PyObject *retval = NULL;
     int nomem = 0;
@@ -194,6 +195,7 @@ grp_getgrgid_impl(PyObject *module, PyObject *id)
 grp.getgrnam
 
     name: unicode
+    / [from 3.16]
 
 Return the group database entry for the given group name.
 
@@ -202,7 +204,7 @@ If name is not valid, raise KeyError.
 
 static PyObject *
 grp_getgrnam_impl(PyObject *module, PyObject *name)
-/*[clinic end generated code: output=67905086f403c21c input=08ded29affa3c863]*/
+/*[clinic end generated code: output=67905086f403c21c input=bbcdbc9a8786c117]*/
 {
     char *buf = NULL, *buf2 = NULL, *name_chars;
     int nomem = 0;

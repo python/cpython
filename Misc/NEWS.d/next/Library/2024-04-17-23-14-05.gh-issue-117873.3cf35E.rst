@@ -1,0 +1,2 @@
+:mod:`grp`: Deprecate passing keyword arguments to :func:`grp.getgrgid` and
+:func:`grp.getgrnam` functions. Patch by Victor Stinner.
