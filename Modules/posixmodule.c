@@ -5511,7 +5511,7 @@ static PyObject *
 os__path_abspath_impl(PyObject *module, PyObject *path)
 /*[clinic end generated code: output=b58956d662b60be0 input=577ecb3473d22113]*/
 {
-    Py_ssize_t path_len, start, abs_len;
+    Py_ssize_t path_len, prefix_len, abs_len;
     wchar_t *abs, *abs_buf = NULL, *cwd_buf = NULL;
     PyObject *result = NULL;
 
@@ -5526,7 +5526,7 @@ os__path_abspath_impl(PyObject *module, PyObject *path)
     }
 
     if (_Py_isabs(path_buf)) {
-        start = 0;
+        prefix_len = 0;
         abs_len = path_len;
         abs = path_buf;
     }
@@ -5543,8 +5543,8 @@ os__path_abspath_impl(PyObject *module, PyObject *path)
         }
 
         int add_sep = cwd_buf[cwd_len - 1] != SEP;
-        start = cwd_len + add_sep;
-        abs_len = start + path_len;
+        prefix_len = cwd_len + add_sep;
+        abs_len = prefix_len + path_len;
 
         if ((size_t)abs_len + 1 > (size_t)PY_SSIZE_T_MAX / sizeof(wchar_t)) {
             PyErr_SetString(PyExc_OverflowError, "path is too long");
@@ -5568,7 +5568,7 @@ os__path_abspath_impl(PyObject *module, PyObject *path)
         p[path_len] = '\0';
     }
 
-    abs = _Py_normpath_and_size(abs, abs_len, start, &abs_len);
+    abs = _Py_normpath_and_size(abs, abs_len, prefix_len, &abs_len);
     result = PyUnicode_FromWideChar(abs, abs_len);
 
 exit:
