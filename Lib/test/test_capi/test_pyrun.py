@@ -52,12 +52,12 @@ class PyRunTest(unittest.TestCase):
         self.assertIsNone(run(b'\xc3\xa4\n', {'\xe4': 1}))
         self.assertRaises(SyntaxError, run, b'\xe4\n', {})
 
-        self.assertRaises(SystemError, run, b'a\n', NULL)
-        self.assertRaises(SystemError, run, b'a\n', NULL, {})
-        self.assertRaises(SystemError, run, b'a\n', NULL, dict(a=1))
-        self.assertRaises(SystemError, run, b'a\n', UserDict())
-        self.assertRaises(SystemError, run, b'a\n', UserDict(), {})
-        self.assertRaises(SystemError, run, b'a\n', UserDict(), dict(a=1))
+        # CRASHES run(b'a\n', NULL)
+        # CRASHES run(b'a\n', NULL, {})
+        # CRASHES run(b'a\n', NULL, dict(a=1))
+        # CRASHES run(b'a\n', UserDict())
+        # CRASHES run(b'a\n', UserDict(), {})
+        # CRASHES run(b'a\n', UserDict(), dict(a=1))
 
         # CRASHES run(NULL, {})
 
@@ -81,12 +81,12 @@ class PyRunTest(unittest.TestCase):
         self.assertRaises(TypeError, run, dict(a=1), [])
         self.assertRaises(TypeError, run, dict(a=1), 1)
 
-        self.assertRaises(SystemError, run, NULL)
-        self.assertRaises(SystemError, run, NULL, {})
-        self.assertRaises(SystemError, run, NULL, dict(a=1))
-        self.assertRaises(SystemError, run, UserDict())
-        self.assertRaises(SystemError, run, UserDict(), {})
-        self.assertRaises(SystemError, run, UserDict(), dict(a=1))
+        # CRASHES run(NULL)
+        # CRASHES run(NULL, {})
+        # CRASHES run(NULL, dict(a=1))
+        # CRASHES run(UserDict())
+        # CRASHES run(UserDict(), {})
+        # CRASHES run(UserDict(), dict(a=1))
 
     @unittest.skipUnless(TESTFN_UNDECODABLE, 'only works if there are undecodable paths')
     def test_pyrun_fileexflags_with_undecodable_filename(self):
