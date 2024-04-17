@@ -3050,6 +3050,30 @@ class ConfigDictTest(BaseTest):
         },
     }
 
+    config18  = {
+        "version": 1,
+        "handlers": {
+            "console": {
+                "class": "logging.StreamHandler",
+                "level": "DEBUG",
+            },
+            "buffering": {
+                "class": "logging.handlers.MemoryHandler",
+                "capacity": 5,
+                "target": "console",
+                "level": "DEBUG",
+                "flushLevel": "ERROR"
+            }
+        },
+        "loggers": {
+            "mymodule": {
+                "level": "DEBUG",
+                "handlers": ["buffering"],
+                "propagate": "true"
+            }
+        }
+    }
+
     bad_format = {
         "version": 1,
         "formatters": {
@@ -3535,6 +3559,11 @@ class ConfigDictTest(BaseTest):
         self.apply_config(self.config17)
         h = logging._handlers['hand1']
         self.assertEqual(h.formatter.custom_property, 'value')
+
+    def test_config18_ok(self):
+        self.apply_config(self.config18)
+        handler = logging.getLogger('mymodule').handlers[0]
+        self.assertEqual(handler.flushLevel, logging.ERROR)
 
     def setup_via_listener(self, text, verify=None):
         text = text.encode("utf-8")
