@@ -976,6 +976,7 @@ A class object can be called (see above) to yield a class instance (see below).
    single: __doc__ (class attribute)
    single: __annotations__ (class attribute)
    single: __type_params__ (class attribute)
+   single: __static_attributes__ (class attribute)
 
 Special attributes:
 
