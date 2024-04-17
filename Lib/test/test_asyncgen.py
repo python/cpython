@@ -401,6 +401,7 @@ class AsyncGenTest(unittest.TestCase):
             x = gen().athrow(GeneratorExit, GeneratorExit(), None)
         with self.assertRaises(GeneratorExit):
             x.send(None)
+            gc.collect()
 
     def test_async_gen_api_01(self):
         async def gen():
