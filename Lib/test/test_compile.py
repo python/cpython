@@ -2429,24 +2429,28 @@ class TestInstructionSequence(unittest.TestCase):
 
     def test_basics(self):
         seq = _testinternalcapi.new_instruction_sequence()
-        seq.addop(opcode.opmap['LOAD_CONST'], 1, 1, 0, 0, 0)
-        seq.addop(opcode.opmap['JUMP'], lbl1 := seq.new_label(), 2, 0, 0, 0)
-        seq.addop(opcode.opmap['LOAD_CONST'], 1, 3, 0, 0, 0)
-        seq.addop(opcode.opmap['JUMP'], lbl2 := seq.new_label(), 4, 0, 0, 0)
-        seq.use_label(lbl1)
-        seq.addop(opcode.opmap['LOAD_CONST'], 2, 4, 0, 0, 0)
-        seq.use_label(lbl2)
-        seq.addop(opcode.opmap['RETURN_VALUE'], 0, 3, 0, 0, 0)
 
-        expected = [('LOAD_CONST', 1, 1, 0, 0, 0),
-                    ('JUMP', 4, 2, 0, 0, 0),
-                    ('LOAD_CONST', 1, 3, 0, 0, 0),
-                    ('JUMP', 5, 4, 0, 0, 0),
-                    ('LOAD_CONST', 2, 4, 0, 0, 0),
-                    ('RETURN_VALUE', None, 3, 0, 0, 0),
+        def add_op(seq, opname, oparg, bl, bc=0, el=0, ec=0):
+            seq.addop(opcode.opmap[opname], oparg, bl, bc, el, el)
+
+        add_op(seq, 'LOAD_CONST', 1, 1)
+        add_op(seq, 'JUMP', lbl1 := seq.new_label(), 2)
+        add_op(seq, 'LOAD_CONST', 1, 3)
+        add_op(seq, 'JUMP', lbl2 := seq.new_label(), 4)
+        seq.use_label(lbl1)
+        add_op(seq, 'LOAD_CONST', 2, 4)
+        seq.use_label(lbl2)
+        add_op(seq, 'RETURN_VALUE', 0, 3)
+
+        expected = [('LOAD_CONST', 1, 1),
+                    ('JUMP', 4, 2),
+                    ('LOAD_CONST', 1, 3),
+                    ('JUMP', 5, 4),
+                    ('LOAD_CONST', 2, 4),
+                    ('RETURN_VALUE', None, 3),
                    ]
 
-        self.compare_instructions(seq, expected)
+        self.compare_instructions(seq, [ex + (0,0,0) for ex in expected])
 
     def test_nested(self):
         seq = _testinternalcapi.new_instruction_sequence()

@@ -173,7 +173,7 @@ class InstructionSequenceType "_PyInstructionSequence *" "&_PyInstructionSequenc
 #include "clinic/instruction_sequence.c.h"
 
 static _PyInstructionSequence*
-inst_seq_create_raw(void)
+inst_seq_create(void)
 {
     _PyInstructionSequence *seq;
     seq = PyObject_GC_New(_PyInstructionSequence, &_PyInstructionSequence_Type);
@@ -195,7 +195,7 @@ inst_seq_create_raw(void)
 PyObject*
 _PyInstructionSequence_New(void)
 {
-    _PyInstructionSequence *seq = inst_seq_create_raw();
+    _PyInstructionSequence *seq = inst_seq_create();
     if (seq == NULL) {
         return NULL;
     }
@@ -213,7 +213,7 @@ static PyObject *
 inst_seq_new_impl(PyTypeObject *type)
 /*[clinic end generated code: output=98881de92c8876f6 input=b393150146849c74]*/
 {
-    return (PyObject*)inst_seq_create_raw();
+    return (PyObject*)inst_seq_create();
 }
 
 /*[clinic input]
