@@ -446,7 +446,7 @@ class HelpFormatter(object):
             # add the action string to the list
             parts.append(part)
 
-        # insert group markers at the necessary indices
+        # group mutually exclusive actions
         for start, end in sorted(inserts, reverse=True):
             group = inserts[start, end]
             group_parts = [item for item in parts[start:end] if item is not None]

@@ -1,2 +1,2 @@
-Simplify :mod:`argparse` usage formatting to avoid assertion errors caused by
-whitespace in metavars or ``SUPPRESS``-ed groups. Contributed by Ali Hamdan.
+Fix assertion errors caused by whitespace in metavars or ``SUPPRESS``-ed groups
+in :mod:`argparse` by simplifying usage formatting. Patch by Ali Hamdan.

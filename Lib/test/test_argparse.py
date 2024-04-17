@@ -4370,7 +4370,7 @@ class TestHelpUsageNoWhitespaceCrash(TestCase):
         self.assertEqual(parser.format_usage(), usage)
 
     def test_nested_mutex_groups(self):
-        parser = argparse.ArgumentParser()
+        parser = argparse.ArgumentParser(prog='PROG')
         g = parser.add_mutually_exclusive_group()
         g.add_argument("--spam")
         with warnings.catch_warnings():
@@ -4383,8 +4383,8 @@ class TestHelpUsageNoWhitespaceCrash(TestCase):
         parser.add_argument("--num")
 
         usage = textwrap.dedent('''\
-        usage: __main__.py [-h] [--spam SPAM | [--hax HAX | --hex HEX] | --eggs EGGS]
-                           [--num NUM]
+        usage: PROG [-h] [--spam SPAM | [--hax HAX | --hex HEX] | --eggs EGGS]
+                    [--num NUM]
         ''')
         self.assertEqual(parser.format_usage(), usage)
 
