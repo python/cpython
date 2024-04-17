@@ -661,7 +661,7 @@ extern PyObject* _PyType_GetTextSignatureFromInternalDoc(const char *, const cha
 
 void _PyObject_InitInlineValues(PyObject *obj, PyTypeObject *tp);
 extern int _PyObject_StoreInstanceAttribute(PyObject *obj,
-                                               PyObject *name, PyObject *value);
+                                            PyObject *name, PyObject *value);
 extern bool _PyObject_TryGetInstanceAttribute(PyObject *obj, PyObject *name,
                                               PyObject **attr);
 
