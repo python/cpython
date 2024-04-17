@@ -4569,6 +4569,8 @@ class FormatterTest(unittest.TestCase, AssertErrorMessage):
             self.assertEqual(record.msecs, want)
             self.assertEqual(record.created, ns / 1e9)
 
+    # The test overrides a private attribute
+    @support.cpython_only
     def test_relativeCreated_has_higher_precision(self):
         # See issue gh-102402
         ns = 1_677_903_920_000_998_503  # approx. 2023-03-04 04:25:20 UTC
