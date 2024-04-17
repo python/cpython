@@ -2979,18 +2979,12 @@ dict_set_fromkeys(PyInterpreterState *interp, PyDictObject *mp,
         return NULL;
     }
 
-    int (*next_entry_ptr)(PyObject *, Py_ssize_t *, PyObject **, Py_hash_t *);
-    if (PyFrozenSet_CheckExact(iterable)) {
-        next_entry_ptr = &_PyFrozenSet_NextEntry;
-    }
-    else {
-        next_entry_ptr = &_PySet_NextEntry;
-    }
-
-    while ((*next_entry_ptr)(iterable, &pos, &key, &hash)) {
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(iterable);
+    while (_PySet_NextEntry(iterable, &pos, &key, &hash)) {
         if (insertdict(interp, mp, Py_NewRef(key), hash, Py_NewRef(value))) {
             Py_DECREF(mp);
-            return NULL;
+            mp = NULL;
+            break;
         }
     }
     return mp;

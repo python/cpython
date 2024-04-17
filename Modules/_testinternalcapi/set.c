@@ -1,6 +1,7 @@
 #include "parts.h"
 #include "../_testcapi/util.h"  // NULLABLE, RETURN_INT
 
+#include "pycore_critical_section.h"
 #include "pycore_setobject.h"
 
 
@@ -27,8 +28,9 @@ set_next_entry(PyObject *self, PyObject *args)
         return NULL;
     }
     NULLABLE(set);
-
+    Py_BEGIN_CRITICAL_SECTION(set);
     rc = _PySet_NextEntry(set, &pos, &item, &hash);
+    Py_END_CRITICAL_SECTION();
     if (rc == 1) {
         return Py_BuildValue("innO", rc, pos, hash, item);
     }

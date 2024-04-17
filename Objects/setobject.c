@@ -2681,11 +2681,8 @@ _PySet_NextEntry(PyObject *set, Py_ssize_t *pos, PyObject **key, Py_hash_t *hash
         PyErr_BadInternalCall();
         return -1;
     }
-    int ret;
-    Py_BEGIN_CRITICAL_SECTION(set);
-    ret = _PySet_NextEntry_lock_held(set, pos, key, hash);
-    Py_END_CRITICAL_SECTION();
-    return ret;
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(set);
+    return _PySet_NextEntry_lock_held(set, pos, key, hash);
 }
 
 int
