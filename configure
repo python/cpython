@@ -25367,6 +25367,56 @@ printf "%s\n" "#define HAVE_RL_COMPDISP_FUNC_T 1" >>confdefs.h
 fi
 
 
+    # Some editline versions declare rl_startup_hook as taking no args, others
+    # declare it as taking 2.
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking if rl_startup_hook takes arguments" >&5
+printf %s "checking if rl_startup_hook takes arguments... " >&6; }
+if test ${ac_cv_readline_rl_startup_hook_takes_args+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+
+        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+      #include <stdio.h> /* Must be first for Gnu Readline */
+      #ifdef WITH_EDITLINE
+      # include <editline/readline.h>
+      #else
+      # include <readline/readline.h>
+      # include <readline/history.h>
+      #endif
+
+                extern int test_hook_func(const char *text, int state);
+int
+main (void)
+{
+rl_startup_hook=test_hook_func;
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ac_cv_readline_rl_startup_hook_takes_args=yes
+else $as_nop
+  ac_cv_readline_rl_startup_hook_takes_args=no
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_readline_rl_startup_hook_takes_args" >&5
+printf "%s\n" "$ac_cv_readline_rl_startup_hook_takes_args" >&6; }
+    if test "x$ac_cv_readline_rl_startup_hook_takes_args" = xyes
+then :
+
+
+printf "%s\n" "#define Py_RL_STARTUP_HOOK_TAKES_ARGS 1" >>confdefs.h
+
+
+fi
+
 
 
 CFLAGS=$save_CFLAGS
