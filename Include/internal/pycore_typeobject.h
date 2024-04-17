@@ -68,6 +68,43 @@ struct types_state {
     unsigned int next_version_tag;
 
     struct type_cache type_cache;
+
+    /* Every static builtin type is initialized for each interpreter
+       during its own initialization, including for the main interpreter
+       during global runtime initialization.  This is done by calling
+       _PyStaticType_InitBuiltin().
+
+       The first time a static builtin type is initialized, all the
+       normal PyType_Ready() stuff happens.  The only difference from
+       normal is that there are three PyTypeObject fields holding
+       objects which are stored here (on PyInterpreterState) rather
+       than in the corresponding PyTypeObject fields.  Those are:
+       tp_dict (cls.__dict__), tp_subclasses (cls.__subclasses__),
+       and tp_weaklist.
+
+       When a subinterpreter is initialized, each static builtin type
+       is still initialized, but only the interpreter-specific portion,
+       namely those three objects.
+
+       Those objects are stored in the PyInterpreterState.types.builtins
+       array, at the index corresponding to each specific static builtin
+       type.  That index (a size_t value) is stored in the tp_subclasses
+       field.  For static builtin types, we re-purposed the now-unused
+       tp_subclasses to avoid adding another field to PyTypeObject.
+       In all other cases tp_subclasses holds a dict like before.
+       (The field was previously defined as PyObject*, but is now void*
+       to reflect its dual use.)
+
+       The index for each static builtin type isn't statically assigned.
+       Instead it is calculated the first time a type is initialized
+       (by the main interpreter).  The index matches the order in which
+       the type was initialized relative to the others.  The actual
+       value comes from the current value of num_builtins_initialized,
+       as each type is initialized for the main interpreter.
+
+       num_builtins_initialized is incremented once for each static
+       builtin type.  Once initialization is over for a subinterpreter,
+       the value will be the same as for all other interpreters.  */
     size_t num_builtins_initialized;
     static_builtin_state builtins[_Py_MAX_STATIC_BUILTIN_TYPES];
     PyMutex mutex;
@@ -151,6 +188,18 @@ PyAPI_FUNC(PyObject*) _PySuper_Lookup(PyTypeObject *su_type, PyObject *su_obj,
                                  PyObject *name, int *meth_found);
 
 extern PyObject* _PyType_GetFullyQualifiedName(PyTypeObject *type, char sep);
+
+// Perform the following operation, in a thread-safe way when required by the
+// build mode.
+//
+// self->tp_flags = (self->tp_flags & ~mask) | flags;
+extern void _PyType_SetFlags(PyTypeObject *self, unsigned long mask,
+                             unsigned long flags);
+
+// Like _PyType_SetFlags(), but apply the operation to self and any of its
+// subclasses without Py_TPFLAGS_IMMUTABLETYPE set.
+extern void _PyType_SetFlagsRecursive(PyTypeObject *self, unsigned long mask,
+                                      unsigned long flags);
 
 
 #ifdef __cplusplus
