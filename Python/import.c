@@ -1417,8 +1417,13 @@ create_dynamic(PyThreadState *tstate, struct _Py_ext_module_loader_info *info,
         _Py_ext_module_loader_result_apply_error(&res);
         goto finally;
     }
+    assert(!PyErr_Occurred());
 
-    if (res.singlephase) {
+    if (res.kind == _Py_ext_module_loader_result_MULTIPHASE) {
+        mod = PyModule_FromDefAndSpec(res.def, spec);
+    }
+    else {
+        assert(res.kind == _Py_ext_module_loader_result_SINGLEPHASE);
         mod = Py_NewRef(res.module);
 
         const char *name_buf = PyBytes_AS_STRING(info->name_encoded);
@@ -1434,9 +1439,6 @@ create_dynamic(PyThreadState *tstate, struct _Py_ext_module_loader_info *info,
             Py_CLEAR(mod);
             goto finally;
         }
-    }
-    else {
-        mod = PyModule_FromDefAndSpec(res.def, spec);
     }
 
     // XXX Shouldn't this happen in the error cases too.
