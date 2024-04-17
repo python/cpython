@@ -2518,6 +2518,15 @@ class ClinicParserTest(TestCase):
         p = function.parameters['cls']
         self.assertEqual(p.kind, inspect.Parameter.POSITIONAL_ONLY)
 
+    def test_disallow_defining_class_at_module_level(self):
+        err = "A 'defining_class' parameter cannot be defined at module level."
+        block = """
+            module m
+            m.func
+                cls: defining_class
+        """
+        self.expect_failure(block, err, lineno=2)
+
 
 class ClinicExternalTest(TestCase):
     maxDiff = None
