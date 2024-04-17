@@ -1602,7 +1602,7 @@ FutureIter_dealloc(futureiterobject *it)
 {
     PyTypeObject *tp = Py_TYPE(it);
 
-    assert(_PyType_HasFeature((PyTypeObject *)tp, Py_TPFLAGS_HEAPTYPE));
+    assert(_PyType_HasFeature(tp, Py_TPFLAGS_HEAPTYPE));
 
     PyObject *module = ((PyHeapTypeObject*)tp)->ht_module;
     asyncio_state *state = NULL;
