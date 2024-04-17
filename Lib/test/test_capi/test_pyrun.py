@@ -1,4 +1,5 @@
-import unittest, os
+import os
+import unittest
 from collections import UserDict
 from test.support import import_helper
 from test.support.os_helper import unlink, TESTFN, TESTFN_UNDECODABLE
