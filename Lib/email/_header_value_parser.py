@@ -566,12 +566,14 @@ class DisplayName(Phrase):
         if res[0].token_type == 'cfws':
             res.pop(0)
         else:
-            if res[0][0].token_type == 'cfws':
+            if (isinstance(res[0], TokenList) and
+                    res[0][0].token_type == 'cfws'):
                 res[0] = TokenList(res[0][1:])
         if res[-1].token_type == 'cfws':
             res.pop()
         else:
-            if res[-1][-1].token_type == 'cfws':
+            if (isinstance(res[-1], TokenList) and
+                    res[-1][-1].token_type == 'cfws'):
                 res[-1] = TokenList(res[-1][:-1])
         return res.value
 
@@ -586,9 +588,13 @@ class DisplayName(Phrase):
                     quote = True
         if len(self) != 0 and quote:
             pre = post = ''
-            if self[0].token_type=='cfws' or self[0][0].token_type=='cfws':
+            if (self[0].token_type == 'cfws' or
+                isinstance(self[0], TokenList) and
+                self[0][0].token_type == 'cfws'):
                 pre = ' '
-            if self[-1].token_type=='cfws' or self[-1][-1].token_type=='cfws':
+            if (self[-1].token_type == 'cfws' or
+                isinstance(self[-1], TokenList) and
+                self[-1][-1].token_type == 'cfws'):
                 post = ' '
             return pre+quote_string(self.display_name)+post
         else:
@@ -1514,13 +1520,18 @@ def get_obs_local_part(value):
                 raise
             token, value = get_cfws(value)
         obs_local_part.append(token)
+    if not obs_local_part:
+        raise errors.HeaderParseError(
+            "expected obs-local-part but found '{}'".format(value))
     if (obs_local_part[0].token_type == 'dot' or
             obs_local_part[0].token_type=='cfws' and
+            len(obs_local_part) > 1 and
             obs_local_part[1].token_type=='dot'):
         obs_local_part.defects.append(errors.InvalidHeaderDefect(
             "Invalid leading '.' in local part"))
     if (obs_local_part[-1].token_type == 'dot' or
             obs_local_part[-1].token_type=='cfws' and
+            len(obs_local_part) > 1 and
             obs_local_part[-2].token_type=='dot'):
         obs_local_part.defects.append(errors.InvalidHeaderDefect(
             "Invalid trailing '.' in local part"))
@@ -1772,7 +1783,10 @@ def get_name_addr(value):
             raise errors.HeaderParseError(
                 "expected name-addr but found '{}'".format(token))
         if leader is not None:
-            token[0][:0] = [leader]
+            if isinstance(token[0], TokenList):
+                token[0][:0] = [leader]
+            else:
+                token[:0] = [leader]
             leader = None
         name_addr.append(token)
     token, value = get_angle_addr(value)
