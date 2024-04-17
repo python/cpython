@@ -4008,7 +4008,7 @@ PyInit__testcapi(void)
     if (_PyTestCapi_Init_PyAtomic(m) < 0) {
         return NULL;
     }
-    if (_PyTestCapi_Init_PyRun(m) < 0) {
+    if (_PyTestCapi_Init_Run(m) < 0) {
         return NULL;
     }
     if (_PyTestCapi_Init_Hash(m) < 0) {

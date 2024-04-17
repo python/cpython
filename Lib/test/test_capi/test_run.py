@@ -11,7 +11,7 @@ Py_file_input = _testcapi.Py_file_input
 Py_eval_input = _testcapi.Py_eval_input
 
 
-class PyRunTest(unittest.TestCase):
+class CAPITest(unittest.TestCase):
     # TODO: Test the following functions:
     #
     #   PyRun_SimpleStringFlags
@@ -33,7 +33,7 @@ class PyRunTest(unittest.TestCase):
     #   PyRun_FileEx (may be a macro)
     #   PyRun_FileFlags (may be a macro)
 
-    def test_pyrun_stringflags(self):
+    def test_run_stringflags(self):
         # Test PyRun_StringFlags().
         def run(s, *args):
             return _testcapi.run_stringflags(s, Py_file_input, *args)
@@ -61,7 +61,7 @@ class PyRunTest(unittest.TestCase):
 
         # CRASHES run(NULL, {})
 
-    def test_pyrun_fileexflags(self):
+    def test_run_fileexflags(self):
         # Test PyRun_FileExFlags().
         filename = os.fsencode(TESTFN)
         with open(filename, 'wb') as fp:
@@ -89,7 +89,7 @@ class PyRunTest(unittest.TestCase):
         # CRASHES run(UserDict(), dict(a=1))
 
     @unittest.skipUnless(TESTFN_UNDECODABLE, 'only works if there are undecodable paths')
-    def test_pyrun_fileexflags_with_undecodable_filename(self):
+    def test_run_fileexflags_with_undecodable_filename(self):
         run = _testcapi.run_fileexflags
         try:
             with open(TESTFN_UNDECODABLE, 'wb') as fp:
