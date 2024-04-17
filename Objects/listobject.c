@@ -3,6 +3,7 @@
 #include "Python.h"
 #include "pycore_abstract.h"      // _PyIndex_Check()
 #include "pycore_ceval.h"         // _PyEval_GetBuiltin()
+#include "pycore_dict.h"          // _PyDictViewObject
 #include "pycore_pyatomic_ft_wrappers.h"
 #include "pycore_interp.h"        // PyInterpreterState.list
 #include "pycore_list.h"          // struct _Py_list_freelist, _PyListIterObject
@@ -1288,9 +1289,61 @@ list_extend_set(PyListObject *self, PySetObject *other)
     PyObject **dest = self->ob_item + m;
     while (_PySet_NextEntry((PyObject *)other, &setpos, &key, &hash)) {
         Py_INCREF(key);
-        *dest = key;
+        FT_ATOMIC_STORE_PTR_RELEASE(*dest, key);
         dest++;
     }
+    Py_SET_SIZE(self, m + n);
+    return 0;
+}
+
+static int
+list_extend_dict(PyListObject *self, PyDictObject *dict, int which_item)
+{
+    // which_item: 0 for keys and 1 for values
+    Py_ssize_t m = Py_SIZE(self);
+    Py_ssize_t n = PyDict_GET_SIZE(dict);
+    if (list_resize(self, m + n) < 0) {
+        return -1;
+    }
+
+    PyObject **dest = self->ob_item + m;
+    Py_ssize_t pos = 0;
+    PyObject *keyvalue[2];
+    while (_PyDict_Next((PyObject *)dict, &pos, &keyvalue[0], &keyvalue[1], NULL)) {
+        PyObject *obj = keyvalue[which_item];
+        Py_INCREF(obj);
+        FT_ATOMIC_STORE_PTR_RELEASE(*dest, obj);
+        dest++;
+    }
+
+    Py_SET_SIZE(self, m + n);
+    return 0;
+}
+
+static int
+list_extend_dictitems(PyListObject *self, PyDictObject *dict)
+{
+    Py_ssize_t m = Py_SIZE(self);
+    Py_ssize_t n = PyDict_GET_SIZE(dict);
+    if (list_resize(self, m + n) < 0) {
+        return -1;
+    }
+
+    PyObject **dest = self->ob_item + m;
+    Py_ssize_t pos = 0;
+    Py_ssize_t i = 0;
+    PyObject *key, *value;
+    while (_PyDict_Next((PyObject *)dict, &pos, &key, &value, NULL)) {
+        PyObject *item = PyTuple_Pack(2, key, value);
+        if (item == NULL) {
+            Py_SET_SIZE(self, m + i);
+            return -1;
+        }
+        FT_ATOMIC_STORE_PTR_RELEASE(*dest, item);
+        dest++;
+        i++;
+    }
+
     Py_SET_SIZE(self, m + n);
     return 0;
 }
@@ -1300,7 +1353,6 @@ _list_extend(PyListObject *self, PyObject *iterable)
 {
     // Special case:
     // lists and tuples which can use PySequence_Fast ops
-    // TODO(@corona10): Add more special cases for other types.
     int res = -1;
     if ((PyObject *)self == iterable) {
         Py_BEGIN_CRITICAL_SECTION(self);
@@ -1320,6 +1372,29 @@ _list_extend(PyListObject *self, PyObject *iterable)
     else if (PyAnySet_CheckExact(iterable)) {
         Py_BEGIN_CRITICAL_SECTION2(self, iterable);
         res = list_extend_set(self, (PySetObject *)iterable);
+        Py_END_CRITICAL_SECTION2();
+    }
+    else if (PyDict_CheckExact(iterable)) {
+        Py_BEGIN_CRITICAL_SECTION2(self, iterable);
+        res = list_extend_dict(self, (PyDictObject *)iterable, 0 /*keys*/);
+        Py_END_CRITICAL_SECTION2();
+    }
+    else if (Py_IS_TYPE(iterable, &PyDictKeys_Type)) {
+        PyDictObject *dict = ((_PyDictViewObject *)iterable)->dv_dict;
+        Py_BEGIN_CRITICAL_SECTION2(self, dict);
+        res = list_extend_dict(self, dict, 0 /*keys*/);
+        Py_END_CRITICAL_SECTION2();
+    }
+    else if (Py_IS_TYPE(iterable, &PyDictValues_Type)) {
+        PyDictObject *dict = ((_PyDictViewObject *)iterable)->dv_dict;
+        Py_BEGIN_CRITICAL_SECTION2(self, dict);
+        res = list_extend_dict(self, dict, 1 /*values*/);
+        Py_END_CRITICAL_SECTION2();
+    }
+    else if (Py_IS_TYPE(iterable, &PyDictItems_Type)) {
+        PyDictObject *dict = ((_PyDictViewObject *)iterable)->dv_dict;
+        Py_BEGIN_CRITICAL_SECTION2(self, dict);
+        res = list_extend_dictitems(self, dict);
         Py_END_CRITICAL_SECTION2();
     }
     else {
@@ -1558,6 +1633,15 @@ sortslice_advance(sortslice *slice, Py_ssize_t n)
 /* Avoid malloc for small temp arrays. */
 #define MERGESTATE_TEMP_SIZE 256
 
+/* The largest value of minrun. This must be a power of 2, and >= 1, so that
+ * the compute_minrun() algorithm guarantees to return a result no larger than
+ * this,
+ */
+#define MAX_MINRUN 64
+#if ((MAX_MINRUN) < 1) || ((MAX_MINRUN) & ((MAX_MINRUN) - 1))
+#error "MAX_MINRUN must be a power of 2, and >= 1"
+#endif
+
 /* One MergeState exists on the stack per invocation of mergesort.  It's just
  * a convenient way to pass state around among the helper functions.
  */
@@ -1615,68 +1699,133 @@ struct s_MergeState {
     int (*tuple_elem_compare)(PyObject *, PyObject *, MergeState *);
 };
 
-/* binarysort is the best method for sorting small arrays: it does
-   few compares, but can do data movement quadratic in the number of
-   elements.
-   [lo.keys, hi) is a contiguous slice of a list of keys, and is sorted via
-   binary insertion.  This sort is stable.
-   On entry, must have lo.keys <= start <= hi, and that
-   [lo.keys, start) is already sorted (pass start == lo.keys if you don't
-   know!).
-   If islt() complains return -1, else 0.
+/* binarysort is the best method for sorting small arrays: it does few
+   compares, but can do data movement quadratic in the number of elements.
+   ss->keys is viewed as an array of n kays, a[:n]. a[:ok] is already sorted.
+   Pass ok = 0 (or 1) if you don't know.
+   It's sorted in-place, by a stable binary insertion sort. If ss->values
+   isn't NULL, it's permuted in lockstap with ss->keys.
+   On entry, must have n >= 1, and 0 <= ok <= n <= MAX_MINRUN.
+   Return -1 if comparison raises an exception, else 0.
    Even in case of error, the output slice will be some permutation of
    the input (nothing is lost or duplicated).
 */
 static int
-binarysort(MergeState *ms, sortslice lo, PyObject **hi, PyObject **start)
+binarysort(MergeState *ms, const sortslice *ss, Py_ssize_t n, Py_ssize_t ok)
 {
-    Py_ssize_t k;
-    PyObject **l, **p, **r;
+    Py_ssize_t k; /* for IFLT macro expansion */
+    PyObject ** const a = ss->keys;
+    PyObject ** const v = ss->values;
+    const bool has_values = v != NULL;
     PyObject *pivot;
+    Py_ssize_t M;
 
-    assert(lo.keys <= start && start <= hi);
-    /* assert [lo.keys, start) is sorted */
-    if (lo.keys == start)
-        ++start;
-    for (; start < hi; ++start) {
-        /* set l to where *start belongs */
-        l = lo.keys;
-        r = start;
-        pivot = *r;
-        /* Invariants:
-         * pivot >= all in [lo.keys, l).
-         * pivot  < all in [r, start).
-         * These are vacuously true at the start.
-         */
-        assert(l < r);
-        do {
-            p = l + ((r - l) >> 1);
-            IFLT(pivot, *p)
-                r = p;
+    assert(0 <= ok && ok <= n && 1 <= n && n <= MAX_MINRUN);
+    /* assert a[:ok] is sorted */
+    if (! ok)
+        ++ok;
+    /* Regular insertion sort has average- and worst-case O(n**2) cost
+       for both # of comparisons and number of bytes moved. But its branches
+       are highly predictable, and it loves sorted input (n-1 compares and no
+       data movement). This is significant in cases like sortperf.py's %sort,
+       where an out-of-order element near the start of a run is moved into
+       place slowly but then the remaining elements up to length minrun are
+       generally at worst one slot away from their correct position (so only
+       need 1 or 2 commpares to resolve). If comparisons are very fast (such
+       as for a list of Python floats), the simple inner loop leaves it
+       very competitive with binary insertion, despite that it does
+       significantly more compares overall on random data.
+
+       Binary insertion sort has worst, average, and best case O(n log n)
+       cost for # of comparisons, but worst and average case O(n**2) cost
+       for data movement. The more expensive comparisons, the more important
+       the comparison advantage. But its branches are less predictable the
+       more "randomish" the data, and that's so significant its worst case
+       in real life is random input rather than reverse-ordered (which does
+       about twice the data movement than random input does).
+
+       Note that the number of bytes moved doesn't seem to matter. MAX_MINRUN
+       of 64 is so small that the key and value pointers all fit in a corner
+       of L1 cache, and moving things around in that is very fast. */
+#if 0 // ordinary insertion sort.
+    PyObject * vpivot = NULL;
+    for (; ok < n; ++ok) {
+        pivot = a[ok];
+        if (has_values)
+            vpivot = v[ok];
+        for (M = ok - 1; M >= 0; --M) {
+            k = ISLT(pivot, a[M]);
+            if (k < 0) {
+                a[M + 1] = pivot;
+                if (has_values)
+                    v[M + 1] = vpivot;
+                goto fail;
+            }
+            else if (k) {
+                a[M + 1] = a[M];
+                if (has_values)
+                    v[M + 1] = v[M];
+            }
             else
-                l = p+1;
-        } while (l < r);
-        assert(l == r);
-        /* The invariants still hold, so pivot >= all in [lo.keys, l) and
-           pivot < all in [l, start), so pivot belongs at l.  Note
-           that if there are elements equal to pivot, l points to the
-           first slot after them -- that's why this sort is stable.
-           Slide over to make room.
-           Caution: using memmove is much slower under MSVC 5;
-           we're not usually moving many slots. */
-        for (p = start; p > l; --p)
-            *p = *(p-1);
-        *l = pivot;
-        if (lo.values != NULL) {
-            Py_ssize_t offset = lo.values - lo.keys;
-            p = start + offset;
-            pivot = *p;
-            l += offset;
-            for ( ; p > l; --p)
-                *p = *(p-1);
-            *l = pivot;
+                break;
+        }
+        a[M + 1] = pivot;
+        if (has_values)
+            v[M + 1] = vpivot;
+    }
+#else // binary insertion sort
+    Py_ssize_t L, R;
+    for (; ok < n; ++ok) {
+        /* set L to where a[ok] belongs */
+        L = 0;
+        R = ok;
+        pivot = a[ok];
+        /* Slice invariants. vacuously true at the start:
+         * all a[0:L]  <= pivot
+         * all a[L:R]     unknown
+         * all a[R:ok]  > pivot
+         */
+        assert(L < R);
+        do {
+            /* don't do silly ;-) things to prevent overflow when finding
+               the midpoint; L and R are very far from filling a Py_ssize_t */
+            M = (L + R) >> 1;
+#if 1 // straightforward, but highly unpredictable branch on random data
+            IFLT(pivot, a[M])
+                R = M;
+            else
+                L = M + 1;
+#else
+            /* Try to get compiler to generate conditional move instructions
+               instead. Works fine, but leaving it disabled for now because
+               it's not yielding consistently faster sorts. Needs more
+               investigation. More computation in the inner loop adds its own
+               costs, which can be significant when compares are fast. */
+            k = ISLT(pivot, a[M]);
+            if (k < 0)
+                goto fail;
+            Py_ssize_t Mp1 = M + 1;
+            R = k ? M : R;
+            L = k ? L : Mp1;
+#endif
+        } while (L < R);
+        assert(L == R);
+        /* a[:L] holds all elements from a[:ok] <= pivot now, so pivot belongs
+           at index L. Slide a[L:ok] to the right a slot to make room for it.
+           Caution: using memmove is much slower under MSVC 5; we're not
+           usually moving many slots. Years later: under Visual Studio 2022,
+           memmove seems just slightly slower than doing it "by hand". */
+        for (M = ok; M > L; --M)
+            a[M] = a[M - 1];
+        a[L] = pivot;
+        if (has_values) {
+            pivot = v[ok];
+            for (M = ok; M > L; --M)
+                v[M] = v[M - 1];
+            v[L] = pivot;
         }
     }
+#endif // pick binary or regular insertion sort
     return 0;
 
  fail:
@@ -2489,10 +2638,10 @@ merge_force_collapse(MergeState *ms)
 /* Compute a good value for the minimum run length; natural runs shorter
  * than this are boosted artificially via binary insertion.
  *
- * If n < 64, return n (it's too small to bother with fancy stuff).
- * Else if n is an exact power of 2, return 32.
- * Else return an int k, 32 <= k <= 64, such that n/k is close to, but
- * strictly less than, an exact power of 2.
+ * If n < MAX_MINRUN return n (it's too small to bother with fancy stuff).
+ * Else if n is an exact power of 2, return MAX_MINRUN / 2.
+ * Else return an int k, MAX_MINRUN / 2 <= k <= MAX_MINRUN, such that n/k is
+ * close to, but strictly less than, an exact power of 2.
  *
  * See listsort.txt for more info.
  */
@@ -2502,7 +2651,7 @@ merge_compute_minrun(Py_ssize_t n)
     Py_ssize_t r = 0;           /* becomes 1 if any 1 bits are shifted off */
 
     assert(n >= 0);
-    while (n >= 64) {
+    while (n >= MAX_MINRUN) {
         r |= n & 1;
         n >>= 1;
     }
@@ -2886,7 +3035,7 @@ list_sort_impl(PyListObject *self, PyObject *keyfunc, int reverse)
         if (n < minrun) {
             const Py_ssize_t force = nremaining <= minrun ?
                               nremaining : minrun;
-            if (binarysort(&ms, lo, lo.keys + force, lo.keys + n) < 0)
+            if (binarysort(&ms, &lo, force, n) < 0)
                 goto fail;
             n = force;
         }
@@ -3157,7 +3306,7 @@ list_remove_impl(PyListObject *self, PyObject *value)
         else if (cmp < 0)
             return NULL;
     }
-    PyErr_Format(PyExc_ValueError, "%R is not in list", value);
+    PyErr_SetString(PyExc_ValueError, "list.remove(x): x not in list");
     return NULL;
 }
 

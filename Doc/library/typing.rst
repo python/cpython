@@ -23,26 +23,24 @@
 
 --------------
 
-This module provides runtime support for type hints. For the original
-specification of the typing system, see :pep:`484`. For a simplified
-introduction to type hints, see :pep:`483`.
+This module provides runtime support for type hints.
 
+Consider the function below::
 
-The function below takes and returns a string and is annotated as follows::
+   def moon_weight(earth_weight: float) -> str:
+       return f'On the moon, you would weigh {earth_weight * 0.166} kilograms.'
 
-   def greeting(name: str) -> str:
-       return 'Hello ' + name
+The function ``moon_weight`` takes an argument expected to be an instance of :class:`float`,
+as indicated by the *type hint* ``earth_weight: float``. The function is expected to
+return an instance of :class:`str`, as indicated by the ``-> str`` hint.
 
-In the function ``greeting``, the argument ``name`` is expected to be of type
-:class:`str` and the return type :class:`str`. Subtypes are accepted as
-arguments.
+While type hints can be simple classes like :class:`float` or :class:`str`,
+they can also be more complex. The :mod:`typing` module provides a vocabulary of
+more advanced type hints.
 
 New features are frequently added to the ``typing`` module.
-The `typing_extensions <https://pypi.org/project/typing-extensions/>`_ package
+The :pypi:`typing_extensions` package
 provides backports of these new features to older versions of Python.
-
-For a summary of deprecated features and a deprecation timeline, please see
-`Deprecation Timeline of Major Features`_.
 
 .. seealso::
 
@@ -61,67 +59,11 @@ For a summary of deprecated features and a deprecation timeline, please see
 
 .. _relevant-peps:
 
-Relevant PEPs
-=============
+Specification for the Python Type System
+========================================
 
-Since the initial introduction of type hints in :pep:`484` and :pep:`483`, a
-number of PEPs have modified and enhanced Python's framework for type
-annotations:
-
-.. raw:: html
-
-   <details>
-   <summary><a style="cursor:pointer;">The full list of PEPs</a></summary>
-
-* :pep:`526`: Syntax for Variable Annotations
-     *Introducing* syntax for annotating variables outside of function
-     definitions, and :data:`ClassVar`
-* :pep:`544`: Protocols: Structural subtyping (static duck typing)
-     *Introducing* :class:`Protocol` and the
-     :func:`@runtime_checkable<runtime_checkable>` decorator
-* :pep:`585`: Type Hinting Generics In Standard Collections
-     *Introducing* :class:`types.GenericAlias` and the ability to use standard
-     library classes as :ref:`generic types<types-genericalias>`
-* :pep:`586`: Literal Types
-     *Introducing* :data:`Literal`
-* :pep:`589`: TypedDict: Type Hints for Dictionaries with a Fixed Set of Keys
-     *Introducing* :class:`TypedDict`
-* :pep:`591`: Adding a final qualifier to typing
-     *Introducing* :data:`Final` and the :func:`@final<final>` decorator
-* :pep:`593`: Flexible function and variable annotations
-     *Introducing* :data:`Annotated`
-* :pep:`604`: Allow writing union types as ``X | Y``
-     *Introducing* :data:`types.UnionType` and the ability to use
-     the binary-or operator ``|`` to signify a
-     :ref:`union of types<types-union>`
-* :pep:`612`: Parameter Specification Variables
-     *Introducing* :class:`ParamSpec` and :data:`Concatenate`
-* :pep:`613`: Explicit Type Aliases
-     *Introducing* :data:`TypeAlias`
-* :pep:`646`: Variadic Generics
-     *Introducing* :data:`TypeVarTuple`
-* :pep:`647`: User-Defined Type Guards
-     *Introducing* :data:`TypeGuard`
-* :pep:`655`: Marking individual TypedDict items as required or potentially missing
-     *Introducing* :data:`Required` and :data:`NotRequired`
-* :pep:`673`: Self type
-    *Introducing* :data:`Self`
-* :pep:`675`: Arbitrary Literal String Type
-    *Introducing* :data:`LiteralString`
-* :pep:`681`: Data Class Transforms
-    *Introducing* the :func:`@dataclass_transform<dataclass_transform>` decorator
-* :pep:`692`: Using ``TypedDict`` for more precise ``**kwargs`` typing
-    *Introducing* a new way of typing ``**kwargs`` with :data:`Unpack` and
-    :data:`TypedDict`
-* :pep:`695`: Type Parameter Syntax
-    *Introducing* builtin syntax for creating generic functions, classes, and type aliases.
-* :pep:`698`: Adding an override decorator to typing
-    *Introducing* the :func:`@override<override>` decorator
-
-.. raw:: html
-
-   </details>
-   <br>
+The canonical, up-to-date specification of the Python type system can be
+found at `"Specification for the Python type system" <https://typing.readthedocs.io/en/latest/spec/index.html>`_.
 
 .. _type-aliases:
 
@@ -1443,22 +1385,23 @@ These can be used as types in annotations. They all support subscription using
    .. versionadded:: 3.9
 
 
-.. data:: TypeGuard
+.. data:: TypeIs
 
-   Special typing construct for marking user-defined type guard functions.
+   Special typing construct for marking user-defined type predicate functions.
 
-   ``TypeGuard`` can be used to annotate the return type of a user-defined
-   type guard function.  ``TypeGuard`` only accepts a single type argument.
-   At runtime, functions marked this way should return a boolean.
+   ``TypeIs`` can be used to annotate the return type of a user-defined
+   type predicate function.  ``TypeIs`` only accepts a single type argument.
+   At runtime, functions marked this way should return a boolean and take at
+   least one positional argument.
 
-   ``TypeGuard`` aims to benefit *type narrowing* -- a technique used by static
+   ``TypeIs`` aims to benefit *type narrowing* -- a technique used by static
    type checkers to determine a more precise type of an expression within a
    program's code flow.  Usually type narrowing is done by analyzing
    conditional code flow and applying the narrowing to a block of code.  The
-   conditional expression here is sometimes referred to as a "type guard"::
+   conditional expression here is sometimes referred to as a "type predicate"::
 
       def is_str(val: str | float):
-          # "isinstance" type guard
+          # "isinstance" type predicate
           if isinstance(val, str):
               # Type of ``val`` is narrowed to ``str``
               ...
@@ -1467,8 +1410,73 @@ These can be used as types in annotations. They all support subscription using
               ...
 
    Sometimes it would be convenient to use a user-defined boolean function
-   as a type guard.  Such a function should use ``TypeGuard[...]`` as its
-   return type to alert static type checkers to this intention.
+   as a type predicate.  Such a function should use ``TypeIs[...]`` or
+   :data:`TypeGuard` as its return type to alert static type checkers to
+   this intention.  ``TypeIs`` usually has more intuitive behavior than
+   ``TypeGuard``, but it cannot be used when the input and output types
+   are incompatible (e.g., ``list[object]`` to ``list[int]``) or when the
+   function does not return ``True`` for all instances of the narrowed type.
+
+   Using  ``-> TypeIs[NarrowedType]`` tells the static type checker that for a given
+   function:
+
+   1. The return value is a boolean.
+   2. If the return value is ``True``, the type of its argument
+      is the intersection of the argument's original type and ``NarrowedType``.
+   3. If the return value is ``False``, the type of its argument
+      is narrowed to exclude ``NarrowedType``.
+
+   For example::
+
+        from typing import assert_type, final, TypeIs
+
+        class Parent: pass
+        class Child(Parent): pass
+        @final
+        class Unrelated: pass
+
+        def is_parent(val: object) -> TypeIs[Parent]:
+            return isinstance(val, Parent)
+
+        def run(arg: Child | Unrelated):
+            if is_parent(arg):
+                # Type of ``arg`` is narrowed to the intersection
+                # of ``Parent`` and ``Child``, which is equivalent to
+                # ``Child``.
+                assert_type(arg, Child)
+            else:
+                # Type of ``arg`` is narrowed to exclude ``Parent``,
+                # so only ``Unrelated`` is left.
+                assert_type(arg, Unrelated)
+
+   The type inside ``TypeIs`` must be consistent with the type of the
+   function's argument; if it is not, static type checkers will raise
+   an error.  An incorrectly written ``TypeIs`` function can lead to
+   unsound behavior in the type system; it is the user's responsibility
+   to write such functions in a type-safe manner.
+
+   If a ``TypeIs`` function is a class or instance method, then the type in
+   ``TypeIs`` maps to the type of the second parameter after ``cls`` or
+   ``self``.
+
+   In short, the form ``def foo(arg: TypeA) -> TypeIs[TypeB]: ...``,
+   means that if ``foo(arg)`` returns ``True``, then ``arg`` is an instance
+   of ``TypeB``, and if it returns ``False``, it is not an instance of ``TypeB``.
+
+   ``TypeIs`` also works with type variables.  For more information, see
+   :pep:`742` (Narrowing types with ``TypeIs``).
+
+   .. versionadded:: 3.13
+
+
+.. data:: TypeGuard
+
+   Special typing construct for marking user-defined type predicate functions.
+
+   Type predicate functions are user-defined functions that return whether their
+   argument is an instance of a particular type.
+   ``TypeGuard`` works similarly to :data:`TypeIs`, but has subtly different
+   effects on type checking behavior (see below).
 
    Using  ``-> TypeGuard`` tells the static type checker that for a given
    function:
@@ -1476,6 +1484,8 @@ These can be used as types in annotations. They all support subscription using
    1. The return value is a boolean.
    2. If the return value is ``True``, the type of its argument
       is the type inside ``TypeGuard``.
+
+   ``TypeGuard`` also works with type variables.  See :pep:`647` for more details.
 
    For example::
 
@@ -1491,23 +1501,19 @@ These can be used as types in annotations. They all support subscription using
                  # Type of ``val`` remains as ``list[object]``.
                  print("Not a list of strings!")
 
-   If ``is_str_list`` is a class or instance method, then the type in
-   ``TypeGuard`` maps to the type of the second parameter after ``cls`` or
-   ``self``.
+   ``TypeIs`` and ``TypeGuard`` differ in the following ways:
 
-   In short, the form ``def foo(arg: TypeA) -> TypeGuard[TypeB]: ...``,
-   means that if ``foo(arg)`` returns ``True``, then ``arg`` narrows from
-   ``TypeA`` to ``TypeB``.
-
-   .. note::
-
-      ``TypeB`` need not be a narrower form of ``TypeA`` -- it can even be a
-      wider form. The main reason is to allow for things like
-      narrowing ``list[object]`` to ``list[str]`` even though the latter
-      is not a subtype of the former, since ``list`` is invariant.
-      The responsibility of writing type-safe type guards is left to the user.
-
-   ``TypeGuard`` also works with type variables.  See :pep:`647` for more details.
+   * ``TypeIs`` requires the narrowed type to be a subtype of the input type, while
+     ``TypeGuard`` does not.  The main reason is to allow for things like
+     narrowing ``list[object]`` to ``list[str]`` even though the latter
+     is not a subtype of the former, since ``list`` is invariant.
+   * When a ``TypeGuard`` function returns ``True``, type checkers narrow the type of the
+     variable to exactly the ``TypeGuard`` type. When a ``TypeIs`` function returns ``True``,
+     type checkers can infer a more precise type combining the previously known type of the
+     variable with the ``TypeIs`` type. (Technically, this is known as an intersection type.)
+   * When a ``TypeGuard`` function returns ``False``, type checkers cannot narrow the type of
+     the variable at all. When a ``TypeIs`` function returns ``False``, type checkers can narrow
+     the type of the variable to exclude the ``TypeIs`` type.
 
    .. versionadded:: 3.10
 

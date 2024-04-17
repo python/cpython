@@ -613,11 +613,16 @@ PyOS_BeforeFork(void)
     run_at_forkers(interp->before_forkers, 1);
 
     _PyImport_AcquireLock(interp);
+    _PyEval_StopTheWorldAll(&_PyRuntime);
+    HEAD_LOCK(&_PyRuntime);
 }
 
 void
 PyOS_AfterFork_Parent(void)
 {
+    HEAD_UNLOCK(&_PyRuntime);
+    _PyEval_StartTheWorldAll(&_PyRuntime);
+
     PyInterpreterState *interp = _PyInterpreterState_GET();
     if (_PyImport_ReleaseLock(interp) <= 0) {
         Py_FatalError("failed releasing import lock after fork");
@@ -632,6 +637,7 @@ PyOS_AfterFork_Child(void)
     PyStatus status;
     _PyRuntimeState *runtime = &_PyRuntime;
 
+    // re-creates runtime->interpreters.mutex (HEAD_UNLOCK)
     status = _PyRuntimeState_ReInitThreads(runtime);
     if (_PyStatus_EXCEPTION(status)) {
         goto fatal_error;
@@ -640,6 +646,7 @@ PyOS_AfterFork_Child(void)
     PyThreadState *tstate = _PyThreadState_GET();
     _Py_EnsureTstateNotNULL(tstate);
 
+    assert(tstate->thread_id == PyThread_get_thread_ident());
 #ifdef PY_HAVE_THREAD_NATIVE_ID
     tstate->native_thread_id = PyThread_get_thread_native_id();
 #endif
@@ -649,10 +656,21 @@ PyOS_AfterFork_Child(void)
     _Py_qsbr_after_fork((_PyThreadStateImpl *)tstate);
 #endif
 
+    // Ideally we could guarantee tstate is running main.
+    _PyInterpreterState_ReinitRunningMain(tstate);
+
     status = _PyEval_ReInitThreads(tstate);
     if (_PyStatus_EXCEPTION(status)) {
         goto fatal_error;
     }
+
+    // Remove the dead thread states. We "start the world" once we are the only
+    // thread state left to undo the stop the world call in `PyOS_BeforeFork`.
+    // That needs to happen before `_PyThreadState_DeleteList`, because that
+    // may call destructors.
+    PyThreadState *list = _PyThreadState_RemoveExcept(tstate);
+    _PyEval_StartTheWorldAll(&_PyRuntime);
+    _PyThreadState_DeleteList(list);
 
     status = _PyImport_ReInitLock(tstate->interp);
     if (_PyStatus_EXCEPTION(status)) {
@@ -4088,6 +4106,20 @@ posix_getcwd(int use_bytes)
     else {
         obj = PyUnicode_DecodeFSDefault(buf);
     }
+#ifdef __linux__
+    if (buf[0] != '/') {
+        /*
+         * On Linux >= 2.6.36 with glibc < 2.27, getcwd() can return a
+         * relative pathname starting with '(unreachable)'. We detect this
+         * and fail with ENOENT, matching newer glibc behaviour.
+         */
+        errno = ENOENT;
+        path_object_error(obj);
+        PyMem_RawFree(buf);
+        return NULL;
+    }
+#endif
+    assert(buf[0] == '/');
     PyMem_RawFree(buf);
 
     return obj;
@@ -7731,10 +7763,15 @@ os_register_at_fork_impl(PyObject *module, PyObject *before,
 // running in the process. Best effort, silent if unable to count threads.
 // Constraint: Quick. Never overcounts. Never leaves an error set.
 //
-// This code might do an import, thus acquiring the import lock, which
-// PyOS_BeforeFork() also does.  As this should only be called from
-// the parent process, it is in the same thread so that works.
-static void warn_about_fork_with_threads(const char* name) {
+// This should only be called from the parent process after
+// PyOS_AfterFork_Parent().
+static void
+warn_about_fork_with_threads(const char* name)
+{
+    // It's not safe to issue the warning while the world is stopped, because
+    // other threads might be holding locks that we need, which would deadlock.
+    assert(!_PyRuntime.stoptheworld.world_stopped);
+
     // TODO: Consider making an `os` module API to return the current number
     // of threads in the process. That'd presumably use this platform code but
     // raise an error rather than using the inaccurate fallback.
@@ -7842,7 +7879,7 @@ os_fork1_impl(PyObject *module)
     pid_t pid;
 
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    if (interp->finalizing) {
+    if (_PyInterpreterState_GetFinalizing(interp) != NULL) {
         PyErr_SetString(PyExc_PythonFinalizationError,
                         "can't fork at interpreter shutdown");
         return NULL;
@@ -7858,9 +7895,10 @@ os_fork1_impl(PyObject *module)
         /* child: this clobbers and resets the import lock. */
         PyOS_AfterFork_Child();
     } else {
-        warn_about_fork_with_threads("fork1");
         /* parent: release the import lock. */
         PyOS_AfterFork_Parent();
+        // After PyOS_AfterFork_Parent() starts the world to avoid deadlock.
+        warn_about_fork_with_threads("fork1");
     }
     if (pid == -1) {
         errno = saved_errno;
@@ -7886,7 +7924,7 @@ os_fork_impl(PyObject *module)
 {
     pid_t pid;
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    if (interp->finalizing) {
+    if (_PyInterpreterState_GetFinalizing(interp) != NULL) {
         PyErr_SetString(PyExc_PythonFinalizationError,
                         "can't fork at interpreter shutdown");
         return NULL;
@@ -7906,9 +7944,10 @@ os_fork_impl(PyObject *module)
         /* child: this clobbers and resets the import lock. */
         PyOS_AfterFork_Child();
     } else {
-        warn_about_fork_with_threads("fork");
         /* parent: release the import lock. */
         PyOS_AfterFork_Parent();
+        // After PyOS_AfterFork_Parent() starts the world to avoid deadlock.
+        warn_about_fork_with_threads("fork");
     }
     if (pid == -1) {
         errno = saved_errno;
@@ -8719,7 +8758,7 @@ os_forkpty_impl(PyObject *module)
     pid_t pid;
 
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    if (interp->finalizing) {
+    if (_PyInterpreterState_GetFinalizing(interp) != NULL) {
         PyErr_SetString(PyExc_PythonFinalizationError,
                         "can't fork at interpreter shutdown");
         return NULL;
@@ -8737,9 +8776,10 @@ os_forkpty_impl(PyObject *module)
         /* child: this clobbers and resets the import lock. */
         PyOS_AfterFork_Child();
     } else {
-        warn_about_fork_with_threads("forkpty");
         /* parent: release the import lock. */
         PyOS_AfterFork_Parent();
+        // After PyOS_AfterFork_Parent() starts the world to avoid deadlock.
+        warn_about_fork_with_threads("forkpty");
     }
     if (pid == -1) {
         return posix_error();
@@ -9115,7 +9155,81 @@ os_setpgrp_impl(PyObject *module)
 #ifdef HAVE_GETPPID
 
 #ifdef MS_WINDOWS
-#include <processsnapshot.h>
+#include <winternl.h>
+#include <ProcessSnapshot.h>
+
+// The structure definition in winternl.h may be incomplete.
+// This structure is the full version from the MSDN documentation.
+typedef struct _PROCESS_BASIC_INFORMATION_FULL {
+    NTSTATUS ExitStatus;
+    PVOID PebBaseAddress;
+    ULONG_PTR AffinityMask;
+    LONG BasePriority;
+    ULONG_PTR UniqueProcessId;
+    ULONG_PTR InheritedFromUniqueProcessId;
+} PROCESS_BASIC_INFORMATION_FULL;
+
+typedef NTSTATUS (NTAPI *PNT_QUERY_INFORMATION_PROCESS) (
+    IN    HANDLE           ProcessHandle,
+    IN    PROCESSINFOCLASS ProcessInformationClass,
+    OUT   PVOID            ProcessInformation,
+    IN    ULONG            ProcessInformationLength,
+    OUT   PULONG           ReturnLength OPTIONAL);
+
+// This function returns the process ID of the parent process.
+// Returns 0 on failure.
+static ULONG
+win32_getppid_fast(void)
+{
+    NTSTATUS status;
+    HMODULE ntdll;
+    PNT_QUERY_INFORMATION_PROCESS pNtQueryInformationProcess;
+    PROCESS_BASIC_INFORMATION_FULL basic_information;
+    static ULONG cached_ppid = 0;
+
+    if (cached_ppid) {
+        // No need to query the kernel again.
+        return cached_ppid;
+    }
+
+    ntdll = GetModuleHandleW(L"ntdll.dll");
+    if (!ntdll) {
+        return 0;
+    }
+
+    pNtQueryInformationProcess = (PNT_QUERY_INFORMATION_PROCESS) GetProcAddress(ntdll, "NtQueryInformationProcess");
+    if (!pNtQueryInformationProcess) {
+        return 0;
+    }
+
+    status = pNtQueryInformationProcess(GetCurrentProcess(),
+                                        ProcessBasicInformation,
+                                        &basic_information,
+                                        sizeof(basic_information),
+                                        NULL);
+
+    if (!NT_SUCCESS(status)) {
+        return 0;
+    }
+
+    // Perform sanity check on the parent process ID we received from NtQueryInformationProcess.
+    // The check covers values which exceed the 32-bit range (if running on x64) as well as
+    // zero and (ULONG) -1.
+
+    if (basic_information.InheritedFromUniqueProcessId == 0 ||
+        basic_information.InheritedFromUniqueProcessId >= ULONG_MAX)
+    {
+        return 0;
+    }
+
+    // Now that we have reached this point, the BasicInformation.InheritedFromUniqueProcessId
+    // structure member contains a ULONG_PTR which represents the process ID of our parent
+    // process. This process ID will be correctly returned even if the parent process has
+    // exited or been terminated.
+
+    cached_ppid = (ULONG) basic_information.InheritedFromUniqueProcessId;
+    return cached_ppid;
+}
 
 static PyObject*
 win32_getppid(void)
@@ -9123,8 +9237,16 @@ win32_getppid(void)
     DWORD error;
     PyObject* result = NULL;
     HANDLE process = GetCurrentProcess();
-
     HPSS snapshot = NULL;
+    ULONG pid;
+
+    pid = win32_getppid_fast();
+    if (pid != 0) {
+        return PyLong_FromUnsignedLong(pid);
+    }
+
+    // If failure occurs in win32_getppid_fast(), fall back to using the PSS API.
+
     error = PssCaptureSnapshot(process, PSS_CAPTURE_NONE, 0, &snapshot);
     if (error != ERROR_SUCCESS) {
         return PyErr_SetFromWindowsErr(error);
@@ -15707,6 +15829,10 @@ DirEntry_from_find_data(PyObject *module, path_t *path, WIN32_FIND_DATAW *dataW)
 
     find_data_to_file_info(dataW, &file_info, &reparse_tag);
     _Py_attribute_data_to_stat(&file_info, reparse_tag, NULL, NULL, &entry->win32_lstat);
+
+    /* ctime is only deprecated from 3.12, so we copy birthtime across */
+    entry->win32_lstat.st_ctime = entry->win32_lstat.st_birthtime;
+    entry->win32_lstat.st_ctime_nsec = entry->win32_lstat.st_birthtime_nsec;
 
     return (PyObject *)entry;
 
