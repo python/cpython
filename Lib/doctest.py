@@ -104,8 +104,7 @@ import traceback
 import unittest
 from io import StringIO, IncrementalNewlineDecoder
 from collections import namedtuple
-import _colorize  # Used in doctests
-from _colorize import ANSIColors, can_colorize
+from traceback import _ANSIColors, _can_colorize
 
 
 class TestResults(namedtuple('TestResults', 'failed attempted')):
@@ -1181,8 +1180,8 @@ class DocTestRunner:
     The `run` method is used to process a single DocTest case.  It
     returns a TestResults instance.
 
-        >>> save_colorize = _colorize.COLORIZE
-        >>> _colorize.COLORIZE = False
+        >>> save_colorize = traceback._COLORIZE
+        >>> traceback._COLORIZE = False
 
         >>> tests = DocTestFinder().find(_TestClass)
         >>> runner = DocTestRunner(verbose=False)
@@ -1235,7 +1234,7 @@ class DocTestRunner:
     overriding the methods `report_start`, `report_success`,
     `report_unexpected_exception`, and `report_failure`.
 
-        >>> _colorize.COLORIZE = save_colorize
+        >>> traceback._COLORIZE = save_colorize
     """
     # This divider string is used to separate failure messages, and to
     # separate sections of the summary.
@@ -1315,7 +1314,7 @@ class DocTestRunner:
 
     def _failure_header(self, test, example):
         red, reset = (
-            (ANSIColors.RED, ANSIColors.RESET) if can_colorize() else ("", "")
+            (_ANSIColors.RED, _ANSIColors.RESET) if _can_colorize() else ("", "")
         )
         out = [f"{red}{self.DIVIDER}{reset}"]
         if test.filename:
@@ -1602,13 +1601,13 @@ class DocTestRunner:
             else:
                 failed.append((name, (failures, tries, skips)))
 
-        if can_colorize():
-            bold_green = ANSIColors.BOLD_GREEN
-            bold_red = ANSIColors.BOLD_RED
-            green = ANSIColors.GREEN
-            red = ANSIColors.RED
-            reset = ANSIColors.RESET
-            yellow = ANSIColors.YELLOW
+        if _can_colorize():
+            bold_green = _ANSIColors.BOLD_GREEN
+            bold_red = _ANSIColors.BOLD_RED
+            green = _ANSIColors.GREEN
+            red = _ANSIColors.RED
+            reset = _ANSIColors.RESET
+            yellow = _ANSIColors.YELLOW
         else:
             bold_green = ""
             bold_red = ""

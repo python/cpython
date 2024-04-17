@@ -19,7 +19,6 @@ static const char* _Py_stdlib_module_names[] = {
 "_codecs_tw",
 "_collections",
 "_collections_abc",
-"_colorize",
 "_compat_pickle",
 "_compression",
 "_contextvars",
