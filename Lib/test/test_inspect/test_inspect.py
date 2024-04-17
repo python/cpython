@@ -5338,6 +5338,8 @@ class TestSignatureDefinitions(unittest.TestCase):
 
     def test_sys_module_has_signatures(self):
         no_signature = {'getsizeof', 'set_asyncgen_hooks'}
+        no_signature |= {name for name in ['getobjects']
+                         if hasattr(sys, name)}
         self._test_module_has_signatures(sys, no_signature)
 
     def test_abc_module_has_signatures(self):
