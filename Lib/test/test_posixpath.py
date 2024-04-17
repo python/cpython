@@ -334,6 +334,17 @@ class PosixPathTest(unittest.TestCase):
                 for path in ('~', '~/.local', '~vstinner/'):
                     self.assertEqual(posixpath.expanduser(path), path)
 
+    @unittest.skipIf(sys.platform == "vxworks",
+                     "no home directory on VxWorks")
+    def test_expanduser_pwd2(self):
+        pwd = import_helper.import_module('pwd')
+        for e in pwd.getpwall():
+            name = e.pw_name
+            home = e.pw_dir
+            self.assertEqual(posixpath.expanduser('~' + name), home)
+            self.assertEqual(posixpath.expanduser(os.fsencode('~' + name)),
+                             os.fsencode(home))
+
     NORMPATH_CASES = [
         ("", "."),
         ("/", "/"),
