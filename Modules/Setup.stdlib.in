@@ -168,7 +168,7 @@
 @MODULE__XXTESTFUZZ_TRUE@_xxtestfuzz _xxtestfuzz/_xxtestfuzz.c _xxtestfuzz/fuzzer.c
 @MODULE__TESTBUFFER_TRUE@_testbuffer _testbuffer.c
 @MODULE__TESTINTERNALCAPI_TRUE@_testinternalcapi _testinternalcapi.c
-@MODULE__TESTCAPI_TRUE@_testcapi _testcapimodule.c _testcapi/vectorcall.c _testcapi/vectorcall_limited.c _testcapi/heaptype.c _testcapi/abstract.c _testcapi/bytearray.c _testcapi/bytes.c _testcapi/unicode.c _testcapi/dict.c _testcapi/set.c _testcapi/list.c _testcapi/tuple.c _testcapi/getargs.c _testcapi/pytime.c _testcapi/datetime.c _testcapi/docstring.c _testcapi/mem.c _testcapi/watchers.c _testcapi/long.c _testcapi/float.c _testcapi/complex.c _testcapi/numbers.c _testcapi/structmember.c _testcapi/exceptions.c _testcapi/code.c _testcapi/buffer.c _testcapi/pyos.c _testcapi/file.c _testcapi/codec.c _testcapi/immortal.c _testcapi/heaptype_relative.c _testcapi/gc.c _testcapi/sys.c
+@MODULE__TESTCAPI_TRUE@_testcapi _testcapimodule.c _testcapi/vectorcall.c _testcapi/vectorcall_limited.c _testcapi/heaptype.c _testcapi/abstract.c _testcapi/bytearray.c _testcapi/bytes.c _testcapi/unicode.c _testcapi/dict.c _testcapi/set.c _testcapi/list.c _testcapi/tuple.c _testcapi/getargs.c _testcapi/pytime.c _testcapi/datetime.c _testcapi/docstring.c _testcapi/mem.c _testcapi/watchers.c _testcapi/long.c _testcapi/float.c _testcapi/complex.c _testcapi/numbers.c _testcapi/structmember.c _testcapi/exceptions.c _testcapi/code.c _testcapi/buffer.c _testcapi/pyos.c _testcapi/run.c _testcapi/file.c _testcapi/codec.c _testcapi/immortal.c _testcapi/heaptype_relative.c _testcapi/gc.c _testcapi/sys.c
 @MODULE__TESTCLINIC_TRUE@_testclinic _testclinic.c
 
 # Some testing modules MUST be built as shared libraries.
