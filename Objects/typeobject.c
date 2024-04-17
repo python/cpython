@@ -116,11 +116,13 @@ type_from_ref(PyObject *ref)
 
 /* helpers for for static builtin types */
 
+#ifndef NDEBUG
 static inline int
 static_builtin_index_is_set(PyTypeObject *self)
 {
     return self->tp_subclasses != NULL;
 }
+#endif
 
 static inline size_t
 static_builtin_index_get(PyTypeObject *self)
