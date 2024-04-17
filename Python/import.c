@@ -1165,7 +1165,7 @@ is_core_module(PyInterpreterState *interp, PyObject *name, PyObject *path)
 }
 
 static int
-fix_up_extension_for_interpreter(PyInterpreterState *interp,
+fix_up_extension_for_interpreter(PyThreadState *tstate,
                                  PyObject *mod, PyModuleDef *def,
                                  PyObject *name, PyObject *path,
                                  PyObject *modules)
@@ -1174,13 +1174,13 @@ fix_up_extension_for_interpreter(PyInterpreterState *interp,
     assert(def == PyModule_GetDef(mod));
 
     if (modules == NULL) {
-        modules = get_modules_dict(interp);
+        modules = get_modules_dict(tstate->interp);
     }
     if (PyObject_SetItem(modules, name, mod) < 0) {
         return -1;
     }
 
-    if (_modules_by_index_set(interp, def, mod) < 0) {
+    if (_modules_by_index_set(tstate->interp, def, mod) < 0) {
         goto error;
     }
 
@@ -1193,11 +1193,10 @@ error:
 
 
 static int
-fix_up_extension(PyObject *mod, PyModuleDef *def,
+fix_up_extension(PyThreadState *tstate, PyObject *mod, PyModuleDef *def,
                  PyObject *name, PyObject *path,
                  PyObject *modules)
 {
-    PyInterpreterState *interp = _PyInterpreterState_GET();
     if (def == NULL) {
         def = PyModule_GetDef(mod);
         if (def == NULL) {
@@ -1207,7 +1206,7 @@ fix_up_extension(PyObject *mod, PyModuleDef *def,
     }
 
     if (fix_up_extension_for_interpreter(
-                interp, mod, def, name, path, modules) < 0)
+                tstate, mod, def, name, path, modules) < 0)
     {
         return -1;
     }
@@ -1215,7 +1214,7 @@ fix_up_extension(PyObject *mod, PyModuleDef *def,
     // bpo-44050: Extensions and def->m_base.m_copy can be updated
     // when the extension module doesn't support sub-interpreters.
     if (def->m_size == -1) {
-        if (!is_core_module(interp, name, path)) {
+        if (!is_core_module(tstate->interp, name, path)) {
             assert(PyUnicode_CompareWithASCIIString(name, "sys") != 0);
             assert(PyUnicode_CompareWithASCIIString(name, "builtins") != 0);
             if (def->m_base.m_copy) {
@@ -1236,7 +1235,7 @@ fix_up_extension(PyObject *mod, PyModuleDef *def,
     }
 
     // XXX Why special-case the main interpreter?
-    if (_Py_IsMainInterpreter(interp) || def->m_size == -1) {
+    if (_Py_IsMainInterpreter(tstate->interp) || def->m_size == -1) {
 #ifndef NDEBUG
         PyModuleDef *cached = _extensions_cache_get(path, name);
         assert(cached == NULL || cached == def);
@@ -1262,7 +1261,8 @@ _PyImport_FixupExtensionObject(PyObject *mod, PyObject *name,
         PyErr_BadInternalCall();
         return -1;
     }
-    if (fix_up_extension(mod, NULL, name, filename, modules) < 0) {
+    PyThreadState *tstate = _PyThreadState_GET();
+    if (fix_up_extension(tstate, mod, NULL, name, filename, modules) < 0) {
         return -1;
     }
     return 0;
@@ -1377,7 +1377,8 @@ clear_singlephase_extension(PyInterpreterState *interp,
 /*******************/
 
 int
-_PyImport_FixupBuiltin(PyObject *mod, const char *name, PyObject *modules)
+_PyImport_FixupBuiltin(PyThreadState *tstate, PyObject *mod, const char *name,
+                       PyObject *modules)
 {
     int res = -1;
     assert(mod != NULL && PyModule_Check(mod));
@@ -1394,7 +1395,7 @@ _PyImport_FixupBuiltin(PyObject *mod, const char *name, PyObject *modules)
         goto finally;
     }
 
-    if (fix_up_extension(mod, def, nameobj, nameobj, modules) < 0) {
+    if (fix_up_extension(tstate, mod, def, nameobj, nameobj, modules) < 0) {
         goto finally;
     }
 
@@ -1468,7 +1469,7 @@ create_builtin(PyThreadState *tstate, PyObject *name, PyObject *spec)
         def->m_base.m_init = p0;
 
         PyObject *modules = MODULES(tstate->interp);
-        if (fix_up_extension(mod, def, name, name, modules) < 0) {
+        if (fix_up_extension(tstate, mod, def, name, name, modules) < 0) {
             return NULL;
         }
         return mod;
