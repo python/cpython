@@ -56,11 +56,6 @@ typedef struct _stack_chunk {
     PyObject * data[1]; /* Variable sized */
 } _PyStackChunk;
 
-struct _py_trashcan {
-    int delete_nesting;
-    PyObject *delete_later;
-};
-
 struct _ts {
     /* See Python/ceval.c for comments explaining most fields */
 
@@ -152,7 +147,7 @@ struct _ts {
      */
     unsigned long native_thread_id;
 
-    struct _py_trashcan trash;
+    PyObject *delete_later;
 
     /* Tagged pointer to top-most critical section, or zero if there is no
      * active critical section. Critical sections are only used in
