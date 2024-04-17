@@ -82,7 +82,7 @@ Important deprecations, removals or restrictions:
 
 Interpreter improvements:
 
-* A basic :ref:`JIT compiler <whatsnew313-jit-compiler>` was added.
+* :pep:`744`: A basic :ref:`JIT compiler <whatsnew313-jit-compiler>` was added.
   It is currently disabled by default (though we may turn it on later).
   Performance improvements are modest -- we expect to be improving this
   over the next few releases.
@@ -185,7 +185,7 @@ Other Language Changes
 
   (Contributed by Victor Stinner in :gh:`114570`.)
 
-* Allow controlling Expat >=2.6.0 reparse deferral (CVE-2023-52425)
+* Allow controlling Expat >=2.6.0 reparse deferral (:cve:`2023-52425`)
   by adding five new methods:
 
   * :meth:`xml.etree.ElementTree.XMLParser.flush`
@@ -212,9 +212,8 @@ Other Language Changes
   (Contributed by William Woodruff in :gh:`112389`.)
 
 * The :class:`configparser.ConfigParser` now accepts unnamed sections before named
-   ones if configured to do so.
-
-   (Contributed by Pedro Sousa Lacerda in :gh:`66449`)
+  ones if configured to do so.
+  (Contributed by Pedro Sousa Lacerda in :gh:`66449`.)
 
 
 New Modules
@@ -233,7 +232,7 @@ argparse
   :meth:`~argparse.ArgumentParser.add_argument` and :meth:`!add_parser`
   which allows to deprecate command-line options, positional arguments and
   subcommands.
-  (Contributed by Serhiy Storchaka in :gh:`83648`).
+  (Contributed by Serhiy Storchaka in :gh:`83648`.)
 
 array
 -----
@@ -263,9 +262,9 @@ ast
   argument that does not map to a field on the AST node is now deprecated,
   and will raise an exception in Python 3.15.
 
-* :func:`ast.parse` now accepts an optional argument ``optimize``
+* :func:`ast.parse` now accepts an optional argument *optimize*
   which is passed on to the :func:`compile` built-in. This makes it
-  possible to obtain an optimized ``AST``.
+  possible to obtain an optimized AST.
   (Contributed by Irit Katriel in :gh:`108113`.)
 
 asyncio
@@ -332,7 +331,7 @@ base64
 ------
 
 * Add :func:`base64.z85encode` and :func:`base64.z85decode` functions which allow encoding
-  and decoding z85 data.
+  and decoding Z85 data.
   See `Z85  specification <https://rfc.zeromq.org/spec/32/>`_ for more information.
   (Contributed by Matan Perelman in :gh:`75299`.)
 
@@ -355,6 +354,9 @@ dbm
   from the database.
   (Contributed by Donghee Na in :gh:`107122`.)
 
+* Add new :mod:`dbm.sqlite3` backend, and make it the default :mod:`!dbm` backend.
+  (Contributed by Raymond Hettinger and Erlend E. Aasland in :gh:`100414`.)
+
 dis
 ---
 
@@ -363,16 +365,6 @@ dis
   The offsets can be added with the new ``-O`` command line option or
   the ``show_offsets`` parameter.
   (Contributed by Irit Katriel in :gh:`112137`.)
-
-dbm
----
-
-* Add :meth:`dbm.gnu.gdbm.clear` and :meth:`dbm.ndbm.ndbm.clear`  methods that remove all items
-  from the database.
-  (Contributed by Donghee Na in :gh:`107122`.)
-
-* Add new :mod:`dbm.sqlite3` backend, and make it the default :mod:`!dbm` backend.
-  (Contributed by Raymond Hettinger and Erlend E. Aasland in :gh:`100414`.)
 
 doctest
 -------
@@ -390,10 +382,10 @@ email
   encountered instead of potentially inaccurate values. Add optional *strict*
   parameter to these two functions: use ``strict=False`` to get the old
   behavior, accept malformed inputs.
-  ``getattr(email.utils, 'supports_strict_parsing', False)`` can be use to
+  ``getattr(email.utils, 'supports_strict_parsing', False)`` can be used to
   check if the *strict* parameter is available.
   (Contributed by Thomas Dwyer and Victor Stinner for :gh:`102988` to improve
-  the CVE-2023-27043 fix.)
+  the :cve:`2023-27043` fix.)
 
 fractions
 ---------
@@ -409,21 +401,22 @@ gc
 * The cyclic garbage collector is now incremental, which changes the meanings
   of the results of :meth:`gc.get_threshold` and :meth:`gc.set_threshold` as
   well as :meth:`gc.get_count` and :meth:`gc.get_stats`.
-* :meth:`gc.get_threshold` returns a three-tuple for backwards compatibility,
-  the first value is the threshold for young collections, as before, the second
-  value determines the rate at which the old collection is scanned; the
-  default is 10 and higher values mean that the old collection is scanned more slowly.
-  The third value is meangless and is always zero.
-* :meth:`gc.set_threshold` ignores any items after the second.
-* :meth:`gc.get_count` and :meth:`gc.get_stats`.
-  These functions return the same format of results as before.
-  The only difference is that instead of the results refering to
-  the young, aging and old generations, the results refer to the
-  young generation and the aging and collecting spaces of the old generation.
 
-In summary, code that attempted to manipulate the behavior of the cycle GC may
-not work exactly as intended, but it is very unlikely to harmful.
-All other code will work just fine.
+  * :meth:`gc.get_threshold` returns a three-item tuple for backwards compatibility.
+    The first value is the threshold for young collections, as before; the second
+    value determines the rate at which the old collection is scanned (the
+    default is 10, and higher values mean that the old collection is scanned more slowly).
+    The third value is meaningless and is always zero.
+  * :meth:`gc.set_threshold` ignores any items after the second.
+  * :meth:`gc.get_count` and :meth:`gc.get_stats`
+    return the same format of results as before.
+    The only difference is that instead of the results referring to
+    the young, aging and old generations, the results refer to the
+    young generation and the aging and collecting spaces of the old generation.
+
+  In summary, code that attempted to manipulate the behavior of the cycle GC may
+  not work exactly as intended, but it is very unlikely to be harmful.
+  All other code will work just fine.
 
 glob
 ----
@@ -432,46 +425,49 @@ glob
   shell-style wildcards to a regular expression.
   (Contributed by Barney Gale in :gh:`72904`.)
 
-io
---
-
-The :class:`io.IOBase` finalizer now logs the ``close()`` method errors with
-:data:`sys.unraisablehook`. Previously, errors were ignored silently by default,
-and only logged in :ref:`Python Development Mode <devmode>` or on :ref:`Python
-built on debug mode <debug-build>`.
-(Contributed by Victor Stinner in :gh:`62948`.)
-
 importlib
 ---------
 
-Previously deprecated :mod:`importlib.resources` functions are un-deprecated:
+* Previously deprecated :mod:`importlib.resources` functions are un-deprecated:
 
-  * :func:`~importlib.resources.is_resource()`
-  * :func:`~importlib.resources.open_binary()`
-  * :func:`~importlib.resources.open_text()`
-  * :func:`~importlib.resources.path()`
-  * :func:`~importlib.resources.read_binary()`
-  * :func:`~importlib.resources.read_text()`
+    * :func:`~importlib.resources.is_resource()`
+    * :func:`~importlib.resources.open_binary()`
+    * :func:`~importlib.resources.open_text()`
+    * :func:`~importlib.resources.path()`
+    * :func:`~importlib.resources.read_binary()`
+    * :func:`~importlib.resources.read_text()`
 
-All now allow for a directory (or tree) of resources, using multiple positional
-arguments.
+  All now allow for a directory (or tree) of resources, using multiple positional
+  arguments.
 
-For text-reading functions, the *encoding* and *errors* must now be given as
-keyword arguments.
+  For text-reading functions, the *encoding* and *errors* must now be given as
+  keyword arguments.
 
-The :func:`~importlib.resources.contents()` remains deprecated in favor of
-the full-featured :class:`~importlib.resources.abc.Traversable` API.
-However, there is now no plan to remove it.
+  The :func:`~importlib.resources.contents()` remains deprecated in favor of
+  the full-featured :class:`~importlib.resources.abc.Traversable` API.
+  However, there is now no plan to remove it.
 
-(Contributed by Petr Viktorin in :gh:`106532`.)
+  (Contributed by Petr Viktorin in :gh:`106532`.)
+
+io
+--
+
+* The :class:`io.IOBase` finalizer now logs the ``close()`` method errors with
+  :data:`sys.unraisablehook`. Previously, errors were ignored silently by default,
+  and only logged in :ref:`Python Development Mode <devmode>` or on :ref:`Python
+  built on debug mode <debug-build>`.
+  (Contributed by Victor Stinner in :gh:`62948`.)
 
 ipaddress
 ---------
 
 * Add the :attr:`ipaddress.IPv4Address.ipv6_mapped` property, which returns the IPv4-mapped IPv6 address.
   (Contributed by Charles Machalow in :gh:`109466`.)
-* Fix ``is_global`` and ``is_private`` behavior in ``IPv4Address``, ``IPv6Address``, ``IPv4Network``
-  and ``IPv6Network``.
+* Fix ``is_global`` and ``is_private`` behavior in
+  :class:`~ipaddress.IPv4Address`,
+  :class:`~ipaddress.IPv6Address`,
+  :class:`~ipaddress.IPv4Network` and
+  :class:`~ipaddress.IPv6Network`.
 
 itertools
 ---------
@@ -492,12 +488,12 @@ marshal
 math
 ----
 
-A new function :func:`~math.fma` for fused multiply-add operations has been
-added. This function computes ``x * y + z`` with only a single round, and so
-avoids any intermediate loss of precision. It wraps the ``fma()`` function
-provided by C99, and follows the specification of the IEEE 754
-"fusedMultiplyAdd" operation for special cases.
-(Contributed by Mark Dickinson and Victor Stinner in :gh:`73468`.)
+* A new function :func:`~math.fma` for fused multiply-add operations has been
+  added. This function computes ``x * y + z`` with only a single round, and so
+  avoids any intermediate loss of precision. It wraps the ``fma()`` function
+  provided by C99, and follows the specification of the IEEE 754
+  "fusedMultiplyAdd" operation for special cases.
+  (Contributed by Mark Dickinson and Victor Stinner in :gh:`73468`.)
 
 mmap
 ----
@@ -593,18 +589,18 @@ pathlib
 
 * Add *recurse_symlinks* keyword-only argument to :meth:`pathlib.Path.glob`
   and :meth:`~pathlib.Path.rglob`.
-  (Contributed by Barney Gale in :gh:`77609`).
+  (Contributed by Barney Gale in :gh:`77609`.)
 
 * Add *follow_symlinks* keyword-only argument to :meth:`~pathlib.Path.is_file`,
   :meth:`~pathlib.Path.is_dir`, :meth:`~pathlib.Path.owner`,
   :meth:`~pathlib.Path.group`.
   (Contributed by Barney Gale in :gh:`105793`, and Kamil Turek in
-  :gh:`107962`).
+  :gh:`107962`.)
 
 * Return files and directories from :meth:`pathlib.Path.glob` and
   :meth:`~pathlib.Path.rglob` when given a pattern that ends with "``**``". In
   earlier versions, only directories were returned.
-  (Contributed by Barney Gale in :gh:`70303`).
+  (Contributed by Barney Gale in :gh:`70303`.)
 
 pdb
 ---
@@ -634,6 +630,13 @@ re
 * Rename :exc:`!re.error` to :exc:`re.PatternError` for improved clarity.
   :exc:`!re.error` is kept for backward compatibility.
 
+site
+----
+
+* :file:`.pth` files are now decoded by UTF-8 first, and then by the
+  :term:`locale encoding` if the UTF-8 decoding fails.
+  (Contributed by Inada Naoki in :gh:`117802`.)
+
 sqlite3
 -------
 
@@ -652,6 +655,8 @@ statistics
   This makes it possible to estimate a continuous probability density function
   from a fixed number of discrete samples.
   (Contributed by Raymond Hettinger in :gh:`115863`.)
+
+.. _whatsnew313-subprocess:
 
 subprocess
 ----------
@@ -685,7 +690,7 @@ time
 
 * On Windows, :func:`time.time()` now uses the
   ``GetSystemTimePreciseAsFileTime()`` clock to have a resolution better
-  than 1 us, instead of the ``GetSystemTimeAsFileTime()`` clock which has a
+  than 1 μs, instead of the ``GetSystemTimeAsFileTime()`` clock which has a
   resolution of 15.6 ms.
   (Contributed by Victor Stinner in :gh:`63207`.)
 
@@ -782,6 +787,7 @@ zipimport
 * Gains support for ZIP64 format files.  Everybody loves huge code right?
   (Contributed by Tim Hatch in :gh:`94146`.)
 
+.. Add improved modules above alphabetically, not here at the end.
 
 Optimizations
 =============
@@ -792,7 +798,8 @@ Optimizations
 * The :mod:`subprocess` module uses :func:`os.posix_spawn` in more situations
   including the default where ``close_fds=True`` on many modern platforms.  This
   should provide a noteworthy performance increase launching processes on
-  FreeBSD and Solaris.  See the ``subprocess`` section above for details.
+  FreeBSD and Solaris.  See the :ref:`subprocess <whatsnew313-subprocess>`
+  section above for details.
   (Contributed by Jakub Kulik in :gh:`113117`.)
 
 .. _whatsnew313-jit-compiler:
@@ -831,6 +838,8 @@ The internal architecture is roughly as follows.
   *copy-and-patch*. It has no runtime dependencies, but there is a new
   build-time dependency on LLVM.
 
+See :pep:`744` for more details.
+
 (JIT by Brandt Bucher, inspired by a paper by Haoran Xu and Fredrik Kjolstad.
 Tier 2 IR by Mark Shannon and Guido van Rossum.
 Tier 2 optimizer by Ken Jin.)
@@ -844,7 +853,7 @@ Deprecated
   emits :exc:`DeprecationWarning` since 3.13
   and will be removed in Python 3.16.
   Use the ``'w'`` format code instead.
-  (contributed by Hugo van Kemenade in :gh:`80480`)
+  (Contributed by Hugo van Kemenade in :gh:`80480`.)
 
 * :mod:`ctypes`: Deprecate undocumented :func:`!ctypes.SetPointerType`
   and :func:`!ctypes.ARRAY` functions.
@@ -859,6 +868,11 @@ Deprecated
 * :mod:`dis`: The ``dis.HAVE_ARGUMENT`` separator is deprecated. Check
   membership in :data:`~dis.hasarg` instead.
   (Contributed by Irit Katriel in :gh:`109319`.)
+
+* :ref:`frame-objects`:
+  Calling :meth:`frame.clear` on a suspended frame raises :exc:`RuntimeError`
+  (as has always been the case for an executing frame).
+  (Contributed by Irit Katriel in :gh:`79932`.)
 
 * :mod:`getopt` and :mod:`optparse` modules: They are now
   :term:`soft deprecated`: the :mod:`argparse` module should be used for new projects.
@@ -889,6 +903,12 @@ Deprecated
   removal in Python 3.15. Use :func:`os.path.isreserved` to detect reserved
   paths on Windows.
 
+* :mod:`platform`:
+  :func:`~platform.java_ver` is deprecated and will be removed in 3.15.
+  It was largely untested, had a confusing API,
+  and was only useful for Jython support.
+  (Contributed by Nikita Sobolev in :gh:`116349`.)
+
 * :mod:`pydoc`: Deprecate undocumented :func:`!pydoc.ispackage` function.
   (Contributed by Zackery Spytz in :gh:`64020`.)
 
@@ -916,6 +936,10 @@ Deprecated
 * :mod:`sys`: :func:`sys._enablelegacywindowsfsencoding` function.
   Replace it with the :envvar:`PYTHONLEGACYWINDOWSFSENCODING` environment variable.
   (Contributed by Inada Naoki in :gh:`73427`.)
+
+* :mod:`tarfile`:
+  The undocumented and unused ``tarfile`` attribute of :class:`tarfile.TarFile`
+  is deprecated and scheduled for removal in Python 3.16.
 
 * :mod:`traceback`: The field *exc_type* of :class:`traceback.TracebackException`
   is deprecated. Use *exc_type_str* instead.
@@ -949,28 +973,19 @@ Deprecated
     the new :ref:`type parameter syntax <type-params>` instead.
     (Contributed by Michael The in :gh:`107116`.)
 
-* :mod:`wave`: Deprecate the ``getmark()``, ``setmark()`` and ``getmarkers()``
-  methods of the :class:`wave.Wave_read` and :class:`wave.Wave_write` classes.
-  They will be removed in Python 3.15.
-  (Contributed by Victor Stinner in :gh:`105096`.)
-
-* Calling :meth:`frame.clear` on a suspended frame raises :exc:`RuntimeError`
-  (as has always been the case for an executing frame).
-  (Contributed by Irit Katriel in :gh:`79932`.)
-
-* Assignment to a function's :attr:`~function.__code__` attribute where the new code
+* :ref:`user-defined-funcs`:
+  Assignment to a function's :attr:`~function.__code__` attribute where the new code
   object's type does not match the function's type, is deprecated. The
   different types are: plain function, generator, async generator and
   coroutine.
   (Contributed by Irit Katriel in :gh:`81137`.)
 
-* The undocumented and unused ``tarfile`` attribute of :class:`tarfile.TarFile`
-  is deprecated and scheduled for removal in Python 3.16.
+* :mod:`wave`: Deprecate the ``getmark()``, ``setmark()`` and ``getmarkers()``
+  methods of the :class:`wave.Wave_read` and :class:`wave.Wave_write` classes.
+  They will be removed in Python 3.15.
+  (Contributed by Victor Stinner in :gh:`105096`.)
 
-* :func:`platform.java_ver` is deprecated and will be removed in 3.15.
-  It was largely untested, had a confusing API,
-  and was only useful for Jython support.
-  (Contributed by Nikita Sobolev in :gh:`116349`.)
+.. Add deprecations above alphabetically, not here at the end.
 
 Pending Removal in Python 3.14
 ------------------------------
@@ -1070,7 +1085,8 @@ Pending Removal in Python 3.14
 * :mod:`typing`: :class:`~typing.ByteString`, deprecated since Python 3.9,
   now causes a :exc:`DeprecationWarning` to be emitted when it is used.
 
-* :class:`!urllib.parse.Quoter` is deprecated: it was not intended to be a
+* :mod:`urllib`:
+  :class:`!urllib.parse.Quoter` is deprecated: it was not intended to be a
   public API.
   (Contributed by Gregory P. Smith in :gh:`88168`.)
 
@@ -1098,6 +1114,12 @@ Pending Removal in Python 3.15
   removal in Python 3.15. Use :func:`os.path.isreserved` to detect reserved
   paths on Windows.
 
+* :mod:`platform`:
+  :func:`~platform.java_ver` is deprecated and will be removed in 3.15.
+  It was largely untested, had a confusing API,
+  and was only useful for Jython support.
+  (Contributed by Nikita Sobolev in :gh:`116349`.)
+
 * :mod:`threading`:
   Passing any arguments to :func:`threading.RLock` is now deprecated.
   C version allows any numbers of args and kwargs,
@@ -1107,33 +1129,28 @@ Pending Removal in Python 3.15
 
 * :class:`typing.NamedTuple`:
 
-  * The undocumented keyword argument syntax for creating NamedTuple classes
+  * The undocumented keyword argument syntax for creating :class:`!NamedTuple` classes
     (``NT = NamedTuple("NT", x=int)``) is deprecated, and will be disallowed in
     3.15. Use the class-based syntax or the functional syntax instead.
 
-  * When using the functional syntax to create a NamedTuple class, failing to
-    pass a value to the 'fields' parameter (``NT = NamedTuple("NT")``) is
-    deprecated. Passing ``None`` to the 'fields' parameter
+  * When using the functional syntax to create a :class:`!NamedTuple` class, failing to
+    pass a value to the *fields* parameter (``NT = NamedTuple("NT")``) is
+    deprecated. Passing ``None`` to the *fields* parameter
     (``NT = NamedTuple("NT", None)``) is also deprecated. Both will be
-    disallowed in Python 3.15. To create a NamedTuple class with 0 fields, use
+    disallowed in Python 3.15. To create a :class:`!NamedTuple` class with 0 fields, use
     ``class NT(NamedTuple): pass`` or ``NT = NamedTuple("NT", [])``.
 
 * :class:`typing.TypedDict`: When using the functional syntax to create a
-  TypedDict class, failing to pass a value to the 'fields' parameter (``TD =
-  TypedDict("TD")``) is deprecated. Passing ``None`` to the 'fields' parameter
+  :class:`!TypedDict` class, failing to pass a value to the *fields* parameter (``TD =
+  TypedDict("TD")``) is deprecated. Passing ``None`` to the *fields* parameter
   (``TD = TypedDict("TD", None)``) is also deprecated. Both will be disallowed
-  in Python 3.15. To create a TypedDict class with 0 fields, use ``class
+  in Python 3.15. To create a :class:`!TypedDict` class with 0 fields, use ``class
   TD(TypedDict): pass`` or ``TD = TypedDict("TD", {})``.
 
 * :mod:`wave`: Deprecate the ``getmark()``, ``setmark()`` and ``getmarkers()``
   methods of the :class:`wave.Wave_read` and :class:`wave.Wave_write` classes.
   They will be removed in Python 3.15.
   (Contributed by Victor Stinner in :gh:`105096`.)
-
-* :func:`platform.java_ver` is deprecated and will be removed in 3.15.
-  It was largely untested, had a confusing API,
-  and was only useful for Jython support.
-  (Contributed by Nikita Sobolev in :gh:`116349`.)
 
 Pending Removal in Python 3.16
 ------------------------------
@@ -1306,9 +1323,8 @@ PEP 594: dead batteries
 
     * ``cgi.FieldStorage`` can typically be replaced with
       :func:`urllib.parse.parse_qsl` for ``GET`` and ``HEAD`` requests,
-      and the :mod:`email.message` module or `multipart
-      <https://pypi.org/project/multipart/>`__ PyPI project for ``POST`` and
-      ``PUT``.
+      and the :mod:`email.message` module or :pypi:`multipart`
+      PyPI project for ``POST`` and ``PUT``.
 
     * ``cgi.parse()`` can be replaced by calling :func:`urllib.parse.parse_qs`
       directly on the desired query string, except for ``multipart/form-data``
@@ -1326,7 +1342,7 @@ PEP 594: dead batteries
     * ``cgi.parse_multipart()`` can be replaced with the functionality in the
       :mod:`email` package (e.g. :class:`email.message.EmailMessage` and
       :class:`email.message.Message`) which implements the same MIME RFCs, or
-      with the `multipart <https://pypi.org/project/multipart/>`__ PyPI project.
+      with the :pypi:`multipart` PyPI project.
 
     (Contributed by Victor Stinner in :gh:`104773`.)
 
@@ -1334,21 +1350,19 @@ PEP 594: dead batteries
     The :mod:`hashlib` module is a potential replacement for certain use cases.
     Otherwise, the following PyPI projects can be used:
 
-    * `bcrypt <https://pypi.org/project/bcrypt/>`_:
+    * :pypi:`bcrypt`:
       Modern password hashing for your software and your servers.
-    * `passlib <https://pypi.org/project/passlib/>`_:
+    * :pypi:`passlib`:
       Comprehensive password hashing framework supporting over 30 schemes.
-    * `argon2-cffi <https://pypi.org/project/argon2-cffi/>`_:
+    * :pypi:`argon2-cffi`:
       The secure Argon2 password hashing algorithm.
-    * `legacycrypt <https://pypi.org/project/legacycrypt/>`_:
+    * :pypi:`legacycrypt`:
       Wrapper to the POSIX crypt library call and associated functionality.
 
     (Contributed by Victor Stinner in :gh:`104773`.)
 
-  * :mod:`!imghdr`: use the projects
-    `filetype <https://pypi.org/project/filetype/>`_,
-    `puremagic <https://pypi.org/project/puremagic/>`_,
-    or `python-magic <https://pypi.org/project/python-magic/>`_ instead.
+  * :mod:`!imghdr`: use the projects :pypi:`filetype`,
+    :pypi:`puremagic`, or :pypi:`python-magic` instead.
     (Contributed by Victor Stinner in :gh:`104773`.)
 
   * :mod:`!mailcap`.
@@ -1362,8 +1376,7 @@ PEP 594: dead batteries
     (Contributed by Victor Stinner in :gh:`104773`.)
 
   * :mod:`!nntplib`:
-    the `PyPI nntplib project <https://pypi.org/project/nntplib/>`_
-    can be used instead.
+    the :pypi:`nntplib` PyPI project can be used instead.
     (Contributed by Victor Stinner in :gh:`104773`.)
 
   * :mod:`!ossaudiodev`: use the
@@ -1373,23 +1386,19 @@ PEP 594: dead batteries
   * :mod:`!pipes`: use the :mod:`subprocess` module instead.
     (Contributed by Victor Stinner in :gh:`104773`.)
 
-  * :mod:`!sndhdr`: use the projects
-    `filetype <https://pypi.org/project/filetype/>`_,
-    `puremagic <https://pypi.org/project/puremagic/>`_, or
-    `python-magic <https://pypi.org/project/python-magic/>`_ instead.
+  * :mod:`!sndhdr`: use the projects :pypi:`filetype_,
+    :pypi:`puremagic`, or :pypi:`python-magic` instead.
     (Contributed by Victor Stinner in :gh:`104773`.)
 
   * :mod:`!spwd`:
-    the `python-pam project <https://pypi.org/project/python-pam/>`_
-    can be used instead.
+    the :pypi:`python-pam` project can be used instead.
     (Contributed by Victor Stinner in :gh:`104773`.)
 
   * :mod:`!sunau`.
     (Contributed by Victor Stinner in :gh:`104773`.)
 
-  * :mod:`!telnetlib`, use the projects
-    `telnetlib3 <https://pypi.org/project/telnetlib3/>`_ or
-    `Exscript <https://pypi.org/project/Exscript/>`_ instead.
+  * :mod:`!telnetlib`, use the projects :pypi:`telnetlib3 ` or
+    :pypi:`Exscript` instead.
     (Contributed by Victor Stinner in :gh:`104773`.)
 
   * :mod:`!uu`: the :mod:`base64` module is a modern alternative.
@@ -1575,15 +1584,15 @@ Changes in the Python API
   than directories only. Users may add a trailing slash to match only
   directories.
 
-* :c:func:`!PyCode_GetFirstFree` is an ustable API now and has been renamed
+* :c:func:`!PyCode_GetFirstFree` is an unstable API now and has been renamed
   to :c:func:`PyUnstable_Code_GetFirstFree`.
-  (Contributed by Bogdan Romanyuk in :gh:`115781`)
+  (Contributed by Bogdan Romanyuk in :gh:`115781`.)
 
 
 Build Changes
 =============
 
-* Autoconf 2.71 and aclocal 1.16.4 is now required to regenerate
+* Autoconf 2.71 and aclocal 1.16.4 are now required to regenerate
   the :file:`configure` script.
   (Contributed by Christian Heimes in :gh:`89886`.)
 
@@ -1606,10 +1615,10 @@ Build Changes
   :ref:`limited C API <limited-c-api>`.
   (Contributed by Victor Stinner in :gh:`85283`.)
 
-* ``wasm32-wasi`` is now a tier 2 platform.
+* ``wasm32-wasi`` is now a :pep:`11` tier 2 platform.
   (Contributed by Brett Cannon in :gh:`115192`.)
 
-* ``wasm32-emscripten`` is no longer a supported platform.
+* ``wasm32-emscripten`` is no longer a :pep:`11` supported platform.
   (Contributed by Brett Cannon in :gh:`115192`.)
 
 
@@ -1835,6 +1844,13 @@ Porting to Python 3.13
   and ``setitimer()`` functions.
   (Contributed by Victor Stinner in :gh:`108765`.)
 
+* On Windows, ``Python.h`` no longer includes the ``<stddef.h>`` standard
+  header file. If needed, it should now be included explicitly. For example, it
+  provides ``offsetof()`` function, and ``size_t`` and ``ptrdiff_t`` types.
+  Including ``<stddef.h>`` explicitly was already needed by all other
+  platforms, the ``HAVE_STDDEF_H`` macro is only defined on Windows.
+  (Contributed by Victor Stinner in :gh:`108765`.)
+
 * If the :c:macro:`Py_LIMITED_API` macro is defined, :c:macro:`!Py_BUILD_CORE`,
   :c:macro:`!Py_BUILD_CORE_BUILTIN` and :c:macro:`!Py_BUILD_CORE_MODULE` macros
   are now undefined by ``<Python.h>``.
@@ -1844,7 +1860,7 @@ Porting to Python 3.13
   were removed. They should be replaced by the new macros ``Py_TRASHCAN_BEGIN``
   and ``Py_TRASHCAN_END``.
 
-  A tp_dealloc function that has the old macros, such as::
+  A ``tp_dealloc`` function that has the old macros, such as::
 
     static void
     mytype_dealloc(mytype *p)
@@ -1868,13 +1884,6 @@ Porting to Python 3.13
 
   Note that ``Py_TRASHCAN_BEGIN`` has a second argument which
   should be the deallocation function it is in.
-
-* On Windows, ``Python.h`` no longer includes the ``<stddef.h>`` standard
-  header file. If needed, it should now be included explicitly. For example, it
-  provides ``offsetof()`` function, and ``size_t`` and ``ptrdiff_t`` types.
-  Including ``<stddef.h>`` explicitly was already needed by all other
-  platforms, the ``HAVE_STDDEF_H`` macro is only defined on Windows.
-  (Contributed by Victor Stinner in :gh:`108765`.)
 
 Deprecated
 ----------

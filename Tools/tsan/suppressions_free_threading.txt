@@ -1,0 +1,51 @@
+# This file contains suppressions for the free-threaded build. It contains the
+# suppressions for the default build and additional suppressions needed only in
+# the free-threaded build.
+#
+# reference: https://github.com/google/sanitizers/wiki/ThreadSanitizerSuppressions
+
+## Default build suppresssions
+
+race:get_allocator_unlocked
+race:set_allocator_unlocked
+
+## Free-threaded suppressions
+
+race:_add_to_weak_set
+race:_in_weak_set
+race:_mi_heap_delayed_free_partial
+race:_Py_IsImmortal
+race:_Py_IsOwnedByCurrentThread
+race:_PyEval_EvalFrameDefault
+race:_PyFunction_SetVersion
+race:_PyImport_AcquireLock
+race:_PyImport_ReleaseLock
+race:_PyInterpreterState_SetNotRunningMain
+race:_PyInterpreterState_IsRunningMain
+race:_PyObject_GC_IS_SHARED
+race:_PyObject_GC_SET_SHARED
+race:_PyObject_GC_TRACK
+race:_PyType_HasFeature
+race:_PyType_Lookup
+race:assign_version_tag
+race:compare_unicode_unicode
+race:delitem_common
+race:dictkeys_decref
+race:dictkeys_incref
+race:dictresize
+race:gc_collect_main
+race:gc_restore_tid
+race:initialize_new_array
+race:insertdict
+race:lookup_tp_dict
+race:mi_heap_visit_pages
+race:PyMember_GetOne
+race:PyMember_SetOne
+race:new_reference
+race:set_contains_key
+race:set_inheritable
+race:start_the_world
+race:tstate_set_detached
+race:unicode_hash
+race:update_cache
+race:update_cache_gil_disabled
