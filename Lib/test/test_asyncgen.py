@@ -1807,6 +1807,7 @@ class TestUnawaitedWarnings(unittest.TestCase):
         g = gen()
         with self.assertRaises(MyException):
             g.aclose().throw(MyException)
+            gc.collect()
 
 
 if __name__ == "__main__":
