@@ -1,0 +1,1 @@
+Fix building against recent libedit versions by detecting readline hook signatures in :program:`configure`.
