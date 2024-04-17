@@ -116,16 +116,10 @@ type_from_ref(PyObject *ref)
 
 /* helpers for for static builtin types */
 
-static inline int
-static_builtin_index_is_set(PyTypeObject *self)
-{
-    return self->tp_subclasses != NULL;
-}
-
 static inline size_t
 static_builtin_index_get(PyTypeObject *self)
 {
-    assert(static_builtin_index_is_set(self));
+    assert(self->tp_subclasses != NULL);
     /* We store a 1-based index so 0 can mean "not initialized". */
     return (size_t)self->tp_subclasses - 1;
 }
@@ -163,7 +157,7 @@ static void
 static_builtin_state_init(PyInterpreterState *interp, PyTypeObject *self)
 {
     if (_Py_IsMainInterpreter(interp)) {
-        assert(!static_builtin_index_is_set(self));
+        assert(self->tp_subclasses == NULL);
         static_builtin_index_set(self, interp->types.num_builtins_initialized);
     }
     else {
