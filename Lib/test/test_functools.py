@@ -185,6 +185,19 @@ class TestPartial:
         flat = partial(signature, 'asdf', bar=True)
         self.assertEqual(signature(nested), signature(flat))
 
+    def test_nested_optimization_bug(self):
+        partial = self.partial
+        class Builder:
+            def __call__(self, tag, *children, **attrib):
+                return (tag, children, attrib)
+
+            def __getattr__(self, tag):
+                return partial(self, tag)
+
+        B = Builder()
+        m = B.m
+        assert m(1, 2, a=2) == ('m', (1, 2), dict(a=2))
+
     def test_nested_partial_with_attribute(self):
         # see issue 25137
         partial = self.partial
