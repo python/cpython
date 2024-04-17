@@ -768,18 +768,20 @@ class DictConfigurator(BaseConfigurator):
                 klass = cname
             else:
                 klass = self.resolve(cname)
-            if issubclass(klass, logging.handlers.MemoryHandler) and\
-                'target' in config:
-                # Special case for handler which refers to another handler
-                try:
-                    tn = config['target']
-                    th = self.config['handlers'][tn]
-                    if not isinstance(th, logging.Handler):
-                        config.update(config_copy)  # restore for deferred cfg
-                        raise TypeError('target not configured yet')
-                    config['target'] = th
-                except Exception as e:
-                    raise ValueError('Unable to set target handler %r' % tn) from e
+            if issubclass(klass, logging.handlers.MemoryHandler):
+                if 'flushLevel' in config:
+                    config['flushLevel'] = logging._checkLevel(config['flushLevel'])
+                if 'target' in config:
+                    # Special case for handler which refers to another handler
+                    try:
+                        tn = config['target']
+                        th = self.config['handlers'][tn]
+                        if not isinstance(th, logging.Handler):
+                            config.update(config_copy)  # restore for deferred cfg
+                            raise TypeError('target not configured yet')
+                        config['target'] = th
+                    except Exception as e:
+                        raise ValueError('Unable to set target handler %r' % tn) from e
             elif issubclass(klass, logging.handlers.QueueHandler):
                 # Another special case for handler which refers to other handlers
                 # if 'handlers' not in config:
