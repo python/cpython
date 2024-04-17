@@ -454,7 +454,9 @@ class HelpFormatter(object):
                 open, close = "()" if len(group_parts) > 1 else ("", "")
             else:
                 open, close = "[]"
-            parts[start:end] = [open + " | ".join(group_parts) + close]
+            parts[start] = open + " | ".join(group_parts) + close
+            for i in range(start + 1, end):
+                parts[i] = None
 
         # return the usage parts
         return [item for item in parts if item is not None]
