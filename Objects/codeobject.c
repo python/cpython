@@ -2352,12 +2352,14 @@ _PyCode_ConstantKey(PyObject *op)
 
             item_key = _PyCode_ConstantKey(item);
             if (item_key == NULL) {
+                Py_DECREF(item);
                 Py_DECREF(tuple);
                 return NULL;
             }
 
             assert(i < len);
             PyTuple_SET_ITEM(tuple, i, item_key);
+            Py_DECREF(item);
             i++;
         }
         set = PyFrozenSet_New(tuple);

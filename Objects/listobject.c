@@ -1289,7 +1289,6 @@ list_extend_set(PyListObject *self, PySetObject *other)
     PyObject **dest = self->ob_item + m;
     Py_BEGIN_CRITICAL_SECTION(other);
     while (_PySet_NextEntry((PyObject *)other, &setpos, &key, &hash)) {
-        Py_INCREF(key);
         FT_ATOMIC_STORE_PTR_RELEASE(*dest, key);
         dest++;
     }

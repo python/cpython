@@ -2981,7 +2981,7 @@ dict_set_fromkeys(PyInterpreterState *interp, PyDictObject *mp,
 
     _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(iterable);
     while (_PySet_NextEntry(iterable, &pos, &key, &hash)) {
-        if (insertdict(interp, mp, Py_NewRef(key), hash, Py_NewRef(value))) {
+        if (insertdict(interp, mp, key, hash, Py_NewRef(value))) {
             Py_DECREF(mp);
             mp = NULL;
             break;

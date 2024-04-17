@@ -3418,7 +3418,6 @@ save_set(PickleState *state, PicklerObject *self, PyObject *obj)
         int err = 0;
         Py_BEGIN_CRITICAL_SECTION(obj);
         while (_PySet_NextEntry(obj, &ppos, &item, &hash)) {
-            Py_INCREF(item);
             err = save(state, self, item, 0);
             Py_CLEAR(item);
             if (err < 0)

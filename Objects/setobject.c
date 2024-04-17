@@ -2669,7 +2669,7 @@ _PySet_NextEntry_lock_held(PyObject *set, Py_ssize_t *pos, PyObject **key, Py_ha
     if (ret == 0) {
         return 0;
     }
-    *key = entry->key;
+    *key = Py_NewRef(entry->key);
     *hash = entry->hash;
     return 1;
 }

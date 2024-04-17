@@ -922,6 +922,7 @@ merge_consts_recursive(PyObject *const_cache, PyObject *o)
         Py_hash_t hash;
         while (_PyFrozenSet_NextEntry(o, &pos, &item, &hash)) {
             PyObject *k = merge_consts_recursive(const_cache, item);
+            Py_DECREF(item);
             if (k == NULL) {
                 Py_DECREF(tuple);
                 Py_DECREF(key);

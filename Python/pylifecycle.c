@@ -2916,6 +2916,7 @@ _Py_DumpExtensionModules(int fd, PyInterpreterState *interp)
                     && PyUnicode_Compare(key, item) == 0)
                 {
                     is_stdlib_ext = 1;
+                    Py_DECREF(item);
                     break;
                 }
             }
