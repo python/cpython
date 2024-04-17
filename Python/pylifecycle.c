@@ -777,7 +777,7 @@ pycore_init_builtins(PyThreadState *tstate)
     }
 
     PyObject *modules = _PyImport_GetModules(interp);
-    if (_PyImport_FixupBuiltin(bimod, "builtins", modules) < 0) {
+    if (_PyImport_FixupBuiltin(tstate, bimod, "builtins", modules) < 0) {
         goto error;
     }
 

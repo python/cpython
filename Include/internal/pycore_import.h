@@ -23,6 +23,7 @@ extern void _PyImport_AcquireLock(PyInterpreterState *interp);
 extern int _PyImport_ReleaseLock(PyInterpreterState *interp);
 
 extern int _PyImport_FixupBuiltin(
+    PyThreadState *tstate,
     PyObject *mod,
     const char *name,            /* UTF-8 encoded string */
     PyObject *modules

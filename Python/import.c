@@ -1219,7 +1219,7 @@ error:
 
 
 static int
-fix_up_extension(PyObject *mod, PyModuleDef *def,
+fix_up_extension(PyThreadState *tstate, PyObject *mod, PyModuleDef *def,
                  PyObject *name, PyObject *filename,
                  PyObject *modules)
 {
@@ -1234,7 +1234,6 @@ fix_up_extension(PyObject *mod, PyModuleDef *def,
         filename = name;
     }
 
-    PyInterpreterState *interp = _PyInterpreterState_GET();
     if (def == NULL) {
         def = PyModule_GetDef(mod);
         if (def == NULL) {
@@ -1244,7 +1243,7 @@ fix_up_extension(PyObject *mod, PyModuleDef *def,
     }
 
     // XXX Why special-case the main interpreter?
-    if (_Py_IsMainInterpreter(interp) || def->m_size == -1) {
+    if (_Py_IsMainInterpreter(tstate->interp) || def->m_size == -1) {
 #ifndef NDEBUG
         PyModuleDef *cached = _extensions_cache_get(filename, name);
         assert(cached == NULL || cached == def);
@@ -1255,7 +1254,7 @@ fix_up_extension(PyObject *mod, PyModuleDef *def,
     }
 
     if (fix_up_extension_for_interpreter(
-                interp, mod, def, name, filename, modules) < 0)
+                tstate->interp, mod, def, name, filename, modules) < 0)
     {
         return -1;
     }
@@ -1367,8 +1366,8 @@ clear_singlephase_extension(PyInterpreterState *interp,
 }
 
 static PyObject *
-create_dynamic(struct _Py_ext_module_loader_info *info, PyObject *file,
-               PyObject *spec)
+create_dynamic(PyThreadState *tstate, struct _Py_ext_module_loader_info *info,
+               PyObject *file, PyObject *spec)
 {
     FILE *fp;
     struct _Py_ext_module_loader_result res;
@@ -1405,7 +1404,9 @@ create_dynamic(struct _Py_ext_module_loader_info *info, PyObject *file,
             goto finally;
         }
 
-        if (fix_up_extension(mod, res.def, info->name, info->path, NULL) < 0) {
+        if (fix_up_extension(
+                    tstate, mod, res.def, info->name, info->path, NULL) < 0)
+        {
             Py_CLEAR(mod);
             goto finally;
         }
@@ -1429,7 +1430,8 @@ finally:
 /*******************/
 
 int
-_PyImport_FixupBuiltin(PyObject *mod, const char *name, PyObject *modules)
+_PyImport_FixupBuiltin(PyThreadState *tstate, PyObject *mod, const char *name,
+                       PyObject *modules)
 {
     int res = -1;
     PyObject *nameobj;
@@ -1438,7 +1440,7 @@ _PyImport_FixupBuiltin(PyObject *mod, const char *name, PyObject *modules)
         return -1;
     }
     assert(mod != NULL && PyModule_Check(mod));
-    if (fix_up_extension(mod, NULL, nameobj, NULL, modules) < 0) {
+    if (fix_up_extension(tstate, mod, NULL, nameobj, NULL, modules) < 0) {
         goto finally;
     }
     res = 0;
@@ -1498,7 +1500,9 @@ create_builtin(PyThreadState *tstate, PyObject *name, PyObject *spec)
                 }
                 def->m_base.m_init = p->initfunc;
 
-                if (fix_up_extension(mod, def, name, NULL, modules) < 0) {
+                if (fix_up_extension(
+                            tstate, mod, def, name, NULL, modules) < 0)
+                {
                     return NULL;
                 }
                 return mod;
@@ -3838,7 +3842,7 @@ _imp_create_dynamic_impl(PyObject *module, PyObject *spec, PyObject *file)
     }
 
     /* Is multi-phase init or this is the first time being loaded. */
-    mod = create_dynamic(&info, file, spec);
+    mod = create_dynamic(tstate, &info, file, spec);
     if (mod == NULL) {
         goto finally;
     }
