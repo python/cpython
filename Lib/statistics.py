@@ -139,7 +139,7 @@ from decimal import Decimal
 from itertools import count, groupby, repeat
 from bisect import bisect_left, bisect_right
 from math import hypot, sqrt, fabs, exp, erf, tau, log, fsum, sumprod
-from math import isfinite, isinf, pi, cos, sin, tan, cosh, asin, atan
+from math import isfinite, isinf, pi, cos, sin, tan, cosh, asin, atan, acos
 from functools import reduce
 from operator import itemgetter
 from collections import Counter, namedtuple, defaultdict

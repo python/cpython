@@ -2426,6 +2426,17 @@ class TestKDE(unittest.TestCase):
         self.assertEqual(f_hat(-1.0), 1/2)
         self.assertEqual(f_hat(1.0), 1/2)
 
+    def test_kde_kernel_invcdfs(self):
+        kernel_invcdfs = statistics._kernel_invcdfs
+        kde = statistics.kde
+
+        # Verify that cdf / invcdf will round trip
+        xarr = [i/100 for i in range(-100, 101)]
+        for kernel, invcdf in kernel_invcdfs.items():
+            with self.subTest(kernel=kernel):
+                cdf = kde([0.0], h=1.0, kernel=kernel, cumulative=True)
+                for x in xarr:
+                    self.assertAlmostEqual(invcdf(cdf(x)), x, places=5)
 
 class TestQuantiles(unittest.TestCase):
 
