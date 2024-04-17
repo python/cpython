@@ -185,6 +185,19 @@ class TestPartial:
         flat = partial(signature, 'asdf', bar=True)
         self.assertEqual(signature(nested), signature(flat))
 
+    def test_nested_optimization_bug(self):
+        partial = self.partial
+        class Builder:
+            def __call__(self, tag, *children, **attrib):
+                return (tag, children, attrib)
+
+            def __getattr__(self, tag):
+                return partial(self, tag)
+
+        B = Builder()
+        m = B.m
+        assert m(1, 2, a=2) == ('m', (1, 2), dict(a=2))
+
     def test_nested_partial_with_attribute(self):
         # see issue 25137
         partial = self.partial
@@ -1867,7 +1880,7 @@ class TestLRU:
             return fib(n-1) + fib(n-2)
 
         if not support.Py_DEBUG:
-            depth = support.Py_C_RECURSION_LIMIT*2//7
+            depth = support.get_c_recursion_limit()*2//7
             with support.infinite_recursion():
                 fib(depth)
         if self.module == c_functools:

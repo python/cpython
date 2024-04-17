@@ -75,6 +75,10 @@ The :mod:`glob` module defines the following functions:
       Using the "``**``" pattern in large directory trees may consume
       an inordinate amount of time.
 
+   .. note::
+      This function may return duplicate path names if *pathname*
+      contains multiple "``**``" patterns and *recursive* is true.
+
    .. versionchanged:: 3.5
       Support for recursive globs using "``**``".
 
@@ -93,6 +97,10 @@ The :mod:`glob` module defines the following functions:
 
    .. audit-event:: glob.glob pathname,recursive glob.iglob
    .. audit-event:: glob.glob/2 pathname,recursive,root_dir,dir_fd glob.iglob
+
+   .. note::
+      This function may return duplicate path names if *pathname*
+      contains multiple "``**``" patterns and *recursive* is true.
 
    .. versionchanged:: 3.5
       Support for recursive globs using "``**``".
