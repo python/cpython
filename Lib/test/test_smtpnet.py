@@ -10,7 +10,7 @@ ssl = import_helper.import_module("ssl")
 
 support.requires("network")
 
-SMTP_TEST_SERVER = os.getenv('SMTP_TEST_SERVER', 'smtp.gmail.com')
+SMTP_TEST_SERVER = os.getenv('CPYTHON_TEST_SMTP_SERVER', 'smtp.gmail.com')
 
 def check_ssl_verifiy(host, port):
     context = ssl.create_default_context()
