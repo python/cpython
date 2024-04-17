@@ -59,10 +59,14 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_REPLACE_WITH_TRUE] = 0,
     [_UNARY_INVERT] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_GUARD_BOTH_INT] = HAS_EXIT_FLAG,
+    [_GUARD_NOS_INT] = HAS_EXIT_FLAG,
+    [_GUARD_TOS_INT] = HAS_EXIT_FLAG,
     [_BINARY_OP_MULTIPLY_INT] = HAS_ERROR_FLAG | HAS_PURE_FLAG,
     [_BINARY_OP_ADD_INT] = HAS_ERROR_FLAG | HAS_PURE_FLAG,
     [_BINARY_OP_SUBTRACT_INT] = HAS_ERROR_FLAG | HAS_PURE_FLAG,
     [_GUARD_BOTH_FLOAT] = HAS_EXIT_FLAG,
+    [_GUARD_NOS_FLOAT] = HAS_EXIT_FLAG,
+    [_GUARD_TOS_FLOAT] = HAS_EXIT_FLAG,
     [_BINARY_OP_MULTIPLY_FLOAT] = HAS_PURE_FLAG,
     [_BINARY_OP_ADD_FLOAT] = HAS_PURE_FLAG,
     [_BINARY_OP_SUBTRACT_FLOAT] = HAS_PURE_FLAG,
@@ -352,9 +356,13 @@ const char *const _PyOpcode_uop_name[MAX_UOP_ID+1] = {
     [_GUARD_IS_NOT_NONE_POP] = "_GUARD_IS_NOT_NONE_POP",
     [_GUARD_IS_TRUE_POP] = "_GUARD_IS_TRUE_POP",
     [_GUARD_KEYS_VERSION] = "_GUARD_KEYS_VERSION",
+    [_GUARD_NOS_FLOAT] = "_GUARD_NOS_FLOAT",
+    [_GUARD_NOS_INT] = "_GUARD_NOS_INT",
     [_GUARD_NOT_EXHAUSTED_LIST] = "_GUARD_NOT_EXHAUSTED_LIST",
     [_GUARD_NOT_EXHAUSTED_RANGE] = "_GUARD_NOT_EXHAUSTED_RANGE",
     [_GUARD_NOT_EXHAUSTED_TUPLE] = "_GUARD_NOT_EXHAUSTED_TUPLE",
+    [_GUARD_TOS_FLOAT] = "_GUARD_TOS_FLOAT",
+    [_GUARD_TOS_INT] = "_GUARD_TOS_INT",
     [_GUARD_TYPE_VERSION] = "_GUARD_TYPE_VERSION",
     [_INIT_CALL_BOUND_METHOD_EXACT_ARGS] = "_INIT_CALL_BOUND_METHOD_EXACT_ARGS",
     [_INIT_CALL_PY_EXACT_ARGS] = "_INIT_CALL_PY_EXACT_ARGS",
@@ -566,6 +574,10 @@ int _PyUop_num_popped(int opcode, int oparg)
             return 1;
         case _GUARD_BOTH_INT:
             return 2;
+        case _GUARD_NOS_INT:
+            return 2;
+        case _GUARD_TOS_INT:
+            return 1;
         case _BINARY_OP_MULTIPLY_INT:
             return 2;
         case _BINARY_OP_ADD_INT:
@@ -574,6 +586,10 @@ int _PyUop_num_popped(int opcode, int oparg)
             return 2;
         case _GUARD_BOTH_FLOAT:
             return 2;
+        case _GUARD_NOS_FLOAT:
+            return 2;
+        case _GUARD_TOS_FLOAT:
+            return 1;
         case _BINARY_OP_MULTIPLY_FLOAT:
             return 2;
         case _BINARY_OP_ADD_FLOAT:
