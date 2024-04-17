@@ -402,7 +402,7 @@ class AsyncGenTest(unittest.TestCase):
         with self.assertRaises(GeneratorExit):
             x.send(None)
             del x
-            gc.collect()
+            gc_collect()
 
     def test_async_gen_api_01(self):
         async def gen():
@@ -1810,7 +1810,7 @@ class TestUnawaitedWarnings(unittest.TestCase):
         with self.assertRaises(MyException):
             g.aclose().throw(MyException)
             del g
-            gc.collect()
+            gc_collect()
 
 
 if __name__ == "__main__":
