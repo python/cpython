@@ -1287,12 +1287,10 @@ list_extend_set(PyListObject *self, PySetObject *other)
     Py_hash_t hash;
     PyObject *key;
     PyObject **dest = self->ob_item + m;
-    Py_BEGIN_CRITICAL_SECTION(other);
     while (_PySet_NextEntry((PyObject *)other, &setpos, &key, &hash)) {
         FT_ATOMIC_STORE_PTR_RELEASE(*dest, key);
         dest++;
     }
-    Py_END_CRITICAL_SECTION();
     Py_SET_SIZE(self, m + n);
     return 0;
 }
