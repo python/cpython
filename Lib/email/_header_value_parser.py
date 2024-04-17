@@ -1773,7 +1773,7 @@ def get_name_addr(value):
     leader = None
     if not value:
         raise errors.HeaderParseError(
-            "expected name-addr but but found '{}'".format(value))
+            "expected name-addr but found '{}'".format(value))
     if value[0] in CFWS_LEADER:
         leader, value = get_cfws(value)
         if not value:
