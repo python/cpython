@@ -702,7 +702,6 @@
     added = '3.2'
 [function.PyEval_InitThreads]
     added = '3.2'
-    abi_only = true
 [function.PyEval_ReleaseLock]
     added = '3.2'
     abi_only = true

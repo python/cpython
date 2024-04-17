@@ -2027,9 +2027,9 @@ Removed
   added in Python 3.8 and the old macros were deprecated in Python 3.11.
   (Contributed by Irit Katriel in :gh:`105111`.)
 
-* Remove ``PyEval_InitThreads()`` and ``PyEval_ThreadsInitialized()``
-  functions, deprecated in Python 3.9. Since Python 3.7, ``Py_Initialize()``
-  always creates the GIL: calling ``PyEval_InitThreads()`` did nothing and
+* Remove ``PyEval_ThreadsInitialized()``
+  function, deprecated in Python 3.9. Since Python 3.7, ``Py_Initialize()``
+  always creates the GIL: calling ``PyEval_InitThreads()`` does nothing and
   ``PyEval_ThreadsInitialized()`` always returned non-zero.
   (Contributed by Victor Stinner in :gh:`105182`.)
 
