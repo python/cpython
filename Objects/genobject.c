@@ -11,6 +11,7 @@
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
 #include "pycore_opcode_utils.h"  // RESUME_AFTER_YIELD_FROM
+#include "pycore_pyatomic_ft_wrappers.h" // FT_ATOMIC_*
 #include "pycore_pyerrors.h"      // _PyErr_ClearExcState()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 
@@ -329,10 +330,11 @@ gen_close_iter(PyObject *yf)
 static inline bool
 is_resume(_Py_CODEUNIT *instr)
 {
+    uint8_t code = FT_ATOMIC_LOAD_UINT8_RELAXED(instr->op.code);
     return (
-        instr->op.code == RESUME ||
-        instr->op.code == RESUME_CHECK ||
-        instr->op.code == INSTRUMENTED_RESUME
+        code == RESUME ||
+        code == RESUME_CHECK ||
+        code == INSTRUMENTED_RESUME
     );
 }
 

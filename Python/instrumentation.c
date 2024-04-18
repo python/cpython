@@ -625,9 +625,10 @@ de_instrument(PyCodeObject *code, int i, int event)
         return;
     }
     CHECK(_PyOpcode_Deopt[deinstrumented] == deinstrumented);
-    *opcode_ptr = deinstrumented;
+    FT_ATOMIC_STORE_UINT8_RELAXED(*opcode_ptr, deinstrumented);
     if (_PyOpcode_Caches[deinstrumented]) {
-        instr[1].counter = adaptive_counter_warmup();
+        FT_ATOMIC_STORE_UINT16_RELAXED(instr[1].counter.as_counter,
+                                       adaptive_counter_warmup().as_counter);
     }
 }
 
@@ -702,8 +703,10 @@ instrument(PyCodeObject *code, int i)
         int deopt = _PyOpcode_Deopt[opcode];
         int instrumented = INSTRUMENTED_OPCODES[deopt];
         assert(instrumented);
-        *opcode_ptr = instrumented;
+        FT_ATOMIC_STORE_UINT8_RELAXED(*opcode_ptr, instrumented);
         if (_PyOpcode_Caches[deopt]) {
+          FT_ATOMIC_STORE_UINT16_RELAXED(instr[1].counter.as_counter,
+                                         adaptive_counter_warmup().as_counter);
             instr[1].counter = adaptive_counter_warmup();
         }
     }
