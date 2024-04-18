@@ -349,12 +349,13 @@ class PosixPathTest(unittest.TestCase):
     def test_expanduser_pwd2(self):
         pwd = import_helper.import_module('pwd')
         for e in pwd.getpwall():
-            name = e.pw_name
-            home = e.pw_dir
-            home = home.rstrip('/') or '/'
-            self.assertEqual(posixpath.expanduser('~' + name), home)
-            self.assertEqual(posixpath.expanduser(os.fsencode('~' + name)),
-                             os.fsencode(home))
+            with self.subTest(entry=e):
+                name = e.pw_name
+                home = e.pw_dir
+                home = home.rstrip('/') or '/'
+                self.assertEqual(posixpath.expanduser('~' + name), home)
+                self.assertEqual(posixpath.expanduser(os.fsencode('~' + name)),
+                                 os.fsencode(home))
 
     NORMPATH_CASES = [
         ("", "."),
