@@ -1027,8 +1027,7 @@ finally:
 }
 
 static int
-_extensions_cache_set(PyObject *filename, PyObject *name, PyModuleDef *def,
-                      bool replace)
+_extensions_cache_set(PyObject *filename, PyObject *name, PyModuleDef *def)
 {
     int res = -1;
     assert(def != NULL);
@@ -1057,14 +1056,11 @@ _extensions_cache_set(PyObject *filename, PyObject *name, PyModuleDef *def,
         /* It was previously deleted. */
         entry->value = def;
     }
-    /* We expect it to be static, so it must be the same pointer. */
-    else if ((PyModuleDef *)entry->value == def) {
+    else {
+        /* We expect it to be static, so it must be the same pointer. */
+        assert((PyModuleDef *)entry->value == def);
         /* It was already added. */
         already_set = 1;
-    }
-    else {
-        assert(replace);
-        entry->value = def;
     }
 
     if (!already_set) {
@@ -1271,7 +1267,7 @@ fix_up_extension(PyThreadState *tstate, PyObject *mod, PyModuleDef *def,
         PyModuleDef *cached = _extensions_cache_get(filename, name);
         assert(cached == NULL || cached == def);
 #endif
-        if (_extensions_cache_set(filename, name, def, false) < 0) {
+        if (_extensions_cache_set(filename, name, def) < 0) {
             return -1;
         }
     }
