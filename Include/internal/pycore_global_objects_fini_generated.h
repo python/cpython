@@ -871,7 +871,6 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(consts));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(context));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(contravariant));
-    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(cookie));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(copy));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(copyreg));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(coro));

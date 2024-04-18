@@ -921,9 +921,6 @@ _PyUnicode_InitStaticStrings(PyInterpreterState *interp) {
     string = &_Py_ID(contravariant);
     assert(_PyUnicode_CheckConsistency(string, 1));
     _PyUnicode_InternInPlace(interp, &string);
-    string = &_Py_ID(cookie);
-    assert(_PyUnicode_CheckConsistency(string, 1));
-    _PyUnicode_InternInPlace(interp, &string);
     string = &_Py_ID(copy);
     assert(_PyUnicode_CheckConsistency(string, 1));
     _PyUnicode_InternInPlace(interp, &string);

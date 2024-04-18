@@ -360,7 +360,6 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(consts)
         STRUCT_FOR_ID(context)
         STRUCT_FOR_ID(contravariant)
-        STRUCT_FOR_ID(cookie)
         STRUCT_FOR_ID(copy)
         STRUCT_FOR_ID(copyreg)
         STRUCT_FOR_ID(coro)

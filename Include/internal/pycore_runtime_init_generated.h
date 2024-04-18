@@ -869,7 +869,6 @@ extern "C" {
     INIT_ID(consts), \
     INIT_ID(context), \
     INIT_ID(contravariant), \
-    INIT_ID(cookie), \
     INIT_ID(copy), \
     INIT_ID(copyreg), \
     INIT_ID(coro), \
