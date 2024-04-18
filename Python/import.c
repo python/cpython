@@ -1191,21 +1191,21 @@ is_core_module(PyInterpreterState *interp, PyObject *name, PyObject *filename)
 }
 
 
-static struct PyModuleDef failed_ext_unknown = {
-    PyModuleDef_HEAD_INIT,
-    .m_name="unknown",
-};
 static struct PyModuleDef failed_ext_singlephase = {
     PyModuleDef_HEAD_INIT,
-    .m_name="singlephase",
+    .m_name="singlephase - failed",
 };
 static struct PyModuleDef failed_ext_multiphase = {
     PyModuleDef_HEAD_INIT,
-    .m_name="multiphase",
+    .m_name="multiphase - failed",
 };
 static struct PyModuleDef failed_ext_invalid = {
     PyModuleDef_HEAD_INIT,
-    .m_name="invalid",
+    .m_name="invalid - failed",
+};
+static struct PyModuleDef ext_multiphase = {
+    PyModuleDef_HEAD_INIT,
+    .m_name="multiphase",
 };
 
 static enum _Py_ext_module_loader_result_kind
@@ -1219,9 +1219,6 @@ get_extension_kind(PyModuleDef *def, bool *p_failed)
         failed = false;
         kind = _Py_ext_module_loader_result_SINGLEPHASE;
     }
-    else if (def == &failed_ext_unknown) {
-        kind = _Py_ext_module_loader_result_UNKNOWN;
-    }
     else if (def == &failed_ext_singlephase) {
         kind = _Py_ext_module_loader_result_SINGLEPHASE;
     }
@@ -1230,6 +1227,10 @@ get_extension_kind(PyModuleDef *def, bool *p_failed)
     }
     else if (def == &failed_ext_invalid) {
         kind = _Py_ext_module_loader_result_INVALID;
+    }
+    else if (def == &ext_multiphase) {
+        kind = _Py_ext_module_loader_result_MULTIPHASE;
+        failed = false;
     }
     else {
         failed = false;
@@ -1247,16 +1248,15 @@ get_extension_kind(PyModuleDef *def, bool *p_failed)
 }
 
 static PyModuleDef *
-get_failed_extension_def(enum _Py_ext_module_loader_result_kind kind)
+get_extension_def(enum _Py_ext_module_loader_result_kind kind, bool failed)
 {
-    if (kind == _Py_ext_module_loader_result_UNKNOWN) {
-        return &failed_ext_unknown;
+    if (kind == _Py_ext_module_loader_result_MULTIPHASE) {
+        return failed ? &failed_ext_multiphase : &ext_multiphase;
     }
-    else if (kind == _Py_ext_module_loader_result_SINGLEPHASE) {
+
+    assert(failed);
+    if (kind == _Py_ext_module_loader_result_SINGLEPHASE) {
         return &failed_ext_singlephase;
-    }
-    else if (kind == _Py_ext_module_loader_result_MULTIPHASE) {
-        return &failed_ext_multiphase;
     }
     else {
         assert(kind == _Py_ext_module_loader_result_INVALID);
@@ -1274,15 +1274,18 @@ update_extensions_cache(PyThreadState *tstate,
                         PyObject *path, PyObject *name, PyModuleDef *def,
                         struct cached_singlephase_info *singlephase)
 {
+    assert(def != NULL);
     PyObject *m_copy = NULL;
-    PyObject *exc = NULL;
+    PyObject *exc = _PyErr_GetRaisedException(tstate);
 
     bool failed;
     enum _Py_ext_module_loader_result_kind kind =
                                     get_extension_kind(def, &failed);
+    assert(!PyErr_Occurred());
 
     /* Copy the module's __dict__, if applicable. */
     if (failed) {
+        assert(singlephase == NULL || singlephase->m_dict == NULL);
         assert(def->m_base.m_copy == NULL);
     }
     else if (singlephase == NULL) {
@@ -1323,31 +1326,44 @@ update_extensions_cache(PyThreadState *tstate,
             }
             m_copy = PyDict_Copy(singlephase->m_dict);
             if (m_copy == NULL) {
-                /* We ignore the error until the end of the function.
-                 * We could probably also throw it away, which would
-                 * effectively mark the module as not loadable. */
-                exc = _PyErr_GetRaisedException(tstate);
+                /* Ignoring the error is okay since at worst it would
+                 * effectively mark this broken module as not loadeable. */
+#ifndef NDEBUG
+                PyErr_PrintEx(0);
+#else
+                PyErr_Clear();
+#endif
+                if (_PyInterpreterState_GetConfig(tstate->interp)->verbose) {
+                    PySys_FormatStderr(
+                            "# failed to copy __dict__ for extension %U\n",
+                            name);
+                }
             }
-        }
-        else {
-            assert(def->m_base.m_copy == NULL);
         }
     }
 
+    /* Ideally we would never reach update_extensions_cache() more
+     * than once for any given module, and thus the cache lookup
+     * here would always return NULL.  However, for multi-phase
+     * init modules we fully reload every time.  For single-phase
+     * we preserve the long-standing behavior of always trying again
+     * if the previous load attempt failed.
+     *
+     * In both cases we may consider changing that behavior
+     * in the future.  In the meantime, must must ensure there
+     * wasn't a previous successful load (and cache). */
 #ifndef NDEBUG
-    /* Double check the cached def, if any. */
     PyModuleDef *cached = _extensions_cache_get(path, name);
-    if (cached != NULL) {
-        bool cached_failed;
-        enum _Py_ext_module_loader_result_kind cached_kind =
-                                get_extension_kind(cached, &cached_failed);
-        assert(!failed || cached_failed);
-        assert(failed || cached_failed || (def == cached));
-        assert(!cached_failed
-                || kind == cached_kind
-                || (cached_kind != _Py_ext_module_loader_result_SINGLEPHASE
-                    && cached_kind != _Py_ext_module_loader_result_MULTIPHASE));
+    if (kind == _Py_ext_module_loader_result_MULTIPHASE) {
+        assert(cached == NULL || cached == def);
     }
+    else {
+        assert(kind == _Py_ext_module_loader_result_SINGLEPHASE);
+        assert(cached == NULL || cached == def);
+    }
+    assert(cached == NULL
+           || (cached == def
+               && kind == _Py_ext_module_loader_result_MULTIPHASE));
 #endif
 
     /* Update the cache.
@@ -1362,11 +1378,11 @@ update_extensions_cache(PyThreadState *tstate,
 
     /* Finish up. */
     if (m_copy != NULL) {
-        def->m_base.m_copy = Py_NewRef(m_copy);
-        Py_XDECREF(m_copy);
+        /* The def "steals" the reference. */
+        def->m_base.m_copy = m_copy;
     }
     if (exc != NULL) {
-        _PyErr_SetRaisedException(tstate, exc);
+        _PyErr_ChainExceptions1(exc);
         return -1;
     }
 
@@ -1511,18 +1527,41 @@ import_find_extension(PyThreadState *tstate,
     if (def == NULL) {
         return NULL;
     }
-    else {
-        bool failed;
-        enum _Py_ext_module_loader_result_kind kind =
-                                get_extension_kind(def, &failed);
-        if (failed) {
-            // XXX Don't try again?
-            return NULL;
-        }
-        else if (kind == _Py_ext_module_loader_result_MULTIPHASE) {
-            return NULL;
-        }
-        assert(kind == _Py_ext_module_loader_result_SINGLEPHASE);
+
+    if (_PyInterpreterState_GetConfig(tstate->interp)->verbose) {
+        PySys_FormatStderr("import %U # previously loaded (%R)\n",
+                           info->name, info->path);
+    }
+
+    bool failed;
+    enum _Py_ext_module_loader_result_kind kind =
+                            get_extension_kind(def, &failed);
+    if (kind == _Py_ext_module_loader_result_INVALID) {
+        /* The first time around we couldn't tell what kind of
+         * module it was, so we will try again.  It's highly
+         * likely the outcome will be the same though. */
+        assert(failed);
+        // XXX Raise an exception?
+        return NULL;
+    }
+    else if (kind == _Py_ext_module_loader_result_MULTIPHASE) {
+        /* We always fully reload multi-phase init modules.
+         * If we were to cache the actual module def rather than
+         * a dummy, we could cut out a bunch of duplicate effort.
+         * However, that assumes that the init function is as
+         * minimal as it's supported to be. */
+        // XXX Raise an exception if failed?  Do so optionally?
+        return NULL;
+    }
+
+    assert(kind == _Py_ext_module_loader_result_SINGLEPHASE);
+    // XXX Do the single-phase check here. */
+
+    if (failed) {
+        /* For now we always try again.  This preserves
+         * the long-standing existing behavior. */
+        // XXX Raise an exception if failed?  Do so optionally?
+        return NULL;
     }
 
     /* It may have been successfully imported previously
@@ -1539,11 +1578,6 @@ import_find_extension(PyThreadState *tstate,
         return NULL;
     }
 
-    int verbose = _PyInterpreterState_GetConfig(tstate->interp)->verbose;
-    if (verbose) {
-        PySys_FormatStderr("import %U # previously loaded (%R)\n",
-                           info->name, info->path);
-    }
     return mod;
 }
 
@@ -1585,7 +1619,6 @@ import_run_extension(PyThreadState *tstate, PyModInitFunction p0,
     PyObject *mod = NULL;
     PyModuleDef *def = NULL;
     bool iscore = is_core_module(tstate->interp, info->name, info->path);
-    int verbose = _PyInterpreterState_GetConfig(tstate->interp)->verbose;
 
     struct _Py_ext_module_loader_result res;
     int rc = _PyImport_RunModInitFunc(p0, info, &res);
@@ -1599,7 +1632,7 @@ import_run_extension(PyThreadState *tstate, PyModInitFunction p0,
             assert(!PyErr_Occurred());
         }
         /* We discard res.def. */
-        def = get_failed_extension_def(res.kind);
+        def = get_extension_def(res.kind, true);
         /* We must do some bookkeeping before we bail out. */
     }
     else {
@@ -1627,7 +1660,7 @@ import_run_extension(PyThreadState *tstate, PyModInitFunction p0,
 #else
                 PyErr_Clear();
 #endif
-                if (verbose) {
+                if (_PyInterpreterState_GetConfig(tstate->interp)->verbose) {
                     PySys_FormatStderr("# extension %U fixup failed\n",
                                        info->name);
                 }
@@ -1655,7 +1688,7 @@ import_run_extension(PyThreadState *tstate, PyModInitFunction p0,
 #else
         PyErr_Clear();
 #endif
-        if (verbose) {
+        if (_PyInterpreterState_GetConfig(tstate->interp)->verbose) {
             PySys_FormatStderr("# failed to globally cache extension %U\n",
                                info->name);
         }
