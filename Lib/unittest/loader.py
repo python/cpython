@@ -84,9 +84,13 @@ class TestLoader(object):
             raise TypeError("Test cases should not be derived from "
                             "TestSuite. Maybe you meant to derive from "
                             "TestCase?")
-        testCaseNames = self.getTestCaseNames(testCaseClass)
-        if not testCaseNames and hasattr(testCaseClass, 'runTest'):
-            testCaseNames = ['runTest']
+        if testCaseClass in (case.TestCase, case.FunctionTestCase):
+            # We don't load any tests from base types that should not be loaded.
+            testCaseNames = []
+        else:
+            testCaseNames = self.getTestCaseNames(testCaseClass)
+            if not testCaseNames and hasattr(testCaseClass, 'runTest'):
+                testCaseNames = ['runTest']
         loaded_suite = self.suiteClass(map(testCaseClass, testCaseNames))
         return loaded_suite
 
@@ -95,7 +99,11 @@ class TestLoader(object):
         tests = []
         for name in dir(module):
             obj = getattr(module, name)
-            if isinstance(obj, type) and issubclass(obj, case.TestCase):
+            if (
+                isinstance(obj, type)
+                and issubclass(obj, case.TestCase)
+                and obj not in (case.TestCase, case.FunctionTestCase)
+            ):
                 tests.append(self.loadTestsFromTestCase(obj))
 
         load_tests = getattr(module, 'load_tests', None)
@@ -164,7 +172,11 @@ class TestLoader(object):
 
         if isinstance(obj, types.ModuleType):
             return self.loadTestsFromModule(obj)
-        elif isinstance(obj, type) and issubclass(obj, case.TestCase):
+        elif (
+            isinstance(obj, type)
+            and issubclass(obj, case.TestCase)
+            and obj not in (case.TestCase, case.FunctionTestCase)
+        ):
             return self.loadTestsFromTestCase(obj)
         elif (isinstance(obj, types.FunctionType) and
               isinstance(parent, type) and
@@ -242,6 +254,7 @@ class TestLoader(object):
         Paths are sorted before being imported to ensure reproducible execution
         order even on filesystems with non-alphabetical ordering like ext3/4.
         """
+        original_top_level_dir = self._top_level_dir
         set_implicit_top = False
         if top_level_dir is None and self._top_level_dir is not None:
             # make top_level_dir optional if called from load_tests in a package
@@ -295,6 +308,7 @@ class TestLoader(object):
             raise ImportError('Start directory is not importable: %r' % start_dir)
 
         tests = list(self._find_tests(start_dir, pattern))
+        self._top_level_dir = original_top_level_dir
         return self.suiteClass(tests)
 
     def _get_directory_containing_module(self, module_name):

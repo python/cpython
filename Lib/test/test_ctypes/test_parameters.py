@@ -1,4 +1,3 @@
-import _ctypes_test
 import unittest
 import test.support
 from ctypes import (CDLL, PyDLL, ArgumentError,
@@ -14,6 +13,8 @@ from ctypes import (CDLL, PyDLL, ArgumentError,
                     c_long, c_ulong,
                     c_longlong, c_ulonglong,
                     c_float, c_double, c_longdouble)
+from test.support import import_helper
+_ctypes_test = import_helper.import_module("_ctypes_test")
 
 
 class SimpleTypesTestCase(unittest.TestCase):
@@ -157,7 +158,7 @@ class SimpleTypesTestCase(unittest.TestCase):
         # TypeError: has no from_param method
         self.assertRaises(TypeError, setattr, func, "argtypes", (object,))
 
-        class Adapter(object):
+        class Adapter:
             def from_param(cls, obj):
                 return None
 
@@ -165,7 +166,7 @@ class SimpleTypesTestCase(unittest.TestCase):
         self.assertEqual(func(None), None)
         self.assertEqual(func(object()), None)
 
-        class Adapter(object):
+        class Adapter:
             def from_param(cls, obj):
                 return obj
 
@@ -174,7 +175,7 @@ class SimpleTypesTestCase(unittest.TestCase):
         self.assertRaises(ArgumentError, func, object())
         self.assertEqual(func(c_void_p(42)), 42)
 
-        class Adapter(object):
+        class Adapter:
             def from_param(cls, obj):
                 raise ValueError(obj)
 

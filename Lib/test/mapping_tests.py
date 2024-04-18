@@ -1,7 +1,7 @@
 # tests common to dict and UserDict
 import unittest
 import collections
-import sys
+from test.support import get_c_recursion_limit
 
 
 class BasicTestMappingProtocol(unittest.TestCase):
@@ -624,7 +624,7 @@ class TestHashMappingProtocol(TestMappingProtocol):
 
     def test_repr_deep(self):
         d = self._empty_mapping()
-        for i in range(sys.getrecursionlimit() + 100):
+        for i in range(get_c_recursion_limit() + 1):
             d0 = d
             d = self._empty_mapping()
             d[1] = d0

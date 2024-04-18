@@ -1,3 +1,0 @@
-``PyTypeObject.tp_bases`` (and ``tp_mro``) for builtin static types are now
-shared by all interpreters, whereas in 3.12-beta1 they were stored on
-``PyInterpreterState``.  Also note that now the tuples are immortal objects.

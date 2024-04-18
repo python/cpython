@@ -1,3 +1,7 @@
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
 #include "blob.h"
 #include "util.h"
 
@@ -97,10 +101,12 @@ pysqlite_close_all_blobs(pysqlite_Connection *self)
 {
     for (int i = 0; i < PyList_GET_SIZE(self->blobs); i++) {
         PyObject *weakref = PyList_GET_ITEM(self->blobs, i);
-        PyObject *blob = PyWeakref_GetObject(weakref);
-        if (!Py_IsNone(blob)) {
-            close_blob((pysqlite_Blob *)blob);
+        PyObject *blob;
+        if (!PyWeakref_GetRef(weakref, &blob)) {
+            continue;
         }
+        close_blob((pysqlite_Blob *)blob);
+        Py_DECREF(blob);
     }
 }
 
@@ -570,7 +576,7 @@ static PyMethodDef blob_methods[] = {
 };
 
 static struct PyMemberDef blob_members[] = {
-    {"__weaklistoffset__", T_PYSSIZET, offsetof(pysqlite_Blob, in_weakreflist), READONLY},
+    {"__weaklistoffset__", Py_T_PYSSIZET, offsetof(pysqlite_Blob, in_weakreflist), Py_READONLY},
     {NULL},
 };
 
