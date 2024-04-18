@@ -852,14 +852,16 @@ using ``[]``.
    .. versionadded:: 3.11
 
 .. data:: Never
+.. data:: NoReturn
 
-   The `bottom type <https://en.wikipedia.org/wiki/Bottom_type>`_,
-   a type that has no members.
+   ``Never`` and ``NoReturn`` are
+   `bottom types <https://en.wikipedia.org/wiki/Bottom_type>`_,
+   types that have no members.
 
-   This can be used to define a function that should never be
+   They can be used to define a function that should never be
    called, as there are no valid arguments::
 
-      from typing import Never
+      from typing import Never  # or NoReturn
 
       def never_call_me(arg: Never) -> None:
           pass
@@ -872,46 +874,27 @@ using ``[]``.
               case str():
                   print("It's a str")
               case _:
-                  never_call_me(arg)  # OK, arg is of type Never
+                  never_call_me(arg)  # OK, arg is of type Never (or NoReturn)
 
-   ``Never`` can also be used to indicate that a function never returns::
+   Or to indicate that a function never returns::
 
-      from typing import Never
+      from typing import Never  # or NoReturn
 
       def stop() -> Never:
           raise RuntimeError('no way')
 
-   You can also use :data:`NoReturn` for this purpose. Decide which notation
-   you prefer.
+   ``Never`` and ``NoReturn`` have the same meaning in the type system.
+   Users may make a stylistic choice about which one is preferred in which context.
+
+   .. versionadded:: 3.6.2
+
+      Added ``NoReturn``.
 
    .. versionadded:: 3.11
 
-      On older Python versions, :data:`NoReturn` may be used as a
-      replacement for ``Never``, which was added to make the use as a
+      Added ``Never``, to make the use as a
       `bottom type <https://en.wikipedia.org/wiki/Bottom_type>`_ more
       explicit. Type checkers should treat the two equivalently.
-
-.. data:: NoReturn
-
-   Special type indicating that a function never returns.
-
-   For example::
-
-      from typing import NoReturn
-
-      def stop() -> NoReturn:
-          raise RuntimeError('no way')
-
-   You can also use :data:`Never` for this purpose. Decide which notation
-   you prefer.
-
-   ``NoReturn`` can also be used as a
-   `bottom type <https://en.wikipedia.org/wiki/Bottom_type>`_, a type that
-   has no values. Starting in Python 3.11, the :data:`Never` type should
-   be used for this concept instead. Type checkers should treat the two
-   equivalently.
-
-   .. versionadded:: 3.6.2
 
 .. data:: Self
 
