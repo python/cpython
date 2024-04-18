@@ -895,7 +895,7 @@ setup_context(Py_ssize_t stack_level,
     if (f == NULL) {
         globals = interp->sysdict;
         *filename = PyUnicode_FromString("<sys>");
-        *lineno = 1;
+        *lineno = 0;
     }
     else {
         globals = f->f_frame->f_globals;
