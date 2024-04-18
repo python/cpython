@@ -397,6 +397,10 @@ executor_traverse(PyObject *o, visitproc visit, void *arg)
 static PyObject *
 get_jit_code(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
+#ifndef _Py_JIT
+    PyErr_SetString(PyExc_RuntimeError, "JIT support not enabled.");
+    return NULL;
+#endif
     if (!Py_IS_TYPE(self, &_PyUOpExecutor_Type)) {
         PyErr_SetString(PyExc_TypeError, "get_jit_code() requires a uop_executor object.");
         return NULL;
