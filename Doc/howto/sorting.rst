@@ -271,12 +271,13 @@ To accommodate those situations, Python provides
 to make it usable as a key function:
 
 ..doctest::
->>> from functools import cmp_to_key
->>> from locale import strcoll
 
->>> names = 'Zoë Åbjørn Núñez Élana Zeke Abe Nubia Eloise'.split()
->>> sorted(names, key=cmp_to_key(strcoll))  # locale-aware sort order
-['Abe', 'Eloise', 'Nubia', 'Núñez', 'Zeke', 'Zoë', 'Åbjørn', 'Élana']
+   >>> from functools import cmp_to_key
+   >>> from locale import strcoll
+
+   >>> names = 'Zoë Åbjørn Núñez Élana Zeke Abe Nubia Eloise'.split()
+   >>> sorted(names, key=cmp_to_key(strcoll))  # locale-aware sort order
+   ['Abe', 'Eloise', 'Nubia', 'Núñez', 'Zeke', 'Zoë', 'Åbjørn', 'Élana']
 
 Odds and Ends
 =============
