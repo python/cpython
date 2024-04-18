@@ -117,9 +117,7 @@ class TestAndroidOutput(unittest.TestCase):
                     write("\u4e2d\u6587")  # Chinese
 
                     # Non-BMP emoji
-                    write("\U0001f600",
-                          [r"\xed\xa0\xbd\xed\xb8\x80" if api_level < 23
-                           else "\U0001f600"])
+                    write("\U0001f600")
 
                     # Null characters will truncate a message.
                     write("\u0000", [] if api_level < 24 else [""])
@@ -223,9 +221,7 @@ class TestAndroidOutput(unittest.TestCase):
                 write(b"\xe4\xb8\xad\xe6\x96\x87")  # Chinese
 
                 # Non-BMP emoji
-                write(b"\xf0\x9f\x98\x80",
-                      [r"\xed\xa0\xbd\xed\xb8\x80" if api_level < 23
-                       else "\U0001f600"])
+                write(b"\xf0\x9f\x98\x80")
 
                 # Null characters will truncate a message.
                 write(b"\x00", [] if api_level < 24 else [""])
