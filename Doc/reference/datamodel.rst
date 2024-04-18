@@ -627,12 +627,6 @@ Most of these attributes check the type of the assigned value:
      - A :class:`dictionary <dict>` containing defaults for keyword-only
        :term:`parameters <parameter>`.
 
-   * - .. attribute:: function.__static_attributes__
-     - A :class:`tuple` containing names of attributes of this class which
-       are accessed through ``self.X`` from any function in its body.
-
-       .. versionadded:: 3.13
-
 Function objects also support getting and setting arbitrary attributes, which
 can be used, for example, to attach metadata to functions.  Regular attribute
 dot-notation is used to get and set such attributes.
