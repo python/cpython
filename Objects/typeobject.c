@@ -56,7 +56,7 @@ class object "PyObject *" "&PyBaseObject_Type"
 #ifdef Py_GIL_DISABLED
 
 // There's a global lock for mutation of types.  This avoids having to take
-// additonal locks while doing various subclass processing which may result
+// additional locks while doing various subclass processing which may result
 // in odd behaviors w.r.t. running with the GIL as the outer type lock could
 // be released and reacquired during a subclass update if there's contention
 // on the subclass lock.
@@ -10395,7 +10395,7 @@ fixup_slot_dispatchers(PyTypeObject *type)
 {
     // This lock isn't strictly necessary because the type has not been
     // exposed to anyone else yet, but update_ont_slot calls find_name_in_mro
-    // where we'd like to assert that the tyep is locked.
+    // where we'd like to assert that the type is locked.
     BEGIN_TYPE_LOCK()
 
     assert(!PyErr_Occurred());
