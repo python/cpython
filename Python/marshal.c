@@ -538,6 +538,7 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
                                     p->version, p->allow_code);
             if (dump == NULL) {
                 p->error = WFERR_UNMARSHALLABLE;
+                Py_DECREF(value);
                 break;
             }
             PyObject *pair = PyTuple_Pack(2, dump, value);

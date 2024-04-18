@@ -32,7 +32,9 @@ set_next_entry(PyObject *self, PyObject *args)
     rc = _PySet_NextEntryRef(set, &pos, &item, &hash);
     Py_END_CRITICAL_SECTION();
     if (rc == 1) {
-        return Py_BuildValue("innO", rc, pos, hash, item);
+        PyObject *ret = Py_BuildValue("innO", rc, pos, hash, item);
+        Py_DECREF(item);
+        return ret;
     }
     assert(item == UNINITIALIZED_PTR);
     assert(hash == (Py_hash_t)UNINITIALIZED_SIZE);
