@@ -512,8 +512,7 @@ _PyEval_FiniGIL(PyInterpreterState *interp)
     interp->ceval.gil = NULL;
 }
 
-// Function removed in the Python 3.13 API but kept in the stable ABI.
-PyAPI_FUNC(void)
+void
 PyEval_InitThreads(void)
 {
     /* Do nothing: kept for backward compatibility */
