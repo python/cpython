@@ -1192,15 +1192,19 @@ is_core_module(PyInterpreterState *interp, PyObject *name, PyObject *filename)
 
 
 static struct PyModuleDef failed_ext_unknown = {
+    PyModuleDef_HEAD_INIT,
     .m_name="unknown",
 };
 static struct PyModuleDef failed_ext_singlephase = {
+    PyModuleDef_HEAD_INIT,
     .m_name="singlephase",
 };
 static struct PyModuleDef failed_ext_multiphase = {
+    PyModuleDef_HEAD_INIT,
     .m_name="multiphase",
 };
 static struct PyModuleDef failed_ext_invalid = {
+    PyModuleDef_HEAD_INIT,
     .m_name="invalid",
 };
 
@@ -1236,7 +1240,9 @@ get_extension_kind(PyModuleDef *def, bool *p_failed)
             kind = _Py_ext_module_loader_result_MULTIPHASE;
         }
     }
-    *p_failed = failed;
+    if (p_failed != NULL) {
+        *p_failed = failed;
+    }
     return kind;
 }
 
@@ -1330,7 +1336,7 @@ update_extensions_cache(PyThreadState *tstate,
 
 #ifndef NDEBUG
     /* Double check the cached def, if any. */
-    PyModuleDef *cached = _extensions_cache_get(filename, name);
+    PyModuleDef *cached = _extensions_cache_get(path, name);
     if (cached != NULL) {
         bool cached_failed;
         enum _Py_ext_module_loader_result_kind cached_kind =
@@ -1349,7 +1355,7 @@ update_extensions_cache(PyThreadState *tstate,
      * The only possible failure is out-of-memory.  In that case,
      * we don't worry about any current exception, and we expect
      * MemoryError will be raised soon somewhere else. */
-    if (_extensions_cache_set(filename, name, def) < 0)
+    if (_extensions_cache_set(path, name, def) < 0)
     {
         PyErr_Clear();
     }
@@ -1374,6 +1380,8 @@ fix_up_extension_for_interpreter(PyThreadState *tstate,
 {
     assert(mod != NULL && PyModule_Check(mod));
     assert(def != NULL && def == _PyModule_GetDef(mod));
+    assert(get_extension_kind(def, NULL) ==
+            _Py_ext_module_loader_result_SINGLEPHASE);
     assert(modules != NULL);
 
     if (_modules_by_index_set(tstate->interp, def, mod) < 0) {
@@ -1400,6 +1408,8 @@ fix_up_extension(PyThreadState *tstate, PyObject *mod, PyObject *filename,
                  struct interpreter_specific_info *fix_interp)
 {
     assert(mod != NULL && PyModule_Check(mod));
+    assert(get_extension_kind(_PyModule_GetDef(mod), NULL) ==
+                        _Py_ext_module_loader_result_SINGLEPHASE);
 
     if (filename != NULL) {
         /* Remember the filename as the __file__ attribute */
@@ -1575,27 +1585,94 @@ import_run_extension(PyThreadState *tstate, PyModInitFunction p0,
     PyObject *mod = NULL;
     PyModuleDef *def = NULL;
     bool iscore = is_core_module(tstate->interp, info->name, info->path);
+    int verbose = _PyInterpreterState_GetConfig(tstate->interp)->verbose;
 
     struct _Py_ext_module_loader_result res;
-    if (_PyImport_RunModInitFunc(p0, info, &res) < 0) {
-        /* We discard res.def. */
+    int rc = _PyImport_RunModInitFunc(p0, info, &res);
+    if (rc != 0) {
         assert(res.module == NULL);
+        if (PyErr_Occurred()) {
+            assert(def == NULL);
+            // XXX Capture the current exception. */
+        }
+        else {
+            assert(!PyErr_Occurred());
+        }
+        /* We discard res.def. */
         def = get_failed_extension_def(res.kind);
+        /* We must do some bookkeeping before we bail out. */
+    }
+    else {
+        assert(!PyErr_Occurred());
+        mod = res.module;
+        res.module = NULL;
+        def = res.def;
+        assert(def != NULL);
+    }
+
+    /* Update the global import state before doing anything else. */
+    struct cached_singlephase_info *singlephase = NULL;
+    struct cached_singlephase_info _singlephase = {0};
+    if (rc != 0) {
+        /* We will still cache the def, to remember what kind it is. */
+    }
+    else if (res.kind == _Py_ext_module_loader_result_SINGLEPHASE) {
+        if (mod != NULL) {
+            /* Fix up the module first, since the cached def may.rely on it.
+             * We do not do the interpreter-specific fixes at this point. */
+            if (fix_up_extension(tstate, mod, info->filename, NULL) < 0) {
+                /* We will still cache the def, to remember what kind it is. */
+#ifndef NDEBUG
+                PyErr_PrintEx(0);
+#else
+                PyErr_Clear();
+#endif
+                if (verbose) {
+                    PySys_FormatStderr("# extension %U fixup failed\n",
+                                       info->name);
+                }
+            }
+        }
+        // gh-88216: Extensions and def->m_base.m_copy can be updated
+        // when the extension module doesn't support sub-interpreters.
+        if (mod != NULL && def->m_size == -1 && !iscore) {
+            assert(rc == 0);
+            _singlephase.m_dict = PyModule_GetDict(mod);
+            assert(_singlephase.m_dict != NULL);
+        }
+        singlephase = &_singlephase;
+    }
+    else {
+        assert(res.kind == _Py_ext_module_loader_result_MULTIPHASE);
+    }
+    if (update_extensions_cache(
+                tstate, info->path, info->name, def, singlephase) < 0)
+    {
+        /* Ignoring the error is okay since at worst it means repeating
+         * some effort later, which is what we used to do anyway. */
+#ifndef NDEBUG
+        PyErr_PrintEx(0);
+#else
+        PyErr_Clear();
+#endif
+        if (verbose) {
+            PySys_FormatStderr("# failed to globally cache extension %U\n",
+                               info->name);
+        }
+    }
+
+    /* Finally we handle the error return from _PyImport_RunModInitFunc(). */
+    if (rc < 0) {
         _Py_ext_module_loader_result_apply_error(&res);
+        Py_CLEAR(mod);
         goto finally;
     }
-    assert(!PyErr_Occurred());
 
-    mod = res.module;
-    res.module = NULL;
-    def = res.def;
-    assert(def != NULL);
-
+    /* Now we finish up with kind-specific operations. */
     if (res.kind == _Py_ext_module_loader_result_MULTIPHASE) {
         assert(mod == NULL);
         mod = PyModule_FromDefAndSpec(def, spec);
         if (mod == NULL) {
-            /* We will still cache the def, to remember it's multi-phase. */
             goto finally;
         }
     }
@@ -1603,7 +1680,7 @@ import_run_extension(PyThreadState *tstate, PyModInitFunction p0,
         assert(res.kind == _Py_ext_module_loader_result_SINGLEPHASE);
         assert(PyModule_Check(mod));
 
-        /* Make sure this module is allowed in this interpreter. */
+        /* Make sure the module is allowed in this interpreter. */
         const char *name_buf = PyBytes_AS_STRING(info->name_encoded);
         if (_PyImport_CheckSubinterpIncompatibleExtensionAllowed(name_buf) < 0) {
             /* We will still cache the def, to remember it's single-phase. */
@@ -1611,41 +1688,16 @@ import_run_extension(PyThreadState *tstate, PyModInitFunction p0,
             goto finally;
         }
 
-        /* Do any final fixes to the module. */
-        struct interpreter_specific_info interp_specific = {
-            .modules=modules,
-            .name=info->name,
-            .def=def,
-        };
-        if (fix_up_extension(
-                    tstate, mod, info->filename, &interp_specific) < 0)
+        /* We finish the fixups that we didn't do earlier. */
+        if (fix_up_extension_for_interpreter(
+                tstate, mod, def, info->name, modules) < 0)
         {
-            Py_CLEAR(mod);
-            goto finally;
-        }
-
-        /* Add the module def to the global cache. */
-        struct cached_singlephase_info singlephase = {0};
-        // gh-88216: Extensions and def->m_base.m_copy can be updated
-        // when the extension module doesn't support sub-interpreters.
-        if (def->m_size == -1 && !iscore) {
-            singlephase.m_dict = PyModule_GetDict(mod);
-            assert(singlephase.m_dict != NULL);
-        }
-        if (update_extensions_cache(
-                    tstate, info->path, info->name, def, &singlephase) < 0)
-        {
-            /* We will still cache the def, to remember it's single-phase. */
             Py_CLEAR(mod);
             goto finally;
         }
     }
 
 finally:
-    if (update_extensions_cache(tstate, mod, info->path, def, info->name) < 0) {
-        Py_CLEAR(mod);
-    }
-
     return mod;
 }
 
@@ -1678,22 +1730,14 @@ _PyImport_FixupBuiltin(PyThreadState *tstate, PyObject *mod, const char *name,
      * module state, but we also don't populate def->m_base.m_copy
      * for them. */
     assert(is_core_module(tstate->interp, nameobj, nameobj));
-    assert(get_extension_kind(def) ==
+    assert(get_extension_kind(def, NULL) ==
             _Py_ext_module_loader_result_SINGLEPHASE);
     assert(def->m_size == -1);
     assert(def->m_base.m_copy == NULL);
 
-    /* Do the normal fixes to the module. */
-    struct interpreter_specific_info interp_specific = {
-        .modules=modules,
-        .name=nameobj,
-        .def=def,
-    };
-    if (fix_up_extension(tstate, mod, NULL, &interp_specific) < 0) {
-        goto finally;
-    }
-
-    /* Add the module def to the global cache. */
+    /* Add the module def to the global cache.
+     * There's no need to wait until after the fixups since
+     * we don't populate m_copy. */
     struct cached_singlephase_info singlephase = {
         /* We don't want def->m_base.m_copy populated. */
         .m_dict=NULL,
@@ -1704,8 +1748,13 @@ _PyImport_FixupBuiltin(PyThreadState *tstate, PyObject *mod, const char *name,
         goto finally;
     }
 
-    if (update_extensions_cache(tstate, mod, nameobj, nameobj, def) < 0) {
-        Py_CLEAR(mod);
+    /* Do the normal fixes to the module. */
+    struct interpreter_specific_info interp_specific = {
+        .modules=modules,
+        .name=nameobj,
+        .def=def,
+    };
+    if (fix_up_extension(tstate, mod, NULL, &interp_specific) < 0) {
         goto finally;
     }
 
