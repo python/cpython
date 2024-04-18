@@ -3,6 +3,8 @@ import dbm
 import shelve
 import pickle
 import os
+from io import BytesIO
+from pydoc import locate
 
 from test.support import os_helper
 from collections.abc import MutableMapping
@@ -164,6 +166,58 @@ class TestCase(unittest.TestCase):
     def test_default_protocol(self):
         with shelve.Shelf({}) as s:
             self.assertEqual(s._protocol, pickle.DEFAULT_PROTOCOL)
+
+    def test_custom_serializer_and_deserializer(self):
+        def serializer(obj, protocol=None):
+            return bytes(f"{type(obj).__name__}", 'utf-8')
+
+        def deserializer(data):
+            value = BytesIO(data).read()
+            return locate(value.decode("utf-8"))
+
+        os.mkdir(self.dirname)
+        self.addCleanup(os_helper.rmtree, self.dirname)
+
+        with shelve.open(self.fn, serializer=serializer, deserializer=deserializer) as s:
+            num = 1
+            s['number'] = num
+            self.assertEqual(s['number'], type(num))
+
+        with self.assertRaises(AssertionError):
+            def serializer(obj, protocol=None):
+                return bytes(f"{type(obj).__name__}", 'utf-8')
+
+            def deserializer(data):
+                pass
+
+            with shelve.open(self.fn, serializer=serializer, deserializer=deserializer) as s:
+                s['number'] = 100
+                self.assertEqual(s['number'], 100)
+
+        with self.assertRaises(dbm.sqlite3.error):
+            def serializer(obj, protocol=None):
+                pass
+
+            def deserializer(data):
+                return BytesIO(data).read().decode("utf-8")
+
+            with shelve.open(self.fn, serializer=serializer, deserializer=deserializer) as s:
+                s['number'] = 100
+                self.assertEqual(s['number'], 100)
+
+    def test_missing_custom_deserializer(self):
+        def serializer(obj, protocol=None):
+            pass
+
+        with self.assertRaises(shelve.ShelveError):
+            shelve.Shelf({}, protocol=2, writeback=False, serializer=serializer)
+
+    def test_missing_custom_serializer(self):
+        def deserializer(data):
+            pass
+
+        with self.assertRaises(shelve.ShelveError):
+            shelve.Shelf({}, protocol=2, writeback=False, deserializer=deserializer)
 
 
 class TestShelveBase:

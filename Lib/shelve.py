@@ -56,12 +56,17 @@ entries in the cache, and empty the cache (d.sync() also synchronizes
 the persistent dictionary on disk, if feasible).
 """
 
-from pickle import DEFAULT_PROTOCOL, Pickler, Unpickler
+from pickle import DEFAULT_PROTOCOL, Unpickler, dumps, loads
 from io import BytesIO
 
 import collections.abc
 
 __all__ = ["Shelf", "BsdDbShelf", "DbfilenameShelf", "open"]
+
+
+class ShelveError(Exception):
+    pass
+
 
 class _ClosedDict(collections.abc.MutableMapping):
     'Marker for a closed dict.  Access attempts raise a ValueError.'
@@ -82,7 +87,7 @@ class Shelf(collections.abc.MutableMapping):
     """
 
     def __init__(self, dict, protocol=None, writeback=False,
-                 keyencoding="utf-8"):
+                 keyencoding="utf-8", *, serializer=None, deserializer=None):
         self.dict = dict
         if protocol is None:
             protocol = DEFAULT_PROTOCOL
@@ -90,6 +95,15 @@ class Shelf(collections.abc.MutableMapping):
         self.writeback = writeback
         self.cache = {}
         self.keyencoding = keyencoding
+
+        if serializer is None and deserializer is None:
+            self.serializer = dumps
+            self.deserializer = loads
+        elif (serializer is None) ^ (deserializer is None):
+            raise ShelveError("Serializer and deserializer must be defined together.")
+        else:
+            self.serializer = serializer
+            self.deserializer = deserializer
 
     def __iter__(self):
         for k in self.dict.keys():
@@ -110,8 +124,8 @@ class Shelf(collections.abc.MutableMapping):
         try:
             value = self.cache[key]
         except KeyError:
-            f = BytesIO(self.dict[key.encode(self.keyencoding)])
-            value = Unpickler(f).load()
+            f = self.dict[key.encode(self.keyencoding)]
+            value = self.deserializer(f)
             if self.writeback:
                 self.cache[key] = value
         return value
@@ -119,10 +133,7 @@ class Shelf(collections.abc.MutableMapping):
     def __setitem__(self, key, value):
         if self.writeback:
             self.cache[key] = value
-        f = BytesIO()
-        p = Pickler(f, self._protocol)
-        p.dump(value)
-        self.dict[key.encode(self.keyencoding)] = f.getvalue()
+        self.dict[key.encode(self.keyencoding)] = self.serializer(value, self._protocol)
 
     def __delitem__(self, key):
         del self.dict[key.encode(self.keyencoding)]
@@ -222,9 +233,9 @@ class DbfilenameShelf(Shelf):
     See the module's __doc__ string for an overview of the interface.
     """
 
-    def __init__(self, filename, flag='c', protocol=None, writeback=False):
+    def __init__(self, filename, flag='c', protocol=None, writeback=False, serializer=None, deserializer=None):
         import dbm
-        Shelf.__init__(self, dbm.open(filename, flag), protocol, writeback)
+        Shelf.__init__(self, dbm.open(filename, flag), protocol, writeback, serializer=serializer, deserializer=deserializer)
 
     def clear(self):
         """Remove all items from the shelf."""
@@ -233,8 +244,7 @@ class DbfilenameShelf(Shelf):
         self.cache.clear()
         self.dict.clear()
 
-
-def open(filename, flag='c', protocol=None, writeback=False):
+def open(filename, flag='c', protocol=None, writeback=False, *, serializer=None, deserializer=None):
     """Open a persistent dictionary for reading and writing.
 
     The filename parameter is the base filename for the underlying
@@ -247,4 +257,4 @@ def open(filename, flag='c', protocol=None, writeback=False):
     See the module's __doc__ string for an overview of the interface.
     """
 
-    return DbfilenameShelf(filename, flag, protocol, writeback)
+    return DbfilenameShelf(filename, flag, protocol, writeback, serializer, deserializer)
