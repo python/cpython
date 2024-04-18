@@ -1721,7 +1721,7 @@ encoder_clear(PyEncoderObject *self)
     return 0;
 }
 
-PyDoc_STRVAR(encoder_doc, "_iterencode(obj, _current_indent_level) -> iterable");
+PyDoc_STRVAR(encoder_doc, "Encoder(markers, default, encoder, indent, key_separator, item_separator, sort_keys, skipkeys, allow_nan)");
 
 static PyType_Slot PyEncoderType_slots[] = {
     {Py_tp_doc, (void *)encoder_doc},
