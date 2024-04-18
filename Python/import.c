@@ -1477,15 +1477,24 @@ _PyImport_FixupBuiltin(PyThreadState *tstate, PyObject *mod, const char *name,
                        PyObject *modules)
 {
     int res = -1;
+    assert(mod != NULL && PyModule_Check(mod));
+
     PyObject *nameobj;
     nameobj = PyUnicode_InternFromString(name);
     if (nameobj == NULL) {
         return -1;
     }
-    assert(mod != NULL && PyModule_Check(mod));
-    if (fix_up_extension(tstate, mod, NULL, nameobj, NULL, modules) < 0) {
+
+    PyModuleDef *def = PyModule_GetDef(mod);
+    if (def == NULL) {
+        PyErr_BadInternalCall();
         goto finally;
     }
+
+    if (fix_up_extension(tstate, mod, def, nameobj, NULL, modules) < 0) {
+        goto finally;
+    }
+
     res = 0;
 
 finally:
