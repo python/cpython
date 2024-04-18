@@ -307,6 +307,7 @@ _PyImport_RunModInitFunc(PyModInitFunction p0,
         /* Remember pointer to module init function. */
         res.def = PyModule_GetDef(m);
         if (res.def == NULL) {
+            PyErr_Clear();
             SET_ERROR("initialization of %s did not return a valid extension "
                       "module", name_buf);
             goto error;
@@ -322,10 +323,12 @@ _PyImport_RunModInitFunc(PyModInitFunction p0,
     }
 #undef SET_ERROR
 
+    assert(!PyErr_Occurred());
     *p_res = res;
     return 0;
 
 error:
+    assert((PyErr_Occurred() == NULL) != (res.err[0] == '\0'));
     Py_CLEAR(res.module);
     res.def = NULL;
     *p_res = res;
