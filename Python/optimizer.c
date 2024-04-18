@@ -400,7 +400,7 @@ get_jit_code(PyObject *self, PyObject *Py_UNUSED(ignored))
 #ifndef _Py_JIT
     PyErr_SetString(PyExc_RuntimeError, "JIT support not enabled.");
     return NULL;
-#endif
+#else
     if (!Py_IS_TYPE(self, &_PyUOpExecutor_Type)) {
         PyErr_SetString(PyExc_TypeError, "get_jit_code() requires a uop_executor object.");
         return NULL;
@@ -411,6 +411,7 @@ get_jit_code(PyObject *self, PyObject *Py_UNUSED(ignored))
         return NULL;
     }
     return PyBytes_FromStringAndSize(executor->jit_code, executor->jit_size);
+#endif
 }
 
 static PyMethodDef uop_executor_methods[] = {
