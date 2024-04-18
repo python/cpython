@@ -1472,7 +1472,7 @@ create_builtin(PyThreadState *tstate, PyObject *name, PyObject *spec)
     PyModuleDef *def = NULL;
 
     struct _Py_ext_module_loader_info info;
-    if (_Py_ext_module_loader_info_init(&info, name, NULL) < 0) {
+    if (_Py_ext_module_loader_info_init_for_builtin(&info, name) < 0) {
         return NULL;
     }
 
@@ -1506,13 +1506,17 @@ create_builtin(PyThreadState *tstate, PyObject *name, PyObject *spec)
         goto finally;
     }
 
-    mod = p0();
-    if (mod == NULL) {
+    struct _Py_ext_module_loader_result res;
+    if (_PyImport_RunModInitFunc(p0, &info, &res) < 0) {
         goto finally;
     }
 
-    if (PyObject_TypeCheck(mod, &PyModuleDef_Type)) {
-        def = (PyModuleDef*)mod;
+    mod = res.module;
+    res.module = NULL;
+    def = res.def;
+    assert(def != NULL);
+
+    if (mod == NULL) {
         assert(!is_singlephase(def));
         mod = PyModule_FromDefAndSpec(def, spec);
         if (mod == NULL) {
@@ -1520,12 +1524,6 @@ create_builtin(PyThreadState *tstate, PyObject *name, PyObject *spec)
         }
     }
     else {
-        assert(PyModule_Check(mod));
-        def = PyModule_GetDef(mod);
-        if (def == NULL) {
-            Py_CLEAR(mod);
-            goto finally;
-        }
         assert(is_singlephase(def));
 
         /* Remember pointer to module init function. */
@@ -1540,12 +1538,14 @@ create_builtin(PyThreadState *tstate, PyObject *name, PyObject *spec)
             singlephase.m_dict = PyModule_GetDict(mod);
             assert(singlephase.m_dict != NULL);
         }
+
         if (update_global_state_for_extension(
                 tstate, info.name, info.path, def, &singlephase) < 0)
         {
             Py_CLEAR(mod);
             goto finally;
         }
+
         PyObject *modules = get_modules_dict(tstate, true);
         if (finish_singlephase_extension(
                 tstate, mod, def, info.name, modules) < 0)
@@ -3942,7 +3942,7 @@ _imp_create_dynamic_impl(PyObject *module, PyObject *spec, PyObject *file)
         }
 
         /* Remember pointer to module init function. */
-        res.def->m_base.m_init = p0;
+        def->m_base.m_init = p0;
 
         /* Remember the filename as the __file__ attribute */
         if (PyModule_AddObjectRef(mod, "__file__", info.filename) < 0) {
