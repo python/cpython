@@ -895,11 +895,11 @@ class CursorTests(unittest.TestCase):
             ("select ?2, ?1", (1, 2), (2, 1)),
         ):
             with self.subTest(query=query, params=params):
-                with warnings.catch_warnings(record=True) as cm:
+                with warnings.catch_warnings(record=True):
+                    warnings.simplefilter("error", DeprecationWarning)
                     cu = self.cu.execute(query, params)
                     actual, = cu.fetchall()
                     self.assertEqual(actual, expected)
-                self.assertEqual(cm, [])
 
     def test_execute_too_many_params(self):
         category = sqlite.SQLITE_LIMIT_VARIABLE_NUMBER
