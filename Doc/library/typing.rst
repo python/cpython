@@ -852,7 +852,7 @@ using ``[]``.
    .. versionadded:: 3.11
 
 .. data:: Never
-.. data:: NoReturn
+          NoReturn
 
    ``Never`` and ``NoReturn`` are
    `bottom types <https://en.wikipedia.org/wiki/Bottom_type>`_,
