@@ -17,6 +17,10 @@ api_level = platform.android_ver().api_level
 
 
 # Test redirection of stdout and stderr to the Android log.
+@unittest.skipIf(
+    api_level < 23 and platform.machine() == "aarch64",
+    "SELinux blocks reading logs on older ARM64 emulators"
+)
 class TestAndroidOutput(unittest.TestCase):
     maxDiff = None
 
@@ -118,9 +122,9 @@ class TestAndroidOutput(unittest.TestCase):
                            else "\U0001f600"])
 
                     # Null characters will truncate a message.
-                    write("\u0000", [""])
+                    write("\u0000", [] if api_level < 24 else [""])
                     write("a\u0000", ["a"])
-                    write("\u0000b", [""])
+                    write("\u0000b", [] if api_level < 24 else [""])
                     write("a\u0000b", ["a"])
 
                 # Multi-line messages. Avoid identical consecutive lines, as
@@ -224,9 +228,9 @@ class TestAndroidOutput(unittest.TestCase):
                        else "\U0001f600"])
 
                 # Null characters will truncate a message.
-                write(b"\x00", [""])
+                write(b"\x00", [] if api_level < 24 else [""])
                 write(b"a\x00", ["a"])
-                write(b"\x00b", [""])
+                write(b"\x00b", [] if api_level < 24 else [""])
                 write(b"a\x00b", ["a"])
 
                 # Invalid UTF-8
