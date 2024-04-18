@@ -1336,11 +1336,20 @@ int
 _PyImport_FixupBuiltin(PyObject *mod, const char *name, PyObject *modules)
 {
     int res = -1;
+    assert(mod != NULL && PyModule_Check(mod));
+
     PyObject *nameobj;
     nameobj = PyUnicode_InternFromString(name);
     if (nameobj == NULL) {
         return -1;
     }
+
+    PyModuleDef *def = PyModule_GetDef(mod);
+    if (def == NULL) {
+        PyErr_BadInternalCall();
+        goto finally;
+    }
+
     if (PyObject_SetItem(modules, nameobj, mod) < 0) {
         goto finally;
     }
@@ -1348,6 +1357,7 @@ _PyImport_FixupBuiltin(PyObject *mod, const char *name, PyObject *modules)
         PyMapping_DelItem(modules, nameobj);
         goto finally;
     }
+
     res = 0;
 
 finally:
