@@ -7,12 +7,13 @@
    and sharing. */
 
 #include "Python.h"
-#include "pycore_call.h"          // _PyObject_CallNoArgs()
-#include "pycore_code.h"          // _PyCode_New()
-#include "pycore_hashtable.h"     // _Py_hashtable_t
-#include "pycore_long.h"          // _PyLong_DigitCount
-#include "pycore_setobject.h"     // _PySet_NextEntry()
-#include "marshal.h"              // Py_MARSHAL_VERSION
+#include "pycore_call.h"             // _PyObject_CallNoArgs()
+#include "pycore_code.h"             // _PyCode_New()
+#include "pycore_critical_section.h" // Py_BEGIN_CRITICAL_SECTION()
+#include "pycore_hashtable.h"        // _Py_hashtable_t
+#include "pycore_long.h"             // _PyLong_DigitCount
+#include "pycore_setobject.h"        // _PySet_NextEntry()
+#include "marshal.h"                 // Py_MARSHAL_VERSION
 
 #ifdef __APPLE__
 #  include "TargetConditionals.h"
@@ -531,22 +532,28 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
             return;
         }
         Py_ssize_t i = 0;
-        while (_PySet_NextEntry(v, &pos, &value, &hash)) {
+        Py_BEGIN_CRITICAL_SECTION(v);
+        while (_PySet_NextEntryRef(v, &pos, &value, &hash)) {
             PyObject *dump = _PyMarshal_WriteObjectToString(value,
                                     p->version, p->allow_code);
             if (dump == NULL) {
                 p->error = WFERR_UNMARSHALLABLE;
-                Py_DECREF(pairs);
-                return;
+                Py_DECREF(value);
+                break;
             }
             PyObject *pair = PyTuple_Pack(2, dump, value);
             Py_DECREF(dump);
+            Py_DECREF(value);
             if (pair == NULL) {
                 p->error = WFERR_NOMEMORY;
-                Py_DECREF(pairs);
-                return;
+                break;
             }
             PyList_SET_ITEM(pairs, i++, pair);
+        }
+        Py_END_CRITICAL_SECTION();
+        if (p->error == WFERR_UNMARSHALLABLE || p->error == WFERR_NOMEMORY) {
+            Py_DECREF(pairs);
+            return;
         }
         assert(i == n);
         if (PyList_Sort(pairs)) {

@@ -862,7 +862,7 @@ subclasscheck_check_registry(_abc_data *impl, PyObject *subclass,
 
     // Make a local copy of the registry to protect against concurrent
     // modifications of _abc_registry.
-    PyObject *registry = PySet_New(registry_shared);
+    PyObject *registry = PyFrozenSet_New(registry_shared);
     if (registry == NULL) {
         return -1;
     }
