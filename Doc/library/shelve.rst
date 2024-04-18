@@ -17,7 +17,7 @@ This includes most class instances, recursive data types, and objects containing
 lots of shared  sub-objects.  The keys are ordinary strings.
 
 
-.. function:: open(filename, flag='c', protocol=None, writeback=False)
+.. function:: open(filename, flag='c', protocol=None, writeback=False, *, serializer=None, deserializer=None)
 
    Open a persistent dictionary.  The filename specified is the base filename for
    the underlying database.  As a side-effect, an extension may be added to the
@@ -41,12 +41,23 @@ lots of shared  sub-objects.  The keys are ordinary strings.
    determine which accessed entries are mutable, nor which ones were actually
    mutated).
 
+   By default, :mod:`shelve` uses :func:`pickle.dumps` and :func:`pickle.loads`
+   for serializing and deserializing. However *serializer* can be the function
+   that takes the :term:`bytes-like object` and returns the object. *deserializer*
+   can be the function that takes the object and returns :class:`bytes`. For example,
+   :keyword:`lambda`, which the :mod:`pickle` does not support, can be used in
+   :mod:`shelve` using the serializer and deserializer functions, which do support
+   the :keyword:`lambda`.
+
    .. versionchanged:: 3.10
       :const:`pickle.DEFAULT_PROTOCOL` is now used as the default pickle
       protocol.
 
    .. versionchanged:: 3.11
       Accepts :term:`path-like object` for filename.
+
+   .. versionchanged:: 3.13
+      Accepts *serializer* and *deserializer*.
 
    .. note::
 
@@ -150,7 +161,7 @@ Restrictions
       protocol.
 
 
-.. class:: BsdDbShelf(dict, protocol=None, writeback=False, keyencoding='utf-8')
+.. class:: BsdDbShelf(dict, protocol=None, writeback=False, keyencoding='utf-8', serializer=None, deserializer=None)
 
    A subclass of :class:`Shelf` which exposes :meth:`!first`, :meth:`!next`,
    :meth:`!previous`, :meth:`!last` and :meth:`!set_location` methods.
@@ -164,7 +175,7 @@ Restrictions
    interpretation as for the :class:`Shelf` class.
 
 
-.. class:: DbfilenameShelf(filename, flag='c', protocol=None, writeback=False)
+.. class:: DbfilenameShelf(filename, flag='c', protocol=None, writeback=False, serializer=None, deserializer=None)
 
    A subclass of :class:`Shelf` which accepts a *filename* instead of a dict-like
    object.  The underlying file will be opened using :func:`dbm.open`.  By
