@@ -1451,42 +1451,37 @@ clear_singlephase_extension(PyInterpreterState *interp,
 }
 
 static PyObject *
-create_dynamic(PyThreadState *tstate, struct _Py_ext_module_loader_info *info,
-               PyObject *file, PyObject *spec)
+import_run_extension(PyThreadState *tstate, PyModInitFunction p0,
+                     struct _Py_ext_module_loader_info *info,
+                     PyObject *spec, PyObject *modules)
 {
-    FILE *fp;
-    struct _Py_ext_module_loader_result res;
     PyObject *mod = NULL;
+    PyModuleDef *def = NULL;
 
-    /* We would move this (and the fclose() below) into
-     * _PyImport_GetModInitFunc(), but it isn't clear if the intervening
-     * code relies on fp still being open. */
-    if (file != NULL) {
-        fp = _Py_fopen_obj(info->path, "r");
-        if (fp == NULL) {
-            goto finally;
-        }
-    }
-    else {
-        fp = NULL;
-    }
-
-    PyModInitFunction p0 = _PyImport_GetModInitFunc(info, fp);
-    if (p0 == NULL) {
-        goto finally;
-    }
+    struct _Py_ext_module_loader_result res;
     if (_PyImport_RunModInitFunc(p0, info, &res) < 0) {
+        /* We discard res.def. */
+        assert(res.module == NULL);
         _Py_ext_module_loader_result_apply_error(&res);
         goto finally;
     }
     assert(!PyErr_Occurred());
 
-    if (res.kind == _Py_ext_module_loader_result_MULTIPHASE) {
-        mod = PyModule_FromDefAndSpec(res.def, spec);
+    mod = res.module;
+    res.module = NULL;
+    def = res.def;
+
+    if (res.kind ==_Py_ext_module_loader_result_MULTIPHASE) {
+        assert(def != NULL);
+        assert(mod == NULL);
+        mod = PyModule_FromDefAndSpec(def, spec);
+        if (mod == NULL) {
+            goto finally;
+        }
     }
     else {
-        assert(res.kind == _Py_ext_module_loader_result_SINGLEPHASE);
-        mod = Py_NewRef(res.module);
+        assert(res.kind ==_Py_ext_module_loader_result_SINGLEPHASE);
+        assert(PyModule_Check(mod));
 
         const char *name_buf = PyBytes_AS_STRING(info->name_encoded);
         if (_PyImport_CheckSubinterpIncompatibleExtensionAllowed(name_buf) < 0) {
@@ -1494,18 +1489,12 @@ create_dynamic(PyThreadState *tstate, struct _Py_ext_module_loader_info *info,
             goto finally;
         }
 
-        PyObject *modules = get_modules_dict(tstate, true);
         if (fix_up_extension(
-                    tstate, mod, res.def, info->name, info->path, modules) < 0)
+                    tstate, mod, def, info->name, info->path, modules) < 0)
         {
             Py_CLEAR(mod);
             goto finally;
         }
-    }
-
-    // XXX Shouldn't this happen in the error cases too.
-    if (fp) {
-        fclose(fp);
     }
 
 finally:
@@ -1584,47 +1573,30 @@ create_builtin(PyThreadState *tstate, PyObject *name, PyObject *spec)
         goto finally;
     }
 
-    PyObject *modules = get_modules_dict(tstate, true);
+    /* Look up the module in the inittab. */
+    struct _inittab *found = NULL;
     for (struct _inittab *p = INITTAB; p->name != NULL; p++) {
         if (_PyUnicode_EqualToASCIIString(name, p->name)) {
-            if (p->initfunc == NULL) {
-                /* Cannot re-init internal module ("sys" or "builtins") */
-                mod = import_add_module(tstate, name);
-                goto finally;
-            }
-
-            struct _Py_ext_module_loader_info info;
-            if (_Py_ext_module_loader_info_init_for_builtin(&info, name) < 0) {
-                goto finally;
-            }
-
-            struct _Py_ext_module_loader_result res;
-            int rc = _PyImport_RunModInitFunc((*p->initfunc), &info, &res);
-            _Py_ext_module_loader_info_clear(&info);
-            if (rc < 0) {
-                _Py_ext_module_loader_result_apply_error(&res);
-                goto finally;
-            }
-            if (res.kind ==_Py_ext_module_loader_result_MULTIPHASE) {
-                assert(res.def != NULL);
-                assert(res.module == NULL);
-                mod = PyModule_FromDefAndSpec(res.def, spec);
-                goto finally;
-            }
-            else {
-                assert(res.kind ==_Py_ext_module_loader_result_SINGLEPHASE);
-                mod = res.module;
-                if (fix_up_extension(
-                            tstate, mod, res.def, name, NULL, modules) < 0)
-                {
-                    Py_CLEAR(mod);
-                }
-                goto finally;
-            }
+            found = p;
+            break;
         }
     }
-    // not found
-    mod = Py_None;
+    if (found == NULL) {
+        // not found
+        mod = Py_NewRef(Py_None);
+        goto finally;
+    }
+
+    PyModInitFunction p0 = (*found->initfunc);
+    if (p0 == NULL) {
+        /* Cannot re-init internal module ("sys" or "builtins") */
+        mod = import_add_module(tstate, name);
+        goto finally;
+    }
+
+    /* Now load it. */
+    mod = import_run_extension(
+                    tstate, p0, &info, spec, get_modules_dict(tstate, true));
 
 finally:
     _Py_ext_module_loader_info_clear(&info);
@@ -3938,6 +3910,7 @@ static PyObject *
 _imp_create_dynamic_impl(PyObject *module, PyObject *spec, PyObject *file)
 /*[clinic end generated code: output=83249b827a4fde77 input=c31b954f4cf4e09d]*/
 {
+    FILE *fp;
     PyThreadState *tstate = _PyThreadState_GET();
 
     struct _Py_ext_module_loader_info info;
@@ -3963,10 +3936,33 @@ _imp_create_dynamic_impl(PyObject *module, PyObject *spec, PyObject *file)
         goto finally;
     }
 
-    /* Is multi-phase init or this is the first time being loaded. */
-    mod = create_dynamic(tstate, &info, file, spec);
+    /* We would move this (and the fclose() below) into
+     * _PyImport_GetModInitFunc(), but it isn't clear if the intervening
+     * code relies on fp still being open. */
+    if (file != NULL) {
+        fp = _Py_fopen_obj(info.path, "r");
+        if (fp == NULL) {
+            goto finally;
+        }
+    }
+    else {
+        fp = NULL;
+    }
+
+    PyModInitFunction p0 = _PyImport_GetModInitFunc(&info, fp);
+    if (p0 == NULL) {
+        goto finally;
+    }
+
+    mod = import_run_extension(
+                    tstate, p0, &info, spec, get_modules_dict(tstate, true));
     if (mod == NULL) {
         goto finally;
+    }
+
+    // XXX Shouldn't this happen in the error cases too (i.e. in "finally")?
+    if (fp) {
+        fclose(fp);
     }
 
 finally:
