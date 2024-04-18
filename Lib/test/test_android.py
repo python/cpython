@@ -5,7 +5,6 @@ import subprocess
 import sys
 import unittest
 from contextlib import contextmanager
-from ctypes import CDLL, c_char_p, c_int
 from threading import Thread
 from time import time
 
@@ -37,6 +36,7 @@ class TestAndroidOutput(unittest.TestCase):
             self.logcat_process.stdout.close()
         Thread(target=logcat_thread).start()
 
+        from ctypes import CDLL, c_char_p, c_int
         android_log_write = getattr(CDLL("liblog.so"), "__android_log_write")
         android_log_write.argtypes = (c_int, c_char_p, c_char_p)
         ANDROID_LOG_INFO = 4
