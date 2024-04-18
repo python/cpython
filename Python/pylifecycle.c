@@ -71,7 +71,9 @@ static PyStatus add_main_module(PyInterpreterState *interp);
 static PyStatus init_import_site(void);
 static PyStatus init_set_builtins_open(void);
 static PyStatus init_sys_streams(PyThreadState *tstate);
+#ifdef __ANDROID__
 static void init_android_streams(PyThreadState *tstate);
+#endif
 static void wait_for_thread_shutdown(PyThreadState *tstate);
 static void call_ll_exitfuncs(_PyRuntimeState *runtime);
 
@@ -2724,6 +2726,7 @@ done:
 }
 
 
+#ifdef __ANDROID__
 /* Redirecting streams to the log is a convenience, but won't be critical for
    every app, so failures of this function are non-fatal. */
 static void
@@ -2744,6 +2747,7 @@ init_android_streams(PyThreadState *tstate)
     }
     Py_XDECREF(_android_support);
 }
+#endif
 
 
 static void
