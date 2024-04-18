@@ -1163,7 +1163,7 @@ accurately approximated inverse cumulative distribution function.
 .. testcode::
 
    from random import choice, random, seed
-   from math import sqrt, log, pi, tan, asin
+   from math import sqrt, log, pi, tan, asin, cos, acos
    from statistics import NormalDist
 
    kernel_invcdfs = {
@@ -1172,6 +1172,7 @@ accurately approximated inverse cumulative distribution function.
        'sigmoid': lambda p: log(tan(p * pi/2)),
        'rectangular': lambda p: 2*p - 1,
        'triangular': lambda p: sqrt(2*p) - 1 if p < 0.5 else 1 - sqrt(2 - 2*p),
+       'parabolic': lambda p: 2 * cos((acos(2*p-1) + pi) / 3),
        'cosine': lambda p: 2*asin(2*p - 1)/pi,
    }
 

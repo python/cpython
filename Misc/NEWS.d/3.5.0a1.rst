@@ -1284,7 +1284,7 @@ Add function :func:`sys.is_finalizing` to know about interpreter shutdown.
 .. section: Library
 
 Add a default limit for the amount of data xmlrpclib.gzip_decode will
-return. This resolves CVE-2013-1753.
+return. This resolves :cve:`2013-1753`.
 
 ..
 
@@ -4030,7 +4030,7 @@ unittest.mock.MagicMock now supports division. Patch by Johannes Baiter.
 .. section: Library
 
 Fix arbitrary memory access in JSONDecoder.raw_decode with a negative second
-parameter. Bug reported by Guido Vranken. (See also: CVE-2014-4616)
+parameter. Bug reported by Guido Vranken. (See also: :cve:`2014-4616`)
 
 ..
 

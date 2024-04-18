@@ -145,7 +145,7 @@ There are several options for building GUI applications on the Mac with Python.
 
 *PyObjC* is a Python binding to Apple's Objective-C/Cocoa framework, which is
 the foundation of most modern Mac development. Information on PyObjC is
-available from https://pypi.org/project/pyobjc/.
+available from :pypi:`pyobjc`.
 
 The standard Python GUI toolkit is :mod:`tkinter`, based on the cross-platform
 Tk toolkit (https://www.tcl.tk). An Aqua-native version of Tk is bundled with
@@ -177,7 +177,7 @@ Distributing Python Applications
 A range of tools exist for converting your Python code into a standalone
 distributable application:
 
-* `py2app <https://pypi.org/project/py2app/>`__: Supports creating macOS ``.app``
+* :pypi:`py2app`: Supports creating macOS ``.app``
   bundles from a Python project.
 
 * `Briefcase <https://briefcase.readthedocs.io>`__: Part of the `BeeWare Project

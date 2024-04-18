@@ -9,7 +9,7 @@ from libclinic.function import (
     Function, Parameter,
     CALLABLE, STATIC_METHOD, CLASS_METHOD, METHOD_INIT, METHOD_NEW,
     GETTER, SETTER)
-from libclinic.crenderdata import CRenderData, TemplateDict
+from libclinic.codegen import CRenderData, TemplateDict
 from libclinic.converter import (
     CConverter, legacy_converters, add_legacy_c_converter)
 
