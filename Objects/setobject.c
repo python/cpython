@@ -2080,7 +2080,6 @@ set_issuperset_impl(PySetObject *so, PyObject *other)
     Py_RETURN_TRUE;
 }
 
-// TODO: Make thread-safe in free-threaded builds
 static PyObject *
 set_richcompare(PySetObject *v, PyObject *w, int op)
 {
