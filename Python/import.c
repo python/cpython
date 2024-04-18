@@ -1193,20 +1193,28 @@ is_core_module(PyInterpreterState *interp, PyObject *name, PyObject *path)
 }
 
 #ifndef NDEBUG
-static bool
-is_singlephase(PyModuleDef *def)
+static enum _Py_ext_module_loader_result_kind
+get_extension_kind(PyModuleDef *def)
 {
+    enum _Py_ext_module_loader_result_kind kind;
     if (def == NULL) {
         /* It must be a module created by reload_singlephase_extension()
          * from m_copy.  Ideally we'd do away with this case. */
-        return true;
+        kind = _Py_ext_module_loader_result_SINGLEPHASE;
     }
     else if (def->m_slots == NULL) {
-        return true;
+        kind = _Py_ext_module_loader_result_SINGLEPHASE;
     }
     else {
-        return false;
+        kind = _Py_ext_module_loader_result_MULTIPHASE;
     }
+    return kind;
+}
+
+static bool
+is_singlephase(PyModuleDef *def)
+{
+    return get_extension_kind(def) == _Py_ext_module_loader_result_SINGLEPHASE;
 }
 #endif
 
@@ -1373,7 +1381,9 @@ import_find_extension(PyThreadState *tstate,
             return NULL;
         }
         assert(!PyErr_Occurred());
+        assert(res.kind == _Py_ext_module_loader_result_SINGLEPHASE);
         mod = res.module;
+
         // XXX __file__ doesn't get set!
         if (PyObject_SetItem(modules, info->name, mod) == -1) {
             Py_DECREF(mod);
@@ -1416,7 +1426,7 @@ import_run_extension(PyThreadState *tstate, PyModInitFunction p0,
     def = res.def;
     assert(def != NULL);
 
-    if (mod == NULL) {
+    if (res.kind == _Py_ext_module_loader_result_MULTIPHASE) {
         //assert(!is_singlephase(def));
         assert(mod == NULL);
         mod = PyModule_FromDefAndSpec(def, spec);
@@ -1425,6 +1435,7 @@ import_run_extension(PyThreadState *tstate, PyModInitFunction p0,
         }
     }
     else {
+        assert(res.kind == _Py_ext_module_loader_result_SINGLEPHASE);
         assert(is_singlephase(def));
         assert(PyModule_Check(mod));
 
