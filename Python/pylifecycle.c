@@ -2911,12 +2911,11 @@ _Py_DumpExtensionModules(int fd, PyInterpreterState *interp)
             PyObject *item;
             Py_hash_t hash;
             // if stdlib_module_names is not NULL, it is always a frozenset.
-            while (_PyFrozenSet_NextEntry(stdlib_module_names, &i, &item, &hash)) {
+            while (_PySet_NextEntry(stdlib_module_names, &i, &item, &hash)) {
                 if (PyUnicode_Check(item)
                     && PyUnicode_Compare(key, item) == 0)
                 {
                     is_stdlib_ext = 1;
-                    Py_DECREF(item);
                     break;
                 }
             }

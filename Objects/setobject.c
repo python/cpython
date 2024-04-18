@@ -2662,37 +2662,36 @@ PySet_Add(PyObject *anyset, PyObject *key)
 }
 
 int
-_PySet_NextEntry_lock_held(PyObject *set, Py_ssize_t *pos, PyObject **key, Py_hash_t *hash)
+_PySet_NextEntry(PyObject *set, Py_ssize_t *pos, PyObject **key, Py_hash_t *hash)
 {
     setentry *entry;
-    int ret = set_next((PySetObject *)set, pos, &entry);
-    if (ret == 0) {
-        return 0;
+
+    if (!PyAnySet_Check(set)) {
+        PyErr_BadInternalCall();
+        return -1;
     }
-    *key = Py_NewRef(entry->key);
+    if (set_next((PySetObject *)set, pos, &entry) == 0)
+        return 0;
+    *key = entry->key;
     *hash = entry->hash;
     return 1;
 }
 
 int
-_PySet_NextEntry(PyObject *set, Py_ssize_t *pos, PyObject **key, Py_hash_t *hash)
+_PySet_NextEntryRef(PyObject *set, Py_ssize_t *pos, PyObject **key, Py_hash_t *hash)
 {
+    setentry *entry;
+
     if (!PyAnySet_Check(set)) {
         PyErr_BadInternalCall();
         return -1;
     }
     _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(set);
-    return _PySet_NextEntry_lock_held(set, pos, key, hash);
-}
-
-int
-_PyFrozenSet_NextEntry(PyObject *set, Py_ssize_t *pos, PyObject **key, Py_hash_t *hash)
-{
-    if (!PyFrozenSet_CheckExact(set)) {
-        PyErr_BadInternalCall();
-        return -1;
-    }
-    return _PySet_NextEntry_lock_held(set, pos, key, hash);
+    if (set_next((PySetObject *)set, pos, &entry) == 0)
+        return 0;
+    *key = Py_NewRef(entry->key);
+    *hash = entry->hash;
+    return 1;
 }
 
 PyObject *

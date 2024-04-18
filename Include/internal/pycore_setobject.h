@@ -8,15 +8,15 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-// Export for '_pickle' shared extension
+// Export for '_abc' shared extension
 PyAPI_FUNC(int) _PySet_NextEntry(
     PyObject *set,
     Py_ssize_t *pos,
     PyObject **key,
     Py_hash_t *hash);
 
-// Export for 'Python/compile.c'
-PyAPI_FUNC(int) _PyFrozenSet_NextEntry(
+// Export for '_pickle'
+PyAPI_FUNC(int) _PySet_NextEntryRef(
     PyObject *set,
     Py_ssize_t *pos,
     PyObject **key,

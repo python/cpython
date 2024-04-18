@@ -870,22 +870,19 @@ subclasscheck_check_registry(_abc_data *impl, PyObject *subclass,
     Py_ssize_t pos = 0;
     Py_hash_t hash;
 
-    while (_PyFrozenSet_NextEntry(registry, &pos, &key, &hash)) {
+    while (_PySet_NextEntry(registry, &pos, &key, &hash)) {
         PyObject *rkey;
         if (PyWeakref_GetRef(key, &rkey) < 0) {
             // Someone inject non-weakref type in the registry.
             ret = -1;
-            Py_DECREF(key);
             break;
         }
 
         if (rkey == NULL) {
-            Py_DECREF(key);
             continue;
         }
         int r = PyObject_IsSubclass(subclass, rkey);
         Py_DECREF(rkey);
-        Py_DECREF(key);
         if (r < 0) {
             ret = -1;
             break;

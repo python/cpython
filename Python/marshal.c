@@ -533,7 +533,7 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
         }
         Py_ssize_t i = 0;
         Py_BEGIN_CRITICAL_SECTION(v);
-        while (_PySet_NextEntry(v, &pos, &value, &hash)) {
+        while (_PySet_NextEntryRef(v, &pos, &value, &hash)) {
             PyObject *dump = _PyMarshal_WriteObjectToString(value,
                                     p->version, p->allow_code);
             if (dump == NULL) {

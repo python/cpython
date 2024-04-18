@@ -29,7 +29,7 @@ set_next_entry(PyObject *self, PyObject *args)
     }
     NULLABLE(set);
     Py_BEGIN_CRITICAL_SECTION(set);
-    rc = _PySet_NextEntry(set, &pos, &item, &hash);
+    rc = _PySet_NextEntryRef(set, &pos, &item, &hash);
     Py_END_CRITICAL_SECTION();
     if (rc == 1) {
         return Py_BuildValue("innO", rc, pos, hash, item);

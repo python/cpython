@@ -1287,7 +1287,7 @@ list_extend_set(PyListObject *self, PySetObject *other)
     Py_hash_t hash;
     PyObject *key;
     PyObject **dest = self->ob_item + m;
-    while (_PySet_NextEntry((PyObject *)other, &setpos, &key, &hash)) {
+    while (_PySet_NextEntryRef((PyObject *)other, &setpos, &key, &hash)) {
         FT_ATOMIC_STORE_PTR_RELEASE(*dest, key);
         dest++;
     }
