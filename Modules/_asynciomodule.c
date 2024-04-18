@@ -1602,6 +1602,7 @@ FutureIter_dealloc(futureiterobject *it)
 {
     PyTypeObject *tp = Py_TYPE(it);
 
+    // FutureIter is a heap type so any subclass must also be a heap type.
     assert(_PyType_HasFeature(tp, Py_TPFLAGS_HEAPTYPE));
 
     PyObject *module = ((PyHeapTypeObject*)tp)->ht_module;
