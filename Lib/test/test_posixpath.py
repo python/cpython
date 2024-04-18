@@ -341,6 +341,7 @@ class PosixPathTest(unittest.TestCase):
         for e in pwd.getpwall():
             name = e.pw_name
             home = e.pw_dir
+            home = home.rstrip('/') or '/'
             self.assertEqual(posixpath.expanduser('~' + name), home)
             self.assertEqual(posixpath.expanduser(os.fsencode('~' + name)),
                              os.fsencode(home))
