@@ -627,6 +627,12 @@ Most of these attributes check the type of the assigned value:
      - A :class:`dictionary <dict>` containing defaults for keyword-only
        :term:`parameters <parameter>`.
 
+   * - .. attribute:: function.__type_params__
+     - A :class:`tuple` containing the :ref:`type parameters <type-params>` of
+       a :ref:`generic function <generic-functions>`.
+
+       .. versionadded:: 3.12
+
 Function objects also support getting and setting arbitrary attributes, which
 can be used, for example, to attach metadata to functions.  Regular attribute
 dot-notation is used to get and set such attributes.
