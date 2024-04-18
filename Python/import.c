@@ -1187,6 +1187,22 @@ is_core_module(PyInterpreterState *interp, PyObject *name, PyObject *filename)
     return 0;
 }
 
+
+static enum _Py_ext_module_loader_result_kind
+get_extension_kind(PyModuleDef *def)
+{
+    assert(def != NULL);
+    enum _Py_ext_module_loader_result_kind kind;
+    if (def->m_slots == NULL) {
+        kind = _Py_ext_module_loader_result_SINGLEPHASE;
+    }
+    else {
+        kind = _Py_ext_module_loader_result_MULTIPHASE;
+    }
+    return kind;
+}
+
+
 static int
 fix_up_extension_for_interpreter(PyThreadState *tstate,
                                  PyObject *mod, PyModuleDef *def,
@@ -1520,8 +1536,14 @@ static PyObject*
 create_builtin(PyThreadState *tstate, PyObject *name, PyObject *spec)
 {
     PyObject *mod = import_find_extension(tstate, name, name);
-    if (mod || _PyErr_Occurred(tstate)) {
+    if (mod != NULL) {
+        assert(!_PyErr_Occurred(tstate));
+        assert(get_extension_kind(_PyModule_GetDef(mod))
+                    == _Py_ext_module_loader_result_SINGLEPHASE);
         return mod;
+    }
+    else if (_PyErr_Occurred(tstate)) {
+        return NULL;
     }
 
     PyObject *modules = get_modules_dict(tstate, true);
@@ -3873,19 +3895,24 @@ static PyObject *
 _imp_create_dynamic_impl(PyObject *module, PyObject *spec, PyObject *file)
 /*[clinic end generated code: output=83249b827a4fde77 input=c31b954f4cf4e09d]*/
 {
-    PyObject *mod = NULL;
-    struct _Py_ext_module_loader_info info;
+    PyThreadState *tstate = _PyThreadState_GET();
 
+    struct _Py_ext_module_loader_info info;
     if (_Py_ext_module_loader_info_init_from_spec(&info, spec) < 0) {
         return NULL;
     }
 
-    PyThreadState *tstate = _PyThreadState_GET();
-    mod = import_find_extension(tstate, info.name, info.path);
-    if (mod != NULL || _PyErr_Occurred(tstate)) {
-        assert(mod == NULL || !_PyErr_Occurred(tstate));
+    PyObject *mod = import_find_extension(tstate, info.name, info.path);
+    if (mod != NULL) {
+        assert(!_PyErr_Occurred(tstate));
+        assert(get_extension_kind(_PyModule_GetDef(mod))
+                    == _Py_ext_module_loader_result_SINGLEPHASE);
         goto finally;
     }
+    else if (_PyErr_Occurred(tstate)) {
+        goto finally;
+    }
+    /* Otherwise it must be multi-phase init or the first time it's loaded. */
 
     if (PySys_Audit("import", "OOOOO", info.name, info.path,
                     Py_None, Py_None, Py_None) < 0)
