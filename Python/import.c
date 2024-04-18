@@ -1390,6 +1390,86 @@ import_find_extension(PyThreadState *tstate,
     return mod;
 }
 
+static PyObject *
+import_run_extension(PyThreadState *tstate, PyModInitFunction p0,
+                     struct _Py_ext_module_loader_info *info,
+                     PyObject *spec, PyObject *modules)
+{
+    PyObject *mod = NULL;
+    PyModuleDef *def = NULL;
+
+    struct _Py_ext_module_loader_result res;
+    if (_PyImport_RunModInitFunc(p0, info, &res) < 0) {
+        /* We discard res.def. */
+        assert(res.module == NULL);
+        assert(PyErr_Occurred());
+        goto finally;
+    }
+    assert(!PyErr_Occurred());
+
+    mod = res.module;
+    res.module = NULL;
+    def = res.def;
+    assert(def != NULL);
+
+    if (mod == NULL) {
+        //assert(!is_singlephase(def));
+        assert(mod == NULL);
+        mod = PyModule_FromDefAndSpec(def, spec);
+        if (mod == NULL) {
+            goto finally;
+        }
+    }
+    else {
+        assert(is_singlephase(def));
+        assert(PyModule_Check(mod));
+
+        const char *name_buf = PyBytes_AS_STRING(info->name_encoded);
+        if (_PyImport_CheckSubinterpIncompatibleExtensionAllowed(name_buf) < 0) {
+            Py_CLEAR(mod);
+            goto finally;
+        }
+
+        /* Remember pointer to module init function. */
+        def->m_base.m_init = p0;
+
+        if (info->filename != NULL) {
+            /* Remember the filename as the __file__ attribute */
+            if (PyModule_AddObjectRef(mod, "__file__", info->filename) < 0) {
+                PyErr_Clear(); /* Not important enough to report */
+            }
+        }
+
+        struct singlephase_global_update singlephase = {0};
+        // gh-88216: Extensions and def->m_base.m_copy can be updated
+        // when the extension module doesn't support sub-interpreters.
+        if (def->m_size == -1
+                && !is_core_module(tstate->interp, info->name, info->path))
+        {
+            singlephase.m_dict = PyModule_GetDict(mod);
+            assert(singlephase.m_dict != NULL);
+        }
+        if (update_global_state_for_extension(
+                tstate, info->path, info->name, def, &singlephase) < 0)
+        {
+            Py_CLEAR(mod);
+            goto finally;
+        }
+
+        PyObject *modules = get_modules_dict(tstate, true);
+        if (finish_singlephase_extension(
+                tstate, mod, def, info->name, modules) < 0)
+        {
+            Py_CLEAR(mod);
+            goto finally;
+        }
+    }
+
+finally:
+    return mod;
+}
+
+
 static int
 clear_singlephase_extension(PyInterpreterState *interp,
                             PyObject *name, PyObject *path)
@@ -1495,8 +1575,6 @@ is_builtin(PyObject *name)
 static PyObject*
 create_builtin(PyThreadState *tstate, PyObject *name, PyObject *spec)
 {
-    PyModuleDef *def = NULL;
-
     struct _Py_ext_module_loader_info info;
     if (_Py_ext_module_loader_info_init_for_builtin(&info, name) < 0) {
         return NULL;
@@ -1532,54 +1610,9 @@ create_builtin(PyThreadState *tstate, PyObject *name, PyObject *spec)
         goto finally;
     }
 
-    struct _Py_ext_module_loader_result res;
-    if (_PyImport_RunModInitFunc(p0, &info, &res) < 0) {
-        goto finally;
-    }
-
-    mod = res.module;
-    res.module = NULL;
-    def = res.def;
-    assert(def != NULL);
-
-    if (mod == NULL) {
-        assert(!is_singlephase(def));
-        mod = PyModule_FromDefAndSpec(def, spec);
-        if (mod == NULL) {
-            goto finally;
-        }
-    }
-    else {
-        assert(is_singlephase(def));
-
-        /* Remember pointer to module init function. */
-        def->m_base.m_init = p0;
-
-        struct singlephase_global_update singlephase = {0};
-        // gh-88216: Extensions and def->m_base.m_copy can be updated
-        // when the extension module doesn't support sub-interpreters.
-        if (def->m_size == -1
-                && !is_core_module(tstate->interp, info.name, info.path))
-        {
-            singlephase.m_dict = PyModule_GetDict(mod);
-            assert(singlephase.m_dict != NULL);
-        }
-
-        if (update_global_state_for_extension(
-                tstate, info.name, info.path, def, &singlephase) < 0)
-        {
-            Py_CLEAR(mod);
-            goto finally;
-        }
-
-        PyObject *modules = get_modules_dict(tstate, true);
-        if (finish_singlephase_extension(
-                tstate, mod, def, info.name, modules) < 0)
-        {
-            Py_CLEAR(mod);
-            goto finally;
-        }
-    }
+    /* Now load it. */
+    mod = import_run_extension(
+                    tstate, p0, &info, spec, get_modules_dict(tstate, true));
 
 finally:
     _Py_ext_module_loader_info_clear(&info);
@@ -3894,7 +3927,6 @@ _imp_create_dynamic_impl(PyObject *module, PyObject *spec, PyObject *file)
 /*[clinic end generated code: output=83249b827a4fde77 input=c31b954f4cf4e09d]*/
 {
     PyObject *mod = NULL;
-    PyModuleDef *def = NULL;
     PyThreadState *tstate = _PyThreadState_GET();
 
     struct _Py_ext_module_loader_info info;
@@ -3938,67 +3970,12 @@ _imp_create_dynamic_impl(PyObject *module, PyObject *spec, PyObject *file)
         goto finally;
     }
 
-    struct _Py_ext_module_loader_result res;
-    if (_PyImport_RunModInitFunc(p0, &info, &res) < 0) {
-        assert(PyErr_Occurred());
-        goto finally;
-    }
-
-    mod = res.module;
-    res.module = NULL;
-    def = res.def;
-    assert(def != NULL);
-
+    mod = import_run_extension(
+                    tstate, p0, &info, spec, get_modules_dict(tstate, true));
     if (mod == NULL) {
-        //assert(!is_singlephase(def));
-        mod = PyModule_FromDefAndSpec(def, spec);
-        if (mod == NULL) {
-            goto finally;
-        }
-    }
-    else {
-        assert(is_singlephase(def));
-        assert(!is_core_module(tstate->interp, info.name, info.filename));
-        assert(!is_core_module(tstate->interp, info.name, info.name));
-
-        const char *name_buf = PyBytes_AS_STRING(info.name_encoded);
-        if (_PyImport_CheckSubinterpIncompatibleExtensionAllowed(name_buf) < 0) {
-            Py_CLEAR(mod);
-            goto finally;
-        }
-
-        /* Remember pointer to module init function. */
-        def->m_base.m_init = p0;
-
-        /* Remember the filename as the __file__ attribute */
-        if (PyModule_AddObjectRef(mod, "__file__", info.filename) < 0) {
-            PyErr_Clear(); /* Not important enough to report */
-        }
-
-        struct singlephase_global_update singlephase = {0};
-        // gh-88216: Extensions and def->m_base.m_copy can be updated
-        // when the extension module doesn't support sub-interpreters.
-        if (def->m_size == -1) {
-            singlephase.m_dict = PyModule_GetDict(mod);
-            assert(singlephase.m_dict != NULL);
-        }
-        if (update_global_state_for_extension(
-                tstate, info.filename, info.name, def, &singlephase) < 0)
-        {
-            Py_CLEAR(mod);
-            goto finally;
-        }
-
-        PyObject *modules = get_modules_dict(tstate, true);
-        if (finish_singlephase_extension(
-                tstate, mod, def, info.name, modules) < 0)
-        {
-            Py_CLEAR(mod);
-            goto finally;
-        }
     }
 
-    // XXX Shouldn't this happen in the error cases too.
+    // XXX Shouldn't this happen in the error cases too (i.e. in "finally")?
     if (fp) {
         fclose(fp);
     }
