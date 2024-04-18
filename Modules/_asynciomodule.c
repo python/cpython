@@ -1611,8 +1611,9 @@ FutureIter_dealloc(futureiterobject *it)
     tp->tp_clear((PyObject *)it);
 
     // GH-115874: We can't use PyType_GetModuleByDef here as the type might have
-    // already been cleared. This is also why we must check if ht_module != NULL.
-    // Subclasses also cannot make use of the free list.
+    // already been cleared, which is also why we must check if ht_module != NULL.
+    // Due to this restriction, subclasses that belong to a different module
+    // will not be able to use the free list.
     if (module && _PyModule_GetDef(module) == &_asynciomodule) {
         state = get_asyncio_state(module);
     }
