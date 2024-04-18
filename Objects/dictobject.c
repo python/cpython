@@ -1818,7 +1818,7 @@ insert_to_emptydict(PyInterpreterState *interp, PyDictObject *mp,
         ep->me_hash = hash;
         ep->me_value = value;
     }
-    mp->ma_used++;
+    FT_ATOMIC_STORE_SSIZE_RELAXED(mp->ma_used, FT_ATOMIC_LOAD_SSIZE_RELAXED(mp->ma_used) + 1);
     mp->ma_version_tag = new_version;
     newkeys->dk_usable--;
     newkeys->dk_nentries++;
@@ -2510,7 +2510,7 @@ delitem_common(PyDictObject *mp, Py_hash_t hash, Py_ssize_t ix,
     Py_ssize_t hashpos = lookdict_index(mp->ma_keys, hash, ix);
     assert(hashpos >= 0);
 
-    mp->ma_used--;
+    FT_ATOMIC_STORE_SSIZE_RELAXED(mp->ma_used, FT_ATOMIC_LOAD_SSIZE(mp->ma_used) - 1);
     mp->ma_version_tag = new_version;
     if (_PyDict_HasSplitTable(mp)) {
         assert(old_value == mp->ma_values->values[ix]);
