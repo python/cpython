@@ -834,7 +834,7 @@ static PyMethodDef setiter_methods[] = {
 
 static PyObject *setiter_iternext(setiterobject *si)
 {
-    PyObject *key;
+    PyObject *key = NULL;
     Py_ssize_t i, mask;
     setentry *entry;
     PySetObject *so = si->si_set;
@@ -843,30 +843,35 @@ static PyObject *setiter_iternext(setiterobject *si)
         return NULL;
     assert (PyAnySet_Check(so));
 
-    if (si->si_used != so->used) {
+    Py_ssize_t so_used = FT_ATOMIC_LOAD_SSIZE(so->used);
+    Py_ssize_t si_used = FT_ATOMIC_LOAD_SSIZE(si->si_used);
+    if (si_used != so_used) {
         PyErr_SetString(PyExc_RuntimeError,
                         "Set changed size during iteration");
         si->si_used = -1; /* Make this state sticky */
         return NULL;
     }
 
+    Py_BEGIN_CRITICAL_SECTION(so);
     i = si->si_pos;
     assert(i>=0);
     entry = so->table;
     mask = so->mask;
-    while (i <= mask && (entry[i].key == NULL || entry[i].key == dummy))
+    while (i <= mask && (entry[i].key == NULL || entry[i].key == dummy)) {
         i++;
+    }
+    if (i <= mask) {
+        key = Py_NewRef(entry[i].key);
+    }
+    Py_END_CRITICAL_SECTION();
     si->si_pos = i+1;
-    if (i > mask)
-        goto fail;
+    if (key == NULL) {
+        si->si_set = NULL;
+        Py_DECREF(so);
+        return NULL;
+    }
     si->len--;
-    key = entry[i].key;
-    return Py_NewRef(key);
-
-fail:
-    si->si_set = NULL;
-    Py_DECREF(so);
-    return NULL;
+    return key;
 }
 
 PyTypeObject PySetIter_Type = {
@@ -2656,7 +2661,6 @@ PySet_Add(PyObject *anyset, PyObject *key)
     return rv;
 }
 
-// TODO: Make thread-safe in free-threaded builds
 int
 _PySet_NextEntry(PyObject *set, Py_ssize_t *pos, PyObject **key, Py_hash_t *hash)
 {
@@ -2669,6 +2673,23 @@ _PySet_NextEntry(PyObject *set, Py_ssize_t *pos, PyObject **key, Py_hash_t *hash
     if (set_next((PySetObject *)set, pos, &entry) == 0)
         return 0;
     *key = entry->key;
+    *hash = entry->hash;
+    return 1;
+}
+
+int
+_PySet_NextEntryRef(PyObject *set, Py_ssize_t *pos, PyObject **key, Py_hash_t *hash)
+{
+    setentry *entry;
+
+    if (!PyAnySet_Check(set)) {
+        PyErr_BadInternalCall();
+        return -1;
+    }
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(set);
+    if (set_next((PySetObject *)set, pos, &entry) == 0)
+        return 0;
+    *key = Py_NewRef(entry->key);
     *hash = entry->hash;
     return 1;
 }
