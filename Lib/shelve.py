@@ -197,7 +197,15 @@ class BsdDbShelf(Shelf):
     """
 
     def __init__(self, dict, protocol=None, writeback=False,
-                 keyencoding="utf-8"):
+                 keyencoding="utf-8", *, serializer=None, deserializer=None):
+        if serializer is None and deserializer is None:
+            self.serializer = dumps
+            self.deserializer = loads
+        elif (serializer is None) ^ (deserializer is None):
+            raise ShelveError("Serializer and deserializer must be defined together.")
+        else:
+            self.serializer = serializer
+            self.deserializer = deserializer
         Shelf.__init__(self, dict, protocol, writeback, keyencoding)
 
     def set_location(self, key):
