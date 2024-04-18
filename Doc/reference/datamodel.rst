@@ -627,12 +627,6 @@ Most of these attributes check the type of the assigned value:
      - A :class:`dictionary <dict>` containing defaults for keyword-only
        :term:`parameters <parameter>`.
 
-   * - .. attribute:: function.__type_params__
-     - A :class:`tuple` containing the :ref:`type parameters <type-params>` of
-       a :ref:`generic function <generic-functions>`.
-
-       .. versionadded:: 3.12
-
    * - .. attribute:: function.__static_attributes__
      - A :class:`tuple` containing names of attributes of this class which
        are accessed through ``self.X`` from any function in its body.
@@ -1007,7 +1001,7 @@ Special attributes:
       A tuple containing the :ref:`type parameters <type-params>` of
       a :ref:`generic class <generic-classes>`.
 
-   :attr:`__static_attributes__`
+   :attr:`~class.__static_attributes__`
       A tuple containing names of attributes of this class which are accessed
       through ``self.X`` from any function in its body.
 
