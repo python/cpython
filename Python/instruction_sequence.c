@@ -158,6 +158,8 @@ _PyInstructionSequence_AddNested(instr_sequence *seq, instr_sequence *nested)
 
 void
 PyInstructionSequence_Fini(instr_sequence *seq) {
+    Py_XDECREF(seq->s_nested);
+
     PyMem_Free(seq->s_labelmap);
     seq->s_labelmap = NULL;
 
