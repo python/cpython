@@ -895,7 +895,7 @@ class CursorTests(unittest.TestCase):
             ("select ?2, ?1", (1, 2), (2, 1)),
         ):
             with self.subTest(query=query, params=params):
-                with warnings.catch_warnings(record=True):
+                with warnings.catch_warnings():
                     warnings.simplefilter("error", DeprecationWarning)
                     cu = self.cu.execute(query, params)
                     actual, = cu.fetchall()
