@@ -4643,8 +4643,10 @@ class GenericTests(BaseTestCase):
 
     def test_pep695_generic_with_future_annotations(self):
         hints_for_A = get_type_hints(ann_module695.A)
-        self.assertEqual(hints_for_A.keys(), {"x", "y", "z"})
-        self.assertEqual(tuple(hints_for_A.values()), ann_module695.A.__type_params__)
+        A_type_params = ann_module695.A.__type_params__
+        self.assertIs(hints_for_A["x"], A_type_params[0])
+        self.assertEqual(hints_for_A["y"].__args__[0], Unpack[A_type_params[1]])
+        self.assertIs(hints_for_A["z"].__args__[0], A_type_params[2])
 
         hints_for_B = get_type_hints(ann_module695.B)
         self.assertEqual(hints_for_B.keys(), {"x", "y", "z"})

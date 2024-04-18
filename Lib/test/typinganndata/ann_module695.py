@@ -1,10 +1,11 @@
 from __future__ import annotations
+from typing import Callable
 
 
 class A[T, *Ts, **P]:
     x: T
-    y: Ts
-    z: P
+    y: tuple[*Ts]
+    z: Callable[P, str]
 
 
 class B[T, *Ts, **P]:
