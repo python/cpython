@@ -2733,7 +2733,7 @@ class Parameter:
         `Parameter.KEYWORD_ONLY`, `Parameter.VAR_KEYWORD`.
     """
 
-    __slots__ = ('_name', '_kind', '_default', '_annotation')
+    __slots__ = ('_name', '_kind', '_default', '_annotation', '_hash')
 
     POSITIONAL_ONLY         = _POSITIONAL_ONLY
     POSITIONAL_OR_KEYWORD   = _POSITIONAL_OR_KEYWORD
@@ -2785,6 +2785,7 @@ class Parameter:
             raise ValueError('{!r} is not a valid parameter name'.format(name))
 
         self._name = name
+        self._hash = hash((self._name, self._kind, self._annotation, self._default))
 
     def __reduce__(self):
         return (type(self),
@@ -2858,7 +2859,7 @@ class Parameter:
         return '<{} "{}">'.format(self.__class__.__name__, self)
 
     def __hash__(self):
-        return hash((self._name, self._kind, self._annotation, self._default))
+        return self._hash
 
     def __eq__(self, other):
         if self is other:
