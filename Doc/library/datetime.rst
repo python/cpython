@@ -114,7 +114,7 @@ Available Types
    :noindex:
 
    An idealized time, independent of any particular day, assuming that every day
-   has exactly 24\*60\*60 seconds.  (There is no notion of "leap seconds" here.)
+   has exactly ``24 * 60 * 60`` seconds.  (There is no notion of "leap seconds" here.)
    Attributes: :attr:`hour`, :attr:`minute`, :attr:`second`, :attr:`microsecond`,
    and :attr:`.tzinfo`.
 
@@ -213,10 +213,10 @@ A :class:`timedelta` object represents a duration, the difference between two
    Only *days*, *seconds* and *microseconds* are stored internally.
    Arguments are converted to those units:
 
-   * A millisecond is converted to 1000 microseconds.
-   * A minute is converted to 60 seconds.
-   * An hour is converted to 3600 seconds.
-   * A week is converted to 7 days.
+   * A *millisecond* is converted to ``1000`` *microseconds*.
+   * A *minute* is converted to ``60`` *seconds*.
+   * An *hour* is converted to ``3600`` *seconds*.
+   * A *week* is converted to ``7`` *days*.
 
    and days, seconds and microseconds are then normalized so that the
    representation is unique, with
@@ -280,20 +280,26 @@ Class attributes:
    The smallest possible difference between non-equal :class:`timedelta` objects,
    ``timedelta(microseconds=1)``.
 
-Note that, because of normalization, ``timedelta.max`` > ``-timedelta.min``.
+Note that, because of normalization, ``timedelta.max > -timedelta.min`` is true.
 ``-timedelta.max`` is not representable as a :class:`timedelta` object.
 
 Instance attributes (read-only):
 
-+------------------+--------------------------------------------+
-| Attribute        | Value                                      |
-+==================+============================================+
-| ``days``         | Between -999999999 and 999999999 inclusive |
-+------------------+--------------------------------------------+
-| ``seconds``      | Between 0 and 86399 inclusive              |
-+------------------+--------------------------------------------+
-| ``microseconds`` | Between 0 and 999999 inclusive             |
-+------------------+--------------------------------------------+
+
+.. attribute:: timedelta.days
+
+   Between ``-999999999`` and ``999999999`` inclusive.
+
+
+.. attribute:: timedelta.seconds
+
+   Between ``0`` and ``86399`` inclusive.
+
+
+.. attribute:: timedelta.microseconds
+
+   Between ``0`` and ``999999`` inclusive.
+
 
 Supported operations:
 
@@ -302,18 +308,18 @@ Supported operations:
 +--------------------------------+-----------------------------------------------+
 | Operation                      | Result                                        |
 +================================+===============================================+
-| ``t1 = t2 + t3``               | Sum of *t2* and *t3*. Afterwards *t1*-*t2* == |
-|                                | *t3* and *t1*-*t3* == *t2* are true. (1)      |
+| ``t1 = t2 + t3``               | Sum of *t2* and *t3*. Afterwards ``t1 - t2 == |
+|                                | t3`` and ``t1 - t3 == t2`` are true. (1)      |
 +--------------------------------+-----------------------------------------------+
-| ``t1 = t2 - t3``               | Difference of *t2* and *t3*. Afterwards *t1*  |
-|                                | == *t2* - *t3* and *t2* == *t1* + *t3* are    |
+| ``t1 = t2 - t3``               | Difference of *t2*  and *t3*. Afterwards ``t1 |
+|                                | == t2 - t3`` and ``t2 == t1 + t3`` are        |
 |                                | true. (1)(6)                                  |
 +--------------------------------+-----------------------------------------------+
 | ``t1 = t2 * i or t1 = i * t2`` | Delta multiplied by an integer.               |
-|                                | Afterwards *t1* // i == *t2* is true,         |
+|                                | Afterwards ``t1 // i == t2`` is true,         |
 |                                | provided ``i != 0``.                          |
 +--------------------------------+-----------------------------------------------+
-|                                | In general, *t1* \* i == *t1* \* (i-1) + *t1* |
+|                                | In general, ``t1  * i == t1 * (i-1) + t1``    |
 |                                | is true. (1)                                  |
 +--------------------------------+-----------------------------------------------+
 | ``t1 = t2 * f or t1 = f * t2`` | Delta multiplied by a float. The result is    |
@@ -343,10 +349,9 @@ Supported operations:
 | ``+t1``                        | Returns a :class:`timedelta` object with the  |
 |                                | same value. (2)                               |
 +--------------------------------+-----------------------------------------------+
-| ``-t1``                        | equivalent to                                 |
-|                                | :class:`timedelta`\ (-*t1.days*,              |
-|                                | -*t1.seconds*, -*t1.microseconds*),           |
-|                                | and to *t1*\* -1. (1)(4)                      |
+| ``-t1``                        | equivalent to ``timedelta(-t1.days,           |
+|                                | -t1.seconds*, -t1.microseconds)``,            |
+|                                | and to ``t1 * -1``. (1)(4)                    |
 +--------------------------------+-----------------------------------------------+
 | ``abs(t)``                     | equivalent to +\ *t* when ``t.days >= 0``,    |
 |                                | and to -*t* when ``t.days < 0``. (2)          |
@@ -370,10 +375,10 @@ Notes:
    This is exact and cannot overflow.
 
 (3)
-   Division by 0 raises :exc:`ZeroDivisionError`.
+   Division by ``0`` raises :exc:`ZeroDivisionError`.
 
 (4)
-   -*timedelta.max* is not representable as a :class:`timedelta` object.
+   ``-timedelta.max`` is not representable as a :class:`timedelta` object.
 
 (5)
    String representations of :class:`timedelta` objects are normalized
@@ -503,7 +508,7 @@ Other constructors, all class methods:
 .. classmethod:: date.fromordinal(ordinal)
 
    Return the date corresponding to the proleptic Gregorian ordinal, where
-   January 1 of year 1 has ordinal 1.
+   January 1 of year 1 has ordinal ``1``.
 
    :exc:`ValueError` is raised unless ``1 <= ordinal <=
    date.max.toordinal()``. For any date *d*,
@@ -570,12 +575,12 @@ Instance attributes (read-only):
 
 .. attribute:: date.month
 
-   Between 1 and 12 inclusive.
+   Between ``1`` and ``12`` inclusive.
 
 
 .. attribute:: date.day
 
-   Between 1 and the number of days in the given month of the given year.
+   Between ``1`` and the number of days in the given month of the given year.
 
 
 Supported operations:
@@ -613,8 +618,8 @@ Notes:
    ``timedelta.seconds`` and ``timedelta.microseconds`` are ignored.
 
 (3)
-   This is exact, and cannot overflow. timedelta.seconds and
-   timedelta.microseconds are 0, and date2 + timedelta == date1 after.
+   This is exact, and cannot overflow. ``timedelta.seconds`` and
+   ``timedelta.microseconds`` are ``0``, and ``date2 + timedelta == date1`` after.
 
 (4)
    :class:`date` objects are equal if they represent the same date.
@@ -677,20 +682,20 @@ Instance methods:
 .. method:: date.toordinal()
 
    Return the proleptic Gregorian ordinal of the date, where January 1 of year 1
-   has ordinal 1. For any :class:`date` object *d*,
+   has ordinal ``1``. For any :class:`date` object *d*,
    ``date.fromordinal(d.toordinal()) == d``.
 
 
 .. method:: date.weekday()
 
-   Return the day of the week as an integer, where Monday is 0 and Sunday is 6.
+   Return the day of the week as an integer, where Monday is ``0`` and Sunday is ``6``.
    For example, ``date(2002, 12, 4).weekday() == 2``, a Wednesday. See also
    :meth:`isoweekday`.
 
 
 .. method:: date.isoweekday()
 
-   Return the day of the week as an integer, where Monday is 1 and Sunday is 7.
+   Return the day of the week as an integer, where Monday is ``1`` and Sunday is ``7``.
    For example, ``date(2002, 12, 4).isoweekday() == 3``, a Wednesday. See also
    :meth:`weekday`, :meth:`isocalendar`.
 
@@ -752,7 +757,7 @@ Instance methods:
 .. method:: date.strftime(format)
 
    Return a string representing the date, controlled by an explicit format string.
-   Format codes referring to hours, minutes or seconds will see 0 values.
+   Format codes referring to hours, minutes or seconds will see ``0`` values.
    See also :ref:`strftime-strptime-behavior` and :meth:`date.isoformat`.
 
 
@@ -841,7 +846,7 @@ from a :class:`date` object and a :class:`.time` object.
 
 Like a :class:`date` object, :class:`.datetime` assumes the current Gregorian
 calendar extended in both directions; like a :class:`.time` object,
-:class:`.datetime` assumes there are exactly 3600\*24 seconds in every day.
+:class:`.datetime` assumes there are exactly ``3600 * 24`` seconds in every day.
 
 Constructor:
 
@@ -945,7 +950,7 @@ Other constructors, all class methods:
       failure.
 
    .. versionchanged:: 3.6
-      :meth:`fromtimestamp` may return instances with :attr:`.fold` set to 1.
+      :meth:`fromtimestamp` may return instances with :attr:`.fold` set to ``1``.
 
 .. classmethod:: datetime.utcfromtimestamp(timestamp)
 
@@ -991,9 +996,9 @@ Other constructors, all class methods:
 .. classmethod:: datetime.fromordinal(ordinal)
 
    Return the :class:`.datetime` corresponding to the proleptic Gregorian ordinal,
-   where January 1 of year 1 has ordinal 1. :exc:`ValueError` is raised unless ``1
-   <= ordinal <= datetime.max.toordinal()``. The hour, minute, second and
-   microsecond of the result are all 0, and :attr:`.tzinfo` is ``None``.
+   where January 1 of year 1 has ordinal ``1``. :exc:`ValueError` is raised unless
+   ``1 <= ordinal <= datetime.max.toordinal()``. The hour, minute, second and
+   microsecond of the result are all ``0``, and :attr:`.tzinfo` is ``None``.
 
 
 .. classmethod:: datetime.combine(date, time, tzinfo=time.tzinfo)
@@ -1128,12 +1133,12 @@ Instance attributes (read-only):
 
 .. attribute:: datetime.month
 
-   Between 1 and 12 inclusive.
+   Between ``1`` and ``12`` inclusive.
 
 
 .. attribute:: datetime.day
 
-   Between 1 and the number of days in the given month of the given year.
+   Between ``1`` and the number of days in the given month of the given year.
 
 
 .. attribute:: datetime.hour
@@ -1167,7 +1172,7 @@ Instance attributes (read-only):
    In ``[0, 1]``. Used to disambiguate wall times during a repeated interval. (A
    repeated interval occurs when clocks are rolled back at the end of daylight saving
    time or when the UTC offset for the current zone is decreased for political reasons.)
-   The value 0 (1) represents the earlier (later) of the two moments with the same wall
+   The value ``0`` (1) represents the earlier (later) of the two moments with the same wall
    time representation.
 
    .. versionadded:: 3.6
@@ -1194,15 +1199,15 @@ Supported operations:
 
 (1)
    datetime2 is a duration of timedelta removed from datetime1, moving forward in
-   time if ``timedelta.days`` > 0, or backward if ``timedelta.days`` < 0. The
+   time if ``timedelta.days > 0``, or backward if ``timedelta.days < 0``. The
    result has the same :attr:`~.datetime.tzinfo` attribute as the input datetime, and
-   datetime2 - datetime1 == timedelta after. :exc:`OverflowError` is raised if
-   datetime2.year would be smaller than :const:`MINYEAR` or larger than
+   ``datetime2 - datetime1 == timedelta`` after. :exc:`OverflowError` is raised if
+   ``datetime2.year`` would be smaller than :const:`MINYEAR` or larger than
    :const:`MAXYEAR`. Note that no time zone adjustments are done even if the
    input is an aware object.
 
 (2)
-   Computes the datetime2 such that datetime2 + timedelta == datetime1. As for
+   Computes the datetime2 such that ``datetime2 + timedelta == datetime1``. As for
    addition, the result has the same :attr:`~.datetime.tzinfo` attribute as the input
    datetime, and no time zone adjustments are done even if the input is aware.
 
@@ -1216,7 +1221,7 @@ Supported operations:
    object *t* such that ``datetime2 + t == datetime1``. No time zone adjustments
    are done in this case.
 
-   If both are aware and have different :attr:`~.datetime.tzinfo` attributes, ``a-b`` acts
+   If both are aware and have different :attr:`~.datetime.tzinfo` attributes, ``a - b`` acts
    as if *a* and *b* were first converted to naive UTC datetimes. The
    result is ``(a.replace(tzinfo=None) - a.utcoffset()) - (b.replace(tzinfo=None)
    - b.utcoffset())`` except that the implementation never overflows.
@@ -1398,13 +1403,13 @@ Instance methods:
 .. method:: datetime.utctimetuple()
 
    If :class:`.datetime` instance *d* is naive, this is the same as
-   ``d.timetuple()`` except that :attr:`~.time.struct_time.tm_isdst` is forced to 0 regardless of what
+   ``d.timetuple()`` except that :attr:`~.time.struct_time.tm_isdst` is forced to ``0`` regardless of what
    ``d.dst()`` returns. DST is never in effect for a UTC time.
 
    If *d* is aware, *d* is normalized to UTC time, by subtracting
    ``d.utcoffset()``, and a :class:`time.struct_time` for the
-   normalized time is returned. :attr:`!tm_isdst` is forced to 0. Note
-   that an :exc:`OverflowError` may be raised if *d*.year was
+   normalized time is returned. :attr:`!tm_isdst` is forced to ``0``. Note
+   that an :exc:`OverflowError` may be raised if ``d.year`` was
    ``MINYEAR`` or ``MAXYEAR`` and UTC adjustment spills over a year
    boundary.
 
@@ -1462,13 +1467,13 @@ Instance methods:
 
 .. method:: datetime.weekday()
 
-   Return the day of the week as an integer, where Monday is 0 and Sunday is 6.
+   Return the day of the week as an integer, where Monday is ``0`` and Sunday is ``6``.
    The same as ``self.date().weekday()``. See also :meth:`isoweekday`.
 
 
 .. method:: datetime.isoweekday()
 
-   Return the day of the week as an integer, where Monday is 1 and Sunday is 7.
+   Return the day of the week as an integer, where Monday is ``1`` and Sunday is ``7``.
    The same as ``self.date().isoweekday()``. See also :meth:`weekday`,
    :meth:`isocalendar`.
 
@@ -1483,15 +1488,15 @@ Instance methods:
 
    Return a string representing the date and time in ISO 8601 format:
 
-   - ``YYYY-MM-DDTHH:MM:SS.ffffff``, if :attr:`microsecond` is not 0
-   - ``YYYY-MM-DDTHH:MM:SS``, if :attr:`microsecond` is 0
+   - ``YYYY-MM-DDTHH:MM:SS.ffffff``, if :attr:`microsecond` is not ``0``
+   - ``YYYY-MM-DDTHH:MM:SS``, if :attr:`microsecond` is ``0``
 
    If :meth:`utcoffset` does not return ``None``, a string is
    appended, giving the UTC offset:
 
    - ``YYYY-MM-DDTHH:MM:SS.ffffff+HH:MM[:SS[.ffffff]]``, if :attr:`microsecond`
      is not 0
-   - ``YYYY-MM-DDTHH:MM:SS+HH:MM[:SS[.ffffff]]``,  if :attr:`microsecond` is 0
+   - ``YYYY-MM-DDTHH:MM:SS+HH:MM[:SS[.ffffff]]``,  if :attr:`microsecond` is ``0``
 
    Examples::
 
@@ -1519,7 +1524,7 @@ Instance methods:
    components of the time to include (the default is ``'auto'``).
    It can be one of the following:
 
-   - ``'auto'``: Same as ``'seconds'`` if :attr:`microsecond` is 0,
+   - ``'auto'``: Same as ``'seconds'`` if :attr:`microsecond` is ``0``,
      same as ``'microseconds'`` otherwise.
    - ``'hours'``: Include the :attr:`hour` in the two-digit ``HH`` format.
    - ``'minutes'``: Include :attr:`hour` and :attr:`minute` in ``HH:MM`` format.
@@ -1735,7 +1740,7 @@ day, and subject to adjustment via a :class:`tzinfo` object.
    * ``fold in [0, 1]``.
 
    If an argument outside those ranges is given, :exc:`ValueError` is raised. All
-   default to ``0`` except *tzinfo*, which defaults to :const:`None`.
+   default to ``0`` except *tzinfo*, which defaults to ``None``.
 
 Class attributes:
 
@@ -1790,7 +1795,7 @@ Instance attributes (read-only):
    In ``[0, 1]``. Used to disambiguate wall times during a repeated interval. (A
    repeated interval occurs when clocks are rolled back at the end of daylight saving
    time or when the UTC offset for the current zone is decreased for political reasons.)
-   The value 0 (1) represents the earlier (later) of the two moments with the same wall
+   The value ``0`` (1) represents the earlier (later) of the two moments with the same wall
    time representation.
 
    .. versionadded:: 3.6
@@ -1885,16 +1890,16 @@ Instance methods:
 
    Return a string representing the time in ISO 8601 format, one of:
 
-   - ``HH:MM:SS.ffffff``, if :attr:`microsecond` is not 0
-   - ``HH:MM:SS``, if :attr:`microsecond` is 0
+   - ``HH:MM:SS.ffffff``, if :attr:`microsecond` is not ``0``
+   - ``HH:MM:SS``, if :attr:`microsecond` is ``0``
    - ``HH:MM:SS.ffffff+HH:MM[:SS[.ffffff]]``, if :meth:`utcoffset` does not return ``None``
-   - ``HH:MM:SS+HH:MM[:SS[.ffffff]]``, if :attr:`microsecond` is 0 and :meth:`utcoffset` does not return ``None``
+   - ``HH:MM:SS+HH:MM[:SS[.ffffff]]``, if :attr:`microsecond` is ``0`` and :meth:`utcoffset` does not return ``None``
 
    The optional argument *timespec* specifies the number of additional
    components of the time to include (the default is ``'auto'``).
    It can be one of the following:
 
-   - ``'auto'``: Same as ``'seconds'`` if :attr:`microsecond` is 0,
+   - ``'auto'``: Same as ``'seconds'`` if :attr:`microsecond` is ``0``,
      same as ``'microseconds'`` otherwise.
    - ``'hours'``: Include the :attr:`hour` in the two-digit ``HH`` format.
    - ``'minutes'``: Include :attr:`hour` and :attr:`minute` in ``HH:MM`` format.
@@ -2083,7 +2088,7 @@ Examples of working with a :class:`.time` object::
    ``tz.utcoffset(dt) - tz.dst(dt)``
 
    must return the same result for every :class:`.datetime` *dt* with ``dt.tzinfo ==
-   tz``  For sane :class:`tzinfo` subclasses, this expression yields the time
+   tz``. For sane :class:`tzinfo` subclasses, this expression yields the time
    zone's "standard offset", which should not depend on the date or the time, but
    only on geographic location. The implementation of :meth:`datetime.astimezone`
    relies on this, but cannot detect violations; it's the programmer's
@@ -2120,7 +2125,7 @@ Examples of working with a :class:`.time` object::
    Return the time zone name corresponding to the :class:`.datetime` object *dt*, as
    a string. Nothing about string names is defined by the :mod:`!datetime` module,
    and there's no requirement that it mean anything in particular. For example,
-   "GMT", "UTC", "-500", "-5:00", "EDT", "US/Eastern", "America/New York" are all
+   ``"GMT"``, ``"UTC"``, ``"-500"``, ``"-5:00"``, ``"EDT"``, ``"US/Eastern"``, ``"America/New York"`` are all
    valid replies. Return ``None`` if a string name isn't known. Note that this is
    a method rather than a fixed string primarily because some :class:`tzinfo`
    subclasses will wish to return different names depending on the specific value
@@ -2235,7 +2240,7 @@ to 1:00 (standard time) again. Local times of the form 1:MM are ambiguous.
 :meth:`~.datetime.astimezone` mimics the local clock's behavior by mapping two adjacent UTC
 hours into the same local hour then. In the Eastern example, UTC times of the
 form 5:MM and 6:MM both map to 1:MM when converted to Eastern, but earlier times
-have the :attr:`~.datetime.fold` attribute set to 0 and the later times have it set to 1.
+have the :attr:`~.datetime.fold` attribute set to ``0`` and the later times have it set to ``1``.
 For example, at the Fall back transition of 2016, we get::
 
     >>> u0 = datetime(2016, 11, 6, 4, tzinfo=timezone.utc)
@@ -2411,8 +2416,8 @@ requires, and these work on all platforms with a standard C implementation.
 |           |                                |  Samstag (de_DE)       |       |
 +-----------+--------------------------------+------------------------+-------+
 | ``%w``    | Weekday as a decimal number,   | 0, 1, ..., 6           |       |
-|           | where 0 is Sunday and 6 is     |                        |       |
-|           | Saturday.                      |                        |       |
+|           | where ``'0'`` is Sunday        |                        |       |
+|           | and ``'6'`` is Saturday.       |                        |       |
 +-----------+--------------------------------+------------------------+-------+
 | ``%d``    | Day of the month as a          | 01, 02, ..., 31        | \(9)  |
 |           | zero-padded decimal number.    |                        |       |
@@ -2472,7 +2477,7 @@ requires, and these work on all platforms with a standard C implementation.
 |           | decimal number. All days in a  |                        |       |
 |           | new year preceding the first   |                        |       |
 |           | Sunday are considered to be in |                        |       |
-|           | week 0.                        |                        |       |
+|           | week ``'0'``.                  |                        |       |
 +-----------+--------------------------------+------------------------+-------+
 | ``%W``    | Week number of the year        | 00, 01, ..., 53        | \(7), |
 |           | (Monday as the first day of    |                        | \(9)  |
@@ -2480,7 +2485,7 @@ requires, and these work on all platforms with a standard C implementation.
 |           | decimal number. All days in a  |                        |       |
 |           | new year preceding the first   |                        |       |
 |           | Monday are considered to be in |                        |       |
-|           | week 0.                        |                        |       |
+|           | week ``'0'``.                  |                        |       |
 +-----------+--------------------------------+------------------------+-------+
 | ``%c``    | Locale's appropriate date and  || Tue Aug 16 21:30:00   | \(1)  |
 |           | time representation.           |  1988 (en_US);         |       |
@@ -2509,7 +2514,7 @@ convenience. These parameters all correspond to ISO 8601 date values.
 |           | the ISO week (``%V``).         |                        |       |
 +-----------+--------------------------------+------------------------+-------+
 | ``%u``    | ISO 8601 weekday as a decimal  | 1, 2, ..., 7           |       |
-|           | number where 1 is Monday.      |                        |       |
+|           | number where ``'1'`` is Monday.|                        |       |
 +-----------+--------------------------------+------------------------+-------+
 | ``%V``    | ISO 8601 week as a decimal     | 01, 02, ..., 53        | \(8), |
 |           | number with Monday as          |                        | \(9)  |
