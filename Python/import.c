@@ -1526,25 +1526,29 @@ create_builtin(PyThreadState *tstate, PyObject *name, PyObject *spec)
                 /* Cannot re-init internal module ("sys" or "builtins") */
                 return import_add_module(tstate, name);
             }
-            mod = (*p->initfunc)();
-            if (mod == NULL) {
+
+            struct _Py_ext_module_loader_info info;
+            if (_Py_ext_module_loader_info_init_for_builtin(&info, name) < 0) {
                 return NULL;
             }
 
-            if (PyObject_TypeCheck(mod, &PyModuleDef_Type)) {
-                return PyModule_FromDefAndSpec((PyModuleDef*)mod, spec);
+            struct _Py_ext_module_loader_result res;
+            int rc = _PyImport_RunModInitFunc((*p->initfunc), &info, &res);
+            _Py_ext_module_loader_info_clear(&info);
+            if (rc < 0) {
+                _Py_ext_module_loader_result_apply_error(&res);
+                return NULL;
+            }
+            if (res.kind ==_Py_ext_module_loader_result_MULTIPHASE) {
+                assert(res.def != NULL);
+                assert(res.module == NULL);
+                return PyModule_FromDefAndSpec(res.def, spec);
             }
             else {
-                assert(PyModule_Check(mod));
-                /* Remember pointer to module init function. */
-                PyModuleDef *def = PyModule_GetDef(mod);
-                if (def == NULL) {
-                    return NULL;
-                }
-                def->m_base.m_init = p->initfunc;
-
+                assert(res.kind ==_Py_ext_module_loader_result_SINGLEPHASE);
+                mod = res.module;
                 if (fix_up_extension(
-                            tstate, mod, def, name, NULL, modules) < 0)
+                            tstate, mod, res.def, name, NULL, modules) < 0)
                 {
                     return NULL;
                 }

@@ -105,6 +105,33 @@ _Py_ext_module_loader_info_clear(struct _Py_ext_module_loader_info *info)
 }
 
 int
+_Py_ext_module_loader_info_init_for_builtin(
+                            struct _Py_ext_module_loader_info *info,
+                            PyObject *name)
+{
+    assert(PyUnicode_Check(name));
+
+#ifndef NDEBUG
+    Py_ssize_t name_len = PyUnicode_GetLength(name);
+#endif
+    assert(name_len > 0);
+    assert(PyUnicode_FindChar(name, '.', 0, name_len, -1) == -1);
+    PyObject *name_encoded = PyUnicode_AsEncodedString(name, "ascii", NULL);
+    if (name_encoded == NULL) {
+        return -1;
+    }
+
+    *info = (struct _Py_ext_module_loader_info){
+        .name=Py_NewRef(name),
+        .name_encoded=name_encoded,
+        /* We won't need path. */
+        .hook_prefix=ascii_only_prefix,
+        .newcontext=NULL,
+    };
+    return 0;
+}
+
+int
 _Py_ext_module_loader_info_init_from_spec(
                             struct _Py_ext_module_loader_info *p_info,
                             PyObject *spec)
@@ -271,10 +298,16 @@ _PyImport_RunModInitFunc(PyModInitFunction p0,
         res.kind = _Py_ext_module_loader_result_SINGLEPHASE;
         res.module = m;
 
+        if (!PyModule_Check(m)) {
+            SET_ERROR("initialization of %s did not return an extension "
+                      "module", name_buf);
+            goto error;
+        }
+
         /* Remember pointer to module init function. */
         res.def = PyModule_GetDef(m);
         if (res.def == NULL) {
-            SET_ERROR("initialization of %s did not return an extension "
+            SET_ERROR("initialization of %s did not return a valid extension "
                       "module", name_buf);
             goto error;
         }
