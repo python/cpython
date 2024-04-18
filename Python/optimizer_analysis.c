@@ -497,6 +497,9 @@ remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
     for (int pc = 0; pc < buffer_size; pc++) {
         int opcode = buffer[pc].opcode;
         switch (opcode) {
+            case _START_EXECUTOR:
+                may_have_escaped = false;
+                break;
             case _SET_IP:
                 buffer[pc].opcode = _NOP;
                 last_set_ip = pc;
