@@ -642,6 +642,10 @@ be finalized; only the internally used file object will be closed. See the
    and ``tarinfo.size`` bytes are read from it and added to the archive.  You can
    create :class:`TarInfo` objects directly, or by using :meth:`gettarinfo`.
 
+   .. versionchanged:: 3.13
+
+      *fileobj* must be given for non-zero-sized regular files.
+
 
 .. method:: TarFile.gettarinfo(name=None, arcname=None, fileobj=None)
 
