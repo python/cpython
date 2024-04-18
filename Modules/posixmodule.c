@@ -4721,6 +4721,7 @@ exit:
 os._path_isdevdrive
 
     path: path_t
+    /
 
 Determines whether the specified path is on a Windows Dev Drive.
 
@@ -4728,7 +4729,7 @@ Determines whether the specified path is on a Windows Dev Drive.
 
 static PyObject *
 os__path_isdevdrive_impl(PyObject *module, path_t *path)
-/*[clinic end generated code: output=1f437ea6677433a2 input=ee83e4996a48e23d]*/
+/*[clinic end generated code: output=1f437ea6677433a2 input=4946446dd2614420]*/
 {
 #ifndef PERSISTENT_VOLUME_STATE_DEV_VOLUME
     /* This flag will be documented at
@@ -4996,13 +4997,14 @@ os__findfirstfile_impl(PyObject *module, path_t *path)
 os._getvolumepathname
 
     path: path_t
+    /
 
 A helper function for ismount on Win32.
 [clinic start generated code]*/
 
 static PyObject *
 os__getvolumepathname_impl(PyObject *module, path_t *path)
-/*[clinic end generated code: output=804c63fd13a1330b input=722b40565fa21552]*/
+/*[clinic end generated code: output=804c63fd13a1330b input=41f7f1b1c38b8657]*/
 {
     PyObject *result;
     wchar_t *mountpath=NULL;
@@ -5044,13 +5046,14 @@ exit:
 os._path_splitroot
 
     path: path_t
+    /
 
 Removes everything after the root on Win32.
 [clinic start generated code]*/
 
 static PyObject *
 os__path_splitroot_impl(PyObject *module, path_t *path)
-/*[clinic end generated code: output=ab7f1a88b654581c input=dc93b1d3984cffb6]*/
+/*[clinic end generated code: output=ab7f1a88b654581c input=d356de1edb6050a2]*/
 {
     wchar_t *buffer;
     wchar_t *end;
@@ -5471,13 +5474,14 @@ os__path_islink_impl(PyObject *module, PyObject *path)
 os._path_normpath
 
     path: object
+    /
 
 Basic path normalization.
 [clinic start generated code]*/
 
 static PyObject *
-os__path_normpath_impl(PyObject *module, PyObject *path)
-/*[clinic end generated code: output=b94d696d828019da input=5e90c39e12549dc0]*/
+os__path_normpath(PyObject *module, PyObject *path)
+/*[clinic end generated code: output=82848a4c5f1e4a27 input=04f5e8c234583554]*/
 {
     if (!PyUnicode_Check(path)) {
         PyErr_Format(PyExc_TypeError, "expected 'str', not '%.200s'",
@@ -13270,13 +13274,14 @@ os_statvfs_impl(PyObject *module, path_t *path)
 os._getdiskusage
 
     path: path_t
+    /
 
 Return disk usage statistics about the given path as a (total, free) tuple.
 [clinic start generated code]*/
 
 static PyObject *
 os__getdiskusage_impl(PyObject *module, path_t *path)
-/*[clinic end generated code: output=3bd3991f5e5c5dfb input=6af8d1b7781cc042]*/
+/*[clinic end generated code: output=3bd3991f5e5c5dfb input=2cb5d1ddfb36949f]*/
 {
     BOOL retval;
     ULARGE_INTEGER _, total, free;
@@ -16438,6 +16443,7 @@ error:
 os._add_dll_directory
 
     path: path_t
+    /
 
 Add a path to the DLL search path.
 
@@ -16451,7 +16457,7 @@ to remove this directory from the search path.
 
 static PyObject *
 os__add_dll_directory_impl(PyObject *module, path_t *path)
-/*[clinic end generated code: output=80b025daebb5d683 input=1de3e6c13a5808c8]*/
+/*[clinic end generated code: output=80b025daebb5d683 input=b55aee2ef0841338]*/
 {
     DLL_DIRECTORY_COOKIE cookie = 0;
     DWORD err = 0;
@@ -16478,6 +16484,7 @@ os__add_dll_directory_impl(PyObject *module, path_t *path)
 os._remove_dll_directory
 
     cookie: object
+    /
 
 Removes a path from the DLL search path.
 
@@ -16487,8 +16494,8 @@ yourself.
 [clinic start generated code]*/
 
 static PyObject *
-os__remove_dll_directory_impl(PyObject *module, PyObject *cookie)
-/*[clinic end generated code: output=594350433ae535bc input=c1d16a7e7d9dc5dc]*/
+os__remove_dll_directory(PyObject *module, PyObject *cookie)
+/*[clinic end generated code: output=51231d104643ccd2 input=3817458b9509ced0]*/
 {
     DLL_DIRECTORY_COOKIE cookieValue;
     DWORD err = 0;
