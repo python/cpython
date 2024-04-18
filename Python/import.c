@@ -1557,7 +1557,12 @@ create_builtin(PyThreadState *tstate, PyObject *name, PyObject *spec)
     }
 
     PyObject *mod = import_find_extension(tstate, &info);
-    if (mod || _PyErr_Occurred(tstate)) {
+    if (mod != NULL) {
+        assert(!_PyErr_Occurred(tstate));
+        assert(is_singlephase(_PyModule_GetDef(mod)));
+        goto finally;
+    }
+    else if (_PyErr_Occurred(tstate)) {
         goto finally;
     }
 
@@ -3943,20 +3948,23 @@ _imp_create_dynamic_impl(PyObject *module, PyObject *spec, PyObject *file)
 /*[clinic end generated code: output=83249b827a4fde77 input=c31b954f4cf4e09d]*/
 {
     PyObject *mod = NULL;
+    PyThreadState *tstate = _PyThreadState_GET();
 
     struct _Py_ext_module_loader_info info;
     if (_Py_ext_module_loader_info_init_from_spec(&info, spec) < 0) {
         return NULL;
     }
 
-    PyThreadState *tstate = _PyThreadState_GET();
     mod = import_find_extension(tstate, &info);
-    if (mod != NULL || _PyErr_Occurred(tstate)) {
-        assert(mod == NULL || !_PyErr_Occurred(tstate));
+    if (mod != NULL) {
+        assert(!_PyErr_Occurred(tstate));
+        assert(is_singlephase(_PyModule_GetDef(mod)));
         goto finally;
     }
-
-    /* Is multi-phase init or this is the first time being loaded. */
+    else if (_PyErr_Occurred(tstate)) {
+        goto finally;
+    }
+    /* Otherwise it must be multi-phase init or the first time it's loaded. */
 
     if (PySys_Audit("import", "OOOOO", info.name, info.filename,
                     Py_None, Py_None, Py_None) < 0)
