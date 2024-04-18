@@ -1,0 +1,1 @@
+Add notes on how to report python documentation theme bugs
