@@ -15,7 +15,7 @@ PyAPI_FUNC(int) _PySet_NextEntry(
     PyObject **key,
     Py_hash_t *hash);
 
-// Export for '_pickle'
+// Export for '_pickle' shared extension
 PyAPI_FUNC(int) _PySet_NextEntryRef(
     PyObject *set,
     Py_ssize_t *pos,
