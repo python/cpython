@@ -278,6 +278,7 @@ _PyImport_RunModInitFunc(PyModInitFunction p0,
 
         res.def = PyModule_GetDef(m);
         if (res.def == NULL) {
+            PyErr_Clear();
             PyErr_Format(PyExc_SystemError,
                          "initialization of %s did not return an extension "
                          "module", name_buf);
@@ -288,10 +289,12 @@ _PyImport_RunModInitFunc(PyModInitFunction p0,
         res.def->m_base.m_init = p0;
     }
 
+    assert(!PyErr_Occurred());
     *p_res = res;
     return 0;
 
 error:
+    assert(PyErr_Occurred());
     Py_CLEAR(res.module);
     res.def = NULL;
     *p_res = res;
