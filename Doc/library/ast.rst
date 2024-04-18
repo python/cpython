@@ -724,7 +724,7 @@ Comprehensions
 
         >>> print(ast.dump(
         ...     ast.parse('[x for x in numbers]', mode='eval'),
-        ...     indent=4, show_empty=True,
+        ...     indent=4,
         ... ))
         Expression(
             body=ListComp(
@@ -733,11 +733,10 @@ Comprehensions
                     comprehension(
                         target=Name(id='x', ctx=Store()),
                         iter=Name(id='numbers', ctx=Load()),
-                        ifs=[],
                         is_async=0)]))
         >>> print(ast.dump(
         ...     ast.parse('{x: x**2 for x in numbers}', mode='eval'),
-        ...     indent=4, show_empty=True,
+        ...     indent=4,
         ... ))
         Expression(
             body=DictComp(
@@ -750,11 +749,10 @@ Comprehensions
                     comprehension(
                         target=Name(id='x', ctx=Store()),
                         iter=Name(id='numbers', ctx=Load()),
-                        ifs=[],
                         is_async=0)]))
         >>> print(ast.dump(
         ...     ast.parse('{x for x in numbers}', mode='eval'),
-        ...     indent=4, show_empty=True,
+        ...     indent=4,
         ... ))
         Expression(
             body=SetComp(
@@ -763,7 +761,6 @@ Comprehensions
                     comprehension(
                         target=Name(id='x', ctx=Store()),
                         iter=Name(id='numbers', ctx=Load()),
-                        ifs=[],
                         is_async=0)]))
 
 
@@ -1404,7 +1401,7 @@ Pattern matching
         ...         ...
         ...     case tuple():
         ...         ...
-        ... """), indent=4, show_empty=True))
+        ... """), indent=4))
         Module(
             body=[
                 Match(
@@ -1425,14 +1422,10 @@ Pattern matching
                                     value=Constant(value=Ellipsis))]),
                         match_case(
                             pattern=MatchClass(
-                                cls=Name(id='tuple', ctx=Load()),
-                                patterns=[],
-                                kwd_attrs=[],
-                                kwd_patterns=[]),
+                                cls=Name(id='tuple', ctx=Load())),
                             body=[
                                 Expr(
-                                    value=Constant(value=Ellipsis))])])],
-            type_ignores=[])
+                                    value=Constant(value=Ellipsis))])])])
 
    .. versionadded:: 3.10
 
@@ -1585,7 +1578,7 @@ Pattern matching
         ...         ...
         ...     case {**rest}:
         ...         ...
-        ... """), indent=4, show_empty=True))
+        ... """), indent=4))
         Module(
             body=[
                 Match(
@@ -1603,11 +1596,10 @@ Pattern matching
                                 Expr(
                                     value=Constant(value=Ellipsis))]),
                         match_case(
-                            pattern=MatchMapping(keys=[], patterns=[], rest='rest'),
+                            pattern=MatchMapping(rest='rest'),
                             body=[
                                 Expr(
-                                    value=Constant(value=Ellipsis))])])],
-            type_ignores=[])
+                                    value=Constant(value=Ellipsis))])])])
 
    .. versionadded:: 3.10
 
@@ -1636,7 +1628,7 @@ Pattern matching
         ...         ...
         ...     case Point3D(x=0, y=0, z=0):
         ...         ...
-        ... """), indent=4, show_empty=True))
+        ... """), indent=4))
         Module(
             body=[
                 Match(
@@ -1649,16 +1641,13 @@ Pattern matching
                                     MatchValue(
                                         value=Constant(value=0)),
                                     MatchValue(
-                                        value=Constant(value=0))],
-                                kwd_attrs=[],
-                                kwd_patterns=[]),
+                                        value=Constant(value=0))]),
                             body=[
                                 Expr(
                                     value=Constant(value=Ellipsis))]),
                         match_case(
                             pattern=MatchClass(
                                 cls=Name(id='Point3D', ctx=Load()),
-                                patterns=[],
                                 kwd_attrs=[
                                     'x',
                                     'y',
@@ -1672,8 +1661,7 @@ Pattern matching
                                         value=Constant(value=0))]),
                             body=[
                                 Expr(
-                                    value=Constant(value=Ellipsis))])])],
-            type_ignores=[])
+                                    value=Constant(value=Ellipsis))])])])
 
    .. versionadded:: 3.10
 
@@ -1863,21 +1851,16 @@ Function and class definitions
 
    .. doctest::
 
-        >>> print(ast.dump(ast.parse('lambda x,y: ...'), indent=4, show_empty=True))
+        >>> print(ast.dump(ast.parse('lambda x,y: ...'), indent=4))
         Module(
             body=[
                 Expr(
                     value=Lambda(
                         args=arguments(
-                            posonlyargs=[],
                             args=[
                                 arg(arg='x'),
-                                arg(arg='y')],
-                            kwonlyargs=[],
-                            kw_defaults=[],
-                            defaults=[]),
-                        body=Constant(value=Ellipsis)))],
-            type_ignores=[])
+                                arg(arg='y')]),
+                        body=Constant(value=Ellipsis)))])
 
 
 .. class:: arguments(posonlyargs, args, vararg, kwonlyargs, kw_defaults, kwarg, defaults)
@@ -2389,6 +2372,33 @@ and classes for traversing abstract syntax trees:
 
    .. versionchanged:: 3.13
       Added the *show_empty* option.
+
+      .. doctest::
+
+         >>> print(ast.dump(ast.parse("""\
+         ... async def f():
+         ...     await other_func()
+         ... """), indent=4, show_empty=True))
+         Module(
+             body=[
+                 AsyncFunctionDef(
+                     name='f',
+                     args=arguments(
+                         posonlyargs=[],
+                         args=[],
+                         kwonlyargs=[],
+                         kw_defaults=[],
+                         defaults=[]),
+                     body=[
+                         Expr(
+                             value=Await(
+                                 value=Call(
+                                     func=Name(id='other_func', ctx=Load()),
+                                     args=[],
+                                     keywords=[])))],
+                     decorator_list=[],
+                     type_params=[])],
+             type_ignores=[])
 
 
 .. _ast-compiler-flags:

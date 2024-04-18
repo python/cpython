@@ -130,7 +130,7 @@ def dump(
     integer or string, then the tree will be pretty-printed with that indent
     level. None (the default) selects the single line representation.
     If show_empty is False, then empty lists and fields that are None
-    will be ommitted from the output for better readability.
+    will be omitted from the output for better readability.
     """
     def _format(node, level=0):
         if indent is not None:
