@@ -332,8 +332,8 @@ def warn(message, category=None, stacklevel=1, source=None,
                     raise ValueError
     except ValueError:
         globals = sys.__dict__
-        filename = "sys"
-        lineno = 1
+        filename = "<sys>"
+        lineno = 0
     else:
         globals = frame.f_globals
         filename = frame.f_code.co_filename

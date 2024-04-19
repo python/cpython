@@ -489,7 +489,7 @@ class WarnTests(BaseTest):
 
                 warning_tests.inner("spam7", stacklevel=9999)
                 self.assertEqual(os.path.basename(w[-1].filename),
-                                    "sys")
+                                    "<sys>")
 
     def test_stacklevel_import(self):
         # Issue #24305: With stacklevel=2, module-level warnings should work.
@@ -1388,7 +1388,7 @@ a=A()
         # Issue #21925: Emitting a ResourceWarning late during the Python
         # shutdown must be logged.
 
-        expected = b"sys:1: ResourceWarning: unclosed file "
+        expected = b"<sys>:0: ResourceWarning: unclosed file "
 
         # don't import the warnings module
         # (_warnings will try to import it)
