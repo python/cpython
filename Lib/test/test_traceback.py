@@ -531,7 +531,7 @@ class TracebackCases(unittest.TestCase):
         self.assertEqual(
             str(inspect.signature(traceback.print_exception)),
             ('(exc, /, value=<implicit>, tb=<implicit>, '
-             'limit=None, file=None, chain=True, **kwargs)'))
+             'limit=None, file=None, chain=True, *, colorize=False)'))
 
         self.assertEqual(
             str(inspect.signature(traceback.format_exception)),

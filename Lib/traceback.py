@@ -113,8 +113,8 @@ def _parse_value_tb(exc, value, tb):
     return value, tb
 
 
-def print_exception(exc, /, value=_sentinel, tb=_sentinel, limit=None, \
-                    file=None, chain=True, **kwargs):
+def print_exception(exc, /, value=_sentinel, tb=_sentinel, limit=None,
+                    file=None, chain=True, *, colorize=False):
     """Print exception up to 'limit' stack trace entries from 'tb' to 'file'.
 
     This differs from print_tb() in the following ways: (1) if
@@ -125,7 +125,6 @@ def print_exception(exc, /, value=_sentinel, tb=_sentinel, limit=None, \
     occurred with a caret on the next line indicating the approximate
     position of the error.
     """
-    colorize = kwargs.get("colorize", False)
     value, tb = _parse_value_tb(exc, value, tb)
     te = TracebackException(type(value), value, tb, limit=limit, compact=True)
     te.print(file=file, chain=chain, colorize=colorize)
@@ -165,7 +164,7 @@ def _print_exception_bltin(exc, /):
     return print_exception(exc, limit=BUILTIN_EXCEPTION_LIMIT, file=file, colorize=colorize)
 
 
-def format_exception(exc, /, value=_sentinel, tb=_sentinel, limit=None, \
+def format_exception(exc, /, value=_sentinel, tb=_sentinel, limit=None,
                      chain=True):
     """Format a stack trace and the exception information.
 
@@ -541,13 +540,12 @@ class StackSummary(list):
                 result.append(FrameSummary(filename, lineno, name, line=line))
         return result
 
-    def format_frame_summary(self, frame_summary, **kwargs):
+    def format_frame_summary(self, frame_summary, *, colorize=False):
         """Format the lines for a single FrameSummary.
 
         Returns a string representing one frame involved in the stack. This
         gets called for every frame to be printed in the stack summary.
         """
-        colorize = kwargs.get("colorize", False)
         row = []
         filename = frame_summary.filename
         if frame_summary.filename.startswith("<stdin>-"):
@@ -727,7 +725,7 @@ class StackSummary(list):
 
         return ''.join(row)
 
-    def format(self, **kwargs):
+    def format(self, *, colorize=False):
         """Format the stack ready for printing.
 
         Returns a list of strings ready for printing.  Each string in the
@@ -739,7 +737,6 @@ class StackSummary(list):
         repetitions are shown, followed by a summary line stating the exact
         number of further repetitions.
         """
-        colorize = kwargs.get("colorize", False)
         result = []
         last_file = None
         last_line = None
@@ -1207,7 +1204,7 @@ class TracebackException:
     def __str__(self):
         return self._str
 
-    def format_exception_only(self, *, show_group=False, _depth=0, **kwargs):
+    def format_exception_only(self, *, show_group=False, _depth=0, colorize=False):
         """Format the exception part of the traceback.
 
         The return value is a generator of strings, each ending in a newline.
@@ -1224,8 +1221,6 @@ class TracebackException:
         :exc:`BaseExceptionGroup`, the nested exceptions are included as
         well, recursively, with indentation relative to their nesting depth.
         """
-        colorize = kwargs.get("colorize", False)
-
         indent = 3 * _depth * ' '
         if not self._have_exc_type:
             yield indent + _format_final_exc_line(None, self._str, colorize=colorize)
@@ -1261,10 +1256,9 @@ class TracebackException:
             for ex in self.exceptions:
                 yield from ex.format_exception_only(show_group=show_group, _depth=_depth+1, colorize=colorize)
 
-    def _format_syntax_error(self, stype, **kwargs):
+    def _format_syntax_error(self, stype, *, colorize=False):
         """Format SyntaxError exceptions (internal helper)."""
         # Show exactly where the problem was found.
-        colorize = kwargs.get("colorize", False)
         filename_suffix = ''
         if self.lineno is not None:
             if colorize:
@@ -1341,7 +1335,7 @@ class TracebackException:
         else:
             yield "{}: {}{}\n".format(stype, msg, filename_suffix)
 
-    def format(self, *, chain=True, _ctx=None, **kwargs):
+    def format(self, *, chain=True, _ctx=None, colorize=False):
         """Format the exception.
 
         If chain is not *True*, *__cause__* and *__context__* will not be formatted.
@@ -1353,7 +1347,6 @@ class TracebackException:
         The message indicating which exception occurred is always the last
         string in the output.
         """
-        colorize = kwargs.get("colorize", False)
         if _ctx is None:
             _ctx = _ExceptionPrintContext()
 
@@ -1442,9 +1435,8 @@ class TracebackException:
                     _ctx.exception_group_depth = 0
 
 
-    def print(self, *, file=None, chain=True, **kwargs):
+    def print(self, *, file=None, chain=True, colorize=False):
         """Print the result of self.format(chain=chain) to 'file'."""
-        colorize = kwargs.get("colorize", False)
         if file is None:
             file = sys.stderr
         for line in self.format(chain=chain, colorize=colorize):
