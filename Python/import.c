@@ -1313,6 +1313,7 @@ import_find_extension(PyThreadState *tstate,
     if (def == NULL) {
         return NULL;
     }
+    assert(is_singlephase(def));
 
     /* It may have been successfully imported previously
        in an interpreter that allows legacy modules
@@ -1360,12 +1361,16 @@ import_find_extension(PyThreadState *tstate,
                || _PyModule_GetDef(mod) == def);
     }
     else {
-        if (def->m_base.m_init == NULL)
-            return NULL;
-        mod = def->m_base.m_init();
-        if (mod == NULL) {
+        if (def->m_base.m_init == NULL) {
             return NULL;
         }
+        struct _Py_ext_module_loader_result res;
+        if (_PyImport_RunModInitFunc(def->m_base.m_init, info, &res) < 0) {
+            return NULL;
+        }
+        assert(!PyErr_Occurred());
+        mod = res.module;
+        // XXX __file__ doesn't get set!
         if (PyObject_SetItem(modules, info->name, mod) == -1) {
             Py_DECREF(mod);
             return NULL;
