@@ -29,7 +29,7 @@ __all__ = [
     "captured_stdin", "captured_stderr",
     # unittest
     "is_resource_enabled", "requires", "requires_freebsd_version",
-    "requires_linux_version", "requires_mac_ver",
+    "requires_gil_enabled", "requires_linux_version", "requires_mac_ver",
     "check_syntax_error",
     "requires_gzip", "requires_bz2", "requires_lzma",
     "bigmemtest", "bigaddrspacetest", "cpython_only", "get_attribute",
@@ -56,7 +56,7 @@ __all__ = [
     "run_with_tz", "PGO", "missing_compiler_executable",
     "ALWAYS_EQ", "NEVER_EQ", "LARGEST", "SMALLEST",
     "LOOPBACK_TIMEOUT", "INTERNET_TIMEOUT", "SHORT_TIMEOUT", "LONG_TIMEOUT",
-    "Py_DEBUG", "EXCEEDS_RECURSION_LIMIT", "Py_C_RECURSION_LIMIT",
+    "Py_DEBUG", "exceeds_recursion_limit", "get_c_recursion_limit",
     "skip_on_s390x",
     "without_optimizer",
     ]
@@ -837,6 +837,17 @@ def check_cflags_pgo():
 
 
 Py_GIL_DISABLED = bool(sysconfig.get_config_var('Py_GIL_DISABLED'))
+
+def requires_gil_enabled(msg="needs the GIL enabled"):
+    """Decorator for skipping tests on the free-threaded build."""
+    return unittest.skipIf(Py_GIL_DISABLED, msg)
+
+def expected_failure_if_gil_disabled():
+    """Expect test failure if the GIL is disabled."""
+    if Py_GIL_DISABLED:
+        return unittest.expectedFailure
+    return lambda test_case: test_case
+
 if Py_GIL_DISABLED:
     _header = 'PHBBInP'
 else:
@@ -1167,6 +1178,10 @@ def requires_limited_api(test):
     except ImportError:
         return unittest.skip('needs _testcapi and _testlimitedcapi modules')(test)
     return test
+
+
+TEST_MODULES_ENABLED = sysconfig.get_config_var('TEST_MODULES') == 'yes'
+
 
 def requires_specialization(test):
     return unittest.skipUnless(
@@ -1734,8 +1749,19 @@ def run_in_subinterp_with_config(code, *, own_gil=None, **config):
         raise unittest.SkipTest("requires _testinternalcapi")
     if own_gil is not None:
         assert 'gil' not in config, (own_gil, config)
-        config['gil'] = 2 if own_gil else 1
-    return _testinternalcapi.run_in_subinterp_with_config(code, **config)
+        config['gil'] = 'own' if own_gil else 'shared'
+    else:
+        gil = config['gil']
+        if gil == 0:
+            config['gil'] = 'default'
+        elif gil == 1:
+            config['gil'] = 'shared'
+        elif gil == 2:
+            config['gil'] = 'own'
+        else:
+            raise NotImplementedError(gil)
+    config = types.SimpleNamespace(**config)
+    return _testinternalcapi.run_in_subinterp_with_config(code, config)
 
 
 def _check_tracemalloc():
@@ -2470,22 +2496,18 @@ def adjust_int_max_str_digits(max_digits):
         sys.set_int_max_str_digits(current)
 
 
-def _get_c_recursion_limit():
+def get_c_recursion_limit():
     try:
         import _testcapi
         return _testcapi.Py_C_RECURSION_LIMIT
-    except (ImportError, AttributeError):
-        # Originally taken from Include/cpython/pystate.h .
-        if sys.platform == 'win32':
-            return 4000
-        else:
-            return 10000
+    except ImportError:
+        raise unittest.SkipTest('requires _testcapi')
 
-# The default C recursion limit.
-Py_C_RECURSION_LIMIT = _get_c_recursion_limit()
 
-#For recursion tests, easily exceeds default recursion limit
-EXCEEDS_RECURSION_LIMIT = Py_C_RECURSION_LIMIT * 3
+def exceeds_recursion_limit():
+    """For recursion tests, easily exceeds default recursion limit."""
+    return get_c_recursion_limit() * 3
+
 
 #Windows doesn't have os.uname() but it doesn't support s390x.
 skip_on_s390x = unittest.skipIf(hasattr(os, 'uname') and os.uname().machine == 's390x',

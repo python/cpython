@@ -1,4 +1,3 @@
-import _ctypes_test
 import unittest
 import test.support
 from ctypes import (CDLL, PyDLL, ArgumentError,
@@ -14,6 +13,8 @@ from ctypes import (CDLL, PyDLL, ArgumentError,
                     c_long, c_ulong,
                     c_longlong, c_ulonglong,
                     c_float, c_double, c_longdouble)
+from test.support import import_helper
+_ctypes_test = import_helper.import_module("_ctypes_test")
 
 
 class SimpleTypesTestCase(unittest.TestCase):
