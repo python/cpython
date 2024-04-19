@@ -4181,6 +4181,7 @@ dummy_func(
 #ifndef _Py_JIT
             current_executor = (_PyExecutorObject*)executor;
 #endif
+            DEOPT_IF(!((_PyExecutorObject *)executor)->vm_data.valid);
         }
 
         tier2 op(_FATAL_ERROR, (--)) {
