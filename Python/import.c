@@ -1207,14 +1207,28 @@ get_extension_kind(PyModuleDef *def)
 }
 
 
+struct cached_singlephase_info {
+    PyObject *m_dict;
+};
+
 static int
-update_extensions_cache(PyThreadState *tstate, PyModuleDef *def, PyObject *mod,
-                        PyObject *path, PyObject *name)
+update_extensions_cache(PyThreadState *tstate, PyModuleDef *def,
+                        PyObject *path, PyObject *name,
+                        struct cached_singlephase_info *singlephase)
 {
-    // gh-88216: Extensions and def->m_base.m_copy can be updated
-    // when the extension module doesn't support sub-interpreters.
-    if (def->m_size == -1) {
-        if (!is_core_module(tstate->interp, name, path)) {
+    /* Copy the module's __dict__, if applicable. */
+    if (singlephase == NULL) {
+        assert(def->m_base.m_copy == NULL);
+    }
+    else {
+        assert(def->m_base.m_init != NULL
+               || is_core_module(tstate->interp, name, path));
+        if (singlephase->m_dict != NULL) {
+            assert(PyDict_Check(singlephase->m_dict));
+            // gh-88216: Extensions and def->m_base.m_copy can be updated
+            // when the extension module doesn't support sub-interpreters.
+            assert(def->m_size == -1);
+            assert(!is_core_module(tstate->interp, name, path));
             assert(PyUnicode_CompareWithASCIIString(name, "sys") != 0);
             assert(PyUnicode_CompareWithASCIIString(name, "builtins") != 0);
             /* XXX gh-88216: The copied dict is owned by the current
@@ -1237,12 +1251,10 @@ update_extensions_cache(PyThreadState *tstate, PyModuleDef *def, PyObject *mod,
                    XXX this should really not happen. */
                 Py_CLEAR(def->m_base.m_copy);
             }
-            PyObject *dict = PyModule_GetDict(mod);
-            if (dict == NULL) {
-                return -1;
-            }
-            def->m_base.m_copy = PyDict_Copy(dict);
+            def->m_base.m_copy = PyDict_Copy(singlephase->m_dict);
             if (def->m_base.m_copy == NULL) {
+                // XXX Ignore this error?  Doing so would effectively
+                // mark the module as not loadable. */
                 return -1;
             }
         }
@@ -1455,6 +1467,7 @@ import_run_extension(PyThreadState *tstate, PyModInitFunction p0,
 {
     PyObject *mod = NULL;
     PyModuleDef *def = NULL;
+    bool iscore = is_core_module(tstate->interp, info->name, info->path);
 
     struct _Py_ext_module_loader_result res;
     if (_PyImport_RunModInitFunc(p0, info, &res) < 0) {
@@ -1481,12 +1494,14 @@ import_run_extension(PyThreadState *tstate, PyModInitFunction p0,
         assert(res.kind ==_Py_ext_module_loader_result_SINGLEPHASE);
         assert(PyModule_Check(mod));
 
+        /* Make sure this module is allowed in this interpreter. */
         const char *name_buf = PyBytes_AS_STRING(info->name_encoded);
         if (_PyImport_CheckSubinterpIncompatibleExtensionAllowed(name_buf) < 0) {
             Py_CLEAR(mod);
             goto finally;
         }
 
+        /* Do any final fixes to the module. */
         struct interpreter_specific_info interp_specific = {
             .modules=modules,
             .name=info->name,
@@ -1499,8 +1514,16 @@ import_run_extension(PyThreadState *tstate, PyModInitFunction p0,
             goto finally;
         }
 
+        /* Add the module def to the global cache. */
+        struct cached_singlephase_info singlephase = {0};
+        // gh-88216: Extensions and def->m_base.m_copy can be updated
+        // when the extension module doesn't support sub-interpreters.
+        if (def->m_size == -1 && !iscore) {
+            singlephase.m_dict = PyModule_GetDict(mod);
+            assert(singlephase.m_dict != NULL);
+        }
         if (update_extensions_cache(
-                    tstate, def, mod, info->path, info->name) < 0)
+                    tstate, def, info->path, info->name, &singlephase) < 0)
         {
             Py_CLEAR(mod);
             goto finally;
@@ -1535,6 +1558,17 @@ _PyImport_FixupBuiltin(PyThreadState *tstate, PyObject *mod, const char *name,
         goto finally;
     }
 
+    /* We only use _PyImport_FixupBuiltin() for the core builtin modules
+     * (sys and builtins).  These modules are single-phase init with no
+     * module state, but we also don't populate def->m_base.m_copy
+     * for them. */
+    assert(is_core_module(tstate->interp, nameobj, nameobj));
+    assert(get_extension_kind(def) ==
+            _Py_ext_module_loader_result_SINGLEPHASE);
+    assert(def->m_size == -1);
+    assert(def->m_base.m_copy == NULL);
+
+    /* Do the normal fixes to the module. */
     struct interpreter_specific_info interp_specific = {
         .modules=modules,
         .name=nameobj,
@@ -1544,7 +1578,14 @@ _PyImport_FixupBuiltin(PyThreadState *tstate, PyObject *mod, const char *name,
         goto finally;
     }
 
-    if (update_extensions_cache(tstate, def, mod, nameobj, nameobj) < 0) {
+    /* Add the module def to the global cache. */
+    struct cached_singlephase_info singlephase = {
+        /* We don't want def->m_base.m_copy populated. */
+        .m_dict=NULL,
+    };
+    if (update_extensions_cache(
+                tstate, def, nameobj, nameobj, &singlephase) < 0)
+    {
         goto finally;
     }
 
