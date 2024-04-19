@@ -5110,7 +5110,11 @@ os__path_splitroot_ex_impl(PyObject *module, PyObject *path)
     p += rootsize;
     PyObject *tail = PyUnicode_FromWideChar(p, len - drvsize - rootsize);
     PyMem_Free(buffer);
-    return Py_BuildValue("(OOO)", drv, root, tail);
+    PyObject *result = Py_BuildValue("(OOO)", drv, root, tail);
+    Py_DECREF(drv);
+    Py_DECREF(root);
+    Py_DECREF(tail);
+    return result;
 }
 #endif
 
