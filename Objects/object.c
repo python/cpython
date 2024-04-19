@@ -374,7 +374,7 @@ _Py_MergeZeroLocalRefcount(PyObject *op)
     assert(op->ob_ref_local == 0);
 
     _Py_atomic_store_uintptr_relaxed(&op->ob_tid, 0);
-    Py_ssize_t shared = _Py_atomic_load_ssize_relaxed(&op->ob_ref_shared);
+    Py_ssize_t shared = _Py_atomic_load_ssize_acquire(&op->ob_ref_shared);
     if (shared == 0) {
         // Fast-path: shared refcount is zero (including flags)
         _Py_Dealloc(op);
