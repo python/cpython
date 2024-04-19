@@ -1197,13 +1197,8 @@ fix_up_extension(PyThreadState *tstate, PyObject *mod, PyModuleDef *def,
                  PyObject *name, PyObject *path,
                  PyObject *modules)
 {
-    if (def == NULL) {
-        def = PyModule_GetDef(mod);
-        if (def == NULL) {
-            PyErr_BadInternalCall();
-            return -1;
-        }
-    }
+    assert(mod != NULL && PyModule_Check(mod));
+    assert(def == _PyModule_GetDef(mod));
 
     if (fix_up_extension_for_interpreter(
                 tstate, mod, def, name, path, modules) < 0)
@@ -1247,7 +1242,6 @@ fix_up_extension(PyThreadState *tstate, PyObject *mod, PyModuleDef *def,
 
     return 0;
 
-
 error:
     PyMapping_DelItem(modules, name);
     return -1;
@@ -1261,8 +1255,14 @@ _PyImport_FixupExtensionObject(PyObject *mod, PyObject *name,
         PyErr_BadInternalCall();
         return -1;
     }
+    PyModuleDef *def = PyModule_GetDef(mod);
+    if (def == NULL) {
+        PyErr_BadInternalCall();
+        return -1;
+    }
+
     PyThreadState *tstate = _PyThreadState_GET();
-    if (fix_up_extension(tstate, mod, NULL, name, filename, modules) < 0) {
+    if (fix_up_extension(tstate, mod, def, name, filename, modules) < 0) {
         return -1;
     }
     return 0;
