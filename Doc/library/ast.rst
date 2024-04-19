@@ -2520,7 +2520,8 @@ to stdout.  Otherwise, the content is read from stdin.
     code that generated them. This is helpful for tools that make source code
     transformations.
 
-    `leoAst.py <https://leoeditor.com/appendices.html#leoast-py>`_ unifies the
+    `leoAst.py <https://leo-editor.github.io/leo-editor/appendices.html#leoast-py>`_
+    unifies the
     token-based and parse-tree-based views of python programs by inserting
     two-way links between tokens and ast nodes.
 
@@ -2532,4 +2533,4 @@ to stdout.  Otherwise, the content is read from stdin.
     `Parso <https://parso.readthedocs.io>`_ is a Python parser that supports
     error recovery and round-trip parsing for different Python versions (in
     multiple Python versions). Parso is also able to list multiple syntax errors
-    in your python file.
+    in your Python file.
