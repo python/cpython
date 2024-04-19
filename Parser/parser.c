@@ -22634,7 +22634,7 @@ invalid_import_rule(Parser *p)
     return _res;
 }
 
-// invalid_import_from_targets: import_from_as_names ',' NEWLINE
+// invalid_import_from_targets: import_from_as_names ',' NEWLINE | NEWLINE
 static void *
 invalid_import_from_targets_rule(Parser *p)
 {
@@ -22676,6 +22676,30 @@ invalid_import_from_targets_rule(Parser *p)
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s invalid_import_from_targets[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "import_from_as_names ',' NEWLINE"));
+    }
+    { // NEWLINE
+        if (p->error_indicator) {
+            p->level--;
+            return NULL;
+        }
+        D(fprintf(stderr, "%*c> invalid_import_from_targets[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "NEWLINE"));
+        Token * token;
+        if (
+            (token = _PyPegen_expect_token(p, NEWLINE))  // token='NEWLINE'
+        )
+        {
+            D(fprintf(stderr, "%*c+ invalid_import_from_targets[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "NEWLINE"));
+            _res = RAISE_SYNTAX_ERROR_STARTING_FROM ( token , "Expected one or more names after 'import'" );
+            if (_res == NULL && PyErr_Occurred()) {
+                p->error_indicator = 1;
+                p->level--;
+                return NULL;
+            }
+            goto done;
+        }
+        p->mark = _mark;
+        D(fprintf(stderr, "%*c%s invalid_import_from_targets[%d-%d]: %s failed!\n", p->level, ' ',
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "NEWLINE"));
     }
     _res = NULL;
   done:
