@@ -1894,7 +1894,8 @@
             PyTypeObject *ltype = sym_get_type(left);
             PyTypeObject *rtype = sym_get_type(right);
             if (ltype != NULL && (ltype == &PyLong_Type || ltype == &PyFloat_Type) &&
-                rtype != NULL && (rtype == &PyLong_Type || rtype == &PyFloat_Type)) {
+                rtype != NULL && (rtype == &PyLong_Type || rtype == &PyFloat_Type))
+            {
                 if (oparg != NB_TRUE_DIVIDE && oparg != NB_INPLACE_TRUE_DIVIDE &&
                     ltype == &PyLong_Type && rtype == &PyLong_Type) {
                     /* If both inputs are ints and the op is not division the result is an int */
