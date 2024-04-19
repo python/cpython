@@ -183,9 +183,9 @@ PyInit__blake2(void)
 typedef enum { Blake2s, Blake2b } blake2_alg;
 
 static inline blake2_alg type_to_alg(PyTypeObject *type) {
-    if (type->tp_name == blake2b_type_spec.name)
+    if (!strcmp(type->tp_name, blake2b_type_spec.name))
         return Blake2b;
-    else if (type->tp_name == blake2s_type_spec.name)
+    else if (!strcmp(type->tp_name, blake2s_type_spec.name))
         return Blake2s;
     else
         Py_UNREACHABLE();
@@ -207,8 +207,9 @@ typedef struct {
 /*[clinic input]
 module _blake2
 class _blake2.blake2b "Blake2Object *" "&PyBlake2_BLAKE2bType"
+class _blake2.blake2s "Blake2Object *" "&PyBlake2_BLAKE2sType"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=0b180617d6a53dca]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=b7526666bd18af83]*/
 
 
 static Blake2Object *
@@ -270,35 +271,13 @@ static void update(Blake2Object *self, uint8_t *buf, Py_ssize_t len) {
     }
 }
 
-/*[clinic input]
-@classmethod
-_blake2.blake2b.__new__ as py_blake2b_new
-    data: object(c_default="NULL") = b''
-    /
-    *
-    digest_size: int(c_default="HACL_HASH_BLAKE2B_OUT_BYTES") = _blake2.blake2b.MAX_DIGEST_SIZE
-    key: Py_buffer(c_default="NULL", py_default="b''") = None
-    salt: Py_buffer(c_default="NULL", py_default="b''") = None
-    person: Py_buffer(c_default="NULL", py_default="b''") = None
-    fanout: int = 1
-    depth: int = 1
-    leaf_size: unsigned_long = 0
-    node_offset: unsigned_long_long = 0
-    node_depth: int = 0
-    inner_size: int = 0
-    last_node: bool = False
-    usedforsecurity: bool = True
-
-Return a new BLAKE2b hash object.
-[clinic start generated code]*/
-
 static PyObject *
-py_blake2b_new_impl(PyTypeObject *type, PyObject *data, int digest_size,
+py_blake2b_or_s_new(PyTypeObject *type, PyObject *data, int digest_size,
                     Py_buffer *key, Py_buffer *salt, Py_buffer *person,
                     int fanout, int depth, unsigned long leaf_size,
                     unsigned long long node_offset, int node_depth,
                     int inner_size, int last_node, int usedforsecurity)
-/*[clinic end generated code: output=32bfd8f043c6896f input=8fee2b7b11428b2d]*/
+
 {
     Blake2Object *self = NULL;
     Py_buffer buf;
@@ -310,23 +289,29 @@ py_blake2b_new_impl(PyTypeObject *type, PyObject *data, int digest_size,
 
     self->alg = type_to_alg(type);
 
+    // Using Blake2b because we statically know that these are greater than the
+    // Blake2s sizes -- this avoids a VLA.
     uint8_t salt_[HACL_HASH_BLAKE2B_SALT_BYTES] = { 0 };
     uint8_t personal_[HACL_HASH_BLAKE2B_PERSONAL_BYTES] = { 0 };
 
     /* Validate digest size. */
-    if (digest_size <= 0 || (unsigned) digest_size > HACL_HASH_BLAKE2B_OUT_BYTES) {
+    if (digest_size <= 0 ||
+        (unsigned) digest_size > (self->alg == Blake2b ? HACL_HASH_BLAKE2B_OUT_BYTES : HACL_HASH_BLAKE2S_OUT_BYTES))
+    {
         PyErr_Format(PyExc_ValueError,
-                "digest_size must be between 1 and %d bytes",
-                HACL_HASH_BLAKE2B_OUT_BYTES);
+                "digest_size for %s must be between 1 and %d bytes, here it is %d",
+                self->alg == Blake2b ? "Blake2b" : "Blake2s",
+                self->alg == Blake2b ? HACL_HASH_BLAKE2B_OUT_BYTES : HACL_HASH_BLAKE2S_OUT_BYTES,
+                digest_size);
         goto error;
     }
 
     /* Validate salt parameter. */
     if ((salt->obj != NULL) && salt->len) {
-        if (salt->len > HACL_HASH_BLAKE2B_SALT_BYTES) {
+        if (salt->len > (self->alg == Blake2b ? HACL_HASH_BLAKE2B_SALT_BYTES : HACL_HASH_BLAKE2S_SALT_BYTES)) {
             PyErr_Format(PyExc_ValueError,
                 "maximum salt length is %d bytes",
-                HACL_HASH_BLAKE2B_SALT_BYTES);
+                (self->alg == Blake2b ? HACL_HASH_BLAKE2B_SALT_BYTES : HACL_HASH_BLAKE2S_SALT_BYTES));
             goto error;
         }
         memcpy(salt_, salt->buf, salt->len);
@@ -334,10 +319,10 @@ py_blake2b_new_impl(PyTypeObject *type, PyObject *data, int digest_size,
 
     /* Validate personalization parameter. */
     if ((person->obj != NULL) && person->len) {
-        if (person->len > HACL_HASH_BLAKE2B_PERSONAL_BYTES) {
+        if (person->len > (self->alg == Blake2b ? HACL_HASH_BLAKE2B_PERSONAL_BYTES : HACL_HASH_BLAKE2S_PERSONAL_BYTES)) {
             PyErr_Format(PyExc_ValueError,
                 "maximum person length is %d bytes",
-                HACL_HASH_BLAKE2B_PERSONAL_BYTES);
+                (self->alg == Blake2b ? HACL_HASH_BLAKE2B_PERSONAL_BYTES : HACL_HASH_BLAKE2S_PERSONAL_BYTES));
             goto error;
         }
         memcpy(personal_, person->buf, person->len);
@@ -373,19 +358,20 @@ py_blake2b_new_impl(PyTypeObject *type, PyObject *data, int digest_size,
         goto error;
     }
 
-    if (inner_size < 0 || (unsigned) inner_size > HACL_HASH_BLAKE2B_OUT_BYTES) {
+    if (inner_size < 0 ||
+        (unsigned) inner_size > (self->alg == Blake2b ? HACL_HASH_BLAKE2B_OUT_BYTES : HACL_HASH_BLAKE2S_OUT_BYTES)) {
         PyErr_Format(PyExc_ValueError,
                 "inner_size must be between 0 and is %d",
-                HACL_HASH_BLAKE2B_OUT_BYTES);
+                (self->alg == Blake2b ? HACL_HASH_BLAKE2B_OUT_BYTES : HACL_HASH_BLAKE2S_OUT_BYTES));
         goto error;
     }
 
     /* Set key length. */
     if ((key->obj != NULL) && key->len) {
-        if (key->len > HACL_HASH_BLAKE2B_KEY_BYTES) {
+        if (key->len > (self->alg == Blake2b ? HACL_HASH_BLAKE2B_KEY_BYTES : HACL_HASH_BLAKE2S_KEY_BYTES)) {
             PyErr_Format(PyExc_ValueError,
                 "maximum key length is %d bytes",
-                HACL_HASH_BLAKE2B_KEY_BYTES);
+                (self->alg == Blake2b ? HACL_HASH_BLAKE2B_KEY_BYTES : HACL_HASH_BLAKE2S_KEY_BYTES));
             goto error;
         }
     }
@@ -438,6 +424,72 @@ py_blake2b_new_impl(PyTypeObject *type, PyObject *data, int digest_size,
         Py_DECREF(self);
     }
     return NULL;
+}
+
+/*[clinic input]
+@classmethod
+_blake2.blake2b.__new__ as py_blake2b_new
+    data: object(c_default="NULL") = b''
+    /
+    *
+    digest_size: int(c_default="HACL_HASH_BLAKE2B_OUT_BYTES") = _blake2.blake2b.MAX_DIGEST_SIZE
+    key: Py_buffer(c_default="NULL", py_default="b''") = None
+    salt: Py_buffer(c_default="NULL", py_default="b''") = None
+    person: Py_buffer(c_default="NULL", py_default="b''") = None
+    fanout: int = 1
+    depth: int = 1
+    leaf_size: unsigned_long = 0
+    node_offset: unsigned_long_long = 0
+    node_depth: int = 0
+    inner_size: int = 0
+    last_node: bool = False
+    usedforsecurity: bool = True
+
+Return a new BLAKE2b hash object.
+[clinic start generated code]*/
+
+static PyObject *
+py_blake2b_new_impl(PyTypeObject *type, PyObject *data, int digest_size,
+                    Py_buffer *key, Py_buffer *salt, Py_buffer *person,
+                    int fanout, int depth, unsigned long leaf_size,
+                    unsigned long long node_offset, int node_depth,
+                    int inner_size, int last_node, int usedforsecurity)
+/*[clinic end generated code: output=32bfd8f043c6896f input=8fee2b7b11428b2d]*/
+{
+    return py_blake2b_or_s_new(type, data, digest_size, key, salt, person, fanout, depth, leaf_size, node_offset, node_depth, inner_size, last_node, usedforsecurity);
+}
+
+/*[clinic input]
+@classmethod
+_blake2.blake2s.__new__ as py_blake2s_new
+    data: object(c_default="NULL") = b''
+    /
+    *
+    digest_size: int(c_default="HACL_HASH_BLAKE2S_OUT_BYTES") = _blake2.blake2s.MAX_DIGEST_SIZE
+    key: Py_buffer(c_default="NULL", py_default="b''") = None
+    salt: Py_buffer(c_default="NULL", py_default="b''") = None
+    person: Py_buffer(c_default="NULL", py_default="b''") = None
+    fanout: int = 1
+    depth: int = 1
+    leaf_size: unsigned_long = 0
+    node_offset: unsigned_long_long = 0
+    node_depth: int = 0
+    inner_size: int = 0
+    last_node: bool = False
+    usedforsecurity: bool = True
+
+Return a new BLAKE2s hash object.
+[clinic start generated code]*/
+
+static PyObject *
+py_blake2s_new_impl(PyTypeObject *type, PyObject *data, int digest_size,
+                    Py_buffer *key, Py_buffer *salt, Py_buffer *person,
+                    int fanout, int depth, unsigned long leaf_size,
+                    unsigned long long node_offset, int node_depth,
+                    int inner_size, int last_node, int usedforsecurity)
+/*[clinic end generated code: output=556181f73905c686 input=8165a11980eac7f3]*/
+{
+    return py_blake2b_or_s_new(type, data, digest_size, key, salt, person, fanout, depth, leaf_size, node_offset, node_depth, inner_size, last_node, usedforsecurity);
 }
 
 /*[clinic input]
@@ -575,7 +627,7 @@ static PyMethodDef py_blake2b_methods[] = {
 static PyObject *
 py_blake2b_get_name(Blake2Object *self, void *closure)
 {
-    return PyUnicode_FromString("blake2b");
+    return PyUnicode_FromString(self->alg == Blake2b ? "blake2b" : "blake2s");
 }
 
 
@@ -583,7 +635,7 @@ py_blake2b_get_name(Blake2Object *self, void *closure)
 static PyObject *
 py_blake2b_get_block_size(Blake2Object *self, void *closure)
 {
-    return PyLong_FromLong(HACL_HASH_BLAKE2B_BLOCK_BYTES);
+    return PyLong_FromLong(self->alg == Blake2b ? HACL_HASH_BLAKE2B_BLOCK_BYTES : HACL_HASH_BLAKE2S_BLOCK_BYTES);
 }
 
 
@@ -618,9 +670,17 @@ py_blake2b_dealloc(Blake2Object *self)
 {
     switch (self->alg) {
         case Blake2b:
-            Hacl_Hash_Blake2b_free(self->blake2b_state);
+            // This happens if we hit "goto error" in the middle of the
+            // initialization function. We leverage the fact that tp_alloc
+            // guarantees that the contents of the object are NULL-initialized
+            // (see documentation for PyType_GenericAlloc) to detect this case.
+            if (self->blake2b_state != NULL)
+                Hacl_Hash_Blake2b_free(self->blake2b_state);
+            break;
         case Blake2s:
-            Hacl_Hash_Blake2s_free(self->blake2s_state);
+            if (self->blake2b_state != NULL)
+                Hacl_Hash_Blake2s_free(self->blake2s_state);
+            break;
         default:
             Py_UNREACHABLE();
     }
@@ -630,7 +690,7 @@ py_blake2b_dealloc(Blake2Object *self)
     Py_DECREF(type);
 }
 
-static PyType_Slot blake2bs_type_slots[] = {
+static PyType_Slot blake2b_type_slots[] = {
     {Py_tp_dealloc, py_blake2b_dealloc},
     {Py_tp_doc, (char *)py_blake2b_new__doc__},
     {Py_tp_methods, py_blake2b_methods},
@@ -639,16 +699,27 @@ static PyType_Slot blake2bs_type_slots[] = {
     {0,0}
 };
 
+static PyType_Slot blake2s_type_slots[] = {
+    {Py_tp_dealloc, py_blake2b_dealloc},
+    {Py_tp_doc, (char *)py_blake2s_new__doc__},
+    {Py_tp_methods, py_blake2b_methods},
+    {Py_tp_getset, py_blake2b_getsetters},
+    // only the constructor differs, so that it can receive a clinic-generated
+    // default digest length suitable for blake2s
+    {Py_tp_new, py_blake2s_new},
+    {0,0}
+};
+
 static PyType_Spec blake2b_type_spec = {
     .name = "_blake2.blake2b",
     .basicsize =  sizeof(Blake2Object),
     .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE,
-    .slots = blake2bs_type_slots
+    .slots = blake2b_type_slots
 };
 
 static PyType_Spec blake2s_type_spec = {
     .name = "_blake2.blake2s",
     .basicsize =  sizeof(Blake2Object),
     .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE,
-    .slots = blake2bs_type_slots
+    .slots = blake2s_type_slots
 };
