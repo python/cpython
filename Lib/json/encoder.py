@@ -245,10 +245,12 @@ class JSONEncoder(object):
 
 
         if (_one_shot and c_make_encoder is not None):
-                #and self.indent is None):
-            indent_str = self.indent if isinstance(self.indent, (str, type(None))) else ' ' * self.indent
+            if self.indent is not None and not isinstance(self.indent, str):
+                        indent = ' ' * self.indent
+            else:
+                indent = self.indent
             _iterencode = c_make_encoder(
-                markers, self.default, _encoder, indent_str,
+                markers, self.default, _encoder, indent,
                 self.key_separator, self.item_separator, self.sort_keys,
                 self.skipkeys, self.allow_nan)
         else:
