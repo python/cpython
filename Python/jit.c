@@ -194,7 +194,7 @@ patch_64(unsigned char *location, uintptr_t value)
     *loc64 = value;
 }
 
-// 12-bit low part of an absolute address. Pairs nicely with patch_aarch64_21
+// 12-bit low part of an absolute address. Pairs nicely with patch_aarch64_21r
 // (below).
 static inline void
 patch_aarch64_12(unsigned char *location, uintptr_t value)
@@ -261,7 +261,7 @@ patch_aarch64_16d(unsigned char *location, uintptr_t value)
 // 21-bit count of pages between this page and an absolute address's page... I
 // know, I know, it's weird. Pairs nicely with patch_aarch64_12 (above).
 static inline void
-patch_aarch64_21(unsigned char *location, uintptr_t value)
+patch_aarch64_21r(unsigned char *location, uintptr_t value)
 {
     uint32_t *loc32 = (uint32_t *)location;
     value = (value >> 12) - ((uintptr_t)location >> 12);
@@ -275,7 +275,7 @@ patch_aarch64_21(unsigned char *location, uintptr_t value)
 }
 
 static inline void
-patch_aarch64_21x(unsigned char *location, uintptr_t value)
+patch_aarch64_21rx(unsigned char *location, uintptr_t value)
 {
     uint32_t *loc32 = (uint32_t *)location;
     assert(IS_AARCH64_ADRP(*loc32));
@@ -322,12 +322,12 @@ patch_aarch64_21x(unsigned char *location, uintptr_t value)
     //         continue;
     //     }
     // }
-    patch_aarch64_21(location, value);
+    patch_aarch64_21r(location, value);
 }
 
 // 28-bit relative branch.
 static inline void
-patch_aarch64_26(unsigned char *location, uintptr_t value)
+patch_aarch64_26r(unsigned char *location, uintptr_t value)
 {
     uint32_t *loc32 = (uint32_t *)location;
     assert(IS_AARCH64_BRANCH(*loc32));
@@ -342,10 +342,9 @@ patch_aarch64_26(unsigned char *location, uintptr_t value)
 
 // 32-bit relative address.
 static inline void
-patch_x86_64_32x(unsigned char *location, uintptr_t value)
+patch_x86_64_32rx(unsigned char *location, uintptr_t value)
 {
     uint8_t *loc8 = (uint8_t *)location;
-    uint32_t *loc32 = (uint32_t *)location;
     // Try to relax the GOT load into an immediate value:
     uint64_t relaxed = *(uint64_t *)(value + 4) - 4;
     if ((int64_t)relaxed - (int64_t)location >= -(1LL << 31) &&
@@ -369,12 +368,7 @@ patch_x86_64_32x(unsigned char *location, uintptr_t value)
             value = relaxed;
         }
     }
-    // XXX: Dup of patch_R_X86_64_GOTPCREL:
-    value -= (uintptr_t)location;
-    // Check that we're not out of range of 32 signed bits:
-    assert((int64_t)value >= -(1LL << 31));
-    assert((int64_t)value < (1LL << 31));
-    *loc32 = (uint32_t)value;
+    patch_32r(location, value);
 }
 
 #include "jit_stencils.h"
@@ -384,10 +378,12 @@ int
 _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction trace[], size_t length)
 {
     // Loop once to find the total compiled size:
+    uintptr_t instruction_starts[UOP_MAX_TRACE_LENGTH];
     size_t code_size = emitted_trampoline_code;
     size_t data_size = emitted_trampoline_data;
     for (size_t i = 0; i < length; i++) {
         const _PyUOpInstruction *instruction = &trace[i];
+        instruction_starts[i] = code_size;
         code_size += emitted[instruction->opcode][0];
         data_size += emitted[instruction->opcode][1];
     }
@@ -402,15 +398,10 @@ _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction trace[], siz
     if (memory == NULL) {
         return -1;
     }
-    // Loop again to find the offsets of each instruction:
-    size_t offset = emitted_trampoline_code;
-    uintptr_t instruction_starts[UOP_MAX_TRACE_LENGTH];
+    // Update the offsets of each instruction:
     for (size_t i = 0; i < length; i++) {
-        const _PyUOpInstruction *instruction = &trace[i];
-        instruction_starts[i] = (uintptr_t)memory + offset;
-        offset += emitted[instruction->opcode][0];
+        instruction_starts[i] += (uintptr_t)memory;
     }
-    assert(offset + emitted[_FATAL_ERROR][0] == code_size);
     // Loop again to emit the code:
     unsigned char *code = memory;
     unsigned char *data = memory + code_size;
