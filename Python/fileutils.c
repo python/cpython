@@ -2295,6 +2295,63 @@ PathCchCombineEx(wchar_t *buffer, size_t bufsize, const wchar_t *dirname,
 
 #endif /* defined(MS_WINDOWS_GAMES) && !defined(MS_WINDOWS_DESKTOP) */
 
+#ifdef MS_WINDOWS
+void
+_Py_skiproot(wchar_t *path, Py_ssize_t size, Py_ssize_t *drvsize, Py_ssize_t *rootsize)
+{
+    wchar_t *pEnd = size >= 0 ? &path[size] : NULL;
+#define IS_END(x) (pEnd ? (x) == pEnd : !*(x))
+#define IS_SEP(x) (*(x) == SEP || *(x) == ALTSEP)
+    *drvsize = 0;
+    *rootsize = 0;
+    if (IS_SEP(&path[0])) {
+        if (IS_SEP(&path[1])) {
+            // Device drives, e.g. \\.\device or \\?\device
+            // UNC drives, e.g. \\server\share or \\?\UNC\server\share
+            Py_ssize_t idx;
+            if (path[2] == L'?' && IS_SEP(&path[3]) && (path[4] == L'U' || path[4] == L'u') &&
+                (path[5] == L'N' || path[5] == L'n') && (path[6] == L'C' || path[6] == L'c') &&
+                IS_SEP(&path[7])) {
+                idx = 8;
+            }
+            else {
+                idx = 2;
+            }
+            while (!IS_END(&path[idx]) && !IS_SEP(&path[idx])) {
+                idx++;
+            }
+            if (IS_END(&path[idx])) {
+                *drvsize = idx;
+            }
+            else {
+                idx++;
+                while (!IS_END(&path[idx]) && !IS_SEP(&path[idx])) {
+                    idx++;
+                }
+                *drvsize = idx;
+                if (IS_SEP(&path[idx])) {
+                    *rootsize = 1;
+                }
+            }
+        }
+        else {
+            // Relative path with root, e.g. \Windows
+            *rootsize = 1;
+        }
+    }
+    else if (!IS_END(&path[0]) && path[1] == L':')
+    {
+        *drvsize = 2;
+        if (IS_SEP(&path[2])) {
+            // Absolute drive-letter path, e.g. X:\Windows
+            *rootsize = 1;
+        }
+    }
+#undef IS_SEP
+#undef IS_END
+}
+#endif
+
 // The caller must ensure "buffer" is big enough.
 static int
 join_relfile(wchar_t *buffer, size_t bufsize,

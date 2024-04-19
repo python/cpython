@@ -5085,6 +5085,34 @@ os__path_splitroot_impl(PyObject *module, path_t *path)
     return result;
 }
 
+#ifdef MS_WINDOWS
+/*[clinic input]
+os._path_splitroot_ex
+
+    path: unicode
+    /
+
+[clinic start generated code]*/
+
+static PyObject *
+os__path_splitroot_ex_impl(PyObject *module, PyObject *path)
+/*[clinic end generated code: output=de97403d3dfebc40 input=bebce42edb41f967]*/
+{
+    Py_ssize_t len;
+    wchar_t *buffer = PyUnicode_AsWideCharString(path, &len);
+    Py_ssize_t drvsize;
+    Py_ssize_t rootsize;
+    _Py_skiproot(buffer, len, &drvsize, &rootsize);
+    wchar_t *p = buffer;
+    PyObject *drv = PyUnicode_FromWideChar(p, drvsize);
+    p += drvsize;
+    PyObject *root = PyUnicode_FromWideChar(p, rootsize);
+    p += rootsize;
+    PyObject *tail = PyUnicode_FromWideChar(p, len - drvsize - rootsize);
+    PyMem_Free(buffer);
+    return Py_BuildValue("(OOO)", drv, root, tail);
+}
+#endif
 
 /*[clinic input]
 os._path_isdir
@@ -16799,6 +16827,7 @@ static PyMethodDef posix_methods[] = {
     OS__FINDFIRSTFILE_METHODDEF
     OS__GETVOLUMEPATHNAME_METHODDEF
     OS__PATH_SPLITROOT_METHODDEF
+    OS__PATH_SPLITROOT_EX_METHODDEF
     OS__PATH_NORMPATH_METHODDEF
     OS_GETLOADAVG_METHODDEF
     OS_URANDOM_METHODDEF
