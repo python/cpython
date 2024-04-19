@@ -42,13 +42,13 @@ randomness that your operating system provides.
    sources provided by the operating system.  See
    :class:`random.SystemRandom` for additional details.
 
-.. function:: choice(sequence)
+.. function:: choice(seq)
 
    Return a randomly chosen element from a non-empty sequence.
 
-.. function:: randbelow(n)
+.. function:: randbelow(exclusive_upper_bound)
 
-   Return a random int in the range [0, *n*).
+   Return a random int in the range [0, *exclusive_upper_bound*).
 
 .. function:: randbits(k)
 
