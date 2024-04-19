@@ -811,7 +811,7 @@ coverage-lcov:
 	@ # remove 3rd party modules, system headers and internal files with
 	@ # debug, test or dummy functions.
 	@lcov $(COVERAGE_LCOV_OPTIONS) --remove $(COVERAGE_INFO) \
-	    '*/Modules/_blake2/impl/*' \
+	    '*/Modules/_hacl/*' \
 	    '*/Modules/_ctypes/libffi*/*' \
 	    '*/Modules/_decimal/libmpdec/*' \
 	    '*/Modules/expat/*' \
@@ -841,7 +841,7 @@ coverage-report: regen-token regen-frozen
 
 # Run "Argument Clinic" over all source files
 .PHONY: clinic
-clinic: check-clean-src $(srcdir)/Modules/_blake2/blake2s_impl.c
+clinic: check-clean-src
 	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/clinic/clinic.py --make --exclude Lib/test/clinic.test.c --srcdir $(srcdir)
 
 .PHONY: clinic-tests
@@ -870,11 +870,6 @@ pybuilddir.txt: $(PYTHON_FOR_BUILD_DEPS)
 		rm -f ./pybuilddir.txt ; \
 		exit 1 ; \
 	fi
-
-# blake2s is auto-generated from blake2b
-$(srcdir)/Modules/_blake2/blake2s_impl.c: $(srcdir)/Modules/_blake2/blake2b_impl.c $(srcdir)/Modules/_blake2/blake2b2s.py
-	$(PYTHON_FOR_REGEN) $(srcdir)/Modules/_blake2/blake2b2s.py
-	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/clinic/clinic.py -f $@
 
 # Build static library
 $(LIBRARY): $(LIBRARY_OBJS)
