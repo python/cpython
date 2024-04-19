@@ -7048,17 +7048,9 @@ _PyObject_SetManagedDict(PyObject *obj, PyObject *new_dict)
 
         Py_BEGIN_CRITICAL_SECTION2(dict, obj);
 
-#ifdef Py_DEBUG
-        // If the dict in the object has been replaced between when we got
-        // the dict and unlocked the objects then it's definitely no longer
-        // inline and there's no need to detach it, we can just replace it.
-        // The call to _PyDict_DetachFromObject will be a nop.
-        PyDictObject *cur_dict = _PyObject_ManagedDictPointer(obj)->dict;
-        assert(cur_dict == dict ||
-               (cur_dict->ma_values != _PyObject_InlineValues(obj) &&
-                dict->ma_values != _PyObject_InlineValues(obj) &&
-                !_PyObject_InlineValues(obj)->valid));
-#endif
+        // We've locked dict, but the actual dict could have changed
+        // since we locked it.
+        dict = _PyObject_ManagedDictPointer(obj)->dict;
 
         FT_ATOMIC_STORE_PTR(_PyObject_ManagedDictPointer(obj)->dict,
                             (PyDictObject *)Py_XNewRef(new_dict));
@@ -7067,7 +7059,7 @@ _PyObject_SetManagedDict(PyObject *obj, PyObject *new_dict)
 
         Py_END_CRITICAL_SECTION2();
 
-        Py_DECREF(dict);
+        Py_XDECREF(dict);
     }
     else {
         PyDictObject *dict;
@@ -7095,21 +7087,25 @@ PyObject_ClearManagedDict(PyObject *obj)
 int
 _PyDict_DetachFromObject(PyDictObject *mp, PyObject *obj)
 {
-    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(mp);
     _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(obj);
 
-    if (mp->ma_values == NULL || mp->ma_values != _PyObject_InlineValues(obj)) {
+    if (FT_ATOMIC_LOAD_PTR_RELAXED(mp->ma_values) != _PyObject_InlineValues(obj)) {
         return 0;
     }
+
+    // We could be called with an unlocked dict when the caller knows the
+    // values are already detached, so we assert after inline values check.
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(mp);
     assert(mp->ma_values->embedded == 1);
     assert(mp->ma_values->valid == 1);
     assert(Py_TYPE(obj)->tp_flags & Py_TPFLAGS_INLINE_VALUES);
 
-    mp->ma_values = copy_values(mp->ma_values);
+    PyDictValues *values = copy_values(mp->ma_values);
 
-    if (mp->ma_values == NULL) {
+    if (values == NULL) {
         return -1;
     }
+    mp->ma_values = values;
 
     FT_ATOMIC_STORE_UINT8(_PyObject_InlineValues(obj)->valid, 0);
 
