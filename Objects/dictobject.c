@@ -6805,6 +6805,9 @@ _PyObject_StoreInstanceAttribute(PyObject *obj, PyObject *name, PyObject *value)
             if (dict == NULL) {
                 return -1;
             }
+            int res = store_instance_attr_dict(obj, dict, name, value);
+            Py_DECREF(dict);
+            return res;
         }
         return store_instance_attr_dict(obj, dict, name, value);
     }
