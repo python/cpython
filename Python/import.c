@@ -1289,26 +1289,16 @@ struct interpreter_specific_info {
 };
 
 static int
-fix_up_extension(PyThreadState *tstate, PyObject *mod, PyModuleDef *def,
-                 PyObject *name, PyObject *filename,
+fix_up_extension(PyThreadState *tstate, PyObject *mod, PyObject *filename,
                  struct interpreter_specific_info *fix_interp)
 {
     assert(mod != NULL && PyModule_Check(mod));
-    assert(def == _PyModule_GetDef(mod));
 
     if (filename != NULL) {
         /* Remember the filename as the __file__ attribute */
         if (PyModule_AddObjectRef(mod, "__file__", filename) < 0) {
             PyErr_Clear(); /* Not important enough to report */
         }
-    }
-    else {
-        /* It must be a builtin module. */
-        filename = name;
-    }
-
-    if (update_extensions_cache(tstate, def, mod, filename, name) < 0) {
-        return -1;
     }
 
     /* Make interpreter-specific fixes. */
@@ -1502,8 +1492,14 @@ import_run_extension(PyThreadState *tstate, PyModInitFunction p0,
             .def=def,
         };
         if (fix_up_extension(
-                    tstate, mod, def, info->name, info->filename,
-                    &interp_specific) < 0)
+                    tstate, mod, info->filename, &interp_specific) < 0)
+        {
+            Py_CLEAR(mod);
+            goto finally;
+        }
+
+        if (update_extensions_cache(
+                    tstate, def, mod, info->path, info->name) < 0)
         {
             Py_CLEAR(mod);
             goto finally;
@@ -1543,9 +1539,11 @@ _PyImport_FixupBuiltin(PyThreadState *tstate, PyObject *mod, const char *name,
         .name=nameobj,
         .def=def,
     };
-    if (fix_up_extension(
-                tstate, mod, def, nameobj, NULL, &interp_specific) < 0)
-    {
+    if (fix_up_extension(tstate, mod, NULL, &interp_specific) < 0) {
+        goto finally;
+    }
+
+    if (update_extensions_cache(tstate, def, mod, nameobj, nameobj) < 0) {
         goto finally;
     }
 
