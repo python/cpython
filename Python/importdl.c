@@ -183,7 +183,7 @@ void
 _Py_ext_module_loader_result_apply_error(
                             struct _Py_ext_module_loader_result *res)
 {
-    if (res->err != NULL) {
+    if (res->err[0] != '\0') {
         if (PyErr_Occurred()) {
             _PyErr_FormatFromCause(PyExc_SystemError, res->err);
         }
@@ -328,7 +328,7 @@ _PyImport_RunModInitFunc(PyModInitFunction p0,
     return 0;
 
 error:
-    assert((PyErr_Occurred() == NULL) != (res.err[0] == '\0'));
+    assert(PyErr_Occurred() || res.err[0] != '\0');
     Py_CLEAR(res.module);
     res.def = NULL;
     *p_res = res;
