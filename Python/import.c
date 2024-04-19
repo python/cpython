@@ -1268,6 +1268,7 @@ fix_up_extension(PyThreadState *tstate, PyObject *mod, PyModuleDef *def,
                  PyObject *modules)
 {
     assert(mod != NULL && PyModule_Check(mod));
+    assert(def == _PyModule_GetDef(mod));
 
     if (filename != NULL) {
         /* Remember the filename as the __file__ attribute */
@@ -1278,17 +1279,6 @@ fix_up_extension(PyThreadState *tstate, PyObject *mod, PyModuleDef *def,
     else {
         /* It must be a builtin module. */
         filename = name;
-    }
-
-    if (def == NULL) {
-        def = PyModule_GetDef(mod);
-        if (def == NULL) {
-            PyErr_BadInternalCall();
-            return -1;
-        }
-    }
-    else {
-        assert(def == PyModule_GetDef(mod));
     }
 
     if (update_extensions_cache(tstate, def, mod, filename, name) < 0) {
@@ -1462,9 +1452,9 @@ import_run_extension(PyThreadState *tstate, PyModInitFunction p0,
     mod = res.module;
     res.module = NULL;
     def = res.def;
+    assert(def != NULL);
 
     if (res.kind ==_Py_ext_module_loader_result_MULTIPHASE) {
-        assert(def != NULL);
         assert(mod == NULL);
         mod = PyModule_FromDefAndSpec(def, spec);
         if (mod == NULL) {
