@@ -1,0 +1,1 @@
+Do not try to get the source line for made up file name "sys" in :mod:`warnings`.
