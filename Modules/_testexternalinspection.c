@@ -17,6 +17,10 @@
 
 #if defined(__APPLE__)
 #  include <TargetConditionals.h>
+// Older macOS SDKs do not define TARGET_OS_OSX
+#  if !defined(TARGET_OS_OSX)
+#     define TARGET_OS_OSX 1
+#  endif
 #  if TARGET_OS_OSX
 #    include <libproc.h>
 #    include <mach-o/fat.h>
