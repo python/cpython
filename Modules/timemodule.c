@@ -1907,8 +1907,8 @@ PyDoc_STRVAR(module_doc,
 There are two standard representations of time.  One is the number\n\
 of seconds since the Epoch, in UTC (a.k.a. GMT).  It may be an integer\n\
 or a floating point number (to represent fractions of seconds).\n\
-The Epoch is system-defined; on Unix, it is generally January 1st, 1970.\n\
-The actual value can be retrieved by calling gmtime(0).\n\
+The epoch is the point where the time starts, the return value of time.gmtime(0).\n\
+It is January 1, 1970, 00:00:00 (UTC) on all platforms.\n\
 \n\
 The other representation is a tuple of 9 integers giving local time.\n\
 The tuple items are:\n\
