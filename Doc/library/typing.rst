@@ -2887,7 +2887,9 @@ Introspection helpers
 
    This is often the same as ``obj.__annotations__``. In addition,
    forward references encoded as string literals are handled by evaluating
-   them in ``globals`` and ``locals`` namespaces. For a class ``C``, return
+   them in ``globals``, ``locals`` and (where applicable)
+   :ref:`type parameter <type-params>` namespaces.
+   For a class ``C``, return
    a dictionary constructed by merging all the ``__annotations__`` along
    ``C.__mro__`` in reverse order.
 
