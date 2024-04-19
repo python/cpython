@@ -1,2 +1,2 @@
-Added a method to access JIT compiled machine code from the UOp Executor when the experimental JIT is enabled. Patch
+Added a ``get_jit_code()`` method to access JIT compiled machine code from the UOp Executor when the experimental JIT is enabled. Patch
 by Anthony Shaw.
