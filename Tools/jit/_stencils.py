@@ -66,17 +66,6 @@ class Hole:
     # Convenience method:
     replace = dataclasses.replace
 
-    def as_c(self) -> str:
-        """Dump this hole as an initialization of a C Hole struct."""
-        parts = [
-            f"{self.offset:#x}",
-            f"HoleKind_{self.kind}",
-            f"HoleValue_{self.value.name}",
-            f"&{self.symbol}" if self.symbol else "NULL",
-            f"{_signed(self.addend):#x}",
-        ]
-        return f"{{{', '.join(parts)}}}"
-
 
 @dataclasses.dataclass
 class Stencil:

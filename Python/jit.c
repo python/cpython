@@ -381,15 +381,13 @@ patch_x86_64_32x(unsigned char *location, uintptr_t value)
 
 // Compiles executor in-place. Don't forget to call _PyJIT_Free later!
 int
-_PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction *trace, size_t length)
+_PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction trace[], size_t length)
 {
     // Loop once to find the total compiled size:
-    size_t instruction_starts[UOP_MAX_TRACE_LENGTH];
     size_t code_size = emitted_trampoline_code;
     size_t data_size = emitted_trampoline_data;
     for (size_t i = 0; i < length; i++) {
-        _PyUOpInstruction *instruction = (_PyUOpInstruction *)&trace[i];
-        instruction_starts[i] = code_size;
+        const _PyUOpInstruction *instruction = &trace[i];
         code_size += emitted[instruction->opcode][0];
         data_size += emitted[instruction->opcode][1];
     }
@@ -404,6 +402,15 @@ _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction *trace, size
     if (memory == NULL) {
         return -1;
     }
+    // Loop again to find the offsets of each instruction:
+    size_t offset = emitted_trampoline_code;
+    uintptr_t instruction_starts[UOP_MAX_TRACE_LENGTH];
+    for (size_t i = 0; i < length; i++) {
+        const _PyUOpInstruction *instruction = &trace[i];
+        instruction_starts[i] = (uintptr_t)memory + offset;
+        offset += emitted[instruction->opcode][0];
+    }
+    assert(offset + emitted[_FATAL_ERROR][0] == code_size);
     // Loop again to emit the code:
     unsigned char *code = memory;
     unsigned char *data = memory + code_size;
@@ -413,76 +420,21 @@ _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction *trace, size
         // (which may be different for efficiency reasons). On platforms where
         // we don't change calling conventions, the trampoline is empty and
         // nothing is emitted here:
-        // Think of patches as a dictionary mapping HoleValue to uintptr_t:
-        uintptr_t patches[] = GET_PATCHES();
-        patches[HoleValue_CODE] = (uintptr_t)code;
-        patches[HoleValue_CONTINUE] = (uintptr_t)code + emitted_trampoline_code;
-        patches[HoleValue_DATA] = (uintptr_t)data;
-        patches[HoleValue_EXECUTOR] = (uintptr_t)executor;
-        patches[HoleValue_TOP] = (uintptr_t)memory + emitted_trampoline_code;
-        patches[HoleValue_ZERO] = 0;
-        emit_trampoline(patches);
+        emit_trampoline(code, data, executor, NULL, instruction_starts);
         code += emitted_trampoline_code;
         data += emitted_trampoline_data;
     }
     assert(trace[0].opcode == _START_EXECUTOR || trace[0].opcode == _COLD_EXIT);
     for (size_t i = 0; i < length; i++) {
-        _PyUOpInstruction *instruction = (_PyUOpInstruction *)&trace[i];
-        uintptr_t patches[] = GET_PATCHES();
-        patches[HoleValue_CODE] = (uintptr_t)code;
-        patches[HoleValue_CONTINUE] = (uintptr_t)code + emitted[instruction->opcode][0];
-        patches[HoleValue_DATA] = (uintptr_t)data;
-        patches[HoleValue_EXECUTOR] = (uintptr_t)executor;
-        patches[HoleValue_OPARG] = instruction->oparg;
-    #if SIZEOF_VOID_P == 8
-        patches[HoleValue_OPERAND] = instruction->operand;
-    #else
-        assert(SIZEOF_VOID_P == 4);
-        patches[HoleValue_OPERAND_HI] = instruction->operand >> 32;
-        patches[HoleValue_OPERAND_LO] = instruction->operand & UINT32_MAX;
-    #endif
-        switch (instruction->format) {
-            case UOP_FORMAT_TARGET:
-                patches[HoleValue_TARGET] = instruction->target;
-                break;
-            case UOP_FORMAT_EXIT:
-                assert(instruction->exit_index < executor->exit_count);
-                patches[HoleValue_EXIT_INDEX] = instruction->exit_index;
-                if (instruction->error_target < length) {
-                    patches[HoleValue_ERROR_TARGET] = (uintptr_t)memory + instruction_starts[instruction->error_target];
-                }
-                break;
-            case UOP_FORMAT_JUMP:
-                assert(instruction->jump_target < length);
-                patches[HoleValue_JUMP_TARGET] = (uintptr_t)memory + instruction_starts[instruction->jump_target];
-                if (instruction->error_target < length) {
-                    patches[HoleValue_ERROR_TARGET] = (uintptr_t)memory + instruction_starts[instruction->error_target];
-                }
-                break;
-            default:
-                assert(0);
-                Py_FatalError("Illegal instruction format");
-        }
-        patches[HoleValue_TOP] = (uintptr_t)memory + instruction_starts[1];
-        patches[HoleValue_ZERO] = 0;
-        // XXX: Args: code, data, executor, instruction, instruction_starts (with memory added)
-        emitters[instruction->opcode](patches);
+        const _PyUOpInstruction *instruction = &trace[i];
+        emitters[instruction->opcode](code, data, executor, instruction, instruction_starts);
         code += emitted[instruction->opcode][0];
         data += emitted[instruction->opcode][1];
     }
-    {
-        // Protect against accidental buffer overrun into data:
-        uintptr_t patches[] = GET_PATCHES();
-        patches[HoleValue_CODE] = (uintptr_t)code;
-        patches[HoleValue_CONTINUE] = (uintptr_t)code;
-        patches[HoleValue_DATA] = (uintptr_t)data;
-        patches[HoleValue_EXECUTOR] = (uintptr_t)executor;
-        patches[HoleValue_TOP] = (uintptr_t)code;
-        patches[HoleValue_ZERO] = 0;
-        emitters[_FATAL_ERROR](patches);
-        code += emitted[_FATAL_ERROR][0];
-        data += emitted[_FATAL_ERROR][1];
-    }
+    // Protect against accidental buffer overrun into data:
+    emitters[_FATAL_ERROR](code, data, executor, NULL, instruction_starts);
+    code += emitted[_FATAL_ERROR][0];
+    data += emitted[_FATAL_ERROR][1];
     assert(code == memory + code_size);
     assert(data == memory + code_size + data_size);
     if (mark_executable(memory, total_size)) {
