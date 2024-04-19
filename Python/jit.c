@@ -16,8 +16,6 @@
 #include "pycore_sliceobject.h"
 #include "pycore_jit.h"
 
-#include "jit_stencils.h"
-
 // Memory management stuff: ////////////////////////////////////////////////////
 
 #ifndef MS_WINDOWS
@@ -146,238 +144,240 @@ set_bits(uint32_t *loc, uint8_t loc_start, uint64_t value, uint8_t value_start,
 #define IS_AARCH64_LDR_OR_STR(I) (((I) & 0x3B000000) == 0x39000000)
 #define IS_AARCH64_MOV(I)        (((I) & 0x9F800000) == 0x92800000)
 
-// Fill all of stencil's holes in the memory pointed to by base, using the
-// values in patches.
-static void
-patch(unsigned char *base, const Stencil *stencil, uintptr_t patches[])
+// LLD is a great reference for performing relocations... just keep in
+// mind that Tools/jit/build.py does filtering and preprocessing for us!
+// Here's a good place to start for each platform:
+// - aarch64-apple-darwin:
+//   - https://github.com/llvm/llvm-project/blob/main/lld/MachO/Arch/ARM64.cpp
+//   - https://github.com/llvm/llvm-project/blob/main/lld/MachO/Arch/ARM64Common.cpp
+//   - https://github.com/llvm/llvm-project/blob/main/lld/MachO/Arch/ARM64Common.h
+// - aarch64-pc-windows-msvc:
+//   - https://github.com/llvm/llvm-project/blob/main/lld/COFF/Chunks.cpp
+// - aarch64-unknown-linux-gnu:
+//   - https://github.com/llvm/llvm-project/blob/main/lld/ELF/Arch/AArch64.cpp
+// - i686-pc-windows-msvc:
+//   - https://github.com/llvm/llvm-project/blob/main/lld/COFF/Chunks.cpp
+// - x86_64-apple-darwin:
+//   - https://github.com/llvm/llvm-project/blob/main/lld/MachO/Arch/X86_64.cpp
+// - x86_64-pc-windows-msvc:
+//   - https://github.com/llvm/llvm-project/blob/main/lld/COFF/Chunks.cpp
+// - x86_64-unknown-linux-gnu:
+//   - https://github.com/llvm/llvm-project/blob/main/lld/ELF/Arch/X86_64.cpp
+
+// 32-bit absolute address.
+static inline void
+patch_32(unsigned char *location, uintptr_t value)
 {
-    for (size_t i = 0; i < stencil->holes_size; i++) {
-        const Hole *hole = &stencil->holes[i];
-        unsigned char *location = base + hole->offset;
-        uint64_t value = patches[hole->value] + (uintptr_t)hole->symbol + hole->addend;
-        uint8_t *loc8 = (uint8_t *)location;
-        uint32_t *loc32 = (uint32_t *)location;
-        uint64_t *loc64 = (uint64_t *)location;
-        // LLD is a great reference for performing relocations... just keep in
-        // mind that Tools/jit/build.py does filtering and preprocessing for us!
-        // Here's a good place to start for each platform:
-        // - aarch64-apple-darwin:
-        //   - https://github.com/llvm/llvm-project/blob/main/lld/MachO/Arch/ARM64.cpp
-        //   - https://github.com/llvm/llvm-project/blob/main/lld/MachO/Arch/ARM64Common.cpp
-        //   - https://github.com/llvm/llvm-project/blob/main/lld/MachO/Arch/ARM64Common.h
-        // - aarch64-pc-windows-msvc:
-        //   - https://github.com/llvm/llvm-project/blob/main/lld/COFF/Chunks.cpp
-        // - aarch64-unknown-linux-gnu:
-        //   - https://github.com/llvm/llvm-project/blob/main/lld/ELF/Arch/AArch64.cpp
-        // - i686-pc-windows-msvc:
-        //   - https://github.com/llvm/llvm-project/blob/main/lld/COFF/Chunks.cpp
-        // - x86_64-apple-darwin:
-        //   - https://github.com/llvm/llvm-project/blob/main/lld/MachO/Arch/X86_64.cpp
-        // - x86_64-pc-windows-msvc:
-        //   - https://github.com/llvm/llvm-project/blob/main/lld/COFF/Chunks.cpp
-        // - x86_64-unknown-linux-gnu:
-        //   - https://github.com/llvm/llvm-project/blob/main/lld/ELF/Arch/X86_64.cpp
-        switch (hole->kind) {
-            case HoleKind_IMAGE_REL_I386_DIR32:
-                // 32-bit absolute address.
-                // Check that we're not out of range of 32 unsigned bits:
-                assert(value < (1ULL << 32));
-                *loc32 = (uint32_t)value;
-                continue;
-            case HoleKind_ARM64_RELOC_UNSIGNED:
-            case HoleKind_R_AARCH64_ABS64:
-            case HoleKind_X86_64_RELOC_UNSIGNED:
-            case HoleKind_R_X86_64_64:
-                // 64-bit absolute address.
-                *loc64 = value;
-                continue;
-            case HoleKind_IMAGE_REL_AMD64_REL32:
-            case HoleKind_IMAGE_REL_I386_REL32:
-            case HoleKind_R_X86_64_GOTPCRELX:
-            case HoleKind_R_X86_64_REX_GOTPCRELX:
-            case HoleKind_X86_64_RELOC_GOT:
-            case HoleKind_X86_64_RELOC_GOT_LOAD: {
-                // 32-bit relative address.
-                // Try to relax the GOT load into an immediate value:
-                uint64_t relaxed = *(uint64_t *)(value + 4) - 4;
-                if ((int64_t)relaxed - (int64_t)location >= -(1LL << 31) &&
-                    (int64_t)relaxed - (int64_t)location + 1 < (1LL << 31))
-                {
-                    if (loc8[-2] == 0x8B) {
-                        // mov reg, dword ptr [rip + AAA] -> lea reg, [rip + XXX]
-                        loc8[-2] = 0x8D;
-                        value = relaxed;
-                    }
-                    else if (loc8[-2] == 0xFF && loc8[-1] == 0x15) {
-                        // call qword ptr [rip + AAA] -> nop; call XXX
-                        loc8[-2] = 0x90;
-                        loc8[-1] = 0xE8;
-                        value = relaxed;
-                    }
-                    else if (loc8[-2] == 0xFF && loc8[-1] == 0x25) {
-                        // jmp qword ptr [rip + AAA] -> nop; jmp XXX
-                        loc8[-2] = 0x90;
-                        loc8[-1] = 0xE9;
-                        value = relaxed;
-                    }
-                }
-            }
-            // Fall through...
-            case HoleKind_R_X86_64_GOTPCREL:
-            case HoleKind_R_X86_64_PC32:
-            case HoleKind_X86_64_RELOC_SIGNED:
-            case HoleKind_X86_64_RELOC_BRANCH:
-                // 32-bit relative address.
-                value -= (uintptr_t)location;
-                // Check that we're not out of range of 32 signed bits:
-                assert((int64_t)value >= -(1LL << 31));
-                assert((int64_t)value < (1LL << 31));
-                *loc32 = (uint32_t)value;
-                continue;
-            case HoleKind_ARM64_RELOC_BRANCH26:
-            case HoleKind_IMAGE_REL_ARM64_BRANCH26:
-            case HoleKind_R_AARCH64_CALL26:
-            case HoleKind_R_AARCH64_JUMP26:
-                // 28-bit relative branch.
-                assert(IS_AARCH64_BRANCH(*loc32));
-                value -= (uintptr_t)location;
-                // Check that we're not out of range of 28 signed bits:
-                assert((int64_t)value >= -(1 << 27));
-                assert((int64_t)value < (1 << 27));
-                // Since instructions are 4-byte aligned, only use 26 bits:
-                assert(get_bits(value, 0, 2) == 0);
-                set_bits(loc32, 0, value, 2, 26);
-                continue;
-            case HoleKind_R_AARCH64_MOVW_UABS_G0_NC:
-                // 16-bit low part of an absolute address.
-                assert(IS_AARCH64_MOV(*loc32));
-                // Check the implicit shift (this is "part 0 of 3"):
-                assert(get_bits(*loc32, 21, 2) == 0);
-                set_bits(loc32, 5, value, 0, 16);
-                continue;
-            case HoleKind_R_AARCH64_MOVW_UABS_G1_NC:
-                // 16-bit middle-low part of an absolute address.
-                assert(IS_AARCH64_MOV(*loc32));
-                // Check the implicit shift (this is "part 1 of 3"):
-                assert(get_bits(*loc32, 21, 2) == 1);
-                set_bits(loc32, 5, value, 16, 16);
-                continue;
-            case HoleKind_R_AARCH64_MOVW_UABS_G2_NC:
-                // 16-bit middle-high part of an absolute address.
-                assert(IS_AARCH64_MOV(*loc32));
-                // Check the implicit shift (this is "part 2 of 3"):
-                assert(get_bits(*loc32, 21, 2) == 2);
-                set_bits(loc32, 5, value, 32, 16);
-                continue;
-            case HoleKind_R_AARCH64_MOVW_UABS_G3:
-                // 16-bit high part of an absolute address.
-                assert(IS_AARCH64_MOV(*loc32));
-                // Check the implicit shift (this is "part 3 of 3"):
-                assert(get_bits(*loc32, 21, 2) == 3);
-                set_bits(loc32, 5, value, 48, 16);
-                continue;
-            case HoleKind_ARM64_RELOC_GOT_LOAD_PAGE21:
-            case HoleKind_IMAGE_REL_ARM64_PAGEBASE_REL21:
-            case HoleKind_R_AARCH64_ADR_GOT_PAGE:
-            case HoleKind_R_AARCH64_ADR_PREL_PG_HI21:
-                // 21-bit count of pages between this page and an absolute address's
-                // page... I know, I know, it's weird. Pairs nicely with
-                // ARM64_RELOC_GOT_LOAD_PAGEOFF12 (below).
-                assert(IS_AARCH64_ADRP(*loc32));
-                // Try to relax the pair of GOT loads into an immediate value:
-                const Hole *next_hole = &stencil->holes[i + 1];
-                if (i + 1 < stencil->holes_size &&
-                    (next_hole->kind == HoleKind_ARM64_RELOC_GOT_LOAD_PAGEOFF12 ||
-                     next_hole->kind == HoleKind_IMAGE_REL_ARM64_PAGEOFFSET_12L ||
-                     next_hole->kind == HoleKind_R_AARCH64_LD64_GOT_LO12_NC) &&
-                    next_hole->offset == hole->offset + 4 &&
-                    next_hole->symbol == hole->symbol &&
-                    next_hole->addend == hole->addend &&
-                    next_hole->value == hole->value)
-                {
-                    unsigned char reg = get_bits(loc32[0], 0, 5);
-                    assert(IS_AARCH64_LDR_OR_STR(loc32[1]));
-                    // There should be only one register involved:
-                    assert(reg == get_bits(loc32[1], 0, 5));  // ldr's output register.
-                    assert(reg == get_bits(loc32[1], 5, 5));  // ldr's input register.
-                    uint64_t relaxed = *(uint64_t *)value;
-                    if (relaxed < (1UL << 16)) {
-                        // adrp reg, AAA; ldr reg, [reg + BBB] -> movz reg, XXX; nop
-                        loc32[0] = 0xD2800000 | (get_bits(relaxed, 0, 16) << 5) | reg;
-                        loc32[1] = 0xD503201F;
-                        i++;
-                        continue;
-                    }
-                    if (relaxed < (1ULL << 32)) {
-                        // adrp reg, AAA; ldr reg, [reg + BBB] -> movz reg, XXX; movk reg, YYY
-                        loc32[0] = 0xD2800000 | (get_bits(relaxed,  0, 16) << 5) | reg;
-                        loc32[1] = 0xF2A00000 | (get_bits(relaxed, 16, 16) << 5) | reg;
-                        i++;
-                        continue;
-                    }
-                    relaxed = value - (uintptr_t)location;
-                    if ((relaxed & 0x3) == 0 &&
-                        (int64_t)relaxed >= -(1L << 19) &&
-                        (int64_t)relaxed < (1L << 19))
-                    {
-                        // adrp reg, AAA; ldr reg, [reg + BBB] -> ldr reg, XXX; nop
-                        loc32[0] = 0x58000000 | (get_bits(relaxed, 2, 19) << 5) | reg;
-                        loc32[1] = 0xD503201F;
-                        i++;
-                        continue;
-                    }
-                }
-                // Fall through...
-            case HoleKind_ARM64_RELOC_PAGE21:
-                // Number of pages between this page and the value's page:
-                value = (value >> 12) - ((uintptr_t)location >> 12);
-                // Check that we're not out of range of 21 signed bits:
-                assert((int64_t)value >= -(1 << 20));
-                assert((int64_t)value < (1 << 20));
-                // value[0:2] goes in loc[29:31]:
-                set_bits(loc32, 29, value, 0, 2);
-                // value[2:21] goes in loc[5:26]:
-                set_bits(loc32, 5, value, 2, 19);
-                continue;
-            case HoleKind_ARM64_RELOC_GOT_LOAD_PAGEOFF12:
-            case HoleKind_ARM64_RELOC_PAGEOFF12:
-            case HoleKind_IMAGE_REL_ARM64_PAGEOFFSET_12A:
-            case HoleKind_IMAGE_REL_ARM64_PAGEOFFSET_12L:
-            case HoleKind_R_AARCH64_ADD_ABS_LO12_NC:
-            case HoleKind_R_AARCH64_LD64_GOT_LO12_NC:
-                // 12-bit low part of an absolute address. Pairs nicely with
-                // ARM64_RELOC_GOT_LOAD_PAGE21 (above).
-                assert(IS_AARCH64_LDR_OR_STR(*loc32) || IS_AARCH64_ADD_OR_SUB(*loc32));
-                // There might be an implicit shift encoded in the instruction:
-                uint8_t shift = 0;
-                if (IS_AARCH64_LDR_OR_STR(*loc32)) {
-                    shift = (uint8_t)get_bits(*loc32, 30, 2);
-                    // If both of these are set, the shift is supposed to be 4.
-                    // That's pretty weird, and it's never actually been observed...
-                    assert(get_bits(*loc32, 23, 1) == 0 || get_bits(*loc32, 26, 1) == 0);
-                }
-                value = get_bits(value, 0, 12);
-                assert(get_bits(value, 0, shift) == 0);
-                set_bits(loc32, 10, value, shift, 12);
-                continue;
-        }
-        Py_UNREACHABLE();
+    uint32_t *loc32 = (uint32_t *)location;
+    // Check that we're not out of range of 32 unsigned bits:
+    assert(value < (1ULL << 32));
+    *loc32 = (uint32_t)value;
+}
+
+// 32-bit relative address.
+static inline void
+patch_32r(unsigned char *location, uintptr_t value)
+{
+    uint32_t *loc32 = (uint32_t *)location;
+    value -= (uintptr_t)location;
+    // Check that we're not out of range of 32 signed bits:
+    assert((int64_t)value >= -(1LL << 31));
+    assert((int64_t)value < (1LL << 31));
+    *loc32 = (uint32_t)value;
+}
+
+// 64-bit absolute address.
+static inline void
+patch_64(unsigned char *location, uintptr_t value)
+{
+    uint64_t *loc64 = (uint64_t *)location;
+    *loc64 = value;
+}
+
+// 12-bit low part of an absolute address. Pairs nicely with patch_aarch64_21
+// (below).
+static inline void
+patch_aarch64_12(unsigned char *location, uintptr_t value)
+{
+    uint32_t *loc32 = (uint32_t *)location;
+    assert(IS_AARCH64_LDR_OR_STR(*loc32) || IS_AARCH64_ADD_OR_SUB(*loc32));
+    // There might be an implicit shift encoded in the instruction:
+    uint8_t shift = 0;
+    if (IS_AARCH64_LDR_OR_STR(*loc32)) {
+        shift = (uint8_t)get_bits(*loc32, 30, 2);
+        // If both of these are set, the shift is supposed to be 4.
+        // That's pretty weird, and it's never actually been observed...
+        assert(get_bits(*loc32, 23, 1) == 0 || get_bits(*loc32, 26, 1) == 0);
     }
+    value = get_bits(value, 0, 12);
+    assert(get_bits(value, 0, shift) == 0);
+    set_bits(loc32, 10, value, shift, 12);
 }
 
-static void
-copy_and_patch(unsigned char *base, const Stencil *stencil, uintptr_t patches[])
+// 16-bit low part of an absolute address.
+static inline void
+patch_aarch64_16a(unsigned char *location, uintptr_t value)
 {
-    memcpy(base, stencil->body, stencil->body_size);
-    patch(base, stencil, patches);
+    uint32_t *loc32 = (uint32_t *)location;
+    assert(IS_AARCH64_MOV(*loc32));
+    // Check the implicit shift (this is "part 0 of 3"):
+    assert(get_bits(*loc32, 21, 2) == 0);
+    set_bits(loc32, 5, value, 0, 16);
 }
 
-static void
-emit(const StencilGroup *group, uintptr_t patches[])
+// 16-bit middle-low part of an absolute address.
+static inline void
+patch_aarch64_16b(unsigned char *location, uintptr_t value)
 {
-    copy_and_patch((unsigned char *)patches[HoleValue_DATA], &group->data, patches);
-    copy_and_patch((unsigned char *)patches[HoleValue_CODE], &group->code, patches);
+    uint32_t *loc32 = (uint32_t *)location;
+    assert(IS_AARCH64_MOV(*loc32));
+    // Check the implicit shift (this is "part 1 of 3"):
+    assert(get_bits(*loc32, 21, 2) == 1);
+    set_bits(loc32, 5, value, 16, 16);
 }
+
+// 16-bit middle-high part of an absolute address.
+static inline void
+patch_aarch64_16c(unsigned char *location, uintptr_t value)
+{
+    uint32_t *loc32 = (uint32_t *)location;
+    assert(IS_AARCH64_MOV(*loc32));
+    // Check the implicit shift (this is "part 2 of 3"):
+    assert(get_bits(*loc32, 21, 2) == 2);
+    set_bits(loc32, 5, value, 32, 16);
+}
+
+// 16-bit high part of an absolute address.
+static inline void
+patch_aarch64_16d(unsigned char *location, uintptr_t value)
+{
+    uint32_t *loc32 = (uint32_t *)location;
+    assert(IS_AARCH64_MOV(*loc32));
+    // Check the implicit shift (this is "part 3 of 3"):
+    assert(get_bits(*loc32, 21, 2) == 3);
+    set_bits(loc32, 5, value, 48, 16);
+}
+
+// 21-bit count of pages between this page and an absolute address's page... I
+// know, I know, it's weird. Pairs nicely with patch_aarch64_12 (above).
+static inline void
+patch_aarch64_21(unsigned char *location, uintptr_t value)
+{
+    uint32_t *loc32 = (uint32_t *)location;
+    value = (value >> 12) - ((uintptr_t)location >> 12);
+    // Check that we're not out of range of 21 signed bits:
+    assert((int64_t)value >= -(1 << 20));
+    assert((int64_t)value < (1 << 20));
+    // value[0:2] goes in loc[29:31]:
+    set_bits(loc32, 29, value, 0, 2);
+    // value[2:21] goes in loc[5:26]:
+    set_bits(loc32, 5, value, 2, 19);
+}
+
+static inline void
+patch_aarch64_21x(unsigned char *location, uintptr_t value)
+{
+    uint32_t *loc32 = (uint32_t *)location;
+    assert(IS_AARCH64_ADRP(*loc32));
+    // // Try to relax the pair of GOT loads into an immediate value:
+    // const Hole *next_hole = &stencil->holes[i + 1];
+    // if (i + 1 < stencil->holes_size &&
+    //     (next_hole->kind == HoleKind_ARM64_RELOC_GOT_LOAD_PAGEOFF12 ||
+    //         next_hole->kind == HoleKind_IMAGE_REL_ARM64_PAGEOFFSET_12L ||
+    //         next_hole->kind == HoleKind_R_AARCH64_LD64_GOT_LO12_NC) &&
+    //     next_hole->offset == hole->offset + 4 &&
+    //     next_hole->symbol == hole->symbol &&
+    //     next_hole->addend == hole->addend &&
+    //     next_hole->value == hole->value)
+    // {
+    //     unsigned char reg = get_bits(loc32[0], 0, 5);
+    //     assert(IS_AARCH64_LDR_OR_STR(loc32[1]));
+    //     // There should be only one register involved:
+    //     assert(reg == get_bits(loc32[1], 0, 5));  // ldr's output register.
+    //     assert(reg == get_bits(loc32[1], 5, 5));  // ldr's input register.
+    //     uint64_t relaxed = *(uint64_t *)value;
+    //     if (relaxed < (1UL << 16)) {
+    //         // adrp reg, AAA; ldr reg, [reg + BBB] -> movz reg, XXX; nop
+    //         loc32[0] = 0xD2800000 | (get_bits(relaxed, 0, 16) << 5) | reg;
+    //         loc32[1] = 0xD503201F;
+    //         i++;
+    //         continue;
+    //     }
+    //     if (relaxed < (1ULL << 32)) {
+    //         // adrp reg, AAA; ldr reg, [reg + BBB] -> movz reg, XXX; movk reg, YYY
+    //         loc32[0] = 0xD2800000 | (get_bits(relaxed,  0, 16) << 5) | reg;
+    //         loc32[1] = 0xF2A00000 | (get_bits(relaxed, 16, 16) << 5) | reg;
+    //         i++;
+    //         continue;
+    //     }
+    //     relaxed = value - (uintptr_t)location;
+    //     if ((relaxed & 0x3) == 0 &&
+    //         (int64_t)relaxed >= -(1L << 19) &&
+    //         (int64_t)relaxed < (1L << 19))
+    //     {
+    //         // adrp reg, AAA; ldr reg, [reg + BBB] -> ldr reg, XXX; nop
+    //         loc32[0] = 0x58000000 | (get_bits(relaxed, 2, 19) << 5) | reg;
+    //         loc32[1] = 0xD503201F;
+    //         i++;
+    //         continue;
+    //     }
+    // }
+    patch_aarch64_21(location, value);
+}
+
+// 28-bit relative branch.
+static inline void
+patch_aarch64_26(unsigned char *location, uintptr_t value)
+{
+    uint32_t *loc32 = (uint32_t *)location;
+    assert(IS_AARCH64_BRANCH(*loc32));
+    value -= (uintptr_t)location;
+    // Check that we're not out of range of 28 signed bits:
+    assert((int64_t)value >= -(1 << 27));
+    assert((int64_t)value < (1 << 27));
+    // Since instructions are 4-byte aligned, only use 26 bits:
+    assert(get_bits(value, 0, 2) == 0);
+    set_bits(loc32, 0, value, 2, 26);
+}
+
+// 32-bit relative address.
+static inline void
+patch_x86_64_32x(unsigned char *location, uintptr_t value)
+{
+    uint8_t *loc8 = (uint8_t *)location;
+    uint32_t *loc32 = (uint32_t *)location;
+    // Try to relax the GOT load into an immediate value:
+    uint64_t relaxed = *(uint64_t *)(value + 4) - 4;
+    if ((int64_t)relaxed - (int64_t)location >= -(1LL << 31) &&
+        (int64_t)relaxed - (int64_t)location + 1 < (1LL << 31))
+    {
+        if (loc8[-2] == 0x8B) {
+            // mov reg, dword ptr [rip + AAA] -> lea reg, [rip + XXX]
+            loc8[-2] = 0x8D;
+            value = relaxed;
+        }
+        else if (loc8[-2] == 0xFF && loc8[-1] == 0x15) {
+            // call qword ptr [rip + AAA] -> nop; call XXX
+            loc8[-2] = 0x90;
+            loc8[-1] = 0xE8;
+            value = relaxed;
+        }
+        else if (loc8[-2] == 0xFF && loc8[-1] == 0x25) {
+            // jmp qword ptr [rip + AAA] -> nop; jmp XXX
+            loc8[-2] = 0x90;
+            loc8[-1] = 0xE9;
+            value = relaxed;
+        }
+    }
+    // XXX: Dup of patch_R_X86_64_GOTPCREL:
+    value -= (uintptr_t)location;
+    // Check that we're not out of range of 32 signed bits:
+    assert((int64_t)value >= -(1LL << 31));
+    assert((int64_t)value < (1LL << 31));
+    *loc32 = (uint32_t)value;
+}
+
+#include "jit_stencils.h"
 
 // Compiles executor in-place. Don't forget to call _PyJIT_Free later!
 int
@@ -385,17 +385,16 @@ _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction *trace, size
 {
     // Loop once to find the total compiled size:
     size_t instruction_starts[UOP_MAX_TRACE_LENGTH];
-    size_t code_size = trampoline.code.body_size;
-    size_t data_size = trampoline.data.body_size;
+    size_t code_size = emitted_trampoline_code;
+    size_t data_size = emitted_trampoline_data;
     for (size_t i = 0; i < length; i++) {
         _PyUOpInstruction *instruction = (_PyUOpInstruction *)&trace[i];
-        const StencilGroup *group = &stencil_groups[instruction->opcode];
         instruction_starts[i] = code_size;
-        code_size += group->code.body_size;
-        data_size += group->data.body_size;
+        code_size += emitted[instruction->opcode][0];
+        data_size += emitted[instruction->opcode][1];
     }
-    code_size += stencil_groups[_FATAL_ERROR].code.body_size;
-    data_size += stencil_groups[_FATAL_ERROR].data.body_size;
+    code_size += emitted[_FATAL_ERROR][0];
+    data_size += emitted[_FATAL_ERROR][1];
     // Round up to the nearest page:
     size_t page_size = get_page_size();
     assert((page_size & (page_size - 1)) == 0);
@@ -414,26 +413,24 @@ _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction *trace, size
         // (which may be different for efficiency reasons). On platforms where
         // we don't change calling conventions, the trampoline is empty and
         // nothing is emitted here:
-        const StencilGroup *group = &trampoline;
         // Think of patches as a dictionary mapping HoleValue to uintptr_t:
         uintptr_t patches[] = GET_PATCHES();
         patches[HoleValue_CODE] = (uintptr_t)code;
-        patches[HoleValue_CONTINUE] = (uintptr_t)code + group->code.body_size;
+        patches[HoleValue_CONTINUE] = (uintptr_t)code + emitted_trampoline_code;
         patches[HoleValue_DATA] = (uintptr_t)data;
         patches[HoleValue_EXECUTOR] = (uintptr_t)executor;
-        patches[HoleValue_TOP] = (uintptr_t)memory + trampoline.code.body_size;
+        patches[HoleValue_TOP] = (uintptr_t)memory + emitted_trampoline_code;
         patches[HoleValue_ZERO] = 0;
-        emit(group, patches);
-        code += group->code.body_size;
-        data += group->data.body_size;
+        emit_trampoline(patches);
+        code += emitted_trampoline_code;
+        data += emitted_trampoline_data;
     }
     assert(trace[0].opcode == _START_EXECUTOR || trace[0].opcode == _COLD_EXIT);
     for (size_t i = 0; i < length; i++) {
         _PyUOpInstruction *instruction = (_PyUOpInstruction *)&trace[i];
-        const StencilGroup *group = &stencil_groups[instruction->opcode];
         uintptr_t patches[] = GET_PATCHES();
         patches[HoleValue_CODE] = (uintptr_t)code;
-        patches[HoleValue_CONTINUE] = (uintptr_t)code + group->code.body_size;
+        patches[HoleValue_CONTINUE] = (uintptr_t)code + emitted[instruction->opcode][0];
         patches[HoleValue_DATA] = (uintptr_t)data;
         patches[HoleValue_EXECUTOR] = (uintptr_t)executor;
         patches[HoleValue_OPARG] = instruction->oparg;
@@ -468,13 +465,13 @@ _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction *trace, size
         }
         patches[HoleValue_TOP] = (uintptr_t)memory + instruction_starts[1];
         patches[HoleValue_ZERO] = 0;
-        emit(group, patches);
-        code += group->code.body_size;
-        data += group->data.body_size;
+        // XXX: Args: code, data, executor, instruction, instruction_starts (with memory added)
+        emitters[instruction->opcode](patches);
+        code += emitted[instruction->opcode][0];
+        data += emitted[instruction->opcode][1];
     }
     {
         // Protect against accidental buffer overrun into data:
-        const StencilGroup *group = &stencil_groups[_FATAL_ERROR];
         uintptr_t patches[] = GET_PATCHES();
         patches[HoleValue_CODE] = (uintptr_t)code;
         patches[HoleValue_CONTINUE] = (uintptr_t)code;
@@ -482,9 +479,9 @@ _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction *trace, size
         patches[HoleValue_EXECUTOR] = (uintptr_t)executor;
         patches[HoleValue_TOP] = (uintptr_t)code;
         patches[HoleValue_ZERO] = 0;
-        emit(group, patches);
-        code += group->code.body_size;
-        data += group->data.body_size;
+        emitters[_FATAL_ERROR](patches);
+        code += emitted[_FATAL_ERROR][0];
+        data += emitted[_FATAL_ERROR][1];
     }
     assert(code == memory + code_size);
     assert(data == memory + code_size + data_size);
@@ -493,7 +490,7 @@ _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction *trace, size
         return -1;
     }
     executor->jit_code = memory;
-    executor->jit_side_entry = memory + trampoline.code.body_size;
+    executor->jit_side_entry = memory + emitted_trampoline_code;
     executor->jit_size = total_size;
     return 0;
 }
