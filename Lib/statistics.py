@@ -1729,8 +1729,15 @@ def _simple_s_curve(power):
                       if p <= 1/2 else
                       1 - (2 - 2*p) ** power)
 
+def _quartic_invcdf_estimate(p):
+    sign, p = (1, p) if p <= 1/2 else (-1, 1 - p)
+    x = (2 * p) ** 0.4258865685331 - 1  # (204/479)
+    if p >= 0.004:
+        x += 0.026818732 * sin(7.101753784 * p + 2.732305658)
+    return x * sign
+
 _quartic_invcdf = _newton_raphson(
-    f_inv_estimate = _simple_s_curve(0.4258865685331),   # (204/479)
+    f_inv_estimate = _quartic_invcdf_estimate,
     f = lambda t: 3/16 * t**5 - 5/8 * t**3 + 15/16 * t + 1/2,
     f_prime = lambda t: 15/16 * (1.0 - t * t) ** 2)
 
