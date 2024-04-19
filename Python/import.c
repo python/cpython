@@ -1212,8 +1212,8 @@ struct cached_singlephase_info {
 };
 
 static int
-update_extensions_cache(PyThreadState *tstate, PyModuleDef *def,
-                        PyObject *path, PyObject *name,
+update_extensions_cache(PyThreadState *tstate,
+                        PyObject *path, PyObject *name, PyModuleDef *def,
                         struct cached_singlephase_info *singlephase)
 {
     /* Copy the module's __dict__, if applicable. */
@@ -1523,7 +1523,7 @@ import_run_extension(PyThreadState *tstate, PyModInitFunction p0,
             assert(singlephase.m_dict != NULL);
         }
         if (update_extensions_cache(
-                    tstate, def, info->path, info->name, &singlephase) < 0)
+                    tstate, info->path, info->name, def, &singlephase) < 0)
         {
             Py_CLEAR(mod);
             goto finally;
@@ -1584,7 +1584,7 @@ _PyImport_FixupBuiltin(PyThreadState *tstate, PyObject *mod, const char *name,
         .m_dict=NULL,
     };
     if (update_extensions_cache(
-                tstate, def, nameobj, nameobj, &singlephase) < 0)
+                tstate, nameobj, nameobj, def, &singlephase) < 0)
     {
         goto finally;
     }
