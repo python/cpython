@@ -82,9 +82,9 @@ get_module_state(PyObject *mod)
 static inline datetime_state *
 get_module_state_by_cls(PyTypeObject *cls)
 {
-    datetime_state *state = (datetime_state *)_PyType_GetModuleState(cls);
+    void *state = _PyType_GetModuleState(cls);
     assert(state != NULL);
-    return state;
+    return (datetime_state *)state;
 }
 
 static struct PyModuleDef datetimemodule;
@@ -3118,7 +3118,7 @@ datetime_date_fromtimestamp_capi(PyObject *cls, PyObject *args)
     PyObject *result = NULL;
 
     if (PyArg_UnpackTuple(args, "fromtimestamp", 1, 1, &timestamp)) {
-        datetime_state *st = get_module_state_by_cls(cls);
+        datetime_state *st = get_module_state_by_cls((PyTypeObject *)cls);
         result = date_fromtimestamp(st, cls, timestamp);
     }
 
@@ -3483,8 +3483,7 @@ static void
 iso_calendar_date_dealloc(PyDateTime_IsoCalendarDate *self)
 {
     PyTypeObject *tp = Py_TYPE(self);
-    // tupledealloc does PyObject_GC_UnTrack
-    PyTuple_Type.tp_dealloc((PyObject *)self);
+    PyTuple_Type.tp_dealloc((PyObject *)self);  // delegate GC-untrack as well
     Py_DECREF(tp);
 }
 
