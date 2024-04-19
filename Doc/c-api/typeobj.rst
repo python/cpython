@@ -1034,9 +1034,8 @@ and :c:data:`PyType_Type` effectively act as defaults.)
       the type, and the type object is INCREF'ed when a new instance is created, and
       DECREF'ed when an instance is destroyed (this does not apply to instances of
       subtypes; only the type referenced by the instance's ob_type gets INCREF'ed or
-      DECREF'ed). Heap types must also support garbage collection as
-      they can form a `reference cycle <https://docs.python.org/3/c-api/gcsupport.html#supporting-cyclic-garbage-collection>`_
-      with their own module object.
+      DECREF'ed). Heap types must also :ref:`support garbage collection <supporting-cycle-detection>` as
+      they can form a reference cycle with their own module object.
 
       **Inheritance:**
 
