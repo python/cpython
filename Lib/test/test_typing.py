@@ -47,7 +47,7 @@ import weakref
 import types
 
 from test.support import captured_stderr, cpython_only
-from test.typinganndata import mod_generics_cache, _typed_dict_helper
+from test.typinganndata import ann_module695, mod_generics_cache, _typed_dict_helper
 
 
 CANNOT_SUBCLASS_TYPE = 'Cannot subclass special typing classes'
@@ -4498,6 +4498,30 @@ class GenericTests(BaseTestCase):
             get_type_hints(f, globals(), locals()),
             {'x': list[list[ForwardRef('X')]]}
         )
+
+    def test_pep695_generic_with_future_annotations(self):
+        hints_for_A = get_type_hints(ann_module695.A)
+        A_type_params = ann_module695.A.__type_params__
+        self.assertIs(hints_for_A["x"], A_type_params[0])
+        self.assertEqual(hints_for_A["y"].__args__[0], Unpack[A_type_params[1]])
+        self.assertIs(hints_for_A["z"].__args__[0], A_type_params[2])
+
+        hints_for_B = get_type_hints(ann_module695.B)
+        self.assertEqual(hints_for_B.keys(), {"x", "y", "z"})
+        self.assertEqual(
+            set(hints_for_B.values()) ^ set(ann_module695.B.__type_params__),
+            set()
+        )
+
+        hints_for_generic_function = get_type_hints(ann_module695.generic_function)
+        func_t_params = ann_module695.generic_function.__type_params__
+        self.assertEqual(
+            hints_for_generic_function.keys(), {"x", "y", "z", "zz", "return"}
+        )
+        self.assertIs(hints_for_generic_function["x"], func_t_params[0])
+        self.assertEqual(hints_for_generic_function["y"], Unpack[func_t_params[1]])
+        self.assertIs(hints_for_generic_function["z"].__origin__, func_t_params[2])
+        self.assertIs(hints_for_generic_function["zz"].__origin__, func_t_params[2])
 
     def test_extended_generic_rules_subclassing(self):
         class T1(Tuple[T, KT]): ...
