@@ -1236,6 +1236,20 @@ update_global_state_for_extension(PyThreadState *tstate,
             assert(!is_core_module(tstate->interp, name, path));
             assert(PyUnicode_CompareWithASCIIString(name, "sys") != 0);
             assert(PyUnicode_CompareWithASCIIString(name, "builtins") != 0);
+            /* XXX gh-88216: The copied dict is owned by the current
+             * interpreter.  That's a problem if the interpreter has
+             * its own obmalloc state or if the module is successfully
+             * imported into such an interpreter.  If the interpreter
+             * has its own GIL then there may be data races and
+             * PyImport_ClearModulesByIndex() can crash.  Normally,
+             * a single-phase init module cannot be imported in an
+             * isolated interpreter, but there are ways around that.
+             * Hence, heere be dragons!  Ideally we would instead do
+             * something like make a read-only, immortal copy of the
+             * dict using PyMem_RawMalloc() and store *that* in m_copy.
+             * Then we'd need to make sure to clear that when the
+             * runtime is finalized, rather than in
+             * PyImport_ClearModulesByIndex(). */
             if (def->m_base.m_copy) {
                 /* Somebody already imported the module,
                    likely under a different name.
@@ -1337,6 +1351,13 @@ import_find_extension(PyThreadState *tstate,
             Py_DECREF(mod);
             return NULL;
         }
+        /* We can't set mod->md_def if it's missing,
+         * because _PyImport_ClearModulesByIndex() might break
+         * due to violating interpreter isolation.  See the note
+         * in fix_up_extension_for_interpreter().  Until that
+         * is solved, we leave md_def set to NULL. */
+        assert(_PyModule_GetDef(mod) == NULL
+               || _PyModule_GetDef(mod) == def);
     }
     else {
         if (def->m_base.m_init == NULL)
