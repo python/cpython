@@ -644,7 +644,7 @@ type_params[asdl_type_param_seq*]:
     | '[' token=']' {
         RAISE_SYNTAX_ERROR_STARTING_FROM(
             token, 
-            "At least one type parameter definition is expected")}
+            "Type parameter list cannot be empty")}
 
 type_param_seq[asdl_type_param_seq*]: a[asdl_type_param_seq*]=','.type_param+ [','] { a }
 

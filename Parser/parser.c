@@ -10625,7 +10625,7 @@ type_params_rule(Parser *p)
         )
         {
             D(fprintf(stderr, "%*c+ type_params[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'[' ']'"));
-            _res = RAISE_SYNTAX_ERROR_STARTING_FROM ( token , "At least one type parameter definition is expected" );
+            _res = RAISE_SYNTAX_ERROR_STARTING_FROM ( token , "Type parameter list cannot be empty" );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 p->level--;

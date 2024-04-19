@@ -2018,17 +2018,17 @@ Invalid expressions in type scopes:
    >>> type A[] = int
    Traceback (most recent call last):
    ...
-   SyntaxError: At least one type parameter definition is expected
+   SyntaxError: Type parameter list cannot be empty
 
    >>> class A[]: ...
    Traceback (most recent call last):
    ...
-   SyntaxError: At least one type parameter definition is expected
+   SyntaxError: Type parameter list cannot be empty
 
    >>> def some[](): ...
    Traceback (most recent call last):
    ...
-   SyntaxError: At least one type parameter definition is expected
+   SyntaxError: Type parameter list cannot be empty
 
    >>> type A[T: (x:=3)] = int
    Traceback (most recent call last):
