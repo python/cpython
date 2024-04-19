@@ -1201,6 +1201,10 @@ def _get_slots(cls):
     match cls.__dict__.get('__slots__'):
         # A class which does not define __slots__ at all is equivalent
         # to a class defining __slots__ = ('__dict__', '__weakref__')
+        case None if getattr(cls, '__weakrefoffset__', -1) == 0:
+            # Except for special cases, inheriting from them do not set
+            # any slots at all:
+            yield from ()
         case None:
             yield from ('__dict__', '__weakref__')
         case str(slot):
@@ -1228,6 +1232,7 @@ def _add_slots(cls, is_frozen, weakref_slot):
     inherited_slots = set(
         itertools.chain.from_iterable(map(_get_slots, cls.__mro__[1:-1]))
     )
+    print(inherited_slots)
     # The slots for our class.  Remove slots from our base classes.  Add
     # '__weakref__' if weakref_slot was given, unless it is already present.
     cls_dict["__slots__"] = tuple(
