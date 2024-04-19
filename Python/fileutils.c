@@ -2311,7 +2311,8 @@ _Py_skiproot(wchar_t *path, Py_ssize_t size, Py_ssize_t *drvsize, Py_ssize_t *ro
             Py_ssize_t idx;
             if (path[2] == L'?' && IS_SEP(&path[3]) && (path[4] == L'U' || path[4] == L'u') &&
                 (path[5] == L'N' || path[5] == L'n') && (path[6] == L'C' || path[6] == L'c') &&
-                IS_SEP(&path[7])) {
+                IS_SEP(&path[7]))
+            {
                 idx = 8;
             }
             else {
@@ -2339,8 +2340,7 @@ _Py_skiproot(wchar_t *path, Py_ssize_t size, Py_ssize_t *drvsize, Py_ssize_t *ro
             *rootsize = 1;
         }
     }
-    else if (!IS_END(&path[0]) && path[1] == L':')
-    {
+    else if (!IS_END(&path[0]) && path[1] == L':') {
         *drvsize = 2;
         if (IS_SEP(&path[2])) {
             // Absolute drive-letter path, e.g. X:\Windows
