@@ -1263,9 +1263,35 @@ update_extensions_cache(PyThreadState *tstate, PyModuleDef *def, PyObject *mod,
 }
 
 static int
+fix_up_extension_for_interpreter(PyThreadState *tstate,
+                                 PyObject *mod, PyModuleDef *def,
+                                 PyObject *name, PyObject *modules)
+{
+    assert(mod != NULL && PyModule_Check(mod));
+    assert(def == _PyModule_GetDef(mod));
+    assert(modules != NULL);
+
+    if (_modules_by_index_set(tstate->interp, def, mod) < 0) {
+        return -1;
+    }
+
+    if (PyObject_SetItem(modules, name, mod) < 0) {
+        return -1;
+    }
+
+    return 0;
+}
+
+struct interpreter_specific_info {
+    PyObject *modules;
+    PyObject *name;
+    PyModuleDef *def;
+};
+
+static int
 fix_up_extension(PyThreadState *tstate, PyObject *mod, PyModuleDef *def,
                  PyObject *name, PyObject *filename,
-                 PyObject *modules)
+                 struct interpreter_specific_info *fix_interp)
 {
     assert(mod != NULL && PyModule_Check(mod));
     assert(def == _PyModule_GetDef(mod));
@@ -1286,12 +1312,13 @@ fix_up_extension(PyThreadState *tstate, PyObject *mod, PyModuleDef *def,
     }
 
     /* Make interpreter-specific fixes. */
-    if (_modules_by_index_set(tstate->interp, def, mod) < 0) {
-        return -1;
-    }
-    assert(modules != NULL);
-    if (PyObject_SetItem(modules, name, mod) < 0) {
-        return -1;
+    if (fix_interp != NULL) {
+        if (fix_up_extension_for_interpreter(
+                    tstate, mod, fix_interp->def, fix_interp->name,
+                    fix_interp->modules) < 0)
+        {
+            return -1;
+        }
     }
 
     return 0;
@@ -1471,8 +1498,14 @@ import_run_extension(PyThreadState *tstate, PyModInitFunction p0,
             goto finally;
         }
 
+        struct interpreter_specific_info interp_specific = {
+            .modules=modules,
+            .name=info->name,
+            .def=def,
+        };
         if (fix_up_extension(
-                    tstate, mod, def, info->name, info->path, modules) < 0)
+                    tstate, mod, def, info->name, info->path,
+                    &interp_specific) < 0)
         {
             Py_CLEAR(mod);
             goto finally;
@@ -1507,7 +1540,14 @@ _PyImport_FixupBuiltin(PyThreadState *tstate, PyObject *mod, const char *name,
         goto finally;
     }
 
-    if (fix_up_extension(tstate, mod, def, nameobj, NULL, modules) < 0) {
+    struct interpreter_specific_info interp_specific = {
+        .modules=modules,
+        .name=nameobj,
+        .def=def,
+    };
+    if (fix_up_extension(
+                tstate, mod, def, nameobj, NULL, &interp_specific) < 0)
+    {
         goto finally;
     }
 
