@@ -1876,7 +1876,7 @@ actually be smaller than the old one.
 If a table is split (its keys and hashes are shared, its values are not),
 then the values are temporarily copied into the table, it is resized as
 a combined table, then the me_value slots in the old table are NULLed out.
-After resizing a table is always combined.
+After resizing, a table is always combined.
 
 This function supports:
  - Unicode split -> Unicode combined or Generic
