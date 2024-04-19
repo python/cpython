@@ -1356,13 +1356,14 @@ _steal_accumulate(_PyUnicodeWriter *writer, PyObject *stolen)
     return rval;
 }
 
-// TODO: this method should be cached
+// TODO: this method could be cached
 PyObject* _create_newline_indent(PyObject* indent, Py_ssize_t indent_level)
 {
     PyObject* start = PyUnicode_FromString("\n");
     if (start == 0) {
         goto end;
     }
+    // there is no public PyUnicode_Repeat?
     PyObject* mul_name = PyUnicode_FromString("__mul__");
     if (mul_name == 0) {
         goto end;
