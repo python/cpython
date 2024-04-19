@@ -97,9 +97,10 @@ PyObject *
 _PyImport_LoadDynamicModuleWithSpec(PyObject *spec, FILE *fp)
 {
 #ifndef MS_WINDOWS
-    PyObject *pathbytes = NULL;
+    PyObject *filename_bytes = NULL;
+    const char *filename_buf;
 #endif
-    PyObject *name_unicode = NULL, *name = NULL, *path = NULL, *m = NULL;
+    PyObject *name_unicode = NULL, *name = NULL, *filename = NULL, *m = NULL;
     const char *name_buf, *hook_prefix;
     const char *oldcontext, *newcontext;
     dl_funcptr exportfunc;
@@ -126,21 +127,23 @@ _PyImport_LoadDynamicModuleWithSpec(PyObject *spec, FILE *fp)
     }
     name_buf = PyBytes_AS_STRING(name);
 
-    path = PyObject_GetAttrString(spec, "origin");
-    if (path == NULL)
+    filename = PyObject_GetAttrString(spec, "origin");
+    if (filename == NULL) {
         goto error;
+    }
 
 #ifdef MS_WINDOWS
-    exportfunc = _PyImport_FindSharedFuncptrWindows(hook_prefix, name_buf,
-                                                    path, fp);
+    exportfunc = _PyImport_FindSharedFuncptrWindows(
+            hook_prefix, name_buf, filename, fp);
 #else
-    pathbytes = PyUnicode_EncodeFSDefault(path);
-    if (pathbytes == NULL)
+    filename_bytes = PyUnicode_EncodeFSDefault(filename);
+    if (filename_bytes == NULL) {
         goto error;
-    exportfunc = _PyImport_FindSharedFuncptr(hook_prefix, name_buf,
-                                             PyBytes_AS_STRING(pathbytes),
-                                             fp);
-    Py_DECREF(pathbytes);
+    }
+    filename_buf = PyBytes_AS_STRING(filename_bytes);
+    exportfunc = _PyImport_FindSharedFuncptr(
+            hook_prefix, name_buf, filename_buf, fp);
+    Py_DECREF(filename_bytes);
 #endif
 
     if (exportfunc == NULL) {
@@ -152,7 +155,7 @@ _PyImport_LoadDynamicModuleWithSpec(PyObject *spec, FILE *fp)
                 hook_prefix, name_buf);
             if (msg == NULL)
                 goto error;
-            PyErr_SetImportError(msg, name_unicode, path);
+            PyErr_SetImportError(msg, name_unicode, filename);
             Py_DECREF(msg);
         }
         goto error;
@@ -194,7 +197,7 @@ _PyImport_LoadDynamicModuleWithSpec(PyObject *spec, FILE *fp)
     if (PyObject_TypeCheck(m, &PyModuleDef_Type)) {
         Py_DECREF(name_unicode);
         Py_DECREF(name);
-        Py_DECREF(path);
+        Py_DECREF(filename);
         return PyModule_FromDefAndSpec((PyModuleDef*)m, spec);
     }
 
@@ -224,19 +227,19 @@ _PyImport_LoadDynamicModuleWithSpec(PyObject *spec, FILE *fp)
     def->m_base.m_init = p0;
 
     PyObject *modules = PyImport_GetModuleDict();
-    if (_PyImport_FixupExtensionObject(m, name_unicode, path, modules) < 0)
+    if (_PyImport_FixupExtensionObject(m, name_unicode, filename, modules) < 0)
         goto error;
 
     Py_DECREF(name_unicode);
     Py_DECREF(name);
-    Py_DECREF(path);
+    Py_DECREF(filename);
 
     return m;
 
 error:
     Py_DECREF(name_unicode);
     Py_XDECREF(name);
-    Py_XDECREF(path);
+    Py_XDECREF(filename);
     Py_XDECREF(m);
     return NULL;
 }

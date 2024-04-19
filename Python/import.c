@@ -1125,10 +1125,10 @@ _PyImport_CheckSubinterpIncompatibleExtensionAllowed(const char *name)
 
 static PyObject *
 get_core_module_dict(PyInterpreterState *interp,
-                     PyObject *name, PyObject *filename)
+                     PyObject *name, PyObject *path)
 {
     /* Only builtin modules are core. */
-    if (filename == name) {
+    if (path == name) {
         assert(!PyErr_Occurred());
         if (PyUnicode_CompareWithASCIIString(name, "sys") == 0) {
             return interp->sysdict_copy;
@@ -1143,11 +1143,11 @@ get_core_module_dict(PyInterpreterState *interp,
 }
 
 static inline int
-is_core_module(PyInterpreterState *interp, PyObject *name, PyObject *filename)
+is_core_module(PyInterpreterState *interp, PyObject *name, PyObject *path)
 {
     /* This might be called before the core dict copies are in place,
        so we can't rely on get_core_module_dict() here. */
-    if (filename == name) {
+    if (path == name) {
         if (PyUnicode_CompareWithASCIIString(name, "sys") == 0) {
             return 1;
         }
@@ -1159,7 +1159,7 @@ is_core_module(PyInterpreterState *interp, PyObject *name, PyObject *filename)
 }
 
 static int
-fix_up_extension(PyObject *mod, PyObject *name, PyObject *filename)
+fix_up_extension(PyObject *mod, PyObject *name, PyObject *path)
 {
     if (mod == NULL || !PyModule_Check(mod)) {
         PyErr_BadInternalCall();
@@ -1180,7 +1180,7 @@ fix_up_extension(PyObject *mod, PyObject *name, PyObject *filename)
     // bpo-44050: Extensions and def->m_base.m_copy can be updated
     // when the extension module doesn't support sub-interpreters.
     if (def->m_size == -1) {
-        if (!is_core_module(tstate->interp, name, filename)) {
+        if (!is_core_module(tstate->interp, name, path)) {
             assert(PyUnicode_CompareWithASCIIString(name, "sys") != 0);
             assert(PyUnicode_CompareWithASCIIString(name, "builtins") != 0);
             if (def->m_base.m_copy) {
@@ -1202,7 +1202,7 @@ fix_up_extension(PyObject *mod, PyObject *name, PyObject *filename)
 
     // XXX Why special-case the main interpreter?
     if (_Py_IsMainInterpreter(tstate->interp) || def->m_size == -1) {
-        if (_extensions_cache_set(filename, name, def) < 0) {
+        if (_extensions_cache_set(path, name, def) < 0) {
             return -1;
         }
     }
@@ -1227,10 +1227,10 @@ _PyImport_FixupExtensionObject(PyObject *mod, PyObject *name,
 
 static PyObject *
 import_find_extension(PyThreadState *tstate, PyObject *name,
-                      PyObject *filename)
+                      PyObject *path)
 {
     /* Only single-phase init modules will be in the cache. */
-    PyModuleDef *def = _extensions_cache_get(filename, name);
+    PyModuleDef *def = _extensions_cache_get(path, name);
     if (def == NULL) {
         return NULL;
     }
@@ -1253,7 +1253,7 @@ import_find_extension(PyThreadState *tstate, PyObject *name,
         if (m_copy == NULL) {
             /* It might be a core module (e.g. sys & builtins),
                for which we don't set m_copy. */
-            m_copy = get_core_module_dict(tstate->interp, name, filename);
+            m_copy = get_core_module_dict(tstate->interp, name, path);
             if (m_copy == NULL) {
                 return NULL;
             }
@@ -1292,16 +1292,16 @@ import_find_extension(PyThreadState *tstate, PyObject *name,
     int verbose = _PyInterpreterState_GetConfig(tstate->interp)->verbose;
     if (verbose) {
         PySys_FormatStderr("import %U # previously loaded (%R)\n",
-                           name, filename);
+                           name, path);
     }
     return mod;
 }
 
 static int
 clear_singlephase_extension(PyInterpreterState *interp,
-                            PyObject *name, PyObject *filename)
+                            PyObject *name, PyObject *path)
 {
-    PyModuleDef *def = _extensions_cache_get(filename, name);
+    PyModuleDef *def = _extensions_cache_get(path, name);
     if (def == NULL) {
         if (PyErr_Occurred()) {
             return -1;
@@ -1322,7 +1322,7 @@ clear_singlephase_extension(PyInterpreterState *interp,
     }
 
     /* Clear the cached module def. */
-    _extensions_cache_delete(filename, name);
+    _extensions_cache_delete(path, name);
 
     return 0;
 }
@@ -3740,7 +3740,7 @@ static PyObject *
 _imp_create_dynamic_impl(PyObject *module, PyObject *spec, PyObject *file)
 /*[clinic end generated code: output=83249b827a4fde77 input=c31b954f4cf4e09d]*/
 {
-    PyObject *mod, *name, *path;
+    PyObject *mod, *name, *filename;
     FILE *fp;
 
     name = PyObject_GetAttrString(spec, "name");
@@ -3748,20 +3748,20 @@ _imp_create_dynamic_impl(PyObject *module, PyObject *spec, PyObject *file)
         return NULL;
     }
 
-    path = PyObject_GetAttrString(spec, "origin");
-    if (path == NULL) {
+    filename = PyObject_GetAttrString(spec, "origin");
+    if (filename == NULL) {
         Py_DECREF(name);
         return NULL;
     }
 
     PyThreadState *tstate = _PyThreadState_GET();
-    mod = import_find_extension(tstate, name, path);
+    mod = import_find_extension(tstate, name, filename);
     if (mod != NULL || _PyErr_Occurred(tstate)) {
         assert(mod == NULL || !_PyErr_Occurred(tstate));
         goto finally;
     }
 
-    if (PySys_Audit("import", "OOOOO", name, path,
+    if (PySys_Audit("import", "OOOOO", name, filename,
                     Py_None, Py_None, Py_None) < 0)
     {
         goto finally;
@@ -3770,7 +3770,7 @@ _imp_create_dynamic_impl(PyObject *module, PyObject *spec, PyObject *file)
     /* Is multi-phase init or this is the first time being loaded. */
 
     if (file != NULL) {
-        fp = _Py_fopen_obj(path, "r");
+        fp = _Py_fopen_obj(filename, "r");
         if (fp == NULL) {
             goto finally;
         }
@@ -3782,7 +3782,7 @@ _imp_create_dynamic_impl(PyObject *module, PyObject *spec, PyObject *file)
     mod = _PyImport_LoadDynamicModuleWithSpec(spec, fp);
     if (mod != NULL) {
         /* Remember the filename as the __file__ attribute */
-        if (PyModule_AddObjectRef(mod, "__file__", path) < 0) {
+        if (PyModule_AddObjectRef(mod, "__file__", filename) < 0) {
             PyErr_Clear(); /* Not important enough to report */
         }
     }
@@ -3794,7 +3794,7 @@ _imp_create_dynamic_impl(PyObject *module, PyObject *spec, PyObject *file)
 
 finally:
     Py_DECREF(name);
-    Py_DECREF(path);
+    Py_DECREF(filename);
     return mod;
 }
 
