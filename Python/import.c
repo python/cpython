@@ -1270,7 +1270,7 @@ finish_singlephase_extension(PyThreadState *tstate,
                              PyObject *name, PyObject *modules)
 {
     assert(mod != NULL && PyModule_Check(mod));
-    assert(def == PyModule_GetDef(mod));
+    assert(def == _PyModule_GetDef(mod));
 
     if (_modules_by_index_set(tstate->interp, def, mod) < 0) {
         return -1;
@@ -1395,6 +1395,7 @@ create_dynamic(PyThreadState *tstate, struct _Py_ext_module_loader_info *info,
                PyObject *file, PyObject *spec)
 {
     PyObject *mod = NULL;
+    PyModuleDef *def = NULL;
 
     /* We would move this (and the fclose() below) into
      * _PyImport_GetModInitFunc(), but it isn't clear if the intervening
@@ -1421,15 +1422,23 @@ create_dynamic(PyThreadState *tstate, struct _Py_ext_module_loader_info *info,
         goto finally;
     }
 
-    if (res.module == NULL) {
-        //assert(!is_singlephase(res.def));
-        mod = PyModule_FromDefAndSpec(res.def, spec);
+    mod = res.module;
+    res.module = NULL;
+    def = res.def;
+    assert(def != NULL);
+
+    if (mod == NULL) {
+        //assert(!is_singlephase(def));
+        mod = PyModule_FromDefAndSpec(def, spec);
+        if (mod == NULL) {
+            goto finally;
+        }
     }
     else {
-        assert(is_singlephase(res.def));
+        assert(is_singlephase(def));
         assert(!is_core_module(tstate->interp, info->name, info->filename));
         assert(!is_core_module(tstate->interp, info->name, info->name));
-        mod = Py_NewRef(res.module);
+        mod = Py_NewRef(mod);
 
         const char *name_buf = PyBytes_AS_STRING(info->name_encoded);
         if (_PyImport_CheckSubinterpIncompatibleExtensionAllowed(name_buf) < 0) {
@@ -1445,12 +1454,12 @@ create_dynamic(PyThreadState *tstate, struct _Py_ext_module_loader_info *info,
         struct singlephase_global_update singlephase = {0};
         // gh-88216: Extensions and def->m_base.m_copy can be updated
         // when the extension module doesn't support sub-interpreters.
-        if (res.def->m_size == -1) {
+        if (def->m_size == -1) {
             singlephase.m_dict = PyModule_GetDict(mod);
             assert(singlephase.m_dict != NULL);
         }
         if (update_global_state_for_extension(
-                tstate, info->filename, info->name, res.def, &singlephase) < 0)
+                tstate, info->filename, info->name, def, &singlephase) < 0)
         {
             Py_CLEAR(mod);
             goto finally;
@@ -1458,7 +1467,7 @@ create_dynamic(PyThreadState *tstate, struct _Py_ext_module_loader_info *info,
 
         PyObject *modules = get_modules_dict(tstate, true);
         if (finish_singlephase_extension(
-                tstate, mod, res.def, info->name, modules) < 0)
+                tstate, mod, def, info->name, modules) < 0)
         {
             Py_CLEAR(mod);
             goto finally;
