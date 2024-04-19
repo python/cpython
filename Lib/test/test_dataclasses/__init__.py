@@ -3612,6 +3612,17 @@ class TestSlots(unittest.TestCase):
         self.assertTrue(H.__weakref__)
         H()
 
+    def test_dataclass_slot_dict(self):
+        class WithDictSlot:
+            __slots__ = ('__dict__',)
+
+        @dataclass(slots=True)
+        class A(WithDictSlot): ...
+
+        self.assertEqual(A.__slots__, ())
+        self.assertEqual(A().__dict__, {})
+        A()
+
 
 class TestDescriptors(unittest.TestCase):
     def test_set_name(self):

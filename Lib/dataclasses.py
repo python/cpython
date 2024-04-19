@@ -1201,12 +1201,15 @@ def _get_slots(cls):
     match cls.__dict__.get('__slots__'):
         # A class which does not define __slots__ at all is equivalent
         # to a class defining __slots__ = ('__dict__', '__weakref__')
-        case None if getattr(cls, '__weakrefoffset__', -1) == 0:
+        case None:
             # Except for special cases, inheriting from them do not set
             # any slots at all:
-            yield from ()
-        case None:
-            yield from ('__dict__', '__weakref__')
+            slots = ['__dict__', '__weakref__']
+            if getattr(cls, '__weakrefoffset__', -1) == 0:
+                slots.remove('__weakref__')
+            if getattr(cls, '__dictrefoffset__', -1) == 0:
+                slots.remove('__dict__')
+            yield from slots
         case str(slot):
             yield slot
         # Slots may be any iterable, but we cannot handle an iterator
