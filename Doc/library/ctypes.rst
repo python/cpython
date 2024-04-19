@@ -2072,13 +2072,13 @@ Utility functions
    Does the same as the C ``sizeof`` operator.
 
 
-.. function:: string_at(address, size=-1)
+.. function:: string_at(ptr, size=-1)
 
-   This function returns the C string starting at memory address *address* as a bytes
-   object. If size is specified, it is used as size, otherwise the string is assumed
+   Return the byte string at *void \*ptr*.
+   If *size* is specified, it is used as size, otherwise the string is assumed
    to be zero-terminated.
 
-   .. audit-event:: ctypes.string_at address,size ctypes.string_at
+   .. audit-event:: ctypes.string_at ptr,size ctypes.string_at
 
 
 .. function:: WinError(code=None, descr=None)
@@ -2094,14 +2094,14 @@ Utility functions
       alias of :exc:`OSError`.
 
 
-.. function:: wstring_at(address, size=-1)
+.. function:: wstring_at(ptr, size=-1)
 
-   This function returns the wide character string starting at memory address
-   *address* as a string.  If *size* is specified, it is used as the number of
+   Return the wide-character string at *void \*ptr*.
+   If *size* is specified, it is used as the number of
    characters of the string, otherwise the string is assumed to be
    zero-terminated.
 
-   .. audit-event:: ctypes.wstring_at address,size ctypes.wstring_at
+   .. audit-event:: ctypes.wstring_at ptr,size ctypes.wstring_at
 
 
 .. _ctypes-data-types:
