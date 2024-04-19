@@ -978,8 +978,6 @@ enter_tier_two:
 #define STAT_INC(opname, name) ((void)0)
 #undef STAT_DEC
 #define STAT_DEC(opname, name) ((void)0)
-#undef CALL_STAT_INC
-#define CALL_STAT_INC(name) ((void)0)
 #endif
 
 #undef ENABLE_SPECIALIZATION
@@ -995,6 +993,7 @@ enter_tier_two:
     ; // dummy statement after a label, before a declaration
     uint16_t uopcode;
 #ifdef Py_STATS
+    int lastuop = 0;
     uint64_t trace_uop_execution_counter = 0;
 #endif
 
@@ -1018,6 +1017,7 @@ tier2_dispatch:
         next_uop++;
         OPT_STAT_INC(uops_executed);
         UOP_STAT_INC(uopcode, execution_count);
+        UOP_PAIR_INC(uopcode, lastuop);
 #ifdef Py_STATS
         trace_uop_execution_counter++;
 #endif

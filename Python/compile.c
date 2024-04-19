@@ -32,6 +32,7 @@
 #include "pycore_code.h"          // _PyCode_New()
 #include "pycore_compile.h"
 #include "pycore_flowgraph.h"
+#include "pycore_instruction_sequence.h" // _PyInstructionSequence_New()
 #include "pycore_intrinsics.h"
 #include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_pystate.h"       // _Py_GetConfig()
@@ -248,7 +249,7 @@ struct compiler_unit {
     PyObject *u_private;            /* for private name mangling */
     PyObject *u_static_attributes;  /* for class: attributes accessed via self.X */
 
-    instr_sequence u_instr_sequence; /* codegen output */
+    instr_sequence *u_instr_sequence; /* codegen output */
 
     int u_nfblocks;
     int u_in_inlined_comp;
@@ -281,12 +282,12 @@ struct compiler {
     int c_nestlevel;
     PyObject *c_const_cache;     /* Python dict holding all constants,
                                     including names tuple */
-    struct compiler_unit *u; /* compiler state for current block */
+    struct compiler_unit *u;     /* compiler state for current block */
     PyObject *c_stack;           /* Python list holding compiler_unit ptrs */
     PyArena *c_arena;            /* pointer to memory allocation arena */
 };
 
-#define INSTR_SEQUENCE(C) (&((C)->u->u_instr_sequence))
+#define INSTR_SEQUENCE(C) ((C)->u->u_instr_sequence)
 
 
 typedef struct {
@@ -567,7 +568,7 @@ dictbytype(PyObject *src, int scope_type, int flag, Py_ssize_t offset)
 static void
 compiler_unit_free(struct compiler_unit *u)
 {
-    PyInstructionSequence_Fini(&u->u_instr_sequence);
+    Py_CLEAR(u->u_instr_sequence);
     Py_CLEAR(u->u_ste);
     Py_CLEAR(u->u_metadata.u_name);
     Py_CLEAR(u->u_metadata.u_qualname);
@@ -976,7 +977,7 @@ compiler_addop_load_const(PyObject *const_cache, struct compiler_unit *u, locati
     if (arg < 0) {
         return ERROR;
     }
-    return codegen_addop_i(&u->u_instr_sequence, LOAD_CONST, arg, loc);
+    return codegen_addop_i(u->u_instr_sequence, LOAD_CONST, arg, loc);
 }
 
 static int
@@ -987,7 +988,7 @@ compiler_addop_o(struct compiler_unit *u, location loc,
     if (arg < 0) {
         return ERROR;
     }
-    return codegen_addop_i(&u->u_instr_sequence, opcode, arg, loc);
+    return codegen_addop_i(u->u_instr_sequence, opcode, arg, loc);
 }
 
 static int
@@ -1033,7 +1034,7 @@ compiler_addop_name(struct compiler_unit *u, location loc,
         arg <<= 2;
         arg |= 1;
     }
-    return codegen_addop_i(&u->u_instr_sequence, opcode, arg, loc);
+    return codegen_addop_i(u->u_instr_sequence, opcode, arg, loc);
 }
 
 /* Add an opcode with an integer argument */
@@ -1251,6 +1252,8 @@ compiler_enter_scope(struct compiler *c, identifier name,
     else {
         u->u_static_attributes = NULL;
     }
+
+    u->u_instr_sequence = (instr_sequence*)_PyInstructionSequence_New();
 
     /* Push the old compiler_unit on the stack. */
     if (c->u) {
@@ -7526,7 +7529,7 @@ optimize_and_assemble_code_unit(struct compiler_unit *u, PyObject *const_cache,
     if (consts == NULL) {
         goto error;
     }
-    g = instr_sequence_to_cfg(&u->u_instr_sequence);
+    g = instr_sequence_to_cfg(u->u_instr_sequence);
     if (g == NULL) {
         goto error;
     }
@@ -7593,158 +7596,23 @@ optimize_and_assemble(struct compiler *c, int addNone)
  * a jump target label marking the beginning of a basic block.
  */
 
-static int
-instructions_to_instr_sequence(PyObject *instructions, instr_sequence *seq)
-{
-    assert(PyList_Check(instructions));
-
-    Py_ssize_t num_insts = PyList_GET_SIZE(instructions);
-    bool *is_target = PyMem_Calloc(num_insts, sizeof(bool));
-    if (is_target == NULL) {
-        return ERROR;
-    }
-    for (Py_ssize_t i = 0; i < num_insts; i++) {
-        PyObject *item = PyList_GET_ITEM(instructions, i);
-        if (!PyTuple_Check(item) || PyTuple_GET_SIZE(item) != 6) {
-            PyErr_SetString(PyExc_ValueError, "expected a 6-tuple");
-            goto error;
-        }
-        int opcode = PyLong_AsLong(PyTuple_GET_ITEM(item, 0));
-        if (PyErr_Occurred()) {
-            goto error;
-        }
-        if (HAS_TARGET(opcode)) {
-            int oparg = PyLong_AsLong(PyTuple_GET_ITEM(item, 1));
-            if (PyErr_Occurred()) {
-                goto error;
-            }
-            if (oparg < 0 || oparg >= num_insts) {
-                PyErr_SetString(PyExc_ValueError, "label out of range");
-                goto error;
-            }
-            is_target[oparg] = true;
-        }
-    }
-
-    for (int i = 0; i < num_insts; i++) {
-        if (is_target[i]) {
-            if (_PyInstructionSequence_UseLabel(seq, i) < 0) {
-                goto error;
-            }
-        }
-        PyObject *item = PyList_GET_ITEM(instructions, i);
-        if (!PyTuple_Check(item) || PyTuple_GET_SIZE(item) != 6) {
-            PyErr_SetString(PyExc_ValueError, "expected a 6-tuple");
-            goto error;
-        }
-        int opcode = PyLong_AsLong(PyTuple_GET_ITEM(item, 0));
-        if (PyErr_Occurred()) {
-            goto error;
-        }
-        int oparg;
-        if (OPCODE_HAS_ARG(opcode)) {
-            oparg = PyLong_AsLong(PyTuple_GET_ITEM(item, 1));
-            if (PyErr_Occurred()) {
-                goto error;
-            }
-        }
-        else {
-            oparg = 0;
-        }
-        location loc;
-        loc.lineno = PyLong_AsLong(PyTuple_GET_ITEM(item, 2));
-        if (PyErr_Occurred()) {
-            goto error;
-        }
-        loc.end_lineno = PyLong_AsLong(PyTuple_GET_ITEM(item, 3));
-        if (PyErr_Occurred()) {
-            goto error;
-        }
-        loc.col_offset = PyLong_AsLong(PyTuple_GET_ITEM(item, 4));
-        if (PyErr_Occurred()) {
-            goto error;
-        }
-        loc.end_col_offset = PyLong_AsLong(PyTuple_GET_ITEM(item, 5));
-        if (PyErr_Occurred()) {
-            goto error;
-        }
-        if (_PyInstructionSequence_Addop(seq, opcode, oparg, loc) < 0) {
-            goto error;
-        }
-    }
-    PyMem_Free(is_target);
-    return SUCCESS;
-error:
-    PyMem_Free(is_target);
-    return ERROR;
-}
-
-static cfg_builder*
-instructions_to_cfg(PyObject *instructions)
-{
-    cfg_builder *g = NULL;
-    instr_sequence seq;
-    memset(&seq, 0, sizeof(instr_sequence));
-
-    if (instructions_to_instr_sequence(instructions, &seq) < 0) {
-        goto error;
-    }
-    g = instr_sequence_to_cfg(&seq);
-    if (g == NULL) {
-        goto error;
-    }
-    PyInstructionSequence_Fini(&seq);
-    return g;
-error:
-    _PyCfgBuilder_Free(g);
-    PyInstructionSequence_Fini(&seq);
-    return NULL;
-}
 
 static PyObject *
-instr_sequence_to_instructions(instr_sequence *seq)
+cfg_to_instruction_sequence(cfg_builder *g)
 {
-    PyObject *instructions = PyList_New(0);
-    if (instructions == NULL) {
-        return NULL;
-    }
-    for (int i = 0; i < seq->s_used; i++) {
-        instruction *instr = &seq->s_instrs[i];
-        location loc = instr->i_loc;
-        PyObject *inst_tuple = Py_BuildValue(
-            "(iiiiii)", instr->i_opcode, instr->i_oparg,
-            loc.lineno, loc.end_lineno,
-            loc.col_offset, loc.end_col_offset);
-        if (inst_tuple == NULL) {
+    instr_sequence *seq = (instr_sequence *)_PyInstructionSequence_New();
+    if (seq != NULL) {
+        if (_PyCfg_ToInstructionSequence(g, seq) < 0) {
             goto error;
         }
-
-        int res = PyList_Append(instructions, inst_tuple);
-        Py_DECREF(inst_tuple);
-        if (res != 0) {
+        if (_PyInstructionSequence_ApplyLabelMap(seq) < 0) {
             goto error;
         }
     }
-    return instructions;
+    return (PyObject*)seq;
 error:
-    Py_XDECREF(instructions);
+    PyInstructionSequence_Fini(seq);
     return NULL;
-}
-
-static PyObject *
-cfg_to_instructions(cfg_builder *g)
-{
-    instr_sequence seq;
-    memset(&seq, 0, sizeof(seq));
-    if (_PyCfg_ToInstructionSequence(g, &seq) < 0) {
-        return NULL;
-    }
-    if (_PyInstructionSequence_ApplyLabelMap(&seq) < 0) {
-        return NULL;
-    }
-    PyObject *res = instr_sequence_to_instructions(&seq);
-    PyInstructionSequence_Fini(&seq);
-    return res;
 }
 
 // C implementation of inspect.cleandoc()
@@ -7916,13 +7784,8 @@ _PyCompile_CodeGen(PyObject *ast, PyObject *filename, PyCompilerFlags *pflags,
     if (_PyInstructionSequence_ApplyLabelMap(INSTR_SEQUENCE(c)) < 0) {
         return NULL;
     }
-
-    PyObject *insts = instr_sequence_to_instructions(INSTR_SEQUENCE(c));
-    if (insts == NULL) {
-        goto finally;
-    }
-    res = PyTuple_Pack(2, insts, metadata);
-    Py_DECREF(insts);
+    /* Allocate a copy of the instruction sequence on the heap */
+    res = PyTuple_Pack(2, INSTR_SEQUENCE(c), metadata);
 
 finally:
     Py_XDECREF(metadata);
@@ -7933,16 +7796,19 @@ finally:
 }
 
 PyObject *
-_PyCompile_OptimizeCfg(PyObject *instructions, PyObject *consts, int nlocals)
+_PyCompile_OptimizeCfg(PyObject *seq, PyObject *consts, int nlocals)
 {
-    cfg_builder *g = NULL;
-    PyObject *res = NULL;
+    if (!_PyInstructionSequence_Check(seq)) {
+        PyErr_SetString(PyExc_ValueError, "expected an instruction sequence");
+        return NULL;
+    }
     PyObject *const_cache = PyDict_New();
     if (const_cache == NULL) {
         return NULL;
     }
 
-    g = instructions_to_cfg(instructions);
+    PyObject *res = NULL;
+    cfg_builder *g = instr_sequence_to_cfg((instr_sequence*)seq);
     if (g == NULL) {
         goto error;
     }
@@ -7951,7 +7817,7 @@ _PyCompile_OptimizeCfg(PyObject *instructions, PyObject *consts, int nlocals)
                                 nparams, firstlineno) < 0) {
         goto error;
     }
-    res = cfg_to_instructions(g);
+    res = cfg_to_instruction_sequence(g);
 error:
     Py_DECREF(const_cache);
     _PyCfgBuilder_Free(g);
@@ -7962,8 +7828,12 @@ int _PyCfg_JumpLabelsToTargets(cfg_builder *g);
 
 PyCodeObject *
 _PyCompile_Assemble(_PyCompile_CodeUnitMetadata *umd, PyObject *filename,
-                    PyObject *instructions)
+                    PyObject *seq)
 {
+    if (!_PyInstructionSequence_Check(seq)) {
+        PyErr_SetString(PyExc_TypeError, "expected an instruction sequence");
+        return NULL;
+    }
     cfg_builder *g = NULL;
     PyCodeObject *co = NULL;
     instr_sequence optimized_instrs;
@@ -7974,7 +7844,7 @@ _PyCompile_Assemble(_PyCompile_CodeUnitMetadata *umd, PyObject *filename,
         return NULL;
     }
 
-    g = instructions_to_cfg(instructions);
+    g = instr_sequence_to_cfg((instr_sequence*)seq);
     if (g == NULL) {
         goto error;
     }
