@@ -1722,13 +1722,6 @@ def _newton_raphson(f_inv_estimate, f, f_prime, tolerance=1e-12):
         return x
     return f_inv
 
-def _simple_s_curve(power):
-    "S-curve that crosses (0, -1), (1/2, 0), (1, 1)."
-    # Approximates the inverse CDF for kernels with support: -1 < x < 1.
-    return lambda p: ((2 * p) ** power - 1
-                      if p <= 1/2 else
-                      1 - (2 - 2*p) ** power)
-
 def _quartic_invcdf_estimate(p):
     sign, p = (1, p) if p <= 1/2 else (-1, 1 - p)
     x = (2 * p) ** 0.4258865685331 - 1  # (204/479)
@@ -1741,8 +1734,13 @@ _quartic_invcdf = _newton_raphson(
     f = lambda t: 3/16 * t**5 - 5/8 * t**3 + 15/16 * t + 1/2,
     f_prime = lambda t: 15/16 * (1.0 - t * t) ** 2)
 
+def _triweight_invcdf_estimate(p):
+    sign, p = (1, p) if p <= 1/2 else (-1, 1 - p)
+    x = (2 * p) ** 0.3400218741872791 - 1  # (17/50)
+    return x * sign
+
 _triweight_invcdf = _newton_raphson(
-    f_inv_estimate = _simple_s_curve(0.3400218741872791),  # (17/50)
+    f_inv_estimate = _triweight_invcdf_estimate,
     f = lambda t: 35/32 * (-1/7*t**7 + 3/5*t**5 - t**3 + t) + 1/2,
     f_prime = lambda t: 35/32 * (1.0 - t * t) ** 3)
 
@@ -1767,10 +1765,7 @@ def kde_random(data, h, kernel='normal', *, seed=None):
     probability density function created by kde(data, h, kernel).
 
     Providing a *seed* allows reproducible selections within a single
-    thread.  In the future, the selection method for the parabolic,
-    quartic, and triweight kernels may be replaced with faster
-    algorithms that give different results.  The seed may be an
-    integer, float, str, or bytes.
+    thread.  The seed may be an integer, float, str, or bytes.
 
     A StatisticsError will be raised if the *data* sequence is empty.
 
