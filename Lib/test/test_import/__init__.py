@@ -159,9 +159,8 @@ def requires_singlephase_init(meth):
             finally:
                 restore__testsinglephase()
     meth = cpython_only(meth)
-    # gh-117649: free-threaded build does not currently support single-phase
-    # init modules in subinterpreters.
-    meth = requires_gil_enabled(meth)
+    msg = "gh-117694: free-threaded build does not currently support single-phase init modules in sub-interpreters"
+    meth = requires_gil_enabled(msg)(meth)
     return unittest.skipIf(_testsinglephase is None,
                            'test requires _testsinglephase module')(meth)
 
