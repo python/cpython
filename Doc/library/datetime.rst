@@ -114,7 +114,7 @@ Available Types
    :noindex:
 
    An idealized time, independent of any particular day, assuming that every day
-   has exactly ``24 * 60 * 60`` seconds.  (There is no notion of "leap seconds" here.)
+   has exactly ``24*60*60`` seconds.  (There is no notion of "leap seconds" here.)
    Attributes: :attr:`hour`, :attr:`minute`, :attr:`second`, :attr:`microsecond`,
    and :attr:`.tzinfo`.
 
@@ -213,10 +213,10 @@ A :class:`timedelta` object represents a duration, the difference between two
    Only *days*, *seconds* and *microseconds* are stored internally.
    Arguments are converted to those units:
 
-   * A *millisecond* is converted to ``1000`` *microseconds*.
-   * A *minute* is converted to ``60`` *seconds*.
-   * An *hour* is converted to ``3600`` *seconds*.
-   * A *week* is converted to ``7`` *days*.
+   * A *millisecond* is converted to 1000 *microseconds*.
+   * A *minute* is converted to 60 *seconds*.
+   * An *hour* is converted to 3600 *seconds*.
+   * A *week* is converted to 7 *days*.
 
    and days, seconds and microseconds are then normalized so that the
    representation is unique, with
@@ -1740,7 +1740,7 @@ day, and subject to adjustment via a :class:`tzinfo` object.
    * ``fold in [0, 1]``.
 
    If an argument outside those ranges is given, :exc:`ValueError` is raised. All
-   default to ``0`` except *tzinfo*, which defaults to ``None``.
+   default to ``0`` except *tzinfo*, which defaults to :const:`None`.
 
 Class attributes:
 
