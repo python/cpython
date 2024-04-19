@@ -32,6 +32,9 @@ or of a type that emulates it.
 
 All of the functions below return 0 on success and -1 (with an exception set) on error.
 
+They should not be called with an exception set; you might want to wrap the
+call in :c:func:`PyErr_GetRaisedException` and :c:func:`PyErr_SetRaisedException`.
+
 See :mod:`sys.monitoring` for descriptions of the events.
 
 .. c:function:: int PyMonitoring_FirePyStartEvent(PyMonitoringState *state, PyObject *codelike, int32_t offset)
@@ -132,13 +135,14 @@ would typically correspond to a python function.
    the event. The size of ``event_types`` (and hence also of ``state_array``)
    is given in ``length``.
 
-   The ``version`` argument is a pointer to a value which should be initialized
-   to 0 and then set only by ``PyMonitoring_EnterScope`` itelf. It allows this
+   The ``version`` argument is a pointer to a value which should be allocated 
+   by the user together with ``state_array`` and initialized to 0,
+   and then set only by ``PyMonitoring_EnterScope`` itelf. It allows this
    function to determine whether event states have changed since the previous call,
    and to return quickly if they have not.
 
    The scopes referred to here are lexical scopes: a function, class or method.
-   ``PyMonitoring_EnterScope`` should be called whenever the lexical scope
+   ``PyMonitoring_EnterScope`` should be called whenever the lexical scope is
    entered. Scopes can be reentered, reusing the same *state_array* and *version*,
    in situations like when emulating a recursive Python function. When a code-like's
    execution is paused, such as when emulating a generator, the scope needs to
