@@ -1318,10 +1318,11 @@ fix_up_extension(PyThreadState *tstate, PyObject *mod, PyModuleDef *def,
 
 static PyObject *
 reload_singlephase_extension(PyThreadState *tstate, PyModuleDef *def,
-                             PyObject *name, PyObject *filename)
+                             struct _Py_ext_module_loader_info *info)
 {
     PyObject *mod;
     PyObject *modules = get_modules_dict(tstate, true);
+    PyObject *filename = info->path == NULL ? info->name : info->path;
 
     if (def->m_size == -1) {
         PyObject *m_copy = def->m_base.m_copy;
@@ -1329,13 +1330,13 @@ reload_singlephase_extension(PyThreadState *tstate, PyModuleDef *def,
         if (m_copy == NULL) {
             /* It might be a core module (e.g. sys & builtins),
                for which we don't set m_copy. */
-            m_copy = get_core_module_dict(tstate->interp, name, filename);
+            m_copy = get_core_module_dict(tstate->interp, info->name, filename);
             if (m_copy == NULL) {
                 assert(!PyErr_Occurred());
                 return NULL;
             }
         }
-        mod = import_add_module(tstate, name);
+        mod = import_add_module(tstate, info->name);
         if (mod == NULL) {
             return NULL;
         }
@@ -1361,18 +1362,23 @@ reload_singlephase_extension(PyThreadState *tstate, PyModuleDef *def,
             assert(!PyErr_Occurred());
             return NULL;
         }
-        mod = def->m_base.m_init();
-        if (mod == NULL) {
+        struct _Py_ext_module_loader_result res;
+        if (_PyImport_RunModInitFunc(def->m_base.m_init, info, &res) < 0) {
+            _Py_ext_module_loader_result_apply_error(&res);
             return NULL;
         }
-        if (PyObject_SetItem(modules, name, mod) == -1) {
+        assert(!PyErr_Occurred());
+        assert(res.kind == _Py_ext_module_loader_result_SINGLEPHASE);
+        mod = res.module;
+        // XXX __file__ doesn't get set!
+        if (PyObject_SetItem(modules, info->name, mod) == -1) {
             Py_DECREF(mod);
             return NULL;
         }
     }
 
     if (_modules_by_index_set(tstate->interp, def, mod) < 0) {
-        PyMapping_DelItem(modules, name);
+        PyMapping_DelItem(modules, info->name);
         Py_DECREF(mod);
         return NULL;
     }
@@ -1381,11 +1387,13 @@ reload_singlephase_extension(PyThreadState *tstate, PyModuleDef *def,
 }
 
 static PyObject *
-import_find_extension(PyThreadState *tstate, PyObject *name,
-                      PyObject *filename)
+import_find_extension(PyThreadState *tstate,
+                      struct _Py_ext_module_loader_info *info)
 {
+    PyObject *filename = info->path == NULL ? info->name : info->path;
+
     /* Only single-phase init modules will be in the cache. */
-    PyModuleDef *def = _extensions_cache_get(filename, name);
+    PyModuleDef *def = _extensions_cache_get(filename, info->name);
     if (def == NULL) {
         return NULL;
     }
@@ -1393,13 +1401,13 @@ import_find_extension(PyThreadState *tstate, PyObject *name,
     /* It may have been successfully imported previously
        in an interpreter that allows legacy modules
        but is not allowed in the current interpreter. */
-    const char *name_buf = PyUnicode_AsUTF8(name);
+    const char *name_buf = PyUnicode_AsUTF8(info->name);
     assert(name_buf != NULL);
     if (_PyImport_CheckSubinterpIncompatibleExtensionAllowed(name_buf) < 0) {
         return NULL;
     }
 
-    PyObject *mod = reload_singlephase_extension(tstate, def, name, filename);
+    PyObject *mod = reload_singlephase_extension(tstate, def, info);
     if (mod == NULL) {
         return NULL;
     }
@@ -1407,7 +1415,7 @@ import_find_extension(PyThreadState *tstate, PyObject *name,
     int verbose = _PyInterpreterState_GetConfig(tstate->interp)->verbose;
     if (verbose) {
         PySys_FormatStderr("import %U # previously loaded (%R)\n",
-                           name, filename);
+                           info->name, filename);
     }
     return mod;
 }
@@ -1560,15 +1568,20 @@ is_builtin(PyObject *name)
 static PyObject*
 create_builtin(PyThreadState *tstate, PyObject *name, PyObject *spec)
 {
-    PyObject *mod = import_find_extension(tstate, name, name);
+    struct _Py_ext_module_loader_info info;
+    if (_Py_ext_module_loader_info_init_for_builtin(&info, name) < 0) {
+        return NULL;
+    }
+
+    PyObject *mod = import_find_extension(tstate, &info);
     if (mod != NULL) {
         assert(!_PyErr_Occurred(tstate));
         assert(get_extension_kind(_PyModule_GetDef(mod))
                     == _Py_ext_module_loader_result_SINGLEPHASE);
-        return mod;
+        goto finally;
     }
     else if (_PyErr_Occurred(tstate)) {
-        return NULL;
+        goto finally;
     }
 
     PyObject *modules = get_modules_dict(tstate, true);
@@ -1576,12 +1589,13 @@ create_builtin(PyThreadState *tstate, PyObject *name, PyObject *spec)
         if (_PyUnicode_EqualToASCIIString(name, p->name)) {
             if (p->initfunc == NULL) {
                 /* Cannot re-init internal module ("sys" or "builtins") */
-                return import_add_module(tstate, name);
+                mod = import_add_module(tstate, name);
+                goto finally;
             }
 
             struct _Py_ext_module_loader_info info;
             if (_Py_ext_module_loader_info_init_for_builtin(&info, name) < 0) {
-                return NULL;
+                goto finally;
             }
 
             struct _Py_ext_module_loader_result res;
@@ -1589,12 +1603,13 @@ create_builtin(PyThreadState *tstate, PyObject *name, PyObject *spec)
             _Py_ext_module_loader_info_clear(&info);
             if (rc < 0) {
                 _Py_ext_module_loader_result_apply_error(&res);
-                return NULL;
+                goto finally;
             }
             if (res.kind ==_Py_ext_module_loader_result_MULTIPHASE) {
                 assert(res.def != NULL);
                 assert(res.module == NULL);
-                return PyModule_FromDefAndSpec(res.def, spec);
+                mod = PyModule_FromDefAndSpec(res.def, spec);
+                goto finally;
             }
             else {
                 assert(res.kind ==_Py_ext_module_loader_result_SINGLEPHASE);
@@ -1602,15 +1617,18 @@ create_builtin(PyThreadState *tstate, PyObject *name, PyObject *spec)
                 if (fix_up_extension(
                             tstate, mod, res.def, name, NULL, modules) < 0)
                 {
-                    return NULL;
+                    Py_CLEAR(mod);
                 }
-                return mod;
+                goto finally;
             }
         }
     }
-
     // not found
-    Py_RETURN_NONE;
+    mod = Py_None;
+
+finally:
+    _Py_ext_module_loader_info_clear(&info);
+    return mod;
 }
 
 
@@ -3927,7 +3945,7 @@ _imp_create_dynamic_impl(PyObject *module, PyObject *spec, PyObject *file)
         return NULL;
     }
 
-    PyObject *mod = import_find_extension(tstate, info.name, info.path);
+    PyObject *mod = import_find_extension(tstate, &info);
     if (mod != NULL) {
         assert(!_PyErr_Occurred(tstate));
         assert(get_extension_kind(_PyModule_GetDef(mod))
