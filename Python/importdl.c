@@ -96,12 +96,13 @@ error:
 void
 _Py_ext_module_loader_info_clear(struct _Py_ext_module_loader_info *info)
 {
-    Py_CLEAR(info->path);
+    Py_CLEAR(info->filename);
 #ifndef MS_WINDOWS
-    Py_CLEAR(info->path_encoded);
+    Py_CLEAR(info->filename_encoded);
 #endif
     Py_CLEAR(info->name);
     Py_CLEAR(info->name_encoded);
+    info->path = NULL;
 }
 
 int
@@ -124,6 +125,7 @@ _Py_ext_module_loader_info_init_for_builtin(
     *info = (struct _Py_ext_module_loader_info){
         .name=Py_NewRef(name),
         .name_encoded=name_encoded,
+        .path=name,
         /* We won't need path. */
         .hook_prefix=ascii_only_prefix,
         .newcontext=NULL,
@@ -161,19 +163,21 @@ _Py_ext_module_loader_info_init_from_spec(
         return -1;
     }
 
-    info.path = PyObject_GetAttrString(spec, "origin");
-    if (info.path == NULL) {
+    info.filename = PyObject_GetAttrString(spec, "origin");
+    if (info.filename == NULL) {
         _Py_ext_module_loader_info_clear(&info);
         return -1;
     }
 
 #ifndef MS_WINDOWS
-    info.path_encoded = PyUnicode_EncodeFSDefault(info.path);
-    if (info.path_encoded == NULL) {
+    info.filename_encoded = PyUnicode_EncodeFSDefault(info.filename);
+    if (info.filename_encoded == NULL) {
         _Py_ext_module_loader_info_clear(&info);
         return -1;
     }
 #endif
+
+    info.path = info.filename;
 
     *p_info = info;
     return 0;
@@ -204,10 +208,10 @@ _PyImport_GetModInitFunc(struct _Py_ext_module_loader_info *info,
     dl_funcptr exportfunc;
 #ifdef MS_WINDOWS
     exportfunc = _PyImport_FindSharedFuncptrWindows(
-                    info->hook_prefix, name_buf, info->path, fp);
+                    info->hook_prefix, name_buf, info->filename, fp);
 #else
     {
-        const char *path_buf = PyBytes_AS_STRING(info->path_encoded);
+        const char *path_buf = PyBytes_AS_STRING(info->filename_encoded);
         exportfunc = _PyImport_FindSharedFuncptr(
                         info->hook_prefix, name_buf, path_buf, fp);
     }
@@ -221,7 +225,7 @@ _PyImport_GetModInitFunc(struct _Py_ext_module_loader_info *info,
                 "module export function (%s_%s)",
                 info->hook_prefix, name_buf);
             if (msg != NULL) {
-                PyErr_SetImportError(msg, info->name, info->path);
+                PyErr_SetImportError(msg, info->name, info->filename);
                Py_DECREF(msg);
             }
         }
