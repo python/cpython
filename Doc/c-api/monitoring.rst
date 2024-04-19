@@ -139,7 +139,7 @@ would typically correspond to a python function.
 
    The scopes referred to here are lexical scopes: a function, class or method.
    ``PyMonitoring_EnterScope`` should be called whenever the lexical scope
-   entered. Scopes can be nested, reusing the same *state_array* and *version*,
+   entered. Scopes can be reentered, reusing the same *state_array* and *version*,
    in situations like when emulating a recursive Python function. When a code-like's
    execution is paused, such as when emulating a generator, the scope needs to
    be exited and re-entered.
