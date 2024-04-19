@@ -10567,7 +10567,7 @@ type_alias_rule(Parser *p)
     return _res;
 }
 
-// type_params: '[' type_param_seq ']'
+// type_params: '[' type_param_seq ']' | '[' ']'
 static asdl_type_param_seq*
 type_params_rule(Parser *p)
 {
@@ -10609,6 +10609,33 @@ type_params_rule(Parser *p)
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s type_params[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'[' type_param_seq ']'"));
+    }
+    { // '[' ']'
+        if (p->error_indicator) {
+            p->level--;
+            return NULL;
+        }
+        D(fprintf(stderr, "%*c> type_params[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'[' ']'"));
+        Token * _literal;
+        Token * token;
+        if (
+            (_literal = _PyPegen_expect_token(p, 9))  // token='['
+            &&
+            (token = _PyPegen_expect_token(p, 10))  // token=']'
+        )
+        {
+            D(fprintf(stderr, "%*c+ type_params[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'[' ']'"));
+            _res = RAISE_SYNTAX_ERROR_STARTING_FROM ( token , "At least one type variable definition is expected" );
+            if (_res == NULL && PyErr_Occurred()) {
+                p->error_indicator = 1;
+                p->level--;
+                return NULL;
+            }
+            goto done;
+        }
+        p->mark = _mark;
+        D(fprintf(stderr, "%*c%s type_params[%d-%d]: %s failed!\n", p->level, ' ',
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'[' ']'"));
     }
     _res = NULL;
   done:

@@ -2015,6 +2015,21 @@ Invalid bytes literals:
 
 Invalid expressions in type scopes:
 
+   >>> type A[] = int
+   Traceback (most recent call last):
+   ...
+   SyntaxError: At least one type variable definition is expected
+
+   >>> class A[]: ...
+   Traceback (most recent call last):
+   ...
+   SyntaxError: At least one type variable definition is expected
+
+   >>> def some[](): ...
+   Traceback (most recent call last):
+   ...
+   SyntaxError: At least one type variable definition is expected
+
    >>> type A[T: (x:=3)] = int
    Traceback (most recent call last):
       ...
