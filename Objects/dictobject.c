@@ -1606,31 +1606,6 @@ insertion_resize(PyInterpreterState *interp, PyDictObject *mp, int unicode)
     return dictresize(interp, mp, calculate_log2_keysize(GROWTH_RATE(mp)), unicode);
 }
 
-static Py_ssize_t
-insert_into_splitdictkeys(PyDictKeysObject *keys, PyObject *name, Py_hash_t hash)
-{
-    assert(PyUnicode_CheckExact(name));
-    ASSERT_KEYS_LOCKED(keys);
-
-    Py_ssize_t ix = unicodekeys_lookup_unicode(keys, name, hash);
-    if (ix == DKIX_EMPTY) {
-        if (keys->dk_usable <= 0) {
-            return DKIX_EMPTY;
-        }
-        /* Insert into new slot. */
-        keys->dk_version = 0;
-        Py_ssize_t hashpos = find_empty_slot(keys, hash);
-        ix = keys->dk_nentries;
-        PyDictUnicodeEntry *ep = &DK_UNICODE_ENTRIES(keys)[ix];
-        dictkeys_set_index(keys, hashpos, ix);
-        assert(ep->me_key == NULL);
-        ep->me_key = Py_NewRef(name);
-        split_keys_entry_added(keys);
-    }
-    assert (ix < SHARED_KEYS_MAX_SIZE);
-    return ix;
-}
-
 static inline int
 insert_combined_dict(PyInterpreterState *interp, PyDictObject *mp,
                      Py_hash_t hash, PyObject *key, PyObject *value)
@@ -1664,39 +1639,56 @@ insert_combined_dict(PyInterpreterState *interp, PyDictObject *mp,
     return 0;
 }
 
-static int
-insert_split_dict(PyInterpreterState *interp, PyDictObject *mp,
-                  Py_hash_t hash, PyObject *key, PyObject *value)
+static Py_ssize_t
+insert_split_key(PyDictKeysObject *keys, PyObject *key, Py_hash_t hash)
 {
-    PyDictKeysObject *keys = mp->ma_keys;
-    LOCK_KEYS(keys);
-    if (keys->dk_usable <= 0) {
-        /* Need to resize. */
-        UNLOCK_KEYS(keys);
-        int ins = insertion_resize(interp, mp, 1);
-        if (ins < 0) {
-            return -1;
-        }
-        assert(!_PyDict_HasSplitTable(mp));
-        return insert_combined_dict(interp, mp, hash, key, value);
+    assert(PyUnicode_CheckExact(key));
+    Py_ssize_t ix;
+
+#ifdef Py_GIL_DISABLED
+    ix = unicodekeys_lookup_unicode_threadsafe(keys, key, hash);
+    if (ix >= 0) {
+        return ix;
     }
+#endif
 
-    Py_ssize_t hashpos = find_empty_slot(keys, hash);
-    dictkeys_set_index(keys, hashpos, keys->dk_nentries);
-
-    PyDictUnicodeEntry *ep;
-    ep = &DK_UNICODE_ENTRIES(keys)[keys->dk_nentries];
-    STORE_SHARED_KEY(ep->me_key, key);
-
-    Py_ssize_t index = keys->dk_nentries;
-    _PyDictValues_AddToInsertionOrder(mp->ma_values, index);
-    assert (mp->ma_values->values[index] == NULL);
-    STORE_SPLIT_VALUE(mp, index, value);
-
-    split_keys_entry_added(keys);
-    assert(keys->dk_usable >= 0);
+    LOCK_KEYS(keys);
+    ix = unicodekeys_lookup_unicode(keys, key, hash);
+    if (ix == DKIX_EMPTY && keys->dk_usable > 0) {
+        // Insert into new slot
+        keys->dk_version = 0;
+        Py_ssize_t hashpos = find_empty_slot(keys, hash);
+        ix = keys->dk_nentries;
+        dictkeys_set_index(keys, hashpos, ix);
+        PyDictUnicodeEntry *ep = &DK_UNICODE_ENTRIES(keys)[ix];
+        STORE_SHARED_KEY(ep->me_key, Py_NewRef(key));
+        split_keys_entry_added(keys);
+    }
+    assert (ix < SHARED_KEYS_MAX_SIZE);
     UNLOCK_KEYS(keys);
-    return 0;
+    return ix;
+}
+
+static void
+insert_split_value(PyInterpreterState *interp, PyDictObject *mp, PyObject *key, PyObject *value, Py_ssize_t ix)
+{
+    assert(PyUnicode_CheckExact(key));
+    MAINTAIN_TRACKING(mp, key, value);
+    PyObject *old_value = mp->ma_values->values[ix];
+    if (old_value == NULL) {
+        uint64_t new_version = _PyDict_NotifyEvent(interp, PyDict_EVENT_ADDED, mp, key, value);
+        STORE_SPLIT_VALUE(mp, ix, Py_NewRef(value));
+        _PyDictValues_AddToInsertionOrder(mp->ma_values, ix);
+        mp->ma_used++;
+        mp->ma_version_tag = new_version;
+    }
+    else {
+        uint64_t new_version = _PyDict_NotifyEvent(interp, PyDict_EVENT_MODIFIED, mp, key, value);
+        STORE_SPLIT_VALUE(mp, ix, Py_NewRef(value));
+        mp->ma_version_tag = new_version;
+        Py_DECREF(old_value);
+    }
+    ASSERT_CONSISTENT(mp);
 }
 
 /*
@@ -1719,6 +1711,21 @@ insertdict(PyInterpreterState *interp, PyDictObject *mp,
         assert(mp->ma_keys->dk_kind == DICT_KEYS_GENERAL);
     }
 
+    if (mp->ma_keys->dk_kind == DICT_KEYS_SPLIT) {
+        Py_ssize_t ix = insert_split_key(mp->ma_keys, key, hash);
+        if (ix != DKIX_EMPTY) {
+            insert_split_value(interp, mp, key, value, ix);
+            Py_DECREF(key);
+            Py_DECREF(value);
+            return 0;
+        }
+
+        /* No space in shared keys. Resize and continue below. */
+        if (insertion_resize(interp, mp, 1) < 0) {
+            goto Fail;
+        }
+    }
+
     Py_ssize_t ix = _Py_dict_lookup(mp, key, hash, &old_value);
     if (ix == DKIX_ERROR)
         goto Fail;
@@ -1731,17 +1738,9 @@ insertdict(PyInterpreterState *interp, PyDictObject *mp,
         /* Insert into new slot. */
         mp->ma_keys->dk_version = 0;
         assert(old_value == NULL);
-
-        if (!_PyDict_HasSplitTable(mp)) {
-            if (insert_combined_dict(interp, mp, hash, key, value) < 0) {
-                goto Fail;
-            }
+        if (insert_combined_dict(interp, mp, hash, key, value) < 0) {
+            goto Fail;
         }
-        else {
-            if (insert_split_dict(interp, mp, hash, key, value) < 0)
-                goto Fail;
-        }
-
         mp->ma_used++;
         mp->ma_version_tag = new_version;
         ASSERT_CONSISTENT(mp);
@@ -1751,21 +1750,12 @@ insertdict(PyInterpreterState *interp, PyDictObject *mp,
     if (old_value != value) {
         uint64_t new_version = _PyDict_NotifyEvent(
                 interp, PyDict_EVENT_MODIFIED, mp, key, value);
-        if (_PyDict_HasSplitTable(mp)) {
-            STORE_SPLIT_VALUE(mp, ix, value);
-            if (old_value == NULL) {
-                _PyDictValues_AddToInsertionOrder(mp->ma_values, ix);
-                mp->ma_used++;
-            }
+        assert(old_value != NULL);
+        if (DK_IS_UNICODE(mp->ma_keys)) {
+            DK_UNICODE_ENTRIES(mp->ma_keys)[ix].me_value = value;
         }
         else {
-            assert(old_value != NULL);
-            if (DK_IS_UNICODE(mp->ma_keys)) {
-                DK_UNICODE_ENTRIES(mp->ma_keys)[ix].me_value = value;
-            }
-            else {
-                DK_ENTRIES(mp->ma_keys)[ix].me_value = value;
-            }
+            DK_ENTRIES(mp->ma_keys)[ix].me_value = value;
         }
         mp->ma_version_tag = new_version;
     }
@@ -4174,6 +4164,29 @@ dict_setdefault_ref_lock_held(PyObject *d, PyObject *key, PyObject *default_valu
         }
     }
 
+    if (mp->ma_keys->dk_kind == DICT_KEYS_SPLIT) {
+        Py_ssize_t ix = insert_split_key(mp->ma_keys, key, hash);
+        if (ix != DKIX_EMPTY) {
+            PyObject *value = mp->ma_values->values[ix];
+            int already_present = value != NULL;
+            if (!already_present) {
+                insert_split_value(interp, mp, key, default_value, ix);
+                value = default_value;
+            }
+            if (result) {
+                *result = incref_result ? Py_NewRef(value) : value;
+            }
+            return already_present;
+        }
+
+        /* No space in shared keys. Resize and continue below. */
+        if (insertion_resize(interp, mp, 1) < 0) {
+            goto error;
+        }
+    }
+
+    assert(!_PyDict_HasSplitTable(mp));
+
     Py_ssize_t ix = _Py_dict_lookup(mp, key, hash, &value);
     if (ix == DKIX_ERROR) {
         if (result) {
@@ -4188,25 +4201,13 @@ dict_setdefault_ref_lock_held(PyObject *d, PyObject *key, PyObject *default_valu
         mp->ma_keys->dk_version = 0;
         value = default_value;
 
-        if (!_PyDict_HasSplitTable(mp)) {
-            if (insert_combined_dict(interp, mp, hash, Py_NewRef(key), Py_NewRef(value)) < 0) {
-                Py_DECREF(key);
-                Py_DECREF(value);
-                if (result) {
-                    *result = NULL;
-                }
-                return -1;
+        if (insert_combined_dict(interp, mp, hash, Py_NewRef(key), Py_NewRef(value)) < 0) {
+            Py_DECREF(key);
+            Py_DECREF(value);
+            if (result) {
+                *result = NULL;
             }
-        }
-        else {
-            if (insert_split_dict(interp, mp, hash, Py_NewRef(key), Py_NewRef(value)) < 0) {
-                Py_DECREF(key);
-                Py_DECREF(value);
-                if (result) {
-                    *result = NULL;
-                }
-                return -1;
-            }
+            return -1;
         }
 
         MAINTAIN_TRACKING(mp, key, value);
@@ -4219,29 +4220,19 @@ dict_setdefault_ref_lock_held(PyObject *d, PyObject *key, PyObject *default_valu
         }
         return 0;
     }
-    else if (value == NULL) {
-        uint64_t new_version = _PyDict_NotifyEvent(
-                interp, PyDict_EVENT_ADDED, mp, key, default_value);
-        value = default_value;
-        assert(_PyDict_HasSplitTable(mp));
-        assert(mp->ma_values->values[ix] == NULL);
-        MAINTAIN_TRACKING(mp, key, value);
-        STORE_SPLIT_VALUE(mp, ix, Py_NewRef(value));
-        _PyDictValues_AddToInsertionOrder(mp->ma_values, ix);
-        mp->ma_used++;
-        mp->ma_version_tag = new_version;
-        ASSERT_CONSISTENT(mp);
-        if (result) {
-            *result = incref_result ? Py_NewRef(value) : value;
-        }
-        return 0;
-    }
 
+    assert(value != NULL);
     ASSERT_CONSISTENT(mp);
     if (result) {
         *result = incref_result ? Py_NewRef(value) : value;
     }
     return 1;
+
+error:
+    if (result) {
+        *result = NULL;
+    }
+    return -1;
 }
 
 int
@@ -6696,18 +6687,7 @@ store_instance_attr_lock_held(PyObject *obj, PyDictValues *values,
             assert(hash != -1);
         }
 
-#ifdef Py_GIL_DISABLED
-        // Try a thread-safe lookup to see if the index is already allocated
-        ix = unicodekeys_lookup_unicode_threadsafe(keys, name, hash);
-        if (ix == DKIX_EMPTY || ix == DKIX_KEY_CHANGED) {
-            // Lock keys and do insert
-            LOCK_KEYS(keys);
-            ix = insert_into_splitdictkeys(keys, name, hash);
-            UNLOCK_KEYS(keys);
-        }
-#else
-        ix = insert_into_splitdictkeys(keys, name, hash);
-#endif
+        ix = insert_split_key(keys, name, hash);
 
 #ifdef Py_STATS
         if (ix == DKIX_EMPTY) {
