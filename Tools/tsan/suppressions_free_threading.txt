@@ -29,8 +29,6 @@ race:_PyType_HasFeature
 race:assign_version_tag
 race:compare_unicode_unicode
 race:delitem_common
-race:dictkeys_decref
-race:dictkeys_incref
 race:dictresize
 race:gc_collect_main
 race:gc_restore_tid
