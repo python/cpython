@@ -1336,10 +1336,8 @@
     added = '3.2'
 [function.PySys_SetArgv]
     added = '3.2'
-    abi_only = true
 [function.PySys_SetArgvEx]
     added = '3.2'
-    abi_only = true
 [function.PySys_SetObject]
     added = '3.2'
 [function.PySys_SetPath]
@@ -1672,10 +1670,8 @@
     added = '3.2'
 [function.Py_SetProgramName]
     added = '3.2'
-    abi_only = true
 [function.Py_SetPythonHome]
     added = '3.2'
-    abi_only = true
 [function.Py_SetRecursionLimit]
     added = '3.2'
 [function.Py_VaBuildValue]

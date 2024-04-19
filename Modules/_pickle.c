@@ -9,15 +9,16 @@
 #endif
 
 #include "Python.h"
-#include "pycore_bytesobject.h"   // _PyBytesWriter
-#include "pycore_ceval.h"         // _Py_EnterRecursiveCall()
-#include "pycore_long.h"          // _PyLong_AsByteArray()
-#include "pycore_moduleobject.h"  // _PyModule_GetState()
-#include "pycore_object.h"        // _PyNone_Type
-#include "pycore_pystate.h"       // _PyThreadState_GET()
-#include "pycore_runtime.h"       // _Py_ID()
-#include "pycore_setobject.h"     // _PySet_NextEntry()
-#include "pycore_sysmodule.h"     // _PySys_GetAttr()
+#include "pycore_bytesobject.h"       // _PyBytesWriter
+#include "pycore_ceval.h"             // _Py_EnterRecursiveCall()
+#include "pycore_critical_section.h"  // Py_BEGIN_CRITICAL_SECTION()
+#include "pycore_long.h"              // _PyLong_AsByteArray()
+#include "pycore_moduleobject.h"      // _PyModule_GetState()
+#include "pycore_object.h"            // _PyNone_Type
+#include "pycore_pystate.h"           // _PyThreadState_GET()
+#include "pycore_runtime.h"           // _Py_ID()
+#include "pycore_setobject.h"         // _PySet_NextEntry()
+#include "pycore_sysmodule.h"         // _PySys_GetAttr()
 
 #include <stdlib.h>               // strtol()
 
@@ -3413,14 +3414,20 @@ save_set(PickleState *state, PicklerObject *self, PyObject *obj)
         i = 0;
         if (_Pickler_Write(self, &mark_op, 1) < 0)
             return -1;
-        while (_PySet_NextEntry(obj, &ppos, &item, &hash)) {
-            Py_INCREF(item);
-            int err = save(state, self, item, 0);
+
+        int err = 0;
+        Py_BEGIN_CRITICAL_SECTION(obj);
+        while (_PySet_NextEntryRef(obj, &ppos, &item, &hash)) {
+            err = save(state, self, item, 0);
             Py_CLEAR(item);
             if (err < 0)
-                return -1;
+                break;
             if (++i == BATCHSIZE)
                 break;
+        }
+        Py_END_CRITICAL_SECTION();
+        if (err < 0) {
+            return -1;
         }
         if (_Pickler_Write(self, &additems_op, 1) < 0)
             return -1;

@@ -1621,6 +1621,11 @@ Build Changes
 * ``wasm32-emscripten`` is no longer a :pep:`11` supported platform.
   (Contributed by Brett Cannon in :gh:`115192`.)
 
+* Python now bundles the `mimalloc library <https://github.com/microsoft/mimalloc>`__.
+  It is licensed under the MIT license, see :ref:`mimalloc license <mimalloc-license>`.
+  The bundled mimalloc has custom changes, see :gh:`113141` for details.
+  (Contributed by Dino Viehland in :gh:`109914`.)
+
 
 C API Changes
 =============
@@ -2006,12 +2011,8 @@ Removed
   * ``PySys_AddWarnOption()``: use :c:member:`PyConfig.warnoptions` instead.
   * ``PySys_AddXOption()``: use :c:member:`PyConfig.xoptions` instead.
   * ``PySys_HasWarnOptions()``: use :c:member:`PyConfig.xoptions` instead.
-  * ``PySys_SetArgvEx()``: set :c:member:`PyConfig.argv` instead.
-  * ``PySys_SetArgv()``: set :c:member:`PyConfig.argv` instead.
   * ``PySys_SetPath()``: set :c:member:`PyConfig.module_search_paths` instead.
   * ``Py_SetPath()``: set :c:member:`PyConfig.module_search_paths` instead.
-  * ``Py_SetProgramName()``: set :c:member:`PyConfig.program_name` instead.
-  * ``Py_SetPythonHome()``: set :c:member:`PyConfig.home` instead.
   * ``Py_SetStandardStreamEncoding()``: set :c:member:`PyConfig.stdio_encoding`
     instead, and set also maybe :c:member:`PyConfig.legacy_windows_stdio` (on
     Windows).
@@ -2068,6 +2069,16 @@ Pending Removal in Python 3.14
 
 * Creating immutable types (:c:macro:`Py_TPFLAGS_IMMUTABLETYPE`) with mutable
   bases using the C API.
+* Functions to configure the Python initialization, deprecated in Python 3.11:
+
+  * ``PySys_SetArgvEx()``: set :c:member:`PyConfig.argv` instead.
+  * ``PySys_SetArgv()``: set :c:member:`PyConfig.argv` instead.
+  * ``Py_SetProgramName()``: set :c:member:`PyConfig.program_name` instead.
+  * ``Py_SetPythonHome()``: set :c:member:`PyConfig.home` instead.
+
+  The :c:func:`Py_InitializeFromConfig` API should be used with
+  :c:type:`PyConfig` instead.
+
 * Global configuration variables:
 
   * :c:var:`Py_DebugFlag`: use :c:member:`PyConfig.parser_debug`

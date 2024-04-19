@@ -550,7 +550,7 @@ def commonpath(paths):
         split_paths = [path.split(sep) for path in paths]
 
         try:
-            isabs, = set(p[:1] == sep for p in paths)
+            isabs, = {p.startswith(sep) for p in paths}
         except ValueError:
             raise ValueError("Can't mix absolute and relative paths") from None
 
