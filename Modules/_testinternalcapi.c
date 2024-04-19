@@ -1953,7 +1953,7 @@ set_immortalize_deferred(PyObject *self, PyObject *value)
     interp->gc.immortalize.enable_on_thread = enabled_on_thread;
     return Py_BuildValue("ii", old_enabled, old_enabled_on_thread);
 #else
-    Py_RETURN_FALSE;
+    return Py_BuildValue("OO", Py_False, Py_False);
 #endif
 }
 
