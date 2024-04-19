@@ -1167,28 +1167,22 @@ is_core_module(PyInterpreterState *interp, PyObject *name, PyObject *path)
 static int
 fix_up_extension_for_interpreter(PyThreadState *tstate,
                                  PyObject *mod, PyModuleDef *def,
-                                 PyObject *name, PyObject *path,
-                                 PyObject *modules)
+                                 PyObject *name, PyObject *modules)
 {
     assert(mod != NULL && PyModule_Check(mod));
     assert(def == PyModule_GetDef(mod));
 
-    if (modules == NULL) {
-        modules = get_modules_dict(tstate->interp);
-    }
-    if (PyObject_SetItem(modules, name, mod) < 0) {
+    if (_modules_by_index_set(tstate->interp, def, mod) < 0) {
         return -1;
     }
 
-    if (_modules_by_index_set(tstate->interp, def, mod) < 0) {
-        goto error;
+    if (modules != NULL) {
+        if (PyObject_SetItem(modules, name, mod) < 0) {
+            return -1;
+        }
     }
 
     return 0;
-
-error:
-    PyMapping_DelItem(modules, name);
-    return -1;
 }
 
 
@@ -1201,7 +1195,7 @@ fix_up_extension(PyThreadState *tstate, PyObject *mod, PyModuleDef *def,
     assert(def == _PyModule_GetDef(mod));
 
     if (fix_up_extension_for_interpreter(
-                tstate, mod, def, name, path, modules) < 0)
+                tstate, mod, def, name, modules) < 0)
     {
         return -1;
     }
