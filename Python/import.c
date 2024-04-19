@@ -1191,9 +1191,13 @@ is_core_module(PyInterpreterState *interp, PyObject *name, PyObject *filename)
 static enum _Py_ext_module_loader_result_kind
 get_extension_kind(PyModuleDef *def)
 {
-    assert(def != NULL);
     enum _Py_ext_module_loader_result_kind kind;
-    if (def->m_slots == NULL) {
+    if (def == NULL) {
+        /* It must be a module created by reload_singlephase_extension()
+         * from m_copy.  Ideally we'd do away with this case. */
+        kind = _Py_ext_module_loader_result_SINGLEPHASE;
+    }
+    else if (def->m_slots == NULL) {
         kind = _Py_ext_module_loader_result_SINGLEPHASE;
     }
     else {
@@ -1222,12 +1226,26 @@ fix_up_extension_for_interpreter(PyThreadState *tstate,
         goto error;
     }
 
-    // bpo-44050: Extensions and def->m_base.m_copy can be updated
+    // gh-88216: Extensions and def->m_base.m_copy can be updated
     // when the extension module doesn't support sub-interpreters.
     if (def->m_size == -1) {
         if (!is_core_module(interp, name, filename)) {
             assert(PyUnicode_CompareWithASCIIString(name, "sys") != 0);
             assert(PyUnicode_CompareWithASCIIString(name, "builtins") != 0);
+            /* XXX gh-88216: The copied dict is owned by the current
+             * interpreter.  That's a problem if the interpreter has
+             * its own obmalloc state or if the module is successfully
+             * imported into such an interpreter.  If the interpreter
+             * has its own GIL then there may be data races and
+             * PyImport_ClearModulesByIndex() can crash.  Normally,
+             * a single-phase init module cannot be imported in an
+             * isolated interpreter, but there are ways around that.
+             * Hence, heere be dragons!  Ideally we would instead do
+             * something like make a read-only, immortal copy of the
+             * dict using PyMem_RawMalloc() and store *that* in m_copy.
+             * Then we'd need to make sure to clear that when the
+             * runtime is finalized, rather than in
+             * PyImport_ClearModulesByIndex(). */
             if (def->m_base.m_copy) {
                 /* Somebody already imported the module,
                    likely under a different name.
@@ -1330,6 +1348,13 @@ reload_singlephase_extension(PyThreadState *tstate, PyModuleDef *def,
             Py_DECREF(mod);
             return NULL;
         }
+        /* We can't set mod->md_def if it's missing,
+         * because _PyImport_ClearModulesByIndex() might break
+         * due to violating interpreter isolation.  See the note
+         * in fix_up_extension_for_interpreter().  Until that
+         * is solved, we leave md_def set to NULL. */
+        assert(_PyModule_GetDef(mod) == NULL
+               || _PyModule_GetDef(mod) == def);
     }
     else {
         if (def->m_base.m_init == NULL) {
