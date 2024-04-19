@@ -2545,3 +2545,8 @@ to stdout.  Otherwise, the content is read from stdin.
     Tree that looks like an ast tree and keeps all formatting details. It's
     useful for building automated refactoring (codemod) applications and
     linters.
+
+    `Parso <https://parso.readthedocs.io>`_ is a Python parser that supports
+    error recovery and round-trip parsing for different Python versions (in
+    multiple Python versions). Parso is also able to list multiple syntax errors
+    in your Python file.
