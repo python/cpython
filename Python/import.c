@@ -1208,28 +1208,13 @@ get_extension_kind(PyModuleDef *def)
 
 
 static int
-fix_up_extension_for_interpreter(PyThreadState *tstate,
-                                 PyObject *mod, PyModuleDef *def,
-                                 PyObject *name, PyObject *filename,
-                                 PyObject *modules)
+update_extensions_cache(PyThreadState *tstate, PyModuleDef *def, PyObject *mod,
+                        PyObject *filename, PyObject *name)
 {
-    PyInterpreterState *interp = tstate->interp;
-    assert(mod != NULL && PyModule_Check(mod));
-    assert(def == PyModule_GetDef(mod));
-
-    assert(modules != NULL);
-    if (PyObject_SetItem(modules, name, mod) < 0) {
-        return -1;
-    }
-
-    if (_modules_by_index_set(interp, def, mod) < 0) {
-        goto error;
-    }
-
     // gh-88216: Extensions and def->m_base.m_copy can be updated
     // when the extension module doesn't support sub-interpreters.
     if (def->m_size == -1) {
-        if (!is_core_module(interp, name, filename)) {
+        if (!is_core_module(tstate->interp, name, filename)) {
             assert(PyUnicode_CompareWithASCIIString(name, "sys") != 0);
             assert(PyUnicode_CompareWithASCIIString(name, "builtins") != 0);
             /* XXX gh-88216: The copied dict is owned by the current
@@ -1254,28 +1239,36 @@ fix_up_extension_for_interpreter(PyThreadState *tstate,
             }
             PyObject *dict = PyModule_GetDict(mod);
             if (dict == NULL) {
-                goto error;
+                return -1;
             }
             def->m_base.m_copy = PyDict_Copy(dict);
             if (def->m_base.m_copy == NULL) {
-                goto error;
+                return -1;
             }
         }
     }
 
+    // XXX Why special-case the main interpreter?
+    if (_Py_IsMainInterpreter(tstate->interp) || def->m_size == -1) {
+#ifndef NDEBUG
+        PyModuleDef *cached = _extensions_cache_get(filename, name);
+        assert(cached == NULL || cached == def);
+#endif
+        if (_extensions_cache_set(filename, name, def) < 0) {
+            return -1;
+        }
+    }
+
     return 0;
-
-error:
-    PyMapping_DelItem(modules, name);
-    return -1;
 }
-
 
 static int
 fix_up_extension(PyThreadState *tstate, PyObject *mod, PyModuleDef *def,
                  PyObject *name, PyObject *filename,
                  PyObject *modules)
 {
+    assert(mod != NULL && PyModule_Check(mod));
+
     if (filename != NULL) {
         /* Remember the filename as the __file__ attribute */
         if (PyModule_AddObjectRef(mod, "__file__", filename) < 0) {
@@ -1294,21 +1287,20 @@ fix_up_extension(PyThreadState *tstate, PyObject *mod, PyModuleDef *def,
             return -1;
         }
     }
-
-    // XXX Why special-case the main interpreter?
-    if (_Py_IsMainInterpreter(tstate->interp) || def->m_size == -1) {
-#ifndef NDEBUG
-        PyModuleDef *cached = _extensions_cache_get(filename, name);
-        assert(cached == NULL || cached == def);
-#endif
-        if (_extensions_cache_set(filename, name, def) < 0) {
-            return -1;
-        }
+    else {
+        assert(def == PyModule_GetDef(mod));
     }
 
-    if (fix_up_extension_for_interpreter(
-                tstate, mod, def, name, filename, modules) < 0)
-    {
+    if (update_extensions_cache(tstate, def, mod, filename, name) < 0) {
+        return -1;
+    }
+
+    /* Make interpreter-specific fixes. */
+    if (_modules_by_index_set(tstate->interp, def, mod) < 0) {
+        return -1;
+    }
+    assert(modules != NULL);
+    if (PyObject_SetItem(modules, name, mod) < 0) {
         return -1;
     }
 
