@@ -1269,14 +1269,15 @@ fix_up_extension_for_interpreter(PyThreadState *tstate,
 {
     assert(mod != NULL && PyModule_Check(mod));
     assert(def == _PyModule_GetDef(mod));
-    assert(modules != NULL);
 
     if (_modules_by_index_set(tstate->interp, def, mod) < 0) {
         return -1;
     }
 
-    if (PyObject_SetItem(modules, name, mod) < 0) {
-        return -1;
+    if (modules != NULL) {
+        if (PyObject_SetItem(modules, name, mod) < 0) {
+            return -1;
+        }
     }
 
     return 0;
