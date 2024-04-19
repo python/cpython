@@ -1,0 +1,1 @@
+Add parameter *fileobj* check for :func:`tarfile.addfile()`

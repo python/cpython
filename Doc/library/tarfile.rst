@@ -637,10 +637,14 @@ be finalized; only the internally used file object will be closed. See the
 
 .. method:: TarFile.addfile(tarinfo, fileobj=None)
 
-   Add the :class:`TarInfo` object *tarinfo* to the archive. If *fileobj* is given,
-   it should be a :term:`binary file`, and
-   ``tarinfo.size`` bytes are read from it and added to the archive.  You can
+   Add the :class:`TarInfo` object *tarinfo* to the archive. If *tarinfo* represents
+   a non zero-size regular file, the *fileobj* argument should be a :term:`binary file`,
+   and ``tarinfo.size`` bytes are read from it and added to the archive.  You can
    create :class:`TarInfo` objects directly, or by using :meth:`gettarinfo`.
+
+   .. versionchanged:: 3.13
+
+      *fileobj* must be given for non-zero-sized regular files.
 
 
 .. method:: TarFile.gettarinfo(name=None, arcname=None, fileobj=None)
