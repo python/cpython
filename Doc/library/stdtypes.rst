@@ -5542,7 +5542,7 @@ types, where they are relevant.  Some of these are not reported by the
       [<class 'bool'>, <enum 'IntEnum'>, <flag 'IntFlag'>, <class 're._constants._NamedIntConstant'>]
 
 
-.. method:: class.__static_attributes__
+.. attribute:: class.__static_attributes__
 
       A tuple containing names of attributes of this class which are accessed
       through ``self.X`` from any function in its body.
