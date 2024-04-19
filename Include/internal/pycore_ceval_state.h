@@ -63,6 +63,7 @@ struct _ceval_runtime_state {
     } perf;
     /* Pending calls to be made only on the main thread. */
     struct _pending_calls pending_mainthread;
+    PyMutex sys_trace_profile_mutex;
 };
 
 #ifdef PY_HAVE_PERF_TRAMPOLINE
