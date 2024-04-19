@@ -1,0 +1,8 @@
+Restore functions removed in Python 3.13 alpha 1:
+
+* :c:func:`Py_SetPythonHome`
+* :c:func:`Py_SetProgramName`
+* :c:func:`PySys_SetArgvEx`
+* :c:func:`PySys_SetArgv`
+
+Patch by Victor Stinner.

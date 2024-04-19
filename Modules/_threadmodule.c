@@ -800,8 +800,8 @@ lock_PyThread_acquire_lock(lockobject *self, PyObject *args, PyObject *kwds)
 }
 
 PyDoc_STRVAR(acquire_doc,
-"acquire(blocking=True, timeout=-1) -> bool\n\
-(acquire_lock() is an obsolete synonym)\n\
+"acquire($self, /, blocking=True, timeout=-1)\n\
+--\n\
 \n\
 Lock the lock.  Without argument, this blocks if the lock is already\n\
 locked (even by the same thread), waiting for another thread to release\n\
@@ -809,6 +809,18 @@ the lock, and return True once the lock is acquired.\n\
 With an argument, this will only block if the argument is true,\n\
 and the return value reflects whether the lock is acquired.\n\
 The blocking operation is interruptible.");
+
+PyDoc_STRVAR(acquire_lock_doc,
+"acquire_lock($self, /, blocking=True, timeout=-1)\n\
+--\n\
+\n\
+An obsolete synonym of acquire().");
+
+PyDoc_STRVAR(enter_doc,
+"__enter__($self, /)\n\
+--\n\
+\n\
+Lock the lock.");
 
 static PyObject *
 lock_PyThread_release_lock(lockobject *self, PyObject *Py_UNUSED(ignored))
@@ -825,12 +837,24 @@ lock_PyThread_release_lock(lockobject *self, PyObject *Py_UNUSED(ignored))
 }
 
 PyDoc_STRVAR(release_doc,
-"release()\n\
-(release_lock() is an obsolete synonym)\n\
+"release($self, /)\n\
+--\n\
 \n\
 Release the lock, allowing another thread that is blocked waiting for\n\
 the lock to acquire the lock.  The lock must be in the locked state,\n\
 but it needn't be locked by the same thread that unlocks it.");
+
+PyDoc_STRVAR(release_lock_doc,
+"release_lock($self, /)\n\
+--\n\
+\n\
+An obsolete synonym of release().");
+
+PyDoc_STRVAR(lock_exit_doc,
+"__exit__($self, /, *exc_info)\n\
+--\n\
+\n\
+Release the lock.");
 
 static PyObject *
 lock_locked_lock(lockobject *self, PyObject *Py_UNUSED(ignored))
@@ -839,10 +863,16 @@ lock_locked_lock(lockobject *self, PyObject *Py_UNUSED(ignored))
 }
 
 PyDoc_STRVAR(locked_doc,
-"locked() -> bool\n\
-(locked_lock() is an obsolete synonym)\n\
+"locked($self, /)\n\
+--\n\
 \n\
 Return whether the lock is in the locked state.");
+
+PyDoc_STRVAR(locked_lock_doc,
+"locked_lock($self, /)\n\
+--\n\
+\n\
+An obsolete synonym of locked().");
 
 static PyObject *
 lock_repr(lockobject *self)
@@ -890,21 +920,21 @@ error:
 
 static PyMethodDef lock_methods[] = {
     {"acquire_lock", _PyCFunction_CAST(lock_PyThread_acquire_lock),
-     METH_VARARGS | METH_KEYWORDS, acquire_doc},
+     METH_VARARGS | METH_KEYWORDS, acquire_lock_doc},
     {"acquire",      _PyCFunction_CAST(lock_PyThread_acquire_lock),
      METH_VARARGS | METH_KEYWORDS, acquire_doc},
     {"release_lock", (PyCFunction)lock_PyThread_release_lock,
-     METH_NOARGS, release_doc},
+     METH_NOARGS, release_lock_doc},
     {"release",      (PyCFunction)lock_PyThread_release_lock,
      METH_NOARGS, release_doc},
     {"locked_lock",  (PyCFunction)lock_locked_lock,
-     METH_NOARGS, locked_doc},
+     METH_NOARGS, locked_lock_doc},
     {"locked",       (PyCFunction)lock_locked_lock,
      METH_NOARGS, locked_doc},
     {"__enter__",    _PyCFunction_CAST(lock_PyThread_acquire_lock),
-     METH_VARARGS | METH_KEYWORDS, acquire_doc},
+     METH_VARARGS | METH_KEYWORDS, enter_doc},
     {"__exit__",    (PyCFunction)lock_PyThread_release_lock,
-     METH_VARARGS, release_doc},
+     METH_VARARGS, lock_exit_doc},
 #ifdef HAVE_FORK
     {"_at_fork_reinit",    (PyCFunction)lock__at_fork_reinit,
      METH_NOARGS, NULL},
@@ -913,7 +943,10 @@ static PyMethodDef lock_methods[] = {
 };
 
 PyDoc_STRVAR(lock_doc,
-"A lock object is a synchronization primitive.  To create a lock,\n\
+"lock()\n\
+--\n\
+\n\
+A lock object is a synchronization primitive.  To create a lock,\n\
 call threading.Lock().  Methods are:\n\
 \n\
 acquire() -- lock the lock, possibly blocking until it can be obtained\n\
@@ -1029,7 +1062,8 @@ rlock_acquire(rlockobject *self, PyObject *args, PyObject *kwds)
 }
 
 PyDoc_STRVAR(rlock_acquire_doc,
-"acquire(blocking=True) -> bool\n\
+"acquire($self, /, blocking=True, timeout=-1)\n\
+--\n\
 \n\
 Lock the lock.  `blocking` indicates whether we should wait\n\
 for the lock to be available or not.  If `blocking` is False\n\
@@ -1043,6 +1077,12 @@ In all other cases, the method will return True immediately.\n\
 Precisely, if the current thread already holds the lock, its\n\
 internal counter is simply incremented. If nobody holds the lock,\n\
 the lock is taken and its internal counter initialized to 1.");
+
+PyDoc_STRVAR(rlock_enter_doc,
+"__enter__($self, /)\n\
+--\n\
+\n\
+Lock the lock.");
 
 static PyObject *
 rlock_release(rlockobject *self, PyObject *Py_UNUSED(ignored))
@@ -1062,7 +1102,8 @@ rlock_release(rlockobject *self, PyObject *Py_UNUSED(ignored))
 }
 
 PyDoc_STRVAR(rlock_release_doc,
-"release()\n\
+"release($self, /)\n\
+--\n\
 \n\
 Release the lock, allowing another thread that is blocked waiting for\n\
 the lock to acquire the lock.  The lock must be in the locked state,\n\
@@ -1072,6 +1113,12 @@ and must be locked by the same thread that unlocks it; otherwise a\n\
 Do note that if the lock was acquire()d several times in a row by the\n\
 current thread, release() needs to be called as many times for the lock\n\
 to be available for other threads.");
+
+PyDoc_STRVAR(rlock_exit_doc,
+"__exit__($self, /, *exc_info)\n\
+--\n\
+\n\
+Release the lock.");
 
 static PyObject *
 rlock_acquire_restore(rlockobject *self, PyObject *args)
@@ -1100,7 +1147,8 @@ rlock_acquire_restore(rlockobject *self, PyObject *args)
 }
 
 PyDoc_STRVAR(rlock_acquire_restore_doc,
-"_acquire_restore(state) -> None\n\
+"_acquire_restore($self, state, /)\n\
+--\n\
 \n\
 For internal use by `threading.Condition`.");
 
@@ -1125,7 +1173,8 @@ rlock_release_save(rlockobject *self, PyObject *Py_UNUSED(ignored))
 }
 
 PyDoc_STRVAR(rlock_release_save_doc,
-"_release_save() -> tuple\n\
+"_release_save($self, /)\n\
+--\n\
 \n\
 For internal use by `threading.Condition`.");
 
@@ -1139,7 +1188,8 @@ rlock_recursion_count(rlockobject *self, PyObject *Py_UNUSED(ignored))
 }
 
 PyDoc_STRVAR(rlock_recursion_count_doc,
-"_recursion_count() -> int\n\
+"_recursion_count($self, /)\n\
+--\n\
 \n\
 For internal use by reentrancy checks.");
 
@@ -1155,7 +1205,8 @@ rlock_is_owned(rlockobject *self, PyObject *Py_UNUSED(ignored))
 }
 
 PyDoc_STRVAR(rlock_is_owned_doc,
-"_is_owned() -> bool\n\
+"_is_owned($self, /)\n\
+--\n\
 \n\
 For internal use by `threading.Condition`.");
 
@@ -1223,9 +1274,9 @@ static PyMethodDef rlock_methods[] = {
     {"_recursion_count", (PyCFunction)rlock_recursion_count,
      METH_NOARGS, rlock_recursion_count_doc},
     {"__enter__",    _PyCFunction_CAST(rlock_acquire),
-     METH_VARARGS | METH_KEYWORDS, rlock_acquire_doc},
+     METH_VARARGS | METH_KEYWORDS, rlock_enter_doc},
     {"__exit__",    (PyCFunction)rlock_release,
-     METH_VARARGS, rlock_release_doc},
+     METH_VARARGS, rlock_exit_doc},
 #ifdef HAVE_FORK
     {"_at_fork_reinit",    (PyCFunction)rlock__at_fork_reinit,
      METH_NOARGS, NULL},
@@ -1626,7 +1677,7 @@ static PyType_Slot local_type_slots[] = {
     {Py_tp_dealloc, (destructor)local_dealloc},
     {Py_tp_getattro, (getattrofunc)local_getattro},
     {Py_tp_setattro, (setattrofunc)local_setattro},
-    {Py_tp_doc, "Thread-local data"},
+    {Py_tp_doc, "_local()\n--\n\nThread-local data"},
     {Py_tp_traverse, (traverseproc)local_traverse},
     {Py_tp_clear, (inquiry)local_clear},
     {Py_tp_new, local_new},
@@ -1714,7 +1765,8 @@ thread_daemon_threads_allowed(PyObject *module, PyObject *Py_UNUSED(ignored))
 }
 
 PyDoc_STRVAR(daemon_threads_allowed_doc,
-"daemon_threads_allowed()\n\
+"daemon_threads_allowed($module, /)\n\
+--\n\
 \n\
 Return True if daemon threads are allowed in the current interpreter,\n\
 and False otherwise.\n");
@@ -1798,9 +1850,9 @@ thread_PyThread_start_new_thread(PyObject *module, PyObject *fargs)
     return PyLong_FromUnsignedLongLong(ident);
 }
 
-PyDoc_STRVAR(start_new_doc,
-"start_new_thread(function, args[, kwargs])\n\
-(start_new() is an obsolete synonym)\n\
+PyDoc_STRVAR(start_new_thread_doc,
+"start_new_thread($module, function, args, kwargs={}, /)\n\
+--\n\
 \n\
 Start a new thread and return its identifier.\n\
 \n\
@@ -1809,7 +1861,13 @@ tuple args and keyword arguments taken from the optional dictionary\n\
 kwargs.  The thread exits when the function returns; the return value\n\
 is ignored.  The thread will also exit when the function raises an\n\
 unhandled exception; a stack trace will be printed unless the exception\n\
-is SystemExit.\n");
+is SystemExit.");
+
+PyDoc_STRVAR(start_new_doc,
+"start_new($module, function, args, kwargs={}, /)\n\
+--\n\
+\n\
+An obsolete synonym of start_new_thread().");
 
 static PyObject *
 thread_PyThread_start_joinable_thread(PyObject *module, PyObject *fargs,
@@ -1870,7 +1928,8 @@ thread_PyThread_start_joinable_thread(PyObject *module, PyObject *fargs,
 }
 
 PyDoc_STRVAR(start_joinable_doc,
-"start_joinable_thread(function[, daemon=True[, handle=None]])\n\
+"start_joinable_thread($module, /, function, handle=None, daemon=True)\n\
+--\n\
 \n\
 *For internal use only*: start a new thread.\n\
 \n\
@@ -1890,11 +1949,17 @@ thread_PyThread_exit_thread(PyObject *self, PyObject *Py_UNUSED(ignored))
 }
 
 PyDoc_STRVAR(exit_doc,
-"exit()\n\
-(exit_thread() is an obsolete synonym)\n\
+"exit($module, /)\n\
+--\n\
 \n\
 This is synonymous to ``raise SystemExit''.  It will cause the current\n\
 thread to exit silently unless the exception is caught.");
+
+PyDoc_STRVAR(exit_thread_doc,
+"exit_thread($module, /)\n\
+--\n\
+\n\
+An obsolete synonym of exit().");
 
 static PyObject *
 thread_PyThread_interrupt_main(PyObject *self, PyObject *args)
@@ -1912,7 +1977,8 @@ thread_PyThread_interrupt_main(PyObject *self, PyObject *args)
 }
 
 PyDoc_STRVAR(interrupt_doc,
-"interrupt_main(signum=signal.SIGINT, /)\n\
+"interrupt_main($module, signum=signal.SIGINT, /)\n\
+--\n\
 \n\
 Simulate the arrival of the given signal in the main thread,\n\
 where the corresponding signal handler will be executed.\n\
@@ -1928,12 +1994,18 @@ thread_PyThread_allocate_lock(PyObject *module, PyObject *Py_UNUSED(ignored))
     return (PyObject *) newlockobject(module);
 }
 
-PyDoc_STRVAR(allocate_doc,
-"allocate_lock() -> lock object\n\
-(allocate() is an obsolete synonym)\n\
+PyDoc_STRVAR(allocate_lock_doc,
+"allocate_lock($module, /)\n\
+--\n\
 \n\
 Create a new lock object. See help(type(threading.Lock())) for\n\
 information about locks.");
+
+PyDoc_STRVAR(allocate_doc,
+"allocate($module, /)\n\
+--\n\
+\n\
+An obsolete synonym of allocate_lock().");
 
 static PyObject *
 thread_get_ident(PyObject *self, PyObject *Py_UNUSED(ignored))
@@ -1947,7 +2019,8 @@ thread_get_ident(PyObject *self, PyObject *Py_UNUSED(ignored))
 }
 
 PyDoc_STRVAR(get_ident_doc,
-"get_ident() -> integer\n\
+"get_ident($module, /)\n\
+--\n\
 \n\
 Return a non-zero integer that uniquely identifies the current thread\n\
 amongst other threads that exist simultaneously.\n\
@@ -1966,7 +2039,8 @@ thread_get_native_id(PyObject *self, PyObject *Py_UNUSED(ignored))
 }
 
 PyDoc_STRVAR(get_native_id_doc,
-"get_native_id() -> integer\n\
+"get_native_id($module, /)\n\
+--\n\
 \n\
 Return a non-negative integer identifying the thread as reported\n\
 by the OS (kernel). This may be used to uniquely identify a\n\
@@ -1981,9 +2055,9 @@ thread__count(PyObject *self, PyObject *Py_UNUSED(ignored))
 }
 
 PyDoc_STRVAR(_count_doc,
-"_count() -> integer\n\
+"_count($module, /)\n\
+--\n\
 \n\
-\
 Return the number of currently running Python threads, excluding\n\
 the main thread. The returned number comprises all threads created\n\
 through `start_new_thread()` as well as `threading.Thread`, and not\n\
@@ -2027,7 +2101,8 @@ thread_stack_size(PyObject *self, PyObject *args)
 }
 
 PyDoc_STRVAR(stack_size_doc,
-"stack_size([size]) -> size\n\
+"stack_size($module, size=0, /)\n\
+--\n\
 \n\
 Return the thread stack size used when creating new threads.  The\n\
 optional size argument specifies the stack size (in bytes) to be used\n\
@@ -2182,7 +2257,8 @@ thread_excepthook(PyObject *module, PyObject *args)
 }
 
 PyDoc_STRVAR(excepthook_doc,
-"excepthook(exc_type, exc_value, exc_traceback, thread)\n\
+"_excepthook($module, (exc_type, exc_value, exc_traceback, thread), /)\n\
+--\n\
 \n\
 Handle uncaught Thread.run() exception.");
 
@@ -2194,7 +2270,8 @@ thread__is_main_interpreter(PyObject *module, PyObject *Py_UNUSED(ignored))
 }
 
 PyDoc_STRVAR(thread__is_main_interpreter_doc,
-"_is_main_interpreter()\n\
+"_is_main_interpreter($module, /)\n\
+--\n\
 \n\
 Return True if the current interpreter is the main Python interpreter.");
 
@@ -2240,7 +2317,8 @@ thread_shutdown(PyObject *self, PyObject *args)
 }
 
 PyDoc_STRVAR(shutdown_doc,
-"_shutdown()\n\
+"_shutdown($module, /)\n\
+--\n\
 \n\
 Wait for all non-daemon threads (other than the calling thread) to stop.");
 
@@ -2269,7 +2347,8 @@ thread__make_thread_handle(PyObject *module, PyObject *identobj)
 }
 
 PyDoc_STRVAR(thread__make_thread_handle_doc,
-"_make_thread_handle(ident)\n\
+"_make_thread_handle($module, ident, /)\n\
+--\n\
 \n\
 Internal only. Make a thread handle for threads not spawned\n\
 by the _thread or threading module.");
@@ -2281,14 +2360,15 @@ thread__get_main_thread_ident(PyObject *module, PyObject *Py_UNUSED(ignored))
 }
 
 PyDoc_STRVAR(thread__get_main_thread_ident_doc,
-"_get_main_thread_ident()\n\
+"_get_main_thread_ident($module, /)\n\
+--\n\
 \n\
 Internal only. Return a non-zero integer that uniquely identifies the main thread\n\
 of the main interpreter.");
 
 static PyMethodDef thread_methods[] = {
     {"start_new_thread",        (PyCFunction)thread_PyThread_start_new_thread,
-     METH_VARARGS, start_new_doc},
+     METH_VARARGS, start_new_thread_doc},
     {"start_new",               (PyCFunction)thread_PyThread_start_new_thread,
      METH_VARARGS, start_new_doc},
     {"start_joinable_thread",   _PyCFunction_CAST(thread_PyThread_start_joinable_thread),
@@ -2296,11 +2376,11 @@ static PyMethodDef thread_methods[] = {
     {"daemon_threads_allowed",  (PyCFunction)thread_daemon_threads_allowed,
      METH_NOARGS, daemon_threads_allowed_doc},
     {"allocate_lock",           thread_PyThread_allocate_lock,
-     METH_NOARGS, allocate_doc},
+     METH_NOARGS, allocate_lock_doc},
     {"allocate",                thread_PyThread_allocate_lock,
      METH_NOARGS, allocate_doc},
     {"exit_thread",             thread_PyThread_exit_thread,
-     METH_NOARGS, exit_doc},
+     METH_NOARGS, exit_thread_doc},
     {"exit",                    thread_PyThread_exit_thread,
      METH_NOARGS, exit_doc},
     {"interrupt_main",          (PyCFunction)thread_PyThread_interrupt_main,
