@@ -6135,7 +6135,7 @@ datetime_richcompare(PyObject *self, PyObject *other, int op)
         PyDateTime_Delta *delta;
 
         assert(offset1 != offset2); /* else last "if" handled it */
-        delta = (PyDateTime_Delta *)datetime_subtract((PyObject *)self,
+        delta = (PyDateTime_Delta *)_datetime_subtract(st, (PyObject *)self,
                                                        other);
         if (delta == NULL)
             goto done;
