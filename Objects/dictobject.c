@@ -6734,6 +6734,7 @@ store_instance_attr_lock_held(PyObject *obj, PyDictValues *values,
             dict = make_dict_from_instance_attributes(PyInterpreterState_Get(), keys, values);
             if (dict == NULL ||
                 set_or_del_lock_held(dict, name, value) < 0) {
+                Py_XDECREF(dict);
                 return -1;
             }
 
