@@ -135,7 +135,7 @@ would typically correspond to a python function.
    the event. The size of ``event_types`` (and hence also of ``state_array``)
    is given in ``length``.
 
-   The ``version`` argument is a pointer to a value which should be allocated 
+   The ``version`` argument is a pointer to a value which should be allocated
    by the user together with ``state_array`` and initialized to 0,
    and then set only by ``PyMonitoring_EnterScope`` itelf. It allows this
    function to determine whether event states have changed since the previous call,
