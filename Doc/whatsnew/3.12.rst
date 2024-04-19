@@ -726,7 +726,7 @@ inspect
 
 * Add :func:`inspect.markcoroutinefunction` to mark sync functions that return
   a :term:`coroutine` for use with :func:`inspect.iscoroutinefunction`.
-  (Contributed Carlton Gibson in :gh:`99247`.)
+  (Contributed by Carlton Gibson in :gh:`99247`.)
 
 * Add :func:`inspect.getasyncgenstate` and :func:`inspect.getasyncgenlocals`
   for determining the current state of asynchronous generators.
@@ -751,8 +751,8 @@ math
   (Contributed by Raymond Hettinger in :gh:`100485`.)
 
 * Extend :func:`math.nextafter` to include a *steps* argument
-  for moving up or down multiple steps at a time.
-  (By Matthias Goergens, Mark Dickinson, and Raymond Hettinger in :gh:`94906`.)
+  for moving up or down multiple steps at a time. (Contributed by
+  Matthias Goergens, Mark Dickinson, and Raymond Hettinger in :gh:`94906`.)
 
 os
 --
