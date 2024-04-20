@@ -134,7 +134,9 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
 
     def doTest(self, expected_ext, files, *modules, **kw):
         self.makeZip(files, **kw)
+        self.doTestWithPreBuiltZip(expected_ext, *modules, **kw)
 
+    def doTestWithPreBuiltZip(self, expected_ext, *modules, **kw):
         sys.path.insert(0, TEMP_ZIP)
 
         mod = importlib.import_module(".".join(modules))
@@ -809,6 +811,27 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
     def testZip64CruftAndComment(self):
         files = self.getZip64Files()
         self.doTest(".py", files, "f65536", comment=b"c" * ((1 << 16) - 1))
+
+    def testZip64LargeFile(self):
+        support.requires(
+            "largefile",
+            f"test generates files >{0xFFFFFFFF} bytes and takes a long time "
+            "to run"
+        )
+        self.addCleanup(os_helper.unlink, os_helper.TESTFN)
+        with open(os_helper.TESTFN, "wb") as f:
+            f.write(b"data")
+            f.write(os.linesep.encode())
+            f.seek(0xFFFFFFFF, os.SEEK_CUR)
+            f.write(os.linesep.encode())
+
+        self.addCleanup(os_helper.unlink, TEMP_ZIP)
+        with ZipFile(TEMP_ZIP, "w", compression=self.compression) as z:
+            z.write(os_helper.TESTFN, "data1")
+            z.writestr("module.py", test_src)
+            z.write(os_helper.TESTFN, "data2")
+
+        self.doTestWithPreBuiltZip(".py", "module")
 
 
 @support.requires_zlib()
