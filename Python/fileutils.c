@@ -2499,49 +2499,39 @@ _Py_normpath_and_size(wchar_t *path, Py_ssize_t size, Py_ssize_t *normsize)
 #endif
 #define SEP_OR_END(x) (IS_SEP(x) || IS_END(x))
 
-    // Skip leading '.\'
     if (p1[0] == L'.' && IS_SEP(&p1[1])) {
+        // Skip leading '.\'
         path = &path[2];
-        while (IS_SEP(path) && !IS_END(path)) {
+        while (IS_SEP(path)) {
             path++;
         }
         p1 = p2 = minP2 = path;
         lastC = SEP;
     }
-#ifdef MS_WINDOWS
-    // Skip past drive segment and update minP2
-    else if (p1[0] && p1[1] == L':') {
-        *p2++ = *p1++;
-        *p2++ = *p1++;
-        minP2 = p2;
-        lastC = L':';
-    }
-    // Skip past all \\-prefixed paths, including \\?\, \\.\,
-    // and network paths, including the first segment.
-    else if (IS_SEP(&p1[0]) && IS_SEP(&p1[1])) {
-        int sepCount = 2;
-        *p2++ = SEP;
-        *p2++ = SEP;
-        p1 += 2;
-        for (; !IS_END(p1) && sepCount; ++p1) {
-            if (IS_SEP(p1)) {
-                --sepCount;
-                *p2++ = lastC = SEP;
-            } else {
-                *p2++ = lastC = *p1;
-            }
-        }
-        minP2 = p2 - 1;
-    }
+    else {
+        Py_ssize_t drvsize, rootsize;
+        _Py_skiproot(path, size, &drvsize, &rootsize);
+        if (drvsize || rootsize) {
+            // Skip past root and update minP2
+            p1 = &path[drvsize + rootsize];
+#ifndef ALTSEP
+            p2 = p1;
 #else
-    // Skip past two leading SEPs
-    else if (IS_SEP(&p1[0]) && IS_SEP(&p1[1]) && !IS_SEP(&p1[2])) {
-        *p2++ = *p1++;
-        *p2++ = *p1++;
-        minP2 = p2 - 1;  // Absolute path has SEP at minP2
-        lastC = SEP;
+            for (; p2 < p1; ++p2) {
+                if (*p2 == ALTSEP) {
+                    *p2 = SEP;
+                }
+            }
+#endif
+            minP2 = p2 - 1;
+            lastC = *minP2;
+#ifdef MS_WINDOWS
+            if (lastC != SEP) {
+                minP2++;
+            }
+#endif
+        }
     }
-#endif /* MS_WINDOWS */
 
     /* if pEnd is specified, check that. Else, check for null terminator */
     for (; !IS_END(p1); ++p1) {

@@ -5479,17 +5479,12 @@ static PyObject *
 os__path_splitroot_ex_impl(PyObject *module, PyObject *path)
 /*[clinic end generated code: output=de97403d3dfebc40 input=bebce42edb41f967]*/
 {
-    Py_ssize_t len;
+    Py_ssize_t len, drvsize, rootsize;
     wchar_t *buffer = PyUnicode_AsWideCharString(path, &len);
-    Py_ssize_t drvsize;
-    Py_ssize_t rootsize;
     _Py_skiproot(buffer, len, &drvsize, &rootsize);
-    wchar_t *p = buffer;
-    PyObject *drv = PyUnicode_FromWideChar(p, drvsize);
-    p += drvsize;
-    PyObject *root = PyUnicode_FromWideChar(p, rootsize);
-    p += rootsize;
-    PyObject *tail = PyUnicode_FromWideChar(p, len - drvsize - rootsize);
+    PyObject *drv = PyUnicode_FromWideChar(buffer, drvsize);
+    PyObject *root = PyUnicode_FromWideChar(&buffer[drvsize], rootsize);
+    PyObject *tail = PyUnicode_FromWideChar(&buffer[drvsize + rootsize], len - drvsize - rootsize);
     PyMem_Free(buffer);
     PyObject *result = Py_BuildValue("(OOO)", drv, root, tail);
     Py_DECREF(drv);
