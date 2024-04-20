@@ -1049,8 +1049,8 @@ new_datetime_ex(int year, int month, int day, int hour, int minute,
 
 static PyObject *
 new_datetime_capi(int year, int month, int day, int hour, int minute,
-                     int second, int usecond, PyObject *tzinfo,
-                     PyTypeObject *type)
+                  int second, int usecond, PyObject *tzinfo,
+                  PyTypeObject *type)
 {
     return new_datetime_ex(year, month, day, hour, minute, second,
                            usecond, tzinfo, type);
@@ -1058,8 +1058,8 @@ new_datetime_capi(int year, int month, int day, int hour, int minute,
 
 static PyObject *
 new_datetime_fold_capi(int year, int month, int day, int hour, int minute,
-                      int second, int usecond, PyObject *tzinfo, int fold,
-                      PyTypeObject *type)
+                       int second, int usecond, PyObject *tzinfo, int fold,
+                       PyTypeObject *type)
 {
     return new_datetime_ex2(year, month, day, hour, minute, second,
                             usecond, tzinfo, fold, type);
