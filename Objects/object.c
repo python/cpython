@@ -10,6 +10,7 @@
 #include "pycore_dict.h"          // _PyObject_MakeDictFromInstanceAttributes()
 #include "pycore_floatobject.h"   // _PyFloat_DebugMallocStats()
 #include "pycore_initconfig.h"    // _PyStatus_EXCEPTION()
+#include "pycore_instruction_sequence.h" // _PyInstructionSequence_Type
 #include "pycore_hashtable.h"     // _Py_hashtable_new()
 #include "pycore_memoryobject.h"  // _PyManagedBuffer_Type
 #include "pycore_namespace.h"     // _PyNamespace_Type
@@ -373,7 +374,7 @@ _Py_MergeZeroLocalRefcount(PyObject *op)
     assert(op->ob_ref_local == 0);
 
     _Py_atomic_store_uintptr_relaxed(&op->ob_tid, 0);
-    Py_ssize_t shared = _Py_atomic_load_ssize_relaxed(&op->ob_ref_shared);
+    Py_ssize_t shared = _Py_atomic_load_ssize_acquire(&op->ob_ref_shared);
     if (shared == 0) {
         // Fast-path: shared refcount is zero (including flags)
         _Py_Dealloc(op);
@@ -2294,6 +2295,7 @@ static PyTypeObject* static_types[] = {
     &_PyHamt_BitmapNode_Type,
     &_PyHamt_CollisionNode_Type,
     &_PyHamt_Type,
+    &_PyInstructionSequence_Type,
     &_PyLegacyEventHandler_Type,
     &_PyLineIterator,
     &_PyManagedBuffer_Type,
@@ -2709,33 +2711,31 @@ finally:
 
 /* Trashcan support. */
 
-#define _PyTrash_UNWIND_LEVEL 50
-
 /* Add op to the gcstate->trash_delete_later list.  Called when the current
  * call-stack depth gets large.  op must be a currently untracked gc'ed
  * object, with refcount 0.  Py_DECREF must already have been called on it.
  */
-static void
-_PyTrash_thread_deposit_object(struct _py_trashcan *trash, PyObject *op)
+void
+_PyTrash_thread_deposit_object(PyThreadState *tstate, PyObject *op)
 {
     _PyObject_ASSERT(op, _PyObject_IS_GC(op));
     _PyObject_ASSERT(op, !_PyObject_GC_IS_TRACKED(op));
     _PyObject_ASSERT(op, Py_REFCNT(op) == 0);
 #ifdef Py_GIL_DISABLED
     _PyObject_ASSERT(op, op->ob_tid == 0);
-    op->ob_tid = (uintptr_t)trash->delete_later;
+    op->ob_tid = (uintptr_t)tstate->delete_later;
 #else
-    _PyGCHead_SET_PREV(_Py_AS_GC(op), (PyGC_Head*)trash->delete_later);
+    _PyGCHead_SET_PREV(_Py_AS_GC(op), (PyGC_Head*)tstate->delete_later);
 #endif
-    trash->delete_later = op;
+    tstate->delete_later = op;
 }
 
 /* Deallocate all the objects in the gcstate->trash_delete_later list.
  * Called when the call-stack unwinds again. */
-static void
-_PyTrash_thread_destroy_chain(struct _py_trashcan *trash)
+void
+_PyTrash_thread_destroy_chain(PyThreadState *tstate)
 {
-    /* We need to increase trash_delete_nesting here, otherwise,
+    /* We need to increase c_recursion_remaining here, otherwise,
        _PyTrash_thread_destroy_chain will be called recursively
        and then possibly crash.  An example that may crash without
        increase:
@@ -2746,17 +2746,17 @@ _PyTrash_thread_destroy_chain(struct _py_trashcan *trash)
                tups = [(tup,) for tup in tups]
            del tups
     */
-    assert(trash->delete_nesting == 0);
-    ++trash->delete_nesting;
-    while (trash->delete_later) {
-        PyObject *op = trash->delete_later;
+    assert(tstate->c_recursion_remaining > Py_TRASHCAN_HEADROOM);
+    tstate->c_recursion_remaining--;
+    while (tstate->delete_later) {
+        PyObject *op = tstate->delete_later;
         destructor dealloc = Py_TYPE(op)->tp_dealloc;
 
 #ifdef Py_GIL_DISABLED
-        trash->delete_later = (PyObject*) op->ob_tid;
+        tstate->delete_later = (PyObject*) op->ob_tid;
         op->ob_tid = 0;
 #else
-        trash->delete_later = (PyObject*) _PyGCHead_PREV(_Py_AS_GC(op));
+        tstate->delete_later = (PyObject*) _PyGCHead_PREV(_Py_AS_GC(op));
 #endif
 
         /* Call the deallocator directly.  This used to try to
@@ -2767,91 +2767,9 @@ _PyTrash_thread_destroy_chain(struct _py_trashcan *trash)
          */
         _PyObject_ASSERT(op, Py_REFCNT(op) == 0);
         (*dealloc)(op);
-        assert(trash->delete_nesting == 1);
     }
-    --trash->delete_nesting;
+    tstate->c_recursion_remaining++;
 }
-
-
-static struct _py_trashcan *
-_PyTrash_get_state(PyThreadState *tstate)
-{
-    if (tstate != NULL) {
-        return &tstate->trash;
-    }
-    // The current thread must be finalizing.
-    // Fall back to using thread-local state.
-    // XXX Use thread-local variable syntax?
-    assert(PyThread_tss_is_created(&_PyRuntime.trashTSSkey));
-    struct _py_trashcan *trash =
-        (struct _py_trashcan *)PyThread_tss_get(&_PyRuntime.trashTSSkey);
-    if (trash == NULL) {
-        trash = PyMem_RawMalloc(sizeof(struct _py_trashcan));
-        if (trash == NULL) {
-            Py_FatalError("Out of memory");
-        }
-        PyThread_tss_set(&_PyRuntime.trashTSSkey, (void *)trash);
-    }
-    return trash;
-}
-
-static void
-_PyTrash_clear_state(PyThreadState *tstate)
-{
-    if (tstate != NULL) {
-        assert(tstate->trash.delete_later == NULL);
-        return;
-    }
-    if (PyThread_tss_is_created(&_PyRuntime.trashTSSkey)) {
-        struct _py_trashcan *trash =
-            (struct _py_trashcan *)PyThread_tss_get(&_PyRuntime.trashTSSkey);
-        if (trash != NULL) {
-            PyThread_tss_set(&_PyRuntime.trashTSSkey, (void *)NULL);
-            PyMem_RawFree(trash);
-        }
-    }
-}
-
-
-int
-_PyTrash_begin(PyThreadState *tstate, PyObject *op)
-{
-    // XXX Make sure the GIL is held.
-    struct _py_trashcan *trash = _PyTrash_get_state(tstate);
-    if (trash->delete_nesting >= _PyTrash_UNWIND_LEVEL) {
-        /* Store the object (to be deallocated later) and jump past
-         * Py_TRASHCAN_END, skipping the body of the deallocator */
-        _PyTrash_thread_deposit_object(trash, op);
-        return 1;
-    }
-    ++trash->delete_nesting;
-    return 0;
-}
-
-
-void
-_PyTrash_end(PyThreadState *tstate)
-{
-    // XXX Make sure the GIL is held.
-    struct _py_trashcan *trash = _PyTrash_get_state(tstate);
-    --trash->delete_nesting;
-    if (trash->delete_nesting <= 0) {
-        if (trash->delete_later != NULL) {
-            _PyTrash_thread_destroy_chain(trash);
-        }
-        _PyTrash_clear_state(tstate);
-    }
-}
-
-
-/* bpo-40170: It's only be used in Py_TRASHCAN_BEGIN macro to hide
-   implementation details. */
-int
-_PyTrash_cond(PyObject *op, destructor dealloc)
-{
-    return Py_TYPE(op)->tp_dealloc == dealloc;
-}
-
 
 void _Py_NO_RETURN
 _PyObject_AssertFailed(PyObject *obj, const char *expr, const char *msg,
