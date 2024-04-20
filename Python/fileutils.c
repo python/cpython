@@ -2295,15 +2295,31 @@ PathCchCombineEx(wchar_t *buffer, size_t bufsize, const wchar_t *dirname,
 
 #endif /* defined(MS_WINDOWS_GAMES) && !defined(MS_WINDOWS_DESKTOP) */
 
-#ifdef MS_WINDOWS
 void
 _Py_skiproot(wchar_t *path, Py_ssize_t size, Py_ssize_t *drvsize, Py_ssize_t *rootsize)
 {
+#ifndef MS_WINDOWS
+#define IS_SEP(x) (*(x) == SEP)
+    *drvsize = 0;
+    if (!IS_SEP(&path[0])) {
+        // Relative path, e.g.: 'foo'
+        *rootsize = 0;
+    }
+    else if (!IS_SEP(&path[1]) || IS_SEP(&path[2])) {
+        // Absolute path, e.g.: '/foo', '///foo', '////foo', etc.
+        *rootsize = 1;
+    }
+    else {
+        // Precisely two leading slashes, e.g.: '//foo'. Implementation defined per POSIX, see
+        // https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap04.html#tag_04_13
+        *rootsize = 2;
+    }
+#undef IS_SEP
+#else
     wchar_t *pEnd = size >= 0 ? &path[size] : NULL;
 #define IS_END(x) (pEnd ? (x) == pEnd : !*(x))
 #define IS_SEP(x) (*(x) == SEP || *(x) == ALTSEP)
-    *drvsize = 0;
-    *rootsize = 0;
+#define SEP_OR_END(x) (IS_SEP(x) || IS_END(x))
     if (IS_SEP(&path[0])) {
         if (IS_SEP(&path[1])) {
             // Device drives, e.g. \\.\device or \\?\device
@@ -2318,25 +2334,30 @@ _Py_skiproot(wchar_t *path, Py_ssize_t size, Py_ssize_t *drvsize, Py_ssize_t *ro
             else {
                 idx = 2;
             }
-            while (!IS_END(&path[idx]) && !IS_SEP(&path[idx])) {
+            while (!SEP_OR_END(&path[idx])) {
                 idx++;
             }
             if (IS_END(&path[idx])) {
                 *drvsize = idx;
+                *rootsize = 0;
             }
             else {
                 idx++;
-                while (!IS_END(&path[idx]) && !IS_SEP(&path[idx])) {
+                while (!SEP_OR_END(&path[idx])) {
                     idx++;
                 }
                 *drvsize = idx;
-                if (IS_SEP(&path[idx])) {
+                if (IS_END(&path[idx])) {
+                    *rootsize = 0;
+                }
+                else {
                     *rootsize = 1;
                 }
             }
         }
         else {
             // Relative path with root, e.g. \Windows
+            *drvsize = 0;
             *rootsize = 1;
         }
     }
@@ -2346,11 +2367,21 @@ _Py_skiproot(wchar_t *path, Py_ssize_t size, Py_ssize_t *drvsize, Py_ssize_t *ro
             // Absolute drive-letter path, e.g. X:\Windows
             *rootsize = 1;
         }
+        else {
+            // Relative path with drive, e.g. X:Windows
+            *rootsize = 0;
+        }
     }
+    else {
+        // Relative path, e.g. Windows
+        *drvsize = 0;
+        *rootsize = 0;
+    }
+#undef SEP_OR_END
 #undef IS_SEP
 #undef IS_END
-}
 #endif
+}
 
 // The caller must ensure "buffer" is big enough.
 static int

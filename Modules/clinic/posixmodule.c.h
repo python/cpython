@@ -2012,38 +2012,6 @@ exit:
 
 #endif /* defined(MS_WINDOWS) */
 
-#if defined(MS_WINDOWS) && defined(MS_WINDOWS)
-
-PyDoc_STRVAR(os__path_splitroot_ex__doc__,
-"_path_splitroot_ex($module, path, /)\n"
-"--\n"
-"\n");
-
-#define OS__PATH_SPLITROOT_EX_METHODDEF    \
-    {"_path_splitroot_ex", (PyCFunction)os__path_splitroot_ex, METH_O, os__path_splitroot_ex__doc__},
-
-static PyObject *
-os__path_splitroot_ex_impl(PyObject *module, PyObject *path);
-
-static PyObject *
-os__path_splitroot_ex(PyObject *module, PyObject *arg)
-{
-    PyObject *return_value = NULL;
-    PyObject *path;
-
-    if (!PyUnicode_Check(arg)) {
-        _PyArg_BadArgument("_path_splitroot_ex", "argument", "str", arg);
-        goto exit;
-    }
-    path = arg;
-    return_value = os__path_splitroot_ex_impl(module, path);
-
-exit:
-    return return_value;
-}
-
-#endif /* defined(MS_WINDOWS) && defined(MS_WINDOWS) */
-
 #if defined(MS_WINDOWS)
 
 PyDoc_STRVAR(os__path_isdir__doc__,
@@ -2279,6 +2247,34 @@ exit:
 }
 
 #endif /* defined(MS_WINDOWS) */
+
+PyDoc_STRVAR(os__path_splitroot_ex__doc__,
+"_path_splitroot_ex($module, path, /)\n"
+"--\n"
+"\n");
+
+#define OS__PATH_SPLITROOT_EX_METHODDEF    \
+    {"_path_splitroot_ex", (PyCFunction)os__path_splitroot_ex, METH_O, os__path_splitroot_ex__doc__},
+
+static PyObject *
+os__path_splitroot_ex_impl(PyObject *module, PyObject *path);
+
+static PyObject *
+os__path_splitroot_ex(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    PyObject *path;
+
+    if (!PyUnicode_Check(arg)) {
+        _PyArg_BadArgument("_path_splitroot_ex", "argument", "str", arg);
+        goto exit;
+    }
+    path = arg;
+    return_value = os__path_splitroot_ex_impl(module, path);
+
+exit:
+    return return_value;
+}
 
 PyDoc_STRVAR(os__path_normpath__doc__,
 "_path_normpath($module, /, path)\n"
@@ -12071,10 +12067,6 @@ os__supports_virtual_terminal(PyObject *module, PyObject *Py_UNUSED(ignored))
     #define OS__PATH_SPLITROOT_METHODDEF
 #endif /* !defined(OS__PATH_SPLITROOT_METHODDEF) */
 
-#ifndef OS__PATH_SPLITROOT_EX_METHODDEF
-    #define OS__PATH_SPLITROOT_EX_METHODDEF
-#endif /* !defined(OS__PATH_SPLITROOT_EX_METHODDEF) */
-
 #ifndef OS__PATH_ISDIR_METHODDEF
     #define OS__PATH_ISDIR_METHODDEF
 #endif /* !defined(OS__PATH_ISDIR_METHODDEF) */
@@ -12638,4 +12630,4 @@ os__supports_virtual_terminal(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF
     #define OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF
 #endif /* !defined(OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF) */
-/*[clinic end generated code: output=d009cc9854b11b18 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=054328aa869f1582 input=a9049054013a1b77]*/
