@@ -1707,6 +1707,10 @@ SyntaxError: Expected one or more names after 'import'
 Traceback (most recent call last):
 SyntaxError: Expected one or more names after 'import'
 
+>>> import
+Traceback (most recent call last):
+SyntaxError: Expected one or more names after 'import'
+
 >>> (): int
 Traceback (most recent call last):
 SyntaxError: only single target (not tuple) can be annotated
