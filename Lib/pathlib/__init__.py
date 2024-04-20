@@ -169,9 +169,7 @@ class PurePath(_abc.PurePathBase):
             return NotImplemented
 
     def __reduce__(self):
-        # Using the parts tuple helps share interned path parts
-        # when pickling related paths.
-        return (self.__class__, self.parts)
+        return self.__class__, tuple(self._raw_paths)
 
     def __repr__(self):
         return "{}({!r})".format(self.__class__.__name__, self.as_posix())
