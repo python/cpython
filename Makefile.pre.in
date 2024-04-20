@@ -2366,6 +2366,7 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/test_doctest \
 		test/test_email \
 		test/test_email/data \
+		test/test_free_threading \
 		test/test_future_stmt \
 		test/test_gdb \
 		test/test_import \
