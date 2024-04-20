@@ -1950,70 +1950,6 @@ exit:
 
 #if defined(MS_WINDOWS)
 
-PyDoc_STRVAR(os__path_splitroot__doc__,
-"_path_splitroot($module, /, path)\n"
-"--\n"
-"\n"
-"Removes everything after the root on Win32.");
-
-#define OS__PATH_SPLITROOT_METHODDEF    \
-    {"_path_splitroot", _PyCFunction_CAST(os__path_splitroot), METH_FASTCALL|METH_KEYWORDS, os__path_splitroot__doc__},
-
-static PyObject *
-os__path_splitroot_impl(PyObject *module, path_t *path);
-
-static PyObject *
-os__path_splitroot(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
-{
-    PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    #define NUM_KEYWORDS 1
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(path), },
-    };
-    #undef NUM_KEYWORDS
-    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #else  // !Py_BUILD_CORE
-    #  define KWTUPLE NULL
-    #endif  // !Py_BUILD_CORE
-
-    static const char * const _keywords[] = {"path", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "_path_splitroot",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[1];
-    path_t path = PATH_T_INITIALIZE("_path_splitroot", "path", 0, 0);
-
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
-    if (!args) {
-        goto exit;
-    }
-    if (!path_converter(args[0], &path)) {
-        goto exit;
-    }
-    return_value = os__path_splitroot_impl(module, &path);
-
-exit:
-    /* Cleanup for path */
-    path_cleanup(&path);
-
-    return return_value;
-}
-
-#endif /* defined(MS_WINDOWS) */
-
-#if defined(MS_WINDOWS)
-
 PyDoc_STRVAR(os__path_isdir__doc__,
 "_path_isdir($module, /, s)\n"
 "--\n"
@@ -2248,29 +2184,29 @@ exit:
 
 #endif /* defined(MS_WINDOWS) */
 
-PyDoc_STRVAR(os__path_splitroot_ex__doc__,
-"_path_splitroot_ex($module, path, /)\n"
+PyDoc_STRVAR(os__path_splitroot__doc__,
+"_path_splitroot($module, path, /)\n"
 "--\n"
 "\n");
 
-#define OS__PATH_SPLITROOT_EX_METHODDEF    \
-    {"_path_splitroot_ex", (PyCFunction)os__path_splitroot_ex, METH_O, os__path_splitroot_ex__doc__},
+#define OS__PATH_SPLITROOT_METHODDEF    \
+    {"_path_splitroot", (PyCFunction)os__path_splitroot, METH_O, os__path_splitroot__doc__},
 
 static PyObject *
-os__path_splitroot_ex_impl(PyObject *module, PyObject *path);
+os__path_splitroot_impl(PyObject *module, PyObject *path);
 
 static PyObject *
-os__path_splitroot_ex(PyObject *module, PyObject *arg)
+os__path_splitroot(PyObject *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
     PyObject *path;
 
     if (!PyUnicode_Check(arg)) {
-        _PyArg_BadArgument("_path_splitroot_ex", "argument", "str", arg);
+        _PyArg_BadArgument("_path_splitroot", "argument", "str", arg);
         goto exit;
     }
     path = arg;
-    return_value = os__path_splitroot_ex_impl(module, path);
+    return_value = os__path_splitroot_impl(module, path);
 
 exit:
     return return_value;
@@ -12063,10 +11999,6 @@ os__supports_virtual_terminal(PyObject *module, PyObject *Py_UNUSED(ignored))
     #define OS__GETVOLUMEPATHNAME_METHODDEF
 #endif /* !defined(OS__GETVOLUMEPATHNAME_METHODDEF) */
 
-#ifndef OS__PATH_SPLITROOT_METHODDEF
-    #define OS__PATH_SPLITROOT_METHODDEF
-#endif /* !defined(OS__PATH_SPLITROOT_METHODDEF) */
-
 #ifndef OS__PATH_ISDIR_METHODDEF
     #define OS__PATH_ISDIR_METHODDEF
 #endif /* !defined(OS__PATH_ISDIR_METHODDEF) */
@@ -12630,4 +12562,4 @@ os__supports_virtual_terminal(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF
     #define OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF
 #endif /* !defined(OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF) */
-/*[clinic end generated code: output=054328aa869f1582 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=fa17bdc7ac8fa9b9 input=a9049054013a1b77]*/

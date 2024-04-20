@@ -168,7 +168,7 @@ def splitdrive(p):
 
 
 try:
-    from nt import _path_splitroot_ex
+    from nt import _path_splitroot
 except ImportError:
     def splitroot(p):
         """Split a pathname into drive, root and tail. The drive is defined
@@ -234,9 +234,9 @@ else:
         """
         p = os.fspath(p)
         if isinstance(p, bytes):
-            drive, root, tail = _path_splitroot_ex(os.fsdecode(p))
+            drive, root, tail = _path_splitroot(os.fsdecode(p))
             return os.fsencode(drive), os.fsencode(root), os.fsencode(tail)
-        return _path_splitroot_ex(p)
+        return _path_splitroot(p)
 
 
 # Split a path in head (everything up to the last '/') and tail (the

@@ -135,7 +135,7 @@ def splitdrive(p):
 
 
 try:
-    from posix import _path_splitroot_ex
+    from posix import _path_splitroot
 except ImportError:
     def splitroot(p):
         """Split a pathname into drive, root and tail. On Posix, drive is always
@@ -177,9 +177,9 @@ else:
         """
         p = os.fspath(p)
         if isinstance(p, bytes):
-            _, root, tail = _path_splitroot_ex(os.fsdecode(p))
+            _, root, tail = _path_splitroot(os.fsdecode(p))
             return b'', os.fsencode(root), os.fsencode(tail)
-        return _path_splitroot_ex(p)
+        return _path_splitroot(p)
 
 
 # Return the tail (basename) part of a path, same as split(path)[1].
