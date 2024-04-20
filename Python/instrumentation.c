@@ -1228,9 +1228,9 @@ _Py_call_instrumentation_line(PyThreadState *tstate, _PyInterpreterFrame* frame,
     int line = 0;
 
     if (line_delta == COMPUTED_LINE_LINENO_CHANGE) {
-        // We know the line number must changed, don't need to calculate the
-        // line number for now because we might not need it.
-        line = 0;
+        // We know the line number must have changed, don't need to calculate
+        // the line number for now because we might not need it.
+        line = -1;
     } else {
         line = compute_line(code, i, line_delta);
         assert(line >= 0);
@@ -1269,7 +1269,7 @@ _Py_call_instrumentation_line(PyThreadState *tstate, _PyInterpreterFrame* frame,
                 tstate->tracing++;
                 /* Call c_tracefunc directly, having set the line number. */
                 Py_INCREF(frame_obj);
-                if (line == 0 && line_delta > COMPUTED_LINE) {
+                if (line == -1 && line_delta > COMPUTED_LINE) {
                     /* Only assign f_lineno if it's easy to calculate, otherwise
                      * do lazy calculation by setting the f_lineno to 0.
                      */
@@ -1292,7 +1292,7 @@ _Py_call_instrumentation_line(PyThreadState *tstate, _PyInterpreterFrame* frame,
         goto done;
     }
 
-    if (line == 0) {
+    if (line == -1) {
         /* Need to calculate the line number now for monitoring events */
         line = compute_line(code, i, line_delta);
     }
