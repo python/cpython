@@ -1048,7 +1048,7 @@ new_datetime_ex(int year, int month, int day, int hour, int minute,
 }
 
 static PyObject *
-new_datetime_ex_capi(int year, int month, int day, int hour, int minute,
+new_datetime_capi(int year, int month, int day, int hour, int minute,
                      int second, int usecond, PyObject *tzinfo,
                      PyTypeObject *type)
 {
@@ -1057,7 +1057,7 @@ new_datetime_ex_capi(int year, int month, int day, int hour, int minute,
 }
 
 static PyObject *
-new_datetime_ex2_capi(int year, int month, int day, int hour, int minute,
+new_datetime_fold_capi(int year, int month, int day, int hour, int minute,
                       int second, int usecond, PyObject *tzinfo, int fold,
                       PyTypeObject *type)
 {
@@ -1163,15 +1163,15 @@ new_time_ex2(int hour, int minute, int second, int usecond,
 }
 
 static PyObject *
-new_time_ex_capi(int hour, int minute, int second, int usecond,
-            PyObject *tzinfo, PyTypeObject *type)
+new_time_capi(int hour, int minute, int second, int usecond,
+              PyObject *tzinfo, PyTypeObject *type)
 {
     return new_time_ex2(hour, minute, second, usecond, tzinfo, 0, type);
 }
 
 static PyObject *
-new_time_ex2_capi(int hour, int minute, int second, int usecond,
-                  PyObject *tzinfo, int fold, PyTypeObject *type)
+new_time_fold_capi(int hour, int minute, int second, int usecond,
+                   PyObject *tzinfo, int fold, PyTypeObject *type)
 {
     return new_time_ex2(hour, minute, second, usecond, tzinfo, fold, type);
 }
@@ -6754,14 +6754,14 @@ get_datetime_capi(void)
     capi->DeltaType = &PyDateTime_DeltaType;
     capi->TZInfoType = &PyDateTime_TZInfoType;
     capi->Date_FromDate = new_date_ex;
-    capi->DateTime_FromDateAndTime = new_datetime_ex_capi;
-    capi->Time_FromTime = new_time_ex_capi;
+    capi->DateTime_FromDateAndTime = new_datetime_capi;
+    capi->Time_FromTime = new_time_capi;
     capi->Delta_FromDelta = new_delta_ex;
     capi->TimeZone_FromTimeZone = new_timezone_capi;
     capi->DateTime_FromTimestamp = datetime_fromtimestamp;
     capi->Date_FromTimestamp = datetime_date_fromtimestamp_capi;
-    capi->DateTime_FromDateAndTimeAndFold = new_datetime_ex2_capi;
-    capi->Time_FromTimeAndFold = new_time_ex2_capi;
+    capi->DateTime_FromDateAndTimeAndFold = new_datetime_fold_capi;
+    capi->Time_FromTimeAndFold = new_time_fold_capi;
     // Make sure this function is called after utc has
     // been initialized.
     datetime_state *st = STATIC_STATE();
