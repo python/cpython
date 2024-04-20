@@ -1360,6 +1360,7 @@ _steal_accumulate(_PyUnicodeWriter *writer, PyObject *stolen)
 PyObject* _create_newline_indent(PyObject* indent, Py_ssize_t indent_level)
 {
     PyObject* start = PyUnicode_FromString("\n");
+    PyObject* newline_indent = NULL;
     if (start == 0) {
         goto end;
     }
@@ -1373,7 +1374,7 @@ PyObject* _create_newline_indent(PyObject* indent, Py_ssize_t indent_level)
         goto end;
     }
 
-    PyObject* newline_indent = PyUnicode_Concat(start, _current_indent);
+    newline_indent = PyUnicode_Concat(start, _current_indent);
 end:
     Py_XDECREF(start);
     Py_XDECREF(mul_name);
