@@ -981,6 +981,12 @@ new_date_ex(int year, int month, int day, PyTypeObject *type)
 #define new_date(year, month, day) \
     new_date_ex(year, month, day, &PyDateTime_DateType)
 
+static PyObject *
+new_date_capi(int year, int month, int day, PyTypeObject *type)
+{
+    return new_date_ex(year, month, day, type);
+}
+
 // Forward declaration
 static PyObject *
 new_datetime_ex(int, int, int, int, int, int, int, PyObject *, PyTypeObject *);
@@ -1176,7 +1182,7 @@ new_time_fold_capi(int hour, int minute, int second, int usecond,
     return new_time_ex2(hour, minute, second, usecond, tzinfo, fold, type);
 }
 
-#define new_time(hh, mm, ss, us, tzinfo, fold)                       \
+#define new_time(hh, mm, ss, us, tzinfo, fold)  \
     new_time_ex2(hh, mm, ss, us, tzinfo, fold, &PyDateTime_TimeType)
 
 static PyObject *
@@ -1229,6 +1235,13 @@ new_delta_ex(int days, int seconds, int microseconds, int normalize,
 
 #define new_delta(d, s, us, normalize)  \
     new_delta_ex(d, s, us, normalize, &PyDateTime_DeltaType)
+
+static PyObject *
+new_delta_capi(int days, int seconds, int microseconds, int normalize,
+               PyTypeObject *type)
+{
+    return new_delta_ex(days, seconds, microseconds, normalize, type);
+}
 
 
 typedef struct
@@ -5266,6 +5279,12 @@ datetime_fromtimestamp(PyObject *cls, PyObject *args, PyObject *kw)
     return self;
 }
 
+static PyObject *
+datetime_fromtimestamp_capi(PyObject *cls, PyObject *args, PyObject *kw)
+{
+    return datetime_fromtimestamp(cls, args, kw);
+}
+
 /* Return new UTC datetime from timestamp (Python timestamp -- a double). */
 static PyObject *
 datetime_utcfromtimestamp(PyObject *cls, PyObject *args)
@@ -6753,12 +6772,12 @@ get_datetime_capi(void)
     capi->TimeType = &PyDateTime_TimeType;
     capi->DeltaType = &PyDateTime_DeltaType;
     capi->TZInfoType = &PyDateTime_TZInfoType;
-    capi->Date_FromDate = new_date_ex;
+    capi->Date_FromDate = new_date_capi;
     capi->DateTime_FromDateAndTime = new_datetime_capi;
     capi->Time_FromTime = new_time_capi;
-    capi->Delta_FromDelta = new_delta_ex;
+    capi->Delta_FromDelta = new_delta_capi;
     capi->TimeZone_FromTimeZone = new_timezone_capi;
-    capi->DateTime_FromTimestamp = datetime_fromtimestamp;
+    capi->DateTime_FromTimestamp = datetime_fromtimestamp_capi;
     capi->Date_FromTimestamp = datetime_date_fromtimestamp_capi;
     capi->DateTime_FromDateAndTimeAndFold = new_datetime_fold_capi;
     capi->Time_FromTimeAndFold = new_time_fold_capi;
