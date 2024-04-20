@@ -116,7 +116,7 @@ mark_executable(unsigned char *memory, size_t size)
 
 // value[value_start : value_start + len]
 static uint32_t
-get_bits(uintptr_t value, uint8_t value_start, uint8_t width)
+get_bits(uint64_t value, uint8_t value_start, uint8_t width)
 {
     assert(width <= 32);
     return (value >> value_start) & ((1ULL << width) - 1);
@@ -124,7 +124,7 @@ get_bits(uintptr_t value, uint8_t value_start, uint8_t width)
 
 // *loc[loc_start : loc_start + width] = value[value_start : value_start + width]
 static void
-set_bits(uint32_t *loc, uint8_t loc_start, uintptr_t value, uint8_t value_start,
+set_bits(uint32_t *loc, uint8_t loc_start, uint64_t value, uint8_t value_start,
          uint8_t width)
 {
     assert(loc_start + width <= 32);
@@ -166,7 +166,7 @@ set_bits(uint32_t *loc, uint8_t loc_start, uintptr_t value, uint8_t value_start,
 
 // 32-bit absolute address.
 static inline void
-patch_32(unsigned char *location, uintptr_t value)
+patch_32(unsigned char *location, uint64_t value)
 {
     uint32_t *loc32 = (uint32_t *)location;
     // Check that we're not out of range of 32 unsigned bits:
@@ -176,7 +176,7 @@ patch_32(unsigned char *location, uintptr_t value)
 
 // 32-bit relative address.
 static inline void
-patch_32r(unsigned char *location, uintptr_t value)
+patch_32r(unsigned char *location, uint64_t value)
 {
     uint32_t *loc32 = (uint32_t *)location;
     value -= (uintptr_t)location;
@@ -188,7 +188,7 @@ patch_32r(unsigned char *location, uintptr_t value)
 
 // 64-bit absolute address.
 static inline void
-patch_64(unsigned char *location, uintptr_t value)
+patch_64(unsigned char *location, uint64_t value)
 {
     uint64_t *loc64 = (uint64_t *)location;
     *loc64 = value;
@@ -197,7 +197,7 @@ patch_64(unsigned char *location, uintptr_t value)
 // 12-bit low part of an absolute address. Pairs nicely with patch_aarch64_21r
 // (below).
 static inline void
-patch_aarch64_12(unsigned char *location, uintptr_t value)
+patch_aarch64_12(unsigned char *location, uint64_t value)
 {
     uint32_t *loc32 = (uint32_t *)location;
     assert(IS_AARCH64_LDR_OR_STR(*loc32) || IS_AARCH64_ADD_OR_SUB(*loc32));
@@ -216,7 +216,7 @@ patch_aarch64_12(unsigned char *location, uintptr_t value)
 
 // 16-bit low part of an absolute address.
 static inline void
-patch_aarch64_16a(unsigned char *location, uintptr_t value)
+patch_aarch64_16a(unsigned char *location, uint64_t value)
 {
     uint32_t *loc32 = (uint32_t *)location;
     assert(IS_AARCH64_MOV(*loc32));
@@ -227,7 +227,7 @@ patch_aarch64_16a(unsigned char *location, uintptr_t value)
 
 // 16-bit middle-low part of an absolute address.
 static inline void
-patch_aarch64_16b(unsigned char *location, uintptr_t value)
+patch_aarch64_16b(unsigned char *location, uint64_t value)
 {
     uint32_t *loc32 = (uint32_t *)location;
     assert(IS_AARCH64_MOV(*loc32));
@@ -238,7 +238,7 @@ patch_aarch64_16b(unsigned char *location, uintptr_t value)
 
 // 16-bit middle-high part of an absolute address.
 static inline void
-patch_aarch64_16c(unsigned char *location, uintptr_t value)
+patch_aarch64_16c(unsigned char *location, uint64_t value)
 {
     uint32_t *loc32 = (uint32_t *)location;
     assert(IS_AARCH64_MOV(*loc32));
@@ -249,7 +249,7 @@ patch_aarch64_16c(unsigned char *location, uintptr_t value)
 
 // 16-bit high part of an absolute address.
 static inline void
-patch_aarch64_16d(unsigned char *location, uintptr_t value)
+patch_aarch64_16d(unsigned char *location, uint64_t value)
 {
     uint32_t *loc32 = (uint32_t *)location;
     assert(IS_AARCH64_MOV(*loc32));
@@ -261,7 +261,7 @@ patch_aarch64_16d(unsigned char *location, uintptr_t value)
 // 21-bit count of pages between this page and an absolute address's page... I
 // know, I know, it's weird. Pairs nicely with patch_aarch64_12 (above).
 static inline void
-patch_aarch64_21r(unsigned char *location, uintptr_t value)
+patch_aarch64_21r(unsigned char *location, uint64_t value)
 {
     uint32_t *loc32 = (uint32_t *)location;
     value = (value >> 12) - ((uintptr_t)location >> 12);
@@ -275,7 +275,7 @@ patch_aarch64_21r(unsigned char *location, uintptr_t value)
 }
 
 static inline void
-patch_aarch64_21rx(unsigned char *location, uintptr_t value)
+patch_aarch64_21rx(unsigned char *location, uint64_t value)
 {
     uint32_t *loc32 = (uint32_t *)location;
     assert(IS_AARCH64_ADRP(*loc32));
@@ -295,7 +295,7 @@ patch_aarch64_21rx(unsigned char *location, uintptr_t value)
     //     // There should be only one register involved:
     //     assert(reg == get_bits(loc32[1], 0, 5));  // ldr's output register.
     //     assert(reg == get_bits(loc32[1], 5, 5));  // ldr's input register.
-    //     uintptr_t relaxed = *(uintptr_t *)value;
+    //     uint64_t relaxed = *(uint64_t *)value;
     //     if (relaxed < (1UL << 16)) {
     //         // adrp reg, AAA; ldr reg, [reg + BBB] -> movz reg, XXX; nop
     //         loc32[0] = 0xD2800000 | (get_bits(relaxed, 0, 16) << 5) | reg;
@@ -327,7 +327,7 @@ patch_aarch64_21rx(unsigned char *location, uintptr_t value)
 
 // 28-bit relative branch.
 static inline void
-patch_aarch64_26r(unsigned char *location, uintptr_t value)
+patch_aarch64_26r(unsigned char *location, uint64_t value)
 {
     uint32_t *loc32 = (uint32_t *)location;
     assert(IS_AARCH64_BRANCH(*loc32));
@@ -342,11 +342,11 @@ patch_aarch64_26r(unsigned char *location, uintptr_t value)
 
 // 32-bit relative address.
 static inline void
-patch_x86_64_32rx(unsigned char *location, uintptr_t value)
+patch_x86_64_32rx(unsigned char *location, uint64_t value)
 {
     uint8_t *loc8 = (uint8_t *)location;
     // Try to relax the GOT load into an immediate value:
-    uintptr_t relaxed = *(uintptr_t *)(value + 4) - 4;
+    uint64_t relaxed = *(uint64_t *)(value + 4) - 4;
     if ((int64_t)relaxed - (int64_t)location >= -(1LL << 31) &&
         (int64_t)relaxed - (int64_t)location + 1 < (1LL << 31))
     {
