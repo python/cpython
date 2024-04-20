@@ -10,6 +10,7 @@
 #include "pycore_dict.h"          // _PyObject_MakeDictFromInstanceAttributes()
 #include "pycore_floatobject.h"   // _PyFloat_DebugMallocStats()
 #include "pycore_initconfig.h"    // _PyStatus_EXCEPTION()
+#include "pycore_instruction_sequence.h" // _PyInstructionSequence_Type
 #include "pycore_hashtable.h"     // _Py_hashtable_new()
 #include "pycore_memoryobject.h"  // _PyManagedBuffer_Type
 #include "pycore_namespace.h"     // _PyNamespace_Type
@@ -73,21 +74,16 @@ get_legacy_reftotal(void)
     interp->object_state.reftotal
 
 static inline void
-reftotal_increment(PyInterpreterState *interp)
+reftotal_add(PyThreadState *tstate, Py_ssize_t n)
 {
-    REFTOTAL(interp)++;
-}
-
-static inline void
-reftotal_decrement(PyInterpreterState *interp)
-{
-    REFTOTAL(interp)--;
-}
-
-static inline void
-reftotal_add(PyInterpreterState *interp, Py_ssize_t n)
-{
-    REFTOTAL(interp) += n;
+#ifdef Py_GIL_DISABLED
+    _PyThreadStateImpl *tstate_impl = (_PyThreadStateImpl *)tstate;
+    // relaxed store to avoid data race with read in get_reftotal()
+    Py_ssize_t reftotal = tstate_impl->reftotal + n;
+    _Py_atomic_store_ssize_relaxed(&tstate_impl->reftotal, reftotal);
+#else
+    REFTOTAL(tstate->interp) += n;
+#endif
 }
 
 static inline Py_ssize_t get_global_reftotal(_PyRuntimeState *);
@@ -117,7 +113,15 @@ get_reftotal(PyInterpreterState *interp)
 {
     /* For a single interpreter, we ignore the legacy _Py_RefTotal,
        since we can't determine which interpreter updated it. */
-    return REFTOTAL(interp);
+    Py_ssize_t total = REFTOTAL(interp);
+#ifdef Py_GIL_DISABLED
+    for (PyThreadState *p = interp->threads.head; p != NULL; p = p->next) {
+        /* This may race with other threads modifications to their reftotal */
+        _PyThreadStateImpl *tstate_impl = (_PyThreadStateImpl *)p;
+        total += _Py_atomic_load_ssize_relaxed(&tstate_impl->reftotal);
+    }
+#endif
+    return total;
 }
 
 static inline Py_ssize_t
@@ -129,7 +133,7 @@ get_global_reftotal(_PyRuntimeState *runtime)
     HEAD_LOCK(&_PyRuntime);
     PyInterpreterState *interp = PyInterpreterState_Head();
     for (; interp != NULL; interp = PyInterpreterState_Next(interp)) {
-        total += REFTOTAL(interp);
+        total += get_reftotal(interp);
     }
     HEAD_UNLOCK(&_PyRuntime);
 
@@ -222,32 +226,32 @@ _Py_NegativeRefcount(const char *filename, int lineno, PyObject *op)
 void
 _Py_INCREF_IncRefTotal(void)
 {
-    reftotal_increment(_PyInterpreterState_GET());
+    reftotal_add(_PyThreadState_GET(), 1);
 }
 
 /* This is used strictly by Py_DECREF(). */
 void
 _Py_DECREF_DecRefTotal(void)
 {
-    reftotal_decrement(_PyInterpreterState_GET());
+    reftotal_add(_PyThreadState_GET(), -1);
 }
 
 void
-_Py_IncRefTotal(PyInterpreterState *interp)
+_Py_IncRefTotal(PyThreadState *tstate)
 {
-    reftotal_increment(interp);
+    reftotal_add(tstate, 1);
 }
 
 void
-_Py_DecRefTotal(PyInterpreterState *interp)
+_Py_DecRefTotal(PyThreadState *tstate)
 {
-    reftotal_decrement(interp);
+    reftotal_add(tstate, -1);
 }
 
 void
-_Py_AddRefTotal(PyInterpreterState *interp, Py_ssize_t n)
+_Py_AddRefTotal(PyThreadState *tstate, Py_ssize_t n)
 {
-    reftotal_add(interp, n);
+    reftotal_add(tstate, n);
 }
 
 /* This includes the legacy total
@@ -267,7 +271,10 @@ _Py_GetLegacyRefTotal(void)
 Py_ssize_t
 _PyInterpreterState_GetRefTotal(PyInterpreterState *interp)
 {
-    return get_reftotal(interp);
+    HEAD_LOCK(&_PyRuntime);
+    Py_ssize_t total = get_reftotal(interp);
+    HEAD_UNLOCK(&_PyRuntime);
+    return total;
 }
 
 #endif /* Py_REF_DEBUG */
@@ -345,7 +352,7 @@ _Py_DecRefSharedDebug(PyObject *o, const char *filename, int lineno)
 
     if (should_queue) {
 #ifdef Py_REF_DEBUG
-        _Py_IncRefTotal(_PyInterpreterState_GET());
+        _Py_IncRefTotal(_PyThreadState_GET());
 #endif
         _Py_brc_queue_object(o);
     }
@@ -367,7 +374,7 @@ _Py_MergeZeroLocalRefcount(PyObject *op)
     assert(op->ob_ref_local == 0);
 
     _Py_atomic_store_uintptr_relaxed(&op->ob_tid, 0);
-    Py_ssize_t shared = _Py_atomic_load_ssize_relaxed(&op->ob_ref_shared);
+    Py_ssize_t shared = _Py_atomic_load_ssize_acquire(&op->ob_ref_shared);
     if (shared == 0) {
         // Fast-path: shared refcount is zero (including flags)
         _Py_Dealloc(op);
@@ -405,7 +412,7 @@ _Py_ExplicitMergeRefcount(PyObject *op, Py_ssize_t extra)
                                                 &shared, new_shared));
 
 #ifdef Py_REF_DEBUG
-    _Py_AddRefTotal(_PyInterpreterState_GET(), extra);
+    _Py_AddRefTotal(_PyThreadState_GET(), extra);
 #endif
 
     _Py_atomic_store_uint32_relaxed(&op->ob_ref_local, 0);
@@ -2001,6 +2008,11 @@ static PyNumberMethods none_as_number = {
     0,                          /* nb_index */
 };
 
+PyDoc_STRVAR(none_doc,
+"NoneType()\n"
+"--\n\n"
+"The type of the None singleton.");
+
 PyTypeObject _PyNone_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "NoneType",
@@ -2022,7 +2034,7 @@ PyTypeObject _PyNone_Type = {
     0,                  /*tp_setattro */
     0,                  /*tp_as_buffer */
     Py_TPFLAGS_DEFAULT, /*tp_flags */
-    0,                  /*tp_doc */
+    none_doc,           /*tp_doc */
     0,                  /*tp_traverse */
     0,                  /*tp_clear */
     _Py_BaseObject_RichCompare, /*tp_richcompare */
@@ -2100,6 +2112,11 @@ static PyNumberMethods notimplemented_as_number = {
     .nb_bool = notimplemented_bool,
 };
 
+PyDoc_STRVAR(notimplemented_doc,
+"NotImplementedType()\n"
+"--\n\n"
+"The type of the NotImplemented singleton.");
+
 PyTypeObject _PyNotImplemented_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "NotImplementedType",
@@ -2121,7 +2138,7 @@ PyTypeObject _PyNotImplemented_Type = {
     0,                  /*tp_setattro */
     0,                  /*tp_as_buffer */
     Py_TPFLAGS_DEFAULT, /*tp_flags */
-    0,                  /*tp_doc */
+    notimplemented_doc, /*tp_doc */
     0,                  /*tp_traverse */
     0,                  /*tp_clear */
     0,                  /*tp_richcompare */
@@ -2278,6 +2295,7 @@ static PyTypeObject* static_types[] = {
     &_PyHamt_BitmapNode_Type,
     &_PyHamt_CollisionNode_Type,
     &_PyHamt_Type,
+    &_PyInstructionSequence_Type,
     &_PyLegacyEventHandler_Type,
     &_PyLineIterator,
     &_PyManagedBuffer_Type,
@@ -2376,7 +2394,7 @@ void
 _Py_NewReference(PyObject *op)
 {
 #ifdef Py_REF_DEBUG
-    reftotal_increment(_PyInterpreterState_GET());
+    _Py_IncRefTotal(_PyThreadState_GET());
 #endif
     new_reference(op);
 }
@@ -2406,6 +2424,19 @@ _Py_SetImmortal(PyObject *op)
         _PyObject_GC_UNTRACK(op);
     }
     _Py_SetImmortalUntracked(op);
+}
+
+void
+_PyObject_SetDeferredRefcount(PyObject *op)
+{
+#ifdef Py_GIL_DISABLED
+    assert(PyType_IS_GC(Py_TYPE(op)));
+    assert(_Py_IsOwnedByCurrentThread(op));
+    assert(op->ob_ref_shared == 0);
+    op->ob_gc_bits |= _PyGC_BITS_DEFERRED;
+    op->ob_ref_local += 1;
+    op->ob_ref_shared = _Py_REF_QUEUED;
+#endif
 }
 
 void
@@ -2680,33 +2711,31 @@ finally:
 
 /* Trashcan support. */
 
-#define _PyTrash_UNWIND_LEVEL 50
-
 /* Add op to the gcstate->trash_delete_later list.  Called when the current
  * call-stack depth gets large.  op must be a currently untracked gc'ed
  * object, with refcount 0.  Py_DECREF must already have been called on it.
  */
-static void
-_PyTrash_thread_deposit_object(struct _py_trashcan *trash, PyObject *op)
+void
+_PyTrash_thread_deposit_object(PyThreadState *tstate, PyObject *op)
 {
     _PyObject_ASSERT(op, _PyObject_IS_GC(op));
     _PyObject_ASSERT(op, !_PyObject_GC_IS_TRACKED(op));
     _PyObject_ASSERT(op, Py_REFCNT(op) == 0);
 #ifdef Py_GIL_DISABLED
     _PyObject_ASSERT(op, op->ob_tid == 0);
-    op->ob_tid = (uintptr_t)trash->delete_later;
+    op->ob_tid = (uintptr_t)tstate->delete_later;
 #else
-    _PyGCHead_SET_PREV(_Py_AS_GC(op), (PyGC_Head*)trash->delete_later);
+    _PyGCHead_SET_PREV(_Py_AS_GC(op), (PyGC_Head*)tstate->delete_later);
 #endif
-    trash->delete_later = op;
+    tstate->delete_later = op;
 }
 
 /* Deallocate all the objects in the gcstate->trash_delete_later list.
  * Called when the call-stack unwinds again. */
-static void
-_PyTrash_thread_destroy_chain(struct _py_trashcan *trash)
+void
+_PyTrash_thread_destroy_chain(PyThreadState *tstate)
 {
-    /* We need to increase trash_delete_nesting here, otherwise,
+    /* We need to increase c_recursion_remaining here, otherwise,
        _PyTrash_thread_destroy_chain will be called recursively
        and then possibly crash.  An example that may crash without
        increase:
@@ -2717,17 +2746,17 @@ _PyTrash_thread_destroy_chain(struct _py_trashcan *trash)
                tups = [(tup,) for tup in tups]
            del tups
     */
-    assert(trash->delete_nesting == 0);
-    ++trash->delete_nesting;
-    while (trash->delete_later) {
-        PyObject *op = trash->delete_later;
+    assert(tstate->c_recursion_remaining > Py_TRASHCAN_HEADROOM);
+    tstate->c_recursion_remaining--;
+    while (tstate->delete_later) {
+        PyObject *op = tstate->delete_later;
         destructor dealloc = Py_TYPE(op)->tp_dealloc;
 
 #ifdef Py_GIL_DISABLED
-        trash->delete_later = (PyObject*) op->ob_tid;
+        tstate->delete_later = (PyObject*) op->ob_tid;
         op->ob_tid = 0;
 #else
-        trash->delete_later = (PyObject*) _PyGCHead_PREV(_Py_AS_GC(op));
+        tstate->delete_later = (PyObject*) _PyGCHead_PREV(_Py_AS_GC(op));
 #endif
 
         /* Call the deallocator directly.  This used to try to
@@ -2738,91 +2767,9 @@ _PyTrash_thread_destroy_chain(struct _py_trashcan *trash)
          */
         _PyObject_ASSERT(op, Py_REFCNT(op) == 0);
         (*dealloc)(op);
-        assert(trash->delete_nesting == 1);
     }
-    --trash->delete_nesting;
+    tstate->c_recursion_remaining++;
 }
-
-
-static struct _py_trashcan *
-_PyTrash_get_state(PyThreadState *tstate)
-{
-    if (tstate != NULL) {
-        return &tstate->trash;
-    }
-    // The current thread must be finalizing.
-    // Fall back to using thread-local state.
-    // XXX Use thread-local variable syntax?
-    assert(PyThread_tss_is_created(&_PyRuntime.trashTSSkey));
-    struct _py_trashcan *trash =
-        (struct _py_trashcan *)PyThread_tss_get(&_PyRuntime.trashTSSkey);
-    if (trash == NULL) {
-        trash = PyMem_RawMalloc(sizeof(struct _py_trashcan));
-        if (trash == NULL) {
-            Py_FatalError("Out of memory");
-        }
-        PyThread_tss_set(&_PyRuntime.trashTSSkey, (void *)trash);
-    }
-    return trash;
-}
-
-static void
-_PyTrash_clear_state(PyThreadState *tstate)
-{
-    if (tstate != NULL) {
-        assert(tstate->trash.delete_later == NULL);
-        return;
-    }
-    if (PyThread_tss_is_created(&_PyRuntime.trashTSSkey)) {
-        struct _py_trashcan *trash =
-            (struct _py_trashcan *)PyThread_tss_get(&_PyRuntime.trashTSSkey);
-        if (trash != NULL) {
-            PyThread_tss_set(&_PyRuntime.trashTSSkey, (void *)NULL);
-            PyMem_RawFree(trash);
-        }
-    }
-}
-
-
-int
-_PyTrash_begin(PyThreadState *tstate, PyObject *op)
-{
-    // XXX Make sure the GIL is held.
-    struct _py_trashcan *trash = _PyTrash_get_state(tstate);
-    if (trash->delete_nesting >= _PyTrash_UNWIND_LEVEL) {
-        /* Store the object (to be deallocated later) and jump past
-         * Py_TRASHCAN_END, skipping the body of the deallocator */
-        _PyTrash_thread_deposit_object(trash, op);
-        return 1;
-    }
-    ++trash->delete_nesting;
-    return 0;
-}
-
-
-void
-_PyTrash_end(PyThreadState *tstate)
-{
-    // XXX Make sure the GIL is held.
-    struct _py_trashcan *trash = _PyTrash_get_state(tstate);
-    --trash->delete_nesting;
-    if (trash->delete_nesting <= 0) {
-        if (trash->delete_later != NULL) {
-            _PyTrash_thread_destroy_chain(trash);
-        }
-        _PyTrash_clear_state(tstate);
-    }
-}
-
-
-/* bpo-40170: It's only be used in Py_TRASHCAN_BEGIN macro to hide
-   implementation details. */
-int
-_PyTrash_cond(PyObject *op, destructor dealloc)
-{
-    return Py_TYPE(op)->tp_dealloc == dealloc;
-}
-
 
 void _Py_NO_RETURN
 _PyObject_AssertFailed(PyObject *obj, const char *expr, const char *msg,

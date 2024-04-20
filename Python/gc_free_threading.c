@@ -159,6 +159,15 @@ gc_decref(PyObject *op)
     op->ob_tid -= 1;
 }
 
+static void
+disable_deferred_refcounting(PyObject *op)
+{
+    if (_PyObject_HasDeferredRefcount(op)) {
+        op->ob_gc_bits &= ~_PyGC_BITS_DEFERRED;
+        op->ob_ref_shared -= (1 << _Py_REF_SHARED_SHIFT);
+    }
+}
+
 static Py_ssize_t
 merge_refcount(PyObject *op, Py_ssize_t extra)
 {
@@ -168,7 +177,7 @@ merge_refcount(PyObject *op, Py_ssize_t extra)
     refcount += extra;
 
 #ifdef Py_REF_DEBUG
-    _Py_AddRefTotal(_PyInterpreterState_GET(), extra);
+    _Py_AddRefTotal(_PyThreadState_GET(), extra);
 #endif
 
     // No atomics necessary; all other threads in this interpreter are paused.
@@ -307,7 +316,7 @@ merge_queued_objects(_PyThreadStateImpl *tstate, struct collection_state *state)
             // decref and deallocate the object once we start the world again.
             op->ob_ref_shared += (1 << _Py_REF_SHARED_SHIFT);
 #ifdef Py_REF_DEBUG
-            _Py_IncRefTotal(_PyInterpreterState_GET());
+            _Py_IncRefTotal(_PyThreadState_GET());
 #endif
             worklist_push(&state->objs_to_decref, op);
         }
@@ -375,9 +384,10 @@ update_refs(const mi_heap_t *heap, const mi_heap_area_t *area,
     }
 
     Py_ssize_t refcount = Py_REFCNT(op);
+    refcount -= _PyObject_HasDeferredRefcount(op);
     _PyObject_ASSERT(op, refcount >= 0);
 
-    if (refcount > 0) {
+    if (refcount > 0 && !_PyObject_HasDeferredRefcount(op)) {
         // Untrack tuples and dicts as necessary in this pass, but not objects
         // with zero refcount, which we will want to collect.
         if (PyTuple_CheckExact(op)) {
@@ -466,6 +476,9 @@ mark_heap_visitor(const mi_heap_t *heap, const mi_heap_area_t *area,
         return true;
     }
 
+    _PyObject_ASSERT_WITH_MSG(op, gc_get_refs(op) >= 0,
+                                  "refcount is too small");
+
     if (gc_is_unreachable(op) && gc_get_refs(op) != 0) {
         // Object is reachable but currently marked as unreachable.
         // Mark it as reachable and traverse its pointers to find
@@ -499,6 +512,10 @@ scan_heap_visitor(const mi_heap_t *heap, const mi_heap_area_t *area,
 
     struct collection_state *state = (struct collection_state *)args;
     if (gc_is_unreachable(op)) {
+        // Disable deferred refcounting for unreachable objects so that they
+        // are collected immediately after finalization.
+        disable_deferred_refcounting(op);
+
         // Merge and add one to the refcount to prevent deallocation while we
         // are holding on to it in a worklist.
         merge_refcount(op, 1);

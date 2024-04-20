@@ -11,6 +11,7 @@
 #include "pycore_object.h"
 #include "pycore_opcode_metadata.h" // _PyOpcode_Caches
 #include "pycore_uop_metadata.h"    // _PyOpcode_uop_name
+#include "pycore_uop_ids.h"       // MAX_UOP_ID
 #include "pycore_opcode_utils.h"  // RESUME_AT_FUNC_START
 #include "pycore_pylifecycle.h"   // _PyOS_URandomNonblock()
 #include "pycore_runtime.h"       // _Py_ID()
@@ -269,6 +270,14 @@ print_optimization_stats(FILE *out, OptimizationStats *stats)
         }
     }
 
+    for (int i = 1; i <= MAX_UOP_ID; i++){
+        for (int j = 1; j <= MAX_UOP_ID; j++) {
+            if (stats->opcode[i].pair_count[j]) {
+                fprintf(out, "uop[%s].pair_count[%s] : %" PRIu64 "\n",
+                        _PyOpcode_uop_name[i], _PyOpcode_uop_name[j], stats->opcode[i].pair_count[j]);
+            }
+        }
+    }
     for (int i = 0; i < MAX_UOP_ID; i++) {
         if (stats->error_in_opcode[i]) {
             fprintf(
@@ -419,22 +428,20 @@ _PyCode_Quicken(PyCodeObject *code)
         int caches = _PyOpcode_Caches[opcode];
         if (caches) {
             // The initial value depends on the opcode
-            int initial_value;
             switch (opcode) {
                 case JUMP_BACKWARD:
-                    initial_value = 0;
+                    instructions[i + 1].counter = initial_jump_backoff_counter();
                     break;
                 case POP_JUMP_IF_FALSE:
                 case POP_JUMP_IF_TRUE:
                 case POP_JUMP_IF_NONE:
                 case POP_JUMP_IF_NOT_NONE:
-                    initial_value = 0x5555;  // Alternating 0, 1 bits
+                    instructions[i + 1].cache = 0x5555;  // Alternating 0, 1 bits
                     break;
                 default:
-                    initial_value = adaptive_counter_warmup();
+                    instructions[i + 1].counter = adaptive_counter_warmup();
                     break;
             }
-            instructions[i + 1].cache = initial_value;
             i += caches;
         }
     }
