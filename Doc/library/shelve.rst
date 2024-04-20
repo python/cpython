@@ -42,7 +42,7 @@ lots of shared  sub-objects.  The keys are ordinary strings.
    mutated).
 
    By default, :mod:`shelve` uses :func:`pickle.dumps` and :func:`pickle.loads`
-   for serializing and deserializing. However *serializer* can be the function
+   for serializing and deserializing. However *deserializer* can be the function
    that takes the :term:`bytes-like object` and returns the object. *deserializer*
    can be the function that takes the object and returns :class:`bytes`. For example,
    :keyword:`lambda`, which the :mod:`pickle` does not support, can be used in
