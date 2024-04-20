@@ -6,6 +6,10 @@
 
 #include <Python.h>
 #include <stdbool.h>
+#ifdef HAVE_UNISTD_H
+#  include <unistd.h>             // getcwd()
+#endif
+
 #include "pycore_abstract.h"      // _PyObject_RealIsSubclass()
 #include "pycore_ceval.h"         // _Py_EnterRecursiveCall
 #include "pycore_exceptions.h"    // struct _Py_exc_state
@@ -22,6 +26,11 @@ PyObject *PyExc_EnvironmentError = NULL;  // borrowed ref
 PyObject *PyExc_IOError = NULL;  // borrowed ref
 #ifdef MS_WINDOWS
 PyObject *PyExc_WindowsError = NULL;  // borrowed ref
+#  define getcwd _getcwd
+char *_getcwd(
+   char *buffer,
+   int maxlen
+);
 #endif
 
 
