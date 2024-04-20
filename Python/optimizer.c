@@ -397,7 +397,7 @@ executor_traverse(PyObject *o, visitproc visit, void *arg)
 static int
 executor_is_gc(PyObject *o)
 {
-    if ((void*)COLD_EXITS <= (void*)o && (void*)o < (void*)COLD_EXITS + UOP_MAX_TRACE_LENGTH) {
+    if ((PyObject *)&COLD_EXITS[0] <= o && o < (PyObject *)&COLD_EXITS[UOP_MAX_TRACE_LENGTH]) {
         return 0;
     }
     return 1;
