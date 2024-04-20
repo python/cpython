@@ -166,6 +166,7 @@ def splitdrive(p):
     drive, root, tail = splitroot(p)
     return drive, root + tail
 
+
 try:
     from nt import _path_splitroot_ex
 except ImportError:

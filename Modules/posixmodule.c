@@ -5085,6 +5085,7 @@ os__path_splitroot_impl(PyObject *module, path_t *path)
     return result;
 }
 
+
 /*[clinic input]
 os._path_isdir
 
