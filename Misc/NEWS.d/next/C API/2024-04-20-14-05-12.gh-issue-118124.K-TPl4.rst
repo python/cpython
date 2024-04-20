@@ -1,0 +1,3 @@
+Deprecates :c:macro:`Py_BUILD_ASSERT`. Passing non-constant expression to
+:c:macro:`Py_BUILD_ASSERT` or :c:macro:`Py_BUILD_ASSERT_EXPR` now makes
+compilation failed.

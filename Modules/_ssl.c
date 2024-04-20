@@ -3620,7 +3620,7 @@ static PyObject *
 get_options(PySSLContext *self, void *c)
 {
     uint64_t options = SSL_CTX_get_options(self->ctx);
-    Py_BUILD_ASSERT(sizeof(unsigned long long) >= sizeof(options));
+    static_assert(sizeof(unsigned long long) >= sizeof(options), "");
     return PyLong_FromUnsignedLongLong(options);
 }
 
@@ -3642,7 +3642,7 @@ set_options(PySSLContext *self, PyObject *arg, void *c)
     if (new_opts_arg == (unsigned long long)-1 && PyErr_Occurred()) {
         return -1;
     }
-    Py_BUILD_ASSERT(sizeof(new_opts) >= sizeof(new_opts_arg));
+    static_assert(sizeof(new_opts) >= sizeof(new_opts_arg), "");
     new_opts = (uint64_t)new_opts_arg;
 
     opts = SSL_CTX_get_options(self->ctx);
@@ -6062,7 +6062,7 @@ sslmodule_init_socketapi(PyObject *module)
 static int
 sslmodule_add_option(PyObject *m, const char *name, uint64_t value)
 {
-    Py_BUILD_ASSERT(sizeof(unsigned long long) >= sizeof(value));
+    static_assert(sizeof(unsigned long long) >= sizeof(value), "");
     return PyModule_Add(m, name, PyLong_FromUnsignedLongLong(value));
 }
 

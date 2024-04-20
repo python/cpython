@@ -2905,8 +2905,22 @@ test_macros(PyObject *self, PyObject *Py_UNUSED(args))
 
     // static_assert(), Py_BUILD_ASSERT()
     static_assert(1 == 1, "bug");
+    // Py_BUILD_ASSERT is now deprecated
+#if defined(__GNUC__) || defined(__clang__)
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#  pragma GCC diagnostic ignored "-Wunused-value"
+#elif defined(_MSC_VER)
+#  pragma warning(push)
+#  pragma warning(disable:4996)
+#  pragma warning(disable:4555)
+#endif
     Py_BUILD_ASSERT(1 == 1);
-
+#if defined(__GNUC__)
+#  pragma GCC diagnostic pop
+#elif defined(_MSC_VER)
+#  pragma warning(pop)
+#endif
 
     // Py_MIN(), Py_MAX(), Py_ABS()
     assert(Py_MIN(5, 11) == 5);

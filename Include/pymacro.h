@@ -40,6 +40,13 @@
    by "__LINE__". */
 #define Py_STRINGIFY(x) _Py_XSTRINGIFY(x)
 
+#define _Py_CONCAT(x, y) x##y
+
+/* Concatenate the arguments. An indirection is required for expanding
+   arguments once. For example Py_CONCAT(name, __LINE__) is replaced by name
+   followed by the line number, not by "__LINE__". */
+#define Py_CONCAT(x, y) _Py_CONCAT(x, y)
+
 /* Get the size of a structure member in bytes */
 #define Py_MEMBER_SIZE(type, member) sizeof(((type *)0)->member)
 
@@ -56,13 +63,44 @@
    #define foo_to_char(foo)  \
        ((char *)(foo)        \
         + Py_BUILD_ASSERT_EXPR(offsetof(struct foo, string) == 0))
+   Originaly written by Rusty Russell, public domain, http://ccodearchive.net/
+   Modified to prohibit variable-length arrays(VLA). */
+#if defined(__cplusplus)
+    template<typename T>
+    struct _Py_BUILD_ASSERT_EXPR_prohibit_vla {
+        static_assert(sizeof(T) == 1,
+            "Py_BUILD_ASSERT_EXPR can only be used with constant "
+            "expression of value true");
+    };
+#  define Py_BUILD_ASSERT_EXPR(cond) \
+        (!sizeof(_Py_BUILD_ASSERT_EXPR_prohibit_vla<char[1 - 2 * !(cond)]>))
+#elif defined(_MSC_VER)
+#  define Py_BUILD_ASSERT_EXPR(cond) \
+        (!sizeof( \
+            __pragma(warning(push)) \
+            __pragma(warning(suppress: 4116)) \
+            enum { \
+                Py_CONCAT(_Py_BUILD_ASSERT_EXPR_prohibit_vla_,__LINE__) = \
+                    sizeof(char[1 - 2 * !(cond)]) \
+            } \
+            __pragma(warning(pop)) \
+        ))
+#else
+#  define Py_BUILD_ASSERT_EXPR(cond) \
+        (!sizeof( \
+            enum { \
+                Py_CONCAT(_Py_BUILD_ASSERT_EXPR_prohibit_vla_,__LINE__) = \
+                    sizeof(char[1 - 2 * !(cond)]) \
+            } \
+        ))
+#endif
 
-   Written by Rusty Russell, public domain, http://ccodearchive.net/ */
-#define Py_BUILD_ASSERT_EXPR(cond) \
-    (sizeof(char [1 - 2*!(cond)]) - 1)
-
-#define Py_BUILD_ASSERT(cond)  do {         \
-        (void)Py_BUILD_ASSERT_EXPR(cond);   \
+/* Deprecated, use static_assert instead. */
+#define Py_BUILD_ASSERT(cond)  do { \
+        Py_DEPRECATED(3.13) \
+        int _Py_BUILD_ASSERT_is_deprecated_use_static_assert_instead = 0; \
+        _Py_BUILD_ASSERT_is_deprecated_use_static_assert_instead; \
+        static_assert(cond, ""); \
     } while(0)
 
 /* Get the number of elements in a visible array

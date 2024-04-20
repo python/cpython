@@ -1046,7 +1046,7 @@ py_win_perf_counter_frequency(_PyTimeFraction *base, int raise_exc)
     // Since Windows XP, frequency cannot be zero.
     assert(frequency >= 1);
 
-    Py_BUILD_ASSERT(sizeof(PyTime_t) == sizeof(frequency));
+    static_assert(sizeof(PyTime_t) == sizeof(frequency), "");
     PyTime_t denom = (PyTime_t)frequency;
 
     // Known QueryPerformanceFrequency() values:
@@ -1113,8 +1113,8 @@ py_mach_timebase_info(_PyTimeFraction *base, int raise_exc)
     // PyTime_t. In practice, timebase uses uint32_t, so casting cannot
     // overflow. At the end, only make sure that the type is uint32_t
     // (PyTime_t is 64-bit long).
-    Py_BUILD_ASSERT(sizeof(timebase.numer) <= sizeof(PyTime_t));
-    Py_BUILD_ASSERT(sizeof(timebase.denom) <= sizeof(PyTime_t));
+    static_assert(sizeof(timebase.numer) <= sizeof(PyTime_t), "");
+    static_assert(sizeof(timebase.denom) <= sizeof(PyTime_t), "");
     PyTime_t numer = (PyTime_t)timebase.numer;
     PyTime_t denom = (PyTime_t)timebase.denom;
 

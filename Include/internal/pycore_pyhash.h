@@ -10,13 +10,13 @@ static inline Py_hash_t
 _Py_HashPointerRaw(const void *ptr)
 {
     uintptr_t x = (uintptr_t)ptr;
-    Py_BUILD_ASSERT(sizeof(x) == sizeof(ptr));
+    static_assert(sizeof(x) == sizeof(ptr), "");
 
     // Bottom 3 or 4 bits are likely to be 0; rotate x by 4 to the right
     // to avoid excessive hash collisions for dicts and sets.
     x = (x >> 4) | (x << (8 * sizeof(uintptr_t) - 4));
 
-    Py_BUILD_ASSERT(sizeof(x) == sizeof(Py_hash_t));
+    static_assert(sizeof(x) == sizeof(Py_hash_t), "");
     return (Py_hash_t)x;
 }
 

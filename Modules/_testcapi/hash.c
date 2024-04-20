@@ -54,7 +54,7 @@ hash_pointer(PyObject *Py_UNUSED(module), PyObject *arg)
     }
 
     Py_hash_t hash = Py_HashPointer(ptr);
-    Py_BUILD_ASSERT(sizeof(long long) >= sizeof(hash));
+    static_assert(sizeof(long long) >= sizeof(hash), "");
     return PyLong_FromLongLong(hash);
 }
 
@@ -64,7 +64,7 @@ object_generichash(PyObject *Py_UNUSED(module), PyObject *arg)
 {
     NULLABLE(arg);
     Py_hash_t hash = PyObject_GenericHash(arg);
-    Py_BUILD_ASSERT(sizeof(long long) >= sizeof(hash));
+    static_assert(sizeof(long long) >= sizeof(hash), "");
     return PyLong_FromLongLong(hash);
 }
 

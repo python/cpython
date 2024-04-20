@@ -1931,7 +1931,7 @@ static PyObject *
 get_py_thread_id(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     uintptr_t tid = _Py_ThreadId();
-    Py_BUILD_ASSERT(sizeof(unsigned long long) >= sizeof(tid));
+    static_assert(sizeof(unsigned long long) >= sizeof(tid), "");
     return PyLong_FromUnsignedLongLong(tid);
 }
 #endif

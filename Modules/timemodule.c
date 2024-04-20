@@ -198,7 +198,7 @@ time_clockid_converter(PyObject *obj, clockid_t *p)
     }
 
     // Make sure that we picked the right type (check sizes type)
-    Py_BUILD_ASSERT(sizeof(clk_id) == sizeof(*p));
+    static_assert(sizeof(clk_id) == sizeof(*p), "");
     *p = (clockid_t)clk_id;
     return 1;
 }

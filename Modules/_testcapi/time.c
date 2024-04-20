@@ -15,7 +15,7 @@ pytime_from_nanoseconds(PyTime_t *tp, PyObject *obj)
         return -1;
     }
 
-    Py_BUILD_ASSERT(sizeof(long long) == sizeof(PyTime_t));
+    static_assert(sizeof(long long) == sizeof(PyTime_t), "");
     *tp = (PyTime_t)nsec;
     return 0;
 }
@@ -98,7 +98,7 @@ _PyTestCapi_Init_Time(PyObject *m)
     if (PyModule_AddFunctions(m, test_methods) < 0) {
         return -1;
     }
-    Py_BUILD_ASSERT(sizeof(long long) == sizeof(PyTime_t));
+    static_assert(sizeof(long long) == sizeof(PyTime_t), "");
     if (PyModule_AddObject(m, "PyTime_MIN", PyLong_FromLongLong(PyTime_MIN)) < 0) {
         return 1;
     }

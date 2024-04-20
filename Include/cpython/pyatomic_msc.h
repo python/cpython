@@ -16,7 +16,7 @@
 #include <intrin.h>
 
 #define _Py_atomic_ASSERT_ARG_TYPE(TYPE) \
-    Py_BUILD_ASSERT(sizeof(*obj) == sizeof(TYPE))
+    static_assert(sizeof(*obj) == sizeof(TYPE), "")
 
 
 // --- _Py_atomic_add --------------------------------------------------------
