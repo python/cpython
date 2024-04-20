@@ -38,12 +38,14 @@ optimize_to_bool(
     _Py_UopsSymbol **result_ptr);
 
 extern void
-eliminate_pop_guard(_PyUOpInstruction *this_instr, bool exit)
+eliminate_pop_guard(_PyUOpInstruction *this_instr, bool exit);
+
+extern PyCodeObject *get_code(_PyUOpInstruction *op);
 
 static int
 dummy_func(void) {
 
-    PyCodeObject *code;
+    PyCodeObject *co;
     int oparg;
     _Py_UopsSymbol *flag;
     _Py_UopsSymbol *left;
@@ -54,10 +56,15 @@ dummy_func(void) {
     _Py_UopsSymbol *top;
     _Py_UopsSymbol *bottom;
     _Py_UOpsAbstractFrame *frame;
+    _Py_UOpsAbstractFrame *new_frame;
     _Py_UOpsContext *ctx;
     _PyUOpInstruction *this_instr;
     _PyBloomFilter *dependencies;
     int modified;
+    int curr_space;
+    int max_space;
+    _PyUOpInstruction *first_valid_check_stack;
+    _PyUOpInstruction *corresponding_check_stack;
 
 // BEGIN BYTECODES //
 
@@ -393,9 +400,10 @@ dummy_func(void) {
     }
 
     op(_LOAD_CONST, (-- value)) {
-        // There should be no LOAD_CONST. It should be all
-        // replaced by peephole_opt.
-        Py_UNREACHABLE();
+        PyObject *val = PyTuple_GET_ITEM(co->co_consts, this_instr->oparg);
+        int opcode = _Py_IsImmortal(val) ? _LOAD_CONST_INLINE_BORROW : _LOAD_CONST_INLINE;
+        REPLACE_OP(this_instr, opcode, 0, (uintptr_t)val);
+        OUT_OF_SPACE_IF_NULL(value = sym_new_const(ctx, val));
     }
 
     op(_LOAD_CONST_INLINE, (ptr/4 -- value)) {
@@ -590,6 +598,32 @@ dummy_func(void) {
         frame_pop(ctx);
         stack_pointer = ctx->frame->stack_pointer;
         res = retval;
+
+        /* Stack space handling */
+        assert(corresponding_check_stack == NULL);
+        assert(co != NULL);
+        int framesize = co->co_framesize;
+        assert(framesize > 0);
+        assert(framesize <= curr_space);
+        curr_space -= framesize;
+
+        co = get_code(this_instr);
+        if (co == NULL) {
+            // might be impossible, but bailing is still safe
+            goto done;
+        }
+    }
+
+    op(_CHECK_STACK_SPACE, ( --)) {
+        assert(corresponding_check_stack == NULL);
+        corresponding_check_stack = this_instr;
+    }
+
+    op (_CHECK_STACK_SPACE_OPERAND, ( -- )) {
+        (void)framesize;
+        /* We should never see _CHECK_STACK_SPACE_OPERANDs.
+        * They are only created at the end of this pass. */
+        Py_UNREACHABLE();
     }
 
     op(_PUSH_FRAME, (new_frame: _Py_UOpsAbstractFrame * -- unused if (0))) {
@@ -598,6 +632,29 @@ dummy_func(void) {
         ctx->frame = new_frame;
         ctx->curr_frame_depth++;
         stack_pointer = new_frame->stack_pointer;
+        co = get_code(this_instr);
+        if (co == NULL) {
+            // should be about to _EXIT_TRACE anyway
+            goto done;
+        }
+
+        /* Stack space handling */
+        int framesize = co->co_framesize;
+        assert(framesize > 0);
+        curr_space += framesize;
+        if (curr_space < 0 || curr_space > INT32_MAX) {
+            // won't fit in signed 32-bit int
+            goto done;
+        }
+        max_space = curr_space > max_space ? curr_space : max_space;
+        if (first_valid_check_stack == NULL) {
+            first_valid_check_stack = corresponding_check_stack;
+        }
+        else {
+            // delete all but the first valid _CHECK_STACK_SPACE
+            corresponding_check_stack->opcode = _NOP;
+        }
+        corresponding_check_stack = NULL;
     }
 
     op(_UNPACK_SEQUENCE, (seq -- values[oparg])) {
@@ -660,6 +717,22 @@ dummy_func(void) {
             assert(!sym_matches_type(flag, &_PyNone_Type));
             eliminate_pop_guard(this_instr, false);
         }
+    }
+
+    op(_CHECK_PEP_523, (--)) {
+        /* Setting the eval frame function invalidates
+        * all executors, so no need to check dynamically */
+        if (_PyInterpreterState_GET()->eval_frame == NULL) {
+            REPLACE_OP(this_instr, _NOP, 0 ,0);
+        }
+    }
+
+    op(_JUMP_TO_TOP, (--)) {
+        goto done;
+    }
+
+    op(_EXIT_TRACE, (--)) {
+        goto done;
     }
 
 

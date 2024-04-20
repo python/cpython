@@ -169,9 +169,7 @@ class PurePath(_abc.PurePathBase):
             return NotImplemented
 
     def __reduce__(self):
-        # Using the parts tuple helps share interned path parts
-        # when pickling related paths.
-        return (self.__class__, self.parts)
+        return self.__class__, tuple(self._raw_paths)
 
     def __repr__(self):
         return "{}({!r})".format(self.__class__.__name__, self.as_posix())
@@ -607,11 +605,9 @@ class Path(_abc.PathBase, PurePath):
         if raw[-1] in (self.parser.sep, self.parser.altsep):
             # GH-65238: pathlib doesn't preserve trailing slash. Add it back.
             parts.append('')
-        if not self.is_dir():
-            return iter([])
         select = self._glob_selector(parts[::-1], case_sensitive, recurse_symlinks)
         root = str(self)
-        paths = select(root, exists=True)
+        paths = select(root)
 
         # Normalize results
         if root == '.':

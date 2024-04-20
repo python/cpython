@@ -501,9 +501,9 @@ However, for reading convenience, most of the examples show sorted sequences.
    variance indicates that the data is spread out; a small variance indicates
    it is clustered closely around the mean.
 
-   If the optional second argument *mu* is given, it is typically the mean of
-   the *data*.  It can also be used to compute the second moment around a
-   point that is not the mean.  If it is missing or ``None`` (the default),
+   If the optional second argument *mu* is given, it should be the *population*
+   mean of the *data*.  It can also be used to compute the second moment around
+   a point that is not the mean.  If it is missing or ``None`` (the default),
    the arithmetic mean is automatically calculated.
 
    Use this function to calculate the variance from the entire population.  To
@@ -573,8 +573,8 @@ However, for reading convenience, most of the examples show sorted sequences.
    the data is spread out; a small variance indicates it is clustered closely
    around the mean.
 
-   If the optional second argument *xbar* is given, it should be the mean of
-   *data*.  If it is missing or ``None`` (the default), the mean is
+   If the optional second argument *xbar* is given, it should be the *sample*
+   mean of *data*.  If it is missing or ``None`` (the default), the mean is
    automatically calculated.
 
    Use this function when your data is a sample from a population. To calculate
@@ -590,8 +590,8 @@ However, for reading convenience, most of the examples show sorted sequences.
       >>> variance(data)
       1.3720238095238095
 
-   If you have already calculated the mean of your data, you can pass it as the
-   optional second argument *xbar* to avoid recalculation:
+   If you have already calculated the sample mean of your data, you can pass it
+   as the optional second argument *xbar* to avoid recalculation:
 
    .. doctest::
 
@@ -1163,7 +1163,7 @@ accurately approximated inverse cumulative distribution function.
 .. testcode::
 
    from random import choice, random, seed
-   from math import sqrt, log, pi, tan, asin
+   from math import sqrt, log, pi, tan, asin, cos, acos
    from statistics import NormalDist
 
    kernel_invcdfs = {
@@ -1172,6 +1172,7 @@ accurately approximated inverse cumulative distribution function.
        'sigmoid': lambda p: log(tan(p * pi/2)),
        'rectangular': lambda p: 2*p - 1,
        'triangular': lambda p: sqrt(2*p) - 1 if p < 0.5 else 1 - sqrt(2 - 2*p),
+       'parabolic': lambda p: 2 * cos((acos(2*p-1) + pi) / 3),
        'cosine': lambda p: 2*asin(2*p - 1)/pi,
    }
 
