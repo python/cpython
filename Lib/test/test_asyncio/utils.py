@@ -36,21 +36,26 @@ from test.support import socket_helper
 from test.support import threading_helper
 
 
-def data_file(filename):
-    if hasattr(support, 'TEST_HOME_DIR'):
-        fullname = os.path.join(support.TEST_HOME_DIR, filename)
-        if os.path.isfile(fullname):
-            return fullname
-    fullname = os.path.join(os.path.dirname(__file__), '..', filename)
+# Use the maximum known clock resolution (gh-75191, gh-110088): Windows
+# GetTickCount64() has a resolution of 15.6 ms. Use 50 ms to tolerate rounding
+# issues.
+CLOCK_RES = 0.050
+
+
+def data_file(*filename):
+    fullname = os.path.join(support.TEST_HOME_DIR, *filename)
     if os.path.isfile(fullname):
         return fullname
-    raise FileNotFoundError(filename)
+    fullname = os.path.join(os.path.dirname(__file__), '..', *filename)
+    if os.path.isfile(fullname):
+        return fullname
+    raise FileNotFoundError(os.path.join(filename))
 
 
-ONLYCERT = data_file('ssl_cert.pem')
-ONLYKEY = data_file('ssl_key.pem')
-SIGNED_CERTFILE = data_file('keycert3.pem')
-SIGNING_CA = data_file('pycacert.pem')
+ONLYCERT = data_file('certdata', 'ssl_cert.pem')
+ONLYKEY = data_file('certdata', 'ssl_key.pem')
+SIGNED_CERTFILE = data_file('certdata', 'keycert3.pem')
+SIGNING_CA = data_file('certdata', 'pycacert.pem')
 PEERCERT = {
     'OCSP': ('http://testca.pythontest.net/testca/ocsp/',),
     'caIssuers': ('http://testca.pythontest.net/testca/pycacert.cer',),
@@ -541,6 +546,7 @@ class TestCase(unittest.TestCase):
             else:
                 loop._default_executor.shutdown(wait=True)
         loop.close()
+
         policy = support.maybe_get_event_loop_policy()
         if policy is not None:
             try:
@@ -552,9 +558,13 @@ class TestCase(unittest.TestCase):
                 pass
             else:
                 if isinstance(watcher, asyncio.ThreadedChildWatcher):
-                    threads = list(watcher._threads.values())
-                    for thread in threads:
-                        thread.join()
+                    # Wait for subprocess to finish, but not forever
+                    for thread in list(watcher._threads.values()):
+                        thread.join(timeout=support.SHORT_TIMEOUT)
+                        if thread.is_alive():
+                            raise RuntimeError(f"thread {thread} still alive: "
+                                               "subprocess still running")
+
 
     def set_event_loop(self, loop, *, cleanup=True):
         if loop is None:
@@ -577,7 +587,7 @@ class TestCase(unittest.TestCase):
 
         # Detect CPython bug #23353: ensure that yield/yield-from is not used
         # in an except block of a generator
-        self.assertEqual(sys.exc_info(), (None, None, None))
+        self.assertIsNone(sys.exception())
 
         self.doCleanups()
         threading_helper.threading_cleanup(*self._thread_cleanup)
@@ -607,3 +617,18 @@ def mock_nonblocking_socket(proto=socket.IPPROTO_TCP, type=socket.SOCK_STREAM,
     sock.family = family
     sock.gettimeout.return_value = 0.0
     return sock
+
+
+async def await_without_task(coro):
+    exc = None
+    def func():
+        try:
+            for _ in coro.__await__():
+                pass
+        except BaseException as err:
+            nonlocal exc
+            exc = err
+    asyncio.get_running_loop().call_soon(func)
+    await asyncio.sleep(0)
+    if exc is not None:
+        raise exc

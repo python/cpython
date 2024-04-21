@@ -98,13 +98,13 @@ use Tkinter without a Tcl/Tk installation. The best way to ship a
 frozen Tkinter program is to decide in advance where you are going
 to place the Tcl and Tk library files in the distributed setup, and
 then declare these directories in your frozen Python program using
-the TCL_LIBRARY, TK_LIBRARY and TIX_LIBRARY environment variables.
+the TCL_LIBRARY and TK_LIBRARY environment variables.
 
 For example, assume you will ship your frozen program in the directory
 <root>/bin/windows-x86 and will place your Tcl library files
 in <root>/lib/tcl8.2 and your Tk library files in <root>/lib/tk8.2. Then
 placing the following lines in your frozen Python script before importing
-Tkinter or Tix would set the environment correctly for Tcl/Tk/Tix:
+tkinter would set the environment correctly for Tcl/Tk:
 
 import os
 import os.path
@@ -115,17 +115,14 @@ if sys.platform == "win32":
    sys.path = ['', '..\\..\\lib\\python-2.0']
    os.environ['TCL_LIBRARY'] = RootDir + '\\lib\\tcl8.2'
    os.environ['TK_LIBRARY'] = RootDir + '\\lib\\tk8.2'
-   os.environ['TIX_LIBRARY'] = RootDir + '\\lib\\tix8.1'
 elif sys.platform == "linux2":
    sys.path = ['', '../../lib/python-2.0']
    os.environ['TCL_LIBRARY'] = RootDir + '/lib/tcl8.2'
    os.environ['TK_LIBRARY'] = RootDir + '/lib/tk8.2'
-   os.environ['TIX_LIBRARY'] = RootDir + '/lib/tix8.1'
 elif sys.platform == "solaris":
    sys.path = ['', '../../lib/python-2.0']
    os.environ['TCL_LIBRARY'] = RootDir + '/lib/tcl8.2'
    os.environ['TK_LIBRARY'] = RootDir + '/lib/tk8.2'
-   os.environ['TIX_LIBRARY'] = RootDir + '/lib/tix8.1'
 
 This also adds <root>/lib/python-2.0 to your Python path
 for any Python files such as _tkinter.pyd you may need.
@@ -148,10 +145,9 @@ executable would be possible, in which the Tcl/Tk library files are
 incorporated in a frozen Python module as string literals and written
 to a temporary location when the program runs; this is currently left
 as an exercise for the reader.  An easier approach is to freeze the
-Tcl/Tk/Tix code into the dynamic libraries using the Tcl ET code,
-or the Tix Stand-Alone-Module code. Of course, you can also simply
-require that Tcl/Tk is required on the target installation, but be
-careful that the version corresponds.
+Tcl/Tk code into the dynamic libraries using the Tcl ET code.
+Of course, you can also simply require that Tcl/Tk is required on the
+target installation, but be careful that the version corresponds.
 
 There are some caveats using frozen Tkinter applications:
 	Under Windows if you use the -s windows option, writing
@@ -221,6 +217,11 @@ source tree).
 
 It is possible to create frozen programs that don't have a console
 window, by specifying the option '-s windows'. See the Usage below.
+
+Usage under macOS
+-----------------
+
+On macOS the freeze tool is not supported for framework builds.
 
 Usage
 -----

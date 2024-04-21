@@ -1,10 +1,9 @@
-import unittest
 import ctypes
-from test.test_ctypes import need_symbol
+import unittest
+from test.support import import_helper
+_ctypes_test = import_helper.import_module("_ctypes_test")
 
-import _ctypes_test
 
-@need_symbol('c_wchar')
 class UnicodeTestCase(unittest.TestCase):
     def test_wcslen(self):
         dll = ctypes.CDLL(_ctypes_test.__file__)

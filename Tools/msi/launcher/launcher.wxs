@@ -34,13 +34,34 @@
             <Custom Before="SetLauncherInstallDirectoryLM" Action="SetLauncherInstallDirectoryCU">NOT Installed AND NOT ALLUSERS=1</Custom>
             <Custom Before="CostFinalize" Action="SetLauncherInstallDirectoryLM">NOT Installed AND ALLUSERS=1</Custom>
 
+            <?if $(var.UpgradeMinimumVersion)="3.11.0.0" ?>
+            <RemoveExistingProducts After="InstallValidate">UPGRADE or REMOVE_350_LAUNCHER or REMOVE_360A1_LAUNCHER or UPGRADE_3_11_0 or UPGRADE_3_11_1</RemoveExistingProducts>
+            <?else ?>
             <RemoveExistingProducts After="InstallValidate">UPGRADE or REMOVE_350_LAUNCHER or REMOVE_360A1_LAUNCHER</RemoveExistingProducts>
+            <?endif ?>
         </InstallExecuteSequence>
+
+        <?if $(var.UpgradeMinimumVersion)="3.11.0.0" ?>
+        <Condition Message="!(loc.NoDowngrade)">Installed OR NOT DOWNGRADE OR UPGRADE_3_11_0 OR UPGRADE_3_11_1</Condition>
+        <?else ?>
+        <Condition Message="!(loc.NoDowngrade)">Installed OR NOT DOWNGRADE</Condition>
+        <?endif ?>
 
         <!-- Upgrade all versions of the launcher -->
         <Upgrade Id="$(var.UpgradeCode)">
             <UpgradeVersion Property="DOWNGRADE" Minimum="$(var.Version)" IncludeMinimum="no" OnlyDetect="yes" />
             <UpgradeVersion Property="UPGRADE" Minimum="0.0.0.0" IncludeMinimum="yes" Maximum="$(var.Version)" IncludeMaximum="no" />
+            <!--
+            Prior to 3.11.2150, version numbers incorrectly used date-based
+            revision numbers in the third field. Because these are higher than
+            the real version, it prevents upgrades.
+            Releases of 3.10 have a similar issue, however, no significant
+            changes have shipped in the launcher, so we don't worry about it.
+            -->
+            <?if $(var.UpgradeMinimumVersion)="3.11.0.0" ?>
+            <UpgradeVersion Property="UPGRADE_3_11_0" Minimum="3.11.7966.0" IncludeMinimum="yes" Maximum="3.11.7966.0" IncludeMaximum="yes" />
+            <UpgradeVersion Property="UPGRADE_3_11_1" Minimum="3.11.8009.0" IncludeMinimum="yes" Maximum="3.11.8009.0" IncludeMaximum="yes" />
+            <?endif ?>
         </Upgrade>
         <!-- Python 3.5.0 shipped with a different UpgradeCode -->
         <Upgrade Id="A71530B9-E89D-53DB-9C2D-C6D7551876D8">
