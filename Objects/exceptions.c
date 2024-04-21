@@ -1859,7 +1859,7 @@ oserror_init(PyOSErrorObject *self, PyObject **p_args,
         char* cwd = NULL;
 
         // fetch exception state in order to restore it later
-        PyObject *exc = PyErr_GetRaisedException();
+        // PyObject *exc = PyErr_GetRaisedException();
 
         while (true) {
             char* tmp = realloc(cwd, cwd_len);
@@ -1890,7 +1890,7 @@ oserror_init(PyOSErrorObject *self, PyObject **p_args,
         free(cwd);
 
         // restore exception state
-        PyErr_SetRaisedException(exc);
+        // PyErr_SetRaisedException(exc);
     }
 
     /* Steals the reference to args */
