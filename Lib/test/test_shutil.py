@@ -2143,10 +2143,10 @@ class TestMisc(BaseTest, unittest.TestCase):
         check_chown(filename, uid)
         shutil.chown(filename, group=gid)
         check_chown(filename, gid=gid)
-        shutil.chown(os.path.basename(filename), dir_fd=dirfd)
-        check_chown(filename, gid=gid)
+        shutil.chown(os.path.basename(filename), uid, gid, dir_fd=dirfd)
+        check_chown(filename, uid, gid)
         shutil.chown(os.path.basename(filename), user=uid, dir_fd=dirfd)
-        check_chown(filename, gid=gid)
+        check_chown(filename, uid)
         shutil.chown(os.path.basename(filename), group=gid, dir_fd=dirfd)
         check_chown(filename, gid=gid)
 
