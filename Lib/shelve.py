@@ -100,7 +100,8 @@ class Shelf(collections.abc.MutableMapping):
             self.serializer = dumps
             self.deserializer = loads
         elif (serializer is None) ^ (deserializer is None):
-            raise ShelveError("Serializer and deserializer must be defined together.")
+            raise ShelveError("Serializer and deserializer must be"
+                              "defined together.")
         else:
             self.serializer = serializer
             self.deserializer = deserializer
@@ -133,7 +134,8 @@ class Shelf(collections.abc.MutableMapping):
     def __setitem__(self, key, value):
         if self.writeback:
             self.cache[key] = value
-        self.dict[key.encode(self.keyencoding)] = self.serializer(value, self._protocol)
+        serialized_value = self.serializer(value, self._protocol)
+        self.dict[key.encode(self.keyencoding)] = serialized_value
 
     def __delitem__(self, key):
         del self.dict[key.encode(self.keyencoding)]
@@ -202,7 +204,8 @@ class BsdDbShelf(Shelf):
             self.serializer = dumps
             self.deserializer = loads
         elif (serializer is None) ^ (deserializer is None):
-            raise ShelveError("Serializer and deserializer must be defined together.")
+            raise ShelveError("Serializer and deserializer must be"
+                              "defined together.")
         else:
             self.serializer = serializer
             self.deserializer = deserializer
@@ -241,9 +244,11 @@ class DbfilenameShelf(Shelf):
     See the module's __doc__ string for an overview of the interface.
     """
 
-    def __init__(self, filename, flag='c', protocol=None, writeback=False, serializer=None, deserializer=None):
+    def __init__(self, filename, flag='c', protocol=None, writeback=False,
+                 serializer=None, deserializer=None):
         import dbm
-        Shelf.__init__(self, dbm.open(filename, flag), protocol, writeback, serializer=serializer, deserializer=deserializer)
+        Shelf.__init__(self, dbm.open(filename, flag), protocol, writeback,
+                       serializer=serializer, deserializer=deserializer)
 
     def clear(self):
         """Remove all items from the shelf."""
@@ -252,7 +257,8 @@ class DbfilenameShelf(Shelf):
         self.cache.clear()
         self.dict.clear()
 
-def open(filename, flag='c', protocol=None, writeback=False, *, serializer=None, deserializer=None):
+def open(filename, flag='c', protocol=None, writeback=False, *,
+         serializer=None, deserializer=None):
     """Open a persistent dictionary for reading and writing.
 
     The filename parameter is the base filename for the underlying
@@ -265,4 +271,5 @@ def open(filename, flag='c', protocol=None, writeback=False, *, serializer=None,
     See the module's __doc__ string for an overview of the interface.
     """
 
-    return DbfilenameShelf(filename, flag, protocol, writeback, serializer, deserializer)
+    return DbfilenameShelf(filename, flag, protocol, writeback,
+                           serializer, deserializer)
