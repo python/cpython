@@ -587,6 +587,8 @@ mappingproxy(OrderedDict([('the', 0),
         short = dict(zip('edcba', 'edcba'))
         long = dict((chr(x), chr(x)) for x in range(90, 64, -1))
         lengths = {"empty": empty, "short": short, "long": long}
+        # Test that a subclass that doesn't replace __repr__ works with different lengths
+        class MV(MappingView): pass
 
         for name, d in lengths.items():
             with self.subTest(length=name, name="Views"):
@@ -602,6 +604,8 @@ mappingproxy(OrderedDict([('the', 0),
                                  ItemsView.__name__ + sorted_items)
                 self.assertEqual(pprint.pformat(MappingView(d), sort_dicts=True),
                                  MappingView.__name__ + sorted_items)
+                self.assertEqual(pprint.pformat(MV(d), sort_dicts=True),
+                                 MV.__name__ + sorted_items)
                 self.assertEqual(pprint.pformat(ValuesView(d), sort_dicts=True),
                                  ValuesView.__name__ + sorted_items)
                 self.assertEqual(pprint.pformat(KeysView(d), sort_dicts=False),
@@ -610,8 +614,19 @@ mappingproxy(OrderedDict([('the', 0),
                                  ItemsView.__name__ + joined_items)
                 self.assertEqual(pprint.pformat(MappingView(d), sort_dicts=False),
                                  MappingView.__name__ + joined_items)
+                self.assertEqual(pprint.pformat(MV(d), sort_dicts=False),
+                                 MV.__name__ + joined_items)
                 self.assertEqual(pprint.pformat(ValuesView(d), sort_dicts=False),
                                  ValuesView.__name__ + joined_items)
+
+    def test_mapping_view_subclass_no_mapping(self):
+        class BMV(MappingView):
+            def __init__(self, d):
+                super().__init__(d)
+                self.mapping = self._mapping
+                del self._mapping
+
+        self.assertRaises(AttributeError, pprint.pformat, BMV({}))
 
     def test_mapping_subclass_repr(self):
         """Test that mapping ABC views use their ._mapping's __repr__."""
