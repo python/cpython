@@ -41,9 +41,6 @@ import sys as _sys
 import types as _types
 from io import StringIO as _StringIO
 
-ABC_VIEW_TYPES = (_collections.abc.KeysView, _collections.abc.ItemsView,
-                  _collections.abc.ValuesView, _collections.abc.MappingView)
-
 __all__ = ["pprint","pformat","isreadable","isrecursive","saferepr",
            "PrettyPrinter", "pp"]
 
@@ -260,26 +257,12 @@ class PrettyPrinter:
         write('])')
 
     def _pprint_mapping_abc_view(self, object, stream, indent, allowance, context, level):
-        """Pretty print views from collections.abc."""
+        """Pretty print mapping views from collections.abc."""
         write = stream.write
-        # Dispatch formatting to the view's _mapping if it has a different __repr__
-        if object._mapping.__class__.__repr__ is not _collections.abc.MappingView.__repr__:
-            write(object.__class__.__name__ + '(')
-            self._format(object._mapping, stream, indent, allowance, context, level)
-            write(')')
-            return
-        write(object.__class__.__name__ + '({')
-        if self._indent_per_level > 1:
-            write((self._indent_per_level - 1) * ' ')
-        length = len(object)
-        if length:
-            if self._sort_dicts:
-                entries = sorted(object._mapping.items(), key=_safe_tuple)
-            else:
-                entries = object._mapping.items()
-            self._format_dict_items(entries, stream, indent, allowance + 1,
-                                    context, level)
-        write('})')
+        write(object.__class__.__name__ + '(')
+        # Dispatch formatting to the view's _mapping
+        self._format(object._mapping, stream, indent, allowance, context, level)
+        write(')')
 
     _dict_keys_view = type({}.keys())
     _dispatch[_dict_keys_view.__repr__] = _pprint_dict_view
@@ -664,14 +647,15 @@ class PrettyPrinter:
             if isinstance(typ, (self._dict_items_view, _collections.abc.ItemsView)):
                 key = _safe_tuple
             format = typ.__name__ + '([%s])'
-            if typ in ABC_VIEW_TYPES:
-                # Dispatch formatting to the view's _mapping if it has a different __repr__
-                if object._mapping.__class__.__repr__ is not _collections.abc.MappingView.__repr__:
-                    mapping_repr, readable, recursive = self.format(
-                        object._mapping, context, maxlevels, level)
-                    return (typ.__name__ + '(%s)' % mapping_repr), readable, recursive
-                format = typ.__name__ + '({%s})'
-                object = object._mapping.items()
+            if hasattr(object, "_mapping"):
+                # Dispatch formatting to the view's _mapping
+                mapping_repr, readable, recursive = self.format(
+                    object._mapping, context, maxlevels, level)
+                return (typ.__name__ + '(%s)' % mapping_repr), readable, recursive
+            elif hasattr(typ, "_mapping"):
+                #  We have a view that somehow has lost its type's _mapping, raise
+                #  an error by calling repr() instead of failing cryptically later
+                return repr(object), True, False
             if self._sort_dicts:
                 object = sorted(object, key=key)
             context[objid] = 1
@@ -681,18 +665,11 @@ class PrettyPrinter:
             append = components.append
             level += 1
             for val in object:
-                krepr = ""
-                kreadable = krecur = False
-                if typ in ABC_VIEW_TYPES:
-                    key, val = val
-                    krepr, kreadable, krecur = self.format(
-                            key, context, maxlevels, level)
-                    krepr = "%s: " % krepr
                 vrepr, vreadable, vrecur = self.format(
                     val, context, maxlevels, level)
-                append("%s%s" % (krepr, vrepr))
-                readable = readable and kreadable and vreadable
-                if krecur or vrecur:
+                append(vrepr)
+                readable = readable and vreadable
+                if vrecur:
                     recursive = True
             del context[objid]
             return format % ", ".join(components), readable, recursive
