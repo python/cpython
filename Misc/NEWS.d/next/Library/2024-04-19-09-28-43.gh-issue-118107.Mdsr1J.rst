@@ -1,2 +1,2 @@
-Fix zipimport reading of ZIP64 files with file entries that are too big or
+Fix :mod:`zipimport` reading of ZIP64 files with file entries that are too big or
 offset too far.
