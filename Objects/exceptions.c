@@ -26,9 +26,9 @@ PyObject *PyExc_EnvironmentError = NULL;  // borrowed ref
 PyObject *PyExc_IOError = NULL;  // borrowed ref
 #ifdef MS_WINDOWS
 PyObject *PyExc_WindowsError = NULL;  // borrowed ref
-#  define getcwd _getcwd
-char *_getcwd(
-   char *buffer,
+// TODO: find correct header file for this
+wchar_t *_wgetcwd(
+   wchar_t *buffer,
    int maxlen
 );
 #endif
@@ -1801,6 +1801,90 @@ oserror_parse_args(PyObject **p_args,
     return 0;
 }
 
+// getcwd() wrapper
+// This returns a string with the working directory. Any errors are
+// suppressed and NULL is returned instead.
+static PyObject *
+getcwd_helper()
+{
+    PyObject * res = NULL;
+
+    size_t cwd_len = 100;
+
+#ifdef MS_WINDOWS
+    // Windows version using wchar_t (UTF-16) encoding
+
+    wchar_t* cwd = NULL;
+
+    while (true) {
+        wchar_t* tmp = realloc(cwd, cwd_len * sizeof *tmp);
+        if (!tmp) {
+            // out of memory
+            break;
+        }
+        cwd = tmp;
+
+        if (_wgetcwd(cwd, cwd_len)) {
+            /* Try to convert to a string. If this fails, it means that
+             * the working dir is just not encoded as UTF-8, which is
+             * unfortunate, but nothing we can change here. */
+            PyObject* py_cwd = PyUnicode_FromWideChar(cwd, -1);
+            if (py_cwd) {
+                res = py_cwd;
+            }
+            break;
+        }
+        // some error happened, check if wgetcwd() just needs more space
+        if (errno != ERANGE) {
+            break;
+        }
+
+        // increase allocation size and try again
+        cwd_len *= 2;
+    }
+    // release temporary storage
+    free(cwd);
+#else
+    // generic version for POSIX systems assuming UTF-8 encoding
+    // TODO: glibc allows calling getcwd() with null parameters,
+    // which then causes it to alloc the necessary amount itself.
+
+    char* cwd = NULL;
+
+    while (true) {
+        char* tmp = realloc(cwd, cwd_len);
+        if (!tmp) {
+            // out of memory
+            break;
+        }
+        cwd = tmp;
+
+        if (getcwd(cwd, cwd_len)) {
+            /* Try to convert to a string. If this fails, it means that
+                * the working dir is just not encoded as UTF-8, which is
+                * unfortunate, but nothing we can change here. */
+            PyObject* py_cwd = PyUnicode_FromString(cwd);
+            if (py_cwd) {
+                res = py_cwd;
+            }
+            break;
+        }
+        // some error happened, check if getcwd() just needs more space
+        if (errno != ERANGE) {
+            break;
+        }
+
+        // increase allocation size and try again
+        cwd_len *= 2;
+    }
+    // release temporary storage
+    free(cwd);
+#endif
+
+
+    return res;
+}
+
 static int
 oserror_init(PyOSErrorObject *self, PyObject **p_args,
              PyObject *myerrno, PyObject *strerror,
@@ -1855,42 +1939,7 @@ oserror_init(PyOSErrorObject *self, PyObject **p_args,
      * form the full path, but it may change before the exception is
      * logged or handled, so we include it as context here. */
     if (self->filename != Py_None) {
-        size_t cwd_len = 100;
-        char* cwd = NULL;
-
-        // fetch exception state in order to restore it later
-        // PyObject *exc = PyErr_GetRaisedException();
-
-        while (true) {
-            char* tmp = realloc(cwd, cwd_len);
-            if (!tmp) {
-                // out of memory
-                break;
-            }
-            cwd = tmp;
-
-            if (getcwd(cwd, cwd_len)) {
-                /* Try to convert to a string. If this fails, it means that
-                 * the working dir is just not encoded as UTF-8, which is
-                 * unfortunate, but nothing we can change here. */
-                PyObject* py_cwd = PyUnicode_FromString(cwd);
-                if (py_cwd) {
-                    self->cwd = py_cwd;
-                }
-                break;
-            }
-            // some error happened, check if getcwd() just needs more space
-            if (errno != ERANGE) {
-                break;
-            }
-
-            // increase allocation size and try again
-            cwd_len *= 2;
-        }
-        free(cwd);
-
-        // restore exception state
-        // PyErr_SetRaisedException(exc);
+        self->cwd = getcwd_helper();
     }
 
     /* Steals the reference to args */
