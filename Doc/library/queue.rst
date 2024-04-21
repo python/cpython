@@ -245,8 +245,10 @@ them down.
    queue is empty. Set *immediate* to true to make :meth:`~Queue.get` raise
    immediately instead.
 
-   All blocked callers of :meth:`~Queue.put` will be unblocked. If *immediate*
-   is true, also unblock callers of :meth:`~Queue.get` and :meth:`~Queue.join`.
+   All blocked callers of :meth:`~Queue.put` and :meth:`~Queue.get` will be
+   unblocked. If *immediate* is true, a task will be marked as done for each
+   remaining item in the queue, which may unblock callers of
+   :meth:`~Queue.join`.
 
    .. versionadded:: 3.13
 
