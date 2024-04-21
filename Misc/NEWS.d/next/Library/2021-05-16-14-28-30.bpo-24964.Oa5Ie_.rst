@@ -1,3 +1,0 @@
-Added :meth:`http.client.HTTPConnection.get_proxy_response_headers` that
-provides access to the HTTP headers on a proxy server response to the
-``CONNECT`` request.

@@ -1,2 +1,0 @@
-Argument Clinic C converters now accept the ``unused`` keyword, for wrapping
-a parameter with :c:macro:`Py_UNUSED`. Patch by Erlend E. Aasland.

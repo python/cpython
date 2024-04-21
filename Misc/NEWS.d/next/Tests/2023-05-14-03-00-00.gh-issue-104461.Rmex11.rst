@@ -1,3 +1,0 @@
-Run test_configure_screen on X11 only, since the ``DISPLAY``
-environment variable and ``-screen`` option for toplevels
-are not useful on Tk for Win32 or Aqua.

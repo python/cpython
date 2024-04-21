@@ -127,9 +127,12 @@ This module defines the following functions:
    Its value may be used to uniquely identify this particular thread system-wide
    (until the thread terminates, after which the value may be recycled by the OS).
 
-   .. availability:: Windows, FreeBSD, Linux, macOS, OpenBSD, NetBSD, AIX, DragonFlyBSD.
+   .. availability:: Windows, FreeBSD, Linux, macOS, OpenBSD, NetBSD, AIX, DragonFlyBSD, GNU/kFreeBSD.
 
    .. versionadded:: 3.8
+
+   .. versionchanged:: 3.13
+      Added support for GNU/kFreeBSD.
 
 
 .. function:: enumerate()
@@ -272,7 +275,7 @@ The instance's values will be different for separate threads.
    A class that represents thread-local data.
 
    For more details and extensive examples, see the documentation string of the
-   :mod:`_threading_local` module: :source:`Lib/_threading_local.py`.
+   :mod:`!_threading_local` module: :source:`Lib/_threading_local.py`.
 
 
 .. _thread-objects:
@@ -285,7 +288,7 @@ thread of control.  There are two ways to specify the activity: by passing a
 callable object to the constructor, or by overriding the :meth:`~Thread.run`
 method in a subclass.  No other methods (except for the constructor) should be
 overridden in a subclass.  In other words, *only*  override the
-:meth:`~Thread.__init__` and :meth:`~Thread.run` methods of this class.
+``__init__()`` and :meth:`~Thread.run` methods of this class.
 
 Once a thread object is created, its activity must be started by calling the
 thread's :meth:`~Thread.start` method.  This invokes the :meth:`~Thread.run`
@@ -337,7 +340,7 @@ since it is impossible to detect the termination of alien threads.
    are:
 
    *group* should be ``None``; reserved for future extension when a
-   :class:`ThreadGroup` class is implemented.
+   :class:`!ThreadGroup` class is implemented.
 
    *target* is the callable object to be invoked by the :meth:`run` method.
    Defaults to ``None``, meaning nothing is called.
@@ -360,11 +363,11 @@ since it is impossible to detect the termination of alien threads.
    base class constructor (``Thread.__init__()``) before doing anything else to
    the thread.
 
+   .. versionchanged:: 3.3
+      Added the *daemon* parameter.
+
    .. versionchanged:: 3.10
       Use the *target* name if *name* argument is omitted.
-
-   .. versionchanged:: 3.3
-      Added the *daemon* argument.
 
    .. method:: start()
 
@@ -531,9 +534,10 @@ All methods are executed atomically.
    lock, subsequent attempts to acquire it block, until it is released; any
    thread may release it.
 
-   Note that ``Lock`` is actually a factory function which returns an instance
-   of the most efficient version of the concrete Lock class that is supported
-   by the platform.
+   .. versionchanged:: 3.13
+      ``Lock`` is now a class. In earlier Pythons, ``Lock`` was a factory
+      function which returned an instance of the underlying private lock
+      type.
 
 
    .. method:: acquire(blocking=True, timeout=-1)
@@ -983,18 +987,15 @@ method.  The :meth:`~Event.wait` method blocks until the flag is true.
 
    .. method:: wait(timeout=None)
 
-      Block until the internal flag is true.  If the internal flag is true on
-      entry, return immediately.  Otherwise, block until another thread calls
-      :meth:`.set` to set the flag to true, or until the optional timeout occurs.
+      Block as long as the internal flag is false and the timeout, if given,
+      has not expired. The return value represents the
+      reason that this blocking method returned; ``True`` if returning because
+      the internal flag is set to true, or ``False`` if a timeout is given and
+      the the internal flag did not become true within the given wait time.
 
       When the timeout argument is present and not ``None``, it should be a
-      floating point number specifying a timeout for the operation in seconds
-      (or fractions thereof).
-
-      This method returns ``True`` if and only if the internal flag has been set to
-      true, either before the wait call or after the wait starts, so it will
-      always return ``True`` except if a timeout is given and the operation
-      times out.
+      floating point number specifying a timeout for the operation in seconds,
+      or fractions thereof.
 
       .. versionchanged:: 3.1
          Previously, the method always returned ``None``.
@@ -1009,7 +1010,7 @@ This class represents an action that should be run only after a certain amount
 of time has passed --- a timer.  :class:`Timer` is a subclass of :class:`Thread`
 and as such also functions as an example of creating custom threads.
 
-Timers are started, as with threads, by calling their :meth:`~Timer.start`
+Timers are started, as with threads, by calling their :meth:`Timer.start <Thread.start>`
 method.  The timer can be stopped (before its action has begun) by calling the
 :meth:`~Timer.cancel` method.  The interval the timer will wait before
 executing its action may not be exactly the same as the interval specified by
@@ -1147,10 +1148,10 @@ As an example, here is a simple way to synchronize a client and server thread::
 Using locks, conditions, and semaphores in the :keyword:`!with` statement
 -------------------------------------------------------------------------
 
-All of the objects provided by this module that have :meth:`acquire` and
-:meth:`release` methods can be used as context managers for a :keyword:`with`
-statement.  The :meth:`acquire` method will be called when the block is
-entered, and :meth:`release` will be called when the block is exited.  Hence,
+All of the objects provided by this module that have ``acquire`` and
+``release`` methods can be used as context managers for a :keyword:`with`
+statement.  The ``acquire`` method will be called when the block is
+entered, and ``release`` will be called when the block is exited.  Hence,
 the following snippet::
 
    with some_lock:

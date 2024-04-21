@@ -166,8 +166,9 @@ class EditorWindow:
             text.bind("<3>",self.right_menu_event)
 
         text.bind('<MouseWheel>', wheel_event)
-        text.bind('<Button-4>', wheel_event)
-        text.bind('<Button-5>', wheel_event)
+        if text._windowingsystem == 'x11':
+            text.bind('<Button-4>', wheel_event)
+            text.bind('<Button-5>', wheel_event)
         text.bind('<Configure>', self.handle_winconfig)
         text.bind("<<cut>>", self.cut)
         text.bind("<<copy>>", self.copy)
@@ -1043,7 +1044,9 @@ class EditorWindow:
     def saved_change_hook(self):
         short = self.short_title()
         long = self.long_title()
-        if short and long:
+        if short and long and not macosx.isCocoaTk():
+            # Don't use both values on macOS because
+            # that doesn't match platform conventions.
             title = short + " - " + long + _py_version
         elif short:
             title = short
@@ -1057,6 +1060,13 @@ class EditorWindow:
             icon = "*%s" % icon
         self.top.wm_title(title)
         self.top.wm_iconname(icon)
+
+        if macosx.isCocoaTk():
+            # Add a proxy icon to the window title
+            self.top.wm_attributes("-titlepath", long)
+
+            # Maintain the modification status for the window
+            self.top.wm_attributes("-modified", not self.get_saved())
 
     def get_saved(self):
         return self.undo.get_saved()
@@ -1571,7 +1581,7 @@ class EditorWindow:
     # blocks are found).
 
     def guess_indent(self):
-        opener, indented = IndentSearcher(self.text, self.tabwidth).run()
+        opener, indented = IndentSearcher(self.text).run()
         if opener and indented:
             raw, indentsmall = get_line_indent(opener, self.tabwidth)
             raw, indentlarge = get_line_indent(indented, self.tabwidth)
@@ -1609,15 +1619,10 @@ def get_line_indent(line, tabwidth):
 
 
 class IndentSearcher:
+    "Manage initial indent guess, returned by run method."
 
-    # .run() chews over the Text widget, looking for a block opener
-    # and the stmt following it.  Returns a pair,
-    #     (line containing block opener, line containing stmt)
-    # Either or both may be None.
-
-    def __init__(self, text, tabwidth):
+    def __init__(self, text):
         self.text = text
-        self.tabwidth = tabwidth
         self.i = self.finished = 0
         self.blkopenline = self.indentedline = None
 
@@ -1633,7 +1638,8 @@ class IndentSearcher:
     def tokeneater(self, type, token, start, end, line,
                    INDENT=tokenize.INDENT,
                    NAME=tokenize.NAME,
-                   OPENERS=('class', 'def', 'for', 'if', 'try', 'while')):
+                   OPENERS=('class', 'def', 'for', 'if', 'match', 'try',
+                            'while', 'with')):
         if self.finished:
             pass
         elif type == NAME and token in OPENERS:
@@ -1643,22 +1649,21 @@ class IndentSearcher:
             self.finished = 1
 
     def run(self):
-        save_tabsize = tokenize.tabsize
-        tokenize.tabsize = self.tabwidth
+        """Return 2 lines containing block opener and and indent.
+
+        Either the indent line or both may be None.
+        """
         try:
-            try:
-                tokens = tokenize.generate_tokens(self.readline)
-                for token in tokens:
-                    self.tokeneater(*token)
-            except (tokenize.TokenError, SyntaxError):
-                # since we cut off the tokenizer early, we can trigger
-                # spurious errors
-                pass
-        finally:
-            tokenize.tabsize = save_tabsize
+            tokens = tokenize.generate_tokens(self.readline)
+            for token in tokens:
+                self.tokeneater(*token)
+        except (tokenize.TokenError, SyntaxError):
+            # Stopping the tokenizer early can trigger spurious errors.
+            pass
         return self.blkopenline, self.indentedline
 
 ### end autoindent code ###
+
 
 def prepstr(s):
     """Extract the underscore from a string.
@@ -1752,6 +1757,7 @@ def _editor_window(parent):  # htest #
     # text.bind("<<close-all-windows>>", edit.close_event)
     # Does not stop error, neither does following
     # edit.text.bind("<<close-window>>", edit.close_event)
+
 
 if __name__ == '__main__':
     from unittest import main

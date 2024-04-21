@@ -5,7 +5,9 @@
 #endif
 
 #include "Python.h"
-#include "internal/pycore_interp.h"
+#include "pycore_interp.h"
+#include "pycore_pystate.h"       // _PyInterpreterState_GET()
+#include "pycore_typevarobject.h"
 #include "clinic/_typingmodule.c.h"
 
 /*[clinic input]
@@ -38,12 +40,12 @@ static PyMethodDef typing_methods[] = {
 };
 
 PyDoc_STRVAR(typing_doc,
-"Accelerators for the typing module.\n");
+"Primitives and accelerators for the typing module.\n");
 
 static int
 _typing_exec(PyObject *m)
 {
-    PyInterpreterState *interp = PyInterpreterState_Get();
+    PyInterpreterState *interp = _PyInterpreterState_GET();
 
 #define EXPORT_TYPE(name, typename) \
     if (PyModule_AddObjectRef(m, name, \
@@ -56,9 +58,11 @@ _typing_exec(PyObject *m)
     EXPORT_TYPE("ParamSpec", paramspec_type);
     EXPORT_TYPE("ParamSpecArgs", paramspecargs_type);
     EXPORT_TYPE("ParamSpecKwargs", paramspeckwargs_type);
-    EXPORT_TYPE("TypeAliasType", typealias_type);
     EXPORT_TYPE("Generic", generic_type);
 #undef EXPORT_TYPE
+    if (PyModule_AddObjectRef(m, "TypeAliasType", (PyObject *)&_PyTypeAlias_Type) < 0) {
+        return -1;
+    }
     return 0;
 }
 

@@ -62,7 +62,11 @@
           pass
    */
 
-#define Py_LIMITED_API 0x030b0000
+// Need limited C API version 3.12 for Py_MOD_PER_INTERPRETER_GIL_SUPPORTED
+#include "pyconfig.h"   // Py_GIL_DISABLED
+#ifndef Py_GIL_DISABLED
+#  define Py_LIMITED_API 0x030c0000
+#endif
 
 #include "Python.h"
 #include <string.h>
