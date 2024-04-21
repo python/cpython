@@ -619,6 +619,23 @@ mappingproxy(OrderedDict([('the', 0),
                 self.assertEqual(pprint.pformat(ValuesView(d), sort_dicts=False),
                                  ValuesView.__name__ + joined_items)
 
+    def test_nested_views(self):
+        d = {1: MappingView({1: MappingView({1: MappingView({1: 2})})})}
+        self.assertEqual(repr(d),
+                         "{1: MappingView({1: MappingView({1: MappingView({1: 2})})})}")
+        self.assertEqual(pprint.pformat(d),
+                         "{1: MappingView({1: MappingView({1: MappingView({1: 2})})})}")
+        self.assertEqual(pprint.pformat(d, depth=2),
+                         "{1: MappingView({1: {...}})}")
+        d = {}
+        d1 = {1: d.values()}
+        d2 = {1: d1.values()}
+        d3 = {1: d2.values()}
+        self.assertEqual(pprint.pformat(d3),
+                         "{1: dict_values([dict_values([dict_values([])])])}")
+        self.assertEqual(pprint.pformat(d3, depth=2),
+                         "{1: dict_values([{...}])}")
+
     def test_mapping_view_subclass_no_mapping(self):
         class BMV(MappingView):
             def __init__(self, d):
