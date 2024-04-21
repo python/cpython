@@ -990,34 +990,10 @@ new_date_capi(int year, int month, int day, PyTypeObject *type)
     return _new_date(year, month, day, type);
 }
 
-// Forward declaration
-static inline PyObject *
-new_datetime_nofold(int, int, int, int, int, int, int, PyObject *, PyTypeObject *);
-
-/* Create date instance with no range checking, or call subclass constructor */
-static inline PyObject *
-new_date_subclass(int year, int month, int day, PyObject *cls)
-{
-    PyObject *result;
-    // We have "fast path" constructors for two subclasses: date and datetime
-    if ((PyTypeObject *)cls == &PyDateTime_DateType) {
-        result = _new_date(year, month, day, (PyTypeObject *)cls);
-    }
-    else if ((PyTypeObject *)cls == &PyDateTime_DateTimeType) {
-        result = new_datetime_nofold(year, month, day, 0, 0, 0, 0, Py_None,
-                                     (PyTypeObject *)cls);
-    }
-    else {
-        result = PyObject_CallFunction(cls, "iii", year, month, day);
-    }
-
-    return result;
-}
-
 /* Create a datetime instance with no range checking. */
 static inline PyObject *
-_new_datetime(int year, int month, int day, int hour, int minute,
-                 int second, int usecond, PyObject *tzinfo, int fold, PyTypeObject *type)
+_new_datetime(int year, int month, int day, int hour, int minute, int second,
+              int usecond, PyObject *tzinfo, int fold, PyTypeObject *type)
 {
     PyDateTime_DateTime *self;
     char aware = tzinfo != Py_None;
@@ -1048,13 +1024,24 @@ _new_datetime(int year, int month, int day, int hour, int minute,
     return (PyObject *)self;
 }
 
+/* Create date instance with no range checking, or call subclass constructor */
 static inline PyObject *
-new_datetime_nofold(int year, int month, int day, int hour, int minute,
-                    int second, int usecond, PyObject *tzinfo,
-                    PyTypeObject *type)
+new_date_subclass(int year, int month, int day, PyObject *cls)
 {
-    return _new_datetime(year, month, day, hour, minute, second,
-                         usecond, tzinfo, 0, type);
+    PyObject *result;
+    // We have "fast path" constructors for two subclasses: date and datetime
+    if ((PyTypeObject *)cls == &PyDateTime_DateType) {
+        result = _new_date(year, month, day, (PyTypeObject *)cls);
+    }
+    else if ((PyTypeObject *)cls == &PyDateTime_DateTimeType) {
+        result = _new_datetime(year, month, day, 0, 0, 0, 0, Py_None, 0,
+                               (PyTypeObject *)cls);
+    }
+    else {
+        result = PyObject_CallFunction(cls, "iii", year, month, day);
+    }
+
+    return result;
 }
 
 static PyObject *
@@ -1062,8 +1049,8 @@ new_datetime_nofold_capi(int year, int month, int day, int hour, int minute,
                          int second, int usecond, PyObject *tzinfo,
                          PyTypeObject *type)
 {
-    return new_datetime_nofold(year, month, day, hour, minute, second,
-                               usecond, tzinfo, type);
+    return _new_datetime(year, month, day, hour, minute, second,
+                         usecond, tzinfo, 0, type);
 }
 
 static PyObject *
