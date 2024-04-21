@@ -1,0 +1,1 @@
+Added the *dir_fd* & *follow_symlinks* parameters to :func:`shutil.chown`.
