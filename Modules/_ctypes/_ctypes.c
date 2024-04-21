@@ -451,23 +451,44 @@ class _ctypes.CType_Type "PyObject *" "clinic_state()->CType_Type"
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=8389fc5b74a84f2a]*/
 
+
+static PyType_Spec pyctype_type_spec;
+
+
+static inline int
+PyStgInfo_FromSpec(PyObject *type, StgInfo **result)
+{
+    *result = NULL;
+    PyTypeObject *PyCType_Type = _PyType_GetBaseBySpec(Py_TYPE(type),
+                                                       &pyctype_type_spec);
+    if (PyCType_Type == NULL) {
+        // not a ctypes class.
+        return -1;
+    }
+    StgInfo *info = PyObject_GetTypeData(type, PyCType_Type);
+    assert(info != NULL);
+    if (!info->initialized) {
+        // StgInfo is not initialized. This happens in abstract classes.
+        return 0;
+    }
+    *result = info;
+    return 1;
+}
+
 static int
 CType_Type_traverse(PyObject *self, visitproc visit, void *arg)
 {
-    ctypes_state *st = get_module_state_by_def_final(Py_TYPE(self));
-    if (st && st->PyCType_Type) {
-        StgInfo *info;
-        if (PyStgInfo_FromType(st, self, &info) < 0) {
-            PyErr_WriteUnraisable(self);
-        }
-        if (info) {
-            Py_VISIT(info->proto);
-            Py_VISIT(info->argtypes);
-            Py_VISIT(info->converters);
-            Py_VISIT(info->restype);
-            Py_VISIT(info->checker);
-            Py_VISIT(info->module);
-        }
+    StgInfo *info;
+    if (PyStgInfo_FromSpec(self, &info) < 0) {
+        PyErr_WriteUnraisable(self);
+    }
+    if (info) {
+        Py_VISIT(info->proto);
+        Py_VISIT(info->argtypes);
+        Py_VISIT(info->converters);
+        Py_VISIT(info->restype);
+        Py_VISIT(info->checker);
+        Py_VISIT(info->module);
     }
     Py_VISIT(Py_TYPE(self));
     return PyType_Type.tp_traverse(self, visit, arg);
@@ -488,15 +509,12 @@ ctype_clear_stginfo(StgInfo *info)
 static int
 CType_Type_clear(PyObject *self)
 {
-    ctypes_state *st = get_module_state_by_def_final(Py_TYPE(self));
-    if (st && st->PyCType_Type) {
-        StgInfo *info;
-        if (PyStgInfo_FromType(st, self, &info) < 0) {
-            PyErr_WriteUnraisable(self);
-        }
-        if (info) {
-            ctype_clear_stginfo(info);
-        }
+    StgInfo *info;
+    if (PyStgInfo_FromSpec(self, &info) < 0) {
+        PyErr_WriteUnraisable(self);
+    }
+    if (info) {
+        ctype_clear_stginfo(info);
     }
     return PyType_Type.tp_clear(self);
 }
@@ -504,21 +522,18 @@ CType_Type_clear(PyObject *self)
 static void
 CType_Type_dealloc(PyObject *self)
 {
-    ctypes_state *st = get_module_state_by_def_final(Py_TYPE(self));
-    if (st && st->PyCType_Type) {
-        StgInfo *info;
-        if (PyStgInfo_FromType(st, self, &info) < 0) {
-            PyErr_WriteUnraisable(self);
-        }
-        if (info) {
-            PyMem_Free(info->ffi_type_pointer.elements);
-            info->ffi_type_pointer.elements = NULL;
-            PyMem_Free(info->format);
-            info->format = NULL;
-            PyMem_Free(info->shape);
-            info->shape = NULL;
-            ctype_clear_stginfo(info);
-        }
+    StgInfo *info;
+    if (PyStgInfo_FromSpec(self, &info) < 0) {
+        PyErr_WriteUnraisable(self);
+    }
+    if (info) {
+        PyMem_Free(info->ffi_type_pointer.elements);
+        info->ffi_type_pointer.elements = NULL;
+        PyMem_Free(info->format);
+        info->format = NULL;
+        PyMem_Free(info->shape);
+        info->shape = NULL;
+        ctype_clear_stginfo(info);
     }
     PyTypeObject *tp = Py_TYPE(self);
     PyType_Type.tp_dealloc(self);
@@ -574,6 +589,7 @@ static PyType_Slot ctype_type_slots[] = {
     {Py_tp_methods, ctype_methods},
     // Sequence protocol.
     {Py_sq_repeat, CType_Type_repeat},
+    {Py_id_static_spec, &pyctype_type_spec},
     {0, NULL},
 };
 
