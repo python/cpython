@@ -39,7 +39,7 @@ they can also be more complex. The :mod:`typing` module provides a vocabulary of
 more advanced type hints.
 
 New features are frequently added to the ``typing`` module.
-The `typing_extensions <https://pypi.org/project/typing-extensions/>`_ package
+The :pypi:`typing_extensions` package
 provides backports of these new features to older versions of Python.
 
 .. seealso::
@@ -3024,7 +3024,9 @@ Introspection helpers
 
    This is often the same as ``obj.__annotations__``. In addition,
    forward references encoded as string literals are handled by evaluating
-   them in ``globals`` and ``locals`` namespaces. For a class ``C``, return
+   them in ``globals``, ``locals`` and (where applicable)
+   :ref:`type parameter <type-params>` namespaces.
+   For a class ``C``, return
    a dictionary constructed by merging all the ``__annotations__`` along
    ``C.__mro__`` in reverse order.
 

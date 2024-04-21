@@ -33,4 +33,5 @@ Currently, the HOWTOs are:
    annotations.rst
    isolating-extensions.rst
    timerfd.rst
+   mro.rst
 

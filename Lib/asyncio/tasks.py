@@ -255,6 +255,8 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
         """
         if self._num_cancels_requested > 0:
             self._num_cancels_requested -= 1
+            if self._num_cancels_requested == 0:
+                self._must_cancel = False
         return self._num_cancels_requested
 
     def __eager_start(self):
