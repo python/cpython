@@ -25,7 +25,7 @@ jobs:
       uses: actions/cache@v4
       with:
         path: config.cache
-        key: ${{ github.job }}-${{ runner.os }}-${{ env.IMAGE_VERSION }}-${{ inputs.config_hash }}
+        key: ${{ github.job }}-${{ runner.os }}-${{ env.IMAGE_VERSION }}-${{ inputs.config_hash }}-${{ env.pythonLocation }}
     - name: Install Dependencies
       run: |
         sudo ./.github/workflows/posix-deps-apt.sh
