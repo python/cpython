@@ -127,6 +127,22 @@ Incremental Garbage Collection
   This means that maximum pause times are reduced
   by an order of magnitude or more for larger heaps.
 
+Support For Mobile Platforms
+----------------------------
+
+* iOS is now a :pep:`11` supported platform. ``arm64-apple-ios``
+  (iPhone and iPad devices released after 2013) and
+  ``arm64-apple-ios-simulator`` (Xcode iOS simulator running on Apple Silicon
+  hardware) are now tier 3 platforms.
+
+  ``x86_64-apple-ios-simulator`` (Xcode iOS simulator running on older x86_64
+  hardware) is not a tier 3 supported platform, but will be supported on a
+  best-effort basis.
+
+  See :pep:`730`: for more details.
+
+  (PEP written and implementation contributed by Russell Keith-Magee in
+  :gh:`114099`.)
 
 Other Language Changes
 ======================
@@ -189,6 +205,11 @@ Other Language Changes
   * :func:`os.forkpty`.
 
   (Contributed by Victor Stinner in :gh:`114570`.)
+
+* Added :attr:`!name` and :attr:`!mode` attributes for compressed
+  and archived file-like objects in modules :mod:`bz2`, :mod:`lzma`,
+  :mod:`tarfile` and :mod:`zipfile`.
+  (Contributed by Serhiy Storchaka in :gh:`115961`.)
 
 * Allow controlling Expat >=2.6.0 reparse deferral (:cve:`2023-52425`)
   by adding five new methods:
@@ -1588,6 +1609,12 @@ Changes in the Python API
   files and directories if a pattern that ends with "``**``" is given, rather
   than directories only. Users may add a trailing slash to match only
   directories.
+
+* The value of the :attr:`!mode` attribute of :class:`gzip.GzipFile` was
+  changed from integer (``1`` or ``2``) to string (``'rb'`` or ``'wb'``).
+  The value of the :attr:`!mode` attribute of the readable file-like object
+  returned by :meth:`zipfile.ZipFile.open` was changed from ``'r'`` to ``'rb'``.
+  (Contributed by Serhiy Storchaka in :gh:`115961`.)
 
 * :c:func:`!PyCode_GetFirstFree` is an unstable API now and has been renamed
   to :c:func:`PyUnstable_Code_GetFirstFree`.
