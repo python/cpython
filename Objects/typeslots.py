@@ -30,6 +30,8 @@ def generate_typeslots(out=sys.stdout):
         elif member.startswith("bf_"):
             member = (f'{{offsetof(PyBufferProcs, {member}),'+
                       ' offsetof(PyTypeObject, tp_as_buffer)}')
+        elif member == "id_static_spec":
+            member = '{-1, Py_id_static_spec}'
         res[int(m.group(2))] = member
 
     M = max(res.keys())+1

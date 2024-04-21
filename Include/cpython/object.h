@@ -271,6 +271,7 @@ typedef struct _heaptypeobject {
     char *_ht_tpname;  // Storage for "tp_name"; see PyType_FromModuleAndSpec
     struct _specialization_cache _spec_cache; // For use by the specializer.
     /* here are optional user slots, followed by the members. */
+    PyType_Spec *ht_static_spec;
 } PyHeapTypeObject;
 
 PyAPI_FUNC(const char *) _PyType_Name(PyTypeObject *);

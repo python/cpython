@@ -3587,6 +3587,7 @@ type_new_alloc(type_new_ctx *ctx)
     et->ht_name = Py_NewRef(ctx->name);
     et->ht_module = NULL;
     et->_ht_tpname = NULL;
+    et->ht_static_spec = NULL;
 
     _PyObject_SetDeferredRefcount((PyObject *)et);
 
@@ -4613,11 +4614,23 @@ _PyType_FromMetaclass_impl(
                 }
             }
             break;
+        case Py_id_static_spec:
+            {
+                if (slot->pfunc && slot->pfunc != spec) {
+                    PyErr_Format(PyExc_TypeError,
+                                 "Py_id_static_spec slot does not match "
+                                 "the type spec of '%s'", type->tp_name);
+                    goto finally;
+                }
+                res->ht_static_spec = (PyType_Spec *)slot->pfunc;
+            }
+            break;
         default:
             {
                 /* Copy other slots directly */
                 PySlot_Offset slotoffsets = pyslot_offsets[slot->slot];
                 short slot_offset = slotoffsets.slot_offset;
+                assert(slot_offset != Py_id_static_spec);
                 if (slotoffsets.subslot_offset == -1) {
                     /* Set a slot in the main PyTypeObject */
                     *(void**)((char*)res_start + slot_offset) = slot->pfunc;
@@ -4773,6 +4786,9 @@ PyType_GetSlot(PyTypeObject *type, int slot)
 
     if (slot <= 0 || slot >= slots_len) {
         PyErr_BadInternalCall();
+        return NULL;
+    }
+    if (slot == Py_id_static_spec) {
         return NULL;
     }
 
@@ -5474,6 +5490,7 @@ type_dealloc(PyObject *self)
     }
     Py_XDECREF(et->ht_module);
     PyMem_Free(et->_ht_tpname);
+    et->ht_static_spec = NULL;
     Py_TYPE(type)->tp_free((PyObject *)type);
 }
 

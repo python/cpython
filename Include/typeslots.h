@@ -86,3 +86,7 @@
 /* New in 3.10 */
 #define Py_am_send 81
 #endif
+#if !defined(Py_LIMITED_API)
+/* New in 3.13 */
+#define Py_id_static_spec 82
+#endif
