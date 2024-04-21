@@ -1493,7 +1493,7 @@ class WriteTest(WriteTestBase, unittest.TestCase):
             tar = tarfile.open(tmpname, "r")
             try:
                 for t in tar:
-                    # bpo-35964: "." is now excluded from tarfiles
+                    # gh-80145: "." is now excluded from tarfiles
                     self.assertNotEqual(t.name, os.curdir)
                     self.assertTrue(t.name.startswith("./"), t.name)
             finally:
