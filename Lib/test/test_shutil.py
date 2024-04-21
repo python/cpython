@@ -2107,6 +2107,7 @@ class TestMisc(BaseTest, unittest.TestCase):
     def test_chown(self):
         dirname = self.mkdtemp()
         filename = tempfile.mktemp(dir=dirname)
+        dirfd = os.open(dirname, os.O_RDONLY)
         write_file(filename, 'testing chown function')
 
         with self.assertRaises(ValueError):
@@ -2128,7 +2129,7 @@ class TestMisc(BaseTest, unittest.TestCase):
         gid = os.getgid()
 
         def check_chown(path, uid=None, gid=None):
-            s = os.stat(filename)
+            s = os.stat(path)
             if uid is not None:
                 self.assertEqual(uid, s.st_uid)
             if gid is not None:
@@ -2142,6 +2143,17 @@ class TestMisc(BaseTest, unittest.TestCase):
         check_chown(filename, uid)
         shutil.chown(filename, group=gid)
         check_chown(filename, gid=gid)
+        shutil.chown(os.path.basename(filename), dir_fd=dirfd)
+        check_chown(filename, gid=gid)
+        shutil.chown(os.path.basename(filename), user=uid, dir_fd=dirfd)
+        check_chown(filename, gid=gid)
+        shutil.chown(os.path.basename(filename), group=gid, dir_fd=dirfd)
+        check_chown(filename, gid=gid)
+
+        with self.assertRaises(FileNotFoundError):
+            shutil.chown('invalid-file', user=uid, dir_fd=dirfd)
+            shutil.chown('invalid-file', group=gid, dir_fd=dirfd)
+            shutil.chown('invalid-file', user=uid, group=gid, dir_fd=dirfd)
 
         shutil.chown(dirname, uid, gid)
         check_chown(dirname, uid, gid)
@@ -2149,8 +2161,14 @@ class TestMisc(BaseTest, unittest.TestCase):
         check_chown(dirname, uid)
         shutil.chown(dirname, user=uid)
         check_chown(dirname, uid)
+        shutil.chown(dirname, user=uid, follow_symlinks=True)
+        check_chown(dirname, uid)
         shutil.chown(dirname, group=gid)
         check_chown(dirname, gid=gid)
+        shutil.chown(dirname, group=gid, follow_symlinks=True)
+        check_chown(dirname, gid=gid)
+        shutil.chown(dirname, user=uid, group=gid, follow_symlinks=True)
+        check_chown(dirname, uid=uid, gid=gid)
 
         try:
             user = pwd.getpwuid(uid)[0]

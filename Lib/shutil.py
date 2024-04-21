@@ -1442,11 +1442,19 @@ elif _WINDOWS:
         return _ntuple_diskusage(total, used, free)
 
 
-def chown(path, user=None, group=None):
+def chown(path, user=None, group=None, *, dir_fd=None, follow_symlinks=True):
     """Change owner user and group of the given path.
 
     user and group can be the uid/gid or the user/group names, and in that case,
     they are converted to their respective uid/gid.
+
+    If dir_fd is not None, it should be a file descriptor open to a directory;
+    path will then be relative to that directory.
+    dir_fd may not be implemented on your platform.
+    If it is unavailable, using it will raise a NotImplementedError.
+
+    If follow_symlinks is not set and path is a symbolic link, the owner of the
+    symlink will be changed instead of the file it points to.
     """
     sys.audit('shutil.chown', path, user, group)
 
@@ -1472,7 +1480,8 @@ def chown(path, user=None, group=None):
         if _group is None:
             raise LookupError("no such group: {!r}".format(group))
 
-    os.chown(path, _user, _group)
+    os.chown(path, _user, _group, dir_fd=dir_fd,
+             follow_symlinks=follow_symlinks)
 
 def get_terminal_size(fallback=(80, 24)):
     """Get the size of the terminal window.
