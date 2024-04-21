@@ -127,6 +127,22 @@ Incremental Garbage Collection
   This means that maximum pause times are reduced
   by an order of magnitude or more for larger heaps.
 
+Support For Mobile Platforms
+----------------------------
+
+* iOS is now a :pep:`11` supported platform. ``arm64-apple-ios``
+  (iPhone and iPad devices released after 2013) and
+  ``arm64-apple-ios-simulator`` (Xcode iOS simulator running on Apple Silicon
+  hardware) are now tier 3 platforms.
+
+  ``x86_64-apple-ios-simulator`` (Xcode iOS simulator running on older x86_64
+  hardware) is not a tier 3 supported platform, but will be supported on a
+  best-effort basis.
+
+  See :pep:`730`: for more details.
+
+  (PEP written and implementation contributed by Russell Keith-Magee in
+  :gh:`114099`.)
 
 Other Language Changes
 ======================
