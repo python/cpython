@@ -43,11 +43,11 @@ lots of shared  sub-objects.  The keys are ordinary strings.
 
    By default, :mod:`shelve` uses :func:`pickle.dumps` and :func:`pickle.loads`
    for serializing and deserializing. However *deserializer* can be the function
-   that takes the :term:`bytes-like object` and returns the object. *serializer*
-   can be the function that takes the object and returns :class:`bytes`. For example,
-   :keyword:`lambda`, which the :mod:`pickle` does not support, can be used in
-   :mod:`shelve` using the serializer and deserializer functions, which do support
-   the :keyword:`lambda`.
+   that takes the :term:`bytes-like object` and the *protocol* parameter and returns
+   the object. *serializer* can be the function that takes the object and returns
+   :class:`bytes`. For example, :keyword:`lambda`, which the :mod:`pickle` does not
+   support, can be used in :mod:`shelve` using the serializer and deserializer
+   functions, which do support the :keyword:`lambda`.
 
    .. versionchanged:: 3.10
       :const:`pickle.DEFAULT_PROTOCOL` is now used as the default pickle
@@ -57,7 +57,7 @@ lots of shared  sub-objects.  The keys are ordinary strings.
       Accepts :term:`path-like object` for filename.
 
    .. versionchanged:: 3.13
-      Accepts *serializer* and *deserializer*.
+      Accepts *serializer* and *deserializer* as parameters.
 
    .. note::
 
@@ -128,7 +128,7 @@ Restrictions
   which can cause hard crashes when trying to read from the database.
 
 
-.. class:: Shelf(dict, protocol=None, writeback=False, keyencoding='utf-8')
+.. class:: Shelf(dict, protocol=None, writeback=False, keyencoding='utf-8', serializer=None, deserializer=None)
 
    A subclass of :class:`collections.abc.MutableMapping` which stores pickled
    values in the *dict* object.
@@ -146,6 +146,11 @@ Restrictions
    The *keyencoding* parameter is the encoding used to encode keys before they
    are used with the underlying dict.
 
+   The *deserializer* parameter can be the function that takes the
+   :term:`bytes-like object` and the *protocol* parameter and returns the
+   object. *serializer* parameter can be the function that takes the object
+   and returns :class:`bytes`.
+
    A :class:`Shelf` object can also be used as a context manager, in which
    case it will be automatically closed when the :keyword:`with` block ends.
 
@@ -160,6 +165,8 @@ Restrictions
       :const:`pickle.DEFAULT_PROTOCOL` is now used as the default pickle
       protocol.
 
+   .. versionchanged:: 3.13
+      Accepts *serializer* and *deserializer* as parameters.
 
 .. class:: BsdDbShelf(dict, protocol=None, writeback=False, keyencoding='utf-8', serializer=None, deserializer=None)
 
@@ -171,8 +178,8 @@ Restrictions
    modules.  The *dict* object passed to the constructor must support those
    methods.  This is generally accomplished by calling one of
    :func:`!bsddb.hashopen`, :func:`!bsddb.btopen` or :func:`!bsddb.rnopen`.  The
-   optional *protocol*, *writeback*, and *keyencoding* parameters have the same
-   interpretation as for the :class:`Shelf` class.
+   optional *protocol*, *writeback*, *keyencoding*, *serializer* and *deserializer*
+   parameters have the same interpretation as for the :class:`Shelf` class.
 
 
 .. class:: DbfilenameShelf(filename, flag='c', protocol=None, writeback=False, serializer=None, deserializer=None)
@@ -181,8 +188,8 @@ Restrictions
    object.  The underlying file will be opened using :func:`dbm.open`.  By
    default, the file will be created and opened for both read and write.  The
    optional *flag* parameter has the same interpretation as for the :func:`.open`
-   function.  The optional *protocol* and *writeback* parameters have the same
-   interpretation as for the :class:`Shelf` class.
+   function.  The optional *protocol*, *writeback*, *serializer* and *deserializer*
+   parameters have the same interpretation as for the :class:`Shelf` class.
 
 
 .. _shelve-example:
