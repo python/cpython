@@ -2,7 +2,7 @@
 /* set object implementation
 
    Written and maintained by Raymond D. Hettinger <python@rcn.com>
-   Derived from Lib/sets.py and Objects/dictobject.c.
+   Derived from Objects/dictobject.c.
 
    The basic lookup function used by all operations.
    This is based on Algorithm D from Knuth Vol. 3, Sec. 6.4.
@@ -2080,7 +2080,6 @@ set_issuperset_impl(PySetObject *so, PyObject *other)
     Py_RETURN_TRUE;
 }
 
-// TODO: Make thread-safe in free-threaded builds
 static PyObject *
 set_richcompare(PySetObject *v, PyObject *w, int op)
 {
