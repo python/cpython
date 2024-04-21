@@ -1360,7 +1360,7 @@ _steal_accumulate(_PyUnicodeWriter *writer, PyObject *stolen)
 PyObject* _create_newline_indent(PyObject* indent, Py_ssize_t indent_level)
 {
     PyObject* newline_indent = NULL;
-   
+ 
     PyObject* _current_indent = PySequence_Repeat(indent, indent_level);
     if (_current_indent == NULL) {
         goto end;
