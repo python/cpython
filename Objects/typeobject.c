@@ -4883,6 +4883,47 @@ PyType_GetModuleByDef(PyTypeObject *type, PyModuleDef *def)
     return res;
 }
 
+static PyTypeObject *
+get_base_by_spec(PyTypeObject *type, PyType_Spec *spec)
+{
+    PyObject *bases = type->tp_bases;
+    Py_ssize_t n = PyTuple_GET_SIZE(bases);
+    for (Py_ssize_t i = 0; i < n; i++) {
+        PyTypeObject *base = (PyTypeObject *)PyTuple_GET_ITEM(bases, i);
+        if (!_PyType_HasFeature(base, Py_TPFLAGS_HEAPTYPE)) {
+            continue;
+        }
+        PyType_Spec *base_spec = ((PyHeapTypeObject*)base)->ht_static_spec;
+        if (base_spec && base_spec == spec) {
+            return base;
+        }
+        base = get_base_by_spec(base, spec);
+        if (base) {
+            return base;
+        }
+    }
+    return NULL;
+}
+
+PyTypeObject *
+_PyType_GetBaseBySpec(PyTypeObject *type, PyType_Spec *spec)
+{
+    assert(spec);
+    assert(PyType_Check(type));
+
+    BEGIN_TYPE_LOCK()
+    PyTypeObject *res = get_base_by_spec(type, spec);
+    END_TYPE_LOCK()
+
+    if (res == NULL) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "PyType_GetBaseBySpec: No superclass of '%s' has the given spec",
+            type->tp_name);
+    }
+    return res;
+}
+
 void *
 PyObject_GetTypeData(PyObject *obj, PyTypeObject *cls)
 {
