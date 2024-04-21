@@ -636,6 +636,10 @@ class _FileInFile(object):
     def flush(self):
         pass
 
+    @property
+    def mode(self):
+        return 'rb'
+
     def readable(self):
         return True
 
