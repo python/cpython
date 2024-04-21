@@ -2488,12 +2488,27 @@ class Wrapper:
         self.func(*args, **kwargs)
 
 @Wrapper
-def test_look_in_unwrapped():
+def wrapped():
     """
     Docstrings in wrapped functions must be detected as well.
 
     >>> 'one other test'
     'one other test'
+    """
+
+def test_look_in_unwrapped():
+    """
+    Ensure that wrapped doctests work correctly.
+
+    >>> import doctest
+    >>> doctest.run_docstring_examples(
+    ...     wrapped, {}, name=wrapped.__name__, verbose=True)
+    Finding tests in wrapped
+    Trying:
+        'one other test'
+    Expecting:
+        'one other test'
+    ok
     """
 
 if support.check_impl_detail(cpython=True):
