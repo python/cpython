@@ -963,8 +963,8 @@ parse_isoformat_time(const char *dtstr, size_t dtlen, int *hour, int *minute,
  */
 
 /* Create a date instance with no range checking. */
-static PyObject *
-new_date_ex(int year, int month, int day, PyTypeObject *type)
+static inline PyObject *
+_new_date(int year, int month, int day, PyTypeObject *type)
 {
     PyDateTime_Date *self;
 
@@ -978,31 +978,34 @@ new_date_ex(int year, int month, int day, PyTypeObject *type)
     return (PyObject *)self;
 }
 
-#define new_date(year, month, day) \
-    new_date_ex(year, month, day, &PyDateTime_DateType)
+static inline PyObject *
+new_date(int year, int month, int day)
+{
+    return _new_date(year, month, day, &PyDateTime_DateType);
+}
 
 static PyObject *
 new_date_capi(int year, int month, int day, PyTypeObject *type)
 {
-    return new_date_ex(year, month, day, type);
+    return _new_date(year, month, day, type);
 }
 
 // Forward declaration
-static PyObject *
-new_datetime_ex(int, int, int, int, int, int, int, PyObject *, PyTypeObject *);
+static inline PyObject *
+new_datetime_nofold(int, int, int, int, int, int, int, PyObject *, PyTypeObject *);
 
 /* Create date instance with no range checking, or call subclass constructor */
-static PyObject *
-new_date_subclass_ex(int year, int month, int day, PyObject *cls)
+static inline PyObject *
+new_date_subclass(int year, int month, int day, PyObject *cls)
 {
     PyObject *result;
     // We have "fast path" constructors for two subclasses: date and datetime
     if ((PyTypeObject *)cls == &PyDateTime_DateType) {
-        result = new_date_ex(year, month, day, (PyTypeObject *)cls);
+        result = _new_date(year, month, day, (PyTypeObject *)cls);
     }
     else if ((PyTypeObject *)cls == &PyDateTime_DateTimeType) {
-        result = new_datetime_ex(year, month, day, 0, 0, 0, 0, Py_None,
-                                 (PyTypeObject *)cls);
+        result = new_datetime_nofold(year, month, day, 0, 0, 0, 0, Py_None,
+                                     (PyTypeObject *)cls);
     }
     else {
         result = PyObject_CallFunction(cls, "iii", year, month, day);
@@ -1012,8 +1015,8 @@ new_date_subclass_ex(int year, int month, int day, PyObject *cls)
 }
 
 /* Create a datetime instance with no range checking. */
-static PyObject *
-new_datetime_ex2(int year, int month, int day, int hour, int minute,
+static inline PyObject *
+_new_datetime(int year, int month, int day, int hour, int minute,
                  int second, int usecond, PyObject *tzinfo, int fold, PyTypeObject *type)
 {
     PyDateTime_DateTime *self;
@@ -1045,12 +1048,13 @@ new_datetime_ex2(int year, int month, int day, int hour, int minute,
     return (PyObject *)self;
 }
 
-static PyObject *
-new_datetime_ex(int year, int month, int day, int hour, int minute,
-                int second, int usecond, PyObject *tzinfo, PyTypeObject *type)
+static inline PyObject *
+new_datetime_nofold(int year, int month, int day, int hour, int minute,
+                    int second, int usecond, PyObject *tzinfo,
+                    PyTypeObject *type)
 {
-    return new_datetime_ex2(year, month, day, hour, minute, second, usecond,
-                            tzinfo, 0, type);
+    return _new_datetime(year, month, day, hour, minute, second,
+                         usecond, tzinfo, 0, type);
 }
 
 static PyObject *
@@ -1058,8 +1062,8 @@ new_datetime_nofold_capi(int year, int month, int day, int hour, int minute,
                          int second, int usecond, PyObject *tzinfo,
                          PyTypeObject *type)
 {
-    return new_datetime_ex(year, month, day, hour, minute, second,
-                           usecond, tzinfo, type);
+    return new_datetime_nofold(year, month, day, hour, minute, second,
+                               usecond, tzinfo, type);
 }
 
 static PyObject *
@@ -1067,13 +1071,17 @@ new_datetime_capi(int year, int month, int day, int hour, int minute,
                        int second, int usecond, PyObject *tzinfo, int fold,
                        PyTypeObject *type)
 {
-    return new_datetime_ex2(year, month, day, hour, minute, second,
-                            usecond, tzinfo, fold, type);
+    return _new_datetime(year, month, day, hour, minute, second,
+                         usecond, tzinfo, fold, type);
 }
 
-#define new_datetime(y, m, d, hh, mm, ss, us, tzinfo, fold) \
-    new_datetime_ex2(y, m, d, hh, mm, ss, us, tzinfo, fold, \
-                    &PyDateTime_DateTimeType)
+static inline PyObject *
+new_datetime(int year, int month, int day, int hour, int minute,
+             int second, int usecond, PyObject *tzinfo, int fold)
+{
+    return _new_datetime(year, month, day, hour, minute, second,
+                         usecond, tzinfo, fold, &PyDateTime_DateTimeType);
+}
 
 static PyObject *
 call_subclass_fold(PyObject *cls, int fold, const char *format, ...)
@@ -1109,10 +1117,11 @@ Done:
     return res;
 }
 
-static PyObject *
-new_datetime_subclass_fold_ex(int year, int month, int day, int hour, int minute,
-                              int second, int usecond, PyObject *tzinfo,
-                              int fold, PyObject *cls) {
+static inline PyObject *
+new_datetime_subclass(int year, int month, int day, int hour, int minute,
+                      int second, int usecond, PyObject *tzinfo,
+                      int fold, PyObject *cls)
+{
     PyObject* dt;
     if ((PyTypeObject*)cls == &PyDateTime_DateTimeType) {
         // Use the fast path constructor
@@ -1128,19 +1137,20 @@ new_datetime_subclass_fold_ex(int year, int month, int day, int hour, int minute
     return dt;
 }
 
-static PyObject *
-new_datetime_subclass_ex(int year, int month, int day, int hour, int minute,
-                              int second, int usecond, PyObject *tzinfo,
-                              PyObject *cls) {
-    return new_datetime_subclass_fold_ex(year, month, day, hour, minute,
-                                         second, usecond, tzinfo, 0,
-                                         cls);
+static inline PyObject *
+new_datetime_subclass_nofold(int year, int month, int day,
+                             int hour, int minute, int second, int usecond,
+                             PyObject *tzinfo, PyObject *cls)
+{
+    return new_datetime_subclass(year, month, day, hour, minute,
+                                 second, usecond, tzinfo, 0,
+                                 cls);
 }
 
 /* Create a time instance with no range checking. */
-static PyObject *
-new_time_ex2(int hour, int minute, int second, int usecond,
-             PyObject *tzinfo, int fold, PyTypeObject *type)
+static inline PyObject *
+_new_time(int hour, int minute, int second, int usecond,
+          PyObject *tzinfo, int fold, PyTypeObject *type)
 {
     PyDateTime_Time *self;
     char aware = tzinfo != Py_None;
@@ -1172,22 +1182,27 @@ static PyObject *
 new_time_nofold_capi(int hour, int minute, int second, int usecond,
                      PyObject *tzinfo, PyTypeObject *type)
 {
-    return new_time_ex2(hour, minute, second, usecond, tzinfo, 0, type);
+    return _new_time(hour, minute, second, usecond, tzinfo, 0, type);
 }
 
 static PyObject *
 new_time_capi(int hour, int minute, int second, int usecond,
               PyObject *tzinfo, int fold, PyTypeObject *type)
 {
-    return new_time_ex2(hour, minute, second, usecond, tzinfo, fold, type);
+    return _new_time(hour, minute, second, usecond, tzinfo, fold, type);
 }
 
-#define new_time(hh, mm, ss, us, tzinfo, fold)  \
-    new_time_ex2(hh, mm, ss, us, tzinfo, fold, &PyDateTime_TimeType)
+static inline PyObject *
+new_time(int hour, int minute, int second, int usecond,
+         PyObject *tzinfo, int fold)
+{
+    return _new_time(hour, minute, second, usecond, tzinfo, fold,
+                     &PyDateTime_TimeType);
+}
 
-static PyObject *
-new_time_subclass_fold_ex(int hour, int minute, int second, int usecond,
-                          PyObject *tzinfo, int fold, PyObject *cls)
+static inline PyObject *
+new_time_subclass(int hour, int minute, int second, int usecond,
+                  PyObject *tzinfo, int fold, PyObject *cls)
 {
     PyObject *t;
     if ((PyTypeObject*)cls == &PyDateTime_TimeType) {
@@ -1209,9 +1224,9 @@ new_time_subclass_fold_ex(int hour, int minute, int second, int usecond,
  * case, raises OverflowError and returns NULL if the normalized days is out
  * of range.
  */
-static PyObject *
-new_delta_ex(int days, int seconds, int microseconds, int normalize,
-             PyTypeObject *type)
+static inline PyObject *
+_new_delta(int days, int seconds, int microseconds, int normalize,
+           PyTypeObject *type)
 {
     PyDateTime_Delta *self;
 
@@ -1233,14 +1248,18 @@ new_delta_ex(int days, int seconds, int microseconds, int normalize,
     return (PyObject *) self;
 }
 
-#define new_delta(d, s, us, normalize)  \
-    new_delta_ex(d, s, us, normalize, &PyDateTime_DeltaType)
+static inline PyObject *
+new_delta(int days, int seconds, int microseconds, int normalize)
+{
+    return _new_delta(days, seconds, microseconds, normalize,
+                      &PyDateTime_DeltaType);
+}
 
 static PyObject *
 new_delta_capi(int days, int seconds, int microseconds, int normalize,
                PyTypeObject *type)
 {
-    return new_delta_ex(days, seconds, microseconds, normalize, type);
+    return _new_delta(days, seconds, microseconds, normalize, type);
 }
 
 
@@ -1999,8 +2018,8 @@ checked_divmod(PyObject *a, PyObject *b)
 
 /* Convert a number of us (as a Python int) to a timedelta.
  */
-static PyObject *
-microseconds_to_delta_ex(PyObject *pyus, PyTypeObject *type)
+static inline PyObject *
+_microseconds_to_delta(PyObject *pyus, PyTypeObject *type)
 {
     int us;
     int s;
@@ -2049,7 +2068,7 @@ microseconds_to_delta_ex(PyObject *pyus, PyTypeObject *type)
     if (d == -1 && PyErr_Occurred()) {
         goto Done;
     }
-    result = new_delta_ex(d, s, us, 0, type);
+    result = _new_delta(d, s, us, 0, type);
 
 Done:
     Py_XDECREF(tuple);
@@ -2062,8 +2081,11 @@ BadDivmod:
     goto Done;
 }
 
-#define microseconds_to_delta(pymicros) \
-    microseconds_to_delta_ex(pymicros, &PyDateTime_DeltaType)
+static inline PyObject *
+microseconds_to_delta(PyObject *pymicros)
+{
+    return _microseconds_to_delta(pymicros, &PyDateTime_DeltaType);
+}
 
 static PyObject *
 multiply_int_timedelta(PyObject *intobj, PyDateTime_Delta *delta)
@@ -2691,7 +2713,7 @@ delta_new(PyTypeObject *type, PyObject *args, PyObject *kw)
         CLEANUP;
     }
 
-    self = microseconds_to_delta_ex(x, type);
+    self = _microseconds_to_delta(x, type);
     Py_DECREF(x);
 Done:
     return self;
@@ -3020,7 +3042,7 @@ date_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 
     if (PyArg_ParseTupleAndKeywords(args, kw, "iii", date_kws,
                                     &year, &month, &day)) {
-        self = new_date_ex(year, month, day, type);
+        self = _new_date(year, month, day, type);
     }
     return self;
 }
@@ -3037,10 +3059,10 @@ date_fromtimestamp(PyObject *cls, PyObject *obj)
     if (_PyTime_localtime(t, &tm) != 0)
         return NULL;
 
-    return new_date_subclass_ex(tm.tm_year + 1900,
-                                tm.tm_mon + 1,
-                                tm.tm_mday,
-                                cls);
+    return new_date_subclass(tm.tm_year + 1900,
+                             tm.tm_mon + 1,
+                             tm.tm_mday,
+                             cls);
 }
 
 /* Return new date from current time.
@@ -3124,7 +3146,7 @@ date_fromordinal(PyObject *cls, PyObject *args)
                                               ">= 1");
         else {
             ord_to_ymd(ordinal, &year, &month, &day);
-            result = new_date_subclass_ex(year, month, day, cls);
+            result = new_date_subclass(year, month, day, cls);
         }
     }
     return result;
@@ -3163,7 +3185,7 @@ date_fromisoformat(PyObject *cls, PyObject *dtstr)
         goto invalid_string_error;
     }
 
-    return new_date_subclass_ex(year, month, day, cls);
+    return new_date_subclass(year, month, day, cls);
 
 invalid_string_error:
     PyErr_Format(PyExc_ValueError, "Invalid isoformat string: %R", dtstr);
@@ -3209,7 +3231,7 @@ date_fromisocalendar(PyObject *cls, PyObject *args, PyObject *kw)
         return NULL;
     }
 
-    return new_date_subclass_ex(year, month, day, cls);
+    return new_date_subclass(year, month, day, cls);
 }
 
 
@@ -3231,8 +3253,8 @@ add_date_timedelta(PyDateTime_Date *date, PyDateTime_Delta *delta, int negate)
     int day = GET_DAY(date) + (negate ? -deltadays : deltadays);
 
     if (normalize_date(&year, &month, &day) >= 0)
-        result = new_date_subclass_ex(year, month, day,
-                                      (PyObject* )Py_TYPE(date));
+        result = new_date_subclass(year, month, day,
+                                   (PyObject* )Py_TYPE(date));
     return result;
 }
 
@@ -3574,7 +3596,7 @@ datetime_date_replace_impl(PyDateTime_Date *self, int year, int month,
                            int day)
 /*[clinic end generated code: output=2a9430d1e6318aeb input=0d1f02685b3e90f6]*/
 {
-    return new_date_subclass_ex(year, month, day, (PyObject *)Py_TYPE(self));
+    return new_date_subclass(year, month, day, (PyObject *)Py_TYPE(self));
 }
 
 static Py_hash_t
@@ -4363,8 +4385,7 @@ time_new(PyTypeObject *type, PyObject *args, PyObject *kw)
     if (PyArg_ParseTupleAndKeywords(args, kw, "|iiiiO$i", time_kws,
                                     &hour, &minute, &second, &usecond,
                                     &tzinfo, &fold)) {
-        self = new_time_ex2(hour, minute, second, usecond, tzinfo, fold,
-                            type);
+        self = _new_time(hour, minute, second, usecond, tzinfo, fold, type);
     }
     return self;
 }
@@ -4615,12 +4636,12 @@ time_hash(PyDateTime_Time *self)
     if (self->hashcode == -1) {
         PyObject *offset, *self0;
         if (TIME_GET_FOLD(self)) {
-            self0 = new_time_ex2(TIME_GET_HOUR(self),
-                                 TIME_GET_MINUTE(self),
-                                 TIME_GET_SECOND(self),
-                                 TIME_GET_MICROSECOND(self),
-                                 HASTZINFO(self) ? self->tzinfo : Py_None,
-                                 0, Py_TYPE(self));
+            self0 = _new_time(TIME_GET_HOUR(self),
+                              TIME_GET_MINUTE(self),
+                              TIME_GET_SECOND(self),
+                              TIME_GET_MICROSECOND(self),
+                              HASTZINFO(self) ? self->tzinfo : Py_None,
+                              0, Py_TYPE(self));
             if (self0 == NULL)
                 return -1;
         }
@@ -4684,8 +4705,8 @@ datetime_time_replace_impl(PyDateTime_Time *self, int hour, int minute,
                            int fold)
 /*[clinic end generated code: output=0b89a44c299e4f80 input=9b6a35b1e704b0ca]*/
 {
-    return new_time_subclass_fold_ex(hour, minute, second, microsecond, tzinfo,
-                                     fold, (PyObject *)Py_TYPE(self));
+    return new_time_subclass(hour, minute, second, microsecond, tzinfo,
+                             fold, (PyObject *)Py_TYPE(self));
 }
 
 static PyObject *
@@ -5029,9 +5050,9 @@ datetime_new(PyTypeObject *type, PyObject *args, PyObject *kw)
     if (PyArg_ParseTupleAndKeywords(args, kw, "iii|iiiiO$i", datetime_kws,
                                     &year, &month, &day, &hour, &minute,
                                     &second, &usecond, &tzinfo, &fold)) {
-        self = new_datetime_ex2(year, month, day,
-                                hour, minute, second, usecond,
-                                tzinfo, fold, type);
+        self = _new_datetime(year, month, day,
+                             hour, minute, second, usecond,
+                             tzinfo, fold, type);
     }
     return self;
 }
@@ -5149,8 +5170,8 @@ datetime_from_timet_and_us(PyObject *cls, TM_FUNC f, time_t timet, int us,
                 fold = 1;
         }
     }
-    return new_datetime_subclass_fold_ex(year, month, day, hour, minute,
-                                         second, us, tzinfo, fold, cls);
+    return new_datetime_subclass(year, month, day, hour, minute,
+                                 second, us, tzinfo, fold, cls);
 }
 
 /* Internal helper.
@@ -5343,16 +5364,16 @@ datetime_combine(PyObject *cls, PyObject *args, PyObject *kw)
             else
                 tzinfo = Py_None;
         }
-        result = new_datetime_subclass_fold_ex(GET_YEAR(date),
-                                               GET_MONTH(date),
-                                               GET_DAY(date),
-                                               TIME_GET_HOUR(time),
-                                               TIME_GET_MINUTE(time),
-                                               TIME_GET_SECOND(time),
-                                               TIME_GET_MICROSECOND(time),
-                                               tzinfo,
-                                               TIME_GET_FOLD(time),
-                                               cls);
+        result = new_datetime_subclass(GET_YEAR(date),
+                                       GET_MONTH(date),
+                                       GET_DAY(date),
+                                       TIME_GET_HOUR(time),
+                                       TIME_GET_MINUTE(time),
+                                       TIME_GET_SECOND(time),
+                                       TIME_GET_MICROSECOND(time),
+                                       tzinfo,
+                                       TIME_GET_FOLD(time),
+                                       cls);
     }
     return result;
 }
@@ -5592,7 +5613,8 @@ datetime_fromisoformat(PyObject *cls, PyObject *dtstr)
         goto error;
     }
 
-    PyObject *dt = new_datetime_subclass_ex(year, month, day, hour, minute,
+    PyObject *dt = new_datetime_subclass_nofold(
+    	                                    year, month, day, hour, minute,
                                             second, microsecond, tzinfo, cls);
 
     Py_DECREF(tzinfo);
@@ -5670,7 +5692,8 @@ add_datetime_timedelta(PyDateTime_DateTime *date, PyDateTime_Delta *delta,
         return NULL;
     }
 
-    return new_datetime_subclass_ex(year, month, day,
+    return new_datetime_subclass_nofold(
+                                    year, month, day,
                                     hour, minute, second, microsecond,
                                     HASTZINFO(date) ? date->tzinfo : Py_None,
                                     (PyObject *)Py_TYPE(date));
@@ -5916,17 +5939,17 @@ datetime_ctime(PyDateTime_DateTime *self, PyObject *Py_UNUSED(ignored))
 static PyObject *
 flip_fold(PyObject *dt)
 {
-    return new_datetime_ex2(GET_YEAR(dt),
-                            GET_MONTH(dt),
-                            GET_DAY(dt),
-                            DATE_GET_HOUR(dt),
-                            DATE_GET_MINUTE(dt),
-                            DATE_GET_SECOND(dt),
-                            DATE_GET_MICROSECOND(dt),
-                            HASTZINFO(dt) ?
-                             ((PyDateTime_DateTime *)dt)->tzinfo : Py_None,
-                            !DATE_GET_FOLD(dt),
-                            Py_TYPE(dt));
+    return _new_datetime(GET_YEAR(dt),
+                         GET_MONTH(dt),
+                         GET_DAY(dt),
+                         DATE_GET_HOUR(dt),
+                         DATE_GET_MINUTE(dt),
+                         DATE_GET_SECOND(dt),
+                         DATE_GET_MICROSECOND(dt),
+                         HASTZINFO(dt) ?
+                          ((PyDateTime_DateTime *)dt)->tzinfo : Py_None,
+                         !DATE_GET_FOLD(dt),
+                         Py_TYPE(dt));
 }
 
 static PyObject *
@@ -6064,15 +6087,15 @@ datetime_hash(PyDateTime_DateTime *self)
     if (self->hashcode == -1) {
         PyObject *offset, *self0;
         if (DATE_GET_FOLD(self)) {
-            self0 = new_datetime_ex2(GET_YEAR(self),
-                                     GET_MONTH(self),
-                                     GET_DAY(self),
-                                     DATE_GET_HOUR(self),
-                                     DATE_GET_MINUTE(self),
-                                     DATE_GET_SECOND(self),
-                                     DATE_GET_MICROSECOND(self),
-                                     HASTZINFO(self) ? self->tzinfo : Py_None,
-                                     0, Py_TYPE(self));
+            self0 = _new_datetime(GET_YEAR(self),
+                                  GET_MONTH(self),
+                                  GET_DAY(self),
+                                  DATE_GET_HOUR(self),
+                                  DATE_GET_MINUTE(self),
+                                  DATE_GET_SECOND(self),
+                                  DATE_GET_MICROSECOND(self),
+                                  HASTZINFO(self) ? self->tzinfo : Py_None,
+                                  0, Py_TYPE(self));
             if (self0 == NULL)
                 return -1;
         }
@@ -6145,9 +6168,9 @@ datetime_datetime_replace_impl(PyDateTime_DateTime *self, int year,
                                int fold)
 /*[clinic end generated code: output=00bc96536833fddb input=9b38253d56d9bcad]*/
 {
-    return new_datetime_subclass_fold_ex(year, month, day, hour, minute,
-                                         second, microsecond, tzinfo, fold,
-                                         (PyObject *)Py_TYPE(self));
+    return new_datetime_subclass(year, month, day, hour, minute,
+                                 second, microsecond, tzinfo, fold,
+                                 (PyObject *)Py_TYPE(self));
 }
 
 static PyObject *
@@ -6338,16 +6361,16 @@ datetime_astimezone(PyDateTime_DateTime *self, PyObject *args, PyObject *kw)
     if (!HASTZINFO(result)) {
         temp = (PyObject *)result;
         result = (PyDateTime_DateTime *)
-                   new_datetime_ex2(GET_YEAR(result),
-                                    GET_MONTH(result),
-                                    GET_DAY(result),
-                                    DATE_GET_HOUR(result),
-                                    DATE_GET_MINUTE(result),
-                                    DATE_GET_SECOND(result),
-                                    DATE_GET_MICROSECOND(result),
-                                    st->utc,
-                                    DATE_GET_FOLD(result),
-                                    Py_TYPE(result));
+                   _new_datetime(GET_YEAR(result),
+                                 GET_MONTH(result),
+                                 GET_DAY(result),
+                                 DATE_GET_HOUR(result),
+                                 DATE_GET_MINUTE(result),
+                                 DATE_GET_SECOND(result),
+                                 DATE_GET_MICROSECOND(result),
+                                 st->utc,
+                                 DATE_GET_FOLD(result),
+                                 Py_TYPE(result));
         Py_DECREF(temp);
         if (result == NULL)
             return NULL;
