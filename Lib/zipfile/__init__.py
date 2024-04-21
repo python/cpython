@@ -940,7 +940,7 @@ class ZipExtFile(io.BufferedIOBase):
         result = ['<%s.%s' % (self.__class__.__module__,
                               self.__class__.__qualname__)]
         if not self.closed:
-            result.append(' name=%r mode=%r' % (self.name, self.mode))
+            result.append(' name=%r' % (self.name,))
             if self._compress_type != ZIP_STORED:
                 result.append(' compress_type=%s' %
                               compressor_names.get(self._compress_type,
@@ -1216,6 +1216,14 @@ class _ZipWriteFile(io.BufferedIOBase):
     @property
     def _fileobj(self):
         return self._zipfile.fp
+
+    @property
+    def name(self):
+        return self._zinfo.filename
+
+    @property
+    def mode(self):
+        return 'wb'
 
     def writable(self):
         return True
@@ -1687,7 +1695,7 @@ class ZipFile:
             else:
                 pwd = None
 
-            return ZipExtFile(zef_file, mode, zinfo, pwd, True)
+            return ZipExtFile(zef_file, mode + 'b', zinfo, pwd, True)
         except:
             zef_file.close()
             raise

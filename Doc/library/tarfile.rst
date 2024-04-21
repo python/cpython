@@ -565,6 +565,10 @@ be finalized; only the internally used file object will be closed. See the
    .. versionchanged:: 3.3
       Return an :class:`io.BufferedReader` object.
 
+   .. versionchanged:: 3.13
+      The returned :class:`io.BufferedReader` object has the :attr:`!mode`
+      attribute which is always equal to ``'rb'``.
+
 .. attribute:: TarFile.errorlevel
    :type: int
 
