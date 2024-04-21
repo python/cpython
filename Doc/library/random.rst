@@ -712,7 +712,7 @@ The :mod:`!random` module can be executed from the command line.
 
 .. code-block:: sh
 
-   python -m random [-h] [-c CHOICE [CHOICE ...] | -i N | -f N | --test [N]]
+   python -m random [-h] [-c CHOICE [CHOICE ...] | -i N | -f N] [input ...]
 
 The following options are accepted:
 
@@ -737,10 +737,6 @@ The following options are accepted:
 
    Print a random floating point number between 1 and N inclusive,
    using :meth:`uniform`.
-
-.. option:: --test <N>
-
-   Run a test N times.
 
 If no options are given, the output depends on the input:
 
