@@ -1251,7 +1251,7 @@ encoder_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     return (PyObject *)s;
 }
 
-static PyObject*
+static PyObject *
 _create_newline_indent(PyObject* indent, Py_ssize_t indent_level)
 {
     PyObject* current_indent = PySequence_Repeat(indent, indent_level);
@@ -1557,8 +1557,8 @@ encoder_listencode_dict(PyEncoderObject *s, _PyUnicodeWriter *writer,
     PyObject *items = NULL;
     PyObject *key, *value;
     bool first = true;
-    PyObject* newline_indent = NULL;
-    PyObject* separator_indent = NULL;
+    PyObject *newline_indent = NULL;
+    PyObject *separator_indent = NULL;
 
     if (PyDict_GET_SIZE(dct) == 0)  /* Fast path */
         return _PyUnicodeWriter_WriteASCIIString(writer, "{}", 2);
