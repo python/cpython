@@ -24,6 +24,12 @@ for details about the signatures of the different event callbacks).
 The ``codelike`` argument should be an instance of :class:`types.CodeType`
 or of a type that emulates it.
 
+The VM disables tracing when firing an event, so there is no need for user
+code to do that.
+
+It is expected that monitoring functions are not called with an exception set,
+except for those which are firing exception-related events.
+
 .. c:type:: PyMonitoringState
 
   Representation of the state of an event type. It is allocated by the user
