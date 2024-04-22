@@ -177,6 +177,7 @@ else:
         """
         p = os.fspath(p)
         if isinstance(p, bytes):
+            # Optimisation: the drive is always empty
             _, root, tail = _path_splitroot(os.fsdecode(p))
             return b'', os.fsencode(root), os.fsencode(tail)
         return _path_splitroot(p)

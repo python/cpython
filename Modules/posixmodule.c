@@ -5042,13 +5042,15 @@ exit:
 
 /*[clinic input]
 os._path_splitanchor
+
     path: path_t
+
 Removes everything after the root on Win32.
 [clinic start generated code]*/
 
 static PyObject *
 os__path_splitanchor_impl(PyObject *module, path_t *path)
-/*[clinic end generated code: output=37b687463b40c424 input=00dd0c06233b8cff]*/
+/*[clinic end generated code: output=37b687463b40c424 input=3cf73c8896e3d7a5]*/
 {
     wchar_t *buffer;
     wchar_t *end;
