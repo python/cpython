@@ -1392,39 +1392,45 @@ create_builtin(PyThreadState *tstate, PyObject *name, PyObject *spec)
     }
 
     PyObject *modules = MODULES(tstate->interp);
+    struct _inittab *found = NULL;
     for (struct _inittab *p = INITTAB; p->name != NULL; p++) {
         if (_PyUnicode_EqualToASCIIString(name, p->name)) {
-            if (p->initfunc == NULL) {
-                /* Cannot re-init internal module ("sys" or "builtins") */
-                return import_add_module(tstate, name);
-            }
-            mod = (*p->initfunc)();
-            if (mod == NULL) {
-                return NULL;
-            }
-
-            if (PyObject_TypeCheck(mod, &PyModuleDef_Type)) {
-                return PyModule_FromDefAndSpec((PyModuleDef*)mod, spec);
-            }
-            else {
-                /* Remember pointer to module init function. */
-                PyModuleDef *def = PyModule_GetDef(mod);
-                if (def == NULL) {
-                    return NULL;
-                }
-
-                def->m_base.m_init = p->initfunc;
-                if (_PyImport_FixupExtensionObject(mod, name, name,
-                                                   modules) < 0) {
-                    return NULL;
-                }
-                return mod;
-            }
+            found = p;
         }
     }
+    if (found == NULL) {
+        // not found
+        Py_RETURN_NONE;
+    }
 
-    // not found
-    Py_RETURN_NONE;
+    PyModInitFunction p0 = (PyModInitFunction)found->initfunc;
+    if (p0 == NULL) {
+        /* Cannot re-init internal module ("sys" or "builtins") */
+        assert(is_core_module(tstate->interp, name, name));
+        return import_add_module(tstate, name);
+    }
+
+    mod = p0();
+    if (mod == NULL) {
+        return NULL;
+    }
+
+    if (PyObject_TypeCheck(mod, &PyModuleDef_Type)) {
+        return PyModule_FromDefAndSpec((PyModuleDef*)mod, spec);
+    }
+    else {
+        /* Remember pointer to module init function. */
+        PyModuleDef *def = PyModule_GetDef(mod);
+        if (def == NULL) {
+            return NULL;
+        }
+
+        def->m_base.m_init = p0;
+        if (_PyImport_FixupExtensionObject(mod, name, name, modules) < 0) {
+            return NULL;
+        }
+        return mod;
+    }
 }
 
 
