@@ -4883,7 +4883,7 @@ PyType_GetModuleByDef(PyTypeObject *type, PyModuleDef *def)
 }
 
 static PyTypeObject *
-get_base_by_spec(PyTypeObject *type, PyType_Spec *spec)
+get_base_by_spec_recursive(PyTypeObject *type, PyType_Spec *spec)
 {
     PyObject *bases = type->tp_bases;
     Py_ssize_t n = PyTuple_GET_SIZE(bases);
@@ -4895,7 +4895,7 @@ get_base_by_spec(PyTypeObject *type, PyType_Spec *spec)
         if (((PyHeapTypeObject*)base)->ht_static_spec == spec) {
             return base;
         }
-        base = get_base_by_spec(base, spec);
+        base = get_base_by_spec_recursive(base, spec);
         if (base) {
             return base;
         }
@@ -4908,10 +4908,29 @@ _PyType_GetBaseBySpec(PyTypeObject *type, PyType_Spec *spec)
 {
     assert(spec);
     assert(PyType_Check(type));
-    PyTypeObject *res;
+    PyTypeObject *res = NULL;
 
     BEGIN_TYPE_LOCK()
-    res = get_base_by_spec(type, spec);
+    PyObject *mro = lookup_tp_mro(type);
+    if (mro == NULL) {
+        res = get_base_by_spec_recursive(type, spec);
+    }
+    else {
+        // See PyType_GetModuleByDef() implementation
+        assert(PyTuple_Check(mro));
+        assert(PyTuple_GET_SIZE(mro) >= 1);
+        Py_ssize_t n = PyTuple_GET_SIZE(mro);
+        for (Py_ssize_t i = 0; i < n; i++) {
+            PyObject *super = PyTuple_GET_ITEM(mro, i);
+            if(!_PyType_HasFeature((PyTypeObject *)super, Py_TPFLAGS_HEAPTYPE)) {
+                continue;
+            }
+            if (((PyHeapTypeObject*)super)->ht_static_spec == spec) {
+                res = _PyType_CAST(super);
+                break;
+            }
+        }
+    }
     END_TYPE_LOCK()
 
     if (res == NULL) {
