@@ -85,11 +85,11 @@ encoder_dealloc(PyObject *self);
 static int
 encoder_clear(PyEncoderObject *self);
 static int
-encoder_listencode_list(PyEncoderObject *s, _PyUnicodeWriter *writer, PyObject *seq, Py_ssize_t indent_level);
+encoder_listencode_list(PyEncoderObject *s, _PyUnicodeWriter *writer, PyObject *seq, Py_ssize_t indent_level, PyObject* current_newline_indent);
 static int
-encoder_listencode_obj(PyEncoderObject *s, _PyUnicodeWriter *writer, PyObject *obj, Py_ssize_t indent_level);
+encoder_listencode_obj(PyEncoderObject *s, _PyUnicodeWriter *writer, PyObject *obj, Py_ssize_t indent_level, PyObject *current_newline_indent);
 static int
-encoder_listencode_dict(PyEncoderObject *s, _PyUnicodeWriter *writer, PyObject *dct, Py_ssize_t indent_level);
+encoder_listencode_dict(PyEncoderObject *s, _PyUnicodeWriter *writer, PyObject *dct, Py_ssize_t indent_level, PyObject* current_newline_indent);
 static PyObject *
 _encoded_const(PyObject *obj);
 static void
@@ -1251,6 +1251,25 @@ encoder_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     return (PyObject *)s;
 }
 
+static PyObject*
+_create_newline_indent(PyObject* indent, Py_ssize_t indent_level)
+{
+    PyObject* current_indent = PySequence_Repeat(indent, indent_level);
+    if (current_indent == NULL) {
+        return NULL;
+    }
+    PyObject* start = PyUnicode_FromOrdinal(10);
+    if (start == NULL) {
+        Py_DECREF(current_indent);
+        return NULL;
+    }
+
+    PyObject* newline_indent = PyUnicode_Concat(start, current_indent);
+    Py_DECREF(current_indent);
+    Py_DECREF(start);
+    return newline_indent;
+}
+
 static PyObject *
 encoder_call(PyEncoderObject *self, PyObject *args, PyObject *kwds)
 {
@@ -1267,10 +1286,19 @@ encoder_call(PyEncoderObject *self, PyObject *args, PyObject *kwds)
     _PyUnicodeWriter_Init(&writer);
     writer.overallocate = 1;
 
-    if (encoder_listencode_obj(self, &writer, obj, indent_level)) {
+    PyObject * current_newline_indent = NULL;
+    if (self->indent != Py_None) {
+        current_newline_indent = _create_newline_indent(self->indent, indent_level);
+        if (current_newline_indent == NULL) {
+            _PyUnicodeWriter_Dealloc(&writer);
+            return NULL;
+        }
+    }
+    if (encoder_listencode_obj(self, &writer, obj, indent_level, current_newline_indent)) {
         _PyUnicodeWriter_Dealloc(&writer);
         return NULL;
     }
+    Py_XDECREF(current_newline_indent);
 
     result = PyTuple_New(1);
     if (result == NULL ||
@@ -1357,29 +1385,9 @@ _steal_accumulate(_PyUnicodeWriter *writer, PyObject *stolen)
 }
 
 
-PyObject* _create_newline_indent(PyObject* indent, Py_ssize_t indent_level)
-{
-    PyObject* newline_indent = NULL;
-
-    PyObject* _current_indent = PySequence_Repeat(indent, indent_level);
-    if (_current_indent == NULL) {
-        goto end;
-    }
-    PyObject* start = PyUnicode_FromString("\n");
-    if (start == NULL) {
-        goto end;
-    }
-
-    newline_indent = PyUnicode_Concat(start, _current_indent);
-end:
-    Py_XDECREF(_current_indent);
-    Py_XDECREF(start);
-    return newline_indent;
-}
-
 static int
 encoder_listencode_obj(PyEncoderObject *s, _PyUnicodeWriter *writer,
-                       PyObject *obj, Py_ssize_t indent_level)
+                       PyObject *obj, Py_ssize_t indent_level, PyObject *current_newline_indent)
 {
     /* Encode Python object obj to a JSON term */
     PyObject *newobj;
@@ -1415,14 +1423,14 @@ encoder_listencode_obj(PyEncoderObject *s, _PyUnicodeWriter *writer,
     else if (PyList_Check(obj) || PyTuple_Check(obj)) {
         if (_Py_EnterRecursiveCall(" while encoding a JSON object"))
             return -1;
-        rv = encoder_listencode_list(s, writer, obj, indent_level);
+        rv = encoder_listencode_list(s, writer, obj, indent_level, current_newline_indent);
         _Py_LeaveRecursiveCall();
         return rv;
     }
     else if (PyDict_Check(obj)) {
         if (_Py_EnterRecursiveCall(" while encoding a JSON object"))
             return -1;
-        rv = encoder_listencode_dict(s, writer, obj, indent_level);
+        rv = encoder_listencode_dict(s, writer, obj, indent_level, current_newline_indent);
         _Py_LeaveRecursiveCall();
         return rv;
     }
@@ -1456,7 +1464,7 @@ encoder_listencode_obj(PyEncoderObject *s, _PyUnicodeWriter *writer,
             Py_XDECREF(ident);
             return -1;
         }
-        rv = encoder_listencode_obj(s, writer, newobj, indent_level);
+        rv = encoder_listencode_obj(s, writer, newobj, indent_level, current_newline_indent);
         _Py_LeaveRecursiveCall();
 
         Py_DECREF(newobj);
@@ -1477,7 +1485,8 @@ encoder_listencode_obj(PyEncoderObject *s, _PyUnicodeWriter *writer,
 
 static int
 encoder_encode_key_value(PyEncoderObject *s, _PyUnicodeWriter *writer, bool *first,
-                         PyObject *key, PyObject *value, Py_ssize_t indent_level, PyObject *current_item_separator)
+                         PyObject *key, PyObject *value, Py_ssize_t indent_level,
+                         PyObject *current_newline_indent, PyObject *current_item_separator)
 {
     PyObject *keystr = NULL;
     PyObject *encoded;
@@ -1532,7 +1541,7 @@ encoder_encode_key_value(PyEncoderObject *s, _PyUnicodeWriter *writer, bool *fir
     if (_PyUnicodeWriter_WriteStr(writer, s->key_separator) < 0) {
         return -1;
     }
-    if (encoder_listencode_obj(s, writer, value, indent_level) < 0) {
+    if (encoder_listencode_obj(s, writer, value, indent_level, current_newline_indent) < 0) {
         return -1;
     }
     return 0;
@@ -1540,13 +1549,16 @@ encoder_encode_key_value(PyEncoderObject *s, _PyUnicodeWriter *writer, bool *fir
 
 static int
 encoder_listencode_dict(PyEncoderObject *s, _PyUnicodeWriter *writer,
-                        PyObject *dct, Py_ssize_t indent_level)
+                        PyObject *dct, Py_ssize_t indent_level,
+                        PyObject *current_newline_indent)
 {
     /* Encode Python dict dct a JSON term */
     PyObject *ident = NULL;
     PyObject *items = NULL;
     PyObject *key, *value;
     bool first = true;
+    PyObject* newline_indent = NULL;
+    PyObject* separator_indent = NULL;
 
     if (PyDict_GET_SIZE(dct) == 0)  /* Fast path */
         return _PyUnicodeWriter_WriteASCIIString(writer, "{}", 2);
@@ -1570,23 +1582,19 @@ encoder_listencode_dict(PyEncoderObject *s, _PyUnicodeWriter *writer,
     if (_PyUnicodeWriter_WriteChar(writer, '{'))
         goto bail;
 
-    PyObject* newline_indent = 0;
-    PyObject* current_item_separator = s->item_separator;
+    PyObject *current_item_separator = s->item_separator; // borrowed reference
     if (s->indent != Py_None) {
         indent_level += 1;
-        newline_indent = _create_newline_indent(s->indent, indent_level);
-        if (newline_indent == 0) {
+        newline_indent = PyUnicode_Concat(current_newline_indent, s->indent);
+        if (newline_indent == NULL) {
             goto bail;
         }
-        current_item_separator = PyUnicode_Concat(current_item_separator, newline_indent);
-        if (current_item_separator == 0) {
-            Py_DECREF(newline_indent);
+        separator_indent = PyUnicode_Concat(current_item_separator, newline_indent);
+        if (separator_indent == NULL) {
             goto bail;
         }
-
+        current_item_separator = separator_indent; // update item separator with a borrowed reference
         if (_PyUnicodeWriter_WriteStr(writer, newline_indent) < 0) {
-            Py_DECREF(current_item_separator);
-            Py_DECREF(newline_indent);
             goto bail;
         }
     }
@@ -1606,7 +1614,7 @@ encoder_listencode_dict(PyEncoderObject *s, _PyUnicodeWriter *writer,
 
             key = PyTuple_GET_ITEM(item, 0);
             value = PyTuple_GET_ITEM(item, 1);
-            if (encoder_encode_key_value(s, writer, &first, key, value, indent_level, current_item_separator) < 0)
+            if (encoder_encode_key_value(s, writer, &first, key, value, indent_level, newline_indent, current_item_separator) < 0)
                 goto bail;
         }
         Py_CLEAR(items);
@@ -1614,7 +1622,7 @@ encoder_listencode_dict(PyEncoderObject *s, _PyUnicodeWriter *writer,
     } else {
         Py_ssize_t pos = 0;
         while (PyDict_Next(dct, &pos, &key, &value)) {
-            if (encoder_encode_key_value(s, writer, &first, key, value, indent_level, current_item_separator) < 0)
+            if (encoder_encode_key_value(s, writer, &first, key, value, indent_level, newline_indent, current_item_separator) < 0)
                 goto bail;
         }
     }
@@ -1625,37 +1633,37 @@ encoder_listencode_dict(PyEncoderObject *s, _PyUnicodeWriter *writer,
         Py_CLEAR(ident);
     }
     if (s->indent != Py_None) {
-        Py_DECREF(current_item_separator);
-        indent_level--;
-        newline_indent = _create_newline_indent(s->indent, indent_level);
-        if (newline_indent == 0) {
-            goto bail;
-        }
-
-        if (_PyUnicodeWriter_WriteStr(writer, newline_indent) < 0) {
-            Py_DECREF(newline_indent);
-            goto bail;
-        }
         Py_DECREF(newline_indent);
+        Py_DECREF(separator_indent);
+        indent_level--;
+
+        if (_PyUnicodeWriter_WriteStr(writer, current_newline_indent) < 0) {
+            goto bail;
+        }
     }
 
     if (_PyUnicodeWriter_WriteChar(writer, '}'))
         goto bail;
+
     return 0;
 
 bail:
     Py_XDECREF(items);
     Py_XDECREF(ident);
+    Py_XDECREF(separator_indent);
+    Py_XDECREF(newline_indent);
     return -1;
 }
 
 static int
 encoder_listencode_list(PyEncoderObject *s, _PyUnicodeWriter *writer,
-                        PyObject *seq, Py_ssize_t indent_level)
+                        PyObject *seq, Py_ssize_t indent_level, PyObject *current_newline_indent)
 {
     PyObject *ident = NULL;
     PyObject *s_fast = NULL;
     Py_ssize_t i;
+    PyObject* newline_indent = NULL;
+    PyObject* separator_indent = NULL;
 
     ident = NULL;
     s_fast = PySequence_Fast(seq, "_iterencode_list needs a sequence");
@@ -1685,12 +1693,11 @@ encoder_listencode_list(PyEncoderObject *s, _PyUnicodeWriter *writer,
     if (_PyUnicodeWriter_WriteChar(writer, '['))
         goto bail;
 
-    PyObject* separator = s->item_separator; // borrowed reference
-    PyObject* newline_indent = 0;
+    PyObject *separator = s->item_separator; // borrowed reference
     if (s->indent != Py_None) {
         indent_level++;
-        newline_indent = _create_newline_indent(s->indent, indent_level);
-        if (newline_indent == 0) {
+        newline_indent = PyUnicode_Concat(current_newline_indent, s->indent);
+        if (newline_indent == NULL) {
             goto bail;
         }
 
@@ -1698,11 +1705,11 @@ encoder_listencode_list(PyEncoderObject *s, _PyUnicodeWriter *writer,
             goto bail;
         }
 
-        separator = PyUnicode_Concat(separator, newline_indent); // non-borrowed reference
-        if (separator == 0) {
+        separator_indent = PyUnicode_Concat(separator, newline_indent);
+        if (separator_indent == NULL) {
             goto bail;
         }
-        Py_DECREF(newline_indent);
+        separator = separator_indent; // assign separator with borrowed reference
     }
     for (i = 0; i < PySequence_Fast_GET_SIZE(s_fast); i++) {
         PyObject *obj = PySequence_Fast_GET_ITEM(s_fast, i);
@@ -1710,7 +1717,7 @@ encoder_listencode_list(PyEncoderObject *s, _PyUnicodeWriter *writer,
             if (_PyUnicodeWriter_WriteStr(writer, separator) < 0)
                 goto bail;
         }
-        if (encoder_listencode_obj(s, writer, obj, indent_level))
+        if (encoder_listencode_obj(s, writer, obj, indent_level, newline_indent))
             goto bail;
     }
     if (ident != NULL) {
@@ -1721,16 +1728,11 @@ encoder_listencode_list(PyEncoderObject *s, _PyUnicodeWriter *writer,
 
     if (s->indent != Py_None) {
         indent_level--;
-        Py_DECREF(separator);
-        newline_indent = _create_newline_indent(s->indent, indent_level);
-        if (newline_indent == 0) {
-            goto bail;
-        }
-
-        if (_PyUnicodeWriter_WriteStr(writer, newline_indent) < 0) {
-            goto bail;
-        }
         Py_DECREF(newline_indent);
+        Py_DECREF(separator_indent);
+        if (_PyUnicodeWriter_WriteStr(writer, current_newline_indent) < 0) {
+            goto bail;
+        }
     }
 
     if (_PyUnicodeWriter_WriteChar(writer, ']'))
@@ -1741,6 +1743,8 @@ encoder_listencode_list(PyEncoderObject *s, _PyUnicodeWriter *writer,
 bail:
     Py_XDECREF(ident);
     Py_DECREF(s_fast);
+    Py_XDECREF(separator_indent);
+    Py_XDECREF(newline_indent);
     return -1;
 }
 
