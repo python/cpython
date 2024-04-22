@@ -589,6 +589,7 @@ static PyType_Slot ctype_type_slots[] = {
     {Py_tp_methods, ctype_methods},
     // Sequence protocol.
     {Py_sq_repeat, CType_Type_repeat},
+    // Memory layout ID.
     {Py_id_static_spec, &pyctype_type_spec},
     {0, NULL},
 };
