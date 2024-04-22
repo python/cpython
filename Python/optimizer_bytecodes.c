@@ -21,6 +21,7 @@ typedef struct _Py_UOpsAbstractFrame _Py_UOpsAbstractFrame;
 #define sym_new_const _Py_uop_sym_new_const
 #define sym_new_null _Py_uop_sym_new_null
 #define sym_matches_type _Py_uop_sym_matches_type
+#define sym_get_type _Py_uop_sym_get_type
 #define sym_has_type _Py_uop_sym_has_type
 #define sym_set_null _Py_uop_sym_set_null
 #define sym_set_non_null _Py_uop_sym_set_non_null
@@ -99,9 +100,18 @@ dummy_func(void) {
     }
 
     op(_GUARD_BOTH_INT, (left, right -- left, right)) {
-        if (sym_matches_type(left, &PyLong_Type) &&
-            sym_matches_type(right, &PyLong_Type)) {
-            REPLACE_OP(this_instr, _NOP, 0, 0);
+        if (sym_matches_type(left, &PyLong_Type)) {
+            if (sym_matches_type(right, &PyLong_Type)) {
+                REPLACE_OP(this_instr, _NOP, 0, 0);
+            }
+            else {
+                REPLACE_OP(this_instr, _GUARD_TOS_INT, 0, 0);
+            }
+        }
+        else {
+            if (sym_matches_type(right, &PyLong_Type)) {
+                REPLACE_OP(this_instr, _GUARD_NOS_INT, 0, 0);
+            }
         }
         if (!sym_set_type(left, &PyLong_Type)) {
             goto hit_bottom;
@@ -112,9 +122,18 @@ dummy_func(void) {
     }
 
     op(_GUARD_BOTH_FLOAT, (left, right -- left, right)) {
-        if (sym_matches_type(left, &PyFloat_Type) &&
-            sym_matches_type(right, &PyFloat_Type)) {
-            REPLACE_OP(this_instr, _NOP, 0 ,0);
+        if (sym_matches_type(left, &PyFloat_Type)) {
+            if (sym_matches_type(right, &PyFloat_Type)) {
+                REPLACE_OP(this_instr, _NOP, 0, 0);
+            }
+            else {
+                REPLACE_OP(this_instr, _GUARD_TOS_FLOAT, 0, 0);
+            }
+        }
+        else {
+            if (sym_matches_type(right, &PyFloat_Type)) {
+                REPLACE_OP(this_instr, _GUARD_NOS_FLOAT, 0, 0);
+            }
         }
         if (!sym_set_type(left, &PyFloat_Type)) {
             goto hit_bottom;
@@ -135,6 +154,25 @@ dummy_func(void) {
         if (!sym_set_type(right, &PyUnicode_Type)) {
             goto hit_bottom;
         }
+    }
+
+    op(_BINARY_OP, (left, right -- res)) {
+        PyTypeObject *ltype = sym_get_type(left);
+        PyTypeObject *rtype = sym_get_type(right);
+        if (ltype != NULL && (ltype == &PyLong_Type || ltype == &PyFloat_Type) &&
+            rtype != NULL && (rtype == &PyLong_Type || rtype == &PyFloat_Type))
+        {
+            if (oparg != NB_TRUE_DIVIDE && oparg != NB_INPLACE_TRUE_DIVIDE &&
+                ltype == &PyLong_Type && rtype == &PyLong_Type) {
+                /* If both inputs are ints and the op is not division the result is an int */
+                OUT_OF_SPACE_IF_NULL(res = sym_new_type(ctx, &PyLong_Type));
+            }
+            else {
+                /* For any other op combining ints/floats the result is a float */
+                OUT_OF_SPACE_IF_NULL(res = sym_new_type(ctx, &PyFloat_Type));
+            }
+        }
+        OUT_OF_SPACE_IF_NULL(res = sym_new_unknown(ctx));
     }
 
     op(_BINARY_OP_ADD_INT, (left, right -- res)) {
@@ -423,7 +461,6 @@ dummy_func(void) {
         OUT_OF_SPACE_IF_NULL(value = sym_new_const(ctx, ptr));
         OUT_OF_SPACE_IF_NULL(null = sym_new_null(ctx));
     }
-
 
     op(_COPY, (bottom, unused[oparg-1] -- bottom, unused[oparg-1], top)) {
         assert(oparg > 0);

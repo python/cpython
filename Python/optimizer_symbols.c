@@ -231,6 +231,15 @@ _Py_uop_sym_new_null(_Py_UOpsContext *ctx)
     return null_sym;
 }
 
+PyTypeObject *
+_Py_uop_sym_get_type(_Py_UopsSymbol *sym)
+{
+    if (_Py_uop_sym_is_bottom(sym)) {
+        return NULL;
+    }
+    return sym->typ;
+}
+
 bool
 _Py_uop_sym_has_type(_Py_UopsSymbol *sym)
 {
@@ -244,10 +253,7 @@ bool
 _Py_uop_sym_matches_type(_Py_UopsSymbol *sym, PyTypeObject *typ)
 {
     assert(typ != NULL && PyType_Check(typ));
-    if (_Py_uop_sym_is_bottom(sym)) {
-        return false;
-    }
-    return sym->typ == typ;
+    return _Py_uop_sym_get_type(sym) == typ;
 }
 
 int

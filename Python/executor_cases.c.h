@@ -447,6 +447,26 @@
             break;
         }
 
+        case _GUARD_NOS_INT: {
+            PyObject *left;
+            left = stack_pointer[-2];
+            if (!PyLong_CheckExact(left)) {
+                UOP_STAT_INC(uopcode, miss);
+                JUMP_TO_JUMP_TARGET();
+            }
+            break;
+        }
+
+        case _GUARD_TOS_INT: {
+            PyObject *value;
+            value = stack_pointer[-1];
+            if (!PyLong_CheckExact(value)) {
+                UOP_STAT_INC(uopcode, miss);
+                JUMP_TO_JUMP_TARGET();
+            }
+            break;
+        }
+
         case _BINARY_OP_MULTIPLY_INT: {
             PyObject *right;
             PyObject *left;
@@ -505,6 +525,26 @@
                 JUMP_TO_JUMP_TARGET();
             }
             if (!PyFloat_CheckExact(right)) {
+                UOP_STAT_INC(uopcode, miss);
+                JUMP_TO_JUMP_TARGET();
+            }
+            break;
+        }
+
+        case _GUARD_NOS_FLOAT: {
+            PyObject *left;
+            left = stack_pointer[-2];
+            if (!PyFloat_CheckExact(left)) {
+                UOP_STAT_INC(uopcode, miss);
+                JUMP_TO_JUMP_TARGET();
+            }
+            break;
+        }
+
+        case _GUARD_TOS_FLOAT: {
+            PyObject *value;
+            value = stack_pointer[-1];
+            if (!PyFloat_CheckExact(value)) {
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
             }

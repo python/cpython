@@ -225,9 +225,18 @@
             _Py_UopsSymbol *left;
             right = stack_pointer[-1];
             left = stack_pointer[-2];
-            if (sym_matches_type(left, &PyLong_Type) &&
-                sym_matches_type(right, &PyLong_Type)) {
-                REPLACE_OP(this_instr, _NOP, 0, 0);
+            if (sym_matches_type(left, &PyLong_Type)) {
+                if (sym_matches_type(right, &PyLong_Type)) {
+                    REPLACE_OP(this_instr, _NOP, 0, 0);
+                }
+                else {
+                    REPLACE_OP(this_instr, _GUARD_TOS_INT, 0, 0);
+                }
+            }
+            else {
+                if (sym_matches_type(right, &PyLong_Type)) {
+                    REPLACE_OP(this_instr, _GUARD_NOS_INT, 0, 0);
+                }
             }
             if (!sym_set_type(left, &PyLong_Type)) {
                 goto hit_bottom;
@@ -235,6 +244,14 @@
             if (!sym_set_type(right, &PyLong_Type)) {
                 goto hit_bottom;
             }
+            break;
+        }
+
+        case _GUARD_NOS_INT: {
+            break;
+        }
+
+        case _GUARD_TOS_INT: {
             break;
         }
 
@@ -333,9 +350,18 @@
             _Py_UopsSymbol *left;
             right = stack_pointer[-1];
             left = stack_pointer[-2];
-            if (sym_matches_type(left, &PyFloat_Type) &&
-                sym_matches_type(right, &PyFloat_Type)) {
-                REPLACE_OP(this_instr, _NOP, 0 ,0);
+            if (sym_matches_type(left, &PyFloat_Type)) {
+                if (sym_matches_type(right, &PyFloat_Type)) {
+                    REPLACE_OP(this_instr, _NOP, 0, 0);
+                }
+                else {
+                    REPLACE_OP(this_instr, _GUARD_TOS_FLOAT, 0, 0);
+                }
+            }
+            else {
+                if (sym_matches_type(right, &PyFloat_Type)) {
+                    REPLACE_OP(this_instr, _GUARD_NOS_FLOAT, 0, 0);
+                }
             }
             if (!sym_set_type(left, &PyFloat_Type)) {
                 goto hit_bottom;
@@ -343,6 +369,14 @@
             if (!sym_set_type(right, &PyFloat_Type)) {
                 goto hit_bottom;
             }
+            break;
+        }
+
+        case _GUARD_NOS_FLOAT: {
+            break;
+        }
+
+        case _GUARD_TOS_FLOAT: {
             break;
         }
 
@@ -1852,9 +1886,27 @@
         }
 
         case _BINARY_OP: {
+            _Py_UopsSymbol *right;
+            _Py_UopsSymbol *left;
             _Py_UopsSymbol *res;
-            res = sym_new_not_null(ctx);
-            if (res == NULL) goto out_of_space;
+            right = stack_pointer[-1];
+            left = stack_pointer[-2];
+            PyTypeObject *ltype = sym_get_type(left);
+            PyTypeObject *rtype = sym_get_type(right);
+            if (ltype != NULL && (ltype == &PyLong_Type || ltype == &PyFloat_Type) &&
+                rtype != NULL && (rtype == &PyLong_Type || rtype == &PyFloat_Type))
+            {
+                if (oparg != NB_TRUE_DIVIDE && oparg != NB_INPLACE_TRUE_DIVIDE &&
+                    ltype == &PyLong_Type && rtype == &PyLong_Type) {
+                    /* If both inputs are ints and the op is not division the result is an int */
+                    OUT_OF_SPACE_IF_NULL(res = sym_new_type(ctx, &PyLong_Type));
+                }
+                else {
+                    /* For any other op combining ints/floats the result is a float */
+                    OUT_OF_SPACE_IF_NULL(res = sym_new_type(ctx, &PyFloat_Type));
+                }
+            }
+            OUT_OF_SPACE_IF_NULL(res = sym_new_unknown(ctx));
             stack_pointer[-2] = res;
             stack_pointer += -1;
             break;

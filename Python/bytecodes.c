@@ -426,6 +426,14 @@ dummy_func(
             EXIT_IF(!PyLong_CheckExact(right));
         }
 
+        op(_GUARD_NOS_INT, (left, unused -- left, unused)) {
+            EXIT_IF(!PyLong_CheckExact(left));
+        }
+
+        op(_GUARD_TOS_INT, (value -- value)) {
+            EXIT_IF(!PyLong_CheckExact(value));
+        }
+
         pure op(_BINARY_OP_MULTIPLY_INT, (left, right -- res)) {
             STAT_INC(BINARY_OP, hit);
             res = _PyLong_Multiply((PyLongObject *)left, (PyLongObject *)right);
@@ -460,6 +468,14 @@ dummy_func(
         op(_GUARD_BOTH_FLOAT, (left, right -- left, right)) {
             EXIT_IF(!PyFloat_CheckExact(left));
             EXIT_IF(!PyFloat_CheckExact(right));
+        }
+
+        op(_GUARD_NOS_FLOAT, (left, unused -- left, unused)) {
+            EXIT_IF(!PyFloat_CheckExact(left));
+        }
+
+        op(_GUARD_TOS_FLOAT, (value -- value)) {
+            EXIT_IF(!PyFloat_CheckExact(value));
         }
 
         pure op(_BINARY_OP_MULTIPLY_FLOAT, (left, right -- res)) {

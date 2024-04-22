@@ -903,9 +903,49 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertTrue(res)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
-        guard_both_float_count = [opname for opname in iter_opnames(ex) if opname == "_GUARD_BOTH_INT"]
-        self.assertLessEqual(len(guard_both_float_count), 1)
+        guard_both_int_count = [opname for opname in iter_opnames(ex) if opname == "_GUARD_BOTH_INT"]
+        self.assertLessEqual(len(guard_both_int_count), 1)
         self.assertIn("_COMPARE_OP_INT", uops)
+
+    def test_compare_op_type_propagation_int_partial(self):
+        def testfunc(n):
+            a = 1
+            for _ in range(n):
+                if a > 2:
+                    x = 0
+                if a < 2:
+                    x = 1
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, 32)
+        self.assertEqual(res, 1)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        guard_left_int_count = [opname for opname in iter_opnames(ex) if opname == "_GUARD_NOS_INT"]
+        guard_both_int_count = [opname for opname in iter_opnames(ex) if opname == "_GUARD_BOTH_INT"]
+        self.assertLessEqual(len(guard_left_int_count), 1)
+        self.assertEqual(len(guard_both_int_count), 0)
+        self.assertIn("_COMPARE_OP_INT", uops)
+
+    def test_compare_op_type_propagation_float_partial(self):
+        def testfunc(n):
+            a = 1.0
+            for _ in range(n):
+                if a > 2.0:
+                    x = 0
+                if a < 2.0:
+                    x = 1
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, 32)
+        self.assertEqual(res, 1)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        guard_left_float_count = [opname for opname in iter_opnames(ex) if opname == "_GUARD_NOS_FLOAT"]
+        guard_both_float_count = [opname for opname in iter_opnames(ex) if opname == "_GUARD_BOTH_FLOAT"]
+        self.assertLessEqual(len(guard_left_float_count), 1)
+        self.assertEqual(len(guard_both_float_count), 0)
+        self.assertIn("_COMPARE_OP_FLOAT", uops)
 
     def test_compare_op_type_propagation_unicode(self):
         def testfunc(n):
