@@ -3946,6 +3946,16 @@ PyInit__testcapi(void)
 
     PyModule_AddIntConstant(m, "the_number_three", 3);
 
+    if (PyModule_AddIntMacro(m, Py_single_input)) {
+        return NULL;
+    }
+    if (PyModule_AddIntMacro(m, Py_file_input)) {
+        return NULL;
+    }
+    if (PyModule_AddIntMacro(m, Py_eval_input)) {
+        return NULL;
+    }
+
     TestError = PyErr_NewException("_testcapi.error", NULL, NULL);
     Py_INCREF(TestError);
     PyModule_AddObject(m, "error", TestError);
@@ -4032,6 +4042,9 @@ PyInit__testcapi(void)
         return NULL;
     }
     if (_PyTestCapi_Init_PyOS(m) < 0) {
+        return NULL;
+    }
+    if (_PyTestCapi_Init_Run(m) < 0) {
         return NULL;
     }
     if (_PyTestCapi_Init_File(m) < 0) {
