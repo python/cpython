@@ -4909,9 +4909,10 @@ _PyType_GetBaseBySpec(PyTypeObject *type, PyType_Spec *spec)
 {
     assert(spec);
     assert(PyType_Check(type));
+    PyTypeObject *res;
 
     BEGIN_TYPE_LOCK()
-    PyTypeObject *res = get_base_by_spec(type, spec);
+    res = get_base_by_spec(type, spec);
     END_TYPE_LOCK()
 
     if (res == NULL) {
