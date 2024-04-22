@@ -644,7 +644,7 @@ class PrettyPrinter:
             if objid in context:
                 return _recursion(object), False, True
             key = _safe_key
-            if isinstance(typ, (self._dict_items_view, _collections.abc.ItemsView)):
+            if issubclass(typ, (self._dict_items_view, _collections.abc.ItemsView)):
                 key = _safe_tuple
             format = typ.__name__ + '([%s])'
             if hasattr(object, "_mapping"):

@@ -636,6 +636,18 @@ mappingproxy(OrderedDict([('the', 0),
         self.assertEqual(pprint.pformat(d3, depth=2),
                          "{1: dict_values([{...}])}")
 
+    def test_unorderable_items_views(self):
+        """Check that views with unorderable items have stable sorting."""
+        d = dict((((3+1j), 3), ((1+1j), (1+0j)), (1j, 0j), (500, None), (499, None)))
+        iv = ItemsView(d)
+        self.assertEqual(pprint.pformat(iv),
+                         pprint.pformat(iv))
+        self.assertTrue(pprint.pformat(iv).endswith(", 499: None, 500: None})"),
+                        pprint.pformat(iv))
+        self.assertEqual(pprint.pformat(d.items()),  # Won't be equal unless _safe_tuple
+                         pprint.pformat(d.items()))  # is used in _safe_repr
+        self.assertTrue(pprint.pformat(d.items()).endswith(", (499, None), (500, None)])"))
+
     def test_mapping_view_subclass_no_mapping(self):
         class BMV(MappingView):
             def __init__(self, d):
