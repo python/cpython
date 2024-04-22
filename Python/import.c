@@ -3887,13 +3887,13 @@ _imp_create_dynamic_impl(PyObject *module, PyObject *spec, PyObject *file)
     }
 
     PyThreadState *tstate = _PyThreadState_GET();
-    mod = import_find_extension(tstate, info.name, info.path);
+    mod = import_find_extension(tstate, info.name, info.filename);
     if (mod != NULL || _PyErr_Occurred(tstate)) {
         assert(mod == NULL || !_PyErr_Occurred(tstate));
         goto finally;
     }
 
-    if (PySys_Audit("import", "OOOOO", info.name, info.path,
+    if (PySys_Audit("import", "OOOOO", info.name, info.filename,
                     Py_None, Py_None, Py_None) < 0)
     {
         goto finally;
@@ -3905,7 +3905,7 @@ _imp_create_dynamic_impl(PyObject *module, PyObject *spec, PyObject *file)
      * _PyImport_GetModInitFunc(), but it isn't clear if the intervening
      * code relies on fp still being open. */
     if (file != NULL) {
-        fp = _Py_fopen_obj(info.path, "r");
+        fp = _Py_fopen_obj(info.filename, "r");
         if (fp == NULL) {
             goto finally;
         }

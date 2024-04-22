@@ -18,9 +18,9 @@ extern const char *_PyImport_DynLoadFiletab[];
 typedef PyObject *(*PyModInitFunction)(void);
 
 struct _Py_ext_module_loader_info {
-    PyObject *path;
+    PyObject *filename;
 #ifndef MS_WINDOWS
-    PyObject *path_encoded;
+    PyObject *filename_encoded;
 #endif
     PyObject *name;
     PyObject *name_encoded;
