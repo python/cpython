@@ -198,6 +198,7 @@ Python/pystate.c	-	_Py_tss_tstate	-
 
 Include/internal/pycore_blocks_output_buffer.h	-	BUFFER_BLOCK_SIZE	-
 Modules/_csv.c	-	quote_styles	-
+Modules/_ctypes/_ctypes.c	-	_ctypesmodule	-
 Modules/_ctypes/cfield.c	-	ffi_type_double	-
 Modules/_ctypes/cfield.c	-	ffi_type_float	-
 Modules/_ctypes/cfield.c	-	ffi_type_longdouble	-
@@ -742,3 +743,4 @@ Modules/_sqlite/module.c	-	_sqlite3module	-
 Modules/clinic/md5module.c.h	_md5_md5	_keywords	-
 Modules/clinic/grpmodule.c.h	grp_getgrgid	_keywords	-
 Modules/clinic/grpmodule.c.h	grp_getgrnam	_keywords	-
+Objects/object.c	-	constants	static PyObject*[]

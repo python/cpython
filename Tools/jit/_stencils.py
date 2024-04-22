@@ -27,10 +27,19 @@ class HoleValue(enum.Enum):
     GOT = enum.auto()
     # The current uop's oparg (exposed as _JIT_OPARG):
     OPARG = enum.auto()
-    # The current uop's operand (exposed as _JIT_OPERAND):
+    # The current uop's operand on 64-bit platforms (exposed as _JIT_OPERAND):
     OPERAND = enum.auto()
+    # The current uop's operand on 32-bit platforms (exposed as _JIT_OPERAND_HI and _JIT_OPERAND_LO):
+    OPERAND_HI = enum.auto()
+    OPERAND_LO = enum.auto()
     # The current uop's target (exposed as _JIT_TARGET):
     TARGET = enum.auto()
+    # The base address of the machine code for the jump target (exposed as _JIT_JUMP_TARGET):
+    JUMP_TARGET = enum.auto()
+    # The base address of the machine code for the error jump target (exposed as _JIT_ERROR_TARGET):
+    ERROR_TARGET = enum.auto()
+    # The index of the exit to be jumped through (exposed as _JIT_EXIT_INDEX):
+    EXIT_INDEX = enum.auto()
     # The base address of the machine code for the first uop (exposed as _JIT_TOP):
     TOP = enum.auto()
     # A hardcoded value of zero (used for symbol lookups):
@@ -124,7 +133,7 @@ class Stencil:
         ):
             self.holes.append(hole.replace(offset=base + 4 * i, kind=kind))
 
-    def remove_jump(self) -> None:
+    def remove_jump(self, *, alignment: int = 1) -> None:
         """Remove a zero-length continuation jump, if it exists."""
         hole = max(self.holes, key=lambda hole: hole.offset)
         match hole:
@@ -170,7 +179,7 @@ class Stencil:
                 offset -= 2
             case _:
                 return
-        if self.body[offset:] == jump:
+        if self.body[offset:] == jump and offset % alignment == 0:
             self.body = self.body[:offset]
             self.holes.remove(hole)
 
@@ -199,9 +208,8 @@ class StencilGroup:
             ):
                 self.code.pad(alignment)
                 self.code.emit_aarch64_trampoline(hole)
-                self.code.pad(alignment)
                 self.code.holes.remove(hole)
-        self.code.remove_jump()
+        self.code.remove_jump(alignment=alignment)
         self.code.pad(alignment)
         self.data.pad(8)
         for stencil in [self.code, self.data]:

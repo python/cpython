@@ -1153,9 +1153,9 @@ class AST_Tests(unittest.TestCase):
 
     @support.cpython_only
     def test_ast_recursion_limit(self):
-        fail_depth = support.EXCEEDS_RECURSION_LIMIT
+        fail_depth = support.exceeds_recursion_limit()
         crash_depth = 100_000
-        success_depth = int(support.Py_C_RECURSION_LIMIT * 0.8)
+        success_depth = int(support.get_c_recursion_limit() * 0.8)
         if _testinternalcapi is not None:
             remaining = _testinternalcapi.get_c_recursion_remaining()
             success_depth = min(success_depth, remaining)
@@ -2915,6 +2915,47 @@ class ASTConstructorTests(unittest.TestCase):
         node = ast.FunctionDef(name='foo', args=args)
         self.assertEqual(node.name, 'foo')
         self.assertEqual(node.decorator_list, [])
+
+    def test_custom_subclass(self):
+        class NoInit(ast.AST):
+            pass
+
+        obj = NoInit()
+        self.assertIsInstance(obj, NoInit)
+        self.assertEqual(obj.__dict__, {})
+
+        class Fields(ast.AST):
+            _fields = ('a',)
+
+        with self.assertWarnsRegex(DeprecationWarning,
+                                   r"Fields provides _fields but not _field_types."):
+            obj = Fields()
+        with self.assertRaises(AttributeError):
+            obj.a
+        obj = Fields(a=1)
+        self.assertEqual(obj.a, 1)
+
+        class FieldsAndTypes(ast.AST):
+            _fields = ('a',)
+            _field_types = {'a': int | None}
+            a: int | None = None
+
+        obj = FieldsAndTypes()
+        self.assertIs(obj.a, None)
+        obj = FieldsAndTypes(a=1)
+        self.assertEqual(obj.a, 1)
+
+        class FieldsAndTypesNoDefault(ast.AST):
+            _fields = ('a',)
+            _field_types = {'a': int}
+
+        with self.assertWarnsRegex(DeprecationWarning,
+                                   r"FieldsAndTypesNoDefault\.__init__ missing 1 required positional argument: 'a'\."):
+            obj = FieldsAndTypesNoDefault()
+        with self.assertRaises(AttributeError):
+            obj.a
+        obj = FieldsAndTypesNoDefault(a=1)
+        self.assertEqual(obj.a, 1)
 
 
 @support.cpython_only

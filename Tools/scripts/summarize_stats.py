@@ -114,7 +114,7 @@ def load_raw_data(input: Path) -> RawData:
         return data
 
     else:
-        raise ValueError(f"{input:r} is not a file or directory path")
+        raise ValueError(f"{input} is not a file or directory path")
 
 
 def save_raw_data(data: RawData, json_output: TextIO):
@@ -394,7 +394,7 @@ class Stats:
         return result
 
     def get_object_stats(self) -> dict[str, tuple[int, int]]:
-        total_materializations = self._data.get("Object new values", 0)
+        total_materializations = self._data.get("Object inline values", 0)
         total_allocations = self._data.get("Object allocations", 0) + self._data.get(
             "Object allocations from freelist", 0
         )
@@ -513,6 +513,8 @@ class Stats:
         attempts = self._data["Optimization optimizer attempts"]
         successes = self._data["Optimization optimizer successes"]
         no_memory = self._data["Optimization optimizer failure no memory"]
+        builtins_changed = self._data["Optimizer remove globals builtins changed"]
+        incorrect_keys = self._data["Optimizer remove globals incorrect keys"]
 
         return {
             Doc(
@@ -527,6 +529,14 @@ class Stats:
                 "Optimizer no memory",
                 "The number of optimizations that failed due to no memory.",
             ): (no_memory, attempts),
+            Doc(
+                "Remove globals builtins changed",
+                "The builtins changed during optimization",
+            ): (builtins_changed, attempts),
+            Doc(
+                "Remove globals incorrect keys",
+                "The keys in the globals dictionary aren't what was expected",
+            ): (incorrect_keys, attempts),
         }
 
     def get_histogram(self, prefix: str) -> list[tuple[int, int]]:
@@ -726,9 +736,9 @@ def execution_count_section() -> Section:
     )
 
 
-def pair_count_section() -> Section:
+def pair_count_section(prefix: str, title=None) -> Section:
     def calc_pair_count_table(stats: Stats) -> Rows:
-        opcode_stats = stats.get_opcode_stats("opcode")
+        opcode_stats = stats.get_opcode_stats(prefix)
         pair_counts = opcode_stats.get_pair_counts()
         total = opcode_stats.get_total_execution_count()
 
@@ -750,7 +760,7 @@ def pair_count_section() -> Section:
 
     return Section(
         "Pair counts",
-        "Pair counts for top 100 Tier 1 instructions",
+        f"Pair counts for top 100 {title if title else prefix} pairs",
         [
             Table(
                 ("Pair", "Count:", "Self:", "Cumulative:"),
@@ -1084,8 +1094,7 @@ def object_stats_section() -> Section:
         Below, "allocations" means "allocations that are not from a freelist".
         Total allocations = "Allocations from freelist" + "Allocations".
 
-        "New values" is the number of values arrays created for objects with
-        managed dicts.
+        "Inline values" is the number of values arrays inlined into objects.
 
         The cache hit/miss numbers are for the MRO cache, split into dunder and
         other names.
@@ -1177,6 +1186,17 @@ def optimization_section() -> Section:
             reverse=True,
         )
 
+    def calc_error_in_opcodes_table(stats: Stats) -> Rows:
+        error_in_opcodes = stats.get_opcode_stats("error_in_opcode")
+        return sorted(
+            [
+                (opcode, Count(count))
+                for opcode, count in error_in_opcodes.get_opcode_counts().items()
+            ],
+            key=itemgetter(1),
+            reverse=True,
+        )
+
     def iter_optimization_tables(base_stats: Stats, head_stats: Stats | None = None):
         if not base_stats.get_optimization_stats() or (
             head_stats is not None and not head_stats.get_optimization_stats()
@@ -1212,6 +1232,7 @@ def optimization_section() -> Section:
                 )
             ],
         )
+        yield pair_count_section(prefix="uop", title="Non-JIT uop")
         yield Section(
             "Unsupported opcodes",
             "",
@@ -1222,6 +1243,11 @@ def optimization_section() -> Section:
                     JoinMode.CHANGE,
                 )
             ],
+        )
+        yield Section(
+            "Optimizer errored out with opcode",
+            "Optimization stopped after encountering this opcode",
+            [Table(("Opcode", "Count:"), calc_error_in_opcodes_table, JoinMode.CHANGE)],
         )
 
     return Section(
@@ -1267,7 +1293,7 @@ def meta_stats_section() -> Section:
 
 LAYOUT = [
     execution_count_section(),
-    pair_count_section(),
+    pair_count_section("opcode"),
     pre_succ_pairs_section(),
     specialization_section(),
     specialization_effectiveness_section(),
