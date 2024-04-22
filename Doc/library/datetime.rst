@@ -213,10 +213,10 @@ A :class:`timedelta` object represents a duration, the difference between two
    Only *days*, *seconds* and *microseconds* are stored internally.
    Arguments are converted to those units:
 
-   * A *millisecond* is converted to 1000 *microseconds*.
-   * A *minute* is converted to 60 *seconds*.
-   * An *hour* is converted to 3600 *seconds*.
-   * A *week* is converted to 7 *days*.
+   * A millisecond is converted to 1000 microseconds.
+   * A minute is converted to 60 seconds.
+   * An hour is converted to 3600 seconds.
+   * A week is converted to 7 days.
 
    and days, seconds and microseconds are then normalized so that the
    representation is unique, with
@@ -285,21 +285,15 @@ Note that, because of normalization, ``timedelta.max > -timedelta.min`` is true.
 
 Instance attributes (read-only):
 
-
-.. attribute:: timedelta.days
-
-   Between ``-999999999`` and ``999999999`` inclusive.
-
-
-.. attribute:: timedelta.seconds
-
-   Between ``0`` and ``86399`` inclusive.
-
-
-.. attribute:: timedelta.microseconds
-
-   Between ``0`` and ``999999`` inclusive.
-
++------------------+--------------------------------------------+
+| Attribute        | Value                                      |
++==================+============================================+
+| ``days``         | Between -999999999 and 999999999 inclusive |
++------------------+--------------------------------------------+
+| ``seconds``      | Between 0 and 86399 inclusive              |
++------------------+--------------------------------------------+
+| ``microseconds`` | Between 0 and 999999 inclusive             |
++------------------+--------------------------------------------+
 
 Supported operations:
 
@@ -375,7 +369,7 @@ Notes:
    This is exact and cannot overflow.
 
 (3)
-   Division by ``0`` raises :exc:`ZeroDivisionError`.
+   Division by zero raises :exc:`ZeroDivisionError`.
 
 (4)
    ``-timedelta.max`` is not representable as a :class:`timedelta` object.
@@ -1221,7 +1215,7 @@ Supported operations:
    object *t* such that ``datetime2 + t == datetime1``. No time zone adjustments
    are done in this case.
 
-   If both are aware and have different :attr:`~.datetime.tzinfo` attributes, ``a - b`` acts
+   If both are aware and have different :attr:`~.datetime.tzinfo` attributes, ``a-b`` acts
    as if *a* and *b* were first converted to naive UTC datetimes. The
    result is ``(a.replace(tzinfo=None) - a.utcoffset()) - (b.replace(tzinfo=None)
    - b.utcoffset())`` except that the implementation never overflows.
