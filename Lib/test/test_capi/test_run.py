@@ -2,7 +2,7 @@ import os
 import unittest
 from collections import UserDict
 from test.support import import_helper
-from test.support.os_helper import unlink, TESTFN, TESTFN_UNDECODABLE
+from test.support.os_helper import unlink, TESTFN, TESTFN_ASCII, TESTFN_UNDECODABLE
 
 NULL = None
 _testcapi = import_helper.import_module('_testcapi')
@@ -63,7 +63,8 @@ class CAPITest(unittest.TestCase):
 
     def test_run_fileexflags(self):
         # Test PyRun_FileExFlags().
-        filename = os.fsencode(TESTFN)
+        # XXX: fopen() uses different path encoding than Python on Windows.
+        filename = os.fsencode(TESTFN if os.name != 'nt' else TESTFN_ASCII)
         with open(filename, 'wb') as fp:
             fp.write(b'a\n')
         self.addCleanup(unlink, filename)
@@ -89,6 +90,7 @@ class CAPITest(unittest.TestCase):
         # CRASHES run(UserDict(), dict(a=1))
 
     @unittest.skipUnless(TESTFN_UNDECODABLE, 'only works if there are undecodable paths')
+    @unittest.skipIf(os.name == 'nt', 'does not work on Windows')
     def test_run_fileexflags_with_undecodable_filename(self):
         run = _testcapi.run_fileexflags
         try:
