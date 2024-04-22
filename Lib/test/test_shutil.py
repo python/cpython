@@ -1563,42 +1563,6 @@ class TestArchives(BaseTest, unittest.TestCase):
 
     ### shutil.make_archive
 
-    @support.requires_zlib()
-    def test_make_tarball(self):
-        # creating something to tar
-        root_dir, base_dir = self._create_files('')
-
-        tmpdir2 = self.mkdtemp()
-        # force shutil to create the directory
-        os.rmdir(tmpdir2)
-        # working with relative paths
-        work_dir = os.path.dirname(tmpdir2)
-        rel_base_name = os.path.join(os.path.basename(tmpdir2), 'archive')
-
-        with os_helper.change_cwd(work_dir), no_chdir:
-            base_name = os.path.abspath(rel_base_name)
-            tarball = make_archive(rel_base_name, 'gztar', root_dir, '.')
-
-        # check if the compressed tarball was created
-        self.assertEqual(tarball, base_name + '.tar.gz')
-        self.assertTrue(os.path.isfile(tarball))
-        self.assertTrue(tarfile.is_tarfile(tarball))
-        with tarfile.open(tarball, 'r:gz') as tf:
-            self.assertCountEqual(tf.getnames(),
-                                  ['.', './sub', './sub2',
-                                   './file1', './file2', './sub/file3'])
-
-        # trying an uncompressed one
-        with os_helper.change_cwd(work_dir), no_chdir:
-            tarball = make_archive(rel_base_name, 'tar', root_dir, '.')
-        self.assertEqual(tarball, base_name + '.tar')
-        self.assertTrue(os.path.isfile(tarball))
-        self.assertTrue(tarfile.is_tarfile(tarball))
-        with tarfile.open(tarball, 'r') as tf:
-            self.assertCountEqual(tf.getnames(),
-                                  ['.', './sub', './sub2',
-                                  './file1', './file2', './sub/file3'])
-
     def _tarinfo(self, path):
         with tarfile.open(path) as tar:
             names = tar.getnames()
@@ -1618,6 +1582,92 @@ class TestArchives(BaseTest, unittest.TestCase):
         if base_dir:
             write_file((root_dir, 'outer'), 'xxx')
         return root_dir, base_dir
+
+    @support.requires_zlib()
+    def test_make_tarfile(self):
+        root_dir, base_dir = self._create_files()
+        # Test without base_dir.
+        with os_helper.temp_cwd(), no_chdir:
+            base_name = os.path.join('dst', 'archive')
+            archive = make_archive(base_name, 'tar', root_dir)
+            # check if the compressed tarball was created
+            self.assertEqual(archive, os.path.abspath(base_name) + '.tar')
+            self.assertTrue(os.path.isfile(archive))
+            self.assertTrue(tarfile.is_tarfile(archive))
+            with tarfile.open(archive, 'r') as tf:
+                self.assertCountEqual(tf.getnames(),
+                        ['.', './dist', './dist/sub', './dist/sub2',
+                         './dist/file1', './dist/file2', './dist/sub/file3',
+                         './outer'])
+
+        # Test with base_dir.
+        with os_helper.temp_cwd(), no_chdir:
+            base_name = os.path.join('dst2', 'archive')
+            archive = make_archive(base_name, 'tar', root_dir, base_dir)
+            self.assertEqual(archive, os.path.abspath(base_name) + '.tar')
+            # check if the uncompressed tarball was created
+            self.assertTrue(os.path.isfile(archive))
+            self.assertTrue(tarfile.is_tarfile(archive))
+            with tarfile.open(archive, 'r') as tf:
+                self.assertCountEqual(tf.getnames(),
+                        ['dist', 'dist/sub', 'dist/sub2',
+                         'dist/file1', 'dist/file2', 'dist/sub/file3'])
+
+        # Test with multi-component base_dir.
+        with os_helper.temp_cwd(), no_chdir:
+            base_name = os.path.join('dst3', 'archive')
+            archive = make_archive(base_name, 'tar', root_dir,
+                                   os.path.join(base_dir, 'sub'))
+            self.assertEqual(archive, os.path.abspath(base_name) + '.tar')
+            self.assertTrue(os.path.isfile(archive))
+            self.assertTrue(tarfile.is_tarfile(archive))
+            with tarfile.open(archive, 'r') as tf:
+                self.assertCountEqual(tf.getnames(),
+                        ['dist/sub', 'dist/sub/file3'])
+
+    @support.requires_zlib()
+    def test_make_tarfile_without_rootdir(self):
+        root_dir, base_dir = self._create_files()
+        # Test without base_dir.
+        base_name = os.path.join(self.mkdtemp(), 'dst', 'archive')
+        base_name = os.path.relpath(base_name, root_dir)
+        with os_helper.change_cwd(root_dir), no_chdir:
+            archive = make_archive(base_name, 'gztar')
+            self.assertEqual(archive, base_name + '.tar.gz')
+            self.assertTrue(os.path.isfile(archive))
+            self.assertTrue(tarfile.is_tarfile(archive))
+            with tarfile.open(archive, 'r:gz') as tf:
+                self.assertCountEqual(tf.getnames(),
+                        ['.', './dist', './dist/sub', './dist/sub2',
+                         './dist/file1', './dist/file2', './dist/sub/file3',
+                         './outer'])
+
+        # Test with base_dir.
+        with os_helper.change_cwd(root_dir), no_chdir:
+            base_name = os.path.join('dst', 'archive')
+            archive = make_archive(base_name, 'tar', base_dir=base_dir)
+            self.assertEqual(archive, base_name + '.tar')
+            self.assertTrue(os.path.isfile(archive))
+            self.assertTrue(tarfile.is_tarfile(archive))
+            with tarfile.open(archive, 'r') as tf:
+                self.assertCountEqual(tf.getnames(),
+                        ['dist', 'dist/sub', 'dist/sub2',
+                         'dist/file1', 'dist/file2', 'dist/sub/file3'])
+
+    def test_make_tarfile_with_explicit_curdir(self):
+        # Test with base_dir=os.curdir.
+        root_dir, base_dir = self._create_files()
+        with os_helper.temp_cwd(), no_chdir:
+            base_name = os.path.join('dst', 'archive')
+            archive = make_archive(base_name, 'tar', root_dir, os.curdir)
+            self.assertEqual(archive, os.path.abspath(base_name) + '.tar')
+            self.assertTrue(os.path.isfile(archive))
+            self.assertTrue(tarfile.is_tarfile(archive))
+            with tarfile.open(archive, 'r') as tf:
+                self.assertCountEqual(tf.getnames(),
+                        ['.', './dist', './dist/sub', './dist/sub2',
+                         './dist/file1', './dist/file2', './dist/sub/file3',
+                         './outer'])
 
     @support.requires_zlib()
     @unittest.skipUnless(shutil.which('tar'),
@@ -1668,40 +1718,89 @@ class TestArchives(BaseTest, unittest.TestCase):
 
     @support.requires_zlib()
     def test_make_zipfile(self):
-        # creating something to zip
         root_dir, base_dir = self._create_files()
+        # Test without base_dir.
+        with os_helper.temp_cwd(), no_chdir:
+            base_name = os.path.join('dst', 'archive')
+            archive = make_archive(base_name, 'zip', root_dir)
+            self.assertEqual(archive, os.path.abspath(base_name) + '.zip')
+            self.assertTrue(os.path.isfile(archive))
+            self.assertTrue(zipfile.is_zipfile(archive))
+            with zipfile.ZipFile(archive) as zf:
+                self.assertCountEqual(zf.namelist(),
+                        ['dist/', 'dist/sub/', 'dist/sub2/',
+                         'dist/file1', 'dist/file2', 'dist/sub/file3',
+                         'outer'])
 
-        tmpdir2 = self.mkdtemp()
-        # force shutil to create the directory
-        os.rmdir(tmpdir2)
-        # working with relative paths
-        work_dir = os.path.dirname(tmpdir2)
-        rel_base_name = os.path.join(os.path.basename(tmpdir2), 'archive')
+        # Test with base_dir.
+        with os_helper.temp_cwd(), no_chdir:
+            base_name = os.path.join('dst2', 'archive')
+            archive = make_archive(base_name, 'zip', root_dir, base_dir)
+            self.assertEqual(archive, os.path.abspath(base_name) + '.zip')
+            self.assertTrue(os.path.isfile(archive))
+            self.assertTrue(zipfile.is_zipfile(archive))
+            with zipfile.ZipFile(archive) as zf:
+                self.assertCountEqual(zf.namelist(),
+                        ['dist/', 'dist/sub/', 'dist/sub2/',
+                         'dist/file1', 'dist/file2', 'dist/sub/file3'])
 
-        with os_helper.change_cwd(work_dir), no_chdir:
-            base_name = os.path.abspath(rel_base_name)
-            res = make_archive(rel_base_name, 'zip', root_dir)
+        # Test with multi-component base_dir.
+        with os_helper.temp_cwd(), no_chdir:
+            base_name = os.path.join('dst3', 'archive')
+            archive = make_archive(base_name, 'zip', root_dir,
+                                   os.path.join(base_dir, 'sub'))
+            self.assertEqual(archive, os.path.abspath(base_name) + '.zip')
+            self.assertTrue(os.path.isfile(archive))
+            self.assertTrue(zipfile.is_zipfile(archive))
+            with zipfile.ZipFile(archive) as zf:
+                self.assertCountEqual(zf.namelist(),
+                        ['dist/sub/', 'dist/sub/file3'])
 
-        self.assertEqual(res, base_name + '.zip')
-        self.assertTrue(os.path.isfile(res))
-        self.assertTrue(zipfile.is_zipfile(res))
-        with zipfile.ZipFile(res) as zf:
-            self.assertCountEqual(zf.namelist(),
-                    ['dist/', 'dist/sub/', 'dist/sub2/',
-                     'dist/file1', 'dist/file2', 'dist/sub/file3',
-                     'outer'])
+    @support.requires_zlib()
+    def test_make_zipfile_without_rootdir(self):
+        root_dir, base_dir = self._create_files()
+        # Test without base_dir.
+        base_name = os.path.join(self.mkdtemp(), 'dst', 'archive')
+        base_name = os.path.relpath(base_name, root_dir)
+        with os_helper.change_cwd(root_dir), no_chdir:
+            archive = make_archive(base_name, 'zip')
+            self.assertEqual(archive, base_name + '.zip')
+            self.assertTrue(os.path.isfile(archive))
+            self.assertTrue(zipfile.is_zipfile(archive))
+            with zipfile.ZipFile(archive) as zf:
+                self.assertCountEqual(zf.namelist(),
+                        ['dist/', 'dist/sub/', 'dist/sub2/',
+                         'dist/file1', 'dist/file2', 'dist/sub/file3',
+                         'outer'])
 
-        with os_helper.change_cwd(work_dir), no_chdir:
-            base_name = os.path.abspath(rel_base_name)
-            res = make_archive(rel_base_name, 'zip', root_dir, base_dir)
+        # Test with base_dir.
+        root_dir, base_dir = self._create_files()
+        with os_helper.change_cwd(root_dir), no_chdir:
+            base_name = os.path.join('dst', 'archive')
+            archive = make_archive(base_name, 'zip', base_dir=base_dir)
+            self.assertEqual(archive, base_name + '.zip')
+            self.assertTrue(os.path.isfile(archive))
+            self.assertTrue(zipfile.is_zipfile(archive))
+            with zipfile.ZipFile(archive) as zf:
+                self.assertCountEqual(zf.namelist(),
+                        ['dist/', 'dist/sub/', 'dist/sub2/',
+                         'dist/file1', 'dist/file2', 'dist/sub/file3'])
 
-        self.assertEqual(res, base_name + '.zip')
-        self.assertTrue(os.path.isfile(res))
-        self.assertTrue(zipfile.is_zipfile(res))
-        with zipfile.ZipFile(res) as zf:
-            self.assertCountEqual(zf.namelist(),
-                    ['dist/', 'dist/sub/', 'dist/sub2/',
-                     'dist/file1', 'dist/file2', 'dist/sub/file3'])
+    @support.requires_zlib()
+    def test_make_zipfile_with_explicit_curdir(self):
+        # Test with base_dir=os.curdir.
+        root_dir, base_dir = self._create_files()
+        with os_helper.temp_cwd(), no_chdir:
+            base_name = os.path.join('dst', 'archive')
+            archive = make_archive(base_name, 'zip', root_dir, os.curdir)
+            self.assertEqual(archive, os.path.abspath(base_name) + '.zip')
+            self.assertTrue(os.path.isfile(archive))
+            self.assertTrue(zipfile.is_zipfile(archive))
+            with zipfile.ZipFile(archive) as zf:
+                self.assertCountEqual(zf.namelist(),
+                        ['dist/', 'dist/sub/', 'dist/sub2/',
+                         'dist/file1', 'dist/file2', 'dist/sub/file3',
+                         'outer'])
 
     @support.requires_zlib()
     @unittest.skipUnless(shutil.which('zip'),
@@ -1871,17 +1970,19 @@ class TestArchives(BaseTest, unittest.TestCase):
             unregister_archive_format('xxx')
 
     def test_make_tarfile_in_curdir(self):
-        # Issue #21280
+        # Issue #21280: Test with the archive in the current directory.
         root_dir = self.mkdtemp()
         with os_helper.change_cwd(root_dir), no_chdir:
+            # root_dir must be None, so the archive path is relative.
             self.assertEqual(make_archive('test', 'tar'), 'test.tar')
             self.assertTrue(os.path.isfile('test.tar'))
 
     @support.requires_zlib()
     def test_make_zipfile_in_curdir(self):
-        # Issue #21280
+        # Issue #21280: Test with the archive in the current directory.
         root_dir = self.mkdtemp()
         with os_helper.change_cwd(root_dir), no_chdir:
+            # root_dir must be None, so the archive path is relative.
             self.assertEqual(make_archive('test', 'zip'), 'test.zip')
             self.assertTrue(os.path.isfile('test.zip'))
 
@@ -1902,10 +2003,11 @@ class TestArchives(BaseTest, unittest.TestCase):
         self.assertNotIn('xxx', formats)
 
     def test_make_tarfile_rootdir_nodir(self):
-        # GH-99203
+        # GH-99203: Test with root_dir is not a real directory.
         self.addCleanup(os_helper.unlink, f'{TESTFN}.tar')
         for dry_run in (False, True):
             with self.subTest(dry_run=dry_run):
+                # root_dir does not exist.
                 tmp_dir = self.mkdtemp()
                 nonexisting_file = os.path.join(tmp_dir, 'nonexisting')
                 with self.assertRaises(FileNotFoundError) as cm:
@@ -1914,6 +2016,7 @@ class TestArchives(BaseTest, unittest.TestCase):
                 self.assertEqual(cm.exception.filename, nonexisting_file)
                 self.assertFalse(os.path.exists(f'{TESTFN}.tar'))
 
+                # root_dir is a file.
                 tmp_fd, tmp_file = tempfile.mkstemp(dir=tmp_dir)
                 os.close(tmp_fd)
                 with self.assertRaises(NotADirectoryError) as cm:
@@ -1924,10 +2027,11 @@ class TestArchives(BaseTest, unittest.TestCase):
 
     @support.requires_zlib()
     def test_make_zipfile_rootdir_nodir(self):
-        # GH-99203
+        # GH-99203: Test with root_dir is not a real directory.
         self.addCleanup(os_helper.unlink, f'{TESTFN}.zip')
         for dry_run in (False, True):
             with self.subTest(dry_run=dry_run):
+                # root_dir does not exist.
                 tmp_dir = self.mkdtemp()
                 nonexisting_file = os.path.join(tmp_dir, 'nonexisting')
                 with self.assertRaises(FileNotFoundError) as cm:
@@ -1936,6 +2040,7 @@ class TestArchives(BaseTest, unittest.TestCase):
                 self.assertEqual(cm.exception.filename, nonexisting_file)
                 self.assertFalse(os.path.exists(f'{TESTFN}.zip'))
 
+                # root_dir is a file.
                 tmp_fd, tmp_file = tempfile.mkstemp(dir=tmp_dir)
                 os.close(tmp_fd)
                 with self.assertRaises(NotADirectoryError) as cm:
