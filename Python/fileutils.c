@@ -2318,7 +2318,7 @@ _Py_skiproot(const wchar_t *path, Py_ssize_t size, Py_ssize_t *drvsize, Py_ssize
     }
 #undef IS_SEP
 #else
-    wchar_t *pEnd = size >= 0 ? &path[size] : NULL;
+    const wchar_t *pEnd = size >= 0 ? &path[size] : NULL;
 #define IS_END(x) (pEnd ? (x) == pEnd : !*(x))
 #define IS_SEP(x) (*(x) == SEP || *(x) == ALTSEP)
 #define SEP_OR_END(x) (IS_SEP(x) || IS_END(x))

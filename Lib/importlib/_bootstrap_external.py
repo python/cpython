@@ -106,7 +106,7 @@ if _MS_WINDOWS:
             return path_parts[0]
         root = ""
         path = []
-        for new_root, tail in map(_os._path_splitanchor, path_parts):
+        for new_root, tail in map(_os._path_splitroot, path_parts):
             if new_root.startswith(path_sep_tuple) or new_root.endswith(path_sep_tuple):
                 root = new_root.rstrip(path_separators) or root
                 path = [path_sep + tail]
@@ -178,7 +178,7 @@ if _MS_WINDOWS:
         """Replacement for os.path.isabs."""
         if not path:
             return False
-        root = _os._path_splitanchor(path)[0].replace('/', '\\')
+        root = _os._path_splitroot(path)[0].replace('/', '\\')
         return len(root) > 1 and (root.startswith('\\\\') or root.endswith('\\'))
 
 else:

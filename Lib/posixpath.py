@@ -135,7 +135,7 @@ def splitdrive(p):
 
 
 try:
-    from posix import _path_splitroot
+    from posix import _path_splitroot_ex as splitroot
 except ImportError:
     def splitroot(p):
         """Split a pathname into drive, root and tail. On Posix, drive is always
@@ -164,23 +164,6 @@ except ImportError:
             # Precisely two leading slashes, e.g.: '//foo'. Implementation defined per POSIX, see
             # https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap04.html#tag_04_13
             return empty, p[:2], p[2:]
-else:
-    def splitroot(p):
-        """Split a pathname into drive, root and tail. On Posix, drive is always
-        empty; the root may be empty, a single slash, or two slashes. The tail
-        contains anything after the root. For example:
-
-            splitroot('foo/bar') == ('', '', 'foo/bar')
-            splitroot('/foo/bar') == ('', '/', 'foo/bar')
-            splitroot('//foo/bar') == ('', '//', 'foo/bar')
-            splitroot('///foo/bar') == ('', '/', '//foo/bar')
-        """
-        p = os.fspath(p)
-        if isinstance(p, bytes):
-            # Optimisation: the drive is always empty
-            _, root, tail = _path_splitroot(os.fsdecode(p))
-            return b'', os.fsencode(root), os.fsencode(tail)
-        return _path_splitroot(p)
 
 
 # Return the tail (basename) part of a path, same as split(path)[1].

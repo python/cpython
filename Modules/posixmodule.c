@@ -5041,7 +5041,7 @@ exit:
 
 
 /*[clinic input]
-os._path_splitanchor
+os._path_splitroot
 
     path: path_t
 
@@ -5049,8 +5049,8 @@ Removes everything after the root on Win32.
 [clinic start generated code]*/
 
 static PyObject *
-os__path_splitanchor_impl(PyObject *module, path_t *path)
-/*[clinic end generated code: output=37b687463b40c424 input=3cf73c8896e3d7a5]*/
+os__path_splitroot_impl(PyObject *module, path_t *path)
+/*[clinic end generated code: output=ab7f1a88b654581c input=dc93b1d3984cffb6]*/
 {
     wchar_t *buffer;
     wchar_t *end;
@@ -5468,33 +5468,33 @@ os__path_islink_impl(PyObject *module, PyObject *path)
 
 
 /*[clinic input]
-os._path_splitroot
+os._path_splitroot_ex
 
-    path: unicode
-    /
+    p: path_t
 
 [clinic start generated code]*/
 
 static PyObject *
-os__path_splitroot_impl(PyObject *module, PyObject *path)
-/*[clinic end generated code: output=6904e00a6a970b9b input=4ef301247820b583]*/
+os__path_splitroot_ex_impl(PyObject *module, path_t *p)
+/*[clinic end generated code: output=2001f8839dda3762 input=3b4aad8eba96cfef]*/
 {
-    Py_ssize_t len, drvsize, rootsize;
-    PyObject *drv, *root, *tail, *result = NULL;
-    wchar_t *buffer = PyUnicode_AsWideCharString(path, &len);
-    if (!buffer) {
-        goto exit;
-    }
-    _Py_skiproot(buffer, len, &drvsize, &rootsize);
-    if (!(drv = PyUnicode_FromWideChar(buffer, drvsize)) ||
-        !(root = PyUnicode_FromWideChar(&buffer[drvsize], rootsize)) ||
-        !(tail = PyUnicode_FromWideChar(&buffer[drvsize + rootsize], len - drvsize - rootsize)))
+    Py_ssize_t len = p->length, drvsize, rootsize;
+    PyObject *drv = NULL, *root = NULL, *tail = NULL, *result = NULL;
+    const wchar_t *wide = p->wide;
+    _Py_skiproot(wide, len, &drvsize, &rootsize);
+    if (!(drv = PyUnicode_FromWideChar(wide, drvsize)) ||
+        !(root = PyUnicode_FromWideChar(&wide[drvsize], rootsize)) ||
+        !(tail = PyUnicode_FromWideChar(&wide[drvsize + rootsize], len - drvsize - rootsize)))
     {
         goto exit;
     }
+    if (p->narrow) {
+        Py_SETREF(drv, PyUnicode_EncodeFSDefault(drv));
+        Py_SETREF(root, PyUnicode_EncodeFSDefault(root));
+        Py_SETREF(tail, PyUnicode_EncodeFSDefault(tail));
+    }
     result = Py_BuildValue("(OOO)", drv, root, tail);
 exit:
-    PyMem_Free(buffer);
     Py_DECREF(drv);
     Py_DECREF(root);
     Py_DECREF(tail);
@@ -16833,8 +16833,8 @@ static PyMethodDef posix_methods[] = {
     OS__GETFINALPATHNAME_METHODDEF
     OS__FINDFIRSTFILE_METHODDEF
     OS__GETVOLUMEPATHNAME_METHODDEF
-    OS__PATH_SPLITANCHOR_METHODDEF
     OS__PATH_SPLITROOT_METHODDEF
+    OS__PATH_SPLITROOT_EX_METHODDEF
     OS__PATH_NORMPATH_METHODDEF
     OS_GETLOADAVG_METHODDEF
     OS_URANDOM_METHODDEF
