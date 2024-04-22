@@ -29,7 +29,10 @@ extern int _Py_ext_module_loader_info_from_spec(
     PyObject *spec,
     struct _Py_ext_module_loader_info *info);
 
-extern PyObject *_PyImport_LoadDynamicModuleWithSpec(PyObject *spec, FILE *);
+extern PyObject *_PyImport_LoadDynamicModuleWithSpec(
+    struct _Py_ext_module_loader_info *info,
+    PyObject *spec,
+    FILE *fp);
 
 
 /* Max length of module suffix searched for -- accommodates "module.slb" */

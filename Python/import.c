@@ -3878,28 +3878,22 @@ static PyObject *
 _imp_create_dynamic_impl(PyObject *module, PyObject *spec, PyObject *file)
 /*[clinic end generated code: output=83249b827a4fde77 input=c31b954f4cf4e09d]*/
 {
-    PyObject *mod, *name, *filename;
+    PyObject *mod = NULL;
     FILE *fp;
 
-    name = PyObject_GetAttrString(spec, "name");
-    if (name == NULL) {
-        return NULL;
-    }
-
-    filename = PyObject_GetAttrString(spec, "origin");
-    if (filename == NULL) {
-        Py_DECREF(name);
+    struct _Py_ext_module_loader_info info;
+    if (_Py_ext_module_loader_info_from_spec(spec, &info) < 0) {
         return NULL;
     }
 
     PyThreadState *tstate = _PyThreadState_GET();
-    mod = import_find_extension(tstate, name, filename);
+    mod = import_find_extension(tstate, info.name, info.path);
     if (mod != NULL || _PyErr_Occurred(tstate)) {
         assert(mod == NULL || !_PyErr_Occurred(tstate));
         goto finally;
     }
 
-    if (PySys_Audit("import", "OOOOO", name, filename,
+    if (PySys_Audit("import", "OOOOO", info.name, info.path,
                     Py_None, Py_None, Py_None) < 0)
     {
         goto finally;
@@ -3911,7 +3905,7 @@ _imp_create_dynamic_impl(PyObject *module, PyObject *spec, PyObject *file)
      * _PyImport_GetModInitFunc(), but it isn't clear if the intervening
      * code relies on fp still being open. */
     if (file != NULL) {
-        fp = _Py_fopen_obj(filename, "r");
+        fp = _Py_fopen_obj(info.path, "r");
         if (fp == NULL) {
             goto finally;
         }
@@ -3920,7 +3914,7 @@ _imp_create_dynamic_impl(PyObject *module, PyObject *spec, PyObject *file)
         fp = NULL;
     }
 
-    mod = _PyImport_LoadDynamicModuleWithSpec(spec, fp);
+    mod = _PyImport_LoadDynamicModuleWithSpec(&info, spec, fp);
 
     // XXX Shouldn't this happen in the error cases too.
     if (fp) {
@@ -3928,8 +3922,7 @@ _imp_create_dynamic_impl(PyObject *module, PyObject *spec, PyObject *file)
     }
 
 finally:
-    Py_DECREF(name);
-    Py_DECREF(filename);
+    _Py_ext_module_loader_info_clear(&info);
     return mod;
 }
 
