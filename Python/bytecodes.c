@@ -20,6 +20,7 @@
 #include "pycore_object.h"        // _PyObject_GC_TRACK()
 #include "pycore_opcode_metadata.h"  // uop names
 #include "pycore_opcode_utils.h"  // MAKE_FUNCTION_*
+#include "pycore_pyatomic_ft_wrappers.h" // FT_ATOMIC_LOAD_PTR_ACQUIRE
 #include "pycore_pyerrors.h"      // _PyErr_GetRaisedException()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_range.h"         // _PyRangeIterObject
@@ -150,10 +151,11 @@ dummy_func(
             uintptr_t global_version =
                 _Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) &
                 ~_PY_EVAL_EVENTS_MASK;
-            uintptr_t code_version = _PyFrame_GetCode(frame)->_co_instrumentation_version;
+            PyCodeObject *code = _PyFrame_GetCode(frame);
+            uintptr_t code_version = FT_ATOMIC_LOAD_UINTPTR_ACQUIRE(code->_co_instrumentation_version);
             assert((code_version & 255) == 0);
             if (code_version != global_version) {
-                int err = _Py_Instrument(_PyFrame_GetCode(frame), tstate->interp);
+                int err = _Py_Instrument(code, tstate->interp);
                 ERROR_IF(err, error);
                 next_instr = this_instr;
             }
@@ -171,14 +173,14 @@ dummy_func(
             _Py_emscripten_signal_clock -= Py_EMSCRIPTEN_SIGNAL_HANDLING;
 #endif
             uintptr_t eval_breaker = _Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker);
-            uintptr_t version = _PyFrame_GetCode(frame)->_co_instrumentation_version;
+            uintptr_t version = FT_ATOMIC_LOAD_UINTPTR_ACQUIRE(_PyFrame_GetCode(frame)->_co_instrumentation_version);
             assert((version & _PY_EVAL_EVENTS_MASK) == 0);
             DEOPT_IF(eval_breaker != version);
         }
 
         inst(INSTRUMENTED_RESUME, (--)) {
             uintptr_t global_version = _Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & ~_PY_EVAL_EVENTS_MASK;
-            uintptr_t code_version = _PyFrame_GetCode(frame)->_co_instrumentation_version;
+            uintptr_t code_version = FT_ATOMIC_LOAD_UINTPTR_ACQUIRE(_PyFrame_GetCode(frame)->_co_instrumentation_version);
             if (code_version != global_version) {
                 if (_Py_Instrument(_PyFrame_GetCode(frame), tstate->interp)) {
                     ERROR_NO_POP();
@@ -424,6 +426,14 @@ dummy_func(
             EXIT_IF(!PyLong_CheckExact(right));
         }
 
+        op(_GUARD_NOS_INT, (left, unused -- left, unused)) {
+            EXIT_IF(!PyLong_CheckExact(left));
+        }
+
+        op(_GUARD_TOS_INT, (value -- value)) {
+            EXIT_IF(!PyLong_CheckExact(value));
+        }
+
         pure op(_BINARY_OP_MULTIPLY_INT, (left, right -- res)) {
             STAT_INC(BINARY_OP, hit);
             res = _PyLong_Multiply((PyLongObject *)left, (PyLongObject *)right);
@@ -458,6 +468,14 @@ dummy_func(
         op(_GUARD_BOTH_FLOAT, (left, right -- left, right)) {
             EXIT_IF(!PyFloat_CheckExact(left));
             EXIT_IF(!PyFloat_CheckExact(right));
+        }
+
+        op(_GUARD_NOS_FLOAT, (left, unused -- left, unused)) {
+            EXIT_IF(!PyFloat_CheckExact(left));
+        }
+
+        op(_GUARD_TOS_FLOAT, (value -- value)) {
+            EXIT_IF(!PyFloat_CheckExact(value));
         }
 
         pure op(_BINARY_OP_MULTIPLY_FLOAT, (left, right -- res)) {
@@ -1945,15 +1963,13 @@ dummy_func(
 
         op(_CHECK_ATTR_WITH_HINT, (owner -- owner)) {
             assert(Py_TYPE(owner)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
-            PyManagedDictPointer *managed_dict = _PyObject_ManagedDictPointer(owner);
-            PyDictObject *dict = managed_dict->dict;
+            PyDictObject *dict = _PyObject_GetManagedDict(owner);
             DEOPT_IF(dict == NULL);
             assert(PyDict_CheckExact((PyObject *)dict));
         }
 
         op(_LOAD_ATTR_WITH_HINT, (hint/1, owner -- attr, null if (oparg & 1))) {
-            PyManagedDictPointer *managed_dict = _PyObject_ManagedDictPointer(owner);
-            PyDictObject *dict = managed_dict->dict;
+            PyDictObject *dict = _PyObject_GetManagedDict(owner);
             DEOPT_IF(hint >= (size_t)dict->ma_keys->dk_nentries);
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg>>1);
             if (DK_IS_UNICODE(dict->ma_keys)) {
@@ -2070,14 +2086,15 @@ dummy_func(
         op(_GUARD_DORV_NO_DICT, (owner -- owner)) {
             assert(Py_TYPE(owner)->tp_dictoffset < 0);
             assert(Py_TYPE(owner)->tp_flags & Py_TPFLAGS_INLINE_VALUES);
-            DEOPT_IF(_PyObject_ManagedDictPointer(owner)->dict);
+            DEOPT_IF(_PyObject_GetManagedDict(owner));
             DEOPT_IF(_PyObject_InlineValues(owner)->valid == 0);
         }
 
         op(_STORE_ATTR_INSTANCE_VALUE, (index/1, value, owner --)) {
             STAT_INC(STORE_ATTR, hit);
-            assert(_PyObject_ManagedDictPointer(owner)->dict == NULL);
+            assert(_PyObject_GetManagedDict(owner) == NULL);
             PyDictValues *values = _PyObject_InlineValues(owner);
+
             PyObject *old_value = values->values[index];
             values->values[index] = value;
             if (old_value == NULL) {
@@ -2086,6 +2103,7 @@ dummy_func(
             else {
                 Py_DECREF(old_value);
             }
+
             Py_DECREF(owner);
         }
 
@@ -2100,8 +2118,7 @@ dummy_func(
             assert(type_version != 0);
             DEOPT_IF(tp->tp_version_tag != type_version);
             assert(tp->tp_flags & Py_TPFLAGS_MANAGED_DICT);
-            PyManagedDictPointer *managed_dict = _PyObject_ManagedDictPointer(owner);
-            PyDictObject *dict = managed_dict->dict;
+            PyDictObject *dict = _PyObject_GetManagedDict(owner);
             DEOPT_IF(dict == NULL);
             assert(PyDict_CheckExact((PyObject *)dict));
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
@@ -2377,7 +2394,14 @@ dummy_func(
         };
 
         tier1 inst(ENTER_EXECUTOR, (--)) {
+            int prevoparg = oparg;
             CHECK_EVAL_BREAKER();
+            if (this_instr->op.code != ENTER_EXECUTOR ||
+                this_instr->op.arg != prevoparg) {
+                next_instr = this_instr;
+                DISPATCH();
+            }
+
             PyCodeObject *code = _PyFrame_GetCode(frame);
             _PyExecutorObject *executor = code->co_executors->executors[oparg & 255];
             assert(executor->vm_data.index == INSTR_OFFSET() - 1);
@@ -4181,6 +4205,7 @@ dummy_func(
 #ifndef _Py_JIT
             current_executor = (_PyExecutorObject*)executor;
 #endif
+            DEOPT_IF(!((_PyExecutorObject *)executor)->vm_data.valid);
         }
 
         tier2 op(_FATAL_ERROR, (--)) {
