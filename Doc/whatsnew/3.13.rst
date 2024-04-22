@@ -241,6 +241,9 @@ Other Language Changes
   ones if configured to do so.
   (Contributed by Pedro Sousa Lacerda in :gh:`66449`.)
 
+* :ref:`annotation scope <annotation-scopes>` within class scopes can now
+  contain lambdas. (Contributed by Jelle Zijlstra in :gh:`109118`.)
+
 
 New Modules
 ===========
