@@ -1,0 +1,4 @@
+Fix erroneous :exc:`NameError` when calling :func:`typing.get_type_hints` on
+a class that made use of :pep:`695` type parameters in a module that had
+``from __future__ import annotations`` at the top of the file. Patch by Alex
+Waygood.

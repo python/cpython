@@ -2,7 +2,7 @@
 /* set object implementation
 
    Written and maintained by Raymond D. Hettinger <python@rcn.com>
-   Derived from Lib/sets.py and Objects/dictobject.c.
+   Derived from Objects/dictobject.c.
 
    The basic lookup function used by all operations.
    This is based on Algorithm D from Knuth Vol. 3, Sec. 6.4.
@@ -2080,7 +2080,6 @@ set_issuperset_impl(PySetObject *so, PyObject *other)
     Py_RETURN_TRUE;
 }
 
-// TODO: Make thread-safe in free-threaded builds
 static PyObject *
 set_richcompare(PySetObject *v, PyObject *w, int op)
 {
@@ -2661,7 +2660,6 @@ PySet_Add(PyObject *anyset, PyObject *key)
     return rv;
 }
 
-// TODO: Make thread-safe in free-threaded builds
 int
 _PySet_NextEntry(PyObject *set, Py_ssize_t *pos, PyObject **key, Py_hash_t *hash)
 {
@@ -2674,6 +2672,23 @@ _PySet_NextEntry(PyObject *set, Py_ssize_t *pos, PyObject **key, Py_hash_t *hash
     if (set_next((PySetObject *)set, pos, &entry) == 0)
         return 0;
     *key = entry->key;
+    *hash = entry->hash;
+    return 1;
+}
+
+int
+_PySet_NextEntryRef(PyObject *set, Py_ssize_t *pos, PyObject **key, Py_hash_t *hash)
+{
+    setentry *entry;
+
+    if (!PyAnySet_Check(set)) {
+        PyErr_BadInternalCall();
+        return -1;
+    }
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(set);
+    if (set_next((PySetObject *)set, pos, &entry) == 0)
+        return 0;
+    *key = Py_NewRef(entry->key);
     *hash = entry->hash;
     return 1;
 }
