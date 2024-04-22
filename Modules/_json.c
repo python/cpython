@@ -1662,8 +1662,8 @@ encoder_listencode_list(PyEncoderObject *s, _PyUnicodeWriter *writer,
     PyObject *ident = NULL;
     PyObject *s_fast = NULL;
     Py_ssize_t i;
-    PyObject* newline_indent = NULL;
-    PyObject* separator_indent = NULL;
+    PyObject *newline_indent = NULL;
+    PyObject *separator_indent = NULL;
 
     ident = NULL;
     s_fast = PySequence_Fast(seq, "_iterencode_list needs a sequence");
