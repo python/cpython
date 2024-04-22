@@ -594,6 +594,10 @@ os.path
   exactly one (back)slash to be absolute.
   (Contributed by Barney Gale and Jon Foster in :gh:`44626`.)
 
+* Add support of *dir_fd* and *follow_symlinks* keyword arguments in
+  :func:`shutil.chown`.
+  (Contributed by Berker Peksag and Tahia K in :gh:`62308`)
+
 pathlib
 -------
 
