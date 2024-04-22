@@ -46,7 +46,8 @@ gmon.out
 .DS_Store
 
 *.exe
-
+.cache
+compile_commands.json
 # Ignore core dumps... but not Tools/msi/core/ or the like.
 core
 !core/

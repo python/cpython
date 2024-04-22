@@ -134,6 +134,42 @@ exit:
     return return_value;
 }
 
+
+PyDoc_STRVAR(nwise_new__doc__,
+"nwise(iterable, /)\n"
+"--\n"
+"\n"
+"Return an iterator of overlapping pairs taken from the input iterator.\n"
+"\n"
+"    s -> (s0,s1), (s1,s2), (s2, s3), ...");
+
+static PyObject *
+nwise_new_impl(PyTypeObject *type, PyObject *iterable, Py_ssize_t n);
+
+static PyObject *
+nwise_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    PyObject *return_value = NULL;
+    PyTypeObject *base_tp = clinic_state()->nwise_type;
+    PyObject *iterable;
+    Py_ssize_t n;
+
+    if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
+        !_PyArg_NoKeywords("nwise", kwargs)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("nwise", PyTuple_GET_SIZE(args), 2, 2)) {
+        goto exit;
+    }
+    iterable = PyTuple_GET_ITEM(args, 0);
+    n = PyLong_AsSsize_t(PyTuple_GET_ITEM(args, 1));
+    return_value = nwise_new_impl(type, iterable, n);
+
+exit:
+    return return_value;
+}
+
+
 PyDoc_STRVAR(itertools_groupby__doc__,
 "groupby(iterable, key=None)\n"
 "--\n"
