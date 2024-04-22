@@ -465,9 +465,15 @@ _Py_atomic_store_ullong_relaxed(unsigned long long *obj,
 static inline void *
 _Py_atomic_load_ptr_acquire(const void *obj);
 
+static inline uintptr_t
+_Py_atomic_load_uintptr_acquire(const uintptr_t *obj);
+
 // Stores `*obj = value` (release operation)
 static inline void
 _Py_atomic_store_ptr_release(void *obj, void *value);
+
+static inline void
+_Py_atomic_store_uintptr_release(uintptr_t *obj, uintptr_t value);
 
 static inline void
 _Py_atomic_store_ssize_release(Py_ssize_t *obj, Py_ssize_t value);
@@ -489,6 +495,8 @@ _Py_atomic_load_uint32_acquire(const uint32_t *obj);
 
 static inline Py_ssize_t
 _Py_atomic_load_ssize_acquire(const Py_ssize_t *obj);
+
+
 
 
 // --- _Py_atomic_fence ------------------------------------------------------

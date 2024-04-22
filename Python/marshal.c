@@ -42,7 +42,8 @@ module marshal
 #elif defined(__wasi__)
 #  define MAX_MARSHAL_STACK_DEPTH 1500
 // TARGET_OS_IPHONE covers any non-macOS Apple platform.
-#elif defined(__APPLE__) && TARGET_OS_IPHONE
+// It won't be defined on older macOS SDKs
+#elif defined(__APPLE__) && defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE
 #  define MAX_MARSHAL_STACK_DEPTH 1500
 #else
 #  define MAX_MARSHAL_STACK_DEPTH 2000
