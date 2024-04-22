@@ -4630,7 +4630,6 @@ _PyType_FromMetaclass_impl(
                 /* Copy other slots directly */
                 PySlot_Offset slotoffsets = pyslot_offsets[slot->slot];
                 short slot_offset = slotoffsets.slot_offset;
-                assert(slot_offset != Py_id_static_spec);
                 if (slotoffsets.subslot_offset == -1) {
                     /* Set a slot in the main PyTypeObject */
                     *(void**)((char*)res_start + slot_offset) = slot->pfunc;

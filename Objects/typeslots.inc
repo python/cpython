@@ -80,4 +80,4 @@
 {offsetof(PyAsyncMethods, am_anext), offsetof(PyTypeObject, tp_as_async)},
 {-1, offsetof(PyTypeObject, tp_finalize)},
 {offsetof(PyAsyncMethods, am_send), offsetof(PyTypeObject, tp_as_async)},
-{-1, Py_id_static_spec},
+{-1, offsetof(PyHeapTypeObject, ht_static_spec)},
