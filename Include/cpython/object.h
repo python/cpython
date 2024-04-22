@@ -493,6 +493,7 @@ do { \
 PyAPI_FUNC(void *) PyObject_GetItemData(PyObject *obj);
 
 PyAPI_FUNC(int) PyObject_VisitManagedDict(PyObject *obj, visitproc visit, void *arg);
+PyAPI_FUNC(void) _PyObject_SetManagedDict(PyObject *obj, PyObject *new_dict);
 PyAPI_FUNC(void) PyObject_ClearManagedDict(PyObject *obj);
 
 #define TYPE_MAX_WATCHERS 8
