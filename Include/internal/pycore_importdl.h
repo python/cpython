@@ -19,6 +19,9 @@ typedef PyObject *(*PyModInitFunction)(void);
 
 struct _Py_ext_module_loader_info {
     PyObject *path;
+#ifndef MS_WINDOWS
+    PyObject *path_encoded;
+#endif
     PyObject *name;
     PyObject *name_encoded;
     const char *hook_prefix;
