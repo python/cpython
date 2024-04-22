@@ -286,7 +286,7 @@ struct compiler {
     PyObject *c_stack;           /* Python list holding compiler_unit ptrs */
     PyArena *c_arena;            /* pointer to memory allocation arena */
 
-    bool c_save_nested_seqs;     /* if true, construct recusrsive instruction sequences
+    bool c_save_nested_seqs;     /* if true, construct recursive instruction sequences
                                   * (including instructions for nested code objects)
                                   */
 };
