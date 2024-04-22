@@ -1870,7 +1870,7 @@ without the dedicated syntax, as documented below.
       * :ref:`annotating-callables`
 
 .. data:: ParamSpecArgs
-.. data:: ParamSpecKwargs
+          ParamSpecKwargs
 
    Arguments and keyword arguments attributes of a :class:`ParamSpec`. The
    ``P.args`` attribute of a ``ParamSpec`` is an instance of ``ParamSpecArgs``,
