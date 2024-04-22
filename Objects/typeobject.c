@@ -4893,8 +4893,7 @@ get_base_by_spec(PyTypeObject *type, PyType_Spec *spec)
         if (!_PyType_HasFeature(base, Py_TPFLAGS_HEAPTYPE)) {
             continue;
         }
-        PyType_Spec *base_spec = ((PyHeapTypeObject*)base)->ht_static_spec;
-        if (base_spec && base_spec == spec) {
+        if (((PyHeapTypeObject*)base)->ht_static_spec == spec) {
             return base;
         }
         base = get_base_by_spec(base, spec);
