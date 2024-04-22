@@ -14,9 +14,23 @@ extern "C" {
 
 extern const char *_PyImport_DynLoadFiletab[];
 
-extern PyObject *_PyImport_LoadDynamicModuleWithSpec(PyObject *spec, FILE *);
 
 typedef PyObject *(*PyModInitFunction)(void);
+
+struct _Py_ext_module_loader_info {
+    PyObject *path;
+    PyObject *name;
+    PyObject *name_encoded;
+    const char *hook_prefix;
+};
+extern void _Py_ext_module_loader_info_clear(
+    struct _Py_ext_module_loader_info *info);
+extern int _Py_ext_module_loader_info_from_spec(
+    PyObject *spec,
+    struct _Py_ext_module_loader_info *info);
+
+extern PyObject *_PyImport_LoadDynamicModuleWithSpec(PyObject *spec, FILE *);
+
 
 /* Max length of module suffix searched for -- accommodates "module.slb" */
 #define MAXSUFFIXSIZE 12
