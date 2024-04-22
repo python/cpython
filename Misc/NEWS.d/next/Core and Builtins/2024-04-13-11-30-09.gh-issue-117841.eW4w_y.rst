@@ -1,1 +1,1 @@
-Speedup :func:`os.path.lexists` on Windows.
+Speedup :func:`os.path.lexists` on Windows with a native implementation.
