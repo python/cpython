@@ -943,20 +943,20 @@ _Py_module_getattro_impl(PyModuleObject *m, PyObject *name, int suppress)
     }
 
     PyObject *origin = NULL;
-    if (_get_file_origin_from_spec(spec, &origin) == -1) {
+    if (_get_file_origin_from_spec(spec, &origin) < 0) {
         goto done;
     }
 
     int is_possibly_shadowing = _is_module_possibly_shadowing(origin);
-    if (is_possibly_shadowing == -1) {
+    if (is_possibly_shadowing < 0) {
         goto done;
     }
     int is_possibly_shadowing_stdlib = 0;
-    if (is_possibly_shadowing == 1) {
+    if (is_possibly_shadowing) {
         PyObject *stdlib_modules = PySys_GetObject("stdlib_module_names");
         if (stdlib_modules && PyAnySet_Check(stdlib_modules)) {
             is_possibly_shadowing_stdlib = PySet_Contains(stdlib_modules, mod_name);
-            if (is_possibly_shadowing_stdlib == -1) {
+            if (is_possibly_shadowing_stdlib < 0) {
                 goto done;
             }
         }
@@ -970,7 +970,8 @@ _Py_module_getattro_impl(PyModuleObject *m, PyObject *name, int suppress)
                     "name as the standard library module named '%U' "
                     "and the import system gives it precedence)",
                     mod_name, name, origin, mod_name);
-    } else {
+    }
+    else {
         int rc = _PyModuleSpec_IsInitializing(spec);
         if (rc > 0) {
             if (is_possibly_shadowing) {
