@@ -354,6 +354,7 @@ def has_error_without_pop(op: parser.InstDef) -> bool:
 NON_ESCAPING_FUNCTIONS = (
     "Py_INCREF",
     "_PyManagedDictPointer_IsValues",
+    "_PyObject_GetManagedDict",
     "_PyObject_ManagedDictPointer",
     "_PyObject_InlineValues",
     "_PyDictValues_AddToInsertionOrder",

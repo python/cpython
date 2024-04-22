@@ -21,7 +21,10 @@ extern "C" {
 
 #ifdef Py_GIL_DISABLED
 #define FT_ATOMIC_LOAD_PTR(value) _Py_atomic_load_ptr(&value)
+#define FT_ATOMIC_STORE_PTR(value, new_value) _Py_atomic_store_ptr(&value, new_value)
 #define FT_ATOMIC_LOAD_SSIZE(value) _Py_atomic_load_ssize(&value)
+#define FT_ATOMIC_LOAD_SSIZE_ACQUIRE(value) \
+    _Py_atomic_load_ssize_acquire(&value)
 #define FT_ATOMIC_LOAD_SSIZE_RELAXED(value) \
     _Py_atomic_load_ssize_relaxed(&value)
 #define FT_ATOMIC_STORE_PTR(value, new_value) \
@@ -30,6 +33,12 @@ extern "C" {
     _Py_atomic_load_ptr_acquire(&value)
 #define FT_ATOMIC_LOAD_UINTPTR_ACQUIRE(value) \
     _Py_atomic_load_uintptr_acquire(&value)
+#define FT_ATOMIC_LOAD_PTR_RELAXED(value) \
+    _Py_atomic_load_ptr_relaxed(&value)
+#define FT_ATOMIC_LOAD_UINT8(value) \
+    _Py_atomic_load_uint8(&value)
+#define FT_ATOMIC_STORE_UINT8(value, new_value) \
+    _Py_atomic_store_uint8(&value, new_value)
 #define FT_ATOMIC_STORE_PTR_RELAXED(value, new_value) \
     _Py_atomic_store_ptr_relaxed(&value, new_value)
 #define FT_ATOMIC_STORE_PTR_RELEASE(value, new_value) \
@@ -43,11 +52,16 @@ extern "C" {
 
 #else
 #define FT_ATOMIC_LOAD_PTR(value) value
+#define FT_ATOMIC_STORE_PTR(value, new_value) value = new_value
 #define FT_ATOMIC_LOAD_SSIZE(value) value
+#define FT_ATOMIC_LOAD_SSIZE_ACQUIRE(value) value
 #define FT_ATOMIC_LOAD_SSIZE_RELAXED(value) value
 #define FT_ATOMIC_STORE_PTR(value, new_value) value = new_value
 #define FT_ATOMIC_LOAD_PTR_ACQUIRE(value) value
 #define FT_ATOMIC_LOAD_UINTPTR_ACQUIRE(value) value
+#define FT_ATOMIC_LOAD_PTR_RELAXED(value) value
+#define FT_ATOMIC_LOAD_UINT8(value) value
+#define FT_ATOMIC_STORE_UINT8(value, new_value) value = new_value
 #define FT_ATOMIC_STORE_PTR_RELAXED(value, new_value) value = new_value
 #define FT_ATOMIC_STORE_PTR_RELEASE(value, new_value) value = new_value
 #define FT_ATOMIC_STORE_UINTPTR_RELEASE(value, new_value) value = new_value

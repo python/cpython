@@ -4017,16 +4017,14 @@
             // _CHECK_ATTR_WITH_HINT
             {
                 assert(Py_TYPE(owner)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
-                PyManagedDictPointer *managed_dict = _PyObject_ManagedDictPointer(owner);
-                PyDictObject *dict = managed_dict->dict;
+                PyDictObject *dict = _PyObject_GetManagedDict(owner);
                 DEOPT_IF(dict == NULL, LOAD_ATTR);
                 assert(PyDict_CheckExact((PyObject *)dict));
             }
             // _LOAD_ATTR_WITH_HINT
             {
                 uint16_t hint = read_u16(&this_instr[4].cache);
-                PyManagedDictPointer *managed_dict = _PyObject_ManagedDictPointer(owner);
-                PyDictObject *dict = managed_dict->dict;
+                PyDictObject *dict = _PyObject_GetManagedDict(owner);
                 DEOPT_IF(hint >= (size_t)dict->ma_keys->dk_nentries, LOAD_ATTR);
                 PyObject *name = GETITEM(FRAME_CO_NAMES, oparg>>1);
                 if (DK_IS_UNICODE(dict->ma_keys)) {
@@ -5309,7 +5307,7 @@
             {
                 assert(Py_TYPE(owner)->tp_dictoffset < 0);
                 assert(Py_TYPE(owner)->tp_flags & Py_TPFLAGS_INLINE_VALUES);
-                DEOPT_IF(_PyObject_ManagedDictPointer(owner)->dict, STORE_ATTR);
+                DEOPT_IF(_PyObject_GetManagedDict(owner), STORE_ATTR);
                 DEOPT_IF(_PyObject_InlineValues(owner)->valid == 0, STORE_ATTR);
             }
             // _STORE_ATTR_INSTANCE_VALUE
@@ -5317,7 +5315,7 @@
             {
                 uint16_t index = read_u16(&this_instr[4].cache);
                 STAT_INC(STORE_ATTR, hit);
-                assert(_PyObject_ManagedDictPointer(owner)->dict == NULL);
+                assert(_PyObject_GetManagedDict(owner) == NULL);
                 PyDictValues *values = _PyObject_InlineValues(owner);
                 PyObject *old_value = values->values[index];
                 values->values[index] = value;
@@ -5380,8 +5378,7 @@
             assert(type_version != 0);
             DEOPT_IF(tp->tp_version_tag != type_version, STORE_ATTR);
             assert(tp->tp_flags & Py_TPFLAGS_MANAGED_DICT);
-            PyManagedDictPointer *managed_dict = _PyObject_ManagedDictPointer(owner);
-            PyDictObject *dict = managed_dict->dict;
+            PyDictObject *dict = _PyObject_GetManagedDict(owner);
             DEOPT_IF(dict == NULL, STORE_ATTR);
             assert(PyDict_CheckExact((PyObject *)dict));
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
