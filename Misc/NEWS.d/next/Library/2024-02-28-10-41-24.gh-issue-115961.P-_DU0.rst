@@ -1,0 +1,7 @@
+Added :attr:`!name` and :attr:`!mode` attributes for compressed and archived
+file-like objects in modules :mod:`bz2`, :mod:`lzma`, :mod:`tarfile` and
+:mod:`zipfile`. The value of the :attr:`!mode` attribute of
+:class:`gzip.GzipFile` was changed from integer (``1`` or ``2``) to string
+(``'rb'`` or ``'wb'``). The value of the :attr:`!mode` attribute of the
+readable file-like object returned by :meth:`zipfile.ZipFile.open` was
+changed from ``'r'`` to ``'rb'``.

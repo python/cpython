@@ -3165,9 +3165,9 @@ subtype_setdict(PyObject *obj, PyObject *value, void *context)
                      "not a '%.200s'", Py_TYPE(value)->tp_name);
         return -1;
     }
+
     if (Py_TYPE(obj)->tp_flags & Py_TPFLAGS_MANAGED_DICT) {
-        PyObject_ClearManagedDict(obj);
-        _PyObject_ManagedDictPointer(obj)->dict = (PyDictObject *)Py_XNewRef(value);
+        _PyObject_SetManagedDict(obj, value);
     }
     else {
         dictptr = _PyObject_ComputedDictPointer(obj);
@@ -5671,7 +5671,7 @@ type_clear(PyObject *self)
        the dict, so that other objects caught in a reference cycle
        don't start calling destroyed methods.
 
-       Otherwise, the we need to clear tp_mro, which is
+       Otherwise, we need to clear tp_mro, which is
        part of a hard cycle (its first element is the class itself) that
        won't be broken otherwise (it's a tuple and tuples don't have a
        tp_clear handler).
@@ -6194,15 +6194,27 @@ object_set_class(PyObject *self, PyObject *value, void *closure)
         /* Changing the class will change the implicit dict keys,
          * so we must materialize the dictionary first. */
         if (oldto->tp_flags & Py_TPFLAGS_INLINE_VALUES) {
-            PyDictObject *dict = _PyObject_ManagedDictPointer(self)->dict;
+            PyDictObject *dict = _PyObject_MaterializeManagedDict(self);
             if (dict == NULL) {
-                dict = (PyDictObject *)_PyObject_MakeDictFromInstanceAttributes(self);
-                if (dict == NULL) {
-                    return -1;
-                }
-                _PyObject_ManagedDictPointer(self)->dict = dict;
+                return -1;
             }
-            if (_PyDict_DetachFromObject(dict, self)) {
+
+            bool error = false;
+
+            Py_BEGIN_CRITICAL_SECTION2(self, dict);
+
+            // If we raced after materialization and replaced the dict
+            // then the materialized dict should no longer have the
+            // inline values in which case detach is a nop.
+            assert(_PyObject_GetManagedDict(self) == dict ||
+                   dict->ma_values != _PyObject_InlineValues(self));
+
+            if (_PyDict_DetachFromObject(dict, self) < 0) {
+                error = true;
+            }
+
+            Py_END_CRITICAL_SECTION2();
+            if (error) {
                 return -1;
             }
         }
