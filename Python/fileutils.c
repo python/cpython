@@ -2296,8 +2296,10 @@ PathCchCombineEx(wchar_t *buffer, size_t bufsize, const wchar_t *dirname,
 #endif /* defined(MS_WINDOWS_GAMES) && !defined(MS_WINDOWS_DESKTOP) */
 
 void
-_Py_skiproot(wchar_t *path, Py_ssize_t size, Py_ssize_t *drvsize, Py_ssize_t *rootsize)
+_Py_skiproot(const wchar_t *path, Py_ssize_t size, Py_ssize_t *drvsize, Py_ssize_t *rootsize)
 {
+    assert(drvsize);
+    assert(rootsize);
 #ifndef MS_WINDOWS
 #define IS_SEP(x) (*(x) == SEP)
     *drvsize = 0;

@@ -104,29 +104,28 @@ if _MS_WINDOWS:
             return ""
         if len(path_parts) == 1:
             return path_parts[0]
-        anchor = ""
+        root = ""
         path = []
-        for drive, root, tail in map(_os._path_splitroot, path_parts):
-            new_anchor = drive + root
-            if new_anchor.startswith(path_sep_tuple) or new_anchor.endswith(path_sep_tuple):
-                anchor = new_anchor.rstrip(path_separators) or anchor
+        for new_root, tail in map(_os._path_splitanchor, path_parts):
+            if new_root.startswith(path_sep_tuple) or new_root.endswith(path_sep_tuple):
+                root = new_root.rstrip(path_separators) or root
                 path = [path_sep + tail]
-            elif new_anchor.endswith(':'):
-                if anchor.casefold() != new_anchor.casefold():
+            elif new_root.endswith(':'):
+                if root.casefold() != new_root.casefold():
                     # Drive relative paths have to be resolved by the OS, so we reset the
                     # tail but do not add a path_sep prefix.
-                    anchor = new_anchor
+                    root = new_root
                     path = [tail]
                 else:
                     path.append(tail)
             else:
-                anchor = new_anchor or anchor
+                root = new_root or root
                 path.append(tail)
         path = [p.rstrip(path_separators) for p in path if p]
         if len(path) == 1 and not path[0]:
-            # Avoid losing the anchor's trailing separator when joining with nothing
-            return anchor + path_sep
-        return anchor + path_sep.join(path)
+            # Avoid losing the root's trailing separator when joining with nothing
+            return root + path_sep
+        return root + path_sep.join(path)
 
 else:
     def _path_join(*path_parts):
@@ -179,9 +178,8 @@ if _MS_WINDOWS:
         """Replacement for os.path.isabs."""
         if not path:
             return False
-        drive, root, _ = _os._path_splitroot(path)
-        anchor = (drive + root).replace('/', '\\')
-        return len(anchor) > 1 and (anchor.startswith('\\\\') or anchor.endswith('\\'))
+        root = _os._path_splitanchor(path)[0].replace('/', '\\')
+        return len(root) > 1 and (root.startswith('\\\\') or root.endswith('\\'))
 
 else:
     def _path_isabs(path):

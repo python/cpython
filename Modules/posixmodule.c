@@ -5041,6 +5041,50 @@ exit:
 
 
 /*[clinic input]
+os._path_splitanchor
+    path: path_t
+Removes everything after the root on Win32.
+[clinic start generated code]*/
+
+static PyObject *
+os__path_splitanchor_impl(PyObject *module, path_t *path)
+/*[clinic end generated code: output=37b687463b40c424 input=00dd0c06233b8cff]*/
+{
+    wchar_t *buffer;
+    wchar_t *end;
+    PyObject *result = NULL;
+    HRESULT ret;
+
+    buffer = (wchar_t*)PyMem_Malloc(sizeof(wchar_t) * (wcslen(path->wide) + 1));
+    if (!buffer) {
+        return NULL;
+    }
+    wcscpy(buffer, path->wide);
+    for (wchar_t *p = wcschr(buffer, L'/'); p; p = wcschr(p, L'/')) {
+        *p = L'\\';
+    }
+
+    Py_BEGIN_ALLOW_THREADS
+    ret = PathCchSkipRoot(buffer, &end);
+    Py_END_ALLOW_THREADS
+    if (FAILED(ret)) {
+        result = Py_BuildValue("sO", "", path->object);
+    } else if (end != buffer) {
+        size_t rootLen = (size_t)(end - buffer);
+        result = Py_BuildValue("NN",
+            PyUnicode_FromWideChar(path->wide, rootLen),
+            PyUnicode_FromWideChar(path->wide + rootLen, -1)
+        );
+    } else {
+        result = Py_BuildValue("Os", path->object, "");
+    }
+    PyMem_Free(buffer);
+
+    return result;
+}
+
+
+/*[clinic input]
 os._path_isdir
 
     s: 'O'
@@ -5434,13 +5478,21 @@ os__path_splitroot_impl(PyObject *module, PyObject *path)
 /*[clinic end generated code: output=6904e00a6a970b9b input=4ef301247820b583]*/
 {
     Py_ssize_t len, drvsize, rootsize;
+    PyObject *drv, *root, *tail, *result = NULL;
     wchar_t *buffer = PyUnicode_AsWideCharString(path, &len);
+    if (!buffer) {
+        goto exit;
+    }
     _Py_skiproot(buffer, len, &drvsize, &rootsize);
-    PyObject *drv = PyUnicode_FromWideChar(buffer, drvsize);
-    PyObject *root = PyUnicode_FromWideChar(&buffer[drvsize], rootsize);
-    PyObject *tail = PyUnicode_FromWideChar(&buffer[drvsize + rootsize], len - drvsize - rootsize);
+    if (!(drv = PyUnicode_FromWideChar(buffer, drvsize)) ||
+        !(root = PyUnicode_FromWideChar(&buffer[drvsize], rootsize)) ||
+        !(tail = PyUnicode_FromWideChar(&buffer[drvsize + rootsize], len - drvsize - rootsize)))
+    {
+        goto exit;
+    }
+    result = Py_BuildValue("(OOO)", drv, root, tail);
+exit:
     PyMem_Free(buffer);
-    PyObject *result = Py_BuildValue("(OOO)", drv, root, tail);
     Py_DECREF(drv);
     Py_DECREF(root);
     Py_DECREF(tail);
@@ -16779,6 +16831,7 @@ static PyMethodDef posix_methods[] = {
     OS__GETFINALPATHNAME_METHODDEF
     OS__FINDFIRSTFILE_METHODDEF
     OS__GETVOLUMEPATHNAME_METHODDEF
+    OS__PATH_SPLITANCHOR_METHODDEF
     OS__PATH_SPLITROOT_METHODDEF
     OS__PATH_NORMPATH_METHODDEF
     OS_GETLOADAVG_METHODDEF
