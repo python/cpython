@@ -157,10 +157,10 @@ import token
 import types
 import functools
 import builtins
-import weakref
 from keyword import iskeyword
 from operator import attrgetter
 from collections import namedtuple, OrderedDict
+from weakref import ref as make_weakref
 
 # Create constants for the compiler flags in Include/code.h
 # We try to get them from dis to avoid duplication
@@ -1850,7 +1850,7 @@ def _shadowed_dict_from_weakref_mro_tuple(*weakref_mro):
 
 def _shadowed_dict(klass):
     return _shadowed_dict_from_weakref_mro_tuple(
-        *[weakref.ref(entry) for entry in _static_getmro(klass)]
+        *[make_weakref(entry) for entry in _static_getmro(klass)]
     )
 
 
