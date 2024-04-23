@@ -4916,11 +4916,8 @@ _PyType_GetBaseBySpec(PyTypeObject *type, PyType_Spec *spec)
         res = get_base_by_spec_recursive(type, spec);
     }
     else {
-        // See PyType_GetModuleByDef() implementation
         assert(PyTuple_Check(mro));
-        assert(PyTuple_GET_SIZE(mro) >= 1);
-        Py_ssize_t n = PyTuple_GET_SIZE(mro);
-        for (Py_ssize_t i = 0; i < n; i++) {
+        for (Py_ssize_t i = PyTuple_GET_SIZE(mro) - 1; i >= 0; i--) {
             PyObject *super = PyTuple_GET_ITEM(mro, i);
             if(!_PyType_HasFeature((PyTypeObject *)super, Py_TPFLAGS_HEAPTYPE)) {
                 continue;
