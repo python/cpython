@@ -26,12 +26,9 @@ race:_PyObject_GC_IS_SHARED
 race:_PyObject_GC_SET_SHARED
 race:_PyObject_GC_TRACK
 race:_PyType_HasFeature
-race:_PyType_Lookup
 race:assign_version_tag
 race:compare_unicode_unicode
 race:delitem_common
-race:dictkeys_decref
-race:dictkeys_incref
 race:dictresize
 race:gc_collect_main
 race:gc_restore_tid
@@ -47,5 +44,3 @@ race:set_inheritable
 race:start_the_world
 race:tstate_set_detached
 race:unicode_hash
-race:update_cache
-race:update_cache_gil_disabled
