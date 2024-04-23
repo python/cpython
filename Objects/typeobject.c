@@ -4826,7 +4826,7 @@ PyType_GetModuleState(PyTypeObject *type)
  * given PyModuleDef.
  */
 static inline PyObject *
-type_get_module_by_def(PyTypeObject *type, PyModuleDef *def)
+get_module_by_def(PyTypeObject *type, PyModuleDef *def)
 {
     assert(PyType_Check(type));
 
@@ -4877,7 +4877,7 @@ type_get_module_by_def(PyTypeObject *type, PyModuleDef *def)
 PyObject *
 PyType_GetModuleByDef(PyTypeObject *type, PyModuleDef *def)
 {
-    PyObject *module = type_get_module_by_def(type, def);
+    PyObject *module = get_module_by_def(type, def);
     if (module == NULL) {
         PyErr_Format(
             PyExc_TypeError,
@@ -4891,9 +4891,9 @@ PyObject *
 _PyType_GetModuleByDef2(PyTypeObject *left, PyTypeObject *right,
                         PyModuleDef *def)
 {
-    PyObject *module = type_get_module_by_def(left, def);
+    PyObject *module = get_module_by_def(left, def);
     if (module == NULL) {
-        module = type_get_module_by_def(right, def);
+        module = get_module_by_def(right, def);
         if (module == NULL) {
             PyErr_Format(
                 PyExc_TypeError,
