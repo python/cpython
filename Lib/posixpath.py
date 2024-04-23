@@ -172,7 +172,7 @@ else:
         """
         try:
             return _path_splitroot_ex(p)
-        except (UnicodeEncodeError, ValueError):
+        except ValueError:
             return _splitroot_fallback(p)
 
 
