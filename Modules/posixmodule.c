@@ -5494,7 +5494,7 @@ os__path_splitroot_ex_impl(PyObject *module, PyObject *p)
     }
 #ifdef MS_WINDOWS
     len = path.length;
-    const wchar_t *buffer = path.wide;
+    buffer = path.wide;
 #else
     if (!(wide = PyUnicode_DecodeFSDefaultAndSize(path.narrow, path.length)) ||
         !(buffer = PyUnicode_AsWideCharString(wide, &len)))
