@@ -2249,16 +2249,15 @@ exit:
 #endif /* defined(MS_WINDOWS) */
 
 PyDoc_STRVAR(os__path_splitroot_ex__doc__,
-"_path_splitroot_ex($module, /, p)\n"
+"_path_splitroot_ex($module, /, path)\n"
 "--\n"
-"\n"
-"Split a pathname into drive, root and tail.");
+"\n");
 
 #define OS__PATH_SPLITROOT_EX_METHODDEF    \
     {"_path_splitroot_ex", _PyCFunction_CAST(os__path_splitroot_ex), METH_FASTCALL|METH_KEYWORDS, os__path_splitroot_ex__doc__},
 
 static PyObject *
-os__path_splitroot_ex_impl(PyObject *module, PyObject *p);
+os__path_splitroot_ex_impl(PyObject *module, path_t *path);
 
 static PyObject *
 os__path_splitroot_ex(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -2273,7 +2272,7 @@ os__path_splitroot_ex(PyObject *module, PyObject *const *args, Py_ssize_t nargs,
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(p), },
+        .ob_item = { &_Py_ID(path), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -2282,7 +2281,7 @@ os__path_splitroot_ex(PyObject *module, PyObject *const *args, Py_ssize_t nargs,
     #  define KWTUPLE NULL
     #endif  // !Py_BUILD_CORE
 
-    static const char * const _keywords[] = {"p", NULL};
+    static const char * const _keywords[] = {"path", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
         .fname = "_path_splitroot_ex",
@@ -2290,16 +2289,21 @@ os__path_splitroot_ex(PyObject *module, PyObject *const *args, Py_ssize_t nargs,
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
-    PyObject *p;
+    path_t path = PATH_T_INITIALIZE("_path_splitroot_ex", "path", 0, 0);
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
     if (!args) {
         goto exit;
     }
-    p = args[0];
-    return_value = os__path_splitroot_ex_impl(module, p);
+    if (!path_converter(args[0], &path)) {
+        goto exit;
+    }
+    return_value = os__path_splitroot_ex_impl(module, &path);
 
 exit:
+    /* Cleanup for path */
+    path_cleanup(&path);
+
     return return_value;
 }
 
@@ -12657,4 +12661,4 @@ os__supports_virtual_terminal(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF
     #define OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF
 #endif /* !defined(OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF) */
-/*[clinic end generated code: output=5bd32f18f4146963 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=3ad5455c1ea92c58 input=a9049054013a1b77]*/

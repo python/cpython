@@ -1205,7 +1205,7 @@ path_cleanup(path_t *path)
 }
 
 static int
-posix_path_converter(PyObject *o, void *p, int allow_embedded_null)
+path_converter(PyObject *o, void *p)
 {
     path_t *path = (path_t *)p;
     PyObject *bytes = NULL;
@@ -1293,7 +1293,7 @@ posix_path_converter(PyObject *o, void *p, int allow_embedded_null)
             FORMAT_EXCEPTION(PyExc_ValueError, "%s too long for Windows");
             goto error_exit;
         }
-        if (!allow_embedded_null && wcslen(wide) != length) {
+        if (wcslen(wide) != length) {
             FORMAT_EXCEPTION(PyExc_ValueError, "embedded null character in %s");
             goto error_exit;
         }
@@ -1304,7 +1304,7 @@ posix_path_converter(PyObject *o, void *p, int allow_embedded_null)
         wide = NULL;
         goto success_exit;
 #else
-        if (!PyUnicode_FSConverterPosix(o, &bytes, allow_embedded_null)) {
+        if (!PyUnicode_FSConverter(o, &bytes)) {
             goto error_exit;
         }
 #endif
@@ -1341,7 +1341,7 @@ posix_path_converter(PyObject *o, void *p, int allow_embedded_null)
 
     length = PyBytes_GET_SIZE(bytes);
     narrow = PyBytes_AS_STRING(bytes);
-    if (!allow_embedded_null && (size_t)length != strlen(narrow)) {
+    if ((size_t)length != strlen(narrow)) {
         FORMAT_EXCEPTION(PyExc_ValueError, "embedded null character in %s");
         goto error_exit;
     }
@@ -1364,7 +1364,7 @@ posix_path_converter(PyObject *o, void *p, int allow_embedded_null)
         FORMAT_EXCEPTION(PyExc_ValueError, "%s too long for Windows");
         goto error_exit;
     }
-    if (!allow_embedded_null && wcslen(wide) != length) {
+    if (wcslen(wide) != length) {
         FORMAT_EXCEPTION(PyExc_ValueError, "embedded null character in %s");
         goto error_exit;
     }
@@ -1398,12 +1398,6 @@ posix_path_converter(PyObject *o, void *p, int allow_embedded_null)
     PyMem_Free(wide);
 #endif
     return 0;
-}
-
-static int
-path_converter(PyObject *o, void *p)
-{
-    return posix_path_converter(o, p, 0);
 }
 
 static void
@@ -5476,27 +5470,22 @@ os__path_islink_impl(PyObject *module, PyObject *path)
 /*[clinic input]
 os._path_splitroot_ex
 
-    p: object
+    path: path_t
 
-Split a pathname into drive, root and tail.
 [clinic start generated code]*/
 
 static PyObject *
-os__path_splitroot_ex_impl(PyObject *module, PyObject *p)
-/*[clinic end generated code: output=1be3aff51db9fc0d input=df3394f511f02c51]*/
+os__path_splitroot_ex_impl(PyObject *module, path_t *path)
+/*[clinic end generated code: output=4b0072b6cdf4b611 input=586b2015848e9416]*/
 {
     Py_ssize_t len, drvsize, rootsize;
     PyObject *wide = NULL, *drv = NULL, *root = NULL, *tail = NULL, *result = NULL;
-    wchar_t *buffer = NULL;
-    path_t path = PATH_T_INITIALIZE("_path_splitroot_ex", "p", 0, 0);
-    if (!posix_path_converter(p, &path, 1)) {
-        goto exit;
-    }
+    const wchar_t *buffer = NULL;
 #ifdef MS_WINDOWS
-    len = path.length;
-    buffer = path.wide;
+    len = path->length;
+    buffer = path->wide;
 #else
-    if (!(wide = PyUnicode_DecodeFSDefaultAndSize(path.narrow, path.length)) ||
+    if (!(wide = PyUnicode_DecodeFSDefaultAndSize(path->narrow, path->length)) ||
         !(buffer = PyUnicode_AsWideCharString(wide, &len)))
     {
         goto exit;
@@ -5509,15 +5498,18 @@ os__path_splitroot_ex_impl(PyObject *module, PyObject *p)
     {
         goto exit;
     }
-    if (PyBytes_Check(path.object)) {
+    if (PyBytes_Check(path->object)) {
         Py_SETREF(drv, PyUnicode_EncodeFSDefault(drv));
         Py_SETREF(root, PyUnicode_EncodeFSDefault(root));
         Py_SETREF(tail, PyUnicode_EncodeFSDefault(tail));
     }
     result = Py_BuildValue("(OOO)", drv, root, tail);
 exit:
-    path_cleanup(&path);
-    PyMem_Free(buffer);
+#ifndef MS_WINDOWS
+    if (buffer) {
+        PyMem_Free(buffer);
+    }
+#endif
     if (drv) {
         Py_DECREF(drv);
     }
