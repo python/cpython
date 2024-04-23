@@ -1826,7 +1826,7 @@ aliases.
    .. versionadded:: 3.12
 
    .. versionchanged:: 3.13
-      Added ``default_value``.
+      Added the *default_value* parameter.
 
 .. class:: ParamSpec(name, default_value)
 
@@ -1861,7 +1861,7 @@ aliases.
    .. versionadded:: 3.12
 
    .. versionchanged:: 3.13
-      Added ``default_value``.
+      Added the *default_value* parameter.
 
 .. class:: TypeVarTuple(name, default_value)
 
@@ -1893,7 +1893,7 @@ aliases.
    .. versionadded:: 3.12
 
    .. versionchanged:: 3.13
-      Added ``default_value``.
+      Added the *default_value* parameter.
 
 Function and class definitions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

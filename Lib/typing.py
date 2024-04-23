@@ -316,9 +316,13 @@ def _check_generic_specialization(cls, arguments):
     if actual_len != expected_len:
         # deal with defaults
         if actual_len < expected_len:
-            # If the parameter at actual_len has a default, then all parameters
-            # after it must also have one, because we validated as much in
-            # _collect_parameters().
+            # If the parameter at index `actual_len` in the parameters list
+            # has a default, then all parameters after it must also have
+            # one, because we validated as much in _collect_parameters().
+            # That means that no error needs to be raised here, despite
+            # the number of arguments being passed not matching the number
+            # of parameters: all parameters that aren't explicitly
+            # specialized in this call are parameters with default values.
             if cls.__parameters__[actual_len].__default__ is not None:
                 return
 
@@ -1591,10 +1595,10 @@ class _SpecialGenericAlias(_NotIterable, _BaseGenericAlias, _root=True):
         params = tuple(_type_check(p, msg) for p in params)
         if not self._nparams:
             raise TypeError(f"{self} is not a generic class")
-        alen = len(params)
-        if alen != self._nparams:
-            raise TypeError(f"Too {'many' if alen > self._nparams else 'few'} arguments for {self};"
-                            f" actual {alen}, expected {self._nparams}")
+        actual_len = len(params)
+        if actual_len != self._nparams:
+            raise TypeError(f"Too {'many' if actual_len > self._nparams else 'few'} arguments for {self};"
+                            f" actual {actual_len}, expected {self._nparams}")
         return self.copy_with(params)
 
     def copy_with(self, params):
