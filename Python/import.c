@@ -1171,26 +1171,6 @@ is_core_module(PyInterpreterState *interp, PyObject *name, PyObject *path)
     return 0;
 }
 
-static int
-fix_up_extension_for_interpreter(PyThreadState *tstate,
-                                 PyObject *mod, PyModuleDef *def,
-                                 PyObject *name, PyObject *modules)
-{
-    assert(mod != NULL && PyModule_Check(mod));
-    assert(def == PyModule_GetDef(mod));
-
-    if (_modules_by_index_set(tstate->interp, def, mod) < 0) {
-        return -1;
-    }
-
-    if (modules != NULL) {
-        if (PyObject_SetItem(modules, name, mod) < 0) {
-            return -1;
-        }
-    }
-
-    return 0;
-}
 
 static int
 fix_up_extension(PyThreadState *tstate, PyObject *mod, PyModuleDef *def,
@@ -1236,6 +1216,29 @@ fix_up_extension(PyThreadState *tstate, PyObject *mod, PyModuleDef *def,
     return 0;
 }
 
+/* For multi-phase init modules, the module is finished
+ * by PyModule_FromDefAndSpec(). */
+static int
+finish_singlephase_extension(PyThreadState *tstate,
+                             PyObject *mod, PyModuleDef *def,
+                             PyObject *name, PyObject *modules)
+{
+    assert(mod != NULL && PyModule_Check(mod));
+    assert(def == PyModule_GetDef(mod));
+
+    if (_modules_by_index_set(tstate->interp, def, mod) < 0) {
+        return -1;
+    }
+
+    if (modules != NULL) {
+        if (PyObject_SetItem(modules, name, mod) < 0) {
+            return -1;
+        }
+    }
+
+    return 0;
+}
+
 int
 _PyImport_FixupExtensionObject(PyObject *mod, PyObject *name,
                                PyObject *filename, PyObject *modules)
@@ -1254,9 +1257,7 @@ _PyImport_FixupExtensionObject(PyObject *mod, PyObject *name,
     if (fix_up_extension(tstate, mod, def, name, filename) < 0) {
         return -1;
     }
-    if (fix_up_extension_for_interpreter(
-                tstate, mod, def, name, modules) < 0)
-    {
+    if (finish_singlephase_extension(tstate, mod, def, name, modules) < 0) {
         return -1;
     }
     return 0;
@@ -1392,9 +1393,7 @@ _PyImport_FixupBuiltin(PyThreadState *tstate, PyObject *mod, const char *name,
     if (fix_up_extension(tstate, mod, def, nameobj, nameobj) < 0) {
         goto finally;
     }
-    if (fix_up_extension_for_interpreter(
-                tstate, mod, def, nameobj, modules) < 0)
-    {
+    if (finish_singlephase_extension(tstate, mod, def, nameobj, modules) < 0) {
         goto finally;
     }
 
@@ -1471,9 +1470,7 @@ create_builtin(PyThreadState *tstate, PyObject *name, PyObject *spec)
             return NULL;
         }
         PyObject *modules = get_modules_dict(tstate, true);
-        if (fix_up_extension_for_interpreter(
-                    tstate, mod, def, name, modules) < 0)
-        {
+        if (finish_singlephase_extension(tstate, mod, def, name, modules) < 0) {
             return NULL;
         }
         return mod;
