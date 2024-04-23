@@ -4850,12 +4850,19 @@ get_module_by_def(PyTypeObject *type, PyModuleDef *def)
     // The type must be ready
     assert(mro != NULL);
     assert(PyTuple_Check(mro));
-    for (Py_ssize_t i = PyTuple_GET_SIZE(mro) - 1; i >= 0; i--) {
+    // mro_invoke() ensures that the type MRO cannot be empty, so we don't have
+    // to check i < PyTuple_GET_SIZE(mro) at the first loop iteration.
+    assert(PyTuple_GET_SIZE(mro) >= 1);
+    assert(PyTuple_GET_ITEM(mro, 0) == (PyObject *)type);
+
+    Py_ssize_t n = PyTuple_GET_SIZE(mro);
+    for (Py_ssize_t i = 1; i < n; i++) {
         PyObject *super = PyTuple_GET_ITEM(mro, i);
         if(!_PyType_HasFeature((PyTypeObject *)super, Py_TPFLAGS_HEAPTYPE)) {
             // Static types in the MRO need to be skipped
             continue;
         }
+
         PyHeapTypeObject *ht = (PyHeapTypeObject*)super;
         PyObject *module = ht->ht_module;
         if (module && _PyModule_GetDef(module) == def) {
