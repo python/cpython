@@ -1112,9 +1112,9 @@ def _typevartuple_prepare_subst(self, alias, args):
         raise TypeError(f"Too few arguments for {alias};"
                         f" actual {alen}, expected at least {plen-1}")
     if left == alen - right and self.__default__ is not None:
-        replacement = self.__default__
+        replacement = _unpack_args([self.__default__])
     else:
-        replacement = tuple(args[left: alen - right])
+        replacement = args[left: alen - right]
 
     return (
         *args[:left],
@@ -1818,7 +1818,7 @@ class _UnpackGenericAlias(_GenericAlias, _root=True):
         assert len(self.__args__) == 1
         arg, = self.__args__
         if isinstance(arg, _GenericAlias):
-            assert arg.__origin__ is tuple
+            assert arg.__origin__ is tuple, arg.__origin__
             return arg.__args__
         return None
 

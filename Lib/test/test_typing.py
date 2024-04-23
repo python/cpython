@@ -623,8 +623,9 @@ class TypeParameterDefaultsTests(BaseTestCase):
     def test_typevartuple_specialization(self):
         T = TypeVar("T")
         Ts = TypeVarTuple('Ts', default=Unpack[Tuple[str, int]])
+        self.assertEqual(Ts.__default__, Unpack[Tuple[str, int]])
         class A(Generic[T, Unpack[Ts]]): ...
-        self.assertEqual(A[float].__args__, (float, int, str))
+        self.assertEqual(A[float].__args__, (float, str, int))
 
     def test_typevartuple_none(self):
         U = TypeVarTuple('U')
