@@ -1194,8 +1194,7 @@ fix_up_extension_for_interpreter(PyThreadState *tstate,
 
 static int
 fix_up_extension(PyThreadState *tstate, PyObject *mod, PyModuleDef *def,
-                 PyObject *name, PyObject *path,
-                 PyObject *modules)
+                 PyObject *name, PyObject *path)
 {
     assert(mod != NULL && PyModule_Check(mod));
     assert(def == _PyModule_GetDef(mod));
@@ -1234,12 +1233,6 @@ fix_up_extension(PyThreadState *tstate, PyObject *mod, PyModuleDef *def,
         }
     }
 
-    if (fix_up_extension_for_interpreter(
-                tstate, mod, def, name, modules) < 0)
-    {
-        return -1;
-    }
-
     return 0;
 }
 
@@ -1258,7 +1251,12 @@ _PyImport_FixupExtensionObject(PyObject *mod, PyObject *name,
     }
 
     PyThreadState *tstate = _PyThreadState_GET();
-    if (fix_up_extension(tstate, mod, def, name, filename, modules) < 0) {
+    if (fix_up_extension(tstate, mod, def, name, filename) < 0) {
+        return -1;
+    }
+    if (fix_up_extension_for_interpreter(
+                tstate, mod, def, name, modules) < 0)
+    {
         return -1;
     }
     return 0;
@@ -1391,7 +1389,12 @@ _PyImport_FixupBuiltin(PyThreadState *tstate, PyObject *mod, const char *name,
         goto finally;
     }
 
-    if (fix_up_extension(tstate, mod, def, nameobj, nameobj, modules) < 0) {
+    if (fix_up_extension(tstate, mod, def, nameobj, nameobj) < 0) {
+        goto finally;
+    }
+    if (fix_up_extension_for_interpreter(
+                tstate, mod, def, nameobj, modules) < 0)
+    {
         goto finally;
     }
 
@@ -1464,8 +1467,13 @@ create_builtin(PyThreadState *tstate, PyObject *name, PyObject *spec)
         /* Remember pointer to module init function. */
         def->m_base.m_init = p0;
 
+        if (fix_up_extension(tstate, mod, def, name, name) < 0) {
+            return NULL;
+        }
         PyObject *modules = get_modules_dict(tstate, true);
-        if (fix_up_extension(tstate, mod, def, name, name, modules) < 0) {
+        if (fix_up_extension_for_interpreter(
+                    tstate, mod, def, name, modules) < 0)
+        {
             return NULL;
         }
         return mod;
