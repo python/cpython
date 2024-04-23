@@ -288,11 +288,6 @@ extern void _Py_Specialize_Send(PyObject *receiver, _Py_CODEUNIT *instr);
 extern void _Py_Specialize_ToBool(PyObject *value, _Py_CODEUNIT *instr);
 extern void _Py_Specialize_ContainsOp(PyObject *value, _Py_CODEUNIT *instr);
 
-/* Finalizer function for static codeobjects used in deepfreeze.py */
-extern void _PyStaticCode_Fini(PyCodeObject *co);
-/* Function to intern strings of codeobjects and quicken the bytecode */
-extern int _PyStaticCode_Init(PyCodeObject *co);
-
 #ifdef Py_STATS
 
 #include "pycore_bitutils.h"  // _Py_bit_length

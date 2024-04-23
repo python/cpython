@@ -394,6 +394,12 @@ executor_traverse(PyObject *o, visitproc visit, void *arg)
     return 0;
 }
 
+static int
+executor_is_gc(PyObject *o)
+{
+    return !_Py_IsImmortal(o);
+}
+
 PyTypeObject _PyUOpExecutor_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     .tp_name = "uop_executor",
@@ -405,6 +411,7 @@ PyTypeObject _PyUOpExecutor_Type = {
     .tp_methods = executor_methods,
     .tp_traverse = executor_traverse,
     .tp_clear = executor_clear,
+    .tp_is_gc = executor_is_gc,
 };
 
 /* TO DO -- Generate these tables */

@@ -1699,6 +1699,18 @@ SyntaxError: Did you mean to use 'from ... import ...' instead?
 Traceback (most recent call last):
 SyntaxError: invalid syntax
 
+>>> from i import
+Traceback (most recent call last):
+SyntaxError: Expected one or more names after 'import'
+
+>>> from .. import
+Traceback (most recent call last):
+SyntaxError: Expected one or more names after 'import'
+
+>>> import
+Traceback (most recent call last):
+SyntaxError: Expected one or more names after 'import'
+
 >>> (): int
 Traceback (most recent call last):
 SyntaxError: only single target (not tuple) can be annotated
