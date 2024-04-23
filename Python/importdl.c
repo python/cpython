@@ -147,6 +147,11 @@ _Py_ext_module_loader_info_init(struct _Py_ext_module_loader_info *p_info,
             return -1;
         }
 #endif
+
+        info.path = info.filename;
+    }
+    else {
+        info.path = info.name;
     }
 
     *p_info = info;

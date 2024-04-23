@@ -24,6 +24,9 @@ struct _Py_ext_module_loader_info {
 #endif
     PyObject *name;
     PyObject *name_encoded;
+    /* path is always a borrowed ref of name or filename,
+     * depending on if it's builtin or not. */
+    PyObject *path;
     const char *hook_prefix;
     const char *newcontext;
 };
