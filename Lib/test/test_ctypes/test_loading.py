@@ -188,11 +188,11 @@ class LoaderTest(unittest.TestCase):
             should_pass("windll.kernel32.SetDllDirectoryW(None); WinDLL('_sqlite3.dll', winmode=0)")
 
             # Full path load without DLL_LOAD_DIR shouldn't find dependency
-            should_fail("WinDLL(nt._getfullpathname('_sqlite3.dll'), " +
+            should_fail("WinDLL(nt._path_abspath('_sqlite3.dll'), " +
                         "winmode=nt._LOAD_LIBRARY_SEARCH_SYSTEM32)")
 
             # Full path load with DLL_LOAD_DIR should succeed
-            should_pass("WinDLL(nt._getfullpathname('_sqlite3.dll'), " +
+            should_pass("WinDLL(nt._path_abspath('_sqlite3.dll'), " +
                         "winmode=nt._LOAD_LIBRARY_SEARCH_SYSTEM32|" +
                         "nt._LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR)")
 

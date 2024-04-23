@@ -583,7 +583,7 @@ else:
 
 def _abspath_fallback(path):
     """Return the absolute version of a path as a fallback function in case
-    `nt._getfullpathname` is not available or raises OSError. See bpo-31047 for
+    `nt._path_abspath` is not available or raises OSError. See bpo-31047 for
     more.
 
     """

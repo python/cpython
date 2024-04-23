@@ -380,7 +380,7 @@ class CDLL(object):
                 import nt
                 mode = nt._LOAD_LIBRARY_SEARCH_DEFAULT_DIRS
                 if '/' in name or '\\' in name:
-                    self._name = nt._getfullpathname(self._name)
+                    self._name = nt._path_abspath(self._name)
                     mode |= nt._LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR
 
         class _FuncPtr(_CFuncPtr):
