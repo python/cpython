@@ -29,6 +29,8 @@ The following functions can be safely called before Python is initialized:
   * :c:func:`PyMem_SetAllocator`
   * :c:func:`PyMem_SetupDebugHooks`
   * :c:func:`PyObject_SetArenaAllocator`
+  * :c:func:`Py_SetProgramName`
+  * :c:func:`Py_SetPythonHome`
   * :c:func:`PySys_ResetWarnOptions`
 
 * Informative functions:
@@ -59,7 +61,7 @@ The following functions can be safely called before Python is initialized:
    :c:func:`Py_Initialize`: :c:func:`Py_EncodeLocale`, :c:func:`Py_GetPath`,
    :c:func:`Py_GetPrefix`, :c:func:`Py_GetExecPrefix`,
    :c:func:`Py_GetProgramFullPath`, :c:func:`Py_GetPythonHome`,
-   and :c:func:`Py_GetProgramName`.
+   :c:func:`Py_GetProgramName` and :c:func:`PyEval_InitThreads`.
 
 
 .. _global-conf-vars:
@@ -326,6 +328,7 @@ Initializing and finalizing the interpreter
 .. c:function:: void Py_Initialize()
 
    .. index::
+      single: PyEval_InitThreads()
       single: modules (in module sys)
       single: path (in module sys)
       pair: module; builtins
@@ -423,6 +426,34 @@ Initializing and finalizing the interpreter
 
 Process-wide parameters
 =======================
+
+
+.. c:function:: void Py_SetProgramName(const wchar_t *name)
+
+   .. index::
+      single: Py_Initialize()
+      single: main()
+      single: Py_GetPath()
+
+   This API is kept for backward compatibility: setting
+   :c:member:`PyConfig.program_name` should be used instead, see :ref:`Python
+   Initialization Configuration <init-config>`.
+
+   This function should be called before :c:func:`Py_Initialize` is called for
+   the first time, if it is called at all.  It tells the interpreter the value
+   of the ``argv[0]`` argument to the :c:func:`main` function of the program
+   (converted to wide characters).
+   This is used by :c:func:`Py_GetPath` and some other functions below to find
+   the Python run-time libraries relative to the interpreter executable.  The
+   default value is ``'python'``.  The argument should point to a
+   zero-terminated wide character string in static storage whose contents will not
+   change for the duration of the program's execution.  No code in the Python
+   interpreter will change the contents of this storage.
+
+   Use :c:func:`Py_DecodeLocale` to decode a bytes string to get a
+   :c:expr:`wchar_*` string.
+
+   .. deprecated:: 3.11
 
 
 .. c:function:: wchar_t* Py_GetProgramName()
@@ -624,6 +655,106 @@ Process-wide parameters
    The returned string points into static storage; the caller should not modify its
    value.  The value is available to Python code as part of the variable
    ``sys.version``.
+
+
+.. c:function:: void PySys_SetArgvEx(int argc, wchar_t **argv, int updatepath)
+
+   .. index::
+      single: main()
+      single: Py_FatalError()
+      single: argv (in module sys)
+
+   This API is kept for backward compatibility: setting
+   :c:member:`PyConfig.argv`, :c:member:`PyConfig.parse_argv` and
+   :c:member:`PyConfig.safe_path` should be used instead, see :ref:`Python
+   Initialization Configuration <init-config>`.
+
+   Set :data:`sys.argv` based on *argc* and *argv*.  These parameters are
+   similar to those passed to the program's :c:func:`main` function with the
+   difference that the first entry should refer to the script file to be
+   executed rather than the executable hosting the Python interpreter.  If there
+   isn't a script that will be run, the first entry in *argv* can be an empty
+   string.  If this function fails to initialize :data:`sys.argv`, a fatal
+   condition is signalled using :c:func:`Py_FatalError`.
+
+   If *updatepath* is zero, this is all the function does.  If *updatepath*
+   is non-zero, the function also modifies :data:`sys.path` according to the
+   following algorithm:
+
+   - If the name of an existing script is passed in ``argv[0]``, the absolute
+     path of the directory where the script is located is prepended to
+     :data:`sys.path`.
+   - Otherwise (that is, if *argc* is ``0`` or ``argv[0]`` doesn't point
+     to an existing file name), an empty string is prepended to
+     :data:`sys.path`, which is the same as prepending the current working
+     directory (``"."``).
+
+   Use :c:func:`Py_DecodeLocale` to decode a bytes string to get a
+   :c:expr:`wchar_*` string.
+
+   See also :c:member:`PyConfig.orig_argv` and :c:member:`PyConfig.argv`
+   members of the :ref:`Python Initialization Configuration <init-config>`.
+
+   .. note::
+      It is recommended that applications embedding the Python interpreter
+      for purposes other than executing a single script pass ``0`` as *updatepath*,
+      and update :data:`sys.path` themselves if desired.
+      See :cve:`2008-5983`.
+
+      On versions before 3.1.3, you can achieve the same effect by manually
+      popping the first :data:`sys.path` element after having called
+      :c:func:`PySys_SetArgv`, for example using::
+
+         PyRun_SimpleString("import sys; sys.path.pop(0)\n");
+
+   .. versionadded:: 3.1.3
+
+   .. XXX impl. doesn't seem consistent in allowing ``0``/``NULL`` for the params;
+      check w/ Guido.
+
+   .. deprecated:: 3.11
+
+
+.. c:function:: void PySys_SetArgv(int argc, wchar_t **argv)
+
+   This API is kept for backward compatibility: setting
+   :c:member:`PyConfig.argv` and :c:member:`PyConfig.parse_argv` should be used
+   instead, see :ref:`Python Initialization Configuration <init-config>`.
+
+   This function works like :c:func:`PySys_SetArgvEx` with *updatepath* set
+   to ``1`` unless the :program:`python` interpreter was started with the
+   :option:`-I`.
+
+   Use :c:func:`Py_DecodeLocale` to decode a bytes string to get a
+   :c:expr:`wchar_*` string.
+
+   See also :c:member:`PyConfig.orig_argv` and :c:member:`PyConfig.argv`
+   members of the :ref:`Python Initialization Configuration <init-config>`.
+
+   .. versionchanged:: 3.4 The *updatepath* value depends on :option:`-I`.
+
+   .. deprecated:: 3.11
+
+
+.. c:function:: void Py_SetPythonHome(const wchar_t *home)
+
+   This API is kept for backward compatibility: setting
+   :c:member:`PyConfig.home` should be used instead, see :ref:`Python
+   Initialization Configuration <init-config>`.
+
+   Set the default "home" directory, that is, the location of the standard
+   Python libraries.  See :envvar:`PYTHONHOME` for the meaning of the
+   argument string.
+
+   The argument should point to a zero-terminated character string in static
+   storage whose contents will not change for the duration of the program's
+   execution.  No code in the Python interpreter will change the contents of
+   this storage.
+
+   Use :c:func:`Py_DecodeLocale` to decode a bytes string to get a
+   :c:expr:`wchar_*` string.
+
+   .. deprecated:: 3.11
 
 
 .. c:function:: wchar_t* Py_GetPythonHome()
@@ -839,6 +970,33 @@ code, or when embedding the Python interpreter:
    .. c:member:: PyInterpreterState *interp
 
       This thread's interpreter state.
+
+
+.. c:function:: void PyEval_InitThreads()
+
+   .. index::
+      single: PyEval_AcquireThread()
+      single: PyEval_ReleaseThread()
+      single: PyEval_SaveThread()
+      single: PyEval_RestoreThread()
+
+   Deprecated function which does nothing.
+
+   In Python 3.6 and older, this function created the GIL if it didn't exist.
+
+   .. versionchanged:: 3.9
+      The function now does nothing.
+
+   .. versionchanged:: 3.7
+      This function is now called by :c:func:`Py_Initialize()`, so you don't
+      have to call it yourself anymore.
+
+   .. versionchanged:: 3.2
+      This function cannot be called before :c:func:`Py_Initialize()` anymore.
+
+   .. deprecated:: 3.9
+
+   .. index:: pair: module; _thread
 
 
 .. c:function:: PyThreadState* PyEval_SaveThread()

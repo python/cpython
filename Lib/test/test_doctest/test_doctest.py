@@ -18,8 +18,12 @@ import types
 import contextlib
 
 
-if not support.has_subprocess_support:
-    raise unittest.SkipTest("test_CLI requires subprocess support.")
+def doctest_skip_if(condition):
+    def decorator(func):
+        if condition and support.HAVE_DOCSTRINGS:
+            func.__doc__ = ">>> pass  # doctest: +SKIP"
+        return func
+    return decorator
 
 
 # NOTE: There are some additional tests relating to interaction with
@@ -466,7 +470,7 @@ We'll simulate a __file__ attr that ends in pyc:
     >>> tests = finder.find(sample_func)
 
     >>> print(tests)  # doctest: +ELLIPSIS
-    [<DocTest sample_func from test_doctest.py:33 (1 example)>]
+    [<DocTest sample_func from test_doctest.py:37 (1 example)>]
 
 The exact name depends on how test_doctest was invoked, so allow for
 leading path components.
@@ -2541,12 +2545,41 @@ class Wrapper:
         self.func(*args, **kwargs)
 
 @Wrapper
-def test_look_in_unwrapped():
+def wrapped():
     """
     Docstrings in wrapped functions must be detected as well.
 
     >>> 'one other test'
     'one other test'
+    """
+
+def test_look_in_unwrapped():
+    """
+    Ensure that wrapped doctests work correctly.
+
+    >>> import doctest
+    >>> doctest.run_docstring_examples(
+    ...     wrapped, {}, name=wrapped.__name__, verbose=True)
+    Finding tests in wrapped
+    Trying:
+        'one other test'
+    Expecting:
+        'one other test'
+    ok
+    """
+
+@doctest_skip_if(support.check_impl_detail(cpython=False))
+def test_wrapped_c_func():
+    """
+    # https://github.com/python/cpython/issues/117692
+    >>> import binascii
+    >>> from test.test_doctest.decorator_mod import decorator
+
+    >>> c_func_wrapped = decorator(binascii.b2a_hex)
+    >>> tests = doctest.DocTestFinder(exclude_empty=False).find(c_func_wrapped)
+    >>> for test in tests:
+    ...    print(test.lineno, test.name)
+    None b2a_hex
     """
 
 def test_unittest_reportflags():
@@ -2966,6 +2999,7 @@ Check doctest with a non-ascii filename:
     TestResults(failed=1, attempted=1)
     """
 
+@doctest_skip_if(not support.has_subprocess_support)
 def test_CLI(): r"""
 The doctest module can be used to run doctests against an arbitrary file.
 These tests test this CLI functionality.
