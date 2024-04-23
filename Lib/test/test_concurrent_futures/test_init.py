@@ -4,6 +4,7 @@ import queue
 import time
 import unittest
 import sys
+import io
 from concurrent.futures._base import BrokenExecutor
 from concurrent.futures.process import _check_system_limits
 
@@ -124,7 +125,7 @@ class FailingInitializerResourcesTest(unittest.TestCase):
         except NotImplementedError:
             self.skipTest("ProcessPoolExecutor unavailable on this system")
 
-        runner = unittest.TextTestRunner()
+        runner = unittest.TextTestRunner(stream=io.StringIO())
         runner.run(test_class('test_initializer'))
 
         # GH-104090:
