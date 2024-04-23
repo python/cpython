@@ -407,8 +407,8 @@ _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction *trace, size
     unsigned char *data = memory + code_size;
     {
         const StencilGroup *group = &trampoline;
-        // Think of patches as a dictionary mapping HoleValue to uint64_t:
-        uint64_t patches[] = GET_PATCHES();
+        // Think of patches as a dictionary mapping HoleValue to uintptr_t:
+        uintptr_t patches[] = GET_PATCHES();
         patches[HoleValue_CODE] = (uintptr_t)code;
         patches[HoleValue_CONTINUE] = (uintptr_t)code + group->code.body_size;
         patches[HoleValue_DATA] = (uintptr_t)data;
