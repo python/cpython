@@ -1390,99 +1390,6 @@ clear_singlephase_extension(PyInterpreterState *interp,
     return 0;
 }
 
-static PyObject *
-create_dynamic(PyThreadState *tstate, struct _Py_ext_module_loader_info *info,
-               PyObject *file, PyObject *spec)
-{
-    PyObject *mod = NULL;
-    PyModuleDef *def = NULL;
-
-    /* We would move this (and the fclose() below) into
-     * _PyImport_GetModInitFunc(), but it isn't clear if the intervening
-     * code relies on fp still being open. */
-    FILE *fp;
-    if (file != NULL) {
-        fp = _Py_fopen_obj(info->filename, "r");
-        if (fp == NULL) {
-            goto finally;
-        }
-    }
-    else {
-        fp = NULL;
-    }
-
-    PyModInitFunction p0 = _PyImport_GetModInitFunc(info, fp);
-    if (p0 == NULL) {
-        goto finally;
-    }
-
-    struct _Py_ext_module_loader_result res;
-    if (_PyImport_RunModInitFunc(p0, info, &res) < 0) {
-        assert(PyErr_Occurred());
-        goto finally;
-    }
-
-    mod = res.module;
-    res.module = NULL;
-    def = res.def;
-    assert(def != NULL);
-
-    if (mod == NULL) {
-        //assert(!is_singlephase(def));
-        mod = PyModule_FromDefAndSpec(def, spec);
-        if (mod == NULL) {
-            goto finally;
-        }
-    }
-    else {
-        assert(is_singlephase(def));
-        assert(!is_core_module(tstate->interp, info->name, info->filename));
-        assert(!is_core_module(tstate->interp, info->name, info->name));
-        mod = Py_NewRef(mod);
-
-        const char *name_buf = PyBytes_AS_STRING(info->name_encoded);
-        if (_PyImport_CheckSubinterpIncompatibleExtensionAllowed(name_buf) < 0) {
-            Py_CLEAR(mod);
-            goto finally;
-        }
-
-        /* Remember the filename as the __file__ attribute */
-        if (PyModule_AddObjectRef(mod, "__file__", info->filename) < 0) {
-            PyErr_Clear(); /* Not important enough to report */
-        }
-
-        struct singlephase_global_update singlephase = {0};
-        // gh-88216: Extensions and def->m_base.m_copy can be updated
-        // when the extension module doesn't support sub-interpreters.
-        if (def->m_size == -1) {
-            singlephase.m_dict = PyModule_GetDict(mod);
-            assert(singlephase.m_dict != NULL);
-        }
-        if (update_global_state_for_extension(
-                tstate, info->filename, info->name, def, &singlephase) < 0)
-        {
-            Py_CLEAR(mod);
-            goto finally;
-        }
-
-        PyObject *modules = get_modules_dict(tstate, true);
-        if (finish_singlephase_extension(
-                tstate, mod, def, info->name, modules) < 0)
-        {
-            Py_CLEAR(mod);
-            goto finally;
-        }
-    }
-
-    // XXX Shouldn't this happen in the error cases too.
-    if (fp) {
-        fclose(fp);
-    }
-
-finally:
-    return mod;
-}
-
 
 /*******************/
 /* builtin modules */
@@ -3957,6 +3864,7 @@ _imp_create_dynamic_impl(PyObject *module, PyObject *spec, PyObject *file)
 /*[clinic end generated code: output=83249b827a4fde77 input=c31b954f4cf4e09d]*/
 {
     PyObject *mod = NULL;
+    PyModuleDef *def = NULL;
     PyThreadState *tstate = _PyThreadState_GET();
 
     struct _Py_ext_module_loader_info info;
@@ -3981,10 +3889,86 @@ _imp_create_dynamic_impl(PyObject *module, PyObject *spec, PyObject *file)
         goto finally;
     }
 
-    /* Is multi-phase init or this is the first time being loaded. */
-    mod = create_dynamic(tstate, &info, file, spec);
-    if (mod == NULL) {
+    /* We would move this (and the fclose() below) into
+     * _PyImport_GetModInitFunc(), but it isn't clear if the intervening
+     * code relies on fp still being open. */
+    FILE *fp;
+    if (file != NULL) {
+        fp = _Py_fopen_obj(info.filename, "r");
+        if (fp == NULL) {
+            goto finally;
+        }
+    }
+    else {
+        fp = NULL;
+    }
+
+    PyModInitFunction p0 = _PyImport_GetModInitFunc(&info, fp);
+    if (p0 == NULL) {
         goto finally;
+    }
+
+    struct _Py_ext_module_loader_result res;
+    if (_PyImport_RunModInitFunc(p0, &info, &res) < 0) {
+        assert(PyErr_Occurred());
+        goto finally;
+    }
+
+    mod = res.module;
+    res.module = NULL;
+    def = res.def;
+    assert(def != NULL);
+
+    if (mod == NULL) {
+        //assert(!is_singlephase(def));
+        mod = PyModule_FromDefAndSpec(def, spec);
+        if (mod == NULL) {
+            goto finally;
+        }
+    }
+    else {
+        assert(is_singlephase(def));
+        assert(!is_core_module(tstate->interp, info.name, info.filename));
+        assert(!is_core_module(tstate->interp, info.name, info.name));
+        mod = Py_NewRef(mod);
+
+        const char *name_buf = PyBytes_AS_STRING(info.name_encoded);
+        if (_PyImport_CheckSubinterpIncompatibleExtensionAllowed(name_buf) < 0) {
+            Py_CLEAR(mod);
+            goto finally;
+        }
+
+        /* Remember the filename as the __file__ attribute */
+        if (PyModule_AddObjectRef(mod, "__file__", info.filename) < 0) {
+            PyErr_Clear(); /* Not important enough to report */
+        }
+
+        struct singlephase_global_update singlephase = {0};
+        // gh-88216: Extensions and def->m_base.m_copy can be updated
+        // when the extension module doesn't support sub-interpreters.
+        if (def->m_size == -1) {
+            singlephase.m_dict = PyModule_GetDict(mod);
+            assert(singlephase.m_dict != NULL);
+        }
+        if (update_global_state_for_extension(
+                tstate, info.filename, info.name, def, &singlephase) < 0)
+        {
+            Py_CLEAR(mod);
+            goto finally;
+        }
+
+        PyObject *modules = get_modules_dict(tstate, true);
+        if (finish_singlephase_extension(
+                tstate, mod, def, info.name, modules) < 0)
+        {
+            Py_CLEAR(mod);
+            goto finally;
+        }
+    }
+
+    // XXX Shouldn't this happen in the error cases too.
+    if (fp) {
+        fclose(fp);
     }
 
 finally:
