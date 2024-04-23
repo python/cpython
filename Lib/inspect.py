@@ -1850,7 +1850,7 @@ def _shadowed_dict_from_weakref_mro_tuple(weakref_mro):
 
 def _shadowed_dict(klass):
     return _shadowed_dict_from_weakref_mro_tuple(
-        tuple(map(weakref.ref, _static_getmro(klass)))
+        tuple([weakref.ref(entry) for entry in _static_getmro(klass)])
     )
 
 
