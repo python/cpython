@@ -407,8 +407,7 @@ get_jit_code(PyObject *self, PyObject *Py_UNUSED(ignored))
     }
     _PyExecutorObject *executor = (_PyExecutorObject *)self;
     if (executor->jit_code == NULL || executor->jit_size == 0) {
-        PyErr_SetString(PyExc_ValueError, "No JIT code available.");
-        return NULL;
+        Py_RETURN_NONE;
     }
     return PyBytes_FromStringAndSize(executor->jit_code, executor->jit_size);
 #endif
