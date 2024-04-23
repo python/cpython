@@ -1192,7 +1192,6 @@ fix_up_extension_for_interpreter(PyThreadState *tstate,
     return 0;
 }
 
-
 static int
 fix_up_extension(PyThreadState *tstate, PyObject *mod, PyModuleDef *def,
                  PyObject *name, PyObject *path,
@@ -1200,12 +1199,6 @@ fix_up_extension(PyThreadState *tstate, PyObject *mod, PyModuleDef *def,
 {
     assert(mod != NULL && PyModule_Check(mod));
     assert(def == _PyModule_GetDef(mod));
-
-    if (fix_up_extension_for_interpreter(
-                tstate, mod, def, name, modules) < 0)
-    {
-        return -1;
-    }
 
     // bpo-44050: Extensions and def->m_base.m_copy can be updated
     // when the extension module doesn't support sub-interpreters.
@@ -1221,11 +1214,11 @@ fix_up_extension(PyThreadState *tstate, PyObject *mod, PyModuleDef *def,
             }
             PyObject *dict = PyModule_GetDict(mod);
             if (dict == NULL) {
-                goto error;
+                return -1;
             }
             def->m_base.m_copy = PyDict_Copy(dict);
             if (def->m_base.m_copy == NULL) {
-                goto error;
+                return -1;
             }
         }
     }
@@ -1237,15 +1230,17 @@ fix_up_extension(PyThreadState *tstate, PyObject *mod, PyModuleDef *def,
         assert(cached == NULL || cached == def);
 #endif
         if (_extensions_cache_set(path, name, def) < 0) {
-            goto error;
+            return -1;
         }
     }
 
-    return 0;
+    if (fix_up_extension_for_interpreter(
+                tstate, mod, def, name, modules) < 0)
+    {
+        return -1;
+    }
 
-error:
-    PyMapping_DelItem(modules, name);
-    return -1;
+    return 0;
 }
 
 int
