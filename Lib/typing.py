@@ -268,6 +268,8 @@ def _collect_parameters(args):
     """
     # required type parameter cannot appear after parameter with default
     default_encountered = False
+    # or after TypeVarTuple
+    type_var_tuple_encountered = False
     parameters = []
     for t in args:
         if isinstance(t, type):
@@ -282,6 +284,10 @@ def _collect_parameters(args):
                         parameters.append(collected)
         elif hasattr(t, '__typing_subst__'):
             if t not in parameters:
+                if type_var_tuple_encountered and t.__default__ is not None:
+                    raise TypeError('Type parameter with a default'
+                                    ' follows TypeVarTuple')
+
                 if t.__default__ is not None:
                     default_encountered = True
                 elif default_encountered:
@@ -290,6 +296,8 @@ def _collect_parameters(args):
 
                 parameters.append(t)
         else:
+            if _is_unpacked_typevartuple(t):
+                type_var_tuple_encountered = True
             for x in getattr(t, '__parameters__', ()):
                 if x not in parameters:
                     parameters.append(x)

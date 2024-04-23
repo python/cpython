@@ -640,6 +640,17 @@ class TypeParameterDefaultsTests(BaseTestCase):
         self.assertEqual(A[int, str, range].__args__, (int, str, range))
         self.assertEqual(A[int, str, *tuple[int, ...]].__args__, (int, str, *tuple[int, ...]))
 
+    def test_no_default_after_typevar_tuple(self):
+        T = TypeVar("T", default=int)
+        Ts = TypeVarTuple("Ts")
+        Ts_default = TypeVarTuple("Ts_default", default=Unpack[Tuple[str, int]])
+
+        with self.assertRaises(TypeError):
+            class X(Generic[*Ts, T]): ...
+
+        with self.assertRaises(TypeError):
+            class X(Generic[*Ts_default, T]): ...
+
     def test_paramspec_specialization(self):
         T = TypeVar("T")
         P = ParamSpec('P', default=[str, int])
