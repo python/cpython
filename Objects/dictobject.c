@@ -1188,40 +1188,9 @@ _PyDictKeys_StringLookup(PyDictKeysObject* dk, PyObject *key)
     return unicodekeys_lookup_unicode(dk, key, hash);
 }
 
-
-#ifdef Py_GIL_DISABLED
-
-// Version of _Py_dict_lookup specialized for when we have split keys and the
-// shared keys are locked.
-static Py_ssize_t
-splitdict_lookup_keys_lock_held(PyDictObject *mp, PyObject *key, Py_hash_t hash,
-                                PyObject **value_addr)
-{
-    PyDictKeysObject *dk = mp->ma_keys;
-    Py_ssize_t ix;
-
-    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(mp);
-    ASSERT_KEYS_LOCKED(dk);
-    assert(PyUnicode_CheckExact(key));
-    assert(dk->dk_kind == DICT_KEYS_SPLIT);
-
-    ix = unicodekeys_lookup_unicode(dk, key, hash);
-
-    if (ix >= 0) {
-        *value_addr = mp->ma_values->values[ix];
-    }
-    else {
-        *value_addr = NULL;
-    }
-
-    return ix;
-}
-
 static Py_ssize_t
 unicodekeys_lookup_unicode_threadsafe(PyDictKeysObject* dk, PyObject *key,
                                       Py_hash_t hash);
-
-#endif // Py_GIL_DISABLED
 
 /*
 The basic lookup function used by all operations.
@@ -1260,15 +1229,16 @@ start:
                 ix = unicodekeys_lookup_unicode_threadsafe(dk, key, hash);
                 if (ix == DKIX_KEY_CHANGED) {
                     LOCK_KEYS(dk);
-                    ix = splitdict_lookup_keys_lock_held(mp, key, hash,
-                                                         value_addr);
+                    ix = unicodekeys_lookup_unicode(dk, key, hash);
                     UNLOCK_KEYS(dk);
-                    return ix;
                 }
             }
-#endif
-
+            else {
+                ix = unicodekeys_lookup_unicode(dk, key, hash);
+            }
+#else
             ix = unicodekeys_lookup_unicode(dk, key, hash);
+#endif
         }
         else {
             INCREF_KEYS_FT(dk);
