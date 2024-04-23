@@ -1003,9 +1003,10 @@ class UnpackTests(BaseTestCase):
         class Gen[*Ts]: ...
         PartGen = Gen[int, *Ts]
 
-        with self.assertRaises(TypeError):
+        bad_unpack_param = re.escape("Unpack[...] must be used with a tuple type")
+        with self.assertRaisesRegex(TypeError, bad_unpack_param):
             PartGen[Unpack[list[int]]]
-        with self.assertRaises(TypeError):
+        with self.assertRaisesRegex(TypeError, bad_unpack_param):
             PartGen[Unpack[List[int]]]
 
 
