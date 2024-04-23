@@ -1924,7 +1924,7 @@ Loading and running tests
          *start_dir* can not be a :term:`namespace packages <namespace package>`.
          It has been broken since Python 3.7 and Python 3.11 officially remove it.
 
-      .. versionchanged:: 3.13
+      .. versionchanged:: 3.12.4
          *top_level_dir* is only stored for the duration of *discover* call.
 
 
