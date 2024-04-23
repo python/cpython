@@ -266,7 +266,7 @@ def _collect_parameters(args):
         >>> _collect_parameters((T, Callable[P, T]))
         (~T, ~P)
     """
-    # required TypeVarLike cannot appear after TypeVarLike with default
+    # required type parameter cannot appear after parameter with default
     default_encountered = False
     parameters = []
     for t in args:
@@ -296,35 +296,31 @@ def _collect_parameters(args):
     return tuple(parameters)
 
 
-def _check_generic(cls, parameters, elen):
+def _check_generic_specialization(cls, parameters):
     """Check correct count for parameters of a generic cls (internal helper).
 
     This gives a nice error message in case of count mismatch.
     """
+    elen = len(cls.__parameters__)
     if not elen:
         raise TypeError(f"{cls} is not a generic class")
     alen = len(parameters)
     if alen != elen:
-        expect_val = elen
-        if hasattr(cls, "__parameters__"):
-            parameters = [p for p in cls.__parameters__ if get_origin(p) is not Unpack]
+        # deal with defaults
+        if alen < elen:
+            # since we validate defaults in _collect_type_vars
+            # or _collect_parameters, we can safely check parameters[alen]
+            if cls.__parameters__[alen].__default__ is not None:
+                return
 
-            # deal with TypeVarLike defaults
-            # required TypeVarLikes cannot appear after a defaulted one.
-            if alen < elen:
-                # since we validate TypeVarLike default in _collect_type_vars
-                # or _collect_parameters we can safely check parameters[alen]
-                if parameters[alen].__default__ is not None:
-                    return
-
-                num_default_tv = sum(p.__default__ is not None for p in parameters)
-
-                elen -= num_default_tv
-
-                expect_val = f"at least {elen}"
+            elen -= sum(p.__default__ is not None for p in cls.__parameters__)
+            expect_val = f"at least {elen}"
+        else:
+            expect_val = elen
 
         raise TypeError(f"Too {'many' if alen > elen else 'few'} arguments"
                         f" for {cls}; actual {alen}, expected {expect_val}")
+
 
 def _unpack_args(args):
     newargs = []
@@ -1115,11 +1111,15 @@ def _typevartuple_prepare_subst(self, alias, args):
     elif left + right > alen:
         raise TypeError(f"Too few arguments for {alias};"
                         f" actual {alen}, expected at least {plen-1}")
+    if left == alen - right and self.__default__ is not None:
+        replacement = self.__default__
+    else:
+        replacement = tuple(args[left: alen - right])
 
     return (
         *args[:left],
         *([fillarg]*(typevartuple_index - left)),
-        tuple(args[left: alen - right]),
+        replacement,
         *([fillarg]*(plen - right - left - typevartuple_index - 1)),
         *args[alen - right:],
     )
@@ -1185,7 +1185,7 @@ def _generic_class_getitem(cls, params):
             prepare = getattr(param, '__typing_prepare_subst__', None)
             if prepare is not None:
                 params = prepare(cls, params)
-        _check_generic(cls, params, len(cls.__parameters__))
+        _check_generic_specialization(cls, params)
 
         new_args = []
         for param, new_arg in zip(cls.__parameters__, params):
@@ -1578,7 +1578,12 @@ class _SpecialGenericAlias(_NotIterable, _BaseGenericAlias, _root=True):
             params = (params,)
         msg = "Parameters to generic types must be types."
         params = tuple(_type_check(p, msg) for p in params)
-        _check_generic(self, params, self._nparams)
+        if not self._nparams:
+            raise TypeError(f"{self} is not a generic class")
+        alen = len(params)
+        if alen != self._nparams:
+            raise TypeError(f"Too {'many' if alen > self._nparams else 'few'} arguments for {self};"
+                            f" actual {alen}, expected {self._nparams}")
         return self.copy_with(params)
 
     def copy_with(self, params):
