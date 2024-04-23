@@ -661,7 +661,7 @@ type_param[type_param_ty] (memo):
 type_param_bound[expr_ty]: ':' e=expression { e }
 type_param_default[expr_ty]: '=' e=expression {
     CHECK_VERSION(expr_ty, 13, "Type parameter defaults are", e) }
-type_param_starred_default[expr_ty]: '=' e=starred_expression {
+type_param_starred_default[expr_ty]: '=' e=star_expression {
     CHECK_VERSION(expr_ty, 13, "Type parameter defaults are", e) }
 
 # EXPRESSIONS

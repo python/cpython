@@ -1189,6 +1189,16 @@ class DefaultsTest(unittest.TestCase):
         self.assertIs(U.__default__, float)
         self.assertIs(V.__default__, type(None))
 
+    def test_starred_invalid(self):
+        check_syntax_error(self, "type Alias[T = *int] = int")
+        check_syntax_error(self, "type Alias[**P = *int] = int")
+
+    def test_starred_typevartuple(self):
+        default = tuple[int, str]
+        type Alias[*Ts = *default] = Ts
+        Ts, = Alias.__type_params__
+        self.assertEqual(Ts.__default__, next(iter(default)))
+
     def test_nondefault_after_default(self):
         check_syntax_error(self, "def func[T=int, U](): pass", "non-default type parameter 'U' follows default type parameter")
         check_syntax_error(self, "class C[T=int, U]: pass", "non-default type parameter 'U' follows default type parameter")

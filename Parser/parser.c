@@ -10980,7 +10980,7 @@ type_param_default_rule(Parser *p)
     return _res;
 }
 
-// type_param_starred_default: '=' starred_expression
+// type_param_starred_default: '=' star_expression
 static expr_ty
 type_param_starred_default_rule(Parser *p)
 {
@@ -10993,21 +10993,21 @@ type_param_starred_default_rule(Parser *p)
     }
     expr_ty _res = NULL;
     int _mark = p->mark;
-    { // '=' starred_expression
+    { // '=' star_expression
         if (p->error_indicator) {
             p->level--;
             return NULL;
         }
-        D(fprintf(stderr, "%*c> type_param_starred_default[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'=' starred_expression"));
+        D(fprintf(stderr, "%*c> type_param_starred_default[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'=' star_expression"));
         Token * _literal;
         expr_ty e;
         if (
             (_literal = _PyPegen_expect_token(p, 22))  // token='='
             &&
-            (e = starred_expression_rule(p))  // starred_expression
+            (e = star_expression_rule(p))  // star_expression
         )
         {
-            D(fprintf(stderr, "%*c+ type_param_starred_default[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'=' starred_expression"));
+            D(fprintf(stderr, "%*c+ type_param_starred_default[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'=' star_expression"));
             _res = CHECK_VERSION ( expr_ty , 13 , "Type parameter defaults are" , e );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
@@ -11018,7 +11018,7 @@ type_param_starred_default_rule(Parser *p)
         }
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s type_param_starred_default[%d-%d]: %s failed!\n", p->level, ' ',
-                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'=' starred_expression"));
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'=' star_expression"));
     }
     _res = NULL;
   done:
