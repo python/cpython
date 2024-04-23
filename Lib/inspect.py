@@ -1835,7 +1835,7 @@ def _check_class(klass, attr):
 
 
 @functools.lru_cache()
-def _shadowed_dict_from_weakref_mro_tuple(weakref_mro):
+def _shadowed_dict_from_weakref_mro_tuple(*weakref_mro):
     for weakref_entry in weakref_mro:
         entry = weakref_entry()
         dunder_dict = _get_dunder_dict_of_class(entry)
@@ -1850,7 +1850,7 @@ def _shadowed_dict_from_weakref_mro_tuple(weakref_mro):
 
 def _shadowed_dict(klass):
     return _shadowed_dict_from_weakref_mro_tuple(
-        tuple([weakref.ref(entry) for entry in _static_getmro(klass)])
+        *[weakref.ref(entry) for entry in _static_getmro(klass)]
     )
 
 
