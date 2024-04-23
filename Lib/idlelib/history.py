@@ -103,4 +103,4 @@ class History:
 
 if __name__ == "__main__":
     from unittest import main
-    main('idlelib.idle_test.test_history', verbosity=2, exit=False)
+    main('test.test_idle.test_history', verbosity=2, exit=False)

@@ -33,7 +33,7 @@ insert the import and main lines before the htest lines.
 
 if __name__ == "__main__":
     from unittest import main
-    main('idlelib.idle_test.test_abc', verbosity=2, exit=False)
+    main('test.test_idle.test_abc', verbosity=2, exit=False)
 
 The ', exit=False' is only needed if an htest follows.
 
@@ -132,7 +132,7 @@ GUI tests, in test_xyz.py. (Both '-m idlelib' and '-m idlelib.idle'
 start Idle and so cannot run tests.)
 
 python -m idlelib.xyz
-python -m idlelib.idle_test.test_xyz
+python -m test.test_idle.test_xyz
 
 The following runs all idle_test/test_*.py tests interactively.
 
@@ -164,8 +164,8 @@ latter allows use of other regrtest options.  When using the latter,
 all components of the pattern must be present, but any can be replaced
 by '*'.
 
-python -m unittest -v idlelib.idle_test.test_xyz.Test_case.test_meth
-python -m test -m idlelib.idle_test.text_xyz.Test_case.test_meth test_idle
+python -m unittest -v test.test_idle.test_xyz.Test_case.test_meth
+python -m test -m test.test_idle.text_xyz.Test_case.test_meth test_idle
 
 The test suite can be run in an IDLE user process from Shell.
 >>> import test.autotest  # Issue 25588, 2017/10/13, 3.6.4, 3.7.0a2.
@@ -228,8 +228,8 @@ rem filename without .py, 2nd parameter if test is not test_filename
 setlocal
 set py=f:\dev\3x\pcbuild\win32\python_d.exe
 set src=idlelib.%1
-if "%2" EQU "" set tst=f:/dev/3x/Lib/idlelib/idle_test/test_%1.py
-if "%2" NEQ "" set tst=f:/dev/ex/Lib/idlelib/idle_test/test_%2.py
+if "%2" EQU "" set tst=f:/dev/3x/Lib/test/test_idle/test_%1.py
+if "%2" NEQ "" set tst=f:/dev/ex/Lib/test/test_idle/test_%2.py
 
 %py% -m coverage run --pylib --source=%src% %tst%
 %py% -m coverage report --show-missing

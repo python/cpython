@@ -210,4 +210,4 @@ class ScriptBinding:
 
 if __name__ == "__main__":
     from unittest import main
-    main('idlelib.idle_test.test_runscript', verbosity=2,)
+    main('test.test_idle.test_runscript', verbosity=2,)
