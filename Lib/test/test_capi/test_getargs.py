@@ -856,20 +856,24 @@ class Bytes_TestCase(unittest.TestCase):
 
     def test_w_star(self):
         # getargs_w_star() modifies first and last byte
-        from _testcapi import getargs_w_star
-        self.assertRaises(TypeError, getargs_w_star, 'abc\xe9')
-        self.assertRaises(TypeError, getargs_w_star, b'bytes')
-        self.assertRaises(TypeError, getargs_w_star, b'nul:\0')
-        self.assertRaises(TypeError, getargs_w_star, memoryview(b'bytes'))
-        buf = bytearray(b'bytearray')
-        self.assertEqual(getargs_w_star(buf), b'[ytearra]')
-        self.assertEqual(buf, bytearray(b'[ytearra]'))
-        buf = bytearray(b'memoryview')
-        self.assertEqual(getargs_w_star(memoryview(buf)), b'[emoryvie]')
-        self.assertEqual(buf, bytearray(b'[emoryvie]'))
-        self.assertRaises(TypeError, getargs_w_star, None)
-        self.assertRaises(TypeError, getargs_w_star, NONCONTIG_WRITABLE)
-        self.assertRaises(TypeError, getargs_w_star, NONCONTIG_READONLY)
+        # getargs_w_star_opt() takes additional optional args: with one
+        #   argument it should behave the same as getargs_w_star
+        from _testcapi import getargs_w_star, getargs_w_star_opt
+        for func in (getargs_w_star, getargs_w_star_opt):
+            with self.subTest(func=func):
+                self.assertRaises(TypeError, func, 'abc\xe9')
+                self.assertRaises(TypeError, func, b'bytes')
+                self.assertRaises(TypeError, func, b'nul:\0')
+                self.assertRaises(TypeError, func, memoryview(b'bytes'))
+                buf = bytearray(b'bytearray')
+                self.assertEqual(func(buf), b'[ytearra]')
+                self.assertEqual(buf, bytearray(b'[ytearra]'))
+                buf = bytearray(b'memoryview')
+                self.assertEqual(func(memoryview(buf)), b'[emoryvie]')
+                self.assertEqual(buf, bytearray(b'[emoryvie]'))
+                self.assertRaises(TypeError, func, None)
+                self.assertRaises(TypeError, func, NONCONTIG_WRITABLE)
+                self.assertRaises(TypeError, func, NONCONTIG_READONLY)
 
     def test_getargs_empty(self):
         from _testcapi import getargs_empty
@@ -1112,9 +1116,9 @@ class SkipitemTest(unittest.TestCase):
             c = chr(i)
 
             # skip parentheses, the error reporting is inconsistent about them
-            # skip 'e', it's always a two-character code
+            # skip 'e' and 'w', they're always two-character codes
             # skip '|' and '$', they don't represent arguments anyway
-            if c in '()e|$':
+            if c in '()ew|$':
                 continue
 
             # test the format unit when not skipped
@@ -1152,7 +1156,7 @@ class SkipitemTest(unittest.TestCase):
         dict_b = {'b':1}
         keywords = ["a", "b"]
 
-        supported = ('s#', 's*', 'z#', 'z*', 'y#', 'y*', 'w#', 'w*')
+        supported = ('s#', 's*', 'z#', 'z*', 'y#', 'y*', 'w*')
         for c in string.ascii_letters:
             for c2 in '#*':
                 f = c + c2

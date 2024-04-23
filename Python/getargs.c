@@ -2641,6 +2641,11 @@ skipitem(const char **p_format, va_list *p_va, int flags)
             if (p_va != NULL) {
                 (void) va_arg(*p_va, char **);
             }
+            if (c == 'w' && *format != '*')
+            {
+                /* after 'w', only '*' is allowed */
+                goto err;
+            }
             if (*format == '#') {
                 if (p_va != NULL) {
                     (void) va_arg(*p_va, Py_ssize_t *);
