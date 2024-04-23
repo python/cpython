@@ -116,25 +116,18 @@ class MockTest(unittest.TestCase):
             mock()
 
     def test_create_autospec_should_be_configurable_by_kwargs(self):
-        """If kwargs are given to set side_effect & return_value, the function
-        must configure the parent mock during initialization."""
-        class Result:
-            def get_result(self):
-                pass
-
+        """If kwargs are given to configure mock, the function must configure
+        the parent mock during initialization."""
         mocked_result = 'mocked value'
-        class_mock = create_autospec(spec=Result, **{
-            # Test both side_effect & return_value which is why the 2nd
-            # parameter of side_effect is DEFAULT.
-            'return_value.get_result.side_effect': [ValueError, DEFAULT],
-            'return_value.get_result.return_value': mocked_result})
+        class_mock = create_autospec(spec=Something, **{
+            'return_value.meth.side_effect': [ValueError, DEFAULT],
+            'return_value.meth.return_value': mocked_result})
         with self.assertRaises(ValueError):
-            class_mock().get_result()
-        # Call it again to test return_value.
-        self.assertEqual(class_mock().get_result(), mocked_result)
+            class_mock().meth(a=None, b=None, c=None)
+        self.assertEqual(class_mock().meth(a=None, b=None, c=None), mocked_result)
         # Only the parent mock should be configurable because the user will
         # pass kwargs with respect to the parent mock.
-        self.assertEqual(class_mock().return_value.get_result.side_effect, None)
+        self.assertEqual(class_mock().return_value.meth.side_effect, None)
 
     def test_repr(self):
         mock = Mock(name='foo')

@@ -2788,7 +2788,7 @@ def create_autospec(spec, spec_set=False, instance=False, _parent=None,
     if _parent is not None and not instance:
         _parent._mock_children[_name] = mock
 
-    # Pop "wraps" from kwargs because it will not be used again.
+    # Pop wraps from kwargs because it must not be passed to configure_mock.
     wrapped = kwargs.pop('wraps', None)
     if is_type and not instance and 'return_value' not in kwargs:
         mock.return_value = create_autospec(spec, spec_set, instance=True,
