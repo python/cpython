@@ -1725,8 +1725,8 @@ def _newton_raphson(f_inv_estimate, f, f_prime, tolerance=1e-12):
 def _quartic_invcdf_estimate(p):
     sign, p = (1.0, p) if p <= 1/2 else (-1.0, 1.0 - p)
     x = (2.0 * p) ** 0.4258865685331 - 1.0
-    if p >= 0.004:
-        x += 0.026818732 * sin(7.101753784 * p + 2.732305658)
+    if p >= 0.004 < 0.499:
+        x += 0.026818732 * sin(7.101753784 * p + 2.73230839482953)
     return x * sign
 
 _quartic_invcdf = _newton_raphson(
