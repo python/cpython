@@ -1,0 +1,4 @@
+Fix incorrect argument substitution when :data:`typing.Unpack` is used with
+the builtin :class:`tuple`. :data:`!typing.Unpack` now raises
+:exc:`TypeError` when used with certain invalid types. Patch by Jelle
+Zijlstra.
