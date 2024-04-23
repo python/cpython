@@ -407,7 +407,7 @@ else:
         """Return an absolute path."""
         try:
             return _path_abspath(path)
-        except (UnicodeEncodeError, ValueError):
+        except ValueError:
             return _abspath_fallback(path)
 
 # Return a canonical path (i.e. the absolute location of a file on the
