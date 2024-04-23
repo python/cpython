@@ -1185,19 +1185,51 @@ is_core_module(PyInterpreterState *interp, PyObject *name, PyObject *path)
     return 0;
 }
 
+#ifndef NDEBUG
+static bool
+is_singlephase(PyModuleDef *def)
+{
+    if (def == NULL) {
+        /* It must be a module created by reload_singlephase_extension()
+         * from m_copy.  Ideally we'd do away with this case. */
+        return true;
+    }
+    else if (def->m_slots == NULL) {
+        return true;
+    }
+    else {
+        return false;
+    }
+}
+#endif
+
+
+struct singlephase_global_update {
+    PyObject *m_dict;
+};
 
 static int
 update_global_state_for_extension(PyThreadState *tstate,
-                                  PyObject *mod, PyModuleDef *def,
-                                  PyObject *name, PyObject *path)
+                                  PyObject *path, PyObject *name,
+                                  PyModuleDef *def,
+                                  struct singlephase_global_update *singlephase)
 {
-    assert(mod != NULL && PyModule_Check(mod));
-    assert(def == _PyModule_GetDef(mod));
-
-    // bpo-44050: Extensions and def->m_base.m_copy can be updated
-    // when the extension module doesn't support sub-interpreters.
-    if (def->m_size == -1) {
-        if (!is_core_module(tstate->interp, name, path)) {
+    /* Copy the module's __dict__, if applicable. */
+    if (singlephase == NULL) {
+        assert(def->m_base.m_copy == NULL);
+    }
+    else {
+        assert(def->m_base.m_init != NULL
+               || is_core_module(tstate->interp, name, path));
+        if (singlephase->m_dict == NULL) {
+            assert(def->m_base.m_copy == NULL);
+        }
+        else {
+            assert(PyDict_Check(singlephase->m_dict));
+            // gh-88216: Extensions and def->m_base.m_copy can be updated
+            // when the extension module doesn't support sub-interpreters.
+            assert(def->m_size == -1);
+            assert(!is_core_module(tstate->interp, name, path));
             assert(PyUnicode_CompareWithASCIIString(name, "sys") != 0);
             assert(PyUnicode_CompareWithASCIIString(name, "builtins") != 0);
             if (def->m_base.m_copy) {
@@ -1206,17 +1238,16 @@ update_global_state_for_extension(PyThreadState *tstate,
                    XXX this should really not happen. */
                 Py_CLEAR(def->m_base.m_copy);
             }
-            PyObject *dict = PyModule_GetDict(mod);
-            if (dict == NULL) {
-                return -1;
-            }
-            def->m_base.m_copy = PyDict_Copy(dict);
+            def->m_base.m_copy = PyDict_Copy(singlephase->m_dict);
             if (def->m_base.m_copy == NULL) {
+                // XXX Ignore this error?  Doing so would effectively
+                // mark the module as not loadable. */
                 return -1;
             }
         }
     }
 
+    /* Add the module's def to the global cache. */
     // XXX Why special-case the main interpreter?
     if (_Py_IsMainInterpreter(tstate->interp) || def->m_size == -1) {
 #ifndef NDEBUG
@@ -1258,6 +1289,8 @@ int
 _PyImport_FixupExtensionObject(PyObject *mod, PyObject *name,
                                PyObject *filename, PyObject *modules)
 {
+    PyThreadState *tstate = _PyThreadState_GET();
+
     if (mod == NULL || !PyModule_Check(mod)) {
         PyErr_BadInternalCall();
         return -1;
@@ -1268,15 +1301,28 @@ _PyImport_FixupExtensionObject(PyObject *mod, PyObject *name,
         return -1;
     }
 
-    PyThreadState *tstate = _PyThreadState_GET();
+    /* Only single-phase init extension modules can reach here. */
+    assert(is_singlephase(def));
+    assert(!is_core_module(tstate->interp, name, filename));
+    assert(!is_core_module(tstate->interp, name, name));
+
+    struct singlephase_global_update singlephase = {0};
+    // gh-88216: Extensions and def->m_base.m_copy can be updated
+    // when the extension module doesn't support sub-interpreters.
+    if (def->m_size == -1) {
+        singlephase.m_dict = PyModule_GetDict(mod);
+        assert(singlephase.m_dict != NULL);
+    }
     if (update_global_state_for_extension(
-            tstate, mod, def, name, filename) < 0)
+            tstate, filename, name, def, &singlephase) < 0)
     {
         return -1;
     }
+
     if (finish_singlephase_extension(tstate, mod, def, name, modules) < 0) {
         return -1;
     }
+
     return 0;
 }
 
@@ -1407,11 +1453,25 @@ _PyImport_FixupBuiltin(PyThreadState *tstate, PyObject *mod, const char *name,
         goto finally;
     }
 
+    /* We only use _PyImport_FixupBuiltin() for the core builtin modules
+     * (sys and builtins).  These modules are single-phase init with no
+     * module state, but we also don't populate def->m_base.m_copy
+     * for them. */
+    assert(is_core_module(tstate->interp, nameobj, nameobj));
+    assert(is_singlephase(def));
+    assert(def->m_size == -1);
+    assert(def->m_base.m_copy == NULL);
+
+    struct singlephase_global_update singlephase = {
+        /* We don't want def->m_base.m_copy populated. */
+        .m_dict=NULL,
+    };
     if (update_global_state_for_extension(
-            tstate, mod, def, nameobj, nameobj) < 0)
+            tstate, nameobj, nameobj, def, &singlephase) < 0)
     {
         goto finally;
     }
+
     if (finish_singlephase_extension(tstate, mod, def, nameobj, modules) < 0) {
         goto finally;
     }
@@ -1444,6 +1504,7 @@ is_builtin(PyObject *name)
 static PyObject*
 create_builtin(PyThreadState *tstate, PyObject *name, PyObject *spec)
 {
+    PyModuleDef *def = NULL;
     PyObject *mod = import_find_extension(tstate, name, name);
     if (mod || _PyErr_Occurred(tstate)) {
         return mod;
@@ -1473,20 +1534,32 @@ create_builtin(PyThreadState *tstate, PyObject *name, PyObject *spec)
     }
 
     if (PyObject_TypeCheck(mod, &PyModuleDef_Type)) {
-        return PyModule_FromDefAndSpec((PyModuleDef*)mod, spec);
+        def = (PyModuleDef*)mod;
+        assert(!is_singlephase(def));
+        return PyModule_FromDefAndSpec(def, spec);
     }
     else {
         assert(PyModule_Check(mod));
-        PyModuleDef *def = PyModule_GetDef(mod);
+        def = PyModule_GetDef(mod);
         if (def == NULL) {
             return NULL;
         }
+        assert(is_singlephase(def));
 
         /* Remember pointer to module init function. */
         def->m_base.m_init = p0;
 
+        struct singlephase_global_update singlephase = {0};
+        // gh-88216: Extensions and def->m_base.m_copy can be updated
+        // when the extension module doesn't support sub-interpreters.
+        if (def->m_size == -1
+                && !is_core_module(tstate->interp, name, name))
+        {
+            singlephase.m_dict = PyModule_GetDict(mod);
+            assert(singlephase.m_dict != NULL);
+        }
         if (update_global_state_for_extension(
-                tstate, mod, def, name, name) < 0)
+                tstate, name, name, def, &singlephase) < 0)
         {
             return NULL;
         }
