@@ -157,6 +157,7 @@ import token
 import types
 import functools
 import builtins
+import weakref
 from keyword import iskeyword
 from operator import attrgetter
 from collections import namedtuple, OrderedDict
@@ -1832,9 +1833,11 @@ def _check_class(klass, attr):
             return entry.__dict__[attr]
     return _sentinel
 
+
 @functools.lru_cache()
-def _shadowed_dict_from_mro_tuple(mro):
-    for entry in mro:
+def _shadowed_dict_from_weakref_mro_tuple(weakref_mro):
+    for weakref_entry in weakref_mro:
+        entry = weakref_entry()
         dunder_dict = _get_dunder_dict_of_class(entry)
         if '__dict__' in dunder_dict:
             class_dict = dunder_dict['__dict__']
@@ -1844,8 +1847,12 @@ def _shadowed_dict_from_mro_tuple(mro):
                 return class_dict
     return _sentinel
 
+
 def _shadowed_dict(klass):
-    return _shadowed_dict_from_mro_tuple(_static_getmro(klass))
+    return _shadowed_dict_from_weakref_mro_tuple(
+        tuple(map(weakref.ref, _static_getmro(klass)))
+    )
+
 
 def getattr_static(obj, attr, default=_sentinel):
     """Retrieve attributes without triggering dynamic lookup via the
