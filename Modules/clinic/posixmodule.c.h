@@ -2251,13 +2251,14 @@ exit:
 PyDoc_STRVAR(os__path_splitroot_ex__doc__,
 "_path_splitroot_ex($module, /, p)\n"
 "--\n"
-"\n");
+"\n"
+"Split a pathname into drive, root and tail.");
 
 #define OS__PATH_SPLITROOT_EX_METHODDEF    \
     {"_path_splitroot_ex", _PyCFunction_CAST(os__path_splitroot_ex), METH_FASTCALL|METH_KEYWORDS, os__path_splitroot_ex__doc__},
 
 static PyObject *
-os__path_splitroot_ex_impl(PyObject *module, path_t *p);
+os__path_splitroot_ex_impl(PyObject *module, PyObject *p);
 
 static PyObject *
 os__path_splitroot_ex(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -2289,21 +2290,16 @@ os__path_splitroot_ex(PyObject *module, PyObject *const *args, Py_ssize_t nargs,
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
-    path_t p = PATH_T_INITIALIZE("_path_splitroot_ex", "p", 0, 0);
+    PyObject *p;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
     if (!args) {
         goto exit;
     }
-    if (!path_converter(args[0], &p)) {
-        goto exit;
-    }
-    return_value = os__path_splitroot_ex_impl(module, &p);
+    p = args[0];
+    return_value = os__path_splitroot_ex_impl(module, p);
 
 exit:
-    /* Cleanup for p */
-    path_cleanup(&p);
-
     return return_value;
 }
 
@@ -12661,4 +12657,4 @@ os__supports_virtual_terminal(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF
     #define OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF
 #endif /* !defined(OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF) */
-/*[clinic end generated code: output=9dd0e27ec4e8edd1 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5bd32f18f4146963 input=a9049054013a1b77]*/
