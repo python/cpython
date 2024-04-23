@@ -685,11 +685,13 @@ class TypeParameterDefaultsTests(BaseTestCase):
         self.assertEqual(U.__default__, None)
         self.assertEqual(U_None.__default__, type(None))
 
-    def test_erroneous_generic(self):
+    def test_no_default_after_non_default(self):
         DefaultStrT = TypeVar('DefaultStrT', default=str)
         T = TypeVar('T')
 
-        with self.assertRaises(TypeError):
+        with self.assertRaisesRegex(
+            TypeError, r"Type parameter ~T without a default follows type parameter with a default"
+        ):
             Test = Generic[DefaultStrT, T]
 
     def test_need_more_params(self):
@@ -701,8 +703,8 @@ class TypeParameterDefaultsTests(BaseTestCase):
         A[int, bool]
         A[int, bool, str]
 
-        with self.assertRaises(
-            TypeError, msg="Too few arguments for .+; actual 1, expected at least 2"
+        with self.assertRaisesRegex(
+            TypeError, r"Too few arguments for .+; actual 1, expected at least 2"
         ):
             Test = A[int]
 
