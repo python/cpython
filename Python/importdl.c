@@ -105,22 +105,19 @@ _Py_ext_module_loader_info_clear(struct _Py_ext_module_loader_info *info)
 }
 
 int
-_Py_ext_module_loader_info_init_from_spec(
-                            struct _Py_ext_module_loader_info *p_info,
-                            PyObject *spec)
+_Py_ext_module_loader_info_init(struct _Py_ext_module_loader_info *p_info,
+                                PyObject *name, PyObject *filename)
 {
     struct _Py_ext_module_loader_info info = {0};
 
-    info.name = PyObject_GetAttrString(spec, "name");
-    if (info.name == NULL) {
-        return -1;
-    }
-    if (!PyUnicode_Check(info.name)) {
+    assert(name != NULL);
+    if (!PyUnicode_Check(name)) {
         PyErr_SetString(PyExc_TypeError,
-                        "spec.name must be a string");
+                        "module name must be a string");
         _Py_ext_module_loader_info_clear(&info);
         return -1;
     }
+    info.name = Py_NewRef(name);
 
     info.name_encoded = get_encoded_name(info.name, &info.hook_prefix);
     if (info.name_encoded == NULL) {
@@ -134,23 +131,44 @@ _Py_ext_module_loader_info_init_from_spec(
         return -1;
     }
 
-    info.filename = PyObject_GetAttrString(spec, "origin");
-    if (info.filename == NULL) {
-        _Py_ext_module_loader_info_clear(&info);
-        return -1;
-    }
+    if (filename != NULL) {
+        if (!PyUnicode_Check(filename)) {
+            PyErr_SetString(PyExc_TypeError,
+                            "module filename must be a string");
+            _Py_ext_module_loader_info_clear(&info);
+            return -1;
+        }
+        info.filename = Py_NewRef(filename);
 
 #ifndef MS_WINDOWS
-    info.filename_encoded = PyUnicode_EncodeFSDefault(info.filename);
-    if (info.filename_encoded == NULL) {
-        _Py_ext_module_loader_info_clear(&info);
-        return -1;
-    }
+        info.filename_encoded = PyUnicode_EncodeFSDefault(info.filename);
+        if (info.filename_encoded == NULL) {
+            _Py_ext_module_loader_info_clear(&info);
+            return -1;
+        }
 #endif
+    }
 
     *p_info = info;
     return 0;
 }
+
+int
+_Py_ext_module_loader_info_init_from_spec(
+                            struct _Py_ext_module_loader_info *p_info,
+                            PyObject *spec)
+{
+    PyObject *name = PyObject_GetAttrString(spec, "name");
+    if (name == NULL) {
+        return -1;
+    }
+    PyObject *filename = PyObject_GetAttrString(spec, "origin");
+    if (filename == NULL) {
+        return -1;
+    }
+    return _Py_ext_module_loader_info_init(p_info, name, filename);
+}
+
 
 PyObject *
 _PyImport_LoadDynamicModuleWithSpec(struct _Py_ext_module_loader_info *info,

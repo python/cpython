@@ -29,6 +29,10 @@ struct _Py_ext_module_loader_info {
 };
 extern void _Py_ext_module_loader_info_clear(
     struct _Py_ext_module_loader_info *info);
+extern int _Py_ext_module_loader_info_init(
+    struct _Py_ext_module_loader_info *info,
+    PyObject *name,
+    PyObject *filename);
 extern int _Py_ext_module_loader_info_init_from_spec(
     struct _Py_ext_module_loader_info *info,
     PyObject *spec);
