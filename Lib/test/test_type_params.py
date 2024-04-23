@@ -1164,27 +1164,33 @@ class TypeParamsRuntimeTest(unittest.TestCase):
 
 class DefaultsTest(unittest.TestCase):
     def test_defaults_on_func(self):
-        def func[T=int, *U=float, **V=None]():
-            pass
+        ns = run_code("""
+            def func[T=int, **U=float, *V=None]():
+                pass
+        """)
 
-        T, U, V = func.__type_params__
+        T, U, V = ns["func"].__type_params__
         self.assertIs(T.__default__, int)
         self.assertIs(U.__default__, float)
         self.assertIs(V.__default__, type(None))
 
     def test_defaults_on_class(self):
-        class C[T=int, *U=float, **V=None]:
-            pass
+        ns = run_code("""
+            class C[T=int, **U=float, *V=None]:
+                pass
+        """)
 
-        T, U, V = C.__type_params__
+        T, U, V = ns["C"].__type_params__
         self.assertIs(T.__default__, int)
         self.assertIs(U.__default__, float)
         self.assertIs(V.__default__, type(None))
 
     def test_defaults_on_type_alias(self):
-        type Alias[T = int, *U = float, **V = None] = int
+        ns = run_code("""
+            type Alias[T = int, **U = float, *V = None] = int
+        """)
 
-        T, U, V = Alias.__type_params__
+        T, U, V = ns["Alias"].__type_params__
         self.assertIs(T.__default__, int)
         self.assertIs(U.__default__, float)
         self.assertIs(V.__default__, type(None))
@@ -1194,10 +1200,13 @@ class DefaultsTest(unittest.TestCase):
         check_syntax_error(self, "type Alias[**P = *int] = int")
 
     def test_starred_typevartuple(self):
-        default = tuple[int, str]
-        type Alias[*Ts = *default] = Ts
-        Ts, = Alias.__type_params__
-        self.assertEqual(Ts.__default__, next(iter(default)))
+        ns = run_code("""
+            default = tuple[int, str]
+            type Alias[*Ts = *default] = Ts
+        """)
+
+        Ts, = ns["Alias"].__type_params__
+        self.assertEqual(Ts.__default__, next(iter(ns["default"])))
 
     def test_nondefault_after_default(self):
         check_syntax_error(self, "def func[T=int, U](): pass", "non-default type parameter 'U' follows default type parameter")
@@ -1205,9 +1214,11 @@ class DefaultsTest(unittest.TestCase):
         check_syntax_error(self, "type A[T=int, U] = int", "non-default type parameter 'U' follows default type parameter")
 
     def test_lazy_evaluation(self):
-        type Alias[T = Undefined, *U = Undefined, **V = Undefined] = int
+        ns = run_code("""
+            type Alias[T = Undefined, *U = Undefined, **V = Undefined] = int
+        """)
 
-        T, U, V = Alias.__type_params__
+        T, U, V = ns["Alias"].__type_params__
 
         with self.assertRaises(NameError):
             T.__default__
@@ -1216,13 +1227,13 @@ class DefaultsTest(unittest.TestCase):
         with self.assertRaises(NameError):
             V.__default__
 
-        Undefined = "defined"
+        ns["Undefined"] = "defined"
         self.assertEqual(T.__default__, "defined")
         self.assertEqual(U.__default__, "defined")
         self.assertEqual(V.__default__, "defined")
 
         # Now it is cached
-        Undefined = "redefined"
+        ns["Undefined"] = "redefined"
         self.assertEqual(T.__default__, "defined")
         self.assertEqual(U.__default__, "defined")
         self.assertEqual(V.__default__, "defined")
@@ -1230,16 +1241,22 @@ class DefaultsTest(unittest.TestCase):
     def test_symtable_key_regression_default(self):
         # Test against the bugs that would happen if we used .default_
         # as the key in the symtable.
-        type X[T = [T for T in [T]]] = T
-        T, = X.__type_params__
+        ns = run_code("""
+            type X[T = [T for T in [T]]] = T
+        """)
+
+        T, = ns["X"].__type_params__
         self.assertEqual(T.__default__, [T])
 
     def test_symtable_key_regression_name(self):
         # Test against the bugs that would happen if we used .name
         # as the key in the symtable.
-        type X1[T = A] = T
-        type X2[T = B] = T
-        A = "A"
-        B = "B"
-        self.assertEqual(X1.__type_params__[0].__default__, "A")
-        self.assertEqual(X2.__type_params__[0].__default__, "B")
+        ns = run_code("""
+            type X1[T = A] = T
+            type X2[T = B] = T
+            A = "A"
+            B = "B"
+        """)
+
+        self.assertEqual(ns["X1"].__type_params__[0].__default__, "A")
+        self.assertEqual(ns["X2"].__type_params__[0].__default__, "B")
