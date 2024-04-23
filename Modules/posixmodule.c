@@ -5506,6 +5506,9 @@ os__path_splitroot_ex_impl(PyObject *module, path_t *path)
     result = Py_BuildValue("(OOO)", drv, root, tail);
 exit:
 #ifndef MS_WINDOWS
+    if (wide) {
+        Py_DECREF(wide);
+    }
     if (buffer) {
         PyMem_Free(buffer);
     }
