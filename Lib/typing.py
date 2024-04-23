@@ -335,7 +335,7 @@ def _check_generic_specialization(cls, arguments):
                         f" for {cls}; actual {actual_len}, expected {expect_val}")
 
 
-def _unpack_args(args):
+def _unpack_args(*args):
     newargs = []
     for arg in args:
         subargs = getattr(arg, '__typing_unpacked_tuple_args__', None)
@@ -1125,7 +1125,7 @@ def _typevartuple_prepare_subst(self, alias, args):
         raise TypeError(f"Too few arguments for {alias};"
                         f" actual {alen}, expected at least {plen-1}")
     if left == alen - right and self.__default__ is not None:
-        replacement = _unpack_args([self.__default__])
+        replacement = _unpack_args(self.__default__)
     else:
         replacement = args[left: alen - right]
 
@@ -1431,8 +1431,7 @@ class _GenericAlias(_BaseGenericAlias, _root=True):
         # Preprocess `args`.
         if not isinstance(args, tuple):
             args = (args,)
-        args = tuple(_type_convert(p) for p in args)
-        args = _unpack_args(args)
+        args = _unpack_args(*(_type_convert(p) for p in args))
         new_args = self._determine_new_args(args)
         r = self.copy_with(new_args)
         return r
