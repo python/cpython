@@ -1592,10 +1592,10 @@ class _SpecialGenericAlias(_NotIterable, _BaseGenericAlias, _root=True):
             params = (params,)
         msg = "Parameters to generic types must be types."
         params = tuple(_type_check(p, msg) for p in params)
-        if not self._nparams:
-            raise TypeError(f"{self} is not a generic class")
         actual_len = len(params)
         if actual_len != self._nparams:
+            if not self._nparams:
+                raise TypeError(f"{self} is not a generic class")
             raise TypeError(f"Too {'many' if actual_len > self._nparams else 'few'} arguments for {self};"
                             f" actual {actual_len}, expected {self._nparams}")
         return self.copy_with(params)
