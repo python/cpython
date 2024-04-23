@@ -1124,6 +1124,38 @@ _PyImport_CheckSubinterpIncompatibleExtensionAllowed(const char *name)
     return 0;
 }
 
+#ifdef Py_GIL_DISABLED
+void
+_PyImport_CheckGILForModule(void *gil, PyObject *module_name)
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+
+    if (gil == Py_MOD_GIL_USED) {
+        if (_PyEval_EnableGILPermanent(tstate)) {
+            PyErr_WarnFormat(
+                PyExc_RuntimeWarning,
+                1,
+                "The global interpreter lock (GIL) has been enabled to load "
+                "module '%U', which has not declared that it can run safely "
+                "without the GIL. To override this behavior and keep the GIL "
+                "disabled (at your own risk), run with PYTHON_GIL=0 or -Xgil=0.",
+                module_name
+            );
+        }
+
+        const PyConfig *config = _PyInterpreterState_GetConfig(tstate->interp);
+        if (config->enable_gil == _PyConfig_GIL_DEFAULT && config->verbose) {
+            PySys_FormatStderr("# loading module '%U', which requires the GIL\n",
+                               module_name);
+        }
+    }
+    else {
+        assert(gil == Py_MOD_GIL_NOT_USED);
+        _PyEval_DisableGIL(tstate);
+    }
+}
+#endif
+
 static PyObject *
 get_core_module_dict(PyInterpreterState *interp,
                      PyObject *name, PyObject *path)
@@ -1444,38 +1476,6 @@ create_builtin(PyThreadState *tstate, PyObject *name, PyObject *spec)
 #endif
     return NULL;
 }
-
-#ifdef Py_GIL_DISABLED
-void
-_PyImport_CheckGILForModule(void *gil, PyObject *module_name)
-{
-    PyThreadState *tstate = _PyThreadState_GET();
-
-    if (gil == Py_MOD_GIL_USED) {
-        if (_PyEval_EnableGILPermanent(tstate)) {
-            PyErr_WarnFormat(
-                PyExc_RuntimeWarning,
-                1,
-                "The global interpreter lock (GIL) has been enabled to load "
-                "module '%U', which has not declared that it can run safely "
-                "without the GIL. To override this behavior and keep the GIL "
-                "disabled (at your own risk), run with PYTHON_GIL=0 or -Xgil=0.",
-                module_name
-            );
-        }
-
-        const PyConfig *config = _PyInterpreterState_GetConfig(tstate->interp);
-        if (config->enable_gil == _PyConfig_GIL_DEFAULT && config->verbose) {
-            PySys_FormatStderr("# loading module '%U', which requires the GIL\n",
-                               module_name);
-        }
-    }
-    else {
-        assert(gil == Py_MOD_GIL_NOT_USED);
-        _PyEval_DisableGIL(tstate);
-    }
-}
-#endif
 
 /*****************************/
 /* the builtin modules table */

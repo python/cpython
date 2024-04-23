@@ -2043,7 +2043,7 @@ _PyThreadState_Attach(PyThreadState *tstate)
     }
 
 
-    while (1) {
+    do {
         int acquired_gil = _PyEval_AcquireLock(tstate);
 
         // XXX assert(tstate_is_alive(tstate));
@@ -2070,8 +2070,7 @@ _PyThreadState_Attach(PyThreadState *tstate)
 #else
         (void)acquired_gil;
 #endif
-        break;
-    }
+    } while (0);
 
     // Resume previous critical section. This acquires the lock(s) from the
     // top-most critical section.
