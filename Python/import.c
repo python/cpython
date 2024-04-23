@@ -3935,24 +3935,34 @@ _imp_create_dynamic_impl(PyObject *module, PyObject *spec, PyObject *file)
         fp = NULL;
     }
 
-    struct _Py_ext_module_loader_result res;
-    if (_PyImport_RunDynamicModule(&info, fp, &res) < 0) {
+    PyModInitFunction p0 = _PyImport_GetModInitFunc(&info, fp);
+    if (p0 == NULL) {
         goto finally;
     }
-    mod = res.module;
 
-    if (mod == NULL) {
-        /* multi-phase init */
+    struct _Py_ext_module_loader_result res;
+    if (_PyImport_RunModInitFunc(p0, &info, &res) < 0) {
+        assert(PyErr_Occurred());
+        return NULL;
+    }
 
+    if (res.module == NULL) {
+        //assert(!is_singlephase(res.def));
         mod = PyModule_FromDefAndSpec(res.def, spec);
     }
     else {
-        /* Fall back to single-phase init mechanism */
+        assert(is_singlephase(res.def));
+        mod = Py_NewRef(res.module);
 
         const char *name_buf = PyBytes_AS_STRING(info.name_encoded);
         if (_PyImport_CheckSubinterpIncompatibleExtensionAllowed(name_buf) < 0) {
             Py_CLEAR(mod);
             goto finally;
+        }
+
+        /* Remember the filename as the __file__ attribute */
+        if (PyModule_AddObjectRef(mod, "__file__", info.filename) < 0) {
+            PyErr_Clear(); /* Not important enough to report */
         }
 
         PyObject *modules = get_modules_dict(tstate, true);

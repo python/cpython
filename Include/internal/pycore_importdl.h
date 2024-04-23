@@ -44,10 +44,13 @@ struct _Py_ext_module_loader_result {
     PyModuleDef *def;
     PyObject *module;
 };
-extern int _PyImport_RunDynamicModule(
+extern PyModInitFunction _PyImport_GetModInitFunc(
     struct _Py_ext_module_loader_info *info,
-    FILE *fp,
-    struct _Py_ext_module_loader_result *res);
+    FILE *fp);
+extern int _PyImport_RunModInitFunc(
+    PyModInitFunction p0,
+    struct _Py_ext_module_loader_info *info,
+    struct _Py_ext_module_loader_result *p_res);
 
 
 /* Max length of module suffix searched for -- accommodates "module.slb" */
