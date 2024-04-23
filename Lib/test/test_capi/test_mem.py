@@ -153,7 +153,7 @@ class PyMemDebugTests(unittest.TestCase):
 
 
 # free-threading requires mimalloc (not malloc)
-@support.requires_gil_enabled
+@support.requires_gil_enabled()
 class PyMemMallocDebugTests(PyMemDebugTests):
     PYTHONMALLOC = 'malloc_debug'
 
