@@ -1704,8 +1704,9 @@ class _UnpackGenericAlias(_GenericAlias, _root=True):
         assert self.__origin__ is Unpack
         assert len(self.__args__) == 1
         arg, = self.__args__
-        if isinstance(arg, _GenericAlias):
-            assert arg.__origin__ is tuple
+        if isinstance(arg, (_GenericAlias, types.GenericAlias)):
+            if arg.__origin__ is not tuple:
+                raise TypeError("Unpack[...] must be used with a tuple type")
             return arg.__args__
         return None
 
