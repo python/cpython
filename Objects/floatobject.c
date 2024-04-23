@@ -309,13 +309,13 @@ PyFloat_AsDouble(PyObject *op)
 #define CONVERT_TO_DOUBLE(obj, dbl)                     \
     if (PyFloat_Check(obj))                             \
         dbl = PyFloat_AS_DOUBLE(obj);                   \
-    else if (convert_to_double(&(obj), &(dbl)) < 0)     \
+    else if (_Py_convert_to_double(&(obj), &(dbl)) < 0) \
         return obj;
 
 /* Methods */
 
-static int
-convert_to_double(PyObject **v, double *dbl)
+int
+_Py_convert_to_double(PyObject **v, double *dbl)
 {
     PyObject *obj = *v;
 

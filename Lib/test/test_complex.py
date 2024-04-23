@@ -127,6 +127,9 @@ class ComplexTest(ComplexesAreIdenticalMixin, unittest.TestCase):
             self.assertTrue(isnan(z.real))
             self.assertTrue(isnan(z.imag))
 
+        self.assertComplexesAreIdentical(complex(INF, NAN) / 2,
+                                         complex(INF, NAN))
+
         self.assertComplexesAreIdentical(complex(INF, 1)/(0.0+1j),
                                          complex(NAN, -INF))
 
@@ -224,6 +227,10 @@ class ComplexTest(ComplexesAreIdenticalMixin, unittest.TestCase):
     def test_add(self):
         self.assertEqual(1j + int(+1), complex(+1, 1))
         self.assertEqual(1j + int(-1), complex(-1, 1))
+        self.assertComplexesAreIdentical(complex(-0.0, -0.0) + (-0.0),
+                                         complex(-0.0, -0.0))
+        self.assertComplexesAreIdentical((-0.0) + complex(-0.0, -0.0),
+                                         complex(-0.0, -0.0))
         self.assertRaises(OverflowError, operator.add, 1j, 10**1000)
         self.assertRaises(TypeError, operator.add, 1j, None)
         self.assertRaises(TypeError, operator.add, None, 1j)
@@ -231,6 +238,10 @@ class ComplexTest(ComplexesAreIdenticalMixin, unittest.TestCase):
     def test_sub(self):
         self.assertEqual(1j - int(+1), complex(-1, 1))
         self.assertEqual(1j - int(-1), complex(1, 1))
+        self.assertComplexesAreIdentical(complex(-0.0, -0.0) - 0.0,
+                                         complex(-0.0, -0.0))
+        self.assertComplexesAreIdentical(-0.0 - complex(0.0, 0.0),
+                                         complex(-0.0, -0.0))
         self.assertRaises(OverflowError, operator.sub, 1j, 10**1000)
         self.assertRaises(TypeError, operator.sub, 1j, None)
         self.assertRaises(TypeError, operator.sub, None, 1j)
@@ -238,6 +249,10 @@ class ComplexTest(ComplexesAreIdenticalMixin, unittest.TestCase):
     def test_mul(self):
         self.assertEqual(1j * int(20), complex(0, 20))
         self.assertEqual(1j * int(-1), complex(0, -1))
+        self.assertComplexesAreIdentical(complex(INF, NAN) * 2,
+                                         complex(INF, NAN))
+        self.assertComplexesAreIdentical(2 * complex(INF, NAN),
+                                         complex(INF, NAN))
         self.assertRaises(OverflowError, operator.mul, 1j, 10**1000)
         self.assertRaises(TypeError, operator.mul, 1j, None)
         self.assertRaises(TypeError, operator.mul, None, 1j)
