@@ -373,7 +373,7 @@ static PyObject *
 typevar_new_impl(PyTypeObject *type, PyObject *name, PyObject *constraints,
                  PyObject *bound, PyObject *default_value, int covariant,
                  int contravariant, int infer_variance)
-/*[clinic end generated code: output=74ee963663330604 input=2962ee79d92972fc]*/
+/*[clinic end generated code: output=d2b248ff074eaab6 input=1613c393ddbd7d7f]*/
 {
     if (covariant && contravariant) {
         PyErr_SetString(PyExc_ValueError,
@@ -980,7 +980,7 @@ static PyObject *
 paramspec_new_impl(PyTypeObject *type, PyObject *name, PyObject *bound,
                    PyObject *default_value, int covariant, int contravariant,
                    int infer_variance)
-/*[clinic end generated code: output=b6be5856624d7b5d input=5f16268ae6237a50]*/
+/*[clinic end generated code: output=47ca9d63fa5a094d input=891f0e133228a87d]*/
 {
     if (covariant && contravariant) {
         PyErr_SetString(PyExc_ValueError, "Bivariant types are not supported.");
@@ -1237,8 +1237,9 @@ Create a new TypeVarTuple with the given name.
 [clinic start generated code]*/
 
 static PyObject *
-typevartuple_impl(PyTypeObject *type, PyObject *name, PyObject *default_value)
-/*[clinic end generated code: output=eb847fe0acd69560 input=b2f0ecf512371a75]*/
+typevartuple_impl(PyTypeObject *type, PyObject *name,
+                  PyObject *default_value)
+/*[clinic end generated code: output=9d6b76dfe95aae51 input=bacdec7f88a28324]*/
 {
     PyObject *module = caller();
     if (module == NULL) {

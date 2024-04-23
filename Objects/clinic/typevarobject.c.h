@@ -17,7 +17,7 @@ PyDoc_STRVAR(typevar_new__doc__,
 
 static PyObject *
 typevar_new_impl(PyTypeObject *type, PyObject *name, PyObject *constraints,
-                 PyObject *bound, PyObject *default_, int covariant,
+                 PyObject *bound, PyObject *default_value, int covariant,
                  int contravariant, int infer_variance);
 
 static PyObject *
@@ -56,7 +56,7 @@ typevar_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject *name;
     PyObject *constraints = NULL;
     PyObject *bound = Py_None;
-    PyObject *default_ = NULL;
+    PyObject *default_value = NULL;
     int covariant = 0;
     int contravariant = 0;
     int infer_variance = 0;
@@ -81,7 +81,7 @@ typevar_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         }
     }
     if (fastargs[3]) {
-        default_ = fastargs[3];
+        default_value = fastargs[3];
         if (!--noptargs) {
             goto skip_optional_kwonly;
         }
@@ -109,7 +109,7 @@ typevar_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         goto exit;
     }
 skip_optional_kwonly:
-    return_value = typevar_new_impl(type, name, constraints, bound, default_, covariant, contravariant, infer_variance);
+    return_value = typevar_new_impl(type, name, constraints, bound, default_value, covariant, contravariant, infer_variance);
 
 exit:
     Py_XDECREF(constraints);
@@ -288,7 +288,7 @@ PyDoc_STRVAR(paramspec_new__doc__,
 
 static PyObject *
 paramspec_new_impl(PyTypeObject *type, PyObject *name, PyObject *bound,
-                   PyObject *default_, int covariant, int contravariant,
+                   PyObject *default_value, int covariant, int contravariant,
                    int infer_variance);
 
 static PyObject *
@@ -326,7 +326,7 @@ paramspec_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 1;
     PyObject *name;
     PyObject *bound = Py_None;
-    PyObject *default_ = NULL;
+    PyObject *default_value = NULL;
     int covariant = 0;
     int contravariant = 0;
     int infer_variance = 0;
@@ -350,7 +350,7 @@ paramspec_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         }
     }
     if (fastargs[2]) {
-        default_ = fastargs[2];
+        default_value = fastargs[2];
         if (!--noptargs) {
             goto skip_optional_kwonly;
         }
@@ -378,7 +378,7 @@ paramspec_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         goto exit;
     }
 skip_optional_kwonly:
-    return_value = paramspec_new_impl(type, name, bound, default_, covariant, contravariant, infer_variance);
+    return_value = paramspec_new_impl(type, name, bound, default_value, covariant, contravariant, infer_variance);
 
 exit:
     return return_value;
@@ -446,7 +446,8 @@ PyDoc_STRVAR(typevartuple__doc__,
 "Create a new TypeVarTuple with the given name.");
 
 static PyObject *
-typevartuple_impl(PyTypeObject *type, PyObject *name, PyObject *default_);
+typevartuple_impl(PyTypeObject *type, PyObject *name,
+                  PyObject *default_value);
 
 static PyObject *
 typevartuple(PyTypeObject *type, PyObject *args, PyObject *kwargs)
@@ -482,7 +483,7 @@ typevartuple(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
     Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 1;
     PyObject *name;
-    PyObject *default_ = NULL;
+    PyObject *default_value = NULL;
 
     fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 1, 1, 0, argsbuf);
     if (!fastargs) {
@@ -496,9 +497,9 @@ typevartuple(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
-    default_ = fastargs[1];
+    default_value = fastargs[1];
 skip_optional_kwonly:
-    return_value = typevartuple_impl(type, name, default_);
+    return_value = typevartuple_impl(type, name, default_value);
 
 exit:
     return return_value;
@@ -643,4 +644,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=8d8c359bf29c4ee8 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d61c659408a879ea input=a9049054013a1b77]*/
