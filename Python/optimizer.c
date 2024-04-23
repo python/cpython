@@ -401,10 +401,6 @@ get_jit_code(PyObject *self, PyObject *Py_UNUSED(ignored))
     PyErr_SetString(PyExc_RuntimeError, "JIT support not enabled.");
     return NULL;
 #else
-    if (!Py_IS_TYPE(self, &_PyUOpExecutor_Type)) {
-        PyErr_SetString(PyExc_TypeError, "get_jit_code() requires a uop_executor object.");
-        return NULL;
-    }
     _PyExecutorObject *executor = (_PyExecutorObject *)self;
     if (executor->jit_code == NULL || executor->jit_size == 0) {
         Py_RETURN_NONE;
