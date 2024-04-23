@@ -4848,40 +4848,6 @@ _PyOS_getfullpathname(const wchar_t *path, wchar_t **abspath_p)
 }
 
 
-/* A helper function for abspath on win32 */
-/*[clinic input]
-os._getfullpathname
-
-    path: path_t
-    /
-
-[clinic start generated code]*/
-
-static PyObject *
-os__getfullpathname_impl(PyObject *module, path_t *path)
-/*[clinic end generated code: output=bb8679d56845bc9b input=332ed537c29d0a3e]*/
-{
-    wchar_t *abspath;
-
-    if (_PyOS_getfullpathname(path->wide, &abspath) < 0) {
-        return win32_error_object("GetFullPathNameW", path->object);
-    }
-    if (abspath == NULL) {
-        return PyErr_NoMemory();
-    }
-
-    PyObject *str = PyUnicode_FromWideChar(abspath, wcslen(abspath));
-    PyMem_RawFree(abspath);
-    if (str == NULL) {
-        return NULL;
-    }
-    if (path->narrow) {
-        Py_SETREF(str, PyUnicode_EncodeFSDefault(str));
-    }
-    return str;
-}
-
-
 /*[clinic input]
 os._getfinalpathname
 
@@ -5496,39 +5462,55 @@ os__path_normpath_impl(PyObject *module, PyObject *path)
     return result;
 }
 
-#ifndef MS_WINDOWS
-
 /*[clinic input]
 os._path_abspath
 
-    path: unicode
+    path: path_t
     /
 
 Make path absolute.
 [clinic start generated code]*/
 
 static PyObject *
-os__path_abspath_impl(PyObject *module, PyObject *path)
-/*[clinic end generated code: output=b58956d662b60be0 input=577ecb3473d22113]*/
+os__path_abspath_impl(PyObject *module, path_t *path)
+/*[clinic end generated code: output=bb40fbf3be7251a4 input=54be6529c3267bd0]*/
 {
-    Py_ssize_t path_len, prefix_len, abs_len;
-    wchar_t *abs, *abs_buf = NULL, *cwd_buf = NULL;
-    PyObject *result = NULL;
+    Py_ssize_t path_len, abs_len;
+    wchar_t *abs, *abs_buf = NULL, *cwd_buf = NULL, *path_buf = NULL;
+    PyObject *wide = NULL, *result = NULL;
 
-    wchar_t *path_buf = PyUnicode_AsWideCharString(path, &path_len);
-    if (!path_buf) {
+#ifdef MS_WINDOWS
+    path_len = path->length;
+    path_buf = (wchar_t *)path->wide;
+#else
+    if (!(wide = PyUnicode_DecodeFSDefaultAndSize(path->narrow, path->length)) ||
+        !(path_buf = PyUnicode_AsWideCharString(wide, &path_len)))
+    {
         goto exit;
     }
+#endif
 
+    int is_bytes = PyBytes_Check(path->object);
+#ifdef MS_WINDOWS
+    abs = _Py_normpath_and_size(path_buf, path_len, 0, &abs_len);
+    if (abs_len == 0) {
+        result = posix_getcwd(is_bytes);
+        goto exit;
+    }
+    if (_PyOS_getfullpathname(abs, &abs_buf) < 0) {
+        result = win32_error_object("GetFullPathNameW", path->object);
+        goto exit;
+    }
+    abs = abs_buf;
+    abs_len = wcslen(abs_buf);
+#else
     if (path_len == 0 || (path_len == 1 && path_buf[0] == L'.')) {
-        result = posix_getcwd(0);
+        result = posix_getcwd(is_bytes);
         goto exit;
     }
 
     if (_Py_isabs(path_buf)) {
-        prefix_len = 0;
-        abs_len = path_len;
-        abs = path_buf;
+        abs = _Py_normpath_and_size(path_buf, path_len, 0, &abs_len);
     }
     else {
         PyObject *cwd_obj = posix_getcwd(0);
@@ -5543,7 +5525,7 @@ os__path_abspath_impl(PyObject *module, PyObject *path)
         }
 
         int add_sep = cwd_buf[cwd_len - 1] != SEP;
-        prefix_len = cwd_len + add_sep;
+        Py_ssize_t prefix_len = cwd_len + add_sep;
         abs_len = prefix_len + path_len;
 
         if ((size_t)abs_len + 1 > (size_t)PY_SSIZE_T_MAX / sizeof(wchar_t)) {
@@ -5553,10 +5535,9 @@ os__path_abspath_impl(PyObject *module, PyObject *path)
 
         abs_buf = PyMem_RawMalloc(((size_t)abs_len + 1) * sizeof(wchar_t));
         if (!abs_buf) {
-            PyErr_NoMemory();
+            result = PyErr_NoMemory();
             goto exit;
         }
-        abs = abs_buf;
 
         // Join cwd & path
         wchar_t *p = memcpy(abs_buf, cwd_buf, cwd_len * sizeof(wchar_t));
@@ -5566,15 +5547,24 @@ os__path_abspath_impl(PyObject *module, PyObject *path)
         }
         memcpy(p, path_buf, path_len * sizeof(wchar_t));
         p[path_len] = '\0';
+        abs = _Py_normpath_and_size(abs_buf, abs_len, prefix_len, &abs_len);
+    }
+#endif
+
+    result = PyUnicode_FromWideChar(abs, abs_len);
+    if (is_bytes) {
+        Py_SETREF(result, PyUnicode_EncodeFSDefault(result));
     }
 
-    abs = _Py_normpath_and_size(abs, abs_len, prefix_len, &abs_len);
-    result = PyUnicode_FromWideChar(abs, abs_len);
-
 exit:
+#ifndef MS_WINDOWS
+    if (wide) {
+        Py_DECREF(wide);
+    }
     if (path_buf) {
         PyMem_Free(path_buf);
     }
+#endif
     if (cwd_buf) {
         PyMem_Free(cwd_buf);
     }
@@ -5583,8 +5573,6 @@ exit:
     }
     return result;
 }
-
-#endif
 
 /*[clinic input]
 os.mkdir
@@ -16883,7 +16871,6 @@ static PyMethodDef posix_methods[] = {
     OS_FPATHCONF_METHODDEF
     OS_PATHCONF_METHODDEF
     OS_ABORT_METHODDEF
-    OS__GETFULLPATHNAME_METHODDEF
     OS__GETDISKUSAGE_METHODDEF
     OS__GETFINALPATHNAME_METHODDEF
     OS__FINDFIRSTFILE_METHODDEF

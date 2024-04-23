@@ -1785,39 +1785,6 @@ exit:
 
 #if defined(MS_WINDOWS)
 
-PyDoc_STRVAR(os__getfullpathname__doc__,
-"_getfullpathname($module, path, /)\n"
-"--\n"
-"\n");
-
-#define OS__GETFULLPATHNAME_METHODDEF    \
-    {"_getfullpathname", (PyCFunction)os__getfullpathname, METH_O, os__getfullpathname__doc__},
-
-static PyObject *
-os__getfullpathname_impl(PyObject *module, path_t *path);
-
-static PyObject *
-os__getfullpathname(PyObject *module, PyObject *arg)
-{
-    PyObject *return_value = NULL;
-    path_t path = PATH_T_INITIALIZE("_getfullpathname", "path", 0, 0);
-
-    if (!path_converter(arg, &path)) {
-        goto exit;
-    }
-    return_value = os__getfullpathname_impl(module, &path);
-
-exit:
-    /* Cleanup for path */
-    path_cleanup(&path);
-
-    return return_value;
-}
-
-#endif /* defined(MS_WINDOWS) */
-
-#if defined(MS_WINDOWS)
-
 PyDoc_STRVAR(os__getfinalpathname__doc__,
 "_getfinalpathname($module, path, /)\n"
 "--\n"
@@ -2303,8 +2270,6 @@ exit:
     return return_value;
 }
 
-#if !defined(MS_WINDOWS)
-
 PyDoc_STRVAR(os__path_abspath__doc__,
 "_path_abspath($module, path, /)\n"
 "--\n"
@@ -2315,26 +2280,25 @@ PyDoc_STRVAR(os__path_abspath__doc__,
     {"_path_abspath", (PyCFunction)os__path_abspath, METH_O, os__path_abspath__doc__},
 
 static PyObject *
-os__path_abspath_impl(PyObject *module, PyObject *path);
+os__path_abspath_impl(PyObject *module, path_t *path);
 
 static PyObject *
 os__path_abspath(PyObject *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
-    PyObject *path;
+    path_t path = PATH_T_INITIALIZE("_path_abspath", "path", 0, 0);
 
-    if (!PyUnicode_Check(arg)) {
-        _PyArg_BadArgument("_path_abspath", "argument", "str", arg);
+    if (!path_converter(arg, &path)) {
         goto exit;
     }
-    path = arg;
-    return_value = os__path_abspath_impl(module, path);
+    return_value = os__path_abspath_impl(module, &path);
 
 exit:
+    /* Cleanup for path */
+    path_cleanup(&path);
+
     return return_value;
 }
-
-#endif /* !defined(MS_WINDOWS) */
 
 PyDoc_STRVAR(os_mkdir__doc__,
 "mkdir($module, /, path, mode=511, *, dir_fd=None)\n"
@@ -12052,10 +12016,6 @@ os__supports_virtual_terminal(PyObject *module, PyObject *Py_UNUSED(ignored))
     #define OS__PATH_ISDEVDRIVE_METHODDEF
 #endif /* !defined(OS__PATH_ISDEVDRIVE_METHODDEF) */
 
-#ifndef OS__GETFULLPATHNAME_METHODDEF
-    #define OS__GETFULLPATHNAME_METHODDEF
-#endif /* !defined(OS__GETFULLPATHNAME_METHODDEF) */
-
 #ifndef OS__GETFINALPATHNAME_METHODDEF
     #define OS__GETFINALPATHNAME_METHODDEF
 #endif /* !defined(OS__GETFINALPATHNAME_METHODDEF) */
@@ -12087,10 +12047,6 @@ os__supports_virtual_terminal(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef OS__PATH_ISLINK_METHODDEF
     #define OS__PATH_ISLINK_METHODDEF
 #endif /* !defined(OS__PATH_ISLINK_METHODDEF) */
-
-#ifndef OS__PATH_ABSPATH_METHODDEF
-    #define OS__PATH_ABSPATH_METHODDEF
-#endif /* !defined(OS__PATH_ABSPATH_METHODDEF) */
 
 #ifndef OS_NICE_METHODDEF
     #define OS_NICE_METHODDEF
@@ -12639,4 +12595,4 @@ os__supports_virtual_terminal(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF
     #define OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF
 #endif /* !defined(OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF) */
-/*[clinic end generated code: output=e984e2fa69e44555 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f8bf7c940193ae4f input=a9049054013a1b77]*/
