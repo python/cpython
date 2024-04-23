@@ -233,7 +233,7 @@ Annotation scopes differ from function scopes in the following ways:
    Annotation scopes were introduced in Python 3.12 as part of :pep:`695`.
 
 .. versionchanged:: 3.13
-   Annotation scopes are now also used for type parameter defaults, as
+   Annotation scopes are also used for type parameter defaults, as
    introduced by :pep:`696`.
 
 .. _lazy-evaluation:
