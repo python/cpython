@@ -56,9 +56,16 @@ jit_alloc(size_t size)
     int flags = MEM_COMMIT | MEM_RESERVE;
     unsigned char *memory = VirtualAlloc(NULL, size, flags, PAGE_READWRITE);
     int failed = memory == NULL;
+#elif defined(__APPLE__) && defined(__aarch64__)
+    int flags = MAP_ANONYMOUS | MAP_PRIVATE | MAP_JIT;
+    int prot = PROT_READ | PROT_WRITE | PROT_EXEC;
+    unsigned char *memory = mmap(NULL, size, prot, flags, -1, 0);
+    int failed = memory == MAP_FAILED;
+    pthread_jit_write_protect_np(0);
 #else
     int flags = MAP_ANONYMOUS | MAP_PRIVATE;
-    unsigned char *memory = mmap(NULL, size, PROT_READ | PROT_WRITE, flags, -1, 0);
+    int prot = PROT_READ | PROT_WRITE;
+    unsigned char *memory = mmap(NULL, size, prot, flags, -1, 0);
     int failed = memory == MAP_FAILED;
 #endif
     if (failed) {
@@ -101,6 +108,10 @@ mark_executable(unsigned char *memory, size_t size)
     }
     int old;
     int failed = !VirtualProtect(memory, size, PAGE_EXECUTE_READ, &old);
+#elif defined(__APPLE__) && defined(__aarch64__)
+    int failed = 0;
+    __builtin___clear_cache((char *)memory, (char *)memory + size);
+    pthread_jit_write_protect_np(1);
 #else
     __builtin___clear_cache((char *)memory, (char *)memory + size);
     int failed = mprotect(memory, size, PROT_EXEC | PROT_READ);
