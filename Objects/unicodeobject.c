@@ -3790,7 +3790,7 @@ PyUnicode_DecodeFSDefaultAndSize(const char *s, Py_ssize_t size)
 
 
 int
-PyUnicode_FSConverter(PyObject* arg, void* addr)
+PyUnicode_FSConverterPosix(PyObject* arg, void* addr, int allow_embedded_null)
 {
     PyObject *path = NULL;
     PyObject *output = NULL;
@@ -3819,7 +3819,7 @@ PyUnicode_FSConverter(PyObject* arg, void* addr)
 
     size = PyBytes_GET_SIZE(output);
     data = PyBytes_AS_STRING(output);
-    if ((size_t)size != strlen(data)) {
+    if (!allow_embedded_null && (size_t)size != strlen(data)) {
         PyErr_SetString(PyExc_ValueError, "embedded null byte");
         Py_DECREF(output);
         return 0;
@@ -3828,6 +3828,11 @@ PyUnicode_FSConverter(PyObject* arg, void* addr)
     return Py_CLEANUP_SUPPORTED;
 }
 
+int
+PyUnicode_FSConverter(PyObject* arg, void* addr)
+{
+    return PyUnicode_FSConverterPosix(arg, addr, 0);
+}
 
 int
 PyUnicode_FSDecoder(PyObject* arg, void* addr)

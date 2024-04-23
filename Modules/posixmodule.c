@@ -1304,7 +1304,7 @@ posix_path_converter(PyObject *o, void *p, int allow_embedded_null)
         wide = NULL;
         goto success_exit;
 #else
-        if (!PyUnicode_FSConverter(o, &bytes)) {
+        if (!PyUnicode_FSConverterPosix(o, &bytes, allow_embedded_null)) {
             goto error_exit;
         }
 #endif
@@ -5486,21 +5486,30 @@ os__path_splitroot_ex_impl(PyObject *module, PyObject *p)
 /*[clinic end generated code: output=1be3aff51db9fc0d input=df3394f511f02c51]*/
 {
     Py_ssize_t len, drvsize, rootsize;
-    PyObject *drv = NULL, *root = NULL, *tail = NULL, *result = NULL;
+    PyObject *wide = NULL, *drv = NULL, *root = NULL, *tail = NULL, *result = NULL;
+    wchar_t *buffer = NULL;
     path_t path = PATH_T_INITIALIZE("_path_splitroot_ex", "p", 0, 0);
     if (!posix_path_converter(p, &path, 1)) {
         goto exit;
     }
+#ifdef MS_WINDOWS
     len = path.length;
-    const wchar_t *wide = path.wide;
-    _Py_skiproot(wide, len, &drvsize, &rootsize);
-    if (!(drv = PyUnicode_FromWideChar(wide, drvsize)) ||
-        !(root = PyUnicode_FromWideChar(&wide[drvsize], rootsize)) ||
-        !(tail = PyUnicode_FromWideChar(&wide[drvsize + rootsize], len - drvsize - rootsize)))
+    const wchar_t *buffer = path.wide;
+#else
+    if (!(wide = PyUnicode_DecodeFSDefaultAndSize(path.narrow, path.length)) ||
+        !(buffer = PyUnicode_AsWideCharString(wide, &len)))
     {
         goto exit;
     }
-    if (path.narrow) {
+#endif
+    _Py_skiproot(buffer, len, &drvsize, &rootsize);
+    if (!(drv = PyUnicode_FromWideChar(buffer, drvsize)) ||
+        !(root = PyUnicode_FromWideChar(&buffer[drvsize], rootsize)) ||
+        !(tail = PyUnicode_FromWideChar(&buffer[drvsize + rootsize], len - drvsize - rootsize)))
+    {
+        goto exit;
+    }
+    if (PyBytes_Check(path.object)) {
         Py_SETREF(drv, PyUnicode_EncodeFSDefault(drv));
         Py_SETREF(root, PyUnicode_EncodeFSDefault(root));
         Py_SETREF(tail, PyUnicode_EncodeFSDefault(tail));
@@ -5508,9 +5517,16 @@ os__path_splitroot_ex_impl(PyObject *module, PyObject *p)
     result = Py_BuildValue("(OOO)", drv, root, tail);
 exit:
     path_cleanup(&path);
-    Py_DECREF(drv);
-    Py_DECREF(root);
-    Py_DECREF(tail);
+    PyMem_Free(buffer);
+    if (drv) {
+        Py_DECREF(drv);
+    }
+    if (root) {
+        Py_DECREF(root);
+    }
+    if (tail) {
+        Py_DECREF(tail);
+    }
     return result;
 }
 
