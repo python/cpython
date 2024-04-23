@@ -280,7 +280,7 @@ Class attributes:
    The smallest possible difference between non-equal :class:`timedelta` objects,
    ``timedelta(microseconds=1)``.
 
-Note that, because of normalization, ``timedelta.max > -timedelta.min`` is true.
+Note that, because of normalization, ``timedelta.max`` is greater than ``-timedelta.min``.
 ``-timedelta.max`` is not representable as a :class:`timedelta` object.
 
 Instance attributes (read-only):
@@ -302,11 +302,11 @@ Supported operations:
 +--------------------------------+-----------------------------------------------+
 | Operation                      | Result                                        |
 +================================+===============================================+
-| ``t1 = t2 + t3``               | Sum of *t2* and *t3*. Afterwards ``t1 - t2 == |
-|                                | t3`` and ``t1 - t3 == t2`` are true. (1)      |
+| ``t1 = t2 + t3``               | Sum of ``t2`` and ``t3``. Afterwards ``t1 - t2|
+|                                |  == t3`` and ``t1 - t3 == t2`` are true. (1)  |
 +--------------------------------+-----------------------------------------------+
-| ``t1 = t2 - t3``               | Difference of *t2*  and *t3*. Afterwards ``t1 |
-|                                | == t2 - t3`` and ``t2 == t1 + t3`` are        |
+| ``t1 = t2 - t3``               | Difference of ``t2``  and ``t3``. Afterwards  |
+|                                | ``t1 == t2 - t3`` and ``t2 == t1 + t3`` are   |
 |                                | true. (1)(6)                                  |
 +--------------------------------+-----------------------------------------------+
 | ``t1 = t2 * i or t1 = i * t2`` | Delta multiplied by an integer.               |
@@ -320,8 +320,8 @@ Supported operations:
 |                                | rounded to the nearest multiple of            |
 |                                | timedelta.resolution using round-half-to-even.|
 +--------------------------------+-----------------------------------------------+
-| ``f = t2 / t3``                | Division (3) of overall duration *t2* by      |
-|                                | interval unit *t3*. Returns a :class:`float`  |
+| ``f = t2 / t3``                | Division (3) of overall duration ``t2`` by    |
+|                                | interval unit ``t3``. Returns a :class:`float`|
 |                                | object.                                       |
 +--------------------------------+-----------------------------------------------+
 | ``t1 = t2 / f or t1 = t2 / i`` | Delta divided by a float or an int. The result|
@@ -347,8 +347,8 @@ Supported operations:
 |                                | -t1.seconds*, -t1.microseconds)``,            |
 |                                | and to ``t1 * -1``. (1)(4)                    |
 +--------------------------------+-----------------------------------------------+
-| ``abs(t)``                     | equivalent to +\ *t* when ``t.days >= 0``,    |
-|                                | and to -*t* when ``t.days < 0``. (2)          |
+| ``abs(t)``                     | equivalent to ``t`` when ``t.days >= 0``,     |
+|                                | and to ``-t`` when ``t.days < 0``. (2)        |
 +--------------------------------+-----------------------------------------------+
 | ``str(t)``                     | Returns a string in the form                  |
 |                                | ``[D day[s], ][H]H:MM:SS[.UUUUUU]``, where D  |
@@ -502,7 +502,7 @@ Other constructors, all class methods:
 .. classmethod:: date.fromordinal(ordinal)
 
    Return the date corresponding to the proleptic Gregorian ordinal, where
-   January 1 of year 1 has ordinal ``1``.
+   January 1 of year 1 has ordinal 1.
 
    :exc:`ValueError` is raised unless ``1 <= ordinal <=
    date.max.toordinal()``. For any date *d*,
@@ -582,10 +582,10 @@ Supported operations:
 +-------------------------------+----------------------------------------------+
 | Operation                     | Result                                       |
 +===============================+==============================================+
-| ``date2 = date1 + timedelta`` | *date2* will be ``timedelta.days`` days      |
-|                               | after *date1*. (1)                           |
+| ``date2 = date1 + timedelta`` | ``date2`` will be ``timedelta.days`` days    |
+|                               | after ``date1``. (1)                         |
 +-------------------------------+----------------------------------------------+
-| ``date2 = date1 - timedelta`` | Computes *date2* such that ``date2 +         |
+| ``date2 = date1 - timedelta`` | Computes ``date2`` such that ``date2 +       |
 |                               | timedelta == date1``. (2)                    |
 +-------------------------------+----------------------------------------------+
 | ``timedelta = date1 - date2`` | \(3)                                         |
@@ -990,7 +990,7 @@ Other constructors, all class methods:
 .. classmethod:: datetime.fromordinal(ordinal)
 
    Return the :class:`.datetime` corresponding to the proleptic Gregorian ordinal,
-   where January 1 of year 1 has ordinal ``1``. :exc:`ValueError` is raised unless
+   where January 1 of year 1 has ordinal 1. :exc:`ValueError` is raised unless
    ``1 <= ordinal <= datetime.max.toordinal()``. The hour, minute, second and
    microsecond of the result are all ``0``, and :attr:`.tzinfo` is ``None``.
 
@@ -2410,8 +2410,8 @@ requires, and these work on all platforms with a standard C implementation.
 |           |                                |  Samstag (de_DE)       |       |
 +-----------+--------------------------------+------------------------+-------+
 | ``%w``    | Weekday as a decimal number,   | 0, 1, ..., 6           |       |
-|           | where ``'0'`` is Sunday        |                        |       |
-|           | and ``'6'`` is Saturday.       |                        |       |
+|           | where 0 is Sunday              |                        |       |
+|           | and 6 is Saturday.             |                        |       |
 +-----------+--------------------------------+------------------------+-------+
 | ``%d``    | Day of the month as a          | 01, 02, ..., 31        | \(9)  |
 |           | zero-padded decimal number.    |                        |       |
@@ -2471,7 +2471,7 @@ requires, and these work on all platforms with a standard C implementation.
 |           | decimal number. All days in a  |                        |       |
 |           | new year preceding the first   |                        |       |
 |           | Sunday are considered to be in |                        |       |
-|           | week ``'0'``.                  |                        |       |
+|           | week 0.                        |                        |       |
 +-----------+--------------------------------+------------------------+-------+
 | ``%W``    | Week number of the year        | 00, 01, ..., 53        | \(7), |
 |           | (Monday as the first day of    |                        | \(9)  |
@@ -2479,7 +2479,7 @@ requires, and these work on all platforms with a standard C implementation.
 |           | decimal number. All days in a  |                        |       |
 |           | new year preceding the first   |                        |       |
 |           | Monday are considered to be in |                        |       |
-|           | week ``'0'``.                  |                        |       |
+|           | week 0.                        |                        |       |
 +-----------+--------------------------------+------------------------+-------+
 | ``%c``    | Locale's appropriate date and  || Tue Aug 16 21:30:00   | \(1)  |
 |           | time representation.           |  1988 (en_US);         |       |
@@ -2508,7 +2508,7 @@ convenience. These parameters all correspond to ISO 8601 date values.
 |           | the ISO week (``%V``).         |                        |       |
 +-----------+--------------------------------+------------------------+-------+
 | ``%u``    | ISO 8601 weekday as a decimal  | 1, 2, ..., 7           |       |
-|           | number where ``'1'`` is Monday.|                        |       |
+|           | number where 1 is Monday.      |                        |       |
 +-----------+--------------------------------+------------------------+-------+
 | ``%V``    | ISO 8601 week as a decimal     | 01, 02, ..., 53        | \(8), |
 |           | number with Monday as          |                        | \(9)  |
