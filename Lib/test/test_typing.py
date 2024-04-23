@@ -629,6 +629,17 @@ class TypeParameterDefaultsTests(BaseTestCase):
         self.assertEqual(A[float, range].__args__, (float, range))
         self.assertEqual(A[float, *tuple[int, ...]].__args__, (float, *tuple[int, ...]))
 
+    def test_typevar_and_typevartuple_specialization(self):
+        T = TypeVar("T")
+        U = TypeVar("U", default=float)
+        Ts = TypeVarTuple('Ts', default=Unpack[Tuple[str, int]])
+        self.assertEqual(Ts.__default__, Unpack[Tuple[str, int]])
+        class A(Generic[T, U, Unpack[Ts]]): ...
+        self.assertEqual(A[int].__args__, (int, float, str, int))
+        self.assertEqual(A[int, str].__args__, (int, str, str, int))
+        self.assertEqual(A[int, str, range].__args__, (int, str, range))
+        self.assertEqual(A[int, str, *tuple[int, ...]].__args__, (int, str, *tuple[int, ...]))
+
     def test_typevartuple_none(self):
         U = TypeVarTuple('U')
         U_None = TypeVarTuple('U_None', default=None)

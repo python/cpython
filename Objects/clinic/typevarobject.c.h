@@ -124,6 +124,36 @@ PyDoc_STRVAR(typevar_typing_subst__doc__,
 #define TYPEVAR_TYPING_SUBST_METHODDEF    \
     {"__typing_subst__", (PyCFunction)typevar_typing_subst, METH_O, typevar_typing_subst__doc__},
 
+PyDoc_STRVAR(typevar_typing_prepare_subst__doc__,
+"__typing_prepare_subst__($self, alias, args, /)\n"
+"--\n"
+"\n");
+
+#define TYPEVAR_TYPING_PREPARE_SUBST_METHODDEF    \
+    {"__typing_prepare_subst__", _PyCFunction_CAST(typevar_typing_prepare_subst), METH_FASTCALL, typevar_typing_prepare_subst__doc__},
+
+static PyObject *
+typevar_typing_prepare_subst_impl(typevarobject *self, PyObject *alias,
+                                  PyObject *args);
+
+static PyObject *
+typevar_typing_prepare_subst(typevarobject *self, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *alias;
+    PyObject *__clinic_args;
+
+    if (!_PyArg_CheckPositional("__typing_prepare_subst__", nargs, 2, 2)) {
+        goto exit;
+    }
+    alias = args[0];
+    __clinic_args = args[1];
+    return_value = typevar_typing_prepare_subst_impl(self, alias, __clinic_args);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(typevar_reduce__doc__,
 "__reduce__($self, /)\n"
 "--\n"
@@ -613,4 +643,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=6e8c6062a9909896 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8d8c359bf29c4ee8 input=a9049054013a1b77]*/

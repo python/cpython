@@ -449,6 +449,66 @@ typevar_typing_subst(typevarobject *self, PyObject *arg)
 }
 
 /*[clinic input]
+typevar.__typing_prepare_subst__ as typevar_typing_prepare_subst
+
+    alias: object
+    args: object
+    /
+
+[clinic start generated code]*/
+
+static PyObject *
+typevar_typing_prepare_subst_impl(typevarobject *self, PyObject *alias,
+                                  PyObject *args)
+/*[clinic end generated code: output=82c3f4691e0ded22 input=201a750415d14ffb]*/
+{
+    PyObject *params = PyObject_GetAttrString(alias, "__parameters__");
+    if (params == NULL) {
+        return NULL;
+    }
+    Py_ssize_t i = PySequence_Index(params, (PyObject *)self);
+    if (i == -1) {
+        Py_DECREF(params);
+        return NULL;
+    }
+    Py_ssize_t args_len = PySequence_Length(args);
+    if (args_len == -1) {
+        Py_DECREF(params);
+        return NULL;
+    }
+    if (i < args_len) {
+        // We already have a value for our TypeVar
+        Py_DECREF(params);
+        return Py_NewRef(args);
+    }
+    else if (i == args_len) {
+        // If the TypeVar has a non-None default, use it.
+        PyObject *dflt = typevar_default(self, NULL);
+        if (dflt == NULL) {
+            Py_DECREF(params);
+            return NULL;
+        }
+        if (!Py_IsNone(dflt)) {
+            PyObject *new_args = PyTuple_Pack(1, dflt);
+            Py_DECREF(dflt);
+            if (new_args == NULL) {
+                Py_DECREF(params);
+                return NULL;
+            }
+            PyObject *result = PySequence_Concat(args, new_args);
+            Py_DECREF(params);
+            Py_DECREF(new_args);
+            return result;
+        }
+    }
+    Py_DECREF(params);
+    PyErr_Format(PyExc_TypeError,
+                 "Too few arguments for %s",
+                 alias);
+    return NULL;
+}
+
+/*[clinic input]
 typevar.__reduce__ as typevar_reduce
 
 [clinic start generated code]*/
@@ -470,6 +530,7 @@ typevar_mro_entries(PyObject *self, PyObject *args)
 
 static PyMethodDef typevar_methods[] = {
     TYPEVAR_TYPING_SUBST_METHODDEF
+    TYPEVAR_TYPING_PREPARE_SUBST_METHODDEF
     TYPEVAR_REDUCE_METHODDEF
     {"__mro_entries__", typevar_mro_entries, METH_O},
     {0}
