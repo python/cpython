@@ -194,7 +194,7 @@ Restrictions
    default, the file will be created and opened for both read and write.  The
    optional *flag* parameter has the same interpretation as for the
    :func:`.open` function.  The optional *protocol*, *writeback*, *serializer*
-   and *deserializer*parameters have the same interpretation as for the
+   and *deserializer* parameters have the same interpretation as for the
    :class:`Shelf` class.
 
 
