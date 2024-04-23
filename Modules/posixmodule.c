@@ -5480,10 +5480,10 @@ os__path_splitroot_ex_impl(PyObject *module, path_t *path)
 {
     Py_ssize_t len, drvsize, rootsize;
     PyObject *wide = NULL, *drv = NULL, *root = NULL, *tail = NULL, *result = NULL;
-    const wchar_t *buffer = NULL;
+    wchar_t *buffer = NULL;
 #ifdef MS_WINDOWS
     len = path->length;
-    buffer = path->wide;
+    buffer = (wchar_t *)path->wide;
 #else
     if (!(wide = PyUnicode_DecodeFSDefaultAndSize(path->narrow, path->length)) ||
         !(buffer = PyUnicode_AsWideCharString(wide, &len)))
