@@ -1872,8 +1872,8 @@ Loading and running tests
       Python identifiers) will be loaded.
 
       All test modules must be importable from the top level of the project. If
-      the start directory is not the top level directory then the top level
-      directory must be specified separately.
+      the start directory is not the top level directory then *top_level_dir*
+      must be specified separately.
 
       If importing a module fails, for example due to a syntax error, then
       this will be recorded as a single error and discovery will continue.  If
@@ -1893,9 +1893,11 @@ Loading and running tests
       package.
 
       The pattern is deliberately not stored as a loader attribute so that
-      packages can continue discovery themselves. *top_level_dir* is stored so
-      ``load_tests`` does not need to pass this argument in to
-      ``loader.discover()``.
+      packages can continue discovery themselves.
+
+      *top_level_dir* is stored internally, and used as a default to any
+      nested calls to ``discover()``. That is, if a package's ``load_tests``
+      calls ``loader.discover()``, it does not need to pass this argument.
 
       *start_dir* can be a dotted module name as well as a directory.
 
@@ -1921,6 +1923,9 @@ Loading and running tests
       .. versionchanged:: 3.11
          *start_dir* can not be a :term:`namespace packages <namespace package>`.
          It has been broken since Python 3.7 and Python 3.11 officially remove it.
+
+      .. versionchanged:: 3.12.4
+         *top_level_dir* is only stored for the duration of *discover* call.
 
 
    The following attributes of a :class:`TestLoader` can be configured either by
