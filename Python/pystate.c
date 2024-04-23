@@ -2096,7 +2096,7 @@ _PyThreadState_Suspend(PyThreadState *tstate)
 {
     _PyRuntimeState *runtime = &_PyRuntime;
 
-    assert(tstate->state == _Py_THREAD_ATTACHED);
+    assert(_Py_atomic_load_int_relaxed(&tstate->state) == _Py_THREAD_ATTACHED);
 
     struct _stoptheworld_state *stw = NULL;
     HEAD_LOCK(runtime);
