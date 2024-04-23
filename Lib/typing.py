@@ -304,30 +304,31 @@ def _collect_parameters(args):
     return tuple(parameters)
 
 
-def _check_generic_specialization(cls, parameters):
+def _check_generic_specialization(cls, arguments):
     """Check correct count for parameters of a generic cls (internal helper).
 
     This gives a nice error message in case of count mismatch.
     """
-    elen = len(cls.__parameters__)
-    if not elen:
+    expected_len = len(cls.__parameters__)
+    if not expected_len:
         raise TypeError(f"{cls} is not a generic class")
-    alen = len(parameters)
-    if alen != elen:
+    actual_len = len(arguments)
+    if actual_len != expected_len:
         # deal with defaults
-        if alen < elen:
-            # since we validate defaults in _collect_type_vars
-            # or _collect_parameters, we can safely check parameters[alen]
-            if cls.__parameters__[alen].__default__ is not None:
+        if actual_len < expected_len:
+            # If the parameter at actual_len has a default, then all parameters
+            # after it must also have one, because we validated as much in
+            # _collect_parameters().
+            if cls.__parameters__[actual_len].__default__ is not None:
                 return
 
-            elen -= sum(p.__default__ is not None for p in cls.__parameters__)
-            expect_val = f"at least {elen}"
+            expected_len -= sum(p.__default__ is not None for p in cls.__parameters__)
+            expect_val = f"at least {expected_len}"
         else:
-            expect_val = elen
+            expect_val = expected_len
 
-        raise TypeError(f"Too {'many' if alen > elen else 'few'} arguments"
-                        f" for {cls}; actual {alen}, expected {expect_val}")
+        raise TypeError(f"Too {'many' if actual_len > expected_len else 'few'} arguments"
+                        f" for {cls}; actual {actual_len}, expected {expect_val}")
 
 
 def _unpack_args(args):
@@ -1160,33 +1161,33 @@ def _paramspec_prepare_subst(self, alias, args):
 
 
 @_tp_cache
-def _generic_class_getitem(cls, params):
+def _generic_class_getitem(cls, args):
     """Parameterizes a generic class.
 
     At least, parameterizing a generic class is the *main* thing this method
     does. For example, for some generic class `Foo`, this is called when we
-    do `Foo[int]` - there, with `cls=Foo` and `params=int`.
+    do `Foo[int]` - there, with `cls=Foo` and `args=int`.
 
     However, note that this method is also called when defining generic
     classes in the first place with `class Foo(Generic[T]): ...`.
     """
-    if not isinstance(params, tuple):
-        params = (params,)
+    if not isinstance(args, tuple):
+        args = (args,)
 
-    params = tuple(_type_convert(p) for p in params)
+    args = tuple(_type_convert(p) for p in args)
     is_generic_or_protocol = cls in (Generic, Protocol)
 
     if is_generic_or_protocol:
         # Generic and Protocol can only be subscripted with unique type variables.
-        if not params:
+        if not args:
             raise TypeError(
                 f"Parameter list to {cls.__qualname__}[...] cannot be empty"
             )
-        if not all(_is_typevar_like(p) for p in params):
+        if not all(_is_typevar_like(p) for p in args):
             raise TypeError(
                 f"Parameters to {cls.__name__}[...] must all be type variables "
                 f"or parameter specification variables.")
-        if len(set(params)) != len(params):
+        if len(set(args)) != len(args):
             raise TypeError(
                 f"Parameters to {cls.__name__}[...] must all be unique")
     else:
@@ -1194,18 +1195,18 @@ def _generic_class_getitem(cls, params):
         for param in cls.__parameters__:
             prepare = getattr(param, '__typing_prepare_subst__', None)
             if prepare is not None:
-                params = prepare(cls, params)
-        _check_generic_specialization(cls, params)
+                args = prepare(cls, args)
+        _check_generic_specialization(cls, args)
 
         new_args = []
-        for param, new_arg in zip(cls.__parameters__, params):
+        for param, new_arg in zip(cls.__parameters__, args):
             if isinstance(param, TypeVarTuple):
                 new_args.extend(new_arg)
             else:
                 new_args.append(new_arg)
-        params = tuple(new_args)
+        args = tuple(new_args)
 
-    return _GenericAlias(cls, params)
+    return _GenericAlias(cls, args)
 
 
 def _generic_init_subclass(cls, *args, **kwargs):
