@@ -46,9 +46,10 @@
 
         case _LOAD_CONST: {
             _Py_UopsSymbol *value;
-            // There should be no LOAD_CONST. It should be all
-            // replaced by peephole_opt.
-            Py_UNREACHABLE();
+            PyObject *val = PyTuple_GET_ITEM(co->co_consts, this_instr->oparg);
+            int opcode = _Py_IsImmortal(val) ? _LOAD_CONST_INLINE_BORROW : _LOAD_CONST_INLINE;
+            REPLACE_OP(this_instr, opcode, 0, (uintptr_t)val);
+            OUT_OF_SPACE_IF_NULL(value = sym_new_const(ctx, val));
             stack_pointer[0] = value;
             stack_pointer += 1;
             break;
@@ -224,9 +225,18 @@
             _Py_UopsSymbol *left;
             right = stack_pointer[-1];
             left = stack_pointer[-2];
-            if (sym_matches_type(left, &PyLong_Type) &&
-                sym_matches_type(right, &PyLong_Type)) {
-                REPLACE_OP(this_instr, _NOP, 0, 0);
+            if (sym_matches_type(left, &PyLong_Type)) {
+                if (sym_matches_type(right, &PyLong_Type)) {
+                    REPLACE_OP(this_instr, _NOP, 0, 0);
+                }
+                else {
+                    REPLACE_OP(this_instr, _GUARD_TOS_INT, 0, 0);
+                }
+            }
+            else {
+                if (sym_matches_type(right, &PyLong_Type)) {
+                    REPLACE_OP(this_instr, _GUARD_NOS_INT, 0, 0);
+                }
             }
             if (!sym_set_type(left, &PyLong_Type)) {
                 goto hit_bottom;
@@ -234,6 +244,14 @@
             if (!sym_set_type(right, &PyLong_Type)) {
                 goto hit_bottom;
             }
+            break;
+        }
+
+        case _GUARD_NOS_INT: {
+            break;
+        }
+
+        case _GUARD_TOS_INT: {
             break;
         }
 
@@ -332,9 +350,18 @@
             _Py_UopsSymbol *left;
             right = stack_pointer[-1];
             left = stack_pointer[-2];
-            if (sym_matches_type(left, &PyFloat_Type) &&
-                sym_matches_type(right, &PyFloat_Type)) {
-                REPLACE_OP(this_instr, _NOP, 0 ,0);
+            if (sym_matches_type(left, &PyFloat_Type)) {
+                if (sym_matches_type(right, &PyFloat_Type)) {
+                    REPLACE_OP(this_instr, _NOP, 0, 0);
+                }
+                else {
+                    REPLACE_OP(this_instr, _GUARD_TOS_FLOAT, 0, 0);
+                }
+            }
+            else {
+                if (sym_matches_type(right, &PyFloat_Type)) {
+                    REPLACE_OP(this_instr, _GUARD_NOS_FLOAT, 0, 0);
+                }
             }
             if (!sym_set_type(left, &PyFloat_Type)) {
                 goto hit_bottom;
@@ -342,6 +369,14 @@
             if (!sym_set_type(right, &PyFloat_Type)) {
                 goto hit_bottom;
             }
+            break;
+        }
+
+        case _GUARD_NOS_FLOAT: {
+            break;
+        }
+
+        case _GUARD_TOS_FLOAT: {
             break;
         }
 
@@ -597,6 +632,18 @@
             frame_pop(ctx);
             stack_pointer = ctx->frame->stack_pointer;
             res = retval;
+            /* Stack space handling */
+            assert(corresponding_check_stack == NULL);
+            assert(co != NULL);
+            int framesize = co->co_framesize;
+            assert(framesize > 0);
+            assert(framesize <= curr_space);
+            curr_space -= framesize;
+            co = get_code(this_instr);
+            if (co == NULL) {
+                // might be impossible, but bailing is still safe
+                goto done;
+            }
             stack_pointer[0] = res;
             stack_pointer += 1;
             break;
@@ -1529,6 +1576,11 @@
         }
 
         case _CHECK_PEP_523: {
+            /* Setting the eval frame function invalidates
+             * all executors, so no need to check dynamically */
+            if (_PyInterpreterState_GET()->eval_frame == NULL) {
+                REPLACE_OP(this_instr, _NOP, 0 ,0);
+            }
             break;
         }
 
@@ -1547,6 +1599,8 @@
         }
 
         case _CHECK_STACK_SPACE: {
+            assert(corresponding_check_stack == NULL);
+            corresponding_check_stack = this_instr;
             break;
         }
 
@@ -1610,6 +1664,28 @@
             ctx->frame = new_frame;
             ctx->curr_frame_depth++;
             stack_pointer = new_frame->stack_pointer;
+            co = get_code(this_instr);
+            if (co == NULL) {
+                // should be about to _EXIT_TRACE anyway
+                goto done;
+            }
+            /* Stack space handling */
+            int framesize = co->co_framesize;
+            assert(framesize > 0);
+            curr_space += framesize;
+            if (curr_space < 0 || curr_space > INT32_MAX) {
+                // won't fit in signed 32-bit int
+                goto done;
+            }
+            max_space = curr_space > max_space ? curr_space : max_space;
+            if (first_valid_check_stack == NULL) {
+                first_valid_check_stack = corresponding_check_stack;
+            }
+            else {
+                // delete all but the first valid _CHECK_STACK_SPACE
+                corresponding_check_stack->opcode = _NOP;
+            }
+            corresponding_check_stack = NULL;
             break;
         }
 
@@ -1810,9 +1886,27 @@
         }
 
         case _BINARY_OP: {
+            _Py_UopsSymbol *right;
+            _Py_UopsSymbol *left;
             _Py_UopsSymbol *res;
-            res = sym_new_not_null(ctx);
-            if (res == NULL) goto out_of_space;
+            right = stack_pointer[-1];
+            left = stack_pointer[-2];
+            PyTypeObject *ltype = sym_get_type(left);
+            PyTypeObject *rtype = sym_get_type(right);
+            if (ltype != NULL && (ltype == &PyLong_Type || ltype == &PyFloat_Type) &&
+                rtype != NULL && (rtype == &PyLong_Type || rtype == &PyFloat_Type))
+            {
+                if (oparg != NB_TRUE_DIVIDE && oparg != NB_INPLACE_TRUE_DIVIDE &&
+                    ltype == &PyLong_Type && rtype == &PyLong_Type) {
+                    /* If both inputs are ints and the op is not division the result is an int */
+                    OUT_OF_SPACE_IF_NULL(res = sym_new_type(ctx, &PyLong_Type));
+                }
+                else {
+                    /* For any other op combining ints/floats the result is a float */
+                    OUT_OF_SPACE_IF_NULL(res = sym_new_type(ctx, &PyFloat_Type));
+                }
+            }
+            OUT_OF_SPACE_IF_NULL(res = sym_new_unknown(ctx));
             stack_pointer[-2] = res;
             stack_pointer += -1;
             break;
@@ -1899,6 +1993,7 @@
         }
 
         case _JUMP_TO_TOP: {
+            goto done;
             break;
         }
 
@@ -1907,6 +2002,11 @@
         }
 
         case _CHECK_STACK_SPACE_OPERAND: {
+            uint32_t framesize = (uint32_t)this_instr->operand;
+            (void)framesize;
+            /* We should never see _CHECK_STACK_SPACE_OPERANDs.
+             * They are only created at the end of this pass. */
+            Py_UNREACHABLE();
             break;
         }
 
@@ -1915,6 +2015,7 @@
         }
 
         case _EXIT_TRACE: {
+            goto done;
             break;
         }
 

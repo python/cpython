@@ -104,6 +104,40 @@ Improved Error Messages
   variables. See also :ref:`using-on-controlling-color`.
   (Contributed by Pablo Galindo Salgado in :gh:`112730`.)
 
+* A common mistake is to write a script with the same name as a
+  standard library module. When this results in errors, we now
+  display a more helpful error message:
+
+  .. code-block:: shell-session
+
+    $ python random.py
+    Traceback (most recent call last):
+      File "/home/random.py", line 1, in <module>
+        import random; print(random.randint(5))
+        ^^^^^^^^^^^^^
+      File "/home/random.py", line 1, in <module>
+        import random; print(random.randint(5))
+                            ^^^^^^^^^^^^^^
+    AttributeError: module 'random' has no attribute 'randint' (consider renaming '/home/random.py' since it has the same name as the standard library module named 'random' and the import system gives it precedence)
+
+  Similarly, if a script has the same name as a third-party
+  module it attempts to import, and this results in errors,
+  we also display a more helpful error message:
+
+  .. code-block:: shell-session
+
+    $ python numpy.py
+    Traceback (most recent call last):
+      File "/home/numpy.py", line 1, in <module>
+        import numpy as np; np.array([1,2,3])
+        ^^^^^^^^^^^^^^^^^^
+      File "/home/numpy.py", line 1, in <module>
+        import numpy as np; np.array([1,2,3])
+                            ^^^^^^^^
+    AttributeError: module 'numpy' has no attribute 'array' (consider renaming '/home/numpy.py' if it has the same name as a third-party module you intended to import)
+
+  (Contributed by Shantanu Jain in :gh:`95754`.)
+
 * When an incorrect keyword argument is passed to a function, the error message
   now potentially suggests the correct keyword argument.
   (Contributed by Pablo Galindo Salgado and Shantanu Jain in :gh:`107944`.)
@@ -115,6 +149,11 @@ Improved Error Messages
         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
     TypeError: split() got an unexpected keyword argument 'max_split'. Did you mean 'maxsplit'?
 
+* Classes have a new :attr:`~class.__static_attributes__` attribute, populated by the compiler,
+  with a tuple of names of attributes of this class which are accessed
+  through ``self.X`` from any function in its body. (Contributed by Irit Katriel
+  in :gh:`115775`.)
+
 Incremental Garbage Collection
 ------------------------------
 
@@ -122,6 +161,22 @@ Incremental Garbage Collection
   This means that maximum pause times are reduced
   by an order of magnitude or more for larger heaps.
 
+Support For Mobile Platforms
+----------------------------
+
+* iOS is now a :pep:`11` supported platform. ``arm64-apple-ios``
+  (iPhone and iPad devices released after 2013) and
+  ``arm64-apple-ios-simulator`` (Xcode iOS simulator running on Apple Silicon
+  hardware) are now tier 3 platforms.
+
+  ``x86_64-apple-ios-simulator`` (Xcode iOS simulator running on older x86_64
+  hardware) is not a tier 3 supported platform, but will be supported on a
+  best-effort basis.
+
+  See :pep:`730`: for more details.
+
+  (PEP written and implementation contributed by Russell Keith-Magee in
+  :gh:`114099`.)
 
 Other Language Changes
 ======================
@@ -185,6 +240,11 @@ Other Language Changes
 
   (Contributed by Victor Stinner in :gh:`114570`.)
 
+* Added :attr:`!name` and :attr:`!mode` attributes for compressed
+  and archived file-like objects in modules :mod:`bz2`, :mod:`lzma`,
+  :mod:`tarfile` and :mod:`zipfile`.
+  (Contributed by Serhiy Storchaka in :gh:`115961`.)
+
 * Allow controlling Expat >=2.6.0 reparse deferral (:cve:`2023-52425`)
   by adding five new methods:
 
@@ -214,6 +274,9 @@ Other Language Changes
 * The :class:`configparser.ConfigParser` now accepts unnamed sections before named
   ones if configured to do so.
   (Contributed by Pedro Sousa Lacerda in :gh:`66449`.)
+
+* :ref:`annotation scope <annotation-scopes>` within class scopes can now
+  contain lambdas. (Contributed by Jelle Zijlstra in :gh:`109118`.)
 
 
 New Modules
@@ -567,6 +630,10 @@ os.path
 * On Windows, :func:`os.path.isabs` no longer considers paths starting with
   exactly one (back)slash to be absolute.
   (Contributed by Barney Gale and Jon Foster in :gh:`44626`.)
+
+* Add support of *dir_fd* and *follow_symlinks* keyword arguments in
+  :func:`shutil.chown`.
+  (Contributed by Berker Peksag and Tahia K in :gh:`62308`)
 
 pathlib
 -------
@@ -1584,6 +1651,12 @@ Changes in the Python API
   than directories only. Users may add a trailing slash to match only
   directories.
 
+* The value of the :attr:`!mode` attribute of :class:`gzip.GzipFile` was
+  changed from integer (``1`` or ``2``) to string (``'rb'`` or ``'wb'``).
+  The value of the :attr:`!mode` attribute of the readable file-like object
+  returned by :meth:`zipfile.ZipFile.open` was changed from ``'r'`` to ``'rb'``.
+  (Contributed by Serhiy Storchaka in :gh:`115961`.)
+
 * :c:func:`!PyCode_GetFirstFree` is an unstable API now and has been renamed
   to :c:func:`PyUnstable_Code_GetFirstFree`.
   (Contributed by Bogdan Romanyuk in :gh:`115781`.)
@@ -1620,6 +1693,11 @@ Build Changes
 
 * ``wasm32-emscripten`` is no longer a :pep:`11` supported platform.
   (Contributed by Brett Cannon in :gh:`115192`.)
+
+* Python now bundles the `mimalloc library <https://github.com/microsoft/mimalloc>`__.
+  It is licensed under the MIT license, see :ref:`mimalloc license <mimalloc-license>`.
+  The bundled mimalloc has custom changes, see :gh:`113141` for details.
+  (Contributed by Dino Viehland in :gh:`109914`.)
 
 
 C API Changes
@@ -2006,12 +2084,8 @@ Removed
   * ``PySys_AddWarnOption()``: use :c:member:`PyConfig.warnoptions` instead.
   * ``PySys_AddXOption()``: use :c:member:`PyConfig.xoptions` instead.
   * ``PySys_HasWarnOptions()``: use :c:member:`PyConfig.xoptions` instead.
-  * ``PySys_SetArgvEx()``: set :c:member:`PyConfig.argv` instead.
-  * ``PySys_SetArgv()``: set :c:member:`PyConfig.argv` instead.
   * ``PySys_SetPath()``: set :c:member:`PyConfig.module_search_paths` instead.
   * ``Py_SetPath()``: set :c:member:`PyConfig.module_search_paths` instead.
-  * ``Py_SetProgramName()``: set :c:member:`PyConfig.program_name` instead.
-  * ``Py_SetPythonHome()``: set :c:member:`PyConfig.home` instead.
   * ``Py_SetStandardStreamEncoding()``: set :c:member:`PyConfig.stdio_encoding`
     instead, and set also maybe :c:member:`PyConfig.legacy_windows_stdio` (on
     Windows).
@@ -2068,6 +2142,16 @@ Pending Removal in Python 3.14
 
 * Creating immutable types (:c:macro:`Py_TPFLAGS_IMMUTABLETYPE`) with mutable
   bases using the C API.
+* Functions to configure the Python initialization, deprecated in Python 3.11:
+
+  * ``PySys_SetArgvEx()``: set :c:member:`PyConfig.argv` instead.
+  * ``PySys_SetArgv()``: set :c:member:`PyConfig.argv` instead.
+  * ``Py_SetProgramName()``: set :c:member:`PyConfig.program_name` instead.
+  * ``Py_SetPythonHome()``: set :c:member:`PyConfig.home` instead.
+
+  The :c:func:`Py_InitializeFromConfig` API should be used with
+  :c:type:`PyConfig` instead.
+
 * Global configuration variables:
 
   * :c:var:`Py_DebugFlag`: use :c:member:`PyConfig.parser_debug`
