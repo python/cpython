@@ -512,8 +512,7 @@ _PyEval_FiniGIL(PyInterpreterState *interp)
     interp->ceval.gil = NULL;
 }
 
-// Function removed in the Python 3.13 API but kept in the stable ABI.
-PyAPI_FUNC(void)
+void
 PyEval_InitThreads(void)
 {
     /* Do nothing: kept for backward compatibility */
@@ -579,9 +578,8 @@ PyEval_ReleaseThread(PyThreadState *tstate)
 }
 
 #ifdef HAVE_FORK
-/* This function is called from PyOS_AfterFork_Child to destroy all threads
-   which are not running in the child process, and clear internal locks
-   which might be held by those threads. */
+/* This function is called from PyOS_AfterFork_Child to re-initialize the
+   GIL and pending calls lock. */
 PyStatus
 _PyEval_ReInitThreads(PyThreadState *tstate)
 {
@@ -598,8 +596,6 @@ _PyEval_ReInitThreads(PyThreadState *tstate)
     struct _pending_calls *pending = &tstate->interp->ceval.pending;
     _PyMutex_at_fork_reinit(&pending->mutex);
 
-    /* Destroy all threads except the current one */
-    _PyThreadState_DeleteExcept(tstate);
     return _PyStatus_OK();
 }
 #endif
@@ -671,7 +667,7 @@ _push_pending_call(struct _pending_calls *pending,
     pending->calls[i].flags = flags;
     pending->last = j;
     assert(pending->calls_to_do < NPENDINGCALLS);
-    pending->calls_to_do++;
+    _Py_atomic_add_int32(&pending->calls_to_do, 1);
     return 0;
 }
 
@@ -701,7 +697,7 @@ _pop_pending_call(struct _pending_calls *pending,
         pending->calls[i] = (struct _pending_call){0};
         pending->first = (i + 1) % NPENDINGCALLS;
         assert(pending->calls_to_do > 0);
-        pending->calls_to_do--;
+        _Py_atomic_add_int32(&pending->calls_to_do, -1);
     }
 }
 

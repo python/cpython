@@ -698,6 +698,14 @@ def get_signal_name(exitcode):
         except ValueError:
             pass
 
+    # Shell exit code (ex: WASI build)
+    if 128 < exitcode < 256:
+        signum = exitcode - 128
+        try:
+            return signal.Signals(signum).name
+        except ValueError:
+            pass
+
     try:
         return WINDOWS_STATUS[exitcode]
     except KeyError:

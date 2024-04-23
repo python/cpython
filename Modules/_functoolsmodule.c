@@ -79,12 +79,19 @@ partial_new(PyTypeObject *type, PyObject *args, PyObject *kw)
         return NULL;
     }
 
+    _functools_state *state = get_functools_state_by_type(type);
+    if (state == NULL) {
+        return NULL;
+    }
+
     pargs = pkw = NULL;
     func = PyTuple_GET_ITEM(args, 0);
-    if (Py_TYPE(func)->tp_call == (ternaryfunc)partial_call) {
-        // The type of "func" might not be exactly the same type object
-        // as "type", but if it is called using partial_call, it must have the
-        // same memory layout (fn, args and kw members).
+
+    int res = PyObject_TypeCheck(func, state->partial_type);
+    if (res == -1) {
+        return NULL;
+    }
+    if (res == 1) {
         // We can use its underlying function directly and merge the arguments.
         partialobject *part = (partialobject *)func;
         if (part->dict == NULL) {
@@ -335,8 +342,9 @@ partial_call(partialobject *pto, PyObject *args, PyObject *kwargs)
 }
 
 PyDoc_STRVAR(partial_doc,
-"partial(func, *args, **keywords) - new function with partial application\n\
-    of the given arguments and keywords.\n");
+"partial(func, /, *args, **keywords)\n--\n\n\
+Create a new function with partial application of the given arguments\n\
+and keywords.");
 
 #define OFF(x) offsetof(partialobject, x)
 static PyMemberDef partial_memberlist[] = {

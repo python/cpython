@@ -883,6 +883,10 @@ and :c:data:`PyType_Type` effectively act as defaults.)
    :c:member:`~PyTypeObject.tp_richcompare` and :c:member:`~PyTypeObject.tp_hash`, when the subtype's
    :c:member:`~PyTypeObject.tp_richcompare` and :c:member:`~PyTypeObject.tp_hash` are both ``NULL``.
 
+   **Default:**
+
+   :c:data:`PyBaseObject_Type` uses :c:func:`PyObject_GenericHash`.
+
 
 .. c:member:: ternaryfunc PyTypeObject.tp_call
 
@@ -1030,7 +1034,8 @@ and :c:data:`PyType_Type` effectively act as defaults.)
       the type, and the type object is INCREF'ed when a new instance is created, and
       DECREF'ed when an instance is destroyed (this does not apply to instances of
       subtypes; only the type referenced by the instance's ob_type gets INCREF'ed or
-      DECREF'ed).
+      DECREF'ed). Heap types should also :ref:`support garbage collection <supporting-cycle-detection>`
+      as they can form a reference cycle with their own module object.
 
       **Inheritance:**
 
