@@ -347,7 +347,7 @@ Supported operations:
 |                                | -t1.seconds*, -t1.microseconds)``,            |
 |                                | and to ``t1 * -1``. (1)(4)                    |
 +--------------------------------+-----------------------------------------------+
-| ``abs(t)``                     | equivalent to ``t`` when ``t.days >= 0``,     |
+| ``abs(t)``                     | equivalent to ``+t`` when ``t.days >= 0``,    |
 |                                | and to ``-t`` when ``t.days < 0``. (2)        |
 +--------------------------------+-----------------------------------------------+
 | ``str(t)``                     | Returns a string in the form                  |
@@ -1201,7 +1201,7 @@ Supported operations:
    input is an aware object.
 
 (2)
-   Computes the datetime2 such that ``datetime2 + timedelta == datetime1``. As for
+   Computes the ``datetime2`` such that ``datetime2 + timedelta == datetime1``. As for
    addition, the result has the same :attr:`~.datetime.tzinfo` attribute as the input
    datetime, and no time zone adjustments are done even if the input is aware.
 
@@ -2410,8 +2410,8 @@ requires, and these work on all platforms with a standard C implementation.
 |           |                                |  Samstag (de_DE)       |       |
 +-----------+--------------------------------+------------------------+-------+
 | ``%w``    | Weekday as a decimal number,   | 0, 1, ..., 6           |       |
-|           | where 0 is Sunday              |                        |       |
-|           | and 6 is Saturday.             |                        |       |
+|           | where 0 is Sunday and 6 is     |                        |       |
+|           | Saturday.                      |                        |       |
 +-----------+--------------------------------+------------------------+-------+
 | ``%d``    | Day of the month as a          | 01, 02, ..., 31        | \(9)  |
 |           | zero-padded decimal number.    |                        |       |
