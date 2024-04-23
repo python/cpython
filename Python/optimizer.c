@@ -394,6 +394,15 @@ executor_traverse(PyObject *o, visitproc visit, void *arg)
     return 0;
 }
 
+static int
+executor_is_gc(PyObject *o)
+{
+    if ((PyObject *)&COLD_EXITS[0] <= o && o < (PyObject *)&COLD_EXITS[COLD_EXIT_COUNT]) {
+        return 0;
+    }
+    return 1;
+}
+
 PyTypeObject _PyUOpExecutor_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     .tp_name = "uop_executor",
@@ -405,6 +414,7 @@ PyTypeObject _PyUOpExecutor_Type = {
     .tp_methods = executor_methods,
     .tp_traverse = executor_traverse,
     .tp_clear = executor_clear,
+    .tp_is_gc = executor_is_gc,
 };
 
 /* TO DO -- Generate these tables */
@@ -1109,8 +1119,6 @@ make_executor_from_uops(_PyUOpInstruction *buffer, int length, const _PyBloomFil
     assert(next_exit == -1);
     assert(dest == executor->trace);
     assert(dest->opcode == _START_EXECUTOR);
-    dest->oparg = 0;
-    dest->target = 0;
     _Py_ExecutorInit(executor, dependencies);
 #ifdef Py_DEBUG
     char *python_lltrace = Py_GETENV("PYTHON_LLTRACE");
@@ -1314,7 +1322,7 @@ counter_optimize(
     }
     _Py_CODEUNIT *target = instr + 1 + _PyOpcode_Caches[JUMP_BACKWARD] - oparg;
     _PyUOpInstruction buffer[5] = {
-        { .opcode = _START_EXECUTOR },
+        { .opcode = _START_EXECUTOR, .jump_target = 4, .format=UOP_FORMAT_JUMP },
         { .opcode = _LOAD_CONST_INLINE_BORROW, .operand = (uintptr_t)self },
         { .opcode = _INTERNAL_INCREMENT_OPT_COUNTER },
         { .opcode = _EXIT_TRACE, .jump_target = 4, .format=UOP_FORMAT_JUMP },

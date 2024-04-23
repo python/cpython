@@ -323,8 +323,20 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(sys_settrace__doc__,
+"settrace($module, function, /)\n"
+"--\n"
+"\n"
+"Set the global debug tracing function.\n"
+"\n"
+"It will be called on each function call.  See the debugger chapter\n"
+"in the library manual.");
+
+#define SYS_SETTRACE_METHODDEF    \
+    {"settrace", (PyCFunction)sys_settrace, METH_O, sys_settrace__doc__},
+
 PyDoc_STRVAR(sys__settraceallthreads__doc__,
-"_settraceallthreads($module, arg, /)\n"
+"_settraceallthreads($module, function, /)\n"
 "--\n"
 "\n"
 "Set the global debug tracing function in all running threads belonging to the current interpreter.\n"
@@ -355,14 +367,26 @@ sys_gettrace(PyObject *module, PyObject *Py_UNUSED(ignored))
     return sys_gettrace_impl(module);
 }
 
+PyDoc_STRVAR(sys_setprofile__doc__,
+"setprofile($module, function, /)\n"
+"--\n"
+"\n"
+"Set the profiling function.\n"
+"\n"
+"It will be called on each function call and return.  See the profiler\n"
+"chapter in the library manual.");
+
+#define SYS_SETPROFILE_METHODDEF    \
+    {"setprofile", (PyCFunction)sys_setprofile, METH_O, sys_setprofile__doc__},
+
 PyDoc_STRVAR(sys__setprofileallthreads__doc__,
-"_setprofileallthreads($module, arg, /)\n"
+"_setprofileallthreads($module, function, /)\n"
 "--\n"
 "\n"
 "Set the profiling function in all running threads belonging to the current interpreter.\n"
 "\n"
-"It will be called on each function call and return.  See the profiler chapter\n"
-"in the library manual.");
+"It will be called on each function call and return.  See the profiler\n"
+"chapter in the library manual.");
 
 #define SYS__SETPROFILEALLTHREADS_METHODDEF    \
     {"_setprofileallthreads", (PyCFunction)sys__setprofileallthreads, METH_O, sys__setprofileallthreads__doc__},
@@ -1504,4 +1528,4 @@ exit:
 #ifndef SYS_GETANDROIDAPILEVEL_METHODDEF
     #define SYS_GETANDROIDAPILEVEL_METHODDEF
 #endif /* !defined(SYS_GETANDROIDAPILEVEL_METHODDEF) */
-/*[clinic end generated code: output=b8b1c53e04c3b20c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=518424ee03e353b0 input=a9049054013a1b77]*/
