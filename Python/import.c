@@ -1173,8 +1173,9 @@ is_core_module(PyInterpreterState *interp, PyObject *name, PyObject *path)
 
 
 static int
-fix_up_extension(PyThreadState *tstate, PyObject *mod, PyModuleDef *def,
-                 PyObject *name, PyObject *path)
+update_global_state_for_extension(PyThreadState *tstate,
+                                  PyObject *mod, PyModuleDef *def,
+                                  PyObject *name, PyObject *path)
 {
     assert(mod != NULL && PyModule_Check(mod));
     assert(def == _PyModule_GetDef(mod));
@@ -1254,7 +1255,9 @@ _PyImport_FixupExtensionObject(PyObject *mod, PyObject *name,
     }
 
     PyThreadState *tstate = _PyThreadState_GET();
-    if (fix_up_extension(tstate, mod, def, name, filename) < 0) {
+    if (update_global_state_for_extension(
+            tstate, mod, def, name, filename) < 0)
+    {
         return -1;
     }
     if (finish_singlephase_extension(tstate, mod, def, name, modules) < 0) {
@@ -1390,7 +1393,9 @@ _PyImport_FixupBuiltin(PyThreadState *tstate, PyObject *mod, const char *name,
         goto finally;
     }
 
-    if (fix_up_extension(tstate, mod, def, nameobj, nameobj) < 0) {
+    if (update_global_state_for_extension(
+            tstate, mod, def, nameobj, nameobj) < 0)
+    {
         goto finally;
     }
     if (finish_singlephase_extension(tstate, mod, def, nameobj, modules) < 0) {
@@ -1466,7 +1471,9 @@ create_builtin(PyThreadState *tstate, PyObject *name, PyObject *spec)
         /* Remember pointer to module init function. */
         def->m_base.m_init = p0;
 
-        if (fix_up_extension(tstate, mod, def, name, name) < 0) {
+        if (update_global_state_for_extension(
+                tstate, mod, def, name, name) < 0)
+        {
             return NULL;
         }
         PyObject *modules = get_modules_dict(tstate, true);
