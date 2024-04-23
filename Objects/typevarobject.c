@@ -495,12 +495,18 @@ variables::\n\
     class StrOrBytesSequence[A: (str, bytes)]:\n\
         ...\n\
 \n\
+Type variables can also have defaults:\n\
+\n\
+    class IntDefault[T = int]:\n\
+        ...\n\
+\n\
 However, if desired, reusable type variables can also be constructed\n\
 manually, like so::\n\
 \n\
    T = TypeVar('T')  # Can be anything\n\
    S = TypeVar('S', bound=str)  # Can be any subtype of str\n\
    A = TypeVar('A', str, bytes)  # Must be exactly str or bytes\n\
+   D = TypeVar('D', default=int)  # Defaults to int\n\
 \n\
 Type variables exist primarily for the benefit of static type\n\
 checkers.  They serve as the parameters for generic types as well\n\
@@ -1019,10 +1025,17 @@ where the use of '**' creates a parameter specification::\n\
 \n\
     type IntFunc[**P] = Callable[P, int]\n\
 \n\
+The following syntax creates a parameter specification that defaults\n\
+to a callable accepting two positional-only arguments of types int\n\
+and str:\n\
+\n\
+    type IntFuncDefault[**P = (int, str)] = Callable[P, int]\n\
+\n\
 For compatibility with Python 3.11 and earlier, ParamSpec objects\n\
 can also be created as follows::\n\
 \n\
     P = ParamSpec('P')\n\
+    DefaultP = ParamSpec('DefaultP', default=(int, str))\n\
 \n\
 Parameter specification variables exist primarily for the benefit of\n\
 static type checkers.  They are used to forward the parameter types of\n\
@@ -1294,10 +1307,15 @@ where a single '*' indicates a type variable tuple::\n\
     def move_first_element_to_last[T, *Ts](tup: tuple[T, *Ts]) -> tuple[*Ts, T]:\n\
         return (*tup[1:], tup[0])\n\
 \n\
+Type variables tuples can have default values:\n\
+\n\
+    type AliasWithDefault[*Ts = (str, int)] = tuple[*Ts]\n\
+\n\
 For compatibility with Python 3.11 and earlier, TypeVarTuple objects\n\
 can also be created as follows::\n\
 \n\
     Ts = TypeVarTuple('Ts')  # Can be given any name\n\
+    DefaultTs = TypeVarTuple('Ts', default=(str, int))\n\
 \n\
 Just as a TypeVar (type variable) is a placeholder for a single type,\n\
 a TypeVarTuple is a placeholder for an *arbitrary* number of types. For\n\

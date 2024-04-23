@@ -282,7 +282,7 @@ def _collect_parameters(args):
                         parameters.append(collected)
         elif hasattr(t, '__typing_subst__'):
             if t not in parameters:
-                if getattr(t, '__default__', None) is not None:
+                if t.__default__ is not None:
                     default_encountered = True
                 elif default_encountered:
                     raise TypeError(f'Type parameter {t!r} without a default'
@@ -314,11 +314,10 @@ def _check_generic(cls, parameters, elen):
             if alen < elen:
                 # since we validate TypeVarLike default in _collect_type_vars
                 # or _collect_parameters we can safely check parameters[alen]
-                if getattr(parameters[alen], '__default__', None) is not None:
+                if parameters[alen].__default__ is not None:
                     return
 
-                num_default_tv = sum(getattr(p, '__default__', None)
-                                        is not None for p in parameters)
+                num_default_tv = sum(p.__default__ is not None for p in parameters)
 
                 elen -= num_default_tv
 
