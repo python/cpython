@@ -524,9 +524,9 @@ io
 inspect
 -------
 
-* Add *skip_bound_arg* parameter to :func:`inspect.Signature.from_callable`
+* Add *bound_arg* parameter to :func:`inspect.Signature.from_callable`
   and :func:`inspect.signature`: keep the ``self`` parameter
-  in the signature if *skip_bound_arg* is False.
+  in the method signature if *bound_arg* is True.
   (Contributed by Nikita Sobolev in :gh:`108901`.)
 
 ipaddress

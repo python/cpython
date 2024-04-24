@@ -651,7 +651,7 @@ and its return annotation. To retrieve a :class:`!Signature` object,
 use the :func:`!signature`
 function.
 
-.. function:: signature(callable, *, follow_wrapped=True, skip_bound_arg=True, globals=None, locals=None, eval_str=False)
+.. function:: signature(callable, *, follow_wrapped=True, bound_arg=False, globals=None, locals=None, eval_str=False)
 
    Return a :class:`Signature` object for the given *callable*:
 
@@ -678,7 +678,8 @@ function.
    If *follow_wrapped* is ``False`` *callable* will not be unwrapped
    (``callable.__wrapped__`` will not be used to unwrap decorated callables).
 
-   If *skip_bound_arg* is ``False``, keep ``self`` parameter in a signature.
+   If *bound_arg* is ``False``, remove ``self`` parameter
+   from the method signature.
 
    For objects defined in modules using stringized annotations
    (``from __future__ import annotations``), :func:`signature` will
@@ -706,7 +707,7 @@ function.
       The *globals*, *locals*, and *eval_str* parameters were added.
 
    .. versionchanged:: 3.13
-      The *skip_bound_arg* parameter was added.
+      The *bound_arg* parameter was added.
 
    .. note::
 
@@ -811,7 +812,7 @@ function.
 
       .. versionadded:: 3.13
 
-   .. classmethod:: Signature.from_callable(obj, *, follow_wrapped=True, skip_bound_arg=True,  globals=None, locals=None, eval_str=False)
+   .. classmethod:: Signature.from_callable(obj, *, follow_wrapped=True, bound_arg=False,  globals=None, locals=None, eval_str=False)
 
        Return a :class:`Signature` (or its subclass) object for a given callable
        *obj*.
@@ -833,7 +834,7 @@ function.
          The *globals*, *locals*, and *eval_str* parameters were added.
 
        .. versionchanged:: 3.13
-         The *skip_bound_arg* parameter was added.
+         The *bound_arg* parameter was added.
 
 
 .. class:: Parameter(name, kind, *, default=Parameter.empty, annotation=Parameter.empty)
