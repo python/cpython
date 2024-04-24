@@ -358,7 +358,7 @@ _PyImport_RunModInitFunc(PyModInitFunction p0,
     return 0;
 
 error:
-    assert((PyErr_Occurred() == NULL) != (res.err[0] == '\0'));
+    assert(PyErr_Occurred() || res.err[0] != '\0');
     Py_CLEAR(res.module);
     res.def = NULL;
     *p_res = res;
