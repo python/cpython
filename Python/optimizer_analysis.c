@@ -554,9 +554,6 @@ remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
                     needs_ip = true;
                     may_have_escaped = true;
                 }
-                if (_PyUop_Flags[opcode] & HAS_ERROR_FLAG) {
-                    needs_ip = true;
-                }
                 if (needs_ip && last_set_ip >= 0) {
                     if (buffer[last_set_ip].opcode == _CHECK_VALIDITY) {
                         buffer[last_set_ip].opcode = _CHECK_VALIDITY_AND_SET_IP;
