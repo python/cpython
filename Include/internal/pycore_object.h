@@ -12,6 +12,7 @@ extern "C" {
 #include "pycore_gc.h"            // _PyObject_GC_IS_TRACKED()
 #include "pycore_emscripten_trampoline.h" // _PyCFunction_TrampolineCall()
 #include "pycore_interp.h"        // PyInterpreterState.gc
+#include "pycore_pyatomic_ft_wrappers.h"  // FT_ATOMIC_STORE_PTR_RELAXED
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 
 /* Check if an object is consistent. For example, ensure that the reference
@@ -659,10 +660,10 @@ extern PyObject* _PyType_GetDocFromInternalDoc(const char *, const char *);
 extern PyObject* _PyType_GetTextSignatureFromInternalDoc(const char *, const char *, int);
 
 void _PyObject_InitInlineValues(PyObject *obj, PyTypeObject *tp);
-extern int _PyObject_StoreInstanceAttribute(PyObject *obj, PyDictValues *values,
-                                          PyObject *name, PyObject *value);
-PyObject * _PyObject_GetInstanceAttribute(PyObject *obj, PyDictValues *values,
-                                        PyObject *name);
+extern int _PyObject_StoreInstanceAttribute(PyObject *obj,
+                                            PyObject *name, PyObject *value);
+extern bool _PyObject_TryGetInstanceAttribute(PyObject *obj, PyObject *name,
+                                              PyObject **attr);
 
 #ifdef Py_GIL_DISABLED
 #  define MANAGED_DICT_OFFSET    (((Py_ssize_t)sizeof(PyObject *))*-1)
@@ -681,6 +682,13 @@ _PyObject_ManagedDictPointer(PyObject *obj)
 {
     assert(Py_TYPE(obj)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
     return (PyManagedDictPointer *)((char *)obj + MANAGED_DICT_OFFSET);
+}
+
+static inline PyDictObject *
+_PyObject_GetManagedDict(PyObject *obj)
+{
+    PyManagedDictPointer *dorv = _PyObject_ManagedDictPointer(obj);
+    return (PyDictObject *)FT_ATOMIC_LOAD_PTR_RELAXED(dorv->dict);
 }
 
 static inline PyDictValues *
