@@ -53,7 +53,7 @@ class TextLogStream(io.TextIOWrapper):
         for line, line_keepends in zip(
             s.splitlines(), s.splitlines(keepends=True)
         ):
-            # Simplify the later stages by translating all newlines into "\n".
+            # Normalize all newlines to "\n".
             if line != line_keepends:
                 line += "\n"
             while line:
