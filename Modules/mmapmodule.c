@@ -319,7 +319,7 @@ mmap_read_method(mmap_object *self,
     if (num_bytes < 0 || num_bytes > remaining)
         num_bytes = remaining;
 
-    #if defined(MS_WIN32) && !defined(DONT_USE_SEH)
+#if defined(MS_WIN32) && !defined(DONT_USE_SEH)
     EXCEPTION_RECORD record;
     __try {
         result = PyBytes_FromStringAndSize(&self->data[self->pos], num_bytes);
@@ -330,10 +330,10 @@ mmap_read_method(mmap_object *self,
         PyErr_SetFromWindowsErr(code);
         result = NULL;
     }
-    #else
+#else
     result = PyBytes_FromStringAndSize(&self->data[self->pos], num_bytes);
     self->pos += num_bytes;
-    #endif
+#endif
 
     return result;
 }
