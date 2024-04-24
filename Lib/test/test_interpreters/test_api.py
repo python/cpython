@@ -174,9 +174,6 @@ class GetCurrentTests(TestBase):
 
     @requires_test_modules
     def test_created_with_capi(self):
-        last = 0
-        for id, *_ in _interpreters.list_all():
-            last = max(last, id)
         expected = _testinternalcapi.next_interpreter_id()
         text = self.run_temp_from_capi(f"""
             import {interpreters.__name__} as interpreters

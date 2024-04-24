@@ -2384,9 +2384,10 @@ AS_CASE([$ac_sys_system],
       AS_VAR_APPEND([LDFLAGS_NODIST], [" -Wl,--max-memory=10485760"])
     ])
 
-    dnl increase initial memory and stack size, move stack first
+    dnl gh-117645: Set the memory size to 20 MiB, the stack size to 8 MiB,
+    dnl and move the stack first.
     dnl https://github.com/WebAssembly/wasi-libc/issues/233
-    AS_VAR_APPEND([LDFLAGS_NODIST], [" -z stack-size=524288 -Wl,--stack-first -Wl,--initial-memory=10485760"])
+    AS_VAR_APPEND([LDFLAGS_NODIST], [" -z stack-size=8388608 -Wl,--stack-first -Wl,--initial-memory=20971520"])
   ]
 )
 
@@ -4778,7 +4779,7 @@ elif test "$disable_gil" = "yes"; then
 fi
 
 AC_MSG_RESULT([$with_mimalloc])
-AC_SUBST([WITH_MIMALLOC])
+AC_SUBST([INSTALL_MIMALLOC], [$with_mimalloc])
 AC_SUBST([MIMALLOC_HEADERS])
 
 # Check for Python-specific malloc support
@@ -6339,6 +6340,21 @@ AS_VAR_IF([with_readline], [no], [
 
     # in readline as well as newer editline (April 2023)
     AC_CHECK_TYPES([rl_compdisp_func_t], [], [], [readline_includes])
+
+    # Some editline versions declare rl_startup_hook as taking no args, others
+    # declare it as taking 2.
+    AC_CACHE_CHECK([if rl_startup_hook takes arguments], [ac_cv_readline_rl_startup_hook_takes_args], [
+        AC_COMPILE_IFELSE(
+            [AC_LANG_PROGRAM([readline_includes]
+                [extern int test_hook_func(const char *text, int state);],
+                [rl_startup_hook=test_hook_func;])],
+            [ac_cv_readline_rl_startup_hook_takes_args=yes],
+            [ac_cv_readline_rl_startup_hook_takes_args=no]
+        )
+    ])
+    AS_VAR_IF([ac_cv_readline_rl_startup_hook_takes_args], [yes], [
+      AC_DEFINE([Py_RL_STARTUP_HOOK_TAKES_ARGS], [1], [Define if rl_startup_hook takes arguments])
+    ])
 
     m4_undefine([readline_includes])
   ])dnl WITH_SAVE_ENV()

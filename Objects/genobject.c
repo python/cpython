@@ -2246,6 +2246,7 @@ async_gen_athrow_throw(PyAsyncGenAThrow *o, PyObject *const *args, Py_ssize_t na
         retval = async_gen_unwrap_value(o->agt_gen, retval);
         if (retval == NULL) {
             o->agt_gen->ag_running_async = 0;
+            o->agt_state = AWAITABLE_STATE_CLOSED;
         }
         return retval;
     } else {
@@ -2259,6 +2260,7 @@ async_gen_athrow_throw(PyAsyncGenAThrow *o, PyObject *const *args, Py_ssize_t na
         }
         if (retval == NULL) {
             o->agt_gen->ag_running_async = 0;
+            o->agt_state = AWAITABLE_STATE_CLOSED;
         }
         if (PyErr_ExceptionMatches(PyExc_StopAsyncIteration) ||
             PyErr_ExceptionMatches(PyExc_GeneratorExit))
