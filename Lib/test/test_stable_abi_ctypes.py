@@ -6,7 +6,10 @@
 import sys
 import unittest
 from test.support.import_helper import import_module
-from _testcapi import get_feature_macros
+try:
+    from _testcapi import get_feature_macros
+except ImportError:
+    raise unittest.SkipTest("requires _testcapi")
 
 feature_macros = get_feature_macros()
 
@@ -706,7 +709,10 @@ SYMBOL_NAMES = (
     "PyType_GenericAlloc",
     "PyType_GenericNew",
     "PyType_GetFlags",
+    "PyType_GetFullyQualifiedName",
     "PyType_GetModule",
+    "PyType_GetModuleByDef",
+    "PyType_GetModuleName",
     "PyType_GetModuleState",
     "PyType_GetName",
     "PyType_GetQualName",
@@ -854,6 +860,8 @@ SYMBOL_NAMES = (
     "Py_GetArgcArgv",
     "Py_GetBuildInfo",
     "Py_GetCompiler",
+    "Py_GetConstant",
+    "Py_GetConstantBorrowed",
     "Py_GetCopyright",
     "Py_GetExecPrefix",
     "Py_GetPath",

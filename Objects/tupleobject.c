@@ -349,8 +349,8 @@ tuplelength(PyTupleObject *a)
     return Py_SIZE(a);
 }
 
-int
-_PyTuple_Contains(PyTupleObject *a, PyObject *el)
+static int
+tuplecontains(PyTupleObject *a, PyObject *el)
 {
     Py_ssize_t i;
     int cmp;
@@ -758,7 +758,7 @@ static PySequenceMethods tuple_as_sequence = {
     0,                                          /* sq_slice */
     0,                                          /* sq_ass_item */
     0,                                          /* sq_ass_slice */
-    (objobjproc)_PyTuple_Contains,              /* sq_contains */
+    (objobjproc)tuplecontains,                  /* sq_contains */
 };
 
 static PyObject*
@@ -946,7 +946,7 @@ _PyTuple_Resize(PyObject **pv, Py_ssize_t newsize)
     if (sv == NULL) {
         *pv = NULL;
 #ifdef Py_REF_DEBUG
-        _Py_DecRefTotal(_PyInterpreterState_GET());
+        _Py_DecRefTotal(_PyThreadState_GET());
 #endif
         PyObject_GC_Del(v);
         return -1;

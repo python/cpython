@@ -304,30 +304,6 @@ PyEvent_WaitTimed(PyEvent *evt, PyTime_t timeout_ns)
     }
 }
 
-_PyEventRc *
-_PyEventRc_New(void)
-{
-    _PyEventRc *erc = (_PyEventRc *)PyMem_RawCalloc(1, sizeof(_PyEventRc));
-    if (erc != NULL) {
-        erc->refcount = 1;
-    }
-    return erc;
-}
-
-void
-_PyEventRc_Incref(_PyEventRc *erc)
-{
-    _Py_atomic_add_ssize(&erc->refcount, 1);
-}
-
-void
-_PyEventRc_Decref(_PyEventRc *erc)
-{
-    if (_Py_atomic_add_ssize(&erc->refcount, -1) == 1) {
-        PyMem_RawFree(erc);
-    }
-}
-
 static int
 unlock_once(_PyOnceFlag *o, int res)
 {
@@ -496,7 +472,7 @@ _PyRWMutex_Unlock(_PyRWMutex *rwmutex)
 
 void _PySeqLock_LockWrite(_PySeqLock *seqlock)
 {
-    // lock the entry by setting by moving to an odd sequence number
+    // lock by moving to an odd sequence number
     uint32_t prev = _Py_atomic_load_uint32_relaxed(&seqlock->sequence);
     while (1) {
         if (SEQLOCK_IS_UPDATING(prev)) {
@@ -516,14 +492,14 @@ void _PySeqLock_LockWrite(_PySeqLock *seqlock)
 
 void _PySeqLock_AbandonWrite(_PySeqLock *seqlock)
 {
-    uint32_t new_seq = seqlock->sequence - 1;
+    uint32_t new_seq = _Py_atomic_load_uint32_relaxed(&seqlock->sequence) - 1;
     assert(!SEQLOCK_IS_UPDATING(new_seq));
     _Py_atomic_store_uint32(&seqlock->sequence, new_seq);
 }
 
 void _PySeqLock_UnlockWrite(_PySeqLock *seqlock)
 {
-    uint32_t new_seq = seqlock->sequence + 1;
+    uint32_t new_seq = _Py_atomic_load_uint32_relaxed(&seqlock->sequence) + 1;
     assert(!SEQLOCK_IS_UPDATING(new_seq));
     _Py_atomic_store_uint32(&seqlock->sequence, new_seq);
 }

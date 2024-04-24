@@ -22,13 +22,13 @@
 
 #define DEFAULT_BLOCK_SIZE 16
 
-typedef _PyCompilerSrcLocation location;
-typedef _PyCfgJumpTargetLabel jump_target_label;
+typedef _Py_SourceLocation location;
+typedef _PyJumpTargetLabel jump_target_label;
 
 typedef struct _PyCfgInstruction {
     int i_opcode;
     int i_oparg;
-    _PyCompilerSrcLocation i_loc;
+    _Py_SourceLocation i_loc;
     struct _PyCfgBasicblock *i_target; /* target block (if jump instruction) */
     struct _PyCfgBasicblock *i_except; /* target block when exception is raised */
 } cfg_instr;
@@ -40,7 +40,7 @@ typedef struct _PyCfgBasicblock {
        control flow. */
     struct _PyCfgBasicblock *b_list;
     /* The label of this block if it is a jump target, -1 otherwise */
-    _PyCfgJumpTargetLabel b_label;
+    _PyJumpTargetLabel b_label;
     /* Exception stack at start of block, used by assembler to create the exception handling table */
     struct _PyCfgExceptStack *b_exceptstack;
     /* pointer to an array of instructions, initially NULL */
@@ -81,7 +81,7 @@ struct _PyCfgBuilder {
     /* pointer to the block currently being constructed */
     struct _PyCfgBasicblock *g_curblock;
     /* label for the next instruction to be placed */
-    _PyCfgJumpTargetLabel g_current_label;
+    _PyJumpTargetLabel g_current_label;
 };
 
 typedef struct _PyCfgBuilder cfg_builder;
@@ -92,7 +92,7 @@ static const jump_target_label NO_LABEL = {-1};
 #define IS_LABEL(L) (!SAME_LABEL((L), (NO_LABEL)))
 
 #define LOCATION(LNO, END_LNO, COL, END_COL) \
-    ((const _PyCompilerSrcLocation){(LNO), (END_LNO), (COL), (END_COL)})
+    ((const _Py_SourceLocation){(LNO), (END_LNO), (COL), (END_COL)})
 
 static inline int
 is_block_push(cfg_instr *i)
@@ -2712,25 +2712,26 @@ prepare_localsplus(_PyCompile_CodeUnitMetadata *umd, cfg_builder *g, int code_fl
 }
 
 int
-_PyCfg_ToInstructionSequence(cfg_builder *g, _PyCompile_InstructionSequence *seq)
+_PyCfg_ToInstructionSequence(cfg_builder *g, _PyInstructionSequence *seq)
 {
     int lbl = 0;
     for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
         b->b_label = (jump_target_label){lbl};
-        lbl += b->b_iused;
+        lbl += 1;
     }
     for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
-        RETURN_IF_ERROR(_PyCompile_InstructionSequence_UseLabel(seq, b->b_label.id));
+        RETURN_IF_ERROR(_PyInstructionSequence_UseLabel(seq, b->b_label.id));
         for (int i = 0; i < b->b_iused; i++) {
             cfg_instr *instr = &b->b_instr[i];
-            if (OPCODE_HAS_JUMP(instr->i_opcode) || is_block_push(instr)) {
+            if (HAS_TARGET(instr->i_opcode)) {
+                /* Set oparg to the label id (it will later be mapped to an offset) */
                 instr->i_oparg = instr->i_target->b_label.id;
             }
             RETURN_IF_ERROR(
-                _PyCompile_InstructionSequence_Addop(
+                _PyInstructionSequence_Addop(
                     seq, instr->i_opcode, instr->i_oparg, instr->i_loc));
 
-            _PyCompile_ExceptHandlerInfo *hi = &seq->s_instrs[seq->s_used-1].i_except_handler_info;
+            _PyExceptHandlerInfo *hi = &seq->s_instrs[seq->s_used-1].i_except_handler_info;
             if (instr->i_except != NULL) {
                 hi->h_label = instr->i_except->b_label.id;
                 hi->h_startdepth = instr->i_except->b_startdepth;
@@ -2749,7 +2750,7 @@ int
 _PyCfg_OptimizedCfgToInstructionSequence(cfg_builder *g,
                                      _PyCompile_CodeUnitMetadata *umd, int code_flags,
                                      int *stackdepth, int *nlocalsplus,
-                                     _PyCompile_InstructionSequence *seq)
+                                     _PyInstructionSequence *seq)
 {
     *stackdepth = calculate_stackdepth(g);
     if (*stackdepth < 0) {

@@ -198,6 +198,7 @@ Python/pystate.c	-	_Py_tss_tstate	-
 
 Include/internal/pycore_blocks_output_buffer.h	-	BUFFER_BLOCK_SIZE	-
 Modules/_csv.c	-	quote_styles	-
+Modules/_ctypes/_ctypes.c	-	_ctypesmodule	-
 Modules/_ctypes/cfield.c	-	ffi_type_double	-
 Modules/_ctypes/cfield.c	-	ffi_type_float	-
 Modules/_ctypes/cfield.c	-	ffi_type_longdouble	-
@@ -444,7 +445,6 @@ Modules/_testcapi/heaptype.c	-	_testcapimodule	-
 Modules/_testcapi/mem.c	-	FmData	-
 Modules/_testcapi/mem.c	-	FmHook	-
 Modules/_testcapi/structmember.c	-	test_structmembersType_OldAPI	-
-Modules/_testcapi/unicode.c	-	_testcapimodule	-
 Modules/_testcapi/watchers.c	-	g_dict_watch_events	-
 Modules/_testcapi/watchers.c	-	g_dict_watchers_installed	-
 Modules/_testcapi/watchers.c	-	g_type_modified_events	-
@@ -741,3 +741,6 @@ Modules/expat/xmlrole.c	-	error	-
 Modules/_io/_iomodule.c	-	_PyIO_Module	-
 Modules/_sqlite/module.c	-	_sqlite3module	-
 Modules/clinic/md5module.c.h	_md5_md5	_keywords	-
+Modules/clinic/grpmodule.c.h	grp_getgrgid	_keywords	-
+Modules/clinic/grpmodule.c.h	grp_getgrnam	_keywords	-
+Objects/object.c	-	constants	static PyObject*[]

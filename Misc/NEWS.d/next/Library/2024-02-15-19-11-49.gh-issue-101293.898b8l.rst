@@ -1,4 +1,0 @@
-Support callables with the ``__call__()`` method and types with
-``__new__()`` and ``__init__()`` methods set to class methods, static
-methods, bound methods, partial functions, and other types of methods and
-descriptors in :meth:`inspect.Signature.from_callable`.
