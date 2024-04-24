@@ -11,6 +11,7 @@ import unittest
 import asyncio
 from test import support
 from test.support import requires_specialization, script_helper
+from test.support.import_helper import import_module
 
 PAIR = (0,1)
 
@@ -1807,19 +1808,37 @@ class TestRegressions(MonitoringTestBase, unittest.TestCase):
         sys.monitoring.set_events(0, E.LINE | E.INSTRUCTION)
         sys.monitoring.set_events(0, 0)
 
+    def test_call_function_ex(self):
+        def f(a=1, b=2):
+            return a + b
+        args = (1, 2)
+        empty_args = []
+
+        call_data = []
+        sys.monitoring.use_tool_id(0, "test")
+        self.addCleanup(sys.monitoring.free_tool_id, 0)
+        sys.monitoring.set_events(0, 0)
+        sys.monitoring.register_callback(0, E.CALL, lambda code, offset, callable, arg0: call_data.append((callable, arg0)))
+        sys.monitoring.set_events(0, E.CALL)
+        f(*args)
+        f(*empty_args)
+        sys.monitoring.set_events(0, 0)
+        self.assertEqual(call_data[0], (f, 1))
+        self.assertEqual(call_data[1], (f, sys.monitoring.MISSING))
+
 
 class TestOptimizer(MonitoringTestBase, unittest.TestCase):
 
     def setUp(self):
-        import _testinternalcapi
+        _testinternalcapi = import_module("_testinternalcapi")
         self.old_opt = _testinternalcapi.get_optimizer()
         opt = _testinternalcapi.new_counter_optimizer()
         _testinternalcapi.set_optimizer(opt)
         super(TestOptimizer, self).setUp()
 
     def tearDown(self):
-        import _testinternalcapi
         super(TestOptimizer, self).tearDown()
+        import _testinternalcapi
         _testinternalcapi.set_optimizer(self.old_opt)
 
     def test_for_loop(self):

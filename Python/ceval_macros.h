@@ -262,7 +262,7 @@ GETITEM(PyObject *v, Py_ssize_t i) {
         STAT_INC(opcode, miss);                                  \
         STAT_INC((INSTNAME), miss);                              \
         /* The counter is always the first cache entry: */       \
-        if (ADAPTIVE_COUNTER_IS_ZERO(next_instr->cache)) {       \
+        if (ADAPTIVE_COUNTER_TRIGGERS(next_instr->cache)) {       \
             STAT_INC((INSTNAME), deopt);                         \
         }                                                        \
     } while (0)
@@ -290,29 +290,28 @@ GETITEM(PyObject *v, Py_ssize_t i) {
         dtrace_function_entry(frame); \
     }
 
-#define ADAPTIVE_COUNTER_IS_ZERO(COUNTER) \
-    (((COUNTER) >> ADAPTIVE_BACKOFF_BITS) == 0)
-
-#define ADAPTIVE_COUNTER_IS_MAX(COUNTER) \
-    (((COUNTER) >> ADAPTIVE_BACKOFF_BITS) == ((1 << MAX_BACKOFF_VALUE) - 1))
+/* This takes a uint16_t instead of a _Py_BackoffCounter,
+ * because it is used directly on the cache entry in generated code,
+ * which is always an integral type. */
+#define ADAPTIVE_COUNTER_TRIGGERS(COUNTER) \
+    backoff_counter_triggers(forge_backoff_counter((COUNTER)))
 
 #ifdef Py_GIL_DISABLED
-#define DECREMENT_ADAPTIVE_COUNTER(COUNTER)                             \
-    do {                                                                \
-        /* gh-115999 tracks progress on addressing this. */             \
+#define ADVANCE_ADAPTIVE_COUNTER(COUNTER) \
+    do { \
+        /* gh-115999 tracks progress on addressing this. */ \
         static_assert(0, "The specializing interpreter is not yet thread-safe"); \
     } while (0);
 #else
-#define DECREMENT_ADAPTIVE_COUNTER(COUNTER)           \
-    do {                                              \
-        assert(!ADAPTIVE_COUNTER_IS_ZERO((COUNTER))); \
-        (COUNTER) -= (1 << ADAPTIVE_BACKOFF_BITS);    \
+#define ADVANCE_ADAPTIVE_COUNTER(COUNTER) \
+    do { \
+        (COUNTER) = advance_backoff_counter((COUNTER)); \
     } while (0);
 #endif
 
-#define INCREMENT_ADAPTIVE_COUNTER(COUNTER)          \
-    do {                                             \
-        (COUNTER) += (1 << ADAPTIVE_BACKOFF_BITS);   \
+#define PAUSE_ADAPTIVE_COUNTER(COUNTER) \
+    do { \
+        (COUNTER) = pause_backoff_counter((COUNTER)); \
     } while (0);
 
 #define UNBOUNDLOCAL_ERROR_MSG \
@@ -392,6 +391,7 @@ stack_pointer = _PyFrame_GetStackPointer(frame);
 #ifdef _Py_JIT
 #define GOTO_TIER_TWO(EXECUTOR)                        \
 do {                                                   \
+    OPT_STAT_INC(traces_executed);                     \
     jit_func jitted = (EXECUTOR)->jit_code;            \
     next_instr = jitted(frame, stack_pointer, tstate); \
     Py_DECREF(tstate->previous_executor);              \
@@ -406,6 +406,7 @@ do {                                                   \
 #else
 #define GOTO_TIER_TWO(EXECUTOR) \
 do { \
+    OPT_STAT_INC(traces_executed); \
     next_uop = (EXECUTOR)->trace; \
     assert(next_uop->opcode == _START_EXECUTOR || next_uop->opcode == _COLD_EXIT); \
     goto enter_tier_two; \
@@ -423,3 +424,9 @@ do { \
 #define CURRENT_OPARG() (next_uop[-1].oparg)
 
 #define CURRENT_OPERAND() (next_uop[-1].operand)
+
+#define JUMP_TO_JUMP_TARGET() goto jump_to_jump_target
+#define JUMP_TO_ERROR() goto jump_to_error_target
+#define GOTO_UNWIND() goto error_tier_two
+#define EXIT_TO_TRACE() goto exit_to_trace
+#define EXIT_TO_TIER1() goto exit_to_tier1

@@ -10,7 +10,8 @@
 """
 #    This module is maintained by Marc-Andre Lemburg <mal@egenix.com>.
 #    If you find problems, please submit bug reports/patches via the
-#    Python bug tracker (http://bugs.python.org) and assign them to "lemburg".
+#    Python issue tracker (https://github.com/python/cpython/issues) and
+#    mention "@malemburg".
 #
 #    Still needed:
 #    * support for MS-DOS (PythonDX ?)
@@ -496,6 +497,30 @@ def mac_ver(release='', versioninfo=('', '', ''), machine=''):
     # If that also doesn't work return the default values
     return release, versioninfo, machine
 
+
+# A namedtuple for iOS version information.
+IOSVersionInfo = collections.namedtuple(
+    "IOSVersionInfo",
+    ["system", "release", "model", "is_simulator"]
+)
+
+
+def ios_ver(system="", release="", model="", is_simulator=False):
+    """Get iOS version information, and return it as a namedtuple:
+        (system, release, model, is_simulator).
+
+    If values can't be determined, they are set to values provided as
+    parameters.
+    """
+    if sys.platform == "ios":
+        import _ios_support
+        result = _ios_support.get_platform_ios()
+        if result is not None:
+            return IOSVersionInfo(*result)
+
+    return IOSVersionInfo(system, release, model, is_simulator)
+
+
 def _java_getprop(name, default):
     """This private helper is deprecated in 3.13 and will be removed in 3.15"""
     from java.lang import System
@@ -541,6 +566,47 @@ def java_ver(release='', vendor='', vminfo=('', '', ''), osinfo=('', '', '')):
     osinfo = os_name, os_version, os_arch
 
     return release, vendor, vminfo, osinfo
+
+
+AndroidVer = collections.namedtuple(
+    "AndroidVer", "release api_level manufacturer model device is_emulator")
+
+def android_ver(release="", api_level=0, manufacturer="", model="", device="",
+                is_emulator=False):
+    if sys.platform == "android":
+        try:
+            from ctypes import CDLL, c_char_p, create_string_buffer
+        except ImportError:
+            pass
+        else:
+            # An NDK developer confirmed that this is an officially-supported
+            # API (https://stackoverflow.com/a/28416743). Use `getattr` to avoid
+            # private name mangling.
+            system_property_get = getattr(CDLL("libc.so"), "__system_property_get")
+            system_property_get.argtypes = (c_char_p, c_char_p)
+
+            def getprop(name, default):
+                # https://android.googlesource.com/platform/bionic/+/refs/tags/android-5.0.0_r1/libc/include/sys/system_properties.h#39
+                PROP_VALUE_MAX = 92
+                buffer = create_string_buffer(PROP_VALUE_MAX)
+                length = system_property_get(name.encode("UTF-8"), buffer)
+                if length == 0:
+                    # This API doesn’t distinguish between an empty property and
+                    # a missing one.
+                    return default
+                else:
+                    return buffer.value.decode("UTF-8", "backslashreplace")
+
+            release = getprop("ro.build.version.release", release)
+            api_level = int(getprop("ro.build.version.sdk", api_level))
+            manufacturer = getprop("ro.product.manufacturer", manufacturer)
+            model = getprop("ro.product.model", model)
+            device = getprop("ro.product.device", device)
+            is_emulator = getprop("ro.kernel.qemu", "0") == "1"
+
+    return AndroidVer(
+        release, api_level, manufacturer, model, device, is_emulator)
+
 
 ### System name aliasing
 
@@ -613,7 +679,7 @@ def _platform(*args):
         if cleaned == platform:
             break
         platform = cleaned
-    while platform[-1] == '-':
+    while platform and platform[-1] == '-':
         platform = platform[:-1]
 
     return platform
@@ -654,7 +720,7 @@ def _syscmd_file(target, default=''):
         default in case the command should fail.
 
     """
-    if sys.platform in ('dos', 'win32', 'win16'):
+    if sys.platform in {'dos', 'win32', 'win16', 'ios', 'tvos', 'watchos'}:
         # XXX Others too ?
         return default
 
@@ -818,6 +884,14 @@ class _Processor:
             csid, cpu_number = vms_lib.getsyi('SYI$_CPU', 0)
             return 'Alpha' if cpu_number >= 128 else 'VAX'
 
+    # On the iOS simulator, os.uname returns the architecture as uname.machine.
+    # On device it returns the model name for some reason; but there's only one
+    # CPU architecture for iOS devices, so we know the right answer.
+    def get_ios():
+        if sys.implementation._multiarch.endswith("simulator"):
+            return os.uname().machine
+        return 'arm64'
+
     def from_subprocess():
         """
         Fall back to `uname -p`
@@ -971,6 +1045,15 @@ def uname():
     if system == 'Microsoft' and release == 'Windows':
         system = 'Windows'
         release = 'Vista'
+
+    # On Android, return the name and version of the OS rather than the kernel.
+    if sys.platform == 'android':
+        system = 'Android'
+        release = android_ver().release
+
+    # Normalize responses on iOS
+    if sys.platform == 'ios':
+        system, release, _, _ = ios_ver()
 
     vals = system, node, release, version, machine
     # Replace 'unknown' values with the more portable ''
@@ -1251,11 +1334,14 @@ def platform(aliased=False, terse=False):
         system, release, version = system_alias(system, release, version)
 
     if system == 'Darwin':
-        # macOS (darwin kernel)
-        macos_release = mac_ver()[0]
-        if macos_release:
-            system = 'macOS'
-            release = macos_release
+        # macOS and iOS both report as a "Darwin" kernel
+        if sys.platform == "ios":
+            system, release, _, _ = ios_ver()
+        else:
+            macos_release = mac_ver()[0]
+            if macos_release:
+                system = 'macOS'
+                release = macos_release
 
     if system == 'Windows':
         # MS platforms

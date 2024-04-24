@@ -29,8 +29,7 @@ process. This was a potential privilege escalation. Filesystem based socket
 permissions restrict this to the *forkserver* process user as was the
 default in Python 3.8 and earlier.
 
-This prevents Linux `CVE-2022-42919
-<https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2022-42919>`_.
+This prevents Linux :cve:`2022-42919`.
 
 ..
 
@@ -3200,9 +3199,8 @@ Remove the :func:`ssl.wrap_socket` function, deprecated in Python 3.7:
 instead, create a :class:`ssl.SSLContext` object and call its
 :class:`ssl.SSLContext.wrap_socket` method. Any package that still uses
 :func:`ssl.wrap_socket` is broken and insecure. The function neither sends a
-SNI TLS extension nor validates server hostname. Code is subject to `CWE-295
-<https://cwe.mitre.org/data/definitions/295.html>`_: Improper Certificate
-Validation. Patch by Victor Stinner.
+SNI TLS extension nor validates server hostname. Code is subject to :cwe:`295`
+Improper Certificate Validation. Patch by Victor Stinner.
 
 ..
 
@@ -4404,8 +4402,7 @@ Remove extra row
 .. section: Documentation
 
 Deprecated tools ``make suspicious`` and ``rstlint.py`` are now removed.
-They have been replaced by `spinx-lint
-<https://pypi.org/project/sphinx-lint/>`_.
+They have been replaced by :pypi:`sphinx-lint`.
 
 ..
 

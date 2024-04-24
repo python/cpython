@@ -815,10 +815,9 @@ teedataobject_traverse(teedataobject *tdo, visitproc visit, void * arg)
 }
 
 static void
-teedataobject_safe_decref(PyObject *obj, PyTypeObject *tdo_type)
+teedataobject_safe_decref(PyObject *obj)
 {
-    while (obj && Py_IS_TYPE(obj, tdo_type) &&
-           Py_REFCNT(obj) == 1) {
+    while (obj && Py_REFCNT(obj) == 1) {
         PyObject *nextlink = ((teedataobject *)obj)->nextlink;
         ((teedataobject *)obj)->nextlink = NULL;
         Py_SETREF(obj, nextlink);
@@ -837,8 +836,7 @@ teedataobject_clear(teedataobject *tdo)
         Py_CLEAR(tdo->values[i]);
     tmp = tdo->nextlink;
     tdo->nextlink = NULL;
-    itertools_state *state = get_module_state_by_cls(Py_TYPE(tdo));
-    teedataobject_safe_decref(tmp, state->teedataobject_type);
+    teedataobject_safe_decref(tmp);
     return 0;
 }
 
@@ -2191,7 +2189,8 @@ chain_setstate(chainobject *lz, PyObject *state)
 }
 
 PyDoc_STRVAR(chain_doc,
-"chain(*iterables) --> chain object\n\
+"chain(*iterables)\n\
+--\n\
 \n\
 Return a chain object whose .__next__() method returns elements from the\n\
 first iterable until it is exhausted, then elements from the next\n\
@@ -2530,7 +2529,8 @@ static PyMethodDef product_methods[] = {
 };
 
 PyDoc_STRVAR(product_doc,
-"product(*iterables, repeat=1) --> product object\n\
+"product(*iterables, repeat=1)\n\
+--\n\
 \n\
 Cartesian product of input iterables.  Equivalent to nested for-loops.\n\n\
 For example, product(A, B) returns the same as:  ((x,y) for x in A for y in B).\n\
@@ -4575,7 +4575,8 @@ static PyMethodDef zip_longest_methods[] = {
 };
 
 PyDoc_STRVAR(zip_longest_doc,
-"zip_longest(iter1 [,iter2 [...]], [fillvalue=None]) --> zip_longest object\n\
+"zip_longest(*iterables, fillvalue=None)\n\
+--\n\
 \n\
 Return a zip_longest object whose .__next__() method returns a tuple where\n\
 the i-th element comes from the i-th iterable argument.  The .__next__()\n\

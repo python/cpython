@@ -518,6 +518,15 @@ also be used to improve performance.
    GCC is used: add ``-fno-semantic-interposition`` to the compiler and linker
    flags.
 
+   .. note::
+
+      During the build, you may encounter compiler warnings about
+      profile data not being available for some source files.
+      These warnings are harmless, as only a subset of the code is exercised
+      during profile data acquisition.
+      To disable these warnings on Clang, manually suppress them by adding
+      ``-Wno-profile-instr-unprofiled`` to :envvar:`CFLAGS`.
+
    .. versionadded:: 3.6
 
    .. versionchanged:: 3.10
@@ -881,7 +890,7 @@ Security Options
 macOS Options
 -------------
 
-See ``Mac/README.rst``.
+See :source:`Mac/README.rst`.
 
 .. option:: --enable-universalsdk
 .. option:: --enable-universalsdk=SDKDIR
@@ -915,6 +924,20 @@ See ``Mac/README.rst``.
 
    Specify the name for the python framework on macOS only valid when
    :option:`--enable-framework` is set (default: ``Python``).
+
+iOS Options
+-----------
+
+See :source:`iOS/README.rst`.
+
+.. option:: --enable-framework=INSTALLDIR
+
+   Create a Python.framework. Unlike macOS, the *INSTALLDIR* argument
+   specifying the installation path is mandatory.
+
+.. option:: --with-framework-name=FRAMEWORK
+
+   Specify the name for the framework (default: ``Python``).
 
 
 Cross Compiling Options
