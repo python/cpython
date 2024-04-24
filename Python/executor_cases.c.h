@@ -4210,6 +4210,8 @@
 
         case _ERROR_POP_N: {
             oparg = CURRENT_OPARG();
+            uint32_t target = (uint32_t)CURRENT_OPERAND();
+            frame->instr_ptr = ((_Py_CODEUNIT *)_PyFrame_GetCode(frame)->co_code_adaptive) + target;
             stack_pointer += -oparg;
             GOTO_UNWIND();
             break;
