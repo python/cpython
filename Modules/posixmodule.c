@@ -5495,18 +5495,10 @@ os__path_splitroot_ex_impl(PyObject *module, PyObject *path)
     }
     result = Py_BuildValue("(OOO)", drv, root, tail);
 exit:
-    if (buffer) {
-        PyMem_Free(buffer);
-    }
-    if (drv) {
-        Py_DECREF(drv);
-    }
-    if (root) {
-        Py_DECREF(root);
-    }
-    if (tail) {
-        Py_DECREF(tail);
-    }
+    PyMem_Free(buffer);
+    Py_XDECREF(drv);
+    Py_DECREF(root);
+    Py_DECREF(tail);
     return result;
 }
 
