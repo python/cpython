@@ -5504,8 +5504,8 @@ os__path_splitroot_ex_impl(PyObject *module, PyObject *path)
 exit:
     PyMem_Free(buffer);
     Py_XDECREF(drv);
-    Py_DECREF(root);
-    Py_DECREF(tail);
+    Py_XDECREF(root);
+    Py_XDECREF(tail);
     return result;
 }
 
