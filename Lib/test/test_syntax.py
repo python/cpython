@@ -1213,6 +1213,22 @@ Missing parens after function definition
    Traceback (most recent call last):
    SyntaxError: expected '('
 
+   >>> def f -> int:
+   Traceback (most recent call last):
+   SyntaxError: expected '('
+
+   >>> async def f -> int:  # type: int
+   Traceback (most recent call last):
+   SyntaxError: expected '('
+
+   >>> async def f[T]:
+   Traceback (most recent call last):
+   SyntaxError: expected '('
+
+   >>> def f[T] -> str:
+   Traceback (most recent call last):
+   SyntaxError: expected '('
+
 Parenthesized arguments in function definitions
 
    >>> def f(x, (y, z), w):
@@ -2026,6 +2042,16 @@ Invalid expressions in type scopes:
    SyntaxError: Type parameter list cannot be empty
 
    >>> def some[](): ...
+   Traceback (most recent call last):
+   ...
+   SyntaxError: Type parameter list cannot be empty
+
+   >>> def some[]()
+   Traceback (most recent call last):
+   ...
+   SyntaxError: Type parameter list cannot be empty
+
+   >>> async def some[]:  # type: int
    Traceback (most recent call last):
    ...
    SyntaxError: Type parameter list cannot be empty
