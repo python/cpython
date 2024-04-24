@@ -696,7 +696,7 @@ top:  // Jump here after _PUSH_FRAME or likely branches
                 if (expansion->nuops > 0) {
                     // Reserve space for nuops (+ _SET_IP + _EXIT_TRACE)
                     int nuops = expansion->nuops;
-                    RESERVE(nuops);
+                    RESERVE(nuops + 1); /* One extra for exit */
                     if (expansion->uops[nuops-1].uop == _POP_FRAME) {
                         // Check for trace stack underflow now:
                         // We can't bail e.g. in the middle of
@@ -978,6 +978,7 @@ prepare_for_execution(_PyUOpInstruction *buffer, int length)
                 current_error_target = target;
                 make_exit(&buffer[next_spare], _ERROR_POP_N, 0);
                 buffer[next_spare].oparg = popped;
+                buffer[next_spare].operand = target;
                 next_spare++;
             }
             buffer[i].error_target = current_error;
