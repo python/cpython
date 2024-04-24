@@ -2355,3 +2355,12 @@ tarfile
   :exc:`DeprecationWarning`.
   In Python 3.14, the default will switch to ``'data'``.
   (Contributed by Petr Viktorin in :pep:`706`.)
+
+Notable changes in 3.8.20
+=========================
+
+ipaddress
+---------
+
+* Fixed ``is_global`` and ``is_private`` behavior in ``IPv4Address``,
+  ``IPv6Address``, ``IPv4Network`` and ``IPv6Network``.
