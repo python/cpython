@@ -569,12 +569,12 @@ Instance attributes (read-only):
 
 .. attribute:: date.month
 
-   Between ``1`` and ``12`` inclusive.
+   Between 1 and 12 inclusive.
 
 
 .. attribute:: date.day
 
-   Between ``1`` and the number of days in the given month of the given year.
+   Between 1 and the number of days in the given month of the given year.
 
 
 Supported operations:
@@ -676,20 +676,20 @@ Instance methods:
 .. method:: date.toordinal()
 
    Return the proleptic Gregorian ordinal of the date, where January 1 of year 1
-   has ordinal ``1``. For any :class:`date` object *d*,
+   has ordinal 1. For any :class:`date` object *d*,
    ``date.fromordinal(d.toordinal()) == d``.
 
 
 .. method:: date.weekday()
 
-   Return the day of the week as an integer, where Monday is ``0`` and Sunday is ``6``.
+   Return the day of the week as an integer, where Monday is 0 and Sunday is 6.
    For example, ``date(2002, 12, 4).weekday() == 2``, a Wednesday. See also
    :meth:`isoweekday`.
 
 
 .. method:: date.isoweekday()
 
-   Return the day of the week as an integer, where Monday is ``1`` and Sunday is ``7``.
+   Return the day of the week as an integer, where Monday is 1 and Sunday is 7.
    For example, ``date(2002, 12, 4).isoweekday() == 3``, a Wednesday. See also
    :meth:`weekday`, :meth:`isocalendar`.
 
@@ -840,7 +840,7 @@ from a :class:`date` object and a :class:`.time` object.
 
 Like a :class:`date` object, :class:`.datetime` assumes the current Gregorian
 calendar extended in both directions; like a :class:`.time` object,
-:class:`.datetime` assumes there are exactly ``3600 * 24`` seconds in every day.
+:class:`.datetime` assumes there are exactly ``3600*24`` seconds in every day.
 
 Constructor:
 
@@ -1127,12 +1127,12 @@ Instance attributes (read-only):
 
 .. attribute:: datetime.month
 
-   Between ``1`` and ``12`` inclusive.
+   Between 1 and 12 inclusive.
 
 
 .. attribute:: datetime.day
 
-   Between ``1`` and the number of days in the given month of the given year.
+   Between 1 and the number of days in the given month of the given year.
 
 
 .. attribute:: datetime.hour
@@ -1166,7 +1166,7 @@ Instance attributes (read-only):
    In ``[0, 1]``. Used to disambiguate wall times during a repeated interval. (A
    repeated interval occurs when clocks are rolled back at the end of daylight saving
    time or when the UTC offset for the current zone is decreased for political reasons.)
-   The value ``0`` (1) represents the earlier (later) of the two moments with the same wall
+   The value ``0`` (``1``) represents the earlier (later) of the two moments with the same wall
    time representation.
 
    .. versionadded:: 3.6
@@ -1192,7 +1192,7 @@ Supported operations:
 +---------------------------------------+--------------------------------+
 
 (1)
-   datetime2 is a duration of timedelta removed from datetime1, moving forward in
+   ``datetime2`` is a duration of timedelta removed from ``datetime1``, moving forward in
    time if ``timedelta.days > 0``, or backward if ``timedelta.days < 0``. The
    result has the same :attr:`~.datetime.tzinfo` attribute as the input datetime, and
    ``datetime2 - datetime1 == timedelta`` after. :exc:`OverflowError` is raised if
@@ -1461,13 +1461,13 @@ Instance methods:
 
 .. method:: datetime.weekday()
 
-   Return the day of the week as an integer, where Monday is ``0`` and Sunday is ``6``.
+   Return the day of the week as an integer, where Monday is 0 and Sunday is 6.
    The same as ``self.date().weekday()``. See also :meth:`isoweekday`.
 
 
 .. method:: datetime.isoweekday()
 
-   Return the day of the week as an integer, where Monday is ``1`` and Sunday is ``7``.
+   Return the day of the week as an integer, where Monday is 1 and Sunday is 7.
    The same as ``self.date().isoweekday()``. See also :meth:`weekday`,
    :meth:`isocalendar`.
 
@@ -1489,7 +1489,7 @@ Instance methods:
    appended, giving the UTC offset:
 
    - ``YYYY-MM-DDTHH:MM:SS.ffffff+HH:MM[:SS[.ffffff]]``, if :attr:`microsecond`
-     is not 0
+     is not ``0``
    - ``YYYY-MM-DDTHH:MM:SS+HH:MM[:SS[.ffffff]]``,  if :attr:`microsecond` is ``0``
 
    Examples::
