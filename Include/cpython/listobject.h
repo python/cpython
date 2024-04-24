@@ -44,7 +44,11 @@ PyList_SET_ITEM(PyObject *op, Py_ssize_t index, PyObject *value) {
     PyListObject *list = _PyList_CAST(op);
     assert(0 <= index);
     assert(index < list->allocated);
+#ifdef Py_GIL_DISABLED
+    _Py_atomic_store_ptr_release(&list->ob_item[index], value);
+#else
     list->ob_item[index] = value;
+#endif
 }
 #define PyList_SET_ITEM(op, index, value) \
     PyList_SET_ITEM(_PyObject_CAST(op), (index), _PyObject_CAST(value))
