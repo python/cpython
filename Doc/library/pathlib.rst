@@ -874,7 +874,7 @@ Methods
 ^^^^^^^
 
 Concrete paths provide the following methods in addition to pure paths
-methods.  Many of these methods can raise an :exc:`OSError` if a system
+methods.  Some of these methods can raise an :exc:`OSError` if a system
 call fails (for example because the path doesn't exist).
 
 .. versionchanged:: 3.8
@@ -885,6 +885,12 @@ call fails (for example because the path doesn't exist).
    :meth:`~Path.is_fifo()`, :meth:`~Path.is_socket()` now return ``False``
    instead of raising an exception for paths that contain characters
    unrepresentable at the OS level.
+
+.. versionchanged:: 3.14
+
+   The methods given above now return ``False`` instead of raising an
+   :exc:`OSError` exception from the operating system. In previous versions,
+   some kinds of :exc:`OSError` exception are raised, and others suppressed.
 
 
 .. classmethod:: Path.cwd()
@@ -1071,8 +1077,8 @@ call fails (for example because the path doesn't exist).
    Return ``True`` if the path points to a directory, ``False`` if it points
    to another kind of file.
 
-   ``False`` is also returned if the path doesn't exist or is a broken symlink;
-   other errors (such as permission errors) are propagated.
+   ``False`` is also returned if the path doesn't exist, or is a broken
+   symlink, or is inaccessible for any other reason.
 
    This method normally follows symlinks; to exclude symlinks to directories,
    add the argument ``follow_symlinks=False``.
@@ -1086,8 +1092,8 @@ call fails (for example because the path doesn't exist).
    Return ``True`` if the path points to a regular file, ``False`` if it
    points to another kind of file.
 
-   ``False`` is also returned if the path doesn't exist or is a broken symlink;
-   other errors (such as permission errors) are propagated.
+   ``False`` is also returned if the path doesn't exist, or is a broken
+   symlink, or is inaccessible for any other reason.
 
    This method normally follows symlinks; to exclude symlinks, add the
    argument ``follow_symlinks=False``.
@@ -1125,8 +1131,8 @@ call fails (for example because the path doesn't exist).
 
    Return ``True`` if the path points to a symbolic link, ``False`` otherwise.
 
-   ``False`` is also returned if the path doesn't exist; other errors (such
-   as permission errors) are propagated.
+   ``False`` is also returned if the path doesn't exist or is inaccessible for
+   any other reason.
 
 
 .. method:: Path.is_socket()
@@ -1143,8 +1149,8 @@ call fails (for example because the path doesn't exist).
    Return ``True`` if the path points to a FIFO (or a symbolic link
    pointing to a FIFO), ``False`` if it points to another kind of file.
 
-   ``False`` is also returned if the path doesn't exist or is a broken symlink;
-   other errors (such as permission errors) are propagated.
+   ``False`` is also returned if the path doesn't exist, or is a broken
+   symlink, or is inaccessible for any other reason.
 
 
 .. method:: Path.is_block_device()
@@ -1152,8 +1158,8 @@ call fails (for example because the path doesn't exist).
    Return ``True`` if the path points to a block device (or a symbolic link
    pointing to a block device), ``False`` if it points to another kind of file.
 
-   ``False`` is also returned if the path doesn't exist or is a broken symlink;
-   other errors (such as permission errors) are propagated.
+   ``False`` is also returned if the path doesn't exist, or is a broken
+   symlink, or is inaccessible for any other reason.
 
 
 .. method:: Path.is_char_device()
@@ -1161,8 +1167,8 @@ call fails (for example because the path doesn't exist).
    Return ``True`` if the path points to a character device (or a symbolic link
    pointing to a character device), ``False`` if it points to another kind of file.
 
-   ``False`` is also returned if the path doesn't exist or is a broken symlink;
-   other errors (such as permission errors) are propagated.
+   ``False`` is also returned if the path doesn't exist, or is a broken
+   symlink, or is inaccessible for any other reason.
 
 
 .. method:: Path.iterdir()
