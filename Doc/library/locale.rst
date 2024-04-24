@@ -165,13 +165,14 @@ The :mod:`locale` module defines the following exception and functions:
    Returns locale-specific information as a string. 
 
 
-.. Note::
+.. note::
 
-   This function is not available on all systems, and the set of possible options might also vary
-   across platforms.
+   This function is not available on all systems, and the set of possible options 
+   also varies across systems.
 
-   *option* may be one of the following constants. 
-   Most descriptions are taken from the corresponding description in the GNU C library.
+   *option* may be one of the following constants. Most
+   descriptions are taken from the corresponding description in the GNU C 
+   library.
 
 
    .. data:: CODESET
