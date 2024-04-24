@@ -3,8 +3,10 @@
 #include "Python.h"
 #include "pycore_code.h"            // write_location_entry_start()
 #include "pycore_compile.h"
+#include "pycore_instruction_sequence.h"
 #include "pycore_opcode_utils.h"    // IS_BACKWARDS_JUMP_OPCODE
 #include "pycore_opcode_metadata.h" // is_pseudo_target, _PyOpcode_Caches
+#include "pycore_symtable.h"        // _Py_SourceLocation
 
 
 #define DEFAULT_CODE_SIZE 128
@@ -21,9 +23,9 @@
         return ERROR;       \
     }
 
-typedef _PyCompilerSrcLocation location;
-typedef _PyCompile_Instruction instruction;
-typedef _PyCompile_InstructionSequence instr_sequence;
+typedef _Py_SourceLocation location;
+typedef _PyInstruction instruction;
+typedef _PyInstructionSequence instr_sequence;
 
 static inline bool
 same_location(location a, location b)
@@ -131,7 +133,7 @@ assemble_emit_exception_table_item(struct assembler *a, int value, int msb)
 static int
 assemble_emit_exception_table_entry(struct assembler *a, int start, int end,
                                     int handler_offset,
-                                    _PyCompile_ExceptHandlerInfo *handler)
+                                    _PyExceptHandlerInfo *handler)
 {
     Py_ssize_t len = PyBytes_GET_SIZE(a->a_except_table);
     if (a->a_except_table_off + MAX_SIZE_OF_ENTRY >= len) {
@@ -157,7 +159,7 @@ static int
 assemble_exception_table(struct assembler *a, instr_sequence *instrs)
 {
     int ioffset = 0;
-    _PyCompile_ExceptHandlerInfo handler;
+    _PyExceptHandlerInfo handler;
     handler.h_label = -1;
     handler.h_startdepth = -1;
     handler.h_preserve_lasti = -1;
@@ -735,7 +737,9 @@ _PyAssemble_MakeCodeObject(_PyCompile_CodeUnitMetadata *umd, PyObject *const_cac
                            PyObject *consts, int maxdepth, instr_sequence *instrs,
                            int nlocalsplus, int code_flags, PyObject *filename)
 {
-
+    if (_PyInstructionSequence_ApplyLabelMap(instrs) < 0) {
+        return NULL;
+    }
     if (resolve_unconditional_jumps(instrs) < 0) {
         return NULL;
     }

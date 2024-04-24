@@ -15,7 +15,13 @@
 #    include <sys/mman.h>
 #endif
 
-#ifdef __APPLE__
+#if defined(__APPLE__)
+#  include <TargetConditionals.h>
+// Older macOS SDKs do not define TARGET_OS_OSX
+#  if !defined(TARGET_OS_OSX)
+#     define TARGET_OS_OSX 1
+#  endif
+#  if TARGET_OS_OSX
 #    include <libproc.h>
 #    include <mach-o/fat.h>
 #    include <mach-o/loader.h>
@@ -26,6 +32,7 @@
 #    include <sys/mman.h>
 #    include <sys/proc.h>
 #    include <sys/sysctl.h>
+#  endif
 #endif
 
 #include <errno.h>
@@ -50,7 +57,7 @@
 #    define HAVE_PROCESS_VM_READV 0
 #endif
 
-#ifdef __APPLE__
+#if defined(__APPLE__) && TARGET_OS_OSX
 static void*
 analyze_macho64(mach_port_t proc_ref, void* base, void* map)
 {
@@ -352,7 +359,7 @@ ssize_t
 read_memory(pid_t pid, void* remote_address, size_t len, void* dst)
 {
     ssize_t total_bytes_read = 0;
-#ifdef __linux__
+#if defined(__linux__) && HAVE_PROCESS_VM_READV
     struct iovec local[1];
     struct iovec remote[1];
     ssize_t result = 0;
@@ -373,7 +380,7 @@ read_memory(pid_t pid, void* remote_address, size_t len, void* dst)
         result += read;
     } while ((size_t)read != local[0].iov_len);
     total_bytes_read = result;
-#elif defined(__APPLE__)
+#elif defined(__APPLE__) && TARGET_OS_OSX
     ssize_t result = -1;
     kern_return_t kr = mach_vm_read_overwrite(
             pid_to_task(pid),
@@ -429,7 +436,7 @@ get_py_runtime(pid_t pid)
 {
 #if defined(__linux__)
     return get_py_runtime_linux(pid);
-#elif defined(__APPLE__)
+#elif defined(__APPLE__) && TARGET_OS_OSX
     return get_py_runtime_macos(pid);
 #else
     return NULL;

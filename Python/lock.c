@@ -249,6 +249,13 @@ _PyRawMutex_UnlockSlow(_PyRawMutex *m)
     }
 }
 
+int
+_PyEvent_IsSet(PyEvent *evt)
+{
+    uint8_t v = _Py_atomic_load_uint8(&evt->v);
+    return v == _Py_LOCKED;
+}
+
 void
 _PyEvent_Notify(PyEvent *evt)
 {
@@ -465,7 +472,7 @@ _PyRWMutex_Unlock(_PyRWMutex *rwmutex)
 
 void _PySeqLock_LockWrite(_PySeqLock *seqlock)
 {
-    // lock the entry by setting by moving to an odd sequence number
+    // lock by moving to an odd sequence number
     uint32_t prev = _Py_atomic_load_uint32_relaxed(&seqlock->sequence);
     while (1) {
         if (SEQLOCK_IS_UPDATING(prev)) {
@@ -485,14 +492,14 @@ void _PySeqLock_LockWrite(_PySeqLock *seqlock)
 
 void _PySeqLock_AbandonWrite(_PySeqLock *seqlock)
 {
-    uint32_t new_seq = seqlock->sequence - 1;
+    uint32_t new_seq = _Py_atomic_load_uint32_relaxed(&seqlock->sequence) - 1;
     assert(!SEQLOCK_IS_UPDATING(new_seq));
     _Py_atomic_store_uint32(&seqlock->sequence, new_seq);
 }
 
 void _PySeqLock_UnlockWrite(_PySeqLock *seqlock)
 {
-    uint32_t new_seq = seqlock->sequence + 1;
+    uint32_t new_seq = _Py_atomic_load_uint32_relaxed(&seqlock->sequence) + 1;
     assert(!SEQLOCK_IS_UPDATING(new_seq));
     _Py_atomic_store_uint32(&seqlock->sequence, new_seq);
 }

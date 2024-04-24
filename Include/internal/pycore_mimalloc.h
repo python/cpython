@@ -27,9 +27,13 @@ typedef enum {
 #  define MI_DEBUG_FREED      PYMEM_DEADBYTE
 #  define MI_DEBUG_PADDING    PYMEM_FORBIDDENBYTE
 #ifdef Py_DEBUG
-#  define MI_DEBUG 1
+#  define MI_DEBUG 2
 #else
 #  define MI_DEBUG 0
+#endif
+
+#ifdef _Py_THREAD_SANITIZER
+#  define MI_TSAN 1
 #endif
 
 #include "mimalloc.h"
@@ -48,6 +52,7 @@ struct _mimalloc_thread_state {
     mi_heap_t *current_object_heap;
     mi_heap_t heaps[_Py_MIMALLOC_HEAP_COUNT];
     mi_tld_t tld;
+    struct llist_node page_list;
 };
 #endif
 
