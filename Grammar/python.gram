@@ -915,7 +915,7 @@ fstring_middle[expr_ty]:
     | fstring_replacement_field
     | t=FSTRING_MIDDLE { _PyPegen_constant_from_token(p, t) }
 fstring_replacement_field[expr_ty]:
-    | '{' a=(yield_expr | star_expressions) debug_expr='='? conversion=[fstring_conversion] format=[fstring_full_format_spec] rbrace='}' {
+    | '{' a=annotated_rhs debug_expr='='? conversion=[fstring_conversion] format=[fstring_full_format_spec] rbrace='}' {
         _PyPegen_formatted_value(p, a, debug_expr, conversion, format, rbrace, EXTRA) }
     | invalid_replacement_field
 fstring_conversion[ResultTokenWithMetadata*]:
@@ -1201,7 +1201,7 @@ invalid_assignment:
     | (star_targets '=')* a=star_expressions '=' {
         RAISE_SYNTAX_ERROR_INVALID_TARGET(STAR_TARGETS, a) }
     | (star_targets '=')* a=yield_expr '=' { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "assignment to yield expression not possible") }
-    | a=star_expressions augassign (yield_expr | star_expressions) {
+    | a=star_expressions augassign annotated_rhs {
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(
             a,
             "'%s' is an illegal expression for augmented assignment",
@@ -1407,17 +1407,17 @@ invalid_replacement_field:
     | '{' a='!' { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "f-string: valid expression required before '!'") }
     | '{' a=':' { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "f-string: valid expression required before ':'") }
     | '{' a='}' { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "f-string: valid expression required before '}'") }
-    | '{' !(yield_expr | star_expressions) { RAISE_SYNTAX_ERROR_ON_NEXT_TOKEN("f-string: expecting a valid expression after '{'")}
-    | '{' (yield_expr | star_expressions) !('=' | '!' | ':' | '}') {
+    | '{' !annotated_rhs { RAISE_SYNTAX_ERROR_ON_NEXT_TOKEN("f-string: expecting a valid expression after '{'")}
+    | '{' annotated_rhs !('=' | '!' | ':' | '}') {
         PyErr_Occurred() ? NULL : RAISE_SYNTAX_ERROR_ON_NEXT_TOKEN("f-string: expecting '=', or '!', or ':', or '}'") }
-    | '{' (yield_expr | star_expressions) '=' !('!' | ':' | '}') {
+    | '{' annotated_rhs '=' !('!' | ':' | '}') {
         PyErr_Occurred() ? NULL : RAISE_SYNTAX_ERROR_ON_NEXT_TOKEN("f-string: expecting '!', or ':', or '}'") }
-    | '{' (yield_expr | star_expressions) '='? invalid_conversion_character
-    | '{' (yield_expr | star_expressions) '='? ['!' NAME] !(':' | '}') {
+    | '{' annotated_rhs '='? invalid_conversion_character
+    | '{' annotated_rhs '='? ['!' NAME] !(':' | '}') {
         PyErr_Occurred() ? NULL : RAISE_SYNTAX_ERROR_ON_NEXT_TOKEN("f-string: expecting ':' or '}'") }
-    | '{' (yield_expr | star_expressions) '='? ['!' NAME] ':' fstring_format_spec* !'}' {
+    | '{' annotated_rhs '='? ['!' NAME] ':' fstring_format_spec* !'}' {
         PyErr_Occurred() ? NULL : RAISE_SYNTAX_ERROR_ON_NEXT_TOKEN("f-string: expecting '}', or format specs") }
-    | '{' (yield_expr | star_expressions) '='? ['!' NAME] !'}' {
+    | '{' annotated_rhs '='? ['!' NAME] !'}' {
         PyErr_Occurred() ? NULL : RAISE_SYNTAX_ERROR_ON_NEXT_TOKEN("f-string: expecting '}'") }
 
 invalid_conversion_character:
