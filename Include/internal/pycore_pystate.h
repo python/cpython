@@ -77,11 +77,17 @@ _Py_IsMainInterpreterFinalizing(PyInterpreterState *interp)
             interp == &_PyRuntime._main_interpreter);
 }
 
-// Export for _xxsubinterpreters module.
+// Export for _interpreters module.
+PyAPI_FUNC(PyObject *) _PyInterpreterState_GetIDObject(PyInterpreterState *);
+
+// Export for _interpreters module.
 PyAPI_FUNC(int) _PyInterpreterState_SetRunningMain(PyInterpreterState *);
 PyAPI_FUNC(void) _PyInterpreterState_SetNotRunningMain(PyInterpreterState *);
 PyAPI_FUNC(int) _PyInterpreterState_IsRunningMain(PyInterpreterState *);
 PyAPI_FUNC(int) _PyInterpreterState_FailIfRunningMain(PyInterpreterState *);
+
+extern int _PyThreadState_IsRunningMain(PyThreadState *);
+extern void _PyInterpreterState_ReinitRunningMain(PyThreadState *);
 
 
 static inline const PyConfig *
@@ -215,7 +221,8 @@ extern PyThreadState * _PyThreadState_New(
     PyInterpreterState *interp,
     int whence);
 extern void _PyThreadState_Bind(PyThreadState *tstate);
-extern void _PyThreadState_DeleteExcept(PyThreadState *tstate);
+extern PyThreadState * _PyThreadState_RemoveExcept(PyThreadState *tstate);
+extern void _PyThreadState_DeleteList(PyThreadState *list);
 extern void _PyThreadState_ClearMimallocHeaps(PyThreadState *tstate);
 
 // Export for '_testinternalcapi' shared extension

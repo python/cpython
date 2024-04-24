@@ -219,6 +219,11 @@ drop_gil(PyInterpreterState *interp, PyThreadState *tstate)
     // XXX assert(tstate == NULL || !tstate->_status.cleared);
 
     struct _gil_runtime_state *gil = ceval->gil;
+#ifdef Py_GIL_DISABLED
+    if (!gil->enabled) {
+        return;
+    }
+#endif
     if (!_Py_atomic_load_ptr_relaxed(&gil->locked)) {
         Py_FatalError("drop_gil: GIL is not locked");
     }
@@ -294,6 +299,11 @@ take_gil(PyThreadState *tstate)
     assert(_PyThreadState_CheckConsistency(tstate));
     PyInterpreterState *interp = tstate->interp;
     struct _gil_runtime_state *gil = interp->ceval.gil;
+#ifdef Py_GIL_DISABLED
+    if (!gil->enabled) {
+        return;
+    }
+#endif
 
     /* Check that _PyEval_InitThreads() was called to create the lock */
     assert(gil_created(gil));
@@ -417,6 +427,7 @@ PyEval_ThreadsInitialized(void)
     return _PyEval_ThreadsInitialized();
 }
 
+#ifndef NDEBUG
 static inline int
 current_thread_holds_gil(struct _gil_runtime_state *gil, PyThreadState *tstate)
 {
@@ -425,6 +436,7 @@ current_thread_holds_gil(struct _gil_runtime_state *gil, PyThreadState *tstate)
     }
     return _Py_atomic_load_int_relaxed(&gil->locked);
 }
+#endif
 
 static void
 init_shared_gil(PyInterpreterState *interp, struct _gil_runtime_state *gil)
@@ -438,6 +450,11 @@ static void
 init_own_gil(PyInterpreterState *interp, struct _gil_runtime_state *gil)
 {
     assert(!gil_created(gil));
+#ifdef Py_GIL_DISABLED
+    // gh-116329: Once it is safe to do so, change this condition to
+    // (enable_gil == _PyConfig_GIL_ENABLE), so the GIL is disabled by default.
+    gil->enabled = _PyInterpreterState_GetConfig(interp)->enable_gil != _PyConfig_GIL_DISABLE;
+#endif
     create_gil(gil);
     assert(gil_created(gil));
     interp->ceval.gil = gil;
@@ -495,8 +512,7 @@ _PyEval_FiniGIL(PyInterpreterState *interp)
     interp->ceval.gil = NULL;
 }
 
-// Function removed in the Python 3.13 API but kept in the stable ABI.
-PyAPI_FUNC(void)
+void
 PyEval_InitThreads(void)
 {
     /* Do nothing: kept for backward compatibility */
@@ -562,9 +578,8 @@ PyEval_ReleaseThread(PyThreadState *tstate)
 }
 
 #ifdef HAVE_FORK
-/* This function is called from PyOS_AfterFork_Child to destroy all threads
-   which are not running in the child process, and clear internal locks
-   which might be held by those threads. */
+/* This function is called from PyOS_AfterFork_Child to re-initialize the
+   GIL and pending calls lock. */
 PyStatus
 _PyEval_ReInitThreads(PyThreadState *tstate)
 {
@@ -581,8 +596,6 @@ _PyEval_ReInitThreads(PyThreadState *tstate)
     struct _pending_calls *pending = &tstate->interp->ceval.pending;
     _PyMutex_at_fork_reinit(&pending->mutex);
 
-    /* Destroy all threads except the current one */
-    _PyThreadState_DeleteExcept(tstate);
     return _PyStatus_OK();
 }
 #endif
@@ -639,6 +652,7 @@ _PyEval_SignalReceived(void)
     _Py_set_eval_breaker_bit(_PyRuntime.main_tstate, _PY_SIGNALS_PENDING_BIT);
 }
 
+
 /* Push one item onto the queue while holding the lock. */
 static int
 _push_pending_call(struct _pending_calls *pending,
@@ -693,7 +707,7 @@ _push_pending_call(struct _pending_calls *pending,
         pending->tail->next = call;
     }
     pending->tail = call;
-    pending->npending++;
+    _Py_atomic_add_int32(&pending->npending, 1);
 
     return 0;
 }
@@ -717,7 +731,7 @@ _pop_pending_call(struct _pending_calls *pending,
     if (pending->tail == call) {
         pending->tail = NULL;
     }
-    pending->npending--;
+    _Py_atomic_add_int32(&pending->npending, -1);
 
     // Copy its data.
     *func = call->func;
@@ -734,6 +748,7 @@ _pop_pending_call(struct _pending_calls *pending,
         PyMem_RawFree(call);
     }
 }
+
 
 #ifndef Py_GIL_DISABLED
 static void

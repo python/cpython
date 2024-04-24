@@ -160,6 +160,7 @@ import builtins
 from keyword import iskeyword
 from operator import attrgetter
 from collections import namedtuple, OrderedDict
+from weakref import ref as make_weakref
 
 # Create constants for the compiler flags in Include/code.h
 # We try to get them from dis to avoid duplication
@@ -954,6 +955,10 @@ def getsourcefile(object):
     elif any(filename.endswith(s) for s in
                  importlib.machinery.EXTENSION_SUFFIXES):
         return None
+    elif filename.endswith(".fwork"):
+        # Apple mobile framework markers are another type of non-source file
+        return None
+
     # return a filename found in the linecache even if it doesn't exist on disk
     if filename in linecache.cache:
         return filename
@@ -984,6 +989,7 @@ def getmodule(object, _filename=None):
         return object
     if hasattr(object, '__module__'):
         return sys.modules.get(object.__module__)
+
     # Try the filename to modulename cache
     if _filename is not None and _filename in modulesbyfile:
         return sys.modules.get(modulesbyfile[_filename])
@@ -1119,7 +1125,7 @@ def findsource(object):
         # Allow filenames in form of "<something>" to pass through.
         # `doctest` monkeypatches `linecache` module to enable
         # inspection, so let `linecache.getlines` to be called.
-        if not (file.startswith('<') and file.endswith('>')):
+        if (not (file.startswith('<') and file.endswith('>'))) or file.endswith('.fwork'):
             raise OSError('source code not available')
 
     module = getmodule(object, file)
@@ -1152,15 +1158,8 @@ def findsource(object):
         if not hasattr(object, 'co_firstlineno'):
             raise OSError('could not find function definition')
         lnum = object.co_firstlineno - 1
-        pat = re.compile(r'^(\s*def\s)|(\s*async\s+def\s)|(.*(?<!\w)lambda(:|\s))|^(\s*@)')
-        while lnum > 0:
-            try:
-                line = lines[lnum]
-            except IndexError:
-                raise OSError('lineno is out of bounds')
-            if pat.match(line):
-                break
-            lnum = lnum - 1
+        if lnum >= len(lines):
+            raise OSError('lineno is out of bounds')
         return lines, lnum
     raise OSError('could not find code object')
 
@@ -1834,9 +1833,16 @@ def _check_class(klass, attr):
             return entry.__dict__[attr]
     return _sentinel
 
+
 @functools.lru_cache()
-def _shadowed_dict_from_mro_tuple(mro):
-    for entry in mro:
+def _shadowed_dict_from_weakref_mro_tuple(*weakref_mro):
+    for weakref_entry in weakref_mro:
+        # Normally we'd have to check whether the result of weakref_entry()
+        # is None here, in case the object the weakref is pointing to has died.
+        # In this specific case, however, we know that the only caller of this
+        # function is `_shadowed_dict()`, and that therefore this weakref is
+        # guaranteed to point to an object that is still alive.
+        entry = weakref_entry()
         dunder_dict = _get_dunder_dict_of_class(entry)
         if '__dict__' in dunder_dict:
             class_dict = dunder_dict['__dict__']
@@ -1846,8 +1852,19 @@ def _shadowed_dict_from_mro_tuple(mro):
                 return class_dict
     return _sentinel
 
+
 def _shadowed_dict(klass):
-    return _shadowed_dict_from_mro_tuple(_static_getmro(klass))
+    # gh-118013: the inner function here is decorated with lru_cache for
+    # performance reasons, *but* make sure not to pass strong references
+    # to the items in the mro. Doing so can lead to unexpected memory
+    # consumption in cases where classes are dynamically created and
+    # destroyed, and the dynamically created classes happen to be the only
+    # objects that hold strong references to other objects that take up a
+    # significant amount of memory.
+    return _shadowed_dict_from_weakref_mro_tuple(
+        *[make_weakref(entry) for entry in _static_getmro(klass)]
+    )
+
 
 def getattr_static(obj, attr, default=_sentinel):
     """Retrieve attributes without triggering dynamic lookup via the

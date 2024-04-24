@@ -500,7 +500,8 @@ sys_addaudithook_impl(PyObject *module, PyObject *hook)
 }
 
 PyDoc_STRVAR(audit_doc,
-"audit(event, *args)\n\
+"audit($module, event, /, *args)\n\
+--\n\
 \n\
 Passes the event to any audit hooks that are attached.");
 
@@ -644,7 +645,8 @@ sys_breakpointhook(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyOb
 }
 
 PyDoc_STRVAR(breakpointhook_doc,
-"breakpointhook(*args, **kws)\n"
+"breakpointhook($module, /, *args, **kwargs)\n"
+"--\n"
 "\n"
 "This hook function is called by built-in breakpoint().\n"
 );
@@ -1085,34 +1087,40 @@ trace_trampoline(PyObject *self, PyFrameObject *frame,
     return 0;
 }
 
+/*[clinic input]
+sys.settrace
+
+    function: object
+    /
+
+Set the global debug tracing function.
+
+It will be called on each function call.  See the debugger chapter
+in the library manual.
+[clinic start generated code]*/
+
 static PyObject *
-sys_settrace(PyObject *self, PyObject *args)
+sys_settrace(PyObject *module, PyObject *function)
+/*[clinic end generated code: output=999d12e9d6ec4678 input=8107feb01c5f1c4e]*/
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    if (args == Py_None) {
+    if (function == Py_None) {
         if (_PyEval_SetTrace(tstate, NULL, NULL) < 0) {
             return NULL;
         }
     }
     else {
-        if (_PyEval_SetTrace(tstate, trace_trampoline, args) < 0) {
+        if (_PyEval_SetTrace(tstate, trace_trampoline, function) < 0) {
             return NULL;
         }
     }
     Py_RETURN_NONE;
 }
 
-PyDoc_STRVAR(settrace_doc,
-"settrace(function)\n\
-\n\
-Set the global debug tracing function.  It will be called on each\n\
-function call.  See the debugger chapter in the library manual."
-);
-
 /*[clinic input]
 sys._settraceallthreads
 
-    arg: object
+    function as arg: object
     /
 
 Set the global debug tracing function in all running threads belonging to the current interpreter.
@@ -1123,7 +1131,7 @@ in the library manual.
 
 static PyObject *
 sys__settraceallthreads(PyObject *module, PyObject *arg)
-/*[clinic end generated code: output=161cca30207bf3ca input=5906aa1485a50289]*/
+/*[clinic end generated code: output=161cca30207bf3ca input=d4bde1f810d73675]*/
 {
     PyObject* argument = NULL;
     Py_tracefunc func = NULL;
@@ -1159,45 +1167,51 @@ sys_gettrace_impl(PyObject *module)
     return Py_NewRef(temp);
 }
 
+/*[clinic input]
+sys.setprofile
+
+    function: object
+    /
+
+Set the profiling function.
+
+It will be called on each function call and return.  See the profiler
+chapter in the library manual.
+[clinic start generated code]*/
+
 static PyObject *
-sys_setprofile(PyObject *self, PyObject *args)
+sys_setprofile(PyObject *module, PyObject *function)
+/*[clinic end generated code: output=1c3503105939db9c input=055d0d7961413a62]*/
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    if (args == Py_None) {
+    if (function == Py_None) {
         if (_PyEval_SetProfile(tstate, NULL, NULL) < 0) {
             return NULL;
         }
     }
     else {
-        if (_PyEval_SetProfile(tstate, profile_trampoline, args) < 0) {
+        if (_PyEval_SetProfile(tstate, profile_trampoline, function) < 0) {
             return NULL;
         }
     }
     Py_RETURN_NONE;
 }
 
-PyDoc_STRVAR(setprofile_doc,
-"setprofile(function)\n\
-\n\
-Set the profiling function.  It will be called on each function call\n\
-and return.  See the profiler chapter in the library manual."
-);
-
 /*[clinic input]
 sys._setprofileallthreads
 
-    arg: object
+    function as arg: object
     /
 
 Set the profiling function in all running threads belonging to the current interpreter.
 
-It will be called on each function call and return.  See the profiler chapter
-in the library manual.
+It will be called on each function call and return.  See the profiler
+chapter in the library manual.
 [clinic start generated code]*/
 
 static PyObject *
 sys__setprofileallthreads(PyObject *module, PyObject *arg)
-/*[clinic end generated code: output=2d61319e27b309fe input=d1a356d3f4f9060a]*/
+/*[clinic end generated code: output=2d61319e27b309fe input=a10589439ba20cee]*/
 {
     PyObject* argument = NULL;
     Py_tracefunc func = NULL;
@@ -2525,11 +2539,11 @@ static PyMethodDef sys_methods[] = {
     SYS_SETSWITCHINTERVAL_METHODDEF
     SYS_GETSWITCHINTERVAL_METHODDEF
     SYS_SETDLOPENFLAGS_METHODDEF
-    {"setprofile", sys_setprofile, METH_O, setprofile_doc},
+    SYS_SETPROFILE_METHODDEF
     SYS__SETPROFILEALLTHREADS_METHODDEF
     SYS_GETPROFILE_METHODDEF
     SYS_SETRECURSIONLIMIT_METHODDEF
-    {"settrace", sys_settrace, METH_O, settrace_doc},
+    SYS_SETTRACE_METHODDEF
     SYS__SETTRACEALLTHREADS_METHODDEF
     SYS_GETTRACE_METHODDEF
     SYS_CALL_TRACING_METHODDEF
@@ -3048,6 +3062,7 @@ static PyStructSequence_Field flags_fields[] = {
     {"warn_default_encoding",   "-X warn_default_encoding"},
     {"safe_path", "-P"},
     {"int_max_str_digits",      "-X int_max_str_digits"},
+    {"gil",                     "-X gil"},
     {0}
 };
 
@@ -3097,6 +3112,16 @@ set_flags_from_config(PyInterpreterState *interp, PyObject *flags)
     SetFlag(config->warn_default_encoding);
     SetFlagObj(PyBool_FromLong(config->safe_path));
     SetFlag(config->int_max_str_digits);
+#ifdef Py_GIL_DISABLED
+    if (config->enable_gil == _PyConfig_GIL_DEFAULT) {
+        SetFlagObj(Py_NewRef(Py_None));
+    }
+    else {
+        SetFlag(config->enable_gil);
+    }
+#else
+    SetFlagObj(PyLong_FromLong(1));
+#endif
 #undef SetFlagObj
 #undef SetFlag
     return 0;
@@ -3739,7 +3764,7 @@ _PySys_Create(PyThreadState *tstate, PyObject **sysmod_p)
         return status;
     }
 
-    if (_PyImport_FixupBuiltin(sysmod, "sys", modules) < 0) {
+    if (_PyImport_FixupBuiltin(tstate, sysmod, "sys", modules) < 0) {
         goto error;
     }
 
@@ -3847,8 +3872,7 @@ make_sys_argv(int argc, wchar_t * const * argv)
     return list;
 }
 
-// Removed in Python 3.13 API, but kept for the stable ABI
-PyAPI_FUNC(void)
+void
 PySys_SetArgvEx(int argc, wchar_t **argv, int updatepath)
 {
     wchar_t* empty_argv[1] = {L""};
@@ -3892,8 +3916,7 @@ PySys_SetArgvEx(int argc, wchar_t **argv, int updatepath)
     }
 }
 
-// Removed in Python 3.13 API, but kept for the stable ABI
-PyAPI_FUNC(void)
+void
 PySys_SetArgv(int argc, wchar_t **argv)
 {
 _Py_COMP_DIAG_PUSH

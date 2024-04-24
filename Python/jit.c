@@ -112,26 +112,6 @@ mark_executable(unsigned char *memory, size_t size)
     return 0;
 }
 
-static int
-mark_readable(unsigned char *memory, size_t size)
-{
-    if (size == 0) {
-        return 0;
-    }
-    assert(size % get_page_size() == 0);
-#ifdef MS_WINDOWS
-    DWORD old;
-    int failed = !VirtualProtect(memory, size, PAGE_READONLY, &old);
-#else
-    int failed = mprotect(memory, size, PROT_READ);
-#endif
-    if (failed) {
-        jit_error("unable to protect readable memory");
-        return -1;
-    }
-    return 0;
-}
-
 // JIT compiler stuff: /////////////////////////////////////////////////////////
 
 // Warning! AArch64 requires you to get your hands dirty. These are your gloves:
@@ -169,12 +149,12 @@ set_bits(uint32_t *loc, uint8_t loc_start, uint64_t value, uint8_t value_start,
 // Fill all of stencil's holes in the memory pointed to by base, using the
 // values in patches.
 static void
-patch(unsigned char *base, const Stencil *stencil, uint64_t *patches)
+patch(unsigned char *base, const Stencil *stencil, uintptr_t patches[])
 {
-    for (uint64_t i = 0; i < stencil->holes_size; i++) {
+    for (size_t i = 0; i < stencil->holes_size; i++) {
         const Hole *hole = &stencil->holes[i];
         unsigned char *location = base + hole->offset;
-        uint64_t value = patches[hole->value] + (uint64_t)hole->symbol + hole->addend;
+        uint64_t value = patches[hole->value] + (uintptr_t)hole->symbol + hole->addend;
         uint8_t *loc8 = (uint8_t *)location;
         uint32_t *loc32 = (uint32_t *)location;
         uint64_t *loc64 = (uint64_t *)location;
@@ -248,7 +228,7 @@ patch(unsigned char *base, const Stencil *stencil, uint64_t *patches)
             case HoleKind_X86_64_RELOC_SIGNED:
             case HoleKind_X86_64_RELOC_BRANCH:
                 // 32-bit relative address.
-                value -= (uint64_t)location;
+                value -= (uintptr_t)location;
                 // Check that we're not out of range of 32 signed bits:
                 assert((int64_t)value >= -(1LL << 31));
                 assert((int64_t)value < (1LL << 31));
@@ -259,7 +239,7 @@ patch(unsigned char *base, const Stencil *stencil, uint64_t *patches)
             case HoleKind_R_AARCH64_JUMP26:
                 // 28-bit relative branch.
                 assert(IS_AARCH64_BRANCH(*loc32));
-                value -= (uint64_t)location;
+                value -= (uintptr_t)location;
                 // Check that we're not out of range of 28 signed bits:
                 assert((int64_t)value >= -(1 << 27));
                 assert((int64_t)value < (1 << 27));
@@ -333,7 +313,7 @@ patch(unsigned char *base, const Stencil *stencil, uint64_t *patches)
                         i++;
                         continue;
                     }
-                    relaxed = (uint64_t)value - (uint64_t)location;
+                    relaxed = value - (uintptr_t)location;
                     if ((relaxed & 0x3) == 0 &&
                         (int64_t)relaxed >= -(1L << 19) &&
                         (int64_t)relaxed < (1L << 19))
@@ -348,7 +328,7 @@ patch(unsigned char *base, const Stencil *stencil, uint64_t *patches)
                 // Fall through...
             case HoleKind_ARM64_RELOC_PAGE21:
                 // Number of pages between this page and the value's page:
-                value = (value >> 12) - ((uint64_t)location >> 12);
+                value = (value >> 12) - ((uintptr_t)location >> 12);
                 // Check that we're not out of range of 21 signed bits:
                 assert((int64_t)value >= -(1 << 20));
                 assert((int64_t)value < (1 << 20));
@@ -383,14 +363,14 @@ patch(unsigned char *base, const Stencil *stencil, uint64_t *patches)
 }
 
 static void
-copy_and_patch(unsigned char *base, const Stencil *stencil, uint64_t *patches)
+copy_and_patch(unsigned char *base, const Stencil *stencil, uintptr_t patches[])
 {
     memcpy(base, stencil->body, stencil->body_size);
     patch(base, stencil, patches);
 }
 
 static void
-emit(const StencilGroup *group, uint64_t patches[])
+emit(const StencilGroup *group, uintptr_t patches[])
 {
     copy_and_patch((unsigned char *)patches[HoleValue_DATA], &group->data, patches);
     copy_and_patch((unsigned char *)patches[HoleValue_CODE], &group->code, patches);
@@ -401,57 +381,96 @@ int
 _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction *trace, size_t length)
 {
     // Loop once to find the total compiled size:
+    size_t instruction_starts[UOP_MAX_TRACE_LENGTH];
     size_t code_size = 0;
     size_t data_size = 0;
     for (size_t i = 0; i < length; i++) {
         _PyUOpInstruction *instruction = (_PyUOpInstruction *)&trace[i];
         const StencilGroup *group = &stencil_groups[instruction->opcode];
+        instruction_starts[i] = code_size;
         code_size += group->code.body_size;
         data_size += group->data.body_size;
     }
-    // Round up to the nearest page (code and data need separate pages):
+    code_size += stencil_groups[_FATAL_ERROR].code.body_size;
+    data_size += stencil_groups[_FATAL_ERROR].data.body_size;
+    // Round up to the nearest page:
     size_t page_size = get_page_size();
     assert((page_size & (page_size - 1)) == 0);
-    code_size += page_size - (code_size & (page_size - 1));
-    data_size += page_size - (data_size & (page_size - 1));
-    unsigned char *memory = jit_alloc(code_size + data_size);
+    size_t padding = page_size - ((code_size + data_size) & (page_size - 1));
+    size_t total_size = code_size + data_size + padding;
+    unsigned char *memory = jit_alloc(total_size);
     if (memory == NULL) {
         return -1;
     }
     // Loop again to emit the code:
     unsigned char *code = memory;
     unsigned char *data = memory + code_size;
-    unsigned char *top = code;
-    if (trace[0].opcode == _START_EXECUTOR) {
-        // Don't want to execute this more than once:
-        top += stencil_groups[_START_EXECUTOR].code.body_size;
-    }
+    assert(trace[0].opcode == _START_EXECUTOR || trace[0].opcode == _COLD_EXIT);
     for (size_t i = 0; i < length; i++) {
         _PyUOpInstruction *instruction = (_PyUOpInstruction *)&trace[i];
         const StencilGroup *group = &stencil_groups[instruction->opcode];
-        // Think of patches as a dictionary mapping HoleValue to uint64_t:
-        uint64_t patches[] = GET_PATCHES();
-        patches[HoleValue_CODE] = (uint64_t)code;
-        patches[HoleValue_CONTINUE] = (uint64_t)code + group->code.body_size;
-        patches[HoleValue_DATA] = (uint64_t)data;
-        patches[HoleValue_EXECUTOR] = (uint64_t)executor;
+        // Think of patches as a dictionary mapping HoleValue to uintptr_t:
+        uintptr_t patches[] = GET_PATCHES();
+        patches[HoleValue_CODE] = (uintptr_t)code;
+        patches[HoleValue_CONTINUE] = (uintptr_t)code + group->code.body_size;
+        patches[HoleValue_DATA] = (uintptr_t)data;
+        patches[HoleValue_EXECUTOR] = (uintptr_t)executor;
         patches[HoleValue_OPARG] = instruction->oparg;
+    #if SIZEOF_VOID_P == 8
         patches[HoleValue_OPERAND] = instruction->operand;
-        patches[HoleValue_TARGET] = instruction->target;
-        patches[HoleValue_TOP] = (uint64_t)top;
+    #else
+        assert(SIZEOF_VOID_P == 4);
+        patches[HoleValue_OPERAND_HI] = instruction->operand >> 32;
+        patches[HoleValue_OPERAND_LO] = instruction->operand & UINT32_MAX;
+    #endif
+        switch (instruction->format) {
+            case UOP_FORMAT_TARGET:
+                patches[HoleValue_TARGET] = instruction->target;
+                break;
+            case UOP_FORMAT_EXIT:
+                assert(instruction->exit_index < executor->exit_count);
+                patches[HoleValue_EXIT_INDEX] = instruction->exit_index;
+                if (instruction->error_target < length) {
+                    patches[HoleValue_ERROR_TARGET] = (uintptr_t)memory + instruction_starts[instruction->error_target];
+                }
+                break;
+            case UOP_FORMAT_JUMP:
+                assert(instruction->jump_target < length);
+                patches[HoleValue_JUMP_TARGET] = (uintptr_t)memory + instruction_starts[instruction->jump_target];
+                if (instruction->error_target < length) {
+                    patches[HoleValue_ERROR_TARGET] = (uintptr_t)memory + instruction_starts[instruction->error_target];
+                }
+                break;
+            default:
+                assert(0);
+                Py_FatalError("Illegal instruction format");
+        }
+        patches[HoleValue_TOP] = (uintptr_t)memory + instruction_starts[1];
         patches[HoleValue_ZERO] = 0;
         emit(group, patches);
         code += group->code.body_size;
         data += group->data.body_size;
     }
-    if (mark_executable(memory, code_size) ||
-        mark_readable(memory + code_size, data_size))
-    {
-        jit_free(memory, code_size + data_size);
+    // Protect against accidental buffer overrun into data:
+    const StencilGroup *group = &stencil_groups[_FATAL_ERROR];
+    uintptr_t patches[] = GET_PATCHES();
+    patches[HoleValue_CODE] = (uintptr_t)code;
+    patches[HoleValue_CONTINUE] = (uintptr_t)code;
+    patches[HoleValue_DATA] = (uintptr_t)data;
+    patches[HoleValue_EXECUTOR] = (uintptr_t)executor;
+    patches[HoleValue_TOP] = (uintptr_t)code;
+    patches[HoleValue_ZERO] = 0;
+    emit(group, patches);
+    code += group->code.body_size;
+    data += group->data.body_size;
+    assert(code == memory + code_size);
+    assert(data == memory + code_size + data_size);
+    if (mark_executable(memory, total_size)) {
+        jit_free(memory, total_size);
         return -1;
     }
     executor->jit_code = memory;
-    executor->jit_size = code_size + data_size;
+    executor->jit_size = total_size;
     return 0;
 }
 

@@ -55,6 +55,7 @@ struct _pending_calls {
     struct _pending_call _preallocated[NPENDINGCALLSARRAY];
 };
 
+
 typedef enum {
     PERF_STATUS_FAILED = -1,  // Perf trampoline is in an invalid state
     PERF_STATUS_NO_INIT = 0,  // Perf trampoline is not initialized
@@ -89,6 +90,7 @@ struct _ceval_runtime_state {
     } perf;
     /* Pending calls to be made only on the main thread. */
     struct _pending_calls pending_mainthread;
+    PyMutex sys_trace_profile_mutex;
 };
 
 #ifdef PY_HAVE_PERF_TRAMPOLINE

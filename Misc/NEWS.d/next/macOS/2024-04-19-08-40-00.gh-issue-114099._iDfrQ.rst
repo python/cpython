@@ -1,0 +1,1 @@
+iOS preprocessor symbol usage was made compatible with older macOS SDKs.

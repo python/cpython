@@ -141,11 +141,10 @@ except ImportError:
     ctypes = None
 from test.support import (cpython_only,
                           check_impl_detail, requires_debug_ranges,
-                          gc_collect)
+                          gc_collect, Py_GIL_DISABLED)
 from test.support.script_helper import assert_python_ok
-from test.support import threading_helper
-from test.support.bytecode_helper import (BytecodeTestCase,
-                                          instructions_with_positions)
+from test.support import threading_helper, import_helper
+from test.support.bytecode_helper import instructions_with_positions
 from opcode import opmap, opname
 COPY_FREE_VARS = opmap['COPY_FREE_VARS']
 
@@ -176,7 +175,7 @@ class CodeTest(unittest.TestCase):
 
     @cpython_only
     def test_newempty(self):
-        import _testcapi
+        _testcapi = import_helper.import_module("_testcapi")
         co = _testcapi.code_newempty("filename", "funcname", 15)
         self.assertEqual(co.co_filename, "filename")
         self.assertEqual(co.co_name, "funcname")
@@ -835,6 +834,7 @@ if check_impl_detail(cpython=True) and ctypes is not None:
 
             SetExtra(f.__code__, FREE_INDEX, ctypes.c_voidp(100))
             del f
+            gc_collect()  # For free-threaded build
             self.assertEqual(LAST_FREED, 100)
 
         def test_get_set(self):
@@ -866,13 +866,18 @@ if check_impl_detail(cpython=True) and ctypes is not None:
                 def run(self):
                     del self.f
                     gc_collect()
-                    self.test.assertEqual(LAST_FREED, 500)
+                    # gh-117683: In the free-threaded build, the code object's
+                    # destructor may still be running concurrently in the main
+                    # thread.
+                    if not Py_GIL_DISABLED:
+                        self.test.assertEqual(LAST_FREED, 500)
 
             SetExtra(f.__code__, FREE_INDEX, ctypes.c_voidp(500))
             tt = ThreadTest(f, self)
             del f
             tt.start()
             tt.join()
+            gc_collect()  # For free-threaded build
             self.assertEqual(LAST_FREED, 500)
 
 

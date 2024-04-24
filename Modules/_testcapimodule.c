@@ -13,7 +13,6 @@
 #include "_testcapi/parts.h"
 
 #include "frameobject.h"          // PyFrame_New()
-#include "interpreteridobject.h"  // PyInterpreterID_Type
 #include "marshal.h"              // PyMarshal_WriteLongToFile()
 
 #include <float.h>                // FLT_MAX
@@ -597,82 +596,38 @@ get_heaptype_for_name(PyObject *self, PyObject *Py_UNUSED(ignored))
     return PyType_FromSpec(&HeapTypeNameType_Spec);
 }
 
+
 static PyObject *
-test_get_type_name(PyObject *self, PyObject *Py_UNUSED(ignored))
+get_type_name(PyObject *self, PyObject *type)
 {
-    PyObject *tp_name = PyType_GetName(&PyLong_Type);
-    assert(strcmp(PyUnicode_AsUTF8(tp_name), "int") == 0);
-    Py_DECREF(tp_name);
-
-    tp_name = PyType_GetName(&PyModule_Type);
-    assert(strcmp(PyUnicode_AsUTF8(tp_name), "module") == 0);
-    Py_DECREF(tp_name);
-
-    PyObject *HeapTypeNameType = PyType_FromSpec(&HeapTypeNameType_Spec);
-    if (HeapTypeNameType == NULL) {
-        Py_RETURN_NONE;
-    }
-    tp_name = PyType_GetName((PyTypeObject *)HeapTypeNameType);
-    assert(strcmp(PyUnicode_AsUTF8(tp_name), "HeapTypeNameType") == 0);
-    Py_DECREF(tp_name);
-
-    PyObject *name = PyUnicode_FromString("test_name");
-    if (name == NULL) {
-        goto done;
-    }
-    if (PyObject_SetAttrString(HeapTypeNameType, "__name__", name) < 0) {
-        Py_DECREF(name);
-        goto done;
-    }
-    tp_name = PyType_GetName((PyTypeObject *)HeapTypeNameType);
-    assert(strcmp(PyUnicode_AsUTF8(tp_name), "test_name") == 0);
-    Py_DECREF(name);
-    Py_DECREF(tp_name);
-
-  done:
-    Py_DECREF(HeapTypeNameType);
-    Py_RETURN_NONE;
+    assert(PyType_Check(type));
+    return PyType_GetName((PyTypeObject *)type);
 }
 
 
 static PyObject *
-test_get_type_qualname(PyObject *self, PyObject *Py_UNUSED(ignored))
+get_type_qualname(PyObject *self, PyObject *type)
 {
-    PyObject *tp_qualname = PyType_GetQualName(&PyLong_Type);
-    assert(strcmp(PyUnicode_AsUTF8(tp_qualname), "int") == 0);
-    Py_DECREF(tp_qualname);
-
-    tp_qualname = PyType_GetQualName(&PyODict_Type);
-    assert(strcmp(PyUnicode_AsUTF8(tp_qualname), "OrderedDict") == 0);
-    Py_DECREF(tp_qualname);
-
-    PyObject *HeapTypeNameType = PyType_FromSpec(&HeapTypeNameType_Spec);
-    if (HeapTypeNameType == NULL) {
-        Py_RETURN_NONE;
-    }
-    tp_qualname = PyType_GetQualName((PyTypeObject *)HeapTypeNameType);
-    assert(strcmp(PyUnicode_AsUTF8(tp_qualname), "HeapTypeNameType") == 0);
-    Py_DECREF(tp_qualname);
-
-    PyObject *spec_name = PyUnicode_FromString(HeapTypeNameType_Spec.name);
-    if (spec_name == NULL) {
-        goto done;
-    }
-    if (PyObject_SetAttrString(HeapTypeNameType,
-                               "__qualname__", spec_name) < 0) {
-        Py_DECREF(spec_name);
-        goto done;
-    }
-    tp_qualname = PyType_GetQualName((PyTypeObject *)HeapTypeNameType);
-    assert(strcmp(PyUnicode_AsUTF8(tp_qualname),
-                  "_testcapi.HeapTypeNameType") == 0);
-    Py_DECREF(spec_name);
-    Py_DECREF(tp_qualname);
-
-  done:
-    Py_DECREF(HeapTypeNameType);
-    Py_RETURN_NONE;
+    assert(PyType_Check(type));
+    return PyType_GetQualName((PyTypeObject *)type);
 }
+
+
+static PyObject *
+get_type_fullyqualname(PyObject *self, PyObject *type)
+{
+    assert(PyType_Check(type));
+    return PyType_GetFullyQualifiedName((PyTypeObject *)type);
+}
+
+
+static PyObject *
+get_type_module_name(PyObject *self, PyObject *type)
+{
+    assert(PyType_Check(type));
+    return PyType_GetModuleName((PyTypeObject *)type);
+}
+
 
 static PyObject *
 test_get_type_dict(PyObject *self, PyObject *Py_UNUSED(ignored))
@@ -1521,36 +1476,6 @@ run_in_subinterp(PyObject *self, PyObject *args)
     PyThreadState_Swap(mainstate);
 
     return PyLong_FromLong(r);
-}
-
-static PyObject *
-get_interpreterid_type(PyObject *self, PyObject *Py_UNUSED(ignored))
-{
-    return Py_NewRef(&PyInterpreterID_Type);
-}
-
-static PyObject *
-link_interpreter_refcount(PyObject *self, PyObject *idobj)
-{
-    PyInterpreterState *interp = PyInterpreterID_LookUp(idobj);
-    if (interp == NULL) {
-        assert(PyErr_Occurred());
-        return NULL;
-    }
-    _PyInterpreterState_RequireIDRef(interp, 1);
-    Py_RETURN_NONE;
-}
-
-static PyObject *
-unlink_interpreter_refcount(PyObject *self, PyObject *idobj)
-{
-    PyInterpreterState *interp = PyInterpreterID_LookUp(idobj);
-    if (interp == NULL) {
-        assert(PyErr_Occurred());
-        return NULL;
-    }
-    _PyInterpreterState_RequireIDRef(interp, 0);
-    Py_RETURN_NONE;
 }
 
 static PyMethodDef ml;
@@ -2750,106 +2675,59 @@ eval_eval_code_ex(PyObject *mod, PyObject *pos_args)
 
     PyObject **c_kwargs = NULL;
 
-    if (!PyArg_UnpackTuple(pos_args,
-                           "eval_code_ex",
-                           2,
-                           8,
-                           &code,
-                           &globals,
-                           &locals,
-                           &args,
-                           &kwargs,
-                           &defaults,
-                           &kw_defaults,
-                           &closure))
+    if (!PyArg_ParseTuple(pos_args,
+                          "OO|OO!O!O!OO:eval_code_ex",
+                          &code,
+                          &globals,
+                          &locals,
+                          &PyTuple_Type, &args,
+                          &PyDict_Type, &kwargs,
+                          &PyTuple_Type, &defaults,
+                          &kw_defaults,
+                          &closure))
     {
         goto exit;
     }
 
-    if (!PyCode_Check(code)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "code must be a Python code object");
-        goto exit;
-    }
-
-    if (!PyDict_Check(globals)) {
-        PyErr_SetString(PyExc_TypeError, "globals must be a dict");
-        goto exit;
-    }
-
-    if (locals && !PyMapping_Check(locals)) {
-        PyErr_SetString(PyExc_TypeError, "locals must be a mapping");
-        goto exit;
-    }
-    if (locals == Py_None) {
-        locals = NULL;
-    }
+    NULLABLE(code);
+    NULLABLE(globals);
+    NULLABLE(locals);
+    NULLABLE(kw_defaults);
+    NULLABLE(closure);
 
     PyObject **c_args = NULL;
     Py_ssize_t c_args_len = 0;
-
-    if (args)
-    {
-        if (!PyTuple_Check(args)) {
-            PyErr_SetString(PyExc_TypeError, "args must be a tuple");
-            goto exit;
-        } else {
-            c_args = &PyTuple_GET_ITEM(args, 0);
-            c_args_len = PyTuple_Size(args);
-        }
+    if (args) {
+        c_args = &PyTuple_GET_ITEM(args, 0);
+        c_args_len = PyTuple_Size(args);
     }
 
     Py_ssize_t c_kwargs_len = 0;
-
-    if (kwargs)
-    {
-        if (!PyDict_Check(kwargs)) {
-            PyErr_SetString(PyExc_TypeError, "keywords must be a dict");
-            goto exit;
-        } else {
-            c_kwargs_len = PyDict_Size(kwargs);
-            if (c_kwargs_len > 0) {
-                c_kwargs = PyMem_NEW(PyObject*, 2 * c_kwargs_len);
-                if (!c_kwargs) {
-                    PyErr_NoMemory();
-                    goto exit;
-                }
-
-                Py_ssize_t i = 0;
-                Py_ssize_t pos = 0;
-
-                while (PyDict_Next(kwargs,
-                                   &pos,
-                                   &c_kwargs[i],
-                                   &c_kwargs[i + 1]))
-                {
-                    i += 2;
-                }
-                c_kwargs_len = i / 2;
-                /* XXX This is broken if the caller deletes dict items! */
+    if (kwargs) {
+        c_kwargs_len = PyDict_Size(kwargs);
+        if (c_kwargs_len > 0) {
+            c_kwargs = PyMem_NEW(PyObject*, 2 * c_kwargs_len);
+            if (!c_kwargs) {
+                PyErr_NoMemory();
+                goto exit;
             }
+
+            Py_ssize_t i = 0;
+            Py_ssize_t pos = 0;
+            while (PyDict_Next(kwargs, &pos, &c_kwargs[i], &c_kwargs[i + 1])) {
+                i += 2;
+            }
+            c_kwargs_len = i / 2;
+            /* XXX This is broken if the caller deletes dict items! */
         }
     }
 
-
     PyObject **c_defaults = NULL;
     Py_ssize_t c_defaults_len = 0;
-
-    if (defaults && PyTuple_Check(defaults)) {
+    if (defaults) {
         c_defaults = &PyTuple_GET_ITEM(defaults, 0);
         c_defaults_len = PyTuple_Size(defaults);
     }
-
-    if (kw_defaults && !PyDict_Check(kw_defaults)) {
-        PyErr_SetString(PyExc_TypeError, "kw_defaults must be a dict");
-        goto exit;
-    }
-
-    if (closure && !PyTuple_Check(closure)) {
-        PyErr_SetString(PyExc_TypeError, "closure must be a tuple of cells");
-        goto exit;
-    }
-
 
     result = PyEval_EvalCodeEx(
         code,
@@ -3169,6 +3047,33 @@ function_set_kw_defaults(PyObject *self, PyObject *args)
 }
 
 static PyObject *
+function_get_closure(PyObject *self, PyObject *func)
+{
+    PyObject *closure = PyFunction_GetClosure(func);
+    if (closure != NULL) {
+        return Py_NewRef(closure);
+    } else if (PyErr_Occurred()) {
+        return NULL;
+    } else {
+        Py_RETURN_NONE;  // This can happen when `closure` is set to `None`
+    }
+}
+
+static PyObject *
+function_set_closure(PyObject *self, PyObject *args)
+{
+    PyObject *func = NULL, *closure = NULL;
+    if (!PyArg_ParseTuple(args, "OO", &func, &closure)) {
+        return NULL;
+    }
+    int result = PyFunction_SetClosure(func, closure);
+    if (result == -1) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+static PyObject *
 check_pyimport_addmodule(PyObject *self, PyObject *args)
 {
     const char *name;
@@ -3347,8 +3252,10 @@ static PyMethodDef TestMethods[] = {
     {"test_buildvalue_N",        test_buildvalue_N,              METH_NOARGS},
     {"test_get_statictype_slots", test_get_statictype_slots,     METH_NOARGS},
     {"get_heaptype_for_name",     get_heaptype_for_name,         METH_NOARGS},
-    {"test_get_type_name",        test_get_type_name,            METH_NOARGS},
-    {"test_get_type_qualname",    test_get_type_qualname,        METH_NOARGS},
+    {"get_type_name",            get_type_name,                  METH_O},
+    {"get_type_qualname",        get_type_qualname,              METH_O},
+    {"get_type_fullyqualname",   get_type_fullyqualname,         METH_O},
+    {"get_type_module_name",     get_type_module_name,           METH_O},
     {"test_get_type_dict",        test_get_type_dict,            METH_NOARGS},
     {"_test_thread_state",      test_thread_state,               METH_VARARGS},
 #ifndef MS_WINDOWS
@@ -3369,9 +3276,6 @@ static PyMethodDef TestMethods[] = {
     {"crash_no_current_thread", crash_no_current_thread,         METH_NOARGS},
     {"test_current_tstate_matches", test_current_tstate_matches, METH_NOARGS},
     {"run_in_subinterp",        run_in_subinterp,                METH_VARARGS},
-    {"get_interpreterid_type",  get_interpreterid_type,          METH_NOARGS},
-    {"link_interpreter_refcount", link_interpreter_refcount,     METH_O},
-    {"unlink_interpreter_refcount", unlink_interpreter_refcount, METH_O},
     {"create_cfunction",        create_cfunction,                METH_NOARGS},
     {"call_in_temporary_c_thread", call_in_temporary_c_thread, METH_VARARGS,
      PyDoc_STR("set_error_class(error_class) -> None")},
@@ -3452,6 +3356,8 @@ static PyMethodDef TestMethods[] = {
     {"function_set_defaults", function_set_defaults, METH_VARARGS, NULL},
     {"function_get_kw_defaults", function_get_kw_defaults, METH_O, NULL},
     {"function_set_kw_defaults", function_set_kw_defaults, METH_VARARGS, NULL},
+    {"function_get_closure", function_get_closure, METH_O, NULL},
+    {"function_set_closure", function_set_closure, METH_VARARGS, NULL},
     {"check_pyimport_addmodule", check_pyimport_addmodule, METH_VARARGS},
     {"test_weakref_capi", test_weakref_capi, METH_NOARGS},
     {NULL, NULL} /* sentinel */
@@ -3947,7 +3853,9 @@ PyInit__testcapi(void)
         return NULL;
 
     Py_SET_TYPE(&_HashInheritanceTester_Type, &PyType_Type);
-
+    if (PyType_Ready(&_HashInheritanceTester_Type) < 0) {
+        return NULL;
+    }
     if (PyType_Ready(&matmulType) < 0)
         return NULL;
     Py_INCREF(&matmulType);
@@ -4019,12 +3927,23 @@ PyInit__testcapi(void)
     PyModule_AddObject(m, "SIZEOF_WCHAR_T", PyLong_FromSsize_t(sizeof(wchar_t)));
     PyModule_AddObject(m, "SIZEOF_VOID_P", PyLong_FromSsize_t(sizeof(void*)));
     PyModule_AddObject(m, "SIZEOF_TIME_T", PyLong_FromSsize_t(sizeof(time_t)));
+    PyModule_AddObject(m, "SIZEOF_PID_T", PyLong_FromSsize_t(sizeof(pid_t)));
     PyModule_AddObject(m, "Py_Version", PyLong_FromUnsignedLong(Py_Version));
     Py_INCREF(&PyInstanceMethod_Type);
     PyModule_AddObject(m, "instancemethod", (PyObject *)&PyInstanceMethod_Type);
 
     PyModule_AddIntConstant(m, "the_number_three", 3);
     PyModule_AddIntMacro(m, Py_C_RECURSION_LIMIT);
+
+    if (PyModule_AddIntMacro(m, Py_single_input)) {
+        return NULL;
+    }
+    if (PyModule_AddIntMacro(m, Py_file_input)) {
+        return NULL;
+    }
+    if (PyModule_AddIntMacro(m, Py_eval_input)) {
+        return NULL;
+    }
 
     testcapistate_t *state = get_testcapi_state(m);
     state->error = PyErr_NewException("_testcapi.error", NULL, NULL);
@@ -4046,9 +3965,6 @@ PyInit__testcapi(void)
         return NULL;
     }
     if (_PyTestCapi_Init_Abstract(m) < 0) {
-        return NULL;
-    }
-    if (_PyTestCapi_Init_ByteArray(m) < 0) {
         return NULL;
     }
     if (_PyTestCapi_Init_Bytes(m) < 0) {
@@ -4108,16 +4024,10 @@ PyInit__testcapi(void)
     if (_PyTestCapi_Init_Buffer(m) < 0) {
         return NULL;
     }
-    if (_PyTestCapi_Init_PyOS(m) < 0) {
-        return NULL;
-    }
     if (_PyTestCapi_Init_File(m) < 0) {
         return NULL;
     }
     if (_PyTestCapi_Init_Codec(m) < 0) {
-        return NULL;
-    }
-    if (_PyTestCapi_Init_Sys(m) < 0) {
         return NULL;
     }
     if (_PyTestCapi_Init_Immortal(m) < 0) {
@@ -4129,16 +4039,16 @@ PyInit__testcapi(void)
     if (_PyTestCapi_Init_PyAtomic(m) < 0) {
         return NULL;
     }
-    if (_PyTestCapi_Init_VectorcallLimited(m) < 0) {
-        return NULL;
-    }
-    if (_PyTestCapi_Init_HeaptypeRelative(m) < 0) {
+    if (_PyTestCapi_Init_Run(m) < 0) {
         return NULL;
     }
     if (_PyTestCapi_Init_Hash(m) < 0) {
         return NULL;
     }
     if (_PyTestCapi_Init_Time(m) < 0) {
+        return NULL;
+    }
+    if (_PyTestCapi_Init_Object(m) < 0) {
         return NULL;
     }
 

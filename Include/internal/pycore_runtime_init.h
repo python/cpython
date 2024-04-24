@@ -166,6 +166,7 @@ extern PyTypeObject _PyExc_MemoryError;
 #define _PyInterpreterState_INIT(INTERP) \
     { \
         .id_refcount = -1, \
+        ._whence = _PyInterpreterState_WHENCE_NOTSET, \
         .imports = IMPORTS_INIT, \
         .ceval = { \
             .recursion_limit = Py_DEFAULT_RECURSION_LIMIT, \
@@ -176,12 +177,12 @@ extern PyTypeObject _PyExc_MemoryError;
         }, \
         .gc = { \
             .enabled = 1, \
-            .generations = { \
-                /* .head is set in _PyGC_InitState(). */ \
-                { .threshold = 700, }, \
+            .young = { .threshold = 2000, }, \
+            .old = { \
                 { .threshold = 10, }, \
-                { .threshold = 10, }, \
+                { .threshold = 0, }, \
             }, \
+            .work_to_do = -5000, \
         }, \
         .qsbr = { \
             .wr_seq = QSBR_INITIAL, \
