@@ -686,12 +686,12 @@ dummy_func(
             DISPATCH_INLINED(new_frame);
         }
 
-        inst(LIST_APPEND, (list, unused[oparg-1], v -- list, unused[oparg-1])) {
-            ERROR_IF(_PyList_AppendTakeRef((PyListObject *)list, v) < 0, error);
+        inst(LIST_APPEND, (list, unused[oparg-1], v: _PyStackRef -- list, unused[oparg-1])) {
+            ERROR_IF(_PyList_AppendTakeRef((PyListObject *)list, Py_STACKREF_UNTAG_OWNED(v)) < 0, error);
         }
 
-        inst(SET_ADD, (set, unused[oparg-1], v -- set, unused[oparg-1])) {
-            int err = PySet_Add(set, v);
+        inst(SET_ADD, (set, unused[oparg-1], v: _PyStackRef -- set, unused[oparg-1])) {
+            int err = PySet_Add(set, Py_STACKREF_UNTAG_OWNED(v));
             DECREF_INPUTS();
             ERROR_IF(err, error);
         }
@@ -776,10 +776,10 @@ dummy_func(
             PyObject *cause = NULL, *exc = NULL;
             switch (oparg) {
             case 2:
-                cause = Py_STACKREF_UNTAG_BORROWED(args[1]);
+                cause = Py_STACKREF_UNTAG_OWNED(args[1]);
                 /* fall through */
             case 1:
-                exc = Py_STACKREF_UNTAG_BORROWED(args[0]);
+                exc = Py_STACKREF_UNTAG_OWNED(args[0]);
                 /* fall through */
             case 0:
                 if (do_raise(tstate, exc, cause)) {
@@ -1173,7 +1173,7 @@ dummy_func(
             }
         }
 
-        inst(STORE_NAME, (v -- )) {
+        inst(STORE_NAME, (v: _PyStackRef -- )) {
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
             PyObject *ns = LOCALS();
             int err;
@@ -1184,9 +1184,9 @@ dummy_func(
                 ERROR_IF(true, error);
             }
             if (PyDict_CheckExact(ns))
-                err = PyDict_SetItem(ns, name, v);
+                err = PyDict_SetItem(ns, name, Py_STACKREF_UNTAG_OWNED(v));
             else
-                err = PyObject_SetItem(ns, name, v);
+                err = PyObject_SetItem(ns, name, Py_STACKREF_UNTAG_OWNED(v));
             DECREF_INPUTS();
             ERROR_IF(err, error);
         }
@@ -1298,9 +1298,9 @@ dummy_func(
             #endif  /* ENABLE_SPECIALIZATION */
         }
 
-        op(_STORE_ATTR, (v, owner --)) {
+        op(_STORE_ATTR, (v: _PyStackRef, owner --)) {
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
-            int err = PyObject_SetAttr(owner, name, v);
+            int err = PyObject_SetAttr(owner, name, Py_STACKREF_UNTAG_OWNED(v));
             DECREF_INPUTS();
             ERROR_IF(err, error);
         }
@@ -1314,9 +1314,9 @@ dummy_func(
             ERROR_IF(err, error);
         }
 
-        inst(STORE_GLOBAL, (v --)) {
+        inst(STORE_GLOBAL, (v: _PyStackRef --)) {
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
-            int err = PyDict_SetItem(GLOBALS(), name, v);
+            int err = PyDict_SetItem(GLOBALS(), name, Py_STACKREF_UNTAG_OWNED(v));
             DECREF_INPUTS();
             ERROR_IF(err, error);
         }
@@ -1568,9 +1568,9 @@ dummy_func(
             }
         }
 
-        inst(STORE_DEREF, (v --)) {
+        inst(STORE_DEREF, (v: _PyStackRef --)) {
             PyCellObject *cell = (PyCellObject *)Py_STACKREF_UNTAG_BORROWED(GETLOCAL(oparg));
-            PyCell_SetTakeRef(cell, v);
+            PyCell_SetTakeRef(cell, Py_STACKREF_UNTAG_OWNED(v));
         }
 
         inst(COPY_FREE_VARS, (--)) {
@@ -1708,11 +1708,11 @@ dummy_func(
             DECREF_INPUTS();
         }
 
-        inst(MAP_ADD, (dict, unused[oparg - 1], key, value -- dict, unused[oparg - 1])) {
+        inst(MAP_ADD, (dict, unused[oparg - 1], key: _PyStackRef, value: _PyStackRef -- dict, unused[oparg - 1])) {
             assert(PyDict_CheckExact(dict));
             /* dict[key] = value */
             // Do not DECREF INPUTS because the function steals the references
-            ERROR_IF(_PyDict_SetItem_Take2((PyDictObject *)dict, key, value) != 0, error);
+            ERROR_IF(_PyDict_SetItem_Take2((PyDictObject *)dict, Py_STACKREF_UNTAG_OWNED(key), Py_STACKREF_UNTAG_OWNED(value)) != 0, error);
         }
 
         inst(INSTRUMENTED_LOAD_SUPER_ATTR, (unused/1, unused, unused, unused -- unused, unused if (oparg & 1))) {
@@ -1854,17 +1854,17 @@ dummy_func(
             #endif  /* ENABLE_SPECIALIZATION */
         }
 
-        op(_LOAD_ATTR, (owner -- attr, self_or_null if (oparg & 1))) {
+        op(_LOAD_ATTR, (owner -- attr: _PyStackRef *, self_or_null if (oparg & 1))) {
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg >> 1);
             if (oparg & 1) {
                 /* Designed to work in tandem with CALL, pushes two values. */
-                attr = NULL;
-                if (_PyObject_GetMethod(owner, name, &attr)) {
+                *attr = Py_STACKREF_TAG(NULL);
+                if (_PyObject_GetMethodStackRef(owner, name, attr)) {
                     /* We can bypass temporary bound method object.
                        meth is unbound method and obj is self.
                        meth | self | arg1 | ... | argN
                      */
-                    assert(attr != NULL);  // No errors on this branch
+                    assert(Py_STACKREF_UNTAG_BORROWED(*attr) != NULL);  // No errors on this branch
                     self_or_null = owner;  // Transfer ownership
                 }
                 else {
@@ -1875,15 +1875,15 @@ dummy_func(
                        meth | NULL | arg1 | ... | argN
                     */
                     DECREF_INPUTS();
-                    ERROR_IF(attr == NULL, error);
+                    ERROR_IF(Py_STACKREF_UNTAG_BORROWED(*attr) == NULL, error);
                     self_or_null = NULL;
                 }
             }
             else {
                 /* Classic, pushes one value. */
-                attr = PyObject_GetAttr(owner, name);
+                *attr = Py_STACKREF_TAG(PyObject_GetAttr(owner, name));
                 DECREF_INPUTS();
-                ERROR_IF(attr == NULL, error);
+                ERROR_IF(Py_STACKREF_UNTAG_BORROWED(*attr) == NULL, error);
             }
         }
 
@@ -2081,12 +2081,12 @@ dummy_func(
             DEOPT_IF(_PyObject_InlineValues(owner)->valid == 0);
         }
 
-        op(_STORE_ATTR_INSTANCE_VALUE, (index/1, value, owner --)) {
+        op(_STORE_ATTR_INSTANCE_VALUE, (index/1, value: _PyStackRef, owner --)) {
             STAT_INC(STORE_ATTR, hit);
             assert(_PyObject_ManagedDictPointer(owner)->dict == NULL);
             PyDictValues *values = _PyObject_InlineValues(owner);
             PyObject *old_value = values->values[index];
-            values->values[index] = value;
+            values->values[index] = Py_STACKREF_UNTAG_OWNED(value);
             if (old_value == NULL) {
                 _PyDictValues_AddToInsertionOrder(values, index);
             }
@@ -2102,7 +2102,7 @@ dummy_func(
             _GUARD_DORV_NO_DICT +
             _STORE_ATTR_INSTANCE_VALUE;
 
-        inst(STORE_ATTR_WITH_HINT, (unused/1, type_version/2, hint/1, value, owner --)) {
+        inst(STORE_ATTR_WITH_HINT, (unused/1, type_version/2, hint/1, value: _PyStackRef, owner --)) {
             PyTypeObject *tp = Py_TYPE(owner);
             assert(type_version != 0);
             DEOPT_IF(tp->tp_version_tag != type_version);
@@ -2120,21 +2120,21 @@ dummy_func(
                 DEOPT_IF(ep->me_key != name);
                 old_value = ep->me_value;
                 DEOPT_IF(old_value == NULL);
-                new_version = _PyDict_NotifyEvent(tstate->interp, PyDict_EVENT_MODIFIED, dict, name, value);
-                ep->me_value = value;
+                new_version = _PyDict_NotifyEvent(tstate->interp, PyDict_EVENT_MODIFIED, dict, name, Py_STACKREF_UNTAG_BORROWED(value));
+                ep->me_value = Py_STACKREF_UNTAG_OWNED(value);
             }
             else {
                 PyDictKeyEntry *ep = DK_ENTRIES(dict->ma_keys) + hint;
                 DEOPT_IF(ep->me_key != name);
                 old_value = ep->me_value;
                 DEOPT_IF(old_value == NULL);
-                new_version = _PyDict_NotifyEvent(tstate->interp, PyDict_EVENT_MODIFIED, dict, name, value);
-                ep->me_value = value;
+                new_version = _PyDict_NotifyEvent(tstate->interp, PyDict_EVENT_MODIFIED, dict, name, Py_STACKREF_UNTAG_BORROWED(value));
+                ep->me_value = Py_STACKREF_UNTAG_OWNED(value);
             }
             Py_DECREF(old_value);
             STAT_INC(STORE_ATTR, hit);
             /* Ensure dict is GC tracked if it needs to be */
-            if (!_PyObject_GC_IS_TRACKED(dict) && _PyObject_GC_MAY_BE_TRACKED(value)) {
+            if (!_PyObject_GC_IS_TRACKED(dict) && _PyObject_GC_MAY_BE_TRACKED(Py_STACKREF_UNTAG_BORROWED(value))) {
                 _PyObject_GC_TRACK(dict);
             }
             /* PEP 509 */
@@ -2142,11 +2142,11 @@ dummy_func(
             Py_DECREF_STACKREF(owner_tagged);
         }
 
-        op(_STORE_ATTR_SLOT, (index/1, value, owner --)) {
+        op(_STORE_ATTR_SLOT, (index/1, value: _PyStackRef, owner --)) {
             char *addr = (char *)owner + index;
             STAT_INC(STORE_ATTR, hit);
             PyObject *old_value = *(PyObject **)addr;
-            *(PyObject **)addr = value;
+            *(PyObject **)addr = Py_STACKREF_UNTAG_OWNED(value);
             Py_XDECREF(old_value);
             Py_DECREF_STACKREF(owner_tagged);
         }
@@ -3517,14 +3517,14 @@ dummy_func(
         }
 
         // This is secretly a super-instruction
-        tier1 inst(CALL_LIST_APPEND, (unused/1, unused/2, callable, self, arg -- unused)) {
+        tier1 inst(CALL_LIST_APPEND, (unused/1, unused/2, callable, self, arg: _PyStackRef -- unused)) {
             assert(oparg == 1);
             PyInterpreterState *interp = tstate->interp;
             DEOPT_IF(callable != interp->callable_cache.list_append);
             assert(self != NULL);
             DEOPT_IF(!PyList_Check(self));
             STAT_INC(CALL, hit);
-            if (_PyList_AppendTakeRef((PyListObject *)self, arg) < 0) {
+            if (_PyList_AppendTakeRef((PyListObject *)self, Py_STACKREF_UNTAG_OWNED(arg)) < 0) {
                 goto pop_1_error;  // Since arg is DECREF'ed already
             }
             Py_DECREF_STACKREF(self_tagged);

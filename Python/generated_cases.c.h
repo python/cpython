@@ -1717,16 +1717,14 @@ kwargs = Py_STACKREF_UNTAG_BORROWED(kwargs_tagged);
             next_instr += 4;
             INSTRUCTION_STATS(CALL_LIST_APPEND);
             static_assert(INLINE_CACHE_ENTRIES_CALL == 3, "incorrect cache size");
-            _PyStackRef arg_tagged;
-            PyObject *arg;
+            _PyStackRef arg;
             _PyStackRef self_tagged;
             PyObject *self;
             _PyStackRef callable_tagged;
             PyObject *callable;
             /* Skip 1 cache entry */
             /* Skip 2 cache entries */
-            arg_tagged = stack_pointer[-1];
-            arg = Py_STACKREF_UNTAG_BORROWED(arg_tagged);
+            arg = stack_pointer[-1];
 
             self_tagged = stack_pointer[-2];
             self = Py_STACKREF_UNTAG_BORROWED(self_tagged);
@@ -1740,7 +1738,7 @@ kwargs = Py_STACKREF_UNTAG_BORROWED(kwargs_tagged);
             assert(self != NULL);
             DEOPT_IF(!PyList_Check(self), CALL);
             STAT_INC(CALL, hit);
-            if (_PyList_AppendTakeRef((PyListObject *)self, arg) < 0) {
+            if (_PyList_AppendTakeRef((PyListObject *)self, Py_STACKREF_UNTAG_OWNED(arg)) < 0) {
                 goto pop_1_error;  // Since arg is DECREF'ed already
             }
             Py_DECREF_STACKREF(self_tagged);
@@ -4001,17 +3999,15 @@ kwargs = Py_STACKREF_UNTAG_BORROWED(kwargs_tagged);
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(LIST_APPEND);
-            _PyStackRef v_tagged;
-            PyObject *v;
+            _PyStackRef v;
             _PyStackRef list_tagged;
             PyObject *list;
-            v_tagged = stack_pointer[-1];
-            v = Py_STACKREF_UNTAG_BORROWED(v_tagged);
+            v = stack_pointer[-1];
 
             list_tagged = stack_pointer[-2 - (oparg-1)];
             list = Py_STACKREF_UNTAG_BORROWED(list_tagged);
 
-            if (_PyList_AppendTakeRef((PyListObject *)list, v) < 0) goto pop_1_error;
+            if (_PyList_AppendTakeRef((PyListObject *)list, Py_STACKREF_UNTAG_OWNED(v)) < 0) goto pop_1_error;
             stack_pointer += -1;
             DISPATCH();
         }
@@ -4071,7 +4067,7 @@ kwargs = Py_STACKREF_UNTAG_BORROWED(kwargs_tagged);
             (void)this_instr;
             _PyStackRef owner_tagged;
             PyObject *owner;
-            PyObject *attr;
+            _PyStackRef *attr;
             PyObject *self_or_null = NULL;
             // _SPECIALIZE_LOAD_ATTR
             owner_tagged = stack_pointer[-1];
@@ -4094,16 +4090,17 @@ kwargs = Py_STACKREF_UNTAG_BORROWED(kwargs_tagged);
             /* Skip 8 cache entries */
             // _LOAD_ATTR
             {
+                attr = &stack_pointer[-1];
                 PyObject *name = GETITEM(FRAME_CO_NAMES, oparg >> 1);
                 if (oparg & 1) {
                     /* Designed to work in tandem with CALL, pushes two values. */
-                    attr = NULL;
-                    if (_PyObject_GetMethod(owner, name, &attr)) {
+                    *attr = Py_STACKREF_TAG(NULL);
+                    if (_PyObject_GetMethodStackRef(owner, name, attr)) {
                         /* We can bypass temporary bound method object.
                            meth is unbound method and obj is self.
                            meth | self | arg1 | ... | argN
                          */
-                        assert(attr != NULL);  // No errors on this branch
+                        assert(Py_STACKREF_UNTAG_BORROWED(*attr) != NULL);  // No errors on this branch
                         self_or_null = owner;  // Transfer ownership
                     }
                     else {
@@ -4115,19 +4112,18 @@ kwargs = Py_STACKREF_UNTAG_BORROWED(kwargs_tagged);
                          */
                         (void)owner;
                         Py_DECREF_STACKREF(owner_tagged);
-                        if (attr == NULL) goto pop_1_error;
+                        if (Py_STACKREF_UNTAG_BORROWED(*attr) == NULL) goto pop_1_error;
                         self_or_null = NULL;
                     }
                 }
                 else {
                     /* Classic, pushes one value. */
-                    attr = PyObject_GetAttr(owner, name);
+                    *attr = Py_STACKREF_TAG(PyObject_GetAttr(owner, name));
                     (void)owner;
                     Py_DECREF_STACKREF(owner_tagged);
-                    if (attr == NULL) goto pop_1_error;
+                    if (Py_STACKREF_UNTAG_BORROWED(*attr) == NULL) goto pop_1_error;
                 }
             }
-            stack_pointer[-1] = Py_STACKREF_TAG(attr);
             if (oparg & 1) stack_pointer[0] = Py_STACKREF_TAG(self_or_null);
             stack_pointer += (oparg & 1);
             DISPATCH();
@@ -5230,17 +5226,13 @@ kwargs = Py_STACKREF_UNTAG_BORROWED(kwargs_tagged);
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(MAP_ADD);
-            _PyStackRef value_tagged;
-            PyObject *value;
-            _PyStackRef key_tagged;
-            PyObject *key;
+            _PyStackRef value;
+            _PyStackRef key;
             _PyStackRef dict_tagged;
             PyObject *dict;
-            value_tagged = stack_pointer[-1];
-            value = Py_STACKREF_UNTAG_BORROWED(value_tagged);
+            value = stack_pointer[-1];
 
-            key_tagged = stack_pointer[-2];
-            key = Py_STACKREF_UNTAG_BORROWED(key_tagged);
+            key = stack_pointer[-2];
 
             dict_tagged = stack_pointer[-3 - (oparg - 1)];
             dict = Py_STACKREF_UNTAG_BORROWED(dict_tagged);
@@ -5248,7 +5240,7 @@ kwargs = Py_STACKREF_UNTAG_BORROWED(kwargs_tagged);
             assert(PyDict_CheckExact(dict));
             /* dict[key] = value */
             // Do not DECREF INPUTS because the function steals the references
-            if (_PyDict_SetItem_Take2((PyDictObject *)dict, key, value) != 0) goto pop_2_error;
+            if (_PyDict_SetItem_Take2((PyDictObject *)dict, Py_STACKREF_UNTAG_OWNED(key), Py_STACKREF_UNTAG_OWNED(value)) != 0) goto pop_2_error;
             stack_pointer += -2;
             DISPATCH();
         }
@@ -5562,10 +5554,10 @@ kwargs = Py_STACKREF_UNTAG_BORROWED(kwargs_tagged);
             PyObject *cause = NULL, *exc = NULL;
             switch (oparg) {
                 case 2:
-                cause = Py_STACKREF_UNTAG_BORROWED(args[1]);
+                cause = Py_STACKREF_UNTAG_OWNED(args[1]);
                 /* fall through */
                 case 1:
-                exc = Py_STACKREF_UNTAG_BORROWED(args[0]);
+                exc = Py_STACKREF_UNTAG_OWNED(args[0]);
                 /* fall through */
                 case 0:
                 if (do_raise(tstate, exc, cause)) {
@@ -5897,19 +5889,17 @@ kwargs = Py_STACKREF_UNTAG_BORROWED(kwargs_tagged);
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(SET_ADD);
-            _PyStackRef v_tagged;
-            PyObject *v;
+            _PyStackRef v;
             _PyStackRef set_tagged;
             PyObject *set;
-            v_tagged = stack_pointer[-1];
-            v = Py_STACKREF_UNTAG_BORROWED(v_tagged);
+            v = stack_pointer[-1];
 
             set_tagged = stack_pointer[-2 - (oparg-1)];
             set = Py_STACKREF_UNTAG_BORROWED(set_tagged);
 
-            int err = PySet_Add(set, v);
+            int err = PySet_Add(set, Py_STACKREF_UNTAG_OWNED(v));
             (void)v;
-            Py_DECREF_STACKREF(v_tagged);
+            Py_DECREF_STACKREF(v);
             if (err) goto pop_1_error;
             stack_pointer += -1;
             DISPATCH();
@@ -5989,8 +5979,7 @@ kwargs = Py_STACKREF_UNTAG_BORROWED(kwargs_tagged);
             (void)this_instr;
             _PyStackRef owner_tagged;
             PyObject *owner;
-            _PyStackRef v_tagged;
-            PyObject *v;
+            _PyStackRef v;
             // _SPECIALIZE_STORE_ATTR
             owner_tagged = stack_pointer[-1];
             owner = Py_STACKREF_UNTAG_BORROWED(owner_tagged);
@@ -6011,14 +6000,13 @@ kwargs = Py_STACKREF_UNTAG_BORROWED(kwargs_tagged);
             }
             /* Skip 3 cache entries */
             // _STORE_ATTR
-            v_tagged = stack_pointer[-2];
-            v = Py_STACKREF_UNTAG_BORROWED(v_tagged);
+            v = stack_pointer[-2];
 
             {
                 PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
-                int err = PyObject_SetAttr(owner, name, v);
+                int err = PyObject_SetAttr(owner, name, Py_STACKREF_UNTAG_OWNED(v));
                 (void)v;
-                Py_DECREF_STACKREF(v_tagged);
+                Py_DECREF_STACKREF(v);
                 (void)owner;
                 Py_DECREF_STACKREF(owner_tagged);
                 if (err) goto pop_2_error;
@@ -6034,8 +6022,7 @@ kwargs = Py_STACKREF_UNTAG_BORROWED(kwargs_tagged);
             static_assert(INLINE_CACHE_ENTRIES_STORE_ATTR == 4, "incorrect cache size");
             _PyStackRef owner_tagged;
             PyObject *owner;
-            _PyStackRef value_tagged;
-            PyObject *value;
+            _PyStackRef value;
             /* Skip 1 cache entry */
             // _GUARD_TYPE_VERSION
             owner_tagged = stack_pointer[-1];
@@ -6055,8 +6042,7 @@ kwargs = Py_STACKREF_UNTAG_BORROWED(kwargs_tagged);
                 DEOPT_IF(_PyObject_InlineValues(owner)->valid == 0, STORE_ATTR);
             }
             // _STORE_ATTR_INSTANCE_VALUE
-            value_tagged = stack_pointer[-2];
-            value = Py_STACKREF_UNTAG_BORROWED(value_tagged);
+            value = stack_pointer[-2];
 
             {
                 uint16_t index = read_u16(&this_instr[4].cache);
@@ -6064,7 +6050,7 @@ kwargs = Py_STACKREF_UNTAG_BORROWED(kwargs_tagged);
                 assert(_PyObject_ManagedDictPointer(owner)->dict == NULL);
                 PyDictValues *values = _PyObject_InlineValues(owner);
                 PyObject *old_value = values->values[index];
-                values->values[index] = value;
+                values->values[index] = Py_STACKREF_UNTAG_OWNED(value);
                 if (old_value == NULL) {
                     _PyDictValues_AddToInsertionOrder(values, index);
                 }
@@ -6084,8 +6070,7 @@ kwargs = Py_STACKREF_UNTAG_BORROWED(kwargs_tagged);
             static_assert(INLINE_CACHE_ENTRIES_STORE_ATTR == 4, "incorrect cache size");
             _PyStackRef owner_tagged;
             PyObject *owner;
-            _PyStackRef value_tagged;
-            PyObject *value;
+            _PyStackRef value;
             /* Skip 1 cache entry */
             // _GUARD_TYPE_VERSION
             owner_tagged = stack_pointer[-1];
@@ -6098,15 +6083,14 @@ kwargs = Py_STACKREF_UNTAG_BORROWED(kwargs_tagged);
                 DEOPT_IF(tp->tp_version_tag != type_version, STORE_ATTR);
             }
             // _STORE_ATTR_SLOT
-            value_tagged = stack_pointer[-2];
-            value = Py_STACKREF_UNTAG_BORROWED(value_tagged);
+            value = stack_pointer[-2];
 
             {
                 uint16_t index = read_u16(&this_instr[4].cache);
                 char *addr = (char *)owner + index;
                 STAT_INC(STORE_ATTR, hit);
                 PyObject *old_value = *(PyObject **)addr;
-                *(PyObject **)addr = value;
+                *(PyObject **)addr = Py_STACKREF_UNTAG_OWNED(value);
                 Py_XDECREF(old_value);
                 Py_DECREF_STACKREF(owner_tagged);
             }
@@ -6121,14 +6105,12 @@ kwargs = Py_STACKREF_UNTAG_BORROWED(kwargs_tagged);
             static_assert(INLINE_CACHE_ENTRIES_STORE_ATTR == 4, "incorrect cache size");
             _PyStackRef owner_tagged;
             PyObject *owner;
-            _PyStackRef value_tagged;
-            PyObject *value;
+            _PyStackRef value;
             /* Skip 1 cache entry */
             owner_tagged = stack_pointer[-1];
             owner = Py_STACKREF_UNTAG_BORROWED(owner_tagged);
 
-            value_tagged = stack_pointer[-2];
-            value = Py_STACKREF_UNTAG_BORROWED(value_tagged);
+            value = stack_pointer[-2];
 
             uint32_t type_version = read_u32(&this_instr[2].cache);
             uint16_t hint = read_u16(&this_instr[4].cache);
@@ -6149,21 +6131,21 @@ kwargs = Py_STACKREF_UNTAG_BORROWED(kwargs_tagged);
                 DEOPT_IF(ep->me_key != name, STORE_ATTR);
                 old_value = ep->me_value;
                 DEOPT_IF(old_value == NULL, STORE_ATTR);
-                new_version = _PyDict_NotifyEvent(tstate->interp, PyDict_EVENT_MODIFIED, dict, name, value);
-                ep->me_value = value;
+                new_version = _PyDict_NotifyEvent(tstate->interp, PyDict_EVENT_MODIFIED, dict, name, Py_STACKREF_UNTAG_BORROWED(value));
+                ep->me_value = Py_STACKREF_UNTAG_OWNED(value);
             }
             else {
                 PyDictKeyEntry *ep = DK_ENTRIES(dict->ma_keys) + hint;
                 DEOPT_IF(ep->me_key != name, STORE_ATTR);
                 old_value = ep->me_value;
                 DEOPT_IF(old_value == NULL, STORE_ATTR);
-                new_version = _PyDict_NotifyEvent(tstate->interp, PyDict_EVENT_MODIFIED, dict, name, value);
-                ep->me_value = value;
+                new_version = _PyDict_NotifyEvent(tstate->interp, PyDict_EVENT_MODIFIED, dict, name, Py_STACKREF_UNTAG_BORROWED(value));
+                ep->me_value = Py_STACKREF_UNTAG_OWNED(value);
             }
             Py_DECREF(old_value);
             STAT_INC(STORE_ATTR, hit);
             /* Ensure dict is GC tracked if it needs to be */
-            if (!_PyObject_GC_IS_TRACKED(dict) && _PyObject_GC_MAY_BE_TRACKED(value)) {
+            if (!_PyObject_GC_IS_TRACKED(dict) && _PyObject_GC_MAY_BE_TRACKED(Py_STACKREF_UNTAG_BORROWED(value))) {
                 _PyObject_GC_TRACK(dict);
             }
             /* PEP 509 */
@@ -6177,13 +6159,11 @@ kwargs = Py_STACKREF_UNTAG_BORROWED(kwargs_tagged);
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(STORE_DEREF);
-            _PyStackRef v_tagged;
-            PyObject *v;
-            v_tagged = stack_pointer[-1];
-            v = Py_STACKREF_UNTAG_BORROWED(v_tagged);
+            _PyStackRef v;
+            v = stack_pointer[-1];
 
             PyCellObject *cell = (PyCellObject *)Py_STACKREF_UNTAG_BORROWED(GETLOCAL(oparg));
-            PyCell_SetTakeRef(cell, v);
+            PyCell_SetTakeRef(cell, Py_STACKREF_UNTAG_OWNED(v));
             stack_pointer += -1;
             DISPATCH();
         }
@@ -6239,15 +6219,13 @@ kwargs = Py_STACKREF_UNTAG_BORROWED(kwargs_tagged);
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(STORE_GLOBAL);
-            _PyStackRef v_tagged;
-            PyObject *v;
-            v_tagged = stack_pointer[-1];
-            v = Py_STACKREF_UNTAG_BORROWED(v_tagged);
+            _PyStackRef v;
+            v = stack_pointer[-1];
 
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
-            int err = PyDict_SetItem(GLOBALS(), name, v);
+            int err = PyDict_SetItem(GLOBALS(), name, Py_STACKREF_UNTAG_OWNED(v));
             (void)v;
-            Py_DECREF_STACKREF(v_tagged);
+            Py_DECREF_STACKREF(v);
             if (err) goto pop_1_error;
             stack_pointer += -1;
             DISPATCH();
@@ -6257,10 +6235,8 @@ kwargs = Py_STACKREF_UNTAG_BORROWED(kwargs_tagged);
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(STORE_NAME);
-            _PyStackRef v_tagged;
-            PyObject *v;
-            v_tagged = stack_pointer[-1];
-            v = Py_STACKREF_UNTAG_BORROWED(v_tagged);
+            _PyStackRef v;
+            v = stack_pointer[-1];
 
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
             PyObject *ns = LOCALS();
@@ -6269,15 +6245,15 @@ kwargs = Py_STACKREF_UNTAG_BORROWED(kwargs_tagged);
                 _PyErr_Format(tstate, PyExc_SystemError,
                               "no locals found when storing %R", name);
                 (void)v;
-                Py_DECREF_STACKREF(v_tagged);
+                Py_DECREF_STACKREF(v);
                 if (true) goto pop_1_error;
             }
             if (PyDict_CheckExact(ns))
-            err = PyDict_SetItem(ns, name, v);
+            err = PyDict_SetItem(ns, name, Py_STACKREF_UNTAG_OWNED(v));
             else
-            err = PyObject_SetItem(ns, name, v);
+            err = PyObject_SetItem(ns, name, Py_STACKREF_UNTAG_OWNED(v));
             (void)v;
-            Py_DECREF_STACKREF(v_tagged);
+            Py_DECREF_STACKREF(v);
             if (err) goto pop_1_error;
             stack_pointer += -1;
             DISPATCH();

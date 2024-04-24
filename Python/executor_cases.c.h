@@ -950,37 +950,33 @@
         /* _BINARY_SUBSCR_GETITEM is not a viable micro-op for tier 2 because it uses the 'this_instr' variable */
 
         case _LIST_APPEND: {
-            _PyStackRef v_tagged;
-            PyObject *v;
+            _PyStackRef v;
             _PyStackRef list_tagged;
             PyObject *list;
             oparg = CURRENT_OPARG();
-            v_tagged = stack_pointer[-1];
-            v = Py_STACKREF_UNTAG_BORROWED(v_tagged);
+            v = stack_pointer[-1];
 
             list_tagged = stack_pointer[-2 - (oparg-1)];
             list = Py_STACKREF_UNTAG_BORROWED(list_tagged);
 
-            if (_PyList_AppendTakeRef((PyListObject *)list, v) < 0) JUMP_TO_ERROR();
+            if (_PyList_AppendTakeRef((PyListObject *)list, Py_STACKREF_UNTAG_OWNED(v)) < 0) JUMP_TO_ERROR();
             stack_pointer += -1;
             break;
         }
 
         case _SET_ADD: {
-            _PyStackRef v_tagged;
-            PyObject *v;
+            _PyStackRef v;
             _PyStackRef set_tagged;
             PyObject *set;
             oparg = CURRENT_OPARG();
-            v_tagged = stack_pointer[-1];
-            v = Py_STACKREF_UNTAG_BORROWED(v_tagged);
+            v = stack_pointer[-1];
 
             set_tagged = stack_pointer[-2 - (oparg-1)];
             set = Py_STACKREF_UNTAG_BORROWED(set_tagged);
 
-            int err = PySet_Add(set, v);
+            int err = PySet_Add(set, Py_STACKREF_UNTAG_OWNED(v));
             (void)v;
-            Py_DECREF_STACKREF(v_tagged);
+            Py_DECREF_STACKREF(v);
             if (err) JUMP_TO_ERROR();
             stack_pointer += -1;
             break;
@@ -1333,11 +1329,9 @@
         }
 
         case _STORE_NAME: {
-            _PyStackRef v_tagged;
-            PyObject *v;
+            _PyStackRef v;
             oparg = CURRENT_OPARG();
-            v_tagged = stack_pointer[-1];
-            v = Py_STACKREF_UNTAG_BORROWED(v_tagged);
+            v = stack_pointer[-1];
 
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
             PyObject *ns = LOCALS();
@@ -1346,15 +1340,15 @@
                 _PyErr_Format(tstate, PyExc_SystemError,
                               "no locals found when storing %R", name);
                 (void)v;
-                Py_DECREF_STACKREF(v_tagged);
+                Py_DECREF_STACKREF(v);
                 if (true) JUMP_TO_ERROR();
             }
             if (PyDict_CheckExact(ns))
-            err = PyDict_SetItem(ns, name, v);
+            err = PyDict_SetItem(ns, name, Py_STACKREF_UNTAG_OWNED(v));
             else
-            err = PyObject_SetItem(ns, name, v);
+            err = PyObject_SetItem(ns, name, Py_STACKREF_UNTAG_OWNED(v));
             (void)v;
-            Py_DECREF_STACKREF(v_tagged);
+            Py_DECREF_STACKREF(v);
             if (err) JUMP_TO_ERROR();
             stack_pointer += -1;
             break;
@@ -1502,19 +1496,17 @@
         case _STORE_ATTR: {
             _PyStackRef owner_tagged;
             PyObject *owner;
-            _PyStackRef v_tagged;
-            PyObject *v;
+            _PyStackRef v;
             oparg = CURRENT_OPARG();
             owner_tagged = stack_pointer[-1];
             owner = Py_STACKREF_UNTAG_BORROWED(owner_tagged);
 
-            v_tagged = stack_pointer[-2];
-            v = Py_STACKREF_UNTAG_BORROWED(v_tagged);
+            v = stack_pointer[-2];
 
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
-            int err = PyObject_SetAttr(owner, name, v);
+            int err = PyObject_SetAttr(owner, name, Py_STACKREF_UNTAG_OWNED(v));
             (void)v;
-            Py_DECREF_STACKREF(v_tagged);
+            Py_DECREF_STACKREF(v);
             (void)owner;
             Py_DECREF_STACKREF(owner_tagged);
             if (err) JUMP_TO_ERROR();
@@ -1539,16 +1531,14 @@
         }
 
         case _STORE_GLOBAL: {
-            _PyStackRef v_tagged;
-            PyObject *v;
+            _PyStackRef v;
             oparg = CURRENT_OPARG();
-            v_tagged = stack_pointer[-1];
-            v = Py_STACKREF_UNTAG_BORROWED(v_tagged);
+            v = stack_pointer[-1];
 
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
-            int err = PyDict_SetItem(GLOBALS(), name, v);
+            int err = PyDict_SetItem(GLOBALS(), name, Py_STACKREF_UNTAG_OWNED(v));
             (void)v;
-            Py_DECREF_STACKREF(v_tagged);
+            Py_DECREF_STACKREF(v);
             if (err) JUMP_TO_ERROR();
             stack_pointer += -1;
             break;
@@ -1819,14 +1809,12 @@
         }
 
         case _STORE_DEREF: {
-            _PyStackRef v_tagged;
-            PyObject *v;
+            _PyStackRef v;
             oparg = CURRENT_OPARG();
-            v_tagged = stack_pointer[-1];
-            v = Py_STACKREF_UNTAG_BORROWED(v_tagged);
+            v = stack_pointer[-1];
 
             PyCellObject *cell = (PyCellObject *)Py_STACKREF_UNTAG_BORROWED(GETLOCAL(oparg));
-            PyCell_SetTakeRef(cell, v);
+            PyCell_SetTakeRef(cell, Py_STACKREF_UNTAG_OWNED(v));
             stack_pointer += -1;
             break;
         }
@@ -2066,18 +2054,14 @@
         }
 
         case _MAP_ADD: {
-            _PyStackRef value_tagged;
-            PyObject *value;
-            _PyStackRef key_tagged;
-            PyObject *key;
+            _PyStackRef value;
+            _PyStackRef key;
             _PyStackRef dict_tagged;
             PyObject *dict;
             oparg = CURRENT_OPARG();
-            value_tagged = stack_pointer[-1];
-            value = Py_STACKREF_UNTAG_BORROWED(value_tagged);
+            value = stack_pointer[-1];
 
-            key_tagged = stack_pointer[-2];
-            key = Py_STACKREF_UNTAG_BORROWED(key_tagged);
+            key = stack_pointer[-2];
 
             dict_tagged = stack_pointer[-3 - (oparg - 1)];
             dict = Py_STACKREF_UNTAG_BORROWED(dict_tagged);
@@ -2085,7 +2069,7 @@
             assert(PyDict_CheckExact(dict));
             /* dict[key] = value */
             // Do not DECREF INPUTS because the function steals the references
-            if (_PyDict_SetItem_Take2((PyDictObject *)dict, key, value) != 0) JUMP_TO_ERROR();
+            if (_PyDict_SetItem_Take2((PyDictObject *)dict, Py_STACKREF_UNTAG_OWNED(key), Py_STACKREF_UNTAG_OWNED(value)) != 0) JUMP_TO_ERROR();
             stack_pointer += -2;
             break;
         }
@@ -2189,22 +2173,23 @@
         case _LOAD_ATTR: {
             _PyStackRef owner_tagged;
             PyObject *owner;
-            PyObject *attr;
+            _PyStackRef *attr;
             PyObject *self_or_null = NULL;
             oparg = CURRENT_OPARG();
             owner_tagged = stack_pointer[-1];
             owner = Py_STACKREF_UNTAG_BORROWED(owner_tagged);
 
+            attr = &stack_pointer[-1];
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg >> 1);
             if (oparg & 1) {
                 /* Designed to work in tandem with CALL, pushes two values. */
-                attr = NULL;
-                if (_PyObject_GetMethod(owner, name, &attr)) {
+                *attr = Py_STACKREF_TAG(NULL);
+                if (_PyObject_GetMethodStackRef(owner, name, attr)) {
                     /* We can bypass temporary bound method object.
                        meth is unbound method and obj is self.
                        meth | self | arg1 | ... | argN
                      */
-                    assert(attr != NULL);  // No errors on this branch
+                    assert(Py_STACKREF_UNTAG_BORROWED(*attr) != NULL);  // No errors on this branch
                     self_or_null = owner;  // Transfer ownership
                 }
                 else {
@@ -2216,18 +2201,17 @@
                      */
                     (void)owner;
                     Py_DECREF_STACKREF(owner_tagged);
-                    if (attr == NULL) JUMP_TO_ERROR();
+                    if (Py_STACKREF_UNTAG_BORROWED(*attr) == NULL) JUMP_TO_ERROR();
                     self_or_null = NULL;
                 }
             }
             else {
                 /* Classic, pushes one value. */
-                attr = PyObject_GetAttr(owner, name);
+                *attr = Py_STACKREF_TAG(PyObject_GetAttr(owner, name));
                 (void)owner;
                 Py_DECREF_STACKREF(owner_tagged);
-                if (attr == NULL) JUMP_TO_ERROR();
+                if (Py_STACKREF_UNTAG_BORROWED(*attr) == NULL) JUMP_TO_ERROR();
             }
-            stack_pointer[-1] = Py_STACKREF_TAG(attr);
             if (oparg & 1) stack_pointer[0] = Py_STACKREF_TAG(self_or_null);
             stack_pointer += (oparg & 1);
             break;
@@ -2574,20 +2558,18 @@
         case _STORE_ATTR_INSTANCE_VALUE: {
             _PyStackRef owner_tagged;
             PyObject *owner;
-            _PyStackRef value_tagged;
-            PyObject *value;
+            _PyStackRef value;
             owner_tagged = stack_pointer[-1];
             owner = Py_STACKREF_UNTAG_BORROWED(owner_tagged);
 
-            value_tagged = stack_pointer[-2];
-            value = Py_STACKREF_UNTAG_BORROWED(value_tagged);
+            value = stack_pointer[-2];
 
             uint16_t index = (uint16_t)CURRENT_OPERAND();
             STAT_INC(STORE_ATTR, hit);
             assert(_PyObject_ManagedDictPointer(owner)->dict == NULL);
             PyDictValues *values = _PyObject_InlineValues(owner);
             PyObject *old_value = values->values[index];
-            values->values[index] = value;
+            values->values[index] = Py_STACKREF_UNTAG_OWNED(value);
             if (old_value == NULL) {
                 _PyDictValues_AddToInsertionOrder(values, index);
             }
@@ -2604,19 +2586,17 @@
         case _STORE_ATTR_SLOT: {
             _PyStackRef owner_tagged;
             PyObject *owner;
-            _PyStackRef value_tagged;
-            PyObject *value;
+            _PyStackRef value;
             owner_tagged = stack_pointer[-1];
             owner = Py_STACKREF_UNTAG_BORROWED(owner_tagged);
 
-            value_tagged = stack_pointer[-2];
-            value = Py_STACKREF_UNTAG_BORROWED(value_tagged);
+            value = stack_pointer[-2];
 
             uint16_t index = (uint16_t)CURRENT_OPERAND();
             char *addr = (char *)owner + index;
             STAT_INC(STORE_ATTR, hit);
             PyObject *old_value = *(PyObject **)addr;
-            *(PyObject **)addr = value;
+            *(PyObject **)addr = Py_STACKREF_UNTAG_OWNED(value);
             Py_XDECREF(old_value);
             Py_DECREF_STACKREF(owner_tagged);
             stack_pointer += -2;
