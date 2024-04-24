@@ -5547,15 +5547,9 @@ os__path_abspath_impl(PyObject *module, PyObject *path)
     result = PyUnicode_FromWideChar(abs, abs_len);
 
 exit:
-    if (path_buf) {
-        PyMem_Free(path_buf);
-    }
-    if (cwd_buf) {
-        PyMem_Free(cwd_buf);
-    }
-    if (abs_buf) {
-        PyMem_RawFree(abs_buf);
-    }
+    PyMem_Free(path_buf);
+    PyMem_Free(cwd_buf);
+    PyMem_RawFree(abs_buf);
     return result;
 }
 
