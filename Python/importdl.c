@@ -28,6 +28,11 @@ extern dl_funcptr _PyImport_FindSharedFuncptr(const char *prefix,
                                               const char *pathname, FILE *fp);
 #endif
 
+
+/***********************************/
+/* module info to use when loading */
+/***********************************/
+
 static const char * const ascii_only_prefix = "PyInit";
 static const char * const nonascii_prefix = "PyInitU";
 
@@ -205,23 +210,141 @@ _Py_ext_module_loader_info_init_from_spec(
 }
 
 
+/********************************/
+/* module init function results */
+/********************************/
+
 void
-_Py_ext_module_loader_result_apply_error(
-                            struct _Py_ext_module_loader_result *res)
+_Py_ext_module_loader_result_clear(struct _Py_ext_module_loader_result *res)
 {
-    if (res->err[0] != '\0') {
-        if (PyErr_Occurred()) {
-            _PyErr_FormatFromCause(PyExc_SystemError, res->err);
-        }
-        else {
-            PyErr_SetString(PyExc_SystemError, res->err);
-        }
-    }
-    else {
+    *res = (struct _Py_ext_module_loader_result){0};
+}
+
+static void
+_Py_ext_module_loader_result_set_error(
+                            struct _Py_ext_module_loader_result *res,
+                            enum _Py_ext_module_loader_result_error_kind kind)
+{
+#ifndef NDEBUG
+    switch (kind) {
+    case _Py_ext_module_loader_result_EXCEPTION:  /* fall through */
+    case _Py_ext_module_loader_result_ERR_UNREPORTED_EXC:
         assert(PyErr_Occurred());
+        break;
+    case _Py_ext_module_loader_result_ERR_MISSING:  /* fall through */
+    case _Py_ext_module_loader_result_ERR_UNINITIALIZED:  /* fall through */
+    case _Py_ext_module_loader_result_ERR_NONASCII_NOT_MULTIPHASE:  /* fall through */
+    case _Py_ext_module_loader_result_ERR_NOT_MODULE:  /* fall through */
+    case _Py_ext_module_loader_result_ERR_MISSING_DEF:
+        assert(!PyErr_Occurred());
+        break;
+    default:
+        /* We added a new error kind but forgot to add it to this switch. */
+        assert(0);
+    }
+#endif
+
+    assert(res->err == NULL && res->_err.exc == NULL);
+    res->err = &res->_err;
+    *res->err = (struct _Py_ext_module_loader_result_error){
+        .kind=kind,
+        .exc=PyErr_GetRaisedException(),
+    };
+
+    /* For some kinds, we also set/check res->kind. */
+    switch (kind) {
+    case _Py_ext_module_loader_result_ERR_UNINITIALIZED:
+        assert(res->kind == _Py_ext_module_loader_result_UNKNOWN);
+        res->kind = _Py_ext_module_loader_result_INVALID;
+        break;
+    /* None of the rest affect the result kind. */
+    case _Py_ext_module_loader_result_EXCEPTION:  /* fall through */
+    case _Py_ext_module_loader_result_ERR_MISSING:  /* fall through */
+    case _Py_ext_module_loader_result_ERR_UNREPORTED_EXC:  /* fall through */
+    case _Py_ext_module_loader_result_ERR_NONASCII_NOT_MULTIPHASE:  /* fall through */
+    case _Py_ext_module_loader_result_ERR_NOT_MODULE:  /* fall through */
+    case _Py_ext_module_loader_result_ERR_MISSING_DEF:
+        break;
+    default:
+        /* We added a new error kind but forgot to add it to this switch. */
+        assert(0);
     }
 }
 
+void
+_Py_ext_module_loader_result_apply_error(
+                            struct _Py_ext_module_loader_result *res,
+                            const char *name)
+{
+    assert(!PyErr_Occurred());
+    struct _Py_ext_module_loader_result_error *err = res->err;
+    assert(err != NULL && err == &res->_err);
+
+#ifndef NDEBUG
+    switch (err->kind) {
+    case _Py_ext_module_loader_result_EXCEPTION:  /* fall through */
+    case _Py_ext_module_loader_result_ERR_UNREPORTED_EXC:
+        assert(err->exc != NULL);
+        break;
+    case _Py_ext_module_loader_result_ERR_MISSING:  /* fall through */
+    case _Py_ext_module_loader_result_ERR_UNINITIALIZED:  /* fall through */
+    case _Py_ext_module_loader_result_ERR_NONASCII_NOT_MULTIPHASE:  /* fall through */
+    case _Py_ext_module_loader_result_ERR_NOT_MODULE:  /* fall through */
+    case _Py_ext_module_loader_result_ERR_MISSING_DEF:
+        assert(err->exc == NULL);
+        break;
+    default:
+        /* We added a new error kind but forgot to add it to this switch. */
+        assert(0);
+    }
+#endif
+
+    const char *msg = NULL;
+    switch (err->kind) {
+    case _Py_ext_module_loader_result_EXCEPTION:
+        break;
+    case _Py_ext_module_loader_result_ERR_MISSING:
+        msg = "initialization of %s failed without raising an exception";
+        break;
+    case _Py_ext_module_loader_result_ERR_UNREPORTED_EXC:
+        msg = "initialization of %s raised unreported exception";
+        break;
+    case _Py_ext_module_loader_result_ERR_UNINITIALIZED:
+        msg = "init function of %s returned uninitialized object";
+        break;
+    case _Py_ext_module_loader_result_ERR_NONASCII_NOT_MULTIPHASE:
+        msg = "initialization of %s did not return PyModuleDef";
+        break;
+    case _Py_ext_module_loader_result_ERR_NOT_MODULE:
+        msg = "initialization of %s did not return an extension module";
+        break;
+    case _Py_ext_module_loader_result_ERR_MISSING_DEF:
+        msg = "initialization of %s did not return a valid extension module";
+        break;
+    default:
+        /* We added a new error kind but forgot to add it to this switch. */
+        assert(0);
+        PyErr_Format(PyExc_SystemError,
+                     "loading %s failed due to init function", name);
+        return;
+    }
+
+    if (err->exc != NULL) {
+        PyErr_SetRaisedException(err->exc);
+        if (msg != NULL) {
+            _PyErr_FormatFromCause(PyExc_SystemError, msg, name);
+        }
+    }
+    else {
+        assert(msg != NULL);
+        PyErr_Format(PyExc_SystemError, msg, name);
+    }
+}
+
+
+/********************************************/
+/* getting/running the module init function */
+/********************************************/
 
 PyModInitFunction
 _PyImport_GetModInitFunc(struct _Py_ext_module_loader_info *info,
@@ -266,7 +389,6 @@ _PyImport_RunModInitFunc(PyModInitFunction p0,
     struct _Py_ext_module_loader_result res = {
         .kind=_Py_ext_module_loader_result_UNKNOWN,
     };
-    const char *name_buf = PyBytes_AS_STRING(info->name_encoded);
 
     /* Call the module init function. */
 
@@ -277,27 +399,19 @@ _PyImport_RunModInitFunc(PyModInitFunction p0,
 
     /* Validate the result (and populate "res". */
 
-#ifdef NDEBUG
-#  define SET_ERROR(...) \
-    (void)snprintf(res.err, Py_ARRAY_LENGTH(res.err),  __VA_ARGS__)
-#else
-#  define SET_ERROR(...) \
-    do { \
-        int n = snprintf(res.err, Py_ARRAY_LENGTH(res.err),  __VA_ARGS__); \
-        assert(n < Py_ARRAY_LENGTH(res.err)); \
-    } while (0)
-#endif
-
     if (m == NULL) {
-        if (!PyErr_Occurred()) {
-            SET_ERROR(
-                "initialization of %s failed without raising an exception",
-                name_buf);
+        if (PyErr_Occurred()) {
+            _Py_ext_module_loader_result_set_error(
+                        &res, _Py_ext_module_loader_result_EXCEPTION);
+        }
+        else {
+            _Py_ext_module_loader_result_set_error(
+                        &res, _Py_ext_module_loader_result_ERR_MISSING);
         }
         goto error;
     } else if (PyErr_Occurred()) {
-        SET_ERROR("initialization of %s raised unreported exception",
-                  name_buf);
+        _Py_ext_module_loader_result_set_error(
+                &res, _Py_ext_module_loader_result_ERR_UNREPORTED_EXC);
         /* We would probably be correct to decref m here,
          * but we weren't doing so before,
          * so we stick with doing nothing. */
@@ -309,9 +423,8 @@ _PyImport_RunModInitFunc(PyModInitFunction p0,
         /* This can happen when a PyModuleDef is returned without calling
          * PyModuleDef_Init on it
          */
-        res.kind = _Py_ext_module_loader_result_INVALID;
-        SET_ERROR("init function of %s returned uninitialized object",
-                  name_buf);
+        _Py_ext_module_loader_result_set_error(
+                &res, _Py_ext_module_loader_result_ERR_UNINITIALIZED);
         /* Likewise, decref'ing here makes sense.  However, the original
          * code has a note about "prevent segfault in DECREF",
          * so we play it safe and leave it alone. */
@@ -326,10 +439,11 @@ _PyImport_RunModInitFunc(PyModInitFunction p0,
         /* Run PyModule_FromDefAndSpec() to finish loading the module. */
     }
     else if (info->hook_prefix == nonascii_prefix) {
-        /* It should have been multi-phase init? */
+        /* Non-ASCII is only supported for multi-phase init. */
+        res.kind = _Py_ext_module_loader_result_MULTIPHASE;
         /* Don't allow legacy init for non-ASCII module names. */
-        SET_ERROR("initialization of %s did not return PyModuleDef",
-                  name_buf);
+        _Py_ext_module_loader_result_set_error(
+                &res, _Py_ext_module_loader_result_ERR_NONASCII_NOT_MULTIPHASE);
         goto error;
     }
     else {
@@ -338,30 +452,31 @@ _PyImport_RunModInitFunc(PyModInitFunction p0,
         res.module = m;
 
         if (!PyModule_Check(m)) {
-            SET_ERROR("initialization of %s did not return an extension "
-                      "module", name_buf);
+            _Py_ext_module_loader_result_set_error(
+                    &res, _Py_ext_module_loader_result_ERR_NOT_MODULE);
             goto error;
         }
 
         res.def = _PyModule_GetDef(m);
         if (res.def == NULL) {
             PyErr_Clear();
-            SET_ERROR("initialization of %s did not return a valid extension "
-                      "module", name_buf);
+            _Py_ext_module_loader_result_set_error(
+                    &res, _Py_ext_module_loader_result_ERR_MISSING_DEF);
             goto error;
         }
     }
-#undef SET_ERROR
 
-    assert(!PyErr_Occurred());
+    assert(!PyErr_Occurred() && res.err == NULL);
     *p_res = res;
     return 0;
 
 error:
-    assert(PyErr_Occurred() || res.err[0] != '\0');
+    assert(!PyErr_Occurred());
+    assert(res.err != NULL);
     Py_CLEAR(res.module);
     res.def = NULL;
     *p_res = res;
+    p_res->err = &p_res->_err;
     return -1;
 }
 

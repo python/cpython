@@ -1377,14 +1377,21 @@ import_find_extension(PyThreadState *tstate,
         }
         struct _Py_ext_module_loader_result res;
         if (_PyImport_RunModInitFunc(def->m_base.m_init, info, &res) < 0) {
-            _Py_ext_module_loader_result_apply_error(&res);
+            _Py_ext_module_loader_result_apply_error(&res, name_buf);
+            _Py_ext_module_loader_result_clear(&res);
             return NULL;
         }
-        assert(!PyErr_Occurred());
+        assert(!PyErr_Occurred() && res.err == NULL);
         assert(res.kind == _Py_ext_module_loader_result_SINGLEPHASE);
         mod = res.module;
+        /* Tchnically, the init function could return a different module def.
+         * Then we would probably need to update the global cache.
+         * However, we don't expect anyone to change the def. */
+        assert(res.def == def);
+        _Py_ext_module_loader_result_clear(&res);
 
         // XXX __file__ doesn't get set!
+
         if (PyObject_SetItem(modules, info->name, mod) == -1) {
             Py_DECREF(mod);
             return NULL;
@@ -1411,15 +1418,16 @@ import_run_extension(PyThreadState *tstate, PyModInitFunction p0,
 {
     PyObject *mod = NULL;
     PyModuleDef *def = NULL;
+    const char *name_buf = PyBytes_AS_STRING(info->name_encoded);
 
     struct _Py_ext_module_loader_result res;
     if (_PyImport_RunModInitFunc(p0, info, &res) < 0) {
         /* We discard res.def. */
         assert(res.module == NULL);
-        _Py_ext_module_loader_result_apply_error(&res);
+        _Py_ext_module_loader_result_apply_error(&res, name_buf);
         goto finally;
     }
-    assert(!PyErr_Occurred());
+    assert(!PyErr_Occurred() && res.err == NULL);
 
     mod = res.module;
     res.module = NULL;
@@ -1439,7 +1447,6 @@ import_run_extension(PyThreadState *tstate, PyModInitFunction p0,
         assert(is_singlephase(def));
         assert(PyModule_Check(mod));
 
-        const char *name_buf = PyBytes_AS_STRING(info->name_encoded);
         if (_PyImport_CheckSubinterpIncompatibleExtensionAllowed(name_buf) < 0) {
             Py_CLEAR(mod);
             goto finally;
@@ -1448,13 +1455,14 @@ import_run_extension(PyThreadState *tstate, PyModInitFunction p0,
         /* Remember pointer to module init function. */
         def->m_base.m_init = p0;
 
+        /* Remember the filename as the __file__ attribute */
         if (info->filename != NULL) {
-            /* Remember the filename as the __file__ attribute */
             if (PyModule_AddObjectRef(mod, "__file__", info->filename) < 0) {
                 PyErr_Clear(); /* Not important enough to report */
             }
         }
 
+        /* Update global import state. */
         struct singlephase_global_update singlephase = {0};
         // gh-88216: Extensions and def->m_base.m_copy can be updated
         // when the extension module doesn't support sub-interpreters.
@@ -1471,6 +1479,7 @@ import_run_extension(PyThreadState *tstate, PyModInitFunction p0,
             goto finally;
         }
 
+        /* Update per-interpreter import state. */
         PyObject *modules = get_modules_dict(tstate, true);
         if (finish_singlephase_extension(
                 tstate, mod, def, info->name, modules) < 0)
@@ -1481,6 +1490,7 @@ import_run_extension(PyThreadState *tstate, PyModInitFunction p0,
     }
 
 finally:
+    _Py_ext_module_loader_result_clear(&res);
     return mod;
 }
 
