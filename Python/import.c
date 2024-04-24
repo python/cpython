@@ -3942,6 +3942,9 @@ _imp_create_dynamic_impl(PyObject *module, PyObject *spec, PyObject *file)
             goto finally;
         }
 
+        /* Remember pointer to module init function. */
+        res.def->m_base.m_init = p0;
+
         /* Remember the filename as the __file__ attribute */
         if (PyModule_AddObjectRef(mod, "__file__", info.filename) < 0) {
             PyErr_Clear(); /* Not important enough to report */

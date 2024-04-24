@@ -218,10 +218,14 @@ _PyImport_RunModInitFunc(PyModInitFunction p0,
     struct _Py_ext_module_loader_result res = {0};
     const char *name_buf = PyBytes_AS_STRING(info->name_encoded);
 
+    /* Call the module init function. */
+
     /* Package context is needed for single-phase init */
     const char *oldcontext = _PyImport_SwapPackageContext(info->newcontext);
     PyObject *m = p0();
     _PyImport_SwapPackageContext(oldcontext);
+
+    /* Validate the result (and populate "res". */
 
     if (m == NULL) {
         if (!PyErr_Occurred()) {
@@ -284,9 +288,6 @@ _PyImport_RunModInitFunc(PyModInitFunction p0,
                          "module", name_buf);
             goto error;
         }
-
-        /* Remember pointer to module init function. */
-        res.def->m_base.m_init = p0;
     }
 
     assert(!PyErr_Occurred());
