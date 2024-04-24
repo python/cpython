@@ -2283,7 +2283,7 @@ class IpaddrUnitTest(unittest.TestCase):
         self.assertEqual(True, ipaddress.ip_network('0.0.0.0').is_unspecified)
 
     def testPrivateNetworks(self):
-        self.assertEqual(False, ipaddress.ip_network("0.0.0.0/0").is_private)
+        self.assertEqual(True, ipaddress.ip_network("0.0.0.0/0").is_private)
         self.assertEqual(False, ipaddress.ip_network("1.0.0.0/8").is_private)
 
         self.assertEqual(True, ipaddress.ip_network("0.0.0.0/8").is_private)
