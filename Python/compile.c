@@ -285,6 +285,10 @@ struct compiler {
     struct compiler_unit *u;     /* compiler state for current block */
     PyObject *c_stack;           /* Python list holding compiler_unit ptrs */
     PyArena *c_arena;            /* pointer to memory allocation arena */
+
+    bool c_save_nested_seqs;     /* if true, construct recursive instruction sequences
+                                  * (including instructions for nested code objects)
+                                  */
 };
 
 #define INSTR_SEQUENCE(C) ((C)->u->u_instr_sequence)
@@ -402,6 +406,7 @@ compiler_setup(struct compiler *c, mod_ty mod, PyObject *filename,
     c->c_flags = *flags;
     c->c_optimize = (optimize == -1) ? _Py_GetConfig()->optimization_level : optimize;
     c->c_nestlevel = 0;
+    c->c_save_nested_seqs = false;
 
     if (!_PyAST_Optimize(mod, arena, c->c_optimize, merged)) {
         return ERROR;
@@ -1290,6 +1295,11 @@ compiler_exit_scope(struct compiler *c)
     // Don't call PySequence_DelItem() with an exception raised
     PyObject *exc = PyErr_GetRaisedException();
 
+    instr_sequence *nested_seq = NULL;
+    if (c->c_save_nested_seqs) {
+        nested_seq = c->u->u_instr_sequence;
+        Py_INCREF(nested_seq);
+    }
     c->c_nestlevel--;
     compiler_unit_free(c->u);
     /* Restore c->u to the parent unit. */
@@ -1303,10 +1313,17 @@ compiler_exit_scope(struct compiler *c)
             PyErr_FormatUnraisable("Exception ignored on removing "
                                    "the last compiler stack item");
         }
+        if (nested_seq != NULL) {
+            if (_PyInstructionSequence_AddNested(c->u->u_instr_sequence, nested_seq) < 0) {
+                PyErr_FormatUnraisable("Exception ignored on appending "
+                                       "nested instruction sequence");
+            }
+        }
     }
     else {
         c->u = NULL;
     }
+    Py_XDECREF(nested_seq);
 
     PyErr_SetRaisedException(exc);
 }
@@ -7734,6 +7751,7 @@ _PyCompile_CodeGen(PyObject *ast, PyObject *filename, PyCompilerFlags *pflags,
         _PyArena_Free(arena);
         return NULL;
     }
+    c->c_save_nested_seqs = true;
 
     metadata = PyDict_New();
     if (metadata == NULL) {
