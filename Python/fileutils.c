@@ -2391,7 +2391,8 @@ _Py_find_basename(const wchar_t *filename)
    normalizing. 'normsize' will be set to contain the length of the
    resulting normalized path. */
 wchar_t *
-_Py_normpath_and_size(wchar_t *path, Py_ssize_t size, Py_ssize_t start, Py_ssize_t *normsize)
+_Py_normpath_and_size(wchar_t *path, Py_ssize_t size, Py_ssize_t start,
+                      Py_ssize_t *normsize)
 {
     assert(path != NULL);
     assert(start>=0);
