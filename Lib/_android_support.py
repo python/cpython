@@ -1,6 +1,5 @@
 import io
 import sys
-from ctypes import CDLL, c_char_p, c_int
 
 
 # The maximum length of a log message in bytes, including the level marker and
@@ -23,32 +22,21 @@ MAX_CHARS_PER_WRITE = MAX_BYTES_PER_WRITE // 4
 # monitor the C-level stdout and stderr. The testbed comes with a .c file to
 # redirect them to the system log using a pipe, but that wouldn't be convenient
 # or appropriate for all apps. So we redirect at the Python level instead.
-def init_streams():
+def init_streams(android_log_write, stdout_prio, stderr_prio):
     if sys.executable:
         return  # Not embedded in an app.
 
-    # Despite its name, this function is part of the public API
-    # (https://developer.android.com/ndk/reference/group/logging).
-    # Use `getattr` to avoid private name mangling.
-    global android_log_write
-    android_log_write = getattr(CDLL("liblog.so"), "__android_log_write")
-    android_log_write.argtypes = (c_int, c_char_p, c_char_p)
-
-    # These log levels match those used by Java's System.out and System.err.
-    ANDROID_LOG_INFO = 4
-    ANDROID_LOG_WARN = 5
-
     sys.stdout = TextLogStream(
-        ANDROID_LOG_INFO, "python.stdout", errors=sys.stdout.errors)
+        android_log_write, stdout_prio, "python.stdout", errors=sys.stdout.errors)
     sys.stderr = TextLogStream(
-        ANDROID_LOG_WARN, "python.stderr", errors=sys.stderr.errors)
+        android_log_write, stderr_prio, "python.stderr", errors=sys.stderr.errors)
 
 
 class TextLogStream(io.TextIOWrapper):
-    def __init__(self, level, tag, **kwargs):
+    def __init__(self, android_log_write, prio, tag, **kwargs):
         kwargs.setdefault("encoding", "UTF-8")
         kwargs.setdefault("line_buffering", True)
-        super().__init__(BinaryLogStream(level, tag), **kwargs)
+        super().__init__(BinaryLogStream(android_log_write, prio, tag), **kwargs)
         self._CHUNK_SIZE = MAX_BYTES_PER_WRITE
 
     def __repr__(self):
@@ -76,8 +64,9 @@ class TextLogStream(io.TextIOWrapper):
 
 
 class BinaryLogStream(io.RawIOBase):
-    def __init__(self, level, tag):
-        self.level = level
+    def __init__(self, android_log_write, prio, tag):
+        self.android_log_write = android_log_write
+        self.prio = prio
         self.tag = tag
 
     def __repr__(self):
@@ -95,5 +84,5 @@ class BinaryLogStream(io.RawIOBase):
 
         # Writing an empty string to the stream should have no effect.
         if b:
-            android_log_write(self.level, self.tag.encode("UTF-8"), b)
+            self.android_log_write(self.prio, self.tag, b)
         return len(b)

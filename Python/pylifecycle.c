@@ -72,7 +72,7 @@ static PyStatus init_import_site(void);
 static PyStatus init_set_builtins_open(void);
 static PyStatus init_sys_streams(PyThreadState *tstate);
 #ifdef __ANDROID__
-static void init_android_streams(PyThreadState *tstate);
+static PyStatus init_android_streams(PyThreadState *tstate);
 #endif
 static void wait_for_thread_shutdown(PyThreadState *tstate);
 static void call_ll_exitfuncs(_PyRuntimeState *runtime);
@@ -1227,7 +1227,10 @@ init_interp_main(PyThreadState *tstate)
     }
 
 #ifdef __ANDROID__
-    init_android_streams(tstate);
+    status = init_android_streams(tstate);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
 #endif
 
 #ifdef Py_DEBUG
@@ -2727,27 +2730,67 @@ done:
 
 
 #ifdef __ANDROID__
-/* Redirecting streams to the log is a convenience, but won't be critical for
-   every app, so failures of this function are non-fatal. */
-static void
+#include <android/log.h>
+
+static PyObject *
+android_log_write_impl(PyObject *self, PyObject *args)
+{
+    int prio = 0;
+    char *tag = NULL;
+    char *text = NULL;
+    Py_ssize_t *text_len = 0;
+    if (!PyArg_ParseTuple(args, "iss#", &prio, &tag, &text, &text_len))
+        return NULL;
+
+    // Despite its name, this function is part of the public API
+    // (https://developer.android.com/ndk/reference/group/logging).
+    __android_log_write(prio, tag, text);
+    Py_RETURN_NONE;
+}
+
+
+static PyMethodDef android_log_write_method = {
+    "android_log_write", android_log_write_impl, METH_VARARGS
+};
+
+
+static PyStatus
 init_android_streams(PyThreadState *tstate)
 {
-    PyObject *_android_support = PyImport_ImportModule("_android_support");
-    if (_android_support == NULL) {
-        fprintf(stderr, "_android_support import failed:\n");
-        _PyErr_Print(tstate);
-    } else {
-        PyObject *result = PyObject_CallMethod(_android_support,
-                                               "init_streams", NULL);
-        if (result == NULL) {
-            fprintf(stderr, "_android_support.init_streams failed:\n");
-            _PyErr_Print(tstate);
-        }
-        Py_XDECREF(result);
-    }
+    PyStatus status = _PyStatus_OK();
+    PyObject *_android_support = NULL;
+    PyObject *android_log_write = NULL;
+    PyObject *result = NULL;
+
+    _android_support = PyImport_ImportModule("_android_support");
+    if (_android_support == NULL)
+        goto error;
+
+    android_log_write = PyCFunction_New(&android_log_write_method, NULL);
+    if (android_log_write == NULL)
+        goto error;
+
+    // These log priorities match those used by Java's System.out and System.err.
+    result = PyObject_CallMethod(
+        _android_support, "init_streams", "Oii",
+        android_log_write, ANDROID_LOG_INFO, ANDROID_LOG_WARN);
+    if (result == NULL)
+        goto error;
+
+    goto done;
+
+error:
+    _PyErr_Print(tstate);
+    status = _PyStatus_ERR("failed to initialize Android streams");
+
+done:
+    Py_XDECREF(result);
+    Py_XDECREF(android_log_write);
     Py_XDECREF(_android_support);
+    return status;
 }
-#endif
+
+#endif  // __ANDROID__
 
 
 static void
