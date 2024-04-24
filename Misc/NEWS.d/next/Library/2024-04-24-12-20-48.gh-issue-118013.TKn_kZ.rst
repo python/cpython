@@ -1,0 +1,9 @@
+Fix regression introduced in gh-103193 that meant that calling
+:func:`inspect.getattr_static` on an instance would cause a strong reference
+to that instance's class to persist in an internal cache in the
+:mod:`inspect` module. This caused unexpected memory consumption if the
+class was dynamically created, the class held strong references to other
+objects which took up a significant amount of memory, and the cache
+contained the sole strong reference to the class. The fix for the regression
+leads to a slowdown in :func:`getattr_static`, but the function should still
+be signficantly faster than it was in Python 3.11. Patch by Alex Waygood.
