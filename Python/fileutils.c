@@ -2327,8 +2327,10 @@ _Py_skiproot(const wchar_t *path, Py_ssize_t size, Py_ssize_t *drvsize, Py_ssize
             // Device drives, e.g. \\.\device or \\?\device
             // UNC drives, e.g. \\server\share or \\?\UNC\server\share
             Py_ssize_t idx;
-            if (path[2] == L'?' && IS_SEP(&path[3]) && (path[4] == L'U' || path[4] == L'u') &&
-                (path[5] == L'N' || path[5] == L'n') && (path[6] == L'C' || path[6] == L'c') &&
+            if (path[2] == L'?' && IS_SEP(&path[3]) &&
+                (path[4] == L'U' || path[4] == L'u') &&
+                (path[5] == L'N' || path[5] == L'n') &&
+                (path[6] == L'C' || path[6] == L'c') &&
                 IS_SEP(&path[7]))
             {
                 idx = 8;
