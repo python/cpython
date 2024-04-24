@@ -344,11 +344,11 @@ Supported operations:
 | ``+t1``                        | Returns a :class:`timedelta` object with the  |
 |                                | same value. (2)                               |
 +--------------------------------+-----------------------------------------------+
-| ``-t1``                        | equivalent to ``timedelta(-t1.days,           |
+| ``-t1``                        | Equivalent to ``timedelta(-t1.days,           |
 |                                | -t1.seconds*, -t1.microseconds)``,            |
 |                                | and to ``t1 * -1``. (1)(4)                    |
 +--------------------------------+-----------------------------------------------+
-| ``abs(t)``                     | equivalent to ``+t`` when ``t.days >= 0``,    |
+| ``abs(t)``                     | Equivalent to ``+t`` when ``t.days >= 0``,    |
 |                                | and to ``-t`` when ``t.days < 0``. (2)        |
 +--------------------------------+-----------------------------------------------+
 | ``str(t)``                     | Returns a string in the form                  |
@@ -1193,7 +1193,7 @@ Supported operations:
 +---------------------------------------+--------------------------------+
 
 (1)
-   ``datetime2`` is a duration of timedelta removed from ``datetime1``, moving forward in
+   ``datetime2`` is a duration of ``timedelta`` removed from ``datetime1``, moving forward in
    time if ``timedelta.days > 0``, or backward if ``timedelta.days < 0``. The
    result has the same :attr:`~.datetime.tzinfo` attribute as the input datetime, and
    ``datetime2 - datetime1 == timedelta`` after. :exc:`OverflowError` is raised if
