@@ -119,11 +119,11 @@ class TestAndroidOutput(unittest.TestCase):
                     # Non-BMP emoji
                     write("\U0001f600")
 
-                    # Null characters will truncate a message.
-                    write("\u0000", [] if api_level < 24 else [""])
-                    write("a\u0000", ["a"])
-                    write("\u0000b", [] if api_level < 24 else [""])
-                    write("a\u0000b", ["a"])
+                    # Null characters are logged using "modified UTF-8".
+                    write("\u0000", [r"\xc0\x80"])
+                    write("a\u0000", [r"a\xc0\x80"])
+                    write("\u0000b", [r"\xc0\x80b"])
+                    write("a\u0000b", [r"a\xc0\x80b"])
 
                 # Multi-line messages. Avoid identical consecutive lines, as
                 # they may activate "chatty" filtering and break the tests.
@@ -223,11 +223,11 @@ class TestAndroidOutput(unittest.TestCase):
                 # Non-BMP emoji
                 write(b"\xf0\x9f\x98\x80")
 
-                # Null characters will truncate a message.
-                write(b"\x00", [] if api_level < 24 else [""])
-                write(b"a\x00", ["a"])
-                write(b"\x00b", [] if api_level < 24 else [""])
-                write(b"a\x00b", ["a"])
+                # Null characters are logged using "modified UTF-8".
+                write(b"\x00", [r"\xc0\x80"])
+                write(b"a\x00", [r"a\xc0\x80"])
+                write(b"\x00b", [r"\xc0\x80b"])
+                write(b"a\x00b", [r"a\xc0\x80b"])
 
                 # Invalid UTF-8
                 write(b"\xff", [r"\xff"])

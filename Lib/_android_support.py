@@ -50,12 +50,7 @@ class TextLogStream(io.TextIOWrapper):
         # We want to emit one log message per line wherever possible, so split
         # the string before sending it to the superclass. Note that
         # "".splitlines() == [], so nothing will be logged for an empty string.
-        for line, line_keepends in zip(
-            s.splitlines(), s.splitlines(keepends=True)
-        ):
-            # Normalize all newlines to "\n".
-            if line != line_keepends:
-                line += "\n"
+        for line in s.splitlines(keepends=True):
             while line:
                 super().write(line[:MAX_CHARS_PER_WRITE])
                 line = line[MAX_CHARS_PER_WRITE:]
@@ -77,12 +72,16 @@ class BinaryLogStream(io.RawIOBase):
 
     def write(self, b):
         if hasattr(b, "__buffer__"):
-            b = bytes(b)
+            b_out = bytes(b)
         else:
             raise TypeError(
                 f"write() argument must be bytes-like, not {type(b).__name__}")
 
+        # Encode null bytes using "modified UTF-8" to avoid truncating the
+        # message.
+        b_out = b_out.replace(b"\x00", b"\xc0\x80")
+
         # Writing an empty string to the stream should have no effect.
-        if b:
-            self.android_log_write(self.prio, self.tag, b)
+        if b_out:
+            self.android_log_write(self.prio, self.tag, b_out)
         return len(b)
