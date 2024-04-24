@@ -869,7 +869,7 @@ DTRACE_OBJS
 DTRACE_HEADERS
 DFLAGS
 DTRACE
-WITH_MIMALLOC
+INSTALL_MIMALLOC
 MIMALLOC_HEADERS
 GDBM_LIBS
 GDBM_CFLAGS
@@ -17335,6 +17335,7 @@ fi
 
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $with_mimalloc" >&5
 printf "%s\n" "$with_mimalloc" >&6; }
+INSTALL_MIMALLOC=$with_mimalloc
 
 
 

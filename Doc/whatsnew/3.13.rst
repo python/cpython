@@ -104,6 +104,40 @@ Improved Error Messages
   variables. See also :ref:`using-on-controlling-color`.
   (Contributed by Pablo Galindo Salgado in :gh:`112730`.)
 
+* A common mistake is to write a script with the same name as a
+  standard library module. When this results in errors, we now
+  display a more helpful error message:
+
+  .. code-block:: shell-session
+
+    $ python random.py
+    Traceback (most recent call last):
+      File "/home/random.py", line 1, in <module>
+        import random; print(random.randint(5))
+        ^^^^^^^^^^^^^
+      File "/home/random.py", line 1, in <module>
+        import random; print(random.randint(5))
+                            ^^^^^^^^^^^^^^
+    AttributeError: module 'random' has no attribute 'randint' (consider renaming '/home/random.py' since it has the same name as the standard library module named 'random' and the import system gives it precedence)
+
+  Similarly, if a script has the same name as a third-party
+  module it attempts to import, and this results in errors,
+  we also display a more helpful error message:
+
+  .. code-block:: shell-session
+
+    $ python numpy.py
+    Traceback (most recent call last):
+      File "/home/numpy.py", line 1, in <module>
+        import numpy as np; np.array([1,2,3])
+        ^^^^^^^^^^^^^^^^^^
+      File "/home/numpy.py", line 1, in <module>
+        import numpy as np; np.array([1,2,3])
+                            ^^^^^^^^
+    AttributeError: module 'numpy' has no attribute 'array' (consider renaming '/home/numpy.py' if it has the same name as a third-party module you intended to import)
+
+  (Contributed by Shantanu Jain in :gh:`95754`.)
+
 * When an incorrect keyword argument is passed to a function, the error message
   now potentially suggests the correct keyword argument.
   (Contributed by Pablo Galindo Salgado and Shantanu Jain in :gh:`107944`.)
@@ -240,6 +274,9 @@ Other Language Changes
 * The :class:`configparser.ConfigParser` now accepts unnamed sections before named
   ones if configured to do so.
   (Contributed by Pedro Sousa Lacerda in :gh:`66449`.)
+
+* :ref:`annotation scope <annotation-scopes>` within class scopes can now
+  contain lambdas. (Contributed by Jelle Zijlstra in :gh:`109118`.)
 
 
 New Modules
@@ -593,6 +630,10 @@ os.path
 * On Windows, :func:`os.path.isabs` no longer considers paths starting with
   exactly one (back)slash to be absolute.
   (Contributed by Barney Gale and Jon Foster in :gh:`44626`.)
+
+* Add support of *dir_fd* and *follow_symlinks* keyword arguments in
+  :func:`shutil.chown`.
+  (Contributed by Berker Peksag and Tahia K in :gh:`62308`)
 
 pathlib
 -------
