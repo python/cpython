@@ -13,9 +13,9 @@ from test.support import os_helper
 from test.support import script_helper
 
 
-_interpreters = import_helper.import_module('_xxsubinterpreters')
+_interpreters = import_helper.import_module('_interpreters')
 _testinternalcapi = import_helper.import_module('_testinternalcapi')
-from _xxsubinterpreters import InterpreterNotFoundError
+from _interpreters import InterpreterNotFoundError
 
 
 ##################################
@@ -231,7 +231,7 @@ class ModuleTests(TestBase):
     def test_import_in_interpreter(self):
         _run_output(
             _interpreters.create(),
-            'import _xxsubinterpreters as _interpreters',
+            'import _interpreters',
         )
 
 
@@ -273,7 +273,7 @@ class GetCurrentTests(TestBase):
         main, *_ = _interpreters.get_main()
         interp = _interpreters.create()
         out = _run_output(interp, dedent("""
-            import _xxsubinterpreters as _interpreters
+            import _interpreters
             cur, *_ = _interpreters.get_current()
             print(cur)
             assert isinstance(cur, int)
@@ -296,7 +296,7 @@ class GetMainTests(TestBase):
         [expected] = [id for id, *_ in _interpreters.list_all()]
         interp = _interpreters.create()
         out = _run_output(interp, dedent("""
-            import _xxsubinterpreters as _interpreters
+            import _interpreters
             main, *_ = _interpreters.get_main()
             print(main)
             assert isinstance(main, int)
@@ -323,7 +323,7 @@ class IsRunningTests(TestBase):
     def test_from_subinterpreter(self):
         interp = _interpreters.create()
         out = _run_output(interp, dedent(f"""
-            import _xxsubinterpreters as _interpreters
+            import _interpreters
             if _interpreters.is_running({interp}):
                 print(True)
             else:
@@ -385,7 +385,7 @@ class CreateTests(TestBase):
         main, = [id for id, *_ in _interpreters.list_all()]
         id1 = _interpreters.create()
         out = _run_output(id1, dedent("""
-            import _xxsubinterpreters as _interpreters
+            import _interpreters
             id = _interpreters.create()
             print(id)
             assert isinstance(id, int)
@@ -402,7 +402,7 @@ class CreateTests(TestBase):
         def f():
             nonlocal id2
             out = _run_output(id1, dedent("""
-                import _xxsubinterpreters as _interpreters
+                import _interpreters
                 id = _interpreters.create()
                 print(id)
                 """))
@@ -505,7 +505,7 @@ class DestroyTests(TestBase):
         main, = [id for id, *_ in _interpreters.list_all()]
         id = _interpreters.create()
         script = dedent(f"""
-            import _xxsubinterpreters as _interpreters
+            import _interpreters
             try:
                 _interpreters.destroy({id})
             except _interpreters.InterpreterError:
@@ -521,7 +521,7 @@ class DestroyTests(TestBase):
         id1 = _interpreters.create()
         id2 = _interpreters.create()
         script = dedent(f"""
-            import _xxsubinterpreters as _interpreters
+            import _interpreters
             _interpreters.destroy({id2})
             """)
         _interpreters.run_string(id1, script)
@@ -862,7 +862,7 @@ class RunStringTests(TestBase):
         script = dedent("""
         from textwrap import dedent
         import threading
-        import _xxsubinterpreters as _interpreters
+        import _interpreters
         id = _interpreters.create()
         def f():
             _interpreters.run_string(id, dedent('''

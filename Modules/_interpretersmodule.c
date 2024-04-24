@@ -23,7 +23,7 @@
 #include "_interpreters_common.h"
 
 
-#define MODULE_NAME _xxsubinterpreters
+#define MODULE_NAME _interpreters
 #define MODULE_NAME_STR Py_STRINGIFY(MODULE_NAME)
 #define MODINIT_FUNC_NAME RESOLVE_MODINIT_FUNC_NAME(MODULE_NAME)
 
