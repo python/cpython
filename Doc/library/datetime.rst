@@ -91,7 +91,7 @@ The :mod:`!datetime` module exports the following constants:
 .. data:: MAXYEAR
 
    The largest year number allowed in a :class:`date` or :class:`.datetime` object.
-   :const:`MAXYEAR` is ``9999``.
+   :const:`MAXYEAR` is 9999.
 
 .. attribute:: UTC
 
@@ -2561,7 +2561,7 @@ information, which are supported in ``datetime.strptime`` but are discarded by
 
 For :class:`.time` objects, the format codes for year, month, and day should not
 be used, as :class:`!time` objects have no such values. If they're used anyway,
-``1900`` is substituted for the year, and 1 for the month and day.
+1900 is substituted for the year, and 1 for the month and day.
 
 For :class:`date` objects, the format codes for hours, minutes, seconds, and
 microseconds should not be used, as :class:`date` objects have no such
@@ -2708,4 +2708,4 @@ Notes:
        <https://web.archive.org/web/20220531051136/https://webspace.science.uu.nl/~gent0113/calendar/isocalendar.htm>`_
        for a good explanation.
 
-.. [#] Passing ``datetime.strptime('Feb 29', '%b %d')`` will fail since ``1900`` is not a leap year.
+.. [#] Passing ``datetime.strptime('Feb 29', '%b %d')`` will fail since 1900 is not a leap year.
