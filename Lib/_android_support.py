@@ -71,11 +71,14 @@ class BinaryLogStream(io.RawIOBase):
         return True
 
     def write(self, b):
-        if hasattr(b, "__buffer__"):
-            b_out = bytes(b)
-        else:
+        try:
+            memoryview(b)
+        except TypeError:
             raise TypeError(
-                f"write() argument must be bytes-like, not {type(b).__name__}")
+                f"write() argument must be bytes-like, not {type(b).__name__}"
+            ) from None
+        else:
+            b_out = bytes(b)
 
         # Encode null bytes using "modified UTF-8" to avoid truncating the
         # message.

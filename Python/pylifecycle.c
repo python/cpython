@@ -2738,8 +2738,7 @@ android_log_write_impl(PyObject *self, PyObject *args)
     int prio = 0;
     char *tag = NULL;
     char *text = NULL;
-    Py_ssize_t *text_len = 0;
-    if (!PyArg_ParseTuple(args, "iss#", &prio, &tag, &text, &text_len))
+    if (!PyArg_ParseTuple(args, "isy", &prio, &tag, &text))
         return NULL;
 
     // Despite its name, this function is part of the public API
