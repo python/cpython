@@ -366,12 +366,15 @@ _Py_PrintSpecializationStats(int to_file)
 
     FILE *out = stderr;
     if (to_file) {
+        const char *dirname = getenv("PYTHON_PYSTATS_DIR");
         /* Write to a file instead of stderr. */
+        if (dirname == NULL) {
 # ifdef MS_WINDOWS
-        const char *dirname = "c:\\temp\\py_stats\\";
+            dirname = "c:\\temp\\py_stats\\";
 # else
-        const char *dirname = "/tmp/py_stats/";
+            dirname = "/tmp/py_stats/";
 # endif
+        }
         /* Use random 160 bit number as file name,
         * to avoid both accidental collisions and
         * symlink attacks. */
@@ -383,8 +386,8 @@ _Py_PrintSpecializationStats(int to_file)
             hex_name[2*i+1] = Py_hexdigits[(rand[i]>>4)&15];
         }
         hex_name[40] = '\0';
-        char buf[64];
-        assert(strlen(dirname) + 40 + strlen(".txt") < 64);
+        char buf[128];
+        assert(strlen(dirname) + 40 + strlen(".txt") < 128);
         sprintf(buf, "%s%s.txt", dirname, hex_name);
         FILE *fout = fopen(buf, "w");
         if (fout) {
