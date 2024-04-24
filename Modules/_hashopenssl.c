@@ -56,6 +56,7 @@
 #endif
 
 #if OPENSSL_VERSION_NUMBER >= 0x30000000L
+#include <openssl/provider.h>
 #define PY_EVP_MD EVP_MD
 #define PY_EVP_MD_fetch(algorithm, properties) EVP_MD_fetch(NULL, algorithm, properties)
 #define PY_EVP_MD_up_ref(md) EVP_MD_up_ref(md)
@@ -265,6 +266,17 @@ typedef struct {
     _Py_hashtable_t *hashtable;
 } _hashlibstate;
 
+static void try_load_default_provider(void) {
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L
+    /* Load the default config file, and expected providers */
+    OPENSSL_init_crypto(OPENSSL_INIT_LOAD_CONFIG, NULL);
+    if (!OSSL_PROVIDER_available(NULL, "default")) {
+	/* System is configured without the default provider */
+        OSSL_PROVIDER_load(NULL, "default");
+    }
+#endif
+}
+
 static inline _hashlibstate*
 get_hashlib_state(PyObject *module)
 {
@@ -386,6 +398,7 @@ py_digest_by_name(PyObject *module, const char *name, enum Py_hash_type py_ht)
             break;
         case Py_ht_evp_nosecurity:
             if (entry->evp_nosecurity == NULL) {
+                try_load_default_provider();
                 entry->evp_nosecurity = PY_EVP_MD_fetch(entry->ossl_name, "-fips");
             }
             digest = entry->evp_nosecurity;
@@ -403,6 +416,7 @@ py_digest_by_name(PyObject *module, const char *name, enum Py_hash_type py_ht)
             digest = PY_EVP_MD_fetch(name, NULL);
             break;
         case Py_ht_evp_nosecurity:
+            try_load_default_provider();
             digest = PY_EVP_MD_fetch(name, "-fips");
             break;
         }
