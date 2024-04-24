@@ -194,7 +194,7 @@ class DumpTests(MemoryDatabaseMixin, unittest.TestCase):
         # gh-118221: iterdump should be able to cope with custom row factories.
         def dict_factory(cu, row):
             fields = [col[0] for col in cu.description]
-            return {k: v for k, v in zip(fields, row)}
+            return dict(zip(fields, row))
 
         self.cx.row_factory = dict_factory
         CREATE_TABLE = "CREATE TABLE test(t);"
