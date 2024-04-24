@@ -12,6 +12,7 @@ from test.support import import_helper
 _interpreters = import_helper.import_module('_interpreters')
 from test.support import Py_GIL_DISABLED
 from test.support import interpreters
+from test.support import force_not_colorized
 from test.support.interpreters import (
     InterpreterError, InterpreterNotFoundError, ExecutionFailed,
 )
@@ -735,6 +736,7 @@ class TestInterpreterExec(TestBase):
         with self.assertRaises(ExecutionFailed):
             interp.exec('raise Exception')
 
+    @force_not_colorized
     def test_display_preserved_exception(self):
         tempdir = self.temp_dir()
         modfile = self.make_module('spam', tempdir, text="""

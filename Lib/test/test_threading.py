@@ -7,6 +7,7 @@ from test.support import threading_helper, requires_subprocess
 from test.support import verbose, cpython_only, os_helper
 from test.support.import_helper import import_module
 from test.support.script_helper import assert_python_ok, assert_python_failure
+from test.support import force_not_colorized
 
 import random
 import sys
@@ -1793,6 +1794,7 @@ class ExceptHookTests(BaseTestCase):
         restore_default_excepthook(self)
         super().setUp()
 
+    @force_not_colorized
     def test_excepthook(self):
         with support.captured_output("stderr") as stderr:
             thread = ThreadRunFail(name="excepthook thread")
@@ -1806,6 +1808,7 @@ class ExceptHookTests(BaseTestCase):
         self.assertIn('ValueError: run failed', stderr)
 
     @support.cpython_only
+    @force_not_colorized
     def test_excepthook_thread_None(self):
         # threading.excepthook called with thread=None: log the thread
         # identifier in this case.
