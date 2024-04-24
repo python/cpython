@@ -43,9 +43,27 @@ namespace_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 static int
 namespace_init(_PyNamespaceObject *ns, PyObject *args, PyObject *kwds)
 {
-    if (PyTuple_GET_SIZE(args) != 0) {
-        PyErr_Format(PyExc_TypeError, "no positional arguments expected");
+    PyObject *arg = NULL;
+    if (!PyArg_UnpackTuple(args, _PyType_Name(Py_TYPE(ns)), 0, 1, &arg)) {
         return -1;
+    }
+    if (arg != NULL) {
+        PyObject *dict;
+        if (PyDict_CheckExact(arg)) {
+            dict = Py_NewRef(arg);
+        }
+        else {
+            dict = PyObject_CallOneArg((PyObject *)&PyDict_Type, arg);
+            if (dict == NULL) {
+                return -1;
+            }
+        }
+        int err = (!PyArg_ValidateKeywordArguments(dict) ||
+                   PyDict_Update(ns->ns_dict, dict) < 0);
+        Py_DECREF(dict);
+        if (err) {
+            return -1;
+        }
     }
     if (kwds == NULL) {
         return 0;
@@ -227,7 +245,7 @@ static PyMethodDef namespace_methods[] = {
 
 
 PyDoc_STRVAR(namespace_doc,
-"SimpleNamespace(**kwargs)\n\
+"SimpleNamespace(mapping_or_iterable=(), /, **kwargs)\n\
 --\n\n\
 A simple attribute-based namespace.");
 
