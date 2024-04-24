@@ -291,6 +291,17 @@ mmap_read_line_method(mmap_object *self,
     return result;
 }
 
+#if defined(MS_WIN32) && !defined(DONT_USE_SEH)
+static DWORD HandlePageException(EXCEPTION_POINTERS *ptrs, EXCEPTION_RECORD *record)
+{
+    *record = *ptrs->ExceptionRecord;
+    if (ptrs->ExceptionRecord->ExceptionCode == EXCEPTION_IN_PAGE_ERROR) {
+        return EXCEPTION_EXECUTE_HANDLER;
+    }
+    return EXCEPTION_CONTINUE_SEARCH;
+}
+#endif
+
 static PyObject *
 mmap_read_method(mmap_object *self,
                  PyObject *args)
@@ -307,8 +318,23 @@ mmap_read_method(mmap_object *self,
     remaining = (self->pos < self->size) ? self->size - self->pos : 0;
     if (num_bytes < 0 || num_bytes > remaining)
         num_bytes = remaining;
+
+    #if defined(MS_WIN32) && !defined(DONT_USE_SEH)
+    EXCEPTION_RECORD record;
+    __try {
+        result = PyBytes_FromStringAndSize(&self->data[self->pos], num_bytes);
+        self->pos += num_bytes;
+    }
+    __except (HandlePageException(GetExceptionInformation(), &record)) {
+        NTSTATUS code = record.ExceptionInformation[2];
+        PyErr_SetFromWindowsErr(code);
+        result = NULL;
+    }
+    #else
     result = PyBytes_FromStringAndSize(&self->data[self->pos], num_bytes);
     self->pos += num_bytes;
+    #endif
+
     return result;
 }
 
