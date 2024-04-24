@@ -5470,27 +5470,22 @@ os__path_islink_impl(PyObject *module, PyObject *path)
 /*[clinic input]
 os._path_splitroot_ex
 
-    path: path_t
+    path: unicode
 
 [clinic start generated code]*/
 
 static PyObject *
-os__path_splitroot_ex_impl(PyObject *module, path_t *path)
-/*[clinic end generated code: output=4b0072b6cdf4b611 input=586b2015848e9416]*/
+os__path_splitroot_ex_impl(PyObject *module, PyObject *path)
+/*[clinic end generated code: output=de97403d3dfebc40 input=f1470e12d899f9ac]*/
 {
     Py_ssize_t len, drvsize, rootsize;
-    PyObject *wide = NULL, *drv = NULL, *root = NULL, *tail = NULL, *result = NULL;
-#ifdef MS_WINDOWS
-    len = path->length;
-    const wchar_t *buffer = path->wide;
-#else
-    wchar_t *buffer = NULL;
-    if (!(wide = PyUnicode_DecodeFSDefaultAndSize(path->narrow, path->length)) ||
-        !(buffer = PyUnicode_AsWideCharString(wide, &len)))
-    {
+    PyObject *drv = NULL, *root = NULL, *tail = NULL, *result = NULL;
+
+    wchar_t *buffer = PyUnicode_AsWideCharString(path, &len);
+    if (!buffer) {
         goto exit;
     }
-#endif
+
     _Py_skiproot(buffer, len, &drvsize, &rootsize);
     if (!(drv = PyUnicode_FromWideChar(buffer, drvsize)) ||
         !(root = PyUnicode_FromWideChar(&buffer[drvsize], rootsize)) ||
@@ -5498,21 +5493,11 @@ os__path_splitroot_ex_impl(PyObject *module, path_t *path)
     {
         goto exit;
     }
-    if (PyBytes_Check(path->object)) {
-        Py_SETREF(drv, PyUnicode_EncodeFSDefault(drv));
-        Py_SETREF(root, PyUnicode_EncodeFSDefault(root));
-        Py_SETREF(tail, PyUnicode_EncodeFSDefault(tail));
-    }
     result = Py_BuildValue("(OOO)", drv, root, tail);
 exit:
-#ifndef MS_WINDOWS
-    if (wide) {
-        Py_DECREF(wide);
-    }
     if (buffer) {
         PyMem_Free(buffer);
     }
-#endif
     if (drv) {
         Py_DECREF(drv);
     }
