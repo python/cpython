@@ -3934,7 +3934,6 @@ _imp_create_dynamic_impl(PyObject *module, PyObject *spec, PyObject *file)
         assert(is_singlephase(def));
         assert(!is_core_module(tstate->interp, info.name, info.filename));
         assert(!is_core_module(tstate->interp, info.name, info.name));
-        mod = Py_NewRef(mod);
 
         const char *name_buf = PyBytes_AS_STRING(info.name_encoded);
         if (_PyImport_CheckSubinterpIncompatibleExtensionAllowed(name_buf) < 0) {
