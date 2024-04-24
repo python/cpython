@@ -170,6 +170,7 @@ The :mod:`locale` module defines the following exception and functions:
    This function is not available on all systems, and the set of possible options 
    also varies across systems.
 
+
    *option* may be one of the following constants. Most
    descriptions are taken from the corresponding description in the GNU C 
    library.
