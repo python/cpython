@@ -1837,6 +1837,11 @@ def _check_class(klass, attr):
 @functools.lru_cache()
 def _shadowed_dict_from_weakref_mro_tuple(*weakref_mro):
     for weakref_entry in weakref_mro:
+        # Normally we'd have to check whether the result of weakref_entry()
+        # is None here, in case the object the weakref is pointing to has died.
+        # In this specific case, however, we know that the only caller of this
+        # function is `_shadowed_dict()`, and that therefore this weakref is
+        # guaranteed to point to an object that is still alive.
         entry = weakref_entry()
         dunder_dict = _get_dunder_dict_of_class(entry)
         if '__dict__' in dunder_dict:
@@ -1849,6 +1854,13 @@ def _shadowed_dict_from_weakref_mro_tuple(*weakref_mro):
 
 
 def _shadowed_dict(klass):
+    # gh-118013: the inner function here is decorated with lru_cache for
+    # performance reasons, *but* make sure not to pass strong references
+    # to the items in the mro. Doing so can lead to unexpected memory
+    # consumption in cases where classes are dynamically created and
+    # destroyed, and the dynamically created classes happen to be the only
+    # objects that hold strong references to other objects that take up a
+    # significant amount of memory.
     return _shadowed_dict_from_weakref_mro_tuple(
         *[make_weakref(entry) for entry in _static_getmro(klass)]
     )
