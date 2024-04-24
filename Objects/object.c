@@ -1558,10 +1558,9 @@ _PyObject_GetMethodStackRef(PyObject *obj, PyObject *name, _PyStackRef *method)
     }
 
 
-    PyObject *dict;
-    if ((tp->tp_flags & Py_TPFLAGS_INLINE_VALUES) && _PyObject_InlineValues(obj)->valid) {
-        PyDictValues *values = _PyObject_InlineValues(obj);
-        PyObject *attr = _PyObject_GetInstanceAttribute(obj, values, name);
+    PyObject *dict, *attr;
+    if ((tp->tp_flags & Py_TPFLAGS_INLINE_VALUES) &&
+        _PyObject_TryGetInstanceAttribute(obj, name, &attr)) {
         if (attr != NULL) {
             *method = Py_STACKREF_TAG(attr);
             return 0;
@@ -1591,8 +1590,8 @@ _PyObject_GetMethodStackRef(PyObject *obj, PyObject *name, _PyStackRef *method)
     descrgetfunc f = NULL;
     if (descr != NULL) {
         Py_INCREF_STACKREF(descr_tagged);
-        uint32_t local = _Py_atomic_load_uint32_relaxed(&descr->ob_ref_local);
-        fprintf(stderr, "refcount %p: %d\n", descr, local);
+//        uint32_t local = _Py_atomic_load_uint32_relaxed(&descr->ob_ref_local);
+//        fprintf(stderr, "refcount %p: %d\n", descr, local);
         if (_PyType_HasFeature(Py_TYPE(descr), Py_TPFLAGS_METHOD_DESCRIPTOR)) {
             return 1;
         } else {

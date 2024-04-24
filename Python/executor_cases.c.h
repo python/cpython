@@ -512,8 +512,11 @@
         }
 
         case _GUARD_NOS_INT: {
+            _PyStackRef left_tagged;
             PyObject *left;
-            left = stack_pointer[-2];
+            left_tagged = stack_pointer[-2];
+            left = Py_STACKREF_UNTAG_BORROWED(left_tagged);
+
             if (!PyLong_CheckExact(left)) {
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
@@ -522,8 +525,11 @@
         }
 
         case _GUARD_TOS_INT: {
+            _PyStackRef value_tagged;
             PyObject *value;
-            value = stack_pointer[-1];
+            value_tagged = stack_pointer[-1];
+            value = Py_STACKREF_UNTAG_BORROWED(value_tagged);
+
             if (!PyLong_CheckExact(value)) {
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
@@ -620,8 +626,11 @@
         }
 
         case _GUARD_NOS_FLOAT: {
+            _PyStackRef left_tagged;
             PyObject *left;
-            left = stack_pointer[-2];
+            left_tagged = stack_pointer[-2];
+            left = Py_STACKREF_UNTAG_BORROWED(left_tagged);
+
             if (!PyFloat_CheckExact(left)) {
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
@@ -630,8 +639,11 @@
         }
 
         case _GUARD_TOS_FLOAT: {
+            _PyStackRef value_tagged;
             PyObject *value;
-            value = stack_pointer[-1];
+            value_tagged = stack_pointer[-1];
+            value = Py_STACKREF_UNTAG_BORROWED(value_tagged);
+
             if (!PyFloat_CheckExact(value)) {
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
