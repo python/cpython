@@ -1728,8 +1728,8 @@ encoder_listencode_list(PyEncoderObject *s, _PyUnicodeWriter *writer,
 
     if (s->indent != Py_None) {
         indent_level--;
-        Py_DECREF(newline_indent);
-        Py_DECREF(separator_indent);
+        Py_CLEAR(newline_indent);
+        Py_CLEAR(separator_indent);
         if (_PyUnicodeWriter_WriteStr(writer, current_newline_indent) < 0) {
             goto bail;
         }
