@@ -191,7 +191,7 @@ class DumpTests(MemoryDatabaseMixin, unittest.TestCase):
         self.assertEqual(expected, got)
 
     def test_dump_custom_row_factory(self):
-        # gh-118221: iterdump should be able to cope with custom row factories
+        # gh-118221: iterdump should be able to cope with custom row factories.
         def dict_factory(cu, row):
             fields = [col[0] for col in cu.description]
             return {k: v for k, v in zip(fields, row)}
