@@ -2938,10 +2938,17 @@ kwargs = Py_STACKREF_UNTAG_BORROWED(kwargs_tagged);
         }
 
         TARGET(ENTER_EXECUTOR) {
-            frame->instr_ptr = next_instr;
+            _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
+            (void)this_instr;
             next_instr += 1;
             INSTRUCTION_STATS(ENTER_EXECUTOR);
+            int prevoparg = oparg;
             CHECK_EVAL_BREAKER();
+            if (this_instr->op.code != ENTER_EXECUTOR ||
+                this_instr->op.arg != prevoparg) {
+                next_instr = this_instr;
+                DISPATCH();
+            }
             PyCodeObject *code = _PyFrame_GetCode(frame);
             _PyExecutorObject *executor = code->co_executors->executors[oparg & 255];
             assert(executor->vm_data.index == INSTR_OFFSET() - 1);
@@ -3784,7 +3791,7 @@ kwargs = Py_STACKREF_UNTAG_BORROWED(kwargs_tagged);
             next_instr += 1;
             INSTRUCTION_STATS(INSTRUMENTED_RESUME);
             uintptr_t global_version = _Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & ~_PY_EVAL_EVENTS_MASK;
-            uintptr_t code_version = _PyFrame_GetCode(frame)->_co_instrumentation_version;
+            uintptr_t code_version = FT_ATOMIC_LOAD_UINTPTR_ACQUIRE(_PyFrame_GetCode(frame)->_co_instrumentation_version);
             if (code_version != global_version) {
                 if (_Py_Instrument(_PyFrame_GetCode(frame), tstate->interp)) {
                     goto error;
@@ -4601,16 +4608,14 @@ kwargs = Py_STACKREF_UNTAG_BORROWED(kwargs_tagged);
             // _CHECK_ATTR_WITH_HINT
             {
                 assert(Py_TYPE(owner)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
-                PyManagedDictPointer *managed_dict = _PyObject_ManagedDictPointer(owner);
-                PyDictObject *dict = managed_dict->dict;
+                PyDictObject *dict = _PyObject_GetManagedDict(owner);
                 DEOPT_IF(dict == NULL, LOAD_ATTR);
                 assert(PyDict_CheckExact((PyObject *)dict));
             }
             // _LOAD_ATTR_WITH_HINT
             {
                 uint16_t hint = read_u16(&this_instr[4].cache);
-                PyManagedDictPointer *managed_dict = _PyObject_ManagedDictPointer(owner);
-                PyDictObject *dict = managed_dict->dict;
+                PyDictObject *dict = _PyObject_GetManagedDict(owner);
                 DEOPT_IF(hint >= (size_t)dict->ma_keys->dk_nentries, LOAD_ATTR);
                 PyObject *name = GETITEM(FRAME_CO_NAMES, oparg>>1);
                 if (DK_IS_UNICODE(dict->ma_keys)) {
@@ -5626,10 +5631,11 @@ kwargs = Py_STACKREF_UNTAG_BORROWED(kwargs_tagged);
             uintptr_t global_version =
             _Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) &
             ~_PY_EVAL_EVENTS_MASK;
-            uintptr_t code_version = _PyFrame_GetCode(frame)->_co_instrumentation_version;
+            PyCodeObject *code = _PyFrame_GetCode(frame);
+            uintptr_t code_version = FT_ATOMIC_LOAD_UINTPTR_ACQUIRE(code->_co_instrumentation_version);
             assert((code_version & 255) == 0);
             if (code_version != global_version) {
-                int err = _Py_Instrument(_PyFrame_GetCode(frame), tstate->interp);
+                int err = _Py_Instrument(code, tstate->interp);
                 if (err) goto error;
                 next_instr = this_instr;
             }
@@ -5652,7 +5658,7 @@ kwargs = Py_STACKREF_UNTAG_BORROWED(kwargs_tagged);
             _Py_emscripten_signal_clock -= Py_EMSCRIPTEN_SIGNAL_HANDLING;
             #endif
             uintptr_t eval_breaker = _Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker);
-            uintptr_t version = _PyFrame_GetCode(frame)->_co_instrumentation_version;
+            uintptr_t version = FT_ATOMIC_LOAD_UINTPTR_ACQUIRE(_PyFrame_GetCode(frame)->_co_instrumentation_version);
             assert((version & _PY_EVAL_EVENTS_MASK) == 0);
             DEOPT_IF(eval_breaker != version, RESUME);
             DISPATCH();
@@ -6038,7 +6044,7 @@ kwargs = Py_STACKREF_UNTAG_BORROWED(kwargs_tagged);
             {
                 assert(Py_TYPE(owner)->tp_dictoffset < 0);
                 assert(Py_TYPE(owner)->tp_flags & Py_TPFLAGS_INLINE_VALUES);
-                DEOPT_IF(_PyObject_ManagedDictPointer(owner)->dict, STORE_ATTR);
+                DEOPT_IF(_PyObject_GetManagedDict(owner), STORE_ATTR);
                 DEOPT_IF(_PyObject_InlineValues(owner)->valid == 0, STORE_ATTR);
             }
             // _STORE_ATTR_INSTANCE_VALUE
@@ -6047,7 +6053,7 @@ kwargs = Py_STACKREF_UNTAG_BORROWED(kwargs_tagged);
             {
                 uint16_t index = read_u16(&this_instr[4].cache);
                 STAT_INC(STORE_ATTR, hit);
-                assert(_PyObject_ManagedDictPointer(owner)->dict == NULL);
+                assert(_PyObject_GetManagedDict(owner) == NULL);
                 PyDictValues *values = _PyObject_InlineValues(owner);
                 PyObject *old_value = values->values[index];
                 values->values[index] = Py_STACKREF_UNTAG_OWNED(value);
@@ -6118,8 +6124,7 @@ kwargs = Py_STACKREF_UNTAG_BORROWED(kwargs_tagged);
             assert(type_version != 0);
             DEOPT_IF(tp->tp_version_tag != type_version, STORE_ATTR);
             assert(tp->tp_flags & Py_TPFLAGS_MANAGED_DICT);
-            PyManagedDictPointer *managed_dict = _PyObject_ManagedDictPointer(owner);
-            PyDictObject *dict = managed_dict->dict;
+            PyDictObject *dict = _PyObject_GetManagedDict(owner);
             DEOPT_IF(dict == NULL, STORE_ATTR);
             assert(PyDict_CheckExact((PyObject *)dict));
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);

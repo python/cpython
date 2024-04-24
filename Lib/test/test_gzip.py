@@ -587,6 +587,8 @@ class TestGzip(BaseTest):
             self.assertRaises(AttributeError, f.fileno)
 
     def test_fileobj_mode(self):
+        self.assertEqual(gzip.READ, 'rb')
+        self.assertEqual(gzip.WRITE, 'wb')
         gzip.GzipFile(self.filename, "wb").close()
         with open(self.filename, "r+b") as f:
             with gzip.GzipFile(fileobj=f, mode='r') as g:

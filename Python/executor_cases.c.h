@@ -21,7 +21,7 @@
             _Py_emscripten_signal_clock -= Py_EMSCRIPTEN_SIGNAL_HANDLING;
             #endif
             uintptr_t eval_breaker = _Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker);
-            uintptr_t version = _PyFrame_GetCode(frame)->_co_instrumentation_version;
+            uintptr_t version = FT_ATOMIC_LOAD_UINTPTR_ACQUIRE(_PyFrame_GetCode(frame)->_co_instrumentation_version);
             assert((version & _PY_EVAL_EVENTS_MASK) == 0);
             if (eval_breaker != version) {
                 UOP_STAT_INC(uopcode, miss);
@@ -511,6 +511,26 @@
             break;
         }
 
+        case _GUARD_NOS_INT: {
+            PyObject *left;
+            left = stack_pointer[-2];
+            if (!PyLong_CheckExact(left)) {
+                UOP_STAT_INC(uopcode, miss);
+                JUMP_TO_JUMP_TARGET();
+            }
+            break;
+        }
+
+        case _GUARD_TOS_INT: {
+            PyObject *value;
+            value = stack_pointer[-1];
+            if (!PyLong_CheckExact(value)) {
+                UOP_STAT_INC(uopcode, miss);
+                JUMP_TO_JUMP_TARGET();
+            }
+            break;
+        }
+
         case _BINARY_OP_MULTIPLY_INT: {
             _PyStackRef right_tagged;
             PyObject *right;
@@ -593,6 +613,26 @@
                 JUMP_TO_JUMP_TARGET();
             }
             if (!PyFloat_CheckExact(right)) {
+                UOP_STAT_INC(uopcode, miss);
+                JUMP_TO_JUMP_TARGET();
+            }
+            break;
+        }
+
+        case _GUARD_NOS_FLOAT: {
+            PyObject *left;
+            left = stack_pointer[-2];
+            if (!PyFloat_CheckExact(left)) {
+                UOP_STAT_INC(uopcode, miss);
+                JUMP_TO_JUMP_TARGET();
+            }
+            break;
+        }
+
+        case _GUARD_TOS_FLOAT: {
+            PyObject *value;
+            value = stack_pointer[-1];
+            if (!PyFloat_CheckExact(value)) {
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
             }
@@ -2357,8 +2397,7 @@
             owner = Py_STACKREF_UNTAG_BORROWED(owner_tagged);
 
             assert(Py_TYPE(owner)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
-            PyManagedDictPointer *managed_dict = _PyObject_ManagedDictPointer(owner);
-            PyDictObject *dict = managed_dict->dict;
+            PyDictObject *dict = _PyObject_GetManagedDict(owner);
             if (dict == NULL) {
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
@@ -2377,8 +2416,7 @@
             owner = Py_STACKREF_UNTAG_BORROWED(owner_tagged);
 
             uint16_t hint = (uint16_t)CURRENT_OPERAND();
-            PyManagedDictPointer *managed_dict = _PyObject_ManagedDictPointer(owner);
-            PyDictObject *dict = managed_dict->dict;
+            PyDictObject *dict = _PyObject_GetManagedDict(owner);
             if (hint >= (size_t)dict->ma_keys->dk_nentries) {
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
@@ -2544,7 +2582,7 @@
 
             assert(Py_TYPE(owner)->tp_dictoffset < 0);
             assert(Py_TYPE(owner)->tp_flags & Py_TPFLAGS_INLINE_VALUES);
-            if (_PyObject_ManagedDictPointer(owner)->dict) {
+            if (_PyObject_GetManagedDict(owner)) {
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
             }
@@ -2566,7 +2604,7 @@
 
             uint16_t index = (uint16_t)CURRENT_OPERAND();
             STAT_INC(STORE_ATTR, hit);
-            assert(_PyObject_ManagedDictPointer(owner)->dict == NULL);
+            assert(_PyObject_GetManagedDict(owner) == NULL);
             PyDictValues *values = _PyObject_InlineValues(owner);
             PyObject *old_value = values->values[index];
             values->values[index] = Py_STACKREF_UNTAG_OWNED(value);
@@ -4942,6 +4980,10 @@ step = Py_STACKREF_UNTAG_BORROWED(step_tagged);
             #ifndef _Py_JIT
             current_executor = (_PyExecutorObject*)executor;
             #endif
+            if (!((_PyExecutorObject *)executor)->vm_data.valid) {
+                UOP_STAT_INC(uopcode, miss);
+                JUMP_TO_JUMP_TARGET();
+            }
             break;
         }
 
@@ -4973,6 +5015,8 @@ step = Py_STACKREF_UNTAG_BORROWED(step_tagged);
 
         case _ERROR_POP_N: {
             oparg = CURRENT_OPARG();
+            uint32_t target = (uint32_t)CURRENT_OPERAND();
+            frame->instr_ptr = ((_Py_CODEUNIT *)_PyFrame_GetCode(frame)->co_code_adaptive) + target;
             stack_pointer += -oparg;
             GOTO_UNWIND();
             break;

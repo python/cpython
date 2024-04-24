@@ -3,6 +3,7 @@
 
 #include "Python.h"
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
+#include "pycore_fileutils.h"     // _Py_wgetcwd
 #include "pycore_interp.h"        // PyInterpreterState.importlib
 #include "pycore_modsupport.h"    // _PyModule_CreateInitialized()
 #include "pycore_moduleobject.h"  // _PyModule_GetDef()
@@ -10,6 +11,7 @@
 #include "pycore_pyerrors.h"      // _PyErr_FormatFromCause()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 
+#include "osdefs.h"               // MAXPATHLEN
 
 
 static PyMemberDef module_members[] = {
@@ -785,11 +787,104 @@ _PyModuleSpec_IsUninitializedSubmodule(PyObject *spec, PyObject *name)
     return rc;
 }
 
+static int
+_get_file_origin_from_spec(PyObject *spec, PyObject **p_origin)
+{
+    PyObject *has_location = NULL;
+    int rc = PyObject_GetOptionalAttr(spec, &_Py_ID(has_location), &has_location);
+    if (rc <= 0) {
+        return rc;
+    }
+    // If origin is not a location, or doesn't exist, or is not a str), we could consider falling
+    // back to module.__file__. But the cases in which module.__file__ is not __spec__.origin
+    // are cases in which we probably shouldn't be guessing.
+    rc = PyObject_IsTrue(has_location);
+    Py_DECREF(has_location);
+    if (rc <= 0) {
+        return rc;
+    }
+    // has_location is true, so origin is a location
+    PyObject *origin = NULL;
+    rc = PyObject_GetOptionalAttr(spec, &_Py_ID(origin), &origin);
+    if (rc <= 0) {
+        return rc;
+    }
+    assert(origin != NULL);
+    if (!PyUnicode_Check(origin)) {
+        Py_DECREF(origin);
+        return 0;
+    }
+    *p_origin = origin;
+    return 1;
+}
+
+static int
+_is_module_possibly_shadowing(PyObject *origin)
+{
+    // origin must be a unicode subtype
+    // Returns 1 if the module at origin could be shadowing a module of the
+    // same name later in the module search path. The condition we check is basically:
+    // root = os.path.dirname(origin.removesuffix(os.sep + "__init__.py"))
+    // return not sys.flags.safe_path and root == (sys.path[0] or os.getcwd())
+    // Returns 0 otherwise (or if we aren't sure)
+    // Returns -1 if an error occurred that should be propagated
+    if (origin == NULL) {
+        return 0;
+    }
+
+    // not sys.flags.safe_path
+    const PyConfig *config = _Py_GetConfig();
+    if (config->safe_path) {
+        return 0;
+    }
+
+    // root = os.path.dirname(origin.removesuffix(os.sep + "__init__.py"))
+    wchar_t root[MAXPATHLEN + 1];
+    Py_ssize_t size = PyUnicode_AsWideChar(origin, root, MAXPATHLEN);
+    if (size < 0) {
+        return -1;
+    }
+    assert(size <= MAXPATHLEN);
+    root[size] = L'\0';
+
+    wchar_t *sep = wcsrchr(root, SEP);
+    if (sep == NULL) {
+        return 0;
+    }
+    // If it's a package then we need to look one directory further up
+    if (wcscmp(sep + 1, L"__init__.py") == 0) {
+        *sep = L'\0';
+        sep = wcsrchr(root, SEP);
+        if (sep == NULL) {
+            return 0;
+        }
+    }
+    *sep = L'\0';
+
+    // sys.path[0] or os.getcwd()
+    wchar_t *sys_path_0 = config->sys_path_0;
+    if (!sys_path_0) {
+        return 0;
+    }
+
+    wchar_t sys_path_0_buf[MAXPATHLEN];
+    if (sys_path_0[0] == L'\0') {
+        // if sys.path[0] == "", treat it as if it were the current directory
+        if (!_Py_wgetcwd(sys_path_0_buf, MAXPATHLEN)) {
+            return -1;
+        }
+        sys_path_0 = sys_path_0_buf;
+    }
+
+    int result = wcscmp(sys_path_0, root) == 0;
+    return result;
+}
+
 PyObject*
 _Py_module_getattro_impl(PyModuleObject *m, PyObject *name, int suppress)
 {
     // When suppress=1, this function suppresses AttributeError.
-    PyObject *attr, *mod_name, *getattr, *origin;
+    PyObject *attr, *mod_name, *getattr;
     attr = _PyObject_GenericGetAttrWithDict((PyObject *)m, name, NULL, suppress);
     if (attr) {
         return attr;
@@ -820,68 +915,111 @@ _Py_module_getattro_impl(PyModuleObject *m, PyObject *name, int suppress)
         Py_DECREF(getattr);
         return result;
     }
+
+    // The attribute was not found.  We make a best effort attempt at a useful error message,
+    // but only if we're not suppressing AttributeError.
+    if (suppress == 1) {
+        return NULL;
+    }
     if (PyDict_GetItemRef(m->md_dict, &_Py_ID(__name__), &mod_name) < 0) {
         return NULL;
     }
-    if (mod_name && PyUnicode_Check(mod_name)) {
-        PyObject *spec;
-        if (PyDict_GetItemRef(m->md_dict, &_Py_ID(__spec__), &spec) < 0) {
-            Py_DECREF(mod_name);
-            return NULL;
-        }
-        if (suppress != 1) {
-            int rc = _PyModuleSpec_IsInitializing(spec);
-            if (rc > 0) {
-                int valid_spec = PyObject_GetOptionalAttr(spec, &_Py_ID(origin), &origin);
-                if (valid_spec == -1) {
-                    Py_XDECREF(spec);
-                    Py_DECREF(mod_name);
-                    return NULL;
-                }
-                if (valid_spec == 1 && !PyUnicode_Check(origin)) {
-                    valid_spec = 0;
-                    Py_DECREF(origin);
-                }
-                if (valid_spec == 1) {
-                    PyErr_Format(PyExc_AttributeError,
-                                "partially initialized "
-                                "module '%U' from '%U' has no attribute '%U' "
-                                "(most likely due to a circular import)",
-                                mod_name, origin, name);
-                    Py_DECREF(origin);
-                }
-                else {
-                    PyErr_Format(PyExc_AttributeError,
-                                "partially initialized "
-                                "module '%U' has no attribute '%U' "
-                                "(most likely due to a circular import)",
-                                mod_name, name);
-                }
-            }
-            else if (rc == 0) {
-                rc = _PyModuleSpec_IsUninitializedSubmodule(spec, name);
-                if (rc > 0) {
-                    PyErr_Format(PyExc_AttributeError,
-                                "cannot access submodule '%U' of module '%U' "
-                                "(most likely due to a circular import)",
-                                name, mod_name);
-                }
-                else if (rc == 0) {
-                    PyErr_Format(PyExc_AttributeError,
-                                "module '%U' has no attribute '%U'",
-                                mod_name, name);
-                }
-            }
-        }
-        Py_XDECREF(spec);
+    if (!mod_name || !PyUnicode_Check(mod_name)) {
+        Py_XDECREF(mod_name);
+        PyErr_Format(PyExc_AttributeError,
+                    "module has no attribute '%U'", name);
+        return NULL;
+    }
+    PyObject *spec;
+    if (PyDict_GetItemRef(m->md_dict, &_Py_ID(__spec__), &spec) < 0) {
         Py_DECREF(mod_name);
         return NULL;
     }
-    Py_XDECREF(mod_name);
-    if (suppress != 1) {
+    if (spec == NULL) {
         PyErr_Format(PyExc_AttributeError,
-                    "module has no attribute '%U'", name);
+                     "module '%U' has no attribute '%U'",
+                     mod_name, name);
+        Py_DECREF(mod_name);
+        return NULL;
     }
+
+    PyObject *origin = NULL;
+    if (_get_file_origin_from_spec(spec, &origin) < 0) {
+        goto done;
+    }
+
+    int is_possibly_shadowing = _is_module_possibly_shadowing(origin);
+    if (is_possibly_shadowing < 0) {
+        goto done;
+    }
+    int is_possibly_shadowing_stdlib = 0;
+    if (is_possibly_shadowing) {
+        PyObject *stdlib_modules = PySys_GetObject("stdlib_module_names");
+        if (stdlib_modules && PyAnySet_Check(stdlib_modules)) {
+            is_possibly_shadowing_stdlib = PySet_Contains(stdlib_modules, mod_name);
+            if (is_possibly_shadowing_stdlib < 0) {
+                goto done;
+            }
+        }
+    }
+
+    if (is_possibly_shadowing_stdlib) {
+        assert(origin);
+        PyErr_Format(PyExc_AttributeError,
+                    "module '%U' has no attribute '%U' "
+                    "(consider renaming '%U' since it has the same "
+                    "name as the standard library module named '%U' "
+                    "and the import system gives it precedence)",
+                    mod_name, name, origin, mod_name);
+    }
+    else {
+        int rc = _PyModuleSpec_IsInitializing(spec);
+        if (rc > 0) {
+            if (is_possibly_shadowing) {
+                assert(origin);
+                // For third-party modules, only mention the possibility of
+                // shadowing if the module is being initialized.
+                PyErr_Format(PyExc_AttributeError,
+                            "module '%U' has no attribute '%U' "
+                            "(consider renaming '%U' if it has the same name "
+                            "as a third-party module you intended to import)",
+                            mod_name, name, origin);
+            }
+            else if (origin) {
+                PyErr_Format(PyExc_AttributeError,
+                            "partially initialized "
+                            "module '%U' from '%U' has no attribute '%U' "
+                            "(most likely due to a circular import)",
+                            mod_name, origin, name);
+            }
+            else {
+                PyErr_Format(PyExc_AttributeError,
+                            "partially initialized "
+                            "module '%U' has no attribute '%U' "
+                            "(most likely due to a circular import)",
+                            mod_name, name);
+            }
+        }
+        else if (rc == 0) {
+            rc = _PyModuleSpec_IsUninitializedSubmodule(spec, name);
+            if (rc > 0) {
+                PyErr_Format(PyExc_AttributeError,
+                            "cannot access submodule '%U' of module '%U' "
+                            "(most likely due to a circular import)",
+                            name, mod_name);
+            }
+            else if (rc == 0) {
+                PyErr_Format(PyExc_AttributeError,
+                            "module '%U' has no attribute '%U'",
+                            mod_name, name);
+            }
+        }
+    }
+
+done:
+    Py_XDECREF(origin);
+    Py_DECREF(spec);
+    Py_DECREF(mod_name);
     return NULL;
 }
 
