@@ -486,8 +486,6 @@ class TypeParamsAccessTest(unittest.TestCase):
                 {}
         """
         error_cases = [
-            "type Alias1[T] = lambda: T",
-            "type Alias2 = lambda: T",
             "type Alias3[T] = (T for _ in (1,))",
             "type Alias4 = (T for _ in (1,))",
             "type Alias5[T] = [T for _ in (1,)]",
@@ -498,6 +496,54 @@ class TypeParamsAccessTest(unittest.TestCase):
                 with self.assertRaisesRegex(SyntaxError,
                                             r"Cannot use [a-z]+ in annotation scope within class scope"):
                     run_code(code.format(case))
+
+    def test_lambda_in_alias_in_class(self):
+        code = """
+            T = "global"
+            class C:
+                T = "class"
+                type Alias = lambda: T
+        """
+        C = run_code(code)["C"]
+        self.assertEqual(C.Alias.__value__(), "global")
+
+    def test_lambda_in_alias_in_generic_class(self):
+        code = """
+            class C[T]:
+                T = "class"
+                type Alias = lambda: T
+        """
+        C = run_code(code)["C"]
+        self.assertIs(C.Alias.__value__(), C.__type_params__[0])
+
+    def test_lambda_in_generic_alias_in_class(self):
+        # A lambda nested in the alias cannot see the class scope, but can see
+        # a surrounding annotation scope.
+        code = """
+            T = U = "global"
+            class C:
+                T = "class"
+                U = "class"
+                type Alias[T] = lambda: (T, U)
+        """
+        C = run_code(code)["C"]
+        T, U = C.Alias.__value__()
+        self.assertIs(T, C.Alias.__type_params__[0])
+        self.assertEqual(U, "global")
+
+    def test_lambda_in_generic_alias_in_generic_class(self):
+        # A lambda nested in the alias cannot see the class scope, but can see
+        # a surrounding annotation scope.
+        code = """
+            class C[T, U]:
+                T = "class"
+                U = "class"
+                type Alias[T] = lambda: (T, U)
+        """
+        C = run_code(code)["C"]
+        T, U = C.Alias.__value__()
+        self.assertIs(T, C.Alias.__type_params__[0])
+        self.assertIs(U, C.__type_params__[1])
 
 
 def make_base(arg):

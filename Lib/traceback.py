@@ -448,8 +448,12 @@ class _ANSIColors:
     BOLD_RED = '\x1b[1;31m'
     MAGENTA = '\x1b[35m'
     BOLD_MAGENTA = '\x1b[1;35m'
+    GREEN = "\x1b[32m"
+    BOLD_GREEN = "\x1b[1;32m"
     GREY = '\x1b[90m'
     RESET = '\x1b[0m'
+    YELLOW = "\x1b[33m"
+
 
 class StackSummary(list):
     """A list of FrameSummary objects, representing a stack of frames."""
