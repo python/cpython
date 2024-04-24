@@ -114,7 +114,11 @@ def literal_eval(node_or_string):
     return _convert(node_or_string)
 
 
-def dump(node, annotate_fields=True, include_attributes=False, *, indent=None):
+def dump(
+    node, annotate_fields=True, include_attributes=False,
+    *,
+    indent=None, show_empty=False,
+):
     """
     Return a formatted dump of the tree in node.  This is mainly useful for
     debugging purposes.  If annotate_fields is true (by default),
@@ -125,6 +129,8 @@ def dump(node, annotate_fields=True, include_attributes=False, *, indent=None):
     include_attributes can be set to true.  If indent is a non-negative
     integer or string, then the tree will be pretty-printed with that indent
     level. None (the default) selects the single line representation.
+    If show_empty is False, then empty lists and fields that are None
+    will be omitted from the output for better readability.
     """
     def _format(node, level=0):
         if indent is not None:
@@ -137,6 +143,7 @@ def dump(node, annotate_fields=True, include_attributes=False, *, indent=None):
         if isinstance(node, AST):
             cls = type(node)
             args = []
+            args_buffer = []
             allsimple = True
             keywords = annotate_fields
             for name in node._fields:
@@ -148,6 +155,18 @@ def dump(node, annotate_fields=True, include_attributes=False, *, indent=None):
                 if value is None and getattr(cls, name, ...) is None:
                     keywords = True
                     continue
+                if (
+                    not show_empty
+                    and (value is None or value == [])
+                    # Special cases:
+                    # `Constant(value=None)` and `MatchSingleton(value=None)`
+                    and not isinstance(node, (Constant, MatchSingleton))
+                ):
+                    args_buffer.append(repr(value))
+                    continue
+                elif not keywords:
+                    args.extend(args_buffer)
+                    args_buffer = []
                 value, simple = _format(value, level)
                 allsimple = allsimple and simple
                 if keywords:
