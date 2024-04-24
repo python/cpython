@@ -19,7 +19,7 @@
 // Utilities
 
 // Returns borrowed reference or NULL
-PyObject *
+static PyObject *
 framelocalproxy_getval(PyFrameObject *frame, PyCodeObject *co, int i)
 {
     PyObject **fast = _PyFrame_GetLocalsArray(frame->f_frame);
@@ -52,7 +52,7 @@ framelocalproxy_getval(PyFrameObject *frame, PyCodeObject *co, int i)
 
 // Type functions
 
-PyObject *
+static PyObject *
 framelocalsproxy_keys(PyObject *self, PyObject *__unused)
 {
     PyObject *names = PyList_New(0);
@@ -82,7 +82,7 @@ framelocalsproxy_keys(PyObject *self, PyObject *__unused)
     return names;
 }
 
-void
+static void
 framelocalsproxy_dealloc(PyObject *self)
 {
     PyObject_GC_UnTrack(self);
@@ -90,7 +90,7 @@ framelocalsproxy_dealloc(PyObject *self)
     Py_TYPE(self)->tp_free(self);
 }
 
-PyObject *
+static PyObject *
 framelocalsproxy_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
     PyFrameLocalsProxyObject *self = (PyFrameLocalsProxyObject *)type->tp_alloc(type, 0);
@@ -122,20 +122,20 @@ framelocalsproxy_tp_clear(PyObject *self)
     return 0;
 }
 
-int
+static int
 framelocalsproxy_visit(PyObject *self, visitproc visit, void *arg)
 {
     Py_VISIT(((PyFrameLocalsProxyObject*)self)->frame);
     return 0;
 }
 
-PyObject *
+static PyObject *
 framelocalsproxy_iter(PyObject *self)
 {
     return PyObject_GetIter(framelocalsproxy_keys(self, NULL));
 }
 
-PyObject *
+static PyObject *
 framelocalsproxy_richcompare(PyObject *self, PyObject *other, int op)
 {
     if (PyFrameLocalsProxy_Check(other)) {
@@ -159,7 +159,7 @@ framelocalsproxy_richcompare(PyObject *self, PyObject *other, int op)
 
 // Methods
 
-PyObject *
+static PyObject *
 framelocalsproxy_items(PyObject *self, PyObject *__unused)
 {
     PyObject *items = PyList_New(0);
@@ -191,7 +191,7 @@ framelocalsproxy_items(PyObject *self, PyObject *__unused)
     return items;
 }
 
-Py_ssize_t
+static Py_ssize_t
 framelocalsproxy_length(PyObject *self)
 {
     PyFrameObject *frame = ((PyFrameLocalsProxyObject*)self)->frame;
@@ -211,7 +211,7 @@ framelocalsproxy_length(PyObject *self)
     return size;
 }
 
-PyObject *
+static PyObject *
 framelocalsproxy_getitem(PyObject *self, PyObject *key)
 {
     PyFrameObject* frame = ((PyFrameLocalsProxyObject*)self)->frame;
@@ -242,7 +242,7 @@ framelocalsproxy_getitem(PyObject *self, PyObject *key)
     return NULL;
 }
 
-int
+static int
 framelocalsproxy_setitem(PyObject *self, PyObject *key, PyObject *value)
 {
     /* Merge locals into fast locals */

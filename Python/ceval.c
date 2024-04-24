@@ -2518,6 +2518,28 @@ PyEval_GetGlobals(void)
     return current_frame->f_globals;
 }
 
+PyObject*
+PyEval_GetFrameLocals(void)
+{
+    return _PyEval_GetFrameLocals();
+}
+
+PyObject* PyEval_GetFrameGlobals(void)
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+    _PyInterpreterFrame *current_frame = _PyThreadState_GetFrame(tstate);
+    if (current_frame == NULL) {
+        return NULL;
+    }
+    return Py_XNewRef(current_frame->f_globals);
+}
+
+PyObject* PyEval_GetFrameBuiltins(void)
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+    return Py_XNewRef(_PyEval_GetBuiltins(tstate));
+}
+
 int
 PyEval_MergeCompilerFlags(PyCompilerFlags *cf)
 {
