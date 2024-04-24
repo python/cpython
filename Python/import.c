@@ -634,29 +634,30 @@ _PyImport_ClearModulesByIndex(PyInterpreterState *interp)
        A. _imp_create_dynamic_impl() -> import_find_extension()
        B. _imp_create_dynamic_impl() -> _PyImport_GetModInitFunc()
        C.   _PyImport_GetModInitFunc():  load <module init func>
-       D. _imp_create_dynamic_impl() -> _PyImport_RunModInitFunc()
-       E.   _PyImport_RunModInitFunc():  call <module init func>
-       F.     <module init func> -> PyModule_Create() -> PyModule_Create2()
-                                        -> PyModule_CreateInitialized()
-       G.       PyModule_CreateInitialized() -> PyModule_New()
-       H.       PyModule_CreateInitialized():  allocate mod->md_state
-       I.       PyModule_CreateInitialized() -> PyModule_AddFunctions()
-       J.       PyModule_CreateInitialized() -> PyModule_SetDocString()
-       K.     PyModule_CreateInitialized():  set mod->md_def
-       L.     <module init func>:  initialize the module, etc.
-       M.   _PyImport_RunModInitFunc():  set def->m_base.m_init
-       N. _imp_create_dynamic_impl()
-              -> _PyImport_CheckSubinterpIncompatibleExtensionAllowed()
-       O. _imp_create_dynamic_impl():  set __file__
-       P. _imp_create_dynamic_impl() -> update_global_state_for_extension()
-       Q.   update_global_state_for_extension():
-                    copy __dict__ into def->m_base.m_copy
-       R.   update_global_state_for_extension():
-                    add it to _PyRuntime.imports.extensions
-       S. _imp_create_dynamic_impl() -> finish_singlephase_extension()
-       T.   finish_singlephase_extension():
-                    add it to interp->imports.modules_by_index
-       U.   finish_singlephase_extension():  add it to sys.modules
+       D. _imp_create_dynamic_impl() -> import_run_extension()
+       E.   import_run_extension() -> _PyImport_RunModInitFunc()
+       F.     _PyImport_RunModInitFunc():  call <module init func>
+       G.       <module init func> -> PyModule_Create() -> PyModule_Create2()
+                                          -> PyModule_CreateInitialized()
+       H.         PyModule_CreateInitialized() -> PyModule_New()
+       I.         PyModule_CreateInitialized():  allocate mod->md_state
+       J.         PyModule_CreateInitialized() -> PyModule_AddFunctions()
+       K.         PyModule_CreateInitialized() -> PyModule_SetDocString()
+       L.       PyModule_CreateInitialized():  set mod->md_def
+       M.       <module init func>:  initialize the module, etc.
+       N.     _PyImport_RunModInitFunc():  set def->m_base.m_init
+       O.   import_run_extension()
+                -> _PyImport_CheckSubinterpIncompatibleExtensionAllowed()
+       P.   import_run_extension():  set __file__
+       Q.   import_run_extension() -> update_global_state_for_extension()
+       R.     update_global_state_for_extension():
+                      copy __dict__ into def->m_base.m_copy
+       S.     update_global_state_for_extension():
+                      add it to _PyRuntime.imports.extensions
+       T.   import_run_extension() -> finish_singlephase_extension()
+       U.     finish_singlephase_extension():
+                      add it to interp->imports.modules_by_index
+       V.     finish_singlephase_extension():  add it to sys.modules
 
        Step (Q) is skipped for core modules (sys/builtins).
 
@@ -679,14 +680,14 @@ _PyImport_ClearModulesByIndex(PyInterpreterState *interp)
     ...for single-phase init modules, where m_size >= 0:
 
     (6). not main interpreter and never loaded there - every time  (not found in _PyRuntime.imports.extensions):
-       A-O. (same as for m_size == -1)
-       P-R. (skipped)
-       S-U. (same as for m_size == -1)
+       A-P. (same as for m_size == -1)
+       Q-S. (skipped)
+       T-V. (same as for m_size == -1)
 
     (6). main interpreter - first time  (not found in _PyRuntime.imports.extensions):
-       A-Q. (same as for m_size == -1)
-       R. (skipped)
-       S-U. (same as for m_size == -1)
+       A-R. (same as for m_size == -1)
+       S. (skipped)
+       T-V. (same as for m_size == -1)
 
     (6). subsequent times  (found in _PyRuntime.imports.extensions):
        A. _imp_create_dynamic_impl() -> import_find_extension()
@@ -703,19 +704,21 @@ _PyImport_ClearModulesByIndex(PyInterpreterState *interp)
     ...for multi-phase init modules:
 
     (6). every time:
-       A.  _imp_create_dynamic_impl() -> import_find_extension()  (not found)
-       B.  _imp_create_dynamic_impl() -> _PyImport_LoadDynamicModuleWithSpec()
-       C.    _PyImport_LoadDynamicModuleWithSpec():  load module init func
-       D.    _PyImport_LoadDynamicModuleWithSpec():  call module init func
-       E.    _PyImport_LoadDynamicModuleWithSpec() -> PyModule_FromDefAndSpec()
-       F.      PyModule_FromDefAndSpec(): gather/check moduledef slots
-       G.      if there's a Py_mod_create slot:
+       A. _imp_create_dynamic_impl() -> import_find_extension()  (not found)
+       B. _imp_create_dynamic_impl() -> _PyImport_GetModInitFunc()
+       C.   _PyImport_GetModInitFunc():  load <module init func>
+       D. _imp_create_dynamic_impl() -> import_run_extension()
+       E.   import_run_extension() -> _PyImport_RunModInitFunc()
+       F.     _PyImport_RunModInitFunc():  call <module init func>
+       G.   import_run_extension() -> PyModule_FromDefAndSpec()
+       H.      PyModule_FromDefAndSpec(): gather/check moduledef slots
+       I.      if there's a Py_mod_create slot:
                  1. PyModule_FromDefAndSpec():  call its function
-       H.      else:
+       J.      else:
                  1. PyModule_FromDefAndSpec() -> PyModule_NewObject()
-       I:      PyModule_FromDefAndSpec():  set mod->md_def
-       J.      PyModule_FromDefAndSpec() -> _add_methods_to_object()
-       K.      PyModule_FromDefAndSpec() -> PyModule_SetDocString()
+       K:      PyModule_FromDefAndSpec():  set mod->md_def
+       L.      PyModule_FromDefAndSpec() -> _add_methods_to_object()
+       M.      PyModule_FromDefAndSpec() -> PyModule_SetDocString()
 
     (10). every time:
        A. _imp_exec_dynamic_impl() -> exec_builtin_or_dynamic()
