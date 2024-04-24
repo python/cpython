@@ -16,6 +16,10 @@ functionality. The POSIX locale mechanism allows programmers to deal with
 certain cultural issues in an application, without requiring the programmer to
 know all the specifics of each country where the software is executed.
 
+.. note::
+
+   Some functions and options are not available on all systems.
+
 .. index:: pair: module; _locale
 
 The :mod:`locale` module is implemented on top of the :mod:`!_locale` module,
@@ -158,14 +162,17 @@ The :mod:`locale` module defines the following exception and functions:
 
 .. function:: nl_langinfo(option)
 
-   Return some locale-specific information as a string.  This function is not
-   available on all systems, and the set of possible options might also vary
-   across platforms.  The possible argument values are numbers, for which
-   symbolic constants are available in the locale module.
+   Returns locale-specific information as a string. 
 
-   The :func:`nl_langinfo` function accepts one of the following keys.  Most
-   descriptions are taken from the corresponding description in the GNU C
-   library.
+
+.. Note::
+
+   This function is not available on all systems, and the set of possible options might also vary
+   across platforms.
+
+   *option* may be one of the following constants. 
+   Most descriptions are taken from the corresponding description in the GNU C library.
+
 
    .. data:: CODESET
 
@@ -525,7 +532,9 @@ The :mod:`locale` module defines the following exception and functions:
    system, like those returned by :func:`os.strerror` might be affected by this
    category.
 
-   This value may not be available on operating systems not conforming to the
+.. note::
+
+   This value may not be available on systems not conforming to the
    POSIX standard, most notably Windows.
 
 
