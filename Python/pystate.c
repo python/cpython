@@ -2,6 +2,7 @@
 /* Thread and interpreter state structures and their interfaces */
 
 #include "Python.h"
+#include "pycore_abstract.h"      // _PyIndex_Check()
 #include "pycore_ceval.h"
 #include "pycore_code.h"          // stats
 #include "pycore_critical_section.h"       // _PyCriticalSection_Resume()
@@ -260,6 +261,12 @@ bind_tstate(PyThreadState *tstate)
     tstate->native_thread_id = PyThread_get_thread_native_id();
 #endif
 
+#ifdef Py_GIL_DISABLED
+    // Initialize biased reference counting inter-thread queue. Note that this
+    // needs to be initialized from the active thread.
+    _Py_brc_init_thread(tstate);
+#endif
+
     // mimalloc state needs to be initialized from the active thread.
     tstate_mimalloc_bind(tstate);
 
@@ -392,6 +399,7 @@ _Py_COMP_DIAG_POP
         &(runtime)->unicode_state.ids.mutex, \
         &(runtime)->imports.extensions.mutex, \
         &(runtime)->ceval.pending_mainthread.mutex, \
+        &(runtime)->ceval.sys_trace_profile_mutex, \
         &(runtime)->atexit.mutex, \
         &(runtime)->audit_hooks.mutex, \
         &(runtime)->allocators.mutex, \
@@ -499,6 +507,15 @@ _PyRuntimeState_ReInitThreads(_PyRuntimeState *runtime)
     for (size_t i = 0; i < Py_ARRAY_LENGTH(locks); i++) {
         _PyMutex_at_fork_reinit(locks[i]);
     }
+#ifdef Py_GIL_DISABLED
+    for (PyInterpreterState *interp = runtime->interpreters.head;
+         interp != NULL; interp = interp->next)
+    {
+        for (int i = 0; i < NUM_WEAKREF_LIST_LOCKS; i++) {
+            _PyMutex_at_fork_reinit(&interp->weakref_locks[i]);
+        }
+    }
+#endif
 
     _PyTypes_AfterFork();
 
@@ -567,6 +584,8 @@ free_interpreter(PyInterpreterState *interp)
     }
 }
 
+static inline int check_interpreter_whence(long);
+
 /* Get the interpreter state to a minimal consistent state.
    Further init happens in pylifecycle.c before it can be used.
    All fields not initialized here are expected to be zeroed out,
@@ -589,11 +608,16 @@ free_interpreter(PyInterpreterState *interp)
 static PyStatus
 init_interpreter(PyInterpreterState *interp,
                  _PyRuntimeState *runtime, int64_t id,
-                 PyInterpreterState *next)
+                 PyInterpreterState *next,
+                 long whence)
 {
     if (interp->_initialized) {
         return _PyStatus_ERR("interpreter already initialized");
     }
+
+    assert(interp->_whence == _PyInterpreterState_WHENCE_NOTSET);
+    assert(check_interpreter_whence(whence) == 0);
+    interp->_whence = whence;
 
     assert(runtime != NULL);
     interp->runtime = runtime;
@@ -702,8 +726,9 @@ _PyInterpreterState_New(PyThreadState *tstate, PyInterpreterState **pinterp)
     }
     interpreters->head = interp;
 
+    long whence = _PyInterpreterState_WHENCE_UNKNOWN;
     status = init_interpreter(interp, runtime,
-                              id, old_head);
+                              id, old_head, whence);
     if (_PyStatus_EXCEPTION(status)) {
         goto error;
     }
@@ -1041,10 +1066,24 @@ _PyInterpreterState_IsRunningMain(PyInterpreterState *interp)
     if (interp->threads.main != NULL) {
         return 1;
     }
-    // For now, we assume the main interpreter is always running.
-    if (_Py_IsMainInterpreter(interp)) {
-        return 1;
+    // Embedders might not know to call _PyInterpreterState_SetRunningMain(),
+    // so their main thread wouldn't show it is running the main interpreter's
+    // program.  (Py_Main() doesn't have this problem.)  For now this isn't
+    // critical.  If it were, we would need to infer "running main" from other
+    // information, like if it's the main interpreter.  We used to do that
+    // but the naive approach led to some inconsistencies that caused problems.
+    return 0;
+}
+
+int
+_PyThreadState_IsRunningMain(PyThreadState *tstate)
+{
+    PyInterpreterState *interp = tstate->interp;
+    if (interp->threads.main != NULL) {
+        return tstate == interp->threads.main;
     }
+    // See the note in _PyInterpreterState_IsRunningMain() about
+    // possible false negatives here for embedders.
     return 0;
 }
 
@@ -1052,17 +1091,125 @@ int
 _PyInterpreterState_FailIfRunningMain(PyInterpreterState *interp)
 {
     if (interp->threads.main != NULL) {
-        PyErr_SetString(PyExc_RuntimeError,
+        PyErr_SetString(PyExc_InterpreterError,
                         "interpreter already running");
         return -1;
     }
     return 0;
 }
 
+void
+_PyInterpreterState_ReinitRunningMain(PyThreadState *tstate)
+{
+    PyInterpreterState *interp = tstate->interp;
+    if (interp->threads.main != tstate) {
+        interp->threads.main = NULL;
+    }
+}
+
 
 //----------
 // accessors
 //----------
+
+int
+_PyInterpreterState_IsReady(PyInterpreterState *interp)
+{
+    return interp->_ready;
+}
+
+
+static inline int
+check_interpreter_whence(long whence)
+{
+    if(whence < 0) {
+        return -1;
+    }
+    if (whence > _PyInterpreterState_WHENCE_MAX) {
+        return -1;
+    }
+    return 0;
+}
+
+long
+_PyInterpreterState_GetWhence(PyInterpreterState *interp)
+{
+    assert(check_interpreter_whence(interp->_whence) == 0);
+    return interp->_whence;
+}
+
+void
+_PyInterpreterState_SetWhence(PyInterpreterState *interp, long whence)
+{
+    assert(interp->_whence != _PyInterpreterState_WHENCE_NOTSET);
+    assert(check_interpreter_whence(whence) == 0);
+    interp->_whence = whence;
+}
+
+
+PyObject *
+PyUnstable_InterpreterState_GetMainModule(PyInterpreterState *interp)
+{
+    PyObject *modules = _PyImport_GetModules(interp);
+    if (modules == NULL) {
+        PyErr_SetString(PyExc_RuntimeError, "interpreter not initialized");
+        return NULL;
+    }
+    return PyMapping_GetItemString(modules, "__main__");
+}
+
+
+PyObject *
+PyInterpreterState_GetDict(PyInterpreterState *interp)
+{
+    if (interp->dict == NULL) {
+        interp->dict = PyDict_New();
+        if (interp->dict == NULL) {
+            PyErr_Clear();
+        }
+    }
+    /* Returning NULL means no per-interpreter dict is available. */
+    return interp->dict;
+}
+
+
+//----------
+// interp ID
+//----------
+
+int64_t
+_PyInterpreterState_ObjectToID(PyObject *idobj)
+{
+    if (!_PyIndex_Check(idobj)) {
+        PyErr_Format(PyExc_TypeError,
+                     "interpreter ID must be an int, got %.100s",
+                     Py_TYPE(idobj)->tp_name);
+        return -1;
+    }
+
+    // This may raise OverflowError.
+    // For now, we don't worry about if LLONG_MAX < INT64_MAX.
+    long long id = PyLong_AsLongLong(idobj);
+    if (id == -1 && PyErr_Occurred()) {
+        return -1;
+    }
+
+    if (id < 0) {
+        PyErr_Format(PyExc_ValueError,
+                     "interpreter ID must be a non-negative int, got %R",
+                     idobj);
+        return -1;
+    }
+#if LLONG_MAX > INT64_MAX
+    else if (id > INT64_MAX) {
+        PyErr_SetString(PyExc_OverflowError, "int too big to convert");
+        return -1;
+    }
+#endif
+    else {
+        return (int64_t)id;
+    }
+}
 
 int64_t
 PyInterpreterState_GetID(PyInterpreterState *interp)
@@ -1072,6 +1219,20 @@ PyInterpreterState_GetID(PyInterpreterState *interp)
         return -1;
     }
     return interp->id;
+}
+
+PyObject *
+_PyInterpreterState_GetIDObject(PyInterpreterState *interp)
+{
+    if (_PyInterpreterState_IDInitref(interp) != 0) {
+        return NULL;
+    };
+    int64_t interpid = interp->id;
+    if (interpid < 0) {
+        return NULL;
+    }
+    assert(interpid < LLONG_MAX);
+    return PyLong_FromLongLong(interpid);
 }
 
 
@@ -1142,30 +1303,6 @@ _PyInterpreterState_RequireIDRef(PyInterpreterState *interp, int required)
     interp->requires_idref = required ? 1 : 0;
 }
 
-PyObject *
-PyUnstable_InterpreterState_GetMainModule(PyInterpreterState *interp)
-{
-    PyObject *modules = _PyImport_GetModules(interp);
-    if (modules == NULL) {
-        PyErr_SetString(PyExc_RuntimeError, "interpreter not initialized");
-        return NULL;
-    }
-    return PyMapping_GetItemString(modules, "__main__");
-}
-
-PyObject *
-PyInterpreterState_GetDict(PyInterpreterState *interp)
-{
-    if (interp->dict == NULL) {
-        interp->dict = PyDict_New();
-        if (interp->dict == NULL) {
-            PyErr_Clear();
-        }
-    }
-    /* Returning NULL means no per-interpreter dict is available. */
-    return interp->dict;
-}
-
 
 //-----------------------------
 // look up an interpreter state
@@ -1225,6 +1362,16 @@ _PyInterpreterState_LookUpID(int64_t requested_id)
                      "unrecognized interpreter ID %lld", requested_id);
     }
     return interp;
+}
+
+PyInterpreterState *
+_PyInterpreterState_LookUpIDObject(PyObject *requested_id)
+{
+    int64_t id = _PyInterpreterState_ObjectToID(requested_id);
+    if (id < 0) {
+        return NULL;
+    }
+    return _PyInterpreterState_LookUpID(id);
 }
 
 
@@ -1339,10 +1486,8 @@ init_threadstate(_PyThreadStateImpl *_tstate,
     tstate->what_event = -1;
     tstate->previous_executor = NULL;
 
-#ifdef Py_GIL_DISABLED
-    // Initialize biased reference counting inter-thread queue
-    _Py_brc_init_thread(tstate);
-#endif
+    tstate->delete_later = NULL;
+
     llist_init(&_tstate->mem_free_queue);
 
     if (interp->stoptheworld.requested || _PyRuntime.stoptheworld.requested) {
@@ -1488,6 +1633,7 @@ PyThreadState_Clear(PyThreadState *tstate)
 {
     assert(tstate->_status.initialized && !tstate->_status.cleared);
     assert(current_fast_get()->interp == tstate->interp);
+    assert(!_PyThreadState_IsRunningMain(tstate));
     // XXX assert(!tstate->_status.bound || tstate->_status.unbound);
     tstate->_status.finalizing = 1;  // just in case
 
@@ -1584,8 +1730,8 @@ static void
 tstate_delete_common(PyThreadState *tstate)
 {
     assert(tstate->_status.cleared && !tstate->_status.finalized);
-    assert(tstate->state != _Py_THREAD_ATTACHED);
     tstate_verify_not_active(tstate);
+    assert(!_PyThreadState_IsRunningMain(tstate));
 
     PyInterpreterState *interp = tstate->interp;
     if (interp == NULL) {
@@ -1613,6 +1759,14 @@ tstate_delete_common(PyThreadState *tstate)
             decrement_stoptheworld_countdown(&runtime->stoptheworld);
         }
     }
+
+#if defined(Py_REF_DEBUG) && defined(Py_GIL_DISABLED)
+    // Add our portion of the total refcount to the interpreter's total.
+    _PyThreadStateImpl *tstate_impl = (_PyThreadStateImpl *)tstate;
+    tstate->interp->object_state.reftotal += tstate_impl->reftotal;
+    tstate_impl->reftotal = 0;
+#endif
+
     HEAD_UNLOCK(runtime);
 
 #ifdef Py_GIL_DISABLED
@@ -1663,7 +1817,6 @@ _PyThreadState_DeleteCurrent(PyThreadState *tstate)
 #ifdef Py_GIL_DISABLED
     _Py_qsbr_detach(((_PyThreadStateImpl *)tstate)->qsbr);
 #endif
-    tstate_set_detached(tstate, _Py_THREAD_DETACHED);
     current_fast_clear(tstate->interp->runtime);
     tstate_delete_common(tstate);
     _PyEval_ReleaseLock(tstate->interp, NULL);
@@ -1678,24 +1831,29 @@ PyThreadState_DeleteCurrent(void)
 }
 
 
-/*
- * Delete all thread states except the one passed as argument.
- * Note that, if there is a current thread state, it *must* be the one
- * passed as argument.  Also, this won't touch any other interpreters
- * than the current one, since we don't know which thread state should
- * be kept in those other interpreters.
- */
-void
-_PyThreadState_DeleteExcept(PyThreadState *tstate)
+// Unlinks and removes all thread states from `tstate->interp`, with the
+// exception of the one passed as an argument. However, it does not delete
+// these thread states. Instead, it returns the removed thread states as a
+// linked list.
+//
+// Note that if there is a current thread state, it *must* be the one
+// passed as argument.  Also, this won't touch any interpreters other
+// than the current one, since we don't know which thread state should
+// be kept in those other interpreters.
+PyThreadState *
+_PyThreadState_RemoveExcept(PyThreadState *tstate)
 {
     assert(tstate != NULL);
     PyInterpreterState *interp = tstate->interp;
     _PyRuntimeState *runtime = interp->runtime;
 
+#ifdef Py_GIL_DISABLED
+    assert(runtime->stoptheworld.world_stopped);
+#endif
+
     HEAD_LOCK(runtime);
     /* Remove all thread states, except tstate, from the linked list of
-       thread states.  This will allow calling PyThreadState_Clear()
-       without holding the lock. */
+       thread states. */
     PyThreadState *list = interp->threads.head;
     if (list == tstate) {
         list = tstate->next;
@@ -1710,9 +1868,19 @@ _PyThreadState_DeleteExcept(PyThreadState *tstate)
     interp->threads.head = tstate;
     HEAD_UNLOCK(runtime);
 
-    /* Clear and deallocate all stale thread states.  Even if this
-       executes Python code, we should be safe since it executes
-       in the current thread, not one of the stale threads. */
+    return list;
+}
+
+// Deletes the thread states in the linked list `list`.
+//
+// This is intended to be used in conjunction with _PyThreadState_RemoveExcept.
+void
+_PyThreadState_DeleteList(PyThreadState *list)
+{
+    // The world can't be stopped because we PyThreadState_Clear() can
+    // call destructors.
+    assert(!_PyRuntime.stoptheworld.world_stopped);
+
     PyThreadState *p, *next;
     for (p = list; p; p = next) {
         next = p->next;
@@ -1838,7 +2006,7 @@ tstate_try_attach(PyThreadState *tstate)
 static void
 tstate_set_detached(PyThreadState *tstate, int detached_state)
 {
-    assert(tstate->state == _Py_THREAD_ATTACHED);
+    assert(_Py_atomic_load_int_relaxed(&tstate->state) == _Py_THREAD_ATTACHED);
 #ifdef Py_GIL_DISABLED
     _Py_atomic_store_int(&tstate->state, detached_state);
 #else
@@ -1903,7 +2071,7 @@ static void
 detach_thread(PyThreadState *tstate, int detached_state)
 {
     // XXX assert(tstate_is_alive(tstate) && tstate_is_bound(tstate));
-    assert(tstate->state == _Py_THREAD_ATTACHED);
+    assert(_Py_atomic_load_int_relaxed(&tstate->state) == _Py_THREAD_ATTACHED);
     assert(tstate == current_fast_get());
     if (tstate->critical_section != 0) {
         _PyCriticalSection_SuspendAll(tstate);
@@ -1928,7 +2096,7 @@ _PyThreadState_Suspend(PyThreadState *tstate)
 {
     _PyRuntimeState *runtime = &_PyRuntime;
 
-    assert(tstate->state == _Py_THREAD_ATTACHED);
+    assert(_Py_atomic_load_int_relaxed(&tstate->state) == _Py_THREAD_ATTACHED);
 
     struct _stoptheworld_state *stw = NULL;
     HEAD_LOCK(runtime);
@@ -2083,7 +2251,8 @@ start_the_world(struct _stoptheworld_state *stw)
     PyThreadState *t;
     _Py_FOR_EACH_THREAD(stw, i, t) {
         if (t != stw->requester) {
-            assert(t->state == _Py_THREAD_SUSPENDED);
+            assert(_Py_atomic_load_int_relaxed(&t->state) ==
+                   _Py_THREAD_SUSPENDED);
             _Py_atomic_store_int(&t->state, _Py_THREAD_DETACHED);
             _PyParkingLot_UnparkAll(&t->state);
         }
@@ -2316,6 +2485,7 @@ _PyThread_CurrentFrames(void)
      * Because these lists can mutate even when the GIL is held, we
      * need to grab head_mutex for the duration.
      */
+    _PyEval_StopTheWorldAll(runtime);
     HEAD_LOCK(runtime);
     PyInterpreterState *i;
     for (i = runtime->interpreters.head; i != NULL; i = i->next) {
@@ -2349,6 +2519,7 @@ fail:
 
 done:
     HEAD_UNLOCK(runtime);
+    _PyEval_StartTheWorldAll(runtime);
     return result;
 }
 
@@ -2380,6 +2551,7 @@ _PyThread_CurrentExceptions(void)
      * Because these lists can mutate even when the GIL is held, we
      * need to grab head_mutex for the duration.
      */
+    _PyEval_StopTheWorldAll(runtime);
     HEAD_LOCK(runtime);
     PyInterpreterState *i;
     for (i = runtime->interpreters.head; i != NULL; i = i->next) {
@@ -2412,6 +2584,7 @@ fail:
 
 done:
     HEAD_UNLOCK(runtime);
+    _PyEval_StartTheWorldAll(runtime);
     return result;
 }
 

@@ -140,6 +140,39 @@ class TestGeneratorBase:
         g.flatten(msg, linesep='\n')
         self.assertEqual(s.getvalue(), self.typ(expected))
 
+    def test_flatten_linesep(self):
+        source = 'Subject: one\n two\r three\r\n four\r\n\r\ntest body\r\n'
+        msg = self.msgmaker(self.typ(source))
+        self.assertEqual(msg['Subject'], 'one two three four')
+
+        expected = 'Subject: one\n two\n three\n four\n\ntest body\n'
+        s = self.ioclass()
+        g = self.genclass(s)
+        g.flatten(msg)
+        self.assertEqual(s.getvalue(), self.typ(expected))
+
+        expected = 'Subject: one two three four\n\ntest body\n'
+        s = self.ioclass()
+        g = self.genclass(s, policy=self.policy.clone(refold_source='all'))
+        g.flatten(msg)
+        self.assertEqual(s.getvalue(), self.typ(expected))
+
+    def test_flatten_control_linesep(self):
+        source = 'Subject: one\v two\f three\x1c four\x1d five\x1e six\r\n\r\ntest body\r\n'
+        msg = self.msgmaker(self.typ(source))
+        self.assertEqual(msg['Subject'], 'one\v two\f three\x1c four\x1d five\x1e six')
+
+        expected = 'Subject: one\v two\f three\x1c four\x1d five\x1e six\n\ntest body\n'
+        s = self.ioclass()
+        g = self.genclass(s)
+        g.flatten(msg)
+        self.assertEqual(s.getvalue(), self.typ(expected))
+
+        s = self.ioclass()
+        g = self.genclass(s, policy=self.policy.clone(refold_source='all'))
+        g.flatten(msg)
+        self.assertEqual(s.getvalue(), self.typ(expected))
+
     def test_set_mangle_from_via_policy(self):
         source = textwrap.dedent("""\
             Subject: test that
@@ -223,6 +256,22 @@ class TestGenerator(TestGeneratorBase, TestEmailBase):
     genclass = Generator
     ioclass = io.StringIO
     typ = str
+
+    def test_flatten_unicode_linesep(self):
+        source = 'Subject: one\x85 two\u2028 three\u2029 four\r\n\r\ntest body\r\n'
+        msg = self.msgmaker(self.typ(source))
+        self.assertEqual(msg['Subject'], 'one\x85 two\u2028 three\u2029 four')
+
+        expected = 'Subject: =?utf-8?b?b25lwoUgdHdv4oCoIHRocmVl4oCp?= four\n\ntest body\n'
+        s = self.ioclass()
+        g = self.genclass(s)
+        g.flatten(msg)
+        self.assertEqual(s.getvalue(), self.typ(expected))
+
+        s = self.ioclass()
+        g = self.genclass(s, policy=self.policy.clone(refold_source='all'))
+        g.flatten(msg)
+        self.assertEqual(s.getvalue(), self.typ(expected))
 
 
 class TestBytesGenerator(TestGeneratorBase, TestEmailBase):

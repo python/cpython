@@ -6,9 +6,9 @@
 #endif
 
 #include "Python.h"
-#include "interpreteridobject.h"
 #include "pycore_crossinterp.h"   // struct _xid
 #include "pycore_interp.h"        // _PyInterpreterState_LookUpID()
+#include "pycore_pystate.h"       // _PyInterpreterState_GetIDObject()
 
 #ifdef MS_WINDOWS
 #define WIN32_LEAN_AND_MEAN
@@ -2908,7 +2908,7 @@ channelsmod_list_interpreters(PyObject *self, PyObject *args, PyObject *kwds)
             goto except;
         }
         if (res) {
-            interpid_obj = PyInterpreterState_GetIDObject(interp);
+            interpid_obj = _PyInterpreterState_GetIDObject(interp);
             if (interpid_obj == NULL) {
                 goto except;
             }

@@ -746,6 +746,17 @@ pylong_asvoidptr(PyObject *module, PyObject *arg)
     return Py_NewRef((PyObject *)value);
 }
 
+static PyObject *
+pylong_aspid(PyObject *module, PyObject *arg)
+{
+    NULLABLE(arg);
+    pid_t value = PyLong_AsPid(arg);
+    if (value == -1 && PyErr_Occurred()) {
+        return NULL;
+    }
+    return PyLong_FromPid(value);
+}
+
 
 static PyMethodDef test_methods[] = {
     _TESTLIMITEDCAPI_TEST_LONG_AND_OVERFLOW_METHODDEF
@@ -773,6 +784,7 @@ static PyMethodDef test_methods[] = {
     {"pylong_as_size_t",            pylong_as_size_t,           METH_O},
     {"pylong_asdouble",             pylong_asdouble,            METH_O},
     {"pylong_asvoidptr",            pylong_asvoidptr,           METH_O},
+    {"pylong_aspid",                pylong_aspid,               METH_O},
     {NULL},
 };
 

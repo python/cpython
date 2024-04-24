@@ -137,6 +137,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: config.cache
+          # Include env.pythonLocation in key to avoid changes in environment when setup-python updates Python
           key: ${{ github.job }}-${{ runner.os }}-${{ env.IMAGE_VERSION }}-${{ needs.check_source.outputs.config_hash }}-${{ env.pythonLocation }}
       - name: Install Dependencies
         run: sudo ./.github/workflows/posix-deps-apt.sh
@@ -492,6 +493,7 @@ jobs:
     with:
       config_hash: ${{ needs.check_source.outputs.config_hash }}
       options: ./configure --config-cache --with-thread-sanitizer --with-pydebug
+      suppressions_path: Tools/tsan/supressions.txt
 
   build_tsan_free_threading:
     name: 'Thread sanitizer (free-threading)'
@@ -501,6 +503,7 @@ jobs:
     with:
       config_hash: ${{ needs.check_source.outputs.config_hash }}
       options: ./configure --config-cache --disable-gil --with-thread-sanitizer --with-pydebug
+      suppressions_path: Tools/tsan/suppressions_free_threading.txt
 
   # CIFuzz job based on https://google.github.io/oss-fuzz/getting-started/continuous-integration/
   cifuzz:
@@ -514,8 +517,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # sanitizer: [address, undefined, memory]  -- memory skipped temporarily until GH-116886 is solved.
-        sanitizer: [address, undefined]
+        sanitizer: [address, undefined, memory]
     steps:
       - name: Build fuzzers (${{ matrix.sanitizer }})
         id: build
