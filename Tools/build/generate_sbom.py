@@ -120,14 +120,14 @@ def filter_gitignored_paths(paths: list[str]) -> list[str]:
     assert git_check_ignore_proc.returncode in (0, 1)
 
     # Paths may or may not be quoted, Windows quotes paths.
-    git_check_ignore_re = re.compile(r"^::\s+(\"[^\"]+\"|.+)\Z")
+    git_check_ignore_re = re.compile(r"^::\s+(\"([^\"]+)\"|(.+))\Z")
 
     # Return the list of paths sorted
     git_check_ignore_lines = git_check_ignore_proc.stdout.decode().splitlines()
     git_check_not_ignored = []
     for line in git_check_ignore_lines:
         if match := git_check_ignore_re.fullmatch(line):
-            git_check_not_ignored.append(match.group(1))
+            git_check_not_ignored.append(match.group(2) or match.group(3))
     return sorted(git_check_not_ignored)
 
 
