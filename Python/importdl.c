@@ -169,9 +169,13 @@ _Py_ext_module_loader_info_init_from_spec(
     }
     PyObject *filename = PyObject_GetAttrString(spec, "origin");
     if (filename == NULL) {
+        Py_DECREF(name);
         return -1;
     }
-    return _Py_ext_module_loader_info_init(p_info, name, filename);
+    int err = _Py_ext_module_loader_info_init(p_info, name, filename);
+    Py_DECREF(name);
+    Py_DECREF(filename);
+    return err;
 }
 
 
