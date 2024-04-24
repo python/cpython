@@ -11,6 +11,10 @@ from test import support
 from test.support import import_helper
 from test.support import warnings_helper
 from test.support.script_helper import assert_python_ok
+try:
+    import _testcapi
+except ImportError:
+    _testcapi = None
 
 
 class AsyncYieldFrom:
@@ -2445,6 +2449,7 @@ class UnawaitedWarningDuringShutdownTest(unittest.TestCase):
 
 
 @support.cpython_only
+@unittest.skipIf(_testcapi is None, "requires _testcapi")
 class CAPITest(unittest.TestCase):
 
     def test_tp_await_1(self):
