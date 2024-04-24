@@ -392,6 +392,27 @@ is also included in the exception group.
 The same special case is made for
 :exc:`KeyboardInterrupt` and :exc:`SystemExit` as in the previous paragraph.
 
+Task groups are careful not to mix up the internal cancellation used to
+"wake up" their :meth:`~object.__aexit__` with cancellation requests
+for the task in which they are running made by other parties.
+In particular, when one task group is syntactically nested in another,
+and both experience an exception in one of their child tasks simultaneously,
+the inner task group will process its exceptions, and then the outer task group
+will receive another cancellation and process its own exceptions.
+
+In the case where a task group is cancelled externally and also must
+raise an :exc:`ExceptionGroup`, it will call the parent task's
+:meth:`~asyncio.Task.cancel` method. This ensures that a
+:exc:`asyncio.CancelledError` will be raised at the next
+:keyword:`await`, so the cancellation is not lost.
+
+Task groups preserve the cancellation count
+reported by :meth:`asyncio.Task.cancelling`.
+
+.. versionchanged:: 3.13
+
+   Improved handling of simultaneous internal and external cancellations
+   and correct preservation of cancellation counts.
 
 Sleeping
 ========
@@ -867,19 +888,50 @@ Waiting Primitives
 
 .. function:: as_completed(aws, *, timeout=None)
 
-   Run :ref:`awaitable objects <asyncio-awaitables>` in the *aws*
-   iterable concurrently.  Return an iterator of coroutines.
-   Each coroutine returned can be awaited to get the earliest next
-   result from the iterable of the remaining awaitables.
+   Run :ref:`awaitable objects <asyncio-awaitables>` in the *aws* iterable
+   concurrently. The returned object can be iterated to obtain the results
+   of the awaitables as they finish.
 
-   Raises :exc:`TimeoutError` if the timeout occurs before
-   all Futures are done.
+   The object returned by ``as_completed()`` can be iterated as an
+   :term:`asynchronous iterator` or a plain :term:`iterator`. When asynchronous
+   iteration is used, the originally-supplied awaitables are yielded if they
+   are tasks or futures. This makes it easy to correlate previously-scheduled
+   tasks with their results. Example::
 
-   Example::
+       ipv4_connect = create_task(open_connection("127.0.0.1", 80))
+       ipv6_connect = create_task(open_connection("::1", 80))
+       tasks = [ipv4_connect, ipv6_connect]
 
-       for coro in as_completed(aws):
-           earliest_result = await coro
-           # ...
+       async for earliest_connect in as_completed(tasks):
+           # earliest_connect is done. The result can be obtained by
+           # awaiting it or calling earliest_connect.result()
+           reader, writer = await earliest_connect
+
+           if earliest_connect is ipv6_connect:
+               print("IPv6 connection established.")
+           else:
+               print("IPv4 connection established.")
+
+   During asynchronous iteration, implicitly-created tasks will be yielded for
+   supplied awaitables that aren't tasks or futures.
+
+   When used as a plain iterator, each iteration yields a new coroutine that
+   returns the result or raises the exception of the next completed awaitable.
+   This pattern is compatible with Python versions older than 3.13::
+
+       ipv4_connect = create_task(open_connection("127.0.0.1", 80))
+       ipv6_connect = create_task(open_connection("::1", 80))
+       tasks = [ipv4_connect, ipv6_connect]
+
+       for next_connect in as_completed(tasks):
+           # next_connect is not one of the original task objects. It must be
+           # awaited to obtain the result value or raise the exception of the
+           # awaitable that finishes next.
+           reader, writer = await next_connect
+
+   A :exc:`TimeoutError` is raised if the timeout occurs before all awaitables
+   are done. This is raised by the ``async for`` loop during asynchronous
+   iteration or by the coroutines yielded during plain iteration.
 
    .. versionchanged:: 3.10
       Removed the *loop* parameter.
@@ -890,6 +942,10 @@ Waiting Primitives
 
    .. versionchanged:: 3.12
       Added support for generators yielding tasks.
+
+   .. versionchanged:: 3.13
+      The result can now be used as either an :term:`asynchronous iterator`
+      or as a plain :term:`iterator` (previously it was only a plain iterator).
 
 
 Running in Threads
@@ -1333,6 +1389,15 @@ Task Object
       If end-user code is, for some reason, suppresing cancellation by
       catching :exc:`CancelledError`, it needs to call this method to remove
       the cancellation state.
+
+      When this method decrements the cancellation count to zero,
+      the method checks if a previous :meth:`cancel` call had arranged
+      for :exc:`CancelledError` to be thrown into the task.
+      If it hasn't been thrown yet, that arrangement will be
+      rescinded (by resetting the internal ``_must_cancel`` flag).
+
+   .. versionchanged:: 3.13
+      Changed to rescind pending cancellation requests upon reaching zero.
 
    .. method:: cancelling()
 

@@ -791,7 +791,7 @@ class _SelectorTransport(transports._FlowControlMixin,
         self._paused = False  # Set when pause_reading() called
 
         if self._server is not None:
-            self._server._attach()
+            self._server._attach(self)
         loop._transports[self._sock_fd] = self
 
     def __repr__(self):
@@ -868,6 +868,8 @@ class _SelectorTransport(transports._FlowControlMixin,
         if self._sock is not None:
             _warn(f"unclosed transport {self!r}", ResourceWarning, source=self)
             self._sock.close()
+            if self._server is not None:
+                self._server._detach(self)
 
     def _fatal_error(self, exc, message='Fatal error on transport'):
         # Should be called from exception handler only.
@@ -906,7 +908,7 @@ class _SelectorTransport(transports._FlowControlMixin,
             self._loop = None
             server = self._server
             if server is not None:
-                server._detach()
+                server._detach(self)
                 self._server = None
 
     def get_write_buffer_size(self):

@@ -299,14 +299,17 @@ Sequences
 These represent finite ordered sets indexed by non-negative numbers. The
 built-in function :func:`len` returns the number of items of a sequence. When
 the length of a sequence is *n*, the index set contains the numbers 0, 1,
-..., *n*-1.  Item *i* of sequence *a* is selected by ``a[i]``.
+..., *n*-1.  Item *i* of sequence *a* is selected by ``a[i]``. Some sequences,
+including built-in sequences, interpret negative subscripts by adding the
+sequence length. For example, ``a[-2]`` equals ``a[n-2]``, the second to last
+item of sequence a with length ``n``.
 
 .. index:: single: slicing
 
 Sequences also support slicing: ``a[i:j]`` selects all items with index *k* such
 that *i* ``<=`` *k* ``<`` *j*.  When used as an expression, a slice is a
-sequence of the same type.  This implies that the index set is renumbered so
-that it starts at 0.
+sequence of the same type. The comment above about negative indexes also applies
+to negative slice positions.
 
 Some sequences also support "extended slicing" with a third "step" parameter:
 ``a[i:j:k]`` selects all items of *a* with index *x* where ``x = i + n*k``, *n*
@@ -929,11 +932,8 @@ name is not found there, the attribute search continues in the base classes.
 This search of the base classes uses the C3 method resolution order which
 behaves correctly even in the presence of 'diamond' inheritance structures
 where there are multiple inheritance paths leading back to a common ancestor.
-Additional details on the C3 MRO used by Python can be found in the
-documentation accompanying the 2.3 release at
-https://www.python.org/download/releases/2.3/mro/.
-
-.. XXX: Could we add that MRO doc as an appendix to the language ref?
+Additional details on the C3 MRO used by Python can be found at
+:ref:`python_2.3_mro`.
 
 .. index::
    pair: object; class
@@ -970,6 +970,7 @@ A class object can be called (see above) to yield a class instance (see below).
    single: __doc__ (class attribute)
    single: __annotations__ (class attribute)
    single: __type_params__ (class attribute)
+   single: __static_attributes__ (class attribute)
 
 Special attributes:
 
@@ -999,6 +1000,10 @@ Special attributes:
    :attr:`__type_params__`
       A tuple containing the :ref:`type parameters <type-params>` of
       a :ref:`generic class <generic-classes>`.
+
+   :attr:`~class.__static_attributes__`
+      A tuple containing names of attributes of this class which are accessed
+      through ``self.X`` from any function in its body.
 
 
 Class instances

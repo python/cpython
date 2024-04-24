@@ -19,6 +19,13 @@ import textwrap
 if not support.has_subprocess_support:
     raise unittest.SkipTest("test module requires subprocess")
 
+
+try:
+    import _testinternalcapi
+except ImportError:
+    _testinternalcapi = None
+
+
 MACOS = (sys.platform == 'darwin')
 PYMEM_ALLOCATOR_NOT_SET = 0
 PYMEM_ALLOCATOR_DEBUG = 2
@@ -352,6 +359,7 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
         self.assertEqual(out, 'Finalized\n' * INIT_LOOPS)
 
     @support.requires_specialization
+    @unittest.skipUnless(support.TEST_MODULES_ENABLED, "requires test modules")
     def test_specialized_static_code_gets_unspecialized_at_Py_FINALIZE(self):
         # https://github.com/python/cpython/issues/92031
 
@@ -396,6 +404,8 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
         out, err = self.run_embedded_interpreter("test_repeated_init_exec", code)
         self.assertEqual(out, '9\n' * INIT_LOOPS)
 
+
+@unittest.skipIf(_testinternalcapi is None, "requires _testinternalcapi")
 class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
     maxDiff = 4096
     UTF8_MODE_ERRORS = ('surrogatepass' if MS_WINDOWS else 'surrogateescape')
@@ -523,6 +533,8 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         CONFIG_COMPAT['_pystats'] = 0
     if support.Py_DEBUG:
         CONFIG_COMPAT['run_presite'] = None
+    if support.Py_GIL_DISABLED:
+        CONFIG_COMPAT['enable_gil'] = -1
     if MS_WINDOWS:
         CONFIG_COMPAT.update({
             'legacy_windows_stdio': 0,
@@ -1586,7 +1598,6 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         # The global path configuration (_Py_path_config) must be a copy
         # of the path configuration of PyInterpreter.config (PyConfig).
         ctypes = import_helper.import_module('ctypes')
-        _testinternalcapi = import_helper.import_module('_testinternalcapi')
 
         def get_func(name):
             func = getattr(ctypes.pythonapi, name)
@@ -1782,6 +1793,7 @@ class MiscTests(EmbeddingTestsMixin, unittest.TestCase):
     # See bpo-44133
     @unittest.skipIf(os.name == 'nt',
                      'Py_FrozenMain is not exported on Windows')
+    @unittest.skipIf(_testinternalcapi is None, "requires _testinternalcapi")
     def test_frozenmain(self):
         env = dict(os.environ)
         env['PYTHONUNBUFFERED'] = '1'

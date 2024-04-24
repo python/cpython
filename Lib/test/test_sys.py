@@ -562,7 +562,8 @@ class SysModuleTest(unittest.TestCase):
             # And the next record must be for g456().
             filename, lineno, funcname, sourceline = stack[i+1]
             self.assertEqual(funcname, "g456")
-            self.assertTrue(sourceline.startswith("if leave_g.wait("))
+            self.assertTrue((sourceline.startswith("if leave_g.wait(") or
+                             sourceline.startswith("g_raised.set()")))
         finally:
             # Reap the spawned thread.
             leave_g.set()
@@ -668,7 +669,7 @@ class SysModuleTest(unittest.TestCase):
         self.assertEqual(len(info), 3)
         self.assertIn(info.name, ('nt', 'pthread', 'pthread-stubs', 'solaris', None))
         self.assertIn(info.lock, ('semaphore', 'mutex+cond', None))
-        if sys.platform.startswith(("linux", "freebsd")):
+        if sys.platform.startswith(("linux", "android", "freebsd")):
             self.assertEqual(info.name, "pthread")
         elif sys.platform == "win32":
             self.assertEqual(info.name, "nt")
@@ -1101,8 +1102,7 @@ class SysModuleTest(unittest.TestCase):
         self.assertEqual(stdout.rstrip(), b"")
         self.assertEqual(stderr.rstrip(), b"")
 
-    @unittest.skipUnless(hasattr(sys, 'getandroidapilevel'),
-                         'need sys.getandroidapilevel()')
+    @unittest.skipUnless(sys.platform == "android", "Android only")
     def test_getandroidapilevel(self):
         level = sys.getandroidapilevel()
         self.assertIsInstance(level, int)
@@ -1390,7 +1390,7 @@ class SizeofTest(unittest.TestCase):
     def setUp(self):
         self.P = struct.calcsize('P')
         self.longdigit = sys.int_info.sizeof_digit
-        import _testinternalcapi
+        _testinternalcapi = import_helper.import_module("_testinternalcapi")
         self.gc_headsize = _testinternalcapi.SIZEOF_PYGC_HEAD
         self.managed_pre_header_size = _testinternalcapi.SIZEOF_MANAGED_PRE_HEADER
 
@@ -1708,11 +1708,15 @@ class SizeofTest(unittest.TestCase):
         # TODO: add check that forces layout of unicodefields
         # weakref
         import weakref
-        check(weakref.ref(int), size('2Pn3P'))
+        if support.Py_GIL_DISABLED:
+            expected = size('2Pn4P')
+        else:
+            expected = size('2Pn3P')
+        check(weakref.ref(int), expected)
         # weakproxy
         # XXX
         # weakcallableproxy
-        check(weakref.proxy(int), size('2Pn3P'))
+        check(weakref.proxy(int), expected)
 
     def check_slots(self, obj, base, extra):
         expected = sys.getsizeof(base) + struct.calcsize(extra)

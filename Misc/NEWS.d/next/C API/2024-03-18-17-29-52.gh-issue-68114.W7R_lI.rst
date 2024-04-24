@@ -1,0 +1,2 @@
+Fixed skipitem()'s handling of the old 'w' and 'w#' formatters.  These are
+no longer supported and now raise an exception if used.

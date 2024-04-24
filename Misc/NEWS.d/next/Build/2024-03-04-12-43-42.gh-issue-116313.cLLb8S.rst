@@ -1,1 +1,0 @@
-Get WASI builds to work under wasmtime 18 w/ WASI 0.2/preview2 primitives.
