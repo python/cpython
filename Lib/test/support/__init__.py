@@ -59,6 +59,7 @@ __all__ = [
     "Py_DEBUG", "exceeds_recursion_limit", "get_c_recursion_limit",
     "skip_on_s390x",
     "without_optimizer",
+    "force_not_colorized"
     ]
 
 
@@ -2557,3 +2558,22 @@ def copy_python_src_ignore(path, names):
             'build',
         }
     return ignored
+
+def force_not_colorized(func):
+    """Force the terminal not to be colorized."""
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        import traceback
+        original_fn = traceback._can_colorize
+        variables = {"PYTHON_COLORS": None, "FORCE_COLOR": None}
+        try:
+            for key in variables:
+                variables[key] = os.environ.pop(key, None)
+            traceback._can_colorize = lambda: False
+            return func(*args, **kwargs)
+        finally:
+            traceback._can_colorize = original_fn
+            for key, value in variables.items():
+                if value is not None:
+                    os.environ[key] = value
+    return wrapper

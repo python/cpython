@@ -1556,7 +1556,11 @@ class DocTestRunner:
         # Make sure sys.displayhook just prints the value to stdout
         save_displayhook = sys.displayhook
         sys.displayhook = sys.__displayhook__
-
+        saved_can_colorize = traceback._can_colorize
+        traceback._can_colorize = lambda: False
+        color_variables = {"PYTHON_COLORS": None, "FORCE_COLOR": None}
+        for key in color_variables:
+            color_variables[key] = os.environ.pop(key, None)
         try:
             return self.__run(test, compileflags, out)
         finally:
@@ -1565,6 +1569,10 @@ class DocTestRunner:
             sys.settrace(save_trace)
             linecache.getlines = self.save_linecache_getlines
             sys.displayhook = save_displayhook
+            traceback._can_colorize = saved_can_colorize
+            for key, value in color_variables.items():
+                if value is not None:
+                    os.environ[key] = value
             if clear_globs:
                 test.globs.clear()
                 import builtins
