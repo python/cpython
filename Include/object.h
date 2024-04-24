@@ -303,7 +303,7 @@ _Py_ThreadId(void)
 static inline Py_ALWAYS_INLINE int
 _Py_IsOwnedByCurrentThread(PyObject *ob)
 {
-    return ob->ob_tid == _Py_ThreadId();
+    return _Py_atomic_load_uintptr_relaxed(&ob->ob_tid) == _Py_ThreadId();
 }
 #endif
 
