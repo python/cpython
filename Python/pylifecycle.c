@@ -2736,10 +2736,11 @@ static PyObject *
 android_log_write_impl(PyObject *self, PyObject *args)
 {
     int prio = 0;
-    char *tag = NULL;
-    char *text = NULL;
-    if (!PyArg_ParseTuple(args, "isy", &prio, &tag, &text))
+    const char *tag = NULL;
+    const char *text = NULL;
+    if (!PyArg_ParseTuple(args, "isy", &prio, &tag, &text)) {
         return NULL;
+    }
 
     // Despite its name, this function is part of the public API
     // (https://developer.android.com/ndk/reference/group/logging).
@@ -2762,19 +2763,22 @@ init_android_streams(PyThreadState *tstate)
     PyObject *result = NULL;
 
     _android_support = PyImport_ImportModule("_android_support");
-    if (_android_support == NULL)
+    if (_android_support == NULL) {
         goto error;
+    }
 
     android_log_write = PyCFunction_New(&android_log_write_method, NULL);
-    if (android_log_write == NULL)
+    if (android_log_write == NULL) {
         goto error;
+    }
 
     // These log priorities match those used by Java's System.out and System.err.
     result = PyObject_CallMethod(
         _android_support, "init_streams", "Oii",
         android_log_write, ANDROID_LOG_INFO, ANDROID_LOG_WARN);
-    if (result == NULL)
+    if (result == NULL) {
         goto error;
+    }
 
     goto done;
 
