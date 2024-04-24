@@ -25,6 +25,8 @@ race:_PyInterpreterState_IsRunningMain
 race:_PyObject_GC_IS_SHARED
 race:_PyObject_GC_SET_SHARED
 race:_PyObject_GC_TRACK
+# https://gist.github.com/mpage/0a24eb2dd458441ededb498e9b0e5de8
+race:_PyParkingLot_Park
 race:_PyType_HasFeature
 race:assign_version_tag
 race:compare_unicode_unicode
@@ -44,3 +46,6 @@ race:set_inheritable
 race:start_the_world
 race:tstate_set_detached
 race:unicode_hash
+
+# https://gist.github.com/mpage/6962e8870606cfc960e159b407a0cb40
+thread:pthread_create
