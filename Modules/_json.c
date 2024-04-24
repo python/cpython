@@ -1633,8 +1633,8 @@ encoder_listencode_dict(PyEncoderObject *s, _PyUnicodeWriter *writer,
         Py_CLEAR(ident);
     }
     if (s->indent != Py_None) {
-        Py_DECREF(newline_indent);
-        Py_DECREF(separator_indent);
+        Py_CLEAR(newline_indent);
+        Py_CLEAR(separator_indent);
         indent_level--;
 
         if (_PyUnicodeWriter_WriteStr(writer, current_newline_indent) < 0) {
