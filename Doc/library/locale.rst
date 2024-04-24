@@ -165,7 +165,7 @@ The :mod:`locale` module defines the following exception and functions:
    Returns locale-specific information as a string.
 
 
-.. note::
+   .. note::
 
       This function is not available on all systems, and the set of possible options
       also varies across systems.
@@ -534,10 +534,10 @@ The :mod:`locale` module defines the following exception and functions:
    system, like those returned by :func:`os.strerror` might be affected by this
    category.
 
-.. note::
+   .. note::
 
-   This value may not be available on systems not conforming to the
-   POSIX standard, most notably Windows.
+      This value may not be available on systems not conforming to the
+      POSIX standard, most notably Windows.
 
 
 .. data:: LC_NUMERIC
