@@ -264,7 +264,7 @@ _PyThreadState_HasStackSpace(PyThreadState *tstate, int size)
 extern _PyInterpreterFrame *
 _PyThreadState_PushFrame(PyThreadState *tstate, size_t size);
 
-void _PyThreadState_PopFrame(PyThreadState *tstate, _PyInterpreterFrame *frame);
+PyAPI_FUNC(void) _PyThreadState_PopFrame(PyThreadState *tstate, _PyInterpreterFrame *frame);
 
 /* Pushes a frame without checking for space.
  * Must be guarded by _PyThreadState_HasStackSpace()
