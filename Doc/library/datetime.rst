@@ -85,7 +85,7 @@ The :mod:`!datetime` module exports the following constants:
 .. data:: MINYEAR
 
    The smallest year number allowed in a :class:`date` or :class:`.datetime` object.
-   :const:`MINYEAR` is ``1``.
+   :const:`MINYEAR` is 1.
 
 
 .. data:: MAXYEAR
@@ -207,7 +207,7 @@ A :class:`timedelta` object represents a duration, the difference between two
 
 .. class:: timedelta(days=0, seconds=0, microseconds=0, milliseconds=0, minutes=0, hours=0, weeks=0)
 
-   All arguments are optional and default to ``0``. Arguments may be integers
+   All arguments are optional and default to 0. Arguments may be integers
    or floats, and may be positive or negative.
 
    Only *days*, *seconds* and *microseconds* are stored internally.
@@ -614,7 +614,7 @@ Notes:
 
 (3)
    This is exact, and cannot overflow. ``timedelta.seconds`` and
-   ``timedelta.microseconds`` are ``0``, and ``date2 + timedelta == date1`` after.
+   ``timedelta.microseconds`` are 0, and ``date2 + timedelta == date1`` after.
 
 (4)
    :class:`date` objects are equal if they represent the same date.
@@ -671,7 +671,7 @@ Instance methods:
      time.struct_time((d.year, d.month, d.day, 0, 0, 0, d.weekday(), yday, -1))
 
    where ``yday = d.toordinal() - date(d.year, 1, 1).toordinal() + 1``
-   is the day number within the current year starting with ``1`` for January 1st.
+   is the day number within the current year starting with 1 for January 1st.
 
 
 .. method:: date.toordinal()
@@ -752,7 +752,7 @@ Instance methods:
 .. method:: date.strftime(format)
 
    Return a string representing the date, controlled by an explicit format string.
-   Format codes referring to hours, minutes or seconds will see ``0`` values.
+   Format codes referring to hours, minutes or seconds will see 0 values.
    See also :ref:`strftime-strptime-behavior` and :meth:`date.isoformat`.
 
 
@@ -841,7 +841,7 @@ from a :class:`date` object and a :class:`.time` object.
 
 Like a :class:`date` object, :class:`.datetime` assumes the current Gregorian
 calendar extended in both directions; like a :class:`.time` object,
-:class:`.datetime` assumes there are exactly ``3600*24`` seconds in every day.
+:class:`.datetime` assumes there are exactly 3600\*24 seconds in every day.
 
 Constructor:
 
@@ -945,7 +945,7 @@ Other constructors, all class methods:
       failure.
 
    .. versionchanged:: 3.6
-      :meth:`fromtimestamp` may return instances with :attr:`.fold` set to ``1``.
+      :meth:`fromtimestamp` may return instances with :attr:`.fold` set to 1.
 
 .. classmethod:: datetime.utcfromtimestamp(timestamp)
 
@@ -993,7 +993,7 @@ Other constructors, all class methods:
    Return the :class:`.datetime` corresponding to the proleptic Gregorian ordinal,
    where January 1 of year 1 has ordinal 1. :exc:`ValueError` is raised unless
    ``1 <= ordinal <= datetime.max.toordinal()``. The hour, minute, second and
-   microsecond of the result are all ``0``, and :attr:`.tzinfo` is ``None``.
+   microsecond of the result are all 0, and :attr:`.tzinfo` is ``None``.
 
 
 .. classmethod:: datetime.combine(date, time, tzinfo=time.tzinfo)
@@ -1167,7 +1167,7 @@ Instance attributes (read-only):
    In ``[0, 1]``. Used to disambiguate wall times during a repeated interval. (A
    repeated interval occurs when clocks are rolled back at the end of daylight saving
    time or when the UTC offset for the current zone is decreased for political reasons.)
-   The values ``0`` and ``1`` represent, respectively, the earlier and later of the two
+   The values 0 and 1 represent, respectively, the earlier and later of the two
    moments with the same wall time representation.
 
    .. versionadded:: 3.6
@@ -1387,23 +1387,23 @@ Instance methods:
                        d.weekday(), yday, dst))
 
    where ``yday = d.toordinal() - date(d.year, 1, 1).toordinal() + 1``
-   is the day number within the current year starting with ``1`` for January
+   is the day number within the current year starting with 1 for January
    1st. The :attr:`~time.struct_time.tm_isdst` flag of the result is set according to the
    :meth:`dst` method: :attr:`.tzinfo` is ``None`` or :meth:`dst` returns
    ``None``, :attr:`!tm_isdst` is set to ``-1``; else if :meth:`dst` returns a
-   non-zero value, :attr:`!tm_isdst` is set to ``1``; else :attr:`!tm_isdst` is
-   set to ``0``.
+   non-zero value, :attr:`!tm_isdst` is set to 1; else :attr:`!tm_isdst` is
+   set to 0.
 
 
 .. method:: datetime.utctimetuple()
 
    If :class:`.datetime` instance *d* is naive, this is the same as
-   ``d.timetuple()`` except that :attr:`~.time.struct_time.tm_isdst` is forced to ``0`` regardless of what
+   ``d.timetuple()`` except that :attr:`~.time.struct_time.tm_isdst` is forced to 0 regardless of what
    ``d.dst()`` returns. DST is never in effect for a UTC time.
 
    If *d* is aware, *d* is normalized to UTC time, by subtracting
    ``d.utcoffset()``, and a :class:`time.struct_time` for the
-   normalized time is returned. :attr:`!tm_isdst` is forced to ``0``. Note
+   normalized time is returned. :attr:`!tm_isdst` is forced to 0. Note
    that an :exc:`OverflowError` may be raised if ``d.year`` was
    ``MINYEAR`` or ``MAXYEAR`` and UTC adjustment spills over a year
    boundary.
@@ -1483,15 +1483,15 @@ Instance methods:
 
    Return a string representing the date and time in ISO 8601 format:
 
-   - ``YYYY-MM-DDTHH:MM:SS.ffffff``, if :attr:`microsecond` is not ``0``
-   - ``YYYY-MM-DDTHH:MM:SS``, if :attr:`microsecond` is ``0``
+   - ``YYYY-MM-DDTHH:MM:SS.ffffff``, if :attr:`microsecond` is not 0
+   - ``YYYY-MM-DDTHH:MM:SS``, if :attr:`microsecond` is 0
 
    If :meth:`utcoffset` does not return ``None``, a string is
    appended, giving the UTC offset:
 
    - ``YYYY-MM-DDTHH:MM:SS.ffffff+HH:MM[:SS[.ffffff]]``, if :attr:`microsecond`
-     is not ``0``
-   - ``YYYY-MM-DDTHH:MM:SS+HH:MM[:SS[.ffffff]]``,  if :attr:`microsecond` is ``0``
+     is not 0
+   - ``YYYY-MM-DDTHH:MM:SS+HH:MM[:SS[.ffffff]]``,  if :attr:`microsecond` is 0
 
    Examples::
 
@@ -1519,7 +1519,7 @@ Instance methods:
    components of the time to include (the default is ``'auto'``).
    It can be one of the following:
 
-   - ``'auto'``: Same as ``'seconds'`` if :attr:`microsecond` is ``0``,
+   - ``'auto'``: Same as ``'seconds'`` if :attr:`microsecond` is 0,
      same as ``'microseconds'`` otherwise.
    - ``'hours'``: Include the :attr:`hour` in the two-digit ``HH`` format.
    - ``'minutes'``: Include :attr:`hour` and :attr:`minute` in ``HH:MM`` format.
@@ -1735,7 +1735,7 @@ day, and subject to adjustment via a :class:`tzinfo` object.
    * ``fold in [0, 1]``.
 
    If an argument outside those ranges is given, :exc:`ValueError` is raised. All
-   default to ``0`` except *tzinfo*, which defaults to :const:`None`.
+   default to 0 except *tzinfo*, which defaults to :const:`None`.
 
 Class attributes:
 
@@ -1790,7 +1790,7 @@ Instance attributes (read-only):
    In ``[0, 1]``. Used to disambiguate wall times during a repeated interval. (A
    repeated interval occurs when clocks are rolled back at the end of daylight saving
    time or when the UTC offset for the current zone is decreased for political reasons.)
-   The values ``0`` and ``1`` represent, respectively, the earlier and later of the two
+   The values 0 and 1 represent, respectively, the earlier and later of the two
    moments with the same wall time representation.
 
    .. versionadded:: 3.6
@@ -1885,16 +1885,16 @@ Instance methods:
 
    Return a string representing the time in ISO 8601 format, one of:
 
-   - ``HH:MM:SS.ffffff``, if :attr:`microsecond` is not ``0``
-   - ``HH:MM:SS``, if :attr:`microsecond` is ``0``
+   - ``HH:MM:SS.ffffff``, if :attr:`microsecond` is not 0
+   - ``HH:MM:SS``, if :attr:`microsecond` is 0
    - ``HH:MM:SS.ffffff+HH:MM[:SS[.ffffff]]``, if :meth:`utcoffset` does not return ``None``
-   - ``HH:MM:SS+HH:MM[:SS[.ffffff]]``, if :attr:`microsecond` is ``0`` and :meth:`utcoffset` does not return ``None``
+   - ``HH:MM:SS+HH:MM[:SS[.ffffff]]``, if :attr:`microsecond` is 0 and :meth:`utcoffset` does not return ``None``
 
    The optional argument *timespec* specifies the number of additional
    components of the time to include (the default is ``'auto'``).
    It can be one of the following:
 
-   - ``'auto'``: Same as ``'seconds'`` if :attr:`microsecond` is ``0``,
+   - ``'auto'``: Same as ``'seconds'`` if :attr:`microsecond` is 0,
      same as ``'microseconds'`` otherwise.
    - ``'hours'``: Include the :attr:`hour` in the two-digit ``HH`` format.
    - ``'minutes'``: Include :attr:`hour` and :attr:`minute` in ``HH:MM`` format.
@@ -2235,7 +2235,7 @@ to 1:00 (standard time) again. Local times of the form 1:MM are ambiguous.
 :meth:`~.datetime.astimezone` mimics the local clock's behavior by mapping two adjacent UTC
 hours into the same local hour then. In the Eastern example, UTC times of the
 form 5:MM and 6:MM both map to 1:MM when converted to Eastern, but earlier times
-have the :attr:`~.datetime.fold` attribute set to ``0`` and the later times have it set to ``1``.
+have the :attr:`~.datetime.fold` attribute set to 0 and the later times have it set to 1.
 For example, at the Fall back transition of 2016, we get::
 
     >>> u0 = datetime(2016, 11, 6, 4, tzinfo=timezone.utc)
@@ -2561,11 +2561,11 @@ information, which are supported in ``datetime.strptime`` but are discarded by
 
 For :class:`.time` objects, the format codes for year, month, and day should not
 be used, as :class:`!time` objects have no such values. If they're used anyway,
-``1900`` is substituted for the year, and ``1`` for the month and day.
+``1900`` is substituted for the year, and 1 for the month and day.
 
 For :class:`date` objects, the format codes for hours, minutes, seconds, and
 microseconds should not be used, as :class:`date` objects have no such
-values. If they're used anyway, ``0`` is substituted for them.
+values. If they're used anyway, 0 is substituted for them.
 
 For the same reason, handling of format strings containing Unicode code points
 that can't be represented in the charset of the current locale is also
