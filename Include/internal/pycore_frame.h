@@ -113,8 +113,10 @@ _PyFrame_NumSlotsForCodeObject(PyCodeObject *code)
 static inline void _PyFrame_Copy(_PyInterpreterFrame *src, _PyInterpreterFrame *dest)
 {
     assert(src->stacktop >= _PyFrame_GetCode(src)->co_nlocalsplus);
-    Py_ssize_t size = ((char*)&src->localsplus[src->stacktop]) - (char *)src;
-    memcpy(dest, src, size);
+    *dest = *src;
+    for (int i = 1; i < src->stacktop; i++) {
+        dest->localsplus[i] = src->localsplus[i];
+    }
     // Don't leave a dangling pointer to the old frame when creating generators
     // and coroutines:
     dest->previous = NULL;
