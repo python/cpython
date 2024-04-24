@@ -26,7 +26,7 @@ __all__ = [
     "Error", "TestFailed", "TestDidNotRun", "ResourceDenied",
     # io
     "record_original_stdout", "get_original_stdout", "captured_stdout",
-    "captured_stdin", "captured_stderr",
+    "captured_stdin", "captured_stderr", "captured_output",
     # unittest
     "is_resource_enabled", "requires", "requires_freebsd_version",
     "requires_gil_enabled", "requires_linux_version", "requires_mac_ver",
