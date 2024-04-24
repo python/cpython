@@ -109,13 +109,35 @@
 
        Return True if self is a file.
 
-    .. abstractmethod:: joinpath(child)
+    .. abstractmethod:: joinpath(*pathsegments)
 
-       Return Traversable child in self.
+       Traverse directories according to *pathsegments* and return
+       the result as :class:`!Traversable`.
+
+       Each *pathsegments* argument may contain multiple names separated by
+       forward slashes (``/``, ``posixpath.sep`` ).
+       For example, the following are equivalent::
+
+           files.joinpath('subdir', 'subsuddir', 'file.txt')
+           files.joinpath('subdir/subsuddir/file.txt')
+
+       Note that some :class:`!Traversable` implementations
+       might not be updated to the latest version of the protocol.
+       For compatibility with such implementations, provide a single argument
+       without path separators to each call to ``joinpath``. For example::
+
+           files.joinpath('subdir').joinpath('subsubdir').joinpath('file.txt')
+
+       .. versionchanged:: 3.11
+
+          ``joinpath`` accepts multiple *pathsegments*, and these segments
+          may contain forward slashes as path separators.
+          Previously, only a single *child* argument was accepted.
 
     .. abstractmethod:: __truediv__(child)
 
        Return Traversable child in self.
+       Equivalent to ``joinpath(child)``.
 
     .. abstractmethod:: open(mode='r', *args, **kwargs)
 

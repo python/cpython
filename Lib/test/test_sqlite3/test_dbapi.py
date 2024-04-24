@@ -28,14 +28,14 @@ import sys
 import threading
 import unittest
 import urllib.parse
+import warnings
 
 from test.support import (
     SHORT_TIMEOUT, check_disallow_instantiation, requires_subprocess,
-    is_emscripten, is_wasi
+    is_apple, is_emscripten, is_wasi
 )
 from test.support import gc_collect
-from test.support import threading_helper
-from _testcapi import INT_MAX, ULLONG_MAX
+from test.support import threading_helper, import_helper
 from os import SEEK_SET, SEEK_CUR, SEEK_END
 from test.support.os_helper import TESTFN, TESTFN_UNDECODABLE, unlink, temp_dir, FakePath
 
@@ -667,7 +667,7 @@ class OpenTests(unittest.TestCase):
             cx.execute(self._sql)
 
     @unittest.skipIf(sys.platform == "win32", "skipped on Windows")
-    @unittest.skipIf(sys.platform == "darwin", "skipped on macOS")
+    @unittest.skipIf(is_apple, "skipped on Apple platforms")
     @unittest.skipIf(is_emscripten or is_wasi, "not supported on Emscripten/WASI")
     @unittest.skipUnless(TESTFN_UNDECODABLE, "only works if there are undecodable paths")
     def test_open_with_undecodable_path(self):
@@ -713,7 +713,7 @@ class OpenTests(unittest.TestCase):
                 cx.execute(self._sql)
 
     @unittest.skipIf(sys.platform == "win32", "skipped on Windows")
-    @unittest.skipIf(sys.platform == "darwin", "skipped on macOS")
+    @unittest.skipIf(is_apple, "skipped on Apple platforms")
     @unittest.skipIf(is_emscripten or is_wasi, "not supported on Emscripten/WASI")
     @unittest.skipUnless(TESTFN_UNDECODABLE, "only works if there are undecodable paths")
     def test_open_undecodable_uri(self):
@@ -887,6 +887,19 @@ class CursorTests(unittest.TestCase):
                 with self.assertWarnsRegex(DeprecationWarning, msg) as cm:
                     self.cu.execute(query, params)
                 self.assertEqual(cm.filename,  __file__)
+
+    def test_execute_indexed_nameless_params(self):
+        # See gh-117995: "'?1' is considered a named placeholder"
+        for query, params, expected in (
+            ("select ?1, ?2", (1, 2), (1, 2)),
+            ("select ?2, ?1", (1, 2), (2, 1)),
+        ):
+            with self.subTest(query=query, params=params):
+                with warnings.catch_warnings():
+                    warnings.simplefilter("error", DeprecationWarning)
+                    cu = self.cu.execute(query, params)
+                    actual, = cu.fetchall()
+                    self.assertEqual(actual, expected)
 
     def test_execute_too_many_params(self):
         category = sqlite.SQLITE_LIMIT_VARIABLE_NUMBER
@@ -1202,7 +1215,6 @@ class BlobTests(unittest.TestCase):
     def test_blob_seek_error(self):
         msg_oor = "offset out of blob range"
         msg_orig = "'origin' should be os.SEEK_SET, os.SEEK_CUR, or os.SEEK_END"
-        msg_of = "seek offset results in overflow"
 
         dataset = (
             (ValueError, msg_oor, lambda: self.blob.seek(1000)),
@@ -1214,12 +1226,15 @@ class BlobTests(unittest.TestCase):
             with self.subTest(exc=exc, msg=msg, fn=fn):
                 self.assertRaisesRegex(exc, msg, fn)
 
+    def test_blob_seek_overflow_error(self):
         # Force overflow errors
+        msg_of = "seek offset results in overflow"
+        _testcapi = import_helper.import_module("_testcapi")
         self.blob.seek(1, SEEK_SET)
         with self.assertRaisesRegex(OverflowError, msg_of):
-            self.blob.seek(INT_MAX, SEEK_CUR)
+            self.blob.seek(_testcapi.INT_MAX, SEEK_CUR)
         with self.assertRaisesRegex(OverflowError, msg_of):
-            self.blob.seek(INT_MAX, SEEK_END)
+            self.blob.seek(_testcapi.INT_MAX, SEEK_END)
 
     def test_blob_read(self):
         buf = self.blob.read()
@@ -1379,13 +1394,16 @@ class BlobTests(unittest.TestCase):
             with self.subTest(idx=idx):
                 with self.assertRaisesRegex(IndexError, "index out of range"):
                     self.blob[idx]
-        with self.assertRaisesRegex(IndexError, "cannot fit 'int'"):
-            self.blob[ULLONG_MAX]
 
         # Provoke read error
         self.cx.execute("update test set b='aaaa' where rowid=1")
         with self.assertRaises(sqlite.OperationalError):
             self.blob[0]
+
+    def test_blob_get_item_error_bigint(self):
+        _testcapi = import_helper.import_module("_testcapi")
+        with self.assertRaisesRegex(IndexError, "cannot fit 'int'"):
+            self.blob[_testcapi.ULLONG_MAX]
 
     def test_blob_set_item_error(self):
         with self.assertRaisesRegex(TypeError, "cannot be interpreted"):

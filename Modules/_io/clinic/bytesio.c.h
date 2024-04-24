@@ -96,7 +96,7 @@ _io_BytesIO_getbuffer_impl(bytesio *self, PyTypeObject *cls);
 static PyObject *
 _io_BytesIO_getbuffer(bytesio *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    if (nargs) {
+    if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "getbuffer() takes no arguments");
         return NULL;
     }
@@ -534,4 +534,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=2be0e05a8871b7e2 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ef116925b8b9e535 input=a9049054013a1b77]*/

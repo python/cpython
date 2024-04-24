@@ -79,7 +79,7 @@ The following functions are provided:
    To support inserting records in a table, the *key* function (if any) is
    applied to *x* for the search step but not for the insertion step.
 
-   Keep in mind that the ``O(log n)`` search is dominated by the slow O(n)
+   Keep in mind that the *O*\ (log *n*) search is dominated by the slow *O*\ (*n*)
    insertion step.
 
    .. versionchanged:: 3.10
@@ -99,7 +99,7 @@ The following functions are provided:
    To support inserting records in a table, the *key* function (if any) is
    applied to *x* for the search step but not for the insertion step.
 
-   Keep in mind that the ``O(log n)`` search is dominated by the slow O(n)
+   Keep in mind that the *O*\ (log *n*) search is dominated by the slow *O*\ (*n*)
    insertion step.
 
    .. versionchanged:: 3.10
@@ -115,7 +115,7 @@ thoughts in mind:
 * Bisection is effective for searching ranges of values.
   For locating specific values, dictionaries are more performant.
 
-* The *insort()* functions are ``O(n)`` because the logarithmic search step
+* The *insort()* functions are *O*\ (*n*) because the logarithmic search step
   is dominated by the linear time insertion step.
 
 * The search functions are stateless and discard key function results after

@@ -140,13 +140,10 @@ builtin___build_class__(PyObject *self, PyObject *const *args, Py_ssize_t nargs,
             goto error;
         }
 
-        if (PyDict_GetItemRef(mkw, &_Py_ID(metaclass), &meta) < 0) {
+        if (PyDict_Pop(mkw, &_Py_ID(metaclass), &meta) < 0) {
             goto error;
         }
         if (meta != NULL) {
-            if (PyDict_DelItem(mkw, &_Py_ID(metaclass)) < 0) {
-                goto error;
-            }
             /* metaclass is explicitly given, check if it's indeed a class */
             isclass = PyType_Check(meta);
         }
@@ -478,7 +475,7 @@ builtin_breakpoint(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyOb
 }
 
 PyDoc_STRVAR(breakpoint_doc,
-"breakpoint(*args, **kws)\n\
+"breakpoint($module, /, *args, **kws)\n\
 --\n\
 \n\
 Call sys.breakpointhook(*args, **kws).  sys.breakpointhook() must accept\n\
@@ -703,17 +700,34 @@ builtin_format_impl(PyObject *module, PyObject *value, PyObject *format_spec)
 /*[clinic input]
 chr as builtin_chr
 
-    i: int
+    i: object
     /
 
 Return a Unicode string of one character with ordinal i; 0 <= i <= 0x10ffff.
 [clinic start generated code]*/
 
 static PyObject *
-builtin_chr_impl(PyObject *module, int i)
-/*[clinic end generated code: output=c733afcd200afcb7 input=3f604ef45a70750d]*/
+builtin_chr(PyObject *module, PyObject *i)
+/*[clinic end generated code: output=d34f25b8035a9b10 input=f919867f0ba2f496]*/
 {
-    return PyUnicode_FromOrdinal(i);
+    int overflow;
+    long v = PyLong_AsLongAndOverflow(i, &overflow);
+    if (v == -1 && PyErr_Occurred()) {
+        return NULL;
+    }
+    if (overflow) {
+        v = overflow < 0 ? INT_MIN : INT_MAX;
+        /* Allow PyUnicode_FromOrdinal() to raise an exception */
+    }
+#if SIZEOF_INT < SIZEOF_LONG
+    else if (v < INT_MIN) {
+        v = INT_MIN;
+    }
+    else if (v > INT_MAX) {
+        v = INT_MAX;
+    }
+#endif
+    return PyUnicode_FromOrdinal(v);
 }
 
 
@@ -1689,16 +1703,16 @@ anext as builtin_anext
     default: object = NULL
     /
 
-async anext(aiterator[, default])
+Return the next item from the async iterator.
 
-Return the next item from the async iterator.  If default is given and the async
-iterator is exhausted, it is returned instead of raising StopAsyncIteration.
+If default is given and the async iterator is exhausted,
+it is returned instead of raising StopAsyncIteration.
 [clinic start generated code]*/
 
 static PyObject *
 builtin_anext_impl(PyObject *module, PyObject *aiterator,
                    PyObject *default_value)
-/*[clinic end generated code: output=f02c060c163a81fa input=8f63f4f78590bb4c]*/
+/*[clinic end generated code: output=f02c060c163a81fa input=2900e4a370d39550]*/
 {
     PyTypeObject *t;
     PyObject *awaitable;
@@ -2381,11 +2395,6 @@ builtin_round_impl(PyObject *module, PyObject *number, PyObject *ndigits)
 /*[clinic end generated code: output=ff0d9dd176c02ede input=275678471d7aca15]*/
 {
     PyObject *round, *result;
-
-    if (!_PyType_IsReady(Py_TYPE(number))) {
-        if (PyType_Ready(Py_TYPE(number)) < 0)
-            return NULL;
-    }
 
     round = _PyObject_LookupSpecial(number, &_Py_ID(__round__));
     if (round == NULL) {

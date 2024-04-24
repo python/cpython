@@ -341,7 +341,7 @@ Glossary
    docstring
       A string literal which appears as the first expression in a class,
       function or module.  While ignored when the suite is executed, it is
-      recognized by the compiler and put into the :attr:`__doc__` attribute
+      recognized by the compiler and put into the :attr:`!__doc__` attribute
       of the enclosing class, function or module.  Since it is available via
       introspection, it is the canonical place for documentation of the
       object.
@@ -547,12 +547,12 @@ Glossary
       tasks such as compression or hashing.  Also, the GIL is always released
       when doing I/O.
 
-      Past efforts to create a "free-threaded" interpreter (one which locks
-      shared data at a much finer granularity) have not been successful
-      because performance suffered in the common single-processor case. It
-      is believed that overcoming this performance issue would make the
-      implementation much more complicated and therefore costlier to maintain.
-
+      As of Python 3.13, the GIL can be disabled using the :option:`--disable-gil`
+      build configuration. After building Python with this option, code must be
+      run with :option:`-X gil 0 <-X>` or after setting the :envvar:`PYTHON_GIL=0 <PYTHON_GIL>`
+      environment variable. This feature enables improved performance for
+      multi-threaded applications and makes it easier to use multi-core CPUs
+      efficiently. For more details, see :pep:`703`.
 
    hash-based pyc
       A bytecode cache file that uses the hash rather than the last-modified
@@ -727,22 +727,10 @@ Glossary
       thread removes *key* from *mapping* after the test, but before the lookup.
       This issue can be solved with locks or by using the EAFP approach.
 
-   locale encoding
-      On Unix, it is the encoding of the LC_CTYPE locale. It can be set with
-      :func:`locale.setlocale(locale.LC_CTYPE, new_locale) <locale.setlocale>`.
-
-      On Windows, it is the ANSI code page (ex: ``"cp1252"``).
-
-      On Android and VxWorks, Python uses ``"utf-8"`` as the locale encoding.
-
-      ``locale.getencoding()`` can be used to get the locale encoding.
-
-      See also the :term:`filesystem encoding and error handler`.
-
    list
       A built-in Python :term:`sequence`.  Despite its name it is more akin
       to an array in other languages than to a linked list since access to
-      elements is O(1).
+      elements is *O*\ (1).
 
    list comprehension
       A compact way to process all or part of the elements in a sequence and
@@ -757,6 +745,18 @@ Glossary
       :meth:`load_module`. A loader is typically returned by a
       :term:`finder`. See :pep:`302` for details and
       :class:`importlib.abc.Loader` for an :term:`abstract base class`.
+
+   locale encoding
+      On Unix, it is the encoding of the LC_CTYPE locale. It can be set with
+      :func:`locale.setlocale(locale.LC_CTYPE, new_locale) <locale.setlocale>`.
+
+      On Windows, it is the ANSI code page (ex: ``"cp1252"``).
+
+      On Android and VxWorks, Python uses ``"utf-8"`` as the locale encoding.
+
+      :func:`locale.getencoding` can be used to get the locale encoding.
+
+      See also the :term:`filesystem encoding and error handler`.
 
    magic method
       .. index:: pair: magic; method
@@ -800,8 +800,7 @@ Glossary
 
    method resolution order
       Method Resolution Order is the order in which base classes are searched
-      for a member during lookup. See `The Python 2.3 Method Resolution Order
-      <https://www.python.org/download/releases/2.3/mro/>`_ for details of the
+      for a member during lookup. See :ref:`python_2.3_mro` for details of the
       algorithm used by the Python interpreter since the 2.3 release.
 
    module
@@ -841,10 +840,11 @@ Glossary
       Some named tuples are built-in types (such as the above examples).
       Alternatively, a named tuple can be created from a regular class
       definition that inherits from :class:`tuple` and that defines named
-      fields.  Such a class can be written by hand or it can be created with
-      the factory function :func:`collections.namedtuple`.  The latter
-      technique also adds some extra methods that may not be found in
-      hand-written or built-in named tuples.
+      fields.  Such a class can be written by hand, or it can be created by
+      inheriting :class:`typing.NamedTuple`, or with the factory function
+      :func:`collections.namedtuple`.  The latter techniques also add some
+      extra methods that may not be found in hand-written or built-in named
+      tuples.
 
    namespace
       The place where a variable is stored.  Namespaces are implemented as
@@ -1104,10 +1104,12 @@ Glossary
       The :class:`collections.abc.Sequence` abstract base class
       defines a much richer interface that goes beyond just
       :meth:`~object.__getitem__` and :meth:`~object.__len__`, adding
-      :meth:`count`, :meth:`index`, :meth:`~object.__contains__`, and
+      :meth:`!count`, :meth:`!index`, :meth:`~object.__contains__`, and
       :meth:`~object.__reversed__`. Types that implement this expanded
       interface can be registered explicitly using
-      :func:`~abc.ABCMeta.register`.
+      :func:`~abc.ABCMeta.register`. For more documentation on sequence
+      methods generally, see
+      :ref:`Common Sequence Operations <typesseq-common>`.
 
    set comprehension
       A compact way to process all or part of the elements in an iterable and

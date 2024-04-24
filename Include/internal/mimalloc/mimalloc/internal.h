@@ -120,6 +120,8 @@ void       _mi_segment_page_free(mi_page_t* page, bool force, mi_segments_tld_t*
 void       _mi_segment_page_abandon(mi_page_t* page, mi_segments_tld_t* tld);
 bool       _mi_segment_try_reclaim_abandoned( mi_heap_t* heap, bool try_all, mi_segments_tld_t* tld);
 void       _mi_segment_thread_collect(mi_segments_tld_t* tld);
+bool       _mi_abandoned_pool_visit_blocks(mi_abandoned_pool_t* pool, uint8_t page_tag, bool visit_blocks, mi_block_visit_fun* visitor, void* arg);
+
 
 #if MI_HUGE_PAGE_ABANDON
 void       _mi_segment_huge_page_free(mi_segment_t* segment, mi_page_t* page, mi_block_t* block);
@@ -161,6 +163,8 @@ void       _mi_heap_collect_abandon(mi_heap_t* heap);
 void       _mi_heap_set_default_direct(mi_heap_t* heap);
 bool       _mi_heap_memid_is_suitable(mi_heap_t* heap, mi_memid_t memid);
 void       _mi_heap_unsafe_destroy_all(void);
+void       _mi_heap_area_init(mi_heap_area_t* area, mi_page_t* page);
+bool       _mi_heap_area_visit_blocks(const mi_heap_area_t* area, mi_page_t *page, mi_block_visit_fun* visitor, void* arg);
 
 // "stats.c"
 void       _mi_stats_done(mi_stats_t* stats);

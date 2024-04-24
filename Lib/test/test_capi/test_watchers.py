@@ -1,7 +1,7 @@
 import unittest
 
 from contextlib import contextmanager, ExitStack
-from test.support import catch_unraisable_exception, import_helper
+from test.support import catch_unraisable_exception, import_helper, gc_collect
 
 
 # Skip this test if the _testcapi module isn't available.
@@ -151,8 +151,8 @@ class TestDictWatchers(unittest.TestCase):
 
     def test_watch_unassigned_watcher_id(self):
         d = {}
-        with self.assertRaisesRegex(ValueError, r"No dict watcher set for ID 1"):
-            self.watch(1, d)
+        with self.assertRaisesRegex(ValueError, r"No dict watcher set for ID 3"):
+            self.watch(3, d)
 
     def test_unwatch_non_dict(self):
         with self.watcher() as wid:
@@ -168,8 +168,8 @@ class TestDictWatchers(unittest.TestCase):
 
     def test_unwatch_unassigned_watcher_id(self):
         d = {}
-        with self.assertRaisesRegex(ValueError, r"No dict watcher set for ID 1"):
-            self.unwatch(1, d)
+        with self.assertRaisesRegex(ValueError, r"No dict watcher set for ID 3"):
+            self.unwatch(3, d)
 
     def test_clear_out_of_range_watcher_id(self):
         with self.assertRaisesRegex(ValueError, r"Invalid dict watcher ID -1"):
@@ -178,8 +178,8 @@ class TestDictWatchers(unittest.TestCase):
             self.clear_watcher(8)  # DICT_MAX_WATCHERS = 8
 
     def test_clear_unassigned_watcher_id(self):
-        with self.assertRaisesRegex(ValueError, r"No dict watcher set for ID 1"):
-            self.clear_watcher(1)
+        with self.assertRaisesRegex(ValueError, r"No dict watcher set for ID 3"):
+            self.clear_watcher(3)
 
 
 class TestTypeWatchers(unittest.TestCase):
@@ -372,6 +372,7 @@ class TestCodeObjectWatchers(unittest.TestCase):
 
     def assert_event_counts(self, exp_created_0, exp_destroyed_0,
                             exp_created_1, exp_destroyed_1):
+        gc_collect()  # code objects are collected by GC in free-threaded build
         self.assertEqual(
             exp_created_0, _testcapi.get_code_watcher_num_created_events(0))
         self.assertEqual(
@@ -432,6 +433,7 @@ class TestCodeObjectWatchers(unittest.TestCase):
         with self.code_watcher(2):
             with catch_unraisable_exception() as cm:
                 del co
+                gc_collect()
 
                 self.assertEqual(str(cm.unraisable.exc_value), "boom!")
 

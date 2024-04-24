@@ -134,24 +134,36 @@ gc_get_debug_impl(PyObject *module)
     return gcstate->debug;
 }
 
-PyDoc_STRVAR(gc_set_thresh__doc__,
-"set_threshold(threshold0, [threshold1, threshold2]) -> None\n"
-"\n"
-"Sets the collection thresholds.  Setting threshold0 to zero disables\n"
-"collection.\n");
+/*[clinic input]
+gc.set_threshold
+
+    threshold0: int
+    [
+    threshold1: int
+    [
+    threshold2: int
+    ]
+    ]
+    /
+
+Set the collection thresholds (the collection frequency).
+
+Setting 'threshold0' to zero disables collection.
+[clinic start generated code]*/
 
 static PyObject *
-gc_set_threshold(PyObject *self, PyObject *args)
+gc_set_threshold_impl(PyObject *module, int threshold0, int group_right_1,
+                      int threshold1, int group_right_2, int threshold2)
+/*[clinic end generated code: output=2e3c7c7dd59060f3 input=0d9612db50984eec]*/
 {
     GCState *gcstate = get_gc_state();
-    if (!PyArg_ParseTuple(args, "i|ii:set_threshold",
-                          &gcstate->generations[0].threshold,
-                          &gcstate->generations[1].threshold,
-                          &gcstate->generations[2].threshold))
-        return NULL;
-    for (int i = 3; i < NUM_GENERATIONS; i++) {
-        /* generations higher than 2 get the same threshold */
-        gcstate->generations[i].threshold = gcstate->generations[2].threshold;
+
+    gcstate->young.threshold = threshold0;
+    if (group_right_1) {
+        gcstate->old[0].threshold = threshold1;
+    }
+    if (group_right_2) {
+        gcstate->old[1].threshold = threshold2;
     }
     Py_RETURN_NONE;
 }
@@ -168,9 +180,9 @@ gc_get_threshold_impl(PyObject *module)
 {
     GCState *gcstate = get_gc_state();
     return Py_BuildValue("(iii)",
-                         gcstate->generations[0].threshold,
-                         gcstate->generations[1].threshold,
-                         gcstate->generations[2].threshold);
+                         gcstate->young.threshold,
+                         gcstate->old[0].threshold,
+                         0);
 }
 
 /*[clinic input]
@@ -184,18 +196,33 @@ gc_get_count_impl(PyObject *module)
 /*[clinic end generated code: output=354012e67b16398f input=a392794a08251751]*/
 {
     GCState *gcstate = get_gc_state();
+
+#ifdef Py_GIL_DISABLED
+    _PyThreadStateImpl *tstate = (_PyThreadStateImpl *)_PyThreadState_GET();
+    struct _gc_thread_state *gc = &tstate->gc;
+
+    // Flush the local allocation count to the global count
+    _Py_atomic_add_int(&gcstate->young.count, (int)gc->alloc_count);
+    gc->alloc_count = 0;
+#endif
+
     return Py_BuildValue("(iii)",
-                         gcstate->generations[0].count,
-                         gcstate->generations[1].count,
-                         gcstate->generations[2].count);
+                         gcstate->young.count,
+                         gcstate->old[gcstate->visited_space].count,
+                         gcstate->old[gcstate->visited_space^1].count);
 }
 
-PyDoc_STRVAR(gc_get_referrers__doc__,
-"get_referrers(*objs) -> list\n\
-Return the list of objects that directly refer to any of objs.");
+/*[clinic input]
+gc.get_referrers
+
+    *objs as args: object
+
+Return the list of objects that directly refer to any of 'objs'.
+[clinic start generated code]*/
 
 static PyObject *
-gc_get_referrers(PyObject *self, PyObject *args)
+gc_get_referrers_impl(PyObject *module, PyObject *args)
+/*[clinic end generated code: output=296a09587f6a86b5 input=bae96961b14a0922]*/
 {
     if (PySys_Audit("gc.get_referrers", "(O)", args) < 0) {
         return NULL;
@@ -213,36 +240,56 @@ referentsvisit(PyObject *obj, void *arg)
     return PyList_Append(list, obj) < 0;
 }
 
-PyDoc_STRVAR(gc_get_referents__doc__,
-"get_referents(*objs) -> list\n\
-Return the list of objects that are directly referred to by objs.");
+static int
+append_referrents(PyObject *result, PyObject *args)
+{
+    for (Py_ssize_t i = 0; i < PyTuple_GET_SIZE(args); i++) {
+        PyObject *obj = PyTuple_GET_ITEM(args, i);
+        if (!_PyObject_IS_GC(obj)) {
+            continue;
+        }
+
+        traverseproc traverse = Py_TYPE(obj)->tp_traverse;
+        if (!traverse) {
+            continue;
+        }
+        if (traverse(obj, referentsvisit, result)) {
+            return -1;
+        }
+    }
+    return 0;
+}
+
+/*[clinic input]
+gc.get_referents
+
+    *objs as args: object
+
+Return the list of objects that are directly referred to by 'objs'.
+[clinic start generated code]*/
 
 static PyObject *
-gc_get_referents(PyObject *self, PyObject *args)
+gc_get_referents_impl(PyObject *module, PyObject *args)
+/*[clinic end generated code: output=d47dc02cefd06fe8 input=b3ceab0c34038cbf]*/
 {
-    Py_ssize_t i;
     if (PySys_Audit("gc.get_referents", "(O)", args) < 0) {
         return NULL;
     }
+    PyInterpreterState *interp = _PyInterpreterState_GET();
     PyObject *result = PyList_New(0);
 
     if (result == NULL)
         return NULL;
 
-    for (i = 0; i < PyTuple_GET_SIZE(args); i++) {
-        traverseproc traverse;
-        PyObject *obj = PyTuple_GET_ITEM(args, i);
+    // NOTE: stop the world is a no-op in default build
+    _PyEval_StopTheWorld(interp);
+    int err = append_referrents(result, args);
+    _PyEval_StartTheWorld(interp);
 
-        if (!_PyObject_IS_GC(obj))
-            continue;
-        traverse = Py_TYPE(obj)->tp_traverse;
-        if (! traverse)
-            continue;
-        if (traverse(obj, referentsvisit, result)) {
-            Py_DECREF(result);
-            return NULL;
-        }
+    if (err < 0) {
+        Py_CLEAR(result);
     }
+
     return result;
 }
 
@@ -279,7 +326,7 @@ gc_get_objects_impl(PyObject *module, Py_ssize_t generation)
     }
 
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    return _PyGC_GetObjects(interp, generation);
+    return _PyGC_GetObjects(interp, (int)generation);
 }
 
 /*[clinic input]
@@ -331,7 +378,7 @@ error:
 
 
 /*[clinic input]
-gc.is_tracked
+gc.is_tracked -> bool
 
     obj: object
     /
@@ -341,21 +388,15 @@ Returns true if the object is tracked by the garbage collector.
 Simple atomic objects will return false.
 [clinic start generated code]*/
 
-static PyObject *
-gc_is_tracked(PyObject *module, PyObject *obj)
-/*[clinic end generated code: output=14f0103423b28e31 input=d83057f170ea2723]*/
+static int
+gc_is_tracked_impl(PyObject *module, PyObject *obj)
+/*[clinic end generated code: output=91c8d086b7f47a33 input=423b98ec680c3126]*/
 {
-    PyObject *result;
-
-    if (_PyObject_IS_GC(obj) && _PyObject_GC_IS_TRACKED(obj))
-        result = Py_True;
-    else
-        result = Py_False;
-    return Py_NewRef(result);
+    return PyObject_GC_IsTracked(obj);
 }
 
 /*[clinic input]
-gc.is_finalized
+gc.is_finalized -> bool
 
     obj: object
     /
@@ -363,14 +404,11 @@ gc.is_finalized
 Returns true if the object has been already finalized by the GC.
 [clinic start generated code]*/
 
-static PyObject *
-gc_is_finalized(PyObject *module, PyObject *obj)
-/*[clinic end generated code: output=e1516ac119a918ed input=201d0c58f69ae390]*/
+static int
+gc_is_finalized_impl(PyObject *module, PyObject *obj)
+/*[clinic end generated code: output=401ff5d6fc660429 input=ca4d111c8f8c4e3a]*/
 {
-    if (_PyObject_IS_GC(obj) && _PyGC_FINALIZED(obj)) {
-         Py_RETURN_TRUE;
-    }
-    Py_RETURN_FALSE;
+    return PyObject_GC_IsFinalized(obj);
 }
 
 /*[clinic input]
@@ -453,17 +491,15 @@ static PyMethodDef GcMethods[] = {
     GC_SET_DEBUG_METHODDEF
     GC_GET_DEBUG_METHODDEF
     GC_GET_COUNT_METHODDEF
-    {"set_threshold",  gc_set_threshold, METH_VARARGS, gc_set_thresh__doc__},
+    GC_SET_THRESHOLD_METHODDEF
     GC_GET_THRESHOLD_METHODDEF
     GC_COLLECT_METHODDEF
     GC_GET_OBJECTS_METHODDEF
     GC_GET_STATS_METHODDEF
     GC_IS_TRACKED_METHODDEF
     GC_IS_FINALIZED_METHODDEF
-    {"get_referrers",  gc_get_referrers, METH_VARARGS,
-        gc_get_referrers__doc__},
-    {"get_referents",  gc_get_referents, METH_VARARGS,
-        gc_get_referents__doc__},
+    GC_GET_REFERRERS_METHODDEF
+    GC_GET_REFERENTS_METHODDEF
     GC_FREEZE_METHODDEF
     GC_UNFREEZE_METHODDEF
     GC_GET_FREEZE_COUNT_METHODDEF

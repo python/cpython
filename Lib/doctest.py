@@ -104,6 +104,7 @@ import traceback
 import unittest
 from io import StringIO, IncrementalNewlineDecoder
 from collections import namedtuple
+from traceback import _ANSIColors, _can_colorize
 
 
 class TestResults(namedtuple('TestResults', 'failed attempted')):
@@ -1140,7 +1141,14 @@ class DocTestFinder:
             obj = obj.fget
         if inspect.isfunction(obj) and getattr(obj, '__doc__', None):
             # We don't use `docstring` var here, because `obj` can be changed.
-            obj = obj.__code__
+            obj = inspect.unwrap(obj)
+            try:
+                obj = obj.__code__
+            except AttributeError:
+                # Functions implemented in C don't necessarily
+                # have a __code__ attribute.
+                # If there's no code, there's no lineno
+                return None
         if inspect.istraceback(obj): obj = obj.tb_frame
         if inspect.isframe(obj): obj = obj.f_code
         if inspect.iscode(obj):
@@ -1172,6 +1180,9 @@ class DocTestRunner:
     The `run` method is used to process a single DocTest case.  It
     returns a TestResults instance.
 
+        >>> save_colorize = traceback._COLORIZE
+        >>> traceback._COLORIZE = False
+
         >>> tests = DocTestFinder().find(_TestClass)
         >>> runner = DocTestRunner(verbose=False)
         >>> tests.sort(key = lambda test: test.name)
@@ -1191,9 +1202,9 @@ class DocTestRunner:
            2 tests in _TestClass
            2 tests in _TestClass.__init__
            2 tests in _TestClass.get
-           1 tests in _TestClass.square
+           1 test in _TestClass.square
         7 tests in 4 items.
-        7 passed and 0 failed.
+        7 passed.
         Test passed.
         TestResults(failed=0, attempted=7)
 
@@ -1222,6 +1233,8 @@ class DocTestRunner:
     can be also customized by subclassing DocTestRunner, and
     overriding the methods `report_start`, `report_success`,
     `report_unexpected_exception`, and `report_failure`.
+
+        >>> traceback._COLORIZE = save_colorize
     """
     # This divider string is used to separate failure messages, and to
     # separate sections of the summary.
@@ -1300,7 +1313,10 @@ class DocTestRunner:
             'Exception raised:\n' + _indent(_exception_traceback(exc_info)))
 
     def _failure_header(self, test, example):
-        out = [self.DIVIDER]
+        red, reset = (
+            (_ANSIColors.RED, _ANSIColors.RESET) if _can_colorize() else ("", "")
+        )
+        out = [f"{red}{self.DIVIDER}{reset}"]
         if test.filename:
             if test.lineno is not None and example.lineno is not None:
                 lineno = test.lineno + example.lineno + 1
@@ -1568,49 +1584,77 @@ class DocTestRunner:
         """
         if verbose is None:
             verbose = self._verbose
-        notests = []
-        passed = []
-        failed = []
+
+        notests, passed, failed = [], [], []
         total_tries = total_failures = total_skips = 0
-        for item in self._stats.items():
-            name, (failures, tries, skips) = item
+
+        for name, (failures, tries, skips) in self._stats.items():
             assert failures <= tries
             total_tries += tries
             total_failures += failures
             total_skips += skips
+
             if tries == 0:
                 notests.append(name)
             elif failures == 0:
                 passed.append((name, tries))
             else:
-                failed.append(item)
+                failed.append((name, (failures, tries, skips)))
+
+        if _can_colorize():
+            bold_green = _ANSIColors.BOLD_GREEN
+            bold_red = _ANSIColors.BOLD_RED
+            green = _ANSIColors.GREEN
+            red = _ANSIColors.RED
+            reset = _ANSIColors.RESET
+            yellow = _ANSIColors.YELLOW
+        else:
+            bold_green = ""
+            bold_red = ""
+            green = ""
+            red = ""
+            reset = ""
+            yellow = ""
+
         if verbose:
             if notests:
-                print(f"{len(notests)} items had no tests:")
+                print(f"{_n_items(notests)} had no tests:")
                 notests.sort()
                 for name in notests:
                     print(f"    {name}")
+
             if passed:
-                print(f"{len(passed)} items passed all tests:")
-                passed.sort()
-                for name, count in passed:
-                    print(f" {count:3d} tests in {name}")
+                print(f"{green}{_n_items(passed)} passed all tests:{reset}")
+                for name, count in sorted(passed):
+                    s = "" if count == 1 else "s"
+                    print(f" {green}{count:3d} test{s} in {name}{reset}")
+
         if failed:
-            print(self.DIVIDER)
-            print(f"{len(failed)} items had failures:")
-            failed.sort()
-            for name, (failures, tries, skips) in failed:
+            print(f"{red}{self.DIVIDER}{reset}")
+            print(f"{_n_items(failed)} had failures:")
+            for name, (failures, tries, skips) in sorted(failed):
                 print(f" {failures:3d} of {tries:3d} in {name}")
+
         if verbose:
-            print(f"{total_tries} tests in {len(self._stats)} items.")
-            print(f"{total_tries - total_failures} passed and {total_failures} failed.")
+            s = "" if total_tries == 1 else "s"
+            print(f"{total_tries} test{s} in {_n_items(self._stats)}.")
+
+            and_f = (
+                f" and {red}{total_failures} failed{reset}"
+                if total_failures else ""
+            )
+            print(f"{green}{total_tries - total_failures} passed{reset}{and_f}.")
+
         if total_failures:
-            msg = f"***Test Failed*** {total_failures} failures"
+            s = "" if total_failures == 1 else "s"
+            msg = f"{bold_red}***Test Failed*** {total_failures} failure{s}{reset}"
             if total_skips:
-                msg = f"{msg} and {total_skips} skipped tests"
+                s = "" if total_skips == 1 else "s"
+                msg = f"{msg} and {yellow}{total_skips} skipped test{s}{reset}"
             print(f"{msg}.")
         elif verbose:
-            print("Test passed.")
+            print(f"{bold_green}Test passed.{reset}")
+
         return TestResults(total_failures, total_tries, skipped=total_skips)
 
     #/////////////////////////////////////////////////////////////////
@@ -1627,9 +1671,18 @@ class DocTestRunner:
             d[name] = (failures, tries, skips)
 
 
+def _n_items(items: list | dict) -> str:
+    """
+    Helper to pluralise the number of items in a list.
+    """
+    n = len(items)
+    s = "" if n == 1 else "s"
+    return f"{n} item{s}"
+
+
 class OutputChecker:
     """
-    A class used to check the whether the actual output from a doctest
+    A class used to check whether the actual output from a doctest
     example matches the expected output.  `OutputChecker` defines two
     methods: `check_output`, which compares a given pair of outputs,
     and returns true if they match; and `output_difference`, which
@@ -2225,13 +2278,13 @@ class DocTestCase(unittest.TestCase):
         unittest.TestCase.__init__(self)
         self._dt_optionflags = optionflags
         self._dt_checker = checker
-        self._dt_globs = test.globs.copy()
         self._dt_test = test
         self._dt_setUp = setUp
         self._dt_tearDown = tearDown
 
     def setUp(self):
         test = self._dt_test
+        self._dt_globs = test.globs.copy()
 
         if self._dt_setUp is not None:
             self._dt_setUp(test)
@@ -2262,12 +2315,13 @@ class DocTestCase(unittest.TestCase):
 
         try:
             runner.DIVIDER = "-"*70
-            failures, tries = runner.run(
-                test, out=new.write, clear_globs=False)
+            results = runner.run(test, out=new.write, clear_globs=False)
+            if results.skipped == results.attempted:
+                raise unittest.SkipTest("all examples were skipped")
         finally:
             sys.stdout = old
 
-        if failures:
+        if results.failed:
             raise self.failureException(self.format_failure(new.getvalue()))
 
     def format_failure(self, err):

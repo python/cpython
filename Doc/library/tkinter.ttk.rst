@@ -1118,7 +1118,7 @@ ttk.Treeview
       as the item identifier; *iid* must not already exist in the tree.
       Otherwise, a new unique identifier is generated.
 
-      See `Item Options`_ for the list of available points.
+      See `Item Options`_ for the list of available options.
 
 
    .. method:: item(item, option=None, **kw)

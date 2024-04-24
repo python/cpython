@@ -102,7 +102,7 @@ class HelpParser(HTMLParser):
             if self.level > 0:
                 self.nested_dl = True
         elif tag == 'li':
-            s = '\n* ' if self.simplelist else '\n\n* '
+            s = '\n* '
         elif tag == 'dt':
             s = '\n\n' if not self.nested_dl else '\n'  # Avoid extra line.
             self.nested_dl = False
