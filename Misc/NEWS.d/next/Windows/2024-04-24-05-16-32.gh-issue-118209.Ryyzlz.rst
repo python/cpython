@@ -1,0 +1,1 @@
+Fix crash in :func:`mmap.read` on Windows when the underlying file operation raises errors.
