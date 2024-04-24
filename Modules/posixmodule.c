@@ -5487,10 +5487,17 @@ os__path_splitroot_ex_impl(PyObject *module, PyObject *path)
     }
 
     _Py_skiproot(buffer, len, &drvsize, &rootsize);
-    if (!(drv = PyUnicode_FromWideChar(buffer, drvsize)) ||
-        !(root = PyUnicode_FromWideChar(&buffer[drvsize], rootsize)) ||
-        !(tail = PyUnicode_FromWideChar(&buffer[drvsize + rootsize], len - drvsize - rootsize)))
-    {
+    drv = PyUnicode_FromWideChar(buffer, drvsize);
+    if (drv == NULL) {
+        goto exit;
+    }
+    root = PyUnicode_FromWideChar(&buffer[drvsize], rootsize);
+    if (root == NULL) {
+        goto exit;
+    }
+    tail = PyUnicode_FromWideChar(&buffer[drvsize + rootsize],
+                                  len - drvsize - rootsize);
+    if (tail == NULL) {
         goto exit;
     }
     result = Py_BuildValue("(OOO)", drv, root, tail);
