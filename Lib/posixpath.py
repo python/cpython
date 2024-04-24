@@ -386,29 +386,26 @@ else:
         return _path_normpath(path) or "."
 
 
-def _abspath_fallback(path):
-    """Return an absolute path."""
-    path = os.fspath(path)
-    if isinstance(path, bytes):
-        if not path.startswith(b'/'):
-            path = join(os.getcwdb(), path)
-    else:
-        if not path.startswith('/'):
-            path = join(os.getcwd(), path)
-    return normpath(path)
-
-
 try:
     from posix import _path_abspath
 except ImportError:
-    abspath = _abspath_fallback
+    def abspath(path):
+        """Return an absolute path."""
+        path = os.fspath(path)
+        if isinstance(path, bytes):
+            if not path.startswith(b'/'):
+                path = join(os.getcwdb(), path)
+        else:
+            if not path.startswith('/'):
+                path = join(os.getcwd(), path)
+        return normpath(path)
 else:
     def abspath(path):
         """Return an absolute path."""
-        try:
-            return _path_abspath(path)
-        except ValueError:
-            return _abspath_fallback(path)
+        path = os.fspath(path)
+        if isinstance(path, bytes):
+            return os.fsencode(_path_abspath(os.fsdecode(path)))
+        return _path_abspath(path)
 
 # Return a canonical path (i.e. the absolute location of a file on the
 # filesystem).

@@ -5465,47 +5465,40 @@ os__path_normpath_impl(PyObject *module, PyObject *path)
 /*[clinic input]
 os._path_abspath
 
-    path: path_t
+    path: unicode
     /
 
 Make path absolute.
 [clinic start generated code]*/
 
 static PyObject *
-os__path_abspath_impl(PyObject *module, path_t *path)
-/*[clinic end generated code: output=bb40fbf3be7251a4 input=54be6529c3267bd0]*/
+os__path_abspath_impl(PyObject *module, PyObject *path)
+/*[clinic end generated code: output=b58956d662b60be0 input=577ecb3473d22113]*/
 {
     Py_ssize_t path_len, abs_len;
-    wchar_t *abs, *abs_buf = NULL, *cwd_buf = NULL, *path_buf = NULL;
-    PyObject *wide = NULL, *result = NULL;
+    wchar_t *abs, *abs_buf = NULL, *cwd_buf = NULL;
+    PyObject *result = NULL;
 
-#ifdef MS_WINDOWS
-    path_len = path->length;
-    path_buf = (wchar_t *)path->wide;
-#else
-    if (!(wide = PyUnicode_DecodeFSDefaultAndSize(path->narrow, path->length)) ||
-        !(path_buf = PyUnicode_AsWideCharString(wide, &path_len)))
-    {
+    wchar_t *path_buf = PyUnicode_AsWideCharString(path, &path_len);
+    if (!path_buf) {
         goto exit;
     }
-#endif
 
-    int is_bytes = PyBytes_Check(path->object);
 #ifdef MS_WINDOWS
     abs = _Py_normpath_and_size(path_buf, path_len, 0, &abs_len);
     if (abs_len == 0) {
-        result = posix_getcwd(is_bytes);
+        result = posix_getcwd(0);
         goto exit;
     }
     if (_PyOS_getfullpathname(abs, &abs_buf) < 0) {
-        result = win32_error_object("GetFullPathNameW", path->object);
+        result = win32_error_object("GetFullPathNameW", path);
         goto exit;
     }
     abs = abs_buf;
     abs_len = wcslen(abs_buf);
 #else
     if (path_len == 0 || (path_len == 1 && path_buf[0] == L'.')) {
-        result = posix_getcwd(is_bytes);
+        result = posix_getcwd(0);
         goto exit;
     }
 
@@ -5552,19 +5545,11 @@ os__path_abspath_impl(PyObject *module, path_t *path)
 #endif
 
     result = PyUnicode_FromWideChar(abs, abs_len);
-    if (is_bytes) {
-        Py_SETREF(result, PyUnicode_EncodeFSDefault(result));
-    }
 
 exit:
-#ifndef MS_WINDOWS
-    if (wide) {
-        Py_DECREF(wide);
-    }
     if (path_buf) {
         PyMem_Free(path_buf);
     }
-#endif
     if (cwd_buf) {
         PyMem_Free(cwd_buf);
     }

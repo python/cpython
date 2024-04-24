@@ -2280,23 +2280,22 @@ PyDoc_STRVAR(os__path_abspath__doc__,
     {"_path_abspath", (PyCFunction)os__path_abspath, METH_O, os__path_abspath__doc__},
 
 static PyObject *
-os__path_abspath_impl(PyObject *module, path_t *path);
+os__path_abspath_impl(PyObject *module, PyObject *path);
 
 static PyObject *
 os__path_abspath(PyObject *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
-    path_t path = PATH_T_INITIALIZE("_path_abspath", "path", 0, 0);
+    PyObject *path;
 
-    if (!path_converter(arg, &path)) {
+    if (!PyUnicode_Check(arg)) {
+        _PyArg_BadArgument("_path_abspath", "argument", "str", arg);
         goto exit;
     }
-    return_value = os__path_abspath_impl(module, &path);
+    path = arg;
+    return_value = os__path_abspath_impl(module, path);
 
 exit:
-    /* Cleanup for path */
-    path_cleanup(&path);
-
     return return_value;
 }
 
@@ -12595,4 +12594,4 @@ os__supports_virtual_terminal(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF
     #define OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF
 #endif /* !defined(OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF) */
-/*[clinic end generated code: output=f8bf7c940193ae4f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=480c7ac86682ae3b input=a9049054013a1b77]*/
