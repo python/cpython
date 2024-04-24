@@ -173,8 +173,7 @@ Root nodes
                 Assign(
                     targets=[
                         Name(id='x', ctx=Store())],
-                    value=Constant(value=1))],
-            type_ignores=[])
+                    value=Constant(value=1))])
 
 
 .. class:: Expression(body)
@@ -302,8 +301,7 @@ Literals
                         value=Call(
                             func=Name(id='sin', ctx=Load()),
                             args=[
-                                Name(id='a', ctx=Load())],
-                            keywords=[]),
+                                Name(id='a', ctx=Load())]),
                         conversion=-1,
                         format_spec=JoinedStr(
                             values=[
@@ -398,8 +396,7 @@ Variables
         Module(
             body=[
                 Expr(
-                    value=Name(id='a', ctx=Load()))],
-            type_ignores=[])
+                    value=Name(id='a', ctx=Load()))])
 
         >>> print(ast.dump(ast.parse('a = 1'), indent=4))
         Module(
@@ -407,16 +404,14 @@ Variables
                 Assign(
                     targets=[
                         Name(id='a', ctx=Store())],
-                    value=Constant(value=1))],
-            type_ignores=[])
+                    value=Constant(value=1))])
 
         >>> print(ast.dump(ast.parse('del a'), indent=4))
         Module(
             body=[
                 Delete(
                     targets=[
-                        Name(id='a', ctx=Del())])],
-            type_ignores=[])
+                        Name(id='a', ctx=Del())])])
 
 
 .. class:: Starred(value, ctx)
@@ -439,8 +434,7 @@ Variables
                                     value=Name(id='b', ctx=Store()),
                                     ctx=Store())],
                             ctx=Store())],
-                    value=Name(id='it', ctx=Load()))],
-            type_ignores=[])
+                    value=Name(id='it', ctx=Load()))])
 
 
 .. _ast-expressions:
@@ -463,8 +457,7 @@ Expressions
                 Expr(
                     value=UnaryOp(
                         op=USub(),
-                        operand=Name(id='a', ctx=Load())))],
-            type_ignores=[])
+                        operand=Name(id='a', ctx=Load())))])
 
 
 .. class:: UnaryOp(op, operand)
@@ -729,7 +722,10 @@ Comprehensions
 
    .. doctest::
 
-        >>> print(ast.dump(ast.parse('[x for x in numbers]', mode='eval'), indent=4))
+        >>> print(ast.dump(
+        ...     ast.parse('[x for x in numbers]', mode='eval'),
+        ...     indent=4,
+        ... ))
         Expression(
             body=ListComp(
                 elt=Name(id='x', ctx=Load()),
@@ -737,9 +733,11 @@ Comprehensions
                     comprehension(
                         target=Name(id='x', ctx=Store()),
                         iter=Name(id='numbers', ctx=Load()),
-                        ifs=[],
                         is_async=0)]))
-        >>> print(ast.dump(ast.parse('{x: x**2 for x in numbers}', mode='eval'), indent=4))
+        >>> print(ast.dump(
+        ...     ast.parse('{x: x**2 for x in numbers}', mode='eval'),
+        ...     indent=4,
+        ... ))
         Expression(
             body=DictComp(
                 key=Name(id='x', ctx=Load()),
@@ -751,9 +749,11 @@ Comprehensions
                     comprehension(
                         target=Name(id='x', ctx=Store()),
                         iter=Name(id='numbers', ctx=Load()),
-                        ifs=[],
                         is_async=0)]))
-        >>> print(ast.dump(ast.parse('{x for x in numbers}', mode='eval'), indent=4))
+        >>> print(ast.dump(
+        ...     ast.parse('{x for x in numbers}', mode='eval'),
+        ...     indent=4,
+        ... ))
         Expression(
             body=SetComp(
                 elt=Name(id='x', ctx=Load()),
@@ -761,7 +761,6 @@ Comprehensions
                     comprehension(
                         target=Name(id='x', ctx=Store()),
                         iter=Name(id='numbers', ctx=Load()),
-                        ifs=[],
                         is_async=0)]))
 
 
@@ -784,18 +783,15 @@ Comprehensions
                 elt=Call(
                     func=Name(id='ord', ctx=Load()),
                     args=[
-                        Name(id='c', ctx=Load())],
-                    keywords=[]),
+                        Name(id='c', ctx=Load())]),
                 generators=[
                     comprehension(
                         target=Name(id='line', ctx=Store()),
                         iter=Name(id='file', ctx=Load()),
-                        ifs=[],
                         is_async=0),
                     comprehension(
                         target=Name(id='c', ctx=Store()),
                         iter=Name(id='line', ctx=Load()),
-                        ifs=[],
                         is_async=0)]))
 
         >>> print(ast.dump(ast.parse('(n**2 for n in it if n>5 if n<10)', mode='eval'),
@@ -834,7 +830,6 @@ Comprehensions
                     comprehension(
                         target=Name(id='i', ctx=Store()),
                         iter=Name(id='soc', ctx=Load()),
-                        ifs=[],
                         is_async=1)]))
 
 
@@ -864,8 +859,7 @@ Statements
                     targets=[
                         Name(id='a', ctx=Store()),
                         Name(id='b', ctx=Store())],
-                    value=Constant(value=1))],
-            type_ignores=[])
+                    value=Constant(value=1))])
 
         >>> print(ast.dump(ast.parse('a,b = c'), indent=4)) # Unpacking
         Module(
@@ -877,8 +871,7 @@ Statements
                                 Name(id='a', ctx=Store()),
                                 Name(id='b', ctx=Store())],
                             ctx=Store())],
-                    value=Name(id='c', ctx=Load()))],
-            type_ignores=[])
+                    value=Name(id='c', ctx=Load()))])
 
 
 .. class:: AnnAssign(target, annotation, value, simple)
@@ -898,8 +891,7 @@ Statements
                 AnnAssign(
                     target=Name(id='c', ctx=Store()),
                     annotation=Name(id='int', ctx=Load()),
-                    simple=1)],
-            type_ignores=[])
+                    simple=1)])
 
         >>> print(ast.dump(ast.parse('(a): int = 1'), indent=4)) # Annotation with parenthesis
         Module(
@@ -908,8 +900,7 @@ Statements
                     target=Name(id='a', ctx=Store()),
                     annotation=Name(id='int', ctx=Load()),
                     value=Constant(value=1),
-                    simple=0)],
-            type_ignores=[])
+                    simple=0)])
 
         >>> print(ast.dump(ast.parse('a.b: int'), indent=4)) # Attribute annotation
         Module(
@@ -920,8 +911,7 @@ Statements
                         attr='b',
                         ctx=Store()),
                     annotation=Name(id='int', ctx=Load()),
-                    simple=0)],
-            type_ignores=[])
+                    simple=0)])
 
         >>> print(ast.dump(ast.parse('a[1]: int'), indent=4)) # Subscript annotation
         Module(
@@ -932,8 +922,7 @@ Statements
                         slice=Constant(value=1),
                         ctx=Store()),
                     annotation=Name(id='int', ctx=Load()),
-                    simple=0)],
-            type_ignores=[])
+                    simple=0)])
 
 
 .. class:: AugAssign(target, op, value)
@@ -954,8 +943,7 @@ Statements
                 AugAssign(
                     target=Name(id='x', ctx=Store()),
                     op=Add(),
-                    value=Constant(value=2))],
-            type_ignores=[])
+                    value=Constant(value=2))])
 
 
 .. class:: Raise(exc, cause)
@@ -971,8 +959,7 @@ Statements
             body=[
                 Raise(
                     exc=Name(id='x', ctx=Load()),
-                    cause=Name(id='y', ctx=Load()))],
-            type_ignores=[])
+                    cause=Name(id='y', ctx=Load()))])
 
 
 .. class:: Assert(test, msg)
@@ -987,8 +974,7 @@ Statements
             body=[
                 Assert(
                     test=Name(id='x', ctx=Load()),
-                    msg=Name(id='y', ctx=Load()))],
-            type_ignores=[])
+                    msg=Name(id='y', ctx=Load()))])
 
 
 .. class:: Delete(targets)
@@ -1005,8 +991,7 @@ Statements
                     targets=[
                         Name(id='x', ctx=Del()),
                         Name(id='y', ctx=Del()),
-                        Name(id='z', ctx=Del())])],
-            type_ignores=[])
+                        Name(id='z', ctx=Del())])])
 
 
 .. class:: Pass()
@@ -1018,8 +1003,7 @@ Statements
         >>> print(ast.dump(ast.parse('pass'), indent=4))
         Module(
             body=[
-                Pass()],
-            type_ignores=[])
+                Pass()])
 
 
 .. class:: TypeAlias(name, type_params, value)
@@ -1036,9 +1020,7 @@ Statements
             body=[
                 TypeAlias(
                     name=Name(id='Alias', ctx=Store()),
-                    type_params=[],
-                    value=Name(id='int', ctx=Load()))],
-            type_ignores=[])
+                    value=Name(id='int', ctx=Load()))])
 
    .. versionadded:: 3.12
 
@@ -1061,8 +1043,7 @@ Imports
                     names=[
                         alias(name='x'),
                         alias(name='y'),
-                        alias(name='z')])],
-            type_ignores=[])
+                        alias(name='z')])])
 
 
 .. class:: ImportFrom(module, names, level)
@@ -1083,8 +1064,7 @@ Imports
                         alias(name='x'),
                         alias(name='y'),
                         alias(name='z')],
-                    level=0)],
-            type_ignores=[])
+                    level=0)])
 
 
 .. class:: alias(name, asname)
@@ -1102,8 +1082,7 @@ Imports
                     names=[
                         alias(name='a', asname='b'),
                         alias(name='c')],
-                    level=2)],
-            type_ignores=[])
+                    level=2)])
 
 Control flow
 ^^^^^^^^^^^^
@@ -1146,8 +1125,7 @@ Control flow
                                     value=Constant(value=Ellipsis))],
                             orelse=[
                                 Expr(
-                                    value=Constant(value=Ellipsis))])])],
-            type_ignores=[])
+                                    value=Constant(value=Ellipsis))])])])
 
 
 .. class:: For(target, iter, body, orelse, type_comment)
@@ -1181,8 +1159,7 @@ Control flow
                             value=Constant(value=Ellipsis))],
                     orelse=[
                         Expr(
-                            value=Constant(value=Ellipsis))])],
-            type_ignores=[])
+                            value=Constant(value=Ellipsis))])])
 
 
 .. class:: While(test, body, orelse)
@@ -1207,8 +1184,7 @@ Control flow
                             value=Constant(value=Ellipsis))],
                     orelse=[
                         Expr(
-                            value=Constant(value=Ellipsis))])],
-            type_ignores=[])
+                            value=Constant(value=Ellipsis))])])
 
 
 .. class:: Break
@@ -1242,9 +1218,7 @@ Control flow
                             body=[
                                 Break()],
                             orelse=[
-                                Continue()])],
-                    orelse=[])],
-            type_ignores=[])
+                                Continue()])])])
 
 
 .. class:: Try(body, handlers, orelse, finalbody)
@@ -1289,8 +1263,7 @@ Control flow
                             value=Constant(value=Ellipsis))],
                     finalbody=[
                         Expr(
-                            value=Constant(value=Ellipsis))])],
-            type_ignores=[])
+                            value=Constant(value=Ellipsis))])])
 
 
 .. class:: TryStar(body, handlers, orelse, finalbody)
@@ -1318,10 +1291,7 @@ Control flow
                             type=Name(id='Exception', ctx=Load()),
                             body=[
                                 Expr(
-                                    value=Constant(value=Ellipsis))])],
-                    orelse=[],
-                    finalbody=[])],
-            type_ignores=[])
+                                    value=Constant(value=Ellipsis))])])])
 
    .. versionadded:: 3.11
 
@@ -1353,10 +1323,7 @@ Control flow
                         ExceptHandler(
                             type=Name(id='TypeError', ctx=Load()),
                             body=[
-                                Pass()])],
-                    orelse=[],
-                    finalbody=[])],
-            type_ignores=[])
+                                Pass()])])])
 
 
 .. class:: With(items, body, type_comment)
@@ -1398,9 +1365,7 @@ Control flow
                                 func=Name(id='something', ctx=Load()),
                                 args=[
                                     Name(id='b', ctx=Load()),
-                                    Name(id='d', ctx=Load())],
-                                keywords=[]))])],
-            type_ignores=[])
+                                    Name(id='d', ctx=Load())]))])])
 
 
 Pattern matching
@@ -1457,14 +1422,10 @@ Pattern matching
                                     value=Constant(value=Ellipsis))]),
                         match_case(
                             pattern=MatchClass(
-                                cls=Name(id='tuple', ctx=Load()),
-                                patterns=[],
-                                kwd_attrs=[],
-                                kwd_patterns=[]),
+                                cls=Name(id='tuple', ctx=Load())),
                             body=[
                                 Expr(
-                                    value=Constant(value=Ellipsis))])])],
-            type_ignores=[])
+                                    value=Constant(value=Ellipsis))])])])
 
    .. versionadded:: 3.10
 
@@ -1492,8 +1453,7 @@ Pattern matching
                                 value=Constant(value='Relevant')),
                             body=[
                                 Expr(
-                                    value=Constant(value=Ellipsis))])])],
-            type_ignores=[])
+                                    value=Constant(value=Ellipsis))])])])
 
    .. versionadded:: 3.10
 
@@ -1519,8 +1479,7 @@ Pattern matching
                             pattern=MatchSingleton(value=None),
                             body=[
                                 Expr(
-                                    value=Constant(value=Ellipsis))])])],
-            type_ignores=[])
+                                    value=Constant(value=Ellipsis))])])])
 
    .. versionadded:: 3.10
 
@@ -1552,8 +1511,7 @@ Pattern matching
                                         value=Constant(value=2))]),
                             body=[
                                 Expr(
-                                    value=Constant(value=Ellipsis))])])],
-            type_ignores=[])
+                                    value=Constant(value=Ellipsis))])])])
 
    .. versionadded:: 3.10
 
@@ -1594,8 +1552,7 @@ Pattern matching
                                     MatchStar()]),
                             body=[
                                 Expr(
-                                    value=Constant(value=Ellipsis))])])],
-            type_ignores=[])
+                                    value=Constant(value=Ellipsis))])])])
 
    .. versionadded:: 3.10
 
@@ -1639,11 +1596,10 @@ Pattern matching
                                 Expr(
                                     value=Constant(value=Ellipsis))]),
                         match_case(
-                            pattern=MatchMapping(keys=[], patterns=[], rest='rest'),
+                            pattern=MatchMapping(rest='rest'),
                             body=[
                                 Expr(
-                                    value=Constant(value=Ellipsis))])])],
-            type_ignores=[])
+                                    value=Constant(value=Ellipsis))])])])
 
    .. versionadded:: 3.10
 
@@ -1685,16 +1641,13 @@ Pattern matching
                                     MatchValue(
                                         value=Constant(value=0)),
                                     MatchValue(
-                                        value=Constant(value=0))],
-                                kwd_attrs=[],
-                                kwd_patterns=[]),
+                                        value=Constant(value=0))]),
                             body=[
                                 Expr(
                                     value=Constant(value=Ellipsis))]),
                         match_case(
                             pattern=MatchClass(
                                 cls=Name(id='Point3D', ctx=Load()),
-                                patterns=[],
                                 kwd_attrs=[
                                     'x',
                                     'y',
@@ -1708,8 +1661,7 @@ Pattern matching
                                         value=Constant(value=0))]),
                             body=[
                                 Expr(
-                                    value=Constant(value=Ellipsis))])])],
-            type_ignores=[])
+                                    value=Constant(value=Ellipsis))])])])
 
    .. versionadded:: 3.10
 
@@ -1751,8 +1703,7 @@ Pattern matching
                             pattern=MatchAs(),
                             body=[
                                 Expr(
-                                    value=Constant(value=Ellipsis))])])],
-            type_ignores=[])
+                                    value=Constant(value=Ellipsis))])])])
 
    .. versionadded:: 3.10
 
@@ -1785,8 +1736,7 @@ Pattern matching
                                     MatchAs(name='y')]),
                             body=[
                                 Expr(
-                                    value=Constant(value=Ellipsis))])])],
-            type_ignores=[])
+                                    value=Constant(value=Ellipsis))])])])
 
    .. versionadded:: 3.10
 
@@ -1818,8 +1768,7 @@ aliases.
                     value=Subscript(
                         value=Name(id='list', ctx=Load()),
                         slice=Name(id='T', ctx=Load()),
-                        ctx=Load()))],
-            type_ignores=[])
+                        ctx=Load()))])
 
    .. versionadded:: 3.12
 
@@ -1843,8 +1792,7 @@ aliases.
                                 Name(id='P', ctx=Load()),
                                 Name(id='int', ctx=Load())],
                             ctx=Load()),
-                        ctx=Load()))],
-            type_ignores=[])
+                        ctx=Load()))])
 
    .. versionadded:: 3.12
 
@@ -1869,8 +1817,7 @@ aliases.
                                     value=Name(id='Ts', ctx=Load()),
                                     ctx=Load())],
                             ctx=Load()),
-                        ctx=Load()))],
-            type_ignores=[])
+                        ctx=Load()))])
 
    .. versionadded:: 3.12
 
@@ -1910,15 +1857,10 @@ Function and class definitions
                 Expr(
                     value=Lambda(
                         args=arguments(
-                            posonlyargs=[],
                             args=[
                                 arg(arg='x'),
-                                arg(arg='y')],
-                            kwonlyargs=[],
-                            kw_defaults=[],
-                            defaults=[]),
-                        body=Constant(value=Ellipsis)))],
-            type_ignores=[])
+                                arg(arg='y')]),
+                        body=Constant(value=Ellipsis)))])
 
 
 .. class:: arguments(posonlyargs, args, vararg, kwonlyargs, kw_defaults, kwarg, defaults)
@@ -1957,7 +1899,6 @@ Function and class definitions
                 FunctionDef(
                     name='f',
                     args=arguments(
-                        posonlyargs=[],
                         args=[
                             arg(
                                 arg='a',
@@ -1980,9 +1921,7 @@ Function and class definitions
                     decorator_list=[
                         Name(id='decorator1', ctx=Load()),
                         Name(id='decorator2', ctx=Load())],
-                    returns=Constant(value='return annotation'),
-                    type_params=[])],
-            type_ignores=[])
+                    returns=Constant(value='return annotation'))])
 
 
 .. class:: Return(value)
@@ -1995,8 +1934,7 @@ Function and class definitions
         Module(
             body=[
                 Return(
-                    value=Constant(value=4))],
-            type_ignores=[])
+                    value=Constant(value=4))])
 
 
 .. class:: Yield(value)
@@ -2012,16 +1950,14 @@ Function and class definitions
             body=[
                 Expr(
                     value=Yield(
-                        value=Name(id='x', ctx=Load())))],
-            type_ignores=[])
+                        value=Name(id='x', ctx=Load())))])
 
         >>> print(ast.dump(ast.parse('yield from x'), indent=4))
         Module(
             body=[
                 Expr(
                     value=YieldFrom(
-                        value=Name(id='x', ctx=Load())))],
-            type_ignores=[])
+                        value=Name(id='x', ctx=Load())))])
 
 
 .. class:: Global(names)
@@ -2038,8 +1974,7 @@ Function and class definitions
                     names=[
                         'x',
                         'y',
-                        'z'])],
-            type_ignores=[])
+                        'z'])])
 
         >>> print(ast.dump(ast.parse('nonlocal x,y,z'), indent=4))
         Module(
@@ -2048,8 +1983,7 @@ Function and class definitions
                     names=[
                         'x',
                         'y',
-                        'z'])],
-            type_ignores=[])
+                        'z'])])
 
 
 .. class:: ClassDef(name, bases, keywords, body, decorator_list, type_params)
@@ -2089,9 +2023,7 @@ Function and class definitions
                         Pass()],
                     decorator_list=[
                         Name(id='decorator1', ctx=Load()),
-                        Name(id='decorator2', ctx=Load())],
-                    type_params=[])],
-            type_ignores=[])
+                        Name(id='decorator2', ctx=Load())])])
 
    .. versionchanged:: 3.12
         Added ``type_params``.
@@ -2123,22 +2055,12 @@ Async and await
         body=[
             AsyncFunctionDef(
                 name='f',
-                args=arguments(
-                    posonlyargs=[],
-                    args=[],
-                    kwonlyargs=[],
-                    kw_defaults=[],
-                    defaults=[]),
+                args=arguments(),
                 body=[
                     Expr(
                         value=Await(
                             value=Call(
-                                func=Name(id='other_func', ctx=Load()),
-                                args=[],
-                                keywords=[])))],
-                decorator_list=[],
-                type_params=[])],
-        type_ignores=[])
+                                func=Name(id='other_func', ctx=Load()))))])])
 
 
 .. class:: AsyncFor(target, iter, body, orelse, type_comment)
@@ -2425,7 +2347,7 @@ and classes for traversing abstract syntax trees:
       node = YourTransformer().visit(node)
 
 
-.. function:: dump(node, annotate_fields=True, include_attributes=False, *, indent=None)
+.. function:: dump(node, annotate_fields=True, include_attributes=False, *, indent=None, show_empty=False)
 
    Return a formatted dump of the tree in *node*.  This is mainly useful for
    debugging purposes.  If *annotate_fields* is true (by default),
@@ -2442,8 +2364,41 @@ and classes for traversing abstract syntax trees:
    indents that many spaces per level.  If *indent* is a string (such as ``"\t"``),
    that string is used to indent each level.
 
+   If *show_empty* is ``False`` (the default), empty lists and fields that are ``None``
+   will be omitted from the output.
+
    .. versionchanged:: 3.9
       Added the *indent* option.
+
+   .. versionchanged:: 3.13
+      Added the *show_empty* option.
+
+      .. doctest::
+
+         >>> print(ast.dump(ast.parse("""\
+         ... async def f():
+         ...     await other_func()
+         ... """), indent=4, show_empty=True))
+         Module(
+             body=[
+                 AsyncFunctionDef(
+                     name='f',
+                     args=arguments(
+                         posonlyargs=[],
+                         args=[],
+                         kwonlyargs=[],
+                         kw_defaults=[],
+                         defaults=[]),
+                     body=[
+                         Expr(
+                             value=Await(
+                                 value=Call(
+                                     func=Name(id='other_func', ctx=Load()),
+                                     args=[],
+                                     keywords=[])))],
+                     decorator_list=[],
+                     type_params=[])],
+             type_ignores=[])
 
 
 .. _ast-compiler-flags:
