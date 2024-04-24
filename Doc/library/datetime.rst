@@ -114,7 +114,7 @@ Available Types
    :noindex:
 
    An idealized time, independent of any particular day, assuming that every day
-   has exactly ``24*60*60`` seconds.  (There is no notion of "leap seconds" here.)
+   has exactly 24\*60\*60 seconds.  (There is no notion of "leap seconds" here.)
    Attributes: :attr:`hour`, :attr:`minute`, :attr:`second`, :attr:`microsecond`,
    and :attr:`.tzinfo`.
 
