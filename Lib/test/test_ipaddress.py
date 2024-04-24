@@ -2269,6 +2269,10 @@ class IpaddrUnitTest(unittest.TestCase):
         self.assertEqual(True, ipaddress.ip_address(
                 '172.31.255.255').is_private)
         self.assertEqual(False, ipaddress.ip_address('172.32.0.0').is_private)
+        self.assertFalse(ipaddress.ip_address('192.0.0.0').is_global)
+        self.assertTrue(ipaddress.ip_address('192.0.0.9').is_global)
+        self.assertTrue(ipaddress.ip_address('192.0.0.10').is_global)
+        self.assertFalse(ipaddress.ip_address('192.0.0.255').is_global)
 
         self.assertEqual(True,
                          ipaddress.ip_address('169.254.100.200').is_link_local)
@@ -2294,6 +2298,7 @@ class IpaddrUnitTest(unittest.TestCase):
         self.assertEqual(True, ipaddress.ip_network("169.254.0.0/16").is_private)
         self.assertEqual(True, ipaddress.ip_network("172.16.0.0/12").is_private)
         self.assertEqual(True, ipaddress.ip_network("192.0.0.0/29").is_private)
+        self.assertEqual(False, ipaddress.ip_network("192.0.0.9/32").is_private)
         self.assertEqual(True, ipaddress.ip_network("192.0.0.170/31").is_private)
         self.assertEqual(True, ipaddress.ip_network("192.0.2.0/24").is_private)
         self.assertEqual(True, ipaddress.ip_network("192.168.0.0/16").is_private)
@@ -2310,8 +2315,8 @@ class IpaddrUnitTest(unittest.TestCase):
         self.assertEqual(True, ipaddress.ip_network("::/128").is_private)
         self.assertEqual(True, ipaddress.ip_network("::ffff:0:0/96").is_private)
         self.assertEqual(True, ipaddress.ip_network("100::/64").is_private)
-        self.assertEqual(True, ipaddress.ip_network("2001::/23").is_private)
         self.assertEqual(True, ipaddress.ip_network("2001:2::/48").is_private)
+        self.assertEqual(False, ipaddress.ip_network("2001:3::/48").is_private)
         self.assertEqual(True, ipaddress.ip_network("2001:db8::/32").is_private)
         self.assertEqual(True, ipaddress.ip_network("2001:10::/28").is_private)
         self.assertEqual(True, ipaddress.ip_network("fc00::/7").is_private)
@@ -2389,6 +2394,20 @@ class IpaddrUnitTest(unittest.TestCase):
 
         self.assertEqual(True, ipaddress.ip_address('0::0').is_unspecified)
         self.assertEqual(False, ipaddress.ip_address('::1').is_unspecified)
+
+        self.assertFalse(ipaddress.ip_address('64:ff9b:1::').is_global)
+        self.assertFalse(ipaddress.ip_address('2001::').is_global)
+        self.assertTrue(ipaddress.ip_address('2001:1::1').is_global)
+        self.assertTrue(ipaddress.ip_address('2001:1::2').is_global)
+        self.assertFalse(ipaddress.ip_address('2001:2::').is_global)
+        self.assertTrue(ipaddress.ip_address('2001:3::').is_global)
+        self.assertFalse(ipaddress.ip_address('2001:4::').is_global)
+        self.assertTrue(ipaddress.ip_address('2001:4:112::').is_global)
+        self.assertFalse(ipaddress.ip_address('2001:10::').is_global)
+        self.assertTrue(ipaddress.ip_address('2001:20::').is_global)
+        self.assertTrue(ipaddress.ip_address('2001:30::').is_global)
+        self.assertFalse(ipaddress.ip_address('2001:40::').is_global)
+        self.assertFalse(ipaddress.ip_address('2002::').is_global)
 
         # some generic IETF reserved addresses
         self.assertEqual(True, ipaddress.ip_address('100::').is_reserved)
