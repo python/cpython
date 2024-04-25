@@ -910,10 +910,7 @@ class Misc:
         function to be called by the event handler and type is either 'idle'
         or 'timer' to indicate what kind of event handler it is.
         """
-        result = self.tk.splitlist(self.tk.call('after', 'info', id))
-        if id is not None:
-            result = tuple(map(self.tk.splitlist, result))
-        return result
+        return self.tk.splitlist(self.tk.call('after', 'info', id))
 
     def bell(self, displayof=0):
         """Ring a display's bell."""
