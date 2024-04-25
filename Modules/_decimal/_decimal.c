@@ -32,6 +32,7 @@
 #include <Python.h>
 #include "pycore_long.h"          // _PyLong_IsZero()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
+#include "pycore_typeobject.h"
 #include "complexobject.h"
 #include "mpdecimal.h"
 
@@ -120,11 +121,8 @@ get_module_state_by_def(PyTypeObject *tp)
 static inline decimal_state *
 find_state_left_or_right(PyObject *left, PyObject *right)
 {
-    PyObject *mod = PyType_GetModuleByDef(Py_TYPE(left), &_decimal_module);
-    if (mod == NULL) {
-        PyErr_Clear();
-        mod = PyType_GetModuleByDef(Py_TYPE(right), &_decimal_module);
-    }
+    PyObject *mod = _PyType_GetModuleByDef2(Py_TYPE(left), Py_TYPE(right),
+                                            &_decimal_module);
     assert(mod != NULL);
     return get_module_state(mod);
 }
