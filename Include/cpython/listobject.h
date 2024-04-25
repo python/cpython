@@ -45,7 +45,7 @@ PyList_SET_ITEM(PyObject *op, Py_ssize_t index, PyObject *value) {
     assert(0 <= index);
     assert(index < list->allocated);
 #ifdef Py_GIL_DISABLED
-    _Py_atomic_store_ptr_release(&list->ob_item[index], value);
+    _Py_atomic_store_ptr_relaxed(&list->ob_item[index], value);
 #else
     list->ob_item[index] = value;
 #endif
