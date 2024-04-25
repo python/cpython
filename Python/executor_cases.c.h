@@ -4604,7 +4604,7 @@
             LOAD_IP(frame->return_offset);
             LOAD_SP();
             LLTRACE_RESUME_FRAME();
-            stack_pointer[0] = res;
+            stack_pointer[0] = Py_STACKREF_TAG(res);
             stack_pointer += 1;
             break;
         }

@@ -2041,7 +2041,7 @@
                 // might be impossible, but bailing is still safe
                 goto done;
             }
-            stack_pointer[0] = res;
+            stack_pointer[0] = (res);
             stack_pointer += 1;
             break;
         }
