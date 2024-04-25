@@ -674,7 +674,7 @@ signal_active_thread(PyInterpreterState *interp, uintptr_t bit)
    threadstate.
 */
 
-void
+static void
 _pending_calls_fini(struct _pending_calls *pending)
 {
     PyMutex_Lock(&pending->mutex);
