@@ -416,10 +416,16 @@ init_code(PyCodeObject *co, struct _PyCodeConstructor *con)
     co->co_ncellvars = ncellvars;
     co->co_nfreevars = nfreevars;
     PyInterpreterState *interp = _PyInterpreterState_GET();
+#ifdef Py_GIL_DISABLED
+    PyMutex_Lock(&interp->func_state.mutex);
+#endif
     co->co_version = interp->func_state.next_version;
     if (interp->func_state.next_version != 0) {
         interp->func_state.next_version++;
     }
+#ifdef Py_GIL_DISABLED
+    PyMutex_Unlock(&interp->func_state.mutex);
+#endif
     co->_co_monitoring = NULL;
     co->_co_instrumentation_version = 0;
     /* not set */

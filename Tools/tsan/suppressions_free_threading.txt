@@ -16,7 +16,6 @@ race:_in_weak_set
 race:_mi_heap_delayed_free_partial
 race:_Py_IsOwnedByCurrentThread
 race:_PyEval_EvalFrameDefault
-race:_PyFunction_SetVersion
 race:_PyImport_AcquireLock
 race:_PyImport_ReleaseLock
 race:_PyInterpreterState_SetNotRunningMain
