@@ -117,6 +117,21 @@ class DumpTests(unittest.TestCase):
         got = list(self.cx.iterdump())
         self.assertEqual(expected, got)
 
+    def test_dump_custom_row_factory(self):
+        # gh-118221: iterdump should be able to cope with custom row factories.
+        def dict_factory(cu, row):
+            fields = [col[0] for col in cu.description]
+            return dict(zip(fields, row))
+
+        self.cx.row_factory = dict_factory
+        CREATE_TABLE = "CREATE TABLE test(t);"
+        expected = ["BEGIN TRANSACTION;", CREATE_TABLE, "COMMIT;"]
+
+        self.cu.execute(CREATE_TABLE)
+        actual = list(self.cx.iterdump())
+        self.assertEqual(expected, actual)
+        self.assertEqual(self.cx.row_factory, dict_factory)
+
     def test_dump_virtual_tables(self):
         # gh-64662
         expected = [

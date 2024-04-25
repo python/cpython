@@ -18,6 +18,7 @@ def _iterdump(connection):
 
     writeable_schema = False
     cu = connection.cursor()
+    cu.row_factory = None  # Make sure we get predictable results.
     yield('BEGIN TRANSACTION;')
 
     # sqlite_master table contains the SQL CREATE statements for the database.
