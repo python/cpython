@@ -118,7 +118,10 @@ extern PyTypeObject _PyExc_MemoryError;
             .pending_mainthread = { \
                 .max = NPENDINGCALLSARRAY, \
                 .maxloop = NPENDINGCALLSARRAY, \
+                .freelist = (runtime).ceval._pending_preallocated \
             }, \
+            ._pending_preallocated = \
+                _PyEval_RUNTIME_PENDING_FREELIST_INIT((runtime).ceval), \
         }, \
         .gilstate = { \
             .check_enabled = 1, \

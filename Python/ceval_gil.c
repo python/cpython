@@ -686,7 +686,9 @@ _pending_calls_fini(struct _pending_calls *pending)
     while (head != NULL) {
         struct _pending_call *cur = head;
         head = cur->next;
-        PyMem_RawFree(cur);
+        if (cur->from_heap) {
+            PyMem_RawFree(cur);
+        }
     }
 }
 
@@ -713,6 +715,7 @@ _push_pending_call(struct _pending_calls *pending,
         if (call == NULL) {
             return -1;
         }
+        call->from_heap = 1;
     }
 
     // Initialize the data.

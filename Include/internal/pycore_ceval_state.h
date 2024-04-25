@@ -20,13 +20,10 @@ struct _pending_call {
     _Py_pending_call_func func;
     void *arg;
     int flags;
+    int from_heap;
     struct _pending_call *next;
 };
 
-// Using an array for the first pending calls gives us some
-// extra stability in the case of signals.
-// We also use the value as the max and loop max for the main thread.
-#define NPENDINGCALLSARRAY 32
 
 // We effectively drop the limit for per-interpreter pending calls.
 #define MAXPENDINGCALLS INT32_MAX
@@ -83,8 +80,49 @@ struct _ceval_runtime_state {
     } perf;
     /* Pending calls to be made only on the main thread. */
     struct _pending_calls pending_mainthread;
+    // Using a preallocated array for the first pending calls gives us
+    // some extra stability in the case of signals.
+    // We also use this number as the max and loop max for the main thread.
+#define NPENDINGCALLSARRAY 32
+    struct _pending_call _pending_preallocated[NPENDINGCALLSARRAY];
     PyMutex sys_trace_profile_mutex;
 };
+
+#define _PyEval_RUNTIME_PENDING_FREELIST_INIT(ceval) \
+    { \
+        { .next = &(ceval)._pending_preallocated[1] }, \
+        { .next = &(ceval)._pending_preallocated[2] }, \
+        { .next = &(ceval)._pending_preallocated[3] }, \
+        { .next = &(ceval)._pending_preallocated[4] }, \
+        { .next = &(ceval)._pending_preallocated[5] }, \
+        { .next = &(ceval)._pending_preallocated[6] }, \
+        { .next = &(ceval)._pending_preallocated[7] }, \
+        { .next = &(ceval)._pending_preallocated[8] }, \
+        { .next = &(ceval)._pending_preallocated[9] }, \
+        { .next = &(ceval)._pending_preallocated[10] }, \
+        { .next = &(ceval)._pending_preallocated[11] }, \
+        { .next = &(ceval)._pending_preallocated[12] }, \
+        { .next = &(ceval)._pending_preallocated[13] }, \
+        { .next = &(ceval)._pending_preallocated[14] }, \
+        { .next = &(ceval)._pending_preallocated[15] }, \
+        { .next = &(ceval)._pending_preallocated[16] }, \
+        { .next = &(ceval)._pending_preallocated[17] }, \
+        { .next = &(ceval)._pending_preallocated[18] }, \
+        { .next = &(ceval)._pending_preallocated[19] }, \
+        { .next = &(ceval)._pending_preallocated[20] }, \
+        { .next = &(ceval)._pending_preallocated[21] }, \
+        { .next = &(ceval)._pending_preallocated[22] }, \
+        { .next = &(ceval)._pending_preallocated[23] }, \
+        { .next = &(ceval)._pending_preallocated[24] }, \
+        { .next = &(ceval)._pending_preallocated[25] }, \
+        { .next = &(ceval)._pending_preallocated[26] }, \
+        { .next = &(ceval)._pending_preallocated[27] }, \
+        { .next = &(ceval)._pending_preallocated[28] }, \
+        { .next = &(ceval)._pending_preallocated[29] }, \
+        { .next = &(ceval)._pending_preallocated[30] }, \
+        { .next = &(ceval)._pending_preallocated[31] }, \
+        /* The last entry has .next set to NULL. */ \
+    }
 
 
 #ifdef PY_HAVE_PERF_TRAMPOLINE
