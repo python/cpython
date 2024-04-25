@@ -94,7 +94,7 @@ jobs:
       - name: Native Windows
         if: runner.os == 'Windows' && matrix.architecture != 'ARM64'
         run: |
-          choco upgrade all -y
+          choco upgrade llvm -y
           choco install llvm --allow-downgrade --no-progress --version ${{ matrix.llvm }} --debug --verbose --noop 
           ./PCbuild/build.bat --experimental-jit ${{ matrix.debug && '-d' || '--pgo' }} -p ${{ matrix.architecture }}
           ./PCbuild/rt.bat ${{ matrix.debug && '-d' }} -p ${{ matrix.architecture }} -q --exclude ${{ matrix.exclude }} --multiprocess 0 --timeout 4500 --verbose2 --verbose3
@@ -103,7 +103,7 @@ jobs:
       - name: Emulated Windows
         if: runner.os == 'Windows' && matrix.architecture == 'ARM64'
         run: |
-          choco upgrade all --debug --verbose --noop 
+          choco upgrade llvm -y
           choco install llvm --allow-downgrade --no-progress --version ${{ matrix.llvm }}
           ./PCbuild/build.bat --experimental-jit ${{ matrix.debug && '-d' || '' }} -p ${{ matrix.architecture }}
 
