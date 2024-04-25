@@ -489,11 +489,10 @@ def get_target(host: str) -> _COFF | _ELF | _MachO:
         args = ["-DPy_NO_ENABLE_SHARED"]
         return _COFF(host, args=args, ghccc=True, prefix="_")
     if re.fullmatch(r"x86_64-apple-darwin.*", host):
-        args = ["-fomit-frame-pointer"]
-        return _MachO(host, args=args, ghccc=True, prefix="_")
+        return _MachO(host, ghccc=True, prefix="_")
     if re.fullmatch(r"x86_64-pc-windows-msvc", host):
         args = ["-fms-runtime-lib=dll"]
-        return _COFF(host, ghccc=True, args=args)
+        return _COFF(host, args=args, ghccc=True)
     if re.fullmatch(r"x86_64-.*-linux-gnu", host):
         return _ELF(host, ghccc=True)
     raise ValueError(host)
