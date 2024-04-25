@@ -257,7 +257,7 @@ do {                                                                    \
 
 #if defined(MS_WIN32) && !defined(DONT_USE_SEH)
 static DWORD
-HandlePageException(EXCEPTION_POINTERS *ptrs, EXCEPTION_RECORD *record)
+filter_page_exception(EXCEPTION_POINTERS *ptrs, EXCEPTION_RECORD *record)
 {
     *record = *ptrs->ExceptionRecord;
     if (ptrs->ExceptionRecord->ExceptionCode == EXCEPTION_IN_PAGE_ERROR) {
@@ -281,7 +281,7 @@ safe_memcpy(void *restrict dest, const void *restrict src, size_t count) {
         memcpy(dest, src, count);
         return 0;
     }
-    __except (HandlePageException(GetExceptionInformation(), &record)) {
+    __except (filter_page_exception(GetExceptionInformation(), &record)) {
         NTSTATUS status = record.ExceptionInformation[2];
         ULONG code = LsaNtStatusToWinError(status);
         PyErr_SetFromWindowsErr(code);
