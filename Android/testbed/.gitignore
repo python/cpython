@@ -1,6 +1,3 @@
-# Cancel a rule from the repository's top-level .gitignore file.
-!.idea
-
 # The Gradle wrapper should be downloaded by running `../android.py setup-testbed`.
 /gradlew
 /gradlew.bat
