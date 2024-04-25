@@ -203,6 +203,20 @@ class FutureTest(unittest.TestCase):
         out = kill_python(p)
         self.assertNotIn(b'SyntaxError: invalid syntax', out)
 
+    def test_future_dotted_import(self):
+        with self.assertRaises(ImportError):
+            from .__future__ import annotations
+
+        with self.assertRaises(ImportError):
+            from __future__ import print_function
+            from ...__future__ import annotations
+
+        code = """
+            from .__future__ import nested_scopes
+            from __future__ import barry_as_FLUFL
+        """
+        self.assertSyntaxError(code, lineno=2)
+
 class AnnotationsFutureTestCase(unittest.TestCase):
     template = dedent(
         """
