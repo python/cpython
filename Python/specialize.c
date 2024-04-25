@@ -28,6 +28,8 @@ extern const char *_PyUOpName(int index);
 GCStats _py_gc_stats[NUM_GENERATIONS] = { 0 };
 static PyStats _Py_stats_struct = { .gc_stats = _py_gc_stats };
 PyStats *_Py_stats = NULL;
+const char *_Py_stats_dir;
+#define PYSTATS_FILENAME_BUFSIZE 128
 
 #define ADD_STAT_TO_DICT(res, field) \
     do { \
@@ -333,6 +335,26 @@ _Py_StatsClear(void)
     _Py_stats_struct.gc_stats = _py_gc_stats;
 }
 
+int
+_Py_StatsSetDir(const char *dirname)
+{
+    _Py_stats_dir = NULL;
+
+    if (dirname != NULL) {
+        if (strlen(dirname) > (PYSTATS_FILENAME_BUFSIZE - 44 - 5)) {
+            return 0;
+        }
+        _Py_stats_dir = dirname;
+    } else {
+# ifdef MS_WINDOWS
+        _Py_stats_dir = "c:\\temp\\py_stats\\";
+# else
+        _Py_stats_dir = "/tmp/py_stats/";
+# endif
+    }
+    return 1;
+}
+
 static int
 mem_is_zero(unsigned char *ptr, size_t size)
 {
@@ -365,16 +387,7 @@ _Py_PrintSpecializationStats(int to_file)
     }
 
     FILE *out = stderr;
-    if (to_file) {
-        const char *dirname = getenv("PYTHON_PYSTATS_DIR");
-        /* Write to a file instead of stderr. */
-        if (dirname == NULL) {
-# ifdef MS_WINDOWS
-            dirname = "c:\\temp\\py_stats\\";
-# else
-            dirname = "/tmp/py_stats/";
-# endif
-        }
+    if (to_file && _Py_stats_dir) {
         /* Use random 160 bit number as file name,
         * to avoid both accidental collisions and
         * symlink attacks. */
@@ -386,9 +399,8 @@ _Py_PrintSpecializationStats(int to_file)
             hex_name[2*i+1] = Py_hexdigits[(rand[i]>>4)&15];
         }
         hex_name[40] = '\0';
-        char buf[128];
-        assert(strlen(dirname) + 40 + strlen(".txt") < 128);
-        sprintf(buf, "%s%s.txt", dirname, hex_name);
+        char buf[PYSTATS_FILENAME_BUFSIZE];
+        sprintf(buf, "%s%s.txt", _Py_stats_dir, hex_name);
         FILE *fout = fopen(buf, "w");
         if (fout) {
             out = fout;
