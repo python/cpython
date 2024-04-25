@@ -5499,7 +5499,7 @@ os__path_normpath_impl(PyObject *module, PyObject *path)
         return NULL;
     }
     Py_ssize_t norm_len;
-    wchar_t *norm_path = _Py_normpath_and_size(buffer, len, 0, &norm_len);
+    wchar_t *norm_path = _Py_normpath_and_size(buffer, len, 0, &norm_len, 0);
     PyObject *result = PyUnicode_FromWideChar(norm_path, norm_len);
     PyMem_Free(buffer);
     return result;
@@ -5533,7 +5533,8 @@ os__path_abspath_impl(PyObject *module, PyObject *path)
                      "_path_abspath: embedded null character in path");
         goto exit;
     }
-    abs = _Py_normpath_and_size(path_buf, path_len, 0, &abs_len);
+    // Preserve `.\` for qualified referencing
+    abs = _Py_normpath_and_size(path_buf, path_len, 0, &abs_len, 1);
     if (abs_len == 0) {
         result = posix_getcwd(0);
         goto exit;
@@ -5551,7 +5552,7 @@ os__path_abspath_impl(PyObject *module, PyObject *path)
     }
 
     if (_Py_isabs(path_buf)) {
-        abs = _Py_normpath_and_size(path_buf, path_len, 0, &abs_len);
+        abs = _Py_normpath_and_size(path_buf, path_len, 0, &abs_len, 0);
     }
     else {
         PyObject *cwd_obj = posix_getcwd(0);
@@ -5588,7 +5589,7 @@ os__path_abspath_impl(PyObject *module, PyObject *path)
         }
         memcpy(p, path_buf, path_len * sizeof(wchar_t));
         p[path_len] = '\0';
-        abs = _Py_normpath_and_size(abs_buf, abs_len, prefix_len, &abs_len);
+        abs = _Py_normpath_and_size(abs_buf, abs_len, prefix_len, &abs_len, 0);
     }
 #endif
 

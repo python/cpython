@@ -2482,10 +2482,11 @@ _Py_find_basename(const wchar_t *filename)
    the path, if known. If -1, the first null character will be assumed
    to be the end of the path. 'start' is the position where to start
    normalizing. 'normsize' will be set to contain the length of the
-   resulting normalized path. */
+   resulting normalized path. If 'explicit_curdir' is set, a leading
+   '.\' is preserved */
 wchar_t *
 _Py_normpath_and_size(wchar_t *path, Py_ssize_t size, Py_ssize_t start,
-                      Py_ssize_t *normsize)
+                      Py_ssize_t *normsize, int explicit_curdir)
 {
     assert(path != NULL);
     assert(start>=0);
@@ -2514,11 +2515,15 @@ _Py_normpath_and_size(wchar_t *path, Py_ssize_t size, Py_ssize_t start,
 
     if (p1[0] == L'.' && IS_SEP(&p1[1])) {
         // Skip leading '.\'
-        path = &path[2];
-        while (IS_SEP(path)) {
-            path++;
+        p1 = &path[2];
+        if (explicit_curdir) {
+            path[1] = SEP;
+            // TODO: Don't change minP2 & handle explicit curdir in main loop
+            p2 = minP2 = p1;
         }
-        p1 = p2 = minP2 = path;
+        while (IS_SEP(p1)) {
+            p1++;
+        }
         lastC = SEP;
     }
     else {
@@ -2618,7 +2623,7 @@ wchar_t *
 _Py_normpath(wchar_t *path, Py_ssize_t size)
 {
     Py_ssize_t norm_length;
-    return _Py_normpath_and_size(path, size, 0, &norm_length);
+    return _Py_normpath_and_size(path, size, 0, &norm_length, 0);
 }
 
 
