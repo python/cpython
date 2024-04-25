@@ -164,6 +164,7 @@ extern PyObject * _PyType_GetBases(PyTypeObject *type);
 extern PyObject * _PyType_GetMRO(PyTypeObject *type);
 extern PyObject* _PyType_GetSubclasses(PyTypeObject *);
 extern int _PyType_HasSubclasses(PyTypeObject *);
+PyAPI_FUNC(PyObject *) _PyType_GetModuleByDef2(PyTypeObject *, PyTypeObject *, PyModuleDef *);
 PyAPI_FUNC(PyTypeObject *) _PyType_GetBaseBySpec(PyTypeObject *, PyType_Spec *);
 
 // PyType_Ready() must be called if _PyType_IsReady() is false.

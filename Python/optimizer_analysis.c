@@ -320,6 +320,7 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
 #define sym_new_const _Py_uop_sym_new_const
 #define sym_new_null _Py_uop_sym_new_null
 #define sym_has_type _Py_uop_sym_has_type
+#define sym_get_type _Py_uop_sym_get_type
 #define sym_matches_type _Py_uop_sym_matches_type
 #define sym_set_null _Py_uop_sym_set_null
 #define sym_set_non_null _Py_uop_sym_set_non_null
@@ -368,7 +369,7 @@ eliminate_pop_guard(_PyUOpInstruction *this_instr, bool exit)
 static PyCodeObject *
 get_code(_PyUOpInstruction *op)
 {
-    assert(op->opcode == _PUSH_FRAME || op->opcode == _POP_FRAME);
+    assert(op->opcode == _PUSH_FRAME || op->opcode == _POP_FRAME || op->opcode == _RETURN_GENERATOR);
     PyCodeObject *co = NULL;
     uint64_t operand = op->operand;
     if (operand == 0) {
@@ -552,9 +553,6 @@ remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
                 if (_PyUop_Flags[opcode] & HAS_ESCAPES_FLAG) {
                     needs_ip = true;
                     may_have_escaped = true;
-                }
-                if (_PyUop_Flags[opcode] & HAS_ERROR_FLAG) {
-                    needs_ip = true;
                 }
                 if (needs_ip && last_set_ip >= 0) {
                     if (buffer[last_set_ip].opcode == _CHECK_VALIDITY) {
