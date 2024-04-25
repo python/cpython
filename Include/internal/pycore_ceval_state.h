@@ -20,16 +20,20 @@ struct _pending_call {
     int flags;
 };
 
+#define PENDINGCALLSARRAYSIZE 32
+#define MAXPENDINGCALLS_MAIN PENDINGCALLSARRAYSIZE
+#define MAXPENDINGCALLS PENDINGCALLSARRAYSIZE
+
 struct _pending_calls {
     int busy;
     PyMutex mutex;
     /* Request for running pending calls. */
     int32_t npending;
-#define NPENDINGCALLS 32
-    struct _pending_call calls[NPENDINGCALLS];
+    struct _pending_call calls[PENDINGCALLSARRAYSIZE];
     int first;
     int last;
 };
+
 
 typedef enum {
     PERF_STATUS_FAILED = -1,  // Perf trampoline is in an invalid state

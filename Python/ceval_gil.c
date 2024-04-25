@@ -680,7 +680,7 @@ _push_pending_call(struct _pending_calls *pending,
                    _Py_pending_call_func func, void *arg, int flags)
 {
     int i = pending->last;
-    int j = (i + 1) % NPENDINGCALLS;
+    int j = (i + 1) % PENDINGCALLSARRAYSIZE;
     if (j == pending->first) {
         return _Py_ADD_PENDING_FULL;
     }
@@ -688,7 +688,7 @@ _push_pending_call(struct _pending_calls *pending,
     pending->calls[i].arg = arg;
     pending->calls[i].flags = flags;
     pending->last = j;
-    assert(pending->npending < NPENDINGCALLS);
+    assert(pending->npending < PENDINGCALLSARRAYSIZE);
     _Py_atomic_add_int32(&pending->npending, 1);
     return _Py_ADD_PENDING_SUCCESS;
 }
@@ -717,7 +717,7 @@ _pop_pending_call(struct _pending_calls *pending,
     int i = _next_pending_call(pending, func, arg, flags);
     if (i >= 0) {
         pending->calls[i] = (struct _pending_call){0};
-        pending->first = (i + 1) % NPENDINGCALLS;
+        pending->first = (i + 1) % PENDINGCALLSARRAYSIZE;
         assert(pending->npending > 0);
         _Py_atomic_add_int32(&pending->npending, -1);
     }
