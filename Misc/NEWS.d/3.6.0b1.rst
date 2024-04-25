@@ -166,7 +166,7 @@ a DeprecationWarning.  Patch by Emanuel Barry.
 .. nonce: aABzcL
 .. section: Core and Builtins
 
-`dict` implementation is changed like PyPy. It is more compact and preserves
+``dict`` implementation is changed like PyPy. It is more compact and preserves
 insertion order. (Concept developed by Raymond Hettinger and patch by Inada
 Naoki.)
 
@@ -949,7 +949,7 @@ Add scrypt (password-based key derivation function) to hashlib module
 .. section: Library
 
 Remove 3DES from ssl module's default cipher list to counter measure sweet32
-attack (CVE-2016-2183).
+attack (:cve:`2016-2183`).
 
 ..
 

@@ -49,7 +49,7 @@ __all__ = ["Awaitable", "Coroutine",
            "Mapping", "MutableMapping",
            "MappingView", "KeysView", "ItemsView", "ValuesView",
            "Sequence", "MutableSequence",
-           "ByteString",
+           "ByteString", "Buffer",
            ]
 
 # This module has been renamed from collections.abc to _collections_abc to
@@ -436,6 +436,21 @@ class Collection(Sized, Iterable, Container):
     def __subclasshook__(cls, C):
         if cls is Collection:
             return _check_methods(C,  "__len__", "__iter__", "__contains__")
+        return NotImplemented
+
+
+class Buffer(metaclass=ABCMeta):
+
+    __slots__ = ()
+
+    @abstractmethod
+    def __buffer__(self, flags: int, /) -> memoryview:
+        raise NotImplementedError
+
+    @classmethod
+    def __subclasshook__(cls, C):
+        if cls is Buffer:
+            return _check_methods(C, "__buffer__")
         return NotImplemented
 
 
@@ -1056,8 +1071,27 @@ Sequence.register(str)
 Sequence.register(range)
 Sequence.register(memoryview)
 
+class _DeprecateByteStringMeta(ABCMeta):
+    def __new__(cls, name, bases, namespace, **kwargs):
+        if name != "ByteString":
+            import warnings
 
-class ByteString(Sequence):
+            warnings._deprecated(
+                "collections.abc.ByteString",
+                remove=(3, 14),
+            )
+        return super().__new__(cls, name, bases, namespace, **kwargs)
+
+    def __instancecheck__(cls, instance):
+        import warnings
+
+        warnings._deprecated(
+            "collections.abc.ByteString",
+            remove=(3, 14),
+        )
+        return super().__instancecheck__(instance)
+
+class ByteString(Sequence, metaclass=_DeprecateByteStringMeta):
     """This unifies bytes and bytearray.
 
     XXX Should add all their methods.
