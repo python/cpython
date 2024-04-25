@@ -75,8 +75,10 @@ run_fileexflags(PyObject *mod, PyObject *pos_args)
 
     result = PyRun_FileExFlags(fp, filename, start, globals, locals, closeit, pflags);
 
-#if !defined(__wasi__)
-    /* The behavior of fileno() after fclose() is undefined. */
+#if defined(__linux__) || defined(MS_WINDOWS) || defined(__APPLE__)
+    /* The behavior of fileno() after fclose() is undefined, but it is
+     * the only practical way to check whether the file was closed.
+     * Only test this on the known platforms. */
     if (closeit && result && fileno(fp) >= 0) {
         PyErr_SetString(PyExc_AssertionError, "File was not closed after excution");
         Py_DECREF(result);
