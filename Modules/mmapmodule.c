@@ -255,6 +255,44 @@ do {                                                                    \
 } while (0)
 #endif /* UNIX */
 
+#if defined(MS_WIN32) && !defined(DONT_USE_SEH)
+static DWORD
+HandlePageException(EXCEPTION_POINTERS *ptrs, EXCEPTION_RECORD *record)
+{
+    *record = *ptrs->ExceptionRecord;
+    if (ptrs->ExceptionRecord->ExceptionCode == EXCEPTION_IN_PAGE_ERROR) {
+        return EXCEPTION_EXECUTE_HANDLER;
+    }
+    return EXCEPTION_CONTINUE_SEARCH;
+}
+#endif
+
+int
+safe_memcpy(void *restrict dest, const void *restrict src, size_t count) {
+#if defined(MS_WIN32) && !defined(DONT_USE_SEH)
+
+    // never fail for count 0
+    if (count == 0) {
+        return 0;
+    }
+
+    EXCEPTION_RECORD record;
+    __try {
+        memcpy(dest, src, count);
+        return 0;
+    }
+    __except (HandlePageException(GetExceptionInformation(), &record)) {
+        NTSTATUS status = record.ExceptionInformation[2];
+        ULONG code = LsaNtStatusToWinError(status);
+        PyErr_SetFromWindowsErr(code);
+        return -1;
+    }
+#else
+    memcpy(dest, src, count);
+    return 0;
+#endif
+}
+
 static PyObject *
 mmap_read_byte_method(mmap_object *self,
                       PyObject *Py_UNUSED(ignored))
@@ -264,7 +302,14 @@ mmap_read_byte_method(mmap_object *self,
         PyErr_SetString(PyExc_ValueError, "read byte out of range");
         return NULL;
     }
-    return PyLong_FromLong((unsigned char)self->data[self->pos++]);
+    unsigned char dest;
+    if (safe_memcpy(dest, self->data + self->pos, 1) < 0) {
+        return NULL;
+    }
+    else {
+        self->pos++;
+        return PyLong_FromLong(dest);
+    }
 }
 
 static PyObject *
@@ -291,17 +336,6 @@ mmap_read_line_method(mmap_object *self,
     return result;
 }
 
-#if defined(MS_WIN32) && !defined(DONT_USE_SEH)
-static DWORD HandlePageException(EXCEPTION_POINTERS *ptrs, EXCEPTION_RECORD *record)
-{
-    *record = *ptrs->ExceptionRecord;
-    if (ptrs->ExceptionRecord->ExceptionCode == EXCEPTION_IN_PAGE_ERROR) {
-        return EXCEPTION_EXECUTE_HANDLER;
-    }
-    return EXCEPTION_CONTINUE_SEARCH;
-}
-#endif
-
 static PyObject *
 mmap_read_method(mmap_object *self,
                  PyObject *args)
@@ -319,22 +353,16 @@ mmap_read_method(mmap_object *self,
     if (num_bytes < 0 || num_bytes > remaining)
         num_bytes = remaining;
 
-#if defined(MS_WIN32) && !defined(DONT_USE_SEH)
-    EXCEPTION_RECORD record;
-    __try {
-        result = PyBytes_FromStringAndSize(&self->data[self->pos], num_bytes);
+    result = PyBytes_FromStringAndSize(NULL, num_bytes);
+    if (result == NULL) {
+        return NULL;
+    }
+    if (safe_memcpy(((PyBytesObject *) result)->ob_sval, self->data + self->pos, num_bytes) < 0) {
+        Py_CLEAR(result);
+    }
+    else {
         self->pos += num_bytes;
     }
-    __except (HandlePageException(GetExceptionInformation(), &record)) {
-        NTSTATUS code = record.ExceptionInformation[2];
-        PyErr_SetFromWindowsErr(code);
-        result = NULL;
-    }
-#else
-    result = PyBytes_FromStringAndSize(&self->data[self->pos], num_bytes);
-    self->pos += num_bytes;
-#endif
-
     return result;
 }
 
