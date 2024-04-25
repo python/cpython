@@ -341,12 +341,12 @@ _Py_StatsSetDir(const char *dirname)
     _Py_stats_dir = NULL;
 
     if (dirname != NULL) {
-        if (strlen(dirname) > (PYSTATS_FILENAME_BUFSIZE - 44 - 1)) {
+        if (strnlen(dirname, PYSTATS_FILENAME_BUFSIZE) >
+            (PYSTATS_FILENAME_BUFSIZE - 44 - 1)) {
             return 0;
         }
         _Py_stats_dir = dirname;
-    }
-    else {
+    } else {
 # ifdef MS_WINDOWS
         _Py_stats_dir = "c:\\temp\\py_stats\\";
 # else
