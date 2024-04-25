@@ -4236,4 +4236,32 @@
             break;
         }
 
+        case _TIER2_RESUME_CHECK: {
+            #if defined(__EMSCRIPTEN__)
+            if (_Py_emscripten_signal_clock == 0) {
+                UOP_STAT_INC(uopcode, miss);
+                JUMP_TO_JUMP_TARGET();
+            }
+            _Py_emscripten_signal_clock -= Py_EMSCRIPTEN_SIGNAL_HANDLING;
+            #endif
+            uintptr_t eval_breaker = _Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker);
+            uintptr_t version = FT_ATOMIC_LOAD_UINTPTR_ACQUIRE(_PyFrame_GetCode(frame)->_co_instrumentation_version);
+            assert((version & _PY_EVAL_EVENTS_MASK) == 0);
+            if (eval_breaker != version) {
+                UOP_STAT_INC(uopcode, miss);
+                JUMP_TO_JUMP_TARGET();
+            }
+            break;
+        }
+
+        case _EVAL_BREAKER_EXIT: {
+            _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY();
+            QSBR_QUIESCENT_STATE(tstate);
+            if (_Py_HandlePending(tstate) != 0) {
+                GOTO_UNWIND();
+            }
+            EXIT_TO_TRACE();
+            break;
+        }
+
 #undef TIER_TWO
