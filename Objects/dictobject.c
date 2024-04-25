@@ -1188,9 +1188,13 @@ _PyDictKeys_StringLookup(PyDictKeysObject* dk, PyObject *key)
     return unicodekeys_lookup_unicode(dk, key, hash);
 }
 
+#ifdef Py_GIL_DISABLED
+
 static Py_ssize_t
 unicodekeys_lookup_unicode_threadsafe(PyDictKeysObject* dk, PyObject *key,
                                       Py_hash_t hash);
+
+#endif
 
 /*
 The basic lookup function used by all operations.
