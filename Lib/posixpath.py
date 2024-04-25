@@ -454,16 +454,14 @@ symbolic links encountered in the path."""
             newpath = path + sep + name
         try:
             st_mode = os.lstat(newpath).st_mode
-            if stat.S_ISLNK(st_mode):
-                pass
-            elif part_count and not stat.S_ISDIR(st_mode):
-                raise NotADirectoryError(errno.ENOTDIR, "Not a directory", newpath)
-            else:
-                path = newpath
-                continue
         except OSError:
             if strict:
                 raise
+            path = newpath
+            continue
+        if not stat.S_ISLNK(st_mode):
+            if strict and part_count and not stat.S_ISDIR(st_mode):
+                raise NotADirectoryError(errno.ENOTDIR, "Not a directory", newpath)
             path = newpath
             continue
         # Resolve the symbolic link
