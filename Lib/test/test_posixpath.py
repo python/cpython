@@ -660,6 +660,20 @@ class PosixPathTest(unittest.TestCase):
             safe_rmdir(ABSTFN + "/k")
             safe_rmdir(ABSTFN)
 
+    def test_realpath_strict_nondir(self):
+        try:
+            with open(ABSTFN, 'w') as f:
+                f.write('test_posixpath wuz ere')
+            self.assertEqual(realpath(ABSTFN, strict=True), ABSTFN)
+            with self.assertRaises(NotADirectoryError):
+                realpath(ABSTFN + "/", strict=True)
+            with self.assertRaises(NotADirectoryError):
+                realpath(ABSTFN + "/.", strict=True)
+            with self.assertRaises(NotADirectoryError):
+                realpath(ABSTFN + "/subdir", strict=True)
+        finally:
+            os_helper.unlink(ABSTFN)
+
     def test_relpath(self):
         (real_getcwd, os.getcwd) = (os.getcwd, lambda: r"/home/user/bar")
         try:
