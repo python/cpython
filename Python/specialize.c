@@ -341,7 +341,7 @@ _Py_StatsSetDir(const char *dirname)
     _Py_stats_dir = NULL;
 
     if (dirname != NULL) {
-        if (strlen(dirname) > (PYSTATS_FILENAME_BUFSIZE - 44 - 5)) {
+        if (strlen(dirname) > (PYSTATS_FILENAME_BUFSIZE - 44 - 1)) {
             return 0;
         }
         _Py_stats_dir = dirname;
