@@ -775,12 +775,12 @@ MODULE__MULTIPROCESSING_FALSE
 MODULE__MULTIPROCESSING_TRUE
 MODULE__ZONEINFO_FALSE
 MODULE__ZONEINFO_TRUE
-MODULE__XXINTERPQUEUES_FALSE
-MODULE__XXINTERPQUEUES_TRUE
-MODULE__XXINTERPCHANNELS_FALSE
-MODULE__XXINTERPCHANNELS_TRUE
-MODULE__XXSUBINTERPRETERS_FALSE
-MODULE__XXSUBINTERPRETERS_TRUE
+MODULE__INTERPQUEUES_FALSE
+MODULE__INTERPQUEUES_TRUE
+MODULE__INTERPCHANNELS_FALSE
+MODULE__INTERPCHANNELS_TRUE
+MODULE__INTERPRETERS_FALSE
+MODULE__INTERPRETERS_TRUE
 MODULE__TYPING_FALSE
 MODULE__TYPING_TRUE
 MODULE__STRUCT_FALSE
@@ -28659,9 +28659,9 @@ case $ac_sys_system in #(
     py_cv_module__posixsubprocess=n/a
     py_cv_module__scproxy=n/a
     py_cv_module__tkinter=n/a
-    py_cv_module__xxsubinterpreters=n/a
-    py_cv_module__xxinterpchannels=n/a
-    py_cv_module__xxinterpqueues=n/a
+    py_cv_module__interpreters=n/a
+    py_cv_module__interpchannels=n/a
+    py_cv_module__interpqueues=n/a
     py_cv_module_grp=n/a
     py_cv_module_pwd=n/a
     py_cv_module_resource=n/a
@@ -29126,20 +29126,20 @@ then :
 fi
 
 
-        if test "$py_cv_module__xxsubinterpreters" != "n/a"
+        if test "$py_cv_module__interpreters" != "n/a"
 then :
-  py_cv_module__xxsubinterpreters=yes
+  py_cv_module__interpreters=yes
 fi
-   if test "$py_cv_module__xxsubinterpreters" = yes; then
-  MODULE__XXSUBINTERPRETERS_TRUE=
-  MODULE__XXSUBINTERPRETERS_FALSE='#'
+   if test "$py_cv_module__interpreters" = yes; then
+  MODULE__INTERPRETERS_TRUE=
+  MODULE__INTERPRETERS_FALSE='#'
 else
-  MODULE__XXSUBINTERPRETERS_TRUE='#'
-  MODULE__XXSUBINTERPRETERS_FALSE=
+  MODULE__INTERPRETERS_TRUE='#'
+  MODULE__INTERPRETERS_FALSE=
 fi
 
-  as_fn_append MODULE_BLOCK "MODULE__XXSUBINTERPRETERS_STATE=$py_cv_module__xxsubinterpreters$as_nl"
-  if test "x$py_cv_module__xxsubinterpreters" = xyes
+  as_fn_append MODULE_BLOCK "MODULE__INTERPRETERS_STATE=$py_cv_module__interpreters$as_nl"
+  if test "x$py_cv_module__interpreters" = xyes
 then :
 
 
@@ -29148,20 +29148,20 @@ then :
 fi
 
 
-        if test "$py_cv_module__xxinterpchannels" != "n/a"
+        if test "$py_cv_module__interpchannels" != "n/a"
 then :
-  py_cv_module__xxinterpchannels=yes
+  py_cv_module__interpchannels=yes
 fi
-   if test "$py_cv_module__xxinterpchannels" = yes; then
-  MODULE__XXINTERPCHANNELS_TRUE=
-  MODULE__XXINTERPCHANNELS_FALSE='#'
+   if test "$py_cv_module__interpchannels" = yes; then
+  MODULE__INTERPCHANNELS_TRUE=
+  MODULE__INTERPCHANNELS_FALSE='#'
 else
-  MODULE__XXINTERPCHANNELS_TRUE='#'
-  MODULE__XXINTERPCHANNELS_FALSE=
+  MODULE__INTERPCHANNELS_TRUE='#'
+  MODULE__INTERPCHANNELS_FALSE=
 fi
 
-  as_fn_append MODULE_BLOCK "MODULE__XXINTERPCHANNELS_STATE=$py_cv_module__xxinterpchannels$as_nl"
-  if test "x$py_cv_module__xxinterpchannels" = xyes
+  as_fn_append MODULE_BLOCK "MODULE__INTERPCHANNELS_STATE=$py_cv_module__interpchannels$as_nl"
+  if test "x$py_cv_module__interpchannels" = xyes
 then :
 
 
@@ -29170,20 +29170,20 @@ then :
 fi
 
 
-        if test "$py_cv_module__xxinterpqueues" != "n/a"
+        if test "$py_cv_module__interpqueues" != "n/a"
 then :
-  py_cv_module__xxinterpqueues=yes
+  py_cv_module__interpqueues=yes
 fi
-   if test "$py_cv_module__xxinterpqueues" = yes; then
-  MODULE__XXINTERPQUEUES_TRUE=
-  MODULE__XXINTERPQUEUES_FALSE='#'
+   if test "$py_cv_module__interpqueues" = yes; then
+  MODULE__INTERPQUEUES_TRUE=
+  MODULE__INTERPQUEUES_FALSE='#'
 else
-  MODULE__XXINTERPQUEUES_TRUE='#'
-  MODULE__XXINTERPQUEUES_FALSE=
+  MODULE__INTERPQUEUES_TRUE='#'
+  MODULE__INTERPQUEUES_FALSE=
 fi
 
-  as_fn_append MODULE_BLOCK "MODULE__XXINTERPQUEUES_STATE=$py_cv_module__xxinterpqueues$as_nl"
-  if test "x$py_cv_module__xxinterpqueues" = xyes
+  as_fn_append MODULE_BLOCK "MODULE__INTERPQUEUES_STATE=$py_cv_module__interpqueues$as_nl"
+  if test "x$py_cv_module__interpqueues" = xyes
 then :
 
 
@@ -31532,16 +31532,16 @@ if test -z "${MODULE__TYPING_TRUE}" && test -z "${MODULE__TYPING_FALSE}"; then
   as_fn_error $? "conditional \"MODULE__TYPING\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
-if test -z "${MODULE__XXSUBINTERPRETERS_TRUE}" && test -z "${MODULE__XXSUBINTERPRETERS_FALSE}"; then
-  as_fn_error $? "conditional \"MODULE__XXSUBINTERPRETERS\" was never defined.
+if test -z "${MODULE__INTERPRETERS_TRUE}" && test -z "${MODULE__INTERPRETERS_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__INTERPRETERS\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
-if test -z "${MODULE__XXINTERPCHANNELS_TRUE}" && test -z "${MODULE__XXINTERPCHANNELS_FALSE}"; then
-  as_fn_error $? "conditional \"MODULE__XXINTERPCHANNELS\" was never defined.
+if test -z "${MODULE__INTERPCHANNELS_TRUE}" && test -z "${MODULE__INTERPCHANNELS_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__INTERPCHANNELS\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
-if test -z "${MODULE__XXINTERPQUEUES_TRUE}" && test -z "${MODULE__XXINTERPQUEUES_FALSE}"; then
-  as_fn_error $? "conditional \"MODULE__XXINTERPQUEUES\" was never defined.
+if test -z "${MODULE__INTERPQUEUES_TRUE}" && test -z "${MODULE__INTERPQUEUES_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__INTERPQUEUES\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE__ZONEINFO_TRUE}" && test -z "${MODULE__ZONEINFO_FALSE}"; then

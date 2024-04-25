@@ -942,7 +942,7 @@ class TestCommandLine(unittest.TestCase):
         with support.SuppressCrashReport():
             ok, stdout, stderr = assert_python_failure(
                 '-c', 'pass',
-                PYTHONTRACEMALLOC=str(nframe))
+                PYTHONTRACEMALLOC=str(nframe), __cleanenv=True)
 
         if b'ValueError: the number of frames must be in range' in stderr:
             return
