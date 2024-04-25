@@ -345,7 +345,8 @@ _Py_StatsSetDir(const char *dirname)
             return 0;
         }
         _Py_stats_dir = dirname;
-    } else {
+    }
+    else {
 # ifdef MS_WINDOWS
         _Py_stats_dir = "c:\\temp\\py_stats\\";
 # else
