@@ -2,6 +2,7 @@
 import typing
 
 HoleKind: typing.TypeAlias = typing.Literal[
+    "ARM64_RELOC_BRANCH26",
     "ARM64_RELOC_GOT_LOAD_PAGE21",
     "ARM64_RELOC_GOT_LOAD_PAGEOFF12",
     "ARM64_RELOC_PAGE21",
@@ -89,6 +90,10 @@ class COFFSection(typing.TypedDict):
     SectionData: typing.NotRequired[dict[typing.Literal["Bytes"], list[int]]]
     Symbols: list[dict[typing.Literal["Symbol"], _COFFSymbol]]
 
+class _ElfSectionType(typing.TypedDict):
+    """An ELF object file section type."""
+    Name: str
+    Value: int
 
 class ELFSection(typing.TypedDict):
     """An ELF object file section."""
@@ -99,8 +104,7 @@ class ELFSection(typing.TypedDict):
     Relocations: list[dict[typing.Literal["Relocation"], ELFRelocation]]
     SectionData: dict[typing.Literal["Bytes"], list[int]]
     Symbols: list[dict[typing.Literal["Symbol"], _ELFSymbol]]
-    Type: dict[typing.Literal["Value"], str]
-
+    Type: _ElfSectionType
 
 class MachOSection(typing.TypedDict):
     """A Mach-O object file section."""

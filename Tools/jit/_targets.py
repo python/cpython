@@ -127,7 +127,7 @@ class _Target(typing.Generic[_S, _R]):
             # Emit relaxable 64-bit calls/jumps, so we don't have to worry about
             # about emitting in-range trampolines for out-of-range targets.
             # We can probably remove this and emit trampolines in the future:
-            "-fno-plt",
+            # "-fno-plt",
             # Don't call stack-smashing canaries that we can't find or patch:
             "-fno-stack-protector",
             "-o",
@@ -262,7 +262,7 @@ class _ELF(
     def _handle_section(
         self, section: _schema.ELFSection, group: _stencils.StencilGroup
     ) -> None:
-        section_type = section["Type"]["Value"]
+        section_type = section["Type"]["Name"]
         flags = {flag["Name"] for flag in section["Flags"]["Flags"]}
         if section_type == "SHT_RELA":
             assert "SHF_INFO_LINK" in flags, flags
@@ -290,7 +290,7 @@ class _ELF(
             for wrapped_symbol in section["Symbols"]:
                 symbol = wrapped_symbol["Symbol"]
                 offset = len(stencil.body) + symbol["Value"]
-                name = symbol["Name"]["Value"]
+                name = symbol["Name"]["Name"]
                 name = name.removeprefix(self.prefix)
                 group.symbols[name] = value, offset
             stencil.body.extend(section["SectionData"]["Bytes"])
@@ -312,9 +312,9 @@ class _ELF(
             case {
                 "Addend": addend,
                 "Offset": offset,
-                "Symbol": {"Value": s},
+                "Symbol": {"Name": s},
                 "Type": {
-                    "Value": "R_AARCH64_ADR_GOT_PAGE"
+                    "Name": "R_AARCH64_ADR_GOT_PAGE"
                     | "R_AARCH64_LD64_GOT_LO12_NC"
                     | "R_X86_64_GOTPCREL"
                     | "R_X86_64_GOTPCRELX"
@@ -327,8 +327,8 @@ class _ELF(
             case {
                 "Addend": addend,
                 "Offset": offset,
-                "Symbol": {"Value": s},
-                "Type": {"Value": kind},
+                "Symbol": {"Name": s},
+                "Type": {"Name": kind},
             }:
                 offset += base
                 s = s.removeprefix(self.prefix)
@@ -371,7 +371,7 @@ class _MachO(
         for wrapped_symbol in section["Symbols"]:
             symbol = wrapped_symbol["Symbol"]
             offset = symbol["Value"] - start_address
-            name = symbol["Name"]["Value"]
+            name = symbol["Name"]["Name"]
             name = name.removeprefix(self.prefix)
             group.symbols[name] = value, offset
         assert "Relocations" in section
@@ -431,8 +431,8 @@ class _MachO(
                 "Type": {"Value": kind},
             } | {
                 "Offset": offset,
-                "Symbol": {"Value": s},
-                "Type": {"Value": kind},
+                "Symbol": {"Name": s},
+                "Type": {"Name": kind},
             }:
                 offset += base
                 s = s.removeprefix(self.prefix)
@@ -446,8 +446,7 @@ class _MachO(
 def get_target(host: str) -> _COFF | _ELF | _MachO:
     """Build a _Target for the given host "triple" and options."""
     if re.fullmatch(r"aarch64-apple-darwin.*", host):
-        args = ["-mcmodel=large"]
-        return _MachO(host, alignment=8, args=args, prefix="_")
+        return _MachO(host, alignment=8, prefix="_")
     if re.fullmatch(r"aarch64-pc-windows-msvc", host):
         args = ["-fms-runtime-lib=dll"]
         return _COFF(host, alignment=8, args=args)
