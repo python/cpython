@@ -127,7 +127,7 @@ class _Target(typing.Generic[_S, _R]):
             # Emit relaxable 64-bit calls/jumps, so we don't have to worry about
             # about emitting in-range trampolines for out-of-range targets.
             # We can probably remove this and emit trampolines in the future:
-            # "-fno-plt",
+            "-fno-plt",
             # Don't call stack-smashing canaries that we can't find or patch:
             "-fno-stack-protector",
             "-o",
