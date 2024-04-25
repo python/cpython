@@ -112,6 +112,7 @@ __all__ = [
     'fmean',
     'geometric_mean',
     'harmonic_mean',
+    'kde',
     'linear_regression',
     'mean',
     'median',
@@ -134,11 +135,12 @@ import sys
 
 from fractions import Fraction
 from decimal import Decimal
-from itertools import groupby, repeat
+from itertools import count, groupby, repeat
 from bisect import bisect_left, bisect_right
-from math import hypot, sqrt, fabs, exp, erf, tau, log, fsum
+from math import hypot, sqrt, fabs, exp, erf, tau, log, fsum, sumprod
+from math import isfinite, isinf, pi, cos, sin, cosh, atan
 from functools import reduce
-from operator import mul
+from operator import itemgetter
 from collections import Counter, namedtuple, defaultdict
 
 _SQRT2 = sqrt(2.0)
@@ -298,7 +300,7 @@ def _exact_ratio(x):
 
     # The integer ratios for binary floats can have numerators or
     # denominators with over 300 decimal digits.  The problem is more
-    # acute with decimal floats where the the default decimal context
+    # acute with decimal floats where the default decimal context
     # supports a huge range of exponents from Emin=-999999 to
     # Emax=999999.  When expanded with as_integer_ratio(), numbers like
     # Decimal('3.14E+5000') and Decimal('3.14E-5000') have large
@@ -354,6 +356,60 @@ def _fail_neg(values, errmsg='negative value'):
         if x < 0:
             raise StatisticsError(errmsg)
         yield x
+
+
+def _rank(data, /, *, key=None, reverse=False, ties='average', start=1) -> list[float]:
+    """Rank order a dataset. The lowest value has rank 1.
+
+    Ties are averaged so that equal values receive the same rank:
+
+        >>> data = [31, 56, 31, 25, 75, 18]
+        >>> _rank(data)
+        [3.5, 5.0, 3.5, 2.0, 6.0, 1.0]
+
+    The operation is idempotent:
+
+        >>> _rank([3.5, 5.0, 3.5, 2.0, 6.0, 1.0])
+        [3.5, 5.0, 3.5, 2.0, 6.0, 1.0]
+
+    It is possible to rank the data in reverse order so that the
+    highest value has rank 1.  Also, a key-function can extract
+    the field to be ranked:
+
+        >>> goals = [('eagles', 45), ('bears', 48), ('lions', 44)]
+        >>> _rank(goals, key=itemgetter(1), reverse=True)
+        [2.0, 1.0, 3.0]
+
+    Ranks are conventionally numbered starting from one; however,
+    setting *start* to zero allows the ranks to be used as array indices:
+
+        >>> prize = ['Gold', 'Silver', 'Bronze', 'Certificate']
+        >>> scores = [8.1, 7.3, 9.4, 8.3]
+        >>> [prize[int(i)] for i in _rank(scores, start=0, reverse=True)]
+        ['Bronze', 'Certificate', 'Gold', 'Silver']
+
+    """
+    # If this function becomes public at some point, more thought
+    # needs to be given to the signature.  A list of ints is
+    # plausible when ties is "min" or "max".  When ties is "average",
+    # either list[float] or list[Fraction] is plausible.
+
+    # Default handling of ties matches scipy.stats.mstats.spearmanr.
+    if ties != 'average':
+        raise ValueError(f'Unknown tie resolution method: {ties!r}')
+    if key is not None:
+        data = map(key, data)
+    val_pos = sorted(zip(data, count()), reverse=reverse)
+    i = start - 1
+    result = [0] * len(val_pos)
+    for _, g in groupby(val_pos, key=itemgetter(0)):
+        group = list(g)
+        size = len(group)
+        rank = i + (size + 1) / 2
+        for value, orig_pos in group:
+            result[orig_pos] = rank
+        i += size
+    return result
 
 
 def _integer_sqrt_of_frac_rto(n: int, m: int) -> int:
@@ -442,28 +498,26 @@ def fmean(data, weights=None):
     >>> fmean([3.5, 4.0, 5.25])
     4.25
     """
-    try:
-        n = len(data)
-    except TypeError:
-        # Handle iterators that do not define __len__().
-        n = 0
-        def count(iterable):
-            nonlocal n
-            for n, x in enumerate(iterable, start=1):
-                yield x
-        data = count(data)
     if weights is None:
+        try:
+            n = len(data)
+        except TypeError:
+            # Handle iterators that do not define __len__().
+            n = 0
+            def count(iterable):
+                nonlocal n
+                for n, x in enumerate(iterable, start=1):
+                    yield x
+            data = count(data)
         total = fsum(data)
         if not n:
             raise StatisticsError('fmean requires at least one data point')
         return total / n
-    try:
-        num_weights = len(weights)
-    except TypeError:
+    if not isinstance(weights, (list, tuple)):
         weights = list(weights)
-        num_weights = len(weights)
-    num = fsum(map(mul, data, weights))
-    if n != num_weights:
+    try:
+        num = sumprod(data, weights)
+    except ValueError:
         raise StatisticsError('data and weights must be the same length')
     den = fsum(weights)
     if not den:
@@ -474,8 +528,10 @@ def fmean(data, weights=None):
 def geometric_mean(data):
     """Convert data to floats and compute the geometric mean.
 
-    Raises a StatisticsError if the input dataset is empty,
-    if it contains a zero, or if it contains a negative value.
+    Raises a StatisticsError if the input dataset is empty
+    or if it contains a negative value.
+
+    Returns zero if the product of inputs is zero.
 
     No special efforts are made to achieve exact results.
     (However, this may change in the future.)
@@ -483,11 +539,25 @@ def geometric_mean(data):
     >>> round(geometric_mean([54, 24, 36]), 9)
     36.0
     """
-    try:
-        return exp(fmean(map(log, data)))
-    except ValueError:
-        raise StatisticsError('geometric mean requires a non-empty dataset '
-                              'containing positive numbers') from None
+    n = 0
+    found_zero = False
+    def count_positive(iterable):
+        nonlocal n, found_zero
+        for n, x in enumerate(iterable, start=1):
+            if x > 0.0 or math.isnan(x):
+                yield x
+            elif x == 0.0:
+                found_zero = True
+            else:
+                raise StatisticsError('No negative inputs allowed', x)
+    total = fsum(map(log, count_positive(data)))
+    if not n:
+        raise StatisticsError('Must have a non-empty dataset')
+    if math.isnan(total):
+        return math.nan
+    if found_zero:
+        return math.nan if total == math.inf else 0.0
+    return exp(total / n)
 
 
 def harmonic_mean(data, weights=None):
@@ -733,6 +803,220 @@ def multimode(data):
     return [value for value, count in counts.items() if count == maxcount]
 
 
+def kde(data, h, kernel='normal', *, cumulative=False):
+    """Kernel Density Estimation:  Create a continuous probability density
+    function or cumulative distribution function from discrete samples.
+
+    The basic idea is to smooth the data using a kernel function
+    to help draw inferences about a population from a sample.
+
+    The degree of smoothing is controlled by the scaling parameter h
+    which is called the bandwidth.  Smaller values emphasize local
+    features while larger values give smoother results.
+
+    The kernel determines the relative weights of the sample data
+    points.  Generally, the choice of kernel shape does not matter
+    as much as the more influential bandwidth smoothing parameter.
+
+    Kernels that give some weight to every sample point:
+
+       normal (gauss)
+       logistic
+       sigmoid
+
+    Kernels that only give weight to sample points within
+    the bandwidth:
+
+       rectangular (uniform)
+       triangular
+       parabolic (epanechnikov)
+       quartic (biweight)
+       triweight
+       cosine
+
+    If *cumulative* is true, will return a cumulative distribution function.
+
+    A StatisticsError will be raised if the data sequence is empty.
+
+    Example
+    -------
+
+    Given a sample of six data points, construct a continuous
+    function that estimates the underlying probability density:
+
+        >>> sample = [-2.1, -1.3, -0.4, 1.9, 5.1, 6.2]
+        >>> f_hat = kde(sample, h=1.5)
+
+    Compute the area under the curve:
+
+        >>> area = sum(f_hat(x) for x in range(-20, 20))
+        >>> round(area, 4)
+        1.0
+
+    Plot the estimated probability density function at
+    evenly spaced points from -6 to 10:
+
+        >>> for x in range(-6, 11):
+        ...     density = f_hat(x)
+        ...     plot = ' ' * int(density * 400) + 'x'
+        ...     print(f'{x:2}: {density:.3f} {plot}')
+        ...
+        -6: 0.002 x
+        -5: 0.009    x
+        -4: 0.031             x
+        -3: 0.070                             x
+        -2: 0.111                                             x
+        -1: 0.125                                                   x
+         0: 0.110                                            x
+         1: 0.086                                   x
+         2: 0.068                            x
+         3: 0.059                        x
+         4: 0.066                           x
+         5: 0.082                                 x
+         6: 0.082                                 x
+         7: 0.058                        x
+         8: 0.028            x
+         9: 0.009    x
+        10: 0.002 x
+
+    Estimate P(4.5 < X <= 7.5), the probability that a new sample value
+    will be between 4.5 and 7.5:
+
+        >>> cdf = kde(sample, h=1.5, cumulative=True)
+        >>> round(cdf(7.5) - cdf(4.5), 2)
+        0.22
+
+    References
+    ----------
+
+    Kernel density estimation and its application:
+    https://www.itm-conferences.org/articles/itmconf/pdf/2018/08/itmconf_sam2018_00037.pdf
+
+    Kernel functions in common use:
+    https://en.wikipedia.org/wiki/Kernel_(statistics)#kernel_functions_in_common_use
+
+    Interactive graphical demonstration and exploration:
+    https://demonstrations.wolfram.com/KernelDensityEstimation/
+
+    Kernel estimation of cumulative distribution function of a random variable with bounded support
+    https://www.econstor.eu/bitstream/10419/207829/1/10.21307_stattrans-2016-037.pdf
+
+    """
+
+    n = len(data)
+    if not n:
+        raise StatisticsError('Empty data sequence')
+
+    if not isinstance(data[0], (int, float)):
+        raise TypeError('Data sequence must contain ints or floats')
+
+    if h <= 0.0:
+        raise StatisticsError(f'Bandwidth h must be positive, not {h=!r}')
+
+    match kernel:
+
+        case 'normal' | 'gauss':
+            sqrt2pi = sqrt(2 * pi)
+            sqrt2 = sqrt(2)
+            K = lambda t: exp(-1/2 * t * t) / sqrt2pi
+            W = lambda t: 1/2 * (1.0 + erf(t / sqrt2))
+            support = None
+
+        case 'logistic':
+            # 1.0 / (exp(t) + 2.0 + exp(-t))
+            K = lambda t: 1/2 / (1.0 + cosh(t))
+            W = lambda t: 1.0 - 1.0 / (exp(t) + 1.0)
+            support = None
+
+        case 'sigmoid':
+            # (2/pi) / (exp(t) + exp(-t))
+            c1 = 1 / pi
+            c2 = 2 / pi
+            K = lambda t: c1 / cosh(t)
+            W = lambda t: c2 * atan(exp(t))
+            support = None
+
+        case 'rectangular' | 'uniform':
+            K = lambda t: 1/2
+            W = lambda t: 1/2 * t + 1/2
+            support = 1.0
+
+        case 'triangular':
+            K = lambda t: 1.0 - abs(t)
+            W = lambda t: t*t * (1/2 if t < 0.0 else -1/2) + t + 1/2
+            support = 1.0
+
+        case 'parabolic' | 'epanechnikov':
+            K = lambda t: 3/4 * (1.0 - t * t)
+            W = lambda t: -1/4 * t**3 + 3/4 * t + 1/2
+            support = 1.0
+
+        case 'quartic' | 'biweight':
+            K = lambda t: 15/16 * (1.0 - t * t) ** 2
+            W = lambda t: 3/16 * t**5 - 5/8 * t**3 + 15/16 * t + 1/2
+            support = 1.0
+
+        case 'triweight':
+            K = lambda t: 35/32 * (1.0 - t * t) ** 3
+            W = lambda t: 35/32 * (-1/7*t**7 + 3/5*t**5 - t**3 + t) + 1/2
+            support = 1.0
+
+        case 'cosine':
+            c1 = pi / 4
+            c2 = pi / 2
+            K = lambda t: c1 * cos(c2 * t)
+            W = lambda t: 1/2 * sin(c2 * t) + 1/2
+            support = 1.0
+
+        case _:
+            raise StatisticsError(f'Unknown kernel name: {kernel!r}')
+
+    if support is None:
+
+        def pdf(x):
+            n = len(data)
+            return sum(K((x - x_i) / h) for x_i in data) / (n * h)
+
+        def cdf(x):
+
+            n = len(data)
+            return sum(W((x - x_i) / h) for x_i in data) / n
+
+
+    else:
+
+        sample = sorted(data)
+        bandwidth = h * support
+
+        def pdf(x):
+            nonlocal n, sample
+            if len(data) != n:
+                sample = sorted(data)
+                n = len(data)
+            i = bisect_left(sample, x - bandwidth)
+            j = bisect_right(sample, x + bandwidth)
+            supported = sample[i : j]
+            return sum(K((x - x_i) / h) for x_i in supported) / (n * h)
+
+        def cdf(x):
+            nonlocal n, sample
+            if len(data) != n:
+                sample = sorted(data)
+                n = len(data)
+            i = bisect_left(sample, x - bandwidth)
+            j = bisect_right(sample, x + bandwidth)
+            supported = sample[i : j]
+            return sum((W((x - x_i) / h) for x_i in supported), i) / n
+
+    if cumulative:
+        cdf.__doc__ = f'CDF estimate with {h=!r} and {kernel=!r}'
+        return cdf
+
+    else:
+        pdf.__doc__ = f'PDF estimate with {h=!r} and {kernel=!r}'
+        return pdf
+
+
 # Notes on methods for computing quantiles
 # ----------------------------------------
 #
@@ -791,7 +1075,9 @@ def quantiles(data, *, n=4, method='exclusive'):
     data = sorted(data)
     ld = len(data)
     if ld < 2:
-        raise StatisticsError('must have at least two data points')
+        if ld == 1:
+            return data * (n - 1)
+        raise StatisticsError('must have at least one data point')
     if method == 'inclusive':
         m = ld - 1
         result = []
@@ -952,6 +1238,27 @@ def _mean_stdev(data):
         # Handle Nans and Infs gracefully
         return float(xbar), float(xbar) / float(ss)
 
+def _sqrtprod(x: float, y: float) -> float:
+    "Return sqrt(x * y) computed with improved accuracy and without overflow/underflow."
+    h = sqrt(x * y)
+    if not isfinite(h):
+        if isinf(h) and not isinf(x) and not isinf(y):
+            # Finite inputs overflowed, so scale down, and recompute.
+            scale = 2.0 ** -512  # sqrt(1 / sys.float_info.max)
+            return _sqrtprod(scale * x, scale * y) / scale
+        return h
+    if not h:
+        if x and y:
+            # Non-zero inputs underflowed, so scale up, and recompute.
+            # Scale:  1 / sqrt(sys.float_info.min * sys.float_info.epsilon)
+            scale = 2.0 ** 537
+            return _sqrtprod(scale * x, scale * y) / scale
+        return h
+    # Improve accuracy with a differential correction.
+    # https://www.wolframalpha.com/input/?i=Maclaurin+series+sqrt%28h**2+%2B+x%29+at+x%3D0
+    d = sumprod((x, h), (y, -h))
+    return h + d / (2.0 * h)
+
 
 # === Statistics for relations between two inputs ===
 
@@ -984,18 +1291,16 @@ def covariance(x, y, /):
         raise StatisticsError('covariance requires at least two data points')
     xbar = fsum(x) / n
     ybar = fsum(y) / n
-    sxy = fsum((xi - xbar) * (yi - ybar) for xi, yi in zip(x, y))
+    sxy = sumprod((xi - xbar for xi in x), (yi - ybar for yi in y))
     return sxy / (n - 1)
 
 
-def correlation(x, y, /):
+def correlation(x, y, /, *, method='linear'):
     """Pearson's correlation coefficient
 
     Return the Pearson's correlation coefficient for two inputs. Pearson's
-    correlation coefficient *r* takes values between -1 and +1. It measures the
-    strength and direction of the linear relationship, where +1 means very
-    strong, positive linear relationship, -1 very strong, negative linear
-    relationship, and 0 no linear relationship.
+    correlation coefficient *r* takes values between -1 and +1. It measures
+    the strength and direction of a linear relationship.
 
     >>> x = [1, 2, 3, 4, 5, 6, 7, 8, 9]
     >>> y = [9, 8, 7, 6, 5, 4, 3, 2, 1]
@@ -1004,19 +1309,36 @@ def correlation(x, y, /):
     >>> correlation(x, y)
     -1.0
 
+    If *method* is "ranked", computes Spearman's rank correlation coefficient
+    for two inputs.  The data is replaced by ranks.  Ties are averaged
+    so that equal values receive the same rank.  The resulting coefficient
+    measures the strength of a monotonic relationship.
+
+    Spearman's rank correlation coefficient is appropriate for ordinal
+    data or for continuous data that doesn't meet the linear proportion
+    requirement for Pearson's correlation coefficient.
     """
     n = len(x)
     if len(y) != n:
         raise StatisticsError('correlation requires that both inputs have same number of data points')
     if n < 2:
         raise StatisticsError('correlation requires at least two data points')
-    xbar = fsum(x) / n
-    ybar = fsum(y) / n
-    sxy = fsum((xi - xbar) * (yi - ybar) for xi, yi in zip(x, y))
-    sxx = fsum((d := xi - xbar) * d for xi in x)
-    syy = fsum((d := yi - ybar) * d for yi in y)
+    if method not in {'linear', 'ranked'}:
+        raise ValueError(f'Unknown method: {method!r}')
+    if method == 'ranked':
+        start = (n - 1) / -2            # Center rankings around zero
+        x = _rank(x, start=start)
+        y = _rank(y, start=start)
+    else:
+        xbar = fsum(x) / n
+        ybar = fsum(y) / n
+        x = [xi - xbar for xi in x]
+        y = [yi - ybar for yi in y]
+    sxy = sumprod(x, y)
+    sxx = sumprod(x, x)
+    syy = sumprod(y, y)
     try:
-        return sxy / sqrt(sxx * syy)
+        return sxy / _sqrtprod(sxx, syy)
     except ZeroDivisionError:
         raise StatisticsError('at least one of the inputs is constant')
 
@@ -1046,7 +1368,7 @@ def linear_regression(x, y, /, *, proportional=False):
     >>> noise = NormalDist().samples(5, seed=42)
     >>> y = [3 * x[i] + 2 + noise[i] for i in range(5)]
     >>> linear_regression(x, y)  #doctest: +ELLIPSIS
-    LinearRegression(slope=3.09078914170..., intercept=1.75684970486...)
+    LinearRegression(slope=3.17495..., intercept=1.00925...)
 
     If *proportional* is true, the independent variable *x* and the
     dependent variable *y* are assumed to be directly proportional.
@@ -1059,7 +1381,7 @@ def linear_regression(x, y, /, *, proportional=False):
 
     >>> y = [3 * x[i] + noise[i] for i in range(5)]
     >>> linear_regression(x, y, proportional=True)  #doctest: +ELLIPSIS
-    LinearRegression(slope=3.02447542484..., intercept=0.0)
+    LinearRegression(slope=2.90475..., intercept=0.0)
 
     """
     n = len(x)
@@ -1067,14 +1389,13 @@ def linear_regression(x, y, /, *, proportional=False):
         raise StatisticsError('linear regression requires that both inputs have same number of data points')
     if n < 2:
         raise StatisticsError('linear regression requires at least two data points')
-    if proportional:
-        sxy = fsum(xi * yi for xi, yi in zip(x, y))
-        sxx = fsum(xi * xi for xi in x)
-    else:
+    if not proportional:
         xbar = fsum(x) / n
         ybar = fsum(y) / n
-        sxy = fsum((xi - xbar) * (yi - ybar) for xi, yi in zip(x, y))
-        sxx = fsum((d := xi - xbar) * d for xi in x)
+        x = [xi - xbar for xi in x]  # List because used three times below
+        y = (yi - ybar for yi in y)  # Generator because only used once below
+    sxy = sumprod(x, y) + 0.0        # Add zero to coerce result to a float
+    sxx = sumprod(x, x)
     try:
         slope = sxy / sxx   # equivalent to:  covariance(x, y) / variance(x)
     except ZeroDivisionError:
@@ -1191,9 +1512,11 @@ class NormalDist:
 
     def samples(self, n, *, seed=None):
         "Generate *n* samples for a given mean and standard deviation."
-        gauss = random.gauss if seed is None else random.Random(seed).gauss
-        mu, sigma = self._mu, self._sigma
-        return [gauss(mu, sigma) for i in range(n)]
+        rnd = random.random if seed is None else random.Random(seed).random
+        inv_cdf = _normal_dist_inv_cdf
+        mu = self._mu
+        sigma = self._sigma
+        return [inv_cdf(rnd(), mu, sigma) for _ in repeat(None, n)]
 
     def pdf(self, x):
         "Probability density function.  P(x <= X < x+dx) / dx"
@@ -1221,8 +1544,6 @@ class NormalDist:
         """
         if p <= 0.0 or p >= 1.0:
             raise StatisticsError('p must be in the range 0.0 < p < 1.0')
-        if self._sigma <= 0.0:
-            raise StatisticsError('cdf() not defined when sigma at or below zero')
         return _normal_dist_inv_cdf(p, self._mu, self._sigma)
 
     def quantiles(self, n=4):
@@ -1382,3 +1703,9 @@ class NormalDist:
 
     def __repr__(self):
         return f'{type(self).__name__}(mu={self._mu!r}, sigma={self._sigma!r})'
+
+    def __getstate__(self):
+        return self._mu, self._sigma
+
+    def __setstate__(self, state):
+        self._mu, self._sigma = state

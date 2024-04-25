@@ -1,28 +1,8 @@
 import functools
 import sys
 import types
-import warnings
 
 import unittest
-
-# Decorator used in the deprecation tests to reset the warning registry for
-# test isolation and reproducibility.
-def warningregistry(func):
-    def wrapper(*args, **kws):
-        missing = []
-        saved = getattr(warnings, '__warningregistry__', missing).copy()
-        try:
-            return func(*args, **kws)
-        finally:
-            if saved is missing:
-                try:
-                    del warnings.__warningregistry__
-                except AttributeError:
-                    pass
-            else:
-                warnings.__warningregistry__ = saved
-    return wrapper
-
 
 class Test_TestLoader(unittest.TestCase):
 
@@ -102,6 +82,22 @@ class Test_TestLoader(unittest.TestCase):
         self.assertIsInstance(suite, loader.suiteClass)
         self.assertEqual(list(suite), [Foo('runTest')])
 
+    # "Do not load any tests from `TestCase` class itself."
+    def test_loadTestsFromTestCase__from_TestCase(self):
+        loader = unittest.TestLoader()
+
+        suite = loader.loadTestsFromTestCase(unittest.TestCase)
+        self.assertIsInstance(suite, loader.suiteClass)
+        self.assertEqual(list(suite), [])
+
+    # "Do not load any tests from `FunctionTestCase` class."
+    def test_loadTestsFromTestCase__from_FunctionTestCase(self):
+        loader = unittest.TestLoader()
+
+        suite = loader.loadTestsFromTestCase(unittest.FunctionTestCase)
+        self.assertIsInstance(suite, loader.suiteClass)
+        self.assertEqual(list(suite), [])
+
     ################################################################
     ### /Tests for TestLoader.loadTestsFromTestCase
 
@@ -122,6 +118,19 @@ class Test_TestLoader(unittest.TestCase):
 
         expected = [loader.suiteClass([MyTestCase('test')])]
         self.assertEqual(list(suite), expected)
+
+    # "This test ensures that internal `TestCase` subclasses are not loaded"
+    def test_loadTestsFromModule__TestCase_subclass_internals(self):
+        # See https://github.com/python/cpython/issues/84867
+        m = types.ModuleType('m')
+        # Simulate imported names:
+        m.TestCase = unittest.TestCase
+        m.FunctionTestCase = unittest.FunctionTestCase
+
+        loader = unittest.TestLoader()
+        suite = loader.loadTestsFromModule(m)
+        self.assertIsInstance(suite, loader.suiteClass)
+        self.assertEqual(list(suite), [])
 
     # "This method searches `module` for classes derived from TestCase"
     #
@@ -174,9 +183,8 @@ class Test_TestLoader(unittest.TestCase):
         self.assertEqual(list(suite), reference)
 
 
-    # Check that loadTestsFromModule honors (or not) a module
+    # Check that loadTestsFromModule honors a module
     # with a load_tests function.
-    @warningregistry
     def test_loadTestsFromModule__load_tests(self):
         m = types.ModuleType('m')
         class MyTestCase(unittest.TestCase):
@@ -195,126 +203,13 @@ class Test_TestLoader(unittest.TestCase):
         suite = loader.loadTestsFromModule(m)
         self.assertIsInstance(suite, unittest.TestSuite)
         self.assertEqual(load_tests_args, [loader, suite, None])
-        # With Python 3.5, the undocumented and unofficial use_load_tests is
-        # ignored (and deprecated).
-        load_tests_args = []
-        with warnings.catch_warnings(record=False):
-            warnings.simplefilter('ignore')
-            suite = loader.loadTestsFromModule(m, use_load_tests=False)
-        self.assertEqual(load_tests_args, [loader, suite, None])
 
-    @warningregistry
-    def test_loadTestsFromModule__use_load_tests_deprecated_positional(self):
-        m = types.ModuleType('m')
-        class MyTestCase(unittest.TestCase):
-            def test(self):
-                pass
-        m.testcase_1 = MyTestCase
-
-        load_tests_args = []
-        def load_tests(loader, tests, pattern):
-            self.assertIsInstance(tests, unittest.TestSuite)
-            load_tests_args.extend((loader, tests, pattern))
-            return tests
-        m.load_tests = load_tests
-        # The method still works.
-        loader = unittest.TestLoader()
-        # use_load_tests=True as a positional argument.
-        with warnings.catch_warnings(record=True) as w:
-            warnings.simplefilter('always')
-            suite = loader.loadTestsFromModule(m, False)
-        self.assertIsInstance(suite, unittest.TestSuite)
-        # load_tests was still called because use_load_tests is deprecated
-        # and ignored.
-        self.assertEqual(load_tests_args, [loader, suite, None])
-        # We got a warning.
-        self.assertIs(w[-1].category, DeprecationWarning)
-        self.assertEqual(str(w[-1].message),
-                             'use_load_tests is deprecated and ignored')
-
-    @warningregistry
-    def test_loadTestsFromModule__use_load_tests_deprecated_keyword(self):
-        m = types.ModuleType('m')
-        class MyTestCase(unittest.TestCase):
-            def test(self):
-                pass
-        m.testcase_1 = MyTestCase
-
-        load_tests_args = []
-        def load_tests(loader, tests, pattern):
-            self.assertIsInstance(tests, unittest.TestSuite)
-            load_tests_args.extend((loader, tests, pattern))
-            return tests
-        m.load_tests = load_tests
-        # The method still works.
-        loader = unittest.TestLoader()
-        with warnings.catch_warnings(record=True) as w:
-            warnings.simplefilter('always')
-            suite = loader.loadTestsFromModule(m, use_load_tests=False)
-        self.assertIsInstance(suite, unittest.TestSuite)
-        # load_tests was still called because use_load_tests is deprecated
-        # and ignored.
-        self.assertEqual(load_tests_args, [loader, suite, None])
-        # We got a warning.
-        self.assertIs(w[-1].category, DeprecationWarning)
-        self.assertEqual(str(w[-1].message),
-                             'use_load_tests is deprecated and ignored')
-
-    @warningregistry
-    def test_loadTestsFromModule__too_many_positional_args(self):
-        m = types.ModuleType('m')
-        class MyTestCase(unittest.TestCase):
-            def test(self):
-                pass
-        m.testcase_1 = MyTestCase
-
-        load_tests_args = []
-        def load_tests(loader, tests, pattern):
-            self.assertIsInstance(tests, unittest.TestSuite)
-            load_tests_args.extend((loader, tests, pattern))
-            return tests
-        m.load_tests = load_tests
-        loader = unittest.TestLoader()
-        with self.assertRaises(TypeError) as cm, \
-             warnings.catch_warnings(record=True) as w:
-            warnings.simplefilter('always')
-            loader.loadTestsFromModule(m, False, 'testme.*')
-        # We still got the deprecation warning.
-        self.assertIs(w[-1].category, DeprecationWarning)
-        self.assertEqual(str(w[-1].message),
-                                'use_load_tests is deprecated and ignored')
-        # We also got a TypeError for too many positional arguments.
-        self.assertEqual(type(cm.exception), TypeError)
-        self.assertEqual(
-            str(cm.exception),
-            'loadTestsFromModule() takes 1 positional argument but 3 were given')
-
-    @warningregistry
-    def test_loadTestsFromModule__use_load_tests_other_bad_keyword(self):
-        m = types.ModuleType('m')
-        class MyTestCase(unittest.TestCase):
-            def test(self):
-                pass
-        m.testcase_1 = MyTestCase
-
-        load_tests_args = []
-        def load_tests(loader, tests, pattern):
-            self.assertIsInstance(tests, unittest.TestSuite)
-            load_tests_args.extend((loader, tests, pattern))
-            return tests
-        m.load_tests = load_tests
-        loader = unittest.TestLoader()
-        with warnings.catch_warnings():
-            warnings.simplefilter('ignore')
-            with self.assertRaises(TypeError) as cm:
-                loader.loadTestsFromModule(
-                    m, use_load_tests=False, very_bad=True, worse=False)
-        self.assertEqual(type(cm.exception), TypeError)
-        # The error message names the first bad argument alphabetically,
-        # however use_load_tests (which sorts first) is ignored.
-        self.assertEqual(
-            str(cm.exception),
-            "loadTestsFromModule() got an unexpected keyword argument 'very_bad'")
+        # In Python 3.12, the undocumented and unofficial use_load_tests has
+        # been removed.
+        with self.assertRaises(TypeError):
+            loader.loadTestsFromModule(m, False)
+        with self.assertRaises(TypeError):
+            loader.loadTestsFromModule(m, use_load_tests=False)
 
     def test_loadTestsFromModule__pattern(self):
         m = types.ModuleType('m')
@@ -1603,39 +1498,6 @@ class TestObsoleteFunctions(unittest.TestCase):
     @staticmethod
     def reverse_three_way_cmp(a, b):
         return unittest.util.three_way_cmp(b, a)
-
-    def test_getTestCaseNames(self):
-        with self.assertWarns(DeprecationWarning) as w:
-            tests = unittest.getTestCaseNames(self.MyTestCase,
-                prefix='check', sortUsing=self.reverse_three_way_cmp,
-                testNamePatterns=None)
-        self.assertEqual(w.filename, __file__)
-        self.assertEqual(tests, ['check_2', 'check_1'])
-
-    def test_makeSuite(self):
-        with self.assertWarns(DeprecationWarning) as w:
-            suite = unittest.makeSuite(self.MyTestCase,
-                    prefix='check', sortUsing=self.reverse_three_way_cmp,
-                    suiteClass=self.MyTestSuite)
-        self.assertEqual(w.filename, __file__)
-        self.assertIsInstance(suite, self.MyTestSuite)
-        expected = self.MyTestSuite([self.MyTestCase('check_2'),
-                                     self.MyTestCase('check_1')])
-        self.assertEqual(suite, expected)
-
-    def test_findTestCases(self):
-        m = types.ModuleType('m')
-        m.testcase_1 = self.MyTestCase
-
-        with self.assertWarns(DeprecationWarning) as w:
-            suite = unittest.findTestCases(m,
-                prefix='check', sortUsing=self.reverse_three_way_cmp,
-                suiteClass=self.MyTestSuite)
-        self.assertEqual(w.filename, __file__)
-        self.assertIsInstance(suite, self.MyTestSuite)
-        expected = [self.MyTestSuite([self.MyTestCase('check_2'),
-                                      self.MyTestCase('check_1')])]
-        self.assertEqual(list(suite), expected)
 
 
 if __name__ == "__main__":

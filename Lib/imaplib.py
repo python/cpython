@@ -1285,16 +1285,12 @@ if HAVE_SSL:
 
         """IMAP4 client class over SSL connection
 
-        Instantiate with: IMAP4_SSL([host[, port[, keyfile[, certfile[, ssl_context[, timeout=None]]]]]])
+        Instantiate with: IMAP4_SSL([host[, port[, ssl_context[, timeout=None]]]])
 
                 host - host's name (default: localhost);
                 port - port number (default: standard IMAP4 SSL port);
-                keyfile - PEM formatted file that contains your private key (default: None);
-                certfile - PEM formatted certificate chain file (default: None);
                 ssl_context - a SSLContext object that contains your certificate chain
                               and private key (default: None)
-                Note: if ssl_context is provided, then parameters keyfile or
-                certfile should not be set otherwise ValueError is raised.
                 timeout - socket timeout (default: None) If timeout is not given or is None,
                           the global default socket timeout is used
 
@@ -1302,23 +1298,10 @@ if HAVE_SSL:
         """
 
 
-        def __init__(self, host='', port=IMAP4_SSL_PORT, keyfile=None,
-                     certfile=None, ssl_context=None, timeout=None):
-            if ssl_context is not None and keyfile is not None:
-                raise ValueError("ssl_context and keyfile arguments are mutually "
-                                 "exclusive")
-            if ssl_context is not None and certfile is not None:
-                raise ValueError("ssl_context and certfile arguments are mutually "
-                                 "exclusive")
-            if keyfile is not None or certfile is not None:
-                import warnings
-                warnings.warn("keyfile and certfile are deprecated, use a "
-                              "custom ssl_context instead", DeprecationWarning, 2)
-            self.keyfile = keyfile
-            self.certfile = certfile
+        def __init__(self, host='', port=IMAP4_SSL_PORT,
+                     *, ssl_context=None, timeout=None):
             if ssl_context is None:
-                ssl_context = ssl._create_stdlib_context(certfile=certfile,
-                                                         keyfile=keyfile)
+                ssl_context = ssl._create_stdlib_context()
             self.ssl_context = ssl_context
             IMAP4.__init__(self, host, port, timeout)
 

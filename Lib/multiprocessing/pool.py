@@ -200,7 +200,7 @@ class Pool(object):
         self._initargs = initargs
 
         if processes is None:
-            processes = os.cpu_count() or 1
+            processes = os.process_cpu_count() or 1
         if processes < 1:
             raise ValueError("Number of processes must be at least 1")
         if maxtasksperchild is not None:
@@ -696,7 +696,7 @@ class Pool(object):
 
         if (not result_handler.is_alive()) and (len(cache) != 0):
             raise AssertionError(
-                "Cannot have cache with result_hander not alive")
+                "Cannot have cache with result_handler not alive")
 
         result_handler._state = TERMINATE
         change_notifier.put(None)

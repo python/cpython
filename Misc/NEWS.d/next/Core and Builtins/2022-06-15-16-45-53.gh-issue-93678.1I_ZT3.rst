@@ -1,1 +1,0 @@
-Refactor compiler optimisation code so that it no longer needs the ``struct assembler`` and ``struct compiler`` passed around. Instead, each function takes the CFG and other data that it actually needs. This will make it possible to test this code directly.

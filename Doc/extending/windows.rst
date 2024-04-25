@@ -34,10 +34,10 @@ A Cookbook Approach
 ===================
 
 There are two approaches to building extension modules on Windows, just as there
-are on Unix: use the :mod:`distutils` package to control the build process, or
-do things manually.  The distutils approach works well for most extensions;
-documentation on using :mod:`distutils` to build and package extension modules
-is available in :ref:`distutils-index`.  If you find you really need to do
+are on Unix: use the ``setuptools`` package to control the build process, or
+do things manually.  The setuptools approach works well for most extensions;
+documentation on using ``setuptools`` to build and package extension modules
+is available in :ref:`setuptools-index`.  If you find you really need to do
 things manually, it may be instructive to study the project file for the
 :source:`winsound <PCbuild/winsound.vcxproj>` standard library module.
 
@@ -132,4 +132,4 @@ modules (including Python) to be able to see your identifiers, you have to say
 Developer Studio will throw in a lot of import libraries that you do not really
 need, adding about 100K to your executable.  To get rid of them, use the Project
 Settings dialog, Link tab, to specify *ignore default libraries*.  Add the
-correct :file:`msvcrtxx.lib` to the list of libraries.
+correct :file:`msvcrt{xx}.lib` to the list of libraries.

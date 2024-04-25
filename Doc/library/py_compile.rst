@@ -35,8 +35,9 @@ byte-code cache files in the directory containing the source code.
    in ``.pyc``.
    For example, if *file* is ``/foo/bar/baz.py`` *cfile* will default to
    ``/foo/bar/__pycache__/baz.cpython-32.pyc`` for Python 3.2.  If *dfile* is
-   specified, it is used as the name of the source file in error messages
-   instead of *file*.  If *doraise* is true, a :exc:`PyCompileError` is raised
+   specified, it is used instead of *file* as the name of the source file from
+   which source lines are obtained for display in exception tracebacks.
+   If *doraise* is true, a :exc:`PyCompileError` is raised
    when an error is encountered while compiling *file*. If *doraise* is false
    (the default), an error string is written to ``sys.stderr``, but no exception
    is raised.  This function returns the path to byte-compiled file, i.e.
@@ -95,7 +96,7 @@ byte-code cache files in the directory containing the source code.
 
 .. class:: PycInvalidationMode
 
-   A enumeration of possible methods the interpreter can use to determine
+   An enumeration of possible methods the interpreter can use to determine
    whether a bytecode file is up to date with a source file. The ``.pyc`` file
    indicates the desired invalidation mode in its header. See
    :ref:`pyc-invalidation` for more information on how Python invalidates
@@ -124,6 +125,7 @@ byte-code cache files in the directory containing the source code.
       This option is useful when the ``.pycs`` are kept up to date by some
       system external to Python like a build system.
 
+.. _py_compile-cli:
 
 Command-Line Interface
 ----------------------
@@ -137,13 +139,13 @@ not be compiled.
 
 .. program:: python -m py_compile
 
-.. cmdoption:: <file> ... <fileN>
-               -
+.. option:: <file> ... <fileN>
+            -
 
    Positional arguments are files to compile.  If ``-`` is the only
    parameter, the list of files is taken from standard input.
 
-.. cmdoption:: -q, --quiet
+.. option:: -q, --quiet
 
    Suppress errors output.
 
