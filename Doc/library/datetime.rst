@@ -1735,7 +1735,7 @@ day, and subject to adjustment via a :class:`tzinfo` object.
    * ``fold in [0, 1]``.
 
    If an argument outside those ranges is given, :exc:`ValueError` is raised. All
-   default to 0 except *tzinfo*, which defaults to :const:`None`.
+   default to 0 except *tzinfo*, which defaults to ``None``.
 
 Class attributes:
 
@@ -2487,7 +2487,7 @@ requires, and these work on all platforms with a standard C implementation.
 |           |                                || Di 16 Aug 21:30:00    |       |
 |           |                                |  1988 (de_DE)          |       |
 +-----------+--------------------------------+------------------------+-------+
-| ``%x``    | Locale's appropriate date      || 08/16/88 (None);      | \(1)  |
+| ``%x``    | Locale's appropriate date      || 08/16/88 (``None``);  | \(1)  |
 |           | representation.                || 08/16/1988 (en_US);   |       |
 |           |                                || 16.08.1988 (de_DE)    |       |
 +-----------+--------------------------------+------------------------+-------+
