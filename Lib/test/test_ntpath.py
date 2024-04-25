@@ -836,8 +836,12 @@ class TestNtpath(NtpathTestCase):
             tester('ntpath.abspath("")', cwd_dir)
             tester('ntpath.abspath(" ")', cwd_dir + "\\ ")
             tester('ntpath.abspath("?")', cwd_dir + "\\?")
-            self.assertEqual(nt._path_abspath("./con"), cwd_dir + "\\con")
-            self.assertEqual(nt._path_abspath("./Z:spam"), cwd_dir + "\\Z:spam")
+            # bpo-45354: Windows 11 changed MS-DOS device name handling
+            if sys.getwindowsversion()[:3] < (10, 0, 22000):
+                tester('ntpath.abspath("./con")', "\\\\.\\con")
+            else:
+                tester('ntpath.abspath("./con")', cwd_dir + "\\con")
+            tester('ntpath.abspath("./Z:spam")', cwd_dir + "\\Z:spam")
             drive, _ = ntpath.splitdrive(cwd_dir)
             tester('ntpath.abspath("/abc/")', drive + "\\abc")
 
