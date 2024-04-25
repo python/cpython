@@ -679,6 +679,11 @@ static int
 _push_pending_call(struct _pending_calls *pending,
                    _Py_pending_call_func func, void *arg, int flags)
 {
+    if (pending->npending == pending->max) {
+        return _Py_ADD_PENDING_FULL;
+    }
+    assert(pending->npending < pending->max);
+
     int i = pending->last;
     int j = (i + 1) % PENDINGCALLSARRAYSIZE;
     if (j == pending->first) {
