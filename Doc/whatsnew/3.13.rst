@@ -791,6 +791,12 @@ tkinter
   :class:`tkinter.ttk.Style`.
   (Contributed by Serhiy Storchaka in :gh:`68166`.)
 
+* Add the :class:`!PhotoImage` methods :meth:`!read` to read
+  an image from a file and :meth:`!data` to get the image data.
+  Add *background* and *grayscale* parameters to :class:`!PhotoImage` method
+  :meth:`!write`.
+  (Contributed by Serhiy Storchaka in :gh:`118271`.)
+
 traceback
 ---------
 
