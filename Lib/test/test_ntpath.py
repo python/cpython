@@ -836,6 +836,7 @@ class TestNtpath(NtpathTestCase):
             tester('ntpath.abspath("")', cwd_dir)
             tester('ntpath.abspath(" ")', cwd_dir + "\\ ")
             tester('ntpath.abspath("?")', cwd_dir + "\\?")
+            tester('ntpath.abspath("con")', "\\\\.\\con")
             # bpo-45354: Windows 11 changed MS-DOS device name handling
             if sys.getwindowsversion()[:3] < (10, 0, 22000):
                 tester('ntpath.abspath("./con")', "\\\\.\\con")
