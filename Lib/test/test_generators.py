@@ -549,7 +549,7 @@ class GeneratorCloseTest(unittest.TestCase):
         next(g)
         del f
         g.close()
-        gc.collect()
+        support.gc_collect()
         self.assertIsNone(f_wr())
 
 
