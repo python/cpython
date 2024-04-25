@@ -141,7 +141,7 @@ class _Target(typing.Generic[_S, _R]):
             "-std=c11",
             *self.args,
         ]
-        if self.ghccc:t
+        if self.ghccc:
             # So, this is mostly a giant hack (but it makes the code much
             # smaller and faster, so it's worth it). We need to use the GHC
             # calling convention, but Clang doesn't support it. So, we *first*
