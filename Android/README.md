@@ -71,6 +71,7 @@ To run the Python test suite on Android:
 
 * Follow the instructions in the previous section to build all supported
   architectures.
+* Run `./android.py setup-testbed`.
 * Open the `testbed` directory in Android Studio.
 * Connect a device, or start an emulator, and select it from the drop-down list
   in the toolbar.
