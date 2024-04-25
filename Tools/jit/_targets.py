@@ -150,7 +150,11 @@ class _Target(typing.Generic[_S, _R]):
             # Once we have access to Clang 19, we can get rid of this and use
             # __attribute__((preserve_none)) directly in the C code instead:
             ll = tempdir / f"{opname}.ll"
-            args_ll = args + ["-S", "-emit-llvm", "-o", f"{ll}", f"{c}"]
+            args_ll = args + [
+                # -fomit-frame-pointer is necessary because the GHC calling
+                # convention uses RBP to pass arguments:
+                "-S", "-emit-llvm", "-fomit-frame-pointer", "-o", f"{ll}", f"{c}"
+            ]
             await _llvm.run("clang", args_ll, echo=self.verbose)
             ir = ll.read_text()
             # This handles declarations, definitions, and calls to named symbols
