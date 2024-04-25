@@ -22,9 +22,6 @@ race:_PyImport_AcquireLock
 race:_PyImport_ReleaseLock
 race:_PyInterpreterState_SetNotRunningMain
 race:_PyInterpreterState_IsRunningMain
-race:_PyObject_GC_IS_SHARED
-race:_PyObject_GC_SET_SHARED
-race:_PyObject_GC_TRACK
 race:_PyType_HasFeature
 race:assign_version_tag
 race:compare_unicode_unicode

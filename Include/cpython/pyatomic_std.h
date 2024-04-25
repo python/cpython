@@ -366,7 +366,7 @@ _Py_atomic_and_uintptr(uintptr_t *obj, uintptr_t value)
 }
 
 
-// --- _Py_atomic_and --------------------------------------------------------
+// --- _Py_atomic_and_relaxed ------------------------------------------------
 
 static inline uint8_t
 _Py_atomic_and_uint8_relaxed(uint8_t *obj, uint8_t value)
