@@ -406,6 +406,8 @@ _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction *trace, size
     unsigned char *code = memory;
     unsigned char *data = memory + code_size;
     {
+        // Compile the trampoline, which handles changing the calling convention
+        // (on platforms where it's not necessary, the trampoline is empty):
         const StencilGroup *group = &trampoline;
         // Think of patches as a dictionary mapping HoleValue to uintptr_t:
         uintptr_t patches[] = GET_PATCHES();

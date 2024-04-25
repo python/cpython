@@ -86,6 +86,9 @@ class _Target(typing.Generic[_S, _R]):
         sections: list[dict[typing.Literal["Section"], _S]] = json.loads(output)
         for wrapped_section in sections:
             self._handle_section(wrapped_section["Section"], group)
+        # The trampoline's entry point is just named "_ENTRY", since on some
+        # platforms we later assume that any function starting with "_JIT_" uses
+        # the GHC calling convention:
         entry_symbol = "_JIT_ENTRY" if "_JIT_ENTRY" in group.symbols else "_ENTRY"
         assert group.symbols[entry_symbol] == (_stencils.HoleValue.CODE, 0)
         if group.data.body:
@@ -105,6 +108,7 @@ class _Target(typing.Generic[_S, _R]):
     async def _compile(
         self, opname: str, c: pathlib.Path, tempdir: pathlib.Path
     ) -> _stencils.StencilGroup:
+        # "Compile" the trampoline to an empty stencil group if it's not needed:
         if opname == "trampoline" and not self.ghccc:
             return _stencils.StencilGroup()
         o = tempdir / f"{opname}.o"
@@ -137,20 +141,26 @@ class _Target(typing.Generic[_S, _R]):
             "-std=c11",
             *self.args,
         ]
-        if self.ghccc:
+        if self.ghccc:t
+            # So, this is mostly a giant hack (but it makes the code much
+            # smaller and faster, so it's worth it). We need to use the GHC
+            # calling convention, but Clang doesn't support it. So, we *first*
+            # compile the code to LLVM IR, perform some text replacements on the
+            # IR to change the calling convention(!), and then compile *that*.
+            # Once we have access to Clang 19, we can get rid of this and use
+            # __attribute__((preserve_none)) directly in the C code instead:
             ll = tempdir / f"{opname}.ll"
             args_ll = args + ["-S", "-emit-llvm", "-o", f"{ll}", f"{c}"]
             await _llvm.run("clang", args_ll, echo=self.verbose)
             ir = ll.read_text()
-            # Hack! Use __attribute__((preserve_none)) once we have Clang 19:
+            # This handles declarations, definitions, and calls to named symbols
+            # starting with "_JIT_":
             ir = re.sub(r"((noalias |nonnull )*ptr @_JIT_\w+\()", r"ghccc \1", ir)
-            for line in ir.splitlines():
-                if re.match(r"ptr @_JIT_\w+\(", line):
-                    assert re.match(r"ghccc (\w+ )*ptr @_JIT_\w+\(", line)
-            ir = re.sub(r"musttail call ([^g])", r"musttail call ghccc \1", ir)
-            for line in ir.splitlines():
-                if re.match(r"musttail", line):
-                    assert re.match(r"musttail call ghccc", line)
+            # This handles calls to anonymous callees, since anything with
+            # "musttail" needs to use the same calling convention:
+            ir = ir.replace("musttail call", "musttail call ghccc")
+            # Sometimes *both* replacements happen at the same site, so fix it:
+            ir = ir.replace("ghccc ghccc", "ghccc")
             ll.write_text(ir)
             args_o = args + ["-Wno-unused-command-line-argument", "-o", f"{o}", f"{ll}"]
         else:
