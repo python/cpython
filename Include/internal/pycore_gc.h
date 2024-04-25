@@ -48,10 +48,32 @@ static inline PyObject* _Py_FROM_GC(PyGC_Head *gc) {
 #  define _PyGC_BITS_DEFERRED       (64)    // Use deferred reference counting
 #endif
 
+#ifdef Py_GIL_DISABLED
+
+static inline void
+_PyObject_SET_GC_BITS(PyObject *op, uint8_t bits)
+{
+    _Py_atomic_or_uint8_relaxed(&op->ob_gc_bits, bits);
+}
+
+static inline int
+_PyObject_HAS_GC_BITS(PyObject *op, uint8_t bits)
+{
+    return (_Py_atomic_load_uint8_relaxed(&op->ob_gc_bits) & bits) != 0;
+}
+
+static inline void
+_PyObject_CLEAR_GC_BITS(PyObject *op, uint8_t bits)
+{
+    _Py_atomic_and_uint8_relaxed(&op->ob_gc_bits, ~bits);
+}
+
+#endif
+
 /* True if the object is currently tracked by the GC. */
 static inline int _PyObject_GC_IS_TRACKED(PyObject *op) {
 #ifdef Py_GIL_DISABLED
-    return (op->ob_gc_bits & _PyGC_BITS_TRACKED) != 0;
+    return _PyObject_HAS_GC_BITS(op, _PyGC_BITS_TRACKED);
 #else
     PyGC_Head *gc = _Py_AS_GC(op);
     return (gc->_gc_next != 0);
@@ -80,12 +102,12 @@ static inline int _PyObject_GC_MAY_BE_TRACKED(PyObject *obj) {
  * for calling _PyMem_FreeDelayed on the referenced
  * memory. */
 static inline int _PyObject_GC_IS_SHARED(PyObject *op) {
-    return (op->ob_gc_bits & _PyGC_BITS_SHARED) != 0;
+    return _PyObject_HAS_GC_BITS(op, _PyGC_BITS_SHARED);
 }
 #define _PyObject_GC_IS_SHARED(op) _PyObject_GC_IS_SHARED(_Py_CAST(PyObject*, op))
 
 static inline void _PyObject_GC_SET_SHARED(PyObject *op) {
-    op->ob_gc_bits |= _PyGC_BITS_SHARED;
+    _PyObject_SET_GC_BITS(op, _PyGC_BITS_SHARED);
 }
 #define _PyObject_GC_SET_SHARED(op) _PyObject_GC_SET_SHARED(_Py_CAST(PyObject*, op))
 
@@ -95,13 +117,13 @@ static inline void _PyObject_GC_SET_SHARED(PyObject *op) {
  * Objects with this bit that are GC objects will automatically
  * delay-freed by PyObject_GC_Del. */
 static inline int _PyObject_GC_IS_SHARED_INLINE(PyObject *op) {
-    return (op->ob_gc_bits & _PyGC_BITS_SHARED_INLINE) != 0;
+    return _PyObject_HAS_GC_BITS(op, _PyGC_BITS_SHARED_INLINE);
 }
 #define _PyObject_GC_IS_SHARED_INLINE(op) \
     _PyObject_GC_IS_SHARED_INLINE(_Py_CAST(PyObject*, op))
 
 static inline void _PyObject_GC_SET_SHARED_INLINE(PyObject *op) {
-    op->ob_gc_bits |= _PyGC_BITS_SHARED_INLINE;
+    _PyObject_SET_GC_BITS(op, _PyGC_BITS_SHARED_INLINE);
 }
 #define _PyObject_GC_SET_SHARED_INLINE(op) \
     _PyObject_GC_SET_SHARED_INLINE(_Py_CAST(PyObject*, op))
@@ -178,7 +200,7 @@ static inline void _PyGCHead_SET_PREV(PyGC_Head *gc, PyGC_Head *prev) {
 
 static inline int _PyGC_FINALIZED(PyObject *op) {
 #ifdef Py_GIL_DISABLED
-    return (op->ob_gc_bits & _PyGC_BITS_FINALIZED) != 0;
+    return _PyObject_HAS_GC_BITS(op, _PyGC_BITS_FINALIZED);
 #else
     PyGC_Head *gc = _Py_AS_GC(op);
     return ((gc->_gc_prev & _PyGC_PREV_MASK_FINALIZED) != 0);
@@ -186,7 +208,7 @@ static inline int _PyGC_FINALIZED(PyObject *op) {
 }
 static inline void _PyGC_SET_FINALIZED(PyObject *op) {
 #ifdef Py_GIL_DISABLED
-    op->ob_gc_bits |= _PyGC_BITS_FINALIZED;
+    _PyObject_SET_GC_BITS(op, _PyGC_BITS_FINALIZED);
 #else
     PyGC_Head *gc = _Py_AS_GC(op);
     gc->_gc_prev |= _PyGC_PREV_MASK_FINALIZED;
@@ -194,7 +216,7 @@ static inline void _PyGC_SET_FINALIZED(PyObject *op) {
 }
 static inline void _PyGC_CLEAR_FINALIZED(PyObject *op) {
 #ifdef Py_GIL_DISABLED
-    op->ob_gc_bits &= ~_PyGC_BITS_FINALIZED;
+    _PyObject_CLEAR_GC_BITS(op, _PyGC_BITS_FINALIZED);
 #else
     PyGC_Head *gc = _Py_AS_GC(op);
     gc->_gc_prev &= ~_PyGC_PREV_MASK_FINALIZED;

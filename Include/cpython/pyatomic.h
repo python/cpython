@@ -250,6 +250,14 @@ static inline uintptr_t
 _Py_atomic_and_uintptr(uintptr_t *obj, uintptr_t value);
 
 
+// --- _Py_atomic_and_relaxed ------------------------------------------------
+// Performs `*obj &= value` atomically and returns the previous value of `*obj`
+// (relaxed consistency).
+
+static inline uint8_t
+_Py_atomic_and_uint8_relaxed(uint8_t *obj, uint8_t value);
+
+
 // --- _Py_atomic_or ---------------------------------------------------------
 // Performs `*obj |= value` atomically and returns the previous value of `*obj`.
 
@@ -268,6 +276,13 @@ _Py_atomic_or_uint64(uint64_t *obj, uint64_t value);
 static inline uintptr_t
 _Py_atomic_or_uintptr(uintptr_t *obj, uintptr_t value);
 
+
+// --- _Py_atomic_or_relaxed -------------------------------------------------
+// Performs `*obj |= value` atomically and returns the previous value of `*obj`
+// (relaxed consistency).
+
+static inline uint8_t
+_Py_atomic_or_uint8_relaxed(uint8_t *obj, uint8_t value);
 
 // --- _Py_atomic_load -------------------------------------------------------
 // Atomically loads `*obj` (sequential consistency)

@@ -218,6 +218,13 @@ _Py_atomic_and_uintptr(uintptr_t *obj, uintptr_t value)
 { return __atomic_fetch_and(obj, value, __ATOMIC_SEQ_CST); }
 
 
+// --- _Py_atomic_and_relaxed ------------------------------------------------
+
+static inline uint8_t
+_Py_atomic_and_uint8_relaxed(uint8_t *obj, uint8_t value)
+{ return __atomic_fetch_and(obj, value, __ATOMIC_RELAXED); }
+
+
 // --- _Py_atomic_or ---------------------------------------------------------
 
 static inline uint8_t
@@ -239,6 +246,15 @@ _Py_atomic_or_uint64(uint64_t *obj, uint64_t value)
 static inline uintptr_t
 _Py_atomic_or_uintptr(uintptr_t *obj, uintptr_t value)
 { return __atomic_fetch_or(obj, value, __ATOMIC_SEQ_CST); }
+
+
+// --- _Py_atomic_or_relaxed -------------------------------------------------
+
+static inline uint8_t
+_Py_atomic_or_uint8_relaxed(uint8_t *obj, uint8_t value)
+{
+    return __atomic_fetch_or(obj, value, __ATOMIC_RELAXED);
+}
 
 
 // --- _Py_atomic_load -------------------------------------------------------
