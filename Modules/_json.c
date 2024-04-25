@@ -1296,7 +1296,7 @@ encoder_call(PyEncoderObject *self, PyObject *args, PyObject *kwds)
         }
     }
     if (encoder_listencode_obj(self, &writer, obj, indent_level,
-                                                    current_newline_indent)) {
+                               current_newline_indent)) {
         _PyUnicodeWriter_Dealloc(&writer);
         return NULL;
     }
