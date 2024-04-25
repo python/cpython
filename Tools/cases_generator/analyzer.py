@@ -359,7 +359,7 @@ NON_ESCAPING_FUNCTIONS = (
     "Py_XDECREF_STACKREF",
     "Py_INCREF_STACKREF",
     "Py_XINCREF_TAGGED",
-    "Py_NewRef_StackRef",    
+    "Py_NewRef_StackRef",
     "Py_INCREF",
     "_PyManagedDictPointer_IsValues",
     "_PyObject_GetManagedDict",
