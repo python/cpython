@@ -5490,6 +5490,11 @@ os__path_abspath_impl(PyObject *module, PyObject *path)
         result = posix_getcwd(0);
         goto exit;
     }
+    if (wcslen(abs) != abs_len) {
+        PyErr_Format(PyExc_ValueError,
+                     "_path_abspath: embedded null character in path");
+        goto exit;
+    }
     if (_PyOS_getfullpathname(abs, &abs_buf) < 0) {
         result = win32_error_object("GetFullPathNameW", path);
         goto exit;
