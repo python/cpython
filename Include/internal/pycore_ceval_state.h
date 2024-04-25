@@ -18,7 +18,7 @@ struct _pending_calls {
     int busy;
     PyMutex mutex;
     /* Request for running pending calls. */
-    int32_t calls_to_do;
+    int32_t npending;
 #define NPENDINGCALLS 32
     struct _pending_call {
         _Py_pending_call_func func;

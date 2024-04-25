@@ -84,15 +84,15 @@ update_eval_breaker_for_thread(PyInterpreterState *interp, PyThreadState *tstate
     return;
 #endif
 
-    int32_t calls_to_do = _Py_atomic_load_int32_relaxed(
-        &interp->ceval.pending.calls_to_do);
-    if (calls_to_do) {
+    int32_t npending = _Py_atomic_load_int32_relaxed(
+        &interp->ceval.pending.npending);
+    if (npending) {
         _Py_set_eval_breaker_bit(tstate, _PY_CALLS_TO_DO_BIT);
     }
     else if (_Py_IsMainThread()) {
-        calls_to_do = _Py_atomic_load_int32_relaxed(
-            &_PyRuntime.ceval.pending_mainthread.calls_to_do);
-        if (calls_to_do) {
+        npending = _Py_atomic_load_int32_relaxed(
+            &_PyRuntime.ceval.pending_mainthread.npending);
+        if (npending) {
             _Py_set_eval_breaker_bit(tstate, _PY_CALLS_TO_DO_BIT);
         }
     }
@@ -688,8 +688,8 @@ _push_pending_call(struct _pending_calls *pending,
     pending->calls[i].arg = arg;
     pending->calls[i].flags = flags;
     pending->last = j;
-    assert(pending->calls_to_do < NPENDINGCALLS);
-    _Py_atomic_add_int32(&pending->calls_to_do, 1);
+    assert(pending->npending < NPENDINGCALLS);
+    _Py_atomic_add_int32(&pending->npending, 1);
     return 0;
 }
 
@@ -718,8 +718,8 @@ _pop_pending_call(struct _pending_calls *pending,
     if (i >= 0) {
         pending->calls[i] = (struct _pending_call){0};
         pending->first = (i + 1) % NPENDINGCALLS;
-        assert(pending->calls_to_do > 0);
-        _Py_atomic_add_int32(&pending->calls_to_do, -1);
+        assert(pending->npending > 0);
+        _Py_atomic_add_int32(&pending->npending, -1);
     }
 }
 
@@ -934,9 +934,9 @@ _Py_FinishPendingCalls(PyThreadState *tstate)
             _PyErr_Print(tstate);
         }
 
-        npending = _Py_atomic_load_int32_relaxed(&pending->calls_to_do);
+        npending = _Py_atomic_load_int32_relaxed(&pending->npending);
         if (pending_main != NULL) {
-            npending += _Py_atomic_load_int32_relaxed(&pending_main->calls_to_do);
+            npending += _Py_atomic_load_int32_relaxed(&pending_main->npending);
         }
     } while (npending > 0);
 }
