@@ -705,7 +705,9 @@ _PyGC_Init(PyInterpreterState *interp)
     GCState *gcstate = &interp->gc;
 
     if (_Py_IsMainInterpreter(interp)) {
-        gcstate->immortalize.enable_on_thread = 1;
+        // gh-117783: immortalize objects that would use deferred refcounting
+        // once the first non-main thread is created.
+        gcstate->immortalize.enable_on_thread_created = 1;
     }
 
     gcstate->garbage = PyList_New(0);

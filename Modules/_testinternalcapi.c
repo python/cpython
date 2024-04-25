@@ -1942,7 +1942,7 @@ set_immortalize_deferred(PyObject *self, PyObject *value)
 #ifdef Py_GIL_DISABLED
     PyInterpreterState *interp = PyInterpreterState_Get();
     int old_enabled = interp->gc.immortalize.enabled;
-    int old_enabled_on_thread = interp->gc.immortalize.enable_on_thread;
+    int old_enabled_on_thread = interp->gc.immortalize.enable_on_thread_created;
     int enabled_on_thread = 0;
     if (!PyArg_ParseTuple(value, "i|i",
                           &interp->gc.immortalize.enabled,
@@ -1950,7 +1950,7 @@ set_immortalize_deferred(PyObject *self, PyObject *value)
     {
         return NULL;
     }
-    interp->gc.immortalize.enable_on_thread = enabled_on_thread;
+    interp->gc.immortalize.enable_on_thread_created = enabled_on_thread;
     return Py_BuildValue("ii", old_enabled, old_enabled_on_thread);
 #else
     return Py_BuildValue("OO", Py_False, Py_False);

@@ -322,7 +322,7 @@ struct _gc_runtime_state {
         int enabled;
 
         /* Set enabled=1 when the first background thread is created. */
-        int enable_on_thread;
+        int enable_on_thread_created;
     } immortalize;
 #endif
 };
