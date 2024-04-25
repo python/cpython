@@ -2727,3 +2727,12 @@ OpenSSL
 * Windows builds and macOS installers from python.org now use OpenSSL 3.0.
 
 .. _libb2: https://www.blake2.net/
+
+Notable changes in 3.11.10
+==========================
+
+ipaddress
+---------
+
+* Fixed ``is_global`` and ``is_private`` behavior in ``IPv4Address``,
+  ``IPv6Address``, ``IPv4Network`` and ``IPv6Network``.
