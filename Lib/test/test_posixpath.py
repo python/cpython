@@ -660,6 +660,7 @@ class PosixPathTest(unittest.TestCase):
             safe_rmdir(ABSTFN + "/k")
             safe_rmdir(ABSTFN)
 
+    @skip_if_ABSTFN_contains_backslash
     def test_realpath_strict_nondir(self):
         try:
             with open(ABSTFN, 'w') as f:
