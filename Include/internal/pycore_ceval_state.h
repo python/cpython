@@ -88,42 +88,6 @@ struct _ceval_runtime_state {
     PyMutex sys_trace_profile_mutex;
 };
 
-#define _PyEval_RUNTIME_PENDING_FREELIST_INIT(ceval) \
-    { \
-        { .next = &(ceval)._pending_preallocated[1] }, \
-        { .next = &(ceval)._pending_preallocated[2] }, \
-        { .next = &(ceval)._pending_preallocated[3] }, \
-        { .next = &(ceval)._pending_preallocated[4] }, \
-        { .next = &(ceval)._pending_preallocated[5] }, \
-        { .next = &(ceval)._pending_preallocated[6] }, \
-        { .next = &(ceval)._pending_preallocated[7] }, \
-        { .next = &(ceval)._pending_preallocated[8] }, \
-        { .next = &(ceval)._pending_preallocated[9] }, \
-        { .next = &(ceval)._pending_preallocated[10] }, \
-        { .next = &(ceval)._pending_preallocated[11] }, \
-        { .next = &(ceval)._pending_preallocated[12] }, \
-        { .next = &(ceval)._pending_preallocated[13] }, \
-        { .next = &(ceval)._pending_preallocated[14] }, \
-        { .next = &(ceval)._pending_preallocated[15] }, \
-        { .next = &(ceval)._pending_preallocated[16] }, \
-        { .next = &(ceval)._pending_preallocated[17] }, \
-        { .next = &(ceval)._pending_preallocated[18] }, \
-        { .next = &(ceval)._pending_preallocated[19] }, \
-        { .next = &(ceval)._pending_preallocated[20] }, \
-        { .next = &(ceval)._pending_preallocated[21] }, \
-        { .next = &(ceval)._pending_preallocated[22] }, \
-        { .next = &(ceval)._pending_preallocated[23] }, \
-        { .next = &(ceval)._pending_preallocated[24] }, \
-        { .next = &(ceval)._pending_preallocated[25] }, \
-        { .next = &(ceval)._pending_preallocated[26] }, \
-        { .next = &(ceval)._pending_preallocated[27] }, \
-        { .next = &(ceval)._pending_preallocated[28] }, \
-        { .next = &(ceval)._pending_preallocated[29] }, \
-        { .next = &(ceval)._pending_preallocated[30] }, \
-        { .next = &(ceval)._pending_preallocated[31] }, \
-        /* The last entry has .next set to NULL. */ \
-    }
-
 
 #ifdef PY_HAVE_PERF_TRAMPOLINE
 # define _PyEval_RUNTIME_PERF_INIT \

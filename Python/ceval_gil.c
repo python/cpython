@@ -675,6 +675,30 @@ signal_active_thread(PyInterpreterState *interp, uintptr_t bit)
 */
 
 static void
+_pending_calls_init(struct _pending_calls *pending,
+                    struct _pending_call *preallocated, size_t len)
+{
+    /* We shouldn't need the lock while initializing. */
+    assert(pending->head == NULL);
+    assert(pending->tail == NULL);
+    assert(pending->npending == 0);
+    assert(!pending->busy);
+    assert(pending->max > 0);
+    assert(pending->maxloop > 0);
+
+    assert(pending->freelist == NULL);
+    if (preallocated) {
+        assert(len > 0);
+        for (size_t i = len; i > 0; i--) {
+            struct _pending_call *call = &preallocated[i-1];
+            assert(!call->from_heap);
+            call->next = pending->freelist;
+            pending->freelist = call;
+        }
+    }
+}
+
+static void
 _pending_calls_fini(struct _pending_calls *pending)
 {
     PyMutex_Lock(&pending->mutex);
@@ -1049,6 +1073,14 @@ Py_MakePendingCalls(void)
 void
 _PyEval_InitState(PyInterpreterState *interp)
 {
+    _pending_calls_init(&interp->ceval.pending, NULL, 0);
+    if (_Py_IsMainInterpreter(interp)) {
+        struct _ceval_runtime_state *ceval = &_PyRuntime.ceval;
+        _pending_calls_init(&ceval->pending_mainthread,
+                            ceval->_pending_preallocated,
+                            Py_ARRAY_LENGTH(ceval->_pending_preallocated));
+    }
+
     _gil_initialize(&interp->_gil);
 }
 
