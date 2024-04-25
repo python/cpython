@@ -2446,7 +2446,7 @@ class IpaddrUnitTest(unittest.TestCase):
         self.assertEqual(
                 False, ipaddress.ip_address('::ffff:172.32.0.0').is_private)
 
-    def testIpv4MappedLocalCheck(self):
+    def testIpv4MappedLoopbackCheck(self):
         # test networks
         self.assertEqual(True, ipaddress.ip_network(
                 '::ffff:127.100.200.254/128').is_loopback)
