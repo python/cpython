@@ -21,14 +21,8 @@ struct _pending_call {
 };
 
 #define PENDINGCALLSARRAYSIZE 32
-#define MAXPENDINGCALLS_MAIN PENDINGCALLSARRAYSIZE
-#define MAXPENDINGCALLS PENDINGCALLSARRAYSIZE
 
-/* For the main thread, we want to make sure all pending calls are
-   run at once, for the sake of prompt signal handling.  This is
-   unlikely to cause any problems since there should be very few
-   pending calls for the main thread. */
-#define MAXPENDINGCALLSLOOP_MAIN 0
+#define MAXPENDINGCALLS PENDINGCALLSARRAYSIZE
 /* For interpreter-level pending calls, we want to avoid spending too
    much time on pending calls in any one thread, so we apply a limit. */
 #if MAXPENDINGCALLS > 100
@@ -36,6 +30,13 @@ struct _pending_call {
 #else
 #  define MAXPENDINGCALLSLOOP MAXPENDINGCALLS
 #endif
+
+#define MAXPENDINGCALLS_MAIN PENDINGCALLSARRAYSIZE
+/* For the main thread, we want to make sure all pending calls are
+   run at once, for the sake of prompt signal handling.  This is
+   unlikely to cause any problems since there should be very few
+   pending calls for the main thread. */
+#define MAXPENDINGCALLSLOOP_MAIN 0
 
 struct _pending_calls {
     int busy;
@@ -63,7 +64,6 @@ typedef enum {
     PERF_STATUS_OK = 1,       // Perf trampoline is ready to be executed
 } perf_status_t;
 
-
 #ifdef PY_HAVE_PERF_TRAMPOLINE
 struct code_arena_st;
 
@@ -75,6 +75,7 @@ struct trampoline_api_st {
     void *state;
 };
 #endif
+
 
 struct _ceval_runtime_state {
     struct {
@@ -97,6 +98,7 @@ struct _ceval_runtime_state {
     struct _pending_calls pending_mainthread;
     PyMutex sys_trace_profile_mutex;
 };
+
 
 #ifdef PY_HAVE_PERF_TRAMPOLINE
 # define _PyEval_RUNTIME_PERF_INIT \
