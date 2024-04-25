@@ -957,12 +957,11 @@ _Py_FinishPendingCalls(PyThreadState *tstate)
             : NULL;
     /* make_pending_calls() may return early without making all pending
        calls, so we keep trying until we're actually done. */
-    int32_t npending = INT32_MAX;
-    int32_t npending_prev = -1;
+    int32_t npending;
+#ifndef NDEBUG
+    int32_t npending_prev = INT32_MAX;
+#endif
     do {
-        assert(npending_prev < 0 || npending_prev > npending);
-        npending_prev = npending;
-
         if (make_pending_calls(tstate) < 0) {
             PyObject *exc = _PyErr_GetRaisedException(tstate);
             PyErr_BadInternalCall();
@@ -974,6 +973,10 @@ _Py_FinishPendingCalls(PyThreadState *tstate)
         if (pending_main != NULL) {
             npending += _Py_atomic_load_int32_relaxed(&pending_main->npending);
         }
+#ifndef NDEBUG
+        assert(npending_prev > npending);
+        npending_prev = npending;
+#endif
     } while (npending > 0);
 }
 
