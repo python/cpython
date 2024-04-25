@@ -349,7 +349,8 @@ static inline Py_ssize_t Py_SIZE(PyObject *ob) {
 static inline Py_ALWAYS_INLINE int _Py_IsImmortal(PyObject *op)
 {
 #if defined(Py_GIL_DISABLED)
-    return (op->ob_ref_local == _Py_IMMORTAL_REFCNT_LOCAL);
+    return (_Py_atomic_load_uint32_relaxed(&op->ob_ref_local) ==
+            _Py_IMMORTAL_REFCNT_LOCAL);
 #elif SIZEOF_VOID_P > 4
     return (_Py_CAST(PY_INT32_T, op->ob_refcnt) < 0);
 #else
