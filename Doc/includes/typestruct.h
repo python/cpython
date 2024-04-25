@@ -35,12 +35,14 @@ typedef struct _typeobject {
 
     const char *tp_doc; /* Documentation string */
 
+    /* Assigned meaning in release 2.0 */
     /* call function for all accessible objects */
     traverseproc tp_traverse;
 
     /* delete references to contained objects */
     inquiry tp_clear;
 
+    /* Assigned meaning in release 2.1 */
     /* rich comparisons */
     richcmpfunc tp_richcompare;
 
@@ -55,6 +57,7 @@ typedef struct _typeobject {
     struct PyMethodDef *tp_methods;
     struct PyMemberDef *tp_members;
     struct PyGetSetDef *tp_getset;
+    // Strong reference on a heap type, borrowed reference on a static type
     struct _typeobject *tp_base;
     PyObject *tp_dict;
     descrgetfunc tp_descr_get;
@@ -76,5 +79,5 @@ typedef struct _typeobject {
     unsigned int tp_version_tag;
 
     destructor tp_finalize;
-
+    vectorcallfunc tp_vectorcall;
 } PyTypeObject;

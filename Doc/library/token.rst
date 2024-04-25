@@ -11,7 +11,7 @@
 --------------
 
 This module provides constants which represent the numeric values of leaf nodes
-of the parse tree (terminal tokens).  Refer to the file :file:`Grammar/Grammar`
+of the parse tree (terminal tokens).  Refer to the file :file:`Grammar/Tokens`
 in the Python distribution for the definitions of the names in the context of
 the language grammar.  The specific numeric values which the names map to may
 change between Python versions.
@@ -70,6 +70,7 @@ the :mod:`tokenize` module.
 
 
 .. data:: TYPE_COMMENT
+   :noindex:
 
    Token value indicating that a type comment was recognized.  Such
    tokens are only produced when :func:`ast.parse()` is invoked with
@@ -87,7 +88,7 @@ the :mod:`tokenize` module.
    now tokenized as :data:`NAME` tokens.
 
 .. versionchanged:: 3.8
-   Added :data:`TYPE_COMMENT`.
+   Added :data:`TYPE_COMMENT`, :data:`TYPE_IGNORE`, :data:`COLONEQUAL`.
    Added :data:`AWAIT` and :data:`ASYNC` tokens back (they're needed
    to support parsing older Python versions for :func:`ast.parse` with
    ``feature_version`` set to 6 or lower).

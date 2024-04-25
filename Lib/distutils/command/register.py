@@ -260,7 +260,7 @@ Your selection [default 1]: ''', log.INFO)
         body = io.StringIO()
         for key, value in data.items():
             # handle multiple entries for the same name
-            if type(value) not in (type([]), type( () )):
+            if not isinstance(value, (list, tuple)):
                 value = [value]
             for value in value:
                 value = str(value)

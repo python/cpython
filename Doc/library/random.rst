@@ -86,8 +86,8 @@ Bookkeeping functions
    .. versionchanged:: 3.2
       Moved to the version 2 scheme which uses all of the bits in a string seed.
 
-   .. deprecated:: 3.9
-      In the future, the *seed* must be one of the following types:
+   .. versionchanged:: 3.11
+      The *seed* must be one of the following types:
       *NoneType*, :class:`int`, :class:`float`, :class:`str`,
       :class:`bytes`, or :class:`bytearray`.
 
@@ -104,12 +104,17 @@ Bookkeeping functions
    the time :func:`getstate` was called.
 
 
-.. function:: getrandbits(k)
+Functions for bytes
+-------------------
 
-   Returns a Python integer with *k* random bits. This method is supplied with
-   the MersenneTwister generator and some other generators may also provide it
-   as an optional part of the API. When available, :meth:`getrandbits` enables
-   :meth:`randrange` to handle arbitrarily large ranges.
+.. function:: randbytes(n)
+
+   Generate *n* random bytes.
+
+   This method should not be used for generating security tokens.
+   Use :func:`secrets.token_bytes` instead.
+
+   .. versionadded:: 3.9
 
 
 Functions for integers
@@ -118,22 +123,42 @@ Functions for integers
 .. function:: randrange(stop)
               randrange(start, stop[, step])
 
-   Return a randomly selected element from ``range(start, stop, step)``.  This is
-   equivalent to ``choice(range(start, stop, step))``, but doesn't actually build a
-   range object.
+   Return a randomly selected element from ``range(start, stop, step)``.
 
-   The positional argument pattern matches that of :func:`range`.  Keyword arguments
-   should not be used because the function may use them in unexpected ways.
+   This is roughly equivalent to ``choice(range(start, stop, step))`` but
+   supports arbitrarily large ranges and is optimized for common cases.
+
+   The positional argument pattern matches the :func:`range` function.
+
+   Keyword arguments should not be used because they can interpreted
+   in unexpected ways. For example ``range(start=100)`` is interpreted
+   as ``range(0, 100, 1)``.
 
    .. versionchanged:: 3.2
       :meth:`randrange` is more sophisticated about producing equally distributed
       values.  Formerly it used a style like ``int(random()*n)`` which could produce
       slightly uneven distributions.
 
+   .. versionchanged:: 3.12
+      Automatic conversion of non-integer types is no longer supported.
+      Calls such as ``randrange(10.0)`` and ``randrange(Fraction(10, 1))``
+      now raise a :exc:`TypeError`.
+
 .. function:: randint(a, b)
 
    Return a random integer *N* such that ``a <= N <= b``.  Alias for
    ``randrange(a, b+1)``.
+
+.. function:: getrandbits(k)
+
+   Returns a non-negative Python integer with *k* random bits. This method
+   is supplied with the MersenneTwister generator and some other generators
+   may also provide it as an optional part of the API. When available,
+   :meth:`getrandbits` enables :meth:`randrange` to handle arbitrarily large
+   ranges.
+
+   .. versionchanged:: 3.9
+      This method now accepts zero for *k*.
 
 
 Functions for sequences
@@ -165,8 +190,8 @@ Functions for sequences
 
    The *weights* or *cum_weights* can use any numeric type that interoperates
    with the :class:`float` values returned by :func:`random` (that includes
-   integers, floats, and fractions but excludes decimals).  Behavior is
-   undefined if any weight is negative.  A :exc:`ValueError` is raised if all
+   integers, floats, and fractions but excludes decimals).  Weights are assumed
+   to be non-negative and finite.  A :exc:`ValueError` is raised if all
    weights are zero.
 
    For a given seed, the :func:`choices` function with equal weighting
@@ -182,12 +207,9 @@ Functions for sequences
       Raises a :exc:`ValueError` if all weights are zero.
 
 
-.. function:: shuffle(x[, random])
+.. function:: shuffle(x)
 
    Shuffle the sequence *x* in place.
-
-   The optional argument *random* is a 0-argument function returning a random
-   float in [0.0, 1.0); by default, this is the function :func:`.random`.
 
    To shuffle an immutable sequence and return a new shuffled list, use
    ``sample(x, k=len(x))`` instead.
@@ -198,11 +220,14 @@ Functions for sequences
    generated.  For example, a sequence of length 2080 is the largest that
    can fit within the period of the Mersenne Twister random number generator.
 
+   .. deprecated-removed:: 3.9 3.11
+      The optional parameter *random*.
 
-.. function:: sample(population, k)
 
-   Return a *k* length list of unique elements chosen from the population sequence
-   or set. Used for random sampling without replacement.
+.. function:: sample(population, k, *, counts=None)
+
+   Return a *k* length list of unique elements chosen from the population
+   sequence.  Used for random sampling without replacement.
 
    Returns a new list containing elements from the population while leaving the
    original population unchanged.  The resulting list is in selection order so that
@@ -213,12 +238,28 @@ Functions for sequences
    Members of the population need not be :term:`hashable` or unique.  If the population
    contains repeats, then each occurrence is a possible selection in the sample.
 
+   Repeated elements can be specified one at a time or with the optional
+   keyword-only *counts* parameter.  For example, ``sample(['red', 'blue'],
+   counts=[4, 2], k=5)`` is equivalent to ``sample(['red', 'red', 'red', 'red',
+   'blue', 'blue'], k=5)``.
+
    To choose a sample from a range of integers, use a :func:`range` object as an
    argument.  This is especially fast and space efficient for sampling from a large
    population:  ``sample(range(10000000), k=60)``.
 
    If the sample size is larger than the population size, a :exc:`ValueError`
    is raised.
+
+   .. versionchanged:: 3.9
+      Added the *counts* parameter.
+
+   .. versionchanged:: 3.11
+
+      The *population* must be a sequence.  Automatic conversion of sets
+      to lists is no longer supported.
+
+
+.. _real-valued-distributions:
 
 Real-valued distributions
 -------------------------
@@ -278,11 +319,21 @@ be found in any statistics text.
                    math.gamma(alpha) * beta ** alpha
 
 
-.. function:: gauss(mu, sigma)
+.. function:: gauss(mu=0.0, sigma=1.0)
 
-   Gaussian distribution.  *mu* is the mean, and *sigma* is the standard
-   deviation.  This is slightly faster than the :func:`normalvariate` function
-   defined below.
+   Normal distribution, also called the Gaussian distribution.  *mu* is the mean,
+   and *sigma* is the standard deviation.  This is slightly faster than
+   the :func:`normalvariate` function defined below.
+
+   Multithreading note:  When two threads call this function
+   simultaneously, it is possible that they will receive the
+   same return value.  This can be avoided in three ways.
+   1) Have each thread use a different instance of the random
+   number generator. 2) Put locks around all calls. 3) Use the
+   slower, but thread-safe :func:`normalvariate` function instead.
+
+   .. versionchanged:: 3.11
+      *mu* and *sigma* now have default arguments.
 
 
 .. function:: lognormvariate(mu, sigma)
@@ -293,9 +344,12 @@ be found in any statistics text.
    zero.
 
 
-.. function:: normalvariate(mu, sigma)
+.. function:: normalvariate(mu=0.0, sigma=1.0)
 
    Normal distribution.  *mu* is the mean, and *sigma* is the standard deviation.
+
+   .. versionchanged:: 3.11
+      *mu* and *sigma* now have default arguments.
 
 
 .. function:: vonmisesvariate(mu, kappa)
@@ -343,8 +397,8 @@ Alternative Generator
 Notes on Reproducibility
 ------------------------
 
-Sometimes it is useful to be able to reproduce the sequences given by a pseudo
-random number generator.  By re-using a seed value, the same sequence should be
+Sometimes it is useful to be able to reproduce the sequences given by a
+pseudo-random number generator.  By re-using a seed value, the same sequence should be
 reproducible from run to run as long as multiple threads are not running.
 
 Most of the random module's algorithms and seeding functions are subject to
@@ -358,15 +412,15 @@ change across Python versions, but two aspects are guaranteed not to change:
 
 .. _random-examples:
 
-Examples and Recipes
---------------------
+Examples
+--------
 
 Basic examples::
 
    >>> random()                             # Random float:  0.0 <= x < 1.0
    0.37444887175646646
 
-   >>> uniform(2.5, 10.0)                   # Random float:  2.5 <= x < 10.0
+   >>> uniform(2.5, 10.0)                   # Random float:  2.5 <= x <= 10.0
    3.1800146073117523
 
    >>> expovariate(1 / 5)                   # Interval between arrivals averaging 5 seconds
@@ -395,12 +449,11 @@ Simulations::
    >>> choices(['red', 'black', 'green'], [18, 18, 2], k=6)
    ['red', 'green', 'black', 'black', 'red', 'black']
 
-   >>> # Deal 20 cards without replacement from a deck of 52 playing cards
-   >>> # and determine the proportion of cards with a ten-value
-   >>> # (a ten, jack, queen, or king).
-   >>> deck = collections.Counter(tens=16, low_cards=36)
-   >>> seen = sample(list(deck.elements()), k=20)
-   >>> seen.count('tens') / 20
+   >>> # Deal 20 cards without replacement from a deck
+   >>> # of 52 playing cards, and determine the proportion of cards
+   >>> # with a ten-value:  ten, jack, queen, or king.
+   >>> dealt = sample(['tens', 'low cards'], counts=[16, 36], k=20)
+   >>> dealt.count('tens') / 20
    0.15
 
    >>> # Estimate the probability of getting 5 or more heads from 7 spins
@@ -408,29 +461,28 @@ Simulations::
    >>> def trial():
    ...     return choices('HT', cum_weights=(0.60, 1.00), k=7).count('H') >= 5
    ...
-   >>> sum(trial() for i in range(10000)) / 10000
+   >>> sum(trial() for i in range(10_000)) / 10_000
    0.4169
 
    >>> # Probability of the median of 5 samples being in middle two quartiles
    >>> def trial():
-   ...     return 2500 <= sorted(choices(range(10000), k=5))[2] < 7500
+   ...     return 2_500 <= sorted(choices(range(10_000), k=5))[2] < 7_500
    ...
-   >>> sum(trial() for i in range(10000)) / 10000
+   >>> sum(trial() for i in range(10_000)) / 10_000
    0.7958
 
 Example of `statistical bootstrapping
 <https://en.wikipedia.org/wiki/Bootstrapping_(statistics)>`_ using resampling
-with replacement to estimate a confidence interval for the mean of a sample of
-size five::
+with replacement to estimate a confidence interval for the mean of a sample::
 
    # http://statistics.about.com/od/Applications/a/Example-Of-Bootstrapping.htm
    from statistics import fmean as mean
    from random import choices
 
-   data = 1, 2, 4, 4, 10
-   means = sorted(mean(choices(data, k=5)) for i in range(20))
+   data = [41, 50, 29, 37, 81, 30, 73, 63, 20, 35, 68, 22, 60, 31, 95]
+   means = sorted(mean(choices(data, k=len(data))) for i in range(100))
    print(f'The sample mean of {mean(data):.1f} has a 90% confidence '
-         f'interval from {means[1]:.1f} to {means[-2]:.1f}')
+         f'interval from {means[5]:.1f} to {means[94]:.1f}')
 
 Example of a `resampling permutation test
 <https://en.wikipedia.org/wiki/Resampling_(statistics)#Permutation_tests>`_
@@ -446,7 +498,7 @@ between the effects of a drug versus a placebo::
     placebo = [54, 51, 58, 44, 55, 52, 42, 47, 58, 46]
     observed_diff = mean(drug) - mean(placebo)
 
-    n = 10000
+    n = 10_000
     count = 0
     combined = drug + placebo
     for i in range(n):
@@ -459,34 +511,32 @@ between the effects of a drug versus a placebo::
     print(f'The one-sided p-value of {count / n:.4f} leads us to reject the null')
     print(f'hypothesis that there is no difference between the drug and the placebo.')
 
-Simulation of arrival times and service deliveries in a single server queue::
+Simulation of arrival times and service deliveries for a multiserver queue::
 
+    from heapq import heapify, heapreplace
     from random import expovariate, gauss
-    from statistics import mean, median, stdev
+    from statistics import mean, quantiles
 
     average_arrival_interval = 5.6
-    average_service_time = 5.0
-    stdev_service_time = 0.5
+    average_service_time = 15.0
+    stdev_service_time = 3.5
+    num_servers = 3
 
-    num_waiting = 0
-    arrivals = []
-    starts = []
-    arrival = service_end = 0.0
-    for i in range(20000):
-        if arrival <= service_end:
-            num_waiting += 1
-            arrival += expovariate(1.0 / average_arrival_interval)
-            arrivals.append(arrival)
-        else:
-            num_waiting -= 1
-            service_start = service_end if num_waiting else arrival
-            service_time = gauss(average_service_time, stdev_service_time)
-            service_end = service_start + service_time
-            starts.append(service_start)
+    waits = []
+    arrival_time = 0.0
+    servers = [0.0] * num_servers  # time when each server becomes available
+    heapify(servers)
+    for i in range(1_000_000):
+        arrival_time += expovariate(1.0 / average_arrival_interval)
+        next_server_available = servers[0]
+        wait = max(0.0, next_server_available - arrival_time)
+        waits.append(wait)
+        service_duration = max(0.0, gauss(average_service_time, stdev_service_time))
+        service_completed = arrival_time + wait + service_duration
+        heapreplace(servers, service_completed)
 
-    waits = [start - arrival for arrival, start in zip(arrivals, starts)]
-    print(f'Mean wait: {mean(waits):.1f}.  Stdev wait: {stdev(waits):.1f}.')
-    print(f'Median wait: {median(waits):.1f}.  Max wait: {max(waits):.1f}.')
+    print(f'Mean wait: {mean(waits):.1f}   Max wait: {max(waits):.1f}')
+    print('Quartiles:', [round(q, 1) for q in quantiles(waits)])
 
 .. seealso::
 
@@ -508,3 +558,58 @@ Simulation of arrival times and service deliveries in a single server queue::
    a tutorial by `Peter Norvig <http://norvig.com/bio.html>`_ covering
    the basics of probability theory, how to write simulations, and
    how to perform data analysis using Python.
+
+
+Recipes
+-------
+
+The default :func:`.random` returns multiples of 2⁻⁵³ in the range
+*0.0 ≤ x < 1.0*.  All such numbers are evenly spaced and are exactly
+representable as Python floats.  However, many other representable
+floats in that interval are not possible selections.  For example,
+``0.05954861408025609`` isn't an integer multiple of 2⁻⁵³.
+
+The following recipe takes a different approach.  All floats in the
+interval are possible selections.  The mantissa comes from a uniform
+distribution of integers in the range *2⁵² ≤ mantissa < 2⁵³*.  The
+exponent comes from a geometric distribution where exponents smaller
+than *-53* occur half as often as the next larger exponent.
+
+::
+
+    from random import Random
+    from math import ldexp
+
+    class FullRandom(Random):
+
+        def random(self):
+            mantissa = 0x10_0000_0000_0000 | self.getrandbits(52)
+            exponent = -53
+            x = 0
+            while not x:
+                x = self.getrandbits(32)
+                exponent += x.bit_length() - 32
+            return ldexp(mantissa, exponent)
+
+All :ref:`real valued distributions <real-valued-distributions>`
+in the class will use the new method::
+
+    >>> fr = FullRandom()
+    >>> fr.random()
+    0.05954861408025609
+    >>> fr.expovariate(0.25)
+    8.87925541791544
+
+The recipe is conceptually equivalent to an algorithm that chooses from
+all the multiples of 2⁻¹⁰⁷⁴ in the range *0.0 ≤ x < 1.0*.  All such
+numbers are evenly spaced, but most have to be rounded down to the
+nearest representable Python float.  (The value 2⁻¹⁰⁷⁴ is the smallest
+positive unnormalized float and is equal to ``math.ulp(0.0)``.)
+
+
+.. seealso::
+
+   `Generating Pseudo-random Floating-Point Values
+   <https://allendowney.com/research/rand/downey07randfloat.pdf>`_ a
+   paper by Allen B. Downey describing ways to generate more
+   fine-grained floats than normally generated by :func:`.random`.

@@ -11,7 +11,7 @@ PyDoc_STRVAR(_posixshmem_shm_open__doc__,
 "Open a shared memory object.  Returns a file descriptor (integer).");
 
 #define _POSIXSHMEM_SHM_OPEN_METHODDEF    \
-    {"shm_open", (PyCFunction)(void(*)(void))_posixshmem_shm_open, METH_FASTCALL|METH_KEYWORDS, _posixshmem_shm_open__doc__},
+    {"shm_open", _PyCFunction_CAST(_posixshmem_shm_open), METH_FASTCALL|METH_KEYWORDS, _posixshmem_shm_open__doc__},
 
 static int
 _posixshmem_shm_open_impl(PyObject *module, PyObject *path, int flags,
@@ -42,22 +42,12 @@ _posixshmem_shm_open(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
         goto exit;
     }
     path = args[0];
-    if (PyFloat_Check(args[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     flags = _PyLong_AsInt(args[1]);
     if (flags == -1 && PyErr_Occurred()) {
         goto exit;
     }
     if (!noptargs) {
         goto skip_optional_pos;
-    }
-    if (PyFloat_Check(args[2])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
     }
     mode = _PyLong_AsInt(args[2]);
     if (mode == -1 && PyErr_Occurred()) {
@@ -89,7 +79,7 @@ PyDoc_STRVAR(_posixshmem_shm_unlink__doc__,
 "region.");
 
 #define _POSIXSHMEM_SHM_UNLINK_METHODDEF    \
-    {"shm_unlink", (PyCFunction)(void(*)(void))_posixshmem_shm_unlink, METH_FASTCALL|METH_KEYWORDS, _posixshmem_shm_unlink__doc__},
+    {"shm_unlink", _PyCFunction_CAST(_posixshmem_shm_unlink), METH_FASTCALL|METH_KEYWORDS, _posixshmem_shm_unlink__doc__},
 
 static PyObject *
 _posixshmem_shm_unlink_impl(PyObject *module, PyObject *path);
@@ -130,4 +120,4 @@ exit:
 #ifndef _POSIXSHMEM_SHM_UNLINK_METHODDEF
     #define _POSIXSHMEM_SHM_UNLINK_METHODDEF
 #endif /* !defined(_POSIXSHMEM_SHM_UNLINK_METHODDEF) */
-/*[clinic end generated code: output=9132861c61d8c2d8 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a6db931a47d36e1b input=a9049054013a1b77]*/

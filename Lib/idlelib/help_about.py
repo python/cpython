@@ -3,12 +3,15 @@
 """
 import os
 import sys
+import webbrowser
 from platform import python_version, architecture
 
 from tkinter import Toplevel, Frame, Label, Button, PhotoImage
 from tkinter import SUNKEN, TOP, BOTTOM, LEFT, X, BOTH, W, EW, NSEW, E
 
 from idlelib import textview
+
+version = python_version()
 
 
 def build_bits():
@@ -42,7 +45,7 @@ class AboutDialog(Toplevel):
         self.create_widgets()
         self.resizable(height=False, width=False)
         self.title(title or
-                   f'About IDLE {python_version()} ({build_bits()} bit)')
+                   f'About IDLE {version} ({build_bits()} bit)')
         self.transient(parent)
         self.grab_set()
         self.protocol("WM_DELETE_WINDOW", self.ok)
@@ -73,8 +76,8 @@ class AboutDialog(Toplevel):
                        bg=self.bg, font=('courier', 24, 'bold'))
         header.grid(row=0, column=0, sticky=E, padx=10, pady=10)
 
-        tk_patchlevel = self.tk.call('info', 'patchlevel')
-        ext = '.png' if tk_patchlevel >= '8.6' else '.gif'
+        tk_patchlevel = self.info_patchlevel()
+        ext = '.png' if tk_patchlevel >= (8, 6) else '.gif'
         icon = os.path.join(os.path.abspath(os.path.dirname(__file__)),
                             'Icons', f'idle_48{ext}')
         self.icon_image = PhotoImage(master=self._root(), file=icon)
@@ -88,20 +91,21 @@ class AboutDialog(Toplevel):
         email = Label(frame_background, text='email:  idle-dev@python.org',
                       justify=LEFT, fg=self.fg, bg=self.bg)
         email.grid(row=6, column=0, columnspan=2, sticky=W, padx=10, pady=0)
-        docs = Label(frame_background, text='https://docs.python.org/' +
-                     python_version()[:3] + '/library/idle.html',
+        docs = Label(frame_background, text="https://docs.python.org/"
+                     f"{version[:version.rindex('.')]}/library/idle.html",
                      justify=LEFT, fg=self.fg, bg=self.bg)
         docs.grid(row=7, column=0, columnspan=2, sticky=W, padx=10, pady=0)
+        docs.bind("<Button-1>", lambda event: webbrowser.open(docs['text']))
 
         Frame(frame_background, borderwidth=1, relief=SUNKEN,
               height=2, bg=self.bg).grid(row=8, column=0, sticky=EW,
                                          columnspan=3, padx=5, pady=5)
 
         pyver = Label(frame_background,
-                      text='Python version:  ' + python_version(),
+                      text='Python version:  ' + version,
                       fg=self.fg, bg=self.bg)
         pyver.grid(row=9, column=0, sticky=W, padx=10, pady=0)
-        tkver = Label(frame_background, text='Tk version:  ' + tk_patchlevel,
+        tkver = Label(frame_background, text=f'Tk version:  {tk_patchlevel}',
                       fg=self.fg, bg=self.bg)
         tkver.grid(row=9, column=1, sticky=W, padx=2, pady=0)
         py_buttons = Frame(frame_background, bg=self.bg)
@@ -124,7 +128,7 @@ class AboutDialog(Toplevel):
                                          columnspan=3, padx=5, pady=5)
 
         idlever = Label(frame_background,
-                        text='IDLE version:   ' + python_version(),
+                        text='IDLE version:   ' + version,
                         fg=self.fg, bg=self.bg)
         idlever.grid(row=12, column=0, sticky=W, padx=10, pady=0)
         idle_buttons = Frame(frame_background, bg=self.bg)

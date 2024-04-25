@@ -92,10 +92,7 @@ class StrTest(unittest.TestCase):
             x = None
 
 
-def test_main():
-    support.run_unittest(BytesTest, StrTest)
-
 if __name__ == '__main__':
     if len(sys.argv) > 1:
         support.set_memlimit(sys.argv[1])
-    test_main()
+    unittest.main()

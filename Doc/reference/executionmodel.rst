@@ -56,15 +56,25 @@ Binding of names
 
 .. index:: single: from; import statement
 
-The following constructs bind names: formal parameters to functions,
-:keyword:`import` statements, class and function definitions (these bind the
-class or function name in the defining block), and targets that are identifiers
-if occurring in an assignment, :keyword:`for` loop header, or after
-:keyword:`!as` in a :keyword:`with` statement or :keyword:`except` clause.
-The :keyword:`!import` statement
-of the form ``from ... import *`` binds all names defined in the imported
-module, except those beginning with an underscore.  This form may only be used
-at the module level.
+The following constructs bind names:
+
+* formal parameters to functions,
+* class definitions,
+* function definitions,
+* assignment expressions,
+* :ref:`targets <assignment>` that are identifiers if occurring in
+  an assignment:
+
+  + :keyword:`for` loop header,
+  + after :keyword:`!as` in a :keyword:`with` statement, :keyword:`except`
+    clause or in the as-pattern in structural pattern matching,
+  + in a capture pattern in structural pattern matching
+
+* :keyword:`import` statements.
+
+The :keyword:`!import` statement of the form ``from ... import *`` binds all
+names defined in the imported module, except those beginning with an underscore.
+This form may only be used at the module level.
 
 A target occurring in a :keyword:`del` statement is also considered bound for
 this purpose (though the actual semantics are to unbind the name).
@@ -119,14 +129,14 @@ is subtle.  Python lacks declarations and allows name binding operations to
 occur anywhere within a code block.  The local variables of a code block can be
 determined by scanning the entire text of the block for name binding operations.
 
-If the :keyword:`global` statement occurs within a block, all uses of the name
-specified in the statement refer to the binding of that name in the top-level
+If the :keyword:`global` statement occurs within a block, all uses of the names
+specified in the statement refer to the bindings of those names in the top-level
 namespace.  Names are resolved in the top-level namespace by searching the
 global namespace, i.e. the namespace of the module containing the code block,
 and the builtins namespace, the namespace of the module :mod:`builtins`.  The
-global namespace is searched first.  If the name is not found there, the
+global namespace is searched first.  If the names are not found there, the
 builtins namespace is searched.  The :keyword:`!global` statement must precede
-all uses of the name.
+all uses of the listed names.
 
 The :keyword:`global` statement has the same scope as a name binding operation
 in the same block.  If the nearest enclosing scope for a free variable contains
@@ -249,8 +259,9 @@ a stack traceback, except when the exception is :exc:`SystemExit`.
 
 Exceptions are identified by class instances.  The :keyword:`except` clause is
 selected depending on the class of the instance: it must reference the class of
-the instance or a base class thereof.  The instance can be received by the
-handler and can carry additional information about the exceptional condition.
+the instance or a :term:`non-virtual base class <abstract base class>` thereof.
+The instance can be received by the handler and can carry additional information
+about the exceptional condition.
 
 .. note::
 

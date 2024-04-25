@@ -1,0 +1,2 @@
+Drag and drop of files onto Python files in Windows Explorer has been
+enabled for Windows ARM64.

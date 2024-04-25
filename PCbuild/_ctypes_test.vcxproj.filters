@@ -7,6 +7,9 @@
     <Filter Include="Source Files">
       <UniqueIdentifier>{38abc486-e143-49dc-8cf0-8aefab0e0d3d}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{5030ff8f-daf5-4bc8-b1dd-e8b59d34c511}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Modules\_ctypes\_ctypes_test.h">
@@ -17,5 +20,10 @@
     <ClCompile Include="..\Modules\_ctypes\_ctypes_test.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="..\PC\python_nt.rc">
+      <Filter>Resource Files</Filter>
+    </ResourceCompile>
   </ItemGroup>
 </Project>

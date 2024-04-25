@@ -1,0 +1,1 @@
+Align :mod:`sqlite3` argument specs with the actual implementation.

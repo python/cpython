@@ -162,10 +162,10 @@ Windows improvements:
 
 * A ``._pth`` file can be added to force isolated mode and fully specify
   all search paths to avoid registry and environment lookup. See
-  :ref:`the documentation <finding_modules>` for more information.
+  :ref:`the documentation <windows_finding_modules>` for more information.
 
 * A ``python36.zip`` file now works as a landmark to infer
-  :envvar:`PYTHONHOME`. See :ref:`the documentation <finding_modules>` for
+  :envvar:`PYTHONHOME`. See :ref:`the documentation <windows_finding_modules>` for
   more information.
 
 
@@ -722,8 +722,8 @@ for the following events in the interpreter:
 * line of code executed.
 
 This can be used to instrument running interpreters in production,
-without the need to recompile specific debug builds or providing
-application-specific profiling/debugging code.
+without the need to recompile specific :ref:`debug builds <debug-build>` or
+providing application-specific profiling/debugging code.
 
 More details in :ref:`instrumentation`.
 
@@ -1422,7 +1422,7 @@ The socket module now supports the address family
 Victor Stinner.)
 
 New Linux constants ``TCP_USER_TIMEOUT`` and ``TCP_CONGESTION`` were added.
-(Contributed by Omar Sandoval, issue:`26273`).
+(Contributed by Omar Sandoval, :issue:`26273`).
 
 
 socketserver
@@ -1597,7 +1597,7 @@ to filter block traces by their address space (domain).
 typing
 ------
 
-Since the :mod:`typing` module is :term:`provisional <provisional api>`,
+Since the :mod:`typing` module is :term:`provisional <provisional API>`,
 all changes introduced in Python 3.6 have also been
 backported to Python 3.5.x.
 
@@ -2117,7 +2117,8 @@ API and Feature Removals
   platform specific ``Lib/plat-*/`` directories, but were chronically out of
   date, inconsistently available across platforms, and unmaintained.  The
   script that created these modules is still available in the source
-  distribution at :source:`Tools/scripts/h2py.py`.
+  distribution at `Tools/scripts/h2py.py
+  <https://github.com/python/cpython/blob/v3.6.15/Tools/scripts/h2py.py>`_.
 
 * The deprecated ``asynchat.fifo`` class has been removed.
 
@@ -2443,3 +2444,16 @@ because of the behavior of the socket option ``SO_REUSEADDR`` in UDP. For more
 details, see the documentation for ``loop.create_datagram_endpoint()``.
 (Contributed by Kyle Stanley, Antoine Pitrou, and Yury Selivanov in
 :issue:`37228`.)
+
+Notable changes in Python 3.6.13
+================================
+
+Earlier Python versions allowed using both ``;`` and ``&`` as
+query parameter separators in :func:`urllib.parse.parse_qs` and
+:func:`urllib.parse.parse_qsl`.  Due to security concerns, and to conform with
+newer W3C recommendations, this has been changed to allow only a single
+separator key, with ``&`` as the default.  This change also affects
+:func:`cgi.parse` and :func:`cgi.parse_multipart` as they use the affected
+functions internally. For more details, please see their respective
+documentation.
+(Contributed by Adam Goldschmidt, Senthil Kumaran and Ken Jin in :issue:`42967`.)

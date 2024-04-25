@@ -1,0 +1,1 @@
+Reduce the size of the inline cache for ``LOAD_METHOD`` by 2 bytes.

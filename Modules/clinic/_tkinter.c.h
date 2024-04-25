@@ -322,21 +322,13 @@ PyDoc_STRVAR(_tkinter_tkapp_splitlist__doc__,
 #define _TKINTER_TKAPP_SPLITLIST_METHODDEF    \
     {"splitlist", (PyCFunction)_tkinter_tkapp_splitlist, METH_O, _tkinter_tkapp_splitlist__doc__},
 
-PyDoc_STRVAR(_tkinter_tkapp_split__doc__,
-"split($self, arg, /)\n"
-"--\n"
-"\n");
-
-#define _TKINTER_TKAPP_SPLIT_METHODDEF    \
-    {"split", (PyCFunction)_tkinter_tkapp_split, METH_O, _tkinter_tkapp_split__doc__},
-
 PyDoc_STRVAR(_tkinter_tkapp_createcommand__doc__,
 "createcommand($self, name, func, /)\n"
 "--\n"
 "\n");
 
 #define _TKINTER_TKAPP_CREATECOMMAND_METHODDEF    \
-    {"createcommand", (PyCFunction)(void(*)(void))_tkinter_tkapp_createcommand, METH_FASTCALL, _tkinter_tkapp_createcommand__doc__},
+    {"createcommand", _PyCFunction_CAST(_tkinter_tkapp_createcommand), METH_FASTCALL, _tkinter_tkapp_createcommand__doc__},
 
 static PyObject *
 _tkinter_tkapp_createcommand_impl(TkappObject *self, const char *name,
@@ -416,7 +408,7 @@ PyDoc_STRVAR(_tkinter_tkapp_createfilehandler__doc__,
 "\n");
 
 #define _TKINTER_TKAPP_CREATEFILEHANDLER_METHODDEF    \
-    {"createfilehandler", (PyCFunction)(void(*)(void))_tkinter_tkapp_createfilehandler, METH_FASTCALL, _tkinter_tkapp_createfilehandler__doc__},
+    {"createfilehandler", _PyCFunction_CAST(_tkinter_tkapp_createfilehandler), METH_FASTCALL, _tkinter_tkapp_createfilehandler__doc__},
 
 static PyObject *
 _tkinter_tkapp_createfilehandler_impl(TkappObject *self, PyObject *file,
@@ -434,11 +426,6 @@ _tkinter_tkapp_createfilehandler(TkappObject *self, PyObject *const *args, Py_ss
         goto exit;
     }
     file = args[0];
-    if (PyFloat_Check(args[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     mask = _PyLong_AsInt(args[1]);
     if (mask == -1 && PyErr_Occurred()) {
         goto exit;
@@ -487,7 +474,7 @@ PyDoc_STRVAR(_tkinter_tkapp_createtimerhandler__doc__,
 "\n");
 
 #define _TKINTER_TKAPP_CREATETIMERHANDLER_METHODDEF    \
-    {"createtimerhandler", (PyCFunction)(void(*)(void))_tkinter_tkapp_createtimerhandler, METH_FASTCALL, _tkinter_tkapp_createtimerhandler__doc__},
+    {"createtimerhandler", _PyCFunction_CAST(_tkinter_tkapp_createtimerhandler), METH_FASTCALL, _tkinter_tkapp_createtimerhandler__doc__},
 
 static PyObject *
 _tkinter_tkapp_createtimerhandler_impl(TkappObject *self, int milliseconds,
@@ -501,11 +488,6 @@ _tkinter_tkapp_createtimerhandler(TkappObject *self, PyObject *const *args, Py_s
     PyObject *func;
 
     if (!_PyArg_CheckPositional("createtimerhandler", nargs, 2, 2)) {
-        goto exit;
-    }
-    if (PyFloat_Check(args[0])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
         goto exit;
     }
     milliseconds = _PyLong_AsInt(args[0]);
@@ -525,7 +507,7 @@ PyDoc_STRVAR(_tkinter_tkapp_mainloop__doc__,
 "\n");
 
 #define _TKINTER_TKAPP_MAINLOOP_METHODDEF    \
-    {"mainloop", (PyCFunction)(void(*)(void))_tkinter_tkapp_mainloop, METH_FASTCALL, _tkinter_tkapp_mainloop__doc__},
+    {"mainloop", _PyCFunction_CAST(_tkinter_tkapp_mainloop), METH_FASTCALL, _tkinter_tkapp_mainloop__doc__},
 
 static PyObject *
 _tkinter_tkapp_mainloop_impl(TkappObject *self, int threshold);
@@ -541,11 +523,6 @@ _tkinter_tkapp_mainloop(TkappObject *self, PyObject *const *args, Py_ssize_t nar
     }
     if (nargs < 1) {
         goto skip_optional;
-    }
-    if (PyFloat_Check(args[0])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
     }
     threshold = _PyLong_AsInt(args[0]);
     if (threshold == -1 && PyErr_Occurred()) {
@@ -564,7 +541,7 @@ PyDoc_STRVAR(_tkinter_tkapp_dooneevent__doc__,
 "\n");
 
 #define _TKINTER_TKAPP_DOONEEVENT_METHODDEF    \
-    {"dooneevent", (PyCFunction)(void(*)(void))_tkinter_tkapp_dooneevent, METH_FASTCALL, _tkinter_tkapp_dooneevent__doc__},
+    {"dooneevent", _PyCFunction_CAST(_tkinter_tkapp_dooneevent), METH_FASTCALL, _tkinter_tkapp_dooneevent__doc__},
 
 static PyObject *
 _tkinter_tkapp_dooneevent_impl(TkappObject *self, int flags);
@@ -580,11 +557,6 @@ _tkinter_tkapp_dooneevent(TkappObject *self, PyObject *const *args, Py_ssize_t n
     }
     if (nargs < 1) {
         goto skip_optional;
-    }
-    if (PyFloat_Check(args[0])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
     }
     flags = _PyLong_AsInt(args[0]);
     if (flags == -1 && PyErr_Occurred()) {
@@ -689,7 +661,7 @@ PyDoc_STRVAR(_tkinter_create__doc__,
 "    if not None, then pass -use to wish");
 
 #define _TKINTER_CREATE_METHODDEF    \
-    {"create", (PyCFunction)(void(*)(void))_tkinter_create, METH_FASTCALL, _tkinter_create__doc__},
+    {"create", _PyCFunction_CAST(_tkinter_create), METH_FASTCALL, _tkinter_create__doc__},
 
 static PyObject *
 _tkinter_create_impl(PyObject *module, const char *screenName,
@@ -769,22 +741,12 @@ _tkinter_create(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 4) {
         goto skip_optional;
     }
-    if (PyFloat_Check(args[3])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     interactive = _PyLong_AsInt(args[3]);
     if (interactive == -1 && PyErr_Occurred()) {
         goto exit;
     }
     if (nargs < 5) {
         goto skip_optional;
-    }
-    if (PyFloat_Check(args[4])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
     }
     wantobjects = _PyLong_AsInt(args[4]);
     if (wantobjects == -1 && PyErr_Occurred()) {
@@ -793,22 +755,12 @@ _tkinter_create(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 6) {
         goto skip_optional;
     }
-    if (PyFloat_Check(args[5])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     wantTk = _PyLong_AsInt(args[5]);
     if (wantTk == -1 && PyErr_Occurred()) {
         goto exit;
     }
     if (nargs < 7) {
         goto skip_optional;
-    }
-    if (PyFloat_Check(args[6])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
     }
     sync = _PyLong_AsInt(args[6]);
     if (sync == -1 && PyErr_Occurred()) {
@@ -862,11 +814,6 @@ _tkinter_setbusywaitinterval(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int new_val;
 
-    if (PyFloat_Check(arg)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     new_val = _PyLong_AsInt(arg);
     if (new_val == -1 && PyErr_Occurred()) {
         goto exit;
@@ -912,4 +859,4 @@ exit:
 #ifndef _TKINTER_TKAPP_DELETEFILEHANDLER_METHODDEF
     #define _TKINTER_TKAPP_DELETEFILEHANDLER_METHODDEF
 #endif /* !defined(_TKINTER_TKAPP_DELETEFILEHANDLER_METHODDEF) */
-/*[clinic end generated code: output=492b8b833fe54bc9 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b0667ac928eb0c28 input=a9049054013a1b77]*/

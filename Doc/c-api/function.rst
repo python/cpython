@@ -26,7 +26,7 @@ There are a few functions specific to Python functions.
 .. c:function:: int PyFunction_Check(PyObject *o)
 
    Return true if *o* is a function object (has type :c:data:`PyFunction_Type`).
-   The parameter must not be ``NULL``.
+   The parameter must not be ``NULL``.  This function always succeeds.
 
 
 .. c:function:: PyObject* PyFunction_New(PyObject *code, PyObject *globals)
@@ -36,15 +36,16 @@ There are a few functions specific to Python functions.
 
    The function's docstring and name are retrieved from the code object. *__module__*
    is retrieved from *globals*. The argument defaults, annotations and closure are
-   set to ``NULL``. *__qualname__* is set to the same value as the function's name.
+   set to ``NULL``. *__qualname__* is set to the same value as the code object's
+   ``co_qualname`` field.
 
 
 .. c:function:: PyObject* PyFunction_NewWithQualName(PyObject *code, PyObject *globals, PyObject *qualname)
 
    As :c:func:`PyFunction_New`, but also allows setting the function object's
    ``__qualname__`` attribute.  *qualname* should be a unicode object or ``NULL``;
-   if ``NULL``, the ``__qualname__`` attribute is set to the same value as its
-   ``__name__`` attribute.
+   if ``NULL``, the ``__qualname__`` attribute is set to the same value as the
+   code object's ``co_qualname`` field.
 
    .. versionadded:: 3.3
 
@@ -61,9 +62,11 @@ There are a few functions specific to Python functions.
 
 .. c:function:: PyObject* PyFunction_GetModule(PyObject *op)
 
-   Return the *__module__* attribute of the function object *op*. This is normally
-   a string containing the module name, but can be set to any other object by
-   Python code.
+   Return a :term:`borrowed reference` to the *__module__* attribute of the
+   function object *op*. It can be *NULL*.
+
+   This is normally a string containing the module name, but can be set to any
+   other object by Python code.
 
 
 .. c:function:: PyObject* PyFunction_GetDefaults(PyObject *op)

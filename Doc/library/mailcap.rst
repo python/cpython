@@ -3,22 +3,28 @@
 
 .. module:: mailcap
    :synopsis: Mailcap file handling.
+   :deprecated:
 
 **Source code:** :source:`Lib/mailcap.py`
+
+.. deprecated-removed:: 3.11 3.13
+   The :mod:`mailcap` module is deprecated
+   (see :pep:`PEP 594 <594#mailcap>` for details).
+   The :mod:`mimetypes` module provides an alternative.
 
 --------------
 
 Mailcap files are used to configure how MIME-aware applications such as mail
-readers and Web browsers react to files with different MIME types. (The name
+readers and web browsers react to files with different MIME types. (The name
 "mailcap" is derived from the phrase "mail capability".)  For example, a mailcap
 file might contain a line like ``video/mpeg; xmpeg %s``.  Then, if the user
-encounters an email message or Web document with the MIME type
+encounters an email message or web document with the MIME type
 :mimetype:`video/mpeg`, ``%s`` will be replaced by a filename (usually one
 belonging to a temporary file) and the :program:`xmpeg` program can be
 automatically started to view the file.
 
 The mailcap format is documented in :rfc:`1524`, "A User Agent Configuration
-Mechanism For Multimedia Mail Format Information," but is not an Internet
+Mechanism For Multimedia Mail Format Information", but is not an internet
 standard.  However, mailcap files are supported on most Unix systems.
 
 
@@ -54,6 +60,18 @@ standard.  However, mailcap files are supported on most Unix systems.
    use) to determine whether or not the mailcap line applies.  :func:`findmatch`
    will automatically check such conditions and skip the entry if the check fails.
 
+   .. versionchanged:: 3.11
+
+      To prevent security issues with shell metacharacters (symbols that have
+      special effects in a shell command line), ``findmatch`` will refuse
+      to inject ASCII characters other than alphanumerics and ``@+=:,./-_``
+      into the returned command line.
+
+      If a disallowed character appears in *filename*, ``findmatch`` will always
+      return ``(None, None)`` as if no entry was found.
+      If such a character appears elsewhere (a value in *plist* or in *MIMEtype*),
+      ``findmatch`` will ignore all mailcap entries which use that value.
+      A :mod:`warning <warnings>` will be raised in either case.
 
 .. function:: getcaps()
 

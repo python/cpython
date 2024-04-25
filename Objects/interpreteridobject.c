@@ -1,8 +1,9 @@
 /* InterpreterID object */
 
 #include "Python.h"
-#include "internal/pycore_pystate.h"
-#include "interpreteridobject.h"
+#include "pycore_abstract.h"   // _PyIndex_Check()
+#include "pycore_interp.h"     // _PyInterpreterState_LookUpID()
+#include "pycore_interpreteridobject.h"
 
 
 typedef struct interpid {
@@ -23,15 +24,21 @@ newinterpid(PyTypeObject *cls, int64_t id, int force)
         }
     }
 
+    if (interp != NULL) {
+        if (_PyInterpreterState_IDIncref(interp) < 0) {
+            return NULL;
+        }
+    }
+
     interpid *self = PyObject_New(interpid, cls);
     if (self == NULL) {
+        if (interp != NULL) {
+            _PyInterpreterState_IDDecref(interp);
+        }
         return NULL;
     }
     self->id = id;
 
-    if (interp != NULL) {
-        _PyInterpreterState_IDIncref(interp);
-    }
     return self;
 }
 
@@ -42,7 +49,7 @@ interp_id_converter(PyObject *arg, void *ptr)
     if (PyObject_TypeCheck(arg, &_PyInterpreterID_Type)) {
         id = ((interpid *)arg)->id;
     }
-    else if (PyIndex_Check(arg)) {
+    else if (_PyIndex_Check(arg)) {
         id = PyLong_AsLongLong(arg);
         if (id == -1 && PyErr_Occurred()) {
             return 0;
@@ -56,7 +63,7 @@ interp_id_converter(PyObject *arg, void *ptr)
     else {
         PyErr_Format(PyExc_TypeError,
                      "interpreter ID must be an int, got %.100s",
-                     arg->ob_type->tp_name);
+                     Py_TYPE(arg)->tp_name);
         return 0;
     }
     *(int64_t *)ptr = id;
@@ -269,7 +276,7 @@ _PyInterpreterState_GetIDObject(PyInterpreterState *interp)
     if (_PyInterpreterState_IDInitref(interp) != 0) {
         return NULL;
     };
-    PY_INT64_T id = PyInterpreterState_GetID(interp);
+    int64_t id = PyInterpreterState_GetID(interp);
     if (id < 0) {
         return NULL;
     }

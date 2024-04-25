@@ -21,7 +21,7 @@ The :mod:`secrets` module is used for generating cryptographically strong
 random numbers suitable for managing data such as passwords, account
 authentication, security tokens, and related secrets.
 
-In particularly, :mod:`secrets` should be used in preference to the
+In particular, :mod:`secrets` should be used in preference to the
 default pseudo-random number generator in the :mod:`random` module, which
 is designed for modelling and simulation, not security or cryptography.
 
@@ -129,7 +129,7 @@ Other functions
 .. function:: compare_digest(a, b)
 
    Return ``True`` if strings *a* and *b* are equal, otherwise ``False``,
-   in such a way as to reduce the risk of
+   using a "constant-time compare" to reduce the risk of
    `timing attacks <https://codahale.com/a-lesson-in-timing-attacks/>`_.
    See :func:`hmac.compare_digest` for additional details.
 
@@ -193,7 +193,7 @@ suitable for password recovery applications:
 .. testcode::
 
    import secrets
-   url = 'https://mydomain.com/reset=' + secrets.token_urlsafe()
+   url = 'https://example.com/reset=' + secrets.token_urlsafe()
 
 
 

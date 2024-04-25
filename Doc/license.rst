@@ -72,6 +72,19 @@ make these releases possible.
 Terms and conditions for accessing or otherwise using Python
 ============================================================
 
+Python software and documentation are licensed under the
+:ref:`PSF License Agreement <PSF-license>`.
+
+Starting with Python 3.8.6, examples, recipes, and other code in
+the documentation are dual licensed under the PSF License Agreement
+and the :ref:`Zero-Clause BSD license <BSD0>`.
+
+Some software incorporated into Python is under different licenses.
+The licenses are listed with code falling under that license.
+See :ref:`OtherLicenses` for an incomplete list of these licenses.
+
+
+.. _PSF-license:
 
 PSF LICENSE AGREEMENT FOR PYTHON |release|
 ------------------------------------------
@@ -87,7 +100,7 @@ PSF LICENSE AGREEMENT FOR PYTHON |release|
       analyze, test, perform and/or display publicly, prepare derivative works,
       distribute, and otherwise use Python |release| alone or in any derivative
       version, provided, however, that PSF's License Agreement and PSF's notice of
-      copyright, i.e., "Copyright © 2001-2019 Python Software Foundation; All Rights
+      copyright, i.e., "Copyright © 2001-2022 Python Software Foundation; All Rights
       Reserved" are retained in Python |release| alone or in any derivative version
       prepared by Licensee.
 
@@ -190,9 +203,9 @@ CNRI LICENSE AGREEMENT FOR PYTHON 1.6.1
       Licensee may substitute the following text (omitting the quotes): "Python 1.6.1
       is made available subject to the terms and conditions in CNRI's License
       Agreement.  This Agreement together with Python 1.6.1 may be located on the
-      Internet using the following unique, persistent identifier (known as a handle):
+      internet using the following unique, persistent identifier (known as a handle):
       1895.22/1013.  This Agreement may also be obtained from a proxy server on the
-      Internet using the following URL: http://hdl.handle.net/1895.22/1013."
+      internet using the following URL: http://hdl.handle.net/1895.22/1013."
 
    3. In the event Licensee prepares a derivative work that is based on or
       incorporates Python 1.6.1 or any part thereof, and wants to make the derivative
@@ -257,6 +270,27 @@ CWI LICENSE AGREEMENT FOR PYTHON 0.9.0 THROUGH 1.2
    ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS
    SOFTWARE.
 
+
+.. _BSD0:
+
+ZERO-CLAUSE BSD LICENSE FOR CODE IN THE PYTHON |release| DOCUMENTATION
+----------------------------------------------------------------------
+
+.. parsed-literal::
+
+    Permission to use, copy, modify, and/or distribute this software for any
+    purpose with or without fee is hereby granted.
+
+    THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH
+    REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY
+    AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,
+    INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM
+    LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
+    OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
+    PERFORMANCE OF THIS SOFTWARE.
+
+
+.. _OtherLicenses:
 
 Licenses and Acknowledgements for Incorporated Software
 =======================================================
@@ -592,9 +626,9 @@ strtod and dtoa
 The file :file:`Python/dtoa.c`, which supplies C functions dtoa and
 strtod for conversion of C doubles to and from strings, is derived
 from the file of the same name by David M. Gay, currently available
-from http://www.netlib.org/fp/.  The original file, as retrieved on
-March 16, 2009, contains the following copyright and licensing
-notice::
+from https://web.archive.org/web/20220517033456/http://www.netlib.org/fp/dtoa.c.
+The original file, as retrieved on March 16, 2009, contains the following
+copyright and licensing notice::
 
    /****************************************************************
     *
@@ -621,7 +655,7 @@ OpenSSL
 
 The modules :mod:`hashlib`, :mod:`posix`, :mod:`ssl`, :mod:`crypt` use
 the OpenSSL library for added performance if made available by the
-operating system. Additionally, the Windows and Mac OS X installers for
+operating system. Additionally, the Windows and macOS installers for
 Python may include a copy of the OpenSSL libraries, so we include a copy
 of the OpenSSL license here::
 
@@ -889,7 +923,7 @@ libmpdec
 The :mod:`_decimal` module is built using an included copy of the libmpdec
 library unless the build is configured ``--with-system-libmpdec``::
 
-   Copyright (c) 2008-2016 Stefan Krah. All rights reserved.
+   Copyright (c) 2008-2020 Stefan Krah. All rights reserved.
 
    Redistribution and use in source and binary forms, with or without
    modification, are permitted provided that the following conditions
@@ -921,7 +955,7 @@ W3C C14N test suite
 The C14N 2.0 test suite in the :mod:`test` package
 (``Lib/test/xmltestdata/c14n-20/``) was retrieved from the W3C website at
 https://www.w3.org/TR/xml-c14n2-testcases/ and is distributed under the
-3-clause BSD license:
+3-clause BSD license::
 
    Copyright (c) 2013 W3C(R) (MIT, ERCIM, Keio, Beihang),
    All Rights Reserved.

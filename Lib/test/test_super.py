@@ -317,6 +317,14 @@ class TestSuper(unittest.TestCase):
         for i in range(1000):
             super.__init__(sp, int, i)
 
+    def test_super_argcount(self):
+        with self.assertRaisesRegex(TypeError, "expected at most"):
+            super(int, int, int)
+
+    def test_super_argtype(self):
+        with self.assertRaisesRegex(TypeError, "argument 1 must be a type"):
+            super(1, int)
+
 
 if __name__ == "__main__":
     unittest.main()

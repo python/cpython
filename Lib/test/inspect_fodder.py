@@ -91,3 +91,25 @@ class Callable:
 
 custom_method = Callable().as_method_of(42)
 del Callable
+
+# line 95
+class WhichComments:
+  # line 97
+    # before f
+    def f(self):
+      # line 100
+        # start f
+        return 1
+        # line 103
+        # end f
+       # line 105
+    # after f
+
+    # before asyncf - line 108
+    async def asyncf(self):
+        # start asyncf
+        return 2
+        # end asyncf
+       # after asyncf - line 113
+    # end of WhichComments - line 114
+  # after WhichComments - line 115

@@ -1,7 +1,40 @@
+.. release date: 2016-06-13
+.. bpo: 26556
+.. date: 9316
+.. nonce: v5j2uL
+.. original section: Library
+.. section: Security
+
+Update expat to 2.1.1, fixes CVE-2015-1283.
+
+..
+
+.. bpo: 0
+.. date: 9315
+.. nonce: PHOAdg
+.. original section: Library
+.. section: Security
+
+Fix TLS stripping vulnerability in smtplib, CVE-2016-0772. Reported by Team
+Oststrom.
+
+..
+
+.. bpo: 26839
+.. date: 9303
+.. nonce: yVvy7R
+.. original section: Library
+.. section: Security
+
+On Linux, :func:`os.urandom` now calls ``getrandom()`` with
+``GRND_NONBLOCK`` to fall back on reading ``/dev/urandom`` if the urandom
+entropy pool is not initialized yet. Patch written by Colm Buckley.
+
+..
+
 .. bpo: 27095
 .. date: 9332
 .. nonce: 92UoyH
-.. release date: 2016-06-13
 .. section: Core and Builtins
 
 Simplified MAKE_FUNCTION and removed MAKE_CLOSURE opcodes. Patch by Demur
@@ -159,27 +192,6 @@ Rees.
 
 ..
 
-.. bpo: 26556
-.. date: 9316
-.. nonce: v5j2uL
-.. original section: Library
-.. section: Security
-
-Update expat to 2.1.1, fixes CVE-2015-1283.
-
-..
-
-.. bpo: 0
-.. date: 9315
-.. nonce: PHOAdg
-.. original section: Library
-.. section: Security
-
-Fix TLS stripping vulnerability in smtplib, CVE-2016-0772. Reported by Team
-Oststrom.
-
-..
-
 .. bpo: 21386
 .. date: 9314
 .. nonce: DjV72U
@@ -291,18 +303,6 @@ responses that don't have a body.  Patch by Susumu Koshiba.
 
 Fix the "platform" module to tolerate when sys.version contains truncated
 build information.
-
-..
-
-.. bpo: 26839
-.. date: 9303
-.. nonce: yVvy7R
-.. original section: Library
-.. section: Security
-
-On Linux, :func:`os.urandom` now calls ``getrandom()`` with
-``GRND_NONBLOCK`` to fall back on reading ``/dev/urandom`` if the urandom
-entropy pool is not initialized yet. Patch written by Colm Buckley.
 
 ..
 
@@ -735,6 +735,16 @@ default when used interactively.
 
 ..
 
+.. bpo: 17500
+.. date: 9257
+.. nonce: QTZbRV
+.. section: Windows
+
+Remove unused and outdated icons. (See also:
+https://github.com/python/pythondotorg/issues/945)
+
+..
+
 .. bpo: 27229
 .. date: 9259
 .. nonce: C2NDch
@@ -752,16 +762,6 @@ Gaye.
 
 Update OS X 10.5+ 32-bit-only installer to build and link with OpenSSL
 1.0.2h.
-
-..
-
-.. bpo: 17500
-.. date: 9257
-.. nonce: QTZbRV
-.. section: Windows
-
-Remove unused and outdated icons. (See also:
-https://github.com/python/pythondotorg/issues/945)
 
 ..
 

@@ -15,7 +15,7 @@ operating system::
 
    >>> import os
    >>> os.getcwd()      # Return the current working directory
-   'C:\\Python39'
+   'C:\\Python312'
    >>> os.chdir('/server/accesslogs')   # Change current working directory
    >>> os.system('mkdir today')   # Run the command mkdir in the system shell
    0
@@ -78,8 +78,9 @@ and an optional number of lines to be displayed::
 
     import argparse
 
-    parser = argparse.ArgumentParser(prog = 'top',
-        description = 'Show top lines from each file')
+    parser = argparse.ArgumentParser(
+        prog='top',
+        description='Show top lines from each file')
     parser.add_argument('filenames', nargs='+')
     parser.add_argument('-l', '--lines', type=int, default=10)
     args = parser.parse_args()
@@ -178,13 +179,13 @@ protocols. Two of the simplest are :mod:`urllib.request` for retrieving data
 from URLs and :mod:`smtplib` for sending mail::
 
    >>> from urllib.request import urlopen
-   >>> with urlopen('http://tycho.usno.navy.mil/cgi-bin/timer.pl') as response:
+   >>> with urlopen('http://worldtimeapi.org/api/timezone/etc/UTC.txt') as response:
    ...     for line in response:
-   ...         line = line.decode('utf-8')  # Decoding the binary data to text.
-   ...         if 'EST' in line or 'EDT' in line:  # look for Eastern Time
-   ...             print(line)
-
-   <BR>Nov. 25, 09:43:32 PM EST
+   ...         line = line.decode()             # Convert bytes to a str
+   ...         if line.startswith('datetime'):
+   ...             print(line.rstrip())         # Remove trailing newline
+   ...
+   datetime: 2022-01-01T01:36:47.689215+00:00
 
    >>> import smtplib
    >>> server = smtplib.SMTP('localhost')
@@ -326,7 +327,7 @@ Python has a "batteries included" philosophy.  This is best seen through the
 sophisticated and robust capabilities of its larger packages. For example:
 
 * The :mod:`xmlrpc.client` and :mod:`xmlrpc.server` modules make implementing
-  remote procedure calls into an almost trivial task.  Despite the modules
+  remote procedure calls into an almost trivial task.  Despite the modules'
   names, no direct knowledge or handling of XML is needed.
 
 * The :mod:`email` package is a library for managing email messages, including

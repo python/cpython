@@ -1,9 +1,9 @@
 """
 pep384_macrocheck.py
 
-This programm tries to locate errors in the relevant Python header
+This program tries to locate errors in the relevant Python header
 files where macros access type fields when they are reachable from
-the limided API.
+the limited API.
 
 The idea is to search macros with the string "->tp_" in it.
 When the macro name does not begin with an underscore,

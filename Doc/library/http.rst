@@ -21,8 +21,8 @@ HyperText Transfer Protocol:
 * :mod:`http.cookies` has utilities for implementing state management with cookies
 * :mod:`http.cookiejar` provides persistence of cookies
 
-:mod:`http` is also a module that defines a number of HTTP status codes and
-associated messages through the :class:`http.HTTPStatus` enum:
+
+The :mod:`http` module also defines the following enums that help you work with http related code:
 
 .. class:: HTTPStatus
 
@@ -35,7 +35,7 @@ associated messages through the :class:`http.HTTPStatus` enum:
 
       >>> from http import HTTPStatus
       >>> HTTPStatus.OK
-      <HTTPStatus.OK: 200>
+      HTTPStatus.OK
       >>> HTTPStatus.OK == 200
       True
       >>> HTTPStatus.OK.value
@@ -45,7 +45,7 @@ associated messages through the :class:`http.HTTPStatus` enum:
       >>> HTTPStatus.OK.description
       'Request fulfilled, document follows'
       >>> list(HTTPStatus)
-      [<HTTPStatus.CONTINUE: 100>, <HTTPStatus.SWITCHING_PROTOCOLS: 101>, ...]
+      [HTTPStatus.CONTINUE, HTTPStatus.SWITCHING_PROTOCOLS, ...]
 
 .. _http-status-codes:
 
@@ -53,8 +53,8 @@ HTTP status codes
 -----------------
 
 Supported,
-`IANA-registered <https://www.iana.org/assignments/http-status-codes/http-status-codes.xhtml>`_
-status codes available in :class:`http.HTTPStatus` are:
+`IANA-registered status codes <https://www.iana.org/assignments/http-status-codes/http-status-codes.xhtml>`_
+available in :class:`http.HTTPStatus` are:
 
 ======= =================================== ==================================================================
 Code    Enum Name                           Details
@@ -62,6 +62,7 @@ Code    Enum Name                           Details
 ``100`` ``CONTINUE``                        HTTP/1.1 :rfc:`7231`, Section 6.2.1
 ``101`` ``SWITCHING_PROTOCOLS``             HTTP/1.1 :rfc:`7231`, Section 6.2.2
 ``102`` ``PROCESSING``                      WebDAV :rfc:`2518`, Section 10.1
+``103`` ``EARLY_HINTS``                     An HTTP Status Code for Indicating Hints :rfc:`8297`
 ``200`` ``OK``                              HTTP/1.1 :rfc:`7231`, Section 6.3.1
 ``201`` ``CREATED``                         HTTP/1.1 :rfc:`7231`, Section 6.3.2
 ``202`` ``ACCEPTED``                        HTTP/1.1 :rfc:`7231`, Section 6.3.3
@@ -98,10 +99,12 @@ Code    Enum Name                           Details
 ``415`` ``UNSUPPORTED_MEDIA_TYPE``          HTTP/1.1 :rfc:`7231`, Section 6.5.13
 ``416`` ``REQUESTED_RANGE_NOT_SATISFIABLE`` HTTP/1.1 Range Requests :rfc:`7233`, Section 4.4
 ``417`` ``EXPECTATION_FAILED``              HTTP/1.1 :rfc:`7231`, Section 6.5.14
+``418`` ``IM_A_TEAPOT``                     HTCPCP/1.0 :rfc:`2324`, Section 2.3.2
 ``421`` ``MISDIRECTED_REQUEST``             HTTP/2 :rfc:`7540`, Section 9.1.2
 ``422`` ``UNPROCESSABLE_ENTITY``            WebDAV :rfc:`4918`, Section 11.2
 ``423`` ``LOCKED``                          WebDAV :rfc:`4918`, Section 11.3
 ``424`` ``FAILED_DEPENDENCY``               WebDAV :rfc:`4918`, Section 11.4
+``425`` ``TOO_EARLY``                       Using Early Data in HTTP :rfc:`8470`
 ``426`` ``UPGRADE_REQUIRED``                HTTP/1.1 :rfc:`7231`, Section 6.5.15
 ``428`` ``PRECONDITION_REQUIRED``           Additional HTTP Status Codes :rfc:`6585`
 ``429`` ``TOO_MANY_REQUESTS``               Additional HTTP Status Codes :rfc:`6585`
@@ -130,3 +133,49 @@ equal to the constant name (i.e. ``http.HTTPStatus.OK`` is also available as
 
 .. versionadded:: 3.8
    Added ``451 UNAVAILABLE_FOR_LEGAL_REASONS`` status code.
+
+.. versionadded:: 3.9
+   Added ``103 EARLY_HINTS``, ``418 IM_A_TEAPOT`` and ``425 TOO_EARLY`` status codes.
+
+.. class:: HTTPMethod
+
+   .. versionadded:: 3.11
+
+   A subclass of :class:`enum.StrEnum` that defines a set of HTTP methods and descriptions written in English.
+
+   Usage::
+
+      >>> from http import HTTPMethod
+      >>> HTTMethod.GET
+      HTTMethod.GET
+      >>> HTTMethod.GET == 'GET'
+      True
+      >>> HTTMethod.GET.value
+      'GET'
+      >>> HTTMethod.GET.description
+      'Transfer a current representation of the target resource.'
+      >>> list(HTTPMethod)
+      [HTTPMethod.GET, HTTPMethod.HEAD, ...]
+
+.. _http-methods:
+
+HTTP methods
+-----------------
+
+Supported,
+`IANA-registered methods <https://www.iana.org/assignments/http-methods/http-methods.xhtml>`_
+available in :class:`http.HTTPMethod` are:
+
+=========== =================================== ==================================================================
+Method      Enum Name                           Details
+=========== =================================== ==================================================================
+``GET``     ``GET``                             HTTP/1.1 :rfc:`7231`, Section 4.3.1
+``HEAD``    ``HEAD``                            HTTP/1.1 :rfc:`7231`, Section 4.3.2
+``POST``    ``POST``                            HTTP/1.1 :rfc:`7231`, Section 4.3.3
+``PUT``     ``PUT``                             HTTP/1.1 :rfc:`7231`, Section 4.3.4
+``DELETE``  ``DELETE``                          HTTP/1.1 :rfc:`7231`, Section 4.3.5
+``CONNECT`` ``CONNECT``                         HTTP/1.1 :rfc:`7231`, Section 4.3.6
+``OPTIONS`` ``OPTIONS``                         HTTP/1.1 :rfc:`7231`, Section 4.3.7
+``TRACE``   ``TRACE``                           HTTP/1.1 :rfc:`7231`, Section 4.3.8
+``PATCH``   ``PATCH``                           HTTP/1.1 :rfc:`5789`
+=========== =================================== ==================================================================

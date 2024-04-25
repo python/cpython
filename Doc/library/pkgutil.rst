@@ -26,7 +26,7 @@ support.
       __path__ = extend_path(__path__, __name__)
 
    This will add to the package's ``__path__`` all subdirectories of directories
-   on ``sys.path`` named after the package.  This is useful if one wants to
+   on :data:`sys.path` named after the package.  This is useful if one wants to
    distribute different parts of a single logical package as multiple
    directories.
 
@@ -68,7 +68,7 @@ support.
 
 .. class:: ImpLoader(fullname, file, filename, etc)
 
-   :term:`Loader` that wraps Python's "classic" import algorithm.
+   :term:`Loader <loader>` that wraps Python's "classic" import algorithm.
 
    .. deprecated:: 3.3
       This emulation is no longer needed, as the standard import mechanism
@@ -128,9 +128,9 @@ support.
 
    Yield :term:`finder` objects for the given module name.
 
-   If fullname contains a '.', the finders will be for the package
+   If fullname contains a ``'.'``, the finders will be for the package
    containing fullname, otherwise they will be all registered top level
-   finders (i.e. those on both sys.meta_path and sys.path_hooks).
+   finders (i.e. those on both :data:`sys.meta_path` and :data:`sys.path_hooks`).
 
    If the named module is in a package, that package is imported as a side
    effect of invoking this function.
@@ -145,7 +145,7 @@ support.
 .. function:: iter_modules(path=None, prefix='')
 
    Yields :class:`ModuleInfo` for all submodules on *path*, or, if
-   *path* is ``None``, all top-level modules on ``sys.path``.
+   *path* is ``None``, all top-level modules on :data:`sys.path`.
 
    *path* should be either ``None`` or a list of paths to look for modules in.
 
@@ -227,3 +227,44 @@ support.
    then ``None`` is returned.  In particular, the :term:`loader` for
    :term:`namespace packages <namespace package>` does not support
    :meth:`get_data <importlib.abc.ResourceLoader.get_data>`.
+
+
+.. function:: resolve_name(name)
+
+   Resolve a name to an object.
+
+   This functionality is used in numerous places in the standard library (see
+   :issue:`12915`) - and equivalent functionality is also in widely used
+   third-party packages such as setuptools, Django and Pyramid.
+
+   It is expected that *name* will be a string in one of the following
+   formats, where W is shorthand for a valid Python identifier and dot stands
+   for a literal period in these pseudo-regexes:
+
+   * ``W(.W)*``
+   * ``W(.W)*:(W(.W)*)?``
+
+   The first form is intended for backward compatibility only. It assumes that
+   some part of the dotted name is a package, and the rest is an object
+   somewhere within that package, possibly nested inside other objects.
+   Because the place where the package stops and the object hierarchy starts
+   can't be inferred by inspection, repeated attempts to import must be done
+   with this form.
+
+   In the second form, the caller makes the division point clear through the
+   provision of a single colon: the dotted name to the left of the colon is a
+   package to be imported, and the dotted name to the right is the object
+   hierarchy within that package. Only one import is needed in this form. If
+   it ends with the colon, then a module object is returned.
+
+   The function will return an object (which might be a module), or raise one
+   of the following exceptions:
+
+   :exc:`ValueError` -- if *name* isn't in a recognised format.
+
+   :exc:`ImportError` -- if an import failed when it shouldn't have.
+
+   :exc:`AttributeError` -- If a failure occurred when traversing the object
+   hierarchy within the imported package to get to the desired object.
+
+   .. versionadded:: 3.9

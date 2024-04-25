@@ -1,0 +1,1 @@
+Change order of bytecode instructions emitted for :keyword:`with` and :keyword:`async with` to reduce the number of entries in the exception table.

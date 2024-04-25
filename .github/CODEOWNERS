@@ -9,19 +9,36 @@
 
 # Core
 **/*context*                  @1st1
-**/*genobject*                @1st1
+**/*genobject*                @1st1 @markshannon
 **/*hamt*                     @1st1
 Objects/set*                  @rhettinger
-Objects/dict*                 @methane
+Objects/dict*                 @methane @markshannon
+Objects/type*                 @markshannon
+Objects/codeobject.c          @markshannon
+Objects/frameobject.c         @markshannon
+Objects/call.c                @markshannon
+Python/ceval.c                @markshannon
+Python/compile.c              @markshannon
+Python/ast_opt.c              @isidentical
+Lib/test/test_patma.py        @brandtbucher
+Lib/test/test_peepholer.py    @brandtbucher
+
+# Exceptions
+Lib/traceback.py              @iritkatriel
+Lib/test/test_except*.py      @iritkatriel
+Lib/test/test_traceback.py    @iritkatriel
+Objects/exceptions.c          @iritkatriel
+Python/traceback.c            @iritkatriel
+Python/pythonrun.c            @iritkatriel
 
 # Hashing
-**/*hashlib*                  @python/crypto-team @tiran
-**/*pyhash*                   @python/crypto-team @tiran
-**/*sha*                      @python/crypto-team @tiran
-**/*md5*                      @python/crypto-team @tiran
-**/*blake*                    @python/crypto-team @tiran
-/Modules/_blake2/**           @python/crypto-team @tiran
-/Modules/_sha3/**             @python/crypto-team @tiran
+**/*hashlib*                  @tiran
+**/*pyhash*                   @tiran
+**/*sha*                      @tiran
+**/*md5*                      @tiran
+**/*blake*                    @tiran
+/Modules/_blake2/**           @tiran
+/Modules/_sha3/**             @tiran
 
 # logging
 **/*logging*                  @vsajip
@@ -36,6 +53,7 @@ Objects/dict*                 @methane
 /Lib/html/                    @ezio-melotti
 /Lib/_markupbase.py           @ezio-melotti
 /Lib/test/test_html*.py       @ezio-melotti
+/Tools/scripts/*html5*        @ezio-melotti
 
 # Import (including importlib).
 # Ignoring importlib.h so as to not get flagged on
@@ -43,14 +61,8 @@ Objects/dict*                 @methane
 # bytecode.
 **/*import*.c                 @brettcannon @encukou @ericsnowcurrently @ncoghlan @warsaw
 **/*import*.py                @brettcannon @encukou @ericsnowcurrently @ncoghlan @warsaw
-
-
-# SSL
-**/*ssl*                      @python/crypto-team @tiran
-**/*.pem                      @python/crypto-team @tiran
-
-# CSPRNG
-Python/bootstrap_hash.c       @python/crypto-team @tiran
+**/importlib/resources/*      @jaraco @warsaw @brettcannon
+**/importlib/metadata/*       @jaraco @warsaw
 
 # Dates and times
 **/*datetime*                 @pganssle @abalkin
@@ -72,11 +84,24 @@ Include/pytime.h              @pganssle @abalkin
 /Modules/gcmodule.c           @pablogsal
 /Doc/library/gc.rst           @pablogsal
 
-# Parser/Pgen
-/Parser/pgen/                 @pablogsal
+# Parser
+/Parser/                      @pablogsal @lysnikolaou
+/Tools/peg_generator/         @pablogsal @lysnikolaou
+/Lib/test/test_peg_generator/ @pablogsal @lysnikolaou
+/Grammar/python.gram          @pablogsal @lysnikolaou
+
+# AST
+Python/ast.c                  @isidentical
+Parser/asdl.py                @isidentical
+Parser/asdl_c.py              @isidentical
+Lib/ast.py                    @isidentical
+
+# Mock
+/Lib/unittest/mock.py         @cjw296
+/Lib/test/test_unittest/testmock/* @cjw296
 
 # SQLite 3
-**/*sqlite*                   @berkerpeksag
+**/*sqlite*                   @berkerpeksag @erlend-aasland
 
 # subprocess
 /Lib/subprocess.py            @gpshead
@@ -102,13 +127,13 @@ Include/pytime.h              @pganssle @abalkin
 **/*bisect*                   @rhettinger
 **/*heapq*                    @rhettinger
 **/*functools*                @rhettinger
-**/*decimal*                  @rhettinger @skrah
+**/*decimal*                  @rhettinger
 
 **/*dataclasses*              @ericvsmith
 
 **/*idlelib*                  @terryjreedy
 
-**/*typing*                   @gvanrossum @ilevkivskyi
+**/*typing*                   @gvanrossum @Fidget-Spinner @JelleZijlstra
 
 **/*asyncore                  @giampaolo
 **/*asynchat                  @giampaolo
@@ -119,6 +144,11 @@ Include/pytime.h              @pganssle @abalkin
 **/*cgi*                      @ethanfurman
 **/*tarfile*                  @ethanfurman
 
+**/*tomllib*                  @encukou
+
 # macOS
 /Mac/                         @python/macos-team
 **/*osx_support*              @python/macos-team
+
+# pathlib
+**/*pathlib*                  @brettcannon

@@ -1,4 +1,6 @@
-from test.support import run_unittest, unload, check_warnings, CleanImport
+from pathlib import Path
+from test.support.import_helper import unload, CleanImport
+from test.support.warnings_helper import check_warnings
 import unittest
 import sys
 import importlib
@@ -89,6 +91,45 @@ class PkgutilTests(unittest.TestCase):
         del sys.path[0]
 
         del sys.modules[pkg]
+
+    def test_issue44061_iter_modules(self):
+        #see: issue44061
+        zip = 'test_getdata_zipfile.zip'
+        pkg = 'test_getdata_zipfile'
+
+        # Include a LF and a CRLF, to test that binary data is read back
+        RESOURCE_DATA = b'Hello, world!\nSecond line\r\nThird line'
+
+        # Make a package with some resources
+        zip_file = os.path.join(self.dirname, zip)
+        z = zipfile.ZipFile(zip_file, 'w')
+
+        # Empty init.py
+        z.writestr(pkg + '/__init__.py', "")
+        # Resource files, res.txt
+        z.writestr(pkg + '/res.txt', RESOURCE_DATA)
+        z.close()
+
+        # Check we can read the resources
+        sys.path.insert(0, zip_file)
+        try:
+            res = pkgutil.get_data(pkg, 'res.txt')
+            self.assertEqual(res, RESOURCE_DATA)
+
+            # make sure iter_modules accepts Path objects
+            names = []
+            for moduleinfo in pkgutil.iter_modules([Path(zip_file)]):
+                self.assertIsInstance(moduleinfo, pkgutil.ModuleInfo)
+                names.append(moduleinfo.name)
+            self.assertEqual(names, [pkg])
+        finally:
+            del sys.path[0]
+            sys.modules.pop(pkg, None)
+
+        # assert path must be None or list of paths
+        expected_msg = "path must be None or list of paths to look for modules in"
+        with self.assertRaisesRegex(ValueError, expected_msg):
+            list(pkgutil.iter_modules("invalid_path"))
 
     def test_unreadable_dir_on_syspath(self):
         # issue7367 - walk_packages failed if unreadable dir on sys.path
@@ -185,6 +226,97 @@ class PkgutilTests(unittest.TestCase):
         bytes_input = b'test_dir'
         with self.assertRaises((TypeError, ValueError)):
             list(pkgutil.walk_packages(bytes_input))
+
+    def test_name_resolution(self):
+        import logging
+        import logging.handlers
+
+        success_cases = (
+            ('os', os),
+            ('os.path', os.path),
+            ('os.path:pathsep', os.path.pathsep),
+            ('logging', logging),
+            ('logging:', logging),
+            ('logging.handlers', logging.handlers),
+            ('logging.handlers:', logging.handlers),
+            ('logging.handlers:SysLogHandler', logging.handlers.SysLogHandler),
+            ('logging.handlers.SysLogHandler', logging.handlers.SysLogHandler),
+            ('logging.handlers:SysLogHandler.LOG_ALERT',
+                logging.handlers.SysLogHandler.LOG_ALERT),
+            ('logging.handlers.SysLogHandler.LOG_ALERT',
+                logging.handlers.SysLogHandler.LOG_ALERT),
+            ('builtins.int', int),
+            ('builtins:int', int),
+            ('builtins.int.from_bytes', int.from_bytes),
+            ('builtins:int.from_bytes', int.from_bytes),
+            ('builtins.ZeroDivisionError', ZeroDivisionError),
+            ('builtins:ZeroDivisionError', ZeroDivisionError),
+            ('os:path', os.path),
+        )
+
+        failure_cases = (
+            (None, TypeError),
+            (1, TypeError),
+            (2.0, TypeError),
+            (True, TypeError),
+            ('', ValueError),
+            ('?abc', ValueError),
+            ('abc/foo', ValueError),
+            ('foo', ImportError),
+            ('os.foo', AttributeError),
+            ('os.foo:', ImportError),
+            ('os.pth:pathsep', ImportError),
+            ('logging.handlers:NoSuchHandler', AttributeError),
+            ('logging.handlers:SysLogHandler.NO_SUCH_VALUE', AttributeError),
+            ('logging.handlers.SysLogHandler.NO_SUCH_VALUE', AttributeError),
+            ('ZeroDivisionError', ImportError),
+            ('os.path.9abc', ValueError),
+            ('9abc', ValueError),
+        )
+
+        # add some Unicode package names to the mix.
+
+        unicode_words = ('\u0935\u092e\u0938',
+                         '\xe9', '\xc8',
+                         '\uc548\ub155\ud558\uc138\uc694',
+                         '\u3055\u3088\u306a\u3089',
+                         '\u3042\u308a\u304c\u3068\u3046',
+                         '\u0425\u043e\u0440\u043e\u0448\u043e',
+                         '\u0441\u043f\u0430\u0441\u0438\u0431\u043e',
+                         '\u73b0\u4ee3\u6c49\u8bed\u5e38\u7528\u5b57\u8868')
+
+        for uw in unicode_words:
+            d = os.path.join(self.dirname, uw)
+            try:
+                os.makedirs(d, exist_ok=True)
+            except  UnicodeEncodeError:
+                # When filesystem encoding cannot encode uw: skip this test
+                continue
+            # make an empty __init__.py file
+            f = os.path.join(d, '__init__.py')
+            with open(f, 'w') as f:
+                f.write('')
+                f.flush()
+            # now import the package we just created; clearing the caches is
+            # needed, otherwise the newly created package isn't found
+            importlib.invalidate_caches()
+            mod = importlib.import_module(uw)
+            success_cases += (uw, mod),
+            if len(uw) > 1:
+                failure_cases += (uw[:-1], ImportError),
+
+        # add an example with a Unicode digit at the start
+        failure_cases += ('\u0966\u0935\u092e\u0938', ValueError),
+
+        for s, expected in success_cases:
+            with self.subTest(s=s):
+                o = pkgutil.resolve_name(s)
+                self.assertEqual(o, expected)
+
+        for s, exc in failure_cases:
+            with self.subTest(s=s):
+                with self.assertRaises(exc):
+                    pkgutil.resolve_name(s)
 
 
 class PkgutilPEP302Tests(unittest.TestCase):
@@ -405,7 +537,8 @@ class ImportlibMigrationTests(unittest.TestCase):
 
     def check_deprecated(self):
         return check_warnings(
-            ("This emulation is deprecated, use 'importlib' instead",
+            ("This emulation is deprecated and slated for removal in "
+             "Python 3.12; use 'importlib' instead",
              DeprecationWarning))
 
     def test_importer_deprecated(self):
@@ -480,15 +613,19 @@ class ImportlibMigrationTests(unittest.TestCase):
             self.assertIsNone(pkgutil.get_importer("*??"))
             self.assertEqual(len(w.warnings), 0)
 
+    def test_issue44061(self):
+        try:
+            pkgutil.get_importer(Path("/home"))
+        except AttributeError:
+            self.fail("Unexpected AttributeError when calling get_importer")
+
     def test_iter_importers_avoids_emulation(self):
         with check_warnings() as w:
             for importer in pkgutil.iter_importers(): pass
             self.assertEqual(len(w.warnings), 0)
 
 
-def test_main():
-    run_unittest(PkgutilTests, PkgutilPEP302Tests, ExtendPathTests,
-                 NestedNamespacePackageTest, ImportlibMigrationTests)
+def tearDownModule():
     # this is necessary if test is run repeated (like when finding leaks)
     import zipimport
     import importlib
@@ -497,4 +634,4 @@ def test_main():
 
 
 if __name__ == '__main__':
-    test_main()
+    unittest.main()

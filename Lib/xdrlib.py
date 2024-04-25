@@ -7,6 +7,9 @@ See: RFC 1014
 import struct
 from io import BytesIO
 from functools import wraps
+import warnings
+
+warnings._deprecated(__name__, remove=(3, 13))
 
 __all__ = ["Error", "Packer", "Unpacker", "ConversionError"]
 

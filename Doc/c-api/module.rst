@@ -19,12 +19,13 @@ Module Objects
 .. c:function:: int PyModule_Check(PyObject *p)
 
    Return true if *p* is a module object, or a subtype of a module object.
+   This function always succeeds.
 
 
 .. c:function:: int PyModule_CheckExact(PyObject *p)
 
    Return true if *p* is a module object, but not a subtype of
-   :c:data:`PyModule_Type`.
+   :c:data:`PyModule_Type`.  This function always succeeds.
 
 
 .. c:function:: PyObject* PyModule_NewObject(PyObject *name)
@@ -153,7 +154,7 @@ or request "multi-phase initialization" by returning the definition struct itsel
    .. c:member:: const char *m_doc
 
       Docstring for the module; usually a docstring variable created with
-      :c:func:`PyDoc_STRVAR` is used.
+      :c:macro:`PyDoc_STRVAR` is used.
 
    .. c:member:: Py_ssize_t m_size
 
@@ -196,23 +197,53 @@ or request "multi-phase initialization" by returning the definition struct itsel
    .. c:member:: traverseproc m_traverse
 
       A traversal function to call during GC traversal of the module object, or
-      ``NULL`` if not needed. This function may be called before module state
-      is allocated (:c:func:`PyModule_GetState()` may return `NULL`),
-      and before the :c:member:`Py_mod_exec` function is executed.
+      ``NULL`` if not needed.
+
+      This function is not called if the module state was requested but is not
+      allocated yet. This is the case immediately after the module is created
+      and before the module is executed (:c:data:`Py_mod_exec` function). More
+      precisely, this function is not called if :c:member:`m_size` is greater
+      than 0 and the module state (as returned by :c:func:`PyModule_GetState`)
+      is ``NULL``.
+
+      .. versionchanged:: 3.9
+         No longer called before the module state is allocated.
 
    .. c:member:: inquiry m_clear
 
       A clear function to call during GC clearing of the module object, or
-      ``NULL`` if not needed. This function may be called before module state
-      is allocated (:c:func:`PyModule_GetState()` may return `NULL`),
-      and before the :c:member:`Py_mod_exec` function is executed.
+      ``NULL`` if not needed.
+
+      This function is not called if the module state was requested but is not
+      allocated yet. This is the case immediately after the module is created
+      and before the module is executed (:c:data:`Py_mod_exec` function). More
+      precisely, this function is not called if :c:member:`m_size` is greater
+      than 0 and the module state (as returned by :c:func:`PyModule_GetState`)
+      is ``NULL``.
+
+      Like :c:member:`PyTypeObject.tp_clear`, this function is not *always*
+      called before a module is deallocated. For example, when reference
+      counting is enough to determine that an object is no longer used,
+      the cyclic garbage collector is not involved and
+      :c:member:`~PyModuleDef.m_free` is called directly.
+
+      .. versionchanged:: 3.9
+         No longer called before the module state is allocated.
 
    .. c:member:: freefunc m_free
 
-      A function to call during deallocation of the module object, or ``NULL`` if
-      not needed. This function may be called before module state
-      is allocated (:c:func:`PyModule_GetState()` may return `NULL`),
-      and before the :c:member:`Py_mod_exec` function is executed.
+      A function to call during deallocation of the module object, or ``NULL``
+      if not needed.
+
+      This function is not called if the module state was requested but is not
+      allocated yet. This is the case immediately after the module is created
+      and before the module is executed (:c:data:`Py_mod_exec` function). More
+      precisely, this function is not called if :c:member:`m_size` is greater
+      than 0 and the module state (as returned by :c:func:`PyModule_GetState`)
+      is ``NULL``.
+
+      .. versionchanged:: 3.9
+         No longer called before the module state is allocated.
 
 Single-phase initialization
 ...........................
@@ -240,7 +271,7 @@ of the following two module creation functions:
       instead; only use this if you are sure you need it.
 
 Before it is returned from in the initialization function, the resulting module
-object is typically populated using functions like :c:func:`PyModule_AddObject`.
+object is typically populated using functions like :c:func:`PyModule_AddObjectRef`.
 
 .. _multi-phase-initialization:
 
@@ -301,7 +332,7 @@ The *m_slots* array must be terminated by a slot with id 0.
 
 The available slot types are:
 
-.. c:var:: Py_mod_create
+.. c:macro:: Py_mod_create
 
    Specifies a function that is called to create the module object itself.
    The *value* pointer of this slot must point to a function of the signature:
@@ -333,7 +364,7 @@ The available slot types are:
    ``PyModuleDef`` has non-``NULL`` ``m_traverse``, ``m_clear``,
    ``m_free``; non-zero ``m_size``; or slots other than ``Py_mod_create``.
 
-.. c:var:: Py_mod_exec
+.. c:macro:: Py_mod_exec
 
    Specifies a function that is called to *execute* the module.
    This is equivalent to executing the code of a Python module: typically,
@@ -413,26 +444,102 @@ a function called from a module execution slot (if using multi-phase
 initialization), can use the following functions to help initialize the module
 state:
 
+.. c:function:: int PyModule_AddObjectRef(PyObject *module, const char *name, PyObject *value)
+
+   Add an object to *module* as *name*.  This is a convenience function which
+   can be used from the module's initialization function.
+
+   On success, return ``0``. On error, raise an exception and return ``-1``.
+
+   Return ``NULL`` if *value* is ``NULL``. It must be called with an exception
+   raised in this case.
+
+   Example usage::
+
+       static int
+       add_spam(PyObject *module, int value)
+       {
+           PyObject *obj = PyLong_FromLong(value);
+           if (obj == NULL) {
+               return -1;
+           }
+           int res = PyModule_AddObjectRef(module, "spam", obj);
+           Py_DECREF(obj);
+           return res;
+        }
+
+   The example can also be written without checking explicitly if *obj* is
+   ``NULL``::
+
+       static int
+       add_spam(PyObject *module, int value)
+       {
+           PyObject *obj = PyLong_FromLong(value);
+           int res = PyModule_AddObjectRef(module, "spam", obj);
+           Py_XDECREF(obj);
+           return res;
+        }
+
+   Note that ``Py_XDECREF()`` should be used instead of ``Py_DECREF()`` in
+   this case, since *obj* can be ``NULL``.
+
+   .. versionadded:: 3.10
+
+
 .. c:function:: int PyModule_AddObject(PyObject *module, const char *name, PyObject *value)
 
-   Add an object to *module* as *name*.  This is a convenience function which can
-   be used from the module's initialization function.  This steals a reference to
-   *value* on success.  Return ``-1`` on error, ``0`` on success.
+   Similar to :c:func:`PyModule_AddObjectRef`, but steals a reference to
+   *value* on success (if it returns ``0``).
+
+   The new :c:func:`PyModule_AddObjectRef` function is recommended, since it is
+   easy to introduce reference leaks by misusing the
+   :c:func:`PyModule_AddObject` function.
 
    .. note::
 
-      Unlike other functions that steal references, ``PyModule_AddObject()`` only
-      decrements the reference count of *value* **on success**.
+      Unlike other functions that steal references, ``PyModule_AddObject()``
+      only decrements the reference count of *value* **on success**.
 
       This means that its return value must be checked, and calling code must
-      :c:func:`Py_DECREF` *value* manually on error. Example usage::
+      :c:func:`Py_DECREF` *value* manually on error.
 
-         Py_INCREF(spam);
-         if (PyModule_AddObject(module, "spam", spam) < 0) {
-             Py_DECREF(module);
-             Py_DECREF(spam);
-             return NULL;
-         }
+   Example usage::
+
+      static int
+      add_spam(PyObject *module, int value)
+      {
+          PyObject *obj = PyLong_FromLong(value);
+          if (obj == NULL) {
+              return -1;
+          }
+          if (PyModule_AddObject(module, "spam", obj) < 0) {
+              Py_DECREF(obj);
+              return -1;
+          }
+          // PyModule_AddObject() stole a reference to obj:
+          // Py_DECREF(obj) is not needed here
+          return 0;
+      }
+
+   The example can also be written without checking explicitly if *obj* is
+   ``NULL``::
+
+      static int
+      add_spam(PyObject *module, int value)
+      {
+          PyObject *obj = PyLong_FromLong(value);
+          if (PyModule_AddObject(module, "spam", obj) < 0) {
+              Py_XDECREF(obj);
+              return -1;
+          }
+          // PyModule_AddObject() stole a reference to obj:
+          // Py_DECREF(obj) is not needed here
+          return 0;
+      }
+
+   Note that ``Py_XDECREF()`` should be used instead of ``Py_DECREF()`` in
+   this case, since *obj* can be ``NULL``.
+
 
 .. c:function:: int PyModule_AddIntConstant(PyObject *module, const char *name, long value)
 
@@ -459,6 +566,16 @@ state:
 .. c:function:: int PyModule_AddStringMacro(PyObject *module, macro)
 
    Add a string constant to *module*.
+
+.. c:function:: int PyModule_AddType(PyObject *module, PyTypeObject *type)
+
+   Add a type object to *module*.
+   The type object is finalized by calling internally :c:func:`PyType_Ready`.
+   The name of the type object is taken from the last component of
+   :c:member:`~PyTypeObject.tp_name` after dot.
+   Return ``-1`` on error, ``0`` on success.
+
+   .. versionadded:: 3.9
 
 
 Module lookup
@@ -493,6 +610,8 @@ since multiple such modules can be created from a single definition.
    mechanisms (either by calling it directly, or by referring to its
    implementation for details of the required state updates).
 
+   The caller must hold the GIL.
+
    Return 0 on success or -1 on failure.
 
    .. versionadded:: 3.3
@@ -501,5 +620,7 @@ since multiple such modules can be created from a single definition.
 
    Removes the module object created from *def* from the interpreter state.
    Return 0 on success or -1 on failure.
+
+   The caller must hold the GIL.
 
    .. versionadded:: 3.3

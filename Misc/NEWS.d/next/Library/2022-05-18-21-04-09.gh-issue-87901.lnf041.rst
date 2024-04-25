@@ -1,0 +1,2 @@
+Removed the ``encoding`` argument from :func:`os.popen` that was added in
+3.11b1.

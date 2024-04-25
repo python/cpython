@@ -2,6 +2,38 @@
 preserve
 [clinic start generated code]*/
 
+PyDoc_STRVAR(pairwise_new__doc__,
+"pairwise(iterable, /)\n"
+"--\n"
+"\n"
+"Return an iterator of overlapping pairs taken from the input iterator.\n"
+"\n"
+"    s -> (s0,s1), (s1,s2), (s2, s3), ...");
+
+static PyObject *
+pairwise_new_impl(PyTypeObject *type, PyObject *iterable);
+
+static PyObject *
+pairwise_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *iterable;
+
+    if ((type == &pairwise_type ||
+         type->tp_init == pairwise_type.tp_init) &&
+        !_PyArg_NoKeywords("pairwise", kwargs)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("pairwise", PyTuple_GET_SIZE(args), 1, 1)) {
+        goto exit;
+    }
+    iterable = PyTuple_GET_ITEM(args, 0);
+    return_value = pairwise_new_impl(type, iterable);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(itertools_groupby__doc__,
 "groupby(iterable, key=None)\n"
 "--\n"
@@ -58,7 +90,8 @@ itertools__grouper(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject *parent;
     PyObject *tgtkey;
 
-    if ((type == &_grouper_type) &&
+    if ((type == &_grouper_type ||
+         type->tp_init == _grouper_type.tp_init) &&
         !_PyArg_NoKeywords("_grouper", kwargs)) {
         goto exit;
     }
@@ -95,7 +128,8 @@ itertools_teedataobject(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject *values;
     PyObject *next;
 
-    if ((type == &teedataobject_type) &&
+    if ((type == &teedataobject_type ||
+         type->tp_init == teedataobject_type.tp_init) &&
         !_PyArg_NoKeywords("teedataobject", kwargs)) {
         goto exit;
     }
@@ -130,7 +164,8 @@ itertools__tee(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject *return_value = NULL;
     PyObject *iterable;
 
-    if ((type == &tee_type) &&
+    if ((type == &tee_type ||
+         type->tp_init == tee_type.tp_init) &&
         !_PyArg_NoKeywords("_tee", kwargs)) {
         goto exit;
     }
@@ -151,7 +186,7 @@ PyDoc_STRVAR(itertools_tee__doc__,
 "Returns a tuple of n independent iterators.");
 
 #define ITERTOOLS_TEE_METHODDEF    \
-    {"tee", (PyCFunction)(void(*)(void))itertools_tee, METH_FASTCALL, itertools_tee__doc__},
+    {"tee", _PyCFunction_CAST(itertools_tee), METH_FASTCALL, itertools_tee__doc__},
 
 static PyObject *
 itertools_tee_impl(PyObject *module, PyObject *iterable, Py_ssize_t n);
@@ -170,14 +205,9 @@ itertools_tee(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 2) {
         goto skip_optional;
     }
-    if (PyFloat_Check(args[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     {
         Py_ssize_t ival = -1;
-        PyObject *iobj = PyNumber_Index(args[1]);
+        PyObject *iobj = _PyNumber_Index(args[1]);
         if (iobj != NULL) {
             ival = PyLong_AsSsize_t(iobj);
             Py_DECREF(iobj);
@@ -209,7 +239,8 @@ itertools_cycle(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject *return_value = NULL;
     PyObject *iterable;
 
-    if ((type == &cycle_type) &&
+    if ((type == &cycle_type ||
+         type->tp_init == cycle_type.tp_init) &&
         !_PyArg_NoKeywords("cycle", kwargs)) {
         goto exit;
     }
@@ -241,7 +272,8 @@ itertools_dropwhile(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject *func;
     PyObject *seq;
 
-    if ((type == &dropwhile_type) &&
+    if ((type == &dropwhile_type ||
+         type->tp_init == dropwhile_type.tp_init) &&
         !_PyArg_NoKeywords("dropwhile", kwargs)) {
         goto exit;
     }
@@ -272,7 +304,8 @@ itertools_takewhile(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject *func;
     PyObject *seq;
 
-    if ((type == &takewhile_type) &&
+    if ((type == &takewhile_type ||
+         type->tp_init == takewhile_type.tp_init) &&
         !_PyArg_NoKeywords("takewhile", kwargs)) {
         goto exit;
     }
@@ -303,7 +336,8 @@ itertools_starmap(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject *func;
     PyObject *seq;
 
-    if ((type == &starmap_type) &&
+    if ((type == &starmap_type ||
+         type->tp_init == starmap_type.tp_init) &&
         !_PyArg_NoKeywords("starmap", kwargs)) {
         goto exit;
     }
@@ -356,14 +390,9 @@ itertools_combinations(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         goto exit;
     }
     iterable = fastargs[0];
-    if (PyFloat_Check(fastargs[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     {
         Py_ssize_t ival = -1;
-        PyObject *iobj = PyNumber_Index(fastargs[1]);
+        PyObject *iobj = _PyNumber_Index(fastargs[1]);
         if (iobj != NULL) {
             ival = PyLong_AsSsize_t(iobj);
             Py_DECREF(iobj);
@@ -385,7 +414,7 @@ PyDoc_STRVAR(itertools_combinations_with_replacement__doc__,
 "\n"
 "Return successive r-length combinations of elements in the iterable allowing individual elements to have successive repeats.\n"
 "\n"
-"combinations_with_replacement(\'ABC\', 2) --> AA AB AC BB BC CC\"");
+"combinations_with_replacement(\'ABC\', 2) --> (\'A\',\'A\'), (\'A\',\'B\'), (\'A\',\'C\'), (\'B\',\'B\'), (\'B\',\'C\'), (\'C\',\'C\')");
 
 static PyObject *
 itertools_combinations_with_replacement_impl(PyTypeObject *type,
@@ -409,14 +438,9 @@ itertools_combinations_with_replacement(PyTypeObject *type, PyObject *args, PyOb
         goto exit;
     }
     iterable = fastargs[0];
-    if (PyFloat_Check(fastargs[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     {
         Py_ssize_t ival = -1;
-        PyObject *iobj = PyNumber_Index(fastargs[1]);
+        PyObject *iobj = _PyNumber_Index(fastargs[1]);
         if (iobj != NULL) {
             ival = PyLong_AsSsize_t(iobj);
             Py_DECREF(iobj);
@@ -577,7 +601,8 @@ itertools_filterfalse(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject *func;
     PyObject *seq;
 
-    if ((type == &filterfalse_type) &&
+    if ((type == &filterfalse_type ||
+         type->tp_init == filterfalse_type.tp_init) &&
         !_PyArg_NoKeywords("filterfalse", kwargs)) {
         goto exit;
     }
@@ -642,4 +667,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=392c9706e79f6710 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=659251a811ff89ed input=a9049054013a1b77]*/

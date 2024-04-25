@@ -9,7 +9,7 @@ PyDoc_STRVAR(_symtable_symtable__doc__,
 "Return symbol and scope dictionaries used internally by compiler.");
 
 #define _SYMTABLE_SYMTABLE_METHODDEF    \
-    {"symtable", (PyCFunction)(void(*)(void))_symtable_symtable, METH_FASTCALL, _symtable_symtable__doc__},
+    {"symtable", _PyCFunction_CAST(_symtable_symtable), METH_FASTCALL, _symtable_symtable__doc__},
 
 static PyObject *
 _symtable_symtable_impl(PyObject *module, PyObject *source,
@@ -48,4 +48,4 @@ _symtable_symtable(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=a12f75cdbdf4e52a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=3f7ccf535d750238 input=a9049054013a1b77]*/

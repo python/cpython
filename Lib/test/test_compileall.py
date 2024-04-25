@@ -1,30 +1,53 @@
-import sys
 import compileall
+import contextlib
+import filecmp
 import importlib.util
-import test.test_importlib.util
+import io
 import os
 import pathlib
 import py_compile
 import shutil
 import struct
+import sys
 import tempfile
+import test.test_importlib.util
 import time
 import unittest
-import io
-import errno
 
 from unittest import mock, skipUnless
 try:
+    # compileall relies on ProcessPoolExecutor if ProcessPoolExecutor exists
+    # and it can function.
     from concurrent.futures import ProcessPoolExecutor
+    from concurrent.futures.process import _check_system_limits
+    _check_system_limits()
     _have_multiprocessing = True
-except ImportError:
+except (NotImplementedError, ModuleNotFoundError):
     _have_multiprocessing = False
 
 from test import support
+from test.support import os_helper
 from test.support import script_helper
+from test.test_py_compile import without_source_date_epoch
+from test.test_py_compile import SourceDateEpochTestMeta
 
-from .test_py_compile import without_source_date_epoch
-from .test_py_compile import SourceDateEpochTestMeta
+
+def get_pyc(script, opt):
+    if not opt:
+        # Replace None and 0 with ''
+        opt = ''
+    return importlib.util.cache_from_source(script, optimization=opt)
+
+
+def get_pycs(script):
+    return [get_pyc(script, opt) for opt in (0, 1, 2)]
+
+
+def is_hardlink(filename1, filename2):
+    """Returns True if two files have the same inode (hardlink)"""
+    inode1 = os.stat(filename1).st_ino
+    inode2 = os.stat(filename2).st_ino
+    return inode1 == inode2
 
 
 class CompileallTestsBase:
@@ -33,7 +56,7 @@ class CompileallTestsBase:
         self.directory = tempfile.mkdtemp()
         self.source_path = os.path.join(self.directory, '_test.py')
         self.bc_path = importlib.util.cache_from_source(self.source_path)
-        with open(self.source_path, 'w') as file:
+        with open(self.source_path, 'w', encoding="utf-8") as file:
             file.write('x = 123\n')
         self.source_path2 = os.path.join(self.directory, '_test2.py')
         self.bc_path2 = importlib.util.cache_from_source(self.source_path2)
@@ -48,15 +71,36 @@ class CompileallTestsBase:
 
     def add_bad_source_file(self):
         self.bad_source_path = os.path.join(self.directory, '_test_bad.py')
-        with open(self.bad_source_path, 'w') as file:
+        with open(self.bad_source_path, 'w', encoding="utf-8") as file:
             file.write('x (\n')
 
     def timestamp_metadata(self):
         with open(self.bc_path, 'rb') as file:
             data = file.read(12)
         mtime = int(os.stat(self.source_path).st_mtime)
-        compare = struct.pack('<4sll', importlib.util.MAGIC_NUMBER, 0, mtime)
+        compare = struct.pack('<4sLL', importlib.util.MAGIC_NUMBER, 0,
+                              mtime & 0xFFFF_FFFF)
         return data, compare
+
+    def test_year_2038_mtime_compilation(self):
+        # Test to make sure we can handle mtimes larger than what a 32-bit
+        # signed number can hold as part of bpo-34990
+        try:
+            os.utime(self.source_path, (2**32 - 1, 2**32 - 1))
+        except (OverflowError, OSError):
+            self.skipTest("filesystem doesn't support timestamps near 2**32")
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.assertTrue(compileall.compile_file(self.source_path))
+
+    def test_larger_than_32_bit_times(self):
+        # This is similar to the test above but we skip it if the OS doesn't
+        # support modification times larger than 32-bits.
+        try:
+            os.utime(self.source_path, (2**35, 2**35))
+        except (OverflowError, OSError):
+            self.skipTest("filesystem doesn't support large timestamps")
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.assertTrue(compileall.compile_file(self.source_path))
 
     def recreation_check(self, metadata):
         """Check that compileall recreates bytecode when the new metadata is
@@ -76,7 +120,7 @@ class CompileallTestsBase:
 
     def test_mtime(self):
         # Test a change in mtime leads to a new .pyc.
-        self.recreation_check(struct.pack('<4sll', importlib.util.MAGIC_NUMBER,
+        self.recreation_check(struct.pack('<4sLL', importlib.util.MAGIC_NUMBER,
                                           0, 1))
 
     def test_magic_number(self):
@@ -139,10 +183,18 @@ class CompileallTestsBase:
         data_file = os.path.join(data_dir, 'file')
         os.mkdir(data_dir)
         # touch data/file
-        with open(data_file, 'w'):
+        with open(data_file, 'wb'):
             pass
         compileall.compile_file(data_file)
         self.assertFalse(os.path.exists(os.path.join(data_dir, '__pycache__')))
+
+
+    def test_compile_file_encoding_fallback(self):
+        # Bug 44666 reported that compile_file failed when sys.stdout.encoding is None
+        self.add_bad_source_file()
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.assertFalse(compileall.compile_file(self.bad_source_path))
+
 
     def test_optimize(self):
         # make sure compiling with different optimization settings than the
@@ -167,6 +219,7 @@ class CompileallTestsBase:
         self.assertRegex(line, r'Listing ([^WindowsPath|PosixPath].*)')
         self.assertTrue(os.path.isfile(self.bc_path))
 
+    @skipUnless(_have_multiprocessing, "requires multiprocessing")
     @mock.patch('concurrent.futures.ProcessPoolExecutor')
     def test_compile_pool_called(self, pool_mock):
         compileall.compile_dir(self.directory, quiet=True, workers=5)
@@ -177,11 +230,13 @@ class CompileallTestsBase:
                                     "workers must be greater or equal to 0"):
             compileall.compile_dir(self.directory, workers=-1)
 
+    @skipUnless(_have_multiprocessing, "requires multiprocessing")
     @mock.patch('concurrent.futures.ProcessPoolExecutor')
     def test_compile_workers_cpu_count(self, pool_mock):
         compileall.compile_dir(self.directory, quiet=True, workers=0)
         self.assertEqual(pool_mock.call_args[1]['max_workers'], None)
 
+    @skipUnless(_have_multiprocessing, "requires multiprocessing")
     @mock.patch('concurrent.futures.ProcessPoolExecutor')
     @mock.patch('compileall.compile_file')
     def test_compile_one_worker(self, compile_file_mock, pool_mock):
@@ -189,6 +244,7 @@ class CompileallTestsBase:
         self.assertFalse(pool_mock.called)
         self.assertTrue(compile_file_mock.called)
 
+    @skipUnless(_have_multiprocessing, "requires multiprocessing")
     @mock.patch('concurrent.futures.ProcessPoolExecutor', new=None)
     @mock.patch('compileall.compile_file')
     def test_compile_missing_multiprocessing(self, compile_file_mock):
@@ -211,6 +267,49 @@ class CompileallTestsBase:
 
         compileall.compile_dir(self.directory, quiet=True, maxlevels=depth)
         self.assertTrue(os.path.isfile(pyc_filename))
+
+    def _test_ddir_only(self, *, ddir, parallel=True):
+        """Recursive compile_dir ddir must contain package paths; bpo39769."""
+        fullpath = ["test", "foo"]
+        path = self.directory
+        mods = []
+        for subdir in fullpath:
+            path = os.path.join(path, subdir)
+            os.mkdir(path)
+            script_helper.make_script(path, "__init__", "")
+            mods.append(script_helper.make_script(path, "mod",
+                                                  "def fn(): 1/0\nfn()\n"))
+        compileall.compile_dir(
+                self.directory, quiet=True, ddir=ddir,
+                workers=2 if parallel else 1)
+        self.assertTrue(mods)
+        for mod in mods:
+            self.assertTrue(mod.startswith(self.directory), mod)
+            modcode = importlib.util.cache_from_source(mod)
+            modpath = mod[len(self.directory+os.sep):]
+            _, _, err = script_helper.assert_python_failure(modcode)
+            expected_in = os.path.join(ddir, modpath)
+            mod_code_obj = test.test_importlib.util.get_code_from_pyc(modcode)
+            self.assertEqual(mod_code_obj.co_filename, expected_in)
+            self.assertIn(f'"{expected_in}"', os.fsdecode(err))
+
+    def test_ddir_only_one_worker(self):
+        """Recursive compile_dir ddir= contains package paths; bpo39769."""
+        return self._test_ddir_only(ddir="<a prefix>", parallel=False)
+
+    @skipUnless(_have_multiprocessing, "requires multiprocessing")
+    def test_ddir_multiple_workers(self):
+        """Recursive compile_dir ddir= contains package paths; bpo39769."""
+        return self._test_ddir_only(ddir="<a prefix>", parallel=True)
+
+    def test_ddir_empty_only_one_worker(self):
+        """Recursive compile_dir ddir='' contains package paths; bpo39769."""
+        return self._test_ddir_only(ddir="", parallel=False)
+
+    @skipUnless(_have_multiprocessing, "requires multiprocessing")
+    def test_ddir_empty_multiple_workers(self):
+        """Recursive compile_dir ddir='' contains package paths; bpo39769."""
+        return self._test_ddir_only(ddir="", parallel=True)
 
     def test_strip_only(self):
         fullpath = ["test", "build", "real", "path"]
@@ -295,7 +394,7 @@ class CompileallTestsBase:
                 except Exception:
                     pass
 
-    @support.skip_unless_symlink
+    @os_helper.skip_unless_symlink
     def test_ignore_symlink_destination(self):
         # Create folders for allowed files, symlinks and prohibited area
         allowed_path = os.path.join(self.directory, "test", "dir", "allowed")
@@ -335,6 +434,9 @@ class CompileallTestsWithoutSourceEpoch(CompileallTestsBase,
     pass
 
 
+# WASI does not have a temp directory and uses cwd instead. The cwd contains
+# non-ASCII chars, so _walk_dir() fails to encode self.directory.
+@unittest.skipIf(support.is_wasi, "tempdir is not encodable on WASI")
 class EncodingTest(unittest.TestCase):
     """Issue 6716: compileall should escape source code when printing errors
     to stdout."""
@@ -361,32 +463,29 @@ class EncodingTest(unittest.TestCase):
 class CommandLineTestsBase:
     """Test compileall's CLI."""
 
-    @classmethod
-    def setUpClass(cls):
-        for path in filter(os.path.isdir, sys.path):
-            directory_created = False
-            directory = pathlib.Path(path) / '__pycache__'
-            path = directory / 'test.try'
-            try:
-                if not directory.is_dir():
-                    directory.mkdir()
-                    directory_created = True
-                with path.open('w') as file:
-                    file.write('# for test_compileall')
-            except OSError:
-                sys_path_writable = False
-                break
-            finally:
-                support.unlink(str(path))
-                if directory_created:
-                    directory.rmdir()
-        else:
-            sys_path_writable = True
-        cls._sys_path_writable = sys_path_writable
+    def setUp(self):
+        self.directory = tempfile.mkdtemp()
+        self.addCleanup(os_helper.rmtree, self.directory)
+        self.pkgdir = os.path.join(self.directory, 'foo')
+        os.mkdir(self.pkgdir)
+        self.pkgdir_cachedir = os.path.join(self.pkgdir, '__pycache__')
+        # Create the __init__.py and a package module.
+        self.initfn = script_helper.make_script(self.pkgdir, '__init__', '')
+        self.barfn = script_helper.make_script(self.pkgdir, 'bar', '')
 
-    def _skip_if_sys_path_not_writable(self):
-        if not self._sys_path_writable:
-            raise unittest.SkipTest('not all entries on sys.path are writable')
+    @contextlib.contextmanager
+    def temporary_pycache_prefix(self):
+        """Adjust and restore sys.pycache_prefix."""
+        old_prefix = sys.pycache_prefix
+        new_prefix = os.path.join(self.directory, '__testcache__')
+        try:
+            sys.pycache_prefix = new_prefix
+            yield {
+                'PYTHONPATH': self.directory,
+                'PYTHONPYCACHEPREFIX': new_prefix,
+            }
+        finally:
+            sys.pycache_prefix = old_prefix
 
     def _get_run_args(self, args):
         return [*support.optim_args_from_interpreter_flags(),
@@ -395,13 +494,15 @@ class CommandLineTestsBase:
 
     def assertRunOK(self, *args, **env_vars):
         rc, out, err = script_helper.assert_python_ok(
-                         *self._get_run_args(args), **env_vars)
+                         *self._get_run_args(args), **env_vars,
+                         PYTHONIOENCODING='utf-8')
         self.assertEqual(b'', err)
         return out
 
     def assertRunNotOK(self, *args, **env_vars):
         rc, out, err = script_helper.assert_python_failure(
-                        *self._get_run_args(args), **env_vars)
+                        *self._get_run_args(args), **env_vars,
+                        PYTHONIOENCODING='utf-8')
         return rc, out, err
 
     def assertCompiled(self, fn):
@@ -412,49 +513,39 @@ class CommandLineTestsBase:
         path = importlib.util.cache_from_source(fn)
         self.assertFalse(os.path.exists(path))
 
-    def setUp(self):
-        self.directory = tempfile.mkdtemp()
-        self.addCleanup(support.rmtree, self.directory)
-        self.pkgdir = os.path.join(self.directory, 'foo')
-        os.mkdir(self.pkgdir)
-        self.pkgdir_cachedir = os.path.join(self.pkgdir, '__pycache__')
-        # Create the __init__.py and a package module.
-        self.initfn = script_helper.make_script(self.pkgdir, '__init__', '')
-        self.barfn = script_helper.make_script(self.pkgdir, 'bar', '')
-
     def test_no_args_compiles_path(self):
         # Note that -l is implied for the no args case.
-        self._skip_if_sys_path_not_writable()
         bazfn = script_helper.make_script(self.directory, 'baz', '')
-        self.assertRunOK(PYTHONPATH=self.directory)
-        self.assertCompiled(bazfn)
-        self.assertNotCompiled(self.initfn)
-        self.assertNotCompiled(self.barfn)
+        with self.temporary_pycache_prefix() as env:
+            self.assertRunOK(**env)
+            self.assertCompiled(bazfn)
+            self.assertNotCompiled(self.initfn)
+            self.assertNotCompiled(self.barfn)
 
     @without_source_date_epoch  # timestamp invalidation test
     def test_no_args_respects_force_flag(self):
-        self._skip_if_sys_path_not_writable()
         bazfn = script_helper.make_script(self.directory, 'baz', '')
-        self.assertRunOK(PYTHONPATH=self.directory)
-        pycpath = importlib.util.cache_from_source(bazfn)
+        with self.temporary_pycache_prefix() as env:
+            self.assertRunOK(**env)
+            pycpath = importlib.util.cache_from_source(bazfn)
         # Set atime/mtime backward to avoid file timestamp resolution issues
         os.utime(pycpath, (time.time()-60,)*2)
         mtime = os.stat(pycpath).st_mtime
         # Without force, no recompilation
-        self.assertRunOK(PYTHONPATH=self.directory)
+        self.assertRunOK(**env)
         mtime2 = os.stat(pycpath).st_mtime
         self.assertEqual(mtime, mtime2)
         # Now force it.
-        self.assertRunOK('-f', PYTHONPATH=self.directory)
+        self.assertRunOK('-f', **env)
         mtime2 = os.stat(pycpath).st_mtime
         self.assertNotEqual(mtime, mtime2)
 
     def test_no_args_respects_quiet_flag(self):
-        self._skip_if_sys_path_not_writable()
         script_helper.make_script(self.directory, 'baz', '')
-        noisy = self.assertRunOK(PYTHONPATH=self.directory)
+        with self.temporary_pycache_prefix() as env:
+            noisy = self.assertRunOK(**env)
         self.assertIn(b'Listing ', noisy)
-        quiet = self.assertRunOK('-q', PYTHONPATH=self.directory)
+        quiet = self.assertRunOK('-q', **env)
         self.assertNotIn(b'Listing ', quiet)
 
     # Ensure that the default behavior of compileall's CLI is to create
@@ -562,7 +653,7 @@ class CommandLineTestsBase:
         self.assertCompiled(spamfn)
         self.assertCompiled(eggfn)
 
-    @support.skip_unless_symlink
+    @os_helper.skip_unless_symlink
     def test_symlink_loop(self):
         # Currently, compileall ignores symlinks to directories.
         # If that limitation is ever lifted, it should protect against
@@ -633,7 +724,7 @@ class CommandLineTestsBase:
         f2 = script_helper.make_script(self.pkgdir, 'f2', '')
         f3 = script_helper.make_script(self.pkgdir, 'f3', '')
         f4 = script_helper.make_script(self.pkgdir, 'f4', '')
-        with open(os.path.join(self.directory, 'l1'), 'w') as l1:
+        with open(os.path.join(self.directory, 'l1'), 'w', encoding="utf-8") as l1:
             l1.write(os.path.join(self.pkgdir, 'f1.py')+os.linesep)
             l1.write(os.path.join(self.pkgdir, 'f2.py')+os.linesep)
         self.assertRunOK('-i', os.path.join(self.directory, 'l1'), f4)
@@ -647,7 +738,7 @@ class CommandLineTestsBase:
         f2 = script_helper.make_script(self.pkgdir, 'f2', '')
         f3 = script_helper.make_script(self.pkgdir, 'f3', '')
         f4 = script_helper.make_script(self.pkgdir, 'f4', '')
-        with open(os.path.join(self.directory, 'l1'), 'w') as l1:
+        with open(os.path.join(self.directory, 'l1'), 'w', encoding="utf-8") as l1:
             l1.write(os.path.join(self.pkgdir, 'f2.py')+os.linesep)
         self.assertRunOK('-i', os.path.join(self.directory, 'l1'))
         self.assertNotCompiled(f1)
@@ -760,7 +851,7 @@ class CommandLineTestsBase:
                 except Exception:
                     pass
 
-    @support.skip_unless_symlink
+    @os_helper.skip_unless_symlink
     def test_ignore_symlink_destination(self):
         # Create folders for allowed files, symlinks and prohibited area
         allowed_path = os.path.join(self.directory, "test", "dir", "allowed")
@@ -785,6 +876,32 @@ class CommandLineTestsBase:
         self.assertTrue(os.path.isfile(allowed_bc))
         self.assertFalse(os.path.isfile(prohibited_bc))
 
+    def test_hardlink_bad_args(self):
+        # Bad arguments combination, hardlink deduplication make sense
+        # only for more than one optimization level
+        self.assertRunNotOK(self.directory, "-o 1", "--hardlink-dupes")
+
+    def test_hardlink(self):
+        # 'a = 0' code produces the same bytecode for the 3 optimization
+        # levels. All three .pyc files must have the same inode (hardlinks).
+        #
+        # If deduplication is disabled, all pyc files must have different
+        # inodes.
+        for dedup in (True, False):
+            with tempfile.TemporaryDirectory() as path:
+                with self.subTest(dedup=dedup):
+                    script = script_helper.make_script(path, "script", "a = 0")
+                    pycs = get_pycs(script)
+
+                    args = ["-q", "-o 0", "-o 1", "-o 2"]
+                    if dedup:
+                        args.append("--hardlink-dupes")
+                    self.assertRunOK(path, *args)
+
+                    self.assertEqual(is_hardlink(pycs[0], pycs[1]), dedup)
+                    self.assertEqual(is_hardlink(pycs[1], pycs[2]), dedup)
+                    self.assertEqual(is_hardlink(pycs[0], pycs[2]), dedup)
+
 
 class CommandLineTestsWithSourceEpoch(CommandLineTestsBase,
                                        unittest.TestCase,
@@ -799,6 +916,178 @@ class CommandLineTestsNoSourceEpoch(CommandLineTestsBase,
                                      source_date_epoch=False):
     pass
 
+
+
+@unittest.skipUnless(hasattr(os, 'link'), 'requires os.link')
+class HardlinkDedupTestsBase:
+    # Test hardlink_dupes parameter of compileall.compile_dir()
+
+    def setUp(self):
+        self.path = None
+
+    @contextlib.contextmanager
+    def temporary_directory(self):
+        with tempfile.TemporaryDirectory() as path:
+            self.path = path
+            yield path
+            self.path = None
+
+    def make_script(self, code, name="script"):
+        return script_helper.make_script(self.path, name, code)
+
+    def compile_dir(self, *, dedup=True, optimize=(0, 1, 2), force=False):
+        compileall.compile_dir(self.path, quiet=True, optimize=optimize,
+                               hardlink_dupes=dedup, force=force)
+
+    def test_bad_args(self):
+        # Bad arguments combination, hardlink deduplication make sense
+        # only for more than one optimization level
+        with self.temporary_directory():
+            self.make_script("pass")
+            with self.assertRaises(ValueError):
+                compileall.compile_dir(self.path, quiet=True, optimize=0,
+                                       hardlink_dupes=True)
+            with self.assertRaises(ValueError):
+                # same optimization level specified twice:
+                # compile_dir() removes duplicates
+                compileall.compile_dir(self.path, quiet=True, optimize=[0, 0],
+                                       hardlink_dupes=True)
+
+    def create_code(self, docstring=False, assertion=False):
+        lines = []
+        if docstring:
+            lines.append("'module docstring'")
+        lines.append('x = 1')
+        if assertion:
+            lines.append("assert x == 1")
+        return '\n'.join(lines)
+
+    def iter_codes(self):
+        for docstring in (False, True):
+            for assertion in (False, True):
+                code = self.create_code(docstring=docstring, assertion=assertion)
+                yield (code, docstring, assertion)
+
+    def test_disabled(self):
+        # Deduplication disabled, no hardlinks
+        for code, docstring, assertion in self.iter_codes():
+            with self.subTest(docstring=docstring, assertion=assertion):
+                with self.temporary_directory():
+                    script = self.make_script(code)
+                    pycs = get_pycs(script)
+                    self.compile_dir(dedup=False)
+                    self.assertFalse(is_hardlink(pycs[0], pycs[1]))
+                    self.assertFalse(is_hardlink(pycs[0], pycs[2]))
+                    self.assertFalse(is_hardlink(pycs[1], pycs[2]))
+
+    def check_hardlinks(self, script, docstring=False, assertion=False):
+        pycs = get_pycs(script)
+        self.assertEqual(is_hardlink(pycs[0], pycs[1]),
+                         not assertion)
+        self.assertEqual(is_hardlink(pycs[0], pycs[2]),
+                         not assertion and not docstring)
+        self.assertEqual(is_hardlink(pycs[1], pycs[2]),
+                         not docstring)
+
+    def test_hardlink(self):
+        # Test deduplication on all combinations
+        for code, docstring, assertion in self.iter_codes():
+            with self.subTest(docstring=docstring, assertion=assertion):
+                with self.temporary_directory():
+                    script = self.make_script(code)
+                    self.compile_dir()
+                    self.check_hardlinks(script, docstring, assertion)
+
+    def test_only_two_levels(self):
+        # Don't build the 3 optimization levels, but only 2
+        for opts in ((0, 1), (1, 2), (0, 2)):
+            with self.subTest(opts=opts):
+                with self.temporary_directory():
+                    # code with no dostring and no assertion:
+                    # same bytecode for all optimization levels
+                    script = self.make_script(self.create_code())
+                    self.compile_dir(optimize=opts)
+                    pyc1 = get_pyc(script, opts[0])
+                    pyc2 = get_pyc(script, opts[1])
+                    self.assertTrue(is_hardlink(pyc1, pyc2))
+
+    def test_duplicated_levels(self):
+        # compile_dir() must not fail if optimize contains duplicated
+        # optimization levels and/or if optimization levels are not sorted.
+        with self.temporary_directory():
+            # code with no dostring and no assertion:
+            # same bytecode for all optimization levels
+            script = self.make_script(self.create_code())
+            self.compile_dir(optimize=[1, 0, 1, 0])
+            pyc1 = get_pyc(script, 0)
+            pyc2 = get_pyc(script, 1)
+            self.assertTrue(is_hardlink(pyc1, pyc2))
+
+    def test_recompilation(self):
+        # Test compile_dir() when pyc files already exists and the script
+        # content changed
+        with self.temporary_directory():
+            script = self.make_script("a = 0")
+            self.compile_dir()
+            # All three levels have the same inode
+            self.check_hardlinks(script)
+
+            pycs = get_pycs(script)
+            inode = os.stat(pycs[0]).st_ino
+
+            # Change of the module content
+            script = self.make_script("print(0)")
+
+            # Recompilation without -o 1
+            self.compile_dir(optimize=[0, 2], force=True)
+
+            # opt-1.pyc should have the same inode as before and others should not
+            self.assertEqual(inode, os.stat(pycs[1]).st_ino)
+            self.assertTrue(is_hardlink(pycs[0], pycs[2]))
+            self.assertNotEqual(inode, os.stat(pycs[2]).st_ino)
+            # opt-1.pyc and opt-2.pyc have different content
+            self.assertFalse(filecmp.cmp(pycs[1], pycs[2], shallow=True))
+
+    def test_import(self):
+        # Test that import updates a single pyc file when pyc files already
+        # exists and the script content changed
+        with self.temporary_directory():
+            script = self.make_script(self.create_code(), name="module")
+            self.compile_dir()
+            # All three levels have the same inode
+            self.check_hardlinks(script)
+
+            pycs = get_pycs(script)
+            inode = os.stat(pycs[0]).st_ino
+
+            # Change of the module content
+            script = self.make_script("print(0)", name="module")
+
+            # Import the module in Python with -O (optimization level 1)
+            script_helper.assert_python_ok(
+                "-O", "-c", "import module", __isolated=False, PYTHONPATH=self.path
+            )
+
+            # Only opt-1.pyc is changed
+            self.assertEqual(inode, os.stat(pycs[0]).st_ino)
+            self.assertEqual(inode, os.stat(pycs[2]).st_ino)
+            self.assertFalse(is_hardlink(pycs[1], pycs[2]))
+            # opt-1.pyc and opt-2.pyc have different content
+            self.assertFalse(filecmp.cmp(pycs[1], pycs[2], shallow=True))
+
+
+class HardlinkDedupTestsWithSourceEpoch(HardlinkDedupTestsBase,
+                                        unittest.TestCase,
+                                        metaclass=SourceDateEpochTestMeta,
+                                        source_date_epoch=True):
+    pass
+
+
+class HardlinkDedupTestsNoSourceEpoch(HardlinkDedupTestsBase,
+                                      unittest.TestCase,
+                                      metaclass=SourceDateEpochTestMeta,
+                                      source_date_epoch=False):
+    pass
 
 
 if __name__ == "__main__":

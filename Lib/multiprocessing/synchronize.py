@@ -270,7 +270,7 @@ class Condition(object):
     def notify(self, n=1):
         assert self._lock._semlock._is_mine(), 'lock is not owned'
         assert not self._wait_semaphore.acquire(
-            False), ('notify: Should not have been able to acquire'
+            False), ('notify: Should not have been able to acquire '
                      + '_wait_semaphore')
 
         # to take account of timeouts since last notify*() we subtract
@@ -353,6 +353,9 @@ class Event(object):
                 return True
             return False
 
+    def __repr__(self) -> str:
+        set_status = 'set' if self.is_set() else 'unset'
+        return f"<{type(self).__qualname__} at {id(self):#x} {set_status}>"
 #
 # Barrier
 #

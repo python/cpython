@@ -4,10 +4,16 @@
 .. module:: pipes
    :platform: Unix
    :synopsis: A Python interface to Unix shell pipelines.
+   :deprecated:
 
 .. sectionauthor:: Moshe Zadka <moshez@zadka.site.co.il>
 
 **Source code:** :source:`Lib/pipes.py`
+
+.. deprecated-removed:: 3.11 3.13
+   The :mod:`pipes` module is deprecated
+   (see :pep:`PEP 594 <594#pipes>` for details).
+   Please use the :mod:`subprocess` module instead.
 
 --------------
 
@@ -16,6 +22,8 @@ The :mod:`pipes` module defines a class to abstract the concept of a *pipeline*
 
 Because the module uses :program:`/bin/sh` command lines, a POSIX or compatible
 shell for :func:`os.system` and :func:`os.popen` is required.
+
+.. availability:: Unix. Not available on VxWorks.
 
 The :mod:`pipes` module defines the following class:
 

@@ -9,7 +9,7 @@ PyDoc_STRVAR(warnings_warn__doc__,
 "Issue a warning, or maybe ignore it or raise an exception.");
 
 #define WARNINGS_WARN_METHODDEF    \
-    {"warn", (PyCFunction)(void(*)(void))warnings_warn, METH_FASTCALL|METH_KEYWORDS, warnings_warn__doc__},
+    {"warn", _PyCFunction_CAST(warnings_warn), METH_FASTCALL|METH_KEYWORDS, warnings_warn__doc__},
 
 static PyObject *
 warnings_warn_impl(PyObject *module, PyObject *message, PyObject *category,
@@ -43,14 +43,9 @@ warnings_warn(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
         }
     }
     if (args[2]) {
-        if (PyFloat_Check(args[2])) {
-            PyErr_SetString(PyExc_TypeError,
-                            "integer argument expected, got float" );
-            goto exit;
-        }
         {
             Py_ssize_t ival = -1;
-            PyObject *iobj = PyNumber_Index(args[2]);
+            PyObject *iobj = _PyNumber_Index(args[2]);
             if (iobj != NULL) {
                 ival = PyLong_AsSsize_t(iobj);
                 Py_DECREF(iobj);
@@ -71,4 +66,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=b7bb54c73b5433ec input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0435c68611fa2fe9 input=a9049054013a1b77]*/

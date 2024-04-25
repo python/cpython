@@ -1,3 +1,8 @@
+import sys
+import doctest
+import unittest
+
+
 doctests = """
 
 Test simple loop with conditional
@@ -14,6 +19,22 @@ Test nesting with the inner expression dependent on the outer
 
     >>> list((i,j) for i in range(4) for j in range(i) )
     [(1, 0), (2, 0), (2, 1), (3, 0), (3, 1), (3, 2)]
+
+Test the idiom for temporary variable assignment in comprehensions.
+
+    >>> list((j*j for i in range(4) for j in [i+1]))
+    [1, 4, 9, 16]
+    >>> list((j*k for i in range(4) for j in [i+1] for k in [j+1]))
+    [2, 6, 12, 20]
+    >>> list((j*k for i in range(4) for j, k in [(i+1, i+2)]))
+    [2, 6, 12, 20]
+
+Not assignment
+
+    >>> list((i*i for i in [*range(4)]))
+    [0, 1, 4, 9]
+    >>> list((i*i for i in (*range(4),)))
+    [0, 1, 4, 9]
 
 Make sure the induction variable is not exposed
 
@@ -87,7 +108,7 @@ Verify that parenthesis are required when used as a keyword argument value
     >>> dict(a = i for i in range(10))
     Traceback (most recent call last):
        ...
-    SyntaxError: invalid syntax
+    SyntaxError: invalid syntax. Maybe you meant '==' or ':=' instead of '='?
 
 Verify that parenthesis are required when used as a keyword argument value
 
@@ -142,7 +163,7 @@ Verify that syntax error's are raised for genexps used as lvalues
     >>> (y for y in (1,2)) += 10
     Traceback (most recent call last):
        ...
-    SyntaxError: cannot assign to generator expression
+    SyntaxError: 'generator expression' is an illegal expression for augmented assignment
 
 
 ########### Tests borrowed from or inspired by test_generators.py ############
@@ -258,28 +279,16 @@ Verify that genexps are weakly referencable
 
 """
 
-import sys
-
 # Trace function can throw off the tuple reuse test.
 if hasattr(sys, 'gettrace') and sys.gettrace():
     __test__ = {}
 else:
     __test__ = {'doctests' : doctests}
 
-def test_main(verbose=None):
-    from test import support
-    from test import test_genexps
-    support.run_doctest(test_genexps, verbose)
+def load_tests(loader, tests, pattern):
+    tests.addTest(doctest.DocTestSuite())
+    return tests
 
-    # verify reference counting
-    if verbose and hasattr(sys, "gettotalrefcount"):
-        import gc
-        counts = [None] * 5
-        for i in range(len(counts)):
-            support.run_doctest(test_genexps, verbose)
-            gc.collect()
-            counts[i] = sys.gettotalrefcount()
-        print(counts)
 
 if __name__ == "__main__":
-    test_main(verbose=True)
+    unittest.main()

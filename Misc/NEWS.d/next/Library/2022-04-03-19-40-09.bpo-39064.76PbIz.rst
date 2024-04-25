@@ -1,0 +1,2 @@
+:class:`zipfile.ZipFile` now raises :exc:`zipfile.BadZipFile` instead of ``ValueError`` when reading a
+corrupt zip file in which the central directory offset is negative.

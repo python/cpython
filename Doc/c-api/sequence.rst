@@ -8,10 +8,10 @@ Sequence Protocol
 
 .. c:function:: int PySequence_Check(PyObject *o)
 
-   Return ``1`` if the object provides sequence protocol, and ``0`` otherwise.
+   Return ``1`` if the object provides the sequence protocol, and ``0`` otherwise.
    Note that it returns ``1`` for Python classes with a :meth:`__getitem__`
-   method unless they are :class:`dict` subclasses since in general case it
-   is impossible to determine what the type of keys it supports.  This
+   method, unless they are :class:`dict` subclasses, since in general it
+   is impossible to determine what type of keys the class supports.  This
    function always succeeds.
 
 
@@ -69,7 +69,7 @@ Sequence Protocol
    is the equivalent of the Python statement ``o[i] = v``.  This function *does
    not* steal a reference to *v*.
 
-   If *v* is ``NULL``, the element is deleted, however this feature is
+   If *v* is ``NULL``, the element is deleted, but this feature is
    deprecated in favour of using :c:func:`PySequence_DelItem`.
 
 
@@ -147,7 +147,7 @@ Sequence Protocol
 
    Returns the length of *o*, assuming that *o* was returned by
    :c:func:`PySequence_Fast` and that *o* is not ``NULL``.  The size can also be
-   gotten by calling :c:func:`PySequence_Size` on *o*, but
+   retrieved by calling :c:func:`PySequence_Size` on *o*, but
    :c:func:`PySequence_Fast_GET_SIZE` is faster because it can assume *o* is a
    list or tuple.
 

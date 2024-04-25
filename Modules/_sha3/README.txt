@@ -1,11 +1,8 @@
-Keccak Code Package
-===================
+tiny_sha3
+=========
 
-The files in kcp are taken from the Keccak Code Package. They have been
-slightly to be C89 compatible. The architecture specific header file
-KeccakP-1600-SnP.h ha been renamed to KeccakP-1600-SnP-opt32.h or
-KeccakP-1600-SnP-opt64.h.
+https://github.com/mjosaarinen/tiny_sha3
+commit dcbb3192047c2a721f5f851db591871d428036a9
 
-The 64bit files were generated with generic64lc/libkeccak.a.pack target, the
-32bit files with generic32lc/libkeccak.a.pack.
-
+- All functions have been converted to static functions.
+- sha3() function is commented out.

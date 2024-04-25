@@ -14,10 +14,10 @@ for the Borland C++ compiler.
 
 import os
 from distutils.errors import \
-     DistutilsExecError, DistutilsPlatformError, \
+     DistutilsExecError, \
      CompileError, LibError, LinkError, UnknownFileError
 from distutils.ccompiler import \
-     CCompiler, gen_preprocess_options, gen_lib_options
+     CCompiler, gen_preprocess_options
 from distutils.file_util import write_file
 from distutils.dep_util import newer
 from distutils import log

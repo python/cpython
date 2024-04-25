@@ -1,0 +1,3 @@
+Make ``--help`` output shorter by moving some info to the new
+``--help-env`` and ``--help-xoptions`` command-line options.
+Also add ``--help-all`` option to print complete usage.

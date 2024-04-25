@@ -157,7 +157,7 @@ class CheckTestCase(support.LoggingSilencer,
                                  'restructuredtext': 1})
 
 def test_suite():
-    return unittest.makeSuite(CheckTestCase)
+    return unittest.TestLoader().loadTestsFromTestCase(CheckTestCase)
 
 if __name__ == "__main__":
     run_unittest(test_suite())

@@ -65,11 +65,10 @@ output must only depend on its input.
 
 Some languages are very strict about purity and don't even have assignment
 statements such as ``a=3`` or ``c = a + b``, but it's difficult to avoid all
-side effects.  Printing to the screen or writing to a disk file are side
-effects, for example.  For example, in Python a call to the :func:`print` or
-:func:`time.sleep` function both return no useful value; they're only called for
-their side effects of sending some text to the screen or pausing execution for a
-second.
+side effects, such as printing to the screen or writing to a disk file. Another
+example is a call to the :func:`print` or :func:`time.sleep` function, neither
+of which returns a useful value. Both are called only for their side effects
+of sending some text to the screen or pausing execution for a second.
 
 Python programs written in functional style usually won't go to the extreme of
 avoiding all I/O or all assignments; instead, they'll provide a
@@ -590,7 +589,7 @@ generator function.
 In addition to :meth:`~generator.send`, there are two other methods on
 generators:
 
-* :meth:`throw(type, value=None, traceback=None) <generator.throw>` is used to
+* :meth:`throw(value) <generator.throw>` is used to
   raise an exception inside the generator; the exception is raised by the
   ``yield`` expression where the generator's execution is paused.
 
@@ -1229,9 +1228,9 @@ Text Processing".
 
 Mertz also wrote a 3-part series of articles on functional programming
 for IBM's DeveloperWorks site; see
-`part 1 <https://www.ibm.com/developerworks/linux/library/l-prog/index.html>`__,
-`part 2 <https://www.ibm.com/developerworks/linux/library/l-prog2/index.html>`__, and
-`part 3 <https://www.ibm.com/developerworks/linux/library/l-prog3/index.html>`__,
+`part 1 <https://developer.ibm.com/articles/l-prog/>`__,
+`part 2 <https://developer.ibm.com/tutorials/l-prog2/>`__, and
+`part 3 <https://developer.ibm.com/tutorials/l-prog3/>`__,
 
 
 Python documentation

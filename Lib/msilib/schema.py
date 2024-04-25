@@ -664,7 +664,7 @@ _Validation_records = [
 ('Class','Component_','N',None, None, 'Component',1,'Identifier',None, 'Required foreign key into the Component Table, specifying the component for which to return a path when called through LocateComponent.',),
 ('Class','Context','N',None, None, None, None, 'Identifier',None, 'The numeric server context for this server. CLSCTX_xxxx',),
 ('Class','DefInprocHandler','Y',None, None, None, None, 'Filename','1;2;3','Optional default inproc handler.  Only optionally provided if Context=CLSCTX_LOCAL_SERVER.  Typically "ole32.dll" or "mapi32.dll"',),
-('Class','FileTypeMask','Y',None, None, None, None, 'Text',None, 'Optional string containing information for the HKCRthis CLSID) key. If multiple patterns exist, they must be delimited by a semicolon, and numeric subkeys will be generated: 0,1,2...',),
+('Class','FileTypeMask','Y',None, None, None, None, 'Text',None, 'Optional string containing information for the HKCRthis CLSID key. If multiple patterns exist, they must be delimited by a semicolon, and numeric subkeys will be generated: 0,1,2...',),
 ('Class','Icon_','Y',None, None, 'Icon',1,'Identifier',None, 'Optional foreign key into the Icon Table, specifying the icon file associated with this CLSID. Will be written under the DefaultIcon key.',),
 ('Class','IconIndex','Y',-32767,32767,None, None, None, None, 'Optional icon index.',),
 ('Class','ProgId_Default','Y',None, None, 'ProgId',1,'Text',None, 'Optional ProgId associated with this CLSID.',),

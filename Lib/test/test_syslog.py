@@ -1,6 +1,5 @@
-
-from test import support
-syslog = support.import_module("syslog") #skip if not supported
+from test.support import import_helper
+syslog = import_helper.import_module("syslog") #skip if not supported
 import unittest
 
 # XXX(nnorwitz): This test sucks.  I don't know of a platform independent way

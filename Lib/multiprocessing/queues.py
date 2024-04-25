@@ -14,6 +14,7 @@ import os
 import threading
 import collections
 import time
+import types
 import weakref
 import errno
 
@@ -48,8 +49,7 @@ class Queue(object):
         self._sem = ctx.BoundedSemaphore(maxsize)
         # For use by concurrent.futures
         self._ignore_epipe = False
-
-        self._after_fork()
+        self._reset()
 
         if sys.platform != 'win32':
             register_after_fork(self, Queue._after_fork)
@@ -62,11 +62,17 @@ class Queue(object):
     def __setstate__(self, state):
         (self._ignore_epipe, self._maxsize, self._reader, self._writer,
          self._rlock, self._wlock, self._sem, self._opid) = state
-        self._after_fork()
+        self._reset()
 
     def _after_fork(self):
         debug('Queue._after_fork()')
-        self._notempty = threading.Condition(threading.Lock())
+        self._reset(after_fork=True)
+
+    def _reset(self, after_fork=False):
+        if after_fork:
+            self._notempty._at_fork_reinit()
+        else:
+            self._notempty = threading.Condition(threading.Lock())
         self._buffer = collections.deque()
         self._thread = None
         self._jointhread = None
@@ -133,13 +139,10 @@ class Queue(object):
 
     def close(self):
         self._closed = True
-        try:
-            self._reader.close()
-        finally:
-            close = self._close
-            if close:
-                self._close = None
-                close()
+        close = self._close
+        if close:
+            self._close = None
+            close()
 
     def join_thread(self):
         debug('Queue.join_thread()')
@@ -163,8 +166,9 @@ class Queue(object):
         self._thread = threading.Thread(
             target=Queue._feed,
             args=(self._buffer, self._notempty, self._send_bytes,
-                  self._wlock, self._writer.close, self._ignore_epipe,
-                  self._on_queue_feeder_error, self._sem),
+                  self._wlock, self._reader.close, self._writer.close,
+                  self._ignore_epipe, self._on_queue_feeder_error,
+                  self._sem),
             name='QueueFeederThread'
         )
         self._thread.daemon = True
@@ -205,8 +209,8 @@ class Queue(object):
             notempty.notify()
 
     @staticmethod
-    def _feed(buffer, notempty, send_bytes, writelock, close, ignore_epipe,
-              onerror, queue_sem):
+    def _feed(buffer, notempty, send_bytes, writelock, reader_close,
+              writer_close, ignore_epipe, onerror, queue_sem):
         debug('starting thread to feed data to pipe')
         nacquire = notempty.acquire
         nrelease = notempty.release
@@ -232,7 +236,8 @@ class Queue(object):
                         obj = bpopleft()
                         if obj is sentinel:
                             debug('feeder thread got sentinel -- exiting')
-                            close()
+                            reader_close()
+                            writer_close()
                             return
 
                         # serialize the data before acquiring the lock
@@ -340,6 +345,10 @@ class SimpleQueue(object):
         else:
             self._wlock = ctx.Lock()
 
+    def close(self):
+        self._reader.close()
+        self._writer.close()
+
     def empty(self):
         return not self._poll()
 
@@ -366,3 +375,5 @@ class SimpleQueue(object):
         else:
             with self._wlock:
                 self._writer.send_bytes(obj)
+
+    __class_getitem__ = classmethod(types.GenericAlias)

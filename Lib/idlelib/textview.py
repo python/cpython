@@ -6,7 +6,6 @@ from tkinter import Toplevel, Text, TclError,\
 from tkinter.ttk import Frame, Scrollbar, Button
 from tkinter.messagebox import showerror
 
-from functools import update_wrapper
 from idlelib.colorizer import color_config
 
 

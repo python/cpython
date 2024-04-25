@@ -104,8 +104,8 @@ getnameinfo(sa, salen, host, hostlen, serv, servlen, flags)
     u_long v4a;
 #ifdef ENABLE_IPV6
     u_char pfx;
-#endif
     int h_error;
+#endif
     char numserv[512];
     char numaddr[512];
 
@@ -181,7 +181,6 @@ getnameinfo(sa, salen, host, hostlen, serv, servlen, flags)
         hp = getipnodebyaddr(addr, gni_afd->a_addrlen, gni_afd->a_af, &h_error);
 #else
         hp = gethostbyaddr(addr, gni_afd->a_addrlen, gni_afd->a_af);
-        h_error = h_errno;
 #endif
 
         if (hp) {

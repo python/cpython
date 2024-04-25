@@ -2,8 +2,11 @@ import unittest
 import os
 import socket
 import sys
-from test.support import (TESTFN, import_fresh_module,
-                          skip_unless_bind_unix_socket)
+from test.support import os_helper
+from test.support import socket_helper
+from test.support.import_helper import import_fresh_module
+from test.support.os_helper import TESTFN
+
 
 c_stat = import_fresh_module('stat', fresh=['_stat'])
 py_stat = import_fresh_module('stat', blocked=['_stat'])
@@ -110,6 +113,7 @@ class TestFilemode:
             else:
                 self.assertFalse(func(mode))
 
+    @os_helper.skip_unless_working_chmod
     def test_mode(self):
         with open(TESTFN, 'w'):
             pass
@@ -148,6 +152,7 @@ class TestFilemode:
             self.assertEqual(self.statmod.S_IFMT(st_mode),
                              self.statmod.S_IFREG)
 
+    @os_helper.skip_unless_working_chmod
     def test_directory(self):
         os.mkdir(TESTFN)
         os.chmod(TESTFN, 0o700)
@@ -158,7 +163,7 @@ class TestFilemode:
         else:
             self.assertEqual(modestr[0], 'd')
 
-    @unittest.skipUnless(hasattr(os, 'symlink'), 'os.symlink not available')
+    @os_helper.skip_unless_symlink
     def test_link(self):
         try:
             os.symlink(os.getcwd(), TESTFN)
@@ -171,11 +176,16 @@ class TestFilemode:
 
     @unittest.skipUnless(hasattr(os, 'mkfifo'), 'os.mkfifo not available')
     def test_fifo(self):
+        if sys.platform == "vxworks":
+            fifo_path = os.path.join("/fifos/", TESTFN)
+        else:
+            fifo_path = TESTFN
+        self.addCleanup(os_helper.unlink, fifo_path)
         try:
-            os.mkfifo(TESTFN, 0o700)
+            os.mkfifo(fifo_path, 0o700)
         except PermissionError as e:
             self.skipTest('os.mkfifo(): %s' % e)
-        st_mode, modestr = self.get_mode()
+        st_mode, modestr = self.get_mode(fifo_path)
         self.assertEqual(modestr, 'prwx------')
         self.assertS_IS("FIFO", st_mode)
 
@@ -193,7 +203,7 @@ class TestFilemode:
                 self.assertS_IS("BLK", st_mode)
                 break
 
-    @skip_unless_bind_unix_socket
+    @socket_helper.skip_unless_bind_unix_socket
     def test_socket(self):
         with socket.socket(socket.AF_UNIX) as s:
             s.bind(TESTFN)

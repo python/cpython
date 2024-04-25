@@ -1,0 +1,1 @@
+Refactor the compiler to reduce boilerplate and repetition.

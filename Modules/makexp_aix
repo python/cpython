@@ -3,7 +3,7 @@
 # ===========================================================================
 # FILE:         makexp_aix
 # TYPE:         standalone executable
-# SYSTEM:	AIX 3.2.5 and AIX 4
+# SYSTEM:	    AIX
 #
 # DESCRIPTION:  This script creates an export list of ALL global symbols
 #               from a list of object or archive files.
@@ -48,34 +48,24 @@ echo "*" >> $expFileName
 echo "* $notemsg" >> $expFileName
 echo "*" >> $expFileName
 
-# Extract the symbol list using 'nm' which produces quite
-# different output under AIX 4 than under AIX 3.2.5.
-# The following handles both versions by using a common flagset.
+# Extract the symbol list using 'nm'
 # Here are some hidden tricks:
-# 1. Use /usr/ccs/bin/nm. Relevant to AIX 3.2.5 which has
-#    another version under /usr/ucb/bin/nm.
-# 2. Use the -B flag to have a standard BSD representation
-#    of the symbol list on both AIX 3.2.5 and AIX 4. The "-B"
-#    flag is missing in the AIX 3.2.5 online usage help of 'nm'.
-# 3. Use the -x flag to have a hex representation of the symbol
-#    values. This fills the leading whitespaces on AIX 4,
-#    thus simplifying the sed statement.
-# 4. Eliminate all entries except those with either "B", "D"
-#    or "T" key letters. We are interested only in the global
-#    (extern) BSS, DATA and TEXT symbols. With the same statement
-#    we eliminate object member lines relevant to AIX 4.
-# 5. Eliminate entries containing a dot. We can have a dot only
-#    as a symbol prefix, but such symbols are undefined externs.
-# 6. Eliminate everything including the key letter, so that we're
-#    left with just the symbol name.
-# 7. Eliminate all entries containing two colons, like Class::method
+# - Use the -B flag to have a standard BSD representation
+#   of the symbol list.
+# - Use the -x flag to have a hex representation of the symbol
+#   values. This fills the leading whitespaces, thus simplifying
+#   the sed statement.
+# - Eliminate all entries except those with either "B", "D"
+#   or "T" key letters. We are interested only in the global
+#   (extern) BSS, DATA and TEXT symbols. With the same statement
+#   we eliminate object member lines relevant to AIX 4.
+# - Eliminate entries containing a dot. We can have a dot only
+#   as a symbol prefix, but such symbols are undefined externs.
+# - Eliminate everything including the key letter, so that we're
+#   left with just the symbol name.
+# - Eliminate all entries containing two colons, like Class::method
 #
 
-# Use -X32_64 if it appears to be implemented in this version of 'nm'.
-NM=/usr/ccs/bin/nm
-xopt=-X32_64
-$NM -e $xopt $1 >/dev/null 2>&1 || xopt=""
-
-$NM -Bex $xopt $inputFiles					\
+/usr/ccs/bin/nm -Bex -X32_64 $inputFiles \
 | sed -e '/ [^BDT] /d' -e '/\./d' -e 's/.* [BDT] //' -e '/::/d'	\
 | sort | uniq >> $expFileName

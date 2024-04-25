@@ -106,8 +106,7 @@ Using DLLs in Practice
 
 
 Windows Python is built in Microsoft Visual C++; using other compilers may or
-may not work (though Borland seems to).  The rest of this section is MSVC++
-specific.
+may not work.  The rest of this section is MSVC++ specific.
 
 When creating DLLs in Windows, you must pass :file:`pythonXY.lib` to the linker.
 To build two DLLs, spam and ni (which uses C functions found in spam), you could
@@ -134,4 +133,3 @@ Developer Studio will throw in a lot of import libraries that you do not really
 need, adding about 100K to your executable.  To get rid of them, use the Project
 Settings dialog, Link tab, to specify *ignore default libraries*.  Add the
 correct :file:`msvcrtxx.lib` to the list of libraries.
-

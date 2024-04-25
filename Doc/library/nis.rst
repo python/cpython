@@ -5,9 +5,14 @@
 .. module:: nis
    :platform: Unix
    :synopsis: Interface to Sun's NIS (Yellow Pages) library.
+   :deprecated:
 
 .. moduleauthor:: Fred Gansevles <Fred.Gansevles@cs.utwente.nl>
 .. sectionauthor:: Moshe Zadka <moshez@zadka.site.co.il>
+
+.. deprecated-removed:: 3.11 3.13
+   The :mod:`nis` module is deprecated
+   (see :pep:`PEP 594 <594#nis>` for details).
 
 --------------
 
