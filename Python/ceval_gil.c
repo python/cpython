@@ -624,6 +624,34 @@ PyEval_RestoreThread(PyThreadState *tstate)
 }
 
 
+void
+_PyEval_SignalReceived(void)
+{
+    _Py_set_eval_breaker_bit(_PyRuntime.main_tstate, _PY_SIGNALS_PENDING_BIT);
+}
+
+
+#ifndef Py_GIL_DISABLED
+static void
+signal_active_thread(PyInterpreterState *interp, uintptr_t bit)
+{
+    struct _gil_runtime_state *gil = interp->ceval.gil;
+
+    // If a thread from the targeted interpreter is holding the GIL, signal
+    // that thread. Otherwise, the next thread to run from the targeted
+    // interpreter will have its bit set as part of taking the GIL.
+    MUTEX_LOCK(gil->mutex);
+    if (_Py_atomic_load_int_relaxed(&gil->locked)) {
+        PyThreadState *holder = (PyThreadState*)_Py_atomic_load_ptr_relaxed(&gil->last_holder);
+        if (holder->interp == interp) {
+            _Py_set_eval_breaker_bit(holder, bit);
+        }
+    }
+    MUTEX_UNLOCK(gil->mutex);
+}
+#endif
+
+
 /* Mechanism whereby asynchronously executing callbacks (e.g. UNIX
    signal handlers or Mac I/O completion routines) can schedule calls
    to a function to be called synchronously.
@@ -645,12 +673,6 @@ PyEval_RestoreThread(PyThreadState *tstate)
    that case, the static variables here should go into the python
    threadstate.
 */
-
-void
-_PyEval_SignalReceived(void)
-{
-    _Py_set_eval_breaker_bit(_PyRuntime.main_tstate, _PY_SIGNALS_PENDING_BIT);
-}
 
 /* Push one item onto the queue while holding the lock. */
 static int
@@ -700,26 +722,6 @@ _pop_pending_call(struct _pending_calls *pending,
         _Py_atomic_add_int32(&pending->calls_to_do, -1);
     }
 }
-
-#ifndef Py_GIL_DISABLED
-static void
-signal_active_thread(PyInterpreterState *interp, uintptr_t bit)
-{
-    struct _gil_runtime_state *gil = interp->ceval.gil;
-
-    // If a thread from the targeted interpreter is holding the GIL, signal
-    // that thread. Otherwise, the next thread to run from the targeted
-    // interpreter will have its bit set as part of taking the GIL.
-    MUTEX_LOCK(gil->mutex);
-    if (_Py_atomic_load_int_relaxed(&gil->locked)) {
-        PyThreadState *holder = (PyThreadState*)_Py_atomic_load_ptr_relaxed(&gil->last_holder);
-        if (holder->interp == interp) {
-            _Py_set_eval_breaker_bit(holder, bit);
-        }
-    }
-    MUTEX_UNLOCK(gil->mutex);
-}
-#endif
 
 /* This implementation is thread-safe.  It allows
    scheduling to be made from any thread, and even from an executing
@@ -880,6 +882,7 @@ make_pending_calls(PyThreadState *tstate)
     pending->busy = 0;
     return 0;
 }
+
 
 void
 _Py_set_eval_breaker_bit_all(PyInterpreterState *interp, uintptr_t bit)
