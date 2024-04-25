@@ -101,20 +101,6 @@ get_module_state_by_def(PyTypeObject *cls)
     return get_module_state(mod);
 }
 
-static inline ctypes_state *
-get_module_state_by_def_final(PyTypeObject *cls)
-{
-    if (cls->tp_mro == NULL) {
-        return NULL;
-    }
-    PyObject *mod = PyType_GetModuleByDef(cls, &_ctypesmodule);
-    if (mod == NULL) {
-        PyErr_Clear();
-        return NULL;
-    }
-    return get_module_state(mod);
-}
-
 
 extern PyType_Spec carg_spec;
 extern PyType_Spec cfield_spec;
