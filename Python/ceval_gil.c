@@ -674,6 +674,22 @@ signal_active_thread(PyInterpreterState *interp, uintptr_t bit)
    threadstate.
 */
 
+void
+_pending_calls_fini(struct _pending_calls *pending)
+{
+    PyMutex_Lock(&pending->mutex);
+    struct _pending_call *head = pending->freelist;
+    pending->freelist = NULL;
+    PyMutex_Unlock(&pending->mutex);
+
+    /* Deallocate all freelist entries. */
+    while (head != NULL) {
+        struct _pending_call *cur = head;
+        head = cur->next;
+        PyMem_RawFree(cur);
+    }
+}
+
 /* Push one item onto the queue while holding the lock. */
 static int
 _push_pending_call(struct _pending_calls *pending,
@@ -688,37 +704,23 @@ _push_pending_call(struct _pending_calls *pending,
     }
 
     // Allocate for the pending call.
-    struct _pending_call *call;
-    if (pending->npending == 0) {
-        assert(pending->_next == pending->_first);
-        assert(pending->head == NULL);
-        assert(pending->tail == NULL);
-        call = &pending->_preallocated[0];
-        pending->_first = 0;
-        pending->_next = 1;
-        call->from_array = 1;
-    }
-    else if (pending->npending < NPENDINGCALLSARRAY) {
-        int i = pending->_next;
-        int next = (i + 1) % NPENDINGCALLSARRAY;
-        assert(i != pending->_first);
-        call = &pending->_preallocated[i];
-        pending->_next = next;
-        call->from_array = 1;
+    struct _pending_call *call = pending->freelist;
+    if (call != NULL) {
+        pending->freelist = call->next;
     }
     else {
         call = PyMem_RawMalloc(sizeof(struct _pending_call));
         if (call == NULL) {
             return -1;
         }
-        call->from_array = 0;
     }
 
     // Initialize the data.
-    call->func = func;
-    call->arg = arg;
-    call->flags = flags;
-    call->next = NULL;
+    *call = (struct _pending_call){
+        .func=func,
+        .arg=arg,
+        .flags=flags,
+    };
 
     // Add the call to the list.
     if (pending->head == NULL) {
@@ -742,10 +744,11 @@ _pop_pending_call(struct _pending_calls *pending,
     if (call == NULL) {
         /* Queue empty */
         assert(pending->npending == 0);
-        assert(pending->_first == pending->_next);
+        assert(pending->tail == NULL);
         return;
     }
     assert(pending->npending > 0);
+    assert(pending->tail != NULL);
 
     // Remove the next one from the list.
     pending->head = call->next;
@@ -759,15 +762,9 @@ _pop_pending_call(struct _pending_calls *pending,
     *arg = call->arg;
     *flags = call->flags;
 
-    // Deallocate the list entry.
-    if (call->from_array) {
-        int i = pending->_first;
-        pending->_preallocated[i] = (struct _pending_call){0};
-        pending->_first = (i + 1) % NPENDINGCALLSARRAY;
-    }
-    else {
-        PyMem_RawFree(call);
-    }
+    // "Deallocate" the list entry.
+    call->next = pending->freelist;
+    pending->freelist = call;
 }
 
 /* This implementation is thread-safe.  It allows
@@ -998,6 +995,12 @@ _Py_FinishPendingCalls(PyThreadState *tstate)
             npending += _Py_atomic_load_int32_relaxed(&pending_main->npending);
         }
     } while (npending > 0);
+
+    /* Clean up the lingering pending calls state. */
+    _pending_calls_fini(pending);
+    if (pending_main != NULL) {
+        _pending_calls_fini(pending_main);
+    }
 }
 
 int

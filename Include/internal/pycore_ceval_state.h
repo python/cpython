@@ -20,7 +20,6 @@ struct _pending_call {
     _Py_pending_call_func func;
     void *arg;
     int flags;
-    int from_array;
     struct _pending_call *next;
 };
 
@@ -46,13 +45,7 @@ struct _pending_calls {
     /* The linked list of pending calls. */
     struct _pending_call *head;
     struct _pending_call *tail;
-
-    // We have a set of pre-allocated pending calls, to avoid
-    // possible allocation failures (at least when the number
-    // of pending calls is small).
-    int _first;
-    int _next;
-    struct _pending_call _preallocated[NPENDINGCALLSARRAY];
+    struct _pending_call *freelist;
 };
 
 
@@ -92,6 +85,7 @@ struct _ceval_runtime_state {
     struct _pending_calls pending_mainthread;
     PyMutex sys_trace_profile_mutex;
 };
+
 
 #ifdef PY_HAVE_PERF_TRAMPOLINE
 # define _PyEval_RUNTIME_PERF_INIT \
