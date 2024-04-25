@@ -85,11 +85,11 @@ encoder_dealloc(PyObject *self);
 static int
 encoder_clear(PyEncoderObject *self);
 static int
-encoder_listencode_list(PyEncoderObject *s, _PyUnicodeWriter *writer, PyObject *seq, PyObject* current_newline_indent);
+encoder_listencode_list(PyEncoderObject *s, _PyUnicodeWriter *writer, PyObject *seq, PyObject *newline_indent);
 static int
-encoder_listencode_obj(PyEncoderObject *s, _PyUnicodeWriter *writer, PyObject *obj, PyObject *current_newline_indent);
+encoder_listencode_obj(PyEncoderObject *s, _PyUnicodeWriter *writer, PyObject *obj, PyObject *newline_indent);
 static int
-encoder_listencode_dict(PyEncoderObject *s, _PyUnicodeWriter *writer, PyObject *dct, PyObject* current_newline_indent);
+encoder_listencode_dict(PyEncoderObject *s, _PyUnicodeWriter *writer, PyObject *dct, PyObject *newline_indent);
 static PyObject *
 _encoded_const(PyObject *obj);
 static void
