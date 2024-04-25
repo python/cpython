@@ -2628,7 +2628,7 @@ dummy_func(
         }
 
         op(_ITER_CHECK_LIST, (iter -- iter)) {
-            DEOPT_IF(Py_TYPE(iter) != &PyListIter_Type);
+            EXIT_IF(Py_TYPE(iter) != &PyListIter_Type);
         }
 
         replaced op(_ITER_JUMP_LIST, (iter -- iter)) {
@@ -2657,8 +2657,8 @@ dummy_func(
             _PyListIterObject *it = (_PyListIterObject *)iter;
             assert(Py_TYPE(iter) == &PyListIter_Type);
             PyListObject *seq = it->it_seq;
-            DEOPT_IF(seq == NULL);
-            DEOPT_IF((size_t)it->it_index >= (size_t)PyList_GET_SIZE(seq));
+            EXIT_IF(seq == NULL);
+            EXIT_IF((size_t)it->it_index >= (size_t)PyList_GET_SIZE(seq));
         }
 
         op(_ITER_NEXT_LIST, (iter -- iter, next)) {
@@ -2677,7 +2677,7 @@ dummy_func(
             _ITER_NEXT_LIST;
 
         op(_ITER_CHECK_TUPLE, (iter -- iter)) {
-            DEOPT_IF(Py_TYPE(iter) != &PyTupleIter_Type);
+            EXIT_IF(Py_TYPE(iter) != &PyTupleIter_Type);
         }
 
         replaced op(_ITER_JUMP_TUPLE, (iter -- iter)) {
@@ -2703,8 +2703,8 @@ dummy_func(
             _PyTupleIterObject *it = (_PyTupleIterObject *)iter;
             assert(Py_TYPE(iter) == &PyTupleIter_Type);
             PyTupleObject *seq = it->it_seq;
-            DEOPT_IF(seq == NULL);
-            DEOPT_IF(it->it_index >= PyTuple_GET_SIZE(seq));
+            EXIT_IF(seq == NULL);
+            EXIT_IF(it->it_index >= PyTuple_GET_SIZE(seq));
         }
 
         op(_ITER_NEXT_TUPLE, (iter -- iter, next)) {
@@ -2724,7 +2724,7 @@ dummy_func(
 
         op(_ITER_CHECK_RANGE, (iter -- iter)) {
             _PyRangeIterObject *r = (_PyRangeIterObject *)iter;
-            DEOPT_IF(Py_TYPE(r) != &PyRangeIter_Type);
+            EXIT_IF(Py_TYPE(r) != &PyRangeIter_Type);
         }
 
         replaced op(_ITER_JUMP_RANGE, (iter -- iter)) {
@@ -2744,7 +2744,7 @@ dummy_func(
         op(_GUARD_NOT_EXHAUSTED_RANGE, (iter -- iter)) {
             _PyRangeIterObject *r = (_PyRangeIterObject *)iter;
             assert(Py_TYPE(r) == &PyRangeIter_Type);
-            DEOPT_IF(r->len <= 0);
+            EXIT_IF(r->len <= 0);
         }
 
         op(_ITER_NEXT_RANGE, (iter -- iter, next)) {
@@ -3145,11 +3145,11 @@ dummy_func(
         }
 
         op(_CHECK_FUNCTION_EXACT_ARGS, (func_version/2, callable, self_or_null, unused[oparg] -- callable, self_or_null, unused[oparg])) {
-            DEOPT_IF(!PyFunction_Check(callable));
+            EXIT_IF(!PyFunction_Check(callable));
             PyFunctionObject *func = (PyFunctionObject *)callable;
-            DEOPT_IF(func->func_version != func_version);
+            EXIT_IF(func->func_version != func_version);
             PyCodeObject *code = (PyCodeObject *)func->func_code;
-            DEOPT_IF(code->co_argcount != oparg + (self_or_null != NULL));
+            EXIT_IF(code->co_argcount != oparg + (self_or_null != NULL));
         }
 
         op(_CHECK_STACK_SPACE, (callable, unused, unused[oparg] -- callable, unused, unused[oparg])) {
@@ -4226,7 +4226,8 @@ dummy_func(
             EXIT_TO_TRACE();
         }
 
-        tier2 op(_ERROR_POP_N, (unused[oparg] --)) {
+        tier2 op(_ERROR_POP_N, (target/2, unused[oparg] --)) {
+            frame->instr_ptr = ((_Py_CODEUNIT *)_PyFrame_GetCode(frame)->co_code_adaptive) + target;
             SYNC_SP();
             GOTO_UNWIND();
         }

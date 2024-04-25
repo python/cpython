@@ -2,10 +2,10 @@
 
 import threading
 import weakref
-import _xxsubinterpreters as _interpreters
+import _interpreters
 
 # aliases:
-from _xxsubinterpreters import (
+from _interpreters import (
     InterpreterError, InterpreterNotFoundError, NotShareableError,
     is_shareable,
 )
