@@ -1292,7 +1292,9 @@ class TestUopsOptimization(unittest.TestCase):
         def testfunc(n):
             for i in range(n):
                 gen()
+            return i
         res, ex = self._run_with_optimizer(testfunc, 20)
+        self.assertEqual(res, 19)
         self.assertIsNotNone(ex)
         self.assertIn("_RETURN_GENERATOR", get_opnames(ex))
 
