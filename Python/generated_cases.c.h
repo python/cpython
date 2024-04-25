@@ -1148,12 +1148,7 @@ step = Py_STACKREF_UNTAG_BORROWED(step_tagged);
                 tstate->py_recursion_remaining--;
                 LOAD_SP();
                 LOAD_IP(0);
-                #if LLTRACE && TIER_ONE
-                lltrace = maybe_lltrace_resume_frame(frame, &entry_frame, GLOBALS());
-                if (lltrace < 0) {
-                    goto exit_unwind;
-                }
-                #endif
+                LLTRACE_RESUME_FRAME();
             }
             DISPATCH();
         }
@@ -2057,12 +2052,7 @@ kwargs = Py_STACKREF_UNTAG_BORROWED(kwargs_tagged);
                 tstate->py_recursion_remaining--;
                 LOAD_SP();
                 LOAD_IP(0);
-                #if LLTRACE && TIER_ONE
-                lltrace = maybe_lltrace_resume_frame(frame, &entry_frame, GLOBALS());
-                if (lltrace < 0) {
-                    goto exit_unwind;
-                }
-                #endif
+                LLTRACE_RESUME_FRAME();
             }
             DISPATCH();
         }
@@ -5692,12 +5682,7 @@ kwargs = Py_STACKREF_UNTAG_BORROWED(kwargs_tagged);
                 _PyFrame_StackPush(frame, retval);
                 LOAD_SP();
                 LOAD_IP(frame->return_offset);
-                #if LLTRACE && TIER_ONE
-                lltrace = maybe_lltrace_resume_frame(frame, &entry_frame, GLOBALS());
-                if (lltrace < 0) {
-                    goto exit_unwind;
-                }
-                #endif
+                LLTRACE_RESUME_FRAME();
             }
             DISPATCH();
         }
@@ -5706,6 +5691,7 @@ kwargs = Py_STACKREF_UNTAG_BORROWED(kwargs_tagged);
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(RETURN_GENERATOR);
+            PyObject *res;
             assert(PyFunction_Check(frame->f_funcobj));
             PyFunctionObject *func = (PyFunctionObject *)frame->f_funcobj;
             PyGenObject *gen = (PyGenObject *)_Py_MakeCoro(func);
@@ -5715,19 +5701,22 @@ kwargs = Py_STACKREF_UNTAG_BORROWED(kwargs_tagged);
             assert(EMPTY());
             _PyFrame_SetStackPointer(frame, stack_pointer);
             _PyInterpreterFrame *gen_frame = (_PyInterpreterFrame *)gen->gi_iframe;
-            frame->instr_ptr = next_instr;
+            frame->instr_ptr++;
             _PyFrame_Copy(frame, gen_frame);
             assert(frame->frame_obj == NULL);
             gen->gi_frame_state = FRAME_CREATED;
             gen_frame->owner = FRAME_OWNED_BY_GENERATOR;
             _Py_LeaveRecursiveCallPy(tstate);
-            assert(frame != &entry_frame);
+            res = (PyObject *)gen;
             _PyInterpreterFrame *prev = frame->previous;
             _PyThreadState_PopFrame(tstate, frame);
             frame = tstate->current_frame = prev;
-            _PyFrame_StackPush(frame, Py_STACKREF_TAG((PyObject *)gen));
             LOAD_IP(frame->return_offset);
-            goto resume_frame;
+            LOAD_SP();
+            LLTRACE_RESUME_FRAME();
+            stack_pointer[0] = Py_STACKREF_TAG(res);
+            stack_pointer += 1;
+            DISPATCH();
         }
 
         TARGET(RETURN_VALUE) {
@@ -5751,12 +5740,7 @@ kwargs = Py_STACKREF_UNTAG_BORROWED(kwargs_tagged);
             _PyFrame_StackPush(frame, retval);
             LOAD_SP();
             LOAD_IP(frame->return_offset);
-            #if LLTRACE && TIER_ONE
-            lltrace = maybe_lltrace_resume_frame(frame, &entry_frame, GLOBALS());
-            if (lltrace < 0) {
-                goto exit_unwind;
-            }
-            #endif
+            LLTRACE_RESUME_FRAME();
             DISPATCH();
         }
 

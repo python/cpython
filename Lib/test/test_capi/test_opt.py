@@ -1286,5 +1286,17 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertEqual(res, 32 * 32)
         self.assertIsNone(ex)
 
+    def test_return_generator(self):
+        def gen():
+            yield None
+        def testfunc(n):
+            for i in range(n):
+                gen()
+            return i
+        res, ex = self._run_with_optimizer(testfunc, 20)
+        self.assertEqual(res, 19)
+        self.assertIsNotNone(ex)
+        self.assertIn("_RETURN_GENERATOR", get_opnames(ex))
+
 if __name__ == "__main__":
     unittest.main()
