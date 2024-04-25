@@ -28,13 +28,7 @@ from sphinx.util import logging
 from sphinx.util.docutils import SphinxDirective
 from sphinx.util.nodes import split_explicit_title
 from sphinx.writers.text import TextWriter, TextTranslator
-
-try:
-    # Sphinx 6+
-    from sphinx.util.display import status_iterator
-except ImportError:
-    # Deprecated in Sphinx 6.1, will be removed in Sphinx 8
-    from sphinx.util import status_iterator
+from sphinx.util.display import status_iterator
 
 
 ISSUE_URI = 'https://bugs.python.org/issue?@action=redirect&bpo=%s'
