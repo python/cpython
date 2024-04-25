@@ -142,8 +142,8 @@ class _Target(typing.Generic[_S, _R]):
             *self.args,
         ]
         if self.ghccc:
-            # So, this is mostly a giant hack (but it makes the code much
-            # smaller and faster, so it's worth it). We need to use the GHC
+            # This is a bit of an ugly workaround, but it makes the code much
+            # smaller and faster, so it's worth it. We want to use the GHC
             # calling convention, but Clang doesn't support it. So, we *first*
             # compile the code to LLVM IR, perform some text replacements on the
             # IR to change the calling convention(!), and then compile *that*.

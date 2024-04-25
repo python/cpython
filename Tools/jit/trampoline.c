@@ -5,7 +5,7 @@
 #include "pycore_jit.h"
 
 // This is where the calling convention changes, on platforms that require it.
-// The actual change is hacked in while the JIT compiler is being built, in
+// The actual change is patched in while the JIT compiler is being built, in
 // Tools/jit/_targets.py. On other platforms, this function compiles to nothing.
 _Py_CODEUNIT *
 _ENTRY(_PyInterpreterFrame *frame, PyObject **stack_pointer, PyThreadState *tstate)
