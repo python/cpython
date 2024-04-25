@@ -1088,10 +1088,12 @@ pending_threadfunc(PyObject *self, PyObject *args, PyObject *kwargs)
     unsigned int num_added = 0;
     for (; num_added < num; num_added++) {
         if (ensure_added) {
-            int r;
+            _Py_add_pending_call_result r;
             do {
                 r = _PyEval_AddPendingCall(interp, &_pending_callback, callable, 0);
-            } while (r < 0);
+                assert(r == _Py_ADD_PENDING_SUCCESS
+                       || r == _Py_ADD_PENDING_FULL);
+            } while (r == _Py_ADD_PENDING_FULL);
         }
         else {
             if (_PyEval_AddPendingCall(interp, &_pending_callback, callable, 0) < 0) {
@@ -1152,14 +1154,16 @@ pending_identify(PyObject *self, PyObject *args)
     PyThread_acquire_lock(mutex, WAIT_LOCK);
     /* It gets released in _pending_identify_callback(). */
 
-    int r;
+    _Py_add_pending_call_result r;
     do {
         Py_BEGIN_ALLOW_THREADS
         r = _PyEval_AddPendingCall(interp,
                                    &_pending_identify_callback, (void *)mutex,
                                    0);
         Py_END_ALLOW_THREADS
-    } while (r < 0);
+        assert(r == _Py_ADD_PENDING_SUCCESS
+               || r == _Py_ADD_PENDING_FULL);
+    } while (r == _Py_ADD_PENDING_FULL);
 
     /* Wait for the pending call to complete. */
     PyThread_acquire_lock(mutex, WAIT_LOCK);

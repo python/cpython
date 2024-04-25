@@ -682,7 +682,7 @@ _push_pending_call(struct _pending_calls *pending,
     int i = pending->last;
     int j = (i + 1) % NPENDINGCALLS;
     if (j == pending->first) {
-        return -1; /* Queue full */
+        return _Py_ADD_PENDING_FULL;
     }
     pending->calls[i].func = func;
     pending->calls[i].arg = arg;
@@ -690,7 +690,7 @@ _push_pending_call(struct _pending_calls *pending,
     pending->last = j;
     assert(pending->npending < NPENDINGCALLS);
     _Py_atomic_add_int32(&pending->npending, 1);
-    return 0;
+    return _Py_ADD_PENDING_SUCCESS;
 }
 
 static int
@@ -728,7 +728,7 @@ _pop_pending_call(struct _pending_calls *pending,
    callback.
  */
 
-int
+_Py_add_pending_call_result
 _PyEval_AddPendingCall(PyInterpreterState *interp,
                        _Py_pending_call_func func, void *arg, int flags)
 {
@@ -741,7 +741,8 @@ _PyEval_AddPendingCall(PyInterpreterState *interp,
     }
 
     PyMutex_Lock(&pending->mutex);
-    int result = _push_pending_call(pending, func, arg, flags);
+    _Py_add_pending_call_result result =
+        _push_pending_call(pending, func, arg, flags);
     PyMutex_Unlock(&pending->mutex);
 
     if (main_only) {
@@ -764,7 +765,15 @@ Py_AddPendingCall(_Py_pending_call_func func, void *arg)
     /* Legacy users of this API will continue to target the main thread
        (of the main interpreter). */
     PyInterpreterState *interp = _PyInterpreterState_Main();
-    return _PyEval_AddPendingCall(interp, func, arg, _Py_PENDING_MAINTHREADONLY);
+    _Py_add_pending_call_result r =
+        _PyEval_AddPendingCall(interp, func, arg, _Py_PENDING_MAINTHREADONLY);
+    if (r == _Py_ADD_PENDING_FULL) {
+        return -1;
+    }
+    else {
+        assert(r == _Py_ADD_PENDING_SUCCESS);
+        return 0;
+    }
 }
 
 static int
