@@ -4,10 +4,10 @@ from tkinter import TclError
 import os
 from test.support import requires
 
-from tkinter.test.support import (requires_tcl,
+from test.test_tkinter.support import (requires_tcl,
                                   get_tk_patchlevel, widget_eq,
                                   AbstractDefaultRootTest)
-from tkinter.test.widget_tests import (
+from test.test_tkinter.widget_tests import (
     add_standard_options,
     AbstractWidgetTest, StandardOptionsTests, IntegerSizeTests, PixelSizeTests,
     setUpModule)

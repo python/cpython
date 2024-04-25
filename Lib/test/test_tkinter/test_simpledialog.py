@@ -1,7 +1,7 @@
 import unittest
 import tkinter
 from test.support import requires, swap_attr
-from tkinter.test.support import AbstractDefaultRootTest
+from test.test_tkinter.support import AbstractDefaultRootTest
 from tkinter.simpledialog import Dialog, askinteger
 
 requires('gui')

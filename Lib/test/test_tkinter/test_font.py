@@ -2,7 +2,7 @@ import unittest
 import tkinter
 from tkinter import font
 from test.support import requires, gc_collect, ALWAYS_EQ
-from tkinter.test.support import AbstractTkTest, AbstractDefaultRootTest
+from test.test_tkinter.support import AbstractTkTest, AbstractDefaultRootTest
 
 requires('gui')
 

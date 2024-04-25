@@ -6,7 +6,7 @@ import tkinter
 from tkinter import (Variable, StringVar, IntVar, DoubleVar, BooleanVar, Tcl,
                      TclError)
 from test.support import ALWAYS_EQ
-from tkinter.test.support import AbstractDefaultRootTest
+from test.test_tkinter.support import AbstractDefaultRootTest
 
 
 class Var(Variable):

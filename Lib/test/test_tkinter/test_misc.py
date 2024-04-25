@@ -3,7 +3,7 @@ import unittest
 import tkinter
 import enum
 from test import support
-from tkinter.test.support import AbstractTkTest, AbstractDefaultRootTest
+from test.test_tkinter.support import AbstractTkTest, AbstractDefaultRootTest
 
 support.requires('gui')
 
