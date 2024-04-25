@@ -64,6 +64,10 @@ struct _ceval_runtime_state {
 #endif
     } perf;
     /* Pending calls to be made only on the main thread. */
+    // The signal machinery falls back on this
+    // so it must be especially stable and efficient.
+    // For example, we use a preallocated array
+    // for the list of pending calls.
     struct _pending_calls pending_mainthread;
     PyMutex sys_trace_profile_mutex;
 };
