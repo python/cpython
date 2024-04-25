@@ -1479,13 +1479,5 @@ class DefaultRootTest(AbstractDefaultRootTest, unittest.TestCase):
         self._test_widget(tkinter.Label)
 
 
-tests_gui = (
-        ButtonTest, CanvasTest, CheckbuttonTest, EntryTest,
-        FrameTest, LabelFrameTest,LabelTest, ListboxTest,
-        MenubuttonTest, MenuTest, MessageTest, OptionMenuTest,
-        PanedWindowTest, RadiobuttonTest, ScaleTest, ScrollbarTest,
-        SpinboxTest, TextTest, ToplevelTest, DefaultRootTest,
-)
-
 if __name__ == '__main__':
     unittest.main()
