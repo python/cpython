@@ -219,6 +219,7 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_CALL_METHOD_DESCRIPTOR_FAST] = HAS_ARG_FLAG | HAS_DEOPT_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_MAKE_FUNCTION] = HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
     [_SET_FUNCTION_ATTRIBUTE] = HAS_ARG_FLAG | HAS_ESCAPES_FLAG,
+    [_RETURN_GENERATOR] = HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
     [_BUILD_SLICE] = HAS_ARG_FLAG | HAS_ERROR_FLAG,
     [_CONVERT_VALUE] = HAS_ARG_FLAG | HAS_ERROR_FLAG,
     [_FORMAT_SIMPLE] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
@@ -445,6 +446,7 @@ const char *const _PyOpcode_uop_name[MAX_UOP_ID+1] = {
     [_PUSH_NULL] = "_PUSH_NULL",
     [_REPLACE_WITH_TRUE] = "_REPLACE_WITH_TRUE",
     [_RESUME_CHECK] = "_RESUME_CHECK",
+    [_RETURN_GENERATOR] = "_RETURN_GENERATOR",
     [_SAVE_RETURN_OFFSET] = "_SAVE_RETURN_OFFSET",
     [_SETUP_ANNOTATIONS] = "_SETUP_ANNOTATIONS",
     [_SET_ADD] = "_SET_ADD",
@@ -894,6 +896,8 @@ int _PyUop_num_popped(int opcode, int oparg)
             return 1;
         case _SET_FUNCTION_ATTRIBUTE:
             return 2;
+        case _RETURN_GENERATOR:
+            return 0;
         case _BUILD_SLICE:
             return 2 + ((oparg == 3) ? 1 : 0);
         case _CONVERT_VALUE:

@@ -53,18 +53,6 @@ _PyFrame_MakeAndSetFrameObject(_PyInterpreterFrame *frame)
     return f;
 }
 
-void
-_PyFrame_Copy(_PyInterpreterFrame *src, _PyInterpreterFrame *dest)
-{
-    assert(src->stacktop >= _PyFrame_GetCode(src)->co_nlocalsplus);
-    Py_ssize_t size = ((char*)&src->localsplus[src->stacktop]) - (char *)src;
-    memcpy(dest, src, size);
-    // Don't leave a dangling pointer to the old frame when creating generators
-    // and coroutines:
-    dest->previous = NULL;
-}
-
-
 static void
 take_ownership(PyFrameObject *f, _PyInterpreterFrame *frame)
 {

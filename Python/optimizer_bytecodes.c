@@ -651,6 +651,28 @@ dummy_func(void) {
         }
     }
 
+    op(_RETURN_GENERATOR, ( -- res)) {
+        SYNC_SP();
+        ctx->frame->stack_pointer = stack_pointer;
+        frame_pop(ctx);
+        stack_pointer = ctx->frame->stack_pointer;
+        OUT_OF_SPACE_IF_NULL(res = sym_new_unknown(ctx));
+
+        /* Stack space handling */
+        assert(corresponding_check_stack == NULL);
+        assert(co != NULL);
+        int framesize = co->co_framesize;
+        assert(framesize > 0);
+        assert(framesize <= curr_space);
+        curr_space -= framesize;
+
+        co = get_code(this_instr);
+        if (co == NULL) {
+            // might be impossible, but bailing is still safe
+            goto done;
+        }
+    }
+
     op(_CHECK_STACK_SPACE, ( --)) {
         assert(corresponding_check_stack == NULL);
         corresponding_check_stack = this_instr;

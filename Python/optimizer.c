@@ -697,7 +697,8 @@ top:  // Jump here after _PUSH_FRAME or likely branches
                     // Reserve space for nuops (+ _SET_IP + _EXIT_TRACE)
                     int nuops = expansion->nuops;
                     RESERVE(nuops + 1); /* One extra for exit */
-                    if (expansion->uops[nuops-1].uop == _POP_FRAME) {
+                    int16_t last_op = expansion->uops[nuops-1].uop;
+                    if (last_op == _POP_FRAME || last_op == _RETURN_GENERATOR) {
                         // Check for trace stack underflow now:
                         // We can't bail e.g. in the middle of
                         // LOAD_CONST + _POP_FRAME.
@@ -756,7 +757,7 @@ top:  // Jump here after _PUSH_FRAME or likely branches
                                 Py_FatalError("garbled expansion");
                         }
 
-                        if (uop == _POP_FRAME) {
+                        if (uop == _POP_FRAME || uop == _RETURN_GENERATOR) {
                             TRACE_STACK_POP();
                             /* Set the operand to the function or code object returned to,
                              * to assist optimization passes. (See _PUSH_FRAME below.)

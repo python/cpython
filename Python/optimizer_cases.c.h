@@ -1840,6 +1840,29 @@
             break;
         }
 
+        case _RETURN_GENERATOR: {
+            _Py_UopsSymbol *res;
+            ctx->frame->stack_pointer = stack_pointer;
+            frame_pop(ctx);
+            stack_pointer = ctx->frame->stack_pointer;
+            OUT_OF_SPACE_IF_NULL(res = sym_new_unknown(ctx));
+            /* Stack space handling */
+            assert(corresponding_check_stack == NULL);
+            assert(co != NULL);
+            int framesize = co->co_framesize;
+            assert(framesize > 0);
+            assert(framesize <= curr_space);
+            curr_space -= framesize;
+            co = get_code(this_instr);
+            if (co == NULL) {
+                // might be impossible, but bailing is still safe
+                goto done;
+            }
+            stack_pointer[0] = res;
+            stack_pointer += 1;
+            break;
+        }
+
         case _BUILD_SLICE: {
             _Py_UopsSymbol *slice;
             slice = sym_new_not_null(ctx);

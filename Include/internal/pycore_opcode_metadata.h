@@ -805,7 +805,7 @@ int _PyOpcode_num_pushed(int opcode, int oparg)  {
         case RETURN_CONST:
             return 0;
         case RETURN_GENERATOR:
-            return 0;
+            return 1;
         case RETURN_VALUE:
             return 0;
         case SEND:
@@ -1310,6 +1310,7 @@ _PyOpcode_macro_expansion[256] = {
     [PUSH_NULL] = { .nuops = 1, .uops = { { _PUSH_NULL, 0, 0 } } },
     [RESUME_CHECK] = { .nuops = 1, .uops = { { _RESUME_CHECK, 0, 0 } } },
     [RETURN_CONST] = { .nuops = 2, .uops = { { _LOAD_CONST, 0, 0 }, { _POP_FRAME, 0, 0 } } },
+    [RETURN_GENERATOR] = { .nuops = 1, .uops = { { _RETURN_GENERATOR, 0, 0 } } },
     [RETURN_VALUE] = { .nuops = 1, .uops = { { _POP_FRAME, 0, 0 } } },
     [SETUP_ANNOTATIONS] = { .nuops = 1, .uops = { { _SETUP_ANNOTATIONS, 0, 0 } } },
     [SET_ADD] = { .nuops = 1, .uops = { { _SET_ADD, 0, 0 } } },
