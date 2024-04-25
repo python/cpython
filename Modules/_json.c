@@ -1286,21 +1286,20 @@ encoder_call(PyEncoderObject *self, PyObject *args, PyObject *kwds)
     _PyUnicodeWriter_Init(&writer);
     writer.overallocate = 1;
 
-    PyObject * current_newline_indent = NULL;
+    PyObject *newline_indent = NULL;
     if (self->indent != Py_None) {
-        current_newline_indent = _create_newline_indent(self->indent,
-                                                        indent_level);
-        if (current_newline_indent == NULL) {
+        newline_indent = _create_newline_indent(self->indent, indent_level);
+        if (newline_indent == NULL) {
             _PyUnicodeWriter_Dealloc(&writer);
             return NULL;
         }
     }
-    if (encoder_listencode_obj(self, &writer, obj, current_newline_indent)) {
+    if (encoder_listencode_obj(self, &writer, obj, newline_indent)) {
         _PyUnicodeWriter_Dealloc(&writer);
-        Py_XDECREF(current_newline_indent);
+        Py_XDECREF(newline_indent);
         return NULL;
     }
-    Py_XDECREF(current_newline_indent);
+    Py_XDECREF(newline_indent);
 
     result = PyTuple_New(1);
     if (result == NULL ||
@@ -1388,7 +1387,7 @@ _steal_accumulate(_PyUnicodeWriter *writer, PyObject *stolen)
 
 static int
 encoder_listencode_obj(PyEncoderObject *s, _PyUnicodeWriter *writer,
-                       PyObject *obj, PyObject *current_newline_indent)
+                       PyObject *obj, PyObject *newline_indent)
 {
     /* Encode Python object obj to a JSON term */
     PyObject *newobj;
@@ -1424,14 +1423,14 @@ encoder_listencode_obj(PyEncoderObject *s, _PyUnicodeWriter *writer,
     else if (PyList_Check(obj) || PyTuple_Check(obj)) {
         if (_Py_EnterRecursiveCall(" while encoding a JSON object"))
             return -1;
-        rv = encoder_listencode_list(s, writer, obj, current_newline_indent);
+        rv = encoder_listencode_list(s, writer, obj, newline_indent);
         _Py_LeaveRecursiveCall();
         return rv;
     }
     else if (PyDict_Check(obj)) {
         if (_Py_EnterRecursiveCall(" while encoding a JSON object"))
             return -1;
-        rv = encoder_listencode_dict(s, writer, obj, current_newline_indent);
+        rv = encoder_listencode_dict(s, writer, obj, newline_indent);
         _Py_LeaveRecursiveCall();
         return rv;
     }
@@ -1465,7 +1464,7 @@ encoder_listencode_obj(PyEncoderObject *s, _PyUnicodeWriter *writer,
             Py_XDECREF(ident);
             return -1;
         }
-        rv = encoder_listencode_obj(s, writer, newobj, current_newline_indent);
+        rv = encoder_listencode_obj(s, writer, newobj, newline_indent);
         _Py_LeaveRecursiveCall();
 
         Py_DECREF(newobj);
