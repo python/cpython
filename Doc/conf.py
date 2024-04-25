@@ -295,7 +295,7 @@ smartquotes_excludes = {
     'languages': ['ja', 'fr', 'zh_TW', 'zh_CN'], 'builders': ['man', 'text'],
 }
 
-# Avoid a warning with Sphinx >= 2.0
+# Avoid a warning with Sphinx >= 4.0
 root_doc = 'contents'
 
 # Allow translation of index directives
