@@ -5485,14 +5485,14 @@ os__path_abspath_impl(PyObject *module, PyObject *path)
     }
 
 #ifdef MS_WINDOWS
+    if (wcslen(path_buf) != path_len) {
+        PyErr_Format(PyExc_ValueError,
+                     "_path_abspath: embedded null character in path");
+        goto exit;
+    }
     abs = _Py_normpath_and_size(path_buf, path_len, 0, &abs_len);
     if (abs_len == 0) {
         result = posix_getcwd(0);
-        goto exit;
-    }
-    if (wcslen(abs) != abs_len) {
-        PyErr_Format(PyExc_ValueError,
-                     "_path_abspath: embedded null character in path");
         goto exit;
     }
     if (_PyOS_getfullpathname(abs, &abs_buf) < 0) {
