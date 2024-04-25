@@ -3849,7 +3849,7 @@ compiler_from_import(struct compiler *c, stmt_ty s)
     }
 
     if (location_is_after(LOC(s), c->c_future.ff_location) &&
-        s->v.ImportFrom.module &&
+        s->v.ImportFrom.module && s->v.ImportFrom.level == 0 &&
         _PyUnicode_EqualToASCIIString(s->v.ImportFrom.module, "__future__"))
     {
         Py_DECREF(names);
