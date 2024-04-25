@@ -1610,20 +1610,13 @@ class DocTestRunner:
             else:
                 failed.append((name, (failures, tries, skips)))
 
-        if can_colorize():
-            bold_green = ANSIColors.BOLD_GREEN
-            bold_red = ANSIColors.BOLD_RED
-            green = ANSIColors.GREEN
-            red = ANSIColors.RED
-            reset = ANSIColors.RESET
-            yellow = ANSIColors.YELLOW
-        else:
-            bold_green = ""
-            bold_red = ""
-            green = ""
-            red = ""
-            reset = ""
-            yellow = ""
+        ansi = _colorize.get_colors()
+        bold_green = ansi.BOLD_GREEN
+        bold_red = ansi.BOLD_RED
+        green = ansi.GREEN
+        red = ansi.RED
+        reset = ansi.RESET
+        yellow = ansi.YELLOW
 
         if verbose:
             if notests:

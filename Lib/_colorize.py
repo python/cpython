@@ -17,7 +17,21 @@ class ANSIColors:
     YELLOW = "\x1b[33m"
 
 
-def can_colorize():
+def get_colors(colorize: bool = False) -> ANSIColors:
+    if colorize or can_colorize():
+        return ANSIColors()
+
+    ansi_colors = ANSIColors()
+
+    # Set color attributes to empty strings
+    for attr in dir(ansi_colors):
+        if not attr.startswith("__"):
+            setattr(ansi_colors, attr, "")
+
+    return ansi_colors
+
+
+def can_colorize() -> bool:
     if sys.platform == "win32":
         try:
             import nt
