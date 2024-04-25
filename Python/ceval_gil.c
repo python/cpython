@@ -793,10 +793,20 @@ handle_signals(PyThreadState *tstate)
 }
 
 static int
-_make_pending_calls(struct _pending_calls *pending)
+_make_pending_calls(struct _pending_calls *pending, int32_t *p_npending)
 {
+    int res = 0;
+    int32_t npending;
+
+    assert(pending->max <= Py_ARRAY_LENGTH(pending->calls));
+    int32_t maxloop = pending->maxloop;
+    if (maxloop == 0) {
+        maxloop = pending->max;
+    }
+    assert(maxloop > 0 && maxloop <= pending->max);
+
     /* perform a bounded number of calls, in case of recursion */
-    for (int i=0; i<NPENDINGCALLS; i++) {
+    for (int i=0; i<maxloop; i++) {
         _Py_pending_call_func func = NULL;
         void *arg = NULL;
         int flags = 0;
@@ -804,21 +814,29 @@ _make_pending_calls(struct _pending_calls *pending)
         /* pop one item off the queue while holding the lock */
         PyMutex_Lock(&pending->mutex);
         _pop_pending_call(pending, &func, &arg, &flags);
+        npending = pending->npending;
         PyMutex_Unlock(&pending->mutex);
 
-        /* having released the lock, perform the callback */
+        /* Check if there are any more pending calls. */
         if (func == NULL) {
+            assert(npending == 0);
             break;
         }
-        int res = func(arg);
+
+        /* having released the lock, perform the callback */
+        res = func(arg);
         if ((flags & _Py_PENDING_RAWFREE) && arg != NULL) {
             PyMem_RawFree(arg);
         }
         if (res != 0) {
-            return -1;
+            res = -1;
+            goto finally;
         }
     }
-    return 0;
+
+finally:
+    *p_npending = npending;
+    return res;
 }
 
 static void
@@ -872,19 +890,28 @@ make_pending_calls(PyThreadState *tstate)
        added in-between re-signals */
     unsignal_pending_calls(tstate, interp);
 
-    if (_make_pending_calls(pending) != 0) {
+    int32_t npending;
+    if (_make_pending_calls(pending, &npending) != 0) {
         pending->busy = 0;
         /* There might not be more calls to make, but we play it safe. */
         signal_pending_calls(tstate, interp);
         return -1;
     }
+    if (npending > 0) {
+        /* We hit pending->maxloop. */
+        signal_pending_calls(tstate, interp);
+    }
 
     if (_Py_IsMainThread() && _Py_IsMainInterpreter(interp)) {
-        if (_make_pending_calls(pending_main) != 0) {
+        if (_make_pending_calls(pending_main, &npending) != 0) {
             pending->busy = 0;
             /* There might not be more calls to make, but we play it safe. */
             signal_pending_calls(tstate, interp);
             return -1;
+        }
+        if (npending > 0) {
+            /* We hit pending_main->maxloop. */
+            signal_pending_calls(tstate, interp);
         }
     }
 

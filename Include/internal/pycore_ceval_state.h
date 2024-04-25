@@ -24,11 +24,33 @@ struct _pending_call {
 #define MAXPENDINGCALLS_MAIN PENDINGCALLSARRAYSIZE
 #define MAXPENDINGCALLS PENDINGCALLSARRAYSIZE
 
+/* For the main thread, we want to make sure all pending calls are
+   run at once, for the sake of prompt signal handling.  This is
+   unlikely to cause any problems since there should be very few
+   pending calls for the main thread. */
+#define MAXPENDINGCALLSLOOP_MAIN 0
+/* For interpreter-level pending calls, we want to avoid spending too
+   much time on pending calls in any one thread, so we apply a limit. */
+#if MAXPENDINGCALLS > 100
+#  define MAXPENDINGCALLSLOOP 100
+#else
+#  define MAXPENDINGCALLSLOOP MAXPENDINGCALLS
+#endif
+
 struct _pending_calls {
     int busy;
     PyMutex mutex;
     /* Request for running pending calls. */
     int32_t npending;
+    /* The maximum allowed number of pending calls.
+       If the queue fills up to this point then _PyEval_AddPendingCall()
+       will return _Py_ADD_PENDING_FULL. */
+    int32_t max;
+    /* We don't want a flood of pending calls to interrupt any one thread
+       for too long, so we keep a limit on the number handled per pass.
+       A value of 0 means there is no limit (other than the maximum
+       size of the list of pending calls). */
+    int32_t maxloop;
     struct _pending_call calls[PENDINGCALLSARRAYSIZE];
     int first;
     int last;
