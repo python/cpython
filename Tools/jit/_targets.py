@@ -221,7 +221,7 @@ class _COFF(
             case {
                 "Offset": offset,
                 "Symbol": s,
-                "Type": {"Value": "IMAGE_REL_I386_DIR32" as kind},
+                "Type": {"Name": "IMAGE_REL_I386_DIR32" as kind},
             }:
                 offset += base
                 value, symbol = self._unwrap_dllimport(s)
@@ -230,7 +230,7 @@ class _COFF(
                 "Offset": offset,
                 "Symbol": s,
                 "Type": {
-                    "Value": "IMAGE_REL_AMD64_REL32" | "IMAGE_REL_I386_REL32" as kind
+                    "Name": "IMAGE_REL_AMD64_REL32" | "IMAGE_REL_I386_REL32" as kind
                 },
             }:
                 offset += base
@@ -242,7 +242,7 @@ class _COFF(
                 "Offset": offset,
                 "Symbol": s,
                 "Type": {
-                    "Value": "IMAGE_REL_ARM64_BRANCH26"
+                    "Name": "IMAGE_REL_ARM64_BRANCH26"
                     | "IMAGE_REL_ARM64_PAGEBASE_REL21"
                     | "IMAGE_REL_ARM64_PAGEOFFSET_12A"
                     | "IMAGE_REL_ARM64_PAGEOFFSET_12L" as kind
