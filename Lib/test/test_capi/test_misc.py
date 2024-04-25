@@ -1550,6 +1550,45 @@ class TestPendingCalls(unittest.TestCase):
         self.main_pendingcalls_submit(l, n)
         self.pendingcalls_wait(l, n)
 
+    def test_max_pending(self):
+        with self.subTest('main-only'):
+            maxpending = 32
+
+            l = []
+            added = self.pendingcalls_submit(l, 1, main=True)
+            self.pendingcalls_wait(l, added)
+            self.assertEqual(added, 1)
+
+            l = []
+            added = self.pendingcalls_submit(l, maxpending, main=True)
+            self.pendingcalls_wait(l, added)
+            self.assertEqual(added, maxpending)
+
+            l = []
+            added = self.pendingcalls_submit(l, maxpending+1, main=True)
+            self.pendingcalls_wait(l, added)
+            self.assertEqual(added, maxpending)
+
+        with self.subTest('not main-only'):
+            # Per-interpreter pending calls has the same low limit
+            # on how many may be pending at a time.
+            maxpending = 32
+
+            l = []
+            added = self.pendingcalls_submit(l, 1, main=False)
+            self.pendingcalls_wait(l, added)
+            self.assertEqual(added, 1)
+
+            l = []
+            added = self.pendingcalls_submit(l, maxpending, main=False)
+            self.pendingcalls_wait(l, added)
+            self.assertEqual(added, maxpending)
+
+            l = []
+            added = self.pendingcalls_submit(l, maxpending+1, main=False)
+            self.pendingcalls_wait(l, added)
+            self.assertEqual(added, maxpending)
+
     class PendingTask(types.SimpleNamespace):
 
         _add_pending = _testinternalcapi.pending_threadfunc
