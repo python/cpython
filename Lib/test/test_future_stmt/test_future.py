@@ -205,11 +205,16 @@ class FutureTest(unittest.TestCase):
 
     def test_future_dotted_import(self):
         with self.assertRaises(ImportError):
-            from .__future__ import annotations
+            exec("from .__future__ import spam")
 
-        with self.assertRaises(ImportError):
+        code = dedent(
+            """
             from __future__ import print_function
-            from ...__future__ import annotations
+            from ...__future__ import ham
+            """
+        )
+        with self.assertRaises(ImportError):
+            exec(code)
 
         code = """
             from .__future__ import nested_scopes
