@@ -839,7 +839,7 @@ pending_threadfunc(PyObject *self, PyObject *arg, PyObject *kwargs)
         Py_INCREF(callable);
     }
 
-    PyThreadState *save_tstate;
+    PyThreadState *save_tstate = NULL;
     if (!blocking) {
         save_tstate = PyEval_SaveThread();
     }
@@ -3262,7 +3262,7 @@ static PyMethodDef TestMethods[] = {
     {"_spawn_pthread_waiter",   spawn_pthread_waiter,            METH_NOARGS},
     {"_end_spawned_pthread",    end_spawned_pthread,             METH_NOARGS},
 #endif
-    {"_pending_threadfunc",     (PyCFunction)pending_threadfunc,
+    {"_pending_threadfunc",     _PyCFunction_CAST(pending_threadfunc),
      METH_VARARGS|METH_KEYWORDS},
 #ifdef HAVE_GETTIMEOFDAY
     {"profile_int",             profile_int,                     METH_NOARGS},

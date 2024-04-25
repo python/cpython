@@ -796,9 +796,10 @@ static int
 _make_pending_calls(struct _pending_calls *pending, int32_t *p_npending)
 {
     int res = 0;
-    int32_t npending;
+    int32_t npending = -1;
 
-    assert(pending->max <= Py_ARRAY_LENGTH(pending->calls));
+    assert(pending->max < SIZE_MAX
+            && ((size_t)pending->max) <= Py_ARRAY_LENGTH(pending->calls));
     int32_t maxloop = pending->maxloop;
     if (maxloop == 0) {
         maxloop = pending->max;

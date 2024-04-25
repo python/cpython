@@ -1080,7 +1080,7 @@ pending_threadfunc(PyObject *self, PyObject *args, PyObject *kwargs)
         Py_INCREF(callable);
     }
 
-    PyThreadState *save_tstate;
+    PyThreadState *save_tstate = NULL;
     if (!blocking) {
         save_tstate = PyEval_SaveThread();
     }
