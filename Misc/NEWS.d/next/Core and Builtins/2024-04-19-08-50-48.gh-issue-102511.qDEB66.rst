@@ -1,0 +1,1 @@
+Speed up :func:`os.path.splitroot` with a native implementation.

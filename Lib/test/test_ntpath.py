@@ -374,6 +374,7 @@ class TestNtpath(NtpathTestCase):
         tester("ntpath.normpath('\\\\foo\\')", '\\\\foo\\')
         tester("ntpath.normpath('\\\\foo')", '\\\\foo')
         tester("ntpath.normpath('\\\\')", '\\\\')
+        tester("ntpath.normpath('//?/UNC/server/share/..')", '\\\\?\\UNC\\server\\share\\')
 
     def test_realpath_curdir(self):
         expected = ntpath.normpath(os.getcwd())
