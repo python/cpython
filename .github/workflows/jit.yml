@@ -108,6 +108,7 @@ jobs:
       - name: Native macOS
         if: runner.os == 'macOS'
         run: |
+          brew update
           brew install llvm@${{ matrix.llvm }}
           SDKROOT="$(xcrun --show-sdk-path)" \
             ./configure --enable-experimental-jit ${{ matrix.debug && '--with-pydebug' || '--enable-optimizations --with-lto' }}
