@@ -5592,16 +5592,27 @@ datetime_utcfromtimestamp(PyObject *cls, PyObject *args)
     return result;
 }
 
-/* Return new datetime from _strptime.strptime_datetime(). */
+/*[clinic input]
+@classmethod
+datetime.datetime.strptime
+
+    cls: self(type="PyObject *")
+    defcls: defining_class
+    string: object
+    format: object
+    /
+
+string, format -> new datetime parsed from a string (like time.strptime()).
+
+Return new datetime from _strptime.strptime_datetime().
+[clinic start generated code]*/
+
 static PyObject *
-datetime_strptime(PyObject *cls, PyObject *args)
+datetime_datetime_strptime_impl(PyObject *cls, PyTypeObject *defcls,
+                                PyObject *string, PyObject *format)
+/*[clinic end generated code: output=7b52ad40cc6f1ecc input=3aeadaad950da13a]*/
 {
-    PyObject *string, *format;
-
-    if (!PyArg_ParseTuple(args, "UU:strptime", &string, &format))
-        return NULL;
-
-    datetime_state *st = find_module_state_by_def(cls);
+    datetime_state *st = get_module_state_by_cls(defcls);
     if (st->strptime == NULL) {
         st->strptime = PyImport_ImportModule("_strptime");
         if (st->strptime == NULL) {
@@ -6960,10 +6971,7 @@ static PyMethodDef datetime_methods[] = {
      METH_VARARGS | METH_CLASS,
      PyDoc_STR("Construct a naive UTC datetime from a POSIX timestamp.")},
 
-    {"strptime", (PyCFunction)datetime_strptime,
-     METH_VARARGS | METH_CLASS,
-     PyDoc_STR("string, format -> new datetime parsed from a string "
-               "(like time.strptime()).")},
+    DATETIME_DATETIME_STRPTIME_METHODDEF
 
     {"combine", _PyCFunction_CAST(datetime_combine),
      METH_VARARGS | METH_KEYWORDS | METH_CLASS,
