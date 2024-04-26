@@ -1937,9 +1937,9 @@ class TestUnawaitedWarnings(unittest.TestCase):
         g = gen()
         with self.assertRaises(MyException):
             g.aclose().throw(MyException)
-            del g
-            gc_collect()
 
+        del g
+        gc_collect()  # does not warn unawaited
 
 if __name__ == "__main__":
     unittest.main()
