@@ -393,6 +393,10 @@ class AsyncGenTest(unittest.TestCase):
                 r'anext\(\): asynchronous generator is already running'):
             an.__next__()
 
+        with self.assertRaisesRegex(RuntimeError,
+                r"cannot reuse already awaited __anext__\(\)/asend\(\)"):
+            an.send(None)
+
     def test_async_gen_asend_throw_concurrent_with_send(self):
         import types
 
@@ -422,6 +426,10 @@ class AsyncGenTest(unittest.TestCase):
                 r'anext\(\): asynchronous generator is already running'):
             gen2.throw(MyExc)
 
+        with self.assertRaisesRegex(RuntimeError,
+                r"cannot reuse already awaited __anext__\(\)/asend\(\)"):
+            gen2.send(None)
+
     def test_async_gen_athrow_throw_concurrent_with_send(self):
         import types
 
@@ -450,6 +458,10 @@ class AsyncGenTest(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError,
                 r'athrow\(\): asynchronous generator is already running'):
             gen2.throw(MyExc)
+
+        with self.assertRaisesRegex(RuntimeError,
+            r"cannot reuse already awaited aclose\(\)/athrow\(\)"):
+            gen2.send(None)
 
     def test_async_gen_asend_throw_concurrent_with_throw(self):
         import types
@@ -485,6 +497,10 @@ class AsyncGenTest(unittest.TestCase):
                 r'anext\(\): asynchronous generator is already running'):
             gen2.throw(MyExc)
 
+        with self.assertRaisesRegex(RuntimeError,
+                r"cannot reuse already awaited __anext__\(\)/asend\(\)"):
+            gen2.send(None)
+
     def test_async_gen_athrow_throw_concurrent_with_throw(self):
         import types
 
@@ -517,6 +533,10 @@ class AsyncGenTest(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError,
                 r'athrow\(\): asynchronous generator is already running'):
             gen2.throw(MyExc)
+
+        with self.assertRaisesRegex(RuntimeError,
+                r"cannot reuse already awaited aclose\(\)/athrow\(\)"):
+            gen2.send(None)
 
     def test_async_gen_3_arg_deprecation_warning(self):
         async def gen():
@@ -1939,6 +1959,53 @@ class TestUnawaitedWarnings(unittest.TestCase):
             g.aclose().throw(MyException)
 
         del g
+        gc_collect()  # does not warn unawaited
+
+    def test_asend_send_already_running(self):
+        @types.coroutine
+        def _async_yield(v):
+            return (yield v)
+
+        async def agenfn():
+            while True:
+                await _async_yield(1)
+            return
+            yield
+
+        agen = agenfn()
+        gen = agen.asend(None)
+        gen.send(None)
+        gen2 = agen.asend(None)
+
+        with self.assertRaisesRegex(RuntimeError,
+                r'anext\(\): asynchronous generator is already running'):
+            gen2.send(None)
+
+        del gen2
+        gc_collect()  # does not warn unawaited
+
+
+    def test_athrow_send_already_running(self):
+        @types.coroutine
+        def _async_yield(v):
+            return (yield v)
+
+        async def agenfn():
+            while True:
+                await _async_yield(1)
+            return
+            yield
+
+        agen = agenfn()
+        gen = agen.asend(None)
+        gen.send(None)
+        gen2 = agen.athrow(Exception)
+
+        with self.assertRaisesRegex(RuntimeError,
+                r'athrow\(\): asynchronous generator is already running'):
+            gen2.send(None)
+
+        del gen2
         gc_collect()  # does not warn unawaited
 
 if __name__ == "__main__":
