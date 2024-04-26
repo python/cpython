@@ -791,6 +791,9 @@ tkinter
   :class:`tkinter.ttk.Style`.
   (Contributed by Serhiy Storchaka in :gh:`68166`.)
 
+* Add the :meth:`!after_info` method for Tkinter widgets.
+  (Contributed by Cheryl Sabella in :gh:`77020`.)
+
 traceback
 ---------
 
