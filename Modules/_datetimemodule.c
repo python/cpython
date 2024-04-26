@@ -4971,8 +4971,22 @@ datetime_time___replace___impl(PyDateTime_Time *self, PyTypeObject *defcls,
                                       microsecond, tzinfo, fold);
 }
 
+/*[clinic input]
+@classmethod
+datetime.time.fromisoformat
+
+    cls: self(type="PyObject *")
+    defcls: defining_class
+    tstr: object
+    /
+string -> time from a string in ISO 8601 format.
+[clinic start generated code]*/
+
 static PyObject *
-time_fromisoformat(PyObject *cls, PyObject *tstr) {
+datetime_time_fromisoformat_impl(PyObject *cls, PyTypeObject *defcls,
+                                 PyObject *tstr)
+/*[clinic end generated code: output=a7090769b0254021 input=f7e5714b1c6fa564]*/
+{
     assert(tstr != NULL);
 
     if (!PyUnicode_Check(tstr)) {
@@ -5005,7 +5019,7 @@ time_fromisoformat(PyObject *cls, PyObject *tstr) {
         goto invalid_string_error;
     }
 
-    datetime_state *st = find_module_state_by_def(cls);
+    datetime_state *st = get_module_state_by_cls(defcls);
     PyObject *tzinfo = tzinfo_from_isoformat_results(st, rv, tzoffset,
                                                      tzimicrosecond);
 
@@ -5086,9 +5100,7 @@ static PyMethodDef time_methods[] = {
     DATETIME_TIME_DST_METHODDEF
     DATETIME_TIME_REPLACE_METHODDEF
     DATETIME_TIME___REPLACE___METHODDEF
-
-     {"fromisoformat", (PyCFunction)time_fromisoformat, METH_O | METH_CLASS,
-     PyDoc_STR("string -> time from a string in ISO 8601 format")},
+    DATETIME_TIME_FROMISOFORMAT_METHODDEF
 
     {"__reduce_ex__", (PyCFunction)time_reduce_ex,        METH_VARARGS,
      PyDoc_STR("__reduce_ex__(proto) -> (cls, state)")},
