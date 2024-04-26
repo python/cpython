@@ -599,10 +599,9 @@ _PyEval_SetTrace(PyThreadState *tstate, Py_tracefunc func, PyObject *arg)
             (1 << PY_MONITORING_EVENT_PY_START) | (1 << PY_MONITORING_EVENT_PY_RESUME) |
             (1 << PY_MONITORING_EVENT_PY_RETURN) | (1 << PY_MONITORING_EVENT_PY_YIELD) |
             (1 << PY_MONITORING_EVENT_RAISE) | (1 << PY_MONITORING_EVENT_LINE) |
-            (1 << PY_MONITORING_EVENT_JUMP) | (1 << PY_MONITORING_EVENT_BRANCH) |
+            (1 << PY_MONITORING_EVENT_JUMP) |
             (1 << PY_MONITORING_EVENT_PY_UNWIND) | (1 << PY_MONITORING_EVENT_PY_THROW) |
-            (1 << PY_MONITORING_EVENT_STOP_ITERATION) |
-            (1 << PY_MONITORING_EVENT_EXCEPTION_HANDLED);
+            (1 << PY_MONITORING_EVENT_STOP_ITERATION);
 
         PyFrameObject* frame = PyEval_GetFrame();
         if (frame->f_trace_opcodes) {
