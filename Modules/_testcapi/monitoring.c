@@ -113,7 +113,7 @@ static PyTypeObject PyCodeLike_Type = {
 /*******************************************************************/
 
 static PyMonitoringState *
-setup_fire(PyObject *codelike, int offset, bool with_exc)
+setup_fire(PyObject *codelike, int offset, int with_exc)
 {
     if (!Py_IS_TYPE(codelike, &PyCodeLike_Type)) {
         PyErr_Format(PyExc_TypeError,
@@ -132,7 +132,7 @@ setup_fire(PyObject *codelike, int offset, bool with_exc)
 }
 
 static int
-teardown_fire(int res, PyMonitoringState *state, bool with_exc)
+teardown_fire(int res, PyMonitoringState *state, int with_exc)
 {
     if (res == -1) {
         return -1;
@@ -148,7 +148,7 @@ fire_event_py_start(PyObject *self, PyObject *args)
 {
     PyObject *codelike;
     int offset;
-    bool with_exc;
+    int with_exc;
     if (!PyArg_ParseTuple(args, "Oip", &codelike, &offset, &with_exc)) {
         return NULL;
     }
@@ -165,7 +165,7 @@ fire_event_py_resume(PyObject *self, PyObject *args)
 {
     PyObject *codelike;
     int offset;
-    bool with_exc;
+    int with_exc;
     if (!PyArg_ParseTuple(args, "Oip", &codelike, &offset, &with_exc)) {
         return NULL;
     }
@@ -182,7 +182,7 @@ fire_event_py_return(PyObject *self, PyObject *args)
 {
     PyObject *codelike;
     int offset;
-    bool with_exc;
+    int with_exc;
     PyObject *retval;
     if (!PyArg_ParseTuple(args, "OipO", &codelike, &offset, &with_exc, &retval)) {
         return NULL;
@@ -200,7 +200,7 @@ fire_event_c_return(PyObject *self, PyObject *args)
 {
     PyObject *codelike;
     int offset;
-    bool with_exc;
+    int with_exc;
     PyObject *retval;
     if (!PyArg_ParseTuple(args, "OipO", &codelike, &offset, &with_exc, &retval)) {
         return NULL;
@@ -218,7 +218,7 @@ fire_event_py_yield(PyObject *self, PyObject *args)
 {
     PyObject *codelike;
     int offset;
-    bool with_exc;
+    int with_exc;
     PyObject *retval;
     if (!PyArg_ParseTuple(args, "OipO", &codelike, &offset, &with_exc, &retval)) {
         return NULL;
@@ -236,7 +236,7 @@ fire_event_call(PyObject *self, PyObject *args)
 {
     PyObject *codelike;
     int offset;
-    bool with_exc;
+    int with_exc;
     PyObject *callable, *arg0;
     if (!PyArg_ParseTuple(args, "OipOO", &codelike, &offset, &with_exc, &callable, &arg0)) {
         return NULL;
@@ -254,7 +254,7 @@ fire_event_line(PyObject *self, PyObject *args)
 {
     PyObject *codelike;
     int offset, lineno;
-    bool with_exc;
+    int with_exc;
     if (!PyArg_ParseTuple(args, "Oipi", &codelike, &offset, &with_exc, &lineno)) {
         return NULL;
     }
@@ -271,7 +271,7 @@ fire_event_jump(PyObject *self, PyObject *args)
 {
     PyObject *codelike;
     int offset;
-    bool with_exc;
+    int with_exc;
     PyObject *target_offset;
     if (!PyArg_ParseTuple(args, "OipO", &codelike, &offset, &with_exc, &target_offset)) {
         return NULL;
@@ -289,7 +289,7 @@ fire_event_branch(PyObject *self, PyObject *args)
 {
     PyObject *codelike;
     int offset;
-    bool with_exc;
+    int with_exc;
     PyObject *target_offset;
     if (!PyArg_ParseTuple(args, "OipO", &codelike, &offset, &with_exc, &target_offset)) {
         return NULL;
@@ -307,7 +307,7 @@ fire_event_py_throw(PyObject *self, PyObject *args)
 {
     PyObject *codelike;
     int offset;
-    bool with_exc;
+    int with_exc;
     PyObject *exception;
     if (!PyArg_ParseTuple(args, "OipO", &codelike, &offset, &with_exc, &exception)) {
         return NULL;
@@ -326,7 +326,7 @@ fire_event_raise(PyObject *self, PyObject *args)
 {
     PyObject *codelike;
     int offset;
-    bool with_exc;
+    int with_exc;
     PyObject *exception;
     if (!PyArg_ParseTuple(args, "OipO", &codelike, &offset, &with_exc, &exception)) {
         return NULL;
@@ -345,7 +345,7 @@ fire_event_c_raise(PyObject *self, PyObject *args)
 {
     PyObject *codelike;
     int offset;
-    bool with_exc;
+    int with_exc;
     PyObject *exception;
     if (!PyArg_ParseTuple(args, "OipO", &codelike, &offset, &with_exc, &exception)) {
         return NULL;
@@ -364,7 +364,7 @@ fire_event_reraise(PyObject *self, PyObject *args)
 {
     PyObject *codelike;
     int offset;
-    bool with_exc;
+    int with_exc;
     PyObject *exception;
     if (!PyArg_ParseTuple(args, "OipO", &codelike, &offset, &with_exc, &exception)) {
         return NULL;
@@ -383,7 +383,7 @@ fire_event_exception_handled(PyObject *self, PyObject *args)
 {
     PyObject *codelike;
     int offset;
-    bool with_exc;
+    int with_exc;
     PyObject *exception;
     if (!PyArg_ParseTuple(args, "OipO", &codelike, &offset, &with_exc, &exception)) {
         return NULL;
@@ -402,7 +402,7 @@ fire_event_py_unwind(PyObject *self, PyObject *args)
 {
     PyObject *codelike;
     int offset;
-    bool with_exc;
+    int with_exc;
     PyObject *exception;
     if (!PyArg_ParseTuple(args, "OipO", &codelike, &offset, &with_exc, &exception)) {
         return NULL;
@@ -421,7 +421,7 @@ fire_event_stop_iteration(PyObject *self, PyObject *args)
 {
     PyObject *codelike;
     int offset;
-    bool with_exc;
+    int with_exc;
     PyObject *exception;
     if (!PyArg_ParseTuple(args, "OipO", &codelike, &offset, &with_exc, &exception)) {
         return NULL;
