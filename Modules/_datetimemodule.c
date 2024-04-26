@@ -3693,6 +3693,7 @@ date_timetuple(PyDateTime_Date *self, PyObject *Py_UNUSED(ignored))
 /*[clinic input]
 datetime.date.replace
 
+    defcls: defining_class
     year: int(c_default="GET_YEAR(self)") = unchanged
     month: int(c_default="GET_MONTH(self)") = unchanged
     day: int(c_default="GET_DAY(self)") = unchanged
@@ -3701,11 +3702,11 @@ Return date with new specified fields.
 [clinic start generated code]*/
 
 static PyObject *
-datetime_date_replace_impl(PyDateTime_Date *self, int year, int month,
-                           int day)
-/*[clinic end generated code: output=2a9430d1e6318aeb input=0d1f02685b3e90f6]*/
+datetime_date_replace_impl(PyDateTime_Date *self, PyTypeObject *defcls,
+                           int year, int month, int day)
+/*[clinic end generated code: output=cd5959b5babf9c13 input=1e7b2e02b632f185]*/
 {
-    datetime_state *st = find_module_state_by_def(Py_TYPE(self));
+    datetime_state *st = get_module_state_by_cls(defcls);
     return new_date_subclass_ex(st, year, month, day, (PyObject *)Py_TYPE(self));
 }
 
