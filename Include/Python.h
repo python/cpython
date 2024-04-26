@@ -51,6 +51,11 @@
 #  error "The limited API is not currently supported in the free-threaded build"
 #endif
 
+// The JIT depends on TIER2
+#ifdef _Py_JIT
+#define _Py_TIER2 1
+#endif
+
 // Include Python header files
 #include "pyport.h"
 #include "pymacro.h"

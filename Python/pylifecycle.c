@@ -1263,7 +1263,7 @@ init_interp_main(PyThreadState *tstate)
 
     // Turn on experimental tier 2 (uops-based) optimizer
     // This is also needed when the JIT is enabled
-#if defined(_Py_JIT) || defined(_Py_TIER2)
+#ifdef _Py_TIER2
     if (is_main_interp) {
             PyObject *opt = PyUnstable_Optimizer_NewUOpOptimizer();
             if (opt == NULL) {
