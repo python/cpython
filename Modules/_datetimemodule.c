@@ -4303,10 +4303,22 @@ datetime_timezone_utcoffset_impl(PyDateTime_TimeZone *self,
     return Py_NewRef(self->offset);
 }
 
+/*[clinic input]
+datetime.timezone.dst
+
+    defcls: defining_class
+    dt: object
+    /
+
+Return None.
+[clinic start generated code]*/
+
 static PyObject *
-timezone_dst(PyObject *self, PyObject *dt)
+datetime_timezone_dst_impl(PyDateTime_TimeZone *self, PyTypeObject *defcls,
+                           PyObject *dt)
+/*[clinic end generated code: output=416cf0e62d3b6a59 input=35ad50ada9cb0080]*/
 {
-    datetime_state *st = find_module_state_by_def(Py_TYPE(self));
+    datetime_state *st = get_module_state_by_cls(defcls);
     if (_timezone_check_argument(st, dt, "dst") == -1)
         return NULL;
 
@@ -4342,9 +4354,7 @@ timezone_getinitargs(PyDateTime_TimeZone *self, PyObject *Py_UNUSED(ignored))
 static PyMethodDef timezone_methods[] = {
     DATETIME_TIMEZONE_TZNAME_METHODDEF
     DATETIME_TIMEZONE_UTCOFFSET_METHODDEF
-
-    {"dst", (PyCFunction)timezone_dst, METH_O,
-     PyDoc_STR("Return None.")},
+    DATETIME_TIMEZONE_DST_METHODDEF
 
     {"fromutc", (PyCFunction)timezone_fromutc, METH_O,
      PyDoc_STR("datetime in UTC -> datetime in local time.")},
