@@ -1048,7 +1048,7 @@ gc_collect_internal(PyInterpreterState *interp, struct collection_state *state, 
     }
 
     state->gcstate->young.count = 0;
-    for (size_t i = 1; i <= generation; ++i) {
+    for (int i = 1; i <= generation; ++i) {
         state->gcstate->old[i-1].count = 0;
     }
 
@@ -1120,7 +1120,6 @@ error:
 static Py_ssize_t
 gc_collect_main(PyThreadState *tstate, int generation, _PyGC_Reason reason)
 {
-    int i;
     Py_ssize_t m = 0; /* # objects collected */
     Py_ssize_t n = 0; /* # unreachable objects that couldn't be collected */
     PyTime_t t1 = 0;   /* initialize to prevent a compiler warning */
