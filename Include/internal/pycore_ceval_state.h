@@ -54,7 +54,7 @@ struct _pending_calls {
     int32_t maxloop;
     struct _pending_call calls[PENDINGCALLSARRAYSIZE];
     int first;
-    int last;
+    int next;
 };
 
 

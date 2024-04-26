@@ -684,17 +684,20 @@ _push_pending_call(struct _pending_calls *pending,
     }
     assert(pending->npending < pending->max);
 
-    int i = pending->last;
-    int j = (i + 1) % PENDINGCALLSARRAYSIZE;
-    if (j == pending->first) {
-        return _Py_ADD_PENDING_FULL;
-    }
+    int i = pending->next;
+    assert(pending->calls[i].func == NULL);
+
     pending->calls[i].func = func;
     pending->calls[i].arg = arg;
     pending->calls[i].flags = flags;
-    pending->last = j;
+
     assert(pending->npending < PENDINGCALLSARRAYSIZE);
     _Py_atomic_add_int32(&pending->npending, 1);
+
+    pending->next = (i + 1) % PENDINGCALLSARRAYSIZE;
+    assert(pending->next != pending->first
+            || pending->npending == pending->max);
+
     return _Py_ADD_PENDING_SUCCESS;
 }
 
@@ -703,8 +706,9 @@ _next_pending_call(struct _pending_calls *pending,
                    int (**func)(void *), void **arg, int *flags)
 {
     int i = pending->first;
-    if (i == pending->last) {
+    if (pending->npending == 0) {
         /* Queue empty */
+        assert(i == pending->next);
         assert(pending->calls[i].func == NULL);
         return -1;
     }
