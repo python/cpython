@@ -879,6 +879,7 @@ extern "C" {
     INIT_ID(d), \
     INIT_ID(data), \
     INIT_ID(database), \
+    INIT_ID(date), \
     INIT_ID(day), \
     INIT_ID(decode), \
     INIT_ID(decoder), \
@@ -1252,8 +1253,11 @@ extern "C" {
     INIT_ID(text), \
     INIT_ID(threading), \
     INIT_ID(throw), \
+    INIT_ID(time), \
     INIT_ID(timeout), \
     INIT_ID(times), \
+    INIT_ID(timespec), \
+    INIT_ID(timestamp), \
     INIT_ID(timetuple), \
     INIT_ID(top), \
     INIT_ID(trace_callback), \
