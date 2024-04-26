@@ -190,17 +190,28 @@ find_state_left_or_right(PyObject *left, PyObject *right)
 
 static int check_tzinfo_subclass(datetime_state *st, PyObject *p);
 
+typedef struct
+{
+    PyObject_HEAD
+    PyObject *offset;
+    PyObject *name;
+} PyDateTime_TimeZone;
+
 /*[clinic input]
 module datetime
-class datetime.datetime "PyDateTime_DateTime *" "&PyDateTime_DateTimeType"
-class datetime.date "PyDateTime_Date *" "&PyDateTime_DateType"
-class datetime.time "PyDateTime_Time *" "&PyDateTime_TimeType"
-class datetime.IsoCalendarDate "PyDateTime_IsoCalendarDate *" "&PyDateTime_IsoCalendarDateType"
+class datetime.datetime "PyDateTime_DateTime *" "clinic_state()->PyDateTime_DateTimeType"
+class datetime.date "PyDateTime_Date *" "clinic_state()->PyDateTime_DateType"
+class datetime.timedelta "PyDateTime_Delta *" "clinic_state()->PyDateTime_DeltaType"
+class datetime.IsoCalendarDate "PyDateTime_IsoCalendarDate *" "clinic_state()->PyDateTime_IsoCalendarDateType"
+class datetime.time "PyDateTime_Time *" "clinic_state()->PyDateTime_TimeType"
+class datetime.tzinfo "PyDateTime_TZInfo *" "clinic_state()->PyDateTime_TZInfoType"
+class datetime.timezone "PyDateTime_TimeZone *" "clinic_state()->PyDateTime_TimeZoneType"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=6f65a48dd22fa40f]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=c941b310de347082]*/
 
+#define clinic_state() (get_module_state_by_cls(defcls))
 #include "clinic/_datetimemodule.c.h"
-
+#undef clinic_state
 
 /* ---------------------------------------------------------------------------
  * Math utilities.
@@ -1235,13 +1246,6 @@ new_delta_ex(int days, int seconds, int microseconds, int normalize,
 #define new_delta(st, d, s, us, normalize)  \
     new_delta_ex(d, s, us, normalize, st->PyDateTime_DeltaType)
 
-
-typedef struct
-{
-    PyObject_HEAD
-    PyObject *offset;
-    PyObject *name;
-} PyDateTime_TimeZone;
 
 /* Create new timezone instance checking offset range.  This
    function does not check the name argument.  Caller must assure
