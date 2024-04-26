@@ -234,10 +234,10 @@ patch(unsigned char *base, const Stencil *stencil, uintptr_t patches[])
                 assert((int64_t)value < (1LL << 31));
                 *loc32 = (uint32_t)value;
                 continue;
+            case HoleKind_ARM64_RELOC_BRANCH26:
             case HoleKind_IMAGE_REL_ARM64_BRANCH26:
             case HoleKind_R_AARCH64_CALL26:
             case HoleKind_R_AARCH64_JUMP26:
-            case HoleKind_ARM64_RELOC_BRANCH26:
                 // 28-bit relative branch.
                 assert(IS_AARCH64_BRANCH(*loc32));
                 value -= (uintptr_t)location;
