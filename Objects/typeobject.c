@@ -16,6 +16,7 @@
 #include "pycore_pyerrors.h"      // _PyErr_Occurred()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_symtable.h"      // _Py_Mangle()
+#include "pycore_tagged.h"        // _PyObject_SetDeferredRefcount
 #include "pycore_typeobject.h"    // struct type_cache
 #include "pycore_unionobject.h"   // _Py_union_type_or
 #include "pycore_weakref.h"       // _PyWeakref_GET_REF()

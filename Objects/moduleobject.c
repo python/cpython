@@ -10,6 +10,7 @@
 #include "pycore_object.h"        // _PyType_AllocNoTrack
 #include "pycore_pyerrors.h"      // _PyErr_FormatFromCause()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
+#include "pycore_tagged.h"        // _PyObject_SetDeferredRefcount
 
 #include "osdefs.h"               // MAXPATHLEN
 
