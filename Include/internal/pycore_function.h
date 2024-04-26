@@ -26,10 +26,10 @@ struct _func_version_cache_item {
 };
 
 struct _py_func_state {
-    #ifdef Py_GIL_DISABLED
+#ifdef Py_GIL_DISABLED
     // Protects next_version
     PyMutex mutex;
-    #endif
+#endif
 
     uint32_t next_version;
     // Borrowed references to function and code objects whose
