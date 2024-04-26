@@ -17,18 +17,18 @@ class ANSIColors:
     YELLOW = "\x1b[33m"
 
 
+NoColors = ANSIColors()
+
+for attr in dir(NoColors):
+    if not attr.startswith("__"):
+        setattr(NoColors, attr, "")
+
+
 def get_colors(colorize: bool = False) -> ANSIColors:
     if colorize or can_colorize():
         return ANSIColors()
-
-    ansi_colors = ANSIColors()
-
-    # Set color attributes to empty strings
-    for attr in dir(ansi_colors):
-        if not attr.startswith("__"):
-            setattr(ansi_colors, attr, "")
-
-    return ansi_colors
+    else:
+        return NoColors
 
 
 def can_colorize() -> bool:
