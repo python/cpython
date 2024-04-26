@@ -424,14 +424,15 @@ type_check(PyObject *arg, const char *msg)
 }
 
 static int
-add_object_to_union_args(PyObject *args_list, PyObject *args_set, PyObject *obj)
+add_object_to_union_args(PyObject *args_list, PyObject *args_set,
+                         PyObject *unhashable_args, PyObject *obj)
 {
     if (Py_IS_TYPE(obj, &_PyUnion_Type)) {
         PyObject *args = ((unionobject *) obj)->args;
         Py_ssize_t size = PyTuple_GET_SIZE(args);
         for (Py_ssize_t i = 0; i < size; i++) {
             PyObject *arg = PyTuple_GET_ITEM(args, i);
-            if (add_object_to_union_args(args_list, args_set, arg) < 0) {
+            if (add_object_to_union_args(args_list, args_set, unhashable_args, arg) < 0) {
                 return -1;
             }
         }
@@ -443,8 +444,17 @@ add_object_to_union_args(PyObject *args_list, PyObject *args_set, PyObject *obj)
     }
     int contains = PySet_Contains(args_set, type);
     if (contains < 0) {
+        if (!PyErr_ExceptionMatches(PyExc_TypeError)) {
+            Py_DECREF(type);
+            return -1;
+        }
+        PyErr_Clear();
+        if (PyList_Append(unhashable_args, obj) < 0) {
+            Py_DECREF(type);
+            return -1;
+        }
         Py_DECREF(type);
-        return -1;
+        return 0;
     }
     else if (contains == 1) {
         Py_DECREF(type);
@@ -474,10 +484,17 @@ _Py_union_from_tuple(PyObject *args)
         Py_DECREF(args_list);
         return NULL;
     }
+    PyObject *unhashable_args = PyList_New(0);
+    if (unhashable_args == NULL) {
+        Py_DECREF(args_list);
+        Py_DECREF(args_set);
+        return NULL;
+    }
     if (!PyTuple_CheckExact(args)) {
-        if (add_object_to_union_args(args_list, args_set, args) < 0) {
+        if (add_object_to_union_args(args_list, args_set, unhashable_args, args) < 0) {
             Py_DECREF(args_list);
             Py_DECREF(args_set);
+            Py_DECREF(unhashable_args);
             return NULL;
         }
     }
@@ -485,14 +502,61 @@ _Py_union_from_tuple(PyObject *args)
         Py_ssize_t size = PyTuple_GET_SIZE(args);
         for (Py_ssize_t i = 0; i < size; i++) {
             PyObject *arg = PyTuple_GET_ITEM(args, i);
-            if (add_object_to_union_args(args_list, args_set, arg) < 0) {
+            if (add_object_to_union_args(args_list, args_set, unhashable_args, arg) < 0) {
                 Py_DECREF(args_list);
                 Py_DECREF(args_set);
+                Py_DECREF(unhashable_args);
                 return NULL;
             }
         }
     }
     Py_DECREF(args_set);
+    Py_ssize_t num_unhashable = PyList_Size(unhashable_args);
+    if (num_unhashable < 0) {
+        Py_DECREF(args_list);
+        Py_DECREF(unhashable_args);
+        return NULL;
+    }
+    if (num_unhashable > 0) {
+        PyObject *new_unhashable = PyList_New(0);
+        if (new_unhashable == NULL) {
+            Py_DECREF(args_list);
+            Py_DECREF(unhashable_args);
+            Py_DECREF(new_unhashable);
+            return NULL;
+        }
+        for (Py_ssize_t i = 0; i < num_unhashable; i++) {
+            PyObject *obj = PyList_GetItemRef(unhashable_args, i);
+            if (obj == NULL) {
+                Py_DECREF(args_list);
+                Py_DECREF(unhashable_args);
+                Py_DECREF(new_unhashable);
+                return NULL;
+            }
+            int contains = PySequence_Contains(new_unhashable, obj);
+            if (contains < 0) {
+                Py_DECREF(args_list);
+                Py_DECREF(unhashable_args);
+                Py_DECREF(new_unhashable);
+                Py_DECREF(obj);
+                return NULL;
+            }
+            if (contains == 1) {
+                Py_DECREF(obj);
+                continue;
+            }
+            if (PyList_Append(args_list, obj) < 0) {
+                Py_DECREF(args_list);
+                Py_DECREF(unhashable_args);
+                Py_DECREF(new_unhashable);
+                Py_DECREF(obj);
+                return NULL;
+            }
+            Py_DECREF(obj);
+        }
+        Py_DECREF(new_unhashable);
+    }
+    Py_DECREF(unhashable_args);
     if (PyList_GET_SIZE(args_list) == 0) {
         Py_DECREF(args_list);
         PyErr_SetString(PyExc_TypeError, "Cannot take a Union of no types.");
