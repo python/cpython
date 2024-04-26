@@ -4752,17 +4752,22 @@ datetime_time_isoformat_impl(PyDateTime_Time *self, PyTypeObject *defcls,
     return result;
 }
 
+/*[clinic input]
+datetime.time.strftime
+
+    defcls: defining_class
+    format: unicode
+
+format -> strftime() style string.
+[clinic start generated code]*/
+
 static PyObject *
-time_strftime(PyDateTime_Time *self, PyObject *args, PyObject *kw)
+datetime_time_strftime_impl(PyDateTime_Time *self, PyTypeObject *defcls,
+                            PyObject *format)
+/*[clinic end generated code: output=d52d5945421e204d input=13ae1ce9fed79229]*/
 {
     PyObject *result;
     PyObject *tuple;
-    PyObject *format;
-    static char *keywords[] = {"format", NULL};
-
-    if (! PyArg_ParseTupleAndKeywords(args, kw, "U:strftime", keywords,
-                                      &format))
-        return NULL;
 
     /* Python's strftime does insane things with the year part of the
      * timetuple.  The year is forced to (the otherwise nonsensical)
@@ -4777,7 +4782,7 @@ time_strftime(PyDateTime_Time *self, PyObject *args, PyObject *kw)
     if (tuple == NULL)
         return NULL;
     assert(PyTuple_Size(tuple) == 9);
-    datetime_state *st = find_module_state_by_def(Py_TYPE(self));
+    datetime_state *st = get_module_state_by_cls(defcls);
     result = wrap_strftime(st, (PyObject *)self, format, tuple,
                            Py_None);
     Py_DECREF(tuple);
@@ -5048,9 +5053,7 @@ time_reduce(PyDateTime_Time *self, PyObject *arg)
 
 static PyMethodDef time_methods[] = {
     DATETIME_TIME_ISOFORMAT_METHODDEF
-
-    {"strftime",        _PyCFunction_CAST(time_strftime),     METH_VARARGS | METH_KEYWORDS,
-     PyDoc_STR("format -> strftime() style string.")},
+    DATETIME_TIME_STRFTIME_METHODDEF
 
     {"__format__",      (PyCFunction)date_format,       METH_VARARGS,
      PyDoc_STR("Formats self with strftime.")},
