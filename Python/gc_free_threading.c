@@ -1159,7 +1159,8 @@ gc_collect_main(PyThreadState *tstate, int generation, _PyGC_Reason reason)
     if (generation+1 < NUM_GENERATIONS) {
         gcstate->old[generation].count += 1;
     }
-    gcstate->young.count = 0;
+
+    _Py_atomic_store_int(&gcstate->young.count, 0);
     for (i = 1; i <= generation; i++) {
         gcstate->old[i-1].count = 0;
     }
