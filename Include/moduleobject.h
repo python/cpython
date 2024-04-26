@@ -98,6 +98,9 @@ struct PyModuleDef_Slot {
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030e0000
 #  define Py_MOD_GIL_USED ((void *)0)
 #  define Py_MOD_GIL_NOT_USED ((void *)1)
+#endif
+
+#ifndef Py_LIMITED_API
 PyAPI_FUNC(int) PyModule_SetGIL(PyObject *module, void *gil);
 #endif
 
