@@ -237,6 +237,7 @@ patch(unsigned char *base, const Stencil *stencil, uintptr_t patches[])
             case HoleKind_IMAGE_REL_ARM64_BRANCH26:
             case HoleKind_R_AARCH64_CALL26:
             case HoleKind_R_AARCH64_JUMP26:
+            case HoleKind_ARM64_RELOC_BRANCH26:
                 // 28-bit relative branch.
                 assert(IS_AARCH64_BRANCH(*loc32));
                 value -= (uintptr_t)location;
@@ -278,7 +279,6 @@ patch(unsigned char *base, const Stencil *stencil, uintptr_t patches[])
             case HoleKind_ARM64_RELOC_GOT_LOAD_PAGE21:
             case HoleKind_IMAGE_REL_ARM64_PAGEBASE_REL21:
             case HoleKind_R_AARCH64_ADR_GOT_PAGE:
-            case HoleKind_ARM64_RELOC_BRANCH26:
                 // 21-bit count of pages between this page and an absolute address's
                 // page... I know, I know, it's weird. Pairs nicely with
                 // ARM64_RELOC_GOT_LOAD_PAGEOFF12 (below).
@@ -288,7 +288,6 @@ patch(unsigned char *base, const Stencil *stencil, uintptr_t patches[])
                 if (i + 1 < stencil->holes_size &&
                     (next_hole->kind == HoleKind_ARM64_RELOC_GOT_LOAD_PAGEOFF12 ||
                      next_hole->kind == HoleKind_IMAGE_REL_ARM64_PAGEOFFSET_12L ||
-                     next_hole->kind == HoleKind_ARM64_RELOC_BRANCH26 ||
                      next_hole->kind == HoleKind_R_AARCH64_LD64_GOT_LO12_NC) &&
                     next_hole->offset == hole->offset + 4 &&
                     next_hole->symbol == hole->symbol &&

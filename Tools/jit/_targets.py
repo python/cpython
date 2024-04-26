@@ -136,6 +136,7 @@ class _Target(typing.Generic[_S, _R]):
             f"{c}",
             *self.args,
         ]
+        print(args)
         await _llvm.run("clang", args, echo=self.verbose)
         return await self._parse(o)
 
@@ -446,8 +447,9 @@ class _MachO(
 def get_target(host: str) -> _COFF | _ELF | _MachO:
     """Build a _Target for the given host "triple" and options."""
     if re.fullmatch(r"aarch64-apple-darwin.*", host):
-        args = ["-mcmodel=large"]
-        return _MachO(host, alignment=8, args=args, prefix="_")
+        # -mcmodel=large is unsupported in LLVM 18
+        # (see https://github.com/llvm/llvm-project/pull/70262)
+        return _MachO(host, alignment=8, prefix="_")
     if re.fullmatch(r"aarch64-pc-windows-msvc", host):
         args = ["-fms-runtime-lib=dll"]
         return _COFF(host, alignment=8, args=args)
