@@ -6895,7 +6895,8 @@ datetime_destructor(PyObject *op)
 }
 
 static PyObject *
-create_timezone_from_delta(datetime_state *st, int days, int sec, int ms, int normalize)
+create_timezone_from_delta(datetime_state *st,
+                           int days, int sec, int ms, int normalize)
 {
     PyObject *delta = new_delta(st, days, sec, ms, normalize);
     if (delta == NULL) {
