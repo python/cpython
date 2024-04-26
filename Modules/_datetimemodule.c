@@ -5464,10 +5464,10 @@ datetime_best_possible(datetime_state *st,
 }
 
 /*[clinic input]
-
 @classmethod
 datetime.datetime.now
 
+    defcls: defining_class
     tz: object = None
         Timezone object.
 
@@ -5477,15 +5477,16 @@ If no tz is specified, uses local timezone.
 [clinic start generated code]*/
 
 static PyObject *
-datetime_datetime_now_impl(PyTypeObject *type, PyObject *tz)
-/*[clinic end generated code: output=b3386e5345e2b47a input=80d09869c5267d00]*/
+datetime_datetime_now_impl(PyTypeObject *type, PyTypeObject *defcls,
+                           PyObject *tz)
+/*[clinic end generated code: output=eee68d8dd2928931 input=7d43a283cbc7686b]*/
 {
     PyObject *self;
 
     /* Return best possible local time -- this isn't constrained by the
      * precision of a timestamp.
      */
-    datetime_state *st = find_module_state_by_def(type);
+    datetime_state *st = get_module_state_by_cls(defcls);
     if (check_tzinfo_subclass(st, tz) < 0)
         return NULL;
 
