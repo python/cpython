@@ -763,6 +763,7 @@ _PyEval_AddPendingCall(PyInterpreterState *interp,
 
     if (timeout > 0) {
         /* We use this lock only to sleep. */
+        // XXX Use time.sleep()?  Don't sleep at all?
         PyMutex timeout_sleeper = (PyMutex){0};
         PyMutex_Lock(&timeout_sleeper);
         while (result == _Py_ADD_PENDING_FULL) {
@@ -770,6 +771,7 @@ _PyEval_AddPendingCall(PyInterpreterState *interp,
                 result = _Py_ADD_PENDING_TIMED_OUT;
                 break;
             }
+// XXX Use a smaller sleep interval?
 #define SLEEP_NS 1000  /* 1 millisecond */
             (void)_PyMutex_LockTimed(
                     &timeout_sleeper, SLEEP_NS, _Py_LOCK_DONT_DETACH);
