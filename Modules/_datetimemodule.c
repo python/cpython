@@ -6729,21 +6729,26 @@ local_timezone_from_local(datetime_state *st, PyDateTime_DateTime *local_dt)
     return local_timezone_from_timestamp(st, timestamp);
 }
 
-static PyDateTime_DateTime *
-datetime_astimezone(PyDateTime_DateTime *self, PyObject *args, PyObject *kw)
+/*[clinic input]
+datetime.datetime.astimezone
+
+    defcls: defining_class
+    tz as tzinfo: object = None
+
+tz -> convert to local time in new timezone tz.
+[clinic start generated code]*/
+
+static PyObject *
+datetime_datetime_astimezone_impl(PyDateTime_DateTime *self,
+                                  PyTypeObject *defcls, PyObject *tzinfo)
+/*[clinic end generated code: output=c61c01074fcb3639 input=9c6b7ce67b3f2c50]*/
 {
     PyDateTime_DateTime *result;
     PyObject *offset;
     PyObject *temp;
     PyObject *self_tzinfo;
-    PyObject *tzinfo = Py_None;
-    static char *keywords[] = {"tz", NULL};
 
-    if (! PyArg_ParseTupleAndKeywords(args, kw, "|O:astimezone", keywords,
-                                      &tzinfo))
-        return NULL;
-
-    datetime_state *st = find_module_state_by_def(Py_TYPE(self));
+    datetime_state *st = get_module_state_by_cls(defcls);
     if (check_tzinfo_subclass(st, tzinfo) == -1)
         return NULL;
 
@@ -6759,7 +6764,7 @@ datetime_astimezone(PyDateTime_DateTime *self, PyObject *args, PyObject *kw)
     /* Conversion to self's own time zone is a NOP. */
     if (self_tzinfo == tzinfo) {
         Py_DECREF(self_tzinfo);
-        return (PyDateTime_DateTime*)Py_NewRef(self);
+        return Py_NewRef(self);
     }
 
     /* Convert self to UTC. */
@@ -6825,7 +6830,7 @@ datetime_astimezone(PyDateTime_DateTime *self, PyObject *args, PyObject *kw)
         PyObject_CallMethodOneArg(tzinfo, &_Py_ID(fromutc), temp);
     Py_DECREF(temp);
 
-    return result;
+    return (PyObject *)result;
 }
 
 static PyObject *
@@ -7104,9 +7109,7 @@ static PyMethodDef datetime_methods[] = {
     DATETIME_DATETIME_DST_METHODDEF
     DATETIME_DATETIME_REPLACE_METHODDEF
     DATETIME_DATETIME___REPLACE___METHODDEF
-
-    {"astimezone",  _PyCFunction_CAST(datetime_astimezone), METH_VARARGS | METH_KEYWORDS,
-     PyDoc_STR("tz -> convert to local time in new timezone tz\n")},
+    DATETIME_DATETIME_ASTIMEZONE_METHODDEF
 
     {"__reduce_ex__", (PyCFunction)datetime_reduce_ex,     METH_VARARGS,
      PyDoc_STR("__reduce_ex__(proto) -> (cls, state)")},
