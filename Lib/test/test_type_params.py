@@ -491,13 +491,13 @@ class TypeParamsAccessTest(unittest.TestCase):
                 T = "class"
                 {}
         """
-        error_cases = [
+        cases = [
             "type Alias[T] = (T for _ in (1,))",
             "type Alias = (T for _ in (1,))",
             "type Alias[T] = [T for _ in (1,)]",
             "type Alias = [T for _ in (1,)]",
         ]
-        for case in error_cases:
+        for case in cases:
             with self.subTest(case=case):
                 ns = run_code(code.format(case))
                 alias = ns["C"].Alias

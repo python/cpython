@@ -1154,10 +1154,12 @@ analyze_block(PySTEntryObject *ste, PyObject *bound, PyObject *free,
             }
         }
 
-        // we inline all non-generator-expression comprehensions
+        // we inline all non-generator-expression comprehensions,
+        // except those in annotation scopes that are nested in classes
         int inline_comp =
             entry->ste_comprehension &&
-            !entry->ste_generator;
+            !entry->ste_generator &&
+            !ste->ste_can_see_class_scope;
 
         if (!analyze_child_block(entry, newbound, newfree, newglobal,
                                  type_params, new_class_entry, &child_free))
