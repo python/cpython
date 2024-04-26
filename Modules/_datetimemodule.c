@@ -6983,10 +6983,21 @@ datetime_datetime_getdate_impl(PyDateTime_DateTime *self,
                     GET_DAY(self));
 }
 
+/*[clinic input]
+datetime.datetime.time as datetime_datetime_gettime
+
+    defcls: defining_class
+    /
+
+Return time object with same time but with tzinfo=None.
+[clinic start generated code]*/
+
 static PyObject *
-datetime_gettime(PyDateTime_DateTime *self, PyObject *Py_UNUSED(ignored))
+datetime_datetime_gettime_impl(PyDateTime_DateTime *self,
+                               PyTypeObject *defcls)
+/*[clinic end generated code: output=9c0cb01cd187e775 input=2b9b40cbdb28f5b9]*/
 {
-    datetime_state *st = find_module_state_by_def(Py_TYPE(self));
+    datetime_state *st = get_module_state_by_cls(defcls);
     return new_time(st,
                     DATE_GET_HOUR(self),
                     DATE_GET_MINUTE(self),
@@ -7116,9 +7127,7 @@ static PyMethodDef datetime_methods[] = {
     /* Instance methods: */
 
     DATETIME_DATETIME_GETDATE_METHODDEF
-
-    {"time",   (PyCFunction)datetime_gettime, METH_NOARGS,
-     PyDoc_STR("Return time object with same time but with tzinfo=None.")},
+    DATETIME_DATETIME_GETTIME_METHODDEF
 
     {"timetz",   (PyCFunction)datetime_gettimetz, METH_NOARGS,
      PyDoc_STR("Return time object with same time and tzinfo.")},
