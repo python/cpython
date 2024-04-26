@@ -136,7 +136,6 @@ class _Target(typing.Generic[_S, _R]):
             f"{c}",
             *self.args,
         ]
-        print(args)
         await _llvm.run("clang", args, echo=self.verbose)
         return await self._parse(o)
 
@@ -388,9 +387,9 @@ class _MachO(
         match relocation:
             case {
                 "Offset": offset,
-                "Symbol": {"Value": s},
+                "Symbol": {"Name": s},
                 "Type": {
-                    "Value": "ARM64_RELOC_GOT_LOAD_PAGE21"
+                    "Name": "ARM64_RELOC_GOT_LOAD_PAGE21"
                     | "ARM64_RELOC_GOT_LOAD_PAGEOFF12" as kind
                 },
             }:
@@ -400,8 +399,8 @@ class _MachO(
                 addend = 0
             case {
                 "Offset": offset,
-                "Symbol": {"Value": s},
-                "Type": {"Value": "X86_64_RELOC_GOT" | "X86_64_RELOC_GOT_LOAD" as kind},
+                "Symbol": {"Name": s},
+                "Type": {"Name": "X86_64_RELOC_GOT" | "X86_64_RELOC_GOT_LOAD" as kind},
             }:
                 offset += base
                 s = s.removeprefix(self.prefix)
@@ -411,13 +410,13 @@ class _MachO(
                 )
             case {
                 "Offset": offset,
-                "Section": {"Value": s},
-                "Type": {"Value": "X86_64_RELOC_SIGNED" as kind},
+                "Section": {"Name": s},
+                "Type": {"Name": "X86_64_RELOC_SIGNED" as kind},
             } | {
                 "Offset": offset,
-                "Symbol": {"Value": s},
+                "Symbol": {"Name": s},
                 "Type": {
-                    "Value": "X86_64_RELOC_BRANCH" | "X86_64_RELOC_SIGNED" as kind
+                    "Name": "X86_64_RELOC_BRANCH" | "X86_64_RELOC_SIGNED" as kind
                 },
             }:
                 offset += base
@@ -428,8 +427,8 @@ class _MachO(
                 )
             case {
                 "Offset": offset,
-                "Section": {"Value": s},
-                "Type": {"Value": kind},
+                "Section": {"Name": s},
+                "Type": {"Name": kind},
             } | {
                 "Offset": offset,
                 "Symbol": {"Name": s},
