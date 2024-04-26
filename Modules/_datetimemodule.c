@@ -4624,9 +4624,19 @@ datetime_time_dst_impl(PyDateTime_Time *self, PyTypeObject *defcls)
     return call_dst(st, GET_TIME_TZINFO(self), Py_None);
 }
 
+/*[clinic input]
+datetime.time.tzname
+
+    defcls: defining_class
+    /
+Return self.tzinfo.tzname(self).
+[clinic start generated code]*/
+
 static PyObject *
-time_tzname(PyDateTime_Time *self, PyObject *unused) {
-    datetime_state *st = find_module_state_by_def(Py_TYPE(self));
+datetime_time_tzname_impl(PyDateTime_Time *self, PyTypeObject *defcls)
+/*[clinic end generated code: output=3308d0b8deba7d33 input=4404cb8a7bff9ffa]*/
+{
+    datetime_state *st = get_module_state_by_cls(defcls);
     return call_tzname(st, GET_TIME_TZINFO(self), Py_None);
 }
 
@@ -5043,10 +5053,7 @@ static PyMethodDef time_methods[] = {
      PyDoc_STR("Formats self with strftime.")},
 
     DATETIME_TIME_UTCOFFSET_METHODDEF
-
-    {"tzname",          (PyCFunction)time_tzname,       METH_NOARGS,
-     PyDoc_STR("Return self.tzinfo.tzname(self).")},
-
+    DATETIME_TIME_TZNAME_METHODDEF
     DATETIME_TIME_DST_METHODDEF
     DATETIME_TIME_REPLACE_METHODDEF
 
