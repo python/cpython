@@ -303,7 +303,7 @@ mmap_read_byte_method(mmap_object *self,
         return NULL;
     }
     unsigned char dest;
-    if (safe_memcpy(dest, self->data + self->pos, 1) < 0) {
+    if (safe_memcpy(&dest, self->data + self->pos, 1) < 0) {
         return NULL;
     }
     else {
