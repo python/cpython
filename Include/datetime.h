@@ -194,10 +194,26 @@ typedef struct {
  * */
 #ifndef _PY_DATETIME_IMPL
 /* Define global variable for the C API and a macro for setting it. */
-static PyDateTime_CAPI *PyDateTimeAPI = NULL;
+static PyDateTime_CAPI *_pydatetimeapi_main = NULL;
 
-#define PyDateTime_IMPORT \
-    PyDateTimeAPI = (PyDateTime_CAPI *)PyCapsule_Import(PyDateTime_CAPSULE_NAME, 0)
+static inline void
+_import_pydatetime(void) {
+    if (PyInterpreterState_Get() == PyInterpreterState_Main()) {
+        _pydatetimeapi_main = PyCapsule_Import(PyDateTime_CAPSULE_NAME, 0);
+    }
+}
+#define PyDateTime_IMPORT _import_pydatetime()
+
+static inline PyDateTime_CAPI *
+_get_pydatetime_api(void) {
+    if (PyInterpreterState_Get() == PyInterpreterState_Main()) {
+        return _pydatetimeapi_main;
+    }
+    else {
+        return PyCapsule_Import(PyDateTime_CAPSULE_NAME, 0);
+    }
+}
+#define PyDateTimeAPI _get_pydatetime_api()
 
 /* Macro for access to the UTC singleton */
 #define PyDateTime_TimeZone_UTC PyDateTimeAPI->TimeZone_UTC
