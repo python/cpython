@@ -4591,9 +4591,20 @@ _time_utcoffset(datetime_state *st, PyObject *self)
 {
     return call_utcoffset(st, GET_TIME_TZINFO(self), Py_None);
 }
+
+/*[clinic input]
+datetime.time.utcoffset
+
+    defcls: defining_class
+    /
+Return self.tzinfo.utcoffset(self).
+[clinic start generated code]*/
+
 static PyObject *
-time_utcoffset(PyObject *self, PyObject *unused) {
-    datetime_state *st = find_module_state_by_def(Py_TYPE(self));
+datetime_time_utcoffset_impl(PyDateTime_Time *self, PyTypeObject *defcls)
+/*[clinic end generated code: output=ac5fef17552f8943 input=b98f428ad48b7daa]*/
+{
+    datetime_state *st = get_module_state_by_cls(defcls);
     return _time_utcoffset(st, (PyObject *)self);
 }
 
@@ -5021,8 +5032,7 @@ static PyMethodDef time_methods[] = {
     {"__format__",      (PyCFunction)date_format,       METH_VARARGS,
      PyDoc_STR("Formats self with strftime.")},
 
-    {"utcoffset",       (PyCFunction)time_utcoffset,    METH_NOARGS,
-     PyDoc_STR("Return self.tzinfo.utcoffset(self).")},
+    DATETIME_TIME_UTCOFFSET_METHODDEF
 
     {"tzname",          (PyCFunction)time_tzname,       METH_NOARGS,
      PyDoc_STR("Return self.tzinfo.tzname(self).")},
