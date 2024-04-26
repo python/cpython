@@ -209,6 +209,8 @@ class datetime.timezone "PyDateTime_TimeZone *" "clinic_state()->PyDateTime_Time
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=c941b310de347082]*/
 
+static int calendar_int_converter(PyObject* arg, int *value);
+
 #define clinic_state() (get_module_state_by_cls(defcls))
 #include "clinic/_datetimemodule.c.h"
 #undef clinic_state
@@ -3232,26 +3234,50 @@ invalid_string_error:
     return NULL;
 }
 
-
-static PyObject *
-date_fromisocalendar(PyObject *cls, PyObject *args, PyObject *kw)
+static int
+calendar_int_converter(PyObject* arg, int *value)
 {
-    static char *keywords[] = {
-        "year", "week", "day", NULL
-    };
-
-    int year, week, day;
-    if (PyArg_ParseTupleAndKeywords(args, kw, "iii:fromisocalendar",
-                keywords,
-                &year, &week, &day) == 0) {
+    int face_value = PyLong_AsInt(arg);
+    if (face_value == -1 && PyErr_Occurred()) {
         if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
             PyErr_Format(PyExc_ValueError,
                     "ISO calendar component out of range");
-
         }
-        return NULL;
+        *value = -1;
+        return 0;
     }
+    *value = face_value;
+    return 1;
+}
 
+/*[python input]
+class calendar_int_converter(CConverter):
+    type = 'int'
+    converter = 'calendar_int_converter'
+[python start generated code]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=62a8ae38ff2c9c0b]*/
+
+
+/*[clinic input]
+@classmethod
+datetime.date.fromisocalendar
+
+    cls: self(type="PyObject *")
+    defcls: defining_class
+    year: calendar_int
+    week: calendar_int
+    day: calendar_int
+
+int, int, int -> Construct a date from the ISO year, week number and weekday.
+
+This is the inverse of the date.isocalendar() function.
+[clinic start generated code]*/
+
+static PyObject *
+datetime_date_fromisocalendar_impl(PyObject *cls, PyTypeObject *defcls,
+                                   int year, int week, int day)
+/*[clinic end generated code: output=bcf68c1effd051aa input=44ba1ccacefc1617]*/
+{
     int month;
     int rv = iso_to_ymd(year, week, day, &year, &month, &day);
 
@@ -3270,7 +3296,7 @@ date_fromisocalendar(PyObject *cls, PyObject *args, PyObject *kw)
                      day);
         return NULL;
     }
-    datetime_state *st = find_module_state_by_def(cls);
+    datetime_state *st = get_module_state_by_cls(defcls);
     return new_date_subclass_ex(st, year, month, day, cls);
 }
 
@@ -3744,12 +3770,7 @@ static PyMethodDef date_methods[] = {
     DATETIME_DATE_FROMTIMESTAMP_METHODDEF
     DATETIME_DATE_FROMORDINAL_METHODDEF
     DATETIME_DATE_FROMISOFORMAT_METHODDEF
-
-     {"fromisocalendar", _PyCFunction_CAST(date_fromisocalendar),
-      METH_VARARGS | METH_KEYWORDS | METH_CLASS,
-      PyDoc_STR("int, int, int -> Construct a date from the ISO year, week "
-                "number and weekday.\n\n"
-                "This is the inverse of the date.isocalendar() function")},
+    DATETIME_DATE_FROMISOCALENDAR_METHODDEF
 
     {"today",         (PyCFunction)date_today,   METH_NOARGS | METH_CLASS,
      PyDoc_STR("Current date or datetime:  same as "
