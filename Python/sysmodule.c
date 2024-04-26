@@ -2166,7 +2166,9 @@ sys__clear_internal_caches_impl(PyObject *module)
 /*[clinic end generated code: output=0ee128670a4966d6 input=253e741ca744f6e8]*/
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
+#ifdef _Py_TIER2
     _Py_Executors_InvalidateAll(interp, 0);
+#endif
     PyType_ClearCache();
     Py_RETURN_NONE;
 }

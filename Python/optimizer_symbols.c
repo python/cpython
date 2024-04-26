@@ -11,6 +11,8 @@
 #include <stdint.h>
 #include <stddef.h>
 
+#ifdef _Py_TIER2
+
 /* Symbols
    =======
 
@@ -506,3 +508,5 @@ fail:
     Py_XDECREF(val_43);
     return NULL;
 }
+
+#endif /* _Py_TIER2 */
