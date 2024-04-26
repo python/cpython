@@ -1543,6 +1543,8 @@ int
 _PyObject_GetMethodStackRef(PyObject *obj, PyObject *name, _PyStackRef *method)
 {
 
+    int meth_found = 0;
+
     assert(Py_STACKREF_UNTAG_BORROWED(*method) == NULL);
 
     PyTypeObject *tp = Py_TYPE(obj);
@@ -1557,19 +1559,41 @@ _PyObject_GetMethodStackRef(PyObject *obj, PyObject *name, _PyStackRef *method)
         return 0;
     }
 
-
+    PyObject *descr = _PyType_Lookup(tp, name);
+    _PyStackRef descr_tagged = Py_STACKREF_TAG_DEFERRED(descr);
+    // Directly set it to that if a GC cycle happens, the descriptor doesn't get
+    // evaporated.
+    // This is why we no longer need a strong reference for this if it's
+    // deferred.
+    // Note: all refcounting operations after this MUST be on descr_tagged
+    // instead of descr.
+    *method = descr_tagged;
+    descrgetfunc f = NULL;
+    if (descr != NULL) {
+        Py_INCREF_STACKREF(descr_tagged);
+        if (_PyType_HasFeature(Py_TYPE(descr), Py_TPFLAGS_METHOD_DESCRIPTOR)) {
+            meth_found = 1;
+        } else {
+            f = Py_TYPE(descr)->tp_descr_get;
+            if (f != NULL && PyDescr_IsData(descr)) {
+                *method = Py_STACKREF_TAG(f(descr, obj, (PyObject *)Py_TYPE(obj)));
+                Py_DECREF_STACKREF(descr_tagged);
+                return 0;
+            }
+        }
+    }
     PyObject *dict, *attr;
     if ((tp->tp_flags & Py_TPFLAGS_INLINE_VALUES) &&
         _PyObject_TryGetInstanceAttribute(obj, name, &attr)) {
         if (attr != NULL) {
             *method = Py_STACKREF_TAG(attr);
+            Py_XDECREF_STACKREF(descr_tagged);
             return 0;
         }
         dict = NULL;
     }
     else if ((tp->tp_flags & Py_TPFLAGS_MANAGED_DICT)) {
-        PyManagedDictPointer* managed_dict = _PyObject_ManagedDictPointer(obj);
-        dict = (PyObject *)managed_dict->dict;
+        dict = (PyObject *)_PyObject_GetManagedDict(obj);
     }
     else {
         PyObject **dictptr = _PyObject_ComputedDictPointer(obj);
@@ -1580,44 +1604,23 @@ _PyObject_GetMethodStackRef(PyObject *obj, PyObject *name, _PyStackRef *method)
             dict = NULL;
         }
     }
-
-    PyObject *descr = _PyType_Lookup(tp, name);
-    // Set to this so that GC doesn't evaporate it.
-    *method = Py_STACKREF_TAG_DEFERRED(descr);
-    _PyStackRef descr_tagged = *method;
-
-
-    descrgetfunc f = NULL;
-    if (descr != NULL) {
-        Py_INCREF_STACKREF(descr_tagged);
-//        uint32_t local = _Py_atomic_load_uint32_relaxed(&descr->ob_ref_local);
-//        fprintf(stderr, "refcount %p: %d\n", descr, local);
-        if (_PyType_HasFeature(Py_TYPE(descr), Py_TPFLAGS_METHOD_DESCRIPTOR)) {
-            return 1;
-        } else {
-            f = Py_TYPE(descr)->tp_descr_get;
-            if (f != NULL && PyDescr_IsData(descr)) {
-                *method = Py_STACKREF_TAG(f(descr, obj, (PyObject *)Py_TYPE(obj)));
-                Py_DECREF_STACKREF(descr_tagged);
-                return 0;
-            }
-        }
-    }
-    else {
-        *method = Py_STACKREF_TAG(NULL);
-    }
-
     if (dict != NULL) {
         Py_INCREF(dict);
-        PyObject *res;
-        if (PyDict_GetItemRef(dict, name, &res) != 0) {
-            *method = Py_STACKREF_TAG(res);
+        PyObject *item;
+        if (PyDict_GetItemRef(dict, name, &item) != 0) {
+            *method = Py_STACKREF_TAG(item);
             // found or error
             Py_DECREF(dict);
+            Py_XDECREF_STACKREF(descr_tagged);
             return 0;
         }
         // not found
         Py_DECREF(dict);
+    }
+
+    if (meth_found) {
+        *method = descr_tagged;
+        return 1;
     }
 
     if (f != NULL) {
@@ -1631,12 +1634,12 @@ _PyObject_GetMethodStackRef(PyObject *obj, PyObject *name, _PyStackRef *method)
         return 0;
     }
 
+    *method = Py_STACKREF_TAG(NULL);
     PyErr_Format(PyExc_AttributeError,
                  "'%.100s' object has no attribute '%U'",
                  tp->tp_name, name);
 
     set_attribute_error_context(obj, name);
-    assert(Py_STACKREF_UNTAG_BORROWED(*method) == NULL);
     return 0;
 }
 
