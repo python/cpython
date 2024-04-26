@@ -7056,11 +7056,12 @@ set_dict_inline_values(PyObject *obj, PyDictObject *new_dict)
     }
 }
 
-void
+int
 _PyObject_SetManagedDict(PyObject *obj, PyObject *new_dict)
 {
     assert(Py_TYPE(obj)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
     assert(_PyObject_InlineValuesConsistencyCheck(obj));
+    int err = 0;
     PyTypeObject *tp = Py_TYPE(obj);
     if (tp->tp_flags & Py_TPFLAGS_INLINE_VALUES) {
         PyDictObject *dict = _PyObject_GetManagedDict(obj);
@@ -7076,11 +7077,11 @@ _PyObject_SetManagedDict(PyObject *obj, PyObject *new_dict)
             Py_END_CRITICAL_SECTION();
 
             if (dict == NULL) {
-                return;
+                return 0;
             }
 #else
             set_dict_inline_values(obj, (PyDictObject *)new_dict);
-            return;
+            return 0;
 #endif
         }
 
@@ -7089,15 +7090,16 @@ _PyObject_SetManagedDict(PyObject *obj, PyObject *new_dict)
         // We've locked dict, but the actual dict could have changed
         // since we locked it.
         dict = _PyObject_ManagedDictPointer(obj)->dict;
-
-        FT_ATOMIC_STORE_PTR(_PyObject_ManagedDictPointer(obj)->dict,
-                            (PyDictObject *)Py_XNewRef(new_dict));
-
-        _PyDict_DetachFromObject(dict, obj);
-
+        err = _PyDict_DetachFromObject(dict, obj);
+        if (err == 0) {
+            FT_ATOMIC_STORE_PTR(_PyObject_ManagedDictPointer(obj)->dict,
+                                (PyDictObject *)Py_XNewRef(new_dict));
+        }
         Py_END_CRITICAL_SECTION2();
 
-        Py_XDECREF(dict);
+        if (err == 0) {
+            Py_XDECREF(dict);
+        }
     }
     else {
         PyDictObject *dict;
@@ -7114,12 +7116,15 @@ _PyObject_SetManagedDict(PyObject *obj, PyObject *new_dict)
         Py_XDECREF(dict);
     }
     assert(_PyObject_InlineValuesConsistencyCheck(obj));
+    return err;
 }
 
 void
 PyObject_ClearManagedDict(PyObject *obj)
 {
-    _PyObject_SetManagedDict(obj, NULL);
+    if (_PyObject_SetManagedDict(obj, NULL) < 0) {
+        PyErr_WriteUnraisable(NULL);
+    }
 }
 
 int
