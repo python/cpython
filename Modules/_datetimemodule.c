@@ -4325,10 +4325,22 @@ datetime_timezone_dst_impl(PyDateTime_TimeZone *self, PyTypeObject *defcls,
     Py_RETURN_NONE;
 }
 
+/*[clinic input]
+datetime.timezone.fromutc
+
+    defcls: defining_class
+    dt: object(type="PyDateTime_DateTime *")
+    /
+
+datetime in UTC -> datetime in local time.
+[clinic start generated code]*/
+
 static PyObject *
-timezone_fromutc(PyDateTime_TimeZone *self, PyDateTime_DateTime *dt)
+datetime_timezone_fromutc_impl(PyDateTime_TimeZone *self,
+                               PyTypeObject *defcls, PyDateTime_DateTime *dt)
+/*[clinic end generated code: output=dd223807a395bb47 input=46b13520da9ab86c]*/
 {
-    datetime_state *st = find_module_state_by_def(Py_TYPE(self));
+    datetime_state *st = get_module_state_by_cls(defcls);
     if (!PyDateTime_Check(st, dt)) {
         PyErr_SetString(PyExc_TypeError,
                         "fromutc: argument must be a datetime");
@@ -4355,9 +4367,7 @@ static PyMethodDef timezone_methods[] = {
     DATETIME_TIMEZONE_TZNAME_METHODDEF
     DATETIME_TIMEZONE_UTCOFFSET_METHODDEF
     DATETIME_TIMEZONE_DST_METHODDEF
-
-    {"fromutc", (PyCFunction)timezone_fromutc, METH_O,
-     PyDoc_STR("datetime in UTC -> datetime in local time.")},
+    DATETIME_TIMEZONE_FROMUTC_METHODDEF
 
     {"__getinitargs__", (PyCFunction)timezone_getinitargs, METH_NOARGS,
      PyDoc_STR("pickle support")},
