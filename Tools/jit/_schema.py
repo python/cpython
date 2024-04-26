@@ -71,12 +71,12 @@ class _COFFSymbol(typing.TypedDict):
 
 
 class _ELFSymbol(typing.TypedDict):
-    Name: dict[typing.Literal["Value"], str]
+    Name: dict[typing.Literal["Name"], str]
     Value: int
 
 
 class _MachOSymbol(typing.TypedDict):
-    Name: dict[typing.Literal["Value"], str]
+    Name: dict[typing.Literal["Name"], str]
     Value: int
 
 
