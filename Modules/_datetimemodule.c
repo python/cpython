@@ -4256,10 +4256,25 @@ timezone_str(PyDateTime_TimeZone *self)
     return PyUnicode_FromFormat("UTC%c%02d:%02d", sign, hours, minutes);
 }
 
+/*[clinic input]
+datetime.timezone.tzname
+
+    defcls: defining_class
+    dt: object
+    /
+
+Return the name specified at timezone creation, or offset as 'UTC(+|-)HH:MM'.
+
+If name is specified when timezone is created, returns the name.
+Otherwise returns offset as 'UTC(+|-)HH:MM'.
+[clinic start generated code]*/
+
 static PyObject *
-timezone_tzname(PyDateTime_TimeZone *self, PyObject *dt)
+datetime_timezone_tzname_impl(PyDateTime_TimeZone *self,
+                              PyTypeObject *defcls, PyObject *dt)
+/*[clinic end generated code: output=113e7127189d5a8f input=5c1b6aa0f14fe729]*/
 {
-    datetime_state *st = find_module_state_by_def(Py_TYPE(self));
+    datetime_state *st = get_module_state_by_cls(defcls);
     if (_timezone_check_argument(st, dt, "tzname") == -1)
         return NULL;
 
@@ -4313,9 +4328,7 @@ timezone_getinitargs(PyDateTime_TimeZone *self, PyObject *Py_UNUSED(ignored))
 }
 
 static PyMethodDef timezone_methods[] = {
-    {"tzname", (PyCFunction)timezone_tzname, METH_O,
-     PyDoc_STR("If name is specified when timezone is created, returns the name."
-               "  Otherwise returns offset as 'UTC(+|-)HH:MM'.")},
+    DATETIME_TIMEZONE_TZNAME_METHODDEF
 
     {"utcoffset", (PyCFunction)timezone_utcoffset, METH_O,
      PyDoc_STR("Return fixed offset.")},
