@@ -4281,10 +4281,22 @@ datetime_timezone_tzname_impl(PyDateTime_TimeZone *self,
     return timezone_str(self);
 }
 
+/*[clinic input]
+datetime.timezone.utcoffset
+
+    defcls: defining_class
+    dt: object
+    /
+
+Return fixed offset.
+[clinic start generated code]*/
+
 static PyObject *
-timezone_utcoffset(PyDateTime_TimeZone *self, PyObject *dt)
+datetime_timezone_utcoffset_impl(PyDateTime_TimeZone *self,
+                                 PyTypeObject *defcls, PyObject *dt)
+/*[clinic end generated code: output=89aaa9277a7bbb85 input=08741fbba8f1fc2b]*/
 {
-    datetime_state *st = find_module_state_by_def(Py_TYPE(self));
+    datetime_state *st = get_module_state_by_cls(defcls);
     if (_timezone_check_argument(st, dt, "utcoffset") == -1)
         return NULL;
 
@@ -4329,9 +4341,7 @@ timezone_getinitargs(PyDateTime_TimeZone *self, PyObject *Py_UNUSED(ignored))
 
 static PyMethodDef timezone_methods[] = {
     DATETIME_TIMEZONE_TZNAME_METHODDEF
-
-    {"utcoffset", (PyCFunction)timezone_utcoffset, METH_O,
-     PyDoc_STR("Return fixed offset.")},
+    DATETIME_TIMEZONE_UTCOFFSET_METHODDEF
 
     {"dst", (PyCFunction)timezone_dst, METH_O,
      PyDoc_STR("Return None.")},
