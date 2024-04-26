@@ -1752,8 +1752,6 @@
             break;
         }
 
-        /* _CALL_PY_WITH_DEFAULTS is not a viable micro-op for tier 2 */
-
         case _CALL_TYPE_1: {
             _Py_UopsSymbol *res;
             res = sym_new_not_null(ctx);

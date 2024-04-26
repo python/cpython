@@ -3410,8 +3410,6 @@
             break;
         }
 
-        /* _CALL_PY_WITH_DEFAULTS is not a viable micro-op for tier 2 because it uses the 'this_instr' variable */
-
         case _CALL_TYPE_1: {
             PyObject *arg;
             PyObject *null;

@@ -133,8 +133,6 @@ int _PyOpcode_num_popped(int opcode, int oparg)  {
             return 2 + oparg;
         case CALL_PY_GENERAL:
             return 2 + oparg;
-        case CALL_PY_WITH_DEFAULTS:
-            return 2 + oparg;
         case CALL_STR_1:
             return 3;
         case CALL_TUPLE_1:
@@ -568,8 +566,6 @@ int _PyOpcode_num_pushed(int opcode, int oparg)  {
             return 0;
         case CALL_PY_GENERAL:
             return 0;
-        case CALL_PY_WITH_DEFAULTS:
-            return 1;
         case CALL_STR_1:
             return 1;
         case CALL_TUPLE_1:
@@ -1016,7 +1012,6 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[268] = {
     [CALL_NON_PY_GENERAL] = { true, INSTR_FMT_IBC00, HAS_ARG_FLAG | HAS_EVAL_BREAK_FLAG | HAS_DEOPT_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
     [CALL_PY_EXACT_ARGS] = { true, INSTR_FMT_IBC00, HAS_ARG_FLAG | HAS_DEOPT_FLAG | HAS_EXIT_FLAG },
     [CALL_PY_GENERAL] = { true, INSTR_FMT_IBC00, HAS_ARG_FLAG | HAS_DEOPT_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG },
-    [CALL_PY_WITH_DEFAULTS] = { true, INSTR_FMT_IBC00, HAS_ARG_FLAG | HAS_DEOPT_FLAG },
     [CALL_STR_1] = { true, INSTR_FMT_IBC00, HAS_ARG_FLAG | HAS_EVAL_BREAK_FLAG | HAS_DEOPT_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
     [CALL_TUPLE_1] = { true, INSTR_FMT_IBC00, HAS_ARG_FLAG | HAS_EVAL_BREAK_FLAG | HAS_DEOPT_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
     [CALL_TYPE_1] = { true, INSTR_FMT_IBC00, HAS_ARG_FLAG | HAS_DEOPT_FLAG },
@@ -1420,7 +1415,6 @@ const char *_PyOpcode_OpName[268] = {
     [CALL_NON_PY_GENERAL] = "CALL_NON_PY_GENERAL",
     [CALL_PY_EXACT_ARGS] = "CALL_PY_EXACT_ARGS",
     [CALL_PY_GENERAL] = "CALL_PY_GENERAL",
-    [CALL_PY_WITH_DEFAULTS] = "CALL_PY_WITH_DEFAULTS",
     [CALL_STR_1] = "CALL_STR_1",
     [CALL_TUPLE_1] = "CALL_TUPLE_1",
     [CALL_TYPE_1] = "CALL_TYPE_1",
@@ -1676,7 +1670,6 @@ const uint8_t _PyOpcode_Deopt[256] = {
     [CALL_NON_PY_GENERAL] = CALL,
     [CALL_PY_EXACT_ARGS] = CALL,
     [CALL_PY_GENERAL] = CALL,
-    [CALL_PY_WITH_DEFAULTS] = CALL,
     [CALL_STR_1] = CALL,
     [CALL_TUPLE_1] = CALL,
     [CALL_TYPE_1] = CALL,
@@ -1876,6 +1869,7 @@ const uint8_t _PyOpcode_Deopt[256] = {
     case 146: \
     case 147: \
     case 148: \
+    case 223: \
     case 224: \
     case 225: \
     case 226: \
