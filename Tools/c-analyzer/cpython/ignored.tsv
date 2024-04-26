@@ -214,9 +214,9 @@ Modules/_ctypes/cfield.c	-	ffi_type_uint8	-
 Modules/_ctypes/cfield.c	-	ffi_type_void	-
 Modules/_datetimemodule.c	-	epoch	-
 Modules/_datetimemodule.c	-	max_fold_seconds	-
-Modules/_datetimemodule.c	datetime_isoformat	specs	-
+Modules/_datetimemodule.c	datetime_datetime_isoformat_impl	specs	-
 Modules/_datetimemodule.c	parse_hh_mm_ss_ff	correction	-
-Modules/_datetimemodule.c	time_isoformat	specs	-
+Modules/_datetimemodule.c	datetime_time_isoformat_impl	specs	-
 Modules/_decimal/_decimal.c	-	cond_map_template	-
 Modules/_decimal/_decimal.c	-	dec_signal_string	-
 Modules/_decimal/_decimal.c	-	dflt_ctx	-
