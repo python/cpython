@@ -441,7 +441,12 @@ add_object_to_union_args(PyObject *args_list, PyObject *args_set, PyObject *obj)
     if (type == NULL) {
         return -1;
     }
-    if (PySet_Contains(args_set, type)) {
+    int contains = PySet_Contains(args_set, type);
+    if (contains < 0) {
+        Py_DECREF(type);
+        return -1;
+    }
+    else if (contains == 1) {
         Py_DECREF(type);
         return 0;
     }

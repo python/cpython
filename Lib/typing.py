@@ -1604,15 +1604,9 @@ class _UnionGenericAliasMeta(type):
 
     def __eq__(self, other):
         warnings._deprecated("_UnionGenericAlias", remove=(3, 15))
-        if not isinstance(other, (_UnionGenericAlias, types.UnionType)):
-            return NotImplemented
-        try:  # fast path
-            return set(self.__args__) == set(other.__args__)
-        except TypeError:  # not hashable, slow path
-            return _compare_args_orderless(self.__args__, other.__args__)
-
-    def __hash__(self):
-        return hash(frozenset(self.__args__))
+        if other is _UnionGenericAlias or other is Union:
+            return True
+        return NotImplemented
 
 
 class _UnionGenericAlias(metaclass=_UnionGenericAliasMeta):
