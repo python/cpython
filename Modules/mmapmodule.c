@@ -357,7 +357,7 @@ mmap_read_method(mmap_object *self,
     if (result == NULL) {
         return NULL;
     }
-    if (safe_memcpy(((PyBytesObject *) result)->ob_sval, self->data + self->pos, num_bytes) < 0) {
+    if (safe_memcpy(PyBytes_AS_STRING(result), self->data + self->pos, num_bytes) < 0) {
         Py_CLEAR(result);
     }
     else {
