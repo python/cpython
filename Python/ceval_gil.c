@@ -451,9 +451,7 @@ init_own_gil(PyInterpreterState *interp, struct _gil_runtime_state *gil)
 {
     assert(!gil_created(gil));
 #ifdef Py_GIL_DISABLED
-    // gh-116329: Once it is safe to do so, change this condition to
-    // (enable_gil == _PyConfig_GIL_ENABLE), so the GIL is disabled by default.
-    gil->enabled = _PyInterpreterState_GetConfig(interp)->enable_gil != _PyConfig_GIL_DISABLE;
+    gil->enabled = _PyInterpreterState_GetConfig(interp)->enable_gil == _PyConfig_GIL_ENABLE;
 #endif
     create_gil(gil);
     assert(gil_created(gil));
