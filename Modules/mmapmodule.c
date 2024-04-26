@@ -511,13 +511,17 @@ mmap_write_byte_method(mmap_object *self,
         return NULL;
 
     CHECK_VALID(NULL);
-    if (self->pos < self->size) {
-        self->data[self->pos++] = value;
-        Py_RETURN_NONE;
-    }
-    else {
+    if (self->pos >= self->size) {
         PyErr_SetString(PyExc_ValueError, "write byte out of range");
         return NULL;
+    }
+
+    if (safe_memcpy(self->data + self->pos, value, 1) < 0) {
+        return NULL;
+    }
+    else {
+        self->pos++;
+        Py_RETURN_NONE;
     }
 }
 
