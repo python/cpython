@@ -394,6 +394,12 @@ executor_traverse(PyObject *o, visitproc visit, void *arg)
     return 0;
 }
 
+static int
+executor_is_gc(PyObject *o)
+{
+    return !_Py_IsImmortal(o);
+}
+
 PyTypeObject _PyUOpExecutor_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     .tp_name = "uop_executor",
@@ -405,6 +411,7 @@ PyTypeObject _PyUOpExecutor_Type = {
     .tp_methods = executor_methods,
     .tp_traverse = executor_traverse,
     .tp_clear = executor_clear,
+    .tp_is_gc = executor_is_gc,
 };
 
 /* TO DO -- Generate these tables */
@@ -689,8 +696,9 @@ top:  // Jump here after _PUSH_FRAME or likely branches
                 if (expansion->nuops > 0) {
                     // Reserve space for nuops (+ _SET_IP + _EXIT_TRACE)
                     int nuops = expansion->nuops;
-                    RESERVE(nuops);
-                    if (expansion->uops[nuops-1].uop == _POP_FRAME) {
+                    RESERVE(nuops + 1); /* One extra for exit */
+                    int16_t last_op = expansion->uops[nuops-1].uop;
+                    if (last_op == _POP_FRAME || last_op == _RETURN_GENERATOR) {
                         // Check for trace stack underflow now:
                         // We can't bail e.g. in the middle of
                         // LOAD_CONST + _POP_FRAME.
@@ -749,7 +757,7 @@ top:  // Jump here after _PUSH_FRAME or likely branches
                                 Py_FatalError("garbled expansion");
                         }
 
-                        if (uop == _POP_FRAME) {
+                        if (uop == _POP_FRAME || uop == _RETURN_GENERATOR) {
                             TRACE_STACK_POP();
                             /* Set the operand to the function or code object returned to,
                              * to assist optimization passes. (See _PUSH_FRAME below.)
@@ -971,6 +979,7 @@ prepare_for_execution(_PyUOpInstruction *buffer, int length)
                 current_error_target = target;
                 make_exit(&buffer[next_spare], _ERROR_POP_N, 0);
                 buffer[next_spare].oparg = popped;
+                buffer[next_spare].operand = target;
                 next_spare++;
             }
             buffer[i].error_target = current_error;
@@ -1109,8 +1118,6 @@ make_executor_from_uops(_PyUOpInstruction *buffer, int length, const _PyBloomFil
     assert(next_exit == -1);
     assert(dest == executor->trace);
     assert(dest->opcode == _START_EXECUTOR);
-    dest->oparg = 0;
-    dest->target = 0;
     _Py_ExecutorInit(executor, dependencies);
 #ifdef Py_DEBUG
     char *python_lltrace = Py_GETENV("PYTHON_LLTRACE");
@@ -1314,7 +1321,7 @@ counter_optimize(
     }
     _Py_CODEUNIT *target = instr + 1 + _PyOpcode_Caches[JUMP_BACKWARD] - oparg;
     _PyUOpInstruction buffer[5] = {
-        { .opcode = _START_EXECUTOR },
+        { .opcode = _START_EXECUTOR, .jump_target = 4, .format=UOP_FORMAT_JUMP },
         { .opcode = _LOAD_CONST_INLINE_BORROW, .operand = (uintptr_t)self },
         { .opcode = _INTERNAL_INCREMENT_OPT_COUNTER },
         { .opcode = _EXIT_TRACE, .jump_target = 4, .format=UOP_FORMAT_JUMP },
