@@ -6962,10 +6962,21 @@ datetime_datetime_timestamp_impl(PyDateTime_DateTime *self,
     return result;
 }
 
+/*[clinic input]
+datetime.datetime.date as datetime_datetime_getdate
+
+    defcls: defining_class
+    /
+
+Return date object with same year, month and day.
+[clinic start generated code]*/
+
 static PyObject *
-datetime_getdate(PyDateTime_DateTime *self, PyObject *Py_UNUSED(ignored))
+datetime_datetime_getdate_impl(PyDateTime_DateTime *self,
+                               PyTypeObject *defcls)
+/*[clinic end generated code: output=1f3378787dafdaca input=9fa762733596e558]*/
 {
-    datetime_state *st = find_module_state_by_def(Py_TYPE(self));
+    datetime_state *st = get_module_state_by_cls(defcls);
     return new_date(st,
                     GET_YEAR(self),
                     GET_MONTH(self),
@@ -7104,8 +7115,7 @@ static PyMethodDef datetime_methods[] = {
 
     /* Instance methods: */
 
-    {"date",   (PyCFunction)datetime_getdate, METH_NOARGS,
-     PyDoc_STR("Return date object with same year, month and day.")},
+    DATETIME_DATETIME_GETDATE_METHODDEF
 
     {"time",   (PyCFunction)datetime_gettime, METH_NOARGS,
      PyDoc_STR("Return time object with same time but with tzinfo=None.")},
