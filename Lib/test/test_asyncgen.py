@@ -460,7 +460,7 @@ class AsyncGenTest(unittest.TestCase):
             gen2.throw(MyExc)
 
         with self.assertRaisesRegex(RuntimeError,
-            r"cannot reuse already awaited aclose\(\)/athrow\(\)"):
+                r"cannot reuse already awaited aclose\(\)/athrow\(\)"):
             gen2.send(None)
 
     def test_async_gen_asend_throw_concurrent_with_throw(self):
