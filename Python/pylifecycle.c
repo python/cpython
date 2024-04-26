@@ -1491,6 +1491,7 @@ finalize_modules_delete_special(PyThreadState *tstate, int verbose)
     }
 }
 
+
 static PyObject*
 finalize_remove_modules(PyObject *modules, int verbose)
 {
