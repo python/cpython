@@ -1032,7 +1032,7 @@ class ReferencesTestCase(TestBase):
         _testcapi.set_nomemory(0)
         del obj
         """).strip()
-        res = script_helper.assert_python_failure("-c", code)
+        res = script_helper.assert_python_ok("-c", code)
         stderr = res.err.decode("ascii", "backslashreplace")
         self.assertNotRegex(stderr, "_Py_Dealloc: Deallocator of type")
 
