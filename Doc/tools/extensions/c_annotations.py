@@ -19,7 +19,6 @@
 """
 
 from os import path
-import docutils
 from docutils import nodes
 from docutils.parsers.rst import directives
 from docutils.parsers.rst import Directive
@@ -38,16 +37,6 @@ REST_ROLE_MAP = {
     'type': 'type',
     'var': 'data',
 }
-
-
-# Monkeypatch nodes.Node.findall for forwards compatability
-# This patch can be dropped when the minimum Sphinx version is 4.4.0
-# or the minimum Docutils version is 0.18.1.
-if docutils.__version_info__ < (0, 18, 1):
-    def findall(self, *args, **kwargs):
-        return iter(self.traverse(*args, **kwargs))
-
-    nodes.Node.findall = findall
 
 
 class RCEntry:
