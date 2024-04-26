@@ -7007,10 +7007,21 @@ datetime_datetime_gettime_impl(PyDateTime_DateTime *self,
                     DATE_GET_FOLD(self));
 }
 
+/*[clinic input]
+datetime.datetime.timetz as datetime_datetime_gettimetz
+
+    defcls: defining_class
+    /
+
+Return time object with same time and tzinfo.
+[clinic start generated code]*/
+
 static PyObject *
-datetime_gettimetz(PyDateTime_DateTime *self, PyObject *Py_UNUSED(ignored))
+datetime_datetime_gettimetz_impl(PyDateTime_DateTime *self,
+                                 PyTypeObject *defcls)
+/*[clinic end generated code: output=5dd413b4496a15d7 input=5e303916b45c585f]*/
 {
-    datetime_state *st = find_module_state_by_def(Py_TYPE(self));
+    datetime_state *st = get_module_state_by_cls(defcls);
     return new_time(st,
                     DATE_GET_HOUR(self),
                     DATE_GET_MINUTE(self),
@@ -7128,9 +7139,7 @@ static PyMethodDef datetime_methods[] = {
 
     DATETIME_DATETIME_GETDATE_METHODDEF
     DATETIME_DATETIME_GETTIME_METHODDEF
-
-    {"timetz",   (PyCFunction)datetime_gettimetz, METH_NOARGS,
-     PyDoc_STR("Return time object with same time and tzinfo.")},
+    DATETIME_DATETIME_GETTIMETZ_METHODDEF
 
     {"ctime",       (PyCFunction)datetime_ctime,        METH_NOARGS,
      PyDoc_STR("Return ctime() style string.")},
