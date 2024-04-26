@@ -1086,6 +1086,7 @@ sanity_check(_PyExecutorObject *executor)
         CHECK(
             opcode == _DEOPT ||
             opcode == _SIDE_EXIT ||
+            opcode == _EVAL_BREAKER_EXIT ||
             opcode == _ERROR_POP_N);
         if (opcode == _SIDE_EXIT) {
             CHECK(inst->format == UOP_FORMAT_EXIT);

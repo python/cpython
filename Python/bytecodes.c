@@ -4233,7 +4233,7 @@ dummy_func(
 #endif
             uintptr_t eval_breaker = _Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker);
             EXIT_IF(eval_breaker & _PY_EVAL_EVENTS_MASK);
-            EXIT_IF(eval_breaker == FT_ATOMIC_LOAD_UINTPTR_ACQUIRE(_PyFrame_GetCode(frame)->_co_instrumentation_version));
+            assert(eval_breaker == FT_ATOMIC_LOAD_UINTPTR_ACQUIRE(_PyFrame_GetCode(frame)->_co_instrumentation_version));
         }
 
         tier2 op(_EVAL_BREAKER_EXIT, (--)) {
