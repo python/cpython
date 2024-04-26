@@ -10,6 +10,7 @@ import textwrap
 import unittest
 from test import support
 from test.support import os_helper
+from test.support import force_not_colorized
 from test.support.script_helper import (
     spawn_python, kill_python, assert_python_ok, assert_python_failure,
     interpreter_requires_environment
@@ -38,6 +39,7 @@ class CmdLineTest(unittest.TestCase):
         self.assertNotIn(b'Traceback', err)
         return out
 
+    @support.cpython_only
     def test_help(self):
         self.verify_valid_flag('-h')
         self.verify_valid_flag('-?')
@@ -48,14 +50,17 @@ class CmdLineTest(unittest.TestCase):
         self.assertNotIn(b'-X dev', out)
         self.assertLess(len(lines), 50)
 
+    @support.cpython_only
     def test_help_env(self):
         out = self.verify_valid_flag('--help-env')
         self.assertIn(b'PYTHONHOME', out)
 
+    @support.cpython_only
     def test_help_xoptions(self):
         out = self.verify_valid_flag('--help-xoptions')
         self.assertIn(b'-X dev', out)
 
+    @support.cpython_only
     def test_help_all(self):
         out = self.verify_valid_flag('--help-all')
         lines = out.splitlines()
@@ -74,6 +79,7 @@ class CmdLineTest(unittest.TestCase):
     def test_site_flag(self):
         self.verify_valid_flag('-S')
 
+    @support.cpython_only
     def test_version(self):
         version = ('Python %d.%d' % sys.version_info[:2]).encode("ascii")
         for switch in '-V', '--version', '-VV':
@@ -139,6 +145,7 @@ class CmdLineTest(unittest.TestCase):
         else:
             self.assertEqual(err, b'')
 
+    @support.cpython_only
     def test_xoption_frozen_modules(self):
         tests = {
             ('=on', 'FrozenImporter'),
@@ -153,6 +160,7 @@ class CmdLineTest(unittest.TestCase):
                 res = assert_python_ok(*cmd)
                 self.assertRegex(res.out.decode('utf-8'), expected)
 
+    @support.cpython_only
     def test_env_var_frozen_modules(self):
         tests = {
             ('on', 'FrozenImporter'),
@@ -579,6 +587,7 @@ class CmdLineTest(unittest.TestCase):
             print("del sys.modules['__main__']", file=script)
         assert_python_ok(filename)
 
+    @support.cpython_only
     def test_unknown_options(self):
         rc, out, err = assert_python_failure('-E', '-z')
         self.assertIn(b'Unknown option: -z', err)
@@ -691,6 +700,7 @@ class CmdLineTest(unittest.TestCase):
             self.assertEqual(proc.returncode, 0, proc)
         return proc.stdout.rstrip()
 
+    @support.cpython_only
     def test_xdev(self):
         # sys.flags.dev_mode
         code = "import sys; print(sys.flags.dev_mode)"
@@ -914,6 +924,7 @@ class CmdLineTest(unittest.TestCase):
         self.assertEqual(proc.returncode, 0, proc)
         self.assertEqual(proc.stdout.strip(), b'0')
 
+    @support.cpython_only
     def test_parsing_error(self):
         args = [sys.executable, '-I', '--unknown-option']
         proc = subprocess.run(args,
@@ -1017,6 +1028,7 @@ class IgnoreEnvironmentTest(unittest.TestCase):
 
 
 class SyntaxErrorTests(unittest.TestCase):
+    @force_not_colorized
     def check_string(self, code):
         proc = subprocess.run([sys.executable, "-"], input=code,
                               stdout=subprocess.PIPE, stderr=subprocess.PIPE)

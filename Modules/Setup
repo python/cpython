@@ -137,6 +137,9 @@ PYTHONPATH=$(COREPYTHONPATH)
 #_datetime _datetimemodule.c
 #_decimal _decimal/_decimal.c
 #_heapq _heapqmodule.c
+#_interpchannels _interpchannelsmodule.c
+#_interpqueues _interpqueuesmodule.c
+#_interpreters _interpretersmodule.c
 #_json _json.c
 #_lsprof _lsprof.c rotatingtree.c
 #_multiprocessing -I$(srcdir)/Modules/_multiprocessing _multiprocessing/multiprocessing.c _multiprocessing/semaphore.c
@@ -271,9 +274,6 @@ PYTHONPATH=$(COREPYTHONPATH)
 
 # Testing
 
-#_xxsubinterpreters _xxsubinterpretersmodule.c
-#_xxinterpchannels _xxinterpchannelsmodule.c
-#_xxinterpqueues _xxinterpqueuesmodule.c
 #_xxtestfuzz _xxtestfuzz/_xxtestfuzz.c _xxtestfuzz/fuzzer.c
 #_testbuffer _testbuffer.c
 #_testinternalcapi _testinternalcapi.c

@@ -1,2 +1,0 @@
-:mod:`typing`: implement :pep:`705` which adds :data:`typing.ReadOnly`
-support to :class:`typing.TypedDict`.

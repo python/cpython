@@ -13,6 +13,7 @@ import itertools
 import locale
 import os
 import pickle
+import platform
 import select
 import selectors
 import shutil
@@ -56,8 +57,10 @@ try:
 except (ImportError, AttributeError):
     all_users = []
 try:
+    import _testcapi
     from _testcapi import INT_MAX, PY_SSIZE_T_MAX
 except ImportError:
+    _testcapi = None
     INT_MAX = PY_SSIZE_T_MAX = sys.maxsize
 
 try:
@@ -1298,6 +1301,7 @@ class EnvironTests(mapping_tests.BasicTestMappingProtocol):
 
 class WalkTests(unittest.TestCase):
     """Tests for os.walk()."""
+    is_fwalk = False
 
     # Wrapper to hide minor differences between os.walk and os.fwalk
     # to tests both functions with the same code base
@@ -1332,14 +1336,14 @@ class WalkTests(unittest.TestCase):
         self.sub11_path = join(self.sub1_path, "SUB11")
         sub2_path = join(self.walk_path, "SUB2")
         sub21_path = join(sub2_path, "SUB21")
-        tmp1_path = join(self.walk_path, "tmp1")
+        self.tmp1_path = join(self.walk_path, "tmp1")
         tmp2_path = join(self.sub1_path, "tmp2")
         tmp3_path = join(sub2_path, "tmp3")
         tmp5_path = join(sub21_path, "tmp3")
         self.link_path = join(sub2_path, "link")
         t2_path = join(os_helper.TESTFN, "TEST2")
         tmp4_path = join(os_helper.TESTFN, "TEST2", "tmp4")
-        broken_link_path = join(sub2_path, "broken_link")
+        self.broken_link_path = join(sub2_path, "broken_link")
         broken_link2_path = join(sub2_path, "broken_link2")
         broken_link3_path = join(sub2_path, "broken_link3")
 
@@ -1349,13 +1353,13 @@ class WalkTests(unittest.TestCase):
         os.makedirs(sub21_path)
         os.makedirs(t2_path)
 
-        for path in tmp1_path, tmp2_path, tmp3_path, tmp4_path, tmp5_path:
+        for path in self.tmp1_path, tmp2_path, tmp3_path, tmp4_path, tmp5_path:
             with open(path, "x", encoding='utf-8') as f:
                 f.write("I'm " + path + " and proud of it.  Blame test_os.\n")
 
         if os_helper.can_symlink():
             os.symlink(os.path.abspath(t2_path), self.link_path)
-            os.symlink('broken', broken_link_path, True)
+            os.symlink('broken', self.broken_link_path, True)
             os.symlink(join('tmp3', 'broken'), broken_link2_path, True)
             os.symlink(join('SUB21', 'tmp5'), broken_link3_path, True)
             self.sub2_tree = (sub2_path, ["SUB21", "link"],
@@ -1451,6 +1455,11 @@ class WalkTests(unittest.TestCase):
         else:
             self.fail("Didn't follow symlink with followlinks=True")
 
+        walk_it = self.walk(self.broken_link_path, follow_symlinks=True)
+        if self.is_fwalk:
+            self.assertRaises(FileNotFoundError, next, walk_it)
+        self.assertRaises(StopIteration, next, walk_it)
+
     def test_walk_bad_dir(self):
         # Walk top-down.
         errors = []
@@ -1471,6 +1480,73 @@ class WalkTests(unittest.TestCase):
                     self.assertIn(os.path.join(root, dir2), roots)
         finally:
             os.rename(path1new, path1)
+
+    def test_walk_bad_dir2(self):
+        walk_it = self.walk('nonexisting')
+        if self.is_fwalk:
+            self.assertRaises(FileNotFoundError, next, walk_it)
+        self.assertRaises(StopIteration, next, walk_it)
+
+        walk_it = self.walk('nonexisting', follow_symlinks=True)
+        if self.is_fwalk:
+            self.assertRaises(FileNotFoundError, next, walk_it)
+        self.assertRaises(StopIteration, next, walk_it)
+
+        walk_it = self.walk(self.tmp1_path)
+        self.assertRaises(StopIteration, next, walk_it)
+
+        walk_it = self.walk(self.tmp1_path, follow_symlinks=True)
+        if self.is_fwalk:
+            self.assertRaises(NotADirectoryError, next, walk_it)
+        self.assertRaises(StopIteration, next, walk_it)
+
+    @unittest.skipUnless(hasattr(os, "mkfifo"), 'requires os.mkfifo()')
+    @unittest.skipIf(sys.platform == "vxworks",
+                    "fifo requires special path on VxWorks")
+    def test_walk_named_pipe(self):
+        path = os_helper.TESTFN + '-pipe'
+        os.mkfifo(path)
+        self.addCleanup(os.unlink, path)
+
+        walk_it = self.walk(path)
+        self.assertRaises(StopIteration, next, walk_it)
+
+        walk_it = self.walk(path, follow_symlinks=True)
+        if self.is_fwalk:
+            self.assertRaises(NotADirectoryError, next, walk_it)
+        self.assertRaises(StopIteration, next, walk_it)
+
+    @unittest.skipUnless(hasattr(os, "mkfifo"), 'requires os.mkfifo()')
+    @unittest.skipIf(sys.platform == "vxworks",
+                    "fifo requires special path on VxWorks")
+    def test_walk_named_pipe2(self):
+        path = os_helper.TESTFN + '-dir'
+        os.mkdir(path)
+        self.addCleanup(shutil.rmtree, path)
+        os.mkfifo(os.path.join(path, 'mypipe'))
+
+        errors = []
+        walk_it = self.walk(path, onerror=errors.append)
+        next(walk_it)
+        self.assertRaises(StopIteration, next, walk_it)
+        self.assertEqual(errors, [])
+
+        errors = []
+        walk_it = self.walk(path, onerror=errors.append)
+        root, dirs, files = next(walk_it)
+        self.assertEqual(root, path)
+        self.assertEqual(dirs, [])
+        self.assertEqual(files, ['mypipe'])
+        dirs.extend(files)
+        files.clear()
+        if self.is_fwalk:
+            self.assertRaises(NotADirectoryError, next, walk_it)
+        self.assertRaises(StopIteration, next, walk_it)
+        if self.is_fwalk:
+            self.assertEqual(errors, [])
+        else:
+            self.assertEqual(len(errors), 1, errors)
+            self.assertIsInstance(errors[0], NotADirectoryError)
 
     def test_walk_many_open_files(self):
         depth = 30
@@ -1537,6 +1613,7 @@ class WalkTests(unittest.TestCase):
 @unittest.skipUnless(hasattr(os, 'fwalk'), "Test needs os.fwalk()")
 class FwalkTests(WalkTests):
     """Tests for os.fwalk()."""
+    is_fwalk = True
 
     def walk(self, top, **kwargs):
         for root, dirs, files, root_fd in self.fwalk(top, **kwargs):
@@ -3857,7 +3934,12 @@ class TermsizeTests(unittest.TestCase):
         try:
             size = os.get_terminal_size()
         except OSError as e:
-            if sys.platform == "win32" or e.errno in (errno.EINVAL, errno.ENOTTY):
+            known_errnos = [errno.EINVAL, errno.ENOTTY]
+            if sys.platform == "android":
+                # The Android testbed redirects the native stdout to a pipe,
+                # which returns a different error code.
+                known_errnos.append(errno.EACCES)
+            if sys.platform == "win32" or e.errno in known_errnos:
                 # Under win32 a generic OSError can be thrown if the
                 # handle cannot be retrieved
                 self.skipTest("failed to query terminal size")
@@ -4011,9 +4093,15 @@ class EventfdTests(unittest.TestCase):
 @unittest.skipUnless(hasattr(os, 'timerfd_create'), 'requires os.timerfd_create')
 @support.requires_linux_version(2, 6, 30)
 class TimerfdTests(unittest.TestCase):
-    # Tolerate a difference of 1 ms
-    CLOCK_RES_NS = 1_000_000
-    CLOCK_RES = CLOCK_RES_NS * 1e-9
+    # 1 ms accuracy is reliably achievable on every platform except Android
+    # emulators, where we allow 10 ms (gh-108277).
+    if sys.platform == "android" and platform.android_ver().is_emulator:
+        CLOCK_RES_PLACES = 2
+    else:
+        CLOCK_RES_PLACES = 3
+
+    CLOCK_RES = 10 ** -CLOCK_RES_PLACES
+    CLOCK_RES_NS = 10 ** (9 - CLOCK_RES_PLACES)
 
     def timerfd_create(self, *args, **kwargs):
         fd = os.timerfd_create(*args, **kwargs)
@@ -4035,18 +4123,18 @@ class TimerfdTests(unittest.TestCase):
 
         # 1st call
         next_expiration, interval2 = os.timerfd_settime(fd, initial=initial_expiration, interval=interval)
-        self.assertAlmostEqual(interval2, 0.0, places=3)
-        self.assertAlmostEqual(next_expiration, 0.0, places=3)
+        self.assertAlmostEqual(interval2, 0.0, places=self.CLOCK_RES_PLACES)
+        self.assertAlmostEqual(next_expiration, 0.0, places=self.CLOCK_RES_PLACES)
 
         # 2nd call
         next_expiration, interval2 = os.timerfd_settime(fd, initial=initial_expiration, interval=interval)
-        self.assertAlmostEqual(interval2, interval, places=3)
-        self.assertAlmostEqual(next_expiration, initial_expiration, places=3)
+        self.assertAlmostEqual(interval2, interval, places=self.CLOCK_RES_PLACES)
+        self.assertAlmostEqual(next_expiration, initial_expiration, places=self.CLOCK_RES_PLACES)
 
         # timerfd_gettime
         next_expiration, interval2 = os.timerfd_gettime(fd)
-        self.assertAlmostEqual(interval2, interval, places=3)
-        self.assertAlmostEqual(next_expiration, initial_expiration, places=3)
+        self.assertAlmostEqual(interval2, interval, places=self.CLOCK_RES_PLACES)
+        self.assertAlmostEqual(next_expiration, initial_expiration, places=self.CLOCK_RES_PLACES)
 
     def test_timerfd_non_blocking(self):
         fd = self.timerfd_create(time.CLOCK_REALTIME, flags=os.TFD_NONBLOCK)
@@ -4100,8 +4188,8 @@ class TimerfdTests(unittest.TestCase):
 
         # timerfd_gettime
         next_expiration, interval2 = os.timerfd_gettime(fd)
-        self.assertAlmostEqual(interval2, interval, places=3)
-        self.assertAlmostEqual(next_expiration, initial_expiration, places=3)
+        self.assertAlmostEqual(interval2, interval, places=self.CLOCK_RES_PLACES)
+        self.assertAlmostEqual(next_expiration, initial_expiration, places=self.CLOCK_RES_PLACES)
 
         count = 3
         t = time.perf_counter()
@@ -4132,8 +4220,8 @@ class TimerfdTests(unittest.TestCase):
         # timerfd_gettime
         # Note: timerfd_gettime returns relative values even if TFD_TIMER_ABSTIME is specified.
         next_expiration, interval2 = os.timerfd_gettime(fd)
-        self.assertAlmostEqual(interval2, interval, places=3)
-        self.assertAlmostEqual(next_expiration, offset, places=3)
+        self.assertAlmostEqual(interval2, interval, places=self.CLOCK_RES_PLACES)
+        self.assertAlmostEqual(next_expiration, offset, places=self.CLOCK_RES_PLACES)
 
         t = time.perf_counter()
         count_signaled = self.read_count_signaled(fd)
@@ -5257,6 +5345,7 @@ class ForkTests(unittest.TestCase):
 
     @unittest.skipUnless(sys.platform in ("linux", "android", "darwin"),
                          "Only Linux and macOS detect this today.")
+    @unittest.skipIf(_testcapi is None, "requires _testcapi")
     def test_fork_warns_when_non_python_thread_exists(self):
         code = """if 1:
             import os, threading, warnings
@@ -5283,20 +5372,21 @@ class ForkTests(unittest.TestCase):
         self.assertEqual(err.decode("utf-8"), "")
         self.assertEqual(out.decode("utf-8"), "")
 
-    def test_fork_at_exit(self):
+    def test_fork_at_finalization(self):
         code = """if 1:
             import atexit
             import os
 
-            def exit_handler():
-                pid = os.fork()
-                if pid != 0:
-                    print("shouldn't be printed")
-
-            atexit.register(exit_handler)
+            class AtFinalization:
+                def __del__(self):
+                    print("OK")
+                    pid = os.fork()
+                    if pid != 0:
+                        print("shouldn't be printed")
+            at_finalization = AtFinalization()
         """
         _, out, err = assert_python_ok("-c", code)
-        self.assertEqual(b"", out)
+        self.assertEqual(b"OK\n", out)
         self.assertIn(b"can't fork at interpreter shutdown", err)
 
 

@@ -48,8 +48,12 @@ extern void _PyEval_SignalReceived(void);
 #define _Py_PENDING_MAINTHREADONLY 1
 #define _Py_PENDING_RAWFREE 2
 
+typedef int _Py_add_pending_call_result;
+#define _Py_ADD_PENDING_SUCCESS 0
+#define _Py_ADD_PENDING_FULL -1
+
 // Export for '_testinternalcapi' shared extension
-PyAPI_FUNC(int) _PyEval_AddPendingCall(
+PyAPI_FUNC(_Py_add_pending_call_result) _PyEval_AddPendingCall(
     PyInterpreterState *interp,
     _Py_pending_call_func func,
     void *arg,
@@ -138,12 +142,12 @@ extern void _PyEval_DeactivateOpCache(void);
 /* With USE_STACKCHECK macro defined, trigger stack checks in
    _Py_CheckRecursiveCall() on every 64th call to _Py_EnterRecursiveCall. */
 static inline int _Py_MakeRecCheck(PyThreadState *tstate)  {
-    return (tstate->c_recursion_remaining-- <= 0
+    return (tstate->c_recursion_remaining-- < 0
             || (tstate->c_recursion_remaining & 63) == 0);
 }
 #else
 static inline int _Py_MakeRecCheck(PyThreadState *tstate) {
-    return tstate->c_recursion_remaining-- <= 0;
+    return tstate->c_recursion_remaining-- < 0;
 }
 #endif
 
@@ -159,6 +163,11 @@ int _Py_CheckRecursiveCallPy(
 static inline int _Py_EnterRecursiveCallTstate(PyThreadState *tstate,
                                                const char *where) {
     return (_Py_MakeRecCheck(tstate) && _Py_CheckRecursiveCall(tstate, where));
+}
+
+static inline void _Py_EnterRecursiveCallTstateUnchecked(PyThreadState *tstate)  {
+    assert(tstate->c_recursion_remaining > 0);
+    tstate->c_recursion_remaining--;
 }
 
 static inline int _Py_EnterRecursiveCall(const char *where) {
@@ -177,7 +186,7 @@ static inline void _Py_LeaveRecursiveCall(void)  {
 
 extern struct _PyInterpreterFrame* _PyEval_GetFrame(void);
 
-extern PyObject* _Py_MakeCoro(PyFunctionObject *func);
+PyAPI_FUNC(PyObject *)_Py_MakeCoro(PyFunctionObject *func);
 
 /* Handle signals, pending calls, GIL drop request
    and asynchronous exception */
