@@ -4948,6 +4948,29 @@ datetime_time_replace_impl(PyDateTime_Time *self, PyTypeObject *defcls,
                                      tzinfo, fold, (PyObject *)Py_TYPE(self));
 }
 
+/*[clinic input]
+datetime.time.__replace__
+
+    defcls: defining_class
+    hour: int(c_default="TIME_GET_HOUR(self)") = unchanged
+    minute: int(c_default="TIME_GET_MINUTE(self)") = unchanged
+    second: int(c_default="TIME_GET_SECOND(self)") = unchanged
+    microsecond: int(c_default="TIME_GET_MICROSECOND(self)") = unchanged
+    tzinfo: object(c_default="HASTZINFO(self) ? self->tzinfo : Py_None") = unchanged
+    *
+    fold: int(c_default="TIME_GET_FOLD(self)") = unchanged
+[clinic start generated code]*/
+
+static PyObject *
+datetime_time___replace___impl(PyDateTime_Time *self, PyTypeObject *defcls,
+                               int hour, int minute, int second,
+                               int microsecond, PyObject *tzinfo, int fold)
+/*[clinic end generated code: output=0db4f39f3353ecf6 input=cf50f2b0e8925429]*/
+{
+    return datetime_time_replace_impl(self, defcls, hour, minute, second,
+                                      microsecond, tzinfo, fold);
+}
+
 static PyObject *
 time_fromisoformat(PyObject *cls, PyObject *tstr) {
     assert(tstr != NULL);
@@ -5062,9 +5085,7 @@ static PyMethodDef time_methods[] = {
     DATETIME_TIME_TZNAME_METHODDEF
     DATETIME_TIME_DST_METHODDEF
     DATETIME_TIME_REPLACE_METHODDEF
-
-    {"__replace__", _PyCFunction_CAST(datetime_time_replace), METH_FASTCALL | METH_KEYWORDS,
-     PyDoc_STR("__replace__($self, /, **changes)\n--\n\nThe same as replace().")},
+    DATETIME_TIME___REPLACE___METHODDEF
 
      {"fromisoformat", (PyCFunction)time_fromisoformat, METH_O | METH_CLASS,
      PyDoc_STR("string -> time from a string in ISO 8601 format")},
