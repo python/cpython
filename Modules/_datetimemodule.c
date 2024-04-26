@@ -975,7 +975,8 @@ new_date_ex(int year, int month, int day, PyTypeObject *type)
 
 // Forward declaration
 static PyObject *
-new_datetime_ex(datetime_state *st, int, int, int, int, int, int, int, PyObject *, PyTypeObject *);
+new_datetime_ex(datetime_state *st,
+                int, int, int, int, int, int, int, PyObject *, PyTypeObject *);
 
 /* Create date instance with no range checking, or call subclass constructor */
 static PyObject *
@@ -1002,7 +1003,8 @@ new_date_subclass_ex(datetime_state *st,
 static PyObject *
 new_datetime_ex2(datetime_state *st,
                  int year, int month, int day, int hour, int minute,
-                 int second, int usecond, PyObject *tzinfo, int fold, PyTypeObject *type)
+                 int second, int usecond, PyObject *tzinfo, int fold,
+                 PyTypeObject *type)
 {
     PyDateTime_DateTime *self;
     char aware = tzinfo != Py_None;
@@ -2112,7 +2114,8 @@ get_float_as_integer_ratio(PyObject *floatobj)
 /* op is 0 for multiplication, 1 for division */
 static PyObject *
 multiply_truedivide_timedelta_float(datetime_state *st,
-                                    PyDateTime_Delta *delta, PyObject *floatobj, int op)
+                                    PyDateTime_Delta *delta,
+                                    PyObject *floatobj, int op)
 {
     PyObject *result = NULL;
     PyObject *pyus_in = NULL, *temp, *pyus_out;
