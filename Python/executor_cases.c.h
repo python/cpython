@@ -2789,7 +2789,8 @@
             gen->gi_frame_state = FRAME_EXECUTING;
             gen->gi_exc_state.previous_item = tstate->exc_info;
             tstate->exc_info = &gen->gi_exc_state;
-            frame->return_offset = (uint16_t)(2 + oparg);
+            // oparg is the return offset from the next instruction.
+            frame->return_offset = (uint16_t)(1 + INLINE_CACHE_ENTRIES_FOR_ITER + oparg);
             stack_pointer[0] = (PyObject *)gen_frame;
             stack_pointer += 1;
             break;
@@ -4224,6 +4225,7 @@
             }
             else {
                 if (!backoff_counter_triggers(exit->temperature)) {
+                    exit->temperature = advance_backoff_counter(exit->temperature);
                     GOTO_TIER_ONE(target);
                 }
                 int optimized = _PyOptimizer_Optimize(frame, target, stack_pointer, &executor);

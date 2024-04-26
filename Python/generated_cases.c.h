@@ -2655,7 +2655,8 @@
                 gen->gi_frame_state = FRAME_EXECUTING;
                 gen->gi_exc_state.previous_item = tstate->exc_info;
                 tstate->exc_info = &gen->gi_exc_state;
-                frame->return_offset = (uint16_t)(2 + oparg);
+                // oparg is the return offset from the next instruction.
+                frame->return_offset = (uint16_t)(1 + INLINE_CACHE_ENTRIES_FOR_ITER + oparg);
             }
             // _PUSH_FRAME
             new_frame = gen_frame;

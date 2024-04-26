@@ -2773,7 +2773,8 @@ dummy_func(
             gen->gi_frame_state = FRAME_EXECUTING;
             gen->gi_exc_state.previous_item = tstate->exc_info;
             tstate->exc_info = &gen->gi_exc_state;
-            frame->return_offset = (uint16_t)(2 + oparg);
+            // oparg is the return offset from the next instruction.
+            frame->return_offset = (uint16_t)(1 + INLINE_CACHE_ENTRIES_FOR_ITER + oparg);
         }
 
         macro(FOR_ITER_GEN) =
@@ -3171,9 +3172,6 @@ dummy_func(
             }
         }
 
-        // The 'unused' output effect represents the return value
-        // (which will be pushed when the frame returns).
-        // It is needed so CALL_PY_EXACT_ARGS matches its family.
         op(_PUSH_FRAME, (new_frame: _PyInterpreterFrame* -- )) {
             // Write it out explicitly because it's subtly different.
             // Eventually this should be the only occurrence of this code.
@@ -4206,6 +4204,7 @@ dummy_func(
             }
             else {
                 if (!backoff_counter_triggers(exit->temperature)) {
+                    exit->temperature = advance_backoff_counter(exit->temperature);
                     GOTO_TIER_ONE(target);
                 }
                 int optimized = _PyOptimizer_Optimize(frame, target, stack_pointer, &executor);
