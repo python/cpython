@@ -6014,9 +6014,21 @@ datetime_datetime_utcoffset_impl(PyObject *self, PyTypeObject *defcls)
     return _datetime_utcoffset(st, self);
 }
 
+/*[clinic input]
+datetime.datetime.dst
+
+    self: self(type="PyObject *")
+    defcls: defining_class
+    /
+
+Return self.tzinfo.dst(self).
+[clinic start generated code]*/
+
 static PyObject *
-datetime_dst(PyObject *self, PyObject *unused) {
-    datetime_state *st = find_module_state_by_def(Py_TYPE(self));
+datetime_datetime_dst_impl(PyObject *self, PyTypeObject *defcls)
+/*[clinic end generated code: output=7fb2ddf5978f37f8 input=dcfdcaed1a5311e4]*/
+{
+    datetime_state *st = get_module_state_by_cls(defcls);
     return _datetime_dst(st, self);
 }
 
@@ -7056,10 +7068,7 @@ static PyMethodDef datetime_methods[] = {
 
     DATETIME_DATETIME_UTCOFFSET_METHODDEF
     DATETIME_DATETIME_TZNAME_METHODDEF
-
-    {"dst",             (PyCFunction)datetime_dst, METH_NOARGS,
-     PyDoc_STR("Return self.tzinfo.dst(self).")},
-
+    DATETIME_DATETIME_DST_METHODDEF
     DATETIME_DATETIME_REPLACE_METHODDEF
 
     {"__replace__", _PyCFunction_CAST(datetime_datetime_replace), METH_FASTCALL | METH_KEYWORDS,
