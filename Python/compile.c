@@ -371,9 +371,6 @@ static PyCodeObject *optimize_and_assemble(struct compiler *, int addNone);
 
 #define CAPSULE_NAME "compile.c compiler unit"
 
-static inline bool in_class_like_block(struct compiler *c) {
-    return c->u->u_ste->ste_type == ClassBlock || c->u->u_ste->ste_can_see_class_scope;
-}
 
 static int
 compiler_setup(struct compiler *c, mod_ty mod, PyObject *filename,
@@ -5463,7 +5460,7 @@ push_inlined_comprehension_state(struct compiler *c, location loc,
                                  PySTEntryObject *entry,
                                  inlined_comprehension_state *state)
 {
-    int in_class_block = in_class_like_block(c) && !c->u->u_in_inlined_comp;
+    int in_class_block = (c->u->u_ste->ste_type == ClassBlock) && !c->u->u_in_inlined_comp;
     c->u->u_in_inlined_comp++;
     // iterate over names bound in the comprehension and ensure we isolate
     // them from the outer scope as needed
