@@ -14,7 +14,6 @@ race:set_allocator_unlocked
 race:_add_to_weak_set
 race:_in_weak_set
 race:_mi_heap_delayed_free_partial
-race:_Py_IsOwnedByCurrentThread
 race:_PyEval_EvalFrameDefault
 race:_PyFunction_SetVersion
 race:_PyImport_AcquireLock
