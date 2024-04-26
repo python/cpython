@@ -132,7 +132,7 @@ def iter_opnames(ex):
 
 
 def get_opnames(ex):
-    return set(iter_opnames(ex))
+    return list(iter_opnames(ex))
 
 
 @requires_specialization
@@ -1297,6 +1297,21 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertEqual(res, 19)
         self.assertIsNotNone(ex)
         self.assertIn("_RETURN_GENERATOR", get_opnames(ex))
+
+    def test_for_iter_gen(self):
+        def gen(n):
+            for i in range(n):
+                yield i
+        def testfunc(n):
+            g = gen(n)
+            s = 0
+            for i in g:
+                s += i
+            return s
+        res, ex = self._run_with_optimizer(testfunc, 20)
+        self.assertEqual(res, 190)
+        self.assertIsNotNone(ex)
+        self.assertIn("_FOR_ITER_GEN_FRAME", get_opnames(ex))
 
 if __name__ == "__main__":
     unittest.main()

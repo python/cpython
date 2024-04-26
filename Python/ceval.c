@@ -1072,9 +1072,13 @@ jump_to_jump_target:
     next_uop = current_executor->trace + target;
     goto tier2_dispatch;
 
+exit_to_tier1_dynamic:
+    next_instr = frame->instr_ptr;
+    goto goto_to_tier1;
 exit_to_tier1:
     assert(next_uop[-1].format == UOP_FORMAT_TARGET);
     next_instr = next_uop[-1].target + _PyCode_CODE(_PyFrame_GetCode(frame));
+goto_to_tier1:
 #ifdef Py_DEBUG
     if (lltrace >= 2) {
         printf("DEOPT: [UOp ");

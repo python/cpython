@@ -87,6 +87,7 @@ _JIT_ENTRY(_PyInterpreterFrame *frame, PyObject **stack_pointer, PyThreadState *
     PATCH_VALUE(_PyExecutorObject *, current_executor, _JIT_EXECUTOR)
     int oparg;
     int uopcode = _JIT_OPCODE;
+    _Py_CODEUNIT *next_instr;
     // Other stuff we need handy:
     PATCH_VALUE(uint16_t, _oparg, _JIT_OPARG)
 #if SIZEOF_VOID_P == 8
@@ -122,6 +123,9 @@ error_tier_two:
 exit_to_tier1:
     tstate->previous_executor = (PyObject *)current_executor;
     GOTO_TIER_ONE(_PyCode_CODE(_PyFrame_GetCode(frame)) + _target);
+exit_to_tier1_dynamic:
+    tstate->previous_executor = (PyObject *)current_executor;
+    GOTO_TIER_ONE(frame->instr_ptr);
 exit_to_trace:
     {
         _PyExitData *exit = &current_executor->exits[_exit_index];

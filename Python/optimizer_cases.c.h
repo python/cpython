@@ -1439,7 +1439,14 @@
             break;
         }
 
-        /* _FOR_ITER_GEN is not a viable micro-op for tier 2 */
+        case _FOR_ITER_GEN_FRAME: {
+            _PyInterpreterFrame *gen_frame;
+            gen_frame = sym_new_not_null(ctx);
+            if (gen_frame == NULL) goto out_of_space;
+            stack_pointer[0] = (_Py_UopsSymbol *)gen_frame;
+            stack_pointer += 1;
+            break;
+        }
 
         /* _BEFORE_ASYNC_WITH is not a viable micro-op for tier 2 */
 
@@ -2106,6 +2113,10 @@
         }
 
         case _COLD_EXIT: {
+            break;
+        }
+
+        case _DYNAMIC_EXIT: {
             break;
         }
 
