@@ -2333,6 +2333,13 @@ set_init(PySetObject *self, PyObject *args, PyObject *kwds)
     if (!PyArg_UnpackTuple(args, Py_TYPE(self)->tp_name, 0, 1, &iterable))
         return -1;
 
+    if (Py_REFCNT(self) == 1 && self->fill == 0) {
+        self->hash = -1;
+        if (iterable == NULL) {
+            return 0;
+        }
+        return set_update_local(self, iterable);
+    }
     Py_BEGIN_CRITICAL_SECTION(self);
     if (self->fill)
         set_clear_internal(self);
