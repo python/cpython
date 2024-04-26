@@ -6543,6 +6543,7 @@ datetime_hash(PyDateTime_DateTime *self)
 /*[clinic input]
 datetime.datetime.replace
 
+    defcls: defining_class
     year: int(c_default="GET_YEAR(self)") = unchanged
     month: int(c_default="GET_MONTH(self)") = unchanged
     day: int(c_default="GET_DAY(self)") = unchanged
@@ -6558,13 +6559,13 @@ Return datetime with new specified fields.
 [clinic start generated code]*/
 
 static PyObject *
-datetime_datetime_replace_impl(PyDateTime_DateTime *self, int year,
-                               int month, int day, int hour, int minute,
-                               int second, int microsecond, PyObject *tzinfo,
-                               int fold)
-/*[clinic end generated code: output=00bc96536833fddb input=9b38253d56d9bcad]*/
+datetime_datetime_replace_impl(PyDateTime_DateTime *self,
+                               PyTypeObject *defcls, int year, int month,
+                               int day, int hour, int minute, int second,
+                               int microsecond, PyObject *tzinfo, int fold)
+/*[clinic end generated code: output=5d4ed85b97ed99c0 input=5265196eec76388f]*/
 {
-    datetime_state *st = find_module_state_by_def(Py_TYPE(self));
+    datetime_state *st = get_module_state_by_cls(defcls);
     return new_datetime_subclass_fold_ex(st, year, month, day, hour, minute,
                                          second, microsecond, tzinfo, fold,
                                          (PyObject *)Py_TYPE(self));
