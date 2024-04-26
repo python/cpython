@@ -3619,8 +3619,17 @@ iso_calendar_date_new_impl(PyTypeObject *type, int year, int week,
     return (PyObject *)self;
 }
 
+/*[clinic input]
+datetime.date.isocalendar
+
+    defcls: defining_class
+    /
+Return a named tuple containing ISO year, week number, and weekday.
+[clinic start generated code]*/
+
 static PyObject *
-date_isocalendar(PyDateTime_Date *self, PyObject *Py_UNUSED(ignored))
+datetime_date_isocalendar_impl(PyDateTime_Date *self, PyTypeObject *defcls)
+/*[clinic end generated code: output=1c363b5301019a12 input=67faf915bc47b3b1]*/
 {
     int  year         = GET_YEAR(self);
     int  week1_monday = iso_week1_monday(year);
@@ -3639,7 +3648,7 @@ date_isocalendar(PyDateTime_Date *self, PyObject *Py_UNUSED(ignored))
         week = 0;
     }
 
-    datetime_state *st = find_module_state_by_def(Py_TYPE(self));
+    datetime_state *st = get_module_state_by_cls(defcls);
     PyObject* v = iso_calendar_date_new_impl(st->PyDateTime_IsoCalendarDateType,
                     year, week + 1, day + 1);
     if (v == NULL) {
@@ -3794,9 +3803,7 @@ static PyMethodDef date_methods[] = {
     {"timetuple",   (PyCFunction)date_timetuple,    METH_NOARGS,
      PyDoc_STR("Return time tuple, compatible with time.localtime().")},
 
-    {"isocalendar", (PyCFunction)date_isocalendar,  METH_NOARGS,
-     PyDoc_STR("Return a named tuple containing ISO year, week number, and "
-               "weekday.")},
+    DATETIME_DATE_ISOCALENDAR_METHODDEF
 
     {"isoformat",   (PyCFunction)date_isoformat,        METH_NOARGS,
      PyDoc_STR("Return string in ISO 8601 format, YYYY-MM-DD.")},
