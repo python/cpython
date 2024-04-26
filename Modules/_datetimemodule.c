@@ -100,11 +100,8 @@ find_module_state_by_def(PyTypeObject *type)
 static inline datetime_state *
 find_state_left_or_right(PyObject *left, PyObject *right)
 {
-    PyObject *mod = PyType_GetModuleByDef(Py_TYPE(left), &datetimemodule);
-    if (mod == NULL) {
-        PyErr_Clear();
-        mod = PyType_GetModuleByDef(Py_TYPE(right), &datetimemodule);
-    }
+    PyObject *mod = _PyType_GetModuleByDef2(Py_TYPE(left), Py_TYPE(right),
+                                            &datetimemodule);
     assert(mod != NULL);
     return get_module_state(mod);
 }
