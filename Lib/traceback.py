@@ -288,7 +288,7 @@ class FrameSummary:
     """
 
     __slots__ = ('filename', 'lineno', 'end_lineno', 'colno', 'end_colno',
-                 'name', '_lines', '_lines_dedented', 'locals', '_frame')
+                 'name', '_lines', '_lines_dedented', 'locals', '_code')
 
     def __init__(self, filename, lineno, name, *, lookup_line=True,
             locals=None, line=None,
@@ -308,7 +308,7 @@ class FrameSummary:
         self.colno = colno
         self.end_colno = end_colno
         self.name = name
-        self._frame = kwargs.get("_frame")
+        self._code = kwargs.get("_code")
         self._lines = line
         self._lines_dedented = None
         if lookup_line:
@@ -348,11 +348,9 @@ class FrameSummary:
             lines = []
             for lineno in range(self.lineno, self.end_lineno + 1):
                 # treat errors (empty string) and empty lines (newline) as the same
-                line = None
-                if self._frame is not None and self.filename.startswith("<"):
-                    line = linecache._getline_from_code(self._frame.f_code, lineno, self._frame.f_globals).rstrip()
-                if line is None:
-                    line = linecache.getline(self.filename, lineno).rstrip()
+                line = linecache.getline(self.filename, lineno).rstrip()
+                if not line and self._code is not None and self.filename.startswith("<"):
+                    line = linecache._getline_from_code(self._code, lineno).rstrip()
                 lines.append(line)
             self._lines = "\n".join(lines) + "\n"
 
@@ -490,7 +488,7 @@ class StackSummary(list):
                 FrameSummary(filename, lineno, name,
                     lookup_line=False, locals=f_locals,
                     end_lineno=end_lineno, colno=colno, end_colno=end_colno,
-                    _frame=f,
+                    _code=f.f_code,
                 )
             )
         for filename in fnames:

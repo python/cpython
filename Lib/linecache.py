@@ -104,9 +104,13 @@ def updatecache(filename, module_globals=None):
     # These imports are not at top level because linecache is in the critical
     # path of the interpreter startup and importing os and sys take a lot of time
     # and slows down the startup sequence.
-    import os
-    import sys
-    import tokenize
+    try:
+        import os
+        import sys
+        import tokenize
+    except ImportError:
+        # These import can fail if the interpreter is shutting down
+        return []
 
     if filename in cache:
         if len(cache[filename]) != 1:
