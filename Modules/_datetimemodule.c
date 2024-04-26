@@ -4676,12 +4676,25 @@ time_str(PyDateTime_Time *self)
     return PyObject_CallMethodNoArgs((PyObject *)self, &_Py_ID(isoformat));
 }
 
+/*[clinic input]
+datetime.time.isoformat
+
+    defcls: defining_class
+    timespec: str = NULL;
+
+Return string in ISO 8601 format, [HH[:MM[:SS[.mmm[uuu]]]]][+HH:MM].
+
+The optional argument timespec specifies the number of additional terms
+of the time to include. Valid options are 'auto', 'hours', 'minutes',
+'seconds', 'milliseconds' and 'microseconds'.
+[clinic start generated code]*/
+
 static PyObject *
-time_isoformat(PyDateTime_Time *self, PyObject *args, PyObject *kw)
+datetime_time_isoformat_impl(PyDateTime_Time *self, PyTypeObject *defcls,
+                             const char *timespec)
+/*[clinic end generated code: output=67801509cfb4fd5b input=61b371e51644bb49]*/
 {
     char buf[100];
-    const char *timespec = NULL;
-    static char *keywords[] = {"timespec", NULL};
     PyObject *result;
     int us = TIME_GET_MICROSECOND(self);
     static const char *specs[][2] = {
@@ -4692,9 +4705,6 @@ time_isoformat(PyDateTime_Time *self, PyObject *args, PyObject *kw)
         {"microseconds", "%02d:%02d:%02d.%06d"},
     };
     size_t given_spec;
-
-    if (!PyArg_ParseTupleAndKeywords(args, kw, "|s:isoformat", keywords, &timespec))
-        return NULL;
 
     if (timespec == NULL || strcmp(timespec, "auto") == 0) {
         if (us == 0) {
@@ -4732,7 +4742,7 @@ time_isoformat(PyDateTime_Time *self, PyObject *args, PyObject *kw)
         return result;
 
     /* We need to append the UTC offset. */
-    datetime_state *st = find_module_state_by_def(Py_TYPE(self));
+    datetime_state *st = get_module_state_by_cls(defcls);
     if (format_utcoffset(st, buf, sizeof(buf), ":", self->tzinfo,
                          Py_None) < 0) {
         Py_DECREF(result);
@@ -5037,14 +5047,7 @@ time_reduce(PyDateTime_Time *self, PyObject *arg)
 }
 
 static PyMethodDef time_methods[] = {
-
-    {"isoformat",   _PyCFunction_CAST(time_isoformat),        METH_VARARGS | METH_KEYWORDS,
-     PyDoc_STR("Return string in ISO 8601 format, [HH[:MM[:SS[.mmm[uuu]]]]]"
-               "[+HH:MM].\n\n"
-               "The optional argument timespec specifies the number "
-               "of additional terms\nof the time to include. Valid "
-               "options are 'auto', 'hours', 'minutes',\n'seconds', "
-               "'milliseconds' and 'microseconds'.\n")},
+    DATETIME_TIME_ISOFORMAT_METHODDEF
 
     {"strftime",        _PyCFunction_CAST(time_strftime),     METH_VARARGS | METH_KEYWORDS,
      PyDoc_STR("format -> strftime() style string.")},
