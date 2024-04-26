@@ -275,6 +275,10 @@ class PrettyPrinter:
 
     _dispatch[_collections.abc.MappingView.__repr__] = _pprint_mapping_abc_view
 
+    _view_reprs = {cls.__repr__ for cls in
+                   (_dict_keys_view, _dict_values_view, _dict_items_view,
+                    _collections.abc.MappingView)}
+
     def _pprint_list(self, object, stream, indent, allowance, context, level):
         stream.write('[')
         self._format_items(object, stream, indent, allowance + 1,
@@ -634,10 +638,7 @@ class PrettyPrinter:
             del context[objid]
             return "{%s}" % ", ".join(components), readable, recursive
 
-        views = (self._dict_keys_view, self._dict_values_view, self._dict_items_view,
-                 _collections.abc.MappingView)
-        view_reprs = {cls.__repr__ for cls in views}
-        if issubclass(typ, _collections.abc.MappingView) and r in view_reprs:
+        if issubclass(typ, _collections.abc.MappingView) and r in self._view_reprs:
             objid = id(object)
             if maxlevels and level >= maxlevels:
                 return "{...}", False, objid in context
@@ -646,7 +647,6 @@ class PrettyPrinter:
             key = _safe_key
             if issubclass(typ, (self._dict_items_view, _collections.abc.ItemsView)):
                 key = _safe_tuple
-            format = typ.__name__ + '([%s])'
             if hasattr(object, "_mapping"):
                 # Dispatch formatting to the view's _mapping
                 mapping_repr, readable, recursive = self.format(
@@ -672,7 +672,7 @@ class PrettyPrinter:
                 if vrecur:
                     recursive = True
             del context[objid]
-            return format % ", ".join(components), readable, recursive
+            return typ.__name__ + '([%s])' % ", ".join(components), readable, recursive
 
         if (issubclass(typ, list) and r is list.__repr__) or \
            (issubclass(typ, tuple) and r is tuple.__repr__):
