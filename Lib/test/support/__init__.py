@@ -2520,6 +2520,7 @@ Py_TRACE_REFS = hasattr(sys, 'getobjects')
 def without_optimizer(func):
     try:
         import _testinternalcapi
+        from _testinternalcapi import get_optimizer, set_optimizer
     except ImportError:
         return func
     @functools.wraps(func)
