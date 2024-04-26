@@ -273,9 +273,19 @@ class TestSFpatches(unittest.TestCase):
         self.assertIn('&#305;mpl&#305;c&#305;t', output)
 
 
+class TestInputParsing(unittest.TestCase):
+    def test_input_type_checks(self):
+        with self.assertRaises(Exception):
+            list(difflib.unified_diff('a', ['b']))
+        with self.assertRaises(TypeError):
+            list(difflib.unified_diff(['a'], 'b'))
+        with self.assertRaises(Exception):
+            list(difflib.unified_diff(['a'], [None]))
+
+
 class TestOutputFormat(unittest.TestCase):
     def test_tab_delimiter(self):
-        args = ['one', 'two', 'Original', 'Current',
+        args = [['one'], ['two'], 'Original', 'Current',
             '2005-01-26 23:30:50', '2010-04-02 10:20:52']
         ud = difflib.unified_diff(*args, lineterm='')
         self.assertEqual(list(ud)[0:2], [
@@ -287,7 +297,7 @@ class TestOutputFormat(unittest.TestCase):
                            "--- Current\t2010-04-02 10:20:52"])
 
     def test_no_trailing_tab_on_empty_filedate(self):
-        args = ['one', 'two', 'Original', 'Current']
+        args = [['one'], ['two'], 'Original', 'Current']
         ud = difflib.unified_diff(*args, lineterm='')
         self.assertEqual(list(ud)[0:2], ["--- Original", "+++ Current"])
 
