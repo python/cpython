@@ -269,7 +269,7 @@ Data Types
          >>> Color.RED.value
          1
 
-      Value of the member, can be set in :meth:`~object.__new__`.
+      Value of the member, can be set in :meth:`~Enum.__new__`.
 
       .. note:: Enum member values
 
@@ -289,7 +289,7 @@ Data Types
 
    .. attribute:: Enum._value_
 
-      Value of the member, can be set in :meth:`~object.__new__`.
+      Value of the member, can be set in :meth:`~Enum.__new__`.
 
    .. attribute:: Enum._order_
 
@@ -397,8 +397,8 @@ Data Types
 
       results in the call ``int('1a', 16)`` and a value of ``17`` for the member.
 
-      ..note:: When writing a custom ``__new__``, do not use ``super().__new__`` --
-               call the appropriate ``__new__`` instead.
+      .. note:: When writing a custom ``__new__``, do not use ``super().__new__`` --
+                call the appropriate ``__new__`` instead.
 
    .. method:: Enum.__repr__(self)
 
