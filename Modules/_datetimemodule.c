@@ -3413,25 +3413,30 @@ date_ctime(PyDateTime_Date *self, PyObject *Py_UNUSED(ignored))
     return format_ctime(self, 0, 0, 0);
 }
 
+/*[clinic input]
+datetime.date.strftime
+
+    defcls: defining_class
+    format: unicode
+
+format -> strftime() style string.
+[clinic start generated code]*/
+
 static PyObject *
-date_strftime(PyDateTime_Date *self, PyObject *args, PyObject *kw)
+datetime_date_strftime_impl(PyDateTime_Date *self, PyTypeObject *defcls,
+                            PyObject *format)
+/*[clinic end generated code: output=605af1ff474ad7ac input=3a6cf7ef6a95d3dd]*/
 {
     /* This method can be inherited, and needs to call the
      * timetuple() method appropriate to self's class.
      */
     PyObject *result;
     PyObject *tuple;
-    PyObject *format;
-    static char *keywords[] = {"format", NULL};
-
-    if (! PyArg_ParseTupleAndKeywords(args, kw, "U:strftime", keywords,
-                                      &format))
-        return NULL;
 
     tuple = PyObject_CallMethodNoArgs((PyObject *)self, &_Py_ID(timetuple));
     if (tuple == NULL)
         return NULL;
-    datetime_state *st = find_module_state_by_def(Py_TYPE(self));
+    datetime_state *st = get_module_state_by_cls(defcls);
     result = wrap_strftime(st, (PyObject *)self, format, tuple,
                            (PyObject *)self);
     Py_DECREF(tuple);
@@ -3781,8 +3786,7 @@ static PyMethodDef date_methods[] = {
     {"ctime",       (PyCFunction)date_ctime,        METH_NOARGS,
      PyDoc_STR("Return ctime() style string.")},
 
-    {"strftime",        _PyCFunction_CAST(date_strftime),     METH_VARARGS | METH_KEYWORDS,
-     PyDoc_STR("format -> strftime() style string.")},
+    DATETIME_DATE_STRFTIME_METHODDEF
 
     {"__format__",      (PyCFunction)date_format,       METH_VARARGS,
      PyDoc_STR("Formats self with strftime.")},
