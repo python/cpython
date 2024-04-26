@@ -7031,8 +7031,19 @@ datetime_datetime_gettimetz_impl(PyDateTime_DateTime *self,
                     DATE_GET_FOLD(self));
 }
 
+/*[clinic input]
+datetime.datetime.utctimetuple
+
+    defcls: defining_class
+    /
+
+Return UTC time tuple, compatible with time.localtime().
+[clinic start generated code]*/
+
 static PyObject *
-datetime_utctimetuple(PyDateTime_DateTime *self, PyObject *Py_UNUSED(ignored))
+datetime_datetime_utctimetuple_impl(PyDateTime_DateTime *self,
+                                    PyTypeObject *defcls)
+/*[clinic end generated code: output=f680a4fb9fbf0581 input=2275032fc3aa0754]*/
 {
     int y, m, d, hh, mm, ss;
     PyObject *tzinfo;
@@ -7044,7 +7055,7 @@ datetime_utctimetuple(PyDateTime_DateTime *self, PyObject *Py_UNUSED(ignored))
     }
     else {
         PyObject *offset;
-        datetime_state *st = find_module_state_by_def(Py_TYPE(self));
+        datetime_state *st = get_module_state_by_cls(defcls);
         offset = call_utcoffset(st, tzinfo, (PyObject *)self);
         if (offset == NULL)
             return NULL;
@@ -7146,10 +7157,7 @@ static PyMethodDef datetime_methods[] = {
 
     DATETIME_DATETIME_TIMETUPLE_METHODDEF
     DATETIME_DATETIME_TIMESTAMP_METHODDEF
-
-    {"utctimetuple",   (PyCFunction)datetime_utctimetuple, METH_NOARGS,
-     PyDoc_STR("Return UTC time tuple, compatible with time.localtime().")},
-
+    DATETIME_DATETIME_UTCTIMETUPLE_METHODDEF
     DATETIME_DATETIME_ISOFORMAT_METHODDEF
     DATETIME_DATETIME_UTCOFFSET_METHODDEF
     DATETIME_DATETIME_TZNAME_METHODDEF
