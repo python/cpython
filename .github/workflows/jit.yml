@@ -122,7 +122,7 @@ jobs:
         run: |
           sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)" ./llvm.sh ${{ matrix.llvm }} all
           export PATH="$(llvm-config-${{ matrix.llvm }} --bindir):$PATH"
-          ./configure --enable-experimental-jit ${{ matrix.debug && '--with-pydebug' || '--enable-optimizations --with-lto' }}
+          ./configure --enable-experimental-jit ${{ matrix.debug && '--with-pydebug' || '--enable-optimizations' }}
           make all --jobs 4
           ./python -m test --exclude ${{ matrix.exclude }} --multiprocess 0 --timeout 4500 --verbose2 --verbose3
 
