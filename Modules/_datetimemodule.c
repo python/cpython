@@ -3710,6 +3710,24 @@ datetime_date_replace_impl(PyDateTime_Date *self, PyTypeObject *defcls,
     return new_date_subclass_ex(st, year, month, day, (PyObject *)Py_TYPE(self));
 }
 
+/*[clinic input]
+datetime.date.__replace__
+
+    defcls: defining_class
+    year: int(c_default="GET_YEAR(self)") = unchanged
+    month: int(c_default="GET_MONTH(self)") = unchanged
+    day: int(c_default="GET_DAY(self)") = unchanged
+
+[clinic start generated code]*/
+
+static PyObject *
+datetime_date___replace___impl(PyDateTime_Date *self, PyTypeObject *defcls,
+                               int year, int month, int day)
+/*[clinic end generated code: output=4274716e2fed7f61 input=7218fbab51692bf7]*/
+{
+    return datetime_date_replace_impl(self, defcls, year, month, day);
+}
+
 static Py_hash_t
 generic_hash(unsigned char *data, int len)
 {
@@ -3822,9 +3840,7 @@ static PyMethodDef date_methods[] = {
                "Monday == 0 ... Sunday == 6")},
 
     DATETIME_DATE_REPLACE_METHODDEF
-
-    {"__replace__", _PyCFunction_CAST(datetime_date_replace), METH_FASTCALL | METH_KEYWORDS,
-     PyDoc_STR("__replace__($self, /, **changes)\n--\n\nThe same as replace().")},
+    DATETIME_DATE___REPLACE___METHODDEF
 
     {"__reduce__", (PyCFunction)date_reduce,        METH_NOARGS,
      PyDoc_STR("__reduce__() -> (cls, state)")},
