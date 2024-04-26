@@ -901,9 +901,8 @@ The internal architecture is roughly as follows.
 
 * There is a Tier 2 interpreter, but it is mostly intended for debugging
   the earlier stages of the optimization pipeline. If the JIT is not
-  enabled, the Tier 2 interpreter can be invoked by passing Python the
-  ``-X uops`` option or by setting the ``PYTHON_UOPS`` environment
-  variable to ``1``.
+  enabled, the Tier 2 interpreter can be enabled by configuring Python
+  with the ``--enable-experimental-tier2`` option.
 
 * When the ``--enable-experimental-jit`` option is used, the optimized
   Tier 2 IR is translated to machine code, which is then executed.
