@@ -76,13 +76,13 @@ jobs:
             runner: ubuntu-latest
             compiler: gcc
             # These fail because of emulation, not because of the JIT:
-            exclude: test_unix_events test_init test_process_pool test_shutdown test_multiprocessing_fork test_cmd_line test_faulthandler test_os test_perf_profiler test_posix test_signal test_socket test_subprocess test_threading test_venv test_external_inspection
+            exclude: test_pathlib test_posixpath test_unix_events test_init test_process_pool test_shutdown test_multiprocessing_fork test_cmd_line test_faulthandler test_os test_perf_profiler test_posix test_signal test_socket test_subprocess test_threading test_venv test_external_inspection
           - target: aarch64-unknown-linux-gnu/clang
             architecture: aarch64
             runner: ubuntu-latest
             compiler: clang
             # These fail because of emulation, not because of the JIT:
-            exclude: test_unix_events test_init test_process_pool test_shutdown test_multiprocessing_fork test_cmd_line test_faulthandler test_os test_perf_profiler test_posix test_signal test_socket test_subprocess test_threading test_venv test_external_inspection
+            exclude: test_pathlib test_posixpath test_unix_events test_init test_process_pool test_shutdown test_multiprocessing_fork test_cmd_line test_faulthandler test_os test_perf_profiler test_posix test_signal test_socket test_subprocess test_threading test_venv test_external_inspection
     env:
       CC: ${{ matrix.compiler }}
     steps:

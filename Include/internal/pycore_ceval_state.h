@@ -24,20 +24,39 @@ struct _pending_call {
     struct _pending_call *next;
 };
 
-
 // We effectively drop the limit for per-interpreter pending calls.
 #define MAXPENDINGCALLS INT32_MAX
-// We don't want a flood of pending calls to interrupt any one thread
-// for too long, so we keep a limit on the number handled per pass.
-#define MAXPENDINGCALLSLOOP 100
+/* For interpreter-level pending calls, we want to avoid spending too
+   much time on pending calls in any one thread, so we apply a limit. */
+#if MAXPENDINGCALLS > 100
+#  define MAXPENDINGCALLSLOOP 100
+#else
+#  define MAXPENDINGCALLSLOOP MAXPENDINGCALLS
+#endif
+
+#define NPENDINGCALLSARRAY 32
+/* We keep the number small to preserve as much compatibility
+   as possible with earlier versions. */
+#define MAXPENDINGCALLS_MAIN NPENDINGCALLSARRAY
+/* For the main thread, we want to make sure all pending calls are
+   run at once, for the sake of prompt signal handling.  This is
+   unlikely to cause any problems since there should be very few
+   pending calls for the main thread. */
+#define MAXPENDINGCALLSLOOP_MAIN 0
 
 struct _pending_calls {
     int busy;
     PyMutex mutex;
     /* The number of pending calls. */
     int32_t npending;
+    /* The maximum allowed number of pending calls.
+       If the queue fills up to this point then _PyEval_AddPendingCall()
+       will return _Py_ADD_PENDING_FULL. */
     int32_t max;
-    /* How many pending calls are made at a time, at most. */
+    /* We don't want a flood of pending calls to interrupt any one thread
+       for too long, so we keep a limit on the number handled per pass.
+       A value of 0 means there is no limit (other than the maximum
+       size of the list of pending calls). */
     int32_t maxloop;
     /* The linked list of pending calls. */
     struct _pending_call *head;
@@ -52,7 +71,6 @@ typedef enum {
     PERF_STATUS_OK = 1,       // Perf trampoline is ready to be executed
 } perf_status_t;
 
-
 #ifdef PY_HAVE_PERF_TRAMPOLINE
 struct code_arena_st;
 
@@ -64,6 +82,7 @@ struct trampoline_api_st {
     void *state;
 };
 #endif
+
 
 struct _ceval_runtime_state {
     struct {
@@ -79,6 +98,10 @@ struct _ceval_runtime_state {
 #endif
     } perf;
     /* Pending calls to be made only on the main thread. */
+    // The signal machinery falls back on this
+    // so it must be especially stable and efficient.
+    // For example, we use a preallocated array
+    // for the list of pending calls.
     struct _pending_calls pending_mainthread;
     // Using a preallocated array for the first pending calls gives us
     // some extra stability in the case of signals.

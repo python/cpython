@@ -116,8 +116,8 @@ extern PyTypeObject _PyExc_MemoryError;
         .ceval = { \
             .perf = _PyEval_RUNTIME_PERF_INIT, \
             .pending_mainthread = { \
-                .max = NPENDINGCALLSARRAY, \
-                .maxloop = NPENDINGCALLSARRAY, \
+                .max = MAXPENDINGCALLS_MAIN, \
+                .maxloop = MAXPENDINGCALLSLOOP_MAIN, \
             }, \
         }, \
         .gilstate = { \

@@ -684,7 +684,7 @@ _pending_calls_init(struct _pending_calls *pending,
     assert(pending->npending == 0);
     assert(!pending->busy);
     assert(pending->max > 0);
-    assert(pending->maxloop > 0);
+    assert(pending->maxloop >= 0);
 
     assert(pending->freelist == NULL);
     if (preallocated) {
@@ -721,13 +721,10 @@ static int
 _push_pending_call(struct _pending_calls *pending,
                    _Py_pending_call_func func, void *arg, int flags)
 {
-    // XXX Drop the limit?
-    if (pending->max >= 0) {
-        if (pending->npending == pending->max) {
-            return -1; /* Queue full */
-        }
-        assert(pending->npending < pending->max);
+    if (pending->npending == pending->max) {
+        return _Py_ADD_PENDING_FULL;
     }
+    assert(pending->npending < pending->max);
 
     // Allocate for the pending call.
     struct _pending_call *call = pending->freelist;
@@ -737,7 +734,7 @@ _push_pending_call(struct _pending_calls *pending,
     else {
         call = PyMem_RawMalloc(sizeof(struct _pending_call));
         if (call == NULL) {
-            return -1;
+            return _Py_ADD_PENDING_NO_MEMORY;
         }
         call->from_heap = 1;
     }
@@ -759,7 +756,7 @@ _push_pending_call(struct _pending_calls *pending,
     pending->tail = call;
     _Py_atomic_add_int32(&pending->npending, 1);
 
-    return 0;
+    return _Py_ADD_PENDING_SUCCESS;
 }
 
 /* Pop one item off the queue while holding the lock. */
@@ -799,7 +796,7 @@ _pop_pending_call(struct _pending_calls *pending,
    callback.
  */
 
-int
+_Py_add_pending_call_result
 _PyEval_AddPendingCall(PyInterpreterState *interp,
                        _Py_pending_call_func func, void *arg, int flags)
 {
@@ -812,7 +809,8 @@ _PyEval_AddPendingCall(PyInterpreterState *interp,
     }
 
     PyMutex_Lock(&pending->mutex);
-    int result = _push_pending_call(pending, func, arg, flags);
+    _Py_add_pending_call_result result =
+        _push_pending_call(pending, func, arg, flags);
     PyMutex_Unlock(&pending->mutex);
 
     if (main_only) {
@@ -835,7 +833,15 @@ Py_AddPendingCall(_Py_pending_call_func func, void *arg)
     /* Legacy users of this API will continue to target the main thread
        (of the main interpreter). */
     PyInterpreterState *interp = _PyInterpreterState_Main();
-    return _PyEval_AddPendingCall(interp, func, arg, _Py_PENDING_MAINTHREADONLY);
+    _Py_add_pending_call_result r =
+        _PyEval_AddPendingCall(interp, func, arg, _Py_PENDING_MAINTHREADONLY);
+    if (r == _Py_ADD_PENDING_FULL) {
+        return -1;
+    }
+    else {
+        assert(r == _Py_ADD_PENDING_SUCCESS);
+        return 0;
+    }
 }
 
 static int
@@ -855,11 +861,19 @@ handle_signals(PyThreadState *tstate)
 }
 
 static int
-_make_pending_calls(struct _pending_calls *pending)
+_make_pending_calls(struct _pending_calls *pending, int32_t *p_npending)
 {
-    assert(pending->max > 0);  // XXX Drop this.
+    int res = 0;
+    int32_t npending = -1;
+
+    int32_t maxloop = pending->maxloop;
+    if (maxloop == 0) {
+        maxloop = pending->max;
+    }
+    assert(maxloop > 0 && maxloop <= pending->max);
+
     /* perform a bounded number of calls, in case of recursion */
-    for (int i=0; i<pending->maxloop; i++) {
+    for (int i=0; i<maxloop; i++) {
         _Py_pending_call_func func = NULL;
         void *arg = NULL;
         int flags = 0;
@@ -867,23 +881,30 @@ _make_pending_calls(struct _pending_calls *pending)
         /* pop one item off the queue while holding the lock */
         PyMutex_Lock(&pending->mutex);
         _pop_pending_call(pending, &func, &arg, &flags);
+        npending = pending->npending;
         PyMutex_Unlock(&pending->mutex);
 
-        /* having released the lock, perform the callback */
+        /* Check if there were any pending calls left. */
         if (func == NULL) {
-            // There are no pending calls left.
+            assert(npending == 0);
             break;
         }
-        int res = func(arg);
+
+        /* having released the lock, perform the callback */
+        res = func(arg);
         if ((flags & _Py_PENDING_RAWFREE) && arg != NULL) {
             PyMem_RawFree(arg);
         }
         if (res != 0) {
             assert(PyErr_Occurred());
-            return -1;
+            res = -1;
+            goto finally;
         }
     }
-    return 0;
+
+finally:
+    *p_npending = npending;
+    return res;
 }
 
 static void
@@ -937,25 +958,26 @@ make_pending_calls(PyThreadState *tstate)
        added in-between re-signals */
     unsignal_pending_calls(tstate, interp);
 
-    if (_make_pending_calls(pending) != 0) {
+    int32_t npending;
+    if (_make_pending_calls(pending, &npending) != 0) {
         pending->busy = 0;
         /* There might not be more calls to make, but we play it safe. */
         signal_pending_calls(tstate, interp);
         return -1;
     }
-    if (pending->npending > 0) {
+    if (npending > 0) {
         /* We hit pending->maxloop. */
         signal_pending_calls(tstate, interp);
     }
 
     if (_Py_IsMainThread() && _Py_IsMainInterpreter(interp)) {
-        if (_make_pending_calls(pending_main) != 0) {
+        if (_make_pending_calls(pending_main, &npending) != 0) {
             pending->busy = 0;
             /* There might not be more calls to make, but we play it safe. */
             signal_pending_calls(tstate, interp);
             return -1;
         }
-        if (pending_main->npending > 0) {
+        if (npending > 0) {
             /* We hit pending_main->maxloop. */
             signal_pending_calls(tstate, interp);
         }
