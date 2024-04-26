@@ -1,0 +1,1 @@
+The minimum Sphinx version required for the documentation is now 6.2.1.
