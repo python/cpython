@@ -3104,6 +3104,7 @@ date_today(PyObject *cls, PyObject *dummy)
 @classmethod
 datetime.date.fromtimestamp
 
+    defcls: defining_class
     timestamp: object
     /
 
@@ -3114,10 +3115,11 @@ as local time.
 [clinic start generated code]*/
 
 static PyObject *
-datetime_date_fromtimestamp(PyTypeObject *type, PyObject *timestamp)
-/*[clinic end generated code: output=fd045fda58168869 input=eabb3fe7f40491fe]*/
+datetime_date_fromtimestamp_impl(PyTypeObject *type, PyTypeObject *defcls,
+                                 PyObject *timestamp)
+/*[clinic end generated code: output=b387674ccfcdead8 input=1b3db9c4244c304e]*/
 {
-    datetime_state *st = find_module_state_by_def(type);
+    datetime_state *st = get_module_state_by_cls(defcls);
     return date_fromtimestamp(st, (PyObject *) type, timestamp);
 }
 
