@@ -5558,6 +5558,18 @@ datetime_datetime_fromtimestamp_impl(PyObject *cls, PyTypeObject *defcls,
     return self;
 }
 
+static PyObject *
+datetime_fromtimestamp_capi(PyObject *cls, PyObject *args, PyObject *kw)
+{
+    PyObject *timestamp;
+    PyObject *tzinfo = Py_None;
+    static char *keywords[] = {"timestamp", "tz", NULL};
+    if (! PyArg_ParseTupleAndKeywords(args, kw, "O|O:fromtimestamp",
+                                      keywords, &timestamp, &tzinfo))
+        return NULL;
+    return datetime_datetime_fromtimestamp_impl(cls, (PyTypeObject *)cls, timestamp, tzinfo);
+}
+
 /* Return new UTC datetime from timestamp (Python timestamp -- a double). */
 static PyObject *
 datetime_utcfromtimestamp(PyObject *cls, PyObject *args)
@@ -7084,7 +7096,7 @@ get_datetime_capi(datetime_state *st)
     capi->Time_FromTime = new_time_ex_capi;
     capi->Delta_FromDelta = new_delta_ex;
     capi->TimeZone_FromTimeZone = new_timezone_capi;
-    capi->DateTime_FromTimestamp = datetime_fromtimestamp;
+    capi->DateTime_FromTimestamp = datetime_fromtimestamp_capi;
     capi->Date_FromTimestamp = datetime_date_fromtimestamp_capi;
     capi->DateTime_FromDateAndTimeAndFold = new_datetime_ex2_capi;
     capi->Time_FromTimeAndFold = new_time_ex2_capi;
