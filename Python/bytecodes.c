@@ -3216,7 +3216,9 @@ dummy_func(
         }
 
         op(_CALL_NON_PY_GENERAL, (callable, self_or_null, args[oparg] -- res)) {
+#if TIER_ONE
             assert(opcode != INSTRUMENTED_CALL);
+#endif
             int total_args = oparg;
             if (self_or_null != NULL) {
                 args--;

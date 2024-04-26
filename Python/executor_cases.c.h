@@ -3144,7 +3144,9 @@
             args = &stack_pointer[-oparg];
             self_or_null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
+            #if TIER_ONE
             assert(opcode != INSTRUMENTED_CALL);
+            #endif
             int total_args = oparg;
             if (self_or_null != NULL) {
                 args--;
