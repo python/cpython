@@ -6920,13 +6920,24 @@ local_to_seconds(int year, int month, int day,
 /* date(1970,1,1).toordinal() == 719163 */
 #define EPOCH_SECONDS (719163LL * 24 * 60 * 60)
 
+/*[clinic input]
+datetime.datetime.timestamp
+
+    defcls: defining_class
+    /
+
+Return POSIX timestamp as float.
+[clinic start generated code]*/
+
 static PyObject *
-datetime_timestamp(PyDateTime_DateTime *self, PyObject *Py_UNUSED(ignored))
+datetime_datetime_timestamp_impl(PyDateTime_DateTime *self,
+                                 PyTypeObject *defcls)
+/*[clinic end generated code: output=2761fb3514c72fa7 input=605e82dfed8d9689]*/
 {
     PyObject *result;
 
     if (HASTZINFO(self) && self->tzinfo != Py_None) {
-        datetime_state *st = find_module_state_by_def(Py_TYPE(self));
+        datetime_state *st = get_module_state_by_cls(defcls);
         PyObject *delta;
         delta = _datetime_subtract(st, (PyObject *)self, st->epoch);
         if (delta == NULL)
@@ -7106,9 +7117,7 @@ static PyMethodDef datetime_methods[] = {
      PyDoc_STR("Return ctime() style string.")},
 
     DATETIME_DATETIME_TIMETUPLE_METHODDEF
-
-    {"timestamp",   (PyCFunction)datetime_timestamp, METH_NOARGS,
-     PyDoc_STR("Return POSIX timestamp as float.")},
+    DATETIME_DATETIME_TIMESTAMP_METHODDEF
 
     {"utctimetuple",   (PyCFunction)datetime_utctimetuple, METH_NOARGS,
      PyDoc_STR("Return UTC time tuple, compatible with time.localtime().")},
