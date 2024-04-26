@@ -152,23 +152,6 @@ _Py_untag_stack_owned(PyObject **dst, const _PyStackRef *src, size_t length) {
 #endif
 
 #if defined(Py_GIL_DISABLED)
-    static inline _PyStackRef
-    _Py_NewRef_StackRef_Owned(_PyStackRef tagged) {
-        if ((tagged.bits & Py_TAG_DEFERRED) == Py_TAG_DEFERRED) {
-            Py_INCREF(Py_STACKREF_UNTAG_BORROWED(tagged));
-            uintptr_t res = tagged.bits & (~Py_TAG_DEFERRED);
-            return ((_PyStackRef){.bits = res});
-        }
-        return tagged;
-    }
-    #define Py_NEWREF_STACKREF_OWNED(op) _Py_NewRef_StackRef_Owned(op)
-#else
-    #define Py_NEWREF_STACKREF_OWNED(op) (op)
-#endif
-
-#define Py_DECREF_STACKREF_OWNED(op) Py_DECREF(Py_STACKREF_UNTAG_BORROWED(op));
-
-#if defined(Py_GIL_DISABLED)
     static inline void
     _Py_IncRef_StackRef(_PyStackRef tagged) {
         if ((tagged.bits & Py_TAG_DEFERRED) == Py_TAG_DEFERRED) {
@@ -193,14 +176,14 @@ _Py_XDECREF_STACKREF(_PyStackRef op)
 #define Py_XDECREF_STACKREF(op) _Py_XDECREF_STACKREF(op)
 
 static inline _PyStackRef
-Py_NewRef_StackRef(_PyStackRef obj)
+_Py_NewRef_StackRef(_PyStackRef obj)
 {
     Py_INCREF_STACKREF(obj);
     return obj;
 }
 
 
-#define Py_NewRef_StackRef(op) Py_NewRef_StackRef(op)
+#define Py_NewRef_StackRef(op) _Py_NewRef_StackRef(op)
 
 #ifdef __cplusplus
 }
