@@ -5823,8 +5823,22 @@ _find_isoformat_datetime_separator(const char *dtstr, Py_ssize_t len) {
     }
 }
 
+/*[clinic input]
+@classmethod
+datetime.datetime.fromisoformat
+
+    cls: self(type="PyObject *")
+    defcls: defining_class
+    dtstr: object
+    /
+
+string -> datetime from a string in most ISO 8601 formats
+[clinic start generated code]*/
+
 static PyObject *
-datetime_fromisoformat(PyObject *cls, PyObject *dtstr)
+datetime_datetime_fromisoformat_impl(PyObject *cls, PyTypeObject *defcls,
+                                     PyObject *dtstr)
+/*[clinic end generated code: output=5f024cc279cd5ae5 input=bf5409a138f87123]*/
 {
     assert(dtstr != NULL);
 
@@ -5898,7 +5912,7 @@ datetime_fromisoformat(PyObject *cls, PyObject *dtstr)
         goto invalid_string_error;
     }
 
-    datetime_state *st = find_module_state_by_def(cls);
+    datetime_state *st = get_module_state_by_cls(defcls);
     PyObject *tzinfo = tzinfo_from_isoformat_results(st, rv, tzoffset, tzusec);
     if (tzinfo == NULL) {
         goto error;
@@ -6982,10 +6996,7 @@ static PyMethodDef datetime_methods[] = {
 
     DATETIME_DATETIME_STRPTIME_METHODDEF
     DATETIME_DATETIME_COMBINE_METHODDEF
-
-    {"fromisoformat", (PyCFunction)datetime_fromisoformat,
-     METH_O | METH_CLASS,
-     PyDoc_STR("string -> datetime from a string in most ISO 8601 formats")},
+    DATETIME_DATETIME_FROMISOFORMAT_METHODDEF
 
     /* Instance methods: */
 
