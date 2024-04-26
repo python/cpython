@@ -756,15 +756,32 @@ _PyEval_AddPendingCall(PyInterpreterState *interp,
         endtime = _PyDeadline_Init(timeout);
     }
 
-    _Py_add_pending_call_result result = -INT32_MIN;
-    do {
-        PyMutex_Lock(&pending->mutex);
-        result = _push_pending_call(pending, func, arg, flags);
-        PyMutex_Unlock(&pending->mutex);
-        if (timeout > 0) {
+    PyMutex_Lock(&pending->mutex);
+    _Py_add_pending_call_result result =
+            _push_pending_call(pending, func, arg, flags);
+    PyMutex_Unlock(&pending->mutex);
+
+    if (timeout > 0) {
+        /* We use this lock only to sleep. */
+        PyMutex timeout_sleeper = (PyMutex){0};
+        PyMutex_Lock(&timeout_sleeper);
+        while (result == _Py_ADD_PENDING_FULL) {
+            if (timeout <= 0) {
+                result = _Py_ADD_PENDING_TIMED_OUT;
+                break;
+            }
+#define SLEEP_NS 1000  /* 1 millisecond */
+            (void)_PyMutex_LockTimed(
+                    &timeout_sleeper, SLEEP_NS, _Py_LOCK_DONT_DETACH);
+
+            PyMutex_Lock(&pending->mutex);
+            result = _push_pending_call(pending, func, arg, flags);
+            PyMutex_Unlock(&pending->mutex);
+
             timeout = _PyDeadline_Get(endtime);
         }
-    } while (result == _Py_ADD_PENDING_FULL && timeout > 0);
+        PyMutex_Unlock(&timeout_sleeper);
+    }
 
     // XXX Do not update the eval breaker if not _Py_ADD_PENDING_SUCCESS.
     if (main_only) {
