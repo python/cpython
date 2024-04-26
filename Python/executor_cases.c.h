@@ -3144,6 +3144,7 @@
             args = &stack_pointer[-oparg];
             self_or_null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
+            assert(opcode != INSTRUMENTED_CALL);
             int total_args = oparg;
             if (self_or_null != NULL) {
                 args--;
@@ -3154,7 +3155,6 @@
                                       callable, args,
                                       total_args | PY_VECTORCALL_ARGUMENTS_OFFSET,
                                       NULL);
-            assert(opcode != INSTRUMENTED_CALL);
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
             Py_DECREF(callable);
             for (int i = 0; i < total_args; i++) {

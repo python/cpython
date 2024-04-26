@@ -1800,9 +1800,6 @@
             INSTRUCTION_STATS(CALL_NON_PY_GENERAL);
             static_assert(INLINE_CACHE_ENTRIES_CALL == 3, "incorrect cache size");
             PyObject *callable;
-            PyObject *null;
-            PyObject *method;
-            PyObject *self;
             PyObject **args;
             PyObject *self_or_null;
             PyObject *res;
@@ -1814,24 +1811,11 @@
                 DEOPT_IF(PyFunction_Check(callable), CALL);
                 DEOPT_IF(Py_TYPE(callable) == &PyMethod_Type, CALL);
             }
-            // _EXPAND_METHOD
-            null = stack_pointer[-1 - oparg];
-            {
-                assert(null == NULL);
-                assert(Py_TYPE(callable) == &PyMethod_Type);
-                self = ((PyMethodObject *)callable)->im_self;
-                Py_INCREF(self);
-                stack_pointer[-1 - oparg] = self;  // Patch stack as it is used by _CALL_PY_GENERAL
-                method = ((PyMethodObject *)callable)->im_func;
-                assert(PyFunction_Check(method));
-                Py_INCREF(method);
-                Py_DECREF(callable);
-            }
             // _CALL_NON_PY_GENERAL
             args = &stack_pointer[-oparg];
-            self_or_null = self;
-            callable = method;
+            self_or_null = stack_pointer[-1 - oparg];
             {
+                assert(opcode != INSTRUMENTED_CALL);
                 int total_args = oparg;
                 if (self_or_null != NULL) {
                     args--;
@@ -1842,13 +1826,12 @@
                                       callable, args,
                                       total_args | PY_VECTORCALL_ARGUMENTS_OFFSET,
                                       NULL);
-                assert(opcode != INSTRUMENTED_CALL);
                 assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
                 Py_DECREF(callable);
                 for (int i = 0; i < total_args; i++) {
                     Py_DECREF(args[i]);
                 }
-                if (res == NULL) { stack_pointer += -4 - oparg; goto error; }
+                if (res == NULL) { stack_pointer += -2 - oparg; goto error; }
             }
             // _CHECK_PERIODIC
             {

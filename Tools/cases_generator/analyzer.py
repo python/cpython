@@ -533,7 +533,6 @@ def compute_properties(op: parser.InstDef) -> Properties:
     exits_if = variable_used(op, "EXIT_IF")
     if deopts_if and exits_if:
         tkn = op.tokens[0]
-        print(op.tokens)
         raise lexer.make_syntax_error(
             "Op cannot contain both EXIT_IF and DEOPT_IF",
             tkn.filename,

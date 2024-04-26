@@ -1981,9 +1981,8 @@ specialize_c_call(PyObject *callable, _Py_CODEUNIT *instr, int nargs)
             return 0;
         }
         default:
-            SPECIALIZATION_FAIL(CALL,
-                builtin_call_fail_kind(PyCFunction_GET_FLAGS(callable)));
-            return 1;
+            instr->op.code = CALL_NON_PY_GENERAL;
+            return 0;
     }
 }
 
@@ -2045,8 +2044,8 @@ _Py_Specialize_Call(PyObject *callable, _Py_CODEUNIT *instr, int nargs)
         }
     }
     else {
-        SPECIALIZATION_FAIL(CALL, call_fail_kind(callable));
-        fail = -1;
+        instr->op.code = CALL_NON_PY_GENERAL;
+        fail = 0;
     }
     if (fail) {
         STAT_INC(CALL, failure);

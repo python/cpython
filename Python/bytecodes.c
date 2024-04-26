@@ -3217,6 +3217,7 @@ dummy_func(
         }
 
         op(_CALL_NON_PY_GENERAL, (callable, self_or_null, args[oparg] -- res)) {
+            assert(opcode != INSTRUMENTED_CALL);
             int total_args = oparg;
             if (self_or_null != NULL) {
                 args--;
@@ -3227,7 +3228,6 @@ dummy_func(
                 callable, args,
                 total_args | PY_VECTORCALL_ARGUMENTS_OFFSET,
                 NULL);
-            assert(opcode != INSTRUMENTED_CALL);
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
             Py_DECREF(callable);
             for (int i = 0; i < total_args; i++) {
@@ -3240,7 +3240,6 @@ dummy_func(
             unused/1 + // Skip over the counter
             unused/2 +
             _CHECK_IS_NOT_PY_CALLABLE +
-            _EXPAND_METHOD +
             _CALL_NON_PY_GENERAL +
             _CHECK_PERIODIC;
 
