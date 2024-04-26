@@ -5624,38 +5624,47 @@ datetime_datetime_strptime_impl(PyObject *cls, PyTypeObject *defcls,
                                       cls, string, format, NULL);
 }
 
-/* Return new datetime from date/datetime and time arguments. */
+/*[clinic input]
+@classmethod
+datetime.datetime.combine
+
+    cls: self(type="PyObject *")
+    defcls: defining_class
+    date: object(subclass_of='clinic_state()->PyDateTime_DateType')
+    time: object(subclass_of='clinic_state()->PyDateTime_TimeType')
+    tzinfo: object = NULL;
+
+date, time -> datetime with same date and time fields.
+
+Return new datetime from date/datetime and time arguments.
+[clinic start generated code]*/
+
 static PyObject *
-datetime_combine(PyObject *cls, PyObject *args, PyObject *kw)
+datetime_datetime_combine_impl(PyObject *cls, PyTypeObject *defcls,
+                               PyObject *date, PyObject *time,
+                               PyObject *tzinfo)
+/*[clinic end generated code: output=973e7edbdf2370fb input=43f4cea1bfda8e92]*/
 {
-    static char *keywords[] = {"date", "time", "tzinfo", NULL};
-    PyObject *date;
-    PyObject *time;
-    PyObject *tzinfo = NULL;
     PyObject *result = NULL;
 
-    datetime_state *st = find_module_state_by_def(cls);
-    if (PyArg_ParseTupleAndKeywords(args, kw, "O!O!|O:combine", keywords,
-                                    st->PyDateTime_DateType, &date,
-                                    st->PyDateTime_TimeType, &time, &tzinfo)) {
-        if (tzinfo == NULL) {
-            if (HASTZINFO(time))
-                tzinfo = ((PyDateTime_Time *)time)->tzinfo;
-            else
-                tzinfo = Py_None;
-        }
-        result = new_datetime_subclass_fold_ex(st,
-                                               GET_YEAR(date),
-                                               GET_MONTH(date),
-                                               GET_DAY(date),
-                                               TIME_GET_HOUR(time),
-                                               TIME_GET_MINUTE(time),
-                                               TIME_GET_SECOND(time),
-                                               TIME_GET_MICROSECOND(time),
-                                               tzinfo,
-                                               TIME_GET_FOLD(time),
-                                               cls);
+    datetime_state *st = get_module_state_by_cls(defcls);
+    if (tzinfo == NULL) {
+        if (HASTZINFO(time))
+            tzinfo = ((PyDateTime_Time *)time)->tzinfo;
+        else
+            tzinfo = Py_None;
     }
+    result = new_datetime_subclass_fold_ex(st,
+                                           GET_YEAR(date),
+                                           GET_MONTH(date),
+                                           GET_DAY(date),
+                                           TIME_GET_HOUR(time),
+                                           TIME_GET_MINUTE(time),
+                                           TIME_GET_SECOND(time),
+                                           TIME_GET_MICROSECOND(time),
+                                           tzinfo,
+                                           TIME_GET_FOLD(time),
+                                           cls);
     return result;
 }
 
@@ -6972,10 +6981,7 @@ static PyMethodDef datetime_methods[] = {
      PyDoc_STR("Construct a naive UTC datetime from a POSIX timestamp.")},
 
     DATETIME_DATETIME_STRPTIME_METHODDEF
-
-    {"combine", _PyCFunction_CAST(datetime_combine),
-     METH_VARARGS | METH_KEYWORDS | METH_CLASS,
-     PyDoc_STR("date, time -> datetime with same date and time fields")},
+    DATETIME_DATETIME_COMBINE_METHODDEF
 
     {"fromisoformat", (PyCFunction)datetime_fromisoformat,
      METH_O | METH_CLASS,
