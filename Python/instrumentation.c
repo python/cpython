@@ -2569,9 +2569,15 @@ _PyMonitoring_FirePyThrowEvent(PyMonitoringState *state, PyObject *codelike, int
                                PyObject *exception)
 {
     assert(state->active);
+    PyObject *exc = PyErr_GetRaisedException();
+
     PyObject *args[4] = { NULL, NULL, NULL, exception };
-    return capi_call_instrumentation(state, codelike, offset, args, 3,
-                                     PY_MONITORING_EVENT_PY_THROW);
+    int res = capi_call_instrumentation(state, codelike, offset, args, 3,
+                                        PY_MONITORING_EVENT_PY_THROW);
+    if (res >= 0) {
+        PyErr_SetRaisedException(exc);
+    }
+    return res;
 }
 
 int
@@ -2579,9 +2585,15 @@ _PyMonitoring_FireRaiseEvent(PyMonitoringState *state, PyObject *codelike, int32
                              PyObject *exception)
 {
     assert(state->active);
+    PyObject *exc = PyErr_GetRaisedException();
+
     PyObject *args[4] = { NULL, NULL, NULL, exception };
-    return capi_call_instrumentation(state, codelike, offset, args, 3,
-                                     PY_MONITORING_EVENT_RAISE);
+    int res = capi_call_instrumentation(state, codelike, offset, args, 3,
+                                        PY_MONITORING_EVENT_RAISE);
+    if (res >= 0) {
+        PyErr_SetRaisedException(exc);
+    }
+    return res;
 }
 
 int
@@ -2589,9 +2601,15 @@ _PyMonitoring_FireCRaiseEvent(PyMonitoringState *state, PyObject *codelike, int3
                               PyObject *exception)
 {
     assert(state->active);
+    PyObject *exc = PyErr_GetRaisedException();
+
     PyObject *args[4] = { NULL, NULL, NULL, exception };
-    return capi_call_instrumentation(state, codelike, offset, args, 3,
-                                     PY_MONITORING_EVENT_C_RAISE);
+    int res = capi_call_instrumentation(state, codelike, offset, args, 3,
+                                        PY_MONITORING_EVENT_C_RAISE);
+    if (res >= 0) {
+        PyErr_SetRaisedException(exc);
+    }
+    return res;
 }
 
 int
@@ -2599,9 +2617,15 @@ _PyMonitoring_FireReraiseEvent(PyMonitoringState *state, PyObject *codelike, int
                                PyObject *exception)
 {
     assert(state->active);
+    PyObject *exc = PyErr_GetRaisedException();
+
     PyObject *args[4] = { NULL, NULL, NULL, exception };
-    return capi_call_instrumentation(state, codelike, offset, args, 3,
-                                     PY_MONITORING_EVENT_RERAISE);
+    int res = capi_call_instrumentation(state, codelike, offset, args, 3,
+                                        PY_MONITORING_EVENT_RERAISE);
+    if (res >= 0) {
+        PyErr_SetRaisedException(exc);
+    }
+    return res;
 }
 
 int
@@ -2609,9 +2633,15 @@ _PyMonitoring_FireExceptionHandledEvent(PyMonitoringState *state, PyObject *code
                                         PyObject *exception)
 {
     assert(state->active);
+    PyObject *exc = PyErr_GetRaisedException();
+
     PyObject *args[4] = { NULL, NULL, NULL, exception };
-    return capi_call_instrumentation(state, codelike, offset, args, 3,
-                                     PY_MONITORING_EVENT_EXCEPTION_HANDLED);
+    int res = capi_call_instrumentation(state, codelike, offset, args, 3,
+                                        PY_MONITORING_EVENT_EXCEPTION_HANDLED);
+    if (res >= 0) {
+        PyErr_SetRaisedException(exc);
+    }
+    return res;
 }
 
 int
@@ -2619,9 +2649,15 @@ _PyMonitoring_FirePyUnwindEvent(PyMonitoringState *state, PyObject *codelike, in
                                 PyObject *exception)
 {
     assert(state->active);
+    PyObject *exc = PyErr_GetRaisedException();
+
     PyObject *args[4] = { NULL, NULL, NULL, exception };
-    return capi_call_instrumentation(state, codelike, offset, args, 3,
-                                     PY_MONITORING_EVENT_PY_UNWIND);
+    int res = capi_call_instrumentation(state, codelike, offset, args, 3,
+                                        PY_MONITORING_EVENT_PY_UNWIND);
+    if (res >= 0) {
+        PyErr_SetRaisedException(exc);
+    }
+    return res;
 }
 
 int
@@ -2629,7 +2665,13 @@ _PyMonitoring_FireStopIterationEvent(PyMonitoringState *state, PyObject *codelik
                                      PyObject *exception)
 {
     assert(state->active);
+    PyObject *exc = PyErr_GetRaisedException();
+
     PyObject *args[4] = { NULL, NULL, NULL, exception };
-    return capi_call_instrumentation(state, codelike, offset, args, 3,
-                                     PY_MONITORING_EVENT_STOP_ITERATION);
+    int res = capi_call_instrumentation(state, codelike, offset, args, 3,
+                                        PY_MONITORING_EVENT_STOP_ITERATION);
+    if (res >= 0) {
+        PyErr_SetRaisedException(exc);
+    }
+    return res;
 }

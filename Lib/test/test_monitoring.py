@@ -1928,6 +1928,7 @@ class TestCApiEventGeneration(MonitoringTestBase, unittest.TestCase):
             ( 1, E.STOP_ITERATION, capi.fire_event_stop_iteration, ValueError(7)),
         ]
 
+
     def check_event_count(self, event, func, args, expected):
         class Counter:
             def __init__(self):
@@ -1961,8 +1962,23 @@ class TestCApiEventGeneration(MonitoringTestBase, unittest.TestCase):
         for expected, event, function, *args in self.cases:
             offset = 0
             self.codelike = _testcapi.CodeLike(1)
+            with_exc = False
             with self.subTest(function.__name__):
-                args_ = (self.codelike, 0) + tuple(args)
+                args_ = (self.codelike, offset, with_exc) + tuple(args)
+                self.check_event_count(event, function, args_, expected)
+
+    EXCEPTION_EVENTS = { E.PY_THROW, E.RAISE, E.EXCEPTION_HANDLED,
+                         E.PY_UNWIND, E.STOP_ITERATION }
+
+    def test_fire_event_with_exc(self):
+        for expected, event, function, *args in self.cases:
+            if not event in self.EXCEPTION_EVENTS:
+                continue
+            offset = 0
+            self.codelike = _testcapi.CodeLike(1)
+            with_exc = True
+            with self.subTest(function.__name__):
+                args_ = (self.codelike, offset, with_exc) + tuple(args)
                 self.check_event_count(event, function, args_, expected)
 
     CANNOT_DISABLE = { E.PY_THROW, E.RAISE, E.RERAISE,
@@ -2008,7 +2024,7 @@ class TestCApiEventGeneration(MonitoringTestBase, unittest.TestCase):
             offset = 0
             self.codelike = _testcapi.CodeLike(2)
             with self.subTest(function.__name__):
-                args_ = (self.codelike, 0) + tuple(args)
+                args_ = (self.codelike, 0, False) + tuple(args)
                 self.check_disable(event, function, args_, expected)
 
     def test_enter_scope_two_events(self):
@@ -2022,24 +2038,25 @@ class TestCApiEventGeneration(MonitoringTestBase, unittest.TestCase):
             yield_value = int(math.log2(E.PY_YIELD))
             unwind_value = int(math.log2(E.PY_UNWIND))
             cl = _testcapi.CodeLike(2)
+            common_args = (cl, 0, False)
             with self.Scope(cl, yield_value, unwind_value):
                 yield_counter.count = 0
                 unwind_counter.count = 0
 
-                _testcapi.fire_event_py_unwind(cl, 0, ValueError(42))
+                _testcapi.fire_event_py_unwind(*common_args, ValueError(42))
                 assert(yield_counter.count == 0)
                 assert(unwind_counter.count == 1)
 
-                _testcapi.fire_event_py_yield(cl, 0, ValueError(42))
+                _testcapi.fire_event_py_yield(*common_args, ValueError(42))
                 assert(yield_counter.count == 1)
                 assert(unwind_counter.count == 1)
 
                 yield_counter.disable = True
-                _testcapi.fire_event_py_yield(cl, 0, ValueError(42))
+                _testcapi.fire_event_py_yield(*common_args, ValueError(42))
                 assert(yield_counter.count == 2)
                 assert(unwind_counter.count == 1)
 
-                _testcapi.fire_event_py_yield(cl, 0, ValueError(42))
+                _testcapi.fire_event_py_yield(*common_args, ValueError(42))
                 assert(yield_counter.count == 2)
                 assert(unwind_counter.count == 1)
 
