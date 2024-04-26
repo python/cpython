@@ -5520,19 +5520,27 @@ datetime_utcnow(PyObject *cls, PyObject *dummy)
     return datetime_best_possible(st, cls, _PyTime_gmtime, Py_None);
 }
 
-/* Return new local datetime from timestamp (Python timestamp -- a double). */
+/*[clinic input]
+@classmethod
+datetime.datetime.fromtimestamp
+
+    cls: self(type="PyObject *")
+    defcls: defining_class
+    timestamp: object
+    tz as tzinfo: object = None
+
+timestamp[, tz] -> tz's local time from POSIX timestamp.
+
+Return new local datetime from timestamp (Python timestamp -- a double).
+[clinic start generated code]*/
+
 static PyObject *
-datetime_fromtimestamp(PyObject *cls, PyObject *args, PyObject *kw)
+datetime_datetime_fromtimestamp_impl(PyObject *cls, PyTypeObject *defcls,
+                                     PyObject *timestamp, PyObject *tzinfo)
+/*[clinic end generated code: output=2cbe69dea19b6df9 input=47b4a2977d90c439]*/
 {
     PyObject *self;
-    PyObject *timestamp;
-    PyObject *tzinfo = Py_None;
-    static char *keywords[] = {"timestamp", "tz", NULL};
-
-    if (! PyArg_ParseTupleAndKeywords(args, kw, "O|O:fromtimestamp",
-                                      keywords, &timestamp, &tzinfo))
-        return NULL;
-    datetime_state *st = find_module_state_by_def(cls);
+    datetime_state *st = get_module_state_by_cls(defcls);
     if (check_tzinfo_subclass(st, tzinfo) < 0)
         return NULL;
 
@@ -6934,9 +6942,7 @@ static PyMethodDef datetime_methods[] = {
      METH_NOARGS | METH_CLASS,
      PyDoc_STR("Return a new datetime representing UTC day and time.")},
 
-    {"fromtimestamp", _PyCFunction_CAST(datetime_fromtimestamp),
-     METH_VARARGS | METH_KEYWORDS | METH_CLASS,
-     PyDoc_STR("timestamp[, tz] -> tz's local time from POSIX timestamp.")},
+    DATETIME_DATETIME_FROMTIMESTAMP_METHODDEF
 
     {"utcfromtimestamp", (PyCFunction)datetime_utcfromtimestamp,
      METH_VARARGS | METH_CLASS,
