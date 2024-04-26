@@ -3937,14 +3937,26 @@ static inline PyObject *
 _datetime_dst(datetime_state *st, PyObject *self);
 
 
+/*[clinic input]
+datetime.tzinfo.fromutc
+
+    defcls: defining_class
+    dt: object
+    /
+
+datetime in UTC -> datetime in local time.
+[clinic start generated code]*/
+
 static PyObject *
-tzinfo_fromutc(PyDateTime_TZInfo *self, PyObject *dt)
+datetime_tzinfo_fromutc_impl(PyDateTime_TZInfo *self, PyTypeObject *defcls,
+                             PyObject *dt)
+/*[clinic end generated code: output=94232bf0b95e71c6 input=8120c9bd10df62c9]*/
 {
     PyObject *result = NULL;
     PyObject *off = NULL, *dst = NULL;
     PyDateTime_Delta *delta = NULL;
 
-    datetime_state *st = find_module_state_by_def(Py_TYPE(self));
+    datetime_state *st = get_module_state_by_cls(defcls);
     if (!PyDateTime_Check(st, dt)) {
         PyErr_SetString(PyExc_TypeError,
                         "fromutc: argument must be a datetime");
@@ -4073,8 +4085,7 @@ static PyMethodDef tzinfo_methods[] = {
     {"dst",             (PyCFunction)tzinfo_dst,                METH_O,
      PyDoc_STR("datetime -> DST offset as timedelta positive east of UTC.")},
 
-    {"fromutc",         (PyCFunction)tzinfo_fromutc,            METH_O,
-     PyDoc_STR("datetime in UTC -> datetime in local time.")},
+    DATETIME_TZINFO_FROMUTC_METHODDEF
 
     {"__reduce__",  tzinfo_reduce,             METH_NOARGS,
      PyDoc_STR("-> (cls, state)")},
