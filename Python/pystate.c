@@ -1569,7 +1569,9 @@ new_threadstate(PyInterpreterState *interp, int whence)
     }
     else {
 #ifdef Py_GIL_DISABLED
-        if (interp->gc.immortalize.enable_on_thread_created && !interp->gc.immortalize.enabled) {
+        if (interp->gc.immortalize.enable_on_thread_created &&
+            !interp->gc.immortalize.enabled)
+        {
             // Immortalize objects marked as using deferred reference counting
             // the first time a non-main thread is created.
             _PyGC_ImmortalizeDeferredObjects(interp);
