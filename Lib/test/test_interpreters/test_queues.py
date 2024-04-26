@@ -7,7 +7,7 @@ import time
 
 from test.support import import_helper, Py_DEBUG
 # Raise SkipTest if subinterpreters not supported.
-_queues = import_helper.import_module('_xxinterpqueues')
+_queues = import_helper.import_module('_interpqueues')
 from test.support import interpreters
 from test.support.interpreters import queues
 from .utils import _run_output, TestBase as _TestBase

@@ -93,7 +93,7 @@ static inline void _PyObject_GC_SET_SHARED(PyObject *op) {
  * threads and needs special purpose when freeing due to
  * the possibility of in-flight lock-free reads occurring.
  * Objects with this bit that are GC objects will automatically
- * delay-freed by PyObject_GC_Del.  */
+ * delay-freed by PyObject_GC_Del. */
 static inline int _PyObject_GC_IS_SHARED_INLINE(PyObject *op) {
     return (op->ob_gc_bits & _PyGC_BITS_SHARED_INLINE) != 0;
 }

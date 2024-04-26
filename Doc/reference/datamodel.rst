@@ -932,11 +932,8 @@ name is not found there, the attribute search continues in the base classes.
 This search of the base classes uses the C3 method resolution order which
 behaves correctly even in the presence of 'diamond' inheritance structures
 where there are multiple inheritance paths leading back to a common ancestor.
-Additional details on the C3 MRO used by Python can be found in the
-documentation accompanying the 2.3 release at
-https://www.python.org/download/releases/2.3/mro/.
-
-.. XXX: Could we add that MRO doc as an appendix to the language ref?
+Additional details on the C3 MRO used by Python can be found at
+:ref:`python_2.3_mro`.
 
 .. index::
    pair: object; class
@@ -973,6 +970,7 @@ A class object can be called (see above) to yield a class instance (see below).
    single: __doc__ (class attribute)
    single: __annotations__ (class attribute)
    single: __type_params__ (class attribute)
+   single: __static_attributes__ (class attribute)
 
 Special attributes:
 
@@ -1002,6 +1000,10 @@ Special attributes:
    :attr:`__type_params__`
       A tuple containing the :ref:`type parameters <type-params>` of
       a :ref:`generic class <generic-classes>`.
+
+   :attr:`~class.__static_attributes__`
+      A tuple containing names of attributes of this class which are accessed
+      through ``self.X`` from any function in its body.
 
 
 Class instances
