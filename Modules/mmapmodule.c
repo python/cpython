@@ -486,10 +486,15 @@ mmap_write_method(mmap_object *self,
     }
 
     CHECK_VALID_OR_RELEASE(NULL, data);
-    memcpy(&self->data[self->pos], data.buf, data.len);
-    self->pos += data.len;
-    PyBuffer_Release(&data);
-    return PyLong_FromSsize_t(data.len);
+    if (safe_memcpy(self->data + self->pos, data.buf, data.len) < 0) {
+        PyBuffer_Release(&data);
+        return NULL;
+    }
+    else {
+        self->pos += data.len;
+        PyBuffer_Release(&data);
+        return PyLong_FromSsize_t(data.len);
+    }
 }
 
 static PyObject *
