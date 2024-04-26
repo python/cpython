@@ -3057,6 +3057,9 @@ dummy_func(
             CALL_METHOD_DESCRIPTOR_NOARGS,
             CALL_METHOD_DESCRIPTOR_FAST,
             CALL_ALLOC_AND_ENTER_INIT,
+            CALL_PY_GENERAL,
+            CALL_BOUND_METHOD_GENERAL,
+            CALL_NON_PY_GENERAL,
         };
 
         specializing op(_SPECIALIZE_CALL, (counter/1, callable, self_or_null, args[oparg] -- callable, self_or_null, args[oparg])) {
@@ -3145,6 +3148,101 @@ dummy_func(
         }
 
         macro(CALL) = _SPECIALIZE_CALL + unused/2 + _CALL + _CHECK_PERIODIC;
+
+        op(_CALL_PY_GENERAL, (callable, self_or_null, args[oparg] -- new_frame: _PyInterpreterFrame*)) {
+            // oparg counts all of the args, but *not* self:
+            int total_args = oparg;
+            if (self_or_null != NULL) {
+                args--;
+                total_args++;
+            }
+            assert(Py_TYPE(callable) == &PyFunction_Type);
+            int code_flags = ((PyCodeObject*)PyFunction_GET_CODE(callable))->co_flags;
+            PyObject *locals = code_flags & CO_OPTIMIZED ? NULL : Py_NewRef(PyFunction_GET_GLOBALS(callable));
+            new_frame = _PyEvalFramePushAndInit(
+                tstate, (PyFunctionObject *)callable, locals,
+                args, total_args, NULL
+            );
+            // The frame has stolen all the arguments from the stack,
+            // so there is no need to clean them up.
+            SYNC_SP();
+            if (new_frame == NULL) {
+                ERROR_NO_POP();
+            }
+            frame->return_offset = (uint16_t)(1 + INLINE_CACHE_ENTRIES_CALL);
+        }
+
+        op(_CHECK_IS_FUNCTION, (callable, unused, unused[oparg] -- callable, unused, unused[oparg])) {
+            DEOPT_IF(!PyFunction_Check(callable));
+        }
+
+        macro(CALL_PY_GENERAL) =
+            unused/1 + // Skip over the counter
+            unused/2 +
+            _CHECK_PEP_523 +
+            _CHECK_IS_FUNCTION +
+            _CALL_PY_GENERAL +
+            _PUSH_FRAME;
+
+        op(_CHECK_IS_METHOD, (callable, null, unused[oparg] -- callable, null, unused[oparg])) {
+            DEOPT_IF(Py_TYPE(callable) != &PyMethod_Type);
+            DEOPT_IF(!PyFunction_Check(((PyMethodObject *)callable)->im_func));
+            DEOPT_IF(null != NULL);
+        }
+
+        op(_EXPAND_METHOD, (callable, null, unused[oparg] -- method, self, unused[oparg])) {
+            assert(null == NULL);
+            assert(Py_TYPE(callable) == &PyMethod_Type);
+            self = ((PyMethodObject *)callable)->im_self;
+            Py_INCREF(self);
+            stack_pointer[-1 - oparg] = self;  // Patch stack as it is used by _CALL_PY_GENERAL
+            method = ((PyMethodObject *)callable)->im_func;
+            assert(PyFunction_Check(method));
+            Py_INCREF(method);
+            Py_DECREF(callable);
+        }
+
+        macro(CALL_BOUND_METHOD_GENERAL) =
+            unused/1 + // Skip over the counter
+            unused/2 +
+            _CHECK_PEP_523 +
+            _CHECK_IS_METHOD +
+            _EXPAND_METHOD +
+            _CALL_PY_GENERAL +
+            _PUSH_FRAME;
+
+        op(_CHECK_IS_NOT_PY_CALLABLE, (callable, unused, unused[oparg] -- callable, unused, unused[oparg])) {
+            DEOPT_IF(PyFunction_Check(callable));
+            DEOPT_IF(Py_TYPE(callable) == &PyMethod_Type);
+        }
+
+        op(_CALL_NON_PY_GENERAL, (callable, self_or_null, args[oparg] -- res)) {
+            int total_args = oparg;
+            if (self_or_null != NULL) {
+                args--;
+                total_args++;
+            }
+            /* Callable is not a normal Python function */
+            res = PyObject_Vectorcall(
+                callable, args,
+                total_args | PY_VECTORCALL_ARGUMENTS_OFFSET,
+                NULL);
+            assert(opcode != INSTRUMENTED_CALL);
+            assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
+            Py_DECREF(callable);
+            for (int i = 0; i < total_args; i++) {
+                Py_DECREF(args[i]);
+            }
+            ERROR_IF(res == NULL, error);
+        }
+
+        macro(CALL_NON_PY_GENERAL) =
+            unused/1 + // Skip over the counter
+            unused/2 +
+            _CHECK_IS_NOT_PY_CALLABLE +
+            _EXPAND_METHOD +
+            _CALL_NON_PY_GENERAL +
+            _CHECK_PERIODIC;
 
         op(_CHECK_CALL_BOUND_METHOD_EXACT_ARGS, (callable, null, unused[oparg] -- callable, null, unused[oparg])) {
             DEOPT_IF(null != NULL);

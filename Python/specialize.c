@@ -1917,36 +1917,26 @@ specialize_py_call(PyFunctionObject *func, _Py_CODEUNIT *instr, int nargs,
         SPECIALIZATION_FAIL(CALL, SPEC_FAIL_CALL_PEP_523);
         return -1;
     }
-    if (kind != SIMPLE_FUNCTION) {
-        SPECIALIZATION_FAIL(CALL, kind);
+    int argcount = -1;
+    if (kind == SPEC_FAIL_CODE_NOT_OPTIMIZED) {
+        SPECIALIZATION_FAIL(CALL, SPEC_FAIL_CODE_NOT_OPTIMIZED);
         return -1;
     }
-    int argcount = code->co_argcount;
-    int defcount = func->func_defaults == NULL ? 0 : (int)PyTuple_GET_SIZE(func->func_defaults);
-    int min_args = argcount-defcount;
-    // GH-105840: min_args is negative when somebody sets too many __defaults__!
-    if (min_args < 0 || nargs > argcount || nargs < min_args) {
-        SPECIALIZATION_FAIL(CALL, SPEC_FAIL_WRONG_NUMBER_ARGUMENTS);
-        return -1;
+    if (kind == SIMPLE_FUNCTION) {
+        argcount = code->co_argcount;
     }
-    assert(nargs <= argcount && nargs >= min_args);
-    assert(min_args >= 0 && defcount >= 0);
-    assert(defcount == 0 || func->func_defaults != NULL);
-    int version = _PyFunction_GetVersionForCurrentState(func);
-    if (version == 0) {
-        SPECIALIZATION_FAIL(CALL, SPEC_FAIL_OUT_OF_VERSIONS);
-        return -1;
-    }
-    write_u32(cache->func_version, version);
-    if (argcount == nargs) {
+    if (argcount == nargs + bound_method) {
+        int version = _PyFunction_GetVersionForCurrentState(func);
+        if (version == 0) {
+            SPECIALIZATION_FAIL(CALL, SPEC_FAIL_OUT_OF_VERSIONS);
+            return -1;
+        }
+        write_u32(cache->func_version, version);
         instr->op.code = bound_method ? CALL_BOUND_METHOD_EXACT_ARGS : CALL_PY_EXACT_ARGS;
     }
-    else if (bound_method) {
-        SPECIALIZATION_FAIL(CALL, SPEC_FAIL_CALL_BOUND_METHOD);
-        return -1;
-    }
     else {
-        instr->op.code = CALL_PY_WITH_DEFAULTS;
+        instr->op.code = bound_method ? CALL_BOUND_METHOD_GENERAL : CALL_PY_GENERAL;
+        return 0;
     }
     return 0;
 }
@@ -2047,7 +2037,7 @@ _Py_Specialize_Call(PyObject *callable, _Py_CODEUNIT *instr, int nargs)
     else if (PyMethod_Check(callable)) {
         PyObject *func = ((PyMethodObject *)callable)->im_func;
         if (PyFunction_Check(func)) {
-            fail = specialize_py_call((PyFunctionObject *)func, instr, nargs+1, true);
+            fail = specialize_py_call((PyFunctionObject *)func, instr, nargs, true);
         }
         else {
             SPECIALIZATION_FAIL(CALL, SPEC_FAIL_CALL_BOUND_METHOD);

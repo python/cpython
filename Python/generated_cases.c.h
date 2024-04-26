@@ -1002,6 +1002,87 @@
             DISPATCH();
         }
 
+        TARGET(CALL_BOUND_METHOD_GENERAL) {
+            frame->instr_ptr = next_instr;
+            next_instr += 4;
+            INSTRUCTION_STATS(CALL_BOUND_METHOD_GENERAL);
+            static_assert(INLINE_CACHE_ENTRIES_CALL == 3, "incorrect cache size");
+            PyObject *null;
+            PyObject *callable;
+            PyObject *method;
+            PyObject *self;
+            PyObject **args;
+            PyObject *self_or_null;
+            _PyInterpreterFrame *new_frame;
+            /* Skip 1 cache entry */
+            /* Skip 2 cache entries */
+            // _CHECK_PEP_523
+            {
+                DEOPT_IF(tstate->interp->eval_frame, CALL);
+            }
+            // _CHECK_IS_METHOD
+            null = stack_pointer[-1 - oparg];
+            callable = stack_pointer[-2 - oparg];
+            {
+                DEOPT_IF(Py_TYPE(callable) != &PyMethod_Type, CALL);
+                DEOPT_IF(!PyFunction_Check(((PyMethodObject *)callable)->im_func), CALL);
+                DEOPT_IF(null != NULL, CALL);
+            }
+            // _EXPAND_METHOD
+            {
+                assert(null == NULL);
+                assert(Py_TYPE(callable) == &PyMethod_Type);
+                self = ((PyMethodObject *)callable)->im_self;
+                Py_INCREF(self);
+                stack_pointer[-1 - oparg] = self;  // Patch stack as it is used by _CALL_PY_GENERAL
+                method = ((PyMethodObject *)callable)->im_func;
+                assert(PyFunction_Check(method));
+                Py_INCREF(method);
+                Py_DECREF(callable);
+            }
+            // _CALL_PY_GENERAL
+            args = &stack_pointer[-oparg];
+            self_or_null = self;
+            callable = method;
+            {
+                // oparg counts all of the args, but *not* self:
+                int total_args = oparg;
+                if (self_or_null != NULL) {
+                    args--;
+                    total_args++;
+                }
+                assert(Py_TYPE(callable) == &PyFunction_Type);
+                int code_flags = ((PyCodeObject*)PyFunction_GET_CODE(callable))->co_flags;
+                PyObject *locals = code_flags & CO_OPTIMIZED ? NULL : Py_NewRef(PyFunction_GET_GLOBALS(callable));
+                new_frame = _PyEvalFramePushAndInit(
+                    tstate, (PyFunctionObject *)callable, locals,
+                    args, total_args, NULL
+                );
+                // The frame has stolen all the arguments from the stack,
+                // so there is no need to clean them up.
+                stack_pointer += -2 - oparg;
+                if (new_frame == NULL) {
+                    goto error;
+                }
+                frame->return_offset = (uint16_t)(1 + INLINE_CACHE_ENTRIES_CALL);
+            }
+            // _PUSH_FRAME
+            {
+                // Write it out explicitly because it's subtly different.
+                // Eventually this should be the only occurrence of this code.
+                assert(tstate->interp->eval_frame == NULL);
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                new_frame->previous = frame;
+                CALL_STAT_INC(inlined_py_calls);
+                frame = tstate->current_frame = new_frame;
+                tstate->py_recursion_remaining--;
+                LOAD_SP();
+                LOAD_IP(0);
+                LLTRACE_RESUME_FRAME();
+            }
+            DISPATCH();
+        }
+
         TARGET(CALL_BUILTIN_CLASS) {
             frame->instr_ptr = next_instr;
             next_instr += 4;
@@ -1713,6 +1794,71 @@
             DISPATCH();
         }
 
+        TARGET(CALL_NON_PY_GENERAL) {
+            frame->instr_ptr = next_instr;
+            next_instr += 4;
+            INSTRUCTION_STATS(CALL_NON_PY_GENERAL);
+            static_assert(INLINE_CACHE_ENTRIES_CALL == 3, "incorrect cache size");
+            PyObject *callable;
+            PyObject *null;
+            PyObject *method;
+            PyObject *self;
+            PyObject **args;
+            PyObject *self_or_null;
+            PyObject *res;
+            /* Skip 1 cache entry */
+            /* Skip 2 cache entries */
+            // _CHECK_IS_NOT_PY_CALLABLE
+            callable = stack_pointer[-2 - oparg];
+            {
+                DEOPT_IF(PyFunction_Check(callable), CALL);
+                DEOPT_IF(Py_TYPE(callable) == &PyMethod_Type, CALL);
+            }
+            // _EXPAND_METHOD
+            null = stack_pointer[-1 - oparg];
+            {
+                assert(null == NULL);
+                assert(Py_TYPE(callable) == &PyMethod_Type);
+                self = ((PyMethodObject *)callable)->im_self;
+                Py_INCREF(self);
+                stack_pointer[-1 - oparg] = self;  // Patch stack as it is used by _CALL_PY_GENERAL
+                method = ((PyMethodObject *)callable)->im_func;
+                assert(PyFunction_Check(method));
+                Py_INCREF(method);
+                Py_DECREF(callable);
+            }
+            // _CALL_NON_PY_GENERAL
+            args = &stack_pointer[-oparg];
+            self_or_null = self;
+            callable = method;
+            {
+                int total_args = oparg;
+                if (self_or_null != NULL) {
+                    args--;
+                    total_args++;
+                }
+                /* Callable is not a normal Python function */
+                res = PyObject_Vectorcall(
+                                      callable, args,
+                                      total_args | PY_VECTORCALL_ARGUMENTS_OFFSET,
+                                      NULL);
+                assert(opcode != INSTRUMENTED_CALL);
+                assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
+                Py_DECREF(callable);
+                for (int i = 0; i < total_args; i++) {
+                    Py_DECREF(args[i]);
+                }
+                if (res == NULL) { stack_pointer += -4 - oparg; goto error; }
+            }
+            // _CHECK_PERIODIC
+            {
+            }
+            stack_pointer[-2 - oparg] = res;
+            stack_pointer += -1 - oparg;
+            CHECK_EVAL_BREAKER();
+            DISPATCH();
+        }
+
         TARGET(CALL_PY_EXACT_ARGS) {
             _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
             next_instr += 4;
@@ -1774,6 +1920,68 @@
                 // Eventually this should be the only occurrence of this code.
                 assert(tstate->interp->eval_frame == NULL);
                 stack_pointer += -2 - oparg;
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                new_frame->previous = frame;
+                CALL_STAT_INC(inlined_py_calls);
+                frame = tstate->current_frame = new_frame;
+                tstate->py_recursion_remaining--;
+                LOAD_SP();
+                LOAD_IP(0);
+                LLTRACE_RESUME_FRAME();
+            }
+            DISPATCH();
+        }
+
+        TARGET(CALL_PY_GENERAL) {
+            frame->instr_ptr = next_instr;
+            next_instr += 4;
+            INSTRUCTION_STATS(CALL_PY_GENERAL);
+            static_assert(INLINE_CACHE_ENTRIES_CALL == 3, "incorrect cache size");
+            PyObject *callable;
+            PyObject **args;
+            PyObject *self_or_null;
+            _PyInterpreterFrame *new_frame;
+            /* Skip 1 cache entry */
+            /* Skip 2 cache entries */
+            // _CHECK_PEP_523
+            {
+                DEOPT_IF(tstate->interp->eval_frame, CALL);
+            }
+            // _CHECK_IS_FUNCTION
+            callable = stack_pointer[-2 - oparg];
+            {
+                DEOPT_IF(!PyFunction_Check(callable), CALL);
+            }
+            // _CALL_PY_GENERAL
+            args = &stack_pointer[-oparg];
+            self_or_null = stack_pointer[-1 - oparg];
+            {
+                // oparg counts all of the args, but *not* self:
+                int total_args = oparg;
+                if (self_or_null != NULL) {
+                    args--;
+                    total_args++;
+                }
+                assert(Py_TYPE(callable) == &PyFunction_Type);
+                int code_flags = ((PyCodeObject*)PyFunction_GET_CODE(callable))->co_flags;
+                PyObject *locals = code_flags & CO_OPTIMIZED ? NULL : Py_NewRef(PyFunction_GET_GLOBALS(callable));
+                new_frame = _PyEvalFramePushAndInit(
+                    tstate, (PyFunctionObject *)callable, locals,
+                    args, total_args, NULL
+                );
+                // The frame has stolen all the arguments from the stack,
+                // so there is no need to clean them up.
+                stack_pointer += -2 - oparg;
+                if (new_frame == NULL) {
+                    goto error;
+                }
+                frame->return_offset = (uint16_t)(1 + INLINE_CACHE_ENTRIES_CALL);
+            }
+            // _PUSH_FRAME
+            {
+                // Write it out explicitly because it's subtly different.
+                // Eventually this should be the only occurrence of this code.
+                assert(tstate->interp->eval_frame == NULL);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 new_frame->previous = frame;
                 CALL_STAT_INC(inlined_py_calls);

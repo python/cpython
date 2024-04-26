@@ -193,6 +193,12 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_CHECK_ATTR_METHOD_LAZY_DICT] = HAS_DEOPT_FLAG,
     [_LOAD_ATTR_METHOD_LAZY_DICT] = HAS_ARG_FLAG,
     [_CHECK_PERIODIC] = HAS_EVAL_BREAK_FLAG,
+    [_CALL_PY_GENERAL] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
+    [_CHECK_IS_FUNCTION] = HAS_ARG_FLAG | HAS_DEOPT_FLAG,
+    [_CHECK_IS_METHOD] = HAS_ARG_FLAG | HAS_DEOPT_FLAG,
+    [_EXPAND_METHOD] = HAS_ARG_FLAG,
+    [_CHECK_IS_NOT_PY_CALLABLE] = HAS_ARG_FLAG | HAS_DEOPT_FLAG,
+    [_CALL_NON_PY_GENERAL] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_CHECK_CALL_BOUND_METHOD_EXACT_ARGS] = HAS_ARG_FLAG | HAS_DEOPT_FLAG,
     [_INIT_CALL_BOUND_METHOD_EXACT_ARGS] = HAS_ARG_FLAG,
     [_CHECK_PEP_523] = HAS_DEOPT_FLAG,
@@ -296,6 +302,8 @@ const char *const _PyOpcode_uop_name[MAX_UOP_ID+1] = {
     [_CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS] = "_CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS",
     [_CALL_METHOD_DESCRIPTOR_NOARGS] = "_CALL_METHOD_DESCRIPTOR_NOARGS",
     [_CALL_METHOD_DESCRIPTOR_O] = "_CALL_METHOD_DESCRIPTOR_O",
+    [_CALL_NON_PY_GENERAL] = "_CALL_NON_PY_GENERAL",
+    [_CALL_PY_GENERAL] = "_CALL_PY_GENERAL",
     [_CALL_STR_1] = "_CALL_STR_1",
     [_CALL_TUPLE_1] = "_CALL_TUPLE_1",
     [_CALL_TYPE_1] = "_CALL_TYPE_1",
@@ -308,6 +316,9 @@ const char *const _PyOpcode_uop_name[MAX_UOP_ID+1] = {
     [_CHECK_EXC_MATCH] = "_CHECK_EXC_MATCH",
     [_CHECK_FUNCTION] = "_CHECK_FUNCTION",
     [_CHECK_FUNCTION_EXACT_ARGS] = "_CHECK_FUNCTION_EXACT_ARGS",
+    [_CHECK_IS_FUNCTION] = "_CHECK_IS_FUNCTION",
+    [_CHECK_IS_METHOD] = "_CHECK_IS_METHOD",
+    [_CHECK_IS_NOT_PY_CALLABLE] = "_CHECK_IS_NOT_PY_CALLABLE",
     [_CHECK_MANAGED_OBJECT_HAS_VALUES] = "_CHECK_MANAGED_OBJECT_HAS_VALUES",
     [_CHECK_PEP_523] = "_CHECK_PEP_523",
     [_CHECK_PERIODIC] = "_CHECK_PERIODIC",
@@ -340,6 +351,7 @@ const char *const _PyOpcode_uop_name[MAX_UOP_ID+1] = {
     [_ERROR_POP_N] = "_ERROR_POP_N",
     [_EXIT_INIT_CHECK] = "_EXIT_INIT_CHECK",
     [_EXIT_TRACE] = "_EXIT_TRACE",
+    [_EXPAND_METHOD] = "_EXPAND_METHOD",
     [_FATAL_ERROR] = "_FATAL_ERROR",
     [_FORMAT_SIMPLE] = "_FORMAT_SIMPLE",
     [_FORMAT_WITH_SPEC] = "_FORMAT_WITH_SPEC",
@@ -852,6 +864,18 @@ int _PyUop_num_popped(int opcode, int oparg)
             return 1;
         case _CHECK_PERIODIC:
             return 0;
+        case _CALL_PY_GENERAL:
+            return 2 + oparg;
+        case _CHECK_IS_FUNCTION:
+            return 2 + oparg;
+        case _CHECK_IS_METHOD:
+            return 2 + oparg;
+        case _EXPAND_METHOD:
+            return 2 + oparg;
+        case _CHECK_IS_NOT_PY_CALLABLE:
+            return 2 + oparg;
+        case _CALL_NON_PY_GENERAL:
+            return 2 + oparg;
         case _CHECK_CALL_BOUND_METHOD_EXACT_ARGS:
             return 2 + oparg;
         case _INIT_CALL_BOUND_METHOD_EXACT_ARGS:
