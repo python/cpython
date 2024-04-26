@@ -6833,15 +6833,26 @@ datetime_datetime_astimezone_impl(PyDateTime_DateTime *self,
     return (PyObject *)result;
 }
 
+/*[clinic input]
+datetime.datetime.timetuple
+
+    defcls: defining_class
+    /
+
+Return time tuple, compatible with time.localtime().
+[clinic start generated code]*/
+
 static PyObject *
-datetime_timetuple(PyDateTime_DateTime *self, PyObject *Py_UNUSED(ignored))
+datetime_datetime_timetuple_impl(PyDateTime_DateTime *self,
+                                 PyTypeObject *defcls)
+/*[clinic end generated code: output=b89cf4ba3c0104c7 input=fa971a44619a864b]*/
 {
     int dstflag = -1;
 
     if (HASTZINFO(self) && self->tzinfo != Py_None) {
         PyObject * dst;
 
-        datetime_state *st = find_module_state_by_def(Py_TYPE(self));
+        datetime_state *st = get_module_state_by_cls(defcls);
         dst = call_dst(st, self->tzinfo, (PyObject *)self);
         if (dst == NULL)
             return NULL;
@@ -7094,8 +7105,7 @@ static PyMethodDef datetime_methods[] = {
     {"ctime",       (PyCFunction)datetime_ctime,        METH_NOARGS,
      PyDoc_STR("Return ctime() style string.")},
 
-    {"timetuple",   (PyCFunction)datetime_timetuple, METH_NOARGS,
-     PyDoc_STR("Return time tuple, compatible with time.localtime().")},
+    DATETIME_DATETIME_TIMETUPLE_METHODDEF
 
     {"timestamp",   (PyCFunction)datetime_timestamp, METH_NOARGS,
      PyDoc_STR("Return POSIX timestamp as float.")},
