@@ -4925,6 +4925,7 @@ time_hash(PyDateTime_Time *self)
 /*[clinic input]
 datetime.time.replace
 
+    defcls: defining_class
     hour: int(c_default="TIME_GET_HOUR(self)") = unchanged
     minute: int(c_default="TIME_GET_MINUTE(self)") = unchanged
     second: int(c_default="TIME_GET_SECOND(self)") = unchanged
@@ -4937,15 +4938,14 @@ Return time with new specified fields.
 [clinic start generated code]*/
 
 static PyObject *
-datetime_time_replace_impl(PyDateTime_Time *self, int hour, int minute,
-                           int second, int microsecond, PyObject *tzinfo,
-                           int fold)
-/*[clinic end generated code: output=0b89a44c299e4f80 input=9b6a35b1e704b0ca]*/
+datetime_time_replace_impl(PyDateTime_Time *self, PyTypeObject *defcls,
+                           int hour, int minute, int second, int microsecond,
+                           PyObject *tzinfo, int fold)
+/*[clinic end generated code: output=5afc2a8ba7546c79 input=0389d9824e5c911e]*/
 {
-    datetime_state *st = find_module_state_by_def(Py_TYPE(self));
-    return new_time_subclass_fold_ex(st,
-                                     hour, minute, second, microsecond, tzinfo,
-                                     fold, (PyObject *)Py_TYPE(self));
+    datetime_state *st = get_module_state_by_cls(defcls);
+    return new_time_subclass_fold_ex(st, hour, minute, second, microsecond,
+                                     tzinfo, fold, (PyObject *)Py_TYPE(self));
 }
 
 static PyObject *
