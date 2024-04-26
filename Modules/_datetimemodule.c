@@ -6236,12 +6236,28 @@ datetime_str(PyDateTime_DateTime *self)
     return res;
 }
 
+/*[clinic input]
+datetime.datetime.isoformat
+
+    defcls: defining_class
+    sep: int(accept={str}, c_default="'T'", py_default="'T'") = 0
+    timespec: str = NULL
+
+[sep] -> string in ISO 8601 format,
+
+YYYY-MM-DDT[HH[:MM[:SS[.mmm[uuu]]]]][+HH:MM].
+sep is used to separate the year from the time, and defaults to 'T'.
+The optional argument timespec specifies the number of additional terms
+of the time to include. Valid options are 'auto', 'hours', 'minutes',
+'seconds', 'milliseconds' and 'microseconds'.
+[clinic start generated code]*/
+
 static PyObject *
-datetime_isoformat(PyDateTime_DateTime *self, PyObject *args, PyObject *kw)
+datetime_datetime_isoformat_impl(PyDateTime_DateTime *self,
+                                 PyTypeObject *defcls, int sep,
+                                 const char *timespec)
+/*[clinic end generated code: output=d7968a085a5f38c7 input=dbd22819421fe7be]*/
 {
-    int sep = 'T';
-    char *timespec = NULL;
-    static char *keywords[] = {"sep", "timespec", NULL};
     char buffer[100];
     PyObject *result = NULL;
     int us = DATE_GET_MICROSECOND(self);
@@ -6253,9 +6269,6 @@ datetime_isoformat(PyDateTime_DateTime *self, PyObject *args, PyObject *kw)
         {"microseconds", "%04d-%02d-%02d%c%02d:%02d:%02d.%06d"},
     };
     size_t given_spec;
-
-    if (!PyArg_ParseTupleAndKeywords(args, kw, "|Cs:isoformat", keywords, &sep, &timespec))
-        return NULL;
 
     if (timespec == NULL || strcmp(timespec, "auto") == 0) {
         if (us == 0) {
@@ -6294,7 +6307,7 @@ datetime_isoformat(PyDateTime_DateTime *self, PyObject *args, PyObject *kw)
         return result;
 
     /* We need to append the UTC offset. */
-    datetime_state *st = find_module_state_by_def(Py_TYPE(self));
+    datetime_state *st = get_module_state_by_cls(defcls);
     if (format_utcoffset(st, buffer, sizeof(buffer), ":", self->tzinfo,
                          (PyObject *)self) < 0) {
         Py_DECREF(result);
@@ -7056,16 +7069,7 @@ static PyMethodDef datetime_methods[] = {
     {"utctimetuple",   (PyCFunction)datetime_utctimetuple, METH_NOARGS,
      PyDoc_STR("Return UTC time tuple, compatible with time.localtime().")},
 
-    {"isoformat",   _PyCFunction_CAST(datetime_isoformat), METH_VARARGS | METH_KEYWORDS,
-     PyDoc_STR("[sep] -> string in ISO 8601 format, "
-               "YYYY-MM-DDT[HH[:MM[:SS[.mmm[uuu]]]]][+HH:MM].\n"
-               "sep is used to separate the year from the time, and "
-               "defaults to 'T'.\n"
-               "The optional argument timespec specifies the number "
-               "of additional terms\nof the time to include. Valid "
-               "options are 'auto', 'hours', 'minutes',\n'seconds', "
-               "'milliseconds' and 'microseconds'.\n")},
-
+    DATETIME_DATETIME_ISOFORMAT_METHODDEF
     DATETIME_DATETIME_UTCOFFSET_METHODDEF
     DATETIME_DATETIME_TZNAME_METHODDEF
     DATETIME_DATETIME_DST_METHODDEF
