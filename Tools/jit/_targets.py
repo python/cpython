@@ -446,8 +446,6 @@ class _MachO(
 def get_target(host: str) -> _COFF | _ELF | _MachO:
     """Build a _Target for the given host "triple" and options."""
     if re.fullmatch(r"aarch64-apple-darwin.*", host):
-        # -mcmodel=large is unsupported in LLVM 18
-        # (see https://github.com/llvm/llvm-project/pull/70262)
         return _MachO(host, alignment=8, prefix="_")
     if re.fullmatch(r"aarch64-pc-windows-msvc", host):
         args = ["-fms-runtime-lib=dll"]
