@@ -180,6 +180,7 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_ITER_CHECK_RANGE] = HAS_EXIT_FLAG,
     [_GUARD_NOT_EXHAUSTED_RANGE] = HAS_EXIT_FLAG,
     [_ITER_NEXT_RANGE] = HAS_ERROR_FLAG,
+    [_FOR_ITER_GEN_FRAME] = HAS_ARG_FLAG | HAS_DEOPT_FLAG,
     [_WITH_EXCEPT_START] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_PUSH_EXC_INFO] = 0,
     [_GUARD_DORV_VALUES_INST_ATTR_FROM_DICT] = HAS_DEOPT_FLAG,
@@ -219,6 +220,7 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_CALL_METHOD_DESCRIPTOR_FAST] = HAS_ARG_FLAG | HAS_DEOPT_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_MAKE_FUNCTION] = HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
     [_SET_FUNCTION_ATTRIBUTE] = HAS_ARG_FLAG | HAS_ESCAPES_FLAG,
+    [_RETURN_GENERATOR] = HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
     [_BUILD_SLICE] = HAS_ARG_FLAG | HAS_ERROR_FLAG,
     [_CONVERT_VALUE] = HAS_ARG_FLAG | HAS_ERROR_FLAG,
     [_FORMAT_SIMPLE] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
@@ -244,6 +246,7 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_CHECK_FUNCTION] = HAS_DEOPT_FLAG,
     [_INTERNAL_INCREMENT_OPT_COUNTER] = 0,
     [_COLD_EXIT] = HAS_ARG_FLAG | HAS_ESCAPES_FLAG,
+    [_DYNAMIC_EXIT] = HAS_ARG_FLAG | HAS_ESCAPES_FLAG,
     [_START_EXECUTOR] = HAS_DEOPT_FLAG,
     [_FATAL_ERROR] = HAS_ESCAPES_FLAG,
     [_CHECK_VALIDITY_AND_SET_IP] = HAS_DEOPT_FLAG,
@@ -330,6 +333,7 @@ const char *const _PyOpcode_uop_name[MAX_UOP_ID+1] = {
     [_DEOPT] = "_DEOPT",
     [_DICT_MERGE] = "_DICT_MERGE",
     [_DICT_UPDATE] = "_DICT_UPDATE",
+    [_DYNAMIC_EXIT] = "_DYNAMIC_EXIT",
     [_END_SEND] = "_END_SEND",
     [_ERROR_POP_N] = "_ERROR_POP_N",
     [_EXIT_INIT_CHECK] = "_EXIT_INIT_CHECK",
@@ -337,6 +341,7 @@ const char *const _PyOpcode_uop_name[MAX_UOP_ID+1] = {
     [_FATAL_ERROR] = "_FATAL_ERROR",
     [_FORMAT_SIMPLE] = "_FORMAT_SIMPLE",
     [_FORMAT_WITH_SPEC] = "_FORMAT_WITH_SPEC",
+    [_FOR_ITER_GEN_FRAME] = "_FOR_ITER_GEN_FRAME",
     [_FOR_ITER_TIER_TWO] = "_FOR_ITER_TIER_TWO",
     [_GET_AITER] = "_GET_AITER",
     [_GET_ANEXT] = "_GET_ANEXT",
@@ -445,6 +450,7 @@ const char *const _PyOpcode_uop_name[MAX_UOP_ID+1] = {
     [_PUSH_NULL] = "_PUSH_NULL",
     [_REPLACE_WITH_TRUE] = "_REPLACE_WITH_TRUE",
     [_RESUME_CHECK] = "_RESUME_CHECK",
+    [_RETURN_GENERATOR] = "_RETURN_GENERATOR",
     [_SAVE_RETURN_OFFSET] = "_SAVE_RETURN_OFFSET",
     [_SETUP_ANNOTATIONS] = "_SETUP_ANNOTATIONS",
     [_SET_ADD] = "_SET_ADD",
@@ -816,6 +822,8 @@ int _PyUop_num_popped(int opcode, int oparg)
             return 1;
         case _ITER_NEXT_RANGE:
             return 1;
+        case _FOR_ITER_GEN_FRAME:
+            return 1;
         case _WITH_EXCEPT_START:
             return 4;
         case _PUSH_EXC_INFO:
@@ -894,6 +902,8 @@ int _PyUop_num_popped(int opcode, int oparg)
             return 1;
         case _SET_FUNCTION_ATTRIBUTE:
             return 2;
+        case _RETURN_GENERATOR:
+            return 0;
         case _BUILD_SLICE:
             return 2 + ((oparg == 3) ? 1 : 0);
         case _CONVERT_VALUE:
@@ -943,6 +953,8 @@ int _PyUop_num_popped(int opcode, int oparg)
         case _INTERNAL_INCREMENT_OPT_COUNTER:
             return 1;
         case _COLD_EXIT:
+            return 0;
+        case _DYNAMIC_EXIT:
             return 0;
         case _START_EXECUTOR:
             return 0;

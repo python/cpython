@@ -837,12 +837,7 @@ dummy_func(
             _PyFrame_StackPush(frame, retval);
             LOAD_SP();
             LOAD_IP(frame->return_offset);
-#if LLTRACE && TIER_ONE
-            lltrace = maybe_lltrace_resume_frame(frame, &entry_frame, GLOBALS());
-            if (lltrace < 0) {
-                goto exit_unwind;
-            }
-#endif
+            LLTRACE_RESUME_FRAME();
         }
 
         macro(RETURN_VALUE) =
@@ -1114,6 +1109,10 @@ dummy_func(
             _PyFrame_StackPush(frame, retval);
             /* We don't know which of these is relevant here, so keep them equal */
             assert(INLINE_CACHE_ENTRIES_SEND == INLINE_CACHE_ENTRIES_FOR_ITER);
+            assert(_PyOpcode_Deopt[frame->instr_ptr->op.code] == SEND ||
+                   _PyOpcode_Deopt[frame->instr_ptr->op.code] == FOR_ITER ||
+                   _PyOpcode_Deopt[frame->instr_ptr->op.code] == INTERPRETER_EXIT ||
+                   _PyOpcode_Deopt[frame->instr_ptr->op.code] == ENTER_EXECUTOR);
             LOAD_IP(1 + INLINE_CACHE_ENTRIES_SEND);
             goto resume_frame;
         }
@@ -2764,23 +2763,25 @@ dummy_func(
             _ITER_JUMP_RANGE +
             _ITER_NEXT_RANGE;
 
-        inst(FOR_ITER_GEN, (unused/1, iter -- iter, unused)) {
-            DEOPT_IF(tstate->interp->eval_frame);
+        op(_FOR_ITER_GEN_FRAME, (iter -- iter, gen_frame: _PyInterpreterFrame*)) {
             PyGenObject *gen = (PyGenObject *)iter;
             DEOPT_IF(Py_TYPE(gen) != &PyGen_Type);
             DEOPT_IF(gen->gi_frame_state >= FRAME_EXECUTING);
             STAT_INC(FOR_ITER, hit);
-            _PyInterpreterFrame *gen_frame = (_PyInterpreterFrame *)gen->gi_iframe;
+            gen_frame = (_PyInterpreterFrame *)gen->gi_iframe;
             _PyFrame_StackPush(gen_frame, Py_None);
             gen->gi_frame_state = FRAME_EXECUTING;
             gen->gi_exc_state.previous_item = tstate->exc_info;
             tstate->exc_info = &gen->gi_exc_state;
-            assert(next_instr[oparg].op.code == END_FOR ||
-                   next_instr[oparg].op.code == INSTRUMENTED_END_FOR);
-            assert(next_instr - this_instr + oparg <= UINT16_MAX);
-            frame->return_offset = (uint16_t)(next_instr - this_instr + oparg);
-            DISPATCH_INLINED(gen_frame);
+            // oparg is the return offset from the next instruction.
+            frame->return_offset = (uint16_t)(1 + INLINE_CACHE_ENTRIES_FOR_ITER + oparg);
         }
+
+        macro(FOR_ITER_GEN) =
+            unused/1 +
+            _CHECK_PEP_523 +
+            _FOR_ITER_GEN_FRAME +
+            _PUSH_FRAME;
 
         inst(BEFORE_ASYNC_WITH, (mgr -- exit, res)) {
             PyObject *enter = _PyObject_LookupSpecial(mgr, &_Py_ID(__aenter__));
@@ -3171,10 +3172,7 @@ dummy_func(
             }
         }
 
-        // The 'unused' output effect represents the return value
-        // (which will be pushed when the frame returns).
-        // It is needed so CALL_PY_EXACT_ARGS matches its family.
-        op(_PUSH_FRAME, (new_frame: _PyInterpreterFrame* -- unused if (0))) {
+        op(_PUSH_FRAME, (new_frame: _PyInterpreterFrame* -- )) {
             // Write it out explicitly because it's subtly different.
             // Eventually this should be the only occurrence of this code.
             assert(tstate->interp->eval_frame == NULL);
@@ -3186,12 +3184,7 @@ dummy_func(
             tstate->py_recursion_remaining--;
             LOAD_SP();
             LOAD_IP(0);
-#if LLTRACE && TIER_ONE
-            lltrace = maybe_lltrace_resume_frame(frame, &entry_frame, GLOBALS());
-            if (lltrace < 0) {
-                goto exit_unwind;
-            }
-#endif
+            LLTRACE_RESUME_FRAME();
         }
 
         macro(CALL_BOUND_METHOD_EXACT_ARGS) =
@@ -3877,7 +3870,7 @@ dummy_func(
             }
         }
 
-        tier1 inst(RETURN_GENERATOR, (--)) {
+        inst(RETURN_GENERATOR, (-- res)) {
             assert(PyFunction_Check(frame->f_funcobj));
             PyFunctionObject *func = (PyFunctionObject *)frame->f_funcobj;
             PyGenObject *gen = (PyGenObject *)_Py_MakeCoro(func);
@@ -3887,19 +3880,19 @@ dummy_func(
             assert(EMPTY());
             _PyFrame_SetStackPointer(frame, stack_pointer);
             _PyInterpreterFrame *gen_frame = (_PyInterpreterFrame *)gen->gi_iframe;
-            frame->instr_ptr = next_instr;
+            frame->instr_ptr++;
             _PyFrame_Copy(frame, gen_frame);
             assert(frame->frame_obj == NULL);
             gen->gi_frame_state = FRAME_CREATED;
             gen_frame->owner = FRAME_OWNED_BY_GENERATOR;
             _Py_LeaveRecursiveCallPy(tstate);
-            assert(frame != &entry_frame);
+            res = (PyObject *)gen;
             _PyInterpreterFrame *prev = frame->previous;
             _PyThreadState_PopFrame(tstate, frame);
             frame = tstate->current_frame = prev;
-            _PyFrame_StackPush(frame, (PyObject *)gen);
             LOAD_IP(frame->return_offset);
-            goto resume_frame;
+            LOAD_SP();
+            LLTRACE_RESUME_FRAME();
         }
 
         inst(BUILD_SLICE, (start, stop, step if (oparg == 3) -- slice)) {
@@ -4199,6 +4192,38 @@ dummy_func(
             GOTO_TIER_TWO(executor);
         }
 
+        tier2 op(_DYNAMIC_EXIT, (--)) {
+            tstate->previous_executor = (PyObject *)current_executor;
+            _PyExitData *exit = (_PyExitData *)&current_executor->exits[oparg];
+            _Py_CODEUNIT *target = frame->instr_ptr;
+            _PyExecutorObject *executor;
+            if (target->op.code == ENTER_EXECUTOR) {
+                PyCodeObject *code = (PyCodeObject *)frame->f_executable;
+                executor = code->co_executors->executors[target->op.arg];
+                Py_INCREF(executor);
+            }
+            else {
+                if (!backoff_counter_triggers(exit->temperature)) {
+                    exit->temperature = advance_backoff_counter(exit->temperature);
+                    GOTO_TIER_ONE(target);
+                }
+                int optimized = _PyOptimizer_Optimize(frame, target, stack_pointer, &executor);
+                if (optimized <= 0) {
+                    exit->temperature = restart_backoff_counter(exit->temperature);
+                    if (optimized < 0) {
+                        Py_DECREF(current_executor);
+                        tstate->previous_executor = Py_None;
+                        GOTO_UNWIND();
+                    }
+                    GOTO_TIER_ONE(target);
+                }
+                else {
+                    exit->temperature = initial_temperature_backoff_counter();
+                }
+            }
+            GOTO_TIER_TWO(executor);
+        }
+
         tier2 op(_START_EXECUTOR, (executor/4 --)) {
             Py_DECREF(tstate->previous_executor);
             tstate->previous_executor = NULL;
@@ -4231,6 +4256,7 @@ dummy_func(
             SYNC_SP();
             GOTO_UNWIND();
         }
+
 
 // END BYTECODES //
 

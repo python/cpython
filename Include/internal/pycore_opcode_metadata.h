@@ -625,7 +625,7 @@ int _PyOpcode_num_pushed(int opcode, int oparg)  {
         case FOR_ITER:
             return 2;
         case FOR_ITER_GEN:
-            return 2;
+            return 1;
         case FOR_ITER_LIST:
             return 2;
         case FOR_ITER_RANGE:
@@ -805,7 +805,7 @@ int _PyOpcode_num_pushed(int opcode, int oparg)  {
         case RETURN_CONST:
             return 0;
         case RETURN_GENERATOR:
-            return 0;
+            return 1;
         case RETURN_VALUE:
             return 0;
         case SEND:
@@ -1253,6 +1253,7 @@ _PyOpcode_macro_expansion[256] = {
     [FORMAT_SIMPLE] = { .nuops = 1, .uops = { { _FORMAT_SIMPLE, 0, 0 } } },
     [FORMAT_WITH_SPEC] = { .nuops = 1, .uops = { { _FORMAT_WITH_SPEC, 0, 0 } } },
     [FOR_ITER] = { .nuops = 1, .uops = { { _FOR_ITER, 9, 0 } } },
+    [FOR_ITER_GEN] = { .nuops = 3, .uops = { { _CHECK_PEP_523, 0, 0 }, { _FOR_ITER_GEN_FRAME, 0, 0 }, { _PUSH_FRAME, 0, 0 } } },
     [FOR_ITER_LIST] = { .nuops = 3, .uops = { { _ITER_CHECK_LIST, 0, 0 }, { _ITER_JUMP_LIST, 9, 1 }, { _ITER_NEXT_LIST, 0, 0 } } },
     [FOR_ITER_RANGE] = { .nuops = 3, .uops = { { _ITER_CHECK_RANGE, 0, 0 }, { _ITER_JUMP_RANGE, 9, 1 }, { _ITER_NEXT_RANGE, 0, 0 } } },
     [FOR_ITER_TUPLE] = { .nuops = 3, .uops = { { _ITER_CHECK_TUPLE, 0, 0 }, { _ITER_JUMP_TUPLE, 9, 1 }, { _ITER_NEXT_TUPLE, 0, 0 } } },
@@ -1310,6 +1311,7 @@ _PyOpcode_macro_expansion[256] = {
     [PUSH_NULL] = { .nuops = 1, .uops = { { _PUSH_NULL, 0, 0 } } },
     [RESUME_CHECK] = { .nuops = 1, .uops = { { _RESUME_CHECK, 0, 0 } } },
     [RETURN_CONST] = { .nuops = 2, .uops = { { _LOAD_CONST, 0, 0 }, { _POP_FRAME, 0, 0 } } },
+    [RETURN_GENERATOR] = { .nuops = 1, .uops = { { _RETURN_GENERATOR, 0, 0 } } },
     [RETURN_VALUE] = { .nuops = 1, .uops = { { _POP_FRAME, 0, 0 } } },
     [SETUP_ANNOTATIONS] = { .nuops = 1, .uops = { { _SETUP_ANNOTATIONS, 0, 0 } } },
     [SET_ADD] = { .nuops = 1, .uops = { { _SET_ADD, 0, 0 } } },

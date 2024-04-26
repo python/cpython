@@ -369,7 +369,7 @@ eliminate_pop_guard(_PyUOpInstruction *this_instr, bool exit)
 static PyCodeObject *
 get_code(_PyUOpInstruction *op)
 {
-    assert(op->opcode == _PUSH_FRAME || op->opcode == _POP_FRAME);
+    assert(op->opcode == _PUSH_FRAME || op->opcode == _POP_FRAME || op->opcode == _RETURN_GENERATOR);
     PyCodeObject *co = NULL;
     uint64_t operand = op->operand;
     if (operand == 0) {
