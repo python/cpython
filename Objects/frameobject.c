@@ -159,6 +159,32 @@ framelocalsproxy_richcompare(PyObject *self, PyObject *other, int op)
 
 // Methods
 
+static PyObject*
+framelocalsproxy_values(PyObject *self, PyObject *__unused)
+{
+    PyObject *values = PyList_New(0);
+    PyFrameObject *frame = ((PyFrameLocalsProxyObject*)self)->frame;
+    PyCodeObject *co = PyFrame_GetCode(frame);
+
+    for (int i = 0; i < co->co_nlocalsplus; i++) {
+        PyObject *value = framelocalproxy_getval(frame, co, i);
+        if (value) {
+            PyList_Append(values, value);
+        }
+    }
+
+    // Iterate through the extra locals
+    Py_ssize_t j = 0;
+    PyObject *key = NULL;
+    PyObject *value = NULL;
+
+    while (PyDict_Next(frame->f_extra_locals, &j, &key, &value)) {
+        PyList_Append(values, value);
+    }
+
+    return values;
+}
+
 static PyObject *
 framelocalsproxy_items(PyObject *self, PyObject *__unused)
 {
@@ -320,7 +346,11 @@ static PyMappingMethods framelocalsproxy_as_mapping = {
 static PyMethodDef framelocalsproxy_methods[] = {
     {"__getitem__",   framelocalsproxy_getitem,           METH_O | METH_COEXIST,
      NULL},
+    {"__setitem__",   framelocalsproxy_setitem,           METH_O | METH_COEXIST,
+     NULL},
     {"keys",          framelocalsproxy_keys,              METH_NOARGS,
+     NULL},
+    {"values",        framelocalsproxy_values,            METH_NOARGS,
      NULL},
     {"items",         framelocalsproxy_items,             METH_NOARGS,
      NULL},

@@ -270,6 +270,37 @@ class ReprTest(unittest.TestCase):
                          r"^<frame at 0x[0-9a-fA-F]+, file %s, line %d, code inner>$"
                          % (file_repr, offset + 5))
 
+class TestFrameLocals(unittest.TestCase):
+    def test_scope(self):
+        class A:
+            x = 1
+            sys._getframe().f_locals['x'] = 2
+            sys._getframe().f_locals['y'] = 2
+
+        self.assertEqual(A.x, 2)
+        self.assertEqual(A.y, 2)
+
+        def f():
+            x = 1
+            sys._getframe().f_locals['x'] = 2
+            sys._getframe().f_locals['y'] = 2
+            self.assertEqual(x, 2)
+            self.assertEqual(locals()['y'], 2)
+        f()
+
+    def test_as_dict(self):
+        x = 1
+        y = 2
+        d = sys._getframe().f_locals
+        # self, x, y, d
+        self.assertEqual(len(d), 4)
+        self.assertEqual(set(d.keys()), set(['x', 'y', 'd', 'self']))
+        self.assertEqual(len(d.values()), 4)
+        self.assertIn(1, d.values())
+        self.assertEqual(len(d.items()), 4)
+        self.assertIn(('x', 1), d.items())
+        self.assertEqual(d.__getitem__('x'), 1)
+
 class TestIncompleteFrameAreInvisible(unittest.TestCase):
 
     def test_issue95818(self):
