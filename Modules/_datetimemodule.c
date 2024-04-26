@@ -6571,6 +6571,34 @@ datetime_datetime_replace_impl(PyDateTime_DateTime *self,
                                          (PyObject *)Py_TYPE(self));
 }
 
+/*[clinic input]
+datetime.datetime.__replace__
+
+    defcls: defining_class
+    year: int(c_default="GET_YEAR(self)") = unchanged
+    month: int(c_default="GET_MONTH(self)") = unchanged
+    day: int(c_default="GET_DAY(self)") = unchanged
+    hour: int(c_default="DATE_GET_HOUR(self)") = unchanged
+    minute: int(c_default="DATE_GET_MINUTE(self)") = unchanged
+    second: int(c_default="DATE_GET_SECOND(self)") = unchanged
+    microsecond: int(c_default="DATE_GET_MICROSECOND(self)") = unchanged
+    tzinfo: object(c_default="HASTZINFO(self) ? self->tzinfo : Py_None") = unchanged
+    *
+    fold: int(c_default="DATE_GET_FOLD(self)") = unchanged
+[clinic start generated code]*/
+
+static PyObject *
+datetime_datetime___replace___impl(PyDateTime_DateTime *self,
+                                   PyTypeObject *defcls, int year, int month,
+                                   int day, int hour, int minute, int second,
+                                   int microsecond, PyObject *tzinfo,
+                                   int fold)
+/*[clinic end generated code: output=2b2c327c73986226 input=233cfaa570c8a3b0]*/
+{
+    return datetime_datetime_replace_impl(self, defcls, year, month, day,
+                             hour, minute, second, microsecond, tzinfo, fold);
+}
+
 static PyObject *
 local_timezone_from_timestamp(datetime_state *st, time_t timestamp)
 {
@@ -7075,9 +7103,7 @@ static PyMethodDef datetime_methods[] = {
     DATETIME_DATETIME_TZNAME_METHODDEF
     DATETIME_DATETIME_DST_METHODDEF
     DATETIME_DATETIME_REPLACE_METHODDEF
-
-    {"__replace__", _PyCFunction_CAST(datetime_datetime_replace), METH_FASTCALL | METH_KEYWORDS,
-     PyDoc_STR("__replace__($self, /, **changes)\n--\n\nThe same as replace().")},
+    DATETIME_DATETIME___REPLACE___METHODDEF
 
     {"astimezone",  _PyCFunction_CAST(datetime_astimezone), METH_VARARGS | METH_KEYWORDS,
      PyDoc_STR("tz -> convert to local time in new timezone tz\n")},
