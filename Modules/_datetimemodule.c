@@ -2852,10 +2852,21 @@ _delta_total_seconds(datetime_state *st, PyObject *self)
     return total_seconds;
 }
 
+/*[clinic input]
+datetime.timedelta.total_seconds
+
+    self: self(type="PyObject *")
+    defcls: defining_class
+    /
+
+Total seconds in the duration.
+[clinic start generated code]*/
+
 static PyObject *
-delta_total_seconds(PyObject *self, PyObject *Py_UNUSED(ignored))
+datetime_timedelta_total_seconds_impl(PyObject *self, PyTypeObject *defcls)
+/*[clinic end generated code: output=d702744694267dbf input=324f72e0d662f3b3]*/
 {
-    datetime_state *st = find_module_state_by_def(Py_TYPE(self));
+    datetime_state *st = get_module_state_by_cls(defcls);
     return _delta_total_seconds(st, self);
 }
 
@@ -2897,8 +2908,7 @@ static PyMemberDef delta_members[] = {
 };
 
 static PyMethodDef delta_methods[] = {
-    {"total_seconds", delta_total_seconds, METH_NOARGS,
-     PyDoc_STR("Total seconds in the duration.")},
+    DATETIME_TIMEDELTA_TOTAL_SECONDS_METHODDEF
 
     {"__reduce__", (PyCFunction)delta_reduce, METH_NOARGS,
      PyDoc_STR("__reduce__() -> (cls, state)")},
