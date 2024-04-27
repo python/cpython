@@ -158,7 +158,7 @@ _Py_untag_stack_owned(PyObject **dst, const _PyStackRef *src, size_t length) {
             assert(_PyObject_HasDeferredRefcount(Py_STACKREF_UNTAG_BORROWED(tagged)));
             return;
         }
-        return Py_INCREF(Py_STACKREF_UNTAG_BORROWED(tagged));
+        Py_INCREF(Py_STACKREF_UNTAG_BORROWED(tagged));
     }
     #define Py_INCREF_STACKREF(op) _Py_IncRef_StackRef(op)
 #else
