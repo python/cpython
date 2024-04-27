@@ -134,7 +134,6 @@ import_star(PyThreadState* tstate, PyObject *from)
         return NULL;
     }
     int err = import_all_from(tstate, locals, from);
-    _PyFrame_LocalsToFast(frame, 0);
     Py_DECREF(locals);
     if (err < 0) {
         return NULL;

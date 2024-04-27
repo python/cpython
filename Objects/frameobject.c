@@ -1655,7 +1655,6 @@ _PyFrame_New_NoTrack(PyCodeObject *code)
     f->f_trace = NULL;
     f->f_trace_lines = 1;
     f->f_trace_opcodes = 0;
-    f->f_fast_as_locals = 0;
     f->f_lineno = 0;
     f->f_extra_locals = NULL;
     return f;
