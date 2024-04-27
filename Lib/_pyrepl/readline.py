@@ -325,19 +325,23 @@ class _ReadlineWrapper:
         # history item: we use \r\n instead of just \n.  If the history
         # file is passed to GNU readline, the extra \r are just ignored.
         history = self.get_reader().history
-        f = open(os.path.expanduser(filename), encoding="utf-8", errors="replace")
-        buffer = []
-        for line in f:
-            if line.endswith("\r\n"):
-                buffer.append(line)
-            else:
-                line = self._histline(line)
-                if buffer:
-                    line = "".join(buffer).replace("\r", "") + line
-                    del buffer[:]
-                if line:
-                    history.append(line)
-        f.close()
+
+        with open(os.path.expanduser(filename), 'rb') as f:
+            lines = [line.decode('utf-8', errors='replace') for line in f.read().split(b'\n')]
+            buffer = []
+            for line in lines:
+                # Ignore readline history file header
+                if line.startswith("_HiStOrY_V2_"):
+                    continue
+                if line.endswith("\r"):
+                    buffer.append(line+'\n')
+                else:
+                    line = self._histline(line)
+                    if buffer:
+                        line = "".join(buffer).replace("\r", "") + line
+                        del buffer[:]
+                    if line:
+                        history.append(line)
 
     def write_history_file(self, filename="~/.history"):
         maxlength = self.saved_history_length
