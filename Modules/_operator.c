@@ -1146,6 +1146,21 @@ itemgetter_reduce(itemgetterobject *ig, PyObject *Py_UNUSED(ignored))
 
 PyDoc_STRVAR(reduce_doc, "Return state information for pickling");
 
+static PyObject *
+itemgetter_get_items(itemgetterobject *ig, void *closure) {
+    if (ig->nitems == 1) {
+        return PyTuple_Pack(1, ig->item);
+    }
+    return Py_NewRef(ig->item);
+}
+
+static PyGetSetDef itemgetter_getsets[] = {
+    {"_items", (getter)itemgetter_get_items, NULL,
+     NULL,
+     NULL},
+    {NULL}  /* Sentinel */
+};
+
 static PyMethodDef itemgetter_methods[] = {
     {"__reduce__", (PyCFunction)itemgetter_reduce, METH_NOARGS,
      reduce_doc},
@@ -1171,6 +1186,7 @@ static PyType_Slot itemgetter_type_slots[] = {
     {Py_tp_clear, itemgetter_clear},
     {Py_tp_methods, itemgetter_methods},
     {Py_tp_members, itemgetter_members},
+    {Py_tp_getset, itemgetter_getsets},
     {Py_tp_new, itemgetter_new},
     {Py_tp_getattro, PyObject_GenericGetAttr},
     {Py_tp_repr, itemgetter_repr},
@@ -1501,6 +1517,18 @@ attrgetter_reduce(attrgetterobject *ag, PyObject *Py_UNUSED(ignored))
     return Py_BuildValue("ON", Py_TYPE(ag), attrstrings);
 }
 
+static PyObject *
+attrgetter_get_attrs(attrgetterobject *ag, void *closure) {
+    return attrgetter_args(ag);
+}
+
+static PyGetSetDef attrgetter_getsets[] = {
+    {"_attrs", (getter)attrgetter_get_attrs, NULL,
+     NULL,
+     NULL},
+    {NULL}  /* Sentinel */
+};
+
 static PyMethodDef attrgetter_methods[] = {
     {"__reduce__", (PyCFunction)attrgetter_reduce, METH_NOARGS,
      reduce_doc},
@@ -1528,6 +1556,7 @@ static PyType_Slot attrgetter_type_slots[] = {
     {Py_tp_clear, attrgetter_clear},
     {Py_tp_methods, attrgetter_methods},
     {Py_tp_members, attrgetter_members},
+    {Py_tp_getset, attrgetter_getsets},
     {Py_tp_new, attrgetter_new},
     {Py_tp_getattro, PyObject_GenericGetAttr},
     {Py_tp_repr, attrgetter_repr},
@@ -1837,6 +1866,32 @@ methodcaller_reduce(methodcallerobject *mc, PyObject *Py_UNUSED(ignored))
     }
 }
 
+static PyObject *
+methodcaller_get_args(methodcallerobject *mc, void *closure) {
+    return PyTuple_GetSlice(mc->xargs, 1, PyTuple_GET_SIZE(mc->xargs));
+}
+
+static PyObject *
+methodcaller_get_kwargs(methodcallerobject *mc, void *closure) {
+    if (mc->kwds == NULL) {
+        PyObject *empty = PyDict_New();
+        PyObject *proxy = PyDictProxy_New(empty);
+        Py_DECREF(empty);
+        return proxy;
+    }
+    return PyDictProxy_New(mc->kwds);
+}
+
+static PyGetSetDef methodcaller_getsets[] = {
+    {"_args", (getter)methodcaller_get_args, NULL,
+     NULL,
+     NULL},
+    {"_kwargs", (getter)methodcaller_get_kwargs, NULL,
+     NULL,
+     NULL},
+    {NULL}  /* Sentinel */
+};
+
 static PyMethodDef methodcaller_methods[] = {
     {"__reduce__", (PyCFunction)methodcaller_reduce, METH_NOARGS,
      reduce_doc},
@@ -1844,6 +1899,7 @@ static PyMethodDef methodcaller_methods[] = {
 };
 
 static PyMemberDef methodcaller_members[] = {
+    {"_name", _Py_T_OBJECT, offsetof(methodcallerobject , name), Py_READONLY},
     {"__vectorcalloffset__", Py_T_PYSSIZET, offsetof(methodcallerobject, vectorcall), Py_READONLY},
     {NULL}
 };
@@ -1863,6 +1919,7 @@ static PyType_Slot methodcaller_type_slots[] = {
     {Py_tp_clear, methodcaller_clear},
     {Py_tp_methods, methodcaller_methods},
     {Py_tp_members, methodcaller_members},
+    {Py_tp_getset, methodcaller_getsets},
     {Py_tp_new, methodcaller_new},
     {Py_tp_getattro, PyObject_GenericGetAttr},
     {Py_tp_repr, methodcaller_repr},
