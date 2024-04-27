@@ -1861,6 +1861,7 @@ _PySys_GetSizeOf(PyObject *o)
     }
     else {
         res = _PyObject_CallNoArgs(method);
+        // printf("size: %s\n", PyUnicode_AsUTF8(PyObject_Repr(res)));
         Py_DECREF(method);
     }
 
@@ -1868,6 +1869,7 @@ _PySys_GetSizeOf(PyObject *o)
         return (size_t)-1;
 
     size = PyLong_AsSsize_t(res);
+    printf("size: %ld\n", size);
     Py_DECREF(res);
     if (size == -1 && _PyErr_Occurred(tstate))
         return (size_t)-1;
@@ -1885,6 +1887,7 @@ _PySys_GetSizeOf(PyObject *o)
         /* Add the size of the pre-header if "o" is not a static type */
         presize = _PyType_PreHeaderSize(Py_TYPE(o));
     }
+    printf("presize: %ld\n", presize);
 
     return (size_t)size + presize;
 }

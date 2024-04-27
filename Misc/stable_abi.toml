@@ -2489,3 +2489,9 @@
     added = '3.13'
 [function.PyList_GetItemRef]
     added = '3.13'
+[function.PyEval_GetFrameBuiltins]
+    added = '3.13
+[function.PyEval_GetFrameGlobals]
+    added = '3.13
+[function.PyEval_GetFrameLocals]
+    added = '3.13

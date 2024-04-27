@@ -1,3 +1,4 @@
+import copy
 import gc
 import operator
 import re
@@ -300,6 +301,77 @@ class TestFrameLocals(unittest.TestCase):
         self.assertEqual(len(d.items()), 4)
         self.assertIn(('x', 1), d.items())
         self.assertEqual(d.__getitem__('x'), 1)
+        d.__setitem__('x', 2)
+        self.assertEqual(d['x'], 2)
+        self.assertEqual(d.get('x'), 2)
+        self.assertIs(d.get('non_exist', None), None)
+        self.assertEqual(d.__len__(), 4)
+        self.assertEqual(set([key for key in d]), set(['x', 'y', 'd', 'self']))
+        self.assertIn('x', d)
+        self.assertTrue(d.__contains__('x'))
+
+        self.assertEqual(reversed(d), list(reversed(d.keys())))
+
+        d.update({'x': 3, 'z': 4})
+        self.assertEqual(d['x'], 3)
+        self.assertEqual(d['z'], 4)
+
+        with self.assertRaises(TypeError):
+            d.update([1, 2])
+
+        self.assertEqual(d.setdefault('x', 5), 3)
+        self.assertEqual(d.setdefault('new', 5), 5)
+        self.assertEqual(d['new'], 5)
+
+    def test_as_number(self):
+        x = 1
+        y = 2
+        d = sys._getframe().f_locals
+        self.assertIn('z', d | {'z': 3})
+        d |= {'z': 3}
+        self.assertEqual(d['z'], 3)
+        d |= {'y': 3}
+        self.assertEqual(d['y'], 3)
+        with self.assertRaises(TypeError):
+            d |= 3
+        with self.assertRaises(TypeError):
+            _ = d | [3]
+
+    def test_repr(self):
+        x = 1
+        # Introduce a reference cycle
+        frame = sys._getframe()
+        self.assertEqual(repr(frame.f_locals), repr(dict(frame.f_locals)))
+
+    def test_delete(self):
+        x = 1
+        d = sys._getframe().f_locals
+        with self.assertRaises(TypeError):
+            del d['x']
+
+        with self.assertRaises(TypeError):
+            d.clear()
+
+        with self.assertRaises(TypeError):
+            d.pop('x')
+
+    def test_unsupport(self):
+        x = 1
+        d = sys._getframe().f_locals
+        with self.assertRaises(TypeError):
+            d.copy()
+
+        with self.assertRaises(TypeError):
+            copy.copy(d)
+
+        with self.assertRaises(TypeError):
+            copy.deepcopy(d)
+
+        with self.assertRaises(TypeError):
+            d.get(1)
+
+        with self.assertRaises(TypeError):
+            d.setdefault(1, 'x')
 
 class TestIncompleteFrameAreInvisible(unittest.TestCase):
 
