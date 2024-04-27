@@ -22,7 +22,7 @@ you don't already have the SDK, here's how to install it:
   `android-sdk/cmdline-tools/latest`.
 * `export ANDROID_HOME=/path/to/android-sdk`
 
-The `android.py` script also requires the following commands to be on the PATH:
+The `android.py` script also requires the following commands to be on the `PATH`:
 
 * `curl`
 * `make`
