@@ -346,7 +346,7 @@ class _ReadlineWrapper:
     def write_history_file(self, filename="~/.history"):
         maxlength = self.saved_history_length
         history = self.get_reader().get_trimmed_history(maxlength)
-        with open(os.path.expanduser(filename), "a", encoding="utf-8") as f:
+        with open(os.path.expanduser(filename), "w", encoding="utf-8") as f:
             for entry in history:
                 entry = entry.replace("\n", "\r\n")  # multiline history support
                 f.write(entry + "\n")
