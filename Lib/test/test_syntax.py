@@ -2393,12 +2393,13 @@ if x:
             return code
 
         CO_MAXBLOCKS = 20  # static nesting limit of the compiler
+        MAX_MANAGERS = CO_MAXBLOCKS - 1  # One for the StopIteration block
 
-        for n in range(CO_MAXBLOCKS):
+        for n in range(MAX_MANAGERS):
             with self.subTest(f"within range: {n=}"):
                 compile(get_code(n), "<string>", "exec")
 
-        for n in range(CO_MAXBLOCKS, CO_MAXBLOCKS + 5):
+        for n in range(MAX_MANAGERS, MAX_MANAGERS + 5):
             with self.subTest(f"out of range: {n=}"):
                 self._check_error(get_code(n), "too many statically nested blocks")
 
