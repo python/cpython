@@ -371,6 +371,7 @@ class PosixPathTest(unittest.TestCase):
         ("///..//./foo/.//bar", "/foo/bar"),
         (".", "."),
         (".//.", "."),
+        ("./foo/bar", "foo/bar"),
         ("..", ".."),
         ("../", ".."),
         ("../foo", "../foo"),

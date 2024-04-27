@@ -2538,7 +2538,7 @@ _Py_normpath_and_size(wchar_t *path, Py_ssize_t size, Py_ssize_t start,
     }
     if (p1[0] == L'.' && SEP_OR_END(&p1[1])) {
         // Skip leading '.\'
-        lastC = *(++p1);
+        lastC = *++p1;
 #ifdef ALTSEP
         if (lastC == ALTSEP) {
             lastC = SEP;
@@ -2620,15 +2620,16 @@ _Py_normpath_and_size(wchar_t *path, Py_ssize_t size, Py_ssize_t start,
                  !SEP_OR_END(&minP2[2]))
         {
             // Not '..\'
+            wchar_t *p3 = p2;
             p2 += 2;
             assert(p2 < p1);
-            wchar_t *p3 = p2 - 2;
             while (p3 != minP2) {
-                p3[2] = *p3--;
+                p3[2] = *p3;
+                p3--;
             }
             p3[2] = p3[0];
-            p3[0] = L'.';
             p3[1] = SEP;
+            p3[0] = L'.';
         }
         p2[1] = L'\0';
     }
