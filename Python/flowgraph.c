@@ -263,7 +263,7 @@ basicblock_insert_instruction(basicblock *block, int pos, cfg_instr *instr) {
 }
 
 /* For debugging purposes only */
-#if 1
+#if 0
 static void
 dump_instr(cfg_instr *i)
 {
