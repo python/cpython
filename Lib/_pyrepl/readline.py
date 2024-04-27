@@ -215,7 +215,7 @@ class maybe_accept(commands.Command):
             # auto-indent the next line like the previous line
             prevlinestart, indent = _get_previous_line_indent(r.buffer, r.pos)
             r.insert("\n")
-            if indent:
+            if not self.reader.paste_mode and indent:
                 for i in range(prevlinestart, prevlinestart + indent):
                     r.insert(r.buffer[i])
         else:
@@ -286,6 +286,7 @@ class _ReadlineWrapper:
             return reader.readline(returns_unicode=returns_unicode)
         finally:
             reader.more_lines = saved
+            reader.paste_mode = False
 
     def parse_and_bind(self, string):
         pass  # XXX we don't support parsing GNU-readline-style init files

@@ -126,6 +126,7 @@ default_keymap = tuple(
         (r"\C-x\C-u", "upcase-region"),
         (r"\C-y", "yank"),
         (r"\C-z", "suspend"),
+        (r"\C-t", "paste-mode"),
         (r"\M-b", "backward-word"),
         (r"\M-c", "capitalize-word"),
         (r"\M-d", "kill-word"),
@@ -255,6 +256,8 @@ class Reader:
         self.input_trans = input.KeymapTranslator(
             self.keymap, invalid_cls="invalid-key", character_cls="self-insert"
         )
+
+        self.paste_mode = False
 
     def collect_keymap(self):
         return default_keymap
@@ -421,6 +424,9 @@ class Reader:
                 res = self.ps3
         else:
             res = self.ps1
+
+        if self.paste_mode:
+            res= '(paste mode)'
         
         if traceback._can_colorize():
             res = traceback._ANSIColors.BOLD_MAGENTA + res + traceback._ANSIColors.RESET

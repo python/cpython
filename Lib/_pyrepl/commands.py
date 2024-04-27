@@ -444,3 +444,9 @@ class quoted_insert(Command):
         # because of a mixture of str and bytes.  Disable these keys.
         pass
         # self.reader.push_input_trans(QITrans())
+
+class paste_mode(Command):
+
+    def do(self):
+        self.reader.paste_mode = True
+        self.reader.dirty = 1
