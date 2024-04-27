@@ -5535,7 +5535,7 @@ os__path_abspath_impl(PyObject *module, PyObject *path)
     }
     // Preserve `.\` for qualified referencing
     abs = _Py_normpath_and_size(path_buf, path_len, 0, &abs_len, 1);
-    if (abs_len == 0) {
+    if (abs_len == 0 || (abs_len == 1 && abs[0] == L'.')) {
         result = posix_getcwd(0);
         goto exit;
     }
@@ -5585,7 +5585,7 @@ os__path_abspath_impl(PyObject *module, PyObject *path)
         wchar_t *p = memcpy(abs_buf, cwd_buf, cwd_len * sizeof(wchar_t));
         p += cwd_len;
         if (add_sep) {
-            *(p++) = SEP;
+            *p++ = SEP;
         }
         memcpy(p, path_buf, path_len * sizeof(wchar_t));
         p[path_len] = '\0';
