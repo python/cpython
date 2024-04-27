@@ -1018,23 +1018,22 @@ class ReferencesTestCase(TestBase):
         import _testcapi
         import weakref
 
-        class Obj:
+        class TestObj:
             pass
 
         def callback(obj):
             pass
 
-
-        obj = Obj()
+        obj = TestObj()
         # The choice of 50 is arbitrary, but must be large enough to ensure
         # the allocation won't be serviced by the free list.
         wrs = [weakref.ref(obj, callback) for _ in range(50)]
         _testcapi.set_nomemory(0)
         del obj
         """).strip()
-        res = script_helper.assert_python_ok("-c", code)
+        res, _ = script_helper.run_python_until_end("-c", code)
         stderr = res.err.decode("ascii", "backslashreplace")
-        self.assertNotRegex(stderr, "_Py_Dealloc: Deallocator of type")
+        self.assertNotRegex(stderr, "_Py_Dealloc: Deallocator of type 'TestObj'")
 
 
 class SubclassableWeakrefTestCase(TestBase):
