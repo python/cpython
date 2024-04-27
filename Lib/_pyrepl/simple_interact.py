@@ -26,6 +26,8 @@ allowing multiline input and multiline history entries.
 import _sitebuiltins
 import linecache
 import sys
+import code
+import traceback
 
 from .readline import _error, _get_reader, multiline_input
 
@@ -56,13 +58,20 @@ REPL_COMMANDS = {
     "help": _sitebuiltins._Helper(),
 }
 
+class InteractiveColoredConsole(code.InteractiveConsole):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.can_colorize = traceback._can_colorize()
+    def showtraceback(self):
+        super().showtraceback(colorize=self.can_colorize)
+
 
 def run_multiline_interactive_console(mainmodule=None, future_flags=0):
     import code
     import __main__
 
     mainmodule = mainmodule or __main__
-    console = code.InteractiveConsole(mainmodule.__dict__, filename="<stdin>")
+    console = InteractiveColoredConsole(mainmodule.__dict__, filename="<stdin>")
     if future_flags:
         console.compile.compiler.flags |= future_flags
 
