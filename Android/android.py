@@ -110,7 +110,7 @@ def unpack_deps(host):
 
 def download(url, target_dir="."):
     out_path = f"{target_dir}/{basename(url)}"
-    run(["wget", "-O", out_path, url])
+    run(["curl", "-Lf", "-o", out_path, url])
     return out_path
 
 
@@ -187,7 +187,7 @@ def setup_testbed(context):
             f"https://services.gradle.org/distributions/gradle-{ver_short}-bin.zip")
         outer_jar = f"gradle-{ver_short}/lib/plugins/gradle-wrapper-{ver_short}.jar"
         run(["unzip", bin_zip, outer_jar])
-        run(["unzip", "-d", f"{testbed_dir}/gradle/wrapper", outer_jar,
+        run(["unzip", "-o", "-d", f"{testbed_dir}/gradle/wrapper", outer_jar,
              "gradle-wrapper.jar"])
 
 
