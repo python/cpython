@@ -1,0 +1,1 @@
+Fix func:`ntpath.abspath` & func:`posixpath.abspath` for relative paths on the other platform`.
