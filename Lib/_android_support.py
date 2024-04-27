@@ -81,14 +81,17 @@ class BinaryLogStream(io.RawIOBase):
             raise TypeError(
                 f"write() argument must be bytes-like, not {type(b).__name__}"
             ) from None
-        else:
-            b_out = bytes(b)
 
-        # Encode null bytes using "modified UTF-8" to avoid truncating the
-        # message.
-        b_out = b_out.replace(b"\x00", b"\xc0\x80")
+        b_out = bytes(b)
+        b_len = len(b_out)  # May be different from len(b) if b is an array.
 
         # Writing an empty string to the stream should have no effect.
         if b_out:
+            # Encode null bytes using "modified UTF-8" to avoid truncating the
+            # message. This should not affect the return value, as the caller
+            # may be expecting it to match the length of the input.
+            b_out = b_out.replace(b"\x00", b"\xc0\x80")
+
             self.android_log_write(self.prio, self.tag, b_out)
-        return len(b)
+
+        return b_len

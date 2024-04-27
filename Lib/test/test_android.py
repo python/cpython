@@ -4,6 +4,7 @@ import re
 import subprocess
 import sys
 import unittest
+from array import array
 from contextlib import contextmanager
 from threading import Thread
 from test.support import LOOPBACK_TIMEOUT
@@ -213,8 +214,10 @@ class TestAndroidOutput(unittest.TestCase):
                 self.assertTrue(stream.writable())
                 self.assertFalse(stream.readable())
 
-                def write(b, lines=None):
-                    self.assertEqual(len(b), stream.write(b))
+                def write(b, lines=None, *, write_len=None):
+                    if write_len is None:
+                        write_len = len(b)
+                    self.assertEqual(write_len, stream.write(b))
                     if lines is None:
                         lines = [b.decode()]
                     self.assert_logs(level, tag, lines)
@@ -271,6 +274,34 @@ class TestAndroidOutput(unittest.TestCase):
                 write(b"hello\r\nworld\r\n", ["hello", "world"])
                 write(b"\r\n", [""])
 
+                # Other bytes-like objects are accepted.
+                write(bytearray(b"bytearray"))
+
+                mv = memoryview(b"memoryview")
+                write(mv, ["memoryview"])  # Continuous
+                write(mv[::2], ["mmrve"])  # Discontinuous
+
+                write(
+                    # Android only supports little-endian architectures, so the
+                    # bytes representation is as follows:
+                    array("H", [
+                        0,      # 00 00
+                        1,      # 01 00
+                        65534,  # FE FF
+                        65535,  # FF FF
+                    ]),
+
+                    # After encoding null bytes with modified UTF-8, the only
+                    # valid UTF-8 sequence is \x01. All other bytes are handled
+                    # by backslashreplace.
+                    ["\\xc0\\x80\\xc0\\x80"
+                     "\x01\\xc0\\x80"
+                     "\\xfe\\xff"
+                     "\\xff\\xff"],
+                    write_len=8,
+                )
+
+                # Non-bytes-like classes are not accepted.
                 for obj in ["", "hello", None, 42]:
                     with self.subTest(obj=obj):
                         with self.assertRaisesRegex(
