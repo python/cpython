@@ -123,9 +123,6 @@ static PyObject *
 import_star(PyThreadState* tstate, PyObject *from)
 {
     _PyInterpreterFrame *frame = tstate->current_frame;
-    if (_PyFrame_FastToLocalsWithError(frame) < 0) {
-        return NULL;
-    }
 
     PyObject *locals = _PyFrame_GetLocals(frame);
     if (locals == NULL) {

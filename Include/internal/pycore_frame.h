@@ -248,12 +248,6 @@ _PyFrame_GetLocals(_PyInterpreterFrame *frame);
 PyObject *
 _PyFrame_GetHiddenLocals(_PyInterpreterFrame *frame);
 
-int
-_PyFrame_FastToLocalsWithError(_PyInterpreterFrame *frame);
-
-void
-_PyFrame_LocalsToFast(_PyInterpreterFrame *frame, int clear);
-
 static inline bool
 _PyThreadState_HasStackSpace(PyThreadState *tstate, int size)
 {

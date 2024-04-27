@@ -1853,13 +1853,6 @@ _PyFrame_GetHiddenLocals(_PyInterpreterFrame *frame)
 }
 
 
-int
-_PyFrame_FastToLocalsWithError(_PyInterpreterFrame *frame)
-{
-    return 0;
-}
-
-
 PyObject *
 PyFrame_GetVar(PyFrameObject *frame_obj, PyObject *name)
 {
@@ -1915,12 +1908,6 @@ PyFrame_FastToLocalsWithError(PyFrameObject *f)
 
 void
 PyFrame_FastToLocals(PyFrameObject *f)
-{
-    return;
-}
-
-void
-_PyFrame_LocalsToFast(_PyInterpreterFrame *frame, int clear)
 {
     return;
 }
