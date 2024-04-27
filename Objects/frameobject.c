@@ -146,15 +146,6 @@ framelocalsproxy_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
     ((PyFrameLocalsProxyObject*)self)->frame = (PyFrameObject*)Py_NewRef(frame);
 
-    if (frame->f_extra_locals == NULL) {
-        frame->f_extra_locals = PyDict_New();
-        if (frame->f_extra_locals == NULL) {
-            Py_DECREF(frame);
-            Py_DECREF(self);
-            return NULL;
-        }
-    }
-
     return (PyObject *)self;
 }
 
@@ -276,8 +267,10 @@ framelocalsproxy_values(PyObject *self, PyObject *__unused)
     PyObject *key = NULL;
     PyObject *value = NULL;
 
-    while (PyDict_Next(frame->f_extra_locals, &j, &key, &value)) {
-        PyList_Append(values, value);
+    if (frame->f_extra_locals) {
+        while (PyDict_Next(frame->f_extra_locals, &j, &key, &value)) {
+            PyList_Append(values, value);
+        }
     }
 
     return values;
@@ -306,10 +299,12 @@ framelocalsproxy_items(PyObject *self, PyObject *__unused)
     PyObject *key = NULL;
     PyObject *value = NULL;
 
-    while (PyDict_Next(frame->f_extra_locals, &j, &key, &value)) {
-        PyObject *pair = PyTuple_Pack(2, key, value);
-        PyList_Append(items, pair);
-        Py_DECREF(pair);
+    if (frame->f_extra_locals) {
+        while (PyDict_Next(frame->f_extra_locals, &j, &key, &value)) {
+            PyObject *pair = PyTuple_Pack(2, key, value);
+            PyList_Append(items, pair);
+            Py_DECREF(pair);
+        }
     }
 
     return items;
@@ -414,17 +409,18 @@ framelocalsproxy_setitem(PyObject *self, PyObject *key, PyObject *value)
 
     PyObject *extra = frame->f_extra_locals;
 
-    if (extra != NULL) {
-        assert(PyDict_Check(extra));
-        if (value == NULL) {
-            if (PyDict_DelItem(extra, key) < 0) {
-                return -1;
-            }
-        } else {
-            if (PyDict_SetItem(extra, key, value) < 0) {
-                return -1;
-            }
+    if (extra == NULL) {
+        extra = PyDict_New();
+        if (extra == NULL) {
+            return -1;
         }
+        frame->f_extra_locals = extra;
+    }
+
+    assert(PyDict_Check(extra));
+
+    if (PyDict_SetItem(extra, key, value) < 0) {
+        return -1;
     }
 
     return 0;
