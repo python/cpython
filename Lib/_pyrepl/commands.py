@@ -396,6 +396,14 @@ class accept(FinishCommand):
         pass
 
 
+class help(Command):
+    def do(self):
+        import _sitebuiltins
+        self.reader.console.restore()
+        self.reader.msg = _sitebuiltins._Helper()()
+        self.reader.dirty = 1
+
+
 class invalid_key(Command):
     def do(self):
         pending = self.reader.console.getpending()
