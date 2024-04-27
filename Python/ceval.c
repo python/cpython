@@ -2481,14 +2481,13 @@ PyObject *
 _PyEval_GetFrameLocals(void)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    PyObject* locals = NULL;
      _PyInterpreterFrame *current_frame = _PyThreadState_GetFrame(tstate);
     if (current_frame == NULL) {
         _PyErr_SetString(tstate, PyExc_SystemError, "frame does not exist");
         return NULL;
     }
 
-    locals = _PyFrame_GetLocals(current_frame);
+    PyObject *locals = _PyFrame_GetLocals(current_frame);
     if (locals == NULL) {
         return NULL;
     }

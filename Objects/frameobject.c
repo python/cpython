@@ -467,7 +467,6 @@ framelocalsproxy_get(PyObject* self, PyObject *const *args, Py_ssize_t nargs)
 
     PyObject *key = args[0];
     PyObject *default_value = Py_None;
-    PyObject *result = NULL;
 
     if (nargs == 2) {
         default_value = args[1];
@@ -478,7 +477,7 @@ framelocalsproxy_get(PyObject* self, PyObject *const *args, Py_ssize_t nargs)
         return NULL;
     }
 
-    result = framelocalsproxy_getitem(self, args[0]);
+    PyObject *result = framelocalsproxy_getitem(self, args[0]);
 
     if (result == NULL) {
         if (PyErr_ExceptionMatches(PyExc_KeyError)) {
@@ -501,7 +500,6 @@ framelocalsproxy_setdefault(PyObject* self, PyObject *const *args, Py_ssize_t na
 
     PyObject *key = args[0];
     PyObject *default_value = Py_None;
-    PyObject *result = NULL;
 
     if (nargs == 2) {
         default_value = args[1];
@@ -512,7 +510,7 @@ framelocalsproxy_setdefault(PyObject* self, PyObject *const *args, Py_ssize_t na
         return NULL;
     }
 
-    result = framelocalsproxy_getitem(self, key);
+    PyObject *result = framelocalsproxy_getitem(self, key);
 
     if (result == NULL) {
         if (PyErr_ExceptionMatches(PyExc_KeyError)) {
