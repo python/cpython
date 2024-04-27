@@ -2282,6 +2282,22 @@ class SubinterpreterTest(unittest.TestCase):
         subinterp_attr_id = os.read(r, 100)
         self.assertEqual(main_attr_id, subinterp_attr_id)
 
+    @unittest.skipIf(_testmultiphase is None, "test requires _testmultiphase module")
+    def test_datetime_capi_client(self):
+        script = textwrap.dedent("""
+            import importlib.machinery
+            import importlib.util
+            fullname = '_test_datetime_capi_client'
+            origin = importlib.util.find_spec('_testmultiphase').origin
+            loader = importlib.machinery.ExtensionFileLoader(fullname, origin)
+            spec = importlib.util.spec_from_loader(fullname, loader)
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
+        """)
+        exec(script)
+        ret = support.run_in_subinterp(script)
+        self.assertEqual(ret, 0)
+
 
 @requires_subinterpreters
 class InterpreterConfigTests(unittest.TestCase):

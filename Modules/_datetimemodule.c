@@ -63,6 +63,18 @@ static datetime_state _datetime_global_state;
 
 #define STATIC_STATE() (&_datetime_global_state)
 
+void
+set_datetime_capi_by_interp(PyDateTime_CAPI *capi)
+{
+    _PyInterpreterState_GET()->datetime_capi = capi;
+}
+
+PyDateTime_CAPI *
+get_datetime_capi_by_interp(void)
+{
+    return (PyDateTime_CAPI *)_PyInterpreterState_GET()->datetime_capi;
+}
+
 /* We require that C int be at least 32 bits, and use int virtually
  * everywhere.  In just a few cases we use a temp long, where a Python
  * API returns a C long.  In such cases, we have to ensure that the
@@ -6736,12 +6748,15 @@ get_datetime_capi(void)
     datetime_state *st = STATIC_STATE();
     assert(st->utc != NULL);
     capi->TimeZone_UTC = st->utc; // borrowed ref
+    capi->_set_capi_by_interp = set_datetime_capi_by_interp;
+    capi->_get_capi_by_interp = get_datetime_capi_by_interp;
     return capi;
 }
 
 static void
 datetime_destructor(PyObject *op)
 {
+    set_datetime_capi_by_interp(NULL);
     void *ptr = PyCapsule_GetPointer(op, PyDateTime_CAPSULE_NAME);
     PyMem_Free(ptr);
 }
