@@ -396,12 +396,6 @@ class accept(FinishCommand):
         pass
 
 
-class help(Command):
-    def do(self):
-        self.reader.msg = self.reader.help_text
-        self.reader.dirty = 1
-
-
 class invalid_key(Command):
     def do(self):
         pending = self.reader.console.getpending()

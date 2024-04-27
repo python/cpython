@@ -23,6 +23,7 @@ the CPython prompt as closely as possible, with the exception of
 allowing multiline input and multiline history entries.
 """
 
+import _sitebuiltins
 import linecache
 import sys
 
@@ -46,6 +47,14 @@ def _strip_final_indent(text):
     if n > 0 and text[n - 1] == "\n":
         return short
     return text
+
+
+REPL_COMMANDS = {
+    "exit": _sitebuiltins.Quitter('exit', ''),
+    "quit": _sitebuiltins.Quitter('quit' ,''),
+    "copyright": _sitebuiltins._Printer('copyright', sys.copyright),
+    "help": _sitebuiltins._Helper(),
+}
 
 
 def run_multiline_interactive_console(mainmodule=None, future_flags=0):
@@ -81,11 +90,17 @@ def run_multiline_interactive_console(mainmodule=None, future_flags=0):
                 statement = multiline_input(more_lines, ps1, ps2, returns_unicode=True)
             except EOFError:
                 break
+
             input_name = f"<python-input-{input_n}>"
             linecache._register_code(input_name, statement, "<stdin>")
-            more = console.push(_strip_final_indent(statement), filename=input_name)
+            maybe_repl_command = REPL_COMMANDS.get(statement.strip())
+            if maybe_repl_command is not None:
+                maybe_repl_command()
+                continue
+            else:
+                more = console.push(_strip_final_indent(statement), filename=input_name)
+                assert not more
             input_n += 1
-            assert not more
         except KeyboardInterrupt:
             console.write("\nKeyboardInterrupt\n")
             console.resetbuffer()
