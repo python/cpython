@@ -601,28 +601,21 @@ else:
         return _path_normpath(path) or "."
 
 
-def _abspath_fallback(path):
-    """Return the absolute version of a path as a fallback function in case
-    `nt._getfullpathname` is not available or raises OSError. See bpo-31047 for
-    more.
-
-    """
-
-    path = os.fspath(path)
-    if not isabs(path):
-        if isinstance(path, bytes):
-            cwd = os.getcwdb()
-        else:
-            cwd = os.getcwd()
-        path = join(cwd, path)
-    return normpath(path)
-
 # Return an absolute path.
 try:
     from nt import _getfullpathname
 
 except ImportError: # not running on Windows - mock up something sensible
-    abspath = _abspath_fallback
+    def abspath(path):
+        """Return the absolute version of a path."""
+        path = os.fspath(path)
+        if not isabs(path):
+            drive, _, path = splitroot(path)
+            if isinstance(path, bytes):
+                path = join(drive or b'C:', b'\\' + path)
+            else:
+                path = join(drive or 'C:', '\\' + path)
+        return normpath(path)
 
 else:  # use native Windows method on Windows
     def abspath(path):
@@ -630,7 +623,22 @@ else:  # use native Windows method on Windows
         try:
             return _getfullpathname(normpath(path))
         except (OSError, ValueError):
-            return _abspath_fallback(path)
+            path = os.fspath(path)
+            if not isabs(path):
+                if isinstance(path, bytes):
+                    sep = b'/'
+                    cwd = os.getcwdb()
+                else:
+                    sep = '/'
+                    cwd = os.getcwd()
+                drive, _, path = splitroot(path)
+                if drive and drive != splitroot(cwd)[0]:
+                    try:
+                        cwd = _getfullpathname(drive)
+                    except (OSError, ValueError):
+                        cwd = join(drive, sep)
+                path = join(cwd, path)
+            return normpath(path)
 
 try:
     from nt import _findfirstfile, _getfinalpathname, readlink as _nt_readlink

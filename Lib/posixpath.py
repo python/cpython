@@ -406,16 +406,25 @@ else:
         return _path_normpath(path) or "."
 
 
-def abspath(path):
-    """Return an absolute path."""
-    path = os.fspath(path)
-    if isinstance(path, bytes):
-        if not path.startswith(b'/'):
-            path = join(os.getcwdb(), path)
-    else:
-        if not path.startswith('/'):
-            path = join(os.getcwd(), path)
-    return normpath(path)
+if os.name == "nt":  # not running on Unix - mock up something sensible
+    def abspath(path):
+        """Return an absolute path."""
+        path = os.fspath(path)
+        sep = _get_sep(path)
+        if not path.startswith(sep):
+            path = sep + path
+        return normpath(path)
+else:  # use native Unix method on Unix
+    def abspath(path):
+        """Return an absolute path."""
+        path = os.fspath(path)
+        if isinstance(path, bytes):
+            if not path.startswith(b'/'):
+                path = join(os.getcwdb(), path)
+        else:
+            if not path.startswith('/'):
+                path = join(os.getcwd(), path)
+        return normpath(path)
 
 
 # Return a canonical path (i.e. the absolute location of a file on the
