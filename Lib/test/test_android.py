@@ -121,11 +121,17 @@ class TestAndroidOutput(unittest.TestCase):
                     # Non-BMP emoji
                     write("\U0001f600")
 
+                    # Non-encodable surrogates
+                    write("\ud800\udc00", ["\\ud800\\udc00"])
+
+                    # Code used by surrogateescape (which isn't enabled here)
+                    write("\udc80", ["\\udc80"])
+
                     # Null characters are logged using "modified UTF-8".
-                    write("\u0000", [r"\xc0\x80"])
-                    write("a\u0000", [r"a\xc0\x80"])
-                    write("\u0000b", [r"\xc0\x80b"])
-                    write("a\u0000b", [r"a\xc0\x80b"])
+                    write("\u0000", ["\\xc0\\x80"])
+                    write("a\u0000", ["a\\xc0\\x80"])
+                    write("\u0000b", ["\\xc0\\x80b"])
+                    write("a\u0000b", ["a\\xc0\\x80b"])
 
                 # Multi-line messages. Avoid identical consecutive lines, as
                 # they may activate "chatty" filtering and break the tests.
@@ -154,6 +160,12 @@ class TestAndroidOutput(unittest.TestCase):
                 write("hello\r\n", ["hello"])
                 write("hello\r\nworld\r\n", ["hello", "world"])
                 write("\r\n", [""])
+
+                # Non-standard line separators should be preserved.
+                write("before form feed\x0cafter form feed\n",
+                      ["before form feed\x0cafter form feed"])
+                write("before line separator\u2028after line separator\n",
+                      ["before line separator\u2028after line separator"])
 
                 # String subclasses are accepted, and if their methods write
                 # themselves, this doesn't cause infinite recursion.
@@ -238,17 +250,17 @@ class TestAndroidOutput(unittest.TestCase):
                 # Non-BMP emoji
                 write(b"\xf0\x9f\x98\x80")
 
-                # Null characters are logged using "modified UTF-8".
-                write(b"\x00", [r"\xc0\x80"])
-                write(b"a\x00", [r"a\xc0\x80"])
-                write(b"\x00b", [r"\xc0\x80b"])
-                write(b"a\x00b", [r"a\xc0\x80b"])
+                # Null bytes are logged using "modified UTF-8".
+                write(b"\x00", ["\\xc0\\x80"])
+                write(b"a\x00", ["a\\xc0\\x80"])
+                write(b"\x00b", ["\\xc0\\x80b"])
+                write(b"a\x00b", ["a\\xc0\\x80b"])
 
                 # Invalid UTF-8
-                write(b"\xff", [r"\xff"])
-                write(b"a\xff", [r"a\xff"])
-                write(b"\xffb", [r"\xffb"])
-                write(b"a\xffb", [r"a\xffb"])
+                write(b"\xff", ["\\xff"])
+                write(b"a\xff", ["a\\xff"])
+                write(b"\xffb", ["\\xffb"])
+                write(b"a\xffb", ["a\\xffb"])
 
                 # Log entries containing newlines are shown differently by
                 # `logcat -v tag`, `logcat -v long`, and Android Studio. We
