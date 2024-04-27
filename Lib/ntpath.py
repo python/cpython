@@ -646,6 +646,8 @@ except ImportError:
     # realpath is a no-op on systems without _getfinalpathname support.
     def realpath(path, *, strict=False):
         """Return an absolute path."""
+        if strict:
+            raise NotImplementedError('realpath: strict unavailable on this platform')
         return abspath(path)
 else:
     def _readlink_deep(path):
