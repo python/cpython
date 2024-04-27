@@ -105,6 +105,7 @@ def run_multiline_interactive_console(mainmodule=None, future_flags=0):
             stripped_statement = statement.strip()
             maybe_repl_command = REPL_COMMANDS.get(stripped_statement)
             if maybe_repl_command is not None and stripped_statement not in console.locals:
+                _get_reader().history.pop()
                 maybe_repl_command()
                 continue
             else:
