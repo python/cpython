@@ -89,16 +89,13 @@ int
 PyRun_AnyFileExFlags(FILE *fp, const char *filename, int closeit,
                      PyCompilerFlags *flags)
 {
-    PyObject *filename_obj;
+    PyObject *filename_obj = NULL;
     if (filename != NULL) {
         filename_obj = PyUnicode_DecodeFSDefault(filename);
         if (filename_obj == NULL) {
             PyErr_Print();
             return -1;
         }
-    }
-    else {
-        filename_obj = NULL;
     }
     int res = _PyRun_AnyFileObject(fp, filename_obj, closeit, flags);
     Py_XDECREF(filename_obj);
@@ -455,7 +452,7 @@ _PyRun_SimpleFileObject(FILE *fp, PyObject *filename, int closeit,
         v = run_pyc_file(pyc_fp, dict, dict, flags);
     } else {
         /* When running from stdin, leave __main__.__loader__ alone */
-        if (PyUnicode_CompareWithASCIIString(filename, "<stdin>") != 0 &&
+        if ((!PyUnicode_Check(filename) || !PyUnicode_EqualToUTF8(filename, "<stdin>")) &&
             set_main_loader(dict, filename, "SourceFileLoader") < 0) {
             fprintf(stderr, "python: failed to set __main__.__loader__\n");
             ret = -1;
@@ -475,11 +472,11 @@ _PyRun_SimpleFileObject(FILE *fp, PyObject *filename, int closeit,
 
   done:
     if (set_file_name) {
-        if (PyDict_DelItemString(dict, "__file__")) {
-            PyErr_Clear();
+        if (PyDict_PopString(dict, "__file__", NULL) < 0) {
+            PyErr_Print();
         }
-        if (PyDict_DelItemString(dict, "__cached__")) {
-            PyErr_Clear();
+        if (PyDict_PopString(dict, "__cached__", NULL) < 0) {
+            PyErr_Print();
         }
     }
     Py_XDECREF(main_module);

@@ -56,7 +56,7 @@ enum _frameowner {
 };
 
 typedef struct _PyInterpreterFrame {
-    PyObject *f_executable; /* Strong reference */
+    PyObject *f_executable; /* Strong reference (code object or None) */
     struct _PyInterpreterFrame *previous;
     PyObject *f_funcobj; /* Strong reference. Only valid if not on C stack */
     PyObject *f_globals; /* Borrowed reference. Only valid if not on C stack */
@@ -111,7 +111,17 @@ _PyFrame_NumSlotsForCodeObject(PyCodeObject *code)
     return code->co_framesize - FRAME_SPECIALS_SIZE;
 }
 
-void _PyFrame_Copy(_PyInterpreterFrame *src, _PyInterpreterFrame *dest);
+static inline void _PyFrame_Copy(_PyInterpreterFrame *src, _PyInterpreterFrame *dest)
+{
+    assert(src->stacktop >= _PyFrame_GetCode(src)->co_nlocalsplus);
+    *dest = *src;
+    for (int i = 1; i < src->stacktop; i++) {
+        dest->localsplus[i] = src->localsplus[i];
+    }
+    // Don't leave a dangling pointer to the old frame when creating generators
+    // and coroutines:
+    dest->previous = NULL;
+}
 
 /* Consumes reference to func and locals.
    Does not initialize frame->previous, which happens
@@ -260,7 +270,7 @@ _PyThreadState_HasStackSpace(PyThreadState *tstate, int size)
 extern _PyInterpreterFrame *
 _PyThreadState_PushFrame(PyThreadState *tstate, size_t size);
 
-void _PyThreadState_PopFrame(PyThreadState *tstate, _PyInterpreterFrame *frame);
+PyAPI_FUNC(void) _PyThreadState_PopFrame(PyThreadState *tstate, _PyInterpreterFrame *frame);
 
 /* Pushes a frame without checking for space.
  * Must be guarded by _PyThreadState_HasStackSpace()

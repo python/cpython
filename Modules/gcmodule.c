@@ -196,6 +196,16 @@ gc_get_count_impl(PyObject *module)
 /*[clinic end generated code: output=354012e67b16398f input=a392794a08251751]*/
 {
     GCState *gcstate = get_gc_state();
+
+#ifdef Py_GIL_DISABLED
+    _PyThreadStateImpl *tstate = (_PyThreadStateImpl *)_PyThreadState_GET();
+    struct _gc_thread_state *gc = &tstate->gc;
+
+    // Flush the local allocation count to the global count
+    _Py_atomic_add_int(&gcstate->young.count, (int)gc->alloc_count);
+    gc->alloc_count = 0;
+#endif
+
     return Py_BuildValue("(iii)",
                          gcstate->young.count,
                          gcstate->old[gcstate->visited_space].count,
@@ -230,6 +240,26 @@ referentsvisit(PyObject *obj, void *arg)
     return PyList_Append(list, obj) < 0;
 }
 
+static int
+append_referrents(PyObject *result, PyObject *args)
+{
+    for (Py_ssize_t i = 0; i < PyTuple_GET_SIZE(args); i++) {
+        PyObject *obj = PyTuple_GET_ITEM(args, i);
+        if (!_PyObject_IS_GC(obj)) {
+            continue;
+        }
+
+        traverseproc traverse = Py_TYPE(obj)->tp_traverse;
+        if (!traverse) {
+            continue;
+        }
+        if (traverse(obj, referentsvisit, result)) {
+            return -1;
+        }
+    }
+    return 0;
+}
+
 /*[clinic input]
 gc.get_referents
 
@@ -242,29 +272,24 @@ static PyObject *
 gc_get_referents_impl(PyObject *module, PyObject *args)
 /*[clinic end generated code: output=d47dc02cefd06fe8 input=b3ceab0c34038cbf]*/
 {
-    Py_ssize_t i;
     if (PySys_Audit("gc.get_referents", "(O)", args) < 0) {
         return NULL;
     }
+    PyInterpreterState *interp = _PyInterpreterState_GET();
     PyObject *result = PyList_New(0);
 
     if (result == NULL)
         return NULL;
 
-    for (i = 0; i < PyTuple_GET_SIZE(args); i++) {
-        traverseproc traverse;
-        PyObject *obj = PyTuple_GET_ITEM(args, i);
+    // NOTE: stop the world is a no-op in default build
+    _PyEval_StopTheWorld(interp);
+    int err = append_referrents(result, args);
+    _PyEval_StartTheWorld(interp);
 
-        if (!_PyObject_IS_GC(obj))
-            continue;
-        traverse = Py_TYPE(obj)->tp_traverse;
-        if (! traverse)
-            continue;
-        if (traverse(obj, referentsvisit, result)) {
-            Py_DECREF(result);
-            return NULL;
-        }
+    if (err < 0) {
+        Py_CLEAR(result);
     }
+
     return result;
 }
 
@@ -301,7 +326,7 @@ gc_get_objects_impl(PyObject *module, Py_ssize_t generation)
     }
 
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    return _PyGC_GetObjects(interp, generation);
+    return _PyGC_GetObjects(interp, (int)generation);
 }
 
 /*[clinic input]
@@ -353,7 +378,7 @@ error:
 
 
 /*[clinic input]
-gc.is_tracked
+gc.is_tracked -> bool
 
     obj: object
     /
@@ -363,21 +388,15 @@ Returns true if the object is tracked by the garbage collector.
 Simple atomic objects will return false.
 [clinic start generated code]*/
 
-static PyObject *
-gc_is_tracked(PyObject *module, PyObject *obj)
-/*[clinic end generated code: output=14f0103423b28e31 input=d83057f170ea2723]*/
+static int
+gc_is_tracked_impl(PyObject *module, PyObject *obj)
+/*[clinic end generated code: output=91c8d086b7f47a33 input=423b98ec680c3126]*/
 {
-    PyObject *result;
-
-    if (_PyObject_IS_GC(obj) && _PyObject_GC_IS_TRACKED(obj))
-        result = Py_True;
-    else
-        result = Py_False;
-    return Py_NewRef(result);
+    return PyObject_GC_IsTracked(obj);
 }
 
 /*[clinic input]
-gc.is_finalized
+gc.is_finalized -> bool
 
     obj: object
     /
@@ -385,14 +404,11 @@ gc.is_finalized
 Returns true if the object has been already finalized by the GC.
 [clinic start generated code]*/
 
-static PyObject *
-gc_is_finalized(PyObject *module, PyObject *obj)
-/*[clinic end generated code: output=e1516ac119a918ed input=201d0c58f69ae390]*/
+static int
+gc_is_finalized_impl(PyObject *module, PyObject *obj)
+/*[clinic end generated code: output=401ff5d6fc660429 input=ca4d111c8f8c4e3a]*/
 {
-    if (_PyObject_IS_GC(obj) && _PyGC_FINALIZED(obj)) {
-         Py_RETURN_TRUE;
-    }
-    Py_RETURN_FALSE;
+    return PyObject_GC_IsFinalized(obj);
 }
 
 /*[clinic input]

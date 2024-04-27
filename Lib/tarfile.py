@@ -636,6 +636,10 @@ class _FileInFile(object):
     def flush(self):
         pass
 
+    @property
+    def mode(self):
+        return 'rb'
+
     def readable(self):
         return True
 
@@ -872,7 +876,7 @@ class TarInfo(object):
         pax_headers = ('A dictionary containing key-value pairs of an '
                        'associated pax extended header.'),
         sparse = 'Sparse member information.',
-        tarfile = None,
+        _tarfile = None,
         _sparse_structs = None,
         _link_target = None,
         )
@@ -900,6 +904,24 @@ class TarInfo(object):
 
         self.sparse = None      # sparse member information
         self.pax_headers = {}   # pax header information
+
+    @property
+    def tarfile(self):
+        import warnings
+        warnings.warn(
+            'The undocumented "tarfile" attribute of TarInfo objects '
+            + 'is deprecated and will be removed in Python 3.16',
+            DeprecationWarning, stacklevel=2)
+        return self._tarfile
+
+    @tarfile.setter
+    def tarfile(self, tarfile):
+        import warnings
+        warnings.warn(
+            'The undocumented "tarfile" attribute of TarInfo objects '
+            + 'is deprecated and will be removed in Python 3.16',
+            DeprecationWarning, stacklevel=2)
+        self._tarfile = tarfile
 
     @property
     def path(self):
@@ -2030,7 +2052,7 @@ class TarFile(object):
         # Now, fill the TarInfo object with
         # information specific for the file.
         tarinfo = self.tarinfo()
-        tarinfo.tarfile = self  # Not needed
+        tarinfo._tarfile = self  # To be removed in 3.16.
 
         # Use os.stat or os.lstat, depending on if symlinks shall be resolved.
         if fileobj is None:
@@ -2196,12 +2218,15 @@ class TarFile(object):
             self.addfile(tarinfo)
 
     def addfile(self, tarinfo, fileobj=None):
-        """Add the TarInfo object `tarinfo' to the archive. If `fileobj' is
-           given, it should be a binary file, and tarinfo.size bytes are read
-           from it and added to the archive. You can create TarInfo objects
-           directly, or by using gettarinfo().
+        """Add the TarInfo object `tarinfo' to the archive. If `tarinfo' represents
+           a non zero-size regular file, the `fileobj' argument should be a binary file,
+           and tarinfo.size bytes are read from it and added to the archive.
+           You can create TarInfo objects directly, or by using gettarinfo().
         """
         self._check("awx")
+
+        if fileobj is None and tarinfo.isreg() and tarinfo.size != 0:
+            raise ValueError("fileobj not provided for non zero-size regular file")
 
         tarinfo = copy.copy(tarinfo)
 
@@ -2229,7 +2254,7 @@ class TarFile(object):
                     'Python 3.14 will, by default, filter extracted tar '
                     + 'archives and reject files or modify their metadata. '
                     + 'Use the filter argument to control this behavior.',
-                    DeprecationWarning)
+                    DeprecationWarning, stacklevel=3)
                 return fully_trusted_filter
             if isinstance(filter, str):
                 raise TypeError(
@@ -2411,7 +2436,7 @@ class TarFile(object):
         if upperdirs and not os.path.exists(upperdirs):
             # Create directories that are not part of the archive with
             # default permissions.
-            os.makedirs(upperdirs)
+            os.makedirs(upperdirs, exist_ok=True)
 
         if tarinfo.islnk() or tarinfo.issym():
             self._dbg(1, "%s -> %s" % (tarinfo.name, tarinfo.linkname))

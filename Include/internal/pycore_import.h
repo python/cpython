@@ -11,7 +11,6 @@ extern "C" {
 
 #include "pycore_lock.h"          // PyMutex
 #include "pycore_hashtable.h"     // _Py_hashtable_t
-#include "pycore_time.h"          // _PyTime_t
 
 extern int _PyImport_IsInitialized(PyInterpreterState *);
 
@@ -23,11 +22,14 @@ extern int _PyImport_SetModuleString(const char *name, PyObject* module);
 extern void _PyImport_AcquireLock(PyInterpreterState *interp);
 extern int _PyImport_ReleaseLock(PyInterpreterState *interp);
 
+// This is used exclusively for the sys and builtins modules:
 extern int _PyImport_FixupBuiltin(
+    PyThreadState *tstate,
     PyObject *mod,
     const char *name,            /* UTF-8 encoded string */
     PyObject *modules
     );
+// We could probably drop this:
 extern int _PyImport_FixupExtensionObject(PyObject*, PyObject *,
                                           PyObject *, PyObject *);
 
@@ -103,7 +105,7 @@ struct _import_state {
     /* diagnostic info in PyImport_ImportModuleLevelObject() */
     struct {
         int import_level;
-        _PyTime_t accumulated;
+        PyTime_t accumulated;
         int header;
     } find_and_load;
 };

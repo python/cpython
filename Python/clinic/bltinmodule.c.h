@@ -233,25 +233,6 @@ PyDoc_STRVAR(builtin_chr__doc__,
 #define BUILTIN_CHR_METHODDEF    \
     {"chr", (PyCFunction)builtin_chr, METH_O, builtin_chr__doc__},
 
-static PyObject *
-builtin_chr_impl(PyObject *module, int i);
-
-static PyObject *
-builtin_chr(PyObject *module, PyObject *arg)
-{
-    PyObject *return_value = NULL;
-    int i;
-
-    i = PyLong_AsInt(arg);
-    if (i == -1 && PyErr_Occurred()) {
-        goto exit;
-    }
-    return_value = builtin_chr_impl(module, i);
-
-exit:
-    return return_value;
-}
-
 PyDoc_STRVAR(builtin_compile__doc__,
 "compile($module, /, source, filename, mode, flags=0,\n"
 "        dont_inherit=False, optimize=-1, *, _feature_version=-1)\n"
@@ -712,10 +693,10 @@ PyDoc_STRVAR(builtin_anext__doc__,
 "anext($module, aiterator, default=<unrepresentable>, /)\n"
 "--\n"
 "\n"
-"async anext(aiterator[, default])\n"
+"Return the next item from the async iterator.\n"
 "\n"
-"Return the next item from the async iterator.  If default is given and the async\n"
-"iterator is exhausted, it is returned instead of raising StopAsyncIteration.");
+"If default is given and the async iterator is exhausted,\n"
+"it is returned instead of raising StopAsyncIteration.");
 
 #define BUILTIN_ANEXT_METHODDEF    \
     {"anext", _PyCFunction_CAST(builtin_anext), METH_FASTCALL, builtin_anext__doc__},
@@ -1212,4 +1193,4 @@ builtin_issubclass(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=31bded5d08647a57 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=6d15edfc194b2c08 input=a9049054013a1b77]*/
