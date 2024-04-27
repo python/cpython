@@ -50,7 +50,7 @@ iOS specific arguments to configure
 
     Unless you know what you're doing, changing the name of the Python
     framework on iOS is not advised. If you use this option, you won't be able
-    to run the ``make testios`` target without making signficant manual
+    to run the ``make testios`` target without making significant manual
     alterations, and you won't be able to use any binary packages unless you
     compile them yourself using your own framework name.
 
