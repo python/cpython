@@ -2482,8 +2482,8 @@ _Py_find_basename(const wchar_t *filename)
    the path, if known. If -1, the first null character will be assumed
    to be the end of the path. 'start' is the position where to start
    normalizing. 'normsize' will be set to contain the length of the
-   resulting normalized path. If 'explicit_curdir' is set, a leading
-   '.\' is preserved */
+   resulting normalized path. If 'explicit_curdir' is set, an explicit
+   curdir will be used for qualified referencing in the cwd */
 wchar_t *
 _Py_normpath_and_size(wchar_t *path, Py_ssize_t size, Py_ssize_t start,
                       Py_ssize_t *normsize, int explicit_curdir)
@@ -2504,6 +2504,7 @@ _Py_normpath_and_size(wchar_t *path, Py_ssize_t size, Py_ssize_t start,
     wchar_t *p2 = path;     // destination of a scanned character to be ljusted
     wchar_t *minP2 = path;  // the beginning of the destination range
     wchar_t lastC = L'\0';  // the last ljusted character, p2[-1] in most cases
+    int explicit = 0;       // uses qualified referencing in the cwd
 
 #define IS_END(x) (pEnd ? (x) == pEnd : !*(x))
 #ifdef ALTSEP
@@ -2541,27 +2542,16 @@ _Py_normpath_and_size(wchar_t *path, Py_ssize_t size, Py_ssize_t start,
 #ifdef ALTSEP
         if (lastC == ALTSEP) {
             lastC = SEP;
-            if (explicit_curdir) {
-                p2[1] = SEP;
-            }
         }
 #endif
-        if (explicit_curdir) {
-            // TODO: Don't change minP2 & handle explicit curdir in main loop
-            if (!lastC) {
-                p2 = minP2 = &p2[1];
-            }
-            else {
-                p2 = minP2 = &p2[2];
-            }
-        }
         while (IS_SEP(p1)) {
             p1++;
         }
+        explicit = 1;
     }
 
-    // Skip past cwd, not allowed if size is unknown
-    if (size >= 0 && path + start > p1) {
+    // Skip past cwd, not allowed if size is unknown or explicit_curdir is set
+    if (size >= 0 && path + start > p1 && !explicit_curdir) {
         p1 = p2 = path + start;
         lastC = *(p1-1);
     }
@@ -2594,9 +2584,11 @@ _Py_normpath_and_size(wchar_t *path, Py_ssize_t size, Py_ssize_t start,
                         p2 = p3 + 1;
                     } else {
                         p2 = p3;
+                        explicit = 1;
                     }
                     p1 += 1;
                 } else if (sep_at_1) {
+                    explicit = 1;
                 } else {
                     *p2++ = lastC = c;
                 }
@@ -2615,6 +2607,30 @@ _Py_normpath_and_size(wchar_t *path, Py_ssize_t size, Py_ssize_t start,
         }
     } else {
         --p2;
+    }
+    if (explicit_curdir && !rootsize && explicit) {
+        // Add explicit curdir
+        if (p2 == minP2 - 1) {
+            // '.'
+            p2++;
+            assert(p2 < p1);
+            *p2 = L'.';
+        }
+        else if (minP2[0] != L'.' || minP2[1] != L'.' ||
+                 !SEP_OR_END(&minP2[2]))
+        {
+            // Not '..\'
+            p2 += 2;
+            assert(p2 < p1);
+            wchar_t *p3 = p2 - 2;
+            while (p3 != minP2) {
+                p3[2] = *p3--;
+            }
+            p3[2] = p3[0];
+            p3[0] = L'.';
+            p3[1] = SEP;
+        }
+        p2[1] = L'\0';
     }
     *normsize = p2 - path + 1;
 #undef SEP_OR_END
