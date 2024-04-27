@@ -3,7 +3,14 @@ import sys
 
 
 
-def interactive_console(mainmodule=None, quiet=False):
+def interactive_console(mainmodule=None, quiet=False, pythonstartup=False):
+    startup_path = os.getenv("PYTHONSTARTUP")
+    if pythonstartup and startup_path:
+        import tokenize
+        with tokenize.open(startup_path) as f:
+            startup_code = compile(f.read(), startup_path, "exec")
+            exec(startup_code)
+
     # set sys.{ps1,ps2} just before invoking the interactive interpreter. This
     # mimics what CPython does in pythonrun.c
     if not hasattr(sys, "ps1"):
@@ -61,17 +68,5 @@ def run_simple_interactive_console(mainmodule):
             more = 0
 
 
-# ____________________________________________________________
-
-if __name__ == "__main__":  # for testing
-    if os.getenv("PYTHONSTARTUP"):
-        import tokenize
-        with tokenize.open(os.getenv("PYTHONSTARTUP")) as f:
-            exec(
-                compile(
-                    f.read(),
-                    os.getenv("PYTHONSTARTUP"),
-                    "exec",
-                )
-            )
+if __name__ == "__main__":
     interactive_console()
