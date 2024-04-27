@@ -434,6 +434,8 @@ if os.name == "nt":
     # realpath is a no-op on Windows.
     def realpath(path, *, strict=False):
         """Return an absolute path."""
+        if strict:
+            raise NotImplementedError('realpath: strict unavailable on this platform')
         return abspath(path)
 else:
     def realpath(filename, *, strict=False):
