@@ -74,9 +74,9 @@ typedef union {
         int tag = (is_deferred ? Py_TAG_DEFERRED : 0);
         return ((_PyStackRef){.bits = ((uintptr_t)(obj) | tag)});
     }
-#define Py_STACKREF_TAG_DEFERRED(obj) _Py_STACKREF_TAG_DEFERRED(_PyObject_CAST(obj))
+    #define Py_STACKREF_TAG_DEFERRED(obj) _Py_STACKREF_TAG_DEFERRED(_PyObject_CAST(obj))
 #else
-#define Py_STACKREF_TAG_DEFERRED(obj) ((_PyStackRef){.bits = ((uintptr_t)(obj))})
+    #define Py_STACKREF_TAG_DEFERRED(obj) ((_PyStackRef){.bits = ((uintptr_t)(obj))})
 #endif
 
 #if defined(Py_TAG_TEST)
