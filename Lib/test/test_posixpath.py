@@ -20,16 +20,6 @@ except ImportError:
 
 ABSTFN = abspath(os_helper.TESTFN)
 
-def skip_if_ABSTFN_contains_backslash(test):
-    """
-    On Windows, posixpath.abspath still returns paths with backslashes
-    instead of posix forward slashes. If this is the case, several tests
-    fail, so skip them.
-    """
-    found_backslash = '\\' in ABSTFN
-    msg = "ABSTFN is not a posix path - tests fail"
-    return [test, unittest.skip(msg)(test)][found_backslash]
-
 def safe_rmdir(dirname):
     try:
         os.rmdir(dirname)
@@ -419,7 +409,7 @@ class PosixPathTest(unittest.TestCase):
                 result = posixpath.normpath(path)
                 self.assertEqual(result, expected)
 
-    @skip_if_ABSTFN_contains_backslash
+    @unittest.skipUnless(posix, "realpath requires 'posix' module")
     def test_realpath_curdir(self):
         self.assertEqual(realpath('.'), os.getcwd())
         self.assertEqual(realpath('./.'), os.getcwd())
@@ -429,7 +419,7 @@ class PosixPathTest(unittest.TestCase):
         self.assertEqual(realpath(b'./.'), os.getcwdb())
         self.assertEqual(realpath(b'/'.join([b'.'] * 100)), os.getcwdb())
 
-    @skip_if_ABSTFN_contains_backslash
+    @unittest.skipUnless(posix, "realpath requires 'posix' module")
     def test_realpath_pardir(self):
         self.assertEqual(realpath('..'), dirname(os.getcwd()))
         self.assertEqual(realpath('../..'), dirname(dirname(os.getcwd())))
@@ -440,7 +430,7 @@ class PosixPathTest(unittest.TestCase):
         self.assertEqual(realpath(b'/'.join([b'..'] * 100)), b'/')
 
     @os_helper.skip_unless_symlink
-    @skip_if_ABSTFN_contains_backslash
+    @unittest.skipUnless(posix, "realpath requires 'posix' module")
     def test_realpath_basic(self):
         # Basic operation.
         try:
@@ -450,7 +440,7 @@ class PosixPathTest(unittest.TestCase):
             os_helper.unlink(ABSTFN)
 
     @os_helper.skip_unless_symlink
-    @skip_if_ABSTFN_contains_backslash
+    @unittest.skipUnless(posix, "realpath requires 'posix' module")
     def test_realpath_strict(self):
         # Bug #43757: raise FileNotFoundError in strict mode if we encounter
         # a path that does not exist.
@@ -462,7 +452,7 @@ class PosixPathTest(unittest.TestCase):
             os_helper.unlink(ABSTFN)
 
     @os_helper.skip_unless_symlink
-    @skip_if_ABSTFN_contains_backslash
+    @unittest.skipUnless(posix, "realpath requires 'posix' module")
     def test_realpath_relative(self):
         try:
             os.symlink(posixpath.relpath(ABSTFN+"1"), ABSTFN)
@@ -471,7 +461,7 @@ class PosixPathTest(unittest.TestCase):
             os_helper.unlink(ABSTFN)
 
     @os_helper.skip_unless_symlink
-    @skip_if_ABSTFN_contains_backslash
+    @unittest.skipUnless(posix, "realpath requires 'posix' module")
     def test_realpath_missing_pardir(self):
         try:
             os.symlink(os_helper.TESTFN + "1", os_helper.TESTFN)
@@ -480,7 +470,7 @@ class PosixPathTest(unittest.TestCase):
             os_helper.unlink(os_helper.TESTFN)
 
     @os_helper.skip_unless_symlink
-    @skip_if_ABSTFN_contains_backslash
+    @unittest.skipUnless(posix, "realpath requires 'posix' module")
     def test_realpath_symlink_loops(self):
         # Bug #930024, return the path unchanged if we get into an infinite
         # symlink loop in non-strict mode (default).
@@ -521,7 +511,7 @@ class PosixPathTest(unittest.TestCase):
             os_helper.unlink(ABSTFN+"a")
 
     @os_helper.skip_unless_symlink
-    @skip_if_ABSTFN_contains_backslash
+    @unittest.skipUnless(posix, "realpath requires 'posix' module")
     def test_realpath_symlink_loops_strict(self):
         # Bug #43757, raise OSError if we get into an infinite symlink loop in
         # strict mode.
@@ -562,7 +552,7 @@ class PosixPathTest(unittest.TestCase):
             os_helper.unlink(ABSTFN+"a")
 
     @os_helper.skip_unless_symlink
-    @skip_if_ABSTFN_contains_backslash
+    @unittest.skipUnless(posix, "realpath requires 'posix' module")
     def test_realpath_repeated_indirect_symlinks(self):
         # Issue #6975.
         try:
@@ -576,7 +566,7 @@ class PosixPathTest(unittest.TestCase):
             safe_rmdir(ABSTFN)
 
     @os_helper.skip_unless_symlink
-    @skip_if_ABSTFN_contains_backslash
+    @unittest.skipUnless(posix, "realpath requires 'posix' module")
     def test_realpath_deep_recursion(self):
         depth = 10
         try:
@@ -595,7 +585,7 @@ class PosixPathTest(unittest.TestCase):
             safe_rmdir(ABSTFN)
 
     @os_helper.skip_unless_symlink
-    @skip_if_ABSTFN_contains_backslash
+    @unittest.skipUnless(posix, "realpath requires 'posix' module")
     def test_realpath_resolve_parents(self):
         # We also need to resolve any symlinks in the parents of a relative
         # path passed to realpath. E.g.: current working directory is
@@ -614,7 +604,7 @@ class PosixPathTest(unittest.TestCase):
             safe_rmdir(ABSTFN)
 
     @os_helper.skip_unless_symlink
-    @skip_if_ABSTFN_contains_backslash
+    @unittest.skipUnless(posix, "realpath requires 'posix' module")
     def test_realpath_resolve_before_normalizing(self):
         # Bug #990669: Symbolic links should be resolved before we
         # normalize the path. E.g.: if we have directories 'a', 'k' and 'y'
@@ -642,7 +632,7 @@ class PosixPathTest(unittest.TestCase):
             safe_rmdir(ABSTFN)
 
     @os_helper.skip_unless_symlink
-    @skip_if_ABSTFN_contains_backslash
+    @unittest.skipUnless(posix, "realpath requires 'posix' module")
     def test_realpath_resolve_first(self):
         # Bug #1213894: The first component of the path, if not absolute,
         # must be resolved too.
@@ -660,6 +650,7 @@ class PosixPathTest(unittest.TestCase):
             safe_rmdir(ABSTFN + "/k")
             safe_rmdir(ABSTFN)
 
+    @unittest.skipUnless(posix, "relpath requires 'posix' module")
     def test_relpath(self):
         (real_getcwd, os.getcwd) = (os.getcwd, lambda: r"/home/user/bar")
         try:
@@ -687,6 +678,7 @@ class PosixPathTest(unittest.TestCase):
         finally:
             os.getcwd = real_getcwd
 
+    @unittest.skipUnless(posix, "relpath requires 'posix' module")
     def test_relpath_bytes(self):
         (real_getcwdb, os.getcwdb) = (os.getcwdb, lambda: br"/home/user/bar")
         try:

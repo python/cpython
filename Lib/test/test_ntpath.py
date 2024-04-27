@@ -376,16 +376,18 @@ class TestNtpath(NtpathTestCase):
         tester("ntpath.normpath('\\\\')", '\\\\')
         tester("ntpath.normpath('//?/UNC/server/share/..')", '\\\\?\\UNC\\server\\share\\')
 
+    @unittest.skipUnless(HAVE_GETFINALPATHNAME, 'need _getfinalpathname')
     def test_realpath_curdir(self):
-        expected = ntpath.normpath(os.getcwd())
+        expected = os.getcwd()
         tester("ntpath.realpath('.')", expected)
         tester("ntpath.realpath('./.')", expected)
         tester("ntpath.realpath('/'.join(['.'] * 100))", expected)
         tester("ntpath.realpath('.\\.')", expected)
         tester("ntpath.realpath('\\'.join(['.'] * 100))", expected)
 
+    @unittest.skipUnless(HAVE_GETFINALPATHNAME, 'need _getfinalpathname')
     def test_realpath_pardir(self):
-        expected = ntpath.normpath(os.getcwd())
+        expected = os.getcwd()
         tester("ntpath.realpath('..')", ntpath.dirname(expected))
         tester("ntpath.realpath('../..')",
                ntpath.dirname(ntpath.dirname(expected)))
@@ -839,6 +841,7 @@ class TestNtpath(NtpathTestCase):
             drive, _ = ntpath.splitdrive(cwd_dir)
             tester('ntpath.abspath("/abc/")', drive + "\\abc")
 
+    @unittest.skipUnless(nt, "relpath requires 'nt' module")
     def test_relpath(self):
         tester('ntpath.relpath("a")', 'a')
         tester('ntpath.relpath(ntpath.abspath("a"))', 'a')
