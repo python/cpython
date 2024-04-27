@@ -1,2 +1,0 @@
-Fix issue where :meth:`pathlib.Path.glob` raised :exc:`RecursionError` when
-walking deep directory trees.

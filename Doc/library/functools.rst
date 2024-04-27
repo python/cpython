@@ -194,7 +194,7 @@ The :mod:`functools` module defines the following functions:
    In contrast, the tuple arguments ``('answer', Decimal(42))`` and
    ``('answer', Fraction(42))`` are treated as equivalent.
 
-   The wrapped function is instrumented with a :func:`cache_parameters`
+   The wrapped function is instrumented with a :func:`!cache_parameters`
    function that returns a new :class:`dict` showing the values for *maxsize*
    and *typed*.  This is for information purposes only.  Mutating the values
    has no effect.
@@ -226,8 +226,9 @@ The :mod:`functools` module defines the following functions:
 
    In general, the LRU cache should only be used when you want to reuse
    previously computed values.  Accordingly, it doesn't make sense to cache
-   functions with side-effects, functions that need to create distinct mutable
-   objects on each call, or impure functions such as time() or random().
+   functions with side-effects, functions that need to create
+   distinct mutable objects on each call (such as generators and async functions),
+   or impure functions such as time() or random().
 
    Example of an LRU cache for static web content::
 
@@ -274,8 +275,8 @@ The :mod:`functools` module defines the following functions:
    .. versionchanged:: 3.8
       Added the *user_function* option.
 
-   .. versionadded:: 3.9
-      Added the function :func:`cache_parameters`
+   .. versionchanged:: 3.9
+      Added the function :func:`!cache_parameters`
 
 .. decorator:: total_ordering
 
@@ -402,25 +403,27 @@ The :mod:`functools` module defines the following functions:
    .. versionadded:: 3.4
 
 
-.. function:: reduce(function, iterable[, initializer])
+.. function:: reduce(function, iterable[, initial], /)
 
    Apply *function* of two arguments cumulatively to the items of *iterable*, from
    left to right, so as to reduce the iterable to a single value.  For example,
    ``reduce(lambda x, y: x+y, [1, 2, 3, 4, 5])`` calculates ``((((1+2)+3)+4)+5)``.
    The left argument, *x*, is the accumulated value and the right argument, *y*, is
-   the update value from the *iterable*.  If the optional *initializer* is present,
+   the update value from the *iterable*.  If the optional *initial* is present,
    it is placed before the items of the iterable in the calculation, and serves as
-   a default when the iterable is empty.  If *initializer* is not given and
+   a default when the iterable is empty.  If *initial* is not given and
    *iterable* contains only one item, the first item is returned.
 
    Roughly equivalent to::
 
-      def reduce(function, iterable, initializer=None):
+      initial_missing = object()
+
+      def reduce(function, iterable, initial=initial_missing, /):
           it = iter(iterable)
-          if initializer is None:
+          if initial is initial_missing:
               value = next(it)
           else:
-              value = initializer
+              value = initial
           for element in it:
               value = function(value, element)
           return value
@@ -664,13 +667,9 @@ The :mod:`functools` module defines the following functions:
    on the wrapper function). :exc:`AttributeError` is still raised if the
    wrapper function itself is missing any attributes named in *updated*.
 
-   .. versionadded:: 3.2
-      Automatic addition of the ``__wrapped__`` attribute.
-
-   .. versionadded:: 3.2
-      Copying of the ``__annotations__`` attribute by default.
-
    .. versionchanged:: 3.2
+      The ``__wrapped__`` attribute is now automatically added.
+      The ``__annotations__`` attribute is now copied by default.
       Missing attributes no longer trigger an :exc:`AttributeError`.
 
    .. versionchanged:: 3.4
@@ -739,7 +738,7 @@ have three read-only attributes:
    called.
 
 :class:`partial` objects are like :class:`function` objects in that they are
-callable, weak referencable, and can have attributes.  There are some important
+callable, weak referenceable, and can have attributes.  There are some important
 differences.  For instance, the :attr:`~definition.__name__` and :attr:`__doc__` attributes
 are not created automatically.  Also, :class:`partial` objects defined in
 classes behave like static methods and do not transform into bound methods

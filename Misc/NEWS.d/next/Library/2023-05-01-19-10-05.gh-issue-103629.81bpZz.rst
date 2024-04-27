@@ -1,1 +1,0 @@
-Update the ``repr`` of :class:`typing.Unpack` according to :pep:`692`.

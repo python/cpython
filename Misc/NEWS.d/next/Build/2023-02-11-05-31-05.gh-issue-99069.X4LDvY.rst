@@ -1,1 +1,0 @@
-Extended workaround defining ``static_assert`` when missing from the libc headers to all clang and gcc builds. In particular, this fixes building on macOS <= 10.10.

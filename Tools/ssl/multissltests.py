@@ -46,8 +46,10 @@ OPENSSL_OLD_VERSIONS = [
 ]
 
 OPENSSL_RECENT_VERSIONS = [
-    "1.1.1t",
-    "3.0.8"
+    "1.1.1w",
+    "3.0.13",
+    "3.1.5",
+    "3.2.1",
 ]
 
 LIBRESSL_OLD_VERSIONS = [
@@ -150,7 +152,10 @@ class AbstractBuilder(object):
     build_template = None
     depend_target = None
     install_target = 'install'
-    jobs = os.cpu_count()
+    if hasattr(os, 'process_cpu_count'):
+        jobs = os.process_cpu_count()
+    else:
+        jobs = os.cpu_count()
 
     module_files = (
         os.path.join(PYTHONROOT, "Modules/_ssl.c"),

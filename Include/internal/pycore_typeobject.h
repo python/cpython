@@ -4,11 +4,12 @@
 extern "C" {
 #endif
 
-#include "pycore_moduleobject.h"
-
 #ifndef Py_BUILD_CORE
 #  error "this header requires Py_BUILD_CORE define"
 #endif
+
+#include "pycore_moduleobject.h"  // PyModuleObject
+#include "pycore_lock.h"          // PyMutex
 
 
 /* state */
@@ -28,6 +29,9 @@ struct _types_runtime_state {
 // see _PyType_Lookup().
 struct type_cache_entry {
     unsigned int version;  // initialized from type->tp_version_tag
+#ifdef Py_GIL_DISABLED
+   _PySeqLock sequence;
+#endif
     PyObject *name;        // reference to exactly a str or None
     PyObject *value;       // borrowed reference or NULL
 };
@@ -46,11 +50,9 @@ typedef struct {
     PyTypeObject *type;
     int readying;
     int ready;
-    // XXX tp_dict, tp_bases, and tp_mro can probably be statically
-    // allocated, instead of dynamically and stored on the interpreter.
+    // XXX tp_dict can probably be statically allocated,
+    // instead of dynamically and stored on the interpreter.
     PyObject *tp_dict;
-    PyObject *tp_bases;
-    PyObject *tp_mro;
     PyObject *tp_subclasses;
     /* We never clean up weakrefs for static builtin types since
        they will effectively never get triggered.  However, there
@@ -66,8 +68,46 @@ struct types_state {
     unsigned int next_version_tag;
 
     struct type_cache type_cache;
+
+    /* Every static builtin type is initialized for each interpreter
+       during its own initialization, including for the main interpreter
+       during global runtime initialization.  This is done by calling
+       _PyStaticType_InitBuiltin().
+
+       The first time a static builtin type is initialized, all the
+       normal PyType_Ready() stuff happens.  The only difference from
+       normal is that there are three PyTypeObject fields holding
+       objects which are stored here (on PyInterpreterState) rather
+       than in the corresponding PyTypeObject fields.  Those are:
+       tp_dict (cls.__dict__), tp_subclasses (cls.__subclasses__),
+       and tp_weaklist.
+
+       When a subinterpreter is initialized, each static builtin type
+       is still initialized, but only the interpreter-specific portion,
+       namely those three objects.
+
+       Those objects are stored in the PyInterpreterState.types.builtins
+       array, at the index corresponding to each specific static builtin
+       type.  That index (a size_t value) is stored in the tp_subclasses
+       field.  For static builtin types, we re-purposed the now-unused
+       tp_subclasses to avoid adding another field to PyTypeObject.
+       In all other cases tp_subclasses holds a dict like before.
+       (The field was previously defined as PyObject*, but is now void*
+       to reflect its dual use.)
+
+       The index for each static builtin type isn't statically assigned.
+       Instead it is calculated the first time a type is initialized
+       (by the main interpreter).  The index matches the order in which
+       the type was initialized relative to the others.  The actual
+       value comes from the current value of num_builtins_initialized,
+       as each type is initialized for the main interpreter.
+
+       num_builtins_initialized is incremented once for each static
+       builtin type.  Once initialization is over for a subinterpreter,
+       the value will be the same as for all other interpreters.  */
     size_t num_builtins_initialized;
     static_builtin_state builtins[_Py_MAX_STATIC_BUILTIN_TYPES];
+    PyMutex mutex;
 };
 
 
@@ -76,7 +116,7 @@ struct types_state {
 extern PyStatus _PyTypes_InitTypes(PyInterpreterState *);
 extern void _PyTypes_FiniTypes(PyInterpreterState *);
 extern void _PyTypes_Fini(PyInterpreterState *);
-
+extern void _PyTypes_AfterFork(void);
 
 /* other API */
 
@@ -116,11 +156,15 @@ extern static_builtin_state * _PyStaticType_GetState(PyInterpreterState *, PyTyp
 extern void _PyStaticType_ClearWeakRefs(PyInterpreterState *, PyTypeObject *type);
 extern void _PyStaticType_Dealloc(PyInterpreterState *, PyTypeObject *);
 
+// Export for 'math' shared extension, used via _PyType_IsReady() static inline
+// function
 PyAPI_FUNC(PyObject *) _PyType_GetDict(PyTypeObject *);
+
 extern PyObject * _PyType_GetBases(PyTypeObject *type);
 extern PyObject * _PyType_GetMRO(PyTypeObject *type);
 extern PyObject* _PyType_GetSubclasses(PyTypeObject *);
 extern int _PyType_HasSubclasses(PyTypeObject *);
+PyAPI_FUNC(PyObject *) _PyType_GetModuleByDef2(PyTypeObject *, PyTypeObject *, PyModuleDef *);
 
 // PyType_Ready() must be called if _PyType_IsReady() is false.
 // See also the Py_TPFLAGS_READY flag.
@@ -130,18 +174,34 @@ _PyType_IsReady(PyTypeObject *type)
     return _PyType_GetDict(type) != NULL;
 }
 
-PyObject *
-_Py_type_getattro_impl(PyTypeObject *type, PyObject *name, int *suppress_missing_attribute);
-PyObject *
-_Py_type_getattro(PyTypeObject *type, PyObject *name);
+extern PyObject* _Py_type_getattro_impl(PyTypeObject *type, PyObject *name,
+                                        int *suppress_missing_attribute);
+extern PyObject* _Py_type_getattro(PyObject *type, PyObject *name);
 
-PyObject *_Py_slot_tp_getattro(PyObject *self, PyObject *name);
-PyObject *_Py_slot_tp_getattr_hook(PyObject *self, PyObject *name);
+extern PyObject* _Py_BaseObject_RichCompare(PyObject* self, PyObject* other, int op);
 
-PyAPI_DATA(PyTypeObject) _PyBufferWrapper_Type;
+extern PyObject* _Py_slot_tp_getattro(PyObject *self, PyObject *name);
+extern PyObject* _Py_slot_tp_getattr_hook(PyObject *self, PyObject *name);
 
-PyObject *
-_PySuper_Lookup(PyTypeObject *su_type, PyObject *su_obj, PyObject *name, int *meth_found);
+extern PyTypeObject _PyBufferWrapper_Type;
+
+PyAPI_FUNC(PyObject*) _PySuper_Lookup(PyTypeObject *su_type, PyObject *su_obj,
+                                 PyObject *name, int *meth_found);
+
+extern PyObject* _PyType_GetFullyQualifiedName(PyTypeObject *type, char sep);
+
+// Perform the following operation, in a thread-safe way when required by the
+// build mode.
+//
+// self->tp_flags = (self->tp_flags & ~mask) | flags;
+extern void _PyType_SetFlags(PyTypeObject *self, unsigned long mask,
+                             unsigned long flags);
+
+// Like _PyType_SetFlags(), but apply the operation to self and any of its
+// subclasses without Py_TPFLAGS_IMMUTABLETYPE set.
+extern void _PyType_SetFlagsRecursive(PyTypeObject *self, unsigned long mask,
+                                      unsigned long flags);
+
 
 #ifdef __cplusplus
 }
