@@ -43,7 +43,6 @@ class InvalidTerminal(RuntimeError):
 
 _error = (termios.error, curses.error, InvalidTerminal)
 
-# there are arguments for changing this to "refresh"
 SIGWINCH_EVENT = "repaint"
 
 FIONREAD = getattr(termios, "FIONREAD", None)
@@ -59,39 +58,30 @@ def _my_getstr(cap, optional=0):
     return r
 
 
-# at this point, can we say: AAAAAAAAAAAAAAAAAAAAAARGH!
-def maybe_add_baudrate(dict, rate):
-    name = "B%d" % rate
-    if hasattr(termios, name):
-        dict[getattr(termios, name)] = rate
+# ------------ start of baudrate definitions ------------
 
+# Add (possibly) missing baudrates (check termios man page) to termios
+
+def add_supported_baudrates(dictionary, rate):
+    baudrate_name = "B%d" % rate
+    if hasattr(termios, baudrate_name):
+        dictionary[getattr(termios, baudrate_name)] = rate
+
+# Check the termios man page (Line speed) to know where these
+# values come from.
+supported_baudrates = [
+    0, 110, 115200, 1200, 134, 150, 1800, 19200, 200, 230400,
+    2400, 300, 38400, 460800, 4800, 50, 57600, 600, 75, 9600
+]
 
 ratedict = {}
-for r in [
-    0,
-    110,
-    115200,
-    1200,
-    134,
-    150,
-    1800,
-    19200,
-    200,
-    230400,
-    2400,
-    300,
-    38400,
-    460800,
-    4800,
-    50,
-    57600,
-    600,
-    75,
-    9600,
-]:
-    maybe_add_baudrate(ratedict, r)
+for rate in supported_baudrates:
+    add_supported_baudrates(ratedict, rate)
 
-del r, maybe_add_baudrate
+# ------------ end of baudrate definitions ------------
+
+# Clean up variables to avoid unintended usage
+del rate, add_supported_baudrates
 
 delayprog = re.compile(b"\\$<([0-9]+)((?:/|\\*){0,2})>")
 
@@ -203,7 +193,6 @@ class UnixConsole(Console):
         self.encoding = encoding
 
     def refresh(self, screen, c_xy):
-        # this function is still too long (over 90 lines)
         cx, cy = c_xy
         if not self.__gone_tall:
             while len(self.screen) < min(len(screen), self.height):
@@ -445,7 +434,7 @@ class UnixConsole(Console):
 
     def get_event(self, block=1):
         while self.event_queue.empty():
-            while 1:  # All hail Unix!
+            while 1:
                 try:
                     self.push_char(os.read(self.input_fd, 1))
                 except OSError as err:

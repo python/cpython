@@ -1,7 +1,6 @@
 import os
 import sys
 
-irc_header = "And now for something completely different"
 
 
 def interactive_console(mainmodule=None, quiet=False):
@@ -26,8 +25,6 @@ def interactive_console(mainmodule=None, quiet=False):
         from .simple_interact import run_multiline_interactive_console
 
         run_interactive = run_multiline_interactive_console
-    # except ImportError:
-    #     pass
     except SyntaxError:
         print("Warning: 'import pyrepl' failed with SyntaxError")
     run_interactive(mainmodule)
@@ -68,11 +65,13 @@ def run_simple_interactive_console(mainmodule):
 
 if __name__ == "__main__":  # for testing
     if os.getenv("PYTHONSTARTUP"):
-        exec(
-            compile(
-                open(os.getenv("PYTHONSTARTUP")).read(),
-                os.getenv("PYTHONSTARTUP"),
-                "exec",
+        import tokenize
+        with tokenize.open(os.getenv("PYTHONSTARTUP")) as f:
+            exec(
+                compile(
+                    f.read(),
+                    os.getenv("PYTHONSTARTUP"),
+                    "exec",
+                )
             )
-        )
     interactive_console()

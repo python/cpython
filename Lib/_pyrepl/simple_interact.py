@@ -50,7 +50,6 @@ def _strip_final_indent(text):
 
 def run_multiline_interactive_console(mainmodule=None, future_flags=0):
     import code
-
     import __main__
 
     mainmodule = mainmodule or __main__
