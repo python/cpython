@@ -102,8 +102,9 @@ def run_multiline_interactive_console(mainmodule=None, future_flags=0):
 
             input_name = f"<python-input-{input_n}>"
             linecache._register_code(input_name, statement, "<stdin>")
-            maybe_repl_command = REPL_COMMANDS.get(statement.strip())
-            if maybe_repl_command is not None:
+            stripped_statement = statement.strip()
+            maybe_repl_command = REPL_COMMANDS.get(stripped_statement)
+            if maybe_repl_command is not None and stripped_statement not in console.locals:
                 maybe_repl_command()
                 continue
             else:
