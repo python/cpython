@@ -289,6 +289,22 @@ class TestFrameLocals(unittest.TestCase):
             self.assertEqual(locals()['y'], 2)
         f()
 
+    def test_closure(self):
+        x = 1
+        y = 2
+
+        def f():
+            z = x + y
+            d = sys._getframe().f_locals
+            self.assertEqual(d['x'], 1)
+            self.assertEqual(d['y'], 2)
+            d['x'] = 2
+            d['y'] = 3
+
+        f()
+        self.assertEqual(x, 2)
+        self.assertEqual(y, 3)
+
     def test_as_dict(self):
         x = 1
         y = 2
