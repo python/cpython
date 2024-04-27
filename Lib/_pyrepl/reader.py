@@ -21,6 +21,7 @@
 
 import re
 import unicodedata
+import traceback
 
 from . import commands, input
 
@@ -420,6 +421,9 @@ class Reader:
                 res = self.ps3
         else:
             res = self.ps1
+        
+        if traceback._can_colorize():
+            res = traceback._ANSIColors.BOLD_MAGENTA + res + traceback._ANSIColors.RESET
         # Lazily call str() on self.psN, and cache the results using as key
         # the object on which str() was called.  This ensures that even if the
         # same object is used e.g. for ps1 and ps2, str() is called only once.
