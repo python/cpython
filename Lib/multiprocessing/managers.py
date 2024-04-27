@@ -1181,7 +1181,7 @@ class DictProxy(_BaseDictProxy):
     def __ior__(self, value):
         self._callmethod('__ior__', (value,))
         return self
-      
+
     __class_getitem__ = classmethod(types.GenericAlias)
 
 ArrayProxy = MakeProxyType('ArrayProxy', (
