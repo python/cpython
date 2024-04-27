@@ -6,6 +6,7 @@ import sys
 import unittest
 from contextlib import contextmanager
 from threading import Thread
+from test.support import LOOPBACK_TIMEOUT
 from time import time
 
 
@@ -69,7 +70,7 @@ class TestAndroidOutput(unittest.TestCase):
 
     def tearDown(self):
         self.logcat_process.terminate()
-        self.logcat_process.wait(0.1)
+        self.logcat_process.wait(LOOPBACK_TIMEOUT)
 
     @contextmanager
     def unbuffered(self, stream):
@@ -171,9 +172,10 @@ class TestAndroidOutput(unittest.TestCase):
                 stream.flush()
                 self.assert_log(level, tag, "helloworld")
 
-                # Long lines are split into blocks of 1000 *characters*, but
-                # TextIOWrapper should then join them back together as much as
-                # possible without exceeding 4000 UTF-8 *bytes*.
+                # Long lines are split into blocks of 1000 characters
+                # (MAX_CHARS_PER_WRITE), but TextIOWrapper should then join them
+                # back together as much as possible without exceeding 4000 UTF-8
+                # bytes (MAX_BYTES_PER_WRITE).
                 #
                 # ASCII (1 byte per character)
                 write(("foobar" * 700) + "\n",
