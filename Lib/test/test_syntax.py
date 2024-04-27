@@ -2402,6 +2402,31 @@ if x:
             with self.subTest(f"out of range: {n=}"):
                 self._check_error(get_code(n), "too many statically nested blocks")
 
+    @support.cpython_only
+    def test_async_with_statement_many_context_managers(self):
+        # See gh-116767
+
+        def get_code(n):
+            code = [ textwrap.dedent("""
+                async def bug():
+                    async with (
+                    a
+                """) ]
+            for i in range(n):
+                code.append(f"    as a{i}, a\n")
+            code.append("): yield a")
+            return "".join(code)
+
+        CO_MAXBLOCKS = 20  # static nesting limit of the compiler
+
+        for n in range(CO_MAXBLOCKS):
+            with self.subTest(f"within range: {n=}"):
+                compile(get_code(n), "<string>", "exec")
+
+        for n in range(CO_MAXBLOCKS, CO_MAXBLOCKS + 5):
+            with self.subTest(f"out of range: {n=}"):
+                self._check_error(get_code(n), "too many statically nested blocks")
+
     def test_barry_as_flufl_with_syntax_errors(self):
         # The "barry_as_flufl" rule can produce some "bugs-at-a-distance" if
         # is reading the wrong token in the presence of syntax errors later
