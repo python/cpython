@@ -1576,6 +1576,7 @@ csv_register_dialect(PyObject *module, PyObject *args, PyObject *kwargs)
     PyObject *name_obj, *dialect_obj = NULL;
     _csvstate *module_state = get_csv_state(module);
     PyObject *dialect;
+    int res;
 
     if (!PyArg_UnpackTuple(args, "", 1, 2, &name_obj, &dialect_obj))
         return NULL;
@@ -1587,7 +1588,10 @@ csv_register_dialect(PyObject *module, PyObject *args, PyObject *kwargs)
     dialect = _call_dialect(module_state, dialect_obj, kwargs);
     if (dialect == NULL)
         return NULL;
-    if (PyDict_SetItem(module_state->dialects, name_obj, dialect) < 0) {
+    Py_BEGIN_CRITICAL_SECTION(module_state->dialects);
+    res = PyDict_SetItem(module_state->dialects, name_obj, dialect);
+    Py_END_CRITICAL_SECTION();
+    if (res < 0) {
         Py_DECREF(dialect);
         return NULL;
     }
@@ -1597,6 +1601,7 @@ csv_register_dialect(PyObject *module, PyObject *args, PyObject *kwargs)
 
 
 /*[clinic input]
+@critical_section
 _csv.unregister_dialect
 
     name: object
@@ -1608,7 +1613,7 @@ Delete the name/dialect mapping associated with a string name.
 
 static PyObject *
 _csv_unregister_dialect_impl(PyObject *module, PyObject *name)
-/*[clinic end generated code: output=0813ebca6c058df4 input=6b5c1557bf60c7e7]*/
+/*[clinic end generated code: output=0813ebca6c058df4 input=c38732b506218713]*/
 {
     _csvstate *module_state = get_csv_state(module);
     int rc = PyDict_Pop(module_state->dialects, name, NULL);

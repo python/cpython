@@ -80,7 +80,9 @@ _csv_unregister_dialect(PyObject *module, PyObject *const *args, Py_ssize_t narg
         goto exit;
     }
     name = args[0];
+    Py_BEGIN_CRITICAL_SECTION(module);
     return_value = _csv_unregister_dialect_impl(module, name);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -209,4 +211,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=c9376d6674176385 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=4d7e42aba40bd6c2 input=a9049054013a1b77]*/
