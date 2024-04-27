@@ -14,6 +14,7 @@ module instead.
 #endif
 
 #include "Python.h"
+#include "pycore_pyatomic_ft_wrappers.h"  // FT_ATOMIC_LOAD_INT32
 
 #include <stddef.h>               // offsetof()
 #include <stdbool.h>
@@ -702,11 +703,7 @@ parse_grow_buff(ReaderObj *self)
 static int
 parse_add_char(ReaderObj *self, _csvstate *module_state, Py_UCS4 c)
 {
-#ifdef Py_GIL_DISABLED
-    uint32_t field_limit = _Py_atomic_load_int32(&module_state->field_limit);
-#else
-    uint32_t field_limit = module_state->field_limit;
-#endif
+    uint32_t field_limit = FT_ATOMIC_LOAD_INT32(module_state->field_limit);
     if (self->field_len >= field_limit) {
         PyErr_Format(module_state->error_obj,
                      "field larger than field limit (%ld)",
