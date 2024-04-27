@@ -76,7 +76,18 @@ from collections import deque
 from reprlib import Repr
 from traceback import format_exception_only
 
-from _pyrepl.pager import get_pager
+from _pyrepl.pager import (get_pager, plain, escape_less, pipe_pager,
+                           plain_pager, tempfile_pager, tty_pager)
+
+
+# --------------------------------------------------------- old names
+
+getpager = get_pager
+pipepager = pipe_pager
+plainpager = plain_pager
+tempfilepager = tempfile_pager
+ttypager = tty_pager
+
 
 # --------------------------------------------------------- common routines
 
