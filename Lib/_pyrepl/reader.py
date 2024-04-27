@@ -126,7 +126,6 @@ default_keymap = tuple(
         (r"\C-x\C-u", "upcase-region"),
         (r"\C-y", "yank"),
         (r"\C-z", "suspend"),
-        (r"\C-t", "paste-mode"),
         (r"\M-b", "backward-word"),
         (r"\M-c", "capitalize-word"),
         (r"\M-d", "kill-word"),
@@ -163,6 +162,8 @@ default_keymap = tuple(
         (r"\<end>", "end-of-line"),  # was 'end'
         (r"\<home>", "beginning-of-line"),  # was 'home'
         (r"\<f1>", "help"),
+        (r"\<f2>", "show-history"),
+        (r"\<f3>", "paste-mode"),
         (r"\EOF", "end"),  # the entries in the terminfo database for xterms
         (r"\EOH", "home"),  # seem to be wrong.  this is a less than ideal
         # workaround
@@ -426,8 +427,8 @@ class Reader:
             res = self.ps1
 
         if self.paste_mode:
-            res= '(paste mode)'
-        
+            res= '(paste) '
+
         if traceback._can_colorize():
             res = traceback._ANSIColors.BOLD_MAGENTA + res + traceback._ANSIColors.RESET
         # Lazily call str() on self.psN, and cache the results using as key

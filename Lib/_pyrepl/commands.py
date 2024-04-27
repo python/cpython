@@ -445,6 +445,18 @@ class quoted_insert(Command):
         pass
         # self.reader.push_input_trans(QITrans())
 
+
+class show_history(Command):
+    def do(self):
+        # self.reader.console.restore()
+        from _pyrepl.pager import get_pager
+        from _pyrepl.readline import copy_history
+        from site import gethistoryfile
+        pager = get_pager()
+        pager(os.linesep.join(copy_history()), gethistoryfile())
+        self.reader.dirty = 1
+
+
 class paste_mode(Command):
 
     def do(self):
