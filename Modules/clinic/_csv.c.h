@@ -6,6 +6,7 @@ preserve
 #  include "pycore_gc.h"          // PyGC_Head
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
+#include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 PyDoc_STRVAR(_csv_list_dialects__doc__,
@@ -201,9 +202,11 @@ _csv_field_size_limit(PyObject *module, PyObject *const *args, Py_ssize_t nargs,
     }
     new_limit = args[0];
 skip_optional_pos:
+    Py_BEGIN_CRITICAL_SECTION(module);
     return_value = _csv_field_size_limit_impl(module, new_limit);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=9ec59717f5414d8b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c9376d6674176385 input=a9049054013a1b77]*/

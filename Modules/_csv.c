@@ -34,7 +34,7 @@ typedef struct {
     PyTypeObject *dialect_type;
     PyTypeObject *reader_type;
     PyTypeObject *writer_type;
-    long field_limit;   /* max parsed field size */
+    int32_t field_limit;   /* max parsed field size */
     PyObject *str_write;
 } _csvstate;
 
@@ -702,10 +702,15 @@ parse_grow_buff(ReaderObj *self)
 static int
 parse_add_char(ReaderObj *self, _csvstate *module_state, Py_UCS4 c)
 {
-    if (self->field_len >= module_state->field_limit) {
+#ifdef Py_GIL_DISABLED
+    uint32_t field_limit = _Py_atomic_load_int32(&module_state->field_limit);
+#else
+    uint32_t field_limit = module_state->field_limit;
+#endif
+    if (self->field_len >= field_limit) {
         PyErr_Format(module_state->error_obj,
                      "field larger than field limit (%ld)",
-                     module_state->field_limit);
+                     field_limit);
         return -1;
     }
     if (self->field_len == self->field_size && !parse_grow_buff(self))
@@ -1635,6 +1640,7 @@ _csv_get_dialect_impl(PyObject *module, PyObject *name)
 }
 
 /*[clinic input]
+@critical_section
 _csv.field_size_limit
 
     new_limit: object = NULL
@@ -1649,10 +1655,10 @@ the old limit is returned
 
 static PyObject *
 _csv_field_size_limit_impl(PyObject *module, PyObject *new_limit)
-/*[clinic end generated code: output=f2799ecd908e250b input=cec70e9226406435]*/
+/*[clinic end generated code: output=f2799ecd908e250b input=3e49d42e37a7d449]*/
 {
     _csvstate *module_state = get_csv_state(module);
-    long old_limit = module_state->field_limit;
+    int32_t old_limit = module_state->field_limit;
     if (new_limit != NULL) {
         if (!PyLong_CheckExact(new_limit)) {
             PyErr_Format(PyExc_TypeError,
