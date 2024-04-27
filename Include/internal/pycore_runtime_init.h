@@ -114,11 +114,11 @@ extern PyTypeObject _PyExc_MemoryError;
         .autoTSSkey = Py_tss_NEEDS_INIT, \
         .parser = _parser_runtime_state_INIT, \
         .ceval = { \
+            .perf = _PyEval_RUNTIME_PERF_INIT, \
             .pending_mainthread = { \
                 .max = MAXPENDINGCALLS_MAIN, \
                 .maxloop = MAXPENDINGCALLSLOOP_MAIN, \
             }, \
-            .perf = _PyEval_RUNTIME_PERF_INIT, \
         }, \
         .gilstate = { \
             .check_enabled = 1, \

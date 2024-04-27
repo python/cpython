@@ -51,6 +51,7 @@ extern void _PyEval_SignalReceived(void);
 typedef int _Py_add_pending_call_result;
 #define _Py_ADD_PENDING_SUCCESS 0
 #define _Py_ADD_PENDING_FULL -1
+#define _Py_ADD_PENDING_NO_MEMORY -2
 
 // Export for '_testinternalcapi' shared extension
 PyAPI_FUNC(_Py_add_pending_call_result) _PyEval_AddPendingCall(
