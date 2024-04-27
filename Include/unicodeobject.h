@@ -740,6 +740,7 @@ PyAPI_FUNC(PyObject*) PyUnicode_EncodeLocale(
 /* ParseTuple converter: encode str objects to bytes using
    PyUnicode_EncodeFSDefault(); bytes objects are output as-is. */
 
+extern int _PyUnicode_FSConverter(PyObject*, void*, int);
 PyAPI_FUNC(int) PyUnicode_FSConverter(PyObject*, void*);
 
 /* ParseTuple converter: decode bytes objects to unicode using
