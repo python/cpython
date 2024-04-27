@@ -348,10 +348,6 @@ class _ReadlineWrapper:
         history = self.get_reader().get_trimmed_history(maxlength)
         with open(os.path.expanduser(filename), "a", encoding="utf-8") as f:
             for entry in history:
-                # if we are on py3k, we don't need to encode strings before
-                # writing it to a file
-                if isinstance(entry, str) and sys.version_info < (3,):
-                    entry = entry.encode("utf-8")
                 entry = entry.replace("\n", "\r\n")  # multiline history support
                 f.write(entry + "\n")
 

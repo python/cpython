@@ -514,24 +514,22 @@ def register_readline():
         # http://bugs.python.org/issue5845#msg198636
         history = gethistoryfile()
         try:
-            readline.read_history_file(history)
-        except OSError:
-            pass
-        try:
-            _pyrepl.readline.read_history_file(history)
+            if os.getenv("PYTHON_OLD_REPL"):
+                readline.read_history_file(history)
+            else:
+                _pyrepl.readline.read_history_file(history)
         except OSError:
             pass
 
         def write_history():
             try:
-                readline.write_history_file(history)
+                if os.getenv("PYTHON_OLD_REPL"):
+                    readline.write_history_file(history)
+                else:
+                    _pyrepl.readline.write_history_file(history)
             except (FileNotFoundError, PermissionError):
                 # home directory does not exist or is not writable
                 # https://bugs.python.org/issue19891
-                pass
-            try:
-                _pyrepl.readline.write_history_file(history)
-            except (FileNotFoundError, PermissionError):
                 pass
 
         atexit.register(write_history)
