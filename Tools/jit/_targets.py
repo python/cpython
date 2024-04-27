@@ -452,7 +452,7 @@ def get_target(host: str) -> _COFF | _ELF | _MachO:
         return _COFF(host, alignment=8, args=args)
     if re.fullmatch(r"aarch64-.*-linux-gnu", host):
         args = ["-fPIC"]
-        return _ELF(host, args=args, alignment=8)
+        return _ELF(host, alignment=8, args=args)
     if re.fullmatch(r"i686-pc-windows-msvc", host):
         args = ["-DPy_NO_ENABLE_SHARED"]
         return _COFF(host, args=args, prefix="_")
