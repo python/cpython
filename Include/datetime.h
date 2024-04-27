@@ -182,6 +182,7 @@ typedef struct _pydatetime_capi {
     PyObject *(*DateTime_FromDateAndTimeAndFold)(int, int, int, int, int, int, int,
         PyObject*, int, PyTypeObject*);
     PyObject *(*Time_FromTimeAndFold)(int, int, int, int, PyObject*, int, PyTypeObject*);
+
     struct _pydatetime_capi *(*_get_capi_by_interp)(void);
     void (*_set_capi_by_interp)(struct _pydatetime_capi *);
 } PyDateTime_CAPI;
