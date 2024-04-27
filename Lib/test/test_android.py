@@ -154,6 +154,16 @@ class TestAndroidOutput(unittest.TestCase):
                 write("hello\r\nworld\r\n", ["hello", "world"])
                 write("\r\n", [""])
 
+                # String subclasses are accepted, and if their methods write
+                # themselves, this doesn't cause infinite recursion.
+                class CustomStr(str):
+                    def splitlines(self, *args, **kwargs):
+                        sys.stdout.write(self)
+                        return super().splitlines(*args, **kwargs)
+
+                write(CustomStr("custom\n"), ["custom"])
+
+                # Non-string classes are not accepted.
                 for obj in [b"", b"hello", None, 42]:
                     with self.subTest(obj=obj):
                         with self.assertRaisesRegex(

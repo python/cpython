@@ -47,6 +47,10 @@ class TextLogStream(io.TextIOWrapper):
             raise TypeError(
                 f"write() argument must be str, not {type(s).__name__}")
 
+        # In case `s` is a str subclass that writes itself to stdout or stderr
+        # when we call its methods, convert it to an actual str.
+        s = str.__str__(s)
+
         # We want to emit one log message per line wherever possible, so split
         # the string before sending it to the superclass. Note that
         # "".splitlines() == [], so nothing will be logged for an empty string.
