@@ -2502,8 +2502,8 @@
 [function.PyType_GetModuleByDef]
     added = '3.13'
 [function.PyEval_GetFrameBuiltins]
-    added = '3.13
+    added = '3.13'
 [function.PyEval_GetFrameGlobals]
-    added = '3.13
+    added = '3.13'
 [function.PyEval_GetFrameLocals]
-    added = '3.13
+    added = '3.13'
