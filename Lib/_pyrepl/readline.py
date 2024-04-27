@@ -28,6 +28,7 @@ extensions for multiline input.
 
 import os
 import readline
+from site import gethistoryfile
 import sys
 
 from . import commands, historical_reader
@@ -320,7 +321,7 @@ class _ReadlineWrapper:
     def get_current_history_length(self):
         return len(self.get_reader().history)
 
-    def read_history_file(self, filename="~/.history"):
+    def read_history_file(self, filename=gethistoryfile()):
         # multiline extension (really a hack) for the end of lines that
         # are actually continuations inside a single multiline_input()
         # history item: we use \r\n instead of just \n.  If the history
@@ -344,13 +345,16 @@ class _ReadlineWrapper:
                     if line:
                         history.append(line)
 
-    def write_history_file(self, filename="~/.history"):
+    def write_history_file(self, filename=gethistoryfile()):
         maxlength = self.saved_history_length
         history = self.get_reader().get_trimmed_history(maxlength)
         with open(os.path.expanduser(filename), "w", encoding="utf-8") as f:
             for entry in history:
                 entry = entry.replace("\n", "\r\n")  # multiline history support
                 f.write(entry + "\n")
+
+    def copy_history(self):
+        return self.get_reader().history[:]
 
     def clear_history(self):
         del self.get_reader().history[:]
@@ -422,6 +426,7 @@ get_current_history_length = _wrapper.get_current_history_length
 read_history_file = _wrapper.read_history_file
 write_history_file = _wrapper.write_history_file
 clear_history = _wrapper.clear_history
+copy_history = _wrapper.copy_history
 get_history_item = _wrapper.get_history_item
 remove_history_item = _wrapper.remove_history_item
 replace_history_item = _wrapper.replace_history_item
