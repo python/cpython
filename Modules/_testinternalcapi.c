@@ -22,6 +22,7 @@
 #include "pycore_gc.h"            // PyGC_Head
 #include "pycore_hashtable.h"     // _Py_hashtable_new()
 #include "pycore_initconfig.h"    // _Py_GetConfigsAsDict()
+#include "pycore_instruction_sequence.h"  // _PyInstructionSequence_New()
 #include "pycore_interp.h"        // _PyInterpreterState_GetConfigCopy()
 #include "pycore_long.h"          // _PyLong_Sign()
 #include "pycore_object.h"        // _PyObject_IsFreed()
@@ -723,6 +724,19 @@ _testinternalcapi_compiler_cleandoc_impl(PyObject *module, PyObject *doc)
     return _PyCompile_CleanDoc(doc);
 }
 
+/*[clinic input]
+
+_testinternalcapi.new_instruction_sequence -> object
+
+Return a new, empty InstructionSequence.
+[clinic start generated code]*/
+
+static PyObject *
+_testinternalcapi_new_instruction_sequence_impl(PyObject *module)
+/*[clinic end generated code: output=ea4243fddb9057fd input=1dec2591b173be83]*/
+{
+    return _PyInstructionSequence_New();
+}
 
 /*[clinic input]
 
@@ -1048,37 +1062,56 @@ static PyObject *
 pending_threadfunc(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     PyObject *callable;
+    unsigned int num = 1;
+    int blocking = 0;
     int ensure_added = 0;
-    static char *kwlist[] = {"", "ensure_added", NULL};
+    static char *kwlist[] = {"callback", "num",
+                             "blocking", "ensure_added", NULL};
     if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-                                     "O|$p:pending_threadfunc", kwlist,
-                                     &callable, &ensure_added))
+                                     "O|I$pp:pending_threadfunc", kwlist,
+                                     &callable, &num, &blocking, &ensure_added))
     {
         return NULL;
     }
     PyInterpreterState *interp = _PyInterpreterState_GET();
 
     /* create the reference for the callbackwhile we hold the lock */
-    Py_INCREF(callable);
-
-    int r;
-    Py_BEGIN_ALLOW_THREADS
-    r = _PyEval_AddPendingCall(interp, &_pending_callback, callable, 0);
-    Py_END_ALLOW_THREADS
-    if (r < 0) {
-        /* unsuccessful add */
-        if (!ensure_added) {
-            Py_DECREF(callable);
-            Py_RETURN_FALSE;
-        }
-        do {
-            Py_BEGIN_ALLOW_THREADS
-            r = _PyEval_AddPendingCall(interp, &_pending_callback, callable, 0);
-            Py_END_ALLOW_THREADS
-        } while (r < 0);
+    for (unsigned int i = 0; i < num; i++) {
+        Py_INCREF(callable);
     }
 
-    Py_RETURN_TRUE;
+    PyThreadState *save_tstate = NULL;
+    if (!blocking) {
+        save_tstate = PyEval_SaveThread();
+    }
+
+    unsigned int num_added = 0;
+    for (; num_added < num; num_added++) {
+        if (ensure_added) {
+            _Py_add_pending_call_result r;
+            do {
+                r = _PyEval_AddPendingCall(interp, &_pending_callback, callable, 0);
+                assert(r == _Py_ADD_PENDING_SUCCESS
+                       || r == _Py_ADD_PENDING_FULL);
+            } while (r == _Py_ADD_PENDING_FULL);
+        }
+        else {
+            if (_PyEval_AddPendingCall(interp, &_pending_callback, callable, 0) < 0) {
+                break;
+            }
+        }
+    }
+
+    if (!blocking) {
+        PyEval_RestoreThread(save_tstate);
+    }
+
+    for (unsigned int i = num_added; i < num; i++) {
+        Py_DECREF(callable); /* unsuccessful add, destroy the extra reference */
+    }
+
+    /* The callable is decref'ed in _pending_callback() above. */
+    return PyLong_FromUnsignedLong((unsigned long)num_added);
 }
 
 
@@ -1121,14 +1154,16 @@ pending_identify(PyObject *self, PyObject *args)
     PyThread_acquire_lock(mutex, WAIT_LOCK);
     /* It gets released in _pending_identify_callback(). */
 
-    int r;
+    _Py_add_pending_call_result r;
     do {
         Py_BEGIN_ALLOW_THREADS
         r = _PyEval_AddPendingCall(interp,
                                    &_pending_identify_callback, (void *)mutex,
                                    0);
         Py_END_ALLOW_THREADS
-    } while (r < 0);
+        assert(r == _Py_ADD_PENDING_SUCCESS
+               || r == _Py_ADD_PENDING_FULL);
+    } while (r == _Py_ADD_PENDING_FULL);
 
     /* Wait for the pending call to complete. */
     PyThread_acquire_lock(mutex, WAIT_LOCK);
@@ -1952,6 +1987,7 @@ static PyMethodDef module_functions[] = {
     {"set_eval_frame_default", set_eval_frame_default, METH_NOARGS, NULL},
     {"set_eval_frame_record", set_eval_frame_record, METH_O, NULL},
     _TESTINTERNALCAPI_COMPILER_CLEANDOC_METHODDEF
+    _TESTINTERNALCAPI_NEW_INSTRUCTION_SEQUENCE_METHODDEF
     _TESTINTERNALCAPI_COMPILER_CODEGEN_METHODDEF
     _TESTINTERNALCAPI_OPTIMIZE_CFG_METHODDEF
     _TESTINTERNALCAPI_ASSEMBLE_CODE_OBJECT_METHODDEF
