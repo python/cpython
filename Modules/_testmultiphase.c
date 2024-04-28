@@ -964,12 +964,11 @@ datetime_capi_client_exec(PyObject *m)
         return -1;
     }
     PyDateTime_IMPORT;
-    if (PyDateTimeAPI == NULL) {
-        return -2;
-    }
+    PyErr_Clear();
     if (PyDateTimeAPI != PyCapsule_Import(PyDateTime_CAPSULE_NAME, 0)) {
-        return -3;
+        return -1;
     }
+    PyErr_Clear();
     return 0;
 }
 
