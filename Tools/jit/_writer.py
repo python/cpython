@@ -1,5 +1,6 @@
 """Utilities for writing StencilGroups out to a C header file."""
 
+import itertools
 import typing
 
 import _stencils
@@ -47,7 +48,15 @@ def _dump_stencil(opname: str, group: _stencils.StencilGroup) -> typing.Iterator
     for part, stencil in [("data", group.data), ("code", group.code)]:
         if stencil.body:
             yield f"    memcpy({part}, {part}_body, sizeof({part}_body));"
-        for hole in stencil.holes:
+        skip = False
+        stencil.holes.sort(key=lambda hole: hole.offset)
+        for hole, pair in itertools.zip_longest(stencil.holes, stencil.holes[1:]):
+            if skip:
+                skip = False
+                continue
+            if pair and (folded := hole.fold(pair)):
+                skip = True
+                hole = folded
             yield f"    {hole.as_c(part)}"
     yield "}"
     yield ""

@@ -277,51 +277,6 @@ patch_aarch64_21r(unsigned char *location, uint64_t value)
 static inline void
 patch_aarch64_21rx(unsigned char *location, uint64_t value)
 {
-    uint32_t *loc32 = (uint32_t *)location;
-    assert(IS_AARCH64_ADRP(*loc32));
-    // // Try to relax the pair of GOT loads into an immediate value:
-    // const Hole *next_hole = &stencil->holes[i + 1];
-    // if (i + 1 < stencil->holes_size &&
-    //     (next_hole->kind == HoleKind_ARM64_RELOC_GOT_LOAD_PAGEOFF12 ||
-    //         next_hole->kind == HoleKind_IMAGE_REL_ARM64_PAGEOFFSET_12L ||
-    //         next_hole->kind == HoleKind_R_AARCH64_LD64_GOT_LO12_NC) &&
-    //     next_hole->offset == hole->offset + 4 &&
-    //     next_hole->symbol == hole->symbol &&
-    //     next_hole->addend == hole->addend &&
-    //     next_hole->value == hole->value)
-    // {
-    //     unsigned char reg = get_bits(loc32[0], 0, 5);
-    //     assert(IS_AARCH64_LDR_OR_STR(loc32[1]));
-    //     // There should be only one register involved:
-    //     assert(reg == get_bits(loc32[1], 0, 5));  // ldr's output register.
-    //     assert(reg == get_bits(loc32[1], 5, 5));  // ldr's input register.
-    //     uint64_t relaxed = *(uint64_t *)value;
-    //     if (relaxed < (1UL << 16)) {
-    //         // adrp reg, AAA; ldr reg, [reg + BBB] -> movz reg, XXX; nop
-    //         loc32[0] = 0xD2800000 | (get_bits(relaxed, 0, 16) << 5) | reg;
-    //         loc32[1] = 0xD503201F;
-    //         i++;
-    //         continue;
-    //     }
-    //     if (relaxed < (1ULL << 32)) {
-    //         // adrp reg, AAA; ldr reg, [reg + BBB] -> movz reg, XXX; movk reg, YYY
-    //         loc32[0] = 0xD2800000 | (get_bits(relaxed,  0, 16) << 5) | reg;
-    //         loc32[1] = 0xF2A00000 | (get_bits(relaxed, 16, 16) << 5) | reg;
-    //         i++;
-    //         continue;
-    //     }
-    //     relaxed = value - (uintptr_t)location;
-    //     if ((relaxed & 0x3) == 0 &&
-    //         (int64_t)relaxed >= -(1L << 19) &&
-    //         (int64_t)relaxed < (1L << 19))
-    //     {
-    //         // adrp reg, AAA; ldr reg, [reg + BBB] -> ldr reg, XXX; nop
-    //         loc32[0] = 0x58000000 | (get_bits(relaxed, 2, 19) << 5) | reg;
-    //         loc32[1] = 0xD503201F;
-    //         i++;
-    //         continue;
-    //     }
-    // }
     patch_aarch64_21r(location, value);
 }
 
@@ -338,6 +293,44 @@ patch_aarch64_26r(unsigned char *location, uint64_t value)
     // Since instructions are 4-byte aligned, only use 26 bits:
     assert(get_bits(value, 0, 2) == 0);
     set_bits(loc32, 0, value, 2, 26);
+}
+
+// A pair of patch_aarch64_21rx and patch_aarch64_12.
+static inline void
+patch_aarch64_33rx(unsigned char *location, uint64_t value)
+{
+    uint32_t *loc32 = (uint32_t *)location;
+    assert(IS_AARCH64_ADRP(*loc32));
+    // Try to relax the pair of GOT loads into an immediate value:
+    unsigned char reg = get_bits(loc32[0], 0, 5);
+    assert(IS_AARCH64_LDR_OR_STR(loc32[1]));
+    // There should be only one register involved:
+    assert(reg == get_bits(loc32[1], 0, 5));  // ldr's output register.
+    assert(reg == get_bits(loc32[1], 5, 5));  // ldr's input register.
+    uint64_t relaxed = *(uint64_t *)value;
+    if (relaxed < (1UL << 16)) {
+        // adrp reg, AAA; ldr reg, [reg + BBB] -> movz reg, XXX; nop
+        loc32[0] = 0xD2800000 | (get_bits(relaxed, 0, 16) << 5) | reg;
+        loc32[1] = 0xD503201F;
+        return;
+    }
+    if (relaxed < (1ULL << 32)) {
+        // adrp reg, AAA; ldr reg, [reg + BBB] -> movz reg, XXX; movk reg, YYY
+        loc32[0] = 0xD2800000 | (get_bits(relaxed,  0, 16) << 5) | reg;
+        loc32[1] = 0xF2A00000 | (get_bits(relaxed, 16, 16) << 5) | reg;
+        return;
+    }
+    relaxed = value - (uintptr_t)location;
+    if ((relaxed & 0x3) == 0 &&
+        (int64_t)relaxed >= -(1L << 19) &&
+        (int64_t)relaxed < (1L << 19))
+    {
+        // adrp reg, AAA; ldr reg, [reg + BBB] -> ldr reg, XXX; nop
+        loc32[0] = 0x58000000 | (get_bits(relaxed, 2, 19) << 5) | reg;
+        loc32[1] = 0xD503201F;
+        return;
+    }
+    patch_aarch64_21r(location, value);
 }
 
 // 32-bit relative address.

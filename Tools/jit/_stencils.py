@@ -3,6 +3,7 @@
 import dataclasses
 import enum
 import sys
+import typing
 
 import _schema
 
@@ -122,12 +123,28 @@ class Hole:
     symbol: str | None
     # ...plus this addend:
     addend: int
+    func: str = dataclasses.field(init=False)
     # Convenience method:
     replace = dataclasses.replace
 
+    def __post_init__(self) -> None:
+        self.func = _PATCH_FUNCS[self.kind]
+
+    def fold(self, other: typing.Self) -> typing.Self | None:
+        if (
+            self.offset + 4 == other.offset
+            and self.value == other.value
+            and self.symbol == other.symbol
+            and self.addend == other.addend
+            and self.func == "patch_aarch64_21rx"
+            and other.func == "patch_aarch64_12"
+        ):
+            folded = self.replace()
+            folded.func = "patch_aarch64_33rx"
+            return folded
+
     def as_c(self, where: str) -> str:
         """Dump this hole as a call to a patch_* function."""
-        func = _PATCH_FUNCS[self.kind]
         location = f"{where} + {self.offset:#x}"
         value = _HOLE_EXPRS[self.value]
         if self.symbol:
@@ -138,7 +155,7 @@ class Hole:
             if value:
                 value += " + "
             value += f"{_signed(self.addend):#x}"
-        return f"{func}({location}, {value});"
+        return f"{self.func}({location}, {value});"
 
 
 @dataclasses.dataclass
