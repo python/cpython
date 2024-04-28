@@ -5616,7 +5616,7 @@ heap type
 .. nonce: 4DcUaI
 .. section: C API
 
-Add :c:func:`_PyObject_FunctionStr` to get a user-friendly string
+Add :c:func:`!_PyObject_FunctionStr` to get a user-friendly string
 representation of a function-like object. Patch by Jeroen Demeyer.
 
 ..

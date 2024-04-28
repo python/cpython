@@ -1861,8 +1861,8 @@ bundled versions of ``pip`` and ``setuptools``.  Patch by Krzysztof Konopko.
 .. nonce: _dx3OO
 .. section: Library
 
-Removed :meth:`asyncio.Task.current_task` and
-:meth:`asyncio.Task.all_tasks`. Patch contributed by Rémi Lapeyre.
+Removed :meth:`!asyncio.Task.current_task` and
+:meth:`!asyncio.Task.all_tasks`. Patch contributed by Rémi Lapeyre.
 
 ..
 
