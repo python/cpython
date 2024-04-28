@@ -3,6 +3,9 @@ from unittest.mock import MagicMock
 from unittest.mock import call
 from code import InteractiveConsole
 from contextlib import suppress
+from functools import partial
+import rlcompleter
+import os
 
 from _pyrepl.readline import ReadlineAlikeReader
 from _pyrepl.readline import ReadlineConfig
@@ -24,10 +27,10 @@ def more_lines(unicodetext, namespace=None):
         return code is None
 
 
-def multiline_input(reader):
+def multiline_input(reader, namespace=None):
     saved = reader.more_lines
     try:
-        reader.more_lines = more_lines
+        reader.more_lines = partial(more_lines, namespace=namespace)
         reader.ps1 = reader.ps2 = ">>>"
         reader.ps3 = reader.ps4 = "..."
         return reader.readline(returns_unicode=True)
@@ -160,6 +163,7 @@ class TestPyReplOutput(TestCase):
         console = FakeConsole(events)
         reader = ReadlineAlikeReader(console)
         reader.config = ReadlineConfig()
+        reader.config.readline_completer = None
         return reader
 
     def test_basic(self):
@@ -292,6 +296,93 @@ class TestPyReplOutput(TestCase):
         self.assertEqual(output, "3+3")
         output = multiline_input(reader)
         self.assertEqual(output, "1+1")
+
+
+class TestPyReplCompleter(TestCase):
+    def prepare_reader(self, events, namespace):
+        console = FakeConsole(events)
+        reader = ReadlineAlikeReader(console)
+        reader.config = ReadlineConfig()
+        reader.config.readline_completer = rlcompleter.Completer(namespace).complete
+        return reader
+
+    def test_simple_completion(self):
+        events = [
+            Event(evt="key", data="o", raw=bytearray(b"o")),
+            Event(evt="key", data="s", raw=bytearray(b"s")),
+            Event(evt="key", data=".", raw=bytearray(b".")),
+            Event(evt="key", data="g", raw=bytearray(b"g")),
+            Event(evt="key", data="e", raw=bytearray(b"e")),
+            Event(evt="key", data="t", raw=bytearray(b"t")),
+            Event(evt="key", data="e", raw=bytearray(b"e")),
+            Event(evt="key", data="n", raw=bytearray(b"n")),
+            Event(evt="key", data="\t", raw=bytearray(b"\t")),
+            Event(evt="key", data="\n", raw=bytearray(b"\n")),
+        ]
+
+        namespace = {"os": os}
+        reader = self.prepare_reader(events, namespace)
+
+        output = multiline_input(reader, namespace)
+        self.assertEqual(output, "os.getenv")
+
+    def test_completion_with_many_options(self):
+        events = [
+            Event(evt="key", data="o", raw=bytearray(b"o")),
+            Event(evt="key", data="s", raw=bytearray(b"s")),
+            Event(evt="key", data=".", raw=bytearray(b".")),
+            Event(evt="key", data="\t", raw=bytearray(b"\t")),
+            Event(evt="key", data="\t", raw=bytearray(b"\t")),
+            Event(evt="key", data="O", raw=bytearray(b"O")),
+            Event(evt="key", data="_", raw=bytearray(b"_")),
+            Event(evt="key", data="A", raw=bytearray(b"A")),
+            Event(evt="key", data="S", raw=bytearray(b"S")),
+            Event(evt="key", data="\t", raw=bytearray(b"\t")),
+            Event(evt="key", data="\n", raw=bytearray(b"\n")),
+        ]
+
+        namespace = {"os": os}
+        reader = self.prepare_reader(events, namespace)
+
+        output = multiline_input(reader, namespace)
+        self.assertEqual(output, "os.O_ASYNC")
+
+    def test_empty_namespace_completion(self):
+        events = [
+            Event(evt="key", data="o", raw=bytearray(b"o")),
+            Event(evt="key", data="s", raw=bytearray(b"s")),
+            Event(evt="key", data=".", raw=bytearray(b".")),
+            Event(evt="key", data="g", raw=bytearray(b"g")),
+            Event(evt="key", data="e", raw=bytearray(b"e")),
+            Event(evt="key", data="t", raw=bytearray(b"t")),
+            Event(evt="key", data="e", raw=bytearray(b"e")),
+            Event(evt="key", data="n", raw=bytearray(b"n")),
+            Event(evt="key", data="\t", raw=bytearray(b"\t")),
+            Event(evt="key", data="\n", raw=bytearray(b"\n")),
+        ]
+
+        namespace = {}
+        reader = self.prepare_reader(events, namespace)
+
+        output = multiline_input(reader, namespace)
+        self.assertEqual(output, "os.geten")
+
+    def test_global_namespace_completion(self):
+        events = [
+            Event(evt="key", data="p", raw=bytearray(b"p")),
+            Event(evt="key", data="\t", raw=bytearray(b"\t")),
+            Event(evt="key", data="\n", raw=bytearray(b"\n")),
+        ]
+
+        namespace = {"python": None}
+        reader = self.prepare_reader(events, namespace)
+
+        output = multiline_input(reader, namespace)
+        self.assertEqual(output, "python")
+
+
+if __name__ == "__main__":
+    unittest.main()
 
 
 if __name__ == "__main__":
