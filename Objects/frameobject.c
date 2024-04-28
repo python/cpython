@@ -456,7 +456,10 @@ framelocalsproxy_contains(PyObject *self, PyObject *key)
     } else {
         PyObject *extra = ((PyFrameObject*)frame)->f_extra_locals;
         if (extra != NULL) {
-            if (PyDict_Contains(extra, key)) {
+            int result = PyDict_Contains(extra, key);
+            if (result < 0) {
+                return NULL;
+            } else if (result > 0) {
                 Py_RETURN_TRUE;
             }
         }
