@@ -19,6 +19,29 @@
 
 // Utilities
 
+static int
+framelocalsproxy_getkeyindex(PyFrameObject *frame, PyObject* key)
+{
+    PyCodeObject *co = PyFrame_GetCode(frame);
+    // We do 2 loops here because it's highly possible the key is interned
+    // and we can do a pointer comparison.
+    for (int i = 0; i < co->co_nlocalsplus; i++) {
+        PyObject *name = PyTuple_GET_ITEM(co->co_localsplusnames, i);
+        if (name == key) {
+            return i;
+        }
+    }
+
+    for (int i = 0; i < co->co_nlocalsplus; i++) {
+        PyObject *name = PyTuple_GET_ITEM(co->co_localsplusnames, i);
+        if (_PyUnicode_EQ(name, key)) {
+            return i;
+        }
+    }
+
+    return -1;
+}
+
 // Returns borrowed reference or NULL
 static PyObject *
 framelocalsproxy_getval(PyFrameObject *frame, PyCodeObject *co, int i)
@@ -337,14 +360,11 @@ framelocalsproxy_getitem(PyObject *self, PyObject *key)
     PyFrameObject* frame = ((PyFrameLocalsProxyObject*)self)->frame;
     PyCodeObject* co = PyFrame_GetCode(frame);
 
-    for (int i = 0; i < co->co_nlocalsplus; i++) {
-        // The name and the key might be interned so do a fast check first
-        if (PyTuple_GET_ITEM(co->co_localsplusnames, i) == key ||
-                _PyUnicode_EQ(PyTuple_GET_ITEM(co->co_localsplusnames, i), key)) {
-            PyObject *value = framelocalsproxy_getval(frame, co, i);
-            if (value != NULL) {
-                return Py_NewRef(value);
-            }
+    int i = framelocalsproxy_getkeyindex(frame, key);
+    if (i >= 0) {
+        PyObject *value = framelocalsproxy_getval(frame, co, i);
+        if (value != NULL) {
+            return Py_NewRef(value);
         }
     }
 
@@ -375,35 +395,34 @@ framelocalsproxy_setitem(PyObject *self, PyObject *key, PyObject *value)
         return -1;
     }
 
-    for (int i = 0; i < co->co_nlocalsplus; i++) {
-        if (PyTuple_GET_ITEM(co->co_localsplusnames, i) == key ||
-                _PyUnicode_EQ(PyTuple_GET_ITEM(co->co_localsplusnames, i), key)) {
-            _PyLocals_Kind kind = _PyLocals_GetKind(co->co_localspluskinds, i);
+    int i = framelocalsproxy_getkeyindex(frame, key);
 
-            PyObject *oldvalue = fast[i];
-            PyObject *cell = NULL;
-            if (kind == CO_FAST_FREE) {
-                // The cell was set when the frame was created from
-                // the function's closure.
-                assert(oldvalue != NULL && PyCell_Check(oldvalue));
+    if (i >= 0) {
+        _PyLocals_Kind kind = _PyLocals_GetKind(co->co_localspluskinds, i);
+
+        PyObject *oldvalue = fast[i];
+        PyObject *cell = NULL;
+        if (kind == CO_FAST_FREE) {
+            // The cell was set when the frame was created from
+            // the function's closure.
+            assert(oldvalue != NULL && PyCell_Check(oldvalue));
+            cell = oldvalue;
+        } else if (kind & CO_FAST_CELL && oldvalue != NULL) {
+            if (PyCell_Check(oldvalue)) {
                 cell = oldvalue;
-            } else if (kind & CO_FAST_CELL && oldvalue != NULL) {
-                if (PyCell_Check(oldvalue)) {
-                    cell = oldvalue;
-                }
             }
-            if (cell != NULL) {
-                oldvalue = PyCell_GET(cell);
-                if (value != oldvalue) {
-                    PyCell_SET(cell, Py_XNewRef(value));
-                    Py_XDECREF(oldvalue);
-                }
-            } else if (value != oldvalue) {
-                Py_XSETREF(fast[i], Py_NewRef(value));
-            }
-            Py_XDECREF(value);
-            return 0;
         }
+        if (cell != NULL) {
+            oldvalue = PyCell_GET(cell);
+            if (value != oldvalue) {
+                PyCell_SET(cell, Py_XNewRef(value));
+                Py_XDECREF(oldvalue);
+            }
+        } else if (value != oldvalue) {
+            Py_XSETREF(fast[i], Py_NewRef(value));
+        }
+        Py_XDECREF(value);
+        return 0;
     }
 
     // Okay not in the fast locals, try extra locals
@@ -426,21 +445,24 @@ framelocalsproxy_setitem(PyObject *self, PyObject *key, PyObject *value)
 static PyObject*
 framelocalsproxy_contains(PyObject *self, PyObject *key)
 {
-    PyObject* keys = framelocalsproxy_keys(self, NULL);
+    PyFrameObject *frame = ((PyFrameLocalsProxyObject*)self)->frame;
+    int i = framelocalsproxy_getkeyindex(frame, key);
 
-    if (keys == NULL) {
-        return NULL;
+    if (i >= 0) {
+        PyObject *value = framelocalsproxy_getval(frame, PyFrame_GetCode(frame), i);
+        if (value != NULL) {
+            Py_RETURN_TRUE;
+        }
+    } else {
+        PyObject *extra = ((PyFrameObject*)frame)->f_extra_locals;
+        if (extra != NULL) {
+            if (PyDict_Contains(extra, key)) {
+                Py_RETURN_TRUE;
+            }
+        }
     }
 
-    int result = PySequence_Contains(keys, key);
-
-    Py_DECREF(keys);
-
-    if (result < 0) {
-        return NULL;
-    }
-
-    return PyBool_FromLong(result);
+    Py_RETURN_FALSE;
 }
 
 static PyObject*
