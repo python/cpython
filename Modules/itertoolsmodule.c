@@ -270,7 +270,7 @@ typedef struct {
     PyObject_HEAD
     PyObject *it;
     PyObject *old;
-    PyObject* result;
+    PyObject *result;
 } pairwiseobject;
 
 /*[clinic input]
