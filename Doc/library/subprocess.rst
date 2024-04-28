@@ -1066,6 +1066,22 @@ The :mod:`subprocess` module exposes the following constants.
    Specifies that the :attr:`STARTUPINFO.wShowWindow` attribute contains
    additional information.
 
+.. data:: STARTF_FORCEONFEEDBACK
+
+   A :attr:`STARTUPINFO.dwFlags` parameter to specify that the
+   *Working in Background* mouse cursor will be displayed while a
+   process is launching. This is the default behavior for GUI
+   processes.
+
+   .. versionadded:: 3.13
+
+.. data:: STARTF_FORCEOFFFEEDBACK
+
+   A :attr:`STARTUPINFO.dwFlags` parameter to specify that the mouse
+   cursor will not be changed when launching a process.
+
+   .. versionadded:: 3.13
+
 .. data:: CREATE_NEW_CONSOLE
 
    The new process has a new console, instead of inheriting its parent's
