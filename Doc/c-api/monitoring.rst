@@ -28,7 +28,9 @@ The VM disables tracing when firing an event, so there is no need for user
 code to do that.
 
 It is expected that monitoring functions are not called with an exception set,
-except for those which are firing exception-related events.
+except for those which are firing exception-related events. In the latter case,
+it is assumed that the event related to the current exception
+(the one returned from :c:func:`PyErr_GetRaisedException`).
 
 .. c:type:: PyMonitoringState
 
@@ -37,9 +39,6 @@ except for those which are firing exception-related events.
 
 
 All of the functions below return 0 on success and -1 (with an exception set) on error.
-
-They should not be called with an exception set; you might want to wrap the
-call in :c:func:`PyErr_GetRaisedException` and :c:func:`PyErr_SetRaisedException`.
 
 See :mod:`sys.monitoring` for descriptions of the events.
 
@@ -88,37 +87,37 @@ See :mod:`sys.monitoring` for descriptions of the events.
    Fire a ``C_RETURN`` event.
 
 
-.. c:function:: int PyMonitoring_FirePyThrowEvent(PyMonitoringState *state, PyObject *codelike, int32_t offset, PyObject *exception)
+.. c:function:: int PyMonitoring_FirePyThrowEvent(PyMonitoringState *state, PyObject *codelike, int32_t offset)
 
    Fire a ``PY_THROW`` event.
 
 
-.. c:function:: int PyMonitoring_FireRaiseEvent(PyMonitoringState *state, PyObject *codelike, int32_t offset, PyObject *exception)
+.. c:function:: int PyMonitoring_FireRaiseEvent(PyMonitoringState *state, PyObject *codelike, int32_t offset)
 
    Fire a ``RAISE`` event.
 
 
-.. c:function:: int PyMonitoring_FireCRaiseEvent(PyMonitoringState *state, PyObject *codelike, int32_t offset, PyObject *exception)
+.. c:function:: int PyMonitoring_FireCRaiseEvent(PyMonitoringState *state, PyObject *codelike, int32_t offset)
 
    Fire a ``C_RAISE`` event.
 
 
-.. c:function:: int PyMonitoring_FireReraiseEvent(PyMonitoringState *state, PyObject *codelike, int32_t offset, PyObject *exception)
+.. c:function:: int PyMonitoring_FireReraiseEvent(PyMonitoringState *state, PyObject *codelike, int32_t offset)
 
    Fire a ``RERAISE`` event.
 
 
-.. c:function:: int PyMonitoring_FireExceptionHandledEvent(PyMonitoringState *state, PyObject *codelike, int32_t offset, PyObject *exception)
+.. c:function:: int PyMonitoring_FireExceptionHandledEvent(PyMonitoringState *state, PyObject *codelike, int32_t offset)
 
    Fire an ``EXCEPTION_HANDLED`` event.
 
 
-.. c:function:: int PyMonitoring_FirePyUnwindEvent(PyMonitoringState *state, PyObject *codelike, int32_t offset, PyObject *exception)
+.. c:function:: int PyMonitoring_FirePyUnwindEvent(PyMonitoringState *state, PyObject *codelike, int32_t offset)
 
    Fire a ``PY_UNWIND`` event.
 
 
-.. c:function:: int PyMonitoring_FireStopIterationEvent(PyMonitoringState *state, PyObject *codelike, int32_t offset, PyObject *exception)
+.. c:function:: int PyMonitoring_FireStopIterationEvent(PyMonitoringState *state, PyObject *codelike, int32_t offset)
 
    Fire a ``STOP_ITERATION`` event.
 
