@@ -428,7 +428,7 @@ static PyObject *
 typevar_new_impl(PyTypeObject *type, PyObject *name, PyObject *constraints,
                  PyObject *bound, PyObject *default_value, int covariant,
                  int contravariant, int infer_variance)
-/*[clinic end generated code: output=d2b248ff074eaab6 input=1613c393ddbd7d7f]*/
+/*[clinic end generated code: output=d2b248ff074eaab6 input=836f97f631d7293a]*/
 {
     if (covariant && contravariant) {
         PyErr_SetString(PyExc_ValueError,
@@ -572,6 +572,23 @@ typevar_reduce_impl(typevarobject *self)
     return Py_NewRef(self->name);
 }
 
+
+/*[clinic input]
+typevar.has_default as typevar_has_default
+
+[clinic start generated code]*/
+
+static PyObject *
+typevar_has_default_impl(typevarobject *self)
+/*[clinic end generated code: output=76bf0b8dc98b97dd input=31024aa030761cf6]*/
+{
+    if (self->evaluate_default != NULL ||
+        (self->default_value != &_Py_NoDefaultStruct && self->default_value != NULL)) {
+        Py_RETURN_TRUE;
+    }
+    Py_RETURN_FALSE;
+}
+
 static PyObject *
 typevar_mro_entries(PyObject *self, PyObject *args)
 {
@@ -584,6 +601,7 @@ static PyMethodDef typevar_methods[] = {
     TYPEVAR_TYPING_SUBST_METHODDEF
     TYPEVAR_TYPING_PREPARE_SUBST_METHODDEF
     TYPEVAR_REDUCE_METHODDEF
+    TYPEVAR_HAS_DEFAULT_METHODDEF
     {"__mro_entries__", typevar_mro_entries, METH_O},
     {0}
 };
@@ -1029,7 +1047,7 @@ static PyObject *
 paramspec_new_impl(PyTypeObject *type, PyObject *name, PyObject *bound,
                    PyObject *default_value, int covariant, int contravariant,
                    int infer_variance)
-/*[clinic end generated code: output=47ca9d63fa5a094d input=891f0e133228a87d]*/
+/*[clinic end generated code: output=47ca9d63fa5a094d input=495e1565bc067ab9]*/
 {
     if (covariant && contravariant) {
         PyErr_SetString(PyExc_ValueError, "Bivariant types are not supported.");
@@ -1107,6 +1125,22 @@ paramspec_reduce_impl(paramspecobject *self)
     return Py_NewRef(self->name);
 }
 
+/*[clinic input]
+paramspec.has_default as paramspec_has_default
+
+[clinic start generated code]*/
+
+static PyObject *
+paramspec_has_default_impl(paramspecobject *self)
+/*[clinic end generated code: output=daaae7467a6a4368 input=2112e97eeb76cd59]*/
+{
+    if (self->evaluate_default != NULL ||
+        (self->default_value != &_Py_NoDefaultStruct && self->default_value != NULL)) {
+        Py_RETURN_TRUE;
+    }
+    Py_RETURN_FALSE;
+}
+
 static PyObject *
 paramspec_mro_entries(PyObject *self, PyObject *args)
 {
@@ -1118,6 +1152,7 @@ paramspec_mro_entries(PyObject *self, PyObject *args)
 static PyMethodDef paramspec_methods[] = {
     PARAMSPEC_TYPING_SUBST_METHODDEF
     PARAMSPEC_TYPING_PREPARE_SUBST_METHODDEF
+    PARAMSPEC_HAS_DEFAULT_METHODDEF
     PARAMSPEC_REDUCE_METHODDEF
     {"__mro_entries__", paramspec_mro_entries, METH_O},
     {0}
@@ -1344,6 +1379,23 @@ typevartuple_reduce_impl(typevartupleobject *self)
     return Py_NewRef(self->name);
 }
 
+
+/*[clinic input]
+typevartuple.has_default as typevartuple_has_default
+
+[clinic start generated code]*/
+
+static PyObject *
+typevartuple_has_default_impl(typevartupleobject *self)
+/*[clinic end generated code: output=4895f602f56a5e29 input=9ef3250ddb2c1851]*/
+{
+    if (self->evaluate_default != NULL ||
+        (self->default_value != &_Py_NoDefaultStruct && self->default_value != NULL)) {
+        Py_RETURN_TRUE;
+    }
+    Py_RETURN_FALSE;
+}
+
 static PyObject *
 typevartuple_mro_entries(PyObject *self, PyObject *args)
 {
@@ -1394,6 +1446,7 @@ static PyMethodDef typevartuple_methods[] = {
     TYPEVARTUPLE_TYPING_SUBST_METHODDEF
     TYPEVARTUPLE_TYPING_PREPARE_SUBST_METHODDEF
     TYPEVARTUPLE_REDUCE_METHODDEF
+    TYPEVARTUPLE_HAS_DEFAULT_METHODDEF
     {"__mro_entries__", typevartuple_mro_entries, METH_O},
     {0}
 };

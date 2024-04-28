@@ -9,7 +9,7 @@ preserve
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywordsWithVararg()
 
 PyDoc_STRVAR(typevar_new__doc__,
-"typevar(name, *constraints, bound=None, default=<unrepresentable>,\n"
+"typevar(name, *constraints, bound=None, default=typing.NoDefault,\n"
 "        covariant=False, contravariant=False, infer_variance=False)\n"
 "--\n"
 "\n"
@@ -56,7 +56,7 @@ typevar_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject *name;
     PyObject *constraints = NULL;
     PyObject *bound = Py_None;
-    PyObject *default_value = NULL;
+    PyObject *default_value = &_Py_NoDefaultStruct;
     int covariant = 0;
     int contravariant = 0;
     int infer_variance = 0;
@@ -171,6 +171,23 @@ typevar_reduce(typevarobject *self, PyObject *Py_UNUSED(ignored))
     return typevar_reduce_impl(self);
 }
 
+PyDoc_STRVAR(typevar_has_default__doc__,
+"has_default($self, /)\n"
+"--\n"
+"\n");
+
+#define TYPEVAR_HAS_DEFAULT_METHODDEF    \
+    {"has_default", (PyCFunction)typevar_has_default, METH_NOARGS, typevar_has_default__doc__},
+
+static PyObject *
+typevar_has_default_impl(typevarobject *self);
+
+static PyObject *
+typevar_has_default(typevarobject *self, PyObject *Py_UNUSED(ignored))
+{
+    return typevar_has_default_impl(self);
+}
+
 PyDoc_STRVAR(paramspecargs_new__doc__,
 "paramspecargs(origin)\n"
 "--\n"
@@ -280,7 +297,7 @@ exit:
 }
 
 PyDoc_STRVAR(paramspec_new__doc__,
-"paramspec(name, *, bound=None, default=<unrepresentable>,\n"
+"paramspec(name, *, bound=None, default=typing.NoDefault,\n"
 "          covariant=False, contravariant=False, infer_variance=False)\n"
 "--\n"
 "\n"
@@ -326,7 +343,7 @@ paramspec_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 1;
     PyObject *name;
     PyObject *bound = Py_None;
-    PyObject *default_value = NULL;
+    PyObject *default_value = &_Py_NoDefaultStruct;
     int covariant = 0;
     int contravariant = 0;
     int infer_variance = 0;
@@ -437,6 +454,23 @@ static PyObject *
 paramspec_reduce(paramspecobject *self, PyObject *Py_UNUSED(ignored))
 {
     return paramspec_reduce_impl(self);
+}
+
+PyDoc_STRVAR(paramspec_has_default__doc__,
+"has_default($self, /)\n"
+"--\n"
+"\n");
+
+#define PARAMSPEC_HAS_DEFAULT_METHODDEF    \
+    {"has_default", (PyCFunction)paramspec_has_default, METH_NOARGS, paramspec_has_default__doc__},
+
+static PyObject *
+paramspec_has_default_impl(paramspecobject *self);
+
+static PyObject *
+paramspec_has_default(paramspecobject *self, PyObject *Py_UNUSED(ignored))
+{
+    return paramspec_has_default_impl(self);
 }
 
 PyDoc_STRVAR(typevartuple__doc__,
@@ -560,6 +594,23 @@ typevartuple_reduce(typevartupleobject *self, PyObject *Py_UNUSED(ignored))
     return typevartuple_reduce_impl(self);
 }
 
+PyDoc_STRVAR(typevartuple_has_default__doc__,
+"has_default($self, /)\n"
+"--\n"
+"\n");
+
+#define TYPEVARTUPLE_HAS_DEFAULT_METHODDEF    \
+    {"has_default", (PyCFunction)typevartuple_has_default, METH_NOARGS, typevartuple_has_default__doc__},
+
+static PyObject *
+typevartuple_has_default_impl(typevartupleobject *self);
+
+static PyObject *
+typevartuple_has_default(typevartupleobject *self, PyObject *Py_UNUSED(ignored))
+{
+    return typevartuple_has_default_impl(self);
+}
+
 PyDoc_STRVAR(typealias_reduce__doc__,
 "__reduce__($self, /)\n"
 "--\n"
@@ -644,4 +695,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=e49eb7aa7b3b6805 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=73b39e550e4e336c input=a9049054013a1b77]*/

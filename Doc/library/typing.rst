@@ -1756,9 +1756,17 @@ without the dedicated syntax, as documented below.
 
    .. attribute:: __default__
 
-      The default value of the type variable, if any. This attribute is ``None``
-      if the type variable has no default, and :class:`types.NoneType`
-      if the default is set to ``None``.
+      The default value of the type variable, or :data:`typing.NoDefault` if it
+      has no default.
+
+      .. versionadded:: 3.13
+
+   .. method:: has_default()
+
+      Return whether or not the type variable has a default value. This is equivalent
+      to checking whether :attr:`__default__` is not equal to :data:`typing.NoDefault`,
+      except that it does not force evaluation of the
+      :ref:`lazily evaluated <lazy-evaluation>` default value.
 
       .. versionadded:: 3.13
 
@@ -1886,9 +1894,17 @@ without the dedicated syntax, as documented below.
 
    .. attribute:: __default__
 
-      The default value of the type variable tuple, if any. This attribute is ``None``
-      if the type variable tuple has no default, and :class:`types.NoneType`
-      if the default is set to ``None``.
+      The default value of the type variable tuple, or :data:`typing.NoDefault` if it
+      has no default.
+
+      .. versionadded:: 3.13
+
+   .. method:: has_default()
+
+      Return whether or not the type variable tuple has a default value. This is equivalent
+      to checking whether :attr:`__default__` is not equal to :data:`typing.NoDefault`,
+      except that it does not force evaluation of the
+      :ref:`lazily evaluated <lazy-evaluation>` default value.
 
       .. versionadded:: 3.13
 
@@ -1974,9 +1990,17 @@ without the dedicated syntax, as documented below.
 
    .. attribute:: __default__
 
-      The default value of the parameter specification, if any. This attribute is ``None``
-      if the parameter specification has no default, and :class:`types.NoneType`
-      if the default is set to ``None``.
+      The default value of the parameter specification, or :data:`typing.NoDefault` if it
+      has no default.
+
+      .. versionadded:: 3.13
+
+   .. method:: has_default()
+
+      Return whether or not the parameter specification has a default value. This is equivalent
+      to checking whether :attr:`__default__` is not equal to :data:`typing.NoDefault`,
+      except that it does not force evaluation of the
+      :ref:`lazily evaluated <lazy-evaluation>` default value.
 
       .. versionadded:: 3.13
 
@@ -3213,9 +3237,9 @@ Introspection helpers
 
    A sentinel object used to indicate that a type parameter has no default
    value. For example:
-   
+
    .. doctest::
-   
+
       >>> T = TypeVar("T")
       >>> T.__default__ is typing.NoDefault
       True

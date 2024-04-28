@@ -584,6 +584,7 @@ class TypeParameterDefaultsTests(BaseTestCase):
     def test_typevar(self):
         T = TypeVar('T', default=int)
         self.assertEqual(T.__default__, int)
+        self.assertTrue(T.has_default())
         self.assertIsInstance(T, TypeVar)
 
         class A(Generic[T]): ...
@@ -593,15 +594,19 @@ class TypeParameterDefaultsTests(BaseTestCase):
         U = TypeVar('U')
         U_None = TypeVar('U_None', default=None)
         self.assertIs(U.__default__, NoDefault)
+        self.assertFalse(U.has_default())
         self.assertIs(U_None.__default__, None)
+        self.assertTrue(U_None.has_default())
 
         class X[T]: ...
         T, = X.__type_params__
         self.assertIs(T.__default__, NoDefault)
+        self.assertFalse(T.has_default())
 
     def test_paramspec(self):
         P = ParamSpec('P', default=(str, int))
         self.assertEqual(P.__default__, (str, int))
+        self.assertTrue(P.has_default())
         self.assertIsInstance(P, ParamSpec)
 
         class A(Generic[P]): ...
@@ -614,15 +619,19 @@ class TypeParameterDefaultsTests(BaseTestCase):
         U = ParamSpec('U')
         U_None = ParamSpec('U_None', default=None)
         self.assertIs(U.__default__, NoDefault)
+        self.assertFalse(U.has_default())
         self.assertIs(U_None.__default__, None)
+        self.assertTrue(U_None.has_default())
 
         class X[**P]: ...
         P, = X.__type_params__
         self.assertIs(P.__default__, NoDefault)
+        self.assertFalse(P.has_default())
 
     def test_typevartuple(self):
         Ts = TypeVarTuple('Ts', default=Unpack[Tuple[str, int]])
         self.assertEqual(Ts.__default__, Unpack[Tuple[str, int]])
+        self.assertTrue(Ts.has_default())
         self.assertIsInstance(Ts, TypeVarTuple)
 
         class A(Generic[Unpack[Ts]]): ...
@@ -691,11 +700,14 @@ class TypeParameterDefaultsTests(BaseTestCase):
         U = TypeVarTuple('U')
         U_None = TypeVarTuple('U_None', default=None)
         self.assertIs(U.__default__, NoDefault)
+        self.assertFalse(U.has_default())
         self.assertIs(U_None.__default__, None)
+        self.assertTrue(U_None.has_default())
 
         class X[**Ts]: ...
         Ts, = X.__type_params__
         self.assertIs(Ts.__default__, NoDefault)
+        self.assertFalse(Ts.has_default())
 
     def test_no_default_after_non_default(self):
         DefaultStrT = TypeVar('DefaultStrT', default=str)

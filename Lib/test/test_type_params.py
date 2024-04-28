@@ -6,7 +6,7 @@ import pickle
 import weakref
 from test.support import requires_working_socket, check_syntax_error, run_code
 
-from typing import Generic, Sequence, TypeVar, TypeVarTuple, ParamSpec, get_args
+from typing import Generic, NoDefault, Sequence, TypeVar, TypeVarTuple, ParamSpec, get_args
 
 
 class TypeParamsInvalidTest(unittest.TestCase):
@@ -599,12 +599,12 @@ class TypeParamsLazyEvaluationTest(unittest.TestCase):
         self.assertEqual(type_params[0].__name__, "T")
         self.assertIs(type_params[0].__bound__, Foo)
         self.assertEqual(type_params[0].__constraints__, ())
-        self.assertIs(type_params[0].__default__, None)
+        self.assertIs(type_params[0].__default__, NoDefault)
 
         self.assertEqual(type_params[1].__name__, "U")
         self.assertIs(type_params[1].__bound__, None)
         self.assertEqual(type_params[1].__constraints__, (Foo, Foo))
-        self.assertIs(type_params[1].__default__, None)
+        self.assertIs(type_params[1].__default__, NoDefault)
 
     def test_evaluation_error(self):
         class Foo[T: Undefined, U: (Undefined,)]:
@@ -615,8 +615,8 @@ class TypeParamsLazyEvaluationTest(unittest.TestCase):
             type_params[0].__bound__
         self.assertEqual(type_params[0].__constraints__, ())
         self.assertIs(type_params[1].__bound__, None)
-        self.assertIs(type_params[0].__default__, None)
-        self.assertIs(type_params[1].__default__, None)
+        self.assertIs(type_params[0].__default__, NoDefault)
+        self.assertIs(type_params[1].__default__, NoDefault)
         with self.assertRaises(NameError):
             type_params[1].__constraints__
 
@@ -1182,7 +1182,7 @@ class DefaultsTest(unittest.TestCase):
         T, U, V = ns["func"].__type_params__
         self.assertIs(T.__default__, int)
         self.assertIs(U.__default__, float)
-        self.assertIs(V.__default__, type(None))
+        self.assertIs(V.__default__, None)
 
     def test_defaults_on_class(self):
         ns = run_code("""
@@ -1193,7 +1193,7 @@ class DefaultsTest(unittest.TestCase):
         T, U, V = ns["C"].__type_params__
         self.assertIs(T.__default__, int)
         self.assertIs(U.__default__, float)
-        self.assertIs(V.__default__, type(None))
+        self.assertIs(V.__default__, None)
 
     def test_defaults_on_type_alias(self):
         ns = run_code("""
@@ -1203,7 +1203,7 @@ class DefaultsTest(unittest.TestCase):
         T, U, V = ns["Alias"].__type_params__
         self.assertIs(T.__default__, int)
         self.assertIs(U.__default__, float)
-        self.assertIs(V.__default__, type(None))
+        self.assertIs(V.__default__, None)
 
     def test_starred_invalid(self):
         check_syntax_error(self, "type Alias[T = *int] = int")
