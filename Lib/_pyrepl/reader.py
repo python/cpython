@@ -55,12 +55,6 @@ def _my_unctrl(c, u=_make_unctrl_map()):
             return c
 
 
-if "a"[0] == b"a":
-    # When running tests with python2, bytes characters are bytes.
-    def _my_unctrl(c, uc=_my_unctrl):
-        return uc(ord(c))
-
-
 def disp_str(buffer, join="".join, uc=_my_unctrl):
     """disp_str(buffer:string) -> (string, [int])
 
