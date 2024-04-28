@@ -19,29 +19,6 @@
 
 // Utilities
 
-static int
-framelocalsproxy_getkeyindex(PyFrameObject *frame, PyObject* key)
-{
-    PyCodeObject *co = PyFrame_GetCode(frame);
-    // We do 2 loops here because it's highly possible the key is interned
-    // and we can do a pointer comparison.
-    for (int i = 0; i < co->co_nlocalsplus; i++) {
-        PyObject *name = PyTuple_GET_ITEM(co->co_localsplusnames, i);
-        if (name == key) {
-            return i;
-        }
-    }
-
-    for (int i = 0; i < co->co_nlocalsplus; i++) {
-        PyObject *name = PyTuple_GET_ITEM(co->co_localsplusnames, i);
-        if (_PyUnicode_EQ(name, key)) {
-            return i;
-        }
-    }
-
-    return -1;
-}
-
 // Returns borrowed reference or NULL
 static PyObject *
 framelocalsproxy_getval(PyFrameObject *frame, PyCodeObject *co, int i)
@@ -72,6 +49,57 @@ framelocalsproxy_getval(PyFrameObject *frame, PyCodeObject *co, int i)
     }
 
     return value;
+}
+
+static int
+framelocalsproxy_getkeyindex(PyFrameObject *frame, PyObject* key, bool read)
+{
+    /*
+     * Returns the fast locals index of the key
+     *   - if read == true, returns the index if the value is not NULL
+     *   - if read == false, returns the index if the value is not hidden
+     */
+    PyCodeObject *co = PyFrame_GetCode(frame);
+    int found_key = false;
+
+    // We do 2 loops here because it's highly possible the key is interned
+    // and we can do a pointer comparison.
+    for (int i = 0; i < co->co_nlocalsplus; i++) {
+        PyObject *name = PyTuple_GET_ITEM(co->co_localsplusnames, i);
+        if (name == key) {
+            found_key = true;
+            if (read) {
+                if (framelocalsproxy_getval(frame, co, i) != NULL) {
+                    return i;
+                }
+            } else {
+                if (!(_PyLocals_GetKind(co->co_localspluskinds, i) & CO_FAST_HIDDEN)) {
+                    return i;
+                }
+            }
+        }
+    }
+
+    if (!found_key) {
+        // This is unlikely, but we need to make sure. This means the key
+        // is not interned.
+        for (int i = 0; i < co->co_nlocalsplus; i++) {
+            PyObject *name = PyTuple_GET_ITEM(co->co_localsplusnames, i);
+            if (_PyUnicode_EQ(name, key)) {
+                if (read) {
+                    if (framelocalsproxy_getval(frame, co, i) != NULL) {
+                        return i;
+                    }
+                } else {
+                    if (!(_PyLocals_GetKind(co->co_localspluskinds, i) & CO_FAST_HIDDEN)) {
+                        return i;
+                    }
+                }
+            }
+        }
+    }
+
+    return -1;
 }
 
 static int
@@ -360,12 +388,11 @@ framelocalsproxy_getitem(PyObject *self, PyObject *key)
     PyFrameObject* frame = ((PyFrameLocalsProxyObject*)self)->frame;
     PyCodeObject* co = PyFrame_GetCode(frame);
 
-    int i = framelocalsproxy_getkeyindex(frame, key);
+    int i = framelocalsproxy_getkeyindex(frame, key, true);
     if (i >= 0) {
         PyObject *value = framelocalsproxy_getval(frame, co, i);
-        if (value != NULL) {
-            return Py_NewRef(value);
-        }
+        assert(value != NULL);
+        return Py_NewRef(value);
     }
 
     // Okay not in the fast locals, try extra locals
@@ -395,7 +422,7 @@ framelocalsproxy_setitem(PyObject *self, PyObject *key, PyObject *value)
         return -1;
     }
 
-    int i = framelocalsproxy_getkeyindex(frame, key);
+    int i = framelocalsproxy_getkeyindex(frame, key, false);
 
     if (i >= 0) {
         _PyLocals_Kind kind = _PyLocals_GetKind(co->co_localspluskinds, i);
@@ -446,13 +473,12 @@ static PyObject*
 framelocalsproxy_contains(PyObject *self, PyObject *key)
 {
     PyFrameObject *frame = ((PyFrameLocalsProxyObject*)self)->frame;
-    int i = framelocalsproxy_getkeyindex(frame, key);
+    int i = framelocalsproxy_getkeyindex(frame, key, true);
 
     if (i >= 0) {
         PyObject *value = framelocalsproxy_getval(frame, PyFrame_GetCode(frame), i);
-        if (value != NULL) {
-            Py_RETURN_TRUE;
-        }
+        assert(value != NULL);
+        Py_RETURN_TRUE;
     } else {
         PyObject *extra = ((PyFrameObject*)frame)->f_extra_locals;
         if (extra != NULL) {

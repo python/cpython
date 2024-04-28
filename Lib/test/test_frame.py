@@ -345,6 +345,17 @@ class TestFrameLocals(unittest.TestCase):
         with self.assertRaises(TypeError):
             _ = d | [3]
 
+    def test_write_with_hidden(self):
+        def f():
+            f_locals = [sys._getframe().f_locals for b in [0]][0]
+            f_locals['b'] = 2
+            f_locals['c'] = 3
+            self.assertEqual(b, 2)
+            self.assertEqual(c, 3)
+            b = 0
+            c = 0
+        f()
+
     def test_repr(self):
         x = 1
         # Introduce a reference cycle
