@@ -1769,7 +1769,7 @@ Deprecated
     :data:`!PROTOCOL_SSLv23`, :data:`!PROTOCOL_TLSv1`,
     :data:`!PROTOCOL_TLSv1_1`, :data:`!PROTOCOL_TLSv1_2`, and
     :const:`!PROTOCOL_TLS` are deprecated in favor of
-    :const:`!PROTOCOL_TLS_CLIENT` and :const:`!PROTOCOL_TLS_SERVER`
+    :const:`~ssl.PROTOCOL_TLS_CLIENT` and :const:`~ssl.PROTOCOL_TLS_SERVER`
 
   * :func:`!wrap_socket` is replaced by :meth:`ssl.SSLContext.wrap_socket`
 
