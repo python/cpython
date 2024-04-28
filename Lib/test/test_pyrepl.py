@@ -1,4 +1,5 @@
 import curses
+import itertools
 import os
 import rlcompleter
 import sys
@@ -379,7 +380,6 @@ class TestPyReplCompleter(TestCase):
 
         namespace = {"python": None}
         reader = self.prepare_reader(events, namespace)
-
         output = multiline_input(reader, namespace)
         self.assertEqual(output, "python")
 
@@ -486,6 +486,63 @@ class TestUnivEventQueue(TestCase):
         self.assertEqual(eq.events[1].data, "[")
         self.assertEqual(eq.events[2].evt, "key")
         self.assertEqual(eq.events[2].data, "Z")
+
+
+class TestPasteEvent(TestCase):
+    def setUp(self) -> None:
+        curses.setupterm()
+        return super().setUp()
+
+    def prepare_reader(self, events):
+        console = FakeConsole(events)
+        reader = ReadlineAlikeReader(console)
+        reader.config = ReadlineConfig()
+        reader.config.readline_completer = None
+        return reader
+
+    def code_to_events(self, code):
+        for c in code:
+            yield Event(evt='key', data=c, raw=bytearray(c.encode('utf-8')))
+
+    def test_paste(self):
+        code = (
+            'def a():\n'
+            '  for x in range(10):\n'
+            '    if x%2:\n'
+            '      print(x)\n'
+            '    else:\n'
+            '      pass\n\n'
+        )
+
+        events = itertools.chain([
+            Event(evt='key', data='f3', raw=bytearray(b'\x1bOR')),
+        ], self.code_to_events(code))
+        reader = self.prepare_reader(events)
+        output = multiline_input(reader)
+        self.assertEqual(output, code[:-1])
+
+    def test_paste_not_in_paste_mode(self):
+        input_code = (
+            'def a():\n'
+            '  for x in range(10):\n'
+            '    if x%2:\n'
+            '      print(x)\n'
+            '    else:\n'
+            '      pass\n\n'
+        )
+
+        output_code = (
+            'def a():\n'
+            '  for x in range(10):\n'
+            '      if x%2:\n'
+            '            print(x)\n'
+            '                else:'
+        )
+
+        events = self.code_to_events(input_code)
+        reader = self.prepare_reader(events)
+        output = multiline_input(reader)
+        self.assertEqual(output, output_code)
 
 
 if __name__ == "__main__":
