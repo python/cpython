@@ -70,7 +70,7 @@ def get_terminal_keycodes():
     keycodes.update(CTRL_ARROW_KEYCODES)
     return keycodes
 
-class EventQueue(object):
+class EventQueue:
     def __init__(self, fd, encoding):
         self.keycodes = get_terminal_keycodes()
         if os.isatty(fd):

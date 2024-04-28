@@ -1,17 +1,19 @@
-from unittest import TestCase
-from unittest.mock import MagicMock
-from unittest.mock import call
+import curses
+import os
+import rlcompleter
+import sys
 from code import InteractiveConsole
 from contextlib import suppress
 from functools import partial
-import rlcompleter
-import os
+from io import BytesIO
+from unittest import TestCase
+from unittest.mock import MagicMock, call, patch
 
-from _pyrepl.readline import ReadlineAlikeReader
-from _pyrepl.readline import ReadlineConfig
+import _pyrepl.unix_eventqueue as unix_eventqueue
+from _pyrepl.console import Console, Event
+from _pyrepl.readline import ReadlineAlikeReader, ReadlineConfig
 from _pyrepl.simple_interact import _strip_final_indent
-from _pyrepl.console import Event
-from _pyrepl.console import Console
+from _pyrepl.unix_eventqueue import EventQueue
 
 
 def more_lines(unicodetext, namespace=None):
@@ -382,8 +384,108 @@ class TestPyReplCompleter(TestCase):
         self.assertEqual(output, "python")
 
 
-if __name__ == "__main__":
-    unittest.main()
+class TestUnivEventQueue(TestCase):
+    def setUp(self) -> None:
+        curses.setupterm()
+        return super().setUp()
+
+    def test_get(self):
+        eq = EventQueue(sys.stdout.fileno(), "utf-8")
+        event = Event("key", "a", b"a")
+        eq.insert(event)
+        self.assertEqual(eq.get(), event)
+
+    def test_empty(self):
+        eq = EventQueue(sys.stdout.fileno(), "utf-8")
+        self.assertTrue(eq.empty())
+        eq.insert(Event("key", "a", b"a"))
+        self.assertFalse(eq.empty())
+
+    def test_flush_buf(self):
+        eq = EventQueue(sys.stdout.fileno(), "utf-8")
+        eq.buf.extend(b"test")
+        self.assertEqual(eq.flush_buf(), b"test")
+        self.assertEqual(eq.buf, bytearray())
+
+    def test_insert(self):
+        eq = EventQueue(sys.stdout.fileno(), "utf-8")
+        event = Event("key", "a", b"a")
+        eq.insert(event)
+        self.assertEqual(eq.events[0], event)
+
+    @patch("_pyrepl.unix_eventqueue.keymap")
+    def test_push_with_key_in_keymap(self, mock_keymap):
+        mock_keymap.compile_keymap.return_value = {"a": "b"}
+        eq = EventQueue(sys.stdout.fileno(), "utf-8")
+        eq.keymap = {b"a": "b"}
+        eq.push("a")
+        self.assertTrue(mock_keymap.compile_keymap.called)
+        self.assertEqual(eq.events[0].evt, "key")
+        self.assertEqual(eq.events[0].data, "b")
+
+    @patch("_pyrepl.unix_eventqueue.keymap")
+    def test_push_without_key_in_keymap(self, mock_keymap):
+        mock_keymap.compile_keymap.return_value = {"a": "b"}
+        eq = EventQueue(sys.stdout.fileno(), "utf-8")
+        eq.keymap = {b"c": "d"}
+        eq.push("a")
+        self.assertTrue(mock_keymap.compile_keymap.called)
+        self.assertEqual(eq.events[0].evt, "key")
+        self.assertEqual(eq.events[0].data, "a")
+
+    @patch("_pyrepl.unix_eventqueue.keymap")
+    def test_push_with_keymap_in_keymap(self, mock_keymap):
+        mock_keymap.compile_keymap.return_value = {"a": "b"}
+        eq = EventQueue(sys.stdout.fileno(), "utf-8")
+        eq.keymap = {b"a": {b"b": "c"}}
+        eq.push("a")
+        self.assertTrue(mock_keymap.compile_keymap.called)
+        self.assertTrue(eq.empty())
+        eq.push("b")
+        self.assertEqual(eq.events[0].evt, "key")
+        self.assertEqual(eq.events[0].data, "c")
+        eq.push("d")
+        self.assertEqual(eq.events[1].evt, "key")
+        self.assertEqual(eq.events[1].data, "d")
+
+    @patch("_pyrepl.unix_eventqueue.keymap")
+    def test_push_with_keymap_in_keymap_and_escape(self, mock_keymap):
+        mock_keymap.compile_keymap.return_value = {"a": "b"}
+        eq = EventQueue(sys.stdout.fileno(), "utf-8")
+        eq.keymap = {b"a": {b"b": "c"}}
+        eq.push("a")
+        self.assertTrue(mock_keymap.compile_keymap.called)
+        self.assertTrue(eq.empty())
+        eq.flush_buf()
+        eq.push("\033")
+        self.assertEqual(eq.events[0].evt, "key")
+        self.assertEqual(eq.events[0].data, "\033")
+        eq.push("b")
+        self.assertEqual(eq.events[1].evt, "key")
+        self.assertEqual(eq.events[1].data, "b")
+
+    def test_push_special_key(self):
+        eq = EventQueue(sys.stdout.fileno(), "utf-8")
+        eq.keymap = {}
+        eq.push("\x1b")
+        eq.push("[")
+        eq.push("A")
+        self.assertEqual(eq.events[0].evt, "key")
+        self.assertEqual(eq.events[0].data, "\x1b")
+
+    def test_push_unrecognized_escape_sequence(self):
+        eq = EventQueue(sys.stdout.fileno(), "utf-8")
+        eq.keymap = {}
+        eq.push("\x1b")
+        eq.push("[")
+        eq.push("Z")
+        self.assertEqual(len(eq.events), 3)
+        self.assertEqual(eq.events[0].evt, "key")
+        self.assertEqual(eq.events[0].data, "\x1b")
+        self.assertEqual(eq.events[1].evt, "key")
+        self.assertEqual(eq.events[1].data, "[")
+        self.assertEqual(eq.events[2].evt, "key")
+        self.assertEqual(eq.events[2].data, "Z")
 
 
 if __name__ == "__main__":
