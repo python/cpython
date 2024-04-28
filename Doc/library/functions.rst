@@ -1069,6 +1069,15 @@ are always available.  They are listed here in alphabetical order.
     cell references does *not* affect the contents of previously returned
     dictionaries.
 
+   .. versionchanged:: 3.13
+      In previous versions, the semantics of mutating the mapping object
+      returned from this function were formally undefined. In CPython
+      specifically, the mapping returned at function scope could be
+      implicitly refreshed by other operations, such as calling ``locals()``
+      again. Obtaining the legacy CPython behaviour now requires explicit
+      calls to update the initially returned dictionary with the results
+      of subsequent calls to ``locals()``.
+
 
 .. function:: map(function, iterable, *iterables)
 
