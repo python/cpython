@@ -40,7 +40,6 @@ ENCODING = sys.getfilesystemencoding() or "latin1"  # XXX review
 __all__ = [
     "add_history",
     "clear_history",
-    "copy_history",
     "get_begidx",
     "get_completer",
     "get_completer_delims",
@@ -354,9 +353,6 @@ class _ReadlineWrapper:
                 entry = entry.replace("\n", "\r\n")  # multiline history support
                 f.write(entry + "\n")
 
-    def copy_history(self):
-        return self.get_reader().history[:]
-
     def clear_history(self):
         del self.get_reader().history[:]
 
@@ -427,7 +423,6 @@ get_current_history_length = _wrapper.get_current_history_length
 read_history_file = _wrapper.read_history_file
 write_history_file = _wrapper.write_history_file
 clear_history = _wrapper.clear_history
-copy_history = _wrapper.copy_history
 get_history_item = _wrapper.get_history_item
 remove_history_item = _wrapper.remove_history_item
 replace_history_item = _wrapper.replace_history_item

@@ -17,6 +17,8 @@
 # CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
 # CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
+from contextlib import contextmanager
+
 from . import commands, input
 from .reader import Reader as R
 
@@ -263,6 +265,16 @@ class HistoricalReader(R):
             return self.transient_history.get(i, self.history[i])
         else:
             return self.transient_history.get(i, self.get_unicode())
+
+    @contextmanager
+    def suspend(self):
+        with super().suspend():
+            try:
+                old_history = self.history[:]
+                del self.history[:]
+                yield
+            finally:
+                self.history[:] = old_history
 
     def prepare(self):
         super().prepare()

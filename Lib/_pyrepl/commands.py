@@ -399,15 +399,8 @@ class accept(FinishCommand):
 class help(Command):
     def do(self):
         import _sitebuiltins
-        self.reader.console.restore()
-        backup_ps = {}
-        for ps in ("ps1", "ps2", "ps3", "ps4"):
-            backup_ps[ps] = getattr(self.reader, ps)
-        self.reader.msg = _sitebuiltins._Helper()()
-        for ps in ("ps1", "ps2", "ps3", "ps4"):
-            setattr(self.reader, ps, backup_ps[ps])
-        self.reader.prepare()
-        self.reader.dirty = 1
+        with self.reader.suspend():
+            self.reader.msg = _sitebuiltins._Helper()()
 
 
 class invalid_key(Command):
@@ -454,13 +447,12 @@ class quoted_insert(Command):
 
 class show_history(Command):
     def do(self):
-        # self.reader.console.restore()
         from _pyrepl.pager import get_pager
-        from _pyrepl.readline import copy_history
         from site import gethistoryfile
-        pager = get_pager()
-        pager(os.linesep.join(copy_history()), gethistoryfile())
-        self.reader.dirty = 1
+        history = os.linesep.join(self.reader.history[:])
+        with self.reader.suspend():
+            pager = get_pager()
+            pager(history, gethistoryfile())
 
 
 class paste_mode(Command):

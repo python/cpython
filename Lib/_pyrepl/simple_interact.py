@@ -29,6 +29,7 @@ import sys
 import code
 import traceback
 
+from .console import Event
 from .readline import _error, _get_reader, multiline_input
 
 
@@ -55,13 +56,14 @@ REPL_COMMANDS = {
     "exit": _sitebuiltins.Quitter('exit', ''),
     "quit": _sitebuiltins.Quitter('quit' ,''),
     "copyright": _sitebuiltins._Printer('copyright', sys.copyright),
-    "help": _sitebuiltins._Helper(),
+    "help": "help",
 }
 
 class InteractiveColoredConsole(code.InteractiveConsole):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.can_colorize = traceback._can_colorize()
+
     def showtraceback(self):
         super().showtraceback(colorize=self.can_colorize)
 
@@ -76,6 +78,29 @@ def run_multiline_interactive_console(mainmodule=None, future_flags=0):
         console.compile.compiler.flags |= future_flags
 
     input_n = 0
+
+    def maybe_run_command(statement: str) -> bool:
+        statement = statement.strip()
+        if statement in console.locals or statement not in REPL_COMMANDS:
+            return False
+
+        reader = _get_reader()
+        reader.history.pop()  # skip internal commands in history
+        command = REPL_COMMANDS[statement]
+        if callable(command):
+            command()
+            return True
+
+        if isinstance(command, str):
+            # Internal readline commands require a prepared reader like
+            # inside multiline_input.
+            reader.prepare()
+            reader.refresh()
+            reader.do_cmd([command, Event(evt=command, data=command)])
+            reader.restore()
+            return True
+
+        return False
 
     def more_lines(unicodetext):
         # ooh, look at the hack:
@@ -93,6 +118,7 @@ def run_multiline_interactive_console(mainmodule=None, future_flags=0):
                 sys.stdout.flush()
             except Exception:
                 pass
+
             ps1 = getattr(sys, "ps1", ">>> ")
             ps2 = getattr(sys, "ps2", "... ")
             try:
@@ -100,17 +126,13 @@ def run_multiline_interactive_console(mainmodule=None, future_flags=0):
             except EOFError:
                 break
 
+            if maybe_run_command(statement):
+                continue
+
             input_name = f"<python-input-{input_n}>"
             linecache._register_code(input_name, statement, "<stdin>")
-            stripped_statement = statement.strip()
-            maybe_repl_command = REPL_COMMANDS.get(stripped_statement)
-            if maybe_repl_command is not None and stripped_statement not in console.locals:
-                _get_reader().history.pop()
-                maybe_repl_command()
-                continue
-            else:
-                more = console.push(_strip_final_indent(statement), filename=input_name)
-                assert not more
+            more = console.push(_strip_final_indent(statement), filename=input_name)
+            assert not more
             input_n += 1
         except KeyboardInterrupt:
             console.write("\nKeyboardInterrupt\n")

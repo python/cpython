@@ -19,6 +19,7 @@
 # CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
 # CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
+from contextlib import contextmanager
 import re
 import unicodedata
 import traceback
@@ -502,8 +503,9 @@ class Reader:
             self.pos = 0
             self.dirty = 1
             self.last_command = None
+            # XXX should kill ring be here?
             self._pscache = {}
-        except:
+        except BaseException:
             self.restore()
             raise
 
@@ -515,6 +517,19 @@ class Reader:
     def restore(self):
         """Clean up after a run."""
         self.console.restore()
+
+    @contextmanager
+    def suspend(self):
+        """A context manager to delegate to another reader."""
+        prev_state = dict(self.__dict__)
+        try:
+            self.restore()
+            yield
+        finally:
+            for arg in ('msg', 'ps1', 'ps2', 'ps3', 'ps4', 'paste_mode'):
+                setattr(self, arg, prev_state[arg])
+            self.prepare()
+            pass
 
     def finish(self):
         """Called when a command signals that we're finished."""
@@ -537,7 +552,6 @@ class Reader:
         self.dirty = 0  # forgot this for a while (blush)
 
     def do_cmd(self, cmd):
-        # print cmd
         if isinstance(cmd[0], str):
             cmd = self.commands.get(cmd[0], commands.invalid_command)(self, *cmd)
         elif isinstance(cmd[0], type):
