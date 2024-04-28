@@ -55,6 +55,12 @@ def _my_unctrl(c, u=_make_unctrl_map()):
             return c
 
 
+if "a"[0] == b"a":
+    # When running tests with python2, bytes characters are bytes.
+    def _my_unctrl(c, uc=_my_unctrl):
+        return uc(ord(c))
+
+
 def disp_str(buffer, join="".join, uc=_my_unctrl):
     """disp_str(buffer:string) -> (string, [int])
 
@@ -283,6 +289,8 @@ class Reader:
                 screeninfo.append((0, []))
             p -= ll + 1
             prompt, lp = self.process_prompt(prompt)
+            if traceback._can_colorize():
+                prompt = traceback._ANSIColors.BOLD_MAGENTA + prompt + traceback._ANSIColors.RESET
             l, l2 = disp_str(line)
             wrapcount = (len(l) + lp) // w
             if wrapcount == 0:
@@ -335,8 +343,6 @@ class Reader:
         keep = prompt[pos:]
         l -= sum(map(len, _r_csi_seq.findall(keep)))
         out_prompt += keep
-        if traceback._can_colorize():
-            out_prompt = traceback._ANSIColors.BOLD_MAGENTA + out_prompt + traceback._ANSIColors.RESET
         return out_prompt, l
 
     def bow(self, p=None):
