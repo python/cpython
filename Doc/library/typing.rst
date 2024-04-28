@@ -1764,8 +1764,8 @@ without the dedicated syntax, as documented below.
    .. method:: has_default()
 
       Return whether or not the type variable has a default value. This is equivalent
-      to checking whether :attr:`__default__` is not equal to :data:`typing.NoDefault`,
-      except that it does not force evaluation of the
+      to checking whether :attr:`__default__` is not the :data:`typing.NoDefault`
+      singleton, except that it does not force evaluation of the
       :ref:`lazily evaluated <lazy-evaluation>` default value.
 
       .. versionadded:: 3.13
@@ -1902,8 +1902,8 @@ without the dedicated syntax, as documented below.
    .. method:: has_default()
 
       Return whether or not the type variable tuple has a default value. This is equivalent
-      to checking whether :attr:`__default__` is not equal to :data:`typing.NoDefault`,
-      except that it does not force evaluation of the
+      to checking whether :attr:`__default__` is not the :data:`typing.NoDefault`
+      singleton, except that it does not force evaluation of the
       :ref:`lazily evaluated <lazy-evaluation>` default value.
 
       .. versionadded:: 3.13
@@ -1998,8 +1998,8 @@ without the dedicated syntax, as documented below.
    .. method:: has_default()
 
       Return whether or not the parameter specification has a default value. This is equivalent
-      to checking whether :attr:`__default__` is not equal to :data:`typing.NoDefault`,
-      except that it does not force evaluation of the
+      to checking whether :attr:`__default__` is not the :data:`typing.NoDefault`
+      singleton, except that it does not force evaluation of the
       :ref:`lazily evaluated <lazy-evaluation>` default value.
 
       .. versionadded:: 3.13
