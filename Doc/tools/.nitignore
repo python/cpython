@@ -35,7 +35,6 @@ Doc/library/email.errors.rst
 Doc/library/email.parser.rst
 Doc/library/email.policy.rst
 Doc/library/exceptions.rst
-Doc/library/faulthandler.rst
 Doc/library/functools.rst
 Doc/library/getopt.rst
 Doc/library/http.cookiejar.rst
