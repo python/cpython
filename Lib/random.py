@@ -1,4 +1,4 @@
-"""Random variable generators.
+ """Random variable generators.
 
     bytes
     -----
