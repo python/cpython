@@ -3211,8 +3211,17 @@ Introspection helpers
 
 .. data:: NoDefault
 
-   A sentinel object used to represent the default value of certain parameters
-   used in this module.
+   A sentinel object used to indicate that a type parameter has no default
+   value. For example:
+   
+   .. doctest::
+   
+      >>> T = TypeVar("T")
+      >>> T.__default__ is typing.NoDefault
+      True
+      >>> S = TypeVar("S", default=None)
+      >>> S.__default__ is None
+      True
 
    .. versionadded:: 3.13
 

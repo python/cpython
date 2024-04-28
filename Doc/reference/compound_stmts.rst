@@ -1703,7 +1703,9 @@ a single equals sign (``=``) followed by an expression. Like the bounds and
 constraints of type variables, the default value is not evaluated when the
 object is created, but only when the type parameter's ``__default__`` attribute
 is accessed. To this end, the default value is evaluated in a separate
-:ref:`annotation scope <annotation-scopes>`.
+:ref:`annotation scope <annotation-scopes>`. If no default value is specified
+for a type parameter, the ``__default__`` attribute is set to the special
+sentinel object :data:`typing.NoDefault`.
 
 The following example indicates the full set of allowed type parameter declarations::
 

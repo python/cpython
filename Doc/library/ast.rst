@@ -1753,7 +1753,8 @@ aliases.
    A :class:`typing.TypeVar`. *name* is the name of the type variable.
    *bound* is the bound or constraints, if any. If *bound* is a :class:`Tuple`,
    it represents constraints; otherwise it represents the bound. *default_value*
-   is the default value, if any.
+   is the default value; if the :class:`!TypeVar` has no default, this 
+   attribute will be set to ``None``.
 
    .. doctest::
 
@@ -1780,7 +1781,8 @@ aliases.
 .. class:: ParamSpec(name, default_value)
 
    A :class:`typing.ParamSpec`. *name* is the name of the parameter specification.
-   *default_value* is the default value, if any.
+   *default_value* is the default value; if the :class:`!ParamSpec` has no default,
+   this attribute will be set to ``None``.
 
    .. doctest::
 
@@ -1814,7 +1816,8 @@ aliases.
 .. class:: TypeVarTuple(name, default_value)
 
    A :class:`typing.TypeVarTuple`. *name* is the name of the type variable tuple.
-   *default_value* is the default value, if any.
+   *default_value* is the default value; if the :class:`!TypeVarTuple` has no
+   default, this attribute will be set to ``None``.
 
    .. doctest::
 
