@@ -854,12 +854,21 @@ using ``[]``.
 .. data:: Never
           NoReturn
 
-   ``Never`` and ``NoReturn`` are
-   `bottom types <https://en.wikipedia.org/wiki/Bottom_type>`_,
-   types that have no members.
+   ``Never`` and ``NoReturn`` represent the
+   `bottom type <https://en.wikipedia.org/wiki/Bottom_type>`_,
+   a type that has no members.
 
-   They can be used to define a function that should never be
-   called, as there are no valid arguments::
+   They can be used to indicate that a function never returns,
+   such as :func:`sys.exit`::
+
+      from typing import Never  # or NoReturn
+
+      def stop() -> Never:
+          raise RuntimeError('no way')
+
+   Or to define a function that should never be
+   called, as there are no valid arguments, such as
+   :func:`assert_never`::
 
       from typing import Never  # or NoReturn
 
@@ -876,15 +885,8 @@ using ``[]``.
               case _:
                   never_call_me(arg)  # OK, arg is of type Never (or NoReturn)
 
-   Or to indicate that a function never returns::
-
-      from typing import Never  # or NoReturn
-
-      def stop() -> Never:
-          raise RuntimeError('no way')
-
-   ``Never`` and ``NoReturn`` have the same meaning in the type system.
-   Users may make a stylistic choice about which one is preferred in which context.
+   ``Never`` and ``NoReturn`` have the same meaning in the type system
+   and static type checkers treat both equivalently.
 
    .. versionadded:: 3.6.2
 
@@ -892,9 +894,7 @@ using ``[]``.
 
    .. versionadded:: 3.11
 
-      Added ``Never``, to make the use as a
-      `bottom type <https://en.wikipedia.org/wiki/Bottom_type>`_ more
-      explicit. Type checkers should treat the two equivalently.
+      Added ``Never``.
 
 .. data:: Self
 
