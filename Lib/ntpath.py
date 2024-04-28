@@ -102,16 +102,14 @@ def join(path, *paths):
     if isinstance(path, bytes):
         sep = b'\\'
         seps = b'\\/'
-        colon = b':'
+        colon_seps = b':\\/'
     else:
         sep = '\\'
         seps = '\\/'
-        colon = ':'
+        colon_seps = ':\\/'
     try:
-        if not paths:
-            path[:0] + sep  #23780: Ensure compatible data type even if p is null.
         result_drive, result_root, result_path = splitroot(path)
-        for p in map(os.fspath, paths):
+        for p in paths:
             p_drive, p_root, p_path = splitroot(p)
             if p_root:
                 # Second path is absolute
@@ -135,7 +133,7 @@ def join(path, *paths):
             result_path = result_path + p_path
         ## add separator between UNC and non-absolute path
         if (result_path and not result_root and
-            result_drive and result_drive[-1:] not in colon + seps):
+            result_drive and result_drive[-1] not in colon_seps):
             return result_drive + sep + result_path
         return result_drive + result_root + result_path
     except (TypeError, AttributeError, BytesWarning):
@@ -169,56 +167,76 @@ def splitdrive(p):
     return drive, root + tail
 
 
-def splitroot(p):
-    """Split a pathname into drive, root and tail. The drive is defined
-    exactly as in splitdrive(). On Windows, the root may be a single path
-    separator or an empty string. The tail contains anything after the root.
-    For example:
+try:
+    from nt import _path_splitroot_ex
+except ImportError:
+    def splitroot(p):
+        """Split a pathname into drive, root and tail. The drive is defined
+        exactly as in splitdrive(). On Windows, the root may be a single path
+        separator or an empty string. The tail contains anything after the root.
+        For example:
 
-        splitroot('//server/share/') == ('//server/share', '/', '')
-        splitroot('C:/Users/Barney') == ('C:', '/', 'Users/Barney')
-        splitroot('C:///spam///ham') == ('C:', '/', '//spam///ham')
-        splitroot('Windows/notepad') == ('', '', 'Windows/notepad')
-    """
-    p = os.fspath(p)
-    if isinstance(p, bytes):
-        sep = b'\\'
-        altsep = b'/'
-        colon = b':'
-        unc_prefix = b'\\\\?\\UNC\\'
-        empty = b''
-    else:
-        sep = '\\'
-        altsep = '/'
-        colon = ':'
-        unc_prefix = '\\\\?\\UNC\\'
-        empty = ''
-    normp = p.replace(altsep, sep)
-    if normp[:1] == sep:
-        if normp[1:2] == sep:
-            # UNC drives, e.g. \\server\share or \\?\UNC\server\share
-            # Device drives, e.g. \\.\device or \\?\device
-            start = 8 if normp[:8].upper() == unc_prefix else 2
-            index = normp.find(sep, start)
-            if index == -1:
-                return p, empty, empty
-            index2 = normp.find(sep, index + 1)
-            if index2 == -1:
-                return p, empty, empty
-            return p[:index2], p[index2:index2 + 1], p[index2 + 1:]
+            splitroot('//server/share/') == ('//server/share', '/', '')
+            splitroot('C:/Users/Barney') == ('C:', '/', 'Users/Barney')
+            splitroot('C:///spam///ham') == ('C:', '/', '//spam///ham')
+            splitroot('Windows/notepad') == ('', '', 'Windows/notepad')
+        """
+        p = os.fspath(p)
+        if isinstance(p, bytes):
+            sep = b'\\'
+            altsep = b'/'
+            colon = b':'
+            unc_prefix = b'\\\\?\\UNC\\'
+            empty = b''
         else:
-            # Relative path with root, e.g. \Windows
-            return empty, p[:1], p[1:]
-    elif normp[1:2] == colon:
-        if normp[2:3] == sep:
-            # Absolute drive-letter path, e.g. X:\Windows
-            return p[:2], p[2:3], p[3:]
+            sep = '\\'
+            altsep = '/'
+            colon = ':'
+            unc_prefix = '\\\\?\\UNC\\'
+            empty = ''
+        normp = p.replace(altsep, sep)
+        if normp[:1] == sep:
+            if normp[1:2] == sep:
+                # UNC drives, e.g. \\server\share or \\?\UNC\server\share
+                # Device drives, e.g. \\.\device or \\?\device
+                start = 8 if normp[:8].upper() == unc_prefix else 2
+                index = normp.find(sep, start)
+                if index == -1:
+                    return p, empty, empty
+                index2 = normp.find(sep, index + 1)
+                if index2 == -1:
+                    return p, empty, empty
+                return p[:index2], p[index2:index2 + 1], p[index2 + 1:]
+            else:
+                # Relative path with root, e.g. \Windows
+                return empty, p[:1], p[1:]
+        elif normp[1:2] == colon:
+            if normp[2:3] == sep:
+                # Absolute drive-letter path, e.g. X:\Windows
+                return p[:2], p[2:3], p[3:]
+            else:
+                # Relative path with drive, e.g. X:Windows
+                return p[:2], empty, p[2:]
         else:
-            # Relative path with drive, e.g. X:Windows
-            return p[:2], empty, p[2:]
-    else:
-        # Relative path, e.g. Windows
-        return empty, empty, p
+            # Relative path, e.g. Windows
+            return empty, empty, p
+else:
+    def splitroot(p):
+        """Split a pathname into drive, root and tail. The drive is defined
+        exactly as in splitdrive(). On Windows, the root may be a single path
+        separator or an empty string. The tail contains anything after the root.
+        For example:
+
+            splitroot('//server/share/') == ('//server/share', '/', '')
+            splitroot('C:/Users/Barney') == ('C:', '/', 'Users/Barney')
+            splitroot('C:///spam///ham') == ('C:', '/', '//spam///ham')
+            splitroot('Windows/notepad') == ('', '', 'Windows/notepad')
+        """
+        p = os.fspath(p)
+        if isinstance(p, bytes):
+            drive, root, tail = _path_splitroot_ex(os.fsdecode(p))
+            return os.fsencode(drive), os.fsencode(root), os.fsencode(tail)
+        return _path_splitroot_ex(p)
 
 
 # Split a path in head (everything up to the last '/') and tail (the
@@ -279,7 +297,7 @@ if hasattr(os.stat_result, 'st_reparse_tag'):
             st = os.lstat(path)
         except (OSError, ValueError, AttributeError):
             return False
-        return bool(st.st_reparse_tag == stat.IO_REPARSE_TAG_MOUNT_POINT)
+        return st.st_reparse_tag == stat.IO_REPARSE_TAG_MOUNT_POINT
 else:
     # Use genericpath.isjunction as imported above
     pass
@@ -340,8 +358,8 @@ def isreserved(path):
 def _isreservedname(name):
     """Return true if the filename is reserved by the system."""
     # Trailing dots and spaces are reserved.
-    if name.endswith(('.', ' ')) and name not in ('.', '..'):
-        return True
+    if name[-1:] in ('.', ' '):
+        return name not in ('.', '..')
     # Wildcards, separators, colon, and pipe (*?"<>/\:|) are reserved.
     # ASCII control characters (0-31) are reserved.
     # Colon is reserved for file streams (e.g. "name:stream[:type]").
@@ -350,9 +368,7 @@ def _isreservedname(name):
     # DOS device names are reserved (e.g. "nul" or "nul .txt"). The rules
     # are complex and vary across Windows versions. On the side of
     # caution, return True for names that may not be reserved.
-    if name.partition('.')[0].rstrip(' ').upper() in _reserved_names:
-        return True
-    return False
+    return name.partition('.')[0].rstrip(' ').upper() in _reserved_names
 
 
 # Expand paths beginning with '~' or '~user'.
@@ -370,24 +386,23 @@ def expanduser(path):
     If user or $HOME is unknown, do nothing."""
     path = os.fspath(path)
     if isinstance(path, bytes):
+        seps = b'\\/'
         tilde = b'~'
     else:
+        seps = '\\/'
         tilde = '~'
     if not path.startswith(tilde):
         return path
     i, n = 1, len(path)
-    while i < n and path[i] not in _get_bothseps(path):
+    while i < n and path[i] not in seps:
         i += 1
 
     if 'USERPROFILE' in os.environ:
         userhome = os.environ['USERPROFILE']
-    elif not 'HOMEPATH' in os.environ:
+    elif 'HOMEPATH' not in os.environ:
         return path
     else:
-        try:
-            drive = os.environ['HOMEDRIVE']
-        except KeyError:
-            drive = ''
+        drive = os.environ.get('HOMEDRIVE', '')
         userhome = join(drive, os.environ['HOMEPATH'])
 
     if i != 1: #~user
@@ -727,7 +742,8 @@ else:
             new_unc_prefix = b'\\\\'
             cwd = os.getcwdb()
             # bpo-38081: Special case for realpath(b'nul')
-            if normcase(path) == normcase(os.fsencode(devnull)):
+            devnull = b'nul'
+            if normcase(path) == devnull:
                 return b'\\\\.\\NUL'
         else:
             prefix = '\\\\?\\'
@@ -735,7 +751,8 @@ else:
             new_unc_prefix = '\\\\'
             cwd = os.getcwd()
             # bpo-38081: Special case for realpath('nul')
-            if normcase(path) == normcase(devnull):
+            devnull = 'nul'
+            if normcase(path) == devnull:
                 return '\\\\.\\NUL'
         had_prefix = path.startswith(prefix)
         if not had_prefix and not isabs(path):
@@ -860,9 +877,6 @@ def commonpath(paths):
         drivesplits = [splitroot(p.replace(altsep, sep).lower()) for p in paths]
         split_paths = [p.split(sep) for d, r, p in drivesplits]
 
-        if len({r for d, r, p in drivesplits}) != 1:
-            raise ValueError("Can't mix absolute and relative paths")
-
         # Check that all drive letters or UNC paths match. The check is made only
         # now otherwise type errors for mixing strings and bytes would not be
         # caught.
@@ -870,6 +884,12 @@ def commonpath(paths):
             raise ValueError("Paths don't have the same drive")
 
         drive, root, path = splitroot(paths[0].replace(altsep, sep))
+        if len({r for d, r, p in drivesplits}) != 1:
+            if drive:
+                raise ValueError("Can't mix absolute and relative paths")
+            else:
+                raise ValueError("Can't mix rooted and not-rooted paths")
+
         common = path.split(sep)
         common = [c for c in common if c and c != curdir]
 

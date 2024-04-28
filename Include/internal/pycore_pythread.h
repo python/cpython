@@ -99,7 +99,7 @@ extern void _PyThread_AfterFork(struct _pythread_runtime_state *state);
 // unset: -1 seconds, in nanoseconds
 #define PyThread_UNSET_TIMEOUT ((PyTime_t)(-1 * 1000 * 1000 * 1000))
 
-// Exported for the _xxinterpchannels module.
+// Exported for the _interpchannels module.
 PyAPI_FUNC(int) PyThread_ParseTimeoutArg(
     PyObject *arg,
     int blocking,
@@ -111,7 +111,7 @@ PyAPI_FUNC(int) PyThread_ParseTimeoutArg(
  * are returned, depending on whether the lock can be acquired within the
  * timeout.
  */
-// Exported for the _xxinterpchannels module.
+// Exported for the _interpchannels module.
 PyAPI_FUNC(PyLockStatus) PyThread_acquire_lock_timed_with_retries(
     PyThread_type_lock,
     PY_TIMEOUT_T microseconds);

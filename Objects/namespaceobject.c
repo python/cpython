@@ -43,9 +43,27 @@ namespace_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 static int
 namespace_init(_PyNamespaceObject *ns, PyObject *args, PyObject *kwds)
 {
-    if (PyTuple_GET_SIZE(args) != 0) {
-        PyErr_Format(PyExc_TypeError, "no positional arguments expected");
+    PyObject *arg = NULL;
+    if (!PyArg_UnpackTuple(args, _PyType_Name(Py_TYPE(ns)), 0, 1, &arg)) {
         return -1;
+    }
+    if (arg != NULL) {
+        PyObject *dict;
+        if (PyDict_CheckExact(arg)) {
+            dict = Py_NewRef(arg);
+        }
+        else {
+            dict = PyObject_CallOneArg((PyObject *)&PyDict_Type, arg);
+            if (dict == NULL) {
+                return -1;
+            }
+        }
+        int err = (!PyArg_ValidateKeywordArguments(dict) ||
+                   PyDict_Update(ns->ns_dict, dict) < 0);
+        Py_DECREF(dict);
+        if (err) {
+            return -1;
+        }
     }
     if (kwds == NULL) {
         return 0;
@@ -219,15 +237,17 @@ namespace_replace(PyObject *self, PyObject *args, PyObject *kwargs)
 static PyMethodDef namespace_methods[] = {
     {"__reduce__", (PyCFunction)namespace_reduce, METH_NOARGS,
      namespace_reduce__doc__},
-    {"__replace__", _PyCFunction_CAST(namespace_replace), METH_VARARGS|METH_KEYWORDS, NULL},
+    {"__replace__", _PyCFunction_CAST(namespace_replace), METH_VARARGS|METH_KEYWORDS,
+     PyDoc_STR("__replace__($self, /, **changes)\n--\n\n"
+        "Return a copy of the namespace object with new values for the specified attributes.")},
     {NULL,         NULL}  // sentinel
 };
 
 
 PyDoc_STRVAR(namespace_doc,
-"A simple attribute-based namespace.\n\
-\n\
-SimpleNamespace(**kwargs)");
+"SimpleNamespace(mapping_or_iterable=(), /, **kwargs)\n\
+--\n\n\
+A simple attribute-based namespace.");
 
 PyTypeObject _PyNamespace_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)

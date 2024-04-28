@@ -1,6 +1,7 @@
 #include "Python.h"
 #include "opcode.h"
 #include "pycore_interp.h"
+#include "pycore_backoff.h"
 #include "pycore_bitutils.h"        // _Py_popcount32()
 #include "pycore_object.h"          // _PyObject_GC_UNTRACK()
 #include "pycore_opcode_metadata.h" // _PyOpcode_OpName[]
@@ -110,9 +111,7 @@ never_optimize(
     _PyExecutorObject **exec,
     int Py_UNUSED(stack_entries))
 {
-    /* Although it should be benign for this to be called,
-     * it shouldn't happen, so fail in debug builds. */
-    assert(0 && "never optimize should never be called");
+    // This may be called if the optimizer is reset
     return 0;
 }
 
@@ -127,25 +126,12 @@ PyTypeObject _PyDefaultOptimizer_Type = {
 static _PyOptimizerObject _PyOptimizer_Default = {
     PyObject_HEAD_INIT(&_PyDefaultOptimizer_Type)
     .optimize = never_optimize,
-    .resume_threshold = OPTIMIZER_UNREACHABLE_THRESHOLD,
-    .backedge_threshold = OPTIMIZER_UNREACHABLE_THRESHOLD,
-    .side_threshold = OPTIMIZER_UNREACHABLE_THRESHOLD,
 };
-
-static uint32_t
-shift_and_offset_threshold(uint32_t threshold)
-{
-    return (threshold << OPTIMIZER_BITS_IN_COUNTER) + (1 << 15);
-}
 
 _PyOptimizerObject *
 PyUnstable_GetOptimizer(void)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    assert(interp->optimizer_backedge_threshold ==
-           shift_and_offset_threshold(interp->optimizer->backedge_threshold));
-    assert(interp->optimizer_resume_threshold ==
-           shift_and_offset_threshold(interp->optimizer->resume_threshold));
     if (interp->optimizer == &_PyOptimizer_Default) {
         return NULL;
     }
@@ -190,13 +176,6 @@ _Py_SetOptimizer(PyInterpreterState *interp, _PyOptimizerObject *optimizer)
     }
     Py_INCREF(optimizer);
     interp->optimizer = optimizer;
-    interp->optimizer_backedge_threshold = shift_and_offset_threshold(optimizer->backedge_threshold);
-    interp->optimizer_resume_threshold = shift_and_offset_threshold(optimizer->resume_threshold);
-    interp->optimizer_side_threshold = optimizer->side_threshold;
-    if (optimizer == &_PyOptimizer_Default) {
-        assert(interp->optimizer_backedge_threshold > (1 << 16));
-        assert(interp->optimizer_resume_threshold > (1 << 16));
-    }
     return old;
 }
 
@@ -415,6 +394,12 @@ executor_traverse(PyObject *o, visitproc visit, void *arg)
     return 0;
 }
 
+static int
+executor_is_gc(PyObject *o)
+{
+    return !_Py_IsImmortal(o);
+}
+
 PyTypeObject _PyUOpExecutor_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     .tp_name = "uop_executor",
@@ -426,6 +411,7 @@ PyTypeObject _PyUOpExecutor_Type = {
     .tp_methods = executor_methods,
     .tp_traverse = executor_traverse,
     .tp_clear = executor_clear,
+    .tp_is_gc = executor_is_gc,
 };
 
 /* TO DO -- Generate these tables */
@@ -581,8 +567,6 @@ translate_bytecode_to_trace(
 top:  // Jump here after _PUSH_FRAME or likely branches
     for (;;) {
         target = INSTR_IP(instr, code);
-        RESERVE_RAW(2, "_CHECK_VALIDITY_AND_SET_IP");
-        ADD_TO_TRACE(_CHECK_VALIDITY_AND_SET_IP, 0, (uintptr_t)instr, target);
         // Need space for _DEOPT
         max_length--;
 
@@ -611,6 +595,8 @@ top:  // Jump here after _PUSH_FRAME or likely branches
             }
         }
         assert(opcode != ENTER_EXECUTOR && opcode != EXTENDED_ARG);
+        RESERVE_RAW(2, "_CHECK_VALIDITY_AND_SET_IP");
+        ADD_TO_TRACE(_CHECK_VALIDITY_AND_SET_IP, 0, (uintptr_t)instr, target);
 
         /* Special case the first instruction,
          * so that we can guarantee forward progress */
@@ -710,8 +696,9 @@ top:  // Jump here after _PUSH_FRAME or likely branches
                 if (expansion->nuops > 0) {
                     // Reserve space for nuops (+ _SET_IP + _EXIT_TRACE)
                     int nuops = expansion->nuops;
-                    RESERVE(nuops);
-                    if (expansion->uops[nuops-1].uop == _POP_FRAME) {
+                    RESERVE(nuops + 1); /* One extra for exit */
+                    int16_t last_op = expansion->uops[nuops-1].uop;
+                    if (last_op == _POP_FRAME || last_op == _RETURN_GENERATOR) {
                         // Check for trace stack underflow now:
                         // We can't bail e.g. in the middle of
                         // LOAD_CONST + _POP_FRAME.
@@ -770,7 +757,7 @@ top:  // Jump here after _PUSH_FRAME or likely branches
                                 Py_FatalError("garbled expansion");
                         }
 
-                        if (uop == _POP_FRAME) {
+                        if (uop == _POP_FRAME || uop == _RETURN_GENERATOR) {
                             TRACE_STACK_POP();
                             /* Set the operand to the function or code object returned to,
                              * to assist optimization passes. (See _PUSH_FRAME below.)
@@ -827,6 +814,12 @@ top:  // Jump here after _PUSH_FRAME or likely branches
                                     ADD_TO_TRACE(_EXIT_TRACE, 0, 0, 0);
                                     goto done;
                                 }
+                                if (opcode == FOR_ITER_GEN) {
+                                    DPRINTF(2, "Bailing due to dynamic target\n");
+                                    ADD_TO_TRACE(uop, oparg, 0, target);
+                                    ADD_TO_TRACE(_DYNAMIC_EXIT, 0, 0, 0);
+                                    goto done;
+                                }
                                 // Increment IP to the return address
                                 instr += _PyOpcode_Caches[_PyOpcode_Deopt[opcode]] + 1;
                                 TRACE_STACK_PUSH();
@@ -860,7 +853,7 @@ top:  // Jump here after _PUSH_FRAME or likely branches
                             }
                             DPRINTF(2, "Bail, new_code == NULL\n");
                             ADD_TO_TRACE(uop, oparg, 0, target);
-                            ADD_TO_TRACE(_EXIT_TRACE, 0, 0, 0);
+                            ADD_TO_TRACE(_DYNAMIC_EXIT, 0, 0, 0);
                             goto done;
                         }
 
@@ -930,7 +923,7 @@ count_exits(_PyUOpInstruction *buffer, int length)
     int exit_count = 0;
     for (int i = 0; i < length; i++) {
         int opcode = buffer[i].opcode;
-        if (opcode == _SIDE_EXIT) {
+        if (opcode == _SIDE_EXIT || opcode == _DYNAMIC_EXIT) {
             exit_count++;
         }
     }
@@ -992,6 +985,7 @@ prepare_for_execution(_PyUOpInstruction *buffer, int length)
                 current_error_target = target;
                 make_exit(&buffer[next_spare], _ERROR_POP_N, 0);
                 buffer[next_spare].oparg = popped;
+                buffer[next_spare].operand = target;
                 next_spare++;
             }
             buffer[i].error_target = current_error;
@@ -1109,7 +1103,7 @@ make_executor_from_uops(_PyUOpInstruction *buffer, int length, const _PyBloomFil
     assert(exit_count < COLD_EXIT_COUNT);
     for (int i = 0; i < exit_count; i++) {
         executor->exits[i].executor = &COLD_EXITS[i];
-        executor->exits[i].temperature = 0;
+        executor->exits[i].temperature = initial_temperature_backoff_counter();
     }
     int next_exit = exit_count-1;
     _PyUOpInstruction *dest = (_PyUOpInstruction *)&executor->trace[length];
@@ -1126,12 +1120,15 @@ make_executor_from_uops(_PyUOpInstruction *buffer, int length, const _PyBloomFil
             dest->format = UOP_FORMAT_EXIT;
             next_exit--;
         }
+        if (opcode == _DYNAMIC_EXIT) {
+            executor->exits[next_exit].target = 0;
+            dest->oparg = next_exit;
+            next_exit--;
+        }
     }
     assert(next_exit == -1);
     assert(dest == executor->trace);
     assert(dest->opcode == _START_EXECUTOR);
-    dest->oparg = 0;
-    dest->target = 0;
     _Py_ExecutorInit(executor, dependencies);
 #ifdef Py_DEBUG
     char *python_lltrace = Py_GETENV("PYTHON_LLTRACE");
@@ -1291,11 +1288,6 @@ PyUnstable_Optimizer_NewUOpOptimizer(void)
         return NULL;
     }
     opt->optimize = uop_optimize;
-    opt->resume_threshold = OPTIMIZER_UNREACHABLE_THRESHOLD;
-    // Need a few iterations to settle specializations,
-    // and to ammortize the cost of optimization.
-    opt->side_threshold = 16;
-    opt->backedge_threshold = 16;
     return (PyObject *)opt;
 }
 
@@ -1340,7 +1332,7 @@ counter_optimize(
     }
     _Py_CODEUNIT *target = instr + 1 + _PyOpcode_Caches[JUMP_BACKWARD] - oparg;
     _PyUOpInstruction buffer[5] = {
-        { .opcode = _START_EXECUTOR },
+        { .opcode = _START_EXECUTOR, .jump_target = 4, .format=UOP_FORMAT_JUMP },
         { .opcode = _LOAD_CONST_INLINE_BORROW, .operand = (uintptr_t)self },
         { .opcode = _INTERNAL_INCREMENT_OPT_COUNTER },
         { .opcode = _EXIT_TRACE, .jump_target = 4, .format=UOP_FORMAT_JUMP },
@@ -1385,9 +1377,6 @@ PyUnstable_Optimizer_NewCounter(void)
         return NULL;
     }
     opt->base.optimize = counter_optimize;
-    opt->base.resume_threshold = OPTIMIZER_UNREACHABLE_THRESHOLD;
-    opt->base.side_threshold = OPTIMIZER_UNREACHABLE_THRESHOLD;
-    opt->base.backedge_threshold = 0;
     opt->count = 0;
     return (PyObject *)opt;
 }
@@ -1554,7 +1543,7 @@ _Py_ExecutorClear(_PyExecutorObject *executor)
     for (uint32_t i = 0; i < executor->exit_count; i++) {
         Py_DECREF(executor->exits[i].executor);
         executor->exits[i].executor = &COLD_EXITS[i];
-        executor->exits[i].temperature = INT16_MIN;
+        executor->exits[i].temperature = initial_unreachable_backoff_counter();
     }
     _Py_CODEUNIT *instruction = &_PyCode_CODE(code)[executor->vm_data.index];
     assert(instruction->op.code == ENTER_EXECUTOR);

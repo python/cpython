@@ -1287,8 +1287,7 @@ list_extend_set(PyListObject *self, PySetObject *other)
     Py_hash_t hash;
     PyObject *key;
     PyObject **dest = self->ob_item + m;
-    while (_PySet_NextEntry((PyObject *)other, &setpos, &key, &hash)) {
-        Py_INCREF(key);
+    while (_PySet_NextEntryRef((PyObject *)other, &setpos, &key, &hash)) {
         FT_ATOMIC_STORE_PTR_RELEASE(*dest, key);
         dest++;
     }
@@ -1372,6 +1371,11 @@ _list_extend(PyListObject *self, PyObject *iterable)
     else if (PyAnySet_CheckExact(iterable)) {
         Py_BEGIN_CRITICAL_SECTION2(self, iterable);
         res = list_extend_set(self, (PySetObject *)iterable);
+        Py_END_CRITICAL_SECTION2();
+    }
+    else if (PyDict_CheckExact(iterable)) {
+        Py_BEGIN_CRITICAL_SECTION2(self, iterable);
+        res = list_extend_dict(self, (PyDictObject *)iterable, 0 /*keys*/);
         Py_END_CRITICAL_SECTION2();
     }
     else if (Py_IS_TYPE(iterable, &PyDictKeys_Type)) {

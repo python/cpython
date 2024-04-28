@@ -819,25 +819,55 @@ static int _pending_callback(void *arg)
  * run from any python thread.
  */
 static PyObject *
-pending_threadfunc(PyObject *self, PyObject *arg)
+pending_threadfunc(PyObject *self, PyObject *arg, PyObject *kwargs)
 {
+    static char *kwlist[] = {"callback", "num",
+                             "blocking", "ensure_added", NULL};
     PyObject *callable;
-    int r;
-    if (PyArg_ParseTuple(arg, "O", &callable) == 0)
+    unsigned int num = 1;
+    int blocking = 0;
+    int ensure_added = 0;
+    if (!PyArg_ParseTupleAndKeywords(arg, kwargs,
+                                     "O|I$pp:_pending_threadfunc", kwlist,
+                                     &callable, &num, &blocking, &ensure_added))
+    {
         return NULL;
+    }
 
     /* create the reference for the callbackwhile we hold the lock */
-    Py_INCREF(callable);
-
-    Py_BEGIN_ALLOW_THREADS
-    r = Py_AddPendingCall(&_pending_callback, callable);
-    Py_END_ALLOW_THREADS
-
-    if (r<0) {
-        Py_DECREF(callable); /* unsuccessful add, destroy the extra reference */
-        Py_RETURN_FALSE;
+    for (unsigned int i = 0; i < num; i++) {
+        Py_INCREF(callable);
     }
-    Py_RETURN_TRUE;
+
+    PyThreadState *save_tstate = NULL;
+    if (!blocking) {
+        save_tstate = PyEval_SaveThread();
+    }
+
+    unsigned int num_added = 0;
+    for (; num_added < num; num_added++) {
+        if (ensure_added) {
+            int r;
+            do {
+                r = Py_AddPendingCall(&_pending_callback, callable);
+            } while (r < 0);
+        }
+        else {
+            if (Py_AddPendingCall(&_pending_callback, callable) < 0) {
+                break;
+            }
+        }
+    }
+
+    if (!blocking) {
+        PyEval_RestoreThread(save_tstate);
+    }
+
+    for (unsigned int i = num_added; i < num; i++) {
+        Py_DECREF(callable); /* unsuccessful add, destroy the extra reference */
+    }
+    /* The callable is decref'ed above in each added _pending_callback(). */
+    return PyLong_FromUnsignedLong((unsigned long)num_added);
 }
 
 /* Test PyOS_string_to_double. */
@@ -2645,106 +2675,59 @@ eval_eval_code_ex(PyObject *mod, PyObject *pos_args)
 
     PyObject **c_kwargs = NULL;
 
-    if (!PyArg_UnpackTuple(pos_args,
-                           "eval_code_ex",
-                           2,
-                           8,
-                           &code,
-                           &globals,
-                           &locals,
-                           &args,
-                           &kwargs,
-                           &defaults,
-                           &kw_defaults,
-                           &closure))
+    if (!PyArg_ParseTuple(pos_args,
+                          "OO|OO!O!O!OO:eval_code_ex",
+                          &code,
+                          &globals,
+                          &locals,
+                          &PyTuple_Type, &args,
+                          &PyDict_Type, &kwargs,
+                          &PyTuple_Type, &defaults,
+                          &kw_defaults,
+                          &closure))
     {
         goto exit;
     }
 
-    if (!PyCode_Check(code)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "code must be a Python code object");
-        goto exit;
-    }
-
-    if (!PyDict_Check(globals)) {
-        PyErr_SetString(PyExc_TypeError, "globals must be a dict");
-        goto exit;
-    }
-
-    if (locals && !PyMapping_Check(locals)) {
-        PyErr_SetString(PyExc_TypeError, "locals must be a mapping");
-        goto exit;
-    }
-    if (locals == Py_None) {
-        locals = NULL;
-    }
+    NULLABLE(code);
+    NULLABLE(globals);
+    NULLABLE(locals);
+    NULLABLE(kw_defaults);
+    NULLABLE(closure);
 
     PyObject **c_args = NULL;
     Py_ssize_t c_args_len = 0;
-
-    if (args)
-    {
-        if (!PyTuple_Check(args)) {
-            PyErr_SetString(PyExc_TypeError, "args must be a tuple");
-            goto exit;
-        } else {
-            c_args = &PyTuple_GET_ITEM(args, 0);
-            c_args_len = PyTuple_Size(args);
-        }
+    if (args) {
+        c_args = &PyTuple_GET_ITEM(args, 0);
+        c_args_len = PyTuple_Size(args);
     }
 
     Py_ssize_t c_kwargs_len = 0;
-
-    if (kwargs)
-    {
-        if (!PyDict_Check(kwargs)) {
-            PyErr_SetString(PyExc_TypeError, "keywords must be a dict");
-            goto exit;
-        } else {
-            c_kwargs_len = PyDict_Size(kwargs);
-            if (c_kwargs_len > 0) {
-                c_kwargs = PyMem_NEW(PyObject*, 2 * c_kwargs_len);
-                if (!c_kwargs) {
-                    PyErr_NoMemory();
-                    goto exit;
-                }
-
-                Py_ssize_t i = 0;
-                Py_ssize_t pos = 0;
-
-                while (PyDict_Next(kwargs,
-                                   &pos,
-                                   &c_kwargs[i],
-                                   &c_kwargs[i + 1]))
-                {
-                    i += 2;
-                }
-                c_kwargs_len = i / 2;
-                /* XXX This is broken if the caller deletes dict items! */
+    if (kwargs) {
+        c_kwargs_len = PyDict_Size(kwargs);
+        if (c_kwargs_len > 0) {
+            c_kwargs = PyMem_NEW(PyObject*, 2 * c_kwargs_len);
+            if (!c_kwargs) {
+                PyErr_NoMemory();
+                goto exit;
             }
+
+            Py_ssize_t i = 0;
+            Py_ssize_t pos = 0;
+            while (PyDict_Next(kwargs, &pos, &c_kwargs[i], &c_kwargs[i + 1])) {
+                i += 2;
+            }
+            c_kwargs_len = i / 2;
+            /* XXX This is broken if the caller deletes dict items! */
         }
     }
 
-
     PyObject **c_defaults = NULL;
     Py_ssize_t c_defaults_len = 0;
-
-    if (defaults && PyTuple_Check(defaults)) {
+    if (defaults) {
         c_defaults = &PyTuple_GET_ITEM(defaults, 0);
         c_defaults_len = PyTuple_Size(defaults);
     }
-
-    if (kw_defaults && !PyDict_Check(kw_defaults)) {
-        PyErr_SetString(PyExc_TypeError, "kw_defaults must be a dict");
-        goto exit;
-    }
-
-    if (closure && !PyTuple_Check(closure)) {
-        PyErr_SetString(PyExc_TypeError, "closure must be a tuple of cells");
-        goto exit;
-    }
-
 
     result = PyEval_EvalCodeEx(
         code,
@@ -3279,7 +3262,8 @@ static PyMethodDef TestMethods[] = {
     {"_spawn_pthread_waiter",   spawn_pthread_waiter,            METH_NOARGS},
     {"_end_spawned_pthread",    end_spawned_pthread,             METH_NOARGS},
 #endif
-    {"_pending_threadfunc",     pending_threadfunc,              METH_VARARGS},
+    {"_pending_threadfunc",     _PyCFunction_CAST(pending_threadfunc),
+     METH_VARARGS|METH_KEYWORDS},
 #ifdef HAVE_GETTIMEOFDAY
     {"profile_int",             profile_int,                     METH_NOARGS},
 #endif
@@ -3869,7 +3853,9 @@ PyInit__testcapi(void)
         return NULL;
 
     Py_SET_TYPE(&_HashInheritanceTester_Type, &PyType_Type);
-
+    if (PyType_Ready(&_HashInheritanceTester_Type) < 0) {
+        return NULL;
+    }
     if (PyType_Ready(&matmulType) < 0)
         return NULL;
     Py_INCREF(&matmulType);
@@ -3948,6 +3934,16 @@ PyInit__testcapi(void)
 
     PyModule_AddIntConstant(m, "the_number_three", 3);
     PyModule_AddIntMacro(m, Py_C_RECURSION_LIMIT);
+
+    if (PyModule_AddIntMacro(m, Py_single_input)) {
+        return NULL;
+    }
+    if (PyModule_AddIntMacro(m, Py_file_input)) {
+        return NULL;
+    }
+    if (PyModule_AddIntMacro(m, Py_eval_input)) {
+        return NULL;
+    }
 
     testcapistate_t *state = get_testcapi_state(m);
     state->error = PyErr_NewException("_testcapi.error", NULL, NULL);
@@ -4043,10 +4039,16 @@ PyInit__testcapi(void)
     if (_PyTestCapi_Init_PyAtomic(m) < 0) {
         return NULL;
     }
+    if (_PyTestCapi_Init_Run(m) < 0) {
+        return NULL;
+    }
     if (_PyTestCapi_Init_Hash(m) < 0) {
         return NULL;
     }
     if (_PyTestCapi_Init_Time(m) < 0) {
+        return NULL;
+    }
+    if (_PyTestCapi_Init_Object(m) < 0) {
         return NULL;
     }
 

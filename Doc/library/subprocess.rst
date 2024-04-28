@@ -52,10 +52,12 @@ underlying :class:`Popen` interface can be used directly.
 
    If *capture_output* is true, stdout and stderr will be captured.
    When used, the internal :class:`Popen` object is automatically created with
-   ``stdout=PIPE`` and ``stderr=PIPE``. The *stdout* and *stderr* arguments may
-   not be supplied at the same time as *capture_output*.  If you wish to capture
-   and combine both streams into one, use ``stdout=PIPE`` and ``stderr=STDOUT``
-   instead of *capture_output*.
+   *stdout* and *stdin* both set to :data:`~subprocess.PIPE`.
+   The *stdout* and *stderr* arguments may not be supplied at the same time as *capture_output*.
+   If you wish to capture and combine both streams into one,
+   set *stdout* to :data:`~subprocess.PIPE`
+   and *stderr* to :data:`~subprocess.STDOUT`,
+   instead of using *capture_output*.
 
    A *timeout* may be specified in seconds, it is internally passed on to
    :meth:`Popen.communicate`. If the timeout expires, the child process will be
@@ -69,7 +71,8 @@ underlying :class:`Popen` interface can be used directly.
    subprocess's stdin.  If used it must be a byte sequence, or a string if
    *encoding* or *errors* is specified or *text* is true.  When
    used, the internal :class:`Popen` object is automatically created with
-   ``stdin=PIPE``, and the *stdin* argument may not be used as well.
+   *stdin* set to :data:`~subprocess.PIPE`,
+   and the *stdin* argument may not be used as well.
 
    If *check* is true, and the process exits with a non-zero exit code, a
    :exc:`CalledProcessError` exception will be raised. Attributes of that
@@ -751,8 +754,8 @@ Exceptions defined in this module all inherit from :exc:`SubprocessError`.
 Security Considerations
 -----------------------
 
-Unlike some other popen functions, this implementation will never
-implicitly call a system shell.  This means that all characters,
+Unlike some other popen functions, this library will not
+implicitly choose to call a system shell.  This means that all characters,
 including shell metacharacters, can safely be passed to child processes.
 If the shell is invoked explicitly, via ``shell=True``, it is the application's
 responsibility to ensure that all whitespace and metacharacters are
@@ -760,6 +763,14 @@ quoted appropriately to avoid
 `shell injection <https://en.wikipedia.org/wiki/Shell_injection#Shell_injection>`_
 vulnerabilities. On :ref:`some platforms <shlex-quote-warning>`, it is possible
 to use :func:`shlex.quote` for this escaping.
+
+On Windows, batch files (:file:`*.bat` or :file:`*.cmd`) may be launched by the
+operating system in a system shell regardless of the arguments passed to this
+library. This could result in arguments being parsed according to shell rules,
+but without any escaping added by Python. If you are intentionally launching a
+batch file with arguments from untrusted sources, consider passing
+``shell=True`` to allow Python to escape special characters. See :gh:`114539`
+for additional discussion.
 
 
 Popen Objects
