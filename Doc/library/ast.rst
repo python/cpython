@@ -1826,7 +1826,7 @@ aliases.
                     type_params=[
                         TypeVarTuple(
                             name='Ts',
-                            default_value=Tuple(elts=[], ctx=Load()))],
+                            default_value=Tuple(ctx=Load()))],
                     value=Subscript(
                         value=Name(id='tuple', ctx=Load()),
                         slice=Tuple(
