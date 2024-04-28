@@ -1307,7 +1307,7 @@ path_converter(PyObject *o, void *p)
                 goto error_exit;
             }
 #endif
-            if (!path->null_embeddable && wcslen(wide) != length) {
+            if (!path->null_embeddable && wcslen(wide) != (size_t)length) {
                 FORMAT_EXCEPTION(PyExc_ValueError,
                                  "embedded null character in %s");
                 goto error_exit;
@@ -1361,7 +1361,7 @@ path_converter(PyObject *o, void *p)
 
     length = PyBytes_GET_SIZE(bytes);
     narrow = PyBytes_AS_STRING(bytes);
-    if (!path->null_embeddable && (size_t)length != strlen(narrow)) {
+    if (!path->null_embeddable && strlen(narrow) != (size_t)length) {
         FORMAT_EXCEPTION(PyExc_ValueError, "embedded null character in %s");
         goto error_exit;
     }
@@ -1385,7 +1385,7 @@ path_converter(PyObject *o, void *p)
             goto error_exit;
         }
 #endif
-        if (!path->null_embeddable && wcslen(wide) != length) {
+        if (!path->null_embeddable && wcslen(wide) != (size_t)length) {
             FORMAT_EXCEPTION(PyExc_ValueError,
                              "embedded null character in %s");
             goto error_exit;
@@ -1394,7 +1394,7 @@ path_converter(PyObject *o, void *p)
 #ifdef MS_WINDOWS
         path->narrow = TRUE;
 #else
-        path->narrow = narrow
+        path->narrow = narrow;
 #endif
         Py_DECREF(bytes);
         wide = NULL;
