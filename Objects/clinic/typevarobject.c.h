@@ -440,7 +440,7 @@ paramspec_reduce(paramspecobject *self, PyObject *Py_UNUSED(ignored))
 }
 
 PyDoc_STRVAR(typevartuple__doc__,
-"typevartuple(name, *, default=<unrepresentable>)\n"
+"typevartuple(name, *, default=typing.NoDefault)\n"
 "--\n"
 "\n"
 "Create a new TypeVarTuple with the given name.");
@@ -483,7 +483,7 @@ typevartuple(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
     Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 1;
     PyObject *name;
-    PyObject *default_value = NULL;
+    PyObject *default_value = &_Py_NoDefaultStruct;
 
     fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 1, 1, 0, argsbuf);
     if (!fastargs) {
@@ -644,4 +644,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=d61c659408a879ea input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e49eb7aa7b3b6805 input=a9049054013a1b77]*/

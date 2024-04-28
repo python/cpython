@@ -38,7 +38,7 @@ from typing import Annotated, ForwardRef
 from typing import Self, LiteralString
 from typing import TypeAlias
 from typing import ParamSpec, Concatenate, ParamSpecArgs, ParamSpecKwargs
-from typing import TypeGuard, TypeIs
+from typing import TypeGuard, TypeIs, NoDefault
 import abc
 import textwrap
 import typing
@@ -592,8 +592,12 @@ class TypeParameterDefaultsTests(BaseTestCase):
     def test_typevar_none(self):
         U = TypeVar('U')
         U_None = TypeVar('U_None', default=None)
-        self.assertEqual(U.__default__, None)
-        self.assertEqual(U_None.__default__, type(None))
+        self.assertIs(U.__default__, NoDefault)
+        self.assertIs(U_None.__default__, None)
+
+        class X[T]: ...
+        T, = X.__type_params__
+        self.assertIs(T.__default__, NoDefault)
 
     def test_paramspec(self):
         P = ParamSpec('P', default=(str, int))
@@ -609,8 +613,12 @@ class TypeParameterDefaultsTests(BaseTestCase):
     def test_paramspec_none(self):
         U = ParamSpec('U')
         U_None = ParamSpec('U_None', default=None)
-        self.assertEqual(U.__default__, None)
-        self.assertEqual(U_None.__default__, type(None))
+        self.assertIs(U.__default__, NoDefault)
+        self.assertIs(U_None.__default__, None)
+
+        class X[**P]: ...
+        P, = X.__type_params__
+        self.assertIs(P.__default__, NoDefault)
 
     def test_typevartuple(self):
         Ts = TypeVarTuple('Ts', default=Unpack[Tuple[str, int]])
@@ -682,8 +690,12 @@ class TypeParameterDefaultsTests(BaseTestCase):
     def test_typevartuple_none(self):
         U = TypeVarTuple('U')
         U_None = TypeVarTuple('U_None', default=None)
-        self.assertEqual(U.__default__, None)
-        self.assertEqual(U_None.__default__, type(None))
+        self.assertIs(U.__default__, NoDefault)
+        self.assertIs(U_None.__default__, None)
+
+        class X[**Ts]: ...
+        Ts, = X.__type_params__
+        self.assertIs(Ts.__default__, NoDefault)
 
     def test_no_default_after_non_default(self):
         DefaultStrT = TypeVar('DefaultStrT', default=str)
@@ -10143,6 +10155,26 @@ class DataclassTransformTests(BaseTestCase):
             }
         )
         self.assertIsInstance(CustomerModel, Decorated)
+
+
+class NoDefaultTests(BaseTestCase):
+    def test_pickling(self):
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            s = pickle.dumps(NoDefault, proto)
+            loaded = pickle.loads(s)
+            self.assertIs(NoDefault, loaded)
+
+    def test_constructor(self):
+        self.assertIs(NoDefault, type(NoDefault)())
+        with self.assertRaises(TypeError):
+            NoDefault(1)
+
+    def test_repr(self):
+        self.assertEqual(repr(NoDefault), 'typing.NoDefault')
+
+    def test_no_call(self):
+        with self.assertRaises(TypeError):
+            NoDefault()
 
 
 class AllTests(BaseTestCase):

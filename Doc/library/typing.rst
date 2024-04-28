@@ -1616,7 +1616,7 @@ without the dedicated syntax, as documented below.
 
 .. _typevar:
 
-.. class:: TypeVar(name, *constraints, bound=None, covariant=False, contravariant=False, infer_variance=False, default=<unrepresentable>)
+.. class:: TypeVar(name, *constraints, bound=None, covariant=False, contravariant=False, infer_variance=False, default=typing.NoDefault)
 
    Type variable.
 
@@ -1774,7 +1774,7 @@ without the dedicated syntax, as documented below.
 
 .. _typevartuple:
 
-.. class:: TypeVarTuple(name, default=<unrepresentable>)
+.. class:: TypeVarTuple(name, default=typing.NoDefault)
 
    Type variable tuple. A specialized form of :ref:`type variable <typevar>`
    that enables *variadic* generics.
@@ -1903,7 +1903,7 @@ without the dedicated syntax, as documented below.
 
       Support for default values was added.
 
-.. class:: ParamSpec(name, *, bound=None, covariant=False, contravariant=False, default=<unrepresentable>)
+.. class:: ParamSpec(name, *, bound=None, covariant=False, contravariant=False, default=typing.NoDefault)
 
    Parameter specification variable.  A specialized version of
    :ref:`type variables <typevar>`.
@@ -3208,6 +3208,13 @@ Introspection helpers
       will not automatically resolve to ``list[SomeClass]``.
 
    .. versionadded:: 3.7.4
+
+.. data:: NoDefault
+
+   A sentinel object used to represent the default value of certain parameters
+   used in this module.
+
+   .. versionadded:: 3.13
 
 Constant
 --------

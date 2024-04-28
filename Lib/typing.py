@@ -38,6 +38,7 @@ from _typing import (
     ParamSpecKwargs,
     TypeAliasType,
     Generic,
+    NoDefault,
 )
 
 # Please keep __all__ alphabetized within each category.
@@ -138,6 +139,7 @@ __all__ = [
     'NewType',
     'no_type_check',
     'no_type_check_decorator',
+    'NoDefault',
     'NoReturn',
     'NotRequired',
     'overload',
@@ -284,11 +286,11 @@ def _collect_parameters(args):
                         parameters.append(collected)
         elif hasattr(t, '__typing_subst__'):
             if t not in parameters:
-                if type_var_tuple_encountered and t.__default__ is not None:
+                if type_var_tuple_encountered and t.__default__ is not NoDefault:
                     raise TypeError('Type parameter with a default'
                                     ' follows TypeVarTuple')
 
-                if t.__default__ is not None:
+                if t.__default__ is not NoDefault:
                     default_encountered = True
                 elif default_encountered:
                     raise TypeError(f'Type parameter {t!r} without a default'
@@ -323,10 +325,10 @@ def _check_generic_specialization(cls, arguments):
             # the number of arguments being passed not matching the number
             # of parameters: all parameters that aren't explicitly
             # specialized in this call are parameters with default values.
-            if cls.__parameters__[actual_len].__default__ is not None:
+            if cls.__parameters__[actual_len].__default__ is not NoDefault:
                 return
 
-            expected_len -= sum(p.__default__ is not None for p in cls.__parameters__)
+            expected_len -= sum(p.__default__ is not NoDefault for p in cls.__parameters__)
             expect_val = f"at least {expected_len}"
         else:
             expect_val = expected_len
@@ -1124,7 +1126,7 @@ def _typevartuple_prepare_subst(self, alias, args):
     elif left + right > alen:
         raise TypeError(f"Too few arguments for {alias};"
                         f" actual {alen}, expected at least {plen-1}")
-    if left == alen - right and self.__default__ is not None:
+    if left == alen - right and self.__default__ is not NoDefault:
         replacement = _unpack_args(self.__default__)
     else:
         replacement = args[left: alen - right]
@@ -1150,7 +1152,7 @@ def _paramspec_subst(self, arg):
 def _paramspec_prepare_subst(self, alias, args):
     params = alias.__parameters__
     i = params.index(self)
-    if i == len(args) and self.__default__ is not None:
+    if i == len(args) and self.__default__ is not NoDefault:
         args = [*args, self.__default__]
     if i >= len(args):
         raise TypeError(f"Too few arguments for {alias}")
