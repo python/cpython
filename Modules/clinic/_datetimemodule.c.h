@@ -472,7 +472,8 @@ exit:
 PyDoc_STRVAR(datetime_date___replace____doc__,
 "__replace__($self, /, year=unchanged, month=unchanged, day=unchanged)\n"
 "--\n"
-"\n");
+"\n"
+"The same as replace().");
 
 #define DATETIME_DATE___REPLACE___METHODDEF    \
     {"__replace__", _PyCFunction_CAST(datetime_date___replace__), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, datetime_date___replace____doc__},
@@ -1100,7 +1101,8 @@ PyDoc_STRVAR(datetime_time___replace____doc__,
 "            second=unchanged, microsecond=unchanged, tzinfo=unchanged,\n"
 "            *, fold=unchanged)\n"
 "--\n"
-"\n");
+"\n"
+"The same as replace().");
 
 #define DATETIME_TIME___REPLACE___METHODDEF    \
     {"__replace__", _PyCFunction_CAST(datetime_time___replace__), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, datetime_time___replace____doc__},
@@ -1870,7 +1872,8 @@ PyDoc_STRVAR(datetime_datetime___replace____doc__,
 "            hour=unchanged, minute=unchanged, second=unchanged,\n"
 "            microsecond=unchanged, tzinfo=unchanged, *, fold=unchanged)\n"
 "--\n"
-"\n");
+"\n"
+"The same as replace().");
 
 #define DATETIME_DATETIME___REPLACE___METHODDEF    \
     {"__replace__", _PyCFunction_CAST(datetime_datetime___replace__), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, datetime_datetime___replace____doc__},
@@ -2212,4 +2215,4 @@ datetime_datetime_utctimetuple(PyDateTime_DateTime *self, PyTypeObject *defcls, 
     }
     return datetime_datetime_utctimetuple_impl(self, defcls);
 }
-/*[clinic end generated code: output=ababb7cd1b7359a6 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8e2d5fc079c3daeb input=a9049054013a1b77]*/

@@ -3718,12 +3718,13 @@ datetime.date.__replace__
     month: int(c_default="GET_MONTH(self)") = unchanged
     day: int(c_default="GET_DAY(self)") = unchanged
 
+The same as replace().
 [clinic start generated code]*/
 
 static PyObject *
 datetime_date___replace___impl(PyDateTime_Date *self, PyTypeObject *defcls,
                                int year, int month, int day)
-/*[clinic end generated code: output=4274716e2fed7f61 input=7218fbab51692bf7]*/
+/*[clinic end generated code: output=4274716e2fed7f61 input=adb04c14fd81386e]*/
 {
     return datetime_date_replace_impl(self, defcls, year, month, day);
 }
@@ -4959,13 +4960,15 @@ datetime.time.__replace__
     tzinfo: object(c_default="HASTZINFO(self) ? self->tzinfo : Py_None") = unchanged
     *
     fold: int(c_default="TIME_GET_FOLD(self)") = unchanged
+
+The same as replace().
 [clinic start generated code]*/
 
 static PyObject *
 datetime_time___replace___impl(PyDateTime_Time *self, PyTypeObject *defcls,
                                int hour, int minute, int second,
                                int microsecond, PyObject *tzinfo, int fold)
-/*[clinic end generated code: output=0db4f39f3353ecf6 input=cf50f2b0e8925429]*/
+/*[clinic end generated code: output=0db4f39f3353ecf6 input=dbffeada7075f7f0]*/
 {
     return datetime_time_replace_impl(self, defcls, hour, minute, second,
                                       microsecond, tzinfo, fold);
@@ -6585,6 +6588,8 @@ datetime.datetime.__replace__
     tzinfo: object(c_default="HASTZINFO(self) ? self->tzinfo : Py_None") = unchanged
     *
     fold: int(c_default="DATE_GET_FOLD(self)") = unchanged
+
+The same as replace().
 [clinic start generated code]*/
 
 static PyObject *
@@ -6593,7 +6598,7 @@ datetime_datetime___replace___impl(PyDateTime_DateTime *self,
                                    int day, int hour, int minute, int second,
                                    int microsecond, PyObject *tzinfo,
                                    int fold)
-/*[clinic end generated code: output=2b2c327c73986226 input=233cfaa570c8a3b0]*/
+/*[clinic end generated code: output=2b2c327c73986226 input=152de8462978aa03]*/
 {
     return datetime_datetime_replace_impl(self, defcls, year, month, day,
                              hour, minute, second, microsecond, tzinfo, fold);
