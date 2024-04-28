@@ -1108,6 +1108,10 @@ class TestNtpath(NtpathTestCase):
         # There are fast paths of these functions implemented in posixmodule.c.
         # Confirm that they are being used, and not the Python fallbacks in
         # genericpath.py.
+        self.assertTrue(os.path.splitroot is nt._path_splitroot_ex)
+        self.assertFalse(inspect.isfunction(os.path.splitroot))
+        self.assertTrue(os.path.normpath is nt._path_normpath)
+        self.assertFalse(inspect.isfunction(os.path.normpath))
         self.assertTrue(os.path.isdir is nt._path_isdir)
         self.assertFalse(inspect.isfunction(os.path.isdir))
         self.assertTrue(os.path.isfile is nt._path_isfile)
