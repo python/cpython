@@ -1753,7 +1753,7 @@ aliases.
    A :class:`typing.TypeVar`. *name* is the name of the type variable.
    *bound* is the bound or constraints, if any. If *bound* is a :class:`Tuple`,
    it represents constraints; otherwise it represents the bound. *default_value*
-   is the default value; if the :class:`!TypeVar` has no default, this 
+   is the default value; if the :class:`!TypeVar` has no default, this
    attribute will be set to ``None``.
 
    .. doctest::
