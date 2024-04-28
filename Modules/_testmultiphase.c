@@ -965,19 +965,20 @@ datetime_capi_client_exec(PyObject *m)
     }
 
     PyDateTime_IMPORT;
-    if (PyDateTimeAPI == NULL) {
+    PyErr_Clear();
+    PyDateTime_CAPI *capi = PyDateTimeAPI;
+    PyErr_Clear();
+    if (capi != PyCapsule_Import(PyDateTime_CAPSULE_NAME, 0)) {
         return -1;
     }
-    if (PyDateTimeAPI != PyCapsule_Import(PyDateTime_CAPSULE_NAME, 0)) {
-        return -1;
-    }
+    PyErr_Clear();
     if (ismain) {
-        if (PyDateTimeAPI != _pydatetimeapi_main) {
+        if (capi != _pydatetimeapi_main) {
             return -1;
         }
     }
     else {
-        if (PyDateTimeAPI == _pydatetimeapi_main) {
+        if (capi == _pydatetimeapi_main) {
             PyObject *module = PyImport_ImportModule("_datetime");
             if (module == NULL) {
                 return -1;
