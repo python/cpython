@@ -3764,7 +3764,7 @@ _PySys_Create(PyThreadState *tstate, PyObject **sysmod_p)
         return status;
     }
 
-    if (_PyImport_FixupBuiltin(sysmod, "sys", modules) < 0) {
+    if (_PyImport_FixupBuiltin(tstate, sysmod, "sys", modules) < 0) {
         goto error;
     }
 
