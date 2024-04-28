@@ -33,6 +33,8 @@ typedef union {
     #define Py_TAG_DEFERRED (0b1)
     #define Py_TAG (Py_TAG_DEFERRED)
 #else
+    // Define this to test for tagged pointer leakage in the ceval stack.
+    // #define Py_TAG_TEST (0b1)
     #define Py_TAG 0
 #endif
 
@@ -112,78 +114,79 @@ _Py_untag_stack_owned(PyObject **dst, const _PyStackRef *src, size_t length) {
 }
 
 
-#define Py_XSETREF_STACKREF(dst, src) \
+#define Py_STACKREF_XSETREF(dst, src) \
     do { \
         _PyStackRef *_tmp_dst_ptr = _Py_CAST(_PyStackRef*, &(dst)); \
         _PyStackRef _tmp_old_dst = (*_tmp_dst_ptr); \
         *_tmp_dst_ptr = (src); \
-        Py_XDECREF_STACKREF(_tmp_old_dst); \
+        Py_STACKREF_XDECREF(_tmp_old_dst); \
     } while (0)
 
-#define Py_SETREF_STACKREF(dst, src) \
+#define Py_STACKREF_SETREF(dst, src) \
     do { \
         _PyStackRef *_tmp_dst_ptr = _Py_CAST(_PyStackRef*, &(dst)); \
         _PyStackRef _tmp_old_dst = (*_tmp_dst_ptr); \
         *_tmp_dst_ptr = (src); \
-        Py_DECREF_STACKREF(_tmp_old_dst); \
+        Py_STACKREF_DECREF(_tmp_old_dst); \
     } while (0)
 
-#define Py_CLEAR_STACKREF(op) \
+#define Py_STACKREF_CLEAR(op) \
     do { \
         _PyStackRef *_tmp_op_ptr = _Py_CAST(_PyStackRef*, &(op)); \
         _PyStackRef _tmp_old_op = (*_tmp_op_ptr); \
         if (Py_STACKREF_UNTAG_BORROWED(_tmp_old_op) != NULL) { \
             *_tmp_op_ptr = Py_STACKREF_TAG(_Py_NULL); \
-            Py_DECREF_STACKREF(_tmp_old_op); \
+            Py_STACKREF_DECREF(_tmp_old_op); \
         } \
     } while (0)
 
 #if defined(Py_GIL_DISABLED)
     static inline void
-    _Py_DecRef_StackRef(_PyStackRef tagged) {
+    _Py_STACKREF_DECREF(_PyStackRef tagged) {
         if ((tagged.bits & Py_TAG_DEFERRED) == Py_TAG_DEFERRED) {
             return;
         }
         Py_DECREF(Py_STACKREF_UNTAG_BORROWED(tagged));
     }
-    #define Py_DECREF_STACKREF(op) _Py_DecRef_StackRef(op)
+    #define Py_STACKREF_DECREF(op) _Py_STACKREF_DECREF(op)
 #else
-    #define Py_DECREF_STACKREF(op) Py_DECREF(Py_STACKREF_UNTAG_BORROWED(op))
+    #define Py_STACKREF_DECREF(op) Py_DECREF(Py_STACKREF_UNTAG_BORROWED(op))
 #endif
+
+#define Py_STACKREF_DECREF_OWNED(op) Py_DECREF(Py_STACKREF_UNTAG_BORROWED(op));
 
 #if defined(Py_GIL_DISABLED)
     static inline void
-    _Py_IncRef_StackRef(_PyStackRef tagged) {
+    _Py_STACKREF_INCREF(_PyStackRef tagged) {
         if ((tagged.bits & Py_TAG_DEFERRED) == Py_TAG_DEFERRED) {
             assert(_PyObject_HasDeferredRefcount(Py_STACKREF_UNTAG_BORROWED(tagged)));
             return;
         }
-        Py_INCREF(Py_STACKREF_UNTAG_BORROWED(tagged));
+        return Py_INCREF(Py_STACKREF_UNTAG_BORROWED(tagged));
     }
-    #define Py_INCREF_STACKREF(op) _Py_IncRef_StackRef(op)
+    #define Py_STACKREF_INCREF(op) _Py_STACKREF_INCREF(op)
 #else
-    #define Py_INCREF_STACKREF(op) Py_INCREF(Py_STACKREF_UNTAG_BORROWED(op))
+    #define Py_STACKREF_INCREF(op) Py_INCREF(Py_STACKREF_UNTAG_BORROWED(op))
 #endif
 
 static inline void
-_Py_XDECREF_STACKREF(_PyStackRef op)
+_Py_STACKREF_XDECREF(_PyStackRef op)
 {
     if (Py_STACKREF_UNTAG_BORROWED(op) != NULL) {
-        Py_DECREF_STACKREF(op);
+        Py_STACKREF_DECREF(op);
     }
 }
 
-#define Py_XDECREF_STACKREF(op) _Py_XDECREF_STACKREF(op)
+#define Py_STACKREF_XDECREF(op) _Py_STACKREF_XDECREF(op)
 
 static inline _PyStackRef
-_Py_NewRef_StackRef(_PyStackRef obj)
+_Py_StackRef_NewRef(_PyStackRef obj)
 {
-    Py_INCREF_STACKREF(obj);
+    Py_STACKREF_INCREF(obj);
     return obj;
 }
 
-
-#define Py_NewRef_StackRef(op) _Py_NewRef_StackRef(op)
+#define Py_StackRef_NewRef(op) _Py_StackRef_NewRef(op)
 
 #ifdef __cplusplus
 }
