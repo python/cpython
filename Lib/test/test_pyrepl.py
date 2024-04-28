@@ -370,6 +370,7 @@ class TestPyReplCompleter(TestCase):
     def test_global_namespace_completion(self):
         events = [
             Event(evt="key", data="p", raw=bytearray(b"p")),
+            Event(evt="key", data="y", raw=bytearray(b"y")),
             Event(evt="key", data="\t", raw=bytearray(b"\t")),
             Event(evt="key", data="\n", raw=bytearray(b"\n")),
         ]
