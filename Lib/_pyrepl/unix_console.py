@@ -62,26 +62,46 @@ def _my_getstr(cap, optional=0):
 
 # Add (possibly) missing baudrates (check termios man page) to termios
 
+
 def add_supported_baudrates(dictionary, rate):
     baudrate_name = "B%d" % rate
     if hasattr(termios, baudrate_name):
         dictionary[getattr(termios, baudrate_name)] = rate
 
+
 # Check the termios man page (Line speed) to know where these
 # values come from.
 supported_baudrates = [
-    0, 110, 115200, 1200, 134, 150, 1800, 19200, 200, 230400,
-    2400, 300, 38400, 460800, 4800, 50, 57600, 600, 75, 9600
+    0,
+    110,
+    115200,
+    1200,
+    134,
+    150,
+    1800,
+    19200,
+    200,
+    230400,
+    2400,
+    300,
+    38400,
+    460800,
+    4800,
+    50,
+    57600,
+    600,
+    75,
+    9600,
 ]
 
 ratedict = {}
 for rate in supported_baudrates:
     add_supported_baudrates(ratedict, rate)
 
-# ------------ end of baudrate definitions ------------
-
 # Clean up variables to avoid unintended usage
 del rate, add_supported_baudrates
+
+# ------------ end of baudrate definitions ------------
 
 delayprog = re.compile(b"\\$<([0-9]+)((?:/|\\*){0,2})>")
 
@@ -90,7 +110,7 @@ try:
 except AttributeError:
     # this is exactly the minumum necessary to support what we
     # do with poll objects
-    class poll:
+    class MinimalPoll:
         def __init__(self):
             pass
 
@@ -101,12 +121,23 @@ except AttributeError:
             r, w, e = select.select([self.fd], [], [])
             return r
 
+    poll = MinimalPoll
+
 
 POLLIN = getattr(select, "POLLIN", None)
 
 
 class UnixConsole(Console):
     def __init__(self, f_in=0, f_out=1, term=None, encoding=None):
+        """
+        Initialize the UnixConsole.
+
+        Parameters:
+        - f_in (int or file-like object): Input file descriptor or object.
+        - f_out (int or file-like object): Output file descriptor or object.
+        - term (str): Terminal name.
+        - encoding (str): Encoding to use for I/O operations.
+        """
         if encoding is None:
             encoding = sys.getdefaultencoding()
 
@@ -152,47 +183,28 @@ class UnixConsole(Console):
         self._rmkx = _my_getstr("rmkx", 1)
         self._smkx = _my_getstr("smkx", 1)
 
-        ## work out how we're going to sling the cursor around
-        if 0 and self._hpa:  # hpa don't work in windows telnet :-(
-            self.__move_x = self.__move_x_hpa
-        elif self._cub and self._cuf:
-            self.__move_x = self.__move_x_cub_cuf
-        elif self._cub1 and self._cuf1:
-            self.__move_x = self.__move_x_cub1_cuf1
-        else:
-            raise RuntimeError("insufficient terminal (horizontal)")
-
-        if self._cuu and self._cud:
-            self.__move_y = self.__move_y_cuu_cud
-        elif self._cuu1 and self._cud1:
-            self.__move_y = self.__move_y_cuu1_cud1
-        else:
-            raise RuntimeError("insufficient terminal (vertical)")
-
-        if self._dch1:
-            self.dch1 = self._dch1
-        elif self._dch:
-            self.dch1 = curses.tparm(self._dch, 1)
-        else:
-            self.dch1 = None
-
-        if self._ich1:
-            self.ich1 = self._ich1
-        elif self._ich:
-            self.ich1 = curses.tparm(self._ich, 1)
-        else:
-            self.ich1 = None
-
-        self.__move = self.__move_short
+        self.__setup_movement()
 
         self.event_queue = EventQueue(self.input_fd, self.encoding)
         self.cursor_visible = 1
 
-
     def change_encoding(self, encoding):
+        """
+        Change the encoding used for I/O operations.
+
+        Parameters:
+        - encoding (str): New encoding to use.
+        """
         self.encoding = encoding
 
     def refresh(self, screen, c_xy):
+        """
+        Refresh the console screen.
+
+        Parameters:
+        - screen (list): List of strings representing the screen contents.
+        - c_xy (tuple): Cursor position (x, y) on the screen.
+        """
         cx, cy = c_xy
         if not self.__gone_tall:
             while len(self.screen) < min(len(screen), self.height):
@@ -267,6 +279,283 @@ class UnixConsole(Console):
         self.screen = screen
         self.move_cursor(cx, cy)
         self.flushoutput()
+
+    def move_cursor(self, x, y):
+        """
+        Move the cursor to the specified position on the screen.
+
+        Parameters:
+        - x (int): X coordinate.
+        - y (int): Y coordinate.
+        """
+        if y < self.__offset or y >= self.__offset + self.height:
+            self.event_queue.insert(Event("scroll", None))
+        else:
+            self.__move(x, y)
+            self.__posxy = x, y
+            self.flushoutput()
+
+    def prepare(self):
+        """
+        Prepare the console for input/output operations.
+        """
+        self.__svtermstate = tcgetattr(self.input_fd)
+        raw = self.__svtermstate.copy()
+        raw.iflag &= ~(termios.BRKINT | termios.INPCK | termios.ISTRIP | termios.IXON)
+        raw.oflag &= ~(termios.OPOST)
+        raw.cflag &= ~(termios.CSIZE | termios.PARENB)
+        raw.cflag |= termios.CS8
+        raw.lflag &= ~(
+            termios.ICANON | termios.ECHO | termios.IEXTEN | (termios.ISIG * 1)
+        )
+        raw.cc[termios.VMIN] = 1
+        raw.cc[termios.VTIME] = 0
+        tcsetattr(self.input_fd, termios.TCSADRAIN, raw)
+
+        self.screen = []
+        self.height, self.width = self.getheightwidth()
+
+        self.__buffer = []
+
+        self.__posxy = 0, 0
+        self.__gone_tall = 0
+        self.__move = self.__move_short
+        self.__offset = 0
+
+        self.__maybe_write_code(self._smkx)
+
+        try:
+            self.old_sigwinch = signal.signal(signal.SIGWINCH, self.__sigwinch)
+        except ValueError:
+            pass
+
+    def restore(self):
+        """
+        Restore the console to the default state
+        """
+        self.__maybe_write_code(self._rmkx)
+        self.flushoutput()
+        tcsetattr(self.input_fd, termios.TCSADRAIN, self.__svtermstate)
+
+        if hasattr(self, "old_sigwinch"):
+            signal.signal(signal.SIGWINCH, self.old_sigwinch)
+            del self.old_sigwinch
+
+    def push_char(self, char):
+        """
+        Push a character to the console event queue.
+
+        Parameters:
+        - char (str): Character to push.
+        """
+        trace("push char {char!r}", char=char)
+        self.event_queue.push(char)
+
+    def get_event(self, block=True):
+        """
+        Get an event from the console event queue.
+
+        Parameters:
+        - block (bool): Whether to block until an event is available.
+
+        Returns:
+        - Event: Event object from the event queue.
+        """
+        while self.event_queue.empty():
+            while True:
+                try:
+                    self.push_char(os.read(self.input_fd, 1))
+                except OSError as err:
+                    if err.errno == errno.EINTR:
+                        if not self.event_queue.empty():
+                            return self.event_queue.get()
+                        else:
+                            continue
+                    else:
+                        raise
+                else:
+                    break
+            if not block:
+                break
+        return self.event_queue.get()
+
+    def wait(self):
+        """
+        Wait for events on the console.
+        """
+        self.pollob.poll()
+
+    def set_cursor_vis(self, visible):
+        """
+        Set the visibility of the cursor.
+
+        Parameters:
+        - visible (bool): Visibility flag.
+        """
+        if visible:
+            self.__show_cursor()
+        else:
+            self.__hide_cursor()
+
+    if TIOCGWINSZ:
+
+        def getheightwidth(self):
+            """
+            Get the height and width of the console.
+
+            Returns:
+            - tuple: Height and width of the console.
+            """
+            try:
+                return int(os.environ["LINES"]), int(os.environ["COLUMNS"])
+            except KeyError:
+                height, width = struct.unpack(
+                    "hhhh", ioctl(self.input_fd, TIOCGWINSZ, b"\000" * 8)
+                )[0:2]
+                if not height:
+                    return 25, 80
+                return height, width
+
+    else:
+
+        def getheightwidth(self):
+            """
+            Get the height and width of the console.
+
+            Returns:
+            - tuple: Height and width of the console.
+            """
+            try:
+                return int(os.environ["LINES"]), int(os.environ["COLUMNS"])
+            except KeyError:
+                return 25, 80
+
+    def forgetinput(self):
+        """
+        Discard any pending input on the console.
+        """
+        termios.tcflush(self.input_fd, termios.TCIFLUSH)
+
+    def flushoutput(self):
+        """
+        Flush the output buffer.
+        """
+        for text, iscode in self.__buffer:
+            if iscode:
+                self.__tputs(text)
+            else:
+                os.write(self.output_fd, text.encode(self.encoding, "replace"))
+        del self.__buffer[:]
+
+    def finish(self):
+        """
+        Finish console operations and flush the output buffer.
+        """
+        y = len(self.screen) - 1
+        while y >= 0 and not self.screen[y]:
+            y -= 1
+        self.__move(0, min(y, self.height + self.__offset - 1))
+        self.__write("\n\r")
+        self.flushoutput()
+
+    def beep(self):
+        """
+        Emit a beep sound.
+        """
+        self.__maybe_write_code(self._bel)
+        self.flushoutput()
+
+    if FIONREAD:
+
+        def getpending(self):
+            """
+            Get pending events from the console event queue.
+
+            Returns:
+            - Event: Pending event from the event queue.
+            """
+            e = Event("key", "", b"")
+
+            while not self.event_queue.empty():
+                e2 = self.event_queue.get()
+                e.data += e2.data
+                e.raw += e.raw
+
+            amount = struct.unpack("i", ioctl(self.input_fd, FIONREAD, b"\0\0\0\0"))[0]
+            raw = os.read(self.input_fd, amount)
+            data = str(raw, self.encoding, "replace")
+            e.data += data
+            e.raw += raw
+            return e
+
+    else:
+
+        def getpending(self):
+            """
+            Get pending events from the console event queue.
+
+            Returns:
+            - Event: Pending event from the event queue.
+            """
+            e = Event("key", "", b"")
+
+            while not self.event_queue.empty():
+                e2 = self.event_queue.get()
+                e.data += e2.data
+                e.raw += e.raw
+
+            amount = 10000
+            raw = os.read(self.input_fd, amount)
+            data = str(raw, self.encoding, "replace")
+            e.data += data
+            e.raw += raw
+            return e
+
+    def clear(self):
+        """
+        Clear the console screen.
+        """
+        self.__write_code(self._clear)
+        self.__gone_tall = 1
+        self.__move = self.__move_tall
+        self.__posxy = 0, 0
+        self.screen = []
+
+    def __setup_movement(self):
+        """
+        Set up the movement functions based on the terminal capabilities.
+        """
+        if 0 and self._hpa:  # hpa don't work in windows telnet :-(
+            self.__move_x = self.__move_x_hpa
+        elif self._cub and self._cuf:
+            self.__move_x = self.__move_x_cub_cuf
+        elif self._cub1 and self._cuf1:
+            self.__move_x = self.__move_x_cub1_cuf1
+        else:
+            raise RuntimeError("insufficient terminal (horizontal)")
+
+        if self._cuu and self._cud:
+            self.__move_y = self.__move_y_cuu_cud
+        elif self._cuu1 and self._cud1:
+            self.__move_y = self.__move_y_cuu1_cud1
+        else:
+            raise RuntimeError("insufficient terminal (vertical)")
+
+        if self._dch1:
+            self.dch1 = self._dch1
+        elif self._dch:
+            self.dch1 = curses.tparm(self._dch, 1)
+        else:
+            self.dch1 = None
+
+        if self._ich1:
+            self.ich1 = self._ich1
+        elif self._ich:
+            self.ich1 = curses.tparm(self._ich, 1)
+        else:
+            self.ich1 = None
+
+        self.__move = self.__move_short
 
     def __write_changed_line(self, y, oldline, newline, px):
         # this is frustrating; there's no reason to test (say)
@@ -375,90 +664,9 @@ class UnixConsole(Console):
         assert 0 <= y - self.__offset < self.height, y - self.__offset
         self.__write_code(self._cup, y - self.__offset, x)
 
-    def move_cursor(self, x, y):
-        if y < self.__offset or y >= self.__offset + self.height:
-            self.event_queue.insert(Event("scroll", None))
-        else:
-            self.__move(x, y)
-            self.__posxy = x, y
-            self.flushoutput()
-
-    def prepare(self):
-        # per-readline preparations:
-        self.__svtermstate = tcgetattr(self.input_fd)
-        raw = self.__svtermstate.copy()
-        raw.iflag &= ~(termios.BRKINT | termios.INPCK | termios.ISTRIP | termios.IXON)
-        raw.oflag &= ~(termios.OPOST)
-        raw.cflag &= ~(termios.CSIZE | termios.PARENB)
-        raw.cflag |= termios.CS8
-        raw.lflag &= ~(
-            termios.ICANON | termios.ECHO | termios.IEXTEN | (termios.ISIG * 1)
-        )
-        raw.cc[termios.VMIN] = 1
-        raw.cc[termios.VTIME] = 0
-        tcsetattr(self.input_fd, termios.TCSADRAIN, raw)
-
-        self.screen = []
-        self.height, self.width = self.getheightwidth()
-
-        self.__buffer = []
-
-        self.__posxy = 0, 0
-        self.__gone_tall = 0
-        self.__move = self.__move_short
-        self.__offset = 0
-
-        self.__maybe_write_code(self._smkx)
-
-        try:
-            self.old_sigwinch = signal.signal(signal.SIGWINCH, self.__sigwinch)
-        except ValueError:
-            pass
-
-    def restore(self):
-        self.__maybe_write_code(self._rmkx)
-        self.flushoutput()
-        tcsetattr(self.input_fd, termios.TCSADRAIN, self.__svtermstate)
-
-        if hasattr(self, "old_sigwinch"):
-            signal.signal(signal.SIGWINCH, self.old_sigwinch)
-            del self.old_sigwinch
-
     def __sigwinch(self, signum, frame):
         self.height, self.width = self.getheightwidth()
         self.event_queue.insert(Event("resize", None))
-
-    def push_char(self, char):
-        trace("push char {char!r}", char=char)
-        self.event_queue.push(char)
-
-    def get_event(self, block=1):
-        while self.event_queue.empty():
-            while 1:
-                try:
-                    self.push_char(os.read(self.input_fd, 1))
-                except OSError as err:
-                    if err.errno == errno.EINTR:
-                        if not self.event_queue.empty():
-                            return self.event_queue.get()
-                        else:
-                            continue
-                    else:
-                        raise
-                else:
-                    break
-            if not block:
-                break
-        return self.event_queue.get()
-
-    def wait(self):
-        self.pollob.poll()
-
-    def set_cursor_vis(self, vis):
-        if vis:
-            self.__show_cursor()
-        else:
-            self.__hide_cursor()
 
     def __hide_cursor(self):
         if self.cursor_visible:
@@ -482,38 +690,6 @@ class UnixConsole(Console):
             ns = self.height * ["\000" * self.width]
             self.screen = ns
 
-    if TIOCGWINSZ:
-
-        def getheightwidth(self):
-            try:
-                return int(os.environ["LINES"]), int(os.environ["COLUMNS"])
-            except KeyError:
-                height, width = struct.unpack(
-                    "hhhh", ioctl(self.input_fd, TIOCGWINSZ, b"\000" * 8)
-                )[0:2]
-                if not height:
-                    return 25, 80
-                return height, width
-
-    else:
-
-        def getheightwidth(self):
-            try:
-                return int(os.environ["LINES"]), int(os.environ["COLUMNS"])
-            except KeyError:
-                return 25, 80
-
-    def forgetinput(self):
-        termios.tcflush(self.input_fd, termios.TCIFLUSH)
-
-    def flushoutput(self):
-        for text, iscode in self.__buffer:
-            if iscode:
-                self.__tputs(text)
-            else:
-                os.write(self.output_fd, text.encode(self.encoding, "replace"))
-        del self.__buffer[:]
-
     def __tputs(self, fmt, prog=delayprog):
         """A Python implementation of the curses tputs function; the
         curses one can't really be wrapped in a sane manner.
@@ -535,61 +711,8 @@ class UnixConsole(Console):
             delay = int(m.group(1))
             if b"*" in m.group(2):
                 delay *= self.height
-            if self._pad:
+            if self._pad and bps is not None:
                 nchars = (bps * delay) / 1000
                 os.write(self.output_fd, self._pad * nchars)
             else:
                 time.sleep(float(delay) / 1000.0)
-
-    def finish(self):
-        y = len(self.screen) - 1
-        while y >= 0 and not self.screen[y]:
-            y -= 1
-        self.__move(0, min(y, self.height + self.__offset - 1))
-        self.__write("\n\r")
-        self.flushoutput()
-
-    def beep(self):
-        self.__maybe_write_code(self._bel)
-        self.flushoutput()
-
-    if FIONREAD:
-
-        def getpending(self):
-            e = Event("key", "", b"")
-
-            while not self.event_queue.empty():
-                e2 = self.event_queue.get()
-                e.data += e2.data
-                e.raw += e.raw
-
-            amount = struct.unpack("i", ioctl(self.input_fd, FIONREAD, b"\0\0\0\0"))[0]
-            raw = os.read(self.input_fd, amount)
-            data = str(raw, self.encoding, "replace")
-            e.data += data
-            e.raw += raw
-            return e
-
-    else:
-
-        def getpending(self):
-            e = Event("key", "", b"")
-
-            while not self.event_queue.empty():
-                e2 = self.event_queue.get()
-                e.data += e2.data
-                e.raw += e.raw
-
-            amount = 10000
-            raw = os.read(self.input_fd, amount)
-            data = str(raw, self.encoding, "replace")
-            e.data += data
-            e.raw += raw
-            return e
-
-    def clear(self):
-        self.__write_code(self._clear)
-        self.__gone_tall = 1
-        self.__move = self.__move_tall
-        self.__posxy = 0, 0
-        self.screen = []
