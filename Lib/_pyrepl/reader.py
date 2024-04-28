@@ -335,6 +335,8 @@ class Reader:
         keep = prompt[pos:]
         l -= sum(map(len, _r_csi_seq.findall(keep)))
         out_prompt += keep
+        if traceback._can_colorize():
+            out_prompt = traceback._ANSIColors.BOLD_MAGENTA + out_prompt + traceback._ANSIColors.RESET
         return out_prompt, l
 
     def bow(self, p=None):
@@ -423,8 +425,6 @@ class Reader:
         if self.paste_mode:
             res= '(paste) '
 
-        if traceback._can_colorize():
-            res = traceback._ANSIColors.BOLD_MAGENTA + res + traceback._ANSIColors.RESET
         # Lazily call str() on self.psN, and cache the results using as key
         # the object on which str() was called.  This ensures that even if the
         # same object is used e.g. for ps1 and ps2, str() is called only once.
