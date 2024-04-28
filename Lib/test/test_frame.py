@@ -302,6 +302,7 @@ class TestFrameLocals(unittest.TestCase):
         d = sys._getframe().f_locals
         # self, x, y, d
         self.assertEqual(len(d), 4)
+        self.assertIs(d['d'], d)
         self.assertEqual(set(d.keys()), set(['x', 'y', 'd', 'self']))
         self.assertEqual(len(d.values()), 4)
         self.assertIn(1, d.values())

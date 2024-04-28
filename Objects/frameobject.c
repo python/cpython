@@ -420,11 +420,7 @@ framelocalsproxy_setitem(PyObject *self, PyObject *key, PyObject *value)
 
     assert(PyDict_Check(extra));
 
-    if (PyDict_SetItem(extra, key, value) < 0) {
-        return -1;
-    }
-
-    return 0;
+    return PyDict_SetItem(extra, key, value) < 0;
 }
 
 static PyObject*
