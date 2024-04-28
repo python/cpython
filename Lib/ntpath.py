@@ -601,28 +601,20 @@ else:
         return _path_normpath(path) or "."
 
 
-def _abspath_fallback(path):
-    """Return the absolute version of a path as a fallback function in case
-    `nt._path_abspath` is not available or raises OSError. See bpo-31047 for
-    more.
-
-    """
-
-    path = os.fspath(path)
-    if not isabs(path):
-        if isinstance(path, bytes):
-            cwd = os.getcwdb()
-        else:
-            cwd = os.getcwd()
-        path = join(cwd, path)
-    return normpath(path)
-
 # Return an absolute path.
 try:
     from nt import _path_abspath
 
 except ImportError: # not running on Windows - mock up something sensible
-    abspath = _abspath_fallback
+    def abspath(path):
+        """Return the absolute version of a path."""
+        path = os.fspath(path)
+        if not isabs(path):
+            if isinstance(path, bytes):
+                path = join(os.getcwdb(), path)
+            else:
+                path = join(os.getcwd(), path)
+        return normpath(path)
 
 else:  # use native Windows method on Windows
     def abspath(path):
@@ -633,7 +625,27 @@ else:  # use native Windows method on Windows
                 return os.fsencode(_path_abspath(os.fsdecode(path)))
             return _path_abspath(path)
         except (OSError, ValueError):
-            return _abspath_fallback(path)
+            # See gh-75230, handle outside for cleaner traceback
+            pass
+        if not isabs(path):
+            if isinstance(path, bytes):
+                sep = b'/'
+                cwd = os.getcwdb()
+            else:
+                sep = '/'
+                cwd = os.getcwd()
+            drive, _, path = splitroot(path)
+            if drive and drive != splitroot(cwd)[0]:
+                try:
+                    if isinstance(drive, bytes):
+                        cwd = os.fsencode(_path_abspath(os.fsdecode(drive)))
+                    else:
+                        cwd = _path_abspath(drive)
+                except (OSError, ValueError):
+                    # Invalid drive
+                    cwd = join(drive, sep)
+            path = join(cwd, path)
+        return normpath(path)
 
 try:
     from nt import _findfirstfile, _getfinalpathname, readlink as _nt_readlink
