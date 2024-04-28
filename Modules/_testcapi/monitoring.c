@@ -113,7 +113,7 @@ static PyTypeObject PyCodeLike_Type = {
 /*******************************************************************/
 
 static PyMonitoringState *
-setup_fire(PyObject *codelike, int offset, int with_exc)
+setup_fire(PyObject *codelike, int offset, PyObject *exc)
 {
     if (!Py_IS_TYPE(codelike, &PyCodeLike_Type)) {
         PyErr_Format(PyExc_TypeError,
@@ -125,21 +125,19 @@ setup_fire(PyObject *codelike, int offset, int with_exc)
     assert(offset >= 0 && offset < cl->num_events);
     PyMonitoringState *state = &cl->monitoring_states[offset];
 
-    if (with_exc) {
-        PyErr_SetObject(PyExc_ValueError, Py_None);
+    if (exc != NULL) {
+        PyErr_SetRaisedException(Py_NewRef(exc));
     }
     return state;
 }
 
 static int
-teardown_fire(int res, PyMonitoringState *state, int with_exc)
+teardown_fire(int res, PyMonitoringState *state)
 {
     if (res == -1) {
         return -1;
     }
-    if (with_exc) {
-        PyErr_Clear();
-    }
+    PyErr_Clear();
     return state->active;
 }
 
@@ -148,16 +146,15 @@ fire_event_py_start(PyObject *self, PyObject *args)
 {
     PyObject *codelike;
     int offset;
-    int with_exc;
-    if (!PyArg_ParseTuple(args, "Oip", &codelike, &offset, &with_exc)) {
+    if (!PyArg_ParseTuple(args, "Oi", &codelike, &offset)) {
         return NULL;
     }
-    PyMonitoringState *state = setup_fire(codelike, offset, with_exc);
+    PyMonitoringState *state = setup_fire(codelike, offset, NULL);
     if (state == NULL) {
         return NULL;
     }
     int res = PyMonitoring_FirePyStartEvent(state, codelike, offset);
-    RETURN_INT(teardown_fire(res, state, with_exc));
+    RETURN_INT(teardown_fire(res, state));
 }
 
 static PyObject *
@@ -165,16 +162,15 @@ fire_event_py_resume(PyObject *self, PyObject *args)
 {
     PyObject *codelike;
     int offset;
-    int with_exc;
-    if (!PyArg_ParseTuple(args, "Oip", &codelike, &offset, &with_exc)) {
+    if (!PyArg_ParseTuple(args, "Oi", &codelike, &offset)) {
         return NULL;
     }
-    PyMonitoringState *state = setup_fire(codelike, offset, with_exc);
+    PyMonitoringState *state = setup_fire(codelike, offset, NULL);
     if (state == NULL) {
         return NULL;
     }
     int res = PyMonitoring_FirePyResumeEvent(state, codelike, offset);
-    RETURN_INT(teardown_fire(res, state, with_exc));
+    RETURN_INT(teardown_fire(res, state));
 }
 
 static PyObject *
@@ -182,17 +178,16 @@ fire_event_py_return(PyObject *self, PyObject *args)
 {
     PyObject *codelike;
     int offset;
-    int with_exc;
     PyObject *retval;
-    if (!PyArg_ParseTuple(args, "OipO", &codelike, &offset, &with_exc, &retval)) {
+    if (!PyArg_ParseTuple(args, "OiO", &codelike, &offset, &retval)) {
         return NULL;
     }
-    PyMonitoringState *state = setup_fire(codelike, offset, with_exc);
+    PyMonitoringState *state = setup_fire(codelike, offset, NULL);
     if (state == NULL) {
         return NULL;
     }
     int res = PyMonitoring_FirePyReturnEvent(state, codelike, offset, retval);
-    RETURN_INT(teardown_fire(res, state, with_exc));
+    RETURN_INT(teardown_fire(res, state));
 }
 
 static PyObject *
@@ -200,17 +195,16 @@ fire_event_c_return(PyObject *self, PyObject *args)
 {
     PyObject *codelike;
     int offset;
-    int with_exc;
     PyObject *retval;
-    if (!PyArg_ParseTuple(args, "OipO", &codelike, &offset, &with_exc, &retval)) {
+    if (!PyArg_ParseTuple(args, "OiO", &codelike, &offset, &retval)) {
         return NULL;
     }
-    PyMonitoringState *state = setup_fire(codelike, offset, with_exc);
+    PyMonitoringState *state = setup_fire(codelike, offset, NULL);
     if (state == NULL) {
         return NULL;
     }
     int res = PyMonitoring_FireCReturnEvent(state, codelike, offset, retval);
-    RETURN_INT(teardown_fire(res, state, with_exc));
+    RETURN_INT(teardown_fire(res, state));
 }
 
 static PyObject *
@@ -218,17 +212,16 @@ fire_event_py_yield(PyObject *self, PyObject *args)
 {
     PyObject *codelike;
     int offset;
-    int with_exc;
     PyObject *retval;
-    if (!PyArg_ParseTuple(args, "OipO", &codelike, &offset, &with_exc, &retval)) {
+    if (!PyArg_ParseTuple(args, "OiO", &codelike, &offset, &retval)) {
         return NULL;
     }
-    PyMonitoringState *state = setup_fire(codelike, offset, with_exc);
+    PyMonitoringState *state = setup_fire(codelike, offset, NULL);
     if (state == NULL) {
         return NULL;
     }
     int res = PyMonitoring_FirePyYieldEvent(state, codelike, offset, retval);
-    RETURN_INT(teardown_fire(res, state, with_exc));
+    RETURN_INT(teardown_fire(res, state));
 }
 
 static PyObject *
@@ -236,17 +229,16 @@ fire_event_call(PyObject *self, PyObject *args)
 {
     PyObject *codelike;
     int offset;
-    int with_exc;
     PyObject *callable, *arg0;
-    if (!PyArg_ParseTuple(args, "OipOO", &codelike, &offset, &with_exc, &callable, &arg0)) {
+    if (!PyArg_ParseTuple(args, "OiOO", &codelike, &offset, &callable, &arg0)) {
         return NULL;
     }
-    PyMonitoringState *state = setup_fire(codelike, offset, with_exc);
+    PyMonitoringState *state = setup_fire(codelike, offset, NULL);
     if (state == NULL) {
         return NULL;
     }
     int res = PyMonitoring_FireCallEvent(state, codelike, offset, callable, arg0);
-    RETURN_INT(teardown_fire(res, state, with_exc));
+    RETURN_INT(teardown_fire(res, state));
 }
 
 static PyObject *
@@ -254,16 +246,15 @@ fire_event_line(PyObject *self, PyObject *args)
 {
     PyObject *codelike;
     int offset, lineno;
-    int with_exc;
-    if (!PyArg_ParseTuple(args, "Oipi", &codelike, &offset, &with_exc, &lineno)) {
+    if (!PyArg_ParseTuple(args, "Oii", &codelike, &offset, &lineno)) {
         return NULL;
     }
-    PyMonitoringState *state = setup_fire(codelike, offset, with_exc);
+    PyMonitoringState *state = setup_fire(codelike, offset, NULL);
     if (state == NULL) {
         return NULL;
     }
     int res = PyMonitoring_FireLineEvent(state, codelike, offset, lineno);
-    RETURN_INT(teardown_fire(res, state, with_exc));
+    RETURN_INT(teardown_fire(res, state));
 }
 
 static PyObject *
@@ -271,17 +262,16 @@ fire_event_jump(PyObject *self, PyObject *args)
 {
     PyObject *codelike;
     int offset;
-    int with_exc;
     PyObject *target_offset;
-    if (!PyArg_ParseTuple(args, "OipO", &codelike, &offset, &with_exc, &target_offset)) {
+    if (!PyArg_ParseTuple(args, "OiO", &codelike, &offset, &target_offset)) {
         return NULL;
     }
-    PyMonitoringState *state = setup_fire(codelike, offset, with_exc);
+    PyMonitoringState *state = setup_fire(codelike, offset, NULL);
     if (state == NULL) {
         return NULL;
     }
     int res = PyMonitoring_FireJumpEvent(state, codelike, offset, target_offset);
-    RETURN_INT(teardown_fire(res, state, with_exc));
+    RETURN_INT(teardown_fire(res, state));
 }
 
 static PyObject *
@@ -289,17 +279,16 @@ fire_event_branch(PyObject *self, PyObject *args)
 {
     PyObject *codelike;
     int offset;
-    int with_exc;
     PyObject *target_offset;
-    if (!PyArg_ParseTuple(args, "OipO", &codelike, &offset, &with_exc, &target_offset)) {
+    if (!PyArg_ParseTuple(args, "OiO", &codelike, &offset, &target_offset)) {
         return NULL;
     }
-    PyMonitoringState *state = setup_fire(codelike, offset, with_exc);
+    PyMonitoringState *state = setup_fire(codelike, offset, NULL);
     if (state == NULL) {
         return NULL;
     }
     int res = PyMonitoring_FireBranchEvent(state, codelike, offset, target_offset);
-    RETURN_INT(teardown_fire(res, state, with_exc));
+    RETURN_INT(teardown_fire(res, state));
 }
 
 static PyObject *
@@ -307,18 +296,17 @@ fire_event_py_throw(PyObject *self, PyObject *args)
 {
     PyObject *codelike;
     int offset;
-    int with_exc;
     PyObject *exception;
-    if (!PyArg_ParseTuple(args, "OipO", &codelike, &offset, &with_exc, &exception)) {
+    if (!PyArg_ParseTuple(args, "OiO", &codelike, &offset, &exception)) {
         return NULL;
     }
     NULLABLE(exception);
-    PyMonitoringState *state = setup_fire(codelike, offset, with_exc);
+    PyMonitoringState *state = setup_fire(codelike, offset, exception);
     if (state == NULL) {
         return NULL;
     }
-    int res = PyMonitoring_FirePyThrowEvent(state, codelike, offset, exception);
-    RETURN_INT(teardown_fire(res, state, with_exc));
+    int res = PyMonitoring_FirePyThrowEvent(state, codelike, offset);
+    RETURN_INT(teardown_fire(res, state));
 }
 
 static PyObject *
@@ -326,18 +314,17 @@ fire_event_raise(PyObject *self, PyObject *args)
 {
     PyObject *codelike;
     int offset;
-    int with_exc;
     PyObject *exception;
-    if (!PyArg_ParseTuple(args, "OipO", &codelike, &offset, &with_exc, &exception)) {
+    if (!PyArg_ParseTuple(args, "OiO", &codelike, &offset, &exception)) {
         return NULL;
     }
     NULLABLE(exception);
-    PyMonitoringState *state = setup_fire(codelike, offset, with_exc);
+    PyMonitoringState *state = setup_fire(codelike, offset, exception);
     if (state == NULL) {
         return NULL;
     }
-    int res = PyMonitoring_FireRaiseEvent(state, codelike, offset, exception);
-    RETURN_INT(teardown_fire(res, state, with_exc));
+    int res = PyMonitoring_FireRaiseEvent(state, codelike, offset);
+    RETURN_INT(teardown_fire(res, state));
 }
 
 static PyObject *
@@ -345,18 +332,17 @@ fire_event_c_raise(PyObject *self, PyObject *args)
 {
     PyObject *codelike;
     int offset;
-    int with_exc;
     PyObject *exception;
-    if (!PyArg_ParseTuple(args, "OipO", &codelike, &offset, &with_exc, &exception)) {
+    if (!PyArg_ParseTuple(args, "OiO", &codelike, &offset, &exception)) {
         return NULL;
     }
     NULLABLE(exception);
-    PyMonitoringState *state = setup_fire(codelike, offset, with_exc);
+    PyMonitoringState *state = setup_fire(codelike, offset, exception);
     if (state == NULL) {
         return NULL;
     }
-    int res = PyMonitoring_FireCRaiseEvent(state, codelike, offset, exception);
-    RETURN_INT(teardown_fire(res, state, with_exc));
+    int res = PyMonitoring_FireCRaiseEvent(state, codelike, offset);
+    RETURN_INT(teardown_fire(res, state));
 }
 
 static PyObject *
@@ -364,18 +350,17 @@ fire_event_reraise(PyObject *self, PyObject *args)
 {
     PyObject *codelike;
     int offset;
-    int with_exc;
     PyObject *exception;
-    if (!PyArg_ParseTuple(args, "OipO", &codelike, &offset, &with_exc, &exception)) {
+    if (!PyArg_ParseTuple(args, "OiO", &codelike, &offset, &exception)) {
         return NULL;
     }
     NULLABLE(exception);
-    PyMonitoringState *state = setup_fire(codelike, offset, with_exc);
+    PyMonitoringState *state = setup_fire(codelike, offset, exception);
     if (state == NULL) {
         return NULL;
     }
-    int res = PyMonitoring_FireReraiseEvent(state, codelike, offset, exception);
-    RETURN_INT(teardown_fire(res, state, with_exc));
+    int res = PyMonitoring_FireReraiseEvent(state, codelike, offset);
+    RETURN_INT(teardown_fire(res, state));
 }
 
 static PyObject *
@@ -383,18 +368,17 @@ fire_event_exception_handled(PyObject *self, PyObject *args)
 {
     PyObject *codelike;
     int offset;
-    int with_exc;
     PyObject *exception;
-    if (!PyArg_ParseTuple(args, "OipO", &codelike, &offset, &with_exc, &exception)) {
+    if (!PyArg_ParseTuple(args, "OiO", &codelike, &offset, &exception)) {
         return NULL;
     }
     NULLABLE(exception);
-    PyMonitoringState *state = setup_fire(codelike, offset, with_exc);
+    PyMonitoringState *state = setup_fire(codelike, offset, exception);
     if (state == NULL) {
         return NULL;
     }
-    int res = PyMonitoring_FireExceptionHandledEvent(state, codelike, offset, exception);
-    RETURN_INT(teardown_fire(res, state, with_exc));
+    int res = PyMonitoring_FireExceptionHandledEvent(state, codelike, offset);
+    RETURN_INT(teardown_fire(res, state));
 }
 
 static PyObject *
@@ -402,18 +386,17 @@ fire_event_py_unwind(PyObject *self, PyObject *args)
 {
     PyObject *codelike;
     int offset;
-    int with_exc;
     PyObject *exception;
-    if (!PyArg_ParseTuple(args, "OipO", &codelike, &offset, &with_exc, &exception)) {
+    if (!PyArg_ParseTuple(args, "OiO", &codelike, &offset, &exception)) {
         return NULL;
     }
     NULLABLE(exception);
-    PyMonitoringState *state = setup_fire(codelike, offset, with_exc);
+    PyMonitoringState *state = setup_fire(codelike, offset, exception);
     if (state == NULL) {
         return NULL;
     }
-    int res = PyMonitoring_FirePyUnwindEvent(state, codelike, offset, exception);
-    RETURN_INT(teardown_fire(res, state, with_exc));
+    int res = PyMonitoring_FirePyUnwindEvent(state, codelike, offset);
+    RETURN_INT(teardown_fire(res, state));
 }
 
 static PyObject *
@@ -421,18 +404,17 @@ fire_event_stop_iteration(PyObject *self, PyObject *args)
 {
     PyObject *codelike;
     int offset;
-    int with_exc;
     PyObject *exception;
-    if (!PyArg_ParseTuple(args, "OipO", &codelike, &offset, &with_exc, &exception)) {
+    if (!PyArg_ParseTuple(args, "OiO", &codelike, &offset, &exception)) {
         return NULL;
     }
     NULLABLE(exception);
-    PyMonitoringState *state = setup_fire(codelike, offset, with_exc);
+    PyMonitoringState *state = setup_fire(codelike, offset, exception);
     if (state == NULL) {
         return NULL;
     }
-    int res = PyMonitoring_FireStopIterationEvent(state, codelike, offset, exception);
-    RETURN_INT(teardown_fire(res, state, with_exc));
+    int res = PyMonitoring_FireStopIterationEvent(state, codelike, offset);
+    RETURN_INT(teardown_fire(res, state));
 }
 
 /*******************************************************************/

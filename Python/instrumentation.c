@@ -2564,114 +2564,99 @@ _PyMonitoring_FireCReturnEvent(PyMonitoringState *state, PyObject *codelike, int
                                      PY_MONITORING_EVENT_C_RETURN);
 }
 
+static inline PyObject *
+exception_event_setup(void) {
+    PyObject *exc = PyErr_GetRaisedException();
+    assert(exc != NULL);
+    return exc;
+}
+
+
+static inline int
+exception_event_teardown(int err, PyObject *exc) {
+    if (err == 0) {
+        PyErr_SetRaisedException(exc);
+    }
+    else {
+        assert(PyErr_Occurred());
+        Py_DECREF(exc);
+    }
+    return err;
+}
+
 int
-_PyMonitoring_FirePyThrowEvent(PyMonitoringState *state, PyObject *codelike, int32_t offset,
-                               PyObject *exception)
+_PyMonitoring_FirePyThrowEvent(PyMonitoringState *state, PyObject *codelike, int32_t offset)
 {
     assert(state->active);
-    PyObject *exc = PyErr_GetRaisedException();
-
-    PyObject *args[4] = { NULL, NULL, NULL, exception };
-    int res = capi_call_instrumentation(state, codelike, offset, args, 3,
+    PyObject *exc = exception_event_setup();
+    PyObject *args[4] = { NULL, NULL, NULL, exc };
+    int err = capi_call_instrumentation(state, codelike, offset, args, 3,
                                         PY_MONITORING_EVENT_PY_THROW);
-    if (res >= 0) {
-        PyErr_SetRaisedException(exc);
-    }
-    return res;
+    return exception_event_teardown(err, exc);
 }
 
 int
-_PyMonitoring_FireRaiseEvent(PyMonitoringState *state, PyObject *codelike, int32_t offset,
-                             PyObject *exception)
+_PyMonitoring_FireRaiseEvent(PyMonitoringState *state, PyObject *codelike, int32_t offset)
 {
     assert(state->active);
-    PyObject *exc = PyErr_GetRaisedException();
-
-    PyObject *args[4] = { NULL, NULL, NULL, exception };
-    int res = capi_call_instrumentation(state, codelike, offset, args, 3,
+    PyObject *exc = exception_event_setup();
+    PyObject *args[4] = { NULL, NULL, NULL, exc };
+    int err = capi_call_instrumentation(state, codelike, offset, args, 3,
                                         PY_MONITORING_EVENT_RAISE);
-    if (res >= 0) {
-        PyErr_SetRaisedException(exc);
-    }
-    return res;
+    return exception_event_teardown(err, exc);
 }
 
 int
-_PyMonitoring_FireCRaiseEvent(PyMonitoringState *state, PyObject *codelike, int32_t offset,
-                              PyObject *exception)
+_PyMonitoring_FireCRaiseEvent(PyMonitoringState *state, PyObject *codelike, int32_t offset)
 {
     assert(state->active);
-    PyObject *exc = PyErr_GetRaisedException();
-
-    PyObject *args[4] = { NULL, NULL, NULL, exception };
-    int res = capi_call_instrumentation(state, codelike, offset, args, 3,
+    PyObject *exc = exception_event_setup();
+    PyObject *args[4] = { NULL, NULL, NULL, exc };
+    int err = capi_call_instrumentation(state, codelike, offset, args, 3,
                                         PY_MONITORING_EVENT_C_RAISE);
-    if (res >= 0) {
-        PyErr_SetRaisedException(exc);
-    }
-    return res;
+    return exception_event_teardown(err, exc);
 }
 
 int
-_PyMonitoring_FireReraiseEvent(PyMonitoringState *state, PyObject *codelike, int32_t offset,
-                               PyObject *exception)
+_PyMonitoring_FireReraiseEvent(PyMonitoringState *state, PyObject *codelike, int32_t offset)
 {
     assert(state->active);
-    PyObject *exc = PyErr_GetRaisedException();
-
-    PyObject *args[4] = { NULL, NULL, NULL, exception };
-    int res = capi_call_instrumentation(state, codelike, offset, args, 3,
+    PyObject *exc = exception_event_setup();
+    PyObject *args[4] = { NULL, NULL, NULL, exc };
+    int err = capi_call_instrumentation(state, codelike, offset, args, 3,
                                         PY_MONITORING_EVENT_RERAISE);
-    if (res >= 0) {
-        PyErr_SetRaisedException(exc);
-    }
-    return res;
+    return exception_event_teardown(err, exc);
 }
 
 int
-_PyMonitoring_FireExceptionHandledEvent(PyMonitoringState *state, PyObject *codelike, int32_t offset,
-                                        PyObject *exception)
+_PyMonitoring_FireExceptionHandledEvent(PyMonitoringState *state, PyObject *codelike, int32_t offset)
 {
     assert(state->active);
-    PyObject *exc = PyErr_GetRaisedException();
-
-    PyObject *args[4] = { NULL, NULL, NULL, exception };
-    int res = capi_call_instrumentation(state, codelike, offset, args, 3,
+    PyObject *exc = exception_event_setup();
+    PyObject *args[4] = { NULL, NULL, NULL, exc };
+    int err = capi_call_instrumentation(state, codelike, offset, args, 3,
                                         PY_MONITORING_EVENT_EXCEPTION_HANDLED);
-    if (res >= 0) {
-        PyErr_SetRaisedException(exc);
-    }
-    return res;
+    return exception_event_teardown(err, exc);
 }
 
 int
-_PyMonitoring_FirePyUnwindEvent(PyMonitoringState *state, PyObject *codelike, int32_t offset,
-                                PyObject *exception)
+_PyMonitoring_FirePyUnwindEvent(PyMonitoringState *state, PyObject *codelike, int32_t offset)
 {
     assert(state->active);
-    PyObject *exc = PyErr_GetRaisedException();
-
-    PyObject *args[4] = { NULL, NULL, NULL, exception };
-    int res = capi_call_instrumentation(state, codelike, offset, args, 3,
+    PyObject *exc = exception_event_setup();
+    PyObject *args[4] = { NULL, NULL, NULL, exc };
+    int err = capi_call_instrumentation(state, codelike, offset, args, 3,
                                         PY_MONITORING_EVENT_PY_UNWIND);
-    if (res >= 0) {
-        PyErr_SetRaisedException(exc);
-    }
-    return res;
+    return exception_event_teardown(err, exc);
 }
 
 int
-_PyMonitoring_FireStopIterationEvent(PyMonitoringState *state, PyObject *codelike, int32_t offset,
-                                     PyObject *exception)
+_PyMonitoring_FireStopIterationEvent(PyMonitoringState *state, PyObject *codelike, int32_t offset)
 {
     assert(state->active);
-    PyObject *exc = PyErr_GetRaisedException();
-
-    PyObject *args[4] = { NULL, NULL, NULL, exception };
-    int res = capi_call_instrumentation(state, codelike, offset, args, 3,
+    PyObject *exc = exception_event_setup();
+    PyObject *args[4] = { NULL, NULL, NULL, exc };
+    int err = capi_call_instrumentation(state, codelike, offset, args, 3,
                                         PY_MONITORING_EVENT_STOP_ITERATION);
-    if (res >= 0) {
-        PyErr_SetRaisedException(exc);
-    }
-    return res;
+    return exception_event_teardown(err, exc);
 }

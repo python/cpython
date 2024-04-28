@@ -1962,23 +1962,8 @@ class TestCApiEventGeneration(MonitoringTestBase, unittest.TestCase):
         for expected, event, function, *args in self.cases:
             offset = 0
             self.codelike = _testcapi.CodeLike(1)
-            with_exc = False
             with self.subTest(function.__name__):
-                args_ = (self.codelike, offset, with_exc) + tuple(args)
-                self.check_event_count(event, function, args_, expected)
-
-    EXCEPTION_EVENTS = { E.PY_THROW, E.RAISE, E.EXCEPTION_HANDLED,
-                         E.PY_UNWIND, E.STOP_ITERATION }
-
-    def test_fire_event_with_exc(self):
-        for expected, event, function, *args in self.cases:
-            if not event in self.EXCEPTION_EVENTS:
-                continue
-            offset = 0
-            self.codelike = _testcapi.CodeLike(1)
-            with_exc = True
-            with self.subTest(function.__name__):
-                args_ = (self.codelike, offset, with_exc) + tuple(args)
+                args_ = (self.codelike, offset) + tuple(args)
                 self.check_event_count(event, function, args_, expected)
 
     CANNOT_DISABLE = { E.PY_THROW, E.RAISE, E.RERAISE,
@@ -2024,7 +2009,7 @@ class TestCApiEventGeneration(MonitoringTestBase, unittest.TestCase):
             offset = 0
             self.codelike = _testcapi.CodeLike(2)
             with self.subTest(function.__name__):
-                args_ = (self.codelike, 0, False) + tuple(args)
+                args_ = (self.codelike, 0) + tuple(args)
                 self.check_disable(event, function, args_, expected)
 
     def test_enter_scope_two_events(self):
@@ -2038,7 +2023,7 @@ class TestCApiEventGeneration(MonitoringTestBase, unittest.TestCase):
             yield_value = int(math.log2(E.PY_YIELD))
             unwind_value = int(math.log2(E.PY_UNWIND))
             cl = _testcapi.CodeLike(2)
-            common_args = (cl, 0, False)
+            common_args = (cl, 0)
             with self.Scope(cl, yield_value, unwind_value):
                 yield_counter.count = 0
                 unwind_counter.count = 0
