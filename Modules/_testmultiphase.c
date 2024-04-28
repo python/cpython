@@ -965,10 +965,10 @@ datetime_capi_client_exec(PyObject *m)
     }
     PyDateTime_IMPORT;
     if (PyDateTimeAPI == NULL) {
-        return -1;
+        return -2;
     }
     if (PyDateTimeAPI != PyCapsule_Import(PyDateTime_CAPSULE_NAME, 0)) {
-        return -1;
+        return -3;
     }
     return 0;
 }
