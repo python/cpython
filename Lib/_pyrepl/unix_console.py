@@ -48,16 +48,6 @@ SIGWINCH_EVENT = "repaint"
 FIONREAD = getattr(termios, "FIONREAD", None)
 TIOCGWINSZ = getattr(termios, "TIOCGWINSZ", None)
 
-
-def _my_getstr(cap, optional=0):
-    r = curses.tigetstr(cap)
-    if not optional and r is None:
-        raise InvalidTerminal(
-            "terminal doesn't have the required '%s' capability" % cap
-        )
-    return r
-
-
 # ------------ start of baudrate definitions ------------
 
 # Add (possibly) missing baudrates (check termios man page) to termios
@@ -157,6 +147,14 @@ class UnixConsole(Console):
         self.pollob.register(self.input_fd, POLLIN)
         curses.setupterm(term, self.output_fd)
         self.term = term
+
+        def _my_getstr(cap, optional=0):
+            r = curses.tigetstr(cap)
+            if not optional and r is None:
+                raise InvalidTerminal(
+                    f"terminal doesn't have the required {cap} capability"
+                )
+            return r
 
         self._bel = _my_getstr("bel")
         self._civis = _my_getstr("civis", optional=True)
