@@ -6724,7 +6724,7 @@ static PyMethodDef module_methods[] = {
 static inline PyDateTime_CAPI *
 get_datetime_capi(void)
 {
-    PyDateTime_CAPI *capi = PyMem_Malloc(sizeof(PyDateTime_CAPI));
+    PyDateTime_CAPI *capi = PyMem_Malloc(sizeof(_pydatetime_capi));
     if (capi == NULL) {
         PyErr_NoMemory();
         return NULL;
@@ -6748,8 +6748,8 @@ get_datetime_capi(void)
     datetime_state *st = STATIC_STATE();
     assert(st->utc != NULL);
     capi->TimeZone_UTC = st->utc; // borrowed ref
-    capi->_set_capi_by_interp = set_datetime_capi_by_interp;
-    capi->_get_capi_by_interp = get_datetime_capi_by_interp;
+    ((_pydatetime_capi *)capi)->_set_capi_by_interp = set_datetime_capi_by_interp;
+    ((_pydatetime_capi *)capi)->_get_capi_by_interp = get_datetime_capi_by_interp;
     return capi;
 }
 

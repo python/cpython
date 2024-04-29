@@ -155,7 +155,7 @@ typedef struct
 
 
 /* Define structure for C API. */
-typedef struct _pydatetime_capi {
+typedef struct {
     /* type objects */
     PyTypeObject *DateType;
     PyTypeObject *DateTimeType;
@@ -183,12 +183,16 @@ typedef struct _pydatetime_capi {
         PyObject*, int, PyTypeObject*);
     PyObject *(*Time_FromTimeAndFold)(int, int, int, int, PyObject*, int, PyTypeObject*);
 
-    struct _pydatetime_capi *(*_get_capi_by_interp)(void);
-    void (*_set_capi_by_interp)(struct _pydatetime_capi *);
 } PyDateTime_CAPI;
 
 #define PyDateTime_CAPSULE_NAME "datetime.datetime_CAPI"
 
+/* Internal use */
+typedef struct {
+    PyDateTime_CAPI api;
+    PyDateTime_CAPI *(*_get_capi_by_interp)(void);
+    void (*_set_capi_by_interp)(PyDateTime_CAPI *);
+} _pydatetime_capi;
 
 /* This block is only used as part of the public API and should not be
  * included in _datetimemodule.c, which does not use the C API capsule.
@@ -205,9 +209,9 @@ static PyDateTime_CAPI *(*_get_pydatetime_capi)(void) = _get_pydatetime_capi_dum
 #define PyDateTimeAPI _get_pydatetime_capi()
 
 static inline void pydatetime_import(void) {
-    PyDateTime_CAPI *capi = PyCapsule_Import(PyDateTime_CAPSULE_NAME, 0);
+    _pydatetime_capi *capi = PyCapsule_Import(PyDateTime_CAPSULE_NAME, 0);
     if (capi) {
-        capi->_set_capi_by_interp(capi);
+        capi->_set_capi_by_interp((PyDateTime_CAPI *)capi);
         _get_pydatetime_capi = capi->_get_capi_by_interp;
     }
 }
