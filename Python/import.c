@@ -645,33 +645,33 @@ _PyImport_ClearModulesByIndex(PyInterpreterState *interp)
        K.         PyModule_CreateInitialized() -> PyModule_SetDocString()
        L.       PyModule_CreateInitialized():  set mod->md_def
        M.       <module init func>:  initialize the module, etc.
-       N.     _PyImport_RunModInitFunc():  set def->m_base.m_init
-       O.   import_run_extension()
+       N.   import_run_extension()
                 -> _PyImport_CheckSubinterpIncompatibleExtensionAllowed()
-       P.   import_run_extension():  set __file__
-       Q.   import_run_extension() -> update_global_state_for_extension()
-       R.     update_global_state_for_extension():
+       O.   import_run_extension():  set __file__
+       P.   import_run_extension() -> update_global_state_for_extension()
+       Q.     update_global_state_for_extension():
                       copy __dict__ into def->m_base.m_copy
-       S.     update_global_state_for_extension():
+       R.     update_global_state_for_extension():
                       add it to _PyRuntime.imports.extensions
-       T.   import_run_extension() -> finish_singlephase_extension()
-       U.     finish_singlephase_extension():
+       S.   import_run_extension() -> finish_singlephase_extension()
+       T.     finish_singlephase_extension():
                       add it to interp->imports.modules_by_index
-       V.     finish_singlephase_extension():  add it to sys.modules
+       U.     finish_singlephase_extension():  add it to sys.modules
 
        Step (Q) is skipped for core modules (sys/builtins).
 
     (6). subsequent times  (found in _PyRuntime.imports.extensions):
        A. _imp_create_dynamic_impl() -> import_find_extension()
-       B.   import_find_extension()
-                -> _PyImport_CheckSubinterpIncompatibleExtensionAllowed()
-       C.   import_find_extension() -> import_add_module()
-       D.     if name in sys.modules:  use that module
-       E.     else:
-                1. import_add_module() -> PyModule_NewObject()
-                2. import_add_module():  set it on sys.modules
-       F.   import_find_extension():  copy the "m_copy" dict into __dict__
-       G.   import_find_extension():  add to modules_by_index
+       B.   import_find_extension() -> reload_singlephase_extension()
+       C.     reload_singlephase_extension()
+                  -> _PyImport_CheckSubinterpIncompatibleExtensionAllowed()
+       D.     reload_singlephase_extension() -> import_add_module()
+       E.       if name in sys.modules:  use that module
+       F.       else:
+                  1. import_add_module() -> PyModule_NewObject()
+                  2. import_add_module():  set it on sys.modules
+       G.     reload_singlephase_extension():  copy the "m_copy" dict into __dict__
+       H.     reload_singlephase_extension():  add to modules_by_index
 
     (10). (every time):
        A. noop
@@ -681,21 +681,23 @@ _PyImport_ClearModulesByIndex(PyInterpreterState *interp)
 
     (6). not main interpreter and never loaded there - every time  (not found in _PyRuntime.imports.extensions):
        A-P. (same as for m_size == -1)
-       Q-S. (skipped)
-       T-V. (same as for m_size == -1)
+       Q.     _PyImport_RunModInitFunc():  set def->m_base.m_init
+       R. (skipped)
+       S-U. (same as for m_size == -1)
 
     (6). main interpreter - first time  (not found in _PyRuntime.imports.extensions):
-       A-R. (same as for m_size == -1)
-       S. (skipped)
-       T-V. (same as for m_size == -1)
+       A-P. (same as for m_size == -1)
+       Q.     _PyImport_RunModInitFunc():  set def->m_base.m_init
+       R-U. (same as for m_size == -1)
 
     (6). subsequent times  (found in _PyRuntime.imports.extensions):
        A. _imp_create_dynamic_impl() -> import_find_extension()
-       B.   import_find_extension()
-                -> _PyImport_CheckSubinterpIncompatibleExtensionAllowed()
-       C.   import_find_extension():  call def->m_base.m_init  (see above)
-       D.   import_find_extension():  add the module to sys.modules
-       E.   import_find_extension():  add to modules_by_index
+       B.   import_find_extension() -> reload_singlephase_extension()
+       C.     reload_singlephase_extension()
+                  -> _PyImport_CheckSubinterpIncompatibleExtensionAllowed()
+       D.     reload_singlephase_extension():  call def->m_base.m_init  (see above)
+       E.     reload_singlephase_extension():  add the module to sys.modules
+       F.     reload_singlephase_extension():  add to modules_by_index
 
     (10). every time:
        A. noop
