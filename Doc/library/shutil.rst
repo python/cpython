@@ -447,7 +447,7 @@ Directory and files operations
    called.  If no *cmd* would be called, return ``None``.
 
    *mode* is a permission mask passed to :func:`os.access`, by default
-   determining if the file exists and executable.
+   determining if the file exists and is executable.
 
    When no *path* is specified, the results of :func:`os.environ` are used,
    returning either the "PATH" value or a fallback of :data:`os.defpath`.
