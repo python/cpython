@@ -5536,7 +5536,7 @@ os__path_splitroot_ex_impl(PyObject *module, path_t *path)
         Py_SETREF(root, PyUnicode_EncodeFSDefault(root));
         Py_SETREF(tail, PyUnicode_EncodeFSDefault(tail));
     }
-    result = Py_BuildValue("(OOO)", drv, root, tail);
+    result = PyTuple_Pack(3, drv, root, tail);
 exit:
     Py_XDECREF(drv);
     Py_XDECREF(root);
