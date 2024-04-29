@@ -1016,7 +1016,9 @@ PyObject_ClearWeakRefs(PyObject *object)
     PyObject *exc = PyErr_GetRaisedException();
     PyObject *tuple = PyTuple_New(num_weakrefs * 2);
     if (tuple == NULL) {
-        _PyErr_ChainExceptions1(exc);
+        _PyWeakref_ClearWeakRefsExceptCallbacks(object);
+        PyErr_WriteUnraisable(NULL);
+        PyErr_SetRaisedException(exc);
         return;
     }
 
