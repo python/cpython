@@ -34,7 +34,19 @@
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_typeobject.h"
 #include "complexobject.h"
-#include "mpdecimal.h"
+
+#include <mpdecimal.h>
+
+// Reuse config from mpdecimal.h if present.
+#if defined(MPD_CONFIG_64)
+  #ifndef CONFIG_64
+    #define CONFIG_64 MPD_CONFIG_64
+  #endif
+#elif defined(MPD_CONFIG_32)
+  #ifndef CONFIG_32
+    #define CONFIG_32 MPD_CONFIG_32
+  #endif
+#endif
 
 #include <ctype.h>                // isascii()
 #include <stdlib.h>
