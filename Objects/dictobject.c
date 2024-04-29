@@ -7131,6 +7131,8 @@ int
 _PyDict_DetachFromObject(PyDictObject *mp, PyObject *obj)
 {
     _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(obj);
+    assert(_PyObject_ManagedDictPointer(obj)->dict == mp);
+    assert(_PyObject_InlineValuesConsistencyCheck(obj));
 
     if (FT_ATOMIC_LOAD_PTR_RELAXED(mp->ma_values) != _PyObject_InlineValues(obj)) {
         return 0;
