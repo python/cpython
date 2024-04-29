@@ -2475,7 +2475,7 @@ get_basic_static_type(PyObject *self, PyObject *args)
     PyTypeObject *cls = &BasicStaticTypes[num_basic_static_types_used++];
 
     if (base != NULL) {
-        cls->tp_bases = Py_BuildValue("(O)", base);
+        cls->tp_bases = PyTuple_Pack(1, base);
         if (cls->tp_bases == NULL) {
             return NULL;
         }
