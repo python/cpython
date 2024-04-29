@@ -117,6 +117,7 @@ _Py_ext_module_loader_info_init(struct _Py_ext_module_loader_info *p_info,
         _Py_ext_module_loader_info_clear(&info);
         return -1;
     }
+    assert(PyUnicode_GetLength(name) > 0);
     info.name = Py_NewRef(name);
 
     info.name_encoded = get_encoded_name(info.name, &info.hook_prefix);
@@ -155,6 +156,31 @@ _Py_ext_module_loader_info_init(struct _Py_ext_module_loader_info *p_info,
     }
 
     *p_info = info;
+    return 0;
+}
+
+int
+_Py_ext_module_loader_info_init_for_builtin(
+                            struct _Py_ext_module_loader_info *info,
+                            PyObject *name)
+{
+    assert(PyUnicode_Check(name));
+    assert(PyUnicode_FindChar(name, '.', 0, PyUnicode_GetLength(name), -1) == -1);
+    assert(PyUnicode_GetLength(name) > 0);
+
+    PyObject *name_encoded = PyUnicode_AsEncodedString(name, "ascii", NULL);
+    if (name_encoded == NULL) {
+        return -1;
+    }
+
+    *info = (struct _Py_ext_module_loader_info){
+        .name=Py_NewRef(name),
+        .name_encoded=name_encoded,
+        /* We won't need filename. */
+        .path=name,
+        .hook_prefix=ascii_only_prefix,
+        .newcontext=NULL,
+    };
     return 0;
 }
 
@@ -284,11 +310,17 @@ _PyImport_RunModInitFunc(PyModInitFunction p0,
         /* single-phase init (legacy) */
         res.module = m;
 
-        res.def = PyModule_GetDef(m);
-        if (res.def == NULL) {
-            PyErr_Clear();
+        if (!PyModule_Check(m)) {
             PyErr_Format(PyExc_SystemError,
                          "initialization of %s did not return an extension "
+                         "module", name_buf);
+            goto error;
+        }
+
+        res.def = _PyModule_GetDef(m);
+        if (res.def == NULL) {
+            PyErr_Format(PyExc_SystemError,
+                         "initialization of %s did not return a valid extension "
                          "module", name_buf);
             goto error;
         }
