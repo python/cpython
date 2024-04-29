@@ -6756,9 +6756,10 @@ get_datetime_capi(void)
 static void
 datetime_destructor(PyObject *op)
 {
-    set_datetime_capi_by_interp(NULL);
     void *ptr = PyCapsule_GetPointer(op, PyDateTime_CAPSULE_NAME);
+    assert(ptr == get_datetime_capi_by_interp());
     PyMem_Free(ptr);
+    set_datetime_capi_by_interp(NULL);
 }
 
 static int
