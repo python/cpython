@@ -275,6 +275,9 @@ _Py_atomic_or_uintptr(uintptr_t *obj, uintptr_t value);
 static inline int
 _Py_atomic_load_int(const int *obj);
 
+static inline long
+_Py_atomic_load_long(const long *obj);
+
 static inline int8_t
 _Py_atomic_load_int8(const int8_t *obj);
 

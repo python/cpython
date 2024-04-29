@@ -413,6 +413,13 @@ _Py_atomic_load_int(const int *obj)
     return atomic_load((const _Atomic(int)*)obj);
 }
 
+static inline long
+_Py_atomic_load_long(const long *obj)
+{
+    _Py_USING_STD;
+    return atomic_load((const _Atomic(long)*)obj);
+}
+
 static inline int8_t
 _Py_atomic_load_int8(const int8_t *obj)
 {

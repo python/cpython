@@ -581,6 +581,13 @@ _Py_atomic_load_int(const int *obj)
     return (int)_Py_atomic_load_uint32((uint32_t *)obj);
 }
 
+static inline long
+_Py_atomic_load_long(const long *obj)
+{
+    _Py_atomic_ASSERT_ARG_TYPE(uint32_t);
+    return (int)_Py_atomic_load_uint32((uint32_t *)obj);
+}
+
 static inline unsigned int
 _Py_atomic_load_uint(const unsigned int *obj)
 {
