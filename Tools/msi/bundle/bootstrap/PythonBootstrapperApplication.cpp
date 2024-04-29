@@ -464,11 +464,11 @@ class PythonBootstrapperApplication : public CBalBaseBootstrapperApplication {
 
         LOC_STRING *pLocString = nullptr;
         LPCWSTR locKey = L"#(loc.Include_launcherHelp)";
-        LONGLONG detectedLauncher;
+        LONGLONG blockedLauncher;
 
-        if (SUCCEEDED(BalGetNumericVariable(L"DetectedLauncher", &detectedLauncher)) && detectedLauncher) {
+        if (SUCCEEDED(BalGetNumericVariable(L"BlockedLauncher", &blockedLauncher)) && blockedLauncher) {
             locKey = L"#(loc.Include_launcherRemove)";
-        } else if (SUCCEEDED(BalGetNumericVariable(L"DetectedOldLauncher", &detectedLauncher)) && detectedLauncher) {
+        } else if (SUCCEEDED(BalGetNumericVariable(L"DetectedOldLauncher", &blockedLauncher)) && blockedLauncher) {
             locKey = L"#(loc.Include_launcherUpgrade)";
         }
 
@@ -2671,7 +2671,7 @@ private:
                 /*Elevate when installing for all users*/
                 L"InstallAllUsers or "
                 /*Elevate when installing the launcher for all users and it was not detected*/
-                L"(Include_launcher and InstallLauncherAllUsers and not DetectedLauncher)"
+                L"(Include_launcher and InstallLauncherAllUsers and not BlockedLauncher)"
             L")",
             L""
         };
