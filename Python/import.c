@@ -1194,7 +1194,7 @@ is_core_module(PyInterpreterState *interp, PyObject *name, PyObject *path)
 
 #ifndef NDEBUG
 static enum _Py_ext_module_kind
-get_extension_kind(PyModuleDef *def)
+get_extension_kind(PyModuleDef *def, bool check_size)
 {
     enum _Py_ext_module_kind kind;
     if (def == NULL) {
@@ -1204,6 +1204,12 @@ get_extension_kind(PyModuleDef *def)
     }
     else if (def->m_slots != NULL) {
         kind = _Py_ext_module_kind_MULTIPHASE;
+    }
+    else if (check_size && def->m_size == -1) {
+        kind = _Py_ext_module_kind_SINGLEPHASE;
+    }
+    else if (def->m_base.m_init != NULL) {
+        kind = _Py_ext_module_kind_SINGLEPHASE;
     }
     else {
         // This is probably single-phase init, but a multi-phase
@@ -1216,7 +1222,7 @@ get_extension_kind(PyModuleDef *def)
 static bool
 is_singlephase(PyModuleDef *def, bool default_singlephase)
 {
-    enum _Py_ext_module_kind kind = get_extension_kind(def);
+    enum _Py_ext_module_kind kind = get_extension_kind(def, default_singlephase);
     if (kind == _Py_ext_module_kind_SINGLEPHASE) {
         return true;
     }
