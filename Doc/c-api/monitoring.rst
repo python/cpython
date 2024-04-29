@@ -29,7 +29,7 @@ code to do that.
 
 It is expected that monitoring functions are not called with an exception set,
 except for those which are firing exception-related events. In the latter case,
-it is assumed that the event related to the current exception
+it is assumed that the event relates to the current exception
 (the one returned from :c:func:`PyErr_GetRaisedException`).
 
 .. c:type:: PyMonitoringState
