@@ -6757,7 +6757,7 @@ static void
 datetime_destructor(PyObject *op)
 {
     void *ptr = PyCapsule_GetPointer(op, PyDateTime_CAPSULE_NAME);
-    assert(ptr == get_datetime_capi_by_interp());
+    assert(!get_datetime_capi_by_interp() || ptr == get_datetime_capi_by_interp());
     PyMem_Free(ptr);
     set_datetime_capi_by_interp(NULL);
 }
