@@ -13,15 +13,15 @@ PAPER        =
 SOURCES      =
 DISTVERSION  = $(shell $(PYTHON) tools/extensions/patchlevel.py)
 REQUIREMENTS = requirements.txt
-SPHINXERRORHANDLING = -W
+SPHINXERRORHANDLING = --fail-on-warning
 
 # Internal variables.
-PAPEROPT_a4     = -D latex_elements.papersize=a4paper
-PAPEROPT_letter = -D latex_elements.papersize=letterpaper
+PAPEROPT_a4     = --define latex_elements.papersize=a4paper
+PAPEROPT_letter = --define latex_elements.papersize=letterpaper
 
-ALLSPHINXOPTS = -b $(BUILDER) \
-                -d build/doctrees \
-                -j $(JOBS) \
+ALLSPHINXOPTS = --builder $(BUILDER) \
+                --doctree-dir build/doctrees \
+                --jobs $(JOBS) \
                 $(PAPEROPT_$(PAPER)) \
                 $(SPHINXOPTS) $(SPHINXERRORHANDLING) \
                 . build/$(BUILDER) $(SOURCES)
