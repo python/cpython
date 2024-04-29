@@ -1570,9 +1570,9 @@ class TestPendingCalls(unittest.TestCase):
             self.assertEqual(added, maxpending)
 
         with self.subTest('not main-only'):
-            # Per-interpreter pending calls has the same low limit
+            # Per-interpreter pending calls has a much higher limit
             # on how many may be pending at a time.
-            maxpending = 32
+            maxpending = 300
 
             l = []
             added = self.pendingcalls_submit(l, 1, main=False)
