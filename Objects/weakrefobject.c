@@ -1019,8 +1019,10 @@ PyObject_ClearWeakRefs(PyObject *object)
         _PyWeakref_ClearWeakRefsExceptCallbacks(object);
         PyErr_WriteUnraisable(NULL);
         PyErr_SetRaisedException(exc);
+        Py_XDECREF(exc);  // Clean up the reference to the exception object
         return;
     }
+    Py_XDECREF(exc); // Clean up the reference if tuple creation is successful
 
     Py_ssize_t num_items = 0;
     for (int done = 0; !done;) {
