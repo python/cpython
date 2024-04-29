@@ -177,6 +177,10 @@ class ProactorTests(WindowsEventsTestCase):
         event = _overlapped.CreateEvent(None, True, False, None)
         self.addCleanup(_winapi.CloseHandle, event)
 
+        # RegisterWaitForSingleObject() has a resolution of 15.6 ms.
+        # Tolerate 50 ms difference when comparing timings.
+        CLOCK_RES = 0.050
+
         # Wait for unset event with 0.5s timeout;
         # result should be False at timeout
         timeout = 0.5
@@ -187,7 +191,7 @@ class ProactorTests(WindowsEventsTestCase):
 
         self.assertEqual(done, False)
         self.assertFalse(fut.result())
-        self.assertGreaterEqual(elapsed, timeout - test_utils.CLOCK_RES)
+        self.assertGreaterEqual(elapsed, timeout - CLOCK_RES)
 
         _overlapped.SetEvent(event)
 
