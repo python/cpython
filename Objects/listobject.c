@@ -45,6 +45,7 @@ list_allocate_array(size_t capacity)
     if (capacity > PY_SSIZE_T_MAX/sizeof(PyObject*) - 1) {
         return NULL;
     }
+
     _PyListArray *array = PyMem_Malloc(sizeof(_PyListArray) + capacity * sizeof(PyObject *));
     if (array == NULL) {
         return NULL;
@@ -141,6 +142,9 @@ list_resize(PyListObject *self, Py_ssize_t newsize)
             target_bytes = allocated * sizeof(PyObject*);
         }
         memcpy(array->ob_item, self->ob_item, target_bytes);
+    }
+    if (new_allocated > (size_t)allocated) {
+        memset(array->ob_item + allocated, 0, sizeof(PyObject *) * (new_allocated - allocated));
     }
      _Py_atomic_store_ptr_release(&self->ob_item, &array->ob_item);
     self->allocated = new_allocated;
@@ -502,7 +506,7 @@ _PyList_AppendTakeRefListResize(PyListObject *self, PyObject *newitem)
         Py_DECREF(newitem);
         return -1;
     }
-    PyList_SET_ITEM(self, len, newitem);
+    FT_ATOMIC_STORE_PTR_RELEASE(self->ob_item[len], newitem);
     return 0;
 }
 
@@ -1181,7 +1185,7 @@ list_extend_fast(PyListObject *self, PyObject *iterable)
     PyObject **dest = self->ob_item + m;
     for (Py_ssize_t i = 0; i < n; i++) {
         PyObject *o = src[i];
-        dest[i] = Py_NewRef(o);
+        FT_ATOMIC_STORE_PTR_RELEASE(dest[i], Py_NewRef(o));
     }
     return 0;
 }
@@ -1238,7 +1242,7 @@ list_extend_iter_lock_held(PyListObject *self, PyObject *iterable)
 
         if (Py_SIZE(self) < self->allocated) {
             Py_ssize_t len = Py_SIZE(self);
-            PyList_SET_ITEM(self, len, item);  // steals item ref
+            FT_ATOMIC_STORE_PTR_RELEASE(self->ob_item[len], item);
             Py_SET_SIZE(self, len + 1);
         }
         else {
