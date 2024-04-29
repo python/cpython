@@ -72,6 +72,31 @@ with the :term:`GIL` held.
    See :func:`time.time` for details important on this clock.
 
 
+Raw Clock Functions
+-------------------
+
+Similar to clock functions, but don't set an exception on error and don't
+require the caller to hold the GIL.
+
+The functions return ``0`` on success, or set ``*result`` to ``0`` return
+``-1`` on failure.
+
+.. c:function:: int PyTime_MonotonicRaw(PyTime_t *result)
+
+   Similar to :c:func:`PyTime_Monotonic`,
+   but don't set an exception on error and don't require holding the GIL.
+
+.. c:function:: int PyTime_PerfCounterRaw(PyTime_t *result)
+
+   Similar to :c:func:`PyTime_PerfCounter`,
+   but don't set an exception on error and don't require holding the GIL.
+
+.. c:function:: int PyTime_TimeRaw(PyTime_t *result)
+
+   Similar to :c:func:`PyTime_Time`,
+   but don't set an exception on error and don't require holding the GIL.
+
+
 Conversion functions
 --------------------
 
