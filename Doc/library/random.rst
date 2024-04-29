@@ -59,6 +59,12 @@ from sources provided by the operating system.
    random number generator with a long period and comparatively simple update
    operations.
 
+.. note::
+   The global random number generator and instances of :class:`Random` are thread-safe.
+   However, in the free-threaded build, concurrent calls to the global generator or
+   to the same instance of :class:`Random` may encounter contention and poor performance.
+   Consider using separate instances of :class:`Random` per thread instead.
+
 
 Bookkeeping functions
 ---------------------
@@ -293,10 +299,6 @@ be found in any statistics text.
 .. function:: random()
 
    Return the next random floating point number in the range ``0.0 <= X < 1.0``
-
-   .. warning::
-      Calling this function in the concurrent use can cause performance degradation.
-      Instead, Consider using :class:`Random` per thread.
 
 
 .. function:: uniform(a, b)
