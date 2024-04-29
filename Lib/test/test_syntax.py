@@ -2392,7 +2392,7 @@ if x:
             code += "): yield a"
             return code
 
-        CO_MAXBLOCKS = 20  # static nesting limit of the compiler
+        CO_MAXBLOCKS = 21  # static nesting limit of the compiler
         MAX_MANAGERS = CO_MAXBLOCKS - 1  # One for the StopIteration block
 
         for n in range(MAX_MANAGERS):
@@ -2418,7 +2418,7 @@ if x:
             code.append("): yield a")
             return "".join(code)
 
-        CO_MAXBLOCKS = 20  # static nesting limit of the compiler
+        CO_MAXBLOCKS = 21  # static nesting limit of the compiler
         MAX_MANAGERS = CO_MAXBLOCKS - 1  # One for the StopIteration block
 
         for n in range(MAX_MANAGERS):
@@ -2563,7 +2563,8 @@ while 1:
                   while 20:
                    while 21:
                     while 22:
-                     break
+                     while 23:
+                      break
 """
         self._check_error(source, "too many statically nested blocks")
 
