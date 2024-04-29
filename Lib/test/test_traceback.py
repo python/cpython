@@ -384,6 +384,7 @@ class TracebackCases(unittest.TestCase):
         ])
 
     @requires_subprocess()
+    @force_not_colorized
     def test_encoded_file(self):
         # Test that tracebacks are correctly printed for encoded source files:
         # - correct line number (Issue2384)
@@ -410,7 +411,7 @@ class TracebackCases(unittest.TestCase):
                         """.format(firstlines, message))
 
                 process = subprocess.Popen([sys.executable, TESTFN],
-                    stdout=subprocess.PIPE, stderr=subprocess.STDOUT, env={})
+                    stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
                 stdout, stderr = process.communicate()
                 stdout = stdout.decode(output_encoding).splitlines()
             finally:
