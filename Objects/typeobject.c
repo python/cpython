@@ -3167,7 +3167,7 @@ subtype_setdict(PyObject *obj, PyObject *value, void *context)
     }
 
     if (Py_TYPE(obj)->tp_flags & Py_TPFLAGS_MANAGED_DICT) {
-        _PyObject_SetManagedDict(obj, value);
+        return _PyObject_SetManagedDict(obj, value);
     }
     else {
         dictptr = _PyObject_ComputedDictPointer(obj);
