@@ -6017,7 +6017,9 @@
             // NOTE: It's important that YIELD_VALUE never raises an exception!
             // The compiler treats any exception raised here as a failed close()
             // or throw() call.
+            #if TIER_ONE
             assert(frame != &entry_frame);
+            #endif
             frame->instr_ptr++;
             PyGenObject *gen = _PyFrame_GetGenerator(frame);
             assert(FRAME_SUSPENDED_YIELD_FROM == FRAME_SUSPENDED + 1);
