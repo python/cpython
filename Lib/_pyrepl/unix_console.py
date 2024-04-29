@@ -20,6 +20,7 @@
 # CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 import errno
+import functools
 import os
 import re
 import select
@@ -32,13 +33,38 @@ from fcntl import ioctl
 
 from . import curses
 from .console import Console, Event
-from .fancy_termios import tcgetattr, tcsetattr
+from .fancy_termios import (
+    Bell,
+    ClearEol,
+    ClearScreen,
+    ColumnAddress,
+    CursorAddress,
+    CursorDown,
+    CursorInvisible,
+    CursorLeft,
+    CursorNormal,
+    CursorRight,
+    CursorUp,
+    DeleteCharacter,
+    InsertCharacter,
+    InvalidTerminal,
+    KeypadLocal,
+    KeypadXmit,
+    PadChar,
+    ParmDeleteCharacter,
+    ParmDownCursor,
+    ParmInsertCharacter,
+    ParmLeftCursor,
+    ParmRightCursor,
+    ParmUpCursor,
+    ScrollForward,
+    ScrollReverse,
+    TermCapability,
+    tcgetattr,
+    tcsetattr,
+)
 from .trace import trace
 from .unix_eventqueue import EventQueue
-
-
-class InvalidTerminal(RuntimeError):
-    pass
 
 
 _error = (termios.error, curses.error, InvalidTerminal)
@@ -117,6 +143,55 @@ except AttributeError:
 POLLIN = getattr(select, "POLLIN", None)
 
 
+class Buffer:
+    def __init__(self, svtermstate, output_fd, encoding):
+        self.__svtermstate = svtermstate
+        self.__output_fd = output_fd
+        self.__pad_char = PadChar(self)
+        self.__encoding = encoding
+        self.__buf = []
+
+    def push(self, item):
+        self.__buf.append(item)
+
+    def clear(self):
+        self.__buf.clear()
+
+    def __tputs(self, fmt, prog=delayprog):
+        """A Python implementation of the curses tputs function; the
+        curses one can't really be wrapped in a sane manner.
+        I have the strong suspicion that this is complexity that
+        will never do anyone any good."""
+        # using .get() means that things will blow up
+        # only if the bps is actually needed (which I'm
+        # betting is pretty unlkely)
+        bps = ratedict.get(self.__svtermstate.ospeed)
+        while 1:
+            m = prog.search(fmt)
+            if not m:
+                os.write(self.__output_fd, fmt)
+                break
+            x, y = m.span()
+            os.write(self.__output_fd, fmt[:x])
+            fmt = fmt[y:]
+            delay = int(m.group(1))
+            if b"*" in m.group(2):
+                delay *= self.height
+            if self.__pad_char.supported and bps is not None:
+                nchars = (bps * delay) / 1000
+                os.write(self.__output_fd, self.__pad_char.text(nchars))
+            else:
+                time.sleep(float(delay) / 1000.0)
+
+    def flush(self):
+        for item in self.__buf:
+            if isinstance(item, TermCapability):
+                self.__tputs(item.text())
+            else:
+                os.write(self.__output_fd, item.encode(self.__encoding, "replace"))
+        self.clear()
+
+
 class UnixConsole(Console):
     def __init__(self, f_in=0, f_out=1, term=None, encoding=None):
         """
@@ -148,38 +223,32 @@ class UnixConsole(Console):
         curses.setupterm(term, self.output_fd)
         self.term = term
 
-        def _my_getstr(cap, optional=0):
-            r = curses.tigetstr(cap)
-            if not optional and r is None:
-                raise InvalidTerminal(
-                    f"terminal doesn't have the required {cap} capability"
-                )
-            return r
+        self.__svtermstate = tcgetattr(self.input_fd)
+        self.__buffer = Buffer(self.__svtermstate, f_out, self.encoding)
 
-        self._bel = _my_getstr("bel")
-        self._civis = _my_getstr("civis", optional=True)
-        self._clear = _my_getstr("clear")
-        self._cnorm = _my_getstr("cnorm", optional=True)
-        self._cub = _my_getstr("cub", optional=True)
-        self._cub1 = _my_getstr("cub1", optional=True)
-        self._cud = _my_getstr("cud", optional=True)
-        self._cud1 = _my_getstr("cud1", optional=True)
-        self._cuf = _my_getstr("cuf", optional=True)
-        self._cuf1 = _my_getstr("cuf1", optional=True)
-        self._cup = _my_getstr("cup")
-        self._cuu = _my_getstr("cuu", optional=True)
-        self._cuu1 = _my_getstr("cuu1", optional=True)
-        self._dch1 = _my_getstr("dch1", optional=True)
-        self._dch = _my_getstr("dch", optional=True)
-        self._el = _my_getstr("el")
-        self._hpa = _my_getstr("hpa", optional=True)
-        self._ich = _my_getstr("ich", optional=True)
-        self._ich1 = _my_getstr("ich1", optional=True)
-        self._ind = _my_getstr("ind", optional=True)
-        self._pad = _my_getstr("pad", optional=True)
-        self._ri = _my_getstr("ri", optional=True)
-        self._rmkx = _my_getstr("rmkx", optional=True)
-        self._smkx = _my_getstr("smkx", optional=True)
+        self._bell = Bell(self.__buffer)
+        self._cursor_invsible = CursorInvisible(self.__buffer)
+        self._clear_screen = ClearScreen(self.__buffer)
+        self._cursor_normal = CursorNormal(self.__buffer)
+        self._parm_left_cursor = ParmLeftCursor(self.__buffer)
+        self._cursor_left = CursorLeft(self.__buffer)
+        self._parm_down_cursor = ParmDownCursor(self.__buffer)
+        self._cursor_down = CursorDown(self.__buffer)
+        self._parm_right_cursor = ParmRightCursor(self.__buffer)
+        self._cursor_right = CursorRight(self.__buffer)
+        self._cursor_address = CursorAddress(self.__buffer)
+        self._parm_up_cursor = ParmUpCursor(self.__buffer)
+        self._cursor_up = CursorUp(self.__buffer)
+        self._parm_delete_character = ParmDeleteCharacter(self.__buffer)
+        self._delete_character = DeleteCharacter(self.__buffer)
+        self._clear_eol = ClearEol(self.__buffer)
+        self._column_address = ColumnAddress(self.__buffer)
+        self._parm_insert_character = ParmInsertCharacter(self.__buffer)
+        self._insert_character = InsertCharacter(self.__buffer)
+        self._scroll_forward = ScrollForward(self.__buffer)
+        self._scroll_reverse = ScrollReverse(self.__buffer)
+        self._keypad_local = KeypadLocal(self.__buffer)
+        self._keypad_xmit = KeypadXmit(self.__buffer)
 
         self.__setup_movement()
 
@@ -237,20 +306,20 @@ class UnixConsole(Console):
         newscr = screen[offset : offset + height]
 
         # use hardware scrolling if we have it.
-        if old_offset > offset and self._ri:
+        if old_offset > offset and self._scroll_reverse.supported:
             self.__hide_cursor()
-            self.__write_code(self._cup, 0, 0)
+            self._cursor_address(0, 0)
             self.__posxy = 0, old_offset
             for i in range(old_offset - offset):
-                self.__write_code(self._ri)
+                self._scroll_reverse()
                 oldscr.pop(-1)
                 oldscr.insert(0, "")
-        elif old_offset < offset and self._ind:
+        elif old_offset < offset and self._scroll_forward.supported:
             self.__hide_cursor()
-            self.__write_code(self._cup, self.height - 1, 0)
+            self._cursor_address(self.height - 1, 0)
             self.__posxy = 0, old_offset + self.height - 1
             for i in range(offset - old_offset):
-                self.__write_code(self._ind)
+                self._scroll_forward()
                 oldscr.pop(0)
                 oldscr.append("")
 
@@ -269,7 +338,7 @@ class UnixConsole(Console):
             self.__hide_cursor()
             self.__move(0, y)
             self.__posxy = 0, y
-            self.__write_code(self._el)
+            self._clear_eol()
             y += 1
 
         self.__show_cursor()
@@ -297,7 +366,6 @@ class UnixConsole(Console):
         """
         Prepare the console for input/output operations.
         """
-        self.__svtermstate = tcgetattr(self.input_fd)
         raw = self.__svtermstate.copy()
         raw.iflag &= ~(termios.BRKINT | termios.INPCK | termios.ISTRIP | termios.IXON)
         raw.oflag &= ~(termios.OPOST)
@@ -313,14 +381,14 @@ class UnixConsole(Console):
         self.screen = []
         self.height, self.width = self.getheightwidth()
 
-        self.__buffer = []
+        self.__buffer.clear()
 
         self.__posxy = 0, 0
         self.__gone_tall = 0
         self.__move = self.__move_short
         self.__offset = 0
 
-        self.__maybe_write_code(self._smkx)
+        self._keypad_xmit()
 
         try:
             self.old_sigwinch = signal.signal(signal.SIGWINCH, self.__sigwinch)
@@ -331,7 +399,7 @@ class UnixConsole(Console):
         """
         Restore the console to the default state
         """
-        self.__maybe_write_code(self._rmkx)
+        self._keypad_local()
         self.flushoutput()
         tcsetattr(self.input_fd, termios.TCSADRAIN, self.__svtermstate)
 
@@ -438,12 +506,7 @@ class UnixConsole(Console):
         """
         Flush the output buffer.
         """
-        for text, iscode in self.__buffer:
-            if iscode:
-                self.__tputs(text)
-            else:
-                os.write(self.output_fd, text.encode(self.encoding, "replace"))
-        del self.__buffer[:]
+        self.__buffer.flush()
 
     def finish(self):
         """
@@ -460,7 +523,7 @@ class UnixConsole(Console):
         """
         Emit a beep sound.
         """
-        self.__maybe_write_code(self._bel)
+        self._bell()
         self.flushoutput()
 
     if FIONREAD:
@@ -513,7 +576,7 @@ class UnixConsole(Console):
         """
         Clear the console screen.
         """
-        self.__write_code(self._clear)
+        self._clear_screen()
         self.__gone_tall = 1
         self.__move = self.__move_tall
         self.__posxy = 0, 0
@@ -523,41 +586,39 @@ class UnixConsole(Console):
         """
         Set up the movement functions based on the terminal capabilities.
         """
-        if 0 and self._hpa:  # hpa don't work in windows telnet :-(
-            self.__move_x = self.__move_x_hpa
-        elif self._cub and self._cuf:
-            self.__move_x = self.__move_x_cub_cuf
-        elif self._cub1 and self._cuf1:
-            self.__move_x = self.__move_x_cub1_cuf1
+        if self._parm_left_cursor.supported and self._parm_right_cursor.supported:
+            self.__move_x = self.__move_x_parm_cursor
+        elif self._cursor_left.supported and self._cursor_right.supported:
+            self.__move_x = self.__move_x_cursor
         else:
-            raise RuntimeError("insufficient terminal (horizontal)")
+            raise InvalidTerminal("insufficient terminal (horizontal)")
 
-        if self._cuu and self._cud:
-            self.__move_y = self.__move_y_cuu_cud
-        elif self._cuu1 and self._cud1:
-            self.__move_y = self.__move_y_cuu1_cud1
+        if self._parm_up_cursor.supported and self._parm_down_cursor.supported:
+            self.__move_y = self.__move_y_parm_cursor
+        elif self._cursor_up.supported and self._cursor_down.supported:
+            self.__move_y = self.__move_y_cursor
         else:
-            raise RuntimeError("insufficient terminal (vertical)")
+            raise InvalidTerminal("insufficient terminal (vertical)")
 
-        if self._dch1:
-            self.dch1 = self._dch1
-        elif self._dch:
-            self.dch1 = curses.tparm(self._dch, 1)
+        if self._delete_character.supported:
+            self.delete_character = self._delete_character
+        elif self._parm_delete_character.supported:
+            self.delete_character = functools.partial(self._parm_delete_character, 1)
         else:
-            self.dch1 = None
+            self.delete_character = None
 
-        if self._ich1:
-            self.ich1 = self._ich1
-        elif self._ich:
-            self.ich1 = curses.tparm(self._ich, 1)
+        if self._insert_character.supported:
+            self.insert_character = self._insert_character
+        elif self._parm_insert_character.supported:
+            self.insert_character = functools.partial(self._parm_insert_character, 1)
         else:
-            self.ich1 = None
+            self.insert_character = None
 
         self.__move = self.__move_short
 
     def __write_changed_line(self, y, oldline, newline, px):
         # this is frustrating; there's no reason to test (say)
-        # self.dch1 inside the loop -- but alternative ways of
+        # self.delete_character inside the loop -- but alternative ways of
         # structuring this function are equally painful (I'm trying to
         # avoid writing code generators these days...)
         x = 0
@@ -568,7 +629,7 @@ class UnixConsole(Console):
         # sequene
         while x < minlen and oldline[x] == newline[x] and newline[x] != "\x1b":
             x += 1
-        if oldline[x:] == newline[x + 1 :] and self.ich1:
+        if oldline[x:] == newline[x + 1 :] and self.insert_character is not None:
             if (
                 y == self.__posxy[1]
                 and x > self.__posxy[0]
@@ -576,7 +637,7 @@ class UnixConsole(Console):
             ):
                 x = px
             self.__move(x, y)
-            self.__write_code(self.ich1)
+            self.insert_character()
             self.__write(newline[x])
             self.__posxy = x + 1, y
         elif x < minlen and oldline[x + 1 :] == newline[x + 1 :]:
@@ -584,8 +645,8 @@ class UnixConsole(Console):
             self.__write(newline[x])
             self.__posxy = x + 1, y
         elif (
-            self.dch1
-            and self.ich1
+            self.delete_character is not None
+            and self.insert_character is not None
             and len(newline) == self.width
             and x < len(newline) - 2
             and newline[x + 1 : -1] == oldline[x:-2]
@@ -593,16 +654,16 @@ class UnixConsole(Console):
             self.__hide_cursor()
             self.__move(self.width - 2, y)
             self.__posxy = self.width - 2, y
-            self.__write_code(self.dch1)
+            self.delete_character()
             self.__move(x, y)
-            self.__write_code(self.ich1)
+            self.insert_character()
             self.__write(newline[x])
             self.__posxy = x + 1, y
         else:
             self.__hide_cursor()
             self.__move(x, y)
             if len(oldline) > len(newline):
-                self.__write_code(self._el)
+                self._clear_eol()
             self.__write(newline[x:])
             self.__posxy = len(newline), y
 
@@ -613,46 +674,39 @@ class UnixConsole(Console):
             self.move_cursor(0, y)
 
     def __write(self, text):
-        self.__buffer.append((text, 0))
+        self.__buffer.push(text)
 
-    def __write_code(self, fmt, *args):
-        self.__buffer.append((curses.tparm(fmt, *args), 1))
-
-    def __maybe_write_code(self, fmt, *args):
-        if fmt:
-            self.__write_code(fmt, *args)
-
-    def __move_y_cuu1_cud1(self, y):
+    def __move_y_cursor(self, y):
         dy = y - self.__posxy[1]
         if dy > 0:
-            self.__write_code(dy * self._cud1)
+            self._cursor_down(dy)
         elif dy < 0:
-            self.__write_code((-dy) * self._cuu1)
+            self._cursor_up(-dy)
 
-    def __move_y_cuu_cud(self, y):
+    def __move_y_parm_cursor(self, y):
         dy = y - self.__posxy[1]
         if dy > 0:
-            self.__write_code(self._cud, dy)
+            self._parm_down_cursor(dy)
         elif dy < 0:
-            self.__write_code(self._cuu, -dy)
+            self._parm_up_cursor(-dy)
 
-    def __move_x_hpa(self, x):
+    def __move_x_column_address(self, x):
         if x != self.__posxy[0]:
-            self.__write_code(self._hpa, x)
+            self._column_address(x)
 
-    def __move_x_cub1_cuf1(self, x):
+    def __move_x_cursor(self, x):
         dx = x - self.__posxy[0]
         if dx > 0:
-            self.__write_code(self._cuf1 * dx)
+            self._cursor_right(dx)
         elif dx < 0:
-            self.__write_code(self._cub1 * (-dx))
+            self._cursor_left(-dx)
 
-    def __move_x_cub_cuf(self, x):
+    def __move_x_parm_cursor(self, x):
         dx = x - self.__posxy[0]
         if dx > 0:
-            self.__write_code(self._cuf, dx)
+            self._parm_right_cursor(dx)
         elif dx < 0:
-            self.__write_code(self._cub, -dx)
+            self._parm_left_cursor(-dx)
 
     def __move_short(self, x, y):
         self.__move_x(x)
@@ -660,7 +714,7 @@ class UnixConsole(Console):
 
     def __move_tall(self, x, y):
         assert 0 <= y - self.__offset < self.height, y - self.__offset
-        self.__write_code(self._cup, y - self.__offset, x)
+        self._cursor_address(y - self.__offset, x)
 
     def __sigwinch(self, signum, frame):
         self.height, self.width = self.getheightwidth()
@@ -668,12 +722,12 @@ class UnixConsole(Console):
 
     def __hide_cursor(self):
         if self.cursor_visible:
-            self.__maybe_write_code(self._civis)
+            self._cursor_invsible()
             self.cursor_visible = 0
 
     def __show_cursor(self):
         if not self.cursor_visible:
-            self.__maybe_write_code(self._cnorm)
+            self._cursor_normal()
             self.cursor_visible = 1
 
     def repaint_prep(self):
@@ -687,30 +741,3 @@ class UnixConsole(Console):
             self.__move(0, self.__offset)
             ns = self.height * ["\000" * self.width]
             self.screen = ns
-
-    def __tputs(self, fmt, prog=delayprog):
-        """A Python implementation of the curses tputs function; the
-        curses one can't really be wrapped in a sane manner.
-
-        I have the strong suspicion that this is complexity that
-        will never do anyone any good."""
-        # using .get() means that things will blow up
-        # only if the bps is actually needed (which I'm
-        # betting is pretty unlkely)
-        bps = ratedict.get(self.__svtermstate.ospeed)
-        while 1:
-            m = prog.search(fmt)
-            if not m:
-                os.write(self.output_fd, fmt)
-                break
-            x, y = m.span()
-            os.write(self.output_fd, fmt[:x])
-            fmt = fmt[y:]
-            delay = int(m.group(1))
-            if b"*" in m.group(2):
-                delay *= self.height
-            if self._pad and bps is not None:
-                nchars = (bps * delay) / 1000
-                os.write(self.output_fd, self._pad * nchars)
-            else:
-                time.sleep(float(delay) / 1000.0)
