@@ -1959,6 +1959,9 @@ The C-API provides a basic mutual exclusion lock.
 
       PyMutex mutex = {0};
 
+   Instances of :c:type:`!PyMutex` should not be copied or moved.  Both the
+   contents and address of a :c:type:`!PyMutex` are meaningful.
+
    .. versionadded:: 3.13
 
 .. c:function:: void PyMutex_Lock(PyMutex *m)
