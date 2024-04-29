@@ -3474,7 +3474,7 @@ typedef struct {
 static PyObject *
 ipowType_ipow(PyObject *self, PyObject *other, PyObject *mod)
 {
-    return Py_BuildValue("OO", other, mod);
+    return PyTuple_Pack(2, other, mod);
 }
 
 static PyNumberMethods ipowType_as_number = {

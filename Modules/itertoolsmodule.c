@@ -2447,7 +2447,7 @@ product_reduce(productobject *lz, PyObject *Py_UNUSED(ignored))
     if (lz->stopped) {
         return Py_BuildValue("O(())", Py_TYPE(lz));
     } else if (lz->result == NULL) {
-        return Py_BuildValue("OO", Py_TYPE(lz), lz->pools);
+        return PyTuple_Pack(2, Py_TYPE(lz), lz->pools);
     } else {
         PyObject *indices;
         Py_ssize_t n, i;
