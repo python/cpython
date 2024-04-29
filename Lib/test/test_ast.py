@@ -1353,13 +1353,13 @@ Module(
             [],
             [ast.keyword('a', ast.Constant(None))],
             [],
-            [ast.Name('dataclass')],
+            [ast.Name('dataclass', ctx=ast.Load())],
         )
         self.assertEqual(ast.dump(node),
-            "ClassDef(name='T', keywords=[keyword(arg='a', value=Constant(value=None))], decorator_list=[Name(id='dataclass')])",
+            "ClassDef(name='T', keywords=[keyword(arg='a', value=Constant(value=None))], decorator_list=[Name(id='dataclass', ctx=Load())])",
         )
         self.assertEqual(ast.dump(node, annotate_fields=False),
-            "ClassDef('T', [], [keyword('a', Constant(None))], [], [Name('dataclass')])",
+            "ClassDef('T', [], [keyword('a', Constant(None))], [], [Name('dataclass', Load())])",
         )
 
     def test_dump_show_empty(self):
