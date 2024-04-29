@@ -1017,12 +1017,8 @@ PyObject_ClearWeakRefs(PyObject *object)
     PyObject *tuple = PyTuple_New(num_weakrefs * 2);
     if (tuple == NULL) {
         _PyWeakref_ClearWeakRefsExceptCallbacks(object);
-        if (exc == NULL) {
-            PyErr_WriteUnraisable(NULL);
-        }
-        else {
-            _PyErr_ChainExceptions1(exc);
-        }
+        PyErr_WriteUnraisable(NULL);
+        PyErr_SetRaisedException(exc);
         return;
     }
 
