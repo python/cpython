@@ -268,14 +268,15 @@ get_events(_Py_GlobalMonitors *m, int tool_id)
  * 8 bit value.
  * if line_delta == -128:
  *     line = None # represented as -1
- * elif line_delta == -127:
+ * elif line_delta == -127 or line_delta == -126:
  *     line = PyCode_Addr2Line(code, offset * sizeof(_Py_CODEUNIT));
  * else:
  *     line = first_line  + (offset >> OFFSET_SHIFT) + line_delta;
  */
 
 #define NO_LINE -128
-#define COMPUTED_LINE -127
+#define COMPUTED_LINE_LINENO_CHANGE -127
+#define COMPUTED_LINE -126
 
 #define OFFSET_SHIFT 4
 
@@ -302,7 +303,7 @@ compute_line(PyCodeObject *code, int offset, int8_t line_delta)
 
         return -1;
     }
-    assert(line_delta == COMPUTED_LINE);
+    assert(line_delta == COMPUTED_LINE || line_delta == COMPUTED_LINE_LINENO_CHANGE);
     /* Look it up */
     return PyCode_Addr2Line(code, offset * sizeof(_Py_CODEUNIT));
 }
@@ -1224,18 +1225,26 @@ _Py_call_instrumentation_line(PyThreadState *tstate, _PyInterpreterFrame* frame,
     }
     PyInterpreterState *interp = tstate->interp;
     int8_t line_delta = line_data->line_delta;
-    int line = compute_line(code, i, line_delta);
-    assert(line >= 0);
-    assert(prev != NULL);
-    int prev_index = (int)(prev - _PyCode_CODE(code));
-    int prev_line = _Py_Instrumentation_GetLine(code, prev_index);
-    if (prev_line == line) {
-        int prev_opcode = _PyCode_CODE(code)[prev_index].op.code;
-        /* RESUME and INSTRUMENTED_RESUME are needed for the operation of
-         * instrumentation, so must never be hidden by an INSTRUMENTED_LINE.
-         */
-        if (prev_opcode != RESUME && prev_opcode != INSTRUMENTED_RESUME) {
-            goto done;
+    int line = 0;
+
+    if (line_delta == COMPUTED_LINE_LINENO_CHANGE) {
+        // We know the line number must have changed, don't need to calculate
+        // the line number for now because we might not need it.
+        line = -1;
+    } else {
+        line = compute_line(code, i, line_delta);
+        assert(line >= 0);
+        assert(prev != NULL);
+        int prev_index = (int)(prev - _PyCode_CODE(code));
+        int prev_line = _Py_Instrumentation_GetLine(code, prev_index);
+        if (prev_line == line) {
+            int prev_opcode = _PyCode_CODE(code)[prev_index].op.code;
+            /* RESUME and INSTRUMENTED_RESUME are needed for the operation of
+             * instrumentation, so must never be hidden by an INSTRUMENTED_LINE.
+             */
+            if (prev_opcode != RESUME && prev_opcode != INSTRUMENTED_RESUME) {
+                goto done;
+            }
         }
     }
 
@@ -1260,6 +1269,12 @@ _Py_call_instrumentation_line(PyThreadState *tstate, _PyInterpreterFrame* frame,
                 tstate->tracing++;
                 /* Call c_tracefunc directly, having set the line number. */
                 Py_INCREF(frame_obj);
+                if (line == -1 && line_delta > COMPUTED_LINE) {
+                    /* Only assign f_lineno if it's easy to calculate, otherwise
+                     * do lazy calculation by setting the f_lineno to 0.
+                     */
+                    line = compute_line(code, i, line_delta);
+                }
                 frame_obj->f_lineno = line;
                 int err = tstate->c_tracefunc(tstate->c_traceobj, frame_obj, PyTrace_LINE, Py_None);
                 frame_obj->f_lineno = 0;
@@ -1275,6 +1290,11 @@ _Py_call_instrumentation_line(PyThreadState *tstate, _PyInterpreterFrame* frame,
     }
     if (tools == 0) {
         goto done;
+    }
+
+    if (line == -1) {
+        /* Need to calculate the line number now for monitoring events */
+        line = compute_line(code, i, line_delta);
     }
     PyObject *line_obj = PyLong_FromLong(line);
     if (line_obj == NULL) {
@@ -1477,6 +1497,13 @@ initialize_lines(PyCodeObject *code)
                  */
                 if (line != current_line && line >= 0) {
                     line_data[i].original_opcode = opcode;
+                    if (line_data[i].line_delta == COMPUTED_LINE) {
+                        /* Label this line as a line with a line number change
+                         * which could help the monitoring callback to quickly
+                         * identify the line number change.
+                         */
+                        line_data[i].line_delta = COMPUTED_LINE_LINENO_CHANGE;
+                    }
                 }
                 else {
                     line_data[i].original_opcode = 0;
@@ -1529,6 +1556,11 @@ initialize_lines(PyCodeObject *code)
         assert(target >= 0);
         if (line_data[target].line_delta != NO_LINE) {
             line_data[target].original_opcode = _Py_GetBaseOpcode(code, target);
+            if (line_data[target].line_delta == COMPUTED_LINE_LINENO_CHANGE) {
+                // If the line is a jump target, we are not sure if the line
+                // number changes, so we set it to COMPUTED_LINE.
+                line_data[target].line_delta = COMPUTED_LINE;
+            }
         }
     }
     /* Scan exception table */

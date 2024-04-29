@@ -41,12 +41,20 @@ int
 PyFrame_GetLineNumber(PyFrameObject *f)
 {
     assert(f != NULL);
-    if (f->f_lineno != 0) {
+    if (f->f_lineno == -1) {
+        // We should calculate it once. If we can't get the line number,
+        // set f->f_lineno to 0.
+        f->f_lineno = PyUnstable_InterpreterFrame_GetLine(f->f_frame);
+        if (f->f_lineno < 0) {
+            f->f_lineno = 0;
+            return -1;
+        }
+    }
+
+    if (f->f_lineno > 0) {
         return f->f_lineno;
     }
-    else {
-        return PyUnstable_InterpreterFrame_GetLine(f->f_frame);
-    }
+    return PyUnstable_InterpreterFrame_GetLine(f->f_frame);
 }
 
 static PyObject *

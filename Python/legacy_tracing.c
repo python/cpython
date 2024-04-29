@@ -174,6 +174,7 @@ call_trace_func(_PyLegacyEventHandler *self, PyObject *arg)
 
     Py_INCREF(frame);
     int err = tstate->c_tracefunc(tstate->c_traceobj, frame, self->event, arg);
+    frame->f_lineno = 0;
     Py_DECREF(frame);
     if (err) {
         return NULL;

@@ -1,0 +1,1 @@
+Lazy load frame line number to improve performance of tracing
