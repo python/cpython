@@ -14,7 +14,7 @@ module instead.
 #endif
 
 #include "Python.h"
-#include "pycore_pyatomic_ft_wrappers.h"  // FT_ATOMIC_LOAD_INT32
+#include "pycore_pyatomic_ft_wrappers.h"  // FT_ATOMIC_LOAD_LONG
 
 #include <stddef.h>               // offsetof()
 #include <stdbool.h>
@@ -35,7 +35,7 @@ typedef struct {
     PyTypeObject *dialect_type;
     PyTypeObject *reader_type;
     PyTypeObject *writer_type;
-    int32_t field_limit;   /* max parsed field size */
+    long field_limit;   /* max parsed field size */
     PyObject *str_write;
 } _csvstate;
 
@@ -703,7 +703,7 @@ parse_grow_buff(ReaderObj *self)
 static int
 parse_add_char(ReaderObj *self, _csvstate *module_state, Py_UCS4 c)
 {
-    uint32_t field_limit = FT_ATOMIC_LOAD_INT32(module_state->field_limit);
+    long field_limit = FT_ATOMIC_LOAD_LONG(module_state->field_limit);
     if (self->field_len >= field_limit) {
         PyErr_Format(module_state->error_obj,
                      "field larger than field limit (%ld)",
