@@ -4258,6 +4258,29 @@ dummy_func(
         }
 
 
+        /* Special version of RESUME_CHECK that (when paired with _EVAL_BREAKER_EXIT)
+         * is safe for tier 2. Progress is guaranteed because _EVAL_BREAKER_EXIT calls
+         * _Py_HandlePending which clears the eval_breaker so that _TIER2_RESUME_CHECK
+         * will not exit if it is immediately executed again. */
+        tier2 op(_TIER2_RESUME_CHECK, (--)) {
+#if defined(__EMSCRIPTEN__)
+            EXIT_IF(_Py_emscripten_signal_clock == 0);
+            _Py_emscripten_signal_clock -= Py_EMSCRIPTEN_SIGNAL_HANDLING;
+#endif
+            uintptr_t eval_breaker = _Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker);
+            EXIT_IF(eval_breaker & _PY_EVAL_EVENTS_MASK);
+            assert(eval_breaker == FT_ATOMIC_LOAD_UINTPTR_ACQUIRE(_PyFrame_GetCode(frame)->_co_instrumentation_version));
+        }
+
+        tier2 op(_EVAL_BREAKER_EXIT, (--)) {
+            _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY();
+            QSBR_QUIESCENT_STATE(tstate);
+            if (_Py_HandlePending(tstate) != 0) {
+                GOTO_UNWIND();
+            }
+            EXIT_TO_TRACE();
+        }
+
 // END BYTECODES //
 
     }
