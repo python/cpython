@@ -417,7 +417,7 @@ binascii_a2b_base64_impl(PyObject *module, Py_buffer *data, int strict_mode)
             if (strict_mode && quad_pos == 0) {
                 state = get_binascii_state(module);
                 if (state) {
-                    PyErr_SetString(state->Error, "Incorrect padding");
+                    PyErr_SetString(state->Error, "Excess padding not allowed");
                 }
                 goto error_end;
             }
