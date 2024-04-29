@@ -10,6 +10,7 @@ import copy
 import threading
 import time
 import random
+import textwrap
 
 from test import support
 from test.support import script_helper, ALWAYS_EQ
@@ -1008,6 +1009,31 @@ class ReferencesTestCase(TestBase):
         ref1 = weakref.ref(x, lambda ref: support.gc_collect())
         del x
         support.gc_collect()
+
+    @support.cpython_only
+    def test_no_memory_when_clearing(self):
+        # gh-118331: Make sure we do not raise an exception from the destructor
+        # when clearing weakrefs if allocating the intermediate tuple fails.
+        code = textwrap.dedent("""
+        import _testcapi
+        import weakref
+
+        class TestObj:
+            pass
+
+        def callback(obj):
+            pass
+
+        obj = TestObj()
+        # The choice of 50 is arbitrary, but must be large enough to ensure
+        # the allocation won't be serviced by the free list.
+        wrs = [weakref.ref(obj, callback) for _ in range(50)]
+        _testcapi.set_nomemory(0)
+        del obj
+        """).strip()
+        res, _ = script_helper.run_python_until_end("-c", code)
+        stderr = res.err.decode("ascii", "backslashreplace")
+        self.assertNotRegex(stderr, "_Py_Dealloc: Deallocator of type 'TestObj'")
 
 
 class SubclassableWeakrefTestCase(TestBase):

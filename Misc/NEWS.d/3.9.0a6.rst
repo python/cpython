@@ -564,7 +564,7 @@ Implement traverse and clear slots in _abc._abc_data type.
 .. nonce: 3rO_q7
 .. section: Library
 
-Remove deprecated :meth:`symtable.SymbolTable.has_exec`.
+Remove deprecated :meth:`!symtable.SymbolTable.has_exec`.
 
 ..
 
@@ -1118,7 +1118,7 @@ into an exit code.
 .. nonce: _FOf7E
 .. section: C API
 
-Move the :c:type:`PyGC_Head` structure to the internal C API.
+Move the :c:type:`!PyGC_Head` structure to the internal C API.
 
 ..
 
@@ -1149,8 +1149,8 @@ the garbage collector respectively. Patch by Pablo Galindo.
 .. nonce: Seuh3D
 .. section: C API
 
-The :c:func:`PyObject_NEW` macro becomes an alias to the
-:c:func:`PyObject_New` macro, and the :c:func:`PyObject_NEW_VAR` macro
+The :c:func:`!PyObject_NEW` macro becomes an alias to the
+:c:func:`PyObject_New` macro, and the :c:func:`!PyObject_NEW_VAR` macro
 becomes an alias to the :c:func:`PyObject_NewVar` macro, to hide
 implementation details. They no longer access directly the
 :c:member:`PyTypeObject.tp_basicsize` member.
@@ -1174,7 +1174,7 @@ used.
 .. nonce: 6nFYbY
 .. section: C API
 
-Convert the :c:func:`PyObject_GET_WEAKREFS_LISTPTR` macro to a function to
+Convert the :c:func:`!PyObject_GET_WEAKREFS_LISTPTR` macro to a function to
 hide implementation details: the macro accessed directly to the
 :c:member:`PyTypeObject.tp_weaklistoffset` member.
 

@@ -53,7 +53,7 @@ typedef struct PyModuleDef_Base {
   /* A copy of the module's __dict__ after the first time it was loaded.
      This is only set/used for legacy modules that do not support
      multiple initializations.
-     It is set by _PyImport_FixupExtensionObject(). */
+     It is set by fix_up_extension() in import.c. */
   PyObject* m_copy;
 } PyModuleDef_Base;
 
