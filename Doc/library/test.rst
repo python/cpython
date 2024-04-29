@@ -169,7 +169,7 @@ test.regrtest` used in previous Python versions still works.  Running the
 script by itself automatically starts running all regression tests in the
 :mod:`test` package. It does this by finding all modules in the package whose
 name starts with ``test_``, importing them, and executing the function
-:func:`test_main` if present or loading the tests via
+``test_main`` if present or loading the tests via
 unittest.TestLoader.loadTestsFromModule if ``test_main`` does not exist.  The
 names of tests to execute may also be passed to the script. Specifying a single
 regression test (:program:`python -m test test_spam`) will minimize output and
@@ -324,9 +324,9 @@ The :mod:`test.support` module defines the following constants:
 
 .. data:: Py_DEBUG
 
-   True if Python was built with the :c:macro:`Py_DEBUG` macro
-   defined, that is, if
-   Python was :ref:`built in debug mode <debug-build>`.
+   True if Python was built with the :c:macro:`Py_DEBUG` macro defined;
+   that is, if Python was :ref:`built in debug mode <debug-build>`
+   (:option:`./configure --with-pydebug <--with-pydebug>`).
 
    .. versionadded:: 3.12
 
@@ -475,7 +475,7 @@ The :mod:`test.support` module defines the following functions:
 
 .. function:: with_pymalloc()
 
-   Return :const:`_testcapi.WITH_PYMALLOC`.
+   Return :const:`!_testcapi.WITH_PYMALLOC`.
 
 
 .. function:: requires(resource, msg=None)
@@ -975,7 +975,7 @@ The :mod:`test.support` module defines the following functions:
 
 .. function:: skip_if_broken_multiprocessing_synchronize()
 
-   Skip tests if the :mod:`multiprocessing.synchronize` module is missing, if
+   Skip tests if the :mod:`!multiprocessing.synchronize` module is missing, if
    there is no available semaphore implementation, or if creating a lock raises
    an :exc:`OSError`.
 
@@ -1093,12 +1093,12 @@ The :mod:`test.support.socket_helper` module provides support for socket tests.
    buildbot environment.  This method raises an exception if the
    ``sock.family`` is :const:`~socket.AF_INET` and ``sock.type`` is
    :const:`~socket.SOCK_STREAM`, and the socket has
-   :const:`~socket.SO_REUSEADDR` or :const:`~socket.SO_REUSEPORT` set on it.
+   :const:`!SO_REUSEADDR` or :const:`!SO_REUSEPORT` set on it.
    Tests should never set these socket options for TCP/IP sockets.
    The only case for setting these options is testing multicasting via
    multiple UDP sockets.
 
-   Additionally, if the :const:`~socket.SO_EXCLUSIVEADDRUSE` socket option is
+   Additionally, if the :const:`!~socket.SO_EXCLUSIVEADDRUSE` socket option is
    available (i.e. on Windows), it will be set on the socket.  This will
    prevent anyone else from binding to our host/port for the duration of the
    test.
@@ -1147,7 +1147,7 @@ script execution tests.
    doesn't have an obvious home with Python's current home finding logic.
 
    Setting :envvar:`PYTHONHOME` is one way to get most of the testsuite to run
-   in that situation.  :envvar:`PYTHONPATH` or :envvar:`PYTHONUSERSITE` are
+   in that situation.  :envvar:`PYTHONPATH` or :envvar:`PYTHONNOUSERSITE` are
    other common environment variables that might impact whether or not the
    interpreter can start.
 
@@ -1559,7 +1559,7 @@ The :mod:`test.support.import_helper` module provides support for import tests.
 
    This function imports and returns a fresh copy of the named Python module
    by removing the named module from ``sys.modules`` before doing the import.
-   Note that unlike :func:`reload`, the original module is not affected by
+   Note that unlike :func:`importlib.reload`, the original module is not affected by
    this operation.
 
    *fresh* is an iterable of additional module names that are also removed
@@ -1722,16 +1722,16 @@ The :mod:`test.support.warnings_helper` module provides support for warnings tes
 
    In this case all warnings are caught and no errors are raised.
 
-   On entry to the context manager, a :class:`WarningRecorder` instance is
+   On entry to the context manager, a :class:`WarningsRecorder` instance is
    returned. The underlying warnings list from
    :func:`~warnings.catch_warnings` is available via the recorder object's
-   :attr:`warnings` attribute.  As a convenience, the attributes of the object
+   :attr:`WarningsRecorder.warnings` attribute.  As a convenience, the attributes of the object
    representing the most recent warning can also be accessed directly through
    the recorder object (see example below).  If no warning has been raised,
    then any of the attributes that would otherwise be expected on an object
    representing a warning will return ``None``.
 
-   The recorder object also has a :meth:`reset` method, which clears the
+   The recorder object also has a :meth:`WarningsRecorder.reset` method, which clears the
    warnings list.
 
    The context manager is designed to be used like this::
