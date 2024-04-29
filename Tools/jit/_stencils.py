@@ -50,7 +50,7 @@ class HoleValue(enum.Enum):
 
 _PATCH_FUNCS = {
     # aarch64-apple-darwin:
-    "ARM64_RELOC_GOT_LOAD_PAGE21": "patch_aarch64_21rx",  # XXX
+    "ARM64_RELOC_GOT_LOAD_PAGE21": "patch_aarch64_21rx",
     "ARM64_RELOC_GOT_LOAD_PAGEOFF12": "patch_aarch64_12",
     "ARM64_RELOC_PAGE21": "patch_aarch64_21r",
     "ARM64_RELOC_PAGEOFF12": "patch_aarch64_12",
@@ -59,15 +59,15 @@ _PATCH_FUNCS = {
     "IMAGE_REL_AMD64_REL32": "patch_x86_64_32rx",
     # aarch64-pc-windows-msvc:
     "IMAGE_REL_ARM64_BRANCH26": "patch_aarch64_26r",
-    "IMAGE_REL_ARM64_PAGEBASE_REL21": "patch_aarch64_21rx",  # XXX
+    "IMAGE_REL_ARM64_PAGEBASE_REL21": "patch_aarch64_21rx",
     "IMAGE_REL_ARM64_PAGEOFFSET_12A": "patch_aarch64_12",
     "IMAGE_REL_ARM64_PAGEOFFSET_12L": "patch_aarch64_12",
     # i686-pc-windows-msvc:
     "IMAGE_REL_I386_DIR32": "patch_32",
-    "IMAGE_REL_I386_REL32": "patch_x86_64_32rx",  # XXX
+    "IMAGE_REL_I386_REL32": "patch_x86_64_32rx",
     # aarch64-unknown-linux-gnu:
     "R_AARCH64_ABS64": "patch_64",
-    "R_AARCH64_ADR_GOT_PAGE": "patch_aarch64_21rx",  # XXX
+    "R_AARCH64_ADR_GOT_PAGE": "patch_aarch64_21rx",
     "R_AARCH64_CALL26": "patch_aarch64_26r",
     "R_AARCH64_JUMP26": "patch_aarch64_26r",
     "R_AARCH64_LD64_GOT_LO12_NC": "patch_aarch64_12",
@@ -131,6 +131,7 @@ class Hole:
         self.func = _PATCH_FUNCS[self.kind]
 
     def fold(self, other: typing.Self) -> typing.Self | None:
+        """Combine two holes into a single hole, if possible."""
         if (
             self.offset + 4 == other.offset
             and self.value == other.value
@@ -142,6 +143,7 @@ class Hole:
             folded = self.replace()
             folded.func = "patch_aarch64_33rx"
             return folded
+        return None
 
     def as_c(self, where: str) -> str:
         """Dump this hole as a call to a patch_* function."""
