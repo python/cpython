@@ -42,7 +42,17 @@ def create_function():
     return f
 
 def create_bound_method():
-    return C().method
+    obj = C()
+    method = obj.method
+    try:
+        # Attempt to call the method through a bound method reference
+        result = method()
+        return result
+    except ReferenceError:
+        print("The object the method was bound to has been garbage collected.")
+    except Exception as e:
+        print(f"An error occurred: {e}")
+    return None
 
 
 class Object:
@@ -1037,6 +1047,35 @@ class ReferencesTestCase(TestBase):
         res, _ = script_helper.run_python_until_end("-c", code)
         stderr = res.err.decode("ascii", "backslashreplace")
         self.assertNotRegex(stderr, "_Py_Dealloc: Deallocator of type 'TestObj'")
+
+    @support.cpython_only
+    def test_no_memory_when_clearing(self):
+        # gh-118331: Make sure we do not raise an exception from the destructor
+        # when clearing weakrefs if allocating the intermediate tuple fails.
+        code = textwrap.dedent("""
+        import _testcapi
+        import weakref
+        
+        class TestObj:
+            pass
+            
+        def callback(obj):
+            pass
+            
+        obj = TestObj()
+        # The choice of 50 is arbitrary, but must be large enough to ensure
+        # the allocation won't be serviced by the free list.
+        try:
+            wrs = [weakref.ref(obj, callback) for _ in range(50)]
+            _testcapi.set_nomemory(0)  # Force memory allocation to fail
+        except MemoryError:
+            print('MemoryError handled properly')
+        del obj
+        """).strip()
+        res, _ = script_helper.run_python_until_end("-c", code)
+        stderr = res.err.decode("ascii", "backslashreplace")
+        self.assertNotRegex(stderr, "_Py_Dealloc: Deallocator of type 'TestObj'")
+        self.assertIn('MemoryError handled properly', stderr)
 
 
 class SubclassableWeakrefTestCase(TestBase):
