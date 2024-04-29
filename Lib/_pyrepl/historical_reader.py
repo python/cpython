@@ -258,7 +258,7 @@ class HistoricalReader(R):
         self.buffer = list(buf)
         self.historyi = i
         self.pos = len(self.buffer)
-        self.dirty = 1
+        self.dirty = True
 
     def get_item(self, i):
         if i != len(self.history):
@@ -338,19 +338,3 @@ class HistoricalReader(R):
 
 
 should_auto_add_history = True
-
-
-def test():
-    from .unix_console import UnixConsole
-
-    reader = HistoricalReader(UnixConsole())
-    reader.ps1 = "h**> "
-    reader.ps2 = "h/*> "
-    reader.ps3 = "h|*> "
-    reader.ps4 = r"h\*> "
-    while reader.readline():
-        pass
-
-
-if __name__ == "__main__":
-    test()

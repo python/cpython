@@ -36,7 +36,7 @@ def multiline_input(reader, namespace=None):
         reader.more_lines = partial(more_lines, namespace=namespace)
         reader.ps1 = reader.ps2 = ">>>"
         reader.ps3 = reader.ps4 = "..."
-        return reader.readline(returns_unicode=True)
+        return reader.readline()
     finally:
         reader.more_lines = saved
         reader.paste_mode = False

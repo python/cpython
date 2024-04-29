@@ -271,9 +271,9 @@ class _ReadlineWrapper:
         except _error:
             return _old_raw_input(prompt)
         reader.ps1 = prompt
-        return reader.readline(returns_unicode=True, startup_hook=self.startup_hook)
+        return reader.readline(startup_hook=self.startup_hook)
 
-    def multiline_input(self, more_lines, ps1, ps2, returns_unicode=False):
+    def multiline_input(self, more_lines, ps1, ps2):
         """Read an input on possibly multiple lines, asking for more
         lines as long as 'more_lines(unicodetext)' returns an object whose
         boolean value is true.
@@ -284,7 +284,7 @@ class _ReadlineWrapper:
             reader.more_lines = more_lines
             reader.ps1 = reader.ps2 = ps1
             reader.ps3 = reader.ps4 = ps2
-            return reader.readline(returns_unicode=returns_unicode)
+            return reader.readline()
         finally:
             reader.more_lines = saved
             reader.paste_mode = False
@@ -386,7 +386,8 @@ class _ReadlineWrapper:
         self.startup_hook = function
 
     def get_line_buffer(self):
-        return self.get_reader().get_buffer()
+        buf_str = self.get_reader().get_unicode()
+        return buf_str.encode()
 
     def _get_idxs(self):
         start = cursor = self.get_reader().pos

@@ -30,7 +30,8 @@ import code
 import traceback
 
 from .console import Event
-from .readline import _error, _get_reader, multiline_input
+from .readline import _get_reader, multiline_input
+from .unix_console import _error
 
 
 def check():  # returns False if there is a problem initializing the state
@@ -122,7 +123,7 @@ def run_multiline_interactive_console(mainmodule=None, future_flags=0):
             ps1 = getattr(sys, "ps1", ">>> ")
             ps2 = getattr(sys, "ps2", "... ")
             try:
-                statement = multiline_input(more_lines, ps1, ps2, returns_unicode=True)
+                statement = multiline_input(more_lines, ps1, ps2)
             except EOFError:
                 break
 

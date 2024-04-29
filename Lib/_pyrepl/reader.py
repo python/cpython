@@ -19,50 +19,26 @@
 # CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
 # CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
+from __future__ import annotations
+
 from contextlib import contextmanager
+from dataclasses import dataclass, field, fields
 import re
 import unicodedata
-import traceback
+from traceback import _can_colorize, _ANSIColors  # type: ignore[attr-defined]
 
-from . import commands, input
+from . import commands, console, input
 
 _r_csi_seq = re.compile(r"\033\[[ -@]*[A-~]")
 
 
-def _make_unctrl_map():
-    uc_map = {}
-    for i in range(256):
-        c = chr(i)
-        if unicodedata.category(c)[0] != "C":
-            uc_map[i] = c
-    for i in range(32):
-        uc_map[i] = "^" + chr(ord("A") + i - 1)
-    uc_map[ord(b"\t")] = "    "  # display TABs as 4 characters
-    uc_map[ord(b"\177")] = "^?"
-    for i in range(256):
-        if i not in uc_map:
-            uc_map[i] = "\\%03o" % i
-    return uc_map
+# types
+Command = commands.Command
+if False:
+    from .types import Callback, SimpleContextManager, KeySpec, CommandName
 
 
-def _my_unctrl(c, u=_make_unctrl_map()):
-    # takes an integer, returns a unicode
-    if c in u:
-        return u[c]
-    else:
-        if unicodedata.category(c).startswith("C"):
-            return r"\u%04x" % ord(c)
-        else:
-            return c
-
-
-if "a"[0] == b"a":
-    # When running tests with python2, bytes characters are bytes.
-    def _my_unctrl(c, uc=_my_unctrl):
-        return uc(ord(c))
-
-
-def disp_str(buffer, join="".join, uc=_my_unctrl):
+def disp_str(buffer: str) -> tuple[str, list[int]]:
     """disp_str(buffer:string) -> (string, [int])
 
     Return the string that should be the printed represenation of
@@ -74,28 +50,25 @@ def disp_str(buffer, join="".join, uc=_my_unctrl):
 
     the list always contains 0s or 1s at present; it could conceivably
     go higher as and when unicode support happens."""
-    # disp_str proved to be a bottleneck for large inputs,
-    # so it needs to be rewritten in C; it's not required though.
-    s = [uc(x) for x in buffer]
-    b = []  # XXX: bytearray
-    for x in s:
+    b: list[int] = []
+    s: list[str] = []
+    for c in buffer:
+        if unicodedata.category(c).startswith("C"):
+            c = r"\u%04x" % ord(c)
+        s.append(c)
         b.append(1)
-        b.extend([0] * (len(x) - 1))
-    return join(s), b
+        b.extend([0] * (len(c) - 1))
+    return "".join(s), b
 
-
-del _my_unctrl
-
-del _make_unctrl_map
 
 # syntax classes:
 
-[SYNTAX_WHITESPACE, SYNTAX_WORD, SYNTAX_SYMBOL] = range(3)
+SYNTAX_WHITESPACE, SYNTAX_WORD, SYNTAX_SYMBOL = range(3)
 
 
-def make_default_syntax_table():
+def make_default_syntax_table() -> dict[str, int]:
     # XXX perhaps should use some unicodedata here?
-    st = {}
+    st: dict[str, int] = {}
     for c in map(chr, range(256)):
         st[c] = SYNTAX_SYMBOL
     for c in [a for a in map(chr, range(256)) if a.isalnum()]:
@@ -104,7 +77,20 @@ def make_default_syntax_table():
     return st
 
 
-default_keymap = tuple(
+def make_default_commands() -> dict[CommandName, type[Command]]:
+    result: dict[CommandName, type[Command]] = {}
+    for v in vars(commands).values():
+        if (
+            isinstance(v, type)
+            and issubclass(v, Command)
+            and v.__name__[0].islower()
+        ):
+            result[v.__name__] = v
+            result[v.__name__.replace("_", "-")] = v
+    return result
+
+
+default_keymap: tuple[tuple[KeySpec, CommandName], ...] = tuple(
     [
         (r"\C-a", "beginning-of-line"),
         (r"\C-b", "left"),
@@ -171,6 +157,7 @@ default_keymap = tuple(
     ]
 )
 
+@dataclass(slots=True)
 class Reader:
     """The Reader class implements the bare bones of a command reader,
     handling such details as editing and cursor motion.  What it does
@@ -189,11 +176,9 @@ class Reader:
         is.
       * screeninfo:
         Ahem.  This list contains some info needed to move the
-        insertion point around reasonably efficiently.  I'd like to
-        get rid of it, because its contents are obtuse (to put it
-        mildly) but I haven't worked out if that is possible yet.
+        insertion point around reasonably efficiently.
       * cxy, lxy:
-        the position of the insertion point in screen ... XXX
+        the position of the insertion point in screen ...
       * syntax_table:
         Dictionary mapping characters to `syntax class'; read the
         emacs docs to see what this means :-)
@@ -226,53 +211,56 @@ class Reader:
         that we're done.
     """
 
-    msg_at_bottom = True
+    console: console.Console
 
-    def __init__(self, console):
-        self.buffer = []
+    ## state
+    buffer: list[str] = field(default_factory=list)
+    pos: int = 0
+    ps1: str = "->> "
+    ps2: str = "/>> "
+    ps3: str = "|.. "
+    ps4: str = R"\__ "
+    kill_ring: list = field(default_factory=list)
+    msg: str = ""
+    arg: int | None = None
+    dirty: bool = False
+    finished: bool = False
+    paste_mode: bool = False
+    commands: dict[str, type[Command]] = field(default_factory=make_default_commands)
+    last_command: type[Command] | None = None
+    syntax_table: dict[str, int] = field(default_factory=make_default_syntax_table)
+    msg_at_bottom: bool = True
+    keymap: tuple[tuple[str, str], ...] = ()
+    input_trans: input.KeymapTranslator = field(init=False)
+    input_trans_stack: list[input.KeymapTranslator] = field(default_factory=list)
+    screeninfo: list[tuple[int, list[int]]] = field(init=False)
+    cxy: tuple[int, int] = field(init=False)
+    lxy: tuple[int, int] = field(init=False)
+
+    def __post_init__(self) -> None:
         # Enable the use of `insert` without a `prepare` call - necessary to
         # facilitate the tab completion hack implemented for
         # <https://bugs.python.org/issue25660>.
-        self.pos = 0
-        self.ps1 = "->> "
-        self.ps2 = "/>> "
-        self.ps3 = "|.. "
-        self.ps4 = r"\__ "
-        self.kill_ring = []
-        self.arg = None
-        self.finished = 0
-        self.console = console
-        self.commands = {}
-        self.msg = ""
-        for v in vars(commands).values():
-            if (
-                isinstance(v, type)
-                and issubclass(v, commands.Command)
-                and v.__name__[0].islower()
-            ):
-                self.commands[v.__name__] = v
-                self.commands[v.__name__.replace("_", "-")] = v
-        self.syntax_table = make_default_syntax_table()
-        self.input_trans_stack = []
         self.keymap = self.collect_keymap()
         self.input_trans = input.KeymapTranslator(
             self.keymap, invalid_cls="invalid-key", character_cls="self-insert"
         )
-
-        self.paste_mode = False
+        self.screeninfo = [(0, [0])]
+        self.cxy = self.pos2xy(self.pos)
+        self.lxy = (self.pos, 0)
 
     def collect_keymap(self):
         return default_keymap
 
-    def calc_screen(self):
+    def calc_screen(self) -> list[str]:
         """The purpose of this method is to translate changes in
         self.buffer into changes in self.screen.  Currently it rips
         everything down and starts from scratch, which whilst not
         especially efficient is certainly simple(r).
         """
         lines = self.get_unicode().split("\n")
-        screen = []
-        screeninfo = []
+        screen: list[str] = []
+        screeninfo: list[tuple[int, list[int]]] = []
         w = self.console.width - 1
         p = self.pos
         for ln, line in zip(range(len(lines)), lines):
@@ -290,8 +278,8 @@ class Reader:
                 screeninfo.append((0, []))
             p -= ll + 1
             prompt, lp = self.process_prompt(prompt)
-            if traceback._can_colorize():
-                prompt = traceback._ANSIColors.BOLD_MAGENTA + prompt + traceback._ANSIColors.RESET
+            if _can_colorize():
+                prompt = _ANSIColors.BOLD_MAGENTA + prompt + _ANSIColors.RESET
             l, l2 = disp_str(line)
             wrapcount = (len(l) + lp) // w
             if wrapcount == 0:
@@ -313,7 +301,7 @@ class Reader:
                 screeninfo.append((0, []))
         return screen
 
-    def process_prompt(self, prompt):
+    def process_prompt(self, prompt: str) -> tuple[str, int]:
         """Process the prompt.
 
         This means calculate the length of the prompt. The character \x01
@@ -346,7 +334,7 @@ class Reader:
         out_prompt += keep
         return out_prompt, l
 
-    def bow(self, p=None):
+    def bow(self, p: int | None = None) -> int:
         """Return the 0-based index of the word break preceding p most
         immediately.
 
@@ -363,7 +351,7 @@ class Reader:
             p -= 1
         return p + 1
 
-    def eow(self, p=None):
+    def eow(self, p: int | None = None) -> int:
         """Return the 0-based index of the word break following p most
         immediately.
 
@@ -379,12 +367,11 @@ class Reader:
             p += 1
         return p
 
-    def bol(self, p=None):
+    def bol(self, p: int | None = None) -> int:
         """Return the 0-based index of the line break preceding p most
         immediately.
 
         p defaults to self.pos."""
-        # XXX there are problems here.
         if p is None:
             p = self.pos
         b = self.buffer
@@ -393,7 +380,7 @@ class Reader:
             p -= 1
         return p + 1
 
-    def eol(self, p=None):
+    def eol(self, p: int | None = None) -> int:
         """Return the 0-based index of the line break following p most
         immediately.
 
@@ -405,48 +392,42 @@ class Reader:
             p += 1
         return p
 
-    def get_arg(self, default=1):
+    def get_arg(self, default: int = 1) -> int:
         """Return any prefix argument that the user has supplied,
-        returning `default' if there is None.  `default' defaults
-        (groan) to 1."""
+        returning `default' if there is None.  Defaults to 1.
+        """
         if self.arg is None:
             return default
         else:
             return self.arg
 
-    def get_prompt(self, lineno, cursor_on_line):
+    def get_prompt(self, lineno, cursor_on_line) -> str:
         """Return what should be in the left-hand margin for line
         `lineno'."""
         if self.arg is not None and cursor_on_line:
             return "(arg: %s) " % self.arg
-        if "\n" in self.buffer:
-            if lineno == 0:
-                res = self.ps2
-            elif lineno == self.buffer.count("\n"):
-                res = self.ps4
-            else:
-                res = self.ps3
-        else:
-            res = self.ps1
 
         if self.paste_mode:
-            res= '(paste) '
+            return '(paste) '
 
-        # Lazily call str() on self.psN, and cache the results using as key
-        # the object on which str() was called.  This ensures that even if the
-        # same object is used e.g. for ps1 and ps2, str() is called only once.
-        if res not in self._pscache:
-            self._pscache[res] = str(res)
-        return self._pscache[res]
+        if "\n" in self.buffer:
+            if lineno == 0:
+                return self.ps2
+            elif lineno == self.buffer.count("\n"):
+                return self.ps4
+            else:
+                return self.ps3
 
-    def push_input_trans(self, itrans):
+        return self.ps1
+
+    def push_input_trans(self, itrans) -> None:
         self.input_trans_stack.append(self.input_trans)
         self.input_trans = itrans
 
-    def pop_input_trans(self):
+    def pop_input_trans(self) -> None:
         self.input_trans = self.input_trans_stack.pop()
 
-    def pos2xy(self, pos):
+    def pos2xy(self, pos: int) -> tuple[int, int]:
         """Return the x, y coordinates of position 'pos'."""
         # this *is* incomprehensible, yes.
         y = 0
@@ -472,56 +453,58 @@ class Reader:
                 i += 1
             return p + i, y
 
-    def insert(self, text):
+    def insert(self, text) -> None:
         """Insert 'text' at the insertion point."""
         self.buffer[self.pos : self.pos] = list(text)
         self.pos += len(text)
-        self.dirty = 1
+        self.dirty = True
 
-    def update_cursor(self):
+    def update_cursor(self) -> None:
         """Move the cursor to reflect changes in self.pos"""
         self.cxy = self.pos2xy(self.pos)
         self.console.move_cursor(*self.cxy)
 
-    def after_command(self, cmd):
+    def after_command(self, cmd) -> None:
         """This function is called to allow post command cleanup."""
         if getattr(cmd, "kills_digit_arg", 1):
             if self.arg is not None:
-                self.dirty = 1
+                self.dirty = True
             self.arg = None
 
-    def prepare(self):
+    def prepare(self) -> None:
         """Get ready to run.  Call restore when finished.  You must not
         write to the console in between the calls to prepare and
         restore."""
         try:
             self.console.prepare()
             self.arg = None
-            self.screeninfo = []
-            self.finished = 0
+            self.finished = False
             del self.buffer[:]
             self.pos = 0
-            self.dirty = 1
+            self.dirty = True
             self.last_command = None
+            self.calc_screen()
+            # self.screeninfo = [(0, [0])]
+            # self.cxy = self.pos2xy(self.pos)
+            # self.lxy = (self.pos, 0)
             # XXX should kill ring be here?
-            self._pscache = {}
         except BaseException:
             self.restore()
             raise
 
-    def last_command_is(self, klass):
+    def last_command_is(self, cls: type) -> bool:
         if not self.last_command:
-            return 0
-        return issubclass(klass, self.last_command)
+            return False
+        return issubclass(cls, self.last_command)
 
-    def restore(self):
+    def restore(self) -> None:
         """Clean up after a run."""
         self.console.restore()
 
     @contextmanager
-    def suspend(self):
+    def suspend(self) -> SimpleContextManager:
         """A context manager to delegate to another reader."""
-        prev_state = dict(self.__dict__)
+        prev_state = {f.name: getattr(self, f.name) for f in fields(self)}
         try:
             self.restore()
             yield
@@ -531,27 +514,27 @@ class Reader:
             self.prepare()
             pass
 
-    def finish(self):
+    def finish(self) -> None:
         """Called when a command signals that we're finished."""
         pass
 
-    def error(self, msg="none"):
+    def error(self, msg: str = "none") -> None:
         self.msg = "! " + msg + " "
-        self.dirty = 1
+        self.dirty = True
         self.console.beep()
 
-    def update_screen(self):
+    def update_screen(self) -> None:
         if self.dirty:
             self.refresh()
 
-    def refresh(self):
+    def refresh(self) -> None:
         """Recalculate and refresh the screen."""
         # this call sets up self.cxy, so call it first.
         screen = self.calc_screen()
         self.console.refresh(screen, self.cxy)
-        self.dirty = 0  # forgot this for a while (blush)
+        self.dirty = False
 
-    def do_cmd(self, cmd):
+    def do_cmd(self, cmd) -> None:
         if isinstance(cmd[0], str):
             cmd = self.commands.get(cmd[0], commands.invalid_command)(self, *cmd)
         elif isinstance(cmd[0], type):
@@ -571,24 +554,24 @@ class Reader:
         if not isinstance(cmd, commands.digit_arg):
             self.last_command = cmd.__class__
 
-        self.finished = cmd.finish
+        self.finished = bool(cmd.finish)
         if self.finished:
             self.console.finish()
             self.finish()
 
-    def handle1(self, block=1):
+    def handle1(self, block: bool = True) -> bool:
         """Handle a single event.  Wait as long as it takes if block
-        is true (the default), otherwise return None if no event is
+        is true (the default), otherwise return False if no event is
         pending."""
 
         if self.msg:
             self.msg = ""
-            self.dirty = 1
+            self.dirty = True
 
-        while 1:
+        while True:
             event = self.console.get_event(block)
             if not event:  # can only happen if we're not blocking
-                return None
+                return False
 
             translate = True
 
@@ -610,16 +593,16 @@ class Reader:
                 if block:
                     continue
                 else:
-                    return None
+                    return False
 
             self.do_cmd(cmd)
-            return 1
+            return True
 
-    def push_char(self, char):
+    def push_char(self, char) -> None:
         self.console.push_char(char)
-        self.handle1(0)
+        self.handle1(block=False)
 
-    def readline(self, returns_unicode=False, startup_hook=None):
+    def readline(self, startup_hook: Callback | None = None) -> str:
         """Read a line.  The implementation of this method also shows
         how to drive Reader if you want more control over the event
         loop."""
@@ -630,39 +613,17 @@ class Reader:
             self.refresh()
             while not self.finished:
                 self.handle1()
-            if returns_unicode:
-                return self.get_unicode()
-            return self.get_buffer()
+            return self.get_unicode()
+
         finally:
             self.restore()
 
-    def bind(self, spec, command):
+    def bind(self, spec: KeySpec, command: CommandName) -> None:
         self.keymap = self.keymap + ((spec, command),)
         self.input_trans = input.KeymapTranslator(
             self.keymap, invalid_cls="invalid-key", character_cls="self-insert"
         )
 
-    def get_buffer(self, encoding=None):
-        if encoding is None:
-            encoding = self.console.encoding
-        return self.get_unicode().encode(encoding)
-
-    def get_unicode(self):
+    def get_unicode(self) -> str:
         """Return the current buffer as a unicode string."""
         return "".join(self.buffer)
-
-
-def test():
-    from .unix_console import UnixConsole
-
-    reader = Reader(UnixConsole())
-    reader.ps1 = "**> "
-    reader.ps2 = "/*> "
-    reader.ps3 = "|*> "
-    reader.ps4 = r"\*> "
-    while reader.readline():
-        pass
-
-
-if __name__ == "__main__":
-    test()
