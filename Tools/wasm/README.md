@@ -275,7 +275,7 @@ Node builds use ``NODERAWFS``.
 ### Hosting Python WASM builds
 
 The simple REPL terminal uses SharedArrayBuffer. For security reasons
-browsers only provide the feature in secure environents with cross-origin
+browsers only provide the feature in secure environments with cross-origin
 isolation. The webserver must send cross-origin headers and correct MIME types
 for the JavaScript and WASM files. Otherwise the terminal will fail to load
 with an error message like ``Browsers disable shared array buffer``.

@@ -632,44 +632,45 @@ _PyImport_ClearModulesByIndex(PyInterpreterState *interp)
 
     (6). first time  (not found in _PyRuntime.imports.extensions):
        A. _imp_create_dynamic_impl() -> import_find_extension()
-       B. _imp_create_dynamic_impl() -> _PyImport_LoadDynamicModuleWithSpec()
-       C.   _PyImport_LoadDynamicModuleWithSpec():  load <module init func>
-       D.   _PyImport_LoadDynamicModuleWithSpec():  call <module init func>
-       E.     <module init func> -> PyModule_Create() -> PyModule_Create2()
+       B. _imp_create_dynamic_impl() -> _PyImport_GetModInitFunc()
+       C.   _PyImport_GetModInitFunc():  load <module init func>
+       D. _imp_create_dynamic_impl() -> _PyImport_RunModInitFunc()
+       E.   _PyImport_RunModInitFunc():  call <module init func>
+       F.     <module init func> -> PyModule_Create() -> PyModule_Create2()
                                         -> PyModule_CreateInitialized()
-       F.       PyModule_CreateInitialized() -> PyModule_New()
-       G.       PyModule_CreateInitialized():  allocate mod->md_state
-       H.       PyModule_CreateInitialized() -> PyModule_AddFunctions()
-       I.       PyModule_CreateInitialized() -> PyModule_SetDocString()
-       J.     PyModule_CreateInitialized():  set mod->md_def
-       K.     <module init func>:  initialize the module, etc.
-       L.   _PyImport_LoadDynamicModuleWithSpec()
-                -> _PyImport_CheckSubinterpIncompatibleExtensionAllowed()
-       M.   _PyImport_LoadDynamicModuleWithSpec():  set def->m_base.m_init
-       N.   _PyImport_LoadDynamicModuleWithSpec() -> _PyImport_FixupExtensionObject()
-       O.     _PyImport_FixupExtensionObject() -> update_global_state_for_extension()
-       P.       update_global_state_for_extension():
-                        copy __dict__ into def->m_base.m_copy
-       Q.       update_global_state_for_extension():
-                        add it to _PyRuntime.imports.extensions
-       R.       _PyImport_FixupExtensionObject() -> finish_singlephase_extension()
-       S.         finish_singlephase_extension():
-                          add it to interp->imports.modules_by_index
-       T.         finish_singlephase_extension():  add it to sys.modules
-       U. _imp_create_dynamic_impl():  set __file__
+       G.       PyModule_CreateInitialized() -> PyModule_New()
+       H.       PyModule_CreateInitialized():  allocate mod->md_state
+       I.       PyModule_CreateInitialized() -> PyModule_AddFunctions()
+       J.       PyModule_CreateInitialized() -> PyModule_SetDocString()
+       K.     PyModule_CreateInitialized():  set mod->md_def
+       L.     <module init func>:  initialize the module, etc.
+       M.   _PyImport_RunModInitFunc():  set def->m_base.m_init
+       N. _imp_create_dynamic_impl()
+              -> _PyImport_CheckSubinterpIncompatibleExtensionAllowed()
+       O. _imp_create_dynamic_impl():  set __file__
+       P. _imp_create_dynamic_impl() -> update_global_state_for_extension()
+       Q.   update_global_state_for_extension():
+                    copy __dict__ into def->m_base.m_copy
+       R.   update_global_state_for_extension():
+                    add it to _PyRuntime.imports.extensions
+       S. _imp_create_dynamic_impl() -> finish_singlephase_extension()
+       T.   finish_singlephase_extension():
+                    add it to interp->imports.modules_by_index
+       U.   finish_singlephase_extension():  add it to sys.modules
 
-       Step (P) is skipped for core modules (sys/builtins).
+       Step (Q) is skipped for core modules (sys/builtins).
 
     (6). subsequent times  (found in _PyRuntime.imports.extensions):
        A. _imp_create_dynamic_impl() -> import_find_extension()
-       B.   import_find_extension() -> import_add_module()
-       C.     if name in sys.modules:  use that module
-       D.     else:
+       B.   import_find_extension()
+                -> _PyImport_CheckSubinterpIncompatibleExtensionAllowed()
+       C.   import_find_extension() -> import_add_module()
+       D.     if name in sys.modules:  use that module
+       E.     else:
                 1. import_add_module() -> PyModule_NewObject()
                 2. import_add_module():  set it on sys.modules
-       E.   import_find_extension():  copy the "m_copy" dict into __dict__
-       F. _imp_create_dynamic_impl()
-                -> _PyImport_CheckSubinterpIncompatibleExtensionAllowed()
+       F.   import_find_extension():  copy the "m_copy" dict into __dict__
+       G.   import_find_extension():  add to modules_by_index
 
     (10). (every time):
        A. noop
@@ -678,19 +679,22 @@ _PyImport_ClearModulesByIndex(PyInterpreterState *interp)
     ...for single-phase init modules, where m_size >= 0:
 
     (6). not main interpreter and never loaded there - every time  (not found in _PyRuntime.imports.extensions):
-       A-N. (same as for m_size == -1)
-       O-Q. (skipped)
-       R-U. (same as for m_size == -1)
+       A-O. (same as for m_size == -1)
+       P-R. (skipped)
+       S-U. (same as for m_size == -1)
 
     (6). main interpreter - first time  (not found in _PyRuntime.imports.extensions):
-       A-O. (same as for m_size == -1)
-       P. (skipped)
-       Q-U. (same as for m_size == -1)
+       A-Q. (same as for m_size == -1)
+       R. (skipped)
+       S-U. (same as for m_size == -1)
 
-    (6). previously loaded in main interpreter  (found in _PyRuntime.imports.extensions):
+    (6). subsequent times  (found in _PyRuntime.imports.extensions):
        A. _imp_create_dynamic_impl() -> import_find_extension()
-       B.   import_find_extension():  call def->m_base.m_init
-       C.   import_find_extension():  add the module to sys.modules
+       B.   import_find_extension()
+                -> _PyImport_CheckSubinterpIncompatibleExtensionAllowed()
+       C.   import_find_extension():  call def->m_base.m_init  (see above)
+       D.   import_find_extension():  add the module to sys.modules
+       E.   import_find_extension():  add to modules_by_index
 
     (10). every time:
        A. noop
@@ -1270,7 +1274,7 @@ finish_singlephase_extension(PyThreadState *tstate,
                              PyObject *name, PyObject *modules)
 {
     assert(mod != NULL && PyModule_Check(mod));
-    assert(def == PyModule_GetDef(mod));
+    assert(def == _PyModule_GetDef(mod));
 
     if (_modules_by_index_set(tstate->interp, def, mod) < 0) {
         return -1;
@@ -1280,47 +1284,6 @@ finish_singlephase_extension(PyThreadState *tstate,
         if (PyObject_SetItem(modules, name, mod) < 0) {
             return -1;
         }
-    }
-
-    return 0;
-}
-
-int
-_PyImport_FixupExtensionObject(PyObject *mod, PyObject *name,
-                               PyObject *filename, PyObject *modules)
-{
-    PyThreadState *tstate = _PyThreadState_GET();
-
-    if (mod == NULL || !PyModule_Check(mod)) {
-        PyErr_BadInternalCall();
-        return -1;
-    }
-    PyModuleDef *def = PyModule_GetDef(mod);
-    if (def == NULL) {
-        PyErr_BadInternalCall();
-        return -1;
-    }
-
-    /* Only single-phase init extension modules can reach here. */
-    assert(is_singlephase(def));
-    assert(!is_core_module(tstate->interp, name, filename));
-    assert(!is_core_module(tstate->interp, name, name));
-
-    struct singlephase_global_update singlephase = {0};
-    // gh-88216: Extensions and def->m_base.m_copy can be updated
-    // when the extension module doesn't support sub-interpreters.
-    if (def->m_size == -1) {
-        singlephase.m_dict = PyModule_GetDict(mod);
-        assert(singlephase.m_dict != NULL);
-    }
-    if (update_global_state_for_extension(
-            tstate, filename, name, def, &singlephase) < 0)
-    {
-        return -1;
-    }
-
-    if (finish_singlephase_extension(tstate, mod, def, name, modules) < 0) {
-        return -1;
     }
 
     return 0;
@@ -1514,7 +1477,12 @@ create_builtin(PyThreadState *tstate, PyObject *name, PyObject *spec)
     }
 
     PyObject *mod = import_find_extension(tstate, &info);
-    if (mod || _PyErr_Occurred(tstate)) {
+    if (mod != NULL) {
+        assert(!_PyErr_Occurred(tstate));
+        assert(is_singlephase(_PyModule_GetDef(mod)));
+        goto finally;
+    }
+    else if (_PyErr_Occurred(tstate)) {
         goto finally;
     }
 
@@ -3900,19 +3868,24 @@ _imp_create_dynamic_impl(PyObject *module, PyObject *spec, PyObject *file)
 /*[clinic end generated code: output=83249b827a4fde77 input=c31b954f4cf4e09d]*/
 {
     PyObject *mod = NULL;
-    FILE *fp;
+    PyModuleDef *def = NULL;
+    PyThreadState *tstate = _PyThreadState_GET();
 
     struct _Py_ext_module_loader_info info;
     if (_Py_ext_module_loader_info_init_from_spec(&info, spec) < 0) {
         return NULL;
     }
 
-    PyThreadState *tstate = _PyThreadState_GET();
     mod = import_find_extension(tstate, &info);
-    if (mod != NULL || _PyErr_Occurred(tstate)) {
-        assert(mod == NULL || !_PyErr_Occurred(tstate));
+    if (mod != NULL) {
+        assert(!_PyErr_Occurred(tstate));
+        assert(is_singlephase(_PyModule_GetDef(mod)));
         goto finally;
     }
+    else if (_PyErr_Occurred(tstate)) {
+        goto finally;
+    }
+    /* Otherwise it must be multi-phase init or the first time it's loaded. */
 
     if (PySys_Audit("import", "OOOOO", info.name, info.filename,
                     Py_None, Py_None, Py_None) < 0)
@@ -3920,11 +3893,10 @@ _imp_create_dynamic_impl(PyObject *module, PyObject *spec, PyObject *file)
         goto finally;
     }
 
-    /* Is multi-phase init or this is the first time being loaded. */
-
     /* We would move this (and the fclose() below) into
      * _PyImport_GetModInitFunc(), but it isn't clear if the intervening
      * code relies on fp still being open. */
+    FILE *fp;
     if (file != NULL) {
         fp = _Py_fopen_obj(info.filename, "r");
         if (fp == NULL) {
@@ -3935,7 +3907,70 @@ _imp_create_dynamic_impl(PyObject *module, PyObject *spec, PyObject *file)
         fp = NULL;
     }
 
-    mod = _PyImport_LoadDynamicModuleWithSpec(&info, spec, fp);
+    PyModInitFunction p0 = _PyImport_GetModInitFunc(&info, fp);
+    if (p0 == NULL) {
+        goto finally;
+    }
+
+    struct _Py_ext_module_loader_result res;
+    if (_PyImport_RunModInitFunc(p0, &info, &res) < 0) {
+        assert(PyErr_Occurred());
+        goto finally;
+    }
+
+    mod = res.module;
+    res.module = NULL;
+    def = res.def;
+    assert(def != NULL);
+
+    if (mod == NULL) {
+        //assert(!is_singlephase(def));
+        mod = PyModule_FromDefAndSpec(def, spec);
+        if (mod == NULL) {
+            goto finally;
+        }
+    }
+    else {
+        assert(is_singlephase(def));
+        assert(!is_core_module(tstate->interp, info.name, info.filename));
+        assert(!is_core_module(tstate->interp, info.name, info.name));
+
+        const char *name_buf = PyBytes_AS_STRING(info.name_encoded);
+        if (_PyImport_CheckSubinterpIncompatibleExtensionAllowed(name_buf) < 0) {
+            Py_CLEAR(mod);
+            goto finally;
+        }
+
+        /* Remember pointer to module init function. */
+        res.def->m_base.m_init = p0;
+
+        /* Remember the filename as the __file__ attribute */
+        if (PyModule_AddObjectRef(mod, "__file__", info.filename) < 0) {
+            PyErr_Clear(); /* Not important enough to report */
+        }
+
+        struct singlephase_global_update singlephase = {0};
+        // gh-88216: Extensions and def->m_base.m_copy can be updated
+        // when the extension module doesn't support sub-interpreters.
+        if (def->m_size == -1) {
+            singlephase.m_dict = PyModule_GetDict(mod);
+            assert(singlephase.m_dict != NULL);
+        }
+        if (update_global_state_for_extension(
+                tstate, info.filename, info.name, def, &singlephase) < 0)
+        {
+            Py_CLEAR(mod);
+            goto finally;
+        }
+
+        PyObject *modules = get_modules_dict(tstate, true);
+        if (finish_singlephase_extension(
+                tstate, mod, def, info.name, modules) < 0)
+        {
+            Py_CLEAR(mod);
+            goto finally;
+        }
+    }
 
     // XXX Shouldn't this happen in the error cases too.
     if (fp) {
