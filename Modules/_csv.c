@@ -1573,7 +1573,6 @@ csv_register_dialect(PyObject *module, PyObject *args, PyObject *kwargs)
     PyObject *name_obj, *dialect_obj = NULL;
     _csvstate *module_state = get_csv_state(module);
     PyObject *dialect;
-    int res;
 
     if (!PyArg_UnpackTuple(args, "", 1, 2, &name_obj, &dialect_obj))
         return NULL;
@@ -1585,8 +1584,7 @@ csv_register_dialect(PyObject *module, PyObject *args, PyObject *kwargs)
     dialect = _call_dialect(module_state, dialect_obj, kwargs);
     if (dialect == NULL)
         return NULL;
-    res = PyDict_SetItem(module_state->dialects, name_obj, dialect);
-    if (res < 0) {
+    if (PyDict_SetItem(module_state->dialects, name_obj, dialect) < 0) {
         Py_DECREF(dialect);
         return NULL;
     }
