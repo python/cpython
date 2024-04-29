@@ -78,6 +78,9 @@ _PyPegen_parse(Parser *p)
 #   Fail if e can be parsed, without consuming any input.
 # ~
 #   Commit to the current alternative, even if it fails to parse.
+# &&e
+#   Eager parse e. The parser will not backtrack and will immediately 
+#   fail with SyntaxError if e cannot be parsed.
 #
 
 # STARTING RULES
