@@ -20,13 +20,7 @@ _random_Random_random_impl(RandomObject *self);
 static PyObject *
 _random_Random_random(RandomObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *return_value = NULL;
-
-    Py_BEGIN_CRITICAL_SECTION(self);
-    return_value = _random_Random_random_impl(self);
-    Py_END_CRITICAL_SECTION();
-
-    return return_value;
+    return _random_Random_random_impl(self);
 }
 
 PyDoc_STRVAR(_random_Random_seed__doc__,
@@ -136,11 +130,9 @@ _random_Random_getrandbits(RandomObject *self, PyObject *arg)
     if (k == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = _random_Random_getrandbits_impl(self, k);
-    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=bf49ece1d341b1b6 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=2ae7839e9d1ba07c input=a9049054013a1b77]*/

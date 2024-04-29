@@ -75,6 +75,7 @@
 #include "pycore_modsupport.h"    // _PyArg_NoKeywords()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_pylifecycle.h"   // _PyOS_URandomNonblock()
+#include "pycore_pyatomic_ft_wrappers.h"  // FT_LOAD_INT()
 
 #ifdef HAVE_UNISTD_H
 #  include <unistd.h>             // getpid()
@@ -139,7 +140,8 @@ genrand_uint32(RandomObject *self)
     uint32_t *mt;
 
     mt = self->state;
-    if (self->index >= N) { /* generate N words at one time */
+    int index = FT_ATOMIC_LOAD_INT(self->index);
+    if (index >= N) { /* generate N words at one time */
         int kk;
 
         for (kk=0;kk<N-M;kk++) {
@@ -153,10 +155,10 @@ genrand_uint32(RandomObject *self)
         y = (mt[N-1]&UPPER_MASK)|(mt[0]&LOWER_MASK);
         mt[N-1] = mt[M-1] ^ (y >> 1) ^ mag01[y & 0x1U];
 
-        self->index = 0;
+        FT_ATOMIC_STORE_INT(self->index, 0);
     }
 
-    y = mt[self->index++];
+    y = mt[FT_ATMOIC_INT_INCREMENT(self->index)];
     y ^= (y >> 11);
     y ^= (y << 7) & 0x9d2c5680U;
     y ^= (y << 15) & 0xefc60000U;
@@ -175,7 +177,6 @@ genrand_uint32(RandomObject *self)
  */
 
 /*[clinic input]
-@critical_section
 _random.Random.random
 
   self: self(type="RandomObject *")
@@ -185,7 +186,7 @@ random() -> x in the interval [0, 1).
 
 static PyObject *
 _random_Random_random_impl(RandomObject *self)
-/*[clinic end generated code: output=117ff99ee53d755c input=26492e52d26e8b7b]*/
+/*[clinic end generated code: output=117ff99ee53d755c input=afb2a59cbbb00349]*/
 {
     uint32_t a=genrand_uint32(self)>>5, b=genrand_uint32(self)>>6;
     return PyFloat_FromDouble((a*67108864.0+b)*(1.0/9007199254740992.0));
@@ -491,7 +492,6 @@ _random_Random_setstate_impl(RandomObject *self, PyObject *state)
 }
 
 /*[clinic input]
-@critical_section
 _random.Random.getrandbits
 
   self: self(type="RandomObject *")
@@ -503,7 +503,7 @@ getrandbits(k) -> x.  Generates an int with k random bits.
 
 static PyObject *
 _random_Random_getrandbits_impl(RandomObject *self, int k)
-/*[clinic end generated code: output=b402f82a2158887f input=87603cd60f79f730]*/
+/*[clinic end generated code: output=b402f82a2158887f input=abfd108bf3c91945]*/
 {
     int i, words;
     uint32_t r;
