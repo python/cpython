@@ -117,6 +117,7 @@ _Py_ext_module_loader_info_init(struct _Py_ext_module_loader_info *p_info,
         _Py_ext_module_loader_info_clear(&info);
         return -1;
     }
+    assert(PyUnicode_GetLength(name) > 0);
     info.name = Py_NewRef(name);
 
     info.name_encoded = get_encoded_name(info.name, &info.hook_prefix);
@@ -159,6 +160,31 @@ _Py_ext_module_loader_info_init(struct _Py_ext_module_loader_info *p_info,
 }
 
 int
+_Py_ext_module_loader_info_init_for_builtin(
+                            struct _Py_ext_module_loader_info *info,
+                            PyObject *name)
+{
+    assert(PyUnicode_Check(name));
+    assert(PyUnicode_FindChar(name, '.', 0, PyUnicode_GetLength(name), -1) == -1);
+    assert(PyUnicode_GetLength(name) > 0);
+
+    PyObject *name_encoded = PyUnicode_AsEncodedString(name, "ascii", NULL);
+    if (name_encoded == NULL) {
+        return -1;
+    }
+
+    *info = (struct _Py_ext_module_loader_info){
+        .name=Py_NewRef(name),
+        .name_encoded=name_encoded,
+        /* We won't need filename. */
+        .path=name,
+        .hook_prefix=ascii_only_prefix,
+        .newcontext=NULL,
+    };
+    return 0;
+}
+
+int
 _Py_ext_module_loader_info_init_from_spec(
                             struct _Py_ext_module_loader_info *p_info,
                             PyObject *spec)
@@ -179,17 +205,12 @@ _Py_ext_module_loader_info_init_from_spec(
 }
 
 
-PyObject *
-_PyImport_LoadDynamicModuleWithSpec(struct _Py_ext_module_loader_info *info,
-                                    PyObject *spec, FILE *fp)
+PyModInitFunction
+_PyImport_GetModInitFunc(struct _Py_ext_module_loader_info *info,
+                         FILE *fp)
 {
-    PyObject *m = NULL;
     const char *name_buf = PyBytes_AS_STRING(info->name_encoded);
-    const char *oldcontext;
     dl_funcptr exportfunc;
-    PyModInitFunction p0;
-    PyModuleDef *def;
-
 #ifdef MS_WINDOWS
     exportfunc = _PyImport_FindSharedFuncptrWindows(
             info->hook_prefix, name_buf, info->filename, fp);
@@ -213,15 +234,28 @@ _PyImport_LoadDynamicModuleWithSpec(struct _Py_ext_module_loader_info *info,
                 Py_DECREF(msg);
             }
         }
-        goto error;
+        return NULL;
     }
 
-    p0 = (PyModInitFunction)exportfunc;
+    return (PyModInitFunction)exportfunc;
+}
+
+int
+_PyImport_RunModInitFunc(PyModInitFunction p0,
+                         struct _Py_ext_module_loader_info *info,
+                         struct _Py_ext_module_loader_result *p_res)
+{
+    struct _Py_ext_module_loader_result res = {0};
+    const char *name_buf = PyBytes_AS_STRING(info->name_encoded);
+
+    /* Call the module init function. */
 
     /* Package context is needed for single-phase init */
-    oldcontext = _PyImport_SwapPackageContext(info->newcontext);
-    m = p0();
+    const char *oldcontext = _PyImport_SwapPackageContext(info->newcontext);
+    PyObject *m = p0();
     _PyImport_SwapPackageContext(oldcontext);
+
+    /* Validate the result (and populate "res". */
 
     if (m == NULL) {
         if (!PyErr_Occurred()) {
@@ -236,9 +270,13 @@ _PyImport_LoadDynamicModuleWithSpec(struct _Py_ext_module_loader_info *info,
             PyExc_SystemError,
             "initialization of %s raised unreported exception",
             name_buf);
+        /* We would probably be correct to decref m here,
+         * but we weren't doing so before,
+         * so we stick with doing nothing. */
         m = NULL;
         goto error;
     }
+
     if (Py_IS_TYPE(m, NULL)) {
         /* This can happen when a PyModuleDef is returned without calling
          * PyModuleDef_Init on it
@@ -246,55 +284,58 @@ _PyImport_LoadDynamicModuleWithSpec(struct _Py_ext_module_loader_info *info,
         PyErr_Format(PyExc_SystemError,
                      "init function of %s returned uninitialized object",
                      name_buf);
+        /* Likewise, decref'ing here makes sense.  However, the original
+         * code has a note about "prevent segfault in DECREF",
+         * so we play it safe and leave it alone. */
         m = NULL; /* prevent segfault in DECREF */
         goto error;
     }
+
     if (PyObject_TypeCheck(m, &PyModuleDef_Type)) {
-        return PyModule_FromDefAndSpec((PyModuleDef*)m, spec);
+        /* multi-phase init */
+        res.def = (PyModuleDef *)m;
+        /* Run PyModule_FromDefAndSpec() to finish loading the module. */
     }
-
-    /* Fall back to single-phase init mechanism */
-
-    if (_PyImport_CheckSubinterpIncompatibleExtensionAllowed(name_buf) < 0) {
-        goto error;
-    }
-
-    if (info->hook_prefix == nonascii_prefix) {
-        /* don't allow legacy init for non-ASCII module names */
+    else if (info->hook_prefix == nonascii_prefix) {
+        /* It should have been multi-phase init? */
+        /* Don't allow legacy init for non-ASCII module names. */
         PyErr_Format(
             PyExc_SystemError,
             "initialization of %s did not return PyModuleDef",
             name_buf);
-        goto error;
+        Py_DECREF(m);
+        return -1;
+    }
+    else {
+        /* single-phase init (legacy) */
+        res.module = m;
+
+        if (!PyModule_Check(m)) {
+            PyErr_Format(PyExc_SystemError,
+                         "initialization of %s did not return an extension "
+                         "module", name_buf);
+            goto error;
+        }
+
+        res.def = _PyModule_GetDef(m);
+        if (res.def == NULL) {
+            PyErr_Format(PyExc_SystemError,
+                         "initialization of %s did not return a valid extension "
+                         "module", name_buf);
+            goto error;
+        }
     }
 
-    /* Remember pointer to module init function. */
-    def = PyModule_GetDef(m);
-    if (def == NULL) {
-        PyErr_Format(PyExc_SystemError,
-                     "initialization of %s did not return an extension "
-                     "module", name_buf);
-        goto error;
-    }
-    def->m_base.m_init = p0;
-
-    /* Remember the filename as the __file__ attribute */
-    if (PyModule_AddObjectRef(m, "__file__", info->filename) < 0) {
-        PyErr_Clear(); /* Not important enough to report */
-    }
-
-    PyObject *modules = PyImport_GetModuleDict();
-    if (_PyImport_FixupExtensionObject(
-                m, info->name, info->filename, modules) < 0)
-    {
-        goto error;
-    }
-
-    return m;
+    assert(!PyErr_Occurred());
+    *p_res = res;
+    return 0;
 
 error:
-    Py_XDECREF(m);
-    return NULL;
+    assert(PyErr_Occurred());
+    Py_CLEAR(res.module);
+    res.def = NULL;
+    *p_res = res;
+    return -1;
 }
 
 #endif /* HAVE_DYNAMIC_LOADING */

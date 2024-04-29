@@ -20,7 +20,7 @@ struct _pending_call {
     int flags;
 };
 
-#define PENDINGCALLSARRAYSIZE 32
+#define PENDINGCALLSARRAYSIZE 300
 
 #define MAXPENDINGCALLS PENDINGCALLSARRAYSIZE
 /* For interpreter-level pending calls, we want to avoid spending too
@@ -31,7 +31,9 @@ struct _pending_call {
 #  define MAXPENDINGCALLSLOOP MAXPENDINGCALLS
 #endif
 
-#define MAXPENDINGCALLS_MAIN PENDINGCALLSARRAYSIZE
+/* We keep the number small to preserve as much compatibility
+   as possible with earlier versions. */
+#define MAXPENDINGCALLS_MAIN 32
 /* For the main thread, we want to make sure all pending calls are
    run at once, for the sake of prompt signal handling.  This is
    unlikely to cause any problems since there should be very few
