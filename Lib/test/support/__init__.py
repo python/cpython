@@ -1183,7 +1183,7 @@ def requires_limited_api(test):
 
 # Windows build doesn't support --disable-test-modules feature, so there's no
 # 'TEST_MODULES' var in config
-TEST_MODULES_ENABLED = sys.platform == "win32" or sysconfig.get_config_var('TEST_MODULES') == 'yes'
+TEST_MODULES_ENABLED = (sysconfig.get_config_var('TEST_MODULES') or 'yes') == 'yes'
 
 def requires_specialization(test):
     return unittest.skipUnless(
