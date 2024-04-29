@@ -27,7 +27,6 @@ race:_PyObject_GC_TRACK
 race:_PyParkingLot_Park
 race:_PyType_HasFeature
 race:assign_version_tag
-race:gc_collect_main
 race:gc_restore_tid
 race:initialize_new_array
 race:insertdict

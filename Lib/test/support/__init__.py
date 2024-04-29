@@ -516,6 +516,25 @@ def has_no_debug_ranges():
 def requires_debug_ranges(reason='requires co_positions / debug_ranges'):
     return unittest.skipIf(has_no_debug_ranges(), reason)
 
+@contextlib.contextmanager
+def suppress_immortalization(suppress=True):
+    """Suppress immortalization of deferred objects."""
+    try:
+        import _testinternalcapi
+    except ImportError:
+        yield
+        return
+
+    if not suppress:
+        yield
+        return
+
+    old_values = _testinternalcapi.set_immortalize_deferred(False)
+    try:
+        yield
+    finally:
+        _testinternalcapi.set_immortalize_deferred(*old_values)
+
 MS_WINDOWS = (sys.platform == 'win32')
 
 # Is not actually used in tests, but is kept for compatibility.
