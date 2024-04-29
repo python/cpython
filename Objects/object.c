@@ -2430,6 +2430,13 @@ _PyObject_SetDeferredRefcount(PyObject *op)
     assert(PyType_IS_GC(Py_TYPE(op)));
     assert(_Py_IsOwnedByCurrentThread(op));
     assert(op->ob_ref_shared == 0);
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    if (interp->gc.immortalize.enabled) {
+        // gh-117696: immortalize objects instead of using deferred reference
+        // counting for now.
+        _Py_SetImmortal(op);
+        return;
+    }
     op->ob_gc_bits |= _PyGC_BITS_DEFERRED;
     op->ob_ref_local += 1;
     op->ob_ref_shared = _Py_REF_QUEUED;
