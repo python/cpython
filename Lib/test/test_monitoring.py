@@ -1946,8 +1946,14 @@ class TestCApiEventGeneration(MonitoringTestBase, unittest.TestCase):
             event_value = int(math.log2(event))
             with self.Scope(self.codelike, event_value):
                 counter.count = 0
-                func(*args)
-                self.assertEqual(counter.count, expected)
+                try:
+                    func(*args)
+                except ValueError as e:
+                    self.assertIsInstance(expected, ValueError)
+                    self.assertEqual(str(e), str(expected))
+                    return
+                else:
+                    self.assertEqual(counter.count, expected)
 
             prev = sys.monitoring.register_callback(TEST_TOOL, event, None)
             with self.Scope(self.codelike, event_value):
@@ -1965,6 +1971,19 @@ class TestCApiEventGeneration(MonitoringTestBase, unittest.TestCase):
             with self.subTest(function.__name__):
                 args_ = (self.codelike, offset) + tuple(args)
                 self.check_event_count(event, function, args_, expected)
+
+    def test_missing_exception(self):
+        for _, event, function, *args in self.cases:
+            if not (args and isinstance(args[-1], BaseException)):
+                continue
+            offset = 0
+            self.codelike = _testcapi.CodeLike(1)
+            with self.subTest(function.__name__):
+                args_ = (self.codelike, offset) + tuple(args[:-1]) + (None,)
+                evt = int(math.log2(event))
+                expected = ValueError(f"Firing event {evt} with no exception set")
+                self.check_event_count(event, function, args_, expected)
+
 
     CANNOT_DISABLE = { E.PY_THROW, E.RAISE, E.RERAISE,
                        E.EXCEPTION_HANDLED, E.PY_UNWIND }
