@@ -234,6 +234,7 @@ patch(unsigned char *base, const Stencil *stencil, uintptr_t patches[])
                 assert((int64_t)value < (1LL << 31));
                 *loc32 = (uint32_t)value;
                 continue;
+            case HoleKind_ARM64_RELOC_BRANCH26:
             case HoleKind_IMAGE_REL_ARM64_BRANCH26:
             case HoleKind_R_AARCH64_CALL26:
             case HoleKind_R_AARCH64_JUMP26:
@@ -278,6 +279,7 @@ patch(unsigned char *base, const Stencil *stencil, uintptr_t patches[])
             case HoleKind_ARM64_RELOC_GOT_LOAD_PAGE21:
             case HoleKind_IMAGE_REL_ARM64_PAGEBASE_REL21:
             case HoleKind_R_AARCH64_ADR_GOT_PAGE:
+            case HoleKind_R_AARCH64_ADR_PREL_PG_HI21:
                 // 21-bit count of pages between this page and an absolute address's
                 // page... I know, I know, it's weird. Pairs nicely with
                 // ARM64_RELOC_GOT_LOAD_PAGEOFF12 (below).
@@ -341,6 +343,7 @@ patch(unsigned char *base, const Stencil *stencil, uintptr_t patches[])
             case HoleKind_ARM64_RELOC_PAGEOFF12:
             case HoleKind_IMAGE_REL_ARM64_PAGEOFFSET_12A:
             case HoleKind_IMAGE_REL_ARM64_PAGEOFFSET_12L:
+            case HoleKind_R_AARCH64_ADD_ABS_LO12_NC:
             case HoleKind_R_AARCH64_LD64_GOT_LO12_NC:
                 // 12-bit low part of an absolute address. Pairs nicely with
                 // ARM64_RELOC_GOT_LOAD_PAGE21 (above).

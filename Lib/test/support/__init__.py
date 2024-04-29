@@ -516,6 +516,25 @@ def has_no_debug_ranges():
 def requires_debug_ranges(reason='requires co_positions / debug_ranges'):
     return unittest.skipIf(has_no_debug_ranges(), reason)
 
+@contextlib.contextmanager
+def suppress_immortalization(suppress=True):
+    """Suppress immortalization of deferred objects."""
+    try:
+        import _testinternalcapi
+    except ImportError:
+        yield
+        return
+
+    if not suppress:
+        yield
+        return
+
+    old_values = _testinternalcapi.set_immortalize_deferred(False)
+    try:
+        yield
+    finally:
+        _testinternalcapi.set_immortalize_deferred(*old_values)
+
 MS_WINDOWS = (sys.platform == 'win32')
 
 # Is not actually used in tests, but is kept for compatibility.
@@ -1181,8 +1200,9 @@ def requires_limited_api(test):
     return test
 
 
-TEST_MODULES_ENABLED = sysconfig.get_config_var('TEST_MODULES') == 'yes'
-
+# Windows build doesn't support --disable-test-modules feature, so there's no
+# 'TEST_MODULES' var in config
+TEST_MODULES_ENABLED = (sysconfig.get_config_var('TEST_MODULES') or 'yes') == 'yes'
 
 def requires_specialization(test):
     return unittest.skipUnless(

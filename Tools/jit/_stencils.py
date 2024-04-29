@@ -203,7 +203,9 @@ class StencilGroup:
         """Fix up all GOT and internal relocations for this stencil group."""
         for hole in self.code.holes.copy():
             if (
-                hole.kind in {"R_AARCH64_CALL26", "R_AARCH64_JUMP26"}
+                hole.kind in {
+                    "R_AARCH64_CALL26", "R_AARCH64_JUMP26", "ARM64_RELOC_BRANCH26"
+                }
                 and hole.value is HoleValue.ZERO
             ):
                 self.code.pad(alignment)

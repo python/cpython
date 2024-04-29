@@ -159,7 +159,7 @@ class _Target(typing.Generic[_S, _R]):
             ir = ll.read_text()
             # This handles declarations, definitions, and calls to named symbols
             # starting with "_JIT_":
-            ir = re.sub(r"((noalias |nonnull )*ptr @_JIT_\w+\()", r"ghccc \1", ir)
+            ir = re.sub(r"(((noalias|nonnull|noundef) )*ptr @_JIT_\w+\()", r"ghccc \1", ir)
             # This handles calls to anonymous callees, since anything with
             # "musttail" needs to use the same calling convention:
             ir = ir.replace("musttail call", "musttail call ghccc")
@@ -256,7 +256,7 @@ class _COFF(
             case {
                 "Offset": offset,
                 "Symbol": s,
-                "Type": {"Value": "IMAGE_REL_I386_DIR32" as kind},
+                "Type": {"Name": "IMAGE_REL_I386_DIR32" as kind},
             }:
                 offset += base
                 value, symbol = self._unwrap_dllimport(s)
@@ -265,7 +265,7 @@ class _COFF(
                 "Offset": offset,
                 "Symbol": s,
                 "Type": {
-                    "Value": "IMAGE_REL_AMD64_REL32" | "IMAGE_REL_I386_REL32" as kind
+                    "Name": "IMAGE_REL_AMD64_REL32" | "IMAGE_REL_I386_REL32" as kind
                 },
             }:
                 offset += base
@@ -277,7 +277,7 @@ class _COFF(
                 "Offset": offset,
                 "Symbol": s,
                 "Type": {
-                    "Value": "IMAGE_REL_ARM64_BRANCH26"
+                    "Name": "IMAGE_REL_ARM64_BRANCH26"
                     | "IMAGE_REL_ARM64_PAGEBASE_REL21"
                     | "IMAGE_REL_ARM64_PAGEOFFSET_12A"
                     | "IMAGE_REL_ARM64_PAGEOFFSET_12L" as kind
@@ -297,7 +297,7 @@ class _ELF(
     def _handle_section(
         self, section: _schema.ELFSection, group: _stencils.StencilGroup
     ) -> None:
-        section_type = section["Type"]["Value"]
+        section_type = section["Type"]["Name"]
         flags = {flag["Name"] for flag in section["Flags"]["Flags"]}
         if section_type == "SHT_RELA":
             assert "SHF_INFO_LINK" in flags, flags
@@ -325,7 +325,7 @@ class _ELF(
             for wrapped_symbol in section["Symbols"]:
                 symbol = wrapped_symbol["Symbol"]
                 offset = len(stencil.body) + symbol["Value"]
-                name = symbol["Name"]["Value"]
+                name = symbol["Name"]["Name"]
                 name = name.removeprefix(self.prefix)
                 group.symbols[name] = value, offset
             stencil.body.extend(section["SectionData"]["Bytes"])
@@ -347,9 +347,9 @@ class _ELF(
             case {
                 "Addend": addend,
                 "Offset": offset,
-                "Symbol": {"Value": s},
+                "Symbol": {"Name": s},
                 "Type": {
-                    "Value": "R_AARCH64_ADR_GOT_PAGE"
+                    "Name": "R_AARCH64_ADR_GOT_PAGE"
                     | "R_AARCH64_LD64_GOT_LO12_NC"
                     | "R_X86_64_GOTPCREL"
                     | "R_X86_64_GOTPCRELX"
@@ -362,8 +362,8 @@ class _ELF(
             case {
                 "Addend": addend,
                 "Offset": offset,
-                "Symbol": {"Value": s},
-                "Type": {"Value": kind},
+                "Symbol": {"Name": s},
+                "Type": {"Name": kind},
             }:
                 offset += base
                 s = s.removeprefix(self.prefix)
@@ -406,7 +406,7 @@ class _MachO(
         for wrapped_symbol in section["Symbols"]:
             symbol = wrapped_symbol["Symbol"]
             offset = symbol["Value"] - start_address
-            name = symbol["Name"]["Value"]
+            name = symbol["Name"]["Name"]
             name = name.removeprefix(self.prefix)
             group.symbols[name] = value, offset
         assert "Relocations" in section
@@ -422,9 +422,9 @@ class _MachO(
         match relocation:
             case {
                 "Offset": offset,
-                "Symbol": {"Value": s},
+                "Symbol": {"Name": s},
                 "Type": {
-                    "Value": "ARM64_RELOC_GOT_LOAD_PAGE21"
+                    "Name": "ARM64_RELOC_GOT_LOAD_PAGE21"
                     | "ARM64_RELOC_GOT_LOAD_PAGEOFF12" as kind
                 },
             }:
@@ -434,8 +434,8 @@ class _MachO(
                 addend = 0
             case {
                 "Offset": offset,
-                "Symbol": {"Value": s},
-                "Type": {"Value": "X86_64_RELOC_GOT" | "X86_64_RELOC_GOT_LOAD" as kind},
+                "Symbol": {"Name": s},
+                "Type": {"Name": "X86_64_RELOC_GOT" | "X86_64_RELOC_GOT_LOAD" as kind},
             }:
                 offset += base
                 s = s.removeprefix(self.prefix)
@@ -445,13 +445,13 @@ class _MachO(
                 )
             case {
                 "Offset": offset,
-                "Section": {"Value": s},
-                "Type": {"Value": "X86_64_RELOC_SIGNED" as kind},
+                "Section": {"Name": s},
+                "Type": {"Name": "X86_64_RELOC_SIGNED" as kind},
             } | {
                 "Offset": offset,
-                "Symbol": {"Value": s},
+                "Symbol": {"Name": s},
                 "Type": {
-                    "Value": "X86_64_RELOC_BRANCH" | "X86_64_RELOC_SIGNED" as kind
+                    "Name": "X86_64_RELOC_BRANCH" | "X86_64_RELOC_SIGNED" as kind
                 },
             }:
                 offset += base
@@ -462,12 +462,12 @@ class _MachO(
                 )
             case {
                 "Offset": offset,
-                "Section": {"Value": s},
-                "Type": {"Value": kind},
+                "Section": {"Name": s},
+                "Type": {"Name": kind},
             } | {
                 "Offset": offset,
-                "Symbol": {"Value": s},
-                "Type": {"Value": kind},
+                "Symbol": {"Name": s},
+                "Type": {"Name": kind},
             }:
                 offset += base
                 s = s.removeprefix(self.prefix)
@@ -481,13 +481,12 @@ class _MachO(
 def get_target(host: str) -> _COFF | _ELF | _MachO:
     """Build a _Target for the given host "triple" and options."""
     if re.fullmatch(r"aarch64-apple-darwin.*", host):
-        args = ["-mcmodel=large"]
-        return _MachO(host, alignment=8, args=args, prefix="_")
+        return _MachO(host, alignment=8, prefix="_")
     if re.fullmatch(r"aarch64-pc-windows-msvc", host):
         args = ["-fms-runtime-lib=dll"]
         return _COFF(host, alignment=8, args=args)
     if re.fullmatch(r"aarch64-.*-linux-gnu", host):
-        args = ["-mcmodel=large"]
+        args = ["-fpic"]
         return _ELF(host, alignment=8, args=args)
     if re.fullmatch(r"i686-pc-windows-msvc", host):
         args = ["-DPy_NO_ENABLE_SHARED"]
@@ -498,5 +497,6 @@ def get_target(host: str) -> _COFF | _ELF | _MachO:
         args = ["-fms-runtime-lib=dll"]
         return _COFF(host, args=args, ghccc=True)
     if re.fullmatch(r"x86_64-.*-linux-gnu", host):
-        return _ELF(host, ghccc=True)
+        args = ["-fpic"]
+        return _ELF(host, args=args, ghccc=True)
     raise ValueError(host)
