@@ -1381,7 +1381,7 @@ and :c:data:`PyType_Type` effectively act as defaults.)
        Py_VISIT(Py_TYPE(self));
 
    It is only needed since Python 3.9. To support Python 3.8 and older, this
-   line must be conditionnal::
+   line must be conditional::
 
        #if PY_VERSION_HEX >= 0x03090000
            Py_VISIT(Py_TYPE(self));
