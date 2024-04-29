@@ -1,10 +1,20 @@
+from __future__ import annotations
+
 import io
 import os
 import re
 import sys
 
 
-def get_pager():
+# types
+if False:
+    from typing import Protocol, Any
+    class Pager(Protocol):
+        def __call__(self, text: str, title: str = "") -> None:
+            ...
+
+
+def get_pager() -> Pager:
     """Decide what method to use for paging through text."""
     if not hasattr(sys.stdin, "isatty"):
         return plain_pager
@@ -41,32 +51,34 @@ def get_pager():
         os.unlink(filename)
 
 
-def escape_stdout(text):
+def escape_stdout(text: str) -> str:
     # Escape non-encodable characters to avoid encoding errors later
     encoding = getattr(sys.stdout, 'encoding', None) or 'utf-8'
     return text.encode(encoding, 'backslashreplace').decode(encoding)
 
 
-def escape_less(s):
+def escape_less(s: str) -> str:
     return re.sub(r'([?:.%\\])', r'\\\1', s)
 
 
-def plain(text):
+def plain(text: str) -> str:
     """Remove boldface formatting from text."""
     return re.sub('.\b', '', text)
 
 
-def tty_pager(text, title=''):
+def tty_pager(text: str, title: str = '') -> None:
     """Page through text on a text terminal."""
     lines = plain(escape_stdout(text)).split('\n')
+    has_tty = False
     try:
         import tty
+        import termios
         fd = sys.stdin.fileno()
-        old = tty.tcgetattr(fd)
+        old = termios.tcgetattr(fd)
         tty.setcbreak(fd)
         getchar = lambda: sys.stdin.read(1)
+        has_tty = True
     except (ImportError, AttributeError, io.UnsupportedOperation):
-        tty = None
         getchar = lambda: sys.stdin.readline()[:-1][:1]
 
     try:
@@ -97,16 +109,16 @@ def tty_pager(text, title=''):
             r = r + inc
 
     finally:
-        if tty:
-            tty.tcsetattr(fd, tty.TCSAFLUSH, old)
+        if has_tty:
+            termios.tcsetattr(fd, termios.TCSAFLUSH, old)
 
 
-def plain_pager(text, title=''):
+def plain_pager(text: str, title: str = '') -> None:
     """Simply print unformatted text.  This is the ultimate fallback."""
     sys.stdout.write(plain(escape_stdout(text)))
 
 
-def pipe_pager(text, cmd, title=''):
+def pipe_pager(text: str, cmd: str, title: str = '') -> None:
     """Page through text by feeding it to another program."""
     import subprocess
     env = os.environ.copy()
@@ -144,7 +156,7 @@ def pipe_pager(text, cmd, title=''):
             pass
 
 
-def tempfile_pager(text, cmd, title=''):
+def tempfile_pager(text: str, cmd: str, title: str = '') -> None:
     """Page through text by invoking a program on a temporary file."""
     import tempfile
     with tempfile.TemporaryDirectory() as tempdir:
