@@ -988,12 +988,7 @@
             _PyFrame_StackPush(frame, retval);
             LOAD_SP();
             LOAD_IP(frame->return_offset);
-            #if LLTRACE && TIER_ONE
-            lltrace = maybe_lltrace_resume_frame(frame, &entry_frame, GLOBALS());
-            if (lltrace < 0) {
-                goto exit_unwind;
-            }
-            #endif
+            LLTRACE_RESUME_FRAME();
             break;
         }
 
@@ -2774,7 +2769,32 @@
             break;
         }
 
-        /* _FOR_ITER_GEN is not a viable micro-op for tier 2 because it uses the 'this_instr' variable */
+        case _FOR_ITER_GEN_FRAME: {
+            PyObject *iter;
+            _PyInterpreterFrame *gen_frame;
+            oparg = CURRENT_OPARG();
+            iter = stack_pointer[-1];
+            PyGenObject *gen = (PyGenObject *)iter;
+            if (Py_TYPE(gen) != &PyGen_Type) {
+                UOP_STAT_INC(uopcode, miss);
+                JUMP_TO_JUMP_TARGET();
+            }
+            if (gen->gi_frame_state >= FRAME_EXECUTING) {
+                UOP_STAT_INC(uopcode, miss);
+                JUMP_TO_JUMP_TARGET();
+            }
+            STAT_INC(FOR_ITER, hit);
+            gen_frame = (_PyInterpreterFrame *)gen->gi_iframe;
+            _PyFrame_StackPush(gen_frame, Py_None);
+            gen->gi_frame_state = FRAME_EXECUTING;
+            gen->gi_exc_state.previous_item = tstate->exc_info;
+            tstate->exc_info = &gen->gi_exc_state;
+            // oparg is the return offset from the next instruction.
+            frame->return_offset = (uint16_t)(1 + INLINE_CACHE_ENTRIES_FOR_ITER + oparg);
+            stack_pointer[0] = (PyObject *)gen_frame;
+            stack_pointer += 1;
+            break;
+        }
 
         /* _BEFORE_ASYNC_WITH is not a viable micro-op for tier 2 because it has both popping and not-popping errors */
 
@@ -3213,12 +3233,7 @@
             tstate->py_recursion_remaining--;
             LOAD_SP();
             LOAD_IP(0);
-            #if LLTRACE && TIER_ONE
-            lltrace = maybe_lltrace_resume_frame(frame, &entry_frame, GLOBALS());
-            if (lltrace < 0) {
-                goto exit_unwind;
-            }
-            #endif
+            LLTRACE_RESUME_FRAME();
             break;
         }
 
@@ -3833,6 +3848,35 @@
             break;
         }
 
+        case _RETURN_GENERATOR: {
+            PyObject *res;
+            assert(PyFunction_Check(frame->f_funcobj));
+            PyFunctionObject *func = (PyFunctionObject *)frame->f_funcobj;
+            PyGenObject *gen = (PyGenObject *)_Py_MakeCoro(func);
+            if (gen == NULL) {
+                JUMP_TO_ERROR();
+            }
+            assert(EMPTY());
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            _PyInterpreterFrame *gen_frame = (_PyInterpreterFrame *)gen->gi_iframe;
+            frame->instr_ptr++;
+            _PyFrame_Copy(frame, gen_frame);
+            assert(frame->frame_obj == NULL);
+            gen->gi_frame_state = FRAME_CREATED;
+            gen_frame->owner = FRAME_OWNED_BY_GENERATOR;
+            _Py_LeaveRecursiveCallPy(tstate);
+            res = (PyObject *)gen;
+            _PyInterpreterFrame *prev = frame->previous;
+            _PyThreadState_PopFrame(tstate, frame);
+            frame = tstate->current_frame = prev;
+            LOAD_IP(frame->return_offset);
+            LOAD_SP();
+            LLTRACE_RESUME_FRAME();
+            stack_pointer[0] = res;
+            stack_pointer += 1;
+            break;
+        }
+
         case _BUILD_SLICE: {
             PyObject *step = NULL;
             PyObject *stop;
@@ -4168,6 +4212,40 @@
             break;
         }
 
+        case _DYNAMIC_EXIT: {
+            oparg = CURRENT_OPARG();
+            tstate->previous_executor = (PyObject *)current_executor;
+            _PyExitData *exit = (_PyExitData *)&current_executor->exits[oparg];
+            _Py_CODEUNIT *target = frame->instr_ptr;
+            _PyExecutorObject *executor;
+            if (target->op.code == ENTER_EXECUTOR) {
+                PyCodeObject *code = (PyCodeObject *)frame->f_executable;
+                executor = code->co_executors->executors[target->op.arg];
+                Py_INCREF(executor);
+            }
+            else {
+                if (!backoff_counter_triggers(exit->temperature)) {
+                    exit->temperature = advance_backoff_counter(exit->temperature);
+                    GOTO_TIER_ONE(target);
+                }
+                int optimized = _PyOptimizer_Optimize(frame, target, stack_pointer, &executor);
+                if (optimized <= 0) {
+                    exit->temperature = restart_backoff_counter(exit->temperature);
+                    if (optimized < 0) {
+                        Py_DECREF(current_executor);
+                        tstate->previous_executor = Py_None;
+                        GOTO_UNWIND();
+                    }
+                    GOTO_TIER_ONE(target);
+                }
+                else {
+                    exit->temperature = initial_temperature_backoff_counter();
+                }
+            }
+            GOTO_TIER_TWO(executor);
+            break;
+        }
+
         case _START_EXECUTOR: {
             PyObject *executor = (PyObject *)CURRENT_OPERAND();
             Py_DECREF(tstate->previous_executor);
@@ -4210,8 +4288,37 @@
 
         case _ERROR_POP_N: {
             oparg = CURRENT_OPARG();
+            uint32_t target = (uint32_t)CURRENT_OPERAND();
+            frame->instr_ptr = ((_Py_CODEUNIT *)_PyFrame_GetCode(frame)->co_code_adaptive) + target;
             stack_pointer += -oparg;
             GOTO_UNWIND();
+            break;
+        }
+
+        case _TIER2_RESUME_CHECK: {
+            #if defined(__EMSCRIPTEN__)
+            if (_Py_emscripten_signal_clock == 0) {
+                UOP_STAT_INC(uopcode, miss);
+                JUMP_TO_JUMP_TARGET();
+            }
+            _Py_emscripten_signal_clock -= Py_EMSCRIPTEN_SIGNAL_HANDLING;
+            #endif
+            uintptr_t eval_breaker = _Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker);
+            if (eval_breaker & _PY_EVAL_EVENTS_MASK) {
+                UOP_STAT_INC(uopcode, miss);
+                JUMP_TO_JUMP_TARGET();
+            }
+            assert(eval_breaker == FT_ATOMIC_LOAD_UINTPTR_ACQUIRE(_PyFrame_GetCode(frame)->_co_instrumentation_version));
+            break;
+        }
+
+        case _EVAL_BREAKER_EXIT: {
+            _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY();
+            QSBR_QUIESCENT_STATE(tstate);
+            if (_Py_HandlePending(tstate) != 0) {
+                GOTO_UNWIND();
+            }
+            EXIT_TO_TRACE();
             break;
         }
 
