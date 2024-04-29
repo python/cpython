@@ -55,7 +55,7 @@ jobs:
       run: |
         set -Eeuo pipefail
         # Build docs with the '-n' (nit-picky) option; write warnings to file
-        make -C Doc/ PYTHON=../python SPHINXOPTS="-q -n -W --keep-going -w sphinx-warnings.txt" html
+        make -C Doc/ PYTHON=../python SPHINXOPTS="--quiet --nitpicky --fail-on-warning --keep-going --warning-file sphinx-warnings.txt" html
     - name: 'Check warnings'
       if: github.event_name == 'pull_request'
       run: |
