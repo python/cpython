@@ -1194,7 +1194,7 @@ is_core_module(PyInterpreterState *interp, PyObject *name, PyObject *path)
 
 #ifndef NDEBUG
 static enum _Py_ext_module_kind
-get_extension_kind(PyModuleDef *def, bool check_size)
+_get_extension_kind(PyModuleDef *def, bool check_size)
 {
     enum _Py_ext_module_kind kind;
     if (def == NULL) {
@@ -1220,13 +1220,22 @@ get_extension_kind(PyModuleDef *def, bool check_size)
 }
 
 static bool
-is_singlephase(PyModuleDef *def, bool default_singlephase)
+check_multiphase_preinit(PyModuleDef *def)
 {
-    enum _Py_ext_module_kind kind = get_extension_kind(def, default_singlephase);
-    if (kind == _Py_ext_module_kind_SINGLEPHASE) {
-        return true;
-    }
-    return default_singlephase && kind == _Py_ext_module_kind_UNKNOWN;
+    /* PyModule_FromDefAndSpec() checks m_size so we skip m_size
+     * if the module hasn't been fully initialized yet. */
+    enum _Py_ext_module_kind kind = _get_extension_kind(def, false);
+    return kind == _Py_ext_module_kind_MULTIPHASE
+            /* m_slots can be NULL. */
+            || kind == _Py_ext_module_kind_UNKNOWN;
+}
+
+static bool
+check_singlephase(PyModuleDef *def)
+{
+    enum _Py_ext_module_kind kind = _get_extension_kind(def, true);
+    return kind == _Py_ext_module_kind_SINGLEPHASE
+            || kind == _Py_ext_module_kind_UNKNOWN;
 }
 #endif
 
@@ -1349,7 +1358,7 @@ import_find_extension(PyThreadState *tstate,
     if (def == NULL) {
         return NULL;
     }
-    assert(is_singlephase(def, true));
+    assert(check_singlephase(def));
 
     /* It may have been successfully imported previously
        in an interpreter that allows legacy modules
@@ -1463,7 +1472,7 @@ import_run_extension(PyThreadState *tstate, PyModInitFunction p0,
     assert(def != NULL);
 
     if (res.kind == _Py_ext_module_kind_MULTIPHASE) {
-        assert(!is_singlephase(def, false));
+        assert(check_multiphase_preinit(def));
         assert(mod == NULL);
         mod = PyModule_FromDefAndSpec(def, spec);
         if (mod == NULL) {
@@ -1472,7 +1481,7 @@ import_run_extension(PyThreadState *tstate, PyModInitFunction p0,
     }
     else {
         assert(res.kind == _Py_ext_module_kind_SINGLEPHASE);
-        assert(is_singlephase(def, true));
+        assert(check_singlephase(def));
         assert(PyModule_Check(mod));
 
         if (_PyImport_CheckSubinterpIncompatibleExtensionAllowed(name_buf) < 0) {
@@ -1584,7 +1593,7 @@ _PyImport_FixupBuiltin(PyThreadState *tstate, PyObject *mod, const char *name,
      * module state, but we also don't populate def->m_base.m_copy
      * for them. */
     assert(is_core_module(tstate->interp, nameobj, nameobj));
-    assert(is_singlephase(def, true));
+    assert(check_singlephase(def));
     assert(def->m_size == -1);
     assert(def->m_base.m_copy == NULL);
 
@@ -1638,7 +1647,7 @@ create_builtin(PyThreadState *tstate, PyObject *name, PyObject *spec)
     PyObject *mod = import_find_extension(tstate, &info);
     if (mod != NULL) {
         assert(!_PyErr_Occurred(tstate));
-        assert(is_singlephase(_PyModule_GetDef(mod), true));
+        assert(check_singlephase(_PyModule_GetDef(mod)));
         goto finally;
     }
     else if (_PyErr_Occurred(tstate)) {
@@ -3992,7 +4001,7 @@ _imp_create_dynamic_impl(PyObject *module, PyObject *spec, PyObject *file)
     mod = import_find_extension(tstate, &info);
     if (mod != NULL) {
         assert(!_PyErr_Occurred(tstate));
-        assert(is_singlephase(_PyModule_GetDef(mod), true));
+        assert(check_singlephase(_PyModule_GetDef(mod)));
         goto finally;
     }
     else if (_PyErr_Occurred(tstate)) {
