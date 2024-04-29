@@ -4964,11 +4964,7 @@
             uintptr_t eval_breaker = _Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker);
             uintptr_t version = FT_ATOMIC_LOAD_UINTPTR_ACQUIRE(_PyFrame_GetCode(frame)->_co_instrumentation_version);
             assert((version & _PY_EVAL_EVENTS_MASK) == 0);
-            if (tstate->tracing == 0) {
-                DEOPT_IF(eval_breaker != version, RESUME);
-            } else {
-                DEOPT_IF(eval_breaker & _PY_EVAL_EVENTS_MASK, RESUME);
-            }
+            DEOPT_IF(eval_breaker != version, RESUME);
             DISPATCH();
         }
 
