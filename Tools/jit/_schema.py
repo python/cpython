@@ -92,6 +92,7 @@ class COFFSection(typing.TypedDict):
     SectionData: typing.NotRequired[dict[typing.Literal["Bytes"], list[int]]]
     Symbols: list[dict[typing.Literal["Symbol"], _COFFSymbol]]
 
+
 class ELFSection(typing.TypedDict):
     """An ELF object file section."""
 
@@ -102,6 +103,7 @@ class ELFSection(typing.TypedDict):
     SectionData: dict[typing.Literal["Bytes"], list[int]]
     Symbols: list[dict[typing.Literal["Symbol"], _ELFSymbol]]
     Type: dict[typing.Literal["Name"], str]
+
 
 class MachOSection(typing.TypedDict):
     """A Mach-O object file section."""
