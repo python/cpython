@@ -1206,6 +1206,8 @@ get_extension_kind(PyModuleDef *def)
         kind = _Py_ext_module_kind_MULTIPHASE;
     }
     else {
+        // This is probably single-phase init, but a multi-phase
+        // module *can* have NULL m_slots.
         kind = _Py_ext_module_kind_UNKNOWN;
     }
     return kind;
