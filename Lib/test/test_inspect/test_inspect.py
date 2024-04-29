@@ -4090,6 +4090,28 @@ class TestSignatureObject(unittest.TestCase):
                             ((('a', ..., ..., "positional_or_keyword"),),
                             ...))
 
+    def test_signature_on_callable_objects_with_text_signature_attr(self):
+        class C:
+            __text_signature__ = '(a, /, b, c=True)'
+            def __call__(self, *args, **kwargs):
+                pass
+
+        self.assertEqual(self.signature(C), ((), ...))
+        self.assertEqual(self.signature(C()),
+                         ((('a', ..., ..., "positional_only"),
+                           ('b', ..., ..., "positional_or_keyword"),
+                           ('c', True, ..., "positional_or_keyword"),
+                          ),
+                          ...))
+
+        c = C()
+        c.__text_signature__ = '(x, y)'
+        self.assertEqual(self.signature(c),
+                         ((('x', ..., ..., "positional_or_keyword"),
+                           ('y', ..., ..., "positional_or_keyword"),
+                          ),
+                          ...))
+
     def test_signature_on_wrapper(self):
         class Wrapper:
             def __call__(self, b):
