@@ -140,7 +140,6 @@ stmt_reset(pysqlite_Statement *self)
         Py_BEGIN_ALLOW_THREADS
         rc = sqlite3_reset(self->st);
         Py_END_ALLOW_THREADS
-        assert(rc == SQLITE_OK);
     }
 
     return rc;
