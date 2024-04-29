@@ -1227,6 +1227,7 @@ is_singlephase(PyModuleDef *def, bool default_singlephase)
 
 struct singlephase_global_update {
     PyObject *m_dict;
+    PyModInitFunction m_init;
 };
 
 static int
@@ -1240,10 +1241,22 @@ update_global_state_for_extension(PyThreadState *tstate,
         assert(def->m_base.m_copy == NULL);
     }
     else {
-        assert(def->m_base.m_init != NULL
-               || is_core_module(tstate->interp, name, path));
-        if (singlephase->m_dict == NULL) {
+        if (singlephase->m_init != NULL) {
+            assert(singlephase->m_dict == NULL);
             assert(def->m_base.m_copy == NULL);
+            assert(def->m_size >= 0);
+            /* Remember pointer to module init function. */
+            // XXX Two modules should not share the same def->m_base.
+            //assert(def->m_base.m_init == NULL
+            //           || def->m_base.m_init == singlephase->m_init);
+            def->m_base.m_init = singlephase->m_init;
+        }
+        else if (singlephase->m_dict == NULL) {
+            /* It must be a core builtin module. */
+            assert(is_core_module(tstate->interp, name, path));
+            assert(def->m_size == -1);
+            assert(def->m_base.m_copy == NULL);
+            assert(def->m_base.m_init == NULL);
         }
         else {
             assert(PyDict_Check(singlephase->m_dict));
@@ -1422,6 +1435,9 @@ import_run_extension(PyThreadState *tstate, PyModInitFunction p0,
                      struct _Py_ext_module_loader_info *info,
                      PyObject *spec, PyObject *modules)
 {
+    /* Core modules go through _PyImport_FixupBuiltin(). */
+    assert(!is_core_module(tstate->interp, info->name, info->path));
+
     PyObject *mod = NULL;
     PyModuleDef *def = NULL;
     const char *name_buf = PyBytes_AS_STRING(info->name_encoded);
@@ -1458,9 +1474,6 @@ import_run_extension(PyThreadState *tstate, PyModInitFunction p0,
             goto finally;
         }
 
-        /* Remember pointer to module init function. */
-        def->m_base.m_init = p0;
-
         /* Remember the filename as the __file__ attribute */
         if (info->filename != NULL) {
             if (PyModule_AddObjectRef(mod, "__file__", info->filename) < 0) {
@@ -1472,11 +1485,16 @@ import_run_extension(PyThreadState *tstate, PyModInitFunction p0,
         struct singlephase_global_update singlephase = {0};
         // gh-88216: Extensions and def->m_base.m_copy can be updated
         // when the extension module doesn't support sub-interpreters.
-        if (def->m_size == -1
-                && !is_core_module(tstate->interp, info->name, info->path))
-        {
+        if (def->m_size == -1) {
+            /* We will reload from m_copy. */
+            assert(def->m_base.m_init == NULL);
             singlephase.m_dict = PyModule_GetDict(mod);
             assert(singlephase.m_dict != NULL);
+        }
+        else {
+            /* We will reload via the init function. */
+            assert(def->m_size >= 0);
+            singlephase.m_init = p0;
         }
         if (update_global_state_for_extension(
                 tstate, info->path, info->name, def, &singlephase) < 0)
