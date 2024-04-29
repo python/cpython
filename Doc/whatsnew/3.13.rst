@@ -276,7 +276,9 @@ Other Language Changes
   (Contributed by Pedro Sousa Lacerda in :gh:`66449`.)
 
 * :ref:`annotation scope <annotation-scopes>` within class scopes can now
-  contain lambdas. (Contributed by Jelle Zijlstra in :gh:`109118`.)
+  contain lambdas and comprehensions. Comprehensions that are located within
+  class scopes are not inlined into their parent scope. (Contributed by
+  Jelle Zijlstra in :gh:`109118` and :gh:`118160`.)
 
 
 New Modules
@@ -790,6 +792,9 @@ tkinter
   the :meth:`~tkinter.ttk.Style.element_create` method of
   :class:`tkinter.ttk.Style`.
   (Contributed by Serhiy Storchaka in :gh:`68166`.)
+
+* Add the :meth:`!after_info` method for Tkinter widgets.
+  (Contributed by Cheryl Sabella in :gh:`77020`.)
 
 traceback
 ---------

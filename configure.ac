@@ -3961,23 +3961,21 @@ AC_ARG_WITH(
   [with_system_libmpdec="no"])
 AC_MSG_RESULT([$with_system_libmpdec])
 
-AS_VAR_IF([with_system_libmpdec], [yes], [
-  LIBMPDEC_CFLAGS=${LIBMPDEC_CFLAGS-""}
-  LIBMPDEC_LDFLAGS=${LIBMPDEC_LDFLAGS-"-lmpdec"}
-  LIBMPDEC_INTERNAL=
-], [
-  LIBMPDEC_CFLAGS="-I\$(srcdir)/Modules/_decimal/libmpdec"
-  LIBMPDEC_LDFLAGS="-lm \$(LIBMPDEC_A)"
-  LIBMPDEC_INTERNAL="\$(LIBMPDEC_HEADERS) \$(LIBMPDEC_A)"
+AS_VAR_IF(
+  [with_system_libmpdec], [yes],
+  [PKG_CHECK_MODULES(
+    [LIBMPDEC], [libmpdec], [],
+    [LIBMPDEC_CFLAGS=${LIBMPDEC_CFLAGS-""}
+     LIBMPDEC_LIBS=${LIBMPDEC_LIBS-"-lmpdec -lm"}
+     LIBMPDEC_INTERNAL=])],
+  [LIBMPDEC_CFLAGS="-I\$(srcdir)/Modules/_decimal/libmpdec"
+   LIBMPDEC_LIBS="-lm \$(LIBMPDEC_A)"
+   LIBMPDEC_INTERNAL="\$(LIBMPDEC_HEADERS) \$(LIBMPDEC_A)"])
 
-  dnl Disable forced inlining in debug builds, see GH-94847
-  AS_VAR_IF([with_pydebug], [yes], [
-    AS_VAR_APPEND([LIBMPDEC_CFLAGS], [" -DTEST_COVERAGE"])
-  ])
-])
-
-AC_SUBST([LIBMPDEC_CFLAGS])
-AC_SUBST([LIBMPDEC_INTERNAL])
+# Disable forced inlining in debug builds, see GH-94847
+AS_VAR_IF(
+  [with_pydebug], [yes],
+  [AS_VAR_APPEND([LIBMPDEC_CFLAGS], [" -DTEST_COVERAGE"])])
 
 # Check whether _decimal should use a coroutine-local or thread-local context
 AC_MSG_CHECKING([for --with-decimal-contextvar])
@@ -3998,50 +3996,52 @@ fi
 
 AC_MSG_RESULT([$with_decimal_contextvar])
 
-# Check for libmpdec machine flavor
-AC_MSG_CHECKING([for decimal libmpdec machine])
-AS_CASE([$ac_sys_system],
-  [Darwin*], [libmpdec_system=Darwin],
-  [SunOS*], [libmpdec_system=sunos],
-  [libmpdec_system=other]
-)
+AS_VAR_IF(
+  [with_system_libmpdec], [no],
+  [# Check for libmpdec machine flavor
+   AC_MSG_CHECKING([for decimal libmpdec machine])
+   AS_CASE([$ac_sys_system],
+     [Darwin*], [libmpdec_system=Darwin],
+     [SunOS*], [libmpdec_system=sunos],
+     [libmpdec_system=other]
+   )
 
-libmpdec_machine=unknown
-if test "$libmpdec_system" = Darwin; then
-    # universal here means: build libmpdec with the same arch options
-    # the python interpreter was built with
-    libmpdec_machine=universal
-elif test $ac_cv_sizeof_size_t -eq 8; then
-    if test "$ac_cv_gcc_asm_for_x64" = yes; then
-        libmpdec_machine=x64
-    elif test "$ac_cv_type___uint128_t" = yes; then
-        libmpdec_machine=uint128
-    else
-        libmpdec_machine=ansi64
-    fi
-elif test $ac_cv_sizeof_size_t -eq 4; then
-    if test "$ac_cv_gcc_asm_for_x87" = yes -a "$libmpdec_system" != sunos; then
-        AS_CASE([$CC],
-            [*gcc*],   [libmpdec_machine=ppro],
-            [*clang*], [libmpdec_machine=ppro],
-            [libmpdec_machine=ansi32]
-        )
-    else
-        libmpdec_machine=ansi32
-    fi
-fi
-AC_MSG_RESULT([$libmpdec_machine])
+   libmpdec_machine=unknown
+   if test "$libmpdec_system" = Darwin; then
+       # universal here means: build libmpdec with the same arch options
+       # the python interpreter was built with
+       libmpdec_machine=universal
+   elif test $ac_cv_sizeof_size_t -eq 8; then
+       if test "$ac_cv_gcc_asm_for_x64" = yes; then
+           libmpdec_machine=x64
+       elif test "$ac_cv_type___uint128_t" = yes; then
+           libmpdec_machine=uint128
+       else
+           libmpdec_machine=ansi64
+       fi
+   elif test $ac_cv_sizeof_size_t -eq 4; then
+       if test "$ac_cv_gcc_asm_for_x87" = yes -a "$libmpdec_system" != sunos; then
+           AS_CASE([$CC],
+               [*gcc*],   [libmpdec_machine=ppro],
+               [*clang*], [libmpdec_machine=ppro],
+               [libmpdec_machine=ansi32]
+           )
+       else
+           libmpdec_machine=ansi32
+       fi
+   fi
+   AC_MSG_RESULT([$libmpdec_machine])
 
-AS_CASE([$libmpdec_machine],
-  [x64],         [AS_VAR_APPEND([LIBMPDEC_CFLAGS], [" -DCONFIG_64=1 -DASM=1"])],
-  [uint128],     [AS_VAR_APPEND([LIBMPDEC_CFLAGS], [" -DCONFIG_64=1 -DANSI=1 -DHAVE_UINT128_T=1"])],
-  [ansi64],      [AS_VAR_APPEND([LIBMPDEC_CFLAGS], [" -DCONFIG_64=1 -DANSI=1"])],
-  [ppro],        [AS_VAR_APPEND([LIBMPDEC_CFLAGS], [" -DCONFIG_32=1 -DANSI=1 -DASM=1 -Wno-unknown-pragmas"])],
-  [ansi32],      [AS_VAR_APPEND([LIBMPDEC_CFLAGS], [" -DCONFIG_32=1 -DANSI=1"])],
-  [ansi-legacy], [AS_VAR_APPEND([LIBMPDEC_CFLAGS], [" -DCONFIG_32=1 -DANSI=1 -DLEGACY_COMPILER=1"])],
-  [universal],   [AS_VAR_APPEND([LIBMPDEC_CFLAGS], [" -DUNIVERSAL=1"])],
-  [AC_MSG_ERROR([_decimal: unsupported architecture])]
-)
+   AS_CASE([$libmpdec_machine],
+     [x64],         [AS_VAR_APPEND([LIBMPDEC_CFLAGS], [" -DCONFIG_64=1 -DASM=1"])],
+     [uint128],     [AS_VAR_APPEND([LIBMPDEC_CFLAGS], [" -DCONFIG_64=1 -DANSI=1 -DHAVE_UINT128_T=1"])],
+     [ansi64],      [AS_VAR_APPEND([LIBMPDEC_CFLAGS], [" -DCONFIG_64=1 -DANSI=1"])],
+     [ppro],        [AS_VAR_APPEND([LIBMPDEC_CFLAGS], [" -DCONFIG_32=1 -DANSI=1 -DASM=1 -Wno-unknown-pragmas"])],
+     [ansi32],      [AS_VAR_APPEND([LIBMPDEC_CFLAGS], [" -DCONFIG_32=1 -DANSI=1"])],
+     [ansi-legacy], [AS_VAR_APPEND([LIBMPDEC_CFLAGS], [" -DCONFIG_32=1 -DANSI=1 -DLEGACY_COMPILER=1"])],
+     [universal],   [AS_VAR_APPEND([LIBMPDEC_CFLAGS], [" -DUNIVERSAL=1"])],
+     [AC_MSG_ERROR([_decimal: unsupported architecture])]
+   )])
 
 if test "$have_ipa_pure_const_bug" = yes; then
     # Some versions of gcc miscompile inline asm:
@@ -4055,6 +4055,9 @@ if test "$have_glibc_memmove_bug" = yes; then
     # https://sourceware.org/ml/libc-alpha/2010-12/msg00009.html
     AS_VAR_APPEND([LIBMPDEC_CFLAGS], [" -U_FORTIFY_SOURCE"])
 fi
+
+AC_SUBST([LIBMPDEC_CFLAGS])
+AC_SUBST([LIBMPDEC_INTERNAL])
 
 
 dnl detect sqlite3 from Emscripten emport
@@ -7643,7 +7646,7 @@ PY_STDLIB_MOD([_curses_panel],
   [], [test "$have_panel" != "no"],
   [$PANEL_CFLAGS $CURSES_CFLAGS], [$PANEL_LIBS $CURSES_LIBS]
 )
-PY_STDLIB_MOD([_decimal], [], [], [$LIBMPDEC_CFLAGS], [$LIBMPDEC_LDFLAGS])
+PY_STDLIB_MOD([_decimal], [], [], [$LIBMPDEC_CFLAGS], [$LIBMPDEC_LIBS])
 PY_STDLIB_MOD([_dbm],
   [test -n "$with_dbmliborder"], [test "$have_dbm" != "no"],
   [$DBM_CFLAGS], [$DBM_LIBS])
