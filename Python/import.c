@@ -1202,11 +1202,11 @@ get_extension_kind(PyModuleDef *def)
          * from m_copy.  Ideally we'd do away with this case. */
         kind = _Py_ext_module_kind_SINGLEPHASE;
     }
-    else if (def->m_slots == NULL) {
-        kind = _Py_ext_module_kind_SINGLEPHASE;
+    else if (def->m_slots != NULL) {
+        kind = _Py_ext_module_kind_MULTIPHASE;
     }
     else {
-        kind = _Py_ext_module_kind_MULTIPHASE;
+        kind = _Py_ext_module_kind_SINGLEPHASE;
     }
     return kind;
 }
