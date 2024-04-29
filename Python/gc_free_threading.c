@@ -1044,9 +1044,20 @@ record_deallocation(PyThreadState *tstate)
 }
 
 static void
-gc_collect_internal(PyInterpreterState *interp, struct collection_state *state)
+gc_collect_internal(PyInterpreterState *interp, struct collection_state *state, int generation)
 {
     _PyEval_StopTheWorld(interp);
+
+    // update collection and allocation counters
+    if (generation+1 < NUM_GENERATIONS) {
+        state->gcstate->old[generation].count += 1;
+    }
+
+    state->gcstate->young.count = 0;
+    for (int i = 1; i <= generation; ++i) {
+        state->gcstate->old[i-1].count = 0;
+    }
+
     // merge refcounts for all queued objects
     merge_all_queued_objects(interp, state);
     process_delayed_frees(interp);
@@ -1115,7 +1126,6 @@ error:
 static Py_ssize_t
 gc_collect_main(PyThreadState *tstate, int generation, _PyGC_Reason reason)
 {
-    int i;
     Py_ssize_t m = 0; /* # objects collected */
     Py_ssize_t n = 0; /* # unreachable objects that couldn't be collected */
     PyTime_t t1 = 0;   /* initialize to prevent a compiler warning */
@@ -1161,15 +1171,6 @@ gc_collect_main(PyThreadState *tstate, int generation, _PyGC_Reason reason)
         PyDTrace_GC_START(generation);
     }
 
-    /* update collection and allocation counters */
-    if (generation+1 < NUM_GENERATIONS) {
-        gcstate->old[generation].count += 1;
-    }
-    gcstate->young.count = 0;
-    for (i = 1; i <= generation; i++) {
-        gcstate->old[i-1].count = 0;
-    }
-
     PyInterpreterState *interp = tstate->interp;
 
     struct collection_state state = {
@@ -1177,7 +1178,7 @@ gc_collect_main(PyThreadState *tstate, int generation, _PyGC_Reason reason)
         .gcstate = gcstate,
     };
 
-    gc_collect_internal(interp, &state);
+    gc_collect_internal(interp, &state, generation);
 
     m = state.collected;
     n = state.uncollectable;
