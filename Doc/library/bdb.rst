@@ -240,10 +240,8 @@ The :mod:`bdb` module also defines two classes:
       Called from :meth:`dispatch_call` if a break might stop inside the
       called function.
 
-      .. note::
-
-         *argument_list* is not used anymore and will always be :data:`None`.
-         The argument is kept for backwards compatibility.
+      *argument_list* is not used anymore and will always be ``None``.
+      The argument is kept for backwards compatibility.
 
    .. method:: user_line(frame)
 
