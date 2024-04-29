@@ -50,6 +50,7 @@ class HoleValue(enum.Enum):
 
 _PATCH_FUNCS = {
     # aarch64-apple-darwin:
+    "ARM64_RELOC_BRANCH26": "patch_aarch64_26r",
     "ARM64_RELOC_GOT_LOAD_PAGE21": "patch_aarch64_21rx",
     "ARM64_RELOC_GOT_LOAD_PAGEOFF12": "patch_aarch64_12",
     "ARM64_RELOC_PAGE21": "patch_aarch64_21r",
@@ -67,7 +68,9 @@ _PATCH_FUNCS = {
     "IMAGE_REL_I386_REL32": "patch_x86_64_32rx",
     # aarch64-unknown-linux-gnu:
     "R_AARCH64_ABS64": "patch_64",
+    "R_AARCH64_ADD_ABS_LO12_NC": "patch_aarch64_12",
     "R_AARCH64_ADR_GOT_PAGE": "patch_aarch64_21rx",
+    "R_AARCH64_ADR_PREL_PG_HI21": "patch_aarch64_21rx",
     "R_AARCH64_CALL26": "patch_aarch64_26r",
     "R_AARCH64_JUMP26": "patch_aarch64_26r",
     "R_AARCH64_LD64_GOT_LO12_NC": "patch_aarch64_12",

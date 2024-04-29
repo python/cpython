@@ -330,7 +330,8 @@ patch_aarch64_33rx(unsigned char *location, uint64_t value)
         loc32[1] = 0xD503201F;
         return;
     }
-    patch_aarch64_21r(location, value);
+    patch_aarch64_21rx(location, value);
+    patch_aarch64_12(location + 4, value);
 }
 
 // 32-bit relative address.
