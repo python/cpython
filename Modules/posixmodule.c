@@ -5468,6 +5468,49 @@ os__path_islink_impl(PyObject *module, PyObject *path)
 
 
 /*[clinic input]
+os._path_splitroot_ex
+
+    path: unicode
+
+[clinic start generated code]*/
+
+static PyObject *
+os__path_splitroot_ex_impl(PyObject *module, PyObject *path)
+/*[clinic end generated code: output=de97403d3dfebc40 input=f1470e12d899f9ac]*/
+{
+    Py_ssize_t len, drvsize, rootsize;
+    PyObject *drv = NULL, *root = NULL, *tail = NULL, *result = NULL;
+
+    wchar_t *buffer = PyUnicode_AsWideCharString(path, &len);
+    if (!buffer) {
+        goto exit;
+    }
+
+    _Py_skiproot(buffer, len, &drvsize, &rootsize);
+    drv = PyUnicode_FromWideChar(buffer, drvsize);
+    if (drv == NULL) {
+        goto exit;
+    }
+    root = PyUnicode_FromWideChar(&buffer[drvsize], rootsize);
+    if (root == NULL) {
+        goto exit;
+    }
+    tail = PyUnicode_FromWideChar(&buffer[drvsize + rootsize],
+                                  len - drvsize - rootsize);
+    if (tail == NULL) {
+        goto exit;
+    }
+    result = Py_BuildValue("(OOO)", drv, root, tail);
+exit:
+    PyMem_Free(buffer);
+    Py_XDECREF(drv);
+    Py_XDECREF(root);
+    Py_XDECREF(tail);
+    return result;
+}
+
+
+/*[clinic input]
 os._path_normpath
 
     path: object
@@ -16799,6 +16842,7 @@ static PyMethodDef posix_methods[] = {
     OS__FINDFIRSTFILE_METHODDEF
     OS__GETVOLUMEPATHNAME_METHODDEF
     OS__PATH_SPLITROOT_METHODDEF
+    OS__PATH_SPLITROOT_EX_METHODDEF
     OS__PATH_NORMPATH_METHODDEF
     OS_GETLOADAVG_METHODDEF
     OS_URANDOM_METHODDEF

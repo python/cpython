@@ -8,6 +8,7 @@
 #include "Python.h"
 #include "pycore_crossinterp.h"   // struct _xid
 #include "pycore_interp.h"        // _PyInterpreterState_LookUpID()
+#include "pycore_pystate.h"       // _PyInterpreterState_GetIDObject()
 
 #ifdef MS_WINDOWS
 #define WIN32_LEAN_AND_MEAN
@@ -17,9 +18,7 @@
 #endif
 
 #define REGISTERS_HEAP_TYPES
-#define RETURNS_INTERPID_OBJECT
 #include "_interpreters_common.h"
-#undef RETURNS_INTERPID_OBJECT
 #undef REGISTERS_HEAP_TYPES
 
 
@@ -85,7 +84,7 @@ channel's queue, which are safely managed via the _PyCrossInterpreterData_*()
 API..  The module does not create any objects that are shared globally.
 */
 
-#define MODULE_NAME _xxinterpchannels
+#define MODULE_NAME _interpchannels
 #define MODULE_NAME_STR Py_STRINGIFY(MODULE_NAME)
 #define MODINIT_FUNC_NAME RESOLVE_MODINIT_FUNC_NAME(MODULE_NAME)
 
@@ -2909,7 +2908,7 @@ channelsmod_list_interpreters(PyObject *self, PyObject *args, PyObject *kwds)
             goto except;
         }
         if (res) {
-            interpid_obj = get_interpid_obj(interp);
+            interpid_obj = _PyInterpreterState_GetIDObject(interp);
             if (interpid_obj == NULL) {
                 goto except;
             }

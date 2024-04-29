@@ -26,7 +26,7 @@ __all__ = [
     "Error", "TestFailed", "TestDidNotRun", "ResourceDenied",
     # io
     "record_original_stdout", "get_original_stdout", "captured_stdout",
-    "captured_stdin", "captured_stderr",
+    "captured_stdin", "captured_stderr", "captured_output",
     # unittest
     "is_resource_enabled", "requires", "requires_freebsd_version",
     "requires_gil_enabled", "requires_linux_version", "requires_mac_ver",
@@ -59,6 +59,7 @@ __all__ = [
     "Py_DEBUG", "exceeds_recursion_limit", "get_c_recursion_limit",
     "skip_on_s390x",
     "without_optimizer",
+    "force_not_colorized"
     ]
 
 
@@ -841,6 +842,12 @@ Py_GIL_DISABLED = bool(sysconfig.get_config_var('Py_GIL_DISABLED'))
 def requires_gil_enabled(msg="needs the GIL enabled"):
     """Decorator for skipping tests on the free-threaded build."""
     return unittest.skipIf(Py_GIL_DISABLED, msg)
+
+def expected_failure_if_gil_disabled():
+    """Expect test failure if the GIL is disabled."""
+    if Py_GIL_DISABLED:
+        return unittest.expectedFailure
+    return lambda test_case: test_case
 
 if Py_GIL_DISABLED:
     _header = 'PHBBInP'
@@ -2551,3 +2558,22 @@ def copy_python_src_ignore(path, names):
             'build',
         }
     return ignored
+
+def force_not_colorized(func):
+    """Force the terminal not to be colorized."""
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        import traceback
+        original_fn = traceback._can_colorize
+        variables = {"PYTHON_COLORS": None, "FORCE_COLOR": None}
+        try:
+            for key in variables:
+                variables[key] = os.environ.pop(key, None)
+            traceback._can_colorize = lambda: False
+            return func(*args, **kwargs)
+        finally:
+            traceback._can_colorize = original_fn
+            for key, value in variables.items():
+                if value is not None:
+                    os.environ[key] = value
+    return wrapper

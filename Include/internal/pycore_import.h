@@ -22,11 +22,14 @@ extern int _PyImport_SetModuleString(const char *name, PyObject* module);
 extern void _PyImport_AcquireLock(PyInterpreterState *interp);
 extern int _PyImport_ReleaseLock(PyInterpreterState *interp);
 
+// This is used exclusively for the sys and builtins modules:
 extern int _PyImport_FixupBuiltin(
+    PyThreadState *tstate,
     PyObject *mod,
     const char *name,            /* UTF-8 encoded string */
     PyObject *modules
     );
+// We could probably drop this:
 extern int _PyImport_FixupExtensionObject(PyObject*, PyObject *,
                                           PyObject *, PyObject *);
 
