@@ -84,9 +84,9 @@ if support.HAVE_ASAN_FORK_BUG:
     raise unittest.SkipTest("libasan has a pthread_create() dead lock related to thread+fork")
 
 
-# gh-110666: Tolerate a difference of 100 ms when comparing timings
+# gh-110666: Tolerate a difference of 1 ms when comparing timings
 # (clock resolution)
-CLOCK_RES = 0.100
+CLOCK_RES = 0.001
 
 
 def latin(s):

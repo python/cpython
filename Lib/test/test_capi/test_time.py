@@ -9,7 +9,7 @@ PyTime_MAX = _testcapi.PyTime_MAX
 SEC_TO_NS = 10 ** 9
 DAY_TO_SEC = (24 * 60 * 60)
 # Worst clock resolution: maximum delta between two clock reads.
-CLOCK_RES = 0.050
+CLOCK_RES = 0.001
 
 
 class CAPITest(unittest.TestCase):
