@@ -27,10 +27,8 @@ or of a type that emulates it.
 The VM disables tracing when firing an event, so there is no need for user
 code to do that.
 
-It is expected that monitoring functions are not called with an exception set,
-except for those which are firing exception-related events. In the latter case,
-it is assumed that the event relates to the current exception
-(the one returned from :c:func:`PyErr_GetRaisedException`).
+Monitoring functions should not be called with an exception set,
+except those listed below as working with the current exception.
 
 .. c:type:: PyMonitoringState
 
@@ -89,37 +87,44 @@ See :mod:`sys.monitoring` for descriptions of the events.
 
 .. c:function:: int PyMonitoring_FirePyThrowEvent(PyMonitoringState *state, PyObject *codelike, int32_t offset)
 
-   Fire a ``PY_THROW`` event.
+   Fire a ``PY_THROW`` event with the current exception (as returned by
+   :c:func:`PyErr_GetRaisedException`).
 
 
 .. c:function:: int PyMonitoring_FireRaiseEvent(PyMonitoringState *state, PyObject *codelike, int32_t offset)
 
-   Fire a ``RAISE`` event.
+   Fire a ``RAISE`` event with the current exception (as returned by
+   :c:func:`PyErr_GetRaisedException`).
 
 
 .. c:function:: int PyMonitoring_FireCRaiseEvent(PyMonitoringState *state, PyObject *codelike, int32_t offset)
 
-   Fire a ``C_RAISE`` event.
+   Fire a ``C_RAISE`` event with the current exception (as returned by
+   :c:func:`PyErr_GetRaisedException`).
 
 
 .. c:function:: int PyMonitoring_FireReraiseEvent(PyMonitoringState *state, PyObject *codelike, int32_t offset)
 
-   Fire a ``RERAISE`` event.
+   Fire a ``RERAISE`` event with the current exception (as returned by
+   :c:func:`PyErr_GetRaisedException`).
 
 
 .. c:function:: int PyMonitoring_FireExceptionHandledEvent(PyMonitoringState *state, PyObject *codelike, int32_t offset)
 
-   Fire an ``EXCEPTION_HANDLED`` event.
+   Fire an ``EXCEPTION_HANDLED`` event with the current exception (as returned by
+   :c:func:`PyErr_GetRaisedException`).
 
 
 .. c:function:: int PyMonitoring_FirePyUnwindEvent(PyMonitoringState *state, PyObject *codelike, int32_t offset)
 
-   Fire a ``PY_UNWIND`` event.
+   Fire a ``PY_UNWIND`` event with the current exception (as returned by
+   :c:func:`PyErr_GetRaisedException`).
 
 
 .. c:function:: int PyMonitoring_FireStopIterationEvent(PyMonitoringState *state, PyObject *codelike, int32_t offset)
 
-   Fire a ``STOP_ITERATION`` event.
+   Fire a ``STOP_ITERATION`` event with the current exception (as returned by
+   :c:func:`PyErr_GetRaisedException`).
 
 
 Managing the Monitoring State

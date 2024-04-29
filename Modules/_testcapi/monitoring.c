@@ -115,12 +115,7 @@ static PyTypeObject PyCodeLike_Type = {
 static PyMonitoringState *
 setup_fire(PyObject *codelike, int offset, PyObject *exc)
 {
-    if (!Py_IS_TYPE(codelike, &PyCodeLike_Type)) {
-        PyErr_Format(PyExc_TypeError,
-                     "expected a code-like, got %s",
-                     Py_TYPE(codelike)->tp_name);
-        return NULL;
-    }
+    RAISE_UNLESS_CODELIKE(codelike);
     PyCodeLikeObject *cl = ((PyCodeLikeObject *)codelike);
     assert(offset >= 0 && offset < cl->num_events);
     PyMonitoringState *state = &cl->monitoring_states[offset];
@@ -132,10 +127,18 @@ setup_fire(PyObject *codelike, int offset, PyObject *exc)
 }
 
 static int
-teardown_fire(int res, PyMonitoringState *state)
+teardown_fire(int res, PyMonitoringState *state, PyObject *exception)
 {
     if (res == -1) {
         return -1;
+    }
+    if (exception) {
+        assert(PyErr_Occurred());
+        assert(((PyObject*)Py_TYPE(exception)) == PyErr_Occurred());
+    }
+
+    else {
+        assert(!PyErr_Occurred());
     }
     PyErr_Clear();
     return state->active;
@@ -149,12 +152,13 @@ fire_event_py_start(PyObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "Oi", &codelike, &offset)) {
         return NULL;
     }
-    PyMonitoringState *state = setup_fire(codelike, offset, NULL);
+    PyObject *exception = NULL;
+    PyMonitoringState *state = setup_fire(codelike, offset, exception);
     if (state == NULL) {
         return NULL;
     }
     int res = PyMonitoring_FirePyStartEvent(state, codelike, offset);
-    RETURN_INT(teardown_fire(res, state));
+    RETURN_INT(teardown_fire(res, state, exception));
 }
 
 static PyObject *
@@ -165,12 +169,13 @@ fire_event_py_resume(PyObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "Oi", &codelike, &offset)) {
         return NULL;
     }
-    PyMonitoringState *state = setup_fire(codelike, offset, NULL);
+    PyObject *exception = NULL;
+    PyMonitoringState *state = setup_fire(codelike, offset, exception);
     if (state == NULL) {
         return NULL;
     }
     int res = PyMonitoring_FirePyResumeEvent(state, codelike, offset);
-    RETURN_INT(teardown_fire(res, state));
+    RETURN_INT(teardown_fire(res, state, exception));
 }
 
 static PyObject *
@@ -182,12 +187,13 @@ fire_event_py_return(PyObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "OiO", &codelike, &offset, &retval)) {
         return NULL;
     }
-    PyMonitoringState *state = setup_fire(codelike, offset, NULL);
+    PyObject *exception = NULL;
+    PyMonitoringState *state = setup_fire(codelike, offset, exception);
     if (state == NULL) {
         return NULL;
     }
     int res = PyMonitoring_FirePyReturnEvent(state, codelike, offset, retval);
-    RETURN_INT(teardown_fire(res, state));
+    RETURN_INT(teardown_fire(res, state, exception));
 }
 
 static PyObject *
@@ -199,12 +205,13 @@ fire_event_c_return(PyObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "OiO", &codelike, &offset, &retval)) {
         return NULL;
     }
-    PyMonitoringState *state = setup_fire(codelike, offset, NULL);
+    PyObject *exception = NULL;
+    PyMonitoringState *state = setup_fire(codelike, offset, exception);
     if (state == NULL) {
         return NULL;
     }
     int res = PyMonitoring_FireCReturnEvent(state, codelike, offset, retval);
-    RETURN_INT(teardown_fire(res, state));
+    RETURN_INT(teardown_fire(res, state, exception));
 }
 
 static PyObject *
@@ -216,12 +223,13 @@ fire_event_py_yield(PyObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "OiO", &codelike, &offset, &retval)) {
         return NULL;
     }
-    PyMonitoringState *state = setup_fire(codelike, offset, NULL);
+    PyObject *exception = NULL;
+    PyMonitoringState *state = setup_fire(codelike, offset, exception);
     if (state == NULL) {
         return NULL;
     }
     int res = PyMonitoring_FirePyYieldEvent(state, codelike, offset, retval);
-    RETURN_INT(teardown_fire(res, state));
+    RETURN_INT(teardown_fire(res, state, exception));
 }
 
 static PyObject *
@@ -233,12 +241,13 @@ fire_event_call(PyObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "OiOO", &codelike, &offset, &callable, &arg0)) {
         return NULL;
     }
-    PyMonitoringState *state = setup_fire(codelike, offset, NULL);
+    PyObject *exception = NULL;
+    PyMonitoringState *state = setup_fire(codelike, offset, exception);
     if (state == NULL) {
         return NULL;
     }
     int res = PyMonitoring_FireCallEvent(state, codelike, offset, callable, arg0);
-    RETURN_INT(teardown_fire(res, state));
+    RETURN_INT(teardown_fire(res, state, exception));
 }
 
 static PyObject *
@@ -249,12 +258,13 @@ fire_event_line(PyObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "Oii", &codelike, &offset, &lineno)) {
         return NULL;
     }
-    PyMonitoringState *state = setup_fire(codelike, offset, NULL);
+    PyObject *exception = NULL;
+    PyMonitoringState *state = setup_fire(codelike, offset, exception);
     if (state == NULL) {
         return NULL;
     }
     int res = PyMonitoring_FireLineEvent(state, codelike, offset, lineno);
-    RETURN_INT(teardown_fire(res, state));
+    RETURN_INT(teardown_fire(res, state, exception));
 }
 
 static PyObject *
@@ -266,12 +276,13 @@ fire_event_jump(PyObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "OiO", &codelike, &offset, &target_offset)) {
         return NULL;
     }
-    PyMonitoringState *state = setup_fire(codelike, offset, NULL);
+    PyObject *exception = NULL;
+    PyMonitoringState *state = setup_fire(codelike, offset, exception);
     if (state == NULL) {
         return NULL;
     }
     int res = PyMonitoring_FireJumpEvent(state, codelike, offset, target_offset);
-    RETURN_INT(teardown_fire(res, state));
+    RETURN_INT(teardown_fire(res, state, exception));
 }
 
 static PyObject *
@@ -283,12 +294,13 @@ fire_event_branch(PyObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "OiO", &codelike, &offset, &target_offset)) {
         return NULL;
     }
-    PyMonitoringState *state = setup_fire(codelike, offset, NULL);
+    PyObject *exception = NULL;
+    PyMonitoringState *state = setup_fire(codelike, offset, exception);
     if (state == NULL) {
         return NULL;
     }
     int res = PyMonitoring_FireBranchEvent(state, codelike, offset, target_offset);
-    RETURN_INT(teardown_fire(res, state));
+    RETURN_INT(teardown_fire(res, state, exception));
 }
 
 static PyObject *
@@ -306,7 +318,7 @@ fire_event_py_throw(PyObject *self, PyObject *args)
         return NULL;
     }
     int res = PyMonitoring_FirePyThrowEvent(state, codelike, offset);
-    RETURN_INT(teardown_fire(res, state));
+    RETURN_INT(teardown_fire(res, state, exception));
 }
 
 static PyObject *
@@ -324,7 +336,7 @@ fire_event_raise(PyObject *self, PyObject *args)
         return NULL;
     }
     int res = PyMonitoring_FireRaiseEvent(state, codelike, offset);
-    RETURN_INT(teardown_fire(res, state));
+    RETURN_INT(teardown_fire(res, state, exception));
 }
 
 static PyObject *
@@ -342,7 +354,7 @@ fire_event_c_raise(PyObject *self, PyObject *args)
         return NULL;
     }
     int res = PyMonitoring_FireCRaiseEvent(state, codelike, offset);
-    RETURN_INT(teardown_fire(res, state));
+    RETURN_INT(teardown_fire(res, state, exception));
 }
 
 static PyObject *
@@ -360,7 +372,7 @@ fire_event_reraise(PyObject *self, PyObject *args)
         return NULL;
     }
     int res = PyMonitoring_FireReraiseEvent(state, codelike, offset);
-    RETURN_INT(teardown_fire(res, state));
+    RETURN_INT(teardown_fire(res, state, exception));
 }
 
 static PyObject *
@@ -378,7 +390,7 @@ fire_event_exception_handled(PyObject *self, PyObject *args)
         return NULL;
     }
     int res = PyMonitoring_FireExceptionHandledEvent(state, codelike, offset);
-    RETURN_INT(teardown_fire(res, state));
+    RETURN_INT(teardown_fire(res, state, exception));
 }
 
 static PyObject *
@@ -396,7 +408,7 @@ fire_event_py_unwind(PyObject *self, PyObject *args)
         return NULL;
     }
     int res = PyMonitoring_FirePyUnwindEvent(state, codelike, offset);
-    RETURN_INT(teardown_fire(res, state));
+    RETURN_INT(teardown_fire(res, state, exception));
 }
 
 static PyObject *
@@ -414,7 +426,7 @@ fire_event_stop_iteration(PyObject *self, PyObject *args)
         return NULL;
     }
     int res = PyMonitoring_FireStopIterationEvent(state, codelike, offset);
-    RETURN_INT(teardown_fire(res, state));
+    RETURN_INT(teardown_fire(res, state, exception));
 }
 
 /*******************************************************************/
