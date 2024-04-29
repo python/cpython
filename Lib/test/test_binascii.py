@@ -145,10 +145,15 @@ class BinASCIITest(unittest.TestCase):
         # Test excess data exceptions
         assertExcessData(b'ab==a', b'i')
         assertExcessData(b'ab===', b'i')
+        assertExcessData(b'ab====', b'i')
         assertExcessData(b'ab==:', b'i')
         assertExcessData(b'abc=a', b'i\xb7')
         assertExcessData(b'abc=:', b'i\xb7')
         assertExcessData(b'ab==\n', b'i')
+        assertExcessData(b'abc==', b'i\xb7')
+        assertExcessData(b'abc===', b'i\xb7')
+        assertExcessData(b'abc====', b'i\xb7')
+        assertExcessData(b'abc=====', b'i\xb7')
 
         # Test non-base64 data exceptions
         assertNonBase64Data(b'\nab==', b'i')
@@ -160,11 +165,15 @@ class BinASCIITest(unittest.TestCase):
         assertLeadingPadding(b'=', b'')
         assertLeadingPadding(b'==', b'')
         assertLeadingPadding(b'===', b'')
+        assertLeadingPadding(b'====', b'')
+        assertLeadingPadding(b'=====', b'')
         assertDiscontinuousPadding(b'ab=c=', b'i\xb7')
         assertDiscontinuousPadding(b'ab=ab==', b'i\xb6\x9b')
-        assertExcessPadding(b'AAAA=', b'\x00\x00\x00')
-        assertExcessPadding(b'AAAA==', b'\x00\x00\x00')
-        assertExcessPadding(b'AAAA===', b'\x00\x00\x00')
+        assertExcessPadding(b'abcd=', b'i\xb7\x1d')
+        assertExcessPadding(b'abcd==', b'i\xb7\x1d')
+        assertExcessPadding(b'abcd===', b'i\xb7\x1d')
+        assertExcessPadding(b'abcd====', b'i\xb7\x1d')
+        assertExcessPadding(b'abcd=====', b'i\xb7\x1d')
 
 
     def test_base64errors(self):
