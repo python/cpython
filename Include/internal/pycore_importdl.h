@@ -15,6 +15,14 @@ extern "C" {
 extern const char *_PyImport_DynLoadFiletab[];
 
 
+enum _Py_ext_module_kind {
+    _Py_ext_module_kind_UNKNOWN = 0,
+    _Py_ext_module_kind_SINGLEPHASE = 1,
+    _Py_ext_module_kind_MULTIPHASE = 2,
+    _Py_ext_module_kind_INVALID = 3,
+};
+
+
 /* Input for loading an extension module. */
 struct _Py_ext_module_loader_info {
     PyObject *filename;
@@ -46,12 +54,7 @@ extern int _Py_ext_module_loader_info_init_from_spec(
 struct _Py_ext_module_loader_result {
     PyModuleDef *def;
     PyObject *module;
-    enum _Py_ext_module_loader_result_kind {
-        _Py_ext_module_loader_result_UNKNOWN = 0,
-        _Py_ext_module_loader_result_SINGLEPHASE = 1,
-        _Py_ext_module_loader_result_MULTIPHASE = 2,
-        _Py_ext_module_loader_result_INVALID = 3,
-    } kind;
+    enum _Py_ext_module_kind kind;
     struct _Py_ext_module_loader_result_error *err;
     struct _Py_ext_module_loader_result_error {
         enum _Py_ext_module_loader_result_error_kind {

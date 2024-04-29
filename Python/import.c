@@ -1193,20 +1193,20 @@ is_core_module(PyInterpreterState *interp, PyObject *name, PyObject *path)
 }
 
 #ifndef NDEBUG
-static enum _Py_ext_module_loader_result_kind
+static enum _Py_ext_module_kind
 get_extension_kind(PyModuleDef *def)
 {
-    enum _Py_ext_module_loader_result_kind kind;
+    enum _Py_ext_module_kind kind;
     if (def == NULL) {
         /* It must be a module created by reload_singlephase_extension()
          * from m_copy.  Ideally we'd do away with this case. */
-        kind = _Py_ext_module_loader_result_SINGLEPHASE;
+        kind = _Py_ext_module_kind_SINGLEPHASE;
     }
     else if (def->m_slots == NULL) {
-        kind = _Py_ext_module_loader_result_SINGLEPHASE;
+        kind = _Py_ext_module_kind_SINGLEPHASE;
     }
     else {
-        kind = _Py_ext_module_loader_result_MULTIPHASE;
+        kind = _Py_ext_module_kind_MULTIPHASE;
     }
     return kind;
 }
@@ -1214,7 +1214,7 @@ get_extension_kind(PyModuleDef *def)
 static bool
 is_singlephase(PyModuleDef *def)
 {
-    return get_extension_kind(def) == _Py_ext_module_loader_result_SINGLEPHASE;
+    return get_extension_kind(def) == _Py_ext_module_kind_SINGLEPHASE;
 }
 #endif
 
@@ -1382,7 +1382,7 @@ import_find_extension(PyThreadState *tstate,
             return NULL;
         }
         assert(!PyErr_Occurred() && res.err == NULL);
-        assert(res.kind == _Py_ext_module_loader_result_SINGLEPHASE);
+        assert(res.kind == _Py_ext_module_kind_SINGLEPHASE);
         mod = res.module;
         /* Tchnically, the init function could return a different module def.
          * Then we would probably need to update the global cache.
@@ -1434,7 +1434,7 @@ import_run_extension(PyThreadState *tstate, PyModInitFunction p0,
     def = res.def;
     assert(def != NULL);
 
-    if (res.kind == _Py_ext_module_loader_result_MULTIPHASE) {
+    if (res.kind == _Py_ext_module_kind_MULTIPHASE) {
         //assert(!is_singlephase(def));
         assert(mod == NULL);
         mod = PyModule_FromDefAndSpec(def, spec);
@@ -1443,7 +1443,7 @@ import_run_extension(PyThreadState *tstate, PyModInitFunction p0,
         }
     }
     else {
-        assert(res.kind == _Py_ext_module_loader_result_SINGLEPHASE);
+        assert(res.kind == _Py_ext_module_kind_SINGLEPHASE);
         assert(is_singlephase(def));
         assert(PyModule_Check(mod));
 

@@ -254,8 +254,8 @@ _Py_ext_module_loader_result_set_error(
     /* For some kinds, we also set/check res->kind. */
     switch (kind) {
     case _Py_ext_module_loader_result_ERR_UNINITIALIZED:
-        assert(res->kind == _Py_ext_module_loader_result_UNKNOWN);
-        res->kind = _Py_ext_module_loader_result_INVALID;
+        assert(res->kind == _Py_ext_module_kind_UNKNOWN);
+        res->kind = _Py_ext_module_kind_INVALID;
         break;
     /* None of the rest affect the result kind. */
     case _Py_ext_module_loader_result_EXCEPTION:  /* fall through */
@@ -387,7 +387,7 @@ _PyImport_RunModInitFunc(PyModInitFunction p0,
                          struct _Py_ext_module_loader_result *p_res)
 {
     struct _Py_ext_module_loader_result res = {
-        .kind=_Py_ext_module_loader_result_UNKNOWN,
+        .kind=_Py_ext_module_kind_UNKNOWN,
     };
 
     /* Call the module init function. */
@@ -434,13 +434,13 @@ _PyImport_RunModInitFunc(PyModInitFunction p0,
 
     if (PyObject_TypeCheck(m, &PyModuleDef_Type)) {
         /* multi-phase init */
-        res.kind = _Py_ext_module_loader_result_MULTIPHASE;
+        res.kind = _Py_ext_module_kind_MULTIPHASE;
         res.def = (PyModuleDef *)m;
         /* Run PyModule_FromDefAndSpec() to finish loading the module. */
     }
     else if (info->hook_prefix == nonascii_prefix) {
         /* Non-ASCII is only supported for multi-phase init. */
-        res.kind = _Py_ext_module_loader_result_MULTIPHASE;
+        res.kind = _Py_ext_module_kind_MULTIPHASE;
         /* Don't allow legacy init for non-ASCII module names. */
         _Py_ext_module_loader_result_set_error(
                 &res, _Py_ext_module_loader_result_ERR_NONASCII_NOT_MULTIPHASE);
@@ -448,7 +448,7 @@ _PyImport_RunModInitFunc(PyModInitFunction p0,
     }
     else {
         /* single-phase init (legacy) */
-        res.kind = _Py_ext_module_loader_result_SINGLEPHASE;
+        res.kind = _Py_ext_module_kind_SINGLEPHASE;
         res.module = m;
 
         if (!PyModule_Check(m)) {
