@@ -295,8 +295,8 @@ be found in any statistics text.
    Return the next random floating point number in the range ``0.0 <= X < 1.0``
 
    .. warning::
-      Directly calling this function in a multithreaded application can cause the
-      performance degradation. Instead, use the :class:`Random` per thread.
+      Calling this function in the concurrent use can cause performance degradation.
+      Instead, Consider using :class:`Random` per thread.
 
 
 .. function:: uniform(a, b)
