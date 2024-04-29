@@ -49,7 +49,6 @@ extensions['py'] = PythonLanguage
 def parse_file(
         filename: str,
         *,
-        limited_capi: bool,
         output: str | None = None,
         verify: bool = True,
 ) -> None:
@@ -73,6 +72,7 @@ def parse_file(
     if not find_start_re.search(raw):
         return
 
+    limited_capi = False
     if LIMITED_CAPI_REGEX.search(raw):
         limited_capi = True
 
@@ -112,8 +112,6 @@ For more information see https://devguide.python.org/development-tools/clinic/""
     cmdline.add_argument("--exclude", type=str, action="append",
                          help=("a file to exclude in --make mode; "
                                "can be given multiple times"))
-    cmdline.add_argument("--limited", dest="limited_capi", action='store_true',
-                         help="use the Limited C API")
     cmdline.add_argument("filename", metavar="FILE", type=str, nargs="*",
                          help="the list of files to process")
     return cmdline
@@ -202,8 +200,7 @@ def run_clinic(parser: argparse.ArgumentParser, ns: argparse.Namespace) -> None:
                     continue
                 if ns.verbose:
                     print(path)
-                parse_file(path,
-                           verify=not ns.force, limited_capi=ns.limited_capi)
+                parse_file(path, verify=not ns.force)
         return
 
     if not ns.filename:
@@ -215,8 +212,7 @@ def run_clinic(parser: argparse.ArgumentParser, ns: argparse.Namespace) -> None:
     for filename in ns.filename:
         if ns.verbose:
             print(filename)
-        parse_file(filename, output=ns.output,
-                   verify=not ns.force, limited_capi=ns.limited_capi)
+        parse_file(filename, output=ns.output, verify=not ns.force)
 
 
 def main(argv: list[str] | None = None) -> NoReturn:
