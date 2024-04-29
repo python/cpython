@@ -17,6 +17,7 @@
 # CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
 # CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
+from abc import ABC, abstractmethod
 import dataclasses
 
 
@@ -27,7 +28,7 @@ class Event:
     raw: bytes = b""
 
 
-class Console:
+class Console(ABC):
     """Attributes:
 
     screen,
@@ -35,58 +36,79 @@ class Console:
     width,
     """
 
-    def refresh(self, screen, xy):
-        pass
+    @abstractmethod
+    def refresh(self, screen: list[str], xy: tuple[int, int]) -> None:
+        ...
 
-    def prepare(self):
-        pass
+    @abstractmethod
+    def prepare(self) -> None:
+        ...
 
-    def restore(self):
-        pass
+    @abstractmethod
+    def restore(self) -> None:
+        ...
 
-    def move_cursor(self, x, y):
-        pass
+    @abstractmethod
+    def move_cursor(self, x: int, y: int) -> None:
+        ...
 
-    def set_cursor_vis(self, vis):
-        pass
+    @abstractmethod
+    def set_cursor_vis(self, visible: bool) -> None:
+        ...
 
-    def getheightwidth(self):
+    @abstractmethod
+    def getheightwidth(self) -> tuple[int, int]:
         """Return (height, width) where height and width are the height
         and width of the terminal window in characters."""
-        pass
+        ...
 
-    def get_event(self, block=1):
+    @abstractmethod
+    def get_event(self, block: bool  = True) -> Event:
         """Return an Event instance.  Returns None if |block| is false
         and there is no event pending, otherwise waits for the
         completion of an event."""
-        pass
+        ...
 
-    def beep(self):
-        pass
+    @abstractmethod
+    def push_char(self, char: str) -> None:
+        """
+        Push a character to the console event queue.
+        """
+        ...
 
-    def clear(self):
+    @abstractmethod
+    def beep(self) -> None:
+        ...
+
+    @abstractmethod
+    def clear(self) -> None:
         """Wipe the screen"""
-        pass
+        ...
 
-    def finish(self):
+    @abstractmethod
+    def finish(self) -> None:
         """Move the cursor to the end of the display and otherwise get
         ready for end.  XXX could be merged with restore?  Hmm."""
-        pass
+        ...
 
-    def flushoutput(self):
+    @abstractmethod
+    def flushoutput(self) -> None:
         """Flush all output to the screen (assuming there's some
         buffering going on somewhere)."""
-        pass
+        ...
 
-    def forgetinput(self):
+    @abstractmethod
+    def forgetinput(self) -> None:
         """Forget all pending, but not yet processed input."""
-        pass
+        ...
 
-    def getpending(self):
+    @abstractmethod
+    def getpending(self) -> Event:
         """Return the characters that have been typed but not yet
         processed."""
-        pass
+        ...
 
-    def wait(self):
+    @abstractmethod
+    def wait(self) -> None:
         """Wait for an event."""
-        pass
+        ...

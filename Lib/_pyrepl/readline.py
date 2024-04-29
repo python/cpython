@@ -28,7 +28,7 @@ extensions for multiline input.
 
 import os
 import readline
-from site import gethistoryfile
+from site import gethistoryfile   # type: ignore[attr-defined]
 import sys
 
 from . import commands, historical_reader

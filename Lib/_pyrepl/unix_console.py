@@ -349,7 +349,7 @@ class UnixConsole(Console):
         trace("push char {char!r}", char=char)
         self.event_queue.push(char)
 
-    def get_event(self, block=True):
+    def get_event(self, block: bool = True) -> Event:
         """
         Get an event from the console event queue.
 

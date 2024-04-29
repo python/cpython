@@ -105,10 +105,8 @@ default_keymap: tuple[tuple[KeySpec, CommandName], ...] = tuple(
         (r"\C-k", "kill-line"),
         (r"\C-l", "clear-screen"),
         (r"\C-m", "accept"),
-        (r"\C-q", "quoted-insert"),
         (r"\C-t", "transpose-characters"),
         (r"\C-u", "unix-line-discard"),
-        (r"\C-v", "quoted-insert"),
         (r"\C-w", "unix-word-rubout"),
         (r"\C-x\C-u", "upcase-region"),
         (r"\C-y", "yank"),
@@ -142,7 +140,6 @@ default_keymap: tuple[tuple[KeySpec, CommandName], ...] = tuple(
         (r"\<down>", "down"),
         (r"\<left>", "left"),
         (r"\<right>", "right"),
-        (r"\<insert>", "quoted-insert"),
         (r"\<delete>", "delete"),
         (r"\<backspace>", "backspace"),
         (r"\M-\<backspace>", "backward-kill-word"),
@@ -464,9 +461,9 @@ class Reader:
         self.cxy = self.pos2xy(self.pos)
         self.console.move_cursor(*self.cxy)
 
-    def after_command(self, cmd) -> None:
+    def after_command(self, cmd: Command) -> None:
         """This function is called to allow post command cleanup."""
-        if getattr(cmd, "kills_digit_arg", 1):
+        if getattr(cmd, "kills_digit_arg", True):
             if self.arg is not None:
                 self.dirty = True
             self.arg = None
@@ -537,7 +534,7 @@ class Reader:
     def do_cmd(self, cmd) -> None:
         if isinstance(cmd[0], str):
             cmd = self.commands.get(cmd[0], commands.invalid_command)(self, *cmd)
-        elif isinstance(cmd[0], type):
+        elif isinstance(cmd[0], type) and issubclass(cmd[0], commands.Command):
             cmd = cmd[0](self, *cmd)
         else:
             return  # nothing to do

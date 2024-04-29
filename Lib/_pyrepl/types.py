@@ -4,3 +4,4 @@ Callback = Callable[[], Any]
 SimpleContextManager = Iterator[None]
 KeySpec = str  # like r"\C-c"
 CommandName = str  # like "interrupt"
+EventTuple = tuple[CommandName, str]

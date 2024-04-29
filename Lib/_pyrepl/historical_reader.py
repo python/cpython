@@ -17,12 +17,19 @@
 # CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
 # CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
+from __future__ import annotations
+
 from contextlib import contextmanager
 
 from . import commands, input
-from .reader import Reader as R
+from .reader import Reader
 
-isearch_keymap = tuple(
+
+if False:
+    from .types import Callback, SimpleContextManager, KeySpec, CommandName
+
+
+isearch_keymap: tuple[tuple[KeySpec, CommandName], ...] = tuple(
     [("\\%03o" % c, "isearch-end") for c in range(256) if chr(c) != "\\"]
     + [(c, "isearch-add-character") for c in map(chr, range(32, 127)) if c != "\\"]
     + [
@@ -46,7 +53,7 @@ ISEARCH_DIRECTION_FORWARDS = "f"
 
 
 class next_history(commands.Command):
-    def do(self):
+    def do(self) -> None:
         r = self.reader
         if r.historyi == len(r.history):
             r.error("end of history list")
@@ -190,7 +197,7 @@ class isearch_end(commands.Command):
         r.dirty = 1
 
 
-class HistoricalReader(R):
+class HistoricalReader(Reader):
     """Adds history support (with incremental history searching) to the
     Reader class.
 

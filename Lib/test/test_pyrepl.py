@@ -55,8 +55,50 @@ class FakeConsole(Console):
         self.height = 100
         self.width = 80
 
-    def get_event(self, block=True):
+    def get_event(self, block: bool = True) -> Event:
         return next(self.events)
+
+    def getpending(self) -> Event:
+        return self.get_event(block=False)
+
+    def getheightwidth(self) -> tuple[int, int]:
+        return self.height, self.width
+
+    def refresh(self, screen: list[str], xy: tuple[int, int]) -> None:
+        pass
+
+    def prepare(self) -> None:
+        pass
+
+    def restore(self) -> None:
+        pass
+
+    def move_cursor(self, x: int, y: int) -> None:
+        pass
+
+    def set_cursor_vis(self, visible: bool) -> None:
+        pass
+
+    def push_char(self, char: str) -> None:
+        pass
+
+    def beep(self) -> None:
+        pass
+
+    def clear(self) -> None:
+        pass
+
+    def finish(self) -> None:
+        pass
+
+    def flushoutput(self) -> None:
+        pass
+
+    def forgetinput(self) -> None:
+        pass
+
+    def wait(self) -> None:
+        pass
 
 
 class TestPyReplDriver(TestCase):
