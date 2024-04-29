@@ -1,2 +1,0 @@
-Fix a traceback in :mod:`argparse` when all options in a mutually exclusive
-group are suppressed.

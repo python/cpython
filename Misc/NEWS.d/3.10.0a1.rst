@@ -5,7 +5,7 @@
 .. section: Security
 
 Fixes ``python3x._pth`` being ignored on Windows, caused by the fix for
-:issue:`29778` (CVE-2020-15801).
+:issue:`29778` (:cve:`2020-15801`).
 
 ..
 
@@ -25,7 +25,7 @@ events.
 .. section: Security
 
 Ensure :file:`python3.dll` is loaded from correct locations when Python is
-embedded (CVE-2020-15523).
+embedded (:cve:`2020-15523`).
 
 ..
 
@@ -1596,7 +1596,7 @@ UnpicklingError instead of crashing.
 .. section: Library
 
 Avoid infinite loop when reading specially crafted TAR files using the
-tarfile module (CVE-2019-20907).
+tarfile module (:cve:`2019-20907`).
 
 ..
 
@@ -1861,8 +1861,8 @@ bundled versions of ``pip`` and ``setuptools``.  Patch by Krzysztof Konopko.
 .. nonce: _dx3OO
 .. section: Library
 
-Removed :meth:`asyncio.Task.current_task` and
-:meth:`asyncio.Task.all_tasks`. Patch contributed by Rémi Lapeyre.
+Removed :meth:`!asyncio.Task.current_task` and
+:meth:`!asyncio.Task.all_tasks`. Patch contributed by Rémi Lapeyre.
 
 ..
 

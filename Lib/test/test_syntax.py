@@ -1699,6 +1699,18 @@ SyntaxError: Did you mean to use 'from ... import ...' instead?
 Traceback (most recent call last):
 SyntaxError: invalid syntax
 
+>>> from i import
+Traceback (most recent call last):
+SyntaxError: Expected one or more names after 'import'
+
+>>> from .. import
+Traceback (most recent call last):
+SyntaxError: Expected one or more names after 'import'
+
+>>> import
+Traceback (most recent call last):
+SyntaxError: Expected one or more names after 'import'
+
 >>> (): int
 Traceback (most recent call last):
 SyntaxError: only single target (not tuple) can be annotated
@@ -1711,6 +1723,49 @@ SyntaxError: only single target (not tuple) can be annotated
 >>> ([]): int
 Traceback (most recent call last):
 SyntaxError: only single target (not list) can be annotated
+
+# 'not' after operators:
+
+>>> 3 + not 3
+Traceback (most recent call last):
+SyntaxError: 'not' after an operator must be parenthesized
+
+>>> 3 * not 3
+Traceback (most recent call last):
+SyntaxError: 'not' after an operator must be parenthesized
+
+>>> + not 3
+Traceback (most recent call last):
+SyntaxError: 'not' after an operator must be parenthesized
+
+>>> - not 3
+Traceback (most recent call last):
+SyntaxError: 'not' after an operator must be parenthesized
+
+>>> ~ not 3
+Traceback (most recent call last):
+SyntaxError: 'not' after an operator must be parenthesized
+
+>>> 3 + - not 3
+Traceback (most recent call last):
+SyntaxError: 'not' after an operator must be parenthesized
+
+>>> 3 + not -1
+Traceback (most recent call last):
+SyntaxError: 'not' after an operator must be parenthesized
+
+# Check that we don't introduce misleading errors
+>>> not 1 */ 2
+Traceback (most recent call last):
+SyntaxError: invalid syntax
+
+>>> not 1 +
+Traceback (most recent call last):
+SyntaxError: invalid syntax
+
+>>> not + 1 +
+Traceback (most recent call last):
+SyntaxError: invalid syntax
 
 Corner-cases that used to fail to raise the correct error:
 
@@ -1868,22 +1923,22 @@ A[*(1:2)]
     >>> A[*(1:2)]
     Traceback (most recent call last):
         ...
-    SyntaxError: invalid syntax
+    SyntaxError: Invalid star expression
     >>> A[*(1:2)] = 1
     Traceback (most recent call last):
         ...
-    SyntaxError: invalid syntax
+    SyntaxError: Invalid star expression
     >>> del A[*(1:2)]
     Traceback (most recent call last):
         ...
-    SyntaxError: invalid syntax
+    SyntaxError: Invalid star expression
 
 A[*:] and A[:*]
 
     >>> A[*:]
     Traceback (most recent call last):
         ...
-    SyntaxError: invalid syntax
+    SyntaxError: Invalid star expression
     >>> A[:*]
     Traceback (most recent call last):
         ...
@@ -1894,7 +1949,7 @@ A[*]
     >>> A[*]
     Traceback (most recent call last):
         ...
-    SyntaxError: invalid syntax
+    SyntaxError: Invalid star expression
 
 A[**]
 
@@ -2038,11 +2093,23 @@ Invalid expressions in type scopes:
 
     >>> f(**x, *)
     Traceback (most recent call last):
-    SyntaxError: iterable argument unpacking follows keyword argument unpacking
+    SyntaxError: Invalid star expression
 
     >>> f(x, *:)
     Traceback (most recent call last):
-    SyntaxError: invalid syntax
+    SyntaxError: Invalid star expression
+
+    >>> f(x, *)
+    Traceback (most recent call last):
+    SyntaxError: Invalid star expression
+
+    >>> f(x = 5, *)
+    Traceback (most recent call last):
+    SyntaxError: Invalid star expression
+
+    >>> f(x = 5, *:)
+    Traceback (most recent call last):
+    SyntaxError: Invalid star expression
 """
 
 import re

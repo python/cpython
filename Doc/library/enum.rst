@@ -279,6 +279,8 @@ Data Types
          >>> Color.RED.value
          1
 
+      Value of the member, can be set in :meth:`~Enum.__new__`.
+
       .. note:: Enum member values
 
          Member values can be anything: :class:`int`, :class:`str`, etc.  If
@@ -286,13 +288,18 @@ Data Types
          appropriate value will be chosen for you.  See :class:`auto` for the
          details.
 
+         While mutable/unhashable values, such as :class:`dict`, :class:`list` or
+         a mutable :class:`~dataclasses.dataclass`, can be used, they will have a
+         quadratic performance impact during creation relative to the
+         total number of mutable/unhashable values in the enum.
+
    .. attribute:: Enum._name_
 
       Name of the member.
 
    .. attribute:: Enum._value_
 
-      Value of the member, can be set in :meth:`~object.__new__`.
+      Value of the member, can be set in :meth:`~Enum.__new__`.
 
    .. attribute:: Enum._order_
 
@@ -400,8 +407,8 @@ Data Types
 
       results in the call ``int('1a', 16)`` and a value of ``17`` for the member.
 
-      ..note:: When writing a custom ``__new__``, do not use ``super().__new__`` --
-               call the appropriate ``__new__`` instead.
+      .. note:: When writing a custom ``__new__``, do not use ``super().__new__`` --
+                call the appropriate ``__new__`` instead.
 
    .. method:: Enum.__repr__(self)
 
@@ -820,7 +827,7 @@ Supported ``__dunder__`` names
 :attr:`~EnumType.__members__` is a read-only ordered mapping of ``member_name``:``member``
 items.  It is only available on the class.
 
-:meth:`~object.__new__`, if specified, must create and return the enum members;
+:meth:`~Enum.__new__`, if specified, must create and return the enum members;
 it is also a very good idea to set the member's :attr:`!_value_` appropriately.
 Once all the members are created it is no longer used.
 
