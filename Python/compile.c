@@ -2237,7 +2237,8 @@ compiler_function_body(struct compiler *c, stmt_ty s, int is_async, Py_ssize_t f
 
     NEW_JUMP_TARGET_LABEL(c, start);
     USE_LABEL(c, start);
-    if (c->u->u_ste->ste_coroutine || c->u->u_ste->ste_generator) {
+    bool add_stopiteration_handler = c->u->u_ste->ste_coroutine || c->u->u_ste->ste_generator;
+    if (add_stopiteration_handler) {
         /* wrap_in_stopiteration_handler will push a block, so we need to account for that */
         RETURN_IF_ERROR(
             compiler_push_fblock(c, NO_LOCATION, STOP_ITERATION,
@@ -2247,7 +2248,7 @@ compiler_function_body(struct compiler *c, stmt_ty s, int is_async, Py_ssize_t f
     for (Py_ssize_t i = first_instr; i < asdl_seq_LEN(body); i++) {
         VISIT_IN_SCOPE(c, stmt, (stmt_ty)asdl_seq_GET(body, i));
     }
-    if (c->u->u_ste->ste_coroutine || c->u->u_ste->ste_generator) {
+    if (add_stopiteration_handler) {
         if (wrap_in_stopiteration_handler(c) < 0) {
             compiler_exit_scope(c);
             return ERROR;
