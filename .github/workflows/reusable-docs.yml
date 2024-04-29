@@ -55,7 +55,7 @@ jobs:
       run: |
         set -Eeuo pipefail
         # Build docs with the '-n' (nit-picky) option; write warnings to file
-        make -C Doc/ PYTHON=../python SPHINXOPTS="-q -n -W --keep-going -w sphinx-warnings.txt" html
+        make -C Doc/ PYTHON=../python SPHINXOPTS="--quiet --nitpicky --fail-on-warning --keep-going --warning-file sphinx-warnings.txt" html
     - name: 'Check warnings'
       if: github.event_name == 'pull_request'
       run: |
@@ -74,7 +74,7 @@ jobs:
     - name: 'Set up Python'
       uses: actions/setup-python@v5
       with:
-        python-version: '3.11'  # known to work with Sphinx 4.2
+        python-version: '3.12'  # known to work with Sphinx 6.2.1
         cache: 'pip'
         cache-dependency-path: 'Doc/requirements-oldest-sphinx.txt'
     - name: 'Install build dependencies'
