@@ -39,6 +39,7 @@
   <Target Name="_TouchRegenSources" Condition="$(ForceRegen) == 'true'">
     <Message Text="Touching source files to force regeneration" Importance="high" />
     <Touch Files="@(_PegenSources);@(_ASTSources);@(_OpcodeSources);@(_TokenSources);@(_KeywordOutputs);@(_SbomSources)"
+           AlwaysCreate="False" />
   </Target>
 
   <Target Name="_RegenPegen"
