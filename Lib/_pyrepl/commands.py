@@ -235,8 +235,9 @@ class suspend(Command):
 class up(MotionCommand):
     def do(self) -> None:
         r = self.reader
-        for i in range(r.get_arg()):
+        for _ in range(r.get_arg()):
             bol1 = r.bol()
+            eol1 = r.eol()
             if bol1 == 0:
                 if r.historyi > 0:
                     r.select_item(r.historyi - 1)
@@ -246,7 +247,14 @@ class up(MotionCommand):
                 return
             bol2 = r.bol(bol1 - 1)
             line_pos = r.pos - bol1
-            if line_pos > bol1 - bol2 - 1:
+
+            # Adjusting `pos` instead of (x, y) coordinates means that moving
+            # between lines that have mixed single-width and double-width
+            # characters does not align. Most editors do this, so leave it as-is.
+            if line_pos > bol1 - bol2 - 1 or (
+                # If at end-of-non-empty-line, move to end-of-line
+                r.pos == eol1 and any(not i.isspace() for i in r.buffer[bol1:])
+            ):
                 r.pos = bol1 - 1
             else:
                 r.pos = bol2 + line_pos
@@ -268,7 +276,14 @@ class down(MotionCommand):
                 r.error("end of buffer")
                 return
             eol2 = r.eol(eol1 + 1)
-            if r.pos - bol1 > eol2 - eol1 - 1:
+
+            # Adjusting `pos` instead of (x, y) coordinates means that moving
+            # between lines that have mixed single-width and double-width
+            # characters does not align. Most editors do this, so leave it as-is.
+            if r.pos - bol1 > eol2 - eol1 - 1 or (
+                # If at end-of-non-empty-line, move to end-of-line
+                r.pos == eol1 and any(not i.isspace() for i in r.buffer[bol1:])
+            ):
                 r.pos = eol2
             else:
                 r.pos = eol1 + (r.pos - bol1) + 1
