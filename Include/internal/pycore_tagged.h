@@ -73,8 +73,6 @@ typedef union {
     #define PyStackRef_StealObject(tagged) PyStackRef_Get(tagged)
 #endif
 
-#define MAX_UNTAG_SCRATCH 10
-
 static inline void
 _Py_untag_stack_borrowed(PyObject **dst, const _PyStackRef *src, size_t length) {
     for (size_t i = 0; i < length; i++) {
