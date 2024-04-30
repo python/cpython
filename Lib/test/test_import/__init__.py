@@ -1328,6 +1328,8 @@ class RelativeImportTests(unittest.TestCase):
             package2.submodule1.submodule2
 
     def test_rebinding(self):
+        # The same data is also used for testing pkgutil.resolve_name()
+        # in test_pkgutil and mock.patch in test_unittest.
         path = os.path.join(os.path.dirname(__file__), 'data')
         with uncache('package3', 'package3.submodule'), DirsOnSysPath(path):
             from package3 import submodule

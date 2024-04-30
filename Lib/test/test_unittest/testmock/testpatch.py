@@ -1731,6 +1731,10 @@ class PatchTest(unittest.TestCase):
 
 
     def test_name_resolution_import_rebinding(self):
+        # Currently mock.patch uses pkgutil.resolve_name(), but repeat
+        # similar tests just for the case.
+        # The same data is also used for testing import in test_import and
+        # pkgutil.resolve_name() in test_pkgutil.
         path = os.path.join(os.path.dirname(test.__file__), 'test_import', 'data')
         def check(name):
             p = patch(name)

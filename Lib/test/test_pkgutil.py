@@ -322,6 +322,8 @@ class PkgutilTests(unittest.TestCase):
                     pkgutil.resolve_name(s)
 
     def test_name_resolution_import_rebinding(self):
+        # The same data is also used for testing import in test_import and
+        # mock.patch in test_unittest.
         path = os.path.join(os.path.dirname(__file__), 'test_import', 'data')
         with uncache('package3', 'package3.submodule'), DirsOnSysPath(path):
             self.assertEqual(pkgutil.resolve_name('package3.submodule.attr'), 'submodule')
