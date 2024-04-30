@@ -1089,32 +1089,38 @@ dummy_func(
             goto resume_frame;
         }
 
-        tier1 inst(YIELD_VALUE, (retval -- unused)) {
+        inst(YIELD_VALUE, (retval -- value)) {
             // NOTE: It's important that YIELD_VALUE never raises an exception!
             // The compiler treats any exception raised here as a failed close()
             // or throw() call.
+            #if TIER_ONE
             assert(frame != &entry_frame);
-            frame->instr_ptr = next_instr;
+            #endif
+            frame->instr_ptr++;
             PyGenObject *gen = _PyFrame_GetGenerator(frame);
             assert(FRAME_SUSPENDED_YIELD_FROM == FRAME_SUSPENDED + 1);
             assert(oparg == 0 || oparg == 1);
             gen->gi_frame_state = FRAME_SUSPENDED + oparg;
-            _PyFrame_SetStackPointer(frame, stack_pointer - 1);
+            SYNC_SP();
+            _PyFrame_SetStackPointer(frame, stack_pointer);
             tstate->exc_info = gen->gi_exc_state.previous_item;
             gen->gi_exc_state.previous_item = NULL;
             _Py_LeaveRecursiveCallPy(tstate);
             _PyInterpreterFrame *gen_frame = frame;
             frame = tstate->current_frame = frame->previous;
             gen_frame->previous = NULL;
-            _PyFrame_StackPush(frame, retval);
             /* We don't know which of these is relevant here, so keep them equal */
             assert(INLINE_CACHE_ENTRIES_SEND == INLINE_CACHE_ENTRIES_FOR_ITER);
+            #if TIER_ONE
             assert(_PyOpcode_Deopt[frame->instr_ptr->op.code] == SEND ||
                    _PyOpcode_Deopt[frame->instr_ptr->op.code] == FOR_ITER ||
                    _PyOpcode_Deopt[frame->instr_ptr->op.code] == INTERPRETER_EXIT ||
                    _PyOpcode_Deopt[frame->instr_ptr->op.code] == ENTER_EXECUTOR);
+            #endif
             LOAD_IP(1 + INLINE_CACHE_ENTRIES_SEND);
-            goto resume_frame;
+            LOAD_SP();
+            value = retval;
+            LLTRACE_RESUME_FRAME();
         }
 
         inst(POP_EXCEPT, (exc_value -- )) {
@@ -4257,6 +4263,29 @@ dummy_func(
             GOTO_UNWIND();
         }
 
+
+        /* Special version of RESUME_CHECK that (when paired with _EVAL_BREAKER_EXIT)
+         * is safe for tier 2. Progress is guaranteed because _EVAL_BREAKER_EXIT calls
+         * _Py_HandlePending which clears the eval_breaker so that _TIER2_RESUME_CHECK
+         * will not exit if it is immediately executed again. */
+        tier2 op(_TIER2_RESUME_CHECK, (--)) {
+#if defined(__EMSCRIPTEN__)
+            EXIT_IF(_Py_emscripten_signal_clock == 0);
+            _Py_emscripten_signal_clock -= Py_EMSCRIPTEN_SIGNAL_HANDLING;
+#endif
+            uintptr_t eval_breaker = _Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker);
+            EXIT_IF(eval_breaker & _PY_EVAL_EVENTS_MASK);
+            assert(eval_breaker == FT_ATOMIC_LOAD_UINTPTR_ACQUIRE(_PyFrame_GetCode(frame)->_co_instrumentation_version));
+        }
+
+        tier2 op(_EVAL_BREAKER_EXIT, (--)) {
+            _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY();
+            QSBR_QUIESCENT_STATE(tstate);
+            if (_Py_HandlePending(tstate) != 0) {
+                GOTO_UNWIND();
+            }
+            EXIT_TO_TRACE();
+        }
 
 // END BYTECODES //
 
