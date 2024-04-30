@@ -684,6 +684,13 @@
 
         /* _INSTRUMENTED_YIELD_VALUE is not a viable micro-op for tier 2 */
 
+        case _YIELD_VALUE: {
+            _Py_UopsSymbol *res;
+            OUT_OF_SPACE_IF_NULL(res = sym_new_unknown(ctx));
+            stack_pointer[-1] = res;
+            break;
+        }
+
         case _POP_EXCEPT: {
             stack_pointer += -1;
             break;
@@ -1440,11 +1447,8 @@
         }
 
         case _FOR_ITER_GEN_FRAME: {
-            _PyInterpreterFrame *gen_frame;
-            gen_frame = sym_new_not_null(ctx);
-            if (gen_frame == NULL) goto out_of_space;
-            stack_pointer[0] = (_Py_UopsSymbol *)gen_frame;
-            stack_pointer += 1;
+            /* We are about to hit the end of the trace */
+            goto done;
             break;
         }
 
