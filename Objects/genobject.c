@@ -380,6 +380,7 @@ gen_close(PyGenObject *gen, PyObject *args)
             // RESUME after YIELD_VALUE and exception depth is 1
             assert((oparg & RESUME_OPARG_LOCATION_MASK) != RESUME_AT_FUNC_START);
             gen->gi_frame_state = FRAME_COMPLETED;
+            _PyFrame_ClearLocals((_PyInterpreterFrame *)gen->gi_iframe);
             Py_RETURN_NONE;
         }
     }
