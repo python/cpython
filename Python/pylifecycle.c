@@ -2410,54 +2410,6 @@ init_import_site(void)
     return _PyStatus_OK();
 }
 
-/* Check if a file descriptor is valid or not.
-   Return 0 if the file descriptor is invalid, return non-zero otherwise. */
-static int
-is_valid_fd(int fd)
-{
-/* dup() is faster than fstat(): fstat() can require input/output operations,
-   whereas dup() doesn't. There is a low risk of EMFILE/ENFILE at Python
-   startup. Problem: dup() doesn't check if the file descriptor is valid on
-   some platforms.
-
-   fcntl(fd, F_GETFD) is even faster, because it only checks the process table.
-   It is preferred over dup() when available, since it cannot fail with the
-   "too many open files" error (EMFILE).
-
-   bpo-30225: On macOS Tiger, when stdout is redirected to a pipe and the other
-   side of the pipe is closed, dup(1) succeed, whereas fstat(1, &st) fails with
-   EBADF. FreeBSD has similar issue (bpo-32849).
-
-   Only use dup() on Linux where dup() is enough to detect invalid FD
-   (bpo-32849).
-*/
-    if (fd < 0) {
-        return 0;
-    }
-#if defined(F_GETFD) && ( \
-        defined(__linux__) || \
-        defined(__APPLE__) || \
-        defined(__wasm__))
-    return fcntl(fd, F_GETFD) >= 0;
-#elif defined(__linux__)
-    int fd2 = dup(fd);
-    if (fd2 >= 0) {
-        close(fd2);
-    }
-    return (fd2 >= 0);
-#elif defined(MS_WINDOWS)
-    HANDLE hfile;
-    _Py_BEGIN_SUPPRESS_IPH
-    hfile = (HANDLE)_get_osfhandle(fd);
-    _Py_END_SUPPRESS_IPH
-    return (hfile != INVALID_HANDLE_VALUE
-            && GetFileType(hfile) != FILE_TYPE_UNKNOWN);
-#else
-    struct stat st;
-    return (fstat(fd, &st) == 0);
-#endif
-}
-
 /* returns Py_None if the fd is not valid */
 static PyObject*
 create_stdio(const PyConfig *config, PyObject* io,
@@ -2471,8 +2423,9 @@ create_stdio(const PyConfig *config, PyObject* io,
     int buffering, isatty;
     const int buffered_stdio = config->buffered_stdio;
 
-    if (!is_valid_fd(fd))
+    if (!_Py_IsValidFD(fd)) {
         Py_RETURN_NONE;
+    }
 
     /* stdin is always opened in buffered mode, first because it shouldn't
        make a difference in common use cases, second because TextIOWrapper
@@ -2588,9 +2541,9 @@ error:
     Py_XDECREF(text);
     Py_XDECREF(raw);
 
-    if (PyErr_ExceptionMatches(PyExc_OSError) && !is_valid_fd(fd)) {
+    if (PyErr_ExceptionMatches(PyExc_OSError) && !_Py_IsValidFD(fd)) {
         /* Issue #24891: the file descriptor was closed after the first
-           is_valid_fd() check was called. Ignore the OSError and set the
+           _Py_IsValidFD() check was called. Ignore the OSError and set the
            stream to None. */
         PyErr_Clear();
         Py_RETURN_NONE;
