@@ -259,7 +259,7 @@ class TestCursorPosition(TestCase):
 
         reader = self.handle_all_events(events)
 
-        # cursor her (showing 2nd line only):
+        # cursor here (showing 2nd line only):
         # <  ' 可口可乐; 可口可樂'>
         #               ^
         # TODO: Would we like the cursor to go back to end of line 2?
