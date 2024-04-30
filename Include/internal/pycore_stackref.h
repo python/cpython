@@ -114,8 +114,6 @@ PyStackRef_DECREF(_PyStackRef tagged)
 #   define PyStackRef_DECREF(op) Py_DECREF(PyStackRef_Get(op))
 #endif
 
-#define PyStackRef_DECREF_OWNED(op) Py_DECREF(PyStackRef_Get(op));
-
 #if defined(Py_GIL_DISABLED)
 static inline void
 PyStackRef_INCREF(_PyStackRef tagged)
