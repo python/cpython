@@ -52,7 +52,7 @@ _PATCH_FUNCS = {
     # aarch64-apple-darwin:
     "ARM64_RELOC_BRANCH26": "patch_aarch64_26r",
     "ARM64_RELOC_GOT_LOAD_PAGE21": "patch_aarch64_21rx",
-    "ARM64_RELOC_GOT_LOAD_PAGEOFF12": "patch_aarch64_12",
+    "ARM64_RELOC_GOT_LOAD_PAGEOFF12": "patch_aarch64_12x",
     "ARM64_RELOC_PAGE21": "patch_aarch64_21r",
     "ARM64_RELOC_PAGEOFF12": "patch_aarch64_12",
     "ARM64_RELOC_UNSIGNED": "patch_64",
@@ -62,7 +62,7 @@ _PATCH_FUNCS = {
     "IMAGE_REL_ARM64_BRANCH26": "patch_aarch64_26r",
     "IMAGE_REL_ARM64_PAGEBASE_REL21": "patch_aarch64_21rx",
     "IMAGE_REL_ARM64_PAGEOFFSET_12A": "patch_aarch64_12",
-    "IMAGE_REL_ARM64_PAGEOFFSET_12L": "patch_aarch64_12",
+    "IMAGE_REL_ARM64_PAGEOFFSET_12L": "patch_aarch64_12x",
     # i686-pc-windows-msvc:
     "IMAGE_REL_I386_DIR32": "patch_32",
     "IMAGE_REL_I386_REL32": "patch_x86_64_32rx",
@@ -70,10 +70,10 @@ _PATCH_FUNCS = {
     "R_AARCH64_ABS64": "patch_64",
     "R_AARCH64_ADD_ABS_LO12_NC": "patch_aarch64_12",
     "R_AARCH64_ADR_GOT_PAGE": "patch_aarch64_21rx",
-    "R_AARCH64_ADR_PREL_PG_HI21": "patch_aarch64_21rx",
+    "R_AARCH64_ADR_PREL_PG_HI21": "patch_aarch64_21r",
     "R_AARCH64_CALL26": "patch_aarch64_26r",
     "R_AARCH64_JUMP26": "patch_aarch64_26r",
-    "R_AARCH64_LD64_GOT_LO12_NC": "patch_aarch64_12",
+    "R_AARCH64_LD64_GOT_LO12_NC": "patch_aarch64_12x",
     "R_AARCH64_MOVW_UABS_G0_NC": "patch_aarch64_16a",
     "R_AARCH64_MOVW_UABS_G1_NC": "patch_aarch64_16b",
     "R_AARCH64_MOVW_UABS_G2_NC": "patch_aarch64_16c",
@@ -141,7 +141,7 @@ class Hole:
             and self.symbol == other.symbol
             and self.addend == other.addend
             and self.func == "patch_aarch64_21rx"
-            and other.func == "patch_aarch64_12"
+            and other.func == "patch_aarch64_12x"
         ):
             folded = self.replace()
             folded.func = "patch_aarch64_33rx"

@@ -214,6 +214,12 @@ patch_aarch64_12(unsigned char *location, uint64_t value)
     set_bits(loc32, 10, value, shift, 12);
 }
 
+static inline void
+patch_aarch64_12x(unsigned char *location, uint64_t value)
+{
+    patch_aarch64_12(location, value);
+}
+
 // 16-bit low part of an absolute address.
 static inline void
 patch_aarch64_16a(unsigned char *location, uint64_t value)
@@ -295,7 +301,7 @@ patch_aarch64_26r(unsigned char *location, uint64_t value)
     set_bits(loc32, 0, value, 2, 26);
 }
 
-// A pair of patch_aarch64_21rx and patch_aarch64_12.
+// A pair of patch_aarch64_21rx and patch_aarch64_12x.
 static inline void
 patch_aarch64_33rx(unsigned char *location, uint64_t value)
 {
@@ -331,7 +337,7 @@ patch_aarch64_33rx(unsigned char *location, uint64_t value)
         return;
     }
     patch_aarch64_21rx(location, value);
-    patch_aarch64_12(location + 4, value);
+    patch_aarch64_12x(location + 4, value);
 }
 
 // 32-bit relative address.
