@@ -432,5 +432,5 @@ class show_history(Command):
 class paste_mode(Command):
 
     def do(self) -> None:
-        self.reader.paste_mode = True
+        self.reader.paste_mode = not self.reader.paste_mode
         self.reader.dirty = True
