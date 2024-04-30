@@ -46,7 +46,7 @@ import weakref
 import types
 
 from test.support import captured_stderr, cpython_only, infinite_recursion
-from test.typinganndata import mod_generics_cache, _typed_dict_helper
+from test.typinganndata import ann_module695, mod_generics_cache, _typed_dict_helper
 
 
 CANNOT_SUBCLASS_TYPE = 'Cannot subclass special typing classes'
@@ -977,6 +977,38 @@ class UnpackTests(BaseTestCase):
         def foo(**kwargs: Unpack[Movie]): ...
         self.assertEqual(repr(foo.__annotations__['kwargs']),
                          f"typing.Unpack[{__name__}.Movie]")
+
+    def test_builtin_tuple(self):
+        Ts = TypeVarTuple("Ts")
+
+        class Old(Generic[*Ts]): ...
+        class New[*Ts]: ...
+
+        PartOld = Old[int, *Ts]
+        self.assertEqual(PartOld[str].__args__, (int, str))
+        self.assertEqual(PartOld[*tuple[str]].__args__, (int, str))
+        self.assertEqual(PartOld[*Tuple[str]].__args__, (int, str))
+        self.assertEqual(PartOld[Unpack[tuple[str]]].__args__, (int, str))
+        self.assertEqual(PartOld[Unpack[Tuple[str]]].__args__, (int, str))
+
+        PartNew = New[int, *Ts]
+        self.assertEqual(PartNew[str].__args__, (int, str))
+        self.assertEqual(PartNew[*tuple[str]].__args__, (int, str))
+        self.assertEqual(PartNew[*Tuple[str]].__args__, (int, str))
+        self.assertEqual(PartNew[Unpack[tuple[str]]].__args__, (int, str))
+        self.assertEqual(PartNew[Unpack[Tuple[str]]].__args__, (int, str))
+
+    def test_unpack_wrong_type(self):
+        Ts = TypeVarTuple("Ts")
+        class Gen[*Ts]: ...
+        PartGen = Gen[int, *Ts]
+
+        bad_unpack_param = re.escape("Unpack[...] must be used with a tuple type")
+        with self.assertRaisesRegex(TypeError, bad_unpack_param):
+            PartGen[Unpack[list[int]]]
+        with self.assertRaisesRegex(TypeError, bad_unpack_param):
+            PartGen[Unpack[List[int]]]
+
 
 class TypeVarTupleTests(BaseTestCase):
 
@@ -4640,6 +4672,30 @@ class GenericTests(BaseTestCase):
             get_type_hints(f, globals(), locals()),
             {'x': list[list[ForwardRef('X')]]}
         )
+
+    def test_pep695_generic_with_future_annotations(self):
+        hints_for_A = get_type_hints(ann_module695.A)
+        A_type_params = ann_module695.A.__type_params__
+        self.assertIs(hints_for_A["x"], A_type_params[0])
+        self.assertEqual(hints_for_A["y"].__args__[0], Unpack[A_type_params[1]])
+        self.assertIs(hints_for_A["z"].__args__[0], A_type_params[2])
+
+        hints_for_B = get_type_hints(ann_module695.B)
+        self.assertEqual(hints_for_B.keys(), {"x", "y", "z"})
+        self.assertEqual(
+            set(hints_for_B.values()) ^ set(ann_module695.B.__type_params__),
+            set()
+        )
+
+        hints_for_generic_function = get_type_hints(ann_module695.generic_function)
+        func_t_params = ann_module695.generic_function.__type_params__
+        self.assertEqual(
+            hints_for_generic_function.keys(), {"x", "y", "z", "zz", "return"}
+        )
+        self.assertIs(hints_for_generic_function["x"], func_t_params[0])
+        self.assertEqual(hints_for_generic_function["y"], Unpack[func_t_params[1]])
+        self.assertIs(hints_for_generic_function["z"].__origin__, func_t_params[2])
+        self.assertIs(hints_for_generic_function["zz"].__origin__, func_t_params[2])
 
     def test_extended_generic_rules_subclassing(self):
         class T1(Tuple[T, KT]): ...

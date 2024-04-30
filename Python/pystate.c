@@ -399,6 +399,7 @@ _Py_COMP_DIAG_POP
         &(runtime)->unicode_state.ids.mutex, \
         &(runtime)->imports.extensions.mutex, \
         &(runtime)->ceval.pending_mainthread.mutex, \
+        &(runtime)->ceval.sys_trace_profile_mutex, \
         &(runtime)->atexit.mutex, \
         &(runtime)->audit_hooks.mutex, \
         &(runtime)->allocators.mutex, \
@@ -1567,6 +1568,17 @@ new_threadstate(PyInterpreterState *interp, int whence)
         // Must be called with lock unlocked to avoid re-entrancy deadlock.
         PyMem_RawFree(new_tstate);
     }
+    else {
+#ifdef Py_GIL_DISABLED
+        if (interp->gc.immortalize.enable_on_thread_created &&
+            !interp->gc.immortalize.enabled)
+        {
+            // Immortalize objects marked as using deferred reference counting
+            // the first time a non-main thread is created.
+            _PyGC_ImmortalizeDeferredObjects(interp);
+        }
+#endif
+    }
 
 #ifdef Py_GIL_DISABLED
     // Must be called with lock unlocked to avoid lock ordering deadlocks.
@@ -2095,7 +2107,7 @@ _PyThreadState_Suspend(PyThreadState *tstate)
 {
     _PyRuntimeState *runtime = &_PyRuntime;
 
-    assert(tstate->state == _Py_THREAD_ATTACHED);
+    assert(_Py_atomic_load_int_relaxed(&tstate->state) == _Py_THREAD_ATTACHED);
 
     struct _stoptheworld_state *stw = NULL;
     HEAD_LOCK(runtime);

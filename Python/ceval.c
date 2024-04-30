@@ -20,6 +20,7 @@
 #include "pycore_opcode_metadata.h" // EXTRA_CASES
 #include "pycore_optimizer.h"     // _PyUOpExecutor_Type
 #include "pycore_opcode_utils.h"  // MAKE_FUNCTION_*
+#include "pycore_pyatomic_ft_wrappers.h" // FT_ATOMIC_LOAD_PTR_ACQUIRE
 #include "pycore_pyerrors.h"      // _PyErr_GetRaisedException()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_range.h"         // _PyRangeIterObject
@@ -1071,9 +1072,13 @@ jump_to_jump_target:
     next_uop = current_executor->trace + target;
     goto tier2_dispatch;
 
+exit_to_tier1_dynamic:
+    next_instr = frame->instr_ptr;
+    goto goto_to_tier1;
 exit_to_tier1:
     assert(next_uop[-1].format == UOP_FORMAT_TARGET);
     next_instr = next_uop[-1].target + _PyCode_CODE(_PyFrame_GetCode(frame));
+goto_to_tier1:
 #ifdef Py_DEBUG
     if (lltrace >= 2) {
         printf("DEOPT: [UOp ");
