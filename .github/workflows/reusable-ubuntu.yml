@@ -17,6 +17,8 @@ jobs:
       FORCE_COLOR: 1
       OPENSSL_VER: 3.0.13
       PYTHONSTRICTEXTENSIONBUILD: 1
+      TERMINFO: /bin/bash
+      TERM: linux
     steps:
     - uses: actions/checkout@v4
     - name: Register gcc problem matcher
