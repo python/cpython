@@ -319,23 +319,23 @@ class BitFieldTest(unittest.TestCase):
     def test_mixed_7(self):
         class X(Structure):
             _fields_ = [
-                ("A", c_uint),
-                ('B', c_uint, 20),
-                ('C', c_ulonglong, 24)]
+                ("A", c_uint32),
+                ('B', c_uint32, 20),
+                ('C', c_uint64, 24)]
         self.assertEqual(16, sizeof(X))
 
     def test_mixed_8(self):
         class Foo(Structure):
             _fields_ = [
-                ("A", c_uint),
-                ("B", c_uint, 32),
+                ("A", c_uint32),
+                ("B", c_uint32, 32),
                 ("C", c_ulonglong, 1),
                 ]
 
         class Bar(Structure):
             _fields_ = [
-                ("A", c_uint),
-                ("B", c_uint),
+                ("A", c_uint32),
+                ("B", c_uint32),
                 ("C", c_ulonglong, 1),
                 ]
         self.assertEqual(sizeof(Foo), sizeof(Bar))
@@ -344,7 +344,7 @@ class BitFieldTest(unittest.TestCase):
         class X(Structure):
             _fields_ = [
                 ("A", c_uint8),
-                ("B", c_uint, 1),
+                ("B", c_uint32, 1),
                 ]
         if sys.platform == 'win32':
             self.assertEqual(8, sizeof(X))
