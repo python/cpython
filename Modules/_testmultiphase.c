@@ -961,7 +961,7 @@ datetime_capi_import_with_error(void)
 {
     static int is_datetime_multiphase = -1;
     int ismain = PyInterpreterState_Get() == PyInterpreterState_Main();
-    if (ismain) {
+    if (ismain && is_datetime_multiphase < 0) {
         PyObject *module = PyImport_ImportModule("_datetime");
         if (module == NULL) {
             return -1;
