@@ -414,6 +414,7 @@ class TestFrameCApi(unittest.TestCase):
         PyEval_GetFrameGlobals.restype = ctypes.py_object
         frame_globals = PyEval_GetFrameGlobals()
         self.assertTrue(type(frame_globals), dict)
+        self.assertIs(frame_globals, globals())
 
         PyEval_GetFrameBuiltins = ctypes.pythonapi.PyEval_GetFrameBuiltins
         PyEval_GetFrameBuiltins.restype = ctypes.py_object
