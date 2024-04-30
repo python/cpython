@@ -38,6 +38,13 @@ if False:
     from .types import Callback, SimpleContextManager, KeySpec, CommandName
 
 
+def str_width(c: str) -> int:
+    w = unicodedata.east_asian_width(c)
+    if w in ('N', 'Na', 'H', 'A'):
+        return 1
+    return 2
+
+
 def disp_str(buffer: str) -> tuple[str, list[int]]:
     """disp_str(buffer:string) -> (string, [int])
 
@@ -57,7 +64,7 @@ def disp_str(buffer: str) -> tuple[str, list[int]]:
             c = r"\u%04x" % ord(c)
         s.append(c)
         b.append(1)
-        b.extend([0] * (len(c) - 1))
+        b.extend([0] * (str_width(c) - 1))
     return "".join(s), b
 
 
@@ -260,7 +267,7 @@ class Reader:
         screeninfo: list[tuple[int, list[int]]] = []
         w = self.console.width - 1
         p = self.pos
-        for ln, line in zip(range(len(lines)), lines):
+        for ln, line in enumerate(lines):
             ll = len(line)
             if 0 <= p <= ll:
                 if self.msg and not self.msg_at_bottom:
