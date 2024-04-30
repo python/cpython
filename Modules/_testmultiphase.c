@@ -959,7 +959,7 @@ PyInit__test_shared_gil_only(void)
 static int
 datetime_capi_import_with_error(void)
 {
-    static int multiphase = -1;
+    static int is_datetime_multiphase = -1;
     int ismain = PyInterpreterState_Get() == PyInterpreterState_Main();
     if (ismain) {
         PyObject *module = PyImport_ImportModule("_datetime");
@@ -969,13 +969,13 @@ datetime_capi_import_with_error(void)
         PyModuleDef *def = PyModule_GetDef(module);
         Py_DECREF(module);
         if (def && def->m_size >= 0) {
-            multiphase = 1;
+            is_datetime_multiphase = 1;
         }
         else {
-            multiphase = 0;
+            is_datetime_multiphase = 0;
         }
     }
-    if (multiphase < 0) {
+    if (is_datetime_multiphase < 0) {
         PyErr_SetString(PyExc_AssertionError,
                         "Main interpreter must be loaded first.");
         return -1;
@@ -986,7 +986,7 @@ datetime_capi_import_with_error(void)
         return 0;
     }
 #ifdef Py_GIL_DISABLED
-    if (!ismain && !multiphase) {
+    if (!ismain && !is_datetime_multiphase) {
         PyErr_WriteUnraisable(NULL);
         return 0;
     }
