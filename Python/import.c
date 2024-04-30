@@ -924,6 +924,7 @@ extensions_lock_release(void)
     PyMutex_Unlock(&_PyRuntime.imports.extensions.mutex);
 }
 
+
 /* Magic for extension modules (built-in as well as dynamically
    loaded).  To prevent initializing an extension module more than
    once, we keep a static dictionary 'extensions' keyed by the tuple
@@ -940,10 +941,68 @@ extensions_lock_release(void)
    dictionary, to avoid loading shared libraries twice.
 */
 
+typedef PyDictObject *cached_m_dict_t;
+
 struct extensions_cache_value {
     PyModuleDef *def;
-//    PyModuleDef _def;
 };
+
+static struct extensions_cache_value *
+alloc_extensions_cache_value(void)
+{
+    struct extensions_cache_value *value
+            = PyMem_RawMalloc(sizeof(struct extensions_cache_value));
+    if (value == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+    *value = (struct extensions_cache_value){0};
+    return value;
+}
+
+static void
+free_extensions_cache_value(struct extensions_cache_value *value)
+{
+    PyMem_RawFree(value);
+}
+
+static int
+update_extensions_cache_value(struct extensions_cache_value *value,
+                              PyModuleDef *def)
+{
+    assert(def != NULL);
+    /* We expect it to be static, so it must be the same pointer. */
+    assert(value->def == NULL || value->def == def);
+
+    /* We assume that all module defs are statically allocated
+       and will never be freed.  Otherwise, we would incref here. */
+    _Py_SetImmortalUntracked((PyObject *)def);
+
+    *value = (struct extensions_cache_value){
+        .def=def,
+    };
+    return 0;
+}
+
+static void
+clear_extensions_cache_value(struct extensions_cache_value *value)
+{
+    assert(value != NULL);
+    /* If we hadn't made the stored defs immortal, we would decref here.
+       However, this decref would be problematic if the module def were
+       dynamically allocated, it were the last ref, and this function
+       were called with an interpreter other than the def's owner. */
+    assert(value->def == NULL || _Py_IsImmortal(value->def));
+}
+
+static void
+del_extensions_cache_value(struct extensions_cache_value *value)
+{
+    if (value != NULL) {
+        clear_extensions_cache_value(value);
+        free_extensions_cache_value(value);
+    }
+}
 
 static void *
 hashtable_key_from_2_strings(PyObject *str1, PyObject *str2, const char sep)
@@ -958,6 +1017,7 @@ hashtable_key_from_2_strings(PyObject *str1, PyObject *str2, const char sep)
     assert(SIZE_MAX - str1_len - str2_len > 2);
     size_t size = str1_len + 1 + str2_len + 1;
 
+    // XXX Use a buffer if it's a temp value (every case but "set").
     char *key = PyMem_RawMalloc(size);
     if (key == NULL) {
         PyErr_NoMemory();
@@ -989,18 +1049,6 @@ hashtable_destroy_str(void *ptr)
     PyMem_RawFree(ptr);
 }
 
-static void
-hashtable_destroy_value(void *value)
-{
-    if (value != NULL) {
-        struct extensions_cache_value *v
-                = (struct extensions_cache_value *)value;
-        /* There's no need to decref the def since it's immortal. */
-        assert(v->def == NULL || _Py_IsImmortal(v->def));
-        PyMem_RawFree(value);
-    }
-}
-
 #define HTSEP ':'
 
 static int
@@ -1011,7 +1059,7 @@ _extensions_cache_init(void)
         hashtable_hash_str,
         hashtable_compare_str,
         hashtable_destroy_str,  // key
-        hashtable_destroy_value,  // value
+        (_Py_hashtable_destroy_func)del_extensions_cache_value,  // value
         &alloc
     );
     if (EXTENSIONS.hashtable == NULL) {
@@ -1043,6 +1091,7 @@ _extensions_cache_find_unlocked(PyObject *path, PyObject *name,
     return entry;
 }
 
+/* This can only fail with "out of memory". */
 static struct extensions_cache_value *
 _extensions_cache_get(PyObject *path, PyObject *name)
 {
@@ -1062,19 +1111,20 @@ finally:
     return value;
 }
 
+/* This can only fail with "out of memory". */
 static int
 _extensions_cache_set(PyObject *path, PyObject *name, PyModuleDef *def)
 {
     int res = -1;
     assert(def != NULL);
+    void *key = NULL;
+    struct extensions_cache_value *value = NULL;
+    struct extensions_cache_value *newvalue = NULL;
 
-    struct extensions_cache_value *value
-            = PyMem_RawMalloc(sizeof(struct extensions_cache_value));
-    if (value == NULL) {
-        PyErr_NoMemory();
+    struct extensions_cache_value updates = {0};
+    if (update_extensions_cache_value(&updates, def) < 0) {
         return -1;
     }
-    value->def = def;
 
     extensions_lock_acquire();
 
@@ -1084,35 +1134,35 @@ _extensions_cache_set(PyObject *path, PyObject *name, PyModuleDef *def)
         }
     }
 
-    int already_set = 0;
-    void *key = NULL;
     _Py_hashtable_entry_t *entry =
             _extensions_cache_find_unlocked(path, name, &key);
     if (entry == NULL) {
         /* It was never added. */
-        if (_Py_hashtable_set(EXTENSIONS.hashtable, key, value) < 0) {
+        newvalue = alloc_extensions_cache_value();
+        if (newvalue == NULL) {
+            goto finally;
+        }
+        if (_Py_hashtable_set(EXTENSIONS.hashtable, key, newvalue) < 0) {
             PyErr_NoMemory();
             goto finally;
         }
+        value = newvalue;
         /* The hashtable owns the key now. */
         key = NULL;
     }
-    else if (entry->value == NULL) {
-        /* It was previously deleted. */
-        entry->value = value;
-    }
     else {
-        /* We expect it to be static, so it must be the same pointer. */
-        assert(((struct extensions_cache_value *)entry->value)->def == def);
-        /* It was already added. */
-        already_set = 1;
+        value = (struct extensions_cache_value *)entry->value;
+        if (value == NULL) {
+            /* It was previously deleted. */
+            newvalue = alloc_extensions_cache_value();
+            if (newvalue == NULL) {
+                goto finally;
+            }
+            value = newvalue;
+            entry->value = value;
+        }
     }
 
-    if (!already_set) {
-        /* We assume that all module defs are statically allocated
-           and will never be freed.  Otherwise, we would incref here. */
-        _Py_SetImmortal((PyObject *)def);
-    }
     res = 0;
 
 finally:
@@ -1120,6 +1170,14 @@ finally:
     if (key != NULL) {
         hashtable_destroy_str(key);
     }
+
+    if (value != NULL) {
+        *value = updates;
+    }
+    else if (newvalue != NULL) {
+        del_extensions_cache_value(newvalue);
+    }
+
     return res;
 }
 
@@ -1143,12 +1201,10 @@ _extensions_cache_delete(PyObject *path, PyObject *name)
         /* It was already removed. */
         goto finally;
     }
-    /* If we hadn't made the stored defs immortal, we would decref here.
-       However, this decref would be problematic if the module def were
-       dynamically allocated, it were the last ref, and this function
-       were called with an interpreter other than the def's owner. */
-    hashtable_destroy_value(entry->value);
+    struct extensions_cache_value *value = entry->value;
     entry->value = NULL;
+
+    del_extensions_cache_value(value);
 
 finally:
     extensions_lock_release();
