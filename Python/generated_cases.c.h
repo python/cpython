@@ -2510,7 +2510,7 @@
             Py_INCREF(executor);
             GOTO_TIER_TWO(executor);
             #else
-            assert(0);
+            Py_FatalError("ENTER_EXECUTOR is not supported in this build");
             #endif /* _Py_TIER2 */
             DISPATCH();
         }
