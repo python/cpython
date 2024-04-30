@@ -789,7 +789,7 @@
     <ClInclude Include="..\Include\internal\pycore_symtable.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\internal\pycore_tagged.h">
+    <ClInclude Include="..\Include\internal\pycore_stackref.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_time.h">

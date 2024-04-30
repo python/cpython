@@ -11,7 +11,7 @@
 #include "pycore_opcode_utils.h"  // RESUME_AT_FUNC_START
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_setobject.h"     // _PySet_NextEntry()
-#include "pycore_tagged.h"        // _PyObject_SetDeferredRefcount
+#include "pycore_stackref.h"        // _PyObject_SetDeferredRefcount
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
 #include "clinic/codeobject.c.h"
 
