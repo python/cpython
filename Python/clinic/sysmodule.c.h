@@ -1485,6 +1485,24 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(sys__baserepl__doc__,
+"_baserepl($module, /)\n"
+"--\n"
+"\n"
+"Private function for getting the base REPL");
+
+#define SYS__BASEREPL_METHODDEF    \
+    {"_baserepl", (PyCFunction)sys__baserepl, METH_NOARGS, sys__baserepl__doc__},
+
+static PyObject *
+sys__baserepl_impl(PyObject *module);
+
+static PyObject *
+sys__baserepl(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return sys__baserepl_impl(module);
+}
+
 #ifndef SYS_GETWINDOWSVERSION_METHODDEF
     #define SYS_GETWINDOWSVERSION_METHODDEF
 #endif /* !defined(SYS_GETWINDOWSVERSION_METHODDEF) */
@@ -1528,4 +1546,4 @@ exit:
 #ifndef SYS_GETANDROIDAPILEVEL_METHODDEF
     #define SYS_GETANDROIDAPILEVEL_METHODDEF
 #endif /* !defined(SYS_GETANDROIDAPILEVEL_METHODDEF) */
-/*[clinic end generated code: output=518424ee03e353b0 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=10609bc672b7f884 input=a9049054013a1b77]*/

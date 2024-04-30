@@ -2391,6 +2391,21 @@ sys__get_cpu_count_config_impl(PyObject *module)
     return config->cpu_count;
 }
 
+/*[clinic input]
+sys._baserepl 
+
+Private function for getting the base REPL
+[clinic start generated code]*/
+
+static PyObject *
+sys__baserepl_impl(PyObject *module)
+/*[clinic end generated code: output=f19a36375ebe0a45 input=7ca599425413e734]*/
+{
+    PyCompilerFlags cf = _PyCompilerFlags_INIT;
+    PyRun_AnyFileExFlags(stdin, "<stdin>", 0, &cf);
+    Py_RETURN_NONE;
+}
+
 static PerfMapState perf_map_state;
 
 PyAPI_FUNC(int) PyUnstable_PerfMapState_Init(void) {
@@ -2560,6 +2575,7 @@ static PyMethodDef sys_methods[] = {
     SYS_UNRAISABLEHOOK_METHODDEF
     SYS_GET_INT_MAX_STR_DIGITS_METHODDEF
     SYS_SET_INT_MAX_STR_DIGITS_METHODDEF
+    SYS__BASEREPL_METHODDEF
 #ifdef Py_STATS
     SYS__STATS_ON_METHODDEF
     SYS__STATS_OFF_METHODDEF
