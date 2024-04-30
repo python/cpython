@@ -7103,6 +7103,9 @@ printf "%s\n" "$ANDROID_API_LEVEL" >&6; }
 printf "%s\n" "#define ANDROID_API_LEVEL $ANDROID_API_LEVEL" >>confdefs.h
 
 
+  # For __android_log_write() in Python/pylifecycle.c.
+  LIBS="$LIBS -llog"
+
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for the Android arm ABI" >&5
 printf %s "checking for the Android arm ABI... " >&6; }
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $_arm_arch" >&5
