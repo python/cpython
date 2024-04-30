@@ -251,16 +251,16 @@ class TestAndroidOutput(unittest.TestCase):
                 write(b"\xf0\x9f\x98\x80")
 
                 # Null bytes are logged using "modified UTF-8".
-                write(b"\x00", ["\\xc0\\x80"])
-                write(b"a\x00", ["a\\xc0\\x80"])
-                write(b"\x00b", ["\\xc0\\x80b"])
-                write(b"a\x00b", ["a\\xc0\\x80b"])
+                write(b"\x00", [r"\xc0\x80"])
+                write(b"a\x00", [r"a\xc0\x80"])
+                write(b"\x00b", [r"\xc0\x80b"])
+                write(b"a\x00b", [r"a\xc0\x80b"])
 
                 # Invalid UTF-8
-                write(b"\xff", ["\\xff"])
-                write(b"a\xff", ["a\\xff"])
-                write(b"\xffb", ["\\xffb"])
-                write(b"a\xffb", ["a\\xffb"])
+                write(b"\xff", [r"\xff"])
+                write(b"a\xff", [r"a\xff"])
+                write(b"\xffb", [r"\xffb"])
+                write(b"a\xffb", [r"a\xffb"])
 
                 # Log entries containing newlines are shown differently by
                 # `logcat -v tag`, `logcat -v long`, and Android Studio. We
