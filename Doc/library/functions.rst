@@ -562,6 +562,11 @@ are always available.  They are listed here in alphabetical order.
       >>> eval('x+1')
       2
 
+   .. warning::
+
+      Because this function can be used for executing arbitrary code, it is not recommended
+      to pass user-supplied input, which may lead to security vulnerabilities.
+
    This function can also be used to execute arbitrary code objects (such as
    those created by :func:`compile`).  In this case, pass a code object instead
    of a string.  If the code object has been compiled with ``'exec'`` as the
