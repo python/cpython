@@ -2007,17 +2007,23 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
         lookupmodule() translates (possibly incomplete) file or module name
         into an absolute file name.
+
+        filename could be in format of:
+            * an absolute path like '/path/to/file.py'
+            * a relative path like 'file.py' or 'dir/file.py'
+            * a module name like 'module' or 'package.module'
+
+        files and modules will be searched in sys.path.
         """
-        if os.path.isabs(filename) and  os.path.exists(filename):
-            return filename
-        f = os.path.join(sys.path[0], filename)
-        if  os.path.exists(f) and self.canonic(f) == self.mainpyfile:
-            return f
-        root, ext = os.path.splitext(filename)
-        if ext == '':
-            filename = filename + '.py'
+        if not filename.endswith('.py'):
+            # A module is passed in so convert it to equivalent file
+            filename = filename.replace('.', os.sep) + '.py'
+
         if os.path.isabs(filename):
-            return filename
+            if os.path.exists(filename):
+                return filename
+            return None
+
         for dirname in sys.path:
             while os.path.islink(dirname):
                 dirname = os.readlink(dirname)
