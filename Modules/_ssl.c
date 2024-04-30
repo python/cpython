@@ -5329,7 +5329,11 @@ PySSLSession_clear(PySSLSession *self)
 
 static PyObject *
 PySSLSession_get_time(PySSLSession *self, void *closure) {
+#if OPENSSL_VERSION_NUMBER >= 0x30300000L
+    return _PyLong_FromTime_t(SSL_SESSION_get_time_ex(self->session));
+#else
     return PyLong_FromLong(SSL_SESSION_get_time(self->session));
+#endif
 }
 
 PyDoc_STRVAR(PySSLSession_get_time_doc,
