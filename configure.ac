@@ -1774,6 +1774,7 @@ case $enable_experimental_jit in
   yes) enable_experimental_jit="-D_Py_JIT -D_Py_TIER2=1" ;;
   yes-default-off) enable_experimental_jit="-D_Py_JIT -D_Py_TIER2=3" ;;
   interpreter) enable_experimental_jit="-D_Py_TIER2=4" ;;
+  interpreter-default-off) enable_experimental_jit="-D_Py_TIER2=6" ;;  # Secret option
   *) AC_MSG_ERROR(
       [invalid argument: --enable-experimental-jit=$enable_experimental_jit; expected no|yes|yes-default-off|interpreter]) ;;
 esac
