@@ -1766,7 +1766,6 @@ _PyEvalFramePushAndInit_UnTagged(PyThreadState *tstate, PyFunctionObject *func,
     PyMem_Free(tagged_args_buffer);
     return res;
 #else
-    assert(Py_TAG == 0);
     return _PyEvalFramePushAndInit(tstate, func, locals, (_PyStackRef const *)args, argcount, kwnames);
 #endif
 }
