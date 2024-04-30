@@ -940,6 +940,11 @@ extensions_lock_release(void)
    dictionary, to avoid loading shared libraries twice.
 */
 
+struct extensions_cache_value {
+    PyModuleDef *def;
+//    PyModuleDef _def;
+};
+
 static void *
 hashtable_key_from_2_strings(PyObject *str1, PyObject *str2, const char sep)
 {
@@ -984,6 +989,18 @@ hashtable_destroy_str(void *ptr)
     PyMem_RawFree(ptr);
 }
 
+static void
+hashtable_destroy_value(void *value)
+{
+    if (value != NULL) {
+        struct extensions_cache_value *v
+                = (struct extensions_cache_value *)value;
+        /* There's no need to decref the def since it's immortal. */
+        assert(v->def == NULL || _Py_IsImmortal(v->def));
+        PyMem_RawFree(value);
+    }
+}
+
 #define HTSEP ':'
 
 static int
@@ -994,8 +1011,7 @@ _extensions_cache_init(void)
         hashtable_hash_str,
         hashtable_compare_str,
         hashtable_destroy_str,  // key
-        /* There's no need to decref the def since it's immortal. */
-        NULL,  // value
+        hashtable_destroy_value,  // value
         &alloc
     );
     if (EXTENSIONS.hashtable == NULL) {
@@ -1027,10 +1043,10 @@ _extensions_cache_find_unlocked(PyObject *path, PyObject *name,
     return entry;
 }
 
-static PyModuleDef *
+static struct extensions_cache_value *
 _extensions_cache_get(PyObject *path, PyObject *name)
 {
-    PyModuleDef *def = NULL;
+    struct extensions_cache_value *value = NULL;
     extensions_lock_acquire();
 
     _Py_hashtable_entry_t *entry =
@@ -1039,11 +1055,11 @@ _extensions_cache_get(PyObject *path, PyObject *name)
         /* It was never added. */
         goto finally;
     }
-    def = (PyModuleDef *)entry->value;
+    value = (struct extensions_cache_value *)entry->value;
 
 finally:
     extensions_lock_release();
-    return def;
+    return value;
 }
 
 static int
@@ -1051,6 +1067,15 @@ _extensions_cache_set(PyObject *path, PyObject *name, PyModuleDef *def)
 {
     int res = -1;
     assert(def != NULL);
+
+    struct extensions_cache_value *value
+            = PyMem_RawMalloc(sizeof(struct extensions_cache_value));
+    if (value == NULL) {
+        PyErr_NoMemory();
+        return -1;
+    }
+    value->def = def;
+
     extensions_lock_acquire();
 
     if (EXTENSIONS.hashtable == NULL) {
@@ -1065,7 +1090,7 @@ _extensions_cache_set(PyObject *path, PyObject *name, PyModuleDef *def)
             _extensions_cache_find_unlocked(path, name, &key);
     if (entry == NULL) {
         /* It was never added. */
-        if (_Py_hashtable_set(EXTENSIONS.hashtable, key, def) < 0) {
+        if (_Py_hashtable_set(EXTENSIONS.hashtable, key, value) < 0) {
             PyErr_NoMemory();
             goto finally;
         }
@@ -1074,11 +1099,11 @@ _extensions_cache_set(PyObject *path, PyObject *name, PyModuleDef *def)
     }
     else if (entry->value == NULL) {
         /* It was previously deleted. */
-        entry->value = def;
+        entry->value = value;
     }
     else {
         /* We expect it to be static, so it must be the same pointer. */
-        assert((PyModuleDef *)entry->value == def);
+        assert(((struct extensions_cache_value *)entry->value)->def == def);
         /* It was already added. */
         already_set = 1;
     }
@@ -1122,7 +1147,7 @@ _extensions_cache_delete(PyObject *path, PyObject *name)
        However, this decref would be problematic if the module def were
        dynamically allocated, it were the last ref, and this function
        were called with an interpreter other than the def's owner. */
-    assert(_Py_IsImmortal(entry->value));
+    hashtable_destroy_value(entry->value);
     entry->value = NULL;
 
 finally:
@@ -1338,8 +1363,9 @@ update_global_state_for_extension(PyThreadState *tstate,
     // XXX Why special-case the main interpreter?
     if (_Py_IsMainInterpreter(tstate->interp) || def->m_size == -1) {
 #ifndef NDEBUG
-        PyModuleDef *cached = _extensions_cache_get(path, name);
-        assert(cached == NULL || cached == def);
+        struct extensions_cache_value *cached
+                = _extensions_cache_get(path, name);
+        assert(cached == NULL || cached->def == def);
 #endif
         if (_extensions_cache_set(path, name, def) < 0) {
             return -1;
@@ -1471,10 +1497,12 @@ import_find_extension(PyThreadState *tstate,
                       struct _Py_ext_module_loader_info *info)
 {
     /* Only single-phase init modules will be in the cache. */
-    PyModuleDef *def = _extensions_cache_get(info->path, info->name);
-    if (def == NULL) {
+    struct extensions_cache_value *value
+            = _extensions_cache_get(info->path, info->name);
+    if (value == NULL) {
         return NULL;
     }
+    PyModuleDef *def = value->def;
     assert_singlephase(def);
 
     /* It may have been successfully imported previously
@@ -1594,13 +1622,14 @@ static int
 clear_singlephase_extension(PyInterpreterState *interp,
                             PyObject *name, PyObject *path)
 {
-    PyModuleDef *def = _extensions_cache_get(path, name);
-    if (def == NULL) {
+    struct extensions_cache_value *value = _extensions_cache_get(path, name);
+    if (value == NULL) {
         if (PyErr_Occurred()) {
             return -1;
         }
         return 0;
     }
+    PyModuleDef *def = value->def;
 
     /* Clear data set when the module was initially loaded. */
     def->m_base.m_init = NULL;
