@@ -13,10 +13,11 @@ import random
 import textwrap
 
 from test import support
-from test.support import script_helper, ALWAYS_EQ, suppress_immortalization, is_wasi
+from test.support import script_helper, ALWAYS_EQ, suppress_immortalization
 from test.support import gc_collect
 from test.support import import_helper
 from test.support import threading_helper
+from test.support import is_wasi, Py_DEBUG
 
 # Used in ReferencesTestCase.test_ref_created_during_del() .
 ref_from_del = None
