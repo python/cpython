@@ -276,7 +276,9 @@ Other Language Changes
   (Contributed by Pedro Sousa Lacerda in :gh:`66449`.)
 
 * :ref:`annotation scope <annotation-scopes>` within class scopes can now
-  contain lambdas. (Contributed by Jelle Zijlstra in :gh:`109118`.)
+  contain lambdas and comprehensions. Comprehensions that are located within
+  class scopes are not inlined into their parent scope. (Contributed by
+  Jelle Zijlstra in :gh:`109118` and :gh:`118160`.)
 
 
 New Modules
@@ -791,6 +793,9 @@ tkinter
   :class:`tkinter.ttk.Style`.
   (Contributed by Serhiy Storchaka in :gh:`68166`.)
 
+* Add the :meth:`!after_info` method for Tkinter widgets.
+  (Contributed by Cheryl Sabella in :gh:`77020`.)
+
 traceback
 ---------
 
@@ -803,6 +808,14 @@ traceback
   which holds the type object itself. Add parameter *save_exc_type* (default
   ``True``) to indicate whether ``exc_type`` should be saved.
   (Contributed by Irit Katriel in :gh:`112332`.)
+
+types
+-----
+
+* :class:`~types.SimpleNamespace` constructor now allows specifying initial
+  values of attributes as a positional argument which must be a mapping or
+  an iterable of key-value pairs.
+  (Contributed by Serhiy Storchaka in :gh:`108191`.)
 
 typing
 ------
