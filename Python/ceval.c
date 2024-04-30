@@ -1748,7 +1748,7 @@ _PyEvalFramePushAndInit_UnTagged(PyThreadState *tstate, PyFunctionObject *func,
                         PyObject *locals, PyObject *const* args,
                         size_t argcount, PyObject *kwnames)
 {
-#if defined(Py_GIL_DISABLED) || defined(Py_TAG_TEST)
+#if defined(Py_GIL_DISABLED)
     size_t kw_count = kwnames == NULL ? 0 : PyTuple_GET_SIZE(kwnames);
     size_t total_argcount = argcount + kw_count;
     _PyStackRef *tagged_args_buffer = PyMem_Malloc(sizeof(_PyStackRef) * total_argcount);

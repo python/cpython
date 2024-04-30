@@ -9756,7 +9756,7 @@ _PyUnicode_JoinStack_Slow(PyObject *separator, _PyStackRef const *tagged, Py_ssi
 PyObject *
 _PyUnicode_JoinStack(PyObject *separator, _PyStackRef const *items_tagged, Py_ssize_t seqlen)
 {
-#if defined(Py_GIL_DISABLED) || defined(Py_TAG_TEST)
+#if defined(Py_GIL_DISABLED)
     PyObject *args[MAX_UNTAG_SCRATCH];
     if (seqlen > MAX_UNTAG_SCRATCH) {
         return _PyUnicode_JoinStack_Slow(separator, items_tagged, seqlen);
