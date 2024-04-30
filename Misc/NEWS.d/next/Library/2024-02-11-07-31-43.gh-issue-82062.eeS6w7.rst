@@ -1,3 +1,3 @@
-Fix :func:`inspect.signature()` to correctly handle globals in extension
-modules.  Now signatures are correct if globals are use to define default
-values in extension functions and/or methods.
+Fix :func:`inspect.signature()` to correctly handle parameter defaults
+on methods in extension modules that use names defined in the module
+namespace.
