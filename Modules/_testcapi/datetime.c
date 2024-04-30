@@ -8,6 +8,9 @@ static int test_run_counter = 0;
 static PyObject *
 test_datetime_capi(PyObject *self, PyObject *args)
 {
+    if (!test_run_counter) {
+        _PyDateTimeAPI_Clear();
+    }
     if (PyDateTimeAPI) {
         if (test_run_counter) {
             /* Probably regrtest.py -R */

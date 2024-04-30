@@ -63,16 +63,33 @@ static datetime_state _datetime_global_state;
 
 #define STATIC_STATE() (&_datetime_global_state)
 
-void
+static inline void
 set_datetime_capi_by_interp(PyDateTime_CAPI *capi)
 {
     _PyInterpreterState_GET()->datetime_capi = capi;
 }
 
+void
+_PyDateTimeAPI_Import(void)
+{
+    PyDateTime_CAPI *capi = PyCapsule_Import(PyDateTime_CAPSULE_NAME, 0);
+    if (capi) {
+        // PyInit__datetime() is not called when the module is already loaded
+        // with single-phase init.
+        set_datetime_capi_by_interp((PyDateTime_CAPI *)capi);
+    }
+}
+
 PyDateTime_CAPI *
-get_datetime_capi_by_interp(void)
+_PyDateTimeAPI_Get(void)
 {
     return (PyDateTime_CAPI *)_PyInterpreterState_GET()->datetime_capi;
+}
+
+void
+_PyDateTimeAPI_Clear(void)
+{
+    set_datetime_capi_by_interp(NULL);
 }
 
 /* We require that C int be at least 32 bits, and use int virtually
@@ -6724,7 +6741,7 @@ static PyMethodDef module_methods[] = {
 static inline PyDateTime_CAPI *
 get_datetime_capi(void)
 {
-    PyDateTime_CAPI *capi = PyMem_Malloc(sizeof(_pydatetime_capi));
+    PyDateTime_CAPI *capi = PyMem_Malloc(sizeof(PyDateTime_CAPI));
     if (capi == NULL) {
         PyErr_NoMemory();
         return NULL;
@@ -6748,8 +6765,6 @@ get_datetime_capi(void)
     datetime_state *st = STATIC_STATE();
     assert(st->utc != NULL);
     capi->TimeZone_UTC = st->utc; // borrowed ref
-    ((_pydatetime_capi *)capi)->_set_capi_by_interp = set_datetime_capi_by_interp;
-    ((_pydatetime_capi *)capi)->_get_capi_by_interp = get_datetime_capi_by_interp;
     return capi;
 }
 
@@ -6757,9 +6772,7 @@ static void
 datetime_destructor(PyObject *op)
 {
     void *ptr = PyCapsule_GetPointer(op, PyDateTime_CAPSULE_NAME);
-    assert(!get_datetime_capi_by_interp() || ptr == get_datetime_capi_by_interp());
     PyMem_Free(ptr);
-    set_datetime_capi_by_interp(NULL);
 }
 
 static int
@@ -6959,6 +6972,8 @@ _datetime_exec(PyObject *module)
         PyMem_Free(capi);
         goto error;
     }
+    /* Ensure that the newest capi is used on multi-phase init */
+    set_datetime_capi_by_interp(capi);
 
     /* A 4-year cycle has an extra leap day over what we'd get from
      * pasting together 4 single years.

@@ -959,7 +959,7 @@ PyInit__test_shared_gil_only(void)
 static int
 datetime_capi_client_exec(PyObject *m)
 {
-    _get_pydatetime_capi = _get_pydatetime_capi_dummy;
+    _PyDateTimeAPI_Clear();
     if (PyDateTimeAPI != NULL) {
         return -1;
     }
