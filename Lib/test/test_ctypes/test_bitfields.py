@@ -71,9 +71,12 @@ class C_Test(unittest.TestCase):
     def test_ints(self):
         for i in range(512):
             for name in "ABCDEFGHI":
-                b = BITS()
-                setattr(b, name, i)
-                self.assertEqual(getattr(b, name), func(byref(b), name.encode('ascii')))
+                with self.subTest(i=i, name=name):
+                    b = BITS()
+                    setattr(b, name, i)
+                    self.assertEqual(
+                        getattr(b, name),
+                        func(byref(b), (name.encode('ascii'))))
 
     def test_shorts(self):
         b = BITS()
@@ -87,13 +90,12 @@ class C_Test(unittest.TestCase):
             self.skipTest("Compiler does not support signed short bitfields")
         for i in range(256):
             for name in "MNOPQRS":
-                b = BITS()
-                setattr(b, name, i)
-                self.assertEqual(
-                    getattr(b, name),
-                    func(byref(b), (name.encode('ascii'))),
-                    (name, i))
-
+                with self.subTest(i=i, name=name):
+                    b = BITS()
+                    setattr(b, name, i)
+                    self.assertEqual(
+                        getattr(b, name),
+                        func(byref(b), (name.encode('ascii'))))
 
     @unittest.skipUnless(func_msvc, "need MSVC or __attribute__((ms_struct))")
     def test_shorts_msvc_mode(self):
@@ -108,12 +110,12 @@ class C_Test(unittest.TestCase):
             self.skipTest("Compiler does not support signed short bitfields")
         for i in range(256):
             for name in "MNOPQRS":
-                b = BITS_msvc()
-                setattr(b, name, i)
-                self.assertEqual(
-                    getattr(b, name),
-                    func_msvc(byref(b), name.encode('ascii')),
-                    (name, i))
+                with self.subTest(i=i, name=name):
+                    b = BITS_msvc()
+                    setattr(b, name, i)
+                    self.assertEqual(
+                        getattr(b, name),
+                        func_msvc(byref(b), name.encode('ascii')))
 
 
 signed_int_types = (c_byte, c_short, c_int, c_long, c_longlong)
