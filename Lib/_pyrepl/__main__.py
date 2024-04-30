@@ -1,7 +1,13 @@
 import os
 import sys
 
+CAN_USE_PYREPL = True
+
 def interactive_console(mainmodule=None, quiet=False, pythonstartup=False):
+    global CAN_USE_PYREPL
+    if not CAN_USE_PYREPL:
+        return sys._baserepl()
+
     startup_path = os.getenv("PYTHONSTARTUP")
     if pythonstartup and startup_path:
         import tokenize
@@ -27,6 +33,7 @@ def interactive_console(mainmodule=None, quiet=False, pythonstartup=False):
         run_interactive = run_multiline_interactive_console
     except Exception as e:
         print(f"Warning: 'import _pyrepl' failed with '{e}'", sys.stderr)
+        CAN_USE_PYREPL = False
     if run_interactive is None:
         return sys._baserepl()
     return run_interactive(mainmodule)
