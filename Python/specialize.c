@@ -1789,8 +1789,7 @@ specialize_class_call(PyObject *callable, _Py_CODEUNIT *instr, int nargs)
         return -1;
     }
     if (Py_TYPE(tp) != &PyType_Type) {
-        SPECIALIZATION_FAIL(CALL, SPEC_FAIL_CALL_METACLASS);
-        return -1;
+        goto generic;
     }
     if (tp->tp_new == PyBaseObject_Type.tp_new) {
         PyFunctionObject *init = get_init_for_simple_managed_python_class(tp);
@@ -1807,10 +1806,10 @@ specialize_class_call(PyObject *callable, _Py_CODEUNIT *instr, int nargs)
             _Py_SET_OPCODE(*instr, CALL_ALLOC_AND_ENTER_INIT);
             return 0;
         }
-        return -1;
     }
-    SPECIALIZATION_FAIL(CALL, SPEC_FAIL_CALL_CLASS_MUTABLE);
-    return -1;
+generic:
+    instr->op.code = CALL_NON_PY_GENERAL;
+    return 0;
 }
 
 #ifdef Py_STATS
@@ -1901,8 +1900,8 @@ specialize_method_descriptor(PyMethodDescrObject *descr, _Py_CODEUNIT *instr,
             return 0;
         }
     }
-    SPECIALIZATION_FAIL(CALL, meth_descr_call_fail_kind(descr->d_method->ml_flags));
-    return -1;
+    instr->op.code = CALL_NON_PY_GENERAL;
+    return 0;
 }
 
 static int
@@ -1936,7 +1935,6 @@ specialize_py_call(PyFunctionObject *func, _Py_CODEUNIT *instr, int nargs,
     }
     else {
         instr->op.code = bound_method ? CALL_BOUND_METHOD_GENERAL : CALL_PY_GENERAL;
-        return 0;
     }
     return 0;
 }
@@ -1945,6 +1943,7 @@ static int
 specialize_c_call(PyObject *callable, _Py_CODEUNIT *instr, int nargs)
 {
     if (PyCFunction_GET_FUNCTION(callable) == NULL) {
+        SPECIALIZATION_FAIL(CALL, SPEC_FAIL_OTHER);
         return 1;
     }
     switch (PyCFunction_GET_FLAGS(callable) &
