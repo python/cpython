@@ -537,15 +537,53 @@ class TestPasteEvent(TestCase):
             '    if x%2:\n'
             '      print(x)\n'
             '    else:\n'
-            '      pass\n\n'
+            '      pass\n'
         )
 
         events = itertools.chain([
             Event(evt='key', data='f3', raw=bytearray(b'\x1bOR')),
-        ], code_to_events(code))
+        ], code_to_events(code), [
+            Event(evt='key', data='f3', raw=bytearray(b'\x1bOR')),
+        ], code_to_events("\n"))
         reader = self.prepare_reader(events)
         output = multiline_input(reader)
-        self.assertEqual(output, code[:-1])
+        self.assertEqual(output, code)
+
+    def test_paste_mid_newlines(self):
+        code = (
+            'def f():\n'
+            '  x = y\n'
+            '  \n'
+            '  y = z\n'
+        )
+
+        events = itertools.chain([
+            Event(evt='key', data='f3', raw=bytearray(b'\x1bOR')),
+        ], code_to_events(code), [
+            Event(evt='key', data='f3', raw=bytearray(b'\x1bOR')),
+        ], code_to_events("\n"))
+        reader = self.prepare_reader(events)
+        output = multiline_input(reader)
+        self.assertEqual(output, code)
+
+    def test_paste_mid_newlines_not_in_paste_mode(self):
+        code = (
+            'def f():\n'
+            '  x = y\n'
+            '  \n'
+            '  y = z\n\n'
+        )
+
+        expected = (
+            'def f():\n'
+            '  x = y\n'
+            '    '
+        )
+
+        events = code_to_events(code)
+        reader = self.prepare_reader(events)
+        output = multiline_input(reader)
+        self.assertEqual(output, expected)
 
     def test_paste_not_in_paste_mode(self):
         input_code = (

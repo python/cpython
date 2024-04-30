@@ -219,8 +219,10 @@ class maybe_accept(commands.Command):
             if not self.reader.paste_mode and indent:
                 for i in range(prevlinestart, prevlinestart + indent):
                     r.insert(r.buffer[i])
-        else:
+        elif not self.reader.paste_mode:
             self.finish = 1
+        else:
+            r.insert("\n")
 
 
 class backspace_dedent(commands.Command):
