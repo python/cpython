@@ -3079,7 +3079,7 @@ _Py_IsValidFD(int fd)
 #if defined(F_GETFD) && ( \
         defined(__linux__) || \
         defined(__APPLE__) || \
-        defined(__wasm__))
+        (defined(__wasm__) && !defined(__wasi__)))
     return fcntl(fd, F_GETFD) >= 0;
 #elif defined(__linux__)
     int fd2 = dup(fd);
@@ -3099,4 +3099,3 @@ _Py_IsValidFD(int fd)
     return (fstat(fd, &st) == 0);
 #endif
 }
-
