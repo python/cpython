@@ -29,6 +29,8 @@ typedef union {
     uintptr_t bits;
 } _PyStackRef;
 
+static const _PyStackRef Py_STACKREF_NULL = ((_PyStackRef) { .bits = (uintptr_t)NULL });
+
 #ifdef Py_GIL_DISABLED
     #define Py_TAG_DEFERRED (1)
     #define Py_TAG (Py_TAG_DEFERRED)
@@ -144,7 +146,7 @@ _Py_untag_stack_steal(PyObject **dst, const _PyStackRef *src, size_t length) {
 static inline void
 PyStackRef_XDECREF(_PyStackRef op)
 {
-    if (PyStackRef_Get(op) != NULL) {
+    if (op.bits != Py_STACKREF_NULL.bits) {
         PyStackRef_DECREF(op);
     }
 }
@@ -159,7 +161,7 @@ PyStackRef_NewRef(_PyStackRef obj)
 static inline _PyStackRef
 PyStackRef_XNewRef(_PyStackRef obj)
 {
-    if (PyStackRef_Get(obj) == NULL) {
+    if (obj.bits == Py_STACKREF_NULL.bits) {
         return obj;
     }
     return PyStackRef_NewRef(obj);
