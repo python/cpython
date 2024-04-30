@@ -371,6 +371,12 @@ class TestPyReplOutput(TestCase):
         output = multiline_input(reader)
         self.assertEqual(output, "1+1")
 
+    def test_control_character(self):
+        events = code_to_events("c\x1d\n")
+        reader = self.prepare_reader(events)
+        output = multiline_input(reader)
+        self.assertEqual(output, "c\x1d")
+
 
 class TestPyReplCompleter(TestCase):
     def prepare_reader(self, events, namespace):
