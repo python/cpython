@@ -576,7 +576,6 @@ Modules/_testmultiphase.c	-	def_nonmodule_with_methods	-
 Modules/_testmultiphase.c	-	main_def	-
 Modules/_testmultiphase.c	-	main_slots	-
 Modules/_testmultiphase.c	-	meth_state_access_slots	-
-Modules/_testmultiphase.c	-	is_datetime_multiphase	-
 Modules/_testmultiphase.c	-	nonmodule_methods	-
 Modules/_testmultiphase.c	-	null_slots_def	-
 Modules/_testmultiphase.c	-	slots_bad_large	-
