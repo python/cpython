@@ -990,6 +990,19 @@ _Py_atomic_load_int_acquire(const int *obj)
 }
 
 static inline void
+_Py_atomic_store_uint32_release(uint32_t *obj, uint32_t value)
+{
+#if defined(_M_X64) || defined(_M_IX86)
+    *(uint32_t volatile *)obj = value;
+#elif defined(_M_ARM64)
+    _Py_atomic_ASSERT_ARG_TYPE(unsigned __int32);
+    __stlr32((unsigned __int32 volatile *)obj, (unsigned __int32)value);
+#else
+#  error "no implementation of _Py_atomic_store_uint32_release"
+#endif
+}
+
+static inline void
 _Py_atomic_store_uint64_release(uint64_t *obj, uint64_t value)
 {
 #if defined(_M_X64) || defined(_M_IX86)
