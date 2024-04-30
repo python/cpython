@@ -34,19 +34,24 @@ DEFAULT_OUTPUT = ROOT / "Python/executor_cases.c.h"
 
 
 def declare_variable(
-    var: StackItem, uop: Uop, variables: set[str], out: CWriter
+    var: StackItem, uop: Uop, variables: set[str], out: CWriter,
+    dir_out: bool = False
 ) -> None:
     if var.name in variables:
         return
     type = var.type if var.type else "PyObject *"
     variables.add(var.name)
     if var.condition:
+        if not dir_out and type.strip() != "_PyStackRef":
+            out.emit(f"_PyStackRef {var.name}_stackref = PyStackRef_StealRef(NULL);\n")
         out.emit(f"{type}{var.name} = NULL;\n")
         if uop.replicates:
             # Replicas may not use all their conditional variables
             # So avoid a compiler warning with a fake use
             out.emit(f"(void){var.name};\n")
     else:
+        if not dir_out and type.strip() != "_PyStackRef" and not var.is_array():
+            out.emit(f"_PyStackRef {var.name}_stackref;\n")
         out.emit(f"{type}{var.name};\n")
 
 
@@ -55,7 +60,7 @@ def declare_variables(uop: Uop, out: CWriter) -> None:
     for var in reversed(uop.stack.inputs):
         declare_variable(var, uop, variables, out)
     for var in uop.stack.outputs:
-        declare_variable(var, uop, variables, out)
+        declare_variable(var, uop, variables, out, dir_out=True)
 
 
 def tier2_replace_error(
@@ -163,7 +168,8 @@ def write_uop(uop: Uop, out: CWriter, stack: Stack) -> None:
             out.emit(f"oparg = {uop.properties.const_oparg};\n")
             out.emit(f"assert(oparg == CURRENT_OPARG());\n")
         for var in reversed(uop.stack.inputs):
-            out.emit(stack.pop(var))
+            for line in stack.pop(var):
+                out.emit(line)
         if not uop.properties.stores_sp:
             for i, var in enumerate(uop.stack.outputs):
                 out.emit(stack.push(var))

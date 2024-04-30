@@ -3174,7 +3174,7 @@ PyList_AsTuple(PyObject *v)
 }
 
 PyObject *
-_PyList_FromArraySteal(PyObject *const *src, Py_ssize_t n)
+_PyList_FromStackSteal(_PyStackRef const *src, Py_ssize_t n)
 {
     if (n == 0) {
         return PyList_New(0);
@@ -3183,13 +3183,16 @@ _PyList_FromArraySteal(PyObject *const *src, Py_ssize_t n)
     PyListObject *list = (PyListObject *)PyList_New(n);
     if (list == NULL) {
         for (Py_ssize_t i = 0; i < n; i++) {
-            Py_DECREF(src[i]);
+            PyStackRef_DECREF(src[i]);
         }
         return NULL;
     }
 
     PyObject **dst = list->ob_item;
-    memcpy(dst, src, n * sizeof(PyObject *));
+    for (Py_ssize_t i = 0; i < n; i++) {
+        PyObject *item = PyStackRef_StealObject(src[i]);
+        dst[i] = item;
+    }
 
     return (PyObject *)list;
 }

@@ -2141,7 +2141,7 @@ binary_op_fail_kind(int oparg, PyObject *lhs, PyObject *rhs)
 
 void
 _Py_Specialize_BinaryOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
-                        int oparg, PyObject **locals)
+                        int oparg, _PyStackRef *locals)
 {
     assert(ENABLE_SPECIALIZATION);
     assert(_PyOpcode_Caches[BINARY_OP] == INLINE_CACHE_ENTRIES_BINARY_OP);
@@ -2155,7 +2155,7 @@ _Py_Specialize_BinaryOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
             if (PyUnicode_CheckExact(lhs)) {
                 _Py_CODEUNIT next = instr[INLINE_CACHE_ENTRIES_BINARY_OP + 1];
                 bool to_store = (next.op.code == STORE_FAST);
-                if (to_store && locals[next.op.arg] == lhs) {
+                if (to_store && PyStackRef_Get(locals[next.op.arg]) == lhs) {
                     instr->op.code = BINARY_OP_INPLACE_ADD_UNICODE;
                     goto success;
                 }

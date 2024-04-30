@@ -35,10 +35,10 @@ def validate_uop(override: Uop, uop: Uop) -> None:
     pass
 
 
-def type_name(var: StackItem) -> str:
+def type_name(var: StackItem, tagged: bool=False) -> str:
     if var.is_array():
         return f"_Py_UopsSymbol **"
-    if var.type:
+    if var.type and var.type.strip() != "_PyStackRef" and not tagged:
         return var.type
     return f"_Py_UopsSymbol *"
 
@@ -50,8 +50,12 @@ def declare_variables(uop: Uop, out: CWriter, skip_inputs: bool) -> None:
             if var.name not in variables:
                 variables.add(var.name)
                 if var.condition:
+                    if not var.is_array():
+                        out.emit(f"{type_name(var, tagged=True)}{var.name}_stackref = NULL;\n")
                     out.emit(f"{type_name(var)}{var.name} = NULL;\n")
                 else:
+                    if not var.is_array():
+                        out.emit(f"{type_name(var, tagged=True)}{var.name}_stackref;\n")
                     out.emit(f"{type_name(var)}{var.name};\n")
     for var in uop.stack.outputs:
         if var.peek:
@@ -107,14 +111,15 @@ def write_uop(
         is_override = override is not None
         out.start_line()
         for var in reversed(prototype.stack.inputs):
-            res = stack.pop(var)
+            res = stack.pop(var, should_untag=False)
             if not skip_inputs:
-                out.emit(res)
+                for line in res:
+                    out.emit(line)
         if not prototype.properties.stores_sp:
             for i, var in enumerate(prototype.stack.outputs):
-                res = stack.push(var)
+                temp = stack.push(var)
                 if not var.peek or is_override:
-                    out.emit(res)
+                    out.emit(temp)
         if debug:
             args = []
             for var in prototype.stack.inputs:
@@ -142,9 +147,10 @@ def write_uop(
         if prototype.properties.stores_sp:
             for i, var in enumerate(prototype.stack.outputs):
                 if not var.peek or is_override:
-                    out.emit(stack.push(var))
+                    for line in stack.push(var):
+                        out.emit(line)
         out.start_line()
-        stack.flush(out, cast_type="_Py_UopsSymbol *")
+        stack.flush(out, cast_type="_Py_UopsSymbol *", should_tag=False)
     except SizeMismatch as ex:
         raise analysis_error(ex.args[0], uop.body[0])
 

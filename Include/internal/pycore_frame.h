@@ -11,6 +11,7 @@ extern "C" {
 #include <stdbool.h>
 #include <stddef.h>               // offsetof()
 #include "pycore_code.h"          // STATS
+#include "pycore_stackref.h"        // _PyStackRef
 
 /* See Objects/frame_layout.md for an explanation of the frame stack
  * including explanation of the PyFrameObject and _PyInterpreterFrame
@@ -67,7 +68,7 @@ typedef struct _PyInterpreterFrame {
     uint16_t return_offset;  /* Only relevant during a function call */
     char owner;
     /* Locals and stack */
-    PyObject *localsplus[1];
+    _PyStackRef localsplus[1];
 } _PyInterpreterFrame;
 
 #define _PyInterpreterFrame_LASTI(IF) \
@@ -78,23 +79,23 @@ static inline PyCodeObject *_PyFrame_GetCode(_PyInterpreterFrame *f) {
     return (PyCodeObject *)f->f_executable;
 }
 
-static inline PyObject **_PyFrame_Stackbase(_PyInterpreterFrame *f) {
-    return f->localsplus + _PyFrame_GetCode(f)->co_nlocalsplus;
+static inline _PyStackRef *_PyFrame_Stackbase(_PyInterpreterFrame *f) {
+    return (f->localsplus + _PyFrame_GetCode(f)->co_nlocalsplus);
 }
 
-static inline PyObject *_PyFrame_StackPeek(_PyInterpreterFrame *f) {
+static inline _PyStackRef _PyFrame_StackPeek(_PyInterpreterFrame *f) {
     assert(f->stacktop > _PyFrame_GetCode(f)->co_nlocalsplus);
-    assert(f->localsplus[f->stacktop-1] != NULL);
+    assert(PyStackRef_Get(f->localsplus[f->stacktop-1]) != NULL);
     return f->localsplus[f->stacktop-1];
 }
 
-static inline PyObject *_PyFrame_StackPop(_PyInterpreterFrame *f) {
+static inline _PyStackRef _PyFrame_StackPop(_PyInterpreterFrame *f) {
     assert(f->stacktop > _PyFrame_GetCode(f)->co_nlocalsplus);
     f->stacktop--;
     return f->localsplus[f->stacktop];
 }
 
-static inline void _PyFrame_StackPush(_PyInterpreterFrame *f, PyObject *value) {
+static inline void _PyFrame_StackPush(_PyInterpreterFrame *f, _PyStackRef value) {
     f->localsplus[f->stacktop] = value;
     f->stacktop++;
 }
@@ -120,6 +121,12 @@ static inline void _PyFrame_Copy(_PyInterpreterFrame *src, _PyInterpreterFrame *
     // Don't leave a dangling pointer to the old frame when creating generators
     // and coroutines:
     dest->previous = NULL;
+#ifdef Py_GIL_DISABLED
+    PyCodeObject *co = (PyCodeObject *)dest->f_executable;
+    for (int i = src->stacktop; i < co->co_nlocalsplus + co->co_stacksize; i++) {
+        dest->localsplus[i] = PyStackRef_StealRef(NULL);
+    }
+#endif
 }
 
 /* Consumes reference to func and locals.
@@ -143,14 +150,24 @@ _PyFrame_Initialize(
     frame->owner = FRAME_OWNED_BY_THREAD;
 
     for (int i = null_locals_from; i < code->co_nlocalsplus; i++) {
-        frame->localsplus[i] = NULL;
+        frame->localsplus[i] = PyStackRef_StealRef(NULL);
     }
+
+#ifdef Py_GIL_DISABLED
+    // On GIL disabled, we walk the entire stack in GC. Since stacktop
+    // is not always in sync with the real stack pointer, we have
+    // no choice but to traverse the entire stack.
+    // This just makes sure we don't pass the GC invalid stack values.
+    for (int i = code->co_nlocalsplus; i < code->co_nlocalsplus + code->co_stacksize; i++) {
+        frame->localsplus[i] = PyStackRef_StealRef(NULL);
+    }
+#endif
 }
 
 /* Gets the pointer to the locals array
  * that precedes this frame.
  */
-static inline PyObject**
+static inline _PyStackRef*
 _PyFrame_GetLocalsArray(_PyInterpreterFrame *frame)
 {
     return frame->localsplus;
@@ -160,16 +177,16 @@ _PyFrame_GetLocalsArray(_PyInterpreterFrame *frame)
    Having stacktop <= 0 ensures that invalid
    values are not visible to the cycle GC.
    We choose -1 rather than 0 to assist debugging. */
-static inline PyObject**
+static inline _PyStackRef*
 _PyFrame_GetStackPointer(_PyInterpreterFrame *frame)
 {
-    PyObject **sp = frame->localsplus + frame->stacktop;
+    _PyStackRef *sp = frame->localsplus + frame->stacktop;
     frame->stacktop = -1;
     return sp;
 }
 
 static inline void
-_PyFrame_SetStackPointer(_PyInterpreterFrame *frame, PyObject **stack_pointer)
+_PyFrame_SetStackPointer(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer)
 {
     frame->stacktop = (int)(stack_pointer - frame->localsplus);
 }
@@ -307,6 +324,12 @@ _PyFrame_PushTrampolineUnchecked(PyThreadState *tstate, PyCodeObject *code, int 
     frame->instr_ptr = _PyCode_CODE(code);
     frame->owner = FRAME_OWNED_BY_THREAD;
     frame->return_offset = 0;
+#ifdef Py_GIL_DISABLED
+    assert(code->co_nlocalsplus == 0);
+    for (int i = 0; i < code->co_stacksize; i++) {
+        frame->localsplus[i] = PyStackRef_StealRef(NULL);
+    }
+#endif
     return frame;
 }
 

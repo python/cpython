@@ -2153,6 +2153,86 @@ _PyDict_FromItems(PyObject *const *keys, Py_ssize_t keys_offset,
     return dict;
 }
 
+
+PyObject*
+_PyDict_FromStackItems(_PyStackRef const *keys, Py_ssize_t keys_offset,
+                        _PyStackRef const *values, Py_ssize_t values_offset,
+                        Py_ssize_t length)
+{
+    bool unicode = true;
+    _PyStackRef const *ks = keys;
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+
+    for (Py_ssize_t i = 0; i < length; i++) {
+        if (!PyUnicode_CheckExact(PyStackRef_Get(*ks))) {
+            unicode = false;
+            break;
+        }
+        ks += keys_offset;
+    }
+
+    PyObject *dict = dict_new_presized(interp, length, unicode);
+    if (dict == NULL) {
+        return NULL;
+    }
+
+    ks = keys;
+    _PyStackRef const *vs = values;
+
+    for (Py_ssize_t i = 0; i < length; i++) {
+        PyObject *key = PyStackRef_Get(*ks);
+        PyObject *value = PyStackRef_Get(*vs);
+        if (setitem_lock_held((PyDictObject *)dict, key, value) < 0) {
+            Py_DECREF(dict);
+            return NULL;
+        }
+        ks += keys_offset;
+        vs += values_offset;
+    }
+
+    return dict;
+}
+
+PyObject*
+_PyDict_FromStackItemsUntaggedKeys(
+    PyObject *const *keys, Py_ssize_t keys_offset,
+    _PyStackRef const *values, Py_ssize_t values_offset,
+    Py_ssize_t length)
+{
+    bool unicode = true;
+    PyObject *const *ks = keys;
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+
+    for (Py_ssize_t i = 0; i < length; i++) {
+        if (!PyUnicode_CheckExact(*ks)) {
+            unicode = false;
+            break;
+        }
+        ks += keys_offset;
+    }
+
+    PyObject *dict = dict_new_presized(interp, length, unicode);
+    if (dict == NULL) {
+        return NULL;
+    }
+
+    ks = keys;
+    _PyStackRef const *vs = values;
+
+    for (Py_ssize_t i = 0; i < length; i++) {
+        PyObject *key = *ks;
+        PyObject *value = PyStackRef_Get(*vs);
+        if (setitem_lock_held((PyDictObject *)dict, key, value) < 0) {
+            Py_DECREF(dict);
+            return NULL;
+        }
+        ks += keys_offset;
+        vs += values_offset;
+    }
+
+    return dict;
+}
+
 /* Note that, for historical reasons, PyDict_GetItem() suppresses all errors
  * that may occur (originally dicts supported only string keys, and exceptions
  * weren't possible).  So, while the original intent was that a NULL return

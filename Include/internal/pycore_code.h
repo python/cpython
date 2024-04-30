@@ -8,6 +8,7 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
+#include "pycore_stackref.h" // _PyStackRef
 
 // We hide some of the newer PyCodeObject fields behind macros.
 // This helps with backporting certain changes to 3.12.
@@ -278,7 +279,7 @@ extern void _Py_Specialize_StoreSubscr(PyObject *container, PyObject *sub,
 extern void _Py_Specialize_Call(PyObject *callable, _Py_CODEUNIT *instr,
                                 int nargs);
 extern void _Py_Specialize_BinaryOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
-                                    int oparg, PyObject **locals);
+                                    int oparg, _PyStackRef *locals);
 extern void _Py_Specialize_CompareOp(PyObject *lhs, PyObject *rhs,
                                      _Py_CODEUNIT *instr, int oparg);
 extern void _Py_Specialize_UnpackSequence(PyObject *seq, _Py_CODEUNIT *instr,

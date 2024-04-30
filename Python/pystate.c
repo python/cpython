@@ -2168,6 +2168,7 @@ interp_for_stop_the_world(struct _stoptheworld_state *stw)
         for (t = i->threads.head; t; t = t->next)
 
 
+
 // Try to transition threads atomically from the "detached" state to the
 // "gc stopped" state. Returns true if all threads are in the "gc stopped"
 static bool

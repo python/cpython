@@ -15,6 +15,7 @@
 #include "pycore_tstate.h"        // _PyThreadStateImpl
 #include "pycore_weakref.h"       // _PyWeakref_ClearRef()
 #include "pydtrace.h"
+#include "pycore_stackref.h"
 
 #ifdef Py_GIL_DISABLED
 
@@ -299,6 +300,34 @@ gc_visit_heaps(PyInterpreterState *interp, mi_block_visit_fun *visitor,
 }
 
 static void
+gc_visit_thread_stacks(struct _stoptheworld_state *stw)
+{
+    HEAD_LOCK(&_PyRuntime);
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    for (PyThreadState *p = interp->threads.head; p != NULL; p = p->next) {
+        _PyInterpreterFrame *curr_frame = p->current_frame;
+        while (curr_frame != NULL) {
+            // f_executable could be Py_None for the entry frame.
+            if (PyCode_Check(curr_frame->f_executable)) {
+                PyCodeObject *co = (PyCodeObject *)curr_frame->f_executable;
+                for (int i = 0; i < co->co_nlocalsplus + co->co_stacksize; i++) {
+                    _PyStackRef curr_o = curr_frame->localsplus[i];
+                    // Note: we MUST check that it has deferred bit set before checking the rest.
+                    // Otherwise we might read into invalid memory due to non-deferred references
+                    // being dead already.
+                    if ((curr_o.bits & Py_TAG_DEFERRED) == Py_TAG_DEFERRED &&
+                        !_Py_IsImmortal(PyStackRef_Get(curr_o))) {
+                        gc_add_refs(PyStackRef_Get(curr_o), 1);
+                    }
+                }
+            }
+            curr_frame = curr_frame->previous;
+        }
+    }
+    HEAD_UNLOCK(&_PyRuntime);
+}
+
+static void
 merge_queued_objects(_PyThreadStateImpl *tstate, struct collection_state *state)
 {
     struct _brc_thread_state *brc = &tstate->brc;
@@ -351,8 +380,8 @@ process_delayed_frees(PyInterpreterState *interp)
 }
 
 // Subtract an incoming reference from the computed "gc_refs" refcount.
-static int
-visit_decref(PyObject *op, void *arg)
+int
+_Py_visit_decref(PyObject *op, void *arg)
 {
     if (_PyObject_GC_IS_TRACKED(op) && !_Py_IsImmortal(op)) {
         // If update_refs hasn't reached this object yet, mark it
@@ -419,7 +448,7 @@ update_refs(const mi_heap_t *heap, const mi_heap_area_t *area,
     // Subtract internal references from ob_tid. Objects with ob_tid > 0
     // are directly reachable from outside containers, and so can't be
     // collected.
-    Py_TYPE(op)->tp_traverse(op, visit_decref, NULL);
+    Py_TYPE(op)->tp_traverse(op, _Py_visit_decref, NULL);
     return true;
 }
 
@@ -556,6 +585,8 @@ deduce_unreachable_heap(PyInterpreterState *interp,
     gc_visit_heaps(interp, &validate_gc_objects, &state->base);
 #endif
 
+    gc_visit_thread_stacks(&interp->stoptheworld);
+
     // Transitively mark reachable objects by clearing the
     // _PyGC_BITS_UNREACHABLE flag.
     if (gc_visit_heaps(interp, &mark_heap_visitor, &state->base) < 0) {
@@ -609,6 +640,24 @@ clear_weakrefs(struct collection_state *state)
 {
     PyObject *op;
     WORKSTACK_FOR_EACH(&state->unreachable, op) {
+        if (PyGen_CheckExact(op) ||
+            PyCoro_CheckExact(op) ||
+            PyAsyncGen_CheckExact(op)) {
+            // Ensure any non-refcounted pointers to cyclic trash are converted
+            // to refcounted pointers. This prevents bugs where the generator is
+            // freed after its function object.
+            PyGenObject *gen = (PyGenObject *)op;
+            _PyInterpreterFrame *frame = (_PyInterpreterFrame *)(gen->gi_iframe);
+            for (int i = 0; i < frame->stacktop; i++) {
+                _PyStackRef curr_o = frame->localsplus[i];
+                // Note: we MUST check that it has deferred bit set before checking the rest.
+                // Otherwise we might read into invalid memory due to non-deferred references
+                // being dead already.
+                if ((curr_o.bits & Py_TAG_DEFERRED) == Py_TAG_DEFERRED) {
+                    gc_add_refs(PyStackRef_Get(curr_o), 1);
+                }
+            }
+        }
         if (PyWeakref_Check(op)) {
             // Clear weakrefs that are themselves unreachable to ensure their
             // callbacks will not be executed later from a `tp_clear()`
@@ -832,8 +881,8 @@ show_stats_each_generations(GCState *gcstate)
 }
 
 // Traversal callback for handle_resurrected_objects.
-static int
-visit_decref_unreachable(PyObject *op, void *data)
+int
+_Py_visit_decref_unreachable(PyObject *op, void *data)
 {
     if (gc_is_unreachable(op) && _PyObject_GC_IS_TRACKED(op)) {
         op->ob_ref_local -= 1;
@@ -880,7 +929,7 @@ handle_resurrected_objects(struct collection_state *state)
 
         traverseproc traverse = Py_TYPE(op)->tp_traverse;
         (void) traverse(op,
-            (visitproc)visit_decref_unreachable,
+            (visitproc)_Py_visit_decref_unreachable,
             NULL);
     }
 

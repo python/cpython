@@ -1327,6 +1327,18 @@ import_find_extension(PyThreadState *tstate,
         return NULL;
     }
 
+    /* gh-117649: The free-threaded build does not currently support
+       single-phase init modules in subinterpreters. */
+#ifdef Py_GIL_DISABLED
+    if (def->m_size == -1 && !_Py_IsMainInterpreter(tstate->interp)) {
+        return PyErr_Format(
+            PyExc_ImportError,
+            "module %s does not support the combination of free-threading "
+            "and subinterpreters",
+             name_buf);
+    }
+#endif
+
     PyObject *mod, *mdict;
     PyObject *modules = get_modules_dict(tstate, true);
 

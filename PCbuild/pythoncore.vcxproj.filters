@@ -702,6 +702,9 @@
     <ClInclude Include="..\Include\internal\pycore_object_alloc.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_object_deferred.h">
+      <Filter>Include\internal</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_object_state.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
@@ -787,6 +790,9 @@
       <Filter>Include\internal</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_symtable.h">
+      <Filter>Include\internal</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_stackref.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_time.h">

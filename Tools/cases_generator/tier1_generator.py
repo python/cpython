@@ -44,8 +44,12 @@ def declare_variables(inst: Instruction, out: CWriter) -> None:
                     type = var.type if var.type else "PyObject *"
                     variables.add(var.name)
                     if var.condition:
+                        if type.strip() != "_PyStackRef":
+                            out.emit(f"_PyStackRef {var.name}_stackref = PyStackRef_StealRef(NULL);\n")
                         out.emit(f"{type}{var.name} = NULL;\n")
                     else:
+                        if not var.is_array() and not var.type:
+                            out.emit(f"_PyStackRef {var.name}_stackref;\n")
                         out.emit(f"{type}{var.name};\n")
             for var in uop.stack.outputs:
                 if var.name not in variables:
@@ -70,7 +74,8 @@ def write_uop(
         if braces:
             out.emit(f"// {uop.name}\n")
         for var in reversed(uop.stack.inputs):
-            out.emit(stack.pop(var))
+            for line in stack.pop(var):
+                out.emit(line)
         if braces:
             out.emit("{\n")
         if not uop.properties.stores_sp:

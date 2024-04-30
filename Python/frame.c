@@ -16,11 +16,17 @@ _PyFrame_Traverse(_PyInterpreterFrame *frame, visitproc visit, void *arg)
     Py_VISIT(frame->f_funcobj);
     Py_VISIT(_PyFrame_GetCode(frame));
    /* locals */
-    PyObject **locals = _PyFrame_GetLocalsArray(frame);
+    _PyStackRef *locals = _PyFrame_GetLocalsArray(frame);
     int i = 0;
     /* locals and stack */
     for (; i <frame->stacktop; i++) {
-        Py_VISIT(locals[i]);
+#ifdef Py_GIL_DISABLED
+        if ((locals[i].bits & Py_TAG_DEFERRED) &&
+            (visit == _Py_visit_decref || visit == _Py_visit_decref_unreachable)) {
+            continue;
+        }
+#endif
+        Py_VISIT(PyStackRef_Get(locals[i]));
     }
     return 0;
 }
@@ -99,7 +105,7 @@ _PyFrame_ClearLocals(_PyInterpreterFrame *frame)
 {
     assert(frame->stacktop >= 0);
     for (int i = 0; i < frame->stacktop; i++) {
-        Py_XDECREF(frame->localsplus[i]);
+        PyStackRef_XDECREF(frame->localsplus[i]);
     }
     frame->stacktop = 0;
     Py_CLEAR(frame->f_locals);

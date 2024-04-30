@@ -11,6 +11,7 @@ import pathlib
 import re
 import string
 import sys
+import sysconfig
 from test import support
 import textwrap
 import types
@@ -691,10 +692,20 @@ class IncompatibleExtensionModuleRestrictionsTests(unittest.TestCase):
             with _incompatible_extension_module_restrictions(disable_check=True):
                 import _testsinglephase
             ''')
-        with self.subTest('check disabled, shared GIL'):
-            self.run_with_shared_gil(script)
-        with self.subTest('check disabled, per-interpreter GIL'):
-            self.run_with_own_gil(script)
+        if not sysconfig.get_config_var('Py_GIL_DISABLED'):
+            with self.subTest('check disabled, shared GIL'):
+                self.run_with_shared_gil(script)
+            with self.subTest('check disabled, per-interpreter GIL'):
+                self.run_with_own_gil(script)
+        else:
+            # gh-117649: Py_GIL_DISABLED builds do not support legacy
+            # single-phase init extensions within subinterpreters.
+            with self.subTest('check disabled, shared GIL'):
+                with self.assertRaises(ImportError):
+                    self.run_with_shared_gil(script)
+            with self.subTest('check disabled, per-interpreter GIL'):
+                with self.assertRaises(ImportError):
+                    self.run_with_own_gil(script)
 
         script = textwrap.dedent(f'''
             from importlib.util import _incompatible_extension_module_restrictions

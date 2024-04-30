@@ -124,7 +124,8 @@ class Stack:
         self.variables: list[StackItem] = []
         self.defined: set[str] = set()
 
-    def pop(self, var: StackItem) -> str:
+    def pop(self, var: StackItem, should_untag: bool = True) -> tuple[str, ...]:
+        untag = "PyStackRef_Get" if should_untag else ""
         self.top_offset.pop(var)
         if not var.peek:
             self.peek_offset.pop(var)
@@ -137,34 +138,60 @@ class Stack:
                     f"Expected {var.size} got {popped.size}"
                 )
             if popped.name == var.name:
-                return ""
+                return ("", )
             elif popped.name in UNUSED:
                 self.defined.add(var.name)
-                return (
-                    f"{var.name} = {indirect}stack_pointer[{self.top_offset.to_c()}];\n"
-                )
+                if indirect:
+                    return (
+                        f"{var.name} = {indirect}stack_pointer[{self.top_offset.to_c()}];\n",
+                    )
+                else:
+                    type = var.type or ""
+                    if type.strip() != "_PyStackRef":
+                        return (
+                            f"{var.name}_stackref = stack_pointer[{self.top_offset.to_c()}];\n",
+                            f"{var.name} = {untag}({var.name}_stackref);\n",
+                        )
+                    else:
+                        return (
+                            f"{var.name} = stack_pointer[{self.top_offset.to_c()}];\n",
+                        )
             elif var.name in UNUSED:
-                return ""
+                return ("", )
             else:
                 self.defined.add(var.name)
-                return f"{var.name} = {popped.name};\n"
+                res = [f"{var.name} = {popped.name};\n"]
+                if not var.type:
+                    res.append(f"{var.name}_stackref = PyStackRef_StealRef({popped.name});\n")
+                return tuple(res)
         self.base_offset.pop(var)
         if var.name in UNUSED:
-            return ""
+            return ("", )
         else:
             self.defined.add(var.name)
-        cast = f"({var.type})" if (not indirect and var.type) else ""
-        assign = (
-            f"{var.name} = {cast}{indirect}stack_pointer[{self.base_offset.to_c()}];"
-        )
+        cast = f"({var.type})" if (not indirect and var.type and var.type.strip() != "_PyStackRef") else ""
+        if indirect:
+            assign: tuple[str, ...] = (
+                f"{var.name} = {indirect}stack_pointer[{self.base_offset.to_c()}];",
+            )
+        else:
+            if (var.type or "").strip() != "_PyStackRef":
+                assign = (
+                    f"{var.name}_stackref = stack_pointer[{self.base_offset.to_c()}];\n",
+                    f"{var.name} = {cast}{untag}({var.name}_stackref);\n",
+                )
+            else:
+                assign = (
+                    f"{var.name} = stack_pointer[{self.base_offset.to_c()}];\n",
+                )
         if var.condition:
             if var.condition == "1":
-                return f"{assign}\n"
+                return (*assign, "\n")
             elif var.condition == "0":
-                return ""
+                return ("", )
             else:
-                return f"if ({var.condition}) {{ {assign} }}\n"
-        return f"{assign}\n"
+                return (f"if ({var.condition}) {{\n", *assign,  "}\n", )
+        return (*assign, "\n")
 
     def push(self, var: StackItem) -> str:
         self.variables.append(var)
@@ -177,19 +204,21 @@ class Stack:
             self.top_offset.push(var)
             return ""
 
-    def flush(self, out: CWriter, cast_type: str = "PyObject *") -> None:
+    def flush(self, out: CWriter, cast_type: str = "PyObject *", should_tag: bool = True) -> None:
         out.start_line()
         for var in self.variables:
             if not var.peek:
-                cast = f"({cast_type})" if var.type else ""
+                type = var.type or ""
+                cast = f"({cast_type})" if (type and type.strip() != "_PyStackRef") else ""
                 if var.name not in UNUSED and not var.is_array():
                     if var.condition:
                         if var.condition == "0":
                             continue
                         elif var.condition != "1":
                             out.emit(f"if ({var.condition}) ")
+                    tag = "PyStackRef_StealRef" if should_tag and type.strip() != "_PyStackRef" else ""
                     out.emit(
-                        f"stack_pointer[{self.base_offset.to_c()}] = {cast}{var.name};\n"
+                        f"stack_pointer[{self.base_offset.to_c()}] = {tag}({cast}{var.name});\n"
                     )
             self.base_offset.push(var)
         if self.base_offset.to_c() != self.top_offset.to_c():
