@@ -163,7 +163,9 @@ dummy_func(
                 if ((oparg & RESUME_OPARG_LOCATION_MASK) < RESUME_AFTER_YIELD_FROM) {
                     CHECK_EVAL_BREAKER();
                 }
+                #if ENABLE_SPECIALIZATION
                 FT_ATOMIC_STORE_UINT8_RELAXED(this_instr->op.code, RESUME_CHECK);
+                #endif  /* ENABLE_SPECIALIZATION */
             }
         }
 
