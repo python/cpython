@@ -747,10 +747,11 @@ top:  // Jump here after _PUSH_FRAME or likely branches
                                 uop = _PyUOp_Replacements[uop];
                                 assert(uop != 0);
                                 if (uop == _FOR_ITER_TIER_TWO) {
-                                    target += 1 + INLINE_CACHE_ENTRIES_FOR_ITER + oparg + 2 + extended;
-                                    assert(_PyCode_CODE(code)[target-2].op.code == END_FOR ||
-                                            _PyCode_CODE(code)[target-2].op.code == INSTRUMENTED_END_FOR);
-                                    assert(_PyCode_CODE(code)[target-1].op.code == POP_TOP);
+                                    uint32_t next_inst = target + 1 + INLINE_CACHE_ENTRIES_FOR_ITER + extended;
+                                    target = next_inst + oparg + 1;
+                                    assert(_PyCode_CODE(code)[target-1].op.code == END_FOR ||
+                                            _PyCode_CODE(code)[target-1].op.code == INSTRUMENTED_END_FOR);
+                                    assert(_PyCode_CODE(code)[target].op.code == POP_TOP);
                                 }
                                 break;
                             default:

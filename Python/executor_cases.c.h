@@ -2664,9 +2664,7 @@
                     _PyErr_Clear(tstate);
                 }
                 /* iterator ended normally */
-                Py_DECREF(iter);
-                STACK_SHRINK(1);
-                /* The translator sets the deopt target just past END_FOR */
+                /* The translator sets the deopt target just past the matching END_FOR */
                 if (true) {
                     UOP_STAT_INC(uopcode, miss);
                     JUMP_TO_JUMP_TARGET();
