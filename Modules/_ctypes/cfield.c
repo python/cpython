@@ -89,7 +89,7 @@ PyCField_FromDesc manages:
 static void
 PyCField_FromDesc_gcc(Py_ssize_t bitsize, Py_ssize_t *pbitofs,
                 Py_ssize_t *psize, Py_ssize_t *poffset, Py_ssize_t *palign,
-                CFieldObject* self, StgInfo* dict,
+                CFieldObject* self, StgInfo* info,
                 int is_bitfield
                 )
 {
@@ -97,25 +97,26 @@ PyCField_FromDesc_gcc(Py_ssize_t bitsize, Py_ssize_t *pbitofs,
     *pbitofs += *poffset * 8;
     *poffset = 0;
 
-    *palign = dict->align;
+    *palign = info->align;
 
     if ((bitsize > 0)
-        && (round_down(*pbitofs, 8 * dict->align)
-            < round_down(*pbitofs + bitsize - 1, 8 * dict->align))) {
+        && (round_down(*pbitofs, 8 * info->align)
+            < round_down(*pbitofs + bitsize - 1, 8 * info->align))) {
         // We would be straddling alignment units.
-        *pbitofs = round_up(*pbitofs, 8*dict->align);
+        *pbitofs = round_up(*pbitofs, 8*info->align);
     }
     assert(*poffset == 0);
 
     if(is_bitfield) {
-        self->offset = round_down(*pbitofs, 8*dict->size) / 8;
+        self->offset = round_down(*pbitofs, 8*info->size) / 8;
         Py_ssize_t effective_bitsof = *pbitofs - 8 * self->offset;
         self->size = BUILD_SIZE(bitsize, effective_bitsof);
-        assert(dict->size == dict->align);
-        assert(effective_bitsof <= dict->size * 8);
+        assert(info->size == info->align);
+        assert(effective_bitsof <= info->size * 8);
     } else {
-        self->offset = round_down(*pbitofs, 8*dict->align) / 8;
-        self->size = dict->size;
+        assert(bitsize == 0);
+        self->offset = round_down(*pbitofs, 8*info->align) / 8;
+        self->size = info->size;
     }
 
     *pbitofs += bitsize;
@@ -127,45 +128,45 @@ PyCField_FromDesc_msvc(
                 Py_ssize_t *pfield_size, Py_ssize_t bitsize,
                 Py_ssize_t *pbitofs, Py_ssize_t *psize, Py_ssize_t *poffset,
                 Py_ssize_t *palign, int pack,
-                CFieldObject* self, StgInfo* dict,
+                CFieldObject* self, StgInfo* info,
                 int is_bitfield
                 )
 {
     if (pack)
-        *palign = min(pack, dict->align);
+        *palign = min(pack, info->align);
     else
-        *palign = dict->align;
+        *palign = info->align;
 
     // *poffset points to end of current bitfield.
     // *pbitofs is generally non-positive,
     // and 8 * (*poffset) + *pbitofs points just behind
     // the end of the last field we placed.
-    if (0 < *pbitofs + bitsize || 8 * dict->size != *pfield_size) {
+    if (0 < *pbitofs + bitsize || 8 * info->size != *pfield_size) {
         // Close the previous bitfield (if any).
         // and start a new bitfield:
         *poffset = round_up(*poffset, *palign);
 
-        *poffset += dict->size;
+        *poffset += info->size;
 
-        *pfield_size = dict->size * 8;
+        *pfield_size = info->size * 8;
         // Reminder: 8 * (*poffset) + *pbitofs points to where we would start a
         // new field.  Ie just behind where we placed the last field plus an
         // allowance for alignment.
         *pbitofs = - *pfield_size;
     }
 
-    assert(8 * dict->size == *pfield_size);
+    assert(8 * info->size == *pfield_size);
 
     self->offset = *poffset - (*pfield_size) / 8;
     if(is_bitfield) {
-        assert(dict->size == dict->align);
+        assert(info->size == info->align);
         assert(0 <= (*pfield_size + *pbitofs));
-        assert((*pfield_size + *pbitofs) < dict->size * 8);
+        assert((*pfield_size + *pbitofs) < info->size * 8);
         self->size = BUILD_SIZE(bitsize, *pfield_size + *pbitofs);
     } else {
-        self->size = dict->size;
+        self->size = info->size;
     }
-    assert(*pfield_size + *pbitofs <= dict->size * 8);
+    assert(*pfield_size + *pbitofs <= info->size * 8);
 
     *pbitofs += bitsize;
     *psize = *poffset;
