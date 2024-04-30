@@ -590,6 +590,11 @@ class ConnectionTests(unittest.TestCase):
             del cx
             gc_collect()
 
+    def test_connection_signature(self):
+        from inspect import signature
+        sig = signature(self.cx)
+        self.assertEqual(str(sig), "(sql, /)")
+
 
 class UninitialisedConnectionTests(unittest.TestCase):
     def setUp(self):
