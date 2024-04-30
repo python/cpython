@@ -25,9 +25,10 @@ you don't already have the SDK, here's how to install it:
 The `android.py` script also requires the following commands to be on the `PATH`:
 
 * `curl`
-* `make`
 * `tar`
 * `unzip`
+* `java`
+* dependencies to build Python (`make`, C compiler)
 
 
 ## Building
@@ -76,12 +77,13 @@ call. For example, if you want a pydebug build that also caches the results from
 
 To run the Python test suite on Android:
 
+* Install Android Studio, if you don't already have it.
 * Follow the instructions in the previous section to build all supported
   architectures.
-* Run `./android.py setup-testbed`.
+* Run `./android.py setup-testbed` to download additional tools.
 * Open the `testbed` directory in Android Studio.
-* Connect a device, or start an emulator, and select it from the drop-down list
-  in the toolbar.
+* In the *Device Manager* dock, connect a device or start an emulator.
+  Then select it from the drop-down list in the toolbar.
 * Click the "Run" button in the toolbar.
 * The testbed app displays nothing on screen while running. To see its output,
   open the [Logcat window](https://developer.android.com/studio/debug/logcat).
