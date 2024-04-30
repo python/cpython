@@ -2285,9 +2285,12 @@ def _signature_fromstr(cls, obj, s, skip_bound_arg=True):
 
     module = None
     module_dict = {}
-    module_name = (getattr(obj, '__module__', None) or
-                   getattr(getattr(obj, '__objclass__', None),
-                           '__module__', None))
+
+    module_name = getattr(obj, '__module__', None)
+    if not module_name:
+        objclass = getattr(obj, '__objclass__', None)
+        module_name = getattr(objclass, '__module__', None)
+
     if module_name:
         module = sys.modules.get(module_name, None)
         if module:
