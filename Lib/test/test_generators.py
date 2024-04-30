@@ -450,6 +450,26 @@ class ExceptionTest(unittest.TestCase):
         self.assertIsInstance(cm.exception.value, StopIteration)
         self.assertEqual(cm.exception.value.value, 2)
 
+    def test_close_releases_frame_locals(self):
+        # See gh-118272
+
+        class Foo:
+            pass
+
+        f = Foo()
+        f_wr = weakref.ref(f)
+
+        def genfn():
+            a = f
+            yield
+
+        g = genfn()
+        next(g)
+        del f
+        g.close()
+        support.gc_collect()
+        self.assertIsNone(f_wr())
+
 
 class GeneratorThrowTest(unittest.TestCase):
 

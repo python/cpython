@@ -403,6 +403,7 @@ gen_close(PyGenObject *gen, PyObject *args)
          * StopIteration. */
         if (exception_handler_depth == 1) {
             gen->gi_frame_state = FRAME_COMPLETED;
+            _PyFrame_ClearLocals((_PyInterpreterFrame *)gen->gi_iframe);
             Py_RETURN_NONE;
         }
     }

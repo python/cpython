@@ -213,6 +213,9 @@ _PyFrame_GetFrameObject(_PyInterpreterFrame *frame)
     return _PyFrame_MakeAndSetFrameObject(frame);
 }
 
+void
+_PyFrame_ClearLocals(_PyInterpreterFrame *frame);
+
 /* Clears all references in the frame.
  * If take is non-zero, then the _PyInterpreterFrame frame
  * may be transferred to the frame object it references
