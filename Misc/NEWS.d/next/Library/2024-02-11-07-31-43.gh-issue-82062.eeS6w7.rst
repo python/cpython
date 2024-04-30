@@ -1,2 +1,3 @@
-Fix :func:`inspect.signature()` to correctly set extension module for
-built-in instance methods.
+Fix :func:`inspect.signature()` to correctly set extension module for built-in
+instance methods.  They lacks ``__module__`` attribute, so we use instead
+``__objclass__.__module__`` attribute.
