@@ -86,7 +86,7 @@ PyCField_FromDesc manages:
 - *palign: the alignment requirements of the last field we placed.
 */
 
-static void
+static int
 PyCField_FromDesc_gcc(Py_ssize_t bitsize, Py_ssize_t *pbitofs,
                 Py_ssize_t *psize, Py_ssize_t *poffset, Py_ssize_t *palign,
                 CFieldObject* self, StgInfo* info,
@@ -111,8 +111,13 @@ PyCField_FromDesc_gcc(Py_ssize_t bitsize, Py_ssize_t *pbitofs,
         self->offset = round_down(*pbitofs, 8*info->size) / 8;
         Py_ssize_t effective_bitsof = *pbitofs - 8 * self->offset;
         self->size = BUILD_SIZE(bitsize, effective_bitsof);
-        assert(info->size == info->align);
         assert(effective_bitsof <= info->size * 8);
+        if (info->size != info->align) {
+            PyErr_SetString(
+                PyExc_TypeError,
+                "bitfield's base type size differs from alignment");
+            return -1;
+        }
     } else {
         assert(bitsize == 0);
         self->offset = round_down(*pbitofs, 8*info->align) / 8;
@@ -121,9 +126,11 @@ PyCField_FromDesc_gcc(Py_ssize_t bitsize, Py_ssize_t *pbitofs,
 
     *pbitofs += bitsize;
     *psize = round_up(*pbitofs, 8) / 8;
+
+    return 0;
 }
 
-static void
+static int
 PyCField_FromDesc_msvc(
                 Py_ssize_t *pfield_size, Py_ssize_t bitsize,
                 Py_ssize_t *pbitofs, Py_ssize_t *psize, Py_ssize_t *poffset,
@@ -159,7 +166,12 @@ PyCField_FromDesc_msvc(
 
     self->offset = *poffset - (*pfield_size) / 8;
     if(is_bitfield) {
-        assert(info->size == info->align);
+        if (info->size != info->align) {
+            PyErr_SetString(
+                PyExc_TypeError,
+                "bitfield's base type size differs from alignment");
+            return -1;
+        }
         assert(0 <= (*pfield_size + *pbitofs));
         assert((*pfield_size + *pbitofs) < info->size * 8);
         self->size = BUILD_SIZE(bitsize, *pfield_size + *pbitofs);
@@ -170,6 +182,8 @@ PyCField_FromDesc_msvc(
 
     *pbitofs += bitsize;
     *psize = *poffset;
+
+    return 0;
 }
 
 PyObject *
@@ -251,8 +265,9 @@ PyCField_FromDesc(ctypes_state *st, PyObject *desc, Py_ssize_t index,
     assert(bitsize <= info->size * 8);
 
     // `pack` only makes sense in msvc compatibility mode.
+    int result;
     if (ms_struct || pack != 0) {
-        PyCField_FromDesc_msvc(
+        result = PyCField_FromDesc_msvc(
                 pfield_size, bitsize, pbitofs,
                 psize, poffset, palign,
                 pack,
@@ -260,12 +275,16 @@ PyCField_FromDesc(ctypes_state *st, PyObject *desc, Py_ssize_t index,
                 is_bitfield
                 );
     } else {
-        PyCField_FromDesc_gcc(
+        result = PyCField_FromDesc_gcc(
                 bitsize, pbitofs,
                 psize, poffset, palign,
                 self, info,
                 is_bitfield
                 );
+    }
+    if (result < 0) {
+        Py_DECREF(self);
+        return NULL;
     }
     assert(!is_bitfield || (LOW_BIT(self->size) <= self->size * 8));
     if(big_endian && is_bitfield) {
