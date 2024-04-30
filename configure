@@ -8227,14 +8227,17 @@ else $as_nop
 fi
 
 case $enable_experimental_jit in
-  no|yes|yes-default-off|interpreter) ;;
+  no) enable_experimental_jit=0 ;;
+  yes) enable_experimental_jit=1 ;;
+  yes-default-off) enable_experimental_jit=3 ;;
+  interpreter) enable_experimental_jit=4 ;;
   *) as_fn_error $? "invalid argument: --enable-experimental-jit=$enable_experimental_jit; expected no|yes|yes-default-off|interpreter" "$LINENO" 5 ;;
 esac
-if test "x$enable_experimental_jit" = xno
+if test "x$enable_experimental_jit" = x0
 then :
 
 else $as_nop
-  as_fn_append CFLAGS_NODIST " -D_Py_JIT=_PY_JIT_$(echo $enable_experimental_jit | tr a-z- A-Z_)"
+  as_fn_append CFLAGS_NODIST " -D_Py_JIT=$enable_experimental_jit"
            REGEN_JIT_COMMAND="\$(PYTHON_FOR_REGEN) \$(srcdir)/Tools/jit/build.py $host"
            JIT_STENCILS_H="jit_stencils.h"
            if test "x$Py_DEBUG" = xtrue
