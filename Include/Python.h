@@ -53,7 +53,7 @@
 
 // The JIT depends on TIER2
 #ifdef _Py_JIT
-#define _Py_TIER2 1
+#define _Py_TIER2 _Py_JIT
 #endif
 
 // Include Python header files

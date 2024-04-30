@@ -1089,7 +1089,6 @@ with_trace_refs
 enable_pystats
 with_assertions
 enable_experimental_jit
-enable_experimental_tier2
 enable_optimizations
 with_lto
 enable_bolt
@@ -1819,12 +1818,9 @@ Optional Features:
   --disable-gil           enable experimental support for running without the
                           GIL (default is no)
   --enable-pystats        enable internal statistics gathering (default is no)
-  --enable-experimental-jit
+  --enable-experimental-jit[=no|yes|yes-default-off|interpreter]
                           build the experimental just-in-time compiler
                           (default is no)
-  --enable-experimental-tier2
-                          use the experimental tier 2 interpreter (default is
-                          no)
   --enable-optimizations  enable expensive, stable optimizations (PGO, etc.)
                           (default is no)
   --enable-bolt           enable usage of the llvm-bolt post-link optimizer
@@ -8230,11 +8226,15 @@ else $as_nop
   enable_experimental_jit=no
 fi
 
+case $enable_experimental_jit in
+  no|yes|yes-default-off|interpreter) ;;
+  *) as_fn_error $? "invalid argument: --enable-experimental-jit=$enable_experimental_jit; expected no|yes|yes-default-off|interpreter" "$LINENO" 5 ;;
+esac
 if test "x$enable_experimental_jit" = xno
 then :
 
 else $as_nop
-  as_fn_append CFLAGS_NODIST " -D_Py_JIT"
+  as_fn_append CFLAGS_NODIST " -D_Py_JIT=_PY_JIT_$(echo $enable_experimental_jit | tr a-z- A-Z_)"
            REGEN_JIT_COMMAND="\$(PYTHON_FOR_REGEN) \$(srcdir)/Tools/jit/build.py $host"
            JIT_STENCILS_H="jit_stencils.h"
            if test "x$Py_DEBUG" = xtrue
@@ -8246,26 +8246,6 @@ fi
 
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $enable_experimental_jit" >&5
 printf "%s\n" "$enable_experimental_jit" >&6; }
-
-# Check for --enable-experimental-tier2:
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --enable-experimental-tier2" >&5
-printf %s "checking for --enable-experimental-tier2... " >&6; }
-# Check whether --enable-experimental-tier2 was given.
-if test ${enable_experimental_tier2+y}
-then :
-  enableval=$enable_experimental_tier2;
-else $as_nop
-  enable_experimental_tier2=no
-fi
-
-if test "x$enable_experimental_tier2" = xno
-then :
-
-else $as_nop
-  as_fn_append CFLAGS_NODIST " -D_Py_TIER2"
-fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $enable_experimental_tier2" >&5
-printf "%s\n" "$enable_experimental_tier2" >&6; }
 
 # Enable optimization flags
 

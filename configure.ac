@@ -1765,14 +1765,19 @@ fi
 # Check for --enable-experimental-jit:
 AC_MSG_CHECKING([for --enable-experimental-jit])
 AC_ARG_ENABLE([experimental-jit],
-              [AS_HELP_STRING([--enable-experimental-jit],
+              [AS_HELP_STRING([--enable-experimental-jit@<:@=no|yes|yes-default-off|interpreter@:>@],
                               [build the experimental just-in-time compiler (default is no)])],
               [],
               [enable_experimental_jit=no])
+case $enable_experimental_jit in
+  no|yes|yes-default-off|interpreter) ;;
+  *) AC_MSG_ERROR(
+      [invalid argument: --enable-experimental-jit=$enable_experimental_jit; expected no|yes|yes-default-off|interpreter]) ;;
+esac
 AS_VAR_IF([enable_experimental_jit],
           [no],
           [],
-          [AS_VAR_APPEND([CFLAGS_NODIST], [" -D_Py_JIT"])
+          [AS_VAR_APPEND([CFLAGS_NODIST], [" -D_Py_JIT=_PY_JIT_$(echo $enable_experimental_jit | tr a-z- A-Z_)"])
            AS_VAR_SET([REGEN_JIT_COMMAND],
                       ["\$(PYTHON_FOR_REGEN) \$(srcdir)/Tools/jit/build.py $host"])
            AS_VAR_SET([JIT_STENCILS_H], ["jit_stencils.h"])
@@ -1783,19 +1788,6 @@ AS_VAR_IF([enable_experimental_jit],
 AC_SUBST([REGEN_JIT_COMMAND])
 AC_SUBST([JIT_STENCILS_H])
 AC_MSG_RESULT([$enable_experimental_jit])
-
-# Check for --enable-experimental-tier2:
-AC_MSG_CHECKING([for --enable-experimental-tier2])
-AC_ARG_ENABLE([experimental-tier2],
-              [AS_HELP_STRING([--enable-experimental-tier2],
-                              [use the experimental tier 2 interpreter (default is no)])],
-              [],
-              [enable_experimental_tier2=no])
-AS_VAR_IF([enable_experimental_tier2],
-          [no],
-          [],
-          [AS_VAR_APPEND([CFLAGS_NODIST], [" -D_Py_TIER2"])])
-AC_MSG_RESULT([$enable_experimental_tier2])
 
 # Enable optimization flags
 AC_SUBST([DEF_MAKE_ALL_RULE])
