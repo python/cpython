@@ -724,9 +724,13 @@ class ElementTree:
             if method == "text":
                 _serialize_text(write, self._root)
             else:
-                qnames, namespaces = _namespaces(self._root, default_namespace)
+                qnames, namespaces_to_declare = _namespaces(self._root, default_namespace)
+                if default_namespace:
+                    # Always write the default_namespace if provided, even if
+                    # it wasn't referenced in the xml
+                    namespaces_to_declare[default_namespace] = ""
                 serialize = _serialize[method]
-                serialize(write, self._root, qnames, namespaces,
+                serialize(write, self._root, qnames, namespaces_to_declare,
                           short_empty_elements=short_empty_elements)
 
     def write_c14n(self, file):
@@ -792,21 +796,41 @@ def _namespaces(elem, default_namespace=None):
     # maps qnames to *encoded* prefix:local names
     qnames = {None: None}
 
+    global_default_uri = None
+    for uri, prefix in list(_namespace_map.items()):
+        if prefix == "":
+            global_default_uri = uri
+            # register_namespaces() only allows a unique set of prefixes so ""
+            # will only occur once
+            break
+
     # maps uri:s to prefixes
     namespaces = {}
     if default_namespace:
-        namespaces[default_namespace] = ""
+        namespace_map = _namespace_map.copy()
+        if global_default_uri:
+            del namespace_map[global_default_uri]
+        namespace_map[default_namespace] = ""
+    else:
+        namespace_map = _namespace_map
 
     def add_qname(qname):
         # calculate serialized qname representation
+        found_unqualified = False
         try:
             if qname[:1] == "{":
                 uri, tag = qname[1:].rsplit("}", 1)
                 prefix = namespaces.get(uri)
                 if prefix is None:
-                    prefix = _namespace_map.get(uri)
+                    prefix = namespace_map.get(uri)
                     if prefix is None:
-                        prefix = "ns%d" % len(namespaces)
+                        cnt = len(namespaces)
+                        # Keep the pre-gh118416 numbering scheme where the
+                        # default namespace was always considered the first
+                        # namespace
+                        if default_namespace and default_namespace not in namespaces:
+                            cnt += 1
+                        prefix = "ns%d" % cnt
                     if prefix != "xml":
                         namespaces[uri] = prefix
                 if prefix:
@@ -820,31 +844,41 @@ def _namespaces(elem, default_namespace=None):
                         "cannot use non-qualified names with "
                         "default_namespace option"
                         )
+                found_unqualified = True
                 qnames[qname] = qname
         except TypeError:
             _raise_serialization_error(qname)
+        return found_unqualified
 
     # populate qname and namespaces table
+    found_unqualified = False
     for elem in elem.iter():
         tag = elem.tag
         if isinstance(tag, QName):
             if tag.text not in qnames:
-                add_qname(tag.text)
+                found_unqualified |= add_qname(tag.text)
         elif isinstance(tag, str):
             if tag not in qnames:
-                add_qname(tag)
+                found_unqualified |= add_qname(tag)
         elif tag is not None and tag is not Comment and tag is not PI:
             _raise_serialization_error(tag)
         for key, value in elem.items():
             if isinstance(key, QName):
                 key = key.text
             if key not in qnames:
-                add_qname(key)
+                found_unqualified |= add_qname(key)
             if isinstance(value, QName) and value.text not in qnames:
-                add_qname(value.text)
+                found_unqualified |= add_qname(value.text)
         text = elem.text
         if isinstance(text, QName) and text.text not in qnames:
-            add_qname(text.text)
+            found_unqualified |= add_qname(text.text)
+
+    if found_unqualified and global_default_uri in namespaces:
+        # A deferred check of using unqualified tags when a global default
+        # namespace is registered
+        raise ValueError(
+            "cannot use non-qualified names with default_namespace option"
+        )
     return qnames, namespaces
 
 def _serialize_xml(write, elem, qnames, namespaces,

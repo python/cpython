@@ -2074,6 +2074,14 @@ class XIncludeTest(unittest.TestCase):
 
 class BugsTest(unittest.TestCase):
 
+    @classmethod
+    def setUpClass(cls):
+        cls._orig_namespace_map = ET.register_namespace._namespace_map.copy()
+
+    def tearDown(self):
+        ET.register_namespace._namespace_map.clear()
+        ET.register_namespace._namespace_map.update(self._orig_namespace_map)
+
     def test_bug_xmltoolkit21(self):
         # marshaller gives obscure errors for non-string values
 
@@ -2271,6 +2279,62 @@ class BugsTest(unittest.TestCase):
         e = ET.Element("{http://purl.org/dc/elements/1.1/}title")
         self.assertEqual(ET.tostring(e),
             b'<dc:title xmlns:dc="http://purl.org/dc/elements/1.1/" />')
+
+    def test_pre_gh118416_register_default_namespace_behaviour(self):
+        # All these examples worked prior to fixing bug gh118416
+        ET.register_namespace("", "gh118416")
+
+        # If the registered default prefix's URI is not used, don't raise an
+        # error
+        e = ET.Element("{other}elem")
+        self.assertEqual(
+            serialize(e),
+            '<ns0:elem xmlns:ns0="other" />',
+        )
+        # no error even with unqualified tags
+        e = ET.Element("elem")
+        self.assertEqual(
+            serialize(e),
+            '<elem />',
+        )
+
+        # Uses registered default prefix, if used in tree
+        e = ET.Element("{gh118416}elem")
+        self.assertEqual(
+            serialize(e),
+            '<elem xmlns="gh118416" />',
+        )
+
+        # Use explicitly provided default_namespace if registered default
+        # prefix is not used.
+        e = ET.Element("{default}elem")
+        ET.SubElement(e, "{other}otherEl")
+        self.assertEqual(
+            serialize(e, default_namespace="default"),
+            (
+                '<elem xmlns="default" xmlns:ns1="other">'
+                '<ns1:otherEl />'
+                '</elem>'
+            ),
+        )
+
+    def test_gh118416_register_default_namespace(self):
+        ET.register_namespace("", "gh118416")
+        e = ET.Element("{gh118416}elem")
+        ET.SubElement(e, "noPrefixElem")
+        with self.assertRaises(ValueError) as cm:
+            serialize(e)
+        self.assertEqual(
+            str(cm.exception),
+            "cannot use non-qualified names with default_namespace option",
+        )
+
+        e = ET.Element("{gh118416}elem")
+        # explicitly set default_namespace takes precedence
+        self.assertEqual(
+            serialize(e, default_namespace="otherdefault"),
+            '<ns1:elem xmlns="otherdefault" xmlns:ns1="gh118416" />',
+        )
 
     def test_bug_200709_element_comment(self):
         # Not sure if this can be fixed, really (since the serializer needs

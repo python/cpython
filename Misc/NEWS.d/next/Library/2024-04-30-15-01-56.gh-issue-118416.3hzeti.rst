@@ -1,0 +1,3 @@
+Fix possible issues in :mod:`xml.etree.ElementTree` when serialising xml if
+a default namespace prefix (``""``) has been registered with
+:func:`xml.etree.ElementTree.register_namespace()`

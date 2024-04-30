@@ -1179,7 +1179,9 @@ ElementTree Objects
       *xml_declaration* controls if an XML declaration should be added to the
       file.  Use ``False`` for never, ``True`` for always, ``None``
       for only if not US-ASCII or UTF-8 or Unicode (default is ``None``).
-      *default_namespace* sets the default XML namespace (for "xmlns").
+      *default_namespace* sets the default XML namespace (for "xmlns"). This
+      option takes precedence over a default namespace registered using
+      :func:`register_namespace`.
       *method* is either ``"xml"``, ``"html"`` or ``"text"`` (default is
       ``"xml"``).
       The keyword-only *short_empty_elements* parameter controls the formatting
