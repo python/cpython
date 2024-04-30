@@ -653,7 +653,8 @@ clear_weakrefs(struct collection_state *state)
                 // Note: we MUST check that it has deferred bit set before checking the rest.
                 // Otherwise we might read into invalid memory due to non-deferred references
                 // being dead already.
-                if ((curr_o.bits & Py_TAG_DEFERRED) == Py_TAG_DEFERRED) {
+                if ((curr_o.bits & Py_TAG_DEFERRED) == Py_TAG_DEFERRED &&
+                    !_Py_IsImmortal(PyStackRef_Get(curr_o))) {
                     gc_add_refs(PyStackRef_Get(curr_o), 1);
                 }
             }
