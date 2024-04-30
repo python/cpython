@@ -1,7 +1,6 @@
 /* Module definition and import implementation */
 
 #include "Python.h"
-#include "pycore_ceval.h"
 #include "pycore_hashtable.h"     // _Py_hashtable_new_full()
 #include "pycore_import.h"        // _PyImport_BootstrapImp()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
@@ -1151,38 +1150,6 @@ _PyImport_CheckSubinterpIncompatibleExtensionAllowed(const char *name)
     return 0;
 }
 
-#ifdef Py_GIL_DISABLED
-void
-_PyImport_CheckGILForModule(void *gil, PyObject *module_name)
-{
-    PyThreadState *tstate = _PyThreadState_GET();
-
-    if (gil == Py_MOD_GIL_USED) {
-        if (_PyEval_EnableGILPermanent(tstate)) {
-            PyErr_WarnFormat(
-                PyExc_RuntimeWarning,
-                1,
-                "The global interpreter lock (GIL) has been enabled to load "
-                "module '%U', which has not declared that it can run safely "
-                "without the GIL. To override this behavior and keep the GIL "
-                "disabled (at your own risk), run with PYTHON_GIL=0 or -Xgil=0.",
-                module_name
-            );
-        }
-
-        const PyConfig *config = _PyInterpreterState_GetConfig(tstate->interp);
-        if (config->enable_gil == _PyConfig_GIL_DEFAULT && config->verbose) {
-            PySys_FormatStderr("# loading module '%U', which requires the GIL\n",
-                               module_name);
-        }
-    }
-    else {
-        assert(gil == Py_MOD_GIL_NOT_USED);
-        _PyEval_DisableGIL(tstate);
-    }
-}
-#endif
-
 static PyObject *
 get_core_module_dict(PyInterpreterState *interp,
                      PyObject *name, PyObject *path)
@@ -1571,9 +1538,6 @@ create_builtin(PyThreadState *tstate, PyObject *name, PyObject *spec)
         goto finally;
     }
 
-#ifdef Py_GIL_DISABLED
-    _PyEval_EnableGILTransient(tstate);
-#endif
     mod = p0();
     if (mod == NULL) {
         goto finally;
@@ -1624,14 +1588,6 @@ create_builtin(PyThreadState *tstate, PyObject *name, PyObject *spec)
     }
 
 finally:
-#ifdef Py_GIL_DISABLE
-    if (mod != NULL) {
-        _PyImport_CheckGILForModule(((PyModuleObject*)mod)->md_gil, name);
-    }
-    else {
-        _PyEval_DisableGIL(tstate);
-    }
-#endif
     _Py_ext_module_loader_info_clear(&info);
     return mod;
 }

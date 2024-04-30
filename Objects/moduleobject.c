@@ -3,9 +3,7 @@
 
 #include "Python.h"
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
-#include "pycore_ceval.h"         // _PyEval_EnableGIL()
 #include "pycore_fileutils.h"     // _Py_wgetcwd
-#include "pycore_initconfig.h"    // _PyConfig_GIL_DEFAULT
 #include "pycore_interp.h"        // PyInterpreterState.importlib
 #include "pycore_modsupport.h"    // _PyModule_CreateInitialized()
 #include "pycore_moduleobject.h"  // _PyModule_GetDef()
@@ -262,7 +260,7 @@ PyModule_FromDefAndSpec2(PyModuleDef* def, PyObject *spec, int module_api_versio
 {
     PyModuleDef_Slot* cur_slot;
     PyObject *(*create)(PyObject *, PyModuleDef*) = NULL;
-    PyObject *nameobj = NULL;
+    PyObject *nameobj;
     PyObject *m = NULL;
     int has_multiple_interpreters_slot = 0;
     void *multiple_interpreters = (void *)0;
@@ -277,7 +275,7 @@ PyModule_FromDefAndSpec2(PyModuleDef* def, PyObject *spec, int module_api_versio
 
     nameobj = PyObject_GetAttrString(spec, "name");
     if (nameobj == NULL) {
-        goto error;
+        return NULL;
     }
     name = PyUnicode_AsUTF8(nameobj);
     if (name == NULL) {
@@ -363,12 +361,6 @@ PyModule_FromDefAndSpec2(PyModuleDef* def, PyObject *spec, int module_api_versio
         goto error;
     }
 
-#ifdef Py_GIL_DISABLED
-    _PyImport_CheckGILForModule(gil_slot, nameobj);
-#else
-    (void)gil_slot;
-#endif
-
     if (create) {
         m = create(spec, def);
         if (m == NULL) {
@@ -434,7 +426,7 @@ PyModule_FromDefAndSpec2(PyModuleDef* def, PyObject *spec, int module_api_versio
     return m;
 
 error:
-    Py_XDECREF(nameobj);
+    Py_DECREF(nameobj);
     Py_XDECREF(m);
     return NULL;
 }
