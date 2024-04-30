@@ -4957,7 +4957,7 @@
                 }
                 #if ENABLE_SPECIALIZATION
                 FT_ATOMIC_STORE_UINT8_RELAXED(this_instr->op.code, RESUME_CHECK);
-                #endif
+                #endif  /* ENABLE_SPECIALIZATION */
             }
             DISPATCH();
         }
