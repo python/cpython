@@ -13,7 +13,7 @@ import random
 import textwrap
 
 from test import support
-from test.support import script_helper, ALWAYS_EQ, suppress_immortalization
+from test.support import script_helper, ALWAYS_EQ, suppress_immortalization, is_wasi
 from test.support import gc_collect
 from test.support import import_helper
 from test.support import threading_helper
@@ -960,6 +960,7 @@ class ReferencesTestCase(TestBase):
         self.assertEqual(hash(a), hash(42))
         self.assertRaises(TypeError, hash, b)
 
+    @unittest.skipIf(is_wasi and Py_DEBUG, "requires deep stack")
     def test_trashcan_16602(self):
         # Issue #16602: when a weakref's target was part of a long
         # deallocation chain, the trashcan mechanism could delay clearing
