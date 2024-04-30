@@ -472,6 +472,15 @@ _PyImport_RunModInitFunc(PyModInitFunction p0,
                     &res, _Py_ext_module_loader_result_ERR_MISSING_DEF);
             goto error;
         }
+
+#ifdef Py_GIL_DISABLED
+        if (res.def->m_size == -1) {
+            // This module may be recreated (without running its init function)
+            // in reload_singlephase_extension(), so remember its GIL slot
+            // here.
+            _PyImport_SetModuleGIL(m, ((PyModuleObject *)m)->md_gil);
+        }
+#endif
     }
 
     assert(!PyErr_Occurred());

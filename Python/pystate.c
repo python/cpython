@@ -847,6 +847,9 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
 
     assert(interp->imports.modules == NULL);
     assert(interp->imports.modules_by_index == NULL);
+#ifdef Py_GIL_DISABLED
+    assert(interp->imports.module_gil_by_index == NULL);
+#endif
     assert(interp->imports.importlib == NULL);
     assert(interp->imports.import_func == NULL);
 
@@ -2055,19 +2058,36 @@ _PyThreadState_Attach(PyThreadState *tstate)
         Py_FatalError("non-NULL old thread state");
     }
 
-    _PyEval_AcquireLock(tstate);
 
-    // XXX assert(tstate_is_alive(tstate));
-    current_fast_set(&_PyRuntime, tstate);
-    tstate_activate(tstate);
+    while (1) {
+        int acquired_gil = _PyEval_AcquireLock(tstate);
 
-    if (!tstate_try_attach(tstate)) {
-        tstate_wait_attach(tstate);
-    }
+        // XXX assert(tstate_is_alive(tstate));
+        current_fast_set(&_PyRuntime, tstate);
+        tstate_activate(tstate);
+
+        if (!tstate_try_attach(tstate)) {
+            tstate_wait_attach(tstate);
+        }
 
 #ifdef Py_GIL_DISABLED
-    _Py_qsbr_attach(((_PyThreadStateImpl *)tstate)->qsbr);
+        if (!!tstate->interp->ceval.gil->enabled != acquired_gil) {
+            // The GIL was enabled between our call to _PyEval_AcquireLock()
+            // and when we attached (the GIL can't go from enabled to disabled
+            // here because only a thread holding the GIL can disable
+            // it). Detach and try again.
+            assert(!acquired_gil);
+            tstate_set_detached(tstate, _Py_THREAD_DETACHED);
+            tstate_deactivate(tstate);
+            current_fast_clear(&_PyRuntime);
+            continue;
+        }
+        _Py_qsbr_attach(((_PyThreadStateImpl *)tstate)->qsbr);
+#else
+        (void)acquired_gil;
 #endif
+        break;
+    }
 
     // Resume previous critical section. This acquires the lock(s) from the
     // top-most critical section.

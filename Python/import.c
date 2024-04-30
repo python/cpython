@@ -1,6 +1,7 @@
 /* Module definition and import implementation */
 
 #include "Python.h"
+#include "pycore_ceval.h"
 #include "pycore_hashtable.h"     // _Py_hashtable_new_full()
 #include "pycore_import.h"        // _PyImport_BootstrapImp()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
@@ -68,6 +69,8 @@ static struct _inittab *inittab_copy = NULL;
     (interp)->imports.modules
 #define MODULES_BY_INDEX(interp) \
     (interp)->imports.modules_by_index
+#define MODULE_GIL_BY_INDEX(interp) \
+    (interp)->imports.module_gil_by_index
 #define IMPORTLIB(interp) \
     (interp)->imports.importlib
 #define OVERRIDE_MULTI_INTERP_EXTENSIONS_CHECK(interp) \
@@ -498,6 +501,59 @@ _modules_by_index_clear_one(PyInterpreterState *interp, PyModuleDef *def)
     return PyList_SetItem(MODULES_BY_INDEX(interp), index, Py_NewRef(Py_None));
 }
 
+#ifdef Py_GIL_DISABLED
+int
+_PyImport_SetModuleGIL(PyObject *module, void *gil)
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    assert(PyModule_Check(module));
+    PyModuleDef *def = ((PyModuleObject *)module)->md_def;
+    if (def->m_size != -1) {
+        return 0;
+    }
+
+    Py_ssize_t index = def->m_base.m_index;
+    assert(index > 0);
+
+    // This sequence assumes that it is called during module loading, when the
+    // GIL is enabled.
+    assert(_PyEval_IsGILEnabled(_PyThreadState_GET()));
+    PyObject *gil_list = MODULE_GIL_BY_INDEX(interp);
+    if (gil_list == NULL) {
+        gil_list = MODULE_GIL_BY_INDEX(interp) = PyList_New(0);
+        if (gil_list == NULL) {
+            return -1;
+        }
+    }
+    while (PyList_GET_SIZE(gil_list) <= index) {
+        if (PyList_Append(gil_list, Py_None) < 0) {
+            return -1;
+        }
+    }
+
+    PyObject *gil_long = PyLong_FromVoidPtr(gil);
+    if (gil_long == NULL) {
+        return -1;
+    }
+    return PyList_SetItem(gil_list, index, gil_long);
+}
+
+static void *
+_get_moduledef_gil(PyModuleDef *def)
+{
+    assert(def->m_size == -1);
+    Py_ssize_t index = def->m_base.m_index;
+    assert(index > 0);
+
+    PyObject *gil_list = MODULE_GIL_BY_INDEX(_PyInterpreterState_GET());
+    assert(gil_list != NULL);
+    assert(index < PyList_GET_SIZE(gil_list));
+
+    PyObject *gil = PyList_GET_ITEM(gil_list, index);
+    assert(PyLong_CheckExact(gil));
+    return PyLong_AsVoidPtr(gil);
+}
+#endif
 
 PyObject*
 PyState_FindModule(PyModuleDef* module)
@@ -1172,6 +1228,47 @@ _PyImport_CheckSubinterpIncompatibleExtensionAllowed(const char *name)
     return 0;
 }
 
+#ifdef Py_GIL_DISABLED
+int
+_PyImport_CheckGILForModule(PyObject* module, PyObject *module_name)
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+    if (module == NULL) {
+        _PyEval_DisableGIL(tstate);
+        return 0;
+    }
+
+    if (!PyModule_Check(module) ||
+        ((PyModuleObject *)module)->md_gil == Py_MOD_GIL_USED) {
+        if (_PyEval_EnableGILPermanent(tstate)) {
+            int warn_result = PyErr_WarnFormat(
+                PyExc_RuntimeWarning,
+                1,
+                "The global interpreter lock (GIL) has been enabled to load "
+                "module '%U', which has not declared that it can run safely "
+                "without the GIL. To override this behavior and keep the GIL "
+                "disabled (at your own risk), run with PYTHON_GIL=0 or -Xgil=0.",
+                module_name
+            );
+            if (warn_result < 0) {
+                return warn_result;
+            }
+        }
+
+        const PyConfig *config = _PyInterpreterState_GetConfig(tstate->interp);
+        if (config->enable_gil == _PyConfig_GIL_DEFAULT && config->verbose) {
+            PySys_FormatStderr("# loading module '%U', which requires the GIL\n",
+                               module_name);
+        }
+    }
+    else {
+        _PyEval_DisableGIL(tstate);
+    }
+
+    return 0;
+}
+#endif
+
 static PyObject *
 get_core_module_dict(PyInterpreterState *interp,
                      PyObject *name, PyObject *path)
@@ -1416,6 +1513,13 @@ reload_singlephase_extension(PyThreadState *tstate, PyModuleDef *def,
             Py_DECREF(mod);
             return NULL;
         }
+#ifdef Py_GIL_DISABLED
+        if (def->m_base.m_copy != NULL) {
+            // For non-core modules, fetch the GIL slot that was remembered in
+            // _PyImport_RunModInitFunc().
+            ((PyModuleObject *)mod)->md_gil = _get_moduledef_gil(def);
+        }
+#endif
         /* We can't set mod->md_def if it's missing,
          * because _PyImport_ClearModulesByIndex() might break
          * due to violating interpreter isolation.  See the note
@@ -1700,6 +1804,9 @@ create_builtin(PyThreadState *tstate, PyObject *name, PyObject *spec)
         return NULL;
     }
 
+#ifdef Py_GIL_DISABLED
+    _PyEval_EnableGILTransient(tstate);
+#endif
     PyObject *mod = import_find_extension(tstate, &info);
     if (mod != NULL) {
         assert(!_PyErr_Occurred(tstate));
@@ -1735,6 +1842,11 @@ create_builtin(PyThreadState *tstate, PyObject *name, PyObject *spec)
                     tstate, p0, &info, spec, get_modules_dict(tstate, true));
 
 finally:
+#ifdef Py_GIL_DISABLED
+    if (_PyImport_CheckGILForModule(mod, info.name) < 0) {
+        Py_CLEAR(mod);
+    }
+#endif
     _Py_ext_module_loader_info_clear(&info);
     return mod;
 }
@@ -3467,6 +3579,9 @@ _PyImport_ClearCore(PyInterpreterState *interp)
        by _PyImport_FiniCore(). */
     Py_CLEAR(MODULES(interp));
     Py_CLEAR(MODULES_BY_INDEX(interp));
+#ifdef Py_GIL_DISABLED
+    Py_CLEAR(MODULE_GIL_BY_INDEX(interp));
+#endif
     Py_CLEAR(IMPORTLIB(interp));
     Py_CLEAR(IMPORT_FUNC(interp));
 }
@@ -4054,6 +4169,9 @@ _imp_create_dynamic_impl(PyObject *module, PyObject *spec, PyObject *file)
         return NULL;
     }
 
+#ifdef Py_GIL_DISABLED
+    _PyEval_EnableGILTransient(tstate);
+#endif
     mod = import_find_extension(tstate, &info);
     if (mod != NULL) {
         assert(!_PyErr_Occurred(tstate));
@@ -4101,6 +4219,11 @@ _imp_create_dynamic_impl(PyObject *module, PyObject *spec, PyObject *file)
     }
 
 finally:
+#ifdef Py_GIL_DISABLED
+    if (_PyImport_CheckGILForModule(mod, info.name) < 0) {
+        Py_CLEAR(mod);
+    }
+#endif
     _Py_ext_module_loader_info_clear(&info);
     return mod;
 }

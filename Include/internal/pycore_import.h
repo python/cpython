@@ -83,6 +83,12 @@ struct _import_state {
        This is initialized lazily in PyState_AddModule(), which is also
        where modules get added. */
     PyObject *modules_by_index;
+#ifdef Py_GIL_DISABLED
+    /* This list contains GIL slots (see Py_mod_gil) for modules that may be
+       reinitialized by reload_singlephase_extension(). It is indexed the same
+       way as modules_by_index. */
+    PyObject *module_gil_by_index;
+#endif
     /* importlib module._bootstrap */
     PyObject *importlib;
     /* override for config->use_frozen_modules (for tests)
@@ -205,6 +211,22 @@ extern int _PyImport_CheckSubinterpIncompatibleExtensionAllowed(
 
 // Export for '_testinternalcapi' shared extension
 PyAPI_FUNC(int) _PyImport_ClearExtension(PyObject *name, PyObject *filename);
+
+#ifdef Py_GIL_DISABLED
+extern int _PyImport_SetModuleGIL(PyObject *module, void *gil);
+extern void *_PyImport_GetModuleDefGIL(PyModuleDef *def);
+
+// Assuming that the GIL is enabled from a call to
+// _PyEval_EnableGILTransient(), resolve the transient request depending on the
+// state of the module argument:
+// - If module is NULL or a PyModuleObject with md_gil == Py_MOD_GIL_NOT_USED,
+//   call _PyEval_DisableGIL().
+// - Otherwise, call _PyEval_EnableGILPermanent(). If the GIL was not already
+//   enabled permanently, issue a warning referencing the module's name.
+//
+// This function may raise an exception.
+extern int _PyImport_CheckGILForModule(PyObject *module, PyObject *module_name);
+#endif
 
 #ifdef __cplusplus
 }
