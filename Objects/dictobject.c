@@ -7240,7 +7240,7 @@ PyObject_GenericGetDict(PyObject *obj, void *context)
 }
 
 int
-_PyObjectDict_SetItem(PyTypeObject *tp, PyObject **dictptr,
+_PyObjectDict_SetItem(PyTypeObject *tp, PyObject *obj, PyObject **dictptr,
                       PyObject *key, PyObject *value)
 {
     PyObject *dict;
@@ -7249,39 +7249,40 @@ _PyObjectDict_SetItem(PyTypeObject *tp, PyObject **dictptr,
     PyInterpreterState *interp = _PyInterpreterState_GET();
 
     assert(dictptr != NULL);
-    if ((tp->tp_flags & Py_TPFLAGS_HEAPTYPE) && (cached = CACHED_KEYS(tp))) {
-        assert(dictptr != NULL);
+    dict = *dictptr;
+    if (dict == NULL) {
+#ifdef Py_GIL_DISABLED
+        Py_BEGIN_CRITICAL_SECTION(obj);
         dict = *dictptr;
-        if (dict == NULL) {
+        if (dict != NULL) {
+            goto done;
+        }
+#endif
+        if ((tp->tp_flags & Py_TPFLAGS_HEAPTYPE) && (cached = CACHED_KEYS(tp))) {
             assert(!_PyType_HasFeature(tp, Py_TPFLAGS_INLINE_VALUES));
             dictkeys_incref(cached);
             dict = new_dict_with_shared_keys(interp, cached);
-            if (dict == NULL)
-                return -1;
-            *dictptr = dict;
-        }
-        if (value == NULL) {
-            res = PyDict_DelItem(dict, key);
+            if (dict == NULL) {
+                dictkeys_decref(interp, cached, false);
+            }
         }
         else {
-            res = PyDict_SetItem(dict, key, value);
-        }
-    } else {
-        dict = *dictptr;
-        if (dict == NULL) {
             dict = PyDict_New();
-            if (dict == NULL)
-                return -1;
-            *dictptr = dict;
         }
-        if (value == NULL) {
-            res = PyDict_DelItem(dict, key);
-        } else {
-            res = PyDict_SetItem(dict, key, value);
+        *dictptr = dict;
+#ifdef Py_GIL_DISABLED
+done:
+        Py_END_CRITICAL_SECTION();
+#endif
+        if (dict == NULL) {
+            return -1;
         }
     }
 
+    Py_BEGIN_CRITICAL_SECTION(dict);
+    res = _PyDict_SetItem_LockHeld((PyDictObject *)dict, key, value);
     ASSERT_CONSISTENT(dict);
+    Py_END_CRITICAL_SECTION();
     return res;
 }
 

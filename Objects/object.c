@@ -1731,7 +1731,7 @@ _PyObject_GenericSetAttrWithDict(PyObject *obj, PyObject *name,
             goto done;
         }
         else {
-            res = _PyObjectDict_SetItem(tp, dictptr, name, value);
+            res = _PyObjectDict_SetItem(tp, obj, dictptr, name, value);
         }
     }
     else {
