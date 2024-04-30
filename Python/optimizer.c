@@ -571,7 +571,6 @@ top:  // Jump here after _PUSH_FRAME or likely branches
 
         uint32_t opcode = instr->op.code;
         uint32_t oparg = instr->op.arg;
-        uint32_t extended = 0;
 
         DPRINTF(2, "%d: %s(%d)\n", target, _PyOpcode_OpName[opcode], oparg);
 
@@ -585,7 +584,6 @@ top:  // Jump here after _PUSH_FRAME or likely branches
 
         if (opcode == EXTENDED_ARG) {
             instr++;
-            extended = 1;
             opcode = instr->op.code;
             oparg = (oparg << 8) | instr->op.arg;
             if (opcode == EXTENDED_ARG) {
@@ -746,13 +744,15 @@ top:  // Jump here after _PUSH_FRAME or likely branches
                             case OPARG_REPLACED:
                                 uop = _PyUOp_Replacements[uop];
                                 assert(uop != 0);
+#ifdef Py_DEBUG
                                 if (uop == _FOR_ITER_TIER_TWO) {
-                                    uint32_t next_inst = target + 1 + INLINE_CACHE_ENTRIES_FOR_ITER + extended;
-                                    target = next_inst + oparg + 1;
-                                    assert(_PyCode_CODE(code)[target-1].op.code == END_FOR ||
-                                            _PyCode_CODE(code)[target-1].op.code == INSTRUMENTED_END_FOR);
-                                    assert(_PyCode_CODE(code)[target].op.code == POP_TOP);
+                                    uint32_t next_inst = target + 1 + INLINE_CACHE_ENTRIES_FOR_ITER + (oparg > 256);
+                                    uint32_t jump_target = next_inst + oparg;
+                                    assert(_PyCode_CODE(code)[jump_target].op.code == END_FOR ||
+                                            _PyCode_CODE(code)[jump_target].op.code == INSTRUMENTED_END_FOR);
+                                    assert(_PyCode_CODE(code)[jump_target+1].op.code == POP_TOP);
                                 }
+#endif
                                 break;
                             default:
                                 fprintf(stderr,
@@ -972,7 +972,15 @@ prepare_for_execution(_PyUOpInstruction *buffer, int length)
         int opcode = inst->opcode;
         int32_t target = (int32_t)uop_get_target(inst);
         if (_PyUop_Flags[opcode] & (HAS_EXIT_FLAG | HAS_DEOPT_FLAG)) {
-            if (target != current_jump_target) {
+            int32_t jump_target = target;
+            if (opcode == _FOR_ITER_TIER_TWO) {
+                /* Target the POP_TOP immediately after the END_FOR,
+                 * leaving only the iterator on the stack. */
+                int extended_arg = inst->oparg > 256;
+                int32_t next_inst = target + 1 + INLINE_CACHE_ENTRIES_FOR_ITER + extended_arg;
+                jump_target = next_inst + inst->oparg + 1;
+            }
+            if (jump_target != current_jump_target) {
                 uint16_t exit_op;
                 if (_PyUop_Flags[opcode] & HAS_EXIT_FLAG) {
                     if (opcode == _TIER2_RESUME_CHECK) {
@@ -985,8 +993,8 @@ prepare_for_execution(_PyUOpInstruction *buffer, int length)
                 else {
                     exit_op = _DEOPT;
                 }
-                make_exit(&buffer[next_spare], exit_op, target);
-                current_jump_target = target;
+                make_exit(&buffer[next_spare], exit_op, jump_target);
+                current_jump_target = jump_target;
                 current_jump = next_spare;
                 next_spare++;
             }
