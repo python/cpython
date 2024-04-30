@@ -9,6 +9,7 @@ extern "C" {
 #endif
 
 #include <stddef.h>
+#include "pycore_gc.h"
 
 // Mark an object as supporting deferred reference counting. This is a no-op
 // in the default (with GIL) build. Objects that use deferred reference
@@ -29,7 +30,7 @@ typedef union {
     uintptr_t bits;
 } _PyStackRef;
 
-static const _PyStackRef Py_STACKREF_NULL = ((_PyStackRef) { .bits = (uintptr_t)NULL });
+static const _PyStackRef Py_STACKREF_NULL = ((_PyStackRef) { .bits = 0 });
 
 #ifdef Py_GIL_DISABLED
     #define Py_TAG_DEFERRED (1)
