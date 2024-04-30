@@ -367,7 +367,7 @@ _opcode_get_executor_impl(PyObject *module, PyObject *code, int offset)
                      Py_TYPE(code)->tp_name);
         return NULL;
     }
-#ifdef _Py_JIT
+#ifdef _Py_TIER2
     return (PyObject *)PyUnstable_GetExecutor((PyCodeObject *)code, offset);
 #else
     PyErr_Format(PyExc_RuntimeError,

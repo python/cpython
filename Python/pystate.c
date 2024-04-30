@@ -653,7 +653,7 @@ init_interpreter(PyInterpreterState *interp,
     }
     interp->sys_profile_initialized = false;
     interp->sys_trace_initialized = false;
-#ifdef _Py_JIT
+#ifdef _Py_TIER2
     (void)_Py_SetOptimizer(interp, NULL);
     interp->executor_list_head = NULL;
 #endif
@@ -808,7 +808,7 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
         tstate->_status.cleared = 0;
     }
 
-#ifdef _Py_JIT
+#ifdef _Py_TIER2
     _PyOptimizerObject *old = _Py_SetOptimizer(interp, NULL);
     assert(old != NULL);
     Py_DECREF(old);
@@ -2824,7 +2824,7 @@ _PyInterpreterState_SetEvalFrameFunc(PyInterpreterState *interp,
     if (eval_frame == interp->eval_frame) {
         return;
     }
-#ifdef _Py_JIT
+#ifdef _Py_TIER2
     if (eval_frame != NULL) {
         _Py_Executors_InvalidateAll(interp, 1);
     }

@@ -1,4 +1,3 @@
-#ifdef _Py_JIT
 
 #include "Python.h"
 
@@ -11,6 +10,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stddef.h>
+
+#ifdef _Py_TIER2
 
 /* Symbols
    =======
@@ -508,4 +509,4 @@ fail:
     return NULL;
 }
 
-#endif /* _Py_JIT */
+#endif /* _Py_TIER2 */

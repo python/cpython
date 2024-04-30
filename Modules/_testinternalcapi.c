@@ -985,7 +985,7 @@ get_co_framesize(PyObject *self, PyObject *arg)
     return PyLong_FromLong(code->co_framesize);
 }
 
-#ifdef _Py_JIT
+#ifdef _Py_TIER2
 
 static PyObject *
 new_counter_optimizer(PyObject *self, PyObject *arg)
@@ -1015,7 +1015,7 @@ static PyObject *
 get_optimizer(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     PyObject *opt = NULL;
-#ifdef _Py_JIT
+#ifdef _Py_TIER2
     opt = (PyObject *)PyUnstable_GetOptimizer();
 #endif
     if (opt == NULL) {
@@ -2027,7 +2027,7 @@ static PyMethodDef module_functions[] = {
     {"iframe_getline", iframe_getline, METH_O, NULL},
     {"iframe_getlasti", iframe_getlasti, METH_O, NULL},
     {"get_co_framesize", get_co_framesize, METH_O, NULL},
-#ifdef _Py_JIT
+#ifdef _Py_TIER2
     {"get_optimizer", get_optimizer,  METH_NOARGS, NULL},
     {"set_optimizer", set_optimizer,  METH_O, NULL},
     {"new_counter_optimizer", new_counter_optimizer, METH_NOARGS, NULL},
@@ -2081,7 +2081,7 @@ static PyMethodDef module_functions[] = {
     {"py_thread_id", get_py_thread_id, METH_NOARGS},
 #endif
     {"set_immortalize_deferred", set_immortalize_deferred, METH_VARARGS},
-#ifdef _Py_JIT
+#ifdef _Py_TIER2
     {"uop_symbols_test", _Py_uop_symbols_test, METH_NOARGS},
 #endif
     {NULL, NULL} /* sentinel */

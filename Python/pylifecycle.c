@@ -621,7 +621,7 @@ static int
 builtins_dict_watcher(PyDict_WatchEvent event, PyObject *dict, PyObject *key, PyObject *new_value)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
-#ifdef _Py_JIT
+#ifdef _Py_TIER2
     if (interp->rare_events.builtin_dict < _Py_MAX_ALLOWED_BUILTINS_MODIFICATIONS) {
         _Py_Executors_InvalidateAll(interp, 1);
     }
@@ -1265,7 +1265,7 @@ init_interp_main(PyThreadState *tstate)
 
     // Turn on experimental tier 2 (uops-based) optimizer
     // This is also needed when the JIT is enabled
-#ifdef _Py_JIT
+#ifdef _Py_TIER2
     if (is_main_interp) {
             PyObject *opt = PyUnstable_Optimizer_NewUOpOptimizer();
             if (opt == NULL) {
@@ -1636,7 +1636,7 @@ finalize_modules(PyThreadState *tstate)
 {
     PyInterpreterState *interp = tstate->interp;
 
-#ifdef _Py_JIT
+#ifdef _Py_TIER2
     // Invalidate all executors and turn off tier 2 optimizer
     _Py_Executors_InvalidateAll(interp, 0);
     _PyOptimizerObject *old = _Py_SetOptimizer(interp, NULL);
