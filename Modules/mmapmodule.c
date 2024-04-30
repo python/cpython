@@ -26,6 +26,8 @@
 #include "pycore_abstract.h"      // _Py_convert_optional_to_ssize_t()
 #include "pycore_bytesobject.h"   // _PyBytes_Find()
 #include "pycore_fileutils.h"     // _Py_stat_struct
+#include "pycore_global_objects.h"// _Py_SINGLETON
+#include "pycore_runtime.h"       // _PyRuntime
 
 #include <stddef.h>               // offsetof()
 #ifndef MS_WINDOWS
@@ -41,6 +43,7 @@
 
 #ifdef MS_WINDOWS
 #include <windows.h>
+#include <ntsecapi.h> // LsaNtStatusToWinError
 static int
 my_getpagesize(void)
 {
@@ -255,6 +258,11 @@ do {                                                                    \
 } while (0)
 #endif /* UNIX */
 
+// copied from bytesobject.c
+#define CHARACTERS _Py_SINGLETON(bytes_characters)
+#define CHARACTER(ch) \
+     ((PyBytesObject *)&(CHARACTERS[ch]));
+
 #if defined(MS_WIN32) && !defined(DONT_USE_SEH)
 static DWORD
 filter_page_exception(EXCEPTION_POINTERS *ptrs, EXCEPTION_RECORD *record)
@@ -272,6 +280,8 @@ safe_memcpy(void *restrict dest, const void *restrict src, size_t count) {
 #if defined(MS_WIN32) && !defined(DONT_USE_SEH)
 
     // never fail for count 0
+    // according to https://en.cppreference.com/w/cpp/string/byte/memcpy
+    // If either dest or src is an invalid or null pointer, the behavior is undefined, even if count is zero.
     if (count == 0) {
         return 0;
     }
@@ -282,7 +292,7 @@ safe_memcpy(void *restrict dest, const void *restrict src, size_t count) {
         return 0;
     }
     __except (filter_page_exception(GetExceptionInformation(), &record)) {
-        NTSTATUS status = record.ExceptionInformation[2];
+        NTSTATUS status = (NTSTATUS) record.ExceptionInformation[2];
         ULONG code = LsaNtStatusToWinError(status);
         PyErr_SetFromWindowsErr(code);
         return -1;
@@ -293,6 +303,69 @@ safe_memcpy(void *restrict dest, const void *restrict src, size_t count) {
 #endif
 }
 
+#if defined(MS_WIN32) && !defined(DONT_USE_SEH)
+#define handle_invalid_mem(sourcecode) \
+    EXCEPTION_RECORD record; \
+    __try { \
+        sourcecode \
+        return 0; \
+    } \
+    __except (filter_page_exception(GetExceptionInformation(), &record)) { \
+        NTSTATUS status = (NTSTATUS) record.ExceptionInformation[2]; \
+        ULONG code = LsaNtStatusToWinError(status); \
+        PyErr_SetFromWindowsErr(code); \
+        return -1; \
+    }
+#else
+#define handle_invalid_mem(sourcecode) \
+sourcecode \
+return 0;
+#endif
+
+int
+safe_byte_copy(char *dest, const char *src) {
+    handle_invalid_mem(
+        *dest = *src;
+    )
+}
+
+int
+safe_memchr(void **out, const void *ptr, int ch, size_t count) {
+    handle_invalid_mem(
+        *out = memchr(ptr, ch, count);
+    )
+}
+
+int
+safe_memmove(void *dest, const void *src, size_t count) {
+    handle_invalid_mem(
+        memmove(dest, src, count);
+    )
+}
+
+int
+safe_copy_from_slice(char *dest, const char *src, Py_ssize_t start, Py_ssize_t step, Py_ssize_t slicelen) {
+    handle_invalid_mem(
+        size_t cur;
+        Py_ssize_t i;
+        for (cur = start, i = 0; i < slicelen; cur += step, i++) {
+            dest[cur] = src[i];
+        }
+    )
+}
+
+int
+safe_copy_to_slice(char *dest, const char *src, Py_ssize_t start, Py_ssize_t step, Py_ssize_t slicelen) {
+    handle_invalid_mem(
+        size_t cur;
+        Py_ssize_t i;
+        for (cur = start, i = 0; i < slicelen; cur += step, i++) {
+            dest[i] = src[cur];
+        }
+    )
+}
+
+
 static PyObject *
 mmap_read_byte_method(mmap_object *self,
                       PyObject *Py_UNUSED(ignored))
@@ -302,13 +375,43 @@ mmap_read_byte_method(mmap_object *self,
         PyErr_SetString(PyExc_ValueError, "read byte out of range");
         return NULL;
     }
-    unsigned char dest;
-    if (safe_memcpy(&dest, self->data + self->pos, 1) < 0) {
+    char dest;
+    if (safe_byte_copy(&dest, self->data + self->pos) < 0) {
         return NULL;
     }
     else {
         self->pos++;
         return PyLong_FromLong(dest);
+    }
+}
+
+PyObject *
+_read_mmap_mem(mmap_object *self, char *start, size_t num_bytes) {
+    if (num_bytes == 1) {
+        char dest;
+        if (safe_byte_copy(&dest, start) < 0) {
+            return NULL;
+        }
+        else {
+            PyBytesObject *op = CHARACTER(dest & 255);
+            assert(_Py_IsImmortal(op));
+            self->pos += 1;
+            return (PyObject *)op;
+        }
+    }
+    else {
+        PyObject *result = PyBytes_FromStringAndSize(NULL, num_bytes);
+        // this check was not done previously in mmap_read_line_method, which means pos was increased even in case of error
+        if (result == NULL) {
+            return NULL;
+        }
+        if (safe_memcpy(PyBytes_AS_STRING(result), start, num_bytes) < 0) {
+            Py_CLEAR(result);
+        }
+        else {
+            self->pos += num_bytes;
+        }
+        return result;
     }
 }
 
@@ -318,7 +421,6 @@ mmap_read_line_method(mmap_object *self,
 {
     Py_ssize_t remaining;
     char *start, *eol;
-    PyObject *result;
 
     CHECK_VALID(NULL);
 
@@ -326,14 +428,17 @@ mmap_read_line_method(mmap_object *self,
     if (!remaining)
         return PyBytes_FromString("");
     start = self->data + self->pos;
-    eol = memchr(start, '\n', remaining);
+
+    if (safe_memchr(&eol, start, '\n', remaining) < 0) {
+        return NULL;
+    }
+
     if (!eol)
         eol = self->data + self->size;
     else
         ++eol; /* advance past newline */
-    result = PyBytes_FromStringAndSize(start, (eol - start));
-    self->pos += (eol - start);
-    return result;
+
+    return _read_mmap_mem(self, start, eol - start);
 }
 
 static PyObject *
@@ -341,7 +446,6 @@ mmap_read_method(mmap_object *self,
                  PyObject *args)
 {
     Py_ssize_t num_bytes = PY_SSIZE_T_MAX, remaining;
-    PyObject *result;
 
     CHECK_VALID(NULL);
     if (!PyArg_ParseTuple(args, "|O&:read", _Py_convert_optional_to_ssize_t, &num_bytes))
@@ -353,17 +457,7 @@ mmap_read_method(mmap_object *self,
     if (num_bytes < 0 || num_bytes > remaining)
         num_bytes = remaining;
 
-    result = PyBytes_FromStringAndSize(NULL, num_bytes);
-    if (result == NULL) {
-        return NULL;
-    }
-    if (safe_memcpy(PyBytes_AS_STRING(result), self->data + self->pos, num_bytes) < 0) {
-        Py_CLEAR(result);
-    }
-    else {
-        self->pos += num_bytes;
-    }
-    return result;
+    return _read_mmap_mem(self, self->data + self->pos, num_bytes);
 }
 
 static PyObject *
@@ -516,7 +610,7 @@ mmap_write_byte_method(mmap_object *self,
         return NULL;
     }
 
-    if (safe_memcpy(self->data + self->pos, value, 1) < 0) {
+    if (safe_byte_copy(self->data + self->pos, &value) < 0) {
         return NULL;
     }
     else {
@@ -826,8 +920,9 @@ mmap_move_method(mmap_object *self, PyObject *args)
             goto bounds;
 
         CHECK_VALID(NULL);
-        memmove(&self->data[dest], &self->data[src], cnt);
-
+        if (safe_memmove(self->data + dest, self->data + src, cnt) < 0) {
+            return NULL;
+        };
         Py_RETURN_NONE;
 
       bounds:
@@ -1031,7 +1126,16 @@ mmap_item(mmap_object *self, Py_ssize_t i)
         PyErr_SetString(PyExc_IndexError, "mmap index out of range");
         return NULL;
     }
-    return PyBytes_FromStringAndSize(self->data + i, 1);
+
+    char dest;
+    if (safe_byte_copy(&dest, self->data + i) < 0) {
+        return NULL;
+    }
+    else {
+        PyBytesObject *op = CHARACTER(dest & 255);
+        assert(_Py_IsImmortal(op));
+        return (PyObject *)op;
+    }
 }
 
 static PyObject *
@@ -1068,17 +1172,16 @@ mmap_subscript(mmap_object *self, PyObject *item)
                                               slicelen);
         else {
             char *result_buf = (char *)PyMem_Malloc(slicelen);
-            size_t cur;
-            Py_ssize_t i;
             PyObject *result;
 
             if (result_buf == NULL)
                 return PyErr_NoMemory();
 
-            for (cur = start, i = 0; i < slicelen;
-                 cur += step, i++) {
-                result_buf[i] = self->data[cur];
+            if (safe_copy_to_slice(result_buf, self->data, start, step, slicelen) < 0) {
+                PyMem_Free(result_buf);
+                return NULL;
             }
+
             result = PyBytes_FromStringAndSize(result_buf,
                                                 slicelen);
             PyMem_Free(result_buf);
@@ -1115,8 +1218,13 @@ mmap_ass_item(mmap_object *self, Py_ssize_t i, PyObject *v)
     if (!is_writable(self))
         return -1;
     buf = PyBytes_AsString(v);
-    self->data[i] = buf[0];
-    return 0;
+
+    if (safe_byte_copy(self->data + i, buf) < 0) {
+        return -1;
+    }
+    else {
+        return 0;
+    }
 }
 
 static int
@@ -1160,8 +1268,13 @@ mmap_ass_subscript(mmap_object *self, PyObject *item, PyObject *value)
             return -1;
         }
         CHECK_VALID(-1);
-        self->data[i] = (char) v;
-        return 0;
+
+        if (safe_byte_copy(self->data + i, (char *) &v) < 0) {
+            return -1;
+        }
+        else {
+            return 0;
+        }
     }
     else if (PySlice_Check(item)) {
         Py_ssize_t start, stop, step, slicelen;
@@ -1186,24 +1299,21 @@ mmap_ass_subscript(mmap_object *self, PyObject *item, PyObject *value)
         }
 
         CHECK_VALID_OR_RELEASE(-1, vbuf);
+        int result = 0;
         if (slicelen == 0) {
         }
         else if (step == 1) {
-            memcpy(self->data + start, vbuf.buf, slicelen);
+            if (safe_memcpy(self->data + start, vbuf.buf, slicelen) < 0) {
+                result = -1;
+            }
         }
         else {
-            size_t cur;
-            Py_ssize_t i;
-
-            for (cur = start, i = 0;
-                 i < slicelen;
-                 cur += step, i++)
-            {
-                self->data[cur] = ((char *)vbuf.buf)[i];
+            if (safe_copy_from_slice(self->data, (char *)vbuf.buf, start, step, slicelen) < 0) {
+                result = -1;
             }
         }
         PyBuffer_Release(&vbuf);
-        return 0;
+        return result;
     }
     else {
         PyErr_SetString(PyExc_TypeError,
