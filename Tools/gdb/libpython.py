@@ -255,7 +255,7 @@ class PyObjectPtr(object):
 
         Derived classes will override this.
 
-        For example, a PyIntObject* with ob_ival 42 in the inferior process
+        For example, a PyLongObjectPtr* with long_value 42 in the inferior process
         should result in an int(42) in this process.
 
         visited: a set of all gdb.Value pyobject pointers already visited
