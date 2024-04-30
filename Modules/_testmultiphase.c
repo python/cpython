@@ -987,6 +987,7 @@ datetime_capi_import_with_error(void)
     }
 #ifdef Py_GIL_DISABLED
     if (!ismain && !is_datetime_multiphase) {
+        // _datetime module and Capsule are not imported
         PyErr_WriteUnraisable(NULL);
         return 0;
     }
