@@ -501,7 +501,8 @@ ThreadHandle_join(ThreadHandle *self, PyTime_t timeout_ns)
 
     // Wait until the deadline for the thread to exit.
     PyTime_t deadline = timeout_ns != -1 ? _PyDeadline_Init(timeout_ns) : 0;
-    while (!PyEvent_WaitTimed(&self->thread_is_exiting, timeout_ns)) {
+    int detach = 1;
+    while (!PyEvent_WaitTimed(&self->thread_is_exiting, timeout_ns, detach)) {
         if (deadline) {
             // _PyDeadline_Get will return a negative value if the deadline has
             // been exceeded.
