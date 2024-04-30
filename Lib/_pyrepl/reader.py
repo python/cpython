@@ -62,9 +62,12 @@ def disp_str(buffer: str) -> tuple[str, list[int]]:
     for c in buffer:
         if unicodedata.category(c).startswith("C"):
             c = r"\u%04x" % ord(c)
+            b.append(1)
+            b.extend([0] * (len(c) - 1))
+        else:
+            b.append(1)
+            b.extend([0] * (str_width(c) - 1))
         s.append(c)
-        b.append(1)
-        b.extend([0] * (str_width(c) - 1))
     return "".join(s), b
 
 
