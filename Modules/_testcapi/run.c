@@ -1,5 +1,7 @@
+#define PYTESTCAPI_NEED_INTERNAL_API
 #include "parts.h"
 #include "util.h"
+#include "pycore_fileutils.h"     // _Py_IsValidFD()
 
 #include <stdio.h>
 #include <errno.h>
@@ -75,15 +77,14 @@ run_fileexflags(PyObject *mod, PyObject *pos_args)
 
     result = PyRun_FileExFlags(fp, filename, start, globals, locals, closeit, pflags);
 
-    struct stat st;
-    if (closeit && result && fstat(fd, &st) == 0) {
+    if (closeit && result && _Py_IsValidFD(fd)) {
         PyErr_SetString(PyExc_AssertionError, "File was not closed after excution");
         Py_DECREF(result);
         fclose(fp);
         return NULL;
     }
 
-    if (!closeit && fstat(fd, &st) != 0) {
+    if (!closeit && !_Py_IsValidFD(fd)) {
         PyErr_SetString(PyExc_AssertionError, "Bad file descriptor after excution");
         Py_XDECREF(result);
         return NULL;
