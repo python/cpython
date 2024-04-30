@@ -1,3 +1,5 @@
+#ifdef _Py_TIER2
+
 /*
  * This file contains the support code for CPython's uops optimizer.
  * It also performs some simple optimizations.
@@ -32,8 +34,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stddef.h>
-
-#ifdef _Py_TIER2
 
 #ifdef Py_DEBUG
     extern const char *_PyUOpName(int index);

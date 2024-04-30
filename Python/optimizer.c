@@ -1,3 +1,5 @@
+#ifdef _Py_TIER2
+
 #include "Python.h"
 #include "opcode.h"
 #include "pycore_interp.h"
@@ -14,8 +16,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stddef.h>
-
-#ifdef _Py_TIER2
 
 #define NEED_OPCODE_METADATA
 #include "pycore_uop_metadata.h" // Uop tables

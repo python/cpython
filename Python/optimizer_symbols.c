@@ -1,3 +1,4 @@
+#ifdef _Py_TIER2
 
 #include "Python.h"
 
@@ -10,8 +11,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stddef.h>
-
-#ifdef _Py_TIER2
 
 /* Symbols
    =======
