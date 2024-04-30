@@ -59,6 +59,12 @@ from sources provided by the operating system.
    random number generator with a long period and comparatively simple update
    operations.
 
+.. note::
+   The global random number generator and instances of :class:`Random` are thread-safe.
+   However, in the free-threaded build, concurrent calls to the global generator or
+   to the same instance of :class:`Random` may encounter contention and poor performance.
+   Consider using separate instances of :class:`Random` per thread instead.
+
 
 Bookkeeping functions
 ---------------------
