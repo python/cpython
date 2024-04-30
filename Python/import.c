@@ -966,6 +966,15 @@ free_extensions_cache_value(struct extensions_cache_value *value)
     PyMem_RawFree(value);
 }
 
+static PyObject *
+get_cached_m_dict(struct extensions_cache_value *value)
+{
+    assert(value != NULL);
+    assert(value->def != NULL);
+    Py_XINCREF(value->def->m_base.m_copy);
+    return value->def->m_base.m_copy;
+}
+
 static int
 update_extensions_cache_value(struct extensions_cache_value *value,
                               PyModuleDef *def)
@@ -1261,11 +1270,11 @@ get_core_module_dict(PyInterpreterState *interp,
     if (path == name) {
         assert(!PyErr_Occurred());
         if (PyUnicode_CompareWithASCIIString(name, "sys") == 0) {
-            return interp->sysdict_copy;
+            return Py_NewRef(interp->sysdict_copy);
         }
         assert(!PyErr_Occurred());
         if (PyUnicode_CompareWithASCIIString(name, "builtins") == 0) {
-            return interp->builtins_copy;
+            return Py_NewRef(interp->builtins_copy);
         }
         assert(!PyErr_Occurred());
     }
@@ -1466,6 +1475,7 @@ reload_singlephase_extension(PyThreadState *tstate,
     PyModuleDef *def = cached->def;
     assert(def != NULL);
     assert_singlephase(cached);
+    PyModInitFunction m_init = def->m_base.m_init;
     PyObject *mod = NULL;
 
     /* It may have been successfully imported previously
@@ -1479,8 +1489,13 @@ reload_singlephase_extension(PyThreadState *tstate,
 
     PyObject *modules = get_modules_dict(tstate, true);
     if (def->m_size == -1) {
-        PyObject *m_copy = def->m_base.m_copy;
         /* Module does not support repeated initialization */
+        assert(m_init == NULL);
+        assert(def->m_base.m_init == NULL);
+        // XXX Copying the cached dict may break interpreter isolation.
+        // We could solve this by temporarily acquiring the original
+        // interpreter's GIL.
+        PyObject *m_copy = get_cached_m_dict(cached);
         if (m_copy == NULL) {
             /* It might be a core module (e.g. sys & builtins),
                for which we don't set m_copy. */
@@ -1493,14 +1508,18 @@ reload_singlephase_extension(PyThreadState *tstate,
         }
         mod = import_add_module(tstate, info->name);
         if (mod == NULL) {
+            Py_DECREF(m_copy);
             return NULL;
         }
         PyObject *mdict = PyModule_GetDict(mod);
         if (mdict == NULL) {
+            Py_DECREF(m_copy);
             Py_DECREF(mod);
             return NULL;
         }
-        if (PyDict_Update(mdict, m_copy)) {
+        int rc = PyDict_Update(mdict, m_copy);
+        Py_DECREF(m_copy);
+        if (rc < 0) {
             Py_DECREF(mod);
             return NULL;
         }
