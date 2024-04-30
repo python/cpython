@@ -71,21 +71,19 @@ run_fileexflags(PyObject *mod, PyObject *pos_args)
         PyErr_SetFromErrnoWithFilename(PyExc_OSError, filename);
         return NULL;
     }
+    int fd = fileno(fp);
 
     result = PyRun_FileExFlags(fp, filename, start, globals, locals, closeit, pflags);
 
-#if defined(__linux__) || defined(MS_WINDOWS) || defined(__APPLE__)
-    /* The behavior of fileno() after fclose() is undefined, but it is
-     * the only practical way to check whether the file was closed.
-     * Only test this on the known platforms. */
-    if (closeit && result && fileno(fp) >= 0) {
+    struct stat st;
+    if (closeit && result && fstat(fd, &st) == 0) {
         PyErr_SetString(PyExc_AssertionError, "File was not closed after excution");
         Py_DECREF(result);
         fclose(fp);
         return NULL;
     }
-#endif
-    if (!closeit && fileno(fp) < 0) {
+
+    if (!closeit && fstat(fd, &st) != 0) {
         PyErr_SetString(PyExc_AssertionError, "Bad file descriptor after excution");
         Py_XDECREF(result);
         return NULL;
