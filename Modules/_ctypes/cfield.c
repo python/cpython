@@ -139,10 +139,11 @@ PyCField_FromDesc_msvc(
                 int is_bitfield
                 )
 {
-    if (pack)
-        *palign = min(pack, info->align);
-    else
+    if (pack) {
+        *palign = Py_MIN(pack, info->align);
+    } else {
         *palign = info->align;
+    }
 
     // *poffset points to end of current bitfield.
     // *pbitofs is generally non-positive,
