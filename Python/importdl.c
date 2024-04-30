@@ -93,57 +93,133 @@ error:
     return NULL;
 }
 
-PyObject *
-_PyImport_LoadDynamicModuleWithSpec(PyObject *spec, FILE *fp)
+void
+_Py_ext_module_loader_info_clear(struct _Py_ext_module_loader_info *info)
 {
+    Py_CLEAR(info->filename);
 #ifndef MS_WINDOWS
-    PyObject *filename_bytes = NULL;
-    const char *filename_buf;
+    Py_CLEAR(info->filename_encoded);
 #endif
-    PyObject *name_unicode = NULL, *name = NULL, *filename = NULL, *m = NULL;
-    const char *name_buf, *hook_prefix;
-    const char *oldcontext, *newcontext;
-    dl_funcptr exportfunc;
-    PyModuleDef *def;
-    PyModInitFunction p0;
+    Py_CLEAR(info->name);
+    Py_CLEAR(info->name_encoded);
+}
 
-    name_unicode = PyObject_GetAttrString(spec, "name");
-    if (name_unicode == NULL) {
-        return NULL;
-    }
-    if (!PyUnicode_Check(name_unicode)) {
+int
+_Py_ext_module_loader_info_init(struct _Py_ext_module_loader_info *p_info,
+                                PyObject *name, PyObject *filename)
+{
+    struct _Py_ext_module_loader_info info = {0};
+
+    assert(name != NULL);
+    if (!PyUnicode_Check(name)) {
         PyErr_SetString(PyExc_TypeError,
-                        "spec.name must be a string");
-        goto error;
+                        "module name must be a string");
+        _Py_ext_module_loader_info_clear(&info);
+        return -1;
     }
-    newcontext = PyUnicode_AsUTF8(name_unicode);
-    if (newcontext == NULL) {
-        goto error;
+    assert(PyUnicode_GetLength(name) > 0);
+    info.name = Py_NewRef(name);
+
+    info.name_encoded = get_encoded_name(info.name, &info.hook_prefix);
+    if (info.name_encoded == NULL) {
+        _Py_ext_module_loader_info_clear(&info);
+        return -1;
     }
 
-    name = get_encoded_name(name_unicode, &hook_prefix);
+    info.newcontext = PyUnicode_AsUTF8(info.name);
+    if (info.newcontext == NULL) {
+        _Py_ext_module_loader_info_clear(&info);
+        return -1;
+    }
+
+    if (filename != NULL) {
+        if (!PyUnicode_Check(filename)) {
+            PyErr_SetString(PyExc_TypeError,
+                            "module filename must be a string");
+            _Py_ext_module_loader_info_clear(&info);
+            return -1;
+        }
+        info.filename = Py_NewRef(filename);
+
+#ifndef MS_WINDOWS
+        info.filename_encoded = PyUnicode_EncodeFSDefault(info.filename);
+        if (info.filename_encoded == NULL) {
+            _Py_ext_module_loader_info_clear(&info);
+            return -1;
+        }
+#endif
+
+        info.path = info.filename;
+    }
+    else {
+        info.path = info.name;
+    }
+
+    *p_info = info;
+    return 0;
+}
+
+int
+_Py_ext_module_loader_info_init_for_builtin(
+                            struct _Py_ext_module_loader_info *info,
+                            PyObject *name)
+{
+    assert(PyUnicode_Check(name));
+    assert(PyUnicode_FindChar(name, '.', 0, PyUnicode_GetLength(name), -1) == -1);
+    assert(PyUnicode_GetLength(name) > 0);
+
+    PyObject *name_encoded = PyUnicode_AsEncodedString(name, "ascii", NULL);
+    if (name_encoded == NULL) {
+        return -1;
+    }
+
+    *info = (struct _Py_ext_module_loader_info){
+        .name=Py_NewRef(name),
+        .name_encoded=name_encoded,
+        /* We won't need filename. */
+        .path=name,
+        .hook_prefix=ascii_only_prefix,
+        .newcontext=NULL,
+    };
+    return 0;
+}
+
+int
+_Py_ext_module_loader_info_init_from_spec(
+                            struct _Py_ext_module_loader_info *p_info,
+                            PyObject *spec)
+{
+    PyObject *name = PyObject_GetAttrString(spec, "name");
     if (name == NULL) {
-        goto error;
+        return -1;
     }
-    name_buf = PyBytes_AS_STRING(name);
-
-    filename = PyObject_GetAttrString(spec, "origin");
+    PyObject *filename = PyObject_GetAttrString(spec, "origin");
     if (filename == NULL) {
-        goto error;
+        Py_DECREF(name);
+        return -1;
     }
+    int err = _Py_ext_module_loader_info_init(p_info, name, filename);
+    Py_DECREF(name);
+    Py_DECREF(filename);
+    return err;
+}
 
+
+PyModInitFunction
+_PyImport_GetModInitFunc(struct _Py_ext_module_loader_info *info,
+                         FILE *fp)
+{
+    const char *name_buf = PyBytes_AS_STRING(info->name_encoded);
+    dl_funcptr exportfunc;
 #ifdef MS_WINDOWS
     exportfunc = _PyImport_FindSharedFuncptrWindows(
-            hook_prefix, name_buf, filename, fp);
+            info->hook_prefix, name_buf, info->filename, fp);
 #else
-    filename_bytes = PyUnicode_EncodeFSDefault(filename);
-    if (filename_bytes == NULL) {
-        goto error;
+    {
+        const char *path_buf = PyBytes_AS_STRING(info->filename_encoded);
+        exportfunc = _PyImport_FindSharedFuncptr(
+                        info->hook_prefix, name_buf, path_buf, fp);
     }
-    filename_buf = PyBytes_AS_STRING(filename_bytes);
-    exportfunc = _PyImport_FindSharedFuncptr(
-            hook_prefix, name_buf, filename_buf, fp);
-    Py_DECREF(filename_bytes);
 #endif
 
     if (exportfunc == NULL) {
@@ -152,21 +228,34 @@ _PyImport_LoadDynamicModuleWithSpec(PyObject *spec, FILE *fp)
             msg = PyUnicode_FromFormat(
                 "dynamic module does not define "
                 "module export function (%s_%s)",
-                hook_prefix, name_buf);
-            if (msg == NULL)
-                goto error;
-            PyErr_SetImportError(msg, name_unicode, filename);
-            Py_DECREF(msg);
+                info->hook_prefix, name_buf);
+            if (msg != NULL) {
+                PyErr_SetImportError(msg, info->name, info->filename);
+                Py_DECREF(msg);
+            }
         }
-        goto error;
+        return NULL;
     }
 
-    p0 = (PyModInitFunction)exportfunc;
+    return (PyModInitFunction)exportfunc;
+}
+
+int
+_PyImport_RunModInitFunc(PyModInitFunction p0,
+                         struct _Py_ext_module_loader_info *info,
+                         struct _Py_ext_module_loader_result *p_res)
+{
+    struct _Py_ext_module_loader_result res = {0};
+    const char *name_buf = PyBytes_AS_STRING(info->name_encoded);
+
+    /* Call the module init function. */
 
     /* Package context is needed for single-phase init */
-    oldcontext = _PyImport_SwapPackageContext(newcontext);
-    m = p0();
+    const char *oldcontext = _PyImport_SwapPackageContext(info->newcontext);
+    PyObject *m = p0();
     _PyImport_SwapPackageContext(oldcontext);
+
+    /* Validate the result (and populate "res". */
 
     if (m == NULL) {
         if (!PyErr_Occurred()) {
@@ -181,9 +270,13 @@ _PyImport_LoadDynamicModuleWithSpec(PyObject *spec, FILE *fp)
             PyExc_SystemError,
             "initialization of %s raised unreported exception",
             name_buf);
+        /* We would probably be correct to decref m here,
+         * but we weren't doing so before,
+         * so we stick with doing nothing. */
         m = NULL;
         goto error;
     }
+
     if (Py_IS_TYPE(m, NULL)) {
         /* This can happen when a PyModuleDef is returned without calling
          * PyModuleDef_Init on it
@@ -191,57 +284,58 @@ _PyImport_LoadDynamicModuleWithSpec(PyObject *spec, FILE *fp)
         PyErr_Format(PyExc_SystemError,
                      "init function of %s returned uninitialized object",
                      name_buf);
+        /* Likewise, decref'ing here makes sense.  However, the original
+         * code has a note about "prevent segfault in DECREF",
+         * so we play it safe and leave it alone. */
         m = NULL; /* prevent segfault in DECREF */
         goto error;
     }
+
     if (PyObject_TypeCheck(m, &PyModuleDef_Type)) {
-        Py_DECREF(name_unicode);
-        Py_DECREF(name);
-        Py_DECREF(filename);
-        return PyModule_FromDefAndSpec((PyModuleDef*)m, spec);
+        /* multi-phase init */
+        res.def = (PyModuleDef *)m;
+        /* Run PyModule_FromDefAndSpec() to finish loading the module. */
     }
-
-    /* Fall back to single-phase init mechanism */
-
-    if (_PyImport_CheckSubinterpIncompatibleExtensionAllowed(name_buf) < 0) {
-        goto error;
-    }
-
-    if (hook_prefix == nonascii_prefix) {
-        /* don't allow legacy init for non-ASCII module names */
+    else if (info->hook_prefix == nonascii_prefix) {
+        /* It should have been multi-phase init? */
+        /* Don't allow legacy init for non-ASCII module names. */
         PyErr_Format(
             PyExc_SystemError,
             "initialization of %s did not return PyModuleDef",
             name_buf);
-        goto error;
+        Py_DECREF(m);
+        return -1;
+    }
+    else {
+        /* single-phase init (legacy) */
+        res.module = m;
+
+        if (!PyModule_Check(m)) {
+            PyErr_Format(PyExc_SystemError,
+                         "initialization of %s did not return an extension "
+                         "module", name_buf);
+            goto error;
+        }
+
+        res.def = _PyModule_GetDef(m);
+        if (res.def == NULL) {
+            PyErr_Format(PyExc_SystemError,
+                         "initialization of %s did not return a valid extension "
+                         "module", name_buf);
+            goto error;
+        }
     }
 
-    /* Remember pointer to module init function. */
-    def = PyModule_GetDef(m);
-    if (def == NULL) {
-        PyErr_Format(PyExc_SystemError,
-                     "initialization of %s did not return an extension "
-                     "module", name_buf);
-        goto error;
-    }
-    def->m_base.m_init = p0;
-
-    PyObject *modules = PyImport_GetModuleDict();
-    if (_PyImport_FixupExtensionObject(m, name_unicode, filename, modules) < 0)
-        goto error;
-
-    Py_DECREF(name_unicode);
-    Py_DECREF(name);
-    Py_DECREF(filename);
-
-    return m;
+    assert(!PyErr_Occurred());
+    *p_res = res;
+    return 0;
 
 error:
-    Py_DECREF(name_unicode);
-    Py_XDECREF(name);
-    Py_XDECREF(filename);
-    Py_XDECREF(m);
-    return NULL;
+    assert(PyErr_Occurred());
+    Py_CLEAR(res.module);
+    res.def = NULL;
+    *p_res = res;
+    return -1;
 }
 
 #endif /* HAVE_DYNAMIC_LOADING */

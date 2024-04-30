@@ -1439,7 +1439,14 @@
             break;
         }
 
-        /* _FOR_ITER_GEN is not a viable micro-op for tier 2 */
+        case _FOR_ITER_GEN_FRAME: {
+            _PyInterpreterFrame *gen_frame;
+            gen_frame = sym_new_not_null(ctx);
+            if (gen_frame == NULL) goto out_of_space;
+            stack_pointer[0] = (_Py_UopsSymbol *)gen_frame;
+            stack_pointer += 1;
+            break;
+        }
 
         /* _BEFORE_ASYNC_WITH is not a viable micro-op for tier 2 */
 
@@ -1840,6 +1847,29 @@
             break;
         }
 
+        case _RETURN_GENERATOR: {
+            _Py_UopsSymbol *res;
+            ctx->frame->stack_pointer = stack_pointer;
+            frame_pop(ctx);
+            stack_pointer = ctx->frame->stack_pointer;
+            OUT_OF_SPACE_IF_NULL(res = sym_new_unknown(ctx));
+            /* Stack space handling */
+            assert(corresponding_check_stack == NULL);
+            assert(co != NULL);
+            int framesize = co->co_framesize;
+            assert(framesize > 0);
+            assert(framesize <= curr_space);
+            curr_space -= framesize;
+            co = get_code(this_instr);
+            if (co == NULL) {
+                // might be impossible, but bailing is still safe
+                goto done;
+            }
+            stack_pointer[0] = res;
+            stack_pointer += 1;
+            break;
+        }
+
         case _BUILD_SLICE: {
             _Py_UopsSymbol *slice;
             slice = sym_new_not_null(ctx);
@@ -2086,6 +2116,10 @@
             break;
         }
 
+        case _DYNAMIC_EXIT: {
+            break;
+        }
+
         case _START_EXECUTOR: {
             break;
         }
@@ -2108,6 +2142,14 @@
 
         case _ERROR_POP_N: {
             stack_pointer += -oparg;
+            break;
+        }
+
+        case _TIER2_RESUME_CHECK: {
+            break;
+        }
+
+        case _EVAL_BREAKER_EXIT: {
             break;
         }
 

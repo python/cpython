@@ -688,7 +688,7 @@ static inline PyDictObject *
 _PyObject_GetManagedDict(PyObject *obj)
 {
     PyManagedDictPointer *dorv = _PyObject_ManagedDictPointer(obj);
-    return (PyDictObject *)FT_ATOMIC_LOAD_PTR_RELAXED(dorv->dict);
+    return (PyDictObject *)FT_ATOMIC_LOAD_PTR_ACQUIRE(dorv->dict);
 }
 
 static inline PyDictValues *
