@@ -1,5 +1,5 @@
-#ifndef Py_INTERNAL_TAGGED_H
-#define Py_INTERNAL_TAGGED_H
+#ifndef Py_INTERNAL_STACKREF_H
+#define Py_INTERNAL_STACKREF_H
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -174,4 +174,4 @@ PyStackRef_NewRef(_PyStackRef obj)
 #ifdef __cplusplus
 }
 #endif
-#endif /* !Py_INTERNAL_TAGGED_H */
+#endif /* !Py_INTERNAL_STACKREF_H */
