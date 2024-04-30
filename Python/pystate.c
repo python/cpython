@@ -1568,6 +1568,17 @@ new_threadstate(PyInterpreterState *interp, int whence)
         // Must be called with lock unlocked to avoid re-entrancy deadlock.
         PyMem_RawFree(new_tstate);
     }
+    else {
+#ifdef Py_GIL_DISABLED
+        if (interp->gc.immortalize.enable_on_thread_created &&
+            !interp->gc.immortalize.enabled)
+        {
+            // Immortalize objects marked as using deferred reference counting
+            // the first time a non-main thread is created.
+            _PyGC_ImmortalizeDeferredObjects(interp);
+        }
+#endif
+    }
 
 #ifdef Py_GIL_DISABLED
     // Must be called with lock unlocked to avoid lock ordering deadlocks.
@@ -2227,7 +2238,8 @@ stop_the_world(struct _stoptheworld_state *stw)
         }
 
         PyTime_t wait_ns = 1000*1000;  // 1ms (arbitrary, may need tuning)
-        if (PyEvent_WaitTimed(&stw->stop_event, wait_ns)) {
+        int detach = 0;
+        if (PyEvent_WaitTimed(&stw->stop_event, wait_ns, detach)) {
             assert(stw->thread_countdown == 0);
             break;
         }

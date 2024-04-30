@@ -36,6 +36,9 @@ extern int _Py_ext_module_loader_info_init(
     struct _Py_ext_module_loader_info *info,
     PyObject *name,
     PyObject *filename);
+extern int _Py_ext_module_loader_info_init_for_builtin(
+    struct _Py_ext_module_loader_info *p_info,
+    PyObject *name);
 extern int _Py_ext_module_loader_info_init_from_spec(
     struct _Py_ext_module_loader_info *info,
     PyObject *spec);

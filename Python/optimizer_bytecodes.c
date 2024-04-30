@@ -673,6 +673,15 @@ dummy_func(void) {
         }
     }
 
+    op(_YIELD_VALUE, (unused -- res)) {
+        OUT_OF_SPACE_IF_NULL(res = sym_new_unknown(ctx));
+    }
+
+    op(_FOR_ITER_GEN_FRAME, ( -- )) {
+        /* We are about to hit the end of the trace */
+        goto done;
+    }
+
     op(_CHECK_STACK_SPACE, ( --)) {
         assert(corresponding_check_stack == NULL);
         corresponding_check_stack = this_instr;
