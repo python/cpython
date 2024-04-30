@@ -903,9 +903,9 @@ and :term:`generators <generator>` which incur interpreter overhead.
    def sliding_window(iterable, n):
        "Collect data into overlapping fixed-length chunks or blocks."
        # sliding_window('ABCDEFG', 4) → ABCD BCDE CDEF DEFG
-       it = iter(iterable)
-       window = collections.deque(islice(it, n-1), maxlen=n)
-       for x in it:
+       iterator = iter(iterable)
+       window = collections.deque(islice(iterator, n-1), maxlen=n)
+       for x in iterator:
            window.append(x)
            yield tuple(window)
 
@@ -955,8 +955,8 @@ and :term:`generators <generator>` which incur interpreter overhead.
        seq_index = getattr(iterable, 'index', None)
        if seq_index is None:
            # Path for general iterables
-           it = islice(iterable, start, stop)
-           for i, element in enumerate(it, start):
+           iterator = islice(iterable, start, stop)
+           for i, element in enumerate(iterator, start):
                if element is value or element == value:
                    yield i
        else:
