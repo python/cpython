@@ -1437,7 +1437,10 @@ PEP 594: dead batteries
     * :pypi:`argon2-cffi`:
       The secure Argon2 password hashing algorithm.
     * :pypi:`legacycrypt`:
-      Wrapper to the POSIX crypt library call and associated functionality.
+      :mod:`ctypes` wrapper to the POSIX crypt library call and associated functionality.
+    * :pypi:`crypt_r`:
+      Fork of the :mod:`!crypt` module, wrapper to the :manpage:`crypt_r(3)` library
+      call and associated functionality.
 
     (Contributed by Victor Stinner in :gh:`104773`.)
 

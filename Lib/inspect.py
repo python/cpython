@@ -2179,8 +2179,10 @@ def _signature_is_builtin(obj):
             ismethoddescriptor(obj) or
             isinstance(obj, _NonUserDefinedCallables) or
             # Can't test 'isinstance(type)' here, as it would
-            # also be True for regular python classes
-            obj in (type, object))
+            # also be True for regular python classes.
+            # Can't use the `in` operator here, as it would
+            # invoke the custom __eq__ method.
+            obj is type or obj is object)
 
 
 def _signature_is_functionlike(obj):
@@ -2692,6 +2694,13 @@ def _signature_from_callable(obj, *,
         # An object with __call__
         call = getattr_static(type(obj), '__call__', None)
         if call is not None:
+            try:
+                text_sig = obj.__text_signature__
+            except AttributeError:
+                pass
+            else:
+                if text_sig:
+                    return _signature_fromstr(sigcls, obj, text_sig)
             call = _descriptor_get(call, obj)
             return _get_signature_of(call)
 
