@@ -5,6 +5,7 @@ static const char* _Py_stdlib_module_names[] = {
 "__future__",
 "_abc",
 "_aix_support",
+"_android_support",
 "_ast",
 "_asyncio",
 "_bisect",

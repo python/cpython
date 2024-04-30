@@ -2631,28 +2631,49 @@
         }
 
         TARGET(FOR_ITER_GEN) {
-            _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
+            frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(FOR_ITER_GEN);
             static_assert(INLINE_CACHE_ENTRIES_FOR_ITER == 1, "incorrect cache size");
             PyObject *iter;
+            _PyInterpreterFrame *gen_frame;
+            _PyInterpreterFrame *new_frame;
             /* Skip 1 cache entry */
+            // _CHECK_PEP_523
+            {
+                DEOPT_IF(tstate->interp->eval_frame, FOR_ITER);
+            }
+            // _FOR_ITER_GEN_FRAME
             iter = stack_pointer[-1];
-            DEOPT_IF(tstate->interp->eval_frame, FOR_ITER);
-            PyGenObject *gen = (PyGenObject *)iter;
-            DEOPT_IF(Py_TYPE(gen) != &PyGen_Type, FOR_ITER);
-            DEOPT_IF(gen->gi_frame_state >= FRAME_EXECUTING, FOR_ITER);
-            STAT_INC(FOR_ITER, hit);
-            _PyInterpreterFrame *gen_frame = (_PyInterpreterFrame *)gen->gi_iframe;
-            _PyFrame_StackPush(gen_frame, Py_None);
-            gen->gi_frame_state = FRAME_EXECUTING;
-            gen->gi_exc_state.previous_item = tstate->exc_info;
-            tstate->exc_info = &gen->gi_exc_state;
-            assert(next_instr[oparg].op.code == END_FOR ||
-                   next_instr[oparg].op.code == INSTRUMENTED_END_FOR);
-            assert(next_instr - this_instr + oparg <= UINT16_MAX);
-            frame->return_offset = (uint16_t)(next_instr - this_instr + oparg);
-            DISPATCH_INLINED(gen_frame);
+            {
+                PyGenObject *gen = (PyGenObject *)iter;
+                DEOPT_IF(Py_TYPE(gen) != &PyGen_Type, FOR_ITER);
+                DEOPT_IF(gen->gi_frame_state >= FRAME_EXECUTING, FOR_ITER);
+                STAT_INC(FOR_ITER, hit);
+                gen_frame = (_PyInterpreterFrame *)gen->gi_iframe;
+                _PyFrame_StackPush(gen_frame, Py_None);
+                gen->gi_frame_state = FRAME_EXECUTING;
+                gen->gi_exc_state.previous_item = tstate->exc_info;
+                tstate->exc_info = &gen->gi_exc_state;
+                // oparg is the return offset from the next instruction.
+                frame->return_offset = (uint16_t)(1 + INLINE_CACHE_ENTRIES_FOR_ITER + oparg);
+            }
+            // _PUSH_FRAME
+            new_frame = gen_frame;
+            {
+                // Write it out explicitly because it's subtly different.
+                // Eventually this should be the only occurrence of this code.
+                assert(tstate->interp->eval_frame == NULL);
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                new_frame->previous = frame;
+                CALL_STAT_INC(inlined_py_calls);
+                frame = tstate->current_frame = new_frame;
+                tstate->py_recursion_remaining--;
+                LOAD_SP();
+                LOAD_IP(0);
+                LLTRACE_RESUME_FRAME();
+            }
+            DISPATCH();
         }
 
         TARGET(FOR_ITER_LIST) {
@@ -5991,27 +6012,41 @@
             next_instr += 1;
             INSTRUCTION_STATS(YIELD_VALUE);
             PyObject *retval;
+            PyObject *value;
             retval = stack_pointer[-1];
             // NOTE: It's important that YIELD_VALUE never raises an exception!
             // The compiler treats any exception raised here as a failed close()
             // or throw() call.
+            #if TIER_ONE
             assert(frame != &entry_frame);
-            frame->instr_ptr = next_instr;
+            #endif
+            frame->instr_ptr++;
             PyGenObject *gen = _PyFrame_GetGenerator(frame);
             assert(FRAME_SUSPENDED_YIELD_FROM == FRAME_SUSPENDED + 1);
             assert(oparg == 0 || oparg == 1);
             gen->gi_frame_state = FRAME_SUSPENDED + oparg;
-            _PyFrame_SetStackPointer(frame, stack_pointer - 1);
+            stack_pointer += -1;
+            _PyFrame_SetStackPointer(frame, stack_pointer);
             tstate->exc_info = gen->gi_exc_state.previous_item;
             gen->gi_exc_state.previous_item = NULL;
             _Py_LeaveRecursiveCallPy(tstate);
             _PyInterpreterFrame *gen_frame = frame;
             frame = tstate->current_frame = frame->previous;
             gen_frame->previous = NULL;
-            _PyFrame_StackPush(frame, retval);
             /* We don't know which of these is relevant here, so keep them equal */
             assert(INLINE_CACHE_ENTRIES_SEND == INLINE_CACHE_ENTRIES_FOR_ITER);
+            #if TIER_ONE
+            assert(_PyOpcode_Deopt[frame->instr_ptr->op.code] == SEND ||
+                   _PyOpcode_Deopt[frame->instr_ptr->op.code] == FOR_ITER ||
+                   _PyOpcode_Deopt[frame->instr_ptr->op.code] == INTERPRETER_EXIT ||
+                   _PyOpcode_Deopt[frame->instr_ptr->op.code] == ENTER_EXECUTOR);
+            #endif
             LOAD_IP(1 + INLINE_CACHE_ENTRIES_SEND);
-            goto resume_frame;
+            LOAD_SP();
+            value = retval;
+            LLTRACE_RESUME_FRAME();
+            stack_pointer[0] = value;
+            stack_pointer += 1;
+            DISPATCH();
         }
 #undef TIER_ONE
