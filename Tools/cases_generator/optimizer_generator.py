@@ -90,7 +90,7 @@ def emit_default(out: CWriter, uop: Uop) -> None:
                 out.emit(f"{var.name} = sym_new_null(ctx);\n")
                 out.emit(f"if ({var.name} == NULL) goto out_of_space;\n")
             else:
-                out.emit(f"{var.name} = sym_new_not_null(ctx);\n")
+                out.emit(f"{var.name} = (void *)sym_new_not_null(ctx);\n")
                 out.emit(f"if ({var.name} == NULL) goto out_of_space;\n")
 
 
