@@ -456,7 +456,6 @@ Modules/_elementtree.c	-	expat_capi	-
 Modules/readline.c	-	libedit_append_replace_history_offset	-
 Modules/readline.c	-	using_libedit_emulation	-
 Modules/readline.c	-	libedit_history_start	-
-Modules/_testmultiphase.c	datetime_capi_import_with_error	is_datetime_multiphase	-
 
 ##-----------------------
 ## state
