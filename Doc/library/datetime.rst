@@ -1336,7 +1336,7 @@ Instance methods:
       def astimezone(self, tz):
           if self.tzinfo is tz:
               return self
-          # Convert self to UTC, and attach the new :class:`timezone` object.
+          # Convert self to UTC, and attach the new timezone object.
           utc = (self - self.utcoffset()).replace(tzinfo=tz)
           # Convert from UTC to tz's local time.
           return tz.fromutc(utc)
