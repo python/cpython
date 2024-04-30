@@ -98,8 +98,10 @@ class TestAndroidOutput(unittest.TestCase):
                 # that way by libregrtest.main.
                 self.assertEqual("backslashreplace", stream.errors)
 
-                def write(s, lines=None):
-                    self.assertEqual(len(s), stream.write(s))
+                def write(s, lines=None, *, write_len=None):
+                    if write_len is None:
+                        write_len = len(s)
+                    self.assertEqual(write_len, stream.write(s))
                     if lines is None:
                         lines = [s]
                     self.assert_logs(level, tag, lines)
@@ -122,16 +124,16 @@ class TestAndroidOutput(unittest.TestCase):
                     write("\U0001f600")
 
                     # Non-encodable surrogates
-                    write("\ud800\udc00", ["\\ud800\\udc00"])
+                    write("\ud800\udc00", [r"\ud800\udc00"])
 
                     # Code used by surrogateescape (which isn't enabled here)
-                    write("\udc80", ["\\udc80"])
+                    write("\udc80", [r"\udc80"])
 
                     # Null characters are logged using "modified UTF-8".
-                    write("\u0000", ["\\xc0\\x80"])
-                    write("a\u0000", ["a\\xc0\\x80"])
-                    write("\u0000b", ["\\xc0\\x80b"])
-                    write("a\u0000b", ["a\\xc0\\x80b"])
+                    write("\u0000", [r"\xc0\x80"])
+                    write("a\u0000", [r"a\xc0\x80"])
+                    write("\u0000b", [r"\xc0\x80b"])
+                    write("a\u0000b", [r"a\xc0\x80b"])
 
                 # Multi-line messages. Avoid identical consecutive lines, as
                 # they may activate "chatty" filtering and break the tests.
@@ -167,14 +169,19 @@ class TestAndroidOutput(unittest.TestCase):
                 write("before line separator\u2028after line separator\n",
                       ["before line separator\u2028after line separator"])
 
-                # String subclasses are accepted, and if their methods write
-                # themselves, this doesn't cause infinite recursion.
+                # String subclasses are accepted, but they should be converted
+                # to a standard str without calling any of their methods.
                 class CustomStr(str):
                     def splitlines(self, *args, **kwargs):
-                        sys.stdout.write(self)
-                        return super().splitlines(*args, **kwargs)
+                        raise AssertionError()
 
-                write(CustomStr("custom\n"), ["custom"])
+                    def __len__(self):
+                        raise AssertionError()
+
+                    def __str__(self):
+                        raise AssertionError()
+
+                write(CustomStr("custom\n"), ["custom"], write_len=7)
 
                 # Non-string classes are not accepted.
                 for obj in [b"", b"hello", None, 42]:
@@ -196,9 +203,10 @@ class TestAndroidOutput(unittest.TestCase):
                 self.assert_log(level, tag, "helloworld")
 
                 # Long lines are split into blocks of 1000 characters
-                # (MAX_CHARS_PER_WRITE), but TextIOWrapper should then join them
-                # back together as much as possible without exceeding 4000 UTF-8
-                # bytes (MAX_BYTES_PER_WRITE).
+                # (MAX_CHARS_PER_WRITE in _android_support.py), but
+                # TextIOWrapper should then join them back together as much as
+                # possible without exceeding 4000 UTF-8 bytes
+                # (MAX_BYTES_PER_WRITE).
                 #
                 # ASCII (1 byte per character)
                 write(("foobar" * 700) + "\n",
