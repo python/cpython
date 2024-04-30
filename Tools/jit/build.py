@@ -10,7 +10,7 @@ if __name__ == "__main__":
     comment = f"$ {shlex.join([sys.executable] + sys.argv)}"
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
-        "target", type=_targets.get_target, help="a PEP 11 target triple to compile for"
+        "target", type=_targets.target, help="a PEP 11 target triple to compile for"
     )
     parser.add_argument(
         "-d", "--debug", action="store_true", help="compile for a debug build of Python"

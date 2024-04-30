@@ -40,6 +40,7 @@ class _Target(typing.Generic[_S, _R]):
     args: typing.Sequence[str] = ()
     ghccc: bool = False
     prefix: str = ""
+    stable: bool = False
     debug: bool = False
     force: bool = False
     verbose: bool = False
@@ -188,6 +189,11 @@ class _Target(typing.Generic[_S, _R]):
 
     def build(self, out: pathlib.Path, *, comment: str = "") -> None:
         """Build jit_stencils.h in the given directory."""
+        if not self.stable:
+            warning = f"JIT support for {self.triple} is still experimental!"
+            request = "Please report any issues you encounter.".center(len(warning))
+            outline = "=" * len(warning)
+            print("\n".join(["", outline, warning, request, outline, ""]))
         digest = f"// {self._compute_digest(out)}\n"
         jit_stencils = out / "jit_stencils.h"
         if (
@@ -478,7 +484,7 @@ class _MachO(
         return _stencils.Hole(offset, kind, value, symbol, addend)
 
 
-def get_target(host: str) -> _COFF | _ELF | _MachO:
+def target(host: str) -> _COFF | _ELF | _MachO:
     """Build a _Target for the given host "triple" and options."""
     # ghccc currently crashes Clang when combined with musttail on aarch64. :(
     if re.fullmatch(r"aarch64-apple-darwin.*", host):
