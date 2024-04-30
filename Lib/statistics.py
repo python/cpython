@@ -1078,6 +1078,7 @@ def quantiles(data, *, n=4, method='exclusive'):
         if ld == 1:
             return data * (n - 1)
         raise StatisticsError('must have at least one data point')
+
     if method == 'inclusive':
         m = ld - 1
         result = []
@@ -1086,6 +1087,7 @@ def quantiles(data, *, n=4, method='exclusive'):
             interpolated = (data[j] * (n - delta) + data[j + 1] * delta) / n
             result.append(interpolated)
         return result
+
     if method == 'exclusive':
         m = ld + 1
         result = []
@@ -1096,6 +1098,7 @@ def quantiles(data, *, n=4, method='exclusive'):
             interpolated = (data[j - 1] * (n - delta) + data[j] * delta) / n
             result.append(interpolated)
         return result
+
     raise ValueError(f'Unknown method: {method!r}')
 
 
