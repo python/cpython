@@ -869,7 +869,7 @@ Other constructors, all class methods:
 
 .. classmethod:: datetime.today()
 
-   Return the current local datetime, with :attr:`.tzinfo` ``None``.
+   Return the current local date and time, with :attr:`.tzinfo` ``None``.
 
    Equivalent to::
 
