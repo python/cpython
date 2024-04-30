@@ -30,71 +30,47 @@ typedef union {
 } _PyStackRef;
 
 #ifdef Py_GIL_DISABLED
-    #define Py_TAG_DEFERRED (0b1)
+    #define Py_TAG_DEFERRED (1)
     #define Py_TAG (Py_TAG_DEFERRED)
 #else
-    // Define this to test for tagged pointer leakage in the ceval stack.
-    // #define Py_TAG_TEST (0b1)
     #define Py_TAG 0
 #endif
 
-#if defined(Py_TAG_TEST)
-    #define Py_STACKREF_UNTAG_BORROWED(tagged) ((PyObject *)(uintptr_t)((tagged).bits & (~Py_TAG_TEST)))
-#elif defined(Py_GIL_DISABLED)
+// Gets a PyObject * from a _PyStackRef
+#if defined(Py_GIL_DISABLED)
     static inline PyObject *
-    _Py_STACKREF_UNTAG_BORROWED(_PyStackRef tagged) {
+    PyStackRef_Get(_PyStackRef tagged) {
         PyObject *cleared = ((PyObject *)((tagged).bits & (~Py_TAG)));
         return cleared;
     }
-    #define Py_STACKREF_UNTAG_BORROWED(tagged) _Py_STACKREF_UNTAG_BORROWED(tagged)
 #else
-    #define Py_STACKREF_UNTAG_BORROWED(tagged) ((PyObject *)(uintptr_t)((tagged).bits))
+    #define PyStackRef_Get(tagged) ((PyObject *)(uintptr_t)((tagged).bits))
 #endif
 
-#if defined(Py_TAG_TEST)
-    #define Py_STACKREF_TAG(obj) ((_PyStackRef){.bits = ((uintptr_t)(obj) | Py_TAG_TEST)})
-#elif defined(Py_GIL_DISABLED)
+// Converts a PyObject * to a PyStackRef, stealing the reference.
+#if defined(Py_GIL_DISABLED)
     static inline _PyStackRef
-    _Py_STACKREF_TAG(PyObject *obj) {
+    _PyStackRef_StealRef(PyObject *obj) {
         // Make sure we don't take an already tagged value.
-        assert(Py_STACKREF_UNTAG_BORROWED(((_PyStackRef){.bits = ((uintptr_t)(obj))})) == obj);
+        assert(PyStackRef_Get(((_PyStackRef){.bits = ((uintptr_t)(obj))})) == obj);
         return ((_PyStackRef){.bits = ((uintptr_t)(obj))});
     }
-    #define Py_STACKREF_TAG(obj) _Py_STACKREF_TAG(_PyObject_CAST(obj))
+    #define PyStackRef_StealRef(obj) _PyStackRef_StealRef(_PyObject_CAST(obj))
 #else
-    #define Py_STACKREF_TAG(obj) ((_PyStackRef){.bits = ((uintptr_t)(obj))})
+    #define PyStackRef_StealRef(obj) ((_PyStackRef){.bits = ((uintptr_t)(obj))})
 #endif
 
-#if defined(Py_TAG_TEST)
-    #define Py_STACKREF_TAG_DEFERRED(obj) ((_PyStackRef){.bits = ((uintptr_t)(obj) | Py_TAG_TEST)})
-#elif defined(Py_GIL_DISABLED)
-    static inline _PyStackRef
-    _Py_STACKREF_TAG_DEFERRED(PyObject *obj) {
-        // Make sure we don't take an already tagged value.
-        assert(Py_STACKREF_UNTAG_BORROWED(((_PyStackRef){.bits = ((uintptr_t)(obj))})) == obj);
-        int is_deferred = (obj != NULL && _PyObject_HasDeferredRefcount(obj));
-        int tag = (is_deferred ? Py_TAG_DEFERRED : 0);
-        return ((_PyStackRef){.bits = ((uintptr_t)(obj) | tag)});
-    }
-    #define Py_STACKREF_TAG_DEFERRED(obj) _Py_STACKREF_TAG_DEFERRED(_PyObject_CAST(obj))
-#else
-    #define Py_STACKREF_TAG_DEFERRED(obj) ((_PyStackRef){.bits = ((uintptr_t)(obj))})
-#endif
-
-#if defined(Py_TAG_TEST)
-    #define Py_STACKREF_UNTAG_OWNED(tagged) Py_STACKREF_UNTAG_BORROWED(tagged)
-#elif defined(Py_GIL_DISABLED)
+#if defined(Py_GIL_DISABLED)
     static inline PyObject *
-    _Py_STACKREF_UNTAG_OWNED(_PyStackRef tagged) {
+    PyStackRef_StealObject(_PyStackRef tagged) {
         if ((tagged.bits & Py_TAG_DEFERRED) == Py_TAG_DEFERRED) {
-            assert(_PyObject_HasDeferredRefcount(Py_STACKREF_UNTAG_BORROWED(tagged)));
-            return Py_NewRef(Py_STACKREF_UNTAG_BORROWED(tagged));
+            assert(_PyObject_HasDeferredRefcount(PyStackRef_Get(tagged)));
+            return Py_NewRef(PyStackRef_Get(tagged));
         }
-        return Py_STACKREF_UNTAG_BORROWED(tagged);
+        return PyStackRef_Get(tagged);
     }
-    #define Py_STACKREF_UNTAG_OWNED(tagged) _Py_STACKREF_UNTAG_OWNED(tagged)
 #else
-    #define Py_STACKREF_UNTAG_OWNED(tagged) Py_STACKREF_UNTAG_BORROWED(tagged)
+    #define PyStackRef_StealObject(tagged) PyStackRef_Get(tagged)
 #endif
 
 #define MAX_UNTAG_SCRATCH 10
@@ -102,91 +78,100 @@ typedef union {
 static inline void
 _Py_untag_stack_borrowed(PyObject **dst, const _PyStackRef *src, size_t length) {
     for (size_t i = 0; i < length; i++) {
-        dst[i] = Py_STACKREF_UNTAG_BORROWED(src[i]);
+        dst[i] = PyStackRef_Get(src[i]);
     }
 }
 
 static inline void
-_Py_untag_stack_owned(PyObject **dst, const _PyStackRef *src, size_t length) {
+_Py_untag_stack_steal(PyObject **dst, const _PyStackRef *src, size_t length) {
     for (size_t i = 0; i < length; i++) {
-        dst[i] = Py_STACKREF_UNTAG_OWNED(src[i]);
+        dst[i] = PyStackRef_StealObject(src[i]);
     }
 }
 
 
-#define Py_STACKREF_XSETREF(dst, src) \
+#define PyStackRef_XSETREF(dst, src) \
     do { \
         _PyStackRef *_tmp_dst_ptr = _Py_CAST(_PyStackRef*, &(dst)); \
         _PyStackRef _tmp_old_dst = (*_tmp_dst_ptr); \
         *_tmp_dst_ptr = (src); \
-        Py_STACKREF_XDECREF(_tmp_old_dst); \
+        PyStackRef_XDECREF(_tmp_old_dst); \
     } while (0)
 
-#define Py_STACKREF_SETREF(dst, src) \
+#define PyStackRef_SETREF(dst, src) \
     do { \
         _PyStackRef *_tmp_dst_ptr = _Py_CAST(_PyStackRef*, &(dst)); \
         _PyStackRef _tmp_old_dst = (*_tmp_dst_ptr); \
         *_tmp_dst_ptr = (src); \
-        Py_STACKREF_DECREF(_tmp_old_dst); \
+        PyStackRef_DECREF(_tmp_old_dst); \
     } while (0)
 
-#define Py_STACKREF_CLEAR(op) \
+#define PyStackRef_CLEAR(op) \
     do { \
         _PyStackRef *_tmp_op_ptr = _Py_CAST(_PyStackRef*, &(op)); \
         _PyStackRef _tmp_old_op = (*_tmp_op_ptr); \
-        if (Py_STACKREF_UNTAG_BORROWED(_tmp_old_op) != NULL) { \
-            *_tmp_op_ptr = Py_STACKREF_TAG(_Py_NULL); \
-            Py_STACKREF_DECREF(_tmp_old_op); \
+        if (PyStackRef_Get(_tmp_old_op) != NULL) { \
+            *_tmp_op_ptr = PyStackRef_StealRef(_Py_NULL); \
+            PyStackRef_DECREF(_tmp_old_op); \
         } \
     } while (0)
 
 #if defined(Py_GIL_DISABLED)
     static inline void
-    _Py_STACKREF_DECREF(_PyStackRef tagged) {
+    PyStackRef_DECREF(_PyStackRef tagged) {
         if ((tagged.bits & Py_TAG_DEFERRED) == Py_TAG_DEFERRED) {
             return;
         }
-        Py_DECREF(Py_STACKREF_UNTAG_BORROWED(tagged));
+        Py_DECREF(PyStackRef_Get(tagged));
     }
-    #define Py_STACKREF_DECREF(op) _Py_STACKREF_DECREF(op)
 #else
-    #define Py_STACKREF_DECREF(op) Py_DECREF(Py_STACKREF_UNTAG_BORROWED(op))
+    #define PyStackRef_DECREF(op) Py_DECREF(PyStackRef_Get(op))
 #endif
 
-#define Py_STACKREF_DECREF_OWNED(op) Py_DECREF(Py_STACKREF_UNTAG_BORROWED(op));
+#define PyStackRef_DECREF_OWNED(op) Py_DECREF(PyStackRef_Get(op));
 
 #if defined(Py_GIL_DISABLED)
     static inline void
-    _Py_STACKREF_INCREF(_PyStackRef tagged) {
+    PyStackRef_INCREF(_PyStackRef tagged) {
         if ((tagged.bits & Py_TAG_DEFERRED) == Py_TAG_DEFERRED) {
-            assert(_PyObject_HasDeferredRefcount(Py_STACKREF_UNTAG_BORROWED(tagged)));
+            assert(_PyObject_HasDeferredRefcount(PyStackRef_Get(tagged)));
             return;
         }
-        Py_INCREF(Py_STACKREF_UNTAG_BORROWED(tagged));
+        Py_INCREF(PyStackRef_Get(tagged));
     }
-    #define Py_STACKREF_INCREF(op) _Py_STACKREF_INCREF(op)
 #else
-    #define Py_STACKREF_INCREF(op) Py_INCREF(Py_STACKREF_UNTAG_BORROWED(op))
+    #define PyStackRef_INCREF(op) Py_INCREF(PyStackRef_Get(op))
 #endif
 
 static inline void
-_Py_STACKREF_XDECREF(_PyStackRef op)
+PyStackRef_XDECREF(_PyStackRef op)
 {
-    if (Py_STACKREF_UNTAG_BORROWED(op) != NULL) {
-        Py_STACKREF_DECREF(op);
+    if (PyStackRef_Get(op) != NULL) {
+        PyStackRef_DECREF(op);
     }
 }
 
-#define Py_STACKREF_XDECREF(op) _Py_STACKREF_XDECREF(op)
-
 static inline _PyStackRef
-_Py_StackRef_NewRef(_PyStackRef obj)
+PyStackRef_NewRef(_PyStackRef obj)
 {
-    Py_STACKREF_INCREF(obj);
+    PyStackRef_INCREF(obj);
     return obj;
 }
 
-#define Py_StackRef_NewRef(op) _Py_StackRef_NewRef(op)
+// Converts a PyObject * to a PyStackRef, with a new reference
+#if defined(Py_GIL_DISABLED)
+    static inline _PyStackRef
+    _PyStackRef_NewRefDeferred(PyObject *obj) {
+        // Make sure we don't take an already tagged value.
+        assert(PyStackRef_Get(((_PyStackRef){.bits = ((uintptr_t)(obj))})) == obj);
+        int is_deferred = (obj != NULL && _PyObject_HasDeferredRefcount(obj));
+        int tag = (is_deferred ? Py_TAG_DEFERRED : 0);
+        return PyStackRef_NewRef((_PyStackRef){.bits = ((uintptr_t)(obj) | tag)});
+    }
+    #define PyStackRef_NewRefDeferred(obj) _PyStackRef_NewRefDeferred(_PyObject_CAST(obj))
+#else
+    #define PyStackRef_NewRefDeferred(obj) PyStackRef_NewRef(((_PyStackRef){.bits = ((uintptr_t)(obj))}))
+#endif
 
 #ifdef __cplusplus
 }
