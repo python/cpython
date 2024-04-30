@@ -44,6 +44,11 @@ _testcext_exec(PyObject *module)
         return -1;
     }
 #endif
+
+    // test Py_BUILD_ASSERT() and Py_BUILD_ASSERT_EXPR()
+    Py_BUILD_ASSERT(sizeof(int) == sizeof(unsigned int));
+    assert(Py_BUILD_ASSERT_EXPR(sizeof(int) == sizeof(unsigned int)) == 0);
+
     return 0;
 }
 
