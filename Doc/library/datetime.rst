@@ -1691,7 +1691,7 @@ day, and subject to adjustment via a :class:`tzinfo` object.
    * ``fold in [0, 1]``.
 
    If an argument outside those ranges is given, :exc:`ValueError` is raised. All
-   default to 0 except *tzinfo*, which defaults to :const:`None`.
+   default to 0 except *tzinfo*, which defaults to ``None``.
 
 Class attributes:
 
