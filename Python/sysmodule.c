@@ -2392,7 +2392,7 @@ sys__get_cpu_count_config_impl(PyObject *module)
 }
 
 /*[clinic input]
-sys._baserepl 
+sys._baserepl
 
 Private function for getting the base REPL
 [clinic start generated code]*/
