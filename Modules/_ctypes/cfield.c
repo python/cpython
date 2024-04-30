@@ -182,9 +182,6 @@ PyCField_FromDesc(ctypes_state *st, PyObject *desc, Py_ssize_t index,
     CFieldObject* self = (CFieldObject *)tp->tp_alloc(tp, 0);
     if (self == NULL)
         return NULL;
-    // Note(Matthias): We get most of what used to be `dict` out of `info` now.
-    // StgDictObject* dict = PyType_stgdict(desc);
-    // if (!dict) {
     StgInfo *info;
     if (PyStgInfo_FromType(st, desc, &info) < 0) {
         Py_DECREF(self);
