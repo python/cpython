@@ -195,8 +195,9 @@ PyCField_FromDesc(ctypes_state *st, PyObject *desc, Py_ssize_t index,
 {
     PyTypeObject *tp = st->PyCField_Type;
     CFieldObject* self = (CFieldObject *)tp->tp_alloc(tp, 0);
-    if (self == NULL)
+    if (self == NULL) {
         return NULL;
+    }
     StgInfo *info;
     if (PyStgInfo_FromType(st, desc, &info) < 0) {
         Py_DECREF(self);
