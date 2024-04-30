@@ -1267,6 +1267,16 @@ init_interp_main(PyThreadState *tstate)
     // This is also needed when the JIT is enabled
 #ifdef _Py_TIER2
     if (is_main_interp) {
+        int enabled = 1;
+#if _Py_TIER2 & 2
+        enabled = 0;
+#endif
+        char *env = Py_GETENV("PYTHON_JIT");
+        if (env && *env != '\0') {
+            // PYTHON_JIT=0|1 overrides the default
+            enabled = *env != '0';
+        }
+        if (enabled) {
             PyObject *opt = PyUnstable_Optimizer_NewUOpOptimizer();
             if (opt == NULL) {
                 return _PyStatus_ERR("can't initialize optimizer");
@@ -1275,6 +1285,7 @@ init_interp_main(PyThreadState *tstate)
                 return _PyStatus_ERR("can't install optimizer");
             }
             Py_DECREF(opt);
+        }
     }
 #endif
 
