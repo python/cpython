@@ -1958,6 +1958,27 @@ get_py_thread_id(PyObject *self, PyObject *Py_UNUSED(ignored))
 #endif
 
 static PyObject *
+set_immortalize_deferred(PyObject *self, PyObject *value)
+{
+#ifdef Py_GIL_DISABLED
+    PyInterpreterState *interp = PyInterpreterState_Get();
+    int old_enabled = interp->gc.immortalize.enabled;
+    int old_enabled_on_thread = interp->gc.immortalize.enable_on_thread_created;
+    int enabled_on_thread = 0;
+    if (!PyArg_ParseTuple(value, "i|i",
+                          &interp->gc.immortalize.enabled,
+                          &enabled_on_thread))
+    {
+        return NULL;
+    }
+    interp->gc.immortalize.enable_on_thread_created = enabled_on_thread;
+    return Py_BuildValue("ii", old_enabled, old_enabled_on_thread);
+#else
+    return Py_BuildValue("OO", Py_False, Py_False);
+#endif
+}
+
+static PyObject *
 has_inline_values(PyObject *self, PyObject *obj)
 {
     if ((Py_TYPE(obj)->tp_flags & Py_TPFLAGS_INLINE_VALUES) &&
@@ -2050,6 +2071,7 @@ static PyMethodDef module_functions[] = {
 #ifdef Py_GIL_DISABLED
     {"py_thread_id", get_py_thread_id, METH_NOARGS},
 #endif
+    {"set_immortalize_deferred", set_immortalize_deferred, METH_VARARGS},
     {"uop_symbols_test", _Py_uop_symbols_test, METH_NOARGS},
     {NULL, NULL} /* sentinel */
 };

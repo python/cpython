@@ -880,6 +880,7 @@ TCLTK_CFLAGS
 LIBSQLITE3_LIBS
 LIBSQLITE3_CFLAGS
 LIBMPDEC_INTERNAL
+LIBMPDEC_LIBS
 LIBMPDEC_CFLAGS
 MODULE__CTYPES_MALLOC_CLOSURE
 LIBFFI_LIBS
@@ -1148,6 +1149,8 @@ LIBUUID_CFLAGS
 LIBUUID_LIBS
 LIBFFI_CFLAGS
 LIBFFI_LIBS
+LIBMPDEC_CFLAGS
+LIBMPDEC_LIBS
 LIBSQLITE3_CFLAGS
 LIBSQLITE3_LIBS
 TCLTK_CFLAGS
@@ -1969,6 +1972,10 @@ Some influential environment variables:
   LIBFFI_CFLAGS
               C compiler flags for LIBFFI, overriding pkg-config
   LIBFFI_LIBS linker flags for LIBFFI, overriding pkg-config
+  LIBMPDEC_CFLAGS
+              C compiler flags for LIBMPDEC, overriding pkg-config
+  LIBMPDEC_LIBS
+              linker flags for LIBMPDEC, overriding pkg-config
   LIBSQLITE3_CFLAGS
               C compiler flags for LIBSQLITE3, overriding pkg-config
   LIBSQLITE3_LIBS
@@ -14591,27 +14598,91 @@ printf "%s\n" "$with_system_libmpdec" >&6; }
 if test "x$with_system_libmpdec" = xyes
 then :
 
-  LIBMPDEC_CFLAGS=${LIBMPDEC_CFLAGS-""}
-  LIBMPDEC_LDFLAGS=${LIBMPDEC_LDFLAGS-"-lmpdec"}
-  LIBMPDEC_INTERNAL=
+pkg_failed=no
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for libmpdec" >&5
+printf %s "checking for libmpdec... " >&6; }
 
+if test -n "$LIBMPDEC_CFLAGS"; then
+    pkg_cv_LIBMPDEC_CFLAGS="$LIBMPDEC_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"libmpdec\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "libmpdec") 2>&5
+  ac_status=$?
+  printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_LIBMPDEC_CFLAGS=`$PKG_CONFIG --cflags "libmpdec" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+if test -n "$LIBMPDEC_LIBS"; then
+    pkg_cv_LIBMPDEC_LIBS="$LIBMPDEC_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"libmpdec\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "libmpdec") 2>&5
+  ac_status=$?
+  printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_LIBMPDEC_LIBS=`$PKG_CONFIG --libs "libmpdec" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+
+
+
+if test $pkg_failed = yes; then
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        LIBMPDEC_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "libmpdec" 2>&1`
+        else
+	        LIBMPDEC_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "libmpdec" 2>&1`
+        fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$LIBMPDEC_PKG_ERRORS" >&5
+
+	LIBMPDEC_CFLAGS=${LIBMPDEC_CFLAGS-""}
+     LIBMPDEC_LIBS=${LIBMPDEC_LIBS-"-lmpdec -lm"}
+     LIBMPDEC_INTERNAL=
+elif test $pkg_failed = untried; then
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+	LIBMPDEC_CFLAGS=${LIBMPDEC_CFLAGS-""}
+     LIBMPDEC_LIBS=${LIBMPDEC_LIBS-"-lmpdec -lm"}
+     LIBMPDEC_INTERNAL=
+else
+	LIBMPDEC_CFLAGS=$pkg_cv_LIBMPDEC_CFLAGS
+	LIBMPDEC_LIBS=$pkg_cv_LIBMPDEC_LIBS
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+
+fi
 else $as_nop
-
   LIBMPDEC_CFLAGS="-I\$(srcdir)/Modules/_decimal/libmpdec"
-  LIBMPDEC_LDFLAGS="-lm \$(LIBMPDEC_A)"
-  LIBMPDEC_INTERNAL="\$(LIBMPDEC_HEADERS) \$(LIBMPDEC_A)"
+   LIBMPDEC_LIBS="-lm \$(LIBMPDEC_A)"
+   LIBMPDEC_INTERNAL="\$(LIBMPDEC_HEADERS) \$(LIBMPDEC_A)"
+fi
 
-    if test "x$with_pydebug" = xyes
+# Disable forced inlining in debug builds, see GH-94847
+if test "x$with_pydebug" = xyes
 then :
-
-    as_fn_append LIBMPDEC_CFLAGS " -DTEST_COVERAGE"
-
+  as_fn_append LIBMPDEC_CFLAGS " -DTEST_COVERAGE"
 fi
-
-fi
-
-
-
 
 # Check whether _decimal should use a coroutine-local or thread-local context
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --with-decimal-contextvar" >&5
@@ -14636,51 +14707,53 @@ fi
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $with_decimal_contextvar" >&5
 printf "%s\n" "$with_decimal_contextvar" >&6; }
 
-# Check for libmpdec machine flavor
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for decimal libmpdec machine" >&5
+if test "x$with_system_libmpdec" = xno
+then :
+  # Check for libmpdec machine flavor
+   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for decimal libmpdec machine" >&5
 printf %s "checking for decimal libmpdec machine... " >&6; }
-case $ac_sys_system in #(
+   case $ac_sys_system in #(
   Darwin*) :
     libmpdec_system=Darwin ;; #(
   SunOS*) :
     libmpdec_system=sunos ;; #(
   *) :
     libmpdec_system=other
- ;;
+    ;;
 esac
 
-libmpdec_machine=unknown
-if test "$libmpdec_system" = Darwin; then
-    # universal here means: build libmpdec with the same arch options
-    # the python interpreter was built with
-    libmpdec_machine=universal
-elif test $ac_cv_sizeof_size_t -eq 8; then
-    if test "$ac_cv_gcc_asm_for_x64" = yes; then
-        libmpdec_machine=x64
-    elif test "$ac_cv_type___uint128_t" = yes; then
-        libmpdec_machine=uint128
-    else
-        libmpdec_machine=ansi64
-    fi
-elif test $ac_cv_sizeof_size_t -eq 4; then
-    if test "$ac_cv_gcc_asm_for_x87" = yes -a "$libmpdec_system" != sunos; then
-        case $CC in #(
+   libmpdec_machine=unknown
+   if test "$libmpdec_system" = Darwin; then
+       # universal here means: build libmpdec with the same arch options
+       # the python interpreter was built with
+       libmpdec_machine=universal
+   elif test $ac_cv_sizeof_size_t -eq 8; then
+       if test "$ac_cv_gcc_asm_for_x64" = yes; then
+           libmpdec_machine=x64
+       elif test "$ac_cv_type___uint128_t" = yes; then
+           libmpdec_machine=uint128
+       else
+           libmpdec_machine=ansi64
+       fi
+   elif test $ac_cv_sizeof_size_t -eq 4; then
+       if test "$ac_cv_gcc_asm_for_x87" = yes -a "$libmpdec_system" != sunos; then
+           case $CC in #(
   *gcc*) :
     libmpdec_machine=ppro ;; #(
   *clang*) :
     libmpdec_machine=ppro ;; #(
   *) :
     libmpdec_machine=ansi32
-         ;;
+            ;;
 esac
-    else
-        libmpdec_machine=ansi32
-    fi
-fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $libmpdec_machine" >&5
+       else
+           libmpdec_machine=ansi32
+       fi
+   fi
+   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $libmpdec_machine" >&5
 printf "%s\n" "$libmpdec_machine" >&6; }
 
-case $libmpdec_machine in #(
+   case $libmpdec_machine in #(
   x64) :
     as_fn_append LIBMPDEC_CFLAGS " -DCONFIG_64=1 -DASM=1" ;; #(
   uint128) :
@@ -14697,8 +14770,9 @@ case $libmpdec_machine in #(
     as_fn_append LIBMPDEC_CFLAGS " -DUNIVERSAL=1" ;; #(
   *) :
     as_fn_error $? "_decimal: unsupported architecture" "$LINENO" 5
- ;;
+    ;;
 esac
+fi
 
 if test "$have_ipa_pure_const_bug" = yes; then
     # Some versions of gcc miscompile inline asm:
@@ -14712,6 +14786,9 @@ if test "$have_glibc_memmove_bug" = yes; then
     # https://sourceware.org/ml/libc-alpha/2010-12/msg00009.html
     as_fn_append LIBMPDEC_CFLAGS " -U_FORTIFY_SOURCE"
 fi
+
+
+
 
 
 
@@ -30310,7 +30387,7 @@ fi
 then :
 
     as_fn_append MODULE_BLOCK "MODULE__DECIMAL_CFLAGS=$LIBMPDEC_CFLAGS$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE__DECIMAL_LDFLAGS=$LIBMPDEC_LDFLAGS$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__DECIMAL_LDFLAGS=$LIBMPDEC_LIBS$as_nl"
 
 fi
    if test "$py_cv_module__decimal" = yes; then
