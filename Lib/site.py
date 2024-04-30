@@ -486,6 +486,7 @@ def register_readline():
         import readline
         import rlcompleter
         import _pyrepl.readline
+        import _pyrepl.unix_console
     except ImportError:
         return
 
@@ -518,7 +519,7 @@ def register_readline():
                 readline.read_history_file(history)
             else:
                 _pyrepl.readline.read_history_file(history)
-        except OSError:
+        except (OSError,* _pyrepl.unix_console._error):
             pass
 
         def write_history():

@@ -32,7 +32,7 @@ def interactive_console(mainmodule=None, quiet=False, pythonstartup=False):
         from .simple_interact import run_multiline_interactive_console
         run_interactive = run_multiline_interactive_console
     except Exception as e:
-        print(f"Warning: 'import _pyrepl' failed with '{e}'", sys.stderr)
+        print(f"Warning: 'import _pyrepl' failed with '{e}'", file=sys.stderr)
         CAN_USE_PYREPL = False
     if run_interactive is None:
         return sys._baserepl()
