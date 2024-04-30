@@ -107,7 +107,7 @@ do { \
 
 /* Do interpreter dispatch accounting for tracing and instrumentation */
 #define DISPATCH() \
-    {              \
+    { \
         NEXTOPARG(); \
         PRE_DISPATCH_GOTO(); \
         DISPATCH_GOTO(); \
