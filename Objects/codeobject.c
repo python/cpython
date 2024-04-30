@@ -1496,7 +1496,7 @@ PyCode_GetFreevars(PyCodeObject *code)
     return _PyCode_GetFreevars(code);
 }
 
-#ifdef _Py_TIER2
+#ifdef _Py_JIT
 
 static void
 clear_executors(PyCodeObject *co)
@@ -1743,7 +1743,7 @@ code_dealloc(PyCodeObject *co)
 
         PyMem_Free(co_extra);
     }
-#ifdef _Py_TIER2
+#ifdef _Py_JIT
     if (co->co_executors != NULL) {
         clear_executors(co);
     }

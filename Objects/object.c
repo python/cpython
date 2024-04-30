@@ -2281,7 +2281,7 @@ static PyTypeObject* static_types[] = {
     &_PyBufferWrapper_Type,
     &_PyContextTokenMissing_Type,
     &_PyCoroWrapper_Type,
-#ifdef _Py_TIER2
+#ifdef _Py_JIT
     &_PyCounterExecutor_Type,
     &_PyCounterOptimizer_Type,
     &_PyDefaultOptimizer_Type,
@@ -2306,7 +2306,7 @@ static PyTypeObject* static_types[] = {
     &_PyPositionsIterator,
     &_PyUnicodeASCIIIter_Type,
     &_PyUnion_Type,
-#ifdef _Py_TIER2
+#ifdef _Py_JIT
     &_PyUOpExecutor_Type,
     &_PyUOpOptimizer_Type,
 #endif

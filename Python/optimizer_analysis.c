@@ -33,7 +33,7 @@
 #include <stdint.h>
 #include <stddef.h>
 
-#ifdef _Py_TIER2
+#ifdef _Py_JIT
 
 #ifdef Py_DEBUG
     extern const char *_PyUOpName(int index);
@@ -606,4 +606,4 @@ _Py_uop_analyze_and_optimize(
     return length;
 }
 
-#endif /* _Py_TIER2 */
+#endif /* _Py_JIT */

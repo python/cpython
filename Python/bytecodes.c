@@ -2355,7 +2355,7 @@ dummy_func(
             CHECK_EVAL_BREAKER();
             assert(oparg <= INSTR_OFFSET());
             JUMPBY(-oparg);
-            #ifdef _Py_TIER2
+            #ifdef _Py_JIT
             #if ENABLE_SPECIALIZATION
             _Py_BackoffCounter counter = this_instr[1].counter;
             if (backoff_counter_triggers(counter) && this_instr->op.code == JUMP_BACKWARD) {
@@ -2381,7 +2381,7 @@ dummy_func(
                 ADVANCE_ADAPTIVE_COUNTER(this_instr[1].counter);
             }
             #endif  /* ENABLE_SPECIALIZATION */
-            #endif /* _Py_TIER2 */
+            #endif /* _Py_JIT */
         }
 
         pseudo(JUMP) = {
@@ -2395,7 +2395,7 @@ dummy_func(
         };
 
         tier1 inst(ENTER_EXECUTOR, (--)) {
-            #ifdef _Py_TIER2
+            #ifdef _Py_JIT
             int prevoparg = oparg;
             CHECK_EVAL_BREAKER();
             if (this_instr->op.code != ENTER_EXECUTOR ||
@@ -2415,7 +2415,7 @@ dummy_func(
             GOTO_TIER_TWO(executor);
             #else
             assert(0);
-            #endif /* _Py_TIER2 */
+            #endif /* _Py_JIT */
         }
 
         replaced op(_POP_JUMP_IF_FALSE, (cond -- )) {

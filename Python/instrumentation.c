@@ -1702,7 +1702,7 @@ instrument_lock_held(PyCodeObject *code, PyInterpreterState *interp)
         );
         return 0;
     }
-#ifdef _Py_TIER2
+#ifdef _Py_JIT
     if (code->co_executors != NULL) {
         _PyCode_Clear_Executors(code);
     }
@@ -1945,7 +1945,7 @@ _PyMonitoring_SetEvents(int tool_id, _PyMonitoringEventSet events)
         goto done;
     }
     set_global_version(tstate, new_version);
-#ifdef _Py_TIER2
+#ifdef _Py_JIT
     _Py_Executors_InvalidateAll(interp, 1);
 #endif
     res = instrument_all_executing_code_objects(interp);
@@ -1987,7 +1987,7 @@ _PyMonitoring_SetLocalEvents(PyCodeObject *code, int tool_id, _PyMonitoringEvent
         code->_co_instrumentation_version -= MONITORING_VERSION_INCREMENT;
     }
 
-#ifdef _Py_TIER2
+#ifdef _Py_JIT
     _Py_Executors_InvalidateDependency(interp, code, 1);
 #endif
 

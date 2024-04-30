@@ -755,7 +755,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
     _Py_CODEUNIT *next_instr;
     PyObject **stack_pointer;
 
-#if defined(_Py_TIER2) && !defined(_Py_JIT)
+#if _Py_JIT & 4
     /* Tier 2 interpreter state */
     _PyExecutorObject *current_executor = NULL;
     const _PyUOpInstruction *next_uop = NULL;
@@ -959,14 +959,10 @@ resume_with_error:
     goto error;
 
 
-#ifdef _Py_TIER2
+#if _Py_JIT & 4 /* Tier 2 interpreter */
 
 // Tier 2 is also here!
 enter_tier_two:
-
-#ifdef _Py_JIT
-    assert(0);
-#else
 
 #undef LOAD_IP
 #define LOAD_IP(UNUSED) (void)0
@@ -1112,9 +1108,7 @@ exit_to_trace:
     tstate->previous_executor = (PyObject *)current_executor;
     GOTO_TIER_TWO(exit->executor);
 
-#endif  // _Py_JIT
-
-#endif // _Py_TIER2
+#endif  /* _Py_JIT & 4 */
 
 }
 
