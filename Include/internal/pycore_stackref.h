@@ -30,7 +30,7 @@ typedef union {
     uintptr_t bits;
 } _PyStackRef;
 
-static const _PyStackRef Py_STACKREF_NULL = ((_PyStackRef) { .bits = 0 });
+static const _PyStackRef Py_STACKREF_NULL = { .bits = 0 };
 
 #ifdef Py_GIL_DISABLED
     #define Py_TAG_DEFERRED (1)
