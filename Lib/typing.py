@@ -404,7 +404,7 @@ def _tp_cache(func=None, /, *, typed=False):
     return decorator
 
 
-def _eval_type(t, globalns, localns, type_params, *, recursive_guard=frozenset()):
+def _eval_type(t, globalns, localns, type_params=None, *, recursive_guard=frozenset()):
     """Evaluate all forward references in the given type t.
 
     For use of globalns and localns see the docstring for get_type_hints().
@@ -913,7 +913,7 @@ class ForwardRef(_Final, _root=True):
         self.__forward_is_class__ = is_class
         self.__forward_module__ = module
 
-    def _evaluate(self, globalns, localns, type_params, *, recursive_guard):
+    def _evaluate(self, globalns, localns, type_params=None, *, recursive_guard):
         if self.__forward_arg__ in recursive_guard:
             return self
         if not self.__forward_evaluated__ or localns is not globalns:
