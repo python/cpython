@@ -59,6 +59,12 @@ from sources provided by the operating system.
    random number generator with a long period and comparatively simple update
    operations.
 
+.. note::
+   The global random number generator and instances of :class:`Random` are thread-safe.
+   However, in the free-threaded build, concurrent calls to the global generator or
+   to the same instance of :class:`Random` may encounter contention and poor performance.
+   Consider using separate instances of :class:`Random` per thread instead.
+
 
 Bookkeeping functions
 ---------------------
@@ -301,7 +307,8 @@ be found in any statistics text.
    ``a <= b`` and ``b <= N <= a`` for ``b < a``.
 
    The end-point value ``b`` may or may not be included in the range
-   depending on floating-point rounding in the equation ``a + (b-a) * random()``.
+   depending on floating-point rounding in the expression
+   ``a + (b-a) * random()``.
 
 
 .. function:: triangular(low, high, mode)

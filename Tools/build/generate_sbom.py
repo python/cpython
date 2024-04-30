@@ -7,9 +7,8 @@ import glob
 import pathlib
 import subprocess
 import sys
+import urllib.request
 import typing
-import zipfile
-from urllib.request import urlopen
 
 CPYTHON_ROOT_DIR = pathlib.Path(__file__).parent.parent.parent
 
@@ -53,13 +52,14 @@ class PackageFiles(typing.NamedTuple):
 # values to 'exclude' if we create new files within tracked
 # directories that aren't sourced from third-party packages.
 PACKAGE_TO_FILES = {
-    # NOTE: pip's entry in this structure is automatically generated in
-    # the 'discover_pip_sbom_package()' function below.
     "mpdecimal": PackageFiles(
         include=["Modules/_decimal/libmpdec/**"]
     ),
     "expat": PackageFiles(
-        include=["Modules/expat/**"]
+        include=["Modules/expat/**"],
+        exclude=[
+            "Modules/expat/expat_config.h",
+        ]
     ),
     "macholib": PackageFiles(
         include=["Lib/ctypes/macholib/**"],
@@ -124,279 +124,41 @@ def filter_gitignored_paths(paths: list[str]) -> list[str]:
     return sorted([line.split()[-1] for line in git_check_ignore_lines if line.startswith("::")])
 
 
-def fetch_package_metadata_from_pypi(project: str, version: str, filename: str | None = None) -> tuple[str, str] | None:
+def get_externals() -> list[str]:
     """
-    Fetches the SHA256 checksum and download location from PyPI.
-    If we're given a filename then we match with that, otherwise we use wheels.
+    Parses 'PCbuild/get_externals.bat' for external libraries.
+    Returns a list of (git tag, name, version) tuples.
     """
-    # Get pip's download location from PyPI. Check that the checksum is correct too.
-    try:
-        raw_text = urlopen(f"https://pypi.org/pypi/{project}/{version}/json").read()
-        release_metadata = json.loads(raw_text)
-        url: dict[str, typing.Any]
-
-        # Look for a matching artifact filename and then check
-        # its remote checksum to the local one.
-        for url in release_metadata["urls"]:
-            # pip can only use Python-only dependencies, so there's
-            # no risk of picking the 'incorrect' wheel here.
-            if (
-                (filename is None and url["packagetype"] == "bdist_wheel")
-                or (filename is not None and url["filename"] == filename)
-            ):
-                break
-        else:
-            raise ValueError(f"No matching filename on PyPI for '{filename}'")
-
-        # Successfully found the download URL for the matching artifact.
-        download_url = url["url"]
-        checksum_sha256 = url["digests"]["sha256"]
-        return download_url, checksum_sha256
-
-    except (OSError, ValueError) as e:
-        # Fail if we're running in CI where we should have an internet connection.
-        error_if(
-            "CI" in os.environ,
-            f"Couldn't fetch metadata for project '{project}' from PyPI: {e}"
-        )
-        return None
-
-
-def find_ensurepip_pip_wheel() -> pathlib.Path | None:
-    """Try to find the pip wheel bundled in ensurepip. If missing return None"""
-
-    ensurepip_bundled_dir = CPYTHON_ROOT_DIR / "Lib/ensurepip/_bundled"
-
-    pip_wheels = []
-    try:
-        for wheel_filename in os.listdir(ensurepip_bundled_dir):
-            if wheel_filename.startswith("pip-"):
-                pip_wheels.append(wheel_filename)
-            else:
-                print(f"Unexpected wheel in ensurepip: '{wheel_filename}'")
-                sys.exit(1)
-
-    # Ignore this error, likely caused by downstream distributors
-    # deleting the 'ensurepip/_bundled' directory.
-    except FileNotFoundError:
-        pass
-
-    if len(pip_wheels) == 0:
-        return None
-    elif len(pip_wheels) > 1:
-        print("Multiple pip wheels detected in 'Lib/ensurepip/_bundled'")
-        sys.exit(1)
-    # Otherwise return the one pip wheel.
-    return ensurepip_bundled_dir / pip_wheels[0]
-
-
-def maybe_remove_pip_and_deps_from_sbom(sbom_data: dict[str, typing.Any]) -> None:
-    """
-    Removes pip and its dependencies from the SBOM data
-    if the pip wheel is removed from ensurepip. This is done
-    by redistributors of Python and pip.
-    """
-
-    # If there's a wheel we don't remove anything.
-    if find_ensurepip_pip_wheel() is not None:
-        return
-
-    # Otherwise we traverse the relationships
-    # to find dependent packages to remove.
-    sbom_pip_spdx_id = spdx_id("SPDXRef-PACKAGE-pip")
-    sbom_spdx_ids_to_remove = {sbom_pip_spdx_id}
-
-    # Find all package SPDXIDs that pip depends on.
-    for sbom_relationship in sbom_data["relationships"]:
-        if (
-            sbom_relationship["relationshipType"] == "DEPENDS_ON"
-            and sbom_relationship["spdxElementId"] == sbom_pip_spdx_id
-        ):
-            sbom_spdx_ids_to_remove.add(sbom_relationship["relatedSpdxElement"])
-
-    # Remove all the packages and relationships.
-    sbom_data["packages"] = [
-        sbom_package for sbom_package in sbom_data["packages"]
-        if sbom_package["SPDXID"] not in sbom_spdx_ids_to_remove
-    ]
-    sbom_data["relationships"] = [
-        sbom_relationship for sbom_relationship in sbom_data["relationships"]
-        if sbom_relationship["relatedSpdxElement"] not in sbom_spdx_ids_to_remove
-    ]
-
-
-def discover_pip_sbom_package(sbom_data: dict[str, typing.Any]) -> None:
-    """pip is a part of a packaging ecosystem (Python, surprise!) so it's actually
-    automatable to discover the metadata we need like the version and checksums
-    so let's do that on behalf of our friends at the PyPA. This function also
-    discovers vendored packages within pip and fetches their metadata.
-    """
-    global PACKAGE_TO_FILES
-
-    pip_wheel_filepath = find_ensurepip_pip_wheel()
-    if pip_wheel_filepath is None:
-        return  # There's no pip wheel, nothing to discover.
-
-    # Add the wheel filename to the list of files so the SBOM file
-    # and relationship generator can work its magic on the wheel too.
-    PACKAGE_TO_FILES["pip"] = PackageFiles(
-        include=[str(pip_wheel_filepath.relative_to(CPYTHON_ROOT_DIR))]
+    get_externals_bat_path = CPYTHON_ROOT_DIR / "PCbuild/get_externals.bat"
+    externals = re.findall(
+        r"set\s+libraries\s*=\s*%libraries%\s+([a-zA-Z0-9.-]+)\s",
+        get_externals_bat_path.read_text()
     )
-
-    # Wheel filename format puts the version right after the project name.
-    pip_version = pip_wheel_filepath.name.split("-")[1]
-    pip_checksum_sha256 = hashlib.sha256(
-        pip_wheel_filepath.read_bytes()
-    ).hexdigest()
-
-    pip_metadata = fetch_package_metadata_from_pypi(
-        project="pip",
-        version=pip_version,
-        filename=pip_wheel_filepath.name,
-    )
-    # We couldn't fetch any metadata from PyPI,
-    # so we give up on verifying if we're not in CI.
-    if pip_metadata is None:
-        return
-
-    pip_download_url, pip_actual_sha256 = pip_metadata
-    if pip_actual_sha256 != pip_checksum_sha256:
-        raise ValueError("Unexpected")
-
-    # Parse 'pip/_vendor/vendor.txt' from the wheel for sub-dependencies.
-    with zipfile.ZipFile(pip_wheel_filepath) as whl:
-        vendor_txt_data = whl.read("pip/_vendor/vendor.txt").decode()
-
-        # With this version regex we're assuming that pip isn't using pre-releases.
-        # If any version doesn't match we get a failure below, so we're safe doing this.
-        version_pin_re = re.compile(r"^([a-zA-Z0-9_.-]+)==([0-9.]*[0-9])$")
-        sbom_pip_dependency_spdx_ids = set()
-        for line in vendor_txt_data.splitlines():
-            line = line.partition("#")[0].strip()  # Strip comments and whitespace.
-            if not line:  # Skip empty lines.
-                continue
-
-            # Non-empty lines we must be able to match.
-            match = version_pin_re.match(line)
-            error_if(match is None, f"Couldn't parse line from pip vendor.txt: '{line}'")
-            assert match is not None  # Make mypy happy.
-
-            # Parse out and normalize the project name.
-            project_name, project_version = match.groups()
-            project_name = project_name.lower()
-
-            # At this point if pip's metadata fetch succeeded we should
-            # expect this request to also succeed.
-            project_metadata = (
-                fetch_package_metadata_from_pypi(project_name, project_version)
-            )
-            assert project_metadata is not None
-            project_download_url, project_checksum_sha256 = project_metadata
-
-            # Update our SBOM data with what we received from PyPI.
-            # Don't overwrite any existing values.
-            sbom_project_spdx_id = spdx_id(f"SPDXRef-PACKAGE-{project_name}")
-            sbom_pip_dependency_spdx_ids.add(sbom_project_spdx_id)
-            for package in sbom_data["packages"]:
-                if package["SPDXID"] != sbom_project_spdx_id:
-                    continue
-
-                # Only thing missing from this blob is the `licenseConcluded`,
-                # that needs to be triaged by human maintainers if the list changes.
-                package.update({
-                    "SPDXID": sbom_project_spdx_id,
-                    "name": project_name,
-                    "versionInfo": project_version,
-                    "downloadLocation": project_download_url,
-                    "checksums": [
-                        {"algorithm": "SHA256", "checksumValue": project_checksum_sha256}
-                    ],
-                    "externalRefs": [
-                        {
-                            "referenceCategory": "PACKAGE_MANAGER",
-                            "referenceLocator": f"pkg:pypi/{project_name}@{project_version}",
-                            "referenceType": "purl",
-                        },
-                    ],
-                    "primaryPackagePurpose": "SOURCE"
-                })
-                break
-
-            PACKAGE_TO_FILES[project_name] = PackageFiles(include=None)
-
-    # Remove pip from the existing SBOM packages if it's there
-    # and then overwrite its entry with our own generated one.
-    sbom_pip_spdx_id = spdx_id("SPDXRef-PACKAGE-pip")
-    sbom_data["packages"] = [
-        sbom_package
-        for sbom_package in sbom_data["packages"]
-        if sbom_package["name"] != "pip"
-    ]
-    sbom_data["packages"].append(
-        {
-            "SPDXID": sbom_pip_spdx_id,
-            "name": "pip",
-            "versionInfo": pip_version,
-            "originator": "Organization: Python Packaging Authority",
-            "licenseConcluded": "NOASSERTION",
-            "downloadLocation": pip_download_url,
-            "checksums": [
-                {"algorithm": "SHA256", "checksumValue": pip_checksum_sha256}
-            ],
-            "externalRefs": [
-                {
-                    "referenceCategory": "SECURITY",
-                    "referenceLocator": f"cpe:2.3:a:pypa:pip:{pip_version}:*:*:*:*:*:*:*",
-                    "referenceType": "cpe23Type",
-                },
-                {
-                    "referenceCategory": "PACKAGE_MANAGER",
-                    "referenceLocator": f"pkg:pypi/pip@{pip_version}",
-                    "referenceType": "purl",
-                },
-            ],
-            "primaryPackagePurpose": "SOURCE",
-        }
-    )
-    for sbom_dep_spdx_id in sorted(sbom_pip_dependency_spdx_ids):
-        sbom_data["relationships"].append({
-            "spdxElementId": sbom_pip_spdx_id,
-            "relatedSpdxElement": sbom_dep_spdx_id,
-            "relationshipType": "DEPENDS_ON"
-        })
+    return externals
 
 
-def main() -> None:
-    sbom_path = CPYTHON_ROOT_DIR / "Misc/sbom.spdx.json"
-    sbom_data = json.loads(sbom_path.read_bytes())
+def check_sbom_packages(sbom_data: dict[str, typing.Any]) -> None:
+    """Make a bunch of assertions about the SBOM package data to ensure it's consistent."""
 
-    # Check if pip should be removed if the wheel is missing.
-    # We can't reset the SBOM relationship data until checking this.
-    maybe_remove_pip_and_deps_from_sbom(sbom_data)
-
-    # We regenerate all of this information. Package information
-    # should be preserved though since that is edited by humans.
-    sbom_data["files"] = []
-    sbom_data["relationships"] = []
-
-    # Insert pip's SBOM metadata from the wheel.
-    discover_pip_sbom_package(sbom_data)
-
-    # Ensure all packages in this tool are represented also in the SBOM file.
-    actual_names = {package["name"] for package in sbom_data["packages"]}
-    expected_names = set(PACKAGE_TO_FILES)
-    error_if(
-        actual_names != expected_names,
-        f"Packages defined in SBOM tool don't match those defined in SBOM file: {actual_names}, {expected_names}",
-    )
-
-    # Make a bunch of assertions about the SBOM data to ensure it's consistent.
     for package in sbom_data["packages"]:
         # Properties and ID must be properly formed.
         error_if(
             "name" not in package,
             "Package is missing the 'name' field"
         )
+
+        # Verify that the checksum matches the expected value
+        # and that the download URL is valid.
+        if "checksums" not in package or "CI" in os.environ:
+            download_location = package["downloadLocation"]
+            resp = urllib.request.urlopen(download_location)
+            error_if(resp.status != 200, f"Couldn't access URL: {download_location}'")
+
+            package["checksums"] = [{
+                "algorithm": "SHA256",
+                "checksumValue": hashlib.sha256(resp.read()).hexdigest()
+            }]
+
         missing_required_keys = REQUIRED_PROPERTIES_PACKAGE - set(package.keys())
         error_if(
             bool(missing_required_keys),
@@ -421,12 +183,46 @@ def main() -> None:
             ),
         )
 
+        # HACL* specifies its expected rev in a refresh script.
+        if package["name"] == "hacl-star":
+            hacl_refresh_sh = (CPYTHON_ROOT_DIR / "Modules/_hacl/refresh.sh").read_text()
+            hacl_expected_rev_match = re.search(
+                r"expected_hacl_star_rev=([0-9a-f]{40})",
+                hacl_refresh_sh
+            )
+            hacl_expected_rev = hacl_expected_rev_match and hacl_expected_rev_match.group(1)
+
+            error_if(
+                hacl_expected_rev != version,
+                "HACL* SBOM version doesn't match value in 'Modules/_hacl/refresh.sh'"
+            )
+
         # License must be on the approved list for SPDX.
         license_concluded = package["licenseConcluded"]
         error_if(
             license_concluded != "NOASSERTION",
             f"License identifier must be 'NOASSERTION'"
         )
+
+
+def create_source_sbom() -> None:
+    sbom_path = CPYTHON_ROOT_DIR / "Misc/sbom.spdx.json"
+    sbom_data = json.loads(sbom_path.read_bytes())
+
+    # We regenerate all of this information. Package information
+    # should be preserved though since that is edited by humans.
+    sbom_data["files"] = []
+    sbom_data["relationships"] = []
+
+    # Ensure all packages in this tool are represented also in the SBOM file.
+    actual_names = {package["name"] for package in sbom_data["packages"]}
+    expected_names = set(PACKAGE_TO_FILES)
+    error_if(
+        actual_names != expected_names,
+        f"Packages defined in SBOM tool don't match those defined in SBOM file: {actual_names}, {expected_names}",
+    )
+
+    check_sbom_packages(sbom_data)
 
     # We call 'sorted()' here a lot to avoid filesystem scan order issues.
     for name, files in sorted(PACKAGE_TO_FILES.items()):
@@ -470,6 +266,50 @@ def main() -> None:
 
     # Update the SBOM on disk
     sbom_path.write_text(json.dumps(sbom_data, indent=2, sort_keys=True))
+
+
+def create_externals_sbom() -> None:
+    sbom_path = CPYTHON_ROOT_DIR / "Misc/externals.spdx.json"
+    sbom_data = json.loads(sbom_path.read_bytes())
+
+    externals = get_externals()
+    externals_name_to_version = {}
+    externals_name_to_git_tag = {}
+    for git_tag in externals:
+        name, _, version = git_tag.rpartition("-")
+        externals_name_to_version[name] = version
+        externals_name_to_git_tag[name] = git_tag
+
+    # Ensure all packages in this tool are represented also in the SBOM file.
+    actual_names = {package["name"] for package in sbom_data["packages"]}
+    expected_names = set(externals_name_to_version)
+    error_if(
+        actual_names != expected_names,
+        f"Packages defined in SBOM tool don't match those defined in SBOM file: {actual_names}, {expected_names}",
+    )
+
+    # Set the versionInfo and downloadLocation fields for all packages.
+    for package in sbom_data["packages"]:
+        package["versionInfo"] = externals_name_to_version[package["name"]]
+        download_location = (
+            f"https://github.com/python/cpython-source-deps/archive/refs/tags/{externals_name_to_git_tag[package['name']]}.tar.gz"
+        )
+        download_location_changed = download_location != package["downloadLocation"]
+        package["downloadLocation"] = download_location
+
+        # If the download URL has changed we want one to get recalulated.
+        if download_location_changed:
+            package.pop("checksums", None)
+
+    check_sbom_packages(sbom_data)
+
+    # Update the SBOM on disk
+    sbom_path.write_text(json.dumps(sbom_data, indent=2, sort_keys=True))
+
+
+def main() -> None:
+    create_source_sbom()
+    create_externals_sbom()
 
 
 if __name__ == "__main__":

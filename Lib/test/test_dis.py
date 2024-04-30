@@ -1201,19 +1201,10 @@ class DisTests(DisTestBase):
     @cpython_only
     @requires_specialization
     def test_loop_quicken(self):
-        import _testinternalcapi
         # Loop can trigger a quicken where the loop is located
-        self.code_quicken(loop_test, 1)
+        self.code_quicken(loop_test, 4)
         got = self.get_disassembly(loop_test, adaptive=True)
         expected = dis_loop_test_quickened_code
-        if _testinternalcapi.get_optimizer():
-            # We *may* see ENTER_EXECUTOR in the disassembly. This is a
-            # temporary hack to keep the test working until dis is able to
-            # handle the instruction correctly (GH-112383):
-            got = got.replace(
-                "ENTER_EXECUTOR          16",
-                "JUMP_BACKWARD           16 (to L1)",
-            )
         self.do_disassembly_compare(got, expected)
 
     @cpython_only
@@ -1985,6 +1976,22 @@ class InstructionTests(InstructionTestCase):
         self.assertEqual(f(opcode.opmap["SET_FUNCTION_ATTRIBUTE"], 2, *args), (2, 'kwdefaults'))
         self.assertEqual(f(opcode.opmap["BINARY_OP"], 3, *args), (3, '<<'))
         self.assertEqual(f(opcode.opmap["CALL_INTRINSIC_1"], 2, *args), (2, 'INTRINSIC_IMPORT_STAR'))
+
+    def test_custom_arg_resolver(self):
+        class MyArgResolver(dis.ArgResolver):
+            def offset_from_jump_arg(self, op, arg, offset):
+                return arg + 1
+
+            def get_label_for_offset(self, offset):
+                return 2 * offset
+
+        def f(opcode, oparg, offset, *init_args):
+            arg_resolver = MyArgResolver(*init_args)
+            return arg_resolver.get_argval_argrepr(opcode, oparg, offset)
+        offset = 42
+        self.assertEqual(f(opcode.opmap["JUMP_BACKWARD"], 1, offset), (2, 'to L4'))
+        self.assertEqual(f(opcode.opmap["SETUP_FINALLY"], 2, offset), (3, 'to L6'))
+
 
     def get_instructions(self, code):
         return dis._get_instructions_bytes(code)

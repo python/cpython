@@ -34,11 +34,10 @@ import numbers
 import locale
 from test.support import (is_resource_enabled,
                           requires_IEEE_754, requires_docstrings,
-                          check_sanitizer,
                           check_disallow_instantiation)
 from test.support import (TestFailed,
                           run_with_locale, cpython_only,
-                          darwin_malloc_err_warning, is_emscripten)
+                          darwin_malloc_err_warning)
 from test.support.import_helper import import_fresh_module
 from test.support import threading_helper
 from test.support import warnings_helper
@@ -1110,6 +1109,13 @@ class FormatTest:
             ('z>z6.1f', '-0.', 'zzz0.0'),
             ('x>z6.1f', '-0.', 'xxx0.0'),
             ('🖤>z6.1f', '-0.', '🖤🖤🖤0.0'),  # multi-byte fill char
+            ('\x00>z6.1f', '-0.', '\x00\x00\x000.0'),  # null fill char
+
+            # issue 114563 ('z' format on F type in cdecimal)
+            ('z3,.10F', '-6.24E-323', '0.0000000000'),
+
+            # issue 91060 ('#' format in cdecimal)
+            ('#', '0', '0.'),
 
             # issue 6850
             ('a=-7.0', '0.12345', 'aaaa0.1'),
@@ -5636,47 +5642,6 @@ class CWhitebox(unittest.TestCase):
             self.assertEqual(Decimal.from_float(cls(101.1)),
                              Decimal.from_float(101.1))
 
-    # Issue 41540:
-    @unittest.skipIf(sys.platform.startswith("aix"),
-                     "AIX: default ulimit: test is flaky because of extreme over-allocation")
-    @unittest.skipIf(is_emscripten, "Test is unstable on Emscripten")
-    @unittest.skipIf(check_sanitizer(address=True, memory=True),
-                     "ASAN/MSAN sanitizer defaults to crashing "
-                     "instead of returning NULL for malloc failure.")
-    def test_maxcontext_exact_arith(self):
-
-        # Make sure that exact operations do not raise MemoryError due
-        # to huge intermediate values when the context precision is very
-        # large.
-
-        # The following functions fill the available precision and are
-        # therefore not suitable for large precisions (by design of the
-        # specification).
-        MaxContextSkip = ['logical_invert', 'next_minus', 'next_plus',
-                          'logical_and', 'logical_or', 'logical_xor',
-                          'next_toward', 'rotate', 'shift']
-
-        Decimal = C.Decimal
-        Context = C.Context
-        localcontext = C.localcontext
-
-        # Here only some functions that are likely candidates for triggering a
-        # MemoryError are tested.  deccheck.py has an exhaustive test.
-        maxcontext = Context(prec=C.MAX_PREC, Emin=C.MIN_EMIN, Emax=C.MAX_EMAX)
-        with localcontext(maxcontext):
-            self.assertEqual(Decimal(0).exp(), 1)
-            self.assertEqual(Decimal(1).ln(), 0)
-            self.assertEqual(Decimal(1).log10(), 0)
-            self.assertEqual(Decimal(10**2).log10(), 2)
-            self.assertEqual(Decimal(10**223).log10(), 223)
-            self.assertEqual(Decimal(10**19).logb(), 19)
-            self.assertEqual(Decimal(4).sqrt(), 2)
-            self.assertEqual(Decimal("40E9").sqrt(), Decimal('2.0E+5'))
-            self.assertEqual(divmod(Decimal(10), 3), (3, 1))
-            self.assertEqual(Decimal(10) // 3, 3)
-            self.assertEqual(Decimal(4) / 2, 2)
-            self.assertEqual(Decimal(400) ** -1, Decimal('0.0025'))
-
     def test_c_immutable_types(self):
         SignalDict = type(C.Context().flags)
         SignalDictMixin = SignalDict.__bases__[0]
@@ -5725,6 +5690,21 @@ class CWhitebox(unittest.TestCase):
 
         with self.assertRaisesRegex(ValueError, err_msg):
             sd.copy()
+
+    def test_format_fallback_capitals(self):
+        # Fallback to _pydecimal formatting (triggered by `#` format which
+        # is unsupported by mpdecimal) should honor the current context.
+        x = C.Decimal('6.09e+23')
+        self.assertEqual(format(x, '#'), '6.09E+23')
+        with C.localcontext(capitals=0):
+            self.assertEqual(format(x, '#'), '6.09e+23')
+
+    def test_format_fallback_rounding(self):
+        y = C.Decimal('6.09')
+        self.assertEqual(format(y, '#.1f'), '6.1')
+        with C.localcontext(rounding=C.ROUND_DOWN):
+            self.assertEqual(format(y, '#.1f'), '6.0')
+
 
 @requires_docstrings
 @requires_cdecimal

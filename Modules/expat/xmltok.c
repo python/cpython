@@ -12,7 +12,7 @@
    Copyright (c) 2002      Greg Stein <gstein@users.sourceforge.net>
    Copyright (c) 2002-2016 Karl Waclawek <karl@waclawek.net>
    Copyright (c) 2005-2009 Steven Solie <steven@solie.ca>
-   Copyright (c) 2016-2022 Sebastian Pipping <sebastian@pipping.org>
+   Copyright (c) 2016-2024 Sebastian Pipping <sebastian@pipping.org>
    Copyright (c) 2016      Pascal Cuoq <cuoq@trust-in-soft.com>
    Copyright (c) 2016      Don Lewis <truckman@apache.org>
    Copyright (c) 2017      Rhodri James <rhodri@wildebeest.org.uk>
@@ -20,8 +20,10 @@
    Copyright (c) 2017      Benbuck Nason <bnason@netflix.com>
    Copyright (c) 2017      José Gutiérrez de la Concha <jose@zeroc.com>
    Copyright (c) 2019      David Loffredo <loffredo@steptools.com>
-   Copyright (c) 2021      Dong-hee Na <donghee.na@python.org>
+   Copyright (c) 2021      Donghee Na <donghee.na@python.org>
    Copyright (c) 2022      Martin Ettl <ettl.martin78@googlemail.com>
+   Copyright (c) 2022      Sean McBride <sean@rogue-research.com>
+   Copyright (c) 2023      Hanno Böck <hanno@gentoo.org>
    Licensed under the MIT license:
 
    Permission is  hereby granted,  free of charge,  to any  person obtaining
@@ -44,7 +46,7 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#include <expat_config.h>
+#include "expat_config.h"
 
 #include <stddef.h>
 #include <string.h> /* memcpy */
@@ -76,7 +78,7 @@
 #define VTABLE VTABLE1, PREFIX(toUtf8), PREFIX(toUtf16)
 
 #define UCS2_GET_NAMING(pages, hi, lo)                                         \
-  (namingBitmap[(pages[hi] << 3) + ((lo) >> 5)] & (1u << ((lo)&0x1F)))
+  (namingBitmap[(pages[hi] << 3) + ((lo) >> 5)] & (1u << ((lo) & 0x1F)))
 
 /* A 2 byte UTF-8 representation splits the characters 11 bits between
    the bottom 5 and 6 bits of the bytes.  We need 8 bits to index into
@@ -100,7 +102,7 @@
    & (1u << (((byte)[2]) & 0x1F)))
 
 /* Detection of invalid UTF-8 sequences is based on Table 3.1B
-   of Unicode 3.2: http://www.unicode.org/unicode/reports/tr28/
+   of Unicode 3.2: https://www.unicode.org/unicode/reports/tr28/
    with the additional restriction of not allowing the Unicode
    code points 0xFFFF and 0xFFFE (sequences EF,BF,BF and EF,BF,BE).
    Implementation details:
@@ -225,7 +227,7 @@ struct normal_encoding {
       /* isNmstrt2 */ NULL, /* isNmstrt3 */ NULL, /* isNmstrt4 */ NULL,        \
       /* isInvalid2 */ NULL, /* isInvalid3 */ NULL, /* isInvalid4 */ NULL
 
-static int FASTCALL checkCharRefNumber(int);
+static int FASTCALL checkCharRefNumber(int result);
 
 #include "xmltok_impl.h"
 #include "ascii.h"
@@ -243,7 +245,7 @@ static int FASTCALL checkCharRefNumber(int);
 #endif
 
 #define SB_BYTE_TYPE(enc, p)                                                   \
-  (((struct normal_encoding *)(enc))->type[(unsigned char)*(p)])
+  (((const struct normal_encoding *)(enc))->type[(unsigned char)*(p)])
 
 #ifdef XML_MIN_SIZE
 static int PTRFASTCALL
@@ -407,7 +409,7 @@ utf8_toUtf16(const ENCODING *enc, const char **fromP, const char *fromLim,
   unsigned short *to = *toP;
   const char *from = *fromP;
   while (from < fromLim && to < toLim) {
-    switch (((struct normal_encoding *)enc)->type[(unsigned char)*from]) {
+    switch (SB_BYTE_TYPE(enc, from)) {
     case BT_LEAD2:
       if (fromLim - from < 2) {
         res = XML_CONVERT_INPUT_INCOMPLETE;
@@ -715,31 +717,26 @@ unicode_byte_type(char hi, char lo) {
       return res;                                                              \
   }
 
-#define SET2(ptr, ch) (((ptr)[0] = ((ch)&0xff)), ((ptr)[1] = ((ch) >> 8)))
 #define GET_LO(ptr) ((unsigned char)(ptr)[0])
 #define GET_HI(ptr) ((unsigned char)(ptr)[1])
 
 DEFINE_UTF16_TO_UTF8(little2_)
 DEFINE_UTF16_TO_UTF16(little2_)
 
-#undef SET2
 #undef GET_LO
 #undef GET_HI
 
-#define SET2(ptr, ch) (((ptr)[0] = ((ch) >> 8)), ((ptr)[1] = ((ch)&0xFF)))
 #define GET_LO(ptr) ((unsigned char)(ptr)[1])
 #define GET_HI(ptr) ((unsigned char)(ptr)[0])
 
 DEFINE_UTF16_TO_UTF8(big2_)
 DEFINE_UTF16_TO_UTF16(big2_)
 
-#undef SET2
 #undef GET_LO
 #undef GET_HI
 
 #define LITTLE2_BYTE_TYPE(enc, p)                                              \
-  ((p)[1] == 0 ? ((struct normal_encoding *)(enc))->type[(unsigned char)*(p)]  \
-               : unicode_byte_type((p)[1], (p)[0]))
+  ((p)[1] == 0 ? SB_BYTE_TYPE(enc, p) : unicode_byte_type((p)[1], (p)[0]))
 #define LITTLE2_BYTE_TO_ASCII(p) ((p)[1] == 0 ? (p)[0] : -1)
 #define LITTLE2_CHAR_MATCHES(p, c) ((p)[1] == 0 && (p)[0] == (c))
 #define LITTLE2_IS_NAME_CHAR_MINBPC(p)                                         \
@@ -872,9 +869,7 @@ static const struct normal_encoding internal_little2_encoding
 #endif
 
 #define BIG2_BYTE_TYPE(enc, p)                                                 \
-  ((p)[0] == 0                                                                 \
-       ? ((struct normal_encoding *)(enc))->type[(unsigned char)(p)[1]]        \
-       : unicode_byte_type((p)[0], (p)[1]))
+  ((p)[0] == 0 ? SB_BYTE_TYPE(enc, p + 1) : unicode_byte_type((p)[0], (p)[1]))
 #define BIG2_BYTE_TO_ASCII(p) ((p)[0] == 0 ? (p)[1] : -1)
 #define BIG2_CHAR_MATCHES(p, c) ((p)[0] == 0 && (p)[1] == (c))
 #define BIG2_IS_NAME_CHAR_MINBPC(p)                                            \

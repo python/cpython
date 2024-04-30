@@ -14,7 +14,6 @@ extern PyTypeObject _PyContextTokenMissing_Type;
 /* runtime lifecycle */
 
 PyStatus _PyContext_Init(PyInterpreterState *);
-void _PyContext_Fini(_PyFreeListState *);
 
 
 /* other API */

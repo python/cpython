@@ -1,3 +1,0 @@
-Fix a reference leak in
-:class:`asyncio.selector_events.BaseSelectorEventLoop` when SSL handshakes
-fail. Patch contributed by Jamie Phan.

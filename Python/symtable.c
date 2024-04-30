@@ -387,7 +387,7 @@ symtable_new(void)
 }
 
 struct symtable *
-_PySymtable_Build(mod_ty mod, PyObject *filename, PyFutureFeatures *future)
+_PySymtable_Build(mod_ty mod, PyObject *filename, _PyFutureFeatures *future)
 {
     struct symtable *st = symtable_new();
     asdl_stmt_seq *seq;
@@ -1154,10 +1154,12 @@ analyze_block(PySTEntryObject *ste, PyObject *bound, PyObject *free,
             }
         }
 
-        // we inline all non-generator-expression comprehensions
+        // we inline all non-generator-expression comprehensions,
+        // except those in annotation scopes that are nested in classes
         int inline_comp =
             entry->ste_comprehension &&
-            !entry->ste_generator;
+            !entry->ste_generator &&
+            !ste->ste_can_see_class_scope;
 
         if (!analyze_child_block(entry, newbound, newfree, newglobal,
                                  type_params, new_class_entry, &child_free))
@@ -1359,14 +1361,20 @@ symtable_enter_block(struct symtable *st, identifier name, _Py_block_ty block,
 }
 
 static long
-symtable_lookup(struct symtable *st, PyObject *name)
+symtable_lookup_entry(struct symtable *st, PySTEntryObject *ste, PyObject *name)
 {
     PyObject *mangled = _Py_Mangle(st->st_private, name);
     if (!mangled)
         return 0;
-    long ret = _PyST_GetSymbol(st->st_cur, mangled);
+    long ret = _PyST_GetSymbol(ste, mangled);
     Py_DECREF(mangled);
     return ret;
+}
+
+static long
+symtable_lookup(struct symtable *st, PyObject *name)
+{
+    return symtable_lookup_entry(st, st->st_cur, name);
 }
 
 static int
@@ -2009,7 +2017,7 @@ symtable_extend_namedexpr_scope(struct symtable *st, expr_ty e)
          * binding conflict with iteration variables, otherwise skip it
          */
         if (ste->ste_comprehension) {
-            long target_in_scope = _PyST_GetSymbol(ste, target_name);
+            long target_in_scope = symtable_lookup_entry(st, ste, target_name);
             if ((target_in_scope & DEF_COMP_ITER) &&
                 (target_in_scope & DEF_LOCAL)) {
                 PyErr_Format(PyExc_SyntaxError, NAMED_EXPR_COMP_CONFLICT, target_name);
@@ -2025,7 +2033,7 @@ symtable_extend_namedexpr_scope(struct symtable *st, expr_ty e)
 
         /* If we find a FunctionBlock entry, add as GLOBAL/LOCAL or NONLOCAL/LOCAL */
         if (ste->ste_type == FunctionBlock) {
-            long target_in_scope = _PyST_GetSymbol(ste, target_name);
+            long target_in_scope = symtable_lookup_entry(st, ste, target_name);
             if (target_in_scope & DEF_GLOBAL) {
                 if (!symtable_add_def(st, target_name, DEF_GLOBAL, LOCATION(e)))
                     VISIT_QUIT(st, 0);
@@ -2134,17 +2142,6 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
         VISIT(st, expr, e->v.UnaryOp.operand);
         break;
     case Lambda_kind: {
-        if (st->st_cur->ste_can_see_class_scope) {
-            // gh-109118
-            PyErr_Format(PyExc_SyntaxError,
-                         "Cannot use lambda in annotation scope within class scope");
-            PyErr_RangedSyntaxLocationObject(st->st_filename,
-                                              e->lineno,
-                                              e->col_offset + 1,
-                                              e->end_lineno,
-                                              e->end_col_offset + 1);
-            VISIT_QUIT(st, 0);
-        }
         if (e->v.Lambda.args->defaults)
             VISIT_SEQ(st, expr, e->v.Lambda.args->defaults);
         if (e->v.Lambda.args->kw_defaults)
@@ -2594,18 +2591,6 @@ symtable_handle_comprehension(struct symtable *st, expr_ty e,
                               identifier scope_name, asdl_comprehension_seq *generators,
                               expr_ty elt, expr_ty value)
 {
-    if (st->st_cur->ste_can_see_class_scope) {
-        // gh-109118
-        PyErr_Format(PyExc_SyntaxError,
-                     "Cannot use comprehension in annotation scope within class scope");
-        PyErr_RangedSyntaxLocationObject(st->st_filename,
-                                         e->lineno,
-                                         e->col_offset + 1,
-                                         e->end_lineno,
-                                         e->end_col_offset + 1);
-        VISIT_QUIT(st, 0);
-    }
-
     int is_generator = (e->kind == GeneratorExp_kind);
     comprehension_ty outermost = ((comprehension_ty)
                                     asdl_seq_GET(generators, 0));
@@ -2751,7 +2736,7 @@ _Py_SymtableStringObjectFlags(const char *str, PyObject *filename,
         _PyArena_Free(arena);
         return NULL;
     }
-    PyFutureFeatures future;
+    _PyFutureFeatures future;
     if (!_PyFuture_FromAST(mod, filename, &future)) {
         _PyArena_Free(arena);
         return NULL;

@@ -17,7 +17,7 @@ def _dump_header() -> typing.Iterator[str]:
     yield "} HoleValue;"
     yield ""
     yield "typedef struct {"
-    yield "    const uint64_t offset;"
+    yield "    const size_t offset;"
     yield "    const HoleKind kind;"
     yield "    const HoleValue value;"
     yield "    const void *symbol;"
@@ -58,7 +58,7 @@ def _dump_footer(opnames: typing.Iterable[str]) -> typing.Iterator[str]:
     yield ""
     yield "#define GET_PATCHES() { \\"
     for value in _stencils.HoleValue:
-        yield f"    [HoleValue_{value.name}] = (uint64_t)0xBADBADBADBADBADB, \\"
+        yield f"    [HoleValue_{value.name}] = (uintptr_t)0xBADBADBADBADBADB, \\"
     yield "}"
 
 
