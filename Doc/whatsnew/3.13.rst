@@ -276,7 +276,9 @@ Other Language Changes
   (Contributed by Pedro Sousa Lacerda in :gh:`66449`.)
 
 * :ref:`annotation scope <annotation-scopes>` within class scopes can now
-  contain lambdas. (Contributed by Jelle Zijlstra in :gh:`109118`.)
+  contain lambdas and comprehensions. Comprehensions that are located within
+  class scopes are not inlined into their parent scope. (Contributed by
+  Jelle Zijlstra in :gh:`109118` and :gh:`118160`.)
 
 
 New Modules
@@ -1435,7 +1437,10 @@ PEP 594: dead batteries
     * :pypi:`argon2-cffi`:
       The secure Argon2 password hashing algorithm.
     * :pypi:`legacycrypt`:
-      Wrapper to the POSIX crypt library call and associated functionality.
+      :mod:`ctypes` wrapper to the POSIX crypt library call and associated functionality.
+    * :pypi:`crypt_r`:
+      Fork of the :mod:`!crypt` module, wrapper to the :manpage:`crypt_r(3)` library
+      call and associated functionality.
 
     (Contributed by Victor Stinner in :gh:`104773`.)
 

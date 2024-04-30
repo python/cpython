@@ -690,6 +690,12 @@ top:  // Jump here after _PUSH_FRAME or likely branches
                 break;
             }
 
+            case RESUME:
+                /* Use a special tier 2 version of RESUME_CHECK to allow traces to
+                 *  start with RESUME_CHECK */
+                ADD_TO_TRACE(_TIER2_RESUME_CHECK, 0, 0, target);
+                break;
+
             default:
             {
                 const struct opcode_macro_expansion *expansion = &_PyOpcode_macro_expansion[opcode];
@@ -698,7 +704,7 @@ top:  // Jump here after _PUSH_FRAME or likely branches
                     int nuops = expansion->nuops;
                     RESERVE(nuops + 1); /* One extra for exit */
                     int16_t last_op = expansion->uops[nuops-1].uop;
-                    if (last_op == _POP_FRAME || last_op == _RETURN_GENERATOR) {
+                    if (last_op == _POP_FRAME || last_op == _RETURN_GENERATOR || last_op == _YIELD_VALUE) {
                         // Check for trace stack underflow now:
                         // We can't bail e.g. in the middle of
                         // LOAD_CONST + _POP_FRAME.
@@ -757,7 +763,7 @@ top:  // Jump here after _PUSH_FRAME or likely branches
                                 Py_FatalError("garbled expansion");
                         }
 
-                        if (uop == _POP_FRAME || uop == _RETURN_GENERATOR) {
+                        if (uop == _POP_FRAME || uop == _RETURN_GENERATOR || uop == _YIELD_VALUE) {
                             TRACE_STACK_POP();
                             /* Set the operand to the function or code object returned to,
                              * to assist optimization passes. (See _PUSH_FRAME below.)
@@ -967,7 +973,18 @@ prepare_for_execution(_PyUOpInstruction *buffer, int length)
         int32_t target = (int32_t)uop_get_target(inst);
         if (_PyUop_Flags[opcode] & (HAS_EXIT_FLAG | HAS_DEOPT_FLAG)) {
             if (target != current_jump_target) {
-                uint16_t exit_op = (_PyUop_Flags[opcode] & HAS_EXIT_FLAG) ? _SIDE_EXIT : _DEOPT;
+                uint16_t exit_op;
+                if (_PyUop_Flags[opcode] & HAS_EXIT_FLAG) {
+                    if (opcode == _TIER2_RESUME_CHECK) {
+                        exit_op = _EVAL_BREAKER_EXIT;
+                    }
+                    else {
+                        exit_op = _SIDE_EXIT;
+                    }
+                }
+                else {
+                    exit_op = _DEOPT;
+                }
                 make_exit(&buffer[next_spare], exit_op, target);
                 current_jump_target = target;
                 current_jump = next_spare;
@@ -1075,6 +1092,7 @@ sanity_check(_PyExecutorObject *executor)
         CHECK(
             opcode == _DEOPT ||
             opcode == _SIDE_EXIT ||
+            opcode == _EVAL_BREAKER_EXIT ||
             opcode == _ERROR_POP_N);
         if (opcode == _SIDE_EXIT) {
             CHECK(inst->format == UOP_FORMAT_EXIT);
