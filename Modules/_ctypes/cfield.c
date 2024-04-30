@@ -191,7 +191,7 @@ PyObject *
 PyCField_FromDesc(ctypes_state *st, PyObject *desc, Py_ssize_t index,
                 Py_ssize_t *pfield_size, Py_ssize_t bitsize,
                 Py_ssize_t *pbitofs, Py_ssize_t *psize, Py_ssize_t *poffset, Py_ssize_t *palign,
-                int pack, int big_endian, int ms_struct)
+                int pack, int big_endian, LayoutMode layout_mode)
 {
     PyTypeObject *tp = st->PyCField_Type;
     CFieldObject* self = (CFieldObject *)tp->tp_alloc(tp, 0);
@@ -265,9 +265,8 @@ PyCField_FromDesc(ctypes_state *st, PyObject *desc, Py_ssize_t index,
     }
     assert(bitsize <= info->size * 8);
 
-    // `pack` only makes sense in msvc compatibility mode.
     int result;
-    if (ms_struct || pack != 0) {
+    if (layout_mode == LAYOUT_MODE_MS) {
         result = PyCField_FromDesc_msvc(
                 pfield_size, bitsize, pbitofs,
                 psize, poffset, palign,
@@ -276,6 +275,7 @@ PyCField_FromDesc(ctypes_state *st, PyObject *desc, Py_ssize_t index,
                 is_bitfield
                 );
     } else {
+        assert(pack == 0);
         result = PyCField_FromDesc_gcc(
                 bitsize, pbitofs,
                 psize, poffset, palign,

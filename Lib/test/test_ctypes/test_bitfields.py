@@ -35,7 +35,7 @@ func.argtypes = POINTER(BITS), c_char
 
 
 class BITS_msvc(Structure):
-    _ms_struct_ = 1
+    _layout_ = "ms"
     _fields_ = [("A", c_int, 1),
                 ("B", c_int, 2),
                 ("C", c_int, 3),

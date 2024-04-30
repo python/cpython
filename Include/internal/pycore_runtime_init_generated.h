@@ -763,11 +763,11 @@ extern "C" {
     INIT_ID(_initializing), \
     INIT_ID(_io), \
     INIT_ID(_is_text_encoding), \
+    INIT_ID(_layout_), \
     INIT_ID(_length_), \
     INIT_ID(_limbo), \
     INIT_ID(_lock_unlock_module), \
     INIT_ID(_loop), \
-    INIT_ID(_ms_struct_), \
     INIT_ID(_needs_com_addref_), \
     INIT_ID(_pack_), \
     INIT_ID(_restype_), \

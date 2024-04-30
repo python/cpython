@@ -289,23 +289,46 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
     }
 
     #ifdef MS_WIN32
-    int ms_struct = 1;
+    LayoutMode layout_mode = LAYOUT_MODE_MS;
     #else
-    int ms_struct = 0;
+    LayoutMode layout_mode = (pack > 0) ? LAYOUT_MODE_MS : LAYOUT_MODE_GCC_SYSV;
     #endif
 
-    if (PyObject_GetOptionalAttr(type, &_Py_ID(_ms_struct_), &tmp) < 0) {
+    if (PyObject_GetOptionalAttr(type, &_Py_ID(_layout_), &tmp) < 0) {
         return -1;
     }
     if (tmp) {
-        ms_struct = PyLong_AsInt(tmp);
-        Py_DECREF(tmp);
-        if (PyErr_Occurred()) {
-            if (PyErr_ExceptionMatches(PyExc_TypeError) ||
-                PyErr_ExceptionMatches(PyExc_OverflowError)) {
+        if (!PyUnicode_Check(tmp)) {
+            PyErr_SetString(PyExc_TypeError,
+                            "_layout_ must be a string");
+            return -1;
+        }
+        if (PyUnicode_CompareWithASCIIString(tmp, "ms") == 0) {
+            layout_mode = LAYOUT_MODE_MS;
+        }
+        else if (PyUnicode_CompareWithASCIIString(tmp, "gcc-sysv") == 0) {
+            layout_mode = LAYOUT_MODE_GCC_SYSV;
+            if (pack > 0) {
                 PyErr_SetString(PyExc_ValueError,
-                                "_pack_ must be a bool or integer");
+                                "_pack_ is not compatible with _layout_=\"gcc-sysv\"");
+                return -1;
             }
+        }
+        else {
+            PyErr_Format(PyExc_ValueError,
+                            "unknown _layout_ %R", tmp);
+            return -1;
+        }
+    }
+    else {
+        // Set the default
+        const char *name = (layout_mode == LAYOUT_MODE_MS) ? "ms"
+                         : "gcc-sysv";
+        PyObject *name_obj = PyUnicode_FromString(name);
+        if (!name) {
+            return -1;
+        }
+        if (PyObject_SetAttr(type, &_Py_ID(_layout_), name_obj) < 0) {
             return -1;
         }
     }
@@ -515,7 +538,7 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
             prop = PyCField_FromDesc(st, desc, i,
                                    &field_size, bitsize, &bitofs,
                                    &size, &offset, &align,
-                                   pack, big_endian, ms_struct);
+                                   pack, big_endian, layout_mode);
             if (prop == NULL) {
                 Py_DECREF(pair);
                 return -1;
@@ -571,7 +594,7 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
             prop = PyCField_FromDesc(st, desc, i,
                                    &field_size, bitsize, &bitofs,
                                    &size, &offset, &align,
-                                   pack, big_endian, ms_struct);
+                                   pack, big_endian, layout_mode);
             if (prop == NULL) {
                 Py_DECREF(pair);
                 return -1;

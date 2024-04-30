@@ -661,11 +661,11 @@ for debugging because they can provide useful information::
    guaranteed by the library to work in the general case.  Unions and
    structures with bit-fields should always be passed to functions by pointer.
 
-Structure/union alignment and byte order
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Structure/union layout, alignment and byte order
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-By default, Structure and Union fields are aligned in the same way the C
-compiler does it. It is possible to override this behavior by specifying a
+By default, Structure and Union fields are laid out in the same way the C
+compiler does it.  It is possible to override this behavior by specifying a
 :attr:`~Structure._pack_` class attribute in the subclass definition.
 This must be set to a positive integer and specifies the maximum alignment for the fields.
 This is what ``#pragma pack(n)`` also does in MSVC.
@@ -673,6 +673,8 @@ It is also possible to set a minimum alignment for how the subclass itself is pa
 same way ``#pragma align(n)`` works in MSVC.
 This can be achieved by specifying a ::attr:`~Structure._align_` class attribute
 in the subclass definition.
+
+To override the, the compiler ::attr:`~Structure._layout_` class attribute.
 
 :mod:`ctypes` uses the native byte order for Structures and Unions.  To build
 structures with non-native byte order, you can use one of the
@@ -2539,6 +2541,32 @@ fields, or any other data types containing pointer type fields.
       An optional small integer that allows overriding the alignment of
       the structure when being packed or unpacked to/from memory.
       Setting this attribute to 0 is the same as not setting it at all.
+
+   .. attribute:: _layout_
+
+      An optional string naming the struct and union layout. It can currently
+      be set to:
+
+      - ``"ms"``: the layout used by the Microsoft compiler (MSVC).
+        GCC and Clang, this layout can be selected with
+        ``__attribute__((ms_struct))``.
+      - ``"gcc-sysv"``: the layout used by GCC with the System V or “SysV-like”
+        data model, as used on Linux and macOS. TThis is generally compatible
+        with clang's defaults.
+        With this layout, :attr:`~Structure._pack_` must be unset or zero.
+
+      If not set explicitly, :attr:`!_layout_` will be set to a default that
+      matches the platform's conventions. This default may change in future
+      Python releases (for example, when a new platform gains official support,
+      or when a difference between similar platforms is found).
+      Currently the default will be:
+
+      - On Windows: ``"ms"``
+      - When :attr:`~Structure._pack_` is specified: ``"ms"``
+      - Otherwise: ``"gcc-sysv"``
+
+      :attr:`!_layout_` must already be defined when
+      :attr:`~Structure._fields_` is assigned, otherwise it will have no effect.
 
    .. attribute:: _anonymous_
 

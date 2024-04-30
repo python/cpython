@@ -44,7 +44,7 @@ def struct_c_decl(attrdict, name='s'):
     endian_name = attrdict['endian_name']
     if endian_name != 'native':
         attributes.append(f'scalar_storage_order("{endian_name}-endian")')
-    if attrdict.get('_ms_struct_'):
+    if attrdict.get('_layout_' == 'ms'):
         attributes.append('ms_struct')
         lines.append(f'#pragma ms_struct on')
     lines.append(f'struct')
@@ -98,7 +98,7 @@ def structure_args(
         'ctype_names': ctype_names,
     }
     if draw(strategies.booleans()):
-        attrdict['_ms_struct_'] = True
+        attrdict['_layout_'] = 'ms'
         pack = 2 ** draw(strategies.integers(0, 4))
         if pack:
             attrdict['_pack_'] = pack
