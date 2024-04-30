@@ -665,16 +665,18 @@ Structure/union layout, alignment and byte order
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 By default, Structure and Union fields are laid out in the same way the C
-compiler does it.  It is possible to override this behavior by specifying a
-:attr:`~Structure._pack_` class attribute in the subclass definition.
-This must be set to a positive integer and specifies the maximum alignment for the fields.
-This is what ``#pragma pack(n)`` also does in MSVC.
+compiler does it.  It is possible to override this behavior entirely by specifying a
+:attr:`~Structure._layout_` class attribute in the subclass definition; see
+the attribute documentation for details.
+
+It is possible to specify the maximum alignment for the fields by setting
+the :attr:`~Structure._pack_` class attribute to a positive integer.
+This matches what ``#pragma pack(n)`` does in MSVC.
+
 It is also possible to set a minimum alignment for how the subclass itself is packed in the
 same way ``#pragma align(n)`` works in MSVC.
 This can be achieved by specifying a ::attr:`~Structure._align_` class attribute
 in the subclass definition.
-
-To override the, the compiler ::attr:`~Structure._layout_` class attribute.
 
 :mod:`ctypes` uses the native byte order for Structures and Unions.  To build
 structures with non-native byte order, you can use one of the
@@ -2551,8 +2553,8 @@ fields, or any other data types containing pointer type fields.
         GCC and Clang, this layout can be selected with
         ``__attribute__((ms_struct))``.
       - ``"gcc-sysv"``: the layout used by GCC with the System V or “SysV-like”
-        data model, as used on Linux and macOS. TThis is generally compatible
-        with clang's defaults.
+        data model, as used on Linux and macOS. This is generally compatible
+        with clang.
         With this layout, :attr:`~Structure._pack_` must be unset or zero.
 
       If not set explicitly, :attr:`!_layout_` will be set to a default that

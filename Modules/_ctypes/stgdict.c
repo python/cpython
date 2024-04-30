@@ -271,7 +271,6 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
     if (tmp) {
         pack = PyLong_AsInt(tmp);
         Py_DECREF(tmp);
-        // TODO(Matthias): It looks like pack == 0 triggers a bug.
         if (pack < 0) {
             if (!PyErr_Occurred() ||
                 PyErr_ExceptionMatches(PyExc_TypeError) ||

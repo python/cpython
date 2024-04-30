@@ -76,8 +76,8 @@ of the bit-fields.
 
 See https://gcc.gnu.org/onlinedocs/gcc/x86-Options.html#index-mms-bitfields for details.
 
-We do not support zero length bitfields.  In fact we use bitsize != 0 to
-indicate a bitfield.
+We do not support zero length bitfields.  In fact we use bitsize != 0 elsewhere
+to indicate a bitfield. Here, non-bitfields need bitsize set to size*8.
 
 PyCField_FromDesc manages:
 - *psize: the size of the structure / union so far.
@@ -119,7 +119,6 @@ PyCField_FromDesc_gcc(Py_ssize_t bitsize, Py_ssize_t *pbitofs,
             return -1;
         }
     } else {
-        assert(bitsize == 0);
         self->offset = round_down(*pbitofs, 8*info->align) / 8;
         self->size = info->size;
     }

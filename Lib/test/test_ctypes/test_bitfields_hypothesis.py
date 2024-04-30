@@ -12,8 +12,11 @@ from ctypes import (
     POINTER,
 )
 
-from hypothesis import assume, given, note, settings
-from hypothesis import strategies
+from test.support.hypothesis_helper import hypothesis
+
+assume = hypothesis.assume
+given = hypothesis.given
+strategies = hypothesis.strategies
 
 C_TYPES = {
     # Note: for Hypothesis minimization to work, "simpler" types should
@@ -64,18 +67,18 @@ def struct_c_decl(attrdict, name='s'):
     lines.append('')
     return '\n'.join(lines)
 
-
 @strategies.composite
-def structure_args(
-    draw,
-    types_strategy=strategies.lists(
-        strategies.sampled_from(list(C_TYPES.items())),
-        min_size=1, max_size=200,
-    ),
-):
+def structure_args(draw):
+    num_fields = draw(strategies.integers(1, 50))
     fields = []
     ctype_names = []
-    for i, (ctype_name, ctype) in enumerate(draw(types_strategy)):
+    for i in range(num_fields):
+        if draw(strategies.booleans()) and 1:
+            ctype_name, ctype = draw(strategies.sampled_from(list(C_TYPES.items())))
+        else:
+            sub_args = draw(structure_args())
+            ctype_name = f's{id(sub_args)}'
+            ctype = type(sub_args)
         name = f'field_{i}'
         bit_size = draw(strategies.integers(1, sizeof(ctype) * 8))
         is_bitfield = draw(strategies.booleans())
@@ -103,6 +106,7 @@ def structure_args(
         if pack:
             attrdict['_pack_'] = pack
     attrdict['c_decl'] = struct_c_decl(attrdict)
+    attrdict['c_name'] = f's{id(attrdict)}'
     result = (
         'RandomTestStruct',
         (cls,),
