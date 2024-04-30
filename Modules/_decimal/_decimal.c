@@ -4287,7 +4287,7 @@ nm_mpd_qdivmod(PyObject *v, PyObject *w)
         return NULL;
     }
 
-    ret = Py_BuildValue("(OO)", q, r);
+    ret = PyTuple_Pack(2, q, r);
     Py_DECREF(r);
     Py_DECREF(q);
     return ret;
@@ -5312,7 +5312,7 @@ ctx_mpd_qdivmod(PyObject *context, PyObject *args)
         return NULL;
     }
 
-    ret = Py_BuildValue("(OO)", q, r);
+    ret = PyTuple_Pack(2, q, r);
     Py_DECREF(r);
     Py_DECREF(q);
     return ret;
