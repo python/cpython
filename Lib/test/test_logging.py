@@ -4599,7 +4599,12 @@ class FormatterTest(unittest.TestCase, AssertErrorMessage):
             self.assertEqual(record.created, ns / 1e9)
 
     def test_relativeCreated_has_higher_precision(self):
-        # See issue gh-102402
+        # See issue gh-102402.
+        # Run the code in the subprocess, because the time module should
+        # be patched before the first import of the logging package.
+        # Temporary unloading and re-importing the logging package has
+        # side effects (including registering the atexit callback and
+        # references leak).
         start_ns = 1_677_903_920_000_998_503  # approx. 2023-03-04 04:25:20 UTC
         offsets_ns = (200, 500, 12_354, 99_999, 1_677_903_456_999_123_456)
         code = textwrap.dedent(f"""
@@ -4608,6 +4613,9 @@ class FormatterTest(unittest.TestCase, AssertErrorMessage):
             start_monotonic_ns = start_ns - 1
 
             import time
+            # Only time.time_ns needs to be patched for the current
+            # implementation, but patch also other functions to make
+            # the test less implementation depending.
             old_time_ns = time.time_ns
             old_time = time.time
             old_monotonic_ns = time.monotonic_ns
