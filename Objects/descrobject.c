@@ -9,7 +9,6 @@
 #include "pycore_modsupport.h"    // _PyArg_UnpackStack()
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
-#include "pycore_stackref.h"        // _PyObject_SetDeferredRefcount
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
 
 
