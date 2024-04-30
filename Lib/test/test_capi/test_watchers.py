@@ -1,7 +1,9 @@
 import unittest
 
 from contextlib import contextmanager, ExitStack
-from test.support import catch_unraisable_exception, import_helper
+from test.support import (
+    catch_unraisable_exception, import_helper,
+    gc_collect, suppress_immortalization)
 
 
 # Skip this test if the _testcapi module isn't available.
@@ -372,6 +374,7 @@ class TestCodeObjectWatchers(unittest.TestCase):
 
     def assert_event_counts(self, exp_created_0, exp_destroyed_0,
                             exp_created_1, exp_destroyed_1):
+        gc_collect()  # code objects are collected by GC in free-threaded build
         self.assertEqual(
             exp_created_0, _testcapi.get_code_watcher_num_created_events(0))
         self.assertEqual(
@@ -381,6 +384,7 @@ class TestCodeObjectWatchers(unittest.TestCase):
         self.assertEqual(
             exp_destroyed_1, _testcapi.get_code_watcher_num_destroyed_events(1))
 
+    @suppress_immortalization()
     def test_code_object_events_dispatched(self):
         # verify that all counts are zero before any watchers are registered
         self.assert_event_counts(0, 0, 0, 0)
@@ -427,11 +431,13 @@ class TestCodeObjectWatchers(unittest.TestCase):
                 self.assertIsNone(cm.unraisable.object)
                 self.assertEqual(str(cm.unraisable.exc_value), "boom!")
 
+    @suppress_immortalization()
     def test_dealloc_error(self):
         co = _testcapi.code_newempty("test_watchers", "dummy0", 0)
         with self.code_watcher(2):
             with catch_unraisable_exception() as cm:
                 del co
+                gc_collect()
 
                 self.assertEqual(str(cm.unraisable.exc_value), "boom!")
 

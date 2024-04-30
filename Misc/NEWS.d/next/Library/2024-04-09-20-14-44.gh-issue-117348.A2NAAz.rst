@@ -1,0 +1,2 @@
+Largely restored import time performance of configparser by avoiding
+dataclasses.

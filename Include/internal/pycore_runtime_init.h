@@ -114,6 +114,10 @@ extern PyTypeObject _PyExc_MemoryError;
         .autoTSSkey = Py_tss_NEEDS_INIT, \
         .parser = _parser_runtime_state_INIT, \
         .ceval = { \
+            .pending_mainthread = { \
+                .max = MAXPENDINGCALLS_MAIN, \
+                .maxloop = MAXPENDINGCALLSLOOP_MAIN, \
+            }, \
             .perf = _PyEval_RUNTIME_PERF_INIT, \
         }, \
         .gilstate = { \
@@ -162,9 +166,14 @@ extern PyTypeObject _PyExc_MemoryError;
 #define _PyInterpreterState_INIT(INTERP) \
     { \
         .id_refcount = -1, \
+        ._whence = _PyInterpreterState_WHENCE_NOTSET, \
         .imports = IMPORTS_INIT, \
         .ceval = { \
             .recursion_limit = Py_DEFAULT_RECURSION_LIMIT, \
+            .pending = { \
+                .max = MAXPENDINGCALLS, \
+                .maxloop = MAXPENDINGCALLSLOOP, \
+            }, \
         }, \
         .gc = { \
             .enabled = 1, \

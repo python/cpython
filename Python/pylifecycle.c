@@ -71,6 +71,9 @@ static PyStatus add_main_module(PyInterpreterState *interp);
 static PyStatus init_import_site(void);
 static PyStatus init_set_builtins_open(void);
 static PyStatus init_sys_streams(PyThreadState *tstate);
+#ifdef __ANDROID__
+static PyStatus init_android_streams(PyThreadState *tstate);
+#endif
 static void wait_for_thread_shutdown(PyThreadState *tstate);
 static void call_ll_exitfuncs(_PyRuntimeState *runtime);
 
@@ -477,6 +480,7 @@ pyinit_core_reconfigure(_PyRuntimeState *runtime,
     if (interp == NULL) {
         return _PyStatus_ERR("can't make main interpreter");
     }
+    assert(interp->_ready);
 
     status = _PyConfig_Write(config, runtime);
     if (_PyStatus_EXCEPTION(status)) {
@@ -558,6 +562,15 @@ init_interp_settings(PyInterpreterState *interp,
         return _PyStatus_ERR("per-interpreter obmalloc does not support "
                              "single-phase init extension modules");
     }
+#ifdef Py_GIL_DISABLED
+    if (!_Py_IsMainInterpreter(interp) &&
+        !config->check_multi_interp_extensions)
+    {
+        return _PyStatus_ERR("The free-threaded build does not support "
+                             "single-phase init extension modules in "
+                             "subinterpreters");
+    }
+#endif
 
     if (config->allow_fork) {
         interp->feature_flags |= Py_RTFLAGS_FORK;
@@ -631,6 +644,8 @@ pycore_create_interpreter(_PyRuntimeState *runtime,
     }
     assert(interp != NULL);
     assert(_Py_IsMainInterpreter(interp));
+    _PyInterpreterState_SetWhence(interp, _PyInterpreterState_WHENCE_RUNTIME);
+    interp->_ready = 1;
 
     status = _PyConfig_Copy(&interp->config, src_config);
     if (_PyStatus_EXCEPTION(status)) {
@@ -644,8 +659,10 @@ pycore_create_interpreter(_PyRuntimeState *runtime,
     }
 
     PyInterpreterConfig config = _PyInterpreterConfig_LEGACY_INIT;
-    // The main interpreter always has its own GIL.
+    // The main interpreter always has its own GIL and supports single-phase
+    // init extensions.
     config.gil = PyInterpreterConfig_OWN_GIL;
+    config.check_multi_interp_extensions = 0;
     status = init_interp_settings(interp, &config);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
@@ -763,7 +780,7 @@ pycore_init_builtins(PyThreadState *tstate)
     }
 
     PyObject *modules = _PyImport_GetModules(interp);
-    if (_PyImport_FixupBuiltin(bimod, "builtins", modules) < 0) {
+    if (_PyImport_FixupBuiltin(tstate, bimod, "builtins", modules) < 0) {
         goto error;
     }
 
@@ -1208,6 +1225,13 @@ init_interp_main(PyThreadState *tstate)
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
+
+#ifdef __ANDROID__
+    status = init_android_streams(tstate);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+#endif
 
 #ifdef Py_DEBUG
     run_presite(tstate);
@@ -2120,7 +2144,8 @@ Py_Finalize(void)
 */
 
 static PyStatus
-new_interpreter(PyThreadState **tstate_p, const PyInterpreterConfig *config)
+new_interpreter(PyThreadState **tstate_p,
+                const PyInterpreterConfig *config, long whence)
 {
     PyStatus status;
 
@@ -2143,6 +2168,8 @@ new_interpreter(PyThreadState **tstate_p, const PyInterpreterConfig *config)
         *tstate_p = NULL;
         return _PyStatus_OK();
     }
+    _PyInterpreterState_SetWhence(interp, whence);
+    interp->_ready = 1;
 
     // XXX Might new_interpreter() have been called without the GIL held?
     PyThreadState *save_tstate = _PyThreadState_GET();
@@ -2231,15 +2258,17 @@ PyStatus
 Py_NewInterpreterFromConfig(PyThreadState **tstate_p,
                             const PyInterpreterConfig *config)
 {
-    return new_interpreter(tstate_p, config);
+    long whence = _PyInterpreterState_WHENCE_CAPI;
+    return new_interpreter(tstate_p, config, whence);
 }
 
 PyThreadState *
 Py_NewInterpreter(void)
 {
     PyThreadState *tstate = NULL;
+    long whence = _PyInterpreterState_WHENCE_LEGACY_CAPI;
     const PyInterpreterConfig config = _PyInterpreterConfig_LEGACY_INIT;
-    PyStatus status = new_interpreter(&tstate, &config);
+    PyStatus status = new_interpreter(&tstate, &config, whence);
     if (_PyStatus_EXCEPTION(status)) {
         Py_ExitStatusException(status);
     }
@@ -2700,6 +2729,73 @@ done:
 }
 
 
+#ifdef __ANDROID__
+#include <android/log.h>
+
+static PyObject *
+android_log_write_impl(PyObject *self, PyObject *args)
+{
+    int prio = 0;
+    const char *tag = NULL;
+    const char *text = NULL;
+    if (!PyArg_ParseTuple(args, "isy", &prio, &tag, &text)) {
+        return NULL;
+    }
+
+    // Despite its name, this function is part of the public API
+    // (https://developer.android.com/ndk/reference/group/logging).
+    __android_log_write(prio, tag, text);
+    Py_RETURN_NONE;
+}
+
+
+static PyMethodDef android_log_write_method = {
+    "android_log_write", android_log_write_impl, METH_VARARGS
+};
+
+
+static PyStatus
+init_android_streams(PyThreadState *tstate)
+{
+    PyStatus status = _PyStatus_OK();
+    PyObject *_android_support = NULL;
+    PyObject *android_log_write = NULL;
+    PyObject *result = NULL;
+
+    _android_support = PyImport_ImportModule("_android_support");
+    if (_android_support == NULL) {
+        goto error;
+    }
+
+    android_log_write = PyCFunction_New(&android_log_write_method, NULL);
+    if (android_log_write == NULL) {
+        goto error;
+    }
+
+    // These log priorities match those used by Java's System.out and System.err.
+    result = PyObject_CallMethod(
+        _android_support, "init_streams", "Oii",
+        android_log_write, ANDROID_LOG_INFO, ANDROID_LOG_WARN);
+    if (result == NULL) {
+        goto error;
+    }
+
+    goto done;
+
+error:
+    _PyErr_Print(tstate);
+    status = _PyStatus_ERR("failed to initialize Android streams");
+
+done:
+    Py_XDECREF(result);
+    Py_XDECREF(android_log_write);
+    Py_XDECREF(_android_support);
+    return status;
+}
+
+#endif  // __ANDROID__
+
+
 static void
 _Py_FatalError_DumpTracebacks(int fd, PyInterpreterState *interp,
                               PyThreadState *tstate)
@@ -2891,6 +2987,7 @@ _Py_DumpExtensionModules(int fd, PyInterpreterState *interp)
             Py_ssize_t i = 0;
             PyObject *item;
             Py_hash_t hash;
+            // if stdlib_module_names is not NULL, it is always a frozenset.
             while (_PySet_NextEntry(stdlib_module_names, &i, &item, &hash)) {
                 if (PyUnicode_Check(item)
                     && PyUnicode_Compare(key, item) == 0)

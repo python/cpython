@@ -27,8 +27,11 @@ class HoleValue(enum.Enum):
     GOT = enum.auto()
     # The current uop's oparg (exposed as _JIT_OPARG):
     OPARG = enum.auto()
-    # The current uop's operand (exposed as _JIT_OPERAND):
+    # The current uop's operand on 64-bit platforms (exposed as _JIT_OPERAND):
     OPERAND = enum.auto()
+    # The current uop's operand on 32-bit platforms (exposed as _JIT_OPERAND_HI and _JIT_OPERAND_LO):
+    OPERAND_HI = enum.auto()
+    OPERAND_LO = enum.auto()
     # The current uop's target (exposed as _JIT_TARGET):
     TARGET = enum.auto()
     # The base address of the machine code for the jump target (exposed as _JIT_JUMP_TARGET):
@@ -200,7 +203,9 @@ class StencilGroup:
         """Fix up all GOT and internal relocations for this stencil group."""
         for hole in self.code.holes.copy():
             if (
-                hole.kind in {"R_AARCH64_CALL26", "R_AARCH64_JUMP26"}
+                hole.kind in {
+                    "R_AARCH64_CALL26", "R_AARCH64_JUMP26", "ARM64_RELOC_BRANCH26"
+                }
                 and hole.value is HoleValue.ZERO
             ):
                 self.code.pad(alignment)

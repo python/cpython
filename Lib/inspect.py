@@ -160,6 +160,7 @@ import builtins
 from keyword import iskeyword
 from operator import attrgetter
 from collections import namedtuple, OrderedDict
+from weakref import ref as make_weakref
 
 # Create constants for the compiler flags in Include/code.h
 # We try to get them from dis to avoid duplication
@@ -1832,9 +1833,16 @@ def _check_class(klass, attr):
             return entry.__dict__[attr]
     return _sentinel
 
+
 @functools.lru_cache()
-def _shadowed_dict_from_mro_tuple(mro):
-    for entry in mro:
+def _shadowed_dict_from_weakref_mro_tuple(*weakref_mro):
+    for weakref_entry in weakref_mro:
+        # Normally we'd have to check whether the result of weakref_entry()
+        # is None here, in case the object the weakref is pointing to has died.
+        # In this specific case, however, we know that the only caller of this
+        # function is `_shadowed_dict()`, and that therefore this weakref is
+        # guaranteed to point to an object that is still alive.
+        entry = weakref_entry()
         dunder_dict = _get_dunder_dict_of_class(entry)
         if '__dict__' in dunder_dict:
             class_dict = dunder_dict['__dict__']
@@ -1844,8 +1852,19 @@ def _shadowed_dict_from_mro_tuple(mro):
                 return class_dict
     return _sentinel
 
+
 def _shadowed_dict(klass):
-    return _shadowed_dict_from_mro_tuple(_static_getmro(klass))
+    # gh-118013: the inner function here is decorated with lru_cache for
+    # performance reasons, *but* make sure not to pass strong references
+    # to the items in the mro. Doing so can lead to unexpected memory
+    # consumption in cases where classes are dynamically created and
+    # destroyed, and the dynamically created classes happen to be the only
+    # objects that hold strong references to other objects that take up a
+    # significant amount of memory.
+    return _shadowed_dict_from_weakref_mro_tuple(
+        *[make_weakref(entry) for entry in _static_getmro(klass)]
+    )
+
 
 def getattr_static(obj, attr, default=_sentinel):
     """Retrieve attributes without triggering dynamic lookup via the
@@ -2160,8 +2179,10 @@ def _signature_is_builtin(obj):
             ismethoddescriptor(obj) or
             isinstance(obj, _NonUserDefinedCallables) or
             # Can't test 'isinstance(type)' here, as it would
-            # also be True for regular python classes
-            obj in (type, object))
+            # also be True for regular python classes.
+            # Can't use the `in` operator here, as it would
+            # invoke the custom __eq__ method.
+            obj is type or obj is object)
 
 
 def _signature_is_functionlike(obj):
@@ -2673,6 +2694,13 @@ def _signature_from_callable(obj, *,
         # An object with __call__
         call = getattr_static(type(obj), '__call__', None)
         if call is not None:
+            try:
+                text_sig = obj.__text_signature__
+            except AttributeError:
+                pass
+            else:
+                if text_sig:
+                    return _signature_fromstr(sigcls, obj, text_sig)
             call = _descriptor_get(call, obj)
             return _get_signature_of(call)
 
