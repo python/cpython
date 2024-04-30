@@ -468,8 +468,8 @@ PyAPI_FUNC(void) _PyTrash_thread_destroy_chain(PyThreadState *tstate);
 
 /* Python 3.10 private API, invoked by the Py_TRASHCAN_BEGIN(). */
 
-/* To avoid raising recursion errors during dealloc, trigger trashcan before we reach
- * recursion limit. To avoid thrashing, we don't attempt to empty the trashcan until
+/* To avoid raising recursion errors during dealloc trigger trashcan before we reach
+ * recursion limit. To avoid trashing, we don't attempt to empty the trashcan until
  * we have headroom above the trigger limit */
 #define Py_TRASHCAN_HEADROOM 50
 
@@ -480,10 +480,10 @@ do { \
         _PyTrash_thread_deposit_object(tstate, (PyObject *)op); \
         break; \
     } \
-    tstate->c_recursion_remaining -= 2;
+    tstate->c_recursion_remaining--;
     /* The body of the deallocator is here. */
 #define Py_TRASHCAN_END \
-    tstate->c_recursion_remaining += 2; \
+    tstate->c_recursion_remaining++; \
     if (tstate->delete_later && tstate->c_recursion_remaining > (Py_TRASHCAN_HEADROOM*2)) { \
         _PyTrash_thread_destroy_chain(tstate); \
     } \
