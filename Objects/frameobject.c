@@ -1868,6 +1868,10 @@ _PyFrame_GetLocals(_PyInterpreterFrame *frame)
 PyObject*
 _PyFrame_GetHiddenLocals(_PyInterpreterFrame *frame)
 {
+    /*
+     * This function returns all the hidden locals introduced by PEP 709,
+     * which are the isolated fast locals for inline comprehensions
+     */
     PyObject* hidden = PyDict_New();
     PyFrameObject* f = _PyFrame_GetFrameObject(frame);
 
