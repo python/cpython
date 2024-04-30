@@ -36,13 +36,55 @@ Dictionaries are sorted by key before the display is computed.
 Functions
 ---------
 
-.. function:: pp(object, *args, sort_dicts=False, **kwargs)
+.. function:: pp(object, stream=None, indent=1, width=80, depth=None, *, \
+                     compact=False, sort_dicts=False, underscore_numbers=False)
 
-   Prints the formatted representation of *object* followed by a newline.
-   If *sort_dicts* is false (the default), dictionaries will be displayed with
-   their keys in insertion order, otherwise the dict keys will be sorted.
-   *args* and *kwargs* will be passed to :func:`~pprint.pprint` as formatting
-   parameters.
+   Prints the formatted representation of *object*, followed by a newline.
+   This function may be used in the interactive interpreter
+   instead of the :func:`print` function for inspecting values.
+   Tip: you can reassign ``print = pprint.pp`` for use within a scope.
+
+   :param object:
+      The object to be printed.
+
+   :param int indent:
+      The amount of indentation added for each nesting level.
+
+   :param int width:
+      The desired maximum number of characters per line in the output.
+      If a structure cannot be formatted within the width constraint,
+      a best effort will be made.
+
+   :param depth:
+      The number of nesting levels which may be printed.
+      If the data structure being printed is too deep,
+      the next contained level is replaced by ``...``.
+      If ``None`` (the default), there is no constraint
+      on the depth of the objects being formatted.
+   :type depth: int | None
+
+   :param stream:
+      A file-like object to which the output will be written
+      by calling its :meth:`!write` method.
+      If ``None`` (the default), :data:`sys.stdout` is used.
+   :type stream: :term:`file-like object` | None
+
+   :param bool compact:
+      Control the way long :term:`sequences <sequence>` are formatted.
+      If ``False`` (the default),
+      each item of a sequence will be formatted on a separate line,
+      otherwise as many items as will fit within the *width*
+      will be formatted on each output line.
+
+   :param bool sort_dicts:
+      If ``True``, dictionaries will be formatted with
+      their keys sorted, otherwise
+      they will be displayed in insertion order (the default).
+
+   :param bool underscore_numbers:
+      If ``True``,
+      integers will be formatted with the ``_`` character for a thousands separator,
+      otherwise underscores are not displayed (the default).
 
       >>> import pprint
       >>> stuff = ['spam', 'eggs', 'lumberjack', 'knights', 'ni']
@@ -61,57 +103,9 @@ Functions
 .. function:: pprint(object, stream=None, indent=1, width=80, depth=None, *, \
                      compact=False, sort_dicts=True, underscore_numbers=False)
 
-   Prints the formatted representation of *object* on *stream*, followed by a
-   newline.  If *stream* is ``None``, :data:`sys.stdout` is used. This may be used
-   in the interactive interpreter instead of the :func:`print` function for
-   inspecting values (you can even reassign ``print = pprint.pprint`` for use
-   within a scope).
-
-   The configuration parameters *stream*, *indent*, *width*, *depth*,
-   *compact*, *sort_dicts* and *underscore_numbers* are passed to the
-   :class:`PrettyPrinter` constructor and their meanings are as
-   described in the documentation below.
-
-   Note that *sort_dicts* is ``True`` by default and you might want to use
-   :func:`~pprint.pp` instead where it is ``False`` by default.
-
-.. _prettyprinter-parameters:
-
-.. list-table:: **Recognised parameters for PrettyPrinter**
-   :header-rows: 1
-   :widths: 20 80
-
-   * - Parameter
-     - Description
-   * - ``indent``: ``int``
-     - The amount of indentation added for each nesting level.
-   * - ``width``: ``int``
-     - The desired maximum number of characters per line in the output.
-       If a structure cannot be formatted within the width constraint,
-       a best effort will be made.
-   * - ``depth``: ``int`` | ``None``
-     - The number of nesting levels which may be printed.
-       If the data structure being printed is too deep,
-       the next contained level is replaced by ``...``.
-       If ``None`` (the default), there is no constraint
-       on the depth of the objects being formatted.
-   * - ``stream``: :term:`file-like object` | ``None``
-     - A file-like object to which the output will be written
-       by calling its :meth:`!write` method.
-       If ``None`` (the default), :data:`sys.stdout` is used.
-   * - ``compact``: ``bool``
-     - Control the way long :term:`sequences <sequence>` are formatted.
-       If ``False`` (the default),
-       each item of a sequence will be formatted on a separate line,
-       otherwise as many items as will fit within the *width*
-       will be formatted on each output line.
-   * - ``sort_dicts``: ``bool``
-     - If ``True`` (the default), dictionaries will be formatted with
-       their keys sorted, otherwise they will display in insertion order.
-   * - ``underscore_numbers``: ``bool``
-     - If ``True``,
-       integers will be formatted with the ``_`` character for a thousands separator,
-       otherwise underscores are not displayed (the default).
+   Alias for :func:`~pprint.pp` with *sort_dicts* set to ``True`` by default,
+   which would automatically sort the dictionaries' keys,
+   you might want to use :func:`~pprint.pp` instead where it is ``False`` by default.
 
 
 .. function:: pformat(object, indent=1, width=80, depth=None, *, \
@@ -164,9 +158,45 @@ PrettyPrinter Objects
 .. class:: PrettyPrinter(indent=1, width=80, depth=None, stream=None, *, \
                          compact=False, sort_dicts=True, underscore_numbers=False)
 
-   Construct a :class:`PrettyPrinter` instance.  This constructor understands
-   several keyword parameters.
-   Parameters described at :ref:`parameters table <prettyprinter-parameters>`.
+   Construct a :class:`PrettyPrinter` instance.
+
+   :param int indent:
+      The amount of indentation added for each nesting level.
+
+   :param int width:
+      The desired maximum number of characters per line in the output.
+      If a structure cannot be formatted within the width constraint,
+      a best effort will be made.
+
+   :param depth:
+      The number of nesting levels which may be printed.
+      If the data structure being printed is too deep,
+      the next contained level is replaced by ``...``.
+      If ``None`` (the default), there is no constraint
+      on the depth of the objects being formatted.
+   :type depth: int | None
+
+   :param stream:
+      A file-like object to which the output will be written
+      by calling its :meth:`!write` method.
+      If ``None`` (the default), :data:`sys.stdout` is used.
+   :type stream: :term:`file-like object` | None
+
+   :param bool compact:
+      Control the way long :term:`sequences <sequence>` are formatted.
+      If ``False`` (the default),
+      each item of a sequence will be formatted on a separate line,
+      otherwise as many items as will fit within the *width*
+      will be formatted on each output line.
+
+   :param bool sort_dicts:
+      If ``True`` (the default), dictionaries will be formatted with
+      their keys sorted, otherwise they will be displayed in insertion order.
+
+   :param bool underscore_numbers:
+      If ``True``,
+      integers will be formatted with the ``_`` character for a thousands separator,
+      otherwise underscores are not displayed (the default).
 
    .. versionchanged:: 3.4
       Added the *compact* parameter.
