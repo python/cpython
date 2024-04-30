@@ -17,7 +17,7 @@ jobs:
       CROSS_BUILD_PYTHON: cross-build/build
       CROSS_BUILD_WASI: cross-build/wasm32-wasi
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v4.1.4
     # No problem resolver registered as one doesn't currently exist for Clang.
     - name: "Install wasmtime"
       uses: jcbhmr/setup-wasmtime@v2
@@ -25,7 +25,7 @@ jobs:
         wasmtime-version: ${{ env.WASMTIME_VERSION }}
     - name: "Restore WASI SDK"
       id: cache-wasi-sdk
-      uses: actions/cache@v4
+      uses: actions/cache@v4.0.2
       with:
         path: ${{ env.WASI_SDK_PATH }}
         key: ${{ runner.os }}-wasi-sdk-${{ env.WASI_SDK_VERSION }}
@@ -43,11 +43,11 @@ jobs:
     - name: "Add ccache to PATH"
       run: echo "PATH=/usr/lib/ccache:$PATH" >> $GITHUB_ENV
     - name: "Install Python"
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v5.1.0
       with:
         python-version: '3.x'
     - name: "Restore Python build config.cache"
-      uses: actions/cache@v4
+      uses: actions/cache@v4.0.2
       with:
         path: ${{ env.CROSS_BUILD_PYTHON }}/config.cache
         # Include env.pythonLocation in key to avoid changes in environment when setup-python updates Python
@@ -57,7 +57,7 @@ jobs:
     - name: "Make build Python"
       run: python3 Tools/wasm/wasi.py make-build-python
     - name: "Restore host config.cache"
-      uses: actions/cache@v4
+      uses: actions/cache@v4.0.2
       with:
         path: ${{ env.CROSS_BUILD_WASI }}/config.cache
         # Include env.pythonLocation in key to avoid changes in environment when setup-python updates Python

@@ -23,7 +23,7 @@ jobs:
       refspec_pr: '+${{ github.event.pull_request.head.sha }}:remotes/origin/${{ github.event.pull_request.head.ref }}'
     steps:
     - name: 'Check out latest PR branch commit'
-      uses: actions/checkout@v4
+      uses: actions/checkout@v4.1.4
       with:
         ref: ${{ github.event.pull_request.head.sha }}
     # Adapted from https://github.com/actions/checkout/issues/520#issuecomment-1167205721
@@ -41,7 +41,7 @@ jobs:
         git fetch origin ${{ env.refspec_base }} --shallow-since="${DATE}" \
           --no-tags --prune --no-recurse-submodules
     - name: 'Set up Python'
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v5.1.0
       with:
         python-version: '3'
         cache: 'pip'
@@ -70,9 +70,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v4.1.4
     - name: 'Set up Python'
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v5.1.0
       with:
         python-version: '3.12'  # known to work with Sphinx 6.2.1
         cache: 'pip'
@@ -88,8 +88,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
-    - uses: actions/checkout@v4
-    - uses: actions/cache@v4
+    - uses: actions/checkout@v4.1.4
+    - uses: actions/cache@v4.0.2
       with:
         path: ~/.cache/pip
         key: ubuntu-doc-${{ hashFiles('Doc/requirements.txt') }}

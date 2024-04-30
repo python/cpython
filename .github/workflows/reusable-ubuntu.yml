@@ -18,7 +18,7 @@ jobs:
       OPENSSL_VER: 3.0.13
       PYTHONSTRICTEXTENSIONBUILD: 1
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v4.1.4
     - name: Register gcc problem matcher
       run: echo "::add-matcher::.github/problem-matchers/gcc.json"
     - name: Install dependencies
@@ -30,7 +30,7 @@ jobs:
         echo "LD_LIBRARY_PATH=${GITHUB_WORKSPACE}/multissl/openssl/${OPENSSL_VER}/lib" >> $GITHUB_ENV
     - name: 'Restore OpenSSL build'
       id: cache-openssl
-      uses: actions/cache@v4
+      uses: actions/cache@v4.0.2
       with:
         path: ./multissl/openssl/${{ env.OPENSSL_VER }}
         key: ${{ runner.os }}-multissl-openssl-${{ env.OPENSSL_VER }}
@@ -56,7 +56,7 @@ jobs:
     - name: Runner image version
       run: echo "IMAGE_VERSION=${ImageVersion}" >> $GITHUB_ENV
     - name: Restore config.cache
-      uses: actions/cache@v4
+      uses: actions/cache@v4.0.2
       with:
         path: ${{ env.CPYTHON_BUILDDIR }}/config.cache
         key: ${{ github.job }}-${{ runner.os }}-${{ env.IMAGE_VERSION }}-${{ inputs.config_hash }}

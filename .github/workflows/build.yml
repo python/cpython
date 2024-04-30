@@ -41,7 +41,7 @@ jobs:
       run_cifuzz: ${{ steps.check.outputs.run_cifuzz }}
       config_hash: ${{ steps.config_hash.outputs.hash }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4.1.4
       - name: Check for source changes
         id: check
         run: |
@@ -127,14 +127,14 @@ jobs:
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true'
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v4.1.4
+      - uses: actions/setup-python@v5.1.0
         with:
           python-version: '3.x'
       - name: Runner image version
         run: echo "IMAGE_VERSION=${ImageVersion}" >> $GITHUB_ENV
       - name: Restore config.cache
-        uses: actions/cache@v4
+        uses: actions/cache@v4.0.2
         with:
           path: config.cache
           # Include env.pythonLocation in key to avoid changes in environment when setup-python updates Python
@@ -264,11 +264,11 @@ jobs:
       OPENSSL_DIR: ${{ github.workspace }}/multissl/openssl/${{ matrix.openssl_ver }}
       LD_LIBRARY_PATH: ${{ github.workspace }}/multissl/openssl/${{ matrix.openssl_ver }}/lib
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v4.1.4
     - name: Runner image version
       run: echo "IMAGE_VERSION=${ImageVersion}" >> $GITHUB_ENV
     - name: Restore config.cache
-      uses: actions/cache@v4
+      uses: actions/cache@v4.0.2
       with:
         path: config.cache
         key: ${{ github.job }}-${{ runner.os }}-${{ env.IMAGE_VERSION }}-${{ needs.check_source.outputs.config_hash }}
@@ -283,7 +283,7 @@ jobs:
         echo "LD_LIBRARY_PATH=${GITHUB_WORKSPACE}/multissl/openssl/${OPENSSL_VER}/lib" >> $GITHUB_ENV
     - name: 'Restore OpenSSL build'
       id: cache-openssl
-      uses: actions/cache@v4
+      uses: actions/cache@v4.0.2
       with:
         path: ./multissl/openssl/${{ env.OPENSSL_VER }}
         key: ${{ runner.os }}-multissl-openssl-${{ env.OPENSSL_VER }}
@@ -324,7 +324,7 @@ jobs:
       OPENSSL_VER: 3.0.13
       PYTHONSTRICTEXTENSIONBUILD: 1
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v4.1.4
     - name: Register gcc problem matcher
       run: echo "::add-matcher::.github/problem-matchers/gcc.json"
     - name: Install Dependencies
@@ -336,7 +336,7 @@ jobs:
         echo "LD_LIBRARY_PATH=${GITHUB_WORKSPACE}/multissl/openssl/${OPENSSL_VER}/lib" >> $GITHUB_ENV
     - name: 'Restore OpenSSL build'
       id: cache-openssl
-      uses: actions/cache@v4
+      uses: actions/cache@v4.0.2
       with:
         path: ./multissl/openssl/${{ env.OPENSSL_VER }}
         key: ${{ runner.os }}-multissl-openssl-${{ env.OPENSSL_VER }}
@@ -361,7 +361,7 @@ jobs:
     - name: Runner image version
       run: echo "IMAGE_VERSION=${ImageVersion}" >> $GITHUB_ENV
     - name: Restore config.cache
-      uses: actions/cache@v4
+      uses: actions/cache@v4.0.2
       with:
         path: ${{ env.CPYTHON_BUILDDIR }}/config.cache
         key: ${{ github.job }}-${{ runner.os }}-${{ env.IMAGE_VERSION }}-${{ needs.check_source.outputs.config_hash }}
@@ -394,7 +394,7 @@ jobs:
         ./python -m venv $VENV_LOC && $VENV_PYTHON -m pip install -r ${GITHUB_WORKSPACE}/Tools/requirements-hypothesis.txt
     - name: 'Restore Hypothesis database'
       id: cache-hypothesis-database
-      uses: actions/cache@v4
+      uses: actions/cache@v4.0.2
       with:
         path: ./hypothesis
         key: hypothesis-database-${{ github.head_ref || github.run_id }}
@@ -438,11 +438,11 @@ jobs:
       PYTHONSTRICTEXTENSIONBUILD: 1
       ASAN_OPTIONS: detect_leaks=0:allocator_may_return_null=1:handle_segv=0
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v4.1.4
     - name: Runner image version
       run: echo "IMAGE_VERSION=${ImageVersion}" >> $GITHUB_ENV
     - name: Restore config.cache
-      uses: actions/cache@v4
+      uses: actions/cache@v4.0.2
       with:
         path: config.cache
         key: ${{ github.job }}-${{ runner.os }}-${{ env.IMAGE_VERSION }}-${{ needs.check_source.outputs.config_hash }}
@@ -461,7 +461,7 @@ jobs:
         echo "LD_LIBRARY_PATH=${GITHUB_WORKSPACE}/multissl/openssl/${OPENSSL_VER}/lib" >> $GITHUB_ENV
     - name: 'Restore OpenSSL build'
       id: cache-openssl
-      uses: actions/cache@v4
+      uses: actions/cache@v4.0.2
       with:
         path: ./multissl/openssl/${{ env.OPENSSL_VER }}
         key: ${{ runner.os }}-multissl-openssl-${{ env.OPENSSL_VER }}

@@ -35,6 +35,6 @@ jobs:
     env:
       IncludeFreethreaded: true
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v4.1.4
     - name: Build CPython installer
       run: .\Tools\msi\build.bat --doc -${{ matrix.type }}
