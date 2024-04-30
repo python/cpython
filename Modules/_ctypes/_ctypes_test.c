@@ -759,6 +759,7 @@ EXPORT(int) unpack_bitfields(struct BITS *bits, char name)
     return 999;
 }
 
+#if defined(MS_WIN32) || defined(__GNUC__) || defined(__clang__)
 struct
 #ifndef MS_WIN32
 __attribute__ ((ms_struct))
@@ -801,6 +802,7 @@ EXPORT(int) unpack_bitfields_msvc(struct BITS_msvc *bits, char name)
     }
     return 999;
 }
+#endif
 
 static PyMethodDef module_methods[] = {
 /*      {"get_last_tf_arg_s", get_last_tf_arg_s, METH_NOARGS},

@@ -54,8 +54,16 @@ class BITS_msvc(Structure):
                 ("R", c_short, 6),
                 ("S", c_short, 7)]
 
-func_msvc = CDLL(_ctypes_test.__file__).unpack_bitfields_msvc
-func_msvc.argtypes = POINTER(BITS_msvc), c_char
+
+try:
+    func_msvc = CDLL(_ctypes_test.__file__).unpack_bitfields_msvc
+except AttributeError as err:
+    # The MSVC struct must be available on Windows; it's optional elsewhere
+    if support.MS_WINDOWS:
+        raise err
+    func_msvc = None
+else:
+    func_msvc.argtypes = POINTER(BITS_msvc), c_char
 
 
 class C_Test(unittest.TestCase):
@@ -86,6 +94,8 @@ class C_Test(unittest.TestCase):
                     func(byref(b), (name.encode('ascii'))),
                     (name, i))
 
+
+    @unittest.skipUnless(func_msvc, "need MSVC or __attribute__((ms_struct))")
     def test_shorts_msvc_mode(self):
         b = BITS_msvc()
         name = "M"
