@@ -1192,7 +1192,7 @@ if $CPP $CPPFLAGS conftest.c >conftest.out 2>/dev/null; then
   AC_DEFINE_UNQUOTED([ANDROID_API_LEVEL], [$ANDROID_API_LEVEL],
                      [The Android API level.])
 
-  # For __android_log_write in pylifecycle.c.
+  # For __android_log_write() in Python/pylifecycle.c.
   LIBS="$LIBS -llog"
 
   AC_MSG_CHECKING([for the Android arm ABI])
