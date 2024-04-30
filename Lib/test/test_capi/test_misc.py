@@ -2294,7 +2294,7 @@ class SubinterpreterTest(unittest.TestCase):
             module = importlib.util.module_from_spec(spec)
             spec.loader.exec_module(module)
         """)
-        exec(script)
+        exec(script)  # run main interp first
         ret = support.run_in_subinterp(script)
         self.assertEqual(ret, 0)
 
