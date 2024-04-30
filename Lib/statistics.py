@@ -1788,13 +1788,9 @@ def kde_random(data, h, kernel='normal', *, seed=None):
     if h <= 0.0:
         raise StatisticsError(f'Bandwidth h must be positive, not {h=!r}')
 
-    if seed is None:
-        random = _random.random
-        choice = _random.choice
-    else:
-        prng = _random.Random(seed)
-        random = prng.random
-        choice = prng.choice
+    prng = _random.Random(seed)
+    random = prng.random
+    choice = prng.choice
 
     try:
         kernel_invcdf = _kernel_invcdfs[kernel]
