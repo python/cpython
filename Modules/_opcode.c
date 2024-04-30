@@ -371,7 +371,7 @@ _opcode_get_executor_impl(PyObject *module, PyObject *code, int offset)
     return (PyObject *)PyUnstable_GetExecutor((PyCodeObject *)code, offset);
 #else
     PyErr_Format(PyExc_RuntimeError,
-                 "Executors is not available in this build");
+                 "Executors are not available in this build");
     return NULL;
 #endif
 }
