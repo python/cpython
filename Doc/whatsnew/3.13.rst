@@ -924,8 +924,8 @@ The ``--enable-experimental-jit`` flag has the following optional values:
   -- Enable the JIT. To disable the JIT at runtime,
   pass the environment variable ``PYTHON_JIT=0``.
 
-* ``yes-default-off`` -- Build the JIT but disable it by default.
-  To emable the JIT at runtime, pass the environment variable
+* ``yes-off`` -- Build the JIT but disable it by default.
+  To enable the JIT at runtime, pass the environment variable
   ``PYTHON_JIT=1``.
 
 * ``interpreter`` -- Enable the Tier 2 interpreter but disable the JIT.

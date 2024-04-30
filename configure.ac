@@ -1768,18 +1768,18 @@ fi
 # Check for --enable-experimental-jit:
 AC_MSG_CHECKING([for --enable-experimental-jit])
 AC_ARG_ENABLE([experimental-jit],
-              [AS_HELP_STRING([--enable-experimental-jit@<:@=no|yes|yes-default-off|interpreter@:>@],
+              [AS_HELP_STRING([--enable-experimental-jit@<:@=no|yes|yes-off|interpreter@:>@],
                               [build the experimental just-in-time compiler (default is no)])],
               [],
               [enable_experimental_jit=no])
 case $enable_experimental_jit in
   no) enable_experimental_jit=no ;;
   yes) enable_experimental_jit="-D_Py_JIT -D_Py_TIER2=1" ;;
-  yes-default-off) enable_experimental_jit="-D_Py_JIT -D_Py_TIER2=3" ;;
+  yes-off) enable_experimental_jit="-D_Py_JIT -D_Py_TIER2=3" ;;
   interpreter) enable_experimental_jit="-D_Py_TIER2=4" ;;
-  interpreter-default-off) enable_experimental_jit="-D_Py_TIER2=6" ;;  # Secret option
+  interpreter-off) enable_experimental_jit="-D_Py_TIER2=6" ;;  # Secret option
   *) AC_MSG_ERROR(
-      [invalid argument: --enable-experimental-jit=$enable_experimental_jit; expected no|yes|yes-default-off|interpreter]) ;;
+      [invalid argument: --enable-experimental-jit=$enable_experimental_jit; expected no|yes|yes-off|interpreter]) ;;
 esac
 AS_VAR_IF([enable_experimental_jit],
           [no],
