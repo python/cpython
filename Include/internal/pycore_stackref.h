@@ -156,6 +156,15 @@ PyStackRef_NewRef(_PyStackRef obj)
     return obj;
 }
 
+static inline _PyStackRef
+PyStackRef_XNewRef(_PyStackRef obj)
+{
+    if (PyStackRef_Get(obj) == NULL) {
+        return obj;
+    }
+    return PyStackRef_NewRef(obj);
+}
+
 // Converts a PyObject * to a PyStackRef, with a new reference
 #if defined(Py_GIL_DISABLED)
     static inline _PyStackRef
@@ -164,7 +173,7 @@ PyStackRef_NewRef(_PyStackRef obj)
         assert(PyStackRef_Get(((_PyStackRef){.bits = ((uintptr_t)(obj))})) == obj);
         int is_deferred = (obj != NULL && _PyObject_HasDeferredRefcount(obj));
         int tag = (is_deferred ? Py_TAG_DEFERRED : 0);
-        return PyStackRef_NewRef((_PyStackRef){.bits = ((uintptr_t)(obj) | tag)});
+        return PyStackRef_XNewRef((_PyStackRef){.bits = ((uintptr_t)(obj) | tag)});
     }
     #define PyStackRef_NewRefDeferred(obj) _PyStackRef_NewRefDeferred(_PyObject_CAST(obj))
 #else
