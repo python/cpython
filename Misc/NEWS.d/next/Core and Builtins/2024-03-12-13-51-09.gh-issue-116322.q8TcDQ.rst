@@ -1,5 +1,5 @@
-Multi-phase init extension modules may indicate to the runtime that they can
-run without the GIL by providing ``Py_MOD_GIL_NOT_USED`` for the ``Py_mod_gil``
-slot. In ``--disable-gil`` builds, loading extensions that do not provide this
-slot will enable the GIL for the remainder of the current interpreter, unless
-the GIL was explicitly disabled by ``PYTHON_GIL=0`` or ``-Xgil=0``.
+Extension modules may indicate to the runtime that they can run without the
+GIL. Multi-phase init modules do so by calling providing
+``Py_MOD_GIL_NOT_USED`` for the ``Py_mod_gil`` slot, while single-phase init
+modules call ``PyModule_ExperimentalSetGIL(mod, Py_MOD_GIL_NOT_USED)`` from
+their init function.
