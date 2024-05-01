@@ -41,7 +41,7 @@ struct _pending_call {
 #define MAXPENDINGCALLSLOOP_MAIN 0
 
 struct _pending_calls {
-    int busy;
+    PyThreadState *handling_thread;
     PyMutex mutex;
     /* Request for running pending calls. */
     int32_t npending;
