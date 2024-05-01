@@ -959,10 +959,12 @@ struct extensions_cache_value {
        multiple initializations.
        It is set by update_global_state_for_extension(). */
     cached_m_dict_t m_dict;
-    PyInterpreterState *m_dict_interp;
+    int64_t m_dict_interpid;
 
     _Py_ext_module_origin origin;
 };
+#define EXTENSIONS_CACHE_VALUE_INIT \
+    (struct extensions_cache_value){ .m_dict_interpid=-1 }
 
 static struct extensions_cache_value *
 alloc_extensions_cache_value(void)
@@ -973,7 +975,7 @@ alloc_extensions_cache_value(void)
         PyErr_NoMemory();
         return NULL;
     }
-    *value = (struct extensions_cache_value){0};
+    *value = EXTENSIONS_CACHE_VALUE_INIT;
     return value;
 }
 
@@ -989,10 +991,9 @@ set_cached_m_dict(struct extensions_cache_value *value, PyObject *m_dict)
     assert(value != NULL);
     assert(value->def != NULL);
 
-    PyInterpreterState *interp = NULL;
+    int64_t interpid = -1;
     PyObject *copied = NULL;
     if (m_dict != NULL) {
-        interp = _PyInterpreterState_GET();
         assert(value->origin != _Py_ext_module_origin_CORE);
         assert(PyDict_Check(m_dict));
         copied = PyDict_Copy(m_dict);
@@ -1001,6 +1002,11 @@ set_cached_m_dict(struct extensions_cache_value *value, PyObject *m_dict)
             return -1;
         }
         // XXX We may want to make copied immortal.
+
+        value->def->m_base.m_cache_has_m_dict = 1;
+
+        PyInterpreterState *interp = _PyInterpreterState_GET();
+        interpid = PyInterpreterState_GetID(interp);
     }
 
     /* XXX gh-88216: The copied dict is owned by the current
@@ -1025,7 +1031,7 @@ set_cached_m_dict(struct extensions_cache_value *value, PyObject *m_dict)
 
     value->def->m_base.m_copy = Py_XNewRef(copied);
     value->m_dict = (cached_m_dict_t)copied;
-    value->m_dict_interp = interp;
+    value->m_dict_interpid = interpid;
     return 0;
 }
 
@@ -1079,7 +1085,7 @@ update_extensions_cache_value(struct extensions_cache_value *value,
     /* For now we don't worry about comparing value->m_copy. */
     assert(def->m_base.m_copy == NULL || m_dict != NULL);
     assert(value->m_dict == NULL || m_dict != NULL);
-    assert((value->m_dict == NULL) == (value->m_dict_interp == NULL));
+    assert((value->m_dict == NULL) == (value->m_dict_interpid < 0));
     assert(origin != _Py_ext_module_origin_CORE || m_dict == NULL);
 
     /* We assume that all module defs are statically allocated
@@ -1261,7 +1267,7 @@ _extensions_cache_set(PyObject *path, PyObject *name,
     struct extensions_cache_value *value = NULL;
     struct extensions_cache_value *newvalue = NULL;
 
-    struct extensions_cache_value updates = {0};
+    struct extensions_cache_value updates = EXTENSIONS_CACHE_VALUE_INIT;
     if (update_extensions_cache_value(
             &updates, def, m_init, m_dict, origin) < 0)
     {
