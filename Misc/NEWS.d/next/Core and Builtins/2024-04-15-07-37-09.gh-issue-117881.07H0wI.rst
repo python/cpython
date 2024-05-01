@@ -1,0 +1,1 @@
+prevent concurrent access to an async generator via athrow().throw() or asend().throw()
