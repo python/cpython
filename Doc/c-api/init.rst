@@ -1925,23 +1925,27 @@ Python-level trace functions in previous versions.
    object has been destroyed.
 
 .. c:function:: int PyRefTracer_SetTracer(PyRefTracer tracer, void *data)
-
-   Register a reference tracer function. The function will be called when a new Python
-   has been created or when an object is going to be destroyed. If **data** is provided
-   it must be an opaque pointer that will be provided when the tracer function is called.
-
-   Not that tracer functions **must not** create Python objects inside or otherwise the
-   call will be re-entrant.
-
+   
+   Register a reference tracer function. The function will be called when a new
+   Python has been created or when an object is going to be destroyed. If
+   **data** is provided it must be an opaque pointer that will be provided when
+   the tracer function is called.
+   
+   Not that tracer functions **must not** create Python objects inside or
+   otherwise the call will be re-entrant. The tracer also **must not** clear
+   any existing exception or set an exception.  The GIL will be held every time
+   the tracer function is called.
+   
    The GIL must be held when calling this function.
 
 .. versionadded:: 3.13
 
 .. c:function:: PyRefTracer PyRefTracer_GetTracer(void** data)
 
-   Get the registered reference tracer function and the value of the opaque data pointer that
-   was registered when :c:func:`PyRefTracer_SetTracer` was called. If no tracer was registered
-   this function will return NULL and will set the **data** pointer to NULL.
+   Get the registered reference tracer function and the value of the opaque data
+   pointer that was registered when :c:func:`PyRefTracer_SetTracer` was called.
+   If no tracer was registered this function will return NULL and will set the
+   **data** pointer to NULL.
 
    The GIL must be held when calling this function.
 
