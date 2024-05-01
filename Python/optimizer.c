@@ -75,7 +75,7 @@ insert_executor(PyCodeObject *code, _Py_CODEUNIT *instr, int index, _PyExecutorO
     Py_INCREF(executor);
     if (instr->op.code == ENTER_EXECUTOR) {
         assert(index == instr->op.arg);
-        _Py_ExecutorClear(code->co_executors->executors[index]);
+        _Py_ExecutorDetach(code->co_executors->executors[index]);
     }
     else {
         assert(code->co_executors->size == index);
@@ -270,10 +270,14 @@ static PyMethodDef executor_methods[] = {
 
 ///////////////////// Experimental UOp Optimizer /////////////////////
 
+static int executor_clear(_PyExecutorObject *executor);
+static void unlink_executor(_PyExecutorObject *executor);
+
 static void
 uop_dealloc(_PyExecutorObject *self) {
     _PyObject_GC_UNTRACK(self);
-    _Py_ExecutorClear(self);
+    assert(self->vm_data.code == NULL);
+    unlink_executor(self);
 #ifdef _Py_JIT
     _PyJIT_Free(self);
 #endif
@@ -380,13 +384,6 @@ PySequenceMethods uop_as_sequence = {
 };
 
 static int
-executor_clear(PyObject *o)
-{
-    _Py_ExecutorClear((_PyExecutorObject *)o);
-    return 0;
-}
-
-static int
 executor_traverse(PyObject *o, visitproc visit, void *arg)
 {
     _PyExecutorObject *executor = (_PyExecutorObject *)o;
@@ -412,7 +409,7 @@ PyTypeObject _PyUOpExecutor_Type = {
     .tp_as_sequence = &uop_as_sequence,
     .tp_methods = executor_methods,
     .tp_traverse = executor_traverse,
-    .tp_clear = executor_clear,
+    .tp_clear = (inquiry)executor_clear,
     .tp_is_gc = executor_is_gc,
 };
 
@@ -1190,6 +1187,7 @@ init_cold_exit_executor(_PyExecutorObject *executor, int oparg)
     inst->opcode = _COLD_EXIT;
     inst->oparg = oparg;
     executor->vm_data.valid = true;
+    executor->vm_data.linked = false;
     for (int i = 0; i < BLOOM_FILTER_WORDS; i++) {
         assert(executor->vm_data.bloom.bits[i] == 0);
     }
@@ -1328,7 +1326,7 @@ PyTypeObject _PyCounterExecutor_Type = {
     .tp_dealloc = (destructor)counter_dealloc,
     .tp_methods = executor_methods,
     .tp_traverse = executor_traverse,
-    .tp_clear = executor_clear,
+    .tp_clear = (inquiry)executor_clear,
 };
 
 static int
@@ -1503,15 +1501,13 @@ link_executor(_PyExecutorObject *executor)
         links->next = NULL;
     }
     else {
-        _PyExecutorObject *next = head->vm_data.links.next;
-        links->previous = head;
-        links->next = next;
-        if (next != NULL) {
-            next->vm_data.links.previous = executor;
-        }
-        head->vm_data.links.next = executor;
+        assert(head->vm_data.links.previous == NULL);
+        links->previous = NULL;
+        links->next = head;
+        head->vm_data.links.previous = executor;
+        interp->executor_list_head = executor;
     }
-    executor->vm_data.valid = true;
+    executor->vm_data.linked = true;
     /* executor_list_head must be first in list */
     assert(interp->executor_list_head->vm_data.links.previous == NULL);
 }
@@ -1519,7 +1515,11 @@ link_executor(_PyExecutorObject *executor)
 static void
 unlink_executor(_PyExecutorObject *executor)
 {
+    if (!executor->vm_data.linked) {
+        return;
+    }
     _PyExecutorLinkListNode *links = &executor->vm_data.links;
+    assert(executor->vm_data.valid);
     _PyExecutorObject *next = links->next;
     _PyExecutorObject *prev = links->previous;
     if (next != NULL) {
@@ -1534,7 +1534,7 @@ unlink_executor(_PyExecutorObject *executor)
         assert(interp->executor_list_head == executor);
         interp->executor_list_head = next;
     }
-    executor->vm_data.valid = false;
+    executor->vm_data.linked = false;
 }
 
 /* This must be called by optimizers before using the executor */
@@ -1548,22 +1548,14 @@ _Py_ExecutorInit(_PyExecutorObject *executor, const _PyBloomFilter *dependency_s
     link_executor(executor);
 }
 
-/* This must be called by executors during dealloc */
+/* Detaches the executor from the code object (if any) that
+ * holds a reference to it */
 void
-_Py_ExecutorClear(_PyExecutorObject *executor)
+_Py_ExecutorDetach(_PyExecutorObject *executor)
 {
-    if (!executor->vm_data.valid) {
-        return;
-    }
-    unlink_executor(executor);
     PyCodeObject *code = executor->vm_data.code;
     if (code == NULL) {
         return;
-    }
-    for (uint32_t i = 0; i < executor->exit_count; i++) {
-        Py_DECREF(executor->exits[i].executor);
-        executor->exits[i].executor = &COLD_EXITS[i];
-        executor->exits[i].temperature = initial_unreachable_backoff_counter();
     }
     _Py_CODEUNIT *instruction = &_PyCode_CODE(code)[executor->vm_data.index];
     assert(instruction->op.code == ENTER_EXECUTOR);
@@ -1572,7 +1564,36 @@ _Py_ExecutorClear(_PyExecutorObject *executor)
     instruction->op.code = executor->vm_data.opcode;
     instruction->op.arg = executor->vm_data.oparg;
     executor->vm_data.code = NULL;
-    Py_CLEAR(code->co_executors->executors[index]);
+    code->co_executors->executors[index] = NULL;
+    Py_DECREF(executor);
+}
+
+static int
+executor_clear(_PyExecutorObject *executor)
+{
+    if (!executor->vm_data.valid) {
+        return 0;
+    }
+    assert(executor->vm_data.valid == 1);
+    unlink_executor(executor);
+    executor->vm_data.valid = 0;
+    /* It is possible for an executor to form a reference
+     * cycle with itself, so decref'ing a side exit could
+     * free the executor unless we hold a strong reference to it
+     */
+    Py_INCREF(executor);
+    for (uint32_t i = 0; i < executor->exit_count; i++) {
+        const _PyExecutorObject *cold = &COLD_EXITS[i];
+        const _PyExecutorObject *side = executor->exits[i].executor;
+        executor->exits[i].temperature = initial_unreachable_backoff_counter();
+        if (side != cold) {
+            executor->exits[i].executor = cold;
+            Py_DECREF(side);
+        }
+    }
+    _Py_ExecutorDetach(executor);
+    Py_DECREF(executor);
+    return 0;
 }
 
 void
@@ -1593,17 +1614,42 @@ _Py_Executors_InvalidateDependency(PyInterpreterState *interp, void *obj, int is
     _Py_BloomFilter_Add(&obj_filter, obj);
     /* Walk the list of executors */
     /* TO DO -- Use a tree to avoid traversing as many objects */
+    bool no_memory = false;
+    PyObject *invalidate = PyList_New(0);
+    if (invalidate == NULL) {
+        PyErr_Clear();
+        no_memory = true;
+    }
+    /* Clearing an executor can deallocate others, so we need to make a list of
+     * executors to invalidate first */
     for (_PyExecutorObject *exec = interp->executor_list_head; exec != NULL;) {
         assert(exec->vm_data.valid);
         _PyExecutorObject *next = exec->vm_data.links.next;
         if (bloom_filter_may_contain(&exec->vm_data.bloom, &obj_filter)) {
-            _Py_ExecutorClear(exec);
+            unlink_executor(exec);
+            if (no_memory) {
+                exec->vm_data.valid = 0;
+            } else {
+                if (PyList_Append(invalidate, (PyObject *)exec) < 0) {
+                    PyErr_Clear();
+                    no_memory = true;
+                    exec->vm_data.valid = 0;
+                }
+            }
             if (is_invalidation) {
                 OPT_STAT_INC(executors_invalidated);
             }
         }
         exec = next;
     }
+    if (invalidate != NULL) {
+        for (Py_ssize_t i = 0; i < PyList_GET_SIZE(invalidate); i++) {
+            _PyExecutorObject *exec = (_PyExecutorObject *)PyList_GET_ITEM(invalidate, i);
+            executor_clear(exec);
+        }
+        Py_DECREF(invalidate);
+    }
+    return;
 }
 
 /* Invalidate all executors */
@@ -1612,12 +1658,13 @@ _Py_Executors_InvalidateAll(PyInterpreterState *interp, int is_invalidation)
 {
     while (interp->executor_list_head) {
         _PyExecutorObject *executor = interp->executor_list_head;
+        assert(executor->vm_data.valid == 1 && executor->vm_data.linked == 1);
         if (executor->vm_data.code) {
             // Clear the entire code object so its co_executors array be freed:
             _PyCode_Clear_Executors(executor->vm_data.code);
         }
         else {
-            _Py_ExecutorClear(executor);
+            executor_clear(executor);
         }
         if (is_invalidation) {
             OPT_STAT_INC(executors_invalidated);

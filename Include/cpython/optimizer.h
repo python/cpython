@@ -24,6 +24,7 @@ typedef struct {
     uint8_t opcode;
     uint8_t oparg;
     uint8_t valid;
+    uint8_t linked;
     int index;           // Index of ENTER_EXECUTOR (if code isn't NULL, below).
     _PyBloomFilter bloom;
     _PyExecutorLinkListNode links;
@@ -135,7 +136,7 @@ PyAPI_FUNC(_PyOptimizerObject *) PyUnstable_GetOptimizer(void);
 PyAPI_FUNC(_PyExecutorObject *) PyUnstable_GetExecutor(PyCodeObject *code, int offset);
 
 void _Py_ExecutorInit(_PyExecutorObject *, const _PyBloomFilter *);
-void _Py_ExecutorClear(_PyExecutorObject *);
+void _Py_ExecutorDetach(_PyExecutorObject *);
 void _Py_BloomFilter_Init(_PyBloomFilter *);
 void _Py_BloomFilter_Add(_PyBloomFilter *bloom, void *obj);
 PyAPI_FUNC(void) _Py_Executor_DependsOn(_PyExecutorObject *executor, void *obj);
