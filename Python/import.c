@@ -959,6 +959,7 @@ struct extensions_cache_value {
        multiple initializations.
        It is set by update_global_state_for_extension(). */
     cached_m_dict_t m_dict;
+    PyInterpreterState *m_dict_interp;
 
     _Py_ext_module_origin origin;
 };
@@ -988,8 +989,11 @@ set_cached_m_dict(struct extensions_cache_value *value, PyObject *m_dict)
     assert(value != NULL);
     assert(value->def != NULL);
 
+    PyInterpreterState *interp = NULL;
     PyObject *copied = NULL;
     if (m_dict != NULL) {
+        interp = _PyInterpreterState_GET();
+        assert(value->origin != _Py_ext_module_origin_CORE);
         assert(PyDict_Check(m_dict));
         copied = PyDict_Copy(m_dict);
         if (copied == NULL) {
@@ -1021,6 +1025,7 @@ set_cached_m_dict(struct extensions_cache_value *value, PyObject *m_dict)
 
     value->def->m_base.m_copy = Py_XNewRef(copied);
     value->m_dict = (cached_m_dict_t)copied;
+    value->m_dict_interp = interp;
     return 0;
 }
 
@@ -1074,6 +1079,8 @@ update_extensions_cache_value(struct extensions_cache_value *value,
     /* For now we don't worry about comparing value->m_copy. */
     assert(def->m_base.m_copy == NULL || m_dict != NULL);
     assert(value->m_dict == NULL || m_dict != NULL);
+    assert((value->m_dict == NULL) == (value->m_dict_interp == NULL));
+    assert(origin != _Py_ext_module_origin_CORE || m_dict == NULL);
 
     /* We assume that all module defs are statically allocated
        and will never be freed.  Otherwise, we would incref here. */
