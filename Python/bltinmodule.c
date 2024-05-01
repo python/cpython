@@ -1047,7 +1047,6 @@ builtin_exec_impl(PyObject *module, PyObject *source, PyObject *globals,
     PyObject *v;
 
     if (globals == Py_None) {
-
         globals = PyEval_GetGlobals();
         if (locals == Py_None) {
             locals = _PyEval_GetFrameLocals();
