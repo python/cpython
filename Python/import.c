@@ -945,6 +945,8 @@ typedef PyDictObject *cached_m_dict_t;
 
 struct extensions_cache_value {
     PyModuleDef *def;
+
+    _Py_ext_module_origin origin;
 };
 
 static struct extensions_cache_value *
@@ -977,7 +979,7 @@ get_cached_m_dict(struct extensions_cache_value *value)
 
 static int
 update_extensions_cache_value(struct extensions_cache_value *value,
-                              PyModuleDef *def)
+                              PyModuleDef *def, _Py_ext_module_origin origin)
 {
     assert(def != NULL);
     /* We expect it to be static, so it must be the same pointer. */
@@ -989,6 +991,7 @@ update_extensions_cache_value(struct extensions_cache_value *value,
 
     *value = (struct extensions_cache_value){
         .def=def,
+        .origin=origin,
     };
     return 0;
 }
@@ -1122,16 +1125,18 @@ finally:
 
 /* This can only fail with "out of memory". */
 static int
-_extensions_cache_set(PyObject *path, PyObject *name, PyModuleDef *def)
+_extensions_cache_set(PyObject *path, PyObject *name,
+                      PyModuleDef *def,_Py_ext_module_origin origin)
 {
     int res = -1;
     assert(def != NULL);
+    assert((origin == _Py_ext_module_origin_DYNAMIC) == (name != path));
     void *key = NULL;
     struct extensions_cache_value *value = NULL;
     struct extensions_cache_value *newvalue = NULL;
 
     struct extensions_cache_value updates = {0};
-    if (update_extensions_cache_value(&updates, def) < 0) {
+    if (update_extensions_cache_value(&updates, def, origin) < 0) {
         return -1;
     }
 
@@ -1358,6 +1363,7 @@ _get_extension_kind(PyModuleDef *def, bool check_size)
 struct singlephase_global_update {
     PyObject *m_dict;
     PyModInitFunction m_init;
+    _Py_ext_module_origin origin;
 };
 
 static int
@@ -1435,7 +1441,11 @@ update_global_state_for_extension(PyThreadState *tstate,
                 = _extensions_cache_get(path, name);
         assert(cached == NULL || cached->def == def);
 #endif
-        if (_extensions_cache_set(path, name, def) < 0) {
+        if (_extensions_cache_set(
+                path, name, def, singlephase->origin) < 0)
+        {
+            // XXX Ignore this error?  Doing so would effectively
+            // mark the module as not loadable.
             return -1;
         }
     }
@@ -1660,7 +1670,9 @@ import_run_extension(PyThreadState *tstate, PyModInitFunction p0,
         }
 
         /* Update global import state. */
-        struct singlephase_global_update singlephase = {0};
+        struct singlephase_global_update singlephase = {
+            .origin=info->origin,
+        };
         // gh-88216: Extensions and def->m_base.m_copy can be updated
         // when the extension module doesn't support sub-interpreters.
         if (def->m_size == -1) {
@@ -1766,6 +1778,7 @@ _PyImport_FixupBuiltin(PyThreadState *tstate, PyObject *mod, const char *name,
     struct singlephase_global_update singlephase = {
         /* We don't want def->m_base.m_copy populated. */
         .m_dict=NULL,
+        .origin=_Py_ext_module_origin_CORE,
     };
     if (update_global_state_for_extension(
             tstate, nameobj, nameobj, def, &singlephase) < 0)
