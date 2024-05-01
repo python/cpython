@@ -957,44 +957,62 @@ PyInit__test_shared_gil_only(void)
 #include "datetime.h"
 
 static int
-datetime_capi_client_exec(PyObject *m)
+datetime_capi_import_with_error(void)
 {
+    static int is_datetime_multiphase = -1;
     int ismain = PyInterpreterState_Get() == PyInterpreterState_Main();
-    if (ismain) {
-        _pydatetimeapi_main = NULL;
+    if (ismain && is_datetime_multiphase < 0) {
+        PyObject *module = PyImport_ImportModule("_datetime");
+        if (module == NULL) {
+            return -1;
+        }
+        PyModuleDef *def = PyModule_GetDef(module);
+        Py_DECREF(module);
+        if (def && def->m_size >= 0) {
+            is_datetime_multiphase = 1;
+        }
+        else {
+            is_datetime_multiphase = 0;
+        }
+    }
+    if (is_datetime_multiphase < 0) {
+        PyErr_SetString(PyExc_AssertionError,
+                        "Main interpreter must be loaded first.");
+        return -1;
     }
 
-    PyDateTime_IMPORT;
-    PyErr_Clear();
-    PyDateTime_CAPI *capi = PyDateTimeAPI;
-    PyErr_Clear();
-    if (capi != PyCapsule_Import(PyDateTime_CAPSULE_NAME, 0)) {
+    _PyDateTimeAPI_Import();
+    if (!PyErr_Occurred()) {
+        return 0;
+    }
+#ifdef Py_GIL_DISABLED
+    if (!ismain && !is_datetime_multiphase) {
+        // _datetime module and Capsule are not imported
+        PyErr_WriteUnraisable(NULL);
+        return 0;
+    }
+#endif
+    return -1;
+}
+
+static int
+datetime_capi_client_exec(PyObject *m)
+{
+    _PyDateTimeAPI_Get = _PyDateTimeAPI_not_ready;
+    if (_PyDateTimeAPI_Get() != NULL) {
+        PyErr_SetString(PyExc_AssertionError,
+                        "DateTime API is expected to remain NULL.");
+        return -1;
+    }
+    if (datetime_capi_import_with_error() < 0) {
+        return -1;
+    }
+    if (PyDateTimeAPI != PyCapsule_Import(PyDateTime_CAPSULE_NAME, 0)) {
+        PyErr_SetString(PyExc_AssertionError,
+                        "DateTime API does not match Capsule CAPI.");
         return -1;
     }
     PyErr_Clear();
-    if (ismain) {
-        if (capi != _pydatetimeapi_main) {
-            return -1;
-        }
-    }
-    else {
-        if (capi == _pydatetimeapi_main) {
-            PyObject *module = PyImport_ImportModule("_datetime");
-            if (module == NULL) {
-                return -1;
-            }
-            PyModuleDef *def = PyModule_GetDef(module);
-            Py_DECREF(module);
-            if (def) {
-                // multi-phase init
-                return -1;
-            }
-            else {
-                // legacy init (shared module)
-                return 0;
-            }
-        }
-    }
     return 0;
 }
 

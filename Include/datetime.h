@@ -186,34 +186,34 @@ typedef struct {
 } PyDateTime_CAPI;
 
 #define PyDateTime_CAPSULE_NAME "datetime.datetime_CAPI"
-
+#define PyDateTime_INTERNAL_CAPSULE_NAME "datetime.datetime_CAPI_INTERNAL"
 
 /* This block is only used as part of the public API and should not be
  * included in _datetimemodule.c, which does not use the C API capsule.
  * See bpo-35081 for more details.
  * */
 #ifndef _PY_DATETIME_IMPL
-/* Define global variable for the C API and a macro for setting it. */
-static PyDateTime_CAPI *_pydatetimeapi_main = NULL;
+static PyDateTime_CAPI *
+_PyDateTimeAPI_not_ready(void)
+{
+    return NULL;
+}
+// typedef PyDateTime_CAPI *(*datetime_api_getfunc)(void);
+// static datetime_api_getfunc _PyDateTimeAPI_Get = _PyDateTimeAPI_not_ready;
+static PyDateTime_CAPI *(*_PyDateTimeAPI_Get)(void) = _PyDateTimeAPI_not_ready;
+
 
 static inline void
-_import_pydatetime(void) {
-    if (PyInterpreterState_Get() == PyInterpreterState_Main()) {
-        _pydatetimeapi_main = PyCapsule_Import(PyDateTime_CAPSULE_NAME, 0);
+_PyDateTimeAPI_Import(void)
+{
+    void *(*func)(void) = PyCapsule_Import(PyDateTime_INTERNAL_CAPSULE_NAME, 0);
+    if (func) {
+        _PyDateTimeAPI_Get = func();
     }
 }
-#define PyDateTime_IMPORT _import_pydatetime()
 
-static inline PyDateTime_CAPI *
-_get_pydatetime_api(void) {
-    if (PyInterpreterState_Get() == PyInterpreterState_Main()) {
-        return _pydatetimeapi_main;
-    }
-    else {
-        return PyCapsule_Import(PyDateTime_CAPSULE_NAME, 0);
-    }
-}
-#define PyDateTimeAPI _get_pydatetime_api()
+#define PyDateTimeAPI _PyDateTimeAPI_Get()
+#define PyDateTime_IMPORT _PyDateTimeAPI_Import()
 
 /* Macro for access to the UTC singleton */
 #define PyDateTime_TimeZone_UTC PyDateTimeAPI->TimeZone_UTC

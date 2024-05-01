@@ -3,11 +3,23 @@
 #include "datetime.h"             // PyDateTimeAPI
 
 
+static int test_run_counter = 0;
+
 static PyObject *
 test_datetime_capi(PyObject *self, PyObject *args)
 {
-    // PyDateTimeAPI cannot be carried over
-    // with multi-phase init enabled.
+    if (PyDateTimeAPI) {
+        if (test_run_counter) {
+            /* Probably regrtest.py -R */
+            Py_RETURN_NONE;
+        }
+        else {
+            PyErr_SetString(PyExc_AssertionError,
+                            "PyDateTime_CAPI somehow initialized");
+            return NULL;
+        }
+    }
+    test_run_counter++;
     PyDateTime_IMPORT;
 
     if (PyDateTimeAPI) {

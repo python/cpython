@@ -236,6 +236,7 @@ struct _is {
     // more comments.
     struct _obmalloc_state *obmalloc;
 
+    void *datetime_capi;
     PyObject *audit_hooks;
     PyType_WatchCallback type_watchers[TYPE_MAX_WATCHERS];
     PyCode_WatchCallback code_watchers[CODE_MAX_WATCHERS];
