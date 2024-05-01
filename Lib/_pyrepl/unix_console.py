@@ -33,6 +33,7 @@ from fcntl import ioctl
 from . import curses
 from .console import Console, Event
 from .fancy_termios import tcgetattr, tcsetattr
+from .reader import wlen
 from .trace import trace
 from .unix_eventqueue import EventQueue
 
@@ -555,56 +556,76 @@ class UnixConsole(Console):
 
         self.__move = self.__move_short
 
-    def __write_changed_line(self, y, oldline, newline, px):
+    def __write_changed_line(self, y, oldline, newline, px_coord):
         # this is frustrating; there's no reason to test (say)
         # self.dch1 inside the loop -- but alternative ways of
         # structuring this function are equally painful (I'm trying to
         # avoid writing code generators these days...)
-        x = 0
-        minlen = min(len(oldline), len(newline))
-        #
+        minlen = min(wlen(oldline), wlen(newline))
+        x_pos = 0
+        x_coord = 0
+
+        px_pos = 0
+        j = 0
+        for c in oldline:
+            if j >= px_coord: break
+            j += wlen(c)
+            px_pos += 1
+
         # reuse the oldline as much as possible, but stop as soon as we
         # encounter an ESCAPE, because it might be the start of an escape
         # sequene
-        while x < minlen and oldline[x] == newline[x] and newline[x] != "\x1b":
-            x += 1
-        if oldline[x:] == newline[x + 1 :] and self.ich1:
+        while x_coord < minlen and oldline[x_pos] == newline[x_pos] and newline[x_pos] != "\x1b":
+            x_coord += wlen(newline[x_pos])
+            x_pos += 1
+
+        character_width = wlen(newline[x_pos])
+
+        # if we need to insert a single character right after the first detected change
+        if oldline[x_pos:] == newline[x_pos + 1 :] and self.ich1:
             if (
                 y == self.__posxy[1]
-                and x > self.__posxy[0]
-                and oldline[px:x] == newline[px + 1 : x + 1]
+                and x_coord > self.__posxy[0]
+                and oldline[px_pos:x_pos] == newline[px_pos + 1 : x_pos + 1]
             ):
-                x = px
-            self.__move(x, y)
+                x_pos = px_pos
+                x_coord = px_coord
+            self.__move(x_coord, y)
             self.__write_code(self.ich1)
-            self.__write(newline[x])
-            self.__posxy = x + 1, y
-        elif x < minlen and oldline[x + 1 :] == newline[x + 1 :]:
-            self.__move(x, y)
-            self.__write(newline[x])
-            self.__posxy = x + 1, y
+            self.__write(newline[x_pos])
+            self.__posxy = x_coord + character_width, y
+
+        # if it's a single character change in the middle of the line
+        elif x_coord < minlen and oldline[x_pos + 1 :] == newline[x_pos + 1 :] and wlen(oldline[x_pos]) == wlen(newline[x_pos]):
+            self.__move(x_coord, y)
+            self.__write(newline[x_pos])
+            self.__posxy = x_coord + character_width, y
+
+        # if this is the last character to fit in the line and we edit in the middle of the line
         elif (
             self.dch1
             and self.ich1
-            and len(newline) == self.width
-            and x < len(newline) - 2
-            and newline[x + 1 : -1] == oldline[x:-2]
+            and wlen(newline) == self.width
+            and x_coord < wlen(newline) - 2
+            and newline[x_pos + 1 : -1] == oldline[x_pos:-2]
         ):
             self.__hide_cursor()
             self.__move(self.width - 2, y)
             self.__posxy = self.width - 2, y
             self.__write_code(self.dch1)
-            self.__move(x, y)
+
+            self.__move(x_coord, y)
             self.__write_code(self.ich1)
-            self.__write(newline[x])
-            self.__posxy = x + 1, y
+            self.__write(newline[x_pos])
+            self.__posxy = x_coord + 1, y
+
         else:
             self.__hide_cursor()
-            self.__move(x, y)
-            if len(oldline) > len(newline):
+            self.__move(x_coord, y)
+            if wlen(oldline) > wlen(newline):
                 self.__write_code(self._el)
-            self.__write(newline[x:])
-            self.__posxy = len(newline), y
+            self.__write(newline[x_pos:])
+            self.__posxy = wlen(newline), y
 
         if "\x1b" in newline:
             # ANSI escape characters are present, so we can't assume

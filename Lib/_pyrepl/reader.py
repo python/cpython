@@ -29,7 +29,7 @@ from traceback import _can_colorize, _ANSIColors  # type: ignore[attr-defined]
 
 from . import commands, console, input
 
-_r_csi_seq = re.compile(r"\033\[[ -@]*[A-~]")
+ANSI_ESCAPE_SEQUENCE = re.compile(r"\x1b\[[ -@]*[A-~]")
 
 
 # types
@@ -45,6 +45,13 @@ def str_width(c: str) -> int:
     return 2
 
 
+def wlen(s: str) -> int:
+    length = sum(str_width(i) for i in s)
+
+    # remove lengths of any escape sequences
+    return length - sum(len(i) for i in ANSI_ESCAPE_SEQUENCE.findall(s))
+
+
 def disp_str(buffer: str) -> tuple[str, list[int]]:
     """disp_str(buffer:string) -> (string, [int])
 
@@ -55,19 +62,15 @@ def disp_str(buffer: str) -> tuple[str, list[int]]:
     >>> disp_str(chr(3))
     ('^C', [1, 0])
 
-    the list always contains 0s or 1s at present; it could conceivably
-    go higher as and when unicode support happens."""
+    """
     b: list[int] = []
     s: list[str] = []
     for c in buffer:
         if unicodedata.category(c).startswith("C"):
             c = r"\u%04x" % ord(c)
-            b.append(1)
-            b.extend([0] * (len(c) - 1))
-        else:
-            b.append(1)
-            b.extend([0] * (str_width(c) - 1))
         s.append(c)
+        b.append(wlen(c))
+        b.extend([0] * (len(c) - 1))
     return "".join(s), b
 
 
@@ -253,7 +256,7 @@ class Reader:
             self.keymap, invalid_cls="invalid-key", character_cls="self-insert"
         )
         self.screeninfo = [(0, [0])]
-        self.cxy = self.pos2xy(self.pos)
+        self.cxy = self.pos2xy()
         self.lxy = (self.pos, 0)
 
     def collect_keymap(self):
@@ -268,40 +271,47 @@ class Reader:
         lines = self.get_unicode().split("\n")
         screen: list[str] = []
         screeninfo: list[tuple[int, list[int]]] = []
-        w = self.console.width - 1
-        p = self.pos
+        width = self.console.width - 1
+        pos = self.pos
         for ln, line in enumerate(lines):
             ll = len(line)
-            if 0 <= p <= ll:
+            if 0 <= pos <= ll:
                 if self.msg and not self.msg_at_bottom:
                     for mline in self.msg.split("\n"):
                         screen.append(mline)
                         screeninfo.append((0, []))
-                self.lxy = p, ln
-            prompt = self.get_prompt(ln, ll >= p >= 0)
+                self.lxy = pos, ln
+            prompt = self.get_prompt(ln, ll >= pos >= 0)
             while "\n" in prompt:
                 pre_prompt, _, prompt = prompt.partition("\n")
                 screen.append(pre_prompt)
                 screeninfo.append((0, []))
-            p -= ll + 1
+            pos -= ll + 1
             prompt, lp = self.process_prompt(prompt)
-            if _can_colorize():
-                prompt = _ANSIColors.BOLD_MAGENTA + prompt + _ANSIColors.RESET
             l, l2 = disp_str(line)
-            wrapcount = (len(l) + lp) // w
+            wrapcount = (wlen(l) + lp) // width
             if wrapcount == 0:
                 screen.append(prompt + l)
-                screeninfo.append((lp, l2 + [1]))
+                screeninfo.append((lp, l2))
             else:
-                screen.append(prompt + l[: w - lp] + "\\")
-                screeninfo.append((lp, l2[: w - lp]))
-                for i in range(-lp + w, -lp + wrapcount * w, w):
-                    screen.append(l[i : i + w] + "\\")
-                    screeninfo.append((0, l2[i : i + w]))
-                screen.append(l[wrapcount * w - lp :])
-                screeninfo.append((0, l2[wrapcount * w - lp :] + [1]))
+                for i in range(wrapcount + 1):
+                    prelen = lp if i == 0 else 0
+                    index_to_wrap_before = 0
+                    column = 0
+                    for character_width in l2:
+                        if column + character_width >= width - prelen:
+                            break
+                        index_to_wrap_before += 1
+                        column += character_width
+                    pre = prompt if i == 0 else ""
+                    post = "\\" if i != wrapcount else ""
+                    after = [1] if i != wrapcount else []
+                    screen.append(pre + l[:index_to_wrap_before] + post)
+                    screeninfo.append((prelen, l2[:index_to_wrap_before] + after))
+                    l = l[index_to_wrap_before:]
+                    l2 = l2[index_to_wrap_before:]
         self.screeninfo = screeninfo
-        self.cxy = self.pos2xy(self.pos)
+        self.cxy = self.pos2xy()
         if self.msg and self.msg_at_bottom:
             for mline in self.msg.split("\n"):
                 screen.append(mline)
@@ -321,7 +331,7 @@ class Reader:
         # They are CSI (or ANSI) sequences  ( ESC [ ... LETTER )
 
         out_prompt = ""
-        l = len(prompt)
+        l = wlen(prompt)
         pos = 0
         while True:
             s = prompt.find("\x01", pos)
@@ -333,11 +343,11 @@ class Reader:
             # Found start and end brackets, subtract from string length
             l = l - (e - s + 1)
             keep = prompt[pos:s]
-            l -= sum(map(len, _r_csi_seq.findall(keep)))
+            l -= sum(map(wlen, ANSI_ESCAPE_SEQUENCE.findall(keep)))
             out_prompt += keep + prompt[s + 1 : e]
             pos = e + 1
         keep = prompt[pos:]
-        l -= sum(map(len, _r_csi_seq.findall(keep)))
+        l -= sum(map(wlen, ANSI_ESCAPE_SEQUENCE.findall(keep)))
         out_prompt += keep
         return out_prompt, l
 
@@ -412,20 +422,22 @@ class Reader:
         """Return what should be in the left-hand margin for line
         `lineno'."""
         if self.arg is not None and cursor_on_line:
-            return "(arg: %s) " % self.arg
-
-        if self.paste_mode:
-            return '(paste) '
-
-        if "\n" in self.buffer:
+            prompt = "(arg: %s) " % self.arg
+        elif self.paste_mode:
+            prompt = '(paste) '
+        elif "\n" in self.buffer:
             if lineno == 0:
-                return self.ps2
+                prompt = self.ps2
             elif lineno == self.buffer.count("\n"):
-                return self.ps4
+                prompt = self.ps4
             else:
-                return self.ps3
+                prompt = self.ps3
+        else:
+            prompt = self.ps1
 
-        return self.ps1
+        if _can_colorize():
+            prompt = f"{_ANSIColors.BOLD_MAGENTA}{prompt}{_ANSIColors.RESET}"
+        return prompt
 
     def push_input_trans(self, itrans) -> None:
         self.input_trans_stack.append(self.input_trans)
@@ -434,31 +446,25 @@ class Reader:
     def pop_input_trans(self) -> None:
         self.input_trans = self.input_trans_stack.pop()
 
-    def pos2xy(self, pos: int) -> tuple[int, int]:
+    def pos2xy(self) -> tuple[int, int]:
         """Return the x, y coordinates of position 'pos'."""
         # this *is* incomprehensible, yes.
         y = 0
+        pos = self.pos
         assert 0 <= pos <= len(self.buffer)
         if pos == len(self.buffer):
             y = len(self.screeninfo) - 1
             p, l2 = self.screeninfo[y]
-            return p + len(l2) - 1, y
-        else:
-            for p, l2 in self.screeninfo:
-                l = l2.count(1)
-                if l > pos:
-                    break
-                else:
-                    pos -= l
-                    y += 1
-            c = 0
-            i = 0
-            while c < pos:
-                c += l2[i]
-                i += 1
-            while l2[i] == 0:
-                i += 1
-            return p + i, y
+            return p + sum(l2) + l2.count(0), y
+
+        for p, l2 in self.screeninfo:
+            l = len(l2) - l2.count(0)
+            if l >= pos:
+                break
+            else:
+                pos -= l + 1
+                y += 1
+        return p + sum(l2[:pos]), y
 
     def insert(self, text) -> None:
         """Insert 'text' at the insertion point."""
@@ -468,7 +474,7 @@ class Reader:
 
     def update_cursor(self) -> None:
         """Move the cursor to reflect changes in self.pos"""
-        self.cxy = self.pos2xy(self.pos)
+        self.cxy = self.pos2xy()
         self.console.move_cursor(*self.cxy)
 
     def after_command(self, cmd: Command) -> None:
@@ -491,10 +497,6 @@ class Reader:
             self.dirty = True
             self.last_command = None
             self.calc_screen()
-            # self.screeninfo = [(0, [0])]
-            # self.cxy = self.pos2xy(self.pos)
-            # self.lxy = (self.pos, 0)
-            # XXX should kill ring be here?
         except BaseException:
             self.restore()
             raise

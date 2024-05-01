@@ -210,7 +210,7 @@ class TestCursorPosition(TestCase):
         self.assertEqual(reader.pos, 1)
 
         # 1 for simple character
-        self.assertEqual(reader.pos2xy(reader.pos), (1, 0))
+        self.assertEqual(reader.pos2xy(), (1, 0))
 
     def test_cursor_position_double_width_character(self):
         events = itertools.chain(code_to_events("樂"))
@@ -219,7 +219,7 @@ class TestCursorPosition(TestCase):
         self.assertEqual(reader.pos, 1)
 
         # 2 for wide character
-        self.assertEqual(reader.pos2xy(reader.pos), (2, 0))
+        self.assertEqual(reader.pos2xy(), (2, 0))
 
     def test_cursor_position_double_width_character_move_left(self):
         events = itertools.chain(code_to_events("樂"), [
@@ -228,7 +228,7 @@ class TestCursorPosition(TestCase):
 
         reader = self.handle_all_events(events)
         self.assertEqual(reader.pos, 0)
-        self.assertEqual(reader.pos2xy(reader.pos), (0, 0))
+        self.assertEqual(reader.pos2xy(), (0, 0))
 
     def test_cursor_position_double_width_character_move_left_right(self):
         events = itertools.chain(code_to_events("樂"), [
@@ -240,7 +240,7 @@ class TestCursorPosition(TestCase):
         self.assertEqual(reader.pos, 1)
 
         # 2 for wide character
-        self.assertEqual(reader.pos2xy(reader.pos), (2, 0))
+        self.assertEqual(reader.pos2xy(), (2, 0))
 
     def test_cursor_position_double_width_characters_move_up(self):
         for_loop = "for _ in _:"
@@ -252,7 +252,7 @@ class TestCursorPosition(TestCase):
 
         # cursor at end of first line
         self.assertEqual(reader.pos, len(for_loop))
-        self.assertEqual(reader.pos2xy(reader.pos), (len(for_loop), 0))
+        self.assertEqual(reader.pos2xy(), (len(for_loop), 0))
 
     def test_cursor_position_double_width_characters_move_up_down(self):
         for_loop = "for _ in _:"
@@ -268,7 +268,7 @@ class TestCursorPosition(TestCase):
         # <  ' 可口可乐; 可口可樂'>
         #              ^
         self.assertEqual(reader.pos, 22)
-        self.assertEqual(reader.pos2xy(reader.pos), (14, 1))
+        self.assertEqual(reader.pos2xy(), (14, 1))
 
     def test_cursor_position_multiple_double_width_characters_move_left(self):
         events = itertools.chain(code_to_events("' 可口可乐; 可口可樂'"), [
@@ -282,7 +282,7 @@ class TestCursorPosition(TestCase):
 
         # 1 for quote, 1 for space, 2 per wide character,
         # 1 for semicolon, 1 for space, 2 per wide character
-        self.assertEqual(reader.pos2xy(reader.pos), (16, 0))
+        self.assertEqual(reader.pos2xy(), (16, 0))
 
     def test_cursor_position_move_up_to_eol(self):
         for_loop = "for _ in _"
@@ -300,7 +300,7 @@ class TestCursorPosition(TestCase):
         #   h
         #   hel
         self.assertEqual(reader.pos, len(for_loop))
-        self.assertEqual(reader.pos2xy(reader.pos), (len(for_loop), 0))
+        self.assertEqual(reader.pos2xy(), (len(for_loop), 0))
 
     def test_cursor_position_move_down_to_eol(self):
         last_line = "  hel"
@@ -320,7 +320,7 @@ class TestCursorPosition(TestCase):
         #   h
         #   hel
         self.assertEqual(reader.pos, len(code))
-        self.assertEqual(reader.pos2xy(reader.pos), (len(last_line), 3))
+        self.assertEqual(reader.pos2xy(), (len(last_line), 3))
 
 
 class TestPyReplOutput(TestCase):
