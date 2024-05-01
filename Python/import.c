@@ -1277,13 +1277,16 @@ _get_extension_kind(PyModuleDef *def, bool check_size)
                 || kind == _Py_ext_module_kind_UNKNOWN);            \
     } while (0)
 
-#define assert_singlephase(def) \
-    assert_singlephase_def(def)
+#define assert_singlephase(cached)                                          \
+    do {                                                                    \
+        _Py_ext_module_kind kind = _get_extension_kind(cached->def, true);  \
+        assert(kind == _Py_ext_module_kind_SINGLEPHASE);                    \
+    } while (0)
 
 #else  /* defined(NDEBUG) */
 #define assert_multiphase_def(def)
 #define assert_singlephase_def(def)
-#define assert_singlephase(def)
+#define assert_singlephase(cached)
 #endif
 
 
@@ -1406,7 +1409,7 @@ reload_singlephase_extension(PyThreadState *tstate,
 {
     PyModuleDef *def = cached->def;
     assert(def != NULL);
-    assert_singlephase(def);
+    assert_singlephase(cached);
     PyObject *mod = NULL;
 
     /* It may have been successfully imported previously
@@ -1505,7 +1508,8 @@ import_find_extension(PyThreadState *tstate,
     if (cached == NULL) {
         return NULL;
     }
-    assert_singlephase(cached->def);
+    assert(cached->def != NULL);
+    assert_singlephase(cached);
 
     /* It may have been successfully imported previously
        in an interpreter that allows legacy modules
@@ -1736,10 +1740,10 @@ create_builtin(PyThreadState *tstate, PyObject *name, PyObject *spec)
         assert(!_PyErr_Occurred(tstate));
 #ifndef NDEBUG
         struct extensions_cache_value *cached
-            = _extensions_cache_get(info.path, info.name);
+                = _extensions_cache_get(info.path, info.name);
 #endif
         assert(cached->def == _PyModule_GetDef(mod));
-        assert_singlephase(cached->def);
+        assert_singlephase(cached);
         goto finally;
     }
     else if (_PyErr_Occurred(tstate)) {
@@ -4095,11 +4099,11 @@ _imp_create_dynamic_impl(PyObject *module, PyObject *spec, PyObject *file)
         assert(!_PyErr_Occurred(tstate));
 #ifndef NDEBUG
         struct extensions_cache_value *cached
-            = _extensions_cache_get(info.path, info.name);
+                = _extensions_cache_get(info.path, info.name);
 #endif
         assert(_PyModule_GetDef(mod) == NULL
                 || cached->def == _PyModule_GetDef(mod));
-        assert_singlephase(cached->def);
+        assert_singlephase(cached);
         goto finally;
     }
     else if (_PyErr_Occurred(tstate)) {
