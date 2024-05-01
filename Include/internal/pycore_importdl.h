@@ -36,14 +36,24 @@ extern int _Py_ext_module_loader_info_init(
     struct _Py_ext_module_loader_info *info,
     PyObject *name,
     PyObject *filename);
+extern int _Py_ext_module_loader_info_init_for_builtin(
+    struct _Py_ext_module_loader_info *p_info,
+    PyObject *name);
 extern int _Py_ext_module_loader_info_init_from_spec(
     struct _Py_ext_module_loader_info *info,
     PyObject *spec);
 
-extern PyObject *_PyImport_LoadDynamicModuleWithSpec(
+struct _Py_ext_module_loader_result {
+    PyModuleDef *def;
+    PyObject *module;
+};
+extern PyModInitFunction _PyImport_GetModInitFunc(
     struct _Py_ext_module_loader_info *info,
-    PyObject *spec,
     FILE *fp);
+extern int _PyImport_RunModInitFunc(
+    PyModInitFunction p0,
+    struct _Py_ext_module_loader_info *info,
+    struct _Py_ext_module_loader_result *p_res);
 
 
 /* Max length of module suffix searched for -- accommodates "module.slb" */
