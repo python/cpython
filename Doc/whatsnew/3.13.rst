@@ -1901,9 +1901,15 @@ New Features
 
   * :c:type:`PyTime_t` type.
   * :c:var:`PyTime_MIN` and :c:var:`PyTime_MAX` constants.
-  * :c:func:`PyTime_AsSecondsDouble`
-    :c:func:`PyTime_Monotonic`, :c:func:`PyTime_PerfCounter`, and
-    :c:func:`PyTime_Time` functions.
+  * Add functions:
+
+    * :c:func:`PyTime_AsSecondsDouble`.
+    * :c:func:`PyTime_Monotonic`.
+    * :c:func:`PyTime_MonotonicRaw`.
+    * :c:func:`PyTime_PerfCounter`.
+    * :c:func:`PyTime_PerfCounterRaw`.
+    * :c:func:`PyTime_Time`.
+    * :c:func:`PyTime_TimeRaw`.
 
   (Contributed by Victor Stinner and Petr Viktorin in :gh:`110850`.)
 
