@@ -48,7 +48,7 @@ at the location you want to break into the debugger, and then run the program.
 You can then step through the code following this statement, and continue
 running without the debugger using the :pdbcmd:`continue` command.
 
-.. versionadded:: 3.7
+.. versionchanged:: 3.7
    The built-in :func:`breakpoint()`, when called with defaults, can be used
    instead of ``import pdb; pdb.set_trace()``.
 
@@ -86,12 +86,12 @@ after normal exit of the program), pdb will restart the program.  Automatic
 restarting preserves pdb's state (such as breakpoints) and in most cases is more
 useful than quitting the debugger upon program's exit.
 
-.. versionadded:: 3.2
-   ``-c`` option is introduced to execute commands as if given
-   in a :file:`.pdbrc` file, see :ref:`debugger-commands`.
+.. versionchanged:: 3.2
+   Added the ``-c`` option to execute commands as if given
+   in a :file:`.pdbrc` file; see :ref:`debugger-commands`.
 
-.. versionadded:: 3.7
-   ``-m`` option is introduced to execute modules similar to the way
+.. versionchanged:: 3.7
+   Added the ``-m`` option to execute modules similar to the way
    ``python -m`` does. As with a script, the debugger will pause execution just
    before the first line of the module.
 
@@ -209,12 +209,12 @@ access further features, you have to do this yourself:
 
    .. audit-event:: pdb.Pdb "" pdb.Pdb
 
-   .. versionadded:: 3.1
-      The *skip* argument.
+   .. versionchanged:: 3.1
+      Added the *skip* parameter.
 
-   .. versionadded:: 3.2
-      The *nosigint* argument.  Previously, a SIGINT handler was never set by
-      Pdb.
+   .. versionchanged:: 3.2
+      Added the *nosigint* parameter.
+      Previously, a SIGINT handler was never set by Pdb.
 
    .. versionchanged:: 3.6
       The *readrc* argument.
@@ -288,18 +288,19 @@ There are three preset *convenience variables*:
 
 If a file :file:`.pdbrc` exists in the user's home directory or in the current
 directory, it is read with ``'utf-8'`` encoding and executed as if it had been
-typed at the debugger prompt.  This is particularly useful for aliases.  If both
+typed at the debugger prompt, with the exception that empty lines and lines
+starting with ``#`` are ignored.  This is particularly useful for aliases.  If both
 files exist, the one in the home directory is read first and aliases defined there
 can be overridden by the local file.
-
-.. versionchanged:: 3.11
-   :file:`.pdbrc` is now read with ``'utf-8'`` encoding. Previously, it was read
-   with the system locale encoding.
 
 .. versionchanged:: 3.2
    :file:`.pdbrc` can now contain commands that continue debugging, such as
    :pdbcmd:`continue` or :pdbcmd:`next`.  Previously, these commands had no
    effect.
+
+.. versionchanged:: 3.11
+   :file:`.pdbrc` is now read with ``'utf-8'`` encoding. Previously, it was read
+   with the system locale encoding.
 
 
 .. pdbcommand:: h(elp) [command]
@@ -327,12 +328,16 @@ can be overridden by the local file.
 
 .. pdbcommand:: b(reak) [([filename:]lineno | function) [, condition]]
 
-   With a *lineno* argument, set a break there in the current file.  With a
-   *function* argument, set a break at the first executable statement within
-   that function.  The line number may be prefixed with a filename and a colon,
-   to specify a breakpoint in another file (probably one that hasn't been loaded
-   yet).  The file is searched on :data:`sys.path`.  Note that each breakpoint
-   is assigned a number to which all the other breakpoint commands refer.
+   With a *lineno* argument, set a break at line *lineno* in the current file.
+   The line number may be prefixed with a *filename* and a colon,
+   to specify a breakpoint in another file (possibly one that hasn't been loaded
+   yet).  The file is searched on :data:`sys.path`.  Accepatable forms of *filename*
+   are ``/abspath/to/file.py``, ``relpath/file.py``, ``module`` and
+   ``package.module``.
+
+   With a *function* argument, set a break at the first executable statement within
+   that function. *function* can be any expression that evaluates to a function
+   in the current namespace.
 
    If a second argument is present, it is an expression which must evaluate to
    true before the breakpoint is honored.
@@ -340,6 +345,9 @@ can be overridden by the local file.
    Without argument, list all breaks, including for each breakpoint, the number
    of times that breakpoint has been hit, the current ignore count, and the
    associated condition if any.
+
+   Each breakpoint is assigned a number to which all the other
+   breakpoint commands refer.
 
 .. pdbcommand:: tbreak [([filename:]lineno | function) [, condition]]
 
@@ -467,8 +475,8 @@ can be overridden by the local file.
    raised or propagated is indicated by ``>>``, if it differs from the current
    line.
 
-   .. versionadded:: 3.2
-      The ``>>`` marker.
+   .. versionchanged:: 3.2
+      Added the ``>>`` marker.
 
 .. pdbcommand:: ll | longlist
 
@@ -583,8 +591,8 @@ can be overridden by the local file.
 
    .. versionadded:: 3.2
 
-   .. versionadded:: 3.13
-      ``exit()`` and ``quit()`` can be used to exit :pdbcmd:`interact`
+   .. versionchanged:: 3.13
+      ``exit()`` and ``quit()`` can be used to exit the :pdbcmd:`interact`
       command.
 
    .. versionchanged:: 3.13

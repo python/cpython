@@ -47,7 +47,8 @@ else:
 COPY_BUFSIZE = 1024 * 1024 if _WINDOWS else 64 * 1024
 # This should never be removed, see rationale in:
 # https://bugs.python.org/issue43743#msg393429
-_USE_CP_SENDFILE = hasattr(os, "sendfile") and sys.platform.startswith("linux")
+_USE_CP_SENDFILE = (hasattr(os, "sendfile")
+                    and sys.platform.startswith(("linux", "android")))
 _HAS_FCOPYFILE = posix and hasattr(posix, "_fcopyfile")  # macOS
 
 # CMD defaults in Windows 10
@@ -306,7 +307,12 @@ def copymode(src, dst, *, follow_symlinks=True):
         else:
             return
     else:
-        stat_func, chmod_func = _stat, os.chmod
+        stat_func = _stat
+        if os.name == 'nt' and os.path.islink(dst):
+            def chmod_func(*args):
+                os.chmod(*args, follow_symlinks=True)
+        else:
+            chmod_func = os.chmod
 
     st = stat_func(src)
     chmod_func(dst, stat.S_IMODE(st.st_mode))
@@ -675,7 +681,7 @@ def _rmtree_safe_fd(topfd, path, onexc):
                     continue
         if is_dir:
             try:
-                dirfd = os.open(entry.name, os.O_RDONLY, dir_fd=topfd)
+                dirfd = os.open(entry.name, os.O_RDONLY | os.O_NONBLOCK, dir_fd=topfd)
                 dirfd_closed = False
             except FileNotFoundError:
                 continue
@@ -780,7 +786,7 @@ def rmtree(path, ignore_errors=False, onerror=None, *, onexc=None, dir_fd=None):
             onexc(os.lstat, path, err)
             return
         try:
-            fd = os.open(path, os.O_RDONLY, dir_fd=dir_fd)
+            fd = os.open(path, os.O_RDONLY | os.O_NONBLOCK, dir_fd=dir_fd)
             fd_closed = False
         except OSError as err:
             onexc(os.open, path, err)
@@ -856,12 +862,12 @@ def move(src, dst, copy_function=copy2):
     similar to the Unix "mv" command. Return the file or directory's
     destination.
 
-    If the destination is a directory or a symlink to a directory, the source
-    is moved inside the directory. The destination path must not already
-    exist.
+    If dst is an existing directory or a symlink to a directory, then src is
+    moved inside that directory. The destination path in that directory must
+    not already exist.
 
-    If the destination already exists but is not a directory, it may be
-    overwritten depending on os.rename() semantics.
+    If dst already exists but is not a directory, it may be overwritten
+    depending on os.rename() semantics.
 
     If the destination is on our current filesystem, then rename() is used.
     Otherwise, src is copied to the destination and then removed. Symlinks are
@@ -880,7 +886,7 @@ def move(src, dst, copy_function=copy2):
     sys.audit("shutil.move", src, dst)
     real_dst = dst
     if os.path.isdir(dst):
-        if _samefile(src, dst):
+        if _samefile(src, dst) and not os.path.islink(src):
             # We might be on a case insensitive filesystem,
             # perform the rename anyway.
             os.rename(src, dst)
@@ -1436,11 +1442,18 @@ elif _WINDOWS:
         return _ntuple_diskusage(total, used, free)
 
 
-def chown(path, user=None, group=None):
+def chown(path, user=None, group=None, *, dir_fd=None, follow_symlinks=True):
     """Change owner user and group of the given path.
 
     user and group can be the uid/gid or the user/group names, and in that case,
     they are converted to their respective uid/gid.
+
+    If dir_fd is set, it should be an open file descriptor to the directory to
+    be used as the root of *path* if it is relative.
+
+    If follow_symlinks is set to False and the last element of the path is a
+    symbolic link, chown will modify the link itself and not the file being
+    referenced by the link.
     """
     sys.audit('shutil.chown', path, user, group)
 
@@ -1466,7 +1479,8 @@ def chown(path, user=None, group=None):
         if _group is None:
             raise LookupError("no such group: {!r}".format(group))
 
-    os.chown(path, _user, _group)
+    os.chown(path, _user, _group, dir_fd=dir_fd,
+             follow_symlinks=follow_symlinks)
 
 def get_terminal_size(fallback=(80, 24)):
     """Get the size of the terminal window.

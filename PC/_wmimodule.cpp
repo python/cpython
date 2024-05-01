@@ -279,9 +279,11 @@ _wmi_exec_query_impl(PyObject *module, PyObject *query)
     // a timeout.  The initEvent will be set after COM initialization, it will
     // take a longer time when first initialized.  The connectEvent will be set
     // after connected to WMI.
-    err = wait_event(data.initEvent, 1000);
     if (!err) {
-        err = wait_event(data.connectEvent, 100);
+        err = wait_event(data.initEvent, 1000);
+        if (!err) {
+            err = wait_event(data.connectEvent, 100);
+        }
     }
 
     while (!err) {
@@ -305,28 +307,33 @@ _wmi_exec_query_impl(PyObject *module, PyObject *query)
         CloseHandle(data.readPipe);
     }
 
-    // Allow the thread some time to clean up
-    switch (WaitForSingleObject(hThread, 100)) {
-    case WAIT_OBJECT_0:
-        // Thread ended cleanly
-        if (!GetExitCodeThread(hThread, (LPDWORD)&err)) {
-            err = GetLastError();
+    if (hThread) {
+        // Allow the thread some time to clean up
+        int thread_err;
+        switch (WaitForSingleObject(hThread, 100)) {
+        case WAIT_OBJECT_0:
+            // Thread ended cleanly
+            if (!GetExitCodeThread(hThread, (LPDWORD)&thread_err)) {
+                thread_err = GetLastError();
+            }
+            break;
+        case WAIT_TIMEOUT:
+            // Probably stuck - there's not much we can do, unfortunately
+            thread_err = WAIT_TIMEOUT;
+            break;
+        default:
+            thread_err = GetLastError();
+            break;
         }
-        break;
-    case WAIT_TIMEOUT:
-        // Probably stuck - there's not much we can do, unfortunately
+        // An error on our side is more likely to be relevant than one from
+        // the thread, but if we don't have one on our side we'll take theirs.
         if (err == 0 || err == ERROR_BROKEN_PIPE) {
-            err = WAIT_TIMEOUT;
+            err = thread_err;
         }
-        break;
-    default:
-        if (err == 0 || err == ERROR_BROKEN_PIPE) {
-            err = GetLastError();
-        }
-        break;
+
+        CloseHandle(hThread);
     }
 
-    CloseHandle(hThread);
     CloseHandle(data.initEvent);
     CloseHandle(data.connectEvent);
     hThread = NULL;

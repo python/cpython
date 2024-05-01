@@ -141,23 +141,29 @@ def _can_colorize():
                 return False
         except (ImportError, AttributeError):
             return False
-
-    if os.environ.get("PYTHON_COLORS") == "0":
-        return False
-    if os.environ.get("PYTHON_COLORS") == "1":
-        return True
-    if "NO_COLOR" in os.environ:
-        return False
+    if not sys.flags.ignore_environment:
+        if os.environ.get("PYTHON_COLORS") == "0":
+            return False
+        if os.environ.get("PYTHON_COLORS") == "1":
+            return True
+        if "NO_COLOR" in os.environ:
+            return False
     if not _COLORIZE:
         return False
-    if "FORCE_COLOR" in os.environ:
-        return True
-    if os.environ.get("TERM") == "dumb":
+    if not sys.flags.ignore_environment:
+        if "FORCE_COLOR" in os.environ:
+            return True
+        if os.environ.get("TERM") == "dumb":
+            return False
+
+    if not hasattr(sys.stderr, "fileno"):
         return False
+
     try:
         return os.isatty(sys.stderr.fileno())
     except io.UnsupportedOperation:
         return sys.stderr.isatty()
+
 
 def _print_exception_bltin(exc, /):
     file = sys.stderr if sys.stderr is not None else sys.__stderr__
@@ -448,8 +454,12 @@ class _ANSIColors:
     BOLD_RED = '\x1b[1;31m'
     MAGENTA = '\x1b[35m'
     BOLD_MAGENTA = '\x1b[1;35m'
+    GREEN = "\x1b[32m"
+    BOLD_GREEN = "\x1b[1;32m"
     GREY = '\x1b[90m'
     RESET = '\x1b[0m'
+    YELLOW = "\x1b[33m"
+
 
 class StackSummary(list):
     """A list of FrameSummary objects, representing a stack of frames."""
@@ -607,13 +617,10 @@ class StackSummary(list):
 
                 # attempt to parse for anchors
                 anchors = None
+                show_carets = False
                 with suppress(Exception):
                     anchors = _extract_caret_anchors_from_line_segment(segment)
-
-                # only use carets if there are anchors or the carets do not span all lines
-                show_carets = False
-                if anchors or all_lines[0][:start_offset].lstrip() or all_lines[-1][end_offset:].rstrip():
-                    show_carets = True
+                show_carets = self.should_show_carets(start_offset, end_offset, all_lines, anchors)
 
                 result = []
 
@@ -726,6 +733,37 @@ class StackSummary(list):
                 row.append('    {name} = {value}\n'.format(name=name, value=value))
 
         return ''.join(row)
+
+    def should_show_carets(self, start_offset, end_offset, all_lines, anchors):
+        with suppress(SyntaxError, ImportError):
+            import ast
+            tree = ast.parse('\n'.join(all_lines))
+            statement = tree.body[0]
+            value = None
+            def _spawns_full_line(value):
+                return (
+                    value.lineno == 1
+                    and value.end_lineno == len(all_lines)
+                    and value.col_offset == start_offset
+                    and value.end_col_offset == end_offset
+                )
+            match statement:
+                case ast.Return(value=ast.Call()):
+                    if isinstance(statement.value.func, ast.Name):
+                        value = statement.value
+                case ast.Assign(value=ast.Call()):
+                    if (
+                        len(statement.targets) == 1 and
+                        isinstance(statement.targets[0], ast.Name)
+                    ):
+                        value = statement.value
+            if value is not None and _spawns_full_line(value):
+                return False
+        if anchors:
+            return True
+        if all_lines[0][:start_offset].lstrip() or all_lines[-1][end_offset:].rstrip():
+            return True
+        return False
 
     def format(self, **kwargs):
         """Format the stack ready for printing.
@@ -1051,7 +1089,11 @@ class TracebackException:
         # Capture now to permit freeing resources: only complication is in the
         # unofficial API _format_final_exc_line
         self._str = _safe_string(exc_value, 'exception')
-        self.__notes__ = getattr(exc_value, '__notes__', None)
+        try:
+            self.__notes__ = getattr(exc_value, '__notes__', None)
+        except Exception as e:
+            self.__notes__ = [
+                f'Ignored error getting __notes__: {_safe_string(e, '__notes__', repr)}']
 
         self._is_syntax_error = False
         self._have_exc_type = exc_type is not None
@@ -1496,6 +1538,13 @@ def _compute_suggestion_error(exc_value, tb, wrong_name):
             self = frame.f_locals['self']
             if hasattr(self, wrong_name):
                 return f"self.{wrong_name}"
+
+    try:
+        import _suggestions
+    except ImportError:
+        pass
+    else:
+        return _suggestions._generate_suggestions(d, wrong_name)
 
     # Compute closest match
 
