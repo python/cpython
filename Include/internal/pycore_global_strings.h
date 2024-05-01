@@ -113,6 +113,7 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(__eq__)
         STRUCT_FOR_ID(__exit__)
         STRUCT_FOR_ID(__file__)
+        STRUCT_FOR_ID(__firstlineno__)
         STRUCT_FOR_ID(__float__)
         STRUCT_FOR_ID(__floordiv__)
         STRUCT_FOR_ID(__format__)

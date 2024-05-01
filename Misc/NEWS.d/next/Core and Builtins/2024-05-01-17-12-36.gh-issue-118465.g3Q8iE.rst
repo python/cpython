@@ -1,0 +1,2 @@
+Compiler populates the new ``__firstlineno__`` field on a class with the
+line number of the first line of the class definition.
