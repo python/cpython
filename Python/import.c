@@ -1040,13 +1040,16 @@ get_cached_m_dict(struct extensions_cache_value *value,
 
 static int
 update_extensions_cache_value(struct extensions_cache_value *value,
-                              PyModuleDef *def, PyObject *m_dict,
-                              _Py_ext_module_origin origin)
+                              PyModuleDef *def, PyModInitFunction m_init,
+                              PyObject *m_dict, _Py_ext_module_origin origin)
 {
     assert(def != NULL);
     /* We expect it to be static, so it must be the same pointer. */
     assert(value->def == NULL || value->def == def);
-    assert(def->m_base.m_init == NULL || m_dict == NULL);
+    assert(m_init == NULL || m_dict == NULL);
+    /* We expect the same symbol to be used and the shared object file
+     * to have remained loaded, so it must be the same pointer. */
+    assert(def->m_base.m_init == NULL || def->m_base.m_init == m_init);
     /* For now we don't worry about comparing value->m_copy. */
     assert(def->m_base.m_copy == NULL || m_dict != NULL);
 
@@ -1058,6 +1061,7 @@ update_extensions_cache_value(struct extensions_cache_value *value,
         .def=def,
         .origin=origin,
     };
+    def->m_base.m_init = m_init;
     if (set_cached_m_dict(&temp, m_dict) < 0) {
         return -1;
     }
@@ -1209,8 +1213,8 @@ finally:
 /* This can only fail with "out of memory". */
 static int
 _extensions_cache_set(PyObject *path, PyObject *name,
-                      PyModuleDef *def, PyObject *m_dict,
-                      _Py_ext_module_origin origin)
+                      PyModuleDef *def, PyModInitFunction m_init,
+                      PyObject *m_dict, _Py_ext_module_origin origin)
 {
     int res = -1;
     assert(def != NULL);
@@ -1220,7 +1224,9 @@ _extensions_cache_set(PyObject *path, PyObject *name,
     struct extensions_cache_value *newvalue = NULL;
 
     struct extensions_cache_value updates = {0};
-    if (update_extensions_cache_value(&updates, def, m_dict, origin) < 0) {
+    if (update_extensions_cache_value(
+            &updates, def, m_init, m_dict, origin) < 0)
+    {
         return -1;
     }
 
@@ -1456,10 +1462,12 @@ update_global_state_for_extension(PyThreadState *tstate,
                                   PyModuleDef *def,
                                   struct singlephase_global_update *singlephase)
 {
+    PyModInitFunction m_init = NULL;
     PyObject *m_dict = NULL;
 
     /* Copy the module's __dict__, if applicable. */
     if (singlephase == NULL) {
+        assert(def->m_base.m_init == NULL);
         assert(def->m_base.m_copy == NULL);
     }
     else {
@@ -1473,7 +1481,7 @@ update_global_state_for_extension(PyThreadState *tstate,
             // We should prevent this somehow.  The simplest solution
             // is probably to store m_copy/m_init in the cache along
             // with the def, rather than within the def.
-            def->m_base.m_init = singlephase->m_init;
+            m_init = singlephase->m_init;
         }
         else if (singlephase->m_dict == NULL) {
             /* It must be a core builtin module. */
@@ -1504,7 +1512,7 @@ update_global_state_for_extension(PyThreadState *tstate,
         assert(cached == NULL || cached->def == def);
 #endif
         if (_extensions_cache_set(
-                path, name, def, m_dict, singlephase->origin) < 0)
+                path, name, def, m_init, m_dict, singlephase->origin) < 0)
         {
             // XXX Ignore this error?  Doing so would effectively
             // mark the module as not loadable.
@@ -1547,7 +1555,6 @@ reload_singlephase_extension(PyThreadState *tstate,
     PyModuleDef *def = cached->def;
     assert(def != NULL);
     assert_singlephase(cached);
-    PyModInitFunction m_init = def->m_base.m_init;
     PyObject *mod = NULL;
 
     /* It may have been successfully imported previously
@@ -1562,7 +1569,6 @@ reload_singlephase_extension(PyThreadState *tstate,
     PyObject *modules = get_modules_dict(tstate, true);
     if (def->m_size == -1) {
         /* Module does not support repeated initialization */
-        assert(m_init == NULL);
         assert(def->m_base.m_init == NULL);
         // XXX Copying the cached dict may break interpreter isolation.
         // We could solve this by temporarily acquiring the original
@@ -1598,12 +1604,14 @@ reload_singlephase_extension(PyThreadState *tstate,
                || _PyModule_GetDef(mod) == def);
     }
     else {
-        if (def->m_base.m_init == NULL) {
+        assert(def->m_base.m_copy == NULL);
+        PyModInitFunction p0 = def->m_base.m_init;
+        if (p0 == NULL) {
             assert(!PyErr_Occurred());
             return NULL;
         }
         struct _Py_ext_module_loader_result res;
-        if (_PyImport_RunModInitFunc(def->m_base.m_init, info, &res) < 0) {
+        if (_PyImport_RunModInitFunc(p0, info, &res) < 0) {
             _Py_ext_module_loader_result_apply_error(&res, name_buf);
             return NULL;
         }
