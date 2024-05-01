@@ -1275,7 +1275,8 @@ mmap_ass_subscript(mmap_object *self, PyObject *item, PyObject *value)
         }
         CHECK_VALID(-1);
 
-        if (safe_byte_copy(self->data + i, (char *) &v) < 0) {
+        char v_char = (char) v;
+        if (safe_byte_copy(self->data + i, &v_char) < 0) {
             return -1;
         }
         else {
