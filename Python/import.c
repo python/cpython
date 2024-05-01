@@ -1193,10 +1193,10 @@ is_core_module(PyInterpreterState *interp, PyObject *name, PyObject *path)
 }
 
 #ifndef NDEBUG
-static enum _Py_ext_module_kind
+static _Py_ext_module_kind
 _get_extension_kind(PyModuleDef *def, bool check_size)
 {
-    enum _Py_ext_module_kind kind;
+    _Py_ext_module_kind kind;
     if (def == NULL) {
         /* It must be a module created by reload_singlephase_extension()
          * from m_copy.  Ideally we'd do away with this case. */
@@ -1224,7 +1224,7 @@ check_multiphase_preinit(PyModuleDef *def)
 {
     /* PyModule_FromDefAndSpec() checks m_size so we skip m_size
      * if the module hasn't been fully initialized yet. */
-    enum _Py_ext_module_kind kind = _get_extension_kind(def, false);
+    _Py_ext_module_kind kind = _get_extension_kind(def, false);
     return kind == _Py_ext_module_kind_MULTIPHASE
             /* m_slots can be NULL. */
             || kind == _Py_ext_module_kind_UNKNOWN;
@@ -1233,7 +1233,7 @@ check_multiphase_preinit(PyModuleDef *def)
 static bool
 check_singlephase(PyModuleDef *def)
 {
-    enum _Py_ext_module_kind kind = _get_extension_kind(def, true);
+    _Py_ext_module_kind kind = _get_extension_kind(def, true);
     return kind == _Py_ext_module_kind_SINGLEPHASE
             || kind == _Py_ext_module_kind_UNKNOWN;
 }
