@@ -507,8 +507,14 @@ loops that truncate the stream.
           start = s.start if s.start is not None else 0
           stop = s.stop
           step = s.step if s.step is not None else 1
-          for i, element in enumerate(iterable):
-              if i >= start and (i - start) % step == 0:
+          it = iter(iterable)
+          for _ in zip(range(start), it):
+              # Consume up to *start* position
+              pass
+          if stop is not None and stop <= start:
+              return
+          for i, element in enumerate(iterable, start):
+              if (i - start) % step == 0:
                   yield element
               if stop is not None and i + 1 >= stop:
                   return
