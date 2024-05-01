@@ -402,19 +402,17 @@ _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction trace[], siz
     for (size_t i = 0; i < length; i++) {
         instruction_starts[i] += (uintptr_t)memory;
     }
-    // Loop again to emit the code:
     unsigned char *code = memory;
     unsigned char *data = memory + code_size;
-    {
-        // Compile the trampoline, which handles converting between the native
-        // calling convention and the calling convention used by jitted code
-        // (which may be different for efficiency reasons). On platforms where
-        // we don't change calling conventions, the trampoline is empty and
-        // nothing is emitted here:
-        emit_trampoline(code, data, executor, NULL, instruction_starts);
-        code += emitted_trampoline_code;
-        data += emitted_trampoline_data;
-    }
+    // Compile the trampoline, which handles converting between the native
+    // calling convention and the calling convention used by jitted code
+    // (which may be different for efficiency reasons). On platforms where
+    // we don't change calling conventions, the trampoline is empty and
+    // nothing is emitted here:
+    emit_trampoline(code, data, executor, NULL, instruction_starts);
+    code += emitted_trampoline_code;
+    data += emitted_trampoline_data;
+    // Loop again to emit the code:
     assert(trace[0].opcode == _START_EXECUTOR || trace[0].opcode == _COLD_EXIT);
     for (size_t i = 0; i < length; i++) {
         const _PyUOpInstruction *instruction = &trace[i];
