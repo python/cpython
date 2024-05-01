@@ -347,7 +347,7 @@ Other Language Changes
 New Modules
 ===========
 
-* None yet.
+* None.
 
 
 Improved Modules
@@ -1647,7 +1647,7 @@ PEP 594: dead batteries
   * :mod:`!pipes`: use the :mod:`subprocess` module instead.
     (Contributed by Victor Stinner in :gh:`104773`.)
 
-  * :mod:`!sndhdr`: use the projects :pypi:`filetype_,
+  * :mod:`!sndhdr`: use the projects :pypi:`filetype`,
     :pypi:`puremagic`, or :pypi:`python-magic` instead.
     (Contributed by Victor Stinner in :gh:`104773`.)
 
@@ -1790,11 +1790,6 @@ webbrowser
   Use :attr:`webbrowser.MacOSXOSAScript.name <webbrowser.controller.name>`
   attribute instead.
   (Contributed by Nikita Sobolev in :gh:`105546`.)
-
-Others
-------
-
-* None yet
 
 CPython bytecode changes
 ========================
