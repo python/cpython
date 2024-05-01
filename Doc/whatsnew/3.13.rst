@@ -100,9 +100,51 @@ Improved Error Messages
 
 * The interpreter now colorizes error messages when displaying tracebacks by default.
   This feature can be controlled via the new :envvar:`PYTHON_COLORS` environment
-  variable as well as the canonical ``NO_COLOR`` and ``FORCE_COLOR`` environment
+  variable as well as the canonical |NO_COLOR|_ and |FORCE_COLOR|_ environment
   variables. See also :ref:`using-on-controlling-color`.
   (Contributed by Pablo Galindo Salgado in :gh:`112730`.)
+
+.. Apparently this how you hack together a formatted link:
+
+.. |FORCE_COLOR| replace:: ``FORCE_COLOR``
+.. _FORCE_COLOR: https://force-color.org/
+
+.. |NO_COLOR| replace:: ``NO_COLOR``
+.. _NO_COLOR: https://no-color.org/
+
+* A common mistake is to write a script with the same name as a
+  standard library module. When this results in errors, we now
+  display a more helpful error message:
+
+  .. code-block:: shell-session
+
+    $ python random.py
+    Traceback (most recent call last):
+      File "/home/random.py", line 1, in <module>
+        import random; print(random.randint(5))
+        ^^^^^^^^^^^^^
+      File "/home/random.py", line 1, in <module>
+        import random; print(random.randint(5))
+                            ^^^^^^^^^^^^^^
+    AttributeError: module 'random' has no attribute 'randint' (consider renaming '/home/random.py' since it has the same name as the standard library module named 'random' and the import system gives it precedence)
+
+  Similarly, if a script has the same name as a third-party
+  module it attempts to import, and this results in errors,
+  we also display a more helpful error message:
+
+  .. code-block:: shell-session
+
+    $ python numpy.py
+    Traceback (most recent call last):
+      File "/home/numpy.py", line 1, in <module>
+        import numpy as np; np.array([1,2,3])
+        ^^^^^^^^^^^^^^^^^^
+      File "/home/numpy.py", line 1, in <module>
+        import numpy as np; np.array([1,2,3])
+                            ^^^^^^^^
+    AttributeError: module 'numpy' has no attribute 'array' (consider renaming '/home/numpy.py' if it has the same name as a third-party module you intended to import)
+
+  (Contributed by Shantanu Jain in :gh:`95754`.)
 
 * When an incorrect keyword argument is passed to a function, the error message
   now potentially suggests the correct keyword argument.
@@ -127,6 +169,22 @@ Incremental Garbage Collection
   This means that maximum pause times are reduced
   by an order of magnitude or more for larger heaps.
 
+Support For Mobile Platforms
+----------------------------
+
+* iOS is now a :pep:`11` supported platform. ``arm64-apple-ios``
+  (iPhone and iPad devices released after 2013) and
+  ``arm64-apple-ios-simulator`` (Xcode iOS simulator running on Apple Silicon
+  hardware) are now tier 3 platforms.
+
+  ``x86_64-apple-ios-simulator`` (Xcode iOS simulator running on older x86_64
+  hardware) is not a tier 3 supported platform, but will be supported on a
+  best-effort basis.
+
+  See :pep:`730`: for more details.
+
+  (PEP written and implementation contributed by Russell Keith-Magee in
+  :gh:`114099`.)
 
 Other Language Changes
 ======================
@@ -190,6 +248,11 @@ Other Language Changes
 
   (Contributed by Victor Stinner in :gh:`114570`.)
 
+* Added :attr:`!name` and :attr:`!mode` attributes for compressed
+  and archived file-like objects in modules :mod:`bz2`, :mod:`lzma`,
+  :mod:`tarfile` and :mod:`zipfile`.
+  (Contributed by Serhiy Storchaka in :gh:`115961`.)
+
 * Allow controlling Expat >=2.6.0 reparse deferral (:cve:`2023-52425`)
   by adding five new methods:
 
@@ -219,6 +282,11 @@ Other Language Changes
 * The :class:`configparser.ConfigParser` now accepts unnamed sections before named
   ones if configured to do so.
   (Contributed by Pedro Sousa Lacerda in :gh:`66449`.)
+
+* :ref:`annotation scope <annotation-scopes>` within class scopes can now
+  contain lambdas and comprehensions. Comprehensions that are located within
+  class scopes are not inlined into their parent scope. (Contributed by
+  Jelle Zijlstra in :gh:`109118` and :gh:`118160`.)
 
 
 New Modules
@@ -378,6 +446,12 @@ doctest
   tests. Add :attr:`doctest.DocTestRunner.skips` and
   :attr:`doctest.TestResults.skipped` attributes.
   (Contributed by Victor Stinner in :gh:`108794`.)
+
+* Color is added to the output by default.
+  This can be controlled via the new :envvar:`PYTHON_COLORS` environment
+  variable as well as the canonical |NO_COLOR|_ and |FORCE_COLOR|_ environment
+  variables. See also :ref:`using-on-controlling-color`.
+  (Contributed by Hugo van Kemenade in :gh:`117225`.)
 
 email
 -----
@@ -573,6 +647,10 @@ os.path
   exactly one (back)slash to be absolute.
   (Contributed by Barney Gale and Jon Foster in :gh:`44626`.)
 
+* Add support of *dir_fd* and *follow_symlinks* keyword arguments in
+  :func:`shutil.chown`.
+  (Contributed by Berker Peksag and Tahia K in :gh:`62308`)
+
 pathlib
 -------
 
@@ -729,6 +807,9 @@ tkinter
   :class:`tkinter.ttk.Style`.
   (Contributed by Serhiy Storchaka in :gh:`68166`.)
 
+* Add the :meth:`!after_info` method for Tkinter widgets.
+  (Contributed by Cheryl Sabella in :gh:`77020`.)
+
 traceback
 ---------
 
@@ -741,6 +822,14 @@ traceback
   which holds the type object itself. Add parameter *save_exc_type* (default
   ``True``) to indicate whether ``exc_type`` should be saved.
   (Contributed by Irit Katriel in :gh:`112332`.)
+
+types
+-----
+
+* :class:`~types.SimpleNamespace` constructor now allows specifying initial
+  values of attributes as a positional argument which must be a mapping or
+  an iterable of key-value pairs.
+  (Contributed by Serhiy Storchaka in :gh:`108191`.)
 
 typing
 ------
@@ -813,7 +902,7 @@ Experimental JIT Compiler
 =========================
 
 When CPython is configured using the ``--enable-experimental-jit`` option,
-a just-in-time compiler is added which can speed up some Python programs.
+a just-in-time compiler is added which may speed up some Python programs.
 
 The internal architecture is roughly as follows.
 
@@ -830,18 +919,34 @@ The internal architecture is roughly as follows.
   before it is interpreted or translated to machine code.
 
 * There is a Tier 2 interpreter, but it is mostly intended for debugging
-  the earlier stages of the optimization pipeline. If the JIT is not
-  enabled, the Tier 2 interpreter can be invoked by passing Python the
-  ``-X uops`` option or by setting the ``PYTHON_UOPS`` environment
-  variable to ``1``.
+  the earlier stages of the optimization pipeline.
+  The Tier 2 interpreter can be enabled by configuring Python
+  with ``--enable-experimental-jit=interpreter``.
 
-* When the ``--enable-experimental-jit`` option is used, the optimized
+* When the JIT is enabled, the optimized
   Tier 2 IR is translated to machine code, which is then executed.
-  This does not require additional runtime options.
 
 * The machine code translation process uses an architecture called
   *copy-and-patch*. It has no runtime dependencies, but there is a new
   build-time dependency on LLVM.
+
+The ``--enable-experimental-jit`` flag has the following optional values:
+
+* ``no`` (default) -- Disable the entire Tier 2 and JIT pipeline.
+
+* ``yes`` (default if the flag is present without optional value)
+  -- Enable the JIT. To disable the JIT at runtime,
+  pass the environment variable ``PYTHON_JIT=0``.
+
+* ``yes-off`` -- Build the JIT but disable it by default.
+  To enable the JIT at runtime, pass the environment variable
+  ``PYTHON_JIT=1``.
+
+* ``interpreter`` -- Enable the Tier 2 interpreter but disable the JIT.
+  The interpreter can be disabled by running with
+  ``PYTHON_JIT=0``.
+
+(On Windows, use ``PCbuild/build.bat --enable-jit`` to enable the JIT.)
 
 See :pep:`744` for more details.
 
@@ -1362,7 +1467,10 @@ PEP 594: dead batteries
     * :pypi:`argon2-cffi`:
       The secure Argon2 password hashing algorithm.
     * :pypi:`legacycrypt`:
-      Wrapper to the POSIX crypt library call and associated functionality.
+      :mod:`ctypes` wrapper to the POSIX crypt library call and associated functionality.
+    * :pypi:`crypt_r`:
+      Fork of the :mod:`!crypt` module, wrapper to the :manpage:`crypt_r(3)` library
+      call and associated functionality.
 
     (Contributed by Victor Stinner in :gh:`104773`.)
 
@@ -1589,6 +1697,12 @@ Changes in the Python API
   than directories only. Users may add a trailing slash to match only
   directories.
 
+* The value of the :attr:`!mode` attribute of :class:`gzip.GzipFile` was
+  changed from integer (``1`` or ``2``) to string (``'rb'`` or ``'wb'``).
+  The value of the :attr:`!mode` attribute of the readable file-like object
+  returned by :meth:`zipfile.ZipFile.open` was changed from ``'r'`` to ``'rb'``.
+  (Contributed by Serhiy Storchaka in :gh:`115961`.)
+
 * :c:func:`!PyCode_GetFirstFree` is an unstable API now and has been renamed
   to :c:func:`PyUnstable_Code_GetFirstFree`.
   (Contributed by Bogdan Romanyuk in :gh:`115781`.)
@@ -1801,9 +1915,15 @@ New Features
 
   * :c:type:`PyTime_t` type.
   * :c:var:`PyTime_MIN` and :c:var:`PyTime_MAX` constants.
-  * :c:func:`PyTime_AsSecondsDouble`
-    :c:func:`PyTime_Monotonic`, :c:func:`PyTime_PerfCounter`, and
-    :c:func:`PyTime_Time` functions.
+  * Add functions:
+
+    * :c:func:`PyTime_AsSecondsDouble`.
+    * :c:func:`PyTime_Monotonic`.
+    * :c:func:`PyTime_MonotonicRaw`.
+    * :c:func:`PyTime_PerfCounter`.
+    * :c:func:`PyTime_PerfCounterRaw`.
+    * :c:func:`PyTime_Time`.
+    * :c:func:`PyTime_TimeRaw`.
 
   (Contributed by Victor Stinner and Petr Viktorin in :gh:`110850`.)
 

@@ -113,7 +113,8 @@ compiler IR.
 
 enum fblocktype { WHILE_LOOP, FOR_LOOP, TRY_EXCEPT, FINALLY_TRY, FINALLY_END,
                   WITH, ASYNC_WITH, HANDLER_CLEANUP, POP_VALUE, EXCEPTION_HANDLER,
-                  EXCEPTION_GROUP_HANDLER, ASYNC_COMPREHENSION_GENERATOR };
+                  EXCEPTION_GROUP_HANDLER, ASYNC_COMPREHENSION_GENERATOR,
+                  STOP_ITERATION };
 
 struct fblockinfo {
     enum fblocktype fb_type;
@@ -285,6 +286,10 @@ struct compiler {
     struct compiler_unit *u;     /* compiler state for current block */
     PyObject *c_stack;           /* Python list holding compiler_unit ptrs */
     PyArena *c_arena;            /* pointer to memory allocation arena */
+
+    bool c_save_nested_seqs;     /* if true, construct recursive instruction sequences
+                                  * (including instructions for nested code objects)
+                                  */
 };
 
 #define INSTR_SEQUENCE(C) ((C)->u->u_instr_sequence)
@@ -402,6 +407,7 @@ compiler_setup(struct compiler *c, mod_ty mod, PyObject *filename,
     c->c_flags = *flags;
     c->c_optimize = (optimize == -1) ? _Py_GetConfig()->optimization_level : optimize;
     c->c_nestlevel = 0;
+    c->c_save_nested_seqs = false;
 
     if (!_PyAST_Optimize(mod, arena, c->c_optimize, merged)) {
         return ERROR;
@@ -1290,6 +1296,11 @@ compiler_exit_scope(struct compiler *c)
     // Don't call PySequence_DelItem() with an exception raised
     PyObject *exc = PyErr_GetRaisedException();
 
+    instr_sequence *nested_seq = NULL;
+    if (c->c_save_nested_seqs) {
+        nested_seq = c->u->u_instr_sequence;
+        Py_INCREF(nested_seq);
+    }
     c->c_nestlevel--;
     compiler_unit_free(c->u);
     /* Restore c->u to the parent unit. */
@@ -1303,10 +1314,17 @@ compiler_exit_scope(struct compiler *c)
             PyErr_FormatUnraisable("Exception ignored on removing "
                                    "the last compiler stack item");
         }
+        if (nested_seq != NULL) {
+            if (_PyInstructionSequence_AddNested(c->u->u_instr_sequence, nested_seq) < 0) {
+                PyErr_FormatUnraisable("Exception ignored on appending "
+                                       "nested instruction sequence");
+            }
+        }
     }
     else {
         c->u = NULL;
     }
+    Py_XDECREF(nested_seq);
 
     PyErr_SetRaisedException(exc);
 }
@@ -1486,6 +1504,7 @@ compiler_unwind_fblock(struct compiler *c, location *ploc,
         case EXCEPTION_HANDLER:
         case EXCEPTION_GROUP_HANDLER:
         case ASYNC_COMPREHENSION_GENERATOR:
+        case STOP_ITERATION:
             return SUCCESS;
 
         case FOR_LOOP:
@@ -2215,14 +2234,26 @@ compiler_function_body(struct compiler *c, stmt_ty s, int is_async, Py_ssize_t f
     c->u->u_metadata.u_argcount = asdl_seq_LEN(args->args);
     c->u->u_metadata.u_posonlyargcount = asdl_seq_LEN(args->posonlyargs);
     c->u->u_metadata.u_kwonlyargcount = asdl_seq_LEN(args->kwonlyargs);
+
+    NEW_JUMP_TARGET_LABEL(c, start);
+    USE_LABEL(c, start);
+    bool add_stopiteration_handler = c->u->u_ste->ste_coroutine || c->u->u_ste->ste_generator;
+    if (add_stopiteration_handler) {
+        /* wrap_in_stopiteration_handler will push a block, so we need to account for that */
+        RETURN_IF_ERROR(
+            compiler_push_fblock(c, NO_LOCATION, STOP_ITERATION,
+                                 start, NO_LABEL, NULL));
+    }
+
     for (Py_ssize_t i = first_instr; i < asdl_seq_LEN(body); i++) {
         VISIT_IN_SCOPE(c, stmt, (stmt_ty)asdl_seq_GET(body, i));
     }
-    if (c->u->u_ste->ste_coroutine || c->u->u_ste->ste_generator) {
+    if (add_stopiteration_handler) {
         if (wrap_in_stopiteration_handler(c) < 0) {
             compiler_exit_scope(c);
             return ERROR;
         }
+        compiler_pop_fblock(c, STOP_ITERATION, start);
     }
     PyCodeObject *co = optimize_and_assemble(c, 1);
     compiler_exit_scope(c);
@@ -7734,6 +7765,7 @@ _PyCompile_CodeGen(PyObject *ast, PyObject *filename, PyCompilerFlags *pflags,
         _PyArena_Free(arena);
         return NULL;
     }
+    c->c_save_nested_seqs = true;
 
     metadata = PyDict_New();
     if (metadata == NULL) {

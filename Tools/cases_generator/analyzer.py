@@ -354,6 +354,7 @@ def has_error_without_pop(op: parser.InstDef) -> bool:
 NON_ESCAPING_FUNCTIONS = (
     "Py_INCREF",
     "_PyManagedDictPointer_IsValues",
+    "_PyObject_GetManagedDict",
     "_PyObject_ManagedDictPointer",
     "_PyObject_InlineValues",
     "_PyDictValues_AddToInsertionOrder",
@@ -410,6 +411,7 @@ NON_ESCAPING_FUNCTIONS = (
     "PyCell_New",
     "PyFloat_AS_DOUBLE",
     "_PyFrame_PushUnchecked",
+    "Py_FatalError",
 )
 
 ESCAPING_FUNCTIONS = (

@@ -572,6 +572,17 @@ static PyMemberDef keyobject_members[] = {
 };
 
 static PyObject *
+keyobject_text_signature(PyObject *self, void *Py_UNUSED(ignored))
+{
+    return PyUnicode_FromString("(obj)");
+}
+
+static PyGetSetDef keyobject_getset[] = {
+    {"__text_signature__", keyobject_text_signature, (setter)NULL},
+    {NULL}
+};
+
+static PyObject *
 keyobject_call(keyobject *ko, PyObject *args, PyObject *kwds);
 
 static PyObject *
@@ -585,6 +596,7 @@ static PyType_Slot keyobject_type_slots[] = {
     {Py_tp_clear, keyobject_clear},
     {Py_tp_richcompare, keyobject_richcompare},
     {Py_tp_members, keyobject_members},
+    {Py_tp_getset, keyobject_getset},
     {0, 0}
 };
 
