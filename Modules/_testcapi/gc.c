@@ -99,7 +99,7 @@ slot_tp_del(PyObject *self)
         return;
     }
     /* Execute __del__ method, if any. */
-    del = _PyType_Fetch(Py_TYPE(self), tp_del);
+    del = _PyType_LookupRef(Py_TYPE(self), tp_del);
     Py_DECREF(tp_del);
     if (del != NULL) {
         res = PyObject_CallOneArg(del, self);

@@ -2511,9 +2511,9 @@ _collections__count_elements_impl(PyObject *module, PyObject *mapping,
     /* Only take the fast path when get() and __setitem__()
      * have not been overridden.
      */
-    mapping_get = _PyType_Fetch(Py_TYPE(mapping), &_Py_ID(get));
+    mapping_get = _PyType_LookupRef(Py_TYPE(mapping), &_Py_ID(get));
     dict_get = _PyType_Lookup(&PyDict_Type, &_Py_ID(get));
-    mapping_setitem = _PyType_Fetch(Py_TYPE(mapping), &_Py_ID(__setitem__));
+    mapping_setitem = _PyType_LookupRef(Py_TYPE(mapping), &_Py_ID(__setitem__));
     dict_setitem = _PyType_Lookup(&PyDict_Type, &_Py_ID(__setitem__));
 
     if (mapping_get != NULL && mapping_get == dict_get &&

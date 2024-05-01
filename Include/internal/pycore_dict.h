@@ -107,8 +107,8 @@ PyAPI_FUNC(PyObject *)_PyDict_LoadGlobal(PyDictObject *, PyDictObject *, PyObjec
 PyAPI_FUNC(int) _PyDict_SetItem_Take2(PyDictObject *op, PyObject *key, PyObject *value);
 extern int _PyObjectDict_SetItem(PyTypeObject *tp, PyObject **dictptr, PyObject *name, PyObject *value);
 extern int _PyDict_SetItem_LockHeld(PyDictObject *dict, PyObject *name, PyObject *value);
-extern int _PyDict_GetItemRef_LockHeld(PyObject *op, PyObject *key, PyObject **result);
-extern int _PyDict_GetItemRef_KnownHash(PyObject *op, PyObject *key, Py_hash_t hash, PyObject **result);
+extern int _PyDict_GetItemRef_Unicode_LockHeld(PyDictObject *op, PyObject *key, PyObject **result);
+extern int _PyDict_GetItemRef_KnownHash(PyDictObject *op, PyObject *key, Py_hash_t hash, PyObject **result);
 
 extern int _PyDict_Pop_KnownHash(
     PyDictObject *dict,

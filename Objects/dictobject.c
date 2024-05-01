@@ -2268,15 +2268,13 @@ _PyDict_GetItem_KnownHash(PyObject *op, PyObject *key, Py_hash_t hash)
  * exception occurred.
 */
 int
-_PyDict_GetItemRef_KnownHash(PyObject *op, PyObject *key, Py_hash_t hash, PyObject **result)
+_PyDict_GetItemRef_KnownHash(PyDictObject *op, PyObject *key, Py_hash_t hash, PyObject **result)
 {
-    PyDictObject*mp = (PyDictObject *)op;
-
     PyObject *value;
 #ifdef Py_GIL_DISABLED
-    Py_ssize_t ix = _Py_dict_lookup_threadsafe(mp, key, hash, &value);
+    Py_ssize_t ix = _Py_dict_lookup_threadsafe(op, key, hash, &value);
 #else
-    Py_ssize_t ix = _Py_dict_lookup(mp, key, hash, &value);
+    Py_ssize_t ix = _Py_dict_lookup(op, key, hash, &value);
 #endif
     assert(ix >= 0 || value == NULL);
     if (ix == DKIX_ERROR) {
@@ -2314,11 +2312,11 @@ PyDict_GetItemRef(PyObject *op, PyObject *key, PyObject **result)
         }
     }
 
-    return _PyDict_GetItemRef_KnownHash(op, key, hash, result);
+    return _PyDict_GetItemRef_KnownHash((PyDictObject *)op, key, hash, result);
 }
 
 int
-_PyDict_GetItemRef_LockHeld(PyObject *op, PyObject *key, PyObject **result)
+_PyDict_GetItemRef_Unicode_LockHeld(PyDictObject *op, PyObject *key, PyObject **result)
 {
     ASSERT_DICT_LOCKED(op);
     assert(PyUnicode_CheckExact(key));
@@ -2332,10 +2330,8 @@ _PyDict_GetItemRef_LockHeld(PyObject *op, PyObject *key, PyObject **result)
         }
     }
 
-    PyDictObject*mp = (PyDictObject *)op;
-
     PyObject *value;
-    Py_ssize_t ix = _Py_dict_lookup(mp, key, hash, &value);
+    Py_ssize_t ix = _Py_dict_lookup(op, key, hash, &value);
     assert(ix >= 0 || value == NULL);
     if (ix == DKIX_ERROR) {
         *result = NULL;

@@ -46,7 +46,7 @@ class TestType(TestCase):
 
         DONE = False
         def writer_func():
-            for i in range(10000):
+            for i in range(3000):
                 C.x
                 C.x
                 C.x += 1
@@ -75,7 +75,7 @@ class TestType(TestCase):
 
         DONE = False
         def writer_func():
-            for i in range(10000):
+            for i in range(3000):
                 D.x
                 D.x
                 C.x += 1

@@ -740,7 +740,7 @@ _PyType_InitCache(PyInterpreterState *interp)
         assert(entry->name == NULL);
 
         entry->version = 0;
-        // Set to None so _PyType_Fetch() can use Py_SETREF(),
+        // Set to None so _PyType_LookupRef() can use Py_SETREF(),
         // rather than using slower Py_XSETREF().
         entry->name = Py_None;
         entry->value = NULL;
@@ -752,7 +752,7 @@ static unsigned int
 _PyType_ClearCache(PyInterpreterState *interp)
 {
     struct type_cache *cache = &interp->types.type_cache;
-    // Set to None, rather than NULL, so _PyType_Fetch() can
+    // Set to None, rather than NULL, so _PyType_LookupRef() can
     // use Py_SETREF() rather than using slower Py_XSETREF().
     type_cache_clear(cache, Py_None);
 
@@ -893,7 +893,8 @@ type_modification_starting_unlocked(PyTypeObject *type)
         }
     }
 
-    _Py_atomic_store_uint32_release(&type->tp_version_tag, 0); /* 0 is not a valid version tag */
+    /* 0 is not a valid version tag */
+    _Py_atomic_store_uint32_release(&type->tp_version_tag, 0);
 }
 
 #endif
@@ -2401,7 +2402,7 @@ PyType_IsSubtype(PyTypeObject *a, PyTypeObject *b)
    Variants:
 
    - _PyObject_LookupSpecial() returns NULL without raising an exception
-     when the _PyType_Fetch() call fails;
+     when the _PyType_LookupRef() call fails;
 
    - lookup_maybe_method() and lookup_method() are internal routines similar
      to _PyObject_LookupSpecial(), but can return unbound PyFunction
@@ -2414,7 +2415,7 @@ _PyObject_LookupSpecial(PyObject *self, PyObject *attr)
 {
     PyObject *res;
 
-    res = _PyType_Fetch(Py_TYPE(self), attr);
+    res = _PyType_LookupRef(Py_TYPE(self), attr);
     if (res != NULL) {
         descrgetfunc f;
         if ((f = Py_TYPE(res)->tp_descr_get) != NULL) {
@@ -2436,7 +2437,7 @@ _PyObject_LookupSpecialId(PyObject *self, _Py_Identifier *attrid)
 static PyObject *
 lookup_maybe_method(PyObject *self, PyObject *attr, int *unbound)
 {
-    PyObject *res = _PyType_Fetch(Py_TYPE(self), attr);
+    PyObject *res = _PyType_LookupRef(Py_TYPE(self), attr);
     if (res == NULL) {
         return NULL;
     }
@@ -5025,7 +5026,7 @@ find_name_in_mro(PyTypeObject *type, PyObject *name, int *error)
         PyObject *base = PyTuple_GET_ITEM(mro, i);
         PyObject *dict = lookup_tp_dict(_PyType_CAST(base));
         assert(dict && PyDict_Check(dict));
-        if (_PyDict_GetItemRef_KnownHash(dict, name, hash, &res) < 0) {
+        if (_PyDict_GetItemRef_KnownHash((PyDictObject *)dict, name, hash, &res) < 0) {
             *error = -1;
             goto done;
         }
@@ -5120,7 +5121,7 @@ _PyTypes_AfterFork(void)
 /* Internal API to look for a name through the MRO.
    This returns a borrowed reference, and doesn't set an exception! */
 PyObject *
-_PyType_Fetch(PyTypeObject *type, PyObject *name)
+_PyType_LookupRef(PyTypeObject *type, PyObject *name)
 {
     PyObject *res;
     int error;
@@ -5216,7 +5217,7 @@ _PyType_Fetch(PyTypeObject *type, PyObject *name)
 PyObject *
 _PyType_Lookup(PyTypeObject *type, PyObject *name)
 {
-    PyObject *res = _PyType_Fetch(type, name);
+    PyObject *res = _PyType_LookupRef(type, name);
     Py_XDECREF(res);
     return res;
 }
@@ -5278,7 +5279,7 @@ _PyType_SetFlagsRecursive(PyTypeObject *self, unsigned long mask, unsigned long 
 }
 
 /* This is similar to PyObject_GenericGetAttr(),
-   but uses _PyType_Fetch() instead of just looking in type->tp_dict.
+   but uses _PyType_LookupRef() instead of just looking in type->tp_dict.
 
    The argument suppress_missing_attribute is used to provide a
    fast path for hasattr. The possible values are:
@@ -5314,7 +5315,7 @@ _Py_type_getattro_impl(PyTypeObject *type, PyObject *name, int * suppress_missin
     meta_get = NULL;
 
     /* Look for the attribute in the metatype */
-    meta_attribute = _PyType_Fetch(metatype, name);
+    meta_attribute = _PyType_LookupRef(metatype, name);
 
     if (meta_attribute != NULL) {
         meta_get = Py_TYPE(meta_attribute)->tp_descr_get;
@@ -5333,7 +5334,7 @@ _Py_type_getattro_impl(PyTypeObject *type, PyObject *name, int * suppress_missin
 
     /* No data descriptor found on metatype. Look in tp_dict of this
      * type and its bases */
-    attribute = _PyType_Fetch(type, name);
+    attribute = _PyType_LookupRef(type, name);
     if (attribute != NULL) {
         /* Implement descriptor functionality, if any */
         descrgetfunc local_get = Py_TYPE(attribute)->tp_descr_get;
@@ -5380,7 +5381,7 @@ _Py_type_getattro_impl(PyTypeObject *type, PyObject *name, int * suppress_missin
 }
 
 /* This is similar to PyObject_GenericGetAttr(),
-   but uses _PyType_Fetch() instead of just looking in type->tp_dict. */
+   but uses _PyType_LookupRef() instead of just looking in type->tp_dict. */
 PyObject *
 _Py_type_getattro(PyObject *type, PyObject *name)
 {
@@ -5430,7 +5431,7 @@ type_setattro(PyObject *self, PyObject *name, PyObject *value)
     assert(!_PyType_HasFeature(metatype, Py_TPFLAGS_MANAGED_DICT));
 
     PyObject *old_value;
-    PyObject *descr = _PyType_Fetch(metatype, name);
+    PyObject *descr = _PyType_LookupRef(metatype, name);
     if (descr != NULL) {
         descrsetfunc f = Py_TYPE(descr)->tp_descr_set;
         if (f != NULL) {
@@ -5459,11 +5460,15 @@ type_setattro(PyObject *self, PyObject *name, PyObject *value)
     // the locks.
     BEGIN_TYPE_DICT_LOCK(dict);
 
-    if (_PyDict_GetItemRef_LockHeld(dict, name, &old_value) < 0) {
+    if (_PyDict_GetItemRef_Unicode_LockHeld((PyDictObject *)dict, name, &old_value) < 0) {
         return -1;
     }
 
 #ifdef Py_GIL_DISABLED
+    // In free-threaded builds readers can race with the lock-free portion
+    // of the type cache and the assignment into the dict.  We clear all of the
+    // versions initially so no readers will succeed in the lock-free case.
+    // They'll then block on the type lock until the update below is done.
     type_modification_starting_unlocked(type);
 #endif
 
@@ -5486,11 +5491,7 @@ type_setattro(PyObject *self, PyObject *name, PyObject *value)
                         "type object '%.50s' has no attribute '%U'",
                         ((PyTypeObject*)type)->tp_name, name);
 
-        PyObject *exc = PyErr_GetRaisedException();
-        if (!PyObject_SetAttr(exc, &_Py_ID(name), name) &&
-            !PyObject_SetAttr(exc, &_Py_ID(obj), (PyObject *)type)) {
-            PyErr_SetRaisedException(exc);
-        }
+        _PyObject_SetAttributeErrorContext((PyObject *)type, name);
     }
 
     assert(_PyType_CheckConsistency(type));
@@ -9459,9 +9460,9 @@ _Py_slot_tp_getattr_hook(PyObject *self, PyObject *name)
     /* speed hack: we could use lookup_maybe, but that would resolve the
        method fully for each attribute lookup for classes with
        __getattr__, even when the attribute is present. So we use
-       _PyType_Fetch and create the method only when needed, with
+       _PyType_LookupRef and create the method only when needed, with
        call_attribute. */
-    getattr = _PyType_Fetch(tp, &_Py_ID(__getattr__));
+    getattr = _PyType_LookupRef(tp, &_Py_ID(__getattr__));
     if (getattr == NULL) {
         /* No __getattr__ hook: use a simpler dispatcher */
         tp->tp_getattro = _Py_slot_tp_getattro;
@@ -9470,9 +9471,9 @@ _Py_slot_tp_getattr_hook(PyObject *self, PyObject *name)
     /* speed hack: we could use lookup_maybe, but that would resolve the
        method fully for each attribute lookup for classes with
        __getattr__, even when self has the default __getattribute__
-       method. So we use _PyType_Fetch and create the method only when
+       method. So we use _PyType_LookupRef and create the method only when
        needed, with call_attribute. */
-    getattribute = _PyType_Fetch(tp, &_Py_ID(__getattribute__));
+    getattribute = _PyType_LookupRef(tp, &_Py_ID(__getattribute__));
     if (getattribute == NULL ||
         (Py_IS_TYPE(getattribute, &PyWrapperDescr_Type) &&
          ((PyWrapperDescrObject *)getattribute)->d_wrapped ==
@@ -9592,7 +9593,7 @@ slot_tp_descr_get(PyObject *self, PyObject *obj, PyObject *type)
     PyTypeObject *tp = Py_TYPE(self);
     PyObject *get;
 
-    get = _PyType_Fetch(tp, &_Py_ID(__get__));
+    get = _PyType_LookupRef(tp, &_Py_ID(__get__));
     if (get == NULL) {
         /* Avoid further slowdowns */
         if (tp->tp_descr_get == slot_tp_descr_get)
