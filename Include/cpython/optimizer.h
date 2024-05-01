@@ -101,7 +101,7 @@ typedef struct _PyExecutorObject {
     uint32_t code_size;
     size_t jit_size;
     void *jit_code;
-    void *jit_code_ghccc;
+    void *jit_side_entry;
     _PyExitData exits[1];
 } _PyExecutorObject;
 

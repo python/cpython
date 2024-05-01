@@ -490,7 +490,7 @@ _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction *trace, size
         return -1;
     }
     executor->jit_code = memory;
-    executor->jit_code_ghccc = memory + trampoline.code.body_size;
+    executor->jit_side_entry = memory + trampoline.code.body_size;
     executor->jit_size = total_size;
     return 0;
 }
@@ -502,7 +502,7 @@ _PyJIT_Free(_PyExecutorObject *executor)
     size_t size = executor->jit_size;
     if (memory) {
         executor->jit_code = NULL;
-        executor->jit_code_ghccc = NULL;
+        executor->jit_side_entry = NULL;
         executor->jit_size = 0;
         if (jit_free(memory, size)) {
             PyErr_WriteUnraisable(NULL);
