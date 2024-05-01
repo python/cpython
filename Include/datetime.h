@@ -186,16 +186,30 @@ typedef struct {
 } PyDateTime_CAPI;
 
 #define PyDateTime_CAPSULE_NAME "datetime.datetime_CAPI"
-
-PyAPI_FUNC(void) _PyDateTimeAPI_Import(void);
-PyAPI_FUNC(void) _PyDateTimeAPI_Clear(void);
-PyAPI_FUNC(PyDateTime_CAPI *) _PyDateTimeAPI_Get(void);
+#define PyDateTime_INTERNAL_CAPSULE_NAME "datetime.datetime_CAPI_INTERNAL"
 
 /* This block is only used as part of the public API and should not be
  * included in _datetimemodule.c, which does not use the C API capsule.
  * See bpo-35081 for more details.
  * */
 #ifndef _PY_DATETIME_IMPL
+static PyDateTime_CAPI *
+_PyDateTimeAPI_not_ready(void)
+{
+    return NULL;
+}
+typedef PyDateTime_CAPI *(*datetime_api_getfunc)(void);
+static datetime_api_getfunc _PyDateTimeAPI_Get = _PyDateTimeAPI_not_ready;
+
+static inline void
+_PyDateTimeAPI_Import(void)
+{
+    datetime_api_getfunc (*func)(void) = PyCapsule_Import(
+                                           PyDateTime_INTERNAL_CAPSULE_NAME, 0);
+    if (func) {
+        _PyDateTimeAPI_Get = func();
+    }
+}
 
 #define PyDateTimeAPI _PyDateTimeAPI_Get()
 #define PyDateTime_IMPORT _PyDateTimeAPI_Import()

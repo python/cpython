@@ -998,7 +998,7 @@ datetime_capi_import_with_error(void)
 static int
 datetime_capi_client_exec(PyObject *m)
 {
-    _PyDateTimeAPI_Clear();
+    _PyDateTimeAPI_Get = _PyDateTimeAPI_not_ready;
     if (_PyDateTimeAPI_Get() != NULL) {
         PyErr_SetString(PyExc_AssertionError,
                         "DateTime API is expected to remain NULL.");

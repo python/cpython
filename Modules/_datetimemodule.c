@@ -69,7 +69,13 @@ set_datetime_capi_by_interp(PyDateTime_CAPI *capi)
     _PyInterpreterState_GET()->datetime_capi = capi;
 }
 
-void
+static PyDateTime_CAPI *
+_PyDateTimeAPI_Get(void)
+{
+    return (PyDateTime_CAPI *)_PyInterpreterState_GET()->datetime_capi;
+}
+
+static void *
 _PyDateTimeAPI_Import(void)
 {
     PyDateTime_CAPI *capi = PyCapsule_Import(PyDateTime_CAPSULE_NAME, 0);
@@ -77,19 +83,9 @@ _PyDateTimeAPI_Import(void)
         // PyInit__datetime() is not called when the module is already loaded
         // with single-phase init.
         set_datetime_capi_by_interp(capi);
+        return _PyDateTimeAPI_Get;
     }
-}
-
-PyDateTime_CAPI *
-_PyDateTimeAPI_Get(void)
-{
-    return (PyDateTime_CAPI *)_PyInterpreterState_GET()->datetime_capi;
-}
-
-void
-_PyDateTimeAPI_Clear(void)
-{
-    set_datetime_capi_by_interp(NULL);
+    return NULL;
 }
 
 /* We require that C int be at least 32 bits, and use int virtually
@@ -6972,6 +6968,18 @@ _datetime_exec(PyObject *module)
         PyMem_Free(capi);
         goto error;
     }
+
+    capsule = PyCapsule_New(_PyDateTimeAPI_Import,
+                            PyDateTime_INTERNAL_CAPSULE_NAME, NULL);
+    if (capsule == NULL) {
+        PyMem_Free(capi);
+        goto error;
+    }
+    if (PyModule_Add(module, "datetime_CAPI_INTERNAL", capsule) < 0) {
+        PyMem_Free(capi);
+        goto error;
+    }
+
     /* Ensure that the newest capi is used on multi-phase init */
     set_datetime_capi_by_interp(capi);
 
