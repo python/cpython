@@ -968,6 +968,56 @@ free_extensions_cache_value(struct extensions_cache_value *value)
     PyMem_RawFree(value);
 }
 
+static int
+set_cached_m_dict(struct extensions_cache_value *value, PyObject *m_dict)
+{
+    assert(value != NULL);
+    assert(value->def != NULL);
+
+    PyObject *copied = NULL;
+    if (m_dict != NULL) {
+        assert(PyDict_Check(m_dict));
+        copied = PyDict_Copy(m_dict);
+        if (copied == NULL) {
+            /* We expect this can only be "out of memory". */
+            return -1;
+        }
+    }
+
+    /* XXX gh-88216: The copied dict is owned by the current
+     * interpreter.  That's a problem if the interpreter has
+     * its own obmalloc state or if the module is successfully
+     * imported into such an interpreter.  If the interpreter
+     * has its own GIL then there may be data races and
+     * PyImport_ClearModulesByIndex() can crash.  Normally,
+     * a single-phase init module cannot be imported in an
+     * isolated interpreter, but there are ways around that.
+     * Hence, heere be dragons!  Ideally we would instead do
+     * something like make a read-only, immortal copy of the
+     * dict using PyMem_RawMalloc() and store *that* in m_copy.
+     * Then we'd need to make sure to clear that when the
+     * runtime is finalized, rather than in
+     * PyImport_ClearModulesByIndex(). */
+    PyObject *old = value->def->m_base.m_copy;
+    if (old != NULL) {
+        // XXX This should really never happen.
+        Py_DECREF(old);
+    }
+
+    value->def->m_base.m_copy = copied;
+    return 0;
+}
+
+static void
+del_cached_m_dict(struct extensions_cache_value *value)
+{
+    assert(value != NULL);
+    if (value->def != NULL) {
+        Py_XDECREF((PyObject *)value->def->m_base.m_copy);
+        value->def->m_base.m_copy = NULL;
+    }
+}
+
 static PyObject * get_core_module_dict(
         PyInterpreterState *interp, PyObject *name, PyObject *path);
 
@@ -990,21 +1040,42 @@ get_cached_m_dict(struct extensions_cache_value *value,
 
 static int
 update_extensions_cache_value(struct extensions_cache_value *value,
-                              PyModuleDef *def, _Py_ext_module_origin origin)
+                              PyModuleDef *def, PyObject *m_dict,
+                              _Py_ext_module_origin origin)
 {
     assert(def != NULL);
     /* We expect it to be static, so it must be the same pointer. */
     assert(value->def == NULL || value->def == def);
+    assert(def->m_base.m_init == NULL || m_dict == NULL);
+    /* For now we don't worry about comparing value->m_copy. */
+    assert(def->m_base.m_copy == NULL || m_dict != NULL);
 
     /* We assume that all module defs are statically allocated
        and will never be freed.  Otherwise, we would incref here. */
     _Py_SetImmortalUntracked((PyObject *)def);
 
-    *value = (struct extensions_cache_value){
+    struct extensions_cache_value temp = {
         .def=def,
         .origin=origin,
     };
+    if (set_cached_m_dict(&temp, m_dict) < 0) {
+        return -1;
+    }
+
+    *value = temp;
     return 0;
+}
+
+static void
+copy_extensions_cache_value(struct extensions_cache_value *value,
+                            struct extensions_cache_value *updates)
+{
+    if (value->def != NULL
+        && value->def->m_base.m_copy != updates->def->m_base.m_copy)
+    {
+        del_cached_m_dict(value);
+    }
+    *value = *updates;
 }
 
 static void
@@ -1016,6 +1087,7 @@ clear_extensions_cache_value(struct extensions_cache_value *value)
        dynamically allocated, it were the last ref, and this function
        were called with an interpreter other than the def's owner. */
     assert(value->def == NULL || _Py_IsImmortal(value->def));
+    del_cached_m_dict(value);
 }
 
 static void
@@ -1137,7 +1209,8 @@ finally:
 /* This can only fail with "out of memory". */
 static int
 _extensions_cache_set(PyObject *path, PyObject *name,
-                      PyModuleDef *def,_Py_ext_module_origin origin)
+                      PyModuleDef *def, PyObject *m_dict,
+                      _Py_ext_module_origin origin)
 {
     int res = -1;
     assert(def != NULL);
@@ -1147,7 +1220,7 @@ _extensions_cache_set(PyObject *path, PyObject *name,
     struct extensions_cache_value *newvalue = NULL;
 
     struct extensions_cache_value updates = {0};
-    if (update_extensions_cache_value(&updates, def, origin) < 0) {
+    if (update_extensions_cache_value(&updates, def, m_dict, origin) < 0) {
         return -1;
     }
 
@@ -1191,16 +1264,16 @@ _extensions_cache_set(PyObject *path, PyObject *name,
     res = 0;
 
 finally:
-    extensions_lock_release();
-    if (key != NULL) {
-        hashtable_destroy_str(key);
-    }
-
     if (value != NULL) {
-        *value = updates;
+        copy_extensions_cache_value(value, &updates);
     }
     else if (newvalue != NULL) {
         del_extensions_cache_value(newvalue);
+    }
+
+    extensions_lock_release();
+    if (key != NULL) {
+        hashtable_destroy_str(key);
     }
 
     return res;
@@ -1383,6 +1456,8 @@ update_global_state_for_extension(PyThreadState *tstate,
                                   PyModuleDef *def,
                                   struct singlephase_global_update *singlephase)
 {
+    PyObject *m_dict = NULL;
+
     /* Copy the module's __dict__, if applicable. */
     if (singlephase == NULL) {
         assert(def->m_base.m_copy == NULL);
@@ -1408,39 +1483,15 @@ update_global_state_for_extension(PyThreadState *tstate,
             assert(def->m_base.m_init == NULL);
         }
         else {
-            assert(PyDict_Check(singlephase->m_dict));
+            assert(singlephase->m_dict != NULL
+                    && PyDict_Check(singlephase->m_dict));
             // gh-88216: Extensions and def->m_base.m_copy can be updated
             // when the extension module doesn't support sub-interpreters.
             assert(def->m_size == -1);
             assert(!is_core_module(tstate->interp, name, path));
             assert(PyUnicode_CompareWithASCIIString(name, "sys") != 0);
             assert(PyUnicode_CompareWithASCIIString(name, "builtins") != 0);
-            /* XXX gh-88216: The copied dict is owned by the current
-             * interpreter.  That's a problem if the interpreter has
-             * its own obmalloc state or if the module is successfully
-             * imported into such an interpreter.  If the interpreter
-             * has its own GIL then there may be data races and
-             * PyImport_ClearModulesByIndex() can crash.  Normally,
-             * a single-phase init module cannot be imported in an
-             * isolated interpreter, but there are ways around that.
-             * Hence, heere be dragons!  Ideally we would instead do
-             * something like make a read-only, immortal copy of the
-             * dict using PyMem_RawMalloc() and store *that* in m_copy.
-             * Then we'd need to make sure to clear that when the
-             * runtime is finalized, rather than in
-             * PyImport_ClearModulesByIndex(). */
-            if (def->m_base.m_copy) {
-                /* Somebody already imported the module,
-                   likely under a different name.
-                   XXX this should really not happen. */
-                Py_CLEAR(def->m_base.m_copy);
-            }
-            def->m_base.m_copy = PyDict_Copy(singlephase->m_dict);
-            if (def->m_base.m_copy == NULL) {
-                // XXX Ignore this error?  Doing so would effectively
-                // mark the module as not loadable. */
-                return -1;
-            }
+            m_dict = singlephase->m_dict;
         }
     }
 
@@ -1453,7 +1504,7 @@ update_global_state_for_extension(PyThreadState *tstate,
         assert(cached == NULL || cached->def == def);
 #endif
         if (_extensions_cache_set(
-                path, name, def, singlephase->origin) < 0)
+                path, name, def, m_dict, singlephase->origin) < 0)
         {
             // XXX Ignore this error?  Doing so would effectively
             // mark the module as not loadable.
