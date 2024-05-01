@@ -162,7 +162,7 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 /* The integer overflow is checked by an assertion below. */
 #define INSTR_OFFSET() ((int)(next_instr - _PyCode_CODE(_PyFrame_GetCode(frame))))
 #define NEXTOPARG()  do { \
-        _Py_CODEUNIT word = *next_instr; \
+        _Py_CODEUNIT word  = {.cache = FT_ATOMIC_LOAD_UINT16_RELAXED(*(uint16_t*)next_instr)}; \
         opcode = word.op.code; \
         oparg = word.op.arg; \
     } while (0)
@@ -442,3 +442,4 @@ do { \
 #define GOTO_UNWIND() goto error_tier_two
 #define EXIT_TO_TRACE() goto exit_to_trace
 #define EXIT_TO_TIER1() goto exit_to_tier1
+#define EXIT_TO_TIER1_DYNAMIC() goto exit_to_tier1_dynamic;

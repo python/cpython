@@ -625,7 +625,7 @@ int _PyOpcode_num_pushed(int opcode, int oparg)  {
         case FOR_ITER:
             return 2;
         case FOR_ITER_GEN:
-            return 2;
+            return 1;
         case FOR_ITER_LIST:
             return 2;
         case FOR_ITER_RANGE:
@@ -981,7 +981,7 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[268] = {
     [BUILD_SLICE] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_ERROR_FLAG },
     [BUILD_STRING] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_ERROR_FLAG },
     [BUILD_TUPLE] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_ERROR_FLAG },
-    [CACHE] = { true, INSTR_FMT_IX, HAS_ESCAPES_FLAG },
+    [CACHE] = { true, INSTR_FMT_IX, 0 },
     [CALL] = { true, INSTR_FMT_IBC00, HAS_ARG_FLAG | HAS_EVAL_BREAK_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG },
     [CALL_ALLOC_AND_ENTER_INIT] = { true, INSTR_FMT_IBC00, HAS_ARG_FLAG | HAS_DEOPT_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG },
     [CALL_BOUND_METHOD_EXACT_ARGS] = { true, INSTR_FMT_IBC00, HAS_ARG_FLAG | HAS_DEOPT_FLAG | HAS_EXIT_FLAG },
@@ -1121,7 +1121,7 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[268] = {
     [PUSH_NULL] = { true, INSTR_FMT_IX, HAS_PURE_FLAG },
     [RAISE_VARARGS] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG },
     [RERAISE] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG },
-    [RESERVED] = { true, INSTR_FMT_IX, HAS_ESCAPES_FLAG },
+    [RESERVED] = { true, INSTR_FMT_IX, 0 },
     [RESUME] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_EVAL_BREAK_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
     [RESUME_CHECK] = { true, INSTR_FMT_IX, HAS_DEOPT_FLAG },
     [RETURN_CONST] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_CONST_FLAG },
@@ -1253,6 +1253,7 @@ _PyOpcode_macro_expansion[256] = {
     [FORMAT_SIMPLE] = { .nuops = 1, .uops = { { _FORMAT_SIMPLE, 0, 0 } } },
     [FORMAT_WITH_SPEC] = { .nuops = 1, .uops = { { _FORMAT_WITH_SPEC, 0, 0 } } },
     [FOR_ITER] = { .nuops = 1, .uops = { { _FOR_ITER, 9, 0 } } },
+    [FOR_ITER_GEN] = { .nuops = 3, .uops = { { _CHECK_PEP_523, 0, 0 }, { _FOR_ITER_GEN_FRAME, 0, 0 }, { _PUSH_FRAME, 0, 0 } } },
     [FOR_ITER_LIST] = { .nuops = 3, .uops = { { _ITER_CHECK_LIST, 0, 0 }, { _ITER_JUMP_LIST, 9, 1 }, { _ITER_NEXT_LIST, 0, 0 } } },
     [FOR_ITER_RANGE] = { .nuops = 3, .uops = { { _ITER_CHECK_RANGE, 0, 0 }, { _ITER_JUMP_RANGE, 9, 1 }, { _ITER_NEXT_RANGE, 0, 0 } } },
     [FOR_ITER_TUPLE] = { .nuops = 3, .uops = { { _ITER_CHECK_TUPLE, 0, 0 }, { _ITER_JUMP_TUPLE, 9, 1 }, { _ITER_NEXT_TUPLE, 0, 0 } } },
@@ -1346,6 +1347,7 @@ _PyOpcode_macro_expansion[256] = {
     [UNPACK_SEQUENCE_TUPLE] = { .nuops = 1, .uops = { { _UNPACK_SEQUENCE_TUPLE, 0, 0 } } },
     [UNPACK_SEQUENCE_TWO_TUPLE] = { .nuops = 1, .uops = { { _UNPACK_SEQUENCE_TWO_TUPLE, 0, 0 } } },
     [WITH_EXCEPT_START] = { .nuops = 1, .uops = { { _WITH_EXCEPT_START, 0, 0 } } },
+    [YIELD_VALUE] = { .nuops = 1, .uops = { { _YIELD_VALUE, 0, 0 } } },
 };
 #endif // NEED_OPCODE_METADATA
 

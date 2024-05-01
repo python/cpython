@@ -2281,9 +2281,11 @@ static PyTypeObject* static_types[] = {
     &_PyBufferWrapper_Type,
     &_PyContextTokenMissing_Type,
     &_PyCoroWrapper_Type,
+#ifdef _Py_TIER2
     &_PyCounterExecutor_Type,
     &_PyCounterOptimizer_Type,
     &_PyDefaultOptimizer_Type,
+#endif
     &_Py_GenericAliasIterType,
     &_PyHamtItems_Type,
     &_PyHamtKeys_Type,
@@ -2304,8 +2306,10 @@ static PyTypeObject* static_types[] = {
     &_PyPositionsIterator,
     &_PyUnicodeASCIIIter_Type,
     &_PyUnion_Type,
+#ifdef _Py_TIER2
     &_PyUOpExecutor_Type,
     &_PyUOpOptimizer_Type,
+#endif
     &_PyWeakref_CallableProxyType,
     &_PyWeakref_ProxyType,
     &_PyWeakref_RefType,
@@ -2430,6 +2434,13 @@ _PyObject_SetDeferredRefcount(PyObject *op)
     assert(PyType_IS_GC(Py_TYPE(op)));
     assert(_Py_IsOwnedByCurrentThread(op));
     assert(op->ob_ref_shared == 0);
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    if (interp->gc.immortalize.enabled) {
+        // gh-117696: immortalize objects instead of using deferred reference
+        // counting for now.
+        _Py_SetImmortal(op);
+        return;
+    }
     op->ob_gc_bits |= _PyGC_BITS_DEFERRED;
     op->ob_ref_local += 1;
     op->ob_ref_shared = _Py_REF_QUEUED;
