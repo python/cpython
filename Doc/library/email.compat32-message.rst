@@ -367,7 +367,7 @@ Here are the methods of the :class:`Message` class:
    .. method:: get(name, failobj=None)
 
       Return the value of the named header field.  This is identical to
-      :meth:`__getitem__` except that optional *failobj* is returned if the
+      :meth:`~object.__getitem__` except that optional *failobj* is returned if the
       named header is missing (defaults to ``None``).
 
    Here are some additional useful methods:

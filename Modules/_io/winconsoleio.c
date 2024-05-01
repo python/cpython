@@ -6,14 +6,14 @@
     Written by Steve Dower
 */
 
-#define PY_SSIZE_T_CLEAN
 #include "Python.h"
 #include "pycore_fileutils.h"     // _Py_BEGIN_SUPPRESS_IPH
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
+#include "pycore_pyerrors.h"      // _PyErr_ChainExceptions1()
 
 #ifdef HAVE_WINDOWS_CONSOLE_IO
 
-#include "structmember.h"         // PyMemberDef
+
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
 #endif
@@ -134,6 +134,23 @@ char _PyIO_get_console_type(PyObject *path_or_fd) {
     return m;
 }
 
+static DWORD
+_find_last_utf8_boundary(const char *buf, DWORD len)
+{
+    /* This function never returns 0, returns the original len instead */
+    DWORD count = 1;
+    if (len == 0 || (buf[len - 1] & 0x80) == 0) {
+        return len;
+    }
+    for (;; count++) {
+        if (count > 3 || count >= len) {
+            return len;
+        }
+        if ((buf[len - count] & 0xc0) != 0x80) {
+            return len - count;
+        }
+    }
+}
 
 /*[clinic input]
 module _io
@@ -281,7 +298,14 @@ _io__WindowsConsoleIO___init___impl(winconsoleio *self, PyObject *nameobj,
             self->fd = -1;
     }
 
-    fd = _PyLong_AsInt(nameobj);
+    if (PyBool_Check(nameobj)) {
+        if (PyErr_WarnEx(PyExc_RuntimeWarning,
+                "bool is used as a file descriptor", 1))
+        {
+            return -1;
+        }
+    }
+    fd = PyLong_AsInt(nameobj);
     if (fd < 0) {
         if (!PyErr_Occurred()) {
             PyErr_SetString(PyExc_ValueError,
@@ -374,12 +398,12 @@ _io__WindowsConsoleIO___init___impl(winconsoleio *self, PyObject *nameobj,
         }
 
         if (self->writable)
-            self->fd = _Py_open_osfhandle_noraise(handle, _O_WRONLY | _O_BINARY);
+            self->fd = _Py_open_osfhandle_noraise(handle, _O_WRONLY | _O_BINARY | _O_NOINHERIT);
         else
-            self->fd = _Py_open_osfhandle_noraise(handle, _O_RDONLY | _O_BINARY);
+            self->fd = _Py_open_osfhandle_noraise(handle, _O_RDONLY | _O_BINARY | _O_NOINHERIT);
         if (self->fd < 0) {
-            CloseHandle(handle);
             PyErr_SetFromErrnoWithFilenameObject(PyExc_OSError, nameobj);
+            CloseHandle(handle);
             goto error;
         }
     }
@@ -975,7 +999,7 @@ _io__WindowsConsoleIO_write_impl(winconsoleio *self, PyTypeObject *cls,
 {
     BOOL res = TRUE;
     wchar_t *wbuf;
-    DWORD len, wlen, orig_len, n = 0;
+    DWORD len, wlen, n = 0;
     HANDLE handle;
 
     if (self->fd == -1)
@@ -1007,21 +1031,8 @@ _io__WindowsConsoleIO_write_impl(winconsoleio *self, PyTypeObject *cls,
        have to reduce and recalculate. */
     while (wlen > 32766 / sizeof(wchar_t)) {
         len /= 2;
-        orig_len = len;
-        /* Reduce the length until we hit the final byte of a UTF-8 sequence
-         * (top bit is unset). Fix for github issue 82052.
-         */
-        while (len > 0 && (((char *)b->buf)[len-1] & 0x80) != 0)
-            --len;
-        /* If we hit a length of 0, something has gone wrong. This shouldn't
-         * be possible, as valid UTF-8 can have at most 3 non-final bytes
-         * before a final one, and our buffer is way longer than that.
-         * But to be on the safe side, if we hit this issue we just restore
-         * the original length and let the console API sort it out.
-         */
-        if (len == 0) {
-            len = orig_len;
-        }
+        /* Fix for github issues gh-110913 and gh-82052. */
+        len = _find_last_utf8_boundary(b->buf, len);
         wlen = MultiByteToWideChar(CP_UTF8, 0, b->buf, len, NULL, 0);
     }
     Py_END_ALLOW_THREADS
@@ -1066,15 +1077,22 @@ _io__WindowsConsoleIO_write_impl(winconsoleio *self, PyTypeObject *cls,
 static PyObject *
 winconsoleio_repr(winconsoleio *self)
 {
-    if (self->fd == -1)
-        return PyUnicode_FromFormat("<_io._WindowsConsoleIO [closed]>");
+    const char *type_name = (Py_TYPE((PyObject *)self)->tp_name);
 
-    if (self->readable)
-        return PyUnicode_FromFormat("<_io._WindowsConsoleIO mode='rb' closefd=%s>",
-            self->closefd ? "True" : "False");
-    if (self->writable)
-        return PyUnicode_FromFormat("<_io._WindowsConsoleIO mode='wb' closefd=%s>",
-            self->closefd ? "True" : "False");
+    if (self->fd == -1) {
+        return PyUnicode_FromFormat("<%.100s [closed]>", type_name);
+    }
+
+    if (self->readable) {
+        return PyUnicode_FromFormat("<%.100s mode='rb' closefd=%s>",
+                                    type_name,
+                                    self->closefd ? "True" : "False");
+    }
+    if (self->writable) {
+        return PyUnicode_FromFormat("<%.100s mode='wb' closefd=%s>",
+                                    type_name,
+                                    self->closefd ? "True" : "False");
+    }
 
     PyErr_SetString(PyExc_SystemError, "_WindowsConsoleIO has invalid mode");
     return NULL;
@@ -1142,10 +1160,10 @@ static PyGetSetDef winconsoleio_getsetlist[] = {
 };
 
 static PyMemberDef winconsoleio_members[] = {
-    {"_blksize", T_UINT, offsetof(winconsoleio, blksize), 0},
-    {"_finalizing", T_BOOL, offsetof(winconsoleio, finalizing), 0},
-    {"__weaklistoffset__", T_PYSSIZET, offsetof(winconsoleio, weakreflist), READONLY},
-    {"__dictoffset__", T_PYSSIZET, offsetof(winconsoleio, dict), READONLY},
+    {"_blksize", Py_T_UINT, offsetof(winconsoleio, blksize), 0},
+    {"_finalizing", Py_T_BOOL, offsetof(winconsoleio, finalizing), 0},
+    {"__weaklistoffset__", Py_T_PYSSIZET, offsetof(winconsoleio, weakreflist), Py_READONLY},
+    {"__dictoffset__", Py_T_PYSSIZET, offsetof(winconsoleio, dict), Py_READONLY},
     {NULL}
 };
 
