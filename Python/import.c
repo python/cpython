@@ -1477,7 +1477,8 @@ import_run_extension(PyThreadState *tstate, PyModInitFunction p0,
         _Py_ext_module_loader_result_apply_error(&res, name_buf);
         goto finally;
     }
-    assert(!PyErr_Occurred() && res.err == NULL);
+    assert(!PyErr_Occurred());
+    assert(res.err == NULL);
 
     mod = res.module;
     res.module = NULL;

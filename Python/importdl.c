@@ -466,7 +466,8 @@ _PyImport_RunModInitFunc(PyModInitFunction p0,
         }
     }
 
-    assert(!PyErr_Occurred() && res.err == NULL);
+    assert(!PyErr_Occurred());
+    assert(res.err == NULL);
     *p_res = res;
     return 0;
 
