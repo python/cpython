@@ -249,28 +249,12 @@ typedef struct {
     double resolution;
 } _Py_clock_info_t;
 
-// Similar to PyTime_Time() but silently ignore the error and return 0 if the
-// internal clock fails.
-//
-// Use _PyTime_TimeWithInfo() or the public PyTime_Time() to check
-// for failure.
-// Export for '_random' shared extension.
-PyAPI_FUNC(PyTime_t) _PyTime_TimeUnchecked(void);
-
 // Get the current time from the system clock.
 // On success, set *t and *info (if not NULL), and return 0.
 // On error, raise an exception and return -1.
 extern int _PyTime_TimeWithInfo(
     PyTime_t *t,
     _Py_clock_info_t *info);
-
-// Similar to PyTime_Monotonic() but silently ignore the error and return 0 if
-// the internal clock fails.
-//
-// Use _PyTime_MonotonicWithInfo() or the public PyTime_Monotonic()
-// to check for failure.
-// Export for '_random' shared extension.
-PyAPI_FUNC(PyTime_t) _PyTime_MonotonicUnchecked(void);
 
 // Get the time of a monotonic clock, i.e. a clock that cannot go backwards.
 // The clock is not affected by system clock updates. The reference point of
@@ -296,14 +280,6 @@ PyAPI_FUNC(int) _PyTime_localtime(time_t t, struct tm *tm);
 // Export for '_datetime' shared extension.
 PyAPI_FUNC(int) _PyTime_gmtime(time_t t, struct tm *tm);
 
-// Similar to PyTime_PerfCounter() but silently ignore the error and return 0
-// if the internal clock fails.
-//
-// Use _PyTime_PerfCounterWithInfo() or the public PyTime_PerfCounter() to
-// check for failure.
-// Export for '_lsprof' shared extension.
-PyAPI_FUNC(PyTime_t) _PyTime_PerfCounterUnchecked(void);
-
 
 // Get the performance counter: clock with the highest available resolution to
 // measure a short duration.
@@ -319,12 +295,12 @@ extern int _PyTime_PerfCounterWithInfo(
 // --- _PyDeadline -----------------------------------------------------------
 
 // Create a deadline.
-// Pseudo code: _PyTime_MonotonicUnchecked() + timeout.
+// Pseudo code: return PyTime_MonotonicRaw() + timeout
 // Export for '_ssl' shared extension.
 PyAPI_FUNC(PyTime_t) _PyDeadline_Init(PyTime_t timeout);
 
 // Get remaining time from a deadline.
-// Pseudo code: deadline - _PyTime_MonotonicUnchecked().
+// Pseudo code: return deadline - PyTime_MonotonicRaw()
 // Export for '_ssl' shared extension.
 PyAPI_FUNC(PyTime_t) _PyDeadline_Get(PyTime_t deadline);
 

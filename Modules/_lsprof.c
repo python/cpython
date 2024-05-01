@@ -121,7 +121,9 @@ call_timer(ProfilerObject *pObj)
         return CallExternalTimer(pObj);
     }
     else {
-        return _PyTime_PerfCounterUnchecked();
+        PyTime_t t;
+        (void)PyTime_PerfCounterRaw(&t);
+        return t;
     }
 }
 
