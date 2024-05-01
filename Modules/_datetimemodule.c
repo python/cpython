@@ -128,7 +128,7 @@ _PyDateTimeAPI_Import(void)
         // PyInit__datetime() is not called when the module is already loaded
         // with single-phase init.
         set_datetime_capi_by_interp(capi);
-        return (void *)_PyDateTimeAPI_Get;
+        return _PyDateTimeAPI_Get;
     }
     return NULL;
 }

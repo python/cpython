@@ -198,10 +198,7 @@ _PyDateTimeAPI_not_ready(void)
 {
     return NULL;
 }
-// typedef PyDateTime_CAPI *(*datetime_api_getfunc)(void);
-// static datetime_api_getfunc _PyDateTimeAPI_Get = _PyDateTimeAPI_not_ready;
 static PyDateTime_CAPI *(*_PyDateTimeAPI_Get)(void) = _PyDateTimeAPI_not_ready;
-
 
 static inline void
 _PyDateTimeAPI_Import(void)
