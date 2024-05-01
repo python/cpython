@@ -3227,7 +3227,7 @@ struct simpletracer_data {
 
 static int _simpletracer(PyObject *obj, PyRefTracerEvent event, void* data) {
     struct simpletracer_data* the_data = (struct simpletracer_data*)data;
-    assert(the_data->create_count + the_data->destroy_count < Py_ARRAY_LENGTH(the_data->addresses));
+    assert(the_data->create_count + the_data->destroy_count < (int)Py_ARRAY_LENGTH(the_data->addresses));
     the_data->addresses[the_data->create_count + the_data->destroy_count] = obj;
     if (event == PyRefTracer_CREATE) {
         the_data->create_count++;
@@ -3240,11 +3240,15 @@ static int _simpletracer(PyObject *obj, PyRefTracerEvent event, void* data) {
 static PyObject *
 test_reftracer(PyObject *ob, PyObject *Py_UNUSED(ignored))
 {
+    // Save the current tracer and data to restore it later
+    void* current_data;
+    PyRefTracer current_tracer = PyRefTracer_GetTracer(&current_data);
+
     struct simpletracer_data tracer_data = {0};
     void* the_data = &tracer_data;
     // Install a simple tracer function
     if (PyRefTracer_SetTracer(_simpletracer, the_data) != 0) {
-        return NULL;
+        goto failed;
     }
 
     // Check that the tracer was correctly installed
@@ -3252,18 +3256,18 @@ test_reftracer(PyObject *ob, PyObject *Py_UNUSED(ignored))
     if (PyRefTracer_GetTracer(&data) != _simpletracer || data != the_data) {
         PyErr_SetString(PyExc_AssertionError, "The reftracer not correctly installed");
         PyRefTracer_SetTracer(NULL, NULL);
-        return NULL;
+        goto failed;
     }
 
     // Create a bunch of objects
     PyObject* obj = PyList_New(0);
     if (obj == NULL) {
-        return NULL;
+        goto failed;
     }
     PyObject* obj2 = PyDict_New();
     if (obj2 == NULL) {
         Py_DECREF(obj);
-        return NULL;
+        goto failed;
     }
 
     // Kill all objects
@@ -3276,24 +3280,27 @@ test_reftracer(PyObject *ob, PyObject *Py_UNUSED(ignored))
     // Check that the tracer was removed
     if (PyRefTracer_GetTracer(&data) != NULL || data != NULL) {
         PyErr_SetString(PyExc_ValueError, "The reftracer was not correctly removed");
-        return NULL;
+        goto failed;
     }
 
     if (tracer_data.create_count != 2 ||
         tracer_data.addresses[0] != obj ||
         tracer_data.addresses[1] != obj2) {
         PyErr_SetString(PyExc_ValueError, "The object creation was not correctly traced");
-        return NULL;
+        goto failed;
     }
 
     if (tracer_data.destroy_count != 2 ||
         tracer_data.addresses[2] != obj ||
         tracer_data.addresses[3] != obj2) {
         PyErr_SetString(PyExc_ValueError, "The object destruction was not correctly traced");
-        return NULL;
+        goto failed;
     }
-
+    PyRefTracer_SetTracer(current_tracer, current_data);
     Py_RETURN_NONE;
+failed:
+    PyRefTracer_SetTracer(current_tracer, current_data);
+    return NULL;
 }
 
 static PyMethodDef TestMethods[] = {
