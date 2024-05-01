@@ -601,10 +601,22 @@ def get_platform():
     machine = machine.replace('/', '-')
 
     if osname[:5] == "linux":
-        # At least on Linux/Intel, 'machine' is the processor --
-        # i386, etc.
-        # XXX what about Alpha, SPARC, etc?
-        return  f"{osname}-{machine}"
+        if sys.platform == "android":
+            osname = "android"
+            release = get_config_var("ANDROID_API_LEVEL")
+
+            # Wheel tags use the ABI names from Android's own tools.
+            machine = {
+                "x86_64": "x86_64",
+                "i686": "x86",
+                "aarch64": "arm64_v8a",
+                "armv7l": "armeabi_v7a",
+            }[machine]
+        else:
+            # At least on Linux/Intel, 'machine' is the processor --
+            # i386, etc.
+            # XXX what about Alpha, SPARC, etc?
+            return  f"{osname}-{machine}"
     elif osname[:5] == "sunos":
         if release[0] >= "5":           # SunOS 5 == Solaris 2
             osname = "solaris"

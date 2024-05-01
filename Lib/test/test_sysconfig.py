@@ -232,6 +232,11 @@ class TestSysConfig(unittest.TestCase):
         self.assertTrue(cvars)
 
     def test_get_platform(self):
+        # Check the actual platform returns something reasonable.
+        actual_platform = get_platform()
+        self.assertIsInstance(actual_platform, str)
+        self.assertTrue(actual_platform)
+
         # windows XP, 32bits
         os.name = 'nt'
         sys.version = ('2.4.4 (#71, Oct 18 2006, 08:34:43) '
@@ -346,6 +351,21 @@ class TestSysConfig(unittest.TestCase):
                     '#1 Mon Apr 30 17:25:38 CEST 2007', 'i686'))
 
         self.assertEqual(get_platform(), 'linux-i686')
+
+        # Android
+        os.name = 'posix'
+        sys.platform = 'android'
+        get_config_vars()['ANDROID_API_LEVEL'] = 9
+        for machine, abi in {
+            'x86_64': 'x86_64',
+            'i686': 'x86',
+            'aarch64': 'arm64_v8a',
+            'armv7l': 'armeabi_v7a',
+        }.items():
+            with self.subTest(machine):
+                self._set_uname(('Linux', 'localhost', '3.18.91+',
+                                '#1 Tue Jan 9 20:35:43 UTC 2018', machine))
+                self.assertEqual(get_platform(), f'android-9-{abi}')
 
         # XXX more platforms to tests here
 
