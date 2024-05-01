@@ -390,6 +390,9 @@ PyModule_FromDefAndSpec2(PyModuleDef* def, PyObject *spec, int module_api_versio
     if (PyModule_Check(m)) {
         ((PyModuleObject*)m)->md_state = NULL;
         ((PyModuleObject*)m)->md_def = def;
+#ifdef Py_GIL_DISABLED
+        ((PyModuleObject*)m)->md_gil = gil_slot;
+#endif
     } else {
         if (def->m_size > 0 || def->m_traverse || def->m_clear || def->m_free) {
             PyErr_Format(
@@ -431,18 +434,18 @@ error:
     return NULL;
 }
 
+#ifdef Py_GIL_DISABLED
 int
-PyModule_SetGIL(PyObject *module, void *gil)
+PyModule_ExperimentalSetGIL(PyObject *module, void *gil)
 {
     if (!PyModule_Check(module)) {
         PyErr_BadInternalCall();
         return -1;
     }
-#ifdef Py_GIL_DISABLED
     ((PyModuleObject *)module)->md_gil = gil;
-#endif
     return 0;
 }
+#endif
 
 int
 PyModule_ExecDef(PyObject *module, PyModuleDef *def)
