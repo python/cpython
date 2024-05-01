@@ -1,4 +1,5 @@
 """Core data structures for compiled code templates."""
+
 import dataclasses
 import enum
 import sys
@@ -29,7 +30,7 @@ class HoleValue(enum.Enum):
     OPARG = enum.auto()
     # The current uop's operand on 64-bit platforms (exposed as _JIT_OPERAND):
     OPERAND = enum.auto()
-    # The current uop's operand on 32-bit platforms (exposed as _JIT_OPERAND_HI and _JIT_OPERAND_LO):
+    # The current uop's operand on 32-bit platforms (exposed as _JIT_OPERAND_HI/LO):
     OPERAND_HI = enum.auto()
     OPERAND_LO = enum.auto()
     # The current uop's target (exposed as _JIT_TARGET):
@@ -203,9 +204,8 @@ class StencilGroup:
         """Fix up all GOT and internal relocations for this stencil group."""
         for hole in self.code.holes.copy():
             if (
-                hole.kind in {
-                    "R_AARCH64_CALL26", "R_AARCH64_JUMP26", "ARM64_RELOC_BRANCH26"
-                }
+                hole.kind
+                in {"R_AARCH64_CALL26", "R_AARCH64_JUMP26", "ARM64_RELOC_BRANCH26"}
                 and hole.value is HoleValue.ZERO
             ):
                 self.code.pad(alignment)
