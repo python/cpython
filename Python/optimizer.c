@@ -1,3 +1,5 @@
+#ifdef _Py_TIER2
+
 #include "Python.h"
 #include "opcode.h"
 #include "pycore_interp.h"
@@ -73,7 +75,7 @@ insert_executor(PyCodeObject *code, _Py_CODEUNIT *instr, int index, _PyExecutorO
     Py_INCREF(executor);
     if (instr->op.code == ENTER_EXECUTOR) {
         assert(index == instr->op.arg);
-        _Py_ExecutorClear(code->co_executors->executors[index]);
+        _Py_ExecutorDetach(code->co_executors->executors[index]);
     }
     else {
         assert(code->co_executors->size == index);
@@ -268,10 +270,14 @@ static PyMethodDef executor_methods[] = {
 
 ///////////////////// Experimental UOp Optimizer /////////////////////
 
+static int executor_clear(_PyExecutorObject *executor);
+static void unlink_executor(_PyExecutorObject *executor);
+
 static void
 uop_dealloc(_PyExecutorObject *self) {
     _PyObject_GC_UNTRACK(self);
-    _Py_ExecutorClear(self);
+    assert(self->vm_data.code == NULL);
+    unlink_executor(self);
 #ifdef _Py_JIT
     _PyJIT_Free(self);
 #endif
@@ -378,13 +384,6 @@ PySequenceMethods uop_as_sequence = {
 };
 
 static int
-executor_clear(PyObject *o)
-{
-    _Py_ExecutorClear((_PyExecutorObject *)o);
-    return 0;
-}
-
-static int
 executor_traverse(PyObject *o, visitproc visit, void *arg)
 {
     _PyExecutorObject *executor = (_PyExecutorObject *)o;
@@ -392,6 +391,35 @@ executor_traverse(PyObject *o, visitproc visit, void *arg)
         Py_VISIT(executor->exits[i].executor);
     }
     return 0;
+}
+
+static PyObject *
+get_jit_code(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+#ifndef _Py_JIT
+    PyErr_SetString(PyExc_RuntimeError, "JIT support not enabled.");
+    return NULL;
+#else
+    _PyExecutorObject *executor = (_PyExecutorObject *)self;
+    if (executor->jit_code == NULL || executor->jit_size == 0) {
+        Py_RETURN_NONE;
+    }
+    return PyBytes_FromStringAndSize(executor->jit_code, executor->jit_size);
+#endif
+}
+
+static PyMethodDef uop_executor_methods[] = {
+    { "is_valid", is_valid, METH_NOARGS, NULL },
+    { "get_jit_code", get_jit_code, METH_NOARGS, NULL},
+    { "get_opcode", get_opcode, METH_NOARGS, NULL },
+    { "get_oparg", get_oparg, METH_NOARGS, NULL },
+    { NULL, NULL },
+};
+
+static int
+executor_is_gc(PyObject *o)
+{
+    return !_Py_IsImmortal(o);
 }
 
 PyTypeObject _PyUOpExecutor_Type = {
@@ -402,9 +430,10 @@ PyTypeObject _PyUOpExecutor_Type = {
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION | Py_TPFLAGS_HAVE_GC,
     .tp_dealloc = (destructor)uop_dealloc,
     .tp_as_sequence = &uop_as_sequence,
-    .tp_methods = executor_methods,
+    .tp_methods = uop_executor_methods,
     .tp_traverse = executor_traverse,
-    .tp_clear = executor_clear,
+    .tp_clear = (inquiry)executor_clear,
+    .tp_is_gc = executor_is_gc,
 };
 
 /* TO DO -- Generate these tables */
@@ -560,8 +589,6 @@ translate_bytecode_to_trace(
 top:  // Jump here after _PUSH_FRAME or likely branches
     for (;;) {
         target = INSTR_IP(instr, code);
-        RESERVE_RAW(2, "_CHECK_VALIDITY_AND_SET_IP");
-        ADD_TO_TRACE(_CHECK_VALIDITY_AND_SET_IP, 0, (uintptr_t)instr, target);
         // Need space for _DEOPT
         max_length--;
 
@@ -590,6 +617,8 @@ top:  // Jump here after _PUSH_FRAME or likely branches
             }
         }
         assert(opcode != ENTER_EXECUTOR && opcode != EXTENDED_ARG);
+        RESERVE_RAW(2, "_CHECK_VALIDITY_AND_SET_IP");
+        ADD_TO_TRACE(_CHECK_VALIDITY_AND_SET_IP, 0, (uintptr_t)instr, target);
 
         /* Special case the first instruction,
          * so that we can guarantee forward progress */
@@ -683,14 +712,21 @@ top:  // Jump here after _PUSH_FRAME or likely branches
                 break;
             }
 
+            case RESUME:
+                /* Use a special tier 2 version of RESUME_CHECK to allow traces to
+                 *  start with RESUME_CHECK */
+                ADD_TO_TRACE(_TIER2_RESUME_CHECK, 0, 0, target);
+                break;
+
             default:
             {
                 const struct opcode_macro_expansion *expansion = &_PyOpcode_macro_expansion[opcode];
                 if (expansion->nuops > 0) {
                     // Reserve space for nuops (+ _SET_IP + _EXIT_TRACE)
                     int nuops = expansion->nuops;
-                    RESERVE(nuops);
-                    if (expansion->uops[nuops-1].uop == _POP_FRAME) {
+                    RESERVE(nuops + 1); /* One extra for exit */
+                    int16_t last_op = expansion->uops[nuops-1].uop;
+                    if (last_op == _POP_FRAME || last_op == _RETURN_GENERATOR || last_op == _YIELD_VALUE) {
                         // Check for trace stack underflow now:
                         // We can't bail e.g. in the middle of
                         // LOAD_CONST + _POP_FRAME.
@@ -749,7 +785,7 @@ top:  // Jump here after _PUSH_FRAME or likely branches
                                 Py_FatalError("garbled expansion");
                         }
 
-                        if (uop == _POP_FRAME) {
+                        if (uop == _POP_FRAME || uop == _RETURN_GENERATOR || uop == _YIELD_VALUE) {
                             TRACE_STACK_POP();
                             /* Set the operand to the function or code object returned to,
                              * to assist optimization passes. (See _PUSH_FRAME below.)
@@ -806,6 +842,12 @@ top:  // Jump here after _PUSH_FRAME or likely branches
                                     ADD_TO_TRACE(_EXIT_TRACE, 0, 0, 0);
                                     goto done;
                                 }
+                                if (opcode == FOR_ITER_GEN) {
+                                    DPRINTF(2, "Bailing due to dynamic target\n");
+                                    ADD_TO_TRACE(uop, oparg, 0, target);
+                                    ADD_TO_TRACE(_DYNAMIC_EXIT, 0, 0, 0);
+                                    goto done;
+                                }
                                 // Increment IP to the return address
                                 instr += _PyOpcode_Caches[_PyOpcode_Deopt[opcode]] + 1;
                                 TRACE_STACK_PUSH();
@@ -839,7 +881,7 @@ top:  // Jump here after _PUSH_FRAME or likely branches
                             }
                             DPRINTF(2, "Bail, new_code == NULL\n");
                             ADD_TO_TRACE(uop, oparg, 0, target);
-                            ADD_TO_TRACE(_EXIT_TRACE, 0, 0, 0);
+                            ADD_TO_TRACE(_DYNAMIC_EXIT, 0, 0, 0);
                             goto done;
                         }
 
@@ -909,7 +951,7 @@ count_exits(_PyUOpInstruction *buffer, int length)
     int exit_count = 0;
     for (int i = 0; i < length; i++) {
         int opcode = buffer[i].opcode;
-        if (opcode == _SIDE_EXIT) {
+        if (opcode == _SIDE_EXIT || opcode == _DYNAMIC_EXIT) {
             exit_count++;
         }
     }
@@ -953,7 +995,18 @@ prepare_for_execution(_PyUOpInstruction *buffer, int length)
         int32_t target = (int32_t)uop_get_target(inst);
         if (_PyUop_Flags[opcode] & (HAS_EXIT_FLAG | HAS_DEOPT_FLAG)) {
             if (target != current_jump_target) {
-                uint16_t exit_op = (_PyUop_Flags[opcode] & HAS_EXIT_FLAG) ? _SIDE_EXIT : _DEOPT;
+                uint16_t exit_op;
+                if (_PyUop_Flags[opcode] & HAS_EXIT_FLAG) {
+                    if (opcode == _TIER2_RESUME_CHECK) {
+                        exit_op = _EVAL_BREAKER_EXIT;
+                    }
+                    else {
+                        exit_op = _SIDE_EXIT;
+                    }
+                }
+                else {
+                    exit_op = _DEOPT;
+                }
                 make_exit(&buffer[next_spare], exit_op, target);
                 current_jump_target = target;
                 current_jump = next_spare;
@@ -971,6 +1024,7 @@ prepare_for_execution(_PyUOpInstruction *buffer, int length)
                 current_error_target = target;
                 make_exit(&buffer[next_spare], _ERROR_POP_N, 0);
                 buffer[next_spare].oparg = popped;
+                buffer[next_spare].operand = target;
                 next_spare++;
             }
             buffer[i].error_target = current_error;
@@ -1060,6 +1114,7 @@ sanity_check(_PyExecutorObject *executor)
         CHECK(
             opcode == _DEOPT ||
             opcode == _SIDE_EXIT ||
+            opcode == _EVAL_BREAKER_EXIT ||
             opcode == _ERROR_POP_N);
         if (opcode == _SIDE_EXIT) {
             CHECK(inst->format == UOP_FORMAT_EXIT);
@@ -1105,6 +1160,11 @@ make_executor_from_uops(_PyUOpInstruction *buffer, int length, const _PyBloomFil
             dest->format = UOP_FORMAT_EXIT;
             next_exit--;
         }
+        if (opcode == _DYNAMIC_EXIT) {
+            executor->exits[next_exit].target = 0;
+            dest->oparg = next_exit;
+            next_exit--;
+        }
     }
     assert(next_exit == -1);
     assert(dest == executor->trace);
@@ -1128,6 +1188,7 @@ make_executor_from_uops(_PyUOpInstruction *buffer, int length, const _PyBloomFil
 #endif
 #ifdef _Py_JIT
     executor->jit_code = NULL;
+    executor->jit_side_entry = NULL;
     executor->jit_size = 0;
     if (_PyJIT_Compile(executor, executor->trace, length)) {
         Py_DECREF(executor);
@@ -1150,6 +1211,7 @@ init_cold_exit_executor(_PyExecutorObject *executor, int oparg)
     inst->opcode = _COLD_EXIT;
     inst->oparg = oparg;
     executor->vm_data.valid = true;
+    executor->vm_data.linked = false;
     for (int i = 0; i < BLOOM_FILTER_WORDS; i++) {
         assert(executor->vm_data.bloom.bits[i] == 0);
     }
@@ -1158,6 +1220,7 @@ init_cold_exit_executor(_PyExecutorObject *executor, int oparg)
 #endif
 #ifdef _Py_JIT
     executor->jit_code = NULL;
+    executor->jit_side_entry = NULL;
     executor->jit_size = 0;
     if (_PyJIT_Compile(executor, executor->trace, 1)) {
         return -1;
@@ -1288,7 +1351,7 @@ PyTypeObject _PyCounterExecutor_Type = {
     .tp_dealloc = (destructor)counter_dealloc,
     .tp_methods = executor_methods,
     .tp_traverse = executor_traverse,
-    .tp_clear = executor_clear,
+    .tp_clear = (inquiry)executor_clear,
 };
 
 static int
@@ -1463,15 +1526,13 @@ link_executor(_PyExecutorObject *executor)
         links->next = NULL;
     }
     else {
-        _PyExecutorObject *next = head->vm_data.links.next;
-        links->previous = head;
-        links->next = next;
-        if (next != NULL) {
-            next->vm_data.links.previous = executor;
-        }
-        head->vm_data.links.next = executor;
+        assert(head->vm_data.links.previous == NULL);
+        links->previous = NULL;
+        links->next = head;
+        head->vm_data.links.previous = executor;
+        interp->executor_list_head = executor;
     }
-    executor->vm_data.valid = true;
+    executor->vm_data.linked = true;
     /* executor_list_head must be first in list */
     assert(interp->executor_list_head->vm_data.links.previous == NULL);
 }
@@ -1479,7 +1540,11 @@ link_executor(_PyExecutorObject *executor)
 static void
 unlink_executor(_PyExecutorObject *executor)
 {
+    if (!executor->vm_data.linked) {
+        return;
+    }
     _PyExecutorLinkListNode *links = &executor->vm_data.links;
+    assert(executor->vm_data.valid);
     _PyExecutorObject *next = links->next;
     _PyExecutorObject *prev = links->previous;
     if (next != NULL) {
@@ -1494,7 +1559,7 @@ unlink_executor(_PyExecutorObject *executor)
         assert(interp->executor_list_head == executor);
         interp->executor_list_head = next;
     }
-    executor->vm_data.valid = false;
+    executor->vm_data.linked = false;
 }
 
 /* This must be called by optimizers before using the executor */
@@ -1508,22 +1573,14 @@ _Py_ExecutorInit(_PyExecutorObject *executor, const _PyBloomFilter *dependency_s
     link_executor(executor);
 }
 
-/* This must be called by executors during dealloc */
+/* Detaches the executor from the code object (if any) that
+ * holds a reference to it */
 void
-_Py_ExecutorClear(_PyExecutorObject *executor)
+_Py_ExecutorDetach(_PyExecutorObject *executor)
 {
-    if (!executor->vm_data.valid) {
-        return;
-    }
-    unlink_executor(executor);
     PyCodeObject *code = executor->vm_data.code;
     if (code == NULL) {
         return;
-    }
-    for (uint32_t i = 0; i < executor->exit_count; i++) {
-        Py_DECREF(executor->exits[i].executor);
-        executor->exits[i].executor = &COLD_EXITS[i];
-        executor->exits[i].temperature = initial_unreachable_backoff_counter();
     }
     _Py_CODEUNIT *instruction = &_PyCode_CODE(code)[executor->vm_data.index];
     assert(instruction->op.code == ENTER_EXECUTOR);
@@ -1532,7 +1589,36 @@ _Py_ExecutorClear(_PyExecutorObject *executor)
     instruction->op.code = executor->vm_data.opcode;
     instruction->op.arg = executor->vm_data.oparg;
     executor->vm_data.code = NULL;
-    Py_CLEAR(code->co_executors->executors[index]);
+    code->co_executors->executors[index] = NULL;
+    Py_DECREF(executor);
+}
+
+static int
+executor_clear(_PyExecutorObject *executor)
+{
+    if (!executor->vm_data.valid) {
+        return 0;
+    }
+    assert(executor->vm_data.valid == 1);
+    unlink_executor(executor);
+    executor->vm_data.valid = 0;
+    /* It is possible for an executor to form a reference
+     * cycle with itself, so decref'ing a side exit could
+     * free the executor unless we hold a strong reference to it
+     */
+    Py_INCREF(executor);
+    for (uint32_t i = 0; i < executor->exit_count; i++) {
+        const _PyExecutorObject *cold = &COLD_EXITS[i];
+        const _PyExecutorObject *side = executor->exits[i].executor;
+        executor->exits[i].temperature = initial_unreachable_backoff_counter();
+        if (side != cold) {
+            executor->exits[i].executor = cold;
+            Py_DECREF(side);
+        }
+    }
+    _Py_ExecutorDetach(executor);
+    Py_DECREF(executor);
+    return 0;
 }
 
 void
@@ -1553,17 +1639,42 @@ _Py_Executors_InvalidateDependency(PyInterpreterState *interp, void *obj, int is
     _Py_BloomFilter_Add(&obj_filter, obj);
     /* Walk the list of executors */
     /* TO DO -- Use a tree to avoid traversing as many objects */
+    bool no_memory = false;
+    PyObject *invalidate = PyList_New(0);
+    if (invalidate == NULL) {
+        PyErr_Clear();
+        no_memory = true;
+    }
+    /* Clearing an executor can deallocate others, so we need to make a list of
+     * executors to invalidate first */
     for (_PyExecutorObject *exec = interp->executor_list_head; exec != NULL;) {
         assert(exec->vm_data.valid);
         _PyExecutorObject *next = exec->vm_data.links.next;
         if (bloom_filter_may_contain(&exec->vm_data.bloom, &obj_filter)) {
-            _Py_ExecutorClear(exec);
+            unlink_executor(exec);
+            if (no_memory) {
+                exec->vm_data.valid = 0;
+            } else {
+                if (PyList_Append(invalidate, (PyObject *)exec) < 0) {
+                    PyErr_Clear();
+                    no_memory = true;
+                    exec->vm_data.valid = 0;
+                }
+            }
             if (is_invalidation) {
                 OPT_STAT_INC(executors_invalidated);
             }
         }
         exec = next;
     }
+    if (invalidate != NULL) {
+        for (Py_ssize_t i = 0; i < PyList_GET_SIZE(invalidate); i++) {
+            _PyExecutorObject *exec = (_PyExecutorObject *)PyList_GET_ITEM(invalidate, i);
+            executor_clear(exec);
+        }
+        Py_DECREF(invalidate);
+    }
+    return;
 }
 
 /* Invalidate all executors */
@@ -1572,15 +1683,18 @@ _Py_Executors_InvalidateAll(PyInterpreterState *interp, int is_invalidation)
 {
     while (interp->executor_list_head) {
         _PyExecutorObject *executor = interp->executor_list_head;
+        assert(executor->vm_data.valid == 1 && executor->vm_data.linked == 1);
         if (executor->vm_data.code) {
             // Clear the entire code object so its co_executors array be freed:
             _PyCode_Clear_Executors(executor->vm_data.code);
         }
         else {
-            _Py_ExecutorClear(executor);
+            executor_clear(executor);
         }
         if (is_invalidation) {
             OPT_STAT_INC(executors_invalidated);
         }
     }
 }
+
+#endif /* _Py_TIER2 */

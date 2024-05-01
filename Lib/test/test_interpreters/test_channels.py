@@ -7,7 +7,7 @@ import time
 
 from test.support import import_helper
 # Raise SkipTest if subinterpreters not supported.
-_channels = import_helper.import_module('_xxinterpchannels')
+_channels = import_helper.import_module('_interpchannels')
 from test.support import interpreters
 from test.support.interpreters import channels
 from .utils import _run_output, TestBase
@@ -22,7 +22,7 @@ class LowLevelTests(TestBase):
     # encountered by the high-level module, thus they
     # mostly shouldn't matter as much.
 
-    # Additional tests are found in Lib/test/test__xxinterpchannels.py.
+    # Additional tests are found in Lib/test/test__interpchannels.py.
     # XXX Those should be either moved to LowLevelTests or eliminated
     # in favor of high-level tests in this file.
 

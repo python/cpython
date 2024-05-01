@@ -14,9 +14,47 @@ extern "C" {
 
 extern const char *_PyImport_DynLoadFiletab[];
 
-extern PyObject *_PyImport_LoadDynamicModuleWithSpec(PyObject *spec, FILE *);
 
 typedef PyObject *(*PyModInitFunction)(void);
+
+struct _Py_ext_module_loader_info {
+    PyObject *filename;
+#ifndef MS_WINDOWS
+    PyObject *filename_encoded;
+#endif
+    PyObject *name;
+    PyObject *name_encoded;
+    /* path is always a borrowed ref of name or filename,
+     * depending on if it's builtin or not. */
+    PyObject *path;
+    const char *hook_prefix;
+    const char *newcontext;
+};
+extern void _Py_ext_module_loader_info_clear(
+    struct _Py_ext_module_loader_info *info);
+extern int _Py_ext_module_loader_info_init(
+    struct _Py_ext_module_loader_info *info,
+    PyObject *name,
+    PyObject *filename);
+extern int _Py_ext_module_loader_info_init_for_builtin(
+    struct _Py_ext_module_loader_info *p_info,
+    PyObject *name);
+extern int _Py_ext_module_loader_info_init_from_spec(
+    struct _Py_ext_module_loader_info *info,
+    PyObject *spec);
+
+struct _Py_ext_module_loader_result {
+    PyModuleDef *def;
+    PyObject *module;
+};
+extern PyModInitFunction _PyImport_GetModInitFunc(
+    struct _Py_ext_module_loader_info *info,
+    FILE *fp);
+extern int _PyImport_RunModInitFunc(
+    PyModInitFunction p0,
+    struct _Py_ext_module_loader_info *info,
+    struct _Py_ext_module_loader_result *p_res);
+
 
 /* Max length of module suffix searched for -- accommodates "module.slb" */
 #define MAXSUFFIXSIZE 12
