@@ -169,6 +169,14 @@ library/ipaddress,,:db00,2001:db00::0/24
 library/ipaddress,,::,2001:db00::0/24
 library/ipaddress,,:db00,2001:db00::0/ffff:ff00::
 library/ipaddress,,::,2001:db00::0/ffff:ff00::
+library/ipaddress,,:ff9b,64:ff9b:1::/48
+library/ipaddress,,::,64:ff9b:1::/48
+library/ipaddress,,::,2001::
+library/ipaddress,,::,2001:1::
+library/ipaddress,,::,2001:3::
+library/ipaddress,,::,2001:4:112::
+library/ipaddress,,::,2001:20::
+library/ipaddress,,::,2001:30::
 library/itertools,,:step,elements from seq[start:stop:step]
 library/itertools,,:stop,elements from seq[start:stop:step]
 library/itertools,,::,kernel = tuple(kernel)[::-1]
