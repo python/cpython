@@ -1904,6 +1904,11 @@ Python-level trace functions in previous versions.
 
 .. versionadded:: 3.12
 
+Reference tracing
+=================
+
+.. versionadded:: 3.13
+
 .. c:type:: int (*PyRefTracer)(PyObject *, int event, void* data)
 
    The type of the trace function registered using :c:func:`PyRefTracer_SetTracer`.
@@ -1929,7 +1934,8 @@ Python-level trace functions in previous versions.
    Register a reference tracer function. The function will be called when a new
    Python has been created or when an object is going to be destroyed. If
    **data** is provided it must be an opaque pointer that will be provided when
-   the tracer function is called.
+   the tracer function is called. Return ``0`` on success. Set an exception and
+   return ``-1`` on error.  
 
    Not that tracer functions **must not** create Python objects inside or
    otherwise the call will be re-entrant. The tracer also **must not** clear
