@@ -1219,24 +1219,31 @@ _get_extension_kind(PyModuleDef *def, bool check_size)
     return kind;
 }
 
-static bool
-check_multiphase_preinit(PyModuleDef *def)
-{
-    /* PyModule_FromDefAndSpec() checks m_size so we skip m_size
-     * if the module hasn't been fully initialized yet. */
-    _Py_ext_module_kind kind = _get_extension_kind(def, false);
-    return kind == _Py_ext_module_kind_MULTIPHASE
-            /* m_slots can be NULL. */
-            || kind == _Py_ext_module_kind_UNKNOWN;
-}
+/* The module might not be fully initialized yet
+ * and PyModule_FromDefAndSpec() checks m_size
+ * so we skip m_size. */
+#define assert_multiphase_def(def)                                  \
+    do {                                                            \
+        _Py_ext_module_kind kind = _get_extension_kind(def, false); \
+        assert(kind == _Py_ext_module_kind_MULTIPHASE               \
+                /* m_slots can be NULL. */                          \
+                || kind == _Py_ext_module_kind_UNKNOWN);            \
+    } while (0)
 
-static bool
-check_singlephase(PyModuleDef *def)
-{
-    _Py_ext_module_kind kind = _get_extension_kind(def, true);
-    return kind == _Py_ext_module_kind_SINGLEPHASE
-            || kind == _Py_ext_module_kind_UNKNOWN;
-}
+#define assert_singlephase_def(def)                                 \
+    do {                                                            \
+        _Py_ext_module_kind kind = _get_extension_kind(def, true);  \
+        assert(kind == _Py_ext_module_kind_SINGLEPHASE              \
+                || kind == _Py_ext_module_kind_UNKNOWN);            \
+    } while (0)
+
+#define assert_singlephase(def) \
+    assert_singlephase_def(def)
+
+#else  /* defined(NDEBUG) */
+#define assert_multiphase_def(def)
+#define assert_singlephase_def(def)
+#define assert_singlephase(def)
 #endif
 
 
@@ -1358,7 +1365,7 @@ import_find_extension(PyThreadState *tstate,
     if (def == NULL) {
         return NULL;
     }
-    assert(check_singlephase(def));
+    assert_singlephase(def);
 
     /* It may have been successfully imported previously
        in an interpreter that allows legacy modules
@@ -1472,7 +1479,7 @@ import_run_extension(PyThreadState *tstate, PyModInitFunction p0,
     assert(def != NULL);
 
     if (res.kind == _Py_ext_module_kind_MULTIPHASE) {
-        assert(check_multiphase_preinit(def));
+        assert_multiphase_def(def);
         assert(mod == NULL);
         mod = PyModule_FromDefAndSpec(def, spec);
         if (mod == NULL) {
@@ -1481,7 +1488,7 @@ import_run_extension(PyThreadState *tstate, PyModInitFunction p0,
     }
     else {
         assert(res.kind == _Py_ext_module_kind_SINGLEPHASE);
-        assert(check_singlephase(def));
+        assert_singlephase_def(def);
         assert(PyModule_Check(mod));
 
         if (_PyImport_CheckSubinterpIncompatibleExtensionAllowed(name_buf) < 0) {
@@ -1593,7 +1600,7 @@ _PyImport_FixupBuiltin(PyThreadState *tstate, PyObject *mod, const char *name,
      * module state, but we also don't populate def->m_base.m_copy
      * for them. */
     assert(is_core_module(tstate->interp, nameobj, nameobj));
-    assert(check_singlephase(def));
+    assert_singlephase_def(def);
     assert(def->m_size == -1);
     assert(def->m_base.m_copy == NULL);
 
@@ -1647,7 +1654,7 @@ create_builtin(PyThreadState *tstate, PyObject *name, PyObject *spec)
     PyObject *mod = import_find_extension(tstate, &info);
     if (mod != NULL) {
         assert(!_PyErr_Occurred(tstate));
-        assert(check_singlephase(_PyModule_GetDef(mod)));
+        assert_singlephase(_PyModule_GetDef(mod));
         goto finally;
     }
     else if (_PyErr_Occurred(tstate)) {
@@ -4001,7 +4008,7 @@ _imp_create_dynamic_impl(PyObject *module, PyObject *spec, PyObject *file)
     mod = import_find_extension(tstate, &info);
     if (mod != NULL) {
         assert(!_PyErr_Occurred(tstate));
-        assert(check_singlephase(_PyModule_GetDef(mod)));
+        assert_singlephase(_PyModule_GetDef(mod));
         goto finally;
     }
     else if (_PyErr_Occurred(tstate)) {
