@@ -524,11 +524,11 @@ are always available.  They are listed here in alphabetical order.
 
 .. _func-eval:
 
-.. function:: eval(expression, globals=None, locals=None)
+.. function:: eval(source, globals=None, locals=None)
 
-   :param expression:
+   :param source:
       A Python expression.
-   :type expression: :class:`str` | :ref:`code object <code-objects>`
+   :type source: :class:`str` | :ref:`code object <code-objects>`
 
    :param globals:
       The global namespace (default: ``None``).
@@ -589,9 +589,9 @@ are always available.  They are listed here in alphabetical order.
 
 .. index:: pair: built-in function; exec
 
-.. function:: exec(object, globals=None, locals=None, *, closure=None)
+.. function:: exec(source, globals=None, locals=None, *, closure=None)
 
-   This function supports dynamic execution of Python code. *object* must be
+   This function supports dynamic execution of Python code. *source* must be
    either a string or a code object.  If it is a string, the string is parsed as
    a suite of Python statements which is then executed (unless a syntax error
    occurs). [#]_ If it is a code object, it is simply executed.  In all cases,
@@ -646,7 +646,7 @@ are always available.  They are listed here in alphabetical order.
 
    .. versionchanged:: 3.13
 
-      :func:`!eval` now accepts keyword arguments.
+      :func:`!exec` now accepts keyword arguments.
 
 
 .. function:: filter(function, iterable)
