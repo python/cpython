@@ -504,24 +504,14 @@ loops that truncate the stream.
           # islice('ABCDEFG', 2, None) → C D E F G
           # islice('ABCDEFG', 0, None, 2) → A C E G
           s = slice(*args)
-          start, stop, step = s.start or 0, s.stop or sys.maxsize, s.step or 1
-          it = iter(range(start, stop, step))
-          try:
-              nexti = next(it)
-          except StopIteration:
-              # Consume *iterable* up to the *start* position.
-              for i, element in zip(range(start), iterable):
-                  pass
-              return
-          try:
-              for i, element in enumerate(iterable):
-                  if i == nexti:
-                      yield element
-                      nexti = next(it)
-          except StopIteration:
-              # Consume to *stop*.
-              for i, element in zip(range(i + 1, stop), iterable):
-                  pass
+          start = s.start if s.start is not None else 0
+          stop = s.stop
+          step = s.step if s.step is not None else 1
+          for i, element in enumerate(iterable):
+              if stop is not None and i >= stop:
+                  return
+              if i >= start and (i - start) % step == 0:
+                  yield element
 
 
 .. function:: pairwise(iterable)
