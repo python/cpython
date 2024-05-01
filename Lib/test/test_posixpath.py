@@ -668,19 +668,8 @@ class PosixPathTest(unittest.TestCase):
             os.symlink(ABSTFN+"1", ABSTFN)
             os.chmod(ABSTFN, 0o000, follow_symlinks=False)
             self.assertEqual(realpath(ABSTFN), ABSTFN)
-        finally:
-            os.chmod(ABSTFN, 0o755, follow_symlinks=False)
-            os.unlink(ABSTFN)
-
-    @os_helper.skip_unless_symlink
-    @skip_if_ABSTFN_contains_backslash
-    @unittest.skipIf(os.chmod not in os.supports_follow_symlinks, "Can't set symlink permissions")
-    def test_realpath_unreadable_symlink_strict(self):
-        try:
-            os.symlink(ABSTFN+"1", ABSTFN)
-            os.chmod(ABSTFN, 0o000, follow_symlinks=False)
             with self.assertRaises(PermissionError):
-                realpath(ABSTFN)
+                realpath(ABSTFN, strict=True)
         finally:
             os.chmod(ABSTFN, 0o755, follow_symlinks=False)
             os.unlink(ABSTFN)
