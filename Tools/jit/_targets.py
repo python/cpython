@@ -480,6 +480,7 @@ class _MachO(
 
 def get_target(host: str) -> _COFF | _ELF | _MachO:
     """Build a _Target for the given host "triple" and options."""
+    # ghccc currently crashes Clang when combined with musttail on aarch64. :(
     if re.fullmatch(r"aarch64-apple-darwin.*", host):
         return _MachO(host, alignment=8, prefix="_")
     if re.fullmatch(r"aarch64-pc-windows-msvc", host):
