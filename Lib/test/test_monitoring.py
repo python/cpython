@@ -1831,15 +1831,17 @@ class TestOptimizer(MonitoringTestBase, unittest.TestCase):
 
     def setUp(self):
         _testinternalcapi = import_module("_testinternalcapi")
-        self.old_opt = _testinternalcapi.get_optimizer()
-        opt = _testinternalcapi.new_counter_optimizer()
-        _testinternalcapi.set_optimizer(opt)
+        if hasattr(_testinternalcapi, "get_optimizer"):
+            self.old_opt = _testinternalcapi.get_optimizer()
+            opt = _testinternalcapi.new_counter_optimizer()
+            _testinternalcapi.set_optimizer(opt)
         super(TestOptimizer, self).setUp()
 
     def tearDown(self):
         super(TestOptimizer, self).tearDown()
         import _testinternalcapi
-        _testinternalcapi.set_optimizer(self.old_opt)
+        if hasattr(_testinternalcapi, "get_optimizer"):
+            _testinternalcapi.set_optimizer(self.old_opt)
 
     def test_for_loop(self):
         def test_func(x):

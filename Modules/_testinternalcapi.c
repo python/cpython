@@ -985,6 +985,8 @@ get_co_framesize(PyObject *self, PyObject *arg)
     return PyLong_FromLong(code->co_framesize);
 }
 
+#ifdef _Py_TIER2
+
 static PyObject *
 new_counter_optimizer(PyObject *self, PyObject *arg)
 {
@@ -1012,7 +1014,10 @@ set_optimizer(PyObject *self, PyObject *opt)
 static PyObject *
 get_optimizer(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *opt = (PyObject *)PyUnstable_GetOptimizer();
+    PyObject *opt = NULL;
+#ifdef _Py_TIER2
+    opt = (PyObject *)PyUnstable_GetOptimizer();
+#endif
     if (opt == NULL) {
         Py_RETURN_NONE;
     }
@@ -1044,6 +1049,8 @@ invalidate_executors(PyObject *self, PyObject *obj)
     _Py_Executors_InvalidateDependency(interp, obj, 1);
     Py_RETURN_NONE;
 }
+
+#endif
 
 static int _pending_callback(void *arg)
 {
@@ -2020,12 +2027,14 @@ static PyMethodDef module_functions[] = {
     {"iframe_getline", iframe_getline, METH_O, NULL},
     {"iframe_getlasti", iframe_getlasti, METH_O, NULL},
     {"get_co_framesize", get_co_framesize, METH_O, NULL},
+#ifdef _Py_TIER2
     {"get_optimizer", get_optimizer,  METH_NOARGS, NULL},
     {"set_optimizer", set_optimizer,  METH_O, NULL},
     {"new_counter_optimizer", new_counter_optimizer, METH_NOARGS, NULL},
     {"new_uop_optimizer", new_uop_optimizer, METH_NOARGS, NULL},
     {"add_executor_dependency", add_executor_dependency, METH_VARARGS, NULL},
     {"invalidate_executors", invalidate_executors, METH_O, NULL},
+#endif
     {"pending_threadfunc", _PyCFunction_CAST(pending_threadfunc),
      METH_VARARGS | METH_KEYWORDS},
     {"pending_identify", pending_identify, METH_VARARGS, NULL},
@@ -2072,7 +2081,9 @@ static PyMethodDef module_functions[] = {
     {"py_thread_id", get_py_thread_id, METH_NOARGS},
 #endif
     {"set_immortalize_deferred", set_immortalize_deferred, METH_VARARGS},
+#ifdef _Py_TIER2
     {"uop_symbols_test", _Py_uop_symbols_test, METH_NOARGS},
+#endif
     {NULL, NULL} /* sentinel */
 };
 

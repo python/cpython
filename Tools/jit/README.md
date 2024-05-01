@@ -7,18 +7,18 @@ This version of CPython can be built with an experimental just-in-time compiler.
 
 The JIT compiler does not require end users to install any third-party dependencies, but part of it must be *built* using LLVM[^why-llvm]. You are *not* required to build the rest of CPython using LLVM, or even the same version of LLVM (in fact, this is uncommon).
 
-LLVM version 16 is required. Both `clang` and `llvm-readobj` need to be installed and discoverable (version suffixes, like `clang-16`, are okay). It's highly recommended that you also have `llvm-objdump` available, since this allows the build script to dump human-readable assembly for the generated code.
+LLVM version 18 is required. Both `clang` and `llvm-readobj` need to be installed and discoverable (version suffixes, like `clang-18`, are okay). It's highly recommended that you also have `llvm-objdump` available, since this allows the build script to dump human-readable assembly for the generated code.
 
 It's easy to install all of the required tools:
 
 ### Linux
 
-Install LLVM 16 on Ubuntu/Debian:
+Install LLVM 18 on Ubuntu/Debian:
 
 ```sh
 wget https://apt.llvm.org/llvm.sh
 chmod +x llvm.sh
-sudo ./llvm.sh 16
+sudo ./llvm.sh 18
 ```
 
 ### macOS

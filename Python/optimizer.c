@@ -1,3 +1,5 @@
+#ifdef _Py_TIER2
+
 #include "Python.h"
 #include "opcode.h"
 #include "pycore_interp.h"
@@ -1622,3 +1624,5 @@ _Py_Executors_InvalidateAll(PyInterpreterState *interp, int is_invalidation)
         }
     }
 }
+
+#endif /* _Py_TIER2 */

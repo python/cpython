@@ -1,3 +1,4 @@
+#ifdef _Py_TIER2
 
 #include "Python.h"
 
@@ -506,3 +507,5 @@ fail:
     Py_XDECREF(val_43);
     return NULL;
 }
+
+#endif /* _Py_TIER2 */
