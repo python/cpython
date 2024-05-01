@@ -1419,7 +1419,6 @@ import_find_extension(PyThreadState *tstate,
         struct _Py_ext_module_loader_result res;
         if (_PyImport_RunModInitFunc(def->m_base.m_init, info, &res) < 0) {
             _Py_ext_module_loader_result_apply_error(&res, name_buf);
-            _Py_ext_module_loader_result_clear(&res);
             return NULL;
         }
         assert(!PyErr_Occurred());
@@ -1475,7 +1474,7 @@ import_run_extension(PyThreadState *tstate, PyModInitFunction p0,
         /* We discard res.def. */
         assert(res.module == NULL);
         _Py_ext_module_loader_result_apply_error(&res, name_buf);
-        goto finally;
+        return NULL;
     }
     assert(!PyErr_Occurred());
     assert(res.err == NULL);
@@ -1490,7 +1489,7 @@ import_run_extension(PyThreadState *tstate, PyModInitFunction p0,
         assert(mod == NULL);
         mod = PyModule_FromDefAndSpec(def, spec);
         if (mod == NULL) {
-            goto finally;
+            goto error;
         }
     }
     else {
@@ -1499,8 +1498,7 @@ import_run_extension(PyThreadState *tstate, PyModInitFunction p0,
         assert(PyModule_Check(mod));
 
         if (_PyImport_CheckSubinterpIncompatibleExtensionAllowed(name_buf) < 0) {
-            Py_CLEAR(mod);
-            goto finally;
+            goto error;
         }
 
         /* Remember the filename as the __file__ attribute */
@@ -1528,8 +1526,7 @@ import_run_extension(PyThreadState *tstate, PyModInitFunction p0,
         if (update_global_state_for_extension(
                 tstate, info->path, info->name, def, &singlephase) < 0)
         {
-            Py_CLEAR(mod);
-            goto finally;
+            goto error;
         }
 
         /* Update per-interpreter import state. */
@@ -1537,14 +1534,17 @@ import_run_extension(PyThreadState *tstate, PyModInitFunction p0,
         if (finish_singlephase_extension(
                 tstate, mod, def, info->name, modules) < 0)
         {
-            Py_CLEAR(mod);
-            goto finally;
+            goto error;
         }
     }
 
-finally:
     _Py_ext_module_loader_result_clear(&res);
     return mod;
+
+error:
+    Py_XDECREF(mod);
+    _Py_ext_module_loader_result_clear(&res);
+    return NULL;
 }
 
 

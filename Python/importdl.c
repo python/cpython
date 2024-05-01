@@ -217,6 +217,9 @@ _Py_ext_module_loader_info_init_from_spec(
 void
 _Py_ext_module_loader_result_clear(struct _Py_ext_module_loader_result *res)
 {
+    /* Instead, the caller should have called
+     * _Py_ext_module_loader_result_apply_error(). */
+    assert(res->err == NULL);
     *res = (struct _Py_ext_module_loader_result){0};
 }
 
@@ -277,21 +280,25 @@ _Py_ext_module_loader_result_apply_error(
                             const char *name)
 {
     assert(!PyErr_Occurred());
-    struct _Py_ext_module_loader_result_error *err = res->err;
-    assert(err != NULL && err == &res->_err);
+    assert(res->err != NULL && res->err == &res->_err);
+    struct _Py_ext_module_loader_result_error err = *res->err;
+    res->err = NULL;
+
+    /* We're otherwise done with the result at this point. */
+    _Py_ext_module_loader_result_clear(res);
 
 #ifndef NDEBUG
-    switch (err->kind) {
+    switch (err.kind) {
     case _Py_ext_module_loader_result_EXCEPTION:  /* fall through */
     case _Py_ext_module_loader_result_ERR_UNREPORTED_EXC:
-        assert(err->exc != NULL);
+        assert(err.exc != NULL);
         break;
     case _Py_ext_module_loader_result_ERR_MISSING:  /* fall through */
     case _Py_ext_module_loader_result_ERR_UNINITIALIZED:  /* fall through */
     case _Py_ext_module_loader_result_ERR_NONASCII_NOT_MULTIPHASE:  /* fall through */
     case _Py_ext_module_loader_result_ERR_NOT_MODULE:  /* fall through */
     case _Py_ext_module_loader_result_ERR_MISSING_DEF:
-        assert(err->exc == NULL);
+        assert(err.exc == NULL);
         break;
     default:
         /* We added a new error kind but forgot to add it to this switch. */
@@ -300,7 +307,7 @@ _Py_ext_module_loader_result_apply_error(
 #endif
 
     const char *msg = NULL;
-    switch (err->kind) {
+    switch (err.kind) {
     case _Py_ext_module_loader_result_EXCEPTION:
         break;
     case _Py_ext_module_loader_result_ERR_MISSING:
@@ -329,9 +336,9 @@ _Py_ext_module_loader_result_apply_error(
         return;
     }
 
-    if (err->exc != NULL) {
-        PyErr_SetRaisedException(err->exc);
-        err->exc = NULL;  /* SetRaisedException() stole our reference. */
+    if (err.exc != NULL) {
+        PyErr_SetRaisedException(err.exc);
+        err.exc = NULL;  /* PyErr_SetRaisedException() stole our reference. */
         if (msg != NULL) {
             _PyErr_FormatFromCause(PyExc_SystemError, msg, name);
         }
