@@ -393,6 +393,29 @@ executor_traverse(PyObject *o, visitproc visit, void *arg)
     return 0;
 }
 
+static PyObject *
+get_jit_code(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+#ifndef _Py_JIT
+    PyErr_SetString(PyExc_RuntimeError, "JIT support not enabled.");
+    return NULL;
+#else
+    _PyExecutorObject *executor = (_PyExecutorObject *)self;
+    if (executor->jit_code == NULL || executor->jit_size == 0) {
+        Py_RETURN_NONE;
+    }
+    return PyBytes_FromStringAndSize(executor->jit_code, executor->jit_size);
+#endif
+}
+
+static PyMethodDef uop_executor_methods[] = {
+    { "is_valid", is_valid, METH_NOARGS, NULL },
+    { "get_jit_code", get_jit_code, METH_NOARGS, NULL},
+    { "get_opcode", get_opcode, METH_NOARGS, NULL },
+    { "get_oparg", get_oparg, METH_NOARGS, NULL },
+    { NULL, NULL },
+};
+
 static int
 executor_is_gc(PyObject *o)
 {
@@ -407,7 +430,7 @@ PyTypeObject _PyUOpExecutor_Type = {
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION | Py_TPFLAGS_HAVE_GC,
     .tp_dealloc = (destructor)uop_dealloc,
     .tp_as_sequence = &uop_as_sequence,
-    .tp_methods = executor_methods,
+    .tp_methods = uop_executor_methods,
     .tp_traverse = executor_traverse,
     .tp_clear = (inquiry)executor_clear,
     .tp_is_gc = executor_is_gc,
