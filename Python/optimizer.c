@@ -1631,6 +1631,7 @@ _Py_Executors_InvalidateDependency(PyInterpreterState *interp, void *obj, int is
                 if (PyList_Append(invalidate, (PyObject *)exec) < 0) {
                     PyErr_Clear();
                     no_memory = true;
+                    exec->vm_data.valid = 0;
                 }
             }
             if (is_invalidation) {
