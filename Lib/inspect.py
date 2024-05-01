@@ -1038,25 +1038,40 @@ class ClassFoundException(Exception):
 class _ClassFinder(ast.NodeVisitor):
 
     def __init__(self, cls, tree, lines, qualname):
-        self.stack = []
+        self.names = qualname.split('.')
+        self.pos = 0
         self.cls = cls
         self.tree = tree
         self.lines = lines
-        self.qualname = qualname
         self.lineno_found = []
 
+    def generic_visit(self, node):
+        if isinstance(node, ast.stmt):
+            super().generic_visit(node)
+
+    visit_Module = ast.NodeVisitor.generic_visit
+
+    # For optimization. Skip the most common stmt nodes that cannot
+    # contain sub-statements.
+    def visit_Expr(self, node): pass
+    def visit_Assign(self, node): pass
+    def visit_Return(self, node): pass
+
     def visit_FunctionDef(self, node):
-        self.stack.append(node.name)
-        self.stack.append('<locals>')
+        if (len(self.names) < self.pos + 3 or
+            node.name != self.names[self.pos] or
+            '<locals>' != self.names[self.pos+1]):
+            return
+        self.pos += 2
         self.generic_visit(node)
-        self.stack.pop()
-        self.stack.pop()
+        self.pos -= 2
 
     visit_AsyncFunctionDef = visit_FunctionDef
 
     def visit_ClassDef(self, node):
-        self.stack.append(node.name)
-        if self.qualname == '.'.join(self.stack):
+        if node.name != self.names[self.pos]:
+            return
+        if len(self.names) == self.pos + 1:
             # Return the decorator for the class if present
             if node.decorator_list:
                 line_number = node.decorator_list[0].lineno
@@ -1065,8 +1080,10 @@ class _ClassFinder(ast.NodeVisitor):
 
             # decrement by one since lines starts with indexing by zero
             self.lineno_found.append((line_number - 1, node.end_lineno))
+            return
+        self.pos += 1
         self.generic_visit(node)
-        self.stack.pop()
+        self.pos -= 1
 
     def get_lineno(self):
         self.visit(self.tree)
