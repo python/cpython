@@ -3174,7 +3174,7 @@ PyList_AsTuple(PyObject *v)
 }
 
 PyObject *
-_PyList_FromStackSteal(_PyStackRef const *src, Py_ssize_t n)
+_PyList_FromStackRefSteal(_PyStackRef const *src, Py_ssize_t n)
 {
     if (n == 0) {
         return PyList_New(0);

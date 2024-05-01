@@ -719,7 +719,7 @@
             values = &stack_pointer[-1 - oparg];
             assert(PyTuple_CheckExact(keys));
             assert(PyTuple_GET_SIZE(keys) == (Py_ssize_t)oparg);
-            map = _PyDict_FromStackItemsUntaggedKeys(
+            map = _PyDict_FromStackRefItemsUntaggedKeys(
                 &PyTuple_GET_ITEM(keys, 0), 1,
                 values, 1, oparg);
             for (int _i = oparg; --_i >= 0;) {
@@ -740,7 +740,7 @@
             _PyStackRef *values;
             PyObject *list;
             values = &stack_pointer[-oparg];
-            list = _PyList_FromStackSteal(values, oparg);
+            list = _PyList_FromStackRefSteal(values, oparg);
             if (list == NULL) { stack_pointer += -oparg; goto error; }
             stack_pointer[-oparg] = PyStackRef_StealRef(list);
             stack_pointer += 1 - oparg;
@@ -754,7 +754,7 @@
             _PyStackRef *values;
             PyObject *map;
             values = &stack_pointer[-oparg*2];
-            map = _PyDict_FromStackItems(
+            map = _PyDict_FromStackRefItems(
                 values, 2,
                 values+1, 2,
                 oparg);
@@ -835,7 +835,7 @@
             _PyStackRef *pieces;
             PyObject *str;
             pieces = &stack_pointer[-oparg];
-            str = _PyUnicode_JoinStack(&_Py_STR(empty), pieces, oparg);
+            str = _PyUnicode_JoinStackRef(&_Py_STR(empty), pieces, oparg);
             for (int _i = oparg; --_i >= 0;) {
                 PyStackRef_DECREF(pieces[_i]);
             }
@@ -852,7 +852,7 @@
             _PyStackRef *values;
             PyObject *tup;
             values = &stack_pointer[-oparg];
-            tup = _PyTuple_FromStackSteal(values, oparg);
+            tup = _PyTuple_FromStackRefSteal(values, oparg);
             if (tup == NULL) { stack_pointer += -oparg; goto error; }
             stack_pointer[-oparg] = PyStackRef_StealRef(tup);
             stack_pointer += 1 - oparg;
@@ -944,7 +944,7 @@
                     DISPATCH_INLINED(new_frame);
                 }
                 /* Callable is not a normal Python function */
-                res = PyObject_Vectorcall_Tagged(
+                res = PyObject_Vectorcall_StackRef(
                     callable, args,
                     total_args | PY_VECTORCALL_ARGUMENTS_OFFSET,
                     NULL);
@@ -1185,7 +1185,7 @@
                 PyTypeObject *tp = (PyTypeObject *)callable;
                 DEOPT_IF(tp->tp_vectorcall == NULL, CALL);
                 STAT_INC(CALL, hit);
-                res = PyObject_TypeVectorcall_Tagged(tp, args, total_args, NULL);
+                res = PyObject_TypeVectorcall_StackRef(tp, args, total_args, NULL);
                 /* Free the arguments. */
                 for (int i = 0; i < total_args; i++) {
                     PyStackRef_DECREF(args[i]);
@@ -1235,7 +1235,7 @@
                 STAT_INC(CALL, hit);
                 PyCFunction cfunc = PyCFunction_GET_FUNCTION(callable);
                 /* res = func(self, args, nargs) */
-                res = PyObject_PyCFunctionFastCall_Tagged(
+                res = PyObject_PyCFunctionFastCall_StackRef(
                     ((PyCFunctionFast)(void(*)(void))cfunc),
                     PyCFunction_GET_SELF(callable),
                     args,
@@ -1292,7 +1292,7 @@
                 PyCFunctionFastWithKeywords cfunc =
                 (PyCFunctionFastWithKeywords)(void(*)(void))
                 PyCFunction_GET_FUNCTION(callable);
-                res = PyObject_PyCFunctionFastWithKeywordsCall_Tagged(
+                res = PyObject_PyCFunctionFastWithKeywordsCall_StackRef(
                     cfunc, PyCFunction_GET_SELF(callable), args, total_args, NULL
                 );
                 assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
@@ -1627,7 +1627,7 @@
                 DISPATCH_INLINED(new_frame);
             }
             /* Callable is not a normal Python function */
-            res = PyObject_Vectorcall_Tagged(
+            res = PyObject_Vectorcall_StackRef(
                 callable, args,
                 positional_args | PY_VECTORCALL_ARGUMENTS_OFFSET,
                 kwnames);
@@ -1785,7 +1785,7 @@
                 PyCFunctionFast cfunc =
                 (PyCFunctionFast)(void(*)(void))meth->ml_meth;
                 int nargs = total_args - 1;
-                res = PyObject_PyCFunctionFastCall_Tagged(
+                res = PyObject_PyCFunctionFastCall_StackRef(
                     cfunc, self, (args + 1), nargs
                 );
                 assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
@@ -1843,7 +1843,7 @@
                 int nargs = total_args - 1;
                 PyCFunctionFastWithKeywords cfunc =
                 (PyCFunctionFastWithKeywords)(void(*)(void))meth->ml_meth;
-                res = PyObject_PyCFunctionFastWithKeywordsCall_Tagged(
+                res = PyObject_PyCFunctionFastWithKeywordsCall_StackRef(
                     cfunc, self, (args + 1), nargs, NULL
                 );
                 assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));

@@ -1610,18 +1610,18 @@ dummy_func(
         }
 
         inst(BUILD_STRING, (pieces[oparg] -- str)) {
-            str = _PyUnicode_JoinStack(&_Py_STR(empty), pieces, oparg);
+            str = _PyUnicode_JoinStackRef(&_Py_STR(empty), pieces, oparg);
             DECREF_INPUTS();
             ERROR_IF(str == NULL, error);
         }
 
         inst(BUILD_TUPLE, (values[oparg] -- tup)) {
-            tup = _PyTuple_FromStackSteal(values, oparg);
+            tup = _PyTuple_FromStackRefSteal(values, oparg);
             ERROR_IF(tup == NULL, error);
         }
 
         inst(BUILD_LIST, (values[oparg] -- list)) {
-            list = _PyList_FromStackSteal(values, oparg);
+            list = _PyList_FromStackRefSteal(values, oparg);
             ERROR_IF(list == NULL, error);
         }
 
@@ -1668,7 +1668,7 @@ dummy_func(
         }
 
         inst(BUILD_MAP, (values[oparg*2] -- map)) {
-            map = _PyDict_FromStackItems(
+            map = _PyDict_FromStackRefItems(
                     values, 2,
                     values+1, 2,
                     oparg);
@@ -1702,7 +1702,7 @@ dummy_func(
         inst(BUILD_CONST_KEY_MAP, (values[oparg], keys -- map)) {
             assert(PyTuple_CheckExact(keys));
             assert(PyTuple_GET_SIZE(keys) == (Py_ssize_t)oparg);
-            map = _PyDict_FromStackItemsUntaggedKeys(
+            map = _PyDict_FromStackRefItemsUntaggedKeys(
                     &PyTuple_GET_ITEM(keys, 0), 1,
                     values, 1, oparg);
             DECREF_INPUTS();
@@ -3110,7 +3110,7 @@ dummy_func(
                 DISPATCH_INLINED(new_frame);
             }
             /* Callable is not a normal Python function */
-            res = PyObject_Vectorcall_Tagged(
+            res = PyObject_Vectorcall_StackRef(
                 callable, args,
                 total_args | PY_VECTORCALL_ARGUMENTS_OFFSET,
                 NULL);
@@ -3373,7 +3373,7 @@ dummy_func(
             PyTypeObject *tp = (PyTypeObject *)callable;
             DEOPT_IF(tp->tp_vectorcall == NULL);
             STAT_INC(CALL, hit);
-            res = PyObject_TypeVectorcall_Tagged(tp, args, total_args, NULL);
+            res = PyObject_TypeVectorcall_StackRef(tp, args, total_args, NULL);
             /* Free the arguments. */
             for (int i = 0; i < total_args; i++) {
                 PyStackRef_DECREF(args[i]);
@@ -3431,7 +3431,7 @@ dummy_func(
             STAT_INC(CALL, hit);
             PyCFunction cfunc = PyCFunction_GET_FUNCTION(callable);
             /* res = func(self, args, nargs) */
-            res = PyObject_PyCFunctionFastCall_Tagged(
+            res = PyObject_PyCFunctionFastCall_StackRef(
                 ((PyCFunctionFast)(void(*)(void))cfunc),
                 PyCFunction_GET_SELF(callable),
                 args,
@@ -3466,7 +3466,7 @@ dummy_func(
             PyCFunctionFastWithKeywords cfunc =
                 (PyCFunctionFastWithKeywords)(void(*)(void))
                 PyCFunction_GET_FUNCTION(callable);
-            res = PyObject_PyCFunctionFastWithKeywordsCall_Tagged(
+            res = PyObject_PyCFunctionFastWithKeywordsCall_StackRef(
                 cfunc, PyCFunction_GET_SELF(callable), args, total_args, NULL
             );
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
@@ -3611,7 +3611,7 @@ dummy_func(
             int nargs = total_args - 1;
             PyCFunctionFastWithKeywords cfunc =
                 (PyCFunctionFastWithKeywords)(void(*)(void))meth->ml_meth;
-            res = PyObject_PyCFunctionFastWithKeywordsCall_Tagged(
+            res = PyObject_PyCFunctionFastWithKeywordsCall_StackRef(
                 cfunc, self, (args + 1), nargs, NULL
             );
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
@@ -3682,7 +3682,7 @@ dummy_func(
                 (PyCFunctionFast)(void(*)(void))meth->ml_meth;
             int nargs = total_args - 1;
 
-            res = PyObject_PyCFunctionFastCall_Tagged(
+            res = PyObject_PyCFunctionFastCall_StackRef(
                 cfunc, self, (args + 1), nargs
             );
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
@@ -3756,7 +3756,7 @@ dummy_func(
                 DISPATCH_INLINED(new_frame);
             }
             /* Callable is not a normal Python function */
-            res = PyObject_Vectorcall_Tagged(
+            res = PyObject_Vectorcall_StackRef(
                 callable, args,
                 positional_args | PY_VECTORCALL_ARGUMENTS_OFFSET,
                 kwnames);

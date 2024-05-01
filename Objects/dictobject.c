@@ -2155,7 +2155,7 @@ _PyDict_FromItems(PyObject *const *keys, Py_ssize_t keys_offset,
 
 
 PyObject*
-_PyDict_FromStackItems(_PyStackRef const *keys, Py_ssize_t keys_offset,
+_PyDict_FromStackRefItems(_PyStackRef const *keys, Py_ssize_t keys_offset,
                         _PyStackRef const *values, Py_ssize_t values_offset,
                         Py_ssize_t length)
 {
@@ -2194,7 +2194,7 @@ _PyDict_FromStackItems(_PyStackRef const *keys, Py_ssize_t keys_offset,
 }
 
 PyObject*
-_PyDict_FromStackItemsUntaggedKeys(
+_PyDict_FromStackRefItemsUntaggedKeys(
     PyObject *const *keys, Py_ssize_t keys_offset,
     _PyStackRef const *values, Py_ssize_t values_offset,
     Py_ssize_t length)

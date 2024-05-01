@@ -1466,7 +1466,7 @@ initialize_locals(PyThreadState *tstate, PyFunctionObject *func,
         }
         else {
             assert(args != NULL);
-            u = _PyTuple_FromStackSteal((args + n), argcount - n);
+            u = _PyTuple_FromStackRefSteal((args + n), argcount - n);
         }
         if (u == NULL) {
             goto fail_post_positional;

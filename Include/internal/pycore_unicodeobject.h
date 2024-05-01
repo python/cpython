@@ -209,7 +209,7 @@ PyAPI_FUNC(PyObject*) _PyUnicode_JoinArray(
     Py_ssize_t seqlen
     );
 
-PyAPI_FUNC(PyObject*) _PyUnicode_JoinStack(
+PyAPI_FUNC(PyObject*) _PyUnicode_JoinStackRef(
     PyObject *separator,
     _PyStackRef const *items,
     Py_ssize_t seqlen
