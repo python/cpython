@@ -51,6 +51,7 @@ test_pytime_monotonic(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(args))
     PyTime_t t;
     int res = PyTime_Monotonic(&t);
     if (res < 0) {
+        assert(t == 0);
         return NULL;
     }
     assert(res == 0);
@@ -67,6 +68,7 @@ test_pytime_monotonic_raw(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(args))
     res = PyTime_MonotonicRaw(&t);
     Py_END_ALLOW_THREADS
     if (res < 0) {
+        assert(t == 0);
         PyErr_SetString(PyExc_RuntimeError, "PyTime_MonotonicRaw() failed");
         return NULL;
     }
@@ -81,6 +83,7 @@ test_pytime_perf_counter(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(args))
     PyTime_t t;
     int res = PyTime_PerfCounter(&t);
     if (res < 0) {
+        assert(t == 0);
         return NULL;
     }
     assert(res == 0);
@@ -97,6 +100,7 @@ test_pytime_perf_counter_raw(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(args
     res = PyTime_PerfCounterRaw(&t);
     Py_END_ALLOW_THREADS
     if (res < 0) {
+        assert(t == 0);
         PyErr_SetString(PyExc_RuntimeError, "PyTime_PerfCounterRaw() failed");
         return NULL;
     }
@@ -111,6 +115,7 @@ test_pytime_time(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(args))
     PyTime_t t;
     int res = PyTime_Time(&t);
     if (res < 0) {
+        assert(t == 0);
         return NULL;
     }
     assert(res == 0);
@@ -127,6 +132,7 @@ test_pytime_time_raw(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(args))
     res = PyTime_TimeRaw(&t);
     Py_END_ALLOW_THREADS
     if (res < 0) {
+        assert(t == 0);
         PyErr_SetString(PyExc_RuntimeError, "PyTime_TimeRaw() failed");
         return NULL;
     }
