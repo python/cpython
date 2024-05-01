@@ -34,6 +34,17 @@ module _imp
 #include "clinic/import.c.h"
 
 
+#ifndef NDEBUG
+static bool
+is_interpreter_isolated(PyInterpreterState *interp)
+{
+    return !_Py_IsMainInterpreter(interp)
+        && !(interp->feature_flags & Py_RTFLAGS_USE_MAIN_OBMALLOC)
+        && interp->ceval.own_gil;
+}
+#endif
+
+
 /*******************************/
 /* process-global import state */
 /*******************************/
@@ -1006,6 +1017,7 @@ set_cached_m_dict(struct extensions_cache_value *value, PyObject *m_dict)
 
         PyInterpreterState *interp = _PyInterpreterState_GET();
         interpid = PyInterpreterState_GetID(interp);
+        assert(!is_interpreter_isolated(interp));
     }
 
     /* XXX gh-88216: The copied dict is owned by the current
