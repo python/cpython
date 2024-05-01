@@ -100,9 +100,17 @@ Improved Error Messages
 
 * The interpreter now colorizes error messages when displaying tracebacks by default.
   This feature can be controlled via the new :envvar:`PYTHON_COLORS` environment
-  variable as well as the canonical ``NO_COLOR`` and ``FORCE_COLOR`` environment
+  variable as well as the canonical |NO_COLOR|_ and |FORCE_COLOR|_ environment
   variables. See also :ref:`using-on-controlling-color`.
   (Contributed by Pablo Galindo Salgado in :gh:`112730`.)
+
+.. Apparently this how you hack together a formatted link:
+
+.. |FORCE_COLOR| replace:: ``FORCE_COLOR``
+.. _FORCE_COLOR: https://force-color.org/
+
+.. |NO_COLOR| replace:: ``NO_COLOR``
+.. _NO_COLOR: https://no-color.org/
 
 * A common mistake is to write a script with the same name as a
   standard library module. When this results in errors, we now
@@ -438,6 +446,12 @@ doctest
   tests. Add :attr:`doctest.DocTestRunner.skips` and
   :attr:`doctest.TestResults.skipped` attributes.
   (Contributed by Victor Stinner in :gh:`108794`.)
+
+* Color is added to the output by default.
+  This can be controlled via the new :envvar:`PYTHON_COLORS` environment
+  variable as well as the canonical |NO_COLOR|_ and |FORCE_COLOR|_ environment
+  variables. See also :ref:`using-on-controlling-color`.
+  (Contributed by Hugo van Kemenade in :gh:`117225`.)
 
 email
 -----
