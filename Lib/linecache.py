@@ -53,10 +53,11 @@ def _getline_from_code(filename, lineno, module_globals=None):
 
 
 def _getlines_from_code(code, module_globals=None):
-    if code in _interactive_cache:
-        entry = _interactive_cache[code]
+    code_id = id(code)
+    if code_id in _interactive_cache:
+        entry = _interactive_cache[code_id]
         if len(entry) != 1:
-            return _interactive_cache[code][2]
+            return _interactive_cache[code_id][2]
     return []
 
 
@@ -226,4 +227,4 @@ def _register_code(code, string, name):
         for const in code.co_consts:
             if isinstance(const, type(code)):
                 stack.append(const)
-        _interactive_cache[code] = entry
+        _interactive_cache[id(code)] = entry
