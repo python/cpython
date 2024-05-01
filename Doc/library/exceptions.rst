@@ -335,9 +335,9 @@ The following exceptions are the exceptions that are usually raised.
 
    .. note::
 
-      ``NotImplementedError`` and ``NotImplemented`` are not interchangeable,
+      ``NotImplementedError`` and :data:`NotImplemented` are not interchangeable,
       even though they have similar names and purposes.  See
-      :data:`NotImplemented` for details on when to use it.
+      :data:`!NotImplemented` for details on when to use it.
 
 .. exception:: OSError([arg])
                OSError(errno, strerror[, filename[, winerror[, filename2]]])

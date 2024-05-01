@@ -7,7 +7,8 @@ import sysconfig
 import time
 import trace
 
-from test.support import os_helper, MS_WINDOWS, flush_std_streams
+from test.support import (os_helper, MS_WINDOWS, flush_std_streams,
+                          suppress_immortalization)
 
 from .cmdline import _parse_args, Namespace
 from .findtests import findtests, split_test_packages, list_cases
@@ -18,6 +19,7 @@ from .results import TestResults, EXITCODE_INTERRUPTED
 from .runtests import RunTests, HuntRefleak
 from .setup import setup_process, setup_test_dir
 from .single import run_single_test, PROGRESS_MIN_TIME
+from .tsan import setup_tsan_tests
 from .utils import (
     StrPath, StrJSON, TestName, TestList, TestTuple, TestFilter,
     strip_py_suffix, count, format_duration,
@@ -56,6 +58,7 @@ class Regrtest:
         self.quiet: bool = ns.quiet
         self.pgo: bool = ns.pgo
         self.pgo_extended: bool = ns.pgo_extended
+        self.tsan: bool = ns.tsan
 
         # Test results
         self.results: TestResults = TestResults()
@@ -182,6 +185,9 @@ class Regrtest:
         if self.pgo:
             # add default PGO tests if no tests are specified
             setup_pgo_tests(self.cmdline_args, self.pgo_extended)
+
+        if self.tsan:
+            setup_tsan_tests(self.cmdline_args)
 
         exclude_tests = set()
         if self.exclude:
@@ -344,9 +350,7 @@ class Regrtest:
             namespace = dict(locals())
             tracer.runctx(cmd, globals=globals(), locals=namespace)
             result = namespace['result']
-            # Mypy doesn't know about this attribute yet,
-            # but it will do soon: https://github.com/python/typeshed/pull/11091
-            result.covered_lines = list(tracer.counts)  # type: ignore[attr-defined]
+            result.covered_lines = list(tracer.counts)
         else:
             result = run_single_test(test_name, runtests)
 
@@ -384,15 +388,10 @@ class Regrtest:
 
             result = self.run_test(test_name, runtests, tracer)
 
-            # Unload the newly imported test modules (best effort
-            # finalization). To work around gh-115490, don't unload
-            # test.support.interpreters and its submodules even if they
-            # weren't loaded before.
-            keep = "test.support.interpreters"
+            # Unload the newly imported test modules (best effort finalization)
             new_modules = [module for module in sys.modules
                            if module not in save_modules and
-                                module.startswith(("test.", "test_"))
-                                and not module.startswith(keep)]
+                                module.startswith(("test.", "test_"))]
             for module in new_modules:
                 sys.modules.pop(module, None)
                 # Remove the attribute of the parent module.
@@ -528,7 +527,10 @@ class Regrtest:
             if self.num_workers:
                 self._run_tests_mp(runtests, self.num_workers)
             else:
-                self.run_tests_sequentially(runtests)
+                # gh-117783: don't immortalize deferred objects when tracking
+                # refleaks. Only releveant for the free-threaded build.
+                with suppress_immortalization(runtests.hunt_refleak):
+                    self.run_tests_sequentially(runtests)
 
             coverage = self.results.get_coverage_results()
             self.display_result(runtests)

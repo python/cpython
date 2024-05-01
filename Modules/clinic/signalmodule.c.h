@@ -2,6 +2,10 @@
 preserve
 [clinic start generated code]*/
 
+#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
+#endif
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 
 PyDoc_STRVAR(signal_default_int_handler__doc__,
@@ -275,6 +279,77 @@ exit:
 }
 
 #endif /* defined(HAVE_SIGINTERRUPT) */
+
+PyDoc_STRVAR(signal_set_wakeup_fd__doc__,
+"set_wakeup_fd($module, fd, /, *, warn_on_full_buffer=True)\n"
+"--\n"
+"\n"
+"Sets the fd to be written to (with the signal number) when a signal comes in.\n"
+"\n"
+"A library can use this to wakeup select or poll.\n"
+"The previous fd or -1 is returned.\n"
+"\n"
+"The fd must be non-blocking.");
+
+#define SIGNAL_SET_WAKEUP_FD_METHODDEF    \
+    {"set_wakeup_fd", _PyCFunction_CAST(signal_set_wakeup_fd), METH_FASTCALL|METH_KEYWORDS, signal_set_wakeup_fd__doc__},
+
+static PyObject *
+signal_set_wakeup_fd_impl(PyObject *module, PyObject *fdobj,
+                          int warn_on_full_buffer);
+
+static PyObject *
+signal_set_wakeup_fd(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(warn_on_full_buffer), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"", "warn_on_full_buffer", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "set_wakeup_fd",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[2];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
+    PyObject *fdobj;
+    int warn_on_full_buffer = 1;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    fdobj = args[0];
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    warn_on_full_buffer = PyObject_IsTrue(args[1]);
+    if (warn_on_full_buffer < 0) {
+        goto exit;
+    }
+skip_optional_kwonly:
+    return_value = signal_set_wakeup_fd_impl(module, fdobj, warn_on_full_buffer);
+
+exit:
+    return return_value;
+}
 
 #if defined(HAVE_SETITIMER)
 
@@ -701,4 +776,4 @@ exit:
 #ifndef SIGNAL_PIDFD_SEND_SIGNAL_METHODDEF
     #define SIGNAL_PIDFD_SEND_SIGNAL_METHODDEF
 #endif /* !defined(SIGNAL_PIDFD_SEND_SIGNAL_METHODDEF) */
-/*[clinic end generated code: output=5a9928cb2dc75b5f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=1c11c1b6f12f26be input=a9049054013a1b77]*/

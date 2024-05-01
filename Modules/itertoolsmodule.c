@@ -270,6 +270,7 @@ typedef struct {
     PyObject_HEAD
     PyObject *it;
     PyObject *old;
+    PyObject *result;
 } pairwiseobject;
 
 /*[clinic input]
@@ -301,6 +302,11 @@ pairwise_new_impl(PyTypeObject *type, PyObject *iterable)
     }
     po->it = it;
     po->old = NULL;
+    po->result = PyTuple_Pack(2, Py_None, Py_None);
+    if (po->result == NULL) {
+        Py_DECREF(po);
+        return NULL;
+    }
     return (PyObject *)po;
 }
 
@@ -311,6 +317,7 @@ pairwise_dealloc(pairwiseobject *po)
     PyObject_GC_UnTrack(po);
     Py_XDECREF(po->it);
     Py_XDECREF(po->old);
+    Py_XDECREF(po->result);
     tp->tp_free(po);
     Py_DECREF(tp);
 }
@@ -321,6 +328,7 @@ pairwise_traverse(pairwiseobject *po, visitproc visit, void *arg)
     Py_VISIT(Py_TYPE(po));
     Py_VISIT(po->it);
     Py_VISIT(po->old);
+    Py_VISIT(po->result);
     return 0;
 }
 
@@ -355,8 +363,30 @@ pairwise_next(pairwiseobject *po)
         Py_DECREF(old);
         return NULL;
     }
-    /* Future optimization: Reuse the result tuple as we do in enumerate() */
-    result = PyTuple_Pack(2, old, new);
+
+    result = po->result;
+    if (Py_REFCNT(result) == 1) {
+        Py_INCREF(result);
+        PyObject *last_old = PyTuple_GET_ITEM(result, 0);
+        PyObject *last_new = PyTuple_GET_ITEM(result, 1);
+        PyTuple_SET_ITEM(result, 0, Py_NewRef(old));
+        PyTuple_SET_ITEM(result, 1, Py_NewRef(new));
+        Py_DECREF(last_old);
+        Py_DECREF(last_new);
+        // bpo-42536: The GC may have untracked this result tuple. Since we're
+        // recycling it, make sure it's tracked again:
+        if (!_PyObject_GC_IS_TRACKED(result)) {
+            _PyObject_GC_TRACK(result);
+        }
+    }
+    else {
+        result = PyTuple_New(2);
+        if (result != NULL) {
+            PyTuple_SET_ITEM(result, 0, Py_NewRef(old));
+            PyTuple_SET_ITEM(result, 1, Py_NewRef(new));
+        }
+    }
+
     Py_XSETREF(po->old, new);
     Py_DECREF(old);
     return result;
@@ -815,10 +845,9 @@ teedataobject_traverse(teedataobject *tdo, visitproc visit, void * arg)
 }
 
 static void
-teedataobject_safe_decref(PyObject *obj, PyTypeObject *tdo_type)
+teedataobject_safe_decref(PyObject *obj)
 {
-    while (obj && Py_IS_TYPE(obj, tdo_type) &&
-           Py_REFCNT(obj) == 1) {
+    while (obj && Py_REFCNT(obj) == 1) {
         PyObject *nextlink = ((teedataobject *)obj)->nextlink;
         ((teedataobject *)obj)->nextlink = NULL;
         Py_SETREF(obj, nextlink);
@@ -837,8 +866,7 @@ teedataobject_clear(teedataobject *tdo)
         Py_CLEAR(tdo->values[i]);
     tmp = tdo->nextlink;
     tdo->nextlink = NULL;
-    itertools_state *state = get_module_state_by_cls(Py_TYPE(tdo));
-    teedataobject_safe_decref(tmp, state->teedataobject_type);
+    teedataobject_safe_decref(tmp);
     return 0;
 }
 
@@ -2191,7 +2219,8 @@ chain_setstate(chainobject *lz, PyObject *state)
 }
 
 PyDoc_STRVAR(chain_doc,
-"chain(*iterables) --> chain object\n\
+"chain(*iterables)\n\
+--\n\
 \n\
 Return a chain object whose .__next__() method returns elements from the\n\
 first iterable until it is exhausted, then elements from the next\n\
@@ -2530,7 +2559,8 @@ static PyMethodDef product_methods[] = {
 };
 
 PyDoc_STRVAR(product_doc,
-"product(*iterables, repeat=1) --> product object\n\
+"product(*iterables, repeat=1)\n\
+--\n\
 \n\
 Cartesian product of input iterables.  Equivalent to nested for-loops.\n\n\
 For example, product(A, B) returns the same as:  ((x,y) for x in A for y in B).\n\
@@ -4575,7 +4605,8 @@ static PyMethodDef zip_longest_methods[] = {
 };
 
 PyDoc_STRVAR(zip_longest_doc,
-"zip_longest(iter1 [,iter2 [...]], [fillvalue=None]) --> zip_longest object\n\
+"zip_longest(*iterables, fillvalue=None)\n\
+--\n\
 \n\
 Return a zip_longest object whose .__next__() method returns a tuple where\n\
 the i-th element comes from the i-th iterable argument.  The .__next__()\n\
@@ -4623,15 +4654,15 @@ batched(p, n) --> [p0, p1, ..., p_n-1], [p_n, p_n+1, ..., p_2n-1], ...\n\
 chain(p, q, ...) --> p0, p1, ... plast, q0, q1, ...\n\
 chain.from_iterable([p, q, ...]) --> p0, p1, ... plast, q0, q1, ...\n\
 compress(data, selectors) --> (d[0] if s[0]), (d[1] if s[1]), ...\n\
-dropwhile(pred, seq) --> seq[n], seq[n+1], starting when pred fails\n\
+dropwhile(predicate, seq) --> seq[n], seq[n+1], starting when predicate fails\n\
 groupby(iterable[, keyfunc]) --> sub-iterators grouped by value of keyfunc(v)\n\
-filterfalse(pred, seq) --> elements of seq where pred(elem) is False\n\
+filterfalse(predicate, seq) --> elements of seq where predicate(elem) is False\n\
 islice(seq, [start,] stop [, step]) --> elements from\n\
        seq[start:stop:step]\n\
 pairwise(s) --> (s[0],s[1]), (s[1],s[2]), (s[2], s[3]), ...\n\
 starmap(fun, seq) --> fun(*seq[0]), fun(*seq[1]), ...\n\
 tee(it, n=2) --> (it1, it2 , ... itn) splits one iterator into n\n\
-takewhile(pred, seq) --> seq[0], seq[1], until pred fails\n\
+takewhile(predicate, seq) --> seq[0], seq[1], until predicate fails\n\
 zip_longest(p, q, ...) --> (p[0], q[0]), (p[1], q[1]), ...\n\
 \n\
 Combinatoric generators:\n\

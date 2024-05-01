@@ -28,7 +28,6 @@ Doc/library/email.errors.rst
 Doc/library/email.parser.rst
 Doc/library/email.policy.rst
 Doc/library/exceptions.rst
-Doc/library/faulthandler.rst
 Doc/library/functools.rst
 Doc/library/http.cookiejar.rst
 Doc/library/http.server.rst
@@ -44,7 +43,6 @@ Doc/library/pickletools.rst
 Doc/library/platform.rst
 Doc/library/plistlib.rst
 Doc/library/profile.rst
-Doc/library/pydoc.rst
 Doc/library/pyexpat.rst
 Doc/library/readline.rst
 Doc/library/resource.rst

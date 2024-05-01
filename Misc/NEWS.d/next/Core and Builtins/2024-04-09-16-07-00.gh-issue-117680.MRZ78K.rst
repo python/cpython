@@ -1,0 +1,1 @@
+Give ``_PyInstructionSequence`` a Python interface and use it in tests.

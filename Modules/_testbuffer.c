@@ -1217,7 +1217,7 @@ init_ndbuf(PyObject *items, PyObject *shape, PyObject *strides,
 
     /* convert scalar to list */
     if (ndim == 0) {
-        items = Py_BuildValue("(O)", items);
+        items = PyTuple_Pack(1, items);
         if (items == NULL)
             return NULL;
     }
@@ -2820,6 +2820,9 @@ static int
 _testbuffer_exec(PyObject *mod)
 {
     Py_SET_TYPE(&NDArray_Type, &PyType_Type);
+    if (PyType_Ready(&NDArray_Type)) {
+        return -1;
+    }
     if (PyModule_AddType(mod, &NDArray_Type) < 0) {
         return -1;
     }

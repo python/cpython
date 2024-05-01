@@ -89,7 +89,7 @@ class _Target(typing.Generic[_S, _R]):
         if group.data.body:
             line = f"0: {str(bytes(group.data.body)).removeprefix('b')}"
             group.data.disassembly.append(line)
-        group.process_relocations()
+        group.process_relocations(alignment=self.alignment)
         return group
 
     def _handle_section(self, section: _S, group: _stencils.StencilGroup) -> None:
@@ -106,7 +106,7 @@ class _Target(typing.Generic[_S, _R]):
         o = tempdir / f"{opname}.o"
         args = [
             f"--target={self.triple}",
-            "-DPy_BUILD_CORE",
+            "-DPy_BUILD_CORE_MODULE",
             "-D_DEBUG" if self.debug else "-DNDEBUG",
             f"-D_JIT_OPCODE={opname}",
             "-D_PyJIT_ACTIVE",
@@ -118,12 +118,17 @@ class _Target(typing.Generic[_S, _R]):
             f"-I{CPYTHON / 'Python'}",
             "-O3",
             "-c",
+            # This debug info isn't necessary, and bloats out the JIT'ed code.
+            # We *may* be able to re-enable this, process it, and JIT it for a
+            # nicer debugging experience... but that needs a lot more research:
             "-fno-asynchronous-unwind-tables",
+            # Don't call built-in functions that we can't find or patch:
             "-fno-builtin",
-            # SET_FUNCTION_ATTRIBUTE on 32-bit Windows debug builds:
-            "-fno-jump-tables",
+            # Emit relaxable 64-bit calls/jumps, so we don't have to worry about
+            # about emitting in-range trampolines for out-of-range targets.
+            # We can probably remove this and emit trampolines in the future:
             "-fno-plt",
-            # Don't make calls to weird stack-smashing canaries:
+            # Don't call stack-smashing canaries that we can't find or patch:
             "-fno-stack-protector",
             "-o",
             f"{o}",
@@ -194,11 +199,20 @@ class _COFF(
             offset = base + symbol["Value"]
             name = symbol["Name"]
             name = name.removeprefix(self.prefix)
-            group.symbols[name] = value, offset
+            if name not in group.symbols:
+                group.symbols[name] = value, offset
         for wrapped_relocation in section["Relocations"]:
             relocation = wrapped_relocation["Relocation"]
             hole = self._handle_relocation(base, relocation, stencil.body)
             stencil.holes.append(hole)
+
+    def _unwrap_dllimport(self, name: str) -> tuple[_stencils.HoleValue, str | None]:
+        if name.startswith("__imp_"):
+            name = name.removeprefix("__imp_")
+            name = name.removeprefix(self.prefix)
+            return _stencils.HoleValue.GOT, name
+        name = name.removeprefix(self.prefix)
+        return _stencils.symbol_to_value(name)
 
     def _handle_relocation(
         self, base: int, relocation: _schema.COFFRelocation, raw: bytes
@@ -207,21 +221,36 @@ class _COFF(
             case {
                 "Offset": offset,
                 "Symbol": s,
-                "Type": {"Value": "IMAGE_REL_AMD64_ADDR64" as kind},
+                "Type": {"Name": "IMAGE_REL_I386_DIR32" as kind},
             }:
                 offset += base
-                s = s.removeprefix(self.prefix)
-                value, symbol = _stencils.symbol_to_value(s)
-                addend = int.from_bytes(raw[offset : offset + 8], "little")
+                value, symbol = self._unwrap_dllimport(s)
+                addend = int.from_bytes(raw[offset : offset + 4], "little")
             case {
                 "Offset": offset,
                 "Symbol": s,
-                "Type": {"Value": "IMAGE_REL_I386_DIR32" as kind},
+                "Type": {
+                    "Name": "IMAGE_REL_AMD64_REL32" | "IMAGE_REL_I386_REL32" as kind
+                },
             }:
                 offset += base
-                s = s.removeprefix(self.prefix)
-                value, symbol = _stencils.symbol_to_value(s)
-                addend = int.from_bytes(raw[offset : offset + 4], "little")
+                value, symbol = self._unwrap_dllimport(s)
+                addend = (
+                    int.from_bytes(raw[offset : offset + 4], "little", signed=True) - 4
+                )
+            case {
+                "Offset": offset,
+                "Symbol": s,
+                "Type": {
+                    "Name": "IMAGE_REL_ARM64_BRANCH26"
+                    | "IMAGE_REL_ARM64_PAGEBASE_REL21"
+                    | "IMAGE_REL_ARM64_PAGEOFFSET_12A"
+                    | "IMAGE_REL_ARM64_PAGEOFFSET_12L" as kind
+                },
+            }:
+                offset += base
+                value, symbol = self._unwrap_dllimport(s)
+                addend = 0
             case _:
                 raise NotImplementedError(relocation)
         return _stencils.Hole(offset, kind, value, symbol, addend)
@@ -233,7 +262,7 @@ class _ELF(
     def _handle_section(
         self, section: _schema.ELFSection, group: _stencils.StencilGroup
     ) -> None:
-        section_type = section["Type"]["Value"]
+        section_type = section["Type"]["Name"]
         flags = {flag["Name"] for flag in section["Flags"]["Flags"]}
         if section_type == "SHT_RELA":
             assert "SHF_INFO_LINK" in flags, flags
@@ -261,7 +290,7 @@ class _ELF(
             for wrapped_symbol in section["Symbols"]:
                 symbol = wrapped_symbol["Symbol"]
                 offset = len(stencil.body) + symbol["Value"]
-                name = symbol["Name"]["Value"]
+                name = symbol["Name"]["Name"]
                 name = name.removeprefix(self.prefix)
                 group.symbols[name] = value, offset
             stencil.body.extend(section["SectionData"]["Bytes"])
@@ -283,9 +312,9 @@ class _ELF(
             case {
                 "Addend": addend,
                 "Offset": offset,
-                "Symbol": {"Value": s},
+                "Symbol": {"Name": s},
                 "Type": {
-                    "Value": "R_AARCH64_ADR_GOT_PAGE"
+                    "Name": "R_AARCH64_ADR_GOT_PAGE"
                     | "R_AARCH64_LD64_GOT_LO12_NC"
                     | "R_X86_64_GOTPCREL"
                     | "R_X86_64_GOTPCRELX"
@@ -298,8 +327,8 @@ class _ELF(
             case {
                 "Addend": addend,
                 "Offset": offset,
-                "Symbol": {"Value": s},
-                "Type": {"Value": kind},
+                "Symbol": {"Name": s},
+                "Type": {"Name": kind},
             }:
                 offset += base
                 s = s.removeprefix(self.prefix)
@@ -342,7 +371,7 @@ class _MachO(
         for wrapped_symbol in section["Symbols"]:
             symbol = wrapped_symbol["Symbol"]
             offset = symbol["Value"] - start_address
-            name = symbol["Name"]["Value"]
+            name = symbol["Name"]["Name"]
             name = name.removeprefix(self.prefix)
             group.symbols[name] = value, offset
         assert "Relocations" in section
@@ -358,9 +387,9 @@ class _MachO(
         match relocation:
             case {
                 "Offset": offset,
-                "Symbol": {"Value": s},
+                "Symbol": {"Name": s},
                 "Type": {
-                    "Value": "ARM64_RELOC_GOT_LOAD_PAGE21"
+                    "Name": "ARM64_RELOC_GOT_LOAD_PAGE21"
                     | "ARM64_RELOC_GOT_LOAD_PAGEOFF12" as kind
                 },
             }:
@@ -370,8 +399,8 @@ class _MachO(
                 addend = 0
             case {
                 "Offset": offset,
-                "Symbol": {"Value": s},
-                "Type": {"Value": "X86_64_RELOC_GOT" | "X86_64_RELOC_GOT_LOAD" as kind},
+                "Symbol": {"Name": s},
+                "Type": {"Name": "X86_64_RELOC_GOT" | "X86_64_RELOC_GOT_LOAD" as kind},
             }:
                 offset += base
                 s = s.removeprefix(self.prefix)
@@ -381,13 +410,13 @@ class _MachO(
                 )
             case {
                 "Offset": offset,
-                "Section": {"Value": s},
-                "Type": {"Value": "X86_64_RELOC_SIGNED" as kind},
+                "Section": {"Name": s},
+                "Type": {"Name": "X86_64_RELOC_SIGNED" as kind},
             } | {
                 "Offset": offset,
-                "Symbol": {"Value": s},
+                "Symbol": {"Name": s},
                 "Type": {
-                    "Value": "X86_64_RELOC_BRANCH" | "X86_64_RELOC_SIGNED" as kind
+                    "Name": "X86_64_RELOC_BRANCH" | "X86_64_RELOC_SIGNED" as kind
                 },
             }:
                 offset += base
@@ -398,12 +427,12 @@ class _MachO(
                 )
             case {
                 "Offset": offset,
-                "Section": {"Value": s},
-                "Type": {"Value": kind},
+                "Section": {"Name": s},
+                "Type": {"Name": kind},
             } | {
                 "Offset": offset,
-                "Symbol": {"Value": s},
-                "Type": {"Value": kind},
+                "Symbol": {"Name": s},
+                "Type": {"Name": kind},
             }:
                 offset += base
                 s = s.removeprefix(self.prefix)
@@ -417,19 +446,22 @@ class _MachO(
 def get_target(host: str) -> _COFF | _ELF | _MachO:
     """Build a _Target for the given host "triple" and options."""
     if re.fullmatch(r"aarch64-apple-darwin.*", host):
-        args = ["-mcmodel=large"]
-        return _MachO(host, alignment=8, args=args, prefix="_")
+        return _MachO(host, alignment=8, prefix="_")
+    if re.fullmatch(r"aarch64-pc-windows-msvc", host):
+        args = ["-fms-runtime-lib=dll"]
+        return _COFF(host, alignment=8, args=args)
     if re.fullmatch(r"aarch64-.*-linux-gnu", host):
-        args = ["-mcmodel=large"]
+        args = ["-fpic"]
         return _ELF(host, alignment=8, args=args)
     if re.fullmatch(r"i686-pc-windows-msvc", host):
-        args = ["-mcmodel=large"]
+        args = ["-DPy_NO_ENABLE_SHARED"]
         return _COFF(host, args=args, prefix="_")
     if re.fullmatch(r"x86_64-apple-darwin.*", host):
         return _MachO(host, prefix="_")
     if re.fullmatch(r"x86_64-pc-windows-msvc", host):
-        args = ["-mcmodel=large"]
+        args = ["-fms-runtime-lib=dll"]
         return _COFF(host, args=args)
     if re.fullmatch(r"x86_64-.*-linux-gnu", host):
-        return _ELF(host)
+        args = ["-fpic"]
+        return _ELF(host, args=args)
     raise ValueError(host)

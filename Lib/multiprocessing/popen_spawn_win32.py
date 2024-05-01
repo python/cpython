@@ -3,6 +3,7 @@ import msvcrt
 import signal
 import sys
 import _winapi
+from subprocess import STARTUPINFO, STARTF_FORCEOFFFEEDBACK
 
 from .context import reduction, get_spawning_popen, set_spawning_popen
 from . import spawn
@@ -74,7 +75,8 @@ class Popen(object):
             try:
                 hp, ht, pid, tid = _winapi.CreateProcess(
                     python_exe, cmd,
-                    None, None, False, 0, env, None, None)
+                    None, None, False, 0, env, None,
+                    STARTUPINFO(dwFlags=STARTF_FORCEOFFFEEDBACK))
                 _winapi.CloseHandle(ht)
             except:
                 _winapi.CloseHandle(rhandle)
