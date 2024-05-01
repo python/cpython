@@ -392,6 +392,8 @@ PyModule_FromDefAndSpec2(PyModuleDef* def, PyObject *spec, int module_api_versio
         ((PyModuleObject*)m)->md_def = def;
 #ifdef Py_GIL_DISABLED
         ((PyModuleObject*)m)->md_gil = gil_slot;
+#else
+        (void)gil_slot;
 #endif
     } else {
         if (def->m_size > 0 || def->m_traverse || def->m_clear || def->m_free) {
