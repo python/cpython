@@ -350,6 +350,10 @@ class StencilGroup:
             )
             self.data.body.extend([0] * 8)
 
+    def as_c(self, opname: str) -> str:
+        """Dump this hole as a StencilGroup initializer."""
+        return f"{{emit_{opname}, {len(self.code.body)}, {len(self.data.body)}}}"
+
 
 def symbol_to_value(symbol: str) -> tuple[HoleValue, str | None]:
     """

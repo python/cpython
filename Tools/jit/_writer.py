@@ -5,8 +5,6 @@ import typing
 
 import _stencils
 
-def _initialize_stencil_group(opname: str, group: _stencils.StencilGroup) -> str:
-    return f"{{emit_{opname}, {len(group.code.body)}, {len(group.data.body)}}}"
 
 def _dump_footer(groups: dict[str, _stencils.StencilGroup]) -> typing.Iterator[str]:
     yield "typedef struct {"
@@ -17,14 +15,13 @@ def _dump_footer(groups: dict[str, _stencils.StencilGroup]) -> typing.Iterator[s
     yield "    size_t data_size;"
     yield "} StencilGroup;"
     yield ""
-    initializer = _initialize_stencil_group('trampoline', groups['trampoline'])
-    yield f"static const StencilGroup trampoline = {initializer};"
+    yield f"static const StencilGroup trampoline = {groups['trampoline'].as_c('trampoline')};"
     yield ""
     yield "static const StencilGroup stencil_groups[MAX_UOP_ID + 1] = {"
     for opname, group in sorted(groups.items()):
         if opname == "trampoline":
             continue
-        yield f"    [{opname}] = {_initialize_stencil_group(opname, group)},"
+        yield f"    [{opname}] = {group.as_c(opname)},"
     yield "};"
 
 
