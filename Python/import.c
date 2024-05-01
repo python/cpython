@@ -1001,9 +1001,8 @@ set_cached_m_dict(struct extensions_cache_value *value, PyObject *m_dict)
             /* We expect this can only be "out of memory". */
             return -1;
         }
-        // XXX We may want to make copied immortal.
 
-        value->def->m_base.m_cache_has_m_dict = 1;
+        // XXX We may want to make copied immortal.
 
         PyInterpreterState *interp = _PyInterpreterState_GET();
         interpid = PyInterpreterState_GetID(interp);
