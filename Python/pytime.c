@@ -1034,10 +1034,14 @@ PyTime_t
 _PyTime_TimeUnchecked(void)
 {
     PyTime_t t;
+#ifdef Py_DEBUG
     int result = PyTime_TimeRaw(&t);
-    // We assume that getting the time succeeds on current platforms.
-    // If this ever is not the case, use PyTime_TimeRaw instead.
-    assert(result == 0);
+    if (result != 0) {
+        Py_FatalError("unable to read the system clock");
+    }
+#else
+    (void)PyTime_TimeRaw(&t);
+#endif
     return t;
 }
 
@@ -1270,10 +1274,14 @@ PyTime_t
 _PyTime_MonotonicUnchecked(void)
 {
     PyTime_t t;
+#ifdef Py_DEBUG
     int result = PyTime_MonotonicRaw(&t);
-    // We assume that getting the time succeeds on current platforms.
-    // If this ever is not the case, use PyTime_MonotonicRaw instead.
-    assert(result == 0);
+    if (result != 0) {
+        Py_FatalError("unable to read the monotonic clock");
+    }
+#else
+    (void)PyTime_MonotonicRaw(&t);
+#endif
     return t;
 }
 
