@@ -20,7 +20,7 @@
 #include "pycore_opcode_metadata.h" // EXTRA_CASES
 #include "pycore_optimizer.h"     // _PyUOpExecutor_Type
 #include "pycore_opcode_utils.h"  // MAKE_FUNCTION_*
-#include "pycore_pyatomic_ft_wrappers.h" // FT_ATOMIC_LOAD_PTR_ACQUIRE
+#include "pycore_pyatomic_ft_wrappers.h" // FT_ATOMIC_*
 #include "pycore_pyerrors.h"      // _PyErr_GetRaisedException()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_range.h"         // _PyRangeIterObject
@@ -755,7 +755,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
     _Py_CODEUNIT *next_instr;
     PyObject **stack_pointer;
 
-#ifndef _Py_JIT
+#if defined(_Py_TIER2) && !defined(_Py_JIT)
     /* Tier 2 interpreter state */
     _PyExecutorObject *current_executor = NULL;
     const _PyUOpInstruction *next_uop = NULL;
@@ -959,6 +959,7 @@ resume_with_error:
     goto error;
 
 
+#ifdef _Py_TIER2
 
 // Tier 2 is also here!
 enter_tier_two:
@@ -1112,6 +1113,8 @@ exit_to_trace:
     GOTO_TIER_TWO(exit->executor);
 
 #endif  // _Py_JIT
+
+#endif // _Py_TIER2
 
 }
 

@@ -2475,7 +2475,7 @@ get_basic_static_type(PyObject *self, PyObject *args)
     PyTypeObject *cls = &BasicStaticTypes[num_basic_static_types_used++];
 
     if (base != NULL) {
-        cls->tp_bases = Py_BuildValue("(O)", base);
+        cls->tp_bases = PyTuple_Pack(1, base);
         if (cls->tp_bases == NULL) {
             return NULL;
         }
@@ -3474,7 +3474,7 @@ typedef struct {
 static PyObject *
 ipowType_ipow(PyObject *self, PyObject *other, PyObject *mod)
 {
-    return Py_BuildValue("OO", other, mod);
+    return PyTuple_Pack(2, other, mod);
 }
 
 static PyNumberMethods ipowType_as_number = {

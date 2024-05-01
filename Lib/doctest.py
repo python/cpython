@@ -104,7 +104,8 @@ import traceback
 import unittest
 from io import StringIO, IncrementalNewlineDecoder
 from collections import namedtuple
-from traceback import _ANSIColors, _can_colorize
+import _colorize  # Used in doctests
+from _colorize import ANSIColors, can_colorize
 
 
 class TestResults(namedtuple('TestResults', 'failed attempted')):
@@ -1180,8 +1181,8 @@ class DocTestRunner:
     The `run` method is used to process a single DocTest case.  It
     returns a TestResults instance.
 
-        >>> save_colorize = traceback._COLORIZE
-        >>> traceback._COLORIZE = False
+        >>> save_colorize = _colorize.COLORIZE
+        >>> _colorize.COLORIZE = False
 
         >>> tests = DocTestFinder().find(_TestClass)
         >>> runner = DocTestRunner(verbose=False)
@@ -1234,7 +1235,7 @@ class DocTestRunner:
     overriding the methods `report_start`, `report_success`,
     `report_unexpected_exception`, and `report_failure`.
 
-        >>> traceback._COLORIZE = save_colorize
+        >>> _colorize.COLORIZE = save_colorize
     """
     # This divider string is used to separate failure messages, and to
     # separate sections of the summary.
@@ -1314,7 +1315,7 @@ class DocTestRunner:
 
     def _failure_header(self, test, example):
         red, reset = (
-            (_ANSIColors.RED, _ANSIColors.RESET) if _can_colorize() else ("", "")
+            (ANSIColors.RED, ANSIColors.RESET) if can_colorize() else ("", "")
         )
         out = [f"{red}{self.DIVIDER}{reset}"]
         if test.filename:
@@ -1556,8 +1557,8 @@ class DocTestRunner:
         # Make sure sys.displayhook just prints the value to stdout
         save_displayhook = sys.displayhook
         sys.displayhook = sys.__displayhook__
-        saved_can_colorize = traceback._can_colorize
-        traceback._can_colorize = lambda: False
+        saved_can_colorize = _colorize.can_colorize
+        _colorize.can_colorize = lambda: False
         color_variables = {"PYTHON_COLORS": None, "FORCE_COLOR": None}
         for key in color_variables:
             color_variables[key] = os.environ.pop(key, None)
@@ -1569,7 +1570,7 @@ class DocTestRunner:
             sys.settrace(save_trace)
             linecache.getlines = self.save_linecache_getlines
             sys.displayhook = save_displayhook
-            traceback._can_colorize = saved_can_colorize
+            _colorize.can_colorize = saved_can_colorize
             for key, value in color_variables.items():
                 if value is not None:
                     os.environ[key] = value
@@ -1609,20 +1610,13 @@ class DocTestRunner:
             else:
                 failed.append((name, (failures, tries, skips)))
 
-        if _can_colorize():
-            bold_green = _ANSIColors.BOLD_GREEN
-            bold_red = _ANSIColors.BOLD_RED
-            green = _ANSIColors.GREEN
-            red = _ANSIColors.RED
-            reset = _ANSIColors.RESET
-            yellow = _ANSIColors.YELLOW
-        else:
-            bold_green = ""
-            bold_red = ""
-            green = ""
-            red = ""
-            reset = ""
-            yellow = ""
+        ansi = _colorize.get_colors()
+        bold_green = ansi.BOLD_GREEN
+        bold_red = ansi.BOLD_RED
+        green = ansi.GREEN
+        red = ansi.RED
+        reset = ansi.RESET
+        yellow = ansi.YELLOW
 
         if verbose:
             if notests:
