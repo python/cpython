@@ -847,6 +847,12 @@ os
   :c:func:`!posix_spawn_file_actions_addclosefrom_np`.
   (Contributed by Jakub Kulik in :gh:`113117`.)
 
+* :func:`os.mkdir` and :func:`os.makedirs` on Windows now support passing a
+  *mode* value of ``0o700`` to apply access control to the new directory. This
+  implicitly affects :func:`tempfile.mkdtemp` and is a mitigation for
+  :cve:`2024-4030`. Other values for *mode* continue to be ignored.
+  (Contributed by Steve Dower in :gh:`118486`.)
+
 os.path
 -------
 
@@ -988,6 +994,14 @@ sys
 * Add the :func:`sys._is_interned` function to test if the string was interned.
   This function is not guaranteed to exist in all implementations of Python.
   (Contributed by Serhiy Storchaka in :gh:`78573`.)
+
+tempfile
+--------
+
+* On Windows, the default mode ``0o700`` used by :func:`tempfile.mkdtemp` now
+  limits access to the new directory due to changes to :func:`os.mkdir`. This
+  is a mitigation for :cve:`2024-4030`.
+  (Contributed by Steve Dower in :gh:`118486`.)
 
 time
 ----
