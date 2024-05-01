@@ -40,6 +40,7 @@ def _dump_stencil(opname: str, group: _stencils.StencilGroup) -> typing.Iterator
                 row = " ".join(f"{byte:#04x}," for byte in stencil.body[i : i + 8])
                 yield f"        {row}"
             yield "    };"
+    # Data is written first (so relaxations in the code work properly):
     for part, stencil in [("data", group.data), ("code", group.code)]:
         if stencil.body:
             yield f"    memcpy({part}, {part}_body, sizeof({part}_body));"
