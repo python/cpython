@@ -163,7 +163,15 @@ dummy_func(
                 if ((oparg & RESUME_OPARG_LOCATION_MASK) < RESUME_AFTER_YIELD_FROM) {
                     CHECK_EVAL_BREAKER();
                 }
-                FT_ATOMIC_STORE_UINT8_RELAXED(this_instr->op.code, RESUME_CHECK);
+                assert(this_instr->op.code == RESUME ||
+                       this_instr->op.code == RESUME_CHECK ||
+                       this_instr->op.code == INSTRUMENTED_RESUME ||
+                       this_instr->op.code == ENTER_EXECUTOR);
+                if (this_instr->op.code == RESUME) {
+                    #if ENABLE_SPECIALIZATION
+                    FT_ATOMIC_STORE_UINT8_RELAXED(this_instr->op.code, RESUME_CHECK);
+                    #endif  /* ENABLE_SPECIALIZATION */
+                }
             }
         }
 
@@ -2361,6 +2369,7 @@ dummy_func(
             CHECK_EVAL_BREAKER();
             assert(oparg <= INSTR_OFFSET());
             JUMPBY(-oparg);
+            #ifdef _Py_TIER2
             #if ENABLE_SPECIALIZATION
             _Py_BackoffCounter counter = this_instr[1].counter;
             if (backoff_counter_triggers(counter) && this_instr->op.code == JUMP_BACKWARD) {
@@ -2386,6 +2395,7 @@ dummy_func(
                 ADVANCE_ADAPTIVE_COUNTER(this_instr[1].counter);
             }
             #endif  /* ENABLE_SPECIALIZATION */
+            #endif /* _Py_TIER2 */
         }
 
         pseudo(JUMP) = {
@@ -2399,6 +2409,7 @@ dummy_func(
         };
 
         tier1 inst(ENTER_EXECUTOR, (--)) {
+            #ifdef _Py_TIER2
             int prevoparg = oparg;
             CHECK_EVAL_BREAKER();
             if (this_instr->op.code != ENTER_EXECUTOR ||
@@ -2416,6 +2427,9 @@ dummy_func(
             tstate->previous_executor = Py_None;
             Py_INCREF(executor);
             GOTO_TIER_TWO(executor);
+            #else
+            Py_FatalError("ENTER_EXECUTOR is not supported in this build");
+            #endif /* _Py_TIER2 */
         }
 
         replaced op(_POP_JUMP_IF_FALSE, (cond -- )) {
