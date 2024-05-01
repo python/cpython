@@ -331,6 +331,7 @@ _Py_ext_module_loader_result_apply_error(
 
     if (err->exc != NULL) {
         PyErr_SetRaisedException(err->exc);
+        err->exc = NULL;  /* SetRaisedException() stole our reference. */
         if (msg != NULL) {
             _PyErr_FormatFromCause(PyExc_SystemError, msg, name);
         }
