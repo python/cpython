@@ -7018,8 +7018,13 @@ case $host/$ac_cv_cc_name in #(
     PY_SUPPORT_TIER=3 ;; #(
     aarch64-apple-ios*/clang) :
     PY_SUPPORT_TIER=3 ;; #(
+    aarch64-*-linux-android/clang) :
+    PY_SUPPORT_TIER=3 ;; #(
+    x86_64-*-linux-android/clang) :
+    PY_SUPPORT_TIER=3 ;; #(
   *) :
-      PY_SUPPORT_TIER=0
+
+  PY_SUPPORT_TIER=0
  ;;
 esac
 
