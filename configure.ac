@@ -1768,14 +1768,23 @@ fi
 # Check for --enable-experimental-jit:
 AC_MSG_CHECKING([for --enable-experimental-jit])
 AC_ARG_ENABLE([experimental-jit],
-              [AS_HELP_STRING([--enable-experimental-jit],
+              [AS_HELP_STRING([--enable-experimental-jit@<:@=no|yes|yes-off|interpreter@:>@],
                               [build the experimental just-in-time compiler (default is no)])],
               [],
               [enable_experimental_jit=no])
+case $enable_experimental_jit in
+  no) enable_experimental_jit=no ;;
+  yes) enable_experimental_jit="-D_Py_JIT -D_Py_TIER2=1" ;;
+  yes-off) enable_experimental_jit="-D_Py_JIT -D_Py_TIER2=3" ;;
+  interpreter) enable_experimental_jit="-D_Py_TIER2=4" ;;
+  interpreter-off) enable_experimental_jit="-D_Py_TIER2=6" ;;  # Secret option
+  *) AC_MSG_ERROR(
+      [invalid argument: --enable-experimental-jit=$enable_experimental_jit; expected no|yes|yes-off|interpreter]) ;;
+esac
 AS_VAR_IF([enable_experimental_jit],
           [no],
           [],
-          [AS_VAR_APPEND([CFLAGS_NODIST], [" -D_Py_JIT"])
+          [AS_VAR_APPEND([CFLAGS_NODIST], [" $enable_experimental_jit"])
            AS_VAR_SET([REGEN_JIT_COMMAND],
                       ["\$(PYTHON_FOR_REGEN) \$(srcdir)/Tools/jit/build.py $host"])
            AS_VAR_SET([JIT_STENCILS_H], ["jit_stencils.h"])
