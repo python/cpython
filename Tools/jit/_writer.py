@@ -5,36 +5,34 @@ import typing
 
 import _stencils
 
+def _initialize_stencil_group(opname: str, group: _stencils.StencilGroup) -> str:
+    return f"{{emit_{opname}, {len(group.code.body)}, {len(group.data.body)}}}"
 
 def _dump_footer(groups: dict[str, _stencils.StencilGroup]) -> typing.Iterator[str]:
-    yield "typedef void (*emitter)(unsigned char *code, unsigned char *data,"
-    yield "                        _PyExecutorObject *executor, const _PyUOpInstruction *instruction,"
-    yield "                        uintptr_t instruction_starts[]);"
+    yield "typedef struct {"
+    yield "    void (*emit)("
+    yield "        unsigned char *code, unsigned char *data, _PyExecutorObject *executor,"
+    yield "        const _PyUOpInstruction *instruction, uintptr_t instruction_starts[]);"
+    yield "    size_t code_size;"
+    yield "    size_t data_size;"
+    yield "} StencilGroup;"
     yield ""
-    yield "static const emitter emitters[MAX_UOP_ID + 1] = {"
-    for opname in sorted(groups):
-        if opname == "trampoline":
-            continue
-        yield f"    [{opname}] = emit_{opname},"
-    yield "};"
+    initializer = _initialize_stencil_group('trampoline', groups['trampoline'])
+    yield f"static const StencilGroup trampoline = {initializer};"
     yield ""
-    yield "static const size_t emitted[MAX_UOP_ID + 1][2] = {"
+    yield "static const StencilGroup stencil_groups[MAX_UOP_ID + 1] = {"
     for opname, group in sorted(groups.items()):
         if opname == "trampoline":
             continue
-        yield f"    [{opname}] = {{{len(group.code.body)}, {len(group.data.body)}}},"
+        yield f"    [{opname}] = {_initialize_stencil_group(opname, group)},"
     yield "};"
-    yield ""
-    yield f"static const size_t emitted_trampoline_code = {len(groups['trampoline'].code.body)};"
-    yield f"static const size_t emitted_trampoline_data = {len(groups['trampoline'].data.body)};"
-    yield ""
 
 
 def _dump_stencil(opname: str, group: _stencils.StencilGroup) -> typing.Iterator[str]:
     yield "void"
-    yield f"emit_{opname}(unsigned char *code, unsigned char *data,"
-    yield f"     {' ' * len(opname)} _PyExecutorObject *executor, const _PyUOpInstruction *instruction,"
-    yield f"     {' ' * len(opname)} uintptr_t instruction_starts[])"
+    yield f"emit_{opname}("
+    yield "    unsigned char *code, unsigned char *data, _PyExecutorObject *executor,"
+    yield "    const _PyUOpInstruction *instruction,uintptr_t instruction_starts[])"
     yield "{"
     for part, stencil in [("code", group.code), ("data", group.data)]:
         for line in stencil.disassembly:

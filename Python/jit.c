@@ -377,18 +377,24 @@ patch_x86_64_32rx(unsigned char *location, uint64_t value)
 int
 _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction trace[], size_t length)
 {
+    const StencilGroup *group;
     // Loop once to find the total compiled size:
     uintptr_t instruction_starts[UOP_MAX_TRACE_LENGTH];
-    size_t code_size = emitted_trampoline_code;
-    size_t data_size = emitted_trampoline_data;
+    size_t code_size = 0;
+    size_t data_size = 0;
+    group = &trampoline;
+    code_size += group->code_size;
+    data_size += group->data_size;
     for (size_t i = 0; i < length; i++) {
         const _PyUOpInstruction *instruction = &trace[i];
+        group = &stencil_groups[instruction->opcode];
         instruction_starts[i] = code_size;
-        code_size += emitted[instruction->opcode][0];
-        data_size += emitted[instruction->opcode][1];
+        code_size += group->code_size;
+        data_size += group->data_size;
     }
-    code_size += emitted[_FATAL_ERROR][0];
-    data_size += emitted[_FATAL_ERROR][1];
+    group = &stencil_groups[_FATAL_ERROR];
+    code_size += group->code_size;
+    data_size += group->data_size;
     // Round up to the nearest page:
     size_t page_size = get_page_size();
     assert((page_size & (page_size - 1)) == 0);
@@ -402,6 +408,7 @@ _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction trace[], siz
     for (size_t i = 0; i < length; i++) {
         instruction_starts[i] += (uintptr_t)memory;
     }
+    // Loop again to emit the code:
     unsigned char *code = memory;
     unsigned char *data = memory + code_size;
     // Compile the trampoline, which handles converting between the native
@@ -409,21 +416,23 @@ _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction trace[], siz
     // (which may be different for efficiency reasons). On platforms where
     // we don't change calling conventions, the trampoline is empty and
     // nothing is emitted here:
-    emit_trampoline(code, data, executor, NULL, instruction_starts);
-    code += emitted_trampoline_code;
-    data += emitted_trampoline_data;
-    // Loop again to emit the code:
+    group = &trampoline;
+    group->emit(code, data, executor, NULL, instruction_starts);
+    code += group->code_size;
+    data += group->data_size;
     assert(trace[0].opcode == _START_EXECUTOR || trace[0].opcode == _COLD_EXIT);
     for (size_t i = 0; i < length; i++) {
         const _PyUOpInstruction *instruction = &trace[i];
-        emitters[instruction->opcode](code, data, executor, instruction, instruction_starts);
-        code += emitted[instruction->opcode][0];
-        data += emitted[instruction->opcode][1];
+        group = &stencil_groups[instruction->opcode];
+        group->emit(code, data, executor, instruction, instruction_starts);
+        code += group->code_size;
+        data += group->data_size;
     }
     // Protect against accidental buffer overrun into data:
-    emitters[_FATAL_ERROR](code, data, executor, NULL, instruction_starts);
-    code += emitted[_FATAL_ERROR][0];
-    data += emitted[_FATAL_ERROR][1];
+    group = &stencil_groups[_FATAL_ERROR];
+    group->emit(code, data, executor, NULL, instruction_starts);
+    code += group->code_size;
+    data += group->data_size;
     assert(code == memory + code_size);
     assert(data == memory + code_size + data_size);
     if (mark_executable(memory, total_size)) {
@@ -431,7 +440,7 @@ _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction trace[], siz
         return -1;
     }
     executor->jit_code = memory;
-    executor->jit_side_entry = memory + emitted_trampoline_code;
+    executor->jit_side_entry = memory + trampoline.code_size;
     executor->jit_size = total_size;
     return 0;
 }
