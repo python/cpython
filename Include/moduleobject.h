@@ -76,7 +76,7 @@ struct PyModuleDef_Slot {
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030c0000
 #  define Py_mod_multiple_interpreters 3
 #endif
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030e0000
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030d0000
 #  define Py_mod_gil 4
 #endif
 
@@ -95,7 +95,7 @@ struct PyModuleDef_Slot {
 #endif
 
 /* for Py_mod_gil: */
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030e0000
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030d0000
 #  define Py_MOD_GIL_USED ((void *)0)
 #  define Py_MOD_GIL_NOT_USED ((void *)1)
 #endif
