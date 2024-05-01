@@ -1432,7 +1432,12 @@ import_find_extension(PyThreadState *tstate,
         assert(res.def == def);
         _Py_ext_module_loader_result_clear(&res);
 
-        // XXX __file__ doesn't get set!
+        /* Remember the filename as the __file__ attribute */
+        if (info->filename != NULL) {
+            if (PyModule_AddObjectRef(mod, "__file__", info->filename) < 0) {
+                PyErr_Clear(); /* Not important enough to report */
+            }
+        }
 
         if (PyObject_SetItem(modules, info->name, mod) == -1) {
             Py_DECREF(mod);
