@@ -584,9 +584,7 @@ free_interpreter(PyInterpreterState *interp)
     }
 }
 
-#ifdef Py_DEBUG
 static inline int check_interpreter_whence(long);
-#endif
 
 /* Get the interpreter state to a minimal consistent state.
    Further init happens in pylifecycle.c before it can be used.
@@ -1125,7 +1123,6 @@ _PyInterpreterState_IsReady(PyInterpreterState *interp)
 }
 
 
-#ifdef Py_DEBUG
 static inline int
 check_interpreter_whence(long whence)
 {
@@ -1137,7 +1134,6 @@ check_interpreter_whence(long whence)
     }
     return 0;
 }
-#endif
 
 long
 _PyInterpreterState_GetWhence(PyInterpreterState *interp)
