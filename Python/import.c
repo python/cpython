@@ -1422,7 +1422,8 @@ import_find_extension(PyThreadState *tstate,
             _Py_ext_module_loader_result_clear(&res);
             return NULL;
         }
-        assert(!PyErr_Occurred() && res.err == NULL);
+        assert(!PyErr_Occurred());
+        assert(res.err == NULL);
         assert(res.kind == _Py_ext_module_kind_SINGLEPHASE);
         mod = res.module;
         /* Tchnically, the init function could return a different module def.
