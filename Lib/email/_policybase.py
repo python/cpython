@@ -152,7 +152,7 @@ class Policy(_PolicyBase, metaclass=abc.ABCMeta):
     mangle_from_        -- a flag that, when True escapes From_ lines in the
                            body of the message by putting a `>' in front of
                            them. This is used when the message is being
-                           serialized by a generator. Default: True.
+                           serialized by a generator. Default: False.
 
     message_factory     -- the class to use to create new message objects.
                            If the value is None, the default is Message.
