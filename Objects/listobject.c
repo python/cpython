@@ -45,7 +45,6 @@ list_allocate_array(size_t capacity)
     if (capacity > PY_SSIZE_T_MAX/sizeof(PyObject*) - 1) {
         return NULL;
     }
-
     _PyListArray *array = PyMem_Malloc(sizeof(_PyListArray) + capacity * sizeof(PyObject *));
     if (array == NULL) {
         return NULL;
@@ -1242,7 +1241,7 @@ list_extend_iter_lock_held(PyListObject *self, PyObject *iterable)
 
         if (Py_SIZE(self) < self->allocated) {
             Py_ssize_t len = Py_SIZE(self);
-            FT_ATOMIC_STORE_PTR_RELEASE(self->ob_item[len], item);
+            FT_ATOMIC_STORE_PTR_RELEASE(self->ob_item[len], item);  // steals item ref
             Py_SET_SIZE(self, len + 1);
         }
         else {
