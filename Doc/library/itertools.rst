@@ -508,10 +508,10 @@ loops that truncate the stream.
           stop = s.stop
           step = s.step if s.step is not None else 1
           for i, element in enumerate(iterable):
-              if stop is not None and i >= stop:
-                  return
               if i >= start and (i - start) % step == 0:
                   yield element
+              if stop is not None and i + 1 >= stop:
+                  return
 
 
 .. function:: pairwise(iterable)
