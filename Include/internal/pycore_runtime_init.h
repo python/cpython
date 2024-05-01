@@ -119,8 +119,9 @@ extern PyTypeObject _PyExc_MemoryError;
         }, \
         .faulthandler = _faulthandler_runtime_state_INIT, \
         .tracemalloc = _tracemalloc_runtime_state_INIT, \
-        .reftracer = { \
+        .ref_tracer = { \
             .tracer_func = NULL, \
+            .tracer_data = NULL, \
         }, \
         .stoptheworld = { \
             .is_global = 1, \

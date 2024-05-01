@@ -3308,12 +3308,14 @@ test_reftracer(PyObject *ob, PyObject *Py_UNUSED(ignored))
     struct simpletracer_data tracer_data = {0};
     void* the_data = &tracer_data;
     // Install a simple tracer function
-    PyRefTracer_SetTracer(_simpletracer, the_data);
+    if (PyRefTracer_SetTracer(_simpletracer, the_data) != 0) {
+        return NULL;
+    }
 
     // Check that the tracer was correctly installed
     void* data;
     if (PyRefTracer_GetTracer(&data) != _simpletracer || data != the_data) {
-        PyErr_SetString(PyExc_ValueError, "The reftracer not correctly installed");
+        PyErr_SetString(PyExc_AssertionError, "The reftracer not correctly installed");
         PyRefTracer_SetTracer(NULL, NULL);
         return NULL;
     }

@@ -2381,9 +2381,9 @@ new_reference(PyObject *op)
 #ifdef Py_TRACE_REFS
     _Py_AddToAllObjects(op);
 #endif
-    if (_PyRuntime.reftracer.tracer_func != NULL) {
-        void* data = _PyRuntime.reftracer.data;
-        _PyRuntime.reftracer.tracer_func(op, PyRefTracer_CREATE, data);
+    if (_PyRuntime.ref_tracer.tracer_func != NULL) {
+        void* data = _PyRuntime.ref_tracer.tracer_data;
+        _PyRuntime.ref_tracer.tracer_func(op, PyRefTracer_CREATE, data);
     }
 }
 
@@ -2408,9 +2408,9 @@ _Py_ResurrectReference(PyObject *op)
 #ifdef Py_TRACE_REFS
     _Py_AddToAllObjects(op);
 #endif
-    if (_PyRuntime.reftracer.tracer_func != NULL) {
-        void* data = _PyRuntime.reftracer.data;
-        _PyRuntime.reftracer.tracer_func(op, PyRefTracer_CREATE, data);
+    if (_PyRuntime.ref_tracer.tracer_func != NULL) {
+        void* data = _PyRuntime.ref_tracer.tracer_data;
+        _PyRuntime.ref_tracer.tracer_func(op, PyRefTracer_CREATE, data);
     }
 }
 
@@ -2885,9 +2885,9 @@ _Py_Dealloc(PyObject *op)
     Py_INCREF(type);
 #endif
 
-    if (_PyRuntime.reftracer.tracer_func != NULL) {
-        void* data = _PyRuntime.reftracer.data;
-        _PyRuntime.reftracer.tracer_func(op, PyRefTracer_DESTROY, data);
+    if (_PyRuntime.ref_tracer.tracer_func != NULL) {
+        void* data = _PyRuntime.ref_tracer.tracer_data;
+        _PyRuntime.ref_tracer.tracer_func(op, PyRefTracer_DESTROY, data);
     }
 
 #ifdef Py_TRACE_REFS
@@ -2980,16 +2980,16 @@ _Py_SetRefcnt(PyObject *ob, Py_ssize_t refcnt)
 
 int PyRefTracer_SetTracer(PyRefTracer tracer, void *data) {
     assert(PyGILState_Check());
-    _PyRuntime.reftracer.tracer_func = tracer;
-    _PyRuntime.reftracer.data = data;
+    _PyRuntime.ref_tracer.tracer_func = tracer;
+    _PyRuntime.ref_tracer.tracer_data = data;
     return 0;
 }
 
 PyRefTracer PyRefTracer_GetTracer(void** data) {
     assert(PyGILState_Check());
     if (data != NULL) {
-        *data = _PyRuntime.reftracer.data;
+        *data = _PyRuntime.ref_tracer.tracer_data;
     }
-    return _PyRuntime.reftracer.tracer_func;
+    return _PyRuntime.ref_tracer.tracer_func;
 }
 
