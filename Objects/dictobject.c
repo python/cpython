@@ -6604,7 +6604,7 @@ _PyDict_NewKeysForClass(PyHeapTypeObject *cls)
     if (cls->ht_type.tp_dict) {
         PyObject *attrs = PyDict_GetItem(cls->ht_type.tp_dict, &_Py_ID(__static_attributes__));
         if (attrs != NULL && PyTuple_Check(attrs)) {
-            for (Py_ssize_t i; i < PyTuple_GET_SIZE(attrs); i++) {
+            for (Py_ssize_t i = 0; i < PyTuple_GET_SIZE(attrs); i++) {
                 PyObject *key = PyTuple_GET_ITEM(attrs, i);
                 Py_hash_t hash;
                 if (PyUnicode_CheckExact(key) && (hash = unicode_get_hash(key)) != -1) {
