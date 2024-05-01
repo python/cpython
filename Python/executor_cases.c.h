@@ -4094,7 +4094,6 @@
             #ifndef _Py_JIT
             next_uop = &current_executor->trace[1];
             #endif
-            CHECK_EVAL_BREAKER();
             break;
         }
 

@@ -4111,7 +4111,6 @@ dummy_func(
 #ifndef _Py_JIT
             next_uop = &current_executor->trace[1];
 #endif
-            CHECK_EVAL_BREAKER();
         }
 
         tier2 op(_SET_IP, (instr_ptr/4 --)) {

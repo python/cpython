@@ -627,6 +627,9 @@ top:  // Jump here after _PUSH_FRAME or likely branches
             if (opcode == JUMP_BACKWARD || opcode == JUMP_BACKWARD_NO_INTERRUPT) {
                 instr += 1 + _PyOpcode_Caches[opcode] - (int32_t)oparg;
                 initial_instr = instr;
+                if (opcode == JUMP_BACKWARD) {
+                    ADD_TO_TRACE(_TIER2_RESUME_CHECK, 0, 0, target);
+                }
                 continue;
             }
             else {
