@@ -5577,8 +5577,8 @@ Typical use will look like:
     Py_END_ALLOW_THREADS
 
     if (error) {
-      PyErr_SetFromWindowsErr(error);
-      return NULL;
+        PyErr_SetFromWindowsErr(error);
+        return NULL;
     }
 */
 
@@ -5726,7 +5726,7 @@ os_mkdir_impl(PyObject *module, path_t *path, int mode, int dir_fd)
         result = CreateDirectoryW(path->wide, pSecAttr);
         error = clearSecurityAttributes(&pSecAttr, &secAttrData);
     } else {
-        // Ignore errors - we have a more interesting one already
+        // Ignore error from "clear" - we have a more interesting one already
         clearSecurityAttributes(&pSecAttr, &secAttrData);
     }
     Py_END_ALLOW_THREADS
