@@ -1748,7 +1748,7 @@ Python-level trace functions in previous versions.
 
 .. c:type:: int (*PyRefTracer)(PyObject *, int event, void* data)
 
-   The type of the trace function registered using :c:func:`PyRefTracer_SetTracer`
+   The type of the trace function registered using :c:func:`PyRefTracer_SetTracer`.
    The first parameter is a Python object that has been just created (when **event**
    is set to :c:data:`PyRefTracer_CREATE`) or about to be destroyed (when **event**
    is set to :c:data:`PyRefTracer_DESTROY`). The **data** argument is the opaque pointer

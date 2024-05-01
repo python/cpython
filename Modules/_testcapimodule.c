@@ -3292,7 +3292,7 @@ struct simpletracer_data {
 
 static int _simpletracer(PyObject *obj, PyRefTracerEvent event, void* data) {
     struct simpletracer_data* the_data = (struct simpletracer_data*)data;
-    assert(the_data->create_count + the_data->destroy_count < 10);
+    assert(the_data->create_count + the_data->destroy_count < Py_ARRAY_LENGTH(the_data->addresses));
     the_data->addresses[the_data->create_count + the_data->destroy_count] = obj;
     if (event == PyRefTracer_CREATE) {
         the_data->create_count++;
@@ -3306,7 +3306,7 @@ static PyObject *
 test_reftracer(PyObject *ob, PyObject *Py_UNUSED(ignored))
 {
     struct simpletracer_data tracer_data = {0};
-    void* the_data = (void*)&tracer_data;
+    void* the_data = &tracer_data;
     // Install a simple tracer function
     PyRefTracer_SetTracer(_simpletracer, the_data);
 
