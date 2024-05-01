@@ -513,7 +513,7 @@ loops that truncate the stream.
               pass
           if stop is not None and stop <= start:
               return
-          for i, element in enumerate(iterable, start):
+          for i, element in enumerate(it, start):
               if (i - start) % step == 0:
                   yield element
               if stop is not None and i + 1 >= stop:
