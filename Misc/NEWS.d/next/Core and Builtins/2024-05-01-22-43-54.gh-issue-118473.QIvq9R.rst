@@ -1,0 +1,1 @@
+Fix set_asyncgen_hooks not to be partially set when raising TypeError

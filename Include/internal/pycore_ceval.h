@@ -71,8 +71,8 @@ extern PyObject* _PyEval_GetAsyncGenFirstiter(void);
 extern PyObject* _PyEval_GetAsyncGenFinalizer(void);
 
 // Used by sys.set_asyncgen_hooks()
-extern int _PyEval_SetAsyncGenFirstiter(PyObject *);
-extern int _PyEval_SetAsyncGenFinalizer(PyObject *);
+extern void _PyEval_SetAsyncGenFirstiter(PyObject *);
+extern void _PyEval_SetAsyncGenFinalizer(PyObject *);
 
 // Used by sys.get_coroutine_origin_tracking_depth()
 // and sys.set_coroutine_origin_tracking_depth()
