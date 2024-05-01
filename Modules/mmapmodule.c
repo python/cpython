@@ -304,67 +304,73 @@ safe_memcpy(void *restrict dest, const void *restrict src, size_t count) {
 }
 
 #if defined(MS_WIN32) && !defined(DONT_USE_SEH)
-#define handle_invalid_mem(sourcecode) \
-    EXCEPTION_RECORD record; \
-    __try { \
-        sourcecode \
-        return 0; \
-    } \
+#define HANDLE_INVALID_MEM(sourcecode) \
+do {                                                                       \
+    EXCEPTION_RECORD record;                                               \
+    __try {                                                                \
+        sourcecode                                                         \
+    }                                                                      \
     __except (filter_page_exception(GetExceptionInformation(), &record)) { \
-        NTSTATUS status = (NTSTATUS) record.ExceptionInformation[2]; \
-        ULONG code = LsaNtStatusToWinError(status); \
-        PyErr_SetFromWindowsErr(code); \
-        return -1; \
-    }
+        NTSTATUS status = (NTSTATUS) record.ExceptionInformation[2];       \
+        ULONG code = LsaNtStatusToWinError(status);                        \
+        PyErr_SetFromWindowsErr(code);                                     \
+        return -1;                                                         \
+    }                                                                      \
+} while (0)
 #else
-#define handle_invalid_mem(sourcecode) \
-sourcecode \
-return 0;
+#define HANDLE_INVALID_MEM(sourcecode)                                     \
+do {                                                                       \
+    sourcecode                                                             \
+} while (0)
 #endif
 
 int
 safe_byte_copy(char *dest, const char *src) {
-    handle_invalid_mem(
+    HANDLE_INVALID_MEM(
         *dest = *src;
-    )
+    );
+    return 0;
 }
 
 int
-safe_memchr(void **out, const void *ptr, int ch, size_t count) {
-    handle_invalid_mem(
-        *out = memchr(ptr, ch, count);
-    )
+safe_memchr(char **out, const void *ptr, int ch, size_t count) {
+    HANDLE_INVALID_MEM(
+        *out = (char *) memchr(ptr, ch, count);
+    );
+    return 0;
 }
 
 int
 safe_memmove(void *dest, const void *src, size_t count) {
-    handle_invalid_mem(
+    HANDLE_INVALID_MEM(
         memmove(dest, src, count);
-    )
+    );
+    return 0;
 }
 
 int
 safe_copy_from_slice(char *dest, const char *src, Py_ssize_t start, Py_ssize_t step, Py_ssize_t slicelen) {
-    handle_invalid_mem(
+    HANDLE_INVALID_MEM(
         size_t cur;
         Py_ssize_t i;
         for (cur = start, i = 0; i < slicelen; cur += step, i++) {
             dest[cur] = src[i];
         }
-    )
+    );
+    return 0;
 }
 
 int
 safe_copy_to_slice(char *dest, const char *src, Py_ssize_t start, Py_ssize_t step, Py_ssize_t slicelen) {
-    handle_invalid_mem(
+    HANDLE_INVALID_MEM(
         size_t cur;
         Py_ssize_t i;
         for (cur = start, i = 0; i < slicelen; cur += step, i++) {
             dest[i] = src[cur];
         }
-    )
+    );
+    return 0;
 }
-
 
 static PyObject *
 mmap_read_byte_method(mmap_object *self,
@@ -381,7 +387,7 @@ mmap_read_byte_method(mmap_object *self,
     }
     else {
         self->pos++;
-        return PyLong_FromLong(dest);
+        return PyLong_FromLong((unsigned char) dest);
     }
 }
 
