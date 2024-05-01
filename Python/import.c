@@ -1006,13 +1006,13 @@ _extensions_cache_init(void)
 }
 
 static _Py_hashtable_entry_t *
-_extensions_cache_find_unlocked(PyObject *filename, PyObject *name,
+_extensions_cache_find_unlocked(PyObject *path, PyObject *name,
                                 void **p_key)
 {
     if (EXTENSIONS.hashtable == NULL) {
         return NULL;
     }
-    void *key = hashtable_key_from_2_strings(filename, name, HTSEP);
+    void *key = hashtable_key_from_2_strings(path, name, HTSEP);
     if (key == NULL) {
         return NULL;
     }
@@ -1028,13 +1028,13 @@ _extensions_cache_find_unlocked(PyObject *filename, PyObject *name,
 }
 
 static PyModuleDef *
-_extensions_cache_get(PyObject *filename, PyObject *name)
+_extensions_cache_get(PyObject *path, PyObject *name)
 {
     PyModuleDef *def = NULL;
     extensions_lock_acquire();
 
     _Py_hashtable_entry_t *entry =
-            _extensions_cache_find_unlocked(filename, name, NULL);
+            _extensions_cache_find_unlocked(path, name, NULL);
     if (entry == NULL) {
         /* It was never added. */
         goto finally;
@@ -1047,7 +1047,7 @@ finally:
 }
 
 static int
-_extensions_cache_set(PyObject *filename, PyObject *name, PyModuleDef *def)
+_extensions_cache_set(PyObject *path, PyObject *name, PyModuleDef *def)
 {
     int res = -1;
     assert(def != NULL);
@@ -1062,7 +1062,7 @@ _extensions_cache_set(PyObject *filename, PyObject *name, PyModuleDef *def)
     int already_set = 0;
     void *key = NULL;
     _Py_hashtable_entry_t *entry =
-            _extensions_cache_find_unlocked(filename, name, &key);
+            _extensions_cache_find_unlocked(path, name, &key);
     if (entry == NULL) {
         /* It was never added. */
         if (_Py_hashtable_set(EXTENSIONS.hashtable, key, def) < 0) {
@@ -1099,7 +1099,7 @@ finally:
 }
 
 static void
-_extensions_cache_delete(PyObject *filename, PyObject *name)
+_extensions_cache_delete(PyObject *path, PyObject *name)
 {
     extensions_lock_acquire();
 
@@ -1109,7 +1109,7 @@ _extensions_cache_delete(PyObject *filename, PyObject *name)
     }
 
     _Py_hashtable_entry_t *entry =
-            _extensions_cache_find_unlocked(filename, name, NULL);
+            _extensions_cache_find_unlocked(path, name, NULL);
     if (entry == NULL) {
         /* It was never added. */
         goto finally;
