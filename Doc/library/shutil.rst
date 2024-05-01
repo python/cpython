@@ -449,8 +449,9 @@ Directory and files operations
    *mode* is a permission mask passed to :func:`os.access`, by default
    determining if the file exists and executable.
 
-   When no *path* is specified, the results of :func:`os.environ` are used,
-   returning either the "PATH" value or a fallback of :data:`os.defpath`.
+   *path* is a "``PATH`` string" specifying the lookup directory list. When no
+   *path* is specified, the results of :func:`os.environ` are used, returning
+   either the "PATH" value or a fallback of :data:`os.defpath`.
 
    On Windows, the current directory is prepended to the *path* if *mode* does
    not include ``os.X_OK``. When the *mode* does include ``os.X_OK``, the
