@@ -38,6 +38,7 @@ class _Target(typing.Generic[_S, _R]):
     _: dataclasses.KW_ONLY
     alignment: int = 1
     args: typing.Sequence[str] = ()
+    ghccc: bool = False
     prefix: str = ""
     debug: bool = False
     force: bool = False
@@ -85,7 +86,11 @@ class _Target(typing.Generic[_S, _R]):
         sections: list[dict[typing.Literal["Section"], _S]] = json.loads(output)
         for wrapped_section in sections:
             self._handle_section(wrapped_section["Section"], group)
-        assert group.symbols["_JIT_ENTRY"] == (_stencils.HoleValue.CODE, 0)
+        # The trampoline's entry point is just named "_ENTRY", since on some
+        # platforms we later assume that any function starting with "_JIT_" uses
+        # the GHC calling convention:
+        entry_symbol = "_JIT_ENTRY" if "_JIT_ENTRY" in group.symbols else "_ENTRY"
+        assert group.symbols[entry_symbol] == (_stencils.HoleValue.CODE, 0)
         if group.data.body:
             line = f"0: {str(bytes(group.data.body)).removeprefix('b')}"
             group.data.disassembly.append(line)
@@ -103,6 +108,9 @@ class _Target(typing.Generic[_S, _R]):
     async def _compile(
         self, opname: str, c: pathlib.Path, tempdir: pathlib.Path
     ) -> _stencils.StencilGroup:
+        # "Compile" the trampoline to an empty stencil group if it's not needed:
+        if opname == "trampoline" and not self.ghccc:
+            return _stencils.StencilGroup()
         o = tempdir / f"{opname}.o"
         args = [
             f"--target={self.triple}",
@@ -130,13 +138,38 @@ class _Target(typing.Generic[_S, _R]):
             "-fno-plt",
             # Don't call stack-smashing canaries that we can't find or patch:
             "-fno-stack-protector",
-            "-o",
-            f"{o}",
             "-std=c11",
-            f"{c}",
             *self.args,
         ]
-        await _llvm.run("clang", args, echo=self.verbose)
+        if self.ghccc:
+            # This is a bit of an ugly workaround, but it makes the code much
+            # smaller and faster, so it's worth it. We want to use the GHC
+            # calling convention, but Clang doesn't support it. So, we *first*
+            # compile the code to LLVM IR, perform some text replacements on the
+            # IR to change the calling convention(!), and then compile *that*.
+            # Once we have access to Clang 19, we can get rid of this and use
+            # __attribute__((preserve_none)) directly in the C code instead:
+            ll = tempdir / f"{opname}.ll"
+            args_ll = args + [
+                # -fomit-frame-pointer is necessary because the GHC calling
+                # convention uses RBP to pass arguments:
+                "-S", "-emit-llvm", "-fomit-frame-pointer", "-o", f"{ll}", f"{c}"
+            ]
+            await _llvm.run("clang", args_ll, echo=self.verbose)
+            ir = ll.read_text()
+            # This handles declarations, definitions, and calls to named symbols
+            # starting with "_JIT_":
+            ir = re.sub(r"(((noalias|nonnull|noundef) )*ptr @_JIT_\w+\()", r"ghccc \1", ir)
+            # This handles calls to anonymous callees, since anything with
+            # "musttail" needs to use the same calling convention:
+            ir = ir.replace("musttail call", "musttail call ghccc")
+            # Sometimes *both* replacements happen at the same site, so fix it:
+            ir = ir.replace("ghccc ghccc", "ghccc")
+            ll.write_text(ir)
+            args_o = args + ["-Wno-unused-command-line-argument", "-o", f"{o}", f"{ll}"]
+        else:
+            args_o = args + ["-o", f"{o}", f"{c}"]
+        await _llvm.run("clang", args_o, echo=self.verbose)
         return await self._parse(o)
 
     async def _build_stencils(self) -> dict[str, _stencils.StencilGroup]:
@@ -146,6 +179,8 @@ class _Target(typing.Generic[_S, _R]):
         with tempfile.TemporaryDirectory() as tempdir:
             work = pathlib.Path(tempdir).resolve()
             async with asyncio.TaskGroup() as group:
+                coro = self._compile("trampoline", TOOLS_JIT / "trampoline.c", work)
+                tasks.append(group.create_task(coro, name="trampoline"))
                 for opname in opnames:
                     coro = self._compile(opname, TOOLS_JIT_TEMPLATE_C, work)
                     tasks.append(group.create_task(coro, name=opname))
@@ -445,6 +480,7 @@ class _MachO(
 
 def get_target(host: str) -> _COFF | _ELF | _MachO:
     """Build a _Target for the given host "triple" and options."""
+    # ghccc currently crashes Clang when combined with musttail on aarch64. :(
     if re.fullmatch(r"aarch64-apple-darwin.*", host):
         return _MachO(host, alignment=8, prefix="_")
     if re.fullmatch(r"aarch64-pc-windows-msvc", host):
@@ -455,13 +491,13 @@ def get_target(host: str) -> _COFF | _ELF | _MachO:
         return _ELF(host, alignment=8, args=args)
     if re.fullmatch(r"i686-pc-windows-msvc", host):
         args = ["-DPy_NO_ENABLE_SHARED"]
-        return _COFF(host, args=args, prefix="_")
+        return _COFF(host, args=args, ghccc=True, prefix="_")
     if re.fullmatch(r"x86_64-apple-darwin.*", host):
-        return _MachO(host, prefix="_")
+        return _MachO(host, ghccc=True, prefix="_")
     if re.fullmatch(r"x86_64-pc-windows-msvc", host):
         args = ["-fms-runtime-lib=dll"]
-        return _COFF(host, args=args)
+        return _COFF(host, args=args, ghccc=True)
     if re.fullmatch(r"x86_64-.*-linux-gnu", host):
         args = ["-fpic"]
-        return _ELF(host, args=args)
+        return _ELF(host, args=args, ghccc=True)
     raise ValueError(host)

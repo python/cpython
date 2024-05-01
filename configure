@@ -1818,7 +1818,7 @@ Optional Features:
   --disable-gil           enable experimental support for running without the
                           GIL (default is no)
   --enable-pystats        enable internal statistics gathering (default is no)
-  --enable-experimental-jit
+  --enable-experimental-jit[=no|yes|yes-off|interpreter]
                           build the experimental just-in-time compiler
                           (default is no)
   --enable-optimizations  enable expensive, stable optimizations (PGO, etc.)
@@ -7103,6 +7103,9 @@ printf "%s\n" "$ANDROID_API_LEVEL" >&6; }
 printf "%s\n" "#define ANDROID_API_LEVEL $ANDROID_API_LEVEL" >>confdefs.h
 
 
+  # For __android_log_write() in Python/pylifecycle.c.
+  LIBS="$LIBS -llog"
+
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for the Android arm ABI" >&5
 printf %s "checking for the Android arm ABI... " >&6; }
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $_arm_arch" >&5
@@ -8226,11 +8229,19 @@ else $as_nop
   enable_experimental_jit=no
 fi
 
+case $enable_experimental_jit in
+  no) enable_experimental_jit=no ;;
+  yes) enable_experimental_jit="-D_Py_JIT -D_Py_TIER2=1" ;;
+  yes-off) enable_experimental_jit="-D_Py_JIT -D_Py_TIER2=3" ;;
+  interpreter) enable_experimental_jit="-D_Py_TIER2=4" ;;
+  interpreter-off) enable_experimental_jit="-D_Py_TIER2=6" ;;  # Secret option
+  *) as_fn_error $? "invalid argument: --enable-experimental-jit=$enable_experimental_jit; expected no|yes|yes-off|interpreter" "$LINENO" 5 ;;
+esac
 if test "x$enable_experimental_jit" = xno
 then :
 
 else $as_nop
-  as_fn_append CFLAGS_NODIST " -D_Py_JIT"
+  as_fn_append CFLAGS_NODIST " $enable_experimental_jit"
            REGEN_JIT_COMMAND="\$(PYTHON_FOR_REGEN) \$(srcdir)/Tools/jit/build.py $host"
            JIT_STENCILS_H="jit_stencils.h"
            if test "x$Py_DEBUG" = xtrue

@@ -20,7 +20,7 @@
 #include "pycore_object.h"        // _PyObject_GC_TRACK()
 #include "pycore_opcode_metadata.h"  // uop names
 #include "pycore_opcode_utils.h"  // MAKE_FUNCTION_*
-#include "pycore_pyatomic_ft_wrappers.h" // FT_ATOMIC_LOAD_PTR_ACQUIRE
+#include "pycore_pyatomic_ft_wrappers.h" // FT_ATOMIC_*
 #include "pycore_pyerrors.h"      // _PyErr_GetRaisedException()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_range.h"         // _PyRangeIterObject
@@ -163,7 +163,15 @@ dummy_func(
                 if ((oparg & RESUME_OPARG_LOCATION_MASK) < RESUME_AFTER_YIELD_FROM) {
                     CHECK_EVAL_BREAKER();
                 }
-                this_instr->op.code = RESUME_CHECK;
+                assert(this_instr->op.code == RESUME ||
+                       this_instr->op.code == RESUME_CHECK ||
+                       this_instr->op.code == INSTRUMENTED_RESUME ||
+                       this_instr->op.code == ENTER_EXECUTOR);
+                if (this_instr->op.code == RESUME) {
+                    #if ENABLE_SPECIALIZATION
+                    FT_ATOMIC_STORE_UINT8_RELAXED(this_instr->op.code, RESUME_CHECK);
+                    #endif  /* ENABLE_SPECIALIZATION */
+                }
             }
         }
 
@@ -1089,32 +1097,38 @@ dummy_func(
             goto resume_frame;
         }
 
-        tier1 inst(YIELD_VALUE, (retval -- unused)) {
+        inst(YIELD_VALUE, (retval -- value)) {
             // NOTE: It's important that YIELD_VALUE never raises an exception!
             // The compiler treats any exception raised here as a failed close()
             // or throw() call.
+            #if TIER_ONE
             assert(frame != &entry_frame);
-            frame->instr_ptr = next_instr;
+            #endif
+            frame->instr_ptr++;
             PyGenObject *gen = _PyFrame_GetGenerator(frame);
             assert(FRAME_SUSPENDED_YIELD_FROM == FRAME_SUSPENDED + 1);
             assert(oparg == 0 || oparg == 1);
             gen->gi_frame_state = FRAME_SUSPENDED + oparg;
-            _PyFrame_SetStackPointer(frame, stack_pointer - 1);
+            SYNC_SP();
+            _PyFrame_SetStackPointer(frame, stack_pointer);
             tstate->exc_info = gen->gi_exc_state.previous_item;
             gen->gi_exc_state.previous_item = NULL;
             _Py_LeaveRecursiveCallPy(tstate);
             _PyInterpreterFrame *gen_frame = frame;
             frame = tstate->current_frame = frame->previous;
             gen_frame->previous = NULL;
-            _PyFrame_StackPush(frame, retval);
             /* We don't know which of these is relevant here, so keep them equal */
             assert(INLINE_CACHE_ENTRIES_SEND == INLINE_CACHE_ENTRIES_FOR_ITER);
+            #if TIER_ONE
             assert(_PyOpcode_Deopt[frame->instr_ptr->op.code] == SEND ||
                    _PyOpcode_Deopt[frame->instr_ptr->op.code] == FOR_ITER ||
                    _PyOpcode_Deopt[frame->instr_ptr->op.code] == INTERPRETER_EXIT ||
                    _PyOpcode_Deopt[frame->instr_ptr->op.code] == ENTER_EXECUTOR);
+            #endif
             LOAD_IP(1 + INLINE_CACHE_ENTRIES_SEND);
-            goto resume_frame;
+            LOAD_SP();
+            value = retval;
+            LLTRACE_RESUME_FRAME();
         }
 
         inst(POP_EXCEPT, (exc_value -- )) {
@@ -2355,6 +2369,7 @@ dummy_func(
             CHECK_EVAL_BREAKER();
             assert(oparg <= INSTR_OFFSET());
             JUMPBY(-oparg);
+            #ifdef _Py_TIER2
             #if ENABLE_SPECIALIZATION
             _Py_BackoffCounter counter = this_instr[1].counter;
             if (backoff_counter_triggers(counter) && this_instr->op.code == JUMP_BACKWARD) {
@@ -2380,6 +2395,7 @@ dummy_func(
                 ADVANCE_ADAPTIVE_COUNTER(this_instr[1].counter);
             }
             #endif  /* ENABLE_SPECIALIZATION */
+            #endif /* _Py_TIER2 */
         }
 
         pseudo(JUMP) = {
@@ -2393,6 +2409,7 @@ dummy_func(
         };
 
         tier1 inst(ENTER_EXECUTOR, (--)) {
+            #ifdef _Py_TIER2
             int prevoparg = oparg;
             CHECK_EVAL_BREAKER();
             if (this_instr->op.code != ENTER_EXECUTOR ||
@@ -2410,6 +2427,9 @@ dummy_func(
             tstate->previous_executor = Py_None;
             Py_INCREF(executor);
             GOTO_TIER_TWO(executor);
+            #else
+            Py_FatalError("ENTER_EXECUTOR is not supported in this build");
+            #endif /* _Py_TIER2 */
         }
 
         replaced op(_POP_JUMP_IF_FALSE, (cond -- )) {

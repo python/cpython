@@ -91,6 +91,7 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_GET_AITER] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_GET_ANEXT] = HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
     [_GET_AWAITABLE] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
+    [_YIELD_VALUE] = HAS_ARG_FLAG | HAS_ESCAPES_FLAG,
     [_POP_EXCEPT] = HAS_ESCAPES_FLAG,
     [_LOAD_ASSERTION_ERROR] = 0,
     [_LOAD_BUILD_CLASS] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
@@ -248,7 +249,7 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_COLD_EXIT] = HAS_ARG_FLAG | HAS_ESCAPES_FLAG,
     [_DYNAMIC_EXIT] = HAS_ARG_FLAG | HAS_ESCAPES_FLAG,
     [_START_EXECUTOR] = HAS_DEOPT_FLAG,
-    [_FATAL_ERROR] = HAS_ESCAPES_FLAG,
+    [_FATAL_ERROR] = 0,
     [_CHECK_VALIDITY_AND_SET_IP] = HAS_DEOPT_FLAG,
     [_DEOPT] = 0,
     [_SIDE_EXIT] = 0,
@@ -500,6 +501,7 @@ const char *const _PyOpcode_uop_name[MAX_UOP_ID+1] = {
     [_UNPACK_SEQUENCE_TUPLE] = "_UNPACK_SEQUENCE_TUPLE",
     [_UNPACK_SEQUENCE_TWO_TUPLE] = "_UNPACK_SEQUENCE_TWO_TUPLE",
     [_WITH_EXCEPT_START] = "_WITH_EXCEPT_START",
+    [_YIELD_VALUE] = "_YIELD_VALUE",
 };
 int _PyUop_num_popped(int opcode, int oparg)
 {
@@ -647,6 +649,8 @@ int _PyUop_num_popped(int opcode, int oparg)
         case _GET_ANEXT:
             return 1;
         case _GET_AWAITABLE:
+            return 1;
+        case _YIELD_VALUE:
             return 1;
         case _POP_EXCEPT:
             return 1;
