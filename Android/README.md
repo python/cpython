@@ -22,12 +22,25 @@ you don't already have the SDK, here's how to install it:
   `android-sdk/cmdline-tools/latest`.
 * `export ANDROID_HOME=/path/to/android-sdk`
 
+The `android.py` script also requires the following commands to be on the `PATH`:
+
+* `curl`
+* `java`
+* `tar`
+* `unzip`
+
 
 ## Building
 
-Building for Android requires doing a cross-build where you have a "build"
-Python to help produce an Android build of CPython. This procedure has been
-tested on Linux and macOS.
+Python can be built for Android on any POSIX platform supported by the Android
+development tools, which currently means Linux or macOS. This involves doing a
+cross-build where you use a "build" Python (for your development machine) to
+help produce a "host" Python for Android.
+
+First, make sure you have all the usual tools and libraries needed to build
+Python for your development machine. The only Android tool you need to install
+is the command line tools package above: the build script will download the
+rest.
 
 The easiest way to do a build is to use the `android.py` script. You can either
 have it perform the entire build process from start to finish in one step, or
@@ -43,9 +56,10 @@ The discrete steps for building via `android.py` are:
 ./android.py make-host HOST
 ```
 
-To see the possible values of HOST, run `./android.py configure-host --help`.
+`HOST` identifies which architecture to build. To see the possible values, run
+`./android.py configure-host --help`.
 
-Or to do it all in a single command, run:
+To do all steps in a single command, run:
 
 ```sh
 ./android.py build HOST
@@ -62,3 +76,22 @@ call. For example, if you want a pydebug build that also caches the results from
 ```sh
 ./android.py build HOST -- -C --with-pydebug
 ```
+
+
+## Testing
+
+To run the Python test suite on Android:
+
+* Install Android Studio, if you don't already have it.
+* Follow the instructions in the previous section to build all supported
+  architectures.
+* Run `./android.py setup-testbed` to download the Gradle wrapper.
+* Open the `testbed` directory in Android Studio.
+* In the *Device Manager* dock, connect a device or start an emulator.
+  Then select it from the drop-down list in the toolbar.
+* Click the "Run" button in the toolbar.
+* The testbed app displays nothing on screen while running. To see its output,
+  open the [Logcat window](https://developer.android.com/studio/debug/logcat).
+
+To run specific tests, or pass any other arguments to the test suite, edit the
+command line in testbed/app/src/main/python/main.py.
