@@ -888,7 +888,7 @@ Experimental JIT Compiler
 =========================
 
 When CPython is configured using the ``--enable-experimental-jit`` option,
-a just-in-time compiler is added which can speed up some Python programs.
+a just-in-time compiler is added which may speed up some Python programs.
 
 The internal architecture is roughly as follows.
 
@@ -905,18 +905,34 @@ The internal architecture is roughly as follows.
   before it is interpreted or translated to machine code.
 
 * There is a Tier 2 interpreter, but it is mostly intended for debugging
-  the earlier stages of the optimization pipeline. If the JIT is not
-  enabled, the Tier 2 interpreter can be invoked by passing Python the
-  ``-X uops`` option or by setting the ``PYTHON_UOPS`` environment
-  variable to ``1``.
+  the earlier stages of the optimization pipeline.
+  The Tier 2 interpreter can be enabled by configuring Python
+  with ``--enable-experimental-jit=interpreter``.
 
-* When the ``--enable-experimental-jit`` option is used, the optimized
+* When the JIT is enabled, the optimized
   Tier 2 IR is translated to machine code, which is then executed.
-  This does not require additional runtime options.
 
 * The machine code translation process uses an architecture called
   *copy-and-patch*. It has no runtime dependencies, but there is a new
   build-time dependency on LLVM.
+
+The ``--enable-experimental-jit`` flag has the following optional values:
+
+* ``no`` (default) -- Disable the entire Tier 2 and JIT pipeline.
+
+* ``yes`` (default if the flag is present without optional value)
+  -- Enable the JIT. To disable the JIT at runtime,
+  pass the environment variable ``PYTHON_JIT=0``.
+
+* ``yes-off`` -- Build the JIT but disable it by default.
+  To enable the JIT at runtime, pass the environment variable
+  ``PYTHON_JIT=1``.
+
+* ``interpreter`` -- Enable the Tier 2 interpreter but disable the JIT.
+  The interpreter can be disabled by running with
+  ``PYTHON_JIT=0``.
+
+(On Windows, use ``PCbuild/build.bat --enable-jit`` to enable the JIT.)
 
 See :pep:`744` for more details.
 
@@ -1437,7 +1453,10 @@ PEP 594: dead batteries
     * :pypi:`argon2-cffi`:
       The secure Argon2 password hashing algorithm.
     * :pypi:`legacycrypt`:
-      Wrapper to the POSIX crypt library call and associated functionality.
+      :mod:`ctypes` wrapper to the POSIX crypt library call and associated functionality.
+    * :pypi:`crypt_r`:
+      Fork of the :mod:`!crypt` module, wrapper to the :manpage:`crypt_r(3)` library
+      call and associated functionality.
 
     (Contributed by Victor Stinner in :gh:`104773`.)
 

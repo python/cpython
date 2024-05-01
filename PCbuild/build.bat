@@ -36,7 +36,9 @@ echo.                 overrides -c and -d
 echo.  --disable-gil  Enable experimental support for running without the GIL.
 echo.  --test-marker  Enable the test marker within the build.
 echo.  --regen        Regenerate all opcodes, grammar and tokens.
-echo.  --experimental-jit  Enable the experimental just-in-time compiler.
+echo.  --experimental-jit          Enable the experimental just-in-time compiler.
+echo.  --experimental-jit-off      Ditto but off by default (PYTHON_JIT=1 enables).
+echo.  --experimental-interpreter  Enable the experimental Tier 2 interpreter.
 echo.
 echo.Available flags to avoid building certain modules.
 echo.These flags have no effect if '-e' is not given:
@@ -66,6 +68,7 @@ set verbose=/nologo /v:m /clp:summary
 set kill=
 set do_pgo=
 set pgo_job=-m test --pgo
+set UseTIER2=0
 
 :CheckOpts
 if "%~1"=="-h" goto Usage
@@ -86,7 +89,10 @@ if "%~1"=="--disable-gil" (set UseDisableGil=true) & shift & goto CheckOpts
 if "%~1"=="--test-marker" (set UseTestMarker=true) & shift & goto CheckOpts
 if "%~1"=="-V" shift & goto Version
 if "%~1"=="--regen" (set Regen=true) & shift & goto CheckOpts
-if "%~1"=="--experimental-jit" (set UseJIT=true) & shift & goto CheckOpts
+if "%~1"=="--experimental-jit" (set UseJIT=true) & (set UseTIER2=1) & shift & goto CheckOpts
+if "%~1"=="--experimental-jit-off" (set UseJIT=true) & (set UseTIER2=3) & shift & goto CheckOpts
+if "%~1"=="--experimental-interpreter" (set UseTIER2=4) & shift & goto CheckOpts
+if "%~1"=="--experimental-interpreter-off" (set UseTIER2=6) & shift & goto CheckOpts
 rem These use the actual property names used by MSBuild.  We could just let
 rem them in through the environment, but we specify them on the command line
 rem anyway for visibility so set defaults after this
@@ -179,6 +185,7 @@ echo on
  /p:DisableGil=%UseDisableGil%^
  /p:UseTestMarker=%UseTestMarker% %GITProperty%^
  /p:UseJIT=%UseJIT%^
+ /p:UseTIER2=%UseTIER2%^
  %1 %2 %3 %4 %5 %6 %7 %8 %9
 
 @echo off

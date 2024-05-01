@@ -1822,6 +1822,13 @@ class TestBasicOps(unittest.TestCase):
         self.assertTrue(gc.is_tracked(next(it)))
 
     @support.cpython_only
+    def test_pairwise_result_gc(self):
+        # Ditto for pairwise.
+        it = pairwise([None, None])
+        gc.collect()
+        self.assertTrue(gc.is_tracked(next(it)))
+
+    @support.cpython_only
     def test_immutable_types(self):
         from itertools import _grouper, _tee, _tee_dataobject
         dataset = (

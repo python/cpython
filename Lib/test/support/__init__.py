@@ -2539,17 +2539,17 @@ Py_TRACE_REFS = hasattr(sys, 'getobjects')
 # Decorator to disable optimizer while a function run
 def without_optimizer(func):
     try:
-        import _testinternalcapi
+        from _testinternalcapi import get_optimizer, set_optimizer
     except ImportError:
         return func
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
-        save_opt = _testinternalcapi.get_optimizer()
+        save_opt = get_optimizer()
         try:
-            _testinternalcapi.set_optimizer(None)
+            set_optimizer(None)
             return func(*args, **kwargs)
         finally:
-            _testinternalcapi.set_optimizer(save_opt)
+            set_optimizer(save_opt)
     return wrapper
 
 

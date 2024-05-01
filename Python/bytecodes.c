@@ -20,7 +20,7 @@
 #include "pycore_object.h"        // _PyObject_GC_TRACK()
 #include "pycore_opcode_metadata.h"  // uop names
 #include "pycore_opcode_utils.h"  // MAKE_FUNCTION_*
-#include "pycore_pyatomic_ft_wrappers.h" // FT_ATOMIC_LOAD_PTR_ACQUIRE
+#include "pycore_pyatomic_ft_wrappers.h" // FT_ATOMIC_*
 #include "pycore_pyerrors.h"      // _PyErr_GetRaisedException()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_range.h"         // _PyRangeIterObject
@@ -168,7 +168,9 @@ dummy_func(
                        this_instr->op.code == INSTRUMENTED_RESUME ||
                        this_instr->op.code == ENTER_EXECUTOR);
                 if (this_instr->op.code == RESUME) {
-                    this_instr->op.code = RESUME_CHECK;
+                    #if ENABLE_SPECIALIZATION
+                    FT_ATOMIC_STORE_UINT8_RELAXED(this_instr->op.code, RESUME_CHECK);
+                    #endif  /* ENABLE_SPECIALIZATION */
                 }
             }
         }
@@ -2367,6 +2369,7 @@ dummy_func(
             CHECK_EVAL_BREAKER();
             assert(oparg <= INSTR_OFFSET());
             JUMPBY(-oparg);
+            #ifdef _Py_TIER2
             #if ENABLE_SPECIALIZATION
             _Py_BackoffCounter counter = this_instr[1].counter;
             if (backoff_counter_triggers(counter) && this_instr->op.code == JUMP_BACKWARD) {
@@ -2392,6 +2395,7 @@ dummy_func(
                 ADVANCE_ADAPTIVE_COUNTER(this_instr[1].counter);
             }
             #endif  /* ENABLE_SPECIALIZATION */
+            #endif /* _Py_TIER2 */
         }
 
         pseudo(JUMP) = {
@@ -2405,6 +2409,7 @@ dummy_func(
         };
 
         tier1 inst(ENTER_EXECUTOR, (--)) {
+            #ifdef _Py_TIER2
             int prevoparg = oparg;
             CHECK_EVAL_BREAKER();
             if (this_instr->op.code != ENTER_EXECUTOR ||
@@ -2422,6 +2427,9 @@ dummy_func(
             tstate->previous_executor = Py_None;
             Py_INCREF(executor);
             GOTO_TIER_TWO(executor);
+            #else
+            Py_FatalError("ENTER_EXECUTOR is not supported in this build");
+            #endif /* _Py_TIER2 */
         }
 
         replaced op(_POP_JUMP_IF_FALSE, (cond -- )) {
