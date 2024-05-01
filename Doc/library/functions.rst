@@ -583,9 +583,13 @@ are always available.  They are listed here in alphabetical order.
       Raises an :ref:`auditing event <auditing>` ``exec`` with the code object
       as the argument. Code compilation events may also be raised.
 
+   .. versionchanged:: 3.13
+
+      :func:`!eval` now accepts keyword arguments.
+
 .. index:: pair: built-in function; exec
 
-.. function:: exec(object, globals=None, locals=None, /, *, closure=None)
+.. function:: exec(object, globals=None, locals=None, *, closure=None)
 
    This function supports dynamic execution of Python code. *object* must be
    either a string or a code object.  If it is a string, the string is parsed as
@@ -639,6 +643,10 @@ are always available.  They are listed here in alphabetical order.
 
    .. versionchanged:: 3.11
       Added the *closure* parameter.
+
+   .. versionchanged:: 3.13
+
+      :func:`!eval` now accepts keyword arguments.
 
 
 .. function:: filter(function, iterable)
