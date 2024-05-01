@@ -3255,7 +3255,7 @@ test_reftracer(PyObject *ob, PyObject *Py_UNUSED(ignored))
     void* data;
     if (PyRefTracer_GetTracer(&data) != _simpletracer || data != the_data) {
         PyErr_SetString(PyExc_AssertionError, "The reftracer not correctly installed");
-        PyRefTracer_SetTracer(NULL, NULL);
+        (void)PyRefTracer_SetTracer(NULL, NULL);
         goto failed;
     }
 
@@ -3275,7 +3275,7 @@ test_reftracer(PyObject *ob, PyObject *Py_UNUSED(ignored))
     Py_DECREF(obj2);
 
     // Remove the tracer
-    PyRefTracer_SetTracer(NULL, NULL);
+    (void)PyRefTracer_SetTracer(NULL, NULL);
 
     // Check that the tracer was removed
     if (PyRefTracer_GetTracer(&data) != NULL || data != NULL) {

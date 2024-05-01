@@ -906,7 +906,9 @@ _PyTraceMalloc_Start(int max_nframe)
         return -1;
     }
 
-    PyRefTracer_SetTracer(_PyTraceMalloc_TraceRef, NULL);
+    if (PyRefTracer_SetTracer(_PyTraceMalloc_TraceRef, NULL) < 0) {
+        return -1;
+    }
 
     if (tracemalloc_config.tracing) {
         /* hook already installed: do nothing */
