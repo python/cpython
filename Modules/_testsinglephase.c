@@ -305,6 +305,9 @@ init__testsinglephase_basic(PyModuleDef *def)
     if (module == NULL) {
         return NULL;
     }
+#ifdef Py_GIL_DISABLED
+    PyModule_ExperimentalSetGIL(module, Py_MOD_GIL_NOT_USED);
+#endif
 
     module_state *state = &global_state.module;
     // It may have been set by a previous run or under a different name.
