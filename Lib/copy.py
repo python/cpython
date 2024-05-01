@@ -187,7 +187,6 @@ def _deepcopy_list(x, memo, deepcopy=deepcopy):
 
 d[list] = _deepcopy_list
 
-_nil = object()
 
 def _deepcopy_tuple(x, memo, deepcopy=deepcopy):
     y = [deepcopy(a, memo) for a in x]
