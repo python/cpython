@@ -968,13 +968,24 @@ free_extensions_cache_value(struct extensions_cache_value *value)
     PyMem_RawFree(value);
 }
 
+static PyObject * get_core_module_dict(
+        PyInterpreterState *interp, PyObject *name, PyObject *path);
+
 static PyObject *
-get_cached_m_dict(struct extensions_cache_value *value)
+get_cached_m_dict(struct extensions_cache_value *value,
+                  PyObject *name, PyObject *path)
 {
     assert(value != NULL);
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    /* It might be a core module (e.g. sys & builtins),
+       for which we don't cache m_dict. */
+    if (value->origin == _Py_ext_module_origin_CORE) {
+        return get_core_module_dict(interp, name, path);
+    }
     assert(value->def != NULL);
-    Py_XINCREF(value->def->m_base.m_copy);
-    return value->def->m_base.m_copy;
+    PyObject *m_dict = value->def->m_base.m_copy;
+    Py_XINCREF(m_dict);
+    return m_dict;
 }
 
 static int
@@ -1505,16 +1516,10 @@ reload_singlephase_extension(PyThreadState *tstate,
         // XXX Copying the cached dict may break interpreter isolation.
         // We could solve this by temporarily acquiring the original
         // interpreter's GIL.
-        PyObject *m_copy = get_cached_m_dict(cached);
+        PyObject *m_copy = get_cached_m_dict(cached, info->name, info->path);
         if (m_copy == NULL) {
-            /* It might be a core module (e.g. sys & builtins),
-               for which we don't set m_copy. */
-            m_copy = get_core_module_dict(
-                    tstate->interp, info->name, info->path);
-            if (m_copy == NULL) {
-                assert(!PyErr_Occurred());
-                return NULL;
-            }
+            assert(!PyErr_Occurred());
+            return NULL;
         }
         mod = import_add_module(tstate, info->name);
         if (mod == NULL) {
