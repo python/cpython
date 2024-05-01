@@ -1268,9 +1268,11 @@ update_global_state_for_extension(PyThreadState *tstate,
             assert(def->m_base.m_copy == NULL);
             assert(def->m_size >= 0);
             /* Remember pointer to module init function. */
-            // XXX Two modules should not share the same def->m_base.
-            //assert(def->m_base.m_init == NULL
-            //           || def->m_base.m_init == singlephase->m_init);
+            // XXX If two modules share a def then def->m_base will
+            // reflect the last one added (here) to the global cache.
+            // We should prevent this somehow.  The simplest solution
+            // is probably to store m_copy/m_init in the cache along
+            // with the def, rather than within the def.
             def->m_base.m_init = singlephase->m_init;
         }
         else if (singlephase->m_dict == NULL) {
