@@ -2610,9 +2610,7 @@ dummy_func(
                     _PyErr_Clear(tstate);
                 }
                 /* iterator ended normally */
-                Py_DECREF(iter);
-                STACK_SHRINK(1);
-                /* The translator sets the deopt target just past END_FOR */
+                /* The translator sets the deopt target just past the matching END_FOR */
                 DEOPT_IF(true);
             }
             // Common case: no jump, leave it to the code generator
