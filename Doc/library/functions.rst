@@ -1723,8 +1723,9 @@ are always available.  They are listed here in alphabetical order.
    :ref:`function` for details.
 
    A static method can be called either on the class (such as ``C.f()``) or on
-   an instance (such as ``C().f()``). Moreover, they can be called as regular
-   functions (such as ``f()``).
+   an instance (such as ``C().f()``).
+   Moreover, the static method :term:`descriptor` is also callable, so it can
+   be used in the class definition (such as ``f()``).
 
    Static methods in Python are similar to those found in Java or C++. Also, see
    :func:`classmethod` for a variant that is useful for creating alternate class
