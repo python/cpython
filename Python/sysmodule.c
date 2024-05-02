@@ -1391,7 +1391,6 @@ static PyObject *
 sys_set_asyncgen_hooks(PyObject *self, PyObject *args, PyObject *kw)
 {
     static char *keywords[] = {"firstiter", "finalizer", NULL};
-    PyThreadState *tstate = NULL;
     PyObject *firstiter = NULL;
     PyObject *finalizer = NULL;
 
@@ -1401,7 +1400,7 @@ sys_set_asyncgen_hooks(PyObject *self, PyObject *args, PyObject *kw)
         return NULL;
     }
 
-    tstate = _PyThreadState_GET();
+    PyObject *cur_finalizer = _PyEval_GetAsyncGenFinalizer();
 
     if (finalizer && finalizer != Py_None) {
         if (!PyCallable_Check(finalizer)) {
@@ -1410,9 +1409,12 @@ sys_set_asyncgen_hooks(PyObject *self, PyObject *args, PyObject *kw)
                          Py_TYPE(finalizer)->tp_name);
             return NULL;
         }
-        if (_PySys_Audit(tstate, "sys.set_asyncgen_hook_finalizer", NULL) < 0) {
+        if (_PyEval_SetAsyncGenFinalizer(finalizer) < 0) {
             return NULL;
         }
+    }
+    else if (finalizer == Py_None && _PyEval_SetAsyncGenFinalizer(NULL) < 0) {
+        return NULL;
     }
 
     if (firstiter && firstiter != Py_None) {
@@ -1420,29 +1422,21 @@ sys_set_asyncgen_hooks(PyObject *self, PyObject *args, PyObject *kw)
             PyErr_Format(PyExc_TypeError,
                          "callable firstiter expected, got %.50s",
                          Py_TYPE(firstiter)->tp_name);
-
-            return NULL;
+            goto error;
         }
-        if (_PySys_Audit(tstate, "sys.set_asyncgen_hook_firstiter", NULL) < 0) {
-            return NULL;
+        if (_PyEval_SetAsyncGenFirstiter(firstiter) < 0) {
+            goto error;
         }
     }
-
-    if (finalizer && finalizer != Py_None) {
-        _PyEval_SetAsyncGenFinalizer(finalizer);
-    }
-    else if (finalizer == Py_None) {
-        _PyEval_SetAsyncGenFinalizer(NULL);
-    }
-
-    if (firstiter && firstiter != Py_None) {
-        _PyEval_SetAsyncGenFirstiter(firstiter);
-    }
-    else if (firstiter == Py_None) {
-        _PyEval_SetAsyncGenFirstiter(NULL);
+    else if (firstiter == Py_None && _PyEval_SetAsyncGenFirstiter(NULL) < 0) {
+        goto error;
     }
 
     Py_RETURN_NONE;
+
+error:
+    _PyEval_SetAsyncGenFinalizer(cur_finalizer);
+    return NULL;
 }
 
 PyDoc_STRVAR(set_asyncgen_hooks_doc,
