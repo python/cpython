@@ -632,11 +632,11 @@ behavior can be controlled by setting different environment variables.
 
 Setting the environment variable ``TERM`` to ``dumb`` will disable color.
 
-If the environment variable ``FORCE_COLOR`` is set, then color will be
+If the |FORCE_COLOR|_ environment variable is set, then color will be
 enabled regardless of the value of TERM. This is useful on CI systems which
 aren’t terminals but can still display ANSI escape sequences.
 
-If the environment variable ``NO_COLOR`` is set, Python will disable all color
+If the |NO_COLOR|_ environment variable is set, Python will disable all color
 in the output. This takes precedence over ``FORCE_COLOR``.
 
 All these environment variables are used also by other tools to control color
@@ -644,6 +644,14 @@ output. To control the color output only in the Python interpreter, the
 :envvar:`PYTHON_COLORS` environment variable can be used. This variable takes
 precedence over ``NO_COLOR``, which in turn takes precedence over
 ``FORCE_COLOR``.
+
+.. Apparently this how you hack together a formatted link:
+
+.. |FORCE_COLOR| replace:: ``FORCE_COLOR``
+.. _FORCE_COLOR: https://force-color.org/
+
+.. |NO_COLOR| replace:: ``NO_COLOR``
+.. _NO_COLOR: https://no-color.org/
 
 Options you shouldn't use
 ~~~~~~~~~~~~~~~~~~~~~~~~~

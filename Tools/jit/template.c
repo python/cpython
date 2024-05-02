@@ -48,7 +48,7 @@
 do {  \
     OPT_STAT_INC(traces_executed);                \
     __attribute__((musttail))                     \
-    return ((jit_func)((EXECUTOR)->jit_code))(frame, stack_pointer, tstate); \
+    return ((jit_func)((EXECUTOR)->jit_side_entry))(frame, stack_pointer, tstate); \
 } while (0)
 
 #undef GOTO_TIER_ONE
@@ -65,7 +65,7 @@ do {  \
 
 #define PATCH_VALUE(TYPE, NAME, ALIAS)  \
     PyAPI_DATA(void) ALIAS;             \
-    TYPE NAME = (TYPE)(uint64_t)&ALIAS;
+    TYPE NAME = (TYPE)(uintptr_t)&ALIAS;
 
 #define PATCH_JUMP(ALIAS)                                    \
 do {                                                         \
@@ -106,7 +106,6 @@ _JIT_ENTRY(_PyInterpreterFrame *frame, PyObject **stack_pointer, PyThreadState *
 
     // The actual instruction definitions (only one will be used):
     if (uopcode == _JUMP_TO_TOP) {
-        CHECK_EVAL_BREAKER();
         PATCH_JUMP(_JIT_TOP);
     }
     switch (uopcode) {
