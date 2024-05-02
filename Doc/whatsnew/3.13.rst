@@ -946,7 +946,8 @@ The ``--enable-experimental-jit`` flag has the following optional values:
   The interpreter can be disabled by running with
   ``PYTHON_JIT=0``.
 
-(On Windows, use ``PCbuild/build.bat --enable-jit`` to enable the JIT.)
+(On Windows, use ``PCbuild/build.bat --experimental-jit`` to enable the JIT
+or ``--experimental-jit-interpreter`` to enable the Tier 2 interpreter.)
 
 See :pep:`744` for more details.
 
