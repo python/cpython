@@ -86,18 +86,16 @@ Functions
       integers will be formatted with the ``_`` character for a thousands separator,
       otherwise underscores are not displayed (the default).
 
-   Usage example:
-
-      >>> import pprint
-      >>> stuff = ['spam', 'eggs', 'lumberjack', 'knights', 'ni']
-      >>> stuff.insert(0, stuff)
-      >>> pprint.pp(stuff)
-      [<Recursion on list with id=...>,
-         'spam',
-         'eggs',
-         'lumberjack',
-         'knights',
-         'ni']
+   >>> import pprint
+   >>> stuff = ['spam', 'eggs', 'lumberjack', 'knights', 'ni']
+   >>> stuff.insert(0, stuff)
+   >>> pprint.pp(stuff)
+   [<Recursion on list with id=...>,
+      'spam',
+      'eggs',
+      'lumberjack',
+      'knights',
+      'ni']
 
    .. versionadded:: 3.8
 
@@ -200,30 +198,28 @@ PrettyPrinter Objects
       integers will be formatted with the ``_`` character for a thousands separator,
       otherwise underscores are not displayed (the default).
 
-   Usage example:
-
-      >>> import pprint
-      >>> stuff = ['spam', 'eggs', 'lumberjack', 'knights', 'ni']
-      >>> stuff.insert(0, stuff[:])
-      >>> pp = pprint.PrettyPrinter(indent=4)
-      >>> pp.pprint(stuff)
-      [   ['spam', 'eggs', 'lumberjack', 'knights', 'ni'],
-            'spam',
-            'eggs',
-            'lumberjack',
-            'knights',
-            'ni']
-      >>> pp = pprint.PrettyPrinter(width=41, compact=True)
-      >>> pp.pprint(stuff)
-      [['spam', 'eggs', 'lumberjack',
-         'knights', 'ni'],
-         'spam', 'eggs', 'lumberjack', 'knights',
-         'ni']
-      >>> tup = ('spam', ('eggs', ('lumberjack', ('knights', ('ni', ('dead',
-      ... ('parrot', ('fresh fruit',))))))))
-      >>> pp = pprint.PrettyPrinter(depth=6)
-      >>> pp.pprint(tup)
-      ('spam', ('eggs', ('lumberjack', ('knights', ('ni', ('dead', (...)))))))
+   >>> import pprint
+   >>> stuff = ['spam', 'eggs', 'lumberjack', 'knights', 'ni']
+   >>> stuff.insert(0, stuff[:])
+   >>> pp = pprint.PrettyPrinter(indent=4)
+   >>> pp.pprint(stuff)
+   [   ['spam', 'eggs', 'lumberjack', 'knights', 'ni'],
+       'spam',
+       'eggs',
+       'lumberjack',
+       'knights',
+       'ni']
+   >>> pp = pprint.PrettyPrinter(width=41, compact=True)
+   >>> pp.pprint(stuff)
+   [['spam', 'eggs', 'lumberjack',
+     'knights', 'ni'],
+    'spam', 'eggs', 'lumberjack', 'knights',
+    'ni']
+   >>> tup = ('spam', ('eggs', ('lumberjack', ('knights', ('ni', ('dead',
+   ... ('parrot', ('fresh fruit',))))))))
+   >>> pp = pprint.PrettyPrinter(depth=6)
+   >>> pp.pprint(tup)
+   ('spam', ('eggs', ('lumberjack', ('knights', ('ni', ('dead', (...)))))))
 
 
    .. versionchanged:: 3.4
