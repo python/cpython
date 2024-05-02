@@ -172,7 +172,7 @@ provide equivalent :meth:`~ConfigParser.getint` and
 :meth:`~ConfigParser.getfloat` methods.  You can register your own
 converters and customize the provided ones. [1]_
 
-Section names will also be stored as strings and will need to be converted
+Section names are also stored as strings and need to be converted
 manually when reading a section:
 
 .. doctest::
