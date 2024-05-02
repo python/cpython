@@ -23,6 +23,19 @@
 
 #define MAX_EXECUTORS_SIZE 256
 
+#ifdef Py_DEBUG
+static int
+base_opcode(PyCodeObject *code, int offset)
+{
+    int opcode = _Py_GetBaseOpcode(code, offset);
+    if (opcode == ENTER_EXECUTOR) {
+        int oparg = _PyCode_CODE(code)[offset].op.arg;
+        _PyExecutorObject *ex = code->co_executors->executors[oparg];
+        return ex->vm_data.opcode;
+    }
+    return opcode;
+}
+#endif
 
 static bool
 has_space_for_executor(PyCodeObject *code, _Py_CODEUNIT *instr)
@@ -445,6 +458,14 @@ _PyUOp_Replacements[MAX_UOP_ID + 1] = {
     [_FOR_ITER] = _FOR_ITER_TIER_TWO,
 };
 
+static const uint8_t
+is_for_iter_test[MAX_UOP_ID + 1] = {
+    [_GUARD_NOT_EXHAUSTED_RANGE] = 1,
+    [_GUARD_NOT_EXHAUSTED_LIST] = 1,
+    [_GUARD_NOT_EXHAUSTED_TUPLE] = 1,
+    [_FOR_ITER_TIER_TWO] = 1,
+};
+
 static const uint16_t
 BRANCH_TO_GUARD[4][2] = {
     [POP_JUMP_IF_FALSE - POP_JUMP_IF_FALSE][0] = _GUARD_IS_TRUE_POP,
@@ -594,7 +615,6 @@ top:  // Jump here after _PUSH_FRAME or likely branches
 
         uint32_t opcode = instr->op.code;
         uint32_t oparg = instr->op.arg;
-        uint32_t extended = 0;
 
         DPRINTF(2, "%d: %s(%d)\n", target, _PyOpcode_OpName[opcode], oparg);
 
@@ -608,7 +628,6 @@ top:  // Jump here after _PUSH_FRAME or likely branches
 
         if (opcode == EXTENDED_ARG) {
             instr++;
-            extended = 1;
             opcode = instr->op.code;
             oparg = (oparg << 8) | instr->op.arg;
             if (opcode == EXTENDED_ARG) {
@@ -772,12 +791,15 @@ top:  // Jump here after _PUSH_FRAME or likely branches
                             case OPARG_REPLACED:
                                 uop = _PyUOp_Replacements[uop];
                                 assert(uop != 0);
-                                if (uop == _FOR_ITER_TIER_TWO) {
-                                    target += 1 + INLINE_CACHE_ENTRIES_FOR_ITER + oparg + 2 + extended;
-                                    assert(_PyCode_CODE(code)[target-2].op.code == END_FOR ||
-                                            _PyCode_CODE(code)[target-2].op.code == INSTRUMENTED_END_FOR);
-                                    assert(_PyCode_CODE(code)[target-1].op.code == POP_TOP);
+#ifdef Py_DEBUG
+                                {
+                                    uint32_t next_inst = target + 1 + INLINE_CACHE_ENTRIES_FOR_ITER + (oparg > 255);
+                                    uint32_t jump_target = next_inst + oparg;
+                                    assert(base_opcode(code, jump_target) == END_FOR ||
+                                        base_opcode(code, jump_target) == INSTRUMENTED_END_FOR);
+                                    assert(base_opcode(code, jump_target+1) == POP_TOP);
                                 }
+#endif
                                 break;
                             default:
                                 fprintf(stderr,
@@ -1000,10 +1022,18 @@ prepare_for_execution(_PyUOpInstruction *buffer, int length)
         if (_PyUop_Flags[opcode] & (HAS_EXIT_FLAG | HAS_DEOPT_FLAG)) {
             uint16_t exit_op = (_PyUop_Flags[opcode] & HAS_EXIT_FLAG) ?
                 _SIDE_EXIT : _DEOPT;
-            if (target != current_jump_target || current_exit_op != exit_op) {
-                make_exit(&buffer[next_spare], exit_op, target);
+            int32_t jump_target = target;
+            if (is_for_iter_test[opcode]) {
+                /* Target the POP_TOP immediately after the END_FOR,
+                 * leaving only the iterator on the stack. */
+                int extended_arg = inst->oparg > 255;
+                int32_t next_inst = target + 1 + INLINE_CACHE_ENTRIES_FOR_ITER + extended_arg;
+                jump_target = next_inst + inst->oparg + 1;
+            }
+            if (jump_target != current_jump_target || current_exit_op != exit_op) {
+                make_exit(&buffer[next_spare], exit_op, jump_target);
                 current_exit_op = exit_op;
-                current_jump_target = target;
+                current_jump_target = jump_target;
                 current_jump = next_spare;
                 next_spare++;
             }

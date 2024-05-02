@@ -215,6 +215,7 @@ print_gc_stats(FILE *out, GCStats *stats)
     }
 }
 
+#ifdef _Py_TIER2
 static void
 print_histogram(FILE *out, const char *name, uint64_t hist[_Py_UOP_HIST_SIZE])
 {
@@ -249,7 +250,6 @@ print_optimization_stats(FILE *out, OptimizationStats *stats)
             stats->optimizer_failure_reason_no_memory);
     fprintf(out, "Optimizer remove globals builtins changed: %" PRIu64 "\n", stats->remove_globals_builtins_changed);
     fprintf(out, "Optimizer remove globals incorrect keys: %" PRIu64 "\n", stats->remove_globals_incorrect_keys);
-
     for (int i = 0; i <= MAX_UOP_ID; i++) {
         if (stats->opcode[i].execution_count) {
             fprintf(out, "uops[%s].execution_count : %" PRIu64 "\n", _PyUOpName(i), stats->opcode[i].execution_count);
@@ -258,7 +258,6 @@ print_optimization_stats(FILE *out, OptimizationStats *stats)
             fprintf(out, "uops[%s].specialization.miss : %" PRIu64 "\n", _PyUOpName(i), stats->opcode[i].miss);
         }
     }
-
     for (int i = 0; i < 256; i++) {
         if (stats->unsupported_opcode[i]) {
             fprintf(
@@ -289,6 +288,7 @@ print_optimization_stats(FILE *out, OptimizationStats *stats)
         }
     }
 }
+#endif
 
 static void
 print_rare_event_stats(FILE *out, RareEventStats *stats)
@@ -309,7 +309,9 @@ print_stats(FILE *out, PyStats *stats)
     print_call_stats(out, &stats->call_stats);
     print_object_stats(out, &stats->object_stats);
     print_gc_stats(out, stats->gc_stats);
+#ifdef _Py_TIER2
     print_optimization_stats(out, &stats->optimization_stats);
+#endif
     print_rare_event_stats(out, &stats->rare_event_stats);
 }
 

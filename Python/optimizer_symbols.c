@@ -164,19 +164,26 @@ _Py_uop_sym_set_const(_Py_UopsSymbol *sym, PyObject *const_val)
     return true;
 }
 
-
 bool
 _Py_uop_sym_set_null(_Py_UopsSymbol *sym)
 {
+    if (_Py_uop_sym_is_not_null(sym)) {
+        sym_set_bottom(sym);
+        return false;
+    }
     sym_set_flag(sym, IS_NULL);
-    return !_Py_uop_sym_is_bottom(sym);
+    return true;
 }
 
 bool
 _Py_uop_sym_set_non_null(_Py_UopsSymbol *sym)
 {
+    if (_Py_uop_sym_is_null(sym)) {
+        sym_set_bottom(sym);
+        return false;
+    }
     sym_set_flag(sym, NOT_NULL);
-    return !_Py_uop_sym_is_bottom(sym);
+    return true;
 }
 
 
