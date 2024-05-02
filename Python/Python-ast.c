@@ -5387,7 +5387,7 @@ ast_repr_max_depth(AST_object *self, int depth)
     }
 
     PyObject *fields;
-    if (PyObject_GetOptionalAttr((PyObject*)Py_TYPE(self), state->_fields, &fields) == -1) {
+    if (PyObject_GetOptionalAttr((PyObject*)Py_TYPE(self), state->_fields, &fields) < 0) {
         Py_ReprLeave((PyObject*)self);
         return NULL;
     }
