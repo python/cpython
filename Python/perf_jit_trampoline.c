@@ -60,7 +60,7 @@ could be mapped to either jitted-PID-0.so or jitted-PID-1.so and it's confusing
 which one is right. So to make perf happy we have non-overlapping ranges for each
 DSO:
 
-  address -> 
+  address ->
   -------------------------------------------------------------------------------------------------------
   /tmp/jitted-PID-0.so   | (headers) | .text | unwind info |
   /tmp/jitted-PID-1.so                         | (headers) | .text | unwind info |
