@@ -165,10 +165,10 @@ static const intptr_t nanoseconds_per_second = 1000000000;
 
 // Dwarf encoding constants
 
-static uint8_t DwarfUData4 = 0x03;
-static uint8_t DwarfSData4 = 0x0b;
-static uint8_t DwarfPcRel = 0x10;
-static uint8_t DwarfDataRel = 0x30;
+static const uint8_t DwarfUData4 = 0x03;
+static const uint8_t DwarfSData4 = 0x0b;
+static const uint8_t DwarfPcRel = 0x10;
+static const uint8_t DwarfDataRel = 0x30;
 // static uint8_t DwarfOmit = 0xff;
 typedef struct {
     unsigned char version;
