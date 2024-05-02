@@ -233,7 +233,7 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_GUARD_IS_FALSE_POP] = HAS_EXIT_FLAG,
     [_GUARD_IS_NONE_POP] = HAS_EXIT_FLAG,
     [_GUARD_IS_NOT_NONE_POP] = HAS_EXIT_FLAG,
-    [_JUMP_TO_TOP] = HAS_EVAL_BREAK_FLAG,
+    [_JUMP_TO_TOP] = 0,
     [_SET_IP] = 0,
     [_CHECK_STACK_SPACE_OPERAND] = HAS_DEOPT_FLAG,
     [_SAVE_RETURN_OFFSET] = HAS_ARG_FLAG,
@@ -254,8 +254,7 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_DEOPT] = 0,
     [_SIDE_EXIT] = 0,
     [_ERROR_POP_N] = HAS_ARG_FLAG,
-    [_TIER2_RESUME_CHECK] = HAS_EXIT_FLAG,
-    [_EVAL_BREAKER_EXIT] = HAS_ESCAPES_FLAG,
+    [_TIER2_RESUME_CHECK] = HAS_DEOPT_FLAG,
 };
 
 const uint8_t _PyUop_Replication[MAX_UOP_ID+1] = {
@@ -339,7 +338,6 @@ const char *const _PyOpcode_uop_name[MAX_UOP_ID+1] = {
     [_DYNAMIC_EXIT] = "_DYNAMIC_EXIT",
     [_END_SEND] = "_END_SEND",
     [_ERROR_POP_N] = "_ERROR_POP_N",
-    [_EVAL_BREAKER_EXIT] = "_EVAL_BREAKER_EXIT",
     [_EXIT_INIT_CHECK] = "_EXIT_INIT_CHECK",
     [_EXIT_TRACE] = "_EXIT_TRACE",
     [_FATAL_ERROR] = "_FATAL_ERROR",
@@ -977,8 +975,6 @@ int _PyUop_num_popped(int opcode, int oparg)
         case _ERROR_POP_N:
             return oparg;
         case _TIER2_RESUME_CHECK:
-            return 0;
-        case _EVAL_BREAKER_EXIT:
             return 0;
         default:
             return -1;

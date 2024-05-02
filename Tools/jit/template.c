@@ -106,7 +106,6 @@ _JIT_ENTRY(_PyInterpreterFrame *frame, PyObject **stack_pointer, PyThreadState *
 
     // The actual instruction definitions (only one will be used):
     if (uopcode == _JUMP_TO_TOP) {
-        CHECK_EVAL_BREAKER();
         PATCH_JUMP(_JIT_TOP);
     }
     switch (uopcode) {
