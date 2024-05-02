@@ -45,6 +45,7 @@ struct trampoline_api_st {
                         unsigned int code_size, PyCodeObject* code);
     int (*free_state)(void* state);
     void *state;
+    Py_ssize_t code_padding; 
 };
 #endif
 
