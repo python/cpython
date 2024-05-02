@@ -5449,10 +5449,9 @@ ast_repr_max_depth(AST_object *self, int depth)
 
     Py_ReprLeave((PyObject *)self);
     Py_DECREF(fields);
-    PyObject *tmp = repr;
-    repr = PyUnicode_FromFormat("%s(%U)", Py_TYPE(self)->tp_name, repr);
-    Py_DECREF(tmp);
-    return repr;
+    PyObject *ret = PyUnicode_FromFormat("%s(%U)", Py_TYPE(self)->tp_name, repr);
+    Py_DECREF(repr);
+    return ret;
 
 error:
     Py_ReprLeave((PyObject *)self);
