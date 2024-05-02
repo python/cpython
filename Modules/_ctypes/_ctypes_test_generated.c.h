@@ -329,7 +329,7 @@
             #if (defined(MS_WIN32) || defined(__GNUC__) || defined(__clang__))
             
                 #pragma pack(push, 8)
-                union GCC_ATTR(ms_struct) Packed4 {
+                union Packed4 {
                     int8_t a;
                     int64_t b;
                 };
