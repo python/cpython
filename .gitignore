@@ -153,7 +153,6 @@ Tools/unicode/data/
 /coverage/
 /externals/
 /htmlcov/
-/.hypothesis/
 Tools/msi/obj
 Tools/ssl/amd64
 Tools/ssl/win32

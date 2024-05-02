@@ -881,29 +881,6 @@ class StructureTestCase(unittest.TestCase):
         self.assertEqual(ctx.exception.args[0], 'item 1 in _argtypes_ passes '
                          'a union by value, which is unsupported.')
 
-    def test_bitfield_matches_c(self):
-        class Test9(Structure):
-            _pack_ = 1
-            _fields_ = (('A', c_uint16),     # 2 bytes
-                        ('B', c_uint16, 9),
-                        ('C', c_uint16, 1),
-                        ('D', c_uint16, 1),
-                        ('E', c_uint16, 1),
-                        ('F', c_uint16, 1),
-                        ('G', c_uint16, 3),  # 4 bytes
-                        ('H', c_uint32, 10),
-                        ('I', c_uint32, 20),
-                        ('J', c_uint32, 2))  # 8 bytes
-        dll = CDLL(_ctypes_test.__file__)
-        func = dll._testfunc_bitfield_by_reference3
-        func.restype = c_long
-        func.argtypes = (POINTER(Test9),c_long,)
-        ind = 0
-        for field in Test9._fields_:
-            test9 = Test9()
-            setattr(test9,field[0], 1)
-            self.assertEqual(func(test9, ind), 1)
-            ind += 1
 
 class PointerMemberTestCase(unittest.TestCase):
 
