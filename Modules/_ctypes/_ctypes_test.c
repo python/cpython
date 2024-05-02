@@ -1,7 +1,7 @@
 // Need limited C API version 3.12 for Py_MOD_PER_INTERPRETER_GIL_SUPPORTED
 #include "pyconfig.h"   // Py_GIL_DISABLED
 #ifndef Py_GIL_DISABLED
-#  define Py_LIMITED_API 0x030c0000
+//#  define Py_LIMITED_API 0x030c0000
 #endif
 
 // gh-85283: On Windows, Py_LIMITED_API requires Py_BUILD_CORE to not attempt
@@ -12,6 +12,7 @@
 #define Py_BUILD_CORE_MODULE
 
 #include <Python.h>
+#include <internal/pycore_unicodeobject.h> // _PyUnicode_EqualToASCIIString
 
 #include <stdio.h>                // printf()
 #include <stdlib.h>               // qsort()
@@ -21,6 +22,8 @@
 #endif
 
 #define EXPORT(x) Py_EXPORTED_SYMBOL x
+
+#include "_ctypes_test_generated.c.h"
 
 /* some functions handy for testing */
 
@@ -810,6 +813,7 @@ static PyMethodDef module_methods[] = {
 */
     {"func_si", py_func_si, METH_VARARGS},
     {"func", py_func, METH_NOARGS},
+    {"get_generated_test_data", get_generated_test_data, METH_O},
     { NULL, NULL, 0, NULL},
 };
 
