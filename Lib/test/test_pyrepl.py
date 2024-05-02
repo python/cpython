@@ -3,14 +3,12 @@ import itertools
 import os
 import rlcompleter
 import sys
+import unittest
 from code import InteractiveConsole
-from contextlib import suppress
 from functools import partial
-from io import BytesIO
 from unittest import TestCase
-from unittest.mock import MagicMock, call, patch
+from unittest.mock import MagicMock, patch
 
-import _pyrepl.unix_eventqueue as unix_eventqueue
 from _pyrepl.console import Console, Event
 from _pyrepl.readline import ReadlineAlikeReader, ReadlineConfig
 from _pyrepl.simple_interact import _strip_final_indent
@@ -45,6 +43,54 @@ def multiline_input(reader, namespace=None):
 def code_to_events(code):
     for c in code:
         yield Event(evt='key', data=c, raw=bytearray(c.encode('utf-8')))
+
+
+def prepare_mock_console(events, **kwargs):
+    console = MagicMock()
+    console.get_event.side_effect = events
+    console.height = 100
+    console.width = 80
+    for key, val in kwargs.items():
+        setattr(console, key, val)
+    return console
+
+
+def prepare_fake_console(**kwargs):
+    console = FakeConsole()
+    for key, val in kwargs.items():
+        setattr(console, key, val)
+    return console
+
+
+def prepare_reader(console, **kwargs):
+    reader = ReadlineAlikeReader(console)
+    reader.config = ReadlineConfig()
+    reader.config.readline_completer = None
+    reader.more_lines = partial(more_lines, namespace=None)
+    reader.paste_mode = True  # Avoid extra indents
+
+    def get_prompt(lineno, cursor_on_line) -> str:
+        return ""
+
+    reader.get_prompt = get_prompt  # Remove prompt for easier calculations of (x, y)
+
+    for key, val in kwargs.items():
+        setattr(reader, key, val)
+
+    return reader
+
+
+def handle_all_events(events,
+                      prepare_console=prepare_mock_console,
+                      prepare_reader=prepare_reader):
+    console = prepare_console(events)
+    reader = prepare_reader(console)
+    try:
+        while True:
+            reader.handle1()
+    except StopIteration:
+        pass
+    return reader, console
 
 
 class FakeConsole(Console):
@@ -101,121 +147,55 @@ class FakeConsole(Console):
         pass
 
 
-class TestPyReplDriver(TestCase):
-    def prepare_reader(self, events):
-        console = MagicMock()
-        console.get_event.side_effect = events
-        console.height = 100
-        console.width = 80
-
-        reader = ReadlineAlikeReader(console)
-        reader.config = ReadlineConfig()
-
-        def get_prompt(lineno, cursor_on_line) -> str:
-            return ""
-
-        reader.get_prompt = get_prompt  # Remove prompt for easier calculations of (x, y)
-
-        return reader, console
-
-    def test_up_arrow(self):
+class TestCursorPosition(TestCase):
+    def test_up_arrow_simple(self):
         code = (
             'def f():\n'
             '  ...\n'
         )
         events = itertools.chain(code_to_events(code), [
             Event(evt="key", data="up", raw=bytearray(b"\x1bOA")),
-            Event(evt="key", data="\n", raw=bytearray(b"\n")),
         ])
 
-        reader, console = self.prepare_reader(events)
+        reader, console = handle_all_events(events)
+        self.assertEqual(reader.pos2xy(), (0, 1))
+        console.move_cursor.assert_called_once_with(0, 1)
 
-        with suppress(StopIteration):
-            _ = multiline_input(reader)
-
-        console.move_cursor.assert_called_with(2, 1)
-
-    def test_down_arrow(self):
+    def test_down_arrow_end_of_input(self):
         code = (
             'def f():\n'
             '  ...\n'
         )
         events = itertools.chain(code_to_events(code), [
             Event(evt="key", data="down", raw=bytearray(b"\x1bOB")),
-            Event(evt="key", data="\n", raw=bytearray(b"\n")),
         ])
 
-        reader, console = self.prepare_reader(events)
+        reader, console = handle_all_events(events)
+        self.assertEqual(reader.pos2xy(), (0, 2))
+        console.move_cursor.assert_called_once_with(0, 2)
 
-        with suppress(StopIteration):
-            _ = multiline_input(reader)
-
-        console.move_cursor.assert_called_with(2, 2)
-
-    def test_left_arrow(self):
+    def test_left_arrow_simple(self):
         events = itertools.chain(code_to_events('11+11'), [
             Event(evt="key", data="left", raw=bytearray(b"\x1bOD")),
-            Event(evt="key", data="\n", raw=bytearray(b"\n")),
         ])
 
-        reader, console = self.prepare_reader(events)
+        reader, console = handle_all_events(events)
+        self.assertEqual(reader.pos2xy(), (4, 0))
+        console.move_cursor.assert_called_once_with(4, 0)
 
-        _ = multiline_input(reader)
-
-        console.move_cursor.assert_has_calls(
-            [
-                call(4, 0),
-            ]
-        )
-
-    def test_right_arrow(self):
+    def test_right_arrow_end_of_line(self):
         events = itertools.chain(code_to_events('11+11'), [
             Event(evt="key", data="right", raw=bytearray(b"\x1bOC")),
-            Event(evt="key", data="\n", raw=bytearray(b"\n")),
         ])
 
-        reader, console = self.prepare_reader(events)
-
-        _ = multiline_input(reader)
-
-        console.move_cursor.assert_has_calls(
-            [
-                call(5, 0),
-            ]
-        )
-
-
-class TestCursorPosition(TestCase):
-    def prepare_reader(self, events):
-        console = MagicMock()
-        console.get_event.side_effect = events
-        console.height = 100
-        console.width = 80
-
-        reader = ReadlineAlikeReader(console)
-        reader.config = ReadlineConfig()
-        reader.more_lines = partial(more_lines, namespace=None)
-        reader.paste_mode = True  # Avoid extra indents
-
-        def get_prompt(lineno, cursor_on_line) -> str:
-            return ""
-
-        reader.get_prompt = get_prompt  # Remove prompt for easier calculations of (x, y)
-        return reader, console
-
-    def handle_all_events(self, events):
-        reader, _ = self.prepare_reader(events)
-        try:
-            while True:
-                reader.handle1()
-        except StopIteration:
-            pass
-        return reader
+        reader, console = handle_all_events(events)
+        self.assertEqual(reader.pos2xy(), (5, 0))
+        console.move_cursor.assert_called_once_with(5, 0)
 
     def test_cursor_position_simple_character(self):
         events = itertools.chain(code_to_events("k"))
 
-        reader = self.handle_all_events(events)
+        reader, _ = handle_all_events(events)
         self.assertEqual(reader.pos, 1)
 
         # 1 for simple character
@@ -224,7 +204,7 @@ class TestCursorPosition(TestCase):
     def test_cursor_position_double_width_character(self):
         events = itertools.chain(code_to_events("樂"))
 
-        reader = self.handle_all_events(events)
+        reader, _ = handle_all_events(events)
         self.assertEqual(reader.pos, 1)
 
         # 2 for wide character
@@ -235,7 +215,7 @@ class TestCursorPosition(TestCase):
             Event(evt="key", data="left", raw=bytearray(b"\x1bOD")),
         ])
 
-        reader = self.handle_all_events(events)
+        reader, _ = handle_all_events(events)
         self.assertEqual(reader.pos, 0)
         self.assertEqual(reader.pos2xy(), (0, 0))
 
@@ -245,7 +225,7 @@ class TestCursorPosition(TestCase):
             Event(evt="key", data="right", raw=bytearray(b"\x1bOC")),
         ])
 
-        reader = self.handle_all_events(events)
+        reader, _ = handle_all_events(events)
         self.assertEqual(reader.pos, 1)
 
         # 2 for wide character
@@ -257,7 +237,7 @@ class TestCursorPosition(TestCase):
             Event(evt="key", data="up", raw=bytearray(b"\x1bOA")),
         ])
 
-        reader = self.handle_all_events(events)
+        reader, _ = handle_all_events(events)
 
         # cursor at end of first line
         self.assertEqual(reader.pos, len(for_loop))
@@ -271,7 +251,7 @@ class TestCursorPosition(TestCase):
             Event(evt="key", data="down", raw=bytearray(b"\x1bOB")),
         ])
 
-        reader = self.handle_all_events(events)
+        reader, _ = handle_all_events(events)
 
         # cursor here (showing 2nd line only):
         # <  ' 可口可乐; 可口可樂'>
@@ -286,7 +266,7 @@ class TestCursorPosition(TestCase):
             Event(evt="key", data="left", raw=bytearray(b"\x1bOD")),
         ])
 
-        reader = self.handle_all_events(events)
+        reader, _ = handle_all_events(events)
         self.assertEqual(reader.pos, 10)
 
         # 1 for quote, 1 for space, 2 per wide character,
@@ -308,7 +288,7 @@ class TestCursorPosition(TestCase):
             Event(evt="key", data="up", raw=bytearray(b"\x1bOA")),
         ])
 
-        reader = self.handle_all_events(events)
+        reader, _ = handle_all_events(events)
 
         # Cursor should be at end of line 1, even though line 2 is shorter
         # for _ in _:
@@ -333,7 +313,7 @@ class TestCursorPosition(TestCase):
             Event(evt="key", data="down", raw=bytearray(b"\x1bOB")),
         ])
 
-        reader = self.handle_all_events(events)
+        reader, _ = handle_all_events(events)
 
         # Cursor should be at end of line 3, even though line 2 is shorter
         # for _ in _:
@@ -342,6 +322,29 @@ class TestCursorPosition(TestCase):
         #   hel
         self.assertEqual(reader.pos, len(code))
         self.assertEqual(reader.pos2xy(), (len(last_line), 3))
+
+    def test_cursor_position_multiple_mixed_lines_move_up(self):
+        code = (
+            "def foo():\n"
+            "  x = '可口可乐; 可口可樂'\n"
+            "  y = 'abckdfjskldfjslkdjf'"
+        )
+        events = itertools.chain(
+            code_to_events(code),
+            13 * [Event(evt="key", data="left", raw=bytearray(b"\x1bOD"))],
+            [Event(evt="key", data="up", raw=bytearray(b"\x1bOA"))],
+        )
+
+        reader, _ = handle_all_events(events)
+
+        # By moving left, we're before the s:
+        # y = 'abckdfjskldfjslkdjf' 
+        #             ^
+        # And we should move before the semi-colon despite the different offset
+        # x = '可口可乐; 可口可樂'
+        #            ^
+        self.assertEqual(reader.pos, 22)
+        self.assertEqual(reader.pos2xy(), (15, 1))
 
 
 class TestPyReplOutput(TestCase):
@@ -675,6 +678,77 @@ class TestPasteEvent(TestCase):
         reader = self.prepare_reader(events)
         output = multiline_input(reader)
         self.assertEqual(output, output_code)
+
+
+class TestReaderScreen(TestCase):
+    handle_events_test_wrap = partial(
+        handle_all_events,
+        prepare_console=partial(prepare_mock_console, width=10)
+    )
+
+    def assert_screen_equals(self, reader, expected):
+        actual = reader.calc_screen()
+        expected = expected.split("\n")
+        self.assertListEqual(actual, expected)
+
+    def test_wrap_simple(self):
+        events = code_to_events(10 * "a")
+        reader, _ = self.handle_events_test_wrap(events)
+        self.assert_screen_equals(reader, f"{9*"a"}\\\na")
+
+    def test_wrap_wide_characters(self):
+        events = code_to_events(8*"a" + "樂")
+        reader, _ = self.handle_events_test_wrap(events)
+        self.assert_screen_equals(reader, f"{8*"a"}\\\n樂")
+
+    def test_wrap_three_lines(self):
+        events = code_to_events(20*"a")
+        reader, _ = self.handle_events_test_wrap(events)
+        self.assert_screen_equals(reader, f"{9*"a"}\\\n{9*"a"}\\\naa")
+
+    def test_wrap_three_lines_mixed_character(self):
+        code = (
+            "def f():\n"
+           f"  {8*"a"}\n"
+           f"  {5*"樂"}"
+        )
+        events = code_to_events(code)
+        reader, _ = self.handle_events_test_wrap(events)
+        self.assert_screen_equals(reader, (
+            "def f():\n"
+           f"  {7*"a"}\\\n"
+            "a\n"
+           f"  {3*"樂"}\\\n"
+            "樂樂"
+        ))
+
+    def test_backspace(self):
+        events = itertools.chain(code_to_events("aaa"), [
+            Event(evt='key', data='backspace', raw=bytearray(b'\x7f')),
+        ])
+        reader, _ = handle_all_events(events)
+        self.assert_screen_equals(reader, "aa")
+
+    def test_wrap_removes_after_backspace(self):
+        events = itertools.chain(code_to_events(10 * "a"), [
+            Event(evt='key', data='backspace', raw=bytearray(b'\x7f')),
+        ])
+        reader, _ = self.handle_events_test_wrap(events)
+        self.assert_screen_equals(reader, 9*"a")
+
+    def test_wrap_removes_after_backspace(self):
+        events = itertools.chain(code_to_events(10 * "a"), [
+            Event(evt='key', data='backspace', raw=bytearray(b'\x7f')),
+        ])
+        reader, _ = self.handle_events_test_wrap(events)
+        self.assert_screen_equals(reader, 9*"a")
+
+    def test_backspace_in_second_line_after_wrap(self):
+        events = itertools.chain(code_to_events(11 * "a"), [
+            Event(evt='key', data='backspace', raw=bytearray(b'\x7f')),
+        ])
+        reader, _ = self.handle_events_test_wrap(events)
+        self.assert_screen_equals(reader, f"{9*"a"}\\\na")
 
 
 if __name__ == "__main__":

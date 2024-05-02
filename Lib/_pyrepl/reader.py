@@ -256,7 +256,6 @@ class Reader:
         lines = self.get_unicode().split("\n")
         screen: list[str] = []
         screeninfo: list[tuple[int, list[int]]] = []
-        width = self.console.width - 1
         pos = self.pos
         for ln, line in enumerate(lines):
             ll = len(line)
@@ -274,7 +273,7 @@ class Reader:
             pos -= ll + 1
             prompt, lp = self.process_prompt(prompt)
             l, l2 = disp_str(line)
-            wrapcount = (wlen(l) + lp) // width
+            wrapcount = (wlen(l) + lp) // self.console.width
             if wrapcount == 0:
                 screen.append(prompt + l)
                 screeninfo.append((lp, l2))
@@ -284,7 +283,7 @@ class Reader:
                     index_to_wrap_before = 0
                     column = 0
                     for character_width in l2:
-                        if column + character_width >= width - prelen:
+                        if column + character_width >= self.console.width - prelen:
                             break
                         index_to_wrap_before += 1
                         column += character_width
