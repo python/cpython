@@ -666,6 +666,13 @@ class ListComprehensionTest(unittest.TestCase):
         self._check_in_scopes(code, expected)
         self._check_in_scopes(code, expected, exec_func=self._replacing_exec)
 
+    def test_multiple_comprehension_name_reuse(self):
+        code = """
+            [x for x in [1]]
+            y = [x for _ in [1]]
+        """
+        self._check_in_scopes(code, {"y": [3]}, ns={"x": 3})
+
 
 __test__ = {'doctests' : doctests}
 
