@@ -1,0 +1,3 @@
+Fix :func:`inspect.signature()` to correctly handle parameter defaults
+on methods in extension modules that use names defined in the module
+namespace.
