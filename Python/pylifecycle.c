@@ -624,9 +624,11 @@ static int
 builtins_dict_watcher(PyDict_WatchEvent event, PyObject *dict, PyObject *key, PyObject *new_value)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
+#ifdef _Py_TIER2
     if (interp->rare_events.builtin_dict < _Py_MAX_ALLOWED_BUILTINS_MODIFICATIONS) {
         _Py_Executors_InvalidateAll(interp, 1);
     }
+#endif
     RARE_EVENT_INTERP_INC(interp, builtin_dict);
     return 0;
 }
@@ -1272,30 +1274,30 @@ init_interp_main(PyThreadState *tstate)
     }
 
     // Turn on experimental tier 2 (uops-based) optimizer
+    // This is also needed when the JIT is enabled
+#ifdef _Py_TIER2
     if (is_main_interp) {
-#ifndef _Py_JIT
-        // No JIT, maybe use the tier two interpreter:
-        char *envvar = Py_GETENV("PYTHON_UOPS");
-        int enabled = envvar != NULL && *envvar > '0';
-        if (_Py_get_xoption(&config->xoptions, L"uops") != NULL) {
-            enabled = 1;
+        int enabled = 1;
+#if _Py_TIER2 & 2
+        enabled = 0;
+#endif
+        char *env = Py_GETENV("PYTHON_JIT");
+        if (env && *env != '\0') {
+            // PYTHON_JIT=0|1 overrides the default
+            enabled = *env != '0';
         }
         if (enabled) {
-#else
-        // Always enable tier two for JIT builds (ignoring the environment
-        // variable and command-line option above):
-        if (true) {
-#endif
             PyObject *opt = PyUnstable_Optimizer_NewUOpOptimizer();
             if (opt == NULL) {
                 return _PyStatus_ERR("can't initialize optimizer");
             }
             if (PyUnstable_SetOptimizer((_PyOptimizerObject *)opt)) {
-                return _PyStatus_ERR("can't initialize optimizer");
+                return _PyStatus_ERR("can't install optimizer");
             }
             Py_DECREF(opt);
         }
     }
+#endif
 
     if (!is_main_interp) {
         // The main interpreter is handled in Py_Main(), for now.
@@ -1655,10 +1657,12 @@ finalize_modules(PyThreadState *tstate)
 {
     PyInterpreterState *interp = tstate->interp;
 
+#ifdef _Py_TIER2
     // Invalidate all executors and turn off tier 2 optimizer
     _Py_Executors_InvalidateAll(interp, 0);
     _PyOptimizerObject *old = _Py_SetOptimizer(interp, NULL);
     Py_XDECREF(old);
+#endif
 
     // Stop watching __builtin__ modifications
     PyDict_Unwatch(0, interp->builtins);

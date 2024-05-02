@@ -34,6 +34,8 @@ def clear_executors(func):
 
 
 @requires_specialization
+@unittest.skipUnless(hasattr(_testinternalcapi, "get_optimizer"),
+                     "Requires optimizer infrastructure")
 class TestOptimizerAPI(unittest.TestCase):
 
     def test_new_counter_optimizer_dealloc(self):
@@ -136,6 +138,8 @@ def get_opnames(ex):
 
 
 @requires_specialization
+@unittest.skipUnless(hasattr(_testinternalcapi, "get_optimizer"),
+                     "Requires optimizer infrastructure")
 class TestExecutorInvalidation(unittest.TestCase):
 
     def setUp(self):
@@ -215,6 +219,8 @@ class TestExecutorInvalidation(unittest.TestCase):
 
 
 @requires_specialization
+@unittest.skipUnless(hasattr(_testinternalcapi, "get_optimizer"),
+                     "Requires optimizer infrastructure")
 @unittest.skipIf(os.getenv("PYTHON_UOPS_OPTIMIZE") == "0", "Needs uop optimizer to run.")
 class TestUops(unittest.TestCase):
 
@@ -579,6 +585,8 @@ class TestUops(unittest.TestCase):
 
 
 @requires_specialization
+@unittest.skipUnless(hasattr(_testinternalcapi, "get_optimizer"),
+                     "Requires optimizer infrastructure")
 @unittest.skipIf(os.getenv("PYTHON_UOPS_OPTIMIZE") == "0", "Needs uop optimizer to run.")
 class TestUopsOptimization(unittest.TestCase):
 

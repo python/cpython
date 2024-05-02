@@ -3186,9 +3186,7 @@
                     _PyErr_Clear(tstate);
                 }
                 /* iterator ended normally */
-                PyStackRef_DECREF(iter_stackref);
-                STACK_SHRINK(1);
-                /* The translator sets the deopt target just past END_FOR */
+                /* The translator sets the deopt target just past the matching END_FOR */
                 if (true) {
                     UOP_STAT_INC(uopcode, miss);
                     JUMP_TO_JUMP_TARGET();
@@ -4905,7 +4903,6 @@
             #ifndef _Py_JIT
             next_uop = &current_executor->trace[1];
             #endif
-            CHECK_EVAL_BREAKER();
             break;
         }
 
@@ -5168,16 +5165,6 @@
                 JUMP_TO_JUMP_TARGET();
             }
             assert(eval_breaker == FT_ATOMIC_LOAD_UINTPTR_ACQUIRE(_PyFrame_GetCode(frame)->_co_instrumentation_version));
-            break;
-        }
-
-        case _EVAL_BREAKER_EXIT: {
-            _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY();
-            QSBR_QUIESCENT_STATE(tstate);
-            if (_Py_HandlePending(tstate) != 0) {
-                GOTO_UNWIND();
-            }
-            EXIT_TO_TRACE();
             break;
         }
 

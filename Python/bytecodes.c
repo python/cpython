@@ -163,7 +163,15 @@ dummy_func(
                 if ((oparg & RESUME_OPARG_LOCATION_MASK) < RESUME_AFTER_YIELD_FROM) {
                     CHECK_EVAL_BREAKER();
                 }
-                FT_ATOMIC_STORE_UINT8_RELAXED(this_instr->op.code, RESUME_CHECK);
+                assert(this_instr->op.code == RESUME ||
+                       this_instr->op.code == RESUME_CHECK ||
+                       this_instr->op.code == INSTRUMENTED_RESUME ||
+                       this_instr->op.code == ENTER_EXECUTOR);
+                if (this_instr->op.code == RESUME) {
+                    #if ENABLE_SPECIALIZATION
+                    FT_ATOMIC_STORE_UINT8_RELAXED(this_instr->op.code, RESUME_CHECK);
+                    #endif  /* ENABLE_SPECIALIZATION */
+                }
             }
         }
 
@@ -2365,6 +2373,7 @@ dummy_func(
             CHECK_EVAL_BREAKER();
             assert(oparg <= INSTR_OFFSET());
             JUMPBY(-oparg);
+            #ifdef _Py_TIER2
             #if ENABLE_SPECIALIZATION
             _Py_BackoffCounter counter = this_instr[1].counter;
             if (backoff_counter_triggers(counter) && this_instr->op.code == JUMP_BACKWARD) {
@@ -2390,6 +2399,7 @@ dummy_func(
                 ADVANCE_ADAPTIVE_COUNTER(this_instr[1].counter);
             }
             #endif  /* ENABLE_SPECIALIZATION */
+            #endif /* _Py_TIER2 */
         }
 
         pseudo(JUMP) = {
@@ -2403,23 +2413,28 @@ dummy_func(
         };
 
         tier1 inst(ENTER_EXECUTOR, (--)) {
-            int prevoparg = oparg;
-            CHECK_EVAL_BREAKER();
-            if (this_instr->op.code != ENTER_EXECUTOR ||
-                this_instr->op.arg != prevoparg) {
-                next_instr = this_instr;
-                DISPATCH();
-            }
-
+            #ifdef _Py_TIER2
             PyCodeObject *code = _PyFrame_GetCode(frame);
             _PyExecutorObject *executor = code->co_executors->executors[oparg & 255];
             assert(executor->vm_data.index == INSTR_OFFSET() - 1);
             assert(executor->vm_data.code == code);
             assert(executor->vm_data.valid);
             assert(tstate->previous_executor == NULL);
+            /* If the eval breaker is set then stay in tier 1.
+             * This avoids any potentially infinite loops
+             * involving _RESUME_CHECK */
+            if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) {
+                opcode = executor->vm_data.opcode;
+                oparg = (oparg & ~255) | executor->vm_data.oparg;
+                next_instr = this_instr;
+                DISPATCH_GOTO();
+            }
             tstate->previous_executor = Py_None;
             Py_INCREF(executor);
             GOTO_TIER_TWO(executor);
+            #else
+            Py_FatalError("ENTER_EXECUTOR is not supported in this build");
+            #endif /* _Py_TIER2 */
         }
 
         replaced op(_POP_JUMP_IF_FALSE, (cond -- )) {
@@ -2601,9 +2616,7 @@ dummy_func(
                     _PyErr_Clear(tstate);
                 }
                 /* iterator ended normally */
-                PyStackRef_DECREF(iter_stackref);
-                STACK_SHRINK(1);
-                /* The translator sets the deopt target just past END_FOR */
+                /* The translator sets the deopt target just past the matching END_FOR */
                 DEOPT_IF(true);
             }
             // Common case: no jump, leave it to the code generator
@@ -4123,7 +4136,6 @@ dummy_func(
 #ifndef _Py_JIT
             next_uop = &current_executor->trace[1];
 #endif
-            CHECK_EVAL_BREAKER();
         }
 
         tier2 op(_SET_IP, (instr_ptr/4 --)) {
@@ -4289,28 +4301,16 @@ dummy_func(
             GOTO_UNWIND();
         }
 
-
-        /* Special version of RESUME_CHECK that (when paired with _EVAL_BREAKER_EXIT)
-         * is safe for tier 2. Progress is guaranteed because _EVAL_BREAKER_EXIT calls
-         * _Py_HandlePending which clears the eval_breaker so that _TIER2_RESUME_CHECK
-         * will not exit if it is immediately executed again. */
+        /* Progress is guaranteed if we DEOPT on the eval breaker, because
+         * ENTER_EXECUTOR will not re-enter tier 2 with the eval breaker set. */
         tier2 op(_TIER2_RESUME_CHECK, (--)) {
 #if defined(__EMSCRIPTEN__)
-            EXIT_IF(_Py_emscripten_signal_clock == 0);
+            DEOPT_IF(_Py_emscripten_signal_clock == 0);
             _Py_emscripten_signal_clock -= Py_EMSCRIPTEN_SIGNAL_HANDLING;
 #endif
             uintptr_t eval_breaker = _Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker);
-            EXIT_IF(eval_breaker & _PY_EVAL_EVENTS_MASK);
+            DEOPT_IF(eval_breaker & _PY_EVAL_EVENTS_MASK);
             assert(eval_breaker == FT_ATOMIC_LOAD_UINTPTR_ACQUIRE(_PyFrame_GetCode(frame)->_co_instrumentation_version));
-        }
-
-        tier2 op(_EVAL_BREAKER_EXIT, (--)) {
-            _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY();
-            QSBR_QUIESCENT_STATE(tstate);
-            if (_Py_HandlePending(tstate) != 0) {
-                GOTO_UNWIND();
-            }
-            EXIT_TO_TRACE();
         }
 
 // END BYTECODES //

@@ -424,6 +424,7 @@ NON_ESCAPING_FUNCTIONS = (
     "PyCell_New",
     "PyFloat_AS_DOUBLE",
     "_PyFrame_PushUnchecked",
+    "Py_FatalError",
 )
 
 ESCAPING_FUNCTIONS = (

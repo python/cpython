@@ -1,0 +1,1 @@
+HEAD requests are no longer upgraded to GET request during redirects in urllib.

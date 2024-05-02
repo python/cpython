@@ -385,8 +385,8 @@ _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction *trace, size
 {
     // Loop once to find the total compiled size:
     size_t instruction_starts[UOP_MAX_TRACE_LENGTH];
-    size_t code_size = 0;
-    size_t data_size = 0;
+    size_t code_size = trampoline.code.body_size;
+    size_t data_size = trampoline.data.body_size;
     for (size_t i = 0; i < length; i++) {
         _PyUOpInstruction *instruction = (_PyUOpInstruction *)&trace[i];
         const StencilGroup *group = &stencil_groups[instruction->opcode];
@@ -408,11 +408,29 @@ _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction *trace, size
     // Loop again to emit the code:
     unsigned char *code = memory;
     unsigned char *data = memory + code_size;
+    {
+        // Compile the trampoline, which handles converting between the native
+        // calling convention and the calling convention used by jitted code
+        // (which may be different for efficiency reasons). On platforms where
+        // we don't change calling conventions, the trampoline is empty and
+        // nothing is emitted here:
+        const StencilGroup *group = &trampoline;
+        // Think of patches as a dictionary mapping HoleValue to uintptr_t:
+        uintptr_t patches[] = GET_PATCHES();
+        patches[HoleValue_CODE] = (uintptr_t)code;
+        patches[HoleValue_CONTINUE] = (uintptr_t)code + group->code.body_size;
+        patches[HoleValue_DATA] = (uintptr_t)data;
+        patches[HoleValue_EXECUTOR] = (uintptr_t)executor;
+        patches[HoleValue_TOP] = (uintptr_t)memory + trampoline.code.body_size;
+        patches[HoleValue_ZERO] = 0;
+        emit(group, patches);
+        code += group->code.body_size;
+        data += group->data.body_size;
+    }
     assert(trace[0].opcode == _START_EXECUTOR || trace[0].opcode == _COLD_EXIT);
     for (size_t i = 0; i < length; i++) {
         _PyUOpInstruction *instruction = (_PyUOpInstruction *)&trace[i];
         const StencilGroup *group = &stencil_groups[instruction->opcode];
-        // Think of patches as a dictionary mapping HoleValue to uintptr_t:
         uintptr_t patches[] = GET_PATCHES();
         patches[HoleValue_CODE] = (uintptr_t)code;
         patches[HoleValue_CONTINUE] = (uintptr_t)code + group->code.body_size;
@@ -454,18 +472,20 @@ _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction *trace, size
         code += group->code.body_size;
         data += group->data.body_size;
     }
-    // Protect against accidental buffer overrun into data:
-    const StencilGroup *group = &stencil_groups[_FATAL_ERROR];
-    uintptr_t patches[] = GET_PATCHES();
-    patches[HoleValue_CODE] = (uintptr_t)code;
-    patches[HoleValue_CONTINUE] = (uintptr_t)code;
-    patches[HoleValue_DATA] = (uintptr_t)data;
-    patches[HoleValue_EXECUTOR] = (uintptr_t)executor;
-    patches[HoleValue_TOP] = (uintptr_t)code;
-    patches[HoleValue_ZERO] = 0;
-    emit(group, patches);
-    code += group->code.body_size;
-    data += group->data.body_size;
+    {
+        // Protect against accidental buffer overrun into data:
+        const StencilGroup *group = &stencil_groups[_FATAL_ERROR];
+        uintptr_t patches[] = GET_PATCHES();
+        patches[HoleValue_CODE] = (uintptr_t)code;
+        patches[HoleValue_CONTINUE] = (uintptr_t)code;
+        patches[HoleValue_DATA] = (uintptr_t)data;
+        patches[HoleValue_EXECUTOR] = (uintptr_t)executor;
+        patches[HoleValue_TOP] = (uintptr_t)code;
+        patches[HoleValue_ZERO] = 0;
+        emit(group, patches);
+        code += group->code.body_size;
+        data += group->data.body_size;
+    }
     assert(code == memory + code_size);
     assert(data == memory + code_size + data_size);
     if (mark_executable(memory, total_size)) {
@@ -473,6 +493,7 @@ _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction *trace, size
         return -1;
     }
     executor->jit_code = memory;
+    executor->jit_side_entry = memory + trampoline.code.body_size;
     executor->jit_size = total_size;
     return 0;
 }
@@ -484,6 +505,7 @@ _PyJIT_Free(_PyExecutorObject *executor)
     size_t size = executor->jit_size;
     if (memory) {
         executor->jit_code = NULL;
+        executor->jit_side_entry = NULL;
         executor->jit_size = 0;
         if (jit_free(memory, size)) {
             PyErr_WriteUnraisable(NULL);

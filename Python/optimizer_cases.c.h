@@ -2363,7 +2363,3 @@
             break;
         }
 
-        case _EVAL_BREAKER_EXIT: {
-            break;
-        }
-
