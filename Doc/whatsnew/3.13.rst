@@ -1961,6 +1961,11 @@ New Features
 * Add :c:func:`PyType_GetModuleByDef` to the limited C API
   (Contributed by Victor Stinner in :gh:`116936`.)
 
+* Add two new functions to the C-API, :c:func:`PyRefTracer_SetTracer` and
+  :c:func:`PyRefTracer_GetTracer`, that allows to track object creation and
+  destruction the same way the :mod:`tracemalloc` module does. (Contributed
+  by Pablo Galindo in :gh:`93502`.)
+
 
 Porting to Python 3.13
 ----------------------
