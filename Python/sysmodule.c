@@ -1400,8 +1400,6 @@ sys_set_asyncgen_hooks(PyObject *self, PyObject *args, PyObject *kw)
         return NULL;
     }
 
-    PyObject *cur_finalizer = _PyEval_GetAsyncGenFinalizer();
-
     if (finalizer && finalizer != Py_None) {
         if (!PyCallable_Check(finalizer)) {
             PyErr_Format(PyExc_TypeError,
@@ -1409,6 +1407,20 @@ sys_set_asyncgen_hooks(PyObject *self, PyObject *args, PyObject *kw)
                          Py_TYPE(finalizer)->tp_name);
             return NULL;
         }
+    }
+
+    if (firstiter && firstiter != Py_None) {
+        if (!PyCallable_Check(firstiter)) {
+            PyErr_Format(PyExc_TypeError,
+                         "callable firstiter expected, got %.50s",
+                         Py_TYPE(firstiter)->tp_name);
+            return NULL;
+        }
+    }
+
+    PyObject *cur_finalizer = _PyEval_GetAsyncGenFinalizer();
+
+    if (finalizer && finalizer != Py_None) {
         if (_PyEval_SetAsyncGenFinalizer(finalizer) < 0) {
             return NULL;
         }
@@ -1418,12 +1430,6 @@ sys_set_asyncgen_hooks(PyObject *self, PyObject *args, PyObject *kw)
     }
 
     if (firstiter && firstiter != Py_None) {
-        if (!PyCallable_Check(firstiter)) {
-            PyErr_Format(PyExc_TypeError,
-                         "callable firstiter expected, got %.50s",
-                         Py_TYPE(firstiter)->tp_name);
-            goto error;
-        }
         if (_PyEval_SetAsyncGenFirstiter(firstiter) < 0) {
             goto error;
         }
