@@ -921,7 +921,7 @@ as internal buffering of data.
    If *offset_src* is None, then *src* is read from the current position;
    respectively for *offset_dst*.
 
-   In Linux kernel older than 5.3, the files pointed by *src* and *dst*
+   In Linux kernel older than 5.3, the files pointed to by *src* and *dst*
    must reside in the same filesystem, otherwise an :exc:`OSError` is
    raised with :attr:`~OSError.errno` set to :const:`errno.EXDEV`.
 
@@ -1666,7 +1666,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    At least one of the file descriptors must refer to a pipe. If *offset_src*
    is None, then *src* is read from the current position; respectively for
    *offset_dst*. The offset associated to the file descriptor that refers to a
-   pipe must be ``None``. The files pointed by *src* and *dst* must reside in
+   pipe must be ``None``. The files pointed to by *src* and *dst* must reside in
    the same filesystem, otherwise an :exc:`OSError` is raised with
    :attr:`~OSError.errno` set to :const:`errno.EXDEV`.
 

@@ -242,7 +242,7 @@ Directory and files operations
    be copied as far as the platform allows; if false or omitted, the contents
    and metadata of the linked files are copied to the new tree.
 
-   When *symlinks* is false, if the file pointed by the symlink doesn't
+   When *symlinks* is false, if the file pointed to by the symlink doesn't
    exist, an exception will be added in the list of errors raised in
    an :exc:`Error` exception at the end of the copy process.
    You can set the optional *ignore_dangling_symlinks* flag to true if you
@@ -437,7 +437,7 @@ Directory and files operations
    called.  If no *cmd* would be called, return ``None``.
 
    *mode* is a permission mask passed to :func:`os.access`, by default
-   determining if the file exists and executable.
+   determining if the file exists and is executable.
 
    When no *path* is specified, the results of :func:`os.environ` are used,
    returning either the "PATH" value or a fallback of :data:`os.defpath`.
