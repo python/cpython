@@ -1400,9 +1400,12 @@ finish_singlephase_extension(PyThreadState *tstate,
 
 
 static PyObject *
-reload_singlephase_extension(PyThreadState *tstate, PyModuleDef *def,
+reload_singlephase_extension(PyThreadState *tstate,
+                             struct extensions_cache_value *cached,
                              struct _Py_ext_module_loader_info *info)
 {
+    PyModuleDef *def = cached->def;
+    assert(def != NULL);
     assert_singlephase(def);
     PyObject *mod = NULL;
 
@@ -1497,13 +1500,12 @@ import_find_extension(PyThreadState *tstate,
                       struct _Py_ext_module_loader_info *info)
 {
     /* Only single-phase init modules will be in the cache. */
-    struct extensions_cache_value *value
+    struct extensions_cache_value *cached
             = _extensions_cache_get(info->path, info->name);
-    if (value == NULL) {
+    if (cached == NULL) {
         return NULL;
     }
-    PyModuleDef *def = value->def;
-    assert_singlephase(def);
+    assert_singlephase(cached->def);
 
     /* It may have been successfully imported previously
        in an interpreter that allows legacy modules
@@ -1514,7 +1516,7 @@ import_find_extension(PyThreadState *tstate,
         return NULL;
     }
 
-    PyObject *mod = reload_singlephase_extension(tstate, def, info);
+    PyObject *mod = reload_singlephase_extension(tstate, cached, info);
     if (mod == NULL) {
         return NULL;
     }
@@ -1622,14 +1624,14 @@ static int
 clear_singlephase_extension(PyInterpreterState *interp,
                             PyObject *name, PyObject *path)
 {
-    struct extensions_cache_value *value = _extensions_cache_get(path, name);
-    if (value == NULL) {
+    struct extensions_cache_value *cached = _extensions_cache_get(path, name);
+    if (cached == NULL) {
         if (PyErr_Occurred()) {
             return -1;
         }
         return 0;
     }
-    PyModuleDef *def = value->def;
+    PyModuleDef *def = cached->def;
 
     /* Clear data set when the module was initially loaded. */
     def->m_base.m_init = NULL;
@@ -1732,7 +1734,12 @@ create_builtin(PyThreadState *tstate, PyObject *name, PyObject *spec)
     PyObject *mod = import_find_extension(tstate, &info);
     if (mod != NULL) {
         assert(!_PyErr_Occurred(tstate));
-        assert_singlephase(_PyModule_GetDef(mod));
+#ifndef NDEBUG
+        struct extensions_cache_value *cached
+            = _extensions_cache_get(info.path, info.name);
+#endif
+        assert(cached->def == _PyModule_GetDef(mod));
+        assert_singlephase(cached->def);
         goto finally;
     }
     else if (_PyErr_Occurred(tstate)) {
@@ -4086,7 +4093,13 @@ _imp_create_dynamic_impl(PyObject *module, PyObject *spec, PyObject *file)
     mod = import_find_extension(tstate, &info);
     if (mod != NULL) {
         assert(!_PyErr_Occurred(tstate));
-        assert_singlephase(_PyModule_GetDef(mod));
+#ifndef NDEBUG
+        struct extensions_cache_value *cached
+            = _extensions_cache_get(info.path, info.name);
+#endif
+        assert(_PyModule_GetDef(mod) == NULL
+                || cached->def == _PyModule_GetDef(mod));
+        assert_singlephase(cached->def);
         goto finally;
     }
     else if (_PyErr_Occurred(tstate)) {
