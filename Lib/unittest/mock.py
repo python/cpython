@@ -2757,8 +2757,8 @@ def create_autospec(spec, spec_set=False, instance=False, _parent=None,
     if _parent is not None and not instance:
         _parent._mock_children[_name] = mock
 
-    wrapped = kwargs.get('wraps')
-
+    # Pop wraps from kwargs because it must not be passed to configure_mock.
+    wrapped = kwargs.pop('wraps', None)
     if is_type and not instance and 'return_value' not in kwargs:
         mock.return_value = create_autospec(spec, spec_set, instance=True,
                                             _name='()', _parent=mock,
@@ -2783,12 +2783,12 @@ def create_autospec(spec, spec_set=False, instance=False, _parent=None,
         except AttributeError:
             continue
 
-        kwargs = {'spec': original}
+        child_kwargs = {'spec': original}
         # Wrap child attributes also.
         if wrapped and hasattr(wrapped, entry):
-            kwargs.update(wraps=original)
+            child_kwargs.update(wraps=original)
         if spec_set:
-            kwargs = {'spec_set': original}
+            child_kwargs = {'spec_set': original}
 
         if not isinstance(original, FunctionTypes):
             new = _SpecState(original, spec_set, mock, entry, instance)
@@ -2799,14 +2799,13 @@ def create_autospec(spec, spec_set=False, instance=False, _parent=None,
                 parent = mock.mock
 
             skipfirst = _must_skip(spec, entry, is_type)
-            kwargs['_eat_self'] = skipfirst
+            child_kwargs['_eat_self'] = skipfirst
             if iscoroutinefunction(original):
                 child_klass = AsyncMock
             else:
                 child_klass = MagicMock
             new = child_klass(parent=parent, name=entry, _new_name=entry,
-                              _new_parent=parent,
-                              **kwargs)
+                              _new_parent=parent, **child_kwargs)
             mock._mock_children[entry] = new
             new.return_value = child_klass()
             _check_signature(original, new, skipfirst=skipfirst)
@@ -2817,6 +2816,11 @@ def create_autospec(spec, spec_set=False, instance=False, _parent=None,
         # setting as an instance attribute?
         if isinstance(new, FunctionTypes):
             setattr(mock, entry, new)
+    # kwargs are passed with respect to the parent mock so, they are not used
+    # for creating return_value of the parent mock. So, this condition
+    # should be true only for the parent mock if kwargs are given.
+    if _is_instance_mock(mock) and kwargs:
+        mock.configure_mock(**kwargs)
 
     return mock
 

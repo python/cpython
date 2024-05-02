@@ -104,6 +104,19 @@ class MockTest(unittest.TestCase):
         with self.assertRaises(TypeError):
             mock()
 
+    def test_create_autospec_should_be_configurable_by_kwargs(self):
+        """If kwargs are given to configure mock, the function must configure
+        the parent mock during initialization."""
+        mocked_result = 'mocked value'
+        class_mock = create_autospec(spec=Something, **{
+            'return_value.meth.side_effect': [ValueError, DEFAULT],
+            'return_value.meth.return_value': mocked_result})
+        with self.assertRaises(ValueError):
+            class_mock().meth(a=None, b=None, c=None)
+        self.assertEqual(class_mock().meth(a=None, b=None, c=None), mocked_result)
+        # Only the parent mock should be configurable because the user will
+        # pass kwargs with respect to the parent mock.
+        self.assertEqual(class_mock().return_value.meth.side_effect, None)
 
     def test_repr(self):
         mock = Mock(name='foo')
