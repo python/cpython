@@ -8,7 +8,7 @@ import weakref
 
 from sys import monitoring
 from test.support import is_wasi
-from threading import Thread, _RLock
+from threading import Thread, _PyRLock
 from unittest import TestCase
 
 
@@ -226,7 +226,7 @@ class MonitoringMisc(MonitoringTestMixin, TestCase):
 
         sys.settrace(trace)
         try:
-            l = _RLock()
+            l = _PyRLock()
 
             def f():
                 for i in range(3000):
