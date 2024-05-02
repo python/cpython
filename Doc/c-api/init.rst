@@ -1904,6 +1904,58 @@ Python-level trace functions in previous versions.
 
 .. versionadded:: 3.12
 
+Reference tracing
+=================
+
+.. versionadded:: 3.13
+
+.. c:type:: int (*PyRefTracer)(PyObject *, int event, void* data)
+
+   The type of the trace function registered using :c:func:`PyRefTracer_SetTracer`.
+   The first parameter is a Python object that has been just created (when **event**
+   is set to :c:data:`PyRefTracer_CREATE`) or about to be destroyed (when **event**
+   is set to :c:data:`PyRefTracer_DESTROY`). The **data** argument is the opaque pointer
+   that was provided when :c:func:`PyRefTracer_SetTracer` was called.
+
+.. versionadded:: 3.13
+
+.. c:var:: int PyRefTracer_CREATE
+
+   The value for the *event* parameter to :c:type:`PyRefTracer` functions when a Python
+   object has been created.
+
+.. c:var:: int PyRefTracer_DESTROY
+
+   The value for the *event* parameter to :c:type:`PyRefTracer` functions when a Python
+   object has been destroyed.
+
+.. c:function:: int PyRefTracer_SetTracer(PyRefTracer tracer, void *data)
+
+   Register a reference tracer function. The function will be called when a new
+   Python has been created or when an object is going to be destroyed. If
+   **data** is provided it must be an opaque pointer that will be provided when
+   the tracer function is called. Return ``0`` on success. Set an exception and
+   return ``-1`` on error.
+
+   Not that tracer functions **must not** create Python objects inside or
+   otherwise the call will be re-entrant. The tracer also **must not** clear
+   any existing exception or set an exception.  The GIL will be held every time
+   the tracer function is called.
+
+   The GIL must be held when calling this function.
+
+.. versionadded:: 3.13
+
+.. c:function:: PyRefTracer PyRefTracer_GetTracer(void** data)
+
+   Get the registered reference tracer function and the value of the opaque data
+   pointer that was registered when :c:func:`PyRefTracer_SetTracer` was called.
+   If no tracer was registered this function will return NULL and will set the
+   **data** pointer to NULL.
+
+   The GIL must be held when calling this function.
+
+.. versionadded:: 3.13
 
 .. _advanced-debugging:
 
