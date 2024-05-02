@@ -20,6 +20,12 @@ static const _PyStackRef Py_STACKREF_NULL = { .bits = 0 };
 
 #define Py_TAG_DEFERRED (1)
 
+static inline int
+PyStackRef_IsDeferred(_PyStackRef ref)
+{
+    return ((ref.bits & Py_TAG_DEFERRED) == Py_TAG_DEFERRED);
+}
+
 // Gets a PyObject * from a _PyStackRef
 #if defined(Py_GIL_DISABLED)
 static inline PyObject *
@@ -87,7 +93,7 @@ _PyStackRef_XNewRefDeferred(PyObject *obj)
 static inline PyObject *
 PyStackRef_StealObject(_PyStackRef tagged)
 {
-    if ((tagged.bits & Py_TAG_DEFERRED) == Py_TAG_DEFERRED) {
+    if (PyStackRef_IsDeferred(tagged)) {
         assert(_PyObject_HasDeferredRefcount(PyStackRef_Get(tagged)) ||
             _Py_IsImmortal(PyStackRef_Get(tagged)));
         return Py_NewRef(PyStackRef_Get(tagged));
@@ -145,7 +151,9 @@ _Py_untag_stack_steal(PyObject **dst, const _PyStackRef *src, size_t length)
 static inline void
 PyStackRef_DECREF(_PyStackRef tagged)
 {
-    if ((tagged.bits & Py_TAG_DEFERRED) == Py_TAG_DEFERRED) {
+    if (PyStackRef_IsDeferred(tagged)) {
+        assert(_PyObject_HasDeferredRefcount(PyStackRef_Get(tagged)) ||
+               _Py_IsImmortal(PyStackRef_Get(tagged)));
         return;
     }
     Py_DECREF(PyStackRef_Get(tagged));
@@ -158,8 +166,9 @@ PyStackRef_DECREF(_PyStackRef tagged)
 static inline void
 PyStackRef_INCREF(_PyStackRef tagged)
 {
-    if ((tagged.bits & Py_TAG_DEFERRED) == Py_TAG_DEFERRED) {
-        assert(_PyObject_HasDeferredRefcount(PyStackRef_Get(tagged)));
+    if (PyStackRef_IsDeferred(tagged)) {
+        assert(_PyObject_HasDeferredRefcount(PyStackRef_Get(tagged)) ||
+                   _Py_IsImmortal(PyStackRef_Get(tagged)));
         return;
     }
     Py_INCREF(PyStackRef_Get(tagged));

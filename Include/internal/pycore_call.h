@@ -201,21 +201,22 @@ extern void _PyStack_UnpackDict_FreeNoDecRef(
 
 PyAPI_FUNC(PyObject *)
 PyObject_Vectorcall_StackRef(PyObject *callable,
-                           const _PyStackRef *tagged, size_t nargs, PyObject *kwnames);
+    const _PyStackRef *tagged, size_t nargs, PyObject *kwnames);
 
 PyAPI_FUNC(PyObject *)
 PyObject_TypeVectorcall_StackRef(PyTypeObject *callable,
-                               const _PyStackRef *tagged, size_t nargs, PyObject *kwnames);
+   const _PyStackRef *tagged, size_t nargs, PyObject *kwnames);
 
 PyAPI_FUNC(PyObject *)
 PyObject_PyCFunctionFastCall_StackRef(PyCFunctionFast cfunc,
-                                    PyObject *self,
-                                    const _PyStackRef *tagged, Py_ssize_t nargs);
+    PyObject *self,
+    const _PyStackRef *tagged, Py_ssize_t nargs);
+
 PyAPI_FUNC(PyObject *)
 PyObject_PyCFunctionFastWithKeywordsCall_StackRef(PyCFunctionFastWithKeywords cfunc,
-                                                PyObject *self,
-                                                const _PyStackRef *tagged, Py_ssize_t nargs,
-                                                PyObject *kwds);
+    PyObject *self,
+    const _PyStackRef *tagged, Py_ssize_t nargs,
+    PyObject *kwds);
 
 #ifdef __cplusplus
 }

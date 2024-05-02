@@ -1466,7 +1466,7 @@ initialize_locals(PyThreadState *tstate, PyFunctionObject *func,
         }
         else {
             assert(args != NULL);
-            u = _PyTuple_FromStackRefSteal((args + n), argcount - n);
+            u = _PyTuple_FromStackSteal((args + n), argcount - n);
         }
         if (u == NULL) {
             goto fail_post_positional;
@@ -2084,7 +2084,7 @@ _PyEval_ExceptionGroupMatch(PyObject* exc_value, PyObject *match_type,
 */
 
 int
-_PyEval_UnpackTaggedIterable(PyThreadState *tstate, PyObject *v,
+_PyEval_UnpackIterableStackRef(PyThreadState *tstate, PyObject *v,
                        int argcnt, int argcntafter, _PyStackRef *sp)
 {
     int i = 0, j = 0;

@@ -1633,7 +1633,7 @@ _PyObject_GetMethodStackRef(PyObject *obj, PyObject *name, _PyStackRef *method)
         return 0;
     }
 
-    *method = PyStackRef_StealRef(NULL);
+    *method = Py_STACKREF_NULL;
     PyErr_Format(PyExc_AttributeError,
                  "'%.100s' object has no attribute '%U'",
                  tp->tp_name, name);

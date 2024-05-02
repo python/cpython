@@ -229,7 +229,7 @@ dummy_func(
         inst(LOAD_FAST_AND_CLEAR, (-- value: _PyStackRef)) {
             value = GETLOCAL(oparg);
             // do not use SETLOCAL here, it decrefs the old value
-            GETLOCAL(oparg) = PyStackRef_StealRef(NULL);
+            GETLOCAL(oparg) = Py_STACKREF_NULL;
         }
 
         inst(LOAD_FAST_LOAD_FAST, ( -- value1: _PyStackRef, value2: _PyStackRef)) {
@@ -1255,7 +1255,7 @@ dummy_func(
 
         op(_UNPACK_SEQUENCE, (seq -- unused[oparg])) {
             _PyStackRef *top = stack_pointer + oparg - 1;
-            int res = _PyEval_UnpackTaggedIterable(tstate, seq, oparg, -1, top);
+            int res = _PyEval_UnpackIterableStackRef(tstate, seq, oparg, -1, top);
             DECREF_INPUTS();
             ERROR_IF(res == 0, error);
         }
@@ -1297,7 +1297,7 @@ dummy_func(
         inst(UNPACK_EX, (seq -- unused[oparg & 0xFF], unused, unused[oparg >> 8])) {
             int totalargs = 1 + (oparg & 0xFF) + (oparg >> 8);
             _PyStackRef *top = stack_pointer + totalargs - 1;
-            int res = _PyEval_UnpackTaggedIterable(tstate, seq, oparg & 0xFF, oparg >> 8, top);
+            int res = _PyEval_UnpackIterableStackRef(tstate, seq, oparg & 0xFF, oparg >> 8, top);
             DECREF_INPUTS();
             ERROR_IF(res == 0, error);
         }
@@ -1537,7 +1537,7 @@ dummy_func(
                 );
                 ERROR_IF(1, error);
             }
-            SETLOCAL(oparg, PyStackRef_StealRef(NULL));
+            SETLOCAL(oparg, Py_STACKREF_NULL);
         }
 
         inst(MAKE_CELL, (--)) {
@@ -1616,12 +1616,12 @@ dummy_func(
         }
 
         inst(BUILD_TUPLE, (values[oparg] -- tup)) {
-            tup = _PyTuple_FromStackRefSteal(values, oparg);
+            tup = _PyTuple_FromStackSteal(values, oparg);
             ERROR_IF(tup == NULL, error);
         }
 
         inst(BUILD_LIST, (values[oparg] -- list)) {
-            list = _PyList_FromStackRefSteal(values, oparg);
+            list = _PyList_FromStackSteal(values, oparg);
             ERROR_IF(list == NULL, error);
         }
 
@@ -1702,8 +1702,8 @@ dummy_func(
         inst(BUILD_CONST_KEY_MAP, (values[oparg], keys -- map)) {
             assert(PyTuple_CheckExact(keys));
             assert(PyTuple_GET_SIZE(keys) == (Py_ssize_t)oparg);
-            map = _PyDict_FromStackRefItemsUntaggedKeys(
-                    &PyTuple_GET_ITEM(keys, 0), 1,
+            map = _PyDict_FromStackRefItems(
+                    (_PyStackRef *)&PyTuple_GET_ITEM(keys, 0), 1,
                     values, 1, oparg);
             DECREF_INPUTS();
             ERROR_IF(map == NULL, error);
@@ -1881,7 +1881,7 @@ dummy_func(
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg >> 1);
             if (oparg & 1) {
                 /* Designed to work in tandem with CALL, pushes two values. */
-                *attr = PyStackRef_StealRef(NULL);
+                *attr = Py_STACKREF_NULL;
                 if (_PyObject_GetMethodStackRef(owner, name, attr)) {
                     /* We can bypass temporary bound method object.
                        meth is unbound method and obj is self.
