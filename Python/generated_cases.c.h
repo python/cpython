@@ -4961,18 +4961,18 @@
                     next_instr = this_instr;
                     DISPATCH();
                 }
+                assert(this_instr->op.code == RESUME ||
+                       this_instr->op.code == RESUME_CHECK ||
+                       this_instr->op.code == INSTRUMENTED_RESUME ||
+                       this_instr->op.code == ENTER_EXECUTOR);
+                if (this_instr->op.code == RESUME) {
+                    #if ENABLE_SPECIALIZATION
+                    FT_ATOMIC_STORE_UINT8_RELAXED(this_instr->op.code, RESUME_CHECK);
+                    #endif  /* ENABLE_SPECIALIZATION */
+                }
             }
             if ((oparg & RESUME_OPARG_LOCATION_MASK) < RESUME_AFTER_YIELD_FROM) {
                 CHECK_EVAL_BREAKER();
-            }
-            assert(this_instr->op.code == RESUME ||
-                   this_instr->op.code == RESUME_CHECK ||
-                   this_instr->op.code == INSTRUMENTED_RESUME ||
-                   this_instr->op.code == ENTER_EXECUTOR);
-            if (this_instr->op.code == RESUME) {
-                #if ENABLE_SPECIALIZATION
-                FT_ATOMIC_STORE_UINT8_RELAXED(this_instr->op.code, RESUME_CHECK);
-                #endif  /* ENABLE_SPECIALIZATION */
             }
             DISPATCH();
         }
