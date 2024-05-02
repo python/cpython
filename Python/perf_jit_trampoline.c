@@ -23,7 +23,7 @@ typedef struct {
     PyThread_type_lock map_lock;
     void* mapped_buffer;
     size_t mapped_size;
-    int code_id_ = 0;
+    int code_id;
 } PerfMapJitState;
 
 static PerfMapJitState perf_jit_map_state;
@@ -169,7 +169,7 @@ static uint8_t DwarfUData4 = 0x03;
 static uint8_t DwarfSData4 = 0x0b;
 static uint8_t DwarfPcRel = 0x10;
 static uint8_t DwarfDataRel = 0x30;
-static uint8_t DwarfOmit = 0xff;
+// static uint8_t DwarfOmit = 0xff;
 typedef struct {
     unsigned char version;
     unsigned char eh_frame_ptr_enc;
@@ -289,7 +289,7 @@ static void* perf_map_jit_init(void) {
         fclose(perf_jit_map_state.perf_map);
         return NULL;
     }
-    perf_jit_map_state.code_id_ = 0;
+    perf_jit_map_state.code_id = 0;
 
     // trampoline_api.code_padding = PERF_JIT_CODE_PADDING;
     return &perf_jit_map_state;
@@ -579,7 +579,8 @@ static void perf_map_jit_write_entry(void *state, const void *code_addr,
     ev.vma = base;
     ev.code_address = base;
     ev.code_size = size;
-    ev.code_id = perf_jit_map_state->code_id_++;
+    perf_jit_map_state.code_id += 1;
+    ev.code_id = perf_jit_map_state.code_id;
 
     perf_map_jit_write_fully(&ev, sizeof(ev));
     perf_map_jit_write_fully(perf_map_entry, name_length+1);
