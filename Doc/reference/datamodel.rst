@@ -1007,7 +1007,7 @@ Special attributes:
       through ``self.X`` from any function in its body.
 
    :attr:`__firstlineno__`
-      The line number of the first line of the xlass definition.
+      The line number of the first line of the class definition.
 
 
 Class instances
