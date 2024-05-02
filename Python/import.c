@@ -1193,26 +1193,63 @@ is_core_module(PyInterpreterState *interp, PyObject *name, PyObject *path)
 }
 
 #ifndef NDEBUG
-static bool
-is_singlephase(PyModuleDef *def)
+static _Py_ext_module_kind
+_get_extension_kind(PyModuleDef *def, bool check_size)
 {
+    _Py_ext_module_kind kind;
     if (def == NULL) {
         /* It must be a module created by reload_singlephase_extension()
          * from m_copy.  Ideally we'd do away with this case. */
-        return true;
+        kind = _Py_ext_module_kind_SINGLEPHASE;
     }
-    else if (def->m_slots == NULL) {
-        return true;
+    else if (def->m_slots != NULL) {
+        kind = _Py_ext_module_kind_MULTIPHASE;
+    }
+    else if (check_size && def->m_size == -1) {
+        kind = _Py_ext_module_kind_SINGLEPHASE;
+    }
+    else if (def->m_base.m_init != NULL) {
+        kind = _Py_ext_module_kind_SINGLEPHASE;
     }
     else {
-        return false;
+        // This is probably single-phase init, but a multi-phase
+        // module *can* have NULL m_slots.
+        kind = _Py_ext_module_kind_UNKNOWN;
     }
+    return kind;
 }
+
+/* The module might not be fully initialized yet
+ * and PyModule_FromDefAndSpec() checks m_size
+ * so we skip m_size. */
+#define assert_multiphase_def(def)                                  \
+    do {                                                            \
+        _Py_ext_module_kind kind = _get_extension_kind(def, false); \
+        assert(kind == _Py_ext_module_kind_MULTIPHASE               \
+                /* m_slots can be NULL. */                          \
+                || kind == _Py_ext_module_kind_UNKNOWN);            \
+    } while (0)
+
+#define assert_singlephase_def(def)                                 \
+    do {                                                            \
+        _Py_ext_module_kind kind = _get_extension_kind(def, true);  \
+        assert(kind == _Py_ext_module_kind_SINGLEPHASE              \
+                || kind == _Py_ext_module_kind_UNKNOWN);            \
+    } while (0)
+
+#define assert_singlephase(def) \
+    assert_singlephase_def(def)
+
+#else  /* defined(NDEBUG) */
+#define assert_multiphase_def(def)
+#define assert_singlephase_def(def)
+#define assert_singlephase(def)
 #endif
 
 
 struct singlephase_global_update {
     PyObject *m_dict;
+    PyModInitFunction m_init;
 };
 
 static int
@@ -1226,10 +1263,24 @@ update_global_state_for_extension(PyThreadState *tstate,
         assert(def->m_base.m_copy == NULL);
     }
     else {
-        assert(def->m_base.m_init != NULL
-               || is_core_module(tstate->interp, name, path));
-        if (singlephase->m_dict == NULL) {
+        if (singlephase->m_init != NULL) {
+            assert(singlephase->m_dict == NULL);
             assert(def->m_base.m_copy == NULL);
+            assert(def->m_size >= 0);
+            /* Remember pointer to module init function. */
+            // XXX If two modules share a def then def->m_base will
+            // reflect the last one added (here) to the global cache.
+            // We should prevent this somehow.  The simplest solution
+            // is probably to store m_copy/m_init in the cache along
+            // with the def, rather than within the def.
+            def->m_base.m_init = singlephase->m_init;
+        }
+        else if (singlephase->m_dict == NULL) {
+            /* It must be a core builtin module. */
+            assert(is_core_module(tstate->interp, name, path));
+            assert(def->m_size == -1);
+            assert(def->m_base.m_copy == NULL);
+            assert(def->m_base.m_init == NULL);
         }
         else {
             assert(PyDict_Check(singlephase->m_dict));
@@ -1316,7 +1367,7 @@ import_find_extension(PyThreadState *tstate,
     if (def == NULL) {
         return NULL;
     }
-    assert(is_singlephase(def));
+    assert_singlephase(def);
 
     /* It may have been successfully imported previously
        in an interpreter that allows legacy modules
@@ -1369,11 +1420,26 @@ import_find_extension(PyThreadState *tstate,
         }
         struct _Py_ext_module_loader_result res;
         if (_PyImport_RunModInitFunc(def->m_base.m_init, info, &res) < 0) {
+            _Py_ext_module_loader_result_apply_error(&res, name_buf);
             return NULL;
         }
         assert(!PyErr_Occurred());
+        assert(res.err == NULL);
+        assert(res.kind == _Py_ext_module_kind_SINGLEPHASE);
         mod = res.module;
-        // XXX __file__ doesn't get set!
+        /* Tchnically, the init function could return a different module def.
+         * Then we would probably need to update the global cache.
+         * However, we don't expect anyone to change the def. */
+        assert(res.def == def);
+        _Py_ext_module_loader_result_clear(&res);
+
+        /* Remember the filename as the __file__ attribute */
+        if (info->filename != NULL) {
+            if (PyModule_AddObjectRef(mod, "__file__", info->filename) < 0) {
+                PyErr_Clear(); /* Not important enough to report */
+            }
+        }
+
         if (PyObject_SetItem(modules, info->name, mod) == -1) {
             Py_DECREF(mod);
             return NULL;
@@ -1398,78 +1464,89 @@ import_run_extension(PyThreadState *tstate, PyModInitFunction p0,
                      struct _Py_ext_module_loader_info *info,
                      PyObject *spec, PyObject *modules)
 {
+    /* Core modules go through _PyImport_FixupBuiltin(). */
+    assert(!is_core_module(tstate->interp, info->name, info->path));
+
     PyObject *mod = NULL;
     PyModuleDef *def = NULL;
+    const char *name_buf = PyBytes_AS_STRING(info->name_encoded);
 
     struct _Py_ext_module_loader_result res;
     if (_PyImport_RunModInitFunc(p0, info, &res) < 0) {
         /* We discard res.def. */
         assert(res.module == NULL);
-        assert(PyErr_Occurred());
-        goto finally;
+        _Py_ext_module_loader_result_apply_error(&res, name_buf);
+        return NULL;
     }
     assert(!PyErr_Occurred());
+    assert(res.err == NULL);
 
     mod = res.module;
     res.module = NULL;
     def = res.def;
     assert(def != NULL);
 
-    if (mod == NULL) {
-        //assert(!is_singlephase(def));
+    if (res.kind == _Py_ext_module_kind_MULTIPHASE) {
+        assert_multiphase_def(def);
         assert(mod == NULL);
         mod = PyModule_FromDefAndSpec(def, spec);
         if (mod == NULL) {
-            goto finally;
+            goto error;
         }
     }
     else {
-        assert(is_singlephase(def));
+        assert(res.kind == _Py_ext_module_kind_SINGLEPHASE);
+        assert_singlephase_def(def);
         assert(PyModule_Check(mod));
 
-        const char *name_buf = PyBytes_AS_STRING(info->name_encoded);
         if (_PyImport_CheckSubinterpIncompatibleExtensionAllowed(name_buf) < 0) {
-            Py_CLEAR(mod);
-            goto finally;
+            goto error;
         }
 
-        /* Remember pointer to module init function. */
-        def->m_base.m_init = p0;
-
+        /* Remember the filename as the __file__ attribute */
         if (info->filename != NULL) {
-            /* Remember the filename as the __file__ attribute */
             if (PyModule_AddObjectRef(mod, "__file__", info->filename) < 0) {
                 PyErr_Clear(); /* Not important enough to report */
             }
         }
 
+        /* Update global import state. */
         struct singlephase_global_update singlephase = {0};
         // gh-88216: Extensions and def->m_base.m_copy can be updated
         // when the extension module doesn't support sub-interpreters.
-        if (def->m_size == -1
-                && !is_core_module(tstate->interp, info->name, info->path))
-        {
+        if (def->m_size == -1) {
+            /* We will reload from m_copy. */
+            assert(def->m_base.m_init == NULL);
             singlephase.m_dict = PyModule_GetDict(mod);
             assert(singlephase.m_dict != NULL);
+        }
+        else {
+            /* We will reload via the init function. */
+            assert(def->m_size >= 0);
+            singlephase.m_init = p0;
         }
         if (update_global_state_for_extension(
                 tstate, info->path, info->name, def, &singlephase) < 0)
         {
-            Py_CLEAR(mod);
-            goto finally;
+            goto error;
         }
 
+        /* Update per-interpreter import state. */
         PyObject *modules = get_modules_dict(tstate, true);
         if (finish_singlephase_extension(
                 tstate, mod, def, info->name, modules) < 0)
         {
-            Py_CLEAR(mod);
-            goto finally;
+            goto error;
         }
     }
 
-finally:
+    _Py_ext_module_loader_result_clear(&res);
     return mod;
+
+error:
+    Py_XDECREF(mod);
+    _Py_ext_module_loader_result_clear(&res);
+    return NULL;
 }
 
 
@@ -1532,7 +1609,7 @@ _PyImport_FixupBuiltin(PyThreadState *tstate, PyObject *mod, const char *name,
      * module state, but we also don't populate def->m_base.m_copy
      * for them. */
     assert(is_core_module(tstate->interp, nameobj, nameobj));
-    assert(is_singlephase(def));
+    assert_singlephase_def(def);
     assert(def->m_size == -1);
     assert(def->m_base.m_copy == NULL);
 
@@ -1586,7 +1663,7 @@ create_builtin(PyThreadState *tstate, PyObject *name, PyObject *spec)
     PyObject *mod = import_find_extension(tstate, &info);
     if (mod != NULL) {
         assert(!_PyErr_Occurred(tstate));
-        assert(is_singlephase(_PyModule_GetDef(mod)));
+        assert_singlephase(_PyModule_GetDef(mod));
         goto finally;
     }
     else if (_PyErr_Occurred(tstate)) {
@@ -3940,7 +4017,7 @@ _imp_create_dynamic_impl(PyObject *module, PyObject *spec, PyObject *file)
     mod = import_find_extension(tstate, &info);
     if (mod != NULL) {
         assert(!_PyErr_Occurred(tstate));
-        assert(is_singlephase(_PyModule_GetDef(mod)));
+        assert_singlephase(_PyModule_GetDef(mod));
         goto finally;
     }
     else if (_PyErr_Occurred(tstate)) {

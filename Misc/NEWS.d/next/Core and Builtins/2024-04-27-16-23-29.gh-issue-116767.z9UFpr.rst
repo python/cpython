@@ -1,0 +1,1 @@
+Fix crash in compiler on 'async with' that has many context managers.
