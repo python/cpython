@@ -72,7 +72,8 @@ As the trampolines are constant, we add a constant padding but in general the pa
 size of the unwind info rounded to 16 bytes. In general, for our trampolines this is 0x50
  */
 
-#define PERF_JIT_CODE_PADDING = 0x50;
+#define PERF_JIT_CODE_PADDING 0x50
+#define trampoline_api _PyRuntime.ceval.perf.trampoline_api
 
 typedef uint64_t uword;
 typedef const char* CodeComments;
@@ -290,8 +291,7 @@ static void* perf_map_jit_init(void) {
         return NULL;
     }
 
-
-    trampoline_api.code_padding = PERF_JIT_CODE_PADDING;
+    // trampoline_api.code_padding = PERF_JIT_CODE_PADDING;
     return &perf_jit_map_state;
 }
 

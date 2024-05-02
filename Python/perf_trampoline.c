@@ -248,6 +248,27 @@ _PyPerf_Callbacks _Py_perfmap_callbacks = {
 };
 
 
+static size_t round_up(int64_t value, int64_t multiple) {
+    if (multiple == 0) {
+        // Avoid division by zero
+        return value;
+    }
+
+    int64_t remainder = value % multiple;
+    if (remainder == 0) {
+        // Value is already a multiple of 'multiple'
+        return value;
+    }
+
+    // Calculate the difference to the next multiple
+    int64_t difference = multiple - remainder;
+
+    // Add the difference to the value
+    int64_t rounded_up_value = value + difference;
+
+    return rounded_up_value;
+}
+
 // TRAMPOLINE MANAGEMENT API
 
 static int
@@ -344,7 +365,7 @@ code_arena_new_code(code_arena_t *code_arena)
 static inline py_trampoline
 compile_trampoline(void)
 {
-    size_t total_code_size = round_up(code_arena->code_size + trampoline_api.code_padding, 16);
+    size_t total_code_size = round_up(perf_code_arena->code_size + trampoline_api.code_padding, 16);
     if ((perf_code_arena == NULL) ||
         (perf_code_arena->size_left <= total_code_size)) {
         if (new_code_arena() < 0) {
