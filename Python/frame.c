@@ -116,6 +116,18 @@ take_ownership(PyFrameObject *f, _PyInterpreterFrame *frame)
 }
 
 void
+_PyFrame_ClearLocals(_PyInterpreterFrame *frame)
+{
+    assert(frame->stacktop >= 0);
+    int stacktop = frame->stacktop;
+    frame->stacktop = 0;
+    for (int i = 0; i < stacktop; i++) {
+        Py_XDECREF(frame->localsplus[i]);
+    }
+    Py_CLEAR(frame->f_locals);
+}
+
+void
 _PyFrame_ClearExceptCode(_PyInterpreterFrame *frame)
 {
     /* It is the responsibility of the owning generator/coroutine
@@ -135,12 +147,8 @@ _PyFrame_ClearExceptCode(_PyInterpreterFrame *frame)
         }
         Py_DECREF(f);
     }
-    assert(frame->stacktop >= 0);
-    for (int i = 0; i < frame->stacktop; i++) {
-        Py_XDECREF(frame->localsplus[i]);
-    }
+    _PyFrame_ClearLocals(frame);
     Py_XDECREF(frame->frame_obj);
-    Py_XDECREF(frame->f_locals);
     Py_DECREF(frame->f_funcobj);
 }
 
