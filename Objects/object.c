@@ -1789,7 +1789,11 @@ PyObject_GenericSetDict(PyObject *obj, PyObject *value, void *context)
                      "not a '%.200s'", Py_TYPE(value)->tp_name);
         return -1;
     }
+#ifdef Py_GIL_DISABLED
+    Py_XDECREF(_Py_atomic_exchange_ptr(dictptr, Py_NewRef(value)));
+#else
     Py_XSETREF(*dictptr, Py_NewRef(value));
+#endif
     return 0;
 }
 

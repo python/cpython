@@ -7186,70 +7186,47 @@ _PyDict_DetachFromObject(PyDictObject *mp, PyObject *obj)
     return 0;
 }
 
-PyObject *
-PyObject_GenericGetDict(PyObject *obj, void *context)
+static inline PyObject *
+ensure_managed_dict(PyObject *obj)
 {
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    PyTypeObject *tp = Py_TYPE(obj);
-    PyDictObject *dict;
-    if (_PyType_HasFeature(tp, Py_TPFLAGS_MANAGED_DICT)) {
-        dict = _PyObject_GetManagedDict(obj);
-        if (dict == NULL &&
-            (tp->tp_flags & Py_TPFLAGS_INLINE_VALUES) &&
+    PyDictObject *dict = _PyObject_GetManagedDict(obj);
+    if (dict == NULL) {
+        PyTypeObject *tp = Py_TYPE(obj);
+        if ((tp->tp_flags & Py_TPFLAGS_INLINE_VALUES) &&
             FT_ATOMIC_LOAD_UINT8(_PyObject_InlineValues(obj)->valid)) {
             dict = _PyObject_MaterializeManagedDict(obj);
         }
-        else if (dict == NULL) {
-            Py_BEGIN_CRITICAL_SECTION(obj);
-
+        else {
+#ifdef Py_GIL_DISABLED
             // Check again that we're not racing with someone else creating the dict
+            Py_BEGIN_CRITICAL_SECTION(obj);
             dict = _PyObject_GetManagedDict(obj);
-            if (dict == NULL) {
-                OBJECT_STAT_INC(dict_materialized_on_request);
-                dictkeys_incref(CACHED_KEYS(tp));
-                dict = (PyDictObject *)new_dict_with_shared_keys(interp, CACHED_KEYS(tp));
-                FT_ATOMIC_STORE_PTR_RELEASE(_PyObject_ManagedDictPointer(obj)->dict,
-                                            (PyDictObject *)dict);
+            if (dict != NULL) {
+                goto done;
             }
+#endif
+            OBJECT_STAT_INC(dict_materialized_on_request);
+            dictkeys_incref(CACHED_KEYS(tp));
+            dict = (PyDictObject *)new_dict_with_shared_keys(_PyInterpreterState_GET(),
+                                                             CACHED_KEYS(tp));
+            FT_ATOMIC_STORE_PTR_RELEASE(_PyObject_ManagedDictPointer(obj)->dict,
+                                        (PyDictObject *)dict);
 
+#ifdef Py_GIL_DISABLED
+done:
             Py_END_CRITICAL_SECTION();
+#endif
         }
-        return Py_XNewRef((PyObject *)dict);
     }
-    else {
-        PyObject **dictptr = _PyObject_ComputedDictPointer(obj);
-        if (dictptr == NULL) {
-            PyErr_SetString(PyExc_AttributeError,
-                            "This object has no __dict__");
-            return NULL;
-        }
-        PyObject *dict = *dictptr;
-        if (dict == NULL) {
-            PyTypeObject *tp = Py_TYPE(obj);
-            if (_PyType_HasFeature(tp, Py_TPFLAGS_HEAPTYPE) && CACHED_KEYS(tp)) {
-                dictkeys_incref(CACHED_KEYS(tp));
-                *dictptr = dict = new_dict_with_shared_keys(
-                        interp, CACHED_KEYS(tp));
-            }
-            else {
-                *dictptr = dict = PyDict_New();
-            }
-        }
-        return Py_XNewRef(dict);
-    }
+    return (PyObject *)dict;
 }
 
-int
-_PyObjectDict_SetItem(PyTypeObject *tp, PyObject *obj, PyObject **dictptr,
-                      PyObject *key, PyObject *value)
+static inline PyObject *
+ensure_nonmanaged_dict(PyObject *obj, PyObject **dictptr)
 {
-    PyObject *dict;
-    int res;
     PyDictKeysObject *cached;
-    PyInterpreterState *interp = _PyInterpreterState_GET();
 
-    assert(dictptr != NULL);
-    dict = *dictptr;
+    PyObject *dict = FT_ATOMIC_LOAD_PTR_RELAXED(*dictptr);
     if (dict == NULL) {
 #ifdef Py_GIL_DISABLED
         Py_BEGIN_CRITICAL_SECTION(obj);
@@ -7258,7 +7235,9 @@ _PyObjectDict_SetItem(PyTypeObject *tp, PyObject *obj, PyObject **dictptr,
             goto done;
         }
 #endif
+        PyTypeObject *tp = Py_TYPE(obj);
         if ((tp->tp_flags & Py_TPFLAGS_HEAPTYPE) && (cached = CACHED_KEYS(tp))) {
+            PyInterpreterState *interp = _PyInterpreterState_GET();
             assert(!_PyType_HasFeature(tp, Py_TPFLAGS_INLINE_VALUES));
             dictkeys_incref(cached);
             dict = new_dict_with_shared_keys(interp, cached);
@@ -7269,14 +7248,45 @@ _PyObjectDict_SetItem(PyTypeObject *tp, PyObject *obj, PyObject **dictptr,
         else {
             dict = PyDict_New();
         }
-        *dictptr = dict;
+        FT_ATOMIC_STORE_PTR_RELAXED(*dictptr, dict);
 #ifdef Py_GIL_DISABLED
 done:
         Py_END_CRITICAL_SECTION();
 #endif
-        if (dict == NULL) {
-            return -1;
+    }
+    return dict;
+}
+
+PyObject *
+PyObject_GenericGetDict(PyObject *obj, void *context)
+{
+    PyTypeObject *tp = Py_TYPE(obj);
+    if (_PyType_HasFeature(tp, Py_TPFLAGS_MANAGED_DICT)) {
+        return Py_XNewRef(ensure_managed_dict(obj));
+    }
+    else {
+        PyObject **dictptr = _PyObject_ComputedDictPointer(obj);
+        if (dictptr == NULL) {
+            PyErr_SetString(PyExc_AttributeError,
+                            "This object has no __dict__");
+            return NULL;
         }
+
+        return Py_XNewRef(ensure_nonmanaged_dict(obj, dictptr));
+    }
+}
+
+int
+_PyObjectDict_SetItem(PyTypeObject *tp, PyObject *obj, PyObject **dictptr,
+                      PyObject *key, PyObject *value)
+{
+    PyObject *dict;
+    int res;
+
+    assert(dictptr != NULL);
+    dict = ensure_nonmanaged_dict(obj, dictptr);
+    if (dict == NULL) {
+        return -1;
     }
 
     Py_BEGIN_CRITICAL_SECTION(dict);
