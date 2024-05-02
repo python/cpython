@@ -1,0 +1,1 @@
+Since Python 3.10, it was possible to use unions as the second argument to ``isinstance``. Now, unions can also be used as match patterns. However, no sub-patterns can be used for unions; only the basic ``isinstance`` function is available.
