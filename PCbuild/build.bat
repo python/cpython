@@ -38,7 +38,7 @@ echo.  --test-marker  Enable the test marker within the build.
 echo.  --regen        Regenerate all opcodes, grammar and tokens.
 echo.  --experimental-jit          Enable the experimental just-in-time compiler.
 echo.  --experimental-jit-off      Ditto but off by default (PYTHON_JIT=1 enables).
-echo.  --experimental-interpreter  Enable the experimental Tier 2 interpreter.
+echo.  --experimental-jit-interpreter  Enable the experimental Tier 2 interpreter.
 echo.
 echo.Available flags to avoid building certain modules.
 echo.These flags have no effect if '-e' is not given:
@@ -91,8 +91,8 @@ if "%~1"=="-V" shift & goto Version
 if "%~1"=="--regen" (set Regen=true) & shift & goto CheckOpts
 if "%~1"=="--experimental-jit" (set UseJIT=true) & (set UseTIER2=1) & shift & goto CheckOpts
 if "%~1"=="--experimental-jit-off" (set UseJIT=true) & (set UseTIER2=3) & shift & goto CheckOpts
-if "%~1"=="--experimental-interpreter" (set UseTIER2=4) & shift & goto CheckOpts
-if "%~1"=="--experimental-interpreter-off" (set UseTIER2=6) & shift & goto CheckOpts
+if "%~1"=="--experimental-jit-interpreter" (set UseTIER2=4) & shift & goto CheckOpts
+if "%~1"=="--experimental-jit-interpreter-off" (set UseTIER2=6) & shift & goto CheckOpts
 rem These use the actual property names used by MSBuild.  We could just let
 rem them in through the environment, but we specify them on the command line
 rem anyway for visibility so set defaults after this
