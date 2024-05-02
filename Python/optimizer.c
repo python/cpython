@@ -24,7 +24,8 @@
 #define MAX_EXECUTORS_SIZE 256
 
 #ifdef Py_DEBUG
-static int base_opcode(PyCodeObject *code, int offset)
+static int
+base_opcode(PyCodeObject *code, int offset)
 {
     int opcode = _Py_GetBaseOpcode(code, offset);
     if (opcode == ENTER_EXECUTOR) {
@@ -788,11 +789,13 @@ top:  // Jump here after _PUSH_FRAME or likely branches
                                 uop = _PyUOp_Replacements[uop];
                                 assert(uop != 0);
 #ifdef Py_DEBUG
-                                uint32_t next_inst = target + 1 + INLINE_CACHE_ENTRIES_FOR_ITER + (oparg > 255);
-                                uint32_t jump_target = next_inst + oparg;
-                                assert(base_opcode(code, jump_target) == END_FOR ||
-                                       base_opcode(code, jump_target) == INSTRUMENTED_END_FOR);
-                                assert(base_opcode(code, jump_target+1) == POP_TOP);
+                                {
+                                    uint32_t next_inst = target + 1 + INLINE_CACHE_ENTRIES_FOR_ITER + (oparg > 255);
+                                    uint32_t jump_target = next_inst + oparg;
+                                    assert(base_opcode(code, jump_target) == END_FOR ||
+                                        base_opcode(code, jump_target) == INSTRUMENTED_END_FOR);
+                                    assert(base_opcode(code, jump_target+1) == POP_TOP);
+                                }
 #endif
                                 break;
                             default:

@@ -178,8 +178,12 @@ _Py_uop_sym_set_null(_Py_UopsSymbol *sym)
 bool
 _Py_uop_sym_set_non_null(_Py_UopsSymbol *sym)
 {
+    if (_Py_uop_sym_is_null(sym)) {
+        sym_set_bottom(sym);
+        return false;
+    }
     sym_set_flag(sym, NOT_NULL);
-    return !_Py_uop_sym_is_bottom(sym);
+    return true;
 }
 
 
