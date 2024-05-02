@@ -970,6 +970,8 @@ free_extensions_cache_value(struct extensions_cache_value *value)
     PyMem_RawFree(value);
 }
 
+static void del_cached_m_dict(struct extensions_cache_value *);
+
 static int
 set_cached_m_dict(struct extensions_cache_value *value, PyObject *m_dict)
 {
@@ -1001,11 +1003,9 @@ set_cached_m_dict(struct extensions_cache_value *value, PyObject *m_dict)
      * Then we'd need to make sure to clear that when the
      * runtime is finalized, rather than in
      * PyImport_ClearModulesByIndex(). */
-    PyObject *old = value->def->m_base.m_copy;
-    if (old != NULL) {
-        // XXX This should really never happen.
-        Py_DECREF(old);
-    }
+    /* Ideally, the cached dict would always be NULL at this point. */
+    assert(value->def->m_base.m_copy == NULL || copied != NULL);
+    del_cached_m_dict(value);
 
     value->def->m_base.m_copy = copied;
     return 0;
@@ -1016,7 +1016,7 @@ del_cached_m_dict(struct extensions_cache_value *value)
 {
     assert(value != NULL);
     if (value->def != NULL) {
-        Py_XDECREF((PyObject *)value->def->m_base.m_copy);
+        Py_XDECREF(value->def->m_base.m_copy);
         value->def->m_base.m_copy = NULL;
     }
 }
@@ -1069,6 +1069,7 @@ update_extensions_cache_value(struct extensions_cache_value *value,
         return -1;
     }
 
+    del_cached_m_dict(value);
     *value = temp;
     return 0;
 }
