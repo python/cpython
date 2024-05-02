@@ -219,6 +219,18 @@ _PyOnceFlag_CallOnce(_PyOnceFlag *flag, _Py_once_fn_t *fn, void *arg)
     return _PyOnceFlag_CallOnceSlow(flag, fn, arg);
 }
 
+// A recursive mutex. The mutex should zero-initialized.
+typedef struct {
+    PyMutex mutex;
+    unsigned long long thread;  // i.e., PyThread_get_thread_ident_ex()
+    size_t level;
+} _PyRecursiveMutex;
+
+PyAPI_FUNC(int) _PyRecursiveMutex_IsLockedByCurrentThread(_PyRecursiveMutex *m);
+PyAPI_FUNC(void) _PyRecursiveMutex_Lock(_PyRecursiveMutex *m);
+PyAPI_FUNC(void) _PyRecursiveMutex_Unlock(_PyRecursiveMutex *m);
+
+
 // A readers-writer (RW) lock. The lock supports multiple concurrent readers or
 // a single writer. The lock is write-preferring: if a writer is waiting while
 // the lock is read-locked then, new readers will be blocked. This avoids
