@@ -627,6 +627,9 @@ top:  // Jump here after _PUSH_FRAME or likely branches
             if (opcode == JUMP_BACKWARD || opcode == JUMP_BACKWARD_NO_INTERRUPT) {
                 instr += 1 + _PyOpcode_Caches[opcode] - (int32_t)oparg;
                 initial_instr = instr;
+                if (opcode == JUMP_BACKWARD) {
+                    ADD_TO_TRACE(_TIER2_RESUME_CHECK, 0, 0, target);
+                }
                 continue;
             }
             else {
@@ -976,6 +979,7 @@ prepare_for_execution(_PyUOpInstruction *buffer, int length)
     int32_t current_error = -1;
     int32_t current_error_target = -1;
     int32_t current_popped = -1;
+    int32_t current_exit_op = -1;
     /* Leaving in NOPs slows down the interpreter and messes up the stats */
     _PyUOpInstruction *copy_to = &buffer[0];
     for (int i = 0; i < length; i++) {
@@ -994,20 +998,11 @@ prepare_for_execution(_PyUOpInstruction *buffer, int length)
         int opcode = inst->opcode;
         int32_t target = (int32_t)uop_get_target(inst);
         if (_PyUop_Flags[opcode] & (HAS_EXIT_FLAG | HAS_DEOPT_FLAG)) {
-            if (target != current_jump_target) {
-                uint16_t exit_op;
-                if (_PyUop_Flags[opcode] & HAS_EXIT_FLAG) {
-                    if (opcode == _TIER2_RESUME_CHECK) {
-                        exit_op = _EVAL_BREAKER_EXIT;
-                    }
-                    else {
-                        exit_op = _SIDE_EXIT;
-                    }
-                }
-                else {
-                    exit_op = _DEOPT;
-                }
+            uint16_t exit_op = (_PyUop_Flags[opcode] & HAS_EXIT_FLAG) ?
+                _SIDE_EXIT : _DEOPT;
+            if (target != current_jump_target || current_exit_op != exit_op) {
                 make_exit(&buffer[next_spare], exit_op, target);
+                current_exit_op = exit_op;
                 current_jump_target = target;
                 current_jump = next_spare;
                 next_spare++;
@@ -1114,7 +1109,6 @@ sanity_check(_PyExecutorObject *executor)
         CHECK(
             opcode == _DEOPT ||
             opcode == _SIDE_EXIT ||
-            opcode == _EVAL_BREAKER_EXIT ||
             opcode == _ERROR_POP_N);
         if (opcode == _SIDE_EXIT) {
             CHECK(inst->format == UOP_FORMAT_EXIT);
