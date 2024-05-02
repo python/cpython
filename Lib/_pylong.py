@@ -83,18 +83,21 @@ def int_to_decimal(n):
 def int_to_decimal_string(n):
     """Asymptotically fast conversion of an 'int' to a decimal string."""
     w = n.bit_length()
-    if w > 1_800_000:
+    if w > 900_000:
         return str(int_to_decimal(n))
 
     def inner(n, w):
         if w <= 1000:
             return str(n)
         w2 = w >> 1
-        d = 10**w2
+        d = pow10_cache.get(w2)
+        if d is None:
+            d = pow10_cache[w2] = 10**w2
         hi, lo = divmod(n, d)
         return inner(hi, w - w2) + inner(lo, w2).zfill(w2)
 
     w = int(w * 0.3010299956639812 + 1)  # log10(2)
+    pow10_cache = {}
     if n < 0:
         return '-' + inner(-n, w)
     else:
