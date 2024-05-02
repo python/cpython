@@ -16,6 +16,9 @@ import re
 import decimal
 
 
+_is_pydecimal = hasattr(decimal.Decimal, '_power_exact')
+
+
 def int_to_decimal(n):
     """Asymptotically fast conversion of an 'int' to Decimal."""
 
@@ -83,7 +86,7 @@ def int_to_decimal(n):
 def int_to_decimal_string(n):
     """Asymptotically fast conversion of an 'int' to a decimal string."""
     w = n.bit_length()
-    if w > 900_000:
+    if w > 900_000 and not _is_pydecimal:
         return str(int_to_decimal(n))
 
     def inner(n, w):
@@ -102,6 +105,7 @@ def int_to_decimal_string(n):
         return '-' + inner(-n, w)
     else:
         return inner(n, w)
+
 
 def _str_to_int_inner(s):
     """Asymptotically fast conversion of a 'str' to an 'int'."""
