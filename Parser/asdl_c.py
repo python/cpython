@@ -1152,7 +1152,9 @@ ast_repr_list(PyObject *list, int depth)
     }
 
     Py_ssize_t length = PySequence_Size(list);
-    if (length == 0) {
+    if (length < 0) {
+        return NULL;
+    } else if (length == 0) {
         return PyObject_Repr(list);
     }
 
@@ -1161,8 +1163,14 @@ ast_repr_list(PyObject *list, int depth)
     PyObject *items[2];
 
     items[0] = PySequence_GetItem(list, 0);
+    if (!items[0]) {
+        return NULL;
+    }
     if (length > 1) {
         items[1] = PySequence_GetItem(list, length - 1);
+        if (!items[1]) {
+            return NULL;
+        }
     }
 
     _PyUnicodeWriter_Init(&writer);
@@ -1233,8 +1241,17 @@ ast_repr_max_depth(AST_object *self, int depth)
     }
 
     PyObject *fields;
-    PyObject_GetOptionalAttr((PyObject*)Py_TYPE(self), state->_fields, &fields);
+    if (PyObject_GetOptionalAttr((PyObject*)Py_TYPE(self), state->_fields, &fields) == -1) {
+        Py_ReprLeave((PyObject*)self);
+        return NULL;
+    }
+
     Py_ssize_t numfields = PySequence_Size(fields);
+    if (numfields < 0) {
+        Py_ReprLeave((PyObject*)self);
+        Py_DECREF(fields);
+        return NULL;
+    }
 
     if (numfields == 0) {
         Py_ReprLeave((PyObject*)self);
