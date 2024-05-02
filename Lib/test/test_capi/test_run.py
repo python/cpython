@@ -11,6 +11,10 @@ Py_file_input = _testcapi.Py_file_input
 Py_eval_input = _testcapi.Py_eval_input
 
 
+class DictSubclass(dict):
+    pass
+
+
 class CAPITest(unittest.TestCase):
     # TODO: Test the following functions:
     #
@@ -50,15 +54,19 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(TypeError, run, b'a\n', dict(a=1), [])
         self.assertRaises(TypeError, run, b'a\n', dict(a=1), 1)
 
+        self.assertIsNone(run(b'a\n', DictSubclass(a=1)))
+        self.assertIsNone(run(b'a\n', DictSubclass(), dict(a=1)))
+        self.assertRaises(NameError, run, b'a\n', DictSubclass())
+
         self.assertIsNone(run(b'\xc3\xa4\n', {'\xe4': 1}))
         self.assertRaises(SyntaxError, run, b'\xe4\n', {})
 
-        # CRASHES run(b'a\n', NULL)
-        # CRASHES run(b'a\n', NULL, {})
-        # CRASHES run(b'a\n', NULL, dict(a=1))
-        # CRASHES run(b'a\n', UserDict())
-        # CRASHES run(b'a\n', UserDict(), {})
-        # CRASHES run(b'a\n', UserDict(), dict(a=1))
+        self.assertRaises(SystemError, run, b'a\n', NULL)
+        self.assertRaises(SystemError, run, b'a\n', NULL, {})
+        self.assertRaises(SystemError, run, b'a\n', NULL, dict(a=1))
+        self.assertRaises(SystemError, run, b'a\n', UserDict())
+        self.assertRaises(SystemError, run, b'a\n', UserDict(), {})
+        self.assertRaises(SystemError, run, b'a\n', UserDict(), dict(a=1))
 
         # CRASHES run(NULL, {})
 
@@ -82,12 +90,16 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(TypeError, run, dict(a=1), [])
         self.assertRaises(TypeError, run, dict(a=1), 1)
 
-        # CRASHES run(NULL)
-        # CRASHES run(NULL, {})
-        # CRASHES run(NULL, dict(a=1))
-        # CRASHES run(UserDict())
-        # CRASHES run(UserDict(), {})
-        # CRASHES run(UserDict(), dict(a=1))
+        self.assertIsNone(run(DictSubclass(a=1)))
+        self.assertIsNone(run(DictSubclass(), dict(a=1)))
+        self.assertRaises(NameError, run, DictSubclass())
+
+        self.assertRaises(SystemError, run, NULL)
+        self.assertRaises(SystemError, run, NULL, {})
+        self.assertRaises(SystemError, run, NULL, dict(a=1))
+        self.assertRaises(SystemError, run, UserDict())
+        self.assertRaises(SystemError, run, UserDict(), {})
+        self.assertRaises(SystemError, run, UserDict(), dict(a=1))
 
     @unittest.skipUnless(TESTFN_UNDECODABLE, 'only works if there are undecodable paths')
     @unittest.skipIf(os.name == 'nt', 'does not work on Windows')
