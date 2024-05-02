@@ -1241,20 +1241,20 @@ ast_repr_max_depth(AST_object *self, int depth)
     }
 
     PyObject *fields;
-    if (PyObject_GetOptionalAttr((PyObject*)Py_TYPE(self), state->_fields, &fields) < 0) {
-        Py_ReprLeave((PyObject*)self);
+    if (PyObject_GetOptionalAttr((PyObject *)Py_TYPE(self), state->_fields, &fields) < 0) {
+        Py_ReprLeave((PyObject *)self);
         return NULL;
     }
 
     Py_ssize_t numfields = PySequence_Size(fields);
     if (numfields < 0) {
-        Py_ReprLeave((PyObject*)self);
+        Py_ReprLeave((PyObject *)self);
         Py_DECREF(fields);
         return NULL;
     }
 
     if (numfields == 0) {
-        Py_ReprLeave((PyObject*)self);
+        Py_ReprLeave((PyObject *)self);
         Py_DECREF(fields);
         return PyUnicode_FromFormat("%s()", Py_TYPE(self)->tp_name);
     }
@@ -1266,7 +1266,7 @@ ast_repr_max_depth(AST_object *self, int depth)
             goto error;
         }
 
-        PyObject *value = PyObject_GetAttr((PyObject*)self, name);
+        PyObject *value = PyObject_GetAttr((PyObject *)self, name);
         if (!value) {
             Py_DECREF(name);
             goto error;
@@ -1301,7 +1301,7 @@ ast_repr_max_depth(AST_object *self, int depth)
         Py_DECREF(value_repr);
     }
 
-    Py_ReprLeave((PyObject*)self);
+    Py_ReprLeave((PyObject *)self);
     Py_DECREF(fields);
     PyObject *tmp = repr;
     repr = PyUnicode_FromFormat("%s(%U)", Py_TYPE(self)->tp_name, repr);
@@ -1309,7 +1309,7 @@ ast_repr_max_depth(AST_object *self, int depth)
     return repr;
 
 error:
-    Py_ReprLeave((PyObject*)self);
+    Py_ReprLeave((PyObject *)self);
     Py_DECREF(fields);
     return NULL;
 }
