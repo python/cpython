@@ -1617,7 +1617,7 @@ initialize_locals(PyThreadState *tstate, PyFunctionObject *func,
             for (; i < defcount; i++) {
                 if (PyStackRef_Get(localsplus[m+i]) == NULL) {
                     PyObject *def = defs[i];
-                    localsplus[m+i] = _PyStackRef_NewRefDeferred(def);
+                    localsplus[m+i] = PyStackRef_NewRefDeferred(def);
                 }
             }
         }

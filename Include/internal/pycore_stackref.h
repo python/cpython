@@ -55,7 +55,7 @@ _PyStackRef_StealRef(PyObject *obj)
 // Converts a PyObject * to a PyStackRef, with a new reference
 #if defined(Py_GIL_DISABLED)
 static inline _PyStackRef
-_PyStackRef_NewRefDeferred(PyObject *obj)
+PyStackRef_NewRefDeferred(PyObject *obj)
 {
     // Make sure we don't take an already tagged value.
     assert(((uintptr_t)obj & Py_TAG_DEFERRED) == 0);
@@ -67,7 +67,7 @@ _PyStackRef_NewRefDeferred(PyObject *obj)
         return (_PyStackRef){ .bits = (uintptr_t)Py_NewRef(obj) };
     }
 }
-#   define PyStackRef_NewRefDeferred(obj) _PyStackRef_NewRefDeferred(_PyObject_CAST(obj))
+#   define PyStackRef_NewRefDeferred(obj) PyStackRef_NewRefDeferred(_PyObject_CAST(obj))
 #else
 #   define PyStackRef_NewRefDeferred(obj) PyStackRef_NewRef(((_PyStackRef){.bits = ((uintptr_t)(obj))}))
 #endif
@@ -81,7 +81,7 @@ _PyStackRef_XNewRefDeferred(PyObject *obj)
     if (obj == NULL) {
         return Py_STACKREF_NULL;
     }
-    return _PyStackRef_NewRefDeferred(obj);
+    return PyStackRef_NewRefDeferred(obj);
 }
 #   define PyStackRef_XNewRefDeferred(obj) _PyStackRef_XNewRefDeferred(_PyObject_CAST(obj))
 #else
