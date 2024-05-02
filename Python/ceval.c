@@ -39,6 +39,7 @@
 #include "pycore_template.h"      // _PyTemplate_Build()
 #include "pycore_traceback.h"     // _PyTraceBack_FromFrame
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
+#include "pycore_unionobject.h"   // _PyUnion_Check()
 #include "pycore_uop_ids.h"       // Uops
 
 #include "dictobject.h"
@@ -725,8 +726,8 @@ PyObject*
 _PyEval_MatchClass(PyThreadState *tstate, PyObject *subject, PyObject *type,
                    Py_ssize_t nargs, PyObject *kwargs)
 {
-    if (!PyType_Check(type)) {
-        const char *e = "called match pattern must be a class";
+    if (!PyType_Check(type) && !_PyUnion_Check(type)) {
+        const char *e = "called match pattern must be a class or a union";
         _PyErr_Format(tstate, PyExc_TypeError, e);
         return NULL;
     }
@@ -734,6 +735,16 @@ _PyEval_MatchClass(PyThreadState *tstate, PyObject *subject, PyObject *type,
     // First, an isinstance check:
     if (PyObject_IsInstance(subject, type) <= 0) {
         return NULL;
+    }
+    // Subpatterns are not supported for union types:
+    if (_PyUnion_Check(type)) {
+        // Return error if any positional or keyword arguments are given:
+        if (nargs || PyTuple_GET_SIZE(kwargs)) {
+            const char *e = "union types do not support sub-patterns";
+            _PyErr_Format(tstate, PyExc_TypeError, e);
+            return NULL;
+        }
+        return PyTuple_New(0);
     }
     // So far so good:
     PyObject *seen = PySet_New(NULL);

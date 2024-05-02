@@ -4,6 +4,7 @@ import dataclasses
 import dis
 import enum
 import inspect
+from re import I
 import sys
 import unittest
 from test import support
@@ -2888,6 +2889,14 @@ class TestPatma(unittest.TestCase):
                         h = 1
                 self.assertEqual(h, 1)
 
+    def test_patma_union_type(self):
+        IntOrStr = int | str
+        x = 0
+        match x:
+            case IntOrStr():
+                x = 1
+        self.assertEqual(x, 1)
+
 
 class TestSyntaxErrors(unittest.TestCase):
 
@@ -3367,6 +3376,31 @@ class TestTypeErrors(unittest.TestCase):
         with self.assertRaises(TypeError):
             match A():
                 case P(x, y):
+                    w = 0
+        self.assertIsNone(w)
+
+    def test_union_type_postional_subpattern(self):
+        IntOrStr = int | str
+        x = 1
+        w = None
+        with self.assertRaises(TypeError):
+            match x:
+                case IntOrStr(x):
+                    w = 0
+        self.assertEqual(x, 1)
+        self.assertIsNone(w)
+
+    def test_union_type_keyword_subpattern(self):
+        @dataclasses.dataclass
+        class Point2:
+            x: int
+            y: int
+        EitherPoint = Point | Point2
+        x = Point(x=1, y=2)
+        w = None
+        with self.assertRaises(TypeError):
+            match x:
+                case EitherPoint(x=1, y=2):
                     w = 0
         self.assertIsNone(w)
 
