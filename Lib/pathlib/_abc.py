@@ -637,7 +637,7 @@ class PathBase(PurePathBase):
     def open(self, mode='r', buffering=-1, encoding=None,
              errors=None, newline=None):
         """
-        Open the file pointed by this path and return a file object, as
+        Open the file pointed to by this path and return a file object, as
         the built-in open() function does.
         """
         raise UnsupportedOperation(self._unsupported_msg('open()'))
