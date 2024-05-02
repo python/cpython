@@ -91,11 +91,11 @@ Functions
    >>> stuff.insert(0, stuff)
    >>> pprint.pp(stuff)
    [<Recursion on list with id=...>,
-      'spam',
-      'eggs',
-      'lumberjack',
-      'knights',
-      'ni']
+    'spam',
+    'eggs',
+    'lumberjack',
+    'knights',
+    'ni']
 
    .. versionadded:: 3.8
 
