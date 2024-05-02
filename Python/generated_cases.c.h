@@ -915,7 +915,7 @@
                     args--;
                     total_args++;
                     PyObject *self = ((PyMethodObject *)callable)->im_self;
-                    args[0] = PyStackRef_NewRef(PyStackRef_StealRef(self));
+                    args[0] = PyStackRef_NewRefDeferred(self);
                     PyObject *method = ((PyMethodObject *)callable)->im_func;
                     args[-1] = PyStackRef_NewRefDeferred(method);
                     PyStackRef_DECREF(callable_stackref);
@@ -1084,12 +1084,10 @@
             // _INIT_CALL_BOUND_METHOD_EXACT_ARGS
             {
                 STAT_INC(CALL, hit);
-                // Ugly tag and untag because the uop header needs to have consistent type with
-                // the rest of the inst. So we can't change it to _PyStackRef.
-                self = PyStackRef_Get(PyStackRef_NewRef(PyStackRef_StealRef(((PyMethodObject *)callable)->im_self)));
-                stack_pointer[-1 - oparg] = PyStackRef_StealRef(self);  // Patch stack as it is used by _INIT_CALL_PY_EXACT_ARGS
-                func = PyStackRef_Get(PyStackRef_NewRef(PyStackRef_StealRef(((PyMethodObject *)callable)->im_func)));
-                stack_pointer[-2 - oparg] = PyStackRef_StealRef(func);  // This is used by CALL, upon deoptimization
+                stack_pointer[-1 - oparg] = PyStackRef_NewRefDeferred(((PyMethodObject *)callable)->im_self);  // Patch stack as it is used by _INIT_CALL_PY_EXACT_ARGS
+                stack_pointer[-2 - oparg] = PyStackRef_NewRefDeferred(((PyMethodObject *)callable)->im_func);  // This is used by CALL, upon deoptimization
+                self = PyStackRef_Get(stack_pointer[-1 - oparg]);
+                func = PyStackRef_Get(stack_pointer[-2 - oparg]);
                 PyStackRef_DECREF(callable_stackref);
             }
             // _CHECK_FUNCTION_EXACT_ARGS
@@ -1595,7 +1593,7 @@
                 args--;
                 total_args++;
                 PyObject *self = ((PyMethodObject *)callable)->im_self;
-                args[0] = PyStackRef_NewRef(PyStackRef_StealRef(self));
+                args[0] = PyStackRef_NewRefDeferred(self);
                 PyObject *method = ((PyMethodObject *)callable)->im_func;
                 args[-1] = PyStackRef_NewRefDeferred(method);
                 PyStackRef_DECREF(callable_stackref);
@@ -2103,7 +2101,7 @@
             }
             for (int i = argcount; i < code->co_argcount; i++) {
                 PyObject *def = PyTuple_GET_ITEM(func->func_defaults, i - min_args);
-                new_frame->localsplus[i] = PyStackRef_NewRef(PyStackRef_StealRef(def));
+                new_frame->localsplus[i] = PyStackRef_NewRefDeferred(def);
             }
             // Manipulate stack and cache directly since we leave using DISPATCH_INLINED().
             STACK_SHRINK(oparg + 2);
@@ -2222,7 +2220,7 @@
             DEOPT_IF(null != NULL, CALL);
             DEOPT_IF(callable != (PyObject *)&PyType_Type, CALL);
             STAT_INC(CALL, hit);
-            res = PyStackRef_NewRef(PyStackRef_StealRef(Py_TYPE(arg)));
+            res = PyStackRef_NewRefDeferred(Py_TYPE(arg));
             PyStackRef_DECREF(arg_stackref);
             stack_pointer[-3] = (res);
             stack_pointer += -2;
@@ -2679,7 +2677,7 @@
             int offset = co->co_nlocalsplus - oparg;
             for (int i = 0; i < oparg; ++i) {
                 PyObject *o = PyTuple_GET_ITEM(closure, i);
-                frame->localsplus[offset + i] = PyStackRef_NewRef(PyStackRef_StealRef(o));
+                frame->localsplus[offset + i] = PyStackRef_NewRefDeferred(o);
             }
             DISPATCH();
         }
@@ -4181,7 +4179,7 @@
                 PyStackRef_DECREF(owner_stackref);
             }
             stack_pointer[-1] = PyStackRef_StealRef(attr);
-            if (oparg & 1) stack_pointer[0] = Py_STACKREF_NULL;
+            if (oparg & 1) stack_pointer[0] = PyStackRef_StealRef(null);
             stack_pointer += (oparg & 1);
             DISPATCH();
         }
@@ -4219,7 +4217,7 @@
             // Manipulate stack directly because we exit with DISPATCH_INLINED().
             STACK_SHRINK(1);
             new_frame->localsplus[0] = owner_stackref;
-            new_frame->localsplus[1] = PyStackRef_NewRef(PyStackRef_StealRef(name));
+            new_frame->localsplus[1] = PyStackRef_NewRefDeferred(name);
             frame->return_offset = (uint16_t)(next_instr - this_instr);
             DISPATCH_INLINED(new_frame);
         }
@@ -4263,7 +4261,7 @@
             }
             /* Skip 5 cache entries */
             stack_pointer[-1] = PyStackRef_StealRef(attr);
-            if (oparg & 1) stack_pointer[0] = Py_STACKREF_NULL;
+            if (oparg & 1) stack_pointer[0] = PyStackRef_StealRef(null);
             stack_pointer += (oparg & 1);
             DISPATCH();
         }
@@ -4438,7 +4436,7 @@
             }
             /* Skip 5 cache entries */
             stack_pointer[-1] = PyStackRef_StealRef(attr);
-            if (oparg & 1) stack_pointer[0] = Py_STACKREF_NULL;
+            if (oparg & 1) stack_pointer[0] = PyStackRef_StealRef(null);
             stack_pointer += (oparg & 1);
             DISPATCH();
         }
@@ -4593,7 +4591,7 @@
             }
             /* Skip 5 cache entries */
             stack_pointer[-1] = PyStackRef_StealRef(attr);
-            if (oparg & 1) stack_pointer[0] = Py_STACKREF_NULL;
+            if (oparg & 1) stack_pointer[0] = PyStackRef_StealRef(null);
             stack_pointer += (oparg & 1);
             DISPATCH();
         }
@@ -4650,7 +4648,7 @@
             }
             /* Skip 5 cache entries */
             stack_pointer[-1] = PyStackRef_StealRef(attr);
-            if (oparg & 1) stack_pointer[0] = Py_STACKREF_NULL;
+            if (oparg & 1) stack_pointer[0] = PyStackRef_StealRef(null);
             stack_pointer += (oparg & 1);
             DISPATCH();
         }
@@ -4676,9 +4674,7 @@
             next_instr += 1;
             INSTRUCTION_STATS(LOAD_CONST);
             _PyStackRef value;
-            value = PyStackRef_StealRef(GETITEM(FRAME_CO_CONSTS, oparg));
-            // Perhaps consider making co_consts tagged too?
-            PyStackRef_INCREF(value);
+            value = PyStackRef_NewRefDeferred(GETITEM(FRAME_CO_CONSTS, oparg));
             stack_pointer[0] = (value);
             stack_pointer += 1;
             DISPATCH();
@@ -4732,7 +4728,7 @@
             INSTRUCTION_STATS(LOAD_FAST_CHECK);
             _PyStackRef value;
             value = GETLOCAL(oparg);
-            if (PyStackRef_Get(value) == NULL) {
+            if (value.bits == 0) {
                 _PyEval_FormatExcCheckArg(tstate, PyExc_UnboundLocalError,
                     UNBOUNDLOCAL_ERROR_MSG,
                     PyTuple_GetItem(_PyFrame_GetCode(frame)->co_localsplusnames, oparg)
@@ -4893,7 +4889,7 @@
                 null = NULL;
             }
             stack_pointer[0] = PyStackRef_StealRef(res);
-            if (oparg & 1) stack_pointer[1] = Py_STACKREF_NULL;
+            if (oparg & 1) stack_pointer[1] = PyStackRef_StealRef(null);
             stack_pointer += 1 + (oparg & 1);
             DISPATCH();
         }
@@ -4934,7 +4930,7 @@
                 null = NULL;
             }
             stack_pointer[0] = PyStackRef_StealRef(res);
-            if (oparg & 1) stack_pointer[1] = Py_STACKREF_NULL;
+            if (oparg & 1) stack_pointer[1] = PyStackRef_StealRef(null);
             stack_pointer += 1 + (oparg & 1);
             DISPATCH();
         }
@@ -4968,7 +4964,7 @@
                 null = NULL;
             }
             stack_pointer[0] = PyStackRef_StealRef(res);
-            if (oparg & 1) stack_pointer[1] = Py_STACKREF_NULL;
+            if (oparg & 1) stack_pointer[1] = PyStackRef_StealRef(null);
             stack_pointer += 1 + (oparg & 1);
             DISPATCH();
         }
@@ -5107,7 +5103,7 @@
                 null = NULL;
             }
             stack_pointer[-3] = PyStackRef_StealRef(attr);
-            if (oparg & 1) stack_pointer[-2] = Py_STACKREF_NULL;
+            if (oparg & 1) stack_pointer[-2] = PyStackRef_StealRef(null);
             stack_pointer += -2 + (oparg & 1);
             DISPATCH();
         }
@@ -5685,9 +5681,7 @@
             _PyStackRef retval;
             // _LOAD_CONST
             {
-                value = PyStackRef_StealRef(GETITEM(FRAME_CO_CONSTS, oparg));
-                // Perhaps consider making co_consts tagged too?
-                PyStackRef_INCREF(value);
+                value = PyStackRef_NewRefDeferred(GETITEM(FRAME_CO_CONSTS, oparg));
             }
             // _POP_FRAME
             retval = value;
@@ -6753,7 +6747,7 @@
             STAT_INC(UNPACK_SEQUENCE, hit);
             PyObject **items = _PyList_ITEMS(seq);
             for (int i = oparg; --i >= 0; ) {
-                *values++ = PyStackRef_NewRef(PyStackRef_StealRef(items[i]));
+                *values++ = PyStackRef_NewRefDeferred(items[i]);
             }
             (void)seq;
             PyStackRef_DECREF(seq_stackref);
@@ -6779,7 +6773,7 @@
             STAT_INC(UNPACK_SEQUENCE, hit);
             PyObject **items = _PyTuple_ITEMS(seq);
             for (int i = oparg; --i >= 0; ) {
-                *values++ = PyStackRef_NewRef(PyStackRef_StealRef(items[i]));
+                *values++ = PyStackRef_NewRefDeferred(items[i]);
             }
             (void)seq;
             PyStackRef_DECREF(seq_stackref);
