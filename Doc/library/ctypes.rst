@@ -2546,19 +2546,18 @@ fields, or any other data types containing pointer type fields.
 
    .. attribute:: _layout_
 
-      An optional string naming the struct and union layout. It can currently
+      An optional string naming the struct/union layout. It can currently
       be set to:
 
       - ``"ms"``: the layout used by the Microsoft compiler (MSVC).
-        GCC and Clang, this layout can be selected with
+        On GCC and Clang, this layout can be selected with
         ``__attribute__((ms_struct))``.
       - ``"gcc-sysv"``: the layout used by GCC with the System V or “SysV-like”
-        data model, as used on Linux and macOS. This is generally compatible
-        with clang.
+        data model, as used on Linux and macOS.
         With this layout, :attr:`~Structure._pack_` must be unset or zero.
 
-      If not set explicitly, :attr:`!_layout_` will be set to a default that
-      matches the platform's conventions. This default may change in future
+      If not set explicitly, ``ctypes`` will use a default that
+      matches the platform conventions. This default may change in future
       Python releases (for example, when a new platform gains official support,
       or when a difference between similar platforms is found).
       Currently the default will be:

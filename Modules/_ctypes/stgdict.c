@@ -319,18 +319,6 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
             return -1;
         }
     }
-    else {
-        // Set the default
-        const char *name = (layout_mode == LAYOUT_MODE_MS) ? "ms"
-                         : "gcc-sysv";
-        PyObject *name_obj = PyUnicode_FromString(name);
-        if (!name) {
-            return -1;
-        }
-        if (PyObject_SetAttr(type, &_Py_ID(_layout_), name_obj) < 0) {
-            return -1;
-        }
-    }
     if (PyObject_GetOptionalAttr(type, &_Py_ID(_align_), &tmp) < 0) {
         return -1;
     }
