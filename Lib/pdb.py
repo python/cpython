@@ -1117,7 +1117,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             if f:
                 fname = f
             item = parts[1]
-        answer = find_function(item, fname)
+        answer = find_function(item, self.canonic(fname))
         return answer or failed
 
     def checkline(self, filename, lineno):
