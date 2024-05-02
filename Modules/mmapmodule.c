@@ -268,40 +268,13 @@ static DWORD
 filter_page_exception(EXCEPTION_POINTERS *ptrs, EXCEPTION_RECORD *record)
 {
     *record = *ptrs->ExceptionRecord;
-    if (ptrs->ExceptionRecord->ExceptionCode == EXCEPTION_IN_PAGE_ERROR) {
+    if (ptrs->ExceptionRecord->ExceptionCode == EXCEPTION_IN_PAGE_ERROR
+        || ptrs->ExceptionRecord->ExceptionCode == EXCEPTION_ACCESS_VIOLATION) {
         return EXCEPTION_EXECUTE_HANDLER;
     }
     return EXCEPTION_CONTINUE_SEARCH;
 }
 #endif
-
-int
-safe_memcpy(void *restrict dest, const void *restrict src, size_t count) {
-#if defined(MS_WIN32) && !defined(DONT_USE_SEH)
-
-    // never fail for count 0
-    // according to https://en.cppreference.com/w/cpp/string/byte/memcpy
-    // If either dest or src is an invalid or null pointer, the behavior is undefined, even if count is zero.
-    if (count == 0) {
-        return 0;
-    }
-
-    EXCEPTION_RECORD record;
-    __try {
-        memcpy(dest, src, count);
-        return 0;
-    }
-    __except (filter_page_exception(GetExceptionInformation(), &record)) {
-        NTSTATUS status = (NTSTATUS) record.ExceptionInformation[2];
-        ULONG code = LsaNtStatusToWinError(status);
-        PyErr_SetFromWindowsErr(code);
-        return -1;
-    }
-#else
-    memcpy(dest, src, count);
-    return 0;
-#endif
-}
 
 #if defined(MS_WIN32) && !defined(DONT_USE_SEH)
 #define HANDLE_INVALID_MEM(sourcecode) \
@@ -311,9 +284,14 @@ do {                                                                       \
         sourcecode                                                         \
     }                                                                      \
     __except (filter_page_exception(GetExceptionInformation(), &record)) { \
-        NTSTATUS status = (NTSTATUS) record.ExceptionInformation[2];       \
-        ULONG code = LsaNtStatusToWinError(status);                        \
-        PyErr_SetFromWindowsErr(code);                                     \
+        if (record.ExceptionCode == EXCEPTION_IN_PAGE_ERROR) {             \
+            NTSTATUS status = (NTSTATUS) record.ExceptionInformation[2];   \
+            ULONG code = LsaNtStatusToWinError(status);                    \
+            PyErr_SetFromWindowsErr(code);                                 \
+        }                                                                  \
+        else if (record.ExceptionCode == EXCEPTION_ACCESS_VIOLATION) {     \
+            PyErr_SetFromWindowsErr(ERROR_NOACCESS);                                 \
+        }                                                                  \
         return -1;                                                         \
     }                                                                      \
 } while (0)
@@ -323,6 +301,14 @@ do {                                                                       \
     sourcecode                                                             \
 } while (0)
 #endif
+
+int
+safe_memcpy(void *restrict dest, const void *restrict src, size_t count) {
+    HANDLE_INVALID_MEM(
+        memcpy(dest, src, count);
+    );
+    return 0;
+}
 
 int
 safe_byte_copy(char *dest, const char *src) {
