@@ -988,7 +988,7 @@ PyObject_ClearWeakRefs(PyObject *object)
     }
 
     list = GET_WEAKREFS_LISTPTR(object);
-    if (FT_ATOMIC_LOAD_PTR(list) == NULL) {
+    if (FT_ATOMIC_LOAD_PTR(*list) == NULL) {
         // Fast path for the common case
         return;
     }
