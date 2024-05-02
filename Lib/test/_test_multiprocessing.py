@@ -2812,8 +2812,8 @@ class _TestPool(BaseTestCase):
         self.pool.map(identity, objs)
 
         del objs
-        gc.collect()  # For PyPy or other GCs.
         time.sleep(DELTA)  # let threaded cleanup code run
+        support.gc_collect()  # For PyPy or other GCs.
         self.assertEqual(set(wr() for wr in refs), {None})
         # With a process pool, copies of the objects are returned, check
         # they were released too.
