@@ -277,7 +277,7 @@ filter_page_exception(EXCEPTION_POINTERS *ptrs, EXCEPTION_RECORD *record)
 #endif
 
 #if defined(MS_WIN32) && !defined(DONT_USE_SEH)
-#define HANDLE_INVALID_MEM(sourcecode) \
+#define HANDLE_INVALID_MEM(sourcecode)                                     \
 do {                                                                       \
     EXCEPTION_RECORD record;                                               \
     __try {                                                                \
@@ -290,7 +290,7 @@ do {                                                                       \
             PyErr_SetFromWindowsErr(code);                                 \
         }                                                                  \
         else if (record.ExceptionCode == EXCEPTION_ACCESS_VIOLATION) {     \
-            PyErr_SetFromWindowsErr(ERROR_NOACCESS);                                 \
+            PyErr_SetFromWindowsErr(ERROR_NOACCESS);                       \
         }                                                                  \
         return -1;                                                         \
     }                                                                      \
