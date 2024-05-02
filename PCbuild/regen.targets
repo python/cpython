@@ -30,11 +30,15 @@
     </_TokenOutputs>
     <_KeywordSources Include="$(PySourcePath)Grammar\python.gram;$(PySourcePath)Grammar\Tokens" />
     <_KeywordOutputs Include="$(PySourcePath)Lib\keyword.py" />
+    <_SbomSources Include="$(PySourcePath)PCbuild\get_externals.bat" />
+    <_SbomOutputs Include="$(PySourcePath)Misc\externals.spdx.json;$(PySourcePath)Misc\sbom.spdx.json">
+      <Format>json</Format>
+    </_SbomOutputs>
   </ItemGroup>
 
   <Target Name="_TouchRegenSources" Condition="$(ForceRegen) == 'true'">
     <Message Text="Touching source files to force regeneration" Importance="high" />
-    <Touch Files="@(_PegenSources);@(_ASTSources);@(_OpcodeSources);@(_TokenSources);@(_KeywordOutputs)"
+    <Touch Files="@(_PegenSources);@(_ASTSources);@(_OpcodeSources);@(_TokenSources);@(_KeywordOutputs);@(_SbomSources)"
            AlwaysCreate="False" />
   </Target>
 
@@ -89,9 +93,16 @@
           WorkingDirectory="$(PySourcePath)" />
   </Target>
 
+  <Target Name="_RegenSbom"
+          DependsOnTargets="FindPythonForBuild"
+          Inputs="@(_SbomSources)"
+          Outputs="@(_SbomOutputs)">
+    <Exec Command='$(PythonForBuild) "$(PySourcePath)Tools\build\generate_sbom.py"'/>
+  </Target>
+
   <Target Name="Regen"
           Condition="$(Configuration) != 'PGUpdate'"
-          DependsOnTargets="_TouchRegenSources;_RegenPegen;_RegenAST_H;_RegenOpcodes;_RegenTokens;_RegenKeywords;_RegenGlobalObjects">
+          DependsOnTargets="_TouchRegenSources;_RegenPegen;_RegenAST_H;_RegenOpcodes;_RegenTokens;_RegenKeywords;_RegenGlobalObjects;_RegenSbom">
     <Message Text="Generated sources are up to date" Importance="high" />
   </Target>
 
