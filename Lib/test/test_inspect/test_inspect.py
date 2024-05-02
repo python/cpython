@@ -4,6 +4,7 @@ import collections
 import copy
 import datetime
 import functools
+import gc
 import importlib
 import inspect
 import io
@@ -25,6 +26,7 @@ import unicodedata
 import unittest
 import unittest.mock
 import warnings
+import weakref
 
 
 try:
@@ -2302,6 +2304,13 @@ class TestGetattrStatic(unittest.TestCase):
         self.assertEqual(inspect.getattr_static(foo, 'a'), 3)
         self.assertFalse(test.called)
 
+        class Bar(Foo): pass
+
+        bar = Bar()
+        bar.a = 5
+        self.assertEqual(inspect.getattr_static(bar, 'a'), 3)
+        self.assertFalse(test.called)
+
     def test_mutated_mro(self):
         test = self
         test.called = False
@@ -2405,6 +2414,21 @@ class TestGetattrStatic(unittest.TestCase):
             inspect.getattr_static(Foo(), 'really_could_be_anything')
 
         self.assertFalse(test.called)
+
+    def test_cache_does_not_cause_classes_to_persist(self):
+        # regression test for gh-118013:
+        # check that the internal _shadowed_dict cache does not cause
+        # dynamically created classes to have extended lifetimes even
+        # when no other strong references to those classes remain.
+        # Since these classes can themselves hold strong references to
+        # other objects, this can cause unexpected memory consumption.
+        class Foo: pass
+        Foo.instance = Foo()
+        weakref_to_class = weakref.ref(Foo)
+        inspect.getattr_static(Foo.instance, 'whatever', 'irrelevant')
+        del Foo
+        gc.collect()
+        self.assertIsNone(weakref_to_class())
 
 
 class TestGetGeneratorState(unittest.TestCase):
@@ -4065,6 +4089,28 @@ class TestSignatureObject(unittest.TestCase):
             self.assertEqual(self.signature(c),
                             ((('a', ..., ..., "positional_or_keyword"),),
                             ...))
+
+    def test_signature_on_callable_objects_with_text_signature_attr(self):
+        class C:
+            __text_signature__ = '(a, /, b, c=True)'
+            def __call__(self, *args, **kwargs):
+                pass
+
+        self.assertEqual(self.signature(C), ((), ...))
+        self.assertEqual(self.signature(C()),
+                         ((('a', ..., ..., "positional_only"),
+                           ('b', ..., ..., "positional_or_keyword"),
+                           ('c', True, ..., "positional_or_keyword"),
+                          ),
+                          ...))
+
+        c = C()
+        c.__text_signature__ = '(x, y)'
+        self.assertEqual(self.signature(c),
+                         ((('x', ..., ..., "positional_or_keyword"),
+                           ('y', ..., ..., "positional_or_keyword"),
+                          ),
+                          ...))
 
     def test_signature_on_wrapper(self):
         class Wrapper:
