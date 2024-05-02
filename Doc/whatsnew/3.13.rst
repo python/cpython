@@ -705,6 +705,9 @@ pdb
   command line option or :envvar:`PYTHONSAFEPATH` environment variable).
   (Contributed by Tian Gao and Christian Walther in :gh:`111762`.)
 
+* :mod:`zipapp` is supported as a debugging target.
+  (Contributed by Tian Gao in :gh:`118501`.)
+
 queue
 -----
 
