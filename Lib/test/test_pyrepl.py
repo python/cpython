@@ -105,8 +105,17 @@ class TestPyReplDriver(TestCase):
     def prepare_reader(self, events):
         console = MagicMock()
         console.get_event.side_effect = events
+        console.height = 100
+        console.width = 80
+
         reader = ReadlineAlikeReader(console)
         reader.config = ReadlineConfig()
+
+        def get_prompt(lineno, cursor_on_line) -> str:
+            return ""
+
+        reader.get_prompt = get_prompt  # Remove prompt for easier calculations of (x, y)
+
         return reader, console
 
     def test_up_arrow(self):
@@ -124,7 +133,7 @@ class TestPyReplDriver(TestCase):
         with suppress(StopIteration):
             _ = multiline_input(reader)
 
-        console.move_cursor.assert_called_with(1, 3)
+        console.move_cursor.assert_called_with(2, 1)
 
     def test_down_arrow(self):
         code = (
@@ -141,7 +150,7 @@ class TestPyReplDriver(TestCase):
         with suppress(StopIteration):
             _ = multiline_input(reader)
 
-        console.move_cursor.assert_called_with(1, 5)
+        console.move_cursor.assert_called_with(2, 2)
 
     def test_left_arrow(self):
         events = itertools.chain(code_to_events('11+11'), [
@@ -155,7 +164,7 @@ class TestPyReplDriver(TestCase):
 
         console.move_cursor.assert_has_calls(
             [
-                call(3, 1),
+                call(4, 0),
             ]
         )
 
@@ -171,7 +180,7 @@ class TestPyReplDriver(TestCase):
 
         console.move_cursor.assert_has_calls(
             [
-                call(4, 1),
+                call(5, 0),
             ]
         )
 
@@ -267,8 +276,8 @@ class TestCursorPosition(TestCase):
         # cursor here (showing 2nd line only):
         # <  ' 可口可乐; 可口可樂'>
         #              ^
-        self.assertEqual(reader.pos, 22)
-        self.assertEqual(reader.pos2xy(), (14, 1))
+        self.assertEqual(reader.pos, 19)
+        self.assertEqual(reader.pos2xy(), (10, 1))
 
     def test_cursor_position_multiple_double_width_characters_move_left(self):
         events = itertools.chain(code_to_events("' 可口可乐; 可口可樂'"), [
@@ -285,8 +294,15 @@ class TestCursorPosition(TestCase):
         self.assertEqual(reader.pos2xy(), (16, 0))
 
     def test_cursor_position_move_up_to_eol(self):
-        for_loop = "for _ in _"
-        code = f"{for_loop}:\n  hello\n  h\n  hel"
+        first_line = "for _ in _:"
+        second_line = "  hello"
+        
+        code = (
+            f"{first_line}\n"
+            f"{second_line}\n"
+             "  h\n"
+             "  hel"
+        )
         events = itertools.chain(code_to_events(code), [
             Event(evt="key", data="up", raw=bytearray(b"\x1bOA")),
             Event(evt="key", data="up", raw=bytearray(b"\x1bOA")),
@@ -299,12 +315,17 @@ class TestCursorPosition(TestCase):
         #   hello
         #   h
         #   hel
-        self.assertEqual(reader.pos, len(for_loop))
-        self.assertEqual(reader.pos2xy(), (len(for_loop), 0))
+        self.assertEqual(reader.pos, len(first_line) + len(second_line) + 1) # +1 for newline
+        self.assertEqual(reader.pos2xy(), (len(second_line), 1))
 
     def test_cursor_position_move_down_to_eol(self):
         last_line = "  hel"
-        code = f"for _ in _:\n  hello\n  h\n{last_line}"
+        code = (
+            "for _ in _:\n"
+            "  hello\n"
+            "  h\n"
+           f"{last_line}"
+        )
         events = itertools.chain(code_to_events(code), [
             Event(evt="key", data="up", raw=bytearray(b"\x1bOA")),
             Event(evt="key", data="up", raw=bytearray(b"\x1bOA")),

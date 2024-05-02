@@ -28,28 +28,13 @@ import unicodedata
 from traceback import _can_colorize, _ANSIColors  # type: ignore[attr-defined]
 
 from . import commands, console, input
-
-ANSI_ESCAPE_SEQUENCE = re.compile(r"\x1b\[[ -@]*[A-~]")
+from .utils import ANSI_ESCAPE_SEQUENCE, wlen
 
 
 # types
 Command = commands.Command
 if False:
     from .types import Callback, SimpleContextManager, KeySpec, CommandName
-
-
-def str_width(c: str) -> int:
-    w = unicodedata.east_asian_width(c)
-    if w in ('N', 'Na', 'H', 'A'):
-        return 1
-    return 2
-
-
-def wlen(s: str) -> int:
-    length = sum(str_width(i) for i in s)
-
-    # remove lengths of any escape sequences
-    return length - sum(len(i) for i in ANSI_ESCAPE_SEQUENCE.findall(s))
 
 
 def disp_str(buffer: str) -> tuple[str, list[int]]:
@@ -409,6 +394,13 @@ class Reader:
             p += 1
         return p
 
+    def max_column(self, y: int) -> int:
+        """Return the last x-offset for line y"""
+        return self.screeninfo[y][0] + sum(self.screeninfo[y][1])
+
+    def max_row(self) -> int:
+        return len(self.screeninfo) - 1
+
     def get_arg(self, default: int = 1) -> int:
         """Return any prefix argument that the user has supplied,
         returning `default' if there is None.  Defaults to 1.
@@ -445,6 +437,25 @@ class Reader:
 
     def pop_input_trans(self) -> None:
         self.input_trans = self.input_trans_stack.pop()
+
+    def setpos_from_xy(self, x: int, y: int) -> None:
+        """Set pos according to coordincates x, y"""
+        pos = 0
+        i = 0
+        while i < y:
+            pos += len(self.screeninfo[i][1]) - self.screeninfo[i][1].count(0) + 1
+            i += 1
+
+        j = 0
+        cur_x = self.screeninfo[i][0]
+        while cur_x < x:
+            if self.screeninfo[i][1][j] == 0:
+                continue
+            cur_x += self.screeninfo[i][1][j]
+            j += 1
+            pos += 1
+
+        self.pos = pos
 
     def pos2xy(self) -> tuple[int, int]:
         """Return the x, y coordinates of position 'pos'."""

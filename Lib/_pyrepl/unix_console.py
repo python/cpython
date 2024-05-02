@@ -33,9 +33,9 @@ from fcntl import ioctl
 from . import curses
 from .console import Console, Event
 from .fancy_termios import tcgetattr, tcsetattr
-from .reader import wlen
 from .trace import trace
 from .unix_eventqueue import EventQueue
+from .utils import wlen
 
 
 class InvalidTerminal(RuntimeError):
