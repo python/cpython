@@ -59,6 +59,9 @@ framelocalsproxy_getkeyindex(PyFrameObject *frame, PyObject* key, bool read)
      *   - if read == true, returns the index if the value is not NULL
      *   - if read == false, returns the index if the value is not hidden
      */
+
+    assert(PyUnicode_CheckExact(key));
+
     PyCodeObject *co = PyFrame_GetCode(frame);
     int found_key = false;
 
@@ -388,11 +391,13 @@ framelocalsproxy_getitem(PyObject *self, PyObject *key)
     PyFrameObject* frame = ((PyFrameLocalsProxyObject*)self)->frame;
     PyCodeObject* co = PyFrame_GetCode(frame);
 
-    int i = framelocalsproxy_getkeyindex(frame, key, true);
-    if (i >= 0) {
-        PyObject *value = framelocalsproxy_getval(frame, co, i);
-        assert(value != NULL);
-        return Py_NewRef(value);
+    if (PyUnicode_CheckExact(key)) {
+        int i = framelocalsproxy_getkeyindex(frame, key, true);
+        if (i >= 0) {
+            PyObject *value = framelocalsproxy_getval(frame, co, i);
+            assert(value != NULL);
+            return Py_NewRef(value);
+        }
     }
 
     // Okay not in the fast locals, try extra locals
@@ -422,34 +427,35 @@ framelocalsproxy_setitem(PyObject *self, PyObject *key, PyObject *value)
         return -1;
     }
 
-    int i = framelocalsproxy_getkeyindex(frame, key, false);
+    if (PyUnicode_CheckExact(key)) {
+        int i = framelocalsproxy_getkeyindex(frame, key, false);
+        if (i >= 0) {
+            _PyLocals_Kind kind = _PyLocals_GetKind(co->co_localspluskinds, i);
 
-    if (i >= 0) {
-        _PyLocals_Kind kind = _PyLocals_GetKind(co->co_localspluskinds, i);
-
-        PyObject *oldvalue = fast[i];
-        PyObject *cell = NULL;
-        if (kind == CO_FAST_FREE) {
-            // The cell was set when the frame was created from
-            // the function's closure.
-            assert(oldvalue != NULL && PyCell_Check(oldvalue));
-            cell = oldvalue;
-        } else if (kind & CO_FAST_CELL && oldvalue != NULL) {
-            if (PyCell_Check(oldvalue)) {
+            PyObject *oldvalue = fast[i];
+            PyObject *cell = NULL;
+            if (kind == CO_FAST_FREE) {
+                // The cell was set when the frame was created from
+                // the function's closure.
+                assert(oldvalue != NULL && PyCell_Check(oldvalue));
                 cell = oldvalue;
+            } else if (kind & CO_FAST_CELL && oldvalue != NULL) {
+                if (PyCell_Check(oldvalue)) {
+                    cell = oldvalue;
+                }
             }
-        }
-        if (cell != NULL) {
-            oldvalue = PyCell_GET(cell);
-            if (value != oldvalue) {
-                PyCell_SET(cell, Py_XNewRef(value));
-                Py_XDECREF(oldvalue);
+            if (cell != NULL) {
+                oldvalue = PyCell_GET(cell);
+                if (value != oldvalue) {
+                    PyCell_SET(cell, Py_XNewRef(value));
+                    Py_XDECREF(oldvalue);
+                }
+            } else if (value != oldvalue) {
+                Py_XSETREF(fast[i], Py_NewRef(value));
             }
-        } else if (value != oldvalue) {
-            Py_XSETREF(fast[i], Py_NewRef(value));
+            Py_XDECREF(value);
+            return 0;
         }
-        Py_XDECREF(value);
-        return 0;
     }
 
     // Okay not in the fast locals, try extra locals
@@ -473,21 +479,21 @@ static PyObject*
 framelocalsproxy_contains(PyObject *self, PyObject *key)
 {
     PyFrameObject *frame = ((PyFrameLocalsProxyObject*)self)->frame;
-    int i = framelocalsproxy_getkeyindex(frame, key, true);
 
-    if (i >= 0) {
-        PyObject *value = framelocalsproxy_getval(frame, PyFrame_GetCode(frame), i);
-        assert(value != NULL);
-        Py_RETURN_TRUE;
-    } else {
-        PyObject *extra = ((PyFrameObject*)frame)->f_extra_locals;
-        if (extra != NULL) {
-            int result = PyDict_Contains(extra, key);
-            if (result < 0) {
-                return NULL;
-            } else if (result > 0) {
-                Py_RETURN_TRUE;
-            }
+    if (PyUnicode_CheckExact(key)) {
+        int i = framelocalsproxy_getkeyindex(frame, key, true);
+        if (i >= 0) {
+            Py_RETURN_TRUE;
+        }
+    }
+
+    PyObject *extra = ((PyFrameObject*)frame)->f_extra_locals;
+    if (extra != NULL) {
+        int result = PyDict_Contains(extra, key);
+        if (result < 0) {
+            return NULL;
+        } else if (result > 0) {
+            Py_RETURN_TRUE;
         }
     }
 
@@ -520,12 +526,7 @@ framelocalsproxy_get(PyObject* self, PyObject *const *args, Py_ssize_t nargs)
         default_value = args[1];
     }
 
-    if (!PyUnicode_CheckExact(key)) {
-        PyErr_SetString(PyExc_TypeError, "key must be a string");
-        return NULL;
-    }
-
-    PyObject *result = framelocalsproxy_getitem(self, args[0]);
+    PyObject *result = framelocalsproxy_getitem(self, key);
 
     if (result == NULL) {
         if (PyErr_ExceptionMatches(PyExc_KeyError)) {
@@ -551,11 +552,6 @@ framelocalsproxy_setdefault(PyObject* self, PyObject *const *args, Py_ssize_t na
 
     if (nargs == 2) {
         default_value = args[1];
-    }
-
-    if (!PyUnicode_CheckExact(key)) {
-        PyErr_SetString(PyExc_TypeError, "key must be a string");
-        return NULL;
     }
 
     PyObject *result = framelocalsproxy_getitem(self, key);

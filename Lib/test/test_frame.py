@@ -331,6 +331,9 @@ class TestFrameLocals(unittest.TestCase):
         self.assertEqual(d.setdefault('new', 5), 5)
         self.assertEqual(d['new'], 5)
 
+        with self.assertRaises(KeyError):
+            d['non_exist']
+
     def test_as_number(self):
         x = 1
         y = 2
@@ -344,6 +347,11 @@ class TestFrameLocals(unittest.TestCase):
             d |= 3
         with self.assertRaises(TypeError):
             _ = d | [3]
+
+    def test_non_string_key(self):
+        d = sys._getframe().f_locals
+        d[1] = 2
+        self.assertEqual(d[1], 2)
 
     def test_write_with_hidden(self):
         def f():
@@ -390,12 +398,6 @@ class TestFrameLocals(unittest.TestCase):
 
         with self.assertRaises(TypeError):
             copy.deepcopy(d)
-
-        with self.assertRaises(TypeError):
-            d.get(1)
-
-        with self.assertRaises(TypeError):
-            d.setdefault(1, 'x')
 
 
 class TestFrameCApi(unittest.TestCase):
