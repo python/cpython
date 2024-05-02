@@ -4352,14 +4352,4 @@
             break;
         }
 
-        case _EVAL_BREAKER_EXIT: {
-            _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY();
-            QSBR_QUIESCENT_STATE(tstate);
-            if (_Py_HandlePending(tstate) != 0) {
-                GOTO_UNWIND();
-            }
-            EXIT_TO_TRACE();
-            break;
-        }
-
 #undef TIER_TWO
