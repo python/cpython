@@ -432,6 +432,9 @@ ctypes
   match platform defaults (GCC/Clang or MSC). In particular, fields no longer
   overlap.
   (Contributed by Matthias Görgens in :gh:`97702`.)
+* A :attr:`ctypes.Structure._layout_`` class attribute can be set
+  to help match a non-default ABI.
+  (Contributed by Petr Viktorin in :gh:`97702`.)
 
 dbm
 ---

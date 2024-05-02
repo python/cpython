@@ -4,9 +4,6 @@ The types here are auto-converted to C source at
 `Modules/_ctypes/_ctypes_test_generated.c.h`, which is compiled into
 _ctypes_test.
 
-The generated tests return a list of raw things to check,
-or [None, skip_reason] to skip the test.
-
 Run this module to regenerate the files:
 
 ./python Lib/test/test_ctypes/test_generated_structs.py > Modules/_ctypes/_ctypes_test_generated.c.h
@@ -27,8 +24,11 @@ _ctypes_test = import_helper.import_module("_ctypes_test")
 KNOWN_COMPILERS = 'defined(MS_WIN32) || defined(__GNUC__) || defined(__clang__)'
 
 # ctypes erases the difference between `c_int` and e.g.`c_int16`.
-# To keep it, we'll use custom subclasses with the C name in `_c_name`.
+# To keep it, we'll use custom subclasses with the C name stashed in `_c_name`:
+class c_bool(ctypes.c_bool):
+    _c_name = '_Bool'
 
+# To do it for all the other types, use some metaprogramming:
 for c_name, ctypes_name in {
     'signed char': 'c_byte',
     'short': 'c_short',
@@ -47,6 +47,9 @@ for c_name, ctypes_name in {
     ctype = getattr(ctypes, ctypes_name)
     newtype = type(ctypes_name, (ctype,), {'_c_name': c_name})
     globals()[ctypes_name] = newtype
+
+
+# Register structs and unions to test
 
 TESTCASES = {}
 def register(name=None):
@@ -390,6 +393,24 @@ class AnonBitfields(Structure):
 
 class GeneratedTest(unittest.TestCase):
     def test_generated_data(self):
+        """Check that a ctypes struct/union matches its C equivalent.
+
+        This compares with data from get_generated_test_data(), a list of:
+        - name (str)
+        - size (int)
+        - alignment (int)
+        - for each field, three snapshots of memory, as bytes:
+            - memory after the field is set to -1
+            - memory after the field is set to 1
+            - memory after the field is set to 0
+
+        or:
+        - None
+        - reason to skip the test (str)
+
+        This does depend on the C compiler keeping padding bits zero.
+        Common compilers seem to do so.
+        """
         for name, cls in TESTCASES.items():
             with self.subTest(name=name):
                 expected = iter(_ctypes_test.get_generated_test_data(name))
@@ -411,12 +432,18 @@ class GeneratedTest(unittest.TestCase):
 
 
 # The rest of this file is generating C code from a ctypes type.
-# This is only tested with the known inputs here.
+# This is only meant for (and tested with) the known inputs in this file!
 
 def c_str_repr(string):
+    """Return a string as a C literal"""
     return '"' + re.sub('([\"\'\\\\\n])', r'\\\1', string) + '"'
 
 def dump_simple_ctype(tp, variable_name='', semi=''):
+    """Get C type name or declaration of a scalar type
+
+    variable_name: if given, declare the given variable
+    semi: a semicolon, and/or bitfield specification to tack on to the end
+    """
     length = getattr(tp, '_length_', None)
     if length is not None:
         return f'{dump_simple_ctype(tp._type_, variable_name)}[{length}]{semi}'
@@ -424,7 +451,13 @@ def dump_simple_ctype(tp, variable_name='', semi=''):
     return f'{tp._c_name}{maybe_space(variable_name)}{semi}'
 
 
-def dump_ctype(tp, agg_name='', variable_name='', semi=''):
+def dump_ctype(tp, struct_or_union_tag='', variable_name='', semi=''):
+    """Get C type name or declaration of a ctype
+
+    struct_or_union_tag: name of the struct or union
+    variable_name: if given, declare the given variable
+    semi: a semicolon, and/or bitfield specification to tack on to the end
+    """
     requires = set()
     if issubclass(tp, (Structure, Union)):
         attributes = []
@@ -443,9 +476,9 @@ def dump_ctype(tp, agg_name='', variable_name='', semi=''):
             a = f' GCC_ATTR({", ".join(attributes)})'
         else:
             a = ''
-        lines = [f'{struct_or_union(tp)}{a}{maybe_space(agg_name)} ' +'{']
+        lines = [f'{struct_or_union(tp)}{a}{maybe_space(struct_or_union_tag)} ' +'{']
         for fielddesc in tp._fields_:
-            f_name, f_tp, f_bits = unpack_field_desc(fielddesc)
+            f_name, f_tp, f_bits = unpack_field_desc(*fielddesc)
             if f_name in getattr(tp, '_anonymous_', ()):
                 f_name = ''
             if f_bits is None:
@@ -478,24 +511,22 @@ def maybe_space(string):
         return ' ' + string
     return string
 
-def unpack_field_desc(fielddesc):
-    try:
-        f_name, f_tp, f_bits = fielddesc
-        return f_name, f_tp, f_bits
-    except ValueError:
-        f_name, f_tp = fielddesc
-        return f_name, f_tp, None
+def unpack_field_desc(f_name, f_tp, f_bits=None):
+    """Unpack a _fields_ entry into a (name, type, bits) triple"""
+    return f_name, f_tp, f_bits
 
 @dataclass
 class FieldInfo:
+    """Information about a (possibly nested) struct/union field"""
     name: str
     tp: type
-    bits: int | None
+    bits: int | None  # number if this is a bit field
     parent_type: type
     parent: 'FieldInfo' #| None
 
     @cached_property
     def attr_path(self):
+        """Attribute names to get at the value of this field"""
         if self.name in getattr(self.parent_type, '_anonymous_', ()):
             selfpath = ()
         else:
@@ -507,29 +538,37 @@ class FieldInfo:
 
     @cached_property
     def full_name(self):
+        """Attribute names to get at the value of this field"""
         return '.'.join(self.attr_path)
 
     def set_to(self, obj, new):
+        """Set the field on a given Structure/Union instance"""
         for attr_name in self.attr_path[:-1]:
             obj = getattr(obj, attr_name)
         setattr(obj, self.attr_path[-1], new)
 
 
 def iterfields(tp, parent=None):
+    """Get *leaf* fields of a structure or union, as FieldInfo"""
     try:
         fields = tp._fields_
     except AttributeError:
         yield parent
     else:
         for fielddesc in fields:
-            f_name, f_tp, f_bits = unpack_field_desc(fielddesc)
+            f_name, f_tp, f_bits = unpack_field_desc(*fielddesc)
             sub = FieldInfo(f_name, f_tp, f_bits, tp, parent)
             yield from iterfields(f_tp, sub)
 
 
 if __name__ == '__main__':
-    print('/* Generated by Lib/test/test_ctypes/test_generated_structs.py */')
-    print("""
+    # Dump C source to stdout
+    def output(string):
+        print(re.compile(r'^ +$', re.MULTILINE).sub('', string).lstrip('\n'))
+    output("""
+        /* Generated by Lib/test/test_ctypes/test_generated_structs.py */
+
+
         // Append VALUE to the result.
         #define APPEND(VAL) {                           \\
             if (!VAL) {                                 \\
@@ -580,18 +619,18 @@ if __name__ == '__main__':
             }
     """)
     for name, cls in TESTCASES.items():
-        print("""
+        output("""
             if (_PyUnicode_EqualToASCIIString(name, %s)) {
             """ % c_str_repr(name))
-        lines, requires = dump_ctype(cls, agg_name=name, semi=';')
+        lines, requires = dump_ctype(cls, struct_or_union_tag=name, semi=';')
         if requires:
-            print(f"""
+            output(f"""
             #if {" && ".join(f'({r})' for r in sorted(requires))}
             """)
         for line in lines:
-            print('                ', line, sep='')
+            output('                ' + line)
         typename = f'{struct_or_union(cls)} {name}'
-        print(f"""
+        output(f"""
                 {typename} value = {{0}};
                 APPEND(PyUnicode_FromString({c_str_repr(name)}));
                 APPEND(PyLong_FromLong(sizeof({typename})));
@@ -599,22 +638,22 @@ if __name__ == '__main__':
         """.rstrip())
         for field in iterfields(cls):
             f_tp = dump_simple_ctype(field.tp)
-            print(f"""\
+            output(f"""\
                 TEST_FIELD({f_tp}, value.{field.full_name});
             """.rstrip())
         if requires:
-            print(f"""
+            output(f"""
             #else
                 APPEND(Py_NewRef(Py_None));
                 APPEND(PyUnicode_FromString("skipped on this compiler"));
             #endif
             """)
-        print("""
+        output("""
                 return result;
             }
         """)
 
-    print("""
+    output("""
             Py_DECREF(result);
             PyErr_Format(PyExc_ValueError, "unknown testcase %R", name);
             return NULL;
