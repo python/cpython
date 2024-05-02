@@ -495,16 +495,6 @@ class FieldInfo:
     parent: 'FieldInfo' #| None
 
     @cached_property
-    def field_descriptor(self):
-        return getattr(self.parent_type, self.name)
-
-    @cached_property
-    def field_path(self):
-        if self.parent:
-            return (*self.parent.field_path, self.name)
-        return (self.name,)
-
-    @cached_property
     def attr_path(self):
         if self.name in getattr(self.parent_type, '_anonymous_', ()):
             selfpath = ()
@@ -518,11 +508,6 @@ class FieldInfo:
     @cached_property
     def full_name(self):
         return '.'.join(self.attr_path)
-
-    def get_from(self, obj):
-        for attr_name in self.attr_path:
-            obj = getattr(obj, attr_name)
-        return obj
 
     def set_to(self, obj, new):
         for attr_name in self.attr_path[:-1]:
