@@ -579,8 +579,6 @@ class UnixConsole(Console):
             x_coord += wlen(newline[x_pos])
             x_pos += 1
 
-        character_width = wlen(newline[x_pos])
-
         # if we need to insert a single character right after the first detected change
         if oldline[x_pos:] == newline[x_pos + 1 :] and self.ich1:
             if (
@@ -590,6 +588,7 @@ class UnixConsole(Console):
             ):
                 x_pos = px_pos
                 x_coord = px_coord
+            character_width = wlen(newline[x_pos])
             self.__move(x_coord, y)
             self.__write_code(self.ich1)
             self.__write(newline[x_pos])
@@ -597,6 +596,7 @@ class UnixConsole(Console):
 
         # if it's a single character change in the middle of the line
         elif x_coord < minlen and oldline[x_pos + 1 :] == newline[x_pos + 1 :] and wlen(oldline[x_pos]) == wlen(newline[x_pos]):
+            character_width = wlen(newline[x_pos])
             self.__move(x_coord, y)
             self.__write(newline[x_pos])
             self.__posxy = x_coord + character_width, y
@@ -614,10 +614,11 @@ class UnixConsole(Console):
             self.__posxy = self.width - 2, y
             self.__write_code(self.dch1)
 
+            character_width = wlen(newline[x_pos])
             self.__move(x_coord, y)
             self.__write_code(self.ich1)
             self.__write(newline[x_pos])
-            self.__posxy = x_coord + 1, y
+            self.__posxy = character_width + 1, y
 
         else:
             self.__hide_cursor()
