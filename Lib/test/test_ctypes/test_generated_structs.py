@@ -620,7 +620,7 @@ if __name__ == '__main__':
     """)
     for name, cls in TESTCASES.items():
         output("""
-            if (_PyUnicode_EqualToASCIIString(name, %s)) {
+            if (PyUnicode_CompareWithASCIIString(name, %s) == 0) {
             """ % c_str_repr(name))
         lines, requires = dump_ctype(cls, struct_or_union_tag=name, semi=';')
         if requires:

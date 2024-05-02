@@ -50,7 +50,7 @@
                 return NULL;
             }
 
-            if (_PyUnicode_EqualToASCIIString(name, "SingleInt")) {
+            if (PyUnicode_CompareWithASCIIString(name, "SingleInt") == 0) {
 
                 struct SingleInt {
                     int a;
@@ -63,7 +63,7 @@
                 return result;
             }
 
-            if (_PyUnicode_EqualToASCIIString(name, "SingleInt_Union")) {
+            if (PyUnicode_CompareWithASCIIString(name, "SingleInt_Union") == 0) {
 
                 union SingleInt_Union {
                     int a;
@@ -76,7 +76,7 @@
                 return result;
             }
 
-            if (_PyUnicode_EqualToASCIIString(name, "SingleU32")) {
+            if (PyUnicode_CompareWithASCIIString(name, "SingleU32") == 0) {
 
                 struct SingleU32 {
                     uint32_t a;
@@ -89,7 +89,7 @@
                 return result;
             }
 
-            if (_PyUnicode_EqualToASCIIString(name, "SimpleStruct")) {
+            if (PyUnicode_CompareWithASCIIString(name, "SimpleStruct") == 0) {
 
                 struct SimpleStruct {
                     int32_t x;
@@ -106,7 +106,7 @@
                 return result;
             }
 
-            if (_PyUnicode_EqualToASCIIString(name, "SimpleUnion")) {
+            if (PyUnicode_CompareWithASCIIString(name, "SimpleUnion") == 0) {
 
                 union SimpleUnion {
                     int32_t x;
@@ -123,7 +123,7 @@
                 return result;
             }
 
-            if (_PyUnicode_EqualToASCIIString(name, "ManyTypes")) {
+            if (PyUnicode_CompareWithASCIIString(name, "ManyTypes") == 0) {
 
                 struct ManyTypes {
                     int8_t i8;
@@ -150,7 +150,7 @@
                 return result;
             }
 
-            if (_PyUnicode_EqualToASCIIString(name, "ManyTypesU")) {
+            if (PyUnicode_CompareWithASCIIString(name, "ManyTypesU") == 0) {
 
                 union ManyTypesU {
                     int8_t i8;
@@ -177,7 +177,7 @@
                 return result;
             }
 
-            if (_PyUnicode_EqualToASCIIString(name, "Nested")) {
+            if (PyUnicode_CompareWithASCIIString(name, "Nested") == 0) {
 
                 struct Nested {
                     struct {
@@ -212,7 +212,7 @@
                 return result;
             }
 
-            if (_PyUnicode_EqualToASCIIString(name, "Packed1")) {
+            if (PyUnicode_CompareWithASCIIString(name, "Packed1") == 0) {
 
             #if (defined(MS_WIN32) || defined(__GNUC__) || defined(__clang__))
 
@@ -236,7 +236,7 @@
                 return result;
             }
 
-            if (_PyUnicode_EqualToASCIIString(name, "Packed2")) {
+            if (PyUnicode_CompareWithASCIIString(name, "Packed2") == 0) {
 
             #if (defined(MS_WIN32) || defined(__GNUC__) || defined(__clang__))
 
@@ -260,7 +260,7 @@
                 return result;
             }
 
-            if (_PyUnicode_EqualToASCIIString(name, "Packed3")) {
+            if (PyUnicode_CompareWithASCIIString(name, "Packed3") == 0) {
 
             #if (defined(MS_WIN32) || defined(__GNUC__) || defined(__clang__))
 
@@ -284,7 +284,7 @@
                 return result;
             }
 
-            if (_PyUnicode_EqualToASCIIString(name, "Packed4")) {
+            if (PyUnicode_CompareWithASCIIString(name, "Packed4") == 0) {
 
             #if (defined(MS_WIN32) || defined(__GNUC__) || defined(__clang__))
 
@@ -308,7 +308,7 @@
                 return result;
             }
 
-            if (_PyUnicode_EqualToASCIIString(name, "IntBits")) {
+            if (PyUnicode_CompareWithASCIIString(name, "IntBits") == 0) {
 
                 struct IntBits {
                     int A :1;
@@ -337,7 +337,7 @@
                 return result;
             }
 
-            if (_PyUnicode_EqualToASCIIString(name, "Bits")) {
+            if (PyUnicode_CompareWithASCIIString(name, "Bits") == 0) {
 
             #if (!defined(__xlc__))
 
@@ -387,7 +387,7 @@
                 return result;
             }
 
-            if (_PyUnicode_EqualToASCIIString(name, "IntBits_MSVC")) {
+            if (PyUnicode_CompareWithASCIIString(name, "IntBits_MSVC") == 0) {
 
             #if (defined(MS_WIN32) || defined(__GNUC__) || defined(__clang__))
 
@@ -423,7 +423,7 @@
                 return result;
             }
 
-            if (_PyUnicode_EqualToASCIIString(name, "Bits_MSVC")) {
+            if (PyUnicode_CompareWithASCIIString(name, "Bits_MSVC") == 0) {
 
             #if (!defined(__xlc__)) && (defined(MS_WIN32) || defined(__GNUC__) || defined(__clang__))
 
@@ -473,7 +473,7 @@
                 return result;
             }
 
-            if (_PyUnicode_EqualToASCIIString(name, "I64Bits")) {
+            if (PyUnicode_CompareWithASCIIString(name, "I64Bits") == 0) {
 
             #if (!defined(__xlc__))
 
@@ -497,7 +497,7 @@
                 return result;
             }
 
-            if (_PyUnicode_EqualToASCIIString(name, "U64Bits")) {
+            if (PyUnicode_CompareWithASCIIString(name, "U64Bits") == 0) {
 
             #if (!defined(__xlc__))
 
@@ -521,7 +521,7 @@
                 return result;
             }
 
-            if (_PyUnicode_EqualToASCIIString(name, "Struct331_8")) {
+            if (PyUnicode_CompareWithASCIIString(name, "Struct331_8") == 0) {
 
             #if (!defined(__xlc__))
 
@@ -545,7 +545,7 @@
                 return result;
             }
 
-            if (_PyUnicode_EqualToASCIIString(name, "Struct1x1_8")) {
+            if (PyUnicode_CompareWithASCIIString(name, "Struct1x1_8") == 0) {
 
             #if (!defined(__xlc__))
 
@@ -569,7 +569,7 @@
                 return result;
             }
 
-            if (_PyUnicode_EqualToASCIIString(name, "Struct1nx1_8")) {
+            if (PyUnicode_CompareWithASCIIString(name, "Struct1nx1_8") == 0) {
 
             #if (!defined(__xlc__))
 
@@ -595,7 +595,7 @@
                 return result;
             }
 
-            if (_PyUnicode_EqualToASCIIString(name, "Struct3xx_8")) {
+            if (PyUnicode_CompareWithASCIIString(name, "Struct3xx_8") == 0) {
 
             #if (!defined(__xlc__))
 
@@ -619,7 +619,7 @@
                 return result;
             }
 
-            if (_PyUnicode_EqualToASCIIString(name, "Struct331_u8")) {
+            if (PyUnicode_CompareWithASCIIString(name, "Struct331_u8") == 0) {
 
             #if (!defined(__xlc__))
 
@@ -643,7 +643,7 @@
                 return result;
             }
 
-            if (_PyUnicode_EqualToASCIIString(name, "Struct1x1_u8")) {
+            if (PyUnicode_CompareWithASCIIString(name, "Struct1x1_u8") == 0) {
 
             #if (!defined(__xlc__))
 
@@ -667,7 +667,7 @@
                 return result;
             }
 
-            if (_PyUnicode_EqualToASCIIString(name, "Struct1nx1_u8")) {
+            if (PyUnicode_CompareWithASCIIString(name, "Struct1nx1_u8") == 0) {
 
             #if (!defined(__xlc__))
 
@@ -693,7 +693,7 @@
                 return result;
             }
 
-            if (_PyUnicode_EqualToASCIIString(name, "Struct3xx_u8")) {
+            if (PyUnicode_CompareWithASCIIString(name, "Struct3xx_u8") == 0) {
 
             #if (!defined(__xlc__))
 
@@ -717,7 +717,7 @@
                 return result;
             }
 
-            if (_PyUnicode_EqualToASCIIString(name, "Struct331_16")) {
+            if (PyUnicode_CompareWithASCIIString(name, "Struct331_16") == 0) {
 
             #if (!defined(__xlc__))
 
@@ -741,7 +741,7 @@
                 return result;
             }
 
-            if (_PyUnicode_EqualToASCIIString(name, "Struct1x1_16")) {
+            if (PyUnicode_CompareWithASCIIString(name, "Struct1x1_16") == 0) {
 
             #if (!defined(__xlc__))
 
@@ -765,7 +765,7 @@
                 return result;
             }
 
-            if (_PyUnicode_EqualToASCIIString(name, "Struct1nx1_16")) {
+            if (PyUnicode_CompareWithASCIIString(name, "Struct1nx1_16") == 0) {
 
             #if (!defined(__xlc__))
 
@@ -791,7 +791,7 @@
                 return result;
             }
 
-            if (_PyUnicode_EqualToASCIIString(name, "Struct3xx_16")) {
+            if (PyUnicode_CompareWithASCIIString(name, "Struct3xx_16") == 0) {
 
             #if (!defined(__xlc__))
 
@@ -815,7 +815,7 @@
                 return result;
             }
 
-            if (_PyUnicode_EqualToASCIIString(name, "Struct331_u16")) {
+            if (PyUnicode_CompareWithASCIIString(name, "Struct331_u16") == 0) {
 
             #if (!defined(__xlc__))
 
@@ -839,7 +839,7 @@
                 return result;
             }
 
-            if (_PyUnicode_EqualToASCIIString(name, "Struct1x1_u16")) {
+            if (PyUnicode_CompareWithASCIIString(name, "Struct1x1_u16") == 0) {
 
             #if (!defined(__xlc__))
 
@@ -863,7 +863,7 @@
                 return result;
             }
 
-            if (_PyUnicode_EqualToASCIIString(name, "Struct1nx1_u16")) {
+            if (PyUnicode_CompareWithASCIIString(name, "Struct1nx1_u16") == 0) {
 
             #if (!defined(__xlc__))
 
@@ -889,7 +889,7 @@
                 return result;
             }
 
-            if (_PyUnicode_EqualToASCIIString(name, "Struct3xx_u16")) {
+            if (PyUnicode_CompareWithASCIIString(name, "Struct3xx_u16") == 0) {
 
             #if (!defined(__xlc__))
 
@@ -913,7 +913,7 @@
                 return result;
             }
 
-            if (_PyUnicode_EqualToASCIIString(name, "Struct331_32")) {
+            if (PyUnicode_CompareWithASCIIString(name, "Struct331_32") == 0) {
 
             #if (!defined(__xlc__))
 
@@ -937,7 +937,7 @@
                 return result;
             }
 
-            if (_PyUnicode_EqualToASCIIString(name, "Struct1x1_32")) {
+            if (PyUnicode_CompareWithASCIIString(name, "Struct1x1_32") == 0) {
 
             #if (!defined(__xlc__))
 
@@ -961,7 +961,7 @@
                 return result;
             }
 
-            if (_PyUnicode_EqualToASCIIString(name, "Struct1nx1_32")) {
+            if (PyUnicode_CompareWithASCIIString(name, "Struct1nx1_32") == 0) {
 
             #if (!defined(__xlc__))
 
@@ -987,7 +987,7 @@
                 return result;
             }
 
-            if (_PyUnicode_EqualToASCIIString(name, "Struct3xx_32")) {
+            if (PyUnicode_CompareWithASCIIString(name, "Struct3xx_32") == 0) {
 
             #if (!defined(__xlc__))
 
@@ -1011,7 +1011,7 @@
                 return result;
             }
 
-            if (_PyUnicode_EqualToASCIIString(name, "Struct331_u32")) {
+            if (PyUnicode_CompareWithASCIIString(name, "Struct331_u32") == 0) {
 
             #if (!defined(__xlc__))
 
@@ -1035,7 +1035,7 @@
                 return result;
             }
 
-            if (_PyUnicode_EqualToASCIIString(name, "Struct1x1_u32")) {
+            if (PyUnicode_CompareWithASCIIString(name, "Struct1x1_u32") == 0) {
 
             #if (!defined(__xlc__))
 
@@ -1059,7 +1059,7 @@
                 return result;
             }
 
-            if (_PyUnicode_EqualToASCIIString(name, "Struct1nx1_u32")) {
+            if (PyUnicode_CompareWithASCIIString(name, "Struct1nx1_u32") == 0) {
 
             #if (!defined(__xlc__))
 
@@ -1085,7 +1085,7 @@
                 return result;
             }
 
-            if (_PyUnicode_EqualToASCIIString(name, "Struct3xx_u32")) {
+            if (PyUnicode_CompareWithASCIIString(name, "Struct3xx_u32") == 0) {
 
             #if (!defined(__xlc__))
 
@@ -1109,7 +1109,7 @@
                 return result;
             }
 
-            if (_PyUnicode_EqualToASCIIString(name, "Struct331_64")) {
+            if (PyUnicode_CompareWithASCIIString(name, "Struct331_64") == 0) {
 
             #if (!defined(__xlc__))
 
@@ -1133,7 +1133,7 @@
                 return result;
             }
 
-            if (_PyUnicode_EqualToASCIIString(name, "Struct1x1_64")) {
+            if (PyUnicode_CompareWithASCIIString(name, "Struct1x1_64") == 0) {
 
             #if (!defined(__xlc__))
 
@@ -1157,7 +1157,7 @@
                 return result;
             }
 
-            if (_PyUnicode_EqualToASCIIString(name, "Struct1nx1_64")) {
+            if (PyUnicode_CompareWithASCIIString(name, "Struct1nx1_64") == 0) {
 
             #if (!defined(__xlc__))
 
@@ -1183,7 +1183,7 @@
                 return result;
             }
 
-            if (_PyUnicode_EqualToASCIIString(name, "Struct3xx_64")) {
+            if (PyUnicode_CompareWithASCIIString(name, "Struct3xx_64") == 0) {
 
             #if (!defined(__xlc__))
 
@@ -1207,7 +1207,7 @@
                 return result;
             }
 
-            if (_PyUnicode_EqualToASCIIString(name, "Struct331_u64")) {
+            if (PyUnicode_CompareWithASCIIString(name, "Struct331_u64") == 0) {
 
             #if (!defined(__xlc__))
 
@@ -1231,7 +1231,7 @@
                 return result;
             }
 
-            if (_PyUnicode_EqualToASCIIString(name, "Struct1x1_u64")) {
+            if (PyUnicode_CompareWithASCIIString(name, "Struct1x1_u64") == 0) {
 
             #if (!defined(__xlc__))
 
@@ -1255,7 +1255,7 @@
                 return result;
             }
 
-            if (_PyUnicode_EqualToASCIIString(name, "Struct1nx1_u64")) {
+            if (PyUnicode_CompareWithASCIIString(name, "Struct1nx1_u64") == 0) {
 
             #if (!defined(__xlc__))
 
@@ -1281,7 +1281,7 @@
                 return result;
             }
 
-            if (_PyUnicode_EqualToASCIIString(name, "Struct3xx_u64")) {
+            if (PyUnicode_CompareWithASCIIString(name, "Struct3xx_u64") == 0) {
 
             #if (!defined(__xlc__))
 
@@ -1305,7 +1305,7 @@
                 return result;
             }
 
-            if (_PyUnicode_EqualToASCIIString(name, "Mixed1")) {
+            if (PyUnicode_CompareWithASCIIString(name, "Mixed1") == 0) {
 
             #if (!defined(__xlc__))
 
@@ -1327,7 +1327,7 @@
                 return result;
             }
 
-            if (_PyUnicode_EqualToASCIIString(name, "Mixed2")) {
+            if (PyUnicode_CompareWithASCIIString(name, "Mixed2") == 0) {
 
             #if (!defined(__xlc__))
 
@@ -1349,7 +1349,7 @@
                 return result;
             }
 
-            if (_PyUnicode_EqualToASCIIString(name, "Mixed3")) {
+            if (PyUnicode_CompareWithASCIIString(name, "Mixed3") == 0) {
 
             #if (!defined(__xlc__))
 
@@ -1371,7 +1371,7 @@
                 return result;
             }
 
-            if (_PyUnicode_EqualToASCIIString(name, "Mixed4")) {
+            if (PyUnicode_CompareWithASCIIString(name, "Mixed4") == 0) {
 
             #if (!defined(__xlc__))
 
@@ -1401,7 +1401,7 @@
                 return result;
             }
 
-            if (_PyUnicode_EqualToASCIIString(name, "Mixed5")) {
+            if (PyUnicode_CompareWithASCIIString(name, "Mixed5") == 0) {
 
             #if (!defined(__xlc__))
 
@@ -1423,7 +1423,7 @@
                 return result;
             }
 
-            if (_PyUnicode_EqualToASCIIString(name, "Mixed6")) {
+            if (PyUnicode_CompareWithASCIIString(name, "Mixed6") == 0) {
 
             #if (!defined(__xlc__))
 
@@ -1445,7 +1445,7 @@
                 return result;
             }
 
-            if (_PyUnicode_EqualToASCIIString(name, "Mixed7")) {
+            if (PyUnicode_CompareWithASCIIString(name, "Mixed7") == 0) {
 
             #if (!defined(__xlc__))
 
@@ -1469,7 +1469,7 @@
                 return result;
             }
 
-            if (_PyUnicode_EqualToASCIIString(name, "Mixed8_a")) {
+            if (PyUnicode_CompareWithASCIIString(name, "Mixed8_a") == 0) {
 
             #if (!defined(__xlc__))
 
@@ -1493,7 +1493,7 @@
                 return result;
             }
 
-            if (_PyUnicode_EqualToASCIIString(name, "Mixed8_b")) {
+            if (PyUnicode_CompareWithASCIIString(name, "Mixed8_b") == 0) {
 
             #if (!defined(__xlc__))
 
@@ -1517,7 +1517,7 @@
                 return result;
             }
 
-            if (_PyUnicode_EqualToASCIIString(name, "Mixed9")) {
+            if (PyUnicode_CompareWithASCIIString(name, "Mixed9") == 0) {
 
             #if (!defined(__xlc__))
 
@@ -1539,7 +1539,7 @@
                 return result;
             }
 
-            if (_PyUnicode_EqualToASCIIString(name, "Mixed10")) {
+            if (PyUnicode_CompareWithASCIIString(name, "Mixed10") == 0) {
 
             #if (!defined(__xlc__))
 
@@ -1561,7 +1561,7 @@
                 return result;
             }
 
-            if (_PyUnicode_EqualToASCIIString(name, "Example_gh_95496")) {
+            if (PyUnicode_CompareWithASCIIString(name, "Example_gh_95496") == 0) {
 
             #if (!defined(__xlc__))
 
@@ -1583,7 +1583,7 @@
                 return result;
             }
 
-            if (_PyUnicode_EqualToASCIIString(name, "Example_gh_84039_bad")) {
+            if (PyUnicode_CompareWithASCIIString(name, "Example_gh_84039_bad") == 0) {
 
             #if (!defined(__xlc__)) && (defined(MS_WIN32) || defined(__GNUC__) || defined(__clang__))
 
@@ -1623,7 +1623,7 @@
                 return result;
             }
 
-            if (_PyUnicode_EqualToASCIIString(name, "Example_gh_84039_good_a")) {
+            if (PyUnicode_CompareWithASCIIString(name, "Example_gh_84039_good_a") == 0) {
 
             #if (!defined(__xlc__)) && (defined(MS_WIN32) || defined(__GNUC__) || defined(__clang__))
 
@@ -1659,7 +1659,7 @@
                 return result;
             }
 
-            if (_PyUnicode_EqualToASCIIString(name, "Example_gh_84039_good")) {
+            if (PyUnicode_CompareWithASCIIString(name, "Example_gh_84039_good") == 0) {
 
             #if (!defined(__xlc__)) && (defined(MS_WIN32) || defined(__GNUC__) || defined(__clang__))
 
@@ -1703,7 +1703,7 @@
                 return result;
             }
 
-            if (_PyUnicode_EqualToASCIIString(name, "Example_gh_73939")) {
+            if (PyUnicode_CompareWithASCIIString(name, "Example_gh_73939") == 0) {
 
             #if (!defined(__xlc__)) && (defined(MS_WIN32) || defined(__GNUC__) || defined(__clang__))
 
@@ -1743,7 +1743,7 @@
                 return result;
             }
 
-            if (_PyUnicode_EqualToASCIIString(name, "Example_gh_86098")) {
+            if (PyUnicode_CompareWithASCIIString(name, "Example_gh_86098") == 0) {
 
             #if (!defined(__xlc__))
 
@@ -1767,7 +1767,7 @@
                 return result;
             }
 
-            if (_PyUnicode_EqualToASCIIString(name, "Example_gh_86098_pack")) {
+            if (PyUnicode_CompareWithASCIIString(name, "Example_gh_86098_pack") == 0) {
 
             #if (!defined(__xlc__)) && (defined(MS_WIN32) || defined(__GNUC__) || defined(__clang__))
 
@@ -1793,7 +1793,7 @@
                 return result;
             }
 
-            if (_PyUnicode_EqualToASCIIString(name, "AnonBitfields")) {
+            if (PyUnicode_CompareWithASCIIString(name, "AnonBitfields") == 0) {
 
             #if (!defined(__xlc__))
 

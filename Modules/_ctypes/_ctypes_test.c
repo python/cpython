@@ -1,5 +1,8 @@
 // Need limited C API version 3.12 for Py_MOD_PER_INTERPRETER_GIL_SUPPORTED
-// Need internal API for _PyUnicode_EqualToASCIIString
+#include "pyconfig.h"   // Py_GIL_DISABLED
+#ifndef Py_GIL_DISABLED
+#  define Py_LIMITED_API 0x030c0000
+#endif
 
 // gh-85283: On Windows, Py_LIMITED_API requires Py_BUILD_CORE to not attempt
 // linking the extension to python3.lib (which fails). Py_BUILD_CORE_MODULE is
@@ -9,7 +12,6 @@
 #define Py_BUILD_CORE_MODULE
 
 #include <Python.h>
-#include <internal/pycore_unicodeobject.h> // _PyUnicode_EqualToASCIIString
 
 #include <stdio.h>                // printf()
 #include <stdlib.h>               // qsort()
