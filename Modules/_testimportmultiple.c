@@ -12,6 +12,7 @@
 #include <Python.h>
 
 static PyModuleDef_Slot shared_slots[] = {
+    {Py_mod_multiple_interpreters, Py_MOD_MULTIPLE_INTERPRETERS_NOT_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL},
 };

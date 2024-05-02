@@ -900,6 +900,9 @@ PyInit__test_module_state_shared(void)
     if (module == NULL) {
         return NULL;
     }
+#ifdef Py_GIL_DISABLED
+    PyModule_ExperimentalSetGIL(module, Py_MOD_GIL_NOT_USED);
+#endif
 
     if (PyModule_AddObjectRef(module, "Error", PyExc_Exception) < 0) {
         Py_DECREF(module);
@@ -932,6 +935,7 @@ PyInit__testmultiphase_multiple_multiple_interpreters_slots(void)
 static PyModuleDef_Slot non_isolated_slots[] = {
     {Py_mod_exec, execfunc},
     {Py_mod_multiple_interpreters, Py_MOD_MULTIPLE_INTERPRETERS_NOT_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL},
 };
 
@@ -952,6 +956,7 @@ static PyModuleDef_Slot shared_gil_only_slots[] = {
        We put it here explicitly to draw attention to the contrast
        with Py_MOD_PER_INTERPRETER_GIL_SUPPORTED. */
     {Py_mod_multiple_interpreters, Py_MOD_MULTIPLE_INTERPRETERS_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL},
 };
 
