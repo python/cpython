@@ -585,27 +585,6 @@ framelocalsproxy_reversed(PyObject *self, PyObject *__unused)
     return result;
 }
 
-static PyObject*
-framelocalsproxy_copy_unsupported(PyObject *self, PyObject *__unused)
-{
-    PyErr_SetString(PyExc_TypeError, "FrameLocalsProxy is uncopyable");
-    return NULL;
-}
-
-static PyObject*
-framelocalsproxy_clear_unsupported(PyObject *self, PyObject *__unused)
-{
-    PyErr_SetString(PyExc_TypeError, "cannot remove variables from FrameLocalsProxy");
-    return NULL;
-}
-
-static PyObject*
-framelocalsproxy_pop_unsupported(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
-{
-    PyErr_SetString(PyExc_TypeError, "cannot remove variables from FrameLocalsProxy");
-    return NULL;
-}
-
 static PyNumberMethods framelocalsproxy_as_number = {
     .nb_or = framelocalsproxy_or,
     .nb_inplace_or = framelocalsproxy_inplace_or,
@@ -624,14 +603,6 @@ static PyMethodDef framelocalsproxy_methods[] = {
      NULL},
     {"__reversed__",  framelocalsproxy_reversed,          METH_NOARGS,
      NULL},
-    {"__copy__",      framelocalsproxy_copy_unsupported,  METH_NOARGS,
-     NULL},
-    {"__deepcopy__",  framelocalsproxy_copy_unsupported,  METH_NOARGS,
-     NULL},
-    {"copy",          framelocalsproxy_copy_unsupported,  METH_NOARGS,
-     NULL},
-    {"clear",         framelocalsproxy_clear_unsupported, METH_NOARGS,
-     NULL},
     {"keys",          framelocalsproxy_keys,              METH_NOARGS,
      NULL},
     {"values",        framelocalsproxy_values,            METH_NOARGS,
@@ -639,8 +610,6 @@ static PyMethodDef framelocalsproxy_methods[] = {
     {"items",         framelocalsproxy_items,             METH_NOARGS,
      NULL},
     {"update",        framelocalsproxy_update,            METH_O,
-     NULL},
-    {"pop",        _PyCFunction_CAST(framelocalsproxy_pop_unsupported), METH_FASTCALL,
      NULL},
     {"get",        _PyCFunction_CAST(framelocalsproxy_get),             METH_FASTCALL,
      NULL},

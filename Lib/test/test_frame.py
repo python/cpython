@@ -368,10 +368,10 @@ class TestFrameLocals(unittest.TestCase):
         with self.assertRaises(TypeError):
             del d['x']
 
-        with self.assertRaises(TypeError):
+        with self.assertRaises(AttributeError):
             d.clear()
 
-        with self.assertRaises(TypeError):
+        with self.assertRaises(AttributeError):
             d.pop('x')
 
     @support.cpython_only
@@ -382,7 +382,7 @@ class TestFrameLocals(unittest.TestCase):
     def test_unsupport(self):
         x = 1
         d = sys._getframe().f_locals
-        with self.assertRaises(TypeError):
+        with self.assertRaises(AttributeError):
             d.copy()
 
         with self.assertRaises(TypeError):
