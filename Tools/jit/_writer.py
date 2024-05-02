@@ -29,7 +29,7 @@ def _dump_stencil(opname: str, group: _stencils.StencilGroup) -> typing.Iterator
     yield "void"
     yield f"emit_{opname}("
     yield "    unsigned char *code, unsigned char *data, _PyExecutorObject *executor,"
-    yield "    const _PyUOpInstruction *instruction,uintptr_t instruction_starts[])"
+    yield "    const _PyUOpInstruction *instruction, uintptr_t instruction_starts[])"
     yield "{"
     for part, stencil in [("code", group.code), ("data", group.data)]:
         for line in stencil.disassembly:
