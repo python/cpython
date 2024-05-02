@@ -288,6 +288,10 @@ Other Language Changes
   class scopes are not inlined into their parent scope. (Contributed by
   Jelle Zijlstra in :gh:`109118` and :gh:`118160`.)
 
+* ``from __future__ import ...`` statements are now just normal
+  relative imports if dots are present before the module name.
+  (Contributed by Jeremiah Gabriel Pascual in :gh:`118216`.)
+
 
 New Modules
 ===========
