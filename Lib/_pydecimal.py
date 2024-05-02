@@ -423,6 +423,39 @@ def localcontext(ctx=None, **kwargs):
 # (because Decimals are not interoperable with floats).  See the notes in
 # numbers.py for more detail.
 
+import re
+_is_power_of_10 = re.compile(r"10*").fullmatch
+del re
+
+# In Decimal._power_exact(), there are two blocks of the form
+#     if xc > 10**p:
+#         return None
+#     ...
+#     code using str(zc)
+# where p is the maximum exponent. Which can be truly gigantic. So Python
+# can appear to hang if those blocke are hit, or, if you wait long enough,
+# run out of RAM. For example,
+#     https://github.com/python/cpython/issues/118027
+# where this happens during decimal.Decimal(2) ** 117 after
+# ctx.Emax is set to decimal.MAX_EMAX.
+#
+# This function instead converts to string first, then sees whether the
+# string is compatible with the claim that it's a value <= 10**p. If so,
+# it returns the string; else None. So the code above becomes instead:
+#     str_xc = _convert_to_str(zc, p)
+#     if str_xc is None:
+#         return None
+#     use `str_xc` instead of str(xc)
+# The code in _power_exact() is very involved, and I'm not certain xc can't
+# be very much larger than 10**p. I _doubt_ it can. But, if I'm wrong, a
+# different approach would be better.
+def _convert_to_str(ec, p):
+    sc = str(ec)
+    if len(sc) <= p or _is_power_of_10(sc):
+        return sc
+    else:
+        return None
+
 class Decimal(object):
     """Floating point class for decimal arithmetic."""
 
@@ -2131,10 +2164,11 @@ class Decimal(object):
             else:
                 return None
 
-            if xc >= 10**p:
+            strxc = _convert_to_str(xc, p)
+            if strxc is None:
                 return None
             xe = -e-xe
-            return _dec_from_triple(0, str(xc), xe)
+            return _dec_from_triple(0, strxc, xe)
 
         # now y is positive; find m and n such that y = m/n
         if ye >= 0:
@@ -2184,13 +2218,13 @@ class Decimal(object):
             return None
         xc = xc**m
         xe *= m
-        if xc > 10**p:
+        str_xc = _convert_to_str(xc, p)
+        if str_xc is None:
             return None
 
         # by this point the result *is* exactly representable
         # adjust the exponent to get as close as possible to the ideal
         # exponent, if necessary
-        str_xc = str(xc)
         if other._isinteger() and other._sign == 0:
             ideal_exponent = self._exp*int(other)
             zeros = min(xe-ideal_exponent, p-len(str_xc))
