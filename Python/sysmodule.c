@@ -2401,7 +2401,7 @@ Return True if the GIL is currently enabled and False otherwise.
 
 static int
 sys__is_gil_enabled_impl(PyObject *module)
-/*[clinic end generated code: output=57732cf53f5b9120 input=e646df2a04652e80]*/
+/*[clinic end generated code: output=57732cf53f5b9120 input=7e9c47f15a00e809]*/
 {
 #ifdef Py_GIL_DISABLED
     PyInterpreterState *interp = _PyInterpreterState_GET();

@@ -1489,7 +1489,7 @@ PyDoc_STRVAR(sys__is_gil_enabled__doc__,
 "_is_gil_enabled($module, /)\n"
 "--\n"
 "\n"
-"Return True if the GIL is currently enabled and False if the GIL is currently disabled.");
+"Return True if the GIL is currently enabled and False otherwise.");
 
 #define SYS__IS_GIL_ENABLED_METHODDEF    \
     {"_is_gil_enabled", (PyCFunction)sys__is_gil_enabled, METH_NOARGS, sys__is_gil_enabled__doc__},
@@ -1556,4 +1556,4 @@ exit:
 #ifndef SYS_GETANDROIDAPILEVEL_METHODDEF
     #define SYS_GETANDROIDAPILEVEL_METHODDEF
 #endif /* !defined(SYS_GETANDROIDAPILEVEL_METHODDEF) */
-/*[clinic end generated code: output=d5ad82453af547c1 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=352ac7a0085e8a1f input=a9049054013a1b77]*/
