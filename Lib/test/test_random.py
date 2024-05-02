@@ -1400,27 +1400,27 @@ class TestModule(unittest.TestCase):
 
 class CommandLineTest(unittest.TestCase):
     def test_parse_args(self):
-        args, help_text = random.parse_args(shlex.split("--choice a b c"))
+        args, help_text = random._parse_args(shlex.split("--choice a b c"))
         self.assertEqual(args.choice, ["a", "b", "c"])
         self.assertTrue(help_text.startswith("usage: "))
 
-        args, help_text = random.parse_args(shlex.split("--integer 5"))
+        args, help_text = random._parse_args(shlex.split("--integer 5"))
         self.assertEqual(args.integer, 5)
         self.assertTrue(help_text.startswith("usage: "))
 
-        args, help_text = random.parse_args(shlex.split("--float 2.5"))
+        args, help_text = random._parse_args(shlex.split("--float 2.5"))
         self.assertEqual(args.float, 2.5)
         self.assertTrue(help_text.startswith("usage: "))
 
-        args, help_text = random.parse_args(shlex.split("a b c"))
+        args, help_text = random._parse_args(shlex.split("a b c"))
         self.assertEqual(args.input, ["a", "b", "c"])
         self.assertTrue(help_text.startswith("usage: "))
 
-        args, help_text = random.parse_args(shlex.split("5"))
+        args, help_text = random._parse_args(shlex.split("5"))
         self.assertEqual(args.input, ["5"])
         self.assertTrue(help_text.startswith("usage: "))
 
-        args, help_text = random.parse_args(shlex.split("2.5"))
+        args, help_text = random._parse_args(shlex.split("2.5"))
         self.assertEqual(args.input, ["2.5"])
         self.assertTrue(help_text.startswith("usage: "))
 

@@ -1000,7 +1000,7 @@ if hasattr(_os, "fork"):
 # -------------- command-line interface ----------------
 
 
-def parse_args(arg_list: list[str] | None):
+def _parse_args(arg_list: list[str] | None):
     import argparse
     parser = argparse.ArgumentParser(
         formatter_class=argparse.RawTextHelpFormatter)
@@ -1028,7 +1028,7 @@ if no options given, output depends on the input
 
 
 def main(arg_list: list[str] | None = None) -> int | str:
-    args, help_text = parse_args(arg_list)
+    args, help_text = _parse_args(arg_list)
 
     # Explicit arguments
     if args.choice:
