@@ -3002,17 +3002,18 @@ class SinglephaseInitTests(unittest.TestCase):
         #  * module's global state was initialized but cleared
 
         # Start with an interpreter that gets destroyed right away.
-        base = self.import_in_subinterp(postscript='''
-            # Attrs set after loading are not in m_copy.
-            mod.spam = 'spam, spam, mash, spam, eggs, and spam'
-        ''')
+        base = self.import_in_subinterp(
+            postscript='''
+                # Attrs set after loading are not in m_copy.
+                mod.spam = 'spam, spam, mash, spam, eggs, and spam'
+                ''')
         self.check_common(base)
         self.check_fresh(base)
 
         # At this point:
         #  * alive in 0 interpreters
         #  * module def in _PyRuntime.imports.extensions
-        #  * mod init func ran again
+        #  * mod init func ran for the first time (since reset)
         #  * m_copy is NULL (claered when the interpreter was destroyed)
         #  * module's global state was initialized, not reset
 
@@ -3024,7 +3025,7 @@ class SinglephaseInitTests(unittest.TestCase):
         # At this point:
         #  * alive in 1 interpreter (interp1)
         #  * module def still in _PyRuntime.imports.extensions
-        #  * mod init func ran again
+        #  * mod init func ran for the second time (since reset)
         #  * m_copy was copied from interp1 (was NULL)
         #  * module's global state was updated, not reset
 
@@ -3036,7 +3037,7 @@ class SinglephaseInitTests(unittest.TestCase):
         # At this point:
         #  * alive in 2 interpreters (interp1, interp2)
         #  * module def still in _PyRuntime.imports.extensions
-        #  * mod init func ran again
+        #  * mod init func did not run again
         #  * m_copy was copied from interp2 (was from interp1)
         #  * module's global state was updated, not reset
 
