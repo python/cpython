@@ -17,7 +17,6 @@
 #define OFF(x) offsetof(PyFrameObject, x)
 
 
-// Utilities
 
 // Returns borrowed reference or NULL
 static PyObject *
@@ -105,6 +104,96 @@ framelocalsproxy_getkeyindex(PyFrameObject *frame, PyObject* key, bool read)
     return -1;
 }
 
+static PyObject *
+framelocalsproxy_getitem(PyObject *self, PyObject *key)
+{
+    PyFrameObject* frame = ((PyFrameLocalsProxyObject*)self)->frame;
+    PyCodeObject* co = PyFrame_GetCode(frame);
+
+    if (PyUnicode_CheckExact(key)) {
+        int i = framelocalsproxy_getkeyindex(frame, key, true);
+        if (i >= 0) {
+            PyObject *value = framelocalsproxy_getval(frame, co, i);
+            assert(value != NULL);
+            return Py_NewRef(value);
+        }
+    }
+
+    // Okay not in the fast locals, try extra locals
+
+    PyObject *extra = frame->f_extra_locals;
+    if (extra != NULL) {
+        PyObject *value = PyDict_GetItem(extra, key);
+        if (value != NULL) {
+            return Py_NewRef(value);
+        }
+    }
+
+    PyErr_Format(PyExc_KeyError, "local variable '%R' is not defined", key);
+    return NULL;
+}
+
+static int
+framelocalsproxy_setitem(PyObject *self, PyObject *key, PyObject *value)
+{
+    /* Merge locals into fast locals */
+    PyFrameObject* frame = ((PyFrameLocalsProxyObject*)self)->frame;
+    PyObject** fast = _PyFrame_GetLocalsArray(frame->f_frame);
+    PyCodeObject* co = PyFrame_GetCode(frame);
+
+    if (value == NULL) {
+        PyErr_SetString(PyExc_TypeError, "cannot remove variables from FrameLocalsProxy");
+        return -1;
+    }
+
+    if (PyUnicode_CheckExact(key)) {
+        int i = framelocalsproxy_getkeyindex(frame, key, false);
+        if (i >= 0) {
+            _PyLocals_Kind kind = _PyLocals_GetKind(co->co_localspluskinds, i);
+
+            PyObject *oldvalue = fast[i];
+            PyObject *cell = NULL;
+            if (kind == CO_FAST_FREE) {
+                // The cell was set when the frame was created from
+                // the function's closure.
+                assert(oldvalue != NULL && PyCell_Check(oldvalue));
+                cell = oldvalue;
+            } else if (kind & CO_FAST_CELL && oldvalue != NULL) {
+                if (PyCell_Check(oldvalue)) {
+                    cell = oldvalue;
+                }
+            }
+            if (cell != NULL) {
+                oldvalue = PyCell_GET(cell);
+                if (value != oldvalue) {
+                    PyCell_SET(cell, Py_XNewRef(value));
+                    Py_XDECREF(oldvalue);
+                }
+            } else if (value != oldvalue) {
+                Py_XSETREF(fast[i], Py_NewRef(value));
+            }
+            Py_XDECREF(value);
+            return 0;
+        }
+    }
+
+    // Okay not in the fast locals, try extra locals
+
+    PyObject *extra = frame->f_extra_locals;
+
+    if (extra == NULL) {
+        extra = PyDict_New();
+        if (extra == NULL) {
+            return -1;
+        }
+        frame->f_extra_locals = extra;
+    }
+
+    assert(PyDict_Check(extra));
+
+    return PyDict_SetItem(extra, key, value) < 0;
+}
+
 static int
 framelocalsproxy_merge(PyObject* self, PyObject* other)
 {
@@ -134,7 +223,7 @@ framelocalsproxy_merge(PyObject* self, PyObject* other)
             return -1;
         }
 
-        if (PyObject_SetItem(self, key, value) < 0) {
+        if (framelocalsproxy_setitem(self, key, value) < 0) {
             Py_DECREF(key);
             Py_DECREF(value);
             Py_DECREF(iter);
@@ -147,8 +236,6 @@ framelocalsproxy_merge(PyObject* self, PyObject* other)
 
     return 0;
 }
-
-// Type functions
 
 static PyObject *
 framelocalsproxy_keys(PyObject *self, PyObject *__unused)
@@ -301,8 +388,6 @@ framelocalsproxy_inplace_or(PyObject *self, PyObject *other)
     return Py_NewRef(self);
 }
 
-// Methods
-
 static PyObject*
 framelocalsproxy_values(PyObject *self, PyObject *__unused)
 {
@@ -383,96 +468,6 @@ framelocalsproxy_length(PyObject *self)
         }
     }
     return size;
-}
-
-static PyObject *
-framelocalsproxy_getitem(PyObject *self, PyObject *key)
-{
-    PyFrameObject* frame = ((PyFrameLocalsProxyObject*)self)->frame;
-    PyCodeObject* co = PyFrame_GetCode(frame);
-
-    if (PyUnicode_CheckExact(key)) {
-        int i = framelocalsproxy_getkeyindex(frame, key, true);
-        if (i >= 0) {
-            PyObject *value = framelocalsproxy_getval(frame, co, i);
-            assert(value != NULL);
-            return Py_NewRef(value);
-        }
-    }
-
-    // Okay not in the fast locals, try extra locals
-
-    PyObject *extra = frame->f_extra_locals;
-    if (extra != NULL) {
-        PyObject *value = PyDict_GetItem(extra, key);
-        if (value != NULL) {
-            return Py_NewRef(value);
-        }
-    }
-
-    PyErr_Format(PyExc_KeyError, "local variable '%R' is not defined", key);
-    return NULL;
-}
-
-static int
-framelocalsproxy_setitem(PyObject *self, PyObject *key, PyObject *value)
-{
-    /* Merge locals into fast locals */
-    PyFrameObject* frame = ((PyFrameLocalsProxyObject*)self)->frame;
-    PyObject** fast = _PyFrame_GetLocalsArray(frame->f_frame);
-    PyCodeObject* co = PyFrame_GetCode(frame);
-
-    if (value == NULL) {
-        PyErr_SetString(PyExc_TypeError, "cannot remove variables from FrameLocalsProxy");
-        return -1;
-    }
-
-    if (PyUnicode_CheckExact(key)) {
-        int i = framelocalsproxy_getkeyindex(frame, key, false);
-        if (i >= 0) {
-            _PyLocals_Kind kind = _PyLocals_GetKind(co->co_localspluskinds, i);
-
-            PyObject *oldvalue = fast[i];
-            PyObject *cell = NULL;
-            if (kind == CO_FAST_FREE) {
-                // The cell was set when the frame was created from
-                // the function's closure.
-                assert(oldvalue != NULL && PyCell_Check(oldvalue));
-                cell = oldvalue;
-            } else if (kind & CO_FAST_CELL && oldvalue != NULL) {
-                if (PyCell_Check(oldvalue)) {
-                    cell = oldvalue;
-                }
-            }
-            if (cell != NULL) {
-                oldvalue = PyCell_GET(cell);
-                if (value != oldvalue) {
-                    PyCell_SET(cell, Py_XNewRef(value));
-                    Py_XDECREF(oldvalue);
-                }
-            } else if (value != oldvalue) {
-                Py_XSETREF(fast[i], Py_NewRef(value));
-            }
-            Py_XDECREF(value);
-            return 0;
-        }
-    }
-
-    // Okay not in the fast locals, try extra locals
-
-    PyObject *extra = frame->f_extra_locals;
-
-    if (extra == NULL) {
-        extra = PyDict_New();
-        if (extra == NULL) {
-            return -1;
-        }
-        frame->f_extra_locals = extra;
-    }
-
-    assert(PyDict_Check(extra));
-
-    return PyDict_SetItem(extra, key, value) < 0;
 }
 
 static PyObject*
