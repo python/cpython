@@ -242,7 +242,7 @@
             #if (defined(MS_WIN32) || defined(__GNUC__) || defined(__clang__))
             
                 #pragma pack(push, 1)
-                struct Packed1 {
+                struct GCC_ATTR(ms_struct) Packed1 {
                     int8_t a;
                     int64_t b;
                 };
@@ -271,7 +271,7 @@
             #if (defined(MS_WIN32) || defined(__GNUC__) || defined(__clang__))
             
                 #pragma pack(push, 2)
-                struct Packed2 {
+                struct GCC_ATTR(ms_struct) Packed2 {
                     int8_t a;
                     int64_t b;
                 };
@@ -300,7 +300,7 @@
             #if (defined(MS_WIN32) || defined(__GNUC__) || defined(__clang__))
             
                 #pragma pack(push, 4)
-                struct Packed3 {
+                struct GCC_ATTR(ms_struct) Packed3 {
                     int8_t a;
                     int64_t b;
                 };
@@ -329,7 +329,7 @@
             #if (defined(MS_WIN32) || defined(__GNUC__) || defined(__clang__))
             
                 #pragma pack(push, 8)
-                struct Packed4 {
+                struct GCC_ATTR(ms_struct) Packed4 {
                     int8_t a;
                     int64_t b;
                 };
@@ -1881,7 +1881,7 @@
             #if (!defined(__xlc__)) && (defined(MS_WIN32) || defined(__GNUC__) || defined(__clang__))
             
                 #pragma pack(push, 1)
-                struct Example_gh_84039_bad {
+                struct GCC_ATTR(ms_struct) Example_gh_84039_bad {
                     uint8_t a0 :1;
                     uint8_t a1 :1;
                     uint8_t a2 :1;
@@ -1926,7 +1926,7 @@
             #if (!defined(__xlc__)) && (defined(MS_WIN32) || defined(__GNUC__) || defined(__clang__))
             
                 #pragma pack(push, 1)
-                struct Example_gh_84039_good_a {
+                struct GCC_ATTR(ms_struct) Example_gh_84039_good_a {
                     uint8_t a0 :1;
                     uint8_t a1 :1;
                     uint8_t a2 :1;
@@ -1967,9 +1967,9 @@
             #if (!defined(__xlc__)) && (defined(MS_WIN32) || defined(__GNUC__) || defined(__clang__))
             
                 #pragma pack(push, 1)
-                struct Example_gh_84039_good {
+                struct GCC_ATTR(ms_struct) Example_gh_84039_good {
                     #pragma pack(push, 1)
-                    struct {
+                    struct GCC_ATTR(ms_struct) {
                         uint8_t a0 :1;
                         uint8_t a1 :1;
                         uint8_t a2 :1;
@@ -2016,7 +2016,7 @@
             #if (!defined(__xlc__)) && (defined(MS_WIN32) || defined(__GNUC__) || defined(__clang__))
             
                 #pragma pack(push, 1)
-                struct Example_gh_73939 {
+                struct GCC_ATTR(ms_struct) Example_gh_73939 {
                     uint16_t P;
                     uint16_t L :9;
                     uint16_t Pro :1;
@@ -2090,7 +2090,7 @@
             #if (!defined(__xlc__)) && (defined(MS_WIN32) || defined(__GNUC__) || defined(__clang__))
             
                 #pragma pack(push, 1)
-                struct Example_gh_86098_pack {
+                struct GCC_ATTR(ms_struct) Example_gh_86098_pack {
                     uint8_t a :8;
                     uint8_t b :8;
                     uint32_t c :16;

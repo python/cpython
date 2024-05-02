@@ -436,7 +436,7 @@ def dump_ctype(tp, agg_name='', variable_name='', semi=''):
             pushes.append(f'#pragma pack(push, {pack})')
             pops.append(f'#pragma pack(pop)')
         layout = getattr(tp, '_layout_', None)
-        if layout == 'ms':
+        if layout == 'ms' or pack:
             requires.add(KNOWN_COMPILERS)
             attributes.append('ms_struct')
         if attributes:
