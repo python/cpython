@@ -563,7 +563,7 @@ def copytree(src, dst, symlinks=False, ignore=None, copy_function=copy2,
     If the optional symlinks flag is true, symbolic links in the
     source tree result in symbolic links in the destination tree; if
     it is false, the contents of the files pointed to by symbolic
-    links are copied. If the file pointed by the symlink doesn't
+    links are copied. If the file pointed to by the symlink doesn't
     exist, an exception will be added in the list of errors raised in
     an Error exception at the end of the copy process.
 
