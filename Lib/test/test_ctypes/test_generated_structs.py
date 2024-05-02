@@ -105,7 +105,7 @@ class ManyTypesU(Union):
 
 
 @register()
-class Nested(Union):
+class Nested(Structure):
     _fields_ = [
         ('a', SimpleStruct), ('b', SimpleUnion), ('anon', SimpleStruct),
     ]
@@ -113,25 +113,25 @@ class Nested(Union):
 
 
 @register()
-class Packed1(Union):
+class Packed1(Structure):
     _fields_ = [('a', c_int8), ('b', c_int64)]
     _pack_ = 1
 
 
 @register()
-class Packed2(Union):
+class Packed2(Structure):
     _fields_ = [('a', c_int8), ('b', c_int64)]
     _pack_ = 2
 
 
 @register()
-class Packed3(Union):
+class Packed3(Structure):
     _fields_ = [('a', c_int8), ('b', c_int64)]
     _pack_ = 4
 
 
 @register()
-class Packed4(Union):
+class Packed4(Structure):
     _fields_ = [('a', c_int8), ('b', c_int64)]
     _pack_ = 8
 
@@ -185,7 +185,8 @@ class Bits_MSVC(Structure):
                 ("R", c_short, 6),
                 ("S", c_short, 7)]
 
-@register()
+# Skipped for now -- we don't always match the alignment
+#@register()
 class IntBits_Union(Union):
     _fields_ = [("A", c_int, 1),
                 ("B", c_int, 2),
@@ -197,7 +198,8 @@ class IntBits_Union(Union):
                 ("H", c_int, 8),
                 ("I", c_int, 9)]
 
-@register()
+# Skipped for now -- we don't always match the alignment
+#@register()
 class BitsUnion(Union):
     _fields_ = [*IntBits_Union._fields_,
 

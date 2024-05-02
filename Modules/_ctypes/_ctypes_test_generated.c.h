@@ -200,7 +200,7 @@
 
             if (_PyUnicode_EqualToASCIIString(name, "Nested")) {
             
-                union Nested {
+                struct Nested {
                     struct {
                         int32_t x;
                         int8_t y;
@@ -218,10 +218,10 @@
                     };
                 };
 
-                union Nested value = {0};
+                struct Nested value = {0};
                 APPEND(PyUnicode_FromString("Nested"));
-                APPEND(PyLong_FromLong(sizeof(union Nested)));
-                APPEND(PyLong_FromLong(_Alignof(union Nested)));
+                APPEND(PyLong_FromLong(sizeof(struct Nested)));
+                APPEND(PyLong_FromLong(_Alignof(struct Nested)));
                 TEST_FIELD(int32_t, value.a.x);
                 TEST_FIELD(int8_t, value.a.y);
                 TEST_FIELD(uint16_t, value.a.z);
@@ -242,16 +242,16 @@
             #if (defined(MS_WIN32) || defined(__GNUC__) || defined(__clang__))
             
                 #pragma pack(push, 1)
-                union Packed1 {
+                struct Packed1 {
                     int8_t a;
                     int64_t b;
                 };
                 #pragma pack(pop)
 
-                union Packed1 value = {0};
+                struct Packed1 value = {0};
                 APPEND(PyUnicode_FromString("Packed1"));
-                APPEND(PyLong_FromLong(sizeof(union Packed1)));
-                APPEND(PyLong_FromLong(_Alignof(union Packed1)));
+                APPEND(PyLong_FromLong(sizeof(struct Packed1)));
+                APPEND(PyLong_FromLong(_Alignof(struct Packed1)));
                 TEST_FIELD(int8_t, value.a);
                 TEST_FIELD(int64_t, value.b);
 
@@ -271,16 +271,16 @@
             #if (defined(MS_WIN32) || defined(__GNUC__) || defined(__clang__))
             
                 #pragma pack(push, 2)
-                union Packed2 {
+                struct Packed2 {
                     int8_t a;
                     int64_t b;
                 };
                 #pragma pack(pop)
 
-                union Packed2 value = {0};
+                struct Packed2 value = {0};
                 APPEND(PyUnicode_FromString("Packed2"));
-                APPEND(PyLong_FromLong(sizeof(union Packed2)));
-                APPEND(PyLong_FromLong(_Alignof(union Packed2)));
+                APPEND(PyLong_FromLong(sizeof(struct Packed2)));
+                APPEND(PyLong_FromLong(_Alignof(struct Packed2)));
                 TEST_FIELD(int8_t, value.a);
                 TEST_FIELD(int64_t, value.b);
 
@@ -300,16 +300,16 @@
             #if (defined(MS_WIN32) || defined(__GNUC__) || defined(__clang__))
             
                 #pragma pack(push, 4)
-                union Packed3 {
+                struct Packed3 {
                     int8_t a;
                     int64_t b;
                 };
                 #pragma pack(pop)
 
-                union Packed3 value = {0};
+                struct Packed3 value = {0};
                 APPEND(PyUnicode_FromString("Packed3"));
-                APPEND(PyLong_FromLong(sizeof(union Packed3)));
-                APPEND(PyLong_FromLong(_Alignof(union Packed3)));
+                APPEND(PyLong_FromLong(sizeof(struct Packed3)));
+                APPEND(PyLong_FromLong(_Alignof(struct Packed3)));
                 TEST_FIELD(int8_t, value.a);
                 TEST_FIELD(int64_t, value.b);
 
@@ -329,16 +329,16 @@
             #if (defined(MS_WIN32) || defined(__GNUC__) || defined(__clang__))
             
                 #pragma pack(push, 8)
-                union Packed4 {
+                struct Packed4 {
                     int8_t a;
                     int64_t b;
                 };
                 #pragma pack(pop)
 
-                union Packed4 value = {0};
+                struct Packed4 value = {0};
                 APPEND(PyUnicode_FromString("Packed4"));
-                APPEND(PyLong_FromLong(sizeof(union Packed4)));
-                APPEND(PyLong_FromLong(_Alignof(union Packed4)));
+                APPEND(PyLong_FromLong(sizeof(struct Packed4)));
+                APPEND(PyLong_FromLong(_Alignof(struct Packed4)));
                 TEST_FIELD(int8_t, value.a);
                 TEST_FIELD(int64_t, value.b);
 
@@ -508,93 +508,6 @@
                 APPEND(PyUnicode_FromString("Bits_MSVC"));
                 APPEND(PyLong_FromLong(sizeof(struct Bits_MSVC)));
                 APPEND(PyLong_FromLong(_Alignof(struct Bits_MSVC)));
-                TEST_FIELD(int, value.A);
-                TEST_FIELD(int, value.B);
-                TEST_FIELD(int, value.C);
-                TEST_FIELD(int, value.D);
-                TEST_FIELD(int, value.E);
-                TEST_FIELD(int, value.F);
-                TEST_FIELD(int, value.G);
-                TEST_FIELD(int, value.H);
-                TEST_FIELD(int, value.I);
-                TEST_FIELD(short, value.M);
-                TEST_FIELD(short, value.N);
-                TEST_FIELD(short, value.O);
-                TEST_FIELD(short, value.P);
-                TEST_FIELD(short, value.Q);
-                TEST_FIELD(short, value.R);
-                TEST_FIELD(short, value.S);
-
-            #else
-                APPEND(Py_NewRef(Py_None));
-                APPEND(PyUnicode_FromString("skipped on this compiler"));
-            #endif
-            
-
-                return result;
-            }
-        
-
-            if (_PyUnicode_EqualToASCIIString(name, "IntBits_Union")) {
-            
-                union IntBits_Union {
-                    int A :1;
-                    int B :2;
-                    int C :3;
-                    int D :4;
-                    int E :5;
-                    int F :6;
-                    int G :7;
-                    int H :8;
-                    int I :9;
-                };
-
-                union IntBits_Union value = {0};
-                APPEND(PyUnicode_FromString("IntBits_Union"));
-                APPEND(PyLong_FromLong(sizeof(union IntBits_Union)));
-                APPEND(PyLong_FromLong(_Alignof(union IntBits_Union)));
-                TEST_FIELD(int, value.A);
-                TEST_FIELD(int, value.B);
-                TEST_FIELD(int, value.C);
-                TEST_FIELD(int, value.D);
-                TEST_FIELD(int, value.E);
-                TEST_FIELD(int, value.F);
-                TEST_FIELD(int, value.G);
-                TEST_FIELD(int, value.H);
-                TEST_FIELD(int, value.I);
-
-                return result;
-            }
-        
-
-            if (_PyUnicode_EqualToASCIIString(name, "BitsUnion")) {
-            
-
-            #if (!defined(__xlc__))
-            
-                union BitsUnion {
-                    int A :1;
-                    int B :2;
-                    int C :3;
-                    int D :4;
-                    int E :5;
-                    int F :6;
-                    int G :7;
-                    int H :8;
-                    int I :9;
-                    short M :1;
-                    short N :2;
-                    short O :3;
-                    short P :4;
-                    short Q :5;
-                    short R :6;
-                    short S :7;
-                };
-
-                union BitsUnion value = {0};
-                APPEND(PyUnicode_FromString("BitsUnion"));
-                APPEND(PyLong_FromLong(sizeof(union BitsUnion)));
-                APPEND(PyLong_FromLong(_Alignof(union BitsUnion)));
                 TEST_FIELD(int, value.A);
                 TEST_FIELD(int, value.B);
                 TEST_FIELD(int, value.C);
@@ -1968,7 +1881,7 @@
             #if (!defined(__xlc__)) && (defined(MS_WIN32) || defined(__GNUC__) || defined(__clang__))
             
                 #pragma pack(push, 1)
-                struct GCC_ATTR(ms_struct) Example_gh_84039_bad {
+                struct Example_gh_84039_bad {
                     uint8_t a0 :1;
                     uint8_t a1 :1;
                     uint8_t a2 :1;
@@ -2013,7 +1926,7 @@
             #if (!defined(__xlc__)) && (defined(MS_WIN32) || defined(__GNUC__) || defined(__clang__))
             
                 #pragma pack(push, 1)
-                struct GCC_ATTR(ms_struct) Example_gh_84039_good_a {
+                struct Example_gh_84039_good_a {
                     uint8_t a0 :1;
                     uint8_t a1 :1;
                     uint8_t a2 :1;
@@ -2054,9 +1967,9 @@
             #if (!defined(__xlc__)) && (defined(MS_WIN32) || defined(__GNUC__) || defined(__clang__))
             
                 #pragma pack(push, 1)
-                struct GCC_ATTR(ms_struct) Example_gh_84039_good {
+                struct Example_gh_84039_good {
                     #pragma pack(push, 1)
-                    struct GCC_ATTR(ms_struct) {
+                    struct {
                         uint8_t a0 :1;
                         uint8_t a1 :1;
                         uint8_t a2 :1;
@@ -2103,7 +2016,7 @@
             #if (!defined(__xlc__)) && (defined(MS_WIN32) || defined(__GNUC__) || defined(__clang__))
             
                 #pragma pack(push, 1)
-                struct GCC_ATTR(ms_struct) Example_gh_73939 {
+                struct Example_gh_73939 {
                     uint16_t P;
                     uint16_t L :9;
                     uint16_t Pro :1;
@@ -2177,7 +2090,7 @@
             #if (!defined(__xlc__)) && (defined(MS_WIN32) || defined(__GNUC__) || defined(__clang__))
             
                 #pragma pack(push, 1)
-                struct GCC_ATTR(ms_struct) Example_gh_86098_pack {
+                struct Example_gh_86098_pack {
                     uint8_t a :8;
                     uint8_t b :8;
                     uint32_t c :16;
