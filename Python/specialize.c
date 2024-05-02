@@ -1812,53 +1812,6 @@ generic:
     return 0;
 }
 
-#ifdef Py_STATS
-static int
-builtin_call_fail_kind(int ml_flags)
-{
-    switch (ml_flags & (METH_VARARGS | METH_FASTCALL | METH_NOARGS | METH_O |
-        METH_KEYWORDS | METH_METHOD)) {
-        case METH_VARARGS:
-            return SPEC_FAIL_CALL_CFUNC_VARARGS;
-        case METH_VARARGS | METH_KEYWORDS:
-            return SPEC_FAIL_CALL_CFUNC_VARARGS_KEYWORDS;
-        case METH_NOARGS:
-            return SPEC_FAIL_CALL_CFUNC_NOARGS;
-        case METH_METHOD | METH_FASTCALL | METH_KEYWORDS:
-            return SPEC_FAIL_CALL_CFUNC_METHOD_FASTCALL_KEYWORDS;
-        /* These cases should be optimized, but return "other" just in case */
-        case METH_O:
-        case METH_FASTCALL:
-        case METH_FASTCALL | METH_KEYWORDS:
-            return SPEC_FAIL_OTHER;
-        default:
-            return SPEC_FAIL_CALL_BAD_CALL_FLAGS;
-    }
-}
-
-static int
-meth_descr_call_fail_kind(int ml_flags)
-{
-    switch (ml_flags & (METH_VARARGS | METH_FASTCALL | METH_NOARGS | METH_O |
-                        METH_KEYWORDS | METH_METHOD)) {
-        case METH_VARARGS:
-            return SPEC_FAIL_CALL_METH_DESCR_VARARGS;
-        case METH_VARARGS | METH_KEYWORDS:
-            return SPEC_FAIL_CALL_METH_DESCR_VARARGS_KEYWORDS;
-        case METH_METHOD | METH_FASTCALL | METH_KEYWORDS:
-            return SPEC_FAIL_CALL_METH_DESCR_METHOD_FASTCALL_KEYWORDS;
-            /* These cases should be optimized, but return "other" just in case */
-        case METH_NOARGS:
-        case METH_O:
-        case METH_FASTCALL:
-        case METH_FASTCALL | METH_KEYWORDS:
-            return SPEC_FAIL_OTHER;
-        default:
-            return SPEC_FAIL_CALL_BAD_CALL_FLAGS;
-    }
-}
-#endif   // Py_STATS
-
 static int
 specialize_method_descriptor(PyMethodDescrObject *descr, _Py_CODEUNIT *instr,
                              int nargs)
@@ -1984,33 +1937,6 @@ specialize_c_call(PyObject *callable, _Py_CODEUNIT *instr, int nargs)
             return 0;
     }
 }
-
-#ifdef Py_STATS
-static int
-call_fail_kind(PyObject *callable)
-{
-    assert(!PyCFunction_CheckExact(callable));
-    assert(!PyFunction_Check(callable));
-    assert(!PyType_Check(callable));
-    assert(!Py_IS_TYPE(callable, &PyMethodDescr_Type));
-    assert(!PyMethod_Check(callable));
-    if (PyInstanceMethod_Check(callable)) {
-        return SPEC_FAIL_CALL_INSTANCE_METHOD;
-    }
-    // builtin method
-    else if (PyCMethod_Check(callable)) {
-        return SPEC_FAIL_CALL_CMETHOD;
-    }
-    else if (Py_TYPE(callable) == &PyWrapperDescr_Type) {
-        return SPEC_FAIL_CALL_OPERATOR_WRAPPER;
-    }
-    else if (Py_TYPE(callable) == &_PyMethodWrapper_Type) {
-        return SPEC_FAIL_CALL_METHOD_WRAPPER;
-    }
-    return SPEC_FAIL_OTHER;
-}
-#endif   // Py_STATS
-
 
 void
 _Py_Specialize_Call(PyObject *callable, _Py_CODEUNIT *instr, int nargs)
