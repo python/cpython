@@ -14,9 +14,10 @@ maximum performance, they should use something like gmpy2."""
 
 import re
 import decimal
-
-
-_is_pydecimal = hasattr(decimal.Decimal, '_power_exact')
+try:
+    import _decimal
+except ImportError:
+    _decimal = None
 
 
 def int_to_decimal(n):
@@ -86,7 +87,7 @@ def int_to_decimal(n):
 def int_to_decimal_string(n):
     """Asymptotically fast conversion of an 'int' to a decimal string."""
     w = n.bit_length()
-    if w > 900_000 and not _is_pydecimal:
+    if w > 900_000 and _decimal is not None:
         return str(int_to_decimal(n))
 
     def inner(n, w):
