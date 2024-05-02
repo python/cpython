@@ -165,7 +165,7 @@ set_bits(uint32_t *loc, uint8_t loc_start, uint64_t value, uint8_t value_start,
 //   - https://github.com/llvm/llvm-project/blob/main/lld/ELF/Arch/X86_64.cpp
 
 // 32-bit absolute address.
-static inline void
+void
 patch_32(unsigned char *location, uint64_t value)
 {
     uint32_t *loc32 = (uint32_t *)location;
@@ -175,7 +175,7 @@ patch_32(unsigned char *location, uint64_t value)
 }
 
 // 32-bit relative address.
-static inline void
+void
 patch_32r(unsigned char *location, uint64_t value)
 {
     uint32_t *loc32 = (uint32_t *)location;
@@ -187,7 +187,7 @@ patch_32r(unsigned char *location, uint64_t value)
 }
 
 // 64-bit absolute address.
-static inline void
+void
 patch_64(unsigned char *location, uint64_t value)
 {
     uint64_t *loc64 = (uint64_t *)location;
@@ -196,7 +196,7 @@ patch_64(unsigned char *location, uint64_t value)
 
 // 12-bit low part of an absolute address. Pairs nicely with patch_aarch64_21r
 // (below).
-static inline void
+void
 patch_aarch64_12(unsigned char *location, uint64_t value)
 {
     uint32_t *loc32 = (uint32_t *)location;
@@ -214,14 +214,14 @@ patch_aarch64_12(unsigned char *location, uint64_t value)
     set_bits(loc32, 10, value, shift, 12);
 }
 
-static inline void
+void
 patch_aarch64_12x(unsigned char *location, uint64_t value)
 {
     patch_aarch64_12(location, value);
 }
 
 // 16-bit low part of an absolute address.
-static inline void
+void
 patch_aarch64_16a(unsigned char *location, uint64_t value)
 {
     uint32_t *loc32 = (uint32_t *)location;
@@ -232,7 +232,7 @@ patch_aarch64_16a(unsigned char *location, uint64_t value)
 }
 
 // 16-bit middle-low part of an absolute address.
-static inline void
+void
 patch_aarch64_16b(unsigned char *location, uint64_t value)
 {
     uint32_t *loc32 = (uint32_t *)location;
@@ -243,7 +243,7 @@ patch_aarch64_16b(unsigned char *location, uint64_t value)
 }
 
 // 16-bit middle-high part of an absolute address.
-static inline void
+void
 patch_aarch64_16c(unsigned char *location, uint64_t value)
 {
     uint32_t *loc32 = (uint32_t *)location;
@@ -254,7 +254,7 @@ patch_aarch64_16c(unsigned char *location, uint64_t value)
 }
 
 // 16-bit high part of an absolute address.
-static inline void
+void
 patch_aarch64_16d(unsigned char *location, uint64_t value)
 {
     uint32_t *loc32 = (uint32_t *)location;
@@ -266,7 +266,7 @@ patch_aarch64_16d(unsigned char *location, uint64_t value)
 
 // 21-bit count of pages between this page and an absolute address's page... I
 // know, I know, it's weird. Pairs nicely with patch_aarch64_12 (above).
-static inline void
+void
 patch_aarch64_21r(unsigned char *location, uint64_t value)
 {
     uint32_t *loc32 = (uint32_t *)location;
@@ -280,14 +280,14 @@ patch_aarch64_21r(unsigned char *location, uint64_t value)
     set_bits(loc32, 5, value, 2, 19);
 }
 
-static inline void
+void
 patch_aarch64_21rx(unsigned char *location, uint64_t value)
 {
     patch_aarch64_21r(location, value);
 }
 
 // 28-bit relative branch.
-static inline void
+void
 patch_aarch64_26r(unsigned char *location, uint64_t value)
 {
     uint32_t *loc32 = (uint32_t *)location;
@@ -302,7 +302,7 @@ patch_aarch64_26r(unsigned char *location, uint64_t value)
 }
 
 // A pair of patch_aarch64_21rx and patch_aarch64_12x.
-static inline void
+void
 patch_aarch64_33rx(unsigned char *location, uint64_t value)
 {
     uint32_t *loc32 = (uint32_t *)location;
@@ -341,7 +341,7 @@ patch_aarch64_33rx(unsigned char *location, uint64_t value)
 }
 
 // 32-bit relative address.
-static inline void
+void
 patch_x86_64_32rx(unsigned char *location, uint64_t value)
 {
     uint8_t *loc8 = (uint8_t *)location;
