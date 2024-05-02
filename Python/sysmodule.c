@@ -2496,10 +2496,6 @@ close_and_release:
     return 0;
 }
 
-#ifdef __cplusplus
-}
-#endif
-
 
 static PyMethodDef sys_methods[] = {
     /* Might as well keep this in alphabetic order */
