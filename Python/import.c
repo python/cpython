@@ -587,6 +587,8 @@ _PyImport_ClearModulesByIndex(PyInterpreterState *interp)
             /* cleanup the saved copy of module dicts */
             PyModuleDef *md = PyModule_GetDef(m);
             if (md) {
+                // XXX Do this more carefully.  The dict might be owned
+                // by another interpreter.
                 Py_CLEAR(md->m_base.m_copy);
             }
         }
@@ -982,6 +984,7 @@ set_cached_m_dict(struct extensions_cache_value *value, PyObject *m_dict)
             /* We expect this can only be "out of memory". */
             return -1;
         }
+        // XXX We may want to make copied immortal.
     }
 
     /* XXX gh-88216: The copied dict is owned by the current
