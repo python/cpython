@@ -26,8 +26,6 @@
 #include "pycore_abstract.h"      // _Py_convert_optional_to_ssize_t()
 #include "pycore_bytesobject.h"   // _PyBytes_Find()
 #include "pycore_fileutils.h"     // _Py_stat_struct
-#include "pycore_global_objects.h"// _Py_SINGLETON
-#include "pycore_runtime.h"       // _PyRuntime
 
 #include <stddef.h>               // offsetof()
 #ifndef MS_WINDOWS
@@ -258,11 +256,6 @@ do {                                                                    \
 } while (0)
 #endif /* UNIX */
 
-// copied from bytesobject.c
-#define CHARACTERS _Py_SINGLETON(bytes_characters)
-#define CHARACTER(ch) \
-     ((PyBytesObject *)&(CHARACTERS[ch]));
-
 #if defined(MS_WIN32) && !defined(DONT_USE_SEH)
 static DWORD
 filter_page_exception(EXCEPTION_POINTERS *ptrs, EXCEPTION_RECORD *record)
@@ -385,10 +378,9 @@ _read_mmap_mem(mmap_object *self, char *start, size_t num_bytes) {
             return NULL;
         }
         else {
-            PyBytesObject *op = CHARACTER(dest & 255);
-            assert(_Py_IsImmortal(op));
+            PyObject *result = PyBytes_FromStringAndSize(&dest, 1);
             self->pos += 1;
-            return (PyObject *)op;
+            return result;
         }
     }
     else {
@@ -1124,9 +1116,7 @@ mmap_item(mmap_object *self, Py_ssize_t i)
         return NULL;
     }
     else {
-        PyBytesObject *op = CHARACTER(dest & 255);
-        assert(_Py_IsImmortal(op));
-        return (PyObject *)op;
+        return PyBytes_FromStringAndSize(&dest, 1);
     }
 }
 
