@@ -4,7 +4,7 @@ import builtins
 import sys
 import unittest
 
-from test.support import swap_item, swap_attr
+from test.support import swap_item, swap_attr, is_wasi
 
 
 class RebindBuiltinsTests(unittest.TestCase):
@@ -134,6 +134,7 @@ class RebindBuiltinsTests(unittest.TestCase):
 
         self.assertEqual(foo(), 7)
 
+    @unittest.skipIf(is_wasi and Py_DEBUG, "requires too much stack")
     def test_load_global_specialization_failure_keeps_oparg(self):
         # https://github.com/python/cpython/issues/91625
         class MyGlobals(dict):
@@ -141,7 +142,7 @@ class RebindBuiltinsTests(unittest.TestCase):
                 return int(key.removeprefix("_number_"))
 
         # Need more than 256 variables to use EXTENDED_ARGS
-        variables = 270
+        variables = 400
         code = "lambda: " + "+".join(f"_number_{i}" for i in range(variables))
         sum_func = eval(code, MyGlobals())
         expected = sum(range(variables))
