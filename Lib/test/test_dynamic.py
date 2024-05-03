@@ -4,7 +4,7 @@ import builtins
 import sys
 import unittest
 
-from test.support import swap_item, swap_attr, is_wasi
+from test.support import swap_item, swap_attr, is_wasi, Py_DEBUG
 
 
 class RebindBuiltinsTests(unittest.TestCase):
