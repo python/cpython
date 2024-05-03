@@ -5503,9 +5503,12 @@ push_inlined_comprehension_state(struct compiler *c, location loc,
         long scope = (symbol >> SCOPE_OFFSET) & SCOPE_MASK;
         PyObject *outv = PyDict_GetItemWithError(c->u->u_ste->ste_symbols, k);
         if (outv == NULL) {
+            if (PyErr_Occurred()) {
+                return ERROR;
+            }
             outv = _PyLong_GetZero();
         }
-        assert(PyLong_Check(outv));
+        assert(PyLong_CheckExact(outv));
         long outsc = (PyLong_AS_LONG(outv) >> SCOPE_OFFSET) & SCOPE_MASK;
         // If a name has different scope inside than outside the comprehension,
         // we need to temporarily handle it with the right scope while
