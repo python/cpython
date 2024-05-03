@@ -61,7 +61,7 @@ framelocalsproxy_getkeyindex(PyFrameObject *frame, PyObject* key, bool read)
 
     assert(PyUnicode_CheckExact(key));
 
-    PyCodeObject *co = PyFrame_GetCode(frame);
+    PyCodeObject *co = _PyFrame_GetCode(frame->f_frame);
     int found_key = false;
 
     // We do 2 loops here because it's highly possible the key is interned
@@ -108,7 +108,7 @@ static PyObject *
 framelocalsproxy_getitem(PyObject *self, PyObject *key)
 {
     PyFrameObject* frame = ((PyFrameLocalsProxyObject*)self)->frame;
-    PyCodeObject* co = PyFrame_GetCode(frame);
+    PyCodeObject* co = _PyFrame_GetCode(frame->f_frame);
 
     if (PyUnicode_CheckExact(key)) {
         int i = framelocalsproxy_getkeyindex(frame, key, true);
@@ -139,7 +139,7 @@ framelocalsproxy_setitem(PyObject *self, PyObject *key, PyObject *value)
     /* Merge locals into fast locals */
     PyFrameObject* frame = ((PyFrameLocalsProxyObject*)self)->frame;
     PyObject** fast = _PyFrame_GetLocalsArray(frame->f_frame);
-    PyCodeObject* co = PyFrame_GetCode(frame);
+    PyCodeObject* co = _PyFrame_GetCode(frame->f_frame);
 
     if (value == NULL) {
         PyErr_SetString(PyExc_TypeError, "cannot remove variables from FrameLocalsProxy");
@@ -242,7 +242,7 @@ framelocalsproxy_keys(PyObject *self, PyObject *__unused)
 {
     PyObject *names = PyList_New(0);
     PyFrameObject *frame = ((PyFrameLocalsProxyObject*)self)->frame;
-    PyCodeObject *co = PyFrame_GetCode(frame);
+    PyCodeObject *co = _PyFrame_GetCode(frame->f_frame);
 
     for (int i = 0; i < co->co_nlocalsplus; i++) {
         PyObject *val = framelocalsproxy_getval(frame, co, i);
@@ -393,7 +393,7 @@ framelocalsproxy_values(PyObject *self, PyObject *__unused)
 {
     PyObject *values = PyList_New(0);
     PyFrameObject *frame = ((PyFrameLocalsProxyObject*)self)->frame;
-    PyCodeObject *co = PyFrame_GetCode(frame);
+    PyCodeObject *co = _PyFrame_GetCode(frame->f_frame);
 
     for (int i = 0; i < co->co_nlocalsplus; i++) {
         PyObject *value = framelocalsproxy_getval(frame, co, i);
@@ -421,7 +421,7 @@ framelocalsproxy_items(PyObject *self, PyObject *__unused)
 {
     PyObject *items = PyList_New(0);
     PyFrameObject *frame = ((PyFrameLocalsProxyObject*)self)->frame;
-    PyCodeObject *co = PyFrame_GetCode(frame);
+    PyCodeObject *co = _PyFrame_GetCode(frame->f_frame);
 
     for (int i = 0; i < co->co_nlocalsplus; i++) {
         PyObject *name = PyTuple_GET_ITEM(co->co_localsplusnames, i);
@@ -454,7 +454,7 @@ static Py_ssize_t
 framelocalsproxy_length(PyObject *self)
 {
     PyFrameObject *frame = ((PyFrameLocalsProxyObject*)self)->frame;
-    PyCodeObject *co = PyFrame_GetCode(frame);
+    PyCodeObject *co = _PyFrame_GetCode(frame->f_frame);
     Py_ssize_t size = 0;
 
     if (frame->f_extra_locals != NULL) {
@@ -651,7 +651,7 @@ frame_hashiddenlocals(PyFrameObject *frame)
      * This function returns all the hidden locals introduced by PEP 709,
      * which are the isolated fast locals for inline comprehensions
      */
-    PyCodeObject* co = PyFrame_GetCode(frame);
+    PyCodeObject* co = _PyFrame_GetCode(frame->f_frame);
 
     for (int i = 0; i < co->co_nlocalsplus; i++) {
         _PyLocals_Kind kind = _PyLocals_GetKind(co->co_localspluskinds, i);
@@ -671,13 +671,13 @@ frame_hashiddenlocals(PyFrameObject *frame)
 static PyObject *
 frame_getlocals(PyFrameObject *f, void *closure)
 {
-    PyCodeObject *co = PyFrame_GetCode(f);
-
     if (f == NULL) {
         PyErr_BadInternalCall();
         return NULL;
     }
     assert(!_PyFrame_IsIncomplete(f->f_frame));
+
+    PyCodeObject *co = _PyFrame_GetCode(f->f_frame);
 
     if (!(co->co_flags & CO_OPTIMIZED) && !frame_hashiddenlocals(f)) {
         return Py_NewRef(f->f_frame->f_locals);
@@ -1837,10 +1837,9 @@ frame_get_var(_PyInterpreterFrame *frame, PyCodeObject *co, int i,
 PyObject *
 _PyFrame_GetLocals(_PyInterpreterFrame *frame)
 {
-    PyCodeObject* co = _PyFrame_GetCode(frame);
     PyFrameObject* f = _PyFrame_GetFrameObject(frame);
 
-    return frame_getlocals(f, co);
+    return frame_getlocals(f, NULL);
 }
 
 
