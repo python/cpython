@@ -5033,10 +5033,6 @@ find_name_in_mro(PyTypeObject *type, PyObject *name, int *error)
         if (res != NULL) {
             break;
         }
-        if (PyErr_Occurred()) {
-            *error = -1;
-            goto done;
-        }
     }
     *error = 0;
 done:
@@ -5450,6 +5446,9 @@ type_setattro(PyObject *self, PyObject *name, PyObject *value)
             dict = type->tp_dict = PyDict_New();
         }
         END_TYPE_LOCK();
+        if (dict == NULL) {
+            return -1;
+        }
     }
 
     // We don't want any re-entrancy between when we update the dict
