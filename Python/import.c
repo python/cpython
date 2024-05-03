@@ -645,33 +645,33 @@ _PyImport_ClearModulesByIndex(PyInterpreterState *interp)
        K.         PyModule_CreateInitialized() -> PyModule_SetDocString()
        L.       PyModule_CreateInitialized():  set mod->md_def
        M.       <module init func>:  initialize the module, etc.
-       N.     _PyImport_RunModInitFunc():  set def->m_base.m_init
-       O.   import_run_extension()
+       N.   import_run_extension()
                 -> _PyImport_CheckSubinterpIncompatibleExtensionAllowed()
-       P.   import_run_extension():  set __file__
-       Q.   import_run_extension() -> update_global_state_for_extension()
-       R.     update_global_state_for_extension():
+       O.   import_run_extension():  set __file__
+       P.   import_run_extension() -> update_global_state_for_extension()
+       Q.     update_global_state_for_extension():
                       copy __dict__ into def->m_base.m_copy
-       S.     update_global_state_for_extension():
+       R.     update_global_state_for_extension():
                       add it to _PyRuntime.imports.extensions
-       T.   import_run_extension() -> finish_singlephase_extension()
-       U.     finish_singlephase_extension():
+       S.   import_run_extension() -> finish_singlephase_extension()
+       T.     finish_singlephase_extension():
                       add it to interp->imports.modules_by_index
-       V.     finish_singlephase_extension():  add it to sys.modules
+       U.     finish_singlephase_extension():  add it to sys.modules
 
        Step (Q) is skipped for core modules (sys/builtins).
 
     (6). subsequent times  (found in _PyRuntime.imports.extensions):
        A. _imp_create_dynamic_impl() -> import_find_extension()
-       B.   import_find_extension()
-                -> _PyImport_CheckSubinterpIncompatibleExtensionAllowed()
-       C.   import_find_extension() -> import_add_module()
-       D.     if name in sys.modules:  use that module
-       E.     else:
-                1. import_add_module() -> PyModule_NewObject()
-                2. import_add_module():  set it on sys.modules
-       F.   import_find_extension():  copy the "m_copy" dict into __dict__
-       G.   import_find_extension():  add to modules_by_index
+       B.   import_find_extension() -> reload_singlephase_extension()
+       C.     reload_singlephase_extension()
+                  -> _PyImport_CheckSubinterpIncompatibleExtensionAllowed()
+       D.     reload_singlephase_extension() -> import_add_module()
+       E.       if name in sys.modules:  use that module
+       F.       else:
+                  1. import_add_module() -> PyModule_NewObject()
+                  2. import_add_module():  set it on sys.modules
+       G.     reload_singlephase_extension():  copy the "m_copy" dict into __dict__
+       H.     reload_singlephase_extension():  add to modules_by_index
 
     (10). (every time):
        A. noop
@@ -681,21 +681,23 @@ _PyImport_ClearModulesByIndex(PyInterpreterState *interp)
 
     (6). not main interpreter and never loaded there - every time  (not found in _PyRuntime.imports.extensions):
        A-P. (same as for m_size == -1)
-       Q-S. (skipped)
-       T-V. (same as for m_size == -1)
+       Q.     _PyImport_RunModInitFunc():  set def->m_base.m_init
+       R. (skipped)
+       S-U. (same as for m_size == -1)
 
     (6). main interpreter - first time  (not found in _PyRuntime.imports.extensions):
-       A-R. (same as for m_size == -1)
-       S. (skipped)
-       T-V. (same as for m_size == -1)
+       A-P. (same as for m_size == -1)
+       Q.     _PyImport_RunModInitFunc():  set def->m_base.m_init
+       R-U. (same as for m_size == -1)
 
     (6). subsequent times  (found in _PyRuntime.imports.extensions):
        A. _imp_create_dynamic_impl() -> import_find_extension()
-       B.   import_find_extension()
-                -> _PyImport_CheckSubinterpIncompatibleExtensionAllowed()
-       C.   import_find_extension():  call def->m_base.m_init  (see above)
-       D.   import_find_extension():  add the module to sys.modules
-       E.   import_find_extension():  add to modules_by_index
+       B.   import_find_extension() -> reload_singlephase_extension()
+       C.     reload_singlephase_extension()
+                  -> _PyImport_CheckSubinterpIncompatibleExtensionAllowed()
+       D.     reload_singlephase_extension():  call def->m_base.m_init  (see above)
+       E.     reload_singlephase_extension():  add the module to sys.modules
+       F.     reload_singlephase_extension():  add to modules_by_index
 
     (10). every time:
        A. noop
@@ -984,84 +986,103 @@ hashtable_destroy_str(void *ptr)
 
 #define HTSEP ':'
 
+static int
+_extensions_cache_init(void)
+{
+    _Py_hashtable_allocator_t alloc = {PyMem_RawMalloc, PyMem_RawFree};
+    EXTENSIONS.hashtable = _Py_hashtable_new_full(
+        hashtable_hash_str,
+        hashtable_compare_str,
+        hashtable_destroy_str,  // key
+        /* There's no need to decref the def since it's immortal. */
+        NULL,  // value
+        &alloc
+    );
+    if (EXTENSIONS.hashtable == NULL) {
+        PyErr_NoMemory();
+        return -1;
+    }
+    return 0;
+}
+
+static _Py_hashtable_entry_t *
+_extensions_cache_find_unlocked(PyObject *path, PyObject *name,
+                                void **p_key)
+{
+    if (EXTENSIONS.hashtable == NULL) {
+        return NULL;
+    }
+    void *key = hashtable_key_from_2_strings(path, name, HTSEP);
+    if (key == NULL) {
+        return NULL;
+    }
+    _Py_hashtable_entry_t *entry =
+            _Py_hashtable_get_entry(EXTENSIONS.hashtable, key);
+    if (p_key != NULL) {
+        *p_key = key;
+    }
+    else {
+        hashtable_destroy_str(key);
+    }
+    return entry;
+}
+
 static PyModuleDef *
-_extensions_cache_get(PyObject *filename, PyObject *name)
+_extensions_cache_get(PyObject *path, PyObject *name)
 {
     PyModuleDef *def = NULL;
-    void *key = NULL;
     extensions_lock_acquire();
 
-    if (EXTENSIONS.hashtable == NULL) {
-        goto finally;
-    }
-
-    key = hashtable_key_from_2_strings(filename, name, HTSEP);
-    if (key == NULL) {
-        goto finally;
-    }
-    _Py_hashtable_entry_t *entry = _Py_hashtable_get_entry(
-            EXTENSIONS.hashtable, key);
+    _Py_hashtable_entry_t *entry =
+            _extensions_cache_find_unlocked(path, name, NULL);
     if (entry == NULL) {
+        /* It was never added. */
         goto finally;
     }
     def = (PyModuleDef *)entry->value;
 
 finally:
     extensions_lock_release();
-    if (key != NULL) {
-        PyMem_RawFree(key);
-    }
     return def;
 }
 
 static int
-_extensions_cache_set(PyObject *filename, PyObject *name, PyModuleDef *def)
+_extensions_cache_set(PyObject *path, PyObject *name, PyModuleDef *def)
 {
     int res = -1;
+    assert(def != NULL);
     extensions_lock_acquire();
 
     if (EXTENSIONS.hashtable == NULL) {
-        _Py_hashtable_allocator_t alloc = {PyMem_RawMalloc, PyMem_RawFree};
-        EXTENSIONS.hashtable = _Py_hashtable_new_full(
-            hashtable_hash_str,
-            hashtable_compare_str,
-            hashtable_destroy_str,  // key
-            /* There's no need to decref the def since it's immortal. */
-            NULL,  // value
-            &alloc
-        );
-        if (EXTENSIONS.hashtable == NULL) {
-            PyErr_NoMemory();
+        if (_extensions_cache_init() < 0) {
             goto finally;
         }
-    }
-
-    void *key = hashtable_key_from_2_strings(filename, name, HTSEP);
-    if (key == NULL) {
-        goto finally;
     }
 
     int already_set = 0;
-    _Py_hashtable_entry_t *entry = _Py_hashtable_get_entry(
-            EXTENSIONS.hashtable, key);
+    void *key = NULL;
+    _Py_hashtable_entry_t *entry =
+            _extensions_cache_find_unlocked(path, name, &key);
     if (entry == NULL) {
+        /* It was never added. */
         if (_Py_hashtable_set(EXTENSIONS.hashtable, key, def) < 0) {
-            PyMem_RawFree(key);
             PyErr_NoMemory();
             goto finally;
         }
+        /* The hashtable owns the key now. */
+        key = NULL;
+    }
+    else if (entry->value == NULL) {
+        /* It was previously deleted. */
+        entry->value = def;
     }
     else {
-        if (entry->value == NULL) {
-            entry->value = def;
-        }
-        else {
-            /* We expect it to be static, so it must be the same pointer. */
-            assert((PyModuleDef *)entry->value == def);
-            already_set = 1;
-        }
-        PyMem_RawFree(key);
+        /* We expect it to be static, so it must be the same pointer. */
+        assert((PyModuleDef *)entry->value == def);
+        /* It was already added. */
+        already_set = 1;
     }
+
     if (!already_set) {
         /* We assume that all module defs are statically allocated
            and will never be freed.  Otherwise, we would incref here. */
@@ -1071,13 +1092,15 @@ _extensions_cache_set(PyObject *filename, PyObject *name, PyModuleDef *def)
 
 finally:
     extensions_lock_release();
+    if (key != NULL) {
+        hashtable_destroy_str(key);
+    }
     return res;
 }
 
 static void
-_extensions_cache_delete(PyObject *filename, PyObject *name)
+_extensions_cache_delete(PyObject *path, PyObject *name)
 {
-    void *key = NULL;
     extensions_lock_acquire();
 
     if (EXTENSIONS.hashtable == NULL) {
@@ -1085,13 +1108,8 @@ _extensions_cache_delete(PyObject *filename, PyObject *name)
         goto finally;
     }
 
-    key = hashtable_key_from_2_strings(filename, name, HTSEP);
-    if (key == NULL) {
-        goto finally;
-    }
-
-    _Py_hashtable_entry_t *entry = _Py_hashtable_get_entry(
-            EXTENSIONS.hashtable, key);
+    _Py_hashtable_entry_t *entry =
+            _extensions_cache_find_unlocked(path, name, NULL);
     if (entry == NULL) {
         /* It was never added. */
         goto finally;
@@ -1109,9 +1127,6 @@ _extensions_cache_delete(PyObject *filename, PyObject *name)
 
 finally:
     extensions_lock_release();
-    if (key != NULL) {
-        PyMem_RawFree(key);
-    }
 }
 
 static void
@@ -1359,15 +1374,11 @@ finish_singlephase_extension(PyThreadState *tstate,
 
 
 static PyObject *
-import_find_extension(PyThreadState *tstate,
-                      struct _Py_ext_module_loader_info *info)
+reload_singlephase_extension(PyThreadState *tstate, PyModuleDef *def,
+                             struct _Py_ext_module_loader_info *info)
 {
-    /* Only single-phase init modules will be in the cache. */
-    PyModuleDef *def = _extensions_cache_get(info->path, info->name);
-    if (def == NULL) {
-        return NULL;
-    }
     assert_singlephase(def);
+    PyObject *mod = NULL;
 
     /* It may have been successfully imported previously
        in an interpreter that allows legacy modules
@@ -1378,9 +1389,7 @@ import_find_extension(PyThreadState *tstate,
         return NULL;
     }
 
-    PyObject *mod, *mdict;
     PyObject *modules = get_modules_dict(tstate, true);
-
     if (def->m_size == -1) {
         PyObject *m_copy = def->m_base.m_copy;
         /* Module does not support repeated initialization */
@@ -1390,6 +1399,7 @@ import_find_extension(PyThreadState *tstate,
             m_copy = get_core_module_dict(
                     tstate->interp, info->name, info->path);
             if (m_copy == NULL) {
+                assert(!PyErr_Occurred());
                 return NULL;
             }
         }
@@ -1397,7 +1407,7 @@ import_find_extension(PyThreadState *tstate,
         if (mod == NULL) {
             return NULL;
         }
-        mdict = PyModule_GetDict(mod);
+        PyObject *mdict = PyModule_GetDict(mod);
         if (mdict == NULL) {
             Py_DECREF(mod);
             return NULL;
@@ -1416,6 +1426,7 @@ import_find_extension(PyThreadState *tstate,
     }
     else {
         if (def->m_base.m_init == NULL) {
+            assert(!PyErr_Occurred());
             return NULL;
         }
         struct _Py_ext_module_loader_result res;
@@ -1445,9 +1456,38 @@ import_find_extension(PyThreadState *tstate,
             return NULL;
         }
     }
+
     if (_modules_by_index_set(tstate->interp, def, mod) < 0) {
         PyMapping_DelItem(modules, info->name);
         Py_DECREF(mod);
+        return NULL;
+    }
+
+    return mod;
+}
+
+static PyObject *
+import_find_extension(PyThreadState *tstate,
+                      struct _Py_ext_module_loader_info *info)
+{
+    /* Only single-phase init modules will be in the cache. */
+    PyModuleDef *def = _extensions_cache_get(info->path, info->name);
+    if (def == NULL) {
+        return NULL;
+    }
+    assert_singlephase(def);
+
+    /* It may have been successfully imported previously
+       in an interpreter that allows legacy modules
+       but is not allowed in the current interpreter. */
+    const char *name_buf = PyUnicode_AsUTF8(info->name);
+    assert(name_buf != NULL);
+    if (_PyImport_CheckSubinterpIncompatibleExtensionAllowed(name_buf) < 0) {
+        return NULL;
+    }
+
+    PyObject *mod = reload_singlephase_extension(tstate, def, info);
+    if (mod == NULL) {
         return NULL;
     }
 
