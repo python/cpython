@@ -17,7 +17,6 @@
 #define OFF(x) offsetof(PyFrameObject, x)
 
 
-
 // Returns borrowed reference or NULL
 static PyObject *
 framelocalsproxy_getval(_PyInterpreterFrame *frame, PyCodeObject *co, int i)
