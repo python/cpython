@@ -2901,6 +2901,9 @@ PyInit__testbuffer(void)
     if (mod == NULL) {
         return NULL;
     }
+#ifdef Py_GIL_DISABLED
+    PyModule_ExperimentalSetGIL(mod, Py_MOD_GIL_NOT_USED);
+#endif
     if (_testbuffer_exec(mod) < 0) {
         Py_DECREF(mod);
         return NULL;
