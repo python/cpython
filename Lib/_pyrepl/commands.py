@@ -236,38 +236,41 @@ class up(MotionCommand):
     def do(self) -> None:
         r = self.reader
         for _ in range(r.get_arg()):
-            bol1 = r.bol()
-            eol1 = r.eol()
-            if bol1 == 0:
+            x, y = r.pos2xy()
+            new_y = y - 1
+
+            if new_y < 0:
                 if r.historyi > 0:
                     r.select_item(r.historyi - 1)
                     return
                 r.pos = 0
                 r.error("start of buffer")
                 return
-            bol2 = r.bol(bol1 - 1)
-            line_pos = r.pos - bol1
 
-            # Adjusting `pos` instead of (x, y) coordinates means that moving
-            # between lines that have mixed single-width and double-width
-            # characters does not align. Most editors do this, so leave it as-is.
-            if line_pos > bol1 - bol2 - 1 or (
-                # If at end-of-non-empty-line, move to end-of-line
-                r.pos == eol1 and any(not i.isspace() for i in r.buffer[bol1:])
+            if (
+                x
+                > (
+                    new_x := r.max_column(new_y)
+                )  # we're past the end of the previous line
+                or x == r.max_column(y)
+                and any(
+                    not i.isspace() for i in r.buffer[r.bol() :]
+                )  # move between eols
             ):
-                r.pos = bol1 - 1
-            else:
-                r.pos = bol2 + line_pos
+                x = new_x
+
+            r.setpos_from_xy(x, new_y)
 
 
 class down(MotionCommand):
     def do(self) -> None:
         r = self.reader
         b = r.buffer
-        for i in range(r.get_arg()):
-            bol1 = r.bol()
-            eol1 = r.eol()
-            if eol1 == len(b):
+        for _ in range(r.get_arg()):
+            x, y = r.pos2xy()
+            new_y = y + 1
+
+            if new_y > r.max_row():
                 if r.historyi < len(r.history):
                     r.select_item(r.historyi + 1)
                     r.pos = r.eol(0)
@@ -275,18 +278,20 @@ class down(MotionCommand):
                 r.pos = len(b)
                 r.error("end of buffer")
                 return
-            eol2 = r.eol(eol1 + 1)
 
-            # Adjusting `pos` instead of (x, y) coordinates means that moving
-            # between lines that have mixed single-width and double-width
-            # characters does not align. Most editors do this, so leave it as-is.
-            if r.pos - bol1 > eol2 - eol1 - 1 or (
-                # If at end-of-non-empty-line, move to end-of-line
-                r.pos == eol1 and any(not i.isspace() for i in r.buffer[bol1:])
+            if (
+                x
+                > (
+                    new_x := r.max_column(new_y)
+                )  # we're past the end of the previous line
+                or x == r.max_column(y)
+                and any(
+                    not i.isspace() for i in r.buffer[r.bol() :]
+                )  # move between eols
             ):
-                r.pos = eol2
-            else:
-                r.pos = eol1 + (r.pos - bol1) + 1
+                x = new_x
+
+            r.setpos_from_xy(x, new_y)
 
 
 class left(MotionCommand):
@@ -417,6 +422,7 @@ class accept(FinishCommand):
 class help(Command):
     def do(self) -> None:
         import _sitebuiltins
+
         with self.reader.suspend():
             self.reader.msg = _sitebuiltins._Helper()()  # type: ignore[assignment, call-arg]
 
@@ -438,6 +444,7 @@ class show_history(Command):
     def do(self) -> None:
         from .pager import get_pager
         from site import gethistoryfile  # type: ignore[attr-defined]
+
         history = os.linesep.join(self.reader.history[:])
         with self.reader.suspend():
             pager = get_pager()

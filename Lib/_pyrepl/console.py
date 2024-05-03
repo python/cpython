@@ -37,24 +37,19 @@ class Console(ABC):
     """
 
     @abstractmethod
-    def refresh(self, screen: list[str], xy: tuple[int, int]) -> None:
-        ...
+    def refresh(self, screen: list[str], xy: tuple[int, int]) -> None: ...
 
     @abstractmethod
-    def prepare(self) -> None:
-        ...
+    def prepare(self) -> None: ...
 
     @abstractmethod
-    def restore(self) -> None:
-        ...
+    def restore(self) -> None: ...
 
     @abstractmethod
-    def move_cursor(self, x: int, y: int) -> None:
-        ...
+    def move_cursor(self, x: int, y: int) -> None: ...
 
     @abstractmethod
-    def set_cursor_vis(self, visible: bool) -> None:
-        ...
+    def set_cursor_vis(self, visible: bool) -> None: ...
 
     @abstractmethod
     def getheightwidth(self) -> tuple[int, int]:
@@ -63,7 +58,7 @@ class Console(ABC):
         ...
 
     @abstractmethod
-    def get_event(self, block: bool  = True) -> Event:
+    def get_event(self, block: bool = True) -> Event:
         """Return an Event instance.  Returns None if |block| is false
         and there is no event pending, otherwise waits for the
         completion of an event."""
@@ -77,8 +72,7 @@ class Console(ABC):
         ...
 
     @abstractmethod
-    def beep(self) -> None:
-        ...
+    def beep(self) -> None: ...
 
     @abstractmethod
     def clear(self) -> None:
