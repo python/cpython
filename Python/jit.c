@@ -164,6 +164,11 @@ set_bits(uint32_t *loc, uint8_t loc_start, uint64_t value, uint8_t value_start,
 // - x86_64-unknown-linux-gnu:
 //   - https://github.com/llvm/llvm-project/blob/main/lld/ELF/Arch/X86_64.cpp
 
+// Many of these patches are "relaxing", meaning that they can rewrite the
+// code they're patching to be more efficient (like turning a 64-bit memory
+// load into a 32-bit immediate load). These patches have an "x" in their name.
+// Relative patches have an "r" in their name.
+
 // 32-bit absolute address.
 void
 patch_32(unsigned char *location, uint64_t value)
@@ -214,9 +219,15 @@ patch_aarch64_12(unsigned char *location, uint64_t value)
     set_bits(loc32, 10, value, shift, 12);
 }
 
+// Relaxable 12-bit low part of an absolute address. Pairs nicely with
+// patch_aarch64_21rx (below).
 void
 patch_aarch64_12x(unsigned char *location, uint64_t value)
 {
+    // This can *only* be relaxed if it occurs immediately before a matching
+    // patch_aarch64_21rx. If that happens, the JIT build step will replace both
+    // calls with a single call to patch_aarch64_33rx. Otherwise, we end up
+    // here, and the instruction is patched normally:
     patch_aarch64_12(location, value);
 }
 
@@ -280,9 +291,15 @@ patch_aarch64_21r(unsigned char *location, uint64_t value)
     set_bits(loc32, 5, value, 2, 19);
 }
 
+// Relaxable 21-bit count of pages between this page and an absolute address's
+// page. Pairs nicely with patch_aarch64_12x (above).
 void
 patch_aarch64_21rx(unsigned char *location, uint64_t value)
 {
+    // This can *only* be relaxed if it occurs immediately before a matching
+    // patch_aarch64_12x. If that happens, the JIT build step will replace both
+    // calls with a single call to patch_aarch64_33rx. Otherwise, we end up
+    // here, and the instruction is patched normally:
     patch_aarch64_21r(location, value);
 }
 
@@ -306,8 +323,8 @@ void
 patch_aarch64_33rx(unsigned char *location, uint64_t value)
 {
     uint32_t *loc32 = (uint32_t *)location;
-    assert(IS_AARCH64_ADRP(*loc32));
     // Try to relax the pair of GOT loads into an immediate value:
+    assert(IS_AARCH64_ADRP(*loc32));
     unsigned char reg = get_bits(loc32[0], 0, 5);
     assert(IS_AARCH64_LDR_OR_STR(loc32[1]));
     // There should be only one register involved:
@@ -336,11 +353,12 @@ patch_aarch64_33rx(unsigned char *location, uint64_t value)
         loc32[1] = 0xD503201F;
         return;
     }
+    // Couldn't do it. Just patch the two instructions normally:
     patch_aarch64_21rx(location, value);
     patch_aarch64_12x(location + 4, value);
 }
 
-// 32-bit relative address.
+// Relaxable 32-bit relative address.
 void
 patch_x86_64_32rx(unsigned char *location, uint64_t value)
 {

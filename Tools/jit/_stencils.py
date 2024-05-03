@@ -48,6 +48,9 @@ class HoleValue(enum.Enum):
     ZERO = enum.auto()
 
 
+# Map relocation types to our JIT's patch functions. "r" suffixes indicate that
+# the patch function is relative. "x" suffixes indicate that they are "relaxing"
+# (see comments in jit.c for more info):
 _PATCH_FUNCS = {
     # aarch64-apple-darwin:
     "ARM64_RELOC_BRANCH26": "patch_aarch64_26r",
@@ -91,6 +94,7 @@ _PATCH_FUNCS = {
     "X86_64_RELOC_SIGNED": "patch_32r",
     "X86_64_RELOC_UNSIGNED": "patch_64",
 }
+# Translate HoleValues to C expressions:
 _HOLE_EXPRS = {
     HoleValue.CODE: "(uintptr_t)code",
     HoleValue.CONTINUE: "(uintptr_t)code + sizeof(code_body)",
@@ -143,6 +147,8 @@ class Hole:
             and self.func == "patch_aarch64_21rx"
             and other.func == "patch_aarch64_12x"
         ):
+            # These can *only* be properly relaxed when they appear together and
+            # patch the same value:
             folded = self.replace()
             folded.func = "patch_aarch64_33rx"
             return folded
