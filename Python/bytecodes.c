@@ -3177,7 +3177,6 @@ dummy_func(
             EXIT_IF(func->func_version != func_version);
         }
 
-
         macro(CALL_PY_GENERAL) =
             unused/1 + // Skip over the counter
             _CHECK_PEP_523 +
