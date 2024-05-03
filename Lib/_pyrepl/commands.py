@@ -248,8 +248,14 @@ class up(MotionCommand):
                 return
 
             if (
-                x > (new_x := r.max_column(new_y)) or  # we're past the end of the previous line
-                x == r.max_column(y) and any(not i.isspace() for i in r.buffer[r.bol():])  # move between eols
+                x
+                > (
+                    new_x := r.max_column(new_y)
+                )  # we're past the end of the previous line
+                or x == r.max_column(y)
+                and any(
+                    not i.isspace() for i in r.buffer[r.bol() :]
+                )  # move between eols
             ):
                 x = new_x
 
@@ -274,8 +280,14 @@ class down(MotionCommand):
                 return
 
             if (
-                x > (new_x := r.max_column(new_y)) or  # we're past the end of the previous line
-                x == r.max_column(y) and any(not i.isspace() for i in r.buffer[r.bol():])  # move between eols
+                x
+                > (
+                    new_x := r.max_column(new_y)
+                )  # we're past the end of the previous line
+                or x == r.max_column(y)
+                and any(
+                    not i.isspace() for i in r.buffer[r.bol() :]
+                )  # move between eols
             ):
                 x = new_x
 
@@ -410,6 +422,7 @@ class accept(FinishCommand):
 class help(Command):
     def do(self) -> None:
         import _sitebuiltins
+
         with self.reader.suspend():
             self.reader.msg = _sitebuiltins._Helper()()  # type: ignore[assignment, call-arg]
 
@@ -431,6 +444,7 @@ class show_history(Command):
     def do(self) -> None:
         from .pager import get_pager
         from site import gethistoryfile  # type: ignore[attr-defined]
+
         history = os.linesep.join(self.reader.history[:])
         with self.reader.suspend():
             pager = get_pager()
