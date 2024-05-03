@@ -38,6 +38,7 @@ from _typing import (
     ParamSpecKwargs,
     TypeAliasType,
     Generic,
+    NoDefault,
 )
 
 # Please keep __all__ alphabetized within each category.
@@ -138,6 +139,7 @@ __all__ = [
     'NewType',
     'no_type_check',
     'no_type_check_decorator',
+    'NoDefault',
     'NoReturn',
     'NotRequired',
     'overload',
@@ -266,6 +268,10 @@ def _collect_parameters(args):
         >>> _collect_parameters((T, Callable[P, T]))
         (~T, ~P)
     """
+    # required type parameter cannot appear after parameter with default
+    default_encountered = False
+    # or after TypeVarTuple
+    type_var_tuple_encountered = False
     parameters = []
     for t in args:
         if isinstance(t, type):
@@ -280,27 +286,58 @@ def _collect_parameters(args):
                         parameters.append(collected)
         elif hasattr(t, '__typing_subst__'):
             if t not in parameters:
+                if type_var_tuple_encountered and t.has_default():
+                    raise TypeError('Type parameter with a default'
+                                    ' follows TypeVarTuple')
+
+                if t.has_default():
+                    default_encountered = True
+                elif default_encountered:
+                    raise TypeError(f'Type parameter {t!r} without a default'
+                                    ' follows type parameter with a default')
+
                 parameters.append(t)
         else:
+            if _is_unpacked_typevartuple(t):
+                type_var_tuple_encountered = True
             for x in getattr(t, '__parameters__', ()):
                 if x not in parameters:
                     parameters.append(x)
     return tuple(parameters)
 
 
-def _check_generic(cls, parameters, elen):
+def _check_generic_specialization(cls, arguments):
     """Check correct count for parameters of a generic cls (internal helper).
 
     This gives a nice error message in case of count mismatch.
     """
-    if not elen:
+    expected_len = len(cls.__parameters__)
+    if not expected_len:
         raise TypeError(f"{cls} is not a generic class")
-    alen = len(parameters)
-    if alen != elen:
-        raise TypeError(f"Too {'many' if alen > elen else 'few'} arguments for {cls};"
-                        f" actual {alen}, expected {elen}")
+    actual_len = len(arguments)
+    if actual_len != expected_len:
+        # deal with defaults
+        if actual_len < expected_len:
+            # If the parameter at index `actual_len` in the parameters list
+            # has a default, then all parameters after it must also have
+            # one, because we validated as much in _collect_parameters().
+            # That means that no error needs to be raised here, despite
+            # the number of arguments being passed not matching the number
+            # of parameters: all parameters that aren't explicitly
+            # specialized in this call are parameters with default values.
+            if cls.__parameters__[actual_len].has_default():
+                return
 
-def _unpack_args(args):
+            expected_len -= sum(p.has_default() for p in cls.__parameters__)
+            expect_val = f"at least {expected_len}"
+        else:
+            expect_val = expected_len
+
+        raise TypeError(f"Too {'many' if actual_len > expected_len else 'few'} arguments"
+                        f" for {cls}; actual {actual_len}, expected {expect_val}")
+
+
+def _unpack_args(*args):
     newargs = []
     for arg in args:
         subargs = getattr(arg, '__typing_unpacked_tuple_args__', None)
@@ -1089,11 +1126,15 @@ def _typevartuple_prepare_subst(self, alias, args):
     elif left + right > alen:
         raise TypeError(f"Too few arguments for {alias};"
                         f" actual {alen}, expected at least {plen-1}")
+    if left == alen - right and self.has_default():
+        replacement = _unpack_args(self.__default__)
+    else:
+        replacement = args[left: alen - right]
 
     return (
         *args[:left],
         *([fillarg]*(typevartuple_index - left)),
-        tuple(args[left: alen - right]),
+        replacement,
         *([fillarg]*(plen - right - left - typevartuple_index - 1)),
         *args[alen - right:],
     )
@@ -1111,6 +1152,8 @@ def _paramspec_subst(self, arg):
 def _paramspec_prepare_subst(self, alias, args):
     params = alias.__parameters__
     i = params.index(self)
+    if i == len(args) and self.has_default():
+        args = [*args, self.__default__]
     if i >= len(args):
         raise TypeError(f"Too few arguments for {alias}")
     # Special case where Z[[int, str, bool]] == Z[int, str, bool] in PEP 612.
@@ -1124,33 +1167,33 @@ def _paramspec_prepare_subst(self, alias, args):
 
 
 @_tp_cache
-def _generic_class_getitem(cls, params):
+def _generic_class_getitem(cls, args):
     """Parameterizes a generic class.
 
     At least, parameterizing a generic class is the *main* thing this method
     does. For example, for some generic class `Foo`, this is called when we
-    do `Foo[int]` - there, with `cls=Foo` and `params=int`.
+    do `Foo[int]` - there, with `cls=Foo` and `args=int`.
 
     However, note that this method is also called when defining generic
     classes in the first place with `class Foo(Generic[T]): ...`.
     """
-    if not isinstance(params, tuple):
-        params = (params,)
+    if not isinstance(args, tuple):
+        args = (args,)
 
-    params = tuple(_type_convert(p) for p in params)
+    args = tuple(_type_convert(p) for p in args)
     is_generic_or_protocol = cls in (Generic, Protocol)
 
     if is_generic_or_protocol:
         # Generic and Protocol can only be subscripted with unique type variables.
-        if not params:
+        if not args:
             raise TypeError(
                 f"Parameter list to {cls.__qualname__}[...] cannot be empty"
             )
-        if not all(_is_typevar_like(p) for p in params):
+        if not all(_is_typevar_like(p) for p in args):
             raise TypeError(
                 f"Parameters to {cls.__name__}[...] must all be type variables "
                 f"or parameter specification variables.")
-        if len(set(params)) != len(params):
+        if len(set(args)) != len(args):
             raise TypeError(
                 f"Parameters to {cls.__name__}[...] must all be unique")
     else:
@@ -1158,18 +1201,18 @@ def _generic_class_getitem(cls, params):
         for param in cls.__parameters__:
             prepare = getattr(param, '__typing_prepare_subst__', None)
             if prepare is not None:
-                params = prepare(cls, params)
-        _check_generic(cls, params, len(cls.__parameters__))
+                args = prepare(cls, args)
+        _check_generic_specialization(cls, args)
 
         new_args = []
-        for param, new_arg in zip(cls.__parameters__, params):
+        for param, new_arg in zip(cls.__parameters__, args):
             if isinstance(param, TypeVarTuple):
                 new_args.extend(new_arg)
             else:
                 new_args.append(new_arg)
-        params = tuple(new_args)
+        args = tuple(new_args)
 
-    return _GenericAlias(cls, params)
+    return _GenericAlias(cls, args)
 
 
 def _generic_init_subclass(cls, *args, **kwargs):
@@ -1390,8 +1433,7 @@ class _GenericAlias(_BaseGenericAlias, _root=True):
         # Preprocess `args`.
         if not isinstance(args, tuple):
             args = (args,)
-        args = tuple(_type_convert(p) for p in args)
-        args = _unpack_args(args)
+        args = _unpack_args(*(_type_convert(p) for p in args))
         new_args = self._determine_new_args(args)
         r = self.copy_with(new_args)
         return r
@@ -1552,7 +1594,12 @@ class _SpecialGenericAlias(_NotIterable, _BaseGenericAlias, _root=True):
             params = (params,)
         msg = "Parameters to generic types must be types."
         params = tuple(_type_check(p, msg) for p in params)
-        _check_generic(self, params, self._nparams)
+        actual_len = len(params)
+        if actual_len != self._nparams:
+            if not self._nparams:
+                raise TypeError(f"{self} is not a generic class")
+            raise TypeError(f"Too {'many' if actual_len > self._nparams else 'few'} arguments for {self};"
+                            f" actual {actual_len}, expected {self._nparams}")
         return self.copy_with(params)
 
     def copy_with(self, params):

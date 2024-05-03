@@ -624,9 +624,11 @@ static int
 builtins_dict_watcher(PyDict_WatchEvent event, PyObject *dict, PyObject *key, PyObject *new_value)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
+#ifdef _Py_TIER2
     if (interp->rare_events.builtin_dict < _Py_MAX_ALLOWED_BUILTINS_MODIFICATIONS) {
         _Py_Executors_InvalidateAll(interp, 1);
     }
+#endif
     RARE_EVENT_INTERP_INC(interp, builtin_dict);
     return 0;
 }
@@ -1272,30 +1274,30 @@ init_interp_main(PyThreadState *tstate)
     }
 
     // Turn on experimental tier 2 (uops-based) optimizer
+    // This is also needed when the JIT is enabled
+#ifdef _Py_TIER2
     if (is_main_interp) {
-#ifndef _Py_JIT
-        // No JIT, maybe use the tier two interpreter:
-        char *envvar = Py_GETENV("PYTHON_UOPS");
-        int enabled = envvar != NULL && *envvar > '0';
-        if (_Py_get_xoption(&config->xoptions, L"uops") != NULL) {
-            enabled = 1;
+        int enabled = 1;
+#if _Py_TIER2 & 2
+        enabled = 0;
+#endif
+        char *env = Py_GETENV("PYTHON_JIT");
+        if (env && *env != '\0') {
+            // PYTHON_JIT=0|1 overrides the default
+            enabled = *env != '0';
         }
         if (enabled) {
-#else
-        // Always enable tier two for JIT builds (ignoring the environment
-        // variable and command-line option above):
-        if (true) {
-#endif
             PyObject *opt = PyUnstable_Optimizer_NewUOpOptimizer();
             if (opt == NULL) {
                 return _PyStatus_ERR("can't initialize optimizer");
             }
             if (PyUnstable_SetOptimizer((_PyOptimizerObject *)opt)) {
-                return _PyStatus_ERR("can't initialize optimizer");
+                return _PyStatus_ERR("can't install optimizer");
             }
             Py_DECREF(opt);
         }
     }
+#endif
 
     if (!is_main_interp) {
         // The main interpreter is handled in Py_Main(), for now.
@@ -1655,10 +1657,12 @@ finalize_modules(PyThreadState *tstate)
 {
     PyInterpreterState *interp = tstate->interp;
 
+#ifdef _Py_TIER2
     // Invalidate all executors and turn off tier 2 optimizer
     _Py_Executors_InvalidateAll(interp, 0);
     _PyOptimizerObject *old = _Py_SetOptimizer(interp, NULL);
     Py_XDECREF(old);
+#endif
 
     // Stop watching __builtin__ modifications
     PyDict_Unwatch(0, interp->builtins);
@@ -2344,7 +2348,7 @@ static PyStatus
 add_main_module(PyInterpreterState *interp)
 {
     PyObject *m, *d, *ann_dict;
-    m = PyImport_AddModule("__main__");
+    m = PyImport_AddModuleObject(&_Py_ID(__main__));
     if (m == NULL)
         return _PyStatus_ERR("can't create __main__ module");
 
@@ -2410,54 +2414,6 @@ init_import_site(void)
     return _PyStatus_OK();
 }
 
-/* Check if a file descriptor is valid or not.
-   Return 0 if the file descriptor is invalid, return non-zero otherwise. */
-static int
-is_valid_fd(int fd)
-{
-/* dup() is faster than fstat(): fstat() can require input/output operations,
-   whereas dup() doesn't. There is a low risk of EMFILE/ENFILE at Python
-   startup. Problem: dup() doesn't check if the file descriptor is valid on
-   some platforms.
-
-   fcntl(fd, F_GETFD) is even faster, because it only checks the process table.
-   It is preferred over dup() when available, since it cannot fail with the
-   "too many open files" error (EMFILE).
-
-   bpo-30225: On macOS Tiger, when stdout is redirected to a pipe and the other
-   side of the pipe is closed, dup(1) succeed, whereas fstat(1, &st) fails with
-   EBADF. FreeBSD has similar issue (bpo-32849).
-
-   Only use dup() on Linux where dup() is enough to detect invalid FD
-   (bpo-32849).
-*/
-    if (fd < 0) {
-        return 0;
-    }
-#if defined(F_GETFD) && ( \
-        defined(__linux__) || \
-        defined(__APPLE__) || \
-        defined(__wasm__))
-    return fcntl(fd, F_GETFD) >= 0;
-#elif defined(__linux__)
-    int fd2 = dup(fd);
-    if (fd2 >= 0) {
-        close(fd2);
-    }
-    return (fd2 >= 0);
-#elif defined(MS_WINDOWS)
-    HANDLE hfile;
-    _Py_BEGIN_SUPPRESS_IPH
-    hfile = (HANDLE)_get_osfhandle(fd);
-    _Py_END_SUPPRESS_IPH
-    return (hfile != INVALID_HANDLE_VALUE
-            && GetFileType(hfile) != FILE_TYPE_UNKNOWN);
-#else
-    struct stat st;
-    return (fstat(fd, &st) == 0);
-#endif
-}
-
 /* returns Py_None if the fd is not valid */
 static PyObject*
 create_stdio(const PyConfig *config, PyObject* io,
@@ -2471,8 +2427,9 @@ create_stdio(const PyConfig *config, PyObject* io,
     int buffering, isatty;
     const int buffered_stdio = config->buffered_stdio;
 
-    if (!is_valid_fd(fd))
+    if (!_Py_IsValidFD(fd)) {
         Py_RETURN_NONE;
+    }
 
     /* stdin is always opened in buffered mode, first because it shouldn't
        make a difference in common use cases, second because TextIOWrapper
@@ -2588,9 +2545,9 @@ error:
     Py_XDECREF(text);
     Py_XDECREF(raw);
 
-    if (PyErr_ExceptionMatches(PyExc_OSError) && !is_valid_fd(fd)) {
+    if (PyErr_ExceptionMatches(PyExc_OSError) && !_Py_IsValidFD(fd)) {
         /* Issue #24891: the file descriptor was closed after the first
-           is_valid_fd() check was called. Ignore the OSError and set the
+           _Py_IsValidFD() check was called. Ignore the OSError and set the
            stream to None. */
         PyErr_Clear();
         Py_RETURN_NONE;
