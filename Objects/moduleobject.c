@@ -183,6 +183,7 @@ _add_methods_to_object(PyObject *module, PyObject *name, PyMethodDef *functions)
         if (func == NULL) {
             return -1;
         }
+        _PyObject_SetDeferredRefcount(func);
         if (PyObject_SetAttrString(module, fdef->ml_name, func) != 0) {
             Py_DECREF(func);
             return -1;
