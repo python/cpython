@@ -2285,6 +2285,107 @@ class SubinterpImportTests(unittest.TestCase):
 
 
 class TestSinglePhaseSnapshot(ModuleSnapshot):
+    """A representation of a single-phase init module for testing.
+
+    Fields from ModuleSnapshot:
+
+    * id - id(mod)
+    * module - mod or a SimpleNamespace with __file__ & __spec__
+    * ns - a shallow copy of mod.__dict__
+    * ns_id - id(mod.__dict__)
+    * cached - sys.modules[name] (or None if not there or not snapshotable)
+    * cached_id - id(sys.modules[name]) (or None if not there)
+
+    Extra fields:
+
+    * summed - the result of calling "mod.sum(1, 2)"
+    * lookedup - the result of calling "mod.look_up_self()"
+    * lookedup_id - the object ID of self.lookedup
+    * state_initialized - the result of calling "mod.state_initialized()"
+    * init_count - (optional) the result of calling "mod.initialized_count()"
+
+    Overridden methods from ModuleSnapshot:
+
+    * from_module()
+    * parse()
+
+    Other methods from ModuleSnapshot:
+
+    * build_script()
+    * from_subinterp()
+
+    ----
+
+    There are 5 modules in Modules/_testsinglephase.c:
+
+    * _testsinglephase
+       * has global state
+       * extra loads skip the init function, copy def.m_base.m_copy
+       * counts calls to init function
+    * _testsinglephase_basic_wrapper
+       * _testsinglephase by another name (and separate init function symbol)
+    * _testsinglephase_basic_copy
+       * same as _testsinglephase but with own def (and init func)
+    * _testsinglephase_with_reinit
+       * has no global or module state
+       * mod.state_initialized returns None
+       * an extra load in the main interpreter calls the cached init func
+       * an extra load in legacy subinterpreters does a full load
+    * _testsinglephase_with_state
+       * has module state
+       * an extra load in the main interpreter calls the cached init func
+       * an extra load in legacy subinterpreters does a full load
+
+    (See Modules/_testsinglephase.c for more info.)
+
+    For all those modules, the snapshot after the initial load (not in
+    the global extensions cache) would look like the following:
+
+    * initial load
+       * id: ID of nww module object
+       * ns: exactly what the module init put there
+       * ns_id: ID of new module's __dict__
+       * cached_id: same as self.id
+       * summed: 3  (never changes)
+       * lookedup_id: same as self.id
+       * state_initialized: a timestamp between the time of the load
+         and the time of the snapshot
+       * init_count: 1  (None for _testsinglephase_with_reinit)
+
+    For the other scenarios it varies.
+
+    For the _testsinglephase, _testsinglephase_basic_wrapper, and
+    _testsinglephase_basic_copy modules, the snapshot should look
+    like the following:
+
+    * reloaded
+       * id: no change
+       * ns: matches what the module init function put there,
+         including the IDs of all contained objects,
+         plus any extra attributes added before the reload
+       * ns_id: no change
+       * cached_id: no change
+       * lookedup_id: no change
+       * state_initialized: no change
+       * init_count: no change
+    * already loaded
+       * (same as initial load except for ns and state_initialized)
+       * ns: matches the initial load, incl. IDs of contained objects
+       * state_initialized: no change from initial load
+
+    For _testsinglephase_with_reinit:
+
+    * reloaded: same as initial load (old module & ns is discarded)
+    * already loaded: same as initial load (old module & ns is discarded)
+
+    For _testsinglephase_with_state:
+
+    * reloaded
+       * (same as initial load (old module & ns is discarded),
+         except init_count)
+       * init_count: increase by 1
+    * already loaded: same as reloaded
+    """
 
     @classmethod
     def from_module(cls, mod):
@@ -2901,17 +3002,18 @@ class SinglephaseInitTests(unittest.TestCase):
         #  * module's global state was initialized but cleared
 
         # Start with an interpreter that gets destroyed right away.
-        base = self.import_in_subinterp(postscript='''
-            # Attrs set after loading are not in m_copy.
-            mod.spam = 'spam, spam, mash, spam, eggs, and spam'
-        ''')
+        base = self.import_in_subinterp(
+            postscript='''
+                # Attrs set after loading are not in m_copy.
+                mod.spam = 'spam, spam, mash, spam, eggs, and spam'
+                ''')
         self.check_common(base)
         self.check_fresh(base)
 
         # At this point:
         #  * alive in 0 interpreters
         #  * module def in _PyRuntime.imports.extensions
-        #  * mod init func ran again
+        #  * mod init func ran for the first time (since reset)
         #  * m_copy is NULL (claered when the interpreter was destroyed)
         #  * module's global state was initialized, not reset
 
@@ -2923,7 +3025,7 @@ class SinglephaseInitTests(unittest.TestCase):
         # At this point:
         #  * alive in 1 interpreter (interp1)
         #  * module def still in _PyRuntime.imports.extensions
-        #  * mod init func ran again
+        #  * mod init func ran for the second time (since reset)
         #  * m_copy was copied from interp1 (was NULL)
         #  * module's global state was updated, not reset
 
@@ -2935,7 +3037,7 @@ class SinglephaseInitTests(unittest.TestCase):
         # At this point:
         #  * alive in 2 interpreters (interp1, interp2)
         #  * module def still in _PyRuntime.imports.extensions
-        #  * mod init func ran again
+        #  * mod init func did not run again
         #  * m_copy was copied from interp2 (was from interp1)
         #  * module's global state was updated, not reset
 
