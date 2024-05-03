@@ -2317,7 +2317,7 @@ symtable_visit_type_param(struct symtable *st, type_param_ty tp)
             VISIT_QUIT(st, 0);
         }
         if (!symtable_visit_type_param_bound_or_default(st, tp->v.TypeVar.default_value, tp->v.TypeVar.name,
-                                                        (void *)(tp + 1))) {
+                                                        (void *)((uintptr_t)tp + 1))) {
             VISIT_QUIT(st, 0);
         }
         break;
