@@ -442,7 +442,13 @@ class Reader:
         pos = 0
         i = 0
         while i < y:
-            pos += len(self.screeninfo[i][1]) - self.screeninfo[i][1].count(0) + 1
+            prompt_len, character_widths = self.screeninfo[i]
+            offset = len(character_widths) - character_widths.count(0)
+            in_wrapped_line = prompt_len + sum(character_widths) >= self.console.width
+            if in_wrapped_line:
+                pos += offset - 1  # -1 cause backslash is not in buffer
+            else:
+                pos += offset + 1  # +1 cause newline is in buffer
             i += 1
 
         j = 0
@@ -469,10 +475,15 @@ class Reader:
 
         for p, l2 in self.screeninfo:
             l = len(l2) - l2.count(0)
-            if l >= pos:
+            in_wrapped_line = p + sum(l2) >= self.console.width
+            offset = l - 1 if in_wrapped_line else l  # need to remove backslash
+            if offset >= pos:
                 break
             else:
-                pos -= l + 1
+                if p + sum(l2) >= self.console.width:
+                    pos -= l - 1  # -1 cause backslash is not in buffer
+                else:
+                    pos -= l + 1  # +1 cause newline is in buffer
                 y += 1
         return p + sum(l2[:pos]), y
 

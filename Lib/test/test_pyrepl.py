@@ -93,6 +93,12 @@ def handle_all_events(events,
     return reader, console
 
 
+handle_events_narrow_console = partial(
+        handle_all_events,
+        prepare_console=partial(prepare_mock_console, width=10)
+    )
+
+
 class FakeConsole(Console):
     def __init__(self, events, encoding="utf-8"):
         self.events = iter(events)
@@ -158,7 +164,7 @@ class TestCursorPosition(TestCase):
         ])
 
         reader, console = handle_all_events(events)
-        self.assertEqual(reader.pos2xy(), (0, 1))
+        self.assertEqual(reader.cxy, (0, 1))
         console.move_cursor.assert_called_once_with(0, 1)
 
     def test_down_arrow_end_of_input(self):
@@ -171,7 +177,7 @@ class TestCursorPosition(TestCase):
         ])
 
         reader, console = handle_all_events(events)
-        self.assertEqual(reader.pos2xy(), (0, 2))
+        self.assertEqual(reader.cxy, (0, 2))
         console.move_cursor.assert_called_once_with(0, 2)
 
     def test_left_arrow_simple(self):
@@ -180,7 +186,7 @@ class TestCursorPosition(TestCase):
         ])
 
         reader, console = handle_all_events(events)
-        self.assertEqual(reader.pos2xy(), (4, 0))
+        self.assertEqual(reader.cxy, (4, 0))
         console.move_cursor.assert_called_once_with(4, 0)
 
     def test_right_arrow_end_of_line(self):
@@ -189,7 +195,7 @@ class TestCursorPosition(TestCase):
         ])
 
         reader, console = handle_all_events(events)
-        self.assertEqual(reader.pos2xy(), (5, 0))
+        self.assertEqual(reader.cxy, (5, 0))
         console.move_cursor.assert_called_once_with(5, 0)
 
     def test_cursor_position_simple_character(self):
@@ -199,7 +205,7 @@ class TestCursorPosition(TestCase):
         self.assertEqual(reader.pos, 1)
 
         # 1 for simple character
-        self.assertEqual(reader.pos2xy(), (1, 0))
+        self.assertEqual(reader.cxy, (1, 0))
 
     def test_cursor_position_double_width_character(self):
         events = itertools.chain(code_to_events("樂"))
@@ -208,7 +214,7 @@ class TestCursorPosition(TestCase):
         self.assertEqual(reader.pos, 1)
 
         # 2 for wide character
-        self.assertEqual(reader.pos2xy(), (2, 0))
+        self.assertEqual(reader.cxy, (2, 0))
 
     def test_cursor_position_double_width_character_move_left(self):
         events = itertools.chain(code_to_events("樂"), [
@@ -217,7 +223,7 @@ class TestCursorPosition(TestCase):
 
         reader, _ = handle_all_events(events)
         self.assertEqual(reader.pos, 0)
-        self.assertEqual(reader.pos2xy(), (0, 0))
+        self.assertEqual(reader.cxy, (0, 0))
 
     def test_cursor_position_double_width_character_move_left_right(self):
         events = itertools.chain(code_to_events("樂"), [
@@ -229,7 +235,7 @@ class TestCursorPosition(TestCase):
         self.assertEqual(reader.pos, 1)
 
         # 2 for wide character
-        self.assertEqual(reader.pos2xy(), (2, 0))
+        self.assertEqual(reader.cxy, (2, 0))
 
     def test_cursor_position_double_width_characters_move_up(self):
         for_loop = "for _ in _:"
@@ -241,7 +247,7 @@ class TestCursorPosition(TestCase):
 
         # cursor at end of first line
         self.assertEqual(reader.pos, len(for_loop))
-        self.assertEqual(reader.pos2xy(), (len(for_loop), 0))
+        self.assertEqual(reader.cxy, (len(for_loop), 0))
 
     def test_cursor_position_double_width_characters_move_up_down(self):
         for_loop = "for _ in _:"
@@ -257,7 +263,7 @@ class TestCursorPosition(TestCase):
         # <  ' 可口可乐; 可口可樂'>
         #              ^
         self.assertEqual(reader.pos, 19)
-        self.assertEqual(reader.pos2xy(), (10, 1))
+        self.assertEqual(reader.cxy, (10, 1))
 
     def test_cursor_position_multiple_double_width_characters_move_left(self):
         events = itertools.chain(code_to_events("' 可口可乐; 可口可樂'"), [
@@ -271,7 +277,7 @@ class TestCursorPosition(TestCase):
 
         # 1 for quote, 1 for space, 2 per wide character,
         # 1 for semicolon, 1 for space, 2 per wide character
-        self.assertEqual(reader.pos2xy(), (16, 0))
+        self.assertEqual(reader.cxy, (16, 0))
 
     def test_cursor_position_move_up_to_eol(self):
         first_line = "for _ in _:"
@@ -296,7 +302,7 @@ class TestCursorPosition(TestCase):
         #   h
         #   hel
         self.assertEqual(reader.pos, len(first_line) + len(second_line) + 1) # +1 for newline
-        self.assertEqual(reader.pos2xy(), (len(second_line), 1))
+        self.assertEqual(reader.cxy, (len(second_line), 1))
 
     def test_cursor_position_move_down_to_eol(self):
         last_line = "  hel"
@@ -321,7 +327,7 @@ class TestCursorPosition(TestCase):
         #   h
         #   hel
         self.assertEqual(reader.pos, len(code))
-        self.assertEqual(reader.pos2xy(), (len(last_line), 3))
+        self.assertEqual(reader.cxy, (len(last_line), 3))
 
     def test_cursor_position_multiple_mixed_lines_move_up(self):
         code = (
@@ -344,7 +350,25 @@ class TestCursorPosition(TestCase):
         # x = '可口可乐; 可口可樂'
         #            ^
         self.assertEqual(reader.pos, 22)
-        self.assertEqual(reader.pos2xy(), (15, 1))
+        self.assertEqual(reader.cxy, (15, 1))
+
+    def test_cursor_position_after_wrap_and_move_up(self):
+        code = (
+            "def foo():\n"
+            "  hello"
+        )
+        events = itertools.chain(code_to_events(code), [
+            Event(evt="key", data="up", raw=bytearray(b"\x1bOA")),
+        ])
+        reader, _ = handle_events_narrow_console(events)
+
+        # The code looks like this:
+        # def foo()\
+        # :
+        #   hello
+        # After moving up we should be after the colon in line 2
+        self.assertEqual(reader.pos, 10)
+        self.assertEqual(reader.cxy, (1, 1))
 
 
 class TestPyReplOutput(TestCase):
@@ -680,40 +704,35 @@ class TestPasteEvent(TestCase):
         self.assertEqual(output, output_code)
 
 
-class TestReaderScreen(TestCase):
-    handle_events_test_wrap = partial(
-        handle_all_events,
-        prepare_console=partial(prepare_mock_console, width=10)
-    )
-
+class TestReader(TestCase):
     def assert_screen_equals(self, reader, expected):
         actual = reader.calc_screen()
         expected = expected.split("\n")
         self.assertListEqual(actual, expected)
 
-    def test_wrap_simple(self):
+    def test_calc_screen_wrap_simple(self):
         events = code_to_events(10 * "a")
-        reader, _ = self.handle_events_test_wrap(events)
+        reader, _ = handle_events_narrow_console(events)
         self.assert_screen_equals(reader, f"{9*"a"}\\\na")
 
-    def test_wrap_wide_characters(self):
+    def test_calc_screen_wrap_wide_characters(self):
         events = code_to_events(8*"a" + "樂")
-        reader, _ = self.handle_events_test_wrap(events)
+        reader, _ = handle_events_narrow_console(events)
         self.assert_screen_equals(reader, f"{8*"a"}\\\n樂")
 
-    def test_wrap_three_lines(self):
+    def test_calc_screen_wrap_three_lines(self):
         events = code_to_events(20*"a")
-        reader, _ = self.handle_events_test_wrap(events)
+        reader, _ = handle_events_narrow_console(events)
         self.assert_screen_equals(reader, f"{9*"a"}\\\n{9*"a"}\\\naa")
 
-    def test_wrap_three_lines_mixed_character(self):
+    def test_calc_screen_wrap_three_lines_mixed_character(self):
         code = (
             "def f():\n"
            f"  {8*"a"}\n"
            f"  {5*"樂"}"
         )
         events = code_to_events(code)
-        reader, _ = self.handle_events_test_wrap(events)
+        reader, _ = handle_events_narrow_console(events)
         self.assert_screen_equals(reader, (
             "def f():\n"
            f"  {7*"a"}\\\n"
@@ -722,33 +741,69 @@ class TestReaderScreen(TestCase):
             "樂樂"
         ))
 
-    def test_backspace(self):
+    def test_calc_screen_backspace(self):
         events = itertools.chain(code_to_events("aaa"), [
             Event(evt='key', data='backspace', raw=bytearray(b'\x7f')),
         ])
         reader, _ = handle_all_events(events)
         self.assert_screen_equals(reader, "aa")
 
-    def test_wrap_removes_after_backspace(self):
+    def test_calc_screen_wrap_removes_after_backspace(self):
         events = itertools.chain(code_to_events(10 * "a"), [
             Event(evt='key', data='backspace', raw=bytearray(b'\x7f')),
         ])
-        reader, _ = self.handle_events_test_wrap(events)
+        reader, _ = handle_events_narrow_console(events)
         self.assert_screen_equals(reader, 9*"a")
 
-    def test_wrap_removes_after_backspace(self):
+    def test_calc_screen_wrap_removes_after_backspace(self):
         events = itertools.chain(code_to_events(10 * "a"), [
             Event(evt='key', data='backspace', raw=bytearray(b'\x7f')),
         ])
-        reader, _ = self.handle_events_test_wrap(events)
+        reader, _ = handle_events_narrow_console(events)
         self.assert_screen_equals(reader, 9*"a")
 
-    def test_backspace_in_second_line_after_wrap(self):
+    def test_calc_screen_backspace_in_second_line_after_wrap(self):
         events = itertools.chain(code_to_events(11 * "a"), [
             Event(evt='key', data='backspace', raw=bytearray(b'\x7f')),
         ])
-        reader, _ = self.handle_events_test_wrap(events)
+        reader, _ = handle_events_narrow_console(events)
         self.assert_screen_equals(reader, f"{9*"a"}\\\na")
+
+    def test_setpos_for_xy_simple(self):
+        events = code_to_events("11+11")
+        reader, _ = handle_all_events(events)
+        reader.setpos_from_xy(0, 0)
+        self.assertEqual(reader.pos, 0)
+
+    def test_setpos_from_xy_multiple_lines(self):
+        code = (
+            "def foo():\n"
+            "  return 1"
+        )
+        events = code_to_events(code)
+        reader, _ = handle_all_events(events)
+        reader.setpos_from_xy(2, 1)
+        self.assertEqual(reader.pos, 13)
+
+    def test_setpos_from_xy_after_wrap(self):
+        code = (
+            "def foo():\n"
+            "  hello"
+        )
+        events = code_to_events(code)
+        reader, _ = handle_events_narrow_console(events)
+        reader.setpos_from_xy(2, 2)
+        self.assertEqual(reader.pos, 13)
+
+    def test_setpos_fromxy_in_wrapped_line(self):
+        code = (
+            "def foo():\n"
+            "  hello"
+        )
+        events = code_to_events(code)
+        reader, _ = handle_events_narrow_console(events)
+        reader.setpos_from_xy(0, 1)
+        self.assertEqual(reader.pos, 9)
 
 
 if __name__ == "__main__":
