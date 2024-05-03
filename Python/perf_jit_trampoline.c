@@ -73,7 +73,7 @@ As the trampolines are constant, we add a constant padding but in general the pa
 size of the unwind info rounded to 16 bytes. In general, for our trampolines this is 0x50
  */
 
-#define PERF_JIT_CODE_PADDING 0x50
+#define PERF_JIT_CODE_PADDING 0x100
 #define trampoline_api _PyRuntime.ceval.perf.trampoline_api
 
 typedef uint64_t uword;
@@ -471,17 +471,17 @@ elf_init_ehframe(ELFObjectContext* ctx)
                  DWRF_U8(0); /* Augmentation data. */
     /* Registers saved in CFRAME. */
 #ifdef __x86_64__
-                 DWRF_U8(DWRF_CFA_advance_loc | 4);
+                 DWRF_U8(DWRF_CFA_advance_loc | 8);
                  DWRF_U8(DWRF_CFA_def_cfa_offset); DWRF_UV(16);
                  DWRF_U8(DWRF_CFA_advance_loc | 6);
                  DWRF_U8(DWRF_CFA_def_cfa_offset); DWRF_UV(8);
     /* Extra registers saved for JIT-compiled code. */
 #elif defined(__aarch64__) && defined(__AARCH64EL__) && !defined(__ILP32__)
-                 DWRF_U8(DWRF_CFA_advance_loc | 4);
+                 DWRF_U8(DWRF_CFA_advance_loc | 1);
                  DWRF_U8(DWRF_CFA_def_cfa_offset); DWRF_UV(16);
                  DWRF_U8(DWRF_CFA_offset | 29); DWRF_UV(2);
                  DWRF_U8(DWRF_CFA_offset | 30); DWRF_UV(1);
-                 DWRF_U8(DWRF_CFA_advance_loc | 12);
+                 DWRF_U8(DWRF_CFA_advance_loc | 3);
                  DWRF_U8(DWRF_CFA_offset | -(64 - 29));
                  DWRF_U8(DWRF_CFA_offset | -(64 - 30));
                  DWRF_U8(DWRF_CFA_def_cfa_offset);
