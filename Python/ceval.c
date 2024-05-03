@@ -2495,8 +2495,8 @@ _PyEval_GetFrameLocals(void)
         }
         Py_DECREF(locals);
         return ret;
-    } else if (PyDict_Check(locals)) {
-        return Py_XNewRef(locals);
+    } else if (PyMapping_Check(locals)) {
+        return locals;
     }
 
     return NULL;
