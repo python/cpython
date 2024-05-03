@@ -3795,7 +3795,7 @@ x_mul(PyLongObject *a, PyLongObject *b)
     memset(z->long_value.ob_digit, 0, _PyLong_DigitCount(z) * sizeof(digit));
     if (a == b) {
         /* Efficient squaring per HAC, Algorithm 14.16:
-         * http://www.cacr.math.uwaterloo.ca/hac/about/chap14.pdf
+         * https://cacr.uwaterloo.ca/hac/about/chap14.pdf
          * Gives slightly less than a 2x speedup when a == b,
          * via exploiting that each entry in the multiplication
          * pyramid appears twice (except for the size_a squares).
@@ -5003,7 +5003,7 @@ long_pow(PyObject *v, PyObject *w, PyObject *x)
     }
     else if (i <= HUGE_EXP_CUTOFF / PyLong_SHIFT ) {
         /* Left-to-right binary exponentiation (HAC Algorithm 14.79) */
-        /* http://www.cacr.math.uwaterloo.ca/hac/about/chap14.pdf    */
+        /* https://cacr.uwaterloo.ca/hac/about/chap14.pdf            */
 
         /* Find the first significant exponent bit. Search right to left
          * because we're primarily trying to cut overhead for small powers.
