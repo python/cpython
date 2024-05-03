@@ -1,4 +1,5 @@
 """Utilities for writing StencilGroups out to a C header file."""
+
 import typing
 
 import _schema

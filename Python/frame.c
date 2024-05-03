@@ -98,10 +98,11 @@ void
 _PyFrame_ClearLocals(_PyInterpreterFrame *frame)
 {
     assert(frame->stacktop >= 0);
-    for (int i = 0; i < frame->stacktop; i++) {
+    int stacktop = frame->stacktop;
+    frame->stacktop = 0;
+    for (int i = 0; i < stacktop; i++) {
         Py_XDECREF(frame->localsplus[i]);
     }
-    frame->stacktop = 0;
     Py_CLEAR(frame->f_locals);
 }
 
