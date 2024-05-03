@@ -1130,9 +1130,7 @@ get_posix_state(PyObject *module)
  *     and was not encoded.
  *   path.narrow
  *     Points to the path if it was expressed as bytes,
- *     or it was Unicode and was encoded to bytes. (On Windows,
- *     is a non-zero integer if the path was expressed as bytes.
- *     The type is deliberately incompatible to prevent misuse.)
+ *     or it was Unicode and was encoded to bytes.
  *   path.fd
  *     Contains a file descriptor if path.accept_fd was true
  *     and the caller provided a signed integer instead of any
@@ -1183,27 +1181,27 @@ typedef struct {
     int allow_fd;
     // Output fields
     const wchar_t *wide;
-#ifdef MS_WINDOWS
-    BOOL narrow;
-#else
     const char *narrow;
-#endif
     int fd;
     Py_ssize_t length;
     PyObject *object;
     PyObject *cleanup;
 } path_t;
 
-#ifdef MS_WINDOWS
-#define PATH_T_INITIALIZE(function_name, argument_name, nullable, \
-                          null_embeddable, make_wide, allow_fd) \
-    {function_name, argument_name, nullable, null_embeddable, make_wide, \
-     allow_fd, NULL, FALSE, -1, 0, NULL, NULL}
-#else
 #define PATH_T_INITIALIZE(function_name, argument_name, nullable, \
                           null_embeddable, make_wide, allow_fd) \
     {function_name, argument_name, nullable, null_embeddable, make_wide, \
      allow_fd, NULL, NULL, -1, 0, NULL, NULL}
+#ifdef MS_WINDOWS
+#define PATH_T_INITIALIZE_P(function_name, argument_name, nullable, \
+                            null_embeddable, allow_fd) \
+    PATH_T_INITIALIZE(function_name, argument_name, nullable, \
+                      null_embeddable, 1, allow_fd)
+#else
+#define PATH_T_INITIALIZE_P(function_name, argument_name, nullable, \
+                            null_embeddable, allow_fd) \
+    PATH_T_INITIALIZE(function_name, argument_name, nullable, \
+                      null_embeddable, 0, allow_fd)
 #endif
 
 static void
@@ -1246,11 +1244,7 @@ path_converter(PyObject *o, void *p)
 
     if ((o == Py_None) && path->nullable) {
         path->wide = NULL;
-#ifdef MS_WINDOWS
-        path->narrow = FALSE;
-#else
         path->narrow = NULL;
-#endif
         path->fd = -1;
         goto success_exit;
     }
@@ -1294,9 +1288,7 @@ path_converter(PyObject *o, void *p)
     }
 
     if (is_unicode) {
-#ifndef MS_WINDOWS
         if (path->make_wide) {
-#endif
             wide = PyUnicode_AsWideCharString(o, &length);
             if (!wide) {
                 goto error_exit;
@@ -1314,20 +1306,14 @@ path_converter(PyObject *o, void *p)
             }
 
             path->wide = wide;
-#ifdef MS_WINDOWS
-            path->narrow = FALSE;
-#else
             path->narrow = NULL;
-#endif
             path->fd = -1;
             wide = NULL;
             goto success_exit;
-#ifndef MS_WINDOWS
         }
         if (!_PyUnicode_FSConverter(o, &bytes, path->null_embeddable)) {
             goto error_exit;
         }
-#endif
     }
     else if (is_bytes) {
         bytes = Py_NewRef(o);
@@ -1337,11 +1323,7 @@ path_converter(PyObject *o, void *p)
             goto error_exit;
         }
         path->wide = NULL;
-#ifdef MS_WINDOWS
-        path->narrow = FALSE;
-#else
         path->narrow = NULL;
-#endif
         goto success_exit;
     }
     else {
@@ -1366,9 +1348,7 @@ path_converter(PyObject *o, void *p)
         goto error_exit;
     }
 
-#ifndef MS_WINDOWS
     if (path->make_wide) {
-#endif
         wo = PyUnicode_DecodeFSDefaultAndSize(narrow, length);
         if (!wo) {
             goto error_exit;
@@ -1391,14 +1371,9 @@ path_converter(PyObject *o, void *p)
             goto error_exit;
         }
         path->wide = wide;
-#ifdef MS_WINDOWS
-        path->narrow = TRUE;
-#else
-        path->narrow = narrow;
-#endif
+        path->narrow = narrow; // TODO: replace by NULL
         Py_DECREF(bytes);
         wide = NULL;
-#ifndef MS_WINDOWS
     }
     else {
         path->wide = NULL;
@@ -1412,7 +1387,6 @@ path_converter(PyObject *o, void *p)
             path->cleanup = bytes;
         }
     }
-#endif
     path->fd = -1;
 
  success_exit:
@@ -2938,7 +2912,7 @@ class path_t_converter(CConverter):
 
     converter = 'path_converter'
 
-    def converter_init(self, *, allow_fd=False, make_wide=False,
+    def converter_init(self, *, allow_fd=False, make_wide=None,
                        nullable=False, null_embeddable=False):
         # right now path_t doesn't support default values.
         # to support a default value, you'll need to override initialize().
@@ -2960,13 +2934,22 @@ class path_t_converter(CConverter):
             return str(int(bool(value)))
 
         # add self.py_name here when merging with posixmodule conversion
-        self.c_default = 'PATH_T_INITIALIZE("{}", "{}", {}, {}, {}, {})'.format(
-            self.function.name,
-            self.name,
-            strify(self.nullable),
-            strify(self.null_embeddable),
-            strify(self.make_wide),
-            strify(self.allow_fd),
+        if self.make_wide is None:
+            self.c_default = 'PATH_T_INITIALIZE_P("{}", "{}", {}, {}, {})'.format(
+                self.function.name,
+                self.name,
+                strify(self.nullable),
+                strify(self.null_embeddable),
+                strify(self.allow_fd),
+            )
+        else:
+            self.c_default = 'PATH_T_INITIALIZE("{}", "{}", {}, {}, {}, {})'.format(
+                self.function.name,
+                self.name,
+                strify(self.nullable),
+                strify(self.null_embeddable),
+                strify(self.make_wide),
+                strify(self.allow_fd),
             )
 
     def cleanup(self):
@@ -5134,7 +5117,7 @@ os__path_isdir_impl(PyObject *module, PyObject *s)
     HANDLE hfile;
     BOOL close_file = TRUE;
     FILE_BASIC_INFO info;
-    path_t _path = PATH_T_INITIALIZE("isdir", "s", 0, 0, 0, 1);
+    path_t _path = PATH_T_INITIALIZE_P("isdir", "s", 0, 0, 1);
     int result;
     BOOL slow_path = TRUE;
     FILE_STAT_BASIC_INFORMATION statInfo;
@@ -5231,7 +5214,7 @@ os__path_isfile_impl(PyObject *module, PyObject *path)
     HANDLE hfile;
     BOOL close_file = TRUE;
     FILE_BASIC_INFO info;
-    path_t _path = PATH_T_INITIALIZE("isfile", "path", 0, 0, 0, 1);
+    path_t _path = PATH_T_INITIALIZE_P("isfile", "path", 0, 0, 1);
     int result;
     BOOL slow_path = TRUE;
     FILE_STAT_BASIC_INFORMATION statInfo;
@@ -5327,7 +5310,7 @@ os__path_exists_impl(PyObject *module, PyObject *path)
 {
     HANDLE hfile;
     BOOL close_file = TRUE;
-    path_t _path = PATH_T_INITIALIZE("exists", "path", 0, 0, 0, 1);
+    path_t _path = PATH_T_INITIALIZE_P("exists", "path", 0, 0, 1);
     int result;
     BOOL slow_path = TRUE;
     FILE_STAT_BASIC_INFORMATION statInfo;
@@ -5414,7 +5397,7 @@ os__path_islink_impl(PyObject *module, PyObject *path)
     HANDLE hfile;
     BOOL close_file = TRUE;
     FILE_ATTRIBUTE_TAG_INFO info;
-    path_t _path = PATH_T_INITIALIZE("islink", "path", 0, 0, 0, 1);
+    path_t _path = PATH_T_INITIALIZE_P("islink", "path", 0, 0, 1);
     int result;
     BOOL slow_path = TRUE;
     FILE_STAT_BASIC_INFORMATION statInfo;
