@@ -3935,6 +3935,9 @@ PyInit__testcapi(void)
     m = PyModule_Create(&_testcapimodule);
     if (m == NULL)
         return NULL;
+#ifdef Py_GIL_DISABLED
+    PyModule_ExperimentalSetGIL(m, Py_MOD_GIL_NOT_USED);
+#endif
 
     Py_SET_TYPE(&_HashInheritanceTester_Type, &PyType_Type);
     if (PyType_Ready(&_HashInheritanceTester_Type) < 0) {

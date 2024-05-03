@@ -1292,6 +1292,7 @@ static PyModuleDef_Slot faulthandler_slots[] = {
     {Py_mod_exec, PyExec_faulthandler},
     // XXX gh-103092: fix isolation.
     //{Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
 };
 

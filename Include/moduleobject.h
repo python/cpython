@@ -76,9 +76,13 @@ struct PyModuleDef_Slot {
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030c0000
 #  define Py_mod_multiple_interpreters 3
 #endif
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030d0000
+#  define Py_mod_gil 4
+#endif
+
 
 #ifndef Py_LIMITED_API
-#define _Py_mod_LAST_SLOT 3
+#define _Py_mod_LAST_SLOT 4
 #endif
 
 #endif /* New in 3.5 */
@@ -88,6 +92,16 @@ struct PyModuleDef_Slot {
 #  define Py_MOD_MULTIPLE_INTERPRETERS_NOT_SUPPORTED ((void *)0)
 #  define Py_MOD_MULTIPLE_INTERPRETERS_SUPPORTED ((void *)1)
 #  define Py_MOD_PER_INTERPRETER_GIL_SUPPORTED ((void *)2)
+#endif
+
+/* for Py_mod_gil: */
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030d0000
+#  define Py_MOD_GIL_USED ((void *)0)
+#  define Py_MOD_GIL_NOT_USED ((void *)1)
+#endif
+
+#if !defined(Py_LIMITED_API) && defined(Py_GIL_DISABLED)
+PyAPI_FUNC(int) PyModule_ExperimentalSetGIL(PyObject *module, void *gil);
 #endif
 
 struct PyModuleDef {

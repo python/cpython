@@ -3756,6 +3756,9 @@ _PySys_Create(PyThreadState *tstate, PyObject **sysmod_p)
     if (sysmod == NULL) {
         return _PyStatus_ERR("failed to create a module object");
     }
+#ifdef Py_GIL_DISABLED
+    PyModule_ExperimentalSetGIL(sysmod, Py_MOD_GIL_NOT_USED);
+#endif
 
     PyObject *sysdict = PyModule_GetDict(sysmod);
     if (sysdict == NULL) {

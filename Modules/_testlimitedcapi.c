@@ -25,6 +25,9 @@ PyInit__testlimitedcapi(void)
     if (mod == NULL) {
         return NULL;
     }
+#ifdef Py_GIL_DISABLED
+    PyModule_ExperimentalSetGIL(mod, Py_MOD_GIL_NOT_USED);
+#endif
 
     if (_PyTestLimitedCAPI_Init_Abstract(mod) < 0) {
         return NULL;
