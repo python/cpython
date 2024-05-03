@@ -1081,62 +1081,6 @@ get_cached_m_dict(struct extensions_cache_value *value,
     return m_dict;
 }
 
-static int
-update_extensions_cache_value(struct extensions_cache_value *value,
-                              PyModuleDef *def, PyModInitFunction m_init,
-                              PyObject *m_dict, _Py_ext_module_origin origin)
-{
-    assert(def != NULL);
-    /* We expect it to be static, so it must be the same pointer. */
-    assert(value->def == NULL || value->def == def);
-    assert(m_init == NULL || m_dict == NULL);
-    /* We expect the same symbol to be used and the shared object file
-     * to have remained loaded, so it must be the same pointer. */
-    assert(value->m_init == NULL || value->m_init == m_init);
-    /* For now we don't worry about comparing value->m_copy. */
-    assert(def->m_base.m_copy == NULL || m_dict != NULL);
-    assert(value->m_dict == NULL || m_dict != NULL);
-    assert((value->m_dict == NULL) == (value->m_dict_interpid < 0));
-    assert(origin != _Py_ext_module_origin_CORE || m_dict == NULL);
-
-    /* We assume that all module defs are statically allocated
-       and will never be freed.  Otherwise, we would incref here. */
-    _Py_SetImmortalUntracked((PyObject *)def);
-
-    struct extensions_cache_value temp = {
-        .def=def,
-        .m_init=m_init,
-        .origin=origin,
-    };
-    def->m_base.m_init = m_init;
-    if (set_cached_m_dict(&temp, m_dict) < 0) {
-        return -1;
-    }
-
-    if (m_init != NULL) {
-        assert(temp.m_dict == NULL);
-    }
-    else {
-        assert(temp.m_init == NULL);
-    }
-
-    del_cached_m_dict(value, NULL);
-    *value = temp;
-    return 0;
-}
-
-static void
-copy_extensions_cache_value(struct extensions_cache_value *value,
-                            struct extensions_cache_value *updates)
-{
-    assert(updates != value);
-    assert(value->def == NULL || updates->def == value->def);
-    // XXX Skipping this (or an extra incref in set_cached_m_dict()
-    // should not be necessary.
-    //del_cached_m_dict(value, updates);
-    *value = *updates;
-}
-
 static void
 clear_extensions_cache_value(struct extensions_cache_value *value)
 {
@@ -1273,17 +1217,34 @@ _extensions_cache_set(PyObject *path, PyObject *name,
 {
     int res = -1;
     assert(def != NULL);
+    assert(m_init == NULL || m_dict == NULL);
+    /* We expect the same symbol to be used and the shared object file
+     * to have remained loaded, so it must be the same pointer. */
+    assert(def->m_base.m_init == NULL || def->m_base.m_init == m_init);
+    /* For now we don't worry about comparing value->m_copy. */
+    assert(def->m_base.m_copy == NULL || m_dict != NULL);
     assert((origin == _Py_ext_module_origin_DYNAMIC) == (name != path));
+    assert(origin != _Py_ext_module_origin_CORE || m_dict == NULL);
+
+    /* We assume that all module defs are statically allocated
+       and will never be freed.  Otherwise, we would incref here. */
+    _Py_SetImmortalUntracked((PyObject *)def);
+
+    /* Generate the new cache value data before taking the lock. */
+    struct extensions_cache_value updates = {
+        .def=def,
+        .m_init=m_init,
+        .origin=origin,
+    };
+    def->m_base.m_init = m_init;
+    if (set_cached_m_dict(&updates, m_dict) < 0) {
+        return -1;
+    }
+
+    /* Move on to the locked section. */
     void *key = NULL;
     struct extensions_cache_value *value = NULL;
     struct extensions_cache_value *newvalue = NULL;
-
-    struct extensions_cache_value updates = EXTENSIONS_CACHE_VALUE_INIT;
-    if (update_extensions_cache_value(
-            &updates, def, m_init, m_dict, origin) < 0)
-    {
-        return -1;
-    }
 
     extensions_lock_acquire();
 
@@ -1293,6 +1254,7 @@ _extensions_cache_set(PyObject *path, PyObject *name,
         }
     }
 
+    /* Ensure there's a cached value for the module. */
     _Py_hashtable_entry_t *entry =
             _extensions_cache_find_unlocked(path, name, &key);
     if (entry == NULL) {
@@ -1320,9 +1282,23 @@ _extensions_cache_set(PyObject *path, PyObject *name,
             value = newvalue;
             entry->value = value;
         }
+        else {
+            /* We expect it to be static, so it must be the same pointer. */
+            assert(value->def == def);
+            /* We expect the same symbol to be used and the shared object file
+             * to have remained loaded, so it must be the same pointer. */
+            assert(value->m_init == m_init);
+            assert(value->m_dict == NULL || m_dict != NULL);
+            assert((value->m_dict == NULL) == (value->m_dict_interpid < 0));
+        }
     }
 
-    copy_extensions_cache_value(value, &updates);
+    /* Fill the cache value with the data we generated earlier. */
+    // XXX Skipping this (or an extra incref in set_cached_m_dict()
+    // should not be necessary.
+    //del_cached_m_dict(value, updates);
+    *value = updates;
+
     res = 0;
     goto finally;
 
