@@ -971,6 +971,11 @@ struct extensions_cache_value {
        It is set by update_global_state_for_extension(). */
     PyModInitFunction m_init;
 
+    /* The module's index into its interpreter's modules_by_index cache.
+       This is set for all extension modules but only used for legacy ones.
+       (See PyInterpreterState.modules_by_index for more info.) */
+    Py_ssize_t m_index;
+
     /* A copy of the module's __dict__ after the first time it was loaded.
        This is only set/used for legacy modules that do not support
        multiple initializations.
@@ -1261,7 +1266,8 @@ finally:
 static int
 _extensions_cache_set(PyObject *path, PyObject *name,
                       PyModuleDef *def, PyModInitFunction m_init,
-                      PyObject *m_dict, _Py_ext_module_origin origin)
+                      Py_ssize_t m_index, PyObject *m_dict,
+                      _Py_ext_module_origin origin)
 {
     int res = -1;
     assert(def != NULL);
@@ -1309,6 +1315,7 @@ _extensions_cache_set(PyObject *path, PyObject *name,
     *newvalue = (struct extensions_cache_value){
         .def=def,
         .m_init=m_init,
+        .m_index=m_index,
         /* m_dict is set by set_cached_m_dict(). */
         .origin=origin,
     };
@@ -1531,8 +1538,9 @@ _get_extension_kind(PyModuleDef *def, bool check_size)
 
 
 struct singlephase_global_update {
-    PyObject *m_dict;
     PyModInitFunction m_init;
+    Py_ssize_t m_index;
+    PyObject *m_dict;
     _Py_ext_module_origin origin;
 };
 
@@ -1591,7 +1599,8 @@ update_global_state_for_extension(PyThreadState *tstate,
         assert(cached == NULL || cached->def == def);
 #endif
         if (_extensions_cache_set(
-                path, name, def, m_init, m_dict, singlephase->origin) < 0)
+                path, name, def, m_init, singlephase->m_index, m_dict,
+                singlephase->origin) < 0)
         {
             // XXX Ignore this error?  Doing so would effectively
             // mark the module as not loadable.
@@ -1817,6 +1826,10 @@ import_run_extension(PyThreadState *tstate, PyModInitFunction p0,
 
         /* Update global import state. */
         struct singlephase_global_update singlephase = {
+            // XXX Modules that share a def should each get their own index,
+            // whereas currently they share (which means the per-interpreter
+            // cache is less reliable than it should be).
+            .m_index=def->m_base.m_index,
             .origin=info->origin,
         };
         // gh-88216: Extensions and def->m_base.m_copy can be updated
@@ -1921,6 +1934,7 @@ _PyImport_FixupBuiltin(PyThreadState *tstate, PyObject *mod, const char *name,
     assert_singlephase_def(def);
     assert(def->m_size == -1);
     assert(def->m_base.m_copy == NULL);
+    assert(def->m_base.m_index >= 0);
 
     /* We aren't using import_find_extension() for core modules,
      * so we have to do the extra check to make sure the module
@@ -1928,6 +1942,7 @@ _PyImport_FixupBuiltin(PyThreadState *tstate, PyObject *mod, const char *name,
      * update_global_state_for_extension(). */
     if (_extensions_cache_get(nameobj, nameobj) == NULL) {
         struct singlephase_global_update singlephase = {
+            .m_index=def->m_base.m_index,
             /* We don't want def->m_base.m_copy populated. */
             .m_dict=NULL,
             .origin=_Py_ext_module_origin_CORE,
