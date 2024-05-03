@@ -112,7 +112,6 @@ def has_magic(s):
         match = magic_check.search(s)
     return match is not None
 
-
 def escape(pathname):
     """Escape all special characters.
     """
