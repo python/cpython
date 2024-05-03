@@ -954,7 +954,12 @@ extensions_lock_release(void)
    dictionary, to avoid loading shared libraries twice.
 */
 
-typedef PyDictObject *cached_m_dict_t;
+typedef struct cached_m_dict {
+    /* A shallow copy of the original module's __dict__. */
+    PyObject *copied;
+    /* The interpreter that owns the copy. */
+    int64_t interpid;
+} *cached_m_dict_t;
 
 struct extensions_cache_value {
     PyModuleDef *def;
@@ -965,17 +970,16 @@ struct extensions_cache_value {
        (m_size >= 0).
        It is set by update_global_state_for_extension(). */
     PyModInitFunction m_init;
+
     /* A copy of the module's __dict__ after the first time it was loaded.
        This is only set/used for legacy modules that do not support
        multiple initializations.
-       It is set by update_global_state_for_extension(). */
+       It is set exclusively by fixup_cached_def(). */
     cached_m_dict_t m_dict;
-    int64_t m_dict_interpid;
+    struct cached_m_dict _m_dict;
 
     _Py_ext_module_origin origin;
 };
-#define EXTENSIONS_CACHE_VALUE_INIT \
-    (struct extensions_cache_value){ .m_dict_interpid=-1 }
 
 static struct extensions_cache_value *
 alloc_extensions_cache_value(void)
@@ -986,7 +990,7 @@ alloc_extensions_cache_value(void)
         PyErr_NoMemory();
         return NULL;
     }
-    *value = EXTENSIONS_CACHE_VALUE_INIT;
+    *value = (struct extensions_cache_value){0};
     return value;
 }
 
@@ -996,29 +1000,78 @@ free_extensions_cache_value(struct extensions_cache_value *value)
     PyMem_RawFree(value);
 }
 
+static void
+fixup_cached_def(struct extensions_cache_value *value)
+{
+    /* For the moment, the values in the def's m_base may belong
+     * to another module, and we're replacing them here.  This can
+     * cause problems later if the old module is reloaded.
+     *
+     * Also, we don't decref any old cached values first when we
+     * replace them here, in case we need to restore them in the
+     * near future.  Instead, the caller is responsible for wrapping
+     * this up by calling cleanup_old_cached_def() or
+     * restore_old_cached_def() if there was an error. */
+    PyModuleDef *def = value->def;
+    assert(def != NULL);
+
+    /* We assume that all module defs are statically allocated
+       and will never be freed.  Otherwise, we would incref here. */
+    _Py_SetImmortalUntracked((PyObject *)def);
+
+    def->m_base.m_init = value->m_init;
+
+    /* Different modules can share the same def, so we can't just
+     * expect m_copy to be NULL. */
+    assert(def->m_base.m_copy == NULL
+           || def->m_base.m_init == NULL
+           || value->m_dict != NULL);
+    if (value->m_dict != NULL) {
+        assert(value->m_dict->copied != NULL);
+        /* As noted above, we don't first decref the old value, if any. */
+        def->m_base.m_copy = Py_NewRef(value->m_dict->copied);
+    }
+}
+
+static void
+restore_old_cached_def(PyModuleDef *def, PyModuleDef_Base *oldbase)
+{
+    def->m_base = *oldbase;
+}
+
+static void
+cleanup_old_cached_def(PyModuleDef_Base *oldbase)
+{
+    Py_XDECREF(oldbase->m_copy);
+}
+
+static void
+del_cached_def(struct extensions_cache_value *value)
+{
+    /* If we hadn't made the stored defs immortal, we would decref here.
+       However, this decref would be problematic if the module def were
+       dynamically allocated, it were the last ref, and this function
+       were called with an interpreter other than the def's owner. */
+    assert(value->def == NULL || _Py_IsImmortal(value->def));
+
+    Py_XDECREF(value->def->m_base.m_copy);
+    value->def->m_base.m_copy = NULL;
+}
+
 static int
-set_cached_m_dict(struct extensions_cache_value *value, PyObject *m_dict)
+init_cached_m_dict(struct extensions_cache_value *value, PyObject *m_dict)
 {
     assert(value != NULL);
-    assert(value->def != NULL);
-
-    int64_t interpid = -1;
-    PyObject *copied = NULL;
-    if (m_dict != NULL) {
-        assert(value->origin != _Py_ext_module_origin_CORE);
-        assert(PyDict_Check(m_dict));
-        copied = PyDict_Copy(m_dict);
-        if (copied == NULL) {
-            /* We expect this can only be "out of memory". */
-            return -1;
-        }
-
-        // XXX We may want to make copied immortal.
-
-        PyInterpreterState *interp = _PyInterpreterState_GET();
-        interpid = PyInterpreterState_GetID(interp);
-        assert(!is_interpreter_isolated(interp));
+    /* This should only have been called without an m_dict already set. */
+    assert(value->m_dict == NULL);
+    if (m_dict == NULL) {
+        return 0;
     }
+    assert(PyDict_Check(m_dict));
+    assert(value->origin != _Py_ext_module_origin_CORE);
+
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    assert(!is_interpreter_isolated(interp));
 
     /* XXX gh-88216: The copied dict is owned by the current
      * interpreter.  That's a problem if the interpreter has
@@ -1034,28 +1087,34 @@ set_cached_m_dict(struct extensions_cache_value *value, PyObject *m_dict)
      * Then we'd need to make sure to clear that when the
      * runtime is finalized, rather than in
      * PyImport_ClearModulesByIndex(). */
-    /* Ideally, the cached dict would always be NULL at this point. */
-    assert(value->def->m_base.m_copy == NULL || copied != NULL);
-    assert(value->m_dict == NULL || copied != NULL);
-    Py_XDECREF(value->def->m_base.m_copy);
-    Py_XDECREF((PyObject *)value->m_dict);
+    PyObject *copied = PyDict_Copy(m_dict);
+    if (copied == NULL) {
+        /* We expect this can only be "out of memory". */
+        return -1;
+    }
+    // XXX We may want to make the copy immortal.
+    // XXX This incref shouldn't be necessary.  We are decref'ing
+    // one to many times somewhere.
+    Py_INCREF(copied);
 
-    value->def->m_base.m_copy = Py_XNewRef(copied);
-    value->m_dict = (cached_m_dict_t)copied;
-    value->m_dict_interpid = interpid;
+    value->_m_dict = (struct cached_m_dict){
+        .copied=copied,
+        .interpid=PyInterpreterState_GetID(interp),
+    };
+
+    value->m_dict = &value->_m_dict;
     return 0;
 }
 
 static void
-del_cached_m_dict(struct extensions_cache_value *value,
-                  struct extensions_cache_value *compare)
+del_cached_m_dict(struct extensions_cache_value *value)
 {
-    if (compare == NULL && value->def != NULL) {
-        Py_XDECREF(value->def->m_base.m_copy);
-        value->def->m_base.m_copy = NULL;
-    }
-    if (compare == NULL || compare->m_dict != value->m_dict) {
-        Py_XDECREF((PyObject *)value->m_dict);
+    if (value->m_dict != NULL) {
+        assert(value->m_dict == &value->_m_dict);
+        assert(value->m_dict->copied != NULL);
+        /* In the future we can take advantage of m_dict->interpid
+         * to decref the dict using the owning interpreter. */
+        Py_XDECREF(value->m_dict->copied);
         value->m_dict = NULL;
     }
 }
@@ -1082,22 +1141,11 @@ get_cached_m_dict(struct extensions_cache_value *value,
 }
 
 static void
-clear_extensions_cache_value(struct extensions_cache_value *value)
-{
-    assert(value != NULL);
-    /* If we hadn't made the stored defs immortal, we would decref here.
-       However, this decref would be problematic if the module def were
-       dynamically allocated, it were the last ref, and this function
-       were called with an interpreter other than the def's owner. */
-    assert(value->def == NULL || _Py_IsImmortal(value->def));
-    del_cached_m_dict(value, NULL);
-}
-
-static void
 del_extensions_cache_value(struct extensions_cache_value *value)
 {
     if (value != NULL) {
-        clear_extensions_cache_value(value);
+        del_cached_m_dict(value);
+        del_cached_def(value);
         free_extensions_cache_value(value);
     }
 }
@@ -1226,89 +1274,88 @@ _extensions_cache_set(PyObject *path, PyObject *name,
     assert((origin == _Py_ext_module_origin_DYNAMIC) == (name != path));
     assert(origin != _Py_ext_module_origin_CORE || m_dict == NULL);
 
-    /* We assume that all module defs are statically allocated
-       and will never be freed.  Otherwise, we would incref here. */
-    _Py_SetImmortalUntracked((PyObject *)def);
-
-    /* Generate the new cache value data before taking the lock. */
-    struct extensions_cache_value updates = {
-        .def=def,
-        .m_init=m_init,
-        .origin=origin,
-    };
-    def->m_base.m_init = m_init;
-    if (set_cached_m_dict(&updates, m_dict) < 0) {
-        return -1;
-    }
-
-    /* Move on to the locked section. */
     void *key = NULL;
     struct extensions_cache_value *value = NULL;
     struct extensions_cache_value *newvalue = NULL;
+    PyModuleDef_Base olddefbase = def->m_base;
 
     extensions_lock_acquire();
 
     if (EXTENSIONS.hashtable == NULL) {
         if (_extensions_cache_init() < 0) {
-            goto error;
+            goto finally;
         }
     }
 
-    /* Ensure there's a cached value for the module. */
+    /* Create a cached value to populate for the module. */
     _Py_hashtable_entry_t *entry =
             _extensions_cache_find_unlocked(path, name, &key);
+    value = entry == NULL
+        ? NULL
+        : (struct extensions_cache_value *)entry->value;
+    /* We should never be updating an existing cache value. */
+    assert(value == NULL);
+    if (value != NULL) {
+        PyErr_Format(PyExc_SystemError,
+                     "extension module %R is already cached", name);
+        goto finally;
+    }
+    newvalue = alloc_extensions_cache_value();
+    if (newvalue == NULL) {
+        goto finally;
+    }
+
+    /* Populate the new cache value data. */
+    *newvalue = (struct extensions_cache_value){
+        .def=def,
+        .m_init=m_init,
+        /* m_dict is set by set_cached_m_dict(). */
+        .origin=origin,
+    };
+    if (init_cached_m_dict(newvalue, m_dict) < 0) {
+        goto finally;
+    }
+    fixup_cached_def(newvalue);
+
     if (entry == NULL) {
         /* It was never added. */
-        newvalue = alloc_extensions_cache_value();
-        if (newvalue == NULL) {
-            goto error;
-        }
         if (_Py_hashtable_set(EXTENSIONS.hashtable, key, newvalue) < 0) {
             PyErr_NoMemory();
-            goto error;
+            goto finally;
         }
-        value = newvalue;
         /* The hashtable owns the key now. */
         key = NULL;
     }
-    else {
-        value = (struct extensions_cache_value *)entry->value;
-        if (value == NULL) {
-            /* It was previously deleted. */
-            newvalue = alloc_extensions_cache_value();
-            if (newvalue == NULL) {
-                goto error;
-            }
-            value = newvalue;
-            entry->value = value;
-        }
-        else {
-            /* We expect it to be static, so it must be the same pointer. */
-            assert(value->def == def);
-            /* We expect the same symbol to be used and the shared object file
-             * to have remained loaded, so it must be the same pointer. */
-            assert(value->m_init == m_init);
-            assert(value->m_dict == NULL || m_dict != NULL);
-            assert((value->m_dict == NULL) == (value->m_dict_interpid < 0));
-        }
+    else if (value == NULL) {
+        /* It was previously deleted. */
+        entry->value = newvalue;
     }
-
-    /* Fill the cache value with the data we generated earlier. */
-    // XXX Skipping this (or an extra incref in set_cached_m_dict()
-    // should not be necessary.
-    //del_cached_m_dict(value, updates);
-    *value = updates;
+    else {
+        /* We are updating the entry for an existing module. */
+        /* We expect def to be static, so it must be the same pointer. */
+        assert(value->def == def);
+        /* We expect the same symbol to be used and the shared object file
+         * to have remained loaded, so it must be the same pointer. */
+        assert(value->m_init == m_init);
+        /* The same module can't switch between caching __dict__ and not. */
+        assert((value->m_dict == NULL) == (m_dict == NULL));
+        /* This shouldn't ever happen. */
+        Py_UNREACHABLE();
+    }
 
     res = 0;
-    goto finally;
-
-error:
-    if (newvalue != NULL) {
-        del_extensions_cache_value(newvalue);
-    }
-    clear_extensions_cache_value(&updates);
 
 finally:
+    if (res < 0) {
+        restore_old_cached_def(def, &olddefbase);
+        if (newvalue != NULL) {
+            del_extensions_cache_value(newvalue);
+        }
+    }
+    else {
+        cleanup_old_cached_def(&olddefbase);
+    }
+
     extensions_lock_release();
     if (key != NULL) {
         hashtable_destroy_str(key);
@@ -1875,15 +1922,21 @@ _PyImport_FixupBuiltin(PyThreadState *tstate, PyObject *mod, const char *name,
     assert(def->m_size == -1);
     assert(def->m_base.m_copy == NULL);
 
-    struct singlephase_global_update singlephase = {
-        /* We don't want def->m_base.m_copy populated. */
-        .m_dict=NULL,
-        .origin=_Py_ext_module_origin_CORE,
-    };
-    if (update_global_state_for_extension(
-            tstate, nameobj, nameobj, def, &singlephase) < 0)
-    {
-        goto finally;
+    /* We aren't using import_find_extension() for core modules,
+     * so we have to do the extra check to make sure the module
+     * isn't already in the global cache before calling
+     * update_global_state_for_extension(). */
+    if (_extensions_cache_get(nameobj, nameobj) == NULL) {
+        struct singlephase_global_update singlephase = {
+            /* We don't want def->m_base.m_copy populated. */
+            .m_dict=NULL,
+            .origin=_Py_ext_module_origin_CORE,
+        };
+        if (update_global_state_for_extension(
+                tstate, nameobj, nameobj, def, &singlephase) < 0)
+        {
+            goto finally;
+        }
     }
 
     if (finish_singlephase_extension(tstate, mod, def, nameobj, modules) < 0) {
@@ -1936,6 +1989,17 @@ create_builtin(PyThreadState *tstate, PyObject *name, PyObject *spec)
     }
     else if (_PyErr_Occurred(tstate)) {
         goto finally;
+    }
+
+    /* If the module was added to the global cache
+     * but def->m_base.m_copy was cleared (e.g. subinterp fini)
+     * then we have to do a little dance here. */
+    struct extensions_cache_value *cached
+            = _extensions_cache_get(info.path, info.name);
+    if (cached != NULL) {
+        assert(cached->def->m_base.m_copy == NULL);
+        /* For now we clear the cache and move on. */
+        _extensions_cache_delete(info.path, info.name);
     }
 
     struct _inittab *found = NULL;
@@ -4298,6 +4362,17 @@ _imp_create_dynamic_impl(PyObject *module, PyObject *spec, PyObject *file)
         goto finally;
     }
     /* Otherwise it must be multi-phase init or the first time it's loaded. */
+
+    /* If the module was added to the global cache
+     * but def->m_base.m_copy was cleared (e.g. subinterp fini)
+     * then we have to do a little dance here. */
+    struct extensions_cache_value *cached
+            = _extensions_cache_get(info.path, info.name);
+    if (cached != NULL) {
+        assert(cached->def->m_base.m_copy == NULL);
+        /* For now we clear the cache and move on. */
+        _extensions_cache_delete(info.path, info.name);
+    }
 
     if (PySys_Audit("import", "OOOOO", info.name, info.filename,
                     Py_None, Py_None, Py_None) < 0)
