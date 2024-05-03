@@ -3974,10 +3974,10 @@ AC_ARG_WITH(
   [system_libmpdec],
   [AS_HELP_STRING(
     [--with-system-libmpdec],
-    [build _decimal module using an installed libmpdec library, see Doc/library/decimal.rst (default is no)]
+    [build _decimal module using an installed mpdecimal library, see Doc/library/decimal.rst (default is yes)]
   )],
   [],
-  [with_system_libmpdec="no"])
+  [with_system_libmpdec="yes"])
 AC_MSG_RESULT([$with_system_libmpdec])
 
 AS_VAR_IF(
@@ -3990,6 +3990,14 @@ AS_VAR_IF(
   [LIBMPDEC_CFLAGS="-I\$(srcdir)/Modules/_decimal/libmpdec"
    LIBMPDEC_LIBS="-lm \$(LIBMPDEC_A)"
    LIBMPDEC_INTERNAL="\$(LIBMPDEC_HEADERS) \$(LIBMPDEC_A)"])
+
+AS_VAR_IF([with_system_libmpdec], [yes],
+          [WITH_SAVE_ENV([
+             CPPFLAGS="$LIBMPDEC_CFLAGS $CPPFLAGS"
+             LDFLAGS="$LIBMPDEC_LIBS $LDFLAGS"
+             AC_SEARCH_LIBS([mpd_version], [mpdec],
+                            [have_mpdec=yes], [have_mpdec=no])])],
+          [have_mpdec=yes])
 
 # Disable forced inlining in debug builds, see GH-94847
 AS_VAR_IF(
@@ -7665,7 +7673,9 @@ PY_STDLIB_MOD([_curses_panel],
   [], [test "$have_panel" != "no"],
   [$PANEL_CFLAGS $CURSES_CFLAGS], [$PANEL_LIBS $CURSES_LIBS]
 )
-PY_STDLIB_MOD([_decimal], [], [], [$LIBMPDEC_CFLAGS], [$LIBMPDEC_LIBS])
+PY_STDLIB_MOD([_decimal],
+  [], [test "$have_mpdec" = "yes"],
+  [$LIBMPDEC_CFLAGS], [$LIBMPDEC_LIBS])
 PY_STDLIB_MOD([_dbm],
   [test -n "$with_dbmliborder"], [test "$have_dbm" != "no"],
   [$DBM_CFLAGS], [$DBM_LIBS])
