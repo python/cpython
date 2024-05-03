@@ -20,9 +20,9 @@
 
 // Returns borrowed reference or NULL
 static PyObject *
-framelocalsproxy_getval(PyFrameObject *frame, PyCodeObject *co, int i)
+framelocalsproxy_getval(_PyInterpreterFrame *frame, PyCodeObject *co, int i)
 {
-    PyObject **fast = _PyFrame_GetLocalsArray(frame->f_frame);
+    PyObject **fast = _PyFrame_GetLocalsArray(frame);
     _PyLocals_Kind kind = _PyLocals_GetKind(co->co_localspluskinds, i);
 
     PyObject *value = fast[i];
@@ -71,7 +71,7 @@ framelocalsproxy_getkeyindex(PyFrameObject *frame, PyObject* key, bool read)
         if (name == key) {
             found_key = true;
             if (read) {
-                if (framelocalsproxy_getval(frame, co, i) != NULL) {
+                if (framelocalsproxy_getval(frame->f_frame, co, i) != NULL) {
                     return i;
                 }
             } else {
@@ -89,7 +89,7 @@ framelocalsproxy_getkeyindex(PyFrameObject *frame, PyObject* key, bool read)
             PyObject *name = PyTuple_GET_ITEM(co->co_localsplusnames, i);
             if (_PyUnicode_EQ(name, key)) {
                 if (read) {
-                    if (framelocalsproxy_getval(frame, co, i) != NULL) {
+                    if (framelocalsproxy_getval(frame->f_frame, co, i) != NULL) {
                         return i;
                     }
                 } else {
@@ -113,7 +113,7 @@ framelocalsproxy_getitem(PyObject *self, PyObject *key)
     if (PyUnicode_CheckExact(key)) {
         int i = framelocalsproxy_getkeyindex(frame, key, true);
         if (i >= 0) {
-            PyObject *value = framelocalsproxy_getval(frame, co, i);
+            PyObject *value = framelocalsproxy_getval(frame->f_frame, co, i);
             assert(value != NULL);
             return Py_NewRef(value);
         }
@@ -245,7 +245,7 @@ framelocalsproxy_keys(PyObject *self, PyObject *__unused)
     PyCodeObject *co = _PyFrame_GetCode(frame->f_frame);
 
     for (int i = 0; i < co->co_nlocalsplus; i++) {
-        PyObject *val = framelocalsproxy_getval(frame, co, i);
+        PyObject *val = framelocalsproxy_getval(frame->f_frame, co, i);
         if (val) {
             PyObject *name = PyTuple_GET_ITEM(co->co_localsplusnames, i);
             PyList_Append(names, name);
@@ -396,7 +396,7 @@ framelocalsproxy_values(PyObject *self, PyObject *__unused)
     PyCodeObject *co = _PyFrame_GetCode(frame->f_frame);
 
     for (int i = 0; i < co->co_nlocalsplus; i++) {
-        PyObject *value = framelocalsproxy_getval(frame, co, i);
+        PyObject *value = framelocalsproxy_getval(frame->f_frame, co, i);
         if (value) {
             PyList_Append(values, value);
         }
@@ -425,7 +425,7 @@ framelocalsproxy_items(PyObject *self, PyObject *__unused)
 
     for (int i = 0; i < co->co_nlocalsplus; i++) {
         PyObject *name = PyTuple_GET_ITEM(co->co_localsplusnames, i);
-        PyObject *value = framelocalsproxy_getval(frame, co, i);
+        PyObject *value = framelocalsproxy_getval(frame->f_frame, co, i);
 
         if (value) {
             PyObject *pair = PyTuple_Pack(2, name, value);
@@ -463,7 +463,7 @@ framelocalsproxy_length(PyObject *self)
     }
 
     for (int i = 0; i < co->co_nlocalsplus; i++) {
-        if (framelocalsproxy_getval(frame, co, i) != NULL) {
+        if (framelocalsproxy_getval(frame->f_frame, co, i) != NULL) {
             size++;
         }
     }
@@ -644,30 +644,6 @@ static PyMemberDef frame_memberlist[] = {
     {NULL}      /* Sentinel */
 };
 
-static bool
-frame_hashiddenlocals(PyFrameObject *frame)
-{
-    /*
-     * This function returns all the hidden locals introduced by PEP 709,
-     * which are the isolated fast locals for inline comprehensions
-     */
-    PyCodeObject* co = _PyFrame_GetCode(frame->f_frame);
-
-    for (int i = 0; i < co->co_nlocalsplus; i++) {
-        _PyLocals_Kind kind = _PyLocals_GetKind(co->co_localspluskinds, i);
-
-        if (kind & CO_FAST_HIDDEN) {
-            PyObject* value = framelocalsproxy_getval(frame, co, i);
-
-            if (value != NULL) {
-                return true;
-            }
-        }
-    }
-
-    return false;
-}
-
 static PyObject *
 frame_getlocals(PyFrameObject *f, void *closure)
 {
@@ -679,7 +655,7 @@ frame_getlocals(PyFrameObject *f, void *closure)
 
     PyCodeObject *co = _PyFrame_GetCode(f->f_frame);
 
-    if (!(co->co_flags & CO_OPTIMIZED) && !frame_hashiddenlocals(f)) {
+    if (!(co->co_flags & CO_OPTIMIZED) && !_PyFrame_HasHiddenLocals(f->f_frame)) {
         return Py_NewRef(f->f_frame->f_locals);
     }
 
@@ -1834,12 +1810,45 @@ frame_get_var(_PyInterpreterFrame *frame, PyCodeObject *co, int i,
 }
 
 
+bool
+_PyFrame_HasHiddenLocals(_PyInterpreterFrame *frame)
+{
+    /*
+     * This function returns if there are hidden locals introduced by PEP 709,
+     * which are the isolated fast locals for inline comprehensions
+     */
+    PyCodeObject* co = _PyFrame_GetCode(frame);
+
+    for (int i = 0; i < co->co_nlocalsplus; i++) {
+        _PyLocals_Kind kind = _PyLocals_GetKind(co->co_localspluskinds, i);
+
+        if (kind & CO_FAST_HIDDEN) {
+            PyObject* value = framelocalsproxy_getval(frame, co, i);
+
+            if (value != NULL) {
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
+
 PyObject *
 _PyFrame_GetLocals(_PyInterpreterFrame *frame)
 {
+    // We should try to avoid creating the FrameObject if possible.
+    // So we check if the frame is a module or class level scope
+    PyCodeObject *co = _PyFrame_GetCode(frame);
+
+    if (!(co->co_flags & CO_OPTIMIZED) && !_PyFrame_HasHiddenLocals(frame)) {
+        return Py_NewRef(frame->f_locals);
+    }
+
     PyFrameObject* f = _PyFrame_GetFrameObject(frame);
 
-    return frame_getlocals(f, NULL);
+    return _PyFrameLocalsProxy_New(f);
 }
 
 

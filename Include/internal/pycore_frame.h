@@ -242,6 +242,9 @@ _PyFrame_ClearExceptCode(_PyInterpreterFrame * frame);
 int
 _PyFrame_Traverse(_PyInterpreterFrame *frame, visitproc visit, void *arg);
 
+bool
+_PyFrame_HasHiddenLocals(_PyInterpreterFrame *frame);
+
 PyObject *
 _PyFrame_GetLocals(_PyInterpreterFrame *frame);
 
