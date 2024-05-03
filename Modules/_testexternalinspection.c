@@ -17,6 +17,10 @@
 
 #if defined(__APPLE__)
 #  include <TargetConditionals.h>
+// Older macOS SDKs do not define TARGET_OS_OSX
+#  if !defined(TARGET_OS_OSX)
+#     define TARGET_OS_OSX 1
+#  endif
 #  if TARGET_OS_OSX
 #    include <libproc.h>
 #    include <mach-o/fat.h>
@@ -623,6 +627,12 @@ PyMODINIT_FUNC
 PyInit__testexternalinspection(void)
 {
     PyObject* mod = PyModule_Create(&module);
+    if (mod == NULL) {
+        return NULL;
+    }
+#ifdef Py_GIL_DISABLED
+    PyModule_ExperimentalSetGIL(mod, Py_MOD_GIL_NOT_USED);
+#endif
     int rc = PyModule_AddIntConstant(mod, "PROCESS_VM_READV_SUPPORTED", HAVE_PROCESS_VM_READV);
     if (rc < 0) {
         Py_DECREF(mod);

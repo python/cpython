@@ -862,7 +862,7 @@ subclasscheck_check_registry(_abc_data *impl, PyObject *subclass,
 
     // Make a local copy of the registry to protect against concurrent
     // modifications of _abc_registry.
-    PyObject *registry = PySet_New(registry_shared);
+    PyObject *registry = PyFrozenSet_New(registry_shared);
     if (registry == NULL) {
         return -1;
     }
@@ -970,6 +970,7 @@ _abcmodule_free(void *module)
 static PyModuleDef_Slot _abcmodule_slots[] = {
     {Py_mod_exec, _abcmodule_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
 };
 

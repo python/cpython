@@ -11,6 +11,7 @@
 #include "pycore_object.h"
 #include "pycore_opcode_metadata.h" // _PyOpcode_Caches
 #include "pycore_uop_metadata.h"    // _PyOpcode_uop_name
+#include "pycore_uop_ids.h"       // MAX_UOP_ID
 #include "pycore_opcode_utils.h"  // RESUME_AT_FUNC_START
 #include "pycore_pylifecycle.h"   // _PyOS_URandomNonblock()
 #include "pycore_runtime.h"       // _Py_ID()
@@ -214,6 +215,7 @@ print_gc_stats(FILE *out, GCStats *stats)
     }
 }
 
+#ifdef _Py_TIER2
 static void
 print_histogram(FILE *out, const char *name, uint64_t hist[_Py_UOP_HIST_SIZE])
 {
@@ -248,7 +250,6 @@ print_optimization_stats(FILE *out, OptimizationStats *stats)
             stats->optimizer_failure_reason_no_memory);
     fprintf(out, "Optimizer remove globals builtins changed: %" PRIu64 "\n", stats->remove_globals_builtins_changed);
     fprintf(out, "Optimizer remove globals incorrect keys: %" PRIu64 "\n", stats->remove_globals_incorrect_keys);
-
     for (int i = 0; i <= MAX_UOP_ID; i++) {
         if (stats->opcode[i].execution_count) {
             fprintf(out, "uops[%s].execution_count : %" PRIu64 "\n", _PyUOpName(i), stats->opcode[i].execution_count);
@@ -257,7 +258,6 @@ print_optimization_stats(FILE *out, OptimizationStats *stats)
             fprintf(out, "uops[%s].specialization.miss : %" PRIu64 "\n", _PyUOpName(i), stats->opcode[i].miss);
         }
     }
-
     for (int i = 0; i < 256; i++) {
         if (stats->unsupported_opcode[i]) {
             fprintf(
@@ -269,6 +269,14 @@ print_optimization_stats(FILE *out, OptimizationStats *stats)
         }
     }
 
+    for (int i = 1; i <= MAX_UOP_ID; i++){
+        for (int j = 1; j <= MAX_UOP_ID; j++) {
+            if (stats->opcode[i].pair_count[j]) {
+                fprintf(out, "uop[%s].pair_count[%s] : %" PRIu64 "\n",
+                        _PyOpcode_uop_name[i], _PyOpcode_uop_name[j], stats->opcode[i].pair_count[j]);
+            }
+        }
+    }
     for (int i = 0; i < MAX_UOP_ID; i++) {
         if (stats->error_in_opcode[i]) {
             fprintf(
@@ -280,6 +288,7 @@ print_optimization_stats(FILE *out, OptimizationStats *stats)
         }
     }
 }
+#endif
 
 static void
 print_rare_event_stats(FILE *out, RareEventStats *stats)
@@ -300,7 +309,9 @@ print_stats(FILE *out, PyStats *stats)
     print_call_stats(out, &stats->call_stats);
     print_object_stats(out, &stats->object_stats);
     print_gc_stats(out, stats->gc_stats);
+#ifdef _Py_TIER2
     print_optimization_stats(out, &stats->optimization_stats);
+#endif
     print_rare_event_stats(out, &stats->rare_event_stats);
 }
 
@@ -843,8 +854,7 @@ specialize_dict_access(
         instr->op.code = values_op;
     }
     else {
-        PyManagedDictPointer *managed_dict = _PyObject_ManagedDictPointer(owner);
-        PyDictObject *dict = managed_dict->dict;
+        PyDictObject *dict = _PyObject_GetManagedDict(owner);
         if (dict == NULL || !PyDict_CheckExact(dict)) {
             SPECIALIZATION_FAIL(base_op, SPEC_FAIL_NO_DICT);
             return 0;

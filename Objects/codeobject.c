@@ -6,6 +6,7 @@
 #include "pycore_code.h"          // _PyCodeConstructor
 #include "pycore_frame.h"         // FRAME_SPECIALS_SIZE
 #include "pycore_interp.h"        // PyInterpreterState.co_extra_freefuncs
+#include "pycore_object.h"        // _PyObject_SetDeferredRefcount
 #include "pycore_opcode_metadata.h" // _PyOpcode_Deopt, _PyOpcode_Caches
 #include "pycore_opcode_utils.h"  // RESUME_AT_FUNC_START
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
@@ -415,10 +416,16 @@ init_code(PyCodeObject *co, struct _PyCodeConstructor *con)
     co->co_ncellvars = ncellvars;
     co->co_nfreevars = nfreevars;
     PyInterpreterState *interp = _PyInterpreterState_GET();
+#ifdef Py_GIL_DISABLED
+    PyMutex_Lock(&interp->func_state.mutex);
+#endif
     co->co_version = interp->func_state.next_version;
     if (interp->func_state.next_version != 0) {
         interp->func_state.next_version++;
     }
+#ifdef Py_GIL_DISABLED
+    PyMutex_Unlock(&interp->func_state.mutex);
+#endif
     co->_co_monitoring = NULL;
     co->_co_instrumentation_version = 0;
     /* not set */
@@ -557,13 +564,22 @@ _PyCode_New(struct _PyCodeConstructor *con)
     }
 
     Py_ssize_t size = PyBytes_GET_SIZE(con->code) / sizeof(_Py_CODEUNIT);
-    PyCodeObject *co = PyObject_NewVar(PyCodeObject, &PyCode_Type, size);
+    PyCodeObject *co;
+#ifdef Py_GIL_DISABLED
+    co = PyObject_GC_NewVar(PyCodeObject, &PyCode_Type, size);
+#else
+    co = PyObject_NewVar(PyCodeObject, &PyCode_Type, size);
+#endif
     if (co == NULL) {
         Py_XDECREF(replacement_locations);
         PyErr_NoMemory();
         return NULL;
     }
     init_code(co, con);
+#ifdef Py_GIL_DISABLED
+    _PyObject_SetDeferredRefcount((PyObject *)co);
+    _PyObject_GC_TRACK(co);
+#endif
     Py_XDECREF(replacement_locations);
     return co;
 }
@@ -1486,13 +1502,16 @@ PyCode_GetFreevars(PyCodeObject *code)
     return _PyCode_GetFreevars(code);
 }
 
+#ifdef _Py_TIER2
+
 static void
 clear_executors(PyCodeObject *co)
 {
     assert(co->co_executors);
     for (int i = 0; i < co->co_executors->size; i++) {
         if (co->co_executors->executors[i]) {
-            _Py_ExecutorClear(co->co_executors->executors[i]);
+            _Py_ExecutorDetach(co->co_executors->executors[i]);
+            assert(co->co_executors->executors[i] == NULL);
         }
     }
     PyMem_Free(co->co_executors);
@@ -1504,6 +1523,8 @@ _PyCode_Clear_Executors(PyCodeObject *code)
 {
     clear_executors(code);
 }
+
+#endif
 
 static void
 deopt_code(PyCodeObject *code, _Py_CODEUNIT *instructions)
@@ -1710,6 +1731,10 @@ code_dealloc(PyCodeObject *co)
     }
     Py_SET_REFCNT(co, 0);
 
+#ifdef Py_GIL_DISABLED
+    PyObject_GC_UnTrack(co);
+#endif
+
     _PyFunction_ClearCodeByVersion(co->co_version);
     if (co->co_extra != NULL) {
         PyInterpreterState *interp = _PyInterpreterState_GET();
@@ -1725,9 +1750,11 @@ code_dealloc(PyCodeObject *co)
 
         PyMem_Free(co_extra);
     }
+#ifdef _Py_TIER2
     if (co->co_executors != NULL) {
         clear_executors(co);
     }
+#endif
 
     Py_XDECREF(co->co_consts);
     Py_XDECREF(co->co_names);
@@ -1751,6 +1778,15 @@ code_dealloc(PyCodeObject *co)
     free_monitoring_data(co->_co_monitoring);
     PyObject_Free(co);
 }
+
+#ifdef Py_GIL_DISABLED
+static int
+code_traverse(PyCodeObject *co, visitproc visit, void *arg)
+{
+    Py_VISIT(co->co_consts);
+    return 0;
+}
+#endif
 
 static PyObject *
 code_repr(PyCodeObject *co)
@@ -2196,9 +2232,17 @@ PyTypeObject PyCode_Type = {
     PyObject_GenericGetAttr,            /* tp_getattro */
     0,                                  /* tp_setattro */
     0,                                  /* tp_as_buffer */
+#ifdef Py_GIL_DISABLED
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC, /* tp_flags */
+#else
     Py_TPFLAGS_DEFAULT,                 /* tp_flags */
+#endif
     code_new__doc__,                    /* tp_doc */
+#ifdef Py_GIL_DISABLED
+    (traverseproc)code_traverse,        /* tp_traverse */
+#else
     0,                                  /* tp_traverse */
+#endif
     0,                                  /* tp_clear */
     code_richcompare,                   /* tp_richcompare */
     offsetof(PyCodeObject, co_weakreflist),     /* tp_weaklistoffset */

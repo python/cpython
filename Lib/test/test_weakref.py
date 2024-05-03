@@ -10,12 +10,14 @@ import copy
 import threading
 import time
 import random
+import textwrap
 
 from test import support
-from test.support import script_helper, ALWAYS_EQ
+from test.support import script_helper, ALWAYS_EQ, suppress_immortalization
 from test.support import gc_collect
 from test.support import import_helper
 from test.support import threading_helper
+from test.support import is_wasi, Py_DEBUG
 
 # Used in ReferencesTestCase.test_ref_created_during_del() .
 ref_from_del = None
@@ -650,6 +652,7 @@ class ReferencesTestCase(TestBase):
         # deallocation of c2.
         del c2
 
+    @suppress_immortalization()
     def test_callback_in_cycle(self):
         import gc
 
@@ -742,6 +745,7 @@ class ReferencesTestCase(TestBase):
         del c1, c2, C, D
         gc.collect()
 
+    @suppress_immortalization()
     def test_callback_in_cycle_resurrection(self):
         import gc
 
@@ -877,6 +881,7 @@ class ReferencesTestCase(TestBase):
         # No exception should be raised here
         gc.collect()
 
+    @suppress_immortalization()
     def test_classes(self):
         # Check that classes are weakrefable.
         class A(object):
@@ -956,6 +961,7 @@ class ReferencesTestCase(TestBase):
         self.assertEqual(hash(a), hash(42))
         self.assertRaises(TypeError, hash, b)
 
+    @unittest.skipIf(is_wasi and Py_DEBUG, "requires deep stack")
     def test_trashcan_16602(self):
         # Issue #16602: when a weakref's target was part of a long
         # deallocation chain, the trashcan mechanism could delay clearing
@@ -1008,6 +1014,31 @@ class ReferencesTestCase(TestBase):
         ref1 = weakref.ref(x, lambda ref: support.gc_collect())
         del x
         support.gc_collect()
+
+    @support.cpython_only
+    def test_no_memory_when_clearing(self):
+        # gh-118331: Make sure we do not raise an exception from the destructor
+        # when clearing weakrefs if allocating the intermediate tuple fails.
+        code = textwrap.dedent("""
+        import _testcapi
+        import weakref
+
+        class TestObj:
+            pass
+
+        def callback(obj):
+            pass
+
+        obj = TestObj()
+        # The choice of 50 is arbitrary, but must be large enough to ensure
+        # the allocation won't be serviced by the free list.
+        wrs = [weakref.ref(obj, callback) for _ in range(50)]
+        _testcapi.set_nomemory(0)
+        del obj
+        """).strip()
+        res, _ = script_helper.run_python_until_end("-c", code)
+        stderr = res.err.decode("ascii", "backslashreplace")
+        self.assertNotRegex(stderr, "_Py_Dealloc: Deallocator of type 'TestObj'")
 
 
 class SubclassableWeakrefTestCase(TestBase):
@@ -1254,6 +1285,12 @@ class WeakMethodTestCase(unittest.TestCase):
 class MappingTestCase(TestBase):
 
     COUNT = 10
+
+    if support.check_sanitizer(thread=True) and support.Py_GIL_DISABLED:
+        # Reduce iteration count to get acceptable latency
+        NUM_THREADED_ITERATIONS = 1000
+    else:
+        NUM_THREADED_ITERATIONS = 100000
 
     def check_len_cycles(self, dict_type, cons):
         N = 20
@@ -1880,7 +1917,7 @@ class MappingTestCase(TestBase):
     def test_threaded_weak_valued_setdefault(self):
         d = weakref.WeakValueDictionary()
         with collect_in_thread():
-            for i in range(100000):
+            for i in range(self.NUM_THREADED_ITERATIONS):
                 x = d.setdefault(10, RefCycle())
                 self.assertIsNot(x, None)  # we never put None in there!
                 del x
@@ -1889,7 +1926,7 @@ class MappingTestCase(TestBase):
     def test_threaded_weak_valued_pop(self):
         d = weakref.WeakValueDictionary()
         with collect_in_thread():
-            for i in range(100000):
+            for i in range(self.NUM_THREADED_ITERATIONS):
                 d[10] = RefCycle()
                 x = d.pop(10, 10)
                 self.assertIsNot(x, None)  # we never put None in there!
@@ -1900,7 +1937,7 @@ class MappingTestCase(TestBase):
         # WeakValueDictionary when collecting from another thread.
         d = weakref.WeakValueDictionary()
         with collect_in_thread():
-            for i in range(200000):
+            for i in range(2 * self.NUM_THREADED_ITERATIONS):
                 o = RefCycle()
                 d[10] = o
                 # o is still alive, so the dict can't be empty

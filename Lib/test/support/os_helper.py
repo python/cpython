@@ -632,7 +632,8 @@ def fd_count():
     if hasattr(os, 'sysconf'):
         try:
             MAXFD = os.sysconf("SC_OPEN_MAX")
-        except OSError:
+        except (OSError, ValueError):
+            # gh-118201: ValueError is raised intermittently on iOS
             pass
 
     old_modes = None
