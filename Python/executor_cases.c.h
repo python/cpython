@@ -3094,12 +3094,12 @@
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
             }
-            if (!PyFunction_Check(((PyMethodObject *)callable)->im_func)) {
+            PyObject *func = ((PyMethodObject *)callable)->im_func;
+            if (!PyFunction_Check(func)) {
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
             }
-            PyFunctionObject *func = (PyFunctionObject *)callable;
-            if (func->func_version != func_version) {
+            if (((PyFunctionObject *)func)->func_version != func_version) {
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
             }

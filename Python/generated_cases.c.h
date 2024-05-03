@@ -1025,9 +1025,9 @@
             {
                 uint32_t func_version = read_u32(&this_instr[2].cache);
                 DEOPT_IF(Py_TYPE(callable) != &PyMethod_Type, CALL);
-                DEOPT_IF(!PyFunction_Check(((PyMethodObject *)callable)->im_func), CALL);
-                PyFunctionObject *func = (PyFunctionObject *)callable;
-                DEOPT_IF(func->func_version != func_version, CALL);
+                PyObject *func = ((PyMethodObject *)callable)->im_func;
+                DEOPT_IF(!PyFunction_Check(func), CALL);
+                DEOPT_IF(((PyFunctionObject *)func)->func_version != func_version, CALL);
                 DEOPT_IF(null != NULL, CALL);
             }
             // _EXPAND_METHOD

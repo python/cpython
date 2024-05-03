@@ -3186,9 +3186,9 @@ dummy_func(
 
         op(_CHECK_METHOD_VERSION, (func_version/2, callable, null, unused[oparg] -- callable, null, unused[oparg])) {
             EXIT_IF(Py_TYPE(callable) != &PyMethod_Type);
-            EXIT_IF(!PyFunction_Check(((PyMethodObject *)callable)->im_func));
-            PyFunctionObject *func = (PyFunctionObject *)callable;
-            EXIT_IF(func->func_version != func_version);
+            PyObject *func = ((PyMethodObject *)callable)->im_func;
+            EXIT_IF(!PyFunction_Check(func));
+            EXIT_IF(((PyFunctionObject *)func)->func_version != func_version);
             EXIT_IF(null != NULL);
         }
 
