@@ -3029,7 +3029,7 @@ class sysconf_confname_converter(path_confname_converter):
     converter="conv_sysconf_confname"
 
 [python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=b9dc54246b32902c]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=fe32fef4a3a19fe5]*/
 
 /*[clinic input]
 
