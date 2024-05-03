@@ -818,10 +818,7 @@ and :term:`generators <generator>` which incur interpreter overhead.
        return map(function, count(start))
 
    def repeatfunc(func, times=None, *args):
-       """Repeat calls to func with specified arguments.
-
-       Example:  repeatfunc(random.random)
-       """
+       "Repeat calls to func with specified arguments."
        if times is None:
            return starmap(func, repeat(args))
        return starmap(func, repeat(args, times))
@@ -843,10 +840,8 @@ and :term:`generators <generator>` which incur interpreter overhead.
        "Advance the iterator n-steps ahead. If n is None, consume entirely."
        # Use functions that consume iterators at C speed.
        if n is None:
-           # feed the entire iterator into a zero-length deque
            collections.deque(iterator, maxlen=0)
        else:
-           # advance to the empty slice starting at position n
            next(islice(iterator, n, n), None)
 
    def nth(iterable, n, default=None):
@@ -865,7 +860,7 @@ and :term:`generators <generator>` which incur interpreter overhead.
 
    def all_equal(iterable, key=None):
        "Returns True if all the elements are equal to each other."
-       # all_equal('4٤໔４৪', key=int) → True
+       # all_equal('4٤௪౪໔', key=int) → True
        return len(take(2, groupby(iterable, key))) <= 1
 
    def unique_justseen(iterable, key=None):
@@ -895,9 +890,9 @@ and :term:`generators <generator>` which incur interpreter overhead.
    def sliding_window(iterable, n):
        "Collect data into overlapping fixed-length chunks or blocks."
        # sliding_window('ABCDEFG', 4) → ABCD BCDE CDEF DEFG
-       it = iter(iterable)
-       window = collections.deque(islice(it, n-1), maxlen=n)
-       for x in it:
+       iterator = iter(iterable)
+       window = collections.deque(islice(iterator, n - 1), maxlen=n)
+       for x in iterator:
            window.append(x)
            yield tuple(window)
 
@@ -947,8 +942,8 @@ and :term:`generators <generator>` which incur interpreter overhead.
        seq_index = getattr(iterable, 'index', None)
        if seq_index is None:
            # Path for general iterables
-           it = islice(iterable, start, stop)
-           for i, element in enumerate(it, start):
+           iterator = islice(iterable, start, stop)
+           for i, element in enumerate(iterator, start):
                if element is value or element == value:
                    yield i
        else:
@@ -963,10 +958,7 @@ and :term:`generators <generator>` which incur interpreter overhead.
                pass
 
    def iter_except(func, exception, first=None):
-       """ Call a function repeatedly until an exception is raised.
-
-       Converts a call-until-exception interface to an iterator interface.
-       """
+       "Convert a call-until-exception interface to an iterator interface."
        # iter_except(d.popitem, KeyError) → non-blocking dictionary iterator
        try:
            if first is not None:
@@ -1066,14 +1058,10 @@ The following recipes have a more mathematical flavor:
        # sieve(30) → 2 3 5 7 11 13 17 19 23 29
        if n > 2:
            yield 2
-       start = 3
        data = bytearray((0, 1)) * (n // 2)
-       limit = math.isqrt(n) + 1
-       for p in iter_index(data, 1, start, limit):
-           yield from iter_index(data, 1, start, p*p)
+       for p in iter_index(data, 1, start=3, stop=math.isqrt(n) + 1):
            data[p*p : n : p+p] = bytes(len(range(p*p, n, p+p)))
-           start = p*p
-       yield from iter_index(data, 1, start)
+       yield from iter_index(data, 1, start=3)
 
    def factor(n):
        "Prime factors of n."
@@ -1093,8 +1081,8 @@ The following recipes have a more mathematical flavor:
        "Count of natural numbers up to n that are coprime to n."
        # https://mathworld.wolfram.com/TotientFunction.html
        # totient(12) → 4 because len([1, 5, 7, 11]) == 4
-       for p in unique_justseen(factor(n)):
-           n -= n // p
+       for prime in set(factor(n)):
+           n -= n // prime
        return n
 
 
