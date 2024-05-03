@@ -496,7 +496,7 @@ loops that truncate the stream.
    data where the internal structure has been flattened (for example, a
    multi-line report may list a name field on every third line).
 
-   Rough equivalent without error checking for negative indices or *step*
+   Rough equivalent without error checking for negative indices or a *step*
    size of zero::
 
       def islice(iterable, *args):
