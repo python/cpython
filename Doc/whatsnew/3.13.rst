@@ -89,6 +89,8 @@ Interpreter improvements:
 
 New typing features:
 
+* :pep:`696`: Type parameters (:data:`typing.TypeVar`, :data:`typing.ParamSpec`,
+  and :data:`typing.TypeVarTuple`) now support defaults.
 * :pep:`742`: :data:`typing.TypeIs` was added, providing more intuitive
   type narrowing behavior.
 
@@ -100,9 +102,17 @@ Improved Error Messages
 
 * The interpreter now colorizes error messages when displaying tracebacks by default.
   This feature can be controlled via the new :envvar:`PYTHON_COLORS` environment
-  variable as well as the canonical ``NO_COLOR`` and ``FORCE_COLOR`` environment
+  variable as well as the canonical |NO_COLOR|_ and |FORCE_COLOR|_ environment
   variables. See also :ref:`using-on-controlling-color`.
   (Contributed by Pablo Galindo Salgado in :gh:`112730`.)
+
+.. Apparently this how you hack together a formatted link:
+
+.. |FORCE_COLOR| replace:: ``FORCE_COLOR``
+.. _FORCE_COLOR: https://force-color.org/
+
+.. |NO_COLOR| replace:: ``NO_COLOR``
+.. _NO_COLOR: https://no-color.org/
 
 * A common mistake is to write a script with the same name as a
   standard library module. When this results in errors, we now
@@ -276,7 +286,13 @@ Other Language Changes
   (Contributed by Pedro Sousa Lacerda in :gh:`66449`.)
 
 * :ref:`annotation scope <annotation-scopes>` within class scopes can now
-  contain lambdas. (Contributed by Jelle Zijlstra in :gh:`109118`.)
+  contain lambdas and comprehensions. Comprehensions that are located within
+  class scopes are not inlined into their parent scope. (Contributed by
+  Jelle Zijlstra in :gh:`109118` and :gh:`118160`.)
+
+* ``from __future__ import ...`` statements are now just normal
+  relative imports if dots are present before the module name.
+  (Contributed by Jeremiah Gabriel Pascual in :gh:`118216`.)
 
 
 New Modules
@@ -436,6 +452,12 @@ doctest
   tests. Add :attr:`doctest.DocTestRunner.skips` and
   :attr:`doctest.TestResults.skipped` attributes.
   (Contributed by Victor Stinner in :gh:`108794`.)
+
+* Color is added to the output by default.
+  This can be controlled via the new :envvar:`PYTHON_COLORS` environment
+  variable as well as the canonical |NO_COLOR|_ and |FORCE_COLOR|_ environment
+  variables. See also :ref:`using-on-controlling-color`.
+  (Contributed by Hugo van Kemenade in :gh:`117225`.)
 
 email
 -----
@@ -685,6 +707,9 @@ pdb
   command line option or :envvar:`PYTHONSAFEPATH` environment variable).
   (Contributed by Tian Gao and Christian Walther in :gh:`111762`.)
 
+* :mod:`zipapp` is supported as a debugging target.
+  (Contributed by Tian Gao in :gh:`118501`.)
+
 queue
 -----
 
@@ -791,6 +816,9 @@ tkinter
   :class:`tkinter.ttk.Style`.
   (Contributed by Serhiy Storchaka in :gh:`68166`.)
 
+* Add the :meth:`!after_info` method for Tkinter widgets.
+  (Contributed by Cheryl Sabella in :gh:`77020`.)
+
 traceback
 ---------
 
@@ -823,6 +851,10 @@ typing
 * Add :data:`typing.ReadOnly`, a special typing construct to mark
   an item of a :class:`typing.TypedDict` as read-only for type checkers.
   See :pep:`705` for more details.
+
+* Add :data:`typing.NoDefault`, a sentinel object used to represent the defaults
+  of some parameters in the :mod:`typing` module. (Contributed by Jelle Zijlstra in
+  :gh:`116126`.)
 
 unicodedata
 -----------
@@ -883,7 +915,7 @@ Experimental JIT Compiler
 =========================
 
 When CPython is configured using the ``--enable-experimental-jit`` option,
-a just-in-time compiler is added which can speed up some Python programs.
+a just-in-time compiler is added which may speed up some Python programs.
 
 The internal architecture is roughly as follows.
 
@@ -900,18 +932,35 @@ The internal architecture is roughly as follows.
   before it is interpreted or translated to machine code.
 
 * There is a Tier 2 interpreter, but it is mostly intended for debugging
-  the earlier stages of the optimization pipeline. If the JIT is not
-  enabled, the Tier 2 interpreter can be invoked by passing Python the
-  ``-X uops`` option or by setting the ``PYTHON_UOPS`` environment
-  variable to ``1``.
+  the earlier stages of the optimization pipeline.
+  The Tier 2 interpreter can be enabled by configuring Python
+  with ``--enable-experimental-jit=interpreter``.
 
-* When the ``--enable-experimental-jit`` option is used, the optimized
+* When the JIT is enabled, the optimized
   Tier 2 IR is translated to machine code, which is then executed.
-  This does not require additional runtime options.
 
 * The machine code translation process uses an architecture called
   *copy-and-patch*. It has no runtime dependencies, but there is a new
   build-time dependency on LLVM.
+
+The ``--enable-experimental-jit`` flag has the following optional values:
+
+* ``no`` (default) -- Disable the entire Tier 2 and JIT pipeline.
+
+* ``yes`` (default if the flag is present without optional value)
+  -- Enable the JIT. To disable the JIT at runtime,
+  pass the environment variable ``PYTHON_JIT=0``.
+
+* ``yes-off`` -- Build the JIT but disable it by default.
+  To enable the JIT at runtime, pass the environment variable
+  ``PYTHON_JIT=1``.
+
+* ``interpreter`` -- Enable the Tier 2 interpreter but disable the JIT.
+  The interpreter can be disabled by running with
+  ``PYTHON_JIT=0``.
+
+(On Windows, use ``PCbuild/build.bat --experimental-jit`` to enable the JIT
+or ``--experimental-jit-interpreter`` to enable the Tier 2 interpreter.)
 
 See :pep:`744` for more details.
 
@@ -1432,7 +1481,10 @@ PEP 594: dead batteries
     * :pypi:`argon2-cffi`:
       The secure Argon2 password hashing algorithm.
     * :pypi:`legacycrypt`:
-      Wrapper to the POSIX crypt library call and associated functionality.
+      :mod:`ctypes` wrapper to the POSIX crypt library call and associated functionality.
+    * :pypi:`crypt_r`:
+      Fork of the :mod:`!crypt` module, wrapper to the :manpage:`crypt_r(3)` library
+      call and associated functionality.
 
     (Contributed by Victor Stinner in :gh:`104773`.)
 
@@ -1877,9 +1929,15 @@ New Features
 
   * :c:type:`PyTime_t` type.
   * :c:var:`PyTime_MIN` and :c:var:`PyTime_MAX` constants.
-  * :c:func:`PyTime_AsSecondsDouble`
-    :c:func:`PyTime_Monotonic`, :c:func:`PyTime_PerfCounter`, and
-    :c:func:`PyTime_Time` functions.
+  * Add functions:
+
+    * :c:func:`PyTime_AsSecondsDouble`.
+    * :c:func:`PyTime_Monotonic`.
+    * :c:func:`PyTime_MonotonicRaw`.
+    * :c:func:`PyTime_PerfCounter`.
+    * :c:func:`PyTime_PerfCounterRaw`.
+    * :c:func:`PyTime_Time`.
+    * :c:func:`PyTime_TimeRaw`.
 
   (Contributed by Victor Stinner and Petr Viktorin in :gh:`110850`.)
 
@@ -1911,6 +1969,11 @@ New Features
 
 * Add :c:func:`PyType_GetModuleByDef` to the limited C API
   (Contributed by Victor Stinner in :gh:`116936`.)
+
+* Add two new functions to the C-API, :c:func:`PyRefTracer_SetTracer` and
+  :c:func:`PyRefTracer_GetTracer`, that allows to track object creation and
+  destruction the same way the :mod:`tracemalloc` module does. (Contributed
+  by Pablo Galindo in :gh:`93502`.)
 
 
 Porting to Python 3.13

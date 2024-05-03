@@ -1,4 +1,5 @@
 """Utilities for writing StencilGroups out to a C header file."""
+
 import typing
 
 import _schema
@@ -53,8 +54,12 @@ def _dump_footer(opnames: typing.Iterable[str]) -> typing.Iterator[str]:
     yield ""
     yield "static const StencilGroup stencil_groups[512] = {"
     for opname in opnames:
+        if opname == "trampoline":
+            continue
         yield f"    [{opname}] = INIT_STENCIL_GROUP({opname}),"
     yield "};"
+    yield ""
+    yield "static const StencilGroup trampoline = INIT_STENCIL_GROUP(trampoline);"
     yield ""
     yield "#define GET_PATCHES() { \\"
     for value in _stencils.HoleValue:
