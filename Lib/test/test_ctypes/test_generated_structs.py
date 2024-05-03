@@ -664,4 +664,3 @@ if __name__ == '__main__':
         #undef SET_AND_APPEND
         #undef APPEND
     """)
-
