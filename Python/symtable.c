@@ -2276,6 +2276,24 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
 }
 
 static int
+symtable_visit_type_param_bound_or_default(struct symtable *st, expr_ty e, identifier name, void *key)
+{
+    if (e) {
+        int is_in_class = st->st_cur->ste_can_see_class_scope;
+        if (!symtable_enter_block(st, name, TypeVarBoundBlock, key, LOCATION(e)))
+            return 0;
+        st->st_cur->ste_can_see_class_scope = is_in_class;
+        if (is_in_class && !symtable_add_def(st, &_Py_ID(__classdict__), USE, LOCATION(e))) {
+            VISIT_QUIT(st, 0);
+        }
+        VISIT(st, expr, e);
+        if (!symtable_exit_block(st))
+            return 0;
+    }
+    return 1;
+}
+
+static int
 symtable_visit_type_param(struct symtable *st, type_param_ty tp)
 {
     if (++st->recursion_depth > st->recursion_limit) {
@@ -2287,28 +2305,39 @@ symtable_visit_type_param(struct symtable *st, type_param_ty tp)
     case TypeVar_kind:
         if (!symtable_add_def(st, tp->v.TypeVar.name, DEF_TYPE_PARAM | DEF_LOCAL, LOCATION(tp)))
             VISIT_QUIT(st, 0);
-        if (tp->v.TypeVar.bound) {
-            int is_in_class = st->st_cur->ste_can_see_class_scope;
-            if (!symtable_enter_block(st, tp->v.TypeVar.name,
-                                      TypeVarBoundBlock, (void *)tp,
-                                      LOCATION(tp)))
-                VISIT_QUIT(st, 0);
-            st->st_cur->ste_can_see_class_scope = is_in_class;
-            if (is_in_class && !symtable_add_def(st, &_Py_ID(__classdict__), USE, LOCATION(tp->v.TypeVar.bound))) {
-                VISIT_QUIT(st, 0);
-            }
-            VISIT(st, expr, tp->v.TypeVar.bound);
-            if (!symtable_exit_block(st))
-                VISIT_QUIT(st, 0);
+
+        // We must use a different key for the bound and default. The obvious choice would be to
+        // use the .bound and .default_value pointers, but that fails when the expression immediately
+        // inside the bound or default is a comprehension: we would reuse the same key for
+        // the comprehension scope. Therefore, use the address + 1 as the second key.
+        // The only requirement for the key is that it is unique and it matches the logic in
+        // compile.c where the scope is retrieved.
+        if (!symtable_visit_type_param_bound_or_default(st, tp->v.TypeVar.bound, tp->v.TypeVar.name,
+                                                        (void *)tp)) {
+            VISIT_QUIT(st, 0);
+        }
+        if (!symtable_visit_type_param_bound_or_default(st, tp->v.TypeVar.default_value, tp->v.TypeVar.name,
+                                                        (void *)((uintptr_t)tp + 1))) {
+            VISIT_QUIT(st, 0);
         }
         break;
     case TypeVarTuple_kind:
-        if (!symtable_add_def(st, tp->v.TypeVarTuple.name, DEF_TYPE_PARAM | DEF_LOCAL, LOCATION(tp)))
+        if (!symtable_add_def(st, tp->v.TypeVarTuple.name, DEF_TYPE_PARAM | DEF_LOCAL, LOCATION(tp))) {
             VISIT_QUIT(st, 0);
+        }
+        if (!symtable_visit_type_param_bound_or_default(st, tp->v.TypeVarTuple.default_value, tp->v.TypeVarTuple.name,
+                                                        (void *)tp)) {
+            VISIT_QUIT(st, 0);
+        }
         break;
     case ParamSpec_kind:
-        if (!symtable_add_def(st, tp->v.ParamSpec.name, DEF_TYPE_PARAM | DEF_LOCAL, LOCATION(tp)))
+        if (!symtable_add_def(st, tp->v.ParamSpec.name, DEF_TYPE_PARAM | DEF_LOCAL, LOCATION(tp))) {
             VISIT_QUIT(st, 0);
+        }
+        if (!symtable_visit_type_param_bound_or_default(st, tp->v.ParamSpec.default_value, tp->v.ParamSpec.name,
+                                                        (void *)tp)) {
+            VISIT_QUIT(st, 0);
+        }
         break;
     }
     VISIT_QUIT(st, 1);
