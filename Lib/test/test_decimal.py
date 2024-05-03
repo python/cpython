@@ -4719,6 +4719,19 @@ class PyWhitebox(unittest.TestCase):
             c.prec = 201
             x = Decimal(2**578) ** Decimal("-0.5")
 
+            # See https://github.com/python/cpython/issues/118027
+            # Testing for an exact power could appear to hang, in the Python
+            # version, as it attempted to compute 10**MAX_EMAX.
+            # Fixed via https://github.com/python/cpython/pull/118503.
+            c.prec = P.MAX_PREC
+            c.Emax = P.MAX_EMAX
+            c.Emin = P.MIN_EMIN
+            c.traps[P.Inexact] = 1
+            D2 = Decimal(2)
+            # If the bug is still present, the next statement won't complete.
+            res = D2 ** 117
+            self.assertEqual(res, 1 << 117)
+
     def test_py_immutability_operations(self):
         # Do operations and check that it didn't change internal objects.
         Decimal = P.Decimal
@@ -5704,21 +5717,6 @@ class CWhitebox(unittest.TestCase):
         self.assertEqual(format(y, '#.1f'), '6.1')
         with C.localcontext(rounding=C.ROUND_DOWN):
             self.assertEqual(format(y, '#.1f'), '6.0')
-
-    def test_python_hang_in_exact_power(self):
-        # See https://github.com/python/cpython/issues/118027
-        # Testing for an exact power could appear to hang, in the Python
-        # version, as it attempted to compute 10**MAX_EMAX.
-        # Fixed via https://github.com/python/cpython/pull/118503.
-        with P.localcontext() as ctx:
-            ctx.prec = P.MAX_PREC
-            ctx.Emax = P.MAX_EMAX
-            ctx.Emin = P.MIN_EMIN
-            ctx.traps[P.Inexact] = 1
-            D2 = P.Decimal(2)
-            # If the bug is still present, the next statement won't complete
-            res = D2 ** 117
-            self.assertEqual(res, 1 << 117)
 
 @requires_docstrings
 @requires_cdecimal
