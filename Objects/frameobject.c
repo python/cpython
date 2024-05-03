@@ -654,13 +654,7 @@ frame_getlocals(PyFrameObject *f, void *closure)
     }
     assert(!_PyFrame_IsIncomplete(f->f_frame));
 
-    PyCodeObject* co = PyFrame_GetCode(f);
-
-    if (!(co->co_flags & CO_OPTIMIZED)) {
-        return Py_NewRef(f->f_frame->f_locals);
-    }
-
-    return _PyFrameLocalsProxy_New(f);
+    return _PyFrame_GetLocals(f->f_frame);
 }
 
 int
@@ -1812,20 +1806,19 @@ frame_get_var(_PyInterpreterFrame *frame, PyCodeObject *co, int i,
 
 
 static bool
-frame_hashiddenlocals(_PyInterpreterFrame *frame)
+frame_hashiddenlocals(PyFrameObject *frame)
 {
     /*
      * This function returns all the hidden locals introduced by PEP 709,
      * which are the isolated fast locals for inline comprehensions
      */
-    PyFrameObject* f = _PyFrame_GetFrameObject(frame);
-    PyCodeObject* co = _PyFrame_GetCode(frame);
+    PyCodeObject* co = PyFrame_GetCode(frame);
 
     for (int i = 0; i < co->co_nlocalsplus; i++) {
         _PyLocals_Kind kind = _PyLocals_GetKind(co->co_localspluskinds, i);
 
         if (kind & CO_FAST_HIDDEN) {
-            PyObject* value = framelocalsproxy_getval(f, co, i);
+            PyObject* value = framelocalsproxy_getval(frame, co, i);
 
             if (value != NULL) {
                 return true;
@@ -1843,7 +1836,7 @@ _PyFrame_GetLocals(_PyInterpreterFrame *frame)
     PyCodeObject* co = _PyFrame_GetCode(frame);
     PyFrameObject* f = _PyFrame_GetFrameObject(frame);
 
-    if (!(co->co_flags & CO_OPTIMIZED) && !frame_hashiddenlocals(frame)) {
+    if (!(co->co_flags & CO_OPTIMIZED) && !frame_hashiddenlocals(f)) {
         return Py_NewRef(frame->f_locals);
     }
 
