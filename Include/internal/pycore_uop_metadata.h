@@ -91,6 +91,7 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_GET_AITER] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_GET_ANEXT] = HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
     [_GET_AWAITABLE] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
+    [_YIELD_VALUE] = HAS_ARG_FLAG | HAS_ESCAPES_FLAG,
     [_POP_EXCEPT] = HAS_ESCAPES_FLAG,
     [_LOAD_ASSERTION_ERROR] = 0,
     [_LOAD_BUILD_CLASS] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
@@ -232,7 +233,7 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_GUARD_IS_FALSE_POP] = HAS_EXIT_FLAG,
     [_GUARD_IS_NONE_POP] = HAS_EXIT_FLAG,
     [_GUARD_IS_NOT_NONE_POP] = HAS_EXIT_FLAG,
-    [_JUMP_TO_TOP] = HAS_EVAL_BREAK_FLAG,
+    [_JUMP_TO_TOP] = 0,
     [_SET_IP] = 0,
     [_CHECK_STACK_SPACE_OPERAND] = HAS_DEOPT_FLAG,
     [_SAVE_RETURN_OFFSET] = HAS_ARG_FLAG,
@@ -248,13 +249,12 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_COLD_EXIT] = HAS_ARG_FLAG | HAS_ESCAPES_FLAG,
     [_DYNAMIC_EXIT] = HAS_ARG_FLAG | HAS_ESCAPES_FLAG,
     [_START_EXECUTOR] = HAS_DEOPT_FLAG,
-    [_FATAL_ERROR] = HAS_ESCAPES_FLAG,
+    [_FATAL_ERROR] = 0,
     [_CHECK_VALIDITY_AND_SET_IP] = HAS_DEOPT_FLAG,
     [_DEOPT] = 0,
     [_SIDE_EXIT] = 0,
     [_ERROR_POP_N] = HAS_ARG_FLAG,
-    [_TIER2_RESUME_CHECK] = HAS_EXIT_FLAG,
-    [_EVAL_BREAKER_EXIT] = HAS_ESCAPES_FLAG,
+    [_TIER2_RESUME_CHECK] = HAS_DEOPT_FLAG,
 };
 
 const uint8_t _PyUop_Replication[MAX_UOP_ID+1] = {
@@ -338,7 +338,6 @@ const char *const _PyOpcode_uop_name[MAX_UOP_ID+1] = {
     [_DYNAMIC_EXIT] = "_DYNAMIC_EXIT",
     [_END_SEND] = "_END_SEND",
     [_ERROR_POP_N] = "_ERROR_POP_N",
-    [_EVAL_BREAKER_EXIT] = "_EVAL_BREAKER_EXIT",
     [_EXIT_INIT_CHECK] = "_EXIT_INIT_CHECK",
     [_EXIT_TRACE] = "_EXIT_TRACE",
     [_FATAL_ERROR] = "_FATAL_ERROR",
@@ -500,6 +499,7 @@ const char *const _PyOpcode_uop_name[MAX_UOP_ID+1] = {
     [_UNPACK_SEQUENCE_TUPLE] = "_UNPACK_SEQUENCE_TUPLE",
     [_UNPACK_SEQUENCE_TWO_TUPLE] = "_UNPACK_SEQUENCE_TWO_TUPLE",
     [_WITH_EXCEPT_START] = "_WITH_EXCEPT_START",
+    [_YIELD_VALUE] = "_YIELD_VALUE",
 };
 int _PyUop_num_popped(int opcode, int oparg)
 {
@@ -647,6 +647,8 @@ int _PyUop_num_popped(int opcode, int oparg)
         case _GET_ANEXT:
             return 1;
         case _GET_AWAITABLE:
+            return 1;
+        case _YIELD_VALUE:
             return 1;
         case _POP_EXCEPT:
             return 1;
@@ -973,8 +975,6 @@ int _PyUop_num_popped(int opcode, int oparg)
         case _ERROR_POP_N:
             return oparg;
         case _TIER2_RESUME_CHECK:
-            return 0;
-        case _EVAL_BREAKER_EXIT:
             return 0;
         default:
             return -1;

@@ -2179,8 +2179,10 @@ def _signature_is_builtin(obj):
             ismethoddescriptor(obj) or
             isinstance(obj, _NonUserDefinedCallables) or
             # Can't test 'isinstance(type)' here, as it would
-            # also be True for regular python classes
-            obj in (type, object))
+            # also be True for regular python classes.
+            # Can't use the `in` operator here, as it would
+            # invoke the custom __eq__ method.
+            obj is type or obj is object)
 
 
 def _signature_is_functionlike(obj):
@@ -2283,7 +2285,12 @@ def _signature_fromstr(cls, obj, s, skip_bound_arg=True):
 
     module = None
     module_dict = {}
+
     module_name = getattr(obj, '__module__', None)
+    if not module_name:
+        objclass = getattr(obj, '__objclass__', None)
+        module_name = getattr(objclass, '__module__', None)
+
     if module_name:
         module = sys.modules.get(module_name, None)
         if module:

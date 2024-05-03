@@ -653,8 +653,10 @@ init_interpreter(PyInterpreterState *interp,
     }
     interp->sys_profile_initialized = false;
     interp->sys_trace_initialized = false;
+#ifdef _Py_TIER2
     (void)_Py_SetOptimizer(interp, NULL);
     interp->executor_list_head = NULL;
+#endif
     if (interp != &runtime->_main_interpreter) {
         /* Fix the self-referential, statically initialized fields. */
         interp->dtoa = (struct _dtoa_state)_dtoa_state_INIT(interp);
@@ -806,9 +808,11 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
         tstate->_status.cleared = 0;
     }
 
+#ifdef _Py_TIER2
     _PyOptimizerObject *old = _Py_SetOptimizer(interp, NULL);
     assert(old != NULL);
     Py_DECREF(old);
+#endif
 
     /* It is possible that any of the objects below have a finalizer
        that runs Python code or otherwise relies on a thread state
@@ -839,9 +843,7 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
     }
 
     PyConfig_Clear(&interp->config);
-    Py_CLEAR(interp->codec_search_path);
-    Py_CLEAR(interp->codec_search_cache);
-    Py_CLEAR(interp->codec_error_registry);
+    _PyCodec_Fini(interp);
 
     assert(interp->imports.modules == NULL);
     assert(interp->imports.modules_by_index == NULL);
@@ -2238,7 +2240,8 @@ stop_the_world(struct _stoptheworld_state *stw)
         }
 
         PyTime_t wait_ns = 1000*1000;  // 1ms (arbitrary, may need tuning)
-        if (PyEvent_WaitTimed(&stw->stop_event, wait_ns)) {
+        int detach = 0;
+        if (PyEvent_WaitTimed(&stw->stop_event, wait_ns, detach)) {
             assert(stw->thread_countdown == 0);
             break;
         }
@@ -2820,9 +2823,11 @@ _PyInterpreterState_SetEvalFrameFunc(PyInterpreterState *interp,
     if (eval_frame == interp->eval_frame) {
         return;
     }
+#ifdef _Py_TIER2
     if (eval_frame != NULL) {
         _Py_Executors_InvalidateAll(interp, 1);
     }
+#endif
     RARE_EVENT_INC(set_eval_frame_func);
     interp->eval_frame = eval_frame;
 }
