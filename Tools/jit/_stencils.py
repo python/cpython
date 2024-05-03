@@ -100,6 +100,7 @@ _HOLE_EXPRS = {
     HoleValue.CONTINUE: "(uintptr_t)code + sizeof(code_body)",
     HoleValue.DATA: "(uintptr_t)data",
     HoleValue.EXECUTOR: "(uintptr_t)executor",
+    # These should all have been turned into DATA values by process_relocations:
     # HoleValue.GOT: "",
     HoleValue.OPARG: "instruction->oparg",
     HoleValue.OPERAND: "instruction->operand",
