@@ -141,7 +141,7 @@ class RebindBuiltinsTests(unittest.TestCase):
                 return int(key.removeprefix("_number_"))
 
         # Need more than 256 variables to use EXTENDED_ARGS
-        variables = 400
+        variables = 300
         code = "lambda: " + "+".join(f"_number_{i}" for i in range(variables))
         sum_func = eval(code, MyGlobals())
         expected = sum(range(variables))
