@@ -1578,11 +1578,11 @@
             break;
         }
 
-        case _CHECK_IS_FUNCTION: {
+        case _CHECK_FUNCTION_VERSION: {
             break;
         }
 
-        case _CHECK_IS_METHOD: {
+        case _CHECK_METHOD_VERSION: {
             break;
         }
 

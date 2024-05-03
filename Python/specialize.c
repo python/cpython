@@ -1877,13 +1877,13 @@ specialize_py_call(PyFunctionObject *func, _Py_CODEUNIT *instr, int nargs,
     if (kind == SIMPLE_FUNCTION) {
         argcount = code->co_argcount;
     }
+    int version = _PyFunction_GetVersionForCurrentState(func);
+    if (version == 0) {
+        SPECIALIZATION_FAIL(CALL, SPEC_FAIL_OUT_OF_VERSIONS);
+        return -1;
+    }
+    write_u32(cache->func_version, version);
     if (argcount == nargs + bound_method) {
-        int version = _PyFunction_GetVersionForCurrentState(func);
-        if (version == 0) {
-            SPECIALIZATION_FAIL(CALL, SPEC_FAIL_OUT_OF_VERSIONS);
-            return -1;
-        }
-        write_u32(cache->func_version, version);
         instr->op.code = bound_method ? CALL_BOUND_METHOD_EXACT_ARGS : CALL_PY_EXACT_ARGS;
     }
     else {

@@ -3171,22 +3171,26 @@ dummy_func(
             frame->return_offset = (uint16_t)(1 + INLINE_CACHE_ENTRIES_CALL);
         }
 
-        op(_CHECK_IS_FUNCTION, (callable, unused, unused[oparg] -- callable, unused, unused[oparg])) {
-            DEOPT_IF(!PyFunction_Check(callable));
+        op(_CHECK_FUNCTION_VERSION, (func_version/2, callable, unused, unused[oparg] -- callable, unused, unused[oparg])) {
+            EXIT_IF(!PyFunction_Check(callable));
+            PyFunctionObject *func = (PyFunctionObject *)callable;
+            EXIT_IF(func->func_version != func_version);
         }
+
 
         macro(CALL_PY_GENERAL) =
             unused/1 + // Skip over the counter
-            unused/2 +
             _CHECK_PEP_523 +
-            _CHECK_IS_FUNCTION +
+            _CHECK_FUNCTION_VERSION +
             _CALL_PY_GENERAL +
             _PUSH_FRAME;
 
-        op(_CHECK_IS_METHOD, (callable, null, unused[oparg] -- callable, null, unused[oparg])) {
-            DEOPT_IF(Py_TYPE(callable) != &PyMethod_Type);
-            DEOPT_IF(!PyFunction_Check(((PyMethodObject *)callable)->im_func));
-            DEOPT_IF(null != NULL);
+        op(_CHECK_METHOD_VERSION, (func_version/2, callable, null, unused[oparg] -- callable, null, unused[oparg])) {
+            EXIT_IF(Py_TYPE(callable) != &PyMethod_Type);
+            EXIT_IF(!PyFunction_Check(((PyMethodObject *)callable)->im_func));
+            PyFunctionObject *func = (PyFunctionObject *)callable;
+            EXIT_IF(func->func_version != func_version);
+            EXIT_IF(null != NULL);
         }
 
         op(_EXPAND_METHOD, (callable, null, unused[oparg] -- method, self, unused[oparg])) {
@@ -3203,9 +3207,8 @@ dummy_func(
 
         macro(CALL_BOUND_METHOD_GENERAL) =
             unused/1 + // Skip over the counter
-            unused/2 +
             _CHECK_PEP_523 +
-            _CHECK_IS_METHOD +
+            _CHECK_METHOD_VERSION +
             _EXPAND_METHOD +
             _CALL_PY_GENERAL +
             _PUSH_FRAME;

@@ -1003,7 +1003,7 @@
         }
 
         TARGET(CALL_BOUND_METHOD_GENERAL) {
-            frame->instr_ptr = next_instr;
+            _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
             next_instr += 4;
             INSTRUCTION_STATS(CALL_BOUND_METHOD_GENERAL);
             static_assert(INLINE_CACHE_ENTRIES_CALL == 3, "incorrect cache size");
@@ -1015,17 +1015,19 @@
             PyObject *self_or_null;
             _PyInterpreterFrame *new_frame;
             /* Skip 1 cache entry */
-            /* Skip 2 cache entries */
             // _CHECK_PEP_523
             {
                 DEOPT_IF(tstate->interp->eval_frame, CALL);
             }
-            // _CHECK_IS_METHOD
+            // _CHECK_METHOD_VERSION
             null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
             {
+                uint32_t func_version = read_u32(&this_instr[2].cache);
                 DEOPT_IF(Py_TYPE(callable) != &PyMethod_Type, CALL);
                 DEOPT_IF(!PyFunction_Check(((PyMethodObject *)callable)->im_func), CALL);
+                PyFunctionObject *func = (PyFunctionObject *)callable;
+                DEOPT_IF(func->func_version != func_version, CALL);
                 DEOPT_IF(null != NULL, CALL);
             }
             // _EXPAND_METHOD
@@ -1918,7 +1920,7 @@
         }
 
         TARGET(CALL_PY_GENERAL) {
-            frame->instr_ptr = next_instr;
+            _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
             next_instr += 4;
             INSTRUCTION_STATS(CALL_PY_GENERAL);
             static_assert(INLINE_CACHE_ENTRIES_CALL == 3, "incorrect cache size");
@@ -1927,15 +1929,17 @@
             PyObject *self_or_null;
             _PyInterpreterFrame *new_frame;
             /* Skip 1 cache entry */
-            /* Skip 2 cache entries */
             // _CHECK_PEP_523
             {
                 DEOPT_IF(tstate->interp->eval_frame, CALL);
             }
-            // _CHECK_IS_FUNCTION
+            // _CHECK_FUNCTION_VERSION
             callable = stack_pointer[-2 - oparg];
             {
+                uint32_t func_version = read_u32(&this_instr[2].cache);
                 DEOPT_IF(!PyFunction_Check(callable), CALL);
+                PyFunctionObject *func = (PyFunctionObject *)callable;
+                DEOPT_IF(func->func_version != func_version, CALL);
             }
             // _CALL_PY_GENERAL
             args = &stack_pointer[-oparg];
