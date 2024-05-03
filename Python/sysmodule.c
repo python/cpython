@@ -2393,6 +2393,25 @@ sys__get_cpu_count_config_impl(PyObject *module)
     return config->cpu_count;
 }
 
+/*[clinic input]
+sys._is_gil_enabled -> bool
+
+Return True if the GIL is currently enabled and False otherwise.
+[clinic start generated code]*/
+
+static int
+sys__is_gil_enabled_impl(PyObject *module)
+/*[clinic end generated code: output=57732cf53f5b9120 input=7e9c47f15a00e809]*/
+{
+#ifdef Py_GIL_DISABLED
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    return interp->ceval.gil->enabled;
+#else
+    return 1;
+#endif
+}
+
+
 static PerfMapState perf_map_state;
 
 PyAPI_FUNC(int) PyUnstable_PerfMapState_Init(void) {
@@ -2565,6 +2584,7 @@ static PyMethodDef sys_methods[] = {
     SYS__STATS_DUMP_METHODDEF
 #endif
     SYS__GET_CPU_COUNT_CONFIG_METHODDEF
+    SYS__IS_GIL_ENABLED_METHODDEF
     {NULL, NULL}  // sentinel
 };
 

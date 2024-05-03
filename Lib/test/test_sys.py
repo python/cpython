@@ -1053,6 +1053,12 @@ class SysModuleTest(unittest.TestCase):
         c = sys.getallocatedblocks()
         self.assertIn(c, range(b - 50, b + 50))
 
+    def test_is_gil_enabled(self):
+        if support.Py_GIL_DISABLED:
+            self.assertIs(type(sys._is_gil_enabled()), bool)
+        else:
+            self.assertTrue(sys._is_gil_enabled())
+
     def test_is_finalizing(self):
         self.assertIs(sys.is_finalizing(), False)
         # Don't use the atexit module because _Py_Finalizing is only set
