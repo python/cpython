@@ -404,6 +404,12 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
         out, err = self.run_embedded_interpreter("test_repeated_init_exec", code)
         self.assertEqual(out, '9\n' * INIT_LOOPS)
 
+    def test_datetime_type_dict(self):
+        # Test use-after-free of unicode keys in tp_dict
+        code = "import datetime; print(datetime.date.min)"
+        out, err = self.run_embedded_interpreter("test_repeated_init_exec", code)
+        self.assertEqual(out, '0001-01-01\n'* INIT_LOOPS)
+
 
 @unittest.skipIf(_testinternalcapi is None, "requires _testinternalcapi")
 class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
