@@ -1630,9 +1630,9 @@ reload_singlephase_extension(PyThreadState *tstate,
         }
         /* We can't set mod->md_def if it's missing,
          * because _PyImport_ClearModulesByIndex() might break
-         * due to violating interpreter isolation.  See the note
-         * in fix_up_extension_for_interpreter().  Until that
-         * is solved, we leave md_def set to NULL. */
+         * due to violating interpreter isolation.
+         * See the note in set_cached_m_dict().
+         * Until that is solved, we leave md_def set to NULL. */
         assert(_PyModule_GetDef(mod) == NULL
                || _PyModule_GetDef(mod) == def);
     }
