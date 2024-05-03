@@ -87,7 +87,7 @@ def int_to_decimal(n):
 def int_to_decimal_string(n):
     """Asymptotically fast conversion of an 'int' to a decimal string."""
     w = n.bit_length()
-    if w > 900_000 and _decimal is not None:
+    if w > 450_000 and _decimal is not None:
         return str(int_to_decimal(n))
 
     def inner(n, w):
