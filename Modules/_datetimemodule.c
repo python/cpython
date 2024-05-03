@@ -7192,8 +7192,8 @@ pretty bizarre, and a tzinfo subclass can override fromutc() if it is.
 --------------------------------------------------------------------------- */
 
 
-/* The following tp_dict members in the comment will be statically allocated
-   strings through an auto-scan by Tools/build/generate_global_objects.py.
+/* The following tp_dict key names will become statically allocated strings
+   after `Tools/build/generate_global_objects.py` scans the block comment.
    This list can be removed after switching to heap types, which will also
    avoid the use-after-free crashes related to gh-113601.
 
