@@ -142,7 +142,11 @@ extern void _PyEval_ReleaseLock(PyInterpreterState *, PyThreadState *);
 //
 // The enabled state of the GIL will not change while one or more threads are
 // attached.
-extern int _PyEval_IsGILEnabled(PyThreadState *tstate);
+static inline int
+_PyEval_IsGILEnabled(PyThreadState *tstate)
+{
+    return tstate->interp->ceval.gil->enabled != 0;
+}
 
 // Enable or disable the GIL used by the interpreter that owns tstate, which
 // must be the current thread. This may affect other interpreters, if the GIL

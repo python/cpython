@@ -478,7 +478,11 @@ _PyImport_RunModInitFunc(PyModInitFunction p0,
             // This module may be recreated (without running its init function)
             // in reload_singlephase_extension(), so remember its GIL slot
             // here.
-            _PyImport_SetModuleGIL(m, ((PyModuleObject *)m)->md_gil);
+            if (_PyImport_SetModuleGIL(m, ((PyModuleObject *)m)->md_gil) < 0) {
+                _Py_ext_module_loader_result_set_error(
+                        &res, _Py_ext_module_loader_result_EXCEPTION);
+                goto error;
+            }
         }
 #endif
     }

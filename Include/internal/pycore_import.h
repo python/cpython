@@ -213,8 +213,11 @@ extern int _PyImport_CheckSubinterpIncompatibleExtensionAllowed(
 PyAPI_FUNC(int) _PyImport_ClearExtension(PyObject *name, PyObject *filename);
 
 #ifdef Py_GIL_DISABLED
+// Store an association between module and gil (which should be one of the
+// values for the Py_mod_gil module slot) in the current interpreter.
+//
+// Only for use on modules with md_def->m_size == -1.
 extern int _PyImport_SetModuleGIL(PyObject *module, void *gil);
-extern void *_PyImport_GetModuleDefGIL(PyModuleDef *def);
 
 // Assuming that the GIL is enabled from a call to
 // _PyEval_EnableGILTransient(), resolve the transient request depending on the

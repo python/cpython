@@ -508,9 +508,7 @@ _PyImport_SetModuleGIL(PyObject *module, void *gil)
     PyInterpreterState *interp = _PyInterpreterState_GET();
     assert(PyModule_Check(module));
     PyModuleDef *def = ((PyModuleObject *)module)->md_def;
-    if (def->m_size != -1) {
-        return 0;
-    }
+    assert(def->m_size == -1);
 
     Py_ssize_t index = def->m_base.m_index;
     assert(index > 0);

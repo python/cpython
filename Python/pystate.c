@@ -2071,7 +2071,7 @@ _PyThreadState_Attach(PyThreadState *tstate)
         }
 
 #ifdef Py_GIL_DISABLED
-        if (!!tstate->interp->ceval.gil->enabled != acquired_gil) {
+        if (_PyEval_IsGILEnabled(tstate) != acquired_gil) {
             // The GIL was enabled between our call to _PyEval_AcquireLock()
             // and when we attached (the GIL can't go from enabled to disabled
             // here because only a thread holding the GIL can disable

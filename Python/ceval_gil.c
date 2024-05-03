@@ -1034,16 +1034,10 @@ _PyEval_InitState(PyInterpreterState *interp)
 
 #ifdef Py_GIL_DISABLED
 int
-_PyEval_IsGILEnabled(PyThreadState *tstate)
-{
-    return tstate->interp->ceval.gil->enabled != 0;
-}
-
-int
 _PyEval_EnableGILTransient(PyThreadState *tstate)
 {
-    if (_PyInterpreterState_GetConfig(tstate->interp)->enable_gil !=
-        _PyConfig_GIL_DEFAULT) {
+    const PyConfig *config = _PyInterpreterState_GetConfig(tstate->interp);
+    if (config->enable_gil != _PyConfig_GIL_DEFAULT) {
         return 0;
     }
     struct _gil_runtime_state *gil = tstate->interp->ceval.gil;
@@ -1094,8 +1088,8 @@ _PyEval_EnableGILTransient(PyThreadState *tstate)
 int
 _PyEval_EnableGILPermanent(PyThreadState *tstate)
 {
-    if (_PyInterpreterState_GetConfig(tstate->interp)->enable_gil !=
-        _PyConfig_GIL_DEFAULT) {
+    const PyConfig *config = _PyInterpreterState_GetConfig(tstate->interp);
+    if (config->enable_gil != _PyConfig_GIL_DEFAULT) {
         return 0;
     }
 
@@ -1114,8 +1108,8 @@ _PyEval_EnableGILPermanent(PyThreadState *tstate)
 int
 _PyEval_DisableGIL(PyThreadState *tstate)
 {
-    if (_PyInterpreterState_GetConfig(tstate->interp)->enable_gil !=
-        _PyConfig_GIL_DEFAULT) {
+    const PyConfig *config = _PyInterpreterState_GetConfig(tstate->interp);
+    if (config->enable_gil != _PyConfig_GIL_DEFAULT) {
         return 0;
     }
 
