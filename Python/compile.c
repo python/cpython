@@ -5458,10 +5458,48 @@ push_inlined_comprehension_state(struct compiler *c, location loc,
     while (PyDict_Next(entry->ste_symbols, &pos, &k, &v)) {
         assert(PyLong_Check(v));
         long symbol = PyLong_AS_LONG(v);
-        // only values bound in the comprehension (DEF_LOCAL) need to be handled
-        // at all; DEF_LOCAL | DEF_NONLOCAL can occur in the case of an
-        // assignment expression to a nonlocal in the comprehension, these don't
-        // need handling here since they shouldn't be isolated
+        long scope = (symbol >> SCOPE_OFFSET) & SCOPE_MASK;
+        PyObject *outv = PyDict_GetItemWithError(c->u->u_ste->ste_symbols, k);
+        if (outv == NULL) {
+            if (PyErr_Occurred()) {
+                return ERROR;
+            }
+            outv = _PyLong_GetZero();
+        }
+        assert(PyLong_CheckExact(outv));
+        long outsc = (PyLong_AS_LONG(outv) >> SCOPE_OFFSET) & SCOPE_MASK;
+        // If a name has different scope inside than outside the comprehension,
+        // we need to temporarily handle it with the right scope while
+        // compiling the comprehension. If it's free in the comprehension
+        // scope, no special handling; it should be handled the same as the
+        // enclosing scope. (If it's free in outer scope and cell in inner
+        // scope, we can't treat it as both cell and free in the same function,
+        // but treating it as free throughout is fine; it's *_DEREF
+        // either way.)
+        if ((scope != outsc && scope != FREE && !(scope == CELL && outsc == FREE))
+                || in_class_block) {
+            if (state->temp_symbols == NULL) {
+                state->temp_symbols = PyDict_New();
+                if (state->temp_symbols == NULL) {
+                    return ERROR;
+                }
+            }
+            // update the symbol to the in-comprehension version and save
+            // the outer version; we'll restore it after running the
+            // comprehension
+            Py_INCREF(outv);
+            if (PyDict_SetItem(c->u->u_ste->ste_symbols, k, v) < 0) {
+                Py_DECREF(outv);
+                return ERROR;
+            }
+            if (PyDict_SetItem(state->temp_symbols, k, outv) < 0) {
+                Py_DECREF(outv);
+                return ERROR;
+            }
+            Py_DECREF(outv);
+        }
+        // locals handling for names bound in comprehension (DEF_LOCAL |
+        // DEF_NONLOCAL occurs in assignment expression to nonlocal)
         if ((symbol & DEF_LOCAL && !(symbol & DEF_NONLOCAL)) || in_class_block) {
             if (!_PyST_IsFunctionLike(c->u->u_ste)) {
                 // non-function scope: override this name to use fast locals
@@ -5480,41 +5518,6 @@ push_inlined_comprehension_state(struct compiler *c, location loc,
                         return ERROR;
                     }
                 }
-            }
-            long scope = (symbol >> SCOPE_OFFSET) & SCOPE_MASK;
-            PyObject *outv = PyDict_GetItemWithError(c->u->u_ste->ste_symbols, k);
-            if (outv == NULL) {
-                outv = _PyLong_GetZero();
-            }
-            assert(PyLong_Check(outv));
-            long outsc = (PyLong_AS_LONG(outv) >> SCOPE_OFFSET) & SCOPE_MASK;
-            if (scope != outsc && !(scope == CELL && outsc == FREE)) {
-                // If a name has different scope inside than outside the
-                // comprehension, we need to temporarily handle it with the
-                // right scope while compiling the comprehension. (If it's free
-                // in outer scope and cell in inner scope, we can't treat it as
-                // both cell and free in the same function, but treating it as
-                // free throughout is fine; it's *_DEREF either way.)
-
-                if (state->temp_symbols == NULL) {
-                    state->temp_symbols = PyDict_New();
-                    if (state->temp_symbols == NULL) {
-                        return ERROR;
-                    }
-                }
-                // update the symbol to the in-comprehension version and save
-                // the outer version; we'll restore it after running the
-                // comprehension
-                Py_INCREF(outv);
-                if (PyDict_SetItem(c->u->u_ste->ste_symbols, k, v) < 0) {
-                    Py_DECREF(outv);
-                    return ERROR;
-                }
-                if (PyDict_SetItem(state->temp_symbols, k, outv) < 0) {
-                    Py_DECREF(outv);
-                    return ERROR;
-                }
-                Py_DECREF(outv);
             }
             // local names bound in comprehension must be isolated from
             // outer scope; push existing value (which may be NULL if
