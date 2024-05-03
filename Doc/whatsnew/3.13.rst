@@ -89,6 +89,8 @@ Interpreter improvements:
 
 New typing features:
 
+* :pep:`696`: Type parameters (:data:`typing.TypeVar`, :data:`typing.ParamSpec`,
+  and :data:`typing.TypeVarTuple`) now support defaults.
 * :pep:`742`: :data:`typing.TypeIs` was added, providing more intuitive
   type narrowing behavior.
 
@@ -849,6 +851,10 @@ typing
 * Add :data:`typing.ReadOnly`, a special typing construct to mark
   an item of a :class:`typing.TypedDict` as read-only for type checkers.
   See :pep:`705` for more details.
+
+* Add :data:`typing.NoDefault`, a sentinel object used to represent the defaults
+  of some parameters in the :mod:`typing` module. (Contributed by Jelle Zijlstra in
+  :gh:`116126`.)
 
 unicodedata
 -----------
