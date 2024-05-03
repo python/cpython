@@ -52,7 +52,7 @@ for c_name, ctypes_name in {
 # Register structs and unions to test
 
 TESTCASES = {}
-def register(name=None):
+def register(name=None, set_name=False):
     def decorator(cls, name=name):
         if name is None:
             name = cls.__name__
@@ -60,6 +60,8 @@ def register(name=None):
         assert name.isidentifier()  # will be used as a C identifier
         assert name not in TESTCASES
         TESTCASES[name] = cls
+        if set_name:
+            cls.__name__ = name
         return cls
     return decorator
 
@@ -230,26 +232,26 @@ for n in 8, 16, 32, 64:
     for signedness in '', 'u':
         ctype = globals()[f'c_{signedness}int{n}']
 
-        @register(f'Struct331_{signedness}{n}')
+        @register(f'Struct331_{signedness}{n}', set_name=True)
         class _cls(Structure):
             _fields_ = [("a", ctype, 3),
                         ("b", ctype, 3),
                         ("c", ctype, 1)]
 
-        @register(f'Struct1x1_{signedness}{n}')
+        @register(f'Struct1x1_{signedness}{n}', set_name=True)
         class _cls(Structure):
             _fields_ = [("a", ctype, 1),
                         ("b", ctype, n-2),
                         ("c", ctype, 1)]
 
-        @register(f'Struct1nx1_{signedness}{n}')
+        @register(f'Struct1nx1_{signedness}{n}', set_name=True)
         class _cls(Structure):
             _fields_ = [("a", ctype, 1),
                         ("full", ctype),
                         ("b", ctype, n-2),
                         ("c", ctype, 1)]
 
-        @register(f'Struct3xx_{signedness}{n}')
+        @register(f'Struct3xx_{signedness}{n}', set_name=True)
         class _cls(Structure):
             _fields_ = [("a", ctype, 3),
                         ("b", ctype, n-2),
@@ -427,8 +429,13 @@ class GeneratedTest(unittest.TestCase):
                     for value in -1, 1, 0:
                         with self.subTest(field=field.full_name, value=value):
                             field.set_to(obj, value)
-                            mem = string_at(ptr, sizeof(obj))
-                            self.assertEqual(mem, next(expected))
+                            py_mem = string_at(ptr, sizeof(obj))
+                            c_mem = next(expected)
+                            if py_mem != c_mem:
+                                # Generate a helpful failure message
+                                lines, requires = dump_ctype(cls)
+                                m = "\n".join([str(field), 'in:', *lines])
+                                self.assertEqual(py_mem.hex(), c_mem.hex(), m)
 
 
 # The rest of this file is generating C code from a ctypes type.
@@ -547,6 +554,24 @@ class FieldInfo:
             obj = getattr(obj, attr_name)
         setattr(obj, self.attr_path[-1], new)
 
+    @cached_property
+    def root(self):
+        if self.parent is None:
+            return self
+        else:
+            return self.parent
+
+    @cached_property
+    def descriptor(self):
+        return getattr(self.parent_type, self.name)
+
+    def __repr__(self):
+        qname = f'{self.root.parent_type.__name__}.{self.full_name}'
+        try:
+            desc = self.descriptor
+        except AttributeError:
+            desc = '???'
+        return f'<{type(self).__name__} for {qname}: {desc}>'
 
 def iterfields(tp, parent=None):
     """Get *leaf* fields of a structure or union, as FieldInfo"""
