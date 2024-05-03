@@ -46,6 +46,8 @@ except ImportError:
 x, y = 1e16, 2.9999 # use temporary values to defeat peephole optimizer
 HAVE_DOUBLE_ROUNDING = (x + y == 1e16 + 4)
 
+# used as proof of globals being used
+A_GLOBAL_VALUE = 123
 
 class Squares:
 
@@ -684,6 +686,11 @@ class BuiltinTest(unittest.TestCase):
                 raise ValueError
         self.assertRaises(ValueError, eval, "foo", {}, X())
 
+    def test_eval_kwargs(self):
+        data = {"A_GLOBAL_VALUE": 456}
+        self.assertEqual(eval("globals()['A_GLOBAL_VALUE']", globals=data), 456)
+        self.assertEqual(eval("globals()['A_GLOBAL_VALUE']", locals=data), 123)
+
     def test_general_eval(self):
         # Tests that general mappings can be used for the locals argument
 
@@ -776,6 +783,19 @@ class BuiltinTest(unittest.TestCase):
         if '__builtins__' in l:
             del l['__builtins__']
         self.assertEqual((g, l), ({'a': 1}, {'b': 2}))
+
+    def test_exec_kwargs(self):
+        g = {}
+        exec('global z\nz = 1', globals=g)
+        if '__builtins__' in g:
+            del g['__builtins__']
+        self.assertEqual(g, {'z': 1})
+
+        # if we only set locals, the global assignment will not
+        # reach this locals dictionary
+        g = {}
+        exec('global z\nz = 1', locals=g)
+        self.assertEqual(g, {})
 
     def test_exec_globals(self):
         code = compile("print('Hello World!')", "", "exec")
