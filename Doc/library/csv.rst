@@ -156,9 +156,9 @@ The :mod:`csv` module defines the following classes:
 
    The *fieldnames* parameter is a :term:`sequence`.  If *fieldnames* is
    omitted, the values in the first row of file *f* will be used as the
-   fieldnames and the first row will not produce a dict in the result.  If
+   fieldnames and will be omitted from the results. If
    *fieldnames* is provided, they will be used and the first row will be
-   included in the result.  Regardless of how the fieldnames are determined,
+   included in the results.  Regardless of how the fieldnames are determined,
    the dictionary preserves their original ordering.
 
    If a row has more fields than fieldnames, the remaining data is put in a
