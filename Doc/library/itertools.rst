@@ -899,7 +899,7 @@ and :term:`generators <generator>` which incur interpreter overhead.
        "Collect data into overlapping fixed-length chunks or blocks."
        # sliding_window('ABCDEFG', 4) → ABCD BCDE CDEF DEFG
        iterator = iter(iterable)
-       window = collections.deque(islice(iterator, n-1), maxlen=n)
+       window = collections.deque(islice(iterator, n - 1), maxlen=n)
        for x in iterator:
            window.append(x)
            yield tuple(window)
@@ -966,10 +966,7 @@ and :term:`generators <generator>` which incur interpreter overhead.
                pass
 
    def iter_except(func, exception, first=None):
-       """ Call a function repeatedly until an exception is raised.
-
-       Converts a call-until-exception interface to an iterator interface.
-       """
+       "Convert a call-until-exception interface to an iterator interface."
        # iter_except(d.popitem, KeyError) → non-blocking dictionary iterator
        try:
            if first is not None:
