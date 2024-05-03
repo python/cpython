@@ -7190,3 +7190,52 @@ small dst() may get within its bounds; and it doesn't even matter if some
 perverse time zone returns a negative dst()).  So a breaking case must be
 pretty bizarre, and a tzinfo subclass can override fromutc() if it is.
 --------------------------------------------------------------------------- */
+
+
+/* The following tp_dict members in the comment will be statically allocated
+   strings through an auto-scan by Tools/build/generate_global_objects.py.
+   This list can be removed after switching to heap types, which will also
+   avoid the use-after-free crashes related to gh-113601.
+
+   _Py_ID(__format__)
+   _Py_ID(__getinitargs__)
+   _Py_ID(__reduce__)
+   _Py_ID(__reduce_ex__)
+   _Py_ID(__replace__)
+   _Py_ID(astimezone)
+   _Py_ID(combine)
+   _Py_ID(ctime)
+   _Py_ID(date)
+   _Py_ID(days)
+   _Py_ID(dst)
+   _Py_ID(fromisocalendar)
+   _Py_ID(fromisoformat)
+   _Py_ID(fromordinal)
+   _Py_ID(fromtimestamp)
+   _Py_ID(fromutc)
+   _Py_ID(isocalendar)
+   _Py_ID(isoformat)
+   _Py_ID(isoweekday)
+   _Py_ID(max)
+   _Py_ID(microseconds)
+   _Py_ID(min)
+   _Py_ID(now)
+   _Py_ID(replace)
+   _Py_ID(resolution)
+   _Py_ID(seconds)
+   _Py_ID(strftime)
+   _Py_ID(strptime)
+   _Py_ID(time)
+   _Py_ID(timestamp)
+   _Py_ID(timetuple)
+   _Py_ID(timetz)
+   _Py_ID(today)
+   _Py_ID(toordinal)
+   _Py_ID(total_seconds)
+   _Py_ID(tzname)
+   _Py_ID(utc)
+   _Py_ID(utcfromtimestamp)
+   _Py_ID(utcnow)
+   _Py_ID(utcoffset)
+   _Py_ID(utctimetuple)
+ */
