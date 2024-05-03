@@ -2495,30 +2495,8 @@ _PyEval_GetFrameLocals(void)
         }
         Py_DECREF(locals);
         return ret;
-    }
-
-    if (PyMapping_Check(locals)) {
-        PyObject* hidden = _PyFrame_GetHiddenLocals(current_frame);
-        if (hidden == NULL) {
-            return NULL;
-        }
-        assert(PyDict_Check(hidden));
-        if (PyDict_Size(hidden) > 0) {
-            PyObject* ret = PyDict_New();
-            if (PyDict_Update(ret, locals)) {
-                Py_DECREF(ret);
-                Py_DECREF(hidden);
-                return NULL;
-            }
-            if (PyDict_Update(ret, hidden)) {
-                Py_DECREF(ret);
-                Py_DECREF(hidden);
-                return NULL;
-            }
-            Py_DECREF(hidden);
-            return ret;
-        }
-        return locals;
+    } else if (PyDict_Check(locals)) {
+        return Py_XNewRef(locals);
     }
 
     return NULL;

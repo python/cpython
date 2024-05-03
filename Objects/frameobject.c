@@ -1811,57 +1811,43 @@ frame_get_var(_PyInterpreterFrame *frame, PyCodeObject *co, int i,
 }
 
 
+static bool
+frame_hashiddenlocals(_PyInterpreterFrame *frame)
+{
+    /*
+     * This function returns all the hidden locals introduced by PEP 709,
+     * which are the isolated fast locals for inline comprehensions
+     */
+    PyFrameObject* f = _PyFrame_GetFrameObject(frame);
+    PyCodeObject* co = _PyFrame_GetCode(frame);
+
+    for (int i = 0; i < co->co_nlocalsplus; i++) {
+        _PyLocals_Kind kind = _PyLocals_GetKind(co->co_localspluskinds, i);
+
+        if (kind & CO_FAST_HIDDEN) {
+            PyObject* value = framelocalsproxy_getval(f, co, i);
+
+            if (value != NULL) {
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
+
 PyObject *
 _PyFrame_GetLocals(_PyInterpreterFrame *frame)
 {
     PyCodeObject* co = _PyFrame_GetCode(frame);
     PyFrameObject* f = _PyFrame_GetFrameObject(frame);
 
-    if (!(co->co_flags & CO_OPTIMIZED)) {
+    if (!(co->co_flags & CO_OPTIMIZED) && !frame_hashiddenlocals(frame)) {
         return Py_NewRef(frame->f_locals);
     }
 
     return _PyFrameLocalsProxy_New(f);
-}
-
-
-PyObject*
-_PyFrame_GetHiddenLocals(_PyInterpreterFrame *frame)
-{
-    /*
-     * This function returns all the hidden locals introduced by PEP 709,
-     * which are the isolated fast locals for inline comprehensions
-     */
-    PyObject* hidden = PyDict_New();
-    PyFrameObject* f = _PyFrame_GetFrameObject(frame);
-
-    if (hidden == NULL) {
-        return NULL;
-    }
-
-    PyCodeObject* co = _PyFrame_GetCode(frame);
-
-    for (int i = 0; i < co->co_nlocalsplus; i++) {
-        _PyLocals_Kind kind = _PyLocals_GetKind(co->co_localspluskinds, i);
-
-        if (!(kind & CO_FAST_HIDDEN)) {
-            continue;
-        }
-
-        PyObject* name = PyTuple_GET_ITEM(co->co_localsplusnames, i);
-        PyObject* value = framelocalsproxy_getval(f, co, i);
-
-        if (value == NULL) {
-            continue;
-        }
-
-        if (PyDict_SetItem(hidden, name, value) < 0) {
-            Py_DECREF(hidden);
-            return NULL;
-        }
-    }
-
-    return hidden;
 }
 
 

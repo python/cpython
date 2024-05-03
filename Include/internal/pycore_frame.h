@@ -245,9 +245,6 @@ _PyFrame_Traverse(_PyInterpreterFrame *frame, visitproc visit, void *arg);
 PyObject *
 _PyFrame_GetLocals(_PyInterpreterFrame *frame);
 
-PyObject *
-_PyFrame_GetHiddenLocals(_PyInterpreterFrame *frame);
-
 static inline bool
 _PyThreadState_HasStackSpace(PyThreadState *tstate, int size)
 {
