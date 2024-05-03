@@ -64,8 +64,9 @@ The function expects to be called repeatedly for all fields in a struct or
 union.  It uses helper functions PyCField_FromDesc_gcc and
 PyCField_FromDesc_msvc to simulate the corresponding compilers.
 
-GCC mode places fields one after another, bit by bit.  But when a field would
-straddle an alignment boundary for its type, we insert a few bits of padding to
+GCC mode places fields one after another, bit by bit.  But "each bit field must
+fit within a single object of its specified type" (GCC manual, section 15.8
+"Bit Field Packing"). When it doesn't, we insert a few bits of padding to
 avoid that.
 
 MSVC mode works similar except for bitfield packing.  Adjacent bit-fields are
@@ -99,27 +100,28 @@ PyCField_FromDesc_gcc(Py_ssize_t bitsize, Py_ssize_t *pbitofs,
 
     *palign = info->align;
 
-    if ((bitsize > 0)
-        && (round_down(*pbitofs, 8 * info->align)
-            < round_down(*pbitofs + bitsize - 1, 8 * info->align))) {
-        // We would be straddling alignment units.
-        *pbitofs = round_up(*pbitofs, 8*info->align);
+    if (bitsize > 0) {
+        // Determine whether the bit field, if placed at the next free bit,
+        // fits within a single object of its specified type.
+        // That is: determine a "slot", sized & aligned for the specified type,
+        // which contains the bitfield's beginning:
+        Py_ssize_t slot_start_bit = round_down(*pbitofs, 8 * info->align);
+        Py_ssize_t slot_end_bit = slot_start_bit + 8 * info->size;
+        // And see if it also contains the bitfield's last bit:
+        Py_ssize_t field_end_bit = *pbitofs + bitsize;
+        if (field_end_bit > slot_end_bit) {
+            // It doesn't: add padding (bump up to the next alignment boundary)
+            *pbitofs = round_up(*pbitofs, 8*info->align);
+        }
     }
     assert(*poffset == 0);
 
+    self->offset = round_down(*pbitofs, 8*info->align) / 8;
     if(is_bitfield) {
-        self->offset = round_down(*pbitofs, 8*info->size) / 8;
         Py_ssize_t effective_bitsof = *pbitofs - 8 * self->offset;
         self->size = BUILD_SIZE(bitsize, effective_bitsof);
         assert(effective_bitsof <= info->size * 8);
-        if (info->size != info->align) {
-            PyErr_SetString(
-                PyExc_TypeError,
-                "bitfield's base type size differs from alignment");
-            return -1;
-        }
     } else {
-        self->offset = round_down(*pbitofs, 8*info->align) / 8;
         self->size = info->size;
     }
 

@@ -308,6 +308,23 @@
                 return result;
             }
 
+            if (PyUnicode_CompareWithASCIIString(name, "X86_32EdgeCase") == 0) {
+
+                struct X86_32EdgeCase {
+                    int32_t a;
+                    int64_t b;
+                    int32_t c;
+                };
+                struct X86_32EdgeCase value = {0};
+                APPEND(PyUnicode_FromString("X86_32EdgeCase"));
+                APPEND(PyLong_FromLong(sizeof(struct X86_32EdgeCase)));
+                APPEND(PyLong_FromLong(_Alignof(struct X86_32EdgeCase)));
+                TEST_FIELD(int32_t, value.a);
+                TEST_FIELD(int64_t, value.b);
+                TEST_FIELD(int32_t, value.c);
+                return result;
+            }
+
             if (PyUnicode_CompareWithASCIIString(name, "IntBits") == 0) {
 
                 struct IntBits {

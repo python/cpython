@@ -141,6 +141,12 @@ class Packed4(Structure):
     _pack_ = 8
 
 @register()
+class X86_32EdgeCase(Structure):
+    # On a Pentium, long long (int64) is 32-bit aligned,
+    # so these are packed tightly.
+    _fields_ = [('a', c_int32), ('b', c_int64), ('c', c_int32)]
+
+@register()
 class IntBits(Structure):
     _fields_ = [("A", c_int, 1),
                 ("B", c_int, 2),
