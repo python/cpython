@@ -496,7 +496,8 @@ loops that truncate the stream.
    data where the internal structure has been flattened (for example, a
    multi-line report may list a name field on every third line).
 
-   Roughly equivalent to::
+   Rough equivalent without error checking for negative indices or *step*
+   size of zero::
 
       def islice(iterable, *args):
           # islice('ABCDEFG', 2) → A B
@@ -504,24 +505,13 @@ loops that truncate the stream.
           # islice('ABCDEFG', 2, None) → C D E F G
           # islice('ABCDEFG', 0, None, 2) → A C E G
           s = slice(*args)
-          start, stop, step = s.start or 0, s.stop or sys.maxsize, s.step or 1
-          it = iter(range(start, stop, step))
-          try:
-              nexti = next(it)
-          except StopIteration:
-              # Consume *iterable* up to the *start* position.
-              for i, element in zip(range(start), iterable):
-                  pass
-              return
-          try:
-              for i, element in enumerate(iterable):
-                  if i == nexti:
-                      yield element
-                      nexti = next(it)
-          except StopIteration:
-              # Consume to *stop*.
-              for i, element in zip(range(i + 1, stop), iterable):
-                  pass
+          start, stop, step = s.start or 0, s.stop, s.step or 1
+          indices = count() if stop is None else range(max(stop, start))
+          nexti = start
+          for i, element in zip(indices, iterable):
+              if i == nexti:
+                  yield element
+                  nexti += step
 
 
 .. function:: pairwise(iterable)
