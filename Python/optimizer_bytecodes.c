@@ -641,7 +641,9 @@ dummy_func(void) {
     op(_POP_FRAME, (retval -- res)) {
         SYNC_SP();
         ctx->frame->stack_pointer = stack_pointer;
-        frame_pop(ctx);
+        if (frame_pop(ctx)) {
+            goto done;
+        }
         stack_pointer = ctx->frame->stack_pointer;
         res = retval;
 
@@ -663,7 +665,9 @@ dummy_func(void) {
     op(_RETURN_GENERATOR, ( -- res)) {
         SYNC_SP();
         ctx->frame->stack_pointer = stack_pointer;
-        frame_pop(ctx);
+        if (frame_pop(ctx)) {
+            goto done;
+        }
         stack_pointer = ctx->frame->stack_pointer;
         OUT_OF_SPACE_IF_NULL(res = sym_new_unknown(ctx));
 

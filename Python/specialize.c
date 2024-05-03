@@ -2357,7 +2357,8 @@ _Py_Specialize_ForIter(PyObject *iter, _Py_CODEUNIT *instr, int oparg)
     }
     else if (tp == &PyGen_Type && oparg <= SHRT_MAX) {
         assert(instr[oparg + INLINE_CACHE_ENTRIES_FOR_ITER + 1].op.code == END_FOR  ||
-            instr[oparg + INLINE_CACHE_ENTRIES_FOR_ITER + 1].op.code == INSTRUMENTED_END_FOR
+            instr[oparg + INLINE_CACHE_ENTRIES_FOR_ITER + 1].op.code == INSTRUMENTED_END_FOR ||
+            instr[oparg + INLINE_CACHE_ENTRIES_FOR_ITER + 1].op.code == ENTER_EXECUTOR
         );
         if (_PyInterpreterState_GET()->eval_frame) {
             SPECIALIZATION_FAIL(FOR_ITER, SPEC_FAIL_OTHER);

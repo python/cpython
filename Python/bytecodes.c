@@ -2589,8 +2589,7 @@ dummy_func(
                     _PyErr_Clear(tstate);
                 }
                 /* iterator ended normally */
-                assert(next_instr[oparg].op.code == END_FOR ||
-                       next_instr[oparg].op.code == INSTRUMENTED_END_FOR);
+                assert(base_opcode(_PyFrame_GetCode(frame), INSTR_OFFSET() + oparg) == END_FOR);
                 Py_DECREF(iter);
                 STACK_SHRINK(1);
                 /* Jump forward oparg, then skip following END_FOR and POP_TOP instruction */
@@ -4349,6 +4348,14 @@ dummy_func(
             uintptr_t eval_breaker = _Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker);
             DEOPT_IF(eval_breaker & _PY_EVAL_EVENTS_MASK);
             assert(tstate->tracing || eval_breaker == FT_ATOMIC_LOAD_UINTPTR_ACQUIRE(_PyFrame_GetCode(frame)->_co_instrumentation_version));
+        }
+
+        tier2 op(_RETURN_OFFSET, (--)) {
+            frame->instr_ptr += frame->return_offset;
+        }
+
+        tier2 op(_YIELD_OFFSET, (--)) {
+            frame->instr_ptr += 1 + INLINE_CACHE_ENTRIES_SEND;
         }
 
 // END BYTECODES //
