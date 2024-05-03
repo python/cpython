@@ -1,2 +1,12 @@
-Fix crashes in :func:`mmap.read`, :func:`mmap.read_byte`, :func:`mmap.write`
-and :func:`mmap.write_byte` on Windows when the underlying file operation raises errors.
+Fix crashes in
+
+* :func:`mmap.move`
+* :func:`mmap.read`
+* :func:`mmap.read_byte`
+* :func:`mmap.readline`
+* :func:`mmap.write`
+* :func:`mmap.write_byte`
+* :func:`mmap.__getitem__`
+* :func:`mmap.__setitem__`
+
+on Windows when the underlying file operation raises errors or an access violation occurs.
