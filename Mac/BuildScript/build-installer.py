@@ -379,9 +379,9 @@ def library_recipes():
               ]
           ),
           dict(
-              name="libmpdec 2.5.1",
-              url="https://www.bytereef.org/software/mpdecimal/releases/mpdecimal-2.5.1.tar.gz",
-              checksum="9f9cd4c041f99b5c49ffb7b59d9f12d95b683d88585608aa56a6307667b2b21f",
+              name="libmpdec 4.0.0",
+              url="https://www.bytereef.org/software/mpdecimal/releases/mpdecimal-4.0.0.tar.gz",
+              checksum="942445c3245b22730fd41a67a7c5c231d11cb1b9936b9c0f76334fb7d0b4468c",
               configure_pre=[
                   "--disable-cxx",
                   "MACHINE=universal",
