@@ -447,6 +447,7 @@ elf_init_ehframe(ELFObjectContext* ctx)
 {
     uint8_t* p = ctx->p;
     uint8_t* framep = p;
+    printf("Code size is: %d\n", ctx->code_size);
 
     /* Emit DWARF EH CIE. */
     DWRF_SECTION(CIE, DWRF_U32(0); /* Offset to CIE itself. */
@@ -471,7 +472,7 @@ elf_init_ehframe(ELFObjectContext* ctx)
                  DWRF_U8(0); /* Augmentation data. */
     /* Registers saved in CFRAME. */
 #ifdef __x86_64__
-                 DWRF_U8(DWRF_CFA_advance_loc | 4);
+                 DWRF_U8(DWRF_CFA_advance_loc | 8);
                  DWRF_U8(DWRF_CFA_def_cfa_offset); DWRF_UV(16);
                  DWRF_U8(DWRF_CFA_advance_loc | 6);
                  DWRF_U8(DWRF_CFA_def_cfa_offset); DWRF_UV(8);
