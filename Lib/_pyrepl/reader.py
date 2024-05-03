@@ -435,7 +435,7 @@ class Reader:
         self.input_trans = self.input_trans_stack.pop()
 
     def setpos_from_xy(self, x: int, y: int) -> None:
-        """Set pos according to coordincates x, y"""
+        """Set pos according to coordinates x, y"""
         pos = 0
         i = 0
         while i < y:
