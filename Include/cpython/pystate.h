@@ -195,7 +195,7 @@ struct _ts {
    // higher stack memory usage than a release build: use a lower limit.
 #  if defined(__wasi__)
      // Based on wasmtime 16.
-#    define Py_C_RECURSION_LIMIT 400
+#    define Py_C_RECURSION_LIMIT 350
 #  else
 #    define Py_C_RECURSION_LIMIT 500
 #  endif
