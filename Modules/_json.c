@@ -1254,19 +1254,11 @@ encoder_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 static PyObject *
 _create_newline_indent(PyObject *indent, Py_ssize_t indent_level)
 {
-    PyObject *current_indent = PySequence_Repeat(indent, indent_level);
-    if (current_indent == NULL) {
-        return NULL;
+    PyObject *newline_indent = PyUnicode_FromOrdinal('\n');
+    if (newline_indent != NULL && indent_level) {
+        PyUnicode_AppendAndDel(&newline_indent,
+                               PySequence_Repeat(indent, indent_level));
     }
-    PyObject *start = PyUnicode_FromOrdinal('\n');
-    if (start == NULL) {
-        Py_DECREF(current_indent);
-        return NULL;
-    }
-
-    PyObject *newline_indent = PyUnicode_Concat(start, current_indent);
-    Py_DECREF(current_indent);
-    Py_DECREF(start);
     return newline_indent;
 }
 
