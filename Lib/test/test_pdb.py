@@ -10,6 +10,7 @@ import unittest
 import subprocess
 import textwrap
 import linecache
+import zipapp
 
 from contextlib import ExitStack, redirect_stdout
 from io import StringIO
@@ -3531,6 +3532,30 @@ def bœr():
         for filename in os.listdir(script_dir):
             if filename.endswith(".py"):
                 self._run_pdb([os.path.join(script_dir, filename)], 'q')
+
+    def test_zipapp(self):
+        with os_helper.temp_dir() as temp_dir:
+            os.mkdir(os.path.join(temp_dir, 'source'))
+            script = textwrap.dedent(
+                """
+                def f(x):
+                    return x + 1
+                f(21 + 21)
+                """
+            )
+            with open(os.path.join(temp_dir, 'source', '__main__.py'), 'w') as f:
+                f.write(script)
+            zipapp.create_archive(os.path.join(temp_dir, 'source'),
+                                  os.path.join(temp_dir, 'zipapp.pyz'))
+            stdout, _ = self._run_pdb([os.path.join(temp_dir, 'zipapp.pyz')], '\n'.join([
+                'b f',
+                'c',
+                'p x',
+                'q'
+            ]))
+            self.assertIn('42', stdout)
+            self.assertIn('return x + 1', stdout)
+
 
 class ChecklineTests(unittest.TestCase):
     def setUp(self):
