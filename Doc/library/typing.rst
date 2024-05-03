@@ -854,7 +854,7 @@ using ``[]``.
 .. data:: Never
           NoReturn
 
-   ``Never`` and ``NoReturn`` represent the
+   :data:`!Never` and :data:`!NoReturn` represent the
    `bottom type <https://en.wikipedia.org/wiki/Bottom_type>`_,
    a type that has no members.
 
@@ -885,16 +885,16 @@ using ``[]``.
               case _:
                   never_call_me(arg)  # OK, arg is of type Never (or NoReturn)
 
-   ``Never`` and ``NoReturn`` have the same meaning in the type system
+   :data:`!Never` and :data:`!NoReturn` have the same meaning in the type system
    and static type checkers treat both equivalently.
 
    .. versionadded:: 3.6.2
 
-      Added ``NoReturn``.
+      Added :data:`NoReturn`.
 
    .. versionadded:: 3.11
 
-      Added ``Never``.
+      Added :data:`Never`.
 
 .. data:: Self
 
