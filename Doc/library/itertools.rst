@@ -510,11 +510,11 @@ loops that truncate the stream.
           if start < 0 or (stop is not None and stop < 0) or step <= 0:
               raise ValueError
           indices = count() if stop is None else range(max(stop, start))
-          nexti = start
+          next_i = start
           for i, element in zip(indices, iterable):
-              if i == nexti:
+              if i == next_i:
                   yield element
-                  nexti += step
+                  next_i += step
 
 
 .. function:: pairwise(iterable)
