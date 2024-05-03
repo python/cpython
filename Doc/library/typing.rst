@@ -1614,7 +1614,7 @@ without the dedicated syntax, as documented below.
 
 .. _typevar:
 
-.. class:: TypeVar(name, *constraints, bound=None, covariant=False, contravariant=False, infer_variance=False)
+.. class:: TypeVar(name, *constraints, bound=None, covariant=False, contravariant=False, infer_variance=False, default=typing.NoDefault)
 
    Type variable.
 
@@ -1752,15 +1752,35 @@ without the dedicated syntax, as documented below.
          the constraints are evaluated only when the attribute is accessed, not when
          the type variable is created (see :ref:`lazy-evaluation`).
 
+   .. attribute:: __default__
+
+      The default value of the type variable, or :data:`typing.NoDefault` if it
+      has no default.
+
+      .. versionadded:: 3.13
+
+   .. method:: has_default()
+
+      Return whether or not the type variable has a default value. This is equivalent
+      to checking whether :attr:`__default__` is not the :data:`typing.NoDefault`
+      singleton, except that it does not force evaluation of the
+      :ref:`lazily evaluated <lazy-evaluation>` default value.
+
+      .. versionadded:: 3.13
+
    .. versionchanged:: 3.12
 
       Type variables can now be declared using the
       :ref:`type parameter <type-params>` syntax introduced by :pep:`695`.
       The ``infer_variance`` parameter was added.
 
+   .. versionchanged:: 3.13
+
+      Support for default values was added.
+
 .. _typevartuple:
 
-.. class:: TypeVarTuple(name)
+.. class:: TypeVarTuple(name, default=typing.NoDefault)
 
    Type variable tuple. A specialized form of :ref:`type variable <typevar>`
    that enables *variadic* generics.
@@ -1870,6 +1890,22 @@ without the dedicated syntax, as documented below.
 
       The name of the type variable tuple.
 
+   .. attribute:: __default__
+
+      The default value of the type variable tuple, or :data:`typing.NoDefault` if it
+      has no default.
+
+      .. versionadded:: 3.13
+
+   .. method:: has_default()
+
+      Return whether or not the type variable tuple has a default value. This is equivalent
+      to checking whether :attr:`__default__` is not the :data:`typing.NoDefault`
+      singleton, except that it does not force evaluation of the
+      :ref:`lazily evaluated <lazy-evaluation>` default value.
+
+      .. versionadded:: 3.13
+
    .. versionadded:: 3.11
 
    .. versionchanged:: 3.12
@@ -1877,7 +1913,11 @@ without the dedicated syntax, as documented below.
       Type variable tuples can now be declared using the
       :ref:`type parameter <type-params>` syntax introduced by :pep:`695`.
 
-.. class:: ParamSpec(name, *, bound=None, covariant=False, contravariant=False)
+   .. versionchanged:: 3.13
+
+      Support for default values was added.
+
+.. class:: ParamSpec(name, *, bound=None, covariant=False, contravariant=False, default=typing.NoDefault)
 
    Parameter specification variable.  A specialized version of
    :ref:`type variables <typevar>`.
@@ -1946,6 +1986,22 @@ without the dedicated syntax, as documented below.
 
       The name of the parameter specification.
 
+   .. attribute:: __default__
+
+      The default value of the parameter specification, or :data:`typing.NoDefault` if it
+      has no default.
+
+      .. versionadded:: 3.13
+
+   .. method:: has_default()
+
+      Return whether or not the parameter specification has a default value. This is equivalent
+      to checking whether :attr:`__default__` is not the :data:`typing.NoDefault`
+      singleton, except that it does not force evaluation of the
+      :ref:`lazily evaluated <lazy-evaluation>` default value.
+
+      .. versionadded:: 3.13
+
    Parameter specification variables created with ``covariant=True`` or
    ``contravariant=True`` can be used to declare covariant or contravariant
    generic types.  The ``bound`` argument is also accepted, similar to
@@ -1958,6 +2014,10 @@ without the dedicated syntax, as documented below.
 
       Parameter specifications can now be declared using the
       :ref:`type parameter <type-params>` syntax introduced by :pep:`695`.
+
+   .. versionchanged:: 3.13
+
+      Support for default values was added.
 
    .. note::
       Only parameter specification variables defined in global scope can
@@ -3170,6 +3230,22 @@ Introspection helpers
       will not automatically resolve to ``list[SomeClass]``.
 
    .. versionadded:: 3.7.4
+
+.. data:: NoDefault
+
+   A sentinel object used to indicate that a type parameter has no default
+   value. For example:
+
+   .. doctest::
+
+      >>> T = TypeVar("T")
+      >>> T.__default__ is typing.NoDefault
+      True
+      >>> S = TypeVar("S", default=None)
+      >>> S.__default__ is None
+      True
+
+   .. versionadded:: 3.13
 
 Constant
 --------
