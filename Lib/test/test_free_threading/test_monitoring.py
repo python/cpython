@@ -219,7 +219,6 @@ class MonitoringMisc(MonitoringTestMixin, TestCase):
             self.assertEqual(ref(), None)
 
     def test_set_local_trace_opcodes(self):
-        return
         def trace(frame, event, arg):
             frame.f_trace_opcodes = True
             return trace
@@ -233,7 +232,7 @@ class MonitoringMisc(MonitoringTestMixin, TestCase):
                     with l:
                         pass
 
-            t = threading.Thread(target=f)
+            t = Thread(target=f)
             t.start()
             for i in range(3000):
                 with l:

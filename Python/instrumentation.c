@@ -1000,7 +1000,7 @@ instrumentation_cross_checks(PyInterpreterState *interp, PyCodeObject *code)
     return monitors_equals(code->_co_monitoring->active_monitors, expected);
 }
 
-static inline
+static
 int debug_check_sanity(PyInterpreterState *interp, PyCodeObject *code)
 {
     int res;
@@ -1688,11 +1688,8 @@ update_instrumentation_data(PyCodeObject *code, PyInterpreterState *interp)
                 PyErr_NoMemory();
                 return -1;
             }
-            // Initialize all of the instructions so if local events change while another thread is executing
-            // we know what the original opcode was.
             for (int i = 0; i < code_len; i++) {
-                int opcode = _PyCode_CODE(code)[i].op.code;
-                code->_co_monitoring->per_instruction_tools[i] = _PyOpcode_Deopt[opcode];
+                code->_co_monitoring->per_instruction_tools[i] = 0;
             }
         }
     }
