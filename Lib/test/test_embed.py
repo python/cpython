@@ -405,7 +405,7 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
         self.assertEqual(out, '9\n' * INIT_LOOPS)
 
     def test_datetime_static_type_dict(self):
-        # Test use-after-free of unicode keys in static-type tp_dict
+        # Test use-after-free of unicode keys in static-types' tp_dict
         code = "import datetime; print(datetime.date.min)"
         out, err = self.run_embedded_interpreter("test_repeated_init_exec", code)
         self.assertEqual(out, '0001-01-01\n' * INIT_LOOPS)
