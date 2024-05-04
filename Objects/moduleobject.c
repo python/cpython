@@ -183,6 +183,7 @@ _add_methods_to_object(PyObject *module, PyObject *name, PyMethodDef *functions)
         if (func == NULL) {
             return -1;
         }
+        _PyObject_SetDeferredRefcount(func);
         if (PyObject_SetAttrString(module, fdef->ml_name, func) != 0) {
             Py_DECREF(func);
             return -1;
@@ -249,6 +250,9 @@ _PyModule_CreateInitialized(PyModuleDef* module, int module_api_version)
         }
     }
     m->md_def = module;
+#ifdef Py_GIL_DISABLE
+    m->md_gil = Py_MOD_GIL_USED;
+#endif
     return (PyObject*)m;
 }
 
@@ -261,6 +265,8 @@ PyModule_FromDefAndSpec2(PyModuleDef* def, PyObject *spec, int module_api_versio
     PyObject *m = NULL;
     int has_multiple_interpreters_slot = 0;
     void *multiple_interpreters = (void *)0;
+    int has_gil_slot = 0;
+    void *gil_slot = Py_MOD_GIL_USED;
     int has_execution_slots = 0;
     const char *name;
     int ret;
@@ -314,6 +320,17 @@ PyModule_FromDefAndSpec2(PyModuleDef* def, PyObject *spec, int module_api_versio
                 }
                 multiple_interpreters = cur_slot->value;
                 has_multiple_interpreters_slot = 1;
+                break;
+            case Py_mod_gil:
+                if (has_gil_slot) {
+                    PyErr_Format(
+                       PyExc_SystemError,
+                       "module %s has more than one 'gil' slot",
+                       name);
+                    goto error;
+                }
+                gil_slot = cur_slot->value;
+                has_gil_slot = 1;
                 break;
             default:
                 assert(cur_slot->slot < 0 || cur_slot->slot > _Py_mod_LAST_SLOT);
@@ -374,6 +391,11 @@ PyModule_FromDefAndSpec2(PyModuleDef* def, PyObject *spec, int module_api_versio
     if (PyModule_Check(m)) {
         ((PyModuleObject*)m)->md_state = NULL;
         ((PyModuleObject*)m)->md_def = def;
+#ifdef Py_GIL_DISABLED
+        ((PyModuleObject*)m)->md_gil = gil_slot;
+#else
+        (void)gil_slot;
+#endif
     } else {
         if (def->m_size > 0 || def->m_traverse || def->m_clear || def->m_free) {
             PyErr_Format(
@@ -414,6 +436,19 @@ error:
     Py_XDECREF(m);
     return NULL;
 }
+
+#ifdef Py_GIL_DISABLED
+int
+PyModule_ExperimentalSetGIL(PyObject *module, void *gil)
+{
+    if (!PyModule_Check(module)) {
+        PyErr_BadInternalCall();
+        return -1;
+    }
+    ((PyModuleObject *)module)->md_gil = gil;
+    return 0;
+}
+#endif
 
 int
 PyModule_ExecDef(PyObject *module, PyModuleDef *def)
@@ -470,6 +505,7 @@ PyModule_ExecDef(PyObject *module, PyModuleDef *def)
                 }
                 break;
             case Py_mod_multiple_interpreters:
+            case Py_mod_gil:
                 /* handled in PyModule_FromDefAndSpec2 */
                 break;
             default:
