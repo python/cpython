@@ -2426,6 +2426,86 @@ class TestKDE(unittest.TestCase):
         self.assertEqual(f_hat(-1.0), 1/2)
         self.assertEqual(f_hat(1.0), 1/2)
 
+    def test_kde_kernel_invcdfs(self):
+        kernel_invcdfs = statistics._kernel_invcdfs
+        kde = statistics.kde
+
+        # Verify that cdf / invcdf will round trip
+        xarr = [i/100 for i in range(-100, 101)]
+        for kernel, invcdf in kernel_invcdfs.items():
+            with self.subTest(kernel=kernel):
+                cdf = kde([0.0], h=1.0, kernel=kernel, cumulative=True)
+                for x in xarr:
+                    self.assertAlmostEqual(invcdf(cdf(x)), x, places=5)
+
+    def test_kde_random(self):
+        kde_random = statistics.kde_random
+        StatisticsError = statistics.StatisticsError
+        kernels = ['normal', 'gauss', 'logistic', 'sigmoid', 'rectangular',
+                   'uniform', 'triangular', 'parabolic', 'epanechnikov',
+                   'quartic', 'biweight', 'triweight', 'cosine']
+        sample = [-2.1, -1.3, -0.4, 1.9, 5.1, 6.2]
+
+        # Smoke test
+
+        for kernel in kernels:
+            with self.subTest(kernel=kernel):
+                rand = kde_random(sample, h=1.5, kernel=kernel)
+                selections = [rand() for i in range(10)]
+
+        # Check error cases
+
+        with self.assertRaises(StatisticsError):
+            kde_random([], h=1.0)                       # Empty dataset
+        with self.assertRaises(TypeError):
+            kde_random(['abc', 'def'], 1.5)             # Non-numeric data
+        with self.assertRaises(TypeError):
+            kde_random(iter(sample), 1.5)               # Data is not a sequence
+        with self.assertRaises(StatisticsError):
+            kde_random(sample, h=0.0)                   # Zero bandwidth
+        with self.assertRaises(StatisticsError):
+            kde_random(sample, h=0.0)                   # Negative bandwidth
+        with self.assertRaises(TypeError):
+            kde_random(sample, h='str')                 # Wrong bandwidth type
+        with self.assertRaises(StatisticsError):
+            kde_random(sample, h=1.0, kernel='bogus')   # Invalid kernel
+
+        # Test name and docstring of the generated function
+
+        h = 1.5
+        kernel = 'cosine'
+        prng = kde_random(sample, h, kernel)
+        self.assertEqual(prng.__name__, 'rand')
+        self.assertIn(kernel, prng.__doc__)
+        self.assertIn(repr(h), prng.__doc__)
+
+        # Approximate distribution test: Compare a random sample to the expected distribution
+
+        data = [-2.1, -1.3, -0.4, 1.9, 5.1, 6.2, 7.8, 14.3, 15.1, 15.3, 15.8, 17.0]
+        n = 1_000_000
+        h = 1.75
+        dx = 0.1
+
+        def p_expected(x):
+            return F_hat(x + dx) - F_hat(x - dx)
+
+        def p_observed(x):
+            # P(x-dx <= X < x+dx) / (2*dx)
+            i = bisect.bisect_left(big_sample, x - dx)
+            j = bisect.bisect_right(big_sample, x + dx)
+            return (j - i) / len(big_sample)
+
+        for kernel in kernels:
+            with self.subTest(kernel=kernel):
+
+                F_hat = statistics.kde(data, h, kernel, cumulative=True)
+                rand = kde_random(data, h, kernel, seed=8675309**2)
+                big_sample = sorted([rand() for i in range(n)])
+
+                for x in range(-40, 190):
+                    x /= 10
+                    self.assertTrue(math.isclose(p_observed(x), p_expected(x), abs_tol=0.001))
+
 
 class TestQuantiles(unittest.TestCase):
 
