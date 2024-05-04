@@ -4720,16 +4720,38 @@ exit:
 /*[clinic input]
 os._path_isdevdrive
 
-    path: path_t
+    path: object
 
 Determines whether the specified path is on a Windows Dev Drive.
 
 [clinic start generated code]*/
 
 static PyObject *
-os__path_isdevdrive_impl(PyObject *module, path_t *path)
-/*[clinic end generated code: output=1f437ea6677433a2 input=ee83e4996a48e23d]*/
+os__path_isdevdrive_impl(PyObject *module, PyObject *path)
+/*[clinic end generated code: output=4f5a02fe80648dab input=cb26f0f438f49cb6]*/
 {
+    path_t _path = PATH_T_INITIALIZE("isdevdrive", "path", 0, 0);
+    if (!path_converter(path, &_path)) {
+        path_cleanup(&_path);
+        if (PyErr_ExceptionMatches(PyExc_ValueError)) {
+            PyErr_Clear();
+            Py_RETURN_FALSE;
+        }
+        return NULL;
+    }
+
+    PyObject *abs_obj = posix_abspath((wchar_t *)_path.wide, _path.length, 0);
+    if (!abs_obj) {
+        path_cleanup(&_path);
+        return NULL;
+    }
+    wchar_t *abs_buf = PyUnicode_AsWideCharString(abs_obj, NULL);
+    Py_DECREF(abs_obj);
+    if (!abs_buf) {
+        path_cleanup(&_path);
+        return NULL;
+    }
+
 #ifndef PERSISTENT_VOLUME_STATE_DEV_VOLUME
     /* This flag will be documented at
        https://learn.microsoft.com/windows-hardware/drivers/ddi/ntifs/ns-ntifs-_file_fs_persistent_volume_information
@@ -4743,7 +4765,7 @@ os__path_isdevdrive_impl(PyObject *module, path_t *path)
     wchar_t volume[MAX_PATH];
 
     Py_BEGIN_ALLOW_THREADS
-    if (!GetVolumePathNameW(path->wide, volume, MAX_PATH)) {
+    if (!GetVolumePathNameW(abs_buf, volume, MAX_PATH)) {
         /* invalid path of some kind */
         /* Note that this also includes the case where a volume is mounted
            in a path longer than 260 characters. This is likely to be rare
@@ -4793,6 +4815,8 @@ os__path_isdevdrive_impl(PyObject *module, path_t *path)
     }
     Py_END_ALLOW_THREADS
 
+    path_cleanup(&_path);
+    PyMem_RawFree(abs_buf);
     if (err) {
         PyErr_SetFromWindowsErr(err);
         return NULL;
@@ -5505,38 +5529,18 @@ os__path_normpath_impl(PyObject *module, PyObject *path)
     return result;
 }
 
-/*[clinic input]
-os._path_abspath
-
-    path: unicode
-    /
-
-Make path absolute.
-[clinic start generated code]*/
-
 static PyObject *
-os__path_abspath_impl(PyObject *module, PyObject *path)
-/*[clinic end generated code: output=b58956d662b60be0 input=577ecb3473d22113]*/
+posix_abspath(wchar_t *path_buf, Py_ssize_t path_len, int use_bytes)
 {
-    Py_ssize_t path_len, abs_len;
+    Py_ssize_t abs_len;
     wchar_t *abs, *abs_buf = NULL, *cwd_buf = NULL;
     PyObject *result = NULL;
 
-    wchar_t *path_buf = PyUnicode_AsWideCharString(path, &path_len);
-    if (!path_buf) {
-        goto exit;
-    }
-
 #ifdef MS_WINDOWS
-    if (wcslen(path_buf) != path_len) {
-        PyErr_Format(PyExc_ValueError,
-                     "_path_abspath: embedded null character in path");
-        goto exit;
-    }
     // Preserve `.\` for qualified referencing
     abs = _Py_normpath_and_size(path_buf, path_len, 0, &abs_len, 1);
     if (abs_len == 0 || (abs_len == 1 && abs[0] == L'.')) {
-        result = posix_getcwd(0);
+        result = posix_getcwd(use_bytes);
         goto exit;
     }
     if (_PyOS_getfullpathname(abs, &abs_buf) < 0) {
@@ -5547,7 +5551,7 @@ os__path_abspath_impl(PyObject *module, PyObject *path)
     abs_len = wcslen(abs_buf);
 #else
     if (path_len == 0 || (path_len == 1 && path_buf[0] == L'.')) {
-        result = posix_getcwd(0);
+        result = posix_getcwd(use_bytes);
         goto exit;
     }
 
@@ -5594,11 +5598,50 @@ os__path_abspath_impl(PyObject *module, PyObject *path)
 #endif
 
     result = PyUnicode_FromWideChar(abs, abs_len);
+    if (use_bytes) {
+        Py_SETREF(result, PyUnicode_EncodeFSDefault(result));
+    }
+
+exit:
+    PyMem_Free(cwd_buf);
+    PyMem_RawFree(abs_buf);
+    return result;
+}
+
+
+/*[clinic input]
+os._path_abspath
+
+    path: unicode
+    /
+
+Make path absolute.
+[clinic start generated code]*/
+
+static PyObject *
+os__path_abspath_impl(PyObject *module, PyObject *path)
+/*[clinic end generated code: output=b58956d662b60be0 input=577ecb3473d22113]*/
+{
+    Py_ssize_t path_len;
+    PyObject *result = NULL;
+
+    wchar_t *path_buf = PyUnicode_AsWideCharString(path, &path_len);
+    if (!path_buf) {
+        goto exit;
+    }
+
+#ifdef MS_WINDOWS
+    if (wcslen(path_buf) != path_len) {
+        PyErr_Format(PyExc_ValueError,
+                     "_path_abspath: embedded null character in path");
+        goto exit;
+    }
+#endif
+
+    result = posix_abspath(path_buf, path_len, 0);
 
 exit:
     PyMem_Free(path_buf);
-    PyMem_Free(cwd_buf);
-    PyMem_RawFree(abs_buf);
     return result;
 }
 
