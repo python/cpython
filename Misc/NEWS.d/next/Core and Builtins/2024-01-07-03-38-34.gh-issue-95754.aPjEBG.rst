@@ -1,0 +1,4 @@
+Improve the error message when a script shadowing a module from the standard
+library causes :exc:`AttributeError` to be raised. Similarly, improve the error
+message when a script shadowing a third party module attempts to access an
+attribute from that third party module while still initialising.

@@ -564,6 +564,7 @@ class PosixTester(unittest.TestCase):
 
     @unittest.skipUnless(hasattr(posix, 'confstr'),
                          'test needs posix.confstr()')
+    @unittest.skipIf(support.is_apple_mobile, "gh-118201: Test is flaky on iOS")
     def test_confstr(self):
         self.assertRaises(ValueError, posix.confstr, "CS_garbage")
         self.assertEqual(len(posix.confstr("CS_PATH")) > 0, True)

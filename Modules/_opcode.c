@@ -367,7 +367,13 @@ _opcode_get_executor_impl(PyObject *module, PyObject *code, int offset)
                      Py_TYPE(code)->tp_name);
         return NULL;
     }
+#ifdef _Py_TIER2
     return (PyObject *)PyUnstable_GetExecutor((PyCodeObject *)code, offset);
+#else
+    PyErr_Format(PyExc_RuntimeError,
+                 "Executors are not available in this build");
+    return NULL;
+#endif
 }
 
 static PyMethodDef
@@ -400,6 +406,7 @@ _opcode_exec(PyObject *m) {
 static PyModuleDef_Slot module_slots[] = {
     {Py_mod_exec, _opcode_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
 };
 

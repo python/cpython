@@ -277,12 +277,12 @@ _PyEvent_Notify(PyEvent *evt)
 void
 PyEvent_Wait(PyEvent *evt)
 {
-    while (!PyEvent_WaitTimed(evt, -1))
+    while (!PyEvent_WaitTimed(evt, -1, /*detach=*/1))
         ;
 }
 
 int
-PyEvent_WaitTimed(PyEvent *evt, PyTime_t timeout_ns)
+PyEvent_WaitTimed(PyEvent *evt, PyTime_t timeout_ns, int detach)
 {
     for (;;) {
         uint8_t v = _Py_atomic_load_uint8(&evt->v);
@@ -298,7 +298,7 @@ PyEvent_WaitTimed(PyEvent *evt, PyTime_t timeout_ns)
 
         uint8_t expected = _Py_HAS_PARKED;
         (void) _PyParkingLot_Park(&evt->v, &expected, sizeof(evt->v),
-                                  timeout_ns, NULL, 1);
+                                  timeout_ns, NULL, detach);
 
         return _Py_atomic_load_uint8(&evt->v) == _Py_LOCKED;
     }

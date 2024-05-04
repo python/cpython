@@ -16,6 +16,8 @@ _testinternalcapi = import_module("_testinternalcapi")
 
 def disabling_optimizer(func):
     def wrapper(*args, **kwargs):
+        if not hasattr(_testinternalcapi, "get_optimizer"):
+            return func(*args, **kwargs)
         old_opt = _testinternalcapi.get_optimizer()
         _testinternalcapi.set_optimizer(None)
         try:

@@ -10,6 +10,7 @@ import unittest
 import subprocess
 import textwrap
 import linecache
+import zipapp
 
 from contextlib import ExitStack, redirect_stdout
 from io import StringIO
@@ -352,6 +353,46 @@ def test_pdb_breakpoint_commands():
     -> print(4)
     (Pdb) continue
     4
+    """
+
+def test_pdb_breakpoint_with_filename():
+    """Breakpoints with filename:lineno
+
+    >>> def test_function():
+    ...     # inspect_fodder2 is a great module as the line number is stable
+    ...     from test.test_inspect import inspect_fodder2 as mod2
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    ...     mod2.func88()
+    ...     mod2.func114()
+    ...     # Be a good citizen and clean up the mess
+    ...     reset_Breakpoint()
+
+    First, need to clear bdb state that might be left over from previous tests.
+    Otherwise, the new breakpoints might get assigned different numbers.
+
+    >>> reset_Breakpoint()
+
+    >>> with PdbTestInput([  # doctest: +NORMALIZE_WHITESPACE +ELLIPSIS
+    ...     'break test.test_inspect.inspect_fodder2:90',
+    ...     'continue', # will stop at func88
+    ...     'break test/test_inspect/inspect_fodder2.py:115',
+    ...     'continue', # will stop at func114
+    ...     'continue',
+    ... ]):
+    ...    test_function()
+    > <doctest test.test_pdb.test_pdb_breakpoint_with_filename[0]>(5)test_function()
+    -> mod2.func88()
+    (Pdb) break test.test_inspect.inspect_fodder2:90
+    Breakpoint 1 at ...inspect_fodder2.py:90
+    (Pdb) continue
+    > ...inspect_fodder2.py(90)func88()
+    -> return 90
+    (Pdb) break test/test_inspect/inspect_fodder2.py:115
+    Breakpoint 2 at ...inspect_fodder2.py:115
+    (Pdb) continue
+    > ...inspect_fodder2.py(115)func114()
+    -> return 115
+    (Pdb) continue
     """
 
 def test_pdb_breakpoints_preserved_across_interactive_sessions():
@@ -3491,6 +3532,30 @@ def bœr():
         for filename in os.listdir(script_dir):
             if filename.endswith(".py"):
                 self._run_pdb([os.path.join(script_dir, filename)], 'q')
+
+    def test_zipapp(self):
+        with os_helper.temp_dir() as temp_dir:
+            os.mkdir(os.path.join(temp_dir, 'source'))
+            script = textwrap.dedent(
+                """
+                def f(x):
+                    return x + 1
+                f(21 + 21)
+                """
+            )
+            with open(os.path.join(temp_dir, 'source', '__main__.py'), 'w') as f:
+                f.write(script)
+            zipapp.create_archive(os.path.join(temp_dir, 'source'),
+                                  os.path.join(temp_dir, 'zipapp.pyz'))
+            stdout, _ = self._run_pdb([os.path.join(temp_dir, 'zipapp.pyz')], '\n'.join([
+                'b f',
+                'c',
+                'p x',
+                'q'
+            ]))
+            self.assertIn('42', stdout)
+            self.assertIn('return x + 1', stdout)
+
 
 class ChecklineTests(unittest.TestCase):
     def setUp(self):

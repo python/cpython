@@ -1,3 +1,4 @@
+#ifdef _Py_TIER2
 
 #include "Python.h"
 
@@ -163,19 +164,26 @@ _Py_uop_sym_set_const(_Py_UopsSymbol *sym, PyObject *const_val)
     return true;
 }
 
-
 bool
 _Py_uop_sym_set_null(_Py_UopsSymbol *sym)
 {
+    if (_Py_uop_sym_is_not_null(sym)) {
+        sym_set_bottom(sym);
+        return false;
+    }
     sym_set_flag(sym, IS_NULL);
-    return !_Py_uop_sym_is_bottom(sym);
+    return true;
 }
 
 bool
 _Py_uop_sym_set_non_null(_Py_UopsSymbol *sym)
 {
+    if (_Py_uop_sym_is_null(sym)) {
+        sym_set_bottom(sym);
+        return false;
+    }
     sym_set_flag(sym, NOT_NULL);
-    return !_Py_uop_sym_is_bottom(sym);
+    return true;
 }
 
 
@@ -231,6 +239,15 @@ _Py_uop_sym_new_null(_Py_UOpsContext *ctx)
     return null_sym;
 }
 
+PyTypeObject *
+_Py_uop_sym_get_type(_Py_UopsSymbol *sym)
+{
+    if (_Py_uop_sym_is_bottom(sym)) {
+        return NULL;
+    }
+    return sym->typ;
+}
+
 bool
 _Py_uop_sym_has_type(_Py_UopsSymbol *sym)
 {
@@ -244,10 +261,7 @@ bool
 _Py_uop_sym_matches_type(_Py_UopsSymbol *sym, PyTypeObject *typ)
 {
     assert(typ != NULL && PyType_Check(typ));
-    if (_Py_uop_sym_is_bottom(sym)) {
-        return false;
-    }
-    return sym->typ == typ;
+    return _Py_uop_sym_get_type(sym) == typ;
 }
 
 int
@@ -500,3 +514,5 @@ fail:
     Py_XDECREF(val_43);
     return NULL;
 }
+
+#endif /* _Py_TIER2 */
