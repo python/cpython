@@ -1345,7 +1345,7 @@ Special read-only attributes
        (if the frame refers to a function or comprehension,
        this may return a write-through proxy object)
 
-       .. versionchanged 3.13
+       .. versionchanged:: 3.13
           Return a proxy for functions and comprehensions.
 
    * - .. attribute:: frame.f_globals
