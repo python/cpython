@@ -242,7 +242,7 @@ class Reader:
         self.cxy = self.pos2xy()
         self.lxy = (self.pos, 0)
 
-    def collect_keymap(self):
+    def collect_keymap(self) -> tuple[tuple[KeySpec, CommandName], ...]:
         return default_keymap
 
     def calc_screen(self) -> list[str]:
