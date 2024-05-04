@@ -2235,6 +2235,7 @@ static PyTypeObject* static_types[] = {
     &PyFilter_Type,
     &PyFloat_Type,
     &PyFrame_Type,
+    &PyFrameLocalsProxy_Type,
     &PyFrozenSet_Type,
     &PyFunction_Type,
     &PyGen_Type,
@@ -2372,9 +2373,6 @@ _PyTypes_FiniTypes(PyInterpreterState *interp)
 static inline void
 new_reference(PyObject *op)
 {
-    if (_PyRuntime.tracemalloc.config.tracing) {
-        _PyTraceMalloc_NewReference(op);
-    }
     // Skip the immortal object check in Py_SET_REFCNT; always set refcnt to 1
 #if !defined(Py_GIL_DISABLED)
     op->ob_refcnt = 1;
@@ -2389,6 +2387,11 @@ new_reference(PyObject *op)
 #ifdef Py_TRACE_REFS
     _Py_AddToAllObjects(op);
 #endif
+    struct _reftracer_runtime_state *tracer = &_PyRuntime.ref_tracer;
+    if (tracer->tracer_func != NULL) {
+        void* data = tracer->tracer_data;
+        tracer->tracer_func(op, PyRefTracer_CREATE, data);
+    }
 }
 
 void
@@ -2450,12 +2453,13 @@ _PyObject_SetDeferredRefcount(PyObject *op)
 void
 _Py_ResurrectReference(PyObject *op)
 {
-    if (_PyRuntime.tracemalloc.config.tracing) {
-        _PyTraceMalloc_NewReference(op);
-    }
 #ifdef Py_TRACE_REFS
     _Py_AddToAllObjects(op);
 #endif
+    if (_PyRuntime.ref_tracer.tracer_func != NULL) {
+        void* data = _PyRuntime.ref_tracer.tracer_data;
+        _PyRuntime.ref_tracer.tracer_func(op, PyRefTracer_CREATE, data);
+    }
 }
 
 
@@ -2845,6 +2849,12 @@ _Py_Dealloc(PyObject *op)
     Py_INCREF(type);
 #endif
 
+    struct _reftracer_runtime_state *tracer = &_PyRuntime.ref_tracer;
+    if (tracer->tracer_func != NULL) {
+        void* data = tracer->tracer_data;
+        tracer->tracer_func(op, PyRefTracer_DESTROY, data);
+    }
+
 #ifdef Py_TRACE_REFS
     _Py_ForgetReference(op);
 #endif
@@ -2932,6 +2942,22 @@ _Py_SetRefcnt(PyObject *ob, Py_ssize_t refcnt)
 {
     Py_SET_REFCNT(ob, refcnt);
 }
+
+int PyRefTracer_SetTracer(PyRefTracer tracer, void *data) {
+    assert(PyGILState_Check());
+    _PyRuntime.ref_tracer.tracer_func = tracer;
+    _PyRuntime.ref_tracer.tracer_data = data;
+    return 0;
+}
+
+PyRefTracer PyRefTracer_GetTracer(void** data) {
+    assert(PyGILState_Check());
+    if (data != NULL) {
+        *data = _PyRuntime.ref_tracer.tracer_data;
+    }
+    return _PyRuntime.ref_tracer.tracer_func;
+}
+
 
 
 static PyObject* constants[] = {

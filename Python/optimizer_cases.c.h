@@ -1559,6 +1559,58 @@
             break;
         }
 
+        case _PY_FRAME_GENERAL: {
+            _Py_UopsSymbol **args;
+            _Py_UopsSymbol *self_or_null;
+            _Py_UopsSymbol *callable;
+            _Py_UOpsAbstractFrame *new_frame;
+            args = &stack_pointer[-oparg];
+            self_or_null = stack_pointer[-1 - oparg];
+            callable = stack_pointer[-2 - oparg];
+            /* The _Py_UOpsAbstractFrame design assumes that we can copy arguments across directly */
+            (void)callable;
+            (void)self_or_null;
+            (void)args;
+            first_valid_check_stack = NULL;
+            goto done;
+            stack_pointer[-2 - oparg] = (_Py_UopsSymbol *)new_frame;
+            stack_pointer += -1 - oparg;
+            break;
+        }
+
+        case _CHECK_FUNCTION_VERSION: {
+            break;
+        }
+
+        case _CHECK_METHOD_VERSION: {
+            break;
+        }
+
+        case _EXPAND_METHOD: {
+            _Py_UopsSymbol *method;
+            _Py_UopsSymbol *self;
+            method = sym_new_not_null(ctx);
+            if (method == NULL) goto out_of_space;
+            self = sym_new_not_null(ctx);
+            if (self == NULL) goto out_of_space;
+            stack_pointer[-2 - oparg] = method;
+            stack_pointer[-1 - oparg] = self;
+            break;
+        }
+
+        case _CHECK_IS_NOT_PY_CALLABLE: {
+            break;
+        }
+
+        case _CALL_NON_PY_GENERAL: {
+            _Py_UopsSymbol *res;
+            res = sym_new_not_null(ctx);
+            if (res == NULL) goto out_of_space;
+            stack_pointer[-2 - oparg] = res;
+            stack_pointer += -1 - oparg;
+            break;
+        }
+
         case _CHECK_CALL_BOUND_METHOD_EXACT_ARGS: {
             _Py_UopsSymbol *null;
             _Py_UopsSymbol *callable;
@@ -1692,15 +1744,13 @@
             if (first_valid_check_stack == NULL) {
                 first_valid_check_stack = corresponding_check_stack;
             }
-            else {
+            else if (corresponding_check_stack) {
                 // delete all but the first valid _CHECK_STACK_SPACE
                 corresponding_check_stack->opcode = _NOP;
             }
             corresponding_check_stack = NULL;
             break;
         }
-
-        /* _CALL_PY_WITH_DEFAULTS is not a viable micro-op for tier 2 */
 
         case _CALL_TYPE_1: {
             _Py_UopsSymbol *res;
@@ -2140,20 +2190,12 @@
             break;
         }
 
-        case _SIDE_EXIT: {
-            break;
-        }
-
         case _ERROR_POP_N: {
             stack_pointer += -oparg;
             break;
         }
 
         case _TIER2_RESUME_CHECK: {
-            break;
-        }
-
-        case _EVAL_BREAKER_EXIT: {
             break;
         }
 

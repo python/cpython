@@ -25,7 +25,7 @@ struct _frame {
     int f_lineno;               /* Current line number. Only valid if non-zero */
     char f_trace_lines;         /* Emit per-line trace events? */
     char f_trace_opcodes;       /* Emit per-opcode trace events? */
-    char f_fast_as_locals;      /* Have the fast locals of this frame been converted to a dict? */
+    PyObject *f_extra_locals;   /* Dict for locals set by users using f_locals, could be NULL */
     /* The frame data, if this frame object owns the frame */
     PyObject *_f_frame_data[1];
 };
@@ -245,14 +245,11 @@ _PyFrame_ClearExceptCode(_PyInterpreterFrame * frame);
 int
 _PyFrame_Traverse(_PyInterpreterFrame *frame, visitproc visit, void *arg);
 
+bool
+_PyFrame_HasHiddenLocals(_PyInterpreterFrame *frame);
+
 PyObject *
-_PyFrame_GetLocals(_PyInterpreterFrame *frame, int include_hidden);
-
-int
-_PyFrame_FastToLocalsWithError(_PyInterpreterFrame *frame);
-
-void
-_PyFrame_LocalsToFast(_PyInterpreterFrame *frame, int clear);
+_PyFrame_GetLocals(_PyInterpreterFrame *frame);
 
 static inline bool
 _PyThreadState_HasStackSpace(PyThreadState *tstate, int size)
@@ -317,6 +314,11 @@ PyGenObject *_PyFrame_GetGenerator(_PyInterpreterFrame *frame)
     size_t offset_in_gen = offsetof(PyGenObject, gi_iframe);
     return (PyGenObject *)(((char *)frame) - offset_in_gen);
 }
+
+PyAPI_FUNC(_PyInterpreterFrame *)
+_PyEvalFramePushAndInit(PyThreadState *tstate, PyFunctionObject *func,
+                        PyObject *locals, PyObject* const* args,
+                        size_t argcount, PyObject *kwnames);
 
 #ifdef __cplusplus
 }

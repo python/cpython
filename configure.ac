@@ -1148,6 +1148,9 @@ AS_CASE([$host/$ac_cv_cc_name],
   [x86_64-*-freebsd*/clang],         [PY_SUPPORT_TIER=3], dnl FreeBSD on AMD64
   [aarch64-apple-ios*-simulator/clang],   [PY_SUPPORT_TIER=3], dnl iOS Simulator on arm64
   [aarch64-apple-ios*/clang],             [PY_SUPPORT_TIER=3], dnl iOS on ARM64
+  [aarch64-*-linux-android/clang],   [PY_SUPPORT_TIER=3], dnl Android on ARM64
+  [x86_64-*-linux-android/clang],    [PY_SUPPORT_TIER=3], dnl Android on AMD64
+
   [PY_SUPPORT_TIER=0]
 )
 
@@ -1773,18 +1776,22 @@ AC_ARG_ENABLE([experimental-jit],
               [],
               [enable_experimental_jit=no])
 case $enable_experimental_jit in
-  no) enable_experimental_jit=no ;;
-  yes) enable_experimental_jit="-D_Py_JIT -D_Py_TIER2=1" ;;
-  yes-off) enable_experimental_jit="-D_Py_JIT -D_Py_TIER2=3" ;;
-  interpreter) enable_experimental_jit="-D_Py_TIER2=4" ;;
-  interpreter-off) enable_experimental_jit="-D_Py_TIER2=6" ;;  # Secret option
+  no)              jit_flags="";          tier2_flags="" ;;
+  yes)             jit_flags="-D_Py_JIT"; tier2_flags="-D_Py_TIER2=1" ;;
+  yes-off)         jit_flags="-D_Py_JIT"; tier2_flags="-D_Py_TIER2=3" ;;
+  interpreter)     jit_flags="";          tier2_flags="-D_Py_TIER2=4" ;;
+  interpreter-off) jit_flags="";          tier2_flags="-D_Py_TIER2=6" ;;  # Secret option
   *) AC_MSG_ERROR(
       [invalid argument: --enable-experimental-jit=$enable_experimental_jit; expected no|yes|yes-off|interpreter]) ;;
 esac
-AS_VAR_IF([enable_experimental_jit],
-          [no],
+AS_VAR_IF([tier2_flags],
           [],
-          [AS_VAR_APPEND([CFLAGS_NODIST], [" $enable_experimental_jit"])
+          [],
+          [AS_VAR_APPEND([CFLAGS_NODIST], [" $tier2_flags"])])
+AS_VAR_IF([jit_flags],
+          [],
+          [],
+          [AS_VAR_APPEND([CFLAGS_NODIST], [" $jit_flags"])
            AS_VAR_SET([REGEN_JIT_COMMAND],
                       ["\$(PYTHON_FOR_REGEN) \$(srcdir)/Tools/jit/build.py $host"])
            AS_VAR_SET([JIT_STENCILS_H], ["jit_stencils.h"])
@@ -1794,7 +1801,7 @@ AS_VAR_IF([enable_experimental_jit],
                      [])])
 AC_SUBST([REGEN_JIT_COMMAND])
 AC_SUBST([JIT_STENCILS_H])
-AC_MSG_RESULT([$enable_experimental_jit])
+AC_MSG_RESULT([$tier2_flags $jit_flags])
 
 # Enable optimization flags
 AC_SUBST([DEF_MAKE_ALL_RULE])

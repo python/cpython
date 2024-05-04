@@ -224,7 +224,7 @@ drop_gil(PyInterpreterState *interp, PyThreadState *tstate)
         return;
     }
 #endif
-    if (!_Py_atomic_load_ptr_relaxed(&gil->locked)) {
+    if (!_Py_atomic_load_int_relaxed(&gil->locked)) {
         Py_FatalError("drop_gil: GIL is not locked");
     }
 
@@ -877,21 +877,20 @@ make_pending_calls(PyThreadState *tstate)
     /* Only one thread (per interpreter) may run the pending calls
        at once.  In the same way, we don't do recursive pending calls. */
     PyMutex_Lock(&pending->mutex);
-    if (pending->busy) {
+    if (pending->handling_thread != NULL) {
         /* A pending call was added after another thread was already
            handling the pending calls (and had already "unsignaled").
            Once that thread is done, it may have taken care of all the
            pending calls, or there might be some still waiting.
-           Regardless, this interpreter's pending calls will stay
-           "signaled" until that first thread has finished.  At that
-           point the next thread to trip the eval breaker will take
-           care of any remaining pending calls.  Until then, though,
-           all the interpreter's threads will be tripping the eval
-           breaker every time it's checked. */
+           To avoid all threads constantly stopping on the eval breaker,
+           we clear the bit for this thread and make sure it is set
+           for the thread currently handling the pending call. */
+        _Py_set_eval_breaker_bit(pending->handling_thread, _PY_CALLS_TO_DO_BIT);
+        _Py_unset_eval_breaker_bit(tstate, _PY_CALLS_TO_DO_BIT);
         PyMutex_Unlock(&pending->mutex);
         return 0;
     }
-    pending->busy = 1;
+    pending->handling_thread = tstate;
     PyMutex_Unlock(&pending->mutex);
 
     /* unsignal before starting to call callbacks, so that any callback
@@ -900,7 +899,7 @@ make_pending_calls(PyThreadState *tstate)
 
     int32_t npending;
     if (_make_pending_calls(pending, &npending) != 0) {
-        pending->busy = 0;
+        pending->handling_thread = NULL;
         /* There might not be more calls to make, but we play it safe. */
         signal_pending_calls(tstate, interp);
         return -1;
@@ -912,7 +911,7 @@ make_pending_calls(PyThreadState *tstate)
 
     if (_Py_IsMainThread() && _Py_IsMainInterpreter(interp)) {
         if (_make_pending_calls(pending_main, &npending) != 0) {
-            pending->busy = 0;
+            pending->handling_thread = NULL;
             /* There might not be more calls to make, but we play it safe. */
             signal_pending_calls(tstate, interp);
             return -1;
@@ -923,7 +922,7 @@ make_pending_calls(PyThreadState *tstate)
         }
     }
 
-    pending->busy = 0;
+    pending->handling_thread = NULL;
     return 0;
 }
 

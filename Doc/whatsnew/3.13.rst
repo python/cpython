@@ -89,6 +89,8 @@ Interpreter improvements:
 
 New typing features:
 
+* :pep:`696`: Type parameters (:data:`typing.TypeVar`, :data:`typing.ParamSpec`,
+  and :data:`typing.TypeVarTuple`) now support defaults.
 * :pep:`742`: :data:`typing.TypeIs` was added, providing more intuitive
   type narrowing behavior.
 
@@ -100,9 +102,17 @@ Improved Error Messages
 
 * The interpreter now colorizes error messages when displaying tracebacks by default.
   This feature can be controlled via the new :envvar:`PYTHON_COLORS` environment
-  variable as well as the canonical ``NO_COLOR`` and ``FORCE_COLOR`` environment
+  variable as well as the canonical |NO_COLOR|_ and |FORCE_COLOR|_ environment
   variables. See also :ref:`using-on-controlling-color`.
   (Contributed by Pablo Galindo Salgado in :gh:`112730`.)
+
+.. Apparently this how you hack together a formatted link:
+
+.. |FORCE_COLOR| replace:: ``FORCE_COLOR``
+.. _FORCE_COLOR: https://force-color.org/
+
+.. |NO_COLOR| replace:: ``NO_COLOR``
+.. _NO_COLOR: https://no-color.org/
 
 * A common mistake is to write a script with the same name as a
   standard library module. When this results in errors, we now
@@ -280,6 +290,10 @@ Other Language Changes
   class scopes are not inlined into their parent scope. (Contributed by
   Jelle Zijlstra in :gh:`109118` and :gh:`118160`.)
 
+* ``from __future__ import ...`` statements are now just normal
+  relative imports if dots are present before the module name.
+  (Contributed by Jeremiah Gabriel Pascual in :gh:`118216`.)
+
 
 New Modules
 ===========
@@ -438,6 +452,12 @@ doctest
   tests. Add :attr:`doctest.DocTestRunner.skips` and
   :attr:`doctest.TestResults.skipped` attributes.
   (Contributed by Victor Stinner in :gh:`108794`.)
+
+* Color is added to the output by default.
+  This can be controlled via the new :envvar:`PYTHON_COLORS` environment
+  variable as well as the canonical |NO_COLOR|_ and |FORCE_COLOR|_ environment
+  variables. See also :ref:`using-on-controlling-color`.
+  (Contributed by Hugo van Kemenade in :gh:`117225`.)
 
 email
 -----
@@ -687,6 +707,9 @@ pdb
   command line option or :envvar:`PYTHONSAFEPATH` environment variable).
   (Contributed by Tian Gao and Christian Walther in :gh:`111762`.)
 
+* :mod:`zipapp` is supported as a debugging target.
+  (Contributed by Tian Gao in :gh:`118501`.)
+
 queue
 -----
 
@@ -722,7 +745,8 @@ statistics
 
 * Add :func:`statistics.kde` for kernel density estimation.
   This makes it possible to estimate a continuous probability density function
-  from a fixed number of discrete samples.
+  from a fixed number of discrete samples.  Also added :func:`statistics.kde_random`
+  for sampling from the estimated probability density function.
   (Contributed by Raymond Hettinger in :gh:`115863`.)
 
 .. _whatsnew313-subprocess:
@@ -829,6 +853,10 @@ typing
   an item of a :class:`typing.TypedDict` as read-only for type checkers.
   See :pep:`705` for more details.
 
+* Add :data:`typing.NoDefault`, a sentinel object used to represent the defaults
+  of some parameters in the :mod:`typing` module. (Contributed by Jelle Zijlstra in
+  :gh:`116126`.)
+
 unicodedata
 -----------
 
@@ -932,7 +960,8 @@ The ``--enable-experimental-jit`` flag has the following optional values:
   The interpreter can be disabled by running with
   ``PYTHON_JIT=0``.
 
-(On Windows, use ``PCbuild/build.bat --enable-jit`` to enable the JIT.)
+(On Windows, use ``PCbuild/build.bat --experimental-jit`` to enable the JIT
+or ``--experimental-jit-interpreter`` to enable the Tier 2 interpreter.)
 
 See :pep:`744` for more details.
 
@@ -1901,9 +1930,15 @@ New Features
 
   * :c:type:`PyTime_t` type.
   * :c:var:`PyTime_MIN` and :c:var:`PyTime_MAX` constants.
-  * :c:func:`PyTime_AsSecondsDouble`
-    :c:func:`PyTime_Monotonic`, :c:func:`PyTime_PerfCounter`, and
-    :c:func:`PyTime_Time` functions.
+  * Add functions:
+
+    * :c:func:`PyTime_AsSecondsDouble`.
+    * :c:func:`PyTime_Monotonic`.
+    * :c:func:`PyTime_MonotonicRaw`.
+    * :c:func:`PyTime_PerfCounter`.
+    * :c:func:`PyTime_PerfCounterRaw`.
+    * :c:func:`PyTime_Time`.
+    * :c:func:`PyTime_TimeRaw`.
 
   (Contributed by Victor Stinner and Petr Viktorin in :gh:`110850`.)
 
@@ -1935,6 +1970,11 @@ New Features
 
 * Add :c:func:`PyType_GetModuleByDef` to the limited C API
   (Contributed by Victor Stinner in :gh:`116936`.)
+
+* Add two new functions to the C-API, :c:func:`PyRefTracer_SetTracer` and
+  :c:func:`PyRefTracer_GetTracer`, that allows to track object creation and
+  destruction the same way the :mod:`tracemalloc` module does. (Contributed
+  by Pablo Galindo in :gh:`93502`.)
 
 
 Porting to Python 3.13
