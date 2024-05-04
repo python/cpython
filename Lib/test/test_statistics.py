@@ -2453,7 +2453,6 @@ class TestKDE(unittest.TestCase):
                 rand = kde_random(sample, h=1.5, kernel=kernel)
                 selections = [rand() for i in range(10)]
 
-
         # Check error cases
 
         with self.assertRaises(StatisticsError):
@@ -2479,6 +2478,31 @@ class TestKDE(unittest.TestCase):
         self.assertEqual(prng.__name__, 'rand')
         self.assertIn(kernel, prng.__doc__)
         self.assertIn(repr(h), prng.__doc__)
+
+        # Approximate distribution test
+
+        data = [-2.1, -1.3, -0.4, 1.9, 5.1, 6.2, 7.8, 14.3, 15.1, 15.3, 15.8, 17.0]
+        n = 1_000_000
+        h = 1.75
+
+        for kernel in kernels:
+            with self.subTest(kernel=kernel):
+
+                f_hat = statistics.kde(data, h, kernel)
+                rand = kde_random(data, h, kernel, seed=8675309**2)
+                big_sample = sorted([rand() for i in range(n)])
+
+                def pdf_observed(x, dx=0.1):
+                    # P(x-dx <= X < x+dx) / (2*dx)
+                    i = bisect.bisect_left(big_sample, x - dx)
+                    j = bisect.bisect_right(big_sample, x + dx)
+                    p_nearby = (j - i) / len(big_sample)
+                    return p_nearby / (2 * dx)
+
+                for x in range(-4, 19):
+                    pd1 = f_hat(x)
+                    pd2 = pdf_observed(x)
+                    self.assertTrue(math.isclose(pd1, pd2, abs_tol=0.01))
 
 
 class TestQuantiles(unittest.TestCase):
