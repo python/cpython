@@ -3,8 +3,10 @@
 #endif
 
 PyAPI_DATA(PyTypeObject) PyFrame_Type;
+PyAPI_DATA(PyTypeObject) PyFrameLocalsProxy_Type;
 
 #define PyFrame_Check(op) Py_IS_TYPE((op), &PyFrame_Type)
+#define PyFrameLocalsProxy_Check(op) Py_IS_TYPE((op), &PyFrameLocalsProxy_Type)
 
 PyAPI_FUNC(PyFrameObject *) PyFrame_GetBack(PyFrameObject *frame);
 PyAPI_FUNC(PyObject *) PyFrame_GetLocals(PyFrameObject *frame);

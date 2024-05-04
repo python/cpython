@@ -1022,13 +1022,6 @@ static PyObject *
 call_trampoline(PyThreadState *tstate, PyObject* callback,
                 PyFrameObject *frame, int what, PyObject *arg)
 {
-    /* Discard any previous modifications the frame's fast locals */
-    if (frame->f_fast_as_locals) {
-        if (PyFrame_FastToLocalsWithError(frame) < 0) {
-            return NULL;
-        }
-    }
-
     /* call the Python-level function */
     if (arg == NULL) {
         arg = Py_None;
@@ -1036,7 +1029,6 @@ call_trampoline(PyThreadState *tstate, PyObject* callback,
     PyObject *args[3] = {(PyObject *)frame, whatstrings[what], arg};
     PyObject *result = _PyObject_VectorcallTstate(tstate, callback, args, 3, NULL);
 
-    PyFrame_LocalsToFast(frame, 1);
     return result;
 }
 

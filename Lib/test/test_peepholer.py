@@ -933,23 +933,6 @@ class TestMarkingVariablesAsUnKnown(BytecodeTestCase):
         self.assertNotInBytecode(f, "LOAD_FAST_CHECK")
         return f
 
-    def test_deleting_local_warns_and_assigns_none(self):
-        f = self.make_function_with_no_checks()
-        co_code = f.__code__.co_code
-        def trace(frame, event, arg):
-            if event == 'line' and frame.f_lineno == 4:
-                del frame.f_locals["x"]
-                sys.settrace(None)
-                return None
-            return trace
-        e = r"assigning None to unbound local 'x'"
-        with self.assertWarnsRegex(RuntimeWarning, e):
-            sys.settrace(trace)
-            f()
-        self.assertInBytecode(f, "LOAD_FAST")
-        self.assertNotInBytecode(f, "LOAD_FAST_CHECK")
-        self.assertEqual(f.__code__.co_code, co_code)
-
     def test_modifying_local_does_not_add_check(self):
         f = self.make_function_with_no_checks()
         def trace(frame, event, arg):

@@ -2475,12 +2475,7 @@ PyEval_GetLocals(void)
         return NULL;
     }
 
-    if (_PyFrame_FastToLocalsWithError(current_frame) < 0) {
-        return NULL;
-    }
-
-    PyObject *locals = current_frame->f_locals;
-    assert(locals != NULL);
+    PyObject *locals = _PyEval_GetFrameLocals();
     return locals;
 }
 
@@ -2494,7 +2489,24 @@ _PyEval_GetFrameLocals(void)
         return NULL;
     }
 
-    return _PyFrame_GetLocals(current_frame, 1);
+    PyObject *locals = _PyFrame_GetLocals(current_frame);
+    if (locals == NULL) {
+        return NULL;
+    }
+
+    if (PyFrameLocalsProxy_Check(locals)) {
+        PyObject* ret = PyDict_New();
+        if (PyDict_Update(ret, locals)) {
+            Py_DECREF(ret);
+            return NULL;
+        }
+        Py_DECREF(locals);
+        return ret;
+    } else if (PyMapping_Check(locals)) {
+        return locals;
+    }
+
+    return NULL;
 }
 
 PyObject *
@@ -2506,6 +2518,28 @@ PyEval_GetGlobals(void)
         return NULL;
     }
     return current_frame->f_globals;
+}
+
+PyObject*
+PyEval_GetFrameLocals(void)
+{
+    return _PyEval_GetFrameLocals();
+}
+
+PyObject* PyEval_GetFrameGlobals(void)
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+    _PyInterpreterFrame *current_frame = _PyThreadState_GetFrame(tstate);
+    if (current_frame == NULL) {
+        return NULL;
+    }
+    return Py_XNewRef(current_frame->f_globals);
+}
+
+PyObject* PyEval_GetFrameBuiltins(void)
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+    return Py_XNewRef(_PyEval_GetBuiltins(tstate));
 }
 
 int
