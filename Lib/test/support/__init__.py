@@ -866,6 +866,17 @@ def check_cflags_pgo():
     return any(option in cflags_nodist for option in pgo_options)
 
 
+def check_bolt_optimized():
+    # BOLTed binary can be checked based on ELF information.
+    # link: https://github.com/llvm/llvm-project/issues/60253
+    binary_path = sys.executable
+    with open(binary_path, 'rb') as f:
+        binary = f.read()
+        if b'.note.bolt_info' in binary:
+            return True
+    return False
+
+
 Py_GIL_DISABLED = bool(sysconfig.get_config_var('Py_GIL_DISABLED'))
 
 def requires_gil_enabled(msg="needs the GIL enabled"):

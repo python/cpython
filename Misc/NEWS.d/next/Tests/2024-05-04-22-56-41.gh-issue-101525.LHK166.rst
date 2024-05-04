@@ -1,0 +1,1 @@
+Skip test_gdb if the binary is BOLTed. Patch by Donghee Na.
