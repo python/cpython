@@ -5244,7 +5244,7 @@ datetime_utcfromtimestamp(PyObject *cls, PyObject *args)
         "datetime.datetime.utcfromtimestamp() is deprecated and scheduled for removal "
         "in a future version. Use timezone-aware objects to represent datetimes "
         "in UTC: datetime.datetime.fromtimestamp(timestamp, datetime.UTC). To maintain "
-        "compatability datetime.datetime.fromtimestamp(timestamp) may be used.", 1))
+        "compatibility datetime.datetime.fromtimestamp(timestamp) may be used.", 1))
     {
         return NULL;
     }
