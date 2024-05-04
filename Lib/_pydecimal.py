@@ -423,56 +423,6 @@ def localcontext(ctx=None, **kwargs):
 # (because Decimals are not interoperable with floats).  See the notes in
 # numbers.py for more detail.
 
-import re
-_is_power_of_10 = re.compile(r"10*").fullmatch
-del re
-
-# In Decimal._power_exact(), there are two blocks of the form
-#     if xc > 10**p:
-#         return None
-#     ...
-#     code using str(zc)
-# where p is the maximum exponent. Which can be truly gigantic. So Python
-# can appear to hang if those blocke are hit, or, if you wait long enough,
-# run out of RAM. For example,
-#     https://github.com/python/cpython/issues/118027
-# where this happens during decimal.Decimal(2) ** 117 after
-# ctx.Emax is set to decimal.MAX_EMAX.
-#
-# This function instead converts to string first, then sees whether the
-# string is compatible with the claim that it's a value <= 10**p. If so,
-# it returns the string; else None. So the code above becomes instead:
-#     str_xc = _convert_to_str(zc, p)
-#     if str_xc is None:
-#         return None
-#     use `str_xc` instead of str(xc)
-# The code in _power_exact() is very involved, and I'm not certain xc can't
-# be very much larger than 10**p. I _doubt_ it can. But, if I'm wrong, a
-# different approach would be better.
-#
-# BUG ALERT: the code in the first block above returns None if xc ix sn
-# integer power of 10 > 10**p. But the replacement accepts any such power of
-# 10. This was intentional, but may be wrong. I (Tim) am taking the comments
-# at their word: that the purpose is to identify cases that are exactly
-# representable in decimal floating point with p digits of precision. Every
-# integer power of 10 is, and even if p is just 1. If that's wrong, the
-# original behavior can be gotten by changing the test below to:
-#     len(sc) <= p or (len(sc) == p+1 and _is_power_of_10(sc))
-# Alas, I don't know how to contrive inputs to trigger these paths.
-#
-# LATER: I believe it's impossible for _is_power_of_10(sc) to be true in
-# either of the code blocks using _convert_to_str() at this time. But I'll
-# leave it in anyway, "just in case", and so this function is more
-# bulletproof if it gets used in other contexts. It's a cheap test and rarely
-# executed.
-
-def _convert_to_str(ec, p):
-    sc = str(ec)
-    if len(sc) <= p or _is_power_of_10(sc):
-        return sc
-    else:
-        return None
-
 class Decimal(object):
     """Floating point class for decimal arithmetic."""
 
@@ -2181,8 +2131,8 @@ class Decimal(object):
             else:
                 return None
 
-            strxc = _convert_to_str(xc, p)
-            if strxc is None:
+            strxc = str(xc)
+            if len(strxc) > p:
                 return None
             xe = -e-xe
             return _dec_from_triple(0, strxc, xe)
@@ -2231,14 +2181,17 @@ class Decimal(object):
 
         # if m > p*100//_log10_lb(xc) then m > p/log10(xc), hence xc**m >
         # 10**p and the result is not representable.
-        assert xc != 1, self
-        assert xc % 10 != 0, self
         if xc > 1 and m > p*100//_log10_lb(xc):
             return None
         xc = xc**m
         xe *= m
-        str_xc = _convert_to_str(xc, p)
-        if str_xc is None:
+        # An exact power of 10 is representable, but can convert to a string
+        # of any length. But an exact power of 10 shouldn't be possible at
+        # this point.
+        assert xc > 1, self
+        assert xc % 10 != 0, self
+        str_xc = str(xc)
+        if len(str_xc) > p:
             return None
 
         # by this point the result *is* exactly representable
