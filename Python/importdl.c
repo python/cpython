@@ -111,9 +111,12 @@ _Py_ext_module_loader_info_clear(struct _Py_ext_module_loader_info *info)
 
 int
 _Py_ext_module_loader_info_init(struct _Py_ext_module_loader_info *p_info,
-                                PyObject *name, PyObject *filename)
+                                PyObject *name, PyObject *filename,
+                                _Py_ext_module_origin origin)
 {
-    struct _Py_ext_module_loader_info info = {0};
+    struct _Py_ext_module_loader_info info = {
+        .origin=origin,
+    };
 
     assert(name != NULL);
     if (!PyUnicode_Check(name)) {
@@ -183,9 +186,22 @@ _Py_ext_module_loader_info_init_for_builtin(
         .name_encoded=name_encoded,
         /* We won't need filename. */
         .path=name,
+        .origin=_Py_ext_module_origin_BUILTIN,
         .hook_prefix=ascii_only_prefix,
         .newcontext=NULL,
     };
+    return 0;
+}
+
+int
+_Py_ext_module_loader_info_init_for_core(
+                            struct _Py_ext_module_loader_info *info,
+                            PyObject *name)
+{
+    if (_Py_ext_module_loader_info_init_for_builtin(info, name) < 0) {
+        return -1;
+    }
+    info->origin = _Py_ext_module_origin_CORE;
     return 0;
 }
 
@@ -203,7 +219,9 @@ _Py_ext_module_loader_info_init_from_spec(
         Py_DECREF(name);
         return -1;
     }
-    int err = _Py_ext_module_loader_info_init(p_info, name, filename);
+    /* We could also accommodate builtin modules here without much trouble. */
+    _Py_ext_module_origin origin = _Py_ext_module_origin_DYNAMIC;
+    int err = _Py_ext_module_loader_info_init(p_info, name, filename, origin);
     Py_DECREF(name);
     Py_DECREF(filename);
     return err;
