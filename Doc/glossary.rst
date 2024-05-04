@@ -1084,6 +1084,10 @@ Glossary
 
       See also :term:`namespace package`.
 
+   REPL
+      An acronym for the "read–eval–print loop", another name for the
+      :term:`interactive` interpreter shell.
+
    __slots__
       A declaration inside a class that saves memory by pre-declaring space for
       instance attributes and eliminating instance dictionaries.  Though

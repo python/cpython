@@ -515,7 +515,7 @@ def register_readline():
         # http://bugs.python.org/issue5845#msg198636
         history = gethistoryfile()
         try:
-            if os.getenv("PYTHON_OLD_REPL"):
+            if os.getenv("PYTHON_BASIC_REPL"):
                 readline.read_history_file(history)
             else:
                 _pyrepl.readline.read_history_file(history)
@@ -524,7 +524,7 @@ def register_readline():
 
         def write_history():
             try:
-                if os.getenv("PYTHON_OLD_REPL"):
+                if os.getenv("PYTHON_BASIC_REPL"):
                     readline.write_history_file(history)
                 else:
                     _pyrepl.readline.write_history_file(history)

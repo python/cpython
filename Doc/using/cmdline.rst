@@ -1158,6 +1158,15 @@ conflict.
 
    .. versionadded:: 3.13
 
+.. envvar:: PYTHON_BASIC_REPL
+
+   If this variable is set to ``1``, the interpreter will not attempt to
+   load the Python-based :term:`REPL` that requires :mod:`curses` and
+   :mod:`readline`, and will instead use the traditional parser-based
+   :term:`REPL`.
+
+   .. versionadded:: 3.13
+
 .. envvar:: PYTHON_HISTORY
 
    This environment variable can be used to set the location of a
