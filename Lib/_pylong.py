@@ -112,7 +112,7 @@ def int_to_decimal_string(n):
         w2 = w >> 1
         d = pow10_cache.get(w2)
         if d is None:
-            d = pow10_cache[w2] = 10**w2
+            d = pow10_cache[w2] = 5**w2 << w2 # 10**i = (5*2)**i = 5**i * 2**i
         hi, lo = divmod(n, d)
         return inner(hi, w - w2) + inner(lo, w2).zfill(w2)
 
