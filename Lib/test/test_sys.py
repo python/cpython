@@ -16,6 +16,7 @@ from test.support import os_helper
 from test.support.script_helper import assert_python_ok, assert_python_failure
 from test.support import threading_helper
 from test.support import import_helper
+from test.support import force_not_colorized
 try:
     from test.support import interpreters
 except ImportError:
@@ -145,6 +146,7 @@ class ActiveExceptionTests(unittest.TestCase):
 
 class ExceptHookTest(unittest.TestCase):
 
+    @force_not_colorized
     def test_original_excepthook(self):
         try:
             raise ValueError(42)
@@ -156,6 +158,7 @@ class ExceptHookTest(unittest.TestCase):
 
         self.assertRaises(TypeError, sys.__excepthook__)
 
+    @force_not_colorized
     def test_excepthook_bytes_filename(self):
         # bpo-37467: sys.excepthook() must not crash if a filename
         # is a bytes string
@@ -562,7 +565,8 @@ class SysModuleTest(unittest.TestCase):
             # And the next record must be for g456().
             filename, lineno, funcname, sourceline = stack[i+1]
             self.assertEqual(funcname, "g456")
-            self.assertTrue(sourceline.startswith("if leave_g.wait("))
+            self.assertTrue((sourceline.startswith("if leave_g.wait(") or
+                             sourceline.startswith("g_raised.set()")))
         finally:
             # Reap the spawned thread.
             leave_g.set()
@@ -668,7 +672,7 @@ class SysModuleTest(unittest.TestCase):
         self.assertEqual(len(info), 3)
         self.assertIn(info.name, ('nt', 'pthread', 'pthread-stubs', 'solaris', None))
         self.assertIn(info.lock, ('semaphore', 'mutex+cond', None))
-        if sys.platform.startswith(("linux", "freebsd")):
+        if sys.platform.startswith(("linux", "android", "freebsd")):
             self.assertEqual(info.name, "pthread")
         elif sys.platform == "win32":
             self.assertEqual(info.name, "nt")
@@ -729,7 +733,7 @@ class SysModuleTest(unittest.TestCase):
         self.assertIs(t, s)
 
         interp = interpreters.create()
-        interp.exec_sync(textwrap.dedent(f'''
+        interp.exec(textwrap.dedent(f'''
             import sys
             t = sys.intern({s!r})
             assert id(t) != {id(s)}, (id(t), {id(s)})
@@ -744,7 +748,7 @@ class SysModuleTest(unittest.TestCase):
         t = sys.intern(s)
 
         interp = interpreters.create()
-        interp.exec_sync(textwrap.dedent(f'''
+        interp.exec(textwrap.dedent(f'''
             import sys
             t = sys.intern({s!r})
             assert id(t) == {id(t)}, (id(t), {id(t)})
@@ -792,6 +796,7 @@ class SysModuleTest(unittest.TestCase):
     def test_clear_type_cache(self):
         sys._clear_type_cache()
 
+    @force_not_colorized
     @support.requires_subprocess()
     def test_ioencoding(self):
         env = dict(os.environ)
@@ -1048,6 +1053,12 @@ class SysModuleTest(unittest.TestCase):
         c = sys.getallocatedblocks()
         self.assertIn(c, range(b - 50, b + 50))
 
+    def test_is_gil_enabled(self):
+        if support.Py_GIL_DISABLED:
+            self.assertIs(type(sys._is_gil_enabled()), bool)
+        else:
+            self.assertTrue(sys._is_gil_enabled())
+
     def test_is_finalizing(self):
         self.assertIs(sys.is_finalizing(), False)
         # Don't use the atexit module because _Py_Finalizing is only set
@@ -1101,13 +1112,13 @@ class SysModuleTest(unittest.TestCase):
         self.assertEqual(stdout.rstrip(), b"")
         self.assertEqual(stderr.rstrip(), b"")
 
-    @unittest.skipUnless(hasattr(sys, 'getandroidapilevel'),
-                         'need sys.getandroidapilevel()')
+    @unittest.skipUnless(sys.platform == "android", "Android only")
     def test_getandroidapilevel(self):
         level = sys.getandroidapilevel()
         self.assertIsInstance(level, int)
         self.assertGreater(level, 0)
 
+    @force_not_colorized
     @support.requires_subprocess()
     def test_sys_tracebacklimit(self):
         code = """if 1:
@@ -1390,8 +1401,9 @@ class SizeofTest(unittest.TestCase):
     def setUp(self):
         self.P = struct.calcsize('P')
         self.longdigit = sys.int_info.sizeof_digit
-        import _testinternalcapi
+        _testinternalcapi = import_helper.import_module("_testinternalcapi")
         self.gc_headsize = _testinternalcapi.SIZEOF_PYGC_HEAD
+        self.managed_pre_header_size = _testinternalcapi.SIZEOF_MANAGED_PRE_HEADER
 
     check_sizeof = test.support.check_sizeof
 
@@ -1427,7 +1439,7 @@ class SizeofTest(unittest.TestCase):
             def __sizeof__(self):
                 return int(self)
         self.assertEqual(sys.getsizeof(OverflowSizeof(sys.maxsize)),
-                         sys.maxsize + self.gc_headsize*2)
+                         sys.maxsize + self.gc_headsize + self.managed_pre_header_size)
         with self.assertRaises(OverflowError):
             sys.getsizeof(OverflowSizeof(sys.maxsize + 1))
         with self.assertRaises(ValueError):
@@ -1549,7 +1561,7 @@ class SizeofTest(unittest.TestCase):
         def func():
             return sys._getframe()
         x = func()
-        check(x, size('3Pi3c7P2ic??2P'))
+        check(x, size('3Pi2cP7P2ic??2P'))
         # function
         def func(): pass
         check(func, size('15Pi'))
@@ -1594,7 +1606,10 @@ class SizeofTest(unittest.TestCase):
         check(int(PyLong_BASE**2-1), vsize('') + 2*self.longdigit)
         check(int(PyLong_BASE**2), vsize('') + 3*self.longdigit)
         # module
-        check(unittest, size('PnPPP'))
+        if support.Py_GIL_DISABLED:
+            check(unittest, size('PPPPPP'))
+        else:
+            check(unittest, size('PPPPP'))
         # None
         check(None, size(''))
         # NotImplementedType
@@ -1650,7 +1665,7 @@ class SizeofTest(unittest.TestCase):
         # type
         # static type: PyTypeObject
         fmt = 'P2nPI13Pl4Pn9Pn12PIPc'
-        s = vsize('2P' + fmt)
+        s = vsize(fmt)
         check(int, s)
         # class
         s = vsize(fmt +                 # PyTypeObject
@@ -1707,11 +1722,15 @@ class SizeofTest(unittest.TestCase):
         # TODO: add check that forces layout of unicodefields
         # weakref
         import weakref
-        check(weakref.ref(int), size('2Pn3P'))
+        if support.Py_GIL_DISABLED:
+            expected = size('2Pn4P')
+        else:
+            expected = size('2Pn3P')
+        check(weakref.ref(int), expected)
         # weakproxy
         # XXX
         # weakcallableproxy
-        check(weakref.proxy(int), size('2Pn3P'))
+        check(weakref.proxy(int), expected)
 
     def check_slots(self, obj, base, extra):
         expected = sys.getsizeof(base) + struct.calcsize(extra)

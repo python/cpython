@@ -691,11 +691,10 @@ _parse_object_unicode(PyScannerObject *s, PyObject *memo, PyObject *pystr, Py_ss
             key = scanstring_unicode(pystr, idx + 1, s->strict, &next_idx);
             if (key == NULL)
                 goto bail;
-            memokey = PyDict_SetDefault(memo, key, key);
-            if (memokey == NULL) {
+            if (PyDict_SetDefaultRef(memo, key, key, &memokey) < 0) {
                 goto bail;
             }
-            Py_SETREF(key, Py_NewRef(memokey));
+            Py_SETREF(key, memokey);
             idx = next_idx;
 
             /* skip whitespace between key and : delimiter, read :, skip whitespace */
@@ -1781,6 +1780,7 @@ _json_exec(PyObject *module)
 static PyModuleDef_Slot _json_slots[] = {
     {Py_mod_exec, _json_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
 };
 

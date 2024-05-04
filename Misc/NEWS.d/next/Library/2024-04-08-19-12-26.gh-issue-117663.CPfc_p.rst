@@ -1,0 +1,2 @@
+Fix ``_simple_enum`` to detect aliases when multiple arguments are present
+but only one is the member value.

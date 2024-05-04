@@ -230,7 +230,7 @@ def is_unwinding_reliable_with_frame_pointers():
     cflags = sysconfig.get_config_var("PY_CORE_CFLAGS")
     if not cflags:
         return False
-    return "no-omit-frame-pointer" in cflags
+    return "no-omit-frame-pointer" in cflags and "_Py_JIT" not in cflags
 
 
 def perf_command_works():
