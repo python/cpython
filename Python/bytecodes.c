@@ -4133,7 +4133,7 @@ dummy_func(
         }
 
         tier2 op(_EXIT_TRACE, (--)) {
-            EXIT_IF(1);
+            EXIT_TO_TRACE();
         }
 
         tier2 op(_CHECK_VALIDITY, (--)) {
@@ -4264,10 +4264,6 @@ dummy_func(
 
         tier2 op(_DEOPT, (--)) {
             EXIT_TO_TIER1();
-        }
-
-        tier2 op(_SIDE_EXIT, (--)) {
-            EXIT_TO_TRACE();
         }
 
         tier2 op(_ERROR_POP_N, (target/2, unused[oparg] --)) {

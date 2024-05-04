@@ -4127,10 +4127,7 @@
         }
 
         case _EXIT_TRACE: {
-            if (1) {
-                UOP_STAT_INC(uopcode, miss);
-                JUMP_TO_JUMP_TARGET();
-            }
+            EXIT_TO_TRACE();
             break;
         }
 
@@ -4316,11 +4313,6 @@
 
         case _DEOPT: {
             EXIT_TO_TIER1();
-            break;
-        }
-
-        case _SIDE_EXIT: {
-            EXIT_TO_TRACE();
             break;
         }
 

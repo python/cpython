@@ -2140,10 +2140,6 @@
             break;
         }
 
-        case _SIDE_EXIT: {
-            break;
-        }
-
         case _ERROR_POP_N: {
             stack_pointer += -oparg;
             break;
