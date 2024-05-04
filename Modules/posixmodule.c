@@ -1090,13 +1090,13 @@ get_posix_state(PyObject *module)
  *
  * path_converter accepts (Unicode) strings and their
  * subclasses, and bytes and their subclasses.  What
- * it does with the argument depends on the platform:
+ * it does with the argument depends on path.make_wide:
  *
- *   * On Windows, if we get a (Unicode) string we
- *     extract the wchar_t * and return it; if we get
- *     bytes we decode to wchar_t * and return that.
+ *   * If path.make_wide is nonzero, if we get a (Unicode)
+ *     string we extract the wchar_t * and return it; if we
+ *     get bytes we decode to wchar_t * and return that.
  *
- *   * On all other platforms, strings are encoded
+ *   * If path.make_wide is zero, strings are encoded
  *     to bytes using PyUnicode_FSConverter, then we
  *     extract the char * from the bytes object and
  *     return that.
@@ -1111,7 +1111,9 @@ get_posix_state(PyObject *module)
  *   path.null_embeddable
  *     If nonzero, the path is permitted to contain embedded null characters.
  *   path.make_wide
- *     If zero, the path is encoded to bytes. (Argument is ignored on Windows)
+ *     If nonzero, the path is decoded to Unicode, encoded to bytes otherwise.
+ *   path.suppress
+ *     If nonzero, errors are suppressed.
  *   path.allow_fd
  *     If nonzero, the path is permitted to be a file handle
  *     (a signed int) instead of a string.
@@ -1127,7 +1129,7 @@ get_posix_state(PyObject *module)
  * Output fields:
  *   path.wide
  *     Points to the path if it was expressed as Unicode
- *     and was not encoded.
+ *     or it was bytes and was encoded to Unicode.
  *   path.narrow
  *     Points to the path if it was expressed as bytes,
  *     or it was Unicode and was encoded to bytes.
@@ -1140,6 +1142,8 @@ get_posix_state(PyObject *module)
  *     unspecified, path_converter will never get called.
  *     So if you set allow_fd, you *MUST* initialize path.fd = -1
  *     yourself!
+ *   path.error
+ *     If nonzero, an error occurred.
  *   path.length
  *     The length of the path in characters, if specified as
  *     a string.
@@ -1178,30 +1182,32 @@ typedef struct {
     int nullable;
     int null_embeddable;
     int make_wide;
+    int suppress;
     int allow_fd;
     // Output fields
     const wchar_t *wide;
     const char *narrow;
     int fd;
+    int error;
     Py_ssize_t length;
     PyObject *object;
     PyObject *cleanup;
 } path_t;
 
 #define PATH_T_INITIALIZE(function_name, argument_name, nullable, \
-                          null_embeddable, make_wide, allow_fd) \
+                          null_embeddable, make_wide, suppress, allow_fd) \
     {function_name, argument_name, nullable, null_embeddable, make_wide, \
-     allow_fd, NULL, NULL, -1, 0, NULL, NULL}
+     suppress, allow_fd, NULL, NULL, -1, 0, 0, NULL, NULL}
 #ifdef MS_WINDOWS
 #define PATH_T_INITIALIZE_P(function_name, argument_name, nullable, \
-                            null_embeddable, allow_fd) \
+                            null_embeddable, suppress, allow_fd) \
     PATH_T_INITIALIZE(function_name, argument_name, nullable, \
-                      null_embeddable, 1, allow_fd)
+                      null_embeddable, 1, suppress, allow_fd)
 #else
 #define PATH_T_INITIALIZE_P(function_name, argument_name, nullable, \
-                            null_embeddable, allow_fd) \
+                            null_embeddable, suppress, allow_fd) \
     PATH_T_INITIALIZE(function_name, argument_name, nullable, \
-                      null_embeddable, 0, allow_fd)
+                      null_embeddable, 0, suppress, allow_fd)
 #endif
 
 static void
@@ -1390,6 +1396,7 @@ path_converter(PyObject *o, void *p)
     path->fd = -1;
 
  success_exit:
+    path->error = 0;
     path->length = length;
     path->object = o;
     return Py_CLEANUP_SUPPORTED;
@@ -1398,7 +1405,16 @@ path_converter(PyObject *o, void *p)
     Py_XDECREF(o);
     Py_XDECREF(bytes);
     PyMem_Free(wide);
-    return 0;
+    if (!path->suppress) {
+        return 0;
+    }
+    path->wide = NULL;
+    path->narrow = NULL;
+    path->fd = -1;
+    path->error = 1;
+    path->length = 0;
+    path->object = NULL;
+    return Py_CLEANUP_SUPPORTED;
 }
 
 static void
@@ -2912,8 +2928,8 @@ class path_t_converter(CConverter):
 
     converter = 'path_converter'
 
-    def converter_init(self, *, allow_fd=False, make_wide=None,
-                       nullable=False, null_embeddable=False):
+    def converter_init(self, *, allow_fd=False, make_wide=None, nullable=False,
+                       null_embeddable=False, suppress=False):
         # right now path_t doesn't support default values.
         # to support a default value, you'll need to override initialize().
         if self.default not in (unspecified, None):
@@ -2925,6 +2941,7 @@ class path_t_converter(CConverter):
         self.nullable = nullable
         self.null_embeddable = null_embeddable
         self.make_wide = make_wide
+        self.suppress = suppress
         self.allow_fd = allow_fd
 
     def pre_render(self):
@@ -2935,20 +2952,22 @@ class path_t_converter(CConverter):
 
         # add self.py_name here when merging with posixmodule conversion
         if self.make_wide is None:
-            self.c_default = 'PATH_T_INITIALIZE_P("{}", "{}", {}, {}, {})'.format(
+            self.c_default = 'PATH_T_INITIALIZE_P("{}", "{}", {}, {}, {}, {})'.format(
                 self.function.name,
                 self.name,
                 strify(self.nullable),
                 strify(self.null_embeddable),
+                strify(self.suppress),
                 strify(self.allow_fd),
             )
         else:
-            self.c_default = 'PATH_T_INITIALIZE("{}", "{}", {}, {}, {}, {})'.format(
+            self.c_default = 'PATH_T_INITIALIZE("{}", "{}", {}, {}, {}, {}, {})'.format(
                 self.function.name,
                 self.name,
                 strify(self.nullable),
                 strify(self.null_embeddable),
                 strify(self.make_wide),
+                strify(self.suppress),
                 strify(self.allow_fd),
             )
 
@@ -3029,7 +3048,7 @@ class sysconf_confname_converter(path_confname_converter):
     converter="conv_sysconf_confname"
 
 [python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=fe32fef4a3a19fe5]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=9bfc716d9f7ad345]*/
 
 /*[clinic input]
 
@@ -5104,26 +5123,24 @@ os__path_splitroot_impl(PyObject *module, path_t *path)
 /*[clinic input]
 os._path_isdir
 
-    s: object
+    s as path: path_t(suppress=True)
 
 Return true if the pathname refers to an existing directory.
 
 [clinic start generated code]*/
 
 static PyObject *
-os__path_isdir_impl(PyObject *module, PyObject *s)
-/*[clinic end generated code: output=9d87ab3c8b8a4e61 input=6e8f9d9f66f85cbc]*/
+os__path_isdir_impl(PyObject *module, path_t *path)
+/*[clinic end generated code: output=0adeafd60704f710 input=945359aa5bde6f2e]*/
 {
     HANDLE hfile;
     BOOL close_file = TRUE;
     FILE_BASIC_INFO info;
-    path_t _path = PATH_T_INITIALIZE_P("isdir", "s", 0, 0, 1);
     int result;
     BOOL slow_path = TRUE;
     FILE_STAT_BASIC_INFORMATION statInfo;
 
-    if (!path_converter(s, &_path)) {
-        path_cleanup(&_path);
+    if (path->error) {
         if (PyErr_ExceptionMatches(PyExc_ValueError)) {
             PyErr_Clear();
             Py_RETURN_FALSE;
@@ -5132,8 +5149,8 @@ os__path_isdir_impl(PyObject *module, PyObject *s)
     }
 
     Py_BEGIN_ALLOW_THREADS
-    if (_path.wide) {
-        if (_Py_GetFileInformationByName(_path.wide, FileStatBasicByNameInfo,
+    if (path->wide) {
+        if (_Py_GetFileInformationByName(path->wide, FileStatBasicByNameInfo,
                                          &statInfo, sizeof(statInfo))) {
             if (!(statInfo.FileAttributes & FILE_ATTRIBUTE_REPARSE_POINT)) {
                 slow_path = FALSE;
@@ -5148,12 +5165,12 @@ os__path_isdir_impl(PyObject *module, PyObject *s)
         }
     }
     if (slow_path) {
-        if (_path.fd != -1) {
-            hfile = _Py_get_osfhandle_noraise(_path.fd);
+        if (path->fd != -1) {
+            hfile = _Py_get_osfhandle_noraise(path->fd);
             close_file = FALSE;
         }
         else {
-            hfile = CreateFileW(_path.wide, FILE_READ_ATTRIBUTES, 0, NULL,
+            hfile = CreateFileW(path->wide, FILE_READ_ATTRIBUTES, 0, NULL,
                                 OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL);
         }
         if (hfile != INVALID_HANDLE_VALUE) {
@@ -5176,7 +5193,7 @@ os__path_isdir_impl(PyObject *module, PyObject *s)
             case ERROR_SHARING_VIOLATION:
             case ERROR_CANT_ACCESS_FILE:
             case ERROR_INVALID_PARAMETER:
-                if (STAT(_path.wide, &st)) {
+                if (STAT(path->wide, &st)) {
                     result = 0;
                 }
                 else {
@@ -5190,7 +5207,6 @@ os__path_isdir_impl(PyObject *module, PyObject *s)
     }
     Py_END_ALLOW_THREADS
 
-    path_cleanup(&_path);
     if (result) {
         Py_RETURN_TRUE;
     }
@@ -5201,26 +5217,24 @@ os__path_isdir_impl(PyObject *module, PyObject *s)
 /*[clinic input]
 os._path_isfile
 
-    path: object
+    path: path_t(suppress=True)
 
 Test whether a path is a regular file
 
 [clinic start generated code]*/
 
 static PyObject *
-os__path_isfile_impl(PyObject *module, PyObject *path)
-/*[clinic end generated code: output=2394ed7c4b5cfd85 input=b37b8017895208b2]*/
+os__path_isfile_impl(PyObject *module, path_t *path)
+/*[clinic end generated code: output=4f72e7b1ada002da input=f095340c0e8e84e9]*/
 {
     HANDLE hfile;
     BOOL close_file = TRUE;
     FILE_BASIC_INFO info;
-    path_t _path = PATH_T_INITIALIZE_P("isfile", "path", 0, 0, 1);
     int result;
     BOOL slow_path = TRUE;
     FILE_STAT_BASIC_INFORMATION statInfo;
 
-    if (!path_converter(path, &_path)) {
-        path_cleanup(&_path);
+    if (path->error) {
         if (PyErr_ExceptionMatches(PyExc_ValueError)) {
             PyErr_Clear();
             Py_RETURN_FALSE;
@@ -5229,8 +5243,8 @@ os__path_isfile_impl(PyObject *module, PyObject *path)
     }
 
     Py_BEGIN_ALLOW_THREADS
-    if (_path.wide) {
-        if (_Py_GetFileInformationByName(_path.wide, FileStatBasicByNameInfo,
+    if (path->wide) {
+        if (_Py_GetFileInformationByName(path->wide, FileStatBasicByNameInfo,
                                          &statInfo, sizeof(statInfo))) {
             if (!(statInfo.FileAttributes & FILE_ATTRIBUTE_REPARSE_POINT)) {
                 slow_path = FALSE;
@@ -5245,12 +5259,12 @@ os__path_isfile_impl(PyObject *module, PyObject *path)
         }
     }
     if (slow_path) {
-        if (_path.fd != -1) {
-            hfile = _Py_get_osfhandle_noraise(_path.fd);
+        if (path->fd != -1) {
+            hfile = _Py_get_osfhandle_noraise(path->fd);
             close_file = FALSE;
         }
         else {
-            hfile = CreateFileW(_path.wide, FILE_READ_ATTRIBUTES, 0, NULL,
+            hfile = CreateFileW(path->wide, FILE_READ_ATTRIBUTES, 0, NULL,
                                 OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL);
         }
         if (hfile != INVALID_HANDLE_VALUE) {
@@ -5273,7 +5287,7 @@ os__path_isfile_impl(PyObject *module, PyObject *path)
             case ERROR_SHARING_VIOLATION:
             case ERROR_CANT_ACCESS_FILE:
             case ERROR_INVALID_PARAMETER:
-                if (STAT(_path.wide, &st)) {
+                if (STAT(path->wide, &st)) {
                     result = 0;
                 }
                 else {
@@ -5287,7 +5301,6 @@ os__path_isfile_impl(PyObject *module, PyObject *path)
     }
     Py_END_ALLOW_THREADS
 
-    path_cleanup(&_path);
     if (result) {
         Py_RETURN_TRUE;
     }
@@ -5298,25 +5311,23 @@ os__path_isfile_impl(PyObject *module, PyObject *path)
 /*[clinic input]
 os._path_exists
 
-    path: object
+    path: path_t(suppress=True)
 
 Test whether a path exists.  Returns False for broken symbolic links
 
 [clinic start generated code]*/
 
 static PyObject *
-os__path_exists_impl(PyObject *module, PyObject *path)
-/*[clinic end generated code: output=f508c3b35e13a249 input=d0e5ab7388302942]*/
+os__path_exists_impl(PyObject *module, path_t *path)
+/*[clinic end generated code: output=69e6089df1fe463a input=ba8bbd209962ca90]*/
 {
     HANDLE hfile;
     BOOL close_file = TRUE;
-    path_t _path = PATH_T_INITIALIZE_P("exists", "path", 0, 0, 1);
     int result;
     BOOL slow_path = TRUE;
     FILE_STAT_BASIC_INFORMATION statInfo;
 
-    if (!path_converter(path, &_path)) {
-        path_cleanup(&_path);
+    if (path->error) {
         if (PyErr_ExceptionMatches(PyExc_ValueError)) {
             PyErr_Clear();
             Py_RETURN_FALSE;
@@ -5325,8 +5336,8 @@ os__path_exists_impl(PyObject *module, PyObject *path)
     }
 
     Py_BEGIN_ALLOW_THREADS
-    if (_path.wide) {
-        if (_Py_GetFileInformationByName(_path.wide, FileStatBasicByNameInfo,
+    if (path->wide) {
+        if (_Py_GetFileInformationByName(path->wide, FileStatBasicByNameInfo,
                                          &statInfo, sizeof(statInfo))) {
             if (!(statInfo.FileAttributes & FILE_ATTRIBUTE_REPARSE_POINT)) {
                 slow_path = FALSE;
@@ -5338,12 +5349,12 @@ os__path_exists_impl(PyObject *module, PyObject *path)
         }
     }
     if (slow_path) {
-        if (_path.fd != -1) {
-            hfile = _Py_get_osfhandle_noraise(_path.fd);
+        if (path->fd != -1) {
+            hfile = _Py_get_osfhandle_noraise(path->fd);
             close_file = FALSE;
         }
         else {
-            hfile = CreateFileW(_path.wide, FILE_READ_ATTRIBUTES, 0, NULL,
+            hfile = CreateFileW(path->wide, FILE_READ_ATTRIBUTES, 0, NULL,
                                 OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL);
         }
         if (hfile != INVALID_HANDLE_VALUE) {
@@ -5359,7 +5370,7 @@ os__path_exists_impl(PyObject *module, PyObject *path)
             case ERROR_SHARING_VIOLATION:
             case ERROR_CANT_ACCESS_FILE:
             case ERROR_INVALID_PARAMETER:
-                if (STAT(_path.wide, &st)) {
+                if (STAT(path->wide, &st)) {
                     result = 0;
                 }
                 else {
@@ -5373,7 +5384,6 @@ os__path_exists_impl(PyObject *module, PyObject *path)
     }
     Py_END_ALLOW_THREADS
 
-    path_cleanup(&_path);
     if (result) {
         Py_RETURN_TRUE;
     }
@@ -5384,26 +5394,24 @@ os__path_exists_impl(PyObject *module, PyObject *path)
 /*[clinic input]
 os._path_islink
 
-    path: object
+    path: path_t(suppress=True)
 
 Test whether a path is a symbolic link
 
 [clinic start generated code]*/
 
 static PyObject *
-os__path_islink_impl(PyObject *module, PyObject *path)
-/*[clinic end generated code: output=6d8640b1a390c054 input=1a7c08fbe89b1ed6]*/
+os__path_islink_impl(PyObject *module, path_t *path)
+/*[clinic end generated code: output=109ad77ec747b3b7 input=a59fe6ee2804173f]*/
 {
     HANDLE hfile;
     BOOL close_file = TRUE;
     FILE_ATTRIBUTE_TAG_INFO info;
-    path_t _path = PATH_T_INITIALIZE_P("islink", "path", 0, 0, 1);
     int result;
     BOOL slow_path = TRUE;
     FILE_STAT_BASIC_INFORMATION statInfo;
 
-    if (!path_converter(path, &_path)) {
-        path_cleanup(&_path);
+    if (path->error) {
         if (PyErr_ExceptionMatches(PyExc_ValueError)) {
             PyErr_Clear();
             Py_RETURN_FALSE;
@@ -5412,8 +5420,8 @@ os__path_islink_impl(PyObject *module, PyObject *path)
     }
 
     Py_BEGIN_ALLOW_THREADS
-    if (_path.wide) {
-        if (_Py_GetFileInformationByName(_path.wide, FileStatBasicByNameInfo,
+    if (path->wide) {
+        if (_Py_GetFileInformationByName(path->wide, FileStatBasicByNameInfo,
                                          &statInfo, sizeof(statInfo))) {
             slow_path = FALSE;
             if (statInfo.FileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) {
@@ -5428,12 +5436,12 @@ os__path_islink_impl(PyObject *module, PyObject *path)
         }
     }
     if (slow_path) {
-        if (_path.fd != -1) {
-            hfile = _Py_get_osfhandle_noraise(_path.fd);
+        if (path->fd != -1) {
+            hfile = _Py_get_osfhandle_noraise(path->fd);
             close_file = FALSE;
         }
         else {
-            hfile = CreateFileW(_path.wide, FILE_READ_ATTRIBUTES, 0, NULL,
+            hfile = CreateFileW(path->wide, FILE_READ_ATTRIBUTES, 0, NULL,
                                 OPEN_EXISTING,
                                 FILE_FLAG_OPEN_REPARSE_POINT | FILE_FLAG_BACKUP_SEMANTICS,
                                 NULL);
@@ -5458,7 +5466,7 @@ os__path_islink_impl(PyObject *module, PyObject *path)
             case ERROR_SHARING_VIOLATION:
             case ERROR_CANT_ACCESS_FILE:
             case ERROR_INVALID_PARAMETER:
-                if (LSTAT(_path.wide, &st)) {
+                if (LSTAT(path->wide, &st)) {
                     result = 0;
                 }
                 else {
@@ -5472,7 +5480,6 @@ os__path_islink_impl(PyObject *module, PyObject *path)
     }
     Py_END_ALLOW_THREADS
 
-    path_cleanup(&_path);
     if (result) {
         Py_RETURN_TRUE;
     }
