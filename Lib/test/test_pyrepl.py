@@ -601,7 +601,7 @@ class TestPyReplCompleter(TestCase):
         self.assertEqual(output, "python")
 
 
-@patch("_pyrepl.curses.tigetstr", MagicMock(return_value=b""))
+@patch("_pyrepl.curses.tigetstr", lambda x: b"")
 class TestUnivEventQueue(TestCase):
     def test_get(self):
         eq = EventQueue(sys.stdout.fileno(), "utf-8")
