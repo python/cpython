@@ -867,7 +867,7 @@ def check_cflags_pgo():
 
 
 def check_bolt_optimized():
-    # Always return false is the platform is WASI.
+    # Always return false, if the platform is WASI.
     if is_wasi:
         return False
     # BOLTed binary can be checked based on ELF information.
