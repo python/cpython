@@ -5502,7 +5502,7 @@ The tail contains anything after the root.
 
 static PyObject *
 os__path_splitroot_ex_impl(PyObject *module, path_t *path)
-/*[clinic end generated code: output=4b0072b6cdf4b611 input=8f29a719fd480028]*/
+/*[clinic end generated code: output=4b0072b6cdf4b611 input=6eb76e9173412c92]*/
 {
     Py_ssize_t drvsize, rootsize;
     PyObject *drv = NULL, *root = NULL, *tail = NULL, *result = NULL;
@@ -5546,7 +5546,7 @@ Normalize path, eliminating double slashes, etc.
 
 static PyObject *
 os__path_normpath_impl(PyObject *module, path_t *path)
-/*[clinic end generated code: output=d353e7ed9410c044 input=b8d62d498aa0a8db]*/
+/*[clinic end generated code: output=d353e7ed9410c044 input=3d4ac23b06332dcb]*/
 {
     PyObject *result;
     Py_ssize_t norm_len;
