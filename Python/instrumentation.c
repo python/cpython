@@ -626,9 +626,10 @@ de_instrument(PyCodeObject *code, int i, int event)
         return;
     }
     CHECK(_PyOpcode_Deopt[deinstrumented] == deinstrumented);
-    *opcode_ptr = deinstrumented;
+    FT_ATOMIC_STORE_UINT8_RELAXED(*opcode_ptr, deinstrumented);
     if (_PyOpcode_Caches[deinstrumented]) {
-        instr[1].counter = adaptive_counter_warmup();
+        FT_ATOMIC_STORE_UINT16_RELAXED(instr[1].counter.as_counter,
+                                       adaptive_counter_warmup().as_counter);
     }
 }
 
@@ -703,8 +704,10 @@ instrument(PyCodeObject *code, int i)
         int deopt = _PyOpcode_Deopt[opcode];
         int instrumented = INSTRUMENTED_OPCODES[deopt];
         assert(instrumented);
-        *opcode_ptr = instrumented;
+        FT_ATOMIC_STORE_UINT8_RELAXED(*opcode_ptr, instrumented);
         if (_PyOpcode_Caches[deopt]) {
+          FT_ATOMIC_STORE_UINT16_RELAXED(instr[1].counter.as_counter,
+                                         adaptive_counter_warmup().as_counter);
             instr[1].counter = adaptive_counter_warmup();
         }
     }
@@ -1214,15 +1217,13 @@ int
 _Py_call_instrumentation_line(PyThreadState *tstate, _PyInterpreterFrame* frame, _Py_CODEUNIT *instr, _Py_CODEUNIT *prev)
 {
     PyCodeObject *code = _PyFrame_GetCode(frame);
+    assert(tstate->tracing == 0);
     assert(is_version_up_to_date(code, tstate->interp));
     assert(instrumentation_cross_checks(tstate->interp, code));
     int i = (int)(instr - _PyCode_CODE(code));
 
     _PyCoMonitoringData *monitoring = code->_co_monitoring;
     _PyCoLineInstrumentationData *line_data = &monitoring->lines[i];
-    if (tstate->tracing) {
-        goto done;
-    }
     PyInterpreterState *interp = tstate->interp;
     int8_t line_delta = line_data->line_delta;
     int line = 0;
@@ -1702,10 +1703,12 @@ instrument_lock_held(PyCodeObject *code, PyInterpreterState *interp)
         );
         return 0;
     }
+#ifdef _Py_TIER2
     if (code->co_executors != NULL) {
         _PyCode_Clear_Executors(code);
     }
     _Py_Executors_InvalidateDependency(interp, code, 1);
+#endif
     int code_len = (int)Py_SIZE(code);
     /* Exit early to avoid creating instrumentation
      * data for potential statically allocated code
@@ -1943,7 +1946,9 @@ _PyMonitoring_SetEvents(int tool_id, _PyMonitoringEventSet events)
         goto done;
     }
     set_global_version(tstate, new_version);
+#ifdef _Py_TIER2
     _Py_Executors_InvalidateAll(interp, 1);
+#endif
     res = instrument_all_executing_code_objects(interp);
 done:
     _PyEval_StartTheWorld(interp);
@@ -1983,7 +1988,9 @@ _PyMonitoring_SetLocalEvents(PyCodeObject *code, int tool_id, _PyMonitoringEvent
         code->_co_instrumentation_version -= MONITORING_VERSION_INCREMENT;
     }
 
+#ifdef _Py_TIER2
     _Py_Executors_InvalidateDependency(interp, code, 1);
+#endif
 
     res = instrument_lock_held(code, interp);
 
