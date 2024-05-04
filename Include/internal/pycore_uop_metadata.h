@@ -193,7 +193,7 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_CHECK_ATTR_METHOD_LAZY_DICT] = HAS_DEOPT_FLAG,
     [_LOAD_ATTR_METHOD_LAZY_DICT] = HAS_ARG_FLAG,
     [_CHECK_PERIODIC] = HAS_EVAL_BREAK_FLAG,
-    [_CALL_PY_GENERAL] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
+    [_PY_FRAME_GENERAL] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
     [_CHECK_FUNCTION_VERSION] = HAS_ARG_FLAG | HAS_EXIT_FLAG,
     [_CHECK_METHOD_VERSION] = HAS_ARG_FLAG | HAS_EXIT_FLAG,
     [_EXPAND_METHOD] = HAS_ARG_FLAG,
@@ -303,7 +303,6 @@ const char *const _PyOpcode_uop_name[MAX_UOP_ID+1] = {
     [_CALL_METHOD_DESCRIPTOR_NOARGS] = "_CALL_METHOD_DESCRIPTOR_NOARGS",
     [_CALL_METHOD_DESCRIPTOR_O] = "_CALL_METHOD_DESCRIPTOR_O",
     [_CALL_NON_PY_GENERAL] = "_CALL_NON_PY_GENERAL",
-    [_CALL_PY_GENERAL] = "_CALL_PY_GENERAL",
     [_CALL_STR_1] = "_CALL_STR_1",
     [_CALL_TUPLE_1] = "_CALL_TUPLE_1",
     [_CALL_TYPE_1] = "_CALL_TYPE_1",
@@ -462,6 +461,7 @@ const char *const _PyOpcode_uop_name[MAX_UOP_ID+1] = {
     [_PUSH_EXC_INFO] = "_PUSH_EXC_INFO",
     [_PUSH_FRAME] = "_PUSH_FRAME",
     [_PUSH_NULL] = "_PUSH_NULL",
+    [_PY_FRAME_GENERAL] = "_PY_FRAME_GENERAL",
     [_REPLACE_WITH_TRUE] = "_REPLACE_WITH_TRUE",
     [_RESUME_CHECK] = "_RESUME_CHECK",
     [_RETURN_GENERATOR] = "_RETURN_GENERATOR",
@@ -864,7 +864,7 @@ int _PyUop_num_popped(int opcode, int oparg)
             return 1;
         case _CHECK_PERIODIC:
             return 0;
-        case _CALL_PY_GENERAL:
+        case _PY_FRAME_GENERAL:
             return 2 + oparg;
         case _CHECK_FUNCTION_VERSION:
             return 2 + oparg;

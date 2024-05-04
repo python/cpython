@@ -1036,13 +1036,13 @@
                 assert(Py_TYPE(callable) == &PyMethod_Type);
                 self = ((PyMethodObject *)callable)->im_self;
                 Py_INCREF(self);
-                stack_pointer[-1 - oparg] = self;  // Patch stack as it is used by _CALL_PY_GENERAL
+                stack_pointer[-1 - oparg] = self;  // Patch stack as it is used by _PY_FRAME_GENERAL
                 method = ((PyMethodObject *)callable)->im_func;
                 assert(PyFunction_Check(method));
                 Py_INCREF(method);
                 Py_DECREF(callable);
             }
-            // _CALL_PY_GENERAL
+            // _PY_FRAME_GENERAL
             args = &stack_pointer[-oparg];
             self_or_null = self;
             callable = method;
@@ -1066,7 +1066,15 @@
                 if (new_frame == NULL) {
                     goto error;
                 }
-                frame->return_offset = (uint16_t)(1 + INLINE_CACHE_ENTRIES_CALL);
+            }
+            // _SAVE_RETURN_OFFSET
+            {
+                #if TIER_ONE
+                frame->return_offset = (uint16_t)(next_instr - this_instr);
+                #endif
+                #if TIER_TWO
+                frame->return_offset = oparg;
+                #endif
             }
             // _PUSH_FRAME
             {
@@ -1941,7 +1949,7 @@
                 PyFunctionObject *func = (PyFunctionObject *)callable;
                 DEOPT_IF(func->func_version != func_version, CALL);
             }
-            // _CALL_PY_GENERAL
+            // _PY_FRAME_GENERAL
             args = &stack_pointer[-oparg];
             self_or_null = stack_pointer[-1 - oparg];
             {
@@ -1964,7 +1972,15 @@
                 if (new_frame == NULL) {
                     goto error;
                 }
-                frame->return_offset = (uint16_t)(1 + INLINE_CACHE_ENTRIES_CALL);
+            }
+            // _SAVE_RETURN_OFFSET
+            {
+                #if TIER_ONE
+                frame->return_offset = (uint16_t)(next_instr - this_instr);
+                #endif
+                #if TIER_TWO
+                frame->return_offset = oparg;
+                #endif
             }
             // _PUSH_FRAME
             {

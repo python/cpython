@@ -1559,7 +1559,7 @@
             break;
         }
 
-        case _CALL_PY_GENERAL: {
+        case _PY_FRAME_GENERAL: {
             _Py_UopsSymbol **args;
             _Py_UopsSymbol *self_or_null;
             _Py_UopsSymbol *callable;

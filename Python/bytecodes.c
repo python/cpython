@@ -3148,7 +3148,7 @@ dummy_func(
 
         macro(CALL) = _SPECIALIZE_CALL + unused/2 + _CALL + _CHECK_PERIODIC;
 
-        op(_CALL_PY_GENERAL, (callable, self_or_null, args[oparg] -- new_frame: _PyInterpreterFrame*)) {
+        op(_PY_FRAME_GENERAL, (callable, self_or_null, args[oparg] -- new_frame: _PyInterpreterFrame*)) {
             // oparg counts all of the args, but *not* self:
             int total_args = oparg;
             if (self_or_null != NULL) {
@@ -3168,7 +3168,6 @@ dummy_func(
             if (new_frame == NULL) {
                 ERROR_NO_POP();
             }
-            frame->return_offset = (uint16_t)(1 + INLINE_CACHE_ENTRIES_CALL);
         }
 
         op(_CHECK_FUNCTION_VERSION, (func_version/2, callable, unused, unused[oparg] -- callable, unused, unused[oparg])) {
@@ -3181,7 +3180,8 @@ dummy_func(
             unused/1 + // Skip over the counter
             _CHECK_PEP_523 +
             _CHECK_FUNCTION_VERSION +
-            _CALL_PY_GENERAL +
+            _PY_FRAME_GENERAL +
+            _SAVE_RETURN_OFFSET +
             _PUSH_FRAME;
 
         op(_CHECK_METHOD_VERSION, (func_version/2, callable, null, unused[oparg] -- callable, null, unused[oparg])) {
@@ -3197,7 +3197,7 @@ dummy_func(
             assert(Py_TYPE(callable) == &PyMethod_Type);
             self = ((PyMethodObject *)callable)->im_self;
             Py_INCREF(self);
-            stack_pointer[-1 - oparg] = self;  // Patch stack as it is used by _CALL_PY_GENERAL
+            stack_pointer[-1 - oparg] = self;  // Patch stack as it is used by _PY_FRAME_GENERAL
             method = ((PyMethodObject *)callable)->im_func;
             assert(PyFunction_Check(method));
             Py_INCREF(method);
@@ -3209,7 +3209,8 @@ dummy_func(
             _CHECK_PEP_523 +
             _CHECK_METHOD_VERSION +
             _EXPAND_METHOD +
-            _CALL_PY_GENERAL +
+            _PY_FRAME_GENERAL +
+            _SAVE_RETURN_OFFSET +
             _PUSH_FRAME;
 
         op(_CHECK_IS_NOT_PY_CALLABLE, (callable, unused, unused[oparg] -- callable, unused, unused[oparg])) {

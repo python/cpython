@@ -629,7 +629,7 @@ dummy_func(void) {
                              frame_new(ctx, co, localsplus_start, n_locals_already_filled, 0));
     }
 
-    op(_CALL_PY_GENERAL, (callable, self_or_null, args[oparg] -- new_frame: _Py_UOpsAbstractFrame *)) {
+    op(_PY_FRAME_GENERAL, (callable, self_or_null, args[oparg] -- new_frame: _Py_UOpsAbstractFrame *)) {
         /* The _Py_UOpsAbstractFrame design assumes that we can copy arguments across directly */
         (void)callable;
         (void)self_or_null;

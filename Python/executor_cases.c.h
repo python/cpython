@@ -3032,7 +3032,7 @@
             break;
         }
 
-        case _CALL_PY_GENERAL: {
+        case _PY_FRAME_GENERAL: {
             PyObject **args;
             PyObject *self_or_null;
             PyObject *callable;
@@ -3060,7 +3060,6 @@
             if (new_frame == NULL) {
                 JUMP_TO_ERROR();
             }
-            frame->return_offset = (uint16_t)(1 + INLINE_CACHE_ENTRIES_CALL);
             stack_pointer[0] = (PyObject *)new_frame;
             stack_pointer += 1;
             break;
@@ -3122,7 +3121,7 @@
             assert(Py_TYPE(callable) == &PyMethod_Type);
             self = ((PyMethodObject *)callable)->im_self;
             Py_INCREF(self);
-            stack_pointer[-1 - oparg] = self;  // Patch stack as it is used by _CALL_PY_GENERAL
+            stack_pointer[-1 - oparg] = self;  // Patch stack as it is used by _PY_FRAME_GENERAL
             method = ((PyMethodObject *)callable)->im_func;
             assert(PyFunction_Check(method));
             Py_INCREF(method);
