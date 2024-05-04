@@ -15873,7 +15873,7 @@ DirEntry_from_find_data(PyObject *module, path_t *path, WIN32_FIND_DATAW *dataW)
     entry->name = PyUnicode_FromWideChar(dataW->cFileName, -1);
     if (!entry->name)
         goto error;
-    int return_bytes = PyBytes_Check(path->object);
+    int return_bytes = path->wide && PyBytes_Check(path->object);
     if (return_bytes) {
         Py_SETREF(entry->name, PyUnicode_EncodeFSDefault(entry->name));
         if (!entry->name)
