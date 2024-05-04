@@ -113,6 +113,7 @@ __all__ = [
     'geometric_mean',
     'harmonic_mean',
     'kde',
+    'kde_random',
     'linear_regression',
     'mean',
     'median',
@@ -138,12 +139,13 @@ from decimal import Decimal
 from itertools import count, groupby, repeat
 from bisect import bisect_left, bisect_right
 from math import hypot, sqrt, fabs, exp, erf, tau, log, fsum, sumprod
-from math import isfinite, isinf, pi, cos, sin, cosh, atan
+from math import isfinite, isinf, pi, cos, sin, tan, cosh, asin, atan, acos
 from functools import reduce
 from operator import itemgetter
 from collections import Counter, namedtuple, defaultdict
 
 _SQRT2 = sqrt(2.0)
+_random = random
 
 # === Exceptions ===
 
@@ -978,10 +980,8 @@ def kde(data, h, kernel='normal', *, cumulative=False):
             return sum(K((x - x_i) / h) for x_i in data) / (n * h)
 
         def cdf(x):
-
             n = len(data)
             return sum(W((x - x_i) / h) for x_i in data) / n
-
 
     else:
 
@@ -1078,6 +1078,7 @@ def quantiles(data, *, n=4, method='exclusive'):
         if ld == 1:
             return data * (n - 1)
         raise StatisticsError('must have at least one data point')
+
     if method == 'inclusive':
         m = ld - 1
         result = []
@@ -1086,6 +1087,7 @@ def quantiles(data, *, n=4, method='exclusive'):
             interpolated = (data[j] * (n - delta) + data[j + 1] * delta) / n
             result.append(interpolated)
         return result
+
     if method == 'exclusive':
         m = ld + 1
         result = []
@@ -1096,6 +1098,7 @@ def quantiles(data, *, n=4, method='exclusive'):
             interpolated = (data[j - 1] * (n - delta) + data[j] * delta) / n
             result.append(interpolated)
         return result
+
     raise ValueError(f'Unknown method: {method!r}')
 
 
@@ -1709,3 +1712,97 @@ class NormalDist:
 
     def __setstate__(self, state):
         self._mu, self._sigma = state
+
+
+## kde_random() ##############################################################
+
+def _newton_raphson(f_inv_estimate, f, f_prime, tolerance=1e-12):
+    def f_inv(y):
+        "Return x such that f(x) ≈ y within the specified tolerance."
+        x = f_inv_estimate(y)
+        while abs(diff := f(x) - y) > tolerance:
+            x -= diff / f_prime(x)
+        return x
+    return f_inv
+
+def _quartic_invcdf_estimate(p):
+    sign, p = (1.0, p) if p <= 1/2 else (-1.0, 1.0 - p)
+    x = (2.0 * p) ** 0.4258865685331 - 1.0
+    if p >= 0.004 < 0.499:
+        x += 0.026818732 * sin(7.101753784 * p + 2.73230839482953)
+    return x * sign
+
+_quartic_invcdf = _newton_raphson(
+    f_inv_estimate = _quartic_invcdf_estimate,
+    f = lambda t: 3/16 * t**5 - 5/8 * t**3 + 15/16 * t + 1/2,
+    f_prime = lambda t: 15/16 * (1.0 - t * t) ** 2)
+
+def _triweight_invcdf_estimate(p):
+    sign, p = (1.0, p) if p <= 1/2 else (-1.0, 1.0 - p)
+    x = (2.0 * p) ** 0.3400218741872791 - 1.0
+    return x * sign
+
+_triweight_invcdf = _newton_raphson(
+    f_inv_estimate = _triweight_invcdf_estimate,
+    f = lambda t: 35/32 * (-1/7*t**7 + 3/5*t**5 - t**3 + t) + 1/2,
+    f_prime = lambda t: 35/32 * (1.0 - t * t) ** 3)
+
+_kernel_invcdfs = {
+    'normal': NormalDist().inv_cdf,
+    'logistic': lambda p: log(p / (1 - p)),
+    'sigmoid': lambda p: log(tan(p * pi/2)),
+    'rectangular': lambda p: 2*p - 1,
+    'parabolic': lambda p: 2 * cos((acos(2*p-1) + pi) / 3),
+    'quartic': _quartic_invcdf,
+    'triweight': _triweight_invcdf,
+    'triangular': lambda p: sqrt(2*p) - 1 if p < 1/2 else 1 - sqrt(2 - 2*p),
+    'cosine': lambda p: 2 * asin(2*p - 1) / pi,
+}
+_kernel_invcdfs['gauss'] = _kernel_invcdfs['normal']
+_kernel_invcdfs['uniform'] = _kernel_invcdfs['rectangular']
+_kernel_invcdfs['epanechnikov'] = _kernel_invcdfs['parabolic']
+_kernel_invcdfs['biweight'] = _kernel_invcdfs['quartic']
+
+def kde_random(data, h, kernel='normal', *, seed=None):
+    """Return a function that makes a random selection from the estimated
+    probability density function created by kde(data, h, kernel).
+
+    Providing a *seed* allows reproducible selections within a single
+    thread.  The seed may be an integer, float, str, or bytes.
+
+    A StatisticsError will be raised if the *data* sequence is empty.
+
+    Example:
+
+    >>> data = [-2.1, -1.3, -0.4, 1.9, 5.1, 6.2]
+    >>> rand = kde_random(data, h=1.5, seed=8675309)
+    >>> new_selections = [rand() for i in range(10)]
+    >>> [round(x, 1) for x in new_selections]
+    [0.7, 6.2, 1.2, 6.9, 7.0, 1.8, 2.5, -0.5, -1.8, 5.6]
+
+    """
+    n = len(data)
+    if not n:
+        raise StatisticsError('Empty data sequence')
+
+    if not isinstance(data[0], (int, float)):
+        raise TypeError('Data sequence must contain ints or floats')
+
+    if h <= 0.0:
+        raise StatisticsError(f'Bandwidth h must be positive, not {h=!r}')
+
+    try:
+        kernel_invcdf = _kernel_invcdfs[kernel]
+    except KeyError:
+        raise StatisticsError(f'Unknown kernel name: {kernel!r}')
+
+    prng = _random.Random(seed)
+    random = prng.random
+    choice = prng.choice
+
+    def rand():
+        return choice(data) + h * kernel_invcdf(random())
+
+    rand.__doc__ = f'Random KDE selection with {h=!r} and {kernel=!r}'
+
+    return rand

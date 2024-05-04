@@ -4272,10 +4272,7 @@
         }
 
         case _EXIT_TRACE: {
-            if (1) {
-                UOP_STAT_INC(uopcode, miss);
-                JUMP_TO_JUMP_TARGET();
-            }
+            EXIT_TO_TRACE();
             break;
         }
 
@@ -4464,11 +4461,6 @@
             break;
         }
 
-        case _SIDE_EXIT: {
-            EXIT_TO_TRACE();
-            break;
-        }
-
         case _ERROR_POP_N: {
             oparg = CURRENT_OPARG();
             uint32_t target = (uint32_t)CURRENT_OPERAND();
@@ -4491,7 +4483,7 @@
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
             }
-            assert(eval_breaker == FT_ATOMIC_LOAD_UINTPTR_ACQUIRE(_PyFrame_GetCode(frame)->_co_instrumentation_version));
+            assert(tstate->tracing || eval_breaker == FT_ATOMIC_LOAD_UINTPTR_ACQUIRE(_PyFrame_GetCode(frame)->_co_instrumentation_version));
             break;
         }
 
