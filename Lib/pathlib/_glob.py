@@ -67,7 +67,7 @@ def translate(pat, *, recursive=False, include_hidden=False, seps=None):
     return fr'(?s:{res})\Z'
 
 
-functools.lru_cache(maxsize=1024)
+@functools.lru_cache(maxsize=1024)
 def compile_pattern(pat, sep, case_sensitive, recursive, include_hidden):
     """Compile given glob pattern to a re.Pattern object (observing case
     sensitivity)."""
