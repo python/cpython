@@ -17,7 +17,8 @@ try:
 except ImportError:
     grp = None
 
-from . import _abc, _glob
+from ._abc import UnsupportedOperation, PurePathBase, PathBase
+from ._glob import StringGlobber
 
 
 __all__ = [
@@ -55,7 +56,7 @@ class _PathParents(Sequence):
         return "<{}.parents>".format(type(self._path).__name__)
 
 
-class PurePath(_abc.PurePathBase):
+class PurePath(PurePathBase):
     """Base class for manipulating paths without I/O.
 
     PurePath represents a filesystem path and offers operations which
@@ -101,7 +102,7 @@ class PurePath(_abc.PurePathBase):
         '_hash',
     )
     parser = os.path
-    _globber = _glob.Globber
+    _globber = StringGlobber
 
     def __new__(cls, *args, **kwargs):
         """Construct a PurePath from one or several strings and or existing
@@ -176,7 +177,7 @@ class PurePath(_abc.PurePathBase):
         try:
             return self._str_normcase_cached
         except AttributeError:
-            if _abc._is_case_sensitive(self.parser):
+            if self.parser is posixpath:
                 self._str_normcase_cached = str(self)
             else:
                 self._str_normcase_cached = str(self).lower()
@@ -478,7 +479,7 @@ class PureWindowsPath(PurePath):
     __slots__ = ()
 
 
-class Path(_abc.PathBase, PurePath):
+class Path(PathBase, PurePath):
     """PurePath subclass that can make system calls.
 
     Path represents a filesystem path but unlike PurePath, also offers
@@ -542,7 +543,7 @@ class Path(_abc.PathBase, PurePath):
         # Call io.text_encoding() here to ensure any warning is raised at an
         # appropriate stack level.
         encoding = io.text_encoding(encoding)
-        return _abc.PathBase.read_text(self, encoding, errors, newline)
+        return PathBase.read_text(self, encoding, errors, newline)
 
     def write_text(self, data, encoding=None, errors=None, newline=None):
         """
@@ -551,7 +552,7 @@ class Path(_abc.PathBase, PurePath):
         # Call io.text_encoding() here to ensure any warning is raised at an
         # appropriate stack level.
         encoding = io.text_encoding(encoding)
-        return _abc.PathBase.write_text(self, data, encoding, errors, newline)
+        return PathBase.write_text(self, data, encoding, errors, newline)
 
     _remove_leading_dot = operator.itemgetter(slice(2, None))
     _remove_trailing_slash = operator.itemgetter(slice(-1))
@@ -842,7 +843,7 @@ class PosixPath(Path, PurePosixPath):
 
     if os.name == 'nt':
         def __new__(cls, *args, **kwargs):
-            raise _abc.UnsupportedOperation(
+            raise UnsupportedOperation(
                 f"cannot instantiate {cls.__name__!r} on your system")
 
 class WindowsPath(Path, PureWindowsPath):
@@ -854,5 +855,5 @@ class WindowsPath(Path, PureWindowsPath):
 
     if os.name != 'nt':
         def __new__(cls, *args, **kwargs):
-            raise _abc.UnsupportedOperation(
+            raise UnsupportedOperation(
                 f"cannot instantiate {cls.__name__!r} on your system")
