@@ -1341,9 +1341,9 @@ Special read-only attributes
 
    * - .. attribute:: frame.f_locals
      - The dictionary used by the frame to look up
-       :ref:`local variables <naming>`
-       (if the frame refers to a function or comprehension,
-       this may return a write-through proxy object)
+       :ref:`local variables <naming>`.
+       If the frame refers to a function or comprehension,
+       this may return a write-through proxy object.
 
        .. versionchanged:: 3.13
           Return a proxy for functions and comprehensions.
