@@ -35,7 +35,7 @@ class Bdb:
         self.frame_trace_lines_opcodes = {}
         self.frame_returning = None
         self.trace_opcodes = False
-        self.__curframe = None
+        self.enterframe = None
 
         self._load_breaks()
 
@@ -88,7 +88,7 @@ class Bdb:
         The arg parameter depends on the previous event.
         """
 
-        self.__curframe = frame
+        self.enterframe = frame
 
         if self.quitting:
             return # None
@@ -298,7 +298,7 @@ class Bdb:
     def _set_trace_opcodes(self, trace_opcodes):
         if trace_opcodes != self.trace_opcodes:
             self.trace_opcodes = trace_opcodes
-            frame = self.__curframe
+            frame = self.enterframe
             while frame is not None:
                 frame.f_trace_opcodes = trace_opcodes
                 if frame is self.botframe:
@@ -370,7 +370,7 @@ class Bdb:
         if frame is None:
             frame = sys._getframe().f_back
         self.reset()
-        self.__curframe = frame
+        self.enterframe = frame
         while frame:
             frame.f_trace = self.trace_dispatch
             self.botframe = frame
