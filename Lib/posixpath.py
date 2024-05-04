@@ -138,15 +138,9 @@ try:
     from posix import _path_splitroot_ex as splitroot
 except ImportError:
     def splitroot(p):
-        """Split a pathname into drive, root and tail. On Posix, drive is always
-        empty; the root may be empty, a single slash, or two slashes. The tail
-        contains anything after the root. For example:
+        """Split a pathname into drive, root and tail.
 
-            splitroot('foo/bar') == ('', '', 'foo/bar')
-            splitroot('/foo/bar') == ('', '/', 'foo/bar')
-            splitroot('//foo/bar') == ('', '//', 'foo/bar')
-            splitroot('///foo/bar') == ('', '/', '//foo/bar')
-        """
+        The tail contains anything after the root."""
         p = os.fspath(p)
         if isinstance(p, bytes):
             sep = b'/'
