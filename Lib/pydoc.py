@@ -127,9 +127,8 @@ def _finddoc(obj):
             cls = self.__class__
     # Should be tested before isdatadescriptor().
     elif isinstance(obj, property):
-        func = obj.fget
-        name = func.__name__
-        cls = _findclass(func)
+        name = obj.__name__
+        cls = _findclass(obj.fget)
         if cls is None or getattr(cls, name) is not obj:
             return None
     elif inspect.ismethoddescriptor(obj) or inspect.isdatadescriptor(obj):
@@ -314,7 +313,8 @@ def visiblename(name, all=None, obj=None):
     if name in {'__author__', '__builtins__', '__cached__', '__credits__',
                 '__date__', '__doc__', '__file__', '__spec__',
                 '__loader__', '__module__', '__name__', '__package__',
-                '__path__', '__qualname__', '__slots__', '__version__'}:
+                '__path__', '__qualname__', '__slots__', '__version__',
+                '__static_attributes__'}:
         return 0
     # Private names are hidden, but special names are displayed.
     if name.startswith('__') and name.endswith('__'): return 1
@@ -552,7 +552,7 @@ class Doc:
                                  '_thread', 'zipimport') or
              (file.startswith(basedir) and
               not file.startswith(os.path.join(basedir, 'site-packages')))) and
-            object.__name__ not in ('xml.etree', 'test.pydoc_mod')):
+            object.__name__ not in ('xml.etree', 'test.test_pydoc.pydoc_mod')):
             if docloc.startswith(("http://", "https://")):
                 docloc = "{}/{}.html".format(docloc.rstrip("/"), object.__name__.lower())
             else:
@@ -856,9 +856,9 @@ class HTMLDoc(Doc):
                             cdict[key] = cdict[base] = modname + '.html#' + key
         funcs, fdict = [], {}
         for key, value in inspect.getmembers(object, inspect.isroutine):
-            # if __all__ exists, believe it.  Otherwise use old heuristic.
-            if (all is not None or
-                inspect.isbuiltin(value) or inspect.getmodule(value) is object):
+            # if __all__ exists, believe it.  Otherwise use a heuristic.
+            if (all is not None
+                or (inspect.getmodule(value) or object) is object):
                 if visiblename(key, all, object):
                     funcs.append((key, value))
                     fdict[key] = '#-' + key
@@ -1144,7 +1144,8 @@ class HTMLDoc(Doc):
                 # XXX lambda's won't usually have func_annotations['return']
                 # since the syntax doesn't support but it is possible.
                 # So removing parentheses isn't truly safe.
-                argspec = argspec[1:-1] # remove parentheses
+                if not object.__annotations__:
+                    argspec = argspec[1:-1] # remove parentheses
         if not argspec:
             argspec = '(...)'
 
@@ -1299,9 +1300,9 @@ location listed above.
                     classes.append((key, value))
         funcs = []
         for key, value in inspect.getmembers(object, inspect.isroutine):
-            # if __all__ exists, believe it.  Otherwise use old heuristic.
-            if (all is not None or
-                inspect.isbuiltin(value) or inspect.getmodule(value) is object):
+            # if __all__ exists, believe it.  Otherwise use a heuristic.
+            if (all is not None
+                or (inspect.getmodule(value) or object) is object):
                 if visiblename(key, all, object):
                     funcs.append((key, value))
         data = []
@@ -1586,7 +1587,8 @@ location listed above.
                 # XXX lambda's won't usually have func_annotations['return']
                 # since the syntax doesn't support but it is possible.
                 # So removing parentheses isn't truly safe.
-                argspec = argspec[1:-1] # remove parentheses
+                if not object.__annotations__:
+                    argspec = argspec[1:-1]
         if not argspec:
             argspec = '(...)'
         decl = asyncqualifier + title + argspec + note
@@ -1635,11 +1637,11 @@ class _PlainTextDoc(TextDoc):
 
 # --------------------------------------------------------- user interfaces
 
-def pager(text):
+def pager(text, title=''):
     """The first time this is called, determine what kind of pager to use."""
     global pager
     pager = getpager()
-    pager(text)
+    pager(text, title)
 
 def getpager():
     """Decide what method to use for paging through text."""
@@ -1654,24 +1656,24 @@ def getpager():
     use_pager = os.environ.get('MANPAGER') or os.environ.get('PAGER')
     if use_pager:
         if sys.platform == 'win32': # pipes completely broken in Windows
-            return lambda text: tempfilepager(plain(text), use_pager)
+            return lambda text, title='': tempfilepager(plain(text), use_pager)
         elif os.environ.get('TERM') in ('dumb', 'emacs'):
-            return lambda text: pipepager(plain(text), use_pager)
+            return lambda text, title='': pipepager(plain(text), use_pager, title)
         else:
-            return lambda text: pipepager(text, use_pager)
+            return lambda text, title='': pipepager(text, use_pager, title)
     if os.environ.get('TERM') in ('dumb', 'emacs'):
         return plainpager
     if sys.platform == 'win32':
-        return lambda text: tempfilepager(plain(text), 'more <')
+        return lambda text, title='': tempfilepager(plain(text), 'more <')
     if hasattr(os, 'system') and os.system('(less) 2>/dev/null') == 0:
-        return lambda text: pipepager(text, 'less')
+        return lambda text, title='': pipepager(text, 'less', title)
 
     import tempfile
     (fd, filename) = tempfile.mkstemp()
     os.close(fd)
     try:
         if hasattr(os, 'system') and os.system('more "%s"' % filename) == 0:
-            return lambda text: pipepager(text, 'more')
+            return lambda text, title='': pipepager(text, 'more', title)
         else:
             return ttypager
     finally:
@@ -1681,11 +1683,26 @@ def plain(text):
     """Remove boldface formatting from text."""
     return re.sub('.\b', '', text)
 
-def pipepager(text, cmd):
+def escape_less(s):
+    return re.sub(r'([?:.%\\])', r'\\\1', s)
+
+def pipepager(text, cmd, title=''):
     """Page through text by feeding it to another program."""
     import subprocess
+    env = os.environ.copy()
+    if title:
+        title += ' '
+    esc_title = escape_less(title)
+    prompt_string = (
+        f' {esc_title}' +
+        '?ltline %lt?L/%L.'
+        ':byte %bB?s/%s.'
+        '.'
+        '?e (END):?pB %pB\\%..'
+        ' (press h for help or q to quit)')
+    env['LESS'] = '-RmPm{0}$PM{0}$'.format(prompt_string)
     proc = subprocess.Popen(cmd, shell=True, stdin=subprocess.PIPE,
-                            errors='backslashreplace')
+                            errors='backslashreplace', env=env)
     try:
         with proc.stdin as pipe:
             try:
@@ -1705,7 +1722,7 @@ def pipepager(text, cmd):
             # left running and the terminal is in raw mode and unusable.
             pass
 
-def tempfilepager(text, cmd):
+def tempfilepager(text, cmd, title=''):
     """Page through text by invoking a program on a temporary file."""
     import tempfile
     with tempfile.TemporaryDirectory() as tempdir:
@@ -1722,7 +1739,7 @@ def _escape_stdout(text):
     encoding = getattr(sys.stdout, 'encoding', None) or 'utf-8'
     return text.encode(encoding, 'backslashreplace').decode(encoding)
 
-def ttypager(text):
+def ttypager(text, title=''):
     """Page through text on a text terminal."""
     lines = plain(_escape_stdout(text)).split('\n')
     try:
@@ -1766,7 +1783,7 @@ def ttypager(text):
         if tty:
             tty.tcsetattr(fd, tty.TCSAFLUSH, old)
 
-def plainpager(text):
+def plainpager(text, title=''):
     """Simply print unformatted text.  This is the ultimate fallback."""
     sys.stdout.write(plain(_escape_stdout(text)))
 
@@ -1868,7 +1885,8 @@ def doc(thing, title='Python Library Documentation: %s', forceload=0,
     """Display text documentation, given an object or a path to an object."""
     if output is None:
         try:
-            pager(render_doc(thing, title, forceload))
+            what = thing if isinstance(thing, str) else type(thing).__name__
+            pager(render_doc(thing, title, forceload), f'Help on {what!s}')
         except ImportError as exc:
             if is_cli:
                 raise
@@ -2242,7 +2260,7 @@ module "pydoc_data.topics" could not be found.
             text = 'Related help topics: ' + ', '.join(xrefs.split()) + '\n'
             wrapped_text = textwrap.wrap(text, 72)
             doc += '\n%s\n' % '\n'.join(wrapped_text)
-        pager(doc)
+        pager(doc, f'Help on {topic!s}')
 
     def _gettopic(self, topic, more_xrefs=''):
         """Return unbuffered tuple of (topic, xrefs).
@@ -2494,6 +2512,7 @@ def _start_server(urlhandler, hostname, port):
             threading.Thread.__init__(self)
             self.serving = False
             self.error = None
+            self.docserver = None
 
         def run(self):
             """Start the server."""
@@ -2526,9 +2545,9 @@ def _start_server(urlhandler, hostname, port):
 
     thread = ServerThread(urlhandler, hostname, port)
     thread.start()
-    # Wait until thread.serving is True to make sure we are
-    # really up before returning.
-    while not thread.error and not thread.serving:
+    # Wait until thread.serving is True and thread.docserver is set
+    # to make sure we are really up before returning.
+    while not thread.error and not (thread.serving and thread.docserver):
         time.sleep(.01)
     return thread
 

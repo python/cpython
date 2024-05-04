@@ -165,7 +165,7 @@ def wasi_sdk_env(context):
     wasi_sdk_path = context.wasi_sdk_path
     sysroot = wasi_sdk_path / "share" / "wasi-sysroot"
     env = {"CC": "clang", "CPP": "clang-cpp", "CXX": "clang++",
-           "LDSHARED": "wasm-ld", "AR": "llvm-ar", "RANLIB": "ranlib"}
+           "AR": "llvm-ar", "RANLIB": "ranlib"}
 
     for env_var, binary_name in list(env.items()):
         env[env_var] = os.fsdecode(wasi_sdk_path / "bin" / binary_name)
@@ -283,8 +283,10 @@ def main():
                         # The 8388608 value comes from `ulimit -s` under Linux
                         # which equates to 8291 KiB.
                         "--wasm max-wasm-stack=8388608 "
-                        # Enable thread support.
-                        "--wasm threads=y --wasi threads=y "
+                        # Use WASI 0.2 primitives.
+                        "--wasi preview2 "
+                        # Enable thread support; causes use of preview1.
+                        #"--wasm threads=y --wasi threads=y "
                         # Map the checkout to / to load the stdlib from /Lib.
                         "--dir {HOST_DIR}::{GUEST_DIR} "
                         # Set PYTHONPATH to the sysconfig data.

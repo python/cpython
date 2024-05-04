@@ -1,2 +1,0 @@
-Changed socket type validation in :meth:`~asyncio.loop.create_datagram_endpoint` to accept all non-stream sockets.
-This fixes a regression in compatibility with raw sockets.

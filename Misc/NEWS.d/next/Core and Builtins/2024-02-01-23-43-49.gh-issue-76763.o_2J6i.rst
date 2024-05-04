@@ -1,3 +1,0 @@
-The :func:`chr` builtin function now always raises :exc:`ValueError` for
-values outside the valid range. Previously it raised :exc:`OverflowError` for
-very large or small values.

@@ -722,6 +722,7 @@ extern "C" {
     INIT_ID(__slotnames__), \
     INIT_ID(__slots__), \
     INIT_ID(__spec__), \
+    INIT_ID(__static_attributes__), \
     INIT_ID(__str__), \
     INIT_ID(__sub__), \
     INIT_ID(__subclasscheck__), \
@@ -740,6 +741,7 @@ extern "C" {
     INIT_ID(_abc_impl), \
     INIT_ID(_abstract_), \
     INIT_ID(_active), \
+    INIT_ID(_align_), \
     INIT_ID(_annotation), \
     INIT_ID(_anonymous_), \
     INIT_ID(_argtypes_), \
@@ -750,6 +752,7 @@ extern "C" {
     INIT_ID(_check_retval_), \
     INIT_ID(_dealloc_warn), \
     INIT_ID(_feature_version), \
+    INIT_ID(_field_types), \
     INIT_ID(_fields_), \
     INIT_ID(_finalizing), \
     INIT_ID(_find_and_load), \
@@ -788,6 +791,7 @@ extern "C" {
     INIT_ID(alias), \
     INIT_ID(allow_code), \
     INIT_ID(append), \
+    INIT_ID(arg), \
     INIT_ID(argdefs), \
     INIT_ID(args), \
     INIT_ID(arguments), \
@@ -858,6 +862,7 @@ extern "C" {
     INIT_ID(co_stacksize), \
     INIT_ID(co_varnames), \
     INIT_ID(code), \
+    INIT_ID(col_offset), \
     INIT_ID(command), \
     INIT_ID(comment_factory), \
     INIT_ID(compile_mode), \
@@ -907,6 +912,7 @@ extern "C" {
     INIT_ID(encode), \
     INIT_ID(encoding), \
     INIT_ID(end), \
+    INIT_ID(end_col_offset), \
     INIT_ID(end_lineno), \
     INIT_ID(end_offset), \
     INIT_ID(endpos), \
@@ -973,13 +979,13 @@ extern "C" {
     INIT_ID(h), \
     INIT_ID(handle), \
     INIT_ID(handle_seq), \
+    INIT_ID(has_location), \
     INIT_ID(hash_name), \
     INIT_ID(header), \
     INIT_ID(headers), \
     INIT_ID(hi), \
     INIT_ID(hook), \
     INIT_ID(hour), \
-    INIT_ID(id), \
     INIT_ID(ident), \
     INIT_ID(identity_hint), \
     INIT_ID(ignore), \
@@ -1028,6 +1034,7 @@ extern "C" {
     INIT_ID(kw1), \
     INIT_ID(kw2), \
     INIT_ID(kwdefaults), \
+    INIT_ID(label), \
     INIT_ID(lambda), \
     INIT_ID(last), \
     INIT_ID(last_exc), \
@@ -1091,6 +1098,7 @@ extern "C" {
     INIT_ID(namespaces), \
     INIT_ID(narg), \
     INIT_ID(ndigits), \
+    INIT_ID(nested), \
     INIT_ID(new_file_name), \
     INIT_ID(new_limit), \
     INIT_ID(newline), \
@@ -1271,6 +1279,7 @@ extern "C" {
     INIT_ID(version), \
     INIT_ID(volume), \
     INIT_ID(wait_all), \
+    INIT_ID(warn_on_full_buffer), \
     INIT_ID(warnings), \
     INIT_ID(warnoptions), \
     INIT_ID(wbits), \

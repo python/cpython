@@ -2,11 +2,11 @@
 
 import threading
 import weakref
-import _xxsubinterpreters as _interpreters
+import _interpreters
 
 # aliases:
-from _xxsubinterpreters import (
-    InterpreterError, InterpreterNotFoundError,
+from _interpreters import (
+    InterpreterError, InterpreterNotFoundError, NotShareableError,
     is_shareable,
 )
 
@@ -14,7 +14,8 @@ from _xxsubinterpreters import (
 __all__ = [
     'get_current', 'get_main', 'create', 'list_all', 'is_shareable',
     'Interpreter',
-    'InterpreterError', 'InterpreterNotFoundError', 'ExecFailure',
+    'InterpreterError', 'InterpreterNotFoundError', 'ExecutionFailed',
+    'NotShareableError',
     'create_queue', 'Queue', 'QueueEmpty', 'QueueFull',
 ]
 
@@ -42,7 +43,11 @@ Uncaught in the interpreter:
 {formatted}
 """.strip()
 
-class ExecFailure(RuntimeError):
+class ExecutionFailed(InterpreterError):
+    """An unhandled exception happened during execution.
+
+    This is raised from Interpreter.exec() and Interpreter.call().
+    """
 
     def __init__(self, excinfo):
         msg = excinfo.formatted
@@ -68,51 +73,78 @@ class ExecFailure(RuntimeError):
 
 def create():
     """Return a new (idle) Python interpreter."""
-    id = _interpreters.create(isolated=True)
-    return Interpreter(id)
+    id = _interpreters.create(reqrefs=True)
+    return Interpreter(id, _ownsref=True)
 
 
 def list_all():
     """Return all existing interpreters."""
-    return [Interpreter(id) for id in _interpreters.list_all()]
+    return [Interpreter(id, _whence=whence)
+            for id, whence in _interpreters.list_all(require_ready=True)]
 
 
 def get_current():
     """Return the currently running interpreter."""
-    id = _interpreters.get_current()
-    return Interpreter(id)
+    id, whence = _interpreters.get_current()
+    return Interpreter(id, _whence=whence)
 
 
 def get_main():
     """Return the main interpreter."""
-    id = _interpreters.get_main()
-    return Interpreter(id)
+    id, whence = _interpreters.get_main()
+    assert whence == _interpreters.WHENCE_RUNTIME, repr(whence)
+    return Interpreter(id, _whence=whence)
 
 
 _known = weakref.WeakValueDictionary()
 
 class Interpreter:
-    """A single Python interpreter."""
+    """A single Python interpreter.
 
-    def __new__(cls, id, /):
+    Attributes:
+
+    "id" - the unique process-global ID number for the interpreter
+    "whence" - indicates where the interpreter was created
+
+    If the interpreter wasn't created by this module
+    then any method that modifies the interpreter will fail,
+    i.e. .close(), .prepare_main(), .exec(), and .call()
+    """
+
+    _WHENCE_TO_STR = {
+       _interpreters.WHENCE_UNKNOWN: 'unknown',
+       _interpreters.WHENCE_RUNTIME: 'runtime init',
+       _interpreters.WHENCE_LEGACY_CAPI: 'legacy C-API',
+       _interpreters.WHENCE_CAPI: 'C-API',
+       _interpreters.WHENCE_XI: 'cross-interpreter C-API',
+       _interpreters.WHENCE_STDLIB: '_interpreters module',
+    }
+
+    def __new__(cls, id, /, _whence=None, _ownsref=None):
         # There is only one instance for any given ID.
         if not isinstance(id, int):
             raise TypeError(f'id must be an int, got {id!r}')
         id = int(id)
+        if _whence is None:
+            if _ownsref:
+                _whence = _interpreters.WHENCE_STDLIB
+            else:
+                _whence = _interpreters.whence(id)
+        assert _whence in cls._WHENCE_TO_STR, repr(_whence)
+        if _ownsref is None:
+            _ownsref = (_whence == _interpreters.WHENCE_STDLIB)
         try:
             self = _known[id]
             assert hasattr(self, '_ownsref')
         except KeyError:
-            # This may raise InterpreterNotFoundError:
-            _interpreters._incref(id)
-            try:
-                self = super().__new__(cls)
-                self._id = id
-                self._ownsref = True
-            except BaseException:
-                _interpreters._deccref(id)
-                raise
+            self = super().__new__(cls)
             _known[id] = self
+            self._id = id
+            self._whence = _whence
+            self._ownsref = _ownsref
+            if _ownsref:
+                # This may raise InterpreterNotFoundError:
+                _interpreters.incref(id)
         return self
 
     def __repr__(self):
@@ -124,12 +156,20 @@ class Interpreter:
     def __del__(self):
         self._decref()
 
+    # for pickling:
+    def __getnewargs__(self):
+        return (self._id,)
+
+    # for pickling:
+    def __getstate__(self):
+        return None
+
     def _decref(self):
         if not self._ownsref:
             return
         self._ownsref = False
         try:
-            _interpreters._decref(self.id)
+            _interpreters.decref(self._id)
         except InterpreterNotFoundError:
             pass
 
@@ -137,17 +177,24 @@ class Interpreter:
     def id(self):
         return self._id
 
+    @property
+    def whence(self):
+        return self._WHENCE_TO_STR[self._whence]
+
     def is_running(self):
         """Return whether or not the identified interpreter is running."""
         return _interpreters.is_running(self._id)
+
+    # Everything past here is available only to interpreters created by
+    # interpreters.create().
 
     def close(self):
         """Finalize and destroy the interpreter.
 
         Attempting to destroy the current interpreter results
-        in a RuntimeError.
+        in an InterpreterError.
         """
-        return _interpreters.destroy(self._id)
+        return _interpreters.destroy(self._id, restrict=True)
 
     def prepare_main(self, ns=None, /, **kwargs):
         """Bind the given values into the interpreter's __main__.
@@ -155,9 +202,9 @@ class Interpreter:
         The values must be shareable.
         """
         ns = dict(ns, **kwargs) if ns is not None else kwargs
-        _interpreters.set___main___attrs(self._id, ns)
+        _interpreters.set___main___attrs(self._id, ns, restrict=True)
 
-    def exec_sync(self, code, /):
+    def exec(self, code, /):
         """Run the given source code in the interpreter.
 
         This is essentially the same as calling the builtin "exec"
@@ -166,22 +213,46 @@ class Interpreter:
 
         There is no return value.
 
-        If the code raises an unhandled exception then an ExecFailure
-        is raised, which summarizes the unhandled exception.  The actual
-        exception is discarded because objects cannot be shared between
-        interpreters.
+        If the code raises an unhandled exception then an ExecutionFailed
+        exception is raised, which summarizes the unhandled exception.
+        The actual exception is discarded because objects cannot be
+        shared between interpreters.
 
         This blocks the current Python thread until done.  During
         that time, the previous interpreter is allowed to run
         in other threads.
         """
-        excinfo = _interpreters.exec(self._id, code)
+        excinfo = _interpreters.exec(self._id, code, restrict=True)
         if excinfo is not None:
-            raise ExecFailure(excinfo)
+            raise ExecutionFailed(excinfo)
 
-    def run(self, code, /):
+    def call(self, callable, /):
+        """Call the object in the interpreter with given args/kwargs.
+
+        Only functions that take no arguments and have no closure
+        are supported.
+
+        The return value is discarded.
+
+        If the callable raises an exception then the error display
+        (including full traceback) is send back between the interpreters
+        and an ExecutionFailed exception is raised, much like what
+        happens with Interpreter.exec().
+        """
+        # XXX Support args and kwargs.
+        # XXX Support arbitrary callables.
+        # XXX Support returning the return value (e.g. via pickle).
+        excinfo = _interpreters.call(self._id, callable, restrict=True)
+        if excinfo is not None:
+            raise ExecutionFailed(excinfo)
+
+    def call_in_thread(self, callable, /):
+        """Return a new thread that calls the object in the interpreter.
+
+        The return value and any raised exception are discarded.
+        """
         def task():
-            self.exec_sync(code)
+            self.call(callable)
         t = threading.Thread(target=task)
         t.start()
         return t

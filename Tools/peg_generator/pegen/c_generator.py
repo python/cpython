@@ -253,7 +253,7 @@ class CCallMakerVisitor(GrammarVisitor):
         else:
             return FunctionCall(
                 function=f"_PyPegen_lookahead",
-                arguments=[positive, call.function, *call.arguments],
+                arguments=[positive, f"(void *(*)(Parser *)) {call.function}", *call.arguments],
                 return_type="int",
             )
 

@@ -30,9 +30,19 @@ bound into a function.
    Return true if *co* is a :ref:`code object <code-objects>`.
    This function always succeeds.
 
-.. c:function:: int PyCode_GetNumFree(PyCodeObject *co)
+.. c:function:: Py_ssize_t PyCode_GetNumFree(PyCodeObject *co)
 
-   Return the number of free variables in *co*.
+   Return the number of free variables in a code object.
+
+.. c:function:: int PyUnstable_Code_GetFirstFree(PyCodeObject *co)
+
+   Return the position of the first free variable in a code object.
+
+   .. versionchanged:: 3.13
+
+      Renamed from ``PyCode_GetFirstFree`` as part of :ref:`unstable-c-api`.
+      The old name is deprecated, but will remain available until the
+      signature changes again.
 
 .. c:function:: PyCodeObject* PyUnstable_Code_New(int argcount, int kwonlyargcount, int nlocals, int stacksize, int flags, PyObject *code, PyObject *consts, PyObject *names, PyObject *varnames, PyObject *freevars, PyObject *cellvars, PyObject *filename, PyObject *name, PyObject *qualname, int firstlineno, PyObject *linetable, PyObject *exceptiontable)
 
