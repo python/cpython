@@ -449,6 +449,7 @@ del re
 # The code in _power_exact() is very involved, and I'm not certain xc can't
 # be very much larger than 10**p. I _doubt_ it can. But, if I'm wrong, a
 # different approach would be better.
+#
 # BUG ALERT: the code in the first block above returns None if xc ix sn
 # integer power of 10 > 10**p. But the replacement accepts any such power of
 # 10. This was intentional, but may be wrong. I (Tim) am taking the comments
@@ -458,6 +459,12 @@ del re
 # original behavior can be gotten by changing the test below to:
 #     len(sc) <= p or (len(sc) == p+1 and _is_power_of_10(sc))
 # Alas, I don't know how to contrive inputs to trigger these paths.
+#
+# LATER: I believe it's impossible for _is_power_of_10(sc) to be true in
+# either of the code blocks using _convert_to_str() at this time. But I'll
+# leave it in anyway, "just in case", and so this function is more
+# bulletproof if it gets used in other contexts. It's a cheap test and rarely
+# executed.
 
 def _convert_to_str(ec, p):
     sc = str(ec)
@@ -2224,6 +2231,8 @@ class Decimal(object):
 
         # if m > p*100//_log10_lb(xc) then m > p/log10(xc), hence xc**m >
         # 10**p and the result is not representable.
+        assert xc != 1, self
+        assert not _is_power_of_10(str(xc)), self
         if xc > 1 and m > p*100//_log10_lb(xc):
             return None
         xc = xc**m
