@@ -88,8 +88,15 @@ def int_to_decimal_string(n):
     """Asymptotically fast conversion of an 'int' to a decimal string."""
     w = n.bit_length()
     if w > 450_000 and _decimal is not None:
+        # It is only usable with the C decimal implementation.
+        # _pydecimal.py calls str() on very large integers, which in its
+        # turn calls int_to_decimal_string(), causing very deep recursion.
         return str(int_to_decimal(n))
 
+    # Fallback algorithm for the case when the C decimal module isn't
+    # available.  This algorithm is asymptotically worse than the algorithm
+    # using the decimal module, but better than the quadratic time
+    # implementation in longobject.c.
     def inner(n, w):
         if w <= 1000:
             return str(n)
