@@ -397,6 +397,7 @@ Modules/xxmodule.c	-	Str_Type	-
 Modules/xxmodule.c	-	Xxo_Type	-
 Modules/xxsubtype.c	-	spamdict_type	-
 Modules/xxsubtype.c	-	spamlist_type	-
+Modules/_testcapi/monitoring.c	-	PyCodeLike_Type	-
 
 ##-----------------------
 ## non-static types - initialized once
