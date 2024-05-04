@@ -25,7 +25,8 @@ from contextlib import contextmanager
 from dataclasses import dataclass, field, fields
 import re
 import unicodedata
-from traceback import _can_colorize, _ANSIColors  # type: ignore[attr-defined]
+from _colorize import can_colorize, ANSIColors
+
 
 from . import commands, console, input
 from .utils import ANSI_ESCAPE_SEQUENCE, wlen
@@ -423,8 +424,8 @@ class Reader:
         else:
             prompt = self.ps1
 
-        if _can_colorize():
-            prompt = f"{_ANSIColors.BOLD_MAGENTA}{prompt}{_ANSIColors.RESET}"
+        if can_colorize():
+            prompt = f"{ANSIColors.BOLD_MAGENTA}{prompt}{ANSIColors.RESET}"
         return prompt
 
     def push_input_trans(self, itrans: input.KeymapTranslator) -> None:

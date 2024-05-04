@@ -23,11 +23,11 @@ the CPython prompt as closely as possible, with the exception of
 allowing multiline input and multiline history entries.
 """
 
+import _colorize
 import _sitebuiltins
 import linecache
 import sys
 import code
-import traceback
 
 from .console import Event
 from .readline import _get_reader, multiline_input
@@ -63,7 +63,7 @@ REPL_COMMANDS = {
 class InteractiveColoredConsole(code.InteractiveConsole):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.can_colorize = traceback._can_colorize()
+        self.can_colorize = _colorize.can_colorize()
 
     def showtraceback(self):
         super().showtraceback(colorize=self.can_colorize)
