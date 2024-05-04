@@ -1731,7 +1731,7 @@ PyDoc_STRVAR(os__path_isdevdrive__doc__,
     {"_path_isdevdrive", _PyCFunction_CAST(os__path_isdevdrive), METH_FASTCALL|METH_KEYWORDS, os__path_isdevdrive__doc__},
 
 static PyObject *
-os__path_isdevdrive_impl(PyObject *module, PyObject *path);
+os__path_isdevdrive_impl(PyObject *module, path_t *path);
 
 static PyObject *
 os__path_isdevdrive(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -1763,16 +1763,21 @@ os__path_isdevdrive(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
-    PyObject *path;
+    path_t path = PATH_T_INITIALIZE("_path_isdevdrive", "path", 0, 0);
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
     if (!args) {
         goto exit;
     }
-    path = args[0];
-    return_value = os__path_isdevdrive_impl(module, path);
+    if (!path_converter(args[0], &path)) {
+        goto exit;
+    }
+    return_value = os__path_isdevdrive_impl(module, &path);
 
 exit:
+    /* Cleanup for path */
+    path_cleanup(&path);
+
     return return_value;
 }
 
@@ -12647,4 +12652,4 @@ os__supports_virtual_terminal(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF
     #define OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF
 #endif /* !defined(OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF) */
-/*[clinic end generated code: output=412b4e312064330d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a5c86cf571db8e59 input=a9049054013a1b77]*/
