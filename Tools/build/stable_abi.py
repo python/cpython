@@ -275,9 +275,19 @@ def gen_ctypes_test(manifest, args, outfile):
         import sys
         import unittest
         from test.support.import_helper import import_module
-        from _testcapi import get_feature_macros
+        try:
+            from _testcapi import get_feature_macros
+        except ImportError:
+            raise unittest.SkipTest("requires _testcapi")
 
         feature_macros = get_feature_macros()
+
+        # Stable ABI is incompatible with Py_TRACE_REFS builds due to PyObject
+        # layout differences.
+        # See https://github.com/python/cpython/issues/88299#issuecomment-1113366226
+        if feature_macros['Py_TRACE_REFS']:
+            raise unittest.SkipTest("incompatible with Py_TRACE_REFS.")
+
         ctypes_test = import_module('ctypes')
 
         class TestStableABIAvailability(unittest.TestCase):
@@ -308,16 +318,11 @@ def gen_ctypes_test(manifest, args, outfile):
         {'function', 'data'},
         include_abi_only=True,
     )
-    optional_items = {}
+    feature_macros = list(manifest.select({'feature_macro'}))
+    optional_items = {m.name: [] for m in feature_macros}
     for item in items:
-        if item.name in (
-                # Some symbols aren't exported on all platforms.
-                # This is a bug: https://bugs.python.org/issue44133
-                'PyModule_Create2', 'PyModule_FromDefAndSpec2',
-            ):
-            continue
         if item.ifdef:
-            optional_items.setdefault(item.ifdef, []).append(item.name)
+            optional_items[item.ifdef].append(item.name)
         else:
             write(f'    "{item.name}",')
     write(")")
@@ -328,7 +333,6 @@ def gen_ctypes_test(manifest, args, outfile):
             write(f"        {name!r},")
         write("    )")
     write("")
-    feature_macros = list(manifest.select({'feature_macro'}))
     feature_names = sorted(m.name for m in feature_macros)
     write(f"EXPECTED_FEATURE_MACROS = set({pprint.pformat(feature_names)})")
 
@@ -600,7 +604,7 @@ def check_private_names(manifest):
         if name.startswith('_') and not item.abi_only:
             raise ValueError(
                 f'`{name}` is private (underscore-prefixed) and should be '
-                + 'removed from the stable ABI list or or marked `abi_only`')
+                + 'removed from the stable ABI list or marked `abi_only`')
 
 def check_dump(manifest, filename):
     """Check that manifest.dump() corresponds to the data.

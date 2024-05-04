@@ -5,7 +5,7 @@
    :platform: Unix
    :synopsis: GNU readline support for Python.
 
-.. sectionauthor:: Skip Montanaro <skip@pobox.com>
+.. sectionauthor:: Skip Montanaro <skip.montanaro@gmail.com>
 
 --------------
 
@@ -23,6 +23,8 @@ Readline keybindings may be configured via an initialization file, typically
 in the GNU Readline manual for information about the format and
 allowable constructs of that file, and the capabilities of the
 Readline library in general.
+
+.. include:: ../includes/wasm-ios-notavail.rst
 
 .. note::
 
@@ -217,6 +219,8 @@ Startup hooks
    readline starts reading input characters.  This function only exists
    if Python was compiled for a version of the library that supports it.
 
+
+.. _readline-completion:
 
 Completion
 ----------

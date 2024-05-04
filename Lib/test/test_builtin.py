@@ -46,6 +46,8 @@ except ImportError:
 x, y = 1e16, 2.9999 # use temporary values to defeat peephole optimizer
 HAVE_DOUBLE_ROUNDING = (x + y == 1e16 + 4)
 
+# used as proof of globals being used
+A_GLOBAL_VALUE = 123
 
 class Squares:
 
@@ -308,14 +310,13 @@ class BuiltinTest(unittest.TestCase):
         self.assertTrue(callable(c3))
 
     def test_chr(self):
+        self.assertEqual(chr(0), '\0')
         self.assertEqual(chr(32), ' ')
         self.assertEqual(chr(65), 'A')
         self.assertEqual(chr(97), 'a')
         self.assertEqual(chr(0xff), '\xff')
-        self.assertRaises(ValueError, chr, 1<<24)
-        self.assertEqual(chr(sys.maxunicode),
-                         str('\\U0010ffff'.encode("ascii"), 'unicode-escape'))
         self.assertRaises(TypeError, chr)
+        self.assertRaises(TypeError, chr, 65.0)
         self.assertEqual(chr(0x0000FFFF), "\U0000FFFF")
         self.assertEqual(chr(0x00010000), "\U00010000")
         self.assertEqual(chr(0x00010001), "\U00010001")
@@ -327,7 +328,11 @@ class BuiltinTest(unittest.TestCase):
         self.assertEqual(chr(0x0010FFFF), "\U0010FFFF")
         self.assertRaises(ValueError, chr, -1)
         self.assertRaises(ValueError, chr, 0x00110000)
-        self.assertRaises((OverflowError, ValueError), chr, 2**32)
+        self.assertRaises(ValueError, chr, 1<<24)
+        self.assertRaises(ValueError, chr, 2**32-1)
+        self.assertRaises(ValueError, chr, -2**32)
+        self.assertRaises(ValueError, chr, 2**1000)
+        self.assertRaises(ValueError, chr, -2**1000)
 
     def test_cmp(self):
         self.assertTrue(not hasattr(builtins, "cmp"))
@@ -611,6 +616,14 @@ class BuiltinTest(unittest.TestCase):
         self.assertIsInstance(res, list)
         self.assertTrue(res == ["a", "b", "c"])
 
+        # dir(obj__dir__iterable)
+        class Foo(object):
+            def __dir__(self):
+                return {"b", "c", "a"}
+        res = dir(Foo())
+        self.assertIsInstance(res, list)
+        self.assertEqual(sorted(res), ["a", "b", "c"])
+
         # dir(obj__dir__not_sequence)
         class Foo(object):
             def __dir__(self):
@@ -629,8 +642,8 @@ class BuiltinTest(unittest.TestCase):
 
     def test___ne__(self):
         self.assertFalse(None.__ne__(None))
-        self.assertTrue(None.__ne__(0))
-        self.assertTrue(None.__ne__("abc"))
+        self.assertIs(None.__ne__(0), NotImplemented)
+        self.assertIs(None.__ne__("abc"), NotImplemented)
 
     def test_divmod(self):
         self.assertEqual(divmod(12, 7), (1, 5))
@@ -672,6 +685,11 @@ class BuiltinTest(unittest.TestCase):
             def __getitem__(self, key):
                 raise ValueError
         self.assertRaises(ValueError, eval, "foo", {}, X())
+
+    def test_eval_kwargs(self):
+        data = {"A_GLOBAL_VALUE": 456}
+        self.assertEqual(eval("globals()['A_GLOBAL_VALUE']", globals=data), 456)
+        self.assertEqual(eval("globals()['A_GLOBAL_VALUE']", locals=data), 123)
 
     def test_general_eval(self):
         # Tests that general mappings can be used for the locals argument
@@ -766,6 +784,19 @@ class BuiltinTest(unittest.TestCase):
             del l['__builtins__']
         self.assertEqual((g, l), ({'a': 1}, {'b': 2}))
 
+    def test_exec_kwargs(self):
+        g = {}
+        exec('global z\nz = 1', globals=g)
+        if '__builtins__' in g:
+            del g['__builtins__']
+        self.assertEqual(g, {'z': 1})
+
+        # if we only set locals, the global assignment will not
+        # reach this locals dictionary
+        g = {}
+        exec('global z\nz = 1', locals=g)
+        self.assertEqual(g, {})
+
     def test_exec_globals(self):
         code = compile("print('Hello World!')", "", "exec")
         # no builtin function
@@ -836,6 +867,32 @@ class BuiltinTest(unittest.TestCase):
         # custom builtins dict subclass is missing key
         self.assertRaisesRegex(NameError, "name 'superglobal' is not defined",
                                exec, code, {'__builtins__': customdict()})
+
+    def test_eval_builtins_mapping(self):
+        code = compile("superglobal", "test", "eval")
+        # works correctly
+        ns = {'__builtins__': types.MappingProxyType({'superglobal': 1})}
+        self.assertEqual(eval(code, ns), 1)
+        # custom builtins mapping is missing key
+        ns = {'__builtins__': types.MappingProxyType({})}
+        self.assertRaisesRegex(NameError, "name 'superglobal' is not defined",
+                               eval, code, ns)
+
+    def test_exec_builtins_mapping_import(self):
+        code = compile("import foo.bar", "test", "exec")
+        ns = {'__builtins__': types.MappingProxyType({})}
+        self.assertRaisesRegex(ImportError, "__import__ not found", exec, code, ns)
+        ns = {'__builtins__': types.MappingProxyType({'__import__': lambda *args: args})}
+        exec(code, ns)
+        self.assertEqual(ns['foo'], ('foo.bar', ns, ns, None, 0))
+
+    def test_eval_builtins_mapping_reduce(self):
+        # list_iterator.__reduce__() calls _PyEval_GetBuiltin("iter")
+        code = compile("x.__reduce__()", "test", "eval")
+        ns = {'__builtins__': types.MappingProxyType({}), 'x': iter([1, 2])}
+        self.assertRaisesRegex(AttributeError, "iter", eval, code, ns)
+        ns = {'__builtins__': types.MappingProxyType({'iter': iter}), 'x': iter([1, 2])}
+        self.assertEqual(eval(code, ns), (iter, ([1, 2],), 0))
 
     def test_exec_redirected(self):
         savestdout = sys.stdout

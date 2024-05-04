@@ -214,7 +214,7 @@ Assignment of an object to a single target is recursively defined as follows.
   object.  This can either replace an existing key/value pair with the same key
   value, or insert a new key/value pair (if no key with the same value existed).
 
-  For user-defined objects, the :meth:`__setitem__` method is called with
+  For user-defined objects, the :meth:`~object.__setitem__` method is called with
   appropriate arguments.
 
   .. index:: pair: slicing; assignment
@@ -351,7 +351,7 @@ If the right hand side is present, an annotated
 assignment performs the actual assignment before evaluating annotations
 (where applicable). If the right hand side is not present for an expression
 target, then the interpreter evaluates the target except for the last
-:meth:`__setitem__` or :meth:`__setattr__` call.
+:meth:`~object.__setitem__` or :meth:`~object.__setattr__` call.
 
 .. seealso::
 
@@ -664,8 +664,7 @@ and information about handling exceptions is in section :ref:`try`.
 .. versionchanged:: 3.3
     :const:`None` is now permitted as ``Y`` in ``raise X from Y``.
 
-.. versionadded:: 3.3
-    The :attr:`~BaseException.__suppress_context__` attribute to suppress
+    Added the :attr:`~BaseException.__suppress_context__` attribute to suppress
     automatic display of the exception context.
 
 .. versionchanged:: 3.11
@@ -932,7 +931,7 @@ That is not a future statement; it's an ordinary import statement with no
 special semantics or syntax restrictions.
 
 Code compiled by calls to the built-in functions :func:`exec` and :func:`compile`
-that occur in a module :mod:`M` containing a future statement will, by default,
+that occur in a module :mod:`!M` containing a future statement will, by default,
 use the new syntax or semantics associated with the future statement.  This can
 be controlled by optional arguments to :func:`compile` --- see the documentation
 of that function for details.
@@ -1007,24 +1006,28 @@ The :keyword:`!nonlocal` statement
 .. productionlist:: python-grammar
    nonlocal_stmt: "nonlocal" `identifier` ("," `identifier`)*
 
-The :keyword:`nonlocal` statement causes the listed identifiers to refer to
-previously bound variables in the nearest enclosing scope excluding globals.
-This is important because the default behavior for binding is to search the
-local namespace first.  The statement allows encapsulated code to rebind
-variables outside of the local scope besides the global (module) scope.
+When the definition of a function or class is nested (enclosed) within
+the definitions of other functions, its nonlocal scopes are the local
+scopes of the enclosing functions. The :keyword:`nonlocal` statement
+causes the listed identifiers to refer to names previously bound in
+nonlocal scopes. It allows encapsulated code to rebind such nonlocal
+identifiers.  If a name is bound in more than one nonlocal scope, the
+nearest binding is used. If a name is not bound in any nonlocal scope,
+or if there is no nonlocal scope, a :exc:`SyntaxError` is raised.
 
-Names listed in a :keyword:`nonlocal` statement, unlike those listed in a
-:keyword:`global` statement, must refer to pre-existing bindings in an
-enclosing scope (the scope in which a new binding should be created cannot
-be determined unambiguously).
-
-Names listed in a :keyword:`nonlocal` statement must not collide with
-pre-existing bindings in the local scope.
+The nonlocal statement applies to the entire scope of a function or
+class body. A :exc:`SyntaxError` is raised if a variable is used or
+assigned to prior to its nonlocal declaration in the scope.
 
 .. seealso::
 
    :pep:`3104` - Access to Names in Outer Scopes
       The specification for the :keyword:`nonlocal` statement.
+
+**Programmer's note:** :keyword:`nonlocal` is a directive to the parser
+and applies only to code parsed along with it.  See the note for the
+:keyword:`global` statement.
+
 
 .. _type:
 

@@ -871,8 +871,8 @@ supports sending logging messages to an email address via SMTP.
    A timeout can be specified for communication with the SMTP server using the
    *timeout* argument.
 
-   .. versionadded:: 3.3
-      The *timeout* argument was added.
+   .. versionchanged:: 3.3
+      Added the *timeout* parameter.
 
    .. method:: emit(record)
 

@@ -518,6 +518,26 @@ APIs:
         - :c:expr:`PyObject*`
         - The result of calling :c:func:`PyObject_Repr`.
 
+      * - ``T``
+        - :c:expr:`PyObject*`
+        - Get the fully qualified name of an object type;
+          call :c:func:`PyType_GetFullyQualifiedName`.
+
+      * - ``#T``
+        - :c:expr:`PyObject*`
+        - Similar to ``T`` format, but use a colon (``:``) as separator between
+          the module name and the qualified name.
+
+      * - ``N``
+        - :c:expr:`PyTypeObject*`
+        - Get the fully qualified name of a type;
+          call :c:func:`PyType_GetFullyQualifiedName`.
+
+      * - ``#N``
+        - :c:expr:`PyTypeObject*`
+        - Similar to ``N`` format, but use a colon (``:``) as separator between
+          the module name and the qualified name.
+
    .. note::
       The width formatter unit is number of characters rather than bytes.
       The precision formatter unit is number of bytes or :c:type:`wchar_t`
@@ -552,6 +572,9 @@ APIs:
       An unrecognized format character now sets a :exc:`SystemError`.
       In previous versions it caused all the rest of the format string to be
       copied as-is to the result string, and any extra arguments discarded.
+
+   .. versionchanged:: 3.13
+      Support for ``%T``, ``%#T``, ``%N`` and ``%#N`` formats added.
 
 
 .. c:function:: PyObject* PyUnicode_FromFormatV(const char *format, va_list vargs)
@@ -854,7 +877,12 @@ wchar_t Support
    Copy the Unicode object contents into the :c:type:`wchar_t` buffer *wstr*.  At most
    *size* :c:type:`wchar_t` characters are copied (excluding a possibly trailing
    null termination character).  Return the number of :c:type:`wchar_t` characters
-   copied or ``-1`` in case of an error.  Note that the resulting :c:expr:`wchar_t*`
+   copied or ``-1`` in case of an error.
+
+   When *wstr* is ``NULL``, instead return the *size* that would be required
+   to store all of *unicode* including a terminating null.
+
+   Note that the resulting :c:expr:`wchar_t*`
    string may or may not be null-terminated.  It is the responsibility of the caller
    to make sure that the :c:expr:`wchar_t*` string is null-terminated in case this is
    required by the application. Also, note that the :c:expr:`wchar_t*` string
