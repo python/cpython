@@ -82,6 +82,7 @@ download them.
         * SQLite
         * XZ
         * libffi
+        * mpdecimal
 
     - uses system-supplied versions of third-party libraries
 
@@ -111,6 +112,7 @@ download them.
         * SQLite
         * XZ
         * libffi
+        * mpdecimal
 
     - uses system-supplied versions of third-party libraries
 

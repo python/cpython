@@ -1,3 +1,4 @@
+import copy
 import gc
 import operator
 import re
@@ -13,7 +14,7 @@ except ImportError:
     _testcapi = None
 
 from test import support
-from test.support import threading_helper, Py_GIL_DISABLED
+from test.support import import_helper, threading_helper, Py_GIL_DISABLED
 from test.support.script_helper import assert_python_ok
 
 
@@ -198,14 +199,6 @@ class FrameAttrsTest(unittest.TestCase):
                 tb = tb.tb_next
         return frames
 
-    def test_locals(self):
-        f, outer, inner = self.make_frames()
-        outer_locals = outer.f_locals
-        self.assertIsInstance(outer_locals.pop('inner'), types.FunctionType)
-        self.assertEqual(outer_locals, {'x': 5, 'y': 6})
-        inner_locals = inner.f_locals
-        self.assertEqual(inner_locals, {'x': 5, 'z': 7})
-
     def test_clear_locals(self):
         # Test f_locals after clear() (issue #21897)
         f, outer, inner = self.make_frames()
@@ -217,8 +210,8 @@ class FrameAttrsTest(unittest.TestCase):
     def test_locals_clear_locals(self):
         # Test f_locals before and after clear() (to exercise caching)
         f, outer, inner = self.make_frames()
-        outer.f_locals
-        inner.f_locals
+        self.assertNotEqual(outer.f_locals, {})
+        self.assertNotEqual(inner.f_locals, {})
         outer.clear()
         inner.clear()
         self.assertEqual(outer.f_locals, {})
@@ -268,6 +261,177 @@ class ReprTest(unittest.TestCase):
         self.assertRegex(repr(f_inner),
                          r"^<frame at 0x[0-9a-fA-F]+, file %s, line %d, code inner>$"
                          % (file_repr, offset + 5))
+
+class TestFrameLocals(unittest.TestCase):
+    def test_scope(self):
+        class A:
+            x = 1
+            sys._getframe().f_locals['x'] = 2
+            sys._getframe().f_locals['y'] = 2
+
+        self.assertEqual(A.x, 2)
+        self.assertEqual(A.y, 2)
+
+        def f():
+            x = 1
+            sys._getframe().f_locals['x'] = 2
+            sys._getframe().f_locals['y'] = 2
+            self.assertEqual(x, 2)
+            self.assertEqual(locals()['y'], 2)
+        f()
+
+    def test_closure(self):
+        x = 1
+        y = 2
+
+        def f():
+            z = x + y
+            d = sys._getframe().f_locals
+            self.assertEqual(d['x'], 1)
+            self.assertEqual(d['y'], 2)
+            d['x'] = 2
+            d['y'] = 3
+
+        f()
+        self.assertEqual(x, 2)
+        self.assertEqual(y, 3)
+
+    def test_as_dict(self):
+        x = 1
+        y = 2
+        d = sys._getframe().f_locals
+        # self, x, y, d
+        self.assertEqual(len(d), 4)
+        self.assertIs(d['d'], d)
+        self.assertEqual(set(d.keys()), set(['x', 'y', 'd', 'self']))
+        self.assertEqual(len(d.values()), 4)
+        self.assertIn(1, d.values())
+        self.assertEqual(len(d.items()), 4)
+        self.assertIn(('x', 1), d.items())
+        self.assertEqual(d.__getitem__('x'), 1)
+        d.__setitem__('x', 2)
+        self.assertEqual(d['x'], 2)
+        self.assertEqual(d.get('x'), 2)
+        self.assertIs(d.get('non_exist', None), None)
+        self.assertEqual(d.__len__(), 4)
+        self.assertEqual(set([key for key in d]), set(['x', 'y', 'd', 'self']))
+        self.assertIn('x', d)
+        self.assertTrue(d.__contains__('x'))
+
+        self.assertEqual(reversed(d), list(reversed(d.keys())))
+
+        d.update({'x': 3, 'z': 4})
+        self.assertEqual(d['x'], 3)
+        self.assertEqual(d['z'], 4)
+
+        with self.assertRaises(TypeError):
+            d.update([1, 2])
+
+        self.assertEqual(d.setdefault('x', 5), 3)
+        self.assertEqual(d.setdefault('new', 5), 5)
+        self.assertEqual(d['new'], 5)
+
+        with self.assertRaises(KeyError):
+            d['non_exist']
+
+    def test_as_number(self):
+        x = 1
+        y = 2
+        d = sys._getframe().f_locals
+        self.assertIn('z', d | {'z': 3})
+        d |= {'z': 3}
+        self.assertEqual(d['z'], 3)
+        d |= {'y': 3}
+        self.assertEqual(d['y'], 3)
+        with self.assertRaises(TypeError):
+            d |= 3
+        with self.assertRaises(TypeError):
+            _ = d | [3]
+
+    def test_non_string_key(self):
+        d = sys._getframe().f_locals
+        d[1] = 2
+        self.assertEqual(d[1], 2)
+
+    def test_write_with_hidden(self):
+        def f():
+            f_locals = [sys._getframe().f_locals for b in [0]][0]
+            f_locals['b'] = 2
+            f_locals['c'] = 3
+            self.assertEqual(b, 2)
+            self.assertEqual(c, 3)
+            b = 0
+            c = 0
+        f()
+
+    def test_repr(self):
+        x = 1
+        # Introduce a reference cycle
+        frame = sys._getframe()
+        self.assertEqual(repr(frame.f_locals), repr(dict(frame.f_locals)))
+
+    def test_delete(self):
+        x = 1
+        d = sys._getframe().f_locals
+        with self.assertRaises(TypeError):
+            del d['x']
+
+        with self.assertRaises(AttributeError):
+            d.clear()
+
+        with self.assertRaises(AttributeError):
+            d.pop('x')
+
+    @support.cpython_only
+    def test_sizeof(self):
+        proxy = sys._getframe().f_locals
+        support.check_sizeof(self, proxy, support.calcobjsize("P"))
+
+    def test_unsupport(self):
+        x = 1
+        d = sys._getframe().f_locals
+        with self.assertRaises(AttributeError):
+            d.copy()
+
+        with self.assertRaises(TypeError):
+            copy.copy(d)
+
+        with self.assertRaises(TypeError):
+            copy.deepcopy(d)
+
+
+class TestFrameCApi(unittest.TestCase):
+    def test_basic(self):
+        x = 1
+        ctypes = import_helper.import_module('ctypes')
+        PyEval_GetFrameLocals = ctypes.pythonapi.PyEval_GetFrameLocals
+        PyEval_GetFrameLocals.restype = ctypes.py_object
+        frame_locals = PyEval_GetFrameLocals()
+        self.assertTrue(type(frame_locals), dict)
+        self.assertEqual(frame_locals['x'], 1)
+        frame_locals['x'] = 2
+        self.assertEqual(x, 1)
+
+        PyEval_GetFrameGlobals = ctypes.pythonapi.PyEval_GetFrameGlobals
+        PyEval_GetFrameGlobals.restype = ctypes.py_object
+        frame_globals = PyEval_GetFrameGlobals()
+        self.assertTrue(type(frame_globals), dict)
+        self.assertIs(frame_globals, globals())
+
+        PyEval_GetFrameBuiltins = ctypes.pythonapi.PyEval_GetFrameBuiltins
+        PyEval_GetFrameBuiltins.restype = ctypes.py_object
+        frame_builtins = PyEval_GetFrameBuiltins()
+        self.assertEqual(frame_builtins, __builtins__)
+
+        PyFrame_GetLocals = ctypes.pythonapi.PyFrame_GetLocals
+        PyFrame_GetLocals.argtypes = [ctypes.py_object]
+        PyFrame_GetLocals.restype = ctypes.py_object
+        frame = sys._getframe()
+        f_locals = PyFrame_GetLocals(frame)
+        self.assertTrue(f_locals['x'], 1)
+        f_locals['x'] = 2
+        self.assertEqual(x, 2)
+
 
 class TestIncompleteFrameAreInvisible(unittest.TestCase):
 

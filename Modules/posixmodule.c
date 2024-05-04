@@ -37,6 +37,8 @@
 #  include <winioctl.h>
 #  include <lmcons.h>             // UNLEN
 #  include "osdefs.h"             // SEP
+#  include <aclapi.h>             // SetEntriesInAcl
+#  include <sddl.h>               // SDDL_REVISION_1
 #  if defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM)
 #    define HAVE_SYMLINK
 #  endif /* MS_WINDOWS_DESKTOP | MS_WINDOWS_SYSTEM */
@@ -5539,6 +5541,146 @@ os__path_normpath_impl(PyObject *module, PyObject *path)
     return result;
 }
 
+#ifdef MS_WINDOWS
+
+/* We centralise SECURITY_ATTRIBUTE initialization based around
+templates that will probably mostly match common POSIX mode settings.
+The _Py_SECURITY_ATTRIBUTE_DATA structure contains temporary data, as
+a constructed SECURITY_ATTRIBUTE structure typically refers to memory
+that has to be alive while it's being used.
+
+Typical use will look like:
+    SECURITY_ATTRIBUTES *pSecAttr = NULL;
+    struct _Py_SECURITY_ATTRIBUTE_DATA secAttrData;
+    int error, error2;
+
+    Py_BEGIN_ALLOW_THREADS
+    switch (mode) {
+    case 0x1C0: // 0o700
+        error = initializeMkdir700SecurityAttributes(&pSecAttr, &secAttrData);
+        break;
+    ...
+    default:
+        error = initializeDefaultSecurityAttributes(&pSecAttr, &secAttrData);
+        break;
+    }
+
+    if (!error) {
+        // do operation, passing pSecAttr
+    }
+
+    // Unconditionally clear secAttrData.
+    error2 = clearSecurityAttributes(&pSecAttr, &secAttrData);
+    if (!error) {
+        error = error2;
+    }
+    Py_END_ALLOW_THREADS
+
+    if (error) {
+        PyErr_SetFromWindowsErr(error);
+        return NULL;
+    }
+*/
+
+struct _Py_SECURITY_ATTRIBUTE_DATA {
+    SECURITY_ATTRIBUTES securityAttributes;
+    PACL acl;
+    SECURITY_DESCRIPTOR sd;
+    EXPLICIT_ACCESS_W ea[4];
+    char sid[64];
+};
+
+static int
+initializeDefaultSecurityAttributes(
+    PSECURITY_ATTRIBUTES *securityAttributes,
+    struct _Py_SECURITY_ATTRIBUTE_DATA *data
+) {
+    assert(securityAttributes);
+    assert(data);
+    *securityAttributes = NULL;
+    memset(data, 0, sizeof(*data));
+    return 0;
+}
+
+static int
+initializeMkdir700SecurityAttributes(
+    PSECURITY_ATTRIBUTES *securityAttributes,
+    struct _Py_SECURITY_ATTRIBUTE_DATA *data
+) {
+    assert(securityAttributes);
+    assert(data);
+    *securityAttributes = NULL;
+    memset(data, 0, sizeof(*data));
+
+    if (!InitializeSecurityDescriptor(&data->sd, SECURITY_DESCRIPTOR_REVISION)
+        || !SetSecurityDescriptorGroup(&data->sd, NULL, TRUE)) {
+        return GetLastError();
+    }
+
+    int use_alias = 0;
+    DWORD cbSid = sizeof(data->sid);
+    if (!CreateWellKnownSid(WinCreatorOwnerRightsSid, NULL, (PSID)data->sid, &cbSid)) {
+        use_alias = 1;
+    }
+
+    data->securityAttributes.nLength = sizeof(SECURITY_ATTRIBUTES);
+    data->ea[0].grfAccessPermissions = GENERIC_ALL;
+    data->ea[0].grfAccessMode = SET_ACCESS;
+    data->ea[0].grfInheritance = SUB_CONTAINERS_AND_OBJECTS_INHERIT;
+    if (use_alias) {
+        data->ea[0].Trustee.TrusteeForm = TRUSTEE_IS_NAME;
+        data->ea[0].Trustee.TrusteeType = TRUSTEE_IS_ALIAS;
+        data->ea[0].Trustee.ptstrName = L"CURRENT_USER";
+    } else {
+        data->ea[0].Trustee.TrusteeForm = TRUSTEE_IS_SID;
+        data->ea[0].Trustee.TrusteeType = TRUSTEE_IS_WELL_KNOWN_GROUP;
+        data->ea[0].Trustee.ptstrName = (LPWCH)(SID*)data->sid;
+    }
+
+    data->ea[1].grfAccessPermissions = GENERIC_ALL;
+    data->ea[1].grfAccessMode = SET_ACCESS;
+    data->ea[1].grfInheritance = SUB_CONTAINERS_AND_OBJECTS_INHERIT;
+    data->ea[1].Trustee.TrusteeForm = TRUSTEE_IS_NAME;
+    data->ea[1].Trustee.TrusteeType = TRUSTEE_IS_ALIAS;
+    data->ea[1].Trustee.ptstrName = L"SYSTEM";
+
+    data->ea[2].grfAccessPermissions = GENERIC_ALL;
+    data->ea[2].grfAccessMode = SET_ACCESS;
+    data->ea[2].grfInheritance = SUB_CONTAINERS_AND_OBJECTS_INHERIT;
+    data->ea[2].Trustee.TrusteeForm = TRUSTEE_IS_NAME;
+    data->ea[2].Trustee.TrusteeType = TRUSTEE_IS_ALIAS;
+    data->ea[2].Trustee.ptstrName = L"ADMINISTRATORS";
+
+    int r = SetEntriesInAclW(3, data->ea, NULL, &data->acl);
+    if (r) {
+        return r;
+    }
+    if (!SetSecurityDescriptorDacl(&data->sd, TRUE, data->acl, FALSE)) {
+        return GetLastError();
+    }
+    data->securityAttributes.lpSecurityDescriptor = &data->sd;
+    *securityAttributes = &data->securityAttributes;
+    return 0;
+}
+
+static int
+clearSecurityAttributes(
+    PSECURITY_ATTRIBUTES *securityAttributes,
+    struct _Py_SECURITY_ATTRIBUTE_DATA *data
+) {
+    assert(securityAttributes);
+    assert(data);
+    *securityAttributes = NULL;
+    if (data->acl) {
+        if (LocalFree((void *)data->acl)) {
+            return GetLastError();
+        }
+    }
+    return 0;
+}
+
+#endif
+
 /*[clinic input]
 os.mkdir
 
@@ -5568,6 +5710,12 @@ os_mkdir_impl(PyObject *module, path_t *path, int mode, int dir_fd)
 /*[clinic end generated code: output=a70446903abe821f input=a61722e1576fab03]*/
 {
     int result;
+#ifdef MS_WINDOWS
+    int error = 0;
+    int pathError = 0;
+    SECURITY_ATTRIBUTES *pSecAttr = NULL;
+    struct _Py_SECURITY_ATTRIBUTE_DATA secAttrData;
+#endif
 #ifdef HAVE_MKDIRAT
     int mkdirat_unavailable = 0;
 #endif
@@ -5579,11 +5727,30 @@ os_mkdir_impl(PyObject *module, path_t *path, int mode, int dir_fd)
 
 #ifdef MS_WINDOWS
     Py_BEGIN_ALLOW_THREADS
-    result = CreateDirectoryW(path->wide, NULL);
+    switch (mode) {
+    case 0x1C0: // 0o700
+        error = initializeMkdir700SecurityAttributes(&pSecAttr, &secAttrData);
+        break;
+    default:
+        error = initializeDefaultSecurityAttributes(&pSecAttr, &secAttrData);
+        break;
+    }
+    if (!error) {
+        result = CreateDirectoryW(path->wide, pSecAttr);
+        error = clearSecurityAttributes(&pSecAttr, &secAttrData);
+    } else {
+        // Ignore error from "clear" - we have a more interesting one already
+        clearSecurityAttributes(&pSecAttr, &secAttrData);
+    }
     Py_END_ALLOW_THREADS
 
-    if (!result)
+    if (error) {
+        PyErr_SetFromWindowsErr(error);
+        return NULL;
+    }
+    if (!result) {
         return path_error(path);
+    }
 #else
     Py_BEGIN_ALLOW_THREADS
 #if HAVE_MKDIRAT
@@ -17904,6 +18071,7 @@ posixmodule_exec(PyObject *m)
 static PyModuleDef_Slot posixmodile_slots[] = {
     {Py_mod_exec, posixmodule_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
 };
 

@@ -1053,6 +1053,12 @@ class SysModuleTest(unittest.TestCase):
         c = sys.getallocatedblocks()
         self.assertIn(c, range(b - 50, b + 50))
 
+    def test_is_gil_enabled(self):
+        if support.Py_GIL_DISABLED:
+            self.assertIs(type(sys._is_gil_enabled()), bool)
+        else:
+            self.assertTrue(sys._is_gil_enabled())
+
     def test_is_finalizing(self):
         self.assertIs(sys.is_finalizing(), False)
         # Don't use the atexit module because _Py_Finalizing is only set
@@ -1555,7 +1561,7 @@ class SizeofTest(unittest.TestCase):
         def func():
             return sys._getframe()
         x = func()
-        check(x, size('3Pi3c7P2ic??2P'))
+        check(x, size('3Pi2cP7P2ic??2P'))
         # function
         def func(): pass
         check(func, size('15Pi'))
@@ -1600,7 +1606,10 @@ class SizeofTest(unittest.TestCase):
         check(int(PyLong_BASE**2-1), vsize('') + 2*self.longdigit)
         check(int(PyLong_BASE**2), vsize('') + 3*self.longdigit)
         # module
-        check(unittest, size('PnPPP'))
+        if support.Py_GIL_DISABLED:
+            check(unittest, size('PPPPPP'))
+        else:
+            check(unittest, size('PPPPP'))
         # None
         check(None, size(''))
         # NotImplementedType
