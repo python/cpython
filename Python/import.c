@@ -448,7 +448,7 @@ _PyImport_GetNextModuleIndex(void)
 
 #ifndef NDEBUG
 struct extensions_cache_value;
-struct extensions_cache_value * _find_cached_def(PyModuleDef *);
+static struct extensions_cache_value * _find_cached_def(PyModuleDef *);
 static Py_ssize_t _get_cached_module_index(struct extensions_cache_value *);
 #endif
 
@@ -1274,7 +1274,7 @@ hashtable_next_match_def(_Py_hashtable_t *ht,
     return 0;
 }
 
-struct extensions_cache_value *
+static struct extensions_cache_value *
 _find_cached_def(PyModuleDef *def)
 {
     struct hashtable_next_match_def_data data = {0};
