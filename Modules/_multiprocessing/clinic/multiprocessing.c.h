@@ -138,8 +138,13 @@ _multiprocessing_sem_unlink(PyObject *module, PyObject *arg)
         _PyArg_BadArgument("sem_unlink", "argument", "str", arg);
         goto exit;
     }
-    name = PyUnicode_AsUTF8(arg);
+    Py_ssize_t name_length;
+    name = PyUnicode_AsUTF8AndSize(arg, &name_length);
     if (name == NULL) {
+        goto exit;
+    }
+    if (strlen(name) != (size_t)name_length) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     return_value = _multiprocessing_sem_unlink_impl(module, name);
@@ -159,4 +164,4 @@ exit:
 #ifndef _MULTIPROCESSING_SEND_METHODDEF
     #define _MULTIPROCESSING_SEND_METHODDEF
 #endif /* !defined(_MULTIPROCESSING_SEND_METHODDEF) */
-/*[clinic end generated code: output=c6735cbc59b6f324 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=73b4cb8428d816da input=a9049054013a1b77]*/

@@ -80,6 +80,28 @@ Support was also added for third-party tools like `PyYAML <https://pyyaml.org/>`
       PEP written by Armin Ronacher and Raymond Hettinger.  Implementation
       written by Raymond Hettinger.
 
+Since an ordered dictionary remembers its insertion order, it can be used
+in conjunction with sorting to make a sorted dictionary::
+
+    >>> # regular unsorted dictionary
+    >>> d = {'banana': 3, 'apple':4, 'pear': 1, 'orange': 2}
+
+    >>> # dictionary sorted by key
+    >>> OrderedDict(sorted(d.items(), key=lambda t: t[0]))
+    OrderedDict([('apple', 4), ('banana', 3), ('orange', 2), ('pear', 1)])
+
+    >>> # dictionary sorted by value
+    >>> OrderedDict(sorted(d.items(), key=lambda t: t[1]))
+    OrderedDict([('pear', 1), ('orange', 2), ('banana', 3), ('apple', 4)])
+
+    >>> # dictionary sorted by length of the key string
+    >>> OrderedDict(sorted(d.items(), key=lambda t: len(t[0])))
+    OrderedDict([('pear', 1), ('apple', 4), ('orange', 2), ('banana', 3)])
+
+The new sorted dictionaries maintain their sort order when entries
+are deleted.  But when new keys are added, the keys are appended
+to the end and the sort is not maintained.
+
 
 PEP 378: Format Specifier for Thousands Separator
 =================================================
@@ -152,7 +174,7 @@ Some smaller changes made to the core Python language are:
 
   (Contributed by Eric Smith; :issue:`5237`.)
 
-* The :func:`string.maketrans` function is deprecated and is replaced by new
+* The :func:`!string.maketrans` function is deprecated and is replaced by new
   static methods, :meth:`bytes.maketrans` and :meth:`bytearray.maketrans`.
   This change solves the confusion around which types were supported by the
   :mod:`string` module. Now, :class:`str`, :class:`bytes`, and
@@ -169,7 +191,7 @@ Some smaller changes made to the core Python language are:
     ...         if '<critical>' in line:
     ...             outfile.write(line)
 
-  With the new syntax, the :func:`contextlib.nested` function is no longer
+  With the new syntax, the :func:`!contextlib.nested` function is no longer
   needed and is now deprecated.
 
   (Contributed by Georg Brandl and Mattias Brändström;
@@ -359,16 +381,20 @@ New, Improved, and Deprecated Modules
               x / 0
 
   In addition, several new assertion methods were added including
-  :func:`assertSetEqual`, :func:`assertDictEqual`,
-  :func:`assertDictContainsSubset`, :func:`assertListEqual`,
-  :func:`assertTupleEqual`, :func:`assertSequenceEqual`,
-  :func:`assertRaisesRegexp`, :func:`assertIsNone`,
-  and :func:`assertIsNotNone`.
+  :meth:`~unittest.TestCase.assertSetEqual`,
+  :meth:`~unittest.TestCase.assertDictEqual`,
+  :meth:`!assertDictContainsSubset`,
+  :meth:`~unittest.TestCase.assertListEqual`,
+  :meth:`~unittest.TestCase.assertTupleEqual`,
+  :meth:`~unittest.TestCase.assertSequenceEqual`,
+  :meth:`assertRaisesRegexp() <unittest.TestCase.assertRaisesRegex>`,
+  :meth:`~unittest.TestCase.assertIsNone`,
+  and :meth:`~unittest.TestCase.assertIsNotNone`.
 
   (Contributed by Benjamin Peterson and Antoine Pitrou.)
 
-* The :mod:`io` module has three new constants for the :meth:`seek`
-  method :data:`SEEK_SET`, :data:`SEEK_CUR`, and :data:`SEEK_END`.
+* The :mod:`io` module has three new constants for the :meth:`~io.IOBase.seek`
+  method: :data:`~os.SEEK_SET`, :data:`~os.SEEK_CUR`, and :data:`~os.SEEK_END`.
 
 * The :data:`sys.version_info` tuple is now a named tuple::
 

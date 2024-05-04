@@ -285,8 +285,28 @@ class CheckbuttonTest(AbstractLabelTest, unittest.TestCase):
                 b.pack()
                 buttons.append(b)
         variables = [str(b['variable']) for b in buttons]
-        print(variables)
         self.assertEqual(len(set(variables)), 4, variables)
+
+    def test_unique_variables2(self):
+        buttons = []
+        f = ttk.Frame(self.root)
+        f.pack()
+        f = ttk.Frame(self.root)
+        f.pack()
+        for j in 'AB':
+            b = tkinter.Checkbutton(f, text=j)
+            b.pack()
+            buttons.append(b)
+        # Should be larger than the number of all previously created
+        # tkinter.Checkbutton widgets:
+        for j in range(100):
+            b = ttk.Checkbutton(f, text=str(j))
+            b.pack()
+            buttons.append(b)
+        names = [str(b) for b in buttons]
+        self.assertEqual(len(set(names)), len(buttons), names)
+        variables = [str(b['variable']) for b in buttons]
+        self.assertEqual(len(set(variables)), len(buttons), variables)
 
 
 @add_standard_options(IntegerSizeTests, StandardTtkOptionsTests)
@@ -1858,14 +1878,6 @@ class DefaultRootTest(AbstractDefaultRootTest, unittest.TestCase):
     def test_label(self):
         self._test_widget(ttk.Label)
 
-
-tests_gui = (
-        ButtonTest, CheckbuttonTest, ComboboxTest, EntryTest,
-        FrameTest, LabelFrameTest, LabelTest, MenubuttonTest,
-        NotebookTest, PanedWindowTest, ProgressbarTest,
-        RadiobuttonTest, ScaleTest, ScrollbarTest, SeparatorTest,
-        SizegripTest, SpinboxTest, TreeviewTest, WidgetTest, DefaultRootTest,
-        )
 
 if __name__ == "__main__":
     unittest.main()

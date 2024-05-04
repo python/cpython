@@ -5,7 +5,6 @@
 
 #include "pycore_ast.h"           // asdl_seq_GET()
 #include "pycore_call.h"          // _PyObject_CallMethodFormat()
-#include "pycore_compile.h"       // _PyAST_Optimize()
 #include "pycore_fileutils.h"     // _Py_BEGIN_SUPPRESS_IPH
 #include "pycore_frame.h"         // _PyFrame_GetCode()
 #include "pycore_interp.h"        // PyInterpreterState.gc
@@ -35,9 +34,9 @@
 extern char* _PyTokenizer_FindEncodingFilename(int, PyObject *);
 
 /*[clinic input]
-class TracebackType "PyTracebackObject *" "&PyTraceback_Type"
+class traceback "PyTracebackObject *" "&PyTraceback_Type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=928fa06c10151120]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=cf96294b2bebc811]*/
 
 #include "clinic/traceback.c.h"
 
@@ -64,7 +63,7 @@ tb_create_raw(PyTracebackObject *next, PyFrameObject *frame, int lasti,
 
 /*[clinic input]
 @classmethod
-TracebackType.__new__ as tb_new
+traceback.__new__ as tb_new
 
   tb_next: object
   tb_frame: object(type='PyFrameObject *', subclass_of='&PyFrame_Type')
@@ -77,7 +76,7 @@ Create a new traceback object.
 static PyObject *
 tb_new_impl(PyTypeObject *type, PyObject *tb_next, PyFrameObject *tb_frame,
             int tb_lasti, int tb_lineno)
-/*[clinic end generated code: output=fa077debd72d861a input=01cbe8ec8783fca7]*/
+/*[clinic end generated code: output=fa077debd72d861a input=b88143145454cb59]*/
 {
     if (tb_next == Py_None) {
         tb_next = NULL;
@@ -618,44 +617,7 @@ tb_displayline(PyTracebackObject* tb, PyObject *f, PyObject *filename, int linen
     if (rc != 0 || !source_line) {
         /* ignore errors since we can't report them, can we? */
         err = ignore_source_errors();
-        goto done;
     }
-
-    int code_offset = tb->tb_lasti;
-    PyCodeObject* code = _PyFrame_GetCode(frame->f_frame);
-    const Py_ssize_t source_line_len = PyUnicode_GET_LENGTH(source_line);
-
-    int start_line;
-    int end_line;
-    int start_col_byte_offset;
-    int end_col_byte_offset;
-    if (!PyCode_Addr2Location(code, code_offset, &start_line, &start_col_byte_offset,
-                              &end_line, &end_col_byte_offset)) {
-        goto done;
-    }
-
-    if (start_line < 0 || end_line < 0
-        || start_col_byte_offset < 0
-        || end_col_byte_offset < 0)
-    {
-        goto done;
-    }
-
-    // If this is a multi-line expression, then we will highlight until
-    // the last non-whitespace character.
-    const char *source_line_str = PyUnicode_AsUTF8(source_line);
-    if (!source_line_str) {
-        goto done;
-    }
-
-    Py_ssize_t i = source_line_len;
-    while (--i >= 0) {
-        if (!IS_WHITESPACE(source_line_str[i])) {
-            break;
-        }
-    }
-
-done:
     Py_XDECREF(source_line);
     return err;
 }
@@ -1002,7 +964,11 @@ dump_traceback(int fd, PyThreadState *tstate, int write_header)
     unsigned int depth = 0;
     while (1) {
         if (MAX_FRAME_DEPTH <= depth) {
-            PUTS(fd, "  ...\n");
+            if (MAX_FRAME_DEPTH < depth) {
+                PUTS(fd, "plus ");
+                _Py_DumpDecimal(fd, depth);
+                PUTS(fd, " frames\n");
+            }
             break;
         }
         dump_frame(fd, frame);

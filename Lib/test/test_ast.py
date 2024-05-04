@@ -12,6 +12,10 @@ import warnings
 import weakref
 from functools import partial
 from textwrap import dedent
+try:
+    import _testinternalcapi
+except ImportError:
+    _testinternalcapi = None
 
 from test import support
 from test.support.import_helper import import_fresh_module
@@ -521,17 +525,38 @@ class AST_Tests(unittest.TestCase):
             if name == 'Index':
                 continue
             if self._is_ast_node(name, item):
-                x = item()
+                x = self._construct_ast_class(item)
                 if isinstance(x, ast.AST):
                     self.assertIs(type(x._fields), tuple)
+
+    def _construct_ast_class(self, cls):
+        kwargs = {}
+        for name, typ in cls.__annotations__.items():
+            if typ is str:
+                kwargs[name] = 'capybara'
+            elif typ is int:
+                kwargs[name] = 42
+            elif typ is object:
+                kwargs[name] = b'capybara'
+            elif isinstance(typ, type) and issubclass(typ, ast.AST):
+                kwargs[name] = self._construct_ast_class(typ)
+        return cls(**kwargs)
 
     def test_arguments(self):
         x = ast.arguments()
         self.assertEqual(x._fields, ('posonlyargs', 'args', 'vararg', 'kwonlyargs',
                                      'kw_defaults', 'kwarg', 'defaults'))
+        self.assertEqual(x.__annotations__, {
+            'posonlyargs': list[ast.arg],
+            'args': list[ast.arg],
+            'vararg': ast.arg | None,
+            'kwonlyargs': list[ast.arg],
+            'kw_defaults': list[ast.expr],
+            'kwarg': ast.arg | None,
+            'defaults': list[ast.expr],
+        })
 
-        with self.assertRaises(AttributeError):
-            x.args
+        self.assertEqual(x.args, [])
         self.assertIsNone(x.vararg)
 
         x = ast.arguments(*range(1, 8))
@@ -547,7 +572,7 @@ class AST_Tests(unittest.TestCase):
         self.assertEqual(x._fields, 666)
 
     def test_field_attr_writable(self):
-        x = ast.Constant()
+        x = ast.Constant(1)
         # We can assign to _fields
         x._fields = 666
         self.assertEqual(x._fields, 666)
@@ -607,15 +632,22 @@ class AST_Tests(unittest.TestCase):
 
         self.assertEqual([str(w.message) for w in wlog], [
             'ast.Num is deprecated and will be removed in Python 3.14; use ast.Constant instead',
+            "Constant.__init__ missing 1 required positional argument: 'value'. This will become "
+            'an error in Python 3.15.',
             'Attribute n is deprecated and will be removed in Python 3.14; use value instead',
             'ast.Num is deprecated and will be removed in Python 3.14; use ast.Constant instead',
             'Attribute n is deprecated and will be removed in Python 3.14; use value instead',
             'ast.Num is deprecated and will be removed in Python 3.14; use ast.Constant instead',
+            "Constant.__init__ missing 1 required positional argument: 'value'. This will become "
+            'an error in Python 3.15.',
             'ast.Num is deprecated and will be removed in Python 3.14; use ast.Constant instead',
             'Attribute n is deprecated and will be removed in Python 3.14; use value instead',
             'ast.Num is deprecated and will be removed in Python 3.14; use ast.Constant instead',
             'ast.Num is deprecated and will be removed in Python 3.14; use ast.Constant instead',
             'ast.Num is deprecated and will be removed in Python 3.14; use ast.Constant instead',
+            "Constant.__init__ got an unexpected keyword argument 'foo'. Support for "
+            'arbitrary keyword arguments is deprecated and will be removed in Python '
+            '3.15.',
             'ast.Num is deprecated and will be removed in Python 3.14; use ast.Constant instead',
             'Attribute n is deprecated and will be removed in Python 3.14; use value instead',
             'ast.Num is deprecated and will be removed in Python 3.14; use ast.Constant instead',
@@ -632,7 +664,8 @@ class AST_Tests(unittest.TestCase):
         ])
 
     def test_classattrs(self):
-        x = ast.Constant()
+        with self.assertWarns(DeprecationWarning):
+            x = ast.Constant()
         self.assertEqual(x._fields, ('value', 'kind'))
 
         with self.assertRaises(AttributeError):
@@ -647,7 +680,7 @@ class AST_Tests(unittest.TestCase):
         with self.assertRaises(AttributeError):
             x.foobar
 
-        x = ast.Constant(lineno=2)
+        x = ast.Constant(lineno=2, value=3)
         self.assertEqual(x.lineno, 2)
 
         x = ast.Constant(42, lineno=0)
@@ -658,8 +691,9 @@ class AST_Tests(unittest.TestCase):
         self.assertRaises(TypeError, ast.Constant, 1, None, 2)
         self.assertRaises(TypeError, ast.Constant, 1, None, 2, lineno=0)
 
-        # Arbitrary keyword arguments are supported
-        self.assertEqual(ast.Constant(1, foo='bar').foo, 'bar')
+        # Arbitrary keyword arguments are supported (but deprecated)
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(ast.Constant(1, foo='bar').foo, 'bar')
 
         with self.assertRaisesRegex(TypeError, "Constant got multiple values for argument 'value'"):
             ast.Constant(1, value=2)
@@ -811,11 +845,11 @@ class AST_Tests(unittest.TestCase):
         assertBytesDeprecated(self.assertNotIsInstance, Constant('42'), Bytes)
         assertNameConstantDeprecated(self.assertNotIsInstance, Constant(42), NameConstant)
         assertEllipsisDeprecated(self.assertNotIsInstance, Constant(42), Ellipsis)
-        assertNumDeprecated(self.assertNotIsInstance, Constant(), Num)
-        assertStrDeprecated(self.assertNotIsInstance, Constant(), Str)
-        assertBytesDeprecated(self.assertNotIsInstance, Constant(), Bytes)
-        assertNameConstantDeprecated(self.assertNotIsInstance, Constant(), NameConstant)
-        assertEllipsisDeprecated(self.assertNotIsInstance, Constant(), Ellipsis)
+        assertNumDeprecated(self.assertNotIsInstance, Constant(None), Num)
+        assertStrDeprecated(self.assertNotIsInstance, Constant(None), Str)
+        assertBytesDeprecated(self.assertNotIsInstance, Constant(None), Bytes)
+        assertNameConstantDeprecated(self.assertNotIsInstance, Constant(1), NameConstant)
+        assertEllipsisDeprecated(self.assertNotIsInstance, Constant(None), Ellipsis)
 
         class S(str): pass
         with assertStrDeprecated():
@@ -884,8 +918,9 @@ class AST_Tests(unittest.TestCase):
         self.assertEqual(x.body, body)
 
     def test_nodeclasses(self):
-        # Zero arguments constructor explicitly allowed
-        x = ast.BinOp()
+        # Zero arguments constructor explicitly allowed (but deprecated)
+        with self.assertWarns(DeprecationWarning):
+            x = ast.BinOp()
         self.assertEqual(x._fields, ('left', 'op', 'right'))
 
         # Random attribute allowed too
@@ -923,8 +958,9 @@ class AST_Tests(unittest.TestCase):
         self.assertEqual(x.right, 3)
         self.assertEqual(x.lineno, 0)
 
-        # Random kwargs also allowed
-        x = ast.BinOp(1, 2, 3, foobarbaz=42)
+        # Random kwargs also allowed (but deprecated)
+        with self.assertWarns(DeprecationWarning):
+            x = ast.BinOp(1, 2, 3, foobarbaz=42)
         self.assertEqual(x.foobarbaz, 42)
 
     def test_no_fields(self):
@@ -937,8 +973,9 @@ class AST_Tests(unittest.TestCase):
 
         for protocol in range(pickle.HIGHEST_PROTOCOL + 1):
             for ast in (compile(i, "?", "exec", 0x400) for i in exec_tests):
-                ast2 = pickle.loads(pickle.dumps(ast, protocol))
-                self.assertEqual(to_tuple(ast2), to_tuple(ast))
+                with self.subTest(ast=ast, protocol=protocol):
+                    ast2 = pickle.loads(pickle.dumps(ast, protocol))
+                    self.assertEqual(to_tuple(ast2), to_tuple(ast))
 
     def test_invalid_sum(self):
         pos = dict(lineno=2, col_offset=3)
@@ -1041,18 +1078,14 @@ class AST_Tests(unittest.TestCase):
         with self.assertRaises(SyntaxError):
             ast.parse('lambda x=1, /: ...', feature_version=(3, 7))
 
-    def test_parenthesized_with_feature_version(self):
-        ast.parse('with (CtxManager() as example): ...', feature_version=(3, 10))
-        # While advertised as a feature in Python 3.10, this was allowed starting 3.9
-        ast.parse('with (CtxManager() as example): ...', feature_version=(3, 9))
-        with self.assertRaises(SyntaxError):
-            ast.parse('with (CtxManager() as example): ...', feature_version=(3, 8))
-        ast.parse('with CtxManager() as example: ...', feature_version=(3, 8))
-
     def test_assignment_expression_feature_version(self):
         ast.parse('(x := 0)', feature_version=(3, 8))
         with self.assertRaises(SyntaxError):
             ast.parse('(x := 0)', feature_version=(3, 7))
+
+    def test_conditional_context_managers_parse_with_low_feature_version(self):
+        # regression test for gh-115881
+        ast.parse('with (x() if y else z()): ...', feature_version=(3, 8))
 
     def test_exception_groups_feature_version(self):
         code = dedent('''
@@ -1118,12 +1151,14 @@ class AST_Tests(unittest.TestCase):
                     return self
         enum._test_simple_enum(_Precedence, ast._Precedence)
 
-    @unittest.skipIf(support.is_wasi, "exhausts limited stack on WASI")
     @support.cpython_only
     def test_ast_recursion_limit(self):
-        fail_depth = support.EXCEEDS_RECURSION_LIMIT
+        fail_depth = support.exceeds_recursion_limit()
         crash_depth = 100_000
-        success_depth = 1200
+        success_depth = int(support.get_c_recursion_limit() * 0.8)
+        if _testinternalcapi is not None:
+            remaining = _testinternalcapi.get_c_recursion_remaining()
+            success_depth = min(success_depth, remaining)
 
         def check_limit(prefix, repeated):
             expect_ok = prefix + repeated * success_depth
@@ -1192,21 +1227,20 @@ class ASTHelpers_Test(unittest.TestCase):
         node = ast.parse('spam(eggs, "and cheese")')
         self.assertEqual(ast.dump(node),
             "Module(body=[Expr(value=Call(func=Name(id='spam', ctx=Load()), "
-            "args=[Name(id='eggs', ctx=Load()), Constant(value='and cheese')], "
-            "keywords=[]))], type_ignores=[])"
+            "args=[Name(id='eggs', ctx=Load()), Constant(value='and cheese')]))])"
         )
         self.assertEqual(ast.dump(node, annotate_fields=False),
             "Module([Expr(Call(Name('spam', Load()), [Name('eggs', Load()), "
-            "Constant('and cheese')], []))], [])"
+            "Constant('and cheese')]))])"
         )
         self.assertEqual(ast.dump(node, include_attributes=True),
             "Module(body=[Expr(value=Call(func=Name(id='spam', ctx=Load(), "
             "lineno=1, col_offset=0, end_lineno=1, end_col_offset=4), "
             "args=[Name(id='eggs', ctx=Load(), lineno=1, col_offset=5, "
             "end_lineno=1, end_col_offset=9), Constant(value='and cheese', "
-            "lineno=1, col_offset=11, end_lineno=1, end_col_offset=23)], keywords=[], "
+            "lineno=1, col_offset=11, end_lineno=1, end_col_offset=23)], "
             "lineno=1, col_offset=0, end_lineno=1, end_col_offset=24), "
-            "lineno=1, col_offset=0, end_lineno=1, end_col_offset=24)], type_ignores=[])"
+            "lineno=1, col_offset=0, end_lineno=1, end_col_offset=24)])"
         )
 
     def test_dump_indent(self):
@@ -1219,9 +1253,7 @@ Module(
             func=Name(id='spam', ctx=Load()),
             args=[
                Name(id='eggs', ctx=Load()),
-               Constant(value='and cheese')],
-            keywords=[]))],
-   type_ignores=[])""")
+               Constant(value='and cheese')]))])""")
         self.assertEqual(ast.dump(node, annotate_fields=False, indent='\t'), """\
 Module(
 \t[
@@ -1230,9 +1262,7 @@ Module(
 \t\t\t\tName('spam', Load()),
 \t\t\t\t[
 \t\t\t\t\tName('eggs', Load()),
-\t\t\t\t\tConstant('and cheese')],
-\t\t\t\t[]))],
-\t[])""")
+\t\t\t\t\tConstant('and cheese')]))])""")
         self.assertEqual(ast.dump(node, include_attributes=True, indent=3), """\
 Module(
    body=[
@@ -1259,7 +1289,6 @@ Module(
                   col_offset=11,
                   end_lineno=1,
                   end_col_offset=23)],
-            keywords=[],
             lineno=1,
             col_offset=0,
             end_lineno=1,
@@ -1267,8 +1296,7 @@ Module(
          lineno=1,
          col_offset=0,
          end_lineno=1,
-         end_col_offset=24)],
-   type_ignores=[])""")
+         end_col_offset=24)])""")
 
     def test_dump_incomplete(self):
         node = ast.Raise(lineno=3, col_offset=4)
@@ -1298,6 +1326,119 @@ Module(
         self.assertEqual(ast.dump(node, annotate_fields=False),
             "Raise(cause=Name('e', Load()))"
         )
+        # Arguments:
+        node = ast.arguments(args=[ast.arg("x")])
+        self.assertEqual(ast.dump(node, annotate_fields=False),
+            "arguments([], [arg('x')])",
+        )
+        node = ast.arguments(posonlyargs=[ast.arg("x")])
+        self.assertEqual(ast.dump(node, annotate_fields=False),
+            "arguments([arg('x')])",
+        )
+        node = ast.arguments(posonlyargs=[ast.arg("x")], kwonlyargs=[ast.arg('y')])
+        self.assertEqual(ast.dump(node, annotate_fields=False),
+            "arguments([arg('x')], kwonlyargs=[arg('y')])",
+        )
+        node = ast.arguments(args=[ast.arg("x")], kwonlyargs=[ast.arg('y')])
+        self.assertEqual(ast.dump(node, annotate_fields=False),
+            "arguments([], [arg('x')], kwonlyargs=[arg('y')])",
+        )
+        node = ast.arguments()
+        self.assertEqual(ast.dump(node, annotate_fields=False),
+            "arguments()",
+        )
+        # Classes:
+        node = ast.ClassDef(
+            'T',
+            [],
+            [ast.keyword('a', ast.Constant(None))],
+            [],
+            [ast.Name('dataclass', ctx=ast.Load())],
+        )
+        self.assertEqual(ast.dump(node),
+            "ClassDef(name='T', keywords=[keyword(arg='a', value=Constant(value=None))], decorator_list=[Name(id='dataclass', ctx=Load())])",
+        )
+        self.assertEqual(ast.dump(node, annotate_fields=False),
+            "ClassDef('T', [], [keyword('a', Constant(None))], [], [Name('dataclass', Load())])",
+        )
+
+    def test_dump_show_empty(self):
+        def check_node(node, empty, full, **kwargs):
+            with self.subTest(show_empty=False):
+                self.assertEqual(
+                    ast.dump(node, show_empty=False, **kwargs),
+                    empty,
+                )
+            with self.subTest(show_empty=True):
+                self.assertEqual(
+                    ast.dump(node, show_empty=True, **kwargs),
+                    full,
+                )
+
+        def check_text(code, empty, full, **kwargs):
+            check_node(ast.parse(code), empty, full, **kwargs)
+
+        check_node(
+            ast.arguments(),
+            empty="arguments()",
+            full="arguments(posonlyargs=[], args=[], kwonlyargs=[], kw_defaults=[], defaults=[])",
+        )
+
+        check_node(
+            # Corner case: there are no real `Name` instances with `id=''`:
+            ast.Name(id='', ctx=ast.Load()),
+            empty="Name(id='', ctx=Load())",
+            full="Name(id='', ctx=Load())",
+        )
+
+        check_node(
+            ast.MatchSingleton(value=None),
+            empty="MatchSingleton(value=None)",
+            full="MatchSingleton(value=None)",
+        )
+
+        check_node(
+            ast.Constant(value=None),
+            empty="Constant(value=None)",
+            full="Constant(value=None)",
+        )
+
+        check_node(
+            ast.Constant(value=''),
+            empty="Constant(value='')",
+            full="Constant(value='')",
+        )
+
+        check_text(
+            "def a(b: int = 0, *, c): ...",
+            empty="Module(body=[FunctionDef(name='a', args=arguments(args=[arg(arg='b', annotation=Name(id='int', ctx=Load()))], kwonlyargs=[arg(arg='c')], kw_defaults=[None], defaults=[Constant(value=0)]), body=[Expr(value=Constant(value=Ellipsis))])])",
+            full="Module(body=[FunctionDef(name='a', args=arguments(posonlyargs=[], args=[arg(arg='b', annotation=Name(id='int', ctx=Load()))], kwonlyargs=[arg(arg='c')], kw_defaults=[None], defaults=[Constant(value=0)]), body=[Expr(value=Constant(value=Ellipsis))], decorator_list=[], type_params=[])], type_ignores=[])",
+        )
+
+        check_text(
+            "def a(b: int = 0, *, c): ...",
+            empty="Module(body=[FunctionDef(name='a', args=arguments(args=[arg(arg='b', annotation=Name(id='int', ctx=Load(), lineno=1, col_offset=9, end_lineno=1, end_col_offset=12), lineno=1, col_offset=6, end_lineno=1, end_col_offset=12)], kwonlyargs=[arg(arg='c', lineno=1, col_offset=21, end_lineno=1, end_col_offset=22)], kw_defaults=[None], defaults=[Constant(value=0, lineno=1, col_offset=15, end_lineno=1, end_col_offset=16)]), body=[Expr(value=Constant(value=Ellipsis, lineno=1, col_offset=25, end_lineno=1, end_col_offset=28), lineno=1, col_offset=25, end_lineno=1, end_col_offset=28)], lineno=1, col_offset=0, end_lineno=1, end_col_offset=28)])",
+            full="Module(body=[FunctionDef(name='a', args=arguments(posonlyargs=[], args=[arg(arg='b', annotation=Name(id='int', ctx=Load(), lineno=1, col_offset=9, end_lineno=1, end_col_offset=12), lineno=1, col_offset=6, end_lineno=1, end_col_offset=12)], kwonlyargs=[arg(arg='c', lineno=1, col_offset=21, end_lineno=1, end_col_offset=22)], kw_defaults=[None], defaults=[Constant(value=0, lineno=1, col_offset=15, end_lineno=1, end_col_offset=16)]), body=[Expr(value=Constant(value=Ellipsis, lineno=1, col_offset=25, end_lineno=1, end_col_offset=28), lineno=1, col_offset=25, end_lineno=1, end_col_offset=28)], decorator_list=[], type_params=[], lineno=1, col_offset=0, end_lineno=1, end_col_offset=28)], type_ignores=[])",
+            include_attributes=True,
+        )
+
+        check_text(
+            'spam(eggs, "and cheese")',
+            empty="Module(body=[Expr(value=Call(func=Name(id='spam', ctx=Load()), args=[Name(id='eggs', ctx=Load()), Constant(value='and cheese')]))])",
+            full="Module(body=[Expr(value=Call(func=Name(id='spam', ctx=Load()), args=[Name(id='eggs', ctx=Load()), Constant(value='and cheese')], keywords=[]))], type_ignores=[])",
+        )
+
+        check_text(
+            'spam(eggs, text="and cheese")',
+            empty="Module(body=[Expr(value=Call(func=Name(id='spam', ctx=Load()), args=[Name(id='eggs', ctx=Load())], keywords=[keyword(arg='text', value=Constant(value='and cheese'))]))])",
+            full="Module(body=[Expr(value=Call(func=Name(id='spam', ctx=Load()), args=[Name(id='eggs', ctx=Load())], keywords=[keyword(arg='text', value=Constant(value='and cheese'))]))], type_ignores=[])",
+        )
+
+        check_text(
+            "import _ast as ast; from module import sub",
+            empty="Module(body=[Import(names=[alias(name='_ast', asname='ast')]), ImportFrom(module='module', names=[alias(name='sub')], level=0)])",
+            full="Module(body=[Import(names=[alias(name='_ast', asname='ast')]), ImportFrom(module='module', names=[alias(name='sub')], level=0)], type_ignores=[])",
+        )
 
     def test_copy_location(self):
         src = ast.parse('1 + 1', mode='eval')
@@ -1308,8 +1449,9 @@ Module(
             'lineno=1, col_offset=4, end_lineno=1, end_col_offset=5), lineno=1, '
             'col_offset=0, end_lineno=1, end_col_offset=5))'
         )
-        src = ast.Call(col_offset=1, lineno=1, end_lineno=1, end_col_offset=1)
-        new = ast.copy_location(src, ast.Call(col_offset=None, lineno=None))
+        func = ast.Name('spam', ast.Load())
+        src = ast.Call(col_offset=1, lineno=1, end_lineno=1, end_col_offset=1, func=func)
+        new = ast.copy_location(src, ast.Call(col_offset=None, lineno=None, func=func))
         self.assertIsNone(new.end_lineno)
         self.assertIsNone(new.end_col_offset)
         self.assertEqual(new.lineno, 1)
@@ -1325,14 +1467,13 @@ Module(
             "Module(body=[Expr(value=Call(func=Name(id='write', ctx=Load(), "
             "lineno=1, col_offset=0, end_lineno=1, end_col_offset=5), "
             "args=[Constant(value='spam', lineno=1, col_offset=6, end_lineno=1, "
-            "end_col_offset=12)], keywords=[], lineno=1, col_offset=0, end_lineno=1, "
+            "end_col_offset=12)], lineno=1, col_offset=0, end_lineno=1, "
             "end_col_offset=13), lineno=1, col_offset=0, end_lineno=1, "
             "end_col_offset=13), Expr(value=Call(func=Name(id='spam', ctx=Load(), "
             "lineno=1, col_offset=0, end_lineno=1, end_col_offset=0), "
             "args=[Constant(value='eggs', lineno=1, col_offset=0, end_lineno=1, "
-            "end_col_offset=0)], keywords=[], lineno=1, col_offset=0, end_lineno=1, "
-            "end_col_offset=0), lineno=1, col_offset=0, end_lineno=1, end_col_offset=0)], "
-            "type_ignores=[])"
+            "end_col_offset=0)], lineno=1, col_offset=0, end_lineno=1, "
+            "end_col_offset=0), lineno=1, col_offset=0, end_lineno=1, end_col_offset=0)])"
         )
 
     def test_increment_lineno(self):
@@ -1568,15 +1709,15 @@ Module(
         self.assertIn('sleep', ns)
 
     def test_recursion_direct(self):
-        e = ast.UnaryOp(op=ast.Not(), lineno=0, col_offset=0)
+        e = ast.UnaryOp(op=ast.Not(), lineno=0, col_offset=0, operand=ast.Constant(1))
         e.operand = e
         with self.assertRaises(RecursionError):
             with support.infinite_recursion():
                 compile(ast.Expression(e), "<test>", "eval")
 
     def test_recursion_indirect(self):
-        e = ast.UnaryOp(op=ast.Not(), lineno=0, col_offset=0)
-        f = ast.UnaryOp(op=ast.Not(), lineno=0, col_offset=0)
+        e = ast.UnaryOp(op=ast.Not(), lineno=0, col_offset=0, operand=ast.Constant(1))
+        f = ast.UnaryOp(op=ast.Not(), lineno=0, col_offset=0, operand=ast.Constant(1))
         e.operand = f
         f.operand = e
         with self.assertRaises(RecursionError):
@@ -2862,6 +3003,64 @@ class NodeTransformerTests(ASTTestMixin, BaseNodeVisitorCases, unittest.TestCase
                 return node
 
         self.assertASTTransformation(PrintToLog, code, expected)
+
+
+class ASTConstructorTests(unittest.TestCase):
+    """Test the autogenerated constructors for AST nodes."""
+
+    def test_FunctionDef(self):
+        args = ast.arguments()
+        self.assertEqual(args.args, [])
+        self.assertEqual(args.posonlyargs, [])
+        with self.assertWarnsRegex(DeprecationWarning,
+                                   r"FunctionDef\.__init__ missing 1 required positional argument: 'name'"):
+            node = ast.FunctionDef(args=args)
+        self.assertFalse(hasattr(node, "name"))
+        self.assertEqual(node.decorator_list, [])
+        node = ast.FunctionDef(name='foo', args=args)
+        self.assertEqual(node.name, 'foo')
+        self.assertEqual(node.decorator_list, [])
+
+    def test_custom_subclass(self):
+        class NoInit(ast.AST):
+            pass
+
+        obj = NoInit()
+        self.assertIsInstance(obj, NoInit)
+        self.assertEqual(obj.__dict__, {})
+
+        class Fields(ast.AST):
+            _fields = ('a',)
+
+        with self.assertWarnsRegex(DeprecationWarning,
+                                   r"Fields provides _fields but not _field_types."):
+            obj = Fields()
+        with self.assertRaises(AttributeError):
+            obj.a
+        obj = Fields(a=1)
+        self.assertEqual(obj.a, 1)
+
+        class FieldsAndTypes(ast.AST):
+            _fields = ('a',)
+            _field_types = {'a': int | None}
+            a: int | None = None
+
+        obj = FieldsAndTypes()
+        self.assertIs(obj.a, None)
+        obj = FieldsAndTypes(a=1)
+        self.assertEqual(obj.a, 1)
+
+        class FieldsAndTypesNoDefault(ast.AST):
+            _fields = ('a',)
+            _field_types = {'a': int}
+
+        with self.assertWarnsRegex(DeprecationWarning,
+                                   r"FieldsAndTypesNoDefault\.__init__ missing 1 required positional argument: 'a'\."):
+            obj = FieldsAndTypesNoDefault()
+        with self.assertRaises(AttributeError):
+            obj.a
+        obj = FieldsAndTypesNoDefault(a=1)
+        self.assertEqual(obj.a, 1)
 
 
 @support.cpython_only

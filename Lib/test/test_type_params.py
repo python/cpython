@@ -436,9 +436,11 @@ class TypeParamsAccessTest(unittest.TestCase):
                 class Inner[U](make_base(T for _ in (1,)), make_base(T)):
                     pass
         """
-        with self.assertRaisesRegex(SyntaxError,
-                                    "Cannot use comprehension in annotation scope within class scope"):
-            run_code(code)
+        ns = run_code(code)
+        inner = ns["C"].Inner
+        base1, base2, _ = inner.__bases__
+        self.assertEqual(list(base1.__arg__), [ns["C"].__type_params__[0]])
+        self.assertEqual(base2.__arg__, "class")
 
     def test_listcomp_in_nested_class(self):
         code = """
@@ -464,9 +466,11 @@ class TypeParamsAccessTest(unittest.TestCase):
                 class Inner[U](make_base([T for _ in (1,)]), make_base(T)):
                     pass
         """
-        with self.assertRaisesRegex(SyntaxError,
-                                    "Cannot use comprehension in annotation scope within class scope"):
-            run_code(code)
+        ns = run_code(code)
+        inner = ns["C"].Inner
+        base1, base2, _ = inner.__bases__
+        self.assertEqual(base1.__arg__, [ns["C"].__type_params__[0]])
+        self.assertEqual(base2.__arg__, "class")
 
     def test_gen_exp_in_generic_method(self):
         code = """
@@ -475,29 +479,81 @@ class TypeParamsAccessTest(unittest.TestCase):
                 def meth[U](x: (T for _ in (1,)), y: T):
                     pass
         """
-        with self.assertRaisesRegex(SyntaxError,
-                                    "Cannot use comprehension in annotation scope within class scope"):
-            run_code(code)
+        ns = run_code(code)
+        meth = ns["C"].meth
+        self.assertEqual(list(meth.__annotations__["x"]), [ns["C"].__type_params__[0]])
+        self.assertEqual(meth.__annotations__["y"], "class")
 
     def test_nested_scope_in_generic_alias(self):
         code = """
-            class C[T]:
+            T = "global"
+            class C:
                 T = "class"
                 {}
         """
-        error_cases = [
-            "type Alias1[T] = lambda: T",
-            "type Alias2 = lambda: T",
-            "type Alias3[T] = (T for _ in (1,))",
-            "type Alias4 = (T for _ in (1,))",
-            "type Alias5[T] = [T for _ in (1,)]",
-            "type Alias6 = [T for _ in (1,)]",
+        cases = [
+            "type Alias[T] = (T for _ in (1,))",
+            "type Alias = (T for _ in (1,))",
+            "type Alias[T] = [T for _ in (1,)]",
+            "type Alias = [T for _ in (1,)]",
         ]
-        for case in error_cases:
+        for case in cases:
             with self.subTest(case=case):
-                with self.assertRaisesRegex(SyntaxError,
-                                            r"Cannot use [a-z]+ in annotation scope within class scope"):
-                    run_code(code.format(case))
+                ns = run_code(code.format(case))
+                alias = ns["C"].Alias
+                value = list(alias.__value__)[0]
+                if alias.__type_params__:
+                    self.assertIs(value, alias.__type_params__[0])
+                else:
+                    self.assertEqual(value, "global")
+
+    def test_lambda_in_alias_in_class(self):
+        code = """
+            T = "global"
+            class C:
+                T = "class"
+                type Alias = lambda: T
+        """
+        C = run_code(code)["C"]
+        self.assertEqual(C.Alias.__value__(), "global")
+
+    def test_lambda_in_alias_in_generic_class(self):
+        code = """
+            class C[T]:
+                T = "class"
+                type Alias = lambda: T
+        """
+        C = run_code(code)["C"]
+        self.assertIs(C.Alias.__value__(), C.__type_params__[0])
+
+    def test_lambda_in_generic_alias_in_class(self):
+        # A lambda nested in the alias cannot see the class scope, but can see
+        # a surrounding annotation scope.
+        code = """
+            T = U = "global"
+            class C:
+                T = "class"
+                U = "class"
+                type Alias[T] = lambda: (T, U)
+        """
+        C = run_code(code)["C"]
+        T, U = C.Alias.__value__()
+        self.assertIs(T, C.Alias.__type_params__[0])
+        self.assertEqual(U, "global")
+
+    def test_lambda_in_generic_alias_in_generic_class(self):
+        # A lambda nested in the alias cannot see the class scope, but can see
+        # a surrounding annotation scope.
+        code = """
+            class C[T, U]:
+                T = "class"
+                U = "class"
+                type Alias[T] = lambda: (T, U)
+        """
+        C = run_code(code)["C"]
+        T, U = C.Alias.__value__()
+        self.assertIs(T, C.Alias.__type_params__[0])
+        self.assertIs(U, C.__type_params__[1])
 
 
 def make_base(arg):

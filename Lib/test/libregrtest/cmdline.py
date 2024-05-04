@@ -2,8 +2,8 @@ import argparse
 import os.path
 import shlex
 import sys
-from test.support import os_helper
-from .utils import ALL_RESOURCES, RESOURCE_NAMES
+from test.support import os_helper, Py_DEBUG
+from .utils import ALL_RESOURCES, RESOURCE_NAMES, TestFilter
 
 
 USAGE = """\
@@ -161,9 +161,10 @@ class Namespace(argparse.Namespace):
         self.forever = False
         self.header = False
         self.failfast = False
-        self.match_tests = []
+        self.match_tests: TestFilter = []
         self.pgo = False
         self.pgo_extended = False
+        self.tsan = False
         self.worker_json = None
         self.start = None
         self.timeout = None
@@ -172,6 +173,7 @@ class Namespace(argparse.Namespace):
         self.fail_rerun = False
         self.tempdir = None
         self._add_python_opts = True
+        self.xmlpath = None
 
         super().__init__(**kwargs)
 
@@ -333,6 +335,8 @@ def _create_parser():
                        help='enable Profile Guided Optimization (PGO) training')
     group.add_argument('--pgo-extended', action='store_true',
                        help='enable extended PGO training (slower training)')
+    group.add_argument('--tsan', dest='tsan', action='store_true',
+                       help='run a subset of test cases that are proper for the TSAN test')
     group.add_argument('--fail-env-changed', action='store_true',
                        help='if a test file alters the environment, mark '
                             'the test as failed')
@@ -347,6 +351,8 @@ def _create_parser():
                        help='override the working directory for the test run')
     group.add_argument('--cleanup', action='store_true',
                        help='remove old test_python_* directories')
+    group.add_argument('--bisect', action='store_true',
+                       help='if some tests fail, run test.bisect_cmd on them')
     group.add_argument('--dont-add-python-opts', dest='_add_python_opts',
                        action='store_false',
                        help="internal option, don't use it")
@@ -448,8 +454,16 @@ def _parse_args(args, **kwargs):
 
     if ns.single and ns.fromfile:
         parser.error("-s and -f don't go together!")
-    if ns.use_mp is not None and ns.trace:
-        parser.error("-T and -j don't go together!")
+    if ns.trace:
+        if ns.use_mp is not None:
+            if not Py_DEBUG:
+                parser.error("need --with-pydebug to use -T and -j together")
+        else:
+            print(
+                "Warning: collecting coverage without -j is imprecise. Configure"
+                " --with-pydebug and run -m test -T -j for best results.",
+                file=sys.stderr
+            )
     if ns.python is not None:
         if ns.use_mp is None:
             parser.error("-p requires -j!")
@@ -493,17 +507,28 @@ def _parse_args(args, **kwargs):
         ns.randomize = True
     if ns.verbose:
         ns.header = True
+
     # When -jN option is used, a worker process does not use --verbose3
     # and so -R 3:3 -jN --verbose3 just works as expected: there is no false
     # alarm about memory leak.
     if ns.huntrleaks and ns.verbose3 and ns.use_mp is None:
-        ns.verbose3 = False
         # run_single_test() replaces sys.stdout with io.StringIO if verbose3
         # is true. In this case, huntrleaks sees an write into StringIO as
         # a memory leak, whereas it is not (gh-71290).
+        ns.verbose3 = False
         print("WARNING: Disable --verbose3 because it's incompatible with "
               "--huntrleaks without -jN option",
               file=sys.stderr)
+
+    if ns.huntrleaks and ns.xmlpath:
+        # The XML data is written into a file outside runtest_refleak(), so
+        # it looks like a leak but it's not. Simply disable XML output when
+        # hunting for reference leaks (gh-83434).
+        ns.xmlpath = None
+        print("WARNING: Disable --junit-xml because it's incompatible "
+              "with --huntrleaks",
+              file=sys.stderr)
+
     if ns.forever:
         # --forever implies --failfast
         ns.failfast = True

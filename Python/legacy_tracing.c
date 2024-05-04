@@ -16,6 +16,13 @@ typedef struct _PyLegacyEventHandler {
     int event;
 } _PyLegacyEventHandler;
 
+#ifdef Py_GIL_DISABLED
+#define LOCK_SETUP()    PyMutex_Lock(&_PyRuntime.ceval.sys_trace_profile_mutex);
+#define UNLOCK_SETUP()  PyMutex_Unlock(&_PyRuntime.ceval.sys_trace_profile_mutex);
+#else
+#define LOCK_SETUP()
+#define UNLOCK_SETUP()
+#endif
 /* The Py_tracefunc function expects the following arguments:
  *   obj: the trace object (PyObject *)
  *   frame: the current frame (PyFrameObject *)
@@ -167,6 +174,7 @@ call_trace_func(_PyLegacyEventHandler *self, PyObject *arg)
 
     Py_INCREF(frame);
     int err = tstate->c_tracefunc(tstate->c_traceobj, frame, self->event, arg);
+    frame->f_lineno = 0;
     Py_DECREF(frame);
     if (err) {
         return NULL;
@@ -414,19 +422,10 @@ is_tstate_valid(PyThreadState *tstate)
 }
 #endif
 
-int
-_PyEval_SetProfile(PyThreadState *tstate, Py_tracefunc func, PyObject *arg)
+static Py_ssize_t
+setup_profile(PyThreadState *tstate, Py_tracefunc func, PyObject *arg, PyObject **old_profileobj)
 {
-    assert(is_tstate_valid(tstate));
-    /* The caller must hold the GIL */
-    assert(PyGILState_Check());
-
-    /* Call _PySys_Audit() in the context of the current thread state,
-       even if tstate is not the current thread state. */
-    PyThreadState *current_tstate = _PyThreadState_GET();
-    if (_PySys_Audit(current_tstate, "sys.setprofile", NULL) < 0) {
-        return -1;
-    }
+    *old_profileobj = NULL;
     /* Setup PEP 669 monitoring callbacks and events. */
     if (!tstate->interp->sys_profile_initialized) {
         tstate->interp->sys_profile_initialized = true;
@@ -469,14 +468,36 @@ _PyEval_SetProfile(PyThreadState *tstate, Py_tracefunc func, PyObject *arg)
 
     int delta = (func != NULL) - (tstate->c_profilefunc != NULL);
     tstate->c_profilefunc = func;
-    PyObject *old_profileobj = tstate->c_profileobj;
+    *old_profileobj = tstate->c_profileobj;
     tstate->c_profileobj = Py_XNewRef(arg);
-    Py_XDECREF(old_profileobj);
     tstate->interp->sys_profiling_threads += delta;
     assert(tstate->interp->sys_profiling_threads >= 0);
+    return tstate->interp->sys_profiling_threads;
+}
+
+int
+_PyEval_SetProfile(PyThreadState *tstate, Py_tracefunc func, PyObject *arg)
+{
+    assert(is_tstate_valid(tstate));
+    /* The caller must hold the GIL */
+    assert(PyGILState_Check());
+
+    /* Call _PySys_Audit() in the context of the current thread state,
+       even if tstate is not the current thread state. */
+    PyThreadState *current_tstate = _PyThreadState_GET();
+    if (_PySys_Audit(current_tstate, "sys.setprofile", NULL) < 0) {
+        return -1;
+    }
+
+    // needs to be decref'd outside of the lock
+    PyObject *old_profileobj;
+    LOCK_SETUP();
+    Py_ssize_t profiling_threads = setup_profile(tstate, func, arg, &old_profileobj);
+    UNLOCK_SETUP();
+    Py_XDECREF(old_profileobj);
 
     uint32_t events = 0;
-    if (tstate->interp->sys_profiling_threads) {
+    if (profiling_threads) {
         events =
             (1 << PY_MONITORING_EVENT_PY_START) | (1 << PY_MONITORING_EVENT_PY_RESUME) |
             (1 << PY_MONITORING_EVENT_PY_RETURN) | (1 << PY_MONITORING_EVENT_PY_YIELD) |
@@ -486,21 +507,10 @@ _PyEval_SetProfile(PyThreadState *tstate, Py_tracefunc func, PyObject *arg)
     return _PyMonitoring_SetEvents(PY_MONITORING_SYS_PROFILE_ID, events);
 }
 
-int
-_PyEval_SetTrace(PyThreadState *tstate, Py_tracefunc func, PyObject *arg)
+static Py_ssize_t
+setup_tracing(PyThreadState *tstate, Py_tracefunc func, PyObject *arg, PyObject **old_traceobj)
 {
-    assert(is_tstate_valid(tstate));
-    /* The caller must hold the GIL */
-    assert(PyGILState_Check());
-
-    /* Call _PySys_Audit() in the context of the current thread state,
-       even if tstate is not the current thread state. */
-    PyThreadState *current_tstate = _PyThreadState_GET();
-    if (_PySys_Audit(current_tstate, "sys.settrace", NULL) < 0) {
-        return -1;
-    }
-
-    assert(tstate->interp->sys_tracing_threads >= 0);
+    *old_traceobj = NULL;
     /* Setup PEP 669 monitoring callbacks and events. */
     if (!tstate->interp->sys_trace_initialized) {
         tstate->interp->sys_trace_initialized = true;
@@ -553,22 +563,46 @@ _PyEval_SetTrace(PyThreadState *tstate, Py_tracefunc func, PyObject *arg)
 
     int delta = (func != NULL) - (tstate->c_tracefunc != NULL);
     tstate->c_tracefunc = func;
-    PyObject *old_traceobj = tstate->c_traceobj;
+    *old_traceobj = tstate->c_traceobj;
     tstate->c_traceobj = Py_XNewRef(arg);
-    Py_XDECREF(old_traceobj);
     tstate->interp->sys_tracing_threads += delta;
     assert(tstate->interp->sys_tracing_threads >= 0);
+    return tstate->interp->sys_tracing_threads;
+}
+
+int
+_PyEval_SetTrace(PyThreadState *tstate, Py_tracefunc func, PyObject *arg)
+{
+    assert(is_tstate_valid(tstate));
+    /* The caller must hold the GIL */
+    assert(PyGILState_Check());
+
+    /* Call _PySys_Audit() in the context of the current thread state,
+       even if tstate is not the current thread state. */
+    PyThreadState *current_tstate = _PyThreadState_GET();
+    if (_PySys_Audit(current_tstate, "sys.settrace", NULL) < 0) {
+        return -1;
+    }
+    assert(tstate->interp->sys_tracing_threads >= 0);
+    // needs to be decref'd outside of the lock
+    PyObject *old_traceobj;
+    LOCK_SETUP();
+    Py_ssize_t tracing_threads = setup_tracing(tstate, func, arg, &old_traceobj);
+    UNLOCK_SETUP();
+    Py_XDECREF(old_traceobj);
+    if (tracing_threads < 0) {
+        return -1;
+    }
 
     uint32_t events = 0;
-    if (tstate->interp->sys_tracing_threads) {
+    if (tracing_threads) {
         events =
             (1 << PY_MONITORING_EVENT_PY_START) | (1 << PY_MONITORING_EVENT_PY_RESUME) |
             (1 << PY_MONITORING_EVENT_PY_RETURN) | (1 << PY_MONITORING_EVENT_PY_YIELD) |
             (1 << PY_MONITORING_EVENT_RAISE) | (1 << PY_MONITORING_EVENT_LINE) |
-            (1 << PY_MONITORING_EVENT_JUMP) | (1 << PY_MONITORING_EVENT_BRANCH) |
+            (1 << PY_MONITORING_EVENT_JUMP) |
             (1 << PY_MONITORING_EVENT_PY_UNWIND) | (1 << PY_MONITORING_EVENT_PY_THROW) |
-            (1 << PY_MONITORING_EVENT_STOP_ITERATION) |
-            (1 << PY_MONITORING_EVENT_EXCEPTION_HANDLED);
+            (1 << PY_MONITORING_EVENT_STOP_ITERATION);
 
         PyFrameObject* frame = PyEval_GetFrame();
         if (frame->f_trace_opcodes) {

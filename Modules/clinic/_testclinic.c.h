@@ -2935,8 +2935,13 @@ clone_f1(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
         _PyArg_BadArgument("clone_f1", "argument 'path'", "str", args[0]);
         goto exit;
     }
-    path = PyUnicode_AsUTF8(args[0]);
+    Py_ssize_t path_length;
+    path = PyUnicode_AsUTF8AndSize(args[0], &path_length);
     if (path == NULL) {
+        goto exit;
+    }
+    if (strlen(path) != (size_t)path_length) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     return_value = clone_f1_impl(module, path);
@@ -2996,8 +3001,13 @@ clone_f2(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
         _PyArg_BadArgument("clone_f2", "argument 'path'", "str", args[0]);
         goto exit;
     }
-    path = PyUnicode_AsUTF8(args[0]);
+    Py_ssize_t path_length;
+    path = PyUnicode_AsUTF8AndSize(args[0], &path_length);
     if (path == NULL) {
+        goto exit;
+    }
+    if (strlen(path) != (size_t)path_length) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     return_value = clone_f2_impl(module, path);
@@ -3131,4 +3141,82 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=32dc6ac90757da7a input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(_testclinic_TestClass_get_defining_class__doc__,
+"get_defining_class($self, /)\n"
+"--\n"
+"\n");
+
+#define _TESTCLINIC_TESTCLASS_GET_DEFINING_CLASS_METHODDEF    \
+    {"get_defining_class", _PyCFunction_CAST(_testclinic_TestClass_get_defining_class), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _testclinic_TestClass_get_defining_class__doc__},
+
+static PyObject *
+_testclinic_TestClass_get_defining_class_impl(PyObject *self,
+                                              PyTypeObject *cls);
+
+static PyObject *
+_testclinic_TestClass_get_defining_class(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
+        PyErr_SetString(PyExc_TypeError, "get_defining_class() takes no arguments");
+        return NULL;
+    }
+    return _testclinic_TestClass_get_defining_class_impl(self, cls);
+}
+
+PyDoc_STRVAR(_testclinic_TestClass_get_defining_class_arg__doc__,
+"get_defining_class_arg($self, /, arg)\n"
+"--\n"
+"\n");
+
+#define _TESTCLINIC_TESTCLASS_GET_DEFINING_CLASS_ARG_METHODDEF    \
+    {"get_defining_class_arg", _PyCFunction_CAST(_testclinic_TestClass_get_defining_class_arg), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _testclinic_TestClass_get_defining_class_arg__doc__},
+
+static PyObject *
+_testclinic_TestClass_get_defining_class_arg_impl(PyObject *self,
+                                                  PyTypeObject *cls,
+                                                  PyObject *arg);
+
+static PyObject *
+_testclinic_TestClass_get_defining_class_arg(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(arg), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"arg", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "get_defining_class_arg",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    PyObject *arg;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    arg = args[0];
+    return_value = _testclinic_TestClass_get_defining_class_arg_impl(self, cls, arg);
+
+exit:
+    return return_value;
+}
+/*[clinic end generated code: output=aa352c3a67300056 input=a9049054013a1b77]*/

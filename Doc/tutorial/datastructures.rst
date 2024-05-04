@@ -48,10 +48,9 @@ objects:
    :noindex:
 
    Remove the item at the given position in the list, and return it.  If no index
-   is specified, ``a.pop()`` removes and returns the last item in the list.  (The
-   square brackets around the *i* in the method signature denote that the parameter
-   is optional, not that you should type square brackets at that position.  You
-   will see this notation frequently in the Python Library Reference.)
+   is specified, ``a.pop()`` removes and returns the last item in the list.
+   It raises an :exc:`IndexError` if the list is empty or the index is
+   outside the list range.
 
 
 .. method:: list.clear()

@@ -6,6 +6,7 @@
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_ceval.h"         // _PyEval_SetProfile()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
+#include "pycore_time.h"          // _PyTime_FromLong()
 
 #include "rotatingtree.h"
 
@@ -17,8 +18,8 @@ struct _ProfilerEntry;
 /* represents a function called from another function */
 typedef struct _ProfilerSubEntry {
     rotating_node_t header;
-    _PyTime_t tt;
-    _PyTime_t it;
+    PyTime_t tt;
+    PyTime_t it;
     long callcount;
     long recursivecallcount;
     long recursionLevel;
@@ -28,8 +29,8 @@ typedef struct _ProfilerSubEntry {
 typedef struct _ProfilerEntry {
     rotating_node_t header;
     PyObject *userObj; /* PyCodeObject, or a descriptive str for builtins */
-    _PyTime_t tt; /* total time in this entry */
-    _PyTime_t it; /* inline time in this entry (not in subcalls) */
+    PyTime_t tt; /* total time in this entry */
+    PyTime_t it; /* inline time in this entry (not in subcalls) */
     long callcount; /* how many times this was called */
     long recursivecallcount; /* how many times called recursively */
     long recursionLevel;
@@ -37,8 +38,8 @@ typedef struct _ProfilerEntry {
 } ProfilerEntry;
 
 typedef struct _ProfilerContext {
-    _PyTime_t t0;
-    _PyTime_t subt;
+    PyTime_t t0;
+    PyTime_t subt;
     struct _ProfilerContext *previous;
     ProfilerEntry *ctxEntry;
 } ProfilerContext;
@@ -84,7 +85,7 @@ _lsprof_get_state(PyObject *module)
 
 /*** External Timers ***/
 
-static _PyTime_t CallExternalTimer(ProfilerObject *pObj)
+static PyTime_t CallExternalTimer(ProfilerObject *pObj)
 {
     PyObject *o = _PyObject_CallNoArgs(pObj->externalTimer);
     if (o == NULL) {
@@ -92,16 +93,16 @@ static _PyTime_t CallExternalTimer(ProfilerObject *pObj)
         return 0;
     }
 
-    _PyTime_t result;
+    PyTime_t result;
     int err;
     if (pObj->externalTimerUnit > 0.0) {
         /* interpret the result as an integer that will be scaled
            in profiler_getstats() */
-        err = _PyTime_FromNanosecondsObject(&result, o);
+        err = _PyTime_FromLong(&result, o);
     }
     else {
         /* interpret the result as a double measured in seconds.
-           As the profiler works with _PyTime_t internally
+           As the profiler works with PyTime_t internally
            we convert it to a large integer */
         err = _PyTime_FromSecondsObject(&result, o, _PyTime_ROUND_FLOOR);
     }
@@ -113,14 +114,14 @@ static _PyTime_t CallExternalTimer(ProfilerObject *pObj)
     return result;
 }
 
-static inline _PyTime_t
+static inline PyTime_t
 call_timer(ProfilerObject *pObj)
 {
     if (pObj->externalTimer != NULL) {
         return CallExternalTimer(pObj);
     }
     else {
-        return _PyTime_GetPerfCounter();
+        return _PyTime_PerfCounterUnchecked();
     }
 }
 
@@ -311,8 +312,8 @@ initContext(ProfilerObject *pObj, ProfilerContext *self, ProfilerEntry *entry)
 static void
 Stop(ProfilerObject *pObj, ProfilerContext *self, ProfilerEntry *entry)
 {
-    _PyTime_t tt = call_timer(pObj) - self->t0;
-    _PyTime_t it = tt - self->subt;
+    PyTime_t tt = call_timer(pObj) - self->t0;
+    PyTime_t it = tt - self->subt;
     if (self->previous)
         self->previous->subt += tt;
     pObj->currentProfilerContext = self->previous;
@@ -557,7 +558,7 @@ _lsprof_Profiler_getstats_impl(ProfilerObject *self, PyTypeObject *cls)
         return NULL;
     }
     if (!self->externalTimer || self->externalTimerUnit == 0.0) {
-        _PyTime_t onesec = _PyTime_FromSeconds(1);
+        PyTime_t onesec = _PyTime_FromSeconds(1);
         collect.factor = (double)1 / onesec;
     }
     else {
@@ -1004,9 +1005,7 @@ _lsprof_exec(PyObject *module)
 
 static PyModuleDef_Slot _lsprofslots[] = {
     {Py_mod_exec, _lsprof_exec},
-    // XXX gh-103092: fix isolation.
-    {Py_mod_multiple_interpreters, Py_MOD_MULTIPLE_INTERPRETERS_NOT_SUPPORTED},
-    //{Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL}
 };
 

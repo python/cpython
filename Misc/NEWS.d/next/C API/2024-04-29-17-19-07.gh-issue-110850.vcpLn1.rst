@@ -1,0 +1,7 @@
+Add "Raw" variant of PyTime functions
+
+* :c:func:`PyTime_MonotonicRaw`
+* :c:func:`PyTime_PerfCounterRaw`
+* :c:func:`PyTime_TimeRaw`
+
+Patch by Victor Stinner.

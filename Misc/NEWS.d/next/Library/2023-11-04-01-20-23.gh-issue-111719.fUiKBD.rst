@@ -1,1 +1,0 @@
-Add extra argument validation for ``alias`` command in :mod:`pdb`

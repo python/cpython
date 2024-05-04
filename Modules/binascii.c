@@ -770,12 +770,20 @@ binascii_crc32_impl(PyObject *module, Py_buffer *data, unsigned int crc)
 
         Py_BEGIN_ALLOW_THREADS
         /* Avoid truncation of length for very large buffers. crc32() takes
-           length as an unsigned int, which may be narrower than Py_ssize_t. */
-        while ((size_t)len > UINT_MAX) {
-            crc = crc32(crc, buf, UINT_MAX);
-            buf += (size_t) UINT_MAX;
-            len -= (size_t) UINT_MAX;
+           length as an unsigned int, which may be narrower than Py_ssize_t.
+           We further limit size due to bugs in Apple's macOS zlib.
+           See https://github.com/python/cpython/issues/105967
+         */
+#define ZLIB_CRC_CHUNK_SIZE 0x40000000
+#if ZLIB_CRC_CHUNK_SIZE > INT_MAX
+# error "unsupported less than 32-bit platform?"
+#endif
+        while ((size_t)len > ZLIB_CRC_CHUNK_SIZE) {
+            crc = crc32(crc, buf, ZLIB_CRC_CHUNK_SIZE);
+            buf += (size_t) ZLIB_CRC_CHUNK_SIZE;
+            len -= (size_t) ZLIB_CRC_CHUNK_SIZE;
         }
+#undef ZLIB_CRC_CHUNK_SIZE
         crc = crc32(crc, buf, (unsigned int)len);
         Py_END_ALLOW_THREADS
     } else {

@@ -6,6 +6,7 @@
 #include "pycore_code.h"          // _PyCodeConstructor
 #include "pycore_frame.h"         // FRAME_SPECIALS_SIZE
 #include "pycore_interp.h"        // PyInterpreterState.co_extra_freefuncs
+#include "pycore_object.h"        // _PyObject_SetDeferredRefcount
 #include "pycore_opcode_metadata.h" // _PyOpcode_Deopt, _PyOpcode_Caches
 #include "pycore_opcode_utils.h"  // RESUME_AT_FUNC_START
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
@@ -415,9 +416,9 @@ init_code(PyCodeObject *co, struct _PyCodeConstructor *con)
     co->co_ncellvars = ncellvars;
     co->co_nfreevars = nfreevars;
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    co->co_version = interp->next_func_version;
-    if (interp->next_func_version != 0) {
-        interp->next_func_version++;
+    co->co_version = interp->func_state.next_version;
+    if (interp->func_state.next_version != 0) {
+        interp->func_state.next_version++;
     }
     co->_co_monitoring = NULL;
     co->_co_instrumentation_version = 0;
@@ -557,13 +558,22 @@ _PyCode_New(struct _PyCodeConstructor *con)
     }
 
     Py_ssize_t size = PyBytes_GET_SIZE(con->code) / sizeof(_Py_CODEUNIT);
-    PyCodeObject *co = PyObject_NewVar(PyCodeObject, &PyCode_Type, size);
+    PyCodeObject *co;
+#ifdef Py_GIL_DISABLED
+    co = PyObject_GC_NewVar(PyCodeObject, &PyCode_Type, size);
+#else
+    co = PyObject_NewVar(PyCodeObject, &PyCode_Type, size);
+#endif
     if (co == NULL) {
         Py_XDECREF(replacement_locations);
         PyErr_NoMemory();
         return NULL;
     }
     init_code(co, con);
+#ifdef Py_GIL_DISABLED
+    _PyObject_SetDeferredRefcount((PyObject *)co);
+    _PyObject_GC_TRACK(co);
+#endif
     Py_XDECREF(replacement_locations);
     return co;
 }
@@ -643,6 +653,35 @@ PyUnstable_Code_NewWithPosOnlyArgs(
         _Py_set_localsplus_info(offset, name, CO_FAST_FREE,
                                localsplusnames, localspluskinds);
     }
+
+    // gh-110543: Make sure the CO_FAST_HIDDEN flag is set correctly.
+    if (!(flags & CO_OPTIMIZED)) {
+        Py_ssize_t code_len = PyBytes_GET_SIZE(code);
+        _Py_CODEUNIT *code_data = (_Py_CODEUNIT *)PyBytes_AS_STRING(code);
+        Py_ssize_t num_code_units = code_len / sizeof(_Py_CODEUNIT);
+        int extended_arg = 0;
+        for (int i = 0; i < num_code_units; i += 1 + _PyOpcode_Caches[code_data[i].op.code]) {
+            _Py_CODEUNIT *instr = &code_data[i];
+            uint8_t opcode = instr->op.code;
+            if (opcode == EXTENDED_ARG) {
+                extended_arg = extended_arg << 8 | instr->op.arg;
+                continue;
+            }
+            if (opcode == LOAD_FAST_AND_CLEAR) {
+                int oparg = extended_arg << 8 | instr->op.arg;
+                if (oparg >= nlocalsplus) {
+                    PyErr_Format(PyExc_ValueError,
+                                "code: LOAD_FAST_AND_CLEAR oparg %d out of range",
+                                oparg);
+                    goto error;
+                }
+                _PyLocals_Kind kind = _PyLocals_GetKind(localspluskinds, oparg);
+                _PyLocals_SetKind(localspluskinds, oparg, kind | CO_FAST_HIDDEN);
+            }
+            extended_arg = 0;
+        }
+    }
+
     // If any cells were args then nlocalsplus will have shrunk.
     if (nlocalsplus != PyTuple_GET_SIZE(localsplusnames)) {
         if (_PyTuple_Resize(&localsplusnames, nlocalsplus) < 0
@@ -1457,32 +1496,29 @@ PyCode_GetFreevars(PyCodeObject *code)
     return _PyCode_GetFreevars(code);
 }
 
+#ifdef _Py_TIER2
+
 static void
 clear_executors(PyCodeObject *co)
 {
+    assert(co->co_executors);
     for (int i = 0; i < co->co_executors->size; i++) {
-        Py_CLEAR(co->co_executors->executors[i]);
+        if (co->co_executors->executors[i]) {
+            _Py_ExecutorDetach(co->co_executors->executors[i]);
+            assert(co->co_executors->executors[i] == NULL);
+        }
     }
     PyMem_Free(co->co_executors);
     co->co_executors = NULL;
 }
 
 void
-_PyCode_Clear_Executors(PyCodeObject *code) {
-    int code_len = (int)Py_SIZE(code);
-    for (int i = 0; i < code_len; i += _PyInstruction_GetLength(code, i)) {
-        _Py_CODEUNIT *instr = &_PyCode_CODE(code)[i];
-        uint8_t opcode = instr->op.code;
-        uint8_t oparg = instr->op.arg;
-        if (opcode == ENTER_EXECUTOR) {
-            _PyExecutorObject *exec = code->co_executors->executors[oparg];
-            assert(exec->vm_data.opcode != ENTER_EXECUTOR);
-            instr->op.code = exec->vm_data.opcode;
-            instr->op.arg = exec->vm_data.oparg;
-        }
-    }
+_PyCode_Clear_Executors(PyCodeObject *code)
+{
     clear_executors(code);
 }
+
+#endif
 
 static void
 deopt_code(PyCodeObject *code, _Py_CODEUNIT *instructions)
@@ -1689,6 +1725,11 @@ code_dealloc(PyCodeObject *co)
     }
     Py_SET_REFCNT(co, 0);
 
+#ifdef Py_GIL_DISABLED
+    PyObject_GC_UnTrack(co);
+#endif
+
+    _PyFunction_ClearCodeByVersion(co->co_version);
     if (co->co_extra != NULL) {
         PyInterpreterState *interp = _PyInterpreterState_GET();
         _PyCodeObjectExtra *co_extra = co->co_extra;
@@ -1703,9 +1744,11 @@ code_dealloc(PyCodeObject *co)
 
         PyMem_Free(co_extra);
     }
+#ifdef _Py_TIER2
     if (co->co_executors != NULL) {
         clear_executors(co);
     }
+#endif
 
     Py_XDECREF(co->co_consts);
     Py_XDECREF(co->co_names);
@@ -1729,6 +1772,15 @@ code_dealloc(PyCodeObject *co)
     free_monitoring_data(co->_co_monitoring);
     PyObject_Free(co);
 }
+
+#ifdef Py_GIL_DISABLED
+static int
+code_traverse(PyCodeObject *co, visitproc visit, void *arg)
+{
+    Py_VISIT(co->co_consts);
+    return 0;
+}
+#endif
 
 static PyObject *
 code_repr(PyCodeObject *co)
@@ -2148,7 +2200,8 @@ static struct PyMethodDef code_methods[] = {
     {"co_positions", (PyCFunction)code_positionsiterator, METH_NOARGS},
     CODE_REPLACE_METHODDEF
     CODE__VARNAME_FROM_OPARG_METHODDEF
-    {"__replace__", _PyCFunction_CAST(code_replace), METH_FASTCALL|METH_KEYWORDS},
+    {"__replace__", _PyCFunction_CAST(code_replace), METH_FASTCALL|METH_KEYWORDS,
+     PyDoc_STR("__replace__($self, /, **changes)\n--\n\nThe same as replace().")},
     {NULL, NULL}                /* sentinel */
 };
 
@@ -2173,9 +2226,17 @@ PyTypeObject PyCode_Type = {
     PyObject_GenericGetAttr,            /* tp_getattro */
     0,                                  /* tp_setattro */
     0,                                  /* tp_as_buffer */
+#ifdef Py_GIL_DISABLED
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC, /* tp_flags */
+#else
     Py_TPFLAGS_DEFAULT,                 /* tp_flags */
+#endif
     code_new__doc__,                    /* tp_doc */
+#ifdef Py_GIL_DISABLED
+    (traverseproc)code_traverse,        /* tp_traverse */
+#else
     0,                                  /* tp_traverse */
+#endif
     0,                                  /* tp_clear */
     code_richcompare,                   /* tp_richcompare */
     offsetof(PyCodeObject, co_weakreflist),     /* tp_weaklistoffset */
@@ -2327,49 +2388,3 @@ _PyCode_ConstantKey(PyObject *op)
     }
     return key;
 }
-
-void
-_PyStaticCode_Fini(PyCodeObject *co)
-{
-    deopt_code(co, _PyCode_CODE(co));
-    if (co->co_executors != NULL) {
-        clear_executors(co);
-    }
-    PyMem_Free(co->co_extra);
-    if (co->_co_cached != NULL) {
-        Py_CLEAR(co->_co_cached->_co_code);
-        Py_CLEAR(co->_co_cached->_co_cellvars);
-        Py_CLEAR(co->_co_cached->_co_freevars);
-        Py_CLEAR(co->_co_cached->_co_varnames);
-        PyMem_Free(co->_co_cached);
-        co->_co_cached = NULL;
-    }
-    co->co_extra = NULL;
-    if (co->co_weakreflist != NULL) {
-        PyObject_ClearWeakRefs((PyObject *)co);
-        co->co_weakreflist = NULL;
-    }
-    free_monitoring_data(co->_co_monitoring);
-    co->_co_monitoring = NULL;
-}
-
-int
-_PyStaticCode_Init(PyCodeObject *co)
-{
-    int res = intern_strings(co->co_names);
-    if (res < 0) {
-        return -1;
-    }
-    res = intern_string_constants(co->co_consts, NULL);
-    if (res < 0) {
-        return -1;
-    }
-    res = intern_strings(co->co_localsplusnames);
-    if (res < 0) {
-        return -1;
-    }
-    _PyCode_Quicken(co);
-    return 0;
-}
-
-#define MAX_CODE_UNITS_PER_LOC_ENTRY 8

@@ -1,2 +1,0 @@
-Fix a bug that was causing :exc:`SyntaxWarning` to appear twice when parsing
-if invalid syntax is encountered later. Patch by Pablo galindo
