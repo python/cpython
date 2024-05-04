@@ -147,6 +147,23 @@ class X86_32EdgeCase(Structure):
     _fields_ = [('a', c_int32), ('b', c_int64), ('c', c_int32)]
 
 @register()
+class MSBitFieldExample(Structure):
+    # From https://learn.microsoft.com/en-us/cpp/c-language/c-bit-fields
+    _fields_ = [
+        ('a', c_uint, 4),
+        ('b', c_uint, 5),
+        ('c', c_uint, 7)]
+
+@register()
+class MSStraddlingExample(Structure):
+    # From https://learn.microsoft.com/en-us/cpp/c-language/c-bit-fields
+    _fields_ = [
+        ('first', c_uint, 9),
+        ('second', c_uint, 7),
+        ('may_straddle', c_uint, 30),
+        ('last', c_uint, 18)]
+
+@register()
 class IntBits(Structure):
     _fields_ = [("A", c_int, 1),
                 ("B", c_int, 2),
