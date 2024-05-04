@@ -5123,7 +5123,7 @@ os__path_splitroot_impl(PyObject *module, path_t *path)
 /*[clinic input]
 os._path_isdir
 
-    s as path: path_t(suppress=True)
+    s as path: path_t(allow_fd=True, suppress=True)
 
 Return true if the pathname refers to an existing directory.
 
@@ -5131,7 +5131,7 @@ Return true if the pathname refers to an existing directory.
 
 static PyObject *
 os__path_isdir_impl(PyObject *module, path_t *path)
-/*[clinic end generated code: output=0adeafd60704f710 input=945359aa5bde6f2e]*/
+/*[clinic end generated code: output=0adeafd60704f710 input=3f8bf1ea0cc77e0c]*/
 {
     HANDLE hfile;
     BOOL close_file = TRUE;
@@ -5217,7 +5217,7 @@ os__path_isdir_impl(PyObject *module, path_t *path)
 /*[clinic input]
 os._path_isfile
 
-    path: path_t(suppress=True)
+    path: path_t(allow_fd=True, suppress=True)
 
 Test whether a path is a regular file
 
@@ -5225,7 +5225,7 @@ Test whether a path is a regular file
 
 static PyObject *
 os__path_isfile_impl(PyObject *module, path_t *path)
-/*[clinic end generated code: output=4f72e7b1ada002da input=f095340c0e8e84e9]*/
+/*[clinic end generated code: output=4f72e7b1ada002da input=b6c69c96e1722a27]*/
 {
     HANDLE hfile;
     BOOL close_file = TRUE;
@@ -5311,7 +5311,7 @@ os__path_isfile_impl(PyObject *module, path_t *path)
 /*[clinic input]
 os._path_exists
 
-    path: path_t(suppress=True)
+    path: path_t(allow_fd=True, suppress=True)
 
 Test whether a path exists.  Returns False for broken symbolic links
 
@@ -5319,7 +5319,7 @@ Test whether a path exists.  Returns False for broken symbolic links
 
 static PyObject *
 os__path_exists_impl(PyObject *module, path_t *path)
-/*[clinic end generated code: output=69e6089df1fe463a input=ba8bbd209962ca90]*/
+/*[clinic end generated code: output=69e6089df1fe463a input=3a73be0affbbe43c]*/
 {
     HANDLE hfile;
     BOOL close_file = TRUE;
@@ -5394,7 +5394,7 @@ os__path_exists_impl(PyObject *module, path_t *path)
 /*[clinic input]
 os._path_islink
 
-    path: path_t(suppress=True)
+    path: path_t(allow_fd=True, suppress=True)
 
 Test whether a path is a symbolic link
 
@@ -5402,7 +5402,7 @@ Test whether a path is a symbolic link
 
 static PyObject *
 os__path_islink_impl(PyObject *module, path_t *path)
-/*[clinic end generated code: output=109ad77ec747b3b7 input=a59fe6ee2804173f]*/
+/*[clinic end generated code: output=109ad77ec747b3b7 input=3937a93631697d6c]*/
 {
     HANDLE hfile;
     BOOL close_file = TRUE;

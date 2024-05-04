@@ -2056,7 +2056,7 @@ os__path_isdir(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
-    path_t path = PATH_T_INITIALIZE_P("_path_isdir", "path", 0, 0, 1, 0);
+    path_t path = PATH_T_INITIALIZE_P("_path_isdir", "path", 0, 0, 1, 1);
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
     if (!args) {
@@ -2120,7 +2120,7 @@ os__path_isfile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
-    path_t path = PATH_T_INITIALIZE_P("_path_isfile", "path", 0, 0, 1, 0);
+    path_t path = PATH_T_INITIALIZE_P("_path_isfile", "path", 0, 0, 1, 1);
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
     if (!args) {
@@ -2184,7 +2184,7 @@ os__path_exists(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
-    path_t path = PATH_T_INITIALIZE_P("_path_exists", "path", 0, 0, 1, 0);
+    path_t path = PATH_T_INITIALIZE_P("_path_exists", "path", 0, 0, 1, 1);
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
     if (!args) {
@@ -2248,7 +2248,7 @@ os__path_islink(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
-    path_t path = PATH_T_INITIALIZE_P("_path_islink", "path", 0, 0, 1, 0);
+    path_t path = PATH_T_INITIALIZE_P("_path_islink", "path", 0, 0, 1, 1);
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
     if (!args) {
@@ -12689,4 +12689,4 @@ os__supports_virtual_terminal(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF
     #define OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF
 #endif /* !defined(OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF) */
-/*[clinic end generated code: output=68dd3493b6596cb4 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=056a1c20f0b1f39f input=a9049054013a1b77]*/
