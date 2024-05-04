@@ -84,6 +84,7 @@ import inspect
 import tokenize
 import traceback
 import linecache
+import _colorize
 
 from contextlib import contextmanager
 from rlcompleter import Completer
@@ -2303,7 +2304,7 @@ def main():
             print("The program exited via sys.exit(). Exit status:", end=' ')
             print(e)
         except BaseException as e:
-            traceback._print_exception_bltin(e)
+            traceback.print_exception(e, colorize=_colorize.can_colorize())
             print("Uncaught exception. Entering post mortem debugging")
             print("Running 'cont' or 'step' will restart the program")
             pdb.interaction(None, e)
