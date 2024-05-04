@@ -1112,8 +1112,8 @@ get_posix_state(PyObject *module)
  *     embedded null characters and have any length.
  *   path.make_wide
  *     If nonzero, the path is decoded to Unicode, encoded to bytes otherwise.
- *   path.suppress
- *     If nonzero, errors are suppressed.
+ *   path.suppress_value_error
+ *     If nonzero, ValueErrors are suppressed.
  *   path.allow_fd
  *     If nonzero, the path is permitted to be a file handle
  *     (a signed int) instead of a string.
@@ -1142,8 +1142,8 @@ get_posix_state(PyObject *module)
  *     unspecified, path_converter will never get called.
  *     So if you set allow_fd, you *MUST* initialize path.fd = -1
  *     yourself!
- *   path.error
- *     If nonzero, an error occurred.
+ *   path.value_error
+ *     If nonzero, a ValueError occurred.
  *   path.length
  *     The length of the path in characters, if specified as
  *     a string.
@@ -1182,32 +1182,32 @@ typedef struct {
     int nullable;
     int nonstrict;
     int make_wide;
-    int suppress;
+    int suppress_value_error;
     int allow_fd;
     // Output fields
     const wchar_t *wide;
     const char *narrow;
     int fd;
-    int error;
+    int value_error;
     Py_ssize_t length;
     PyObject *object;
     PyObject *cleanup;
 } path_t;
 
 #define PATH_T_INITIALIZE(function_name, argument_name, nullable, nonstrict, \
-                          make_wide, suppress, allow_fd) \
-    {function_name, argument_name, nullable, nonstrict, make_wide, suppress, \
-     allow_fd, NULL, NULL, -1, 0, 0, NULL, NULL}
+                          make_wide, suppress_value_error, allow_fd) \
+    {function_name, argument_name, nullable, nonstrict, make_wide, \
+     suppress_value_error, allow_fd, NULL, NULL, -1, 0, 0, NULL, NULL}
 #ifdef MS_WINDOWS
 #define PATH_T_INITIALIZE_P(function_name, argument_name, nullable, \
-                            nonstrict, suppress, allow_fd) \
+                            nonstrict, suppress_value_error, allow_fd) \
     PATH_T_INITIALIZE(function_name, argument_name, nullable, nonstrict, 1, \
-                      suppress, allow_fd)
+                      suppress_value_error, allow_fd)
 #else
 #define PATH_T_INITIALIZE_P(function_name, argument_name, nullable, \
-                            nonstrict, suppress, allow_fd) \
+                            nonstrict, suppress_value_error, allow_fd) \
     PATH_T_INITIALIZE(function_name, argument_name, nullable, nonstrict, 0, \
-                      suppress, allow_fd)
+                      suppress_value_error, allow_fd)
 #endif
 
 static void
@@ -1397,7 +1397,7 @@ path_converter(PyObject *o, void *p)
     path->fd = -1;
 
  success_exit:
-    path->error = 0;
+    path->value_error = 0;
     path->length = length;
     path->object = o;
     return Py_CLEANUP_SUPPORTED;
@@ -1406,13 +1406,16 @@ path_converter(PyObject *o, void *p)
     Py_XDECREF(o);
     Py_XDECREF(bytes);
     PyMem_Free(wide);
-    if (!path->suppress) {
+    if (!path->suppress_value_error ||
+        !PyErr_ExceptionMatches(PyExc_ValueError))
+    {
         return 0;
     }
+    PyErr_Clear();
     path->wide = NULL;
     path->narrow = NULL;
     path->fd = -1;
-    path->error = 1;
+    path->value_error = 1;
     path->length = 0;
     path->object = NULL;
     return Py_CLEANUP_SUPPORTED;
@@ -2926,7 +2929,8 @@ class path_t_converter(CConverter):
     converter = 'path_converter'
 
     def converter_init(self, *, allow_fd=False, make_wide=None,
-                       nonstrict=False, nullable=False, suppress=False):
+                       nonstrict=False, nullable=False,
+                       suppress_value_error=False):
         # right now path_t doesn't support default values.
         # to support a default value, you'll need to override initialize().
         if self.default not in (unspecified, None):
@@ -2938,7 +2942,7 @@ class path_t_converter(CConverter):
         self.nullable = nullable
         self.nonstrict = nonstrict
         self.make_wide = make_wide
-        self.suppress = suppress
+        self.suppress_value_error = suppress_value_error
         self.allow_fd = allow_fd
 
     def pre_render(self):
@@ -2954,7 +2958,7 @@ class path_t_converter(CConverter):
                 self.name,
                 strify(self.nullable),
                 strify(self.nonstrict),
-                strify(self.suppress),
+                strify(self.suppress_value_error),
                 strify(self.allow_fd),
             )
         else:
@@ -2964,7 +2968,7 @@ class path_t_converter(CConverter):
                 strify(self.nullable),
                 strify(self.nonstrict),
                 strify(self.make_wide),
-                strify(self.suppress),
+                strify(self.suppress_value_error),
                 strify(self.allow_fd),
             )
 
@@ -3045,7 +3049,7 @@ class sysconf_confname_converter(path_confname_converter):
     converter="conv_sysconf_confname"
 
 [python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=e859625395de8933]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=577cb476e5d64960]*/
 
 /*[clinic input]
 
@@ -5122,7 +5126,7 @@ os__path_splitroot_impl(PyObject *module, path_t *path)
 /*[clinic input]
 os._path_isdir
 
-    s as path: path_t(allow_fd=True, suppress=True)
+    s as path: path_t(allow_fd=True, suppress_value_error=True)
 
 Return true if the pathname refers to an existing directory.
 
@@ -5130,7 +5134,7 @@ Return true if the pathname refers to an existing directory.
 
 static PyObject *
 os__path_isdir_impl(PyObject *module, path_t *path)
-/*[clinic end generated code: output=0adeafd60704f710 input=3f8bf1ea0cc77e0c]*/
+/*[clinic end generated code: output=0adeafd60704f710 input=2d09b8801fd2f638]*/
 {
     HANDLE hfile;
     BOOL close_file = TRUE;
@@ -5139,12 +5143,8 @@ os__path_isdir_impl(PyObject *module, path_t *path)
     BOOL slow_path = TRUE;
     FILE_STAT_BASIC_INFORMATION statInfo;
 
-    if (path->error) {
-        if (PyErr_ExceptionMatches(PyExc_ValueError)) {
-            PyErr_Clear();
-            Py_RETURN_FALSE;
-        }
-        return NULL;
+    if (path->value_error) {
+        Py_RETURN_FALSE;
     }
 
     Py_BEGIN_ALLOW_THREADS
@@ -5216,7 +5216,7 @@ os__path_isdir_impl(PyObject *module, path_t *path)
 /*[clinic input]
 os._path_isfile
 
-    path: path_t(allow_fd=True, suppress=True)
+    path: path_t(allow_fd=True, suppress_value_error=True)
 
 Test whether a path is a regular file
 
@@ -5224,7 +5224,7 @@ Test whether a path is a regular file
 
 static PyObject *
 os__path_isfile_impl(PyObject *module, path_t *path)
-/*[clinic end generated code: output=4f72e7b1ada002da input=b6c69c96e1722a27]*/
+/*[clinic end generated code: output=4f72e7b1ada002da input=c378f54b14ae878a]*/
 {
     HANDLE hfile;
     BOOL close_file = TRUE;
@@ -5233,12 +5233,8 @@ os__path_isfile_impl(PyObject *module, path_t *path)
     BOOL slow_path = TRUE;
     FILE_STAT_BASIC_INFORMATION statInfo;
 
-    if (path->error) {
-        if (PyErr_ExceptionMatches(PyExc_ValueError)) {
-            PyErr_Clear();
-            Py_RETURN_FALSE;
-        }
-        return NULL;
+    if (path->value_error) {
+        Py_RETURN_FALSE;
     }
 
     Py_BEGIN_ALLOW_THREADS
@@ -5310,7 +5306,7 @@ os__path_isfile_impl(PyObject *module, path_t *path)
 /*[clinic input]
 os._path_exists
 
-    path: path_t(allow_fd=True, suppress=True)
+    path: path_t(allow_fd=True, suppress_value_error=True)
 
 Test whether a path exists.  Returns False for broken symbolic links
 
@@ -5318,7 +5314,7 @@ Test whether a path exists.  Returns False for broken symbolic links
 
 static PyObject *
 os__path_exists_impl(PyObject *module, path_t *path)
-/*[clinic end generated code: output=69e6089df1fe463a input=3a73be0affbbe43c]*/
+/*[clinic end generated code: output=69e6089df1fe463a input=a62c424c1784c43b]*/
 {
     HANDLE hfile;
     BOOL close_file = TRUE;
@@ -5326,12 +5322,8 @@ os__path_exists_impl(PyObject *module, path_t *path)
     BOOL slow_path = TRUE;
     FILE_STAT_BASIC_INFORMATION statInfo;
 
-    if (path->error) {
-        if (PyErr_ExceptionMatches(PyExc_ValueError)) {
-            PyErr_Clear();
-            Py_RETURN_FALSE;
-        }
-        return NULL;
+    if (path->value_error) {
+        Py_RETURN_FALSE;
     }
 
     Py_BEGIN_ALLOW_THREADS
@@ -5393,7 +5385,7 @@ os__path_exists_impl(PyObject *module, path_t *path)
 /*[clinic input]
 os._path_islink
 
-    path: path_t(allow_fd=True, suppress=True)
+    path: path_t(allow_fd=True, suppress_value_error=True)
 
 Test whether a path is a symbolic link
 
@@ -5401,7 +5393,7 @@ Test whether a path is a symbolic link
 
 static PyObject *
 os__path_islink_impl(PyObject *module, path_t *path)
-/*[clinic end generated code: output=109ad77ec747b3b7 input=3937a93631697d6c]*/
+/*[clinic end generated code: output=109ad77ec747b3b7 input=80bd45abdecb418e]*/
 {
     HANDLE hfile;
     BOOL close_file = TRUE;
@@ -5410,12 +5402,8 @@ os__path_islink_impl(PyObject *module, path_t *path)
     BOOL slow_path = TRUE;
     FILE_STAT_BASIC_INFORMATION statInfo;
 
-    if (path->error) {
-        if (PyErr_ExceptionMatches(PyExc_ValueError)) {
-            PyErr_Clear();
-            Py_RETURN_FALSE;
-        }
-        return NULL;
+    if (path->value_error) {
+        Py_RETURN_FALSE;
     }
 
     Py_BEGIN_ALLOW_THREADS
