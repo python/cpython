@@ -437,7 +437,7 @@ Modules/_tkinter.c	-	trbInCmd	-
 ## initialized once
 
 ## other
-Include/datetime.h	-	_pydatetimeapi_main	-
+Include/datetime.h	-	_PyDateTimeAPI_Get	-
 Modules/_ctypes/cfield.c	_ctypes_get_fielddesc	initialized	-
 Modules/_ctypes/malloc_closure.c	-	_pagesize	-
 Modules/_cursesmodule.c	-	initialised	-
@@ -455,6 +455,7 @@ Modules/readline.c	-	libedit_history_start	-
 Modules/_ctypes/cfield.c	-	formattable	-
 Modules/_ctypes/malloc_closure.c	-	free_list	-
 Modules/_curses_panel.c	-	lop	-
+Modules/_datetimemodule.c	-	apicache	-
 Modules/_ssl/debughelpers.c	_PySSL_keylog_callback	lock	-
 Modules/_tkinter.c	-	quitMainLoop	-
 Modules/_tkinter.c	-	errorInCmd	-

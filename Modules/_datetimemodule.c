@@ -108,6 +108,50 @@ find_state_left_or_right(PyObject *left, PyObject *right)
 
 #define find_module_state_by_def(obj) find_module_state_by_def((PyTypeObject *)(obj))
 
+typedef struct {
+    PyInterpreterState *interp;
+    PyDateTime_CAPI *capi;
+} CAPI_Cache;
+
+static CAPI_Cache apicache[2];
+
+static inline void
+set_datetime_capi_by_interp(PyDateTime_CAPI *capi)
+{
+    PyInterpreterState *interp = PyInterpreterState_Get();
+    int i = interp == PyInterpreterState_Main() ? 0 : 1;
+    apicache[i].interp = interp;
+    apicache[i].capi = capi;
+}
+
+static PyDateTime_CAPI *
+_PyDateTimeAPI_Get(void)
+{
+    PyInterpreterState *interp = PyInterpreterState_Get();
+    for (int i = 0; i < 2; i++) {
+        if (apicache[i].interp == interp) {
+            return apicache[i].capi;
+        }
+    }
+    PyDateTime_CAPI *capi = PyCapsule_Import(PyDateTime_CAPSULE_NAME, 0);
+    if (capi) {
+        set_datetime_capi_by_interp(capi);
+    }
+    return capi;
+}
+
+static void *
+_PyDateTimeAPI_Import(void)
+{
+    PyDateTime_CAPI *capi = PyCapsule_Import(PyDateTime_CAPSULE_NAME, 0);
+    if (capi) {
+        // PyInit__datetime() is not called when the module is already loaded
+        // with single-phase init.
+        set_datetime_capi_by_interp(capi);
+        return _PyDateTimeAPI_Get;
+    }
+    return NULL;
+}
 
 /* We require that C int be at least 32 bits, and use int virtually
  * everywhere.  In just a few cases we use a temp long, where a Python
@@ -7088,6 +7132,20 @@ _datetime_exec(PyObject *module)
         PyMem_Free(capi);
         goto error;
     }
+
+    capsule = PyCapsule_New(_PyDateTimeAPI_Import,
+                            PyDateTime_INTERNAL_CAPSULE_NAME, NULL);
+    if (capsule == NULL) {
+        PyMem_Free(capi);
+        goto error;
+    }
+    if (PyModule_Add(module, "datetime_CAPI_INTERNAL", capsule) < 0) {
+        PyMem_Free(capi);
+        goto error;
+    }
+
+    /* Ensure that the newest capi is used on multi-phase init */
+    set_datetime_capi_by_interp(capi);
 
     /* A 4-year cycle has an extra leap day over what we'd get from
      * pasting together 4 single years.

@@ -591,6 +591,7 @@ Modules/_testmultiphase.c	-	slots_exec_unreported_exception	-
 Modules/_testmultiphase.c	-	slots_nonmodule_with_exec_slots	-
 Modules/_testmultiphase.c	-	testexport_methods	-
 Modules/_testmultiphase.c	-	uninitialized_def	-
+Modules/_testmultiphase.c	datetime_capi_import_with_error	is_datetime_multiphase	-
 Modules/_testsinglephase.c	-	global_state	-
 Modules/_xxtestfuzz/_xxtestfuzz.c	-	_fuzzmodule	-
 Modules/_xxtestfuzz/_xxtestfuzz.c	-	module_methods	-
