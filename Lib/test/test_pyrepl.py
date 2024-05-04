@@ -9,11 +9,14 @@ from unittest import TestCase
 from unittest.mock import MagicMock, patch
 
 from test.support import requires
+from test.support.import_helper import import_module
 
 # Optionally test pyrepl.  This currently requires that the
 # 'curses' resource be given on the regrtest command line using the -u
-# option.  If not available, nothing after this line will be executed.
+# option.  Additionally, we need to attempt to import curses and readline.
 requires('curses')
+curses = import_module('curses')
+readline = import_module('readline')
 
 from _pyrepl.console import Console, Event
 from _pyrepl.readline import ReadlineAlikeReader, ReadlineConfig
