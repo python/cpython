@@ -130,7 +130,7 @@ def _coerce_args(*args):
                 warnings.warn(
                     f"Providing false values other than strings or bytes "
                     f"to urllib.parse is deprecated: got {type(arg)}",
-                    DeprecationWarning, 3)
+                    DeprecationWarning, stacklevel=3)
     str_input = isinstance(args[0], str)
     for arg in args[1:]:
         # We special-case the empty string to support the
