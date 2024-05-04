@@ -18,6 +18,9 @@ from stat import S_ISDIR, S_ISLNK, S_ISREG, S_ISSOCK, S_ISBLK, S_ISCHR, S_ISFIFO
 
 from . import _glob
 
+
+__all__ = ["UnsupportedOperation"]
+
 #
 # Internals
 #
