@@ -499,4 +499,3 @@ def _setup() -> None:
 
 
 raw_input: Callable[[object], str] | None = None
-_setup()

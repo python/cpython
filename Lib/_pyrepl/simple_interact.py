@@ -84,6 +84,8 @@ def run_multiline_interactive_console(
 ) -> None:
     import code
     import __main__
+    from .readline import _setup
+    _setup()
 
     mainmodule = mainmodule or __main__
     console = InteractiveColoredConsole(mainmodule.__dict__, filename="<stdin>")
