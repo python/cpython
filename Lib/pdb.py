@@ -431,6 +431,8 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         if self.bp_commands(frame):
             self.interaction(frame, None)
 
+    user_opcode = user_line
+
     def bp_commands(self, frame):
         """Call every command that was set for the current active breakpoint
         (if there is one).
