@@ -14,7 +14,7 @@ import linecache
 from contextlib import ExitStack, redirect_stdout
 from io import StringIO
 from test import support
-from test.support import os_helper
+from test.support import force_not_colorized, os_helper
 from test.support.import_helper import import_module
 from test.support.pty_helper import run_pty, FakeInput
 from unittest.mock import patch
@@ -2918,6 +2918,7 @@ def bœr():
         self.assertNotIn(b'Error', stdout,
                          "Got an error running test script under PDB")
 
+    @force_not_colorized
     def test_issue16180(self):
         # A syntax error in the debuggee.
         script = "def f: pass\n"
