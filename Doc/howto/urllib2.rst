@@ -392,16 +392,16 @@ info and geturl
 ===============
 
 The response returned by urlopen (or the :exc:`~urllib.error.HTTPError` instance) has two
-useful methods :meth:`info` and :meth:`geturl` and is defined in the module
-:mod:`urllib.response`..
+useful methods :meth:`!info` and :meth:`!geturl` and is defined in the module
+:mod:`urllib.response`.
 
-**geturl** - this returns the real URL of the page fetched. This is useful
-because ``urlopen`` (or the opener object used) may have followed a
-redirect. The URL of the page fetched may not be the same as the URL requested.
+* **geturl** - this returns the real URL of the page fetched. This is useful
+  because ``urlopen`` (or the opener object used) may have followed a
+  redirect. The URL of the page fetched may not be the same as the URL requested.
 
-**info** - this returns a dictionary-like object that describes the page
-fetched, particularly the headers sent by the server. It is currently an
-:class:`http.client.HTTPMessage` instance.
+* **info** - this returns a dictionary-like object that describes the page
+  fetched, particularly the headers sent by the server. It is currently an
+  :class:`http.client.HTTPMessage` instance.
 
 Typical headers include 'Content-length', 'Content-type', and so on. See the
 `Quick Reference to HTTP Headers <https://jkorpela.fi/http.html>`_
@@ -507,7 +507,7 @@ than the URL you pass to .add_password() will also match. ::
 
     In the above example we only supplied our ``HTTPBasicAuthHandler`` to
     ``build_opener``. By default openers have the handlers for normal situations
-    -- ``ProxyHandler`` (if a proxy setting such as an :envvar:`http_proxy`
+    -- ``ProxyHandler`` (if a proxy setting such as an :envvar:`!http_proxy`
     environment variable is set), ``UnknownHandler``, ``HTTPHandler``,
     ``HTTPDefaultErrorHandler``, ``HTTPRedirectHandler``, ``FTPHandler``,
     ``FileHandler``, ``DataHandler``, ``HTTPErrorProcessor``.

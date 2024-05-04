@@ -75,9 +75,6 @@ following IDs are pre-defined to make co-operation of tools easier::
   sys.monitoring.PROFILER_ID = 2
   sys.monitoring.OPTIMIZER_ID = 5
 
-There is no obligation to set an ID, nor is there anything preventing a tool
-from using an ID even it is already in use.
-However, tools are encouraged to use a unique ID and respect other tools.
 
 Events
 ------
@@ -258,7 +255,10 @@ No events are active by default.
 Per code object events
 ''''''''''''''''''''''
 
-Events can also be controlled on a per code object basis.
+Events can also be controlled on a per code object basis. The functions
+defined below which accept a :class:`types.CodeType` should be prepared
+to accept a look-alike object from functions which are not defined
+in Python (see :ref:`monitoring`).
 
 .. function:: get_local_events(tool_id: int, code: CodeType, /) -> int
 

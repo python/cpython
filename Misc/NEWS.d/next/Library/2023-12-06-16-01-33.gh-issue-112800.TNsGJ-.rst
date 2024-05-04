@@ -1,2 +1,0 @@
-Fix :mod:`asyncio` ``SubprocessTransport.close()`` not to throw
-``PermissionError`` when used with setuid executables.

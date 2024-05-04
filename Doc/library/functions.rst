@@ -524,11 +524,22 @@ are always available.  They are listed here in alphabetical order.
 
 .. _func-eval:
 
-.. function:: eval(expression, globals=None, locals=None)
+.. function:: eval(source, /, globals=None, locals=None)
 
-   The arguments are a string and optional globals and locals.  If provided,
-   *globals* must be a dictionary.  If provided, *locals* can be any mapping
-   object.
+   :param source:
+      A Python expression.
+   :type source: :class:`str` | :ref:`code object <code-objects>`
+
+   :param globals:
+      The global namespace (default: ``None``).
+   :type globals: :class:`dict` | ``None``
+
+   :param locals:
+      The local namespace (default: ``None``).
+   :type locals: :term:`mapping` | ``None``
+
+   :returns: The result of the evaluated expression.
+   :raises: Syntax errors are reported as exceptions.
 
    The *expression* argument is parsed and evaluated as a Python expression
    (technically speaking, a condition list) using the *globals* and *locals*
@@ -545,8 +556,7 @@ are always available.  They are listed here in alphabetical order.
    :term:`nested scopes <nested scope>` (non-locals) in the enclosing
    environment.
 
-   The return value is the result of
-   the evaluated expression. Syntax errors are reported as exceptions.  Example:
+   Example:
 
       >>> x = 1
       >>> eval('x+1')
@@ -573,11 +583,15 @@ are always available.  They are listed here in alphabetical order.
       Raises an :ref:`auditing event <auditing>` ``exec`` with the code object
       as the argument. Code compilation events may also be raised.
 
+   .. versionchanged:: 3.13
+
+      The *globals* and *locals* arguments can now be passed as keywords.
+
 .. index:: pair: built-in function; exec
 
-.. function:: exec(object, globals=None, locals=None, /, *, closure=None)
+.. function:: exec(source, /, globals=None, locals=None, *, closure=None)
 
-   This function supports dynamic execution of Python code. *object* must be
+   This function supports dynamic execution of Python code. *source* must be
    either a string or a code object.  If it is a string, the string is parsed as
    a suite of Python statements which is then executed (unless a syntax error
    occurs). [#]_ If it is a code object, it is simply executed.  In all cases,
@@ -630,6 +644,10 @@ are always available.  They are listed here in alphabetical order.
    .. versionchanged:: 3.11
       Added the *closure* parameter.
 
+   .. versionchanged:: 3.13
+
+      The *globals* and *locals* arguments can now be passed as keywords.
+
 
 .. function:: filter(function, iterable)
 
@@ -668,16 +686,15 @@ are always available.  They are listed here in alphabetical order.
       sign: "+" | "-"
       infinity: "Infinity" | "inf"
       nan: "nan"
-      digitpart: `!digit` (["_"] `!digit`)*
+      digit: <a Unicode decimal digit, i.e. characters in Unicode general category Nd>
+      digitpart: `digit` (["_"] `digit`)*
       number: [`digitpart`] "." `digitpart` | `digitpart` ["."]
       exponent: ("e" | "E") ["+" | "-"] `digitpart`
       floatnumber: number [`exponent`]
       floatvalue: [`sign`] (`floatnumber` | `infinity` | `nan`)
 
-   Here ``digit`` is a Unicode decimal digit (character in the Unicode general
-   category ``Nd``). Case is not significant, so, for example, "inf", "Inf",
-   "INFINITY", and "iNfINity" are all acceptable spellings for positive
-   infinity.
+   Case is not significant, so, for example, "inf", "Inf", "INFINITY", and
+   "iNfINity" are all acceptable spellings for positive infinity.
 
    Otherwise, if the argument is an integer or a floating point number, a
    floating point number with the same value (within Python's floating point
@@ -1074,8 +1091,8 @@ are always available.  They are listed here in alphabetical order.
    such as ``sorted(iterable, key=keyfunc, reverse=True)[0]`` and
    ``heapq.nlargest(1, iterable, key=keyfunc)``.
 
-   .. versionadded:: 3.4
-      The *default* keyword-only argument.
+   .. versionchanged:: 3.4
+      Added the *default* keyword-only parameter.
 
    .. versionchanged:: 3.8
       The *key* can be ``None``.
@@ -1112,8 +1129,8 @@ are always available.  They are listed here in alphabetical order.
    such as ``sorted(iterable, key=keyfunc)[0]`` and ``heapq.nsmallest(1,
    iterable, key=keyfunc)``.
 
-   .. versionadded:: 3.4
-      The *default* keyword-only argument.
+   .. versionchanged:: 3.4
+      Added the *default* keyword-only parameter.
 
    .. versionchanged:: 3.8
       The *key* can be ``None``.
@@ -1570,6 +1587,16 @@ are always available.  They are listed here in alphabetical order.
    If :func:`sys.displayhook` is not accessible, this function will raise
    :exc:`RuntimeError`.
 
+   This class has a custom representation that can be evaluated::
+
+      class Person:
+         def __init__(self, name, age):
+            self.name = name
+            self.age = age
+
+         def __repr__(self):
+            return f"Person('{self.name}', {self.age})"
+
 
 .. function:: reversed(seq)
 
@@ -1714,8 +1741,9 @@ are always available.  They are listed here in alphabetical order.
    :ref:`function` for details.
 
    A static method can be called either on the class (such as ``C.f()``) or on
-   an instance (such as ``C().f()``). Moreover, they can be called as regular
-   functions (such as ``f()``).
+   an instance (such as ``C().f()``).
+   Moreover, the static method :term:`descriptor` is also callable, so it can
+   be used in the class definition (such as ``f()``).
 
    Static methods in Python are similar to those found in Java or C++. Also, see
    :func:`classmethod` for a variant that is useful for creating alternate class
