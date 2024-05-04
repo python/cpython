@@ -93,8 +93,8 @@ in :mod:`logging` itself) and defining handlers which are declared either in
 
    :param fname: A filename, or a file-like object, or an instance derived
                  from :class:`~configparser.RawConfigParser`. If a
-                 ``RawConfigParser``-derived instance is passed, it is used as
-                 is. Otherwise, a :class:`~configparser.Configparser` is
+                 :class:`!RawConfigParser`-derived instance is passed, it is used as
+                 is. Otherwise, a :class:`~configparser.ConfigParser` is
                  instantiated, and the configuration read by it from the
                  object passed in ``fname``. If that has a :meth:`readline`
                  method, it is assumed to be a file-like object and read using
@@ -103,7 +103,7 @@ in :mod:`logging` itself) and defining handlers which are declared either in
                  :meth:`~configparser.ConfigParser.read`.
 
 
-   :param defaults: Defaults to be passed to the ConfigParser can be specified
+   :param defaults: Defaults to be passed to the :class:`!ConfigParser` can be specified
                     in this argument.
 
    :param disable_existing_loggers: If specified as ``False``, loggers which
@@ -127,8 +127,8 @@ in :mod:`logging` itself) and defining handlers which are declared either in
         application (e.g. based on command-line parameters or other aspects
         of the runtime environment) before being passed to ``fileConfig``.
 
-    .. versionadded:: 3.10
-       The *encoding* parameter is added.
+    .. versionchanged:: 3.10
+       Added the *encoding* parameter.
 
     .. versionchanged:: 3.12
        An exception will be thrown if the provided file

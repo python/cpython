@@ -3673,7 +3673,7 @@ _curses_mousemask_impl(PyObject *module, unsigned long newmask)
 #endif
 
 /*[clinic input]
-_curses.napms
+_curses.napms -> int
 
     ms: int
         Duration in milliseconds.
@@ -3682,13 +3682,13 @@ _curses.napms
 Sleep for specified time.
 [clinic start generated code]*/
 
-static PyObject *
+static int
 _curses_napms_impl(PyObject *module, int ms)
-/*[clinic end generated code: output=a40a1da2e39ea438 input=20cd3af2b6900f56]*/
+/*[clinic end generated code: output=5f292a6a724491bd input=c6d6e01f2f1df9f7]*/
 {
     PyCursesInitialised;
 
-    return Py_BuildValue("i", napms(ms));
+    return napms(ms);
 }
 
 
@@ -4743,6 +4743,9 @@ PyInit__curses(void)
     m = PyModule_Create(&_cursesmodule);
     if (m == NULL)
         return NULL;
+#ifdef Py_GIL_DISABLED
+    PyModule_ExperimentalSetGIL(m, Py_MOD_GIL_NOT_USED);
+#endif
 
     /* Add some symbolic constants to the module */
     d = PyModule_GetDict(m);

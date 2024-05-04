@@ -1,0 +1,1 @@
+Fixed a possible segfault during garbage collection of ``_asyncio.FutureIter`` objects

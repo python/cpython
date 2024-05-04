@@ -2,6 +2,7 @@ import textwrap
 import types
 import typing
 import unittest
+import warnings
 
 
 def global_function():
@@ -69,6 +70,27 @@ class FunctionPropertiesTest(FuncAttrsTest):
         self.assertEqual(test(), None)
         test.__code__ = self.b.__code__
         self.assertEqual(test(), 3) # self.b always returns 3, arbitrarily
+
+    def test_invalid___code___assignment(self):
+        def A(): pass
+        def B(): yield
+        async def C(): yield
+        async def D(x): await x
+
+        for src in [A, B, C, D]:
+            for dst in [A, B, C, D]:
+                if src == dst:
+                    continue
+
+                assert src.__code__.co_flags != dst.__code__.co_flags
+                prev = dst.__code__
+                try:
+                    with self.assertWarnsRegex(DeprecationWarning, 'code object of non-matching type'):
+                        dst.__code__ = src.__code__
+                finally:
+                    with warnings.catch_warnings():
+                        warnings.filterwarnings('ignore', '', DeprecationWarning)
+                        dst.__code__ = prev
 
     def test___globals__(self):
         self.assertIs(self.b.__globals__, globals())

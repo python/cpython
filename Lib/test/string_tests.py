@@ -1503,19 +1503,19 @@ class StringLikeTest(BaseTest):
         # issue 11828
         s = 'hello'
         x = 'x'
-        self.assertRaisesRegex(TypeError, r'^find\(', s.find,
+        self.assertRaisesRegex(TypeError, r'^find\b', s.find,
                                 x, None, None, None)
-        self.assertRaisesRegex(TypeError, r'^rfind\(', s.rfind,
+        self.assertRaisesRegex(TypeError, r'^rfind\b', s.rfind,
                                 x, None, None, None)
-        self.assertRaisesRegex(TypeError, r'^index\(', s.index,
+        self.assertRaisesRegex(TypeError, r'^index\b', s.index,
                                 x, None, None, None)
-        self.assertRaisesRegex(TypeError, r'^rindex\(', s.rindex,
+        self.assertRaisesRegex(TypeError, r'^rindex\b', s.rindex,
                                 x, None, None, None)
-        self.assertRaisesRegex(TypeError, r'^count\(', s.count,
+        self.assertRaisesRegex(TypeError, r'^count\b', s.count,
                                 x, None, None, None)
-        self.assertRaisesRegex(TypeError, r'^startswith\(', s.startswith,
+        self.assertRaisesRegex(TypeError, r'^startswith\b', s.startswith,
                                 x, None, None, None)
-        self.assertRaisesRegex(TypeError, r'^endswith\(', s.endswith,
+        self.assertRaisesRegex(TypeError, r'^endswith\b', s.endswith,
                                 x, None, None, None)
 
         # issue #15534

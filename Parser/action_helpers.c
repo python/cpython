@@ -118,38 +118,8 @@ expr_ty
 _PyPegen_join_names_with_dot(Parser *p, expr_ty first_name, expr_ty second_name)
 {
     assert(first_name != NULL && second_name != NULL);
-    PyObject *first_identifier = first_name->v.Name.id;
-    PyObject *second_identifier = second_name->v.Name.id;
-
-    const char *first_str = PyUnicode_AsUTF8(first_identifier);
-    if (!first_str) {
-        return NULL;
-    }
-    const char *second_str = PyUnicode_AsUTF8(second_identifier);
-    if (!second_str) {
-        return NULL;
-    }
-    Py_ssize_t len = strlen(first_str) + strlen(second_str) + 1;  // +1 for the dot
-
-    PyObject *str = PyBytes_FromStringAndSize(NULL, len);
-    if (!str) {
-        return NULL;
-    }
-
-    char *s = PyBytes_AS_STRING(str);
-    if (!s) {
-        return NULL;
-    }
-
-    strcpy(s, first_str);
-    s += strlen(first_str);
-    *s++ = '.';
-    strcpy(s, second_str);
-    s += strlen(second_str);
-    *s = '\0';
-
-    PyObject *uni = PyUnicode_DecodeUTF8(PyBytes_AS_STRING(str), PyBytes_GET_SIZE(str), NULL);
-    Py_DECREF(str);
+    PyObject *uni = PyUnicode_FromFormat("%U.%U",
+            first_name->v.Name.id, second_name->v.Name.id);
     if (!uni) {
         return NULL;
     }
