@@ -1,1 +1,0 @@
-Fix :mod:`doctest` for :exc:`SyntaxError` not-builtin subclasses.

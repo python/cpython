@@ -34,7 +34,7 @@ class TestResults:
         self.test_times: list[tuple[float, TestName]] = []
         self.stats = TestStats()
         # used by --junit-xml
-        self.testsuite_xml: list[str] = []
+        self.testsuite_xml: list = []
         # used by -T with -j
         self.covered_lines: set[Location] = set()
 
@@ -117,6 +117,8 @@ class TestResults:
             self.worker_bug = True
 
         if result.has_meaningful_duration() and not rerun:
+            if result.duration is None:
+                raise ValueError("result.duration is None")
             self.test_times.append((result.duration, test_name))
         if result.stats is not None:
             self.stats.accumulate(result.stats)
@@ -136,7 +138,7 @@ class TestResults:
     def need_rerun(self):
         return bool(self.rerun_results)
 
-    def prepare_rerun(self) -> tuple[TestTuple, FilterDict]:
+    def prepare_rerun(self, *, clear: bool = True) -> tuple[TestTuple, FilterDict]:
         tests: TestList = []
         match_tests_dict = {}
         for result in self.rerun_results:
@@ -147,11 +149,12 @@ class TestResults:
             if match_tests:
                 match_tests_dict[result.test_name] = match_tests
 
-        # Clear previously failed tests
-        self.rerun_bad.extend(self.bad)
-        self.bad.clear()
-        self.env_changed.clear()
-        self.rerun_results.clear()
+        if clear:
+            # Clear previously failed tests
+            self.rerun_bad.extend(self.bad)
+            self.bad.clear()
+            self.env_changed.clear()
+            self.rerun_results.clear()
 
         return (tuple(tests), match_tests_dict)
 

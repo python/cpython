@@ -1,1 +1,0 @@
-WindowsConsoleIO now correctly chunks large buffers without splitting up UTF-8 sequences.

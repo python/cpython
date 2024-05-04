@@ -1,2 +1,0 @@
-Gathering line coverage of standard libraries within the regression test
-suite is now precise, as well as much faster. Patch by Łukasz Langa.

@@ -81,9 +81,27 @@
 /* PRE_DISPATCH_GOTO() does lltrace if enabled. Normally a no-op */
 #ifdef LLTRACE
 #define PRE_DISPATCH_GOTO() if (lltrace >= 5) { \
-    lltrace_instruction(frame, stack_pointer, next_instr); }
+    lltrace_instruction(frame, stack_pointer, next_instr, opcode, oparg); }
 #else
 #define PRE_DISPATCH_GOTO() ((void)0)
+#endif
+
+#if LLTRACE
+#define LLTRACE_RESUME_FRAME() \
+do { \
+    lltrace = maybe_lltrace_resume_frame(frame, &entry_frame, GLOBALS()); \
+    if (lltrace < 0) { \
+        goto exit_unwind; \
+    } \
+} while (0)
+#else
+#define LLTRACE_RESUME_FRAME() ((void)0)
+#endif
+
+#ifdef Py_GIL_DISABLED
+#define QSBR_QUIESCENT_STATE(tstate) _Py_qsbr_quiescent_state(((_PyThreadStateImpl *)tstate)->qsbr)
+#else
+#define QSBR_QUIESCENT_STATE(tstate)
 #endif
 
 
@@ -117,7 +135,8 @@
 
 #define CHECK_EVAL_BREAKER() \
     _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY(); \
-    if (_Py_atomic_load_uintptr_relaxed(&tstate->interp->ceval.eval_breaker) & _PY_EVAL_EVENTS_MASK) { \
+    QSBR_QUIESCENT_STATE(tstate); \
+    if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) { \
         if (_Py_HandlePending(tstate) != 0) { \
             GOTO_ERROR(error); \
         } \
@@ -143,7 +162,7 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 /* The integer overflow is checked by an assertion below. */
 #define INSTR_OFFSET() ((int)(next_instr - _PyCode_CODE(_PyFrame_GetCode(frame))))
 #define NEXTOPARG()  do { \
-        _Py_CODEUNIT word = *next_instr; \
+        _Py_CODEUNIT word  = {.cache = FT_ATOMIC_LOAD_UINT16_RELAXED(*(uint16_t*)next_instr)}; \
         opcode = word.op.code; \
         oparg = word.op.arg; \
     } while (0)
@@ -255,12 +274,8 @@ GETITEM(PyObject *v, Py_ssize_t i) {
         STAT_INC(opcode, miss);                                  \
         STAT_INC((INSTNAME), miss);                              \
         /* The counter is always the first cache entry: */       \
-        if (ADAPTIVE_COUNTER_IS_ZERO(next_instr->cache)) {       \
+        if (ADAPTIVE_COUNTER_TRIGGERS(next_instr->cache)) {       \
             STAT_INC((INSTNAME), deopt);                         \
-        }                                                        \
-        else {                                                   \
-            /* This is about to be (incorrectly) incremented: */ \
-            STAT_DEC((INSTNAME), deferred);                      \
         }                                                        \
     } while (0)
 #else
@@ -287,21 +302,28 @@ GETITEM(PyObject *v, Py_ssize_t i) {
         dtrace_function_entry(frame); \
     }
 
-#define ADAPTIVE_COUNTER_IS_ZERO(COUNTER) \
-    (((COUNTER) >> ADAPTIVE_BACKOFF_BITS) == 0)
+/* This takes a uint16_t instead of a _Py_BackoffCounter,
+ * because it is used directly on the cache entry in generated code,
+ * which is always an integral type. */
+#define ADAPTIVE_COUNTER_TRIGGERS(COUNTER) \
+    backoff_counter_triggers(forge_backoff_counter((COUNTER)))
 
-#define ADAPTIVE_COUNTER_IS_MAX(COUNTER) \
-    (((COUNTER) >> ADAPTIVE_BACKOFF_BITS) == ((1 << MAX_BACKOFF_VALUE) - 1))
-
-#define DECREMENT_ADAPTIVE_COUNTER(COUNTER)           \
-    do {                                              \
-        assert(!ADAPTIVE_COUNTER_IS_ZERO((COUNTER))); \
-        (COUNTER) -= (1 << ADAPTIVE_BACKOFF_BITS);    \
+#ifdef Py_GIL_DISABLED
+#define ADVANCE_ADAPTIVE_COUNTER(COUNTER) \
+    do { \
+        /* gh-115999 tracks progress on addressing this. */ \
+        static_assert(0, "The specializing interpreter is not yet thread-safe"); \
     } while (0);
+#else
+#define ADVANCE_ADAPTIVE_COUNTER(COUNTER) \
+    do { \
+        (COUNTER) = advance_backoff_counter((COUNTER)); \
+    } while (0);
+#endif
 
-#define INCREMENT_ADAPTIVE_COUNTER(COUNTER)          \
-    do {                                             \
-        (COUNTER) += (1 << ADAPTIVE_BACKOFF_BITS);   \
+#define PAUSE_ADAPTIVE_COUNTER(COUNTER) \
+    do { \
+        (COUNTER) = pause_backoff_counter((COUNTER)); \
     } while (0);
 
 #define UNBOUNDLOCAL_ERROR_MSG \
@@ -336,22 +358,19 @@ do { \
 // for an exception handler, displaying the traceback, and so on
 #define INSTRUMENTED_JUMP(src, dest, event) \
 do { \
-    _PyFrame_SetStackPointer(frame, stack_pointer); \
-    next_instr = _Py_call_instrumentation_jump(tstate, event, frame, src, dest); \
-    stack_pointer = _PyFrame_GetStackPointer(frame); \
-    if (next_instr == NULL) { \
-        next_instr = (dest)+1; \
-        goto error; \
+    if (tstate->tracing) {\
+        next_instr = dest; \
+    } else { \
+        _PyFrame_SetStackPointer(frame, stack_pointer); \
+        next_instr = _Py_call_instrumentation_jump(tstate, event, frame, src, dest); \
+        stack_pointer = _PyFrame_GetStackPointer(frame); \
+        if (next_instr == NULL) { \
+            next_instr = (dest)+1; \
+            goto error; \
+        } \
     } \
 } while (0);
 
-typedef PyObject *(*convertion_func_ptr)(PyObject *);
-
-static const convertion_func_ptr CONVERSION_FUNCTIONS[4] = {
-    [FVC_STR] = PyObject_Str,
-    [FVC_REPR] = PyObject_Repr,
-    [FVC_ASCII] = PyObject_ASCII
-};
 
 // GH-89279: Force inlining by using a macro.
 #if defined(_MSC_VER) && SIZEOF_INT == 4
@@ -369,12 +388,6 @@ static inline void _Py_LeaveRecursiveCallPy(PyThreadState *tstate)  {
     tstate->py_recursion_remaining++;
 }
 
-/* Marker to specify tier 1 only instructions */
-#define TIER_ONE_ONLY
-
-/* Marker to specify tier 2 only instructions */
-#define TIER_TWO_ONLY
-
 /* Implementation of "macros" that modify the instruction pointer,
  * stack pointer, or frame pointer.
  * These need to treated differently by tier 1 and 2.
@@ -386,14 +399,51 @@ static inline void _Py_LeaveRecursiveCallPy(PyThreadState *tstate)  {
 
 /* There's no STORE_IP(), it's inlined by the code generator. */
 
-#define STORE_SP() \
-_PyFrame_SetStackPointer(frame, stack_pointer)
-
 #define LOAD_SP() \
 stack_pointer = _PyFrame_GetStackPointer(frame);
 
 /* Tier-switching macros. */
 
-#define GOTO_TIER_TWO() goto enter_tier_two;
+#ifdef _Py_JIT
+#define GOTO_TIER_TWO(EXECUTOR)                        \
+do {                                                   \
+    OPT_STAT_INC(traces_executed);                     \
+    jit_func jitted = (EXECUTOR)->jit_code;            \
+    next_instr = jitted(frame, stack_pointer, tstate); \
+    Py_DECREF(tstate->previous_executor);              \
+    tstate->previous_executor = NULL;                  \
+    frame = tstate->current_frame;                     \
+    if (next_instr == NULL) {                          \
+        goto resume_with_error;                        \
+    }                                                  \
+    stack_pointer = _PyFrame_GetStackPointer(frame);   \
+    DISPATCH();                                        \
+} while (0)
+#else
+#define GOTO_TIER_TWO(EXECUTOR) \
+do { \
+    OPT_STAT_INC(traces_executed); \
+    next_uop = (EXECUTOR)->trace; \
+    assert(next_uop->opcode == _START_EXECUTOR || next_uop->opcode == _COLD_EXIT); \
+    goto enter_tier_two; \
+} while (0)
+#endif
 
-#define GOTO_TIER_ONE() goto exit_trace;
+#define GOTO_TIER_ONE(TARGET) \
+do { \
+    Py_DECREF(tstate->previous_executor); \
+    tstate->previous_executor = NULL;  \
+    next_instr = target; \
+    DISPATCH(); \
+} while (0)
+
+#define CURRENT_OPARG() (next_uop[-1].oparg)
+
+#define CURRENT_OPERAND() (next_uop[-1].operand)
+
+#define JUMP_TO_JUMP_TARGET() goto jump_to_jump_target
+#define JUMP_TO_ERROR() goto jump_to_error_target
+#define GOTO_UNWIND() goto error_tier_two
+#define EXIT_TO_TRACE() goto exit_to_trace
+#define EXIT_TO_TIER1() goto exit_to_tier1
+#define EXIT_TO_TIER1_DYNAMIC() goto exit_to_tier1_dynamic;

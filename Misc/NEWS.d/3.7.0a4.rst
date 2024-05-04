@@ -152,7 +152,7 @@ option or the ``PYTHONWARNINGS`` environment variable.
 .. nonce: PgGQaB
 .. section: Core and Builtins
 
-`-X dev` now injects a ``'default'`` entry into sys.warnoptions, ensuring
+``-X dev`` now injects a ``'default'`` entry into sys.warnoptions, ensuring
 that it behaves identically to actually passing ``-Wdefault`` at the command
 line.
 
@@ -192,7 +192,7 @@ by Ivan Levkivskyi.
 .. nonce: mDeCLK
 .. section: Core and Builtins
 
-The `atexit` module now has its callback stored per interpreter.
+The ``atexit`` module now has its callback stored per interpreter.
 
 ..
 
@@ -792,7 +792,7 @@ to more readily adjust to platform dependent behaviour.
 .. nonce: ODpc9y
 .. section: Windows
 
-Implement support for `subprocess.Popen(close_fds=True)` on Windows. Patch
+Implement support for ``subprocess.Popen(close_fds=True)`` on Windows. Patch
 by Segev Finer.
 
 ..

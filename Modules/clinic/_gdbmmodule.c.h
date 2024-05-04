@@ -106,7 +106,7 @@ _gdbm_gdbm_keys_impl(gdbmobject *self, PyTypeObject *cls);
 static PyObject *
 _gdbm_gdbm_keys(gdbmobject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    if (nargs) {
+    if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "keys() takes no arguments");
         return NULL;
     }
@@ -132,7 +132,7 @@ _gdbm_gdbm_firstkey_impl(gdbmobject *self, PyTypeObject *cls);
 static PyObject *
 _gdbm_gdbm_firstkey(gdbmobject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    if (nargs) {
+    if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "firstkey() takes no arguments");
         return NULL;
     }
@@ -211,7 +211,7 @@ _gdbm_gdbm_reorganize_impl(gdbmobject *self, PyTypeObject *cls);
 static PyObject *
 _gdbm_gdbm_reorganize(gdbmobject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    if (nargs) {
+    if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "reorganize() takes no arguments");
         return NULL;
     }
@@ -236,7 +236,7 @@ _gdbm_gdbm_sync_impl(gdbmobject *self, PyTypeObject *cls);
 static PyObject *
 _gdbm_gdbm_sync(gdbmobject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    if (nargs) {
+    if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "sync() takes no arguments");
         return NULL;
     }
@@ -258,7 +258,7 @@ _gdbm_gdbm_clear_impl(gdbmobject *self, PyTypeObject *cls);
 static PyObject *
 _gdbm_gdbm_clear(gdbmobject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    if (nargs) {
+    if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "clear() takes no arguments");
         return NULL;
     }
@@ -340,4 +340,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=c5ee922363d5a81f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=6b4c19905ac9967d input=a9049054013a1b77]*/

@@ -9,8 +9,8 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
+#include "pycore_lock.h"          // PyMutex
 #include "pycore_hashtable.h"     // _Py_hashtable_t
-#include "pycore_time.h"          // _PyTime_t
 
 extern int _PyImport_IsInitialized(PyInterpreterState *);
 
@@ -22,13 +22,13 @@ extern int _PyImport_SetModuleString(const char *name, PyObject* module);
 extern void _PyImport_AcquireLock(PyInterpreterState *interp);
 extern int _PyImport_ReleaseLock(PyInterpreterState *interp);
 
+// This is used exclusively for the sys and builtins modules:
 extern int _PyImport_FixupBuiltin(
+    PyThreadState *tstate,
     PyObject *mod,
     const char *name,            /* UTF-8 encoded string */
     PyObject *modules
     );
-extern int _PyImport_FixupExtensionObject(PyObject*, PyObject *,
-                                          PyObject *, PyObject *);
 
 // Export for many shared extensions, like '_json'
 PyAPI_FUNC(PyObject*) _PyImport_GetModuleAttr(PyObject *, PyObject *);
@@ -47,12 +47,12 @@ struct _import_runtime_state {
     Py_ssize_t last_module_index;
     struct {
         /* A lock to guard the cache. */
-        PyThread_type_lock mutex;
+        PyMutex mutex;
         /* The actual cache of (filename, name, PyModuleDef) for modules.
            Only legacy (single-phase init) extension modules are added
            and only if they support multiple initialization (m_size >- 0)
            or are imported in the main interpreter.
-           This is initialized lazily in _PyImport_FixupExtensionObject().
+           This is initialized lazily in fix_up_extension() in import.c.
            Modules are added there and looked up in _imp.find_extension(). */
         _Py_hashtable_t *hashtable;
     } extensions;
@@ -102,7 +102,7 @@ struct _import_state {
     /* diagnostic info in PyImport_ImportModuleLevelObject() */
     struct {
         int import_level;
-        _PyTime_t accumulated;
+        PyTime_t accumulated;
         int header;
     } find_and_load;
 };
