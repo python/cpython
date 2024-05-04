@@ -840,7 +840,7 @@ dis_loop_test_quickened_code = """\
 
 %3d           LOAD_GLOBAL_MODULE       1 (load_test + NULL)
               LOAD_FAST                0 (i)
-              CALL_PY_WITH_DEFAULTS    1
+              CALL_PY_GENERAL          1
               POP_TOP
               JUMP_BACKWARD           16 (to L1)
 

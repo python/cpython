@@ -629,6 +629,15 @@ dummy_func(void) {
                              frame_new(ctx, co, localsplus_start, n_locals_already_filled, 0));
     }
 
+    op(_PY_FRAME_GENERAL, (callable, self_or_null, args[oparg] -- new_frame: _Py_UOpsAbstractFrame *)) {
+        /* The _Py_UOpsAbstractFrame design assumes that we can copy arguments across directly */
+        (void)callable;
+        (void)self_or_null;
+        (void)args;
+        first_valid_check_stack = NULL;
+        goto done;
+    }
+
     op(_POP_FRAME, (retval -- res)) {
         SYNC_SP();
         ctx->frame->stack_pointer = stack_pointer;
@@ -718,7 +727,7 @@ dummy_func(void) {
         if (first_valid_check_stack == NULL) {
             first_valid_check_stack = corresponding_check_stack;
         }
-        else {
+        else if (corresponding_check_stack) {
             // delete all but the first valid _CHECK_STACK_SPACE
             corresponding_check_stack->opcode = _NOP;
         }

@@ -987,6 +987,7 @@ static void make_exit(_PyUOpInstruction *inst, int opcode, int target)
 {
     inst->opcode = opcode;
     inst->oparg = 0;
+    inst->operand = 0;
     inst->format = UOP_FORMAT_TARGET;
     inst->target = target;
 }
