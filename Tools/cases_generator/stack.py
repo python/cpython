@@ -162,7 +162,8 @@ class Stack:
                 self.defined.add(var.name)
                 res = [f"{var.name} = {popped.name};\n"]
                 if not var.type:
-                    res.append(f"{var.name}_stackref = PyStackRef_StealRef({popped.name});\n")
+                    # If it's a peek, pass the stackref through directly so we don't lose information.
+                    res.append(f"{var.name}_stackref = {popped.name}_stackref;\n")
                 return tuple(res)
         self.base_offset.pop(var)
         if var.name in UNUSED:

@@ -1092,9 +1092,9 @@
             }
             // _CHECK_FUNCTION_EXACT_ARGS
             self_or_null = self;
-            self_or_null_stackref = PyStackRef_StealRef(self);
+            self_or_null_stackref = self_stackref;
             callable = func;
-            callable_stackref = PyStackRef_StealRef(func);
+            callable_stackref = func_stackref;
             {
                 uint32_t func_version = read_u32(&this_instr[2].cache);
                 DEOPT_IF(!PyFunction_Check(callable), CALL);
@@ -5438,7 +5438,7 @@
             }
             // _POP_JUMP_IF_TRUE
             cond = b;
-            cond_stackref = PyStackRef_StealRef(b);
+            cond_stackref = b_stackref;
             {
                 (void)cond_stackref;
                 assert(PyBool_Check(cond));
@@ -5479,7 +5479,7 @@
             }
             // _POP_JUMP_IF_FALSE
             cond = b;
-            cond_stackref = PyStackRef_StealRef(b);
+            cond_stackref = b_stackref;
             {
                 (void)cond_stackref;
                 assert(PyBool_Check(cond));
@@ -6507,7 +6507,7 @@
             }
             // _REPLACE_WITH_TRUE
             value = owner;
-            value_stackref = PyStackRef_StealRef(owner);
+            value_stackref = owner_stackref;
             {
                 (void)value;
                 PyStackRef_DECREF(value_stackref);
