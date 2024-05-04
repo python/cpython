@@ -1096,10 +1096,9 @@ get_posix_state(PyObject *module)
  *     string we extract the wchar_t * and return it; if we
  *     get bytes we decode to wchar_t * and return that.
  *
- *   * If path.make_wide is zero, strings are encoded
- *     to bytes using PyUnicode_FSConverter, then we
- *     extract the char * from the bytes object and
- *     return that.
+ *   * If path.make_wide is zero, if we get bytes we extract
+ *     the char_t * and return it; if we get a (Unicode)
+ *     string we encode to char_t * and return that.
  *
  * path_converter also optionally accepts signed
  * integers (representing open file descriptors) instead
@@ -1318,7 +1317,8 @@ path_converter(PyObject *o, void *p)
             wide = NULL;
             goto success_exit;
         }
-        if (!_PyUnicode_FSConverter(o, &bytes, path->nonstrict)) {
+        bytes = PyUnicode_EncodeFSDefault(o);
+        if (!bytes) {
             goto error_exit;
         }
     }
