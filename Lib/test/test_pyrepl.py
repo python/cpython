@@ -9,6 +9,13 @@ from functools import partial
 from unittest import TestCase
 from unittest.mock import MagicMock, patch
 
+from test.support import requires
+
+# Optionally test pyrepl.  This currently requires that the
+# 'curses' resource be given on the regrtest command line using the -u
+# option.  If not available, nothing after this line will be executed.
+requires('curses')
+
 from _pyrepl.console import Console, Event
 from _pyrepl.readline import ReadlineAlikeReader, ReadlineConfig
 from _pyrepl.simple_interact import _strip_final_indent
