@@ -1108,8 +1108,9 @@ get_posix_state(PyObject *module)
  * Input fields:
  *   path.nullable
  *     If nonzero, the path is permitted to be None.
- *   path.null_embeddable
- *     If nonzero, the path is permitted to contain embedded null characters.
+ *   path.nonstrict
+ *     If nonzero, the path is permitted to contain
+ *     embedded null characters and have any length.
  *   path.make_wide
  *     If nonzero, the path is decoded to Unicode, encoded to bytes otherwise.
  *   path.suppress
@@ -1180,7 +1181,7 @@ typedef struct {
     const char *function_name;
     const char *argument_name;
     int nullable;
-    int null_embeddable;
+    int nonstrict;
     int make_wide;
     int suppress;
     int allow_fd;
@@ -1194,20 +1195,20 @@ typedef struct {
     PyObject *cleanup;
 } path_t;
 
-#define PATH_T_INITIALIZE(function_name, argument_name, nullable, \
-                          null_embeddable, make_wide, suppress, allow_fd) \
-    {function_name, argument_name, nullable, null_embeddable, make_wide, \
-     suppress, allow_fd, NULL, NULL, -1, 0, 0, NULL, NULL}
+#define PATH_T_INITIALIZE(function_name, argument_name, nullable, nonstrict, \
+                          make_wide, suppress, allow_fd) \
+    {function_name, argument_name, nullable, nonstrict, make_wide, suppress, \
+     allow_fd, NULL, NULL, -1, 0, 0, NULL, NULL}
 #ifdef MS_WINDOWS
 #define PATH_T_INITIALIZE_P(function_name, argument_name, nullable, \
-                            null_embeddable, suppress, allow_fd) \
-    PATH_T_INITIALIZE(function_name, argument_name, nullable, \
-                      null_embeddable, 1, suppress, allow_fd)
+                            nonstrict, suppress, allow_fd) \
+    PATH_T_INITIALIZE(function_name, argument_name, nullable, nonstrict, 1, \
+                      suppress, allow_fd)
 #else
 #define PATH_T_INITIALIZE_P(function_name, argument_name, nullable, \
-                            null_embeddable, suppress, allow_fd) \
-    PATH_T_INITIALIZE(function_name, argument_name, nullable, \
-                      null_embeddable, 0, suppress, allow_fd)
+                            nonstrict, suppress, allow_fd) \
+    PATH_T_INITIALIZE(function_name, argument_name, nullable, nonstrict, 0, \
+                      suppress, allow_fd)
 #endif
 
 static void
@@ -1300,12 +1301,12 @@ path_converter(PyObject *o, void *p)
                 goto error_exit;
             }
 #ifdef MS_WINDOWS
-            if (length > 32767) {
+            if (!path->nonstrict && length > 32767) {
                 FORMAT_EXCEPTION(PyExc_ValueError, "%s too long for Windows");
                 goto error_exit;
             }
 #endif
-            if (!path->null_embeddable && wcslen(wide) != (size_t)length) {
+            if (!path->nonstrict && wcslen(wide) != (size_t)length) {
                 FORMAT_EXCEPTION(PyExc_ValueError,
                                  "embedded null character in %s");
                 goto error_exit;
@@ -1317,7 +1318,7 @@ path_converter(PyObject *o, void *p)
             wide = NULL;
             goto success_exit;
         }
-        if (!_PyUnicode_FSConverter(o, &bytes, path->null_embeddable)) {
+        if (!_PyUnicode_FSConverter(o, &bytes, path->nonstrict)) {
             goto error_exit;
         }
     }
@@ -1349,7 +1350,7 @@ path_converter(PyObject *o, void *p)
 
     length = PyBytes_GET_SIZE(bytes);
     narrow = PyBytes_AS_STRING(bytes);
-    if (!path->null_embeddable && strlen(narrow) != (size_t)length) {
+    if (!path->nonstrict && strlen(narrow) != (size_t)length) {
         FORMAT_EXCEPTION(PyExc_ValueError, "embedded null character in %s");
         goto error_exit;
     }
@@ -1366,12 +1367,12 @@ path_converter(PyObject *o, void *p)
             goto error_exit;
         }
 #ifdef MS_WINDOWS
-        if (length > 32767) {
+        if (!path->nonstrict && length > 32767) {
             FORMAT_EXCEPTION(PyExc_ValueError, "%s too long for Windows");
             goto error_exit;
         }
 #endif
-        if (!path->null_embeddable && wcslen(wide) != (size_t)length) {
+        if (!path->nonstrict && wcslen(wide) != (size_t)length) {
             FORMAT_EXCEPTION(PyExc_ValueError,
                              "embedded null character in %s");
             goto error_exit;
@@ -2928,8 +2929,8 @@ class path_t_converter(CConverter):
 
     converter = 'path_converter'
 
-    def converter_init(self, *, allow_fd=False, make_wide=None, nullable=False,
-                       null_embeddable=False, suppress=False):
+    def converter_init(self, *, allow_fd=False, make_wide=None,
+                       nonstrict=False, nullable=False, suppress=False):
         # right now path_t doesn't support default values.
         # to support a default value, you'll need to override initialize().
         if self.default not in (unspecified, None):
@@ -2939,7 +2940,7 @@ class path_t_converter(CConverter):
             raise RuntimeError("Can't specify a c_default to the path_t converter!")
 
         self.nullable = nullable
-        self.null_embeddable = null_embeddable
+        self.nonstrict = nonstrict
         self.make_wide = make_wide
         self.suppress = suppress
         self.allow_fd = allow_fd
@@ -2956,7 +2957,7 @@ class path_t_converter(CConverter):
                 self.function.name,
                 self.name,
                 strify(self.nullable),
-                strify(self.null_embeddable),
+                strify(self.nonstrict),
                 strify(self.suppress),
                 strify(self.allow_fd),
             )
@@ -2965,7 +2966,7 @@ class path_t_converter(CConverter):
                 self.function.name,
                 self.name,
                 strify(self.nullable),
-                strify(self.null_embeddable),
+                strify(self.nonstrict),
                 strify(self.make_wide),
                 strify(self.suppress),
                 strify(self.allow_fd),
@@ -3048,7 +3049,7 @@ class sysconf_confname_converter(path_confname_converter):
     converter="conv_sysconf_confname"
 
 [python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=9bfc716d9f7ad345]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=e859625395de8933]*/
 
 /*[clinic input]
 
@@ -5492,7 +5493,7 @@ os__path_islink_impl(PyObject *module, path_t *path)
 /*[clinic input]
 os._path_splitroot_ex
 
-    path: path_t(null_embeddable=True, make_wide=True)
+    path: path_t(make_wide=True, nonstrict=True)
 
 Split a pathname into drive, root and tail.
 
@@ -5501,7 +5502,7 @@ The tail contains anything after the root.
 
 static PyObject *
 os__path_splitroot_ex_impl(PyObject *module, path_t *path)
-/*[clinic end generated code: output=4b0072b6cdf4b611 input=fa388b51979a2f57]*/
+/*[clinic end generated code: output=4b0072b6cdf4b611 input=8f29a719fd480028]*/
 {
     Py_ssize_t drvsize, rootsize;
     PyObject *drv = NULL, *root = NULL, *tail = NULL, *result = NULL;
@@ -5538,14 +5539,14 @@ exit:
 /*[clinic input]
 os._path_normpath
 
-    path: path_t(null_embeddable=True, make_wide=True)
+    path: path_t(make_wide=True, nonstrict=True)
 
 Normalize path, eliminating double slashes, etc.
 [clinic start generated code]*/
 
 static PyObject *
 os__path_normpath_impl(PyObject *module, path_t *path)
-/*[clinic end generated code: output=d353e7ed9410c044 input=4842c54b2fbdfc83]*/
+/*[clinic end generated code: output=d353e7ed9410c044 input=b8d62d498aa0a8db]*/
 {
     PyObject *result;
     Py_ssize_t norm_len;
