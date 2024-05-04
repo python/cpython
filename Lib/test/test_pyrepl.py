@@ -870,16 +870,6 @@ class TestReader(TestCase):
         reader, _ = handle_events_narrow_console(events)
         self.assert_screen_equals(reader, 9 * "a")
 
-    def test_calc_screen_wrap_removes_after_backspace(self):
-        events = itertools.chain(
-            code_to_events(10 * "a"),
-            [
-                Event(evt="key", data="backspace", raw=bytearray(b"\x7f")),
-            ],
-        )
-        reader, _ = handle_events_narrow_console(events)
-        self.assert_screen_equals(reader, 9 * "a")
-
     def test_calc_screen_backspace_in_second_line_after_wrap(self):
         events = itertools.chain(
             code_to_events(11 * "a"),
