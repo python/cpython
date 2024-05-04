@@ -44,6 +44,10 @@ class Command:
     kills_digit_arg: bool = True
 
     def __init__(self, reader: HistoricalReader, event_name: str, event: str) -> None:
+        # Reader should really be "any reader" but there's too much usage of
+        # HistoricalReader methods and fields in the code below for us to
+        # refactor at the moment.
+
         self.reader = reader
         self.event = event
         self.event_name = event_name
@@ -137,7 +141,7 @@ class refresh(Command):
 class repaint(Command):
     def do(self) -> None:
         self.reader.dirty = True
-        self.reader.console.repaint_prep()
+        self.reader.console.repaint()
 
 
 class kill_line(KillCommand):
@@ -227,7 +231,7 @@ class suspend(Command):
         ## in a handler for SIGCONT?
         r.console.prepare()
         r.pos = p
-        r.posxy = 0, 0  # XXX this is invalid
+        # r.posxy = 0, 0  # XXX this is invalid
         r.dirty = True
         r.console.screen = []
 

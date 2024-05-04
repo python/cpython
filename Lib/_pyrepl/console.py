@@ -17,24 +17,24 @@
 # CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
 # CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
-import dataclasses
+from dataclasses import dataclass, field
 
 
-@dataclasses.dataclass
+@dataclass
 class Event:
     evt: str
     data: str
     raw: bytes = b""
 
 
+@dataclass
 class Console(ABC):
-    """Attributes:
-
-    screen,
-    height,
-    width,
-    """
+    screen: list[str] = field(default_factory=list)
+    height: int = 25
+    width: int = 80
 
     @abstractmethod
     def refresh(self, screen: list[str], xy: tuple[int, int]) -> None: ...
@@ -58,14 +58,14 @@ class Console(ABC):
         ...
 
     @abstractmethod
-    def get_event(self, block: bool = True) -> Event:
+    def get_event(self, block: bool = True) -> Event | None:
         """Return an Event instance.  Returns None if |block| is false
         and there is no event pending, otherwise waits for the
         completion of an event."""
         ...
 
     @abstractmethod
-    def push_char(self, char: str) -> None:
+    def push_char(self, char: int | bytes) -> None:
         """
         Push a character to the console event queue.
         """
@@ -105,4 +105,8 @@ class Console(ABC):
     @abstractmethod
     def wait(self) -> None:
         """Wait for an event."""
+        ...
+
+    @abstractmethod
+    def repaint(self) -> None:
         ...

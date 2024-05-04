@@ -18,17 +18,14 @@
 # CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
 # CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
-# If we are running on top of pypy, we import only _minimal_curses.
-# Don't try to fall back to _curses, because that's going to use cffi
-# and fall again more loudly.
 
 try:
     import _curses
 except ImportError:
     try:
-        import curses as _curses
+        import curses as _curses  # type: ignore[no-redef]
     except ImportError:
-        import _curses
+        from . import _minimal_curses as _curses  # type: ignore[no-redef]
 
 setupterm = _curses.setupterm
 tigetstr = _curses.tigetstr

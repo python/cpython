@@ -19,6 +19,8 @@
 # CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
 # CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
+from __future__ import annotations
+
 import errno
 import os
 import re
@@ -38,6 +40,11 @@ from .unix_eventqueue import EventQueue
 from .utils import wlen
 
 
+# types
+if False:
+    from typing import IO
+
+
 class InvalidTerminal(RuntimeError):
     pass
 
@@ -54,7 +61,7 @@ TIOCGWINSZ = getattr(termios, "TIOCGWINSZ", None)
 # Add (possibly) missing baudrates (check termios man page) to termios
 
 
-def add_supported_baudrates(dictionary, rate):
+def add_baudrate_if_supported(dictionary: dict[int, int], rate: int) -> None:
     baudrate_name = "B%d" % rate
     if hasattr(termios, baudrate_name):
         dictionary[getattr(termios, baudrate_name)] = rate
@@ -62,7 +69,7 @@ def add_supported_baudrates(dictionary, rate):
 
 # Check the termios man page (Line speed) to know where these
 # values come from.
-supported_baudrates = [
+potential_baudrates = [
     0,
     110,
     115200,
@@ -85,19 +92,19 @@ supported_baudrates = [
     9600,
 ]
 
-ratedict = {}
-for rate in supported_baudrates:
-    add_supported_baudrates(ratedict, rate)
+ratedict: dict[int, int] = {}
+for rate in potential_baudrates:
+    add_baudrate_if_supported(ratedict, rate)
 
 # Clean up variables to avoid unintended usage
-del rate, add_supported_baudrates
+del rate, add_baudrate_if_supported
 
 # ------------ end of baudrate definitions ------------
 
 delayprog = re.compile(b"\\$<([0-9]+)((?:/|\\*){0,2})>")
 
 try:
-    poll = select.poll
+    poll: type[select.poll] = select.poll
 except AttributeError:
     # this is exactly the minumum necessary to support what we
     # do with poll objects
@@ -112,14 +119,17 @@ except AttributeError:
             r, w, e = select.select([self.fd], [], [])
             return r
 
-    poll = MinimalPoll
-
-
-POLLIN = getattr(select, "POLLIN", None)
+    poll = MinimalPoll  # type: ignore[assignment]
 
 
 class UnixConsole(Console):
-    def __init__(self, f_in=0, f_out=1, term=None, encoding=None):
+    def __init__(
+        self,
+        f_in: IO[bytes] | int = 0,
+        f_out: IO[bytes] | int = 1,
+        term: str = "",
+        encoding: str = "",
+    ):
         """
         Initialize the UnixConsole.
 
@@ -129,10 +139,8 @@ class UnixConsole(Console):
         - term (str): Terminal name.
         - encoding (str): Encoding to use for I/O operations.
         """
-        if encoding is None:
-            encoding = sys.getdefaultencoding()
 
-        self.encoding = encoding
+        self.encoding = encoding or sys.getdefaultencoding()
 
         if isinstance(f_in, int):
             self.input_fd = f_in
@@ -145,8 +153,8 @@ class UnixConsole(Console):
             self.output_fd = f_out.fileno()
 
         self.pollob = poll()
-        self.pollob.register(self.input_fd, POLLIN)
-        curses.setupterm(term, self.output_fd)
+        self.pollob.register(self.input_fd, select.POLLIN)
+        curses.setupterm(term or None, self.output_fd)
         self.term = term
 
         def _my_getstr(cap, optional=0):
@@ -187,7 +195,7 @@ class UnixConsole(Console):
         self.event_queue = EventQueue(self.input_fd, self.encoding)
         self.cursor_visible = 1
 
-    def change_encoding(self, encoding):
+    def change_encoding(self, encoding: str) -> None:
         """
         Change the encoding used for I/O operations.
 
@@ -340,17 +348,14 @@ class UnixConsole(Console):
             signal.signal(signal.SIGWINCH, self.old_sigwinch)
             del self.old_sigwinch
 
-    def push_char(self, char):
+    def push_char(self, char: int | bytes) -> None:
         """
         Push a character to the console event queue.
-
-        Parameters:
-        - char (str): Character to push.
         """
         trace("push char {char!r}", char=char)
         self.event_queue.push(char)
 
-    def get_event(self, block: bool = True) -> Event:
+    def get_event(self, block: bool = True) -> Event | None:
         """
         Get an event from the console event queue.
 
@@ -698,7 +703,7 @@ class UnixConsole(Console):
             self.__maybe_write_code(self._cnorm)
             self.cursor_visible = 1
 
-    def repaint_prep(self):
+    def repaint(self):
         if not self.__gone_tall:
             self.__posxy = 0, self.__posxy[1]
             self.__write("\r")

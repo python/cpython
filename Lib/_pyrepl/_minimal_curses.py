@@ -36,7 +36,7 @@ clib.setupterm.restype = ctypes.c_int
 clib.tigetstr.argtypes = [ctypes.c_char_p]
 clib.tigetstr.restype = ctypes.POINTER(ctypes.c_char)
 
-clib.tparm.argtypes = [ctypes.c_char_p] + 9 * [ctypes.c_int]
+clib.tparm.argtypes = [ctypes.c_char_p] + 9 * [ctypes.c_int]  # type: ignore[operator]
 clib.tparm.restype = ctypes.c_char_p
 
 OK = 0

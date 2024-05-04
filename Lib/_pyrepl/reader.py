@@ -212,7 +212,7 @@ class Reader:
     ps2: str = "/>> "
     ps3: str = "|.. "
     ps4: str = R"\__ "
-    kill_ring: list = field(default_factory=list)
+    kill_ring: list[list[str]] = field(default_factory=list)
     msg: str = ""
     arg: int | None = None
     dirty: bool = False
@@ -406,7 +406,7 @@ class Reader:
         else:
             return self.arg
 
-    def get_prompt(self, lineno, cursor_on_line) -> str:
+    def get_prompt(self, lineno: int, cursor_on_line: bool) -> str:
         """Return what should be in the left-hand margin for line
         `lineno'."""
         if self.arg is not None and cursor_on_line:
@@ -427,7 +427,7 @@ class Reader:
             prompt = f"{_ANSIColors.BOLD_MAGENTA}{prompt}{_ANSIColors.RESET}"
         return prompt
 
-    def push_input_trans(self, itrans) -> None:
+    def push_input_trans(self, itrans: input.KeymapTranslator) -> None:
         self.input_trans_stack.append(self.input_trans)
         self.input_trans = itrans
 
@@ -484,7 +484,7 @@ class Reader:
                 y += 1
         return p + sum(l2[:pos]), y
 
-    def insert(self, text) -> None:
+    def insert(self, text: str | list[str]) -> None:
         """Insert 'text' at the insertion point."""
         self.buffer[self.pos : self.pos] = list(text)
         self.pos += len(text)
@@ -561,17 +561,15 @@ class Reader:
         self.console.refresh(screen, self.cxy)
         self.dirty = False
 
-    def do_cmd(self, cmd) -> None:
-        if isinstance(cmd[0], str):
-            cmd = self.commands.get(cmd[0], commands.invalid_command)(self, *cmd)
-        elif isinstance(cmd[0], type) and issubclass(cmd[0], commands.Command):
-            cmd = cmd[0](self, *cmd)
-        else:
-            return  # nothing to do
+    def do_cmd(self, cmd: list[str]) -> None:
+        assert isinstance(cmd[0], str)
 
-        cmd.do()
+        command_type = self.commands.get(cmd[0], commands.invalid_command)
+        command = command_type(self, *cmd)  # type: ignore[arg-type]
 
-        self.after_command(cmd)
+        command.do()
+
+        self.after_command(command)
 
         if self.dirty:
             self.refresh()
@@ -579,9 +577,9 @@ class Reader:
             self.update_cursor()
 
         if not isinstance(cmd, commands.digit_arg):
-            self.last_command = cmd.__class__
+            self.last_command = command_type
 
-        self.finished = bool(cmd.finish)
+        self.finished = bool(command.finish)
         if self.finished:
             self.console.finish()
             self.finish()
@@ -625,7 +623,7 @@ class Reader:
             self.do_cmd(cmd)
             return True
 
-    def push_char(self, char) -> None:
+    def push_char(self, char: int | bytes) -> None:
         self.console.push_char(char)
         self.handle1(block=False)
 

@@ -106,7 +106,7 @@ class FakeConsole(Console):
         self.height = 100
         self.width = 80
 
-    def get_event(self, block: bool = True) -> Event:
+    def get_event(self, block: bool = True) -> Event | None:
         return next(self.events)
 
     def getpending(self) -> Event:
@@ -130,7 +130,7 @@ class FakeConsole(Console):
     def set_cursor_vis(self, visible: bool) -> None:
         pass
 
-    def push_char(self, char: str) -> None:
+    def push_char(self, char: int | bytes) -> None:
         pass
 
     def beep(self) -> None:
@@ -149,6 +149,9 @@ class FakeConsole(Console):
         pass
 
     def wait(self) -> None:
+        pass
+
+    def repaint(self) -> None:
         pass
 
 

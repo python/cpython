@@ -62,16 +62,16 @@ def get_terminal_keycodes():
     Generates a dictionary mapping terminal keycodes to human-readable names.
     """
     keycodes = {}
-    for  key, terminal_code in TERMINAL_KEYNAMES.items():
+    for key, terminal_code in TERMINAL_KEYNAMES.items():
         keycode = curses.tigetstr(terminal_code)
-        trace('key {key} tiname {tiname} keycode {keycode!r}', **locals())
+        trace('key {key} tiname {terminal_code} keycode {keycode!r}', **locals())
         if keycode:
             keycodes[keycode] = key
     keycodes.update(CTRL_ARROW_KEYCODES)
     return keycodes
 
 class EventQueue:
-    def __init__(self, fd, encoding):
+    def __init__(self, fd: int, encoding: str) -> None:
         self.keycodes = get_terminal_keycodes()
         if os.isatty(fd):
             backspace = tcgetattr(fd)[6][VERASE]
@@ -80,10 +80,10 @@ class EventQueue:
         self.keymap = self.compiled_keymap
         trace("keymap {k!r}", k=self.keymap)
         self.encoding = encoding
-        self.events = deque()
+        self.events: deque[Event] = deque()
         self.buf = bytearray()
 
-    def get(self):
+    def get(self) -> Event | None:
         """
         Retrieves the next event from the queue.
         """
@@ -92,13 +92,13 @@ class EventQueue:
         else:
             return None
 
-    def empty(self):
+    def empty(self) -> bool:
         """
         Checks if the queue is empty.
         """
         return not self.events
 
-    def flush_buf(self):
+    def flush_buf(self) -> bytearray:
         """
         Flushes the buffer and returns its contents.
         """
@@ -106,14 +106,14 @@ class EventQueue:
         self.buf = bytearray()
         return old
 
-    def insert(self, event):
+    def insert(self, event: Event) -> None:
         """
         Inserts an event into the queue.
         """
         trace('added event {event}', event=event)
         self.events.append(event)
 
-    def push(self, char):
+    def push(self, char: int | bytes) -> None:
         """
         Processes a character by updating the buffer and handling special key mappings.
         """
@@ -139,8 +139,8 @@ class EventQueue:
             trace('unrecognized escape sequence, propagating...')
             self.keymap = self.compiled_keymap
             self.insert(Event('key', '\033', bytearray(b'\033')))
-            for c in self.flush_buf()[1:]:
-                self.push(chr(c))
+            for _c in self.flush_buf()[1:]:
+                self.push(_c)
 
         else:
             try:
