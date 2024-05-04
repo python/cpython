@@ -99,16 +99,7 @@ def int_to_decimal_string(n):
     # implementation in longobject.c.
     def inner(n, w):
         if w <= 1000:
-            try:
-                # In normal cases n is small enough here, so the built-in
-                # longobject.c algorithm is the fastest.
-                return str(n)
-            except ValueError:
-                # In very rare cases, when our guess of w is too small and
-                # n is too large, we can hit the limit for int to str
-                # conversion in str().  Call int_to_decimal_string() which
-                # has no such limitation directly.
-                return int_to_decimal_string(n)
+            return str(n)
         w2 = w >> 1
         d = pow10_cache.get(w2)
         if d is None:
