@@ -107,7 +107,7 @@ static void
 dump_stack(_PyInterpreterFrame *frame, PyObject **stack_pointer)
 {
     PyObject **stack_base = _PyFrame_Stackbase(frame);
-    // PyObject *exc = PyErr_GetRaisedException();
+    PyObject *exc = PyErr_GetRaisedException();
     printf("    stack=[");
     for (PyObject **ptr = stack_base; ptr < stack_pointer; ptr++) {
         if (ptr != stack_base) {
@@ -117,12 +117,24 @@ dump_stack(_PyInterpreterFrame *frame, PyObject **stack_pointer)
             printf("<nil>");
             continue;
         }
+        if (
+            *ptr == Py_None
+            || PyBool_Check(*ptr)
+            || PyLong_CheckExact(*ptr)
+            || PyFloat_CheckExact(*ptr)
+            || PyUnicode_CheckExact(*ptr)
+        ) {
+            if (PyObject_Print(*ptr, stdout, 0) == 0) {
+                continue;
+            }
+            PyErr_Clear();
+        }
         // Don't call __repr__(), it might recurse into the interpreter.
         printf("<%s at %p>", Py_TYPE(*ptr)->tp_name, (void *)(*ptr));
     }
     printf("]\n");
-    // fflush(stdout);
-    // PyErr_SetRaisedException(exc);
+    fflush(stdout);
+    PyErr_SetRaisedException(exc);
 }
 
 static void

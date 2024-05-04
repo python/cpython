@@ -3213,8 +3213,8 @@ dummy_func(
             _PUSH_FRAME;
 
         op(_CHECK_IS_NOT_PY_CALLABLE, (callable, unused, unused[oparg] -- callable, unused, unused[oparg])) {
-            DEOPT_IF(PyFunction_Check(callable));
-            DEOPT_IF(Py_TYPE(callable) == &PyMethod_Type);
+            EXIT_IF(PyFunction_Check(callable));
+            EXIT_IF(Py_TYPE(callable) == &PyMethod_Type);
         }
 
         op(_CALL_NON_PY_GENERAL, (callable, self_or_null, args[oparg] -- res)) {
@@ -3247,8 +3247,8 @@ dummy_func(
             _CHECK_PERIODIC;
 
         op(_CHECK_CALL_BOUND_METHOD_EXACT_ARGS, (callable, null, unused[oparg] -- callable, null, unused[oparg])) {
-            DEOPT_IF(null != NULL);
-            DEOPT_IF(Py_TYPE(callable) != &PyMethod_Type);
+            EXIT_IF(null != NULL);
+            EXIT_IF(Py_TYPE(callable) != &PyMethod_Type);
         }
 
         op(_INIT_CALL_BOUND_METHOD_EXACT_ARGS, (callable, unused, unused[oparg] -- func, self, unused[oparg])) {

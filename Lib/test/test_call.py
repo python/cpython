@@ -49,7 +49,7 @@ class FunctionCalls(unittest.TestCase):
         class C:
             def m(self):
                 pass
-        callables = [ f, C.m, [].__len__ ]
+        callables = [f, C.m, [].__len__]
         for c in callables:
             for _ in range(1000):
                 try:
