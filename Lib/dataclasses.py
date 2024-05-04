@@ -1199,16 +1199,16 @@ def _dataclass_setstate(self, state):
 
 def _get_slots(cls):
     match cls.__dict__.get('__slots__'):
-        # A class which does not define __slots__ at all is equivalent
-        # to a class defining __slots__ = ('__dict__', '__weakref__')
+        # `__dictoffset__` and `__weakrefoffset__` can tell us whether
+        # the base type has dict/weakref slots, in a way that works correctly
+        # for both Python classes and C extension types. Extension types
+        # don't use `__slots__` for slot creation
         case None:
-            # Except for special cases, inheriting from them do not set
-            # any slots at all:
-            slots = ['__dict__', '__weakref__']
-            if getattr(cls, '__weakrefoffset__', -1) == 0:
-                slots.remove('__weakref__')
-            if getattr(cls, '__dictrefoffset__', -1) == 0:
-                slots.remove('__dict__')
+            slots = []
+            if getattr(cls, '__weakrefoffset__', -1) != 0:
+                slots.append('__weakref__')
+            if getattr(cls, '__dictrefoffset__', -1) != 0:
+                slots.append('__dict__')
             yield from slots
         case str(slot):
             yield slot
