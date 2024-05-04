@@ -449,6 +449,16 @@ del re
 # The code in _power_exact() is very involved, and I'm not certain xc can't
 # be very much larger than 10**p. I _doubt_ it can. But, if I'm wrong, a
 # different approach would be better.
+# BUG ALERT: the code in the first block above returns None if xc ix sn
+# integer power of 10 > 10**p. But the replacement accepts any such power of
+# 10. This was intentional, but may be wrong. I (Tim) am taking the comments
+# at their word: that the purpose is to identify cases that are exactly
+# representable in decimal floating point with p digits of precision. Every
+# integer power of 10 is, and even if p is just 1. If that's wrong, the
+# original behavior can be gotten by changing the test below to:
+#     len(sc) <= p or (len(sc) == p+1 and _is_power_of_10(sc))
+# Alas, I don't know how to contrive inputs to trigger these paths.
+
 def _convert_to_str(ec, p):
     sc = str(ec)
     if len(sc) <= p or _is_power_of_10(sc):
