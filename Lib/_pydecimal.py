@@ -2232,7 +2232,7 @@ class Decimal(object):
         # if m > p*100//_log10_lb(xc) then m > p/log10(xc), hence xc**m >
         # 10**p and the result is not representable.
         assert xc != 1, self
-        assert not _is_power_of_10(str(xc)), self
+        assert xc % 10 != 0, self
         if xc > 1 and m > p*100//_log10_lb(xc):
             return None
         xc = xc**m
