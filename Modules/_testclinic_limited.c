@@ -146,5 +146,8 @@ PyInit__testclinic_limited(void)
     if (m == NULL) {
         return NULL;
     }
+#ifdef Py_GIL_DISABLED
+    PyModule_ExperimentalSetGIL(m, Py_MOD_GIL_NOT_USED);
+#endif
     return m;
 }

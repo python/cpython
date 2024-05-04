@@ -24,6 +24,7 @@ typedef struct {
     uint8_t opcode;
     uint8_t oparg;
     uint8_t valid;
+    uint8_t linked;
     int index;           // Index of ENTER_EXECUTOR (if code isn't NULL, below).
     _PyBloomFilter bloom;
     _PyExecutorLinkListNode links;
@@ -101,6 +102,7 @@ typedef struct _PyExecutorObject {
     uint32_t code_size;
     size_t jit_size;
     void *jit_code;
+    void *jit_side_entry;
     _PyExitData exits[1];
 } _PyExecutorObject;
 
@@ -135,12 +137,12 @@ PyAPI_FUNC(_PyOptimizerObject *) PyUnstable_GetOptimizer(void);
 PyAPI_FUNC(_PyExecutorObject *) PyUnstable_GetExecutor(PyCodeObject *code, int offset);
 
 void _Py_ExecutorInit(_PyExecutorObject *, const _PyBloomFilter *);
-void _Py_ExecutorClear(_PyExecutorObject *);
+void _Py_ExecutorDetach(_PyExecutorObject *);
 void _Py_BloomFilter_Init(_PyBloomFilter *);
 void _Py_BloomFilter_Add(_PyBloomFilter *bloom, void *obj);
 PyAPI_FUNC(void) _Py_Executor_DependsOn(_PyExecutorObject *executor, void *obj);
 PyAPI_FUNC(void) _Py_Executors_InvalidateDependency(PyInterpreterState *interp, void *obj, int is_invalidation);
-extern void _Py_Executors_InvalidateAll(PyInterpreterState *interp, int is_invalidation);
+PyAPI_FUNC(void) _Py_Executors_InvalidateAll(PyInterpreterState *interp, int is_invalidation);
 
 /* For testing */
 PyAPI_FUNC(PyObject *)PyUnstable_Optimizer_NewCounter(void);

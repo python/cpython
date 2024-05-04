@@ -1110,6 +1110,47 @@
 
         /* _INSTRUMENTED_YIELD_VALUE is not a viable micro-op for tier 2 because it is instrumented */
 
+        case _YIELD_VALUE: {
+            PyObject *retval;
+            PyObject *value;
+            oparg = CURRENT_OPARG();
+            retval = stack_pointer[-1];
+            // NOTE: It's important that YIELD_VALUE never raises an exception!
+            // The compiler treats any exception raised here as a failed close()
+            // or throw() call.
+            #if TIER_ONE
+            assert(frame != &entry_frame);
+            #endif
+            frame->instr_ptr++;
+            PyGenObject *gen = _PyFrame_GetGenerator(frame);
+            assert(FRAME_SUSPENDED_YIELD_FROM == FRAME_SUSPENDED + 1);
+            assert(oparg == 0 || oparg == 1);
+            gen->gi_frame_state = FRAME_SUSPENDED + oparg;
+            stack_pointer += -1;
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            tstate->exc_info = gen->gi_exc_state.previous_item;
+            gen->gi_exc_state.previous_item = NULL;
+            _Py_LeaveRecursiveCallPy(tstate);
+            _PyInterpreterFrame *gen_frame = frame;
+            frame = tstate->current_frame = frame->previous;
+            gen_frame->previous = NULL;
+            /* We don't know which of these is relevant here, so keep them equal */
+            assert(INLINE_CACHE_ENTRIES_SEND == INLINE_CACHE_ENTRIES_FOR_ITER);
+            #if TIER_ONE
+            assert(_PyOpcode_Deopt[frame->instr_ptr->op.code] == SEND ||
+                   _PyOpcode_Deopt[frame->instr_ptr->op.code] == FOR_ITER ||
+                   _PyOpcode_Deopt[frame->instr_ptr->op.code] == INTERPRETER_EXIT ||
+                   _PyOpcode_Deopt[frame->instr_ptr->op.code] == ENTER_EXECUTOR);
+            #endif
+            LOAD_IP(1 + INLINE_CACHE_ENTRIES_SEND);
+            LOAD_SP();
+            value = retval;
+            LLTRACE_RESUME_FRAME();
+            stack_pointer[0] = value;
+            stack_pointer += 1;
+            break;
+        }
+
         case _POP_EXCEPT: {
             PyObject *exc_value;
             exc_value = stack_pointer[-1];
@@ -2623,9 +2664,7 @@
                     _PyErr_Clear(tstate);
                 }
                 /* iterator ended normally */
-                Py_DECREF(iter);
-                STACK_SHRINK(1);
-                /* The translator sets the deopt target just past END_FOR */
+                /* The translator sets the deopt target just past the matching END_FOR */
                 if (true) {
                     UOP_STAT_INC(uopcode, miss);
                     JUMP_TO_JUMP_TARGET();
@@ -4053,7 +4092,6 @@
             #ifndef _Py_JIT
             next_uop = &current_executor->trace[1];
             #endif
-            CHECK_EVAL_BREAKER();
             break;
         }
 
@@ -4308,17 +4346,7 @@
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
             }
-            assert(eval_breaker == FT_ATOMIC_LOAD_UINTPTR_ACQUIRE(_PyFrame_GetCode(frame)->_co_instrumentation_version));
-            break;
-        }
-
-        case _EVAL_BREAKER_EXIT: {
-            _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY();
-            QSBR_QUIESCENT_STATE(tstate);
-            if (_Py_HandlePending(tstate) != 0) {
-                GOTO_UNWIND();
-            }
-            EXIT_TO_TRACE();
+            assert(tstate->tracing || eval_breaker == FT_ATOMIC_LOAD_UINTPTR_ACQUIRE(_PyFrame_GetCode(frame)->_co_instrumentation_version));
             break;
         }
 
