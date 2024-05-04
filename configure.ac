@@ -6713,7 +6713,10 @@ AC_DEFUN([PY_CHECK_CURSES_FUNC],
     [py_var],
     [AC_COMPILE_IFELSE(
       [AC_LANG_PROGRAM(
-        [@%:@include <curses.h>], [
+        [
+        #define NCURSES_OPAQUE 0
+        #include <curses.h>
+        ], [
         #ifndef $1
         void *x=$1
         #endif
