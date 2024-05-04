@@ -165,8 +165,8 @@ slightly different way:
       The keyword-only argument *header*.
 
    .. versionchanged:: 3.13
-      :func:`set_trace` will enter the debugger immediately after the call,
-      rather than before the next line of code is executed.
+      :func:`set_trace` will enter the debugger immediately, rather than
+      on the next line of code to be executed.
 
 .. function:: post_mortem(traceback=None)
 
