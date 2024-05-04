@@ -745,7 +745,8 @@ statistics
 
 * Add :func:`statistics.kde` for kernel density estimation.
   This makes it possible to estimate a continuous probability density function
-  from a fixed number of discrete samples.
+  from a fixed number of discrete samples.  Also added :func:`statistics.kde_random`
+  for sampling from the estimated probability density function.
   (Contributed by Raymond Hettinger in :gh:`115863`.)
 
 .. _whatsnew313-subprocess:
