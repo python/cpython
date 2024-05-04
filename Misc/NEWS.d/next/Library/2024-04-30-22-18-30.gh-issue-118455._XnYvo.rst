@@ -1,1 +1,0 @@
-Correct default value of mangle_from\_ in email.policy.Policy docstring
