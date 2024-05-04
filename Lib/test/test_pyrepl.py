@@ -1,4 +1,3 @@
-import curses
 import itertools
 import os
 import rlcompleter
@@ -599,11 +598,8 @@ class TestPyReplCompleter(TestCase):
         self.assertEqual(output, "python")
 
 
+@patch("_pyrepl.curses.tigetstr", MagicMock(return_value=b""))
 class TestUnivEventQueue(TestCase):
-    def setUp(self) -> None:
-        curses.setupterm()
-        return super().setUp()
-
     def test_get(self):
         eq = EventQueue(sys.stdout.fileno(), "utf-8")
         event = Event("key", "a", b"a")
@@ -704,10 +700,6 @@ class TestUnivEventQueue(TestCase):
 
 
 class TestPasteEvent(TestCase):
-    def setUp(self) -> None:
-        curses.setupterm()
-        return super().setUp()
-
     def prepare_reader(self, events):
         console = FakeConsole(events)
         config = ReadlineConfig(readline_completer=None)
