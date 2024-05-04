@@ -152,8 +152,8 @@ static inline void
 PyStackRef_DECREF(_PyStackRef tagged)
 {
     if (PyStackRef_IsDeferred(tagged)) {
-        assert(_PyObject_HasDeferredRefcount(PyStackRef_Get(tagged)) ||
-               _Py_IsImmortal(PyStackRef_Get(tagged)));
+        // No assert for being immortal or deferred here.
+        // The GC unsets deferred objects right before clearing.
         return;
     }
     Py_DECREF(PyStackRef_Get(tagged));
