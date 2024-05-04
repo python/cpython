@@ -2932,6 +2932,7 @@ def bœr():
             'Fail to handle a syntax error in the debuggee.'
             .format(expected, stderr))
 
+    @force_not_colorized
     def test_issue84583(self):
         # A syntax error from ast.literal_eval should not make pdb exit.
         script = "import ast; ast.literal_eval('')\n"
