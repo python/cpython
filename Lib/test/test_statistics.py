@@ -2479,7 +2479,7 @@ class TestKDE(unittest.TestCase):
         self.assertIn(kernel, prng.__doc__)
         self.assertIn(repr(h), prng.__doc__)
 
-        # Approximate distribution test: Compare a random sample to expected distribution
+        # Approximate distribution test: Compare a random sample to the expected distribution
 
         data = [-2.1, -1.3, -0.4, 1.9, 5.1, 6.2, 7.8, 14.3, 15.1, 15.3, 15.8, 17.0]
         n = 1_000_000
