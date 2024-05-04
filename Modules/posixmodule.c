@@ -1111,9 +1111,11 @@ get_posix_state(PyObject *module)
  *     If nonzero, the path is permitted to contain
  *     embedded null characters and have any length.
  *   path.make_wide
- *     If nonzero, the path is decoded to Unicode, encoded to bytes otherwise.
+ *     If nonzero, the converter always uses wide, decoding if necessary, else
+ *     it always uses narrow, encoding if necessary. The default value is
+ *     nonzero on Windows, else zero.
  *   path.suppress_value_error
- *     If nonzero, ValueErrors are suppressed.
+ *     If nonzero, raising ValueError is suppressed.
  *   path.allow_fd
  *     If nonzero, the path is permitted to be a file handle
  *     (a signed int) instead of a string.
@@ -1129,10 +1131,10 @@ get_posix_state(PyObject *module)
  * Output fields:
  *   path.wide
  *     Points to the path if it was expressed as Unicode
- *     or it was bytes and was encoded to Unicode.
+ *     or if it was bytes and decoded to Unicode.
  *   path.narrow
  *     Points to the path if it was expressed as bytes,
- *     or it was Unicode and was encoded to bytes.
+ *     or if it was Unicode and encoded to bytes.
  *   path.fd
  *     Contains a file descriptor if path.accept_fd was true
  *     and the caller provided a signed integer instead of any
@@ -1143,7 +1145,8 @@ get_posix_state(PyObject *module)
  *     So if you set allow_fd, you *MUST* initialize path.fd = -1
  *     yourself!
  *   path.value_error
- *     If nonzero, a ValueError occurred.
+ *     If nonzero, then suppress_value_error was specified and a ValueError
+ *     occurred.
  *   path.length
  *     The length of the path in characters, if specified as
  *     a string.
