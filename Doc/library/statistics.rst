@@ -317,15 +317,13 @@ However, for reading convenience, most of the examples show sorted sequences.
    Return a function that makes a random selection from the estimated
    probability density function produced by ``kde(data, h, kernel)``.
 
-   Providing a *seed* allows reproducible selections within a single
-   thread.  In the future, the selection method for the *parabolic*,
-   *quartic*, and *triweight* kernels may be replaced with faster
-   algorithms that give different results.  The seed may be an integer,
-   float, str, or bytes.
+   Providing a *seed* allows reproducible selections. In the future, the
+   values may change slightly as more accurate kernel inverse estimates
+   are implemented.  The seed may be an integer, float, str, or bytes.
 
    A :exc:`StatisticsError` will be raised if the *data* sequence is empty.
 
-   Continuing the above example for :func:`kde`, we can use
+   Continuing the example for :func:`kde`, we can use
    :func:`kde_random` to generate new random selections from an
    estimated probability density function:
 
