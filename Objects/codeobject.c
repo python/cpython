@@ -390,6 +390,11 @@ init_code(PyCodeObject *co, struct _PyCodeConstructor *con)
     co->co_filename = Py_NewRef(con->filename);
     co->co_name = Py_NewRef(con->name);
     co->co_qualname = Py_NewRef(con->qualname);
+#ifdef Py_GIL_DISABLED
+    PyUnicode_InternInPlace(&co->co_filename);
+    PyUnicode_InternInPlace(&co->co_name);
+    PyUnicode_InternInPlace(&co->co_qualname);
+#endif
     co->co_flags = con->flags;
 
     co->co_firstlineno = con->firstlineno;
@@ -416,10 +421,16 @@ init_code(PyCodeObject *co, struct _PyCodeConstructor *con)
     co->co_ncellvars = ncellvars;
     co->co_nfreevars = nfreevars;
     PyInterpreterState *interp = _PyInterpreterState_GET();
+#ifdef Py_GIL_DISABLED
+    PyMutex_Lock(&interp->func_state.mutex);
+#endif
     co->co_version = interp->func_state.next_version;
     if (interp->func_state.next_version != 0) {
         interp->func_state.next_version++;
     }
+#ifdef Py_GIL_DISABLED
+    PyMutex_Unlock(&interp->func_state.mutex);
+#endif
     co->_co_monitoring = NULL;
     co->_co_instrumentation_version = 0;
     /* not set */

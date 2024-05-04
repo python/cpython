@@ -647,21 +647,25 @@ type_params[asdl_type_param_seq*]: '[' t=type_param_seq  ']' {
 type_param_seq[asdl_type_param_seq*]: a[asdl_type_param_seq*]=','.type_param+ [','] { a }
 
 type_param[type_param_ty] (memo):
-    | a=NAME b=[type_param_bound] { _PyAST_TypeVar(a->v.Name.id, b, EXTRA) }
+    | a=NAME b=[type_param_bound] c=[type_param_default] { _PyAST_TypeVar(a->v.Name.id, b, c, EXTRA) }
     | '*' a=NAME colon=':' e=expression {
             RAISE_SYNTAX_ERROR_STARTING_FROM(colon, e->kind == Tuple_kind
                 ? "cannot use constraints with TypeVarTuple"
                 : "cannot use bound with TypeVarTuple")
         }
-    | '*' a=NAME { _PyAST_TypeVarTuple(a->v.Name.id, EXTRA) }
+    | '*' a=NAME b=[type_param_starred_default] { _PyAST_TypeVarTuple(a->v.Name.id, b, EXTRA) }
     | '**' a=NAME colon=':' e=expression {
             RAISE_SYNTAX_ERROR_STARTING_FROM(colon, e->kind == Tuple_kind
                 ? "cannot use constraints with ParamSpec"
                 : "cannot use bound with ParamSpec")
         }
-    | '**' a=NAME { _PyAST_ParamSpec(a->v.Name.id, EXTRA) }
+    | '**' a=NAME b=[type_param_default] { _PyAST_ParamSpec(a->v.Name.id, b, EXTRA) }
 
 type_param_bound[expr_ty]: ':' e=expression { e }
+type_param_default[expr_ty]: '=' e=expression {
+    CHECK_VERSION(expr_ty, 13, "Type parameter defaults are", e) }
+type_param_starred_default[expr_ty]: '=' e=star_expression {
+    CHECK_VERSION(expr_ty, 13, "Type parameter defaults are", e) }
 
 # EXPRESSIONS
 # -----------
