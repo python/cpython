@@ -318,6 +318,11 @@ PyGenObject *_PyFrame_GetGenerator(_PyInterpreterFrame *frame)
     return (PyGenObject *)(((char *)frame) - offset_in_gen);
 }
 
+PyAPI_FUNC(_PyInterpreterFrame *)
+_PyEvalFramePushAndInit(PyThreadState *tstate, PyFunctionObject *func,
+                        PyObject *locals, PyObject* const* args,
+                        size_t argcount, PyObject *kwnames);
+
 #ifdef __cplusplus
 }
 #endif
