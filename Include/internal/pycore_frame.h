@@ -343,7 +343,7 @@ PyGenObject *_PyFrame_GetGenerator(_PyInterpreterFrame *frame)
 
 PyAPI_FUNC(_PyInterpreterFrame *)
 _PyEvalFramePushAndInit(PyThreadState *tstate, PyFunctionObject *func,
-                        PyObject *locals, PyObject* const* args,
+                        PyObject *locals, _PyStackRef const* args,
                         size_t argcount, PyObject *kwnames);
 
 #ifdef __cplusplus

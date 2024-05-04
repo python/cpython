@@ -1720,19 +1720,25 @@
 
         case _PY_FRAME_GENERAL: {
             _Py_UopsSymbol **args;
+            _Py_UopsSymbol *self_or_null_stackref;
             _Py_UopsSymbol *self_or_null;
+            _Py_UopsSymbol *callable_stackref;
             _Py_UopsSymbol *callable;
             _Py_UOpsAbstractFrame *new_frame;
             args = &stack_pointer[-oparg];
-            self_or_null = stack_pointer[-1 - oparg];
-            callable = stack_pointer[-2 - oparg];
+            self_or_null_stackref = stack_pointer[-1 - oparg];
+            self_or_null = (self_or_null_stackref);
+
+            callable_stackref = stack_pointer[-2 - oparg];
+            callable = (callable_stackref);
+
             /* The _Py_UOpsAbstractFrame design assumes that we can copy arguments across directly */
             (void)callable;
             (void)self_or_null;
             (void)args;
             first_valid_check_stack = NULL;
             goto done;
-            stack_pointer[-2 - oparg] = (_Py_UopsSymbol *)new_frame;
+            stack_pointer[-2 - oparg] = ((_Py_UopsSymbol *)new_frame);
             stack_pointer += -1 - oparg;
             break;
         }
@@ -1752,8 +1758,8 @@
             if (method == NULL) goto out_of_space;
             self = sym_new_not_null(ctx);
             if (self == NULL) goto out_of_space;
-            stack_pointer[-2 - oparg] = method;
-            stack_pointer[-1 - oparg] = self;
+            stack_pointer[-2 - oparg] = (method);
+            stack_pointer[-1 - oparg] = (self);
             break;
         }
 
@@ -1765,7 +1771,7 @@
             _Py_UopsSymbol *res;
             res = sym_new_not_null(ctx);
             if (res == NULL) goto out_of_space;
-            stack_pointer[-2 - oparg] = res;
+            stack_pointer[-2 - oparg] = (res);
             stack_pointer += -1 - oparg;
             break;
         }

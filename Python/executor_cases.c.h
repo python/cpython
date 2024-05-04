@@ -3623,16 +3623,23 @@
         }
 
         case _PY_FRAME_GENERAL: {
-            PyObject **args;
+            _PyStackRef *args;
+            _PyStackRef self_or_null_stackref;
             PyObject *self_or_null;
+            _PyStackRef callable_stackref;
             PyObject *callable;
             _PyInterpreterFrame *new_frame;
             oparg = CURRENT_OPARG();
             args = &stack_pointer[-oparg];
-            self_or_null = stack_pointer[-1 - oparg];
-            callable = stack_pointer[-2 - oparg];
+            self_or_null_stackref = stack_pointer[-1 - oparg];
+            self_or_null = PyStackRef_Get(self_or_null_stackref);
+
+            callable_stackref = stack_pointer[-2 - oparg];
+            callable = PyStackRef_Get(callable_stackref);
+
             // oparg counts all of the args, but *not* self:
             int total_args = oparg;
+            (void)self_or_null_stackref;
             if (self_or_null != NULL) {
                 args--;
                 total_args++;
@@ -3641,7 +3648,7 @@
             int code_flags = ((PyCodeObject*)PyFunction_GET_CODE(callable))->co_flags;
             PyObject *locals = code_flags & CO_OPTIMIZED ? NULL : Py_NewRef(PyFunction_GET_GLOBALS(callable));
             new_frame = _PyEvalFramePushAndInit(
-                tstate, (PyFunctionObject *)callable, locals,
+                tstate, (PyFunctionObject *)PyStackRef_StealObject(callable_stackref), locals,
                 args, total_args, NULL
             );
             // The frame has stolen all the arguments from the stack,
@@ -3650,15 +3657,18 @@
             if (new_frame == NULL) {
                 JUMP_TO_ERROR();
             }
-            stack_pointer[0] = (PyObject *)new_frame;
+            stack_pointer[0] = PyStackRef_StealRef((PyObject *)new_frame);
             stack_pointer += 1;
             break;
         }
 
         case _CHECK_FUNCTION_VERSION: {
+            _PyStackRef callable_stackref;
             PyObject *callable;
             oparg = CURRENT_OPARG();
-            callable = stack_pointer[-2 - oparg];
+            callable_stackref = stack_pointer[-2 - oparg];
+            callable = PyStackRef_Get(callable_stackref);
+
             uint32_t func_version = (uint32_t)CURRENT_OPERAND();
             if (!PyFunction_Check(callable)) {
                 UOP_STAT_INC(uopcode, miss);
@@ -3673,11 +3683,17 @@
         }
 
         case _CHECK_METHOD_VERSION: {
+            _PyStackRef null_stackref;
             PyObject *null;
+            _PyStackRef callable_stackref;
             PyObject *callable;
             oparg = CURRENT_OPARG();
-            null = stack_pointer[-1 - oparg];
-            callable = stack_pointer[-2 - oparg];
+            null_stackref = stack_pointer[-1 - oparg];
+            null = PyStackRef_Get(null_stackref);
+
+            callable_stackref = stack_pointer[-2 - oparg];
+            callable = PyStackRef_Get(callable_stackref);
+
             uint32_t func_version = (uint32_t)CURRENT_OPERAND();
             if (Py_TYPE(callable) != &PyMethod_Type) {
                 UOP_STAT_INC(uopcode, miss);
@@ -3700,31 +3716,39 @@
         }
 
         case _EXPAND_METHOD: {
+            _PyStackRef null_stackref;
             PyObject *null;
+            _PyStackRef callable_stackref;
             PyObject *callable;
             PyObject *method;
             PyObject *self;
             oparg = CURRENT_OPARG();
-            null = stack_pointer[-1 - oparg];
-            callable = stack_pointer[-2 - oparg];
+            null_stackref = stack_pointer[-1 - oparg];
+            null = PyStackRef_Get(null_stackref);
+
+            callable_stackref = stack_pointer[-2 - oparg];
+            callable = PyStackRef_Get(callable_stackref);
+
             assert(null == NULL);
             assert(Py_TYPE(callable) == &PyMethod_Type);
             self = ((PyMethodObject *)callable)->im_self;
-            Py_INCREF(self);
-            stack_pointer[-1 - oparg] = self;  // Patch stack as it is used by _PY_FRAME_GENERAL
+            stack_pointer[-1 - oparg] = PyStackRef_NewRefDeferred(self);  // Patch stack as it is used by _PY_FRAME_GENERAL
             method = ((PyMethodObject *)callable)->im_func;
             assert(PyFunction_Check(method));
             Py_INCREF(method);
             Py_DECREF(callable);
-            stack_pointer[-2 - oparg] = method;
-            stack_pointer[-1 - oparg] = self;
+            stack_pointer[-2 - oparg] = PyStackRef_StealRef(method);
+            stack_pointer[-1 - oparg] = PyStackRef_StealRef(self);
             break;
         }
 
         case _CHECK_IS_NOT_PY_CALLABLE: {
+            _PyStackRef callable_stackref;
             PyObject *callable;
             oparg = CURRENT_OPARG();
-            callable = stack_pointer[-2 - oparg];
+            callable_stackref = stack_pointer[-2 - oparg];
+            callable = PyStackRef_Get(callable_stackref);
+
             if (PyFunction_Check(callable)) {
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
@@ -3737,14 +3761,20 @@
         }
 
         case _CALL_NON_PY_GENERAL: {
-            PyObject **args;
+            _PyStackRef *args;
+            _PyStackRef self_or_null_stackref;
             PyObject *self_or_null;
+            _PyStackRef callable_stackref;
             PyObject *callable;
             PyObject *res;
             oparg = CURRENT_OPARG();
             args = &stack_pointer[-oparg];
-            self_or_null = stack_pointer[-1 - oparg];
-            callable = stack_pointer[-2 - oparg];
+            self_or_null_stackref = stack_pointer[-1 - oparg];
+            self_or_null = PyStackRef_Get(self_or_null_stackref);
+
+            callable_stackref = stack_pointer[-2 - oparg];
+            callable = PyStackRef_Get(callable_stackref);
+
             #if TIER_ONE
             assert(opcode != INSTRUMENTED_CALL);
             #endif
@@ -3754,17 +3784,17 @@
                 total_args++;
             }
             /* Callable is not a normal Python function */
-            res = PyObject_Vectorcall(
-                                      callable, args,
-                                      total_args | PY_VECTORCALL_ARGUMENTS_OFFSET,
-                                      NULL);
+            res = PyObject_Vectorcall_StackRef(
+                callable, args,
+                total_args | PY_VECTORCALL_ARGUMENTS_OFFSET,
+                NULL);
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
-            Py_DECREF(callable);
+            PyStackRef_DECREF(callable_stackref);
             for (int i = 0; i < total_args; i++) {
-                Py_DECREF(args[i]);
+                PyStackRef_DECREF(args[i]);
             }
             if (res == NULL) JUMP_TO_ERROR();
-            stack_pointer[-2 - oparg] = res;
+            stack_pointer[-2 - oparg] = PyStackRef_StealRef(res);
             stack_pointer += -1 - oparg;
             break;
         }
@@ -4077,7 +4107,7 @@
             PyObject *null;
             _PyStackRef callable_stackref;
             PyObject *callable;
-            _PyStackRef res;
+            PyObject *res;
             oparg = CURRENT_OPARG();
             arg_stackref = stack_pointer[-1];
             arg = PyStackRef_Get(arg_stackref);
@@ -4098,9 +4128,9 @@
                 JUMP_TO_JUMP_TARGET();
             }
             STAT_INC(CALL, hit);
-            res = PyStackRef_NewRefDeferred(Py_TYPE(arg));
+            res = Py_NewRef(Py_TYPE(arg));
             PyStackRef_DECREF(arg_stackref);
-            stack_pointer[-3] = (res);
+            stack_pointer[-3] = PyStackRef_StealRef(res);
             stack_pointer += -2;
             break;
         }

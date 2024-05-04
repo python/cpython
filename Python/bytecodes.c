@@ -3162,6 +3162,7 @@ dummy_func(
         op(_PY_FRAME_GENERAL, (callable, self_or_null, args[oparg] -- new_frame: _PyInterpreterFrame*)) {
             // oparg counts all of the args, but *not* self:
             int total_args = oparg;
+            (void)self_or_null_stackref;
             if (self_or_null != NULL) {
                 args--;
                 total_args++;
@@ -3243,7 +3244,7 @@ dummy_func(
                 total_args | PY_VECTORCALL_ARGUMENTS_OFFSET,
                 NULL);
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
-            PyStackref_DECREF(callable_stackref);
+            PyStackRef_DECREF(callable_stackref);
             for (int i = 0; i < total_args; i++) {
                 PyStackRef_DECREF(args[i]);
             }
@@ -3342,7 +3343,7 @@ dummy_func(
             DEOPT_IF(null != NULL);
             DEOPT_IF(callable != (PyObject *)&PyType_Type);
             STAT_INC(CALL, hit);
-            res = PyStackRef_NewRefDeferred(Py_TYPE(arg));
+            res = Py_NewRef(Py_TYPE(arg));
             PyStackRef_DECREF(arg_stackref);
         }
 

@@ -1207,6 +1207,7 @@
             {
                 // oparg counts all of the args, but *not* self:
                 int total_args = oparg;
+                (void)self_or_null_stackref;
                 if (self_or_null != NULL) {
                     args--;
                     total_args++;
@@ -2116,7 +2117,7 @@
                     total_args | PY_VECTORCALL_ARGUMENTS_OFFSET,
                     NULL);
                 assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
-                PyStackref_DECREF(callable_stackref);
+                PyStackRef_DECREF(callable_stackref);
                 for (int i = 0; i < total_args; i++) {
                     PyStackRef_DECREF(args[i]);
                 }
@@ -2244,6 +2245,7 @@
             {
                 // oparg counts all of the args, but *not* self:
                 int total_args = oparg;
+                (void)self_or_null_stackref;
                 if (self_or_null != NULL) {
                     args--;
                     total_args++;
@@ -2399,7 +2401,7 @@
             DEOPT_IF(null != NULL, CALL);
             DEOPT_IF(callable != (PyObject *)&PyType_Type, CALL);
             STAT_INC(CALL, hit);
-            res = PyStackRef_NewRefDeferred(Py_TYPE(arg));
+            res = Py_NewRef(Py_TYPE(arg));
             PyStackRef_DECREF(arg_stackref);
             stack_pointer[-3] = PyStackRef_StealRef(res);
             stack_pointer += -2;
