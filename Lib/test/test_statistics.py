@@ -2438,6 +2438,49 @@ class TestKDE(unittest.TestCase):
                 for x in xarr:
                     self.assertAlmostEqual(invcdf(cdf(x)), x, places=5)
 
+    def test_kde_random(self):
+        kde_random = statistics.kde_random
+        StatisticsError = statistics.StatisticsError
+        kernels = ['normal', 'gauss', 'logistic', 'sigmoid', 'rectangular',
+                   'uniform', 'triangular', 'parabolic', 'epanechnikov',
+                   'quartic', 'biweight', 'triweight', 'cosine']
+        sample = [-2.1, -1.3, -0.4, 1.9, 5.1, 6.2]
+
+        # Smoke test
+
+        for kernel in kernels:
+            with self.subTest(kernel=kernel):
+                rand = kde_random(sample, h=1.5, kernel=kernel)
+                selections = [rand() for i in range(10)]
+
+
+        # Check error cases
+
+        with self.assertRaises(StatisticsError):
+            kde_random([], h=1.0)                       # Empty dataset
+        with self.assertRaises(TypeError):
+            kde_random(['abc', 'def'], 1.5)             # Non-numeric data
+        with self.assertRaises(TypeError):
+            kde_random(iter(sample), 1.5)               # Data is not a sequence
+        with self.assertRaises(StatisticsError):
+            kde_random(sample, h=0.0)                   # Zero bandwidth
+        with self.assertRaises(StatisticsError):
+            kde_random(sample, h=0.0)                   # Negative bandwidth
+        with self.assertRaises(TypeError):
+            kde_random(sample, h='str')                 # Wrong bandwidth type
+        with self.assertRaises(StatisticsError):
+            kde_random(sample, h=1.0, kernel='bogus')   # Invalid kernel
+
+        # Test name and docstring of the generated function
+
+        h = 1.5
+        kernel = 'cosine'
+        prng = kde_random(sample, h, kernel)
+        self.assertEqual(prng.__name__, 'rand')
+        self.assertIn(kernel, prng.__doc__)
+        self.assertIn(repr(h), prng.__doc__)
+
+
 class TestQuantiles(unittest.TestCase):
 
     def test_specific_cases(self):
