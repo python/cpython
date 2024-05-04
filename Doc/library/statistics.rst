@@ -318,7 +318,7 @@ However, for reading convenience, most of the examples show sorted sequences.
    probability density function produced by ``kde(data, h, kernel)``.
 
    Providing a *seed* allows reproducible selections. In the future, the
-   values may change slightly as more accurate kernel inverse estimates
+   values may change slightly as more accurate kernel inverse CDF estimates
    are implemented.  The seed may be an integer, float, str, or bytes.
 
    A :exc:`StatisticsError` will be raised if the *data* sequence is empty.
