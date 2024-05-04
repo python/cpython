@@ -215,7 +215,6 @@ except ImportError:
             return empty, empty, p
 
 
-
 # Split a path in head (everything up to the last '/') and tail (the
 # rest).  After the trailing '/' is stripped, the invariant
 # join(head, tail) == p holds.

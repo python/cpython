@@ -160,7 +160,6 @@ except ImportError:
             return empty, p[:2], p[2:]
 
 
-
 # Return the tail (basename) part of a path, same as split(path)[1].
 
 def basename(p):
