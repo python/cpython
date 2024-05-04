@@ -708,6 +708,31 @@ class TypeParamsClassScopeTest(unittest.TestCase):
         self.assertIn(int, C.D.__bases__)
         self.assertIs(C.D.x, str)
 
+
+class DynamicClassTest(unittest.TestCase):
+    def _set_type_params(self, ns, params):
+        ns['__type_params__'] = params
+
+    def test_types_new_class_with_callback(self):
+        T = TypeVar('T', infer_variance=True)
+        Klass = types.new_class('Klass', (Generic[T],), {},
+                                lambda ns: self._set_type_params(ns, (T,)))
+
+        self.assertEqual(Klass.__bases__, (Generic,))
+        self.assertEqual(Klass.__orig_bases__, (Generic[T],))
+        self.assertEqual(Klass.__type_params__, (T,))
+        self.assertEqual(Klass.__parameters__, (T,))
+
+    def test_types_new_class_no_callback(self):
+        T = TypeVar('T', infer_variance=True)
+        Klass = types.new_class('Klass', (Generic[T],), {})
+
+        self.assertEqual(Klass.__bases__, (Generic,))
+        self.assertEqual(Klass.__orig_bases__, (Generic[T],))
+        self.assertEqual(Klass.__type_params__, ())  # must be explicitly set
+        self.assertEqual(Klass.__parameters__, (T,))
+
+
 class TypeParamsManglingTest(unittest.TestCase):
     def test_mangling(self):
         class Foo[__T]:
