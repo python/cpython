@@ -1378,7 +1378,7 @@ path_converter(PyObject *o, void *p)
             goto error_exit;
         }
         path->wide = wide;
-        path->narrow = narrow; // TODO: replace by NULL
+        path->narrow = NULL;
         Py_DECREF(bytes);
         wide = NULL;
     }
@@ -1465,11 +1465,7 @@ follow_symlinks_specified(const char *function_name, int follow_symlinks)
 static int
 path_and_dir_fd_invalid(const char *function_name, path_t *path, int dir_fd)
 {
-    if (!path->wide && (dir_fd != DEFAULT_DIR_FD)
-#ifndef MS_WINDOWS
-        && !path->narrow
-#endif
-    ) {
+    if (!path->wide && (dir_fd != DEFAULT_DIR_FD) && !path->narrow) {
         PyErr_Format(PyExc_ValueError,
                      "%s: can't specify dir_fd without matching path",
                      function_name);
@@ -4361,13 +4357,14 @@ _listdir_windows_no_opendir(path_t *path, PyObject *list)
         Py_CLEAR(list);
         goto exit;
     }
+    int return_bytes = PyBytes_Check(path->object);
     do {
         /* Skip over . and .. */
         if (wcscmp(wFileData.cFileName, L".") != 0 &&
             wcscmp(wFileData.cFileName, L"..") != 0) {
             v = PyUnicode_FromWideChar(wFileData.cFileName,
                                        wcslen(wFileData.cFileName));
-            if (path->narrow && v) {
+            if (return_bytes && v) {
                 Py_SETREF(v, PyUnicode_EncodeFSDefault(v));
             }
             if (v == NULL) {
@@ -4910,7 +4907,7 @@ os__getfullpathname_impl(PyObject *module, path_t *path)
     if (str == NULL) {
         return NULL;
     }
-    if (path->narrow) {
+    if (PyBytes_Check(path->object)) {
         Py_SETREF(str, PyUnicode_EncodeFSDefault(str));
     }
     return str;
@@ -4983,7 +4980,7 @@ os__getfinalpathname_impl(PyObject *module, path_t *path)
     }
 
     result = PyUnicode_FromWideChar(target_path, result_length);
-    if (result && path->narrow) {
+    if (result && PyBytes_Check(path->object)) {
         Py_SETREF(result, PyUnicode_EncodeFSDefault(result));
     }
 
@@ -5066,7 +5063,7 @@ os__getvolumepathname_impl(PyObject *module, path_t *path)
         goto exit;
     }
     result = PyUnicode_FromWideChar(mountpath, wcslen(mountpath));
-    if (path->narrow)
+    if (PyBytes_Check(path->object))
         Py_SETREF(result, PyUnicode_EncodeFSDefault(result));
 
 exit:
@@ -10254,7 +10251,7 @@ os_readlink_impl(PyObject *module, path_t *path, int dir_fd)
             name[1] = L'\\';
         }
         result = PyUnicode_FromWideChar(name, nameLen);
-        if (result && path->narrow) {
+        if (result && PyBytes_Check(path->object)) {
             Py_SETREF(result, PyUnicode_EncodeFSDefault(result));
         }
     }
@@ -15875,7 +15872,8 @@ DirEntry_from_find_data(PyObject *module, path_t *path, WIN32_FIND_DATAW *dataW)
     entry->name = PyUnicode_FromWideChar(dataW->cFileName, -1);
     if (!entry->name)
         goto error;
-    if (path->narrow) {
+    int return_bytes = PyBytes_Check(path->object);
+    if (return_bytes) {
         Py_SETREF(entry->name, PyUnicode_EncodeFSDefault(entry->name));
         if (!entry->name)
             goto error;
@@ -15889,7 +15887,7 @@ DirEntry_from_find_data(PyObject *module, path_t *path, WIN32_FIND_DATAW *dataW)
     PyMem_Free(joined_path);
     if (!entry->path)
         goto error;
-    if (path->narrow) {
+    if (return_bytes) {
         Py_SETREF(entry->path, PyUnicode_EncodeFSDefault(entry->path));
         if (!entry->path)
             goto error;
@@ -15974,7 +15972,7 @@ DirEntry_from_posix_info(PyObject *module, path_t *path, const char *name,
             goto error;
     }
 
-    if (!path->narrow || !PyBytes_Check(path->object)) {
+    if (!PyBytes_Check(path->object)) {
         entry->name = PyUnicode_DecodeFSDefaultAndSize(name, name_len);
         if (joined_path)
             entry->path = PyUnicode_DecodeFSDefault(joined_path);
