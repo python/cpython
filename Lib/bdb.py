@@ -319,11 +319,7 @@ class Bdb:
         # stoplineno >= 0 means: stop at line >= the stoplineno
         # stoplineno -1 means: don't stop at all
         self.stoplineno = stoplineno
-        if opcode:
-            # We are stopping at opcode level
-            self._set_trace_opcodes(True)
-        else:
-            self._set_trace_opcodes(False)
+        self._set_trace_opcodes(opcode)
 
     def _set_caller_tracefunc(self):
         # Issue #13183: pdb skips frames after hitting a breakpoint and running
