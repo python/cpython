@@ -43,6 +43,7 @@ Objects/enumobject.c	-	PyReversed_Type	-
 Objects/fileobject.c	-	PyStdPrinter_Type	-
 Objects/floatobject.c	-	PyFloat_Type	-
 Objects/frameobject.c	-	PyFrame_Type	-
+Objects/frameobject.c	-	PyFrameLocalsProxy_Type	-
 Objects/funcobject.c	-	PyClassMethod_Type	-
 Objects/funcobject.c	-	PyFunction_Type	-
 Objects/funcobject.c	-	PyStaticMethod_Type	-
@@ -397,6 +398,7 @@ Modules/xxmodule.c	-	Str_Type	-
 Modules/xxmodule.c	-	Xxo_Type	-
 Modules/xxsubtype.c	-	spamdict_type	-
 Modules/xxsubtype.c	-	spamlist_type	-
+Modules/_testcapi/monitoring.c	-	PyCodeLike_Type	-
 
 ##-----------------------
 ## non-static types - initialized once
