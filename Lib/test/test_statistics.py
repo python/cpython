@@ -2479,7 +2479,7 @@ class TestKDE(unittest.TestCase):
         self.assertIn(kernel, prng.__doc__)
         self.assertIn(repr(h), prng.__doc__)
 
-        # Approximate distribution test
+        # Approximate distribution test: Compare a random sample to expected distribution
 
         data = [-2.1, -1.3, -0.4, 1.9, 5.1, 6.2, 7.8, 14.3, 15.1, 15.3, 15.8, 17.0]
         n = 1_000_000
@@ -2502,7 +2502,8 @@ class TestKDE(unittest.TestCase):
                 rand = kde_random(data, h, kernel, seed=8675309**2)
                 big_sample = sorted([rand() for i in range(n)])
 
-                for x in range(-4, 19):
+                for x in range(-40, 190):
+                    x /= 10
                     self.assertTrue(math.isclose(p_observed(x), p_expected(x), abs_tol=0.001))
 
 
