@@ -479,8 +479,17 @@ class TestPerfProfiler(unittest.TestCase, TestPerfProfilerMixin):
             if f"py::foo_fork:{script}" in line or f"py::bar_fork:{script}" in line:
                 self.assertIn(line, child_perf_file_contents)
 
+def _is_kernel_version_at_least(major, minor):
+    try:
+        with open("/proc/version") as f:
+            version = f.readline().split()[2]
+    except FileNotFoundError:
+        return False
+    version = version.split(".")
+    return int(version[0]) > major or (int(version[0]) == major and int(version[1]) >= minor)
 
 @unittest.skipUnless(perf_command_works(), "perf command doesn't work")
+@unittest.skipUnless(_is_kernel_version_at_least(6, 6), "perf command may not work due to a perf bug")
 class TestPerfProfilerWithDwarf(unittest.TestCase, TestPerfProfilerMixin):
     def run_perf(self, script_dir, script, activate_trampoline=True):
         if activate_trampoline:

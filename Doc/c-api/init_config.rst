@@ -1251,7 +1251,10 @@ PyConfig
       for more information.
 
       Set by :option:`-X perf <-X>` command line option and by the
-      :envvar:`PYTHONPERFSUPPORT` environment variable.
+      :envvar:`PYTHONPERFSUPPORT` environment variable for perf support
+      with stack pointers and :option:`-X perfjit <-X>` command line option
+      and by the :envvar:`PYTHONPERFJITSUPPORT` environment variable for perf
+      support with DWARF JIT information.
 
       Default: ``-1``.
 
