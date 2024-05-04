@@ -378,6 +378,15 @@ def library_recipes():
                   '--disable-dependency-tracking',
               ]
           ),
+          dict(
+              name="libmpdec 4.0.0",
+              url="https://www.bytereef.org/software/mpdecimal/releases/mpdecimal-4.0.0.tar.gz",
+              checksum="942445c3245b22730fd41a67a7c5c231d11cb1b9936b9c0f76334fb7d0b4468c",
+              configure_pre=[
+                  "--disable-cxx",
+                  "MACHINE=universal",
+              ]
+          ),
         ])
 
     if not PYTHON_3:
@@ -1150,6 +1159,7 @@ def buildPython():
     print(" NOTE: --with-mimalloc=no pending resolution of weak linking issues")
     runCommand("%s -C --enable-framework --enable-universalsdk=/ "
                "--with-mimalloc=no "
+               "--with-system-libmpdec "
                "--with-universal-archs=%s "
                "%s "
                "%s "

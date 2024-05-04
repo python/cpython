@@ -84,6 +84,7 @@ import inspect
 import tokenize
 import traceback
 import linecache
+import _colorize
 
 from contextlib import contextmanager
 from rlcompleter import Completer
@@ -120,7 +121,10 @@ def find_function(funcname, filename):
     try:
         fp = tokenize.open(filename)
     except OSError:
-        return None
+        lines = linecache.getlines(filename)
+        if not lines:
+            return None
+        fp = io.StringIO(''.join(lines))
     funcdef = ""
     funcstart = None
     # consumer of this info expects the first line to be 1
@@ -207,6 +211,44 @@ class _ModuleTarget(_ExecutableTarget):
         import runpy
         try:
             _, self._spec, self._code = runpy._get_module_details(self._target)
+        except ImportError as e:
+            print(f"ImportError: {e}")
+            sys.exit(1)
+        except Exception:
+            traceback.print_exc()
+            sys.exit(1)
+
+    def __repr__(self):
+        return self._target
+
+    @property
+    def filename(self):
+        return self._code.co_filename
+
+    @property
+    def code(self):
+        return self._code
+
+    @property
+    def namespace(self):
+        return dict(
+            __name__='__main__',
+            __file__=os.path.normcase(os.path.abspath(self.filename)),
+            __package__=self._spec.parent,
+            __loader__=self._spec.loader,
+            __spec__=self._spec,
+            __builtins__=__builtins__,
+        )
+
+
+class _ZipTarget(_ExecutableTarget):
+    def __init__(self, target):
+        import runpy
+
+        self._target = os.path.realpath(target)
+        sys.path.insert(0, self._target)
+        try:
+            _, self._spec, self._code = runpy._get_main_module_details()
         except ImportError as e:
             print(f"ImportError: {e}")
             sys.exit(1)
@@ -1076,7 +1118,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             if f:
                 fname = f
             item = parts[1]
-        answer = find_function(item, fname)
+        answer = find_function(item, self.canonic(fname))
         return answer or failed
 
     def checkline(self, filename, lineno):
@@ -2282,7 +2324,10 @@ def main():
         if not opts.args:
             parser.error("no module or script to run")
         file = opts.args.pop(0)
-        target = _ScriptTarget(file)
+        if file.endswith('.pyz'):
+            target = _ZipTarget(file)
+        else:
+            target = _ScriptTarget(file)
 
     sys.argv[:] = [file] + opts.args  # Hide "pdb.py" and pdb options from argument list
 
@@ -2303,7 +2348,7 @@ def main():
             print("The program exited via sys.exit(). Exit status:", end=' ')
             print(e)
         except BaseException as e:
-            traceback.print_exc()
+            traceback.print_exception(e, colorize=_colorize.can_colorize())
             print("Uncaught exception. Entering post mortem debugging")
             print("Running 'cont' or 'step' will restart the program")
             pdb.interaction(None, e)
