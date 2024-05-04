@@ -23,7 +23,7 @@ the CPython prompt as closely as possible, with the exception of
 allowing multiline input and multiline history entries.
 """
 
-import _colorize
+import _colorize  # type: ignore[import-not-found]
 import _sitebuiltins
 import linecache
 import sys
