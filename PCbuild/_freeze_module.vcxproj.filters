@@ -46,6 +46,9 @@
     <ClCompile Include="..\Python\bltinmodule.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\Python\brc.c">
+      <Filter>Python</Filter>
+    </ClCompile>
     <ClCompile Include="..\Objects\boolobject.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -103,6 +106,12 @@
     <ClCompile Include="..\Python\context.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\Python\critical_section.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Python\crossinterp.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\Objects\descrobject.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -122,9 +131,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\errors.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Python\executor.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\Objects\exceptions.c">
@@ -161,6 +167,15 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\future.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Python\gc.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Python\gc_free_threading.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Python\gc_gil.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\Modules\gcmodule.c">
@@ -214,6 +229,10 @@
     <ClCompile Include="..\Python\initconfig.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\Python\instruction_sequence.c">
+    <ClCompile Include="..\Python\interpconfig.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\Python\intrinsics.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -223,7 +242,7 @@
     <ClCompile Include="..\Python\legacy_tracing.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\Objects\interpreteridobject.c">
+    <ClCompile Include="..\Python\lock.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\PC\invalid_parameter_handler.c">
@@ -233,6 +252,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\Objects\iterobject.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Python\jit.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\Objects\listobject.c">
@@ -250,48 +272,6 @@
     <ClCompile Include="..\Objects\methodobject.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\Objects\mimalloc\alloc-aligned.c">
-      <Filter>Source Files</Filter>
-    </CLCompile>
-    <ClCompile Include="..\Objects\mimalloc\alloc.c">
-      <Filter>Source Files</Filter>
-    </CLCompile>
-    <ClCompile Include="..\Objects\mimalloc\arena.c">
-      <Filter>Source Files</Filter>
-    </CLCompile>
-    <ClCompile Include="..\Objects\mimalloc\bitmap.c">
-      <Filter>Source Files</Filter>
-    </CLCompile>
-    <ClCompile Include="..\Objects\mimalloc\heap.c">
-      <Filter>Source Files</Filter>
-    </CLCompile>
-    <ClCompile Include="..\Objects\mimalloc\init.c">
-      <Filter>Source Files</Filter>
-    </CLCompile>
-    <ClCompile Include="..\Objects\mimalloc\options.c">
-      <Filter>Source Files</Filter>
-    </CLCompile>
-    <ClCompile Include="..\Objects\mimalloc\os.c">
-      <Filter>Source Files</Filter>
-    </CLCompile>
-    <ClCompile Include="..\Objects\mimalloc\page.c">
-      <Filter>Source Files</Filter>
-    </CLCompile>
-    <ClCompile Include="..\Objects\mimalloc\prim\prim.c">
-      <Filter>Source Files</Filter>
-    </CLCompile>
-    <ClCompile Include="..\Objects\mimalloc\random.c">
-      <Filter>Source Files</Filter>
-    </CLCompile>
-    <ClCompile Include="..\Objects\mimalloc\segment.c">
-      <Filter>Source Files</Filter>
-    </CLCompile>
-    <ClCompile Include="..\Objects\mimalloc\segment-map.c">
-      <Filter>Source Files</Filter>
-    </CLCompile>
-    <ClCompile Include="..\Objects\mimalloc\stats.c">
-      <Filter>Source Files</Filter>
-    </CLCompile>
     <ClCompile Include="..\Python\modsupport.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -316,6 +296,9 @@
     <ClCompile Include="..\Objects\object.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\Python\object_stack.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\Objects\obmalloc.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -328,7 +311,13 @@
     <ClCompile Include="..\Python\optimizer_analysis.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\Python\optimizer_symbols.c">
+      <Filter>Python</Filter>
+    </ClCompile>
     <ClCompile Include="..\Parser\parser.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Python\parking_lot.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\pathconfig.c">
@@ -389,6 +378,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\pytime.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Python\qsbr.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\Objects\rangeobject.c">

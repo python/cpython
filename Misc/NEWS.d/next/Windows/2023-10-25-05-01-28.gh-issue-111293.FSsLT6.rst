@@ -1,1 +1,0 @@
-Fix :data:`os.DirEntry.inode` dropping higher 64 bits of a file id on some filesystems on Windows.

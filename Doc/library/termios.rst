@@ -16,6 +16,8 @@ complete description of these calls, see :manpage:`termios(3)` Unix manual
 page.  It is only available for those Unix versions that support POSIX
 *termios* style tty I/O control configured during installation.
 
+.. availability:: Unix.
+
 All functions in this module take a file descriptor *fd* as their first
 argument.  This can be an integer file descriptor, such as returned by
 ``sys.stdin.fileno()``, or a :term:`file object`, such as ``sys.stdin`` itself.

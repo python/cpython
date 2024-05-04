@@ -41,12 +41,20 @@ int
 PyFrame_GetLineNumber(PyFrameObject *f)
 {
     assert(f != NULL);
-    if (f->f_lineno != 0) {
+    if (f->f_lineno == -1) {
+        // We should calculate it once. If we can't get the line number,
+        // set f->f_lineno to 0.
+        f->f_lineno = PyUnstable_InterpreterFrame_GetLine(f->f_frame);
+        if (f->f_lineno < 0) {
+            f->f_lineno = 0;
+            return -1;
+        }
+    }
+
+    if (f->f_lineno > 0) {
         return f->f_lineno;
     }
-    else {
-        return PyUnstable_InterpreterFrame_GetLine(f->f_frame);
-    }
+    return PyUnstable_InterpreterFrame_GetLine(f->f_frame);
 }
 
 static PyObject *
@@ -127,10 +135,13 @@ frame_settrace_opcodes(PyFrameObject *f, PyObject* value, void *Py_UNUSED(ignore
     }
     if (value == Py_True) {
         f->f_trace_opcodes = 1;
-        _PyInterpreterState_GET()->f_opcode_trace_set = true;
+        if (f->f_trace) {
+            return _PyEval_SetOpcodeTrace(f, true);
+        }
     }
     else {
         f->f_trace_opcodes = 0;
+        return _PyEval_SetOpcodeTrace(f, false);
     }
     return 0;
 }
@@ -301,11 +312,6 @@ mark_stacks(PyCodeObject *code_obj, int len)
         stacks[i] = UNINITIALIZED;
     }
     stacks[0] = EMPTY_STACK;
-    if (code_obj->co_flags & (CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR))
-    {
-        // Generators get sent None while starting:
-        stacks[0] = push_value(stacks[0], Object);
-    }
     int todo = 1;
     while (todo) {
         todo = 0;
@@ -608,7 +614,7 @@ static bool frame_is_suspended(PyFrameObject *frame)
     assert(!_PyFrame_IsIncomplete(frame->f_frame));
     if (frame->f_frame->owner == FRAME_OWNED_BY_GENERATOR) {
         PyGenObject *gen = _PyFrame_GetGenerator(frame->f_frame);
-        return gen->gi_frame_state == FRAME_SUSPENDED;
+        return FRAME_STATE_SUSPENDED(gen->gi_frame_state);
     }
     return false;
 }
@@ -805,13 +811,10 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno, void *Py_UNUSED(ignore
     while (start_stack > best_stack) {
         if (top_of_stack(start_stack) == Except) {
             /* Pop exception stack as well as the evaluation stack */
-            PyThreadState *tstate = _PyThreadState_GET();
-            _PyErr_StackItem *exc_info = tstate->exc_info;
-            PyObject *value = exc_info->exc_value;
             PyObject *exc = _PyFrame_StackPop(f->f_frame);
             assert(PyExceptionInstance_Check(exc) || exc == Py_None);
-            exc_info->exc_value = exc;
-            Py_XDECREF(value);
+            PyThreadState *tstate = _PyThreadState_GET();
+            Py_XSETREF(tstate->exc_info->exc_value, exc == Py_None ? NULL : exc);
         }
         else {
             PyObject *v = _PyFrame_StackPop(f->f_frame);
@@ -842,6 +845,9 @@ frame_settrace(PyFrameObject *f, PyObject* v, void *closure)
     }
     if (v != f->f_trace) {
         Py_XSETREF(f->f_trace, Py_XNewRef(v));
+        if (v != NULL && f->f_trace_opcodes) {
+            return _PyEval_SetOpcodeTrace(f, true);
+        }
     }
     return 0;
 }
@@ -923,6 +929,7 @@ frame_tp_clear(PyFrameObject *f)
         Py_CLEAR(locals[i]);
     }
     f->f_frame->stacktop = 0;
+    Py_CLEAR(f->f_frame->f_locals);
     return 0;
 }
 
@@ -933,6 +940,9 @@ frame_clear(PyFrameObject *f, PyObject *Py_UNUSED(ignored))
         PyGenObject *gen = _PyFrame_GetGenerator(f->f_frame);
         if (gen->gi_frame_state == FRAME_EXECUTING) {
             goto running;
+        }
+        if (FRAME_STATE_SUSPENDED(gen->gi_frame_state)) {
+            goto suspended;
         }
         _PyGen_Finalize((PyObject *)gen);
     }
@@ -947,6 +957,10 @@ frame_clear(PyFrameObject *f, PyObject *Py_UNUSED(ignored))
 running:
     PyErr_SetString(PyExc_RuntimeError,
                     "cannot clear an executing frame");
+    return NULL;
+suspended:
+    PyErr_SetString(PyExc_RuntimeError,
+                    "cannot clear a suspended frame");
     return NULL;
 }
 
@@ -1129,7 +1143,7 @@ frame_init_get_vars(_PyInterpreterFrame *frame)
 
     /* Free vars have not been initialized -- Do that */
     PyObject *closure = ((PyFunctionObject *)frame->f_funcobj)->func_closure;
-    int offset = PyCode_GetFirstFree(co);
+    int offset = PyUnstable_Code_GetFirstFree(co);
     for (int i = 0; i < co->co_nfreevars; ++i) {
         PyObject *o = PyTuple_GET_ITEM(closure, i);
         frame->localsplus[offset + i] = Py_NewRef(o);

@@ -126,9 +126,7 @@ slot_tp_del(PyObject *self)
      * never happened.
      */
     {
-        Py_ssize_t refcnt = Py_REFCNT(self);
-        _Py_NewReferenceNoTotal(self);
-        Py_SET_REFCNT(self, refcnt);
+        _Py_ResurrectReference(self);
     }
     assert(!PyType_IS_GC(Py_TYPE(self)) || PyObject_GC_IsTracked(self));
 }

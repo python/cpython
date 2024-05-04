@@ -99,6 +99,7 @@ import io
 import collections
 import collections.abc
 import contextlib
+import weakref
 
 from . import ElementPath
 
@@ -1223,13 +1224,14 @@ def iterparse(source, events=None, parser=None):
     # parser argument of iterparse is removed, this can be killed.
     pullparser = XMLPullParser(events=events, _parser=parser)
 
-    def iterator(source):
+    if not hasattr(source, "read"):
+        source = open(source, "rb")
+        close_source = True
+    else:
         close_source = False
+
+    def iterator(source):
         try:
-            if not hasattr(source, "read"):
-                source = open(source, "rb")
-                close_source = True
-            yield None
             while True:
                 yield from pullparser.read_events()
                 # load event buffer
@@ -1239,18 +1241,30 @@ def iterparse(source, events=None, parser=None):
                 pullparser.feed(data)
             root = pullparser._close_and_return_root()
             yield from pullparser.read_events()
-            it.root = root
+            it = wr()
+            if it is not None:
+                it.root = root
         finally:
             if close_source:
                 source.close()
 
+    gen = iterator(source)
     class IterParseIterator(collections.abc.Iterator):
-        __next__ = iterator(source).__next__
+        __next__ = gen.__next__
+        def close(self):
+            if close_source:
+                source.close()
+            gen.close()
+
+        def __del__(self):
+            # TODO: Emit a ResourceWarning if it was not explicitly closed.
+            # (When the close() method will be supported in all maintained Python versions.)
+            if close_source:
+                source.close()
+
     it = IterParseIterator()
     it.root = None
-    del iterator, IterParseIterator
-
-    next(it)
+    wr = weakref.ref(it)
     return it
 
 
@@ -1305,6 +1319,11 @@ class XMLPullParser:
                 raise event
             else:
                 yield event
+
+    def flush(self):
+        if self._parser is None:
+            raise ValueError("flush() called after end of stream")
+        self._parser.flush()
 
 
 def XML(text, parser=None):
@@ -1712,6 +1731,15 @@ class XMLParser:
             del self.parser, self._parser
             del self.target, self._target
 
+    def flush(self):
+        was_enabled = self.parser.GetReparseDeferralEnabled()
+        try:
+            self.parser.SetReparseDeferralEnabled(False)
+            self.parser.Parse(b"", False)
+        except self._error as v:
+            self._raiseerror(v)
+        finally:
+            self.parser.SetReparseDeferralEnabled(was_enabled)
 
 # --------------------------------------------------------------------
 # C14N 2.0

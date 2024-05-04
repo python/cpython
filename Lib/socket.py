@@ -382,7 +382,7 @@ class socket(_socket.socket):
                     if timeout and not selector_select(timeout):
                         raise TimeoutError('timed out')
                     if count:
-                        blocksize = count - total_sent
+                        blocksize = min(count - total_sent, blocksize)
                         if blocksize <= 0:
                             break
                     try:

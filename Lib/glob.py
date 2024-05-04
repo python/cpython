@@ -2,13 +2,14 @@
 
 import contextlib
 import os
-import re
 import fnmatch
 import itertools
 import stat
 import sys
 
-__all__ = ["glob", "iglob", "escape"]
+from pathlib._glob import translate, magic_check, magic_check_bytes
+
+__all__ = ["glob", "iglob", "escape", "translate"]
 
 def glob(pathname, *, root_dir=None, dir_fd=None, recursive=False,
         include_hidden=False):
@@ -104,8 +105,8 @@ def _iglob(pathname, root_dir, dir_fd, recursive, dironly,
 
 def _glob1(dirname, pattern, dir_fd, dironly, include_hidden=False):
     names = _listdir(dirname, dir_fd, dironly)
-    if include_hidden or not _ishidden(pattern):
-        names = (x for x in names if include_hidden or not _ishidden(x))
+    if not (include_hidden or _ishidden(pattern)):
+        names = (x for x in names if not _ishidden(x))
     return fnmatch.filter(names, pattern)
 
 def _glob0(dirname, basename, dir_fd, dironly, include_hidden=False):
@@ -119,12 +120,19 @@ def _glob0(dirname, basename, dir_fd, dironly, include_hidden=False):
             return [basename]
     return []
 
-# Following functions are not public but can be used by third-party code.
+_deprecated_function_message = (
+    "{name} is deprecated and will be removed in Python {remove}. Use "
+    "glob.glob and pass a directory to its root_dir argument instead."
+)
 
 def glob0(dirname, pattern):
+    import warnings
+    warnings._deprecated("glob.glob0", _deprecated_function_message, remove=(3, 15))
     return _glob0(dirname, pattern, None, False)
 
 def glob1(dirname, pattern):
+    import warnings
+    warnings._deprecated("glob.glob1", _deprecated_function_message, remove=(3, 15))
     return _glob1(dirname, pattern, None, False)
 
 # This helper function recursively yields relative pathnames inside a literal
@@ -132,7 +140,8 @@ def glob1(dirname, pattern):
 
 def _glob2(dirname, pattern, dir_fd, dironly, include_hidden=False):
     assert _isrecursive(pattern)
-    yield pattern[:0]
+    if not dirname or _isdir(dirname, dir_fd):
+        yield pattern[:0]
     yield from _rlistdir(dirname, dir_fd, dironly,
                          include_hidden=include_hidden)
 
@@ -215,9 +224,6 @@ def _join(dirname, basename):
     if not dirname or not basename:
         return dirname or basename
     return os.path.join(dirname, basename)
-
-magic_check = re.compile('([*?[])')
-magic_check_bytes = re.compile(b'([*?[])')
 
 def has_magic(s):
     if isinstance(s, bytes):

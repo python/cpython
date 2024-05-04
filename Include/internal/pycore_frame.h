@@ -36,12 +36,16 @@ extern PyFrameObject* _PyFrame_New_NoTrack(PyCodeObject *code);
 /* other API */
 
 typedef enum _framestate {
-    FRAME_CREATED = -2,
-    FRAME_SUSPENDED = -1,
+    FRAME_CREATED = -3,
+    FRAME_SUSPENDED = -2,
+    FRAME_SUSPENDED_YIELD_FROM = -1,
     FRAME_EXECUTING = 0,
     FRAME_COMPLETED = 1,
     FRAME_CLEARED = 4
 } PyFrameState;
+
+#define FRAME_STATE_SUSPENDED(S) ((S) == FRAME_SUSPENDED || (S) == FRAME_SUSPENDED_YIELD_FROM)
+#define FRAME_STATE_FINISHED(S) ((S) >= FRAME_COMPLETED)
 
 enum _frameowner {
     FRAME_OWNED_BY_THREAD = 0,
@@ -51,7 +55,7 @@ enum _frameowner {
 };
 
 typedef struct _PyInterpreterFrame {
-    PyObject *f_executable; /* Strong reference */
+    PyObject *f_executable; /* Strong reference (code object or None) */
     struct _PyInterpreterFrame *previous;
     PyObject *f_funcobj; /* Strong reference. Only valid if not on C stack */
     PyObject *f_globals; /* Borrowed reference. Only valid if not on C stack */
@@ -106,7 +110,17 @@ _PyFrame_NumSlotsForCodeObject(PyCodeObject *code)
     return code->co_framesize - FRAME_SPECIALS_SIZE;
 }
 
-void _PyFrame_Copy(_PyInterpreterFrame *src, _PyInterpreterFrame *dest);
+static inline void _PyFrame_Copy(_PyInterpreterFrame *src, _PyInterpreterFrame *dest)
+{
+    assert(src->stacktop >= _PyFrame_GetCode(src)->co_nlocalsplus);
+    *dest = *src;
+    for (int i = 1; i < src->stacktop; i++) {
+        dest->localsplus[i] = src->localsplus[i];
+    }
+    // Don't leave a dangling pointer to the old frame when creating generators
+    // and coroutines:
+    dest->previous = NULL;
+}
 
 /* Consumes reference to func and locals.
    Does not initialize frame->previous, which happens
@@ -213,6 +227,9 @@ _PyFrame_GetFrameObject(_PyInterpreterFrame *frame)
     return _PyFrame_MakeAndSetFrameObject(frame);
 }
 
+void
+_PyFrame_ClearLocals(_PyInterpreterFrame *frame);
+
 /* Clears all references in the frame.
  * If take is non-zero, then the _PyInterpreterFrame frame
  * may be transferred to the frame object it references
@@ -252,7 +269,7 @@ _PyThreadState_HasStackSpace(PyThreadState *tstate, int size)
 extern _PyInterpreterFrame *
 _PyThreadState_PushFrame(PyThreadState *tstate, size_t size);
 
-void _PyThreadState_PopFrame(PyThreadState *tstate, _PyInterpreterFrame *frame);
+PyAPI_FUNC(void) _PyThreadState_PopFrame(PyThreadState *tstate, _PyInterpreterFrame *frame);
 
 /* Pushes a frame without checking for space.
  * Must be guarded by _PyThreadState_HasStackSpace()

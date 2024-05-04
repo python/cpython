@@ -39,7 +39,7 @@ extern "C" {
 #define PY_MONITORING_EVENT_RERAISE 14
 
 
-/* Ancilliary events */
+/* Ancillary events */
 
 #define PY_MONITORING_EVENT_C_RETURN 15
 #define PY_MONITORING_EVENT_C_RAISE 16
@@ -63,6 +63,8 @@ typedef uint32_t _PyMonitoringEventSet;
 PyObject *_PyMonitoring_RegisterCallback(int tool_id, int event_id, PyObject *obj);
 
 int _PyMonitoring_SetEvents(int tool_id, _PyMonitoringEventSet events);
+int _PyMonitoring_SetLocalEvents(PyCodeObject *code, int tool_id, _PyMonitoringEventSet events);
+int _PyMonitoring_GetLocalEvents(PyCodeObject *code, int tool_id, _PyMonitoringEventSet *events);
 
 extern int
 _Py_call_instrumentation(PyThreadState *tstate, int event,
