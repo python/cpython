@@ -867,6 +867,9 @@ def check_cflags_pgo():
 
 
 def check_bolt_optimized():
+    # Always return false is the platform is WASI.
+    if is_wasi:
+        return False
     # BOLTed binary can be checked based on ELF information.
     # link: https://github.com/llvm/llvm-project/issues/60253
     binary_path = sys.executable
