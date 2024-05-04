@@ -99,7 +99,16 @@ def int_to_decimal_string(n):
     # implementation in longobject.c.
     def inner(n, w):
         if w <= 1000:
-            return str(n)
+            try:
+                # In normal cases n is small enough here, so the built-in
+                # longobject.c algorithm is the fastest.
+                return str(n)
+            except ValueError:
+                # In very rare cases, when our guess of w is too small and
+                # n is too large, we can hit the limit for int to str
+                # conversion in str().  Call int_to_decimal_string() which
+                # has no such limitation directly.
+                return int_to_decimal_string(n)
         w2 = w >> 1
         d = pow10_cache.get(w2)
         if d is None:
@@ -107,12 +116,26 @@ def int_to_decimal_string(n):
         hi, lo = divmod(n, d)
         return inner(hi, w - w2) + inner(lo, w2).zfill(w2)
 
+    # The estimation of the number of decimal digits.
+    # There is no harm in small error.  If we guess too large, there may
+    # be leading 0's that need to be stripped.  If we guess too small, we
+    # may need to call str() recursively for the remaining highest digits,
+    # which can still potentially be a large integer. This is manifested
+    # only if the number has way more than 10**15 digits, that exceeds
+    # the 52-bit physical address limit in both Intel64 and AMD64.
     w = int(w * 0.3010299956639812 + 1)  # log10(2)
     pow10_cache = {}
     if n < 0:
-        return '-' + inner(-n, w)
+        n = -n
+        sign = '-'
     else:
-        return inner(n, w)
+        sign = ''
+    s = inner(n, w)
+    if s[0] == '0' and n:
+        # If our guess of w is too large, there may be leading 0's that
+        # need to be stripped.
+        s = s.lstrip('0')
+    return sign + s
 
 
 def _str_to_int_inner(s):
