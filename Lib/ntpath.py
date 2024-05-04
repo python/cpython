@@ -933,19 +933,7 @@ try:
     from nt import _path_isfile as isfile
     from nt import _path_islink as islink
     from nt import _path_exists as exists
+    from nt import _path_isdevdrive as isdevdrive
 except ImportError:
     # Use genericpath.* as imported above
-    pass
-
-
-try:
-    from nt import _path_isdevdrive
-    def isdevdrive(path):
-        """Determines whether the specified path is on a Windows Dev Drive."""
-        try:
-            return _path_isdevdrive(abspath(path))
-        except OSError:
-            return False
-except ImportError:
-    # Use genericpath.isdevdrive as imported above
     pass
