@@ -23,18 +23,22 @@ the CPython prompt as closely as possible, with the exception of
 allowing multiline input and multiline history entries.
 """
 
+from __future__ import annotations
+
 import _colorize  # type: ignore[import-not-found]
 import _sitebuiltins
 import linecache
 import sys
 import code
+from types import ModuleType
 
 from .console import Event
 from .readline import _get_reader, multiline_input
 from .unix_console import _error
 
 
-def check():  # returns False if there is a problem initializing the state
+def check() -> bool:
+    """Returns False if there is a problem initializing the state."""
     try:
         _get_reader()
     except _error:
@@ -42,7 +46,7 @@ def check():  # returns False if there is a problem initializing the state
     return True
 
 
-def _strip_final_indent(text):
+def _strip_final_indent(text: str) -> str:
     # kill spaces and tabs at the end, but only if they follow '\n'.
     # meant to remove the auto-indentation only (although it would of
     # course also remove explicitly-added indentation).
@@ -61,15 +65,23 @@ REPL_COMMANDS = {
 }
 
 class InteractiveColoredConsole(code.InteractiveConsole):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(
+        self,
+        locals: dict[str, object] | None = None,
+        filename: str = "<console>",
+        *,
+        local_exit: bool = False,
+    ) -> None:
+        super().__init__(locals=locals, filename=filename, local_exit=local_exit)  # type: ignore[call-arg]
         self.can_colorize = _colorize.can_colorize()
 
     def showtraceback(self):
         super().showtraceback(colorize=self.can_colorize)
 
 
-def run_multiline_interactive_console(mainmodule=None, future_flags=0):
+def run_multiline_interactive_console(
+    mainmodule: ModuleType | None= None, future_flags: int = 0
+) -> None:
     import code
     import __main__
 
@@ -97,13 +109,13 @@ def run_multiline_interactive_console(mainmodule=None, future_flags=0):
             # inside multiline_input.
             reader.prepare()
             reader.refresh()
-            reader.do_cmd([command, Event(evt=command, data=command)])
+            reader.do_cmd((command, [statement]))
             reader.restore()
             return True
 
         return False
 
-    def more_lines(unicodetext):
+    def more_lines(unicodetext: str) -> bool:
         # ooh, look at the hack:
         src = _strip_final_indent(unicodetext)
         try:
@@ -131,8 +143,8 @@ def run_multiline_interactive_console(mainmodule=None, future_flags=0):
                 continue
 
             input_name = f"<python-input-{input_n}>"
-            linecache._register_code(input_name, statement, "<stdin>")
-            more = console.push(_strip_final_indent(statement), filename=input_name)
+            linecache._register_code(input_name, statement, "<stdin>")  # type: ignore[attr-defined]
+            more = console.push(_strip_final_indent(statement), filename=input_name)  # type: ignore[call-arg]
             assert not more
             input_n += 1
         except KeyboardInterrupt:

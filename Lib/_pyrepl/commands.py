@@ -43,7 +43,9 @@ class Command:
     finish: bool = False
     kills_digit_arg: bool = True
 
-    def __init__(self, reader: HistoricalReader, event_name: str, event: str) -> None:
+    def __init__(
+        self, reader: HistoricalReader, event_name: str, event: list[str]
+    ) -> None:
         # Reader should really be "any reader" but there's too much usage of
         # HistoricalReader methods and fields in the code below for us to
         # refactor at the moment.

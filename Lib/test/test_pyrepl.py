@@ -63,9 +63,8 @@ def prepare_fake_console(**kwargs):
 
 
 def prepare_reader(console, **kwargs):
-    reader = ReadlineAlikeReader(console)
-    reader.config = ReadlineConfig()
-    reader.config.readline_completer = None
+    config = ReadlineConfig(readline_completer=None)
+    reader = ReadlineAlikeReader(console=console, config=config)
     reader.more_lines = partial(more_lines, namespace=None)
     reader.paste_mode = True  # Avoid extra indents
 
@@ -447,9 +446,8 @@ class TestCursorPosition(TestCase):
 class TestPyReplOutput(TestCase):
     def prepare_reader(self, events):
         console = FakeConsole(events)
-        reader = ReadlineAlikeReader(console)
-        reader.config = ReadlineConfig()
-        reader.config.readline_completer = None
+        config = ReadlineConfig(readline_completer=None)
+        reader = ReadlineAlikeReader(console=console, config=config)
         return reader
 
     def test_basic(self):
@@ -555,9 +553,9 @@ class TestPyReplOutput(TestCase):
 class TestPyReplCompleter(TestCase):
     def prepare_reader(self, events, namespace):
         console = FakeConsole(events)
-        reader = ReadlineAlikeReader(console)
-        reader.config = ReadlineConfig()
-        reader.config.readline_completer = rlcompleter.Completer(namespace).complete
+        config = ReadlineConfig()
+        config.readline_completer = rlcompleter.Completer(namespace).complete
+        reader = ReadlineAlikeReader(console=console, config=config)
         return reader
 
     def test_simple_completion(self):
@@ -705,9 +703,8 @@ class TestPasteEvent(TestCase):
 
     def prepare_reader(self, events):
         console = FakeConsole(events)
-        reader = ReadlineAlikeReader(console)
-        reader.config = ReadlineConfig()
-        reader.config.readline_completer = None
+        config = ReadlineConfig(readline_completer=None)
+        reader = ReadlineAlikeReader(console=console, config=config)
         return reader
 
     def test_paste(self):

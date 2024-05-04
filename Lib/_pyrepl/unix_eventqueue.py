@@ -57,7 +57,7 @@ CTRL_ARROW_KEYCODES= {
     b'\033Oc': 'ctrl right',
 }
 
-def get_terminal_keycodes():
+def get_terminal_keycodes() -> dict[bytes, str]:
     """
     Generates a dictionary mapping terminal keycodes to human-readable names.
     """

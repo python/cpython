@@ -30,6 +30,7 @@ from _colorize import can_colorize, ANSIColors  # type: ignore[import-not-found]
 
 from . import commands, console, input
 from .utils import ANSI_ESCAPE_SEQUENCE, wlen
+from .trace import trace
 
 
 # types
@@ -562,9 +563,13 @@ class Reader:
         self.console.refresh(screen, self.cxy)
         self.dirty = False
 
-    def do_cmd(self, cmd: list[str]) -> None:
+    def do_cmd(self, cmd: tuple[str, list[str]]) -> None:
+        """`cmd` is a tuple of "event_name" and "event", which in the current
+        implementation is always just the "buffer" which happens to be a list
+        of single-character strings."""
         assert isinstance(cmd[0], str)
 
+        trace("received command {cmd}", cmd=cmd)
         command_type = self.commands.get(cmd[0], commands.invalid_command)
         command = command_type(self, *cmd)  # type: ignore[arg-type]
 
@@ -613,7 +618,7 @@ class Reader:
             if translate:
                 cmd = self.input_trans.get()
             else:
-                cmd = event.evt, event.data
+                cmd = [event.evt, event.data]
 
             if cmd is None:
                 if block:

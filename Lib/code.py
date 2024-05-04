@@ -171,7 +171,7 @@ class InteractiveConsole(InteractiveInterpreter):
 
     """
 
-    def __init__(self, locals=None, filename="<console>", local_exit=False):
+    def __init__(self, locals=None, filename="<console>", *, local_exit=False):
         """Constructor.
 
         The optional locals argument will be passed to the
