@@ -1740,7 +1740,8 @@ reload_singlephase_extension(PyThreadState *tstate,
 
 static PyObject *
 import_find_extension(PyThreadState *tstate,
-                      struct _Py_ext_module_loader_info *info)
+                      struct _Py_ext_module_loader_info *info,
+                      struct extensions_cache_value **p_cached)
 {
     /* Only single-phase init modules will be in the cache. */
     struct extensions_cache_value *cached
@@ -1750,6 +1751,7 @@ import_find_extension(PyThreadState *tstate,
     }
     assert(cached->def != NULL);
     assert_singlephase(cached);
+    *p_cached = cached;
 
     /* It may have been successfully imported previously
        in an interpreter that allows legacy modules
@@ -1770,6 +1772,7 @@ import_find_extension(PyThreadState *tstate,
         PySys_FormatStderr("import %U # previously loaded (%R)\n",
                            info->name, info->path);
     }
+
     return mod;
 }
 
@@ -1991,14 +1994,14 @@ create_builtin(PyThreadState *tstate, PyObject *name, PyObject *spec)
         return NULL;
     }
 
-    PyObject *mod = import_find_extension(tstate, &info);
+    struct extensions_cache_value *cached = NULL;
+    PyObject *mod = import_find_extension(tstate, &info, &cached);
     if (mod != NULL) {
         assert(!_PyErr_Occurred(tstate));
-#ifndef NDEBUG
-        struct extensions_cache_value *cached
-                = _extensions_cache_get(info.path, info.name);
-#endif
-        assert(cached->def == _PyModule_GetDef(mod));
+        assert(cached != NULL);
+        /* The module might not have md_def set in certain reload cases. */
+        assert(_PyModule_GetDef(mod) == NULL
+                || cached->def == _PyModule_GetDef(mod));
         assert_singlephase(cached);
         goto finally;
     }
@@ -2009,8 +2012,6 @@ create_builtin(PyThreadState *tstate, PyObject *name, PyObject *spec)
     /* If the module was added to the global cache
      * but def->m_base.m_copy was cleared (e.g. subinterp fini)
      * then we have to do a little dance here. */
-    struct extensions_cache_value *cached
-            = _extensions_cache_get(info.path, info.name);
     if (cached != NULL) {
         assert(cached->def->m_base.m_copy == NULL);
         /* For now we clear the cache and move on. */
@@ -4361,13 +4362,12 @@ _imp_create_dynamic_impl(PyObject *module, PyObject *spec, PyObject *file)
         return NULL;
     }
 
-    mod = import_find_extension(tstate, &info);
+    struct extensions_cache_value *cached = NULL;
+    mod = import_find_extension(tstate, &info, &cached);
     if (mod != NULL) {
         assert(!_PyErr_Occurred(tstate));
-#ifndef NDEBUG
-        struct extensions_cache_value *cached
-                = _extensions_cache_get(info.path, info.name);
-#endif
+        assert(cached != NULL);
+        /* The module might not have md_def set in certain reload cases. */
         assert(_PyModule_GetDef(mod) == NULL
                 || cached->def == _PyModule_GetDef(mod));
         assert_singlephase(cached);
@@ -4381,8 +4381,6 @@ _imp_create_dynamic_impl(PyObject *module, PyObject *spec, PyObject *file)
     /* If the module was added to the global cache
      * but def->m_base.m_copy was cleared (e.g. subinterp fini)
      * then we have to do a little dance here. */
-    struct extensions_cache_value *cached
-            = _extensions_cache_get(info.path, info.name);
     if (cached != NULL) {
         assert(cached->def->m_base.m_copy == NULL);
         /* For now we clear the cache and move on. */
