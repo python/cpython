@@ -2456,7 +2456,6 @@ def test_pdb_issue_gh_108976():
     ...     'continue'
     ... ]):
     ...    test_function()
-    bdb.Bdb.dispatch: unknown debugging event: 'opcode'
     > <doctest test.test_pdb.test_pdb_issue_gh_108976[0]>(5)test_function()
     -> a = 1
     (Pdb) continue
