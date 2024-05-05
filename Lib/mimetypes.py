@@ -553,7 +553,6 @@ def _default_mime_types():
         '.html'   : 'text/html',
         '.htm'    : 'text/html',
         '.n3'     : 'text/n3',
-        '.md'     : 'text/markdown',
         '.txt'    : 'text/plain',
         '.bat'    : 'text/plain',
         '.c'      : 'text/plain',

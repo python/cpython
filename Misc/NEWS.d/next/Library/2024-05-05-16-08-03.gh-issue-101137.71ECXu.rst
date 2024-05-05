@@ -1,2 +1,1 @@
-Mime type ``text/x-rst`` and ``text/markdown`` are now supported by
-:mod:`mimetypes`.
+Mime type ``text/x-rst`` is now supported by :mod:`mimetypes`.
