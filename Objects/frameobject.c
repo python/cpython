@@ -171,7 +171,6 @@ framelocalsproxy_setitem(PyObject *self, PyObject *key, PyObject *value)
             } else if (value != oldvalue) {
                 Py_XSETREF(fast[i], Py_NewRef(value));
             }
-            Py_XDECREF(value);
             return 0;
         }
     }
