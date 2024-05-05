@@ -2339,6 +2339,7 @@ LIBSUBDIRS=	asyncio \
 		xmlrpc \
 		zipfile zipfile/_path \
 		zoneinfo \
+		_pyrepl \
 		__phello__
 TESTSUBDIRS=	idlelib/idle_test \
 		test \
