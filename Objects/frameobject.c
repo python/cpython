@@ -232,6 +232,8 @@ framelocalsproxy_merge(PyObject* self, PyObject* other)
         Py_DECREF(value);
     }
 
+    Py_DECREF(iter);
+
     return 0;
 }
 
@@ -306,7 +308,10 @@ framelocalsproxy_visit(PyObject *self, visitproc visit, void *arg)
 static PyObject *
 framelocalsproxy_iter(PyObject *self)
 {
-    return PyObject_GetIter(framelocalsproxy_keys(self, NULL));
+    PyObject* keys = framelocalsproxy_keys(self, NULL);
+    PyObject* iter = PyObject_GetIter(keys);
+    Py_XDECREF(keys);
+    return iter;
 }
 
 static PyObject *
