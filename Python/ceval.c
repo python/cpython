@@ -2496,8 +2496,13 @@ _PyEval_GetFrameLocals(void)
 
     if (PyFrameLocalsProxy_Check(locals)) {
         PyObject* ret = PyDict_New();
+        if (ret == NULL) {
+            Py_DECREF(locals);
+            return NULL;
+        }
         if (PyDict_Update(ret, locals)) {
             Py_DECREF(ret);
+            Py_DECREF(locals);
             return NULL;
         }
         Py_DECREF(locals);
