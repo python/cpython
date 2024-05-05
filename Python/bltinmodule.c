@@ -3124,6 +3124,9 @@ _PyBuiltin_Init(PyInterpreterState *interp)
     mod = _PyModule_CreateInitialized(&builtinsmodule, PYTHON_API_VERSION);
     if (mod == NULL)
         return NULL;
+#ifdef Py_GIL_DISABLED
+    PyModule_ExperimentalSetGIL(mod, Py_MOD_GIL_NOT_USED);
+#endif
     dict = PyModule_GetDict(mod);
 
 #ifdef Py_TRACE_REFS

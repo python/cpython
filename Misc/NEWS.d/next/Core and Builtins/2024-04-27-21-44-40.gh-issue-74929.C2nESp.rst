@@ -1,0 +1,3 @@
+Implement PEP 667: converted :attr:`FrameType.f_locals <frame.f_locals>`
+and :c:func:`PyFrame_GetLocals` to return a write-through proxy object
+when the frame refers to a function or comprehension.
