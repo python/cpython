@@ -7678,7 +7678,7 @@ PY_STDLIB_MOD([_curses_panel],
   [$PANEL_CFLAGS $CURSES_CFLAGS], [$PANEL_LIBS $CURSES_LIBS]
 )
 PY_STDLIB_MOD([_decimal],
-  [], [test "$have_mpdec" = "yes"],
+  [test "$have_mpdec" = "yes"], [],
   [$LIBMPDEC_CFLAGS], [$LIBMPDEC_LIBS])
 PY_STDLIB_MOD([_dbm],
   [test -n "$with_dbmliborder"], [test "$have_dbm" != "no"],
