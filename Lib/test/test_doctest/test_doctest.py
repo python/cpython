@@ -2056,8 +2056,7 @@ if not hasattr(sys, 'gettrace') or not sys.gettrace():
 
           >>> try: runner.run(test)
           ... finally: sys.stdin = real_stdin
-          --Return--
-          > <doctest foo-bar@baz[2]>(1)<module>()->None
+          > <doctest foo-bar@baz[2]>(1)<module>()
           -> import pdb; pdb.set_trace()
           (Pdb) print(x)
           42
@@ -2087,8 +2086,7 @@ if not hasattr(sys, 'gettrace') or not sys.gettrace():
           ...     runner.run(test)
           ... finally:
           ...     sys.stdin = real_stdin
-          --Return--
-          > <doctest test.test_doctest.test_doctest.test_pdb_set_trace[9]>(3)calls_set_trace()->None
+          > <doctest test.test_doctest.test_doctest.test_pdb_set_trace[9]>(3)calls_set_trace()
           -> import pdb; pdb.set_trace()
           (Pdb) print(y)
           2
@@ -2114,6 +2112,7 @@ if not hasattr(sys, 'gettrace') or not sys.gettrace():
           >>> test = parser.get_doctest(doc, globals(), "foo-bar@baz", "foo-bar@baz.py", 0)
           >>> real_stdin = sys.stdin
           >>> sys.stdin = FakeInput([
+          ...    'step',     # return event of g
           ...    'list',     # list source from example 2
           ...    'next',     # return from g()
           ...    'list',     # list source from example 1
@@ -2124,6 +2123,9 @@ if not hasattr(sys, 'gettrace') or not sys.gettrace():
           >>> try: runner.run(test)
           ... finally: sys.stdin = real_stdin
           ... # doctest: +NORMALIZE_WHITESPACE
+          > <doctest foo-bar@baz[1]>(3)g()
+          -> import pdb; pdb.set_trace()
+          (Pdb) step
           --Return--
           > <doctest foo-bar@baz[1]>(3)g()->None
           -> import pdb; pdb.set_trace()
@@ -2188,6 +2190,7 @@ if not hasattr(sys, 'gettrace') or not sys.gettrace():
         >>> test = parser.get_doctest(doc, globals(), "foo-bar@baz", "foo-bar@baz.py", 0)
         >>> real_stdin = sys.stdin
         >>> sys.stdin = FakeInput([
+        ...    'step',
         ...    'print(y)',  # print data defined in the function
         ...    'step', 'step', 'step', 'step', 'step', 'step', 'print(z)',
         ...    'up', 'print(x)',
@@ -2201,6 +2204,9 @@ if not hasattr(sys, 'gettrace') or not sys.gettrace():
         ... finally:
         ...     sys.stdin = real_stdin
         ... # doctest: +REPORT_NDIFF
+        > <doctest test.test_doctest.test_doctest.test_pdb_set_trace_nested[0]>(4)calls_set_trace()
+        -> import pdb; pdb.set_trace()
+        (Pdb) step
         > <doctest test.test_doctest.test_doctest.test_pdb_set_trace_nested[0]>(5)calls_set_trace()
         -> self.f1()
         (Pdb) print(y)

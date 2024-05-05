@@ -715,6 +715,12 @@ pdb
 * :mod:`zipapp` is supported as a debugging target.
   (Contributed by Tian Gao in :gh:`118501`.)
 
+* ``breakpoint()`` and ``pdb.set_trace()`` now enter the debugger immediately
+  rather than on the next line of code to be executed. This change prevents the
+  debugger from breaking outside of the context when ``breakpoint()`` is positioned
+  at the end of the context.
+  (Contributed by Tian Gao in :gh:`118579`.)
+
 queue
 -----
 

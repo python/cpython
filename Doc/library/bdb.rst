@@ -289,6 +289,10 @@ The :mod:`bdb` module also defines two classes:
       Start debugging from *frame*.  If *frame* is not specified, debugging
       starts from caller's frame.
 
+      .. versionchanged:: 3.13
+         :func:`set_trace` will enter the debugger immediately, rather than
+         on the next line of code to be executed.
+
    .. method:: set_continue()
 
       Stop only at breakpoints or when finished.  If there are no breakpoints,

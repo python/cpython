@@ -62,8 +62,8 @@ running without the debugger using the :pdbcmd:`continue` command.
 
 The debugger's prompt is ``(Pdb)``, which is the indicator that you are in debug mode::
 
-   > ...(3)double()
-   -> return x * 2
+   > ...(2)double()
+   -> breakpoint()
    (Pdb) p x
    3
    (Pdb) continue
@@ -164,6 +164,9 @@ slightly different way:
    .. versionchanged:: 3.7
       The keyword-only argument *header*.
 
+   .. versionchanged:: 3.13
+      :func:`set_trace` will enter the debugger immediately, rather than
+      on the next line of code to be executed.
 
 .. function:: post_mortem(traceback=None)
 
