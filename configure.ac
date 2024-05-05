@@ -3991,13 +3991,14 @@ AS_VAR_IF(
    LIBMPDEC_LIBS="-lm \$(LIBMPDEC_A)"
    LIBMPDEC_INTERNAL="\$(LIBMPDEC_HEADERS) \$(LIBMPDEC_A)"])
 
-AS_VAR_IF([with_system_libmpdec], [yes],
-          [WITH_SAVE_ENV([
-             CPPFLAGS="$LIBMPDEC_CFLAGS $CPPFLAGS"
-             LDFLAGS="$LIBMPDEC_LIBS $LDFLAGS"
-             AC_SEARCH_LIBS([mpd_version], [mpdec],
-                            [have_mpdec=yes], [have_mpdec=no])])],
-          [have_mpdec=yes])
+AS_VAR_IF(
+  [with_system_libmpdec], [yes],
+  [WITH_SAVE_ENV(
+    [CPPFLAGS="$LIBMPDEC_CFLAGS $CPPFLAGS"
+     LDFLAGS="$LIBMPDEC_LIBS $LDFLAGS"
+     AC_SEARCH_LIBS([mpd_version], [mpdec],
+                    [have_mpdec=yes], [have_mpdec=no])])],
+  [have_mpdec=yes])
 
 # Disable forced inlining in debug builds, see GH-94847
 AS_VAR_IF(

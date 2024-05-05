@@ -14708,10 +14708,9 @@ save_CPPFLAGS=$CPPFLAGS
 save_LDFLAGS=$LDFLAGS
 save_LIBS=$LIBS
 
-
-             CPPFLAGS="$LIBMPDEC_CFLAGS $CPPFLAGS"
-             LDFLAGS="$LIBMPDEC_LIBS $LDFLAGS"
-             { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for library containing mpd_version" >&5
+CPPFLAGS="$LIBMPDEC_CFLAGS $CPPFLAGS"
+     LDFLAGS="$LIBMPDEC_LIBS $LDFLAGS"
+     { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for library containing mpd_version" >&5
 printf %s "checking for library containing mpd_version... " >&6; }
 if test ${ac_cv_search_mpd_version+y}
 then :
