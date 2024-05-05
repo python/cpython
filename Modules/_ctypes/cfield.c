@@ -168,12 +168,6 @@ PyCField_FromDesc_msvc(
 
     self->offset = *poffset - (*pfield_size) / 8;
     if(is_bitfield) {
-        if (info->size != info->align) {
-            PyErr_SetString(
-                PyExc_TypeError,
-                "bitfield's base type size differs from alignment");
-            return -1;
-        }
         assert(0 <= (*pfield_size + *pbitofs));
         assert((*pfield_size + *pbitofs) < info->size * 8);
         self->size = BUILD_SIZE(bitsize, *pfield_size + *pbitofs);
