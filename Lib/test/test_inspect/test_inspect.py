@@ -5075,6 +5075,12 @@ class TestSignatureBind(unittest.TestCase):
         self.assertEqual(self.call(test, 1, 2, foo=4, bar=5, c_po=10),
                          (1, 2, 3, 4, 5, {'c_po': 10}))
 
+        self.assertEqual(self.call(test, 1, 2, 3, c_po=10, foo=4, bar=5),
+                         (1, 2, 3, 4, 5, {'c_po': 10}))
+
+        self.assertEqual(self.call(test, 1, 2, 3, foo=4, bar=5, c_po=10),
+                         (1, 2, 3, 4, 5, {'c_po': 10}))
+
         self.assertEqual(self.call(test, 1, 2, c_po=4),
                          (1, 2, 3, 42, 50, {'c_po': 4}))
 
