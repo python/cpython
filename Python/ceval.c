@@ -2500,7 +2500,7 @@ _PyEval_GetFrameLocals(void)
             Py_DECREF(locals);
             return NULL;
         }
-        if (PyDict_Update(ret, locals)) {
+        if (PyDict_Update(ret, locals) < 0) {
             Py_DECREF(ret);
             Py_DECREF(locals);
             return NULL;
