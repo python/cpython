@@ -231,6 +231,11 @@ Other Language Changes
   equivalent of the :option:`-X frozen_modules <-X>` command-line option.
   (Contributed by Yilei Yang in :gh:`111374`.)
 
+* Add :ref:`support for the perf profiler <perf_profiling>` working without
+  frame pointers through the new environment variable
+  :envvar:`PYTHONPERFJITSUPPORT` and command-line option :option:`-X perfjit
+  <-X>` (Contributed by Pablo Galindo in :gh:`118518`.)
+
 * The new :envvar:`PYTHON_HISTORY` environment variable can be used to change
   the location of a ``.python_history`` file.
   (Contributed by Levi Sabah, Zackery Spytz and Hugo van Kemenade in

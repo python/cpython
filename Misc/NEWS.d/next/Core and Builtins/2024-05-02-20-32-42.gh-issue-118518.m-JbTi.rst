@@ -1,0 +1,4 @@
+Allow the Linux perf support to work without frame pointers using perf's
+advanced JIT support. The feature is activated when using the
+``PYTHONPERFJITSUPPORT`` environment variable or when running Python with
+``-Xperfjit``. Patch by Pablo Galindo

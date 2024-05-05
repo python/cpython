@@ -586,6 +586,15 @@ Miscellaneous options
 
      .. versionadded:: 3.12
 
+   * ``-X perfjit`` enables support for the Linux ``perf`` profiler with DWARF
+     support. When this option is provided, the ``perf`` profiler will be able
+     to report Python calls using DWARF ifnormation. This option is only available on
+     some platforms and will do nothing if is not supported on the current
+     system. The default value is "off". See also :envvar:`PYTHONPERFJITSUPPORT`
+     and :ref:`perf_profiling`.
+
+     .. versionadded:: 3.13
+
    * :samp:`-X cpu_count={n}` overrides :func:`os.cpu_count`,
      :func:`os.process_cpu_count`, and :func:`multiprocessing.cpu_count`.
      *n* must be greater than or equal to 1.
@@ -1126,6 +1135,21 @@ conflict.
    and :ref:`perf_profiling`.
 
    .. versionadded:: 3.12
+
+.. envvar:: PYTHONPERFJITSUPPORT
+
+   If this variable is set to a nonzero value, it enables support for
+   the Linux ``perf`` profiler so Python calls can be detected by it
+   using DWARF information.
+
+   If set to ``0``, disable Linux ``perf`` profiler support.
+
+   See also the :option:`-X perfjit <-X>` command-line option
+   and :ref:`perf_profiling`.
+
+   .. versionadded:: 3.13
+
+
 
 .. envvar:: PYTHON_CPU_COUNT
 
