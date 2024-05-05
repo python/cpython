@@ -2474,10 +2474,10 @@ class TestKDE(unittest.TestCase):
 
         h = 1.5
         kernel = 'cosine'
-        prng = kde_random(sample, h, kernel)
-        self.assertEqual(prng.__name__, 'rand')
-        self.assertIn(kernel, prng.__doc__)
-        self.assertIn(repr(h), prng.__doc__)
+        rand = kde_random(sample, h, kernel)
+        self.assertEqual(rand.__name__, 'rand')
+        self.assertIn(kernel, rand.__doc__)
+        self.assertIn(repr(h), rand.__doc__)
 
         # Approximate distribution test: Compare a random sample to the expected distribution
 
