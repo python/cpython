@@ -3297,10 +3297,15 @@ class Signature:
                 arguments[kwargs_param.name] = kwargs
             else:
                 if pos_only_param_in_kwargs:
-                    raise TypeError('got some positional-only arguments passed as '
-                                    'keyword arguments: {arg!r} '. \
-                                    format(arg=', '.join(
-                                    param.name for param in pos_only_param_in_kwargs)))
+                    raise TypeError(
+                        'got some positional-only arguments passed as '
+                        'keyword arguments: {arg!r} '.format(
+                            arg=', '.join(
+                                param.name
+                                for param in pos_only_param_in_kwargs
+                            ),
+                        ),
+                    )
                 raise TypeError(
                     'got an unexpected keyword argument {arg!r}'.format(
                         arg=next(iter(kwargs))))
