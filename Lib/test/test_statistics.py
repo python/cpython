@@ -2482,29 +2482,30 @@ class TestKDE(unittest.TestCase):
         # Approximate distribution test: Compare a random sample to the expected distribution
 
         data = [-2.1, -1.3, -0.4, 1.9, 5.1, 6.2, 7.8, 14.3, 15.1, 15.3, 15.8, 17.0]
+        xarr = [x / 10 for x in range(-100, 250)]
         n = 1_000_000
         h = 1.75
         dx = 0.1
 
-        def p_expected(x):
-            return F_hat(x + dx) - F_hat(x - dx)
-
         def p_observed(x):
-            # P(x-dx <= X < x+dx) / (2*dx)
-            i = bisect.bisect_left(big_sample, x - dx)
-            j = bisect.bisect_right(big_sample, x + dx)
+            # P(x <= X < x+dx)
+            i = bisect.bisect_left(big_sample, x)
+            j = bisect.bisect_left(big_sample, x + dx)
             return (j - i) / len(big_sample)
+
+        def p_expected(x):
+            # P(x <= X < x+dx)
+            return F_hat(x + dx) - F_hat(x)
 
         for kernel in kernels:
             with self.subTest(kernel=kernel):
 
-                F_hat = statistics.kde(data, h, kernel, cumulative=True)
                 rand = kde_random(data, h, kernel, seed=8675309**2)
                 big_sample = sorted([rand() for i in range(n)])
+                F_hat = statistics.kde(data, h, kernel, cumulative=True)
 
-                for x in range(-40, 190):
-                    x /= 10
-                    self.assertTrue(math.isclose(p_observed(x), p_expected(x), abs_tol=0.001))
+                for x in xarr:
+                    self.assertTrue(math.isclose(p_observed(x), p_expected(x), abs_tol=0.0005))
 
 
 class TestQuantiles(unittest.TestCase):
