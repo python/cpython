@@ -3998,7 +3998,10 @@ AS_VAR_IF(
      LDFLAGS="$LIBMPDEC_LIBS $LDFLAGS"
      AC_SEARCH_LIBS([mpd_version], [mpdec],
                     [have_mpdec=yes], [have_mpdec=no])])],
-  [have_mpdec=yes])
+  [AS_VAR_SET([have_mpdec], [yes])
+   AC_MSG_WARN([m4_normalize([the bundled copy of libmpdecimal is scheduled for
+                              removal in Python 3.15; consider using a system
+                              installed mpdecimal library.])])])
 
 # Disable forced inlining in debug builds, see GH-94847
 AS_VAR_IF(
