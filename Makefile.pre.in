@@ -488,6 +488,7 @@ PYTHON_OBJS=	\
 		Python/fileutils.o \
 		Python/suggestions.o \
 		Python/perf_trampoline.o \
+		Python/perf_jit_trampoline.o \
 		Python/$(DYNLOADFILE) \
 		$(LIBOBJS) \
 		$(MACHDEP_OBJS) \
