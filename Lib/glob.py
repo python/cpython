@@ -5,7 +5,7 @@ import itertools
 import operator
 import sys
 
-from pathlib._glob import translate, magic_check, magic_check_bytes, Globber
+from pathlib._glob import translate, magic_check, magic_check_bytes, StringGlobber
 
 __all__ = ["glob", "iglob", "escape", "translate"]
 
@@ -49,7 +49,7 @@ def iglob(pathname, *, root_dir=None, dir_fd=None, recursive=False,
             root_dir = os.fsdecode(root_dir)
     anchor, parts = _split_pathname(pathname)
 
-    globber = Globber(recursive=recursive, include_hidden=include_hidden)
+    globber = StringGlobber(recursive=recursive, include_hidden=include_hidden)
     select = globber.selector(parts)
     if anchor:
         # Non-relative pattern. The anchor is guaranteed to exist unless it
@@ -77,12 +77,12 @@ _deprecated_function_message = (
 def glob0(dirname, pattern):
     import warnings
     warnings._deprecated("glob.glob0", _deprecated_function_message, remove=(3, 15))
-    return list(_relative_glob(Globber().literal_selector(pattern, []), dirname))
+    return list(_relative_glob(StringGlobber().literal_selector(pattern, []), dirname))
 
 def glob1(dirname, pattern):
     import warnings
     warnings._deprecated("glob.glob1", _deprecated_function_message, remove=(3, 15))
-    return list(_relative_glob(Globber().wildcard_selector(pattern, []), dirname))
+    return list(_relative_glob(StringGlobber().wildcard_selector(pattern, []), dirname))
 
 def _split_pathname(pathname):
     """Split the given path into a pair (anchor, parts), where *anchor* is the
@@ -101,7 +101,7 @@ def _relative_glob(select, dirname, dir_fd=None):
     """Globs using a select function from the given dirname. The dirname
     prefix is removed from results.
     """
-    dirname = Globber.add_slash(dirname)
+    dirname = StringGlobber.add_slash(dirname)
     slicer = operator.itemgetter(slice(len(dirname), None))
     return map(slicer, select(dirname, dir_fd, dirname))
 

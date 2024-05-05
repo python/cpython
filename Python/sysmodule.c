@@ -1022,13 +1022,6 @@ static PyObject *
 call_trampoline(PyThreadState *tstate, PyObject* callback,
                 PyFrameObject *frame, int what, PyObject *arg)
 {
-    /* Discard any previous modifications the frame's fast locals */
-    if (frame->f_fast_as_locals) {
-        if (PyFrame_FastToLocalsWithError(frame) < 0) {
-            return NULL;
-        }
-    }
-
     /* call the Python-level function */
     if (arg == NULL) {
         arg = Py_None;
@@ -1036,7 +1029,6 @@ call_trampoline(PyThreadState *tstate, PyObject* callback,
     PyObject *args[3] = {(PyObject *)frame, whatstrings[what], arg};
     PyObject *result = _PyObject_VectorcallTstate(tstate, callback, args, 3, NULL);
 
-    PyFrame_LocalsToFast(frame, 1);
     return result;
 }
 
@@ -2290,6 +2282,16 @@ sys_activate_stack_trampoline_impl(PyObject *module, const char *backend)
                 return NULL;
             }
         }
+        else if (strcmp(backend, "perfjit") == 0) {
+            _PyPerf_Callbacks cur_cb;
+            _PyPerfTrampoline_GetCallbacks(&cur_cb);
+            if (cur_cb.write_state != _Py_perfmap_jit_callbacks.write_state) {
+                if (_PyPerfTrampoline_SetCallbacks(&_Py_perfmap_jit_callbacks) < 0 ) {
+                    PyErr_SetString(PyExc_ValueError, "can't activate perf jit trampoline");
+                    return NULL;
+                }
+            }
+        }
     }
     else {
         PyErr_Format(PyExc_ValueError, "invalid backend: %s", backend);
@@ -2391,6 +2393,21 @@ sys__get_cpu_count_config_impl(PyObject *module)
 {
     const PyConfig *config = _Py_GetConfig();
     return config->cpu_count;
+}
+
+/*[clinic input]
+sys._baserepl
+
+Private function for getting the base REPL
+[clinic start generated code]*/
+
+static PyObject *
+sys__baserepl_impl(PyObject *module)
+/*[clinic end generated code: output=f19a36375ebe0a45 input=ade0ebb9fab56f3c]*/
+{
+    PyCompilerFlags cf = _PyCompilerFlags_INIT;
+    PyRun_AnyFileExFlags(stdin, "<stdin>", 0, &cf);
+    Py_RETURN_NONE;
 }
 
 /*[clinic input]
@@ -2577,6 +2594,7 @@ static PyMethodDef sys_methods[] = {
     SYS_UNRAISABLEHOOK_METHODDEF
     SYS_GET_INT_MAX_STR_DIGITS_METHODDEF
     SYS_SET_INT_MAX_STR_DIGITS_METHODDEF
+    SYS__BASEREPL_METHODDEF
 #ifdef Py_STATS
     SYS__STATS_ON_METHODDEF
     SYS__STATS_OFF_METHODDEF

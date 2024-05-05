@@ -1485,6 +1485,24 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(sys__baserepl__doc__,
+"_baserepl($module, /)\n"
+"--\n"
+"\n"
+"Private function for getting the base REPL");
+
+#define SYS__BASEREPL_METHODDEF    \
+    {"_baserepl", (PyCFunction)sys__baserepl, METH_NOARGS, sys__baserepl__doc__},
+
+static PyObject *
+sys__baserepl_impl(PyObject *module);
+
+static PyObject *
+sys__baserepl(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return sys__baserepl_impl(module);
+}
+
 PyDoc_STRVAR(sys__is_gil_enabled__doc__,
 "_is_gil_enabled($module, /)\n"
 "--\n"
@@ -1556,4 +1574,4 @@ exit:
 #ifndef SYS_GETANDROIDAPILEVEL_METHODDEF
     #define SYS_GETANDROIDAPILEVEL_METHODDEF
 #endif /* !defined(SYS_GETANDROIDAPILEVEL_METHODDEF) */
-/*[clinic end generated code: output=352ac7a0085e8a1f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ef7c35945443d300 input=a9049054013a1b77]*/
