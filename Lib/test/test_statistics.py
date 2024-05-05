@@ -2434,7 +2434,6 @@ class TestKDE(unittest.TestCase):
         data.append(100)
         self.assertGreater(f_hat(100), 0.0)
 
-
     def test_kde_kernel_invcdfs(self):
         kernel_invcdfs = statistics._kernel_invcdfs
         kde = statistics.kde
