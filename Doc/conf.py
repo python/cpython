@@ -131,6 +131,7 @@ nitpick_ignore = [
     ('c:func', 'vsnprintf'),
     # Standard C types
     ('c:type', 'FILE'),
+    ('c:type', 'int32_t'),
     ('c:type', 'int64_t'),
     ('c:type', 'intmax_t'),
     ('c:type', 'off_t'),
@@ -298,8 +299,8 @@ smartquotes_excludes = {
     'languages': ['ja', 'fr', 'zh_TW', 'zh_CN'], 'builders': ['man', 'text'],
 }
 
-# Avoid a warning with Sphinx >= 2.0
-master_doc = 'contents'
+# Avoid a warning with Sphinx >= 4.0
+root_doc = 'contents'
 
 # Allow translation of index directives
 gettext_additional_targets = [

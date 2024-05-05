@@ -205,7 +205,7 @@ Annotation scopes are used in the following contexts:
 * Type parameter lists for :ref:`generic classes <generic-classes>`.
   A generic class's base classes and
   keyword arguments are executed within the annotation scope, but its decorators are not.
-* The bounds and constraints for type variables
+* The bounds, constraints, and default values for type parameters
   (:ref:`lazily evaluated <lazy-evaluation>`).
 * The value of type aliases (:ref:`lazily evaluated <lazy-evaluation>`).
 
@@ -232,13 +232,17 @@ Annotation scopes differ from function scopes in the following ways:
 .. versionadded:: 3.12
    Annotation scopes were introduced in Python 3.12 as part of :pep:`695`.
 
+.. versionchanged:: 3.13
+   Annotation scopes are also used for type parameter defaults, as
+   introduced by :pep:`696`.
+
 .. _lazy-evaluation:
 
 Lazy evaluation
 ---------------
 
 The values of type aliases created through the :keyword:`type` statement are
-*lazily evaluated*. The same applies to the bounds and constraints of type
+*lazily evaluated*. The same applies to the bounds, constraints, and default values of type
 variables created through the :ref:`type parameter syntax <type-params>`.
 This means that they are not evaluated when the type alias or type variable is
 created. Instead, they are only evaluated when doing so is necessary to resolve

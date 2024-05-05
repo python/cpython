@@ -684,6 +684,13 @@
 
         /* _INSTRUMENTED_YIELD_VALUE is not a viable micro-op for tier 2 */
 
+        case _YIELD_VALUE: {
+            _Py_UopsSymbol *res;
+            OUT_OF_SPACE_IF_NULL(res = sym_new_unknown(ctx));
+            stack_pointer[-1] = res;
+            break;
+        }
+
         case _POP_EXCEPT: {
             stack_pointer += -1;
             break;
@@ -1439,7 +1446,11 @@
             break;
         }
 
-        /* _FOR_ITER_GEN is not a viable micro-op for tier 2 */
+        case _FOR_ITER_GEN_FRAME: {
+            /* We are about to hit the end of the trace */
+            goto done;
+            break;
+        }
 
         /* _BEFORE_ASYNC_WITH is not a viable micro-op for tier 2 */
 
@@ -1545,6 +1556,58 @@
         /* _CALL is not a viable micro-op for tier 2 */
 
         case _CHECK_PERIODIC: {
+            break;
+        }
+
+        case _PY_FRAME_GENERAL: {
+            _Py_UopsSymbol **args;
+            _Py_UopsSymbol *self_or_null;
+            _Py_UopsSymbol *callable;
+            _Py_UOpsAbstractFrame *new_frame;
+            args = &stack_pointer[-oparg];
+            self_or_null = stack_pointer[-1 - oparg];
+            callable = stack_pointer[-2 - oparg];
+            /* The _Py_UOpsAbstractFrame design assumes that we can copy arguments across directly */
+            (void)callable;
+            (void)self_or_null;
+            (void)args;
+            first_valid_check_stack = NULL;
+            goto done;
+            stack_pointer[-2 - oparg] = (_Py_UopsSymbol *)new_frame;
+            stack_pointer += -1 - oparg;
+            break;
+        }
+
+        case _CHECK_FUNCTION_VERSION: {
+            break;
+        }
+
+        case _CHECK_METHOD_VERSION: {
+            break;
+        }
+
+        case _EXPAND_METHOD: {
+            _Py_UopsSymbol *method;
+            _Py_UopsSymbol *self;
+            method = sym_new_not_null(ctx);
+            if (method == NULL) goto out_of_space;
+            self = sym_new_not_null(ctx);
+            if (self == NULL) goto out_of_space;
+            stack_pointer[-2 - oparg] = method;
+            stack_pointer[-1 - oparg] = self;
+            break;
+        }
+
+        case _CHECK_IS_NOT_PY_CALLABLE: {
+            break;
+        }
+
+        case _CALL_NON_PY_GENERAL: {
+            _Py_UopsSymbol *res;
+            res = sym_new_not_null(ctx);
+            if (res == NULL) goto out_of_space;
+            stack_pointer[-2 - oparg] = res;
+            stack_pointer += -1 - oparg;
             break;
         }
 
@@ -1681,15 +1744,13 @@
             if (first_valid_check_stack == NULL) {
                 first_valid_check_stack = corresponding_check_stack;
             }
-            else {
+            else if (corresponding_check_stack) {
                 // delete all but the first valid _CHECK_STACK_SPACE
                 corresponding_check_stack->opcode = _NOP;
             }
             corresponding_check_stack = NULL;
             break;
         }
-
-        /* _CALL_PY_WITH_DEFAULTS is not a viable micro-op for tier 2 */
 
         case _CALL_TYPE_1: {
             _Py_UopsSymbol *res;
@@ -1837,6 +1898,29 @@
             if (func == NULL) goto out_of_space;
             stack_pointer[-2] = func;
             stack_pointer += -1;
+            break;
+        }
+
+        case _RETURN_GENERATOR: {
+            _Py_UopsSymbol *res;
+            ctx->frame->stack_pointer = stack_pointer;
+            frame_pop(ctx);
+            stack_pointer = ctx->frame->stack_pointer;
+            OUT_OF_SPACE_IF_NULL(res = sym_new_unknown(ctx));
+            /* Stack space handling */
+            assert(corresponding_check_stack == NULL);
+            assert(co != NULL);
+            int framesize = co->co_framesize;
+            assert(framesize > 0);
+            assert(framesize <= curr_space);
+            curr_space -= framesize;
+            co = get_code(this_instr);
+            if (co == NULL) {
+                // might be impossible, but bailing is still safe
+                goto done;
+            }
+            stack_pointer[0] = res;
+            stack_pointer += 1;
             break;
         }
 
@@ -2086,6 +2170,10 @@
             break;
         }
 
+        case _DYNAMIC_EXIT: {
+            break;
+        }
+
         case _START_EXECUTOR: {
             break;
         }
@@ -2102,12 +2190,12 @@
             break;
         }
 
-        case _SIDE_EXIT: {
+        case _ERROR_POP_N: {
+            stack_pointer += -oparg;
             break;
         }
 
-        case _ERROR_POP_N: {
-            stack_pointer += -oparg;
+        case _TIER2_RESUME_CHECK: {
             break;
         }
 

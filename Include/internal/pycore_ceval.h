@@ -48,8 +48,12 @@ extern void _PyEval_SignalReceived(void);
 #define _Py_PENDING_MAINTHREADONLY 1
 #define _Py_PENDING_RAWFREE 2
 
+typedef int _Py_add_pending_call_result;
+#define _Py_ADD_PENDING_SUCCESS 0
+#define _Py_ADD_PENDING_FULL -1
+
 // Export for '_testinternalcapi' shared extension
-PyAPI_FUNC(int) _PyEval_AddPendingCall(
+PyAPI_FUNC(_Py_add_pending_call_result) _PyEval_AddPendingCall(
     PyInterpreterState *interp,
     _Py_pending_call_func func,
     void *arg,
@@ -104,6 +108,7 @@ extern int _PyIsPerfTrampolineActive(void);
 extern PyStatus _PyPerfTrampoline_AfterFork_Child(void);
 #ifdef PY_HAVE_PERF_TRAMPOLINE
 extern _PyPerf_Callbacks _Py_perfmap_callbacks;
+extern _PyPerf_Callbacks _Py_perfmap_jit_callbacks;
 #endif
 
 static inline PyObject*
@@ -182,7 +187,7 @@ static inline void _Py_LeaveRecursiveCall(void)  {
 
 extern struct _PyInterpreterFrame* _PyEval_GetFrame(void);
 
-extern PyObject* _Py_MakeCoro(PyFunctionObject *func);
+PyAPI_FUNC(PyObject *)_Py_MakeCoro(PyFunctionObject *func);
 
 /* Handle signals, pending calls, GIL drop request
    and asynchronous exception */

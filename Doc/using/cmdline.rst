@@ -586,6 +586,15 @@ Miscellaneous options
 
      .. versionadded:: 3.12
 
+   * ``-X perfjit`` enables support for the Linux ``perf`` profiler with DWARF
+     support. When this option is provided, the ``perf`` profiler will be able
+     to report Python calls using DWARF ifnormation. This option is only available on
+     some platforms and will do nothing if is not supported on the current
+     system. The default value is "off". See also :envvar:`PYTHONPERFJITSUPPORT`
+     and :ref:`perf_profiling`.
+
+     .. versionadded:: 3.13
+
    * :samp:`-X cpu_count={n}` overrides :func:`os.cpu_count`,
      :func:`os.process_cpu_count`, and :func:`multiprocessing.cpu_count`.
      *n* must be greater than or equal to 1.
@@ -632,11 +641,11 @@ behavior can be controlled by setting different environment variables.
 
 Setting the environment variable ``TERM`` to ``dumb`` will disable color.
 
-If the environment variable ``FORCE_COLOR`` is set, then color will be
+If the |FORCE_COLOR|_ environment variable is set, then color will be
 enabled regardless of the value of TERM. This is useful on CI systems which
 aren’t terminals but can still display ANSI escape sequences.
 
-If the environment variable ``NO_COLOR`` is set, Python will disable all color
+If the |NO_COLOR|_ environment variable is set, Python will disable all color
 in the output. This takes precedence over ``FORCE_COLOR``.
 
 All these environment variables are used also by other tools to control color
@@ -644,6 +653,14 @@ output. To control the color output only in the Python interpreter, the
 :envvar:`PYTHON_COLORS` environment variable can be used. This variable takes
 precedence over ``NO_COLOR``, which in turn takes precedence over
 ``FORCE_COLOR``.
+
+.. Apparently this how you hack together a formatted link:
+
+.. |FORCE_COLOR| replace:: ``FORCE_COLOR``
+.. _FORCE_COLOR: https://force-color.org/
+
+.. |NO_COLOR| replace:: ``NO_COLOR``
+.. _NO_COLOR: https://no-color.org/
 
 Options you shouldn't use
 ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1118,6 +1135,21 @@ conflict.
    and :ref:`perf_profiling`.
 
    .. versionadded:: 3.12
+
+.. envvar:: PYTHONPERFJITSUPPORT
+
+   If this variable is set to a nonzero value, it enables support for
+   the Linux ``perf`` profiler so Python calls can be detected by it
+   using DWARF information.
+
+   If set to ``0``, disable Linux ``perf`` profiler support.
+
+   See also the :option:`-X perfjit <-X>` command-line option
+   and :ref:`perf_profiling`.
+
+   .. versionadded:: 3.13
+
+
 
 .. envvar:: PYTHON_CPU_COUNT
 
