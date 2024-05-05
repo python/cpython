@@ -244,6 +244,10 @@ framelocalsproxy_keys(PyObject *self, PyObject *__unused)
     PyFrameObject *frame = ((PyFrameLocalsProxyObject*)self)->frame;
     PyCodeObject *co = _PyFrame_GetCode(frame->f_frame);
 
+    if (names == NULL) {
+        return NULL;
+    }
+
     for (int i = 0; i < co->co_nlocalsplus; i++) {
         PyObject *val = framelocalsproxy_getval(frame->f_frame, co, i);
         if (val) {
