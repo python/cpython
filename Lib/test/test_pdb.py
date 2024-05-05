@@ -2233,7 +2233,6 @@ def test_pdb_closure():
     ...     x = 2
     ...     g = 3
     ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
-    ...     pass
 
     >>> with PdbTestInput([  # doctest: +NORMALIZE_WHITESPACE
     ...     'k',
@@ -2254,8 +2253,8 @@ def test_pdb_closure():
     ...     'c'
     ... ]):
     ...     test_function()
-    > <doctest test.test_pdb.test_pdb_closure[2]>(5)test_function()
-    -> pass
+    > <doctest test.test_pdb.test_pdb_closure[2]>(4)test_function()
+    -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
     (Pdb) k
     0
     (Pdb) g
