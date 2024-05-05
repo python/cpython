@@ -87,24 +87,28 @@ class Globber:
 
     # Low-level methods
 
-    lstat = staticmethod(os.lstat)
-    scandir = staticmethod(os.scandir)
-    parse_entry = operator.attrgetter('path')
-    concat_path = operator.add
+    lstat = operator.methodcaller('lstat')
+    add_slash = operator.methodcaller('joinpath', '')
 
-    if os.name == 'nt':
-        @staticmethod
-        def add_slash(pathname):
-            tail = os.path.splitroot(pathname)[2]
-            if not tail or tail[-1] in '\\/':
-                return pathname
-            return f'{pathname}\\'
-    else:
-        @staticmethod
-        def add_slash(pathname):
-            if not pathname or pathname[-1] == '/':
-                return pathname
-            return f'{pathname}/'
+    @staticmethod
+    def scandir(path):
+        """Emulates os.scandir(), which returns an object that can be used as
+        a context manager. This method is called by walk() and glob().
+        """
+        from contextlib import nullcontext
+        return nullcontext(path.iterdir())
+
+    @staticmethod
+    def concat_path(path, text):
+        """Appends text to the given path.
+        """
+        return path.with_segments(path._raw_path + text)
+
+    @staticmethod
+    def parse_entry(entry):
+        """Returns the path of an entry yielded from scandir().
+        """
+        return entry
 
     # High-level methods
 
@@ -303,3 +307,24 @@ class Globber:
                     if dirnames:
                         prefix = cls.add_slash(path)
                         paths += [cls.concat_path(prefix, d) for d in reversed(dirnames)]
+
+
+class StringGlobber(Globber):
+    lstat = staticmethod(os.lstat)
+    scandir = staticmethod(os.scandir)
+    parse_entry = operator.attrgetter('path')
+    concat_path = operator.add
+
+    if os.name == 'nt':
+        @staticmethod
+        def add_slash(pathname):
+            tail = os.path.splitroot(pathname)[2]
+            if not tail or tail[-1] in '\\/':
+                return pathname
+            return f'{pathname}\\'
+    else:
+        @staticmethod
+        def add_slash(pathname):
+            if not pathname or pathname[-1] == '/':
+                return pathname
+            return f'{pathname}/'
