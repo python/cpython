@@ -232,7 +232,8 @@ jobs:
         ../cpython-ro-srcdir/configure \
           --config-cache \
           --with-pydebug \
-          --with-openssl=$OPENSSL_DIR
+          --with-openssl=$OPENSSL_DIR \
+          --with-system-libmpdec=no
 
   build_ubuntu_free_threading:
     name: 'Ubuntu (free-threading)'
@@ -246,7 +247,8 @@ jobs:
           --config-cache \
           --with-pydebug \
           --with-openssl=$OPENSSL_DIR \
-          --disable-gil
+          --disable-gil \
+          --with-system-libmpdec=no
 
   build_ubuntu_ssltests:
     name: 'Ubuntu SSL tests with OpenSSL'
@@ -371,7 +373,8 @@ jobs:
         ../cpython-ro-srcdir/configure \
           --config-cache \
           --with-pydebug \
-          --with-openssl=$OPENSSL_DIR
+          --with-openssl=$OPENSSL_DIR \
+          --with-system-libmpdec=no
     - name: Build CPython out-of-tree
       working-directory: ${{ env.CPYTHON_BUILDDIR }}
       run: make -j4
@@ -477,7 +480,7 @@ jobs:
         save: ${{ github.event_name == 'push' }}
         max-size: "200M"
     - name: Configure CPython
-      run: ./configure --config-cache --with-address-sanitizer --without-pymalloc
+      run: ./configure --config-cache --with-address-sanitizer --without-pymalloc --with-system-libmpdec=no
     - name: Build CPython
       run: make -j4
     - name: Display build info
