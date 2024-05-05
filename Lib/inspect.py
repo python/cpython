@@ -3295,20 +3295,21 @@ class Signature:
             if kwargs_param is not None:
                 # Process our '**kwargs'-like parameter
                 arguments[kwargs_param.name] = kwargs
-            else:
-                if pos_only_param_in_kwargs:
-                    raise TypeError(
-                        'got some positional-only arguments passed as '
-                        'keyword arguments: {arg!r} '.format(
-                            arg=', '.join(
-                                param.name
-                                for param in pos_only_param_in_kwargs
-                            ),
+            elif pos_only_param_in_kwargs:
+                raise TypeError(
+                    'got some positional-only arguments passed as '
+                    'keyword arguments: {arg!r} '.format(
+                        arg=', '.join(
+                            param.name
+                            for param in pos_only_param_in_kwargs
                         ),
-                    )
+                    ),
+                )
+            else:
                 raise TypeError(
                     'got an unexpected keyword argument {arg!r}'.format(
-                        arg=next(iter(kwargs))))
+                        arg=next(iter(kwargs)))
+                    )
 
         return self._bound_arguments_cls(self, arguments)
 
