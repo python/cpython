@@ -372,7 +372,6 @@ class TestFrameLocals(unittest.TestCase):
         self.assertEqual(o, 'a.b.c')
 
     def test_update_with_self(self):
-        # Make sure reference is not leaking here
         def f():
             f_locals = sys._getframe().f_locals
             f_locals.update(f_locals)
