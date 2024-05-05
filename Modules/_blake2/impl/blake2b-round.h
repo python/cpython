@@ -62,7 +62,7 @@
   \
   row2l = _mm_roti_epi64(row2l, -24); \
   row2h = _mm_roti_epi64(row2h, -24); \
- 
+
 #define G2(row1l,row2l,row3l,row4l,row1h,row2h,row3h,row4h,b0,b1) \
   row1l = _mm_add_epi64(_mm_add_epi64(row1l, b0), row2l); \
   row1h = _mm_add_epi64(_mm_add_epi64(row1h, b1), row2h); \
@@ -81,7 +81,7 @@
   \
   row2l = _mm_roti_epi64(row2l, -63); \
   row2h = _mm_roti_epi64(row2h, -63); \
- 
+
 #if defined(HAVE_SSSE3)
 #define DIAGONALIZE(row1l,row2l,row3l,row4l,row1h,row2h,row3h,row4h) \
   t0 = _mm_alignr_epi8(row2h, row2l, 8); \

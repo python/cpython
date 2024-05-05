@@ -16,7 +16,7 @@ PyAPI_DATA(PyTypeObject) PyDict_Type;
 
 #define PyDict_Check(op) \
                  PyType_FastSubclass(Py_TYPE(op), Py_TPFLAGS_DICT_SUBCLASS)
-#define PyDict_CheckExact(op) (Py_TYPE(op) == &PyDict_Type)
+#define PyDict_CheckExact(op) Py_IS_TYPE((op), &PyDict_Type)
 
 PyAPI_FUNC(PyObject *) PyDict_New(void);
 PyAPI_FUNC(PyObject *) PyDict_GetItem(PyObject *mp, PyObject *key);
@@ -58,15 +58,29 @@ PyAPI_FUNC(PyObject *) PyDict_GetItemString(PyObject *dp, const char *key);
 PyAPI_FUNC(int) PyDict_SetItemString(PyObject *dp, const char *key, PyObject *item);
 PyAPI_FUNC(int) PyDict_DelItemString(PyObject *dp, const char *key);
 
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030D0000
+// Return the object from dictionary *op* which has a key *key*.
+// - If the key is present, set *result to a new strong reference to the value
+//   and return 1.
+// - If the key is missing, set *result to NULL and return 0 .
+// - On error, raise an exception and return -1.
+PyAPI_FUNC(int) PyDict_GetItemRef(PyObject *mp, PyObject *key, PyObject **result);
+PyAPI_FUNC(int) PyDict_GetItemStringRef(PyObject *mp, const char *key, PyObject **result);
+#endif
+
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030A0000
+PyAPI_FUNC(PyObject *) PyObject_GenericGetDict(PyObject *, void *);
+#endif
+
 /* Dictionary (keys, values, items) views */
 
 PyAPI_DATA(PyTypeObject) PyDictKeys_Type;
 PyAPI_DATA(PyTypeObject) PyDictValues_Type;
 PyAPI_DATA(PyTypeObject) PyDictItems_Type;
 
-#define PyDictKeys_Check(op) PyObject_TypeCheck(op, &PyDictKeys_Type)
-#define PyDictValues_Check(op) PyObject_TypeCheck(op, &PyDictValues_Type)
-#define PyDictItems_Check(op) PyObject_TypeCheck(op, &PyDictItems_Type)
+#define PyDictKeys_Check(op) PyObject_TypeCheck((op), &PyDictKeys_Type)
+#define PyDictValues_Check(op) PyObject_TypeCheck((op), &PyDictValues_Type)
+#define PyDictItems_Check(op) PyObject_TypeCheck((op), &PyDictItems_Type)
 /* This excludes Values, since they are not sets. */
 # define PyDictViewSet_Check(op) \
     (PyDictKeys_Check(op) || PyDictItems_Check(op))
@@ -84,7 +98,7 @@ PyAPI_DATA(PyTypeObject) PyDictRevIterValue_Type;
 
 #ifndef Py_LIMITED_API
 #  define Py_CPYTHON_DICTOBJECT_H
-#  include  "cpython/dictobject.h"
+#  include "cpython/dictobject.h"
 #  undef Py_CPYTHON_DICTOBJECT_H
 #endif
 

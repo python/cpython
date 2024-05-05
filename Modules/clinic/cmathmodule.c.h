@@ -2,6 +2,12 @@
 preserve
 [clinic start generated code]*/
 
+#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
+#endif
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
+
 PyDoc_STRVAR(cmath_acos__doc__,
 "acos($module, z, /)\n"
 "--\n"
@@ -638,10 +644,10 @@ PyDoc_STRVAR(cmath_log__doc__,
 "\n"
 "log(z[, base]) -> the logarithm of z to the given base.\n"
 "\n"
-"If the base not specified, returns the natural logarithm (base e) of z.");
+"If the base is not specified, returns the natural logarithm (base e) of z.");
 
 #define CMATH_LOG_METHODDEF    \
-    {"log", (PyCFunction)(void(*)(void))cmath_log, METH_FASTCALL, cmath_log__doc__},
+    {"log", _PyCFunction_CAST(cmath_log), METH_FASTCALL, cmath_log__doc__},
 
 static PyObject *
 cmath_log_impl(PyObject *module, Py_complex x, PyObject *y_obj);
@@ -736,7 +742,7 @@ PyDoc_STRVAR(cmath_rect__doc__,
 "Convert from polar coordinates to rectangular coordinates.");
 
 #define CMATH_RECT_METHODDEF    \
-    {"rect", (PyCFunction)(void(*)(void))cmath_rect, METH_FASTCALL, cmath_rect__doc__},
+    {"rect", _PyCFunction_CAST(cmath_rect), METH_FASTCALL, cmath_rect__doc__},
 
 static PyObject *
 cmath_rect_impl(PyObject *module, double r, double phi);
@@ -883,7 +889,7 @@ PyDoc_STRVAR(cmath_isclose__doc__,
 "not close to anything, even itself. inf and -inf are only close to themselves.");
 
 #define CMATH_ISCLOSE_METHODDEF    \
-    {"isclose", (PyCFunction)(void(*)(void))cmath_isclose, METH_FASTCALL|METH_KEYWORDS, cmath_isclose__doc__},
+    {"isclose", _PyCFunction_CAST(cmath_isclose), METH_FASTCALL|METH_KEYWORDS, cmath_isclose__doc__},
 
 static int
 cmath_isclose_impl(PyObject *module, Py_complex a, Py_complex b,
@@ -893,8 +899,31 @@ static PyObject *
 cmath_isclose(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 4
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(a), &_Py_ID(b), &_Py_ID(rel_tol), &_Py_ID(abs_tol), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
     static const char * const _keywords[] = {"a", "b", "rel_tol", "abs_tol", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "isclose", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "isclose",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
     PyObject *argsbuf[4];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 2;
     Py_complex a;
@@ -953,4 +982,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=353347db2e808e0d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=364093af55bfe53f input=a9049054013a1b77]*/

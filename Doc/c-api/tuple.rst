@@ -5,7 +5,7 @@
 Tuple Objects
 -------------
 
-.. index:: object: tuple
+.. index:: pair: object; tuple
 
 
 .. c:type:: PyTupleObject
@@ -21,14 +21,14 @@ Tuple Objects
 
 .. c:function:: int PyTuple_Check(PyObject *p)
 
-   Return true if *p* is a tuple object or an instance of a subtype of the tuple
-   type.
+   Return true if *p* is a tuple object or an instance of a subtype of the
+   tuple type.  This function always succeeds.
 
 
 .. c:function:: int PyTuple_CheckExact(PyObject *p)
 
    Return true if *p* is a tuple object, but not an instance of a subtype of the
-   tuple type.
+   tuple type.  This function always succeeds.
 
 
 .. c:function:: PyObject* PyTuple_New(Py_ssize_t len)
@@ -57,7 +57,13 @@ Tuple Objects
 .. c:function:: PyObject* PyTuple_GetItem(PyObject *p, Py_ssize_t pos)
 
    Return the object at position *pos* in the tuple pointed to by *p*.  If *pos* is
-   out of bounds, return ``NULL`` and set an :exc:`IndexError` exception.
+   negative or out of bounds, return ``NULL`` and set an :exc:`IndexError` exception.
+
+   The returned reference is borrowed from the tuple *p*
+   (that is: it is only valid as long as you hold a reference to *p*).
+   To get a :term:`strong reference`, use
+   :c:func:`Py_NewRef(PyTuple_GetItem(...)) <Py_NewRef>`
+   or :c:func:`PySequence_GetItem`.
 
 
 .. c:function:: PyObject* PyTuple_GET_ITEM(PyObject *p, Py_ssize_t pos)
@@ -69,7 +75,7 @@ Tuple Objects
 
    Return the slice of the tuple pointed to by *p* between *low* and *high*,
    or ``NULL`` on failure.  This is the equivalent of the Python expression
-   ``p[low:high]``.  Indexing from the end of the list is not supported.
+   ``p[low:high]``.  Indexing from the end of the tuple is not supported.
 
 
 .. c:function:: int PyTuple_SetItem(PyObject *p, Py_ssize_t pos, PyObject *o)
@@ -89,9 +95,12 @@ Tuple Objects
    Like :c:func:`PyTuple_SetItem`, but does no error checking, and should *only* be
    used to fill in brand new tuples.
 
+   Bounds checking is performed as an assertion if Python is built in
+   :ref:`debug mode <debug-build>` or :option:`with assertions <--with-assertions>`.
+
    .. note::
 
-      This macro "steals" a reference to *o*, and, unlike
+      This function "steals" a reference to *o*, and, unlike
       :c:func:`PyTuple_SetItem`, does *not* discard a reference to any item that
       is being replaced; any reference in the tuple at position *pos* will be
       leaked.
@@ -111,10 +120,7 @@ Tuple Objects
    raises :exc:`MemoryError` or :exc:`SystemError`.
 
 
-.. c:function:: int PyTuple_ClearFreeList()
-
-   Clear the free list. Return the total number of freed items.
-
+.. _struct-sequence-objects:
 
 Struct Sequence Objects
 -----------------------
@@ -147,39 +153,39 @@ type.
 
    Contains the meta information of a struct sequence type to create.
 
-   +-------------------+------------------------------+--------------------------------------+
-   | Field             | C Type                       | Meaning                              |
-   +===================+==============================+======================================+
-   | ``name``          | ``const char *``             | name of the struct sequence type     |
-   +-------------------+------------------------------+--------------------------------------+
-   | ``doc``           | ``const char *``             | pointer to docstring for the type    |
-   |                   |                              | or ``NULL`` to omit                  |
-   +-------------------+------------------------------+--------------------------------------+
-   | ``fields``        | ``PyStructSequence_Field *`` | pointer to ``NULL``-terminated array |
-   |                   |                              | with field names of the new type     |
-   +-------------------+------------------------------+--------------------------------------+
-   | ``n_in_sequence`` | ``int``                      | number of fields visible to the      |
-   |                   |                              | Python side (if used as tuple)       |
-   +-------------------+------------------------------+--------------------------------------+
+   .. c:member:: const char *name
+
+      Name of the struct sequence type.
+
+   .. c:member:: const char *doc
+
+      Pointer to docstring for the type or ``NULL`` to omit.
+
+   .. c:member:: PyStructSequence_Field *fields
+
+      Pointer to ``NULL``-terminated array with field names of the new type.
+
+   .. c:member:: int n_in_sequence
+
+      Number of fields visible to the Python side (if used as tuple).
 
 
 .. c:type:: PyStructSequence_Field
 
    Describes a field of a struct sequence. As a struct sequence is modeled as a
-   tuple, all fields are typed as :c:type:`PyObject\*`.  The index in the
-   :attr:`fields` array of the :c:type:`PyStructSequence_Desc` determines which
+   tuple, all fields are typed as :c:expr:`PyObject*`.  The index in the
+   :c:member:`~PyStructSequence_Desc.fields` array of
+   the :c:type:`PyStructSequence_Desc` determines which
    field of the struct sequence is described.
 
-   +-----------+------------------+-----------------------------------------+
-   | Field     | C Type           | Meaning                                 |
-   +===========+==================+=========================================+
-   | ``name``  | ``const char *`` | name for the field or ``NULL`` to end   |
-   |           |                  | the list of named fields, set to        |
-   |           |                  | :c:data:`PyStructSequence_UnnamedField` |
-   |           |                  | to leave unnamed                        |
-   +-----------+------------------+-----------------------------------------+
-   | ``doc``   | ``const char *`` | field docstring or ``NULL`` to omit     |
-   +-----------+------------------+-----------------------------------------+
+   .. c:member:: const char *name
+
+      Name for the field or ``NULL`` to end the list of named fields,
+      set to :c:data:`PyStructSequence_UnnamedField` to leave unnamed.
+
+   .. c:member:: const char *doc
+
+      Field docstring or ``NULL`` to omit.
 
 
 .. c:var:: const char * const PyStructSequence_UnnamedField
@@ -199,12 +205,17 @@ type.
 .. c:function:: PyObject* PyStructSequence_GetItem(PyObject *p, Py_ssize_t pos)
 
    Return the object at position *pos* in the struct sequence pointed to by *p*.
-   No bounds checking is performed.
+
+   Bounds checking is performed as an assertion if Python is built in
+   :ref:`debug mode <debug-build>` or :option:`with assertions <--with-assertions>`.
 
 
 .. c:function:: PyObject* PyStructSequence_GET_ITEM(PyObject *p, Py_ssize_t pos)
 
-   Macro equivalent of :c:func:`PyStructSequence_GetItem`.
+   Alias to :c:func:`PyStructSequence_GetItem`.
+
+   .. versionchanged:: 3.13
+      Now implemented as an alias to :c:func:`PyStructSequence_GetItem`.
 
 
 .. c:function:: void PyStructSequence_SetItem(PyObject *p, Py_ssize_t pos, PyObject *o)
@@ -213,6 +224,9 @@ type.
    :c:func:`PyTuple_SET_ITEM`, this should only be used to fill in brand new
    instances.
 
+   Bounds checking is performed as an assertion if Python is built in
+   :ref:`debug mode <debug-build>` or :option:`with assertions <--with-assertions>`.
+
    .. note::
 
       This function "steals" a reference to *o*.
@@ -220,8 +234,7 @@ type.
 
 .. c:function:: void PyStructSequence_SET_ITEM(PyObject *p, Py_ssize_t *pos, PyObject *o)
 
-   Macro equivalent of :c:func:`PyStructSequence_SetItem`.
+   Alias to :c:func:`PyStructSequence_SetItem`.
 
-   .. note::
-
-      This function "steals" a reference to *o*.
+   .. versionchanged:: 3.13
+      Now implemented as an alias to :c:func:`PyStructSequence_SetItem`.

@@ -1,0 +1,2 @@
+Statically allocated objects are, by definition, immortal so must be
+marked as such regardless of whether they are in extension modules or not.

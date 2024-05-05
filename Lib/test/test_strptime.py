@@ -70,6 +70,9 @@ class LocaleTime_Tests(unittest.TestCase):
         self.assertEqual(self.LT_ins.am_pm[position], strftime_output,
                          "AM/PM representation in the wrong position within the tuple")
 
+    @unittest.skipIf(
+        support.is_emscripten, "musl libc issue on Emscripten, bpo-46390"
+    )
     def test_timezone(self):
         # Make sure timezone is correct
         timezone = time.strftime("%Z", self.time_tuple).lower()
@@ -221,25 +224,55 @@ class StrptimeTests(unittest.TestCase):
             else:
                 self.fail("'%s' did not raise ValueError" % bad_format)
 
-        # Ambiguous or incomplete cases using ISO year/week/weekday directives
-        # 1. ISO week (%V) is specified, but the year is specified with %Y
-        # instead of %G
-        with self.assertRaises(ValueError):
-            _strptime._strptime("1999 50", "%Y %V")
-        # 2. ISO year (%G) and ISO week (%V) are specified, but weekday is not
-        with self.assertRaises(ValueError):
-            _strptime._strptime("1999 51", "%G %V")
-        # 3. ISO year (%G) and weekday are specified, but ISO week (%V) is not
-        for w in ('A', 'a', 'w', 'u'):
-            with self.assertRaises(ValueError):
-                _strptime._strptime("1999 51","%G %{}".format(w))
-        # 4. ISO year is specified alone (e.g. time.strptime('2015', '%G'))
-        with self.assertRaises(ValueError):
-            _strptime._strptime("2015", "%G")
-        # 5. Julian/ordinal day (%j) is specified with %G, but not %Y
-        with self.assertRaises(ValueError):
-            _strptime._strptime("1999 256", "%G %j")
+        msg_week_no_year_or_weekday = r"ISO week directive '%V' must be used with " \
+            r"the ISO year directive '%G' and a weekday directive " \
+            r"\('%A', '%a', '%w', or '%u'\)."
+        msg_week_not_compatible = r"ISO week directive '%V' is incompatible with " \
+            r"the year directive '%Y'. Use the ISO year '%G' instead."
+        msg_julian_not_compatible = r"Day of the year directive '%j' is not " \
+            r"compatible with ISO year directive '%G'. Use '%Y' instead."
+        msg_year_no_week_or_weekday = r"ISO year directive '%G' must be used with " \
+            r"the ISO week directive '%V' and a weekday directive " \
+            r"\('%A', '%a', '%w', or '%u'\)."
 
+        locale_time = _strptime.LocaleTime()
+
+        # Ambiguous or incomplete cases using ISO year/week/weekday directives
+        subtests = [
+            # 1. ISO week (%V) is specified, but the year is specified with %Y
+            # instead of %G
+            ("1999 50", "%Y %V", msg_week_no_year_or_weekday),
+            ("1999 50 5", "%Y %V %u", msg_week_not_compatible),
+            # 2. ISO year (%G) and ISO week (%V) are specified, but weekday is not
+            ("1999 51", "%G %V", msg_year_no_week_or_weekday),
+            # 3. ISO year (%G) and weekday are specified, but ISO week (%V) is not
+            ("1999 {}".format(locale_time.f_weekday[5]), "%G %A",
+                msg_year_no_week_or_weekday),
+            ("1999 {}".format(locale_time.a_weekday[5]), "%G %a",
+                msg_year_no_week_or_weekday),
+            ("1999 5", "%G %w", msg_year_no_week_or_weekday),
+            ("1999 5", "%G %u", msg_year_no_week_or_weekday),
+            # 4. ISO year is specified alone (e.g. time.strptime('2015', '%G'))
+            ("2015", "%G", msg_year_no_week_or_weekday),
+            # 5. Julian/ordinal day (%j) is specified with %G, but not %Y
+            ("1999 256", "%G %j", msg_julian_not_compatible),
+            ("1999 50 5 256", "%G %V %u %j", msg_julian_not_compatible),
+            # ISO week specified alone
+            ("50", "%V", msg_week_no_year_or_weekday),
+            # ISO year is unspecified, falling back to year
+            ("50 5", "%V %u", msg_week_no_year_or_weekday),
+            # 6. Invalid ISO weeks
+            ("2019-00-1", "%G-%V-%u",
+             "time data '2019-00-1' does not match format '%G-%V-%u'"),
+            ("2019-54-1", "%G-%V-%u",
+             "time data '2019-54-1' does not match format '%G-%V-%u'"),
+            ("2021-53-1", "%G-%V-%u", "Invalid week: 53"),
+        ]
+
+        for (data_string, format, message) in subtests:
+            with self.subTest(data_string=data_string, format=format):
+                with self.assertRaisesRegex(ValueError, message):
+                    _strptime._strptime(data_string, format)
 
     def test_strptime_exception_context(self):
         # check that this doesn't chain exceptions needlessly (see #17572)
@@ -368,6 +401,9 @@ class StrptimeTests(unittest.TestCase):
         self.assertEqual("Inconsistent use of : in -01:3030", str(err.exception))
 
     @skip_if_buggy_ucrt_strfptime
+    @unittest.skipIf(
+        support.is_emscripten, "musl libc issue on Emscripten, bpo-46390"
+    )
     def test_timezone(self):
         # Test timezone directives.
         # When gmtime() is used with %Z, entire result of strftime() is empty.
@@ -390,6 +426,9 @@ class StrptimeTests(unittest.TestCase):
                             "LocaleTime().timezone has duplicate values and "
                              "time.daylight but timezone value not set to -1")
 
+    @unittest.skipUnless(
+        hasattr(time, "tzset"), "time module has no attribute tzset"
+        )
     def test_bad_timezone(self):
         # Explicitly test possibility of bad timezone;
         # when time.tzname[0] == time.tzname[1] and time.daylight

@@ -1,7 +1,29 @@
+.. release date: 2017-01-02
+.. bpo: 27278
+.. date: 9755
+.. nonce: y_HkGw
+.. original section: Library
+.. section: Security
+
+Fix os.urandom() implementation using getrandom() on Linux.  Truncate size
+to INT_MAX and loop until we collected enough random bytes, instead of
+casting a directly Py_ssize_t to int.
+
+..
+
+.. bpo: 22636
+.. date: 9753
+.. nonce: 3fQW_g
+.. original section: Library
+.. section: Security
+
+Avoid shell injection problems with ctypes.util.find_library().
+
+..
+
 .. bpo: 29073
 .. date: 9898
 .. nonce: EFpHQ7
-.. release date: 2017-01-02
 .. section: Core and Builtins
 
 bytearray formatting no longer truncates on first null byte.
@@ -810,7 +832,7 @@ In the traceback module, restore the formatting of exception messages like
 .. nonce: 3UhyPo
 .. section: Library
 
-Allow falsy values to be used for msg parameter of subTest().
+Allow false values to be used for msg parameter of subTest().
 
 ..
 
@@ -1026,7 +1048,7 @@ certs.
 .. section: Library
 
 Remove 3DES from ssl module's default cipher list to counter measure sweet32
-attack (CVE-2016-2183).
+attack (:cve:`2016-2183`).
 
 ..
 
@@ -1229,7 +1251,7 @@ Fix possible integer overflow in the _csv module for large record lengths.
 .. nonce: OnuO9s
 .. section: Library
 
-Prevent HTTPoxy attack (CVE-2016-1000110). Ignore the HTTP_PROXY variable
+Prevent HTTPoxy attack (:cve:`2016-1000110`). Ignore the HTTP_PROXY variable
 when REQUEST_METHOD environment is set, which indicates that the script is
 in CGI mode.
 
@@ -1406,34 +1428,12 @@ issue25782.
 
 ..
 
-.. bpo: 27278
-.. date: 9755
-.. nonce: y_HkGw
-.. original section: Library
-.. section: Security
-
-Fix os.urandom() implementation using getrandom() on Linux.  Truncate size
-to INT_MAX and loop until we collected enough random bytes, instead of
-casting a directly Py_ssize_t to int.
-
-..
-
 .. bpo: 26386
 .. date: 9754
 .. nonce: 9L3Ut4
 .. section: Library
 
 Fixed ttk.TreeView selection operations with item id's containing spaces.
-
-..
-
-.. bpo: 22636
-.. date: 9753
-.. nonce: 3fQW_g
-.. original section: Library
-.. section: Security
-
-Avoid shell injection problems with ctypes.util.find_library().
 
 ..
 

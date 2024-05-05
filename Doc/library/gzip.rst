@@ -61,7 +61,7 @@ The module defines the following items:
 
 .. exception:: BadGzipFile
 
-   An exception raised for invalid gzip files.  It inherits :exc:`OSError`.
+   An exception raised for invalid gzip files.  It inherits from :exc:`OSError`.
    :exc:`EOFError` and :exc:`zlib.error` can also be raised for invalid gzip
    files.
 
@@ -70,7 +70,7 @@ The module defines the following items:
 .. class:: GzipFile(filename=None, mode=None, compresslevel=9, fileobj=None, mtime=None)
 
    Constructor for the :class:`GzipFile` class, which simulates most of the
-   methods of a :term:`file object`, with the exception of the :meth:`truncate`
+   methods of a :term:`file object`, with the exception of the :meth:`~io.IOBase.truncate`
    method.  At least one of *fileobj* and *filename* must be given a non-trivial
    value.
 
@@ -100,12 +100,14 @@ The module defines the following items:
    compression, and ``9`` is slowest and produces the most compression. ``0``
    is no compression. The default is ``9``.
 
-   The *mtime* argument is an optional numeric timestamp to be written to
-   the last modification time field in the stream when compressing.  It
-   should only be provided in compression mode.  If omitted or ``None``, the
-   current time is used.  See the :attr:`mtime` attribute for more details.
+   The optional *mtime* argument is the timestamp requested by gzip. The time
+   is in Unix format, i.e., seconds since 00:00:00 UTC, January 1, 1970.
+   If *mtime* is omitted or None, the current time is used. Use *mtime* = 0
+   to generate a compressed stream that does not depend on creation time.
 
-   Calling a :class:`GzipFile` object's :meth:`close` method does not close
+   See below for the :attr:`mtime` attribute that is set when decompressing.
+
+   Calling a :class:`GzipFile` object's :meth:`!close` method does not close
    *fileobj*, since you might wish to append more material after the compressed
    data.  This also allows you to pass an :class:`io.BytesIO` object opened for
    writing as *fileobj*, and retrieve the resulting memory buffer using the
@@ -113,7 +115,7 @@ The module defines the following items:
 
    :class:`GzipFile` supports the :class:`io.BufferedIOBase` interface,
    including iteration and the :keyword:`with` statement.  Only the
-   :meth:`truncate` method isn't implemented.
+   :meth:`~io.IOBase.truncate` method isn't implemented.
 
    :class:`GzipFile` also provides the following method and attribute:
 
@@ -131,17 +133,25 @@ The module defines the following items:
 
       .. versionadded:: 3.2
 
+   .. attribute:: mode
+
+      ``'rb'`` for reading and ``'wb'`` for writing.
+
+      .. versionchanged:: 3.13
+         In previous versions it was an integer ``1`` or ``2``.
+
    .. attribute:: mtime
 
-      When decompressing, the value of the last modification time field in
-      the most recently read header may be read from this attribute, as an
-      integer.  The initial value before reading any headers is ``None``.
+      When decompressing, this attribute is set to the last timestamp in the most
+      recently read header.  It is an integer, holding the number of seconds
+      since the Unix epoch (00:00:00 UTC, January 1, 1970).
+      The initial value before reading any headers is ``None``.
 
-      All :program:`gzip` compressed streams are required to contain this
-      timestamp field.  Some programs, such as :program:`gunzip`\ , make use
-      of the timestamp.  The format is the same as the return value of
-      :func:`time.time` and the :attr:`~os.stat_result.st_mtime` attribute of
-      the object returned by :func:`os.stat`.
+   .. attribute:: name
+
+      The path to the gzip file on disk, as a :class:`str` or :class:`bytes`.
+      Equivalent to the output of :func:`os.fspath` on the original input path,
+      with no other normalization, resolution or expansion.
 
    .. versionchanged:: 3.1
       Support for the :keyword:`with` statement was added, along with the
@@ -169,24 +179,39 @@ The module defines the following items:
       Opening :class:`GzipFile` for writing without specifying the *mode*
       argument is deprecated.
 
+   .. versionchanged:: 3.12
+      Remove the ``filename`` attribute, use the :attr:`~GzipFile.name`
+      attribute instead.
+
 
 .. function:: compress(data, compresslevel=9, *, mtime=None)
 
    Compress the *data*, returning a :class:`bytes` object containing
    the compressed data.  *compresslevel* and *mtime* have the same meaning as in
-   the :class:`GzipFile` constructor above.
+   the :class:`GzipFile` constructor above. When *mtime* is set to ``0``, this
+   function is equivalent to :func:`zlib.compress` with *wbits* set to ``31``.
+   The zlib function is faster.
 
    .. versionadded:: 3.2
    .. versionchanged:: 3.8
       Added the *mtime* parameter for reproducible output.
+   .. versionchanged:: 3.11
+      Speed is improved by compressing all data at once instead of in a
+      streamed fashion. Calls with *mtime* set to ``0`` are delegated to
+      :func:`zlib.compress` for better speed.
 
 .. function:: decompress(data)
 
    Decompress the *data*, returning a :class:`bytes` object containing the
-   uncompressed data.
+   uncompressed data. This function is capable of decompressing multi-member
+   gzip data (multiple gzip blocks concatenated together). When the data is
+   certain to contain only one member the :func:`zlib.decompress` function with
+   *wbits* set to 31 is faster.
 
    .. versionadded:: 3.2
-
+   .. versionchanged:: 3.11
+      Speed is improved by decompressing members at once in memory instead of in
+      a streamed fashion.
 
 .. _gzip-usage-examples:
 
@@ -229,6 +254,8 @@ Example of how to GZIP compress a binary string::
 
 .. program:: gzip
 
+.. _gzip-cli:
+
 Command Line Interface
 ----------------------
 
@@ -245,23 +272,22 @@ Once executed the :mod:`gzip` module keeps the input file(s).
 Command line options
 ^^^^^^^^^^^^^^^^^^^^
 
-.. cmdoption:: file
+.. option:: file
 
-   If *file* is not specified, read from :attr:`sys.stdin`.
+   If *file* is not specified, read from :data:`sys.stdin`.
 
-.. cmdoption:: --fast
+.. option:: --fast
 
    Indicates the fastest compression method (less compression).
 
-.. cmdoption:: --best
+.. option:: --best
 
    Indicates the slowest compression method (best compression).
 
-.. cmdoption:: -d, --decompress
+.. option:: -d, --decompress
 
    Decompress the given file.
 
-.. cmdoption:: -h, --help
+.. option:: -h, --help
 
    Show the help message.
-

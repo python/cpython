@@ -15,6 +15,8 @@ interpreter and things that make working with Python easier.
 
    cmdline.rst
    unix.rst
+   configure.rst
    windows.rst
    mac.rst
+   ios.rst
    editors.rst

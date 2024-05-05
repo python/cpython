@@ -60,11 +60,7 @@ if _false:
 import os, sys
 if not sys.flags.ignore_environment and "PY_SAX_PARSER" in os.environ:
     default_parser_list = os.environ["PY_SAX_PARSER"].split(",")
-del os
-
-_key = "python.xml.sax.parser"
-if sys.platform[:4] == "java" and sys.registry.containsKey(_key):
-    default_parser_list = sys.registry.getProperty(_key).split(",")
+del os, sys
 
 
 def make_parser(parser_list=()):
@@ -93,15 +89,6 @@ def make_parser(parser_list=()):
 
 # --- Internal utility methods used by make_parser
 
-if sys.platform[ : 4] == "java":
-    def _create_parser(parser_name):
-        from org.python.core import imp
-        drv_module = imp.importName(parser_name, 0, globals())
-        return drv_module.create_parser()
-
-else:
-    def _create_parser(parser_name):
-        drv_module = __import__(parser_name,{},{},['create_parser'])
-        return drv_module.create_parser()
-
-del sys
+def _create_parser(parser_name):
+    drv_module = __import__(parser_name,{},{},['create_parser'])
+    return drv_module.create_parser()

@@ -18,37 +18,38 @@ ConfigParser -- responsible for parsing a list of
              delimiters=('=', ':'), comment_prefixes=('#', ';'),
              inline_comment_prefixes=None, strict=True,
              empty_lines_in_values=True, default_section='DEFAULT',
-             interpolation=<unset>, converters=<unset>):
-        Create the parser. When `defaults' is given, it is initialized into the
+             interpolation=<unset>, converters=<unset>,
+             allow_unnamed_section=False):
+        Create the parser. When `defaults` is given, it is initialized into the
         dictionary or intrinsic defaults. The keys must be strings, the values
         must be appropriate for %()s string interpolation.
 
-        When `dict_type' is given, it will be used to create the dictionary
+        When `dict_type` is given, it will be used to create the dictionary
         objects for the list of sections, for the options within a section, and
         for the default values.
 
-        When `delimiters' is given, it will be used as the set of substrings
+        When `delimiters` is given, it will be used as the set of substrings
         that divide keys from values.
 
-        When `comment_prefixes' is given, it will be used as the set of
+        When `comment_prefixes` is given, it will be used as the set of
         substrings that prefix comments in empty lines. Comments can be
         indented.
 
-        When `inline_comment_prefixes' is given, it will be used as the set of
+        When `inline_comment_prefixes` is given, it will be used as the set of
         substrings that prefix comments in non-empty lines.
 
         When `strict` is True, the parser won't allow for any section or option
         duplicates while reading from a single source (file, string or
         dictionary). Default is True.
 
-        When `empty_lines_in_values' is False (default: True), each empty line
+        When `empty_lines_in_values` is False (default: True), each empty line
         marks the end of an option. Otherwise, internal empty lines of
         a multiline option are kept as part of the value.
 
-        When `allow_no_value' is True (default: False), options without
+        When `allow_no_value` is True (default: False), options without
         values are accepted; the value presented for these is None.
 
-        When `default_section' is given, the name of the special section is
+        When `default_section` is given, the name of the special section is
         named accordingly. By default it is called ``"DEFAULT"`` but this can
         be customized to point to any other valid section name. Its current
         value can be retrieved using the ``parser_instance.default_section``
@@ -58,7 +59,7 @@ ConfigParser -- responsible for parsing a list of
         instance. It will be used as the handler for option value
         pre-processing when using getters. RawConfigParser objects don't do
         any sort of interpolation, whereas ConfigParser uses an instance of
-        BasicInterpolation. The library also provides a ``zc.buildbot``
+        BasicInterpolation. The library also provides a ``zc.buildout``
         inspired ExtendedInterpolation implementation.
 
         When `converters` is given, it should be a dictionary where each key
@@ -66,6 +67,10 @@ ConfigParser -- responsible for parsing a list of
         implementing the conversion from string to the desired datatype. Every
         converter gets its corresponding get*() method on the parser object and
         section proxies.
+
+        When `allow_unnamed_section` is True (default: False), options
+        without section are accepted: the section for these is
+        ``configparser.UNNAMED_SECTION``.
 
     sections()
         Return all the configuration section names, sans DEFAULT.
@@ -87,7 +92,7 @@ ConfigParser -- responsible for parsing a list of
     read_file(f, filename=None)
         Read and parse one configuration file, given as a file object.
         The filename defaults to f.name; it is only used in error
-        messages (if f has no `name' attribute, the string `<???>' is used).
+        messages (if f has no `name` attribute, the string `<???>` is used).
 
     read_string(string)
         Read configuration from a given string.
@@ -103,9 +108,9 @@ ConfigParser -- responsible for parsing a list of
         Return a string value for the named option.  All % interpolations are
         expanded in the return values, based on the defaults passed into the
         constructor and the DEFAULT section.  Additional substitutions may be
-        provided using the `vars' argument, which must be a dictionary whose
-        contents override any pre-existing defaults. If `option' is a key in
-        `vars', the value from `vars' is used.
+        provided using the `vars` argument, which must be a dictionary whose
+        contents override any pre-existing defaults. If `option` is a key in
+        `vars`, the value from `vars` is used.
 
     getint(section, options, raw=False, vars=None, fallback=_UNSET)
         Like get(), but convert value to an integer.
@@ -134,28 +139,32 @@ ConfigParser -- responsible for parsing a list of
 
     write(fp, space_around_delimiters=True)
         Write the configuration state in .ini format. If
-        `space_around_delimiters' is True (the default), delimiters
+        `space_around_delimiters` is True (the default), delimiters
         between keys and values are surrounded by spaces.
 """
 
-from collections.abc import MutableMapping
+# Do not import dataclasses; overhead is unacceptable (gh-117703)
+
+from collections.abc import Iterable, MutableMapping
 from collections import ChainMap as _ChainMap
+import contextlib
 import functools
 import io
 import itertools
 import os
 import re
 import sys
-import warnings
+import types
 
-__all__ = ["NoSectionError", "DuplicateOptionError", "DuplicateSectionError",
+__all__ = ("NoSectionError", "DuplicateOptionError", "DuplicateSectionError",
            "NoOptionError", "InterpolationError", "InterpolationDepthError",
            "InterpolationMissingOptionError", "InterpolationSyntaxError",
            "ParsingError", "MissingSectionHeaderError",
-           "ConfigParser", "SafeConfigParser", "RawConfigParser",
+           "MultilineContinuationError",
+           "ConfigParser", "RawConfigParser",
            "Interpolation", "BasicInterpolation",  "ExtendedInterpolation",
-           "LegacyInterpolation", "SectionProxy", "ConverterMapping",
-           "DEFAULTSECT", "MAX_INTERPOLATION_DEPTH"]
+           "SectionProxy", "ConverterMapping",
+           "DEFAULTSECT", "MAX_INTERPOLATION_DEPTH", "UNNAMED_SECTION")
 
 _default_dict = dict
 DEFAULTSECT = "DEFAULT"
@@ -297,44 +306,33 @@ class InterpolationDepthError(InterpolationError):
 class ParsingError(Error):
     """Raised when a configuration file does not follow legal syntax."""
 
-    def __init__(self, source=None, filename=None):
-        # Exactly one of `source'/`filename' arguments has to be given.
-        # `filename' kept for compatibility.
-        if filename and source:
-            raise ValueError("Cannot specify both `filename' and `source'. "
-                             "Use `source'.")
-        elif not filename and not source:
-            raise ValueError("Required argument `source' not given.")
-        elif filename:
-            source = filename
-        Error.__init__(self, 'Source contains parsing errors: %r' % source)
+    def __init__(self, source, *args):
+        super().__init__(f'Source contains parsing errors: {source!r}')
         self.source = source
         self.errors = []
         self.args = (source, )
-
-    @property
-    def filename(self):
-        """Deprecated, use `source'."""
-        warnings.warn(
-            "The 'filename' attribute will be removed in future versions.  "
-            "Use 'source' instead.",
-            DeprecationWarning, stacklevel=2
-        )
-        return self.source
-
-    @filename.setter
-    def filename(self, value):
-        """Deprecated, user `source'."""
-        warnings.warn(
-            "The 'filename' attribute will be removed in future versions.  "
-            "Use 'source' instead.",
-            DeprecationWarning, stacklevel=2
-        )
-        self.source = value
+        if args:
+            self.append(*args)
 
     def append(self, lineno, line):
         self.errors.append((lineno, line))
-        self.message += '\n\t[line %2d]: %s' % (lineno, line)
+        self.message += '\n\t[line %2d]: %s' % (lineno, repr(line))
+
+    def combine(self, others):
+        for other in others:
+            for error in other.errors:
+                self.append(*error)
+        return self
+
+    @staticmethod
+    def _raise_all(exceptions: Iterable['ParsingError']):
+        """
+        Combine any number of ParsingErrors into one and raise it.
+        """
+        exceptions = iter(exceptions)
+        with contextlib.suppress(StopIteration):
+            raise next(exceptions).combine(exceptions)
+
 
 
 class MissingSectionHeaderError(ParsingError):
@@ -351,8 +349,30 @@ class MissingSectionHeaderError(ParsingError):
         self.args = (filename, lineno, line)
 
 
+class MultilineContinuationError(ParsingError):
+    """Raised when a key without value is followed by continuation line"""
+    def __init__(self, filename, lineno, line):
+        Error.__init__(
+            self,
+            "Key without value continued with an indented line.\n"
+            "file: %r, line: %d\n%r"
+            %(filename, lineno, line))
+        self.source = filename
+        self.lineno = lineno
+        self.line = line
+        self.args = (filename, lineno, line)
+
+class _UnnamedSection:
+
+    def __repr__(self):
+        return "<UNNAMED_SECTION>"
+
+
+UNNAMED_SECTION = _UnnamedSection()
+
+
 # Used in parser getters to indicate the default behaviour when a specific
-# option is not found it to raise an exception. Created to enable `None' as
+# option is not found it to raise an exception. Created to enable `None` as
 # a valid fallback value.
 _UNSET = object()
 
@@ -386,7 +406,7 @@ class BasicInterpolation(Interpolation):
     would resolve the "%(dir)s" to the value of dir.  All reference
     expansions are done late, on demand. If a user needs to use a bare % in
     a configuration file, she can escape it by writing %%. Other % usage
-    is considered a user error and raises `InterpolationSyntaxError'."""
+    is considered a user error and raises `InterpolationSyntaxError`."""
 
     _KEYCRE = re.compile(r"%\(([^)]+)\)s")
 
@@ -447,7 +467,7 @@ class BasicInterpolation(Interpolation):
 
 class ExtendedInterpolation(Interpolation):
     """Advanced variant of interpolation, supports the syntax used by
-    `zc.buildout'. Enables interpolation between sections."""
+    `zc.buildout`. Enables interpolation between sections."""
 
     _KEYCRE = re.compile(r"\$\{([^}]+)\}")
 
@@ -519,42 +539,50 @@ class ExtendedInterpolation(Interpolation):
                     "found: %r" % (rest,))
 
 
-class LegacyInterpolation(Interpolation):
-    """Deprecated interpolation used in old versions of ConfigParser.
-    Use BasicInterpolation or ExtendedInterpolation instead."""
+class _ReadState:
+    elements_added : set[str]
+    cursect : dict[str, str] | None = None
+    sectname : str | None = None
+    optname : str | None = None
+    lineno : int = 0
+    indent_level : int = 0
+    errors : list[ParsingError]
 
-    _KEYCRE = re.compile(r"%\(([^)]*)\)s|.")
+    def __init__(self):
+        self.elements_added = set()
+        self.errors = list()
 
-    def before_get(self, parser, section, option, value, vars):
-        rawval = value
-        depth = MAX_INTERPOLATION_DEPTH
-        while depth:                    # Loop through this until it's done
-            depth -= 1
-            if value and "%(" in value:
-                replace = functools.partial(self._interpolation_replace,
-                                            parser=parser)
-                value = self._KEYCRE.sub(replace, value)
-                try:
-                    value = value % vars
-                except KeyError as e:
-                    raise InterpolationMissingOptionError(
-                        option, section, rawval, e.args[0]) from None
-            else:
-                break
-        if value and "%(" in value:
-            raise InterpolationDepthError(option, section, rawval)
-        return value
 
-    def before_set(self, parser, section, option, value):
-        return value
+class _Line(str):
 
-    @staticmethod
-    def _interpolation_replace(match, parser):
-        s = match.group(1)
-        if s is None:
-            return match.group()
-        else:
-            return "%%(%s)s" % parser.optionxform(s)
+    def __new__(cls, val, *args, **kwargs):
+        return super().__new__(cls, val)
+
+    def __init__(self, val, prefixes):
+        self.prefixes = prefixes
+
+    @functools.cached_property
+    def clean(self):
+        return self._strip_full() and self._strip_inline()
+
+    @property
+    def has_comments(self):
+        return self.strip() != self.clean
+
+    def _strip_inline(self):
+        """
+        Search for the earliest prefix at the beginning of the line or following a space.
+        """
+        matcher = re.compile(
+            '|'.join(fr'(^|\s)({re.escape(prefix)})' for prefix in self.prefixes.inline)
+            # match nothing if no prefixes
+            or '(?!)'
+        )
+        match = matcher.search(self)
+        return self[:match.start() if match else None].strip()
+
+    def _strip_full(self):
+        return '' if any(map(self.strip().startswith, self.prefixes.full)) else True
 
 
 class RawConfigParser(MutableMapping):
@@ -563,7 +591,7 @@ class RawConfigParser(MutableMapping):
     # Regular expressions for parsing section headers and options
     _SECT_TMPL = r"""
         \[                                 # [
-        (?P<header>[^]]+)                  # very permissive!
+        (?P<header>.+)                     # very permissive!
         \]                                 # ]
         """
     _OPT_TMPL = r"""
@@ -603,7 +631,8 @@ class RawConfigParser(MutableMapping):
                  comment_prefixes=('#', ';'), inline_comment_prefixes=None,
                  strict=True, empty_lines_in_values=True,
                  default_section=DEFAULTSECT,
-                 interpolation=_UNSET, converters=_UNSET):
+                 interpolation=_UNSET, converters=_UNSET,
+                 allow_unnamed_section=False,):
 
         self._dict = dict_type
         self._sections = self._dict()
@@ -622,8 +651,10 @@ class RawConfigParser(MutableMapping):
             else:
                 self._optcre = re.compile(self._OPT_TMPL.format(delim=d),
                                           re.VERBOSE)
-        self._comment_prefixes = tuple(comment_prefixes or ())
-        self._inline_comment_prefixes = tuple(inline_comment_prefixes or ())
+        self._prefixes = types.SimpleNamespace(
+            full=tuple(comment_prefixes or ()),
+            inline=tuple(inline_comment_prefixes or ()),
+        )
         self._strict = strict
         self._allow_no_value = allow_no_value
         self._empty_lines_in_values = empty_lines_in_values
@@ -633,10 +664,16 @@ class RawConfigParser(MutableMapping):
             self._interpolation = self._DEFAULT_INTERPOLATION
         if self._interpolation is None:
             self._interpolation = Interpolation()
+        if not isinstance(self._interpolation, Interpolation):
+            raise TypeError(
+                f"interpolation= must be None or an instance of Interpolation;"
+                f" got an object of type {type(self._interpolation)}"
+            )
         if converters is not _UNSET:
             self._converters.update(converters)
         if defaults:
             self._read_defaults(defaults)
+        self._allow_unnamed_section = allow_unnamed_section
 
     def defaults(self):
         return self._defaults
@@ -690,6 +727,7 @@ class RawConfigParser(MutableMapping):
         """
         if isinstance(filenames, (str, bytes, os.PathLike)):
             filenames = [filenames]
+        encoding = io.text_encoding(encoding)
         read_ok = []
         for filename in filenames:
             try:
@@ -705,10 +743,10 @@ class RawConfigParser(MutableMapping):
     def read_file(self, f, source=None):
         """Like read() but the argument must be a file-like object.
 
-        The `f' argument must be iterable, returning one line at a time.
-        Optional second argument is the `source' specifying the name of the
-        file being read. If not given, it is taken from f.name. If `f' has no
-        `name' attribute, `<???>' is used.
+        The `f` argument must be iterable, returning one line at a time.
+        Optional second argument is the `source` specifying the name of the
+        file being read. If not given, it is taken from f.name. If `f` has no
+        `name` attribute, `<???>` is used.
         """
         if source is None:
             try:
@@ -732,7 +770,7 @@ class RawConfigParser(MutableMapping):
         All types held in the dictionary are converted to strings during
         reading, including section names, option names and keys.
 
-        Optional second argument is the `source' specifying the name of the
+        Optional second argument is the `source` specifying the name of the
         dictionary being read.
         """
         elements_added = set()
@@ -753,27 +791,18 @@ class RawConfigParser(MutableMapping):
                 elements_added.add((section, key))
                 self.set(section, key, value)
 
-    def readfp(self, fp, filename=None):
-        """Deprecated, use read_file instead."""
-        warnings.warn(
-            "This method will be removed in future versions.  "
-            "Use 'parser.read_file()' instead.",
-            DeprecationWarning, stacklevel=2
-        )
-        self.read_file(fp, source=filename)
-
     def get(self, section, option, *, raw=False, vars=None, fallback=_UNSET):
         """Get an option value for a given section.
 
-        If `vars' is provided, it must be a dictionary. The option is looked up
-        in `vars' (if provided), `section', and in `DEFAULTSECT' in that order.
-        If the key is not found and `fallback' is provided, it is used as
-        a fallback value. `None' can be provided as a `fallback' value.
+        If `vars` is provided, it must be a dictionary. The option is looked up
+        in `vars` (if provided), `section`, and in `DEFAULTSECT` in that order.
+        If the key is not found and `fallback` is provided, it is used as
+        a fallback value. `None` can be provided as a `fallback` value.
 
-        If interpolation is enabled and the optional argument `raw' is False,
+        If interpolation is enabled and the optional argument `raw` is False,
         all interpolations are expanded in the return values.
 
-        Arguments `raw', `vars', and `fallback' are keyword only.
+        Arguments `raw`, `vars`, and `fallback` are keyword only.
 
         The section DEFAULT is special.
         """
@@ -833,8 +862,8 @@ class RawConfigParser(MutableMapping):
 
         All % interpolations are expanded in the return values, based on the
         defaults passed into the constructor, unless the optional argument
-        `raw' is true.  Additional substitutions may be provided using the
-        `vars' argument, which must be a dictionary whose contents overrides
+        `raw` is true.  Additional substitutions may be provided using the
+        `vars` argument, which must be a dictionary whose contents overrides
         any pre-existing defaults.
 
         The section DEFAULT is special.
@@ -876,8 +905,8 @@ class RawConfigParser(MutableMapping):
 
     def has_option(self, section, option):
         """Check for the existence of a given option in a given section.
-        If the specified `section' is None or an empty string, DEFAULT is
-        assumed. If the specified `section' does not exist, returns False."""
+        If the specified `section` is None or an empty string, DEFAULT is
+        assumed. If the specified `section` does not exist, returns False."""
         if not section or section == self.default_section:
             option = self.optionxform(option)
             return option in self._defaults
@@ -905,8 +934,11 @@ class RawConfigParser(MutableMapping):
     def write(self, fp, space_around_delimiters=True):
         """Write an .ini-format representation of the configuration state.
 
-        If `space_around_delimiters' is True (the default), delimiters
+        If `space_around_delimiters` is True (the default), delimiters
         between keys and values are surrounded by spaces.
+
+        Please note that comments in the original configuration file are not
+        preserved when writing the configuration back.
         """
         if space_around_delimiters:
             d = " {} ".format(self._delimiters[0])
@@ -915,13 +947,19 @@ class RawConfigParser(MutableMapping):
         if self._defaults:
             self._write_section(fp, self.default_section,
                                     self._defaults.items(), d)
+        if UNNAMED_SECTION in self._sections:
+            self._write_section(fp, UNNAMED_SECTION, self._sections[UNNAMED_SECTION].items(), d, unnamed=True)
+
         for section in self._sections:
+            if section is UNNAMED_SECTION:
+                continue
             self._write_section(fp, section,
                                 self._sections[section].items(), d)
 
-    def _write_section(self, fp, section_name, section_items, delimiter):
+    def _write_section(self, fp, section_name, section_items, delimiter, unnamed=False):
         """Write a single section to the specified `fp'."""
-        fp.write("[{}]\n".format(section_name))
+        if not unnamed:
+            fp.write("[{}]\n".format(section_name))
         for key, value in section_items:
             value = self._interpolation.before_write(self, section_name, key,
                                                      value)
@@ -994,8 +1032,8 @@ class RawConfigParser(MutableMapping):
         """Parse a sectioned configuration file.
 
         Each section in a configuration file contains a header, indicated by
-        a name in square brackets (`[]'), plus key/value options, indicated by
-        `name' and `value' delimited with a specific substring (`=' or `:' by
+        a name in square brackets (`[]`), plus key/value options, indicated by
+        `name` and `value` delimited with a specific substring (`=` or `:` by
         default).
 
         Values can span multiple lines, as long as they are indented deeper
@@ -1003,114 +1041,121 @@ class RawConfigParser(MutableMapping):
         lines may be treated as parts of multiline values or ignored.
 
         Configuration files may include comments, prefixed by specific
-        characters (`#' and `;' by default). Comments may appear on their own
+        characters (`#` and `;` by default). Comments may appear on their own
         in an otherwise empty line or may be entered in lines holding values or
-        section names.
+        section names. Please note that comments get stripped off when reading configuration files.
         """
-        elements_added = set()
-        cursect = None                        # None, or a dictionary
-        sectname = None
-        optname = None
-        lineno = 0
-        indent_level = 0
-        e = None                              # None, or an exception
-        for lineno, line in enumerate(fp, start=1):
-            comment_start = sys.maxsize
-            # strip inline comments
-            inline_prefixes = {p: -1 for p in self._inline_comment_prefixes}
-            while comment_start == sys.maxsize and inline_prefixes:
-                next_prefixes = {}
-                for prefix, index in inline_prefixes.items():
-                    index = line.find(prefix, index+1)
-                    if index == -1:
-                        continue
-                    next_prefixes[prefix] = index
-                    if index == 0 or (index > 0 and line[index-1].isspace()):
-                        comment_start = min(comment_start, index)
-                inline_prefixes = next_prefixes
-            # strip full line comments
-            for prefix in self._comment_prefixes:
-                if line.strip().startswith(prefix):
-                    comment_start = 0
-                    break
-            if comment_start == sys.maxsize:
-                comment_start = None
-            value = line[:comment_start].strip()
-            if not value:
+
+        try:
+            ParsingError._raise_all(self._read_inner(fp, fpname))
+        finally:
+            self._join_multiline_values()
+
+    def _read_inner(self, fp, fpname):
+        st = _ReadState()
+
+        Line = functools.partial(_Line, prefixes=self._prefixes)
+        for st.lineno, line in enumerate(map(Line, fp), start=1):
+            if not line.clean:
                 if self._empty_lines_in_values:
                     # add empty line to the value, but only if there was no
                     # comment on the line
-                    if (comment_start is None and
-                        cursect is not None and
-                        optname and
-                        cursect[optname] is not None):
-                        cursect[optname].append('') # newlines added at join
+                    if (not line.has_comments and
+                        st.cursect is not None and
+                        st.optname and
+                        st.cursect[st.optname] is not None):
+                        st.cursect[st.optname].append('') # newlines added at join
                 else:
                     # empty line marks end of value
-                    indent_level = sys.maxsize
+                    st.indent_level = sys.maxsize
                 continue
-            # continuation line?
+
             first_nonspace = self.NONSPACECRE.search(line)
-            cur_indent_level = first_nonspace.start() if first_nonspace else 0
-            if (cursect is not None and optname and
-                cur_indent_level > indent_level):
-                cursect[optname].append(value)
-            # a section header or option header?
-            else:
-                indent_level = cur_indent_level
-                # is it a section header?
-                mo = self.SECTCRE.match(value)
-                if mo:
-                    sectname = mo.group('header')
-                    if sectname in self._sections:
-                        if self._strict and sectname in elements_added:
-                            raise DuplicateSectionError(sectname, fpname,
-                                                        lineno)
-                        cursect = self._sections[sectname]
-                        elements_added.add(sectname)
-                    elif sectname == self.default_section:
-                        cursect = self._defaults
-                    else:
-                        cursect = self._dict()
-                        self._sections[sectname] = cursect
-                        self._proxies[sectname] = SectionProxy(self, sectname)
-                        elements_added.add(sectname)
-                    # So sections can't start with a continuation line
-                    optname = None
-                # no section header in the file?
-                elif cursect is None:
-                    raise MissingSectionHeaderError(fpname, lineno, line)
-                # an option line?
-                else:
-                    mo = self._optcre.match(value)
-                    if mo:
-                        optname, vi, optval = mo.group('option', 'vi', 'value')
-                        if not optname:
-                            e = self._handle_error(e, fpname, lineno, line)
-                        optname = self.optionxform(optname.rstrip())
-                        if (self._strict and
-                            (sectname, optname) in elements_added):
-                            raise DuplicateOptionError(sectname, optname,
-                                                       fpname, lineno)
-                        elements_added.add((sectname, optname))
-                        # This check is fine because the OPTCRE cannot
-                        # match if it would set optval to None
-                        if optval is not None:
-                            optval = optval.strip()
-                            cursect[optname] = [optval]
-                        else:
-                            # valueless option handling
-                            cursect[optname] = None
-                    else:
-                        # a non-fatal parsing error occurred. set up the
-                        # exception but keep going. the exception will be
-                        # raised at the end of the file and will contain a
-                        # list of all bogus lines
-                        e = self._handle_error(e, fpname, lineno, line)
-        self._join_multiline_values()
-        # if any parsing errors occurred, raise an exception
-        if e:
-            raise e
+            st.cur_indent_level = first_nonspace.start() if first_nonspace else 0
+
+            if self._handle_continuation_line(st, line, fpname):
+                continue
+
+            self._handle_rest(st, line, fpname)
+
+        return st.errors
+
+    def _handle_continuation_line(self, st, line, fpname):
+        # continuation line?
+        is_continue = (st.cursect is not None and st.optname and
+            st.cur_indent_level > st.indent_level)
+        if is_continue:
+            if st.cursect[st.optname] is None:
+                raise MultilineContinuationError(fpname, st.lineno, line)
+            st.cursect[st.optname].append(line.clean)
+        return is_continue
+
+    def _handle_rest(self, st, line, fpname):
+        # a section header or option header?
+        if self._allow_unnamed_section and st.cursect is None:
+            st.sectname = UNNAMED_SECTION
+            st.cursect = self._dict()
+            self._sections[st.sectname] = st.cursect
+            self._proxies[st.sectname] = SectionProxy(self, st.sectname)
+            st.elements_added.add(st.sectname)
+
+        st.indent_level = st.cur_indent_level
+        # is it a section header?
+        mo = self.SECTCRE.match(line.clean)
+
+        if not mo and st.cursect is None:
+            raise MissingSectionHeaderError(fpname, st.lineno, line)
+
+        self._handle_header(st, mo, fpname) if mo else self._handle_option(st, line, fpname)
+
+    def _handle_header(self, st, mo, fpname):
+        st.sectname = mo.group('header')
+        if st.sectname in self._sections:
+            if self._strict and st.sectname in st.elements_added:
+                raise DuplicateSectionError(st.sectname, fpname,
+                                            st.lineno)
+            st.cursect = self._sections[st.sectname]
+            st.elements_added.add(st.sectname)
+        elif st.sectname == self.default_section:
+            st.cursect = self._defaults
+        else:
+            st.cursect = self._dict()
+            self._sections[st.sectname] = st.cursect
+            self._proxies[st.sectname] = SectionProxy(self, st.sectname)
+            st.elements_added.add(st.sectname)
+        # So sections can't start with a continuation line
+        st.optname = None
+
+    def _handle_option(self, st, line, fpname):
+        # an option line?
+        st.indent_level = st.cur_indent_level
+
+        mo = self._optcre.match(line.clean)
+        if not mo:
+            # a non-fatal parsing error occurred. set up the
+            # exception but keep going. the exception will be
+            # raised at the end of the file and will contain a
+            # list of all bogus lines
+            st.errors.append(ParsingError(fpname, st.lineno, line))
+            return
+
+        st.optname, vi, optval = mo.group('option', 'vi', 'value')
+        if not st.optname:
+            st.errors.append(ParsingError(fpname, st.lineno, line))
+        st.optname = self.optionxform(st.optname.rstrip())
+        if (self._strict and
+            (st.sectname, st.optname) in st.elements_added):
+            raise DuplicateOptionError(st.sectname, st.optname,
+                                    fpname, st.lineno)
+        st.elements_added.add((st.sectname, st.optname))
+        # This check is fine because the OPTCRE cannot
+        # match if it would set optval to None
+        if optval is not None:
+            optval = optval.strip()
+            st.cursect[st.optname] = [optval]
+        else:
+            # valueless option handling
+            st.cursect[st.optname] = None
 
     def _join_multiline_values(self):
         defaults = self.default_section, self._defaults
@@ -1129,12 +1174,6 @@ class RawConfigParser(MutableMapping):
         Note: values can be non-string."""
         for key, value in defaults.items():
             self._defaults[self.optionxform(key)] = value
-
-    def _handle_error(self, exc, fpname, lineno, line):
-        if not exc:
-            exc = ParsingError(fpname)
-        exc.append(lineno, repr(line))
-        return exc
 
     def _unify_values(self, section, vars):
         """Create a sequence of lookups with 'vars' taking priority over
@@ -1219,19 +1258,6 @@ class ConfigParser(RawConfigParser):
             self.read_dict({self.default_section: defaults})
         finally:
             self._interpolation = hold_interpolation
-
-
-class SafeConfigParser(ConfigParser):
-    """ConfigParser alias for backwards compatibility purposes."""
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        warnings.warn(
-            "The SafeConfigParser class has been renamed to ConfigParser "
-            "in Python 3.2. This alias will be removed in future versions."
-            " Use ConfigParser directly instead.",
-            DeprecationWarning, stacklevel=2
-        )
 
 
 class SectionProxy(MutableMapping):

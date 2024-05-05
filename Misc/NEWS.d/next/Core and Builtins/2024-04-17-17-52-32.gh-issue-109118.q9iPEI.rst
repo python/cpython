@@ -1,0 +1,2 @@
+:ref:`annotation scope <annotation-scopes>` within class scopes can now
+contain lambdas.

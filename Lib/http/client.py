@@ -70,10 +70,12 @@ Req-sent-unread-response       _CS_REQ_SENT       <response_class>
 
 import email.parser
 import email.message
+import errno
 import http
 import io
 import re
 import socket
+import sys
 import collections.abc
 from urllib.parse import urlsplit
 
@@ -147,6 +149,10 @@ _contains_disallowed_url_pchar_re = re.compile('[\x00-\x20\x7f]')
 #  _is_allowed_url_pchars_re = re.compile(r"^[/!$&'()*+,;=:@%a-zA-Z0-9._~-]+$")
 # We are more lenient for assumed real world compatibility purposes.
 
+# These characters are not allowed within HTTP method names
+# to prevent http header injection.
+_contains_disallowed_method_pchar_re = re.compile('[\x00-\x1f]')
+
 # We always set the Content-Length header for these methods because some
 # servers will otherwise respond with a 411
 _METHODS_EXPECTING_BODY = {'PATCH', 'POST', 'PUT'}
@@ -166,6 +172,13 @@ def _encode(data, name='data'):
             "if you want to send it encoded in UTF-8." %
             (name.title(), data[err.start:err.end], name)) from None
 
+def _strip_ipv6_iface(enc_name: bytes) -> bytes:
+    """Remove interface scope from IPv6 address."""
+    enc_name, percent, _ = enc_name.partition(b"%")
+    if percent:
+        assert enc_name.startswith(b'['), enc_name
+        enc_name += b']'
+    return enc_name
 
 class HTTPMessage(email.message.Message):
     # XXX The only usage of this method is in
@@ -197,15 +210,11 @@ class HTTPMessage(email.message.Message):
                 lst.append(line)
         return lst
 
-def parse_headers(fp, _class=HTTPMessage):
-    """Parses only RFC2822 headers from a file pointer.
+def _read_headers(fp):
+    """Reads potential header lines into a list from a file pointer.
 
-    email Parser wants to see strings rather than bytes.
-    But a TextIOWrapper around self.rfile would buffer too many bytes
-    from the stream, bytes which we later need to read as bytes.
-    So we read the correct bytes here, as bytes, for email Parser
-    to parse.
-
+    Length of line is limited by _MAXLINE, and number of
+    headers is limited by _MAXHEADERS.
     """
     headers = []
     while True:
@@ -217,8 +226,27 @@ def parse_headers(fp, _class=HTTPMessage):
             raise HTTPException("got more than %d headers" % _MAXHEADERS)
         if line in (b'\r\n', b'\n', b''):
             break
-    hstring = b''.join(headers).decode('iso-8859-1')
+    return headers
+
+def _parse_header_lines(header_lines, _class=HTTPMessage):
+    """
+    Parses only RFC2822 headers from header lines.
+
+    email Parser wants to see strings rather than bytes.
+    But a TextIOWrapper around self.rfile would buffer too many bytes
+    from the stream, bytes which we later need to read as bytes.
+    So we read the correct bytes here, as bytes, for email Parser
+    to parse.
+
+    """
+    hstring = b''.join(header_lines).decode('iso-8859-1')
     return email.parser.Parser(_class=_class).parsestr(hstring)
+
+def parse_headers(fp, _class=HTTPMessage):
+    """Parses only RFC2822 headers from a file pointer."""
+
+    headers = _read_headers(fp)
+    return _parse_header_lines(headers, _class)
 
 
 class HTTPResponse(io.BufferedIOBase):
@@ -304,15 +332,10 @@ class HTTPResponse(io.BufferedIOBase):
             if status != CONTINUE:
                 break
             # skip the header from the 100 response
-            while True:
-                skip = self.fp.readline(_MAXLINE + 1)
-                if len(skip) > _MAXLINE:
-                    raise LineTooLong("header line")
-                skip = skip.strip()
-                if not skip:
-                    break
-                if self.debuglevel > 0:
-                    print("header:", skip)
+            skipped_headers = _read_headers(self.fp)
+            if self.debuglevel > 0:
+                print("headers:", skipped_headers)
+            del skipped_headers
 
         self.code = self.status = status
         self.reason = reason.strip()
@@ -345,9 +368,6 @@ class HTTPResponse(io.BufferedIOBase):
         # NOTE: RFC 2616, S4.4, #3 says we ignore this if tr_enc is "chunked"
         self.length = None
         length = self.headers.get("content-length")
-
-         # are we using the chunked-style of transfer encoding?
-        tr_enc = self.headers.get("transfer-encoding")
         if length and not self.chunked:
             try:
                 self.length = int(length)
@@ -441,6 +461,7 @@ class HTTPResponse(io.BufferedIOBase):
         return self.fp is None
 
     def read(self, amt=None):
+        """Read and return the response body, or up to the next amt bytes."""
         if self.fp is None:
             return b""
 
@@ -448,18 +469,25 @@ class HTTPResponse(io.BufferedIOBase):
             self._close_conn()
             return b""
 
+        if self.chunked:
+            return self._read_chunked(amt)
+
         if amt is not None:
-            # Amount is given, implement using readinto
-            b = bytearray(amt)
-            n = self.readinto(b)
-            return memoryview(b)[:n].tobytes()
+            if self.length is not None and amt > self.length:
+                # clip the read to the "end of response"
+                amt = self.length
+            s = self.fp.read(amt)
+            if not s and amt:
+                # Ideally, we would raise IncompleteRead if the content-length
+                # wasn't satisfied, but it might break compatibility.
+                self._close_conn()
+            elif self.length is not None:
+                self.length -= len(s)
+                if not self.length:
+                    self._close_conn()
+            return s
         else:
             # Amount is not given (unbounded read) so we must check self.length
-            # and self.chunked
-
-            if self.chunked:
-                return self._readall_chunked()
-
             if self.length is None:
                 s = self.fp.read()
             else:
@@ -560,19 +588,23 @@ class HTTPResponse(io.BufferedIOBase):
             self.chunk_left = chunk_left
         return chunk_left
 
-    def _readall_chunked(self):
+    def _read_chunked(self, amt=None):
         assert self.chunked != _UNKNOWN
         value = []
         try:
-            while True:
-                chunk_left = self._get_chunk_left()
-                if chunk_left is None:
+            while (chunk_left := self._get_chunk_left()) is not None:
+                if amt is not None and amt <= chunk_left:
+                    value.append(self._safe_read(amt))
+                    self.chunk_left = chunk_left - amt
                     break
+
                 value.append(self._safe_read(chunk_left))
+                if amt is not None:
+                    amt -= chunk_left
                 self.chunk_left = 0
             return b''.join(value)
-        except IncompleteRead:
-            raise IncompleteRead(b''.join(value))
+        except IncompleteRead as exc:
+            raise IncompleteRead(b''.join(value)) from exc
 
     def _readinto_chunked(self, b):
         assert self.chunked != _UNKNOWN
@@ -633,6 +665,8 @@ class HTTPResponse(io.BufferedIOBase):
             self._close_conn()
         elif self.length is not None:
             self.length -= len(result)
+            if not self.length:
+                self._close_conn()
         return result
 
     def peek(self, n=-1):
@@ -657,6 +691,8 @@ class HTTPResponse(io.BufferedIOBase):
             self._close_conn()
         elif self.length is not None:
             self.length -= len(result)
+            if not self.length:
+                self._close_conn()
         return result
 
     def _read1_chunked(self, n):
@@ -764,6 +800,20 @@ class HTTPResponse(io.BufferedIOBase):
         '''
         return self.status
 
+
+def _create_https_context(http_version):
+    # Function also used by urllib.request to be able to set the check_hostname
+    # attribute on a context object.
+    context = ssl._create_default_https_context()
+    # send ALPN extension to indicate HTTP/1.1 protocol
+    if http_version == 11:
+        context.set_alpn_protocols(['http/1.1'])
+    # enable PHA for TLS 1.3 connections if available
+    if context.post_handshake_auth is not None:
+        context.post_handshake_auth = True
+    return context
+
+
 class HTTPConnection:
 
     _http_vsn = 11
@@ -825,8 +875,11 @@ class HTTPConnection:
         self._tunnel_host = None
         self._tunnel_port = None
         self._tunnel_headers = {}
+        self._raw_proxy_headers = None
 
         (self.host, self.port) = self._get_hostport(host, port)
+
+        self._validate_host(self.host)
 
         # This is stored as an instance variable to allow unit
         # tests to replace it with a suitable mockup
@@ -835,16 +888,23 @@ class HTTPConnection:
     def set_tunnel(self, host, port=None, headers=None):
         """Set up host and port for HTTP CONNECT tunnelling.
 
-        In a connection that uses HTTP CONNECT tunneling, the host passed to the
-        constructor is used as a proxy server that relays all communication to
-        the endpoint passed to `set_tunnel`. This done by sending an HTTP
+        In a connection that uses HTTP CONNECT tunnelling, the host passed to
+        the constructor is used as a proxy server that relays all communication
+        to the endpoint passed to `set_tunnel`. This done by sending an HTTP
         CONNECT request to the proxy server when the connection is established.
 
-        This method must be called before the HTML connection has been
+        This method must be called before the HTTP connection has been
         established.
 
         The headers argument should be a mapping of extra HTTP headers to send
         with the CONNECT request.
+
+        As HTTP/1.1 is used for HTTP CONNECT tunnelling request, as per the RFC
+        (https://tools.ietf.org/html/rfc7231#section-4.3.6), a HTTP Host:
+        header must be provided, matching the authority-form of the request
+        target provided as the destination for the CONNECT request. If a
+        HTTP Host: header is not provided via the headers argument, one
+        is generated and transmitted automatically.
         """
 
         if self.sock:
@@ -852,9 +912,14 @@ class HTTPConnection:
 
         self._tunnel_host, self._tunnel_port = self._get_hostport(host, port)
         if headers:
-            self._tunnel_headers = headers
+            self._tunnel_headers = headers.copy()
         else:
             self._tunnel_headers.clear()
+
+        if not any(header.lower() == "host" for header in self._tunnel_headers):
+            encoded_host = self._tunnel_host.encode("idna").decode("ascii")
+            self._tunnel_headers["Host"] = "%s:%d" % (
+                encoded_host, self._tunnel_port)
 
     def _get_hostport(self, host, port):
         if port is None:
@@ -871,50 +936,76 @@ class HTTPConnection:
                 host = host[:i]
             else:
                 port = self.default_port
-            if host and host[0] == '[' and host[-1] == ']':
-                host = host[1:-1]
+        if host and host[0] == '[' and host[-1] == ']':
+            host = host[1:-1]
 
         return (host, port)
 
     def set_debuglevel(self, level):
         self.debuglevel = level
 
+    def _wrap_ipv6(self, ip):
+        if b':' in ip and ip[0] != b'['[0]:
+            return b"[" + ip + b"]"
+        return ip
+
     def _tunnel(self):
-        connect_str = "CONNECT %s:%d HTTP/1.0\r\n" % (self._tunnel_host,
-            self._tunnel_port)
-        connect_bytes = connect_str.encode("ascii")
-        self.send(connect_bytes)
+        connect = b"CONNECT %s:%d %s\r\n" % (
+            self._wrap_ipv6(self._tunnel_host.encode("idna")),
+            self._tunnel_port,
+            self._http_vsn_str.encode("ascii"))
+        headers = [connect]
         for header, value in self._tunnel_headers.items():
-            header_str = "%s: %s\r\n" % (header, value)
-            header_bytes = header_str.encode("latin-1")
-            self.send(header_bytes)
-        self.send(b'\r\n')
+            headers.append(f"{header}: {value}\r\n".encode("latin-1"))
+        headers.append(b"\r\n")
+        # Making a single send() call instead of one per line encourages
+        # the host OS to use a more optimal packet size instead of
+        # potentially emitting a series of small packets.
+        self.send(b"".join(headers))
+        del headers
 
         response = self.response_class(self.sock, method=self._method)
-        (version, code, message) = response._read_status()
+        try:
+            (version, code, message) = response._read_status()
 
-        if code != http.HTTPStatus.OK:
-            self.close()
-            raise OSError("Tunnel connection failed: %d %s" % (code,
-                                                               message.strip()))
-        while True:
-            line = response.fp.readline(_MAXLINE + 1)
-            if len(line) > _MAXLINE:
-                raise LineTooLong("header line")
-            if not line:
-                # for sites which EOF without sending a trailer
-                break
-            if line in (b'\r\n', b'\n', b''):
-                break
+            self._raw_proxy_headers = _read_headers(response.fp)
 
             if self.debuglevel > 0:
-                print('header:', line.decode())
+                for header in self._raw_proxy_headers:
+                    print('header:', header.decode())
+
+            if code != http.HTTPStatus.OK:
+                self.close()
+                raise OSError(f"Tunnel connection failed: {code} {message.strip()}")
+
+        finally:
+            response.close()
+
+    def get_proxy_response_headers(self):
+        """
+        Returns a dictionary with the headers of the response
+        received from the proxy server to the CONNECT request
+        sent to set the tunnel.
+
+        If the CONNECT request was not sent, the method returns None.
+        """
+        return (
+            _parse_header_lines(self._raw_proxy_headers)
+            if self._raw_proxy_headers is not None
+            else None
+        )
 
     def connect(self):
         """Connect to the host and port specified in __init__."""
+        sys.audit("http.client.connect", self, self.host, self.port)
         self.sock = self._create_connection(
             (self.host,self.port), self.timeout, self.source_address)
-        self.sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+        # Might fail in OSs that don't implement TCP_NODELAY
+        try:
+            self.sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+        except OSError as e:
+            if e.errno != errno.ENOPROTOOPT:
+                raise
 
         if self._tunnel_host:
             self._tunnel()
@@ -949,18 +1040,17 @@ class HTTPConnection:
             print("send:", repr(data))
         if hasattr(data, "read") :
             if self.debuglevel > 0:
-                print("sendIng a read()able")
+                print("sending a readable")
             encode = self._is_textIO(data)
             if encode and self.debuglevel > 0:
                 print("encoding file using iso-8859-1")
-            while 1:
-                datablock = data.read(self.blocksize)
-                if not datablock:
-                    break
+            while datablock := data.read(self.blocksize):
                 if encode:
                     datablock = datablock.encode("iso-8859-1")
+                sys.audit("http.client.send", self, datablock)
                 self.sock.sendall(datablock)
             return
+        sys.audit("http.client.send", self, data)
         try:
             self.sock.sendall(data)
         except TypeError:
@@ -980,14 +1070,11 @@ class HTTPConnection:
 
     def _read_readable(self, readable):
         if self.debuglevel > 0:
-            print("sendIng a read()able")
+            print("reading a readable")
         encode = self._is_textIO(readable)
         if encode and self.debuglevel > 0:
             print("encoding file using iso-8859-1")
-        while True:
-            datablock = readable.read(self.blocksize)
-            if not datablock:
-                break
+        while datablock := readable.read(self.blocksize):
             if encode:
                 datablock = datablock.encode("iso-8859-1")
             yield datablock
@@ -1085,6 +1172,8 @@ class HTTPConnection:
         else:
             raise CannotSendRequest(self.__state)
 
+        self._validate_method(method)
+
         # Save the method for use later in the response phase
         self._method = method
 
@@ -1122,7 +1211,7 @@ class HTTPConnection:
                         netloc_enc = netloc.encode("ascii")
                     except UnicodeEncodeError:
                         netloc_enc = netloc.encode("idna")
-                    self.putheader('Host', netloc_enc)
+                    self.putheader('Host', _strip_ipv6_iface(netloc_enc))
                 else:
                     if self._tunnel_host:
                         host = self._tunnel_host
@@ -1138,9 +1227,9 @@ class HTTPConnection:
 
                     # As per RFC 273, IPv6 address should be wrapped with []
                     # when used as Host header
-
-                    if host.find(':') >= 0:
-                        host_enc = b'[' + host_enc + b']'
+                    host_enc = self._wrap_ipv6(host_enc)
+                    if ":" in host:
+                        host_enc = _strip_ipv6_iface(host_enc)
 
                     if port == self.default_port:
                         self.putheader('Host', host_enc)
@@ -1175,12 +1264,29 @@ class HTTPConnection:
         # ASCII also helps prevent CVE-2019-9740.
         return request.encode('ascii')
 
+    def _validate_method(self, method):
+        """Validate a method name for putrequest."""
+        # prevent http header injection
+        match = _contains_disallowed_method_pchar_re.search(method)
+        if match:
+            raise ValueError(
+                    f"method can't contain control characters. {method!r} "
+                    f"(found at least {match.group()!r})")
+
     def _validate_path(self, url):
         """Validate a url for putrequest."""
         # Prevent CVE-2019-9740.
         match = _contains_disallowed_url_pchar_re.search(url)
         if match:
             raise InvalidURL(f"URL can't contain control characters. {url!r} "
+                             f"(found at least {match.group()!r})")
+
+    def _validate_host(self, host):
+        """Validate a host so it doesn't contain control characters."""
+        # Prevent CVE-2019-18348.
+        match = _contains_disallowed_url_pchar_re.search(host)
+        if match:
+            raise InvalidURL(f"URL can't contain control characters. {host!r} "
                              f"(found at least {match.group()!r})")
 
     def putheader(self, header, *values):
@@ -1348,43 +1454,15 @@ else:
 
         default_port = HTTPS_PORT
 
-        # XXX Should key_file and cert_file be deprecated in favour of context?
-
-        def __init__(self, host, port=None, key_file=None, cert_file=None,
-                     timeout=socket._GLOBAL_DEFAULT_TIMEOUT,
-                     source_address=None, *, context=None,
-                     check_hostname=None, blocksize=8192):
+        def __init__(self, host, port=None,
+                     *, timeout=socket._GLOBAL_DEFAULT_TIMEOUT,
+                     source_address=None, context=None, blocksize=8192):
             super(HTTPSConnection, self).__init__(host, port, timeout,
                                                   source_address,
                                                   blocksize=blocksize)
-            if (key_file is not None or cert_file is not None or
-                        check_hostname is not None):
-                import warnings
-                warnings.warn("key_file, cert_file and check_hostname are "
-                              "deprecated, use a custom context instead.",
-                              DeprecationWarning, 2)
-            self.key_file = key_file
-            self.cert_file = cert_file
             if context is None:
-                context = ssl._create_default_https_context()
-                # enable PHA for TLS 1.3 connections if available
-                if context.post_handshake_auth is not None:
-                    context.post_handshake_auth = True
-            will_verify = context.verify_mode != ssl.CERT_NONE
-            if check_hostname is None:
-                check_hostname = context.check_hostname
-            if check_hostname and not will_verify:
-                raise ValueError("check_hostname needs a SSL context with "
-                                 "either CERT_OPTIONAL or CERT_REQUIRED")
-            if key_file or cert_file:
-                context.load_cert_chain(cert_file, key_file)
-                # cert and key file means the user wants to authenticate.
-                # enable TLS 1.3 PHA implicitly even for custom contexts.
-                if context.post_handshake_auth is not None:
-                    context.post_handshake_auth = True
+                context = _create_https_context(self._http_vsn)
             self._context = context
-            if check_hostname is not None:
-                self._context.check_hostname = check_hostname
 
         def connect(self):
             "Connect to a host on a given (SSL) port."

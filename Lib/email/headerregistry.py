@@ -2,10 +2,6 @@
 
 This module provides an implementation of the HeaderRegistry API.
 The implementation is designed to flexibly follow RFC5322 rules.
-
-Eventually HeaderRegistry will be a public API, but it isn't yet,
-and will probably change some before that happens.
-
 """
 from types import MappingProxyType
 
@@ -31,6 +27,11 @@ class Address:
         without any Content Transfer Encoding.
 
         """
+
+        inputs = ''.join(filter(None, (display_name, username, domain, addr_spec)))
+        if '\r' in inputs or '\n' in inputs:
+            raise ValueError("invalid arguments; address parts cannot contain CR or LF")
+
         # This clause with its potential 'raise' may only happen when an
         # application program creates an Address object using an addr_spec
         # keyword.  The email library code itself must always supply username
@@ -217,7 +218,7 @@ class BaseHeader(str):
                 self.__class__.__bases__,
                 str(self),
             ),
-            self.__dict__)
+            self.__getstate__())
 
     @classmethod
     def _reconstruct(cls, value):
@@ -297,7 +298,14 @@ class DateHeader:
             kwds['parse_tree'] = parser.TokenList()
             return
         if isinstance(value, str):
-            value = utils.parsedate_to_datetime(value)
+            kwds['decoded'] = value
+            try:
+                value = utils.parsedate_to_datetime(value)
+            except ValueError:
+                kwds['defects'].append(errors.InvalidDateDefect('Invalid date value or format'))
+                kwds['datetime'] = None
+                kwds['parse_tree'] = parser.TokenList()
+                return
         kwds['datetime'] = value
         kwds['decoded'] = utils.format_datetime(kwds['datetime'])
         kwds['parse_tree'] = cls.value_parser(kwds['decoded'])
