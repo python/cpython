@@ -3286,6 +3286,7 @@ class Signature:
                                                     param.default is _empty):
                     raise TypeError('missing a required argument: {arg!r}'. \
                                     format(arg=param_name)) from None
+
             else:
                 arguments[param_name] = arg_val
 
@@ -3306,8 +3307,7 @@ class Signature:
             else:
                 raise TypeError(
                     'got an unexpected keyword argument {arg!r}'.format(
-                        arg=next(iter(kwargs)))
-                    )
+                        arg=next(iter(kwargs))))
 
         return self._bound_arguments_cls(self, arguments)
 
