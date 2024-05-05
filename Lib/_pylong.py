@@ -19,6 +19,81 @@ try:
 except ImportError:
     _decimal = None
 
+# A number of functions have this form, where `w` is a desired number of
+# digits in base `base`:
+#
+#    def inner(...w...):
+#        if w <= LIMIT:
+#            return something
+#        lo = w >> 1
+#        hi = w - lo
+#        something involving base**lo, inner(...lo...), j, and inner(...hi...)
+#    figure out largest w needed
+#    result = inner(w)
+#
+# They all had some on-the-fly scheme to cache `base**lo` results for reuse.
+# Power is costly.
+#
+# This routine aims to compute all amd only the needed powers in advance, as
+# efficiently as reasonably possible. This isn't trivial, and all the
+# on-the-fly methods did needless work in many cases. The driving code above
+# changes to:
+#
+#    figure out largest w needed
+#    mycache = compute_powers(w, base, LIMIT)
+#    result = inner(w)
+#
+# and `mycache[lo]` replaces `base**lo` in the inner function.
+#
+# While this does give minor speedups (a few percent at best), the primary
+# intent is to simplify the functions using this, by eliminating the need for
+# them to craft their own ad-hoc caching schemes.
+def compute_powers(w, base, more_than, show=False):
+    seen = set()
+    need = set()
+
+    def inner(w):
+        if w in seen or w <= more_than:
+            return
+        seen.add(w)
+        lo = w >> 1
+        hi = w - lo
+        # only _nned_ lo here; some other path may, or may not,
+        # need hi
+        need.add(lo)
+        inner(lo)
+        if lo != hi:
+            inner(hi)
+    inner(w)
+
+    d = {}
+    for this in sorted(need):
+        if this - 1 in d:
+            if show:
+                print("* base at", this)
+            d[this] = d[this - 1] * base # cheap
+        else:
+            lo = this >> 1
+            hi = this - lo
+            if hi in d:
+                if show:
+                    print("square at", this)
+                assert lo in d
+                # Multiplying a bigint by itself (same object!) is
+                # about twice as fast in CPython.
+                sq = d[lo] * d[lo]
+                if hi != lo:
+                    assert hi == lo + 1
+                    if show:
+                        print("    and * base")
+                    sq *= base
+                d[this] = sq
+            else:
+                # Perhaps surprisingly rarely needed.
+                if show:
+                    print("pow at", this)
+                d[this] = base ** this
+    return d
 
 def int_to_decimal(n):
     """Asymptotically fast conversion of an 'int' to Decimal."""
@@ -83,6 +158,49 @@ def int_to_decimal(n):
             result = -result
     return result
 
+old_int_to_decimal = int_to_decimal
+
+def new_int_to_decimal(n):
+    """Asymptotically fast conversion of an 'int' to Decimal."""
+
+    # Function due to Tim Peters.  See GH issue #90716 for details.
+    # https://github.com/python/cpython/issues/90716
+    #
+    # The implementation in longobject.c of base conversion algorithms
+    # between power-of-2 and non-power-of-2 bases are quadratic time.
+    # This function implements a divide-and-conquer algorithm that is
+    # faster for large numbers.  Builds an equal decimal.Decimal in a
+    # "clever" recursive way.  If we want a string representation, we
+    # apply str to _that_.
+
+    from decimal import Decimal as D
+    BITLIM = 128
+
+    def inner(n, w):
+        if w <= BITLIM:
+            return D(n)
+        w2 = w >> 1
+        hi = n >> w2
+        lo = n - (hi << w2)
+        return inner(lo, w2) + inner(hi, w - w2) * w2pow[w2]
+
+    with decimal.localcontext() as ctx:
+        ctx.prec = decimal.MAX_PREC
+        ctx.Emax = decimal.MAX_EMAX
+        ctx.Emin = decimal.MIN_EMIN
+        ctx.traps[decimal.Inexact] = 1 # sanity check
+
+        nbits = n.bit_length()
+        w2pow = compute_powers(nbits, D(2), BITLIM)
+        if n < 0:
+            negate = True
+            n = -n
+        else:
+            negate = False
+        result = inner(n, nbits)
+        if negate:
+            result = -result
+    return result
 
 def int_to_decimal_string(n):
     """Asymptotically fast conversion of an 'int' to a decimal string."""
@@ -128,6 +246,49 @@ def int_to_decimal_string(n):
         s = s.lstrip('0')
     return sign + s
 
+old_int_to_decimal_string = int_to_decimal_string
+def new_int_to_decimal_string(n):
+    """Asymptotically fast conversion of an 'int' to a decimal string."""
+    w = n.bit_length()
+    if w > 450_000 and _decimal is not None:
+        # It is only usable with the C decimal implementation.
+        # _pydecimal.py calls str() on very large integers, which in its
+        # turn calls int_to_decimal_string(), causing very deep recursion.
+        return str(int_to_decimal(n))
+
+    # Fallback algorithm for the case when the C decimal module isn't
+    # available.  This algorithm is asymptotically worse than the algorithm
+    # using the decimal module, but better than the quadratic time
+    # implementation in longobject.c.
+    def inner(n, w):
+        if w <= 1000:
+            return str(n)
+        w2 = w >> 1
+        hi, lo = divmod(n, pow10[w2])
+        return inner(hi, w - w2) + inner(lo, w2).zfill(w2)
+
+    # The estimation of the number of decimal digits.
+    # There is no harm in small error.  If we guess too large, there may
+    # be leading 0's that need to be stripped.  If we guess too small, we
+    # may need to call str() recursively for the remaining highest digits,
+    # which can still potentially be a large integer. This is manifested
+    # only if the number has way more than 10**15 digits, that exceeds
+    # the 52-bit physical address limit in both Intel64 and AMD64.
+    w = int(w * 0.3010299956639812 + 1)  # log10(2)
+    pow10 = compute_powers(w, 5, 1009)
+    for k, v in pow10.items():
+        pow10[k] = v << k
+    if n < 0:
+        n = -n
+        sign = '-'
+    else:
+        sign = ''
+    s = inner(n, w)
+    if s[0] == '0' and n:
+        # If our guess of w is too large, there may be leading 0's that
+        # need to be stripped.
+        s = s.lstrip('0')
+    return sign + s
 
 def _str_to_int_inner(s):
     """Asymptotically fast conversion of a 'str' to an 'int'."""
@@ -175,6 +336,44 @@ def _str_to_int_inner(s):
 
     return inner(0, len(s))
 
+old_str_to_int_inner = _str_to_int_inner
+
+def new_str_to_int_inner(s):
+    """Asymptotically fast conversion of a 'str' to an 'int'."""
+
+    # Function due to Bjorn Martinsson.  See GH issue #90716 for details.
+    # https://github.com/python/cpython/issues/90716
+    #
+    # The implementation in longobject.c of base conversion algorithms
+    # between power-of-2 and non-power-of-2 bases are quadratic time.
+    # This function implements a divide-and-conquer algorithm making use
+    # of Python's built in big int multiplication. Since Python uses the
+    # Karatsuba algorithm for multiplication, the time complexity
+    # of this function is O(len(s)**1.58).
+
+    DIGLIM = 2048
+
+    def inner(a, b):
+        if b - a <= DIGLIM:
+            return int(s[a:b])
+        mid = (a + b + 1) >> 1
+        return (inner(mid, b)
+                + ((inner(a, mid) * w5pow[b - mid]) << (b - mid)))
+
+    w5pow = compute_powers(len(s), 5, DIGLIM)
+    return inner(0, len(s))
+
+def setold():
+    global int_to_decimal, int_to_decimal_string, _str_to_int_inner
+    int_to_decimal = old_int_to_decimal
+    int_to_decimal_string = old_int_to_decimal_string
+    _str_to_int_inner = old_str_to_int_inner
+
+def setnew():
+    global int_to_decimal, int_to_decimal_string, _str_to_int_inner
+    int_to_decimal = new_int_to_decimal
+    int_to_decimal_string = new_int_to_decimal_string
+    _str_to_int_inner = new_str_to_int_inner
 
 def int_from_string(s):
     """Asymptotically fast version of PyLong_FromString(), conversion
@@ -185,7 +384,6 @@ def int_from_string(s):
     # contain underscores and have trailing whitespace.
     s = s.rstrip().replace('_', '')
     return _str_to_int_inner(s)
-
 
 def str_to_int(s):
     """Asymptotically fast version of decimal string to 'int' conversion."""
