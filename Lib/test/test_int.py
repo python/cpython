@@ -906,6 +906,16 @@ class PyLongModuleTests(unittest.TestCase):
             with self.assertRaises(RuntimeError):
                 int(big_value)
 
+    def test_pylong_roundtrip(self):
+        from random import randrange
+        bits = 5000
+        while bits <= 1_000_000:
+            bits += randrange(100) # break bitlength patterns
+            hibit = 1 << (bits - 1)
+            n = hibit + randrange(hibit)
+            assert n.bit_length() == bits
+            self.assertEqual(n, int(str(n)))
+            bits <<= 1
 
 if __name__ == "__main__":
     unittest.main()
