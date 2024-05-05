@@ -248,7 +248,10 @@ framelocalsproxy_keys(PyObject *self, PyObject *__unused)
         PyObject *val = framelocalsproxy_getval(frame->f_frame, co, i);
         if (val) {
             PyObject *name = PyTuple_GET_ITEM(co->co_localsplusnames, i);
-            PyList_Append(names, name);
+            if (PyList_Append(names, name) < 0) {
+                Py_DECREF(names);
+                return NULL;
+            }
         }
     }
 
@@ -260,7 +263,10 @@ framelocalsproxy_keys(PyObject *self, PyObject *__unused)
     if (frame->f_extra_locals) {
         assert(PyDict_Check(frame->f_extra_locals));
         while (PyDict_Next(frame->f_extra_locals, &i, &key, &value)) {
-            PyList_Append(names, key);
+            if (PyList_Append(names, key) < 0) {
+                Py_DECREF(names);
+                return NULL;
+            }
         }
     }
 
@@ -309,8 +315,13 @@ static PyObject *
 framelocalsproxy_iter(PyObject *self)
 {
     PyObject* keys = framelocalsproxy_keys(self, NULL);
+    if (keys == NULL) {
+        return NULL;
+    }
+
     PyObject* iter = PyObject_GetIter(keys);
     Py_XDECREF(keys);
+
     return iter;
 }
 
@@ -572,6 +583,11 @@ static PyObject*
 framelocalsproxy_reversed(PyObject *self, PyObject *__unused)
 {
     PyObject *result = framelocalsproxy_keys(self, NULL);
+
+    if (result == NULL) {
+        return NULL;
+    }
+
     if (PyList_Reverse(result) < 0) {
         Py_DECREF(result);
         return NULL;
