@@ -621,13 +621,14 @@ if __name__ == '__main__':
 
 
         // Append VALUE to the result.
-        #define APPEND(VAL) {                           \\
-            if (!VAL) {                                 \\
+        #define APPEND(ITEM) {                          \\
+            PyObject *item = ITEM;                      \\
+            if (!item) {                                \\
                 Py_DECREF(result);                      \\
                 return NULL;                            \\
             }                                           \\
-            int rv = PyList_Append(result, VAL);        \\
-            Py_DECREF(VAL);                             \\
+            int rv = PyList_Append(result, item);       \\
+            Py_DECREF(item);                            \\
             if (rv < 0) {                               \\
                 Py_DECREF(result);                      \\
                 return NULL;                            \\
