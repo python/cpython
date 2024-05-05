@@ -102,6 +102,34 @@ New typing features:
 New Features
 ============
 
+A Better Interactive Interpreter
+--------------------------------
+
+On Unix-like systems like Linux or macOS, Python now uses a new
+:term:`interactive` shell.  When the user starts the :term:`REPL`
+from a tty, and both :mod:`curses` and :mod:`readline` are available,
+the interactive shell now supports the following new features:
+
+* colorized prompts;
+* multiline editing with history preservation;
+* interactive help browsing using :kbd:`F1` with a separate command
+  history;
+* history browsing using :kbd:`F2` that skips output as well as the
+  :term:`>>>` and :term:`...` prompts;
+* "paste mode" with :kbd:`F3` that makes pasting larger blocks of code
+  easier (press :kbd:`F3` again to return to the regular prompt);
+* ability to issue REPL-specific commands like :kbd:`help`, :kbd:`exit`,
+  and :kbd:`quit` without the need to use call parentheses after the
+  command name.
+
+If the new interactive shell is not desired, it can be disabled via
+the :envvar:`PYTHON_BASIC_REPL` environment variable.
+
+For more on interactive mode, see :ref:`tut-interac`.
+
+(Contributed by Pablo Galindo Salgado, Łukasz Langa, and
+Lysandros Nikolaou in :gh:`111201` based on code from the PyPy project.)
+
 Improved Error Messages
 -----------------------
 

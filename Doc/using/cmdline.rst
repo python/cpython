@@ -42,6 +42,7 @@ additional methods of invocation:
 * When called with standard input connected to a tty device, it prompts for
   commands and executes them until an EOF (an end-of-file character, you can
   produce that with :kbd:`Ctrl-D` on UNIX or :kbd:`Ctrl-Z, Enter` on Windows) is read.
+  For more on interactive mode, see :ref:`tut-interac`.
 * When called with a file name argument or with a file as standard input, it
   reads and executes a script from that file.
 * When called with a directory name argument, it reads and executes an
@@ -1179,6 +1180,15 @@ conflict.
    If this variable is set to ``1``, the interpreter will colorize various kinds
    of output. Setting it to ``0`` deactivates this behavior.
    See also :ref:`using-on-controlling-color`.
+
+   .. versionadded:: 3.13
+
+.. envvar:: PYTHON_BASIC_REPL
+
+   If this variable is set to ``1``, the interpreter will not attempt to
+   load the Python-based :term:`REPL` that requires :mod:`curses` and
+   :mod:`readline`, and will instead use the traditional parser-based
+   :term:`REPL`.
 
    .. versionadded:: 3.13
 
