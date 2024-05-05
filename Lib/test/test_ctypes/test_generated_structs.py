@@ -21,7 +21,6 @@ from ctypes import Structure, Union, _SimpleCData
 from ctypes import sizeof, alignment, pointer, string_at
 _ctypes_test = import_helper.import_module("_ctypes_test")
 
-KNOWN_COMPILERS = 'defined(MS_WIN32) || defined(__GNUC__) || defined(__clang__)'
 
 # ctypes erases the difference between `c_int` and e.g.`c_int16`.
 # To keep it, we'll use custom subclasses with the C name stashed in `_c_name`:
@@ -495,12 +494,16 @@ def dump_ctype(tp, struct_or_union_tag='', variable_name='', semi=''):
         pops = []
         pack = getattr(tp, '_pack_', None)
         if pack is not None:
-            requires.add(KNOWN_COMPILERS)
             pushes.append(f'#pragma pack(push, {pack})')
             pops.append(f'#pragma pack(pop)')
         layout = getattr(tp, '_layout_', None)
         if layout == 'ms' or pack:
-            requires.add(KNOWN_COMPILERS)
+            # The 'ms_struct' attribute only works on x86 and PowerPC
+            requires.add(
+                'defined(MS_WIN32) || ('
+                    '(defined(__x86_64__) || defined(__i386__) || defined(__ppc64__)) && ('
+                    'defined(__GNUC__) || defined(__clang__)))'
+                )
             attributes.append('ms_struct')
         if attributes:
             a = f' GCC_ATTR({", ".join(attributes)})'
