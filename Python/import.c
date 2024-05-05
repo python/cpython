@@ -13,7 +13,7 @@
 #include "pycore_pymem.h"         // _PyMem_SetDefaultAllocator()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_sysmodule.h"     // _PySys_Audit()
-#include "pycore_time.h"          // _PyTime_PerfCounterUnchecked()
+#include "pycore_time.h"          // _PyTime_AsMicroseconds()
 #include "pycore_weakref.h"       // _PyWeakref_GET_REF()
 
 #include "marshal.h"              // PyMarshal_ReadObjectFromString()
@@ -3468,7 +3468,8 @@ import_find_and_load(PyThreadState *tstate, PyObject *abs_name)
 #undef header
 
         import_level++;
-        t1 = _PyTime_PerfCounterUnchecked();
+        // ignore error: don't block import if reading the clock fails
+        (void)PyTime_PerfCounterRaw(&t1);
         accumulated = 0;
     }
 
@@ -3483,7 +3484,9 @@ import_find_and_load(PyThreadState *tstate, PyObject *abs_name)
                                        mod != NULL);
 
     if (import_time) {
-        PyTime_t cum = _PyTime_PerfCounterUnchecked() - t1;
+        PyTime_t t2;
+        (void)PyTime_PerfCounterRaw(&t2);
+        PyTime_t cum = t2 - t1;
 
         import_level--;
         fprintf(stderr, "import time: %9ld | %10ld | %*s%s\n",
