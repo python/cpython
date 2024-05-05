@@ -87,6 +87,11 @@ Interpreter improvements:
   Performance improvements are modest -- we expect to be improving this
   over the next few releases.
 
+* :pep:`667`: :attr:`FrameType.f_locals <frame.f_locals>` when used in
+  a function now returns a write-through proxy to the frame's locals,
+  rather than a ``dict``. See the PEP for corresponding C API changes
+  and deprecations.
+
 New typing features:
 
 * :pep:`696`: Type parameters (:data:`typing.TypeVar`, :data:`typing.ParamSpec`,

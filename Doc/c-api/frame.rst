@@ -120,11 +120,18 @@ See also :ref:`Reflection <reflection>`.
 
 .. c:function:: PyObject* PyFrame_GetLocals(PyFrameObject *frame)
 
-   Get the *frame*'s :attr:`~frame.f_locals` attribute (:class:`dict`).
+   Get the *frame*'s :attr:`~frame.f_locals` attribute.
+   If the frame refers to a function or comprehension, this returns
+   a write-through proxy object that allows modifying the locals.
+   In all other cases (classes, modules) it returns the :class:`dict`
+   representing the frame locals directly.
 
    Return a :term:`strong reference`.
 
    .. versionadded:: 3.11
+
+   .. versionchanged:: 3.13
+      Return a proxy object for functions and comprehensions.
 
 
 .. c:function:: int PyFrame_GetLineNumber(PyFrameObject *frame)
