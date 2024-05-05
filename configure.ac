@@ -3998,7 +3998,8 @@ AS_VAR_IF([with_system_libmpdec], [yes],
     AC_SEARCH_LIBS(
       [mpd_version], [mpdec],
       [have_mpdec=yes], [have_mpdec=no])])],
-  [AC_MSG_WARN([m4_normalize([
+  [AS_VAR_SET([have_mpdec], [yes])
+   AC_MSG_WARN([m4_normalize([
      the bundled copy of libmpdecimal is scheduled for removal in Python 3.15;
      consider using a system installed mpdecimal library.])])])
 
