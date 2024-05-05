@@ -3991,17 +3991,19 @@ AS_VAR_IF(
    LIBMPDEC_LIBS="-lm \$(LIBMPDEC_A)"
    LIBMPDEC_INTERNAL="\$(LIBMPDEC_HEADERS) \$(LIBMPDEC_A)"])
 
-AS_VAR_IF(
-  [with_system_libmpdec], [yes],
-  [WITH_SAVE_ENV(
-    [CPPFLAGS="$LIBMPDEC_CFLAGS $CPPFLAGS"
-     LDFLAGS="$LIBMPDEC_LIBS $LDFLAGS"
-     AC_SEARCH_LIBS([mpd_version], [mpdec],
-                    [have_mpdec=yes], [have_mpdec=no])])],
-  [AS_VAR_SET([have_mpdec], [yes])
-   AC_MSG_WARN([m4_normalize([the bundled copy of libmpdecimal is scheduled for
-                              removal in Python 3.15; consider using a system
-                              installed mpdecimal library.])])])
+AS_VAR_IF([with_system_libmpdec], [yes],
+  [WITH_SAVE_ENV([
+    CPPFLAGS="$LIBMPDEC_CFLAGS $CPPFLAGS"
+    LDFLAGS="$LIBMPDEC_LIBS $LDFLAGS"
+    AC_SEARCH_LIBS(
+      [mpd_version], [mpdec],
+      [have_mpdec=yes], [have_mpdec=no])])],
+  [AC_MSG_WARN([m4_normalize([
+     the bundled copy of libmpdecimal is scheduled for removal in Python 3.15;
+     consider using a system installed mpdecimal library.])])])
+
+AS_IF([test "$with_system_libmpdec" = "yes" && test "$have_mpdec" = "no"],
+      [AC_MSG_WARN([no system libmpdecimal found; unable to build _decimal])])
 
 # Disable forced inlining in debug builds, see GH-94847
 AS_VAR_IF(
@@ -7681,7 +7683,7 @@ PY_STDLIB_MOD([_curses_panel],
   [$PANEL_CFLAGS $CURSES_CFLAGS], [$PANEL_LIBS $CURSES_LIBS]
 )
 PY_STDLIB_MOD([_decimal],
-  [test "$have_mpdec" = "yes"], [],
+  [], [test "$have_mpdec" = "yes"],
   [$LIBMPDEC_CFLAGS], [$LIBMPDEC_LIBS])
 PY_STDLIB_MOD([_dbm],
   [test -n "$with_dbmliborder"], [test "$have_dbm" != "no"],

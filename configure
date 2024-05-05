@@ -14708,9 +14708,10 @@ save_CPPFLAGS=$CPPFLAGS
 save_LDFLAGS=$LDFLAGS
 save_LIBS=$LIBS
 
-CPPFLAGS="$LIBMPDEC_CFLAGS $CPPFLAGS"
-     LDFLAGS="$LIBMPDEC_LIBS $LDFLAGS"
-     { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for library containing mpd_version" >&5
+
+    CPPFLAGS="$LIBMPDEC_CFLAGS $CPPFLAGS"
+    LDFLAGS="$LIBMPDEC_LIBS $LDFLAGS"
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for library containing mpd_version" >&5
 printf %s "checking for library containing mpd_version... " >&6; }
 if test ${ac_cv_search_mpd_version+y}
 then :
@@ -14778,9 +14779,14 @@ LIBS=$save_LIBS
 
 
 else $as_nop
-  have_mpdec=yes
-   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: WARNING: the bundled copy of libmpdecimal is scheduled for removal in Python 3.15; consider using a system installed mpdecimal library." >&5
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: WARNING: the bundled copy of libmpdecimal is scheduled for removal in Python 3.15; consider using a system installed mpdecimal library." >&5
 printf "%s\n" "$as_me: WARNING: the bundled copy of libmpdecimal is scheduled for removal in Python 3.15; consider using a system installed mpdecimal library." >&2;}
+fi
+
+if test "$with_system_libmpdec" = "yes" && test "$have_mpdec" = "no"
+then :
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: WARNING: no system libmpdecimal found; unable to build _decimal" >&5
+printf "%s\n" "$as_me: WARNING: no system libmpdecimal found; unable to build _decimal" >&2;}
 fi
 
 # Disable forced inlining in debug builds, see GH-94847
@@ -30507,9 +30513,9 @@ printf %s "checking for stdlib extension module _decimal... " >&6; }
         if test "$py_cv_module__decimal" != "n/a"
 then :
 
-    if test "$have_mpdec" = "yes"
+    if true
 then :
-  if true
+  if test "$have_mpdec" = "yes"
 then :
   py_cv_module__decimal=yes
 else $as_nop
