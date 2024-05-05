@@ -390,7 +390,7 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
    Usage example::
 
       int32_t value;
-      Py_ssize_t bytes = PyLong_AsNativeBits(pylong, &value, sizeof(value), -1);
+      Py_ssize_t bytes = PyLong_AsNativeBytes(pylong, &value, sizeof(value), -1);
       if (bytes < 0) {
           // Failed. A Python exception was set with the reason.
           return NULL;
@@ -418,7 +418,7 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
    called twice: first to determine the buffer size, then to fill it::
 
       // Ask how much space we need.
-      Py_ssize_t expected = PyLong_AsNativeBits(pylong, NULL, 0, -1);
+      Py_ssize_t expected = PyLong_AsNativeBytes(pylong, NULL, 0, -1);
       if (expected < 0) {
           // Failed. A Python exception was set with the reason.
           return NULL;
@@ -430,7 +430,7 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
           return NULL;
       }
       // Safely get the entire value.
-      Py_ssize_t bytes = PyLong_AsNativeBits(pylong, bignum, expected, -1);
+      Py_ssize_t bytes = PyLong_AsNativeBytes(pylong, bignum, expected, -1);
       if (bytes < 0) {  // Exception has been set.
           free(bignum);
           return NULL;
