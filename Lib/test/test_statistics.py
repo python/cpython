@@ -2426,6 +2426,15 @@ class TestKDE(unittest.TestCase):
         self.assertEqual(f_hat(-1.0), 1/2)
         self.assertEqual(f_hat(1.0), 1/2)
 
+        # Test online updates to data
+
+        data = [1, 2]
+        f_hat = kde(data, 5.0, 'triangular')
+        self.assertEqual(f_hat(100), 0.0)
+        data.append(100)
+        self.assertGreater(f_hat(100), 0.0)
+
+
     def test_kde_kernel_invcdfs(self):
         kernel_invcdfs = statistics._kernel_invcdfs
         kde = statistics.kde
@@ -2506,6 +2515,14 @@ class TestKDE(unittest.TestCase):
 
                 for x in xarr:
                     self.assertTrue(math.isclose(p_observed(x), p_expected(x), abs_tol=0.0005))
+
+        # Test online updates to data
+
+        data = [1, 2]
+        rand = kde_random(data, 5, 'triangular')
+        self.assertLess(max([rand() for i in range(5000)]), 10)
+        data.append(100)
+        self.assertGreater(max(rand() for i in range(5000)), 10)
 
 
 class TestQuantiles(unittest.TestCase):
