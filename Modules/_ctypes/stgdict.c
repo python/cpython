@@ -497,8 +497,9 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
                 return -1;
             }
             if (bitsize <= 0 || bitsize > info->size * 8) {
-                PyErr_SetString(PyExc_ValueError,
-                                "number of bits invalid for bit field");
+                PyErr_Format(PyExc_ValueError,
+                                "number of bits invalid for bit field %R",
+                                name);
                 Py_DECREF(pair);
                 return -1;
             }

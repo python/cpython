@@ -212,10 +212,10 @@ class BitFieldTest(unittest.TestCase):
     def test_single_bitfield_size(self):
         for c_typ in int_types:
             result = self.fail_fields(("a", c_typ, -1))
-            self.assertEqual(result, (ValueError, 'number of bits invalid for bit field'))
+            self.assertEqual(result, (ValueError, "number of bits invalid for bit field 'a'"))
 
             result = self.fail_fields(("a", c_typ, 0))
-            self.assertEqual(result, (ValueError, 'number of bits invalid for bit field'))
+            self.assertEqual(result, (ValueError, "number of bits invalid for bit field 'a'"))
 
             class X(Structure):
                 _fields_ = [("a", c_typ, 1)]
@@ -226,7 +226,7 @@ class BitFieldTest(unittest.TestCase):
             self.assertEqual(sizeof(X), sizeof(c_typ))
 
             result = self.fail_fields(("a", c_typ, sizeof(c_typ)*8 + 1))
-            self.assertEqual(result, (ValueError, 'number of bits invalid for bit field'))
+            self.assertEqual(result, (ValueError, "number of bits invalid for bit field 'a'"))
 
     def test_multi_bitfields_size(self):
         class X(Structure):
