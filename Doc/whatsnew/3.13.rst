@@ -123,7 +123,7 @@ the :envvar:`PYTHON_BASIC_REPL` environment variable.
 For more on interactive mode, see :ref:`tut-interac`.
 
 (Contributed by Pablo Galindo Galgado, Łukasz Langa, and
-Lysandros Nikolaou in :gh:`111201`.)
+Lysandros Nikolaou in :gh:`111201` based on code from the PyPy project.)
 
 Improved Error Messages
 -----------------------
