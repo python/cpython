@@ -24,7 +24,7 @@ def _find_clib():
         path = ctypes.util.find_library(lib)
         if path:
             return path
-    raise ModuleNotFoundError("curses library not found", name="_minimal_curses")
+    raise ModuleNotFoundError("curses library not found", name="_pyrepl._minimal_curses")
 
 
 _clibpath = _find_clib()
