@@ -1,6 +1,172 @@
 
 /* Testing module for single-phase initialization of extension modules
- */
+
+This file contains 5 distinct modules, meaning each as its own name
+and its own init function (PyInit_...).  The default import system will
+only find the one matching the filename: _testsinglephase.  To load the
+others you must do so manually.  For example:
+
+```python
+name = '_testsinglephase_base_wrapper'
+filename = _testsinglephase.__file__
+loader = importlib.machinery.ExtensionFileLoader(name, filename)
+spec = importlib.util.spec_from_file_location(name, filename, loader=loader)
+mod = importlib._bootstrap._load(spec)
+```
+
+Here are the 5 modules:
+
+* _testsinglephase
+   * def: _testsinglephase_basic,
+      * m_name: "_testsinglephase"
+      * m_size: -1
+   * state
+      * process-global
+         * <int> initialized_count  (default to -1; will never be 0)
+         * <module_state> module  (see module state below)
+      * module state: no
+      * initial __dict__: see common initial __dict__ below
+   * init function
+      1. create module
+      2. clear <global>.module
+      3. initialize <global>.module: see module state below
+      4. initialize module: set initial __dict__
+      5. increment <global>.initialized_count
+   * functions
+      * (3 common, see below)
+      * initialized_count() - return <global>.module.initialized_count
+   * import system
+      * caches
+         * global extensions cache: yes
+         * def.m_base.m_copy: yes
+         * def.m_base.m_init: no
+         * per-interpreter cache: yes  (all single-phase init modules)
+      * load in main interpreter
+         * initial  (not already in global cache)
+            1. get init function from shared object file
+            2. run init function
+            3. copy __dict__ into def.m_base.m_copy
+            4. set entry in global cache
+            5. set entry in per-interpreter cache
+            6. set entry in sys.modules
+         * reload  (already in sys.modules)
+            1. get def from global cache
+            2. get module from sys.modules
+            3. update module with contents of def.m_base.m_copy
+         * already loaded in other interpreter  (already in global cache)
+            * same as reload, but create new module and update *it*
+         * not in any sys.modules, still in global cache
+            * same as already loaded
+      * load in legacy (non-isolated) interpreter
+         * same as main interpreter
+      * unload: never  (all single-phase init modules)
+* _testsinglephase_basic_wrapper
+   * identical to _testsinglephase except module name
+* _testsinglephase_basic_copy
+   * def: static local variable in init function
+      * m_name: "_testsinglephase_basic_copy"
+      * m_size: -1
+   * state: same as _testsinglephase
+   * init function: same as _testsinglephase
+   * functions: same as _testsinglephase
+   * import system: same as _testsinglephase
+* _testsinglephase_with_reinit
+   * def: _testsinglephase_with_reinit,
+      * m_name: "_testsinglephase_with_reinit"
+      * m_size: 0
+   * state
+      * process-global state: no
+      * module state: no
+      * initial __dict__: see common initial __dict__ below
+   * init function
+      1. create module
+      2. initialize temporary module state (local var): see module state below
+      3. initialize module: set initial __dict__
+   * functions: see common functions below
+   * import system
+      * caches
+         * global extensions cache: only if loaded in main interpreter
+         * def.m_base.m_copy: no
+         * def.m_base.m_init: only if loaded in the main interpreter
+         * per-interpreter cache: yes  (all single-phase init modules)
+      * load in main interpreter
+         * initial  (not already in global cache)
+            * (same as _testsinglephase except step 3)
+            1. get init function from shared object file
+            2. run init function
+            3. set def.m_base.m_init to the init function
+            4. set entry in global cache
+            5. set entry in per-interpreter cache
+            6. set entry in sys.modules
+         * reload  (already in sys.modules)
+            1. get def from global cache
+            2. call def->m_base.m_init to get a new module object
+            3. replace the existing module in sys.modules
+         * already loaded in other interpreter  (already in global cache)
+            * same as reload (since will only be in cache for main interp)
+         * not in any sys.modules, still in global cache
+            * same as already loaded
+      * load in legacy (non-isolated) interpreter
+         * initial  (not already in global cache)
+            * (same as main interpreter except skip steps 3 & 4 there)
+            1. get init function from shared object file
+            2. run init function
+            ...
+            5. set entry in per-interpreter cache
+            6. set entry in sys.modules
+         * reload  (already in sys.modules)
+            * same as initial  (load from scratch)
+         * already loaded in other interpreter  (already in global cache)
+            * same as initial  (load from scratch)
+         * not in any sys.modules, still in global cache
+            * same as initial  (load from scratch)
+      * unload: never  (all single-phase init modules)
+* _testsinglephase_with_state
+   * def: _testsinglephase_with_state,
+      * m_name: "_testsinglephase_with_state"
+      * m_size: sizeof(module_state)
+   * state
+      * process-global: no
+      * module state: see module state below
+      * initial __dict__: see common initial __dict__ below
+   * init function
+      1. create module
+      3. initialize module state: see module state below
+      4. initialize module: set initial __dict__
+      5. increment <global>.initialized_count
+   * functions: see common functions below
+   * import system: same as _testsinglephase_basic_copy
+
+Module state:
+
+* fields
+   * <PyTime_t> initialized - when the module was first initialized
+   * <PyObject> *error
+   * <PyObject> *int_const
+   * <PyObject> *str_const
+* initialization
+   1. set state.initialized to the current time
+   2. set state.error to a new exception class
+   3. set state->int_const to int(1969)
+   4. set state->str_const to "something different"
+
+Common initial __dict__:
+
+* error: state.error
+* int_const: state.int_const
+* str_const: state.str_const
+* _module_initialized: state.initialized
+
+Common functions:
+
+* look_up_self() - return the module from the per-interpreter "by-index" cache
+* sum() - return a + b
+* state_initialized() - return state->initialized (or None if m_size == 0)
+
+See Python/import.c, especially the long comments, for more about
+single-phase init modules.
+*/
+
 #ifndef Py_BUILD_CORE_BUILTIN
 #  define Py_BUILD_CORE_MODULE 1
 #endif
@@ -305,6 +471,9 @@ init__testsinglephase_basic(PyModuleDef *def)
     if (module == NULL) {
         return NULL;
     }
+#ifdef Py_GIL_DISABLED
+    PyModule_ExperimentalSetGIL(module, Py_MOD_GIL_NOT_USED);
+#endif
 
     module_state *state = &global_state.module;
     // It may have been set by a previous run or under a different name.
@@ -396,6 +565,9 @@ PyInit__testsinglephase_with_reinit(void)
     if (module == NULL) {
         return NULL;
     }
+#ifdef Py_GIL_DISABLED
+    PyModule_ExperimentalSetGIL(module, Py_MOD_GIL_NOT_USED);
+#endif
 
     assert(get_module_state(module) == NULL);
 
@@ -458,6 +630,9 @@ PyInit__testsinglephase_with_state(void)
     if (module == NULL) {
         return NULL;
     }
+#ifdef Py_GIL_DISABLED
+    PyModule_ExperimentalSetGIL(module, Py_MOD_GIL_NOT_USED);
+#endif
 
     module_state *state = get_module_state(module);
     assert(state != NULL);

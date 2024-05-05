@@ -5,7 +5,6 @@ paths with operations that have semantics appropriate for different
 operating systems.
 """
 
-import glob
 import io
 import ntpath
 import operator
@@ -25,7 +24,7 @@ try:
 except ImportError:
     grp = None
 
-from . import _abc
+from . import _abc, _glob
 
 
 __all__ = [
@@ -113,7 +112,7 @@ class PurePath(_abc.PurePathBase):
         '_hash',
     )
     parser = os.path
-    _globber = glob._Globber
+    _globber = _glob.Globber
 
     def __new__(cls, *args, **kwargs):
         """Construct a PurePath from one or several strings and or existing

@@ -89,6 +89,8 @@ Interpreter improvements:
 
 New typing features:
 
+* :pep:`696`: Type parameters (:data:`typing.TypeVar`, :data:`typing.ParamSpec`,
+  and :data:`typing.TypeVarTuple`) now support defaults.
 * :pep:`742`: :data:`typing.TypeIs` was added, providing more intuitive
   type narrowing behavior.
 
@@ -228,6 +230,11 @@ Other Language Changes
   determines whether or not frozen modules are ignored by the import machinery,
   equivalent of the :option:`-X frozen_modules <-X>` command-line option.
   (Contributed by Yilei Yang in :gh:`111374`.)
+
+* Add :ref:`support for the perf profiler <perf_profiling>` working without
+  frame pointers through the new environment variable
+  :envvar:`PYTHONPERFJITSUPPORT` and command-line option :option:`-X perfjit
+  <-X>` (Contributed by Pablo Galindo in :gh:`118518`.)
 
 * The new :envvar:`PYTHON_HISTORY` environment variable can be used to change
   the location of a ``.python_history`` file.
@@ -710,6 +717,9 @@ pdb
   command line option or :envvar:`PYTHONSAFEPATH` environment variable).
   (Contributed by Tian Gao and Christian Walther in :gh:`111762`.)
 
+* :mod:`zipapp` is supported as a debugging target.
+  (Contributed by Tian Gao in :gh:`118501`.)
+
 queue
 -----
 
@@ -745,7 +755,8 @@ statistics
 
 * Add :func:`statistics.kde` for kernel density estimation.
   This makes it possible to estimate a continuous probability density function
-  from a fixed number of discrete samples.
+  from a fixed number of discrete samples.  Also added :func:`statistics.kde_random`
+  for sampling from the estimated probability density function.
   (Contributed by Raymond Hettinger in :gh:`115863`.)
 
 .. _whatsnew313-subprocess:
@@ -851,6 +862,10 @@ typing
 * Add :data:`typing.ReadOnly`, a special typing construct to mark
   an item of a :class:`typing.TypedDict` as read-only for type checkers.
   See :pep:`705` for more details.
+
+* Add :data:`typing.NoDefault`, a sentinel object used to represent the defaults
+  of some parameters in the :mod:`typing` module. (Contributed by Jelle Zijlstra in
+  :gh:`116126`.)
 
 unicodedata
 -----------
@@ -1965,6 +1980,11 @@ New Features
 
 * Add :c:func:`PyType_GetModuleByDef` to the limited C API
   (Contributed by Victor Stinner in :gh:`116936`.)
+
+* Add two new functions to the C-API, :c:func:`PyRefTracer_SetTracer` and
+  :c:func:`PyRefTracer_GetTracer`, that allows to track object creation and
+  destruction the same way the :mod:`tracemalloc` module does. (Contributed
+  by Pablo Galindo in :gh:`93502`.)
 
 
 Porting to Python 3.13

@@ -10,11 +10,12 @@ import unittest
 import subprocess
 import textwrap
 import linecache
+import zipapp
 
 from contextlib import ExitStack, redirect_stdout
 from io import StringIO
 from test import support
-from test.support import os_helper
+from test.support import force_not_colorized, os_helper
 from test.support.import_helper import import_module
 from test.support.pty_helper import run_pty, FakeInput
 from unittest.mock import patch
@@ -2455,7 +2456,6 @@ def test_pdb_issue_gh_108976():
     ...     'continue'
     ... ]):
     ...    test_function()
-    bdb.Bdb.dispatch: unknown debugging event: 'opcode'
     > <doctest test.test_pdb.test_pdb_issue_gh_108976[0]>(5)test_function()
     -> a = 1
     (Pdb) continue
@@ -2918,6 +2918,7 @@ def bœr():
         self.assertNotIn(b'Error', stdout,
                          "Got an error running test script under PDB")
 
+    @force_not_colorized
     def test_issue16180(self):
         # A syntax error in the debuggee.
         script = "def f: pass\n"
@@ -2931,6 +2932,7 @@ def bœr():
             'Fail to handle a syntax error in the debuggee.'
             .format(expected, stderr))
 
+    @force_not_colorized
     def test_issue84583(self):
         # A syntax error from ast.literal_eval should not make pdb exit.
         script = "import ast; ast.literal_eval('')\n"
@@ -3531,6 +3533,30 @@ def bœr():
         for filename in os.listdir(script_dir):
             if filename.endswith(".py"):
                 self._run_pdb([os.path.join(script_dir, filename)], 'q')
+
+    def test_zipapp(self):
+        with os_helper.temp_dir() as temp_dir:
+            os.mkdir(os.path.join(temp_dir, 'source'))
+            script = textwrap.dedent(
+                """
+                def f(x):
+                    return x + 1
+                f(21 + 21)
+                """
+            )
+            with open(os.path.join(temp_dir, 'source', '__main__.py'), 'w') as f:
+                f.write(script)
+            zipapp.create_archive(os.path.join(temp_dir, 'source'),
+                                  os.path.join(temp_dir, 'zipapp.pyz'))
+            stdout, _ = self._run_pdb([os.path.join(temp_dir, 'zipapp.pyz')], '\n'.join([
+                'b f',
+                'c',
+                'p x',
+                'q'
+            ]))
+            self.assertIn('42', stdout)
+            self.assertIn('return x + 1', stdout)
+
 
 class ChecklineTests(unittest.TestCase):
     def setUp(self):

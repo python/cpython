@@ -32,8 +32,10 @@ class Bdb:
         self.skip = set(skip) if skip else None
         self.breaks = {}
         self.fncache = {}
-        self.frame_trace_lines = {}
+        self.frame_trace_lines_opcodes = {}
         self.frame_returning = None
+        self.trace_opcodes = False
+        self.enterframe = None
 
         self._load_breaks()
 
@@ -85,6 +87,9 @@ class Bdb:
 
         The arg parameter depends on the previous event.
         """
+
+        self.enterframe = frame
+
         if self.quitting:
             return # None
         if event == 'line':
@@ -101,6 +106,8 @@ class Bdb:
             return self.trace_dispatch
         if event == 'c_return':
             return self.trace_dispatch
+        if event == 'opcode':
+            return self.dispatch_opcode(frame, arg)
         print('bdb.Bdb.dispatch: unknown debugging event:', repr(event))
         return self.trace_dispatch
 
@@ -185,6 +192,17 @@ class Bdb:
             self.user_exception(frame, arg)
             if self.quitting: raise BdbQuit
 
+        return self.trace_dispatch
+
+    def dispatch_opcode(self, frame, arg):
+        """Invoke user function and return trace function for opcode event.
+        If the debugger stops on the current opcode, invoke
+        self.user_opcode(). Raise BdbQuit if self.quitting is set.
+        Return self.trace_dispatch to continue tracing in this scope.
+        """
+        if self.stop_here(frame) or self.break_here(frame):
+            self.user_opcode(frame)
+            if self.quitting: raise BdbQuit
         return self.trace_dispatch
 
     # Normally derived classes don't override the following
@@ -273,7 +291,21 @@ class Bdb:
         """Called when we stop on an exception."""
         pass
 
-    def _set_stopinfo(self, stopframe, returnframe, stoplineno=0):
+    def user_opcode(self, frame):
+        """Called when we are about to execute an opcode."""
+        pass
+
+    def _set_trace_opcodes(self, trace_opcodes):
+        if trace_opcodes != self.trace_opcodes:
+            self.trace_opcodes = trace_opcodes
+            frame = self.enterframe
+            while frame is not None:
+                frame.f_trace_opcodes = trace_opcodes
+                if frame is self.botframe:
+                    break
+                frame = frame.f_back
+
+    def _set_stopinfo(self, stopframe, returnframe, stoplineno=0, opcode=False):
         """Set the attributes for stopping.
 
         If stoplineno is greater than or equal to 0, then stop at line
@@ -286,6 +318,17 @@ class Bdb:
         # stoplineno >= 0 means: stop at line >= the stoplineno
         # stoplineno -1 means: don't stop at all
         self.stoplineno = stoplineno
+        self._set_trace_opcodes(opcode)
+
+    def _set_caller_tracefunc(self):
+        # Issue #13183: pdb skips frames after hitting a breakpoint and running
+        # step commands.
+        # Restore the trace function in the caller (that may not have been set
+        # for performance reasons) when returning from the current frame.
+        if self.frame_returning:
+            caller_frame = self.frame_returning.f_back
+            if caller_frame and not caller_frame.f_trace:
+                caller_frame.f_trace = self.trace_dispatch
 
     # Derived classes and clients can call the following methods
     # to affect the stepping state.
@@ -300,15 +343,13 @@ class Bdb:
 
     def set_step(self):
         """Stop after one line of code."""
-        # Issue #13183: pdb skips frames after hitting a breakpoint and running
-        # step commands.
-        # Restore the trace function in the caller (that may not have been set
-        # for performance reasons) when returning from the current frame.
-        if self.frame_returning:
-            caller_frame = self.frame_returning.f_back
-            if caller_frame and not caller_frame.f_trace:
-                caller_frame.f_trace = self.trace_dispatch
+        self._set_caller_tracefunc()
         self._set_stopinfo(None, None)
+
+    def set_stepinstr(self):
+        """Stop before the next instruction."""
+        self._set_caller_tracefunc()
+        self._set_stopinfo(None, None, opcode=True)
 
     def set_next(self, frame):
         """Stop on the next line in or below the given frame."""
@@ -329,11 +370,12 @@ class Bdb:
         if frame is None:
             frame = sys._getframe().f_back
         self.reset()
+        self.enterframe = frame
         while frame:
             frame.f_trace = self.trace_dispatch
             self.botframe = frame
-            # We need f_trace_liens == True for the debugger to work
-            self.frame_trace_lines[frame] = frame.f_trace_lines
+            self.frame_trace_lines_opcodes[frame] = (frame.f_trace_lines, frame.f_trace_opcodes)
+            # We need f_trace_lines == True for the debugger to work
             frame.f_trace_lines = True
             frame = frame.f_back
         self.set_step()
@@ -353,9 +395,9 @@ class Bdb:
             while frame and frame is not self.botframe:
                 del frame.f_trace
                 frame = frame.f_back
-            for frame, prev_trace_lines in self.frame_trace_lines.items():
-                frame.f_trace_lines = prev_trace_lines
-            self.frame_trace_lines = {}
+            for frame, (trace_lines, trace_opcodes) in self.frame_trace_lines_opcodes.items():
+                frame.f_trace_lines, frame.f_trace_opcodes = trace_lines, trace_opcodes
+            self.frame_trace_lines_opcodes = {}
 
     def set_quit(self):
         """Set quitting attribute to True.

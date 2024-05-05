@@ -510,3 +510,13 @@ PyAPI_FUNC(int) PyType_Unwatch(int watcher_id, PyObject *type);
  * assigned, or 0 if a new tag could not be assigned.
  */
 PyAPI_FUNC(int) PyUnstable_Type_AssignVersionTag(PyTypeObject *type);
+
+
+typedef enum {
+    PyRefTracer_CREATE = 0,
+    PyRefTracer_DESTROY = 1,
+} PyRefTracerEvent;
+
+typedef int (*PyRefTracer)(PyObject *, PyRefTracerEvent event, void *);
+PyAPI_FUNC(int) PyRefTracer_SetTracer(PyRefTracer tracer, void *data);
+PyAPI_FUNC(PyRefTracer) PyRefTracer_GetTracer(void**);
