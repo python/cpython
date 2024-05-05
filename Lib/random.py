@@ -996,5 +996,75 @@ if hasattr(_os, "fork"):
     _os.register_at_fork(after_in_child=_inst.seed)
 
 
+# ------------------------------------------------------
+# -------------- command-line interface ----------------
+
+
+def _parse_args(arg_list: list[str] | None):
+    import argparse
+    parser = argparse.ArgumentParser(
+        formatter_class=argparse.RawTextHelpFormatter)
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument(
+        "-c", "--choice", nargs="+",
+        help="print a random choice")
+    group.add_argument(
+        "-i", "--integer", type=int, metavar="N",
+        help="print a random integer between 1 and N inclusive")
+    group.add_argument(
+        "-f", "--float", type=float, metavar="N",
+        help="print a random floating point number between 1 and N inclusive")
+    group.add_argument(
+        "--test", type=int, const=10_000, nargs="?",
+        help=argparse.SUPPRESS)
+    parser.add_argument("input", nargs="*",
+                        help="""\
+if no options given, output depends on the input
+    string or multiple: same as --choice
+    integer: same as --integer
+    float: same as --float""")
+    args = parser.parse_args(arg_list)
+    return args, parser.format_help()
+
+
+def main(arg_list: list[str] | None = None) -> int | str:
+    args, help_text = _parse_args(arg_list)
+
+    # Explicit arguments
+    if args.choice:
+        return choice(args.choice)
+
+    if args.integer is not None:
+        return randint(1, args.integer)
+
+    if args.float is not None:
+        return uniform(1, args.float)
+
+    if args.test:
+        _test(args.test)
+        return ""
+
+    # No explicit argument, select based on input
+    if len(args.input) == 1:
+        val = args.input[0]
+        try:
+            # Is it an integer?
+            val = int(val)
+            return randint(1, val)
+        except ValueError:
+            try:
+                # Is it a float?
+                val = float(val)
+                return uniform(1, val)
+            except ValueError:
+                # Split in case of space-separated string: "a b c"
+                return choice(val.split())
+
+    if len(args.input) >= 2:
+        return choice(args.input)
+
+    return help_text
+
+
 if __name__ == '__main__':
-    _test()
+    print(main())

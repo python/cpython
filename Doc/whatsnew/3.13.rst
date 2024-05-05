@@ -722,6 +722,12 @@ queue
   termination.
   (Contributed by Laurie Opperman and Yves Duprat in :gh:`104750`.)
 
+random
+------
+
+* Add a :ref:`command-line interface <random-cli>`.
+  (Contributed by Hugo van Kemenade in :gh:`54321`.)
+
 re
 --
 * Rename :exc:`!re.error` to :exc:`re.PatternError` for improved clarity.
