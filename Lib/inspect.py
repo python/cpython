@@ -3271,6 +3271,9 @@ class Signature:
                 # before reaching the last parameter before *args.
                 continue
 
+            if param.kind == _POSITIONAL_ONLY:
+                continue
+
             param_name = param.name
             try:
                 arg_val = kwargs.pop(param_name)
@@ -3283,13 +3286,8 @@ class Signature:
                                                     param.default is _empty):
                     raise TypeError('missing a required argument: {arg!r}'. \
                                     format(arg=param_name)) from None
-
             else:
-                if param.kind == _POSITIONAL_ONLY:
-                    # Restore the param in case there is a kwargs_param
-                    kwargs[param_name] = arg_val
-                else:
-                    arguments[param_name] = arg_val
+                arguments[param_name] = arg_val
 
         if kwargs:
             if kwargs_param is not None:
