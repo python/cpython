@@ -108,6 +108,7 @@ extern int _PyIsPerfTrampolineActive(void);
 extern PyStatus _PyPerfTrampoline_AfterFork_Child(void);
 #ifdef PY_HAVE_PERF_TRAMPOLINE
 extern _PyPerf_Callbacks _Py_perfmap_callbacks;
+extern _PyPerf_Callbacks _Py_perfmap_jit_callbacks;
 #endif
 
 static inline PyObject*
