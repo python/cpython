@@ -37,13 +37,13 @@ from .readline import _get_reader, multiline_input
 from .unix_console import _error
 
 
-def check() -> bool:
-    """Returns False if there is a problem initializing the state."""
+def check() -> str:
+    """Returns the error message if there is a problem initializing the state."""
     try:
         _get_reader()
-    except _error:
-        return False
-    return True
+    except _error as e:
+        return str(e) or repr(e) or "unknown error"
+    return ""
 
 
 def _strip_final_indent(text: str) -> str:

@@ -24,15 +24,16 @@ def interactive_console(mainmodule=None, quiet=False, pythonstartup=False):
     #
     run_interactive = None
     try:
+        import errno
         if not os.isatty(sys.stdin.fileno()):
-            raise RuntimeError("pyrepl cannot work if stdin it's not a tty")
+            raise OSError(errno.ENOTTY, "tty required", "stdin")
         from .simple_interact import check
-        if not check():
-            raise RuntimeError("pyrepl checks failed")
+        if err := check():
+            raise RuntimeError(err)
         from .simple_interact import run_multiline_interactive_console
         run_interactive = run_multiline_interactive_console
     except Exception as e:
-        print(f"Warning: 'import _pyrepl' failed with '{e}'", file=sys.stderr)
+        print(f"warning: can't use pyrepl: {e}", file=sys.stderr)
         CAN_USE_PYREPL = False
     if run_interactive is None:
         return sys._baserepl()
