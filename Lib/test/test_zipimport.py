@@ -822,6 +822,17 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
             "to run"
         )
 
+        # N.B.: We do alot of gymnastics below in the ZIP_STORED case to save
+        # and reconstruct a sparse zip on systems that support sparse files.
+        # Instead of creating a ~8GB zip file mainly consisting of null bytes
+        # for every run of the test, we create the zip once and save off the
+        # non-null portions of the resulting file as data blobs with offsets
+        # that allow re-creating the zip file sparsely. This drops disk space
+        # usage to ~9KB for the ZIP_STORED case and drops that test time by ~2
+        # orders of magnitude. For the ZIP_DEFLATED case, however, we bite the
+        # bullet. The resulting zip file is ~8MB of non-null data; so the sparse
+        # trick doesn't work and would result in that full ~8MB zip data file
+        # being checked in to source control.
         parts_glob = f"sparse-zip64-c{int(self.compression)}-0x*.part"
         full_parts_glob = os.path.join(TEST_DATA_DIR, parts_glob)
         pre_built_zip_parts = glob.glob(full_parts_glob)
