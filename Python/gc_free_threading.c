@@ -11,7 +11,6 @@
 #include "pycore_object_stack.h"
 #include "pycore_pyerrors.h"
 #include "pycore_pystate.h"       // _PyThreadState_GET()
-#include "pycore_time.h"          // _PyTime_GetPerfCounter()
 #include "pycore_tstate.h"        // _PyThreadStateImpl
 #include "pycore_weakref.h"       // _PyWeakref_ClearRef()
 #include "pydtrace.h"
@@ -1164,7 +1163,8 @@ gc_collect_main(PyThreadState *tstate, int generation, _PyGC_Reason reason)
     if (gcstate->debug & _PyGC_DEBUG_STATS) {
         PySys_WriteStderr("gc: collecting generation %d...\n", generation);
         show_stats_each_generations(gcstate);
-        t1 = _PyTime_PerfCounterUnchecked();
+        // ignore error: don't interrupt the GC if reading the clock fails
+        (void)PyTime_PerfCounterRaw(&t1);
     }
 
     if (PyDTrace_GC_START_ENABLED()) {
@@ -1184,7 +1184,9 @@ gc_collect_main(PyThreadState *tstate, int generation, _PyGC_Reason reason)
     n = state.uncollectable;
 
     if (gcstate->debug & _PyGC_DEBUG_STATS) {
-        double d = PyTime_AsSecondsDouble(_PyTime_PerfCounterUnchecked() - t1);
+        PyTime_t t2;
+        (void)PyTime_PerfCounterRaw(&t2);
+        double d = PyTime_AsSecondsDouble(t2 - t1);
         PySys_WriteStderr(
             "gc: done, %zd unreachable, %zd uncollectable, %.4fs elapsed\n",
             n+m, n, d);
