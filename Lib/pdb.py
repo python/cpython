@@ -650,7 +650,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             "result": None,
             "write_back": {}
         }
-        
+
         # If the source is an expression, we need to print its value
         try:
             compile(source, "<string>", "eval")
