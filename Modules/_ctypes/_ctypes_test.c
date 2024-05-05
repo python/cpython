@@ -761,7 +761,7 @@ EXPORT(int) unpack_bitfields(struct BITS *bits, char name)
     return 999;
 }
 
-#if defined(MS_WIN32) || defined(__GNUC__) || defined(__clang__)
+#if (defined(MS_WIN32) || ((defined(__x86_64__) || defined(__i386__) || defined(__ppc64__)) && (defined(__GNUC__) || defined(__clang__))))
 struct
 #ifndef MS_WIN32
 __attribute__ ((ms_struct))
