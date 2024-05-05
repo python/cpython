@@ -14,6 +14,7 @@ jobs:
     timeout-minutes: 60
     runs-on: ubuntu-20.04
     env:
+      FORCE_COLOR: 1
       OPENSSL_VER: 3.0.13
       PYTHONSTRICTEXTENSIONBUILD: 1
     steps:

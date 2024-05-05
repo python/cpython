@@ -1780,6 +1780,7 @@ _json_exec(PyObject *module)
 static PyModuleDef_Slot _json_slots[] = {
     {Py_mod_exec, _json_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
 };
 

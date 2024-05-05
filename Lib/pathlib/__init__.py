@@ -5,7 +5,6 @@ paths with operations that have semantics appropriate for different
 operating systems.
 """
 
-import glob
 import io
 import ntpath
 import operator
@@ -25,7 +24,7 @@ try:
 except ImportError:
     grp = None
 
-from . import _abc
+from . import _abc, _glob
 
 
 __all__ = [
@@ -113,7 +112,7 @@ class PurePath(_abc.PurePathBase):
         '_hash',
     )
     parser = os.path
-    _globber = glob._Globber
+    _globber = _glob.Globber
 
     def __new__(cls, *args, **kwargs):
         """Construct a PurePath from one or several strings and or existing
@@ -169,9 +168,7 @@ class PurePath(_abc.PurePathBase):
             return NotImplemented
 
     def __reduce__(self):
-        # Using the parts tuple helps share interned path parts
-        # when pickling related paths.
-        return (self.__class__, self.parts)
+        return self.__class__, tuple(self._raw_paths)
 
     def __repr__(self):
         return "{}({!r})".format(self.__class__.__name__, self.as_posix())
@@ -542,7 +539,7 @@ class Path(_abc.PathBase, PurePath):
     def open(self, mode='r', buffering=-1, encoding=None,
              errors=None, newline=None):
         """
-        Open the file pointed by this path and return a file object, as
+        Open the file pointed to by this path and return a file object, as
         the built-in open() function does.
         """
         if "b" not in mode:

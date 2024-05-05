@@ -970,6 +970,7 @@ A class object can be called (see above) to yield a class instance (see below).
    single: __doc__ (class attribute)
    single: __annotations__ (class attribute)
    single: __type_params__ (class attribute)
+   single: __static_attributes__ (class attribute)
 
 Special attributes:
 
@@ -999,6 +1000,10 @@ Special attributes:
    :attr:`__type_params__`
       A tuple containing the :ref:`type parameters <type-params>` of
       a :ref:`generic class <generic-classes>`.
+
+   :attr:`~class.__static_attributes__`
+      A tuple containing names of attributes of this class which are accessed
+      through ``self.X`` from any function in its body.
 
 
 Class instances
@@ -1336,7 +1341,12 @@ Special read-only attributes
 
    * - .. attribute:: frame.f_locals
      - The dictionary used by the frame to look up
-       :ref:`local variables <naming>`
+       :ref:`local variables <naming>`.
+       If the frame refers to a function or comprehension,
+       this may return a write-through proxy object.
+
+       .. versionchanged:: 3.13
+          Return a proxy for functions and comprehensions.
 
    * - .. attribute:: frame.f_globals
      - The dictionary used by the frame to look up

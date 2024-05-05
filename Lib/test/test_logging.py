@@ -3036,6 +3036,30 @@ class ConfigDictTest(BaseTest):
         },
     }
 
+    config18  = {
+        "version": 1,
+        "handlers": {
+            "console": {
+                "class": "logging.StreamHandler",
+                "level": "DEBUG",
+            },
+            "buffering": {
+                "class": "logging.handlers.MemoryHandler",
+                "capacity": 5,
+                "target": "console",
+                "level": "DEBUG",
+                "flushLevel": "ERROR"
+            }
+        },
+        "loggers": {
+            "mymodule": {
+                "level": "DEBUG",
+                "handlers": ["buffering"],
+                "propagate": "true"
+            }
+        }
+    }
+
     bad_format = {
         "version": 1,
         "formatters": {
@@ -3521,6 +3545,11 @@ class ConfigDictTest(BaseTest):
         self.apply_config(self.config17)
         h = logging._handlers['hand1']
         self.assertEqual(h.formatter.custom_property, 'value')
+
+    def test_config18_ok(self):
+        self.apply_config(self.config18)
+        handler = logging.getLogger('mymodule').handlers[0]
+        self.assertEqual(handler.flushLevel, logging.ERROR)
 
     def setup_via_listener(self, text, verify=None):
         text = text.encode("utf-8")
@@ -4570,26 +4599,54 @@ class FormatterTest(unittest.TestCase, AssertErrorMessage):
             self.assertEqual(record.created, ns / 1e9)
 
     def test_relativeCreated_has_higher_precision(self):
-        # See issue gh-102402
-        ns = 1_677_903_920_000_998_503  # approx. 2023-03-04 04:25:20 UTC
+        # See issue gh-102402.
+        # Run the code in the subprocess, because the time module should
+        # be patched before the first import of the logging package.
+        # Temporary unloading and re-importing the logging package has
+        # side effects (including registering the atexit callback and
+        # references leak).
+        start_ns = 1_677_903_920_000_998_503  # approx. 2023-03-04 04:25:20 UTC
         offsets_ns = (200, 500, 12_354, 99_999, 1_677_903_456_999_123_456)
-        orig_modules = import_helper._save_and_remove_modules(['logging'])
-        try:
-            with patch("time.time_ns") as patched_ns:
-                # mock for module import
-                patched_ns.return_value = ns
+        code = textwrap.dedent(f"""
+            start_ns = {start_ns!r}
+            offsets_ns = {offsets_ns!r}
+            start_monotonic_ns = start_ns - 1
+
+            import time
+            # Only time.time_ns needs to be patched for the current
+            # implementation, but patch also other functions to make
+            # the test less implementation depending.
+            old_time_ns = time.time_ns
+            old_time = time.time
+            old_monotonic_ns = time.monotonic_ns
+            old_monotonic = time.monotonic
+            time_ns_result = start_ns
+            time.time_ns = lambda: time_ns_result
+            time.time = lambda: time.time_ns()/1e9
+            time.monotonic_ns = lambda: time_ns_result - start_monotonic_ns
+            time.monotonic = lambda: time.monotonic_ns()/1e9
+            try:
                 import logging
+
                 for offset_ns in offsets_ns:
-                    new_ns = ns + offset_ns
                     # mock for log record creation
-                    patched_ns.return_value = new_ns
-                    record = logging.makeLogRecord({'msg': 'test'})
-                    self.assertAlmostEqual(record.created, new_ns / 1e9, places=6)
-                    # After PR gh-102412, precision (places) increases from 3 to 7
-                    self.assertAlmostEqual(record.relativeCreated, offset_ns / 1e6, places=7)
-        finally:
-            import_helper._save_and_remove_modules(['logging'])
-            sys.modules.update(orig_modules)
+                    time_ns_result = start_ns + offset_ns
+                    record = logging.makeLogRecord({{'msg': 'test'}})
+                    print(record.created, record.relativeCreated)
+            finally:
+                time.time_ns = old_time_ns
+                time.time = old_time
+                time.monotonic_ns = old_monotonic_ns
+                time.monotonic = old_monotonic
+        """)
+        rc, out, err = assert_python_ok("-c", code)
+        out = out.decode()
+        for offset_ns, line in zip(offsets_ns, out.splitlines(), strict=True):
+            with self.subTest(offset_ns=offset_ns):
+                created, relativeCreated = map(float, line.split())
+                self.assertAlmostEqual(created, (start_ns + offset_ns) / 1e9, places=6)
+                # After PR gh-102412, precision (places) increases from 3 to 7
+                self.assertAlmostEqual(relativeCreated, offset_ns / 1e6, places=7)
 
 
 class TestBufferingFormatter(logging.BufferingFormatter):

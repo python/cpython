@@ -1601,11 +1601,25 @@ static void
 FutureIter_dealloc(futureiterobject *it)
 {
     PyTypeObject *tp = Py_TYPE(it);
-    asyncio_state *state = get_asyncio_state_by_def((PyObject *)it);
+
+    // FutureIter is a heap type so any subclass must also be a heap type.
+    assert(_PyType_HasFeature(tp, Py_TPFLAGS_HEAPTYPE));
+
+    PyObject *module = ((PyHeapTypeObject*)tp)->ht_module;
+    asyncio_state *state = NULL;
+
     PyObject_GC_UnTrack(it);
     tp->tp_clear((PyObject *)it);
 
-    if (state->fi_freelist_len < FI_FREELIST_MAXLEN) {
+    // GH-115874: We can't use PyType_GetModuleByDef here as the type might have
+    // already been cleared, which is also why we must check if ht_module != NULL.
+    // Due to this restriction, subclasses that belong to a different module
+    // will not be able to use the free list.
+    if (module && _PyModule_GetDef(module) == &_asynciomodule) {
+        state = get_asyncio_state(module);
+    }
+
+    if (state && state->fi_freelist_len < FI_FREELIST_MAXLEN) {
         state->fi_freelist_len++;
         it->future = (FutureObj*) state->fi_freelist;
         state->fi_freelist = it;
@@ -3781,6 +3795,7 @@ module_exec(PyObject *mod)
 static struct PyModuleDef_Slot module_slots[] = {
     {Py_mod_exec, module_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL},
 };
 

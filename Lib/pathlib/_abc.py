@@ -12,10 +12,11 @@ resemble pathlib's PurePath and Path respectively.
 """
 
 import functools
-import glob
 import operator
 from errno import ENOENT, ENOTDIR, EBADF, ELOOP, EINVAL
 from stat import S_ISDIR, S_ISLNK, S_ISREG, S_ISSOCK, S_ISBLK, S_ISCHR, S_ISFIFO
+
+from . import _glob
 
 #
 # Internals
@@ -43,7 +44,7 @@ def _is_case_sensitive(parser):
     return parser.normcase('Aa') == 'Aa'
 
 
-class Globber(glob._Globber):
+class Globber(_glob.Globber):
     lstat = operator.methodcaller('lstat')
     add_slash = operator.methodcaller('joinpath', '')
 
@@ -637,7 +638,7 @@ class PathBase(PurePathBase):
     def open(self, mode='r', buffering=-1, encoding=None,
              errors=None, newline=None):
         """
-        Open the file pointed by this path and return a file object, as
+        Open the file pointed to by this path and return a file object, as
         the built-in open() function does.
         """
         raise UnsupportedOperation(self._unsupported_msg('open()'))
@@ -692,7 +693,7 @@ class PathBase(PurePathBase):
             # know the case sensitivity of the underlying filesystem, so we
             # must use scandir() for everything, including non-wildcard parts.
             case_pedantic = True
-        recursive = True if recurse_symlinks else glob._no_recurse_symlinks
+        recursive = True if recurse_symlinks else _glob.no_recurse_symlinks
         globber = self._globber(self.parser.sep, case_sensitive, case_pedantic, recursive)
         return globber.selector(parts)
 

@@ -801,6 +801,10 @@ class TestParser(TestParserMixin, TestEmailBase):
         self.assertEqual(qs.content, 'bob')
         self.assertEqual(qs.quoted_value, ' "bob"')
 
+    def test_get_quoted_string_cfws_only_raises(self):
+        with self.assertRaises(errors.HeaderParseError):
+            parser.get_quoted_string(' (foo) ')
+
     def test_get_quoted_string_no_quoted_string(self):
         with self.assertRaises(errors.HeaderParseError):
             parser.get_quoted_string(' (ab) xyz')
@@ -1135,6 +1139,10 @@ class TestParser(TestParserMixin, TestEmailBase):
             '@python.org')
         self.assertEqual(local_part.local_part, 'Fred.A.Johnson and  dogs')
 
+    def test_get_local_part_empty_raises(self):
+        with self.assertRaises(errors.HeaderParseError):
+            parser.get_local_part('')
+
     def test_get_local_part_no_part_raises(self):
         with self.assertRaises(errors.HeaderParseError):
             parser.get_local_part(' (foo) ')
@@ -1387,6 +1395,10 @@ class TestParser(TestParserMixin, TestEmailBase):
                                   '')
         self.assertEqual(domain.domain, 'example.com')
 
+    def test_get_domain_empty_raises(self):
+        with self.assertRaises(errors.HeaderParseError):
+            parser.get_domain("")
+
     def test_get_domain_no_non_cfws_raises(self):
         with self.assertRaises(errors.HeaderParseError):
             parser.get_domain("  (foo)\t")
@@ -1512,6 +1524,10 @@ class TestParser(TestParserMixin, TestEmailBase):
         with self.assertRaises(errors.HeaderParseError):
             parser.get_obs_route('(foo) @example.com,')
 
+    def test_get_obs_route_no_route_before_end_raises2(self):
+        with self.assertRaises(errors.HeaderParseError):
+            parser.get_obs_route('(foo) @example.com, (foo) ')
+
     def test_get_obs_route_no_route_before_special_raises(self):
         with self.assertRaises(errors.HeaderParseError):
             parser.get_obs_route('(foo) [abc],')
@@ -1519,6 +1535,14 @@ class TestParser(TestParserMixin, TestEmailBase):
     def test_get_obs_route_no_route_before_special_raises2(self):
         with self.assertRaises(errors.HeaderParseError):
             parser.get_obs_route('(foo) @example.com [abc],')
+
+    def test_get_obs_route_no_domain_after_at_raises(self):
+        with self.assertRaises(errors.HeaderParseError):
+            parser.get_obs_route('@')
+
+    def test_get_obs_route_no_domain_after_at_raises2(self):
+        with self.assertRaises(errors.HeaderParseError):
+            parser.get_obs_route('@example.com, @')
 
     # get_angle_addr
 
@@ -1645,6 +1669,14 @@ class TestParser(TestParserMixin, TestEmailBase):
         self.assertEqual(angle_addr.domain, 'example.com')
         self.assertIsNone(angle_addr.route)
         self.assertEqual(angle_addr.addr_spec, 'dinsdale@example.com')
+
+    def test_get_angle_addr_empty_raise(self):
+        with self.assertRaises(errors.HeaderParseError):
+            parser.get_angle_addr('')
+
+    def test_get_angle_addr_left_angle_only_raise(self):
+        with self.assertRaises(errors.HeaderParseError):
+            parser.get_angle_addr('<')
 
     def test_get_angle_addr_no_angle_raise(self):
         with self.assertRaises(errors.HeaderParseError):
@@ -1856,6 +1888,10 @@ class TestParser(TestParserMixin, TestEmailBase):
         self.assertEqual(name_addr.domain, 'example.com')
         self.assertIsNone(name_addr.route)
         self.assertEqual(name_addr.addr_spec, 'dinsdale@example.com')
+
+    def test_get_name_addr_empty_raises(self):
+        with self.assertRaises(errors.HeaderParseError):
+            parser.get_name_addr('')
 
     def test_get_name_addr_no_content_raises(self):
         with self.assertRaises(errors.HeaderParseError):
@@ -2731,6 +2767,10 @@ class TestParser(TestParserMixin, TestEmailBase):
     def test_get_msg_id_empty_id_right(self):
         with self.assertRaises(errors.HeaderParseError):
             parser.get_msg_id("<simplelocal@>")
+
+    def test_get_msg_id_no_id_right(self):
+        with self.assertRaises(errors.HeaderParseError):
+            parser.get_msg_id("<simplelocal@")
 
     def test_get_msg_id_with_brackets(self):
         # Microsof Outlook generates non-standard one-off addresses:

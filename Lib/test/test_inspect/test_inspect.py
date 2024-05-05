@@ -4,6 +4,7 @@ import collections
 import copy
 import datetime
 import functools
+import gc
 import importlib
 import inspect
 import io
@@ -25,6 +26,7 @@ import unicodedata
 import unittest
 import unittest.mock
 import warnings
+import weakref
 
 
 try:
@@ -2302,6 +2304,13 @@ class TestGetattrStatic(unittest.TestCase):
         self.assertEqual(inspect.getattr_static(foo, 'a'), 3)
         self.assertFalse(test.called)
 
+        class Bar(Foo): pass
+
+        bar = Bar()
+        bar.a = 5
+        self.assertEqual(inspect.getattr_static(bar, 'a'), 3)
+        self.assertFalse(test.called)
+
     def test_mutated_mro(self):
         test = self
         test.called = False
@@ -2405,6 +2414,21 @@ class TestGetattrStatic(unittest.TestCase):
             inspect.getattr_static(Foo(), 'really_could_be_anything')
 
         self.assertFalse(test.called)
+
+    def test_cache_does_not_cause_classes_to_persist(self):
+        # regression test for gh-118013:
+        # check that the internal _shadowed_dict cache does not cause
+        # dynamically created classes to have extended lifetimes even
+        # when no other strong references to those classes remain.
+        # Since these classes can themselves hold strong references to
+        # other objects, this can cause unexpected memory consumption.
+        class Foo: pass
+        Foo.instance = Foo()
+        weakref_to_class = weakref.ref(Foo)
+        inspect.getattr_static(Foo.instance, 'whatever', 'irrelevant')
+        del Foo
+        gc.collect()
+        self.assertIsNone(weakref_to_class())
 
 
 class TestGetGeneratorState(unittest.TestCase):
@@ -3044,6 +3068,13 @@ class TestSignatureObject(unittest.TestCase):
             with self.subTest(builtin):
                 self.assertEqual(inspect.signature(builtin),
                                  inspect.signature(template))
+
+    @unittest.skipIf(MISSING_C_DOCSTRINGS,
+                     "Signature information for builtins requires docstrings")
+    def test_signature_parsing_with_defaults(self):
+        _testcapi = import_helper.import_module("_testcapi")
+        meth = _testcapi.DocStringUnrepresentableSignatureTest.with_default
+        self.assertEqual(str(inspect.signature(meth)), '(self, /, x=1)')
 
     def test_signature_on_non_function(self):
         with self.assertRaisesRegex(TypeError, 'is not a callable object'):
@@ -4066,6 +4097,28 @@ class TestSignatureObject(unittest.TestCase):
                             ((('a', ..., ..., "positional_or_keyword"),),
                             ...))
 
+    def test_signature_on_callable_objects_with_text_signature_attr(self):
+        class C:
+            __text_signature__ = '(a, /, b, c=True)'
+            def __call__(self, *args, **kwargs):
+                pass
+
+        self.assertEqual(self.signature(C), ((), ...))
+        self.assertEqual(self.signature(C()),
+                         ((('a', ..., ..., "positional_only"),
+                           ('b', ..., ..., "positional_or_keyword"),
+                           ('c', True, ..., "positional_or_keyword"),
+                          ),
+                          ...))
+
+        c = C()
+        c.__text_signature__ = '(x, y)'
+        self.assertEqual(self.signature(c),
+                         ((('x', ..., ..., "positional_or_keyword"),
+                           ('y', ..., ..., "positional_or_keyword"),
+                          ),
+                          ...))
+
     def test_signature_on_wrapper(self):
         class Wrapper:
             def __call__(self, b):
@@ -4643,6 +4696,16 @@ class TestSignatureObject(unittest.TestCase):
             pass
 
         self.assertEqual(inspect.signature(D2), inspect.signature(D1))
+
+    def test_signature_on_non_comparable(self):
+        class NoncomparableCallable:
+            def __call__(self, a):
+                pass
+            def __eq__(self, other):
+                1/0
+        self.assertEqual(self.signature(NoncomparableCallable()),
+                         ((('a', ..., ..., 'positional_or_keyword'),),
+                          ...))
 
 
 class TestParameterObject(unittest.TestCase):
@@ -5338,6 +5401,8 @@ class TestSignatureDefinitions(unittest.TestCase):
 
     def test_sys_module_has_signatures(self):
         no_signature = {'getsizeof', 'set_asyncgen_hooks'}
+        no_signature |= {name for name in ['getobjects']
+                         if hasattr(sys, name)}
         self._test_module_has_signatures(sys, no_signature)
 
     def test_abc_module_has_signatures(self):
