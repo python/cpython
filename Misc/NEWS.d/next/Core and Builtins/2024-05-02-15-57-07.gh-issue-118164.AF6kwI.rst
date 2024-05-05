@@ -1,0 +1,4 @@
+Break a loop between the Python implementation of the :mod:`decimal` module
+and the Python code for integer to string conversion. Also optimize integer
+to string conversion for values in the range from 9_000 to 135_000 decimal
+digits.

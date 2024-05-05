@@ -14,6 +14,10 @@ maximum performance, they should use something like gmpy2."""
 
 import re
 import decimal
+try:
+    import _decimal
+except ImportError:
+    _decimal = None
 
 
 def int_to_decimal(n):
@@ -82,7 +86,47 @@ def int_to_decimal(n):
 
 def int_to_decimal_string(n):
     """Asymptotically fast conversion of an 'int' to a decimal string."""
-    return str(int_to_decimal(n))
+    w = n.bit_length()
+    if w > 450_000 and _decimal is not None:
+        # It is only usable with the C decimal implementation.
+        # _pydecimal.py calls str() on very large integers, which in its
+        # turn calls int_to_decimal_string(), causing very deep recursion.
+        return str(int_to_decimal(n))
+
+    # Fallback algorithm for the case when the C decimal module isn't
+    # available.  This algorithm is asymptotically worse than the algorithm
+    # using the decimal module, but better than the quadratic time
+    # implementation in longobject.c.
+    def inner(n, w):
+        if w <= 1000:
+            return str(n)
+        w2 = w >> 1
+        d = pow10_cache.get(w2)
+        if d is None:
+            d = pow10_cache[w2] = 5**w2 << w2 # 10**i = (5*2)**i = 5**i * 2**i
+        hi, lo = divmod(n, d)
+        return inner(hi, w - w2) + inner(lo, w2).zfill(w2)
+
+    # The estimation of the number of decimal digits.
+    # There is no harm in small error.  If we guess too large, there may
+    # be leading 0's that need to be stripped.  If we guess too small, we
+    # may need to call str() recursively for the remaining highest digits,
+    # which can still potentially be a large integer. This is manifested
+    # only if the number has way more than 10**15 digits, that exceeds
+    # the 52-bit physical address limit in both Intel64 and AMD64.
+    w = int(w * 0.3010299956639812 + 1)  # log10(2)
+    pow10_cache = {}
+    if n < 0:
+        n = -n
+        sign = '-'
+    else:
+        sign = ''
+    s = inner(n, w)
+    if s[0] == '0' and n:
+        # If our guess of w is too large, there may be leading 0's that
+        # need to be stripped.
+        s = s.lstrip('0')
+    return sign + s
 
 
 def _str_to_int_inner(s):
