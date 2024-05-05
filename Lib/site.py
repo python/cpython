@@ -485,6 +485,8 @@ def register_readline():
     try:
         import readline
         import rlcompleter
+        import _pyrepl.readline
+        import _pyrepl.unix_console
     except ImportError:
         return
 
@@ -513,13 +515,19 @@ def register_readline():
         # http://bugs.python.org/issue5845#msg198636
         history = gethistoryfile()
         try:
-            readline.read_history_file(history)
-        except OSError:
+            if os.getenv("PYTHON_BASIC_REPL"):
+                readline.read_history_file(history)
+            else:
+                _pyrepl.readline.read_history_file(history)
+        except (OSError,* _pyrepl.unix_console._error):
             pass
 
         def write_history():
             try:
-                readline.write_history_file(history)
+                if os.getenv("PYTHON_BASIC_REPL"):
+                    readline.write_history_file(history)
+                else:
+                    _pyrepl.readline.write_history_file(history)
             except (FileNotFoundError, PermissionError):
                 # home directory does not exist or is not writable
                 # https://bugs.python.org/issue19891

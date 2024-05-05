@@ -500,7 +500,7 @@ class TracebackCases(unittest.TestCase):
             traceback.format_exception(e.__class__, e)
         with self.assertRaisesRegex(ValueError, 'Both or neither'):
             traceback.format_exception(e.__class__, tb=e.__traceback__)
-        with self.assertRaisesRegex(TypeError, 'positional-only'):
+        with self.assertRaisesRegex(TypeError, 'required positional argument'):
             traceback.format_exception(exc=e)
 
     def test_format_exception_only_exc(self):
@@ -539,7 +539,7 @@ class TracebackCases(unittest.TestCase):
         self.assertEqual(
             str(inspect.signature(traceback.format_exception)),
             ('(exc, /, value=<implicit>, tb=<implicit>, limit=None, '
-             'chain=True)'))
+             'chain=True, **kwargs)'))
 
         self.assertEqual(
             str(inspect.signature(traceback.format_exception_only)),

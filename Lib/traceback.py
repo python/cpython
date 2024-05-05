@@ -140,7 +140,7 @@ def _print_exception_bltin(exc, /):
 
 
 def format_exception(exc, /, value=_sentinel, tb=_sentinel, limit=None, \
-                     chain=True):
+                     chain=True, **kwargs):
     """Format a stack trace and the exception information.
 
     The arguments have the same meaning as the corresponding arguments
@@ -149,9 +149,10 @@ def format_exception(exc, /, value=_sentinel, tb=_sentinel, limit=None, \
     these lines are concatenated and printed, exactly the same text is
     printed as does print_exception().
     """
+    colorize = kwargs.get("colorize", False)
     value, tb = _parse_value_tb(exc, value, tb)
     te = TracebackException(type(value), value, tb, limit=limit, compact=True)
-    return list(te.format(chain=chain))
+    return list(te.format(chain=chain, colorize=colorize))
 
 
 def format_exception_only(exc, /, value=_sentinel, *, show_group=False):

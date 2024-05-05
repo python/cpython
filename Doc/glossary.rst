@@ -9,13 +9,14 @@ Glossary
 .. glossary::
 
    ``>>>``
-      The default Python prompt of the interactive shell.  Often seen for code
-      examples which can be executed interactively in the interpreter.
+      The default Python prompt of the :term:`interactive` shell.  Often
+      seen for code examples which can be executed interactively in the
+      interpreter.
 
    ``...``
       Can refer to:
 
-      * The default Python prompt of the interactive shell when entering the
+      * The default Python prompt of the :term:`interactive` shell when entering the
         code for an indented code block, when within a pair of matching left and
         right delimiters (parentheses, square brackets, curly braces or triple
         quotes), or after specifying a decorator.
@@ -620,7 +621,8 @@ Glossary
       execute them and see their results.  Just launch ``python`` with no
       arguments (possibly by selecting it from your computer's main
       menu). It is a very powerful way to test out new ideas or inspect
-      modules and packages (remember ``help(x)``).
+      modules and packages (remember ``help(x)``). For more on interactive
+      mode, see :ref:`tut-interac`.
 
    interpreted
       Python is an interpreted language, as opposed to a compiled one,
@@ -1083,6 +1085,10 @@ Glossary
       ``__init__.py`` file.
 
       See also :term:`namespace package`.
+
+   REPL
+      An acronym for the "read–eval–print loop", another name for the
+      :term:`interactive` interpreter shell.
 
    __slots__
       A declaration inside a class that saves memory by pre-declaring space for
