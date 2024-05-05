@@ -3204,6 +3204,7 @@ class Signature:
                             # Raise a TypeError once we are sure there is no
                             # **kwargs param later.
                             pos_only_param_in_kwargs.append(param)
+                            continue
                         parameters_ex = (param,)
                         break
                     elif (param.kind == _VAR_KEYWORD or
@@ -3297,7 +3298,7 @@ class Signature:
             elif pos_only_param_in_kwargs:
                 raise TypeError(
                     'got some positional-only arguments passed as '
-                    'keyword arguments: {arg!r} '.format(
+                    'keyword arguments: {arg!r}'.format(
                         arg=', '.join(
                             param.name
                             for param in pos_only_param_in_kwargs
