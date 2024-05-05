@@ -25,10 +25,10 @@ def interactive_console(mainmodule=None, quiet=False, pythonstartup=False):
     run_interactive = None
     try:
         if not os.isatty(sys.stdin.fileno()):
-            raise ImportError
+            raise RuntimeError("pyrepl cannot work if stdin it's not a tty")
         from .simple_interact import check
         if not check():
-            raise ImportError
+            raise RuntimeError("pyrepl checks failed")
         from .simple_interact import run_multiline_interactive_console
         run_interactive = run_multiline_interactive_console
     except Exception as e:
