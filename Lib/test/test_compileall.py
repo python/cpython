@@ -502,19 +502,25 @@ class EncodingTest(unittest.TestCase):
         self.directory = tempfile.mkdtemp()
         self.source_path = os.path.join(self.directory, '_test.py')
         with open(self.source_path, 'w', encoding='utf-8') as file:
-            file.write('print(b"\u20ac")\n')  # intentional error
+            # Intentional syntax error: bytes can only contain
+            # ASCII literal characters.
+            file.write('b"\u20ac"')
 
     def tearDown(self):
         shutil.rmtree(self.directory)
 
     def test_error(self):
-        buffer = io.StringIO()
+        buffer = io.TextIOWrapper(io.BytesIO(), encoding='ascii')
         with contextlib.redirect_stdout(buffer):
             compiled = compileall.compile_dir(self.directory)
         self.assertFalse(compiled)  # should not be successful
-        res = buffer.getvalue()
-        self.assertIn('SyntaxError', res)
-        self.assertIn('print(b"€")', res)
+        buffer.seek(0)
+        res = buffer.read()
+        self.assertIn(
+            'SyntaxError: bytes can only contain ASCII literal characters',
+            res,
+        )
+        self.assertNotIn('UnicodeEncodeError', res)
 
 
 class CommandLineTestsBase:
