@@ -873,6 +873,15 @@ class TestInlineValues(unittest.TestCase):
         obj.foo = None # Aborted here
         self.assertEqual(obj.__dict__, {"foo":None})
 
+    def test_store_attr_deleted_dict(self):
+        class Foo:
+            pass
+
+        f = Foo()
+        del f.__dict__
+        f.a = 3
+        self.assertEqual(f.a, 3)
+
 
 if __name__ == '__main__':
     unittest.main()

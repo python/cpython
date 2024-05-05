@@ -96,7 +96,7 @@ byte-code cache files in the directory containing the source code.
 
 .. class:: PycInvalidationMode
 
-   A enumeration of possible methods the interpreter can use to determine
+   An enumeration of possible methods the interpreter can use to determine
    whether a bytecode file is up to date with a source file. The ``.pyc`` file
    indicates the desired invalidation mode in its header. See
    :ref:`pyc-invalidation` for more information on how Python invalidates

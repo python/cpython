@@ -898,6 +898,10 @@ static int
 py_get_system_clock(PyTime_t *tp, _Py_clock_info_t *info, int raise_exc)
 {
     assert(info == NULL || raise_exc);
+    if (raise_exc) {
+        // raise_exc requires to hold the GIL
+        assert(PyGILState_Check());
+    }
 
 #ifdef MS_WINDOWS
     FILETIME system_time;
@@ -1004,19 +1008,6 @@ py_get_system_clock(PyTime_t *tp, _Py_clock_info_t *info, int raise_exc)
 }
 
 
-PyTime_t
-_PyTime_TimeUnchecked(void)
-{
-    PyTime_t t;
-    if (py_get_system_clock(&t, NULL, 0) < 0) {
-        // If clock_gettime(CLOCK_REALTIME) or gettimeofday() fails:
-        // silently ignore the failure and return 0.
-        t = 0;
-    }
-    return t;
-}
-
-
 int
 PyTime_Time(PyTime_t *result)
 {
@@ -1026,6 +1017,34 @@ PyTime_Time(PyTime_t *result)
     }
     return 0;
 }
+
+
+int
+PyTime_TimeRaw(PyTime_t *result)
+{
+    if (py_get_system_clock(result, NULL, 0) < 0) {
+        *result = 0;
+        return -1;
+    }
+    return 0;
+}
+
+
+PyTime_t
+_PyTime_TimeUnchecked(void)
+{
+    PyTime_t t;
+#ifdef Py_DEBUG
+    int result = PyTime_TimeRaw(&t);
+    if (result != 0) {
+        Py_FatalError("unable to read the system clock");
+    }
+#else
+    (void)PyTime_TimeRaw(&t);
+#endif
+    return t;
+}
+
 
 int
 _PyTime_TimeWithInfo(PyTime_t *t, _Py_clock_info_t *info)
@@ -1140,6 +1159,10 @@ static int
 py_get_monotonic_clock(PyTime_t *tp, _Py_clock_info_t *info, int raise_exc)
 {
     assert(info == NULL || raise_exc);
+    if (raise_exc) {
+        // raise_exc requires to hold the GIL
+        assert(PyGILState_Check());
+    }
 
 #if defined(MS_WINDOWS)
     if (py_get_win_perf_counter(tp, info, raise_exc) < 0) {
@@ -1225,18 +1248,6 @@ py_get_monotonic_clock(PyTime_t *tp, _Py_clock_info_t *info, int raise_exc)
 }
 
 
-PyTime_t
-_PyTime_MonotonicUnchecked(void)
-{
-    PyTime_t t;
-    if (py_get_monotonic_clock(&t, NULL, 0) < 0) {
-        // Ignore silently the error and return 0.
-        t = 0;
-    }
-    return t;
-}
-
-
 int
 PyTime_Monotonic(PyTime_t *result)
 {
@@ -1245,6 +1256,33 @@ PyTime_Monotonic(PyTime_t *result)
         return -1;
     }
     return 0;
+}
+
+
+int
+PyTime_MonotonicRaw(PyTime_t *result)
+{
+    if (py_get_monotonic_clock(result, NULL, 0) < 0) {
+        *result = 0;
+        return -1;
+    }
+    return 0;
+}
+
+
+PyTime_t
+_PyTime_MonotonicUnchecked(void)
+{
+    PyTime_t t;
+#ifdef Py_DEBUG
+    int result = PyTime_MonotonicRaw(&t);
+    if (result != 0) {
+        Py_FatalError("unable to read the monotonic clock");
+    }
+#else
+    (void)PyTime_MonotonicRaw(&t);
+#endif
+    return t;
 }
 
 
@@ -1262,17 +1300,24 @@ _PyTime_PerfCounterWithInfo(PyTime_t *t, _Py_clock_info_t *info)
 }
 
 
-PyTime_t
-_PyTime_PerfCounterUnchecked(void)
-{
-    return _PyTime_MonotonicUnchecked();
-}
-
-
 int
 PyTime_PerfCounter(PyTime_t *result)
 {
     return PyTime_Monotonic(result);
+}
+
+
+int
+PyTime_PerfCounterRaw(PyTime_t *result)
+{
+    return PyTime_MonotonicRaw(result);
+}
+
+
+PyTime_t
+_PyTime_PerfCounterUnchecked(void)
+{
+    return _PyTime_MonotonicUnchecked();
 }
 
 

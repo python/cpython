@@ -328,12 +328,16 @@ can be overridden by the local file.
 
 .. pdbcommand:: b(reak) [([filename:]lineno | function) [, condition]]
 
-   With a *lineno* argument, set a break there in the current file.  With a
-   *function* argument, set a break at the first executable statement within
-   that function.  The line number may be prefixed with a filename and a colon,
-   to specify a breakpoint in another file (probably one that hasn't been loaded
-   yet).  The file is searched on :data:`sys.path`.  Note that each breakpoint
-   is assigned a number to which all the other breakpoint commands refer.
+   With a *lineno* argument, set a break at line *lineno* in the current file.
+   The line number may be prefixed with a *filename* and a colon,
+   to specify a breakpoint in another file (possibly one that hasn't been loaded
+   yet).  The file is searched on :data:`sys.path`.  Accepatable forms of *filename*
+   are ``/abspath/to/file.py``, ``relpath/file.py``, ``module`` and
+   ``package.module``.
+
+   With a *function* argument, set a break at the first executable statement within
+   that function. *function* can be any expression that evaluates to a function
+   in the current namespace.
 
    If a second argument is present, it is an expression which must evaluate to
    true before the breakpoint is honored.
@@ -341,6 +345,9 @@ can be overridden by the local file.
    Without argument, list all breaks, including for each breakpoint, the number
    of times that breakpoint has been hit, the current ignore count, and the
    associated condition if any.
+
+   Each breakpoint is assigned a number to which all the other
+   breakpoint commands refer.
 
 .. pdbcommand:: tbreak [([filename:]lineno | function) [, condition]]
 
