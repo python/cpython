@@ -2507,11 +2507,10 @@ _PyEval_GetFrameLocals(void)
         }
         Py_DECREF(locals);
         return ret;
-    } else if (PyMapping_Check(locals)) {
-        return locals;
     }
 
-    return NULL;
+    assert(PyMapping_Check(locals));
+    return locals;
 }
 
 PyObject *
