@@ -2,13 +2,14 @@
 
 
         // Append VALUE to the result.
-        #define APPEND(VAL) {                           \
-            if (!VAL) {                                 \
+        #define APPEND(ITEM) {                          \
+            PyObject *item = ITEM;                      \
+            if (!item) {                                \
                 Py_DECREF(result);                      \
                 return NULL;                            \
             }                                           \
-            int rv = PyList_Append(result, VAL);        \
-            Py_DECREF(VAL);                             \
+            int rv = PyList_Append(result, item);       \
+            Py_DECREF(item);                            \
             if (rv < 0) {                               \
                 Py_DECREF(result);                      \
                 return NULL;                            \
@@ -214,7 +215,7 @@
 
             if (PyUnicode_CompareWithASCIIString(name, "Packed1") == 0) {
 
-            #if (defined(MS_WIN32) || defined(__GNUC__) || defined(__clang__))
+            #if (defined(MS_WIN32) || ((defined(__x86_64__) || defined(__i386__) || defined(__ppc64__)) && (defined(__GNUC__) || defined(__clang__))))
 
                 #pragma pack(push, 1)
                 struct GCC_ATTR(ms_struct) Packed1 {
@@ -238,7 +239,7 @@
 
             if (PyUnicode_CompareWithASCIIString(name, "Packed2") == 0) {
 
-            #if (defined(MS_WIN32) || defined(__GNUC__) || defined(__clang__))
+            #if (defined(MS_WIN32) || ((defined(__x86_64__) || defined(__i386__) || defined(__ppc64__)) && (defined(__GNUC__) || defined(__clang__))))
 
                 #pragma pack(push, 2)
                 struct GCC_ATTR(ms_struct) Packed2 {
@@ -262,7 +263,7 @@
 
             if (PyUnicode_CompareWithASCIIString(name, "Packed3") == 0) {
 
-            #if (defined(MS_WIN32) || defined(__GNUC__) || defined(__clang__))
+            #if (defined(MS_WIN32) || ((defined(__x86_64__) || defined(__i386__) || defined(__ppc64__)) && (defined(__GNUC__) || defined(__clang__))))
 
                 #pragma pack(push, 4)
                 struct GCC_ATTR(ms_struct) Packed3 {
@@ -286,7 +287,7 @@
 
             if (PyUnicode_CompareWithASCIIString(name, "Packed4") == 0) {
 
-            #if (defined(MS_WIN32) || defined(__GNUC__) || defined(__clang__))
+            #if (defined(MS_WIN32) || ((defined(__x86_64__) || defined(__i386__) || defined(__ppc64__)) && (defined(__GNUC__) || defined(__clang__))))
 
                 #pragma pack(push, 8)
                 struct GCC_ATTR(ms_struct) Packed4 {
@@ -322,6 +323,42 @@
                 TEST_FIELD(int32_t, value.a);
                 TEST_FIELD(int64_t, value.b);
                 TEST_FIELD(int32_t, value.c);
+                return result;
+            }
+
+            if (PyUnicode_CompareWithASCIIString(name, "MSBitFieldExample") == 0) {
+
+                struct MSBitFieldExample {
+                    unsigned int a :4;
+                    unsigned int b :5;
+                    unsigned int c :7;
+                };
+                struct MSBitFieldExample value = {0};
+                APPEND(PyUnicode_FromString("MSBitFieldExample"));
+                APPEND(PyLong_FromLong(sizeof(struct MSBitFieldExample)));
+                APPEND(PyLong_FromLong(_Alignof(struct MSBitFieldExample)));
+                TEST_FIELD(unsigned int, value.a);
+                TEST_FIELD(unsigned int, value.b);
+                TEST_FIELD(unsigned int, value.c);
+                return result;
+            }
+
+            if (PyUnicode_CompareWithASCIIString(name, "MSStraddlingExample") == 0) {
+
+                struct MSStraddlingExample {
+                    unsigned int first :9;
+                    unsigned int second :7;
+                    unsigned int may_straddle :30;
+                    unsigned int last :18;
+                };
+                struct MSStraddlingExample value = {0};
+                APPEND(PyUnicode_FromString("MSStraddlingExample"));
+                APPEND(PyLong_FromLong(sizeof(struct MSStraddlingExample)));
+                APPEND(PyLong_FromLong(_Alignof(struct MSStraddlingExample)));
+                TEST_FIELD(unsigned int, value.first);
+                TEST_FIELD(unsigned int, value.second);
+                TEST_FIELD(unsigned int, value.may_straddle);
+                TEST_FIELD(unsigned int, value.last);
                 return result;
             }
 
@@ -406,7 +443,7 @@
 
             if (PyUnicode_CompareWithASCIIString(name, "IntBits_MSVC") == 0) {
 
-            #if (defined(MS_WIN32) || defined(__GNUC__) || defined(__clang__))
+            #if (defined(MS_WIN32) || ((defined(__x86_64__) || defined(__i386__) || defined(__ppc64__)) && (defined(__GNUC__) || defined(__clang__))))
 
                 struct GCC_ATTR(ms_struct) IntBits_MSVC {
                     int A :1;
@@ -442,7 +479,7 @@
 
             if (PyUnicode_CompareWithASCIIString(name, "Bits_MSVC") == 0) {
 
-            #if (!defined(__xlc__)) && (defined(MS_WIN32) || defined(__GNUC__) || defined(__clang__))
+            #if (!defined(__xlc__)) && (defined(MS_WIN32) || ((defined(__x86_64__) || defined(__i386__) || defined(__ppc64__)) && (defined(__GNUC__) || defined(__clang__))))
 
                 struct GCC_ATTR(ms_struct) Bits_MSVC {
                     int A :1;
@@ -1602,7 +1639,7 @@
 
             if (PyUnicode_CompareWithASCIIString(name, "Example_gh_84039_bad") == 0) {
 
-            #if (!defined(__xlc__)) && (defined(MS_WIN32) || defined(__GNUC__) || defined(__clang__))
+            #if (!defined(__xlc__)) && (defined(MS_WIN32) || ((defined(__x86_64__) || defined(__i386__) || defined(__ppc64__)) && (defined(__GNUC__) || defined(__clang__))))
 
                 #pragma pack(push, 1)
                 struct GCC_ATTR(ms_struct) Example_gh_84039_bad {
@@ -1642,7 +1679,7 @@
 
             if (PyUnicode_CompareWithASCIIString(name, "Example_gh_84039_good_a") == 0) {
 
-            #if (!defined(__xlc__)) && (defined(MS_WIN32) || defined(__GNUC__) || defined(__clang__))
+            #if (!defined(__xlc__)) && (defined(MS_WIN32) || ((defined(__x86_64__) || defined(__i386__) || defined(__ppc64__)) && (defined(__GNUC__) || defined(__clang__))))
 
                 #pragma pack(push, 1)
                 struct GCC_ATTR(ms_struct) Example_gh_84039_good_a {
@@ -1678,7 +1715,7 @@
 
             if (PyUnicode_CompareWithASCIIString(name, "Example_gh_84039_good") == 0) {
 
-            #if (!defined(__xlc__)) && (defined(MS_WIN32) || defined(__GNUC__) || defined(__clang__))
+            #if (!defined(__xlc__)) && (defined(MS_WIN32) || ((defined(__x86_64__) || defined(__i386__) || defined(__ppc64__)) && (defined(__GNUC__) || defined(__clang__))))
 
                 #pragma pack(push, 1)
                 struct GCC_ATTR(ms_struct) Example_gh_84039_good {
@@ -1722,7 +1759,7 @@
 
             if (PyUnicode_CompareWithASCIIString(name, "Example_gh_73939") == 0) {
 
-            #if (!defined(__xlc__)) && (defined(MS_WIN32) || defined(__GNUC__) || defined(__clang__))
+            #if (!defined(__xlc__)) && (defined(MS_WIN32) || ((defined(__x86_64__) || defined(__i386__) || defined(__ppc64__)) && (defined(__GNUC__) || defined(__clang__))))
 
                 #pragma pack(push, 1)
                 struct GCC_ATTR(ms_struct) Example_gh_73939 {
@@ -1786,7 +1823,7 @@
 
             if (PyUnicode_CompareWithASCIIString(name, "Example_gh_86098_pack") == 0) {
 
-            #if (!defined(__xlc__)) && (defined(MS_WIN32) || defined(__GNUC__) || defined(__clang__))
+            #if (!defined(__xlc__)) && (defined(MS_WIN32) || ((defined(__x86_64__) || defined(__i386__) || defined(__ppc64__)) && (defined(__GNUC__) || defined(__clang__))))
 
                 #pragma pack(push, 1)
                 struct GCC_ATTR(ms_struct) Example_gh_86098_pack {
