@@ -2402,7 +2402,7 @@ class TestKDE(unittest.TestCase):
         with self.assertRaises(StatisticsError):
             kde(sample, h=0.0)                          # Zero bandwidth
         with self.assertRaises(StatisticsError):
-            kde(sample, h=0.0)                          # Negative bandwidth
+            kde(sample, h=-1.0)                         # Negative bandwidth
         with self.assertRaises(TypeError):
             kde(sample, h='str')                        # Wrong bandwidth type
         with self.assertRaises(StatisticsError):
@@ -2462,7 +2462,7 @@ class TestKDE(unittest.TestCase):
         with self.assertRaises(TypeError):
             kde_random(iter(sample), 1.5)               # Data is not a sequence
         with self.assertRaises(StatisticsError):
-            kde_random(sample, h=0.0)                   # Zero bandwidth
+            kde_random(sample, h=-1.0)                  # Zero bandwidth
         with self.assertRaises(StatisticsError):
             kde_random(sample, h=0.0)                   # Negative bandwidth
         with self.assertRaises(TypeError):
