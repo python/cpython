@@ -441,7 +441,7 @@ class GeneratedTest(unittest.TestCase):
                 expected = iter(_ctypes_test.get_generated_test_data(name))
                 expected_name = next(expected)
                 if expected_name is None:
-                    unittest.skipTest(next(expected))
+                    self.skipTest(next(expected))
                 self.assertEqual(name, expected_name)
                 self.assertEqual(sizeof(cls), next(expected))
                 with self.subTest('alignment'):
