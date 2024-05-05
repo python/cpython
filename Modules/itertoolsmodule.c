@@ -270,6 +270,7 @@ typedef struct {
     PyObject_HEAD
     PyObject *it;
     PyObject *old;
+    PyObject *result;
 } pairwiseobject;
 
 /*[clinic input]
@@ -301,6 +302,11 @@ pairwise_new_impl(PyTypeObject *type, PyObject *iterable)
     }
     po->it = it;
     po->old = NULL;
+    po->result = PyTuple_Pack(2, Py_None, Py_None);
+    if (po->result == NULL) {
+        Py_DECREF(po);
+        return NULL;
+    }
     return (PyObject *)po;
 }
 
@@ -311,6 +317,7 @@ pairwise_dealloc(pairwiseobject *po)
     PyObject_GC_UnTrack(po);
     Py_XDECREF(po->it);
     Py_XDECREF(po->old);
+    Py_XDECREF(po->result);
     tp->tp_free(po);
     Py_DECREF(tp);
 }
@@ -321,6 +328,7 @@ pairwise_traverse(pairwiseobject *po, visitproc visit, void *arg)
     Py_VISIT(Py_TYPE(po));
     Py_VISIT(po->it);
     Py_VISIT(po->old);
+    Py_VISIT(po->result);
     return 0;
 }
 
@@ -355,8 +363,30 @@ pairwise_next(pairwiseobject *po)
         Py_DECREF(old);
         return NULL;
     }
-    /* Future optimization: Reuse the result tuple as we do in enumerate() */
-    result = PyTuple_Pack(2, old, new);
+
+    result = po->result;
+    if (Py_REFCNT(result) == 1) {
+        Py_INCREF(result);
+        PyObject *last_old = PyTuple_GET_ITEM(result, 0);
+        PyObject *last_new = PyTuple_GET_ITEM(result, 1);
+        PyTuple_SET_ITEM(result, 0, Py_NewRef(old));
+        PyTuple_SET_ITEM(result, 1, Py_NewRef(new));
+        Py_DECREF(last_old);
+        Py_DECREF(last_new);
+        // bpo-42536: The GC may have untracked this result tuple. Since we're
+        // recycling it, make sure it's tracked again:
+        if (!_PyObject_GC_IS_TRACKED(result)) {
+            _PyObject_GC_TRACK(result);
+        }
+    }
+    else {
+        result = PyTuple_New(2);
+        if (result != NULL) {
+            PyTuple_SET_ITEM(result, 0, Py_NewRef(old));
+            PyTuple_SET_ITEM(result, 1, Py_NewRef(new));
+        }
+    }
+
     Py_XSETREF(po->old, new);
     Py_DECREF(old);
     return result;
@@ -2189,7 +2219,8 @@ chain_setstate(chainobject *lz, PyObject *state)
 }
 
 PyDoc_STRVAR(chain_doc,
-"chain(*iterables) --> chain object\n\
+"chain(*iterables)\n\
+--\n\
 \n\
 Return a chain object whose .__next__() method returns elements from the\n\
 first iterable until it is exhausted, then elements from the next\n\
@@ -2528,7 +2559,8 @@ static PyMethodDef product_methods[] = {
 };
 
 PyDoc_STRVAR(product_doc,
-"product(*iterables, repeat=1) --> product object\n\
+"product(*iterables, repeat=1)\n\
+--\n\
 \n\
 Cartesian product of input iterables.  Equivalent to nested for-loops.\n\n\
 For example, product(A, B) returns the same as:  ((x,y) for x in A for y in B).\n\
@@ -4573,7 +4605,8 @@ static PyMethodDef zip_longest_methods[] = {
 };
 
 PyDoc_STRVAR(zip_longest_doc,
-"zip_longest(iter1 [,iter2 [...]], [fillvalue=None]) --> zip_longest object\n\
+"zip_longest(*iterables, fillvalue=None)\n\
+--\n\
 \n\
 Return a zip_longest object whose .__next__() method returns a tuple where\n\
 the i-th element comes from the i-th iterable argument.  The .__next__()\n\
@@ -4748,6 +4781,7 @@ itertoolsmodule_exec(PyObject *mod)
 static struct PyModuleDef_Slot itertoolsmodule_slots[] = {
     {Py_mod_exec, itertoolsmodule_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
 };
 

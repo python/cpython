@@ -1042,6 +1042,8 @@ https://www.w3.org/TR/xml-c14n2-testcases/ and is distributed under the
    OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
+.. _mimalloc-license:
+
 mimalloc
 --------
 

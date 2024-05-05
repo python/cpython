@@ -21,7 +21,7 @@ __all__ = [
     'HTTP',
     ]
 
-linesep_splitter = re.compile(r'\n|\r')
+linesep_splitter = re.compile(r'\n|\r\n?')
 
 @_extend_docstrings
 class EmailPolicy(Policy):
@@ -205,7 +205,8 @@ class EmailPolicy(Policy):
         if hasattr(value, 'name'):
             return value.fold(policy=self)
         maxlen = self.max_line_length if self.max_line_length else sys.maxsize
-        lines = value.splitlines()
+        # We can't use splitlines here because it splits on more than \r and \n.
+        lines = linesep_splitter.split(value)
         refold = (self.refold_source == 'all' or
                   self.refold_source == 'long' and
                     (lines and len(lines[0])+len(name)+2 > maxlen or

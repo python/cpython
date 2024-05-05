@@ -1,3 +1,0 @@
-In documentation of :class:`gzip.GzipFile` in module gzip, explain data type
-of optional constructor argument *mtime*, and recommend ``mtime = 0`` for
-generating deterministic streams.

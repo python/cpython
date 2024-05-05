@@ -639,7 +639,8 @@ class Counter(dict):
         >>> sorted(c.elements())
         ['A', 'A', 'B', 'B', 'C', 'C']
 
-        # Knuth's example for prime factors of 1836:  2**2 * 3**3 * 17**1
+        Knuth's example for prime factors of 1836:  2**2 * 3**3 * 17**1
+
         >>> import math
         >>> prime_factors = Counter({2: 2, 3: 3, 17: 1})
         >>> math.prod(prime_factors.elements())
@@ -1037,9 +1038,9 @@ class ChainMap(_collections_abc.MutableMapping):
         return f'{self.__class__.__name__}({", ".join(map(repr, self.maps))})'
 
     @classmethod
-    def fromkeys(cls, iterable, *args):
-        'Create a ChainMap with a single dict created from the iterable.'
-        return cls(dict.fromkeys(iterable, *args))
+    def fromkeys(cls, iterable, value=None, /):
+        'Create a new ChainMap with keys from iterable and values set to value.'
+        return cls(dict.fromkeys(iterable, value))
 
     def copy(self):
         'New ChainMap or subclass with a new copy of maps[0] and refs to maps[1:]'

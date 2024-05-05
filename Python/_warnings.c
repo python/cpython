@@ -894,8 +894,8 @@ setup_context(Py_ssize_t stack_level,
 
     if (f == NULL) {
         globals = interp->sysdict;
-        *filename = PyUnicode_FromString("sys");
-        *lineno = 1;
+        *filename = PyUnicode_FromString("<sys>");
+        *lineno = 0;
     }
     else {
         globals = f->f_frame->f_globals;
@@ -1498,6 +1498,7 @@ warnings_module_exec(PyObject *module)
 static PyModuleDef_Slot warnings_slots[] = {
     {Py_mod_exec, warnings_module_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
 };
 

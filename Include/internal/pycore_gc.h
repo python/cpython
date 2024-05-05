@@ -39,12 +39,13 @@ static inline PyObject* _Py_FROM_GC(PyGC_Head *gc) {
 
 /* Bit flags for ob_gc_bits (in Py_GIL_DISABLED builds) */
 #ifdef Py_GIL_DISABLED
-#  define _PyGC_BITS_TRACKED        (1)
-#  define _PyGC_BITS_FINALIZED      (2)
+#  define _PyGC_BITS_TRACKED        (1)     // Tracked by the GC
+#  define _PyGC_BITS_FINALIZED      (2)     // tp_finalize was called
 #  define _PyGC_BITS_UNREACHABLE    (4)
 #  define _PyGC_BITS_FROZEN         (8)
 #  define _PyGC_BITS_SHARED         (16)
 #  define _PyGC_BITS_SHARED_INLINE  (32)
+#  define _PyGC_BITS_DEFERRED       (64)    // Use deferred reference counting
 #endif
 
 /* True if the object is currently tracked by the GC. */
@@ -92,7 +93,7 @@ static inline void _PyObject_GC_SET_SHARED(PyObject *op) {
  * threads and needs special purpose when freeing due to
  * the possibility of in-flight lock-free reads occurring.
  * Objects with this bit that are GC objects will automatically
- * delay-freed by PyObject_GC_Del.  */
+ * delay-freed by PyObject_GC_Del. */
 static inline int _PyObject_GC_IS_SHARED_INLINE(PyObject *op) {
     return (op->ob_gc_bits & _PyGC_BITS_SHARED_INLINE) != 0;
 }
@@ -311,6 +312,18 @@ struct _gc_runtime_state {
        collections, and are awaiting to undergo a full collection for
        the first time. */
     Py_ssize_t long_lived_pending;
+
+    /* gh-117783: Deferred reference counting is not fully implemented yet, so
+       as a temporary measure we treat objects using deferred referenence
+       counting as immortal. */
+    struct {
+        /* Immortalize objects instead of marking them as using deferred
+           reference counting. */
+        int enabled;
+
+        /* Set enabled=1 when the first background thread is created. */
+        int enable_on_thread_created;
+    } immortalize;
 #endif
 };
 
@@ -341,6 +354,11 @@ extern PyObject *_PyGC_GetReferrers(PyInterpreterState *interp, PyObject *objs);
 extern void _PyGC_ClearAllFreeLists(PyInterpreterState *interp);
 extern void _Py_ScheduleGC(PyThreadState *tstate);
 extern void _Py_RunGC(PyThreadState *tstate);
+
+#ifdef Py_GIL_DISABLED
+// gh-117783: Immortalize objects that use deferred reference counting
+extern void _PyGC_ImmortalizeDeferredObjects(PyInterpreterState *interp);
+#endif
 
 #ifdef __cplusplus
 }

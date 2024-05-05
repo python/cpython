@@ -1,0 +1,1 @@
+Print colorized exception just like built-in traceback in :mod:`pdb`

@@ -219,6 +219,9 @@ PyInit__tracemalloc(void)
     m = PyModule_Create(&module_def);
     if (m == NULL)
         return NULL;
+#ifdef Py_GIL_DISABLED
+    PyModule_ExperimentalSetGIL(m, Py_MOD_GIL_NOT_USED);
+#endif
 
     if (_PyTraceMalloc_Init() < 0) {
         Py_DECREF(m);

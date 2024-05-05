@@ -1,0 +1,1 @@
+Speedup :func:`os.path.join`.
