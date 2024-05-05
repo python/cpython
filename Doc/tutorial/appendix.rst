@@ -19,14 +19,14 @@ On Unix-like systems (e.g. Linux or macOS) with :mod:`curses` and
 This one supports color, multiline editing, history browsing, and
 paste mode.  To disable color, see :ref:`using-on-controlling-color` for
 details.  Function keys provide some additional functionality.
-``F1`` enters the interactive help browser :mod:`pydoc`.
-``F2`` allows for browsing command-line history without output nor the
-:term:`>>>` and :term:`...` prompts. ``F3`` enters "paste mode", which
-makes pasting larger blocks of code easier. Press ``F3`` to return to
+:kbd:`F1` enters the interactive help browser :mod:`pydoc`.
+:kbd:`F2` allows for browsing command-line history without output nor the
+:term:`>>>` and :term:`...` prompts. :kbd:`F3` enters "paste mode", which
+makes pasting larger blocks of code easier. Press :kbd:`F3` to return to
 the regular prompt.
 
-When using the new interactive shell, exit the shell by typing ``exit``
-or ``quit``. Adding call parentheses after those commands is not
+When using the new interactive shell, exit the shell by typing :kbd:`exit`
+or :kbd:`quit`. Adding call parentheses after those commands is not
 required.
 
 If the new interactive shell is not desired, it can be disabled via
