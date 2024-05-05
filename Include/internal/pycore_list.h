@@ -9,7 +9,7 @@ extern "C" {
 #endif
 
 #include "pycore_freelist.h"  // _PyFreeListState
-#include "pycore_stackref.h" // _PyStackRef
+#include "pycore_stackref.h"  // _PyStackRef
 
 PyAPI_FUNC(PyObject*) _PyList_Extend(PyListObject *, PyObject *);
 extern void _PyList_DebugMallocStats(FILE *out);
