@@ -149,35 +149,41 @@ class BitFieldTest(unittest.TestCase):
 
     def test_signed(self):
         for c_typ in signed_int_types:
-            class X(Structure):
-                _fields_ = [("dummy", c_typ),
-                            ("a", c_typ, 3),
-                            ("b", c_typ, 3),
-                            ("c", c_typ, 1)]
-            self.assertEqual(sizeof(X), sizeof(c_typ)*2)
+            with self.subTest(c_typ):
+                if sizeof(c_typ) != alignment(c_typ):
+                     self.skipTest('assumes size=alignment')
+                class X(Structure):
+                    _fields_ = [("dummy", c_typ),
+                                ("a", c_typ, 3),
+                                ("b", c_typ, 3),
+                                ("c", c_typ, 1)]
+                self.assertEqual(sizeof(X), sizeof(c_typ)*2)
 
-            x = X()
-            self.assertEqual((c_typ, x.a, x.b, x.c), (c_typ, 0, 0, 0))
-            x.a = -1
-            self.assertEqual((c_typ, x.a, x.b, x.c), (c_typ, -1, 0, 0))
-            x.a, x.b = 0, -1
-            self.assertEqual((c_typ, x.a, x.b, x.c), (c_typ, 0, -1, 0))
+                x = X()
+                self.assertEqual((c_typ, x.a, x.b, x.c), (c_typ, 0, 0, 0))
+                x.a = -1
+                self.assertEqual((c_typ, x.a, x.b, x.c), (c_typ, -1, 0, 0))
+                x.a, x.b = 0, -1
+                self.assertEqual((c_typ, x.a, x.b, x.c), (c_typ, 0, -1, 0))
 
 
     def test_unsigned(self):
         for c_typ in unsigned_int_types:
-            class X(Structure):
-                _fields_ = [("a", c_typ, 3),
-                            ("b", c_typ, 3),
-                            ("c", c_typ, 1)]
-            self.assertEqual(sizeof(X), sizeof(c_typ))
+            with self.subTest(c_typ):
+                if sizeof(c_typ) != alignment(c_typ):
+                     self.skipTest('assumes size=alignment')
+                class X(Structure):
+                    _fields_ = [("a", c_typ, 3),
+                                ("b", c_typ, 3),
+                                ("c", c_typ, 1)]
+                self.assertEqual(sizeof(X), sizeof(c_typ))
 
-            x = X()
-            self.assertEqual((c_typ, x.a, x.b, x.c), (c_typ, 0, 0, 0))
-            x.a = -1
-            self.assertEqual((c_typ, x.a, x.b, x.c), (c_typ, 7, 0, 0))
-            x.a, x.b = 0, -1
-            self.assertEqual((c_typ, x.a, x.b, x.c), (c_typ, 0, 7, 0))
+                x = X()
+                self.assertEqual((c_typ, x.a, x.b, x.c), (c_typ, 0, 0, 0))
+                x.a = -1
+                self.assertEqual((c_typ, x.a, x.b, x.c), (c_typ, 7, 0, 0))
+                x.a, x.b = 0, -1
+                self.assertEqual((c_typ, x.a, x.b, x.c), (c_typ, 0, 7, 0))
 
     def fail_fields(self, *fields):
         return self.get_except(type(Structure), "X", (),
@@ -211,22 +217,28 @@ class BitFieldTest(unittest.TestCase):
 
     def test_single_bitfield_size(self):
         for c_typ in int_types:
-            result = self.fail_fields(("a", c_typ, -1))
-            self.assertEqual(result, (ValueError, "number of bits invalid for bit field 'a'"))
+            with self.subTest(c_typ):
+                if sizeof(c_typ) != alignment(c_typ):
+                     self.skipTest('assumes size=alignment')
+                result = self.fail_fields(("a", c_typ, -1))
+                self.assertEqual(result, (ValueError,
+                    "number of bits invalid for bit field 'a'"))
 
-            result = self.fail_fields(("a", c_typ, 0))
-            self.assertEqual(result, (ValueError, "number of bits invalid for bit field 'a'"))
+                result = self.fail_fields(("a", c_typ, 0))
+                self.assertEqual(result, (ValueError,
+                    "number of bits invalid for bit field 'a'"))
 
-            class X(Structure):
-                _fields_ = [("a", c_typ, 1)]
-            self.assertEqual(sizeof(X), sizeof(c_typ))
+                class X(Structure):
+                    _fields_ = [("a", c_typ, 1)]
+                self.assertEqual(sizeof(X), sizeof(c_typ))
 
-            class X(Structure):
-                _fields_ = [("a", c_typ, sizeof(c_typ)*8)]
-            self.assertEqual(sizeof(X), sizeof(c_typ))
+                class X(Structure):
+                    _fields_ = [("a", c_typ, sizeof(c_typ)*8)]
+                self.assertEqual(sizeof(X), sizeof(c_typ))
 
-            result = self.fail_fields(("a", c_typ, sizeof(c_typ)*8 + 1))
-            self.assertEqual(result, (ValueError, "number of bits invalid for bit field 'a'"))
+                result = self.fail_fields(("a", c_typ, sizeof(c_typ)*8 + 1))
+                self.assertEqual(result, (ValueError,
+                    "number of bits invalid for bit field 'a'"))
 
     def test_multi_bitfields_size(self):
         class X(Structure):
@@ -318,6 +330,8 @@ class BitFieldTest(unittest.TestCase):
         a.B = 1
         self.assertEqual(1, a.B)
 
+    @unittest.skipIf(sizeof(c_uint64) != alignment(c_uint64),
+                     'assumes size=alignment')
     def test_mixed_7(self):
         class X(Structure):
             _fields_ = [
@@ -353,6 +367,8 @@ class BitFieldTest(unittest.TestCase):
         else:
             self.assertEqual(4, sizeof(X))
 
+    @unittest.skipIf(sizeof(c_uint64) != alignment(c_uint64),
+                     'assumes size=alignment')
     def test_mixed_10(self):
         class X(Structure):
             _fields_ = [
