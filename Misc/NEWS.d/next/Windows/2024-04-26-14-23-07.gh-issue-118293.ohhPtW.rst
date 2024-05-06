@@ -1,0 +1,2 @@
+The ``multiprocessing`` module now passes the ``STARTF_FORCEOFFFEEDBACK``
+flag when spawning processes to tell Windows not to change the mouse cursor.

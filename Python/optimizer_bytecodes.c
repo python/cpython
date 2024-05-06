@@ -629,6 +629,15 @@ dummy_func(void) {
                              frame_new(ctx, co, localsplus_start, n_locals_already_filled, 0));
     }
 
+    op(_PY_FRAME_GENERAL, (callable, self_or_null, args[oparg] -- new_frame: _Py_UOpsAbstractFrame *)) {
+        /* The _Py_UOpsAbstractFrame design assumes that we can copy arguments across directly */
+        (void)callable;
+        (void)self_or_null;
+        (void)args;
+        first_valid_check_stack = NULL;
+        goto done;
+    }
+
     op(_POP_FRAME, (retval -- res)) {
         SYNC_SP();
         ctx->frame->stack_pointer = stack_pointer;
@@ -649,6 +658,37 @@ dummy_func(void) {
             // might be impossible, but bailing is still safe
             goto done;
         }
+    }
+
+    op(_RETURN_GENERATOR, ( -- res)) {
+        SYNC_SP();
+        ctx->frame->stack_pointer = stack_pointer;
+        frame_pop(ctx);
+        stack_pointer = ctx->frame->stack_pointer;
+        OUT_OF_SPACE_IF_NULL(res = sym_new_unknown(ctx));
+
+        /* Stack space handling */
+        assert(corresponding_check_stack == NULL);
+        assert(co != NULL);
+        int framesize = co->co_framesize;
+        assert(framesize > 0);
+        assert(framesize <= curr_space);
+        curr_space -= framesize;
+
+        co = get_code(this_instr);
+        if (co == NULL) {
+            // might be impossible, but bailing is still safe
+            goto done;
+        }
+    }
+
+    op(_YIELD_VALUE, (unused -- res)) {
+        OUT_OF_SPACE_IF_NULL(res = sym_new_unknown(ctx));
+    }
+
+    op(_FOR_ITER_GEN_FRAME, ( -- )) {
+        /* We are about to hit the end of the trace */
+        goto done;
     }
 
     op(_CHECK_STACK_SPACE, ( --)) {
@@ -687,7 +727,7 @@ dummy_func(void) {
         if (first_valid_check_stack == NULL) {
             first_valid_check_stack = corresponding_check_stack;
         }
-        else {
+        else if (corresponding_check_stack) {
             // delete all but the first valid _CHECK_STACK_SPACE
             corresponding_check_stack->opcode = _NOP;
         }

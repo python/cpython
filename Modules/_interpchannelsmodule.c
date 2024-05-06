@@ -84,7 +84,7 @@ channel's queue, which are safely managed via the _PyCrossInterpreterData_*()
 API..  The module does not create any objects that are shared globally.
 */
 
-#define MODULE_NAME _xxinterpchannels
+#define MODULE_NAME _interpchannels
 #define MODULE_NAME_STR Py_STRINGIFY(MODULE_NAME)
 #define MODINIT_FUNC_NAME RESOLVE_MODINIT_FUNC_NAME(MODULE_NAME)
 
@@ -3326,6 +3326,7 @@ error:
 static struct PyModuleDef_Slot module_slots[] = {
     {Py_mod_exec, module_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL},
 };
 

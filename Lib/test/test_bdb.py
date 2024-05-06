@@ -228,6 +228,10 @@ class Tracer(Bdb):
         self.process_event('exception', frame)
         self.next_set_method()
 
+    def user_opcode(self, frame):
+        self.process_event('opcode', frame)
+        self.next_set_method()
+
     def do_clear(self, arg):
         # The temporary breakpoints are deleted in user_line().
         bp_list = [self.currentbp]
@@ -366,7 +370,7 @@ class Tracer(Bdb):
         set_method = getattr(self, 'set_' + set_type)
 
         # The following set methods give back control to the tracer.
-        if set_type in ('step', 'continue', 'quit'):
+        if set_type in ('step', 'stepinstr', 'continue', 'quit'):
             set_method()
             return
         elif set_type in ('next', 'return'):
@@ -609,6 +613,15 @@ class StateTestCase(BaseTestCase):
                 ]
                 with TracerRun(self) as tracer:
                     tracer.runcall(tfunc_main)
+
+    def test_stepinstr(self):
+        self.expect_set = [
+            ('line',   2, 'tfunc_main'),  ('stepinstr', ),
+            ('opcode', 2, 'tfunc_main'),  ('next', ),
+            ('line',   3, 'tfunc_main'),  ('quit', ),
+        ]
+        with TracerRun(self) as tracer:
+            tracer.runcall(tfunc_main)
 
     def test_next(self):
         self.expect_set = [
