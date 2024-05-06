@@ -51,20 +51,18 @@ except ImportError:
 def compute_powers(w, base, more_than, show=False):
     seen = set()
     need = set()
-
-    def inner(w):
+    ws = {w}
+    while ws:
+        w = ws.pop()
         if w in seen or w <= more_than:
-            return
+            continue
         seen.add(w)
         lo = w >> 1
-        hi = w - lo
-        # only _nned_ lo here; some other path may, or may not,
-        # need hi
+        # only _need_ lo here; some other path may, or may not, need hi
         need.add(lo)
-        inner(lo)
-        if lo != hi:
-            inner(hi)
-    inner(w)
+        ws.add(lo)
+        if w & 1:
+            ws.add(lo + 1)
 
     d = {}
     if not need:
@@ -85,8 +83,8 @@ def compute_powers(w, base, more_than, show=False):
             assert lo in d
             if show:
                 print("square at", this)
-            # Multiplying a bigint by itself (same object!) is
-            # about twice as fast in CPython.
+            # Multiplying a bigint by itself (same object!) is about twice
+            # as fast in CPython.
             sq = d[lo] * d[lo]
             if hi != lo:
                 assert hi == lo + 1
