@@ -83,12 +83,6 @@ struct _import_state {
        This is initialized lazily in PyState_AddModule(), which is also
        where modules get added. */
     PyObject *modules_by_index;
-#ifdef Py_GIL_DISABLED
-    /* This list contains GIL slots (see Py_mod_gil) for modules that may be
-       reinitialized by reload_singlephase_extension(). It is indexed the same
-       way as modules_by_index. */
-    PyObject *module_gil_by_index;
-#endif
     /* importlib module._bootstrap */
     PyObject *importlib;
     /* override for config->use_frozen_modules (for tests)
@@ -213,12 +207,6 @@ extern int _PyImport_CheckSubinterpIncompatibleExtensionAllowed(
 PyAPI_FUNC(int) _PyImport_ClearExtension(PyObject *name, PyObject *filename);
 
 #ifdef Py_GIL_DISABLED
-// Store an association between module and gil (which should be one of the
-// values for the Py_mod_gil module slot) in the current interpreter.
-//
-// Only for use on modules with md_def->m_size == -1.
-extern int _PyImport_SetModuleGIL(PyObject *module, void *gil);
-
 // Assuming that the GIL is enabled from a call to
 // _PyEval_EnableGILTransient(), resolve the transient request depending on the
 // state of the module argument:

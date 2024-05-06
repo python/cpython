@@ -847,9 +847,6 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
 
     assert(interp->imports.modules == NULL);
     assert(interp->imports.modules_by_index == NULL);
-#ifdef Py_GIL_DISABLED
-    assert(interp->imports.module_gil_by_index == NULL);
-#endif
     assert(interp->imports.importlib == NULL);
     assert(interp->imports.import_func == NULL);
 
