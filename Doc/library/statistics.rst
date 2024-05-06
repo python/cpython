@@ -1103,7 +1103,7 @@ which is called the *bandwidth*.
    from random import choice, random
 
    def kde_normal(data, h):
-       "Create a continous probability distribution from discrete samples."
+       "Create a continuous probability distribution from discrete samples."
 
        # Smooth the data with a normal distribution kernel scaled by h.
        K_h = NormalDist(0.0, h)
@@ -1146,7 +1146,7 @@ the data to produce 100 new selections:
 
     >>> new_selections = [rand() for i in range(100)]
 
-Determine the is probability of a new selection being below ``2.0``:
+Determine the probability of a new selection being below ``2.0``:
 
 .. doctest::
 
