@@ -1165,11 +1165,21 @@ class SSLSocket(socket):
 
     @_sslcopydoc
     def get_verified_chain(self):
-        return self._sslobj.get_verified_chain()
+        chain = self._sslobj.get_verified_chain()
+
+        if chain is None:
+            return []
+
+        return [cert.public_bytes(_ssl.ENCODING_DER) for cert in chain]
 
     @_sslcopydoc
     def get_unverified_chain(self):
-        return self._sslobj.get_unverified_chain()
+        chain = self._sslobj.get_unverified_chain()
+
+        if chain is None:
+            return []
+
+        return [cert.public_bytes(_ssl.ENCODING_DER) for cert in chain]
 
     @_sslcopydoc
     def selected_npn_protocol(self):
