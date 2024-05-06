@@ -188,6 +188,7 @@ struct _ts {
 
     PyObject *previous_executor;
 
+    uint64_t dict_global_version;
 };
 
 #ifdef Py_DEBUG
