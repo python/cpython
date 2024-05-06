@@ -913,7 +913,8 @@ Other constructors, all class methods:
 
    .. deprecated:: 3.12
 
-      Use :meth:`datetime.now` with :attr:`UTC` instead.
+      Use :meth:`datetime.now` with :attr:`UTC` instead. To maintain compatibility
+      :meth:`datetime.datetime.now(datetime.UTC).replace(tzinfo=None)` may be used.
 
 
 .. classmethod:: datetime.fromtimestamp(timestamp, tz=None)
@@ -985,7 +986,8 @@ Other constructors, all class methods:
 
    .. deprecated:: 3.12
 
-      Use :meth:`datetime.fromtimestamp` with :attr:`UTC` instead.
+      Use :meth:`datetime.fromtimestamp` with :attr:`UTC` instead. To maintain
+      compatibility :meth:`datetime.fromtimestamp`without :attr:`UTC` may be used.
 
 
 .. classmethod:: datetime.fromordinal(ordinal)
