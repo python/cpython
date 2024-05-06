@@ -85,8 +85,8 @@ class IdleConfParserTest(unittest.TestCase):
         self.assertEqual(parser.sections(), [])
 
     def test_load_file(self):
-        # Borrow test/cfgparser.1 from test_configparser.
-        config_path = findfile('cfgparser.1')
+        # Borrow test/configdata/cfgparser.1 from test_configparser.
+        config_path = findfile('cfgparser.1', subdir='configdata')
         parser = config.IdleConfParser(config_path)
         parser.Load()
 
@@ -274,8 +274,8 @@ class IdleConfTest(unittest.TestCase):
                 conf.CreateConfigHandlers()
 
         # Check keys are equal
-        self.assertCountEqual(conf.defaultCfg.keys(), conf.config_types)
-        self.assertCountEqual(conf.userCfg.keys(), conf.config_types)
+        self.assertCountEqual(conf.defaultCfg, conf.config_types)
+        self.assertCountEqual(conf.userCfg, conf.config_types)
 
         # Check conf parser are correct type
         for default_parser in conf.defaultCfg.values():
@@ -294,8 +294,8 @@ class IdleConfTest(unittest.TestCase):
     def test_load_cfg_files(self):
         conf = self.new_config(_utest=True)
 
-        # Borrow test/cfgparser.1 from test_configparser.
-        config_path = findfile('cfgparser.1')
+        # Borrow test/configdata/cfgparser.1 from test_configparser.
+        config_path = findfile('cfgparser.1', subdir='configdata')
         conf.defaultCfg['foo'] = config.IdleConfParser(config_path)
         conf.userCfg['foo'] = config.IdleUserConfParser(config_path)
 

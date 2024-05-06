@@ -89,6 +89,7 @@ class AuditTest(unittest.TestCase):
         )
 
     def test_unraisablehook(self):
+        import_helper.import_module("_testcapi")
         returncode, events, stderr = self.run_python("test_unraisablehook")
         if returncode:
             self.fail(stderr)
@@ -208,6 +209,8 @@ class AuditTest(unittest.TestCase):
         actual = [(ev[0], ev[2]) for ev in events]
         expected = [
             ("_thread.start_new_thread", "(<test_func>, (), None)"),
+            ("test.test_func", "()"),
+            ("_thread.start_joinable_thread", "(<test_func>, 1, None)"),
             ("test.test_func", "()"),
         ]
 

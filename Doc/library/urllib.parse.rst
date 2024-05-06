@@ -729,8 +729,8 @@ task isn't already covered by the URL parsing functions above.
    .. versionchanged:: 3.2
       *query* supports bytes and string objects.
 
-   .. versionadded:: 3.5
-      *quote_via* parameter.
+   .. versionchanged:: 3.5
+      Added the *quote_via* parameter.
 
 
 .. seealso::

@@ -6,6 +6,7 @@ preserve
 #  include "pycore_gc.h"          // PyGC_Head
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 
 PyDoc_STRVAR(cmath_acos__doc__,
 "acos($module, z, /)\n"
@@ -981,4 +982,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=96a5c4ae198dd5bf input=a9049054013a1b77]*/
+/*[clinic end generated code: output=364093af55bfe53f input=a9049054013a1b77]*/

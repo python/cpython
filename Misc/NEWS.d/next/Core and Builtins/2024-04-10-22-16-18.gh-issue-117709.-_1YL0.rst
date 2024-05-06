@@ -1,0 +1,3 @@
+Speed up calls to :func:`str` with positional-only argument,
+by using the :pep:`590` ``vectorcall`` calling convention.
+Patch by Erlend Aasland.

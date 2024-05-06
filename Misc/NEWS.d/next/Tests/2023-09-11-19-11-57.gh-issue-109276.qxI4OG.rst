@@ -1,6 +1,0 @@
-libregrtest now calls :func:`random.seed()` before running each test file
-when ``-r/--randomize`` command line option is used. Moreover, it's also
-called in worker processes.  It should help to make tests more
-deterministic. Previously, it was only called once in the main process before
-running all test files and it was not called in worker processes.  Patch by
-Victor Stinner.

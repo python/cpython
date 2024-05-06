@@ -1,3 +1,0 @@
-Modify the bytecode so that the actual callable for a :opcode:`CALL` is at a
-consistent position on the stack (regardless of whether or not
-bound-method-calling optimizations are active).

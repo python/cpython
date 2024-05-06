@@ -1,3 +1,0 @@
-Fix some tokens in the grammar that were incorrectly marked as soft
-keywords. Also fix some repeated rule names and ensure that repeated rules
-are not allowed. Patch by Pablo Galindo

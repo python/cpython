@@ -1,1 +1,0 @@
-Add support of :class:`types.SimpleNamespace` in :func:`copy.replace`.

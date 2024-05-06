@@ -1,4 +1,0 @@
-Add :c:func:`PyDict_ContainsString` function: same as
-:c:func:`PyDict_Contains`, but *key* is specified as a :c:expr:`const char*`
-UTF-8 encoded bytes string, rather than a :c:expr:`PyObject*`.
-Patch by Victor Stinner.

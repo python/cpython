@@ -247,17 +247,17 @@ def _get_main_module_details(error=ImportError):
         sys.modules[main_name] = saved_main
 
 
-def _get_code_from_file(run_name, fname):
+def _get_code_from_file(fname):
     # Check for a compiled file first
     from pkgutil import read_code
-    decoded_path = os.path.abspath(os.fsdecode(fname))
-    with io.open_code(decoded_path) as f:
+    code_path = os.path.abspath(fname)
+    with io.open_code(code_path) as f:
         code = read_code(f)
     if code is None:
         # That didn't work, so try it as normal source code
-        with io.open_code(decoded_path) as f:
+        with io.open_code(code_path) as f:
             code = compile(f.read(), fname, 'exec')
-    return code, fname
+    return code
 
 def run_path(path_name, init_globals=None, run_name=None):
     """Execute code located at the specified filesystem location.
@@ -279,12 +279,13 @@ def run_path(path_name, init_globals=None, run_name=None):
     pkg_name = run_name.rpartition(".")[0]
     from pkgutil import get_importer
     importer = get_importer(path_name)
+    path_name = os.fsdecode(path_name)
     if isinstance(importer, type(None)):
         # Not a valid sys.path entry, so run the code directly
         # execfile() doesn't help as we want to allow compiled files
-        code, fname = _get_code_from_file(run_name, path_name)
+        code = _get_code_from_file(path_name)
         return _run_module_code(code, init_globals, run_name,
-                                pkg_name=pkg_name, script_name=fname)
+                                pkg_name=pkg_name, script_name=path_name)
     else:
         # Finder is defined for path, so add it to
         # the start of sys.path

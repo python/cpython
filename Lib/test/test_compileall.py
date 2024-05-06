@@ -362,6 +362,31 @@ class CompileallTestsBase:
             str(err, encoding=sys.getdefaultencoding())
         )
 
+    def test_strip_only_invalid(self):
+        fullpath = ["test", "build", "real", "path"]
+        path = os.path.join(self.directory, *fullpath)
+        os.makedirs(path)
+        script = script_helper.make_script(path, "test", "1 / 0")
+        bc = importlib.util.cache_from_source(script)
+        stripdir = os.path.join(self.directory, *(fullpath[:2] + ['fake']))
+        with support.captured_stdout() as out:
+            compileall.compile_dir(path, quiet=True, stripdir=stripdir)
+        self.assertIn("not a valid prefix", out.getvalue())
+        rc, out, err = script_helper.assert_python_failure(bc)
+        expected_not_in = os.path.join(self.directory, *fullpath[2:])
+        self.assertIn(
+            path,
+            str(err, encoding=sys.getdefaultencoding())
+        )
+        self.assertNotIn(
+            expected_not_in,
+            str(err, encoding=sys.getdefaultencoding())
+        )
+        self.assertNotIn(
+            stripdir,
+            str(err, encoding=sys.getdefaultencoding())
+        )
+
     def test_prepend_only(self):
         fullpath = ["test", "build", "real", "path"]
         path = os.path.join(self.directory, *fullpath)
@@ -477,19 +502,25 @@ class EncodingTest(unittest.TestCase):
         self.directory = tempfile.mkdtemp()
         self.source_path = os.path.join(self.directory, '_test.py')
         with open(self.source_path, 'w', encoding='utf-8') as file:
-            file.write('# -*- coding: utf-8 -*-\n')
-            file.write('print u"\u20ac"\n')
+            # Intentional syntax error: bytes can only contain
+            # ASCII literal characters.
+            file.write('b"\u20ac"')
 
     def tearDown(self):
         shutil.rmtree(self.directory)
 
     def test_error(self):
-        try:
-            orig_stdout = sys.stdout
-            sys.stdout = io.TextIOWrapper(io.BytesIO(),encoding='ascii')
-            compileall.compile_dir(self.directory)
-        finally:
-            sys.stdout = orig_stdout
+        buffer = io.TextIOWrapper(io.BytesIO(), encoding='ascii')
+        with contextlib.redirect_stdout(buffer):
+            compiled = compileall.compile_dir(self.directory)
+        self.assertFalse(compiled)  # should not be successful
+        buffer.seek(0)
+        res = buffer.read()
+        self.assertIn(
+            'SyntaxError: bytes can only contain ASCII literal characters',
+            res,
+        )
+        self.assertNotIn('UnicodeEncodeError', res)
 
 
 class CommandLineTestsBase:
@@ -952,7 +983,7 @@ class CommandLineTestsNoSourceEpoch(CommandLineTestsBase,
 
 
 
-@unittest.skipUnless(hasattr(os, 'link'), 'requires os.link')
+@os_helper.skip_unless_hardlink
 class HardlinkDedupTestsBase:
     # Test hardlink_dupes parameter of compileall.compile_dir()
 

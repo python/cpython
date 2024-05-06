@@ -3,6 +3,7 @@ preserve
 [clinic start generated code]*/
 
 #include "pycore_abstract.h"      // _PyNumber_Index()
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 
 PyDoc_STRVAR(_testinternalcapi_benchmark_locks__doc__,
 "benchmark_locks($module, num_threads, use_pymutex=True,\n"
@@ -71,4 +72,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=97c85dff601fed4b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=105105d759c0c271 input=a9049054013a1b77]*/

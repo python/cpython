@@ -269,8 +269,9 @@ DateTime Objects
       Write the XML-RPC encoding of this :class:`DateTime` item to the *out* stream
       object.
 
-   It also supports certain of Python's built-in operators through rich comparison
-   and :meth:`__repr__` methods.
+   It also supports certain of Python's built-in operators through
+   :meth:`rich comparison <object.__lt__>` and :meth:`~object.__repr__`
+   methods.
 
 A working example follows. The server code::
 
@@ -334,8 +335,8 @@ Binary Objects
       which was the de facto standard base64 specification when the
       XML-RPC spec was written.
 
-   It also supports certain of Python's built-in operators through :meth:`__eq__`
-   and :meth:`__ne__` methods.
+   It also supports certain of Python's built-in operators through
+   :meth:`~object.__eq__` and :meth:`~object.__ne__` methods.
 
 Example usage of the binary objects.  We're going to transfer an image over
 XMLRPC::

@@ -1,1 +1,0 @@
-Remove deprecated in 3.11 ``webbrowser.MacOSXOSAScript._name`` attribute.

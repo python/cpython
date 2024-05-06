@@ -98,6 +98,7 @@ class ProcessPoolExecutorTest(ExecutorTest):
 
         # explicitly destroy the object to ensure that EventfulGCObj.__del__()
         # is called while manager is still running.
+        support.gc_collect()
         obj = None
         support.gc_collect()
 
@@ -115,6 +116,7 @@ class ProcessPoolExecutorTest(ExecutorTest):
         for _ in range(job_count):
             sem.release()
 
+    @support.requires_gil_enabled("gh-117344: test is flaky without the GIL")
     def test_idle_process_reuse_one(self):
         executor = self.executor
         assert executor._max_workers >= 4
@@ -194,21 +196,21 @@ class ProcessPoolExecutorTest(ExecutorTest):
 
         context = self.get_context()
 
-        # gh-109047: Mock the threading.start_new_thread() function to inject
+        # gh-109047: Mock the threading.start_joinable_thread() function to inject
         # RuntimeError: simulate the error raised during Python finalization.
         # Block the second creation: create _ExecutorManagerThread, but block
         # QueueFeederThread.
-        orig_start_new_thread = threading._start_new_thread
+        orig_start_new_thread = threading._start_joinable_thread
         nthread = 0
-        def mock_start_new_thread(func, *args):
+        def mock_start_new_thread(func, *args, **kwargs):
             nonlocal nthread
             if nthread >= 1:
                 raise RuntimeError("can't create new thread at "
                                    "interpreter shutdown")
             nthread += 1
-            return orig_start_new_thread(func, *args)
+            return orig_start_new_thread(func, *args, **kwargs)
 
-        with support.swap_attr(threading, '_start_new_thread',
+        with support.swap_attr(threading, '_start_joinable_thread',
                                mock_start_new_thread):
             executor = self.executor_type(max_workers=2, mp_context=context)
             with executor:

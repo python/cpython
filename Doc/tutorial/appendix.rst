@@ -10,6 +10,28 @@ Appendix
 Interactive Mode
 ================
 
+There are two variants of the interactive :term:`REPL`.  The classic
+basic interpreter is supported on all platforms with minimal line
+control capabilities.
+
+On Unix-like systems (e.g. Linux or macOS) with :mod:`curses` and
+:mod:`readline` support, a new interactive shell is used by default.
+This one supports color, multiline editing, history browsing, and
+paste mode.  To disable color, see :ref:`using-on-controlling-color` for
+details.  Function keys provide some additional functionality.
+:kbd:`F1` enters the interactive help browser :mod:`pydoc`.
+:kbd:`F2` allows for browsing command-line history without output nor the
+:term:`>>>` and :term:`...` prompts. :kbd:`F3` enters "paste mode", which
+makes pasting larger blocks of code easier. Press :kbd:`F3` to return to
+the regular prompt.
+
+When using the new interactive shell, exit the shell by typing :kbd:`exit`
+or :kbd:`quit`. Adding call parentheses after those commands is not
+required.
+
+If the new interactive shell is not desired, it can be disabled via
+the :envvar:`PYTHON_BASIC_REPL` environment variable.
+
 .. _tut-error:
 
 Error Handling
@@ -20,7 +42,7 @@ In interactive mode, it then returns to the primary prompt; when input came from
 a file, it exits with a nonzero exit status after printing the stack trace.
 (Exceptions handled by an :keyword:`except` clause in a :keyword:`try` statement
 are not errors in this context.)  Some errors are unconditionally fatal and
-cause an exit with a nonzero exit; this applies to internal inconsistencies and
+cause an exit with a nonzero exit status; this applies to internal inconsistencies and
 some cases of running out of memory.  All error messages are written to the
 standard error stream; normal output from executed commands is written to
 standard output.

@@ -31,18 +31,6 @@ PyAPI_FUNC(PyObject*) _Py_CheckFunctionResult(
     PyObject *result,
     const char *where);
 
-/* Convert keyword arguments from the FASTCALL (stack: C array, kwnames: tuple)
-   format to a Python dictionary ("kwargs" dict).
-
-   The type of kwnames keys is not checked. The final function getting
-   arguments is responsible to check if all keys are strings, for example using
-   PyArg_ParseTupleAndKeywords() or PyArg_ValidateKeywordArguments().
-
-   Duplicate keys are merged using the last value. If duplicate keys must raise
-   an exception, the caller is responsible to implement an explicit keys on
-   kwnames. */
-extern PyObject* _PyStack_AsDict(PyObject *const *values, PyObject *kwnames);
-
 extern PyObject* _PyObject_Call_Prepend(
     PyThreadState *tstate,
     PyObject *callable,
@@ -73,13 +61,6 @@ extern PyObject * _PyObject_CallMethodFormat(
 PyAPI_FUNC(PyObject*) _PyObject_CallMethod(
     PyObject *obj,
     PyObject *name,
-    const char *format, ...);
-
-/* Like PyObject_CallMethod(), but expect a _Py_Identifier*
-   as the method name. */
-extern PyObject* _PyObject_CallMethodId(
-    PyObject *obj,
-    _Py_Identifier *name,
     const char *format, ...);
 
 extern PyObject* _PyObject_CallMethodIdObjArgs(

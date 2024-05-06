@@ -805,13 +805,13 @@ static int
 heapmanaged_traverse(HeapCTypeObject *self, visitproc visit, void *arg)
 {
     Py_VISIT(Py_TYPE(self));
-    return _PyObject_VisitManagedDict((PyObject *)self, visit, arg);
+    return PyObject_VisitManagedDict((PyObject *)self, visit, arg);
 }
 
 static int
 heapmanaged_clear(HeapCTypeObject *self)
 {
-    _PyObject_ClearManagedDict((PyObject *)self);
+    PyObject_ClearManagedDict((PyObject *)self);
     return 0;
 }
 
@@ -819,7 +819,7 @@ static void
 heapmanaged_dealloc(HeapCTypeObject *self)
 {
     PyTypeObject *tp = Py_TYPE(self);
-    _PyObject_ClearManagedDict((PyObject *)self);
+    PyObject_ClearManagedDict((PyObject *)self);
     PyObject_GC_UnTrack(self);
     PyObject_GC_Del(self);
     Py_DECREF(tp);

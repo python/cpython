@@ -74,6 +74,10 @@ with ``import`` (followed by space or tab) are executed.
    Limiting a code chunk to a single line is a deliberate measure
    to discourage putting anything more complex here.
 
+.. versionchanged:: 3.13
+   The :file:`.pth` files are now decoded by UTF-8 at first and then by the
+   :term:`locale encoding` if it fails.
+
 .. index::
    single: package
    triple: path; configuration; file
@@ -199,7 +203,7 @@ Module contents
    :file:`~/Library/Python/{X.Y}` for macOS framework builds, and
    :file:`{%APPDATA%}\\Python` for Windows.  This value is used to
    compute the installation directories for scripts, data files, Python modules,
-   etc. for the user installation scheme.
+   etc. for the :ref:`user installation scheme <sysconfig-user-scheme>`.
    See also :envvar:`PYTHONUSERBASE`.
 
 
@@ -266,11 +270,11 @@ If it is called without arguments, it will print the contents of
 :data:`USER_BASE` and whether the directory exists, then the same thing for
 :data:`USER_SITE`, and finally the value of :data:`ENABLE_USER_SITE`.
 
-.. cmdoption:: --user-base
+.. option:: --user-base
 
    Print the path to the user base directory.
 
-.. cmdoption:: --user-site
+.. option:: --user-site
 
    Print the path to the user site-packages directory.
 

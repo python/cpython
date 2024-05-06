@@ -1,2 +1,0 @@
-Fixes :func:`~os.stat` and related functions on file systems that do not
-support file ID requests. This includes FAT32 and exFAT.

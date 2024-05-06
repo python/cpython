@@ -6,6 +6,7 @@ preserve
 #  include "pycore_gc.h"          // PyGC_Head
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
+#include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 PyDoc_STRVAR(SHA256Type_copy__doc__,
 "copy($self, /)\n"
@@ -22,7 +23,7 @@ SHA256Type_copy_impl(SHA256object *self, PyTypeObject *cls);
 static PyObject *
 SHA256Type_copy(SHA256object *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    if (nargs) {
+    if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "copy() takes no arguments");
         return NULL;
     }
@@ -44,7 +45,7 @@ SHA512Type_copy_impl(SHA512object *self, PyTypeObject *cls);
 static PyObject *
 SHA512Type_copy(SHA512object *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    if (nargs) {
+    if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "copy() takes no arguments");
         return NULL;
     }
@@ -436,4 +437,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=1242ccc50bcefe98 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b46da764024b1764 input=a9049054013a1b77]*/

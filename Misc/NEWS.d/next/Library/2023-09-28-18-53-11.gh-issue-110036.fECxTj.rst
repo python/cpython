@@ -1,5 +1,0 @@
-On Windows, multiprocessing ``Popen.terminate()`` now catchs
-:exc:`PermissionError` and get the process exit code. If the process is
-still running, raise again the :exc:`PermissionError`. Otherwise, the
-process terminated as expected: store its exit code. Patch by Victor
-Stinner.

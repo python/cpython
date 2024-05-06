@@ -1,4 +1,3 @@
-import _ctypes_test
 import ctypes
 import sys
 import unittest
@@ -7,6 +6,8 @@ from ctypes import (CDLL, Structure, Array, CFUNCTYPE,
                     c_char, c_wchar, c_byte, c_char_p, c_wchar_p,
                     c_short, c_int, c_long, c_longlong, c_void_p,
                     c_float, c_double, c_longdouble)
+from test.support import import_helper
+_ctypes_test = import_helper.import_module("_ctypes_test")
 from _ctypes import _Pointer,  _SimpleCData
 
 
@@ -46,15 +47,15 @@ class FunctionTestCase(unittest.TestCase):
                 _type_ = "i"
 
         with self.assertRaises(TypeError):
-            class X(object, _Pointer):
+            class X2(object, _Pointer):
                 pass
 
         with self.assertRaises(TypeError):
-            class X(object, _SimpleCData):
+            class X3(object, _SimpleCData):
                 _type_ = "i"
 
         with self.assertRaises(TypeError):
-            class X(object, Structure):
+            class X4(object, Structure):
                 _fields_ = []
 
     def test_c_char_parm(self):
