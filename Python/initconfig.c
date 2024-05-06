@@ -60,7 +60,7 @@ static const PyConfigSpec PYCONFIG_SPEC[] = {
     SPEC(hash_seed, ULONG),
     SPEC(faulthandler, BOOL),
     SPEC(tracemalloc, UINT),
-    SPEC(perf_profiling, BOOL),
+    SPEC(perf_profiling, UINT),
     SPEC(import_time, BOOL),
     SPEC(code_debug_ranges, BOOL),
     SPEC(show_ref_count, BOOL),
