@@ -1,11 +1,13 @@
 import unittest
 
 from threading import Thread
-from multiprocessing.dummy import Pool
 from unittest import TestCase
 
-from test.support import is_wasi
+from test.support import threading_helper, import_helper
 
+
+multiprocessing_dummy = import_helper.import_module('multiprocessing.dummy')
+Pool = multiprocessing_dummy.Pool
 
 NTHREADS = 6
 BOTTOM = 0
@@ -15,7 +17,7 @@ ITERS = 100
 class A:
     attr = 1
 
-@unittest.skipIf(is_wasi, "WASI has no threads.")
+@threading_helper.requires_working_threading()
 class TestType(TestCase):
     def test_attr_cache(self):
         def read(id0):
