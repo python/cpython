@@ -110,7 +110,7 @@ should_intern_string(PyObject *o)
     // unless we've disabled immortalizing objects that use deferred reference
     // counting.
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    if (!interp->gc.immortalize.enable_on_thread_created) {
+    if (interp->gc.immortalize.enable_on_thread_created) {
         return 1;
     }
 #endif
