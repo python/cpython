@@ -658,6 +658,7 @@ extern PyObject *_PyType_NewManagedObject(PyTypeObject *type);
 extern PyTypeObject* _PyType_CalculateMetaclass(PyTypeObject *, PyObject *);
 extern PyObject* _PyType_GetDocFromInternalDoc(const char *, const char *);
 extern PyObject* _PyType_GetTextSignatureFromInternalDoc(const char *, const char *, int);
+extern int _PyObject_SetAttributeErrorContext(PyObject *v, PyObject* name);
 
 void _PyObject_InitInlineValues(PyObject *obj, PyTypeObject *tp);
 extern int _PyObject_StoreInstanceAttribute(PyObject *obj,
