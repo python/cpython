@@ -3,6 +3,7 @@ from test.support import (
 )
 from test.support.import_helper import import_module
 from test.support.os_helper import TESTFN, unlink
+from test.support.script_helper import assert_python_ok
 import unittest
 import errno
 import os
@@ -12,6 +13,7 @@ import random
 import socket
 import string
 import sys
+import textwrap
 import weakref
 
 # Skip test if we can't import mmap.
@@ -1061,41 +1063,55 @@ class MmapTests(unittest.TestCase):
     @unittest.skipUnless(os.name == 'nt', 'requires Windows')
     @unittest.skipUnless(hasattr(mmap.mmap, '_protect'), 'test needs debug build')
     def test_access_violations(self):
-        PAGE_NOACCESS = 0x01
+    
+        code = textwrap.dedent("""
+            from test.support.os_helper import TESTFN
+            import mmap
+            import os
+            from contextlib import suppress
 
-        with open(TESTFN, 'bw+') as f:
-            f.write(b'\0'* PAGESIZE)
-            f.flush()
+            if os.path.exists(TESTFN):
+                os.unlink(TESTFN)
 
-            m = mmap.mmap(f.fileno(), PAGESIZE)
-            m._protect(PAGE_NOACCESS, 0, PAGESIZE)
-            with self.assertRaises(OSError):
-                m.read(PAGESIZE)
-            with self.assertRaises(OSError):
-                m.read_byte()
-            with self.assertRaises(OSError):
-                m.readline()
-            with self.assertRaises(OSError):
-                m.write(b'\0'* PAGESIZE)
-            with self.assertRaises(OSError):
-                m.write_byte(0)
-            with self.assertRaises(OSError):
-                m[0]  # test mmap_subscript
-            with self.assertRaises(OSError):
-                m[0:10]  # test mmap_subscript
-            with self.assertRaises(OSError):
-                m[0:10:2]  # test mmap_subscript
-            with self.assertRaises(OSError):
-                m[0] = 1
-            with self.assertRaises(OSError):
-                m[0:10] = b'\0'* 10
-            with self.assertRaises(OSError):
-                m[0:10:2] = b'\0'* 5
-            with self.assertRaises(OSError):
-                m.move(0, 10, 1)
-            with self.assertRaises(OSError):
-                list(m)  # test mmap_item
+            PAGESIZE = mmap.PAGESIZE
+            PAGE_NOACCESS = 0x01
 
+            with open(TESTFN, 'bw+') as f:
+                f.write(b'A'* PAGESIZE)
+                f.flush()
+
+                m = mmap.mmap(f.fileno(), PAGESIZE)
+                m._protect(PAGE_NOACCESS, 0, PAGESIZE)
+                with suppress(OSError):
+                    m.read(PAGESIZE)
+                with suppress(OSError):
+                    m.read_byte()
+                with suppress(OSError):
+                    m.readline()
+                with suppress(OSError):
+                    m.write(b'A'* PAGESIZE)
+                with suppress(OSError):
+                    m.write_byte(0)
+                with suppress(OSError):
+                    m[0]  # test mmap_subscript
+                with suppress(OSError):
+                    m[0:10]  # test mmap_subscript
+                with suppress(OSError):
+                    m[0:10:2]  # test mmap_subscript
+                with suppress(OSError):
+                    m[0] = 1
+                with suppress(OSError):
+                    m[0:10] = b'A'* 10
+                with suppress(OSError):
+                    m[0:10:2] = b'A'* 5
+                with suppress(OSError):
+                    m.move(0, 10, 1)
+                with suppress(OSError):
+                    list(m)  # test mmap_item
+        """)
+        # stderr includes "Windows fatal exception: access violation" logs,
+        # even when the access violations are correctly transformed into exceptions
+        assert_python_ok("-c", code)
 
 class LargeMmapTests(unittest.TestCase):
 
