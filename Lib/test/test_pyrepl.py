@@ -15,9 +15,9 @@ from test.support.import_helper import import_module
 # Optionally test pyrepl.  This currently requires that the
 # 'curses' resource be given on the regrtest command line using the -u
 # option.  Additionally, we need to attempt to import curses and readline.
-requires('curses')
-curses = import_module('curses')
-readline = import_module('readline')
+requires("curses")
+curses = import_module("curses")
+readline = import_module("readline")
 
 from _pyrepl.console import Console, Event
 from _pyrepl.readline import ReadlineAlikeReader, ReadlineConfig
