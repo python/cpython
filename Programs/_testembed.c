@@ -652,7 +652,7 @@ static int test_init_from_config(void)
     config.tracemalloc = 2;
 
     putenv("PYTHONPROFILEIMPORTTIME=0");
-    config.import_time = 1;
+    config.import_time = 0;
 
     putenv("PYTHONNODEBUGRANGES=0");
     config.code_debug_ranges = 0;
