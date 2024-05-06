@@ -1,0 +1,62 @@
+{% extends "!search.html" %}
+{% block extrahead %}
+    {{ super() }}
+    <meta name="robots" content="noindex">
+    <script type="text/javascript">
+        const GLOSSARY_PAGE = 'glossary.html';
+
+        document.addEventListener('DOMContentLoaded', function() {
+          fetch('_static/glossary.json')
+            .then(function(response) {
+              if (response.ok) {
+                return response.json();
+              } else {
+                throw new Error('Failed to fetch glossary.json');
+              }
+            })
+            .then(function(glossary) {
+              const RESULT_TEMPLATE = '<div style="display: none" class="admonition seealso" id="glossary-result">' +
+                                      '  <p class="topic-title">' +
+                                      '    <a class="glossary-title" href="#"></a>' +
+                                      '  </p>' +
+                                      '  <div class="glossary-body"></div>' +
+                                      '</div>';
+              let searchResults = document.getElementById('search-results');
+              searchResults.insertAdjacentHTML('afterbegin', RESULT_TEMPLATE);
+
+              const params = new URLSearchParams(document.location.search).get("q");
+              if (params) {
+                const searchParam = params.toLowerCase();
+                const glossaryItem = glossary[searchParam];
+                if (glossaryItem) {
+                  let resultDiv = document.getElementById('glossary-result');
+
+                  // set up the title text with a link to the glossary page
+                  let glossaryTitle = resultDiv.querySelector('.glossary-title');
+                  glossaryTitle.textContent = 'Glossary: ' + glossaryItem.title;
+                  const linkTarget = searchParam.replace(/ /g, '-');
+                  glossaryTitle.href = GLOSSARY_PAGE + '#term-' + linkTarget;
+
+                  // rewrite any anchor links (to other glossary terms)
+                  // to have a full reference to the glossary page
+                  let body = document.createElement('div');
+                  body.innerHTML = glossaryItem.body;
+                  const anchorLinks = body.querySelectorAll('a[href^="#"]');
+                  anchorLinks.forEach(function(link) {
+                    const currentUrl = link.getAttribute('href');
+                    link.href = GLOSSARY_PAGE + currentUrl;
+                  });
+                  resultDiv.querySelector('.glossary-body').appendChild(body);
+
+                  resultDiv.style.display = '';
+                } else {
+                  document.getElementById('glossary-result').style.display = 'none';
+                }
+              }
+            })
+            .catch(function(error) {
+              console.error(error);
+            });
+        });
+    </script>
+{% endblock %}

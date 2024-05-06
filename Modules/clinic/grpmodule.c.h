@@ -11,23 +11,21 @@ PyDoc_STRVAR(grp_getgrgid__doc__,
 "If id is not valid, raise KeyError.");
 
 #define GRP_GETGRGID_METHODDEF    \
-    {"getgrgid", (PyCFunction)grp_getgrgid, METH_FASTCALL|METH_KEYWORDS, grp_getgrgid__doc__},
+    {"getgrgid", (PyCFunction)(void(*)(void))grp_getgrgid, METH_VARARGS|METH_KEYWORDS, grp_getgrgid__doc__},
 
 static PyObject *
 grp_getgrgid_impl(PyObject *module, PyObject *id);
 
 static PyObject *
-grp_getgrgid(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+grp_getgrgid(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static const char * const _keywords[] = {"id", NULL};
-    static _PyArg_Parser _parser = {"O:getgrgid", _keywords, 0};
+    static char *_keywords[] = {"id", NULL};
     PyObject *id;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &id)) {
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O:getgrgid", _keywords,
+        &id))
         goto exit;
-    }
     return_value = grp_getgrgid_impl(module, id);
 
 exit:
@@ -43,23 +41,21 @@ PyDoc_STRVAR(grp_getgrnam__doc__,
 "If name is not valid, raise KeyError.");
 
 #define GRP_GETGRNAM_METHODDEF    \
-    {"getgrnam", (PyCFunction)grp_getgrnam, METH_FASTCALL|METH_KEYWORDS, grp_getgrnam__doc__},
+    {"getgrnam", (PyCFunction)(void(*)(void))grp_getgrnam, METH_VARARGS|METH_KEYWORDS, grp_getgrnam__doc__},
 
 static PyObject *
 grp_getgrnam_impl(PyObject *module, PyObject *name);
 
 static PyObject *
-grp_getgrnam(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+grp_getgrnam(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static const char * const _keywords[] = {"name", NULL};
-    static _PyArg_Parser _parser = {"U:getgrnam", _keywords, 0};
+    static char *_keywords[] = {"name", NULL};
     PyObject *name;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &name)) {
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "U:getgrnam", _keywords,
+        &name))
         goto exit;
-    }
     return_value = grp_getgrnam_impl(module, name);
 
 exit:
@@ -86,4 +82,4 @@ grp_getgrall(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return grp_getgrall_impl(module);
 }
-/*[clinic end generated code: output=0ccba09e8ec14c81 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=81f180beb67fc585 input=a9049054013a1b77]*/

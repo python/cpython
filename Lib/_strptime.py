@@ -10,6 +10,7 @@ FUNCTIONS:
     strptime -- Calculates the time struct represented by the passed-in string
 
 """
+import os
 import time
 import locale
 import calendar
@@ -182,7 +183,7 @@ class TimeRE(dict):
             self.locale_time = LocaleTime()
         base = super()
         base.__init__({
-            # The " \d" part of the regex is to make %c from ANSI C work
+            # The " [1-9]" part of the regex is to make %c from ANSI C work
             'd': r"(?P<d>3[0-1]|[1-2]\d|0[1-9]|[1-9]| [1-9])",
             'f': r"(?P<f>[0-9]{1,6})",
             'H': r"(?P<H>2[0-3]|[0-1]\d|\d)",
@@ -201,7 +202,7 @@ class TimeRE(dict):
             #XXX: Does 'Y' need to worry about having less or more than
             #     4 digits?
             'Y': r"(?P<Y>\d\d\d\d)",
-            'z': r"(?P<z>[+-]\d\d:?[0-5]\d(:?[0-5]\d(\.\d{1,6})?)?|Z)",
+            'z': r"(?P<z>[+-]\d\d:?[0-5]\d(:?[0-5]\d(\.\d{1,6})?)?|(?-i:Z))",
             'A': self.__seqToRE(self.locale_time.f_weekday, 'A'),
             'a': self.__seqToRE(self.locale_time.a_weekday, 'a'),
             'B': self.__seqToRE(self.locale_time.f_month[1:], 'B'),
@@ -250,12 +251,30 @@ class TimeRE(dict):
         format = regex_chars.sub(r"\\\1", format)
         whitespace_replacement = re_compile(r'\s+')
         format = whitespace_replacement.sub(r'\\s+', format)
+        year_in_format = False
+        day_of_month_in_format = False
         while '%' in format:
             directive_index = format.index('%')+1
+            format_char = format[directive_index]
             processed_format = "%s%s%s" % (processed_format,
                                            format[:directive_index-1],
-                                           self[format[directive_index]])
+                                           self[format_char])
             format = format[directive_index+1:]
+            match format_char:
+                case 'Y' | 'y' | 'G':
+                    year_in_format = True
+                case 'd':
+                    day_of_month_in_format = True
+        if day_of_month_in_format and not year_in_format:
+            import warnings
+            warnings.warn("""\
+Parsing dates involving a day of month without a year specified is ambiguious
+and fails to parse leap day. The default behavior will change in Python 3.15
+to either always raise an exception or to use a different default year (TBD).
+To avoid trouble, add a specific year to the input & format.
+See https://github.com/python/cpython/issues/70647.""",
+                          DeprecationWarning,
+                          skip_file_prefixes=(os.path.dirname(__file__),))
         return "%s%s" % (processed_format, format)
 
     def compile(self, format):
@@ -288,22 +307,6 @@ def _calc_julian_from_U_or_W(year, week_of_year, day_of_week, week_starts_Mon):
     else:
         days_to_week = week_0_length + (7 * (week_of_year - 1))
         return 1 + days_to_week + day_of_week
-
-
-def _calc_julian_from_V(iso_year, iso_week, iso_weekday):
-    """Calculate the Julian day based on the ISO 8601 year, week, and weekday.
-    ISO weeks start on Mondays, with week 01 being the week containing 4 Jan.
-    ISO week days range from 1 (Monday) to 7 (Sunday).
-    """
-    correction = datetime_date(iso_year, 1, 4).isoweekday() + 3
-    ordinal = (iso_week * 7) + iso_weekday - correction
-    # ordinal may be negative or 0 now, which means the date is in the previous
-    # calendar year
-    if ordinal < 1:
-        ordinal += datetime_date(iso_year, 1, 1).toordinal()
-        iso_year -= 1
-        ordinal -= datetime_date(iso_year, 1, 1).toordinal()
-    return iso_year, ordinal
 
 
 def _strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
@@ -358,8 +361,6 @@ def _strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
     tz = -1
     gmtoff = None
     gmtoff_fraction = 0
-    # Default to -1 to signify that values not known; not critical to have,
-    # though
     iso_week = week_of_year = None
     week_of_year_start = None
     # weekday and julian defaulted to None so as to signal need to calculate
@@ -483,19 +484,20 @@ def _strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
                     else:
                         tz = value
                         break
-    # Deal with the cases where ambiguities arize
+
+    # Deal with the cases where ambiguities arise
     # don't assume default values for ISO week/year
-    if year is None and iso_year is not None:
-        if iso_week is None or weekday is None:
-            raise ValueError("ISO year directive '%G' must be used with "
-                             "the ISO week directive '%V' and a weekday "
-                             "directive ('%A', '%a', '%w', or '%u').")
+    if iso_year is not None:
         if julian is not None:
             raise ValueError("Day of the year directive '%j' is not "
                              "compatible with ISO year directive '%G'. "
                              "Use '%Y' instead.")
-    elif week_of_year is None and iso_week is not None:
-        if weekday is None:
+        elif iso_week is None or weekday is None:
+            raise ValueError("ISO year directive '%G' must be used with "
+                             "the ISO week directive '%V' and a weekday "
+                             "directive ('%A', '%a', '%w', or '%u').")
+    elif iso_week is not None:
+        if year is None or weekday is None:
             raise ValueError("ISO week directive '%V' must be used with "
                              "the ISO year directive '%G' and a weekday "
                              "directive ('%A', '%a', '%w', or '%u').")
@@ -505,12 +507,12 @@ def _strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
                              "instead.")
 
     leap_year_fix = False
-    if year is None and month == 2 and day == 29:
-        year = 1904  # 1904 is first leap year of 20th century
-        leap_year_fix = True
-    elif year is None:
-        year = 1900
-
+    if year is None:
+        if month == 2 and day == 29:
+            year = 1904  # 1904 is first leap year of 20th century
+            leap_year_fix = True
+        else:
+            year = 1900
 
     # If we know the week of the year and what day of that week, we can figure
     # out the Julian day of the year.
@@ -520,7 +522,10 @@ def _strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
             julian = _calc_julian_from_U_or_W(year, week_of_year, weekday,
                                                 week_starts_Mon)
         elif iso_year is not None and iso_week is not None:
-            year, julian = _calc_julian_from_V(iso_year, iso_week, weekday + 1)
+            datetime_result = datetime_date.fromisocalendar(iso_year, iso_week, weekday + 1)
+            year = datetime_result.year
+            month = datetime_result.month
+            day = datetime_result.day
         if julian is not None and julian <= 0:
             year -= 1
             yday = 366 if calendar.isleap(year) else 365

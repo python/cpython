@@ -1,5 +1,5 @@
+import atexit
 import os
-import sys
 import signal
 
 from . import util
@@ -26,16 +26,12 @@ class Popen(object):
         if self.returncode is None:
             try:
                 pid, sts = os.waitpid(self.pid, flag)
-            except OSError as e:
+            except OSError:
                 # Child process not yet created. See #1731717
                 # e.errno == errno.ECHILD == 10
                 return None
             if pid == self.pid:
-                if os.WIFSIGNALED(sts):
-                    self.returncode = -os.WTERMSIG(sts)
-                else:
-                    assert os.WIFEXITED(sts), "Status is {:n}".format(sts)
-                    self.returncode = os.WEXITSTATUS(sts)
+                self.returncode = os.waitstatus_to_exitcode(sts)
         return self.returncode
 
     def wait(self, timeout=None):
@@ -67,16 +63,23 @@ class Popen(object):
     def _launch(self, process_obj):
         code = 1
         parent_r, child_w = os.pipe()
+        child_r, parent_w = os.pipe()
         self.pid = os.fork()
         if self.pid == 0:
             try:
+                atexit._clear()
+                atexit.register(util._exit_function)
                 os.close(parent_r)
-                code = process_obj._bootstrap()
+                os.close(parent_w)
+                code = process_obj._bootstrap(parent_sentinel=child_r)
             finally:
+                atexit._run_exitfuncs()
                 os._exit(code)
         else:
             os.close(child_w)
-            self.finalizer = util.Finalize(self, os.close, (parent_r,))
+            os.close(child_r)
+            self.finalizer = util.Finalize(self, util.close_fds,
+                                           (parent_r, parent_w,))
             self.sentinel = parent_r
 
     def close(self):

@@ -4,6 +4,7 @@ import unittest
 from email import message_from_string, message_from_bytes
 from email.message import EmailMessage
 from email.generator import Generator, BytesGenerator
+from email.headerregistry import Address
 from email import policy
 from test.test_email import TestEmailBase, parameterize
 
@@ -139,6 +140,39 @@ class TestGeneratorBase:
         g.flatten(msg, linesep='\n')
         self.assertEqual(s.getvalue(), self.typ(expected))
 
+    def test_flatten_linesep(self):
+        source = 'Subject: one\n two\r three\r\n four\r\n\r\ntest body\r\n'
+        msg = self.msgmaker(self.typ(source))
+        self.assertEqual(msg['Subject'], 'one two three four')
+
+        expected = 'Subject: one\n two\n three\n four\n\ntest body\n'
+        s = self.ioclass()
+        g = self.genclass(s)
+        g.flatten(msg)
+        self.assertEqual(s.getvalue(), self.typ(expected))
+
+        expected = 'Subject: one two three four\n\ntest body\n'
+        s = self.ioclass()
+        g = self.genclass(s, policy=self.policy.clone(refold_source='all'))
+        g.flatten(msg)
+        self.assertEqual(s.getvalue(), self.typ(expected))
+
+    def test_flatten_control_linesep(self):
+        source = 'Subject: one\v two\f three\x1c four\x1d five\x1e six\r\n\r\ntest body\r\n'
+        msg = self.msgmaker(self.typ(source))
+        self.assertEqual(msg['Subject'], 'one\v two\f three\x1c four\x1d five\x1e six')
+
+        expected = 'Subject: one\v two\f three\x1c four\x1d five\x1e six\n\ntest body\n'
+        s = self.ioclass()
+        g = self.genclass(s)
+        g.flatten(msg)
+        self.assertEqual(s.getvalue(), self.typ(expected))
+
+        s = self.ioclass()
+        g = self.genclass(s, policy=self.policy.clone(refold_source='all'))
+        g.flatten(msg)
+        self.assertEqual(s.getvalue(), self.typ(expected))
+
     def test_set_mangle_from_via_policy(self):
         source = textwrap.dedent("""\
             Subject: test that
@@ -223,6 +257,22 @@ class TestGenerator(TestGeneratorBase, TestEmailBase):
     ioclass = io.StringIO
     typ = str
 
+    def test_flatten_unicode_linesep(self):
+        source = 'Subject: one\x85 two\u2028 three\u2029 four\r\n\r\ntest body\r\n'
+        msg = self.msgmaker(self.typ(source))
+        self.assertEqual(msg['Subject'], 'one\x85 two\u2028 three\u2029 four')
+
+        expected = 'Subject: =?utf-8?b?b25lwoUgdHdv4oCoIHRocmVl4oCp?= four\n\ntest body\n'
+        s = self.ioclass()
+        g = self.genclass(s)
+        g.flatten(msg)
+        self.assertEqual(s.getvalue(), self.typ(expected))
+
+        s = self.ioclass()
+        g = self.genclass(s, policy=self.policy.clone(refold_source='all'))
+        g.flatten(msg)
+        self.assertEqual(s.getvalue(), self.typ(expected))
+
 
 class TestBytesGenerator(TestGeneratorBase, TestEmailBase):
 
@@ -288,6 +338,27 @@ class TestBytesGenerator(TestGeneratorBase, TestEmailBase):
             """).encode('utf-8').replace(b'\n', b'\r\n')
         s = io.BytesIO()
         g = BytesGenerator(s, policy=policy.SMTPUTF8)
+        g.flatten(msg)
+        self.assertEqual(s.getvalue(), expected)
+
+    def test_smtp_policy(self):
+        msg = EmailMessage()
+        msg["From"] = Address(addr_spec="foo@bar.com", display_name="Páolo")
+        msg["To"] = Address(addr_spec="bar@foo.com", display_name="Dinsdale")
+        msg["Subject"] = "Nudge nudge, wink, wink"
+        msg.set_content("oh boy, know what I mean, know what I mean?")
+        expected = textwrap.dedent("""\
+            From: =?utf-8?q?P=C3=A1olo?= <foo@bar.com>
+            To: Dinsdale <bar@foo.com>
+            Subject: Nudge nudge, wink, wink
+            Content-Type: text/plain; charset="utf-8"
+            Content-Transfer-Encoding: 7bit
+            MIME-Version: 1.0
+
+            oh boy, know what I mean, know what I mean?
+            """).encode().replace(b"\n", b"\r\n")
+        s = io.BytesIO()
+        g = BytesGenerator(s, policy=policy.SMTP)
         g.flatten(msg)
         self.assertEqual(s.getvalue(), expected)
 

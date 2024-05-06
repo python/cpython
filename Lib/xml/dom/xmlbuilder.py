@@ -1,7 +1,6 @@
 """Implementation of the DOM Level 3 'LS-Load' feature."""
 
 import copy
-import warnings
 import xml.dom
 
 from xml.dom.NodeFilter import NodeFilter

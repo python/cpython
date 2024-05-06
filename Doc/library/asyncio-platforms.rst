@@ -23,11 +23,21 @@ All Platforms
 Windows
 =======
 
+**Source code:** :source:`Lib/asyncio/proactor_events.py`,
+:source:`Lib/asyncio/windows_events.py`,
+:source:`Lib/asyncio/windows_utils.py`
+
+--------------------------------------
+
+.. versionchanged:: 3.8
+
+   On Windows, :class:`ProactorEventLoop` is now the default event loop.
+
 All event loops on Windows do not support the following methods:
 
 * :meth:`loop.create_unix_connection` and
   :meth:`loop.create_unix_server` are not supported.
-  The :data:`socket.AF_UNIX` socket family is specific to Unix.
+  The :const:`socket.AF_UNIX` socket family is specific to Unix.
 
 * :meth:`loop.add_signal_handler` and
   :meth:`loop.remove_signal_handler` are not supported.
@@ -49,14 +59,11 @@ All event loops on Windows do not support the following methods:
 
 :class:`ProactorEventLoop` has the following limitations:
 
-* The :meth:`loop.create_datagram_endpoint` method
-  is not supported.
-
 * The :meth:`loop.add_reader` and :meth:`loop.add_writer`
   methods are not supported.
 
 The resolution of the monotonic clock on Windows is usually around 15.6
-msec.  The best resolution is 0.5 msec. The resolution depends on the
+milliseconds.  The best resolution is 0.5 milliseconds. The resolution depends on the
 hardware (availability of `HPET
 <https://en.wikipedia.org/wiki/High_Precision_Event_Timer>`_) and on the
 Windows configuration.
@@ -67,16 +74,8 @@ Windows configuration.
 Subprocess Support on Windows
 -----------------------------
 
-:class:`SelectorEventLoop` on Windows does not support subproceses.
-On Windows, :class:`ProactorEventLoop` should be used instead::
-
-  import asyncio
-
-  asyncio.set_event_loop_policy(
-      asyncio.WindowsProactorEventLoopPolicy())
-
-  asyncio.run(your_code())
-
+On Windows, the default event loop :class:`ProactorEventLoop` supports
+subprocesses, whereas :class:`SelectorEventLoop` does not.
 
 The :meth:`policy.set_child_watcher()
 <AbstractEventLoopPolicy.set_child_watcher>` function is also
