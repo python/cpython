@@ -1723,6 +1723,7 @@ _Py_Executors_InvalidateAll(PyInterpreterState *interp, int is_invalidation)
 }
 
 #else
+
 void
 _Py_Executors_InvalidateDependency(PyInterpreterState *interp, void *obj, int is_invalidation)
 {
