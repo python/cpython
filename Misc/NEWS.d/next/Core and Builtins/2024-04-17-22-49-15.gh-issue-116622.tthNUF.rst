@@ -1,0 +1,1 @@
+Redirect stdout and stderr to system log when embedded in an Android app.

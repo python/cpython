@@ -12,11 +12,12 @@ jobs:
   build_ubuntu_reusable:
     name: 'build and test'
     timeout-minutes: 60
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     env:
       FORCE_COLOR: 1
       OPENSSL_VER: 3.0.13
       PYTHONSTRICTEXTENSIONBUILD: 1
+      TERM: linux
     steps:
     - uses: actions/checkout@v4
     - name: Register gcc problem matcher

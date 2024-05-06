@@ -29,9 +29,6 @@ extern int _PyImport_FixupBuiltin(
     const char *name,            /* UTF-8 encoded string */
     PyObject *modules
     );
-// We could probably drop this:
-extern int _PyImport_FixupExtensionObject(PyObject*, PyObject *,
-                                          PyObject *, PyObject *);
 
 // Export for many shared extensions, like '_json'
 PyAPI_FUNC(PyObject*) _PyImport_GetModuleAttr(PyObject *, PyObject *);
@@ -55,7 +52,7 @@ struct _import_runtime_state {
            Only legacy (single-phase init) extension modules are added
            and only if they support multiple initialization (m_size >- 0)
            or are imported in the main interpreter.
-           This is initialized lazily in _PyImport_FixupExtensionObject().
+           This is initialized lazily in fix_up_extension() in import.c.
            Modules are added there and looked up in _imp.find_extension(). */
         _Py_hashtable_t *hashtable;
     } extensions;

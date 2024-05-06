@@ -16,7 +16,7 @@ import unittest
 import tempfile
 import types
 import contextlib
-import traceback
+import _colorize
 
 
 def doctest_skip_if(condition):
@@ -893,8 +893,8 @@ Unit tests for the `DocTestRunner` class.
 DocTestRunner is used to run DocTest test cases, and to accumulate
 statistics.  Here's a simple DocTest case we can use:
 
-    >>> save_colorize = traceback._COLORIZE
-    >>> traceback._COLORIZE = False
+    >>> save_colorize = _colorize.COLORIZE
+    >>> _colorize.COLORIZE = False
 
     >>> def f(x):
     ...     '''
@@ -951,7 +951,7 @@ the failure and proceeds to the next example:
     ok
     TestResults(failed=1, attempted=3)
 
-    >>> traceback._COLORIZE = save_colorize
+    >>> _colorize.COLORIZE = save_colorize
 """
     def verbose_flag(): r"""
 The `verbose` flag makes the test runner generate more detailed
@@ -1027,8 +1027,8 @@ An expected exception is specified with a traceback message.  The
 lines between the first line and the type/value may be omitted or
 replaced with any other string:
 
-    >>> save_colorize = traceback._COLORIZE
-    >>> traceback._COLORIZE = False
+    >>> save_colorize = _colorize.COLORIZE
+    >>> _colorize.COLORIZE = False
 
     >>> def f(x):
     ...     '''
@@ -1261,7 +1261,7 @@ unexpected exception:
         ZeroDivisionError: integer division or modulo by zero
     TestResults(failed=1, attempted=1)
 
-    >>> traceback._COLORIZE = save_colorize
+    >>> _colorize.COLORIZE = save_colorize
 """
     def displayhook(): r"""
 Test that changing sys.displayhook doesn't matter for doctest.
@@ -1303,8 +1303,8 @@ together).
 The DONT_ACCEPT_TRUE_FOR_1 flag disables matches between True/False
 and 1/0:
 
-    >>> save_colorize = traceback._COLORIZE
-    >>> traceback._COLORIZE = False
+    >>> save_colorize = _colorize.COLORIZE
+    >>> _colorize.COLORIZE = False
 
     >>> def f(x):
     ...     '>>> True\n1\n'
@@ -1725,7 +1725,7 @@ more than one flag value.  Here we verify that's fixed:
 
 Clean up.
     >>> del doctest.OPTIONFLAGS_BY_NAME[unlikely]
-    >>> traceback._COLORIZE = save_colorize
+    >>> _colorize.COLORIZE = save_colorize
 
     """
 
@@ -1736,8 +1736,8 @@ Option directives can be used to turn option flags on or off for a
 single example.  To turn an option on for an example, follow that
 example with a comment of the form ``# doctest: +OPTION``:
 
-    >>> save_colorize = traceback._COLORIZE
-    >>> traceback._COLORIZE = False
+    >>> save_colorize = _colorize.COLORIZE
+    >>> _colorize.COLORIZE = False
 
     >>> def f(x): r'''
     ...     >>> print(list(range(10)))      # should fail: no ellipsis
@@ -1947,7 +1947,7 @@ source:
     Traceback (most recent call last):
     ValueError: line 0 of the doctest for s has an option directive on a line with no example: '# doctest: +ELLIPSIS'
 
-    >>> traceback._COLORIZE = save_colorize
+    >>> _colorize.COLORIZE = save_colorize
 """
 
 def test_testsource(): r"""
@@ -2031,8 +2031,8 @@ if not hasattr(sys, 'gettrace') or not sys.gettrace():
         with a version that restores stdout.  This is necessary for you to
         see debugger output.
 
-          >>> save_colorize = traceback._COLORIZE
-          >>> traceback._COLORIZE = False
+          >>> save_colorize = _colorize.COLORIZE
+          >>> _colorize.COLORIZE = False
 
           >>> doc = '''
           ... >>> x = 42
@@ -2056,8 +2056,7 @@ if not hasattr(sys, 'gettrace') or not sys.gettrace():
 
           >>> try: runner.run(test)
           ... finally: sys.stdin = real_stdin
-          --Return--
-          > <doctest foo-bar@baz[2]>(1)<module>()->None
+          > <doctest foo-bar@baz[2]>(1)<module>()
           -> import pdb; pdb.set_trace()
           (Pdb) print(x)
           42
@@ -2087,8 +2086,7 @@ if not hasattr(sys, 'gettrace') or not sys.gettrace():
           ...     runner.run(test)
           ... finally:
           ...     sys.stdin = real_stdin
-          --Return--
-          > <doctest test.test_doctest.test_doctest.test_pdb_set_trace[9]>(3)calls_set_trace()->None
+          > <doctest test.test_doctest.test_doctest.test_pdb_set_trace[9]>(3)calls_set_trace()
           -> import pdb; pdb.set_trace()
           (Pdb) print(y)
           2
@@ -2114,6 +2112,7 @@ if not hasattr(sys, 'gettrace') or not sys.gettrace():
           >>> test = parser.get_doctest(doc, globals(), "foo-bar@baz", "foo-bar@baz.py", 0)
           >>> real_stdin = sys.stdin
           >>> sys.stdin = FakeInput([
+          ...    'step',     # return event of g
           ...    'list',     # list source from example 2
           ...    'next',     # return from g()
           ...    'list',     # list source from example 1
@@ -2124,6 +2123,9 @@ if not hasattr(sys, 'gettrace') or not sys.gettrace():
           >>> try: runner.run(test)
           ... finally: sys.stdin = real_stdin
           ... # doctest: +NORMALIZE_WHITESPACE
+          > <doctest foo-bar@baz[1]>(3)g()
+          -> import pdb; pdb.set_trace()
+          (Pdb) step
           --Return--
           > <doctest foo-bar@baz[1]>(3)g()->None
           -> import pdb; pdb.set_trace()
@@ -2157,7 +2159,7 @@ if not hasattr(sys, 'gettrace') or not sys.gettrace():
               9
           TestResults(failed=1, attempted=3)
 
-          >>> traceback._COLORIZE = save_colorize
+          >>> _colorize.COLORIZE = save_colorize
           """
 
     def test_pdb_set_trace_nested():
@@ -2188,6 +2190,7 @@ if not hasattr(sys, 'gettrace') or not sys.gettrace():
         >>> test = parser.get_doctest(doc, globals(), "foo-bar@baz", "foo-bar@baz.py", 0)
         >>> real_stdin = sys.stdin
         >>> sys.stdin = FakeInput([
+        ...    'step',
         ...    'print(y)',  # print data defined in the function
         ...    'step', 'step', 'step', 'step', 'step', 'step', 'print(z)',
         ...    'up', 'print(x)',
@@ -2201,6 +2204,9 @@ if not hasattr(sys, 'gettrace') or not sys.gettrace():
         ... finally:
         ...     sys.stdin = real_stdin
         ... # doctest: +REPORT_NDIFF
+        > <doctest test.test_doctest.test_doctest.test_pdb_set_trace_nested[0]>(4)calls_set_trace()
+        -> import pdb; pdb.set_trace()
+        (Pdb) step
         > <doctest test.test_doctest.test_doctest.test_pdb_set_trace_nested[0]>(5)calls_set_trace()
         -> self.f1()
         (Pdb) print(y)
@@ -2694,8 +2700,8 @@ calling module.  The return value is (#failures, #tests).
 
 We don't want color or `-v` in sys.argv for these tests.
 
-    >>> save_colorize = traceback._COLORIZE
-    >>> traceback._COLORIZE = False
+    >>> save_colorize = _colorize.COLORIZE
+    >>> _colorize.COLORIZE = False
 
     >>> save_argv = sys.argv
     >>> if '-v' in sys.argv:
@@ -2863,7 +2869,7 @@ Test the verbose output:
     TestResults(failed=0, attempted=2)
     >>> doctest.master = None  # Reset master.
     >>> sys.argv = save_argv
-    >>> traceback._COLORIZE = save_colorize
+    >>> _colorize.COLORIZE = save_colorize
 """
 
 class TestImporter(importlib.abc.MetaPathFinder, importlib.abc.ResourceLoader):
@@ -3001,8 +3007,8 @@ if supports_unicode:
     def test_unicode(): """
 Check doctest with a non-ascii filename:
 
-    >>> save_colorize = traceback._COLORIZE
-    >>> traceback._COLORIZE = False
+    >>> save_colorize = _colorize.COLORIZE
+    >>> _colorize.COLORIZE = False
 
     >>> doc = '''
     ... >>> raise Exception('clé')
@@ -3030,7 +3036,7 @@ Check doctest with a non-ascii filename:
         Exception: clé
     TestResults(failed=1, attempted=1)
 
-    >>> traceback._COLORIZE = save_colorize
+    >>> _colorize.COLORIZE = save_colorize
     """
 
 
@@ -3325,8 +3331,8 @@ def test_run_doctestsuite_multiple_times():
 
 def test_exception_with_note(note):
     """
-    >>> save_colorize = traceback._COLORIZE
-    >>> traceback._COLORIZE = False
+    >>> save_colorize = _colorize.COLORIZE
+    >>> _colorize.COLORIZE = False
 
     >>> test_exception_with_note('Note')
     Traceback (most recent call last):
@@ -3378,7 +3384,7 @@ def test_exception_with_note(note):
         note
     TestResults(failed=1, attempted=...)
 
-    >>> traceback._COLORIZE = save_colorize
+    >>> _colorize.COLORIZE = save_colorize
     """
     exc = ValueError('Text')
     exc.add_note(note)
@@ -3459,8 +3465,8 @@ def test_syntax_error_subclass_from_stdlib():
 
 def test_syntax_error_with_incorrect_expected_note():
     """
-    >>> save_colorize = traceback._COLORIZE
-    >>> traceback._COLORIZE = False
+    >>> save_colorize = _colorize.COLORIZE
+    >>> _colorize.COLORIZE = False
 
     >>> def f(x):
     ...     r'''
@@ -3491,7 +3497,7 @@ def test_syntax_error_with_incorrect_expected_note():
         note2
     TestResults(failed=1, attempted=...)
 
-    >>> traceback._COLORIZE = save_colorize
+    >>> _colorize.COLORIZE = save_colorize
     """
 
 
