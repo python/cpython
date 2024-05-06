@@ -2540,7 +2540,7 @@ class Tk(Misc, Wm):
         return getattr(self.tk, attr)
 
 
-def _print_command(cmd, *, file=sys.stdout):
+def _print_command(cmd, *, file=sys.stderr):
     # Print executed Tcl/Tk commands.
     assert isinstance(cmd, tuple)
     cmd = _join(cmd)
