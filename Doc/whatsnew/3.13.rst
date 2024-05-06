@@ -882,6 +882,15 @@ tkinter
 * Add the :meth:`!after_info` method for Tkinter widgets.
   (Contributed by Cheryl Sabella in :gh:`77020`.)
 
+* Add the :class:`!PhotoImage` method :meth:`!copy_replace` to copy a region
+  from one image to other image, possibly with pixel zooming and/or
+  subsampling.
+  Add *from_coords* parameter to :class:`!PhotoImage` methods :meth:`!copy()`,
+  :meth:`!zoom()` and :meth:`!subsample()`.
+  Add *zoom* and *subsample* parameters to :class:`!PhotoImage` method
+  :meth:`!copy()`.
+  (Contributed by Serhiy Storchaka in :gh:`118225`.)
+
 traceback
 ---------
 
