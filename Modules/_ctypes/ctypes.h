@@ -458,8 +458,8 @@ PyObject *_ctypes_get_errobj(ctypes_state *st, int **pspace);
 void Py_ffi_closure_free(void *p);
 void *Py_ffi_closure_alloc(size_t size, void** codeloc);
 #else
-#define Py_ffi_closure_free ffi_closure_free
-#define Py_ffi_closure_alloc ffi_closure_alloc
+#define Py_ffi_closure_free(tp, p) ffi_closure_free(p)
+#define Py_ffi_closure_alloc(tp, size, codeloc) ffi_closure_alloc(size, codeloc)
 #endif
 
 /****************************************************************
