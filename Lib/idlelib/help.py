@@ -185,9 +185,9 @@ class HelpText(Text):
         self.tag_configure('h2', font=(normalfont, 18, 'bold'))
         self.tag_configure('h3', font=(normalfont, 15, 'bold'))
         self.tag_configure('pre', font=(fixedfont, 12))
-        preback = '#eeffcc' if self['fg'] == '#000000' else self['bg']
+        preback = self['selectbackground']
         self.tag_configure('preblock', font=(fixedfont, 10), lmargin1=25,
-                borderwidth=1, relief='solid', background=preback)
+                           background=preback)
         self.tag_configure('l1', lmargin1=25, lmargin2=25)
         self.tag_configure('l2', lmargin1=50, lmargin2=50)
         self.tag_configure('l3', lmargin1=75, lmargin2=75)
