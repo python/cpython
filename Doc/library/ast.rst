@@ -82,7 +82,7 @@ Node classes
       .. doctest::
 
            >>> ast.TypeVar._field_types
-           {'name': <class 'str'>, 'bound': ast.expr | None}
+           {'name': <class 'str'>, 'bound': ast.expr | None, 'default_value': ast.expr | None}
 
       .. versionadded:: 3.13
 
