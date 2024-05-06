@@ -443,7 +443,7 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
         PyObject *prop;
         Py_ssize_t bitsize = 0;
 
-        if (!pair || !PyArg_ParseTuple(pair, "UO|i", &name, &desc, &bitsize)) {
+        if (!pair || !PyArg_ParseTuple(pair, "UO|n", &name, &desc, &bitsize)) {
             PyErr_SetString(PyExc_TypeError,
                             "'_fields_' must be a sequence of (name, C type) pairs");
             Py_XDECREF(pair);
