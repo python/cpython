@@ -789,6 +789,9 @@
     <ClInclude Include="..\Include\internal\pycore_symtable.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_stackref.h">
+      <Filter>Include\internal</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_time.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
@@ -1400,6 +1403,9 @@
     <ClCompile Include="..\Python\perf_trampoline.c">
       <Filter>Python</Filter>
     </ClCompile>
+    <ClCompile Include="..\Python\perf_jit_trampoline.c">
+      <Filter>Python</Filter>
+    </ClCompile>
     <ClCompile Include="..\Python\preconfig.c">
       <Filter>Python</Filter>
     </ClCompile>
@@ -1547,13 +1553,13 @@
     <ClCompile Include="..\Parser\peg_api.c">
       <Filter>Parser</Filter>
     </ClCompile>
-    <ClCompile Include="..\Modules\_xxsubinterpretersmodule.c">
+    <ClCompile Include="..\Modules\_interpretersmodule.c">
       <Filter>Modules</Filter>
     </ClCompile>
-    <ClCompile Include="..\Modules\_xxinterpchannelsmodule.c">
+    <ClCompile Include="..\Modules\_interpchannelsmodule.c">
       <Filter>Modules</Filter>
     </ClCompile>
-    <ClCompile Include="..\Modules\_xxinterpqueuesmodule.c">
+    <ClCompile Include="..\Modules\_interpqueuesmodule.c">
       <Filter>Modules</Filter>
     </ClCompile>
     <ClCompile Include="..\Parser\string_parser.c">

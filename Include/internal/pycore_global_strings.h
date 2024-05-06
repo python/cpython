@@ -470,6 +470,7 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(h)
         STRUCT_FOR_ID(handle)
         STRUCT_FOR_ID(handle_seq)
+        STRUCT_FOR_ID(has_location)
         STRUCT_FOR_ID(hash_name)
         STRUCT_FOR_ID(header)
         STRUCT_FOR_ID(headers)

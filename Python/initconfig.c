@@ -1703,6 +1703,20 @@ config_init_perf_profiling(PyConfig *config)
     if (xoption) {
         config->perf_profiling = 1;
     }
+    env = config_get_env(config, "PYTHONPERFJITSUPPORT");
+    if (env) {
+        if (_Py_str_to_int(env, &active) != 0) {
+            active = 0;
+        }
+        if (active) {
+            config->perf_profiling = 2;
+        }
+    }
+    xoption = config_get_xoption(config, L"perfjit");
+    if (xoption) {
+        config->perf_profiling = 2;
+    }
+
     return _PyStatus_OK();
 
 }
