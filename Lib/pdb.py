@@ -638,10 +638,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         # Otherwise, we can just raise an exception and normal exec will be used.
 
         code = compile(source, "<string>", "exec")
-        for const in code.co_consts:
-            if isinstance(const, CodeType):
-                break
-        else:
+        if any(isinstance(const, CodeType) for const in code.co_consts):
             return False
 
         # locals could be a proxy which does not support pop
@@ -665,7 +662,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         source = ("try:\n" +
                   textwrap.indent(source, "  ") + "\n" +
                   "finally:\n" +
-                  "  __pdb_eval__['write_back'].update(locals())")
+                  "  __pdb_eval__['write_back'] = locals()")
 
         local_vars = list(locals_copy.keys())
 
@@ -687,7 +684,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         # Get the code object of __pdb_scope()
         # The exec fills locals_copy with the __pdb_outer() function and we can call
         # that to get the code object of __pdb_scope()
-        code = exec(source_with_closure, {}, locals_copy)
+        exec(source_with_closure, {}, locals_copy)
         code = locals_copy.pop("__pdb_outer")()
 
         cells = tuple(types.CellType(locals_copy.get(var)) for var in code.co_freevars)
@@ -698,7 +695,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             return False
 
         # get the data we need from the statement
-        pdb_eval = locals_copy.pop("__pdb_eval__")
+        pdb_eval = locals_copy["__pdb_eval__]
 
         # __pdb_eval__ should not be updated back to locals
         pdb_eval["write_back"].pop("__pdb_eval__")
