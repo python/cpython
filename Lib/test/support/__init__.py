@@ -871,7 +871,7 @@ def check_bolt_optimized():
     if is_wasi:
         return False
     config_args = sysconfig.get_config_var('CONFIG_ARGS') or ''
-    return '--enable-bolt' in configs_args
+    return '--enable-bolt' in config_args
 
 
 Py_GIL_DISABLED = bool(sysconfig.get_config_var('Py_GIL_DISABLED'))
