@@ -3763,12 +3763,12 @@ Aliases to other ABCs in :mod:`collections.abc`
    of :class:`Generator` behaves contravariantly, not covariantly or
    invariantly.
 
-   The ``SendType`` and ``ReturnType`` default to :const:`!None`::
+   The ``SendType`` and ``ReturnType`` parameters default to :const:`!None`::
 
       def infinite_stream(start: int) -> Generator[int]:
-         while True:
-            yield start
-            start += 1
+          while True:
+              yield start
+              start += 1
 
    It is also possible to set these types explicitly::
 
