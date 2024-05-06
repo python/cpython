@@ -1088,30 +1088,43 @@ class MmapTests(unittest.TestCase):
                 m._protect(PAGE_NOACCESS, 0, PAGESIZE)
                 with suppress(OSError):
                     m.read(PAGESIZE)
+                    assert False, 'mmap.read() did not raise'
                 with suppress(OSError):
                     m.read_byte()
+                    assert False, 'mmap.read_byte() did not raise'
                 with suppress(OSError):
                     m.readline()
+                    assert False, 'mmap.readline() did not raise'
                 with suppress(OSError):
                     m.write(b'A'* PAGESIZE)
+                    assert False, 'mmap.write() did not raise'
                 with suppress(OSError):
                     m.write_byte(0)
+                    assert False, 'mmap.write_byte() did not raise'
                 with suppress(OSError):
                     m[0]  # test mmap_subscript
+                    assert False, 'mmap.__getitem__() did not raise'
                 with suppress(OSError):
                     m[0:10]  # test mmap_subscript
+                    assert False, 'mmap.__getitem__() did not raise'
                 with suppress(OSError):
                     m[0:10:2]  # test mmap_subscript
+                    assert False, 'mmap.__getitem__() did not raise'
                 with suppress(OSError):
                     m[0] = 1
+                    assert False, 'mmap.__setitem__() did not raise'
                 with suppress(OSError):
                     m[0:10] = b'A'* 10
+                    assert False, 'mmap.__setitem__() did not raise'
                 with suppress(OSError):
                     m[0:10:2] = b'A'* 5
+                    assert False, 'mmap.__setitem__() did not raise'
                 with suppress(OSError):
                     m.move(0, 10, 1)
+                    assert False, 'mmap.move() did not raise'
                 with suppress(OSError):
                     list(m)  # test mmap_item
+                    assert False, 'mmap.__getitem__() did not raise'
         """)
         rt, stdout, stderr = assert_python_ok("-c", code)
         self.assertEqual(stdout.strip(), b'')
@@ -1142,6 +1155,7 @@ class MmapTests(unittest.TestCase):
                 m._protect(PAGE_NOACCESS, 0, PAGESIZE)
                 with suppress(OSError):
                     m.find(b'A')
+                    assert False, 'mmap.find() did not raise'
         """)
         assert_python_ok("-c", code)
 
