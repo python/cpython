@@ -870,14 +870,7 @@ def check_bolt_optimized():
     # Always return false, if the platform is WASI.
     if is_wasi:
         return False
-    # BOLTed binary can be checked based on ELF information.
-    # link: https://github.com/llvm/llvm-project/issues/60253
-    binary_path = sys.executable
-    with open(binary_path, 'rb') as f:
-        binary = f.read()
-        if b'.note.bolt_info' in binary:
-            return True
-    return False
+    return '--enable-bolt' in sysconfig.get_config_var('CONFIG_ARGS')
 
 
 Py_GIL_DISABLED = bool(sysconfig.get_config_var('Py_GIL_DISABLED'))
@@ -891,6 +884,7 @@ def expected_failure_if_gil_disabled():
     if Py_GIL_DISABLED:
         return unittest.expectedFailure
     return lambda test_case: test_case
+
 
 if Py_GIL_DISABLED:
     _header = 'PHBBInP'

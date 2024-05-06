@@ -344,9 +344,6 @@ def get_build_info():
         # PGO (--enable-optimizations)
         optimizations.append('PGO')
 
-    if support.check_bolt_optimized():
-        optimizations.append('BOLT')
-
     if optimizations:
         build.append('+'.join(optimizations))
 
