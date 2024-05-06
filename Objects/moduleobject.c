@@ -439,7 +439,7 @@ error:
 
 #ifdef Py_GIL_DISABLED
 int
-PyModule_ExperimentalSetGIL(PyObject *module, void *gil)
+PyUnstable_Module_SetGIL(PyObject *module, void *gil)
 {
     if (!PyModule_Check(module)) {
         PyErr_BadInternalCall();

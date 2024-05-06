@@ -634,7 +634,7 @@ state:
 
    .. versionadded:: 3.9
 
-.. c:function:: int PyModule_ExperimentalSetGIL(PyObject *module, void *gil)
+.. c:function:: int PyUnstable_Module_SetGIL(PyObject *module, void *gil)
 
    Indicate that *module* does or does not support running without the global
    interpreter lock (GIL), using one of the values from

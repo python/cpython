@@ -1553,7 +1553,7 @@ PyInit_readline(void)
     if (m == NULL)
         return NULL;
 #ifdef Py_GIL_DISABLED
-    PyModule_ExperimentalSetGIL(m, Py_MOD_GIL_NOT_USED);
+    PyUnstable_Module_SetGIL(m, Py_MOD_GIL_NOT_USED);
 #endif
 
     if (PyModule_AddIntConstant(m, "_READLINE_VERSION",

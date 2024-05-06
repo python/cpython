@@ -472,7 +472,7 @@ init__testsinglephase_basic(PyModuleDef *def)
         return NULL;
     }
 #ifdef Py_GIL_DISABLED
-    PyModule_ExperimentalSetGIL(module, Py_MOD_GIL_NOT_USED);
+    PyUnstable_Module_SetGIL(module, Py_MOD_GIL_NOT_USED);
 #endif
 
     module_state *state = &global_state.module;
@@ -566,7 +566,7 @@ PyInit__testsinglephase_with_reinit(void)
         return NULL;
     }
 #ifdef Py_GIL_DISABLED
-    PyModule_ExperimentalSetGIL(module, Py_MOD_GIL_NOT_USED);
+    PyUnstable_Module_SetGIL(module, Py_MOD_GIL_NOT_USED);
 #endif
 
     assert(get_module_state(module) == NULL);
@@ -631,7 +631,7 @@ PyInit__testsinglephase_with_state(void)
         return NULL;
     }
 #ifdef Py_GIL_DISABLED
-    PyModule_ExperimentalSetGIL(module, Py_MOD_GIL_NOT_USED);
+    PyUnstable_Module_SetGIL(module, Py_MOD_GIL_NOT_USED);
 #endif
 
     module_state *state = get_module_state(module);
