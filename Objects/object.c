@@ -1638,7 +1638,7 @@ _PyObject_GetMethodStackRef(PyObject *obj, PyObject *name, _PyStackRef *method)
                  "'%.100s' object has no attribute '%U'",
                  tp->tp_name, name);
 
-    set_attribute_error_context(obj, name);
+    _PyObject_SetAttributeErrorContext(obj, name);
     return 0;
 }
 
