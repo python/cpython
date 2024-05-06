@@ -41,6 +41,7 @@ from tkinter.constants import *
 import re
 
 wantobjects = 1
+_debug = False  # set to True to print executed Tcl/Tk commands
 
 TkVersion = float(_tkinter.TK_VERSION)
 TclVersion = float(_tkinter.TCL_VERSION)
@@ -69,7 +70,10 @@ def _stringify(value):
         else:
             value = '{%s}' % _join(value)
     else:
-        value = str(value)
+        if isinstance(value, bytes):
+            value = str(value, 'latin1')
+        else:
+            value = str(value)
         if not value:
             value = '{}'
         elif _magic_re.search(value):
@@ -411,7 +415,6 @@ class Variable:
             self._tk.globalunsetvar(self._name)
         if self._tclCommands is not None:
             for name in self._tclCommands:
-                #print '- Tkinter: deleted command', name
                 self._tk.deletecommand(name)
             self._tclCommands = None
 
@@ -683,7 +686,6 @@ class Misc:
         this widget in the Tcl interpreter."""
         if self._tclCommands is not None:
             for name in self._tclCommands:
-                #print '- Tkinter: deleted command', name
                 self.tk.deletecommand(name)
             self._tclCommands = None
 
@@ -691,7 +693,6 @@ class Misc:
         """Internal function.
 
         Delete the Tcl command provided in NAME."""
-        #print '- Tkinter: deleted command', name
         self.tk.deletecommand(name)
         try:
             self._tclCommands.remove(name)
@@ -2343,6 +2344,8 @@ class Tk(Misc, Wm):
                 baseName = baseName + ext
         interactive = False
         self.tk = _tkinter.create(screenName, baseName, className, interactive, wantobjects, useTk, sync, use)
+        if _debug:
+            self.tk.settrace(_print_command)
         if useTk:
             self._loadtk()
         if not sys.flags.ignore_environment:
@@ -2428,6 +2431,14 @@ class Tk(Misc, Wm):
     def __getattr__(self, attr):
         "Delegate attribute access to the interpreter object"
         return getattr(self.tk, attr)
+
+
+def _print_command(cmd, *, file=sys.stderr):
+    # Print executed Tcl/Tk commands.
+    assert isinstance(cmd, tuple)
+    cmd = _join(cmd)
+    print(cmd, file=file)
+
 
 # Ideally, the classes Pack, Place and Grid disappear, the
 # pack/place/grid methods are defined on the Widget class, and

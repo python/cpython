@@ -309,6 +309,7 @@ typedef struct {
     int threaded; /* True if tcl_platform[threaded] */
     Tcl_ThreadId thread_id;
     int dispatching;
+    PyObject *trace;
     /* We cannot include tclInt.h, as this is internal.
        So we cache interesting types here. */
     const Tcl_ObjType *OldBooleanType;
@@ -574,6 +575,7 @@ Tkapp_New(const char *screenName, const char *className,
                                 TCL_GLOBAL_ONLY) != NULL;
     v->thread_id = Tcl_GetCurrentThread();
     v->dispatching = 0;
+    v->trace = NULL;
 
 #ifndef TCL_THREADS
     if (v->threaded) {
@@ -1316,6 +1318,29 @@ Tkapp_ObjectResult(TkappObject *self)
     return res;
 }
 
+static int
+Tkapp_Trace(TkappObject *self, PyObject *args)
+{
+    if (args == NULL) {
+        return 0;
+    }
+    if (self->trace) {
+        PyObject *res = PyObject_CallObject(self->trace, args);
+        if (res == NULL) {
+            Py_DECREF(args);
+            return 0;
+        }
+        Py_DECREF(res);
+    }
+    Py_DECREF(args);
+    return 1;
+}
+
+#define TRACE(_self, ARGS) do {                 \
+        if ((_self)->trace && !Tkapp_Trace((_self), Py_BuildValue ARGS)) { \
+            return NULL;                        \
+        }                                       \
+    } while (0)
 
 /* Tkapp_CallProc is the event procedure that is executed in the context of
    the Tcl interpreter thread. Initially, it holds the Tcl lock, and doesn't
@@ -1329,7 +1354,12 @@ Tkapp_CallProc(Tkapp_CallEvent *e, int flags)
     int objc;
     int i;
     ENTER_PYTHON
-    objv = Tkapp_CallArgs(e->args, objStore, &objc);
+    if (e->self->trace && !Tkapp_Trace(e->self, PyTuple_Pack(1, e->args))) {
+        objv = NULL;
+    }
+    else {
+        objv = Tkapp_CallArgs(e->args, objStore, &objc);
+    }
     if (!objv) {
         *(e->exc) = PyErr_GetRaisedException();
         *(e->res) = NULL;
@@ -1422,6 +1452,7 @@ Tkapp_Call(PyObject *selfptr, PyObject *args)
     }
     else
     {
+        TRACE(self, ("(O)", args));
 
         objv = Tkapp_CallArgs(args, objStore, &objc);
         if (!objv)
@@ -1464,6 +1495,8 @@ _tkinter_tkapp_eval_impl(TkappObject *self, const char *script)
     CHECK_STRING_LENGTH(script);
     CHECK_TCL_APPARTMENT;
 
+    TRACE(self, ("((ss))", "eval", script));
+
     ENTER_TCL
     err = Tcl_Eval(Tkapp_Interp(self), script);
     ENTER_OVERLAP
@@ -1493,6 +1526,8 @@ _tkinter_tkapp_evalfile_impl(TkappObject *self, const char *fileName)
     CHECK_STRING_LENGTH(fileName);
     CHECK_TCL_APPARTMENT;
 
+    TRACE(self, ("((ss))", "source", fileName));
+
     ENTER_TCL
     err = Tcl_EvalFile(Tkapp_Interp(self), fileName);
     ENTER_OVERLAP
@@ -1521,6 +1556,8 @@ _tkinter_tkapp_record_impl(TkappObject *self, const char *script)
 
     CHECK_STRING_LENGTH(script);
     CHECK_TCL_APPARTMENT;
+
+    TRACE(self, ("((ssss))", "history", "add", script, "exec"));
 
     ENTER_TCL
     err = Tcl_RecordAndEval(Tkapp_Interp(self), script, TCL_NO_EVAL);
@@ -1710,6 +1747,15 @@ SetVar(TkappObject *self, PyObject *args, int flags)
         newval = AsObj(newValue);
         if (newval == NULL)
             return NULL;
+
+        if (flags & TCL_GLOBAL_ONLY) {
+            TRACE((TkappObject *)self, ("((ssssO))", "uplevel", "#0", "set",
+                                        name1, newValue));
+        }
+        else {
+            TRACE((TkappObject *)self, ("((ssO))", "set", name1, newValue));
+        }
+
         ENTER_TCL
         ok = Tcl_SetVar2Ex(Tkapp_Interp(self), name1, NULL,
                            newval, flags);
@@ -1727,8 +1773,22 @@ SetVar(TkappObject *self, PyObject *args, int flags)
             return NULL;
         CHECK_STRING_LENGTH(name1);
         CHECK_STRING_LENGTH(name2);
+
         /* XXX must hold tcl lock already??? */
         newval = AsObj(newValue);
+        if (((TkappObject *)self)->trace) {
+            if (flags & TCL_GLOBAL_ONLY) {
+                TRACE((TkappObject *)self, ("((sssNO))", "uplevel", "#0", "set",
+                                    PyUnicode_FromFormat("%s(%s)", name1, name2),
+                                    newValue));
+            }
+            else {
+                TRACE((TkappObject *)self, ("((sNO))", "set",
+                                    PyUnicode_FromFormat("%s(%s)", name1, name2),
+                                    newValue));
+            }
+        }
+
         ENTER_TCL
         ok = Tcl_SetVar2Ex(Tkapp_Interp(self), name1, name2, newval, flags);
         ENTER_OVERLAP
@@ -1815,6 +1875,28 @@ UnsetVar(TkappObject *self, PyObject *args, int flags)
 
     CHECK_STRING_LENGTH(name1);
     CHECK_STRING_LENGTH(name2);
+
+    if (((TkappObject *)self)->trace) {
+        if (flags & TCL_GLOBAL_ONLY) {
+            if (name2) {
+                TRACE((TkappObject *)self, ("((sssN))", "uplevel", "#0", "unset",
+                                PyUnicode_FromFormat("%s(%s)", name1, name2)));
+            }
+            else {
+                TRACE((TkappObject *)self, ("((ssss))", "uplevel", "#0", "unset", name1));
+            }
+        }
+        else {
+            if (name2) {
+                TRACE((TkappObject *)self, ("((sN))", "unset",
+                                PyUnicode_FromFormat("%s(%s)", name1, name2)));
+            }
+            else {
+                TRACE((TkappObject *)self, ("((ss))", "unset", name1));
+            }
+        }
+    }
+
     ENTER_TCL
     code = Tcl_UnsetVar2(Tkapp_Interp(self), name1, name2, flags);
     ENTER_OVERLAP
@@ -1981,6 +2063,8 @@ _tkinter_tkapp_exprstring_impl(TkappObject *self, const char *s)
     CHECK_STRING_LENGTH(s);
     CHECK_TCL_APPARTMENT;
 
+    TRACE(self, ("((ss))", "expr", s));
+
     ENTER_TCL
     retval = Tcl_ExprString(Tkapp_Interp(self), s);
     ENTER_OVERLAP
@@ -2011,6 +2095,8 @@ _tkinter_tkapp_exprlong_impl(TkappObject *self, const char *s)
     CHECK_STRING_LENGTH(s);
     CHECK_TCL_APPARTMENT;
 
+    TRACE(self, ("((ss))", "expr", s));
+
     ENTER_TCL
     retval = Tcl_ExprLong(Tkapp_Interp(self), s, &v);
     ENTER_OVERLAP
@@ -2040,6 +2126,9 @@ _tkinter_tkapp_exprdouble_impl(TkappObject *self, const char *s)
 
     CHECK_STRING_LENGTH(s);
     CHECK_TCL_APPARTMENT;
+
+    TRACE(self, ("((ss))", "expr", s));
+
     ENTER_TCL
     retval = Tcl_ExprDouble(Tkapp_Interp(self), s, &v);
     ENTER_OVERLAP
@@ -2069,6 +2158,9 @@ _tkinter_tkapp_exprboolean_impl(TkappObject *self, const char *s)
 
     CHECK_STRING_LENGTH(s);
     CHECK_TCL_APPARTMENT;
+
+    TRACE(self, ("((ss))", "expr", s));
+
     ENTER_TCL
     retval = Tcl_ExprBoolean(Tkapp_Interp(self), s, &v);
     ENTER_OVERLAP
@@ -2293,6 +2385,8 @@ _tkinter_tkapp_createcommand_impl(TkappObject *self, const char *name,
         !WaitForMainloop(self))
         return NULL;
 
+    TRACE(self, ("((ss()O))", "proc", name, func));
+
     data = PyMem_NEW(PythonCmd_ClientData, 1);
     if (!data)
         return PyErr_NoMemory();
@@ -2350,6 +2444,8 @@ _tkinter_tkapp_deletecommand_impl(TkappObject *self, const char *name)
     int err;
 
     CHECK_STRING_LENGTH(name);
+
+    TRACE(self, ("((sss))", "rename", name, ""));
 
     if (self->threaded && self->thread_id != Tcl_GetCurrentThread()) {
         Tcl_Condition cond = NULL;
@@ -2476,6 +2572,8 @@ _tkinter_tkapp_createfilehandler_impl(TkappObject *self, PyObject *file,
         return NULL;
     }
 
+    TRACE(self, ("((ssiiO))", "#", "createfilehandler", tfile, mask, func));
+
     data = NewFHCD(func, file, tfile);
     if (data == NULL)
         return NULL;
@@ -2506,6 +2604,8 @@ _tkinter_tkapp_deletefilehandler(TkappObject *self, PyObject *file)
     tfile = PyObject_AsFileDescriptor(file);
     if (tfile < 0)
         return NULL;
+
+    TRACE(self, ("((ssi))", "#", "deletefilehandler", tfile));
 
     DeleteFHCD(tfile);
 
@@ -2541,6 +2641,7 @@ _tkinter_tktimertoken_deletetimerhandler_impl(TkttObject *self)
     PyObject *func = v->func;
 
     if (v->token != NULL) {
+        /* TRACE(...) */
         Tcl_DeleteTimerHandler(v->token);
         v->token = NULL;
     }
@@ -2642,6 +2743,8 @@ _tkinter_tkapp_createtimerhandler_impl(TkappObject *self, int milliseconds,
     }
 
     CHECK_TCL_APPARTMENT;
+
+    TRACE(self, ("((siO))", "after", milliseconds, func));
 
     v = Tktt_New(func);
     if (v) {
@@ -2811,6 +2914,47 @@ Tkapp_WantObjects(PyObject *self, PyObject *args)
 }
 
 /*[clinic input]
+_tkinter.tkapp.settrace
+
+    func: object
+    /
+
+Set the tracing function.
+[clinic start generated code]*/
+
+static PyObject *
+_tkinter_tkapp_settrace(TkappObject *self, PyObject *func)
+/*[clinic end generated code: output=847f6ebdf46e84fa input=31b260d46d3d018a]*/
+{
+    if (func == Py_None) {
+        func = NULL;
+    }
+    else {
+        Py_INCREF(func);
+    }
+    Py_XSETREF(self->trace, func);
+    Py_RETURN_NONE;
+}
+
+/*[clinic input]
+_tkinter.tkapp.gettrace
+
+Get the tracing function.
+[clinic start generated code]*/
+
+static PyObject *
+_tkinter_tkapp_gettrace_impl(TkappObject *self)
+/*[clinic end generated code: output=d4e2ba7d63e77bb5 input=ac2aea5be74e8c4c]*/
+{
+    PyObject *func = self->trace;
+    if (!func) {
+        func = Py_None;
+    }
+    Py_INCREF(func);
+    return func;
+}
+
+/*[clinic input]
 _tkinter.tkapp.willdispatch
 
 [clinic start generated code]*/
@@ -2835,6 +2979,7 @@ Tkapp_Dealloc(PyObject *self)
     ENTER_TCL
     Tcl_DeleteInterp(Tkapp_Interp(self));
     LEAVE_TCL
+    Py_XDECREF(((TkappObject *)self)->trace);
     PyObject_Free(self);
     Py_DECREF(tp);
     DisableEventHook();
@@ -3045,6 +3190,8 @@ static PyMethodDef Tkapp_methods[] =
 {
     _TKINTER_TKAPP_WILLDISPATCH_METHODDEF
     {"wantobjects",            Tkapp_WantObjects, METH_VARARGS},
+    _TKINTER_TKAPP_SETTRACE_METHODDEF
+    _TKINTER_TKAPP_GETTRACE_METHODDEF
     {"call",                   Tkapp_Call, METH_VARARGS},
     _TKINTER_TKAPP_EVAL_METHODDEF
     _TKINTER_TKAPP_EVALFILE_METHODDEF
