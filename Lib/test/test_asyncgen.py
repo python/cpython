@@ -571,6 +571,54 @@ class AsyncGenTest(unittest.TestCase):
         self.assertTrue(inspect.isawaitable(aclose))
         aclose.close()
 
+    def test_async_gen_asend_close_runtime_error(self):
+        import types
+
+        @types.coroutine
+        def _async_yield(v):
+            return (yield v)
+
+        async def agenfn():
+            try:
+                await _async_yield(None)
+            except GeneratorExit:
+                await _async_yield(None)
+            return
+            yield
+
+        agen = agenfn()
+        gen = agen.asend(None)
+        gen.send(None)
+        with self.assertRaisesRegex(RuntimeError, "coroutine ignored GeneratorExit"):
+            gen.close()
+
+    def test_async_gen_athrow_close_runtime_error(self):
+        import types
+
+        @types.coroutine
+        def _async_yield(v):
+            return (yield v)
+
+        class MyExc(Exception):
+            pass
+
+        async def agenfn():
+            try:
+                yield
+            except MyExc:
+                try:
+                    await _async_yield(None)
+                except GeneratorExit:
+                    await _async_yield(None)
+
+        agen = agenfn()
+        with self.assertRaises(StopIteration):
+            agen.asend(None).send(None)
+        gen = agen.athrow(MyExc)
+        gen.send(None)
+        with self.assertRaisesRegex(RuntimeError, "coroutine ignored GeneratorExit"):
+            gen.close()
+
 
 class AsyncGenAsyncioTest(unittest.TestCase):
 
