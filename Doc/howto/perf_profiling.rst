@@ -205,3 +205,36 @@ You can check if your system has been compiled with this flag by running::
 If you don't see any output it means that your interpreter has not been compiled with
 frame pointers and therefore it may not be able to show Python functions in the output
 of ``perf``.
+
+
+How to work without frame pointers
+----------------------------------
+
+If you are working with a Python interpreter that has been compiled without frame pointers
+you can still use the ``perf`` profiler but the overhead will be a bit higher because Python
+needs to generate unwinding information for every Python function call on the fly. Additionally,
+``perf`` will take more time to process the data because it will need to use the DWARF debugging
+information to unwind the stack and this is a slow process.
+
+To enable this mode, you can use the environment variable :envvar:`PYTHONPERFJITSUPPORT` or the
+:option:`-X perfjit <-X>` option, which will enable the JIT mode for the ``perf`` profiler.
+
+When using the perf JIT mode, you need an extra step before you can run ``perf report``. You need to
+call the ``perf inject`` command to inject the JIT information into the ``perf.data`` file.
+
+    $ perf record -F 9999 -g --call-graph dwarf -o perf.data python -Xperfjit my_script.py
+    $ perf inject -i perf.data --jit
+    $ perf report -g -i perf.data
+
+or using the environment variable::
+
+    $ PYTHONPERFJITSUPPORT=1 perf record -F 9999 -g --call-graph dwarf -o perf.data python my_script.py
+    $ perf inject -i perf.data --jit
+    $ perf report -g -i perf.data
+
+Notice that when using ``--call-graph dwarf`` the ``perf`` tool will take snapshots of the stack of
+the process being profiled and save the information in the ``perf.data`` file. By default the size of
+the stack dump is 8192 bytes but the user can change the size by passing the size after comma like
+``--call-graph dwarf,4096``. The size of the stack dump is important because if the size is too small
+``perf`` will not be able to unwind the stack and the output will be incomplete.
+

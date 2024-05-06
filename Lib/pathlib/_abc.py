@@ -12,11 +12,13 @@ resemble pathlib's PurePath and Path respectively.
 """
 
 import functools
-import operator
 from errno import ENOENT, ENOTDIR, EBADF, ELOOP, EINVAL
 from stat import S_ISDIR, S_ISLNK, S_ISREG, S_ISSOCK, S_ISBLK, S_ISCHR, S_ISFIFO
 
-from . import _glob
+from ._glob import Globber, no_recurse_symlinks
+
+
+__all__ = ["UnsupportedOperation"]
 
 #
 # Internals
@@ -42,30 +44,6 @@ def _ignore_error(exception):
 @functools.cache
 def _is_case_sensitive(parser):
     return parser.normcase('Aa') == 'Aa'
-
-
-class Globber(_glob.Globber):
-    lstat = operator.methodcaller('lstat')
-    add_slash = operator.methodcaller('joinpath', '')
-
-    @staticmethod
-    def scandir(path):
-        # Emulate os.scandir(), which returns an object that can be used as a
-        # context manager. This method is called by walk() and glob().
-        from contextlib import nullcontext
-        return nullcontext(path.iterdir())
-
-    @staticmethod
-    def concat_path(path, text):
-        """Appends text to the given path.
-        """
-        return path.with_segments(path._raw_path + text)
-
-    @staticmethod
-    def parse_entry(entry):
-        """Returns the path of an entry yielded from scandir().
-        """
-        return entry
 
 
 class UnsupportedOperation(NotImplementedError):
@@ -693,7 +671,7 @@ class PathBase(PurePathBase):
             # know the case sensitivity of the underlying filesystem, so we
             # must use scandir() for everything, including non-wildcard parts.
             case_pedantic = True
-        recursive = True if recurse_symlinks else _glob.no_recurse_symlinks
+        recursive = True if recurse_symlinks else no_recurse_symlinks
         globber = self._globber(self.parser.sep, case_sensitive, case_pedantic, recursive)
         return globber.selector(parts)
 
