@@ -2002,6 +2002,7 @@ import_run_extension(PyThreadState *tstate, PyModInitFunction p0,
             cached = update_global_state_for_extension(
                     tstate, info->path, info->name, def, &singlephase);
             if (cached == NULL) {
+                assert(PyErr_Occurred());
                 goto main_finally;
             }
         }
