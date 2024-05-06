@@ -817,6 +817,21 @@ class TestRetrievingSourceCode(GetSourceBase):
     def test_getsource_on_code_object(self):
         self.assertSourceEqual(mod.eggs.__code__, 12, 18)
 
+    def test_getsource_on_generated_class(self):
+        A = type('A', (), {})
+        self.assertEqual(inspect.getsourcefile(A), __file__)
+        self.assertEqual(inspect.getfile(A), __file__)
+        self.assertIs(inspect.getmodule(A), sys.modules[__name__])
+        self.assertRaises(OSError, inspect.getsource, A)
+        self.assertRaises(OSError, inspect.getsourcelines, A)
+        self.assertIsNone(inspect.getcomments(A))
+
+    def test_getsource_on_class_without_firstlineno(self):
+        __firstlineno__ = 1
+        class C:
+            nonlocal __firstlineno__
+        self.assertRaises(OSError, inspect.getsource, C)
+
 class TestGetsourceInteractive(unittest.TestCase):
     def test_getclasses_interactive(self):
         # bpo-44648: simulate a REPL session;

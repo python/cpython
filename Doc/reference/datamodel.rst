@@ -971,6 +971,7 @@ A class object can be called (see above) to yield a class instance (see below).
    single: __annotations__ (class attribute)
    single: __type_params__ (class attribute)
    single: __static_attributes__ (class attribute)
+   single: __firstlineno__ (class attribute)
 
 Special attributes:
 
@@ -1004,6 +1005,9 @@ Special attributes:
    :attr:`~class.__static_attributes__`
       A tuple containing names of attributes of this class which are accessed
       through ``self.X`` from any function in its body.
+
+   :attr:`__firstlineno__`
+      The line number of the first line of the class definition, including decorators.
 
 
 Class instances
