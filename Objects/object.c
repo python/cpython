@@ -1132,8 +1132,8 @@ _PyObject_SetAttrId(PyObject *v, _Py_Identifier *name, PyObject *w)
     return result;
 }
 
-static inline int
-set_attribute_error_context(PyObject* v, PyObject* name)
+int
+_PyObject_SetAttributeErrorContext(PyObject* v, PyObject* name)
 {
     assert(PyErr_Occurred());
     if (!PyErr_ExceptionMatches(PyExc_AttributeError)){
@@ -1188,7 +1188,7 @@ PyObject_GetAttr(PyObject *v, PyObject *name)
     }
 
     if (result == NULL) {
-        set_attribute_error_context(v, name);
+        _PyObject_SetAttributeErrorContext(v, name);
     }
     return result;
 }
@@ -1466,13 +1466,13 @@ _PyObject_GetMethod(PyObject *obj, PyObject *name, PyObject **method)
         return 0;
     }
 
-    PyObject *descr = _PyType_Lookup(tp, name);
+    PyObject *descr = _PyType_LookupRef(tp, name);
     descrgetfunc f = NULL;
     if (descr != NULL) {
-        Py_INCREF(descr);
         if (_PyType_HasFeature(Py_TYPE(descr), Py_TPFLAGS_METHOD_DESCRIPTOR)) {
             meth_found = 1;
-        } else {
+        }
+        else {
             f = Py_TYPE(descr)->tp_descr_get;
             if (f != NULL && PyDescr_IsData(descr)) {
                 *method = f(descr, obj, (PyObject *)Py_TYPE(obj));
@@ -1535,7 +1535,7 @@ _PyObject_GetMethod(PyObject *obj, PyObject *name, PyObject **method)
                  "'%.100s' object has no attribute '%U'",
                  tp->tp_name, name);
 
-    set_attribute_error_context(obj, name);
+    _PyObject_SetAttributeErrorContext(obj, name);
     return 0;
 }
 
@@ -1569,11 +1569,10 @@ _PyObject_GenericGetAttrWithDict(PyObject *obj, PyObject *name,
             goto done;
     }
 
-    descr = _PyType_Lookup(tp, name);
+    descr = _PyType_LookupRef(tp, name);
 
     f = NULL;
     if (descr != NULL) {
-        Py_INCREF(descr);
         f = Py_TYPE(descr)->tp_descr_get;
         if (f != NULL && PyDescr_IsData(descr)) {
             res = f(descr, obj, (PyObject *)Py_TYPE(obj));
@@ -1647,7 +1646,7 @@ _PyObject_GenericGetAttrWithDict(PyObject *obj, PyObject *name,
                      "'%.100s' object has no attribute '%U'",
                      tp->tp_name, name);
 
-        set_attribute_error_context(obj, name);
+        _PyObject_SetAttributeErrorContext(obj, name);
     }
   done:
     Py_XDECREF(descr);
@@ -1670,6 +1669,7 @@ _PyObject_GenericSetAttrWithDict(PyObject *obj, PyObject *name,
     descrsetfunc f;
     int res = -1;
 
+    assert(!PyType_IsSubtype(tp, &PyType_Type));
     if (!PyUnicode_Check(name)){
         PyErr_Format(PyExc_TypeError,
                      "attribute name must be string, not '%.200s'",
@@ -1683,10 +1683,9 @@ _PyObject_GenericSetAttrWithDict(PyObject *obj, PyObject *name,
 
     Py_INCREF(name);
     Py_INCREF(tp);
-    descr = _PyType_Lookup(tp, name);
+    descr = _PyType_LookupRef(tp, name);
 
     if (descr != NULL) {
-        Py_INCREF(descr);
         f = Py_TYPE(descr)->tp_descr_set;
         if (f != NULL) {
             res = f(descr, obj, value);
@@ -1722,7 +1721,7 @@ _PyObject_GenericSetAttrWithDict(PyObject *obj, PyObject *name,
                                 "'%.100s' object has no attribute '%U'",
                                 tp->tp_name, name);
                 }
-                set_attribute_error_context(obj, name);
+                _PyObject_SetAttributeErrorContext(obj, name);
             }
             else {
                 PyErr_Format(PyExc_AttributeError,
@@ -1745,17 +1744,10 @@ _PyObject_GenericSetAttrWithDict(PyObject *obj, PyObject *name,
     }
   error_check:
     if (res < 0 && PyErr_ExceptionMatches(PyExc_KeyError)) {
-        if (PyType_IsSubtype(tp, &PyType_Type)) {
-            PyErr_Format(PyExc_AttributeError,
-                         "type object '%.50s' has no attribute '%U'",
-                         ((PyTypeObject*)obj)->tp_name, name);
-        }
-        else {
-            PyErr_Format(PyExc_AttributeError,
-                         "'%.100s' object has no attribute '%U'",
-                         tp->tp_name, name);
-        }
-        set_attribute_error_context(obj, name);
+        PyErr_Format(PyExc_AttributeError,
+                        "'%.100s' object has no attribute '%U'",
+                        tp->tp_name, name);
+        _PyObject_SetAttributeErrorContext(obj, name);
     }
   done:
     Py_XDECREF(descr);
