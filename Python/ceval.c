@@ -726,25 +726,33 @@ PyObject*
 _PyEval_MatchClass(PyThreadState *tstate, PyObject *subject, PyObject *type,
                    Py_ssize_t nargs, PyObject *kwargs)
 {
-    if (!PyType_Check(type) && !_PyUnion_Check(type)) {
-        const char *e = "called match pattern must be a class or a union";
-        _PyErr_Format(tstate, PyExc_TypeError, e);
+    // Recurse on unions.
+    if (_PyUnion_Check(type)) {
+        // get union members
+        PyObject *members = _Py_union_args(type);
+        const Py_ssize_t n = PyTuple_GET_SIZE(members);
+
+        // iterate over union members and return first match
+        for (Py_ssize_t i = 0; i < n; i++) {
+            PyObject *member = PyTuple_GET_ITEM(members, i);
+            PyObject *attrs = _PyEval_MatchClass(tstate, subject, member, nargs, kwargs);
+            // match found
+            if (attrs != NULL) {
+                return attrs;
+            }
+        }
+        // no match found
+        return NULL;
+    }
+    if (!PyType_Check(type)) {
+        const char *e = "called match pattern must be a class or types.UnionType (got %s)";
+        _PyErr_Format(tstate, PyExc_TypeError, e, Py_TYPE(type)->tp_name);
         return NULL;
     }
     assert(PyTuple_CheckExact(kwargs));
     // First, an isinstance check:
     if (PyObject_IsInstance(subject, type) <= 0) {
         return NULL;
-    }
-    // Subpatterns are not supported for union types:
-    if (_PyUnion_Check(type)) {
-        // Return error if any positional or keyword arguments are given:
-        if (nargs || PyTuple_GET_SIZE(kwargs)) {
-            const char *e = "union types do not support sub-patterns";
-            _PyErr_Format(tstate, PyExc_TypeError, e);
-            return NULL;
-        }
-        return PyTuple_New(0);
     }
     // So far so good:
     PyObject *seen = PySet_New(NULL);
