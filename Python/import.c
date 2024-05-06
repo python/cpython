@@ -2030,7 +2030,9 @@ main_finally:
          * reloaded in the subinterpreter. */
         Py_CLEAR(mod);
 
+        PyThreadState_Clear(main_tstate);
         (void)PyThreadState_Swap(tstate);
+        PyThreadState_Delete(main_tstate);
     }
 
     /*****************************************************************/
