@@ -277,7 +277,7 @@ def new_int_to_decimal_string(n):
     # only if the number has way more than 10**15 digits, that exceeds
     # the 52-bit physical address limit in both Intel64 and AMD64.
     w = int(w * 0.3010299956639812 + 1)  # log10(2)
-    pow10 = compute_powers(w, 5, 1009)
+    pow10 = compute_powers(w, 5, 1000)
     for k, v in pow10.items():
         pow10[k] = v << k
     if n < 0:
@@ -360,7 +360,8 @@ def new_str_to_int_inner(s):
             return int(s[a:b])
         mid = (a + b + 1) >> 1
         return (inner(mid, b)
-                + ((inner(a, mid) * w5pow[b - mid]) << (b - mid)))
+                + ((inner(a, mid) * w5pow[b - mid])
+                    << (b - mid)))
 
     w5pow = compute_powers(len(s), 5, DIGLIM)
     return inner(0, len(s))
