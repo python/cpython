@@ -1469,12 +1469,23 @@ def _compute_suggestion_error(exc_value, tb, wrong_name):
         obj = exc_value.obj
         try:
             d = dir(obj)
+            hide_underscored = (wrong_name[:1] != '_')
+            if hide_underscored and tb is not None:
+                while tb.tb_next is not None:
+                    tb = tb.tb_next
+                frame = tb.tb_frame
+                if 'self' in frame.f_locals and frame.f_locals['self'] is obj:
+                    hide_underscored = False
+            if hide_underscored:
+                d = [x for x in d if x[:1] != '_']
         except Exception:
             return None
     elif isinstance(exc_value, ImportError):
         try:
             mod = __import__(exc_value.name)
             d = dir(mod)
+            if wrong_name[:1] != '_':
+                d = [x for x in d if x[:1] != '_']
         except Exception:
             return None
     else:
