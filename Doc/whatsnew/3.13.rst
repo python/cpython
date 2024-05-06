@@ -328,6 +328,11 @@ Other Language Changes
   class scopes are not inlined into their parent scope. (Contributed by
   Jelle Zijlstra in :gh:`109118` and :gh:`118160`.)
 
+* Classes have a new :attr:`!__firstlineno__` attribute,
+  populated by the compiler, with the line number of the first line
+  of the class definition.
+  (Contributed by Serhiy Storchaka in :gh:`118465`.)
+
 * ``from __future__ import ...`` statements are now just normal
   relative imports if dots are present before the module name.
   (Contributed by Jeremiah Gabriel Pascual in :gh:`118216`.)
