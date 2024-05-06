@@ -14622,19 +14622,19 @@ if test "x$with_system_libmpdec" = xyes
 then :
 
 pkg_failed=no
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for libmpdec" >&5
-printf %s "checking for libmpdec... " >&6; }
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for libmpdec >= 2.5.0" >&5
+printf %s "checking for libmpdec >= 2.5.0... " >&6; }
 
 if test -n "$LIBMPDEC_CFLAGS"; then
     pkg_cv_LIBMPDEC_CFLAGS="$LIBMPDEC_CFLAGS"
  elif test -n "$PKG_CONFIG"; then
     if test -n "$PKG_CONFIG" && \
-    { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"libmpdec\""; } >&5
-  ($PKG_CONFIG --exists --print-errors "libmpdec") 2>&5
+    { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"libmpdec >= 2.5.0\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "libmpdec >= 2.5.0") 2>&5
   ac_status=$?
   printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
   test $ac_status = 0; }; then
-  pkg_cv_LIBMPDEC_CFLAGS=`$PKG_CONFIG --cflags "libmpdec" 2>/dev/null`
+  pkg_cv_LIBMPDEC_CFLAGS=`$PKG_CONFIG --cflags "libmpdec >= 2.5.0" 2>/dev/null`
 		      test "x$?" != "x0" && pkg_failed=yes
 else
   pkg_failed=yes
@@ -14646,12 +14646,12 @@ if test -n "$LIBMPDEC_LIBS"; then
     pkg_cv_LIBMPDEC_LIBS="$LIBMPDEC_LIBS"
  elif test -n "$PKG_CONFIG"; then
     if test -n "$PKG_CONFIG" && \
-    { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"libmpdec\""; } >&5
-  ($PKG_CONFIG --exists --print-errors "libmpdec") 2>&5
+    { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"libmpdec >= 2.5.0\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "libmpdec >= 2.5.0") 2>&5
   ac_status=$?
   printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
   test $ac_status = 0; }; then
-  pkg_cv_LIBMPDEC_LIBS=`$PKG_CONFIG --libs "libmpdec" 2>/dev/null`
+  pkg_cv_LIBMPDEC_LIBS=`$PKG_CONFIG --libs "libmpdec >= 2.5.0" 2>/dev/null`
 		      test "x$?" != "x0" && pkg_failed=yes
 else
   pkg_failed=yes
@@ -14672,9 +14672,9 @@ else
         _pkg_short_errors_supported=no
 fi
         if test $_pkg_short_errors_supported = yes; then
-	        LIBMPDEC_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "libmpdec" 2>&1`
+	        LIBMPDEC_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "libmpdec >= 2.5.0" 2>&1`
         else
-	        LIBMPDEC_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "libmpdec" 2>&1`
+	        LIBMPDEC_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "libmpdec >= 2.5.0" 2>&1`
         fi
 	# Put the nasty error message in config.log where it belongs
 	echo "$LIBMPDEC_PKG_ERRORS" >&5
@@ -14711,66 +14711,32 @@ save_LIBS=$LIBS
 
     CPPFLAGS="$LIBMPDEC_CFLAGS $CPPFLAGS"
     LDFLAGS="$LIBMPDEC_LIBS $LDFLAGS"
-    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for library containing mpd_version" >&5
-printf %s "checking for library containing mpd_version... " >&6; }
-if test ${ac_cv_search_mpd_version+y}
-then :
-  printf %s "(cached) " >&6
-else $as_nop
-  ac_func_search_save_LIBS=$LIBS
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+
+    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-char mpd_version ();
+
+        #include <mpdecimal.h>
+        #if MPD_VERSION_HEX < 0x02050000
+        #  error "mpdecimal 2.5.0 or higher required"
+        #endif
+
 int
 main (void)
 {
-return mpd_version ();
+void *x = mpd_version;
   ;
   return 0;
 }
 _ACEOF
-for ac_lib in '' mpdec
-do
-  if test -z "$ac_lib"; then
-    ac_res="none required"
-  else
-    ac_res=-l$ac_lib
-    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
-  fi
-  if ac_fn_c_try_link "$LINENO"
+if ac_fn_c_try_link "$LINENO"
 then :
-  ac_cv_search_mpd_version=$ac_res
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam \
-    conftest$ac_exeext
-  if test ${ac_cv_search_mpd_version+y}
-then :
-  break
-fi
-done
-if test ${ac_cv_search_mpd_version+y}
-then :
-
-else $as_nop
-  ac_cv_search_mpd_version=no
-fi
-rm conftest.$ac_ext
-LIBS=$ac_func_search_save_LIBS
-fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_search_mpd_version" >&5
-printf "%s\n" "$ac_cv_search_mpd_version" >&6; }
-ac_res=$ac_cv_search_mpd_version
-if test "$ac_res" != no
-then :
-  test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
   have_mpdec=yes
 else $as_nop
   have_mpdec=no
 fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
 
 CFLAGS=$save_CFLAGS
 CPPFLAGS=$save_CPPFLAGS

@@ -3983,7 +3983,7 @@ AC_MSG_RESULT([$with_system_libmpdec])
 AS_VAR_IF(
   [with_system_libmpdec], [yes],
   [PKG_CHECK_MODULES(
-    [LIBMPDEC], [libmpdec], [],
+    [LIBMPDEC], [libmpdec >= 2.5.0], [],
     [LIBMPDEC_CFLAGS=${LIBMPDEC_CFLAGS-""}
      LIBMPDEC_LIBS=${LIBMPDEC_LIBS-"-lmpdec -lm"}
      LIBMPDEC_INTERNAL=])],
@@ -3995,9 +3995,17 @@ AS_VAR_IF([with_system_libmpdec], [yes],
   [WITH_SAVE_ENV([
     CPPFLAGS="$LIBMPDEC_CFLAGS $CPPFLAGS"
     LDFLAGS="$LIBMPDEC_LIBS $LDFLAGS"
-    AC_SEARCH_LIBS(
-      [mpd_version], [mpdec],
-      [have_mpdec=yes], [have_mpdec=no])])],
+
+    AC_LINK_IFELSE([
+      AC_LANG_PROGRAM([
+        #include <mpdecimal.h>
+        #if MPD_VERSION_HEX < 0x02050000
+        #  error "mpdecimal 2.5.0 or higher required"
+        #endif
+      ], [void *x = mpd_version;])],
+      [have_mpdec=yes],
+      [have_mpdec=no])
+  ])],
   [AS_VAR_SET([have_mpdec], [yes])
    AC_MSG_WARN([m4_normalize([
      the bundled copy of libmpdecimal is scheduled for removal in Python 3.15;
