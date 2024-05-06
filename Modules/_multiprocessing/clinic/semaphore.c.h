@@ -6,6 +6,8 @@ preserve
 #  include "pycore_gc.h"          // PyGC_Head
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
+#include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
+#include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 #if defined(HAVE_MP_SEMAPHORE) && defined(MS_WINDOWS)
 
@@ -74,7 +76,9 @@ _multiprocessing_SemLock_acquire(SemLockObject *self, PyObject *const *args, Py_
     }
     timeout_obj = args[1];
 skip_optional_pos:
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = _multiprocessing_SemLock_acquire_impl(self, blocking, timeout_obj);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -99,7 +103,13 @@ _multiprocessing_SemLock_release_impl(SemLockObject *self);
 static PyObject *
 _multiprocessing_SemLock_release(SemLockObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _multiprocessing_SemLock_release_impl(self);
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _multiprocessing_SemLock_release_impl(self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
 }
 
 #endif /* defined(HAVE_MP_SEMAPHORE) && defined(MS_WINDOWS) */
@@ -171,7 +181,9 @@ _multiprocessing_SemLock_acquire(SemLockObject *self, PyObject *const *args, Py_
     }
     timeout_obj = args[1];
 skip_optional_pos:
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = _multiprocessing_SemLock_acquire_impl(self, blocking, timeout_obj);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -196,7 +208,13 @@ _multiprocessing_SemLock_release_impl(SemLockObject *self);
 static PyObject *
 _multiprocessing_SemLock_release(SemLockObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _multiprocessing_SemLock_release_impl(self);
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _multiprocessing_SemLock_release_impl(self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
 }
 
 #endif /* defined(HAVE_MP_SEMAPHORE) && !defined(MS_WINDOWS) */
@@ -339,7 +357,13 @@ _multiprocessing_SemLock__count_impl(SemLockObject *self);
 static PyObject *
 _multiprocessing_SemLock__count(SemLockObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _multiprocessing_SemLock__count_impl(self);
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _multiprocessing_SemLock__count_impl(self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
 }
 
 #endif /* defined(HAVE_MP_SEMAPHORE) */
@@ -541,4 +565,4 @@ exit:
 #ifndef _MULTIPROCESSING_SEMLOCK___EXIT___METHODDEF
     #define _MULTIPROCESSING_SEMLOCK___EXIT___METHODDEF
 #endif /* !defined(_MULTIPROCESSING_SEMLOCK___EXIT___METHODDEF) */
-/*[clinic end generated code: output=e8ea65f8cba8e173 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=713b597256233716 input=a9049054013a1b77]*/

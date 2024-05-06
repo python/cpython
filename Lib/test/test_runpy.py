@@ -12,7 +12,8 @@ import tempfile
 import textwrap
 import unittest
 import warnings
-from test.support import no_tracing, verbose, requires_subprocess, requires_resource
+from test.support import (infinite_recursion, no_tracing, verbose,
+                          requires_subprocess, requires_resource)
 from test.support.import_helper import forget, make_legacy_pyc, unload
 from test.support.os_helper import create_empty_file, temp_dir
 from test.support.script_helper import make_script, make_zip_script
@@ -661,8 +662,10 @@ class RunPathTestCase(unittest.TestCase, CodeExecutionMixin):
             mod_name = 'script'
             script_name = pathlib.Path(self._make_test_script(script_dir,
                                                               mod_name))
-            self._check_script(script_name, "<run_path>", script_name,
-                               script_name, expect_spec=False)
+            self._check_script(script_name, "<run_path>",
+                               os.fsdecode(script_name),
+                               os.fsdecode(script_name),
+                               expect_spec=False)
 
     def test_basic_script_no_suffix(self):
         with temp_dir() as script_dir:
@@ -741,7 +744,8 @@ class RunPathTestCase(unittest.TestCase, CodeExecutionMixin):
                       "runpy.run_path(%r)\n") % dummy_dir
             script_name = self._make_test_script(script_dir, mod_name, source)
             zip_name, fname = make_zip_script(script_dir, 'test_zip', script_name)
-            self.assertRaises(RecursionError, run_path, zip_name)
+            with infinite_recursion(25):
+                self.assertRaises(RecursionError, run_path, zip_name)
 
     def test_encoding(self):
         with temp_dir() as script_dir:

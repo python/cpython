@@ -1,2 +1,0 @@
-Add ``get_recursion_available()`` and ``get_recursion_depth()`` functions to
-the :mod:`test.support` module. Patch by Victor Stinner.

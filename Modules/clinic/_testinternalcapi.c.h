@@ -6,6 +6,7 @@ preserve
 #  include "pycore_gc.h"          // PyGC_Head
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
+#include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 PyDoc_STRVAR(_testinternalcapi_compiler_cleandoc__doc__,
 "compiler_cleandoc($module, /, doc)\n"
@@ -64,6 +65,24 @@ _testinternalcapi_compiler_cleandoc(PyObject *module, PyObject *const *args, Py_
 
 exit:
     return return_value;
+}
+
+PyDoc_STRVAR(_testinternalcapi_new_instruction_sequence__doc__,
+"new_instruction_sequence($module, /)\n"
+"--\n"
+"\n"
+"Return a new, empty InstructionSequence.");
+
+#define _TESTINTERNALCAPI_NEW_INSTRUCTION_SEQUENCE_METHODDEF    \
+    {"new_instruction_sequence", (PyCFunction)_testinternalcapi_new_instruction_sequence, METH_NOARGS, _testinternalcapi_new_instruction_sequence__doc__},
+
+static PyObject *
+_testinternalcapi_new_instruction_sequence_impl(PyObject *module);
+
+static PyObject *
+_testinternalcapi_new_instruction_sequence(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return _testinternalcapi_new_instruction_sequence_impl(module);
 }
 
 PyDoc_STRVAR(_testinternalcapi_compiler_codegen__doc__,
@@ -265,35 +284,20 @@ exit:
     return return_value;
 }
 
-PyDoc_STRVAR(_testinternalcapi_write_unraisable_exc__doc__,
-"write_unraisable_exc($module, exception, err_msg, obj, /)\n"
+PyDoc_STRVAR(_testinternalcapi_test_long_numbits__doc__,
+"test_long_numbits($module, /)\n"
 "--\n"
 "\n");
 
-#define _TESTINTERNALCAPI_WRITE_UNRAISABLE_EXC_METHODDEF    \
-    {"write_unraisable_exc", _PyCFunction_CAST(_testinternalcapi_write_unraisable_exc), METH_FASTCALL, _testinternalcapi_write_unraisable_exc__doc__},
+#define _TESTINTERNALCAPI_TEST_LONG_NUMBITS_METHODDEF    \
+    {"test_long_numbits", (PyCFunction)_testinternalcapi_test_long_numbits, METH_NOARGS, _testinternalcapi_test_long_numbits__doc__},
 
 static PyObject *
-_testinternalcapi_write_unraisable_exc_impl(PyObject *module, PyObject *exc,
-                                            PyObject *err_msg, PyObject *obj);
+_testinternalcapi_test_long_numbits_impl(PyObject *module);
 
 static PyObject *
-_testinternalcapi_write_unraisable_exc(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+_testinternalcapi_test_long_numbits(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *return_value = NULL;
-    PyObject *exc;
-    PyObject *err_msg;
-    PyObject *obj;
-
-    if (!_PyArg_CheckPositional("write_unraisable_exc", nargs, 3, 3)) {
-        goto exit;
-    }
-    exc = args[0];
-    err_msg = args[1];
-    obj = args[2];
-    return_value = _testinternalcapi_write_unraisable_exc_impl(module, exc, err_msg, obj);
-
-exit:
-    return return_value;
+    return _testinternalcapi_test_long_numbits_impl(module);
 }
-/*[clinic end generated code: output=c7156622e80df1ce input=a9049054013a1b77]*/
+/*[clinic end generated code: output=9804015d77d36c77 input=a9049054013a1b77]*/

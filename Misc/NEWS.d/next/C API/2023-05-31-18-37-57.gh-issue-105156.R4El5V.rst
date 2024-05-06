@@ -1,4 +1,0 @@
-Deprecate the old ``Py_UNICODE`` and ``PY_UNICODE_TYPE`` types: use directly
-the :c:type:`wchar_t` type instead. Since Python 3.3, ``Py_UNICODE`` and
-``PY_UNICODE_TYPE`` are just aliases to :c:type:`wchar_t`. Patch by Victor
-Stinner.

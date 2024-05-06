@@ -10,7 +10,6 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_atomic.h"        // _Py_atomic_address
 #include <signal.h>               // NSIG
 
 
@@ -38,12 +37,10 @@ PyAPI_FUNC(void) _Py_RestoreSignals(void);
 #define INVALID_FD (-1)
 
 struct _signals_runtime_state {
-    volatile struct {
-        _Py_atomic_int tripped;
-        /* func is atomic to ensure that PyErr_SetInterrupt is async-signal-safe
-         * (even though it would probably be otherwise, anyway).
-         */
-        _Py_atomic_address func;
+    struct {
+        // tripped and func should be accessed using atomic ops.
+        int tripped;
+        PyObject* func;
     } handlers[Py_NSIG];
 
     volatile struct {
@@ -63,8 +60,9 @@ struct _signals_runtime_state {
 #endif
     } wakeup;
 
-    /* Speed up sigcheck() when none tripped */
-    _Py_atomic_int is_tripped;
+    /* Speed up sigcheck() when none tripped.
+       is_tripped should be accessed using atomic ops. */
+    int is_tripped;
 
     /* These objects necessarily belong to the main interpreter. */
     PyObject *default_handler;

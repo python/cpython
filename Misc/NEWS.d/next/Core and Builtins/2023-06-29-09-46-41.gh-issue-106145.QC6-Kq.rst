@@ -1,2 +1,0 @@
-Make ``end_lineno`` and ``end_col_offset`` required on ``type_param`` ast
-nodes.

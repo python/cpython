@@ -4,13 +4,20 @@ import dis
 import threading
 import types
 import unittest
-from test.support import threading_helper
-import _testinternalcapi
+from test.support import threading_helper, check_impl_detail, requires_specialization
+from test.support.import_helper import import_module
+
+# Skip this module on other interpreters, it is cpython specific:
+if check_impl_detail(cpython=False):
+    raise unittest.SkipTest('implementation detail specific to cpython')
+
+_testinternalcapi = import_module("_testinternalcapi")
 
 
 def disabling_optimizer(func):
     def wrapper(*args, **kwargs):
-        import _testinternalcapi
+        if not hasattr(_testinternalcapi, "get_optimizer"):
+            return func(*args, **kwargs)
         old_opt = _testinternalcapi.get_optimizer()
         _testinternalcapi.set_optimizer(None)
         try:
@@ -502,6 +509,7 @@ class TestCallCache(unittest.TestCase):
 
 
 @threading_helper.requires_working_threading()
+@requires_specialization
 class TestRacesDoNotCrash(unittest.TestCase):
     # Careful with these. Bigger numbers have a higher chance of catching bugs,
     # but you can also burn through a *ton* of type/dict/function versions:
@@ -1017,6 +1025,7 @@ class TestRacesDoNotCrash(unittest.TestCase):
 class C:
     pass
 
+@requires_specialization
 class TestInstanceDict(unittest.TestCase):
 
     def setUp(self):
@@ -1038,20 +1047,13 @@ class TestInstanceDict(unittest.TestCase):
         c.a = 1
         c.b = 2
         c.__dict__
-        self.assertIs(
-            _testinternalcapi.get_object_dict_values(c),
-            None
-        )
+        self.assertEqual(c.__dict__, {"a":1, "b": 2})
 
     def test_dict_dematerialization(self):
         c = C()
         c.a = 1
         c.b = 2
         c.__dict__
-        self.assertIs(
-            _testinternalcapi.get_object_dict_values(c),
-            None
-        )
         for _ in range(100):
             c.a
         self.assertEqual(
@@ -1066,10 +1068,6 @@ class TestInstanceDict(unittest.TestCase):
         d = c.__dict__
         for _ in range(100):
             c.a
-        self.assertIs(
-            _testinternalcapi.get_object_dict_values(c),
-            None
-        )
         self.assertIs(c.__dict__, d)
 
     def test_dict_dematerialization_copy(self):

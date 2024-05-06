@@ -16,10 +16,6 @@
 #  include <shlwapi.h>
 #endif
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 
 /* External interface */
 
@@ -255,8 +251,7 @@ Py_SetPath(const wchar_t *path)
 }
 
 
-// Removed in Python 3.13 API, but kept for the stable ABI
-PyAPI_FUNC(void)
+void
 Py_SetPythonHome(const wchar_t *home)
 {
     int has_value = home && home[0];
@@ -279,8 +274,7 @@ Py_SetPythonHome(const wchar_t *home)
 }
 
 
-// Removed in Python 3.13 API, but kept for the stable ABI
-PyAPI_FUNC(void)
+void
 Py_SetProgramName(const wchar_t *program_name)
 {
     int has_value = program_name && program_name[0];
@@ -500,8 +494,3 @@ _PyPathConfig_ComputeSysPath0(const PyWideStringList *argv, PyObject **path0_p)
     *path0_p = path0_obj;
     return 1;
 }
-
-
-#ifdef __cplusplus
-}
-#endif

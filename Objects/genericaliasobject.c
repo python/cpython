@@ -2,6 +2,7 @@
 
 #include "Python.h"
 #include "pycore_ceval.h"         // _PyEval_GetBuiltin()
+#include "pycore_modsupport.h"    // _PyArg_NoKeywords()
 #include "pycore_object.h"
 #include "pycore_unionobject.h"   // _Py_union_type_or, _PyGenericAlias_Check
 
@@ -536,6 +537,8 @@ _Py_subs_parameters(PyObject *self, PyObject *args, PyObject *parameters, PyObje
 }
 
 PyDoc_STRVAR(genericalias__doc__,
+"GenericAlias(origin, args, /)\n"
+"--\n\n"
 "Represent a PEP 585 generic type\n"
 "\n"
 "E.g. for t = list[int], t.__origin__ is list and t.__args__ is (int,).");

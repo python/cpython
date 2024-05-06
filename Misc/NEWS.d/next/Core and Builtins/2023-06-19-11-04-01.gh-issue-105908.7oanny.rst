@@ -1,1 +1,0 @@
-Fixed bug where :gh:`99111` breaks future import ``barry_as_FLUFL`` in the Python REPL.

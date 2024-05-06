@@ -1,1 +1,0 @@
-Improve error handling when read :mod:`marshal` data.

@@ -289,7 +289,7 @@ def test_excepthook():
 
 
 def test_unraisablehook():
-    from _testinternalcapi import write_unraisable_exc
+    from _testcapi import err_formatunraisable
 
     def unraisablehook(hookargs):
         pass
@@ -302,7 +302,8 @@ def test_unraisablehook():
 
     sys.addaudithook(hook)
     sys.unraisablehook = unraisablehook
-    write_unraisable_exc(RuntimeError("nonfatal-error"), "for audit hook test", None)
+    err_formatunraisable(RuntimeError("nonfatal-error"),
+                         "Exception ignored for audit hook test")
 
 
 def test_winreg():
@@ -454,6 +455,9 @@ def test_threading():
     i = _thread.start_new_thread(test_func(), ())
     lock.acquire()
 
+    handle = _thread.start_joinable_thread(test_func())
+    handle.join()
+
 
 def test_threading_abort():
     # Ensures that aborting PyThreadState_New raises the correct exception
@@ -483,7 +487,13 @@ def test_wmi_exec_query():
             print(event, args[0])
 
     sys.addaudithook(hook)
-    _wmi.exec_query("SELECT * FROM Win32_OperatingSystem")
+    try:
+        _wmi.exec_query("SELECT * FROM Win32_OperatingSystem")
+    except WindowsError as e:
+        # gh-112278: WMI may be slow response when first called, but we still
+        # get the audit event, so just ignore the timeout
+        if e.winerror != 258:
+            raise
 
 def test_syslog():
     import syslog

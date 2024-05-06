@@ -255,7 +255,7 @@ class UTF8ValidatorTest(unittest.TestCase):
     def test_invalid_utf8(self):
         # This is a port of test_utf8_decode_invalid_sequences in
         # test_unicode.py to exercise the separate utf8 validator in
-        # Parser/tokenizer.c used when reading source files.
+        # Parser/tokenizer/helpers.c used when reading source files.
 
         # That file is written using low-level C file I/O, so the only way to
         # test it is to write actual files to disk.

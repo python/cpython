@@ -12,7 +12,7 @@ The following modules have a command-line interface.
 * :ref:`compileall <compileall-cli>`
 * :mod:`cProfile`: see :ref:`profile <profile-cli>`
 * :ref:`difflib <difflib-interface>`
-* :mod:`dis`
+* :ref:`dis <dis-cli>`
 * :mod:`doctest`
 * :mod:`!encodings.rot_13`
 * :mod:`ensurepip`
@@ -36,6 +36,7 @@ The following modules have a command-line interface.
 * :mod:`pyclbr`
 * :mod:`pydoc`
 * :mod:`quopri`
+* :ref:`random <random-cli>`
 * :mod:`runpy`
 * :ref:`site <site-commandline>`
 * :ref:`sqlite3 <sqlite3-cli>`
