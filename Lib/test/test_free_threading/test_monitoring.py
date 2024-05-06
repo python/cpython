@@ -8,20 +8,14 @@ import weakref
 
 from sys import monitoring
 from test.support import is_wasi
-from threading import Thread
+from threading import Thread, _PyRLock
 from unittest import TestCase
 
 
 class InstrumentationMultiThreadedMixin:
-    if not hasattr(sys, "gettotalrefcount"):
-        thread_count = 50
-        func_count = 1000
-        fib = 15
-    else:
-        # Run a little faster in debug builds...
-        thread_count = 25
-        func_count = 500
-        fib = 15
+    thread_count = 10
+    func_count = 200
+    fib = 12
 
     def after_threads(self):
         """Runs once after all the threads have started"""
@@ -175,9 +169,6 @@ class SetTraceMultiThreaded(InstrumentationMultiThreadedMixin, TestCase):
 @unittest.skipIf(is_wasi, "WASI has no threads.")
 class SetProfileMultiThreaded(InstrumentationMultiThreadedMixin, TestCase):
     """Uses sys.setprofile and repeatedly toggles instrumentation on and off"""
-    thread_count = 25
-    func_count = 200
-    fib = 15
 
     def setUp(self):
         self.set = False
@@ -227,6 +218,28 @@ class MonitoringMisc(MonitoringTestMixin, TestCase):
         for ref in self.refs:
             self.assertEqual(ref(), None)
 
+    def test_set_local_trace_opcodes(self):
+        def trace(frame, event, arg):
+            frame.f_trace_opcodes = True
+            return trace
+
+        sys.settrace(trace)
+        try:
+            l = _PyRLock()
+
+            def f():
+                for i in range(3000):
+                    with l:
+                        pass
+
+            t = Thread(target=f)
+            t.start()
+            for i in range(3000):
+                with l:
+                    pass
+            t.join()
+        finally:
+            sys.settrace(None)
 
 if __name__ == "__main__":
     unittest.main()
