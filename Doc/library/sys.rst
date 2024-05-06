@@ -1199,6 +1199,14 @@ always available.
    return value of :func:`intern` around to benefit from it.
 
 
+.. function:: _is_gil_enabled()
+
+   Return :const:`True` if the :term:`GIL` is enabled and :const:`False` if
+   it is disabled.
+
+   .. versionadded:: 3.13
+
+
 .. function:: is_finalizing()
 
    Return :const:`True` if the main Python interpreter is

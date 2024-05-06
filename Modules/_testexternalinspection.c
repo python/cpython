@@ -627,6 +627,12 @@ PyMODINIT_FUNC
 PyInit__testexternalinspection(void)
 {
     PyObject* mod = PyModule_Create(&module);
+    if (mod == NULL) {
+        return NULL;
+    }
+#ifdef Py_GIL_DISABLED
+    PyModule_ExperimentalSetGIL(mod, Py_MOD_GIL_NOT_USED);
+#endif
     int rc = PyModule_AddIntConstant(mod, "PROCESS_VM_READV_SUPPORTED", HAVE_PROCESS_VM_READV);
     if (rc < 0) {
         Py_DECREF(mod);

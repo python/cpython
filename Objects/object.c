@@ -2235,6 +2235,7 @@ static PyTypeObject* static_types[] = {
     &PyFilter_Type,
     &PyFloat_Type,
     &PyFrame_Type,
+    &PyFrameLocalsProxy_Type,
     &PyFrozenSet_Type,
     &PyFunction_Type,
     &PyGen_Type,
@@ -2281,9 +2282,11 @@ static PyTypeObject* static_types[] = {
     &_PyBufferWrapper_Type,
     &_PyContextTokenMissing_Type,
     &_PyCoroWrapper_Type,
+#ifdef _Py_TIER2
     &_PyCounterExecutor_Type,
     &_PyCounterOptimizer_Type,
     &_PyDefaultOptimizer_Type,
+#endif
     &_Py_GenericAliasIterType,
     &_PyHamtItems_Type,
     &_PyHamtKeys_Type,
@@ -2304,8 +2307,10 @@ static PyTypeObject* static_types[] = {
     &_PyPositionsIterator,
     &_PyUnicodeASCIIIter_Type,
     &_PyUnion_Type,
+#ifdef _Py_TIER2
     &_PyUOpExecutor_Type,
     &_PyUOpOptimizer_Type,
+#endif
     &_PyWeakref_CallableProxyType,
     &_PyWeakref_ProxyType,
     &_PyWeakref_RefType,
@@ -2368,9 +2373,6 @@ _PyTypes_FiniTypes(PyInterpreterState *interp)
 static inline void
 new_reference(PyObject *op)
 {
-    if (_PyRuntime.tracemalloc.config.tracing) {
-        _PyTraceMalloc_NewReference(op);
-    }
     // Skip the immortal object check in Py_SET_REFCNT; always set refcnt to 1
 #if !defined(Py_GIL_DISABLED)
     op->ob_refcnt = 1;
@@ -2385,6 +2387,11 @@ new_reference(PyObject *op)
 #ifdef Py_TRACE_REFS
     _Py_AddToAllObjects(op);
 #endif
+    struct _reftracer_runtime_state *tracer = &_PyRuntime.ref_tracer;
+    if (tracer->tracer_func != NULL) {
+        void* data = tracer->tracer_data;
+        tracer->tracer_func(op, PyRefTracer_CREATE, data);
+    }
 }
 
 void
@@ -2430,6 +2437,13 @@ _PyObject_SetDeferredRefcount(PyObject *op)
     assert(PyType_IS_GC(Py_TYPE(op)));
     assert(_Py_IsOwnedByCurrentThread(op));
     assert(op->ob_ref_shared == 0);
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    if (interp->gc.immortalize.enabled) {
+        // gh-117696: immortalize objects instead of using deferred reference
+        // counting for now.
+        _Py_SetImmortal(op);
+        return;
+    }
     op->ob_gc_bits |= _PyGC_BITS_DEFERRED;
     op->ob_ref_local += 1;
     op->ob_ref_shared = _Py_REF_QUEUED;
@@ -2439,12 +2453,13 @@ _PyObject_SetDeferredRefcount(PyObject *op)
 void
 _Py_ResurrectReference(PyObject *op)
 {
-    if (_PyRuntime.tracemalloc.config.tracing) {
-        _PyTraceMalloc_NewReference(op);
-    }
 #ifdef Py_TRACE_REFS
     _Py_AddToAllObjects(op);
 #endif
+    if (_PyRuntime.ref_tracer.tracer_func != NULL) {
+        void* data = _PyRuntime.ref_tracer.tracer_data;
+        _PyRuntime.ref_tracer.tracer_func(op, PyRefTracer_CREATE, data);
+    }
 }
 
 
@@ -2834,6 +2849,12 @@ _Py_Dealloc(PyObject *op)
     Py_INCREF(type);
 #endif
 
+    struct _reftracer_runtime_state *tracer = &_PyRuntime.ref_tracer;
+    if (tracer->tracer_func != NULL) {
+        void* data = tracer->tracer_data;
+        tracer->tracer_func(op, PyRefTracer_DESTROY, data);
+    }
+
 #ifdef Py_TRACE_REFS
     _Py_ForgetReference(op);
 #endif
@@ -2921,6 +2942,22 @@ _Py_SetRefcnt(PyObject *ob, Py_ssize_t refcnt)
 {
     Py_SET_REFCNT(ob, refcnt);
 }
+
+int PyRefTracer_SetTracer(PyRefTracer tracer, void *data) {
+    assert(PyGILState_Check());
+    _PyRuntime.ref_tracer.tracer_func = tracer;
+    _PyRuntime.ref_tracer.tracer_data = data;
+    return 0;
+}
+
+PyRefTracer PyRefTracer_GetTracer(void** data) {
+    assert(PyGILState_Check());
+    if (data != NULL) {
+        *data = _PyRuntime.ref_tracer.tracer_data;
+    }
+    return _PyRuntime.ref_tracer.tracer_func;
+}
+
 
 
 static PyObject* constants[] = {

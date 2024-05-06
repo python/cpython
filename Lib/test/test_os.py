@@ -1811,6 +1811,25 @@ class MakedirTests(unittest.TestCase):
         self.assertRaises(OSError, os.makedirs, path, exist_ok=True)
         os.remove(path)
 
+    @unittest.skipUnless(os.name == 'nt', "requires Windows")
+    def test_win32_mkdir_700(self):
+        base = os_helper.TESTFN
+        path1 = os.path.join(os_helper.TESTFN, 'dir1')
+        path2 = os.path.join(os_helper.TESTFN, 'dir2')
+        # mode=0o700 is special-cased to override ACLs on Windows
+        # There's no way to know exactly how the ACLs will look, so we'll
+        # check that they are different from a regularly created directory.
+        os.mkdir(path1, mode=0o700)
+        os.mkdir(path2, mode=0o777)
+
+        out1 = subprocess.check_output(["icacls.exe", path1], encoding="oem")
+        out2 = subprocess.check_output(["icacls.exe", path2], encoding="oem")
+        os.rmdir(path1)
+        os.rmdir(path2)
+        out1 = out1.replace(path1, "<PATH>")
+        out2 = out2.replace(path2, "<PATH>")
+        self.assertNotEqual(out1, out2)
+
     def tearDown(self):
         path = os.path.join(os_helper.TESTFN, 'dir1', 'dir2', 'dir3',
                             'dir4', 'dir5', 'dir6')
@@ -2365,6 +2384,7 @@ class TestInvalidFD(unittest.TestCase):
         support.is_emscripten or support.is_wasi,
         "musl libc issue on Emscripten/WASI, bpo-46390"
     )
+    @unittest.skipIf(support.is_apple_mobile, "gh-118201: Test is flaky on iOS")
     def test_fpathconf(self):
         self.check(os.pathconf, "PC_NAME_MAX")
         self.check(os.fpathconf, "PC_NAME_MAX")

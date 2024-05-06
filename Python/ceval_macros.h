@@ -86,6 +86,18 @@
 #define PRE_DISPATCH_GOTO() ((void)0)
 #endif
 
+#if LLTRACE
+#define LLTRACE_RESUME_FRAME() \
+do { \
+    lltrace = maybe_lltrace_resume_frame(frame, &entry_frame, GLOBALS()); \
+    if (lltrace < 0) { \
+        goto exit_unwind; \
+    } \
+} while (0)
+#else
+#define LLTRACE_RESUME_FRAME() ((void)0)
+#endif
+
 #ifdef Py_GIL_DISABLED
 #define QSBR_QUIESCENT_STATE(tstate) _Py_qsbr_quiescent_state(((_PyThreadStateImpl *)tstate)->qsbr)
 #else
@@ -150,7 +162,7 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 /* The integer overflow is checked by an assertion below. */
 #define INSTR_OFFSET() ((int)(next_instr - _PyCode_CODE(_PyFrame_GetCode(frame))))
 #define NEXTOPARG()  do { \
-        _Py_CODEUNIT word = *next_instr; \
+        _Py_CODEUNIT word  = {.cache = FT_ATOMIC_LOAD_UINT16_RELAXED(*(uint16_t*)next_instr)}; \
         opcode = word.op.code; \
         oparg = word.op.arg; \
     } while (0)
@@ -346,12 +358,16 @@ do { \
 // for an exception handler, displaying the traceback, and so on
 #define INSTRUMENTED_JUMP(src, dest, event) \
 do { \
-    _PyFrame_SetStackPointer(frame, stack_pointer); \
-    next_instr = _Py_call_instrumentation_jump(tstate, event, frame, src, dest); \
-    stack_pointer = _PyFrame_GetStackPointer(frame); \
-    if (next_instr == NULL) { \
-        next_instr = (dest)+1; \
-        goto error; \
+    if (tstate->tracing) {\
+        next_instr = dest; \
+    } else { \
+        _PyFrame_SetStackPointer(frame, stack_pointer); \
+        next_instr = _Py_call_instrumentation_jump(tstate, event, frame, src, dest); \
+        stack_pointer = _PyFrame_GetStackPointer(frame); \
+        if (next_instr == NULL) { \
+            next_instr = (dest)+1; \
+            goto error; \
+        } \
     } \
 } while (0);
 
@@ -430,3 +446,4 @@ do { \
 #define GOTO_UNWIND() goto error_tier_two
 #define EXIT_TO_TRACE() goto exit_to_trace
 #define EXIT_TO_TIER1() goto exit_to_tier1
+#define EXIT_TO_TIER1_DYNAMIC() goto exit_to_tier1_dynamic;
