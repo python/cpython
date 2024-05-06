@@ -2239,6 +2239,7 @@ def test_pdb_closure():
     ...     'g',
     ...     'y = y',
     ...     'global g; g',
+    ...     'global g; (lambda: g)()',
     ...     '(lambda: x)()',
     ...     '(lambda: g)()',
     ...     'lst = [n for n in range(10) if (n % x) == 0]',
@@ -2262,6 +2263,8 @@ def test_pdb_closure():
     (Pdb) y = y
     *** NameError: name 'y' is not defined
     (Pdb) global g; g
+    1
+    (Pdb) global g; (lambda: g)()
     1
     (Pdb) (lambda: x)()
     2
