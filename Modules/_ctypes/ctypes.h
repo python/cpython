@@ -453,13 +453,8 @@ extern int _ctypes_simple_instance(ctypes_state *st, PyObject *obj);
 
 PyObject *_ctypes_get_errobj(ctypes_state *st, int **pspace);
 
-#ifdef USING_MALLOC_CLOSURE_DOT_C
-void Py_ffi_closure_free(PyTypeObject *thunk_tp, void *p);
-void *Py_ffi_closure_alloc(PyTypeObject *thunk_tp, size_t size, void** codeloc);
-#else
 #define Py_ffi_closure_free(tp, p) ffi_closure_free(p)
 #define Py_ffi_closure_alloc(tp, size, codeloc) ffi_closure_alloc(size, codeloc)
-#endif
 
 
 /****************************************************************
