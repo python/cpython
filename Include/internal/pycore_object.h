@@ -257,7 +257,7 @@ extern int _PyDict_CheckConsistency(PyObject *mp, int check_content);
    when a memory block is reused from a free list.
 
    Internal function called by _Py_NewReference(). */
-extern int _PyTraceMalloc_NewReference(PyObject *op);
+extern int _PyTraceMalloc_TraceRef(PyObject *op, PyRefTracerEvent event, void*);
 
 // Fast inlined version of PyType_HasFeature()
 static inline int

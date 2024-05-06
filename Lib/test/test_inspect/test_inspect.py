@@ -817,6 +817,21 @@ class TestRetrievingSourceCode(GetSourceBase):
     def test_getsource_on_code_object(self):
         self.assertSourceEqual(mod.eggs.__code__, 12, 18)
 
+    def test_getsource_on_generated_class(self):
+        A = type('A', (), {})
+        self.assertEqual(inspect.getsourcefile(A), __file__)
+        self.assertEqual(inspect.getfile(A), __file__)
+        self.assertIs(inspect.getmodule(A), sys.modules[__name__])
+        self.assertRaises(OSError, inspect.getsource, A)
+        self.assertRaises(OSError, inspect.getsourcelines, A)
+        self.assertIsNone(inspect.getcomments(A))
+
+    def test_getsource_on_class_without_firstlineno(self):
+        __firstlineno__ = 1
+        class C:
+            nonlocal __firstlineno__
+        self.assertRaises(OSError, inspect.getsource, C)
+
 class TestGetsourceInteractive(unittest.TestCase):
     def test_getclasses_interactive(self):
         # bpo-44648: simulate a REPL session;
@@ -3068,6 +3083,13 @@ class TestSignatureObject(unittest.TestCase):
             with self.subTest(builtin):
                 self.assertEqual(inspect.signature(builtin),
                                  inspect.signature(template))
+
+    @unittest.skipIf(MISSING_C_DOCSTRINGS,
+                     "Signature information for builtins requires docstrings")
+    def test_signature_parsing_with_defaults(self):
+        _testcapi = import_helper.import_module("_testcapi")
+        meth = _testcapi.DocStringUnrepresentableSignatureTest.with_default
+        self.assertEqual(str(inspect.signature(meth)), '(self, /, x=1)')
 
     def test_signature_on_non_function(self):
         with self.assertRaisesRegex(TypeError, 'is not a callable object'):

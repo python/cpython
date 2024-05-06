@@ -8,6 +8,7 @@ on:
   pull_request:
     paths:
       - ".github/workflows/mypy.yml"
+      - "Lib/_pyrepl/**"
       - "Lib/test/libregrtest/**"
       - "Tools/build/generate_sbom.py"
       - "Tools/cases_generator/**"
@@ -35,8 +36,9 @@ jobs:
     strategy:
       matrix:
         target: [
+          "Lib/_pyrepl",
           "Lib/test/libregrtest",
-          "Tools/build/",
+          "Tools/build",
           "Tools/cases_generator",
           "Tools/clinic",
           "Tools/jit",
