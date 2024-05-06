@@ -193,6 +193,37 @@ intern_constants(PyObject *tuple, int *modified)
             Py_DECREF(tmp);
         }
 #ifdef Py_GIL_DISABLED
+        else if (PySlice_Check(v)) {
+            PySliceObject *slice = (PySliceObject *)v;
+            PyObject *tmp = PyTuple_New(3);
+            if (tmp == NULL) {
+                return -1;
+            }
+            PyTuple_SET_ITEM(tmp, 0, Py_NewRef(slice->start));
+            PyTuple_SET_ITEM(tmp, 1, Py_NewRef(slice->stop));
+            PyTuple_SET_ITEM(tmp, 2, Py_NewRef(slice->step));
+            int tmp_modified = 0;
+            if (intern_constants(tmp, &tmp_modified) < 0) {
+                Py_DECREF(tmp);
+                return -1;
+            }
+            if (tmp_modified) {
+                v = PySlice_New(PyTuple_GET_ITEM(tmp, 0),
+                                PyTuple_GET_ITEM(tmp, 1),
+                                PyTuple_GET_ITEM(tmp, 2));
+                if (v == NULL) {
+                    Py_DECREF(tmp);
+                    return -1;
+                }
+                PyTuple_SET_ITEM(tuple, i, v);
+                Py_DECREF(slice);
+                if (modified) {
+                    *modified = 1;
+                }
+            }
+            Py_DECREF(tmp);
+        }
+
         // Intern non-string consants in the free-threaded build, but only if
         // we are also immortalizing objects that use deferred reference
         // counting.
