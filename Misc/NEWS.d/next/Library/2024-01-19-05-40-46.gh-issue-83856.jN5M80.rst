@@ -1,0 +1,1 @@
+Honor :mod:`atexit` for all :mod:`multiprocessing` start methods

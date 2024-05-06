@@ -121,7 +121,9 @@ call_timer(ProfilerObject *pObj)
         return CallExternalTimer(pObj);
     }
     else {
-        return _PyTime_PerfCounterUnchecked();
+        PyTime_t t;
+        (void)PyTime_PerfCounterRaw(&t);
+        return t;
     }
 }
 
@@ -175,8 +177,7 @@ normalizeUserObj(PyObject *obj)
         PyObject *modname = fn->m_module;
 
         if (name != NULL) {
-            PyObject *mo = _PyType_Lookup(Py_TYPE(self), name);
-            Py_XINCREF(mo);
+            PyObject *mo = _PyType_LookupRef(Py_TYPE(self), name);
             Py_DECREF(name);
             if (mo != NULL) {
                 PyObject *res = PyObject_Repr(mo);

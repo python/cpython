@@ -1030,22 +1030,6 @@ PyTime_TimeRaw(PyTime_t *result)
 }
 
 
-PyTime_t
-_PyTime_TimeUnchecked(void)
-{
-    PyTime_t t;
-#ifdef Py_DEBUG
-    int result = PyTime_TimeRaw(&t);
-    if (result != 0) {
-        Py_FatalError("unable to read the system clock");
-    }
-#else
-    (void)PyTime_TimeRaw(&t);
-#endif
-    return t;
-}
-
-
 int
 _PyTime_TimeWithInfo(PyTime_t *t, _Py_clock_info_t *info)
 {
@@ -1270,22 +1254,6 @@ PyTime_MonotonicRaw(PyTime_t *result)
 }
 
 
-PyTime_t
-_PyTime_MonotonicUnchecked(void)
-{
-    PyTime_t t;
-#ifdef Py_DEBUG
-    int result = PyTime_MonotonicRaw(&t);
-    if (result != 0) {
-        Py_FatalError("unable to read the monotonic clock");
-    }
-#else
-    (void)PyTime_MonotonicRaw(&t);
-#endif
-    return t;
-}
-
-
 int
 _PyTime_MonotonicWithInfo(PyTime_t *tp, _Py_clock_info_t *info)
 {
@@ -1311,13 +1279,6 @@ int
 PyTime_PerfCounterRaw(PyTime_t *result)
 {
     return PyTime_MonotonicRaw(result);
-}
-
-
-PyTime_t
-_PyTime_PerfCounterUnchecked(void)
-{
-    return _PyTime_MonotonicUnchecked();
 }
 
 
@@ -1391,7 +1352,9 @@ _PyTime_gmtime(time_t t, struct tm *tm)
 PyTime_t
 _PyDeadline_Init(PyTime_t timeout)
 {
-    PyTime_t now = _PyTime_MonotonicUnchecked();
+    PyTime_t now;
+    // silently ignore error: cannot report error to the caller
+    (void)PyTime_MonotonicRaw(&now);
     return _PyTime_Add(now, timeout);
 }
 
@@ -1399,6 +1362,8 @@ _PyDeadline_Init(PyTime_t timeout)
 PyTime_t
 _PyDeadline_Get(PyTime_t deadline)
 {
-    PyTime_t now = _PyTime_MonotonicUnchecked();
+    PyTime_t now;
+    // silently ignore error: cannot report error to the caller
+    (void)PyTime_MonotonicRaw(&now);
     return deadline - now;
 }
