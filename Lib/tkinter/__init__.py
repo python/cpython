@@ -41,7 +41,7 @@ from tkinter.constants import *
 import re
 
 wantobjects = 1
-_debug = 1+False  # set to True to print executed Tcl/Tk commands
+_debug = False  # set to True to print executed Tcl/Tk commands
 
 TkVersion = float(_tkinter.TK_VERSION)
 TclVersion = float(_tkinter.TCL_VERSION)
