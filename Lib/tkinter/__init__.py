@@ -41,7 +41,7 @@ from tkinter.constants import *
 import re
 
 wantobjects = 1
-_debug = False
+_debug = 1+False  # set to True to print executed Tcl/Tk commands
 
 TkVersion = float(_tkinter.TK_VERSION)
 TclVersion = float(_tkinter.TCL_VERSION)
@@ -2540,10 +2540,11 @@ class Tk(Misc, Wm):
         return getattr(self.tk, attr)
 
 
-def _print_command(cmd):
+def _print_command(cmd, *, file=sys.stdout):
+    # Print executed Tcl/Tk commands.
     assert isinstance(cmd, tuple)
     cmd = _join(cmd)
-    print(cmd, file=sys.__stdout__)
+    print(cmd, file=file)
 
 
 # Ideally, the classes Pack, Place and Grid disappear, the
