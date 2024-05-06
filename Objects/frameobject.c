@@ -148,8 +148,9 @@ framelocalsproxy_setitem(PyObject *self, PyObject *key, PyObject *value)
     if (PyUnicode_CheckExact(key)) {
         int i = framelocalsproxy_getkeyindex(frame, key, false);
         if (i >= 0) {
-            _PyLocals_Kind kind = _PyLocals_GetKind(co->co_localspluskinds, i);
+            _Py_Executors_InvalidateDependency(PyInterpreterState_Get(), co, 1);
 
+            _PyLocals_Kind kind = _PyLocals_GetKind(co->co_localspluskinds, i);
             PyObject *oldvalue = fast[i];
             PyObject *cell = NULL;
             if (kind == CO_FAST_FREE) {
