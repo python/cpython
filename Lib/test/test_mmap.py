@@ -1059,6 +1059,7 @@ class MmapTests(unittest.TestCase):
                     m.write_byte(X())
 
     @unittest.skipUnless(os.name == 'nt', 'requires Windows')
+    @unittest.skipUnless(hasattr(mmap.mmap, '_protect'), 'test needs debug build')
     def test_access_violations(self):
         PAGE_NOACCESS = 0x01
 
