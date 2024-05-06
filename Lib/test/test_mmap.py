@@ -1066,9 +1066,12 @@ class MmapTests(unittest.TestCase):
     
         code = textwrap.dedent("""
             from test.support.os_helper import TESTFN
+            import faulthandler
             import mmap
             import os
             from contextlib import suppress
+
+            faulthandler.disable()
 
             if os.path.exists(TESTFN):
                 os.unlink(TESTFN)
@@ -1109,9 +1112,9 @@ class MmapTests(unittest.TestCase):
                 with suppress(OSError):
                     list(m)  # test mmap_item
         """)
-        # stderr includes "Windows fatal exception: access violation" logs,
-        # even when the access violations are correctly transformed into exceptions
-        assert_python_ok("-c", code)
+        rt, stdout, stderr = assert_python_ok("-c", code)
+        self.assertEqual(stdout.rstrip(), b'')
+        self.assertEqual(stderr.rstrip(), b'')
 
     @unittest.skipUnless(os.name == 'nt', 'requires Windows')
     @unittest.skipUnless(hasattr(mmap.mmap, '_protect'), 'test needs debug build')
