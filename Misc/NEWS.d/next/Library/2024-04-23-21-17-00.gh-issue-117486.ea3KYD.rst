@@ -1,0 +1,4 @@
+Improve the behavior of user-defined subclasses of :class:`ast.AST`. Such
+classes will now require no changes in the usual case to conform with the
+behavior changes of the :mod:`ast` module in Python 3.13. Patch by Jelle
+Zijlstra.

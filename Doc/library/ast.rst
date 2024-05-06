@@ -61,7 +61,7 @@ Node classes
 
    .. attribute:: _fields
 
-      Each concrete class has an attribute :attr:`_fields` which gives the names
+      Each concrete class has an attribute :attr:`!_fields` which gives the names
       of all child nodes.
 
       Each instance of a concrete class has one attribute for each child node,
@@ -73,6 +73,18 @@ Node classes
       zero-or-more values (marked with an asterisk), the values are represented
       as Python lists.  All possible attributes must be present and have valid
       values when compiling an AST with :func:`compile`.
+
+   .. attribute:: _field_types
+
+      The :attr:`!_field_types` attribute on each concrete class is a dictionary
+      mapping field names (as also listed in :attr:`_fields`) to their types.
+
+      .. doctest::
+
+           >>> ast.TypeVar._field_types
+           {'name': <class 'str'>, 'bound': ast.expr | None, 'default_value': ast.expr | None}
+
+      .. versionadded:: 3.13
 
    .. attribute:: lineno
                   col_offset
