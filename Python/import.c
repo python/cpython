@@ -2008,7 +2008,9 @@ import_run_extension(PyThreadState *tstate, PyModInitFunction p0,
     }
 
     /* Switch back to the subinterpreter. */
-    if (main_tstate != tstate) {
+    if (main_tstate != NULL) {
+        assert(main_tstate != tstate);
+
         /* Any module we got from the init function will have to be
          * reloaded in the subinterpreter. */
         Py_CLEAR(mod);
@@ -2045,7 +2047,7 @@ import_run_extension(PyThreadState *tstate, PyModInitFunction p0,
         }
         assert(!PyErr_Occurred());
 
-        if (main_tstate != tstate) {
+        if (main_tstate != NULL) {
             /* We switched to the main interpreter to run the init
              * function, so now we will "reload" the module from the
              * cached data using the original subinterpreter. */
