@@ -1320,7 +1320,7 @@ Task Object
       with :meth:`uncancel`.  :class:`TaskGroup` context managers use
       :func:`uncancel` in a similar fashion.
 
-      If end-user code is, for some reason, suppresing cancellation by
+      If end-user code is, for some reason, suppressing cancellation by
       catching :exc:`CancelledError`, it needs to call this method to remove
       the cancellation state.
 
