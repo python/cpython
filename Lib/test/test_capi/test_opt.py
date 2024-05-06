@@ -1321,5 +1321,18 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIsNotNone(ex)
         self.assertIn("_FOR_ITER_GEN_FRAME", get_opnames(ex))
 
+    def test_modified_local_is_seen_by_optimized_code(self):
+        l = sys._getframe().f_locals
+        a = 1
+        s = 0
+        for j in range(1 << 10):
+            a + a
+            l["xa"[j >> 9]] = 1.0
+            s += a
+        self.assertIs(type(a), float)
+        self.assertIs(type(s), float)
+        self.assertEqual(s, 1024.0)
+
+
 if __name__ == "__main__":
     unittest.main()
