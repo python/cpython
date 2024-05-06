@@ -153,7 +153,7 @@ static const PyConfigSpec PYCONFIG_SPEC[] = {
     SPEC(home, WSTR_OPT, READ_ONLY, NO_SYS),
     SPEC(thread_inherit_context, INT, READ_ONLY, NO_SYS),
     SPEC(context_aware_warnings, INT, READ_ONLY, NO_SYS),
-    SPEC(import_time, BOOL, READ_ONLY, NO_SYS),
+    SPEC(import_time, UINT, READ_ONLY, NO_SYS),
     SPEC(install_signal_handlers, BOOL, READ_ONLY, NO_SYS),
     SPEC(isolated, BOOL, READ_ONLY, NO_SYS),  // sys.flags.isolated
 #ifdef MS_WINDOWS
@@ -312,7 +312,8 @@ The following implementation-specific options are available:\n\
 "-X gil=[0|1]: enable (1) or disable (0) the GIL; also PYTHON_GIL\n"
 #endif
 "\
--X importtime: show how long each import takes; also PYTHONPROFILEIMPORTTIME\n\
+-X importtime[=2]: show how long each import takes; -X importtime=2 also prints\
+         rows for imports of already-loaded modules; also PYTHONPROFILEIMPORTTIME\n\
 -X int_max_str_digits=N: limit the size of int<->str conversions;\n\
          0 disables the limit; also PYTHONINTMAXSTRDIGITS\n\
 -X no_debug_ranges: don't include extra location information in code objects;\n\
@@ -2246,6 +2247,63 @@ config_init_run_presite(PyConfig *config)
 }
 #endif
 
+/* Set `config->import_time` based on `value` from `-Ximporttime(=.*)?`. */
+static PyStatus
+config_set_import_time(PyConfig *config, const wchar_t *value)
+{
+    int numeric_value;
+
+    // If no value is specified or the value is not an integer, use 1.
+    if (*value == 0 || config_wstr_to_int(value, &numeric_value) != 0) {
+        config->import_time = 1;
+    }
+
+    /* -Ximporttime=1 incurs the default behavior. -Ximporttime=2 also
+     * prints import cache hits. All other numeric values are reserved.
+     */
+    else if (0 <= numeric_value && numeric_value <= 2) {
+        config->import_time = numeric_value;
+    }
+
+    else {
+        return _PyStatus_ERR(
+                "-X importtime: numeric values other than 1 or 2 are "
+                "reserved for future use");
+    }
+
+    return _PyStatus_OK();
+}
+
+/* Configure `config->import_time` by checking -Ximporttime then the
+ * PYTHONPROFILEIMPORTTIME environment variable. Defaults to 0.
+ */
+static PyStatus
+config_read_import_time(PyConfig *config)
+{
+    /* Check the -X option first. */
+    const wchar_t *xoption_value = NULL;
+    xoption_value = config_get_xoption_value(config, L"importtime");
+    if (xoption_value != NULL) {
+        return config_set_import_time(config, xoption_value);
+    }
+
+    /* If there's no -Ximporttime, look for ENV flag */
+    wchar_t *env_value = NULL;
+    /* `CONFIG_GET_ENV_DUP` requires dest to be initialized to `NULL`. */
+    PyStatus status = CONFIG_GET_ENV_DUP(config, &env_value,
+                                         L"PYTHONPROFILEIMPORTTIME",
+                                         "PYTHONPROFILEIMPORTTIME");
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+    if (env_value != NULL) {
+        status = config_set_import_time(config, env_value);
+        PyMem_RawFree(env_value);
+        return status;
+    }
+
+    return _PyStatus_OK();
+}
 
 static PyStatus
 config_read_complex_options(PyConfig *config)
@@ -2257,17 +2315,18 @@ config_read_complex_options(PyConfig *config)
             config->faulthandler = 1;
         }
     }
-    if (config_get_env(config, "PYTHONPROFILEIMPORTTIME")
-       || config_get_xoption(config, L"importtime")) {
-        config->import_time = 1;
-    }
-
     if (config_get_env(config, "PYTHONNODEBUGRANGES")
        || config_get_xoption(config, L"no_debug_ranges")) {
         config->code_debug_ranges = 0;
     }
 
     PyStatus status;
+
+    status = config_read_import_time(config);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
     if (config->tracemalloc < 0) {
         status = config_init_tracemalloc(config);
         if (_PyStatus_EXCEPTION(status)) {
