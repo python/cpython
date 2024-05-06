@@ -1807,6 +1807,10 @@ Changes in the Python API
 Build Changes
 =============
 
+* The :file:`configure` option :option:`--with-system-libmpdec` now defaults
+  to ``yes``. The bundled copy of ``libmpdecimal`` will be removed in Python
+  3.15.
+
 * Autoconf 2.71 and aclocal 1.16.4 are now required to regenerate
   the :file:`configure` script.
   (Contributed by Christian Heimes in :gh:`89886`.)
@@ -2336,6 +2340,7 @@ Pending Removal in Python 3.14
 Pending Removal in Python 3.15
 ------------------------------
 
+* The bundled copy of ``libmpdecimal``.
 * :c:func:`PyImport_ImportModuleNoBlock`: use :c:func:`PyImport_ImportModule`.
 * :c:func:`PyWeakref_GET_OBJECT`: use :c:func:`PyWeakref_GetRef` instead.
 * :c:func:`PyWeakref_GetObject`: use :c:func:`PyWeakref_GetRef` instead.

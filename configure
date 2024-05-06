@@ -1892,8 +1892,9 @@ Optional Packages:
   --with-libs='lib1 ...'  link against additional libs (default is no)
   --with-system-expat     build pyexpat module using an installed expat
                           library, see Doc/library/pyexpat.rst (default is no)
-  --with-system-libmpdec  build _decimal module using an installed libmpdec
-                          library, see Doc/library/decimal.rst (default is no)
+  --with-system-libmpdec  build _decimal module using an installed mpdecimal
+                          library, see Doc/library/decimal.rst (default is
+                          yes)
   --with-decimal-contextvar
                           build _decimal module using a coroutine-local rather
                           than a thread-local context (default is yes)
@@ -14611,7 +14612,7 @@ if test ${with_system_libmpdec+y}
 then :
   withval=$with_system_libmpdec;
 else $as_nop
-  with_system_libmpdec="no"
+  with_system_libmpdec="yes"
 fi
 
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $with_system_libmpdec" >&5
@@ -14621,19 +14622,19 @@ if test "x$with_system_libmpdec" = xyes
 then :
 
 pkg_failed=no
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for libmpdec" >&5
-printf %s "checking for libmpdec... " >&6; }
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for libmpdec >= 2.5.0" >&5
+printf %s "checking for libmpdec >= 2.5.0... " >&6; }
 
 if test -n "$LIBMPDEC_CFLAGS"; then
     pkg_cv_LIBMPDEC_CFLAGS="$LIBMPDEC_CFLAGS"
  elif test -n "$PKG_CONFIG"; then
     if test -n "$PKG_CONFIG" && \
-    { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"libmpdec\""; } >&5
-  ($PKG_CONFIG --exists --print-errors "libmpdec") 2>&5
+    { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"libmpdec >= 2.5.0\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "libmpdec >= 2.5.0") 2>&5
   ac_status=$?
   printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
   test $ac_status = 0; }; then
-  pkg_cv_LIBMPDEC_CFLAGS=`$PKG_CONFIG --cflags "libmpdec" 2>/dev/null`
+  pkg_cv_LIBMPDEC_CFLAGS=`$PKG_CONFIG --cflags "libmpdec >= 2.5.0" 2>/dev/null`
 		      test "x$?" != "x0" && pkg_failed=yes
 else
   pkg_failed=yes
@@ -14645,12 +14646,12 @@ if test -n "$LIBMPDEC_LIBS"; then
     pkg_cv_LIBMPDEC_LIBS="$LIBMPDEC_LIBS"
  elif test -n "$PKG_CONFIG"; then
     if test -n "$PKG_CONFIG" && \
-    { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"libmpdec\""; } >&5
-  ($PKG_CONFIG --exists --print-errors "libmpdec") 2>&5
+    { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"libmpdec >= 2.5.0\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "libmpdec >= 2.5.0") 2>&5
   ac_status=$?
   printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
   test $ac_status = 0; }; then
-  pkg_cv_LIBMPDEC_LIBS=`$PKG_CONFIG --libs "libmpdec" 2>/dev/null`
+  pkg_cv_LIBMPDEC_LIBS=`$PKG_CONFIG --libs "libmpdec >= 2.5.0" 2>/dev/null`
 		      test "x$?" != "x0" && pkg_failed=yes
 else
   pkg_failed=yes
@@ -14671,9 +14672,9 @@ else
         _pkg_short_errors_supported=no
 fi
         if test $_pkg_short_errors_supported = yes; then
-	        LIBMPDEC_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "libmpdec" 2>&1`
+	        LIBMPDEC_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "libmpdec >= 2.5.0" 2>&1`
         else
-	        LIBMPDEC_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "libmpdec" 2>&1`
+	        LIBMPDEC_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "libmpdec >= 2.5.0" 2>&1`
         fi
 	# Put the nasty error message in config.log where it belongs
 	echo "$LIBMPDEC_PKG_ERRORS" >&5
@@ -14698,6 +14699,61 @@ else $as_nop
   LIBMPDEC_CFLAGS="-I\$(srcdir)/Modules/_decimal/libmpdec"
    LIBMPDEC_LIBS="-lm \$(LIBMPDEC_A)"
    LIBMPDEC_INTERNAL="\$(LIBMPDEC_HEADERS) \$(LIBMPDEC_A)"
+fi
+
+if test "x$with_system_libmpdec" = xyes
+then :
+  save_CFLAGS=$CFLAGS
+save_CPPFLAGS=$CPPFLAGS
+save_LDFLAGS=$LDFLAGS
+save_LIBS=$LIBS
+
+
+    CPPFLAGS="$LIBMPDEC_CFLAGS $CPPFLAGS"
+    LIBS="$LIBMPDEC_LIBS $LIBS"
+
+    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+
+        #include <mpdecimal.h>
+        #if MPD_VERSION_HEX < 0x02050000
+        #  error "mpdecimal 2.5.0 or higher required"
+        #endif
+
+int
+main (void)
+{
+const char *x = mpd_version();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"
+then :
+  have_mpdec=yes
+else $as_nop
+  have_mpdec=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
+
+CFLAGS=$save_CFLAGS
+CPPFLAGS=$save_CPPFLAGS
+LDFLAGS=$save_LDFLAGS
+LIBS=$save_LIBS
+
+
+else $as_nop
+  have_mpdec=yes
+   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: WARNING: the bundled copy of libmpdecimal is scheduled for removal in Python 3.15; consider using a system installed mpdecimal library." >&5
+printf "%s\n" "$as_me: WARNING: the bundled copy of libmpdecimal is scheduled for removal in Python 3.15; consider using a system installed mpdecimal library." >&2;}
+fi
+
+if test "$with_system_libmpdec" = "yes" && test "$have_mpdec" = "no"
+then :
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: WARNING: no system libmpdecimal found; unable to build _decimal" >&5
+printf "%s\n" "$as_me: WARNING: no system libmpdecimal found; unable to build _decimal" >&2;}
 fi
 
 # Disable forced inlining in debug builds, see GH-94847
@@ -30426,7 +30482,7 @@ then :
 
     if true
 then :
-  if true
+  if test "$have_mpdec" = "yes"
 then :
   py_cv_module__decimal=yes
 else $as_nop

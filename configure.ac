@@ -3974,22 +3974,45 @@ AC_ARG_WITH(
   [system_libmpdec],
   [AS_HELP_STRING(
     [--with-system-libmpdec],
-    [build _decimal module using an installed libmpdec library, see Doc/library/decimal.rst (default is no)]
+    [build _decimal module using an installed mpdecimal library, see Doc/library/decimal.rst (default is yes)]
   )],
   [],
-  [with_system_libmpdec="no"])
+  [with_system_libmpdec="yes"])
 AC_MSG_RESULT([$with_system_libmpdec])
 
 AS_VAR_IF(
   [with_system_libmpdec], [yes],
   [PKG_CHECK_MODULES(
-    [LIBMPDEC], [libmpdec], [],
+    [LIBMPDEC], [libmpdec >= 2.5.0], [],
     [LIBMPDEC_CFLAGS=${LIBMPDEC_CFLAGS-""}
      LIBMPDEC_LIBS=${LIBMPDEC_LIBS-"-lmpdec -lm"}
      LIBMPDEC_INTERNAL=])],
   [LIBMPDEC_CFLAGS="-I\$(srcdir)/Modules/_decimal/libmpdec"
    LIBMPDEC_LIBS="-lm \$(LIBMPDEC_A)"
    LIBMPDEC_INTERNAL="\$(LIBMPDEC_HEADERS) \$(LIBMPDEC_A)"])
+
+AS_VAR_IF([with_system_libmpdec], [yes],
+  [WITH_SAVE_ENV([
+    CPPFLAGS="$LIBMPDEC_CFLAGS $CPPFLAGS"
+    LIBS="$LIBMPDEC_LIBS $LIBS"
+
+    AC_LINK_IFELSE([
+      AC_LANG_PROGRAM([
+        #include <mpdecimal.h>
+        #if MPD_VERSION_HEX < 0x02050000
+        #  error "mpdecimal 2.5.0 or higher required"
+        #endif
+      ], [const char *x = mpd_version();])],
+      [have_mpdec=yes],
+      [have_mpdec=no])
+  ])],
+  [AS_VAR_SET([have_mpdec], [yes])
+   AC_MSG_WARN([m4_normalize([
+     the bundled copy of libmpdecimal is scheduled for removal in Python 3.15;
+     consider using a system installed mpdecimal library.])])])
+
+AS_IF([test "$with_system_libmpdec" = "yes" && test "$have_mpdec" = "no"],
+      [AC_MSG_WARN([no system libmpdecimal found; unable to build _decimal])])
 
 # Disable forced inlining in debug builds, see GH-94847
 AS_VAR_IF(
@@ -7668,7 +7691,9 @@ PY_STDLIB_MOD([_curses_panel],
   [], [test "$have_panel" != "no"],
   [$PANEL_CFLAGS $CURSES_CFLAGS], [$PANEL_LIBS $CURSES_LIBS]
 )
-PY_STDLIB_MOD([_decimal], [], [], [$LIBMPDEC_CFLAGS], [$LIBMPDEC_LIBS])
+PY_STDLIB_MOD([_decimal],
+  [], [test "$have_mpdec" = "yes"],
+  [$LIBMPDEC_CFLAGS], [$LIBMPDEC_LIBS])
 PY_STDLIB_MOD([_dbm],
   [test -n "$with_dbmliborder"], [test "$have_dbm" != "no"],
   [$DBM_CFLAGS], [$DBM_LIBS])
