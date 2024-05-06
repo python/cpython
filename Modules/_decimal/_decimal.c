@@ -6157,6 +6157,7 @@ decimal_free(void *module)
 static struct PyModuleDef_Slot _decimal_slots[] = {
     {Py_mod_exec, _decimal_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL},
 };
 

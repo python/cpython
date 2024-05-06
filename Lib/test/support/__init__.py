@@ -2539,17 +2539,17 @@ Py_TRACE_REFS = hasattr(sys, 'getobjects')
 # Decorator to disable optimizer while a function run
 def without_optimizer(func):
     try:
-        import _testinternalcapi
+        from _testinternalcapi import get_optimizer, set_optimizer
     except ImportError:
         return func
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
-        save_opt = _testinternalcapi.get_optimizer()
+        save_opt = get_optimizer()
         try:
-            _testinternalcapi.set_optimizer(None)
+            set_optimizer(None)
             return func(*args, **kwargs)
         finally:
-            _testinternalcapi.set_optimizer(save_opt)
+            set_optimizer(save_opt)
     return wrapper
 
 
@@ -2579,20 +2579,21 @@ def copy_python_src_ignore(path, names):
         }
     return ignored
 
+
 def force_not_colorized(func):
     """Force the terminal not to be colorized."""
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
-        import traceback
-        original_fn = traceback._can_colorize
+        import _colorize
+        original_fn = _colorize.can_colorize
         variables = {"PYTHON_COLORS": None, "FORCE_COLOR": None}
         try:
             for key in variables:
                 variables[key] = os.environ.pop(key, None)
-            traceback._can_colorize = lambda: False
+            _colorize.can_colorize = lambda: False
             return func(*args, **kwargs)
         finally:
-            traceback._can_colorize = original_fn
+            _colorize.can_colorize = original_fn
             for key, value in variables.items():
                 if value is not None:
                     os.environ[key] = value

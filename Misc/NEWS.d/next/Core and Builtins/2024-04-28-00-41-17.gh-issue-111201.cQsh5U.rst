@@ -1,0 +1,4 @@
+The :term:`interactive` interpreter is now implemented in Python, which
+allows for a number of new features like colors, multiline input, history
+viewing, and paste mode. Contributed by Pablo Galindo, Łukasz Langa and
+Lysandros Nikolaou based on code from the PyPy project.

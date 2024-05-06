@@ -43,7 +43,8 @@ class object "PyObject *" "&PyBaseObject_Type"
          & ((1 << MCACHE_SIZE_EXP) - 1))
 
 #define MCACHE_HASH_METHOD(type, name)                                  \
-    MCACHE_HASH((type)->tp_version_tag, ((Py_ssize_t)(name)) >> 3)
+    MCACHE_HASH(FT_ATOMIC_LOAD_UINT32_RELAXED((type)->tp_version_tag),   \
+                ((Py_ssize_t)(name)) >> 3)
 #define MCACHE_CACHEABLE_NAME(name)                             \
         PyUnicode_CheckExact(name) &&                           \
         PyUnicode_IS_READY(name) &&                             \
@@ -907,7 +908,7 @@ type_modified_unlocked(PyTypeObject *type)
     }
 
     type->tp_flags &= ~Py_TPFLAGS_VALID_VERSION_TAG;
-    type->tp_version_tag = 0; /* 0 is not a valid version tag */
+    FT_ATOMIC_STORE_UINT32_RELAXED(type->tp_version_tag, 0); /* 0 is not a valid version tag */
     if (PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
         // This field *must* be invalidated if the type is modified (see the
         // comment on struct _specialization_cache):
@@ -984,7 +985,7 @@ type_mro_modified(PyTypeObject *type, PyObject *bases) {
  clear:
     assert(!(type->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN));
     type->tp_flags &= ~Py_TPFLAGS_VALID_VERSION_TAG;
-    type->tp_version_tag = 0; /* 0 is not a valid version tag */
+    FT_ATOMIC_STORE_UINT32_RELAXED(type->tp_version_tag, 0); /* 0 is not a valid version tag */
     if (PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
         // This field *must* be invalidated if the type is modified (see the
         // comment on struct _specialization_cache):
@@ -1020,7 +1021,8 @@ assign_version_tag(PyInterpreterState *interp, PyTypeObject *type)
             /* We have run out of version numbers */
             return 0;
         }
-        type->tp_version_tag = NEXT_GLOBAL_VERSION_TAG++;
+        FT_ATOMIC_STORE_UINT32_RELAXED(type->tp_version_tag,
+                                       NEXT_GLOBAL_VERSION_TAG++);
         assert (type->tp_version_tag <= _Py_MAX_GLOBAL_TYPE_VERSION_TAG);
     }
     else {
@@ -1029,7 +1031,8 @@ assign_version_tag(PyInterpreterState *interp, PyTypeObject *type)
             /* We have run out of version numbers */
             return 0;
         }
-        type->tp_version_tag = NEXT_VERSION_TAG(interp)++;
+        FT_ATOMIC_STORE_UINT32_RELAXED(type->tp_version_tag,
+                                       NEXT_VERSION_TAG(interp)++);
         assert (type->tp_version_tag != 0);
     }
 
@@ -5085,7 +5088,9 @@ _PyType_Lookup(PyTypeObject *type, PyObject *name)
     // synchronize-with other writing threads by doing an acquire load on the sequence
     while (1) {
         int sequence = _PySeqLock_BeginRead(&entry->sequence);
-        if (_Py_atomic_load_uint32_relaxed(&entry->version) == type->tp_version_tag &&
+        uint32_t entry_version = _Py_atomic_load_uint32_relaxed(&entry->version);
+        uint32_t type_version = _Py_atomic_load_uint32_relaxed(&type->tp_version_tag);
+        if (entry_version == type_version &&
             _Py_atomic_load_ptr_relaxed(&entry->name) == name) {
             assert(_PyType_HasFeature(type, Py_TPFLAGS_VALID_VERSION_TAG));
             OBJECT_STAT_INC_COND(type_cache_hits, !is_dunder_name(name));
