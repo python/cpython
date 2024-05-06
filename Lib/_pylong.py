@@ -67,7 +67,14 @@ def compute_powers(w, base, more_than, show=False):
     inner(w)
 
     d = {}
-    for this in sorted(need):
+    if not need:
+        return d
+    it = iter(sorted(need))
+    first = next(it)
+    if show:
+        print("pow at", first)
+    d[first] = base ** first
+    for this in it:
         if this - 1 in d:
             if show:
                 print("* base at", this)
@@ -75,24 +82,18 @@ def compute_powers(w, base, more_than, show=False):
         else:
             lo = this >> 1
             hi = this - lo
-            if hi in d:
+            assert lo in d
+            if show:
+                print("square at", this)
+            # Multiplying a bigint by itself (same object!) is
+            # about twice as fast in CPython.
+            sq = d[lo] * d[lo]
+            if hi != lo:
+                assert hi == lo + 1
                 if show:
-                    print("square at", this)
-                assert lo in d
-                # Multiplying a bigint by itself (same object!) is
-                # about twice as fast in CPython.
-                sq = d[lo] * d[lo]
-                if hi != lo:
-                    assert hi == lo + 1
-                    if show:
-                        print("    and * base")
-                    sq *= base
-                d[this] = sq
-            else:
-                # Perhaps surprisingly rarely needed.
-                if show:
-                    print("pow at", this)
-                d[this] = base ** this
+                    print("    and * base")
+                sq *= base
+            d[this] = sq
     return d
 
 def int_to_decimal(n):
@@ -160,6 +161,12 @@ def int_to_decimal(n):
 
 old_int_to_decimal = int_to_decimal
 
+_unbounded_dec_context = decimal.getcontext().copy()
+_unbounded_dec_context.prec = decimal.MAX_PREC
+_unbounded_dec_context.Emax = decimal.MAX_EMAX
+_unbounded_dec_context.Emin = decimal.MIN_EMIN
+_unbounded_dec_context.traps[decimal.Inexact] = 1 # sanity check
+
 def new_int_to_decimal(n):
     """Asymptotically fast conversion of an 'int' to Decimal."""
 
@@ -174,7 +181,7 @@ def new_int_to_decimal(n):
     # apply str to _that_.
 
     from decimal import Decimal as D
-    BITLIM = 128
+    BITLIM = 200
 
     def inner(n, w):
         if w <= BITLIM:
@@ -184,12 +191,7 @@ def new_int_to_decimal(n):
         lo = n - (hi << w2)
         return inner(lo, w2) + inner(hi, w - w2) * w2pow[w2]
 
-    with decimal.localcontext() as ctx:
-        ctx.prec = decimal.MAX_PREC
-        ctx.Emax = decimal.MAX_EMAX
-        ctx.Emin = decimal.MIN_EMIN
-        ctx.traps[decimal.Inexact] = 1 # sanity check
-
+    with decimal.localcontext(_unbounded_dec_context):
         nbits = n.bit_length()
         w2pow = compute_powers(nbits, D(2), BITLIM)
         if n < 0:
