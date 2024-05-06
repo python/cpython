@@ -34,6 +34,8 @@ def clear_executors(func):
 
 
 @requires_specialization
+@unittest.skipUnless(hasattr(_testinternalcapi, "get_optimizer"),
+                     "Requires optimizer infrastructure")
 class TestOptimizerAPI(unittest.TestCase):
 
     def test_new_counter_optimizer_dealloc(self):
@@ -132,10 +134,12 @@ def iter_opnames(ex):
 
 
 def get_opnames(ex):
-    return set(iter_opnames(ex))
+    return list(iter_opnames(ex))
 
 
 @requires_specialization
+@unittest.skipUnless(hasattr(_testinternalcapi, "get_optimizer"),
+                     "Requires optimizer infrastructure")
 class TestExecutorInvalidation(unittest.TestCase):
 
     def setUp(self):
@@ -215,6 +219,8 @@ class TestExecutorInvalidation(unittest.TestCase):
 
 
 @requires_specialization
+@unittest.skipUnless(hasattr(_testinternalcapi, "get_optimizer"),
+                     "Requires optimizer infrastructure")
 @unittest.skipIf(os.getenv("PYTHON_UOPS_OPTIMIZE") == "0", "Needs uop optimizer to run.")
 class TestUops(unittest.TestCase):
 
@@ -231,7 +237,7 @@ class TestUops(unittest.TestCase):
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
-        self.assertIn("_SET_IP", uops)
+        self.assertIn("_JUMP_TO_TOP", uops)
         self.assertIn("_LOAD_FAST_0", uops)
 
     def test_extended_arg(self):
@@ -579,6 +585,8 @@ class TestUops(unittest.TestCase):
 
 
 @requires_specialization
+@unittest.skipUnless(hasattr(_testinternalcapi, "get_optimizer"),
+                     "Requires optimizer infrastructure")
 @unittest.skipIf(os.getenv("PYTHON_UOPS_OPTIMIZE") == "0", "Needs uop optimizer to run.")
 class TestUopsOptimization(unittest.TestCase):
 
@@ -1285,6 +1293,33 @@ class TestUopsOptimization(unittest.TestCase):
         res, ex = self._run_with_optimizer(testfunc, 32)
         self.assertEqual(res, 32 * 32)
         self.assertIsNone(ex)
+
+    def test_return_generator(self):
+        def gen():
+            yield None
+        def testfunc(n):
+            for i in range(n):
+                gen()
+            return i
+        res, ex = self._run_with_optimizer(testfunc, 20)
+        self.assertEqual(res, 19)
+        self.assertIsNotNone(ex)
+        self.assertIn("_RETURN_GENERATOR", get_opnames(ex))
+
+    def test_for_iter_gen(self):
+        def gen(n):
+            for i in range(n):
+                yield i
+        def testfunc(n):
+            g = gen(n)
+            s = 0
+            for i in g:
+                s += i
+            return s
+        res, ex = self._run_with_optimizer(testfunc, 20)
+        self.assertEqual(res, 190)
+        self.assertIsNotNone(ex)
+        self.assertIn("_FOR_ITER_GEN_FRAME", get_opnames(ex))
 
 if __name__ == "__main__":
     unittest.main()

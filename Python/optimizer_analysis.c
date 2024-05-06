@@ -1,3 +1,5 @@
+#ifdef _Py_TIER2
+
 /*
  * This file contains the support code for CPython's uops optimizer.
  * It also performs some simple optimizations.
@@ -369,7 +371,7 @@ eliminate_pop_guard(_PyUOpInstruction *this_instr, bool exit)
 static PyCodeObject *
 get_code(_PyUOpInstruction *op)
 {
-    assert(op->opcode == _PUSH_FRAME || op->opcode == _POP_FRAME);
+    assert(op->opcode == _PUSH_FRAME || op->opcode == _POP_FRAME || op->opcode == _RETURN_GENERATOR);
     PyCodeObject *co = NULL;
     uint64_t operand = op->operand;
     if (operand == 0) {
@@ -554,9 +556,6 @@ remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
                     needs_ip = true;
                     may_have_escaped = true;
                 }
-                if (_PyUop_Flags[opcode] & HAS_ERROR_FLAG) {
-                    needs_ip = true;
-                }
                 if (needs_ip && last_set_ip >= 0) {
                     if (buffer[last_set_ip].opcode == _CHECK_VALIDITY) {
                         buffer[last_set_ip].opcode = _CHECK_VALIDITY_AND_SET_IP;
@@ -606,3 +605,5 @@ _Py_uop_analyze_and_optimize(
     OPT_STAT_INC(optimizer_successes);
     return length;
 }
+
+#endif /* _Py_TIER2 */

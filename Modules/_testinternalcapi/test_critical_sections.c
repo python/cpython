@@ -204,6 +204,90 @@ test_critical_sections_threads(PyObject *self, PyObject *Py_UNUSED(args))
     Py_DECREF(test_data.obj1);
     Py_RETURN_NONE;
 }
+
+static void
+pysleep(int ms)
+{
+#ifdef MS_WINDOWS
+    Sleep(ms);
+#else
+    usleep(ms * 1000);
+#endif
+}
+
+struct test_data_gc {
+    PyObject *obj;
+    Py_ssize_t num_threads;
+    Py_ssize_t id;
+    Py_ssize_t countdown;
+    PyEvent done_event;
+    PyEvent ready;
+};
+
+static void
+thread_gc(void *arg)
+{
+    struct test_data_gc *test_data = arg;
+    PyGILState_STATE gil = PyGILState_Ensure();
+
+    Py_ssize_t id = _Py_atomic_add_ssize(&test_data->id, 1);
+    if (id == test_data->num_threads - 1) {
+        _PyEvent_Notify(&test_data->ready);
+    }
+    else {
+        // wait for all test threads to more reliably reproduce the issue.
+        PyEvent_Wait(&test_data->ready);
+    }
+
+    if (id == 0) {
+        Py_BEGIN_CRITICAL_SECTION(test_data->obj);
+        // pause long enough that the lock would be handed off directly to
+        // a waiting thread.
+        pysleep(5);
+        PyGC_Collect();
+        Py_END_CRITICAL_SECTION();
+    }
+    else if (id == 1) {
+        pysleep(1);
+        Py_BEGIN_CRITICAL_SECTION(test_data->obj);
+        pysleep(1);
+        Py_END_CRITICAL_SECTION();
+    }
+    else if (id == 2) {
+        // sleep long enough so that thread 0 is waiting to stop the world
+        pysleep(6);
+        Py_BEGIN_CRITICAL_SECTION(test_data->obj);
+        pysleep(1);
+        Py_END_CRITICAL_SECTION();
+    }
+
+    PyGILState_Release(gil);
+    if (_Py_atomic_add_ssize(&test_data->countdown, -1) == 1) {
+        // last thread to finish sets done_event
+        _PyEvent_Notify(&test_data->done_event);
+    }
+}
+
+static PyObject *
+test_critical_sections_gc(PyObject *self, PyObject *Py_UNUSED(args))
+{
+    // gh-118332: Contended critical sections should not deadlock with GC
+    const Py_ssize_t NUM_THREADS = 3;
+    struct test_data_gc test_data = {
+        .obj = PyDict_New(),
+        .countdown = NUM_THREADS,
+        .num_threads = NUM_THREADS,
+    };
+    assert(test_data.obj != NULL);
+
+    for (int i = 0; i < NUM_THREADS; i++) {
+        PyThread_start_new_thread(&thread_gc, &test_data);
+    }
+    PyEvent_Wait(&test_data.done_event);
+    Py_DECREF(test_data.obj);
+    Py_RETURN_NONE;
+}
+
 #endif
 
 static PyMethodDef test_methods[] = {
@@ -212,6 +296,7 @@ static PyMethodDef test_methods[] = {
     {"test_critical_sections_suspend", test_critical_sections_suspend, METH_NOARGS},
 #ifdef Py_CAN_START_THREADS
     {"test_critical_sections_threads", test_critical_sections_threads, METH_NOARGS},
+    {"test_critical_sections_gc", test_critical_sections_gc, METH_NOARGS},
 #endif
     {NULL, NULL} /* sentinel */
 };

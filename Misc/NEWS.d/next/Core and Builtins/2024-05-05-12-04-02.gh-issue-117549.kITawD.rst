@@ -1,0 +1,5 @@
+Don't use designated initializer syntax in inline functions in internal
+headers. They cause problems for C++ or MSVC users who aren't yet using the
+latest C++ standard (C++20). While internal, pycore_backoff.h, is included
+(indirectly, via pycore_code.h) by some key 3rd party software that does so
+for speed.

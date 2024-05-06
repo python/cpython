@@ -114,7 +114,7 @@ def multi_interp_extensions_check(enabled=True):
     This only applies to modules that haven't been imported yet.
     It overrides the PyInterpreterConfig.check_multi_interp_extensions
     setting (see support.run_in_subinterp_with_config() and
-    _xxsubinterpreters.create()).
+    _interpreters.create()).
 
     Also see importlib.utils.allowing_all_extensions().
     """

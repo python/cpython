@@ -56,7 +56,11 @@ static inline Py_ssize_t PyDict_GET_SIZE(PyObject *op) {
     PyDictObject *mp;
     assert(PyDict_Check(op));
     mp = _Py_CAST(PyDictObject*, op);
+#ifdef Py_GIL_DISABLED
+    return _Py_atomic_load_ssize_relaxed(&mp->ma_used);
+#else
     return mp->ma_used;
+#endif
 }
 #define PyDict_GET_SIZE(op) PyDict_GET_SIZE(_PyObject_CAST(op))
 

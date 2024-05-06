@@ -624,6 +624,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__eq__));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__exit__));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__file__));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__firstlineno__));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__float__));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__floordiv__));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__format__));
@@ -981,6 +982,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(h));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(handle));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(handle_seq));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(has_location));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(hash_name));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(header));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(headers));
