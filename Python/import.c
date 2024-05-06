@@ -1935,20 +1935,22 @@ import_run_extension(PyThreadState *tstate, PyModInitFunction p0,
      * to the subinterpreter, check for single-phase init,
      * and then continue loading like normal. */
 
-    PyThreadState *main_tstate = NULL;
-    if (!_Py_IsMainInterpreter(tstate->interp)) {
-        /* We *could* leave in place a legacy interpreter here
-         * (one that shares obmalloc/GIL with main interp),
-         * but there isn't a big advantage, we anticipate
-         * such interpreters will be increasingly uncommon,
-         * and the code is a bit simpler if we always switch
-         * to the main interpreter. */
-        main_tstate = switch_to_main_interpreter(tstate);
-        if (main_tstate == NULL) {
-            return NULL;
-        }
-        assert(main_tstate != tstate);
-        // XXX Get import lock.
+    bool switched = false;
+    /* We *could* leave in place a legacy interpreter here
+     * (one that shares obmalloc/GIL with main interp),
+     * but there isn't a big advantage, we anticipate
+     * such interpreters will be increasingly uncommon,
+     * and the code is a bit simpler if we always switch
+     * to the main interpreter. */
+    PyThreadState *main_tstate = switch_to_main_interpreter(tstate);
+    if (main_tstate == NULL) {
+        return NULL;
+    }
+    else if (main_tstate != tstate) {
+        switched = true;
+        /* In the switched case, we could play it safe
+         * by getting the main interpreter's import lock here.
+         * It's unlikely to matter though. */
     }
 
     struct _Py_ext_module_loader_result res;
@@ -2010,7 +2012,7 @@ import_run_extension(PyThreadState *tstate, PyModInitFunction p0,
 
 main_finally:
     /* Switch back to the subinterpreter. */
-    if (main_tstate != NULL) {
+    if (switched) {
         assert(main_tstate != tstate);
 
         /* Handle any exceptions, which we cannot propagate directly
@@ -2064,7 +2066,7 @@ main_finally:
         }
         assert(!PyErr_Occurred());
 
-        if (main_tstate != NULL) {
+        if (switched) {
             /* We switched to the main interpreter to run the init
              * function, so now we will "reload" the module from the
              * cached data using the original subinterpreter. */
