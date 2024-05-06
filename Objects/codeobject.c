@@ -390,11 +390,9 @@ init_code(PyCodeObject *co, struct _PyCodeConstructor *con)
     co->co_filename = Py_NewRef(con->filename);
     co->co_name = Py_NewRef(con->name);
     co->co_qualname = Py_NewRef(con->qualname);
-#ifdef Py_GIL_DISABLED
     PyUnicode_InternInPlace(&co->co_filename);
     PyUnicode_InternInPlace(&co->co_name);
     PyUnicode_InternInPlace(&co->co_qualname);
-#endif
     co->co_flags = con->flags;
 
     co->co_firstlineno = con->firstlineno;
