@@ -14710,7 +14710,7 @@ save_LIBS=$LIBS
 
 
     CPPFLAGS="$LIBMPDEC_CFLAGS $CPPFLAGS"
-    LDFLAGS="$LIBMPDEC_LIBS $LDFLAGS"
+    LIBS="$LIBMPDEC_LIBS $LIBS"
 
     cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
@@ -14724,7 +14724,7 @@ save_LIBS=$LIBS
 int
 main (void)
 {
-void *x = mpd_version;
+const char *x = mpd_version();
   ;
   return 0;
 }
