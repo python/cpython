@@ -833,7 +833,7 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
         # bullet. The resulting zip file is ~8MB of non-null data; so the sparse
         # trick doesn't work and would result in that full ~8MB zip data file
         # being checked in to source control.
-        parts_glob = f"sparse-zip64-c{int(self.compression)}-0x*.part"
+        parts_glob = f"sparse-zip64-c{self.compression:d}-0x*.part"
         full_parts_glob = os.path.join(TEST_DATA_DIR, parts_glob)
         pre_built_zip_parts = glob.glob(full_parts_glob)
 
@@ -848,11 +848,19 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
             with open(os_helper.TESTFN, "wb") as f:
                 f.write(b"data")
                 f.write(os.linesep.encode())
-                f.seek(0xFFFFFFFF, os.SEEK_CUR)
+                f.seek(0xffff_ffff, os.SEEK_CUR)
                 f.write(os.linesep.encode())
-            with ZipFile(TEMP_ZIP, "w", compression=self.compression) as z:
+            os.utime(os_helper.TESTFN, (0.0, 0.0))
+            with ZipFile(
+                TEMP_ZIP,
+                "w",
+                compression=self.compression,
+                strict_timestamps=False
+            ) as z:
                 z.write(os_helper.TESTFN, "data1")
-                z.writestr("module.py", test_src)
+                z.writestr(
+                    ZipInfo("module.py", (1980, 1, 1, 0, 0, 0)), test_src
+                )
                 z.write(os_helper.TESTFN, "data2")
 
             # This "works" but relies on the zip format having a non-empty
@@ -872,7 +880,12 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
                                 if not part:
                                     part_fullname = os.path.join(
                                         TEST_DATA_DIR,
-                                        "sparse-zip64-c%d-0x%09x.part" % (self.compression, offset)
+                                        f"sparse-zip64-c{self.compression:d}-"
+                                        f"{offset:#011x}.part",
+                                    )
+                                    os.makedirs(
+                                        os.path.dirname(part_fullname),
+                                        exist_ok=True
                                     )
                                     part = open(part_fullname, "wb")
                                     print("Created", part_fullname)
@@ -903,11 +916,18 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
             # Confirm that the reconstructed zip file works and looks right.
             with ZipFile(TEMP_ZIP, "r") as z:
                 self.assertEqual(
-                        z.read("module.py"), test_src.encode(),
-                        msg=f"Recreate {full_parts_glob}, unexpected contents."
+                    z.getinfo("module.py").date_time, (1980, 1, 1, 0, 0, 0)
                 )
-                self.assertGreater(z.getinfo("data1").file_size, 0xffff_ffff)
-                self.assertGreater(z.getinfo("data2").file_size, 0xffff_ffff)
+                self.assertEqual(
+                    z.read("module.py"), test_src.encode(),
+                    msg=f"Recreate {full_parts_glob}, unexpected contents."
+                )
+                def assertDataEntry(name):
+                    zinfo = z.getinfo(name)
+                    self.assertEqual(zinfo.date_time, (1980, 1, 1, 0, 0, 0))
+                    self.assertGreater(zinfo.file_size, 0xffff_ffff)
+                assertDataEntry("data1")
+                assertDataEntry("data2")
 
         self.doTestWithPreBuiltZip(".py", "module")
 
