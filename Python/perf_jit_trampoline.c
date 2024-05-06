@@ -292,7 +292,7 @@ static void* perf_map_jit_init(void) {
     }
     perf_jit_map_state.code_id = 0;
 
-    // trampoline_api.code_padding = PERF_JIT_CODE_PADDING;
+    trampoline_api.code_padding = PERF_JIT_CODE_PADDING;
     return &perf_jit_map_state;
 }
 
