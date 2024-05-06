@@ -231,12 +231,10 @@ dict_next_version(PyInterpreterState *interp)
     PyThreadState *tstate = PyThreadState_GET();
     uint64_t cur_progress = (tstate->dict_global_version &
                             (THREAD_LOCAL_DICT_VERSION_BATCH - 1));
-
     if (cur_progress == 0) {
         uint64_t next = _Py_atomic_add_uint64(&interp->dict_state.global_version,
                                               THREAD_LOCAL_DICT_VERSION_BATCH);
-        tstate->dict_global_version = next + THREAD_LOCAL_DICT_VERSION_BATCH;
-        return next;
+        tstate->dict_global_version = next;
     }
     return tstate->dict_global_version += DICT_VERSION_INCREMENT;
 }
