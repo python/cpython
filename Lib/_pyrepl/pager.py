@@ -23,7 +23,7 @@ def get_pager() -> Pager:
     if not sys.stdin.isatty() or not sys.stdout.isatty():
         return plain_pager
     if sys.platform == "emscripten":
-        return plainpager
+        return plain_pager
     use_pager = os.environ.get('MANPAGER') or os.environ.get('PAGER')
     if use_pager:
         if sys.platform == 'win32': # pipes completely broken in Windows
