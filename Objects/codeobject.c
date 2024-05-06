@@ -105,7 +105,16 @@ PyCode_ClearWatcher(int watcher_id)
 static int
 should_intern_string(PyObject *o)
 {
-#ifndef Py_GIL_DISABLED
+#ifdef Py_GIL_DISABLED
+    // The free-threaded build interns (and immortalizes) all string constants
+    // unless we've disabled immortalizing objects that use deferred reference
+    // counting.
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    if (!interp->gc.immortalize.enable_on_thread_created) {
+        return 1;
+    }
+#endif
+
     // compute if s matches [a-zA-Z0-9_]
     const unsigned char *s, *e;
 
@@ -118,7 +127,6 @@ should_intern_string(PyObject *o)
         if (!Py_ISALNUM(*s) && *s != '_')
             return 0;
     }
-#endif
     return 1;
 }
 

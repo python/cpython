@@ -2,6 +2,7 @@ import marshal
 import tokenize
 import os.path
 import sys
+from test.support import suppress_immortalization
 
 PROGRAM_DIR = os.path.dirname(__file__)
 SRC_DIR = os.path.dirname(PROGRAM_DIR)
@@ -24,7 +25,11 @@ def dump(fp, filename, name):
 
     with tokenize.open(filename) as source_fp:
         source = source_fp.read()
-        code = compile(source, code_filename, 'exec')
+        # The output of marshal can depend on the reference count so suppress
+        # immortalization in the free-threaded build to keep the output
+        # consistent with the default build.
+        with suppress_immortalization():
+            code = compile(source, code_filename, 'exec')
 
     data = marshal.dumps(code)
     writecode(fp, name, data)
