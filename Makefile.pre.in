@@ -2040,7 +2040,7 @@ testuniversal: all
 # a full Xcode install that has an iPhone SE (3rd edition) simulator available.
 # This must be run *after* a `make install` has completed the build. The
 # `--with-framework-name` argument *cannot* be used when configuring the build.
-XCFOLDER=iOSTestbed.$(MULTIARCH).$(shell date +%s)
+XCFOLDER:=iOSTestbed.$(MULTIARCH).$(shell date +%s)
 XCRESULT=$(XCFOLDER)/$(MULTIARCH).xcresult
 .PHONY: testios
 testios:
