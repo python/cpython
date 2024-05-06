@@ -1,3 +1,4 @@
+#undef USING_MALLOC_CLOSURE_DOT_C
 #if defined (__SVR4) && defined (__sun)
 #   include <alloca.h>
 #endif
@@ -453,9 +454,13 @@ extern int _ctypes_simple_instance(ctypes_state *st, PyObject *obj);
 
 PyObject *_ctypes_get_errobj(ctypes_state *st, int **pspace);
 
-#define Py_ffi_closure_free(tp, p) ffi_closure_free(p)
-#define Py_ffi_closure_alloc(tp, size, codeloc) ffi_closure_alloc(size, codeloc)
-
+#ifdef USING_MALLOC_CLOSURE_DOT_C
+void Py_ffi_closure_free(void *p);
+void *Py_ffi_closure_alloc(size_t size, void** codeloc);
+#else
+#define Py_ffi_closure_free ffi_closure_free
+#define Py_ffi_closure_alloc ffi_closure_alloc
+#endif
 
 /****************************************************************
  * Accessing StgInfo -- these are inlined for performance reasons.
