@@ -1113,6 +1113,34 @@ class MmapTests(unittest.TestCase):
         # even when the access violations are correctly transformed into exceptions
         assert_python_ok("-c", code)
 
+    @unittest.skipUnless(os.name == 'nt', 'requires Windows')
+    @unittest.skipUnless(hasattr(mmap.mmap, '_protect'), 'test needs debug build')
+    @unittest.expectedFailure
+    def test_access_violations_fail(self):
+    
+        code = textwrap.dedent("""
+            from test.support.os_helper import TESTFN
+            import mmap
+            import os
+            from contextlib import suppress
+
+            if os.path.exists(TESTFN):
+                os.unlink(TESTFN)
+
+            PAGESIZE = mmap.PAGESIZE
+            PAGE_NOACCESS = 0x01
+
+            with open(TESTFN, 'bw+') as f:
+                f.write(b'A'* PAGESIZE)
+                f.flush()
+
+                m = mmap.mmap(f.fileno(), PAGESIZE)
+                m._protect(PAGE_NOACCESS, 0, PAGESIZE)
+                with suppress(OSError):
+                    m.find(b'A')
+        """)
+        assert_python_ok("-c", code)
+
 class LargeMmapTests(unittest.TestCase):
 
     def setUp(self):
