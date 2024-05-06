@@ -897,6 +897,21 @@ class Misc:
             pass
         self.tk.call('after', 'cancel', id)
 
+    def after_info(self, id=None):
+        """Return information about existing event handlers.
+
+        With no argument, return a tuple of the identifiers for all existing
+        event handlers created by the after and after_idle commands for this
+        interpreter.  If id is supplied, it specifies an existing handler; id
+        must have been the return value from some previous call to after or
+        after_idle and it must not have triggered yet or been canceled. If the
+        id doesn't exist, a TclError is raised.  Otherwise, the return value is
+        a tuple containing (script, type) where script is a reference to the
+        function to be called by the event handler and type is either 'idle'
+        or 'timer' to indicate what kind of event handler it is.
+        """
+        return self.tk.splitlist(self.tk.call('after', 'info', id))
+
     def bell(self, displayof=0):
         """Ring a display's bell."""
         self.tk.call(('bell',) + self._displayof(displayof))
