@@ -1113,8 +1113,8 @@ class MmapTests(unittest.TestCase):
                     list(m)  # test mmap_item
         """)
         rt, stdout, stderr = assert_python_ok("-c", code)
-        self.assertEqual(stdout.rstrip(), b'')
-        self.assertEqual(stderr.rstrip(), b'')
+        self.assertEqual(stdout.strip(), b'')
+        self.assertEqual(stderr.strip(), b'')
 
     @unittest.skipUnless(os.name == 'nt', 'requires Windows')
     @unittest.skipUnless(hasattr(mmap.mmap, '_protect'), 'test needs debug build')
