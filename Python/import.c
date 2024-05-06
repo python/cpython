@@ -2003,13 +2003,27 @@ import_run_extension(PyThreadState *tstate, PyModInitFunction p0,
         cached = update_global_state_for_extension(
                 tstate, info->path, info->name, def, &singlephase);
         if (cached == NULL) {
-            goto error;
+            goto main_finally;
         }
     }
 
+main_finally:
     /* Switch back to the subinterpreter. */
     if (main_tstate != NULL) {
         assert(main_tstate != tstate);
+
+        /* Handle any exceptions, which we cannot propagate directly
+         * to the subinterpreter. */
+        if (PyErr_Occurred()) {
+            if (PyErr_ExceptionMatches(PyExc_MemoryError)) {
+                /* We trust it will be caught again soon. */
+                PyErr_Clear();
+            }
+            else {
+                /* Printing the exception should be sufficient. */
+                PyErr_PrintEx(0);
+            }
+        }
 
         /* Any module we got from the init function will have to be
          * reloaded in the subinterpreter. */
