@@ -541,6 +541,11 @@ are always available.  They are listed here in alphabetical order.
    :returns: The result of the evaluated expression.
    :raises: Syntax errors are reported as exceptions.
 
+   .. warning::
+
+      Because this function can be used for executing arbitrary code, it is not recommended
+      to pass user-supplied input, which may lead to security vulnerabilities.
+
    The *expression* argument is parsed and evaluated as a Python expression
    (technically speaking, a condition list) using the *globals* and *locals*
    dictionaries as global and local namespace.  If the *globals* dictionary is
@@ -561,11 +566,6 @@ are always available.  They are listed here in alphabetical order.
       >>> x = 1
       >>> eval('x+1')
       2
-
-   .. warning::
-
-      Because this function can be used for executing arbitrary code, it is not recommended
-      to pass user-supplied input, which may lead to security vulnerabilities.
 
    This function can also be used to execute arbitrary code objects (such as
    those created by :func:`compile`).  In this case, pass a code object instead
