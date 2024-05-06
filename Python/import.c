@@ -1965,45 +1965,45 @@ import_run_extension(PyThreadState *tstate, PyModInitFunction p0,
         res.module = NULL;
         def = res.def;
         assert(def != NULL);
-    }
 
-    /* Do anything else that should be done
-     * while still using the main interpreter. */
-    if (res.kind == _Py_ext_module_kind_SINGLEPHASE) {
-        /* Remember the filename as the __file__ attribute */
-        if (info->filename != NULL) {
-            if (PyModule_AddObjectRef(mod, "__file__", info->filename) < 0) {
-                PyErr_Clear(); /* Not important enough to report */
+        /* Do anything else that should be done
+         * while still using the main interpreter. */
+        if (res.kind == _Py_ext_module_kind_SINGLEPHASE) {
+            /* Remember the filename as the __file__ attribute */
+            if (info->filename != NULL) {
+                if (PyModule_AddObjectRef(mod, "__file__", info->filename) < 0) {
+                    PyErr_Clear(); /* Not important enough to report */
+                }
             }
-        }
 
-        /* Update global import state. */
-        assert(def->m_base.m_index != 0);
-        struct singlephase_global_update singlephase = {
-            // XXX Modules that share a def should each get their own index,
-            // whereas currently they share (which means the per-interpreter
-            // cache is less reliable than it should be).
-            .m_index=def->m_base.m_index,
-            .origin=info->origin,
-        };
-        // gh-88216: Extensions and def->m_base.m_copy can be updated
-        // when the extension module doesn't support sub-interpreters.
-        if (def->m_size == -1) {
-            /* We will reload from m_copy. */
-            assert(def->m_base.m_init == NULL);
-            singlephase.m_dict = PyModule_GetDict(mod);
-            assert(singlephase.m_dict != NULL);
-        }
-        else {
-            /* We will reload via the init function. */
-            assert(def->m_size >= 0);
-            assert(def->m_base.m_copy == NULL);
-            singlephase.m_init = p0;
-        }
-        cached = update_global_state_for_extension(
-                tstate, info->path, info->name, def, &singlephase);
-        if (cached == NULL) {
-            goto main_finally;
+            /* Update global import state. */
+            assert(def->m_base.m_index != 0);
+            struct singlephase_global_update singlephase = {
+                // XXX Modules that share a def should each get their own index,
+                // whereas currently they share (which means the per-interpreter
+                // cache is less reliable than it should be).
+                .m_index=def->m_base.m_index,
+                .origin=info->origin,
+            };
+            // gh-88216: Extensions and def->m_base.m_copy can be updated
+            // when the extension module doesn't support sub-interpreters.
+            if (def->m_size == -1) {
+                /* We will reload from m_copy. */
+                assert(def->m_base.m_init == NULL);
+                singlephase.m_dict = PyModule_GetDict(mod);
+                assert(singlephase.m_dict != NULL);
+            }
+            else {
+                /* We will reload via the init function. */
+                assert(def->m_size >= 0);
+                assert(def->m_base.m_copy == NULL);
+                singlephase.m_init = p0;
+            }
+            cached = update_global_state_for_extension(
+                    tstate, info->path, info->name, def, &singlephase);
+            if (cached == NULL) {
+                goto main_finally;
+            }
         }
     }
 
