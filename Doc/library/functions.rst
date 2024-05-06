@@ -592,6 +592,11 @@ are always available.  They are listed here in alphabetical order.
 
 .. function:: exec(object, globals=None, locals=None, /, *, closure=None)
 
+   .. warning::
+
+      Because this function can be used for executing arbitrary code, it is not recommended
+      to pass user-supplied input, which may lead to security vulnerabilities.
+
    This function supports dynamic execution of Python code. *object* must be
    either a string or a code object.  If it is a string, the string is parsed as
    a suite of Python statements which is then executed (unless a syntax error
