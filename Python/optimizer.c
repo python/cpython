@@ -1,6 +1,7 @@
+#include "Python.h"
+
 #ifdef _Py_TIER2
 
-#include "Python.h"
 #include "opcode.h"
 #include "pycore_interp.h"
 #include "pycore_backoff.h"
@@ -1719,6 +1720,15 @@ _Py_Executors_InvalidateAll(PyInterpreterState *interp, int is_invalidation)
             OPT_STAT_INC(executors_invalidated);
         }
     }
+}
+
+#else
+void
+_Py_Executors_InvalidateDependency(PyInterpreterState *interp, void *obj, int is_invalidation)
+{
+    (void)interp;
+    (void)obj;
+    (void)is_invalidation;
 }
 
 #endif /* _Py_TIER2 */
