@@ -259,7 +259,7 @@ class JSONEncoder(object):
                 markers, self.default, _encoder, indent, floatstr,
                 self.key_separator, self.item_separator, self.sort_keys,
                 self.skipkeys, _one_shot)
-            return _iterencode(o, '' if self.indent is None else '\n')
+            return _iterencode(o, '' if indent is None else '\n')
 
 def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
         _key_separator, _item_separator, _sort_keys, _skipkeys, _one_shot,
