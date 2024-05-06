@@ -16,7 +16,6 @@
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 
 #include "pystats.h"
-#include "pyerrors.h"
 
 static PyObject *gen_close(PyGenObject *, PyObject *);
 static PyObject *async_gen_asend_new(PyAsyncGenObject *, PyObject *);
