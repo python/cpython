@@ -1,0 +1,1 @@
+Use user-selected color theme for Help => IDLE Doc.
