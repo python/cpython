@@ -378,7 +378,7 @@ class Bdb:
             # We need f_trace_lines == True for the debugger to work
             frame.f_trace_lines = True
             frame = frame.f_back
-        self.set_step()
+        self.set_stepinstr()
         sys.settrace(self.trace_dispatch)
 
     def set_continue(self):

@@ -364,6 +364,21 @@ class TestFrameLocals(unittest.TestCase):
             c = 0
         f()
 
+    def test_local_objects(self):
+        o = object()
+        k = '.'.join(['a', 'b', 'c'])
+        f_locals = sys._getframe().f_locals
+        f_locals['o'] = f_locals['k']
+        self.assertEqual(o, 'a.b.c')
+
+    def test_update_with_self(self):
+        def f():
+            f_locals = sys._getframe().f_locals
+            f_locals.update(f_locals)
+            f_locals.update(f_locals)
+            f_locals.update(f_locals)
+        f()
+
     def test_repr(self):
         x = 1
         # Introduce a reference cycle
