@@ -1089,7 +1089,7 @@ The final prediction goes to the largest posterior. This is known as the
 Kernel density estimation
 *************************
 
-It is possible to estimate a continuous probability density function
+It is possible to estimate a continuous probability distribution
 from a fixed number of discrete samples.
 
 The basic idea is to smooth the data using `a kernel function such as a
@@ -1100,14 +1100,27 @@ which is called the *bandwidth*.
 
 .. testcode::
 
-   def kde_normal(sample, h):
-       "Create a continuous probability density function from a sample."
-       # Smooth the sample with a normal distribution kernel scaled by h.
-       kernel_h = NormalDist(0.0, h).pdf
-       n = len(sample)
+   from random import choice, random
+
+   def kde_normal(data, h):
+       "Create a continuous probability distribution from discrete samples."
+
+       # Smooth the data with a normal distribution kernel scaled by h.
+       K_h = NormalDist(0.0, h)
+
        def pdf(x):
-           return sum(kernel_h(x - x_i) for x_i in sample) / n
-       return pdf
+           'Probability density function.  P(x <= X < x+dx) / dx'
+           return sum(K_h.pdf(x - x_i) for x_i in data) / len(data)
+
+       def cdf(x):
+           'Cumulative distribution function.  P(X <= x)'
+           return sum(K_h.cdf(x - x_i) for x_i in data) / len(data)
+
+       def rand():
+           'Random selection from the probability distribution.'
+           return choice(data) + K_h.inv_cdf(random())
+
+       return pdf, cdf, rand
 
 `Wikipedia has an example
 <https://en.wikipedia.org/wiki/Kernel_density_estimation#Example>`_
@@ -1117,14 +1130,37 @@ a probability density function estimated from a small sample:
 .. doctest::
 
    >>> sample = [-2.1, -1.3, -0.4, 1.9, 5.1, 6.2]
-   >>> f_hat = kde_normal(sample, h=1.5)
+   >>> pdf, cdf, rand = kde_normal(sample, h=1.5)
    >>> xarr = [i/100 for i in range(-750, 1100)]
-   >>> yarr = [f_hat(x) for x in xarr]
+   >>> yarr = [pdf(x) for x in xarr]
 
 The points in ``xarr`` and ``yarr`` can be used to make a PDF plot:
 
 .. image:: kde_example.png
    :alt: Scatter plot of the estimated probability density function.
+
+`Resample <https://en.wikipedia.org/wiki/Resampling_(statistics)>`_
+the data to produce 100 new selections:
+
+.. doctest::
+
+    >>> new_selections = [rand() for i in range(100)]
+
+Determine the probability of a new selection being below ``2.0``:
+
+.. doctest::
+
+   >>> round(cdf(2.0), 4)
+   0.5794
+
+Add a new sample data point and find the new CDF at ``2.0``:
+
+.. doctest::
+
+   >>> sample.append(4.9)
+   >>> round(cdf(2.0), 4)
+   0.5005
+
 
 ..
    # This modelines must appear within the last ten lines of the file.
