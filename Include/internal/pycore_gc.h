@@ -37,7 +37,15 @@ static inline PyObject* _Py_FROM_GC(PyGC_Head *gc) {
 }
 
 
-/* Bit flags for ob_gc_bits (in Py_GIL_DISABLED builds) */
+/* Bit flags for ob_gc_bits (in Py_GIL_DISABLED builds)
+ *
+ * Setting the bits requires a relaxed store. The per-object lock must also be
+ * held, except when the object is only visible to a single thread (e.g. during
+ * object initialization or destruction).
+ *
+ * Reading the bits requires using a relaxed load, but does not require holding
+ * the per-object lock.
+ */
 #ifdef Py_GIL_DISABLED
 #  define _PyGC_BITS_TRACKED        (1)     // Tracked by the GC
 #  define _PyGC_BITS_FINALIZED      (2)     // tp_finalize was called
@@ -51,9 +59,10 @@ static inline PyObject* _Py_FROM_GC(PyGC_Head *gc) {
 #ifdef Py_GIL_DISABLED
 
 static inline void
-_PyObject_SET_GC_BITS(PyObject *op, uint8_t bits)
+_PyObject_SET_GC_BITS(PyObject *op, uint8_t new_bits)
 {
-    _Py_atomic_or_uint8_relaxed(&op->ob_gc_bits, bits);
+    uint8_t bits = _Py_atomic_load_uint8_relaxed(&op->ob_gc_bits);
+    _Py_atomic_store_uint8_relaxed(&op->ob_gc_bits, bits | new_bits);
 }
 
 static inline int
@@ -63,9 +72,10 @@ _PyObject_HAS_GC_BITS(PyObject *op, uint8_t bits)
 }
 
 static inline void
-_PyObject_CLEAR_GC_BITS(PyObject *op, uint8_t bits)
+_PyObject_CLEAR_GC_BITS(PyObject *op, uint8_t bits_to_clear)
 {
-    _Py_atomic_and_uint8_relaxed(&op->ob_gc_bits, ~bits);
+    uint8_t bits = _Py_atomic_load_uint8_relaxed(&op->ob_gc_bits);
+    _Py_atomic_store_uint8_relaxed(&op->ob_gc_bits, bits & ~bits_to_clear);
 }
 
 #endif

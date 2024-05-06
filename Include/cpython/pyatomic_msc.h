@@ -450,16 +450,6 @@ _Py_atomic_and_uintptr(uintptr_t *obj, uintptr_t value)
 }
 
 
-// --- _Py_atomic_and_relaxed ------------------------------------------------
-
-static inline uint8_t
-_Py_atomic_and_uint8_relaxed(uint8_t *obj, uint8_t value)
-{
-    _Py_atomic_ASSERT_ARG_TYPE(char);
-    return (uint8_t)_InterlockedAnd8NoFence((volatile char *)obj, (char)value);
-}
-
-
 // --- _Py_atomic_or ---------------------------------------------------------
 
 static inline uint8_t
@@ -500,6 +490,7 @@ _Py_atomic_or_uint64(uint64_t *obj, uint64_t value)
 #endif
 }
 
+
 static inline uintptr_t
 _Py_atomic_or_uintptr(uintptr_t *obj, uintptr_t value)
 {
@@ -512,16 +503,6 @@ _Py_atomic_or_uintptr(uintptr_t *obj, uintptr_t value)
     return (uintptr_t)_Py_atomic_or_uint32((uint32_t *)obj,
                                            (uint32_t)value);
 #endif
-}
-
-
-// --- _Py_atomic_or_relaxed -------------------------------------------------
-
-static inline uint8_t
-_Py_atomic_or_uint8_relaxed(uint8_t *obj, uint8_t value)
-{
-    _Py_atomic_ASSERT_ARG_TYPE(char);
-    return (uint8_t)_InterlockedOr8NoFence((volatile char *)obj, (char)value);
 }
 
 
