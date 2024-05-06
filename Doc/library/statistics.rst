@@ -1153,6 +1153,14 @@ Determine the probability of a new selection being below ``2.0``:
    >>> round(cdf(2.0), 4)
    0.5794
 
+Add a new sample data point and find the new CDF at ``2.0``:
+
+.. doctest::
+
+   >>> sample.append(4.9)
+   >>> round(cdf(2.0), 4)
+   0.5005
+
 
 ..
    # This modelines must appear within the last ten lines of the file.
