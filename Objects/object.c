@@ -1731,7 +1731,7 @@ _PyObject_GenericSetAttrWithDict(PyObject *obj, PyObject *name,
             goto done;
         }
         else {
-            res = _PyObjectDict_SetItem(tp, dictptr, name, value);
+            res = _PyObjectDict_SetItem(tp, obj, dictptr, name, value);
         }
     }
     else {
@@ -1789,7 +1789,9 @@ PyObject_GenericSetDict(PyObject *obj, PyObject *value, void *context)
                      "not a '%.200s'", Py_TYPE(value)->tp_name);
         return -1;
     }
+    Py_BEGIN_CRITICAL_SECTION(obj);
     Py_XSETREF(*dictptr, Py_NewRef(value));
+    Py_END_CRITICAL_SECTION();
     return 0;
 }
 
