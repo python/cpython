@@ -1689,7 +1689,9 @@ encoder_listencode_dict(PyEncoderObject *s, _PyUnicodeWriter *writer,
     }
     if (s->indent != Py_None) {
         indent_level--;
-        do_dedent(s, writer, indent_level, indent_cache);
+        if (do_dedent(s, writer, indent_level, indent_cache) < 0) {
+            goto bail;
+        }
     }
 
     if (_PyUnicodeWriter_WriteChar(writer, '}'))
@@ -1764,7 +1766,9 @@ encoder_listencode_list(PyEncoderObject *s, _PyUnicodeWriter *writer,
 
     if (s->indent != Py_None) {
         indent_level--;
-        do_dedent(s, writer, indent_level, indent_cache);
+        if (do_dedent(s, writer, indent_level, indent_cache) < 0) {
+            goto bail;
+        }
     }
 
     if (_PyUnicodeWriter_WriteChar(writer, ']'))
