@@ -2454,10 +2454,6 @@ class SinglephaseInitTests(unittest.TestCase):
         # Start fresh.
         cls.clean_up()
 
-    @classmethod
-    def tearDownClass(cls):
-        restore__testsinglephase()
-
     def tearDown(self):
         # Clean up the module.
         self.clean_up()
