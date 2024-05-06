@@ -1,7 +1,8 @@
 import os
 import sys
 
-CAN_USE_PYREPL = True
+CAN_USE_PYREPL = sys.platform != "win32"
+
 
 def interactive_console(mainmodule=None, quiet=False, pythonstartup=False):
     global CAN_USE_PYREPL
@@ -21,7 +22,7 @@ def interactive_console(mainmodule=None, quiet=False, pythonstartup=False):
         sys.ps1 = ">>> "
     if not hasattr(sys, "ps2"):
         sys.ps2 = "... "
-    #
+
     run_interactive = None
     try:
         import errno
@@ -36,8 +37,7 @@ def interactive_console(mainmodule=None, quiet=False, pythonstartup=False):
         from .trace import trace
         msg = f"warning: can't use pyrepl: {e}"
         trace(msg)
-        if sys.platform != 'win32':
-            print(msg, file=sys.stderr)
+        print(msg, file=sys.stderr)
         CAN_USE_PYREPL = False
     if run_interactive is None:
         return sys._baserepl()
