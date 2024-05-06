@@ -1328,7 +1328,7 @@ class _BaseGenericAlias(_Final, _root=True):
         raise AttributeError(attr)
 
     def __setattr__(self, attr, val):
-        if _is_dunder(attr) or attr in {'_name', '_inst', '_nparams'}:
+        if _is_dunder(attr) or attr in {'_name', '_inst', '_nparams', '_defaults'}:
             super().__setattr__(attr, val)
         else:
             setattr(self.__origin__, attr, val)
