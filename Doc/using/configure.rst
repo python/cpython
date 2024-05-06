@@ -812,6 +812,10 @@ Libraries options
    .. versionchanged:: 3.13
       Default to using the installed ``mpdecimal`` library.
 
+   .. deprecated-removed:: 3.13 3.15
+      A copy of the ``mpdecimal`` library sources will no longer be distributed
+      with Python 3.15.
+
    .. seealso:: :option:`LIBMPDEC_CFLAGS` and :option:`LIBMPDEC_LIBS`.
 
 .. option:: --with-readline=readline|editline
