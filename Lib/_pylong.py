@@ -53,7 +53,7 @@ def compute_powers(w, base, more_than, show=False):
     need = set()
     ws = {w}
     while ws:
-        w = ws.pop()
+        w = ws.pop() # any element is fine to use next
         if w in seen or w <= more_than:
             continue
         seen.add(w)
@@ -94,78 +94,13 @@ def compute_powers(w, base, more_than, show=False):
             d[this] = sq
     return d
 
-def int_to_decimal(n):
-    """Asymptotically fast conversion of an 'int' to Decimal."""
-
-    # Function due to Tim Peters.  See GH issue #90716 for details.
-    # https://github.com/python/cpython/issues/90716
-    #
-    # The implementation in longobject.c of base conversion algorithms
-    # between power-of-2 and non-power-of-2 bases are quadratic time.
-    # This function implements a divide-and-conquer algorithm that is
-    # faster for large numbers.  Builds an equal decimal.Decimal in a
-    # "clever" recursive way.  If we want a string representation, we
-    # apply str to _that_.
-
-    D = decimal.Decimal
-    D2 = D(2)
-
-    BITLIM = 128
-
-    mem = {}
-
-    def w2pow(w):
-        """Return D(2)**w and store the result. Also possibly save some
-        intermediate results. In context, these are likely to be reused
-        across various levels of the conversion to Decimal."""
-        if (result := mem.get(w)) is None:
-            if w <= BITLIM:
-                result = D2**w
-            elif w - 1 in mem:
-                result = (t := mem[w - 1]) + t
-            else:
-                w2 = w >> 1
-                # If w happens to be odd, w-w2 is one larger then w2
-                # now. Recurse on the smaller first (w2), so that it's
-                # in the cache and the larger (w-w2) can be handled by
-                # the cheaper `w-1 in mem` branch instead.
-                result = w2pow(w2) * w2pow(w - w2)
-            mem[w] = result
-        return result
-
-    def inner(n, w):
-        if w <= BITLIM:
-            return D(n)
-        w2 = w >> 1
-        hi = n >> w2
-        lo = n - (hi << w2)
-        return inner(lo, w2) + inner(hi, w - w2) * w2pow(w2)
-
-    with decimal.localcontext() as ctx:
-        ctx.prec = decimal.MAX_PREC
-        ctx.Emax = decimal.MAX_EMAX
-        ctx.Emin = decimal.MIN_EMIN
-        ctx.traps[decimal.Inexact] = 1
-
-        if n < 0:
-            negate = True
-            n = -n
-        else:
-            negate = False
-        result = inner(n, n.bit_length())
-        if negate:
-            result = -result
-    return result
-
-old_int_to_decimal = int_to_decimal
-
 _unbounded_dec_context = decimal.getcontext().copy()
 _unbounded_dec_context.prec = decimal.MAX_PREC
 _unbounded_dec_context.Emax = decimal.MAX_EMAX
 _unbounded_dec_context.Emin = decimal.MIN_EMIN
 _unbounded_dec_context.traps[decimal.Inexact] = 1 # sanity check
 
-def new_int_to_decimal(n):
+def int_to_decimal(n):
     """Asymptotically fast conversion of an 'int' to Decimal."""
 
     # Function due to Tim Peters.  See GH issue #90716 for details.
@@ -205,51 +140,6 @@ def new_int_to_decimal(n):
     return result
 
 def int_to_decimal_string(n):
-    """Asymptotically fast conversion of an 'int' to a decimal string."""
-    w = n.bit_length()
-    if w > 450_000 and _decimal is not None:
-        # It is only usable with the C decimal implementation.
-        # _pydecimal.py calls str() on very large integers, which in its
-        # turn calls int_to_decimal_string(), causing very deep recursion.
-        return str(int_to_decimal(n))
-
-    # Fallback algorithm for the case when the C decimal module isn't
-    # available.  This algorithm is asymptotically worse than the algorithm
-    # using the decimal module, but better than the quadratic time
-    # implementation in longobject.c.
-    def inner(n, w):
-        if w <= 1000:
-            return str(n)
-        w2 = w >> 1
-        d = pow10_cache.get(w2)
-        if d is None:
-            d = pow10_cache[w2] = 5**w2 << w2 # 10**i = (5*2)**i = 5**i * 2**i
-        hi, lo = divmod(n, d)
-        return inner(hi, w - w2) + inner(lo, w2).zfill(w2)
-
-    # The estimation of the number of decimal digits.
-    # There is no harm in small error.  If we guess too large, there may
-    # be leading 0's that need to be stripped.  If we guess too small, we
-    # may need to call str() recursively for the remaining highest digits,
-    # which can still potentially be a large integer. This is manifested
-    # only if the number has way more than 10**15 digits, that exceeds
-    # the 52-bit physical address limit in both Intel64 and AMD64.
-    w = int(w * 0.3010299956639812 + 1)  # log10(2)
-    pow10_cache = {}
-    if n < 0:
-        n = -n
-        sign = '-'
-    else:
-        sign = ''
-    s = inner(n, w)
-    if s[0] == '0' and n:
-        # If our guess of w is too large, there may be leading 0's that
-        # need to be stripped.
-        s = s.lstrip('0')
-    return sign + s
-
-old_int_to_decimal_string = int_to_decimal_string
-def new_int_to_decimal_string(n):
     """Asymptotically fast conversion of an 'int' to a decimal string."""
     w = n.bit_length()
     if w > 450_000 and _decimal is not None:
@@ -307,54 +197,6 @@ def _str_to_int_inner(s):
 
     DIGLIM = 2048
 
-    mem = {}
-
-    def w5pow(w):
-        """Return 5**w and store the result.
-        Also possibly save some intermediate results. In context, these
-        are likely to be reused across various levels of the conversion
-        to 'int'.
-        """
-        if (result := mem.get(w)) is None:
-            if w <= DIGLIM:
-                result = 5**w
-            elif w - 1 in mem:
-                result = mem[w - 1] * 5
-            else:
-                w2 = w >> 1
-                # If w happens to be odd, w-w2 is one larger then w2
-                # now. Recurse on the smaller first (w2), so that it's
-                # in the cache and the larger (w-w2) can be handled by
-                # the cheaper `w-1 in mem` branch instead.
-                result = w5pow(w2) * w5pow(w - w2)
-            mem[w] = result
-        return result
-
-    def inner(a, b):
-        if b - a <= DIGLIM:
-            return int(s[a:b])
-        mid = (a + b + 1) >> 1
-        return inner(mid, b) + ((inner(a, mid) * w5pow(b - mid)) << (b - mid))
-
-    return inner(0, len(s))
-
-old_str_to_int_inner = _str_to_int_inner
-
-def new_str_to_int_inner(s):
-    """Asymptotically fast conversion of a 'str' to an 'int'."""
-
-    # Function due to Bjorn Martinsson.  See GH issue #90716 for details.
-    # https://github.com/python/cpython/issues/90716
-    #
-    # The implementation in longobject.c of base conversion algorithms
-    # between power-of-2 and non-power-of-2 bases are quadratic time.
-    # This function implements a divide-and-conquer algorithm making use
-    # of Python's built in big int multiplication. Since Python uses the
-    # Karatsuba algorithm for multiplication, the time complexity
-    # of this function is O(len(s)**1.58).
-
-    DIGLIM = 2048
-
     def inner(a, b):
         if b - a <= DIGLIM:
             return int(s[a:b])
@@ -365,18 +207,6 @@ def new_str_to_int_inner(s):
 
     w5pow = compute_powers(len(s), 5, DIGLIM)
     return inner(0, len(s))
-
-def setold():
-    global int_to_decimal, int_to_decimal_string, _str_to_int_inner
-    int_to_decimal = old_int_to_decimal
-    int_to_decimal_string = old_int_to_decimal_string
-    _str_to_int_inner = old_str_to_int_inner
-
-def setnew():
-    global int_to_decimal, int_to_decimal_string, _str_to_int_inner
-    int_to_decimal = new_int_to_decimal
-    int_to_decimal_string = new_int_to_decimal_string
-    _str_to_int_inner = new_str_to_int_inner
 
 def int_from_string(s):
     """Asymptotically fast version of PyLong_FromString(), conversion
