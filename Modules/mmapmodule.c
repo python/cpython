@@ -351,6 +351,30 @@ safe_copy_to_slice(char *dest, const char *src, Py_ssize_t start, Py_ssize_t ste
     return 0;
 }
 
+PyObject *
+_get_mmap_mem(char *start, size_t num_bytes) {
+    if (num_bytes == 1) {
+        char dest;
+        if (safe_byte_copy(&dest, start) < 0) {
+            return NULL;
+        }
+        else {
+            PyObject *result = PyBytes_FromStringAndSize(&dest, 1);
+            return result;
+        }
+    }
+    else {
+        PyObject *result = PyBytes_FromStringAndSize(NULL, num_bytes);
+        if (result == NULL) {
+            return NULL;
+        }
+        if (safe_memcpy(PyBytes_AS_STRING(result), start, num_bytes) < 0) {
+            Py_CLEAR(result);
+        }
+        return result;
+    }
+}
+
 static PyObject *
 mmap_read_byte_method(mmap_object *self,
                       PyObject *Py_UNUSED(ignored))
@@ -367,35 +391,6 @@ mmap_read_byte_method(mmap_object *self,
     else {
         self->pos++;
         return PyLong_FromLong((unsigned char) dest);
-    }
-}
-
-PyObject *
-_read_mmap_mem(mmap_object *self, char *start, size_t num_bytes) {
-    if (num_bytes == 1) {
-        char dest;
-        if (safe_byte_copy(&dest, start) < 0) {
-            return NULL;
-        }
-        else {
-            PyObject *result = PyBytes_FromStringAndSize(&dest, 1);
-            self->pos += 1;
-            return result;
-        }
-    }
-    else {
-        PyObject *result = PyBytes_FromStringAndSize(NULL, num_bytes);
-        // this check was not done previously in mmap_read_line_method, which means pos was increased even in case of error
-        if (result == NULL) {
-            return NULL;
-        }
-        if (safe_memcpy(PyBytes_AS_STRING(result), start, num_bytes) < 0) {
-            Py_CLEAR(result);
-        }
-        else {
-            self->pos += num_bytes;
-        }
-        return result;
     }
 }
 
@@ -422,7 +417,11 @@ mmap_read_line_method(mmap_object *self,
     else
         ++eol; /* advance past newline */
 
-    return _read_mmap_mem(self, start, eol - start);
+    PyObject *result = _get_mmap_mem(start, eol - start);
+    if (result != NULL) {
+        self->pos += (eol - start);
+    }
+    return result;
 }
 
 static PyObject *
@@ -441,7 +440,11 @@ mmap_read_method(mmap_object *self,
     if (num_bytes < 0 || num_bytes > remaining)
         num_bytes = remaining;
 
-    return _read_mmap_mem(self, self->data + self->pos, num_bytes);
+    PyObject *result = _get_mmap_mem(self->data + self->pos, num_bytes);
+    if (result != NULL) {
+        self->pos += num_bytes;
+    }
+    return result;
 }
 
 static PyObject *
@@ -1136,7 +1139,14 @@ mmap_subscript(mmap_object *self, PyObject *item)
             return NULL;
         }
         CHECK_VALID(NULL);
-        return PyLong_FromLong(Py_CHARMASK(self->data[i]));
+
+        char dest;
+        if (safe_byte_copy(&dest, self->data + i) < 0) {
+            return NULL;
+        }
+        else {
+            return PyLong_FromLong(Py_CHARMASK(dest));
+        }
     }
     else if (PySlice_Check(item)) {
         Py_ssize_t start, stop, step, slicelen;
@@ -1150,8 +1160,7 @@ mmap_subscript(mmap_object *self, PyObject *item)
         if (slicelen <= 0)
             return PyBytes_FromStringAndSize("", 0);
         else if (step == 1)
-            return PyBytes_FromStringAndSize(self->data + start,
-                                              slicelen);
+            return _get_mmap_mem(self->data + start, slicelen);
         else {
             char *result_buf = (char *)PyMem_Malloc(slicelen);
             PyObject *result;
