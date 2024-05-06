@@ -1063,7 +1063,7 @@ class MmapTests(unittest.TestCase):
     @unittest.skipUnless(os.name == 'nt', 'requires Windows')
     @unittest.skipUnless(hasattr(mmap.mmap, '_protect'), 'test needs debug build')
     def test_access_violations(self):
-    
+
         code = textwrap.dedent("""
             from test.support.os_helper import TESTFN
             import faulthandler
@@ -1120,7 +1120,7 @@ class MmapTests(unittest.TestCase):
     @unittest.skipUnless(hasattr(mmap.mmap, '_protect'), 'test needs debug build')
     @unittest.expectedFailure
     def test_access_violations_fail(self):
-    
+
         code = textwrap.dedent("""
             from test.support.os_helper import TESTFN
             import mmap
