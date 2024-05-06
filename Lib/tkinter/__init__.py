@@ -4398,17 +4398,117 @@ class PhotoImage(Image):
                 to = to[1:]
             args = args + ('-to',) + tuple(to)
         self.tk.call(args)
-    # XXX read
 
-    def write(self, filename, format=None, from_coords=None):
-        """Write image to file FILENAME in FORMAT starting from
-        position FROM_COORDS."""
-        args = (self.name, 'write', filename)
-        if format:
-            args = args + ('-format', format)
-        if from_coords:
-            args = args + ('-from',) + tuple(from_coords)
-        self.tk.call(args)
+    def read(self, filename, format=None, *, from_coords=None, to=None, shrink=False):
+        """Reads image data from the file named FILENAME into the image.
+
+        The FORMAT option specifies the format of the image data in the
+        file.
+
+        The FROM_COORDS option specifies a rectangular sub-region of the image
+        file data to be copied to the destination image.  It must be a tuple
+        or a list of 1 to 4 integers (x1, y1, x2, y2).  (x1, y1) and
+        (x2, y2) specify diagonally opposite corners of the rectangle.  If
+        x2 and y2 are not specified, the default value is the bottom-right
+        corner of the source image.  The default, if this option is not
+        specified, is the whole of the image in the image file.
+
+        The TO option specifies the coordinates of the top-left corner of
+        the region of the image into which data from filename are to be
+        read.  The default is (0, 0).
+
+        If SHRINK is true, the size of the destination image will be
+        reduced, if necessary, so that the region into which the image file
+        data are read is at the bottom-right corner of the image.
+        """
+        options = ()
+        if format is not None:
+            options += ('-format', format)
+        if from_coords is not None:
+            options += ('-from', *from_coords)
+        if shrink:
+            options += ('-shrink',)
+        if to is not None:
+            options += ('-to', *to)
+        self.tk.call(self.name, 'read', filename, *options)
+
+    def write(self, filename, format=None, from_coords=None, *,
+              background=None, grayscale=False):
+        """Writes image data from the image to a file named FILENAME.
+
+        The FORMAT option specifies the name of the image file format
+        handler to be used to write the data to the file.  If this option
+        is not given, the format is guessed from the file extension.
+
+        The FROM_COORDS option specifies a rectangular region of the image
+        to be written to the image file.  It must be a tuple or a list of 1
+        to 4 integers (x1, y1, x2, y2).  If only x1 and y1 are specified,
+        the region extends from (x1,y1) to the bottom-right corner of the
+        image.  If all four coordinates are given, they specify diagonally
+        opposite corners of the rectangular region.  The default, if this
+        option is not given, is the whole image.
+
+        If BACKGROUND is specified, the data will not contain any
+        transparency information.  In all transparent pixels the color will
+        be replaced by the specified color.
+
+        If GRAYSCALE is true, the data will not contain color information.
+        All pixel data will be transformed into grayscale.
+        """
+        options = ()
+        if format is not None:
+            options += ('-format', format)
+        if from_coords is not None:
+            options += ('-from', *from_coords)
+        if grayscale:
+            options += ('-grayscale',)
+        if background is not None:
+            options += ('-background', background)
+        self.tk.call(self.name, 'write', filename, *options)
+
+    def data(self, format=None, *, from_coords=None,
+             background=None, grayscale=False):
+        """Returns image data.
+
+        The FORMAT option specifies the name of the image file format
+        handler to be used.  If this option is not given, this method uses
+        a format that consists of a tuple (one element per row) of strings
+        containings space separated (one element per pixel/column) colors
+        in “#RRGGBB” format (where RR is a pair of hexadecimal digits for
+        the red channel, GG for green, and BB for blue).
+
+        The FROM_COORDS option specifies a rectangular region of the image
+        to be returned.  It must be a tuple or a list of 1 to 4 integers
+        (x1, y1, x2, y2).  If only x1 and y1 are specified, the region
+        extends from (x1,y1) to the bottom-right corner of the image.  If
+        all four coordinates are given, they specify diagonally opposite
+        corners of the rectangular region, including (x1, y1) and excluding
+        (x2, y2).  The default, if this option is not given, is the whole
+        image.
+
+        If BACKGROUND is specified, the data will not contain any
+        transparency information.  In all transparent pixels the color will
+        be replaced by the specified color.
+
+        If GRAYSCALE is true, the data will not contain color information.
+        All pixel data will be transformed into grayscale.
+        """
+        options = ()
+        if format is not None:
+            options += ('-format', format)
+        if from_coords is not None:
+            options += ('-from', *from_coords)
+        if grayscale:
+            options += ('-grayscale',)
+        if background is not None:
+            options += ('-background', background)
+        data = self.tk.call(self.name, 'data', *options)
+        if isinstance(data, str):  # For wantobjects = 0.
+            if format is None:
+                data = self.tk.splitlist(data)
+            else:
+                data = bytes(data, 'latin1')
+        return data
 
     def transparency_get(self, x, y):
         """Return True if the pixel at x,y is transparent."""
