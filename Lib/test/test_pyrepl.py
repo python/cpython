@@ -578,13 +578,18 @@ class TestPyReplCompleter(TestCase):
         self.assertEqual(output, "os.getenv")
 
     def test_completion_with_many_options(self):
-        events = code_to_events("os.\t\tO_AS\t\n")
+        # Test with something that initially displays many options
+        # and then complete from one of them. The first time tab is
+        # pressed, the options are displayed (which corresponds to
+        # when the repl shows [ not unique ]) and the second completes
+        # from one of them.
+        events = code_to_events("os.\t\tO_AP\t\n")
 
         namespace = {"os": os}
         reader = self.prepare_reader(events, namespace)
 
         output = multiline_input(reader, namespace)
-        self.assertEqual(output, "os.O_ASYNC")
+        self.assertEqual(output, "os.O_APPEND")
 
     def test_empty_namespace_completion(self):
         events = code_to_events("os.geten\t\n")
