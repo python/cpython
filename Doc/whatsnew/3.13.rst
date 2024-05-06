@@ -623,6 +623,13 @@ math
   "fusedMultiplyAdd" operation for special cases.
   (Contributed by Mark Dickinson and Victor Stinner in :gh:`73468`.)
 
+mimetypes
+---------
+
+* Add the :func:`~mimetypes.guess_file_type` function which works with file path.
+  Passing file path instead of URL in :func:`~mimetypes.guess_type` is :term:`soft deprecated`.
+  (Contributed by Serhiy Storchaka in :gh:`66543`.)
+
 mmap
 ----
 
@@ -1166,6 +1173,10 @@ Deprecated
   (Contributed by Victor Stinner in :gh:`105096`.)
 
 .. Add deprecations above alphabetically, not here at the end.
+
+* Passing file path instead of URL in :func:`~mimetypes.guess_type` is :term:`soft deprecated`.
+  Use :func:`~mimetypes.guess_file_type` instead.
+  (Contributed by Serhiy Storchaka in :gh:`66543`.)
 
 Pending Removal in Python 3.14
 ------------------------------

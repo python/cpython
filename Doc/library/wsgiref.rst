@@ -865,7 +865,7 @@ directory and port number (default: 8000) on the command line::
         fn = os.path.join(path, environ["PATH_INFO"][1:])
         if "." not in fn.split(os.path.sep)[-1]:
             fn = os.path.join(fn, "index.html")
-        mime_type = mimetypes.guess_type(fn)[0]
+        mime_type = mimetypes.guess_file_type(fn)[0]
 
         # Return 200 OK if file exists, otherwise 404 Not Found
         if os.path.exists(fn):
