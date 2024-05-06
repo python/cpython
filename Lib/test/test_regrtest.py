@@ -2291,6 +2291,7 @@ class TestUtils(unittest.TestCase):
         for exitcode, expected in (
             (-int(signal.SIGINT), 'SIGINT'),
             (-int(signal.SIGSEGV), 'SIGSEGV'),
+            (128 + int(signal.SIGABRT), 'SIGABRT'),
             (3221225477, "STATUS_ACCESS_VIOLATION"),
             (0xC00000FD, "STATUS_STACK_OVERFLOW"),
         ):

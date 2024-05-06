@@ -1,0 +1,1 @@
+Add colour to doctest output. Patch by Hugo van Kemenade.

@@ -862,6 +862,25 @@ class TestInlineValues(unittest.TestCase):
         self.assertFalse(has_inline_values(c))
         self.check_100(c)
 
+    def test_bug_117750(self):
+        "Aborted on 3.13a6"
+        class C:
+            def __init__(self):
+                self.__dict__.clear()
+
+        obj = C()
+        self.assertEqual(obj.__dict__, {})
+        obj.foo = None # Aborted here
+        self.assertEqual(obj.__dict__, {"foo":None})
+
+    def test_store_attr_deleted_dict(self):
+        class Foo:
+            pass
+
+        f = Foo()
+        del f.__dict__
+        f.a = 3
+        self.assertEqual(f.a, 3)
 
 
 if __name__ == '__main__':

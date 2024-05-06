@@ -1,5 +1,6 @@
 import unittest
 import unittest.mock
+from test import support
 from test.support import (verbose, refcount_test,
                           cpython_only, requires_subprocess,
                           requires_gil_enabled)
@@ -225,7 +226,9 @@ class GCTests(unittest.TestCase):
         exec("def f(): pass\n", d)
         gc.collect()
         del d
-        self.assertEqual(gc.collect(), 2)
+        # In the free-threaded build, the count returned by `gc.collect()`
+        # is 3 because it includes f's code object.
+        self.assertIn(gc.collect(), (2, 3))
 
     def test_function_tp_clear_leaves_consistent_state(self):
         # https://github.com/python/cpython/issues/91636
@@ -470,7 +473,7 @@ class GCTests(unittest.TestCase):
                 make_nested()
 
         old_switchinterval = sys.getswitchinterval()
-        sys.setswitchinterval(1e-5)
+        support.setswitchinterval(1e-5)
         try:
             exit = []
             threads = []

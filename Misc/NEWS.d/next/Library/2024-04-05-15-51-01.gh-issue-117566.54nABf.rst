@@ -1,0 +1,3 @@
+:meth:`ipaddress.IPv6Address.is_loopback` will now return ``True`` for
+IPv4-mapped loopback addresses, i.e. addresses in the
+``::ffff:127.0.0.0/104`` address space.

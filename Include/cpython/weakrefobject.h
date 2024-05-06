@@ -30,6 +30,14 @@ struct _PyWeakReference {
     PyWeakReference *wr_prev;
     PyWeakReference *wr_next;
     vectorcallfunc vectorcall;
+
+#ifdef Py_GIL_DISABLED
+    /* Pointer to the lock used when clearing in free-threaded builds.
+     * Normally this can be derived from wr_object, but in some cases we need
+     * to lock after wr_object has been set to Py_None.
+     */
+    struct _PyMutex *weakrefs_lock;
+#endif
 };
 
 Py_DEPRECATED(3.13) static inline PyObject* PyWeakref_GET_OBJECT(PyObject *ref_obj)

@@ -684,6 +684,30 @@ class BaseTaskTests:
         finally:
             loop.close()
 
+    def test_uncancel_resets_must_cancel(self):
+
+        async def coro():
+            await fut
+            return 42
+
+        loop = asyncio.new_event_loop()
+        fut = asyncio.Future(loop=loop)
+        task = self.new_task(loop, coro())
+        loop.run_until_complete(asyncio.sleep(0))  # Get task waiting for fut
+        fut.set_result(None)  # Make task runnable
+        try:
+            task.cancel()  # Enter cancelled state
+            self.assertEqual(task.cancelling(), 1)
+            self.assertTrue(task._must_cancel)
+
+            task.uncancel()  # Undo cancellation
+            self.assertEqual(task.cancelling(), 0)
+            self.assertFalse(task._must_cancel)
+        finally:
+            res = loop.run_until_complete(task)
+            self.assertEqual(res, 42)
+            loop.close()
+
     def test_cancel(self):
 
         def gen():

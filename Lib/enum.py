@@ -1088,8 +1088,6 @@ class EnumType(type):
             setattr(cls, name, member)
         # now add to _member_map_ (even aliases)
         cls._member_map_[name] = member
-        #
-        cls._member_map_[name] = member
 
 EnumMeta = EnumType         # keep EnumMeta name for backwards compatibility
 
@@ -1802,20 +1800,31 @@ def _simple_enum(etype=Enum, *, boundary=None, use_args=None):
             for name, value in attrs.items():
                 if isinstance(value, auto) and auto.value is _auto_null:
                     value = gnv(name, 1, len(member_names), gnv_last_values)
-                if value in value2member_map or value in unhashable_values:
-                    # an alias to an existing member
-                    enum_class(value)._add_alias_(name)
+                # create basic member (possibly isolate value for alias check)
+                if use_args:
+                    if not isinstance(value, tuple):
+                        value = (value, )
+                    member = new_member(enum_class, *value)
+                    value = value[0]
                 else:
-                    # create the member
-                    if use_args:
-                        if not isinstance(value, tuple):
-                            value = (value, )
-                        member = new_member(enum_class, *value)
-                        value = value[0]
-                    else:
-                        member = new_member(enum_class)
-                    if __new__ is None:
-                        member._value_ = value
+                    member = new_member(enum_class)
+                if __new__ is None:
+                    member._value_ = value
+                # now check if alias
+                try:
+                    contained = value2member_map.get(member._value_)
+                except TypeError:
+                    contained = None
+                    if member._value_ in unhashable_values:
+                        for m in enum_class:
+                            if m._value_ == member._value_:
+                                contained = m
+                                break
+                if contained is not None:
+                    # an alias to an existing member
+                    contained._add_alias_(name)
+                else:
+                    # finish creating member
                     member._name_ = name
                     member.__objclass__ = enum_class
                     member.__init__(value)
@@ -1847,24 +1856,31 @@ def _simple_enum(etype=Enum, *, boundary=None, use_args=None):
                     if value.value is _auto_null:
                         value.value = gnv(name, 1, len(member_names), gnv_last_values)
                     value = value.value
-                try:
-                    contained = value in value2member_map
-                except TypeError:
-                    contained = value in unhashable_values
-                if contained:
-                    # an alias to an existing member
-                    enum_class(value)._add_alias_(name)
+                # create basic member (possibly isolate value for alias check)
+                if use_args:
+                    if not isinstance(value, tuple):
+                        value = (value, )
+                    member = new_member(enum_class, *value)
+                    value = value[0]
                 else:
-                    # create the member
-                    if use_args:
-                        if not isinstance(value, tuple):
-                            value = (value, )
-                        member = new_member(enum_class, *value)
-                        value = value[0]
-                    else:
-                        member = new_member(enum_class)
-                    if __new__ is None:
-                        member._value_ = value
+                    member = new_member(enum_class)
+                if __new__ is None:
+                    member._value_ = value
+                # now check if alias
+                try:
+                    contained = value2member_map.get(member._value_)
+                except TypeError:
+                    contained = None
+                    if member._value_ in unhashable_values:
+                        for m in enum_class:
+                            if m._value_ == member._value_:
+                                contained = m
+                                break
+                if contained is not None:
+                    # an alias to an existing member
+                    contained._add_alias_(name)
+                else:
+                    # finish creating member
                     member._name_ = name
                     member.__objclass__ = enum_class
                     member.__init__(value)

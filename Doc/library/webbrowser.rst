@@ -42,9 +42,12 @@ a new tab, with the browser being brought to the foreground. The use of the
 
 The script :program:`webbrowser` can be used as a command-line interface for the
 module. It accepts a URL as the argument. It accepts the following optional
-parameters: ``-n`` opens the URL in a new browser window, if possible;
-``-t`` opens the URL in a new browser page ("tab"). The options are,
-naturally, mutually exclusive.  Usage example::
+parameters:
+
+* ``-n``/``--new-window`` opens the URL in a new browser window, if possible.
+* ``-t``/``--new-tab`` opens the URL in a new browser page ("tab").
+
+The options are, naturally, mutually exclusive.  Usage example::
 
    python -m webbrowser -t "https://www.python.org"
 
