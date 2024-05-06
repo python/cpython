@@ -1132,7 +1132,7 @@ a probability density function estimated from a small sample:
    >>> sample = [-2.1, -1.3, -0.4, 1.9, 5.1, 6.2]
    >>> pdf, cdf, rand = kde_normal(sample, h=1.5)
    >>> xarr = [i/100 for i in range(-750, 1100)]
-   >>> yarr = [f_hat(x) for x in xarr]
+   >>> yarr = [pdf(x) for x in xarr]
 
 The points in ``xarr`` and ``yarr`` can be used to make a PDF plot:
 
