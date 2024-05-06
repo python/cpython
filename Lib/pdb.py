@@ -665,7 +665,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                   "  __pdb_eval__['write_back'] = locals()")
 
         # Build a closure source code with freevars from locals like:
-        # def outer():
+        # def __pdb_outer():
         #   var = None
         #   def __pdb_scope():  # This is the code object we want to execute
         #     nonlocal var
@@ -682,11 +682,12 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         # Get the code object of __pdb_scope()
         # The exec fills locals_copy with the __pdb_outer() function and we can call
         # that to get the code object of __pdb_scope()
+        ns = {}
         try:
-            exec(source_with_closure, {}, locals_copy)
+            exec(source_with_closure, {}, ns)
         except Exception:
             return False
-        code = locals_copy.pop("__pdb_outer")()
+        code = ns["__pdb_outer"]()
 
         cells = tuple(types.CellType(locals_copy.get(var)) for var in code.co_freevars)
 
