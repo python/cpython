@@ -1679,9 +1679,7 @@ struct singlephase_global_update {
     Py_ssize_t m_index;
     PyObject *m_dict;
     _Py_ext_module_origin origin;
-#ifdef Py_GIL_DISABLED
     void *md_gil;
-#endif
 };
 
 static struct extensions_cache_value *
@@ -1740,13 +1738,7 @@ update_global_state_for_extension(PyThreadState *tstate,
 #endif
         cached = _extensions_cache_set(
                 path, name, def, m_init, singlephase->m_index, m_dict,
-                singlephase->origin,
-#ifdef Py_GIL_DISABLED
-                singlephase->md_gil
-#else
-                NULL
-#endif
-        );
+                singlephase->origin, singlephase->md_gil);
         if (cached == NULL) {
             // XXX Ignore this error?  Doing so would effectively
             // mark the module as not loadable.
