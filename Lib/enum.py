@@ -2035,7 +2035,7 @@ def _test_simple_enum(checked_enum, simple_enum):
                 )
         for key in set(checked_keys + simple_keys):
             if key in ('__module__', '_member_map_', '_value2member_map_', '__doc__',
-                       '__static_attributes__'):
+                       '__static_attributes__', '__firstlineno__'):
                 # keys known to be different, or very long
                 continue
             elif key in member_names:

@@ -636,8 +636,7 @@ are always available.  They are listed here in alphabetical order.
 
    .. note::
 
-      The default *locals* act as described for function :func:`locals` below:
-      modifications to the default *locals* dictionary should not be attempted.
+      The default *locals* act as described for function :func:`locals` below.
       Pass an explicit *locals* dictionary if you need to see effects of the
       code on *locals* after function :func:`exec` returns.
 
@@ -1049,14 +1048,44 @@ are always available.  They are listed here in alphabetical order.
 
 .. function:: locals()
 
-   Update and return a dictionary representing the current local symbol table.
-   Free variables are returned by :func:`locals` when it is called in function
-   blocks, but not in class blocks. Note that at the module level, :func:`locals`
-   and :func:`globals` are the same dictionary.
+    Return a mapping object representing the current local symbol table, with
+    variable names as the keys, and their currently bound references as the
+    values.
 
-   .. note::
-      The contents of this dictionary should not be modified; changes may not
-      affect the values of local and free variables used by the interpreter.
+    At module scope, as well as when using ``exec()`` or ``eval()`` with a
+    single namespace, this function returns the same namespace as ``globals()``.
+
+    At class scope, it returns the namespace that will be passed to the
+    metaclass constructor.
+
+    When using ``exec()`` or ``eval()`` with separate local and global
+    namespaces, it returns the local namespace passed in to the function call.
+
+    In all of the above cases, each call to ``locals()`` in a given frame of
+    execution will return the *same* mapping object. Changes made through
+    the mapping object returned from ``locals()`` will be visible as bound,
+    rebound, or deleted local variables, and binding, rebinding, or deleting
+    local variables will immediately affect the contents of the returned mapping
+    object.
+
+    At function scope (including for generators and coroutines), each call to
+    ``locals()`` instead returns a fresh dictionary containing the current
+    bindings of the function's local variables and any nonlocal cell references.
+    In this case, name binding changes made via the returned dict are *not*
+    written back to the corresponding local variables or nonlocal cell
+    references, and binding, rebinding, or deleting local variables and nonlocal
+    cell references does *not* affect the contents of previously returned
+    dictionaries.
+
+   .. versionchanged:: 3.13
+      In previous versions, the semantics of mutating the mapping object
+      returned from this function were formally undefined. In CPython
+      specifically, the mapping returned at function scope could be
+      implicitly refreshed by other operations, such as calling ``locals()``
+      again. Obtaining the legacy CPython behaviour now requires explicit
+      calls to update the initially returned dictionary with the results
+      of subsequent calls to ``locals()``.
+
 
 .. function:: map(function, iterable, *iterables)
 
