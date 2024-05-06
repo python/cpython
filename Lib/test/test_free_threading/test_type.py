@@ -1,13 +1,12 @@
 import unittest
 
+from concurrent.futures import ThreadPoolExecutor
 from threading import Thread
 from unittest import TestCase
 
 from test.support import threading_helper, import_helper
 
 
-multiprocessing_dummy = import_helper.import_module('multiprocessing.dummy')
-Pool = multiprocessing_dummy.Pool
 
 NTHREADS = 6
 BOTTOM = 0
@@ -36,11 +35,10 @@ class TestType(TestCase):
                     A.attr = x
 
 
-        with Pool(NTHREADS) as pool:
-            pool.apply_async(read, (1,))
-            pool.apply_async(write, (1,))
-            pool.close()
-            pool.join()
+        with ThreadPoolExecutor(NTHREADS) as pool:
+            pool.submit(read, (1,))
+            pool.submit(write, (1,))
+            pool.shutdown(wait=True)
 
     def test_attr_cache_consistency(self):
         class C:
