@@ -8,10 +8,10 @@ from functools import partial
 from threading import Thread
 from unittest import TestCase
 
-from test.support import is_wasi
+from test.support import threading_helper
 
 
-@unittest.skipIf(is_wasi, "WASI has no threads.")
+@threading_helper.requires_working_threading()
 class TestDict(TestCase):
     def test_racing_creation_shared_keys(self):
         """Verify that creating dictionaries is thread safe when we
