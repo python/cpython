@@ -224,7 +224,7 @@ drop_gil(PyInterpreterState *interp, PyThreadState *tstate)
         return;
     }
 #endif
-    if (!_Py_atomic_load_ptr_relaxed(&gil->locked)) {
+    if (!_Py_atomic_load_int_relaxed(&gil->locked)) {
         Py_FatalError("drop_gil: GIL is not locked");
     }
 

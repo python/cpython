@@ -87,13 +87,48 @@ Interpreter improvements:
   Performance improvements are modest -- we expect to be improving this
   over the next few releases.
 
+* :pep:`667`: :attr:`FrameType.f_locals <frame.f_locals>` when used in
+  a function now returns a write-through proxy to the frame's locals,
+  rather than a ``dict``. See the PEP for corresponding C API changes
+  and deprecations.
+
 New typing features:
 
+* :pep:`696`: Type parameters (:data:`typing.TypeVar`, :data:`typing.ParamSpec`,
+  and :data:`typing.TypeVarTuple`) now support defaults.
 * :pep:`742`: :data:`typing.TypeIs` was added, providing more intuitive
   type narrowing behavior.
 
 New Features
 ============
+
+A Better Interactive Interpreter
+--------------------------------
+
+On Unix-like systems like Linux or macOS, Python now uses a new
+:term:`interactive` shell.  When the user starts the :term:`REPL`
+from a tty, and both :mod:`curses` and :mod:`readline` are available,
+the interactive shell now supports the following new features:
+
+* colorized prompts;
+* multiline editing with history preservation;
+* interactive help browsing using :kbd:`F1` with a separate command
+  history;
+* history browsing using :kbd:`F2` that skips output as well as the
+  :term:`>>>` and :term:`...` prompts;
+* "paste mode" with :kbd:`F3` that makes pasting larger blocks of code
+  easier (press :kbd:`F3` again to return to the regular prompt);
+* ability to issue REPL-specific commands like :kbd:`help`, :kbd:`exit`,
+  and :kbd:`quit` without the need to use call parentheses after the
+  command name.
+
+If the new interactive shell is not desired, it can be disabled via
+the :envvar:`PYTHON_BASIC_REPL` environment variable.
+
+For more on interactive mode, see :ref:`tut-interac`.
+
+(Contributed by Pablo Galindo Salgado, Łukasz Langa, and
+Lysandros Nikolaou in :gh:`111201` based on code from the PyPy project.)
 
 Improved Error Messages
 -----------------------
@@ -229,6 +264,11 @@ Other Language Changes
   equivalent of the :option:`-X frozen_modules <-X>` command-line option.
   (Contributed by Yilei Yang in :gh:`111374`.)
 
+* Add :ref:`support for the perf profiler <perf_profiling>` working without
+  frame pointers through the new environment variable
+  :envvar:`PYTHONPERFJITSUPPORT` and command-line option :option:`-X perfjit
+  <-X>` (Contributed by Pablo Galindo in :gh:`118518`.)
+
 * The new :envvar:`PYTHON_HISTORY` environment variable can be used to change
   the location of a ``.python_history`` file.
   (Contributed by Levi Sabah, Zackery Spytz and Hugo van Kemenade in
@@ -287,6 +327,15 @@ Other Language Changes
   contain lambdas and comprehensions. Comprehensions that are located within
   class scopes are not inlined into their parent scope. (Contributed by
   Jelle Zijlstra in :gh:`109118` and :gh:`118160`.)
+
+* Classes have a new :attr:`!__firstlineno__` attribute,
+  populated by the compiler, with the line number of the first line
+  of the class definition.
+  (Contributed by Serhiy Storchaka in :gh:`118465`.)
+
+* ``from __future__ import ...`` statements are now just normal
+  relative imports if dots are present before the module name.
+  (Contributed by Jeremiah Gabriel Pascual in :gh:`118216`.)
 
 
 New Modules
@@ -574,6 +623,13 @@ math
   "fusedMultiplyAdd" operation for special cases.
   (Contributed by Mark Dickinson and Victor Stinner in :gh:`73468`.)
 
+mimetypes
+---------
+
+* Add the :func:`~mimetypes.guess_file_type` function which works with file path.
+  Passing file path instead of URL in :func:`~mimetypes.guess_type` is :term:`soft deprecated`.
+  (Contributed by Serhiy Storchaka in :gh:`66543`.)
+
 mmap
 ----
 
@@ -701,12 +757,27 @@ pdb
   command line option or :envvar:`PYTHONSAFEPATH` environment variable).
   (Contributed by Tian Gao and Christian Walther in :gh:`111762`.)
 
+* :mod:`zipapp` is supported as a debugging target.
+  (Contributed by Tian Gao in :gh:`118501`.)
+
+* ``breakpoint()`` and ``pdb.set_trace()`` now enter the debugger immediately
+  rather than on the next line of code to be executed. This change prevents the
+  debugger from breaking outside of the context when ``breakpoint()`` is positioned
+  at the end of the context.
+  (Contributed by Tian Gao in :gh:`118579`.)
+
 queue
 -----
 
 * Add :meth:`queue.Queue.shutdown` (along with :exc:`queue.ShutDown`) for queue
   termination.
   (Contributed by Laurie Opperman and Yves Duprat in :gh:`104750`.)
+
+random
+------
+
+* Add a :ref:`command-line interface <random-cli>`.
+  (Contributed by Hugo van Kemenade in :gh:`54321`.)
 
 re
 --
@@ -736,7 +807,8 @@ statistics
 
 * Add :func:`statistics.kde` for kernel density estimation.
   This makes it possible to estimate a continuous probability density function
-  from a fixed number of discrete samples.
+  from a fixed number of discrete samples.  Also added :func:`statistics.kde_random`
+  for sampling from the estimated probability density function.
   (Contributed by Raymond Hettinger in :gh:`115863`.)
 
 .. _whatsnew313-subprocess:
@@ -810,6 +882,21 @@ tkinter
 * Add the :meth:`!after_info` method for Tkinter widgets.
   (Contributed by Cheryl Sabella in :gh:`77020`.)
 
+* Add the :class:`!PhotoImage` method :meth:`!copy_replace` to copy a region
+  from one image to other image, possibly with pixel zooming and/or
+  subsampling.
+  Add *from_coords* parameter to :class:`!PhotoImage` methods :meth:`!copy()`,
+  :meth:`!zoom()` and :meth:`!subsample()`.
+  Add *zoom* and *subsample* parameters to :class:`!PhotoImage` method
+  :meth:`!copy()`.
+  (Contributed by Serhiy Storchaka in :gh:`118225`.)
+
+* Add the :class:`!PhotoImage` methods :meth:`!read` to read
+  an image from a file and :meth:`!data` to get the image data.
+  Add *background* and *grayscale* parameters to :class:`!PhotoImage` method
+  :meth:`!write`.
+  (Contributed by Serhiy Storchaka in :gh:`118271`.)
+
 traceback
 ---------
 
@@ -842,6 +929,10 @@ typing
 * Add :data:`typing.ReadOnly`, a special typing construct to mark
   an item of a :class:`typing.TypedDict` as read-only for type checkers.
   See :pep:`705` for more details.
+
+* Add :data:`typing.NoDefault`, a sentinel object used to represent the defaults
+  of some parameters in the :mod:`typing` module. (Contributed by Jelle Zijlstra in
+  :gh:`116126`.)
 
 unicodedata
 -----------
@@ -946,7 +1037,8 @@ The ``--enable-experimental-jit`` flag has the following optional values:
   The interpreter can be disabled by running with
   ``PYTHON_JIT=0``.
 
-(On Windows, use ``PCbuild/build.bat --enable-jit`` to enable the JIT.)
+(On Windows, use ``PCbuild/build.bat --experimental-jit`` to enable the JIT
+or ``--experimental-jit-interpreter`` to enable the Tier 2 interpreter.)
 
 See :pep:`744` for more details.
 
@@ -1096,6 +1188,10 @@ Deprecated
   (Contributed by Victor Stinner in :gh:`105096`.)
 
 .. Add deprecations above alphabetically, not here at the end.
+
+* Passing file path instead of URL in :func:`~mimetypes.guess_type` is :term:`soft deprecated`.
+  Use :func:`~mimetypes.guess_file_type` instead.
+  (Contributed by Serhiy Storchaka in :gh:`66543`.)
 
 Pending Removal in Python 3.14
 ------------------------------
@@ -1955,6 +2051,11 @@ New Features
 
 * Add :c:func:`PyType_GetModuleByDef` to the limited C API
   (Contributed by Victor Stinner in :gh:`116936`.)
+
+* Add two new functions to the C-API, :c:func:`PyRefTracer_SetTracer` and
+  :c:func:`PyRefTracer_GetTracer`, that allows to track object creation and
+  destruction the same way the :mod:`tracemalloc` module does. (Contributed
+  by Pablo Galindo in :gh:`93502`.)
 
 
 Porting to Python 3.13

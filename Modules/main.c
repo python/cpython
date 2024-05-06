@@ -513,8 +513,13 @@ pymain_run_stdin(PyConfig *config)
         return pymain_exit_err_print();
     }
 
-    PyCompilerFlags cf = _PyCompilerFlags_INIT;
-    int run = PyRun_AnyFileExFlags(stdin, "<stdin>", 0, &cf);
+    if (!isatty(fileno(stdin))
+        || _Py_GetEnv(config->use_environment, "PYTHON_BASIC_REPL")) {
+        PyCompilerFlags cf = _PyCompilerFlags_INIT;
+        int run = PyRun_AnyFileExFlags(stdin, "<stdin>", 0, &cf);
+        return (run != 0);
+    }
+    int run = pymain_run_module(L"_pyrepl", 0);
     return (run != 0);
 }
 
@@ -537,9 +542,15 @@ pymain_repl(PyConfig *config, int *exitcode)
         return;
     }
 
-    PyCompilerFlags cf = _PyCompilerFlags_INIT;
-    int res = PyRun_AnyFileFlags(stdin, "<stdin>", &cf);
-    *exitcode = (res != 0);
+    if (!isatty(fileno(stdin))) {
+        PyCompilerFlags cf = _PyCompilerFlags_INIT;
+        int run = PyRun_AnyFileExFlags(stdin, "<stdin>", 0, &cf);
+        *exitcode = (run != 0);
+        return;
+    }
+    int run = pymain_run_module(L"_pyrepl", 0);
+    *exitcode = (run != 0);
+    return;
 }
 
 

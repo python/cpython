@@ -1,0 +1,4 @@
+Add two new functions to the C-API, :c:func:`PyRefTracer_SetTracer` and
+:c:func:`PyRefTracer_GetTracer`, that allows to track object creation and
+destruction the same way the :mod:`tracemalloc` module does. Patch by Pablo
+Galindo

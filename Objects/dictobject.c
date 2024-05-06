@@ -2268,15 +2268,13 @@ _PyDict_GetItem_KnownHash(PyObject *op, PyObject *key, Py_hash_t hash)
  * exception occurred.
 */
 int
-_PyDict_GetItemRef_KnownHash(PyObject *op, PyObject *key, Py_hash_t hash, PyObject **result)
+_PyDict_GetItemRef_KnownHash(PyDictObject *op, PyObject *key, Py_hash_t hash, PyObject **result)
 {
-    PyDictObject*mp = (PyDictObject *)op;
-
     PyObject *value;
 #ifdef Py_GIL_DISABLED
-    Py_ssize_t ix = _Py_dict_lookup_threadsafe(mp, key, hash, &value);
+    Py_ssize_t ix = _Py_dict_lookup_threadsafe(op, key, hash, &value);
 #else
-    Py_ssize_t ix = _Py_dict_lookup(mp, key, hash, &value);
+    Py_ssize_t ix = _Py_dict_lookup(op, key, hash, &value);
 #endif
     assert(ix >= 0 || value == NULL);
     if (ix == DKIX_ERROR) {
@@ -2314,9 +2312,38 @@ PyDict_GetItemRef(PyObject *op, PyObject *key, PyObject **result)
         }
     }
 
-    return _PyDict_GetItemRef_KnownHash(op, key, hash, result);
+    return _PyDict_GetItemRef_KnownHash((PyDictObject *)op, key, hash, result);
 }
 
+int
+_PyDict_GetItemRef_Unicode_LockHeld(PyDictObject *op, PyObject *key, PyObject **result)
+{
+    ASSERT_DICT_LOCKED(op);
+    assert(PyUnicode_CheckExact(key));
+
+    Py_hash_t hash;
+    if ((hash = unicode_get_hash(key)) == -1) {
+        hash = PyObject_Hash(key);
+        if (hash == -1) {
+            *result = NULL;
+            return -1;
+        }
+    }
+
+    PyObject *value;
+    Py_ssize_t ix = _Py_dict_lookup(op, key, hash, &value);
+    assert(ix >= 0 || value == NULL);
+    if (ix == DKIX_ERROR) {
+        *result = NULL;
+        return -1;
+    }
+    if (value == NULL) {
+        *result = NULL;
+        return 0;  // missing key
+    }
+    *result = Py_NewRef(value);
+    return 1;  // key is present
+}
 
 /* Variant of PyDict_GetItem() that doesn't suppress exceptions.
    This returns NULL *with* an exception set if an exception occurred.
@@ -6704,8 +6731,8 @@ exit:
     return dict;
 }
 
-static int
-set_or_del_lock_held(PyDictObject *dict, PyObject *name, PyObject *value)
+int
+_PyDict_SetItem_LockHeld(PyDictObject *dict, PyObject *name, PyObject *value)
 {
     if (value == NULL) {
         Py_hash_t hash;
@@ -6767,7 +6794,7 @@ store_instance_attr_lock_held(PyObject *obj, PyDictValues *values,
             // so that no one else will see it.
             dict = make_dict_from_instance_attributes(PyInterpreterState_Get(), keys, values);
             if (dict == NULL ||
-                set_or_del_lock_held(dict, name, value) < 0) {
+                _PyDict_SetItem_LockHeld(dict, name, value) < 0) {
                 Py_XDECREF(dict);
                 return -1;
             }
@@ -6779,7 +6806,7 @@ store_instance_attr_lock_held(PyObject *obj, PyDictValues *values,
 
         _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(dict);
 
-        res = set_or_del_lock_held (dict, name, value);
+        res = _PyDict_SetItem_LockHeld(dict, name, value);
         return res;
     }
 
@@ -6822,7 +6849,7 @@ store_instance_attr_dict(PyObject *obj, PyDictObject *dict, PyObject *name, PyOb
         res = store_instance_attr_lock_held(obj, values, name, value);
     }
     else {
-        res = set_or_del_lock_held(dict, name, value);
+        res = _PyDict_SetItem_LockHeld(dict, name, value);
     }
     Py_END_CRITICAL_SECTION();
     return res;
@@ -7253,6 +7280,7 @@ _PyObjectDict_SetItem(PyTypeObject *tp, PyObject **dictptr,
             res = PyDict_SetItem(dict, key, value);
         }
     }
+
     ASSERT_CONSISTENT(dict);
     return res;
 }

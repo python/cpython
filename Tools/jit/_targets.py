@@ -154,13 +154,20 @@ class _Target(typing.Generic[_S, _R]):
             args_ll = args + [
                 # -fomit-frame-pointer is necessary because the GHC calling
                 # convention uses RBP to pass arguments:
-                "-S", "-emit-llvm", "-fomit-frame-pointer", "-o", f"{ll}", f"{c}"
+                "-S",
+                "-emit-llvm",
+                "-fomit-frame-pointer",
+                "-o",
+                f"{ll}",
+                f"{c}",
             ]
             await _llvm.run("clang", args_ll, echo=self.verbose)
             ir = ll.read_text()
             # This handles declarations, definitions, and calls to named symbols
             # starting with "_JIT_":
-            ir = re.sub(r"(((noalias|nonnull|noundef) )*ptr @_JIT_\w+\()", r"ghccc \1", ir)
+            ir = re.sub(
+                r"(((noalias|nonnull|noundef) )*ptr @_JIT_\w+\()", r"ghccc \1", ir
+            )
             # This handles calls to anonymous callees, since anything with
             # "musttail" needs to use the same calling convention:
             ir = ir.replace("musttail call", "musttail call ghccc")

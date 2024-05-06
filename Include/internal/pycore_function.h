@@ -4,6 +4,8 @@
 extern "C" {
 #endif
 
+#include "pycore_lock.h"
+
 #ifndef Py_BUILD_CORE
 #  error "this header requires Py_BUILD_CORE define"
 #endif
@@ -24,6 +26,11 @@ struct _func_version_cache_item {
 };
 
 struct _py_func_state {
+#ifdef Py_GIL_DISABLED
+    // Protects next_version
+    PyMutex mutex;
+#endif
+
     uint32_t next_version;
     // Borrowed references to function and code objects whose
     // func_version % FUNC_VERSION_CACHE_SIZE
