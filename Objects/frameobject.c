@@ -379,10 +379,10 @@ framelocalsproxy_repr(PyObject *self)
     }
 
     PyObject *repr = PyObject_Repr(dct);
+    Py_DECREF(dct);
 
     Py_ReprLeave(self);
 
-    Py_DECREF(dct);
     return repr;
 }
 
