@@ -3648,8 +3648,14 @@ Aliases to asynchronous ABCs in :mod:`collections.abc`
    is no ``ReturnType`` type parameter. As with :class:`Generator`, the
    ``SendType`` behaves contravariantly.
 
-   If your generator will only yield values, set the ``SendType`` to
-   ``None``::
+   The ``SendType`` defaults to :const:`!None`::
+
+      async def infinite_stream(start: int) -> AsyncGenerator[int]:
+          while True:
+              yield start
+              start = await increment(start)
+
+   It is also possible to set this type explicitly::
 
       async def infinite_stream(start: int) -> AsyncGenerator[int, None]:
           while True:
@@ -3670,6 +3676,9 @@ Aliases to asynchronous ABCs in :mod:`collections.abc`
       :class:`collections.abc.AsyncGenerator`
       now supports subscripting (``[]``).
       See :pep:`585` and :ref:`types-genericalias`.
+
+   .. versionchanged:: 3.13
+      The ``SendType`` parameter now has a default.
 
 .. class:: AsyncIterable(Generic[T_co])
 
@@ -3754,8 +3763,14 @@ Aliases to other ABCs in :mod:`collections.abc`
    of :class:`Generator` behaves contravariantly, not covariantly or
    invariantly.
 
-   If your generator will only yield values, set the ``SendType`` and
-   ``ReturnType`` to ``None``::
+   The ``SendType`` and ``ReturnType`` parameters default to :const:`!None`::
+
+      def infinite_stream(start: int) -> Generator[int]:
+          while True:
+              yield start
+              start += 1
+
+   It is also possible to set these types explicitly::
 
       def infinite_stream(start: int) -> Generator[int, None, None]:
           while True:
@@ -3773,6 +3788,9 @@ Aliases to other ABCs in :mod:`collections.abc`
    .. deprecated:: 3.9
       :class:`collections.abc.Generator` now supports subscripting (``[]``).
       See :pep:`585` and :ref:`types-genericalias`.
+
+   .. versionchanged:: 3.13
+      Default values for the send and return types were added.
 
 .. class:: Hashable
 

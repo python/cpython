@@ -1,0 +1,2 @@
+Add type parameter defaults to :class:`typing.Generator` and
+:class:`typing.AsyncGenerator`.

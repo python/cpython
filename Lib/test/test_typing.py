@@ -7289,6 +7289,17 @@ class CollectionsAbcTests(BaseTestCase):
         g = foo()
         self.assertIsSubclass(type(g), typing.Generator)
 
+    def test_generator_default(self):
+        g1 = typing.Generator[int]
+        g2 = typing.Generator[int, None, None]
+        self.assertEqual(get_args(g1), (int, type(None), type(None)))
+        self.assertEqual(get_args(g1), get_args(g2))
+
+        g3 = typing.Generator[int, float]
+        g4 = typing.Generator[int, float, None]
+        self.assertEqual(get_args(g3), (int, float, type(None)))
+        self.assertEqual(get_args(g3), get_args(g4))
+
     def test_no_generator_instantiation(self):
         with self.assertRaises(TypeError):
             typing.Generator()
