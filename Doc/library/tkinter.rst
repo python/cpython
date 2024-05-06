@@ -983,7 +983,7 @@ option (other options are available as well).
    Added the :class:`!PhotoImage` method :meth:`!copy_replace` to copy a region
    from one image to other image, possibly with pixel zooming and/or
    subsampling.
-   Add *from_* parameter to :class:`!PhotoImage` methods :meth:`!copy()`,
+   Add *from_coords* parameter to :class:`!PhotoImage` methods :meth:`!copy()`,
    :meth:`!zoom()` and :meth:`!subsample()`.
    Add *zoom* and *subsample* parameters to :class:`!PhotoImage` method
    :meth:`!copy()`.

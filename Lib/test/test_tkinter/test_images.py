@@ -304,14 +304,14 @@ class PhotoImageTest(AbstractTkTest, unittest.TestCase):
         self.assertEqual(image2.height(), 16)
         self.assertEqual(image2.get(4, 6), image.get(4, 6))
 
-        image2 = image.copy(from_=(2, 3, 14, 11))
+        image2 = image.copy(from_coords=(2, 3, 14, 11))
         self.assertEqual(image2.width(), 12)
         self.assertEqual(image2.height(), 8)
         self.assertEqual(image2.get(0, 0), image.get(2, 3))
         self.assertEqual(image2.get(11, 7), image.get(13, 10))
         self.assertEqual(image2.get(2, 4), image.get(2+2, 4+3))
 
-        image2 = image.copy(from_=(2, 3, 14, 11), zoom=2)
+        image2 = image.copy(from_coords=(2, 3, 14, 11), zoom=2)
         self.assertEqual(image2.width(), 24)
         self.assertEqual(image2.height(), 16)
         self.assertEqual(image2.get(0, 0), image.get(2, 3))
@@ -319,14 +319,14 @@ class PhotoImageTest(AbstractTkTest, unittest.TestCase):
         self.assertEqual(image2.get(2*2, 4*2), image.get(2+2, 4+3))
         self.assertEqual(image2.get(2*2+1, 4*2+1), image.get(6+2, 2+3))
 
-        image2 = image.copy(from_=(2, 3, 14, 11), subsample=2)
+        image2 = image.copy(from_coords=(2, 3, 14, 11), subsample=2)
         self.assertEqual(image2.width(), 6)
         self.assertEqual(image2.height(), 4)
         self.assertEqual(image2.get(0, 0), image.get(2, 3))
         self.assertEqual(image2.get(5, 3), image.get(12, 9))
         self.assertEqual(image2.get(3, 2), image.get(3*2+2, 2*2+3))
 
-        image2 = image.copy(from_=(2, 3, 14, 11), subsample=2, zoom=3)
+        image2 = image.copy(from_coords=(2, 3, 14, 11), subsample=2, zoom=3)
         self.assertEqual(image2.width(), 18)
         self.assertEqual(image2.height(), 12)
         self.assertEqual(image2.get(0, 0), image.get(2, 3))
@@ -346,7 +346,7 @@ class PhotoImageTest(AbstractTkTest, unittest.TestCase):
         self.assertEqual(image2.height(), 8)
         self.assertEqual(image2.get(2, 3), image.get(4, 6))
 
-        image2 = image.subsample(2, from_=(2, 3, 14, 11))
+        image2 = image.subsample(2, from_coords=(2, 3, 14, 11))
         self.assertEqual(image2.width(), 6)
         self.assertEqual(image2.height(), 4)
         self.assertEqual(image2.get(0, 0), image.get(2, 3))
@@ -367,7 +367,7 @@ class PhotoImageTest(AbstractTkTest, unittest.TestCase):
         self.assertEqual(image2.get(8, 12), image.get(4, 6))
         self.assertEqual(image2.get(9, 13), image.get(4, 6))
 
-        image2 = image.zoom(2, from_=(2, 3, 14, 11))
+        image2 = image.zoom(2, from_coords=(2, 3, 14, 11))
         self.assertEqual(image2.width(), 24)
         self.assertEqual(image2.height(), 16)
         self.assertEqual(image2.get(0, 0), image.get(2, 3))
@@ -384,7 +384,7 @@ class PhotoImageTest(AbstractTkTest, unittest.TestCase):
         self.assertEqual(image2.get(4, 6), image.get(4, 6))
 
         image2 = tkinter.PhotoImage(master=self.root)
-        image2.copy_replace(image, from_=(2, 3, 14, 11))
+        image2.copy_replace(image, from_coords=(2, 3, 14, 11))
         self.assertEqual(image2.width(), 12)
         self.assertEqual(image2.height(), 8)
         self.assertEqual(image2.get(0, 0), image.get(2, 3))
@@ -393,7 +393,7 @@ class PhotoImageTest(AbstractTkTest, unittest.TestCase):
 
         image2 = tkinter.PhotoImage(master=self.root)
         image2.copy_replace(image)
-        image2.copy_replace(image, from_=(2, 3, 14, 11), shrink=True)
+        image2.copy_replace(image, from_coords=(2, 3, 14, 11), shrink=True)
         self.assertEqual(image2.width(), 12)
         self.assertEqual(image2.height(), 8)
         self.assertEqual(image2.get(0, 0), image.get(2, 3))
@@ -401,7 +401,7 @@ class PhotoImageTest(AbstractTkTest, unittest.TestCase):
         self.assertEqual(image2.get(2, 4), image.get(2+2, 4+3))
 
         image2 = tkinter.PhotoImage(master=self.root)
-        image2.copy_replace(image, from_=(2, 3, 14, 11), to=(3, 6))
+        image2.copy_replace(image, from_coords=(2, 3, 14, 11), to=(3, 6))
         self.assertEqual(image2.width(), 15)
         self.assertEqual(image2.height(), 14)
         self.assertEqual(image2.get(0+3, 0+6), image.get(2, 3))
@@ -409,7 +409,7 @@ class PhotoImageTest(AbstractTkTest, unittest.TestCase):
         self.assertEqual(image2.get(2+3, 4+6), image.get(2+2, 4+3))
 
         image2 = tkinter.PhotoImage(master=self.root)
-        image2.copy_replace(image, from_=(2, 3, 14, 11), to=(0, 0, 100, 50))
+        image2.copy_replace(image, from_coords=(2, 3, 14, 11), to=(0, 0, 100, 50))
         self.assertEqual(image2.width(), 100)
         self.assertEqual(image2.height(), 50)
         self.assertEqual(image2.get(0, 0), image.get(2, 3))
@@ -420,7 +420,7 @@ class PhotoImageTest(AbstractTkTest, unittest.TestCase):
         self.assertEqual(image2.get(2, 4+8*3), image.get(2+2, 4+3))
 
         image2 = tkinter.PhotoImage(master=self.root)
-        image2.copy_replace(image, from_=(2, 3, 14, 11), zoom=2)
+        image2.copy_replace(image, from_coords=(2, 3, 14, 11), zoom=2)
         self.assertEqual(image2.width(), 24)
         self.assertEqual(image2.height(), 16)
         self.assertEqual(image2.get(0, 0), image.get(2, 3))
@@ -429,7 +429,7 @@ class PhotoImageTest(AbstractTkTest, unittest.TestCase):
         self.assertEqual(image2.get(2*2+1, 4*2+1), image.get(6+2, 2+3))
 
         image2 = tkinter.PhotoImage(master=self.root)
-        image2.copy_replace(image, from_=(2, 3, 14, 11), subsample=2)
+        image2.copy_replace(image, from_coords=(2, 3, 14, 11), subsample=2)
         self.assertEqual(image2.width(), 6)
         self.assertEqual(image2.height(), 4)
         self.assertEqual(image2.get(0, 0), image.get(2, 3))
@@ -437,7 +437,7 @@ class PhotoImageTest(AbstractTkTest, unittest.TestCase):
         self.assertEqual(image2.get(1, 2), image.get(1*2+2, 2*2+3))
 
         image2 = tkinter.PhotoImage(master=self.root)
-        image2.copy_replace(image, from_=(2, 3, 14, 11), subsample=2, zoom=3)
+        image2.copy_replace(image, from_coords=(2, 3, 14, 11), subsample=2, zoom=3)
         self.assertEqual(image2.width(), 18)
         self.assertEqual(image2.height(), 12)
         self.assertEqual(image2.get(0, 0), image.get(2, 3))
