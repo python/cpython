@@ -2067,7 +2067,7 @@ testios:
 
 	# Run the test suite for the Xcode project, targeting the iOS simulator.
 	# If the suite fails, touch a file in the test folder as a marker
-	if ! xcodebuild test -project $(XCFOLDER)/iOSTestbed.xcodeproj -scheme "iOSTestbed" -destination "platform=iOS Simulator,name=iPhone SE (3rd Generation)" -resultBundlePath $(XCRESULT) ; then \
+	if ! xcodebuild test -project $(XCFOLDER)/iOSTestbed.xcodeproj -scheme "iOSTestbed" -destination "platform=iOS Simulator,name=iPhone SE (3rd Generation)" -resultBundlePath $(XCRESULT) -derivedDataPath $(XCFOLDER)/DerivedData ; then \
 	 	touch $(XCFOLDER)/failed; \
 	fi
 
