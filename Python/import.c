@@ -13,7 +13,7 @@
 #include "pycore_pymem.h"         // _PyMem_SetDefaultAllocator()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_sysmodule.h"     // _PySys_Audit()
-#include "pycore_time.h"          // _PyTime_PerfCounterUnchecked()
+#include "pycore_time.h"          // _PyTime_AsMicroseconds()
 #include "pycore_weakref.h"       // _PyWeakref_GET_REF()
 
 #include "marshal.h"              // PyMarshal_ReadObjectFromString()
@@ -32,6 +32,17 @@ module _imp
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=9c332475d8686284]*/
 
 #include "clinic/import.c.h"
+
+
+#ifndef NDEBUG
+static bool
+is_interpreter_isolated(PyInterpreterState *interp)
+{
+    return !_Py_IsMainInterpreter(interp)
+        && !(interp->feature_flags & Py_RTFLAGS_USE_MAIN_OBMALLOC)
+        && interp->ceval.own_gil;
+}
+#endif
 
 
 /*******************************/
@@ -435,6 +446,45 @@ _PyImport_GetNextModuleIndex(void)
     return _Py_atomic_add_ssize(&LAST_MODULE_INDEX, 1) + 1;
 }
 
+#ifndef NDEBUG
+struct extensions_cache_value;
+static struct extensions_cache_value * _find_cached_def(PyModuleDef *);
+static Py_ssize_t _get_cached_module_index(struct extensions_cache_value *);
+#endif
+
+static Py_ssize_t
+_get_module_index_from_def(PyModuleDef *def)
+{
+    Py_ssize_t index = def->m_base.m_index;
+    assert(index > 0);
+#ifndef NDEBUG
+    struct extensions_cache_value *cached = _find_cached_def(def);
+    assert(cached == NULL || index == _get_cached_module_index(cached));
+#endif
+    return index;
+}
+
+static void
+_set_module_index(PyModuleDef *def, Py_ssize_t index)
+{
+    assert(index > 0);
+    if (index == def->m_base.m_index) {
+        /* There's nothing to do. */
+    }
+    else if (def->m_base.m_index == 0) {
+        /* It should have been initialized by PyModuleDef_Init().
+         * We assert here to catch this in dev, but keep going otherwise. */
+        assert(def->m_base.m_index != 0);
+        def->m_base.m_index = index;
+    }
+    else {
+        /* It was already set for a different module.
+         * We replace the old value. */
+        assert(def->m_base.m_index > 0);
+        def->m_base.m_index = index;
+    }
+}
+
 static const char *
 _modules_by_index_check(PyInterpreterState *interp, Py_ssize_t index)
 {
@@ -451,9 +501,8 @@ _modules_by_index_check(PyInterpreterState *interp, Py_ssize_t index)
 }
 
 static PyObject *
-_modules_by_index_get(PyInterpreterState *interp, PyModuleDef *def)
+_modules_by_index_get(PyInterpreterState *interp, Py_ssize_t index)
 {
-    Py_ssize_t index = def->m_base.m_index;
     if (_modules_by_index_check(interp, index) != NULL) {
         return NULL;
     }
@@ -463,11 +512,9 @@ _modules_by_index_get(PyInterpreterState *interp, PyModuleDef *def)
 
 static int
 _modules_by_index_set(PyInterpreterState *interp,
-                      PyModuleDef *def, PyObject *module)
+                      Py_ssize_t index, PyObject *module)
 {
-    assert(def != NULL);
-    assert(def->m_slots == NULL);
-    assert(def->m_base.m_index > 0);
+    assert(index > 0);
 
     if (MODULES_BY_INDEX(interp) == NULL) {
         MODULES_BY_INDEX(interp) = PyList_New(0);
@@ -476,7 +523,6 @@ _modules_by_index_set(PyInterpreterState *interp,
         }
     }
 
-    Py_ssize_t index = def->m_base.m_index;
     while (PyList_GET_SIZE(MODULES_BY_INDEX(interp)) <= index) {
         if (PyList_Append(MODULES_BY_INDEX(interp), Py_None) < 0) {
             return -1;
@@ -487,9 +533,8 @@ _modules_by_index_set(PyInterpreterState *interp,
 }
 
 static int
-_modules_by_index_clear_one(PyInterpreterState *interp, PyModuleDef *def)
+_modules_by_index_clear_one(PyInterpreterState *interp, Py_ssize_t index)
 {
-    Py_ssize_t index = def->m_base.m_index;
     const char *err = _modules_by_index_check(interp, index);
     if (err != NULL) {
         Py_FatalError(err);
@@ -506,7 +551,8 @@ PyState_FindModule(PyModuleDef* module)
     if (module->m_slots) {
         return NULL;
     }
-    return _modules_by_index_get(interp, module);
+    Py_ssize_t index = _get_module_index_from_def(module);
+    return _modules_by_index_get(interp, index);
 }
 
 /* _PyState_AddModule() has been completely removed from the C-API
@@ -526,7 +572,9 @@ _PyState_AddModule(PyThreadState *tstate, PyObject* module, PyModuleDef* def)
                          "PyState_AddModule called on module with slots");
         return -1;
     }
-    return _modules_by_index_set(tstate->interp, def, module);
+    assert(def->m_slots == NULL);
+    Py_ssize_t index = _get_module_index_from_def(def);
+    return _modules_by_index_set(tstate->interp, index, module);
 }
 
 int
@@ -546,7 +594,7 @@ PyState_AddModule(PyObject* module, PyModuleDef* def)
     }
 
     PyInterpreterState *interp = tstate->interp;
-    Py_ssize_t index = def->m_base.m_index;
+    Py_ssize_t index = _get_module_index_from_def(def);
     if (MODULES_BY_INDEX(interp) &&
         index < PyList_GET_SIZE(MODULES_BY_INDEX(interp)) &&
         module == PyList_GET_ITEM(MODULES_BY_INDEX(interp), index))
@@ -555,7 +603,8 @@ PyState_AddModule(PyObject* module, PyModuleDef* def)
         return -1;
     }
 
-    return _modules_by_index_set(interp, def, module);
+    assert(def->m_slots == NULL);
+    return _modules_by_index_set(interp, index, module);
 }
 
 int
@@ -568,7 +617,8 @@ PyState_RemoveModule(PyModuleDef* def)
                          "PyState_RemoveModule called on module with slots");
         return -1;
     }
-    return _modules_by_index_clear_one(tstate->interp, def);
+    Py_ssize_t index = _get_module_index_from_def(def);
+    return _modules_by_index_clear_one(tstate->interp, index);
 }
 
 
@@ -587,6 +637,8 @@ _PyImport_ClearModulesByIndex(PyInterpreterState *interp)
             /* cleanup the saved copy of module dicts */
             PyModuleDef *md = PyModule_GetDef(m);
             if (md) {
+                // XXX Do this more carefully.  The dict might be owned
+                // by another interpreter.
                 Py_CLEAR(md->m_base.m_copy);
             }
         }
@@ -645,33 +697,33 @@ _PyImport_ClearModulesByIndex(PyInterpreterState *interp)
        K.         PyModule_CreateInitialized() -> PyModule_SetDocString()
        L.       PyModule_CreateInitialized():  set mod->md_def
        M.       <module init func>:  initialize the module, etc.
-       N.     _PyImport_RunModInitFunc():  set def->m_base.m_init
-       O.   import_run_extension()
+       N.   import_run_extension()
                 -> _PyImport_CheckSubinterpIncompatibleExtensionAllowed()
-       P.   import_run_extension():  set __file__
-       Q.   import_run_extension() -> update_global_state_for_extension()
-       R.     update_global_state_for_extension():
+       O.   import_run_extension():  set __file__
+       P.   import_run_extension() -> update_global_state_for_extension()
+       Q.     update_global_state_for_extension():
                       copy __dict__ into def->m_base.m_copy
-       S.     update_global_state_for_extension():
+       R.     update_global_state_for_extension():
                       add it to _PyRuntime.imports.extensions
-       T.   import_run_extension() -> finish_singlephase_extension()
-       U.     finish_singlephase_extension():
+       S.   import_run_extension() -> finish_singlephase_extension()
+       T.     finish_singlephase_extension():
                       add it to interp->imports.modules_by_index
-       V.     finish_singlephase_extension():  add it to sys.modules
+       U.     finish_singlephase_extension():  add it to sys.modules
 
        Step (Q) is skipped for core modules (sys/builtins).
 
     (6). subsequent times  (found in _PyRuntime.imports.extensions):
        A. _imp_create_dynamic_impl() -> import_find_extension()
-       B.   import_find_extension()
-                -> _PyImport_CheckSubinterpIncompatibleExtensionAllowed()
-       C.   import_find_extension() -> import_add_module()
-       D.     if name in sys.modules:  use that module
-       E.     else:
-                1. import_add_module() -> PyModule_NewObject()
-                2. import_add_module():  set it on sys.modules
-       F.   import_find_extension():  copy the "m_copy" dict into __dict__
-       G.   import_find_extension():  add to modules_by_index
+       B.   import_find_extension() -> reload_singlephase_extension()
+       C.     reload_singlephase_extension()
+                  -> _PyImport_CheckSubinterpIncompatibleExtensionAllowed()
+       D.     reload_singlephase_extension() -> import_add_module()
+       E.       if name in sys.modules:  use that module
+       F.       else:
+                  1. import_add_module() -> PyModule_NewObject()
+                  2. import_add_module():  set it on sys.modules
+       G.     reload_singlephase_extension():  copy the "m_copy" dict into __dict__
+       H.     reload_singlephase_extension():  add to modules_by_index
 
     (10). (every time):
        A. noop
@@ -681,21 +733,23 @@ _PyImport_ClearModulesByIndex(PyInterpreterState *interp)
 
     (6). not main interpreter and never loaded there - every time  (not found in _PyRuntime.imports.extensions):
        A-P. (same as for m_size == -1)
-       Q-S. (skipped)
-       T-V. (same as for m_size == -1)
+       Q.     _PyImport_RunModInitFunc():  set def->m_base.m_init
+       R. (skipped)
+       S-U. (same as for m_size == -1)
 
     (6). main interpreter - first time  (not found in _PyRuntime.imports.extensions):
-       A-R. (same as for m_size == -1)
-       S. (skipped)
-       T-V. (same as for m_size == -1)
+       A-P. (same as for m_size == -1)
+       Q.     _PyImport_RunModInitFunc():  set def->m_base.m_init
+       R-U. (same as for m_size == -1)
 
     (6). subsequent times  (found in _PyRuntime.imports.extensions):
        A. _imp_create_dynamic_impl() -> import_find_extension()
-       B.   import_find_extension()
-                -> _PyImport_CheckSubinterpIncompatibleExtensionAllowed()
-       C.   import_find_extension():  call def->m_base.m_init  (see above)
-       D.   import_find_extension():  add the module to sys.modules
-       E.   import_find_extension():  add to modules_by_index
+       B.   import_find_extension() -> reload_singlephase_extension()
+       C.     reload_singlephase_extension()
+                  -> _PyImport_CheckSubinterpIncompatibleExtensionAllowed()
+       D.     reload_singlephase_extension():  call def->m_base.m_init  (see above)
+       E.     reload_singlephase_extension():  add the module to sys.modules
+       F.     reload_singlephase_extension():  add to modules_by_index
 
     (10). every time:
        A. noop
@@ -922,6 +976,7 @@ extensions_lock_release(void)
     PyMutex_Unlock(&_PyRuntime.imports.extensions.mutex);
 }
 
+
 /* Magic for extension modules (built-in as well as dynamically
    loaded).  To prevent initializing an extension module more than
    once, we keep a static dictionary 'extensions' keyed by the tuple
@@ -938,6 +993,217 @@ extensions_lock_release(void)
    dictionary, to avoid loading shared libraries twice.
 */
 
+typedef struct cached_m_dict {
+    /* A shallow copy of the original module's __dict__. */
+    PyObject *copied;
+    /* The interpreter that owns the copy. */
+    int64_t interpid;
+} *cached_m_dict_t;
+
+struct extensions_cache_value {
+    PyModuleDef *def;
+
+    /* The function used to re-initialize the module.
+       This is only set for legacy (single-phase init) extension modules
+       and only used for those that support multiple initializations
+       (m_size >= 0).
+       It is set by update_global_state_for_extension(). */
+    PyModInitFunction m_init;
+
+    /* The module's index into its interpreter's modules_by_index cache.
+       This is set for all extension modules but only used for legacy ones.
+       (See PyInterpreterState.modules_by_index for more info.) */
+    Py_ssize_t m_index;
+
+    /* A copy of the module's __dict__ after the first time it was loaded.
+       This is only set/used for legacy modules that do not support
+       multiple initializations.
+       It is set exclusively by fixup_cached_def(). */
+    cached_m_dict_t m_dict;
+    struct cached_m_dict _m_dict;
+
+    _Py_ext_module_origin origin;
+};
+
+static struct extensions_cache_value *
+alloc_extensions_cache_value(void)
+{
+    struct extensions_cache_value *value
+            = PyMem_RawMalloc(sizeof(struct extensions_cache_value));
+    if (value == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+    *value = (struct extensions_cache_value){0};
+    return value;
+}
+
+static void
+free_extensions_cache_value(struct extensions_cache_value *value)
+{
+    PyMem_RawFree(value);
+}
+
+static Py_ssize_t
+_get_cached_module_index(struct extensions_cache_value *cached)
+{
+    assert(cached->m_index > 0);
+    return cached->m_index;
+}
+
+static void
+fixup_cached_def(struct extensions_cache_value *value)
+{
+    /* For the moment, the values in the def's m_base may belong
+     * to another module, and we're replacing them here.  This can
+     * cause problems later if the old module is reloaded.
+     *
+     * Also, we don't decref any old cached values first when we
+     * replace them here, in case we need to restore them in the
+     * near future.  Instead, the caller is responsible for wrapping
+     * this up by calling cleanup_old_cached_def() or
+     * restore_old_cached_def() if there was an error. */
+    PyModuleDef *def = value->def;
+    assert(def != NULL);
+
+    /* We assume that all module defs are statically allocated
+       and will never be freed.  Otherwise, we would incref here. */
+    _Py_SetImmortalUntracked((PyObject *)def);
+
+    def->m_base.m_init = value->m_init;
+
+    assert(value->m_index > 0);
+    _set_module_index(def, value->m_index);
+
+    /* Different modules can share the same def, so we can't just
+     * expect m_copy to be NULL. */
+    assert(def->m_base.m_copy == NULL
+           || def->m_base.m_init == NULL
+           || value->m_dict != NULL);
+    if (value->m_dict != NULL) {
+        assert(value->m_dict->copied != NULL);
+        /* As noted above, we don't first decref the old value, if any. */
+        def->m_base.m_copy = Py_NewRef(value->m_dict->copied);
+    }
+}
+
+static void
+restore_old_cached_def(PyModuleDef *def, PyModuleDef_Base *oldbase)
+{
+    def->m_base = *oldbase;
+}
+
+static void
+cleanup_old_cached_def(PyModuleDef_Base *oldbase)
+{
+    Py_XDECREF(oldbase->m_copy);
+}
+
+static void
+del_cached_def(struct extensions_cache_value *value)
+{
+    /* If we hadn't made the stored defs immortal, we would decref here.
+       However, this decref would be problematic if the module def were
+       dynamically allocated, it were the last ref, and this function
+       were called with an interpreter other than the def's owner. */
+    assert(value->def == NULL || _Py_IsImmortal(value->def));
+
+    Py_XDECREF(value->def->m_base.m_copy);
+    value->def->m_base.m_copy = NULL;
+}
+
+static int
+init_cached_m_dict(struct extensions_cache_value *value, PyObject *m_dict)
+{
+    assert(value != NULL);
+    /* This should only have been called without an m_dict already set. */
+    assert(value->m_dict == NULL);
+    if (m_dict == NULL) {
+        return 0;
+    }
+    assert(PyDict_Check(m_dict));
+    assert(value->origin != _Py_ext_module_origin_CORE);
+
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    assert(!is_interpreter_isolated(interp));
+
+    /* XXX gh-88216: The copied dict is owned by the current
+     * interpreter.  That's a problem if the interpreter has
+     * its own obmalloc state or if the module is successfully
+     * imported into such an interpreter.  If the interpreter
+     * has its own GIL then there may be data races and
+     * PyImport_ClearModulesByIndex() can crash.  Normally,
+     * a single-phase init module cannot be imported in an
+     * isolated interpreter, but there are ways around that.
+     * Hence, heere be dragons!  Ideally we would instead do
+     * something like make a read-only, immortal copy of the
+     * dict using PyMem_RawMalloc() and store *that* in m_copy.
+     * Then we'd need to make sure to clear that when the
+     * runtime is finalized, rather than in
+     * PyImport_ClearModulesByIndex(). */
+    PyObject *copied = PyDict_Copy(m_dict);
+    if (copied == NULL) {
+        /* We expect this can only be "out of memory". */
+        return -1;
+    }
+    // XXX We may want to make the copy immortal.
+    // XXX This incref shouldn't be necessary.  We are decref'ing
+    // one to many times somewhere.
+    Py_INCREF(copied);
+
+    value->_m_dict = (struct cached_m_dict){
+        .copied=copied,
+        .interpid=PyInterpreterState_GetID(interp),
+    };
+
+    value->m_dict = &value->_m_dict;
+    return 0;
+}
+
+static void
+del_cached_m_dict(struct extensions_cache_value *value)
+{
+    if (value->m_dict != NULL) {
+        assert(value->m_dict == &value->_m_dict);
+        assert(value->m_dict->copied != NULL);
+        /* In the future we can take advantage of m_dict->interpid
+         * to decref the dict using the owning interpreter. */
+        Py_XDECREF(value->m_dict->copied);
+        value->m_dict = NULL;
+    }
+}
+
+static PyObject * get_core_module_dict(
+        PyInterpreterState *interp, PyObject *name, PyObject *path);
+
+static PyObject *
+get_cached_m_dict(struct extensions_cache_value *value,
+                  PyObject *name, PyObject *path)
+{
+    assert(value != NULL);
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    /* It might be a core module (e.g. sys & builtins),
+       for which we don't cache m_dict. */
+    if (value->origin == _Py_ext_module_origin_CORE) {
+        return get_core_module_dict(interp, name, path);
+    }
+    assert(value->def != NULL);
+    // XXX Switch to value->m_dict.
+    PyObject *m_dict = value->def->m_base.m_copy;
+    Py_XINCREF(m_dict);
+    return m_dict;
+}
+
+static void
+del_extensions_cache_value(struct extensions_cache_value *value)
+{
+    if (value != NULL) {
+        del_cached_m_dict(value);
+        del_cached_def(value);
+        free_extensions_cache_value(value);
+    }
+}
+
 static void *
 hashtable_key_from_2_strings(PyObject *str1, PyObject *str2, const char sep)
 {
@@ -951,6 +1217,7 @@ hashtable_key_from_2_strings(PyObject *str1, PyObject *str2, const char sep)
     assert(SIZE_MAX - str1_len - str2_len > 2);
     size_t size = str1_len + 1 + str2_len + 1;
 
+    // XXX Use a buffer if it's a temp value (every case but "set").
     char *key = PyMem_RawMalloc(size);
     if (key == NULL) {
         PyErr_NoMemory();
@@ -982,102 +1249,214 @@ hashtable_destroy_str(void *ptr)
     PyMem_RawFree(ptr);
 }
 
+#ifndef NDEBUG
+struct hashtable_next_match_def_data {
+    PyModuleDef *def;
+    struct extensions_cache_value *matched;
+};
+
+static int
+hashtable_next_match_def(_Py_hashtable_t *ht,
+                         const void *key, const void *value, void *user_data)
+{
+    if (value == NULL) {
+        /* It was previously deleted. */
+        return 0;
+    }
+    struct hashtable_next_match_def_data *data
+            = (struct hashtable_next_match_def_data *)user_data;
+    struct extensions_cache_value *cur
+            = (struct extensions_cache_value *)value;
+    if (cur->def == data->def) {
+        data->matched = cur;
+        return 1;
+    }
+    return 0;
+}
+
+static struct extensions_cache_value *
+_find_cached_def(PyModuleDef *def)
+{
+    struct hashtable_next_match_def_data data = {0};
+    (void)_Py_hashtable_foreach(
+            EXTENSIONS.hashtable, hashtable_next_match_def, &data);
+    return data.matched;
+}
+#endif
+
 #define HTSEP ':'
 
-static PyModuleDef *
-_extensions_cache_get(PyObject *filename, PyObject *name)
+static int
+_extensions_cache_init(void)
 {
-    PyModuleDef *def = NULL;
-    void *key = NULL;
+    _Py_hashtable_allocator_t alloc = {PyMem_RawMalloc, PyMem_RawFree};
+    EXTENSIONS.hashtable = _Py_hashtable_new_full(
+        hashtable_hash_str,
+        hashtable_compare_str,
+        hashtable_destroy_str,  // key
+        (_Py_hashtable_destroy_func)del_extensions_cache_value,  // value
+        &alloc
+    );
+    if (EXTENSIONS.hashtable == NULL) {
+        PyErr_NoMemory();
+        return -1;
+    }
+    return 0;
+}
+
+static _Py_hashtable_entry_t *
+_extensions_cache_find_unlocked(PyObject *path, PyObject *name,
+                                void **p_key)
+{
+    if (EXTENSIONS.hashtable == NULL) {
+        return NULL;
+    }
+    void *key = hashtable_key_from_2_strings(path, name, HTSEP);
+    if (key == NULL) {
+        return NULL;
+    }
+    _Py_hashtable_entry_t *entry =
+            _Py_hashtable_get_entry(EXTENSIONS.hashtable, key);
+    if (p_key != NULL) {
+        *p_key = key;
+    }
+    else {
+        hashtable_destroy_str(key);
+    }
+    return entry;
+}
+
+/* This can only fail with "out of memory". */
+static struct extensions_cache_value *
+_extensions_cache_get(PyObject *path, PyObject *name)
+{
+    struct extensions_cache_value *value = NULL;
     extensions_lock_acquire();
 
-    if (EXTENSIONS.hashtable == NULL) {
-        goto finally;
-    }
-
-    key = hashtable_key_from_2_strings(filename, name, HTSEP);
-    if (key == NULL) {
-        goto finally;
-    }
-    _Py_hashtable_entry_t *entry = _Py_hashtable_get_entry(
-            EXTENSIONS.hashtable, key);
+    _Py_hashtable_entry_t *entry =
+            _extensions_cache_find_unlocked(path, name, NULL);
     if (entry == NULL) {
+        /* It was never added. */
         goto finally;
     }
-    def = (PyModuleDef *)entry->value;
+    value = (struct extensions_cache_value *)entry->value;
 
 finally:
     extensions_lock_release();
-    if (key != NULL) {
-        PyMem_RawFree(key);
-    }
-    return def;
+    return value;
 }
 
-static int
-_extensions_cache_set(PyObject *filename, PyObject *name, PyModuleDef *def)
+/* This can only fail with "out of memory". */
+static struct extensions_cache_value *
+_extensions_cache_set(PyObject *path, PyObject *name,
+                      PyModuleDef *def, PyModInitFunction m_init,
+                      Py_ssize_t m_index, PyObject *m_dict,
+                      _Py_ext_module_origin origin)
 {
-    int res = -1;
+    struct extensions_cache_value *value = NULL;
+    void *key = NULL;
+    struct extensions_cache_value *newvalue = NULL;
+    PyModuleDef_Base olddefbase = def->m_base;
+
+    assert(def != NULL);
+    assert(m_init == NULL || m_dict == NULL);
+    /* We expect the same symbol to be used and the shared object file
+     * to have remained loaded, so it must be the same pointer. */
+    assert(def->m_base.m_init == NULL || def->m_base.m_init == m_init);
+    /* For now we don't worry about comparing value->m_copy. */
+    assert(def->m_base.m_copy == NULL || m_dict != NULL);
+    assert((origin == _Py_ext_module_origin_DYNAMIC) == (name != path));
+    assert(origin != _Py_ext_module_origin_CORE || m_dict == NULL);
+
     extensions_lock_acquire();
 
     if (EXTENSIONS.hashtable == NULL) {
-        _Py_hashtable_allocator_t alloc = {PyMem_RawMalloc, PyMem_RawFree};
-        EXTENSIONS.hashtable = _Py_hashtable_new_full(
-            hashtable_hash_str,
-            hashtable_compare_str,
-            hashtable_destroy_str,  // key
-            /* There's no need to decref the def since it's immortal. */
-            NULL,  // value
-            &alloc
-        );
-        if (EXTENSIONS.hashtable == NULL) {
-            PyErr_NoMemory();
+        if (_extensions_cache_init() < 0) {
             goto finally;
         }
     }
 
-    void *key = hashtable_key_from_2_strings(filename, name, HTSEP);
-    if (key == NULL) {
+    /* Create a cached value to populate for the module. */
+    _Py_hashtable_entry_t *entry =
+            _extensions_cache_find_unlocked(path, name, &key);
+    value = entry == NULL
+        ? NULL
+        : (struct extensions_cache_value *)entry->value;
+    /* We should never be updating an existing cache value. */
+    assert(value == NULL);
+    if (value != NULL) {
+        PyErr_Format(PyExc_SystemError,
+                     "extension module %R is already cached", name);
+        goto finally;
+    }
+    newvalue = alloc_extensions_cache_value();
+    if (newvalue == NULL) {
         goto finally;
     }
 
-    int already_set = 0;
-    _Py_hashtable_entry_t *entry = _Py_hashtable_get_entry(
-            EXTENSIONS.hashtable, key);
+    /* Populate the new cache value data. */
+    *newvalue = (struct extensions_cache_value){
+        .def=def,
+        .m_init=m_init,
+        .m_index=m_index,
+        /* m_dict is set by set_cached_m_dict(). */
+        .origin=origin,
+    };
+    if (init_cached_m_dict(newvalue, m_dict) < 0) {
+        goto finally;
+    }
+    fixup_cached_def(newvalue);
+
     if (entry == NULL) {
-        if (_Py_hashtable_set(EXTENSIONS.hashtable, key, def) < 0) {
-            PyMem_RawFree(key);
+        /* It was never added. */
+        if (_Py_hashtable_set(EXTENSIONS.hashtable, key, newvalue) < 0) {
             PyErr_NoMemory();
             goto finally;
+        }
+        /* The hashtable owns the key now. */
+        key = NULL;
+    }
+    else if (value == NULL) {
+        /* It was previously deleted. */
+        entry->value = newvalue;
+    }
+    else {
+        /* We are updating the entry for an existing module. */
+        /* We expect def to be static, so it must be the same pointer. */
+        assert(value->def == def);
+        /* We expect the same symbol to be used and the shared object file
+         * to have remained loaded, so it must be the same pointer. */
+        assert(value->m_init == m_init);
+        /* The same module can't switch between caching __dict__ and not. */
+        assert((value->m_dict == NULL) == (m_dict == NULL));
+        /* This shouldn't ever happen. */
+        Py_UNREACHABLE();
+    }
+
+    value = newvalue;
+
+finally:
+    if (value == NULL) {
+        restore_old_cached_def(def, &olddefbase);
+        if (newvalue != NULL) {
+            del_extensions_cache_value(newvalue);
         }
     }
     else {
-        if (entry->value == NULL) {
-            entry->value = def;
-        }
-        else {
-            /* We expect it to be static, so it must be the same pointer. */
-            assert((PyModuleDef *)entry->value == def);
-            already_set = 1;
-        }
-        PyMem_RawFree(key);
+        cleanup_old_cached_def(&olddefbase);
     }
-    if (!already_set) {
-        /* We assume that all module defs are statically allocated
-           and will never be freed.  Otherwise, we would incref here. */
-        _Py_SetImmortal((PyObject *)def);
-    }
-    res = 0;
 
-finally:
     extensions_lock_release();
-    return res;
+    if (key != NULL) {
+        hashtable_destroy_str(key);
+    }
+
+    return value;
 }
 
 static void
-_extensions_cache_delete(PyObject *filename, PyObject *name)
+_extensions_cache_delete(PyObject *path, PyObject *name)
 {
-    void *key = NULL;
     extensions_lock_acquire();
 
     if (EXTENSIONS.hashtable == NULL) {
@@ -1085,13 +1464,8 @@ _extensions_cache_delete(PyObject *filename, PyObject *name)
         goto finally;
     }
 
-    key = hashtable_key_from_2_strings(filename, name, HTSEP);
-    if (key == NULL) {
-        goto finally;
-    }
-
-    _Py_hashtable_entry_t *entry = _Py_hashtable_get_entry(
-            EXTENSIONS.hashtable, key);
+    _Py_hashtable_entry_t *entry =
+            _extensions_cache_find_unlocked(path, name, NULL);
     if (entry == NULL) {
         /* It was never added. */
         goto finally;
@@ -1100,18 +1474,13 @@ _extensions_cache_delete(PyObject *filename, PyObject *name)
         /* It was already removed. */
         goto finally;
     }
-    /* If we hadn't made the stored defs immortal, we would decref here.
-       However, this decref would be problematic if the module def were
-       dynamically allocated, it were the last ref, and this function
-       were called with an interpreter other than the def's owner. */
-    assert(_Py_IsImmortal(entry->value));
+    struct extensions_cache_value *value = entry->value;
     entry->value = NULL;
+
+    del_extensions_cache_value(value);
 
 finally:
     extensions_lock_release();
-    if (key != NULL) {
-        PyMem_RawFree(key);
-    }
 }
 
 static void
@@ -1165,11 +1534,11 @@ get_core_module_dict(PyInterpreterState *interp,
     if (path == name) {
         assert(!PyErr_Occurred());
         if (PyUnicode_CompareWithASCIIString(name, "sys") == 0) {
-            return interp->sysdict_copy;
+            return Py_NewRef(interp->sysdict_copy);
         }
         assert(!PyErr_Occurred());
         if (PyUnicode_CompareWithASCIIString(name, "builtins") == 0) {
-            return interp->builtins_copy;
+            return Py_NewRef(interp->builtins_copy);
         }
         assert(!PyErr_Occurred());
     }
@@ -1192,44 +1561,106 @@ is_core_module(PyInterpreterState *interp, PyObject *name, PyObject *path)
     return 0;
 }
 
+
 #ifndef NDEBUG
-static bool
-is_singlephase(PyModuleDef *def)
+static _Py_ext_module_kind
+_get_extension_kind(PyModuleDef *def, bool check_size)
 {
+    _Py_ext_module_kind kind;
     if (def == NULL) {
         /* It must be a module created by reload_singlephase_extension()
          * from m_copy.  Ideally we'd do away with this case. */
-        return true;
+        kind = _Py_ext_module_kind_SINGLEPHASE;
     }
-    else if (def->m_slots == NULL) {
-        return true;
+    else if (def->m_slots != NULL) {
+        kind = _Py_ext_module_kind_MULTIPHASE;
+    }
+    else if (check_size && def->m_size == -1) {
+        kind = _Py_ext_module_kind_SINGLEPHASE;
+    }
+    else if (def->m_base.m_init != NULL) {
+        kind = _Py_ext_module_kind_SINGLEPHASE;
     }
     else {
-        return false;
+        // This is probably single-phase init, but a multi-phase
+        // module *can* have NULL m_slots.
+        kind = _Py_ext_module_kind_UNKNOWN;
     }
+    return kind;
 }
+
+/* The module might not be fully initialized yet
+ * and PyModule_FromDefAndSpec() checks m_size
+ * so we skip m_size. */
+#define assert_multiphase_def(def)                                  \
+    do {                                                            \
+        _Py_ext_module_kind kind = _get_extension_kind(def, false); \
+        assert(kind == _Py_ext_module_kind_MULTIPHASE               \
+                /* m_slots can be NULL. */                          \
+                || kind == _Py_ext_module_kind_UNKNOWN);            \
+    } while (0)
+
+#define assert_singlephase_def(def)                                 \
+    do {                                                            \
+        _Py_ext_module_kind kind = _get_extension_kind(def, true);  \
+        assert(kind == _Py_ext_module_kind_SINGLEPHASE              \
+                || kind == _Py_ext_module_kind_UNKNOWN);            \
+    } while (0)
+
+#define assert_singlephase(cached)                                          \
+    do {                                                                    \
+        _Py_ext_module_kind kind = _get_extension_kind(cached->def, true);  \
+        assert(kind == _Py_ext_module_kind_SINGLEPHASE);                    \
+    } while (0)
+
+#else  /* defined(NDEBUG) */
+#define assert_multiphase_def(def)
+#define assert_singlephase_def(def)
+#define assert_singlephase(cached)
 #endif
 
 
 struct singlephase_global_update {
+    PyModInitFunction m_init;
+    Py_ssize_t m_index;
     PyObject *m_dict;
+    _Py_ext_module_origin origin;
 };
 
-static int
+static struct extensions_cache_value *
 update_global_state_for_extension(PyThreadState *tstate,
                                   PyObject *path, PyObject *name,
                                   PyModuleDef *def,
                                   struct singlephase_global_update *singlephase)
 {
-    /* Copy the module's __dict__, if applicable. */
+    struct extensions_cache_value *cached = NULL;
+    PyModInitFunction m_init = NULL;
+    PyObject *m_dict = NULL;
+
+    /* Set up for _extensions_cache_set(). */
     if (singlephase == NULL) {
+        assert(def->m_base.m_init == NULL);
         assert(def->m_base.m_copy == NULL);
     }
     else {
-        assert(def->m_base.m_init != NULL
-               || is_core_module(tstate->interp, name, path));
-        if (singlephase->m_dict == NULL) {
+        if (singlephase->m_init != NULL) {
+            assert(singlephase->m_dict == NULL);
             assert(def->m_base.m_copy == NULL);
+            assert(def->m_size >= 0);
+            /* Remember pointer to module init function. */
+            // XXX If two modules share a def then def->m_base will
+            // reflect the last one added (here) to the global cache.
+            // We should prevent this somehow.  The simplest solution
+            // is probably to store m_copy/m_init in the cache along
+            // with the def, rather than within the def.
+            m_init = singlephase->m_init;
+        }
+        else if (singlephase->m_dict == NULL) {
+            /* It must be a core builtin module. */
+            assert(is_core_module(tstate->interp, name, path));
+            assert(def->m_size == -1);
+            assert(def->m_base.m_copy == NULL);
+            assert(def->m_base.m_init == NULL);
         }
         else {
             assert(PyDict_Check(singlephase->m_dict));
@@ -1239,32 +1670,7 @@ update_global_state_for_extension(PyThreadState *tstate,
             assert(!is_core_module(tstate->interp, name, path));
             assert(PyUnicode_CompareWithASCIIString(name, "sys") != 0);
             assert(PyUnicode_CompareWithASCIIString(name, "builtins") != 0);
-            /* XXX gh-88216: The copied dict is owned by the current
-             * interpreter.  That's a problem if the interpreter has
-             * its own obmalloc state or if the module is successfully
-             * imported into such an interpreter.  If the interpreter
-             * has its own GIL then there may be data races and
-             * PyImport_ClearModulesByIndex() can crash.  Normally,
-             * a single-phase init module cannot be imported in an
-             * isolated interpreter, but there are ways around that.
-             * Hence, heere be dragons!  Ideally we would instead do
-             * something like make a read-only, immortal copy of the
-             * dict using PyMem_RawMalloc() and store *that* in m_copy.
-             * Then we'd need to make sure to clear that when the
-             * runtime is finalized, rather than in
-             * PyImport_ClearModulesByIndex(). */
-            if (def->m_base.m_copy) {
-                /* Somebody already imported the module,
-                   likely under a different name.
-                   XXX this should really not happen. */
-                Py_CLEAR(def->m_base.m_copy);
-            }
-            def->m_base.m_copy = PyDict_Copy(singlephase->m_dict);
-            if (def->m_base.m_copy == NULL) {
-                // XXX Ignore this error?  Doing so would effectively
-                // mark the module as not loadable. */
-                return -1;
-            }
+            m_dict = singlephase->m_dict;
         }
     }
 
@@ -1272,28 +1678,34 @@ update_global_state_for_extension(PyThreadState *tstate,
     // XXX Why special-case the main interpreter?
     if (_Py_IsMainInterpreter(tstate->interp) || def->m_size == -1) {
 #ifndef NDEBUG
-        PyModuleDef *cached = _extensions_cache_get(path, name);
-        assert(cached == NULL || cached == def);
+        cached = _extensions_cache_get(path, name);
+        assert(cached == NULL || cached->def == def);
 #endif
-        if (_extensions_cache_set(path, name, def) < 0) {
-            return -1;
+        cached = _extensions_cache_set(
+                path, name, def, m_init, singlephase->m_index, m_dict,
+                singlephase->origin);
+        if (cached == NULL) {
+            // XXX Ignore this error?  Doing so would effectively
+            // mark the module as not loadable.
+            return NULL;
         }
     }
 
-    return 0;
+    return cached;
 }
 
 /* For multi-phase init modules, the module is finished
  * by PyModule_FromDefAndSpec(). */
 static int
-finish_singlephase_extension(PyThreadState *tstate,
-                             PyObject *mod, PyModuleDef *def,
+finish_singlephase_extension(PyThreadState *tstate, PyObject *mod,
+                             struct extensions_cache_value *cached,
                              PyObject *name, PyObject *modules)
 {
     assert(mod != NULL && PyModule_Check(mod));
-    assert(def == _PyModule_GetDef(mod));
+    assert(cached->def == _PyModule_GetDef(mod));
 
-    if (_modules_by_index_set(tstate->interp, def, mod) < 0) {
+    Py_ssize_t index = _get_cached_module_index(cached);
+    if (_modules_by_index_set(tstate->interp, index, mod) < 0) {
         return -1;
     }
 
@@ -1308,15 +1720,14 @@ finish_singlephase_extension(PyThreadState *tstate,
 
 
 static PyObject *
-import_find_extension(PyThreadState *tstate,
-                      struct _Py_ext_module_loader_info *info)
+reload_singlephase_extension(PyThreadState *tstate,
+                             struct extensions_cache_value *cached,
+                             struct _Py_ext_module_loader_info *info)
 {
-    /* Only single-phase init modules will be in the cache. */
-    PyModuleDef *def = _extensions_cache_get(info->path, info->name);
-    if (def == NULL) {
-        return NULL;
-    }
-    assert(is_singlephase(def));
+    PyModuleDef *def = cached->def;
+    assert(def != NULL);
+    assert_singlephase(cached);
+    PyObject *mod = NULL;
 
     /* It may have been successfully imported previously
        in an interpreter that allows legacy modules
@@ -1327,61 +1738,117 @@ import_find_extension(PyThreadState *tstate,
         return NULL;
     }
 
-    PyObject *mod, *mdict;
     PyObject *modules = get_modules_dict(tstate, true);
-
     if (def->m_size == -1) {
-        PyObject *m_copy = def->m_base.m_copy;
         /* Module does not support repeated initialization */
+        assert(cached->m_init == NULL);
+        assert(def->m_base.m_init == NULL);
+        // XXX Copying the cached dict may break interpreter isolation.
+        // We could solve this by temporarily acquiring the original
+        // interpreter's GIL.
+        PyObject *m_copy = get_cached_m_dict(cached, info->name, info->path);
         if (m_copy == NULL) {
-            /* It might be a core module (e.g. sys & builtins),
-               for which we don't set m_copy. */
-            m_copy = get_core_module_dict(
-                    tstate->interp, info->name, info->path);
-            if (m_copy == NULL) {
-                return NULL;
-            }
+            assert(!PyErr_Occurred());
+            return NULL;
         }
         mod = import_add_module(tstate, info->name);
         if (mod == NULL) {
+            Py_DECREF(m_copy);
             return NULL;
         }
-        mdict = PyModule_GetDict(mod);
+        PyObject *mdict = PyModule_GetDict(mod);
         if (mdict == NULL) {
+            Py_DECREF(m_copy);
             Py_DECREF(mod);
             return NULL;
         }
-        if (PyDict_Update(mdict, m_copy)) {
+        int rc = PyDict_Update(mdict, m_copy);
+        Py_DECREF(m_copy);
+        if (rc < 0) {
             Py_DECREF(mod);
             return NULL;
         }
         /* We can't set mod->md_def if it's missing,
          * because _PyImport_ClearModulesByIndex() might break
-         * due to violating interpreter isolation.  See the note
-         * in fix_up_extension_for_interpreter().  Until that
-         * is solved, we leave md_def set to NULL. */
+         * due to violating interpreter isolation.
+         * See the note in set_cached_m_dict().
+         * Until that is solved, we leave md_def set to NULL. */
         assert(_PyModule_GetDef(mod) == NULL
                || _PyModule_GetDef(mod) == def);
     }
     else {
-        if (def->m_base.m_init == NULL) {
+        assert(cached->m_dict == NULL);
+        assert(def->m_base.m_copy == NULL);
+        // XXX Use cached->m_init.
+        PyModInitFunction p0 = def->m_base.m_init;
+        if (p0 == NULL) {
+            assert(!PyErr_Occurred());
             return NULL;
         }
         struct _Py_ext_module_loader_result res;
-        if (_PyImport_RunModInitFunc(def->m_base.m_init, info, &res) < 0) {
+        if (_PyImport_RunModInitFunc(p0, info, &res) < 0) {
+            _Py_ext_module_loader_result_apply_error(&res, name_buf);
             return NULL;
         }
         assert(!PyErr_Occurred());
+        assert(res.err == NULL);
+        assert(res.kind == _Py_ext_module_kind_SINGLEPHASE);
         mod = res.module;
-        // XXX __file__ doesn't get set!
+        /* Tchnically, the init function could return a different module def.
+         * Then we would probably need to update the global cache.
+         * However, we don't expect anyone to change the def. */
+        assert(res.def == def);
+        _Py_ext_module_loader_result_clear(&res);
+
+        /* Remember the filename as the __file__ attribute */
+        if (info->filename != NULL) {
+            if (PyModule_AddObjectRef(mod, "__file__", info->filename) < 0) {
+                PyErr_Clear(); /* Not important enough to report */
+            }
+        }
+
         if (PyObject_SetItem(modules, info->name, mod) == -1) {
             Py_DECREF(mod);
             return NULL;
         }
     }
-    if (_modules_by_index_set(tstate->interp, def, mod) < 0) {
+
+    Py_ssize_t index = _get_cached_module_index(cached);
+    if (_modules_by_index_set(tstate->interp, index, mod) < 0) {
         PyMapping_DelItem(modules, info->name);
         Py_DECREF(mod);
+        return NULL;
+    }
+
+    return mod;
+}
+
+static PyObject *
+import_find_extension(PyThreadState *tstate,
+                      struct _Py_ext_module_loader_info *info,
+                      struct extensions_cache_value **p_cached)
+{
+    /* Only single-phase init modules will be in the cache. */
+    struct extensions_cache_value *cached
+            = _extensions_cache_get(info->path, info->name);
+    if (cached == NULL) {
+        return NULL;
+    }
+    assert(cached->def != NULL);
+    assert_singlephase(cached);
+    *p_cached = cached;
+
+    /* It may have been successfully imported previously
+       in an interpreter that allows legacy modules
+       but is not allowed in the current interpreter. */
+    const char *name_buf = PyUnicode_AsUTF8(info->name);
+    assert(name_buf != NULL);
+    if (_PyImport_CheckSubinterpIncompatibleExtensionAllowed(name_buf) < 0) {
+        return NULL;
+    }
+
+    PyObject *mod = reload_singlephase_extension(tstate, cached, info);
+    if (mod == NULL) {
         return NULL;
     }
 
@@ -1390,6 +1857,7 @@ import_find_extension(PyThreadState *tstate,
         PySys_FormatStderr("import %U # previously loaded (%R)\n",
                            info->name, info->path);
     }
+
     return mod;
 }
 
@@ -1398,78 +1866,98 @@ import_run_extension(PyThreadState *tstate, PyModInitFunction p0,
                      struct _Py_ext_module_loader_info *info,
                      PyObject *spec, PyObject *modules)
 {
+    /* Core modules go through _PyImport_FixupBuiltin(). */
+    assert(!is_core_module(tstate->interp, info->name, info->path));
+
     PyObject *mod = NULL;
     PyModuleDef *def = NULL;
+    struct extensions_cache_value *cached = NULL;
+    const char *name_buf = PyBytes_AS_STRING(info->name_encoded);
 
     struct _Py_ext_module_loader_result res;
     if (_PyImport_RunModInitFunc(p0, info, &res) < 0) {
         /* We discard res.def. */
         assert(res.module == NULL);
-        assert(PyErr_Occurred());
-        goto finally;
+        _Py_ext_module_loader_result_apply_error(&res, name_buf);
+        return NULL;
     }
     assert(!PyErr_Occurred());
+    assert(res.err == NULL);
 
     mod = res.module;
     res.module = NULL;
     def = res.def;
     assert(def != NULL);
 
-    if (mod == NULL) {
-        //assert(!is_singlephase(def));
+    if (res.kind == _Py_ext_module_kind_MULTIPHASE) {
+        assert_multiphase_def(def);
         assert(mod == NULL);
         mod = PyModule_FromDefAndSpec(def, spec);
         if (mod == NULL) {
-            goto finally;
+            goto error;
         }
     }
     else {
-        assert(is_singlephase(def));
+        assert(res.kind == _Py_ext_module_kind_SINGLEPHASE);
+        assert_singlephase_def(def);
         assert(PyModule_Check(mod));
 
-        const char *name_buf = PyBytes_AS_STRING(info->name_encoded);
         if (_PyImport_CheckSubinterpIncompatibleExtensionAllowed(name_buf) < 0) {
-            Py_CLEAR(mod);
-            goto finally;
+            goto error;
         }
 
-        /* Remember pointer to module init function. */
-        def->m_base.m_init = p0;
-
+        /* Remember the filename as the __file__ attribute */
         if (info->filename != NULL) {
-            /* Remember the filename as the __file__ attribute */
             if (PyModule_AddObjectRef(mod, "__file__", info->filename) < 0) {
                 PyErr_Clear(); /* Not important enough to report */
             }
         }
 
-        struct singlephase_global_update singlephase = {0};
+        /* Update global import state. */
+        assert(def->m_base.m_index != 0);
+        struct singlephase_global_update singlephase = {
+            // XXX Modules that share a def should each get their own index,
+            // whereas currently they share (which means the per-interpreter
+            // cache is less reliable than it should be).
+            .m_index=def->m_base.m_index,
+            .origin=info->origin,
+        };
         // gh-88216: Extensions and def->m_base.m_copy can be updated
         // when the extension module doesn't support sub-interpreters.
-        if (def->m_size == -1
-                && !is_core_module(tstate->interp, info->name, info->path))
-        {
+        if (def->m_size == -1) {
+            /* We will reload from m_copy. */
+            assert(def->m_base.m_init == NULL);
             singlephase.m_dict = PyModule_GetDict(mod);
             assert(singlephase.m_dict != NULL);
         }
-        if (update_global_state_for_extension(
-                tstate, info->path, info->name, def, &singlephase) < 0)
-        {
-            Py_CLEAR(mod);
-            goto finally;
+        else {
+            /* We will reload via the init function. */
+            assert(def->m_size >= 0);
+            assert(def->m_base.m_copy == NULL);
+            singlephase.m_init = p0;
+        }
+        cached = update_global_state_for_extension(
+                tstate, info->path, info->name, def, &singlephase);
+        if (cached == NULL) {
+            goto error;
         }
 
+        /* Update per-interpreter import state. */
         PyObject *modules = get_modules_dict(tstate, true);
         if (finish_singlephase_extension(
-                tstate, mod, def, info->name, modules) < 0)
+                tstate, mod, cached, info->name, modules) < 0)
         {
-            Py_CLEAR(mod);
-            goto finally;
+            goto error;
         }
     }
 
-finally:
+    _Py_ext_module_loader_result_clear(&res);
     return mod;
+
+error:
+    Py_XDECREF(mod);
+    _Py_ext_module_loader_result_clear(&res);
+    return NULL;
 }
 
 
@@ -1477,13 +1965,14 @@ static int
 clear_singlephase_extension(PyInterpreterState *interp,
                             PyObject *name, PyObject *path)
 {
-    PyModuleDef *def = _extensions_cache_get(path, name);
-    if (def == NULL) {
+    struct extensions_cache_value *cached = _extensions_cache_get(path, name);
+    if (cached == NULL) {
         if (PyErr_Occurred()) {
             return -1;
         }
         return 0;
     }
+    PyModuleDef *def = cached->def;
 
     /* Clear data set when the module was initially loaded. */
     def->m_base.m_init = NULL;
@@ -1491,8 +1980,9 @@ clear_singlephase_extension(PyInterpreterState *interp,
     // We leave m_index alone since there's no reason to reset it.
 
     /* Clear the PyState_*Module() cache entry. */
-    if (_modules_by_index_check(interp, def->m_base.m_index) == NULL) {
-        if (_modules_by_index_clear_one(interp, def) < 0) {
+    Py_ssize_t index = _get_cached_module_index(cached);
+    if (_modules_by_index_check(interp, index) == NULL) {
+        if (_modules_by_index_clear_one(interp, index) < 0) {
             return -1;
         }
     }
@@ -1532,21 +2022,32 @@ _PyImport_FixupBuiltin(PyThreadState *tstate, PyObject *mod, const char *name,
      * module state, but we also don't populate def->m_base.m_copy
      * for them. */
     assert(is_core_module(tstate->interp, nameobj, nameobj));
-    assert(is_singlephase(def));
+    assert_singlephase_def(def);
     assert(def->m_size == -1);
     assert(def->m_base.m_copy == NULL);
+    assert(def->m_base.m_index >= 0);
 
-    struct singlephase_global_update singlephase = {
-        /* We don't want def->m_base.m_copy populated. */
-        .m_dict=NULL,
-    };
-    if (update_global_state_for_extension(
-            tstate, nameobj, nameobj, def, &singlephase) < 0)
-    {
-        goto finally;
+    /* We aren't using import_find_extension() for core modules,
+     * so we have to do the extra check to make sure the module
+     * isn't already in the global cache before calling
+     * update_global_state_for_extension(). */
+    struct extensions_cache_value *cached
+            = _extensions_cache_get(nameobj, nameobj);
+    if (cached == NULL) {
+        struct singlephase_global_update singlephase = {
+            .m_index=def->m_base.m_index,
+            /* We don't want def->m_base.m_copy populated. */
+            .m_dict=NULL,
+            .origin=_Py_ext_module_origin_CORE,
+        };
+        cached = update_global_state_for_extension(
+                tstate, nameobj, nameobj, def, &singlephase);
+        if (cached == NULL) {
+            goto finally;
+        }
     }
 
-    if (finish_singlephase_extension(tstate, mod, def, nameobj, modules) < 0) {
+    if (finish_singlephase_extension(tstate, mod, cached, nameobj, modules) < 0) {
         goto finally;
     }
 
@@ -1583,14 +2084,28 @@ create_builtin(PyThreadState *tstate, PyObject *name, PyObject *spec)
         return NULL;
     }
 
-    PyObject *mod = import_find_extension(tstate, &info);
+    struct extensions_cache_value *cached = NULL;
+    PyObject *mod = import_find_extension(tstate, &info, &cached);
     if (mod != NULL) {
         assert(!_PyErr_Occurred(tstate));
-        assert(is_singlephase(_PyModule_GetDef(mod)));
+        assert(cached != NULL);
+        /* The module might not have md_def set in certain reload cases. */
+        assert(_PyModule_GetDef(mod) == NULL
+                || cached->def == _PyModule_GetDef(mod));
+        assert_singlephase(cached);
         goto finally;
     }
     else if (_PyErr_Occurred(tstate)) {
         goto finally;
+    }
+
+    /* If the module was added to the global cache
+     * but def->m_base.m_copy was cleared (e.g. subinterp fini)
+     * then we have to do a little dance here. */
+    if (cached != NULL) {
+        assert(cached->def->m_base.m_copy == NULL);
+        /* For now we clear the cache and move on. */
+        _extensions_cache_delete(info.path, info.name);
     }
 
     struct _inittab *found = NULL;
@@ -2953,7 +3468,8 @@ import_find_and_load(PyThreadState *tstate, PyObject *abs_name)
 #undef header
 
         import_level++;
-        t1 = _PyTime_PerfCounterUnchecked();
+        // ignore error: don't block import if reading the clock fails
+        (void)PyTime_PerfCounterRaw(&t1);
         accumulated = 0;
     }
 
@@ -2968,7 +3484,9 @@ import_find_and_load(PyThreadState *tstate, PyObject *abs_name)
                                        mod != NULL);
 
     if (import_time) {
-        PyTime_t cum = _PyTime_PerfCounterUnchecked() - t1;
+        PyTime_t t2;
+        (void)PyTime_PerfCounterRaw(&t2);
+        PyTime_t cum = t2 - t1;
 
         import_level--;
         fprintf(stderr, "import time: %9ld | %10ld | %*s%s\n",
@@ -3937,16 +4455,30 @@ _imp_create_dynamic_impl(PyObject *module, PyObject *spec, PyObject *file)
         return NULL;
     }
 
-    mod = import_find_extension(tstate, &info);
+    struct extensions_cache_value *cached = NULL;
+    mod = import_find_extension(tstate, &info, &cached);
     if (mod != NULL) {
         assert(!_PyErr_Occurred(tstate));
-        assert(is_singlephase(_PyModule_GetDef(mod)));
+        assert(cached != NULL);
+        /* The module might not have md_def set in certain reload cases. */
+        assert(_PyModule_GetDef(mod) == NULL
+                || cached->def == _PyModule_GetDef(mod));
+        assert_singlephase(cached);
         goto finally;
     }
     else if (_PyErr_Occurred(tstate)) {
         goto finally;
     }
     /* Otherwise it must be multi-phase init or the first time it's loaded. */
+
+    /* If the module was added to the global cache
+     * but def->m_base.m_copy was cleared (e.g. subinterp fini)
+     * then we have to do a little dance here. */
+    if (cached != NULL) {
+        assert(cached->def->m_base.m_copy == NULL);
+        /* For now we clear the cache and move on. */
+        _extensions_cache_delete(info.path, info.name);
+    }
 
     if (PySys_Audit("import", "OOOOO", info.name, info.filename,
                     Py_None, Py_None, Py_None) < 0)
@@ -4095,6 +4627,7 @@ imp_module_exec(PyObject *module)
 static PyModuleDef_Slot imp_slots[] = {
     {Py_mod_exec, imp_module_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
 };
 

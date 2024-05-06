@@ -390,6 +390,11 @@ init_code(PyCodeObject *co, struct _PyCodeConstructor *con)
     co->co_filename = Py_NewRef(con->filename);
     co->co_name = Py_NewRef(con->name);
     co->co_qualname = Py_NewRef(con->qualname);
+#ifdef Py_GIL_DISABLED
+    PyUnicode_InternInPlace(&co->co_filename);
+    PyUnicode_InternInPlace(&co->co_name);
+    PyUnicode_InternInPlace(&co->co_qualname);
+#endif
     co->co_flags = con->flags;
 
     co->co_firstlineno = con->firstlineno;
@@ -416,10 +421,16 @@ init_code(PyCodeObject *co, struct _PyCodeConstructor *con)
     co->co_ncellvars = ncellvars;
     co->co_nfreevars = nfreevars;
     PyInterpreterState *interp = _PyInterpreterState_GET();
+#ifdef Py_GIL_DISABLED
+    PyMutex_Lock(&interp->func_state.mutex);
+#endif
     co->co_version = interp->func_state.next_version;
     if (interp->func_state.next_version != 0) {
         interp->func_state.next_version++;
     }
+#ifdef Py_GIL_DISABLED
+    PyMutex_Unlock(&interp->func_state.mutex);
+#endif
     co->_co_monitoring = NULL;
     co->_co_instrumentation_version = 0;
     /* not set */
@@ -1496,13 +1507,16 @@ PyCode_GetFreevars(PyCodeObject *code)
     return _PyCode_GetFreevars(code);
 }
 
+#ifdef _Py_TIER2
+
 static void
 clear_executors(PyCodeObject *co)
 {
     assert(co->co_executors);
     for (int i = 0; i < co->co_executors->size; i++) {
         if (co->co_executors->executors[i]) {
-            _Py_ExecutorClear(co->co_executors->executors[i]);
+            _Py_ExecutorDetach(co->co_executors->executors[i]);
+            assert(co->co_executors->executors[i] == NULL);
         }
     }
     PyMem_Free(co->co_executors);
@@ -1514,6 +1528,8 @@ _PyCode_Clear_Executors(PyCodeObject *code)
 {
     clear_executors(code);
 }
+
+#endif
 
 static void
 deopt_code(PyCodeObject *code, _Py_CODEUNIT *instructions)
@@ -1739,9 +1755,11 @@ code_dealloc(PyCodeObject *co)
 
         PyMem_Free(co_extra);
     }
+#ifdef _Py_TIER2
     if (co->co_executors != NULL) {
         clear_executors(co);
     }
+#endif
 
     Py_XDECREF(co->co_consts);
     Py_XDECREF(co->co_names);

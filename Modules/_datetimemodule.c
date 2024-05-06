@@ -6984,6 +6984,9 @@ PyInit__datetime(void)
     PyObject *mod = PyModule_Create(&datetimemodule);
     if (mod == NULL)
         return NULL;
+#ifdef Py_GIL_DISABLED
+    PyUnstable_Module_SetGIL(mod, Py_MOD_GIL_NOT_USED);
+#endif
 
     if (_datetime_exec(mod) < 0) {
         Py_DECREF(mod);
