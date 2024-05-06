@@ -181,12 +181,14 @@ def new_int_to_decimal(n):
     from decimal import Decimal as D
     BITLIM = 200
 
+    # Don't bother caching the "lo" mask in this; the time to compute it is
+    # tiny comopared to the multiply.
     def inner(n, w):
         if w <= BITLIM:
             return D(n)
         w2 = w >> 1
         hi = n >> w2
-        lo = n - (hi << w2)
+        lo = n & ((1 << w2) - 1)
         return inner(lo, w2) + inner(hi, w - w2) * w2pow[w2]
 
     with decimal.localcontext(_unbounded_dec_context):
@@ -277,7 +279,7 @@ def new_int_to_decimal_string(n):
     w = int(w * 0.3010299956639812 + 1)  # log10(2)
     pow10 = compute_powers(w, 5, 1000)
     for k, v in pow10.items():
-        pow10[k] = v << k
+        pow10[k] = v << k # 5**k << k == 5**k * 2**k == 10**k
     if n < 0:
         n = -n
         sign = '-'
