@@ -931,9 +931,9 @@ new_dict_with_shared_keys(PyInterpreterState *interp, PyDictKeysObject *keys)
     size_t size = shared_keys_usable_size(keys);
     PyDictValues *values = new_values(size);
     if (values == NULL) {
-        dictkeys_decref(interp, keys, false);
         return PyErr_NoMemory();
     }
+    dictkeys_incref(keys);
     for (size_t i = 0; i < size; i++) {
         values->values[i] = NULL;
     }
@@ -6693,8 +6693,6 @@ materialize_managed_dict_lock_held(PyObject *obj)
 {
     _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(obj);
 
-    OBJECT_STAT_INC(dict_materialized_on_request);
-
     PyDictValues *values = _PyObject_InlineValues(obj);
     PyInterpreterState *interp = _PyInterpreterState_GET();
     PyDictKeysObject *keys = CACHED_KEYS(Py_TYPE(obj));
@@ -7205,8 +7203,6 @@ ensure_managed_dict(PyObject *obj)
                 goto done;
             }
 #endif
-            OBJECT_STAT_INC(dict_materialized_on_request);
-            dictkeys_incref(CACHED_KEYS(tp));
             dict = (PyDictObject *)new_dict_with_shared_keys(_PyInterpreterState_GET(),
                                                              CACHED_KEYS(tp));
             FT_ATOMIC_STORE_PTR_RELEASE(_PyObject_ManagedDictPointer(obj)->dict,
@@ -7226,7 +7222,7 @@ ensure_nonmanaged_dict(PyObject *obj, PyObject **dictptr)
 {
     PyDictKeysObject *cached;
 
-    PyObject *dict = FT_ATOMIC_LOAD_PTR_RELAXED(*dictptr);
+    PyObject *dict = FT_ATOMIC_LOAD_PTR_ACQUIRE(*dictptr);
     if (dict == NULL) {
 #ifdef Py_GIL_DISABLED
         Py_BEGIN_CRITICAL_SECTION(obj);
@@ -7236,19 +7232,15 @@ ensure_nonmanaged_dict(PyObject *obj, PyObject **dictptr)
         }
 #endif
         PyTypeObject *tp = Py_TYPE(obj);
-        if ((tp->tp_flags & Py_TPFLAGS_HEAPTYPE) && (cached = CACHED_KEYS(tp))) {
+        if (_PyType_HasFeature(tp, Py_TPFLAGS_HEAPTYPE) && (cached = CACHED_KEYS(tp))) {
             PyInterpreterState *interp = _PyInterpreterState_GET();
             assert(!_PyType_HasFeature(tp, Py_TPFLAGS_INLINE_VALUES));
-            dictkeys_incref(cached);
             dict = new_dict_with_shared_keys(interp, cached);
-            if (dict == NULL) {
-                dictkeys_decref(interp, cached, false);
-            }
         }
         else {
             dict = PyDict_New();
         }
-        FT_ATOMIC_STORE_PTR_RELAXED(*dictptr, dict);
+        FT_ATOMIC_STORE_PTR_RELEASE(*dictptr, dict);
 #ifdef Py_GIL_DISABLED
 done:
         Py_END_CRITICAL_SECTION();
