@@ -1058,6 +1058,44 @@ class MmapTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, "mmap closed or invalid"):
                     m.write_byte(X())
 
+    @unittest.skipUnless(os.name == 'nt', 'requires Windows')
+    def test_access_violations(self):
+        PAGE_NOACCESS = 0x01
+
+        with open(TESTFN, 'bw+') as f:
+            f.write(b'\0'* PAGESIZE)
+            f.flush()
+
+            m = mmap.mmap(f.fileno(), PAGESIZE)
+            m._protect(PAGE_NOACCESS, 0, PAGESIZE)
+            with self.assertRaises(OSError):
+                m.read(PAGESIZE)
+            with self.assertRaises(OSError):
+                m.read_byte()
+            with self.assertRaises(OSError):
+                m.readline()
+            with self.assertRaises(OSError):
+                m.write(b'\0'* PAGESIZE)
+            with self.assertRaises(OSError):
+                m.write_byte(0)
+            with self.assertRaises(OSError):
+                m[0]  # test mmap_subscript
+            with self.assertRaises(OSError):
+                m[0:10]  # test mmap_subscript
+            with self.assertRaises(OSError):
+                m[0:10:2]  # test mmap_subscript
+            with self.assertRaises(OSError):
+                m[0] = 1
+            with self.assertRaises(OSError):
+                m[0:10] = b'\0'* 10
+            with self.assertRaises(OSError):
+                m[0:10:2] = b'\0'* 5
+            with self.assertRaises(OSError):
+                m.move(0, 10, 1)
+            with self.assertRaises(OSError):
+                list(m)  # test mmap_item
+
+
 class LargeMmapTests(unittest.TestCase):
 
     def setUp(self):

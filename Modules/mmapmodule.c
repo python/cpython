@@ -1000,6 +1000,27 @@ mmap__sizeof__method(mmap_object *self, void *Py_UNUSED(ignored))
 }
 #endif
 
+#if defined(MS_WINDOWS) && defined(Py_DEBUG)
+static PyObject *
+mmap_protect_method(mmap_object *self, PyObject *args) {
+    DWORD flNewProtect, flOldProtect;
+    Py_ssize_t start, length;
+
+    CHECK_VALID(NULL);
+
+    if (!PyArg_ParseTuple(args, "Inn:protect", &flNewProtect, &start, &length)) {
+        return NULL;
+    }
+
+    if (VirtualProtect((void *) (self->data + start), length, flNewProtect, &flOldProtect) == 0) {
+        PyErr_SetFromWindowsErr(GetLastError());
+        return NULL;
+    }
+
+    Py_RETURN_NONE;
+}
+#endif
+
 #ifdef HAVE_MADVISE
 static PyObject *
 mmap_madvise_method(mmap_object *self, PyObject *args)
@@ -1069,7 +1090,10 @@ static struct PyMethodDef mmap_object_methods[] = {
     {"__exit__",        (PyCFunction) mmap__exit__method,       METH_VARARGS},
 #ifdef MS_WINDOWS
     {"__sizeof__",      (PyCFunction) mmap__sizeof__method,     METH_NOARGS},
-#endif
+#ifdef Py_DEBUG
+    {"_protect",        (PyCFunction) mmap_protect_method,      METH_VARARGS},
+#endif // Py_DEBUG
+#endif // MS_WINDOWS
     {NULL,         NULL}       /* sentinel */
 };
 
