@@ -1071,6 +1071,7 @@ class MmapTests(unittest.TestCase):
             import os
             from contextlib import suppress
 
+            # Prevent logging access violations to stderr.
             faulthandler.disable()
 
             if os.path.exists(TESTFN):
