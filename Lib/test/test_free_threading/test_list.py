@@ -3,7 +3,7 @@ import unittest
 from threading import Thread
 from unittest import TestCase
 
-from test.support import is_wasi
+from test.support import threading_helper
 
 
 class C:
@@ -11,7 +11,7 @@ class C:
         self.v = v
 
 
-@unittest.skipIf(is_wasi, "WASI has no threads.")
+@threading_helper.requires_working_threading()
 class TestList(TestCase):
     def test_racing_iter_append(self):
 

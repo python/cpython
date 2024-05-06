@@ -7,7 +7,7 @@ import unittest
 import weakref
 
 from sys import monitoring
-from test.support import is_wasi
+from test.support import threading_helper
 from threading import Thread, _PyRLock
 from unittest import TestCase
 
@@ -87,7 +87,7 @@ class MonitoringTestMixin:
         monitoring.free_tool_id(self.tool_id)
 
 
-@unittest.skipIf(is_wasi, "WASI has no threads.")
+@threading_helper.requires_working_threading()
 class SetPreTraceMultiThreaded(InstrumentationMultiThreadedMixin, TestCase):
     """Sets tracing one time after the threads have started"""
 
@@ -106,7 +106,7 @@ class SetPreTraceMultiThreaded(InstrumentationMultiThreadedMixin, TestCase):
         sys.settrace(self.trace_func)
 
 
-@unittest.skipIf(is_wasi, "WASI has no threads.")
+@threading_helper.requires_working_threading()
 class MonitoringMultiThreaded(
     MonitoringTestMixin, InstrumentationMultiThreadedMixin, TestCase
 ):
@@ -140,7 +140,7 @@ class MonitoringMultiThreaded(
         self.set = not self.set
 
 
-@unittest.skipIf(is_wasi, "WASI has no threads.")
+@threading_helper.requires_working_threading()
 class SetTraceMultiThreaded(InstrumentationMultiThreadedMixin, TestCase):
     """Uses sys.settrace and repeatedly toggles instrumentation on and off"""
 
@@ -166,7 +166,7 @@ class SetTraceMultiThreaded(InstrumentationMultiThreadedMixin, TestCase):
         self.set = not self.set
 
 
-@unittest.skipIf(is_wasi, "WASI has no threads.")
+@threading_helper.requires_working_threading()
 class SetProfileMultiThreaded(InstrumentationMultiThreadedMixin, TestCase):
     """Uses sys.setprofile and repeatedly toggles instrumentation on and off"""
 
@@ -192,7 +192,7 @@ class SetProfileMultiThreaded(InstrumentationMultiThreadedMixin, TestCase):
         self.set = not self.set
 
 
-@unittest.skipIf(is_wasi, "WASI has no threads.")
+@threading_helper.requires_working_threading()
 class MonitoringMisc(MonitoringTestMixin, TestCase):
     def register_callback(self):
         def callback(*args):
