@@ -374,7 +374,7 @@ class PhotoImageTest(AbstractTkTest, unittest.TestCase):
         self.assertRaises(tkinter.TclError, image2.read, self.testfile, 'ppm')
 
         image2 = tkinter.PhotoImage(master=self.root)
-        image2.read(testfile, from_=(2, 3, 14, 11))
+        image2.read(testfile, from_coords=(2, 3, 14, 11))
         self.assertEqual(image2.width(), 12)
         self.assertEqual(image2.height(), 8)
         self.assertEqual(image2.get(0, 0), image.get(2, 3))
@@ -384,7 +384,7 @@ class PhotoImageTest(AbstractTkTest, unittest.TestCase):
         image2 = tkinter.PhotoImage(master=self.root, file=testfile)
         self.assertEqual(image2.width(), 16)
         self.assertEqual(image2.height(), 16)
-        image2.read(testfile, from_=(2, 3, 14, 11), shrink=True)
+        image2.read(testfile, from_coords=(2, 3, 14, 11), shrink=True)
         self.assertEqual(image2.width(), 12)
         self.assertEqual(image2.height(), 8)
         self.assertEqual(image2.get(0, 0), image.get(2, 3))
@@ -392,7 +392,7 @@ class PhotoImageTest(AbstractTkTest, unittest.TestCase):
         self.assertEqual(image2.get(2, 4), image.get(2+2, 4+3))
 
         image2 = tkinter.PhotoImage(master=self.root)
-        image2.read(testfile, from_=(2, 3, 14, 11), to=(3, 6))
+        image2.read(testfile, from_coords=(2, 3, 14, 11), to=(3, 6))
         self.assertEqual(image2.type(), 'photo')
         self.assertEqual(image2.width(), 15)
         self.assertEqual(image2.height(), 14)
@@ -460,7 +460,7 @@ class PhotoImageTest(AbstractTkTest, unittest.TestCase):
         self.assertEqual(image2.get(0, 0), image.get(0, 0))
         self.assertEqual(image2.get(4, 6), image.get(4, 6))
 
-        data = image.data(format='gif', from_=(4, 6, 6, 9))
+        data = image.data(format='gif', from_coords=(4, 6, 6, 9))
         image3 = tkinter.PhotoImage('::img::test3', master=self.root,
                                     format='gif', data=data)
         self.assertEqual(str(image3), '::img::test3')

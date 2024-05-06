@@ -4320,13 +4320,13 @@ class PhotoImage(Image):
             args = args + ('-to',) + tuple(to)
         self.tk.call(args)
 
-    def read(self, filename, format=None, *, from_=None, to=None, shrink=False):
+    def read(self, filename, format=None, *, from_coords=None, to=None, shrink=False):
         """Reads image data from the file named FILENAME into the image.
 
         The FORMAT option specifies the format of the image data in the
         file.
 
-        The FROM_ option specifies a rectangular sub-region of the image
+        The FROM_COORDS option specifies a rectangular sub-region of the image
         file data to be copied to the destination image.  It must be a tuple
         or a list of 1 to 4 integers (x1, y1, x2, y2).  (x1, y1) and
         (x2, y2) specify diagonally opposite corners of the rectangle.  If
@@ -4345,8 +4345,8 @@ class PhotoImage(Image):
         options = ()
         if format is not None:
             options += ('-format', format)
-        if from_ is not None:
-            options += ('-from', *from_)
+        if from_coords is not None:
+            options += ('-from', *from_coords)
         if shrink:
             options += ('-shrink',)
         if to is not None:
@@ -4387,7 +4387,7 @@ class PhotoImage(Image):
             options += ('-background', background)
         self.tk.call(self.name, 'write', filename, *options)
 
-    def data(self, format=None, *, from_=None,
+    def data(self, format=None, *, from_coords=None,
              background=None, grayscale=False):
         """Returns image data.
 
@@ -4398,7 +4398,7 @@ class PhotoImage(Image):
         in “#RRGGBB” format (where RR is a pair of hexadecimal digits for
         the red channel, GG for green, and BB for blue).
 
-        The FROM_ option specifies a rectangular region of the image
+        The FROM_COORDS option specifies a rectangular region of the image
         to be returned.  It must be a tuple or a list of 1 to 4 integers
         (x1, y1, x2, y2).  If only x1 and y1 are specified, the region
         extends from (x1,y1) to the bottom-right corner of the image.  If
@@ -4417,8 +4417,8 @@ class PhotoImage(Image):
         options = ()
         if format is not None:
             options += ('-format', format)
-        if from_ is not None:
-            options += ('-from', *from_)
+        if from_coords is not None:
+            options += ('-from', *from_coords)
         if grayscale:
             options += ('-grayscale',)
         if background is not None:
