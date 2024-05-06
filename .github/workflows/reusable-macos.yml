@@ -22,6 +22,7 @@ jobs:
       HOMEBREW_NO_INSTALL_CLEANUP: 1
       HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK: 1
       PYTHONSTRICTEXTENSIONBUILD: 1
+      TERM: linux
     strategy:
       fail-fast: false
       matrix:

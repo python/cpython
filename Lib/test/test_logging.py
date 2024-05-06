@@ -4598,25 +4598,55 @@ class FormatterTest(unittest.TestCase, AssertErrorMessage):
             self.assertEqual(record.msecs, want)
             self.assertEqual(record.created, ns / 1e9)
 
-    # The test overrides a private attribute
-    @support.cpython_only
     def test_relativeCreated_has_higher_precision(self):
-        # See issue gh-102402
-        ns = 1_677_903_920_000_998_503  # approx. 2023-03-04 04:25:20 UTC
+        # See issue gh-102402.
+        # Run the code in the subprocess, because the time module should
+        # be patched before the first import of the logging package.
+        # Temporary unloading and re-importing the logging package has
+        # side effects (including registering the atexit callback and
+        # references leak).
+        start_ns = 1_677_903_920_000_998_503  # approx. 2023-03-04 04:25:20 UTC
         offsets_ns = (200, 500, 12_354, 99_999, 1_677_903_456_999_123_456)
+        code = textwrap.dedent(f"""
+            start_ns = {start_ns!r}
+            offsets_ns = {offsets_ns!r}
+            start_monotonic_ns = start_ns - 1
 
-        with (patch("time.time_ns") as time_ns_mock,
-              support.swap_attr(logging, '_startTime', ns)):
-            for offset_ns in offsets_ns:
-                # mock for log record creation
-                new_ns = ns + offset_ns
-                time_ns_mock.return_value = new_ns
+            import time
+            # Only time.time_ns needs to be patched for the current
+            # implementation, but patch also other functions to make
+            # the test less implementation depending.
+            old_time_ns = time.time_ns
+            old_time = time.time
+            old_monotonic_ns = time.monotonic_ns
+            old_monotonic = time.monotonic
+            time_ns_result = start_ns
+            time.time_ns = lambda: time_ns_result
+            time.time = lambda: time.time_ns()/1e9
+            time.monotonic_ns = lambda: time_ns_result - start_monotonic_ns
+            time.monotonic = lambda: time.monotonic_ns()/1e9
+            try:
+                import logging
 
-                record = logging.makeLogRecord({'msg': 'test'})
-                self.assertAlmostEqual(record.created, new_ns / 1e9, places=6)
-
+                for offset_ns in offsets_ns:
+                    # mock for log record creation
+                    time_ns_result = start_ns + offset_ns
+                    record = logging.makeLogRecord({{'msg': 'test'}})
+                    print(record.created, record.relativeCreated)
+            finally:
+                time.time_ns = old_time_ns
+                time.time = old_time
+                time.monotonic_ns = old_monotonic_ns
+                time.monotonic = old_monotonic
+        """)
+        rc, out, err = assert_python_ok("-c", code)
+        out = out.decode()
+        for offset_ns, line in zip(offsets_ns, out.splitlines(), strict=True):
+            with self.subTest(offset_ns=offset_ns):
+                created, relativeCreated = map(float, line.split())
+                self.assertAlmostEqual(created, (start_ns + offset_ns) / 1e9, places=6)
                 # After PR gh-102412, precision (places) increases from 3 to 7
-                self.assertAlmostEqual(record.relativeCreated, offset_ns / 1e6, places=7)
+                self.assertAlmostEqual(relativeCreated, offset_ns / 1e6, places=7)
 
 
 class TestBufferingFormatter(logging.BufferingFormatter):

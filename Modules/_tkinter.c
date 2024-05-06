@@ -3205,6 +3205,9 @@ PyInit__tkinter(void)
     m = PyModule_Create(&_tkintermodule);
     if (m == NULL)
         return NULL;
+#ifdef Py_GIL_DISABLED
+    PyModule_ExperimentalSetGIL(m, Py_MOD_GIL_NOT_USED);
+#endif
 
     Tkinter_TclError = PyErr_NewException("_tkinter.TclError", NULL, NULL);
     if (PyModule_AddObjectRef(m, "TclError", Tkinter_TclError)) {
