@@ -102,10 +102,11 @@ PyCode_ClearWatcher(int watcher_id)
  * generic helpers
  ******************/
 
-/* all_name_chars(s): true iff s matches [a-zA-Z0-9_]* */
 static int
-all_name_chars(PyObject *o)
+should_intern_string(PyObject *o)
 {
+#ifndef Py_GIL_DISABLED
+    // compute if s matches [a-zA-Z0-9_]
     const unsigned char *s, *e;
 
     if (!PyUnicode_IS_ASCII(o))
@@ -117,6 +118,7 @@ all_name_chars(PyObject *o)
         if (!Py_ISALNUM(*s) && *s != '_')
             return 0;
     }
+#endif
     return 1;
 }
 
@@ -150,7 +152,7 @@ intern_constants(PyObject *tuple, int *modified)
     for (Py_ssize_t i = PyTuple_GET_SIZE(tuple); --i >= 0; ) {
         PyObject *v = PyTuple_GET_ITEM(tuple, i);
         if (PyUnicode_CheckExact(v)) {
-            if (all_name_chars(v)) {
+            if (should_intern_string(v)) {
                 PyObject *w = v;
                 PyUnicode_InternInPlace(&v);
                 if (w != v) {

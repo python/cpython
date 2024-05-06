@@ -574,7 +574,11 @@ class CodeConstsTest(unittest.TestCase):
     def test_interned_string_with_null(self):
         co = compile(r'res = "str\0value!"', '?', 'exec')
         v = self.find_const(co.co_consts, 'str\0value!')
-        self.assertIsNotInterned(v)
+        if Py_GIL_DISABLED:
+            # The free-threaded build interns all string constants
+            self.assertIsInterned(v)
+        else:
+            self.assertIsNotInterned(v)
 
     @cpython_only
     @unittest.skipUnless(Py_GIL_DISABLED, "does not intern all constants")
