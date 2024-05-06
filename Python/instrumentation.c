@@ -1000,8 +1000,8 @@ instrumentation_cross_checks(PyInterpreterState *interp, PyCodeObject *code)
     return monitors_equals(code->_co_monitoring->active_monitors, expected);
 }
 
-static
-int debug_check_sanity(PyInterpreterState *interp, PyCodeObject *code)
+static int
+debug_check_sanity(PyInterpreterState *interp, PyCodeObject *code)
 {
     int res;
     LOCK_CODE(code);
