@@ -912,7 +912,7 @@ class PyLongModuleTests(unittest.TestCase):
         while bits <= 1_000_000:
             bits += randrange(-100, 101) # break bitlength patterns
             hibit = 1 << (bits - 1)
-            n = hibit + randrange(hibit)
+            n = hibit | getrandbits(bits - 1)
             assert n.bit_length() == bits
             sn = str(n)
             self.assertFalse(sn.startswith('0'))
