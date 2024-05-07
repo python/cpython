@@ -243,6 +243,18 @@ Lib/test/support/interpreters/  @ericsnowcurrently
 Modules/_xx*interp*module.c   @ericsnowcurrently
 Lib/test/test_interpreters/   @ericsnowcurrently
 
+# Android
+**/*Android*                  @mhsmith
+**/*android*                  @mhsmith
+
+# iOS (but not termios)
+**/iOS*                       @freakboy3742
+**/ios*                       @freakboy3742
+**/*_iOS*                     @freakboy3742
+**/*_ios*                     @freakboy3742
+**/*-iOS*                     @freakboy3742
+**/*-ios*                     @freakboy3742
+
 # WebAssembly
 /Tools/wasm/                  @brettcannon
 

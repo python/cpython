@@ -1,2 +1,3 @@
-Improve validation logic in the C implementation of :meth:`datetime.fromisoformat`
-to better handle invalid years. Patch by Vlad Efanov.
+Improve validation logic in the C implementation of
+:meth:`datetime.datetime.fromisoformat` to better handle invalid years.
+Patch by Vlad Efanov.
