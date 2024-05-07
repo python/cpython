@@ -437,13 +437,38 @@ def _tp_cache(func=None, /, *, typed=False):
     return decorator
 
 
-def _eval_type(t, globalns, localns, type_params=None, *, recursive_guard=frozenset()):
+def _deprecation_warning_for_no_type_params_passed(funcname: str) -> None:
+    import warnings
+
+    depr_message = (
+        f"Failing to pass a value to the 'type_params' parameter "
+        f"of {funcname!r} is deprecated, as it leads to incorrect behaviour "
+        f"when calling {funcname} on a stringified annotation "
+        f"that references a PEP 695 type parameter. "
+        f"It will be disallowed in Python 3.15."
+    )
+    warnings.warn(depr_message, category=DeprecationWarning, stacklevel=3)
+
+
+class _Sentinel:
+    __slots__ = ()
+    def __repr__(self):
+        return '<sentinel>'
+
+
+_sentinel = _Sentinel()
+
+
+def _eval_type(t, globalns, localns, type_params=_sentinel, *, recursive_guard=frozenset()):
     """Evaluate all forward references in the given type t.
 
     For use of globalns and localns see the docstring for get_type_hints().
     recursive_guard is used to prevent infinite recursion with a recursive
     ForwardRef.
     """
+    if type_params is _sentinel:
+        _deprecation_warning_for_no_type_params_passed("typing._eval_type")
+        type_params = ()
     if isinstance(t, ForwardRef):
         return t._evaluate(globalns, localns, type_params, recursive_guard=recursive_guard)
     if isinstance(t, (_GenericAlias, GenericAlias, types.UnionType)):
@@ -1018,7 +1043,10 @@ class ForwardRef(_Final, _root=True):
         self.__forward_is_class__ = is_class
         self.__forward_module__ = module
 
-    def _evaluate(self, globalns, localns, type_params=None, *, recursive_guard):
+    def _evaluate(self, globalns, localns, type_params=_sentinel, *, recursive_guard):
+        if type_params is _sentinel:
+            _deprecation_warning_for_no_type_params_passed("typing.ForwardRef._evaluate")
+            type_params = ()
         if self.__forward_arg__ in recursive_guard:
             return self
         if not self.__forward_evaluated__ or localns is not globalns:
@@ -2996,15 +3024,6 @@ class NamedTupleMeta(type):
         if Generic in bases:
             nm_tpl.__init_subclass__()
         return nm_tpl
-
-
-class _Sentinel:
-    __slots__ = ()
-    def __repr__(self):
-        return '<sentinel>'
-
-
-_sentinel = _Sentinel()
 
 
 def NamedTuple(typename, fields=_sentinel, /, **kwargs):
