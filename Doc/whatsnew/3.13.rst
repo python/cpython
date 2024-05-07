@@ -80,7 +80,7 @@ user-friendliness and correctness.
 Interpreter improvements:
 
 * A greatly improved :ref:`interactive interpreter<A Better Interactive Interpreter>`
-  and :ref:improved error messages<Improved Error Messages>`.
+  and :ref:`improved error messages<Improved Error Messages>`.
 
 * Color support in the new :ref:`interactive interpreter<A Better Interactive
   Interpreter>`, as well as in :ref:`tracebacks<Improved Error Messages>`
