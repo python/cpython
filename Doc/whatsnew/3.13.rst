@@ -79,12 +79,14 @@ user-friendliness and correctness.
 
 Interpreter improvements:
 
-* A greatly improved :ref:`interactive interpreter<A Better Interactive Interpreter>`
-  and :ref:`improved error messages<Improved Error Messages>`.
+* A greatly improved :ref:`interactive interpreter
+  <whatsnew313-better-interactive-interpreter>` and
+  :ref:`improved error messages <whatsnew313-improved-error-messages>`.
 
-* Color support in the new :ref:`interactive interpreter<A Better Interactive
-  Interpreter>`, as well as in :ref:`tracebacks<Improved Error Messages>`
-  and :ref:`doctest` output. This can be disabled through the
+* Color support in the new :ref:`interactive interpreter
+  <whatsnew313-better-interactive-interpreter>`,
+  as well as in :ref:`tracebacks <whatsnew313-improved-error-messages>`
+  and :ref:`doctest <whatsnew313-doctest>` output. This can be disabled through the
   :envvar:`PYTHON_COLORS` and |NO_COLOR|_ environment variables.
 
 * :pep:`744`: A basic :ref:`JIT compiler <whatsnew313-jit-compiler>` was added.
@@ -135,6 +137,8 @@ Important deprecations, removals or restrictions:
 New Features
 ============
 
+.. _whatsnew313-better-interactive-interpreter:
+
 A Better Interactive Interpreter
 --------------------------------
 
@@ -162,6 +166,8 @@ For more on interactive mode, see :ref:`tut-interac`.
 
 (Contributed by Pablo Galindo Salgado, Łukasz Langa, and
 Lysandros Nikolaou in :gh:`111201` based on code from the PyPy project.)
+
+.. _whatsnew313-improved-error-messages:
 
 Improved Error Messages
 -----------------------
@@ -626,6 +632,8 @@ dis
   The offsets can be added with the new ``-O`` command line option or
   the ``show_offsets`` parameter.
   (Contributed by Irit Katriel in :gh:`112137`.)
+
+.. _whatsnew313-doctest:
 
 doctest
 -------
