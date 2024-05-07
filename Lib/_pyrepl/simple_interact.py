@@ -77,6 +77,8 @@ class InteractiveColoredConsole(code.InteractiveConsole):
 
     def showtraceback(self):
         super().showtraceback(colorize=self.can_colorize)
+
+
 def run_multiline_interactive_console(
     mainmodule: ModuleType | None= None, future_flags: int = 0
 ) -> None:
