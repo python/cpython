@@ -427,8 +427,7 @@ _safe_PyBytes_FromStringAndSize(char *start, size_t num_bytes) {
             return NULL;
         }
         else {
-            PyObject *result = PyBytes_FromStringAndSize(&dest, 1);
-            return result;
+            return PyBytes_FromStringAndSize(&dest, 1);
         }
     }
     else {
@@ -456,10 +455,8 @@ mmap_read_byte_method(mmap_object *self,
     if (safe_byte_copy(&dest, self->data + self->pos) < 0) {
         return NULL;
     }
-    else {
-        self->pos++;
-        return PyLong_FromLong((unsigned char) dest);
-    }
+    self->pos++;
+    return PyLong_FromLong((unsigned char) dest);
 }
 
 static PyObject *
@@ -646,15 +643,16 @@ mmap_write_method(mmap_object *self,
     }
 
     CHECK_VALID_OR_RELEASE(NULL, data);
+    PyObject *result;
     if (safe_memcpy(self->data + self->pos, data.buf, data.len) < 0) {
-        PyBuffer_Release(&data);
-        return NULL;
+        result = NULL;
     }
     else {
         self->pos += data.len;
-        PyBuffer_Release(&data);
-        return PyLong_FromSsize_t(data.len);
+        result = PyLong_FromSsize_t(data.len);
     }
+    PyBuffer_Release(&data);
+    return result;
 }
 
 static PyObject *
@@ -679,10 +677,8 @@ mmap_write_byte_method(mmap_object *self,
     if (safe_byte_copy(self->data + self->pos, &value) < 0) {
         return NULL;
     }
-    else {
-        self->pos++;
-        Py_RETURN_NONE;
-    }
+    self->pos++;
+    Py_RETURN_NONE;
 }
 
 static PyObject *
@@ -1221,9 +1217,7 @@ mmap_item(mmap_object *self, Py_ssize_t i)
     if (safe_byte_copy(&dest, self->data + i) < 0) {
         return NULL;
     }
-    else {
-        return PyBytes_FromStringAndSize(&dest, 1);
-    }
+    return PyBytes_FromStringAndSize(&dest, 1);
 }
 
 static PyObject *
@@ -1247,9 +1241,7 @@ mmap_subscript(mmap_object *self, PyObject *item)
         if (safe_byte_copy(&dest, self->data + i) < 0) {
             return NULL;
         }
-        else {
-            return PyLong_FromLong(Py_CHARMASK(dest));
-        }
+        return PyLong_FromLong(Py_CHARMASK(dest));
     }
     else if (PySlice_Check(item)) {
         Py_ssize_t start, stop, step, slicelen;
@@ -1272,12 +1264,11 @@ mmap_subscript(mmap_object *self, PyObject *item)
                 return PyErr_NoMemory();
 
             if (safe_copy_to_slice(result_buf, self->data, start, step, slicelen) < 0) {
-                PyMem_Free(result_buf);
-                return NULL;
+                result = NULL;
             }
-
-            result = PyBytes_FromStringAndSize(result_buf,
-                                                slicelen);
+            else {
+                result = PyBytes_FromStringAndSize(result_buf, slicelen);
+            }
             PyMem_Free(result_buf);
             return result;
         }
@@ -1316,9 +1307,7 @@ mmap_ass_item(mmap_object *self, Py_ssize_t i, PyObject *v)
     if (safe_byte_copy(self->data + i, buf) < 0) {
         return -1;
     }
-    else {
-        return 0;
-    }
+    return 0;
 }
 
 static int
@@ -1367,9 +1356,7 @@ mmap_ass_subscript(mmap_object *self, PyObject *item, PyObject *value)
         if (safe_byte_copy(self->data + i, &v_char) < 0) {
             return -1;
         }
-        else {
-            return 0;
-        }
+        return 0;
     }
     else if (PySlice_Check(item)) {
         Py_ssize_t start, stop, step, slicelen;
