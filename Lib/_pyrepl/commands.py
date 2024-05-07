@@ -474,4 +474,4 @@ class enable_bracketed_paste(Command):
 class disable_bracketed_paste(Command):
     def do(self) -> None:
         self.reader.paste_mode = False
-        self.reader.insert("\n")
+        self.reader.dirty = True
