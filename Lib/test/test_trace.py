@@ -530,33 +530,126 @@ class TestCommandLine(unittest.TestCase):
                                                         PYTHONIOENCODING='utf-8')
         self.assertIn(direct_stdout.strip(), trace_stdout)
 
+    def command_line_output_test(self, src, filename, cmd, expected_out_lines, expected_status=0):
+        with open(filename, 'w', encoding='utf-8') as fd:
+            self.addCleanup(unlink, filename)
+            fd.write(src)
+        status, stdout, _ = assert_python_ok('-m', 'trace', *cmd, filename,
+                                             PYTHONIOENCODING='utf-8')
+        out_lines = stdout.decode().splitlines()
+        self.assertEqual(status, expected_status)
+        self.assertEqual(len(out_lines), len(expected_out_lines))
+        for i in range(len(out_lines)):
+            expected = expected_out_lines[i]
+            self.assertIn(expected, out_lines[i])
+
     def test_count_and_summary(self):
+        src = textwrap.dedent("""\
+            x = 1
+            y = 2
+
+            def f():
+                return x + y
+
+            for i in range(10):
+                f()
+        """)
         filename = f'{TESTFN}.py'
         coverfilename = f'{TESTFN}.cover'
         modulename = os.path.basename(TESTFN)
-        with open(filename, 'w', encoding='utf-8') as fd:
-            self.addCleanup(unlink, filename)
-            self.addCleanup(unlink, coverfilename)
-            fd.write(textwrap.dedent("""\
-                x = 1
-                y = 2
+        self.addCleanup(unlink, coverfilename)
+        expected = (
+            'lines   cov%   module   (path)',
+            f'6   100%   {modulename}   ({filename})'
+        )
 
-                def f():
-                    return x + y
+        self.command_line_output_test(
+            src,
+            filename,
+            ['-cs'],
+            expected
+        )
 
-                for i in range(10):
-                    f()
-            """))
-        status, stdout, _ = assert_python_ok('-m', 'trace', '-cs', filename,
-                                             PYTHONIOENCODING='utf-8')
-        stdout = stdout.decode()
-        self.assertEqual(status, 0)
-        self.assertIn('lines   cov%   module   (path)', stdout)
-        self.assertIn(f'6   100%   {modulename}   ({filename})', stdout)
+    def test_trace(self):
+        src = textwrap.dedent("""\
+            x = 1
+            y = 2
+
+            def f():
+                return x + y
+
+            for i in range(3):
+                f()
+        """)
+        filename = f'{TESTFN}.py'
+        modulename = os.path.basename(TESTFN)
+        src_lines = src.splitlines()
+        expected = (
+            f"--- modulename: {modulename}, funcname: <module>",
+            f"{filename}(1): {src_lines[0]}",
+            f"{filename}(2): {src_lines[1]}",
+            f"{filename}(4): {src_lines[3]}",
+            f"{filename}(7): {src_lines[6]}",
+            f"{filename}(8): {src_lines[7]}",
+            f"--- modulename: {modulename}, funcname: f",
+            f"{filename}(5): {src_lines[4]}",
+            f"{filename}(7): {src_lines[6]}",
+            f"{filename}(8): {src_lines[7]}",
+            f"--- modulename: {modulename}, funcname: f",
+            f"{filename}(5): {src_lines[4]}",
+            f"{filename}(7): {src_lines[6]}",
+            f"{filename}(8): {src_lines[7]}",
+            f"--- modulename: {modulename}, funcname: f",
+            f"{filename}(5): {src_lines[4]}",
+            f"{filename}(7): {src_lines[6]}"
+        )
+
+        self.command_line_output_test(
+            src,
+            filename,
+            ['--trace'],
+            expected
+        )
 
     def test_run_as_module(self):
         assert_python_ok('-m', 'trace', '-l', '--module', 'timeit', '-n', '1')
         assert_python_failure('-m', 'trace', '-l', '--module', 'not_a_module_zzz')
+
+
+class TestTrace(unittest.TestCase):
+    def setUp(self):
+        self.addCleanup(sys.settrace, sys.gettrace())
+        self.tracer = Trace(count=0, trace=1)
+        self.filemod = my_file_and_modname()
+
+    def test_trace(self):
+        def f():
+            x = 2
+            y = 4
+            z = traced_func_importing(x, y)
+            return z
+
+        with captured_stdout() as out:
+            self.tracer.runfunc(f)
+
+        out = out.getvalue().splitlines()
+        firstlineno = get_firstlineno(f)
+        firstlineno2 = get_firstlineno(traced_func_importing)
+        firstlineno3 = get_firstlineno(testmod.func)
+
+        this_file = os.path.split(self.filemod[0])[1]
+        testmod_file = os.path.split(fix_ext_py(testmod.__file__))[1]
+
+        self.assertIn(f" --- modulename: {self.filemod[1]}, funcname: f", out[0])
+        self.assertIn(f"{this_file}({firstlineno + 1})", out[1])
+        self.assertIn(f"{this_file}({firstlineno + 2})", out[2])
+        self.assertIn(f"{this_file}({firstlineno + 3})", out[3])
+        self.assertIn(f" --- modulename: {self.filemod[1]}, funcname: traced_func_importing", out[4])
+        self.assertIn(f"{this_file}({firstlineno2 + 1})", out[5])
+        self.assertIn(f" --- modulename: testmod, funcname: func", out[6])
+        self.assertIn(f"{testmod_file}({firstlineno3 + 1})", out[7])
+        self.assertIn(f"{testmod_file}({firstlineno3 + 2})", out[8])
+        self.assertIn(f"{this_file}({firstlineno + 4})", out[9])
 
 
 if __name__ == '__main__':
