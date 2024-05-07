@@ -245,6 +245,7 @@ struct _is {
     struct _Py_long_state long_state;
     struct _dtoa_state dtoa;
     struct _py_func_state func_state;
+    struct _py_code_state code_state;
 
     struct _Py_dict_state dict_state;
     struct _Py_exc_state exc_state;
