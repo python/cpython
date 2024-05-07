@@ -55,9 +55,9 @@ from sources provided by the operating system.
 
 
    `Complementary-Multiply-with-Carry recipe
-   <https://code.activestate.com/recipes/576707/>`_ for a compatible alternative
-   random number generator with a long period and comparatively simple update
-   operations.
+   <https://code.activestate.com/recipes/576707-long-period-random-number-generator/>`_
+   for a compatible alternative random number generator with a long period and
+   comparatively simple update operations.
 
 .. note::
    The global random number generator and instances of :class:`Random` are thread-safe.
