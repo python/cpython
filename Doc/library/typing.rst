@@ -3824,7 +3824,7 @@ Aliases to :mod:`contextlib` ABCs
    Deprecated alias to :class:`contextlib.AbstractContextManager`.
 
    The first type parameter, ``T_co``, represents the type returned by
-   the :meth:`~object.__enter__` method. The second type parameter, ``ExitT_co``,
+   the :meth:`~object.__enter__` method. The optional second type parameter, ``ExitT_co``,
    which defaults to ``bool | None``, represents the type returned by the
    :meth:`~object.__exit__` method.
 
@@ -3836,14 +3836,14 @@ Aliases to :mod:`contextlib` ABCs
       See :pep:`585` and :ref:`types-genericalias`.
 
    .. versionchanged:: 3.13
-      Added the second type parameter, ``ExitT_co``.
+      Added the optional second type parameter, ``ExitT_co``.
 
 .. class:: AsyncContextManager(Generic[T_co, AExitT_co])
 
    Deprecated alias to :class:`contextlib.AbstractAsyncContextManager`.
 
    The first type parameter, ``T_co``, represents the type returned by
-   the :meth:`~object.__aenter__` method. The second type parameter, ``AExitT_co``,
+   the :meth:`~object.__aenter__` method. The optional second type parameter, ``AExitT_co``,
    which defaults to ``bool | None``, represents the type returned by the
    :meth:`~object.__aexit__` method.
 
@@ -3855,7 +3855,7 @@ Aliases to :mod:`contextlib` ABCs
       See :pep:`585` and :ref:`types-genericalias`.
 
    .. versionchanged:: 3.13
-      Added the second type parameter, ``AExitT_co``.
+      Added the optional second type parameter, ``AExitT_co``.
 
 Deprecation Timeline of Major Features
 ======================================
