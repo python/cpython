@@ -221,6 +221,7 @@ class Reader:
     dirty: bool = False
     finished: bool = False
     paste_mode: bool = False
+    was_paste_mode_activated: bool = False
     commands: dict[str, type[Command]] = field(default_factory=make_default_commands)
     last_command: type[Command] | None = None
     syntax_table: dict[str, int] = field(default_factory=make_default_syntax_table)

@@ -135,7 +135,7 @@ def run_multiline_interactive_console(
             ps1 = getattr(sys, "ps1", ">>> ")
             ps2 = getattr(sys, "ps2", "... ")
             try:
-                statement = multiline_input(more_lines, ps1, ps2)
+                statement, contains_pasted_code = multiline_input(more_lines, ps1, ps2)
             except EOFError:
                 break
 
@@ -144,7 +144,10 @@ def run_multiline_interactive_console(
 
             input_name = f"<python-input-{input_n}>"
             linecache._register_code(input_name, statement, "<stdin>")  # type: ignore[attr-defined]
-            more = console.push(_strip_final_indent(statement), filename=input_name)  # type: ignore[call-arg]
+            symbol = "single" if not contains_pasted_code else "exec"
+            more = console.push(_strip_final_indent(statement), filename=input_name, _symbol=symbol)  # type: ignore[call-arg]
+            if contains_pasted_code and more:
+                more = console.push(_strip_final_indent(statement), filename=input_name, _symbol="single")  # type: ignore[call-arg]
             assert not more
             input_n += 1
         except KeyboardInterrupt:
