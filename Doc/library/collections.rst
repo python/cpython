@@ -134,9 +134,9 @@ The class can be used to simulate nested scopes and is useful in templating.
      :attr:`~collections.ChainMap.parents` property.
 
    * The `Nested Contexts recipe
-     <https://code.activestate.com/recipes/577434-nested-contexts-a-chain-of-mapping-objects/>`_
-     has options to control whether writes and other mutations apply only to the
-     first mapping or to any mapping in the chain.
+     <https://code.activestate.com/recipes/577434-nested-contexts-a-chain-of-mapping-objects/>`_ has options to control
+     whether writes and other mutations apply only to the first mapping or to
+     any mapping in the chain.
 
    * A `greatly simplified read-only version of Chainmap
      <https://code.activestate.com/recipes/305268/>`_.

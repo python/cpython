@@ -631,8 +631,8 @@ If you want to know how to change the first sequence into the second, use
      work.
 
    * `Simple version control recipe
-     <https://code.activestate.com/recipes/576729-simple-version-control/>`_
-     for a small application built with :class:`SequenceMatcher`.
+     <https://code.activestate.com/recipes/576729-simple-version-control/>`_ for a small application
+     built with :class:`SequenceMatcher`.
 
 
 .. _differ-objects:
