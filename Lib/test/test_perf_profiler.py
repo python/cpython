@@ -494,7 +494,7 @@ class TestPerfProfilerWithDwarf(unittest.TestCase, TestPerfProfilerMixin):
     def run_perf(self, script_dir, script, activate_trampoline=True):
         if activate_trampoline:
             return run_perf(
-                script_dir, sys.executable, "-Xperfjit", script, use_jit=True
+                script_dir, sys.executable, "-Xperf_jit", script, use_jit=True
             )
         return run_perf(script_dir, sys.executable, script, use_jit=True)
 

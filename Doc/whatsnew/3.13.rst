@@ -272,7 +272,7 @@ Other Language Changes
 
 * Add :ref:`support for the perf profiler <perf_profiling>` working without
   frame pointers through the new environment variable
-  :envvar:`PYTHONPERFJITSUPPORT` and command-line option :option:`-X perfjit
+  :envvar:`PYTHON_PERF_JIT_SUPPORT` and command-line option :option:`-X perf_jit
   <-X>` (Contributed by Pablo Galindo in :gh:`118518`.)
 
 * The new :envvar:`PYTHON_HISTORY` environment variable can be used to change

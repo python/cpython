@@ -2294,7 +2294,7 @@ sys_activate_stack_trampoline_impl(PyObject *module, const char *backend)
                 return NULL;
             }
         }
-        else if (strcmp(backend, "perfjit") == 0) {
+        else if (strcmp(backend, "perf_jit") == 0) {
             _PyPerf_Callbacks cur_cb;
             _PyPerfTrampoline_GetCallbacks(&cur_cb);
             if (cur_cb.write_state != _Py_perfmap_jit_callbacks.write_state) {
