@@ -3,6 +3,7 @@
 import concurrent.futures
 import errno
 import math
+import platform
 import socket
 import sys
 import threading
@@ -230,6 +231,22 @@ class BaseEventLoopTests(test_utils.TestCase):
             self.loop.set_default_executor(executor)
 
         self.assertIsNone(self.loop._default_executor)
+
+    def test_shutdown_default_executor_timeout(self):
+        class DummyExecutor(concurrent.futures.ThreadPoolExecutor):
+            def shutdown(self, wait=True, *, cancel_futures=False):
+                if wait:
+                    time.sleep(0.1)
+
+        self.loop._process_events = mock.Mock()
+        self.loop._write_to_self = mock.Mock()
+        executor = DummyExecutor()
+        self.loop.set_default_executor(executor)
+
+        with self.assertWarnsRegex(RuntimeWarning,
+                                   "The executor did not finishing joining"):
+            self.loop.run_until_complete(
+                self.loop.shutdown_default_executor(timeout=0.01))
 
     def test_call_soon(self):
         def cb():
@@ -1414,6 +1431,10 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
         self._test_create_connection_ip_addr(m_socket, False)
 
     @patch_socket
+    @unittest.skipIf(
+        support.is_android and platform.android_ver().api_level < 23,
+        "Issue gh-71123: this fails on Android before API level 23"
+    )
     def test_create_connection_service_name(self, m_socket):
         m_socket.getaddrinfo = socket.getaddrinfo
         sock = m_socket.socket.return_value

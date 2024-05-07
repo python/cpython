@@ -69,7 +69,7 @@ class StructFieldsTestCase(unittest.TestCase):
     def test_gh99275(self):
         class BrokenStructure(Structure):
             def __init_subclass__(cls, **kwargs):
-                cls._fields_ = []  # This line will fail, `stgdict` is not ready
+                cls._fields_ = []  # This line will fail, `stginfo` is not ready
 
         with self.assertRaisesRegex(TypeError,
                                     'ctypes state is not initialized'):

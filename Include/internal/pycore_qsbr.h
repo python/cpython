@@ -29,6 +29,12 @@ extern "C" {
 #define QSBR_INITIAL 1
 #define QSBR_INCR    2
 
+// Wrap-around safe comparison. This is a holdover from the FreeBSD
+// implementation, which uses 32-bit sequence numbers. We currently use 64-bit
+// sequence numbers, so wrap-around is unlikely.
+#define QSBR_LT(a, b) ((int64_t)((a)-(b)) < 0)
+#define QSBR_LEQ(a, b) ((int64_t)((a)-(b)) <= 0)
+
 struct _qsbr_shared;
 struct _PyThreadStateImpl;  // forward declare to avoid circular dependency
 
@@ -87,6 +93,15 @@ _Py_qsbr_quiescent_state(struct _qsbr_thread_state *qsbr)
 {
     uint64_t seq = _Py_qsbr_shared_current(qsbr->shared);
     _Py_atomic_store_uint64_release(&qsbr->seq, seq);
+}
+
+// Have the read sequences advanced to the given goal? Like `_Py_qsbr_poll()`,
+// but does not perform a scan of threads.
+static inline bool
+_Py_qbsr_goal_reached(struct _qsbr_thread_state *qsbr, uint64_t goal)
+{
+    uint64_t rd_seq = _Py_atomic_load_uint64(&qsbr->shared->rd_seq);
+    return QSBR_LEQ(goal, rd_seq);
 }
 
 // Advance the write sequence and return the new goal. This should be called

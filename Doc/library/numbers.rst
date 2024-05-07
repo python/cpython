@@ -166,7 +166,7 @@ Complex``. I'll consider ``a + b``:
 2. If ``A`` falls back to the boilerplate code, and it were to
    return a value from :meth:`~object.__add__`, we'd miss the possibility
    that ``B`` defines a more intelligent :meth:`~object.__radd__`, so the
-   boilerplate should return :const:`NotImplemented` from
+   boilerplate should return :data:`NotImplemented` from
    :meth:`!__add__`. (Or ``A`` may not implement :meth:`!__add__` at
    all.)
 3. Then ``B``'s :meth:`~object.__radd__` gets a chance. If it accepts

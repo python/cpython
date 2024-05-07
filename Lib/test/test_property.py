@@ -201,6 +201,59 @@ class PropertyTests(unittest.TestCase):
         self.assertIsNone(prop.fdel)
         self.assertAlmostEqual(gettotalrefcount() - refs_before, 0, delta=10)
 
+    def test_property_name(self):
+        def getter(self):
+            return 42
+
+        def setter(self, value):
+            pass
+
+        class A:
+            @property
+            def foo(self):
+                return 1
+
+            @foo.setter
+            def oof(self, value):
+                pass
+
+            bar = property(getter)
+            baz = property(None, setter)
+
+        self.assertEqual(A.foo.__name__, 'foo')
+        self.assertEqual(A.oof.__name__, 'oof')
+        self.assertEqual(A.bar.__name__, 'bar')
+        self.assertEqual(A.baz.__name__, 'baz')
+
+        A.quux = property(getter)
+        self.assertEqual(A.quux.__name__, 'getter')
+        A.quux.__name__ = 'myquux'
+        self.assertEqual(A.quux.__name__, 'myquux')
+        self.assertEqual(A.bar.__name__, 'bar')  # not affected
+        A.quux.__name__ = None
+        self.assertIsNone(A.quux.__name__)
+
+        with self.assertRaisesRegex(
+            AttributeError, "'property' object has no attribute '__name__'"
+        ):
+            property(None, setter).__name__
+
+        with self.assertRaisesRegex(
+            AttributeError, "'property' object has no attribute '__name__'"
+        ):
+            property(1).__name__
+
+        class Err:
+            def __getattr__(self, attr):
+                raise RuntimeError('fail')
+
+        p = property(Err())
+        with self.assertRaisesRegex(RuntimeError, 'fail'):
+            p.__name__
+
+        p.__name__ = 'not_fail'
+        self.assertEqual(p.__name__, 'not_fail')
+
     def test_property_set_name_incorrect_args(self):
         p = property()
 

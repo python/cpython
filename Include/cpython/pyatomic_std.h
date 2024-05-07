@@ -863,11 +863,27 @@ _Py_atomic_load_ptr_acquire(const void *obj)
                                 memory_order_acquire);
 }
 
+static inline uintptr_t
+_Py_atomic_load_uintptr_acquire(const uintptr_t *obj)
+{
+    _Py_USING_STD;
+    return atomic_load_explicit((const _Atomic(uintptr_t)*)obj,
+                                memory_order_acquire);
+}
+
 static inline void
 _Py_atomic_store_ptr_release(void *obj, void *value)
 {
     _Py_USING_STD;
     atomic_store_explicit((_Atomic(void*)*)obj, value,
+                          memory_order_release);
+}
+
+static inline void
+_Py_atomic_store_uintptr_release(uintptr_t *obj, uintptr_t value)
+{
+    _Py_USING_STD;
+    atomic_store_explicit((_Atomic(uintptr_t)*)obj, value,
                           memory_order_release);
 }
 
@@ -879,12 +895,28 @@ _Py_atomic_store_int_release(int *obj, int value)
                           memory_order_release);
 }
 
+static inline void
+_Py_atomic_store_ssize_release(Py_ssize_t *obj, Py_ssize_t value)
+{
+    _Py_USING_STD;
+    atomic_store_explicit((_Atomic(Py_ssize_t)*)obj, value,
+                          memory_order_release);
+}
+
 static inline int
 _Py_atomic_load_int_acquire(const int *obj)
 {
     _Py_USING_STD;
     return atomic_load_explicit((const _Atomic(int)*)obj,
                                 memory_order_acquire);
+}
+
+static inline void
+_Py_atomic_store_uint32_release(uint32_t *obj, uint32_t value)
+{
+    _Py_USING_STD;
+    atomic_store_explicit((_Atomic(uint32_t)*)obj, value,
+                          memory_order_release);
 }
 
 static inline void
@@ -908,6 +940,14 @@ _Py_atomic_load_uint32_acquire(const uint32_t *obj)
 {
     _Py_USING_STD;
     return atomic_load_explicit((const _Atomic(uint32_t)*)obj,
+                                memory_order_acquire);
+}
+
+static inline Py_ssize_t
+_Py_atomic_load_ssize_acquire(const Py_ssize_t *obj)
+{
+    _Py_USING_STD;
+    return atomic_load_explicit((const _Atomic(Py_ssize_t)*)obj,
                                 memory_order_acquire);
 }
 

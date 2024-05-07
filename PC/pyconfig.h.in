@@ -95,7 +95,12 @@ WIN32 is still required for the locale module.
 #endif /* Py_BUILD_CORE || Py_BUILD_CORE_BUILTIN || Py_BUILD_CORE_MODULE */
 
 /* Define to 1 if you want to disable the GIL */
-#undef Py_GIL_DISABLED
+/* Uncomment the definition for free-threaded builds, or define it manually
+ * when compiling extension modules. Note that we test with #ifdef, so
+ * defining as 0 will still disable the GIL. */
+#ifndef Py_GIL_DISABLED
+/* #define Py_GIL_DISABLED 1 */
+#endif
 
 /* Compiler specific defines */
 

@@ -445,6 +445,11 @@ Constants
       Added ``IP_PKTINFO``, ``IP_UNBLOCK_SOURCE``, ``IP_BLOCK_SOURCE``,
       ``IP_ADD_SOURCE_MEMBERSHIP``, ``IP_DROP_SOURCE_MEMBERSHIP``.
 
+   .. versionchanged:: 3.13
+      Added ``SO_BINDTOIFINDEX``. On Linux this constant can be used in the
+      same way that ``SO_BINDTODEVICE`` is used, but with the index of a
+      network interface instead of its name.
+
 .. data:: AF_CAN
           PF_CAN
           SOL_CAN_*
@@ -1208,7 +1213,7 @@ The :mod:`socket` module also offers various network-related services:
    buffer.  Raises :exc:`OverflowError` if *length* is outside the
    permissible range of values.
 
-   .. availability:: Unix, not Emscripten, not WASI.
+   .. availability:: Unix, not WASI.
 
       Most Unix platforms.
 
@@ -1231,7 +1236,7 @@ The :mod:`socket` module also offers various network-related services:
    amount of ancillary data that can be received, since additional
    data may be able to fit into the padding area.
 
-   .. availability:: Unix, not Emscripten, not WASI.
+   .. availability:: Unix, not WASI.
 
       most Unix platforms.
 
@@ -1271,7 +1276,7 @@ The :mod:`socket` module also offers various network-related services:
    (index int, name string) tuples.
    :exc:`OSError` if the system call fails.
 
-   .. availability:: Unix, Windows, not Emscripten, not WASI.
+   .. availability:: Unix, Windows, not WASI.
 
    .. versionadded:: 3.3
 
@@ -1298,7 +1303,7 @@ The :mod:`socket` module also offers various network-related services:
    interface name.
    :exc:`OSError` if no interface with the given name exists.
 
-   .. availability:: Unix, Windows, not Emscripten, not WASI.
+   .. availability:: Unix, Windows, not WASI.
 
    .. versionadded:: 3.3
 
@@ -1315,7 +1320,7 @@ The :mod:`socket` module also offers various network-related services:
    interface index number.
    :exc:`OSError` if no interface with the given index exists.
 
-   .. availability:: Unix, Windows, not Emscripten, not WASI.
+   .. availability:: Unix, Windows, not WASI.
 
    .. versionadded:: 3.3
 
@@ -1332,7 +1337,7 @@ The :mod:`socket` module also offers various network-related services:
    The *fds* parameter is a sequence of file descriptors.
    Consult :meth:`~socket.sendmsg` for the documentation of these parameters.
 
-   .. availability:: Unix, Windows, not Emscripten, not WASI.
+   .. availability:: Unix, Windows, not WASI.
 
       Unix platforms supporting :meth:`~socket.sendmsg`
       and :const:`SCM_RIGHTS` mechanism.
@@ -1346,7 +1351,7 @@ The :mod:`socket` module also offers various network-related services:
    Return ``(msg, list(fds), flags, addr)``.
    Consult :meth:`~socket.recvmsg` for the documentation of these parameters.
 
-   .. availability:: Unix, Windows, not Emscripten, not WASI.
+   .. availability:: Unix, Windows, not WASI.
 
       Unix platforms supporting :meth:`~socket.sendmsg`
       and :const:`SCM_RIGHTS` mechanism.
@@ -1605,8 +1610,9 @@ to sockets.
 
    Receive data from the socket.  The return value is a bytes object representing the
    data received.  The maximum amount of data to be received at once is specified
-   by *bufsize*.  See the Unix manual page :manpage:`recv(2)` for the meaning of
-   the optional argument *flags*; it defaults to zero.
+   by *bufsize*. A returned empty bytes object indicates that the client has disconnected.
+   See the Unix manual page :manpage:`recv(2)` for the meaning of the optional argument
+   *flags*; it defaults to zero.
 
    .. note::
 

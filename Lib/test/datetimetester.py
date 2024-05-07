@@ -1927,6 +1927,10 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
             '2009-02-29',       # Invalid leap day
             '2019-W53-1',       # No week 53 in 2019
             '2020-W54-1',       # No week 54
+            '0000-W25-1',       # Invalid year
+            '10000-W25-1',      # Invalid year
+            '2020-W25-0',       # Invalid day-of-week
+            '2020-W25-8',       # Invalid day-of-week
             '2009\ud80002\ud80028',     # Separators are surrogate codepoints
         ]
 
@@ -2792,6 +2796,19 @@ class TestDateTime(TestDate):
                               target=target):
                 newdate = strptime(string, format)
                 self.assertEqual(newdate, target, msg=reason)
+
+    def test_strptime_leap_year(self):
+        # GH-70647: warns if parsing a format with a day and no year.
+        with self.assertRaises(ValueError):
+            # The existing behavior that GH-70647 seeks to change.
+            self.theclass.strptime('02-29', '%m-%d')
+        with self.assertWarnsRegex(DeprecationWarning,
+                                   r'.*day of month without a year.*'):
+            self.theclass.strptime('03-14.159265', '%m-%d.%f')
+        with self._assertNotWarns(DeprecationWarning):
+            self.theclass.strptime('20-03-14.159265', '%y-%m-%d.%f')
+        with self._assertNotWarns(DeprecationWarning):
+            self.theclass.strptime('02-29,2024', '%m-%d,%Y')
 
     def test_more_timetuple(self):
         # This tests fields beyond those tested by the TestDate.test_timetuple.

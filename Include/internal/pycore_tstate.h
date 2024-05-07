@@ -29,12 +29,17 @@ typedef struct _PyThreadStateImpl {
     PyThreadState base;
 
     struct _qsbr_thread_state *qsbr;  // only used by free-threaded build
+    struct llist_node mem_free_queue; // delayed free queue
 
 #ifdef Py_GIL_DISABLED
     struct _gc_thread_state gc;
     struct _mimalloc_thread_state mimalloc;
     struct _Py_object_freelists freelists;
     struct _brc_thread_state brc;
+#endif
+
+#if defined(Py_REF_DEBUG) && defined(Py_GIL_DISABLED)
+    Py_ssize_t reftotal;  // this thread's total refcount operations
 #endif
 
 } _PyThreadStateImpl;

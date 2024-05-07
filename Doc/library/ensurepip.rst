@@ -38,7 +38,7 @@ when creating a virtual environment) or after explicitly uninstalling
    :pep:`453`: Explicit bootstrapping of pip in Python installations
       The original rationale and specification for this module.
 
-.. include:: ../includes/wasm-notavail.rst
+.. include:: ../includes/wasm-ios-notavail.rst
 
 Command line interface
 ----------------------
