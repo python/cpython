@@ -598,8 +598,8 @@ are always available.  They are listed here in alphabetical order.
 
    .. warning::
 
-      Because this function can be used for executing arbitrary code, it is not recommended
-      to pass user-supplied input, which may lead to security vulnerabilities.
+      This function can execute arbitrary code. Calling it with
+      user-supplied input may lead to security vulnerabilities.
 
    This function supports dynamic execution of Python code. *source* must be
    either a string or a code object.  If it is a string, the string is parsed as
