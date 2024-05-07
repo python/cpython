@@ -1,6 +1,7 @@
 /* Module definition and import implementation */
 
 #include "Python.h"
+#include "pycore_ceval.h"
 #include "pycore_hashtable.h"     // _Py_hashtable_new_full()
 #include "pycore_import.h"        // _PyImport_BootstrapImp()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
@@ -1023,6 +1024,12 @@ struct extensions_cache_value {
     struct cached_m_dict _m_dict;
 
     _Py_ext_module_origin origin;
+
+#ifdef Py_GIL_DISABLED
+    /* The module's md_gil slot, for legacy modules that are reinitialized from
+       m_dict rather than calling their initialization function again. */
+    void *md_gil;
+#endif
 };
 
 static struct extensions_cache_value *
@@ -1351,7 +1358,7 @@ static struct extensions_cache_value *
 _extensions_cache_set(PyObject *path, PyObject *name,
                       PyModuleDef *def, PyModInitFunction m_init,
                       Py_ssize_t m_index, PyObject *m_dict,
-                      _Py_ext_module_origin origin)
+                      _Py_ext_module_origin origin, void *md_gil)
 {
     struct extensions_cache_value *value = NULL;
     void *key = NULL;
@@ -1401,7 +1408,13 @@ _extensions_cache_set(PyObject *path, PyObject *name,
         .m_index=m_index,
         /* m_dict is set by set_cached_m_dict(). */
         .origin=origin,
+#ifdef Py_GIL_DISABLED
+        .md_gil=md_gil,
+#endif
     };
+#ifndef Py_GIL_DISABLED
+    (void)md_gil;
+#endif
     if (init_cached_m_dict(newvalue, m_dict) < 0) {
         goto finally;
     }
@@ -1526,6 +1539,47 @@ _PyImport_CheckSubinterpIncompatibleExtensionAllowed(const char *name)
     return 0;
 }
 
+#ifdef Py_GIL_DISABLED
+int
+_PyImport_CheckGILForModule(PyObject* module, PyObject *module_name)
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+    if (module == NULL) {
+        _PyEval_DisableGIL(tstate);
+        return 0;
+    }
+
+    if (!PyModule_Check(module) ||
+        ((PyModuleObject *)module)->md_gil == Py_MOD_GIL_USED) {
+        if (_PyEval_EnableGILPermanent(tstate)) {
+            int warn_result = PyErr_WarnFormat(
+                PyExc_RuntimeWarning,
+                1,
+                "The global interpreter lock (GIL) has been enabled to load "
+                "module '%U', which has not declared that it can run safely "
+                "without the GIL. To override this behavior and keep the GIL "
+                "disabled (at your own risk), run with PYTHON_GIL=0 or -Xgil=0.",
+                module_name
+            );
+            if (warn_result < 0) {
+                return warn_result;
+            }
+        }
+
+        const PyConfig *config = _PyInterpreterState_GetConfig(tstate->interp);
+        if (config->enable_gil == _PyConfig_GIL_DEFAULT && config->verbose) {
+            PySys_FormatStderr("# loading module '%U', which requires the GIL\n",
+                               module_name);
+        }
+    }
+    else {
+        _PyEval_DisableGIL(tstate);
+    }
+
+    return 0;
+}
+#endif
+
 static PyObject *
 get_core_module_dict(PyInterpreterState *interp,
                      PyObject *name, PyObject *path)
@@ -1625,6 +1679,7 @@ struct singlephase_global_update {
     Py_ssize_t m_index;
     PyObject *m_dict;
     _Py_ext_module_origin origin;
+    void *md_gil;
 };
 
 static struct extensions_cache_value *
@@ -1683,7 +1738,7 @@ update_global_state_for_extension(PyThreadState *tstate,
 #endif
         cached = _extensions_cache_set(
                 path, name, def, m_init, singlephase->m_index, m_dict,
-                singlephase->origin);
+                singlephase->origin, singlephase->md_gil);
         if (cached == NULL) {
             // XXX Ignore this error?  Doing so would effectively
             // mark the module as not loadable.
@@ -1768,6 +1823,13 @@ reload_singlephase_extension(PyThreadState *tstate,
             Py_DECREF(mod);
             return NULL;
         }
+#ifdef Py_GIL_DISABLED
+        if (def->m_base.m_copy != NULL) {
+            // For non-core modules, fetch the GIL slot that was stored by
+            // import_run_extension().
+            ((PyModuleObject *)mod)->md_gil = cached->md_gil;
+        }
+#endif
         /* We can't set mod->md_def if it's missing,
          * because _PyImport_ClearModulesByIndex() might break
          * due to violating interpreter isolation.
@@ -1921,6 +1983,9 @@ import_run_extension(PyThreadState *tstate, PyModInitFunction p0,
             // cache is less reliable than it should be).
             .m_index=def->m_base.m_index,
             .origin=info->origin,
+#ifdef Py_GIL_DISABLED
+            .md_gil=((PyModuleObject *)mod)->md_gil,
+#endif
         };
         // gh-88216: Extensions and def->m_base.m_copy can be updated
         // when the extension module doesn't support sub-interpreters.
@@ -2039,6 +2104,10 @@ _PyImport_FixupBuiltin(PyThreadState *tstate, PyObject *mod, const char *name,
             /* We don't want def->m_base.m_copy populated. */
             .m_dict=NULL,
             .origin=_Py_ext_module_origin_CORE,
+#ifdef Py_GIL_DISABLED
+            /* Unused when m_dict == NULL. */
+            .md_gil=NULL,
+#endif
         };
         cached = update_global_state_for_extension(
                 tstate, nameobj, nameobj, def, &singlephase);
@@ -2128,9 +2197,23 @@ create_builtin(PyThreadState *tstate, PyObject *name, PyObject *spec)
         goto finally;
     }
 
+#ifdef Py_GIL_DISABLED
+    // This call (and the corresponding call to _PyImport_CheckGILForModule())
+    // would ideally be inside import_run_extension(). They are kept in the
+    // callers for now because that would complicate the control flow inside
+    // import_run_extension(). It should be possible to restructure
+    // import_run_extension() to address this.
+    _PyEval_EnableGILTransient(tstate);
+#endif
     /* Now load it. */
     mod = import_run_extension(
                     tstate, p0, &info, spec, get_modules_dict(tstate, true));
+#ifdef Py_GIL_DISABLED
+    if (_PyImport_CheckGILForModule(mod, info.name) < 0) {
+        Py_CLEAR(mod);
+        goto finally;
+    }
+#endif
 
 finally:
     _Py_ext_module_loader_info_clear(&info);
@@ -4505,10 +4588,22 @@ _imp_create_dynamic_impl(PyObject *module, PyObject *spec, PyObject *file)
         goto finally;
     }
 
+#ifdef Py_GIL_DISABLED
+    // This call (and the corresponding call to _PyImport_CheckGILForModule())
+    // would ideally be inside import_run_extension(). They are kept in the
+    // callers for now because that would complicate the control flow inside
+    // import_run_extension(). It should be possible to restructure
+    // import_run_extension() to address this.
+    _PyEval_EnableGILTransient(tstate);
+#endif
     mod = import_run_extension(
                     tstate, p0, &info, spec, get_modules_dict(tstate, true));
-    if (mod == NULL) {
+#ifdef Py_GIL_DISABLED
+    if (_PyImport_CheckGILForModule(mod, info.name) < 0) {
+        Py_CLEAR(mod);
+        goto finally;
     }
+#endif
 
     // XXX Shouldn't this happen in the error cases too (i.e. in "finally")?
     if (fp) {
