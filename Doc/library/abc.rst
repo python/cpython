@@ -170,17 +170,17 @@ The :mod:`!abc` module also provides the following decorator:
    or is derived from it.  A class that has a metaclass derived from
    :class:`!ABCMeta` cannot be instantiated unless all of its abstract methods
    and properties are overridden.  The abstract methods can be called using any
-   of the normal 'super' call mechanisms.  :func:`!abstractmethod` may be used
+   of the normal 'super' call mechanisms.  :deco:`!abstractmethod` may be used
    to declare abstract methods for properties and descriptors.
 
    Dynamically adding abstract methods to a class, or attempting to modify the
    abstraction status of a method or class once it is created, are only
    supported using the :func:`update_abstractmethods` function.  The
-   :func:`!abstractmethod` only affects subclasses derived using regular
+   :deco:`!abstractmethod` only affects subclasses derived using regular
    inheritance; "virtual subclasses" registered with the ABC's
    :meth:`~ABCMeta.register` method are not affected.
 
-   When :func:`!abstractmethod` is applied in combination with other method
+   When :deco:`!abstractmethod` is applied in combination with other method
    descriptors, it should be applied as the innermost decorator, as shown in
    the following usage examples::
 
@@ -242,13 +242,13 @@ The :mod:`!abc` module also supports the following legacy decorators:
 
    .. versionadded:: 3.2
    .. deprecated:: 3.3
-       It is now possible to use :class:`classmethod` with
-       :func:`abstractmethod`, making this decorator redundant.
+       It is now possible to use :deco:`!classmethod` with
+       :deco:`!abstractmethod`, making this decorator redundant.
 
-   A subclass of the built-in :func:`classmethod`, indicating an abstract
-   classmethod. Otherwise it is similar to :func:`abstractmethod`.
+   A subclass of the built-in :deco:`classmethod`, indicating an abstract
+   classmethod. Otherwise it is similar to :deco:`abstractmethod`.
 
-   This special case is deprecated, as the :func:`classmethod` decorator
+   This special case is deprecated, as the :deco:`!classmethod` decorator
    is now correctly identified as abstract when applied to an abstract
    method::
 
@@ -263,13 +263,13 @@ The :mod:`!abc` module also supports the following legacy decorators:
 
    .. versionadded:: 3.2
    .. deprecated:: 3.3
-       It is now possible to use :class:`staticmethod` with
-       :func:`abstractmethod`, making this decorator redundant.
+       It is now possible to use :deco:`!staticmethod` with
+       :deco:`!abstractmethod`, making this decorator redundant.
 
-   A subclass of the built-in :func:`staticmethod`, indicating an abstract
-   staticmethod. Otherwise it is similar to :func:`abstractmethod`.
+   A subclass of the built-in :deco:`staticmethod`, indicating an abstract
+   staticmethod. Otherwise it is similar to :deco:`abstractmethod`.
 
-   This special case is deprecated, as the :func:`staticmethod` decorator
+   This special case is deprecated, as the :deco:`!staticmethod` decorator
    is now correctly identified as abstract when applied to an abstract
    method::
 
@@ -283,14 +283,14 @@ The :mod:`!abc` module also supports the following legacy decorators:
 .. decorator:: abstractproperty
 
    .. deprecated:: 3.3
-       It is now possible to use :class:`property`, :meth:`property.getter`,
-       :meth:`property.setter` and :meth:`property.deleter` with
-       :func:`abstractmethod`, making this decorator redundant.
+       It is now possible to use :deco:`property`, :deco:`property.getter`,
+       :deco:`property.setter` and :deco:`property.deleter` with
+       :deco:`abstractmethod`, making this decorator redundant.
 
-   A subclass of the built-in :func:`property`, indicating an abstract
+   A subclass of the built-in :deco:`!property`, indicating an abstract
    property.
 
-   This special case is deprecated, as the :func:`property` decorator
+   This special case is deprecated, as the :deco:`!property` decorator
    is now correctly identified as abstract when applied to an abstract
    method::
 

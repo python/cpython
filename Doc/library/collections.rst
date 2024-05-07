@@ -1205,7 +1205,7 @@ original insertion position is changed and moved to the end::
             self.move_to_end(key)
 
 An :class:`OrderedDict` would also be useful for implementing
-variants of :func:`functools.lru_cache`:
+variants of :deco:`functools.lru_cache`:
 
 .. testcode::
 

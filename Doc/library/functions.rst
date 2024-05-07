@@ -21,14 +21,14 @@ are always available.  They are listed here in alphabetical order.
 | |  **B**                | |  :func:`format`     | |  |func-memoryview|_ | |  :func:`setattr`      |
 | |  :func:`bin`          | |  |func-frozenset|_  | |  :func:`min`        | |  :func:`slice`        |
 | |  :func:`bool`         | |                     | |                     | |  :func:`sorted`       |
-| |  :func:`breakpoint`   | |  **G**              | |  **N**              | |  :func:`staticmethod` |
+| |  :func:`breakpoint`   | |  **G**              | |  **N**              | |  :deco:`staticmethod` |
 | |  |func-bytearray|_    | |  :func:`getattr`    | |  :func:`next`       | |  |func-str|_          |
 | |  |func-bytes|_        | |  :func:`globals`    | |                     | |  :func:`sum`          |
 | |                       | |                     | |  **O**              | |  :func:`super`        |
 | |  **C**                | |  **H**              | |  :func:`object`     | |                       |
 | |  :func:`callable`     | |  :func:`hasattr`    | |  :func:`oct`        | |  **T**                |
 | |  :func:`chr`          | |  :func:`hash`       | |  :func:`open`       | |  |func-tuple|_        |
-| |  :func:`classmethod`  | |  :func:`help`       | |  :func:`ord`        | |  :func:`type`         |
+| |  :deco:`classmethod`  | |  :func:`help`       | |  :func:`ord`        | |  :func:`type`         |
 | |  :func:`compile`      | |  :func:`hex`        | |                     | |                       |
 | |  :func:`complex`      | |                     | |  **P**              | |  **V**                |
 | |                       | |  **I**              | |  :func:`pow`        | |  :func:`vars`         |
@@ -274,7 +274,7 @@ are always available.  They are listed here in alphabetical order.
    implied first argument.
 
    Class methods are different than C++ or Java static methods. If you want those,
-   see :func:`staticmethod` in this section.
+   see :deco:`staticmethod` in this section.
    For more information on class methods, see :ref:`types`.
 
    .. versionchanged:: 3.9
@@ -1551,7 +1551,7 @@ are always available.  They are listed here in alphabetical order.
               """Get the current voltage."""
               return self._voltage
 
-   The ``@property`` decorator turns the :meth:`!voltage` method into a "getter"
+   The :deco:`property` decorator turns the :meth:`!voltage` method into a "getter"
    for a read-only attribute with the same name, and it sets the docstring for
    *voltage* to "Get the current voltage."
 
@@ -1775,10 +1775,10 @@ are always available.  They are listed here in alphabetical order.
    be used in the class definition (such as ``f()``).
 
    Static methods in Python are similar to those found in Java or C++. Also, see
-   :func:`classmethod` for a variant that is useful for creating alternate class
+   :deco:`classmethod` for a variant that is useful for creating alternate class
    constructors.
 
-   Like all decorators, it is also possible to call ``staticmethod`` as
+   Like all decorators, it is also possible to call :deco:`!staticmethod` as
    a regular function and do something with its result.  This is needed
    in some cases where you need a reference to a function from a class
    body and you want to avoid the automatic transformation to instance

@@ -1138,7 +1138,7 @@ script execution tests.
    Return ``True`` if ``sys.executable interpreter`` requires environment
    variables in order to be able to run at all.
 
-   This is designed to be used with ``@unittest.skipIf()`` to annotate tests
+   This is designed to be used with :deco:`unittest.skipIf` to annotate tests
    that need to use an ``assert_python*()`` function to launch an isolated
    mode (``-I``) or no environment mode (``-E``) sub-interpreter process.
 
