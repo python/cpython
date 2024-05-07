@@ -1063,7 +1063,7 @@ Tier 2 optimizer by Ken Jin.)
 Free-threaded CPython
 =====================
 
-CPython will run with the :term:`global interpreter lock` disabled when
+CPython will run with the :term:`global interpreter lock` (GIL) disabled when
 configured using the ``--disable-gil`` option at build time. This is an
 experimental feature and therefore isn't used by default. Users need to
 either compile their own interpreter, or install one of the experimental
@@ -1077,6 +1077,10 @@ designed with threading in mind will run faster on multicore hardware.
 Work is still ongoing: expect some bugs and a substantial single-threaded
 performance hit.
 
+The free-threaded build still supports optionally running with GIL enabled at
+runtime using the environment variable :envvar:`PYTHON_GIL` or the command line
+option :option:`-X gil`.
+
 * Use :func:`!sys._is_gil_enabled` to determine if the :term:`GIL` is enabled.
 
 * Use ``sysconfig.get_config_var("Py_GIL_DISABLED")`` to identify CPython
@@ -1087,7 +1091,10 @@ C-API extensions need to be built specifically for the free-threaded build.
 * Extensions that support running with the :term:`GIL` disabled should use
   the :c:data:`Py_mod_gil` slot. Extensions using single-phase init should use
   :c:func:`PyUnstable_Module_SetGIL` to indicate whether they support running
-  with the GIL disabled.
+  with the GIL disabled. Importing C extensions that don't use these mechanisms
+  will cause the GIL to be enabled unless the GIL was explicitly disabled with
+  the :envvar:`PYTHON_GIL` environment variable or the :option:`-X gil=0`
+  option.
 
 * pip 24.1b1 or newer is required to install packages with C extensions in the
   free-threaded build.
