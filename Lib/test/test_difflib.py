@@ -273,76 +273,6 @@ class TestSFpatches(unittest.TestCase):
         self.assertIn('&#305;mpl&#305;c&#305;t', output)
 
 
-class TestInputTypes(unittest.TestCase):
-    def _assert_type_error(self, msg, generator, *args):
-        with self.assertRaises(TypeError) as ctx:
-            list(generator(*args))
-        self.assertEqual(msg, str(ctx.exception))
-
-    def test_input_type_checks(self):
-        unified = difflib.unified_diff
-        context = difflib.context_diff
-
-        expect = "input must be a sequence of strings, not str ('a')"
-        self._assert_type_error(expect, unified, 'a', ['b'])
-        self._assert_type_error(expect, context, 'a', ['b'])
-
-        expect = "input must be a sequence of strings, not str ('b')"
-        self._assert_type_error(expect, unified, ['a'], 'b')
-        self._assert_type_error(expect, context, ['a'], 'b')
-
-        expect = "lines to compare must be str, not NoneType (None)"
-        self._assert_type_error(expect, unified, ['a'], [None])
-        self._assert_type_error(expect, context, ['a'], [None])
-
-    def test_mixed_types_content(self):
-        # type of input content must be consistent: all str or all bytes
-        a = [b'hello']
-        b = ['hello']
-
-        unified = difflib.unified_diff
-        context = difflib.context_diff
-
-        expect = "lines to compare must be str, not bytes (b'hello')"
-        self._assert_type_error(expect, unified, a, b)
-        self._assert_type_error(expect, unified, b, a)
-        self._assert_type_error(expect, context, a, b)
-        self._assert_type_error(expect, context, b, a)
-
-        expect = "all arguments must be bytes, not str ('hello')"
-        self._assert_type_error(expect, difflib.diff_bytes, unified, a, b)
-        self._assert_type_error(expect, difflib.diff_bytes, unified, b, a)
-        self._assert_type_error(expect, difflib.diff_bytes, context, a, b)
-        self._assert_type_error(expect, difflib.diff_bytes, context, b, a)
-
-    def test_mixed_types_filenames(self):
-        # cannot pass filenames as bytes if content is str (this may not be
-        # the right behaviour, but at least the test demonstrates how
-        # things work)
-        a = ['hello\n']
-        b = ['ohell\n']
-        fna = b'ol\xe9.txt'     # filename transcoded from ISO-8859-1
-        fnb = b'ol\xc3a9.txt'   # to UTF-8
-        self._assert_type_error(
-            "all arguments must be str, not: b'ol\\xe9.txt'",
-            difflib.unified_diff, a, b, fna, fnb)
-
-    def test_mixed_types_dates(self):
-        # type of dates must be consistent with type of contents
-        a = [b'foo\n']
-        b = [b'bar\n']
-        datea = '1 fév'
-        dateb = '3 fév'
-        self._assert_type_error(
-            "all arguments must be bytes, not str ('1 fév')",
-            difflib.diff_bytes, difflib.unified_diff,
-            a, b, b'a', b'b', datea, dateb)
-
-        # if input is str, non-ASCII dates are fine
-        a = ['foo\n']
-        b = ['bar\n']
-        list(difflib.unified_diff(a, b, 'a', 'b', datea, dateb))
-
 class TestOutputFormat(unittest.TestCase):
     def test_tab_delimiter(self):
         args = [['one'], ['two'], 'Original', 'Current',
@@ -496,6 +426,77 @@ class TestBytes(unittest.TestCase):
         actual = difflib.diff_bytes(unified, a, b, fna, fnb, datea, dateb,
                                     lineterm=b'')
         assertDiff(expect, actual)
+
+
+class TestInputTypes(unittest.TestCase):
+    def _assert_type_error(self, msg, generator, *args):
+        with self.assertRaises(TypeError) as ctx:
+            list(generator(*args))
+        self.assertEqual(msg, str(ctx.exception))
+
+    def test_input_type_checks(self):
+        unified = difflib.unified_diff
+        context = difflib.context_diff
+
+        expect = "input must be a sequence of strings, not str ('a')"
+        self._assert_type_error(expect, unified, 'a', ['b'])
+        self._assert_type_error(expect, context, 'a', ['b'])
+
+        expect = "input must be a sequence of strings, not str ('b')"
+        self._assert_type_error(expect, unified, ['a'], 'b')
+        self._assert_type_error(expect, context, ['a'], 'b')
+
+        expect = "lines to compare must be str, not NoneType (None)"
+        self._assert_type_error(expect, unified, ['a'], [None])
+        self._assert_type_error(expect, context, ['a'], [None])
+
+    def test_mixed_types_content(self):
+        # type of input content must be consistent: all str or all bytes
+        a = [b'hello']
+        b = ['hello']
+
+        unified = difflib.unified_diff
+        context = difflib.context_diff
+
+        expect = "lines to compare must be str, not bytes (b'hello')"
+        self._assert_type_error(expect, unified, a, b)
+        self._assert_type_error(expect, unified, b, a)
+        self._assert_type_error(expect, context, a, b)
+        self._assert_type_error(expect, context, b, a)
+
+        expect = "all arguments must be bytes, not str ('hello')"
+        self._assert_type_error(expect, difflib.diff_bytes, unified, a, b)
+        self._assert_type_error(expect, difflib.diff_bytes, unified, b, a)
+        self._assert_type_error(expect, difflib.diff_bytes, context, a, b)
+        self._assert_type_error(expect, difflib.diff_bytes, context, b, a)
+
+    def test_mixed_types_filenames(self):
+        # cannot pass filenames as bytes if content is str (this may not be
+        # the right behaviour, but at least the test demonstrates how
+        # things work)
+        a = ['hello\n']
+        b = ['ohell\n']
+        fna = b'ol\xe9.txt'     # filename transcoded from ISO-8859-1
+        fnb = b'ol\xc3a9.txt'   # to UTF-8
+        self._assert_type_error(
+            "all arguments must be str, not: b'ol\\xe9.txt'",
+            difflib.unified_diff, a, b, fna, fnb)
+
+    def test_mixed_types_dates(self):
+        # type of dates must be consistent with type of contents
+        a = [b'foo\n']
+        b = [b'bar\n']
+        datea = '1 fév'
+        dateb = '3 fév'
+        self._assert_type_error(
+            "all arguments must be bytes, not str ('1 fév')",
+            difflib.diff_bytes, difflib.unified_diff,
+            a, b, b'a', b'b', datea, dateb)
+
+        # if input is str, non-ASCII dates are fine
+        a = ['foo\n']
+        b = ['bar\n']
+        list(difflib.unified_diff(a, b, 'a', 'b', datea, dateb))
 
 
 class TestJunkAPIs(unittest.TestCase):
