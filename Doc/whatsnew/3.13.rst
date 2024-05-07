@@ -999,6 +999,12 @@ Optimizations
   section above for details.
   (Contributed by Jakub Kulik in :gh:`113117`.)
 
+* Several standard library modules have had their import times significantly
+  improved. The improved modules include :mod:`typing`, :mod:`importlib.metadata`,
+  :mod:`email.utils`, :mod:`functools` and :mod:`enum`.
+  (Contributed by Alex Waygood, Shantanu Jain, Adam Turner, Daniel Hollas and
+  others in :gh:`109653`.)
+
 .. _whatsnew313-jit-compiler:
 
 Experimental JIT Compiler
