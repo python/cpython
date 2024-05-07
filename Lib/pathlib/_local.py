@@ -5,6 +5,7 @@ import os
 import posixpath
 import sys
 import warnings
+from glob import _StringGlobber
 from itertools import chain
 from _collections_abc import Sequence
 
@@ -18,7 +19,6 @@ except ImportError:
     grp = None
 
 from ._abc import UnsupportedOperation, PurePathBase, PathBase
-from ._glob import StringGlobber
 
 
 __all__ = [
@@ -102,7 +102,7 @@ class PurePath(PurePathBase):
         '_hash',
     )
     parser = os.path
-    _globber = StringGlobber
+    _globber = _StringGlobber
 
     def __new__(cls, *args, **kwargs):
         """Construct a PurePath from one or several strings and or existing

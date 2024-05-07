@@ -12,10 +12,9 @@ resemble pathlib's PurePath and Path respectively.
 """
 
 import functools
+from glob import _Globber, _no_recurse_symlinks
 from errno import ENOENT, ENOTDIR, EBADF, ELOOP, EINVAL
 from stat import S_ISDIR, S_ISLNK, S_ISREG, S_ISSOCK, S_ISBLK, S_ISCHR, S_ISFIFO
-
-from ._glob import Globber, no_recurse_symlinks
 
 
 __all__ = ["UnsupportedOperation"]
@@ -119,7 +118,7 @@ class PurePathBase:
         '_resolving',
     )
     parser = ParserBase()
-    _globber = Globber
+    _globber = _Globber
 
     def __init__(self, path, *paths):
         self._raw_path = self.parser.join(path, *paths) if paths else path
@@ -671,7 +670,7 @@ class PathBase(PurePathBase):
             # know the case sensitivity of the underlying filesystem, so we
             # must use scandir() for everything, including non-wildcard parts.
             case_pedantic = True
-        recursive = True if recurse_symlinks else no_recurse_symlinks
+        recursive = True if recurse_symlinks else _no_recurse_symlinks
         globber = self._globber(self.parser.sep, case_sensitive, case_pedantic, recursive)
         return globber.selector(parts)
 
