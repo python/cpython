@@ -1,0 +1,1 @@
+Add instrumented opcodes to YIELD_VALUE assertion for tracing cases.
