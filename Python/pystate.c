@@ -1488,6 +1488,7 @@ init_threadstate(_PyThreadStateImpl *_tstate,
     tstate->datastack_limit = NULL;
     tstate->what_event = -1;
     tstate->previous_executor = NULL;
+    tstate->dict_global_version = 0;
 
     tstate->delete_later = NULL;
 
