@@ -717,7 +717,7 @@ This requirement previously also applied to abstract base classes, such as
 to be explicitly marked to support them, which is unpythonic and unlike
 what one would normally do in idiomatic dynamically typed Python code.
 For example, this conforms to :pep:`484`::
-3826
+
    from collections.abc import Sized, Iterable, Iterator
 
    class Bucket(Sized, Iterable[int]):
