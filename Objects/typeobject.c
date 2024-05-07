@@ -6036,10 +6036,12 @@ object_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
             return NULL;
         }
         comma_w_quotes_sep = PyUnicode_FromString("', '");
-        if (comma_w_quotes_sep) {
-            joined = PyUnicode_Join(comma_w_quotes_sep, sorted_methods);
-            Py_DECREF(comma_w_quotes_sep);
+        if (!comma_w_quotes_sep) {
+            Py_DECREF(sorted_methods);
+            return NULL;
         }
+        joined = PyUnicode_Join(comma_w_quotes_sep, sorted_methods);
+        Py_DECREF(comma_w_quotes_sep);
         if (joined == NULL)  {
             Py_DECREF(sorted_methods);
             return NULL;
