@@ -147,7 +147,7 @@ def run_multiline_interactive_console(
             symbol = "single" if not contains_pasted_code else "exec"
             more = console.push(_strip_final_indent(statement), filename=input_name, _symbol=symbol)  # type: ignore[call-arg]
             if contains_pasted_code and more:
-                more = console.push(_strip_final_indent(statement), filename=input_name, _symbol="single")
+                more = console.push(_strip_final_indent(statement), filename=input_name, _symbol="single")  # type: ignore[call-arg]
             assert not more
             input_n += 1
         except KeyboardInterrupt:
