@@ -780,7 +780,7 @@ class TestMkdtemp(TestBadTempdir, BaseTestCase):
             acl = None
             # First line of result includes our directory
             if line.startswith(dir):
-                acl = line.removeprefix(dir).strip()
+                acl = line[len(dir):].strip()
             elif line and line[:1].isspace():
                 acl = line.strip()
             if acl:

@@ -1382,9 +1382,9 @@ class MakedirTests(unittest.TestCase):
 
     @unittest.skipUnless(os.name == 'nt', "requires Windows")
     def test_win32_mkdir_700(self):
-        base = os_helper.TESTFN
-        path1 = os.path.join(os_helper.TESTFN, 'dir1')
-        path2 = os.path.join(os_helper.TESTFN, 'dir2')
+        base = support.TESTFN
+        path1 = os.path.join(support.TESTFN, 'dir1')
+        path2 = os.path.join(support.TESTFN, 'dir2')
         # mode=0o700 is special-cased to override ACLs on Windows
         # There's no way to know exactly how the ACLs will look, so we'll
         # check that they are different from a regularly created directory.
