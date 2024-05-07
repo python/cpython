@@ -543,8 +543,8 @@ are always available.  They are listed here in alphabetical order.
 
    .. warning::
 
-      Because this function can be used for executing arbitrary code, it is not recommended
-      to pass user-supplied input, which may lead to security vulnerabilities.
+      This function can execute arbitrary code. Calling it with
+      user-supplied input may lead to security vulnerabilities.
 
    The *expression* argument is parsed and evaluated as a Python expression
    (technically speaking, a condition list) using the *globals* and *locals*
