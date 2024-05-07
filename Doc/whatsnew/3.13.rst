@@ -1379,8 +1379,8 @@ webbrowser
   attribute instead.
   (Contributed by Nikita Sobolev in :gh:`105546`.)
 
-Deprecated Modules And APIs
-===========================
+New Deprecations
+================
 
 * Removed chained :class:`classmethod` descriptors (introduced in
   :gh:`63272`).  This can no longer be used to wrap other descriptors
