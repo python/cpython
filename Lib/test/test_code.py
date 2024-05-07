@@ -142,7 +142,8 @@ except ImportError:
 from test.support import (cpython_only,
                           check_impl_detail, requires_debug_ranges,
                           gc_collect, Py_GIL_DISABLED,
-                          suppress_immortalization)
+                          suppress_immortalization,
+                          skip_if_suppress_immortalization)
 from test.support.script_helper import assert_python_ok
 from test.support import threading_helper, import_helper
 from test.support.bytecode_helper import instructions_with_positions
@@ -570,10 +571,30 @@ class CodeConstsTest(unittest.TestCase):
         self.assertIsInterned(f())
 
     @cpython_only
+    @unittest.skipIf(Py_GIL_DISABLED, "free-threaded build interns all string constants")
     def test_interned_string_with_null(self):
         co = compile(r'res = "str\0value!"', '?', 'exec')
         v = self.find_const(co.co_consts, 'str\0value!')
         self.assertIsNotInterned(v)
+
+    @cpython_only
+    @unittest.skipUnless(Py_GIL_DISABLED, "does not intern all constants")
+    @skip_if_suppress_immortalization()
+    def test_interned_constants(self):
+        # compile separately to avoid compile time de-duping
+
+        globals = {}
+        exec(textwrap.dedent("""
+            def func1():
+                return (0.0, (1, 2, "hello"))
+        """), globals)
+
+        exec(textwrap.dedent("""
+            def func2():
+                return (0.0, (1, 2, "hello"))
+        """), globals)
+
+        self.assertTrue(globals["func1"]() is globals["func2"]())
 
 
 class CodeWeakRefTest(unittest.TestCase):
