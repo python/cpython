@@ -117,7 +117,7 @@ def int_to_decimal(n):
     BITLIM = 200
 
     # Don't bother caching the "lo" mask in this; the time to compute it is
-    # tiny comopared to the multiply.
+    # tiny compared to the multiply.
     def inner(n, w):
         if w <= BITLIM:
             return D(n)
