@@ -1712,7 +1712,7 @@ config_init_perf_profiling(PyConfig *config)
             config->perf_profiling = 2;
         }
     }
-    xoption = config_get_xoption(config, L"perfjit");
+    xoption = config_get_xoption(config, L"perf_jit");
     if (xoption) {
         config->perf_profiling = 2;
     }

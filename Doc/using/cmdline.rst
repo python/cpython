@@ -587,7 +587,7 @@ Miscellaneous options
 
      .. versionadded:: 3.12
 
-   * ``-X perfjit`` enables support for the Linux ``perf`` profiler with DWARF
+   * ``-X perf_jit`` enables support for the Linux ``perf`` profiler with DWARF
      support. When this option is provided, the ``perf`` profiler will be able
      to report Python calls using DWARF information. This option is only available on
      some platforms and will do nothing if is not supported on the current
@@ -1145,7 +1145,7 @@ conflict.
 
    If set to ``0``, disable Linux ``perf`` profiler support.
 
-   See also the :option:`-X perfjit <-X>` command-line option
+   See also the :option:`-X perf_jit <-X>` command-line option
    and :ref:`perf_profiling`.
 
    .. versionadded:: 3.13
