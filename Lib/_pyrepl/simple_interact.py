@@ -145,7 +145,7 @@ def run_multiline_interactive_console(
             input_name = f"<python-input-{input_n}>"
             linecache._register_code(input_name, statement, "<stdin>")  # type: ignore[attr-defined]
             symbol = "single" if not contains_pasted_code else "exec"
-            more = console.push(_strip_final_indent(statement), filename=input_name, _symbol=symbol)
+            more = console.push(_strip_final_indent(statement), filename=input_name, _symbol=symbol)  # type: ignore[call-arg]
             if contains_pasted_code and more:
                 more = console.push(_strip_final_indent(statement), filename=input_name, _symbol="single")
             assert not more
