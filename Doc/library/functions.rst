@@ -543,7 +543,7 @@ are always available.  They are listed here in alphabetical order.
 
    .. warning::
 
-      This function can execute arbitrary code. Calling it with
+      This function executes arbitrary code. Calling it with
       user-supplied input may lead to security vulnerabilities.
 
    The *expression* argument is parsed and evaluated as a Python expression
@@ -598,7 +598,7 @@ are always available.  They are listed here in alphabetical order.
 
    .. warning::
 
-      This function can execute arbitrary code. Calling it with
+      This function executes arbitrary code. Calling it with
       user-supplied input may lead to security vulnerabilities.
 
    This function supports dynamic execution of Python code. *source* must be
