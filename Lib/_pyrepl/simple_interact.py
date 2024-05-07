@@ -77,18 +77,6 @@ class InteractiveColoredConsole(code.InteractiveConsole):
 
     def showtraceback(self):
         super().showtraceback(colorize=self.can_colorize)
-
-
-def _enable_bracketed_paste() -> None:
-    sys.stdout.write("\x1b[?2004h")
-    sys.stdout.flush()
-
-
-def _disable_bracketed_paste() -> None:
-    sys.stdout.write("\x1b[?2004l")
-    sys.stdout.flush()
-
-
 def run_multiline_interactive_console(
     mainmodule: ModuleType | None= None, future_flags: int = 0
 ) -> None:
@@ -147,12 +135,9 @@ def run_multiline_interactive_console(
             ps1 = getattr(sys, "ps1", ">>> ")
             ps2 = getattr(sys, "ps2", "... ")
             try:
-                _enable_bracketed_paste()
                 statement = multiline_input(more_lines, ps1, ps2)
             except EOFError:
                 break
-            finally:
-                _disable_bracketed_paste()
 
             if maybe_run_command(statement):
                 continue
