@@ -1859,6 +1859,16 @@ Changes in the Python API
   to :c:func:`PyUnstable_Code_GetFirstFree`.
   (Contributed by Bogdan Romanyuk in :gh:`115781`.)
 
+* Callbacks registered in the :mod:`tkinter` module now take arguments as
+  various Python objects (``int``, ``float``, ``bytes``, ``tuple``),
+  not just ``str``.
+  To restore the previous behavior set :mod:`!tkinter` module global
+  :data:`!wantobject` to ``1`` before creating the
+  :class:`!Tk` object or call the :meth:`!wantobject`
+  method of the :class:`!Tk` object with argument ``1``.
+  Calling it with argument ``2`` restores the current default behavior.
+  (Contributed by Serhiy Storchaka in :gh:`66410`.)
+
 
 Build Changes
 =============
