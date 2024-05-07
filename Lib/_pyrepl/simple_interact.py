@@ -77,6 +77,11 @@ class InteractiveColoredConsole(code.InteractiveConsole):
     def showtraceback(self):
         super().showtraceback(colorize=self.can_colorize)
 
+    def push(self, line, filename=None, symbol="single"):
+        if line.count("\n") > 0:
+            symbol = "exec"
+        return super().push(line, filename=filename, _symbol=symbol)
+
 
 def run_multiline_interactive_console(
     mainmodule: ModuleType | None= None, future_flags: int = 0

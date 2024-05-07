@@ -23,6 +23,7 @@ from _pyrepl.console import Console, Event
 from _pyrepl.readline import ReadlineAlikeReader, ReadlineConfig
 from _pyrepl.simple_interact import _strip_final_indent
 from _pyrepl.unix_eventqueue import EventQueue
+from _pyrepl.simple_interact import InteractiveColoredConsole
 
 
 def more_lines(unicodetext, namespace=None):
@@ -976,6 +977,24 @@ class TestReader(TestCase):
         reader.setpos_from_xy(0, 1)
         self.assertEqual(reader.pos, 9)
 
+class TestInteractiveColoredConsole(unittest.TestCase):
+    def test_showtraceback(self):
+        console = InteractiveColoredConsole()
+        with patch('code.InteractiveConsole.showtraceback') as mock_showtraceback:
+            console.showtraceback()
+            mock_showtraceback.assert_called_once_with(colorize=console.can_colorize)
 
-if __name__ == "__main__":
+    def test_push_single_line(self):
+        console = InteractiveColoredConsole()
+        with patch('code.InteractiveConsole.runsource') as mock_runsource:
+            console.push('print("Hello, world!")')
+            mock_runsource.assert_called_once_with('print("Hello, world!")', '<console>', symbol='single')
+
+    def test_push_multiline(self):
+        console = InteractiveColoredConsole()
+        with patch('code.InteractiveConsole.runsource') as mock_runsource:
+            console.push('if True:\n    print("Hello, world!")')
+            mock_runsource.assert_called_once_with('if True:\n    print("Hello, world!")', '<console>', symbol='exec')
+
+if __name__ == '__main__':
     unittest.main()
