@@ -298,11 +298,8 @@ def expanduser(path):
         return path
     if isinstance(path, bytes):
         userhome = os.fsencode(userhome)
-        root = b'/'
-    else:
-        root = '/'
-    userhome = userhome.rstrip(root)
-    return (userhome + path[i:]) or root
+    userhome = userhome.rstrip(sep)
+    return (userhome + path[i:]) or sep
 
 
 # Expand paths containing shell variable substitutions.
