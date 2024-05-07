@@ -99,6 +99,12 @@ New typing features:
 * :pep:`742`: :data:`typing.TypeIs` was added, providing more intuitive
   type narrowing behavior.
 
+Free-threading:
+
+* :pep:`703`: CPython 3.13 has experimental support for running with the
+  :term:`global interpreter lock` disabled when built with ``--disable-gil``.
+  See :ref:`Free-threaded CPython <free-threaded-cpython>` for more details.
+
 New Features
 ============
 
@@ -1052,6 +1058,46 @@ See :pep:`744` for more details.
 Tier 2 IR by Mark Shannon and Guido van Rossum.
 Tier 2 optimizer by Ken Jin.)
 
+.. _free-threaded-cpython:
+
+Free-threaded CPython
+=====================
+
+CPython will run with the :term:`global interpreter lock` (GIL) disabled when
+configured using the ``--disable-gil`` option at build time. This is an
+experimental feature and therefore isn't used by default. Users need to
+either compile their own interpreter, or install one of the experimental
+builds that are marked as *free-threaded*.
+
+Free-threaded execution allows for full utilization of the available
+processing power by running threads in parallel on available CPU cores.
+While not all software will benefit from this automatically, programs
+designed with threading in mind will run faster on multicore hardware.
+
+Work is still ongoing: expect some bugs and a substantial single-threaded
+performance hit.
+
+The free-threaded build still supports optionally running with GIL enabled at
+runtime using the environment variable :envvar:`PYTHON_GIL` or the command line
+option :option:`-X gil`.
+
+* Use :func:`!sys._is_gil_enabled` to determine if the :term:`GIL` is enabled.
+
+* Use ``sysconfig.get_config_var("Py_GIL_DISABLED")`` to identify CPython
+  builds configured with ``--disable-gil``.
+
+C-API extensions need to be built specifically for the free-threaded build.
+
+* Extensions that support running with the :term:`GIL` disabled should use
+  the :c:data:`Py_mod_gil` slot. Extensions using single-phase init should use
+  :c:func:`PyUnstable_Module_SetGIL` to indicate whether they support running
+  with the GIL disabled. Importing C extensions that don't use these mechanisms
+  will cause the GIL to be enabled unless the GIL was explicitly disabled with
+  the :envvar:`PYTHON_GIL` environment variable or the :option:`-X gil=0`
+  option.
+
+* pip 24.1b1 or newer is required to install packages with C extensions in the
+  free-threaded build.
 
 
 Deprecated
