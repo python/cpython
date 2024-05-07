@@ -211,7 +211,7 @@ How to work without frame pointers
 ----------------------------------
 
 If you are working with a Python interpreter that has been compiled without
-frame pointers you can still use the ``perf`` profiler but the overhead will be
+frame pointers, you can still use the ``perf`` profiler, but the overhead will be
 a bit higher because Python needs to generate unwinding information for every
 Python function call on the fly. Additionally, ``perf`` will take more time to
 process the data because it will need to use the DWARF debugging information to
@@ -225,8 +225,8 @@ which will enable the JIT mode for the ``perf`` profiler.
 
     Due to a bug in the ``perf`` tool, only ``perf`` versions higher than v6.8
     will work with the JIT mode.  The fix was also backported to the v6.7.2
-    version of the tool. 
-    
+    version of the tool.
+
     Note that when checking the version of the ``perf`` tool (which can be done
     by running ``perf version``) you must take into account that some distros
     add some custom version numbers including a ``-`` character.  This means
