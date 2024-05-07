@@ -976,6 +976,15 @@ class TestReader(TestCase):
         reader.setpos_from_xy(0, 1)
         self.assertEqual(reader.pos, 9)
 
+    def test_up_arrow_after_ctrl_r(self):
+        events = iter([
+            Event(evt='key', data='\x12', raw=bytearray(b'\x12')),
+            Event(evt='key', data='up', raw=bytearray(b'\x1bOA')),
+        ])
+
+        reader, _ = handle_all_events(events)
+        self.assert_screen_equals(reader, "")
+
 
 if __name__ == "__main__":
     unittest.main()
