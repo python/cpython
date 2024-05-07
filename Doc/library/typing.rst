@@ -2907,7 +2907,7 @@ Functions and decorators
    .. testcode::
 
       @overload
-      def process(response: None) -> None:
+      def process(response: None = ...) -> None:
           ...
       @overload
       def process(response: int) -> tuple[int, str]:
@@ -2915,7 +2915,7 @@ Functions and decorators
       @overload
       def process(response: bytes) -> str:
           ...
-      def process(response):
+      def process(response=None):
           ...  # actual implementation goes here
 
    See :pep:`484` for more details and comparison with other typing semantics.
