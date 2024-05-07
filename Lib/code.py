@@ -281,7 +281,7 @@ class InteractiveConsole(InteractiveInterpreter):
             elif exitmsg != '':
                 self.write('%s\n' % exitmsg)
 
-    def push(self, line, filename=None):
+    def push(self, line, filename=None, _symbol="single"):
         """Push a line to the interpreter.
 
         The line should not have a trailing newline; it may have
@@ -299,7 +299,7 @@ class InteractiveConsole(InteractiveInterpreter):
         source = "\n".join(self.buffer)
         if filename is None:
             filename = self.filename
-        more = self.runsource(source, filename)
+        more = self.runsource(source, filename, symbol=_symbol)
         if not more:
             self.resetbuffer()
         return more

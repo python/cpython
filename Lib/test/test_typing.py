@@ -6308,6 +6308,31 @@ class ForwardRefTests(BaseTestCase):
         self.assertEqual(X | "x", Union[X, "x"])
         self.assertEqual("x" | X, Union["x", X])
 
+    def test_deprecation_for_no_type_params_passed_to__evaluate(self):
+        with self.assertWarnsRegex(
+            DeprecationWarning,
+            (
+                "Failing to pass a value to the 'type_params' parameter "
+                "of 'typing._eval_type' is deprecated"
+            )
+        ) as cm:
+            self.assertEqual(typing._eval_type(list["int"], globals(), {}), list[int])
+
+        self.assertEqual(cm.filename, __file__)
+
+        f = ForwardRef("int")
+
+        with self.assertWarnsRegex(
+            DeprecationWarning,
+            (
+                "Failing to pass a value to the 'type_params' parameter "
+                "of 'typing.ForwardRef._evaluate' is deprecated"
+            )
+        ) as cm:
+            self.assertIs(f._evaluate(globals(), {}, recursive_guard=frozenset()), int)
+
+        self.assertEqual(cm.filename, __file__)
+
 
 @lru_cache()
 def cached_func(x, y):
@@ -7486,6 +7511,15 @@ class OtherABCTests(BaseTestCase):
         self.assertIsInstance(cm, typing.ContextManager)
         self.assertNotIsInstance(42, typing.ContextManager)
 
+    def test_contextmanager_type_params(self):
+        cm1 = typing.ContextManager[int]
+        self.assertEqual(get_args(cm1), (int, bool | None))
+        cm2 = typing.ContextManager[int, None]
+        self.assertEqual(get_args(cm2), (int, types.NoneType))
+
+        type gen_cm[T1, T2] = typing.ContextManager[T1, T2]
+        self.assertEqual(get_args(gen_cm.__value__[int, None]), (int, types.NoneType))
+
     def test_async_contextmanager(self):
         class NotACM:
             pass
@@ -7497,11 +7531,17 @@ class OtherABCTests(BaseTestCase):
 
         cm = manager()
         self.assertNotIsInstance(cm, typing.AsyncContextManager)
-        self.assertEqual(typing.AsyncContextManager[int].__args__, (int,))
+        self.assertEqual(typing.AsyncContextManager[int].__args__, (int, bool | None))
         with self.assertRaises(TypeError):
             isinstance(42, typing.AsyncContextManager[int])
         with self.assertRaises(TypeError):
-            typing.AsyncContextManager[int, str]
+            typing.AsyncContextManager[int, str, float]
+
+    def test_asynccontextmanager_type_params(self):
+        cm1 = typing.AsyncContextManager[int]
+        self.assertEqual(get_args(cm1), (int, bool | None))
+        cm2 = typing.AsyncContextManager[int, None]
+        self.assertEqual(get_args(cm2), (int, types.NoneType))
 
 
 class TypeTests(BaseTestCase):
@@ -9928,7 +9968,7 @@ class SpecialAttrsTests(BaseTestCase):
             typing.ValuesView: 'ValuesView',
             # Subscribed ABC classes
             typing.AbstractSet[Any]: 'AbstractSet',
-            typing.AsyncContextManager[Any]: 'AsyncContextManager',
+            typing.AsyncContextManager[Any, Any]: 'AsyncContextManager',
             typing.AsyncGenerator[Any, Any]: 'AsyncGenerator',
             typing.AsyncIterable[Any]: 'AsyncIterable',
             typing.AsyncIterator[Any]: 'AsyncIterator',
@@ -9938,7 +9978,7 @@ class SpecialAttrsTests(BaseTestCase):
             typing.ChainMap[Any, Any]: 'ChainMap',
             typing.Collection[Any]: 'Collection',
             typing.Container[Any]: 'Container',
-            typing.ContextManager[Any]: 'ContextManager',
+            typing.ContextManager[Any, Any]: 'ContextManager',
             typing.Coroutine[Any, Any, Any]: 'Coroutine',
             typing.Counter[Any]: 'Counter',
             typing.DefaultDict[Any, Any]: 'DefaultDict',
