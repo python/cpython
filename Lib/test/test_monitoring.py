@@ -656,6 +656,17 @@ class LineMonitoringTest(MonitoringTestBase, unittest.TestCase):
 
         self.check_lines(func2, [1,2,3,4,5,6])
 
+    def test_generator_with_line(self):
+
+        def f():
+            def a():
+                yield
+            def b():
+                yield from a()
+            next(b())
+
+        self.check_lines(f, [1,3,5,4,2,4])
+
 class TestDisable(MonitoringTestBase, unittest.TestCase):
 
     def gen(self, cond):
