@@ -907,7 +907,7 @@ class PyLongModuleTests(unittest.TestCase):
                 int(big_value)
 
     def test_pylong_roundtrip(self):
-        from random import randrange
+        from random import randrange, getrandbits
         bits = 5000
         while bits <= 1_000_000:
             bits += randrange(-100, 101) # break bitlength patterns
