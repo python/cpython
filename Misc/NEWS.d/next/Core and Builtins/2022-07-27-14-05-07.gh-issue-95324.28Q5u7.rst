@@ -1,2 +1,0 @@
-Emit a warning in debug mode if an object does not call
-:c:func:`PyObject_GC_UnTrack` before deallocation. Patch by Pablo Galindo.

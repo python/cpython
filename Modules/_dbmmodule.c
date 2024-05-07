@@ -2,7 +2,11 @@
 /* DBM module using dictionary interface */
 
 
-#define PY_SSIZE_T_CLEAN
+// clinic/_dbmmodule.c.h uses internal pycore_modsupport.h API
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
 #include "Python.h"
 
 #include <sys/types.h>
@@ -358,8 +362,7 @@ _dbm_dbm_get_impl(dbmobject *self, PyTypeObject *cls, const char *key,
         return PyBytes_FromStringAndSize(val.dptr, val.dsize);
     }
 
-    Py_INCREF(default_value);
-    return default_value;
+    return Py_NewRef(default_value);
 }
 
 /*[clinic input]
@@ -416,11 +419,42 @@ _dbm_dbm_setdefault_impl(dbmobject *self, PyTypeObject *cls, const char *key,
     return default_value;
 }
 
+/*[clinic input]
+_dbm.dbm.clear
+    cls: defining_class
+    /
+Remove all items from the database.
+
+[clinic start generated code]*/
+
+static PyObject *
+_dbm_dbm_clear_impl(dbmobject *self, PyTypeObject *cls)
+/*[clinic end generated code: output=8d126b9e1d01a434 input=43aa6ca1acb7f5f5]*/
+{
+    _dbm_state *state = PyType_GetModuleState(cls);
+    assert(state != NULL);
+    check_dbmobject_open(self, state->dbm_error);
+    datum key;
+    // Invalidate cache
+    self->di_size = -1;
+    while (1) {
+        key = dbm_firstkey(self->di_dbm);
+        if (key.dptr == NULL) {
+            break;
+        }
+        if (dbm_delete(self->di_dbm, key) < 0) {
+            dbm_clearerr(self->di_dbm);
+            PyErr_SetString(state->dbm_error, "cannot delete item from database");
+            return NULL;
+        }
+    }
+    Py_RETURN_NONE;
+}
+
 static PyObject *
 dbm__enter__(PyObject *self, PyObject *args)
 {
-    Py_INCREF(self);
-    return self;
+    return Py_NewRef(self);
 }
 
 static PyObject *
@@ -434,6 +468,7 @@ static PyMethodDef dbm_methods[] = {
     _DBM_DBM_KEYS_METHODDEF
     _DBM_DBM_GET_METHODDEF
     _DBM_DBM_SETDEFAULT_METHODDEF
+    _DBM_DBM_CLEAR_METHODDEF
     {"__enter__", dbm__enter__, METH_NOARGS, NULL},
     {"__exit__",  dbm__exit__, METH_VARARGS, NULL},
     {NULL,  NULL}           /* sentinel */
@@ -522,11 +557,6 @@ dbmopen_impl(PyObject *module, PyObject *filename, const char *flags,
     }
 
     const char *name = PyBytes_AS_STRING(filenamebytes);
-    if (strlen(name) != (size_t)PyBytes_GET_SIZE(filenamebytes)) {
-        Py_DECREF(filenamebytes);
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
-        return NULL;
-    }
     PyObject *self = newdbmobject(state, name, iflags, mode);
     Py_DECREF(filenamebytes);
     return self;
@@ -585,6 +615,8 @@ _dbm_module_free(void *module)
 
 static PyModuleDef_Slot _dbmmodule_slots[] = {
     {Py_mod_exec, _dbm_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
 };
 

@@ -1,1 +1,0 @@
-Remove ``tokenize.NL`` check from :mod:`tabnanny`.

@@ -1,6 +1,7 @@
 """
 Define names for built-in types that aren't directly accessible as a builtin.
 """
+
 import sys
 
 # Iterators in Python aren't a matter of type but of protocol.  A large
@@ -56,7 +57,6 @@ except TypeError as exc:
     TracebackType = type(exc.__traceback__)
     FrameType = type(exc.__traceback__.tb_frame)
 
-# For Jython, the following two types are identical
 GetSetDescriptorType = type(FunctionType.__code__)
 MemberDescriptorType = type(FunctionType.__globals__)
 
@@ -143,6 +143,35 @@ def _calculate_meta(meta, bases):
                         "must be a (non-strict) subclass "
                         "of the metaclasses of all its bases")
     return winner
+
+
+def get_original_bases(cls, /):
+    """Return the class's "original" bases prior to modification by `__mro_entries__`.
+
+    Examples::
+
+        from typing import TypeVar, Generic, NamedTuple, TypedDict
+
+        T = TypeVar("T")
+        class Foo(Generic[T]): ...
+        class Bar(Foo[int], float): ...
+        class Baz(list[str]): ...
+        Eggs = NamedTuple("Eggs", [("a", int), ("b", str)])
+        Spam = TypedDict("Spam", {"a": int, "b": str})
+
+        assert get_original_bases(Bar) == (Foo[int], float)
+        assert get_original_bases(Baz) == (list[str],)
+        assert get_original_bases(Eggs) == (NamedTuple,)
+        assert get_original_bases(Spam) == (TypedDict,)
+        assert get_original_bases(int) == (object,)
+    """
+    try:
+        return cls.__dict__.get("__orig_bases__", cls.__bases__)
+    except AttributeError:
+        raise TypeError(
+            f"Expected an instance of type, not {type(cls).__name__!r}"
+        ) from None
+
 
 class DynamicClassAttribute:
     """Route attribute access on a class to __getattr__.
@@ -302,4 +331,11 @@ EllipsisType = type(Ellipsis)
 NoneType = type(None)
 NotImplementedType = type(NotImplemented)
 
+def __getattr__(name):
+    if name == 'CapsuleType':
+        import _socket
+        return type(_socket.CAPI)
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
 __all__ = [n for n in globals() if n[:1] != '_']
+__all__ += ['CapsuleType']

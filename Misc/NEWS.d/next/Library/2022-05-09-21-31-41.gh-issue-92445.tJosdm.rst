@@ -1,3 +1,0 @@
-Fix a bug in :mod:`argparse` where ``nargs="*"`` would raise an error instead of returning
-an empty list when 0 arguments were supplied if choice was also defined in
-``parser.add_argument``.

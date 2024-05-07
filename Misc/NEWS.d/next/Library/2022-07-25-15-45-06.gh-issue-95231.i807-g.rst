@@ -1,3 +1,0 @@
-Fail gracefully if :data:`~errno.EPERM` or :data:`~errno.ENOSYS` is raised when loading
-:mod:`crypt` methods. This may happen when trying to load ``MD5`` on a Linux kernel
-with :abbr:`FIPS (Federal Information Processing Standard)` enabled.

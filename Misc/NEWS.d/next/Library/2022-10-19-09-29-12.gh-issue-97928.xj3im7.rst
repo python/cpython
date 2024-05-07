@@ -1,2 +1,0 @@
-:meth:`tkinter.Text.count` raises now an exception for options starting with
-"-" instead of silently ignoring them.

@@ -52,6 +52,7 @@ and work with streams:
                           limit=None, ssl=None, family=0, proto=0, \
                           flags=0, sock=None, local_addr=None, \
                           server_hostname=None, ssl_handshake_timeout=None, \
+                          ssl_shutdown_timeout=None, \
                           happy_eyeballs_delay=None, interleave=None)
 
    Establish a network connection and return a pair of
@@ -76,11 +77,14 @@ and work with streams:
    .. versionchanged:: 3.7
       Added the *ssl_handshake_timeout* parameter.
 
-   .. versionadded:: 3.8
-      Added *happy_eyeballs_delay* and *interleave* parameters.
+   .. versionchanged:: 3.8
+      Added the *happy_eyeballs_delay* and *interleave* parameters.
 
    .. versionchanged:: 3.10
       Removed the *loop* parameter.
+
+   .. versionchanged:: 3.11
+      Added the *ssl_shutdown_timeout* parameter.
 
 
 .. coroutinefunction:: start_server(client_connected_cb, host=None, \
@@ -89,7 +93,7 @@ and work with streams:
                           flags=socket.AI_PASSIVE, sock=None, \
                           backlog=100, ssl=None, reuse_address=None, \
                           reuse_port=None, ssl_handshake_timeout=None, \
-                          start_serving=True)
+                          ssl_shutdown_timeout=None, start_serving=True)
 
    Start a socket server.
 
@@ -121,12 +125,15 @@ and work with streams:
    .. versionchanged:: 3.10
       Removed the *loop* parameter.
 
+   .. versionchanged:: 3.11
+      Added the *ssl_shutdown_timeout* parameter.
+
 
 .. rubric:: Unix Sockets
 
 .. coroutinefunction:: open_unix_connection(path=None, *, limit=None, \
                         ssl=None, sock=None, server_hostname=None, \
-                        ssl_handshake_timeout=None)
+                        ssl_handshake_timeout=None, ssl_shutdown_timeout=None)
 
    Establish a Unix socket connection and return a pair of
    ``(reader, writer)``.
@@ -150,10 +157,14 @@ and work with streams:
    .. versionchanged:: 3.10
       Removed the *loop* parameter.
 
+   .. versionchanged:: 3.11
+      Added the *ssl_shutdown_timeout* parameter.
+
 
 .. coroutinefunction:: start_unix_server(client_connected_cb, path=None, \
                           *, limit=None, sock=None, backlog=100, ssl=None, \
-                          ssl_handshake_timeout=None, start_serving=True)
+                          ssl_handshake_timeout=None, \
+                          ssl_shutdown_timeout=None, start_serving=True)
 
    Start a Unix socket server.
 
@@ -176,6 +187,9 @@ and work with streams:
    .. versionchanged:: 3.10
       Removed the *loop* parameter.
 
+   .. versionchanged:: 3.11
+      Added the *ssl_shutdown_timeout* parameter.
+
 
 StreamReader
 ============
@@ -183,19 +197,32 @@ StreamReader
 .. class:: StreamReader
 
    Represents a reader object that provides APIs to read data
-   from the IO stream.
+   from the IO stream. As an :term:`asynchronous iterable`, the
+   object supports the :keyword:`async for` statement.
 
    It is not recommended to instantiate *StreamReader* objects
    directly; use :func:`open_connection` and :func:`start_server`
    instead.
 
+   .. method:: feed_eof()
+
+      Acknowledge the EOF.
+
    .. coroutinemethod:: read(n=-1)
 
-      Read up to *n* bytes.  If *n* is not provided, or set to ``-1``,
-      read until EOF and return all read bytes.
+      Read up to *n* bytes from the stream.
 
+      If *n* is not provided or set to ``-1``,
+      read until EOF, then return all read :class:`bytes`.
       If EOF was received and the internal buffer is empty,
       return an empty ``bytes`` object.
+
+      If *n* is ``0``, return an empty ``bytes`` object immediately.
+
+      If *n* is positive, return at most *n* available ``bytes``
+      as soon as at least 1 byte is available in the internal buffer.
+      If EOF is received before any byte is read, return an empty
+      ``bytes`` object.
 
    .. coroutinemethod:: readline()
 
@@ -233,7 +260,18 @@ StreamReader
       buffer is reset.  The :attr:`IncompleteReadError.partial` attribute
       may contain a portion of the separator.
 
+      The *separator* may also be a tuple of separators. In this
+      case the return value will be the shortest possible that has any
+      separator as the suffix. For the purposes of :exc:`LimitOverrunError`,
+      the shortest possible separator is considered to be the one that
+      matched.
+
       .. versionadded:: 3.5.2
+
+      .. versionchanged:: 3.13
+
+         The *separator* parameter may now be a :class:`tuple` of
+         separators.
 
    .. method:: at_eof()
 
@@ -280,7 +318,8 @@ StreamWriter
 
       The method closes the stream and the underlying socket.
 
-      The method should be used along with the ``wait_closed()`` method::
+      The method should be used, though not mandatory,
+      along with the ``wait_closed()`` method::
 
          stream.close()
          await stream.wait_closed()
@@ -319,8 +358,8 @@ StreamWriter
       be resumed.  When there is nothing to wait for, the :meth:`drain`
       returns immediately.
 
-   .. coroutinemethod:: start_tls(sslcontext, \*, server_hostname=None, \
-                          ssl_handshake_timeout=None)
+   .. coroutinemethod:: start_tls(sslcontext, *, server_hostname=None, \
+                          ssl_handshake_timeout=None, ssl_shutdown_timeout=None)
 
       Upgrade an existing stream-based connection to TLS.
 
@@ -335,7 +374,15 @@ StreamWriter
         handshake to complete before aborting the connection.  ``60.0`` seconds
         if ``None`` (default).
 
+      * *ssl_shutdown_timeout* is the time in seconds to wait for the SSL shutdown
+        to complete before aborting the connection. ``30.0`` seconds if ``None``
+        (default).
+
       .. versionadded:: 3.11
+
+      .. versionchanged:: 3.12
+         Added the *ssl_shutdown_timeout* parameter.
+
 
    .. method:: is_closing()
 
@@ -349,7 +396,8 @@ StreamWriter
       Wait until the stream is closed.
 
       Should be called after :meth:`close` to wait until the underlying
-      connection is closed.
+      connection is closed, ensuring that all data has been flushed
+      before e.g. exiting the program.
 
       .. versionadded:: 3.7
 
@@ -379,6 +427,7 @@ TCP echo client using the :func:`asyncio.open_connection` function::
 
         print('Close the connection')
         writer.close()
+        await writer.wait_closed()
 
     asyncio.run(tcp_echo_client('Hello World!'))
 
@@ -411,6 +460,7 @@ TCP echo server using the :func:`asyncio.start_server` function::
 
         print("Close the connection")
         writer.close()
+        await writer.wait_closed()
 
     async def main():
         server = await asyncio.start_server(
@@ -467,6 +517,7 @@ Simple example querying HTTP headers of the URL passed on the command line::
 
         # Ignore the body, close the socket
         writer.close()
+        await writer.wait_closed()
 
     url = sys.argv[1]
     asyncio.run(print_http_headers(url))
@@ -512,6 +563,7 @@ Coroutine waiting until a socket receives data using the
         # Got data, we are done: close the socket
         print("Received:", data.decode())
         writer.close()
+        await writer.wait_closed()
 
         # Close the second socket
         wsock.close()

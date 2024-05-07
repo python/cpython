@@ -1,1 +1,0 @@
-Allow setting the attributes of ``reprlib.Repr`` during object initialization

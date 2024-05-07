@@ -1,4 +1,0 @@
-Fixes :mod:`multiprocessing` spawning child processes on Windows from a
-virtual environment to ensure that child processes that also use
-:mod:`multiprocessing` to spawn more children will recognize that they are
-in a virtual environment.

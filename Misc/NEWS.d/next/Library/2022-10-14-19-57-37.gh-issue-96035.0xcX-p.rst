@@ -1,3 +1,0 @@
-Fix bug in :func:`urllib.parse.urlparse` that causes certain port numbers
-containing whitespace, underscores, plus and minus signs, or non-ASCII digits to be
-incorrectly accepted.

@@ -1,1 +1,0 @@
-The constructors for :class:`~csv.DictWriter` and :class:`~csv.DictReader` now coerce the ``fieldnames`` argument to a :class:`list` if it is an iterator.

@@ -2,14 +2,20 @@
 posixshmem - A Python extension that provides shm_open() and shm_unlink()
 */
 
-#define PY_SSIZE_T_CLEAN
+// Need limited C API version 3.13 for Py_mod_gil
+#include "pyconfig.h"   // Py_GIL_DISABLED
+#ifndef Py_GIL_DISABLED
+#  define Py_LIMITED_API 0x030d0000
+#endif
 
 #include <Python.h>
 
-// for shm_open() and shm_unlink()
+#include <string.h>               // strlen()
+#include <errno.h>                // EINTR
 #ifdef HAVE_SYS_MMAN_H
-#include <sys/mman.h>
+#  include <sys/mman.h>           // shm_open(), shm_unlink()
 #endif
+
 
 /*[clinic input]
 module _posixshmem
@@ -42,8 +48,13 @@ _posixshmem_shm_open_impl(PyObject *module, PyObject *path, int flags,
 {
     int fd;
     int async_err = 0;
-    const char *name = PyUnicode_AsUTF8(path);
+    Py_ssize_t name_size;
+    const char *name = PyUnicode_AsUTF8AndSize(path, &name_size);
     if (name == NULL) {
+        return -1;
+    }
+    if (strlen(name) != (size_t)name_size) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
         return -1;
     }
     do {
@@ -81,8 +92,13 @@ _posixshmem_shm_unlink_impl(PyObject *module, PyObject *path)
 {
     int rv;
     int async_err = 0;
-    const char *name = PyUnicode_AsUTF8(path);
+    Py_ssize_t name_size;
+    const char *name = PyUnicode_AsUTF8AndSize(path, &name_size);
     if (name == NULL) {
+        return NULL;
+    }
+    if (strlen(name) != (size_t)name_size) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
         return NULL;
     }
     do {
@@ -110,12 +126,20 @@ static PyMethodDef module_methods[ ] = {
 };
 
 
+static PyModuleDef_Slot module_slots[] = {
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
+    {0, NULL}
+};
+
+
 static struct PyModuleDef _posixshmemmodule = {
     PyModuleDef_HEAD_INIT,
     .m_name = "_posixshmem",
     .m_doc = "POSIX shared memory module",
     .m_size = 0,
     .m_methods = module_methods,
+    .m_slots = module_slots,
 };
 
 /* Module init function */

@@ -1,2 +1,0 @@
-:func:`shutil.make_archive` now passes the *root_dir* argument to custom
-archivers which support it.

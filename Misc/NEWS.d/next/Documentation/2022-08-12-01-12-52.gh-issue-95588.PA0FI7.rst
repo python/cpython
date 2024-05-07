@@ -1,6 +1,0 @@
-Clarified the conflicting advice given in the :mod:`ast` documentation about
-:func:`ast.literal_eval` being "safe" for use on untrusted input while at
-the same time warning that it can crash the process. The latter statement is
-true and is deemed unfixable without a large amount of work unsuitable for a
-bugfix. So we keep the warning and no longer claim that ``literal_eval`` is
-safe.

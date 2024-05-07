@@ -1,4 +1,5 @@
 #include "Python.h"
+#include "pycore_pythonrun.h"     // _Py_SourceAsString()
 #include "pycore_symtable.h"      // struct symtable
 
 #include "clinic/symtablemodule.c.h"
@@ -56,8 +57,7 @@ _symtable_symtable_impl(PyObject *module, PyObject *source,
     if (st == NULL) {
         return NULL;
     }
-    t = (PyObject *)st->st_top;
-    Py_INCREF(t);
+    t = Py_NewRef(st->st_top);
     _PySymtable_Free(st);
     return t;
 }
@@ -66,12 +66,6 @@ static PyMethodDef symtable_methods[] = {
     _SYMTABLE_SYMTABLE_METHODDEF
     {NULL,              NULL}           /* sentinel */
 };
-
-static int
-symtable_init_stentry_type(PyObject *m)
-{
-    return PyType_Ready(&PySTEntry_Type);
-}
 
 static int
 symtable_init_constants(PyObject *m)
@@ -92,6 +86,14 @@ symtable_init_constants(PyObject *m)
     if (PyModule_AddIntConstant(m, "TYPE_CLASS", ClassBlock) < 0) return -1;
     if (PyModule_AddIntConstant(m, "TYPE_MODULE", ModuleBlock) < 0)
         return -1;
+    if (PyModule_AddIntConstant(m, "TYPE_ANNOTATION", AnnotationBlock) < 0)
+        return -1;
+    if (PyModule_AddIntConstant(m, "TYPE_TYPE_VAR_BOUND", TypeVarBoundBlock) < 0)
+        return -1;
+    if (PyModule_AddIntConstant(m, "TYPE_TYPE_ALIAS", TypeAliasBlock) < 0)
+        return -1;
+    if (PyModule_AddIntConstant(m, "TYPE_TYPE_PARAM", TypeParamBlock) < 0)
+        return -1;
 
     if (PyModule_AddIntMacro(m, LOCAL) < 0) return -1;
     if (PyModule_AddIntMacro(m, GLOBAL_EXPLICIT) < 0) return -1;
@@ -106,8 +108,9 @@ symtable_init_constants(PyObject *m)
 }
 
 static PyModuleDef_Slot symtable_slots[] = {
-    {Py_mod_exec, symtable_init_stentry_type},
     {Py_mod_exec, symtable_init_constants},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
 };
 

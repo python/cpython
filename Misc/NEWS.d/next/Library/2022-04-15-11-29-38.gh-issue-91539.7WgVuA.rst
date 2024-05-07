@@ -1,1 +1,0 @@
-Improve performance of ``urllib.request.getproxies_environment`` when there are many environment variables

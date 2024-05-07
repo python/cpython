@@ -1,4 +1,4 @@
-name: Verify bundled pip and setuptools
+name: Verify bundled wheels
 
 on:
   workflow_dispatch:
@@ -23,10 +23,11 @@ concurrency:
 jobs:
   verify:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-python@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: '3'
-      - name: Compare checksums of bundled pip and setuptools to ones published on PyPI
+      - name: Compare checksum of bundled wheels to the ones published on PyPI
         run: ./Tools/build/verify_ensurepip_wheels.py

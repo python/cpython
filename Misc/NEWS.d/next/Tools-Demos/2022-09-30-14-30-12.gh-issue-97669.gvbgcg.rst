@@ -1,3 +1,0 @@
-Remove outdated example scripts of the ``Tools/scripts/`` directory. A copy can
-be found in the `old-demos project <https://github.com/gvanrossum/old-demos>`_.
-Patch by Victor Stinner.

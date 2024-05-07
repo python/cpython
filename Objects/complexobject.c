@@ -7,10 +7,11 @@
 
 #include "Python.h"
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
+#include "pycore_complexobject.h" // _PyComplex_FormatAdvancedWriter()
 #include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_object.h"        // _PyObject_Init()
 #include "pycore_pymath.h"        // _Py_ADJUST_ERANGE2()
-#include "structmember.h"         // PyMemberDef
+
 
 
 /*[clinic input]
@@ -255,26 +256,51 @@ PyComplex_FromDoubles(double real, double imag)
     return PyComplex_FromCComplex(c);
 }
 
+static PyObject * try_complex_special_method(PyObject *);
+
 double
 PyComplex_RealAsDouble(PyObject *op)
 {
+    double real = -1.0;
+
     if (PyComplex_Check(op)) {
-        return ((PyComplexObject *)op)->cval.real;
+        real = ((PyComplexObject *)op)->cval.real;
     }
     else {
-        return PyFloat_AsDouble(op);
+        PyObject* newop = try_complex_special_method(op);
+        if (newop) {
+            real = ((PyComplexObject *)newop)->cval.real;
+            Py_DECREF(newop);
+        } else if (!PyErr_Occurred()) {
+            real = PyFloat_AsDouble(op);
+        }
     }
+
+    return real;
 }
 
 double
 PyComplex_ImagAsDouble(PyObject *op)
 {
+    double imag = -1.0;
+
     if (PyComplex_Check(op)) {
-        return ((PyComplexObject *)op)->cval.imag;
+        imag = ((PyComplexObject *)op)->cval.imag;
     }
     else {
-        return 0.0;
+        PyObject* newop = try_complex_special_method(op);
+        if (newop) {
+            imag = ((PyComplexObject *)newop)->cval.imag;
+            Py_DECREF(newop);
+        } else if (!PyErr_Occurred()) {
+            PyFloat_AsDouble(op);
+            if (!PyErr_Occurred()) {
+                imag = 0.0;
+            }
+        }
     }
+
+    return imag;
 }
 
 static PyObject *
@@ -449,8 +475,7 @@ to_complex(PyObject **pobj, Py_complex *pc)
         pc->real = PyFloat_AsDouble(obj);
         return 0;
     }
-    Py_INCREF(Py_NotImplemented);
-    *pobj = Py_NotImplemented;
+    *pobj = Py_NewRef(Py_NotImplemented);
     return -1;
 }
 
@@ -553,8 +578,7 @@ static PyObject *
 complex_pos(PyComplexObject *v)
 {
     if (PyComplex_CheckExact(v)) {
-        Py_INCREF(v);
-        return (PyObject *)v;
+        return Py_NewRef(v);
     }
     else
         return PyComplex_FromCComplex(v->cval);
@@ -631,8 +655,7 @@ complex_richcompare(PyObject *v, PyObject *w, int op)
     else
          res = Py_False;
 
-    Py_INCREF(res);
-    return res;
+    return Py_NewRef(res);
 
 Unimplemented:
     Py_RETURN_NOTIMPLEMENTED;
@@ -705,8 +728,7 @@ complex___complex___impl(PyComplexObject *self)
 /*[clinic end generated code: output=e6b35ba3d275dc9c input=3589ada9d27db854]*/
 {
     if (PyComplex_CheckExact(self)) {
-        Py_INCREF(self);
-        return (PyObject *)self;
+        return Py_NewRef(self);
     }
     else {
         return PyComplex_FromCComplex(self->cval);
@@ -723,9 +745,9 @@ static PyMethodDef complex_methods[] = {
 };
 
 static PyMemberDef complex_members[] = {
-    {"real", T_DOUBLE, offsetof(PyComplexObject, cval.real), READONLY,
+    {"real", Py_T_DOUBLE, offsetof(PyComplexObject, cval.real), Py_READONLY,
      "the real part of a complex number"},
-    {"imag", T_DOUBLE, offsetof(PyComplexObject, cval.imag), READONLY,
+    {"imag", Py_T_DOUBLE, offsetof(PyComplexObject, cval.imag), Py_READONLY,
      "the imaginary part of a complex number"},
     {0},
 };
@@ -917,8 +939,7 @@ complex_new_impl(PyTypeObject *type, PyObject *r, PyObject *i)
            to exact complexes here.  If either the input or the
            output is a complex subclass, it will be handled below
            as a non-orthogonal vector.  */
-        Py_INCREF(r);
-        return r;
+        return Py_NewRef(r);
     }
     if (PyUnicode_Check(r)) {
         if (i != NULL) {

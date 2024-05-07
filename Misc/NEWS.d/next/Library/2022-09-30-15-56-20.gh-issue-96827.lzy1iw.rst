@@ -1,1 +1,0 @@
-Avoid spurious tracebacks from :mod:`asyncio` when default executor cleanup is delayed until after the event loop is closed (e.g. as the result of a keyboard interrupt).

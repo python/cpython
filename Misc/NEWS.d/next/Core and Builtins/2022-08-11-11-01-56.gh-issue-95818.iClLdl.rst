@@ -1,1 +1,0 @@
-Skip over incomplete frames in :c:func:`PyThreadState_GetFrame`.

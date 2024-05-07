@@ -1,3 +1,0 @@
-API for implementing vectorcall (:c:data:`Py_TPFLAGS_HAVE_VECTORCALL`,
-:c:func:`PyVectorcall_NARGS` and :c:func:`PyVectorcall_Call`) was added to
-the limited API and stable ABI.

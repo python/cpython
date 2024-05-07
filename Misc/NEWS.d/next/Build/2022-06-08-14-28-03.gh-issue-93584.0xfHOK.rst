@@ -1,2 +1,0 @@
-Address race condition in ``Makefile`` when installing a PGO build. All
-``test`` and ``install`` targets now depend on ``all`` target.

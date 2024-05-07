@@ -1,5 +1,5 @@
-The :mod:`concurrent` package
-=============================
+The :mod:`!concurrent` package
+==============================
 
 Currently, there is only one module in this package:
 

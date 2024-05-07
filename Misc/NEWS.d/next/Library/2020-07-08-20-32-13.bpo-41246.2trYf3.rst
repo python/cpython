@@ -1,3 +1,0 @@
-Give the same callback function for when the overlapped operation is done to
-the functions ``recv``, ``recv_into``, ``recvfrom``, ``sendto``, ``send``
-and ``sendfile`` inside ``IocpProactor``.

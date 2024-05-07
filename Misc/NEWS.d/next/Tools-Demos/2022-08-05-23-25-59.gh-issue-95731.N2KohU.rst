@@ -1,1 +1,0 @@
-Fix handling of module docstrings in :file:`Tools/i18n/pygettext.py`.

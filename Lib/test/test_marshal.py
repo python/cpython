@@ -1,5 +1,5 @@
 from test import support
-from test.support import os_helper, requires_debug_ranges
+from test.support import is_apple_mobile, os_helper, requires_debug_ranges
 from test.support.script_helper import assert_python_ok
 import array
 import io
@@ -118,7 +118,7 @@ class CodeTestCase(unittest.TestCase):
     def test_many_codeobjects(self):
         # Issue2957: bad recursion count on code objects
         # more than MAX_MARSHAL_STACK_DEPTH
-        count = support.EXCEEDS_RECURSION_LIMIT
+        count = support.exceeds_recursion_limit()
         codes = (ExceptionTestCase.test_exceptions.__code__,) * count
         marshal.loads(marshal.dumps(codes))
 
@@ -128,6 +128,32 @@ class CodeTestCase(unittest.TestCase):
         co1, co2 = marshal.loads(marshal.dumps((co1, co2)))
         self.assertEqual(co1.co_filename, "f1")
         self.assertEqual(co2.co_filename, "f2")
+
+    def test_no_allow_code(self):
+        data = {'a': [({0},)]}
+        dump = marshal.dumps(data, allow_code=False)
+        self.assertEqual(marshal.loads(dump, allow_code=False), data)
+
+        f = io.BytesIO()
+        marshal.dump(data, f, allow_code=False)
+        f.seek(0)
+        self.assertEqual(marshal.load(f, allow_code=False), data)
+
+        co = ExceptionTestCase.test_exceptions.__code__
+        data = {'a': [({co, 0},)]}
+        dump = marshal.dumps(data, allow_code=True)
+        self.assertEqual(marshal.loads(dump, allow_code=True), data)
+        with self.assertRaises(ValueError):
+            marshal.dumps(data, allow_code=False)
+        with self.assertRaises(ValueError):
+            marshal.loads(dump, allow_code=False)
+
+        marshal.dump(data, io.BytesIO(), allow_code=True)
+        self.assertEqual(marshal.load(io.BytesIO(dump), allow_code=True), data)
+        with self.assertRaises(ValueError):
+            marshal.dump(data, io.BytesIO(), allow_code=False)
+        with self.assertRaises(ValueError):
+            marshal.load(io.BytesIO(dump), allow_code=False)
 
     @requires_debug_ranges()
     def test_minimal_linetable_with_no_debug_ranges(self):
@@ -260,6 +286,8 @@ class BugsTestCase(unittest.TestCase):
         #if os.name == 'nt' and support.Py_DEBUG:
         if os.name == 'nt':
             MAX_MARSHAL_STACK_DEPTH = 1000
+        elif sys.platform == 'wasi' or is_apple_mobile:
+            MAX_MARSHAL_STACK_DEPTH = 1500
         else:
             MAX_MARSHAL_STACK_DEPTH = 2000
         for i in range(MAX_MARSHAL_STACK_DEPTH - 2):
@@ -353,7 +381,7 @@ class BugsTestCase(unittest.TestCase):
             for elements in (
                 "float('nan'), b'a', b'b', b'c', 'x', 'y', 'z'",
                 # Also test for bad interactions with backreferencing:
-                "('Spam', 0), ('Spam', 1), ('Spam', 2)",
+                "('Spam', 0), ('Spam', 1), ('Spam', 2), ('Spam', 3), ('Spam', 4), ('Spam', 5)",
             ):
                 s = f"{kind}([{elements}])"
                 with self.subTest(s):

@@ -1,2 +1,0 @@
-:func:`os.sched_yield` now release the GIL while calling sched_yield(2).
-Patch by Dong-hee Na.

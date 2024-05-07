@@ -1,7 +1,7 @@
 """Generate 10,000 unique examples for the Levenshtein short-circuit tests."""
 
 import argparse
-from functools import cache
+from functools import lru_cache
 import json
 import os.path
 from random import choices, randrange
@@ -22,7 +22,7 @@ def _substitution_cost(ch_a, ch_b):
     return _MOVE_COST
 
 
-@cache
+@lru_cache(None)
 def levenshtein(a, b):
     if not a or not b:
         return (len(a) + len(b)) * _MOVE_COST

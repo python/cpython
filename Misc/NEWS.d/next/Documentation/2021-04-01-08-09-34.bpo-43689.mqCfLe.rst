@@ -1,1 +1,0 @@
-The ``Differ`` documentation now also mentions other whitespace characters, which make it harder to understand the diff output.

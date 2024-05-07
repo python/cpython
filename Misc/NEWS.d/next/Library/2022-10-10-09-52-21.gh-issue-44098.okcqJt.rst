@@ -1,1 +1,0 @@
-Release the GIL when creating :class:`mmap.mmap` objects on Unix.

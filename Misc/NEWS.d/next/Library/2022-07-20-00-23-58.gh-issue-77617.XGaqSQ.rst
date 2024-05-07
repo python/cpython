@@ -1,2 +1,0 @@
-Add :mod:`sqlite3` :ref:`command-line interface <sqlite3-cli>`.
-Patch by Erlend Aasland.

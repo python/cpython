@@ -1,6 +1,0 @@
-Remove the :func:`sys.getdxp` function and the ``Tools/scripts/analyze_dxp.py``
-script. DXP stands for "dynamic execution pairs". They were related to
-``DYNAMIC_EXECUTION_PROFILE`` and ``DXPAIRS`` macros which have been removed in
-Python 3.11. Python can now be built with :option:`./configure --enable-pystats
-<--enable-pystats>` to gather statistics on Python opcodes.  Patch by Victor
-Stinner.

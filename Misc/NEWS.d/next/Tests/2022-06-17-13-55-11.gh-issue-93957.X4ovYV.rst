@@ -1,2 +1,0 @@
-Provide nicer error reporting from subprocesses in
-test_venv.EnsurePipTest.test_with_pip.

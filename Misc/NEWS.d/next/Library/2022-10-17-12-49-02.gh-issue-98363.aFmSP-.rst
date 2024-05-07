@@ -1,2 +1,0 @@
-Added itertools.batched() to batch data into lists of a given length with
-the last list possibly being shorter than the others.

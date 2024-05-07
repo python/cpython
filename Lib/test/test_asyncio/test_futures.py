@@ -5,6 +5,7 @@ import gc
 import re
 import sys
 import threading
+import traceback
 import unittest
 from unittest import mock
 from types import GenericAlias
@@ -146,10 +147,8 @@ class BaseFutureTests:
         self.assertTrue(f.cancelled())
 
     def test_constructor_without_loop(self):
-        with self.assertWarns(DeprecationWarning) as cm:
-            with self.assertRaisesRegex(RuntimeError, 'There is no current event loop'):
-                self._new_future()
-        self.assertEqual(cm.filename, __file__)
+        with self.assertRaisesRegex(RuntimeError, 'no current event loop'):
+            self._new_future()
 
     def test_constructor_use_running_loop(self):
         async def test():
@@ -159,12 +158,10 @@ class BaseFutureTests:
         self.assertIs(f.get_loop(), self.loop)
 
     def test_constructor_use_global_loop(self):
-        # Deprecated in 3.10
+        # Deprecated in 3.10, undeprecated in 3.12
         asyncio.set_event_loop(self.loop)
         self.addCleanup(asyncio.set_event_loop, None)
-        with self.assertWarns(DeprecationWarning) as cm:
-            f = self._new_future()
-        self.assertEqual(cm.filename, __file__)
+        f = self._new_future()
         self.assertIs(f._loop, self.loop)
         self.assertIs(f.get_loop(), self.loop)
 
@@ -274,10 +271,6 @@ class BaseFutureTests:
         f = self._new_future(loop=self.loop)
         self.assertRaises(asyncio.InvalidStateError, f.exception)
 
-        # StopIteration cannot be raised into a Future - CPython issue26221
-        self.assertRaisesRegex(TypeError, "StopIteration .* cannot be raised",
-                               f.set_exception, StopIteration)
-
         f.set_exception(exc)
         self.assertFalse(f.cancelled())
         self.assertTrue(f.done())
@@ -286,6 +279,25 @@ class BaseFutureTests:
         self.assertRaises(asyncio.InvalidStateError, f.set_result, None)
         self.assertRaises(asyncio.InvalidStateError, f.set_exception, None)
         self.assertFalse(f.cancel())
+
+    def test_stop_iteration_exception(self, stop_iteration_class=StopIteration):
+        exc = stop_iteration_class()
+        f = self._new_future(loop=self.loop)
+        f.set_exception(exc)
+        self.assertFalse(f.cancelled())
+        self.assertTrue(f.done())
+        self.assertRaises(RuntimeError, f.result)
+        exc = f.exception()
+        cause = exc.__cause__
+        self.assertIsInstance(exc, RuntimeError)
+        self.assertRegex(str(exc), 'StopIteration .* cannot be raised')
+        self.assertIsInstance(cause, stop_iteration_class)
+
+    def test_stop_iteration_subclass_exception(self):
+        class MyStopIteration(StopIteration):
+            pass
+
+        self.test_stop_iteration_exception(MyStopIteration)
 
     def test_exception_class(self):
         f = self._new_future(loop=self.loop)
@@ -405,6 +417,24 @@ class BaseFutureTests:
         _copy_future_state(f_cancelled, newf_cancelled)
         self.assertTrue(newf_cancelled.cancelled())
 
+        try:
+            raise concurrent.futures.InvalidStateError
+        except BaseException as e:
+            f_exc = e
+
+        f_conexc = self._new_future(loop=self.loop)
+        f_conexc.set_exception(f_exc)
+
+        newf_conexc = self._new_future(loop=self.loop)
+        _copy_future_state(f_conexc, newf_conexc)
+        self.assertTrue(newf_conexc.done())
+        try:
+            newf_conexc.result()
+        except BaseException as e:
+            newf_exc = e # assertRaises context manager drops the traceback
+        newf_tb = ''.join(traceback.format_tb(newf_exc.__traceback__))
+        self.assertEqual(newf_tb.count('raise concurrent.futures.InvalidStateError'), 1)
+
     def test_iter(self):
         fut = self._new_future(loop=self.loop)
 
@@ -500,10 +530,8 @@ class BaseFutureTests:
             return (arg, threading.get_ident())
         ex = concurrent.futures.ThreadPoolExecutor(1)
         f1 = ex.submit(run, 'oi')
-        with self.assertWarns(DeprecationWarning) as cm:
-            with self.assertRaises(RuntimeError):
-                asyncio.wrap_future(f1)
-        self.assertEqual(cm.filename, __file__)
+        with self.assertRaisesRegex(RuntimeError, 'no current event loop'):
+            asyncio.wrap_future(f1)
         ex.shutdown(wait=True)
 
     def test_wrap_future_use_running_loop(self):
@@ -518,16 +546,14 @@ class BaseFutureTests:
         ex.shutdown(wait=True)
 
     def test_wrap_future_use_global_loop(self):
-        # Deprecated in 3.10
+        # Deprecated in 3.10, undeprecated in 3.12
         asyncio.set_event_loop(self.loop)
         self.addCleanup(asyncio.set_event_loop, None)
         def run(arg):
             return (arg, threading.get_ident())
         ex = concurrent.futures.ThreadPoolExecutor(1)
         f1 = ex.submit(run, 'oi')
-        with self.assertWarns(DeprecationWarning) as cm:
-            f2 = asyncio.wrap_future(f1)
-        self.assertEqual(cm.filename, __file__)
+        f2 = asyncio.wrap_future(f1)
         self.assertIs(self.loop, f2._loop)
         ex.shutdown(wait=True)
 
@@ -620,6 +646,8 @@ class BaseFutureTests:
                             Exception, Exception("elephant"), 32)
             self.assertRaises(TypeError, fi.throw,
                             Exception("elephant"), Exception("elephant"))
+            # https://github.com/python/cpython/issues/101326
+            self.assertRaises(ValueError, fi.throw, ValueError, None, None)
         self.assertRaises(TypeError, fi.throw, list)
 
     def test_future_del_collect(self):
