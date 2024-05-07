@@ -526,9 +526,20 @@ are always available.  They are listed here in alphabetical order.
 
 .. function:: eval(expression, globals=None, locals=None)
 
-   The arguments are a string and optional globals and locals.  If provided,
-   *globals* must be a dictionary.  If provided, *locals* can be any mapping
-   object.
+   :param expression:
+      A Python expression.
+   :type expression: :class:`str` | :ref:`code object <code-objects>`
+
+   :param globals:
+      The global namespace (default: ``None``).
+   :type globals: :class:`dict` | ``None``
+
+   :param locals:
+      The local namespace (default: ``None``).
+   :type locals: :term:`mapping` | ``None``
+
+   :returns: The result of the evaluated expression.
+   :raises: Syntax errors are reported as exceptions.
 
    The *expression* argument is parsed and evaluated as a Python expression
    (technically speaking, a condition list) using the *globals* and *locals*
@@ -545,8 +556,7 @@ are always available.  They are listed here in alphabetical order.
    :term:`nested scopes <nested scope>` (non-locals) in the enclosing
    environment.
 
-   The return value is the result of
-   the evaluated expression. Syntax errors are reported as exceptions.  Example:
+   Example:
 
       >>> x = 1
       >>> eval('x+1')
