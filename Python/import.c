@@ -1147,9 +1147,6 @@ init_cached_m_dict(struct extensions_cache_value *value, PyObject *m_dict)
         return -1;
     }
     // XXX We may want to make the copy immortal.
-    // XXX This incref shouldn't be necessary.  We are decref'ing
-    // one to many times somewhere.
-    Py_INCREF(copied);
 
     value->_m_dict = (struct cached_m_dict){
         .copied=copied,
@@ -1973,7 +1970,11 @@ import_run_extension(PyThreadState *tstate, PyModInitFunction p0,
         if (res.kind == _Py_ext_module_kind_SINGLEPHASE) {
             /* Remember the filename as the __file__ attribute */
             if (info->filename != NULL) {
-                if (PyModule_AddObjectRef(mod, "__file__", info->filename) < 0) {
+                // XXX There's a refleak somewhere with the filename.
+                // Until we can track it down, we intern it.
+                PyObject *filename = Py_NewRef(info->filename);
+                PyUnicode_InternInPlace(&filename);
+                if (PyModule_AddObjectRef(mod, "__file__", filename) < 0) {
                     PyErr_Clear(); /* Not important enough to report */
                 }
             }
