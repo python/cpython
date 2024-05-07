@@ -127,6 +127,8 @@ default_keymap: tuple[tuple[KeySpec, CommandName], ...] = tuple(
         (r"\M-9", "digit-arg"),
         # (r'\M-\n', 'insert-nl'),
         ("\\\\", "self-insert"),
+        (r"\x1b[200~", "enable_bracketed_paste"),
+        (r"\x1b[201~", "disable_bracketed_paste"),
     ]
     + [(c, "self-insert") for c in map(chr, range(32, 127)) if c != "\\"]
     + [(c, "self-insert") for c in map(chr, range(128, 256)) if c.isalpha()]
