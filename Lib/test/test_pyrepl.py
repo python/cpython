@@ -1002,5 +1002,5 @@ class TestReader(TestCase):
         self.assert_screen_equals(reader, "")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()
