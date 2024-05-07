@@ -23,6 +23,7 @@ from _pyrepl.console import Console, Event
 from _pyrepl.readline import ReadlineAlikeReader, ReadlineConfig
 from _pyrepl.simple_interact import _strip_final_indent
 from _pyrepl.unix_eventqueue import EventQueue
+from _pyrepl.simple_interact import InteractiveColoredConsole
 
 
 def more_lines(unicodetext, namespace=None):
@@ -830,7 +831,6 @@ class TestPasteEvent(TestCase):
             '    else:\n'
             '      pass\n'
         )
-        # fmt: on
 
         output_code = (
             'def a():\n'
@@ -841,8 +841,8 @@ class TestPasteEvent(TestCase):
             '\n'
             '    else:\n'
             '      pass\n'
-            '\n'
         )
+        # fmt: on
 
         paste_start = "\x1b[200~"
         paste_end = "\x1b[201~"
@@ -856,6 +856,22 @@ class TestPasteEvent(TestCase):
         reader = self.prepare_reader(events)
         output = multiline_input(reader)
         self.assertEqual(output, output_code)
+
+    def test_bracketed_paste_single_line(self):
+        input_code = "oneline"
+
+        paste_start = "\x1b[200~"
+        paste_end = "\x1b[201~"
+
+        events = itertools.chain(
+            code_to_events(paste_start),
+            code_to_events(input_code),
+            code_to_events(paste_end),
+            code_to_events("\n"),
+        )
+        reader = self.prepare_reader(events)
+        output = multiline_input(reader)
+        self.assertEqual(output, input_code)
 
 
 class TestReader(TestCase):
@@ -976,6 +992,15 @@ class TestReader(TestCase):
         reader.setpos_from_xy(0, 1)
         self.assertEqual(reader.pos, 9)
 
+    def test_up_arrow_after_ctrl_r(self):
+        events = iter([
+            Event(evt='key', data='\x12', raw=bytearray(b'\x12')),
+            Event(evt='key', data='up', raw=bytearray(b'\x1bOA')),
+        ])
 
-if __name__ == "__main__":
+        reader, _ = handle_all_events(events)
+        self.assert_screen_equals(reader, "")
+
+
+if __name__ == '__main__':
     unittest.main()
