@@ -32,7 +32,6 @@ import sys
 import code
 from types import ModuleType
 
-from .console import Event
 from .readline import _get_reader, multiline_input
 from .unix_console import _error
 
@@ -82,7 +81,6 @@ class InteractiveColoredConsole(code.InteractiveConsole):
 def run_multiline_interactive_console(
     mainmodule: ModuleType | None= None, future_flags: int = 0
 ) -> None:
-    import code
     import __main__
     from .readline import _setup
     _setup()

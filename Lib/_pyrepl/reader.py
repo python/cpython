@@ -23,7 +23,6 @@ from __future__ import annotations
 
 from contextlib import contextmanager
 from dataclasses import dataclass, field, fields
-import re
 import unicodedata
 from _colorize import can_colorize, ANSIColors  # type: ignore[import-not-found]
 
