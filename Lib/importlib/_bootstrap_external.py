@@ -1464,7 +1464,7 @@ class PathFinder:
     @staticmethod
     def invalidate_caches():
         """Call the invalidate_caches() method on all path entry finders
-        stored in sys.path_importer_caches (where implemented)."""
+        stored in sys.path_importer_cache (where implemented)."""
         for name, finder in list(sys.path_importer_cache.items()):
             # Drop entry if finder name is a relative path. The current
             # working directory may have changed.
