@@ -211,7 +211,7 @@ Other Functions
 
    After you use :func:`CrtSetReportMode` to specify :const:`CRTDBG_MODE_FILE`,
    you can specify the file handle to receive the message text. *type* must be
-   one of the :const:`!CRT_\*` constants listed below. *file* shuld be the file
+   one of the :const:`!CRT_\*` constants listed below. *file* should be the file
    handle your want specified. Only available in
    :ref:`debug build of Python <debug-build>`.
 
