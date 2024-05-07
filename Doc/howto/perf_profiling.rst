@@ -246,10 +246,10 @@ or using the environment variable::
     $ perf inject -i perf.data --jit --output perf.jit.data
     $ perf report -g -i perf.jit.data
 
-When ``perf inject --jit`` its called. this will read ``perf.data``,
-automatically pick up the perf dump file that python creates (in
+``perf inject --jit`` command will read ``perf.data``,
+automatically pick up the perf dump file that Python creates (in
 ``/tmp/perf-$PID.dump``), and then create ``perf.jit.data`` which merges all the
-JIT information together. This should also create a lot of ``jitted-XXXX-N.so``
+JIT information together. It should also create a lot of ``jitted-XXXX-N.so``
 files in the current directory which are ELF images for all the JIT trampolines
 that were created by Python.
 
