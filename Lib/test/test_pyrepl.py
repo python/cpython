@@ -831,7 +831,6 @@ class TestPasteEvent(TestCase):
             '    else:\n'
             '      pass\n'
         )
-        # fmt: on
 
         output_code = (
             'def a():\n'
@@ -842,8 +841,8 @@ class TestPasteEvent(TestCase):
             '\n'
             '    else:\n'
             '      pass\n'
-            '\n'
         )
+        # fmt: on
 
         paste_start = "\x1b[200~"
         paste_end = "\x1b[201~"
@@ -857,6 +856,22 @@ class TestPasteEvent(TestCase):
         reader = self.prepare_reader(events)
         output = multiline_input(reader)
         self.assertEqual(output, output_code)
+
+    def test_bracketed_paste_single_line(self):
+        input_code = "oneline"
+
+        paste_start = "\x1b[200~"
+        paste_end = "\x1b[201~"
+
+        events = itertools.chain(
+            code_to_events(paste_start),
+            code_to_events(input_code),
+            code_to_events(paste_end),
+            code_to_events("\n"),
+        )
+        reader = self.prepare_reader(events)
+        output = multiline_input(reader)
+        self.assertEqual(output, input_code)
 
 
 class TestReader(TestCase):
