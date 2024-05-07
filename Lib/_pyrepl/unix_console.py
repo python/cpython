@@ -335,7 +335,7 @@ class UnixConsole(Console):
             self.old_sigwinch = signal.signal(signal.SIGWINCH, self.__sigwinch)
         except ValueError:
             pass
-        
+
         self.__enable_bracketed_paste()
 
     def restore(self):
@@ -527,7 +527,7 @@ class UnixConsole(Console):
         self.__move = self.__move_tall
         self.__posxy = 0, 0
         self.screen = []
-        
+
     def __enable_bracketed_paste(self) -> None:
         os.write(self.output_fd, b"\x1b[?2004h")
         self.flushoutput()

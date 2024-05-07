@@ -467,7 +467,7 @@ class paste_mode(Command):
 class enable_bracketed_paste(Command):
     def do(self) -> None:
         self.reader.paste_mode = True
-        
+
 class disable_bracketed_paste(Command):
     def do(self) -> None:
         self.reader.paste_mode = False

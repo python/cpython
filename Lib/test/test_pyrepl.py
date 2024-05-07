@@ -811,7 +811,7 @@ class TestPasteEvent(TestCase):
         reader = self.prepare_reader(events)
         output = multiline_input(reader)
         self.assertEqual(output, output_code)
-    
+
     def test_bracketed_paste(self):
         """Test that bracketed paste using \x1b[200~ and \x1b[201~ works."""
         # fmt: off
