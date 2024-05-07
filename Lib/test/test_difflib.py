@@ -438,11 +438,10 @@ class TestInputTypes(unittest.TestCase):
         unified = difflib.unified_diff
         context = difflib.context_diff
 
-        expect = "input must be a sequence of strings, not str ('a')"
+        expect = "input must be a sequence of strings, not str"
         self._assert_type_error(expect, unified, 'a', ['b'])
         self._assert_type_error(expect, context, 'a', ['b'])
 
-        expect = "input must be a sequence of strings, not str ('b')"
         self._assert_type_error(expect, unified, ['a'], 'b')
         self._assert_type_error(expect, context, ['a'], 'b')
 
