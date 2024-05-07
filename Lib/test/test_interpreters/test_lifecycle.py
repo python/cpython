@@ -115,6 +115,7 @@ class StartupTests(TestBase):
         self.assertEqual(proc.stderr, '')
         return proc.stdout
 
+    @requires_gil_enabled
     def test_sys_path_0(self):
         # The main interpreter's sys.path[0] should be used by subinterpreters.
         script = '''
@@ -164,6 +165,7 @@ class StartupTests(TestBase):
 
 class FinalizationTests(TestBase):
 
+    @requires_gil_enabled
     @support.requires_subprocess()
     def test_gh_109793(self):
         # Make sure finalization finishes and the correct error code
