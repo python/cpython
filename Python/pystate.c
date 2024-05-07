@@ -1831,10 +1831,21 @@ _PyThreadState_DeleteCurrent(PyThreadState *tstate)
     _Py_EnsureTstateNotNULL(tstate);
 #ifdef Py_GIL_DISABLED
     _Py_qsbr_detach(((_PyThreadStateImpl *)tstate)->qsbr);
+    // tstate_delete_common() removes tstate from consideration for
+    // stop-the-worlds. This means that another thread could enable the GIL
+    // before our call to _PyEval_ReleaseLock(), violating its invariant that
+    // the calling thread holds the GIL if and only if the GIL is enabled. Deal
+    // with this by deciding if we need to release the GIL before
+    // tstate_delete_common(), when the invariant is still true.
+    int holds_gil = _PyEval_IsGILEnabled(tstate);
+#else
+    int holds_gil = 1;
 #endif
     current_fast_clear(tstate->interp->runtime);
     tstate_delete_common(tstate);
-    _PyEval_ReleaseLock(tstate->interp, NULL);
+    if (holds_gil) {
+        _PyEval_ReleaseLock(tstate->interp, NULL);
+    }
     free_threadstate((_PyThreadStateImpl *)tstate);
 }
 
