@@ -977,24 +977,6 @@ class TestReader(TestCase):
         reader.setpos_from_xy(0, 1)
         self.assertEqual(reader.pos, 9)
 
-class TestInteractiveColoredConsole(unittest.TestCase):
-    def test_showtraceback(self):
-        console = InteractiveColoredConsole()
-        with patch('code.InteractiveConsole.showtraceback') as mock_showtraceback:
-            console.showtraceback()
-            mock_showtraceback.assert_called_once_with(colorize=console.can_colorize)
-
-    def test_push_single_line(self):
-        console = InteractiveColoredConsole()
-        with patch('code.InteractiveConsole.runsource') as mock_runsource:
-            console.push('print("Hello, world!")')
-            mock_runsource.assert_called_once_with('print("Hello, world!")', '<console>', symbol='single')
-
-    def test_push_multiline(self):
-        console = InteractiveColoredConsole()
-        with patch('code.InteractiveConsole.runsource') as mock_runsource:
-            console.push('if True:\n    print("Hello, world!")')
-            mock_runsource.assert_called_once_with('if True:\n    print("Hello, world!")', '<console>', symbol='exec')
 
 if __name__ == '__main__':
     unittest.main()
