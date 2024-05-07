@@ -36,20 +36,28 @@ class MimeTypesTestCase(unittest.TestCase):
 
     def test_case_sensitivity(self):
         eq = self.assertEqual
-        eq(self.db.guess_type("foobar.HTML"), self.db.guess_type("foobar.html"))
-        eq(self.db.guess_type("foobar.TGZ"), self.db.guess_type("foobar.tgz"))
-        eq(self.db.guess_type("foobar.tar.Z"), ("application/x-tar", "compress"))
-        eq(self.db.guess_type("foobar.tar.z"), (None, None))
+        eq(self.db.guess_file_type("foobar.html"), ("text/html", None))
+        eq(self.db.guess_type("scheme:foobar.html"), ("text/html", None))
+        eq(self.db.guess_file_type("foobar.HTML"), ("text/html", None))
+        eq(self.db.guess_type("scheme:foobar.HTML"), ("text/html", None))
+        eq(self.db.guess_file_type("foobar.tgz"), ("application/x-tar", "gzip"))
+        eq(self.db.guess_type("scheme:foobar.tgz"), ("application/x-tar", "gzip"))
+        eq(self.db.guess_file_type("foobar.TGZ"), ("application/x-tar", "gzip"))
+        eq(self.db.guess_type("scheme:foobar.TGZ"), ("application/x-tar", "gzip"))
+        eq(self.db.guess_file_type("foobar.tar.Z"), ("application/x-tar", "compress"))
+        eq(self.db.guess_type("scheme:foobar.tar.Z"), ("application/x-tar", "compress"))
+        eq(self.db.guess_file_type("foobar.tar.z"), (None, None))
+        eq(self.db.guess_type("scheme:foobar.tar.z"), (None, None))
 
     def test_default_data(self):
         eq = self.assertEqual
-        eq(self.db.guess_type("foo.html"), ("text/html", None))
-        eq(self.db.guess_type("foo.HTML"), ("text/html", None))
-        eq(self.db.guess_type("foo.tgz"), ("application/x-tar", "gzip"))
-        eq(self.db.guess_type("foo.tar.gz"), ("application/x-tar", "gzip"))
-        eq(self.db.guess_type("foo.tar.Z"), ("application/x-tar", "compress"))
-        eq(self.db.guess_type("foo.tar.bz2"), ("application/x-tar", "bzip2"))
-        eq(self.db.guess_type("foo.tar.xz"), ("application/x-tar", "xz"))
+        eq(self.db.guess_file_type("foo.html"), ("text/html", None))
+        eq(self.db.guess_file_type("foo.HTML"), ("text/html", None))
+        eq(self.db.guess_file_type("foo.tgz"), ("application/x-tar", "gzip"))
+        eq(self.db.guess_file_type("foo.tar.gz"), ("application/x-tar", "gzip"))
+        eq(self.db.guess_file_type("foo.tar.Z"), ("application/x-tar", "compress"))
+        eq(self.db.guess_file_type("foo.tar.bz2"), ("application/x-tar", "bzip2"))
+        eq(self.db.guess_file_type("foo.tar.xz"), ("application/x-tar", "xz"))
 
     def test_data_urls(self):
         eq = self.assertEqual
@@ -63,7 +71,7 @@ class MimeTypesTestCase(unittest.TestCase):
         eq = self.assertEqual
         sio = io.StringIO("x-application/x-unittest pyunit\n")
         self.db.readfp(sio)
-        eq(self.db.guess_type("foo.pyunit"),
+        eq(self.db.guess_file_type("foo.pyunit"),
            ("x-application/x-unittest", None))
         eq(self.db.guess_extension("x-application/x-unittest"), ".pyunit")
 
@@ -95,12 +103,12 @@ class MimeTypesTestCase(unittest.TestCase):
     def test_non_standard_types(self):
         eq = self.assertEqual
         # First try strict
-        eq(self.db.guess_type('foo.xul', strict=True), (None, None))
+        eq(self.db.guess_file_type('foo.xul', strict=True), (None, None))
         eq(self.db.guess_extension('image/jpg', strict=True), None)
         # And then non-strict
-        eq(self.db.guess_type('foo.xul', strict=False), ('text/xul', None))
-        eq(self.db.guess_type('foo.XUL', strict=False), ('text/xul', None))
-        eq(self.db.guess_type('foo.invalid', strict=False), (None, None))
+        eq(self.db.guess_file_type('foo.xul', strict=False), ('text/xul', None))
+        eq(self.db.guess_file_type('foo.XUL', strict=False), ('text/xul', None))
+        eq(self.db.guess_file_type('foo.invalid', strict=False), (None, None))
         eq(self.db.guess_extension('image/jpg', strict=False), '.jpg')
         eq(self.db.guess_extension('image/JPG', strict=False), '.jpg')
 
@@ -124,15 +132,26 @@ class MimeTypesTestCase(unittest.TestCase):
                            '//share/server/', '\\\\share\\server\\'):
                 path = prefix + name
                 with self.subTest(path=path):
+                    eq(self.db.guess_file_type(path), gzip_expected)
                     eq(self.db.guess_type(path), gzip_expected)
             expected = (None, None) if os.name == 'nt' else gzip_expected
             for prefix in ('//', '\\\\', '//share/', '\\\\share\\'):
                 path = prefix + name
                 with self.subTest(path=path):
+                    eq(self.db.guess_file_type(path), expected)
                     eq(self.db.guess_type(path), expected)
+        eq(self.db.guess_file_type(r" \"\`;b&b&c |.tar.gz"), gzip_expected)
         eq(self.db.guess_type(r" \"\`;b&b&c |.tar.gz"), gzip_expected)
 
+        eq(self.db.guess_file_type(r'foo/.tar.gz'), (None, 'gzip'))
+        eq(self.db.guess_type(r'foo/.tar.gz'), (None, 'gzip'))
+        expected = (None, 'gzip') if os.name == 'nt' else gzip_expected
+        eq(self.db.guess_file_type(r'foo\.tar.gz'), expected)
+        eq(self.db.guess_type(r'foo\.tar.gz'), expected)
+        eq(self.db.guess_type(r'scheme:foo\.tar.gz'), gzip_expected)
+
     def test_url(self):
+        result = self.db.guess_type('http://example.com/host.html')
         result = self.db.guess_type('http://host.html')
         msg = 'URL only has a host name, not a file'
         self.assertSequenceEqual(result, (None, None), msg)
@@ -214,6 +233,7 @@ class MimeTypesTestCase(unittest.TestCase):
             self.assertEqual(mimetypes.guess_extension('text/html'), '.html')
             self.assertEqual(mimetypes.guess_extension('text/plain'), '.txt')
             self.assertEqual(mimetypes.guess_extension('text/rtf'), '.rtf')
+            self.assertEqual(mimetypes.guess_extension('text/x-rst'), '.rst')
             self.assertEqual(mimetypes.guess_extension('video/mpeg'), '.mpeg')
             self.assertEqual(mimetypes.guess_extension('video/quicktime'), '.mov')
 
@@ -241,22 +261,38 @@ class MimeTypesTestCase(unittest.TestCase):
 
     def test_path_like_ob(self):
         filename = "LICENSE.txt"
-        filepath = pathlib.Path(filename)
-        filepath_with_abs_dir = pathlib.Path('/dir/'+filename)
-        filepath_relative = pathlib.Path('../dir/'+filename)
-        path_dir = pathlib.Path('./')
+        filepath = os_helper.FakePath(filename)
+        filepath_with_abs_dir = os_helper.FakePath('/dir/'+filename)
+        filepath_relative = os_helper.FakePath('../dir/'+filename)
+        path_dir = os_helper.FakePath('./')
 
-        expected = self.db.guess_type(filename)
+        expected = self.db.guess_file_type(filename)
 
+        self.assertEqual(self.db.guess_file_type(filepath), expected)
         self.assertEqual(self.db.guess_type(filepath), expected)
+        self.assertEqual(self.db.guess_file_type(
+            filepath_with_abs_dir), expected)
         self.assertEqual(self.db.guess_type(
             filepath_with_abs_dir), expected)
+        self.assertEqual(self.db.guess_file_type(filepath_relative), expected)
         self.assertEqual(self.db.guess_type(filepath_relative), expected)
+
+        self.assertEqual(self.db.guess_file_type(path_dir), (None, None))
         self.assertEqual(self.db.guess_type(path_dir), (None, None))
 
+    def test_bytes_path(self):
+        self.assertEqual(self.db.guess_file_type(b'foo.html'),
+                         self.db.guess_file_type('foo.html'))
+        self.assertEqual(self.db.guess_file_type(b'foo.tar.gz'),
+                         self.db.guess_file_type('foo.tar.gz'))
+        self.assertEqual(self.db.guess_file_type(b'foo.tgz'),
+                         self.db.guess_file_type('foo.tgz'))
+
     def test_keywords_args_api(self):
+        self.assertEqual(self.db.guess_file_type(
+            path="foo.html", strict=True), ("text/html", None))
         self.assertEqual(self.db.guess_type(
-            url="foo.html", strict=True), ("text/html", None))
+            url="scheme:foo.html", strict=True), ("text/html", None))
         self.assertEqual(self.db.guess_all_extensions(
             type='image/jpg', strict=True), [])
         self.assertEqual(self.db.guess_extension(

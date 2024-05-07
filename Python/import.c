@@ -1,6 +1,7 @@
 /* Module definition and import implementation */
 
 #include "Python.h"
+#include "pycore_ceval.h"
 #include "pycore_hashtable.h"     // _Py_hashtable_new_full()
 #include "pycore_import.h"        // _PyImport_BootstrapImp()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
@@ -13,7 +14,7 @@
 #include "pycore_pymem.h"         // _PyMem_SetDefaultAllocator()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_sysmodule.h"     // _PySys_Audit()
-#include "pycore_time.h"          // _PyTime_PerfCounterUnchecked()
+#include "pycore_time.h"          // _PyTime_AsMicroseconds()
 #include "pycore_weakref.h"       // _PyWeakref_GET_REF()
 
 #include "marshal.h"              // PyMarshal_ReadObjectFromString()
@@ -1023,6 +1024,12 @@ struct extensions_cache_value {
     struct cached_m_dict _m_dict;
 
     _Py_ext_module_origin origin;
+
+#ifdef Py_GIL_DISABLED
+    /* The module's md_gil slot, for legacy modules that are reinitialized from
+       m_dict rather than calling their initialization function again. */
+    void *md_gil;
+#endif
 };
 
 static struct extensions_cache_value *
@@ -1147,9 +1154,6 @@ init_cached_m_dict(struct extensions_cache_value *value, PyObject *m_dict)
         return -1;
     }
     // XXX We may want to make the copy immortal.
-    // XXX This incref shouldn't be necessary.  We are decref'ing
-    // one to many times somewhere.
-    Py_INCREF(copied);
 
     value->_m_dict = (struct cached_m_dict){
         .copied=copied,
@@ -1351,7 +1355,7 @@ static struct extensions_cache_value *
 _extensions_cache_set(PyObject *path, PyObject *name,
                       PyModuleDef *def, PyModInitFunction m_init,
                       Py_ssize_t m_index, PyObject *m_dict,
-                      _Py_ext_module_origin origin)
+                      _Py_ext_module_origin origin, void *md_gil)
 {
     struct extensions_cache_value *value = NULL;
     void *key = NULL;
@@ -1401,7 +1405,13 @@ _extensions_cache_set(PyObject *path, PyObject *name,
         .m_index=m_index,
         /* m_dict is set by set_cached_m_dict(). */
         .origin=origin,
+#ifdef Py_GIL_DISABLED
+        .md_gil=md_gil,
+#endif
     };
+#ifndef Py_GIL_DISABLED
+    (void)md_gil;
+#endif
     if (init_cached_m_dict(newvalue, m_dict) < 0) {
         goto finally;
     }
@@ -1526,6 +1536,67 @@ _PyImport_CheckSubinterpIncompatibleExtensionAllowed(const char *name)
     return 0;
 }
 
+#ifdef Py_GIL_DISABLED
+int
+_PyImport_CheckGILForModule(PyObject* module, PyObject *module_name)
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+    if (module == NULL) {
+        _PyEval_DisableGIL(tstate);
+        return 0;
+    }
+
+    if (!PyModule_Check(module) ||
+        ((PyModuleObject *)module)->md_gil == Py_MOD_GIL_USED) {
+        if (_PyEval_EnableGILPermanent(tstate)) {
+            int warn_result = PyErr_WarnFormat(
+                PyExc_RuntimeWarning,
+                1,
+                "The global interpreter lock (GIL) has been enabled to load "
+                "module '%U', which has not declared that it can run safely "
+                "without the GIL. To override this behavior and keep the GIL "
+                "disabled (at your own risk), run with PYTHON_GIL=0 or -Xgil=0.",
+                module_name
+            );
+            if (warn_result < 0) {
+                return warn_result;
+            }
+        }
+
+        const PyConfig *config = _PyInterpreterState_GetConfig(tstate->interp);
+        if (config->enable_gil == _PyConfig_GIL_DEFAULT && config->verbose) {
+            PySys_FormatStderr("# loading module '%U', which requires the GIL\n",
+                               module_name);
+        }
+    }
+    else {
+        _PyEval_DisableGIL(tstate);
+    }
+
+    return 0;
+}
+#endif
+
+static PyThreadState *
+switch_to_main_interpreter(PyThreadState *tstate)
+{
+    if (_Py_IsMainInterpreter(tstate->interp)) {
+        return tstate;
+    }
+    PyThreadState *main_tstate = PyThreadState_New(_PyInterpreterState_Main());
+    if (main_tstate == NULL) {
+        return NULL;
+    }
+    main_tstate->_whence = _PyThreadState_WHENCE_EXEC;
+#ifndef NDEBUG
+    PyThreadState *old_tstate = PyThreadState_Swap(main_tstate);
+    assert(old_tstate == tstate);
+#else
+    (void)PyThreadState_Swap(main_tstate);
+#endif
+    return main_tstate;
+}
+
 static PyObject *
 get_core_module_dict(PyInterpreterState *interp,
                      PyObject *name, PyObject *path)
@@ -1625,6 +1696,7 @@ struct singlephase_global_update {
     Py_ssize_t m_index;
     PyObject *m_dict;
     _Py_ext_module_origin origin;
+    void *md_gil;
 };
 
 static struct extensions_cache_value *
@@ -1683,7 +1755,7 @@ update_global_state_for_extension(PyThreadState *tstate,
 #endif
         cached = _extensions_cache_set(
                 path, name, def, m_init, singlephase->m_index, m_dict,
-                singlephase->origin);
+                singlephase->origin, singlephase->md_gil);
         if (cached == NULL) {
             // XXX Ignore this error?  Doing so would effectively
             // mark the module as not loadable.
@@ -1768,6 +1840,13 @@ reload_singlephase_extension(PyThreadState *tstate,
             Py_DECREF(mod);
             return NULL;
         }
+#ifdef Py_GIL_DISABLED
+        if (def->m_base.m_copy != NULL) {
+            // For non-core modules, fetch the GIL slot that was stored by
+            // import_run_extension().
+            ((PyModuleObject *)mod)->md_gil = cached->md_gil;
+        }
+#endif
         /* We can't set mod->md_def if it's missing,
          * because _PyImport_ClearModulesByIndex() might break
          * due to violating interpreter isolation.
@@ -1874,24 +1953,171 @@ import_run_extension(PyThreadState *tstate, PyModInitFunction p0,
     struct extensions_cache_value *cached = NULL;
     const char *name_buf = PyBytes_AS_STRING(info->name_encoded);
 
-    struct _Py_ext_module_loader_result res;
-    if (_PyImport_RunModInitFunc(p0, info, &res) < 0) {
-        /* We discard res.def. */
-        assert(res.module == NULL);
-        _Py_ext_module_loader_result_apply_error(&res, name_buf);
+    /* We cannot know if the module is single-phase init or
+     * multi-phase init until after we call its init function. Even
+     * in isolated interpreters (that do not support single-phase init),
+     * the init function will run without restriction.  For multi-phase
+     * init modules that isn't a problem because the init function only
+     * runs PyModuleDef_Init() on the module's def and then returns it.
+     *
+     * However, for single-phase init the module's init function will
+     * create the module, create other objects (and allocate other
+     * memory), populate it and its module state, and initialze static
+     * types.  Some modules store other objects and data in global C
+     * variables and register callbacks with the runtime/stdlib or
+     * even external libraries (which is part of why we can't just
+     * dlclose() the module in the error case).  That's a problem
+     * for isolated interpreters since all of the above happens
+     * and only then * will the import fail.  Memory will leak,
+     * callbacks will still get used, and sometimes there
+     * will be crashes (memory access violations
+     * and use-after-free).
+     *
+     * To put it another way, if the module is single-phase init
+     * then the import will probably break interpreter isolation
+     * and should fail ASAP.  However, the module's init function
+     * will still get run.  That means it may still store state
+     * in the shared-object/DLL address space (which never gets
+     * closed/cleared), including objects (e.g. static types).
+     * This is a problem for isolated subinterpreters since each
+     * has its own object allocator.  If the loaded shared-object
+     * still holds a reference to an object after the corresponding
+     * interpreter has finalized then either we must let it leak
+     * or else any later use of that object by another interpreter
+     * (or across multiple init-fini cycles) will crash the process.
+     *
+     * To avoid all of that, we make sure the module's init function
+     * is always run first with the main interpreter active.  If it was
+     * already the main interpreter then we can continue loading the
+     * module like normal.  Otherwise, right after the init function,
+     * we take care of some import state bookkeeping, switch back
+     * to the subinterpreter, check for single-phase init,
+     * and then continue loading like normal. */
+
+    bool switched = false;
+    /* We *could* leave in place a legacy interpreter here
+     * (one that shares obmalloc/GIL with main interp),
+     * but there isn't a big advantage, we anticipate
+     * such interpreters will be increasingly uncommon,
+     * and the code is a bit simpler if we always switch
+     * to the main interpreter. */
+    PyThreadState *main_tstate = switch_to_main_interpreter(tstate);
+    if (main_tstate == NULL) {
         return NULL;
     }
-    assert(!PyErr_Occurred());
-    assert(res.err == NULL);
+    else if (main_tstate != tstate) {
+        switched = true;
+        /* In the switched case, we could play it safe
+         * by getting the main interpreter's import lock here.
+         * It's unlikely to matter though. */
+    }
 
-    mod = res.module;
-    res.module = NULL;
-    def = res.def;
-    assert(def != NULL);
+    struct _Py_ext_module_loader_result res;
+    int rc = _PyImport_RunModInitFunc(p0, info, &res);
+    if (rc < 0) {
+        /* We discard res.def. */
+        assert(res.module == NULL);
+    }
+    else {
+        assert(!PyErr_Occurred());
+        assert(res.err == NULL);
+
+        mod = res.module;
+        res.module = NULL;
+        def = res.def;
+        assert(def != NULL);
+
+        /* Do anything else that should be done
+         * while still using the main interpreter. */
+        if (res.kind == _Py_ext_module_kind_SINGLEPHASE) {
+            /* Remember the filename as the __file__ attribute */
+            if (info->filename != NULL) {
+                // XXX There's a refleak somewhere with the filename.
+                // Until we can track it down, we intern it.
+                PyObject *filename = Py_NewRef(info->filename);
+                PyUnicode_InternInPlace(&filename);
+                if (PyModule_AddObjectRef(mod, "__file__", filename) < 0) {
+                    PyErr_Clear(); /* Not important enough to report */
+                }
+            }
+
+            /* Update global import state. */
+            assert(def->m_base.m_index != 0);
+            struct singlephase_global_update singlephase = {
+                // XXX Modules that share a def should each get their own index,
+                // whereas currently they share (which means the per-interpreter
+                // cache is less reliable than it should be).
+                .m_index=def->m_base.m_index,
+                .origin=info->origin,
+#ifdef Py_GIL_DISABLED
+                .md_gil=((PyModuleObject *)mod)->md_gil,
+#endif
+            };
+            // gh-88216: Extensions and def->m_base.m_copy can be updated
+            // when the extension module doesn't support sub-interpreters.
+            if (def->m_size == -1) {
+                /* We will reload from m_copy. */
+                assert(def->m_base.m_init == NULL);
+                singlephase.m_dict = PyModule_GetDict(mod);
+                assert(singlephase.m_dict != NULL);
+            }
+            else {
+                /* We will reload via the init function. */
+                assert(def->m_size >= 0);
+                assert(def->m_base.m_copy == NULL);
+                singlephase.m_init = p0;
+            }
+            cached = update_global_state_for_extension(
+                    tstate, info->path, info->name, def, &singlephase);
+            if (cached == NULL) {
+                assert(PyErr_Occurred());
+                goto main_finally;
+            }
+        }
+    }
+
+main_finally:
+    /* Switch back to the subinterpreter. */
+    if (switched) {
+        assert(main_tstate != tstate);
+
+        /* Handle any exceptions, which we cannot propagate directly
+         * to the subinterpreter. */
+        if (PyErr_Occurred()) {
+            if (PyErr_ExceptionMatches(PyExc_MemoryError)) {
+                /* We trust it will be caught again soon. */
+                PyErr_Clear();
+            }
+            else {
+                /* Printing the exception should be sufficient. */
+                PyErr_PrintEx(0);
+            }
+        }
+
+        /* Any module we got from the init function will have to be
+         * reloaded in the subinterpreter. */
+        Py_CLEAR(mod);
+
+        PyThreadState_Clear(main_tstate);
+        (void)PyThreadState_Swap(tstate);
+        PyThreadState_Delete(main_tstate);
+    }
+
+    /*****************************************************************/
+    /* At this point we are back to the interpreter we started with. */
+    /*****************************************************************/
+
+    /* Finally we handle the error return from _PyImport_RunModInitFunc(). */
+    if (rc < 0) {
+        _Py_ext_module_loader_result_apply_error(&res, name_buf);
+        goto error;
+    }
 
     if (res.kind == _Py_ext_module_kind_MULTIPHASE) {
         assert_multiphase_def(def);
         assert(mod == NULL);
+        /* Note that we cheat a little by not repeating the calls
+         * to _PyImport_GetModInitFunc() and _PyImport_RunModInitFunc(). */
         mod = PyModule_FromDefAndSpec(def, spec);
         if (mod == NULL) {
             goto error;
@@ -1900,54 +2126,35 @@ import_run_extension(PyThreadState *tstate, PyModInitFunction p0,
     else {
         assert(res.kind == _Py_ext_module_kind_SINGLEPHASE);
         assert_singlephase_def(def);
-        assert(PyModule_Check(mod));
 
         if (_PyImport_CheckSubinterpIncompatibleExtensionAllowed(name_buf) < 0) {
             goto error;
         }
+        assert(!PyErr_Occurred());
 
-        /* Remember the filename as the __file__ attribute */
-        if (info->filename != NULL) {
-            if (PyModule_AddObjectRef(mod, "__file__", info->filename) < 0) {
-                PyErr_Clear(); /* Not important enough to report */
+        if (switched) {
+            /* We switched to the main interpreter to run the init
+             * function, so now we will "reload" the module from the
+             * cached data using the original subinterpreter. */
+            assert(mod == NULL);
+            mod = reload_singlephase_extension(tstate, cached, info);
+            if (mod == NULL) {
+                goto error;
             }
-        }
-
-        /* Update global import state. */
-        assert(def->m_base.m_index != 0);
-        struct singlephase_global_update singlephase = {
-            // XXX Modules that share a def should each get their own index,
-            // whereas currently they share (which means the per-interpreter
-            // cache is less reliable than it should be).
-            .m_index=def->m_base.m_index,
-            .origin=info->origin,
-        };
-        // gh-88216: Extensions and def->m_base.m_copy can be updated
-        // when the extension module doesn't support sub-interpreters.
-        if (def->m_size == -1) {
-            /* We will reload from m_copy. */
-            assert(def->m_base.m_init == NULL);
-            singlephase.m_dict = PyModule_GetDict(mod);
-            assert(singlephase.m_dict != NULL);
+            assert(!PyErr_Occurred());
+            assert(PyModule_Check(mod));
         }
         else {
-            /* We will reload via the init function. */
-            assert(def->m_size >= 0);
-            assert(def->m_base.m_copy == NULL);
-            singlephase.m_init = p0;
-        }
-        cached = update_global_state_for_extension(
-                tstate, info->path, info->name, def, &singlephase);
-        if (cached == NULL) {
-            goto error;
-        }
+            assert(mod != NULL);
+            assert(PyModule_Check(mod));
 
-        /* Update per-interpreter import state. */
-        PyObject *modules = get_modules_dict(tstate, true);
-        if (finish_singlephase_extension(
-                tstate, mod, cached, info->name, modules) < 0)
-        {
-            goto error;
+            /* Update per-interpreter import state. */
+            PyObject *modules = get_modules_dict(tstate, true);
+            if (finish_singlephase_extension(
+                    tstate, mod, cached, info->name, modules) < 0)
+            {
+                goto error;
+            }
         }
     }
 
@@ -2039,6 +2246,10 @@ _PyImport_FixupBuiltin(PyThreadState *tstate, PyObject *mod, const char *name,
             /* We don't want def->m_base.m_copy populated. */
             .m_dict=NULL,
             .origin=_Py_ext_module_origin_CORE,
+#ifdef Py_GIL_DISABLED
+            /* Unused when m_dict == NULL. */
+            .md_gil=NULL,
+#endif
         };
         cached = update_global_state_for_extension(
                 tstate, nameobj, nameobj, def, &singlephase);
@@ -2128,9 +2339,23 @@ create_builtin(PyThreadState *tstate, PyObject *name, PyObject *spec)
         goto finally;
     }
 
+#ifdef Py_GIL_DISABLED
+    // This call (and the corresponding call to _PyImport_CheckGILForModule())
+    // would ideally be inside import_run_extension(). They are kept in the
+    // callers for now because that would complicate the control flow inside
+    // import_run_extension(). It should be possible to restructure
+    // import_run_extension() to address this.
+    _PyEval_EnableGILTransient(tstate);
+#endif
     /* Now load it. */
     mod = import_run_extension(
                     tstate, p0, &info, spec, get_modules_dict(tstate, true));
+#ifdef Py_GIL_DISABLED
+    if (_PyImport_CheckGILForModule(mod, info.name) < 0) {
+        Py_CLEAR(mod);
+        goto finally;
+    }
+#endif
 
 finally:
     _Py_ext_module_loader_info_clear(&info);
@@ -3468,7 +3693,8 @@ import_find_and_load(PyThreadState *tstate, PyObject *abs_name)
 #undef header
 
         import_level++;
-        t1 = _PyTime_PerfCounterUnchecked();
+        // ignore error: don't block import if reading the clock fails
+        (void)PyTime_PerfCounterRaw(&t1);
         accumulated = 0;
     }
 
@@ -3483,7 +3709,9 @@ import_find_and_load(PyThreadState *tstate, PyObject *abs_name)
                                        mod != NULL);
 
     if (import_time) {
-        PyTime_t cum = _PyTime_PerfCounterUnchecked() - t1;
+        PyTime_t t2;
+        (void)PyTime_PerfCounterRaw(&t2);
+        PyTime_t cum = t2 - t1;
 
         import_level--;
         fprintf(stderr, "import time: %9ld | %10ld | %*s%s\n",
@@ -4502,10 +4730,22 @@ _imp_create_dynamic_impl(PyObject *module, PyObject *spec, PyObject *file)
         goto finally;
     }
 
+#ifdef Py_GIL_DISABLED
+    // This call (and the corresponding call to _PyImport_CheckGILForModule())
+    // would ideally be inside import_run_extension(). They are kept in the
+    // callers for now because that would complicate the control flow inside
+    // import_run_extension(). It should be possible to restructure
+    // import_run_extension() to address this.
+    _PyEval_EnableGILTransient(tstate);
+#endif
     mod = import_run_extension(
                     tstate, p0, &info, spec, get_modules_dict(tstate, true));
-    if (mod == NULL) {
+#ifdef Py_GIL_DISABLED
+    if (_PyImport_CheckGILForModule(mod, info.name) < 0) {
+        Py_CLEAR(mod);
+        goto finally;
     }
+#endif
 
     // XXX Shouldn't this happen in the error cases too (i.e. in "finally")?
     if (fp) {

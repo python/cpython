@@ -6308,6 +6308,31 @@ class ForwardRefTests(BaseTestCase):
         self.assertEqual(X | "x", Union[X, "x"])
         self.assertEqual("x" | X, Union["x", X])
 
+    def test_deprecation_for_no_type_params_passed_to__evaluate(self):
+        with self.assertWarnsRegex(
+            DeprecationWarning,
+            (
+                "Failing to pass a value to the 'type_params' parameter "
+                "of 'typing._eval_type' is deprecated"
+            )
+        ) as cm:
+            self.assertEqual(typing._eval_type(list["int"], globals(), {}), list[int])
+
+        self.assertEqual(cm.filename, __file__)
+
+        f = ForwardRef("int")
+
+        with self.assertWarnsRegex(
+            DeprecationWarning,
+            (
+                "Failing to pass a value to the 'type_params' parameter "
+                "of 'typing.ForwardRef._evaluate' is deprecated"
+            )
+        ) as cm:
+            self.assertIs(f._evaluate(globals(), {}, recursive_guard=frozenset()), int)
+
+        self.assertEqual(cm.filename, __file__)
+
 
 @lru_cache()
 def cached_func(x, y):
@@ -7288,6 +7313,17 @@ class CollectionsAbcTests(BaseTestCase):
             yield 42
         g = foo()
         self.assertIsSubclass(type(g), typing.Generator)
+
+    def test_generator_default(self):
+        g1 = typing.Generator[int]
+        g2 = typing.Generator[int, None, None]
+        self.assertEqual(get_args(g1), (int, type(None), type(None)))
+        self.assertEqual(get_args(g1), get_args(g2))
+
+        g3 = typing.Generator[int, float]
+        g4 = typing.Generator[int, float, None]
+        self.assertEqual(get_args(g3), (int, float, type(None)))
+        self.assertEqual(get_args(g3), get_args(g4))
 
     def test_no_generator_instantiation(self):
         with self.assertRaises(TypeError):

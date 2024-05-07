@@ -216,19 +216,19 @@ needs to generate unwinding information for every Python function call on the fl
 ``perf`` will take more time to process the data because it will need to use the DWARF debugging
 information to unwind the stack and this is a slow process.
 
-To enable this mode, you can use the environment variable :envvar:`PYTHONPERFJITSUPPORT` or the
-:option:`-X perfjit <-X>` option, which will enable the JIT mode for the ``perf`` profiler.
+To enable this mode, you can use the environment variable :envvar:`PYTHON_PERF_JIT_SUPPORT` or the
+:option:`-X perf_jit <-X>` option, which will enable the JIT mode for the ``perf`` profiler.
 
 When using the perf JIT mode, you need an extra step before you can run ``perf report``. You need to
 call the ``perf inject`` command to inject the JIT information into the ``perf.data`` file.
 
-    $ perf record -F 9999 -g --call-graph dwarf -o perf.data python -Xperfjit my_script.py
+    $ perf record -F 9999 -g --call-graph dwarf -o perf.data python -Xperf_jit my_script.py
     $ perf inject -i perf.data --jit
     $ perf report -g -i perf.data
 
 or using the environment variable::
 
-    $ PYTHONPERFJITSUPPORT=1 perf record -F 9999 -g --call-graph dwarf -o perf.data python my_script.py
+    $ PYTHON_PERF_JIT_SUPPORT=1 perf record -F 9999 -g --call-graph dwarf -o perf.data python my_script.py
     $ perf inject -i perf.data --jit
     $ perf report -g -i perf.data
 

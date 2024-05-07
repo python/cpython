@@ -13,6 +13,7 @@
 #include <sys/types.h>
 #include <unistd.h>               // sysconf()
 #include <sys/time.h>           // gettimeofday()
+#include <sys/syscall.h>
 
 // ----------------------------------
 //         Perf jitdump API
@@ -291,7 +292,7 @@ static void* perf_map_jit_init(void) {
     }
     perf_jit_map_state.code_id = 0;
 
-    // trampoline_api.code_padding = PERF_JIT_CODE_PADDING;
+    trampoline_api.code_padding = PERF_JIT_CODE_PADDING;
     return &perf_jit_map_state;
 }
 
@@ -575,7 +576,7 @@ static void perf_map_jit_write_entry(void *state, const void *code_addr,
     ev.base.size = sizeof(ev) + (name_length+1) + size;
     ev.base.time_stamp = get_current_monotonic_ticks();
     ev.process_id = getpid();
-    ev.thread_id = gettid();
+    ev.thread_id = syscall(SYS_gettid);
     ev.vma = base;
     ev.code_address = base;
     ev.code_size = size;

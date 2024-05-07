@@ -208,7 +208,7 @@ jobs:
     with:
       config_hash: ${{ needs.check_source.outputs.config_hash }}
       # macos-14 is M1, macos-13 is Intel
-      os-matrix: '["macos-14", "macos-13"]'
+      os-matrix: '["macos-14-xlarge", "macos-13-large"]'
 
   build_macos_free_threading:
     name: 'macOS (free-threading)'
@@ -218,8 +218,8 @@ jobs:
     with:
       config_hash: ${{ needs.check_source.outputs.config_hash }}
       free-threading: true
-      # macos-14 is M1
-      os-matrix: '["macos-14"]'
+      # macos-14-large is Intel with 12 cores (most parallelism)
+      os-matrix: '["macos-14-large"]'
 
   build_ubuntu:
     name: 'Ubuntu'
@@ -250,7 +250,7 @@ jobs:
 
   build_ubuntu_ssltests:
     name: 'Ubuntu SSL tests with OpenSSL'
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     timeout-minutes: 60
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true'
@@ -316,7 +316,7 @@ jobs:
 
   test_hypothesis:
     name: "Hypothesis tests on Ubuntu"
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     timeout-minutes: 60
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true' && needs.check_source.outputs.run_hypothesis == 'true'
@@ -429,7 +429,7 @@ jobs:
 
   build_asan:
     name: 'Address sanitizer'
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     timeout-minutes: 60
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true'
