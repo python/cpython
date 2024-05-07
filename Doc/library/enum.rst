@@ -392,13 +392,15 @@ Data Types
       in the member assignment will be passed; e.g.
 
          >>> from enum import Enum
-         >>> class MyIntEnum(Enum):
-         ...     SEVENTEEN = '1a', 16
+         >>> class MyIntEnum(int, Enum):
+         ...     TWENTYSIX = '1a', 16
 
-      results in the call ``int('1a', 16)`` and a value of ``17`` for the member.
+      results in the call ``int('1a', 16)`` and a value of ``26`` for the member.
 
-      .. note:: When writing a custom ``__new__``, do not use ``super().__new__`` --
-                call the appropriate ``__new__`` instead.
+      .. note::
+
+         When writing a custom ``__new__``, do not use ``super().__new__`` --
+         call the appropriate ``__new__`` instead.
 
    .. method:: Enum.__repr__(self)
 
