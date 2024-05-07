@@ -62,6 +62,7 @@ race_top:should_intern_string
 race_top:worklist_pop
 race_top:_PyEval_IsGILEnabled
 race_top:llist_insert_tail
+race_top:_Py_slot_tp_getattr_hook
 
 # https://gist.github.com/mpage/6962e8870606cfc960e159b407a0cb40
 thread:pthread_create
