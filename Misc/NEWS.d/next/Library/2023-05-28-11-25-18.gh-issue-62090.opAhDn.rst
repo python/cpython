@@ -1,0 +1,2 @@
+Fix assertion errors caused by whitespace in metavars or ``SUPPRESS``-ed groups
+in :mod:`argparse` by simplifying usage formatting. Patch by Ali Hamdan.
