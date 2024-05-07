@@ -999,6 +999,15 @@ Optimizations
   section above for details.
   (Contributed by Jakub Kulik in :gh:`113117`.)
 
+* Several standard library modules have had their import times significantly
+  improved. For example, the import time of the :mod:`typing` module has been
+  reduced by around a third by removing dependencies on :mod:`re` and
+  :mod:`contextlib`. Other modules to enjoy import-time speedups include
+  :mod:`importlib.metadata`, :mod:`threading`, :mod:`enum`, :mod:`functools`
+  and :mod:`email.utils`.
+  (Contributed by Alex Waygood, Shantanu Jain, Adam Turner, Daniel Hollas and
+  others in :gh:`109653`.)
+
 .. _whatsnew313-jit-compiler:
 
 Experimental JIT Compiler
