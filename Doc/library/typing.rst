@@ -717,7 +717,7 @@ This requirement previously also applied to abstract base classes, such as
 to be explicitly marked to support them, which is unpythonic and unlike
 what one would normally do in idiomatic dynamically typed Python code.
 For example, this conforms to :pep:`484`::
-
+3826
    from collections.abc import Sized, Iterable, Iterator
 
    class Bucket(Sized, Iterable[int]):
@@ -3824,9 +3824,9 @@ Aliases to :mod:`contextlib` ABCs
    Deprecated alias to :class:`contextlib.AbstractContextManager`.
 
    The first type parameter, ``T_co``, represents the type returned by
-   the :meth:`__enter__` method. The second type parameter, ``ExitT_co``,
+   the :meth:`~object.__enter__` method. The second type parameter, ``ExitT_co``,
    which defaults to ``bool | None``, represents the type returned by the
-   :meth:`__exit__` method.
+   :meth:`~object.__exit__` method.
 
    .. versionadded:: 3.5.4
 
@@ -3843,9 +3843,9 @@ Aliases to :mod:`contextlib` ABCs
    Deprecated alias to :class:`contextlib.AbstractAsyncContextManager`.
 
    The first type parameter, ``T_co``, represents the type returned by
-   the :meth:`__aenter__` method. The second type parameter, ``ExitT_co``,
+   the :meth:`~object.__aenter__` method. The second type parameter, ``ExitT_co``,
    which defaults to ``bool | None``, represents the type returned by the
-   :meth:`__aexit__` method.
+   :meth:`~object.__aexit__` method.
 
    .. versionadded:: 3.6.2
 
