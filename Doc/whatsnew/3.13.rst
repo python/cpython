@@ -107,6 +107,9 @@ New typing features:
 * :pep:`742`: :data:`typing.TypeIs` was added, providing more intuitive
   type narrowing behavior.
 
+* :pep:`705`: :data:`typing.ReadOnly` was added, to mark an item of a
+  :class:`typing.TypedDict` as read-only for type checkers.
+
 Free-threading:
 
 * :pep:`703`: CPython 3.13 has experimental support for running with the
@@ -118,7 +121,7 @@ Platform support:
 * :pep:`730`: Apple's iOS is now an officially supported platform. Official
   Android support (:pep:`738`) is in the works as well.
 
-Important deprecations, removals or restrictions:
+Removed modules:
 
 * :ref:`PEP 594 <whatsnew313-pep594>`: The remaining 19 "dead batteries"
   have been removed from the standard library:
@@ -126,6 +129,11 @@ Important deprecations, removals or restrictions:
   :mod:`!crypt`, :mod:`!imghdr`, :mod:`!mailcap`, :mod:`!msilib`, :mod:`!nis`,
   :mod:`!nntplib`, :mod:`!ossaudiodev`, :mod:`!pipes`, :mod:`!sndhdr`, :mod:`!spwd`,
   :mod:`!sunau`, :mod:`!telnetlib`, :mod:`!uu` and :mod:`!xdrlib`.
+
+* Also removed were the :mod:`!tkinter.tix` and :mod:`!lib2to3` modules, and the
+  ``2to3`` program.
+
+Release schedule changes:
 
 * :pep:`602` ("Annual Release Cycle for Python") has been updated:
 
@@ -290,7 +298,7 @@ The internal architecture is roughly as follows.
 * When the JIT is enabled, the optimized
   Tier 2 IR is translated to machine code, which is then executed.
 
-* The machine code translation process uses an architecture called
+* The machine code translation process uses a technique called
   *copy-and-patch*. It has no runtime dependencies, but there is a new
   build-time dependency on LLVM.
 
@@ -338,27 +346,26 @@ designed with threading in mind will run faster on multicore hardware.
 Work is still ongoing: expect some bugs and a substantial single-threaded
 performance hit.
 
-The free-threaded build still supports optionally running with GIL enabled at
-runtime using the environment variable :envvar:`PYTHON_GIL` or the command line
-option :option:`-X gil`.
+The free-threaded build still supports optionally running with the GIL
+enabled at runtime using the environment variable :envvar:`PYTHON_GIL` or
+the command line option :option:`-X gil`.
 
-* Use :func:`!sys._is_gil_enabled` to determine if the :term:`GIL` is enabled.
+To check if the current interpreter is configured with ``--disable-gil``,
+use ``sysconfig.get_config_var("Py_GIL_DISABLED")``. To check if the :term:`GIL`
+is actually disabled in the running process, the :func:`!sys._is_gil_enabled`
+function can be used.
 
-* Use ``sysconfig.get_config_var("Py_GIL_DISABLED")`` to identify CPython
-  builds configured with ``--disable-gil``.
+C-API extension modules need to be built specifically for the free-threaded
+build. Extensions that support running with the :term:`GIL` disabled should
+use the :c:data:`Py_mod_gil` slot. Extensions using single-phase init should
+use :c:func:`PyUnstable_Module_SetGIL` to indicate whether they support
+running with the GIL disabled. Importing C extensions that don't use these
+mechanisms will cause the GIL to be enabled, unless the GIL was explicitly
+disabled with the :envvar:`PYTHON_GIL` environment variable or the
+:option:`-X gil=0` option.
 
-C-API extensions need to be built specifically for the free-threaded build.
-
-* Extensions that support running with the :term:`GIL` disabled should use
-  the :c:data:`Py_mod_gil` slot. Extensions using single-phase init should use
-  :c:func:`PyUnstable_Module_SetGIL` to indicate whether they support running
-  with the GIL disabled. Importing C extensions that don't use these mechanisms
-  will cause the GIL to be enabled unless the GIL was explicitly disabled with
-  the :envvar:`PYTHON_GIL` environment variable or the :option:`-X gil=0`
-  option.
-
-* pip 24.1b1 or newer is required to install packages with C extensions in the
-  free-threaded build.
+pip 24.1b1 or newer is required to install packages with C extensions in the
+free-threaded build.
 
 Other Language Changes
 ======================
@@ -1335,7 +1342,7 @@ typing
 unittest
 --------
 
-* Removed the following :mod:`unittest` functions, deprecated in Python 3.11:
+* Remove the following :mod:`unittest` functions, deprecated in Python 3.11:
 
   * :func:`!unittest.findTestCases`
   * :func:`!unittest.makeSuite`
@@ -1357,10 +1364,10 @@ urllib
 ------
 
 * Remove *cafile*, *capath* and *cadefault* parameters of the
-  :func:`urllib.request.urlopen` function, deprecated in Python 3.6: use the
-  *context* parameter instead. Please use
-  :meth:`ssl.SSLContext.load_cert_chain` instead, or let
-  :func:`ssl.create_default_context` select the system's trusted CA
+  :func:`urllib.request.urlopen` function, deprecated in Python 3.6: pass
+  the *context* parameter instead. Use
+  :meth:`ssl.SSLContext.load_cert_chain` to load specific certificates, or
+  let :func:`ssl.create_default_context` select the system's trusted CA
   certificates for you.
   (Contributed by Victor Stinner in :gh:`105382`.)
 
@@ -1848,6 +1855,7 @@ although there is currently no date scheduled for their removal.
 * :meth:`zipimport.zipimporter.load_module` is deprecated:
   use :meth:`~zipimport.zipimporter.exec_module` instead.
 
+
 CPython Bytecode Changes
 ========================
 
@@ -1856,46 +1864,6 @@ CPython Bytecode Changes
   changed to add a bit indicating whether the except-depth is 1, which
   is needed to optimize closing of generators.
   (Contributed by Irit Katriel in :gh:`111354`.)
-
-Build Changes
-=============
-
-* The :file:`configure` option :option:`--with-system-libmpdec` now defaults
-  to ``yes``. The bundled copy of ``libmpdecimal`` will be removed in Python
-  3.15.
-
-* Autoconf 2.71 and aclocal 1.16.4 are now required to regenerate
-  the :file:`configure` script.
-  (Contributed by Christian Heimes in :gh:`89886`.)
-
-* SQLite 3.15.2 or newer is required to build the :mod:`sqlite3` extension module.
-  (Contributed by Erlend Aasland in :gh:`105875`.)
-
-* Python built with :file:`configure` :option:`--with-trace-refs` (tracing
-  references) is now ABI compatible with the Python release build and
-  :ref:`debug build <debug-build>`.
-  (Contributed by Victor Stinner in :gh:`108634`.)
-
-* Building CPython now requires a compiler with support for the C11 atomic
-  library, GCC built-in atomic functions, or MSVC interlocked intrinsics.
-
-* The ``errno``, ``fcntl``, ``grp``, ``md5``, ``pwd``, ``resource``,
-  ``termios``, ``winsound``,
-  ``_ctypes_test``, ``_multiprocessing.posixshmem``, ``_scproxy``, ``_stat``,
-  ``_statistics``, ``_testconsole``, ``_testimportmultiple`` and ``_uuid``
-  C extensions are now built with the :ref:`limited C API <limited-c-api>`.
-  (Contributed by Victor Stinner in :gh:`85283`.)
-
-* ``wasm32-wasi`` is now a :pep:`11` tier 2 platform.
-  (Contributed by Brett Cannon in :gh:`115192`.)
-
-* ``wasm32-emscripten`` is no longer a :pep:`11` supported platform.
-  (Contributed by Brett Cannon in :gh:`115192`.)
-
-* Python now bundles the `mimalloc library <https://github.com/microsoft/mimalloc>`__.
-  It is licensed under the MIT license, see :ref:`mimalloc license <mimalloc-license>`.
-  The bundled mimalloc has custom changes, see :gh:`113141` for details.
-  (Contributed by Dino Viehland in :gh:`109914`.)
 
 
 C API Changes
@@ -2114,6 +2082,47 @@ New Features
   by Pablo Galindo in :gh:`93502`.)
 
 
+Build Changes
+=============
+
+* The :file:`configure` option :option:`--with-system-libmpdec` now defaults
+  to ``yes``. The bundled copy of ``libmpdecimal`` will be removed in Python
+  3.15.
+
+* Autoconf 2.71 and aclocal 1.16.4 are now required to regenerate
+  the :file:`configure` script.
+  (Contributed by Christian Heimes in :gh:`89886`.)
+
+* SQLite 3.15.2 or newer is required to build the :mod:`sqlite3` extension module.
+  (Contributed by Erlend Aasland in :gh:`105875`.)
+
+* Python built with :file:`configure` :option:`--with-trace-refs` (tracing
+  references) is now ABI compatible with the Python release build and
+  :ref:`debug build <debug-build>`.
+  (Contributed by Victor Stinner in :gh:`108634`.)
+
+* Building CPython now requires a compiler with support for the C11 atomic
+  library, GCC built-in atomic functions, or MSVC interlocked intrinsics.
+
+* The ``errno``, ``fcntl``, ``grp``, ``md5``, ``pwd``, ``resource``,
+  ``termios``, ``winsound``,
+  ``_ctypes_test``, ``_multiprocessing.posixshmem``, ``_scproxy``, ``_stat``,
+  ``_statistics``, ``_testconsole``, ``_testimportmultiple`` and ``_uuid``
+  C extensions are now built with the :ref:`limited C API <limited-c-api>`.
+  (Contributed by Victor Stinner in :gh:`85283`.)
+
+* ``wasm32-wasi`` is now a :pep:`11` tier 2 platform.
+  (Contributed by Brett Cannon in :gh:`115192`.)
+
+* ``wasm32-emscripten`` is no longer a :pep:`11` supported platform.
+  (Contributed by Brett Cannon in :gh:`115192`.)
+
+* Python now bundles the `mimalloc library <https://github.com/microsoft/mimalloc>`__.
+  It is licensed under the MIT license; see :ref:`mimalloc license <mimalloc-license>`.
+  The bundled mimalloc has custom changes, see :gh:`113141` for details.
+  (Contributed by Dino Viehland in :gh:`109914`.)
+
+
 Porting to Python 3.13
 ======================
 
@@ -2129,7 +2138,7 @@ Changes in the Python API
 
 * The :mod:`threading` module now expects the :mod:`!_thread` module to have
   an ``_is_main_interpreter`` attribute.  It is a function with no
-  arguments that return ``True`` if the current interpreter is the
+  arguments that returns ``True`` if the current interpreter is the
   main interpreter.
 
   Any library or application that provides a custom ``_thread`` module
