@@ -1004,10 +1004,6 @@ call fails (for example because the path doesn't exist).
    .. seealso::
       :ref:`pathlib-pattern-language` documentation.
 
-   This method calls :meth:`Path.is_dir` on the top-level directory and
-   propagates any :exc:`OSError` exception that is raised. Subsequent
-   :exc:`OSError` exceptions from scanning directories are suppressed.
-
    By default, or when the *case_sensitive* keyword-only argument is set to
    ``None``, this method matches paths using platform-specific casing rules:
    typically, case-sensitive on POSIX, and case-insensitive on Windows.
@@ -1027,6 +1023,11 @@ call fails (for example because the path doesn't exist).
 
    .. versionchanged:: 3.13
       The *pattern* parameter accepts a :term:`path-like object`.
+
+   .. versionchanged:: 3.13
+      Any :exc:`OSError` exceptions raised from scanning the filesystem are
+      suppressed. In previous versions, such exceptions are suppressed in many
+      cases, but not all.
 
 
 .. method:: Path.rglob(pattern, *, case_sensitive=None, recurse_symlinks=False)

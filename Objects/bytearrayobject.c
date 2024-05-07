@@ -1121,16 +1121,44 @@ bytearray_dealloc(PyByteArrayObject *self)
 #include "stringlib/transmogrify.h"
 
 
-static PyObject *
-bytearray_find(PyByteArrayObject *self, PyObject *args)
-{
-    return _Py_bytes_find(PyByteArray_AS_STRING(self), PyByteArray_GET_SIZE(self), args);
-}
+/*[clinic input]
+@text_signature "($self, sub[, start[, end]], /)"
+bytearray.find
+
+    sub: object
+    start: slice_index(accept={int, NoneType}, c_default='0') = None
+         Optional start position. Default: start of the bytes.
+    end: slice_index(accept={int, NoneType}, c_default='PY_SSIZE_T_MAX') = None
+         Optional stop position. Default: end of the bytes.
+    /
+
+Return the lowest index in B where subsection 'sub' is found, such that 'sub' is contained within B[start:end].
+
+Return -1 on failure.
+[clinic start generated code]*/
 
 static PyObject *
-bytearray_count(PyByteArrayObject *self, PyObject *args)
+bytearray_find_impl(PyByteArrayObject *self, PyObject *sub, Py_ssize_t start,
+                    Py_ssize_t end)
+/*[clinic end generated code: output=413e1cab2ae87da0 input=793dfad803e2952f]*/
 {
-    return _Py_bytes_count(PyByteArray_AS_STRING(self), PyByteArray_GET_SIZE(self), args);
+    return _Py_bytes_find(PyByteArray_AS_STRING(self), PyByteArray_GET_SIZE(self),
+                          sub, start, end);
+}
+
+/*[clinic input]
+bytearray.count = bytearray.find
+
+Return the number of non-overlapping occurrences of subsection 'sub' in bytes B[start:end].
+[clinic start generated code]*/
+
+static PyObject *
+bytearray_count_impl(PyByteArrayObject *self, PyObject *sub,
+                     Py_ssize_t start, Py_ssize_t end)
+/*[clinic end generated code: output=a21ee2692e4f1233 input=4deb529db38deda8]*/
+{
+    return _Py_bytes_count(PyByteArray_AS_STRING(self), PyByteArray_GET_SIZE(self),
+                           sub, start, end);
 }
 
 /*[clinic input]
@@ -1162,22 +1190,55 @@ bytearray_copy_impl(PyByteArrayObject *self)
                                          PyByteArray_GET_SIZE(self));
 }
 
-static PyObject *
-bytearray_index(PyByteArrayObject *self, PyObject *args)
-{
-    return _Py_bytes_index(PyByteArray_AS_STRING(self), PyByteArray_GET_SIZE(self), args);
-}
+/*[clinic input]
+bytearray.index = bytearray.find
+
+Return the lowest index in B where subsection 'sub' is found, such that 'sub' is contained within B[start:end].
+
+Raise ValueError if the subsection is not found.
+[clinic start generated code]*/
 
 static PyObject *
-bytearray_rfind(PyByteArrayObject *self, PyObject *args)
+bytearray_index_impl(PyByteArrayObject *self, PyObject *sub,
+                     Py_ssize_t start, Py_ssize_t end)
+/*[clinic end generated code: output=067a1e78efc672a7 input=8cbaf6836dbd2a9a]*/
 {
-    return _Py_bytes_rfind(PyByteArray_AS_STRING(self), PyByteArray_GET_SIZE(self), args);
+    return _Py_bytes_index(PyByteArray_AS_STRING(self), PyByteArray_GET_SIZE(self),
+                           sub, start, end);
 }
 
+/*[clinic input]
+bytearray.rfind = bytearray.find
+
+Return the highest index in B where subsection 'sub' is found, such that 'sub' is contained within B[start:end].
+
+Return -1 on failure.
+[clinic start generated code]*/
+
 static PyObject *
-bytearray_rindex(PyByteArrayObject *self, PyObject *args)
+bytearray_rfind_impl(PyByteArrayObject *self, PyObject *sub,
+                     Py_ssize_t start, Py_ssize_t end)
+/*[clinic end generated code: output=51bf886f932b283c input=eaa107468a158423]*/
 {
-    return _Py_bytes_rindex(PyByteArray_AS_STRING(self), PyByteArray_GET_SIZE(self), args);
+    return _Py_bytes_rfind(PyByteArray_AS_STRING(self), PyByteArray_GET_SIZE(self),
+                           sub, start, end);
+}
+
+/*[clinic input]
+bytearray.rindex = bytearray.find
+
+Return the highest index in B where subsection 'sub' is found, such that 'sub' is contained within B[start:end].
+
+Raise ValueError if the subsection is not found.
+[clinic start generated code]*/
+
+static PyObject *
+bytearray_rindex_impl(PyByteArrayObject *self, PyObject *sub,
+                      Py_ssize_t start, Py_ssize_t end)
+/*[clinic end generated code: output=38e1cf66bafb08b9 input=81cf49d0af4d5bd0]*/
+{
+    return _Py_bytes_rindex(PyByteArray_AS_STRING(self), PyByteArray_GET_SIZE(self),
+                            sub, start, end);
 }
 
 static int
@@ -2236,17 +2297,15 @@ bytearray_methods[] = {
     STRINGLIB_CENTER_METHODDEF
     BYTEARRAY_CLEAR_METHODDEF
     BYTEARRAY_COPY_METHODDEF
-    {"count", (PyCFunction)bytearray_count, METH_VARARGS,
-     _Py_count__doc__},
+    BYTEARRAY_COUNT_METHODDEF
     BYTEARRAY_DECODE_METHODDEF
     BYTEARRAY_ENDSWITH_METHODDEF
     STRINGLIB_EXPANDTABS_METHODDEF
     BYTEARRAY_EXTEND_METHODDEF
-    {"find", (PyCFunction)bytearray_find, METH_VARARGS,
-     _Py_find__doc__},
+    BYTEARRAY_FIND_METHODDEF
     BYTEARRAY_FROMHEX_METHODDEF
     BYTEARRAY_HEX_METHODDEF
-    {"index", (PyCFunction)bytearray_index, METH_VARARGS, _Py_index__doc__},
+    BYTEARRAY_INDEX_METHODDEF
     BYTEARRAY_INSERT_METHODDEF
     {"isalnum", stringlib_isalnum, METH_NOARGS,
      _Py_isalnum__doc__},
@@ -2276,8 +2335,8 @@ bytearray_methods[] = {
     BYTEARRAY_REMOVEPREFIX_METHODDEF
     BYTEARRAY_REMOVESUFFIX_METHODDEF
     BYTEARRAY_REVERSE_METHODDEF
-    {"rfind", (PyCFunction)bytearray_rfind, METH_VARARGS, _Py_rfind__doc__},
-    {"rindex", (PyCFunction)bytearray_rindex, METH_VARARGS, _Py_rindex__doc__},
+    BYTEARRAY_RFIND_METHODDEF
+    BYTEARRAY_RINDEX_METHODDEF
     STRINGLIB_RJUST_METHODDEF
     BYTEARRAY_RPARTITION_METHODDEF
     BYTEARRAY_RSPLIT_METHODDEF

@@ -7,6 +7,10 @@ on:
       options:
         required: true
         type: string
+      suppressions_path:
+        description: 'A repo relative path to the suppressions file'
+        required: true
+        type: string
 
 jobs:
   build_tsan_reusable:
@@ -30,7 +34,7 @@ jobs:
         sudo sysctl -w vm.mmap_rnd_bits=28
     - name: TSAN Option Setup
       run: |
-        echo "TSAN_OPTIONS=suppressions=${GITHUB_WORKSPACE}/Tools/tsan/supressions.txt" >> $GITHUB_ENV
+        echo "TSAN_OPTIONS=suppressions=${GITHUB_WORKSPACE}/${{ inputs.suppressions_path }}" >> $GITHUB_ENV
         echo "CC=clang" >> $GITHUB_ENV
         echo "CXX=clang++" >> $GITHUB_ENV
     - name: Add ccache to PATH

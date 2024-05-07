@@ -1263,6 +1263,13 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
             self.assertEqual(
                 set(P('.').glob('**/*/*')), {P("dirD/fileD")})
 
+    def test_glob_inaccessible(self):
+        P = self.cls
+        p = P(self.base, "mydir1", "mydir2")
+        p.mkdir(parents=True)
+        p.parent.chmod(0)
+        self.assertEqual(set(p.glob('*')), set())
+
     def test_rglob_pathlike(self):
         P = self.cls
         p = P(self.base, "dirC")
