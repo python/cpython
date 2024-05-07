@@ -1,1 +1,1 @@
-Add the :meth:`after_info` method for Tkinter widgets.
+Add the :meth:`!after_info` method for Tkinter widgets.
