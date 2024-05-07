@@ -6312,7 +6312,7 @@ class ForwardRefTests(BaseTestCase):
         with self.assertWarnsRegex(
             DeprecationWarning,
             (
-                "Failing to pass a value to the `type_params` parameter "
+                "Failing to pass a value to the 'type_params' parameter "
                 "of 'typing._eval_type' is deprecated"
             )
         ) as cm:
@@ -6325,7 +6325,7 @@ class ForwardRefTests(BaseTestCase):
         with self.assertWarnsRegex(
             DeprecationWarning,
             (
-                "Failing to pass a value to the `type_params` parameter "
+                "Failing to pass a value to the 'type_params' parameter "
                 "of 'typing.ForwardRef._evaluate' is deprecated"
             )
         ) as cm:

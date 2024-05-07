@@ -441,7 +441,7 @@ def _deprecation_warning_for_no_type_params_passed(funcname: str) -> None:
     import warnings
 
     depr_message = (
-        f"Failing to pass a value to the `type_params` parameter "
+        f"Failing to pass a value to the 'type_params' parameter "
         f"of {funcname!r} is deprecated, as it leads to incorrect behaviour "
         f"when calling {funcname} on a stringified annotation "
         f"that references a PEP-695 type parameter. "
