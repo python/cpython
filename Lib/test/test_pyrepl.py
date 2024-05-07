@@ -104,7 +104,8 @@ def handle_all_events(
 
 
 handle_events_narrow_console = partial(
-    handle_all_events, prepare_console=partial(prepare_mock_console, width=10)
+    handle_all_events,
+    prepare_console=partial(prepare_mock_console, width=10),
 )
 
 
@@ -936,21 +937,31 @@ class TestReader(TestCase):
 def unix_console(events, **kwargs):
     console = UnixConsole()
     console.get_event = MagicMock(side_effect=events)
+
+    height = kwargs.get("height", 25)
+    width = kwargs.get("width", 80)
+    console.getheightwidth = MagicMock(side_effect=lambda: (height, width))
+
     console.prepare()
     for key, val in kwargs.items():
         setattr(console, key, val)
     return console
 
 
-handle_events_unix_console = partial(handle_all_events, prepare_console=unix_console)
+handle_events_unix_console = partial(
+    handle_all_events,
+    prepare_console=partial(unix_console),
+)
 handle_events_narrow_unix_console = partial(
-    handle_all_events, prepare_console=partial(unix_console, width=5)
+    handle_all_events,
+    prepare_console=partial(unix_console, width=5),
 )
 handle_events_short_unix_console = partial(
-    handle_all_events, prepare_console=partial(unix_console, height=1)
+    handle_all_events,
+    prepare_console=partial(unix_console, height=1),
 )
 handle_events_unix_console_height_3 = partial(
-    handle_all_events, prepare_console=partial(unix_console, height=2)
+    handle_all_events, prepare_console=partial(unix_console, height=3)
 )
 
 
@@ -1152,6 +1163,7 @@ class TestConsole(TestCase):
         reader, console = handle_events_short_unix_console(events)
 
         console.height = 2
+        console.getheightwidth = MagicMock(lambda _: (2, 80))
 
         def same_reader(_):
             return reader
@@ -1185,6 +1197,7 @@ class TestConsole(TestCase):
         reader, console = handle_events_unix_console_height_3(events)
 
         console.height = 1
+        console.getheightwidth = MagicMock(lambda _: (1, 80))
 
         def same_reader(_):
             return reader
