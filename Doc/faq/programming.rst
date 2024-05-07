@@ -2017,7 +2017,7 @@ relevant instance attributes are mutable, the *cached_property* approach
 can't be made to work because it cannot detect changes to the
 attributes.
 
-To make the :deco:`lru_cache` approach work when the *station_id* is mutable,
+To make the :deco:`~functools.lru_cache` approach work when the *station_id* is mutable,
 the class needs to define the :meth:`~object.__eq__` and :meth:`~object.__hash__`
 methods so that the cache can detect relevant attribute updates::
 

@@ -369,7 +369,7 @@ The :mod:`functools` module defines the following functions:
    like normal functions, are handled as descriptors).
 
    When *func* is a descriptor (such as a normal Python function,
-   :deco:`classmethod`, :deco:`staticmethod`, :deco:`abstractmethod` or
+   :deco:`classmethod`, :deco:`staticmethod`, :deco:`~abs.abstractmethod` or
    another instance of :class:`partialmethod`), calls to ``__get__`` are
    delegated to the underlying descriptor, and an appropriate
    :ref:`partial object<partial-objects>` returned as the result.
