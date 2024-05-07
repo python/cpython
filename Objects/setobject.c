@@ -2621,6 +2621,12 @@ PySet_Clear(PyObject *set)
     return 0;
 }
 
+void
+_PySet_ClearInternal(PySetObject *so)
+{
+    (void)set_clear_internal(so);
+}
+
 int
 PySet_Contains(PyObject *anyset, PyObject *key)
 {
