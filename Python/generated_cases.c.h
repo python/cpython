@@ -2673,6 +2673,9 @@
                 opcode = executor->vm_data.opcode;
                 oparg = (oparg & ~255) | executor->vm_data.oparg;
                 next_instr = this_instr;
+                if (_PyOpcode_Caches[_PyOpcode_Deopt[opcode]]) {
+                    PAUSE_ADAPTIVE_COUNTER(this_instr[1].counter);
+                }
                 DISPATCH_GOTO();
             }
             tstate->previous_executor = Py_None;

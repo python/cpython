@@ -384,6 +384,12 @@ ast
   argument that does not map to a field on the AST node is now deprecated,
   and will raise an exception in Python 3.15.
 
+  These changes do not apply to user-defined subclasses of :class:`ast.AST`,
+  unless the class opts in to the new behavior by setting the attribute
+  :attr:`ast.AST._field_types`.
+
+  (Contributed by Jelle Zijlstra in :gh:`105858` and :gh:`117486`.)
+
 * :func:`ast.parse` now accepts an optional argument *optimize*
   which is passed on to the :func:`compile` built-in. This makes it
   possible to obtain an optimized AST.
