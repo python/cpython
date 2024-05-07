@@ -1063,24 +1063,22 @@ class MmapTests(unittest.TestCase):
     @unittest.skipUnless(os.name == 'nt', 'requires Windows')
     @unittest.skipUnless(hasattr(mmap.mmap, '_protect'), 'test needs debug build')
     def test_access_violations(self):
+        from test.support.os_helper import TESTFN
 
         code = textwrap.dedent("""
-            from test.support.os_helper import TESTFN
             import faulthandler
             import mmap
             import os
+            import sys
             from contextlib import suppress
 
             # Prevent logging access violations to stderr.
             faulthandler.disable()
 
-            if os.path.exists(TESTFN):
-                os.unlink(TESTFN)
-
             PAGESIZE = mmap.PAGESIZE
             PAGE_NOACCESS = 0x01
 
-            with open(TESTFN, 'bw+') as f:
+            with open(sys.argv[1], 'bw+') as f:
                 f.write(b'A'* PAGESIZE)
                 f.flush()
 
@@ -1125,37 +1123,17 @@ class MmapTests(unittest.TestCase):
                 with suppress(OSError):
                     list(m)  # test mmap_item
                     assert False, 'mmap.__getitem__() did not raise'
-        """)
-        rt, stdout, stderr = assert_python_ok("-c", code)
-        self.assertEqual(stdout.strip(), b'')
-        self.assertEqual(stderr.strip(), b'')
-
-    @unittest.skipUnless(os.name == 'nt', 'requires Windows')
-    @unittest.skipUnless(hasattr(mmap.mmap, '_protect'), 'test needs debug build')
-    @unittest.expectedFailure
-    def test_access_violations_fail(self):
-
-        code = textwrap.dedent("""
-            from test.support.os_helper import TESTFN
-            import mmap
-            import os
-            from contextlib import suppress
-
-
-            PAGESIZE = mmap.PAGESIZE
-            PAGE_NOACCESS = 0x01
-
-            with open(TESTFN, 'bw+') as f:
-                f.write(b'A'* PAGESIZE)
-                f.flush()
-
-                m = mmap.mmap(f.fileno(), PAGESIZE)
-                m._protect(PAGE_NOACCESS, 0, PAGESIZE)
                 with suppress(OSError):
                     m.find(b'A')
                     assert False, 'mmap.find() did not raise'
+                with suppress(OSError):
+                    m.rfind(b'A')
+                    assert False, 'mmap.rfind() did not raise'
         """)
-        assert_python_ok("-c", code)
+        rt, stdout, stderr = assert_python_ok("-c", code, TESTFN)
+        self.assertEqual(stdout.strip(), b'')
+        self.assertEqual(stderr.strip(), b'')
+
 
 class LargeMmapTests(unittest.TestCase):
 

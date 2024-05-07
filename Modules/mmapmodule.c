@@ -261,9 +261,26 @@ static DWORD
 filter_page_exception(EXCEPTION_POINTERS *ptrs, EXCEPTION_RECORD *record)
 {
     *record = *ptrs->ExceptionRecord;
-    if (ptrs->ExceptionRecord->ExceptionCode == EXCEPTION_IN_PAGE_ERROR
-        || ptrs->ExceptionRecord->ExceptionCode == EXCEPTION_ACCESS_VIOLATION) {
+    if (record->ExceptionCode == EXCEPTION_IN_PAGE_ERROR
+        || record->ExceptionCode == EXCEPTION_ACCESS_VIOLATION) {
         return EXCEPTION_EXECUTE_HANDLER;
+    }
+    return EXCEPTION_CONTINUE_SEARCH;
+}
+
+static DWORD
+filter_page_exception_method(mmap_object *self, EXCEPTION_POINTERS *ptrs, EXCEPTION_RECORD *record)
+{
+    *record = *ptrs->ExceptionRecord;
+    if (record->ExceptionCode == EXCEPTION_IN_PAGE_ERROR
+        || record->ExceptionCode == EXCEPTION_ACCESS_VIOLATION) {
+
+        ULONG_PTR address = record->ExceptionInformation[1];
+        if (address >= (ULONG_PTR) self->data
+            && address < (ULONG_PTR) self->data + (ULONG_PTR) self->size)
+        {
+            return EXCEPTION_EXECUTE_HANDLER;
+        }
     }
     return EXCEPTION_CONTINUE_SEARCH;
 }
@@ -277,6 +294,8 @@ do {                                                                       \
         sourcecode                                                         \
     }                                                                      \
     __except (filter_page_exception(GetExceptionInformation(), &record)) { \
+        assert(record.ExceptionCode == EXCEPTION_IN_PAGE_ERROR             \
+               || record.ExceptionCode == EXCEPTION_ACCESS_VIOLATION);     \
         if (record.ExceptionCode == EXCEPTION_IN_PAGE_ERROR) {             \
             NTSTATUS status = (NTSTATUS) record.ExceptionInformation[2];   \
             ULONG code = LsaNtStatusToWinError(status);                    \
@@ -292,6 +311,34 @@ do {                                                                       \
 #define HANDLE_INVALID_MEM(sourcecode)                                     \
 do {                                                                       \
     sourcecode                                                             \
+} while (0)
+#endif
+
+#if defined(MS_WIN32) && !defined(DONT_USE_SEH)
+#define HANDLE_INVALID_MEM_METHOD(self, sourcecode)                                     \
+do {                                                                                    \
+    EXCEPTION_RECORD record;                                                            \
+    __try {                                                                             \
+        sourcecode                                                                      \
+    }                                                                                   \
+    __except (filter_page_exception_method(self, GetExceptionInformation(), &record)) { \
+        assert(record.ExceptionCode == EXCEPTION_IN_PAGE_ERROR                          \
+               || record.ExceptionCode == EXCEPTION_ACCESS_VIOLATION);                  \
+        if (record.ExceptionCode == EXCEPTION_IN_PAGE_ERROR) {                          \
+            NTSTATUS status = (NTSTATUS) record.ExceptionInformation[2];                \
+            ULONG code = LsaNtStatusToWinError(status);                                 \
+            PyErr_SetFromWindowsErr(code);                                              \
+        }                                                                               \
+        else if (record.ExceptionCode == EXCEPTION_ACCESS_VIOLATION) {                  \
+            PyErr_SetFromWindowsErr(ERROR_NOACCESS);                                    \
+        }                                                                               \
+        return -1;                                                                      \
+    }                                                                                   \
+} while (0)
+#else
+#define HANDLE_INVALID_MEM_METHOD(self, sourcecode)                                     \
+do {                                                                                    \
+    sourcecode                                                                          \
 } while (0)
 #endif
 
@@ -351,8 +398,29 @@ safe_copy_to_slice(char *dest, const char *src, Py_ssize_t start, Py_ssize_t ste
     return 0;
 }
 
+
+int
+_safe_PyBytes_Find(Py_ssize_t *out, mmap_object *self, const char *haystack,
+                   Py_ssize_t len_haystack, const char *needle, Py_ssize_t len_needle,
+                   Py_ssize_t offset) {
+    HANDLE_INVALID_MEM_METHOD(self,
+        *out = _PyBytes_Find(haystack, len_haystack, needle, len_needle, offset);
+    );
+    return 0;
+}
+
+int
+_safe_PyBytes_ReverseFind(Py_ssize_t *out, mmap_object *self, const char *haystack,
+                          Py_ssize_t len_haystack, const char *needle, Py_ssize_t len_needle,
+                          Py_ssize_t offset) {
+    HANDLE_INVALID_MEM_METHOD(self,
+        *out = _PyBytes_ReverseFind(haystack, len_haystack, needle, len_needle, offset);
+    );
+    return 0;
+}
+
 PyObject *
-_get_mmap_mem(char *start, size_t num_bytes) {
+_safe_PyBytes_FromStringAndSize(char *start, size_t num_bytes) {
     if (num_bytes == 1) {
         char dest;
         if (safe_byte_copy(&dest, start) < 0) {
@@ -417,7 +485,7 @@ mmap_read_line_method(mmap_object *self,
     else
         ++eol; /* advance past newline */
 
-    PyObject *result = _get_mmap_mem(start, eol - start);
+    PyObject *result = _safe_PyBytes_FromStringAndSize(start, eol - start);
     if (result != NULL) {
         self->pos += (eol - start);
     }
@@ -440,7 +508,7 @@ mmap_read_method(mmap_object *self,
     if (num_bytes < 0 || num_bytes > remaining)
         num_bytes = remaining;
 
-    PyObject *result = _get_mmap_mem(self->data + self->pos, num_bytes);
+    PyObject *result = _safe_PyBytes_FromStringAndSize(self->data + self->pos, num_bytes);
     if (result != NULL) {
         self->pos += num_bytes;
     }
@@ -476,25 +544,36 @@ mmap_gfind(mmap_object *self,
         else if (end > self->size)
             end = self->size;
 
-        Py_ssize_t res;
+        Py_ssize_t index;
+        PyObject *result;
         CHECK_VALID_OR_RELEASE(NULL, view);
         if (end < start) {
-            res = -1;
+            result = PyLong_FromSsize_t(-1);
         }
         else if (reverse) {
             assert(0 <= start && start <= end && end <= self->size);
-            res = _PyBytes_ReverseFind(
+            if (_safe_PyBytes_ReverseFind(&index, self,
                 self->data + start, end - start,
-                view.buf, view.len, start);
+                view.buf, view.len, start) < 0) {
+                result = NULL;
+            }
+            else {
+                result = PyLong_FromSsize_t(index);
+            }
         }
         else {
             assert(0 <= start && start <= end && end <= self->size);
-            res = _PyBytes_Find(
+            if (_safe_PyBytes_Find(&index, self,
                 self->data + start, end - start,
-                view.buf, view.len, start);
+                view.buf, view.len, start) < 0) {
+                result = NULL;
+            }
+            else {
+                result = PyLong_FromSsize_t(index);
+            }
         }
         PyBuffer_Release(&view);
-        return PyLong_FromSsize_t(res);
+        return result;
     }
 }
 
@@ -1184,7 +1263,7 @@ mmap_subscript(mmap_object *self, PyObject *item)
         if (slicelen <= 0)
             return PyBytes_FromStringAndSize("", 0);
         else if (step == 1)
-            return _get_mmap_mem(self->data + start, slicelen);
+            return _safe_PyBytes_FromStringAndSize(self->data + start, slicelen);
         else {
             char *result_buf = (char *)PyMem_Malloc(slicelen);
             PyObject *result;
