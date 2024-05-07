@@ -1141,8 +1141,6 @@ class MmapTests(unittest.TestCase):
             import os
             from contextlib import suppress
 
-            if os.path.exists(TESTFN):
-                os.unlink(TESTFN)
 
             PAGESIZE = mmap.PAGESIZE
             PAGE_NOACCESS = 0x01
