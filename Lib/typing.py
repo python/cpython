@@ -437,6 +437,17 @@ def _tp_cache(func=None, /, *, typed=False):
     return decorator
 
 
+def _copy_with(t, new_args):
+    if new_args == t.__args__:
+        return t
+    if isinstance(t, GenericAlias):
+        return GenericAlias(t.__origin__, new_args)
+    if isinstance(t, types.UnionType):
+        return functools.reduce(operator.or_, new_args)
+    else:
+        return t.copy_with(new_args)
+
+
 def _eval_type(t, globalns, localns, type_params=None, *, recursive_guard=frozenset()):
     """Evaluate all forward references in the given type t.
 
@@ -459,21 +470,13 @@ def _eval_type(t, globalns, localns, type_params=None, *, recursive_guard=frozen
                 t = t.__origin__[args]
             if is_unpacked:
                 t = Unpack[t]
-
         ev_args = tuple(
             _eval_type(
                 a, globalns, localns, type_params, recursive_guard=recursive_guard
             )
             for a in t.__args__
         )
-        if ev_args == t.__args__:
-            return t
-        if isinstance(t, GenericAlias):
-            return GenericAlias(t.__origin__, ev_args)
-        if isinstance(t, types.UnionType):
-            return functools.reduce(operator.or_, ev_args)
-        else:
-            return t.copy_with(ev_args)
+        return _copy_with(t, ev_args)
     return t
 
 
@@ -1468,66 +1471,7 @@ class _GenericAlias(_BaseGenericAlias, _root=True):
         return tuple(self._make_substitution(self.__args__, new_arg_by_param))
 
     def _make_substitution(self, args, new_arg_by_param):
-        """Create a list of new type arguments."""
-        new_args = []
-        for old_arg in args:
-            if isinstance(old_arg, type):
-                new_args.append(old_arg)
-                continue
-
-            substfunc = getattr(old_arg, '__typing_subst__', None)
-            if substfunc:
-                new_arg = substfunc(new_arg_by_param[old_arg])
-            else:
-                subparams = getattr(old_arg, '__parameters__', ())
-                if not subparams:
-                    new_arg = old_arg
-                else:
-                    subargs = []
-                    for x in subparams:
-                        if isinstance(x, TypeVarTuple):
-                            subargs.extend(new_arg_by_param[x])
-                        else:
-                            subargs.append(new_arg_by_param[x])
-                    new_arg = old_arg[tuple(subargs)]
-
-            if self.__origin__ == collections.abc.Callable and isinstance(new_arg, tuple):
-                # Consider the following `Callable`.
-                #   C = Callable[[int], str]
-                # Here, `C.__args__` should be (int, str) - NOT ([int], str).
-                # That means that if we had something like...
-                #   P = ParamSpec('P')
-                #   T = TypeVar('T')
-                #   C = Callable[P, T]
-                #   D = C[[int, str], float]
-                # ...we need to be careful; `new_args` should end up as
-                # `(int, str, float)` rather than `([int, str], float)`.
-                new_args.extend(new_arg)
-            elif _is_unpacked_typevartuple(old_arg):
-                # Consider the following `_GenericAlias`, `B`:
-                #   class A(Generic[*Ts]): ...
-                #   B = A[T, *Ts]
-                # If we then do:
-                #   B[float, int, str]
-                # The `new_arg` corresponding to `T` will be `float`, and the
-                # `new_arg` corresponding to `*Ts` will be `(int, str)`. We
-                # should join all these types together in a flat list
-                # `(float, int, str)` - so again, we should `extend`.
-                new_args.extend(new_arg)
-            elif isinstance(old_arg, tuple):
-                # Corner case:
-                #    P = ParamSpec('P')
-                #    T = TypeVar('T')
-                #    class Base(Generic[P]): ...
-                # Can be substituted like this:
-                #    X = Base[[int, T]]
-                # In this case, `old_arg` will be a tuple:
-                new_args.append(
-                    tuple(self._make_substitution(old_arg, new_arg_by_param)),
-                )
-            else:
-                new_args.append(new_arg)
-        return new_args
+        return _make_substitution(self.__origin__, args, new_arg_by_param)
 
     def copy_with(self, args):
         return self.__class__(self.__origin__, args, name=self._name, inst=self._inst)
@@ -1572,6 +1516,68 @@ class _GenericAlias(_BaseGenericAlias, _root=True):
     def __iter__(self):
         yield Unpack[self]
 
+
+def _make_substitution(origin, args, new_arg_by_param):
+    """Create a list of new type arguments."""
+    new_args = []
+    for old_arg in args:
+        if isinstance(old_arg, type):
+            new_args.append(old_arg)
+            continue
+
+        substfunc = getattr(old_arg, '__typing_subst__', None)
+        if substfunc:
+            new_arg = substfunc(new_arg_by_param[old_arg])
+        else:
+            subparams = getattr(old_arg, '__parameters__', ())
+            if not subparams:
+                new_arg = old_arg
+            else:
+                subargs = []
+                for x in subparams:
+                    if isinstance(x, TypeVarTuple):
+                        subargs.extend(new_arg_by_param[x])
+                    else:
+                        subargs.append(new_arg_by_param[x])
+                new_arg = old_arg[tuple(subargs)]
+
+        if origin == collections.abc.Callable and isinstance(new_arg, tuple):
+            # Consider the following `Callable`.
+            #   C = Callable[[int], str]
+            # Here, `C.__args__` should be (int, str) - NOT ([int], str).
+            # That means that if we had something like...
+            #   P = ParamSpec('P')
+            #   T = TypeVar('T')
+            #   C = Callable[P, T]
+            #   D = C[[int, str], float]
+            # ...we need to be careful; `new_args` should end up as
+            # `(int, str, float)` rather than `([int, str], float)`.
+            new_args.extend(new_arg)
+        elif _is_unpacked_typevartuple(old_arg):
+            # Consider the following `_GenericAlias`, `B`:
+            #   class A(Generic[*Ts]): ...
+            #   B = A[T, *Ts]
+            # If we then do:
+            #   B[float, int, str]
+            # The `new_arg` corresponding to `T` will be `float`, and the
+            # `new_arg` corresponding to `*Ts` will be `(int, str)`. We
+            # should join all these types together in a flat list
+            # `(float, int, str)` - so again, we should `extend`.
+            new_args.extend(new_arg)
+        elif isinstance(old_arg, tuple):
+            # Corner case:
+            #    P = ParamSpec('P')
+            #    T = TypeVar('T')
+            #    class Base(Generic[P]): ...
+            # Can be substituted like this:
+            #    X = Base[[int, T]]
+            # In this case, `old_arg` will be a tuple:
+            new_args.append(
+                tuple(_make_substitution(origin, old_arg, new_arg_by_param)),
+            )
+        else:
+            new_args.append(new_arg)
+    return new_args
 
 # _nparams is the number of accepted parameters, e.g. 0 for Hashable,
 # 1 for List and 2 for Dict.  It may be -1 if variable number of
@@ -2352,17 +2358,17 @@ _allowed_types = (types.FunctionType, types.BuiltinFunctionType,
                   types.MethodType, types.ModuleType,
                   WrapperDescriptorType, MethodWrapperType, MethodDescriptorType)
 
-
 def get_type_hints(obj, globalns=None, localns=None, include_extras=False):
     """Return type hints for an object.
 
     This is often the same as obj.__annotations__, but it handles
-    forward references encoded as string literals and recursively replaces all
-    'Annotated[T, ...]' with 'T' (unless 'include_extras=True').
+    forward references encoded as string literals, recursively replaces all
+    'Annotated[T, ...]' with 'T' (unless 'include_extras=True'), and resolves
+    type variables to their values as needed.
 
-    The argument may be a module, class, method, or function. The annotations
-    are returned as a dictionary. For classes, annotations include also
-    inherited members.
+    The argument may be a module, class, generic alias, method, or function.
+    The annotations are returned as a dictionary. For classes and generic aliases,
+    annotations also include inherited members.
 
     TypeError is raised if the argument is not of a type that can contain
     annotations, and an empty dictionary is returned if no annotations are
@@ -2386,10 +2392,38 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False):
     """
     if getattr(obj, '__no_type_check__', None):
         return {}
+
+    # for Generic Aliases we need to inspect the origin
+    # then apply its args later
+    ga_args = None
+    if isinstance(obj, (_GenericAlias, GenericAlias)):
+        ga_args = get_args(obj)
+        obj = get_origin(obj)
+
     # Classes require a special treatment.
     if isinstance(obj, type):
+        # track typevars of each base
+        param_tracking = defaultdict(list)
+        # track type hints of each base
+        hint_tracking = {}
         hints = {}
-        for base in reversed(obj.__mro__):
+        # typeddicts cannot redefine pre-existing keys
+        can_override = not is_typeddict(obj)
+        for base in _get_all_bases(obj):
+            # keep track of typevars and the values they are being
+            # replaced with
+            for cls, args in _track_parameter_changes(base):
+                param_tracking[cls].append(args)
+
+                if cls is not base:
+                    # if we previously scanned it and it found no type hints
+                    # then skip processing it
+                    if not hint_tracking[cls]:
+                        continue
+
+                    to_sub = _substitute_type_hints(param_tracking[cls], hint_tracking[cls])
+                    hints.update(to_sub)
+
             if globalns is None:
                 base_globals = getattr(sys.modules.get(base.__module__, None), '__dict__', {})
             else:
@@ -2406,13 +2440,27 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False):
                 # *base_globals* first rather than *base_locals*.
                 # This only affects ForwardRefs.
                 base_globals, base_locals = base_locals, base_globals
+
+            hint_tracking[base] = {}
             for name, value in ann.items():
+                # skip pre-existing keys for typeddict
+                if not can_override and name in hints:
+                    continue
+
                 if value is None:
                     value = type(None)
                 if isinstance(value, str):
                     value = ForwardRef(value, is_argument=False, is_class=True)
                 value = _eval_type(value, base_globals, base_locals, base.__type_params__)
+                hint_tracking[base][name] = value
                 hints[name] = value
+
+        # sub the original args back in
+        if ga_args is not None:
+            param_tracking[obj].append(ga_args)
+            to_sub = _substitute_type_hints(param_tracking[obj], hints)
+            hints.update(to_sub)
+
         return hints if include_extras else {k: _strip_annotations(t) for k, t in hints.items()}
 
     if globalns is None:
@@ -2451,6 +2499,169 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False):
             )
         hints[name] = _eval_type(value, globalns, localns, type_params)
     return hints if include_extras else {k: _strip_annotations(t) for k, t in hints.items()}
+
+def _track_parameter_changes(base):
+    """Track how a parameters values are substituted
+    or changed while traversing its bases.
+    """
+    orig_bases = getattr(base, '__orig_bases__', ())
+    generic_encountered = False
+
+    for orig_base in orig_bases:
+        origin = get_origin(orig_base)
+        if origin is None:
+            continue
+
+        args = get_args(orig_base)
+
+        if origin is Generic:
+            generic_encountered = True
+            yield base, args
+        else:
+            yield origin, args
+
+    # this occurs if obj is
+    # class Bar(Foo[str, U]): ...
+    # in this case, we need to imagine there's a generic base
+    # with the required typevars here.
+    if orig_bases and not generic_encountered:
+        # we need to collect all the typevars from all bases
+        # in the case that they have multiple generic bases
+        # class Baz(Foo[str, U], Bar[U, T]): ...
+        type_vars_for_generic = _collect_parameters(orig_bases)
+
+        # this may be empty if obj is
+        # class Bar(Foo[str]): ...
+        # we can skip adding typevars here.
+        if type_vars_for_generic:
+            yield base, type_vars_for_generic
+
+def _get_all_bases(cls):
+    """Correctly obtains the bases for classes
+    and typeddicts alike.
+    """
+    mro = reversed(cls.__mro__)
+
+    if not is_typeddict(cls):
+        yield from mro
+        return
+
+    traversing = list(mro)
+    visited = []
+
+    while traversing:
+        base = traversing.pop(0)
+
+        orig_bases = getattr(base, '__orig_bases__', ())
+        mro_changed = False
+
+        for orig_base in orig_bases:
+            origin = get_origin(orig_base)
+
+            if origin is not Generic:
+                new_base = orig_base if origin is None else origin
+                if new_base not in visited:
+                    traversing.insert(0, new_base)
+                    traversing.insert(1, base)
+                    mro_changed = True
+
+        if mro_changed:
+            continue
+
+        yield base
+
+        visited.append(base)
+
+def _repack_args(reference, params):
+    """transforms params to match the requested arguments
+    of reference.
+
+    >>> _repack_args((T, U, *Ts), (int, str, float, bool))
+    (int, str, (float, bool))
+    >>> _repack_args((T, U, *Ts), (int, str, *Ts))
+    (int, str, *Ts)
+    """
+
+    # find bounds of potential typevar tuple
+    tuple_start, tuple_end = 0, None
+    found_typvartuple = False
+    for i, tv in enumerate(reference):
+        if _is_unpacked_typevartuple(tv) or isinstance(tv, TypeVarTuple):
+            tuple_start = i
+            found_typvartuple = True
+        elif found_typvartuple:
+            tuple_end = i
+            break
+
+    if found_typvartuple:
+        # if typevartuple doesnt consume rest
+        if tuple_end is not None:
+            tuple_end = tuple_end - len(reference)
+
+        # tuple of typevars
+        type_var_tuple_params = params[tuple_start:tuple_end]
+
+        # if params might contain typevartuple args
+        if len(params) > tuple_start:
+            # if params[tuple_start] is *Ts keep it as-is
+            if _is_unpacked_typevartuple(params[tuple_start]):
+                type_var_tuple_params = params[tuple_start]
+
+        # if starts with type var tuple
+        if tuple_start == 0:
+            # if there are type vars after it
+            if tuple_end is not None:
+                return (type_var_tuple_params, *params[tuple_end:])
+            return (type_var_tuple_params,)
+        # if it's at the end
+        elif tuple_end is None:
+            return (*params[:tuple_start], type_var_tuple_params)
+        # if it's in the middle
+        return (*params[:tuple_start], type_var_tuple_params, *params[tuple_end:])
+    return params
+
+def _substitute_type_hints(substitutions: "list[tuple[Any, ...]]", hints: "dict[str, Any]"):
+    # nothing to substitute
+    if len(substitutions) < 2:
+        return {}
+
+    previous_params = substitutions[-2]
+    new_params = substitutions[-1]
+    new_substitutions = _repack_args(previous_params, new_params)
+
+    # get a mapping of typevar to value
+    mapping = {}
+    for i in range(len(previous_params)):
+        current = previous_params[i]
+        # if the previous parameter is *Ts
+        # make it {Ts: new Ts or value}
+        if _is_unpacked_typevartuple(current):
+            (previous_typevartuple,) = get_args(current)
+            new_value = new_substitutions[i]
+
+            if _is_unpacked_typevartuple(new_value):
+                (new_value,) = get_args(new_value)
+
+            mapping[previous_typevartuple] = new_value
+        else:
+            mapping[current] = new_substitutions[i]
+
+    hints_to_replace = {}
+
+    for name, value in hints.items():
+        origin = get_origin(value)
+        # if the typevar is nested, we must substitute the typevar all the way down.
+        if origin is not None:
+            new_args = tuple(_make_substitution(origin, get_args(value), mapping))
+            sub = _copy_with(value, new_args)
+        elif _is_typevar_like(value):
+            sub = mapping[value]
+        else:
+            continue
+
+        hints_to_replace[name] = sub
+
+    return hints_to_replace
 
 
 def _strip_annotations(t):
