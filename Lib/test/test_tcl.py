@@ -482,29 +482,36 @@ class TclTest(unittest.TestCase):
             return arg
         self.interp.createcommand('testfunc', testfunc)
         self.addCleanup(self.interp.tk.deletecommand, 'testfunc')
-        def check(value, expected=None, *, eq=self.assertEqual):
-            if expected is None:
-                expected = value
+        def check(value, expected1=None, expected2=None, *, eq=self.assertEqual):
+            expected = value
+            if self.wantobjects >= 2:
+                if expected2 is not None:
+                    expected = expected2
+                expected_type = type(expected)
+            else:
+                if expected1 is not None:
+                    expected = expected1
+                expected_type = str
             nonlocal result
             result = None
             r = self.interp.call('testfunc', value)
-            self.assertIsInstance(result, str)
+            self.assertIsInstance(result, expected_type)
             eq(result, expected)
-            self.assertIsInstance(r, str)
+            self.assertIsInstance(r, expected_type)
             eq(r, expected)
         def float_eq(actual, expected):
             self.assertAlmostEqual(float(actual), expected,
                                    delta=abs(expected) * 1e-10)
 
-        check(True, '1')
-        check(False, '0')
+        check(True, '1', 1)
+        check(False, '0', 0)
         check('string')
         check('string\xbd')
         check('string\u20ac')
         check('string\U0001f4bb')
         if sys.platform != 'win32':
-            check('<\udce2\udc82\udcac>', '<\u20ac>')
-            check('<\udced\udca0\udcbd\udced\udcb2\udcbb>', '<\U0001f4bb>')
+            check('<\udce2\udc82\udcac>', '<\u20ac>', '<\u20ac>')
+            check('<\udced\udca0\udcbd\udced\udcb2\udcbb>', '<\U0001f4bb>', '<\U0001f4bb>')
         check('')
         check(b'string', 'string')
         check(b'string\xe2\x82\xac', 'string\xe2\x82\xac')
@@ -526,9 +533,13 @@ class TclTest(unittest.TestCase):
         check(float('inf'), eq=float_eq)
         check(-float('inf'), eq=float_eq)
         # XXX NaN representation can be not parsable by float()
-        check((), '')
-        check((1, (2,), (3, 4), '5 6', ()), '1 2 {3 4} {5 6} {}')
-        check([1, [2,], [3, 4], '5 6', []], '1 2 {3 4} {5 6} {}')
+        check((), '', '')
+        check((1, (2,), (3, 4), '5 6', ()),
+              '1 2 {3 4} {5 6} {}',
+              (1, (2,), (3, 4), '5 6', ''))
+        check([1, [2,], [3, 4], '5 6', []],
+              '1 2 {3 4} {5 6} {}',
+              (1, (2,), (3, 4), '5 6', ''))
 
     def test_splitlist(self):
         splitlist = self.interp.tk.splitlist

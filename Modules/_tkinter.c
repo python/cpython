@@ -2248,7 +2248,7 @@ _tkinter_tkapp_splitlist(TkappObject *self, PyObject *arg)
 
 /* Client data struct */
 typedef struct {
-    PyObject *self;
+    TkappObject *self;
     PyObject *func;
 } PythonCmd_ClientData;
 
@@ -2272,6 +2272,7 @@ PythonCmd(ClientData clientData, Tcl_Interp *interp,
     PyObject *args, *res;
     int i;
     Tcl_Obj *obj_res;
+    int objargs = data->self->wantobjects >= 2;
 
     ENTER_PYTHON
 
@@ -2280,7 +2281,8 @@ PythonCmd(ClientData clientData, Tcl_Interp *interp,
         return PythonCmd_Error(interp);
 
     for (i = 0; i < (objc - 1); i++) {
-        PyObject *s = unicodeFromTclObj(objv[i + 1]);
+        PyObject *s = objargs ? FromObj(data->self, objv[i + 1])
+                              : unicodeFromTclObj(objv[i + 1]);
         if (!s) {
             Py_DECREF(args);
             return PythonCmd_Error(interp);
@@ -2383,7 +2385,8 @@ _tkinter_tkapp_createcommand_impl(TkappObject *self, const char *name,
     data = PyMem_NEW(PythonCmd_ClientData, 1);
     if (!data)
         return PyErr_NoMemory();
-    data->self = Py_NewRef(self);
+    Py_INCREF(self);
+    data->self = self;
     data->func = Py_NewRef(func);
     if (self->threaded && self->thread_id != Tcl_GetCurrentThread()) {
         Tcl_Condition cond = NULL;
@@ -2897,10 +2900,10 @@ Tkapp_WantObjects(PyObject *self, PyObject *args)
 {
 
     int wantobjects = -1;
-    if (!PyArg_ParseTuple(args, "|p:wantobjects", &wantobjects))
+    if (!PyArg_ParseTuple(args, "|i:wantobjects", &wantobjects))
         return NULL;
     if (wantobjects == -1)
-        return PyBool_FromLong(((TkappObject*)self)->wantobjects);
+        return PyLong_FromLong(((TkappObject*)self)->wantobjects);
     ((TkappObject*)self)->wantobjects = wantobjects;
 
     Py_RETURN_NONE;
@@ -3086,7 +3089,7 @@ _tkinter.create
     baseName: str = ""
     className: str = "Tk"
     interactive: bool = False
-    wantobjects: bool = False
+    wantobjects: int = 0
     wantTk: bool = True
         if false, then Tk_Init() doesn't get called
     sync: bool = False
@@ -3102,7 +3105,7 @@ _tkinter_create_impl(PyObject *module, const char *screenName,
                      const char *baseName, const char *className,
                      int interactive, int wantobjects, int wantTk, int sync,
                      const char *use)
-/*[clinic end generated code: output=e3315607648e6bb4 input=09afef9adea70a19]*/
+/*[clinic end generated code: output=e3315607648e6bb4 input=7e382ba431bed537]*/
 {
     /* XXX baseName is not used anymore;
      * try getting rid of it. */
