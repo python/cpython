@@ -23,7 +23,6 @@ from __future__ import annotations
 
 from contextlib import contextmanager
 from dataclasses import dataclass, field, fields
-import re
 import unicodedata
 from _colorize import can_colorize, ANSIColors  # type: ignore[import-not-found]
 
@@ -128,6 +127,8 @@ default_keymap: tuple[tuple[KeySpec, CommandName], ...] = tuple(
         (r"\M-9", "digit-arg"),
         # (r'\M-\n', 'insert-nl'),
         ("\\\\", "self-insert"),
+        (r"\x1b[200~", "enable_bracketed_paste"),
+        (r"\x1b[201~", "disable_bracketed_paste"),
     ]
     + [(c, "self-insert") for c in map(chr, range(32, 127)) if c != "\\"]
     + [(c, "self-insert") for c in map(chr, range(128, 256)) if c.isalpha()]
@@ -220,6 +221,7 @@ class Reader:
     dirty: bool = False
     finished: bool = False
     paste_mode: bool = False
+    was_paste_mode_activated: bool = False
     commands: dict[str, type[Command]] = field(default_factory=make_default_commands)
     last_command: type[Command] | None = None
     syntax_table: dict[str, int] = field(default_factory=make_default_syntax_table)
@@ -567,12 +569,16 @@ class Reader:
         """`cmd` is a tuple of "event_name" and "event", which in the current
         implementation is always just the "buffer" which happens to be a list
         of single-character strings."""
-        assert isinstance(cmd[0], str)
 
         trace("received command {cmd}", cmd=cmd)
-        command_type = self.commands.get(cmd[0], commands.invalid_command)
-        command = command_type(self, *cmd)  # type: ignore[arg-type]
+        if isinstance(cmd[0], str):
+            command_type = self.commands.get(cmd[0], commands.invalid_command)
+        elif isinstance(cmd[0], type):
+            command_type = cmd[0]
+        else:
+            return  # nothing to do
 
+        command = command_type(self, *cmd)  # type: ignore[arg-type]
         command.do()
 
         self.after_command(command)

@@ -437,13 +437,38 @@ def _tp_cache(func=None, /, *, typed=False):
     return decorator
 
 
-def _eval_type(t, globalns, localns, type_params=None, *, recursive_guard=frozenset()):
+def _deprecation_warning_for_no_type_params_passed(funcname: str) -> None:
+    import warnings
+
+    depr_message = (
+        f"Failing to pass a value to the 'type_params' parameter "
+        f"of {funcname!r} is deprecated, as it leads to incorrect behaviour "
+        f"when calling {funcname} on a stringified annotation "
+        f"that references a PEP 695 type parameter. "
+        f"It will be disallowed in Python 3.15."
+    )
+    warnings.warn(depr_message, category=DeprecationWarning, stacklevel=3)
+
+
+class _Sentinel:
+    __slots__ = ()
+    def __repr__(self):
+        return '<sentinel>'
+
+
+_sentinel = _Sentinel()
+
+
+def _eval_type(t, globalns, localns, type_params=_sentinel, *, recursive_guard=frozenset()):
     """Evaluate all forward references in the given type t.
 
     For use of globalns and localns see the docstring for get_type_hints().
     recursive_guard is used to prevent infinite recursion with a recursive
     ForwardRef.
     """
+    if type_params is _sentinel:
+        _deprecation_warning_for_no_type_params_passed("typing._eval_type")
+        type_params = ()
     if isinstance(t, ForwardRef):
         return t._evaluate(globalns, localns, type_params, recursive_guard=recursive_guard)
     if isinstance(t, (_GenericAlias, GenericAlias, types.UnionType)):
@@ -1018,7 +1043,10 @@ class ForwardRef(_Final, _root=True):
         self.__forward_is_class__ = is_class
         self.__forward_module__ = module
 
-    def _evaluate(self, globalns, localns, type_params=None, *, recursive_guard):
+    def _evaluate(self, globalns, localns, type_params=_sentinel, *, recursive_guard):
+        if type_params is _sentinel:
+            _deprecation_warning_for_no_type_params_passed("typing.ForwardRef._evaluate")
+            type_params = ()
         if self.__forward_arg__ in recursive_guard:
             return self
         if not self.__forward_evaluated__ or localns is not globalns:
@@ -1328,7 +1356,7 @@ class _BaseGenericAlias(_Final, _root=True):
         raise AttributeError(attr)
 
     def __setattr__(self, attr, val):
-        if _is_dunder(attr) or attr in {'_name', '_inst', '_nparams'}:
+        if _is_dunder(attr) or attr in {'_name', '_inst', '_nparams', '_defaults'}:
             super().__setattr__(attr, val)
         else:
             setattr(self.__origin__, attr, val)
@@ -1578,11 +1606,12 @@ class _GenericAlias(_BaseGenericAlias, _root=True):
 # parameters are accepted (needs custom __getitem__).
 
 class _SpecialGenericAlias(_NotIterable, _BaseGenericAlias, _root=True):
-    def __init__(self, origin, nparams, *, inst=True, name=None):
+    def __init__(self, origin, nparams, *, inst=True, name=None, defaults=()):
         if name is None:
             name = origin.__name__
         super().__init__(origin, inst=inst, name=name)
         self._nparams = nparams
+        self._defaults = defaults
         if origin.__module__ == 'builtins':
             self.__doc__ = f'A generic version of {origin.__qualname__}.'
         else:
@@ -1594,12 +1623,22 @@ class _SpecialGenericAlias(_NotIterable, _BaseGenericAlias, _root=True):
             params = (params,)
         msg = "Parameters to generic types must be types."
         params = tuple(_type_check(p, msg) for p in params)
+        if (self._defaults
+            and len(params) < self._nparams
+            and len(params) + len(self._defaults) >= self._nparams
+        ):
+            params = (*params, *self._defaults[len(params) - self._nparams:])
         actual_len = len(params)
+
         if actual_len != self._nparams:
+            if self._defaults:
+                expected = f"at least {self._nparams - len(self._defaults)}"
+            else:
+                expected = str(self._nparams)
             if not self._nparams:
                 raise TypeError(f"{self} is not a generic class")
             raise TypeError(f"Too {'many' if actual_len > self._nparams else 'few'} arguments for {self};"
-                            f" actual {actual_len}, expected {self._nparams}")
+                            f" actual {actual_len}, expected {expected}")
         return self.copy_with(params)
 
     def copy_with(self, params):
@@ -1860,7 +1899,7 @@ _SPECIAL_NAMES = frozenset({
     '__abstractmethods__', '__annotations__', '__dict__', '__doc__',
     '__init__', '__module__', '__new__', '__slots__',
     '__subclasshook__', '__weakref__', '__class_getitem__',
-    '__match_args__', '__static_attributes__',
+    '__match_args__', '__static_attributes__', '__firstlineno__',
 })
 
 # These special attributes will be not collected as protocol members.
@@ -2813,8 +2852,8 @@ DefaultDict = _alias(collections.defaultdict, 2, name='DefaultDict')
 OrderedDict = _alias(collections.OrderedDict, 2)
 Counter = _alias(collections.Counter, 1)
 ChainMap = _alias(collections.ChainMap, 2)
-Generator = _alias(collections.abc.Generator, 3)
-AsyncGenerator = _alias(collections.abc.AsyncGenerator, 2)
+Generator = _alias(collections.abc.Generator, 3, defaults=(types.NoneType, types.NoneType))
+AsyncGenerator = _alias(collections.abc.AsyncGenerator, 2, defaults=(types.NoneType,))
 Type = _alias(type, 1, inst=False, name='Type')
 Type.__doc__ = \
     """Deprecated alias to builtins.type.
@@ -2985,15 +3024,6 @@ class NamedTupleMeta(type):
         if Generic in bases:
             nm_tpl.__init_subclass__()
         return nm_tpl
-
-
-class _Sentinel:
-    __slots__ = ()
-    def __repr__(self):
-        return '<sentinel>'
-
-
-_sentinel = _Sentinel()
 
 
 def NamedTuple(typename, fields=_sentinel, /, **kwargs):
@@ -3753,7 +3783,7 @@ def __getattr__(attr):
         obj = _alias(getattr(re, attr), 1)
     elif attr in {"ContextManager", "AsyncContextManager"}:
         import contextlib
-        obj = _alias(getattr(contextlib, f"Abstract{attr}"), 1, name=attr)
+        obj = _alias(getattr(contextlib, f"Abstract{attr}"), 2, name=attr, defaults=(bool | None,))
     else:
         raise AttributeError(f"module {__name__!r} has no attribute {attr!r}")
     globals()[attr] = obj

@@ -3882,6 +3882,27 @@ class SuggestionFormattingTestBase:
             actual = self.get_suggestion(cls(), 'bluch')
             self.assertIn(suggestion, actual)
 
+    def test_getattr_suggestions_underscored(self):
+        class A:
+            bluch = None
+
+        self.assertIn("'bluch'", self.get_suggestion(A(), 'blach'))
+        self.assertIn("'bluch'", self.get_suggestion(A(), '_luch'))
+        self.assertIn("'bluch'", self.get_suggestion(A(), '_bluch'))
+
+        class B:
+            _bluch = None
+            def method(self, name):
+                getattr(self, name)
+
+        self.assertIn("'_bluch'", self.get_suggestion(B(), '_blach'))
+        self.assertIn("'_bluch'", self.get_suggestion(B(), '_luch'))
+        self.assertNotIn("'_bluch'", self.get_suggestion(B(), 'bluch'))
+
+        self.assertIn("'_bluch'", self.get_suggestion(partial(B().method, '_blach')))
+        self.assertIn("'_bluch'", self.get_suggestion(partial(B().method, '_luch')))
+        self.assertIn("'_bluch'", self.get_suggestion(partial(B().method, 'bluch')))
+
     def test_getattr_suggestions_do_not_trigger_for_long_attributes(self):
         class A:
             blech = None
@@ -4073,6 +4094,17 @@ class SuggestionFormattingTestBase:
         ]:
             actual = self.get_import_from_suggestion(code, 'bluch')
             self.assertIn(suggestion, actual)
+
+    def test_import_from_suggestions_underscored(self):
+        code = "bluch = None"
+        self.assertIn("'bluch'", self.get_import_from_suggestion(code, 'blach'))
+        self.assertIn("'bluch'", self.get_import_from_suggestion(code, '_luch'))
+        self.assertIn("'bluch'", self.get_import_from_suggestion(code, '_bluch'))
+
+        code = "_bluch = None"
+        self.assertIn("'_bluch'", self.get_import_from_suggestion(code, '_blach'))
+        self.assertIn("'_bluch'", self.get_import_from_suggestion(code, '_luch'))
+        self.assertNotIn("'_bluch'", self.get_import_from_suggestion(code, 'bluch'))
 
     def test_import_from_suggestions_do_not_trigger_for_long_attributes(self):
         code = "blech = None"

@@ -99,6 +99,12 @@ New typing features:
 * :pep:`742`: :data:`typing.TypeIs` was added, providing more intuitive
   type narrowing behavior.
 
+Free-threading:
+
+* :pep:`703`: CPython 3.13 has experimental support for running with the
+  :term:`global interpreter lock` disabled when built with ``--disable-gil``.
+  See :ref:`Free-threaded CPython <free-threaded-cpython>` for more details.
+
 New Features
 ============
 
@@ -266,7 +272,7 @@ Other Language Changes
 
 * Add :ref:`support for the perf profiler <perf_profiling>` working without
   frame pointers through the new environment variable
-  :envvar:`PYTHONPERFJITSUPPORT` and command-line option :option:`-X perfjit
+  :envvar:`PYTHON_PERF_JIT_SUPPORT` and command-line option :option:`-X perf_jit
   <-X>` (Contributed by Pablo Galindo in :gh:`118518`.)
 
 * The new :envvar:`PYTHON_HISTORY` environment variable can be used to change
@@ -328,6 +334,11 @@ Other Language Changes
   class scopes are not inlined into their parent scope. (Contributed by
   Jelle Zijlstra in :gh:`109118` and :gh:`118160`.)
 
+* Classes have a new :attr:`!__firstlineno__` attribute,
+  populated by the compiler, with the line number of the first line
+  of the class definition.
+  (Contributed by Serhiy Storchaka in :gh:`118465`.)
+
 * ``from __future__ import ...`` statements are now just normal
   relative imports if dots are present before the module name.
   (Contributed by Jeremiah Gabriel Pascual in :gh:`118216`.)
@@ -336,7 +347,7 @@ Other Language Changes
 New Modules
 ===========
 
-* None yet.
+* None.
 
 
 Improved Modules
@@ -378,6 +389,12 @@ ast
   This will cause an exception in Python 3.15. Similarly, passing a keyword
   argument that does not map to a field on the AST node is now deprecated,
   and will raise an exception in Python 3.15.
+
+  These changes do not apply to user-defined subclasses of :class:`ast.AST`,
+  unless the class opts in to the new behavior by setting the attribute
+  :attr:`ast.AST._field_types`.
+
+  (Contributed by Jelle Zijlstra in :gh:`105858` and :gh:`117486`.)
 
 * :func:`ast.parse` now accepts an optional argument *optimize*
   which is passed on to the :func:`compile` built-in. This makes it
@@ -617,6 +634,13 @@ math
   provided by C99, and follows the specification of the IEEE 754
   "fusedMultiplyAdd" operation for special cases.
   (Contributed by Mark Dickinson and Victor Stinner in :gh:`73468`.)
+
+mimetypes
+---------
+
+* Add the :func:`~mimetypes.guess_file_type` function which works with file path.
+  Passing file path instead of URL in :func:`~mimetypes.guess_type` is :term:`soft deprecated`.
+  (Contributed by Serhiy Storchaka in :gh:`66543`.)
 
 mmap
 ----
@@ -870,6 +894,21 @@ tkinter
 * Add the :meth:`!after_info` method for Tkinter widgets.
   (Contributed by Cheryl Sabella in :gh:`77020`.)
 
+* Add the :class:`!PhotoImage` method :meth:`!copy_replace` to copy a region
+  from one image to other image, possibly with pixel zooming and/or
+  subsampling.
+  Add *from_coords* parameter to :class:`!PhotoImage` methods :meth:`!copy()`,
+  :meth:`!zoom()` and :meth:`!subsample()`.
+  Add *zoom* and *subsample* parameters to :class:`!PhotoImage` method
+  :meth:`!copy()`.
+  (Contributed by Serhiy Storchaka in :gh:`118225`.)
+
+* Add the :class:`!PhotoImage` methods :meth:`!read` to read
+  an image from a file and :meth:`!data` to get the image data.
+  Add *background* and *grayscale* parameters to :class:`!PhotoImage` method
+  :meth:`!write`.
+  (Contributed by Serhiy Storchaka in :gh:`118271`.)
+
 traceback
 ---------
 
@@ -960,6 +999,15 @@ Optimizations
   section above for details.
   (Contributed by Jakub Kulik in :gh:`113117`.)
 
+* Several standard library modules have had their import times significantly
+  improved. For example, the import time of the :mod:`typing` module has been
+  reduced by around a third by removing dependencies on :mod:`re` and
+  :mod:`contextlib`. Other modules to enjoy import-time speedups include
+  :mod:`importlib.metadata`, :mod:`threading`, :mod:`enum`, :mod:`functools`
+  and :mod:`email.utils`.
+  (Contributed by Alex Waygood, Shantanu Jain, Adam Turner, Daniel Hollas and
+  others in :gh:`109653`.)
+
 .. _whatsnew313-jit-compiler:
 
 Experimental JIT Compiler
@@ -1019,6 +1067,46 @@ See :pep:`744` for more details.
 Tier 2 IR by Mark Shannon and Guido van Rossum.
 Tier 2 optimizer by Ken Jin.)
 
+.. _free-threaded-cpython:
+
+Free-threaded CPython
+=====================
+
+CPython will run with the :term:`global interpreter lock` (GIL) disabled when
+configured using the ``--disable-gil`` option at build time. This is an
+experimental feature and therefore isn't used by default. Users need to
+either compile their own interpreter, or install one of the experimental
+builds that are marked as *free-threaded*.
+
+Free-threaded execution allows for full utilization of the available
+processing power by running threads in parallel on available CPU cores.
+While not all software will benefit from this automatically, programs
+designed with threading in mind will run faster on multicore hardware.
+
+Work is still ongoing: expect some bugs and a substantial single-threaded
+performance hit.
+
+The free-threaded build still supports optionally running with GIL enabled at
+runtime using the environment variable :envvar:`PYTHON_GIL` or the command line
+option :option:`-X gil`.
+
+* Use :func:`!sys._is_gil_enabled` to determine if the :term:`GIL` is enabled.
+
+* Use ``sysconfig.get_config_var("Py_GIL_DISABLED")`` to identify CPython
+  builds configured with ``--disable-gil``.
+
+C-API extensions need to be built specifically for the free-threaded build.
+
+* Extensions that support running with the :term:`GIL` disabled should use
+  the :c:data:`Py_mod_gil` slot. Extensions using single-phase init should use
+  :c:func:`PyUnstable_Module_SetGIL` to indicate whether they support running
+  with the GIL disabled. Importing C extensions that don't use these mechanisms
+  will cause the GIL to be enabled unless the GIL was explicitly disabled with
+  the :envvar:`PYTHON_GIL` environment variable or the :option:`-X gil=0`
+  option.
+
+* pip 24.1b1 or newer is required to install packages with C extensions in the
+  free-threaded build.
 
 
 Deprecated
@@ -1161,6 +1249,10 @@ Deprecated
   (Contributed by Victor Stinner in :gh:`105096`.)
 
 .. Add deprecations above alphabetically, not here at the end.
+
+* Passing file path instead of URL in :func:`~mimetypes.guess_type` is :term:`soft deprecated`.
+  Use :func:`~mimetypes.guess_file_type` instead.
+  (Contributed by Serhiy Storchaka in :gh:`66543`.)
 
 Pending Removal in Python 3.14
 ------------------------------
@@ -1564,7 +1656,7 @@ PEP 594: dead batteries
   * :mod:`!pipes`: use the :mod:`subprocess` module instead.
     (Contributed by Victor Stinner in :gh:`104773`.)
 
-  * :mod:`!sndhdr`: use the projects :pypi:`filetype_,
+  * :mod:`!sndhdr`: use the projects :pypi:`filetype`,
     :pypi:`puremagic`, or :pypi:`python-magic` instead.
     (Contributed by Victor Stinner in :gh:`104773`.)
 
@@ -1708,11 +1800,6 @@ webbrowser
   attribute instead.
   (Contributed by Nikita Sobolev in :gh:`105546`.)
 
-Others
-------
-
-* None yet
-
 CPython bytecode changes
 ========================
 
@@ -1772,9 +1859,23 @@ Changes in the Python API
   to :c:func:`PyUnstable_Code_GetFirstFree`.
   (Contributed by Bogdan Romanyuk in :gh:`115781`.)
 
+* Callbacks registered in the :mod:`tkinter` module now take arguments as
+  various Python objects (``int``, ``float``, ``bytes``, ``tuple``),
+  not just ``str``.
+  To restore the previous behavior set :mod:`!tkinter` module global
+  :data:`!wantobject` to ``1`` before creating the
+  :class:`!Tk` object or call the :meth:`!wantobject`
+  method of the :class:`!Tk` object with argument ``1``.
+  Calling it with argument ``2`` restores the current default behavior.
+  (Contributed by Serhiy Storchaka in :gh:`66410`.)
+
 
 Build Changes
 =============
+
+* The :file:`configure` option :option:`--with-system-libmpdec` now defaults
+  to ``yes``. The bundled copy of ``libmpdecimal`` will be removed in Python
+  3.15.
 
 * Autoconf 2.71 and aclocal 1.16.4 are now required to regenerate
   the :file:`configure` script.
@@ -2305,6 +2406,7 @@ Pending Removal in Python 3.14
 Pending Removal in Python 3.15
 ------------------------------
 
+* The bundled copy of ``libmpdecimal``.
 * :c:func:`PyImport_ImportModuleNoBlock`: use :c:func:`PyImport_ImportModule`.
 * :c:func:`PyWeakref_GET_OBJECT`: use :c:func:`PyWeakref_GetRef` instead.
 * :c:func:`PyWeakref_GetObject`: use :c:func:`PyWeakref_GetRef` instead.

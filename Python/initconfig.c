@@ -60,7 +60,7 @@ static const PyConfigSpec PYCONFIG_SPEC[] = {
     SPEC(hash_seed, ULONG),
     SPEC(faulthandler, BOOL),
     SPEC(tracemalloc, UINT),
-    SPEC(perf_profiling, BOOL),
+    SPEC(perf_profiling, UINT),
     SPEC(import_time, BOOL),
     SPEC(code_debug_ranges, BOOL),
     SPEC(show_ref_count, BOOL),
@@ -1703,7 +1703,7 @@ config_init_perf_profiling(PyConfig *config)
     if (xoption) {
         config->perf_profiling = 1;
     }
-    env = config_get_env(config, "PYTHONPERFJITSUPPORT");
+    env = config_get_env(config, "PYTHON_PERF_JIT_SUPPORT");
     if (env) {
         if (_Py_str_to_int(env, &active) != 0) {
             active = 0;
@@ -1712,7 +1712,7 @@ config_init_perf_profiling(PyConfig *config)
             config->perf_profiling = 2;
         }
     }
-    xoption = config_get_xoption(config, L"perfjit");
+    xoption = config_get_xoption(config, L"perf_jit");
     if (xoption) {
         config->perf_profiling = 2;
     }

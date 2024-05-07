@@ -6985,7 +6985,7 @@ PyInit__datetime(void)
     if (mod == NULL)
         return NULL;
 #ifdef Py_GIL_DISABLED
-    PyModule_ExperimentalSetGIL(mod, Py_MOD_GIL_NOT_USED);
+    PyUnstable_Module_SetGIL(mod, Py_MOD_GIL_NOT_USED);
 #endif
 
     if (_datetime_exec(mod) < 0) {

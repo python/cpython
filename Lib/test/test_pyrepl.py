@@ -2,6 +2,7 @@ import itertools
 import os
 import rlcompleter
 import sys
+import tempfile
 import unittest
 from code import InteractiveConsole
 from functools import partial
@@ -14,14 +15,15 @@ from test.support.import_helper import import_module
 # Optionally test pyrepl.  This currently requires that the
 # 'curses' resource be given on the regrtest command line using the -u
 # option.  Additionally, we need to attempt to import curses and readline.
-requires('curses')
-curses = import_module('curses')
-readline = import_module('readline')
+requires("curses")
+curses = import_module("curses")
+readline = import_module("readline")
 
 from _pyrepl.console import Console, Event
 from _pyrepl.readline import ReadlineAlikeReader, ReadlineConfig
 from _pyrepl.simple_interact import _strip_final_indent
 from _pyrepl.unix_eventqueue import EventQueue
+from _pyrepl.simple_interact import InteractiveColoredConsole
 
 
 def more_lines(unicodetext, namespace=None):
@@ -577,13 +579,18 @@ class TestPyReplCompleter(TestCase):
         self.assertEqual(output, "os.getenv")
 
     def test_completion_with_many_options(self):
-        events = code_to_events("os.\t\tO_AS\t\n")
+        # Test with something that initially displays many options
+        # and then complete from one of them. The first time tab is
+        # pressed, the options are displayed (which corresponds to
+        # when the repl shows [ not unique ]) and the second completes
+        # from one of them.
+        events = code_to_events("os.\t\tO_AP\t\n")
 
         namespace = {"os": os}
         reader = self.prepare_reader(events, namespace)
 
         output = multiline_input(reader, namespace)
-        self.assertEqual(output, "os.O_ASYNC")
+        self.assertEqual(output, "os.O_APPEND")
 
     def test_empty_namespace_completion(self):
         events = code_to_events("os.geten\t\n")
@@ -603,26 +610,32 @@ class TestPyReplCompleter(TestCase):
 
 @patch("_pyrepl.curses.tigetstr", lambda x: b"")
 class TestUnivEventQueue(TestCase):
+    def setUp(self):
+        self.file = tempfile.TemporaryFile()
+
+    def tearDown(self) -> None:
+        self.file.close()
+
     def test_get(self):
-        eq = EventQueue(sys.stdout.fileno(), "utf-8")
+        eq = EventQueue(self.file.fileno(), "utf-8")
         event = Event("key", "a", b"a")
         eq.insert(event)
         self.assertEqual(eq.get(), event)
 
     def test_empty(self):
-        eq = EventQueue(sys.stdout.fileno(), "utf-8")
+        eq = EventQueue(self.file.fileno(), "utf-8")
         self.assertTrue(eq.empty())
         eq.insert(Event("key", "a", b"a"))
         self.assertFalse(eq.empty())
 
     def test_flush_buf(self):
-        eq = EventQueue(sys.stdout.fileno(), "utf-8")
+        eq = EventQueue(self.file.fileno(), "utf-8")
         eq.buf.extend(b"test")
         self.assertEqual(eq.flush_buf(), b"test")
         self.assertEqual(eq.buf, bytearray())
 
     def test_insert(self):
-        eq = EventQueue(sys.stdout.fileno(), "utf-8")
+        eq = EventQueue(self.file.fileno(), "utf-8")
         event = Event("key", "a", b"a")
         eq.insert(event)
         self.assertEqual(eq.events[0], event)
@@ -630,30 +643,30 @@ class TestUnivEventQueue(TestCase):
     @patch("_pyrepl.unix_eventqueue.keymap")
     def test_push_with_key_in_keymap(self, mock_keymap):
         mock_keymap.compile_keymap.return_value = {"a": "b"}
-        eq = EventQueue(sys.stdout.fileno(), "utf-8")
+        eq = EventQueue(self.file.fileno(), "utf-8")
         eq.keymap = {b"a": "b"}
         eq.push("a")
-        self.assertTrue(mock_keymap.compile_keymap.called)
+        mock_keymap.compile_keymap.assert_called()
         self.assertEqual(eq.events[0].evt, "key")
         self.assertEqual(eq.events[0].data, "b")
 
     @patch("_pyrepl.unix_eventqueue.keymap")
     def test_push_without_key_in_keymap(self, mock_keymap):
         mock_keymap.compile_keymap.return_value = {"a": "b"}
-        eq = EventQueue(sys.stdout.fileno(), "utf-8")
+        eq = EventQueue(self.file.fileno(), "utf-8")
         eq.keymap = {b"c": "d"}
         eq.push("a")
-        self.assertTrue(mock_keymap.compile_keymap.called)
+        mock_keymap.compile_keymap.assert_called()
         self.assertEqual(eq.events[0].evt, "key")
         self.assertEqual(eq.events[0].data, "a")
 
     @patch("_pyrepl.unix_eventqueue.keymap")
     def test_push_with_keymap_in_keymap(self, mock_keymap):
         mock_keymap.compile_keymap.return_value = {"a": "b"}
-        eq = EventQueue(sys.stdout.fileno(), "utf-8")
+        eq = EventQueue(self.file.fileno(), "utf-8")
         eq.keymap = {b"a": {b"b": "c"}}
         eq.push("a")
-        self.assertTrue(mock_keymap.compile_keymap.called)
+        mock_keymap.compile_keymap.assert_called()
         self.assertTrue(eq.empty())
         eq.push("b")
         self.assertEqual(eq.events[0].evt, "key")
@@ -665,10 +678,10 @@ class TestUnivEventQueue(TestCase):
     @patch("_pyrepl.unix_eventqueue.keymap")
     def test_push_with_keymap_in_keymap_and_escape(self, mock_keymap):
         mock_keymap.compile_keymap.return_value = {"a": "b"}
-        eq = EventQueue(sys.stdout.fileno(), "utf-8")
+        eq = EventQueue(self.file.fileno(), "utf-8")
         eq.keymap = {b"a": {b"b": "c"}}
         eq.push("a")
-        self.assertTrue(mock_keymap.compile_keymap.called)
+        mock_keymap.compile_keymap.assert_called()
         self.assertTrue(eq.empty())
         eq.flush_buf()
         eq.push("\033")
@@ -679,7 +692,7 @@ class TestUnivEventQueue(TestCase):
         self.assertEqual(eq.events[1].data, "b")
 
     def test_push_special_key(self):
-        eq = EventQueue(sys.stdout.fileno(), "utf-8")
+        eq = EventQueue(self.file.fileno(), "utf-8")
         eq.keymap = {}
         eq.push("\x1b")
         eq.push("[")
@@ -688,7 +701,7 @@ class TestUnivEventQueue(TestCase):
         self.assertEqual(eq.events[0].data, "\x1b")
 
     def test_push_unrecognized_escape_sequence(self):
-        eq = EventQueue(sys.stdout.fileno(), "utf-8")
+        eq = EventQueue(self.file.fileno(), "utf-8")
         eq.keymap = {}
         eq.push("\x1b")
         eq.push("[")
@@ -804,6 +817,61 @@ class TestPasteEvent(TestCase):
         reader = self.prepare_reader(events)
         output = multiline_input(reader)
         self.assertEqual(output, output_code)
+
+    def test_bracketed_paste(self):
+        """Test that bracketed paste using \x1b[200~ and \x1b[201~ works."""
+        # fmt: off
+        input_code = (
+            'def a():\n'
+            '  for x in range(10):\n'
+            '\n'
+            '    if x%2:\n'
+            '      print(x)\n'
+            '\n'
+            '    else:\n'
+            '      pass\n'
+        )
+
+        output_code = (
+            'def a():\n'
+            '  for x in range(10):\n'
+            '\n'
+            '    if x%2:\n'
+            '      print(x)\n'
+            '\n'
+            '    else:\n'
+            '      pass\n'
+        )
+        # fmt: on
+
+        paste_start = "\x1b[200~"
+        paste_end = "\x1b[201~"
+
+        events = itertools.chain(
+            code_to_events(paste_start),
+            code_to_events(input_code),
+            code_to_events(paste_end),
+            code_to_events("\n"),
+        )
+        reader = self.prepare_reader(events)
+        output = multiline_input(reader)
+        self.assertEqual(output, output_code)
+
+    def test_bracketed_paste_single_line(self):
+        input_code = "oneline"
+
+        paste_start = "\x1b[200~"
+        paste_end = "\x1b[201~"
+
+        events = itertools.chain(
+            code_to_events(paste_start),
+            code_to_events(input_code),
+            code_to_events(paste_end),
+            code_to_events("\n"),
+        )
+        reader = self.prepare_reader(events)
+        output = multiline_input(reader)
+        self.assertEqual(output, input_code)
 
 
 class TestReader(TestCase):
@@ -924,6 +992,15 @@ class TestReader(TestCase):
         reader.setpos_from_xy(0, 1)
         self.assertEqual(reader.pos, 9)
 
+    def test_up_arrow_after_ctrl_r(self):
+        events = iter([
+            Event(evt='key', data='\x12', raw=bytearray(b'\x12')),
+            Event(evt='key', data='up', raw=bytearray(b'\x1bOA')),
+        ])
 
-if __name__ == "__main__":
+        reader, _ = handle_all_events(events)
+        self.assert_screen_equals(reader, "")
+
+
+if __name__ == '__main__':
     unittest.main()
