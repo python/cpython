@@ -1,0 +1,1 @@
+Fix :func:`sys.set_asyncgen_hooks` not to be partially set when raising :exc:`TypeError`.
