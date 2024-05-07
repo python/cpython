@@ -1,0 +1,2 @@
+Fixes Windows build when invoked directly (not through the :file:`build.bat`
+script) without specifying a value for ``UseTIER2``.
