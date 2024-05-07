@@ -1,0 +1,4 @@
+Add an optional second type parameter to :class:`typing.ContextManager` and
+:class:`typing.AsyncContextManager`, representing the return types of
+:meth:`~object.__exit__` and :meth:`~object.__aexit__` respectively.
+This parameter defaults to ``bool | None``.
