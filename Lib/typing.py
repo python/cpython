@@ -3783,7 +3783,7 @@ def __getattr__(attr):
         obj = _alias(getattr(re, attr), 1)
     elif attr in {"ContextManager", "AsyncContextManager"}:
         import contextlib
-        obj = _alias(getattr(contextlib, f"Abstract{attr}"), 1, name=attr)
+        obj = _alias(getattr(contextlib, f"Abstract{attr}"), 2, name=attr, defaults=(bool | None,))
     else:
         raise AttributeError(f"module {__name__!r} has no attribute {attr!r}")
     globals()[attr] = obj
