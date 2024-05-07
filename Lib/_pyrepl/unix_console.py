@@ -530,11 +530,9 @@ class UnixConsole(Console):
 
     def __enable_bracketed_paste(self) -> None:
         os.write(self.output_fd, b"\x1b[?2004h")
-        self.flushoutput()
 
     def __disable_bracketed_paste(self) -> None:
         os.write(self.output_fd, b"\x1b[?2004l")
-        self.flushoutput()
 
     def __setup_movement(self):
         """
