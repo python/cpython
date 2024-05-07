@@ -568,12 +568,16 @@ class Reader:
         """`cmd` is a tuple of "event_name" and "event", which in the current
         implementation is always just the "buffer" which happens to be a list
         of single-character strings."""
-        assert isinstance(cmd[0], str)
 
         trace("received command {cmd}", cmd=cmd)
-        command_type = self.commands.get(cmd[0], commands.invalid_command)
-        command = command_type(self, *cmd)  # type: ignore[arg-type]
+        if isinstance(cmd[0], str):
+            command_type = self.commands.get(cmd[0], commands.invalid_command)
+        elif isinstance(cmd[0], type):
+            command_type = cmd[0]
+        else:
+            return  # nothing to do
 
+        command = command_type(self, *cmd)  # type: ignore[arg-type]
         command.do()
 
         self.after_command(command)
