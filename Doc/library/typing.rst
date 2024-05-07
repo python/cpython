@@ -3838,7 +3838,7 @@ Aliases to :mod:`contextlib` ABCs
    .. versionchanged:: 3.13
       Added the second type parameter, ``ExitT_co``.
 
-.. class:: AsyncContextManager(Generic[T_co, ExitT_co])
+.. class:: AsyncContextManager(Generic[T_co, AExitT_co])
 
    Deprecated alias to :class:`contextlib.AbstractAsyncContextManager`.
 
