@@ -8,6 +8,8 @@ from functools import partial
 from threading import Thread
 from unittest import TestCase
 
+from _testcapi import dict_version
+
 from test.support import threading_helper
 
 
@@ -136,6 +138,40 @@ class TestDict(TestCase):
         for thread_list in lists:
             for ref in thread_list:
                 self.assertIsNone(ref())
+
+    def test_dict_version(self):
+        THREAD_COUNT = 10
+        DICT_COUNT = 10000
+        lists = []
+        writers = []
+
+        def writer_func(thread_list):
+            for i in range(DICT_COUNT):
+                thread_list.append(dict_version({}))
+
+        for x in range(THREAD_COUNT):
+            thread_list = []
+            lists.append(thread_list)
+            writer = Thread(target=partial(writer_func, thread_list))
+            writers.append(writer)
+
+        for writer in writers:
+            writer.start()
+
+        for writer in writers:
+            writer.join()
+
+        total_len = 0
+        values = set()
+        for thread_list in lists:
+            for v in thread_list:
+                if v in values:
+                    print('dup', v, (v/4096)%256)
+                values.add(v)
+            total_len += len(thread_list)
+        versions = set(dict_version for thread_list in lists for dict_version in thread_list)
+        self.assertEqual(len(versions), THREAD_COUNT*DICT_COUNT)
+
 
 if __name__ == "__main__":
     unittest.main()
