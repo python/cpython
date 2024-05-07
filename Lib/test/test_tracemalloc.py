@@ -8,6 +8,7 @@ from test.support.script_helper import (assert_python_ok, assert_python_failure,
                                         interpreter_requires_environment)
 from test import support
 from test.support import os_helper
+from test.support import force_not_colorized
 
 try:
     import _testcapi
@@ -938,11 +939,12 @@ class TestCommandLine(unittest.TestCase):
         stdout = stdout.rstrip()
         self.assertEqual(stdout, b'10')
 
+    @force_not_colorized
     def check_env_var_invalid(self, nframe):
         with support.SuppressCrashReport():
             ok, stdout, stderr = assert_python_failure(
                 '-c', 'pass',
-                PYTHONTRACEMALLOC=str(nframe), __cleanenv=True)
+                PYTHONTRACEMALLOC=str(nframe))
 
         if b'ValueError: the number of frames must be in range' in stderr:
             return

@@ -404,6 +404,7 @@ _Py_COMP_DIAG_POP
         &(runtime)->audit_hooks.mutex, \
         &(runtime)->allocators.mutex, \
         &(runtime)->_main_interpreter.types.mutex, \
+        &(runtime)->_main_interpreter.code_state.mutex, \
     }
 
 static void
@@ -653,8 +654,10 @@ init_interpreter(PyInterpreterState *interp,
     }
     interp->sys_profile_initialized = false;
     interp->sys_trace_initialized = false;
+#ifdef _Py_TIER2
     (void)_Py_SetOptimizer(interp, NULL);
     interp->executor_list_head = NULL;
+#endif
     if (interp != &runtime->_main_interpreter) {
         /* Fix the self-referential, statically initialized fields. */
         interp->dtoa = (struct _dtoa_state)_dtoa_state_INIT(interp);
@@ -806,9 +809,11 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
         tstate->_status.cleared = 0;
     }
 
+#ifdef _Py_TIER2
     _PyOptimizerObject *old = _Py_SetOptimizer(interp, NULL);
     assert(old != NULL);
     Py_DECREF(old);
+#endif
 
     /* It is possible that any of the objects below have a finalizer
        that runs Python code or otherwise relies on a thread state
@@ -839,9 +844,7 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
     }
 
     PyConfig_Clear(&interp->config);
-    Py_CLEAR(interp->codec_search_path);
-    Py_CLEAR(interp->codec_search_cache);
-    Py_CLEAR(interp->codec_error_registry);
+    _PyCodec_Fini(interp);
 
     assert(interp->imports.modules == NULL);
     assert(interp->imports.modules_by_index == NULL);
@@ -1485,6 +1488,7 @@ init_threadstate(_PyThreadStateImpl *_tstate,
     tstate->datastack_limit = NULL;
     tstate->what_event = -1;
     tstate->previous_executor = NULL;
+    tstate->dict_global_version = 0;
 
     tstate->delete_later = NULL;
 
@@ -1567,6 +1571,17 @@ new_threadstate(PyInterpreterState *interp, int whence)
     if (!used_newtstate) {
         // Must be called with lock unlocked to avoid re-entrancy deadlock.
         PyMem_RawFree(new_tstate);
+    }
+    else {
+#ifdef Py_GIL_DISABLED
+        if (interp->gc.immortalize.enable_on_thread_created &&
+            !interp->gc.immortalize.enabled)
+        {
+            // Immortalize objects marked as using deferred reference counting
+            // the first time a non-main thread is created.
+            _PyGC_ImmortalizeDeferredObjects(interp);
+        }
+#endif
     }
 
 #ifdef Py_GIL_DISABLED
@@ -2042,19 +2057,36 @@ _PyThreadState_Attach(PyThreadState *tstate)
         Py_FatalError("non-NULL old thread state");
     }
 
-    _PyEval_AcquireLock(tstate);
 
-    // XXX assert(tstate_is_alive(tstate));
-    current_fast_set(&_PyRuntime, tstate);
-    tstate_activate(tstate);
+    while (1) {
+        int acquired_gil = _PyEval_AcquireLock(tstate);
 
-    if (!tstate_try_attach(tstate)) {
-        tstate_wait_attach(tstate);
-    }
+        // XXX assert(tstate_is_alive(tstate));
+        current_fast_set(&_PyRuntime, tstate);
+        tstate_activate(tstate);
+
+        if (!tstate_try_attach(tstate)) {
+            tstate_wait_attach(tstate);
+        }
 
 #ifdef Py_GIL_DISABLED
-    _Py_qsbr_attach(((_PyThreadStateImpl *)tstate)->qsbr);
+        if (_PyEval_IsGILEnabled(tstate) != acquired_gil) {
+            // The GIL was enabled between our call to _PyEval_AcquireLock()
+            // and when we attached (the GIL can't go from enabled to disabled
+            // here because only a thread holding the GIL can disable
+            // it). Detach and try again.
+            assert(!acquired_gil);
+            tstate_set_detached(tstate, _Py_THREAD_DETACHED);
+            tstate_deactivate(tstate);
+            current_fast_clear(&_PyRuntime);
+            continue;
+        }
+        _Py_qsbr_attach(((_PyThreadStateImpl *)tstate)->qsbr);
+#else
+        (void)acquired_gil;
 #endif
+        break;
+    }
 
     // Resume previous critical section. This acquires the lock(s) from the
     // top-most critical section.
@@ -2227,7 +2259,8 @@ stop_the_world(struct _stoptheworld_state *stw)
         }
 
         PyTime_t wait_ns = 1000*1000;  // 1ms (arbitrary, may need tuning)
-        if (PyEvent_WaitTimed(&stw->stop_event, wait_ns)) {
+        int detach = 0;
+        if (PyEvent_WaitTimed(&stw->stop_event, wait_ns, detach)) {
             assert(stw->thread_countdown == 0);
             break;
         }
@@ -2809,9 +2842,11 @@ _PyInterpreterState_SetEvalFrameFunc(PyInterpreterState *interp,
     if (eval_frame == interp->eval_frame) {
         return;
     }
+#ifdef _Py_TIER2
     if (eval_frame != NULL) {
         _Py_Executors_InvalidateAll(interp, 1);
     }
+#endif
     RARE_EVENT_INC(set_eval_frame_func);
     interp->eval_frame = eval_frame;
 }

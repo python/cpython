@@ -49,15 +49,21 @@ static PyMethodDef module_methods[] = {
     {NULL, NULL, 0, NULL} // Sentinel
 };
 
+static PyModuleDef_Slot module_slots[] = {
+    {Py_mod_multiple_interpreters, Py_MOD_MULTIPLE_INTERPRETERS_NOT_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
+    {0, NULL},
+};
+
 static struct PyModuleDef suggestions_module = {
     PyModuleDef_HEAD_INIT,
     "_suggestions",
     NULL,
-    -1,
-    module_methods
+    0,
+    module_methods,
+    module_slots,
 };
 
 PyMODINIT_FUNC PyInit__suggestions(void) {
-    return PyModule_Create(&suggestions_module);
+    return PyModuleDef_Init(&suggestions_module);
 }
-
