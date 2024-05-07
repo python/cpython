@@ -257,13 +257,13 @@ void
 _PyErr_SetKeyError(PyObject *arg)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    PyObject *tup = PyTuple_Pack(1, arg);
-    if (!tup) {
+    PyObject *exc = PyObject_CallOneArg(PyExc_KeyError, arg);
+    if (!exc) {
         /* caller will expect error to be set anyway */
         return;
     }
-    _PyErr_SetObject(tstate, PyExc_KeyError, tup);
-    Py_DECREF(tup);
+
+    _PyErr_SetRaisedException(tstate, exc);
 }
 
 void
