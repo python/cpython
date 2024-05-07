@@ -1064,8 +1064,17 @@ Free-threaded CPython
 =====================
 
 CPython will run with the :term:`global interpreter lock` disabled when
-configured using the ``--disable-gil`` option. This is an experimental feature
-and work is still ongoing: expect some bugs and a substantial single-threaded
+configured using the ``--disable-gil`` option at build time. This is an
+experimental feature and therefore isn't used by default. Users need to
+either compile their own interpreter, or install one of the experimental
+builds that are marked as *free-threaded*.
+
+Free-threaded execution allows for full utilization of the available
+processing power by running threads in parallel on available CPU cores.
+While not all software will benefit from this automatically, programs
+designed with threading in mind will run faster on multicore hardware.
+
+Work is still ongoing: expect some bugs and a substantial single-threaded
 performance hit.
 
 * Use :func:`!sys._is_gil_enabled` to determine if the :term:`GIL` is enabled.
