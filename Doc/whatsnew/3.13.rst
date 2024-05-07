@@ -2235,42 +2235,6 @@ Changes in the C API
   to :c:func:`PyUnstable_Code_GetFirstFree`.
   (Contributed by Bogdan Romanyuk in :gh:`115781`.)
 
-Deprecated C APIs
------------------
-
-* Deprecate the old ``Py_UNICODE`` and ``PY_UNICODE_TYPE`` types: use directly
-  the :c:type:`wchar_t` type instead. Since Python 3.3, ``Py_UNICODE`` and
-  ``PY_UNICODE_TYPE`` are just aliases to :c:type:`wchar_t`.
-  (Contributed by Victor Stinner in :gh:`105156`.)
-
-* Deprecate old Python initialization functions:
-
-  * :c:func:`PySys_ResetWarnOptions`:
-    clear :data:`sys.warnoptions` and :data:`!warnings.filters` instead.
-  * :c:func:`Py_GetExecPrefix`: get :data:`sys.exec_prefix` instead.
-  * :c:func:`Py_GetPath`: get :data:`sys.path` instead.
-  * :c:func:`Py_GetPrefix`: get :data:`sys.prefix` instead.
-  * :c:func:`Py_GetProgramFullPath`: get :data:`sys.executable` instead.
-  * :c:func:`Py_GetProgramName`: get :data:`sys.executable` instead.
-  * :c:func:`Py_GetPythonHome`: get :c:member:`PyConfig.home` or
-    :envvar:`PYTHONHOME` environment variable instead.
-
-  Functions scheduled for removal in Python 3.15.
-  (Contributed by Victor Stinner in :gh:`105145`.)
-
-* Deprecate the :c:func:`PyImport_ImportModuleNoBlock` function which is just
-  an alias to :c:func:`PyImport_ImportModule` since Python 3.3.
-  Scheduled for removal in Python 3.15.
-  (Contributed by Victor Stinner in :gh:`105396`.)
-
-* Deprecate the :c:func:`PyWeakref_GetObject` and
-  :c:func:`PyWeakref_GET_OBJECT` functions, which return a :term:`borrowed
-  reference`: use the new :c:func:`PyWeakref_GetRef` function instead, it
-  returns a :term:`strong reference`. The `pythoncapi-compat project
-  <https://github.com/python/pythoncapi-compat/>`__ can be used to get
-  :c:func:`PyWeakref_GetRef` on Python 3.12 and older.
-  (Contributed by Victor Stinner in :gh:`105927`.)
-
 Removed C APIs
 --------------
 
@@ -2387,6 +2351,42 @@ Removed C APIs
   :c:func:`PyModule_Add` or :c:func:`PyModule_AddObjectRef` functions should
   be used instead.
   (Contributed by Serhiy Storchaka in :gh:`86493`.)
+
+Deprecated C APIs
+-----------------
+
+* Deprecate the old ``Py_UNICODE`` and ``PY_UNICODE_TYPE`` types: use directly
+  the :c:type:`wchar_t` type instead. Since Python 3.3, ``Py_UNICODE`` and
+  ``PY_UNICODE_TYPE`` are just aliases to :c:type:`wchar_t`.
+  (Contributed by Victor Stinner in :gh:`105156`.)
+
+* Deprecate old Python initialization functions:
+
+  * :c:func:`PySys_ResetWarnOptions`:
+    clear :data:`sys.warnoptions` and :data:`!warnings.filters` instead.
+  * :c:func:`Py_GetExecPrefix`: get :data:`sys.exec_prefix` instead.
+  * :c:func:`Py_GetPath`: get :data:`sys.path` instead.
+  * :c:func:`Py_GetPrefix`: get :data:`sys.prefix` instead.
+  * :c:func:`Py_GetProgramFullPath`: get :data:`sys.executable` instead.
+  * :c:func:`Py_GetProgramName`: get :data:`sys.executable` instead.
+  * :c:func:`Py_GetPythonHome`: get :c:member:`PyConfig.home` or
+    :envvar:`PYTHONHOME` environment variable instead.
+
+  Functions scheduled for removal in Python 3.15.
+  (Contributed by Victor Stinner in :gh:`105145`.)
+
+* Deprecate the :c:func:`PyImport_ImportModuleNoBlock` function which is just
+  an alias to :c:func:`PyImport_ImportModule` since Python 3.3.
+  Scheduled for removal in Python 3.15.
+  (Contributed by Victor Stinner in :gh:`105396`.)
+
+* Deprecate the :c:func:`PyWeakref_GetObject` and
+  :c:func:`PyWeakref_GET_OBJECT` functions, which return a :term:`borrowed
+  reference`: use the new :c:func:`PyWeakref_GetRef` function instead, it
+  returns a :term:`strong reference`. The `pythoncapi-compat project
+  <https://github.com/python/pythoncapi-compat/>`__ can be used to get
+  :c:func:`PyWeakref_GetRef` on Python 3.12 and older.
+  (Contributed by Victor Stinner in :gh:`105927`.)
 
 Pending Removal in Python 3.14
 ------------------------------
