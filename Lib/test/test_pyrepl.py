@@ -817,6 +817,46 @@ class TestPasteEvent(TestCase):
         output = multiline_input(reader)
         self.assertEqual(output, output_code)
 
+    def test_bracketed_paste(self):
+        """Test that bracketed paste using \x1b[200~ and \x1b[201~ works."""
+        # fmt: off
+        input_code = (
+            'def a():\n'
+            '  for x in range(10):\n'
+            '\n'
+            '    if x%2:\n'
+            '      print(x)\n'
+            '\n'
+            '    else:\n'
+            '      pass\n'
+        )
+        # fmt: on
+
+        output_code = (
+            'def a():\n'
+            '  for x in range(10):\n'
+            '\n'
+            '    if x%2:\n'
+            '      print(x)\n'
+            '\n'
+            '    else:\n'
+            '      pass\n'
+            '\n'
+        )
+
+        paste_start = "\x1b[200~"
+        paste_end = "\x1b[201~"
+
+        events = itertools.chain(
+            code_to_events(paste_start),
+            code_to_events(input_code),
+            code_to_events(paste_end),
+            code_to_events("\n"),
+        )
+        reader = self.prepare_reader(events)
+        output = multiline_input(reader)
+        self.assertEqual(output, output_code)
+
 
 class TestReader(TestCase):
     def assert_screen_equals(self, reader, expected):
