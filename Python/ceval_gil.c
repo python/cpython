@@ -206,6 +206,16 @@ static void recreate_gil(struct _gil_runtime_state *gil)
 #endif
 
 static void
+drop_gil_impl(struct _gil_runtime_state *gil)
+{
+    MUTEX_LOCK(gil->mutex);
+    _Py_ANNOTATE_RWLOCK_RELEASED(&gil->locked, /*is_write=*/1);
+    _Py_atomic_store_int_relaxed(&gil->locked, 0);
+    COND_SIGNAL(gil->cond);
+    MUTEX_UNLOCK(gil->mutex);
+}
+
+static void
 drop_gil(PyInterpreterState *interp, PyThreadState *tstate)
 {
     struct _ceval_state *ceval = &interp->ceval;
@@ -220,7 +230,7 @@ drop_gil(PyInterpreterState *interp, PyThreadState *tstate)
 
     struct _gil_runtime_state *gil = ceval->gil;
 #ifdef Py_GIL_DISABLED
-    if (!gil->enabled) {
+    if (!_Py_atomic_load_int_relaxed(&gil->enabled)) {
         return;
     }
 #endif
@@ -236,11 +246,7 @@ drop_gil(PyInterpreterState *interp, PyThreadState *tstate)
         _Py_atomic_store_ptr_relaxed(&gil->last_holder, tstate);
     }
 
-    MUTEX_LOCK(gil->mutex);
-    _Py_ANNOTATE_RWLOCK_RELEASED(&gil->locked, /*is_write=*/1);
-    _Py_atomic_store_int_relaxed(&gil->locked, 0);
-    COND_SIGNAL(gil->cond);
-    MUTEX_UNLOCK(gil->mutex);
+    drop_gil_impl(gil);
 
 #ifdef FORCE_SWITCHING
     /* We check tstate first in case we might be releasing the GIL for
@@ -275,8 +281,10 @@ drop_gil(PyInterpreterState *interp, PyThreadState *tstate)
 
    The function saves errno at entry and restores its value at exit.
 
-   tstate must be non-NULL. */
-static void
+   tstate must be non-NULL.
+
+   Returns 1 if the GIL was acquired, or 0 if not. */
+static int
 take_gil(PyThreadState *tstate)
 {
     int err = errno;
@@ -300,8 +308,8 @@ take_gil(PyThreadState *tstate)
     PyInterpreterState *interp = tstate->interp;
     struct _gil_runtime_state *gil = interp->ceval.gil;
 #ifdef Py_GIL_DISABLED
-    if (!gil->enabled) {
-        return;
+    if (!_Py_atomic_load_int_relaxed(&gil->enabled)) {
+        return 0;
     }
 #endif
 
@@ -346,6 +354,17 @@ take_gil(PyThreadState *tstate)
         }
     }
 
+#ifdef Py_GIL_DISABLED
+    if (!_Py_atomic_load_int_relaxed(&gil->enabled)) {
+        // Another thread disabled the GIL between our check above and
+        // now. Don't take the GIL, signal any other waiting threads, and
+        // return 0.
+        COND_SIGNAL(gil->cond);
+        MUTEX_UNLOCK(gil->mutex);
+        return 0;
+    }
+#endif
+
 #ifdef FORCE_SWITCHING
     /* This mutex must be taken before modifying gil->last_holder:
        see drop_gil(). */
@@ -387,6 +406,7 @@ take_gil(PyThreadState *tstate)
     MUTEX_UNLOCK(gil->mutex);
 
     errno = err;
+    return 1;
 }
 
 void _PyEval_SetSwitchInterval(unsigned long microseconds)
@@ -451,7 +471,8 @@ init_own_gil(PyInterpreterState *interp, struct _gil_runtime_state *gil)
 {
     assert(!gil_created(gil));
 #ifdef Py_GIL_DISABLED
-    gil->enabled = _PyInterpreterState_GetConfig(interp)->enable_gil == _PyConfig_GIL_ENABLE;
+    const PyConfig *config = _PyInterpreterState_GetConfig(interp);
+    gil->enabled = config->enable_gil == _PyConfig_GIL_ENABLE ? INT_MAX : 0;
 #endif
     create_gil(gil);
     assert(gil_created(gil));
@@ -545,11 +566,11 @@ PyEval_ReleaseLock(void)
     drop_gil(tstate->interp, tstate);
 }
 
-void
+int
 _PyEval_AcquireLock(PyThreadState *tstate)
 {
     _Py_EnsureTstateNotNULL(tstate);
-    take_gil(tstate);
+    return take_gil(tstate);
 }
 
 void
@@ -1010,6 +1031,117 @@ _PyEval_InitState(PyInterpreterState *interp)
 {
     _gil_initialize(&interp->_gil);
 }
+
+#ifdef Py_GIL_DISABLED
+int
+_PyEval_EnableGILTransient(PyThreadState *tstate)
+{
+    const PyConfig *config = _PyInterpreterState_GetConfig(tstate->interp);
+    if (config->enable_gil != _PyConfig_GIL_DEFAULT) {
+        return 0;
+    }
+    struct _gil_runtime_state *gil = tstate->interp->ceval.gil;
+
+    int enabled = _Py_atomic_load_int_relaxed(&gil->enabled);
+    if (enabled == INT_MAX) {
+        // The GIL is already enabled permanently.
+        return 0;
+    }
+    if (enabled == INT_MAX - 1) {
+        Py_FatalError("Too many transient requests to enable the GIL");
+    }
+    if (enabled > 0) {
+        // If enabled is nonzero, we know we hold the GIL. This means that no
+        // other threads are attached, and nobody else can be concurrently
+        // mutating it.
+        _Py_atomic_store_int_relaxed(&gil->enabled, enabled + 1);
+        return 0;
+    }
+
+    // Enabling the GIL changes what it means to be an "attached" thread. To
+    // safely make this transition, we:
+    // 1. Detach the current thread.
+    // 2. Stop the world to detach (and suspend) all other threads.
+    // 3. Enable the GIL, if nobody else did between our check above and when
+    //    our stop-the-world begins.
+    // 4. Start the world.
+    // 5. Attach the current thread. Other threads may attach and hold the GIL
+    //    before this thread, which is harmless.
+    _PyThreadState_Detach(tstate);
+
+    // This could be an interpreter-local stop-the-world in situations where we
+    // know that this interpreter's GIL is not shared, and that it won't become
+    // shared before the stop-the-world begins. For now, we always stop all
+    // interpreters for simplicity.
+    _PyEval_StopTheWorldAll(&_PyRuntime);
+
+    enabled = _Py_atomic_load_int_relaxed(&gil->enabled);
+    int this_thread_enabled = enabled == 0;
+    _Py_atomic_store_int_relaxed(&gil->enabled, enabled + 1);
+
+    _PyEval_StartTheWorldAll(&_PyRuntime);
+    _PyThreadState_Attach(tstate);
+
+    return this_thread_enabled;
+}
+
+int
+_PyEval_EnableGILPermanent(PyThreadState *tstate)
+{
+    const PyConfig *config = _PyInterpreterState_GetConfig(tstate->interp);
+    if (config->enable_gil != _PyConfig_GIL_DEFAULT) {
+        return 0;
+    }
+
+    struct _gil_runtime_state *gil = tstate->interp->ceval.gil;
+    assert(current_thread_holds_gil(gil, tstate));
+
+    int enabled = _Py_atomic_load_int_relaxed(&gil->enabled);
+    if (enabled == INT_MAX) {
+        return 0;
+    }
+
+    _Py_atomic_store_int_relaxed(&gil->enabled, INT_MAX);
+    return 1;
+}
+
+int
+_PyEval_DisableGIL(PyThreadState *tstate)
+{
+    const PyConfig *config = _PyInterpreterState_GetConfig(tstate->interp);
+    if (config->enable_gil != _PyConfig_GIL_DEFAULT) {
+        return 0;
+    }
+
+    struct _gil_runtime_state *gil = tstate->interp->ceval.gil;
+    assert(current_thread_holds_gil(gil, tstate));
+
+    int enabled = _Py_atomic_load_int_relaxed(&gil->enabled);
+    if (enabled == INT_MAX) {
+        return 0;
+    }
+
+    assert(enabled >= 1);
+    enabled--;
+
+    // Disabling the GIL is much simpler than enabling it, since we know we are
+    // the only attached thread. Other threads may start free-threading as soon
+    // as this store is complete, if it sets gil->enabled to 0.
+    _Py_atomic_store_int_relaxed(&gil->enabled, enabled);
+
+    if (enabled == 0) {
+        // We're attached, so we know the GIL will remain disabled until at
+        // least the next time we detach, which must be after this function
+        // returns.
+        //
+        // Drop the GIL, which will wake up any threads waiting in take_gil()
+        // and let them resume execution without the GIL.
+        drop_gil_impl(gil);
+        return 1;
+    }
+    return 0;
+}
+#endif
 
 
 /* Do periodic things, like check for signals and async I/0.
