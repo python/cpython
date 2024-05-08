@@ -34,6 +34,8 @@ def clear_executors(func):
 
 
 @requires_specialization
+@unittest.skipUnless(hasattr(_testinternalcapi, "get_optimizer"),
+                     "Requires optimizer infrastructure")
 class TestOptimizerAPI(unittest.TestCase):
 
     def test_new_counter_optimizer_dealloc(self):
@@ -136,6 +138,8 @@ def get_opnames(ex):
 
 
 @requires_specialization
+@unittest.skipUnless(hasattr(_testinternalcapi, "get_optimizer"),
+                     "Requires optimizer infrastructure")
 class TestExecutorInvalidation(unittest.TestCase):
 
     def setUp(self):
@@ -215,6 +219,8 @@ class TestExecutorInvalidation(unittest.TestCase):
 
 
 @requires_specialization
+@unittest.skipUnless(hasattr(_testinternalcapi, "get_optimizer"),
+                     "Requires optimizer infrastructure")
 @unittest.skipIf(os.getenv("PYTHON_UOPS_OPTIMIZE") == "0", "Needs uop optimizer to run.")
 class TestUops(unittest.TestCase):
 
@@ -579,6 +585,8 @@ class TestUops(unittest.TestCase):
 
 
 @requires_specialization
+@unittest.skipUnless(hasattr(_testinternalcapi, "get_optimizer"),
+                     "Requires optimizer infrastructure")
 @unittest.skipIf(os.getenv("PYTHON_UOPS_OPTIMIZE") == "0", "Needs uop optimizer to run.")
 class TestUopsOptimization(unittest.TestCase):
 
@@ -1312,6 +1320,19 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertEqual(res, 190)
         self.assertIsNotNone(ex)
         self.assertIn("_FOR_ITER_GEN_FRAME", get_opnames(ex))
+
+    def test_modified_local_is_seen_by_optimized_code(self):
+        l = sys._getframe().f_locals
+        a = 1
+        s = 0
+        for j in range(1 << 10):
+            a + a
+            l["xa"[j >> 9]] = 1.0
+            s += a
+        self.assertIs(type(a), float)
+        self.assertIs(type(s), float)
+        self.assertEqual(s, 1024.0)
+
 
 if __name__ == "__main__":
     unittest.main()
