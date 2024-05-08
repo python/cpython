@@ -1,5 +1,5 @@
-:mod:`warnings` --- Warning control
-===================================
+:mod:`!warnings` --- Warning control
+====================================
 
 .. module:: warnings
    :synopsis: Issue warning messages and control their disposition.

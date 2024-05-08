@@ -1,5 +1,5 @@
-:mod:`__main__` --- Top-level code environment
-==============================================
+:mod:`!__main__` --- Top-level code environment
+===============================================
 
 .. module:: __main__
    :synopsis: The environment where top-level code is run. Covers command-line

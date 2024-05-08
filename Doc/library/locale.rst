@@ -1,5 +1,5 @@
-:mod:`locale` --- Internationalization services
-===============================================
+:mod:`!locale` --- Internationalization services
+================================================
 
 .. module:: locale
    :synopsis: Internationalization services.
