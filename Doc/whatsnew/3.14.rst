@@ -90,7 +90,9 @@ Improved Modules
 Optimizations
 =============
 
-
+* :func:`glob.glob` and :func:`~glob.iglob` no longer make unnecessary system
+  calls. This speeds up most globbing operations by 20-80%.
+  (Contributed by Barney Gale in :gh:`116380`.)
 
 
 Deprecated
