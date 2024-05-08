@@ -318,30 +318,31 @@ do {                                                                       \
 #endif
 
 #if defined(MS_WINDOWS) && !defined(DONT_USE_SEH)
-#define HANDLE_INVALID_MEM_METHOD(self, sourcecode)                                     \
-do {                                                                                    \
-    EXCEPTION_RECORD record;                                                            \
-    __try {                                                                             \
-        sourcecode                                                                      \
-    }                                                                                   \
-    __except (filter_page_exception_method(self, GetExceptionInformation(), &record)) { \
-        assert(record.ExceptionCode == EXCEPTION_IN_PAGE_ERROR ||                       \
-               record.ExceptionCode == EXCEPTION_ACCESS_VIOLATION);                     \
-        if (record.ExceptionCode == EXCEPTION_IN_PAGE_ERROR) {                          \
-            NTSTATUS status = (NTSTATUS) record.ExceptionInformation[2];                \
-            ULONG code = LsaNtStatusToWinError(status);                                 \
-            PyErr_SetFromWindowsErr(code);                                              \
-        }                                                                               \
-        else if (record.ExceptionCode == EXCEPTION_ACCESS_VIOLATION) {                  \
-            PyErr_SetFromWindowsErr(ERROR_NOACCESS);                                    \
-        }                                                                               \
-        return -1;                                                                      \
-    }                                                                                   \
+#define HANDLE_INVALID_MEM_METHOD(self, sourcecode)                           \
+do {                                                                          \
+    EXCEPTION_RECORD record;                                                  \
+    __try {                                                                   \
+        sourcecode                                                            \
+    }                                                                         \
+    __except (filter_page_exception_method(self, GetExceptionInformation(),   \
+                                           &record)) {                        \
+        assert(record.ExceptionCode == EXCEPTION_IN_PAGE_ERROR ||             \
+               record.ExceptionCode == EXCEPTION_ACCESS_VIOLATION);           \
+        if (record.ExceptionCode == EXCEPTION_IN_PAGE_ERROR) {                \
+            NTSTATUS status = (NTSTATUS) record.ExceptionInformation[2];      \
+            ULONG code = LsaNtStatusToWinError(status);                       \
+            PyErr_SetFromWindowsErr(code);                                    \
+        }                                                                     \
+        else if (record.ExceptionCode == EXCEPTION_ACCESS_VIOLATION) {        \
+            PyErr_SetFromWindowsErr(ERROR_NOACCESS);                          \
+        }                                                                     \
+        return -1;                                                            \
+    }                                                                         \
 } while (0)
 #else
-#define HANDLE_INVALID_MEM_METHOD(self, sourcecode)                                     \
-do {                                                                                    \
-    sourcecode                                                                          \
+#define HANDLE_INVALID_MEM_METHOD(self, sourcecode)                           \
+do {                                                                          \
+    sourcecode                                                                \
 } while (0)
 #endif
 
