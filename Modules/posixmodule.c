@@ -5114,12 +5114,12 @@ _testFileTypeByHandle(HANDLE hfile, int refFileType, BOOL diskOnly)
         return FALSE;
     }
 
-    if (info.attributes & FILE_ATTRIBUTE_REPARSE_POINT) {
+    if (info.FileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) {
         if (refFileType == PY_IFLNK) {
-            return info.reparseTag == IO_REPARSE_TAG_SYMLINK;
+            return info.ReparseTag == IO_REPARSE_TAG_SYMLINK;
         }
         if (refFileType == PY_IFMNT) {
-            return info.reparseTag == IO_REPARSE_TAG_MOUNT_POINT;
+            return info.ReparseTag == IO_REPARSE_TAG_MOUNT_POINT;
         }
         // Non-surrogate reparse points aren't supported by handle. Just
         // return False. Supporting them requires querying and opening the
@@ -5127,10 +5127,10 @@ _testFileTypeByHandle(HANDLE hfile, int refFileType, BOOL diskOnly)
     }
     else if (refFileType == PY_IFREG) {
         return ((fileDevType == FILE_TYPE_DISK) &&
-                !(info.attributes & FILE_ATTRIBUTE_DIRECTORY));
+                !(info.FileAttributes & FILE_ATTRIBUTE_DIRECTORY));
     }
     else if (refFileType == PY_IFDIR) {
-        return info.attributes & FILE_ATTRIBUTE_DIRECTORY;
+        return info.FileAttributes & FILE_ATTRIBUTE_DIRECTORY;
     }
 
     return FALSE;
