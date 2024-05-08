@@ -8,19 +8,11 @@ on:
   push:
     branches:
     - 'main'
-    - '3.12'
-    - '3.11'
-    - '3.10'
-    - '3.9'
-    - '3.8'
+    - '3.*'
   pull_request:
     branches:
     - 'main'
-    - '3.12'
-    - '3.11'
-    - '3.10'
-    - '3.9'
-    - '3.8'
+    - '3.*'
 
 permissions:
   contents: read
