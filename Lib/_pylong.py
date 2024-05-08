@@ -247,15 +247,16 @@ if 1:
                 # This is maximally clear, but "too slow". `decimal`
                 # division is asymptotically fast, but we have no way to
                 # tell it to reuse the high-precision reciprocal it
-                # computes for pow2to5[w2], so it has to recompute them
+                # computes for pow256[w2], so it has to recompute it
                 # over & over & over again :-(
                 hi, lo = divmod(n, pow256[w2][0])
             else:
                 p256, recip = pow256[w2]
                 # The integer part will have about half the digits of n.
-                # So only need that much precision, plus some guard digits.
+                # So only need that much precision, plus some guard
+                # digits.
                 ctx.prec = (n.adjusted() >> 1) + 8
-                hi = (+ n) * recip
+                hi = +n * +recip
                 hi = hi.to_integral_value() # lose the fractional digits
                 ctx.prec = decimal.MAX_PREC
                 lo = n - hi * p256
@@ -290,9 +291,13 @@ if 1:
             for k, v in pow256.items():
                 # No need to save more precision in the reciprocal than
                 # the power of 256 has, plus some guard digits to absorb
-                # most relevant rounding errors.
+                # most relevant rounding errors. This is highly
+                # signficant: 1/2**i has the same number of significant
+                # decimal digits as 5**i, generally over twice the
+                # number in 2**i,
                 ctx.prec = v.adjusted() + 8
-                # The unary "+" chope the reciprocal back to that precision.
+                # The unary "+" chope the reciprocal back to that
+                # precision.
                 pow256[k] = v, +rpow256[k]
             del rpow256 # exact reciprocals no longer needed
             ctx.prec = decimal.MAX_PREC
