@@ -101,6 +101,11 @@ Deprecated
 Removed
 =======
 
+pathlib
+-------
+
+* Remove support for passing additional keyword arguments to
+  :class:`pathlib.Path`. In previous versions, any such arguments are ignored.
 
 
 Porting to Python 3.14
