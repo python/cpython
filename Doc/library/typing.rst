@@ -2334,7 +2334,7 @@ types.
 
       This attribute reflects *only* the value of the ``total`` argument
       to the current ``TypedDict`` class, not whether the class is semantically
-      total. For example, a ``TypedDict`` with ``__total__`` set to True may
+      total. For example, a ``TypedDict`` with ``__total__`` set to ``True`` may
       have keys marked with :data:`NotRequired`, or it may inherit from another
       ``TypedDict`` with ``total=False``. Therefore, it is generally better to use
       :attr:`__required_keys__` and :attr:`__optional_keys__` for introspection.
