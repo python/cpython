@@ -68,7 +68,7 @@ set verbose=/nologo /v:m /clp:summary
 set kill=
 set do_pgo=
 set pgo_job=-m test --pgo
-set UseTIER2=0
+set UseTIER2=
 
 :CheckOpts
 if "%~1"=="-h" goto Usage

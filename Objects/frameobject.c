@@ -148,8 +148,9 @@ framelocalsproxy_setitem(PyObject *self, PyObject *key, PyObject *value)
     if (PyUnicode_CheckExact(key)) {
         int i = framelocalsproxy_getkeyindex(frame, key, false);
         if (i >= 0) {
-            _PyLocals_Kind kind = _PyLocals_GetKind(co->co_localspluskinds, i);
+            _Py_Executors_InvalidateDependency(PyInterpreterState_Get(), co, 1);
 
+            _PyLocals_Kind kind = _PyLocals_GetKind(co->co_localspluskinds, i);
             _PyStackRef oldvalue = fast[i];
             PyObject *cell = NULL;
             if (kind == CO_FAST_FREE) {
@@ -742,6 +743,15 @@ frame_getlocals(PyFrameObject *f, void *closure)
     PyCodeObject *co = _PyFrame_GetCode(f->f_frame);
 
     if (!(co->co_flags & CO_OPTIMIZED) && !_PyFrame_HasHiddenLocals(f->f_frame)) {
+        if (f->f_frame->f_locals == NULL) {
+            // We found cases when f_locals is NULL for non-optimized code.
+            // We fill the f_locals with an empty dict to avoid crash until
+            // we find the root cause.
+            f->f_frame->f_locals = PyDict_New();
+            if (f->f_frame->f_locals == NULL) {
+                return NULL;
+            }
+        }
         return Py_NewRef(f->f_frame->f_locals);
     }
 
@@ -1936,6 +1946,15 @@ _PyFrame_GetLocals(_PyInterpreterFrame *frame)
     PyCodeObject *co = _PyFrame_GetCode(frame);
 
     if (!(co->co_flags & CO_OPTIMIZED) && !_PyFrame_HasHiddenLocals(frame)) {
+        if (frame->f_locals == NULL) {
+            // We found cases when f_locals is NULL for non-optimized code.
+            // We fill the f_locals with an empty dict to avoid crash until
+            // we find the root cause.
+            frame->f_locals = PyDict_New();
+            if (frame->f_locals == NULL) {
+                return NULL;
+            }
+        }
         return Py_NewRef(frame->f_locals);
     }
 

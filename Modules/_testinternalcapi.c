@@ -1986,6 +1986,17 @@ set_immortalize_deferred(PyObject *self, PyObject *value)
 }
 
 static PyObject *
+get_immortalize_deferred(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+#ifdef Py_GIL_DISABLED
+    PyInterpreterState *interp = PyInterpreterState_Get();
+    return PyBool_FromLong(interp->gc.immortalize.enable_on_thread_created);
+#else
+    Py_RETURN_FALSE;
+#endif
+}
+
+static PyObject *
 has_inline_values(PyObject *self, PyObject *obj)
 {
     if ((Py_TYPE(obj)->tp_flags & Py_TPFLAGS_INLINE_VALUES) &&
@@ -2081,6 +2092,7 @@ static PyMethodDef module_functions[] = {
     {"py_thread_id", get_py_thread_id, METH_NOARGS},
 #endif
     {"set_immortalize_deferred", set_immortalize_deferred, METH_VARARGS},
+    {"get_immortalize_deferred", get_immortalize_deferred, METH_NOARGS},
 #ifdef _Py_TIER2
     {"uop_symbols_test", _Py_uop_symbols_test, METH_NOARGS},
 #endif

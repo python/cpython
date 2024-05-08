@@ -298,10 +298,11 @@ class _ReadlineWrapper:
             reader.more_lines = more_lines
             reader.ps1 = reader.ps2 = ps1
             reader.ps3 = reader.ps4 = ps2
-            return reader.readline()
+            return reader.readline(), reader.was_paste_mode_activated
         finally:
             reader.more_lines = saved
             reader.paste_mode = False
+            reader.was_paste_mode_activated = False
 
     def parse_and_bind(self, string: str) -> None:
         pass  # XXX we don't support parsing GNU-readline-style init files

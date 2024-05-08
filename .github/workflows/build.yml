@@ -218,7 +218,7 @@ jobs:
     with:
       config_hash: ${{ needs.check_source.outputs.config_hash }}
       free-threading: true
-      # macos-14 is M1
+      # macos-14-large is Intel with 12 cores (most parallelism)
       os-matrix: '["macos-14"]'
 
   build_ubuntu:
