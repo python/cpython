@@ -1,2 +1,0 @@
-Fix bug where ``generator.close`` does not free the generator frame's
-locals.

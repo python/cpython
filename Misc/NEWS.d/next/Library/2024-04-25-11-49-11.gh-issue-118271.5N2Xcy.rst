@@ -1,4 +1,0 @@
-Add the :class:`!PhotoImage` methods :meth:`~tkinter.PhotoImage.read` to
-read an image from a file and :meth:`~tkinter.PhotoImage.data` to get the
-image data. Add *background* and *grayscale* parameters to
-:class:`!PhotoImage` method :meth:`~tkinter.PhotoImage.write`.

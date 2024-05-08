@@ -1,1 +1,0 @@
-Fix an edge case in :func:`binascii.a2b_base64` strict mode, where excessive padding is not detected when no padding is necessary.

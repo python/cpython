@@ -1,5 +1,0 @@
-Improve the error messages emitted by :mod:`tarfile` deprecation warnings
-relating to PEP 706. If a ``filter`` argument is not provided to
-``extract()`` or ``extractall``, the deprecation warning now points to the
-line in the user's code where the relevant function was called. Patch by
-Alex Waygood.

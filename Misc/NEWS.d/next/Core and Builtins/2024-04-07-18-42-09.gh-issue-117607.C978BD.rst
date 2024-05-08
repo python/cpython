@@ -1,1 +1,0 @@
-Speedup :func:`os.path.relpath`.

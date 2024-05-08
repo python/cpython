@@ -1,1 +1,0 @@
-Add signature for :class:`sqlite3.Connection` objects.

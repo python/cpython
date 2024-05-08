@@ -1,1 +1,0 @@
-Speed up :func:`itertools.pairwise` in the common case by up to 1.8x.

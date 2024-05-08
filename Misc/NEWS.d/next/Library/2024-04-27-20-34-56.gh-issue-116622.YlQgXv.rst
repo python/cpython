@@ -1,2 +1,0 @@
-On Android, :any:`sysconfig.get_platform` now returns the format specified
-by :pep:`738`.

@@ -1,9 +1,0 @@
-Improve the performance of the following :class:`bytes` and
-:class:`bytearray` methods by adapting them to the :c:macro:`METH_FASTCALL`
-calling convention:
-
-* :meth:`!count`
-* :meth:`!find`
-* :meth:`!index`
-* :meth:`!rfind`
-* :meth:`!rindex`

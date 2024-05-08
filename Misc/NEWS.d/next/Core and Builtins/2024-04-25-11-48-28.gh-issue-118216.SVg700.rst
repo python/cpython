@@ -1,1 +1,0 @@
-Don't consider :mod:`__future__` imports with dots before the module name.

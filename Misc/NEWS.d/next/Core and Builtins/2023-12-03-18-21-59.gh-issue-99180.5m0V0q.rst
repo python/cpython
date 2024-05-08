@@ -1,2 +1,0 @@
-Elide uninformative traceback indicators in ``return`` and simple
-``assignment`` statements. Patch by Pablo Galindo.

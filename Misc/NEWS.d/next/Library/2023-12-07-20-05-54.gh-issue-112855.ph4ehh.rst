@@ -1,2 +1,0 @@
-Speed up pickling of :class:`pathlib.PurePath` objects. Patch by Barney
-Gale.

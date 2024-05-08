@@ -1,2 +1,0 @@
-Fix an issue where the type cache can expose a previously accessed attribute
-when a finalizer is run.

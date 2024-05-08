@@ -1,1 +1,0 @@
-Fixes launcher updates not being installed.

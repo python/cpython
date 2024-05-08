@@ -1,2 +1,0 @@
-Increase WASI stack size from 512 KiB to 8 MiB and the initial memory from 10
-MiB to 20 MiB. Patch by Victor Stinner.

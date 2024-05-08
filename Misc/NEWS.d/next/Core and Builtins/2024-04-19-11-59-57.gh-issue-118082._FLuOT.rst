@@ -1,3 +1,0 @@
-Improve :exc:`SyntaxError` message for imports without names, like in
-``from x import`` and ``import`` cases. It now points
-out to users that :keyword:`import` expects at least one name after it.

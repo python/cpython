@@ -1,1 +1,0 @@
-Support ``package.module`` as ``filename`` for ``break`` command of :mod:`pdb`

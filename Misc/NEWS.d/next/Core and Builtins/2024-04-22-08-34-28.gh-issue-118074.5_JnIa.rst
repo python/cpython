@@ -1,2 +1,0 @@
-Make sure that the Executor objects in the COLD_EXITS array aren't assumed
-to be GC-able (which would access bytes outside the object).
