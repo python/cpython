@@ -3561,8 +3561,8 @@ with :func:`os.pidfd_open` in non-blocking mode. Patch by Kumar Aditya.
 .. nonce: mkYl5q
 .. section: Library
 
-Implement Enum __contains__ that returns True or False to replace the
-deprecated behaviour that would sometimes raise a TypeError.
+Implement ``Enum.__contains__`` that returns ``True`` or ``False`` to replace the
+deprecated behaviour that would sometimes raise a :exc:`TypeError`.
 
 ..
 
@@ -3729,7 +3729,7 @@ In a very special case, the email package tried to append the nonexistent
 .. nonce: e6uKxj
 .. section: Library
 
-Fix :func:`ast.unparse` when ``ImportFrom.level`` is None
+Fix :func:`ast.unparse` when ``ImportFrom.level`` is ``None``
 
 ..
 
@@ -3791,7 +3791,7 @@ the :c:type:`time_t` type in C.
 .. section: Library
 
 Fixed crash resulting from calling bisect.insort() or bisect.insort_left()
-with the key argument not equal to None.
+with the key argument not equal to ``None``.
 
 ..
 
@@ -4080,7 +4080,7 @@ replacement strings containing group references by 2--3 times.
 .. section: Library
 
 Fix findtext in the xml module to only give an empty string when the text
-attribute is set to None.
+attribute is set to ``None``.
 
 ..
 
