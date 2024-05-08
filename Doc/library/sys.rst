@@ -1708,7 +1708,7 @@ always available.
    contain a tuple of (filename, line number, function name) tuples
    describing the traceback where the coroutine object was created,
    with the most recent call first. When disabled, ``cr_origin`` will
-   be None.
+   be ``None``.
 
    To enable, pass a *depth* value greater than zero; this sets the
    number of frames whose information will be captured. To disable,
