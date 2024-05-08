@@ -59,3 +59,6 @@ Py_DEPRECATED(3.13) static inline PyObject* PyWeakref_GET_OBJECT(PyObject *ref_o
     return Py_None;
 }
 #define PyWeakref_GET_OBJECT(ref) PyWeakref_GET_OBJECT(_PyObject_CAST(ref))
+
+// Clear weakrefs but do not call callbacks
+PyAPI_FUNC(void) PyUnstable_Weakref_ClearWeakRefsExceptCallbacks(PyObject *obj);

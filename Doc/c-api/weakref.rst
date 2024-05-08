@@ -96,3 +96,10 @@ as much as it can.
    This iterates through the weak references for *object* and calls callbacks
    for those references which have one. It returns when all callbacks have
    been attempted.
+
+
+.. c:function:: void PyUnstable_Weakref_ClearWeakRefsExceptCallbacks(PyObject *object)
+
+   Clears the weakrefs for *object* without calling the callbacks.
+
+   .. versionadded:: 3.13

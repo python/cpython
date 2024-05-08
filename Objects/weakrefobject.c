@@ -1090,6 +1090,12 @@ _PyWeakref_ClearWeakRefsExceptCallbacks(PyObject *obj)
     UNLOCK_WEAKREFS(obj);
 }
 
+void
+PyUnstable_Weakref_ClearWeakRefsExceptCallbacks(PyObject *obj)
+{
+    _PyWeakref_ClearWeakRefsExceptCallbacks(obj);
+}
+
 int
 _PyWeakref_IsDead(PyObject *weakref)
 {
