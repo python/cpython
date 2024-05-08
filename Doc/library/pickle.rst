@@ -1,5 +1,5 @@
-:mod:`pickle` --- Python object serialization
-=============================================
+:mod:`!pickle` --- Python object serialization
+==============================================
 
 .. module:: pickle
    :synopsis: Convert Python objects to streams of bytes and back.

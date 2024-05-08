@@ -1,5 +1,5 @@
-:mod:`xml.etree.ElementTree` --- The ElementTree XML API
-========================================================
+:mod:`!xml.etree.ElementTree` --- The ElementTree XML API
+=========================================================
 
 .. module:: xml.etree.ElementTree
    :synopsis: Implementation of the ElementTree API.

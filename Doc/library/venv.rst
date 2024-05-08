@@ -1,5 +1,5 @@
-:mod:`venv` --- Creation of virtual environments
-================================================
+:mod:`!venv` --- Creation of virtual environments
+=================================================
 
 .. module:: venv
    :synopsis: Creation of virtual environments.

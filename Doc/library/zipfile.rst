@@ -1,5 +1,5 @@
-:mod:`zipfile` --- Work with ZIP archives
-=========================================
+:mod:`!zipfile` --- Work with ZIP archives
+==========================================
 
 .. module:: zipfile
    :synopsis: Read and write ZIP-format archive files.

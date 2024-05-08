@@ -1,5 +1,5 @@
-:mod:`tkinter` --- Python interface to Tcl/Tk
-=============================================
+:mod:`!tkinter` --- Python interface to Tcl/Tk
+==============================================
 
 .. module:: tkinter
    :synopsis: Interface to Tcl/Tk for graphical user interfaces

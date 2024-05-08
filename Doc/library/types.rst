@@ -1,5 +1,5 @@
-:mod:`types` --- Dynamic type creation and names for built-in types
-===================================================================
+:mod:`!types` --- Dynamic type creation and names for built-in types
+====================================================================
 
 .. module:: types
    :synopsis: Names for built-in types.

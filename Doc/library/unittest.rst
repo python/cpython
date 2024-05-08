@@ -1,5 +1,5 @@
-:mod:`unittest` --- Unit testing framework
-==========================================
+:mod:`!unittest` --- Unit testing framework
+===========================================
 
 .. module:: unittest
    :synopsis: Unit testing framework for Python.

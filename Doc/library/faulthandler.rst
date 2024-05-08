@@ -1,5 +1,5 @@
-:mod:`faulthandler` --- Dump the Python traceback
-=================================================
+:mod:`!faulthandler` --- Dump the Python traceback
+==================================================
 
 .. module:: faulthandler
    :synopsis: Dump the Python traceback.

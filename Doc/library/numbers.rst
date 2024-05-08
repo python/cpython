@@ -1,5 +1,5 @@
-:mod:`numbers` --- Numeric abstract base classes
-================================================
+:mod:`!numbers` --- Numeric abstract base classes
+=================================================
 
 .. module:: numbers
    :synopsis: Numeric abstract base classes (Complex, Real, Integral, etc.).

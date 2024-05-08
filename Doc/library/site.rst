@@ -1,5 +1,5 @@
-:mod:`site` --- Site-specific configuration hook
-================================================
+:mod:`!site` --- Site-specific configuration hook
+=================================================
 
 .. module:: site
    :synopsis: Module responsible for site-specific configuration.

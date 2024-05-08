@@ -1,5 +1,5 @@
-:mod:`logging.config` --- Logging configuration
-===============================================
+:mod:`!logging.config` --- Logging configuration
+================================================
 
 .. module:: logging.config
    :synopsis: Configuration of the logging module.

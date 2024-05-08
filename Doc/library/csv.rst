@@ -1,5 +1,5 @@
-:mod:`csv` --- CSV File Reading and Writing
-===========================================
+:mod:`!csv` --- CSV File Reading and Writing
+============================================
 
 .. module:: csv
    :synopsis: Write and read tabular data to and from delimited files.

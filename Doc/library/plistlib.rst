@@ -1,5 +1,5 @@
-:mod:`plistlib` --- Generate and parse Apple ``.plist`` files
-=============================================================
+:mod:`!plistlib` --- Generate and parse Apple ``.plist`` files
+==============================================================
 
 .. module:: plistlib
    :synopsis: Generate and parse Apple plist files.

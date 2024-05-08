@@ -1,5 +1,5 @@
-:mod:`readline` --- GNU readline interface
-==========================================
+:mod:`!readline` --- GNU readline interface
+===========================================
 
 .. module:: readline
    :platform: Unix

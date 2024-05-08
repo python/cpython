@@ -1,5 +1,5 @@
-:mod:`smtplib` --- SMTP protocol client
-=======================================
+:mod:`!smtplib` --- SMTP protocol client
+========================================
 
 .. module:: smtplib
    :synopsis: SMTP protocol client (requires sockets).

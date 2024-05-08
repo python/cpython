@@ -1,5 +1,5 @@
-:mod:`unicodedata` --- Unicode Database
-=======================================
+:mod:`!unicodedata` --- Unicode Database
+========================================
 
 .. module:: unicodedata
    :synopsis: Access the Unicode Database.

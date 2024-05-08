@@ -1,5 +1,5 @@
-:mod:`bz2` --- Support for :program:`bzip2` compression
-=======================================================
+:mod:`!bz2` --- Support for :program:`bzip2` compression
+========================================================
 
 .. module:: bz2
    :synopsis: Interfaces for bzip2 compression and decompression.

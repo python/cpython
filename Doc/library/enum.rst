@@ -1,5 +1,5 @@
-:mod:`enum` --- Support for enumerations
-========================================
+:mod:`!enum` --- Support for enumerations
+=========================================
 
 .. module:: enum
    :synopsis: Implementation of an enumeration class.

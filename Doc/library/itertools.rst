@@ -1,5 +1,5 @@
-:mod:`itertools` --- Functions creating iterators for efficient looping
-=======================================================================
+:mod:`!itertools` --- Functions creating iterators for efficient looping
+========================================================================
 
 .. module:: itertools
    :synopsis: Functions creating iterators for efficient looping.

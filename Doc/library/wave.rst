@@ -1,5 +1,5 @@
-:mod:`wave` --- Read and write WAV files
-========================================
+:mod:`!wave` --- Read and write WAV files
+=========================================
 
 .. module:: wave
    :synopsis: Provide an interface to the WAV sound format.

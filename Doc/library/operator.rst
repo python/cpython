@@ -1,5 +1,5 @@
-:mod:`operator` --- Standard operators as functions
-===================================================
+:mod:`!operator` --- Standard operators as functions
+====================================================
 
 .. module:: operator
    :synopsis: Functions corresponding to the standard operators.

@@ -1,5 +1,5 @@
-:mod:`base64` --- Base16, Base32, Base64, Base85 Data Encodings
-===============================================================
+:mod:`!base64` --- Base16, Base32, Base64, Base85 Data Encodings
+================================================================
 
 .. module:: base64
    :synopsis: RFC 4648: Base16, Base32, Base64 Data Encodings;

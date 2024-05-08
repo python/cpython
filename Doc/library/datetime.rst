@@ -1,5 +1,5 @@
-:mod:`datetime` --- Basic date and time types
-=============================================
+:mod:`!datetime` --- Basic date and time types
+==============================================
 
 .. module:: datetime
    :synopsis: Basic date and time types.

@@ -1,5 +1,5 @@
-:mod:`colorsys` --- Conversions between color systems
-=====================================================
+:mod:`!colorsys` --- Conversions between color systems
+======================================================
 
 .. module:: colorsys
    :synopsis: Conversion functions between RGB and other color systems.

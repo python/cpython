@@ -1,5 +1,5 @@
-:mod:`multiprocessing` --- Process-based parallelism
-====================================================
+:mod:`!multiprocessing` --- Process-based parallelism
+=====================================================
 
 .. module:: multiprocessing
    :synopsis: Process-based parallelism.

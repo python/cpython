@@ -1,5 +1,5 @@
-:mod:`difflib` --- Helpers for computing deltas
-===============================================
+:mod:`!difflib` --- Helpers for computing deltas
+================================================
 
 .. module:: difflib
    :synopsis: Helpers for computing differences between objects.

@@ -1,5 +1,5 @@
-:mod:`zipapp` --- Manage executable Python zip archives
-=======================================================
+:mod:`!zipapp` --- Manage executable Python zip archives
+========================================================
 
 .. module:: zipapp
    :synopsis: Manage executable Python zip archives

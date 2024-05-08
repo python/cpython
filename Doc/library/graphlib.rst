@@ -1,5 +1,5 @@
-:mod:`graphlib` --- Functionality to operate with graph-like structures
-=========================================================================
+:mod:`!graphlib` --- Functionality to operate with graph-like structures
+========================================================================
 
 .. module:: graphlib
    :synopsis: Functionality to operate with graph-like structures

@@ -1,5 +1,5 @@
-:mod:`mimetypes` --- Map filenames to MIME types
-================================================
+:mod:`!mimetypes` --- Map filenames to MIME types
+=================================================
 
 .. module:: mimetypes
    :synopsis: Mapping of filename extensions to MIME types.

@@ -1,5 +1,5 @@
-:mod:`ftplib` --- FTP protocol client
-=====================================
+:mod:`!ftplib` --- FTP protocol client
+======================================
 
 .. module:: ftplib
    :synopsis: FTP protocol client (requires sockets).

@@ -1,5 +1,5 @@
-:mod:`dis` --- Disassembler for Python bytecode
-===============================================
+:mod:`!dis` --- Disassembler for Python bytecode
+================================================
 
 .. module:: dis
    :synopsis: Disassembler for Python bytecode.

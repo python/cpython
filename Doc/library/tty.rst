@@ -1,5 +1,5 @@
-:mod:`tty` --- Terminal control functions
-=========================================
+:mod:`!tty` --- Terminal control functions
+==========================================
 
 .. module:: tty
    :platform: Unix

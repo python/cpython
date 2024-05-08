@@ -1,5 +1,5 @@
-:mod:`math` --- Mathematical functions
-======================================
+:mod:`!math` --- Mathematical functions
+=======================================
 
 .. module:: math
    :synopsis: Mathematical functions (sin() etc.).

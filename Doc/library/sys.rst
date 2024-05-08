@@ -1,5 +1,5 @@
-:mod:`sys` --- System-specific parameters and functions
-=======================================================
+:mod:`!sys` --- System-specific parameters and functions
+========================================================
 
 .. module:: sys
    :synopsis: Access system-specific parameters and functions.

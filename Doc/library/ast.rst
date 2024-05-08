@@ -1,5 +1,5 @@
-:mod:`ast` --- Abstract Syntax Trees
-====================================
+:mod:`!ast` --- Abstract Syntax Trees
+=====================================
 
 .. module:: ast
    :synopsis: Abstract Syntax Tree classes and manipulation.
