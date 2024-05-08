@@ -1,5 +1,5 @@
-:mod:`socketserver` --- A framework for network servers
-=======================================================
+:mod:`!socketserver` --- A framework for network servers
+========================================================
 
 .. module:: socketserver
    :synopsis: A framework for network servers.

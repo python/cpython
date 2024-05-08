@@ -19,9 +19,6 @@ race:_PyImport_AcquireLock
 race:_PyImport_ReleaseLock
 race:_PyInterpreterState_SetNotRunningMain
 race:_PyInterpreterState_IsRunningMain
-race:_PyObject_GC_IS_SHARED
-race:_PyObject_GC_SET_SHARED
-race:_PyObject_GC_TRACK
 # https://gist.github.com/mpage/0a24eb2dd458441ededb498e9b0e5de8
 race:_PyParkingLot_Park
 race:_PyType_HasFeature
