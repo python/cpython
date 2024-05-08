@@ -40,7 +40,7 @@ TclError = _tkinter.TclError
 from tkinter.constants import *
 import re
 
-wantobjects = 2
+wantobjects = 1
 _debug = False  # set to True to print executed Tcl/Tk commands
 
 TkVersion = float(_tkinter.TK_VERSION)
