@@ -20,7 +20,7 @@ static inline int
 _PyObject_HasDeferredRefcount(PyObject *op)
 {
 #ifdef Py_GIL_DISABLED
-    return (op->ob_gc_bits & _PyGC_BITS_DEFERRED) != 0;
+    return _PyObject_HAS_GC_BITS(op, _PyGC_BITS_DEFERRED);
 #else
     return 0;
 #endif
