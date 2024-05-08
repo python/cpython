@@ -1946,6 +1946,15 @@ _PyFrame_GetLocals(_PyInterpreterFrame *frame)
     PyCodeObject *co = _PyFrame_GetCode(frame);
 
     if (!(co->co_flags & CO_OPTIMIZED) && !_PyFrame_HasHiddenLocals(frame)) {
+        if (frame->f_locals == NULL) {
+            // We found cases when f_locals is NULL for non-optimized code.
+            // We fill the f_locals with an empty dict to avoid crash until
+            // we find the root cause.
+            frame->f_locals = PyDict_New();
+            if (frame->f_locals == NULL) {
+                return NULL;
+            }
+        }
         return Py_NewRef(frame->f_locals);
     }
 
