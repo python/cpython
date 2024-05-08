@@ -212,7 +212,9 @@ drop_gil_impl(PyThreadState *tstate, struct _gil_runtime_state *gil)
     _Py_ANNOTATE_RWLOCK_RELEASED(&gil->locked, /*is_write=*/1);
     _Py_atomic_store_int_relaxed(&gil->locked, 0);
 #ifdef Py_GIL_DISABLED
-    tstate->_status.holds_gil = 0;
+    if (tstate != NULL) {
+        tstate->_status.holds_gil = 0;
+    }
 #endif
     COND_SIGNAL(gil->cond);
     MUTEX_UNLOCK(gil->mutex);
@@ -231,10 +233,13 @@ drop_gil(PyInterpreterState *interp, PyThreadState *tstate, int thread_dying)
     // XXX It may be more correct to check tstate->_status.finalizing.
     // XXX assert(thread_dying || !tstate->_status.cleared);
 
-    assert(tstate != NULL);
+    assert(thread_dying || tstate != NULL);
     struct _gil_runtime_state *gil = ceval->gil;
 #ifdef Py_GIL_DISABLED
-    if (!tstate->_status.holds_gil) {
+    // Check if we have the GIL before dropping it. tstate will be NULL if
+    // take_gil() detected that this thread has been destroyed, in which case
+    // we know we have the GIL.
+    if (tstate != NULL && !tstate->_status.holds_gil) {
         return;
     }
 #endif
@@ -397,7 +402,7 @@ take_gil(PyThreadState *tstate)
            in take_gil() while the main thread called
            wait_for_thread_shutdown() from Py_Finalize(). */
         MUTEX_UNLOCK(gil->mutex);
-        drop_gil(interp, tstate, 1);
+        drop_gil(interp, NULL, 1);
         PyThread_exit_thread();
     }
     assert(_PyThreadState_CheckConsistency(tstate));
