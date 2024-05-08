@@ -346,7 +346,7 @@ do {                                                                            
 #endif
 
 int
-safe_memcpy(void *restrict dest, const void *restrict src, size_t count)
+safe_memcpy(void *dest, const void *src, size_t count)
 {
     HANDLE_INVALID_MEM(
         memcpy(dest, src, count);
