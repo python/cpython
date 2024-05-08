@@ -235,9 +235,9 @@ if 0:
             if 0:
                 # This is maximally clear, but "too slow". `decimal`
                 # division is asymptotically fast, but we have no way to
-                # tell it to reuse the high-precision reciprocal
-                # approximations it computes for pow2to5[w2], so it has
-                # to recompute them over & over & over again :-(
+                # tell it to reuse the high-precision reciprocala it
+                # computes for pow2to5[w2], so it has to recompute them
+                # over & over & over again :-(
                 hi, lo = divmod(n, pow2to8[w2])
             else:
                 # The only division in this alternative is by a power of
