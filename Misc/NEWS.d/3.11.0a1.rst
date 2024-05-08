@@ -2722,7 +2722,7 @@ Importing typing.io or typing.re now prints a ``DeprecationWarning``.
 .. section: Library
 
 argparse actions store_const and append_const each receive a default value
-of None when the ``const`` kwarg is not provided. Previously, this raised a
+of ``None`` when the ``const`` kwarg is not provided. Previously, this raised a
 :exc:`TypeError`.
 
 ..
@@ -3995,7 +3995,7 @@ operator expressions.
 .. section: Documentation
 
 Document that :class:`collections.defaultdict` parameter ``default_factory``
-defaults to None and is positional-only.
+defaults to ``None`` and is positional-only.
 
 ..
 
