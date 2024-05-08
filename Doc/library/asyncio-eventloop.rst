@@ -796,7 +796,7 @@ Creating network servers
    :class:`str`, :class:`bytes`, and :class:`~pathlib.Path` paths
    are supported.
 
-   If *cleanup_socket* is True then the Unix socket will automatically
+   If *cleanup_socket* is true then the Unix socket will automatically
    be removed from the filesystem when the server is closed, unless the
    socket has been replaced after the server has been created.
 

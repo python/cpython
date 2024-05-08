@@ -218,7 +218,7 @@ The following classes are provided:
 
    An appropriate ``Content-Type`` header should be included if the *data*
    argument is present.  If this header has not been provided and *data*
-   is not None, ``Content-Type: application/x-www-form-urlencoded`` will
+   is not ``None``, ``Content-Type: application/x-www-form-urlencoded`` will
    be added as a default.
 
    The next two arguments are only of interest for correct handling

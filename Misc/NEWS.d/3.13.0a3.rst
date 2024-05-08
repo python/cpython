@@ -269,7 +269,7 @@ Correctly compute end column offsets for multiline tokens in the
 .. nonce: 4ADN7i
 .. section: Core and Builtins
 
-Fix None.__ne__(None) returning NotImplemented instead of False
+Fix ``None.__ne__(None)`` returning ``NotImplemented`` instead of ``False``.
 
 ..
 

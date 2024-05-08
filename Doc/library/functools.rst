@@ -325,7 +325,7 @@ The :mod:`functools` module defines the following functions:
    .. versionadded:: 3.2
 
    .. versionchanged:: 3.4
-      Returning NotImplemented from the underlying comparison function for
+      Returning ``NotImplemented`` from the underlying comparison function for
       unrecognised types is now supported.
 
 .. function:: partial(func, /, *args, **keywords)

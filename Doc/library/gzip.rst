@@ -102,7 +102,7 @@ The module defines the following items:
 
    The optional *mtime* argument is the timestamp requested by gzip. The time
    is in Unix format, i.e., seconds since 00:00:00 UTC, January 1, 1970.
-   If *mtime* is omitted or None, the current time is used. Use *mtime* = 0
+   If *mtime* is omitted or ``None``, the current time is used. Use *mtime* = 0
    to generate a compressed stream that does not depend on creation time.
 
    See below for the :attr:`mtime` attribute that is set when decompressing.

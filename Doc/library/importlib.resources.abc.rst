@@ -103,11 +103,11 @@
 
     .. abstractmethod:: is_dir()
 
-       Return True if self is a directory.
+       Return ``True`` if self is a directory.
 
     .. abstractmethod:: is_file()
 
-       Return True if self is a file.
+       Return ``True`` if self is a file.
 
     .. abstractmethod:: joinpath(*pathsegments)
 

@@ -3436,7 +3436,8 @@ added support for this decorator. Patch by Alex Waygood.
 .. nonce: C1ahtk
 .. section: Library
 
-Make pydoc.doc catch bad module ImportError when output stream is not None.
+Make :func:`pydoc.doc` catch bad module :exc:`ImportError`
+when output stream is not ``None``.
 
 ..
 

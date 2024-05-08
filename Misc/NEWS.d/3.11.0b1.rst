@@ -58,10 +58,10 @@ may have prevented Python-to-Python calls respecting PEP 523.
 .. nonce: -igcjS
 .. section: Core and Builtins
 
-Add a closure keyword-only parameter to exec(). It can only be specified
+Add a closure keyword-only parameter to :func:`exec()`. It can only be specified
 when exec-ing a code object that uses free variables. When specified, it
 must be a tuple, with exactly the number of cell variables referenced by the
-code object. closure has a default value of None, and it must be None if the
+code object. closure has a default value of ``None``, and it must be ``None`` if the
 code object doesn't refer to any free variables.
 
 ..
@@ -664,8 +664,9 @@ for :func:`os.fcopyfile` available in macOs.
 .. nonce: l1p7CJ
 .. section: Library
 
-For @dataclass, add weakref_slot. Default is False. If True, and if
-slots=True, add a slot named "__weakref__", which will allow instances to be
+For :func:`@dataclass <dataclasses.dataclass>`, add *weakref_slot*.
+The new parameter defaults to ``False``. If true, and if
+``slots=True``, add a slot named ``"__weakref__"``, which will allow instances to be
 weakref'd. Contributed by Eric V. Smith
 
 ..
