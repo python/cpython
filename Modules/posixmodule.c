@@ -5458,6 +5458,51 @@ os__path_islink_impl(PyObject *module, PyObject *path)
     Py_RETURN_FALSE;
 }
 
+
+/*[clinic input]
+os._path_isjunction
+
+    path: 'O'
+
+Test whether a path is a junction
+
+[clinic start generated code]*/
+
+static PyObject *
+os__path_isjunction_impl(PyObject *module, PyObject *path)
+/*[clinic end generated code: output=7b05da937984af21 input=239b95842b12dd68]*/
+{
+    path_t _path = PATH_T_INITIALIZE("isjunction", "path", 0, 1);
+    BOOL result = FALSE;
+
+    if (!path_converter(path, &_path)) {
+        path_cleanup(&_path);
+        if (PyErr_ExceptionMatches(PyExc_ValueError)) {
+            PyErr_Clear();
+            Py_RETURN_FALSE;
+        }
+        return NULL;
+    }
+
+    Py_BEGIN_ALLOW_THREADS
+    if (_path.fd != -1) {
+        HANDLE hfile = _Py_get_osfhandle_noraise(_path.fd);
+        if (hfile != INVALID_HANDLE_VALUE) {
+            result = _testFileTypeByHandle(hfile, PY_IFMNT, TRUE);
+        }
+    }
+    else if (_path.wide) {
+        result = _testFileTypeByName(_path.wide, PY_IFMNT);
+    }
+    Py_END_ALLOW_THREADS
+
+    path_cleanup(&_path);
+    if (result) {
+        Py_RETURN_TRUE;
+    }
+    Py_RETURN_FALSE;
+}
+
 #undef PY_IFREG
 #undef PY_IFDIR
 #undef PY_IFLNK

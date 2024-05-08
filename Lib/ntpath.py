@@ -288,21 +288,6 @@ def dirname(p):
     return split(p)[0]
 
 
-# Is a path a junction?
-
-if hasattr(os.stat_result, 'st_reparse_tag'):
-    def isjunction(path):
-        """Test whether a path is a junction"""
-        try:
-            st = os.lstat(path)
-        except (OSError, ValueError, AttributeError):
-            return False
-        return st.st_reparse_tag == stat.IO_REPARSE_TAG_MOUNT_POINT
-else:
-    # Use genericpath.isjunction as imported above
-    pass
-
-
 # Is a path a mount point?
 # Any drive letter root (eg c:\)
 # Any share UNC (eg \\server\share)
@@ -917,6 +902,7 @@ try:
     from nt import _path_isdir as isdir
     from nt import _path_isfile as isfile
     from nt import _path_islink as islink
+    from nt import _path_isjunction as isjunction
     from nt import _path_exists as exists
 except ImportError:
     # Use genericpath.* as imported above

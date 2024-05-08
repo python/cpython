@@ -1114,6 +1114,8 @@ class TestNtpath(NtpathTestCase):
         self.assertFalse(inspect.isfunction(os.path.isfile))
         self.assertTrue(os.path.islink is nt._path_islink)
         self.assertFalse(inspect.isfunction(os.path.islink))
+        self.assertTrue(os.path.isjunction is nt._path_isjunction)
+        self.assertFalse(inspect.isfunction(os.path.isjunction))
         self.assertTrue(os.path.exists is nt._path_exists)
         self.assertFalse(inspect.isfunction(os.path.exists))
 

@@ -2248,6 +2248,65 @@ exit:
 
 #endif /* defined(MS_WINDOWS) */
 
+#if defined(MS_WINDOWS)
+
+PyDoc_STRVAR(os__path_isjunction__doc__,
+"_path_isjunction($module, /, path)\n"
+"--\n"
+"\n"
+"Test whether a path is a junction");
+
+#define OS__PATH_ISJUNCTION_METHODDEF    \
+    {"_path_isjunction", _PyCFunction_CAST(os__path_isjunction), METH_FASTCALL|METH_KEYWORDS, os__path_isjunction__doc__},
+
+static PyObject *
+os__path_isjunction_impl(PyObject *module, PyObject *path);
+
+static PyObject *
+os__path_isjunction(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(path), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"path", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "_path_isjunction",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    PyObject *path;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    path = args[0];
+    return_value = os__path_isjunction_impl(module, path);
+
+exit:
+    return return_value;
+}
+
+#endif /* defined(MS_WINDOWS) */
+
 PyDoc_STRVAR(os__path_splitroot_ex__doc__,
 "_path_splitroot_ex($module, /, path)\n"
 "--\n"
@@ -12113,6 +12172,10 @@ os__supports_virtual_terminal(PyObject *module, PyObject *Py_UNUSED(ignored))
     #define OS__PATH_ISLINK_METHODDEF
 #endif /* !defined(OS__PATH_ISLINK_METHODDEF) */
 
+#ifndef OS__PATH_ISJUNCTION_METHODDEF
+    #define OS__PATH_ISJUNCTION_METHODDEF
+#endif /* !defined(OS__PATH_ISJUNCTION_METHODDEF) */
+
 #ifndef OS_NICE_METHODDEF
     #define OS_NICE_METHODDEF
 #endif /* !defined(OS_NICE_METHODDEF) */
@@ -12660,4 +12723,4 @@ os__supports_virtual_terminal(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF
     #define OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF
 #endif /* !defined(OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF) */
-/*[clinic end generated code: output=c4698b47007cd6eb input=a9049054013a1b77]*/
+/*[clinic end generated code: output=034909a9050aa9b8 input=a9049054013a1b77]*/
