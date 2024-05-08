@@ -118,7 +118,7 @@ Number-theoretic and representation functions
 
    For further discussion and two alternative approaches, see the `ASPN cookbook
    recipes for accurate floating point summation
-   <https://code.activestate.com/recipes/393090/>`_\.
+   <https://code.activestate.com/recipes/393090-binary-floating-point-summation-accurate-to-full-p/>`_\.
 
 
 .. function:: gcd(*integers)
