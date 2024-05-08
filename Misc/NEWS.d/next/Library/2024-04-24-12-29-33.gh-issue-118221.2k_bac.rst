@@ -1,3 +1,0 @@
-Fix a bug where :meth:`sqlite3.Connection.iterdump` could fail if a custom
-:attr:`row factory <sqlite3.Connection.row_factory>` was used. Patch by Erlend
-Aasland.
