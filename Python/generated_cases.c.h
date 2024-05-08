@@ -4920,7 +4920,7 @@
             INSTRUCTION_STATS(LOAD_FAST_CHECK);
             _PyStackRef value;
             value = GETLOCAL(oparg);
-            if (value.bits == 0) {
+            if (PyStackRef_IsNull(value)) {
                 _PyEval_FormatExcCheckArg(tstate, PyExc_UnboundLocalError,
                     UNBOUNDLOCAL_ERROR_MSG,
                     PyTuple_GetItem(_PyFrame_GetCode(frame)->co_localsplusnames, oparg)

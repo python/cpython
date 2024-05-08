@@ -1493,7 +1493,7 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno, void *Py_UNUSED(ignore
     for (int i = 0; i < code->co_nlocalsplus; i++) {
         // Counting every unbound local is overly-cautious, but a full flow
         // analysis (like we do in the compiler) is probably too expensive:
-        unbound += f->f_frame->localsplus[i].bits == 0;
+        unbound += PyStackRef_IsNull(f->f_frame->localsplus[i]);
     }
     if (unbound) {
         const char *e = "assigning None to %d unbound local%s";
@@ -1504,7 +1504,7 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno, void *Py_UNUSED(ignore
         // Do this in a second pass to avoid writing a bunch of Nones when
         // warnings are being treated as errors and the previous bit raises:
         for (int i = 0; i < code->co_nlocalsplus; i++) {
-            if (f->f_frame->localsplus[i].bits == 0) {
+            if (PyStackRef_IsNull(f->f_frame->localsplus[i])) {
                 f->f_frame->localsplus[i] = PyStackRef_NewRefDeferred(Py_None);
                 unbound--;
             }

@@ -21,6 +21,12 @@ static const _PyStackRef Py_STACKREF_NULL = { .bits = 0 };
 #define Py_TAG_DEFERRED (1)
 
 static inline int
+PyStackRef_IsNull(_PyStackRef stackref)
+{
+    return stackref.bits == 0;
+}
+
+static inline int
 PyStackRef_IsDeferred(_PyStackRef ref)
 {
     return ((ref.bits & Py_TAG_DEFERRED) == Py_TAG_DEFERRED);
@@ -195,7 +201,7 @@ PyStackRef_NewRef(_PyStackRef obj)
 static inline _PyStackRef
 PyStackRef_XNewRef(_PyStackRef obj)
 {
-    if (obj.bits == Py_STACKREF_NULL.bits) {
+    if (PyStackRef_IsNull(obj)) {
         return obj;
     }
     return PyStackRef_NewRef(obj);
