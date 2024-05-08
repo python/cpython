@@ -1723,9 +1723,13 @@ class Misc:
         def getint_event(s):
             """Tk changed behavior in 8.4.2, returning "??" rather more often."""
             try:
-                return getint(s)
+                return getint(unpack(s))
             except (ValueError, TclError):
                 return s
+        def unpack(s):
+            if isinstance(s, tuple) and len(s) == 1:
+                s, = s
+            return s
 
         nsign, b, f, h, k, s, t, w, x, y, A, E, K, N, W, T, X, Y, D = args
         # Missing: (a, c, d, m, o, v, B, R)
@@ -1754,8 +1758,8 @@ class Misc:
         e.width = getint_event(w)
         e.x = getint_event(x)
         e.y = getint_event(y)
-        e.char = A
-        try: e.send_event = getboolean(E)
+        e.char = unpack(A)
+        try: e.send_event = getboolean(unpack(E))
         except TclError: pass
         e.keysym = K
         e.keysym_num = getint_event(N)
