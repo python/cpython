@@ -10,7 +10,7 @@ Note: for ease of maintainability, please prefer clear code and avoid
 "micro-optimizations".  This module will only be imported and used for
 integers with a huge number of digits.  Saving a few microseconds with
 tricky or non-obvious code is not worth it.  For people looking for
-maximum performance, they should use somethig like gmpy2."""
+maximum performance, they should use something like gmpy2."""
 
 import re
 import decimal
