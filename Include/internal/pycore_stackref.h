@@ -35,33 +35,33 @@ PyStackRef_IsDeferred(_PyStackRef ref)
 // Gets a PyObject * from a _PyStackRef
 #if defined(Py_GIL_DISABLED)
 static inline PyObject *
-PyStackRef_Get(_PyStackRef tagged)
+PyStackRef_To_PyObject_Steal(_PyStackRef tagged)
 {
     PyObject *cleared = ((PyObject *)((tagged).bits & (~Py_TAG_DEFERRED)));
     return cleared;
 }
 #else
-#   define PyStackRef_Get(tagged) ((PyObject *)((tagged).bits))
+#   define PyStackRef_To_PyObject_Steal(tagged) ((PyObject *)((tagged).bits))
 #endif
 
 // Converts a PyObject * to a PyStackRef, stealing the reference.
 #if defined(Py_GIL_DISABLED)
 static inline _PyStackRef
-_PyStackRef_StealRef(PyObject *obj)
+_PyObject_To_StackRef_Steal(PyObject *obj)
 {
     // Make sure we don't take an already tagged value.
     assert(((uintptr_t)obj & Py_TAG_DEFERRED) == 0);
     return ((_PyStackRef){.bits = ((uintptr_t)(obj))});
 }
-#   define PyStackRef_StealRef(obj) _PyStackRef_StealRef(_PyObject_CAST(obj))
+#   define PyObject_To_StackRef_Steal(obj) _PyObject_To_StackRef_Steal(_PyObject_CAST(obj))
 #else
-#   define PyStackRef_StealRef(obj) ((_PyStackRef){.bits = ((uintptr_t)(obj))})
+#   define PyObject_To_StackRef_Steal(obj) ((_PyStackRef){.bits = ((uintptr_t)(obj))})
 #endif
 
 // Converts a PyObject * to a PyStackRef, with a new reference
 #if defined(Py_GIL_DISABLED)
 static inline _PyStackRef
-PyStackRef_NewRefDeferred(PyObject *obj)
+PyObject_To_StackRef_New(PyObject *obj)
 {
     // Make sure we don't take an already tagged value.
     assert(((uintptr_t)obj & Py_TAG_DEFERRED) == 0);
@@ -73,9 +73,9 @@ PyStackRef_NewRefDeferred(PyObject *obj)
         return (_PyStackRef){ .bits = (uintptr_t)Py_NewRef(obj) };
     }
 }
-#   define PyStackRef_NewRefDeferred(obj) PyStackRef_NewRefDeferred(_PyObject_CAST(obj))
+#   define PyObject_To_StackRef_New(obj) PyObject_To_StackRef_New(_PyObject_CAST(obj))
 #else
-#   define PyStackRef_NewRefDeferred(obj) PyStackRef_NewRef(((_PyStackRef){.bits = ((uintptr_t)(obj))}))
+#   define PyObject_To_StackRef_New(obj) PyStackRef_NewRef(((_PyStackRef){.bits = ((uintptr_t)(obj))}))
 #endif
 
 #if defined(Py_GIL_DISABLED)
@@ -87,7 +87,7 @@ _PyStackRef_XNewRefDeferred(PyObject *obj)
     if (obj == NULL) {
         return Py_STACKREF_NULL;
     }
-    return PyStackRef_NewRefDeferred(obj);
+    return PyObject_To_StackRef_New(obj);
 }
 #   define PyStackRef_XNewRefDeferred(obj) _PyStackRef_XNewRefDeferred(_PyObject_CAST(obj))
 #else
@@ -97,24 +97,24 @@ _PyStackRef_XNewRefDeferred(PyObject *obj)
 // Converts a PyStackRef back to a PyObject *.
 #if defined(Py_GIL_DISABLED)
 static inline PyObject *
-PyStackRef_StealObject(_PyStackRef tagged)
+PyStackRef_To_PyObject_New(_PyStackRef tagged)
 {
     if (PyStackRef_IsDeferred(tagged)) {
-        assert(_PyObject_HasDeferredRefcount(PyStackRef_Get(tagged)) ||
-            _Py_IsImmortal(PyStackRef_Get(tagged)));
-        return Py_NewRef(PyStackRef_Get(tagged));
+        assert(_PyObject_HasDeferredRefcount(PyStackRef_To_PyObject_Steal(tagged)) ||
+            _Py_IsImmortal(PyStackRef_To_PyObject_Steal(tagged)));
+        return Py_NewRef(PyStackRef_To_PyObject_Steal(tagged));
     }
-    return PyStackRef_Get(tagged);
+    return PyStackRef_To_PyObject_Steal(tagged);
 }
 #else
-#   define PyStackRef_StealObject(tagged) PyStackRef_Get(tagged)
+#   define PyStackRef_To_PyObject_New(tagged) PyStackRef_To_PyObject_Steal(tagged)
 #endif
 
 static inline void
 _Py_untag_stack_borrowed(PyObject **dst, const _PyStackRef *src, size_t length)
 {
     for (size_t i = 0; i < length; i++) {
-        dst[i] = PyStackRef_Get(src[i]);
+        dst[i] = PyStackRef_To_PyObject_Steal(src[i]);
     }
 }
 
@@ -122,7 +122,7 @@ static inline void
 _Py_untag_stack_steal(PyObject **dst, const _PyStackRef *src, size_t length)
 {
     for (size_t i = 0; i < length; i++) {
-        dst[i] = PyStackRef_StealObject(src[i]);
+        dst[i] = PyStackRef_To_PyObject_New(src[i]);
     }
 }
 
@@ -162,10 +162,10 @@ PyStackRef_DECREF(_PyStackRef tagged)
         // The GC unsets deferred objects right before clearing.
         return;
     }
-    Py_DECREF(PyStackRef_Get(tagged));
+    Py_DECREF(PyStackRef_To_PyObject_Steal(tagged));
 }
 #else
-#   define PyStackRef_DECREF(op) Py_DECREF(PyStackRef_Get(op))
+#   define PyStackRef_DECREF(op) Py_DECREF(PyStackRef_To_PyObject_Steal(op))
 #endif
 
 #if defined(Py_GIL_DISABLED)
@@ -173,14 +173,14 @@ static inline void
 PyStackRef_INCREF(_PyStackRef tagged)
 {
     if (PyStackRef_IsDeferred(tagged)) {
-        assert(_PyObject_HasDeferredRefcount(PyStackRef_Get(tagged)) ||
-                   _Py_IsImmortal(PyStackRef_Get(tagged)));
+        assert(_PyObject_HasDeferredRefcount(PyStackRef_To_PyObject_Steal(tagged)) ||
+                   _Py_IsImmortal(PyStackRef_To_PyObject_Steal(tagged)));
         return;
     }
-    Py_INCREF(PyStackRef_Get(tagged));
+    Py_INCREF(PyStackRef_To_PyObject_Steal(tagged));
 }
 #else
-#   define PyStackRef_INCREF(op) Py_INCREF(PyStackRef_Get(op))
+#   define PyStackRef_INCREF(op) Py_INCREF(PyStackRef_To_PyObject_Steal(op))
 #endif
 
 static inline void

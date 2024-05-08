@@ -1545,7 +1545,7 @@ _PyObject_GetMethodStackRef(PyObject *obj, PyObject *name, _PyStackRef *method)
 
     int meth_found = 0;
 
-    assert(PyStackRef_Get(*method) == NULL);
+    assert(PyStackRef_To_PyObject_Steal(*method) == NULL);
 
     PyTypeObject *tp = Py_TYPE(obj);
     if (!_PyType_IsReady(tp)) {
@@ -1555,7 +1555,7 @@ _PyObject_GetMethodStackRef(PyObject *obj, PyObject *name, _PyStackRef *method)
     }
 
     if (tp->tp_getattro != PyObject_GenericGetAttr || !PyUnicode_CheckExact(name)) {
-        *method = PyStackRef_StealRef(PyObject_GetAttr(obj, name));
+        *method = PyObject_To_StackRef_Steal(PyObject_GetAttr(obj, name));
         return 0;
     }
 
@@ -1575,7 +1575,7 @@ _PyObject_GetMethodStackRef(PyObject *obj, PyObject *name, _PyStackRef *method)
         } else {
             f = Py_TYPE(descr)->tp_descr_get;
             if (f != NULL && PyDescr_IsData(descr)) {
-                *method = PyStackRef_StealRef(f(descr, obj, (PyObject *)Py_TYPE(obj)));
+                *method = PyObject_To_StackRef_Steal(f(descr, obj, (PyObject *)Py_TYPE(obj)));
                 PyStackRef_DECREF(descr_stackref);
                 return 0;
             }
@@ -1585,7 +1585,7 @@ _PyObject_GetMethodStackRef(PyObject *obj, PyObject *name, _PyStackRef *method)
     if ((tp->tp_flags & Py_TPFLAGS_INLINE_VALUES) &&
         _PyObject_TryGetInstanceAttribute(obj, name, &attr)) {
         if (attr != NULL) {
-            *method = PyStackRef_StealRef(attr);
+            *method = PyObject_To_StackRef_Steal(attr);
             PyStackRef_XDECREF(descr_stackref);
             return 0;
         }
@@ -1607,7 +1607,7 @@ _PyObject_GetMethodStackRef(PyObject *obj, PyObject *name, _PyStackRef *method)
         Py_INCREF(dict);
         PyObject *item;
         if (PyDict_GetItemRef(dict, name, &item) != 0) {
-            *method = PyStackRef_StealRef(item);
+            *method = PyObject_To_StackRef_Steal(item);
             // found or error
             Py_DECREF(dict);
             PyStackRef_XDECREF(descr_stackref);
@@ -1623,7 +1623,7 @@ _PyObject_GetMethodStackRef(PyObject *obj, PyObject *name, _PyStackRef *method)
     }
 
     if (f != NULL) {
-        *method = PyStackRef_StealRef(f(descr, obj, (PyObject *)Py_TYPE(obj)));
+        *method = PyObject_To_StackRef_Steal(f(descr, obj, (PyObject *)Py_TYPE(obj)));
         PyStackRef_DECREF(descr_stackref);
         return 0;
     }

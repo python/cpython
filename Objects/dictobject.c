@@ -2123,7 +2123,7 @@ _PyDict_FromStackRefItems(_PyStackRef const *keys, Py_ssize_t keys_offset,
     PyInterpreterState *interp = _PyInterpreterState_GET();
 
     for (Py_ssize_t i = 0; i < length; i++) {
-        if (!PyUnicode_CheckExact(PyStackRef_Get(*ks))) {
+        if (!PyUnicode_CheckExact(PyStackRef_To_PyObject_Steal(*ks))) {
             unicode = false;
             break;
         }
@@ -2139,8 +2139,8 @@ _PyDict_FromStackRefItems(_PyStackRef const *keys, Py_ssize_t keys_offset,
     _PyStackRef const *vs = values;
 
     for (Py_ssize_t i = 0; i < length; i++) {
-        PyObject *key = PyStackRef_Get(*ks);
-        PyObject *value = PyStackRef_Get(*vs);
+        PyObject *key = PyStackRef_To_PyObject_Steal(*ks);
+        PyObject *value = PyStackRef_To_PyObject_Steal(*vs);
         if (setitem_lock_held((PyDictObject *)dict, key, value) < 0) {
             Py_DECREF(dict);
             return NULL;

@@ -26,7 +26,7 @@ _PyFrame_Traverse(_PyInterpreterFrame *frame, visitproc visit, void *arg)
             continue;
         }
 #endif
-        Py_VISIT(PyStackRef_Get(locals[i]));
+        Py_VISIT(PyStackRef_To_PyObject_Steal(locals[i]));
     }
     return 0;
 }

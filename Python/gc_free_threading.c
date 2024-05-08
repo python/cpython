@@ -305,7 +305,7 @@ gc_visit_stackref(_PyStackRef ref)
     // Otherwise we might read into invalid memory due to non-deferred references
     // being dead already.
     if (PyStackRef_IsDeferred(ref)) {
-        PyObject *obj = PyStackRef_Get(ref);
+        PyObject *obj = PyStackRef_To_PyObject_Steal(ref);
         if (!_Py_IsImmortal(obj)) {
             gc_add_refs(obj, 1);
         }

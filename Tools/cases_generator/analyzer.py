@@ -352,9 +352,9 @@ def has_error_without_pop(op: parser.InstDef) -> bool:
 
 
 NON_ESCAPING_FUNCTIONS = (
-    "PyStackRef_StealRef",
-    "PyStackRef_Get",
-    "PyStackRef_StealObject",
+    "PyObject_To_StackRef_Steal",
+    "PyStackRef_To_PyObject_Steal",
+    "PyStackRef_To_PyObject_New",
     "PyStackRef_DECREF",
     "PyStackRef_XDECREF",
     "PyStackRef_INCREF",
@@ -363,7 +363,7 @@ NON_ESCAPING_FUNCTIONS = (
     "PyStackRef_CLEAR",
     "PyStackRef_SETREF",
     "PyStackRef_XSETREF",
-    "PyStackRef_NewRefDeferred",
+    "PyObject_To_StackRef_New",
     "Py_INCREF",
     "_PyManagedDictPointer_IsValues",
     "_PyObject_GetManagedDict",
