@@ -8,19 +8,11 @@ on:
   push:
     branches:
     - 'main'
-    - '3.12'
-    - '3.11'
-    - '3.10'
-    - '3.9'
-    - '3.8'
+    - '3.*'
   pull_request:
     branches:
     - 'main'
-    - '3.12'
-    - '3.11'
-    - '3.10'
-    - '3.9'
-    - '3.8'
+    - '3.*'
 
 permissions:
   contents: read
@@ -208,7 +200,7 @@ jobs:
     with:
       config_hash: ${{ needs.check_source.outputs.config_hash }}
       # macos-14 is M1, macos-13 is Intel
-      os-matrix: '["macos-14-xlarge", "macos-13-large"]'
+      os-matrix: '["macos-14", "macos-13"]'
 
   build_macos_free_threading:
     name: 'macOS (free-threading)'
@@ -219,7 +211,7 @@ jobs:
       config_hash: ${{ needs.check_source.outputs.config_hash }}
       free-threading: true
       # macos-14-large is Intel with 12 cores (most parallelism)
-      os-matrix: '["macos-14-large"]'
+      os-matrix: '["macos-14"]'
 
   build_ubuntu:
     name: 'Ubuntu'

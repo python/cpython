@@ -1,3 +1,0 @@
-Add the :func:`mimetypes.guess_file_type` function which works with file
-path. Passing file path instead of URL in :func:`~mimetypes.guess_type` is
-:term:`soft deprecated`.

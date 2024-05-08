@@ -861,9 +861,15 @@ Supported ``_sunder_`` names
      For :class:`Flag` classes the next value chosen will be the next highest
      power-of-two.
 
+- While ``_sunder_`` names are generally reserved for the further development
+  of the :class:`Enum` class and can not be used, some are explicitly allowed:
+
+  - ``_repr_*`` (e.g. ``_repr_html_``), as used in `IPython's rich display`_
+
 .. versionadded:: 3.6 ``_missing_``, ``_order_``, ``_generate_next_value_``
 .. versionadded:: 3.7 ``_ignore_``
-.. versionadded:: 3.13 ``_add_alias_``, ``_add_value_alias_``
+.. versionadded:: 3.13 ``_add_alias_``, ``_add_value_alias_``, ``_repr_*``
+.. _`IPython's rich display`: https://ipython.readthedocs.io/en/stable/config/integrating.html#rich-display
 
 ---------------
 
