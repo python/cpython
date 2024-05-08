@@ -1,0 +1,3 @@
+:class:`!typing.ByteString` and :class:`!collections.abc.ByteString` are
+removed. They had previously raised a :exc:`DeprecationWarning` since Python
+3.12.

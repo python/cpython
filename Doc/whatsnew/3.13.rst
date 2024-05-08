@@ -1573,7 +1573,7 @@ Pending Removal in Python 3.14
   Use :class:`ast.Constant` instead.
   (Contributed by Serhiy Storchaka in :gh:`90953`.)
 
-* :mod:`collections.abc`: Deprecated :class:`~collections.abc.ByteString`.
+* :mod:`collections.abc`: Deprecated :class:`!collections.abc.ByteString`.
   Prefer :class:`!Sequence` or :class:`~collections.abc.Buffer`.
   For use in typing, prefer a union, like ``bytes | bytearray``,
   or :class:`collections.abc.Buffer`.
@@ -1647,7 +1647,7 @@ Pending Removal in Python 3.14
   May be removed in 3.14.
   (Contributed by Nikita Sobolev in :gh:`101866`.)
 
-* :mod:`typing`: :class:`~typing.ByteString`, deprecated since Python 3.9,
+* :mod:`typing`: :class:`!typing.ByteString`, deprecated since Python 3.9,
   now causes a :exc:`DeprecationWarning` to be emitted when it is used.
 
 * :mod:`urllib`:

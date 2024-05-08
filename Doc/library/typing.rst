@@ -3502,14 +3502,6 @@ Aliases to container ABCs in :mod:`collections.abc`
       :class:`collections.abc.Set` now supports subscripting (``[]``).
       See :pep:`585` and :ref:`types-genericalias`.
 
-.. class:: ByteString(Sequence[int])
-
-   This type represents the types :class:`bytes`, :class:`bytearray`,
-   and :class:`memoryview` of byte sequences.
-
-   .. deprecated-removed:: 3.9 3.14
-      Prefer :class:`collections.abc.Buffer`, or a union like ``bytes | bytearray | memoryview``.
-
 .. class:: Collection(Sized, Iterable[T_co], Container[T_co])
 
    Deprecated alias to :class:`collections.abc.Collection`.
@@ -3875,10 +3867,6 @@ convenience. This is subject to change, and not all deprecations are listed.
      - 3.9
      - Undecided (see :ref:`deprecated-aliases` for more information)
      - :pep:`585`
-   * - :class:`typing.ByteString`
-     - 3.9
-     - 3.14
-     - :gh:`91896`
    * - :data:`typing.Text`
      - 3.11
      - Undecided
