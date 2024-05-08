@@ -83,12 +83,8 @@ struct _ts {
         unsigned int bound_gilstate:1;
         /* Currently in use (maybe holds the GIL). */
         unsigned int active:1;
-#ifdef Py_GIL_DISABLED
         /* Currently holds the GIL. */
         unsigned int holds_gil:1;
-#else
-        unsigned int _unused:1;
-#endif
 
         /* various stages of finalization */
         unsigned int finalizing:1;

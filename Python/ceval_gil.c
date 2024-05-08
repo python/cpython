@@ -211,11 +211,9 @@ drop_gil_impl(PyThreadState *tstate, struct _gil_runtime_state *gil)
     MUTEX_LOCK(gil->mutex);
     _Py_ANNOTATE_RWLOCK_RELEASED(&gil->locked, /*is_write=*/1);
     _Py_atomic_store_int_relaxed(&gil->locked, 0);
-#ifdef Py_GIL_DISABLED
     if (tstate != NULL) {
         tstate->_status.holds_gil = 0;
     }
-#endif
     COND_SIGNAL(gil->cond);
     MUTEX_UNLOCK(gil->mutex);
 }
@@ -377,9 +375,7 @@ take_gil(PyThreadState *tstate)
     MUTEX_LOCK(gil->switch_mutex);
 #endif
     /* We now hold the GIL */
-#ifdef Py_GIL_DISABLED
     tstate->_status.holds_gil = 1;
-#endif
     _Py_atomic_store_int_relaxed(&gil->locked, 1);
     _Py_ANNOTATE_RWLOCK_ACQUIRED(&gil->locked, /*is_write=*/1);
 
@@ -402,6 +398,8 @@ take_gil(PyThreadState *tstate)
            in take_gil() while the main thread called
            wait_for_thread_shutdown() from Py_Finalize(). */
         MUTEX_UNLOCK(gil->mutex);
+        /* tstate could be a dangling pointer, so don't pass it to
+           drop_gil(). */
         drop_gil(interp, NULL, 1);
         PyThread_exit_thread();
     }
@@ -458,17 +456,17 @@ PyEval_ThreadsInitialized(void)
 static inline int
 current_thread_holds_gil(struct _gil_runtime_state *gil, PyThreadState *tstate)
 {
-    if (((PyThreadState*)_Py_atomic_load_ptr_relaxed(&gil->last_holder)) != tstate) {
-#ifdef Py_GIL_DISABLED
-        assert(!tstate->_status.holds_gil);
-#endif
-        return 0;
-    }
+    int holds_gil = tstate->_status.holds_gil;
+
+    // holds_gil is the source of truth; check that last_holder and gil->locked
+    // are consistent with it.
     int locked = _Py_atomic_load_int_relaxed(&gil->locked);
-#ifdef Py_GIL_DISABLED
-    assert(!tstate->_status.holds_gil || locked);
-#endif
-    return locked;
+    int is_last_holder =
+        ((PyThreadState*)_Py_atomic_load_ptr_relaxed(&gil->last_holder)) == tstate;
+    assert(!holds_gil || locked);
+    assert(!holds_gil || is_last_holder);
+
+    return holds_gil;
 }
 #endif
 

@@ -2070,12 +2070,11 @@ _PyThreadState_Attach(PyThreadState *tstate)
         }
 
 #ifdef Py_GIL_DISABLED
-        if (_PyEval_IsGILEnabled(tstate) != tstate->_status.holds_gil) {
+        if (_PyEval_IsGILEnabled(tstate) && !tstate->_status.holds_gil) {
             // The GIL was enabled between our call to _PyEval_AcquireLock()
             // and when we attached (the GIL can't go from enabled to disabled
             // here because only a thread holding the GIL can disable
             // it). Detach and try again.
-            assert(!tstate->_status.holds_gil);
             tstate_set_detached(tstate, _Py_THREAD_DETACHED);
             tstate_deactivate(tstate);
             current_fast_clear(&_PyRuntime);
