@@ -1831,21 +1831,10 @@ _PyThreadState_DeleteCurrent(PyThreadState *tstate)
     _Py_EnsureTstateNotNULL(tstate);
 #ifdef Py_GIL_DISABLED
     _Py_qsbr_detach(((_PyThreadStateImpl *)tstate)->qsbr);
-    // tstate_delete_common() removes tstate from consideration for
-    // stop-the-worlds. This means that another thread could enable the GIL
-    // before our call to _PyEval_ReleaseLock(), violating its invariant that
-    // the calling thread holds the GIL if and only if the GIL is enabled. Deal
-    // with this by deciding if we need to release the GIL before
-    // tstate_delete_common(), when the invariant is still true.
-    int holds_gil = _PyEval_IsGILEnabled(tstate);
-#else
-    int holds_gil = 1;
 #endif
     current_fast_clear(tstate->interp->runtime);
     tstate_delete_common(tstate);
-    if (holds_gil) {
-        _PyEval_ReleaseLock(tstate->interp, NULL);
-    }
+    _PyEval_ReleaseLock(tstate->interp, tstate, 1);
     free_threadstate((_PyThreadStateImpl *)tstate);
 }
 
@@ -2070,7 +2059,7 @@ _PyThreadState_Attach(PyThreadState *tstate)
 
 
     while (1) {
-        int acquired_gil = _PyEval_AcquireLock(tstate);
+        _PyEval_AcquireLock(tstate);
 
         // XXX assert(tstate_is_alive(tstate));
         current_fast_set(&_PyRuntime, tstate);
@@ -2081,20 +2070,18 @@ _PyThreadState_Attach(PyThreadState *tstate)
         }
 
 #ifdef Py_GIL_DISABLED
-        if (_PyEval_IsGILEnabled(tstate) != acquired_gil) {
+        if (_PyEval_IsGILEnabled(tstate) != tstate->_status.holds_gil) {
             // The GIL was enabled between our call to _PyEval_AcquireLock()
             // and when we attached (the GIL can't go from enabled to disabled
             // here because only a thread holding the GIL can disable
             // it). Detach and try again.
-            assert(!acquired_gil);
+            assert(!tstate->_status.holds_gil);
             tstate_set_detached(tstate, _Py_THREAD_DETACHED);
             tstate_deactivate(tstate);
             current_fast_clear(&_PyRuntime);
             continue;
         }
         _Py_qsbr_attach(((_PyThreadStateImpl *)tstate)->qsbr);
-#else
-        (void)acquired_gil;
 #endif
         break;
     }
@@ -2125,7 +2112,7 @@ detach_thread(PyThreadState *tstate, int detached_state)
     tstate_deactivate(tstate);
     tstate_set_detached(tstate, detached_state);
     current_fast_clear(&_PyRuntime);
-    _PyEval_ReleaseLock(tstate->interp, tstate);
+    _PyEval_ReleaseLock(tstate->interp, tstate, 0);
 }
 
 void

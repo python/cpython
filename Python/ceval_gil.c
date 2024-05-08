@@ -205,32 +205,36 @@ static void recreate_gil(struct _gil_runtime_state *gil)
 }
 #endif
 
-static void
-drop_gil_impl(struct _gil_runtime_state *gil)
+static inline void
+drop_gil_impl(PyThreadState *tstate, struct _gil_runtime_state *gil)
 {
     MUTEX_LOCK(gil->mutex);
     _Py_ANNOTATE_RWLOCK_RELEASED(&gil->locked, /*is_write=*/1);
     _Py_atomic_store_int_relaxed(&gil->locked, 0);
+#ifdef Py_GIL_DISABLED
+    tstate->_status.holds_gil = 0;
+#endif
     COND_SIGNAL(gil->cond);
     MUTEX_UNLOCK(gil->mutex);
 }
 
 static void
-drop_gil(PyInterpreterState *interp, PyThreadState *tstate)
+drop_gil(PyInterpreterState *interp, PyThreadState *tstate, int thread_dying)
 {
     struct _ceval_state *ceval = &interp->ceval;
-    /* If tstate is NULL, the caller is indicating that we're releasing
+    /* If thread_dying is true, the caller is indicating that we're releasing
        the GIL for the last time in this thread.  This is particularly
        relevant when the current thread state is finalizing or its
        interpreter is finalizing (either may be in an inconsistent
        state).  In that case the current thread will definitely
        never try to acquire the GIL again. */
     // XXX It may be more correct to check tstate->_status.finalizing.
-    // XXX assert(tstate == NULL || !tstate->_status.cleared);
+    // XXX assert(thread_dying || !tstate->_status.cleared);
 
+    assert(tstate != NULL);
     struct _gil_runtime_state *gil = ceval->gil;
 #ifdef Py_GIL_DISABLED
-    if (!_Py_atomic_load_int_relaxed(&gil->enabled)) {
+    if (!tstate->_status.holds_gil) {
         return;
     }
 #endif
@@ -238,26 +242,23 @@ drop_gil(PyInterpreterState *interp, PyThreadState *tstate)
         Py_FatalError("drop_gil: GIL is not locked");
     }
 
-    /* tstate is allowed to be NULL (early interpreter init) */
-    if (tstate != NULL) {
+    if (!thread_dying) {
         /* Sub-interpreter support: threads might have been switched
            under our feet using PyThreadState_Swap(). Fix the GIL last
            holder variable so that our heuristics work. */
         _Py_atomic_store_ptr_relaxed(&gil->last_holder, tstate);
     }
 
-    drop_gil_impl(gil);
+    drop_gil_impl(tstate, gil);
 
 #ifdef FORCE_SWITCHING
-    /* We check tstate first in case we might be releasing the GIL for
-       the last time in this thread.  In that case there's a possible
-       race with tstate->interp getting deleted after gil->mutex is
-       unlocked and before the following code runs, leading to a crash.
-       We can use (tstate == NULL) to indicate the thread is done with
-       the GIL, and that's the only time we might delete the
-       interpreter, so checking tstate first prevents the crash.
-       See https://github.com/python/cpython/issues/104341. */
-    if (tstate != NULL &&
+    /* We might be releasing the GIL for the last time in this thread.  In that
+       case there's a possible race with tstate->interp getting deleted after
+       gil->mutex is unlocked and before the following code runs, leading to a
+       crash.  We can use thread_dying to indicate the thread is done with the
+       GIL, and that's the only time we might delete the interpreter.  See
+       https://github.com/python/cpython/issues/104341. */
+    if (!thread_dying &&
         _Py_eval_breaker_bit_is_set(tstate, _PY_GIL_DROP_REQUEST_BIT)) {
         MUTEX_LOCK(gil->switch_mutex);
         /* Not switched yet => wait */
@@ -284,7 +285,7 @@ drop_gil(PyInterpreterState *interp, PyThreadState *tstate)
    tstate must be non-NULL.
 
    Returns 1 if the GIL was acquired, or 0 if not. */
-static int
+static void
 take_gil(PyThreadState *tstate)
 {
     int err = errno;
@@ -309,7 +310,7 @@ take_gil(PyThreadState *tstate)
     struct _gil_runtime_state *gil = interp->ceval.gil;
 #ifdef Py_GIL_DISABLED
     if (!_Py_atomic_load_int_relaxed(&gil->enabled)) {
-        return 0;
+        return;
     }
 #endif
 
@@ -358,10 +359,10 @@ take_gil(PyThreadState *tstate)
     if (!_Py_atomic_load_int_relaxed(&gil->enabled)) {
         // Another thread disabled the GIL between our check above and
         // now. Don't take the GIL, signal any other waiting threads, and
-        // return 0.
+        // return.
         COND_SIGNAL(gil->cond);
         MUTEX_UNLOCK(gil->mutex);
-        return 0;
+        return;
     }
 #endif
 
@@ -371,6 +372,9 @@ take_gil(PyThreadState *tstate)
     MUTEX_LOCK(gil->switch_mutex);
 #endif
     /* We now hold the GIL */
+#ifdef Py_GIL_DISABLED
+    tstate->_status.holds_gil = 1;
+#endif
     _Py_atomic_store_int_relaxed(&gil->locked, 1);
     _Py_ANNOTATE_RWLOCK_ACQUIRED(&gil->locked, /*is_write=*/1);
 
@@ -393,9 +397,7 @@ take_gil(PyThreadState *tstate)
            in take_gil() while the main thread called
            wait_for_thread_shutdown() from Py_Finalize(). */
         MUTEX_UNLOCK(gil->mutex);
-        /* Passing NULL to drop_gil() indicates that this thread is about to
-           terminate and will never hold the GIL again. */
-        drop_gil(interp, NULL);
+        drop_gil(interp, tstate, 1);
         PyThread_exit_thread();
     }
     assert(_PyThreadState_CheckConsistency(tstate));
@@ -406,7 +408,7 @@ take_gil(PyThreadState *tstate)
     MUTEX_UNLOCK(gil->mutex);
 
     errno = err;
-    return 1;
+    return;
 }
 
 void _PyEval_SetSwitchInterval(unsigned long microseconds)
@@ -452,9 +454,16 @@ static inline int
 current_thread_holds_gil(struct _gil_runtime_state *gil, PyThreadState *tstate)
 {
     if (((PyThreadState*)_Py_atomic_load_ptr_relaxed(&gil->last_holder)) != tstate) {
+#ifdef Py_GIL_DISABLED
+        assert(!tstate->_status.holds_gil);
+#endif
         return 0;
     }
-    return _Py_atomic_load_int_relaxed(&gil->locked);
+    int locked = _Py_atomic_load_int_relaxed(&gil->locked);
+#ifdef Py_GIL_DISABLED
+    assert(!tstate->_status.holds_gil || locked);
+#endif
+    return locked;
 }
 #endif
 
@@ -563,23 +572,24 @@ PyEval_ReleaseLock(void)
     /* This function must succeed when the current thread state is NULL.
        We therefore avoid PyThreadState_Get() which dumps a fatal error
        in debug mode. */
-    drop_gil(tstate->interp, tstate);
-}
-
-int
-_PyEval_AcquireLock(PyThreadState *tstate)
-{
-    _Py_EnsureTstateNotNULL(tstate);
-    return take_gil(tstate);
+    drop_gil(tstate->interp, tstate, 0);
 }
 
 void
-_PyEval_ReleaseLock(PyInterpreterState *interp, PyThreadState *tstate)
+_PyEval_AcquireLock(PyThreadState *tstate)
 {
-    /* If tstate is NULL then we do not expect the current thread
-       to acquire the GIL ever again. */
-    assert(tstate == NULL || tstate->interp == interp);
-    drop_gil(interp, tstate);
+    _Py_EnsureTstateNotNULL(tstate);
+    take_gil(tstate);
+}
+
+void
+_PyEval_ReleaseLock(PyInterpreterState *interp,
+                    PyThreadState *tstate,
+                    int thread_dying)
+{
+    assert(tstate != NULL);
+    assert(tstate->interp == interp);
+    drop_gil(interp, tstate, thread_dying);
 }
 
 void
@@ -1136,7 +1146,7 @@ _PyEval_DisableGIL(PyThreadState *tstate)
         //
         // Drop the GIL, which will wake up any threads waiting in take_gil()
         // and let them resume execution without the GIL.
-        drop_gil_impl(gil);
+        drop_gil_impl(tstate, gil);
         return 1;
     }
     return 0;
