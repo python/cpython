@@ -32,13 +32,15 @@ from enum import IntEnum, auto, _simple_enum
 
 
 def parse(source, filename='<unknown>', mode='exec', *,
-          type_comments=False, feature_version=None):
+          type_comments=False, feature_version=None, optimize=-1):
     """
     Parse the source into an AST node.
     Equivalent to compile(source, filename, mode, PyCF_ONLY_AST).
     Pass type_comments=True to get back type comments where the syntax allows.
     """
     flags = PyCF_ONLY_AST
+    if optimize > 0:
+        flags |= PyCF_OPTIMIZED_AST
     if type_comments:
         flags |= PyCF_TYPE_COMMENTS
     if feature_version is None:
@@ -50,7 +52,7 @@ def parse(source, filename='<unknown>', mode='exec', *,
         feature_version = minor
     # Else it should be an int giving the minor version for 3.x.
     return compile(source, filename, mode, flags,
-                   _feature_version=feature_version)
+                   _feature_version=feature_version, optimize=optimize)
 
 
 def literal_eval(node_or_string):
@@ -112,7 +114,11 @@ def literal_eval(node_or_string):
     return _convert(node_or_string)
 
 
-def dump(node, annotate_fields=True, include_attributes=False, *, indent=None):
+def dump(
+    node, annotate_fields=True, include_attributes=False,
+    *,
+    indent=None, show_empty=False,
+):
     """
     Return a formatted dump of the tree in node.  This is mainly useful for
     debugging purposes.  If annotate_fields is true (by default),
@@ -123,6 +129,8 @@ def dump(node, annotate_fields=True, include_attributes=False, *, indent=None):
     include_attributes can be set to true.  If indent is a non-negative
     integer or string, then the tree will be pretty-printed with that indent
     level. None (the default) selects the single line representation.
+    If show_empty is False, then empty lists and fields that are None
+    will be omitted from the output for better readability.
     """
     def _format(node, level=0):
         if indent is not None:
@@ -135,6 +143,7 @@ def dump(node, annotate_fields=True, include_attributes=False, *, indent=None):
         if isinstance(node, AST):
             cls = type(node)
             args = []
+            args_buffer = []
             allsimple = True
             keywords = annotate_fields
             for name in node._fields:
@@ -146,6 +155,18 @@ def dump(node, annotate_fields=True, include_attributes=False, *, indent=None):
                 if value is None and getattr(cls, name, ...) is None:
                     keywords = True
                     continue
+                if (
+                    not show_empty
+                    and (value is None or value == [])
+                    # Special cases:
+                    # `Constant(value=None)` and `MatchSingleton(value=None)`
+                    and not isinstance(node, (Constant, MatchSingleton))
+                ):
+                    args_buffer.append(repr(value))
+                    continue
+                elif not keywords:
+                    args.extend(args_buffer)
+                    args_buffer = []
                 value, simple = _format(value, level)
                 allsimple = allsimple and simple
                 if keywords:
@@ -726,12 +747,11 @@ class _Unparser(NodeVisitor):
     output source code for the abstract syntax; original formatting
     is disregarded."""
 
-    def __init__(self, *, _avoid_backslashes=False):
+    def __init__(self):
         self._source = []
         self._precedences = {}
         self._type_ignores = {}
         self._indent = 0
-        self._avoid_backslashes = _avoid_backslashes
         self._in_try_star = False
 
     def interleave(self, inter, f, seq):
@@ -1104,12 +1124,21 @@ class _Unparser(NodeVisitor):
         if node.bound:
             self.write(": ")
             self.traverse(node.bound)
+        if node.default_value:
+            self.write(" = ")
+            self.traverse(node.default_value)
 
     def visit_TypeVarTuple(self, node):
         self.write("*" + node.name)
+        if node.default_value:
+            self.write(" = ")
+            self.traverse(node.default_value)
 
     def visit_ParamSpec(self, node):
         self.write("**" + node.name)
+        if node.default_value:
+            self.write(" = ")
+            self.traverse(node.default_value)
 
     def visit_TypeAlias(self, node):
         self.fill("type ")
@@ -1223,17 +1252,7 @@ class _Unparser(NodeVisitor):
 
     def visit_JoinedStr(self, node):
         self.write("f")
-        if self._avoid_backslashes:
-            with self.buffered() as buffer:
-                self._write_fstring_inner(node)
-            return self._write_str_avoiding_backslashes("".join(buffer))
 
-        # If we don't need to avoid backslashes globally (i.e., we only need
-        # to avoid them inside FormattedValues), it's cosmetically preferred
-        # to use escaped whitespace. That is, it's preferred to use backslashes
-        # for cases like: f"{x}\n". To accomplish this, we keep track of what
-        # in our buffer corresponds to FormattedValues and what corresponds to
-        # Constant parts of the f-string, and allow escapes accordingly.
         fstring_parts = []
         for value in node.values:
             with self.buffered() as buffer:
@@ -1244,25 +1263,53 @@ class _Unparser(NodeVisitor):
 
         new_fstring_parts = []
         quote_types = list(_ALL_QUOTES)
+        fallback_to_repr = False
         for value, is_constant in fstring_parts:
-            value, quote_types = self._str_literal_helper(
-                value,
-                quote_types=quote_types,
-                escape_special_whitespace=is_constant,
-            )
+            if is_constant:
+                value, new_quote_types = self._str_literal_helper(
+                    value,
+                    quote_types=quote_types,
+                    escape_special_whitespace=True,
+                )
+                if set(new_quote_types).isdisjoint(quote_types):
+                    fallback_to_repr = True
+                    break
+                quote_types = new_quote_types
+            elif "\n" in value:
+                quote_types = [q for q in quote_types if q in _MULTI_QUOTES]
+                assert quote_types
             new_fstring_parts.append(value)
+
+        if fallback_to_repr:
+            # If we weren't able to find a quote type that works for all parts
+            # of the JoinedStr, fallback to using repr and triple single quotes.
+            quote_types = ["'''"]
+            new_fstring_parts.clear()
+            for value, is_constant in fstring_parts:
+                if is_constant:
+                    value = repr('"' + value)  # force repr to use single quotes
+                    expected_prefix = "'\""
+                    assert value.startswith(expected_prefix), repr(value)
+                    value = value[len(expected_prefix):-1]
+                new_fstring_parts.append(value)
 
         value = "".join(new_fstring_parts)
         quote_type = quote_types[0]
         self.write(f"{quote_type}{value}{quote_type}")
 
-    def _write_fstring_inner(self, node):
+    def _write_fstring_inner(self, node, is_format_spec=False):
         if isinstance(node, JoinedStr):
             # for both the f-string itself, and format_spec
             for value in node.values:
-                self._write_fstring_inner(value)
+                self._write_fstring_inner(value, is_format_spec=is_format_spec)
         elif isinstance(node, Constant) and isinstance(node.value, str):
             value = node.value.replace("{", "{{").replace("}", "}}")
+
+            if is_format_spec:
+                value = value.replace("\\", "\\\\")
+                value = value.replace("'", "\\'")
+                value = value.replace('"', '\\"')
+                value = value.replace("\n", "\\n")
             self.write(value)
         elif isinstance(node, FormattedValue):
             self.visit_FormattedValue(node)
@@ -1271,16 +1318,12 @@ class _Unparser(NodeVisitor):
 
     def visit_FormattedValue(self, node):
         def unparse_inner(inner):
-            unparser = type(self)(_avoid_backslashes=True)
+            unparser = type(self)()
             unparser.set_precedence(_Precedence.TEST.next(), inner)
             return unparser.visit(inner)
 
         with self.delimit("{", "}"):
             expr = unparse_inner(node.value)
-            if "\\" in expr:
-                raise ValueError(
-                    "Unable to avoid backslash in f-string expression part"
-                )
             if expr.startswith("{"):
                 # Separate pair of opening brackets as "{ {"
                 self.write(" ")
@@ -1289,7 +1332,7 @@ class _Unparser(NodeVisitor):
                 self.write(f"!{chr(node.conversion)}")
             if node.format_spec:
                 self.write(":")
-                self._write_fstring_inner(node.format_spec)
+                self._write_fstring_inner(node.format_spec, is_format_spec=True)
 
     def visit_Name(self, node):
         self.write(node.id)
@@ -1309,8 +1352,6 @@ class _Unparser(NodeVisitor):
                 .replace("inf", _INFSTR)
                 .replace("nan", f"({_INFSTR}-{_INFSTR})")
             )
-        elif self._avoid_backslashes and isinstance(value, str):
-            self._write_str_avoiding_backslashes(value)
         else:
             self.write(repr(value))
 
@@ -1797,8 +1838,7 @@ def main():
     import argparse
 
     parser = argparse.ArgumentParser(prog='python -m ast')
-    parser.add_argument('infile', type=argparse.FileType(mode='rb'), nargs='?',
-                        default='-',
+    parser.add_argument('infile', nargs='?', default='-',
                         help='the file to parse; defaults to stdin')
     parser.add_argument('-m', '--mode', default='exec',
                         choices=('exec', 'single', 'eval', 'func_type'),
@@ -1812,9 +1852,14 @@ def main():
                         help='indentation of nodes (number of spaces)')
     args = parser.parse_args()
 
-    with args.infile as infile:
-        source = infile.read()
-    tree = parse(source, args.infile.name, args.mode, type_comments=args.no_type_comments)
+    if args.infile == '-':
+        name = '<stdin>'
+        source = sys.stdin.buffer.read()
+    else:
+        name = args.infile
+        with open(args.infile, 'rb') as infile:
+            source = infile.read()
+    tree = parse(source, name, args.mode, type_comments=args.no_type_comments)
     print(dump(tree, include_attributes=args.include_attributes, indent=args.indent))
 
 if __name__ == '__main__':

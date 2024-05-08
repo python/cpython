@@ -27,7 +27,7 @@ try:
 except ImportError:
     _testmultiphase = None
 try:
-    import _xxsubinterpreters as _interpreters
+    import _interpreters
 except ModuleNotFoundError:
     _interpreters = None
 
@@ -577,7 +577,7 @@ class PEP3147Tests:
         with util.temporary_pycache_prefix(pycache_prefix):
             self.assertEqual(
                 self.util.cache_from_source(path, optimization=''),
-                expect)
+                os.path.normpath(expect))
 
     @unittest.skipIf(sys.implementation.cache_tag is None,
                      'requires sys.implementation.cache_tag to not be None')
@@ -655,27 +655,36 @@ class MagicNumberTests(unittest.TestCase):
 @unittest.skipIf(_interpreters is None, 'subinterpreters required')
 class IncompatibleExtensionModuleRestrictionsTests(unittest.TestCase):
 
-    ERROR = re.compile("^ImportError: module (.*) does not support loading in subinterpreters")
-
     def run_with_own_gil(self, script):
-        interpid = _interpreters.create(isolated=True)
-        try:
-            _interpreters.run_string(interpid, script)
-        except _interpreters.RunFailedError as exc:
-            if m := self.ERROR.match(str(exc)):
-                modname, = m.groups()
-                raise ImportError(modname)
+        interpid = _interpreters.create('isolated')
+        def ensure_destroyed():
+            try:
+                _interpreters.destroy(interpid)
+            except _interpreters.InterpreterNotFoundError:
+                pass
+        self.addCleanup(ensure_destroyed)
+        excsnap = _interpreters.exec(interpid, script)
+        if excsnap is not None:
+            if excsnap.type.__name__ == 'ImportError':
+                raise ImportError(excsnap.msg)
 
     def run_with_shared_gil(self, script):
-        interpid = _interpreters.create(isolated=False)
-        try:
-            _interpreters.run_string(interpid, script)
-        except _interpreters.RunFailedError as exc:
-            if m := self.ERROR.match(str(exc)):
-                modname, = m.groups()
-                raise ImportError(modname)
+        interpid = _interpreters.create('legacy')
+        def ensure_destroyed():
+            try:
+                _interpreters.destroy(interpid)
+            except _interpreters.InterpreterNotFoundError:
+                pass
+        self.addCleanup(ensure_destroyed)
+        excsnap = _interpreters.exec(interpid, script)
+        if excsnap is not None:
+            if excsnap.type.__name__ == 'ImportError':
+                raise ImportError(excsnap.msg)
 
     @unittest.skipIf(_testsinglephase is None, "test requires _testsinglephase module")
+    # gh-117649: single-phase init modules are not currently supported in
+    # subinterpreters in the free-threaded build
+    @support.expected_failure_if_gil_disabled()
     def test_single_phase_init_module(self):
         script = textwrap.dedent('''
             from importlib.util import _incompatible_extension_module_restrictions
@@ -700,14 +709,22 @@ class IncompatibleExtensionModuleRestrictionsTests(unittest.TestCase):
                 self.run_with_own_gil(script)
 
     @unittest.skipIf(_testmultiphase is None, "test requires _testmultiphase module")
+    @support.requires_gil_enabled("gh-117649: not supported in free-threaded build")
     def test_incomplete_multi_phase_init_module(self):
+        # Apple extensions must be distributed as frameworks. This requires
+        # a specialist loader.
+        if support.is_apple_mobile:
+            loader = "AppleFrameworkLoader"
+        else:
+            loader = "ExtensionFileLoader"
+
         prescript = textwrap.dedent(f'''
             from importlib.util import spec_from_loader, module_from_spec
-            from importlib.machinery import ExtensionFileLoader
+            from importlib.machinery import {loader}
 
             name = '_test_shared_gil_only'
             filename = {_testmultiphase.__file__!r}
-            loader = ExtensionFileLoader(name, filename)
+            loader = {loader}(name, filename)
             spec = spec_from_loader(name, loader)
 
             ''')

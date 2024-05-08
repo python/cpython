@@ -1,0 +1,2 @@
+The ``enum`` module allows method named ``_repr_*`` to be defined on
+``Enum`` types.

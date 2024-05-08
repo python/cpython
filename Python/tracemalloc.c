@@ -2,11 +2,12 @@
 #include "pycore_fileutils.h"     // _Py_write_noraise()
 #include "pycore_gc.h"            // PyGC_Head
 #include "pycore_hashtable.h"     // _Py_hashtable_t
-#include "pycore_object.h"        // _PyType_PreHeaderSize
+#include "pycore_object.h"        // _PyType_PreHeaderSize()
 #include "pycore_pymem.h"         // _Py_tracemalloc_config
 #include "pycore_runtime.h"       // _Py_ID()
-#include "pycore_traceback.h"
+#include "pycore_traceback.h"     // _Py_DumpASCII()
 #include <pycore_frame.h>
+
 #include "frameobject.h"          // _PyInterpreterFrame_GetLine
 
 #include <stdlib.h>               // malloc()
@@ -905,6 +906,10 @@ _PyTraceMalloc_Start(int max_nframe)
         return -1;
     }
 
+    if (PyRefTracer_SetTracer(_PyTraceMalloc_TraceRef, NULL) < 0) {
+        return -1;
+    }
+
     if (tracemalloc_config.tracing) {
         /* hook already installed: do nothing */
         return 0;
@@ -1247,7 +1252,7 @@ tracemalloc_get_traceback(unsigned int domain, uintptr_t ptr)
 }
 
 
-#define PUTS(fd, str) _Py_write_noraise(fd, str, (int)strlen(str))
+#define PUTS(fd, str) (void)_Py_write_noraise(fd, str, (int)strlen(str))
 
 static void
 _PyMem_DumpFrame(int fd, frame_t * frame)
@@ -1351,8 +1356,12 @@ _PyTraceMalloc_Fini(void)
    Do nothing if tracemalloc is not tracing memory allocations
    or if the object memory block is not already traced. */
 int
-_PyTraceMalloc_NewReference(PyObject *op)
+_PyTraceMalloc_TraceRef(PyObject *op, PyRefTracerEvent event, void* Py_UNUSED(ignore))
 {
+    if (event != PyRefTracer_CREATE) {
+        return 0;
+    }
+
     assert(PyGILState_Check());
 
     if (!tracemalloc_config.tracing) {

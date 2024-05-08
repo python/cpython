@@ -78,6 +78,11 @@ def translate(pat):
     """
 
     STAR = object()
+    parts = _translate(pat, STAR, '.')
+    return _join_translated_parts(parts, STAR)
+
+
+def _translate(pat, STAR, QUESTION_MARK):
     res = []
     add = res.append
     i, n = 0, len(pat)
@@ -89,7 +94,7 @@ def translate(pat):
             if (not res) or res[-1] is not STAR:
                 add(STAR)
         elif c == '?':
-            add('.')
+            add(QUESTION_MARK)
         elif c == '[':
             j = i
             if j < n and pat[j] == '!':
@@ -146,9 +151,11 @@ def translate(pat):
         else:
             add(re.escape(c))
     assert i == n
+    return res
 
+
+def _join_translated_parts(inp, STAR):
     # Deal with STARs.
-    inp = res
     res = []
     add = res.append
     i, n = 0, len(inp)

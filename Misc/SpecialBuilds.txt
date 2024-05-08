@@ -43,13 +43,9 @@ Py_TRACE_REFS
 
 Build option: ``./configure --with-trace-refs``.
 
-Turn on heavy reference debugging.  This is major surgery.  Every PyObject grows
-two more pointers, to maintain a doubly-linked list of all live heap-allocated
-objects.  Most built-in type objects are not in this list, as they're statically
-allocated.
-
-Note that because the fundamental PyObject layout changes, Python modules
-compiled with Py_TRACE_REFS are incompatible with modules compiled without it.
+Turn on heavy reference debugging.  This is major surgery.  All live
+heap-allocated objects are traced in a hash table.  Most built-in type objects
+are not in this list, as they're statically allocated.
 
 Special gimmicks:
 
