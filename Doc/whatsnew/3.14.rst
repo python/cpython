@@ -105,6 +105,9 @@ Removed
   It had previously raised a :exc:`DeprecationWarning` since Python 3.9. (Contributed
   by Jelle Zijlstra in :gh:`118767`.)
 
+* :class:`!typing.ByteString` and :class:`!collections.abc.ByteString`
+  are removed. They had previously raised a :exc:`DeprecationWarning`
+  since Python 3.12.
 
 Porting to Python 3.14
 ======================
