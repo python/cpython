@@ -64,7 +64,6 @@ __all__ = [
 
     # ABCs (from collections.abc).
     'AbstractSet',  # collections.abc.Set.
-    'ByteString',
     'Container',
     'ContextManager',
     'Hashable',
@@ -1670,21 +1669,6 @@ class _SpecialGenericAlias(_NotIterable, _BaseGenericAlias, _root=True):
         return Union[left, self]
 
 
-class _DeprecatedGenericAlias(_SpecialGenericAlias, _root=True):
-    def __init__(
-        self, origin, nparams, *, removal_version, inst=True, name=None
-    ):
-        super().__init__(origin, nparams, inst=inst, name=name)
-        self._removal_version = removal_version
-
-    def __instancecheck__(self, inst):
-        import warnings
-        warnings._deprecated(
-            f"{self.__module__}.{self._name}", remove=self._removal_version
-        )
-        return super().__instancecheck__(inst)
-
-
 class _CallableGenericAlias(_NotIterable, _GenericAlias, _root=True):
     def __repr__(self):
         assert self._name == 'Callable'
@@ -2828,9 +2812,6 @@ Mapping = _alias(collections.abc.Mapping, 2)
 MutableMapping = _alias(collections.abc.MutableMapping, 2)
 Sequence = _alias(collections.abc.Sequence, 1)
 MutableSequence = _alias(collections.abc.MutableSequence, 1)
-ByteString = _DeprecatedGenericAlias(
-    collections.abc.ByteString, 0, removal_version=(3, 14)  # Not generic.
-)
 # Tuple accepts variable number of parameters.
 Tuple = _TupleType(tuple, -1, inst=False, name='Tuple')
 Tuple.__doc__ = \

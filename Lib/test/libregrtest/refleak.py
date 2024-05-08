@@ -211,7 +211,6 @@ def dash_R_cleanup(fs, ps, pic, zdc, abcs):
         zipimport._zip_directory_cache.update(zdc)
 
     # Clear ABC registries, restoring previously saved ABC registries.
-    # ignore deprecation warning for collections.abc.ByteString
     abs_classes = [getattr(collections.abc, a) for a in collections.abc.__all__]
     abs_classes = filter(isabstract, abs_classes)
     for abc in abs_classes:
