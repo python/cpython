@@ -15,6 +15,11 @@ try:
 except ImportError:
     c_make_encoder = None
 
+try:
+    from decimal import Decimal
+except ImportError:
+    Decimal = None
+
 ESCAPE = re.compile(r'[\x00-\x1f\\"\b\f\n\r\t]')
 ESCAPE_ASCII = re.compile(r'([\\"]|[^\ -~])')
 HAS_UTF8 = re.compile(b'[\x80-\xff]')
@@ -104,7 +109,7 @@ class JSONEncoder(object):
     key_separator = ': '
     def __init__(self, *, skipkeys=False, ensure_ascii=True,
             check_circular=True, allow_nan=True, sort_keys=False,
-            indent=None, separators=None, default=None):
+            indent=None, separators=None, default=None, support_decimal=False):
         """Constructor for JSONEncoder, with sensible defaults.
 
         If skipkeys is false, then it is a TypeError to attempt
@@ -143,6 +148,9 @@ class JSONEncoder(object):
         that can't otherwise be serialized.  It should return a JSON encodable
         version of the object or raise a ``TypeError``.
 
+        If support_decimal is true, then decimal.Decimal objects
+        will be encoded as real numbers, instead of raising a TypeError.
+
         """
 
         self.skipkeys = skipkeys
@@ -151,6 +159,7 @@ class JSONEncoder(object):
         self.allow_nan = allow_nan
         self.sort_keys = sort_keys
         self.indent = indent
+        self.support_decimal = support_decimal
         if separators is not None:
             self.item_separator, self.key_separator = separators
         elif indent is not None:
@@ -245,7 +254,7 @@ class JSONEncoder(object):
 
 
         if (_one_shot and c_make_encoder is not None
-                and self.indent is None):
+                and self.indent is None and self.support_decimal is False):
             _iterencode = c_make_encoder(
                 markers, self.default, _encoder, self.indent,
                 self.key_separator, self.item_separator, self.sort_keys,
@@ -254,11 +263,11 @@ class JSONEncoder(object):
             _iterencode = _make_iterencode(
                 markers, self.default, _encoder, self.indent, floatstr,
                 self.key_separator, self.item_separator, self.sort_keys,
-                self.skipkeys, _one_shot)
+                self.skipkeys, _one_shot, self.support_decimal)
         return _iterencode(o, 0)
 
 def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
-        _key_separator, _item_separator, _sort_keys, _skipkeys, _one_shot,
+        _key_separator, _item_separator, _sort_keys, _skipkeys, _one_shot, support_decimal,
         ## HACK: hand-optimized bytecode; turn globals into locals
         ValueError=ValueError,
         dict=dict,
@@ -270,6 +279,7 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
         str=str,
         tuple=tuple,
         _intstr=int.__repr__,
+        Decimal=Decimal,
     ):
 
     if _indent is not None and not isinstance(_indent, str):
@@ -315,6 +325,8 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
             elif isinstance(value, float):
                 # see comment above for int
                 yield buf + _floatstr(value)
+            elif isinstance(value, Decimal) and support_decimal and Decimal is not None:
+                yield buf + str(value)
             else:
                 yield buf
                 if isinstance(value, (list, tuple)):
@@ -371,10 +383,12 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
             elif isinstance(key, int):
                 # see comment for int/float in _make_iterencode
                 key = _intstr(key)
+            elif isinstance(key, Decimal) and support_decimal and Decimal is not None:
+                key = str(key)
             elif _skipkeys:
                 continue
             else:
-                raise TypeError(f'keys must be str, int, float, bool or None, '
+                raise TypeError(f'keys must be str, int, float, bool{", decimal.Decimal" if support_decimal else ""} or None, '
                                 f'not {key.__class__.__name__}')
             if first:
                 first = False
@@ -396,6 +410,8 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
             elif isinstance(value, float):
                 # see comment for int/float in _make_iterencode
                 yield _floatstr(value)
+            elif isinstance(value, Decimal) and support_decimal and Decimal is not None:
+                yield str(value)
             else:
                 if isinstance(value, (list, tuple)):
                     chunks = _iterencode_list(value, _current_indent_level)
@@ -426,6 +442,8 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
         elif isinstance(o, float):
             # see comment for int/float in _make_iterencode
             yield _floatstr(o)
+        elif isinstance(o, Decimal) and support_decimal and Decimal is not None:
+            yield str(o)
         elif isinstance(o, (list, tuple)):
             yield from _iterencode_list(o, _current_indent_level)
         elif isinstance(o, dict):
