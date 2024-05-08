@@ -257,7 +257,7 @@ extern int _PyDict_CheckConsistency(PyObject *mp, int check_content);
    when a memory block is reused from a free list.
 
    Internal function called by _Py_NewReference(). */
-extern int _PyTraceMalloc_NewReference(PyObject *op);
+extern int _PyTraceMalloc_TraceRef(PyObject *op, PyRefTracerEvent event, void*);
 
 // Fast inlined version of PyType_HasFeature()
 static inline int
@@ -658,6 +658,7 @@ extern PyObject *_PyType_NewManagedObject(PyTypeObject *type);
 extern PyTypeObject* _PyType_CalculateMetaclass(PyTypeObject *, PyObject *);
 extern PyObject* _PyType_GetDocFromInternalDoc(const char *, const char *);
 extern PyObject* _PyType_GetTextSignatureFromInternalDoc(const char *, const char *, int);
+extern int _PyObject_SetAttributeErrorContext(PyObject *v, PyObject* name);
 
 void _PyObject_InitInlineValues(PyObject *obj, PyTypeObject *tp);
 extern int _PyObject_StoreInstanceAttribute(PyObject *obj,
@@ -688,7 +689,7 @@ static inline PyDictObject *
 _PyObject_GetManagedDict(PyObject *obj)
 {
     PyManagedDictPointer *dorv = _PyObject_ManagedDictPointer(obj);
-    return (PyDictObject *)FT_ATOMIC_LOAD_PTR_RELAXED(dorv->dict);
+    return (PyDictObject *)FT_ATOMIC_LOAD_PTR_ACQUIRE(dorv->dict);
 }
 
 static inline PyDictValues *
