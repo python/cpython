@@ -1,5 +1,5 @@
-:mod:`_thread` --- Low-level threading API
-==========================================
+:mod:`!_thread` --- Low-level threading API
+===========================================
 
 .. module:: _thread
    :synopsis: Low-level threading API.
