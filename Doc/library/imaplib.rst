@@ -1,5 +1,5 @@
-:mod:`imaplib` --- IMAP4 protocol client
-========================================
+:mod:`!imaplib` --- IMAP4 protocol client
+=========================================
 
 .. module:: imaplib
    :synopsis: IMAP4 protocol client (requires sockets).

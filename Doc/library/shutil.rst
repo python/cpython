@@ -1,5 +1,5 @@
-:mod:`shutil` --- High-level file operations
-============================================
+:mod:`!shutil` --- High-level file operations
+=============================================
 
 .. module:: shutil
    :synopsis: High-level file operations, including copying.

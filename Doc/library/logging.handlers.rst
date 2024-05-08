@@ -1,5 +1,5 @@
-:mod:`logging.handlers` --- Logging handlers
-============================================
+:mod:`!logging.handlers` --- Logging handlers
+=============================================
 
 .. module:: logging.handlers
    :synopsis: Handlers for the logging module.
