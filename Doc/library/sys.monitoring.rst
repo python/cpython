@@ -1,5 +1,5 @@
-:mod:`sys.monitoring` --- Execution event monitoring
-====================================================
+:mod:`!sys.monitoring` --- Execution event monitoring
+=====================================================
 
 .. module:: sys.monitoring
    :synopsis: Access and control event monitoring

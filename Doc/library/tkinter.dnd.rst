@@ -1,5 +1,5 @@
-:mod:`tkinter.dnd` --- Drag and drop support
-============================================
+:mod:`!tkinter.dnd` --- Drag and drop support
+=============================================
 
 .. module:: tkinter.dnd
    :platform: Tk

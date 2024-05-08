@@ -1,5 +1,5 @@
-:mod:`symtable` --- Access to the compiler's symbol tables
-==========================================================
+:mod:`!symtable` --- Access to the compiler's symbol tables
+===========================================================
 
 .. module:: symtable
    :synopsis: Interface to the compiler's internal symbol tables.
