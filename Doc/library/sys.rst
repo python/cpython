@@ -877,7 +877,7 @@ always available.
    additional garbage collector overhead if the object is managed by the garbage
    collector.
 
-   See `recursive sizeof recipe <https://code.activestate.com/recipes/577504/>`_
+   See `recursive sizeof recipe <https://code.activestate.com/recipes/577504-compute-memory-footprint-of-an-object-and-its-cont/>`_
    for an example of using :func:`getsizeof` recursively to find the size of
    containers and all their contents.
 
@@ -1197,6 +1197,14 @@ always available.
 
    Interned strings are not :term:`immortal`; you must keep a reference to the
    return value of :func:`intern` around to benefit from it.
+
+
+.. function:: _is_gil_enabled()
+
+   Return :const:`True` if the :term:`GIL` is enabled and :const:`False` if
+   it is disabled.
+
+   .. versionadded:: 3.13
 
 
 .. function:: is_finalizing()

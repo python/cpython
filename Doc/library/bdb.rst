@@ -240,6 +240,9 @@ The :mod:`bdb` module also defines two classes:
       Called from :meth:`dispatch_call` if a break might stop inside the
       called function.
 
+      *argument_list* is not used anymore and will always be ``None``.
+      The argument is kept for backwards compatibility.
+
    .. method:: user_line(frame)
 
       Called from :meth:`dispatch_line` when either :meth:`stop_here` or
@@ -285,6 +288,10 @@ The :mod:`bdb` module also defines two classes:
 
       Start debugging from *frame*.  If *frame* is not specified, debugging
       starts from caller's frame.
+
+      .. versionchanged:: 3.13
+         :func:`set_trace` will enter the debugger immediately, rather than
+         on the next line of code to be executed.
 
    .. method:: set_continue()
 

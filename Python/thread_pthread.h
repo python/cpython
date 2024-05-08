@@ -158,12 +158,14 @@ _PyThread_cond_after(long long us, struct timespec *abs)
     PyTime_t t;
 #ifdef CONDATTR_MONOTONIC
     if (condattr_monotonic) {
-        t = _PyTime_MonotonicUnchecked();
+        // silently ignore error: cannot report error to the caller
+        (void)PyTime_MonotonicRaw(&t);
     }
     else
 #endif
     {
-        t = _PyTime_TimeUnchecked();
+        // silently ignore error: cannot report error to the caller
+        (void)PyTime_TimeRaw(&t);
     }
     t = _PyTime_Add(t, timeout);
     _PyTime_AsTimespec_clamp(t, abs);
@@ -506,7 +508,10 @@ PyThread_acquire_lock_timed(PyThread_type_lock lock, PY_TIMEOUT_T microseconds,
     struct timespec abs_timeout;
     // Local scope for deadline
     {
-        PyTime_t deadline = _PyTime_Add(_PyTime_MonotonicUnchecked(), timeout);
+        PyTime_t now;
+        // silently ignore error: cannot report error to the caller
+        (void)PyTime_MonotonicRaw(&now);
+        PyTime_t deadline = _PyTime_Add(now, timeout);
         _PyTime_AsTimespec_clamp(deadline, &abs_timeout);
     }
 #else
@@ -522,8 +527,11 @@ PyThread_acquire_lock_timed(PyThread_type_lock lock, PY_TIMEOUT_T microseconds,
             status = fix_status(sem_clockwait(thelock, CLOCK_MONOTONIC,
                                               &abs_timeout));
 #else
-            PyTime_t abs_time = _PyTime_Add(_PyTime_TimeUnchecked(),
-                                             timeout);
+            PyTime_t now;
+            // silently ignore error: cannot report error to the caller
+            (void)PyTime_TimeRaw(&now);
+            PyTime_t abs_time = _PyTime_Add(now, timeout);
+
             struct timespec ts;
             _PyTime_AsTimespec_clamp(abs_time, &ts);
             status = fix_status(sem_timedwait(thelock, &ts));
