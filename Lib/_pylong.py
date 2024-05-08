@@ -439,7 +439,7 @@ def int_divmod(a, b):
 # compelling, though.
 #
 # If someone wants to look into speeding it more, I suggest focusing on
-# the multiplication by the cacned `5**(8**w2)`. We only need the
+# the multiplication by the cached `5**(8**w2)`. We only need the
 # integer part of the result, so are generally computing many more
 # digits than are needed for that. But we do need the exact ("as if to
 # infinite precsion") integer part.
