@@ -21,6 +21,8 @@ race:park_detached_threads
 race:sock_recv_impl
 # https://gist.github.com/swtaarrs/08dfe7883b4c975c31ecb39388987a67
 race:free_threadstate
+# https://gist.github.com/swtaarrs/cd6aec2006e0c1b561b68d65e9f1a872
+race:_PyParkingLot_Park
 
 
 # These warnings trigger directly in a CPython function.
