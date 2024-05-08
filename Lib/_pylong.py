@@ -248,7 +248,7 @@ if 0:
                 lo = n - hi * pow2to8[w2]
                 # The assert should always succeed, but way too slow to
                 # keep enabled.
-                #assert hi, lo == divmod(n, pow2to8[w2])
+                #assert (hi, lo) == divmod(n, pow2to8[w2])
             inner(hi, w - w2)
             inner(lo, w2)
 
