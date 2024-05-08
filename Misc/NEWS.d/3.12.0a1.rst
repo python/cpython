@@ -3562,7 +3562,7 @@ with :func:`os.pidfd_open` in non-blocking mode. Patch by Kumar Aditya.
 .. section: Library
 
 Implement ``Enum.__contains__`` that returns ``True`` or ``False`` to replace the
-deprecated behaviour that would sometimes raise a ``TypeError``.
+deprecated behaviour that would sometimes raise a :exc:`TypeError`.
 
 ..
 
