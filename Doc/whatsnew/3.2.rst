@@ -785,8 +785,8 @@ functools
 
   (Contributed by Raymond Hettinger and incorporating design ideas from Jim
   Baker, Miki Tebeka, and Nick Coghlan; see `recipe 498245
-  <https://code.activestate.com/recipes/498245/>`_\, `recipe 577479
-  <https://code.activestate.com/recipes/577479/>`_\, :issue:`10586`, and
+  <https://code.activestate.com/recipes/498245-lru-and-lfu-cache-decorators/>`_\, `recipe 577479
+  <https://code.activestate.com/recipes/577479-simple-caching-decorator/>`_\, :issue:`10586`, and
   :issue:`10593`.)
 
 * The :func:`functools.wraps` decorator now adds a :attr:`__wrapped__` attribute
