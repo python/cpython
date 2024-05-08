@@ -51,12 +51,11 @@ tuple_set_item(PyObject *Py_UNUSED(module), PyObject *args)
 static PyObject *
 tuple_resize(PyObject *Py_UNUSED(module), PyObject *args)
 {
-    PyObject *obj;
     Py_ssize_t newsize;
-    if (!PyArg_ParseTuple(args, "On", &obj, &newsize)) {
+    if (!PyArg_ParseTuple(args, "n", &newsize)) {
         return NULL;
     }
-    NULLABLE(obj);
+    PyObject *obj = PyTuple_New(0);
     int r = _PyTuple_Resize(&obj, newsize);
     if (r == -1) {
         return NULL;

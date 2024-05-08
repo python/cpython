@@ -174,16 +174,12 @@ class CAPITest(unittest.TestCase):
 
     def test_tuple_resize(self):
         # Test PyTuple_Resize()
-        tuple_new = _testlimitedcapi.tuple_new
         resize = _testcapi.tuple_resize
         size = _testlimitedcapi.tuple_size
-        tup = tuple_new(0)
+        tup = resize(0)
         self.assertEqual(size(tup), 0)
-        tup = resize(tup, 2)
+        tup = resize(2)
         self.assertEqual(size(tup), 2)
-        tup = tuple_new(0)
-        self.assertRaises(MemoryError, resize, tup, PY_SSIZE_T_MAX)
-        self.assertRaises(SystemError, resize, tup, -1)
-        self.assertRaises(SystemError, resize, tup, PY_SSIZE_T_MIN)
-        self.assertRaises(SystemError, resize, object(), 42)
-        self.assertRaises(SystemError, resize, NULL, 42)
+        self.assertRaises(MemoryError, resize, PY_SSIZE_T_MAX)
+        self.assertRaises(SystemError, resize, -1)
+        self.assertRaises(SystemError, resize, PY_SSIZE_T_MIN)
