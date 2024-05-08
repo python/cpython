@@ -1048,7 +1048,7 @@ _PyStack_UnpackDict_FreeNoDecRef(PyObject *const *stack, PyObject *kwnames)
 #define MAX_UNTAG_SCRATCH 10
 
 static PyObject *
-PyObject_VectorcallTaggedSlow(PyObject *callable,
+PyObject_VectorcallStackRefSlow(PyObject *callable,
                               const _PyStackRef *tagged, size_t nargsf, PyObject *kwnames)
 {
     size_t nargs = nargsf & ~PY_VECTORCALL_ARGUMENTS_OFFSET;
@@ -1079,13 +1079,13 @@ PyObject_Vectorcall_StackRef(PyObject *callable,
     }
     PyObject *args[MAX_UNTAG_SCRATCH];
     if (nargs >= MAX_UNTAG_SCRATCH) {
-        return PyObject_VectorcallTaggedSlow(callable, tagged, nargsf, kwnames);
+        return PyObject_VectorcallStackRefSlow(callable, tagged, nargsf, kwnames);
     }
     // + 1 to allow args[-1] to be used by PY_VECTORCALL_ARGUMENTS_OFFSET
     _Py_untag_stack_borrowed(args + 1, tagged, nargs);
     return PyObject_Vectorcall(callable, args + 1, nargsf, kwnames);
 #else
-    (void)(PyObject_VectorcallTaggedSlow);
+    (void)(PyObject_VectorcallStackRefSlow);
     return PyObject_Vectorcall(callable, (PyObject **)tagged, nargsf, kwnames);
 #endif
 }
