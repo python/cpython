@@ -1,5 +1,5 @@
-:mod:`logging.handlers` --- Logging handlers
-============================================
+:mod:`!logging.handlers` --- Logging handlers
+=============================================
 
 .. module:: logging.handlers
    :synopsis: Handlers for the logging module.
@@ -66,7 +66,7 @@ and :meth:`flush` methods).
 
       :param stream: The stream that the handler should use.
 
-      :return: the old stream, if the stream was changed, or *None* if it wasn't.
+      :return: the old stream, if the stream was changed, or ``None`` if it wasn't.
 
       .. versionadded:: 3.7
 

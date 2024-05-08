@@ -5329,7 +5329,11 @@ PySSLSession_clear(PySSLSession *self)
 
 static PyObject *
 PySSLSession_get_time(PySSLSession *self, void *closure) {
+#if OPENSSL_VERSION_NUMBER >= 0x30300000L
+    return _PyLong_FromTime_t(SSL_SESSION_get_time_ex(self->session));
+#else
     return PyLong_FromLong(SSL_SESSION_get_time(self->session));
+#endif
 }
 
 PyDoc_STRVAR(PySSLSession_get_time_doc,
@@ -6511,6 +6515,7 @@ static PyModuleDef_Slot sslmodule_slots[] = {
     {Py_mod_exec, sslmodule_init_strings},
     {Py_mod_exec, sslmodule_init_lock},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
 };
 

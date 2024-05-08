@@ -12,10 +12,12 @@ resemble pathlib's PurePath and Path respectively.
 """
 
 import functools
-import glob
-import operator
+from glob import _Globber, _no_recurse_symlinks
 from errno import ENOENT, ENOTDIR, EBADF, ELOOP, EINVAL
 from stat import S_ISDIR, S_ISLNK, S_ISREG, S_ISSOCK, S_ISBLK, S_ISCHR, S_ISFIFO
+
+
+__all__ = ["UnsupportedOperation"]
 
 #
 # Internals
@@ -41,30 +43,6 @@ def _ignore_error(exception):
 @functools.cache
 def _is_case_sensitive(parser):
     return parser.normcase('Aa') == 'Aa'
-
-
-class Globber(glob._Globber):
-    lstat = operator.methodcaller('lstat')
-    add_slash = operator.methodcaller('joinpath', '')
-
-    @staticmethod
-    def scandir(path):
-        # Emulate os.scandir(), which returns an object that can be used as a
-        # context manager. This method is called by walk() and glob().
-        from contextlib import nullcontext
-        return nullcontext(path.iterdir())
-
-    @staticmethod
-    def concat_path(path, text):
-        """Appends text to the given path.
-        """
-        return path.with_segments(path._raw_path + text)
-
-    @staticmethod
-    def parse_entry(entry):
-        """Returns the path of an entry yielded from scandir().
-        """
-        return entry
 
 
 class UnsupportedOperation(NotImplementedError):
@@ -140,7 +118,7 @@ class PurePathBase:
         '_resolving',
     )
     parser = ParserBase()
-    _globber = Globber
+    _globber = _Globber
 
     def __init__(self, path, *paths):
         self._raw_path = self.parser.join(path, *paths) if paths else path
@@ -637,7 +615,7 @@ class PathBase(PurePathBase):
     def open(self, mode='r', buffering=-1, encoding=None,
              errors=None, newline=None):
         """
-        Open the file pointed by this path and return a file object, as
+        Open the file pointed to by this path and return a file object, as
         the built-in open() function does.
         """
         raise UnsupportedOperation(self._unsupported_msg('open()'))
@@ -692,7 +670,7 @@ class PathBase(PurePathBase):
             # know the case sensitivity of the underlying filesystem, so we
             # must use scandir() for everything, including non-wildcard parts.
             case_pedantic = True
-        recursive = True if recurse_symlinks else glob._no_recurse_symlinks
+        recursive = True if recurse_symlinks else _no_recurse_symlinks
         globber = self._globber(self.parser.sep, case_sensitive, case_pedantic, recursive)
         return globber.selector(parts)
 

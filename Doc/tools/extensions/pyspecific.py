@@ -27,19 +27,13 @@ from sphinx.locale import _ as sphinx_gettext
 from sphinx.util import logging
 from sphinx.util.docutils import SphinxDirective
 from sphinx.writers.text import TextWriter, TextTranslator
-
-try:
-    # Sphinx 6+
-    from sphinx.util.display import status_iterator
-except ImportError:
-    # Deprecated in Sphinx 6.1, will be removed in Sphinx 8
-    from sphinx.util import status_iterator
+from sphinx.util.display import status_iterator
 
 
 ISSUE_URI = 'https://bugs.python.org/issue?@action=redirect&bpo=%s'
 GH_ISSUE_URI = 'https://github.com/python/cpython/issues/%s'
 # Used in conf.py and updated here by python/release-tools/run_release.py
-SOURCE_URI = 'https://github.com/python/cpython/tree/main/%s'
+SOURCE_URI = 'https://github.com/python/cpython/tree/3.13/%s'
 
 # monkey-patch reST parser to disable alphabetic and roman enumerated lists
 from docutils.parsers.rst.states import Body

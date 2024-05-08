@@ -1,3 +1,5 @@
+#ifdef _Py_TIER2
+
 /*
  * This file contains the support code for CPython's uops optimizer.
  * It also performs some simple optimizations.
@@ -603,3 +605,5 @@ _Py_uop_analyze_and_optimize(
     OPT_STAT_INC(optimizer_successes);
     return length;
 }
+
+#endif /* _Py_TIER2 */

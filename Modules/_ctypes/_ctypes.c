@@ -1113,7 +1113,7 @@ static int
 UnionType_setattro(PyObject *self, PyObject *key, PyObject *value)
 {
     /* XXX Should we disallow deleting _fields_? */
-    if (-1 == PyObject_GenericSetAttr(self, key, value))
+    if (-1 == PyType_Type.tp_setattro(self, key, value))
         return -1;
 
     if (PyUnicode_Check(key) &&
@@ -5965,6 +5965,7 @@ module_free(void *module)
 static PyModuleDef_Slot module_slots[] = {
     {Py_mod_exec, _ctypes_mod_exec},
     {Py_mod_multiple_interpreters, Py_MOD_MULTIPLE_INTERPRETERS_NOT_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
 };
 

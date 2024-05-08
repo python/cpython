@@ -105,7 +105,10 @@ PyAPI_FUNC(PyObject *)_PyDict_LoadGlobal(PyDictObject *, PyDictObject *, PyObjec
 
 /* Consumes references to key and value */
 PyAPI_FUNC(int) _PyDict_SetItem_Take2(PyDictObject *op, PyObject *key, PyObject *value);
-extern int _PyObjectDict_SetItem(PyTypeObject *tp, PyObject **dictptr, PyObject *name, PyObject *value);
+extern int _PyDict_SetItem_LockHeld(PyDictObject *dict, PyObject *name, PyObject *value);
+extern int _PyDict_GetItemRef_Unicode_LockHeld(PyDictObject *op, PyObject *key, PyObject **result);
+extern int _PyDict_GetItemRef_KnownHash(PyDictObject *op, PyObject *key, Py_hash_t hash, PyObject **result);
+extern int _PyObjectDict_SetItem(PyTypeObject *tp, PyObject *obj, PyObject **dictptr, PyObject *name, PyObject *value);
 
 extern int _PyDict_Pop_KnownHash(
     PyDictObject *dict,
@@ -218,8 +221,25 @@ static inline PyDictUnicodeEntry* DK_UNICODE_ENTRIES(PyDictKeysObject *dk) {
 #define DICT_WATCHER_AND_MODIFICATION_MASK ((1 << (DICT_MAX_WATCHERS + DICT_WATCHED_MUTATION_BITS)) - 1)
 
 #ifdef Py_GIL_DISABLED
-#define DICT_NEXT_VERSION(INTERP) \
-    (_Py_atomic_add_uint64(&(INTERP)->dict_state.global_version, DICT_VERSION_INCREMENT) + DICT_VERSION_INCREMENT)
+
+#define THREAD_LOCAL_DICT_VERSION_COUNT 256
+#define THREAD_LOCAL_DICT_VERSION_BATCH THREAD_LOCAL_DICT_VERSION_COUNT * DICT_VERSION_INCREMENT
+
+static inline uint64_t
+dict_next_version(PyInterpreterState *interp)
+{
+    PyThreadState *tstate = PyThreadState_GET();
+    uint64_t cur_progress = (tstate->dict_global_version &
+                            (THREAD_LOCAL_DICT_VERSION_BATCH - 1));
+    if (cur_progress == 0) {
+        uint64_t next = _Py_atomic_add_uint64(&interp->dict_state.global_version,
+                                              THREAD_LOCAL_DICT_VERSION_BATCH);
+        tstate->dict_global_version = next;
+    }
+    return tstate->dict_global_version += DICT_VERSION_INCREMENT;
+}
+
+#define DICT_NEXT_VERSION(INTERP) dict_next_version(INTERP)
 
 #else
 #define DICT_NEXT_VERSION(INTERP) \
