@@ -1095,6 +1095,7 @@ class TestNtpath(NtpathTestCase):
             raise unittest.SkipTest('SystemDrive is not defined or malformed')
         self.assertFalse(os.path.isfile('\\\\.\\' + drive))
 
+    @unittest.skipUnless(hasattr(os, 'pipe'), "need os.pipe()")
     def test_isfile_pipe(self):
         pr, _ = os.pipe()
         self.assertFalse(ntpath.isfile(pr))
