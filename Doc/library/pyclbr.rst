@@ -142,7 +142,7 @@ Class Objects
 
    .. attribute:: parent
 
-      For top-level classes, None.  For nested classes, the parent.
+      For top-level classes, ``None``.  For nested classes, the parent.
 
       .. versionadded:: 3.7
 
