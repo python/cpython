@@ -257,7 +257,7 @@ def _type_repr(obj):
     return repr(obj)
 
 
-def _collect_parameters(args):
+def _collect_parameters(args, *, enforce_default_ordering: bool = True):
     """Collect all type variables and parameter specifications in args
     in order of first appearance (lexicographic order).
 
@@ -286,15 +286,16 @@ def _collect_parameters(args):
                         parameters.append(collected)
         elif hasattr(t, '__typing_subst__'):
             if t not in parameters:
-                if type_var_tuple_encountered and t.has_default():
-                    raise TypeError('Type parameter with a default'
-                                    ' follows TypeVarTuple')
+                if enforce_default_ordering:
+                    if type_var_tuple_encountered and t.has_default():
+                        raise TypeError('Type parameter with a default'
+                                        ' follows TypeVarTuple')
 
-                if t.has_default():
-                    default_encountered = True
-                elif default_encountered:
-                    raise TypeError(f'Type parameter {t!r} without a default'
-                                    ' follows type parameter with a default')
+                    if t.has_default():
+                        default_encountered = True
+                    elif default_encountered:
+                        raise TypeError(f'Type parameter {t!r} without a default'
+                                        ' follows type parameter with a default')
 
                 parameters.append(t)
         else:
@@ -1416,7 +1417,11 @@ class _GenericAlias(_BaseGenericAlias, _root=True):
             args = (args,)
         self.__args__ = tuple(... if a is _TypingEllipsis else
                               a for a in args)
-        self.__parameters__ = _collect_parameters(args)
+        enforce_default_ordering = origin in (Generic, Protocol)
+        self.__parameters__ = _collect_parameters(
+            args,
+            enforce_default_ordering=enforce_default_ordering,
+        )
         if not name:
             self.__module__ = origin.__module__
 
