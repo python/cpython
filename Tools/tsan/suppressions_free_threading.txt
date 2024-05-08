@@ -35,9 +35,6 @@ race_top:_PyImport_AcquireLock
 race_top:_PyImport_ReleaseLock
 race_top:_PyInterpreterState_SetNotRunningMain
 race_top:_PyInterpreterState_IsRunningMain
-race_top:_PyObject_GC_IS_SHARED
-race_top:_PyObject_GC_SET_SHARED
-race_top:_PyObject_GC_TRACK
 # https://gist.github.com/mpage/0a24eb2dd458441ededb498e9b0e5de8
 race_top:_PyParkingLot_Park
 race_top:_PyType_HasFeature
