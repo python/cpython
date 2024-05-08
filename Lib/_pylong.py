@@ -243,7 +243,7 @@ if 0:
                 # The only division in this alternative is by a power of
                 # 10, which comes nearly "for free" in decimal.
                 hi = n.scaleb(-8 * w2) # exactly n/10**(8*w2)
-                hi *= pow5to8[w2] # n/10**(8*w2) * 5**(8*w2( = n/2**(8*w2)
+                hi *= pow5to8[w2] # n/10**(8*w2) * 5**(8*w2) = n/2**(8*w2)
                 hi = hi.to_integral_value() # lose the fractional digits
                 lo = n - hi * pow2to8[w2]
                 # The assert should always succeed, but way too slow to
