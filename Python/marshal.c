@@ -198,7 +198,7 @@ w_long(long x, WFILE *p)
         if ((n) > SIZE32_MAX) {                 \
             (p)->depth--;                       \
             (p)->error = WFERR_UNMARSHALLABLE;  \
-            return 0;                           \
+            return -1;                          \
         }                                       \
         w_long((long)(n), p);                   \
     } while(0)
