@@ -5587,8 +5587,17 @@ struct _Py_SECURITY_ATTRIBUTE_DATA {
     PACL acl;
     SECURITY_DESCRIPTOR sd;
     EXPLICIT_ACCESS_W ea[4];
-    char sid[64];
+    BYTE sidAdmins[SECURITY_MAX_SID_SIZE];
+    BYTE sidSystem[SECURITY_MAX_SID_SIZE];
+    BYTE sidCreator[SECURITY_MAX_SID_SIZE];
 };
+
+static int
+_initializeSid(BYTE *sid, WELL_KNOWN_SID_TYPE sidType)
+{
+    DWORD cbSid = SECURITY_MAX_SID_SIZE;
+    return CreateWellKnownSid(sidType, NULL, sid, &cbSid) ? 1 : 0;
+}
 
 static int
 initializeDefaultSecurityAttributes(
@@ -5612,44 +5621,37 @@ initializeMkdir700SecurityAttributes(
     *securityAttributes = NULL;
     memset(data, 0, sizeof(*data));
 
+    SID_IDENTIFIER_AUTHORITY SidNtAuthority = SECURITY_NT_AUTHORITY;
     if (!InitializeSecurityDescriptor(&data->sd, SECURITY_DESCRIPTOR_REVISION)
-        || !SetSecurityDescriptorGroup(&data->sd, NULL, TRUE)) {
+        || !SetSecurityDescriptorGroup(&data->sd, NULL, TRUE)
+        || !_initializeSid(data->sidAdmins, WinBuiltinAdministratorsSid)
+        || !_initializeSid(data->sidSystem, WinLocalSystemSid)
+        || !_initializeSid(data->sidCreator, WinCreatorOwnerRightsSid)
+    ) {
         return GetLastError();
-    }
-
-    int use_alias = 0;
-    DWORD cbSid = sizeof(data->sid);
-    if (!CreateWellKnownSid(WinCreatorOwnerRightsSid, NULL, (PSID)data->sid, &cbSid)) {
-        use_alias = 1;
     }
 
     data->securityAttributes.nLength = sizeof(SECURITY_ATTRIBUTES);
     data->ea[0].grfAccessPermissions = GENERIC_ALL;
     data->ea[0].grfAccessMode = SET_ACCESS;
     data->ea[0].grfInheritance = SUB_CONTAINERS_AND_OBJECTS_INHERIT;
-    if (use_alias) {
-        data->ea[0].Trustee.TrusteeForm = TRUSTEE_IS_NAME;
-        data->ea[0].Trustee.TrusteeType = TRUSTEE_IS_ALIAS;
-        data->ea[0].Trustee.ptstrName = L"CURRENT_USER";
-    } else {
-        data->ea[0].Trustee.TrusteeForm = TRUSTEE_IS_SID;
-        data->ea[0].Trustee.TrusteeType = TRUSTEE_IS_WELL_KNOWN_GROUP;
-        data->ea[0].Trustee.ptstrName = (LPWCH)(SID*)data->sid;
-    }
+    data->ea[0].Trustee.TrusteeForm = TRUSTEE_IS_SID;
+    data->ea[0].Trustee.TrusteeType = TRUSTEE_IS_WELL_KNOWN_GROUP;
+    data->ea[0].Trustee.ptstrName = (LPWCH)data->sidSystem;
 
     data->ea[1].grfAccessPermissions = GENERIC_ALL;
     data->ea[1].grfAccessMode = SET_ACCESS;
     data->ea[1].grfInheritance = SUB_CONTAINERS_AND_OBJECTS_INHERIT;
-    data->ea[1].Trustee.TrusteeForm = TRUSTEE_IS_NAME;
-    data->ea[1].Trustee.TrusteeType = TRUSTEE_IS_ALIAS;
-    data->ea[1].Trustee.ptstrName = L"SYSTEM";
+    data->ea[1].Trustee.TrusteeForm = TRUSTEE_IS_SID;
+    data->ea[1].Trustee.TrusteeType = TRUSTEE_IS_WELL_KNOWN_GROUP;
+    data->ea[1].Trustee.ptstrName = (LPWCH)data->sidAdmins;
 
     data->ea[2].grfAccessPermissions = GENERIC_ALL;
     data->ea[2].grfAccessMode = SET_ACCESS;
     data->ea[2].grfInheritance = SUB_CONTAINERS_AND_OBJECTS_INHERIT;
-    data->ea[2].Trustee.TrusteeForm = TRUSTEE_IS_NAME;
+    data->ea[2].Trustee.TrusteeForm = TRUSTEE_IS_SID;
     data->ea[2].Trustee.TrusteeType = TRUSTEE_IS_ALIAS;
-    data->ea[2].Trustee.ptstrName = L"ADMINISTRATORS";
+    data->ea[2].Trustee.ptstrName = (LPWCH)data->sidCreator;
 
     int r = SetEntriesInAclW(3, data->ea, NULL, &data->acl);
     if (r) {
