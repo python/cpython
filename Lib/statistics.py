@@ -976,12 +976,10 @@ def kde(data, h, kernel='normal', *, cumulative=False):
     if support is None:
 
         def pdf(x):
-            n = len(data)
-            return sum(K((x - x_i) / h) for x_i in data) / (n * h)
+            return sum(K((x - x_i) / h) for x_i in data) / (len(data) * h)
 
         def cdf(x):
-            n = len(data)
-            return sum(W((x - x_i) / h) for x_i in data) / n
+            return sum(W((x - x_i) / h) for x_i in data) / len(data)
 
     else:
 
