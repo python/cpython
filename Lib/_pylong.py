@@ -10,7 +10,7 @@ Note: for ease of maintainability, please prefer clear code and avoid
 "micro-optimizations".  This module will only be imported and used for
 integers with a huge number of digits.  Saving a few microseconds with
 tricky or non-obvious code is not worth it.  For people looking for
-maximum performance, they should use something like gmpy2."""
+maximum performance, they should use somethig like gmpy2."""
 
 import re
 import decimal
@@ -211,25 +211,36 @@ def _str_to_int_inner(s):
     return inner(0, len(s))
 
 
-if 0:
+if 1:
     import math
     _LOG_10_BASE_256 = math.log(10, 256)
     del  math
     # Asymptotically faster version, using the C decimal module. Unused
-    # for now. See extensive comments at the end of the file. This
-    # basically uses decimal arithmetic to convert from base 10 to base
-    # 256. The latter is just a string of bytes, which CPython can
-    # convert very efficiently to a Python int.
+    # for now. See comments at the end of the file. This basically uses
+    # decimal arithmetic to convert from base 10 to base 256. The latter
+    # is just a string of bytes, which CPython can convert very
+    # efficiently to a Python int.
+
+    # _spread is for testing, mapping how often `n` quotient correction
+    # steps are needed t0 a count of how many times that was needed.
+    # Usually no corrections are needed, and I haven't seen it need more
+    # than 1.
+    from collections import defaultdict
+    _spread = defaultdict(int)
+    del defaultdict
+
     def _dec_str_to_int_inner(s):
         BYTELIM = 200
         D = decimal.Decimal
-        D2to8 = D(256)
-        D5to8 = D(390625)
         result = bytearray()
 
         def inner(n, w):
             if w <= BYTELIM:
-                result.extend(int(n).to_bytes(w)) # default big-endian
+                # XXX Stefan Pochmann discovered that, for 1024-bit
+                # ints, `int(Decimal)` took 2.5x longer than
+                # `int(str(Decimal))`. So simplify this code to the
+                # former if/when that gets repaired.
+                result.extend(int(str(n)).to_bytes(w))
                 return
             w2 = w >> 1
             if 0:
@@ -238,25 +249,53 @@ if 0:
                 # tell it to reuse the high-precision reciprocal it
                 # computes for pow2to5[w2], so it has to recompute them
                 # over & over & over again :-(
-                hi, lo = divmod(n, pow2to8[w2])
+                hi, lo = divmod(n, pow256[w2][0])
             else:
-                # The only division in this alternative is by a power of
-                # 10, which comes nearly "for free" in decimal.
-                hi = n.scaleb(-8 * w2) # exactly n/10**(8*w2)
-                hi *= pow5to8[w2] # n/10**(8*w2) * 5**(8*w2) = n/2**(8*w2)
+                p256, recip = pow256[w2]
+                # The integer part will have about half the digits of n.
+                # So only need that much precision, plus some guard digits.
+                ctx.prec = (n.adjusted() >> 1) + 8
+                hi = (+ n) * recip
                 hi = hi.to_integral_value() # lose the fractional digits
-                lo = n - hi * pow2to8[w2]
+                ctx.prec = decimal.MAX_PREC
+                lo = n - hi * p256
+                assert lo >= 0
+                count = 0
+                while lo >= p256:
+                    count += 1
+                    lo -= p256
+                    hi += 1
+                _spread[count] += 1
+                if count >= 2:
+                    print("HUH! count", count)
+                    input("MORE")
                 # The assert should always succeed, but way too slow to
                 # keep enabled.
-                #assert (hi, lo) == divmod(n, pow2to8[w2])
+                #assert hi, lo == divmod(n, pow256[w2][0])
             inner(hi, w - w2)
             inner(lo, w2)
 
         w = int(len(s) * _LOG_10_BASE_256) + 1
         with decimal.localcontext(_unbounded_dec_context) as ctx:
-            ctx.rounding = decimal.ROUND_DOWN # so to_integral_value() chops
-            pow2to8 = compute_powers(w, D2to8, BYTELIM)
-            pow5to8 = compute_powers(w, D5to8, BYTELIM)
+            D256 = D(256)
+            pow256 = compute_powers(w, D256, BYTELIM)
+            rpow256 = compute_powers(w, 1 / D256, BYTELIM)
+            # We're going to do inexact, chopped arithmetic, multiplying
+            # by an approximation to the reciprocal of 256**i. We chop
+            # to get a lower bound on the true integer quotient. Our
+            # approximation is a lower bound, the multiply is chopped
+            # too, and to_integral_value() is also chopped.
+            ctx.traps[decimal.Inexact] = 0
+            ctx.rounding = decimal.ROUND_DOWN
+            for k, v in pow256.items():
+                # No need to save more precision in the reciprocal than
+                # the power of 256 has, plus some guard digits to absorb
+                # most relevant rounding errors.
+                ctx.prec = v.adjusted() + 8
+                # The unary "+" chope the reciprocal back to that precision.
+                pow256[k] = v, +rpow256[k]
+            del rpow256 # exact reciprocals no longer needed
+            ctx.prec = decimal.MAX_PREC
             inner(D(s), w)
         return int.from_bytes(result)
 
@@ -419,27 +458,12 @@ def int_divmod(a, b):
 # "unnatural", in that it requires multiplying and dividing by large
 # powers of 2, which `decimal` isn't naturally suited to. But
 # `decimal`'s `*` and `/` are asymptotically superior to CPython's, so
-# at _some_ point  it could be expected to win.
+# at _some_ point it could be expected to win.
 #
 # Alas, the crossover point was too high to be of much real interest. I
 # (Tim) then worked on ways to replace its division with multiplication
-# by a cached reciprocal approximation instead, fixing up (usually
-# small) errors afterwards. This reduced the crossover point
-# significantly, but still too high to be of much real interest. And the
-# code grew increasingly complex.
+# by a cached reciprocal approximation instead, fixing up errors
+# afterwards. This reduced the crossover point significantly,
 #
-# Then I had a different idea: there's no actual need to divide by
-# powers of 2 at all. Since `2*5 = 10`, division by `2**k` is the same
-# as multiplying by `5**k` (exact) and then dividing by `10**k` (also
-# exact in `decimal`, and dirt cheap: the module's `scaleb()` function,
-# which just adjusts the internal exponent).
-#
-# This yields short and reasonably clear code with a much lower
-# crossover value, at about 26 million bits. That's still too high to be
-# compelling, though.
-#
-# If someone wants to look into speeding it more, I suggest focusing on
-# the multiplication by the cached `5**(8**w2)`. We only need the
-# integer part of the result, so are generally computing many more
-# digits than are needed for that. But we do need the exact ("as if to
-# infinite precsion") integer part.
+# I revisited tha code, and found ways to improve and simplify it. The
+# crossover point is at about 3.4 million digits now.
