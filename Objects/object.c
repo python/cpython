@@ -2090,13 +2090,9 @@ notimplemented_dealloc(PyObject *notimplemented)
 static int
 notimplemented_bool(PyObject *v)
 {
-    if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                     "NotImplemented should not be used in a boolean context",
-                     1) < 0)
-    {
-        return -1;
-    }
-    return 1;
+    PyErr_SetString(PyExc_TypeError,
+                    "NotImplemented should not be used in a boolean context");
+    return -1;
 }
 
 static PyNumberMethods notimplemented_as_number = {
