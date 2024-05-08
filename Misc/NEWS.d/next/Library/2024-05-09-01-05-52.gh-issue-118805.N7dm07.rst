@@ -1,0 +1,2 @@
+Remove ``type``, ``choices``, and ``metavar`` parameters of
+:class:`!argparse.BooleanOptionalAction`.
