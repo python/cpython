@@ -568,7 +568,7 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
         Py_END_CRITICAL_SECTION();
         if (p->error == WFERR_UNMARSHALLABLE || p->error == WFERR_NOMEMORY) {
             Py_DECREF(pairs);
-            return;
+            return 0;
         }
         assert(i == n);
         if (PyList_Sort(pairs)) {
@@ -589,7 +589,7 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
     else if (PyCode_Check(v)) {
         if (!p->allow_code) {
             p->error = WFERR_CODE_NOT_ALLOWED;
-            return;
+            return 0;
         }
         PyCodeObject *co = (PyCodeObject *)v;
         PyObject *co_code = _PyCode_GetCode(co);
