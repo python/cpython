@@ -211,6 +211,55 @@ def _str_to_int_inner(s):
     return inner(0, len(s))
 
 
+if 0:
+    import math
+    _LOG_10_BASE_256 = math.log(10, 256)
+    del  math
+    # Asymptotically faster version, using the C decimal module. Unused
+    # for now. See extensive comments at the end of the file. This
+    # basically uses decimal arithmetic to convert from base 10 to base
+    # 256. The latter is just a string of bytes, which CPython can
+    # convert very efficiently to a Python int.
+    def _dec_str_to_int_inner(s):
+        BYTELIM = 200
+        D = decimal.Decimal
+        D2to8 = D(256)
+        D5to8 = D(390625)
+        result = bytearray()
+
+        def inner(n, w):
+            if w <= BYTELIM:
+                result.extend(int(n).to_bytes(w)) # default big-endian
+                return
+            w2 = w >> 1
+            if 0:
+                # This is maximally clear, but "too slow". `decimal`
+                # division is asymptotically fast, but we have no way to
+                # tell it to reuse the high-precision reciprocal
+                # approximations it computes for pow2to5[w2], so it has
+                # to recompute them over & over & over again :-(
+                hi, lo = divmod(n, pow2to8[w2])
+            else:
+                # The only division in this alternative is by a power of
+                # 10, which comes nearly "for free" in decimal.
+                hi = n.scaleb(-8 * w2) # exactly n/10**(8*w2)
+                hi *= pow5to8[w2] # n/10**(8*w2) * 5**(8*w2( = n/2**(8*w2)
+                hi = hi.to_integral_value() # lose the fractional digits
+                lo = n - hi * pow2to8[w2]
+                # The assert should always succeed, but way too slow to
+                # keep enabled.
+                #assert hi, lo == divmod(n, pow2to8[w2])
+            inner(hi, w - w2)
+            inner(lo, w2)
+
+        w = int(len(s) * _LOG_10_BASE_256) + 1
+        with decimal.localcontext(_unbounded_dec_context) as ctx:
+            ctx.rounding = decimal.ROUND_DOWN # so to_integral_value() chops
+            pow2to8 = compute_powers(w, D2to8, BYTELIM)
+            pow5to8 = compute_powers(w, D5to8, BYTELIM)
+            inner(D(s), w)
+        return int.from_bytes(result)
+
 def int_from_string(s):
     """Asymptotically fast version of PyLong_FromString(), conversion
     of a string of decimal digits into an 'int'."""
@@ -361,3 +410,36 @@ def int_divmod(a, b):
         return ~q, b + ~r
     else:
         return _divmod_pos(a, b)
+
+
+# Notes on _dec_str_to_int_inner:
+#
+# Stefan Pochmann worked up a str->int function that used the decimal
+# module to, in effect, convert from base 10 to base 256. This is
+# "unnatural", in that it requires multiplying and dividing by large
+# powers of 2, which `decimal` isn't naturally suited to. But
+# `decimal`'s `*` and `/` are asymptotically superior to CPython's, so
+# at _some_ point  it could be expected to win.
+#
+# Alas, the crossover point was too high to be of much real interest. I
+# (Tim) then worked on ways to replace its division with multiplication
+# by a cached reciprocal approximation instead, fixing up (usually
+# small) errors afterwards. This reduced the crossover point
+# significantly, but still too high to be of much real interest. And the
+# code grew increasingly complex.
+#
+# Then I had a different idea: there's no actual need to divide by
+# powers of 2 at all. Since `2*5 = 10`, division by `2**k` is the same
+# as multiplying by `5**k` (exact) and then dividing by `10**k` (also
+# exact in `decimal`, and dirt cheap: the module's `scaleb()` function,
+# which just adjusts the internal exponent).
+#
+# This yields short and reasonably clear code with a much lower
+# crossover value, at about 26 million bits. That's still too high to be
+# compelling, though.
+#
+# If someone wants to look into speeding it more, I suggest focusing on
+# the multiplication by the cacned `5**(8**w2)`. We only need the
+# integer part of the result, so are generally computing many more
+# digits than are needed for that. But we do need the exact ("as if to
+# infinite precsion") integer part.
