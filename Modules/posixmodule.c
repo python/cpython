@@ -5107,8 +5107,16 @@ _testFileTypeByHandle(HANDLE hfile, int refFileType, BOOL diskOnly)
         return FALSE;
     }
 
-    FILE_ATTRIBUTE_TAG_INFO info;
-    if (!GetFileInformationByHandleEx(hfile, FileAttributeTagInfo, &info,
+    FILE_INFO_BY_HANDLE_CLASS FileInformationClass;
+    if (refFileType == PY_IFLNK || refFileType == PY_IFMNT) {
+        FileInformationClass = FileAttributeTagInfo;
+        FILE_ATTRIBUTE_TAG_INFO info;
+    }
+    else {
+        FileInformationClass = FileBasicInfo;
+        FILE_BASIC_INFO info;
+    }
+    if (!GetFileInformationByHandleEx(hfile, FileInformationClass, &info,
                                       sizeof(info)))
     {
         return FALSE;
