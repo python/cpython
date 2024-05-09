@@ -200,7 +200,6 @@ class TestInteractiveInterpreter(unittest.TestCase):
 
 
 
-
 class TestInteractiveModeSyntaxErrors(unittest.TestCase):
 
     def test_interactive_syntax_error_correct_line(self):
