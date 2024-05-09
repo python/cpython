@@ -36,9 +36,9 @@ typedef enum {
 #  define MI_TSAN 1
 #endif
 
-#include "mimalloc.h"
-#include "mimalloc/types.h"
-#include "mimalloc/internal.h"
+#include "mimalloc/mimalloc.h"
+#include "mimalloc/mimalloc/types.h"
+#include "mimalloc/mimalloc/internal.h"
 #endif
 
 #ifdef Py_GIL_DISABLED
