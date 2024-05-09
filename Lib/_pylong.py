@@ -240,7 +240,7 @@ if 1:
                 # ints, `int(Decimal)` took 2.5x longer than
                 # `int(str(Decimal))`. So simplify this code to the
                 # former if/when that gets repaired.
-                result.extend(int(str(n)).to_bytes(w))
+                result.extend(int(str(n)).to_bytes(w)) # big-endian default
                 return
             w2 = w >> 1
             if 0:
@@ -256,14 +256,25 @@ if 1:
                 # So only need that much precision, plus some guard
                 # digits.
                 ctx.prec = (n.adjusted() >> 1) + 8
-                hi = +n * +recip
-                hi = hi.to_integral_value() # lose the fractional digits
+                hi = +n * +recip # unary `+` chops back to ctx.prec digits
                 ctx.prec = decimal.MAX_PREC
+                hi = hi.to_integral_value() # lose the fractional digits
                 lo = n - hi * p256
+                # Because we've been uniformly rounding down, `hi` is a
+                # lower bound on the correct quotient.
                 assert lo >= 0
+                # Adjust quotient up if needed. It usually isn't. In
+                # random testing, the loop body entered about one in 100
+                # thousand cases. I never saw it need more than one
+                # iteration.
                 count = 0
                 while lo >= p256:
                     count += 1
+                    # If the assert fails, chances are decent we're
+                    # sooooo far off it may seem to run forever
+                    # otherwise - the error analysis was fatally flawed
+                    # in this case..
+                    assert count < 10, (count, w, str(n))
                     lo -= p256
                     hi += 1
                 _spread[count] += 1
