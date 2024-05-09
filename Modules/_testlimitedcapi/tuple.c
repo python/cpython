@@ -81,9 +81,8 @@ tuple_setitem(PyObject *Py_UNUSED(module), PyObject *args)
     if (!PyArg_ParseTuple(args, "OnO", &obj, &i, &value)) {
         return NULL;
     }
-    NULLABLE(obj);
     NULLABLE(value);
-    if (obj) {
+    if (PyTuple_CheckExact(obj)) {
         Py_ssize_t size = PyTuple_Size(obj);
         newtuple = PyTuple_New(size);
         if (!newtuple) {
@@ -94,6 +93,7 @@ tuple_setitem(PyObject *Py_UNUSED(module), PyObject *args)
         }
     }
     else {
+        NULLABLE(obj);
         newtuple = obj;
     }
     if (PyTuple_SetItem(newtuple, i, Py_XNewRef(value)) == -1) {
