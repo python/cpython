@@ -288,21 +288,6 @@ def dirname(p):
     return split(p)[0]
 
 
-# Is a path a junction?
-
-if hasattr(os.stat_result, 'st_reparse_tag'):
-    def isjunction(path):
-        """Test whether a path is a junction"""
-        try:
-            st = os.lstat(path)
-        except (OSError, ValueError, AttributeError):
-            return False
-        return st.st_reparse_tag == stat.IO_REPARSE_TAG_MOUNT_POINT
-else:
-    # Use genericpath.isjunction as imported above
-    pass
-
-
 # Is a path a mount point?
 # Any drive letter root (eg c:\)
 # Any share UNC (eg \\server\share)
@@ -805,6 +790,9 @@ supports_unicode_filenames = True
 def relpath(path, start=None):
     """Return a relative version of a path"""
     path = os.fspath(path)
+    if not path:
+        raise ValueError("no path specified")
+
     if isinstance(path, bytes):
         sep = b'\\'
         curdir = b'.'
@@ -816,22 +804,20 @@ def relpath(path, start=None):
 
     if start is None:
         start = curdir
+    else:
+        start = os.fspath(start)
 
-    if not path:
-        raise ValueError("no path specified")
-
-    start = os.fspath(start)
     try:
-        start_abs = abspath(normpath(start))
-        path_abs = abspath(normpath(path))
+        start_abs = abspath(start)
+        path_abs = abspath(path)
         start_drive, _, start_rest = splitroot(start_abs)
         path_drive, _, path_rest = splitroot(path_abs)
         if normcase(start_drive) != normcase(path_drive):
             raise ValueError("path is on mount %r, start on mount %r" % (
                 path_drive, start_drive))
 
-        start_list = [x for x in start_rest.split(sep) if x]
-        path_list = [x for x in path_rest.split(sep) if x]
+        start_list = start_rest.split(sep) if start_rest else []
+        path_list = path_rest.split(sep) if path_rest else []
         # Work out how much of the filepath is shared by start and path.
         i = 0
         for e1, e2 in zip(start_list, path_list):
@@ -842,7 +828,7 @@ def relpath(path, start=None):
         rel_list = [pardir] * (len(start_list)-i) + path_list[i:]
         if not rel_list:
             return curdir
-        return join(*rel_list)
+        return sep.join(rel_list)
     except (TypeError, ValueError, AttributeError, BytesWarning, DeprecationWarning):
         genericpath._check_arg_types('relpath', path, start)
         raise
@@ -916,6 +902,7 @@ try:
     from nt import _path_isdir as isdir
     from nt import _path_isfile as isfile
     from nt import _path_islink as islink
+    from nt import _path_isjunction as isjunction
     from nt import _path_exists as exists
     from nt import _path_lexists as lexists
 except ImportError:

@@ -15441,7 +15441,11 @@ init_fs_encoding(PyThreadState *tstate)
 PyStatus
 _PyUnicode_InitEncodings(PyThreadState *tstate)
 {
-    PyStatus status = init_fs_encoding(tstate);
+    PyStatus status = _PyCodec_InitRegistry(tstate->interp);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+    status = init_fs_encoding(tstate);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
@@ -15537,6 +15541,7 @@ static PyMethodDef _string_methods[] = {
 
 static PyModuleDef_Slot module_slots[] = {
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
 };
 

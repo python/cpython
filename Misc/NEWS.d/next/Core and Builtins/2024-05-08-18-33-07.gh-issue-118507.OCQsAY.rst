@@ -1,0 +1,1 @@
+Speedup :func:`os.path.isjunction` on Windows with a native implementation.

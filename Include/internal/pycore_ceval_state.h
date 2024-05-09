@@ -20,7 +20,7 @@ struct _pending_call {
     int flags;
 };
 
-#define PENDINGCALLSARRAYSIZE 32
+#define PENDINGCALLSARRAYSIZE 300
 
 #define MAXPENDINGCALLS PENDINGCALLSARRAYSIZE
 /* For interpreter-level pending calls, we want to avoid spending too
@@ -31,7 +31,9 @@ struct _pending_call {
 #  define MAXPENDINGCALLSLOOP MAXPENDINGCALLS
 #endif
 
-#define MAXPENDINGCALLS_MAIN PENDINGCALLSARRAYSIZE
+/* We keep the number small to preserve as much compatibility
+   as possible with earlier versions. */
+#define MAXPENDINGCALLS_MAIN 32
 /* For the main thread, we want to make sure all pending calls are
    run at once, for the sake of prompt signal handling.  This is
    unlikely to cause any problems since there should be very few
@@ -39,7 +41,7 @@ struct _pending_call {
 #define MAXPENDINGCALLSLOOP_MAIN 0
 
 struct _pending_calls {
-    int busy;
+    PyThreadState *handling_thread;
     PyMutex mutex;
     /* Request for running pending calls. */
     int32_t npending;
@@ -73,6 +75,7 @@ struct trampoline_api_st {
                         unsigned int code_size, PyCodeObject* code);
     int (*free_state)(void* state);
     void *state;
+    Py_ssize_t code_padding;
 };
 #endif
 
@@ -81,6 +84,7 @@ struct _ceval_runtime_state {
     struct {
 #ifdef PY_HAVE_PERF_TRAMPOLINE
         perf_status_t status;
+        int perf_trampoline_type;
         Py_ssize_t extra_code_index;
         struct code_arena_st *code_arena;
         struct trampoline_api_st trampoline_api;

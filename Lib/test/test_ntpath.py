@@ -1095,6 +1095,15 @@ class TestNtpath(NtpathTestCase):
             raise unittest.SkipTest('SystemDrive is not defined or malformed')
         self.assertFalse(os.path.isfile('\\\\.\\' + drive))
 
+    @unittest.skipUnless(hasattr(os, 'pipe'), "need os.pipe()")
+    def test_isfile_pipe(self):
+        pr, pw = os.pipe()
+        try:
+            self.assertFalse(ntpath.isfile(pr))
+        finally:
+            os.close(pr)
+            os.close(pw)
+
     @unittest.skipIf(sys.platform != 'win32', "windows only")
     def test_con_device(self):
         self.assertFalse(os.path.isfile(r"\\.\CON"))
@@ -1114,6 +1123,8 @@ class TestNtpath(NtpathTestCase):
         self.assertFalse(inspect.isfunction(os.path.isfile))
         self.assertTrue(os.path.islink is nt._path_islink)
         self.assertFalse(inspect.isfunction(os.path.islink))
+        self.assertTrue(os.path.isjunction is nt._path_isjunction)
+        self.assertFalse(inspect.isfunction(os.path.isjunction))
         self.assertTrue(os.path.exists is nt._path_exists)
         self.assertFalse(inspect.isfunction(os.path.exists))
         self.assertTrue(os.path.lexists is nt._path_lexists)

@@ -37,6 +37,8 @@
 #  include <winioctl.h>
 #  include <lmcons.h>             // UNLEN
 #  include "osdefs.h"             // SEP
+#  include <aclapi.h>             // SetEntriesInAcl
+#  include <sddl.h>               // SDDL_REVISION_1
 #  if defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM)
 #    define HAVE_SYMLINK
 #  endif /* MS_WINDOWS_DESKTOP | MS_WINDOWS_SYSTEM */
@@ -5086,215 +5088,252 @@ os__path_splitroot_impl(PyObject *module, path_t *path)
 }
 
 
-/*[clinic input]
-os._path_isdir
+#define PY_IFREG 1
+#define PY_IFDIR 2
+#define PY_IFLNK 3
+#define PY_IFMNT 4
 
-    s: 'O'
+static BOOL
+_testFileTypeByHandle(HANDLE hfile, int refFileType, BOOL diskOnly)
+{
+    assert(refFileType == PY_IFREG || refFileType == PY_IFDIR ||
+           refFileType == PY_IFLNK || refFileType == PY_IFMNT);
+
+    DWORD fileDevType = GetFileType(hfile);
+    if ((fileDevType == FILE_TYPE_CHAR) ||
+        (fileDevType != FILE_TYPE_DISK && diskOnly) ||
+        (fileDevType == FILE_TYPE_UNKNOWN && GetLastError() != 0))
+    {
+        return FALSE;
+    }
+
+    DWORD attributes, reparseTag;
+    if ((refFileType == PY_IFLNK || refFileType == PY_IFMNT)) {
+        FILE_ATTRIBUTE_TAG_INFO info;
+        if (!GetFileInformationByHandleEx(hfile, FileAttributeTagInfo, &info,
+                                          sizeof(info)))
+        {
+            return FALSE;
+        }
+        attributes = info.FileAttributes;
+        reparseTag = info.ReparseTag;
+    }
+    else {
+        FILE_BASIC_INFO info;
+        if (!GetFileInformationByHandleEx(hfile, FileBasicInfo, &info,
+                                          sizeof(info)))
+        {
+            return FALSE;
+        }
+        attributes = info.FileAttributes;
+        reparseTag = 0;
+    }
+
+    if (attributes & FILE_ATTRIBUTE_REPARSE_POINT) {
+        if (refFileType == PY_IFLNK) {
+            return reparseTag == IO_REPARSE_TAG_SYMLINK;
+        }
+        if (refFileType == PY_IFMNT) {
+            return reparseTag == IO_REPARSE_TAG_MOUNT_POINT;
+        }
+        // Non-surrogate reparse points aren't supported by handle. Just
+        // return False. Supporting them requires querying and opening the
+        // final path with reparsing enabled.
+    }
+    else if (refFileType == PY_IFREG) {
+        return ((fileDevType == FILE_TYPE_DISK) &&
+                !(attributes & FILE_ATTRIBUTE_DIRECTORY));
+    }
+    else if (refFileType == PY_IFDIR) {
+        return attributes & FILE_ATTRIBUTE_DIRECTORY;
+    }
+
+    return FALSE;
+}
+
+static BOOL
+_testFileTypeByName(LPCWSTR path, int refFileType)
+{
+    assert(refFileType == PY_IFREG || refFileType == PY_IFDIR ||
+           refFileType == PY_IFLNK || refFileType == PY_IFMNT);
+
+    FILE_STAT_BASIC_INFORMATION info;
+    if (_Py_GetFileInformationByName(path, FileStatBasicByNameInfo, &info,
+                                     sizeof(info)))
+    {
+        if (info.FileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) {
+            if (refFileType == PY_IFLNK) {
+                return info.ReparseTag == IO_REPARSE_TAG_SYMLINK;
+            }
+            if (refFileType == PY_IFMNT) {
+                return info.ReparseTag == IO_REPARSE_TAG_MOUNT_POINT;
+            }
+            if ((refFileType == PY_IFREG) &&
+                (info.FileAttributes & FILE_ATTRIBUTE_DIRECTORY) ||
+                (refFileType == PY_IFDIR) &&
+                !(info.FileAttributes & FILE_ATTRIBUTE_DIRECTORY))
+            {
+                return FALSE;
+            }
+        }
+        else if (refFileType == PY_IFLNK || refFileType == PY_IFMNT) {
+            return FALSE;
+        }
+        else if (refFileType == PY_IFREG) {
+            return !(info.FileAttributes & FILE_ATTRIBUTE_DIRECTORY);
+        }
+        else if (refFileType == PY_IFDIR) {
+            return info.FileAttributes & FILE_ATTRIBUTE_DIRECTORY;
+        }
+    }
+    else if (_Py_GetFileInformationByName_ErrorIsTrustworthy(
+                GetLastError()))
+    {
+        return FALSE;
+    }
+
+    DWORD flags = FILE_FLAG_BACKUP_SEMANTICS;
+    if (refFileType == PY_IFLNK || refFileType == PY_IFMNT) {
+        flags |= FILE_FLAG_OPEN_REPARSE_POINT;
+    }
+    HANDLE hfile = CreateFileW(path, FILE_READ_ATTRIBUTES, 0, NULL,
+                               OPEN_EXISTING, flags, NULL);
+    if (hfile != INVALID_HANDLE_VALUE) {
+        BOOL result = _testFileTypeByHandle(hfile, refFileType, FALSE);
+        CloseHandle(hfile);
+        return result;
+    }
+
+    int rc;
+    STRUCT_STAT st;
+    switch (GetLastError()) {
+    case ERROR_ACCESS_DENIED:
+    case ERROR_SHARING_VIOLATION:
+    case ERROR_CANT_ACCESS_FILE:
+    case ERROR_INVALID_PARAMETER:
+        if (refFileType == PY_IFREG || refFileType == PY_IFDIR) {
+            rc = STAT(path, &st);
+        }
+        else {
+            rc = LSTAT(path, &st);
+        }
+        if (!rc) {
+            switch (refFileType) {
+            case PY_IFREG:
+                return S_ISREG(st.st_mode);
+            case PY_IFDIR:
+                return S_ISDIR(st.st_mode);
+            case PY_IFLNK:
+                return S_ISLNK(st.st_mode);
+            case PY_IFMNT:
+                return st.st_reparse_tag == IO_REPARSE_TAG_MOUNT_POINT;
+            }
+        }
+    }
+
+    return FALSE;
+}
+
+
+/*[clinic input]
+os._path_isdir -> bool
+
+    s: object
 
 Return true if the pathname refers to an existing directory.
 
 [clinic start generated code]*/
 
-static PyObject *
+static int
 os__path_isdir_impl(PyObject *module, PyObject *s)
-/*[clinic end generated code: output=9d87ab3c8b8a4e61 input=c17f7ef21d22d64e]*/
+/*[clinic end generated code: output=cdcdf654d78788cc input=19c64a44650e17b7]*/
 {
-    HANDLE hfile;
-    BOOL close_file = TRUE;
-    FILE_BASIC_INFO info;
     path_t _path = PATH_T_INITIALIZE("isdir", "s", 0, 1);
-    int result;
-    BOOL slow_path = TRUE;
-    FILE_STAT_BASIC_INFORMATION statInfo;
+    BOOL result = FALSE;
 
     if (!path_converter(s, &_path)) {
         path_cleanup(&_path);
         if (PyErr_ExceptionMatches(PyExc_ValueError)) {
             PyErr_Clear();
-            Py_RETURN_FALSE;
+            return FALSE;
         }
-        return NULL;
+        return -1;
     }
 
     Py_BEGIN_ALLOW_THREADS
-    if (_path.wide) {
-        if (_Py_GetFileInformationByName(_path.wide, FileStatBasicByNameInfo,
-                                         &statInfo, sizeof(statInfo))) {
-            if (!(statInfo.FileAttributes & FILE_ATTRIBUTE_REPARSE_POINT)) {
-                slow_path = FALSE;
-                result = statInfo.FileAttributes & FILE_ATTRIBUTE_DIRECTORY;
-            } else if (!(statInfo.FileAttributes & FILE_ATTRIBUTE_DIRECTORY)) {
-                slow_path = FALSE;
-                result = 0;
-            }
-        } else if (_Py_GetFileInformationByName_ErrorIsTrustworthy(GetLastError())) {
-                    slow_path = FALSE;
-                    result = 0;
+    if (_path.fd != -1) {
+        HANDLE hfile = _Py_get_osfhandle_noraise(_path.fd);
+        if (hfile != INVALID_HANDLE_VALUE) {
+            result = _testFileTypeByHandle(hfile, PY_IFDIR, TRUE);
         }
     }
-    if (slow_path) {
-        if (_path.fd != -1) {
-            hfile = _Py_get_osfhandle_noraise(_path.fd);
-            close_file = FALSE;
-        }
-        else {
-            hfile = CreateFileW(_path.wide, FILE_READ_ATTRIBUTES, 0, NULL,
-                                OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL);
-        }
-        if (hfile != INVALID_HANDLE_VALUE) {
-            if (GetFileInformationByHandleEx(hfile, FileBasicInfo, &info,
-                                            sizeof(info)))
-            {
-                result = info.FileAttributes & FILE_ATTRIBUTE_DIRECTORY;
-            }
-            else {
-                result = 0;
-            }
-            if (close_file) {
-                CloseHandle(hfile);
-            }
-        }
-        else {
-            STRUCT_STAT st;
-            switch (GetLastError()) {
-            case ERROR_ACCESS_DENIED:
-            case ERROR_SHARING_VIOLATION:
-            case ERROR_CANT_ACCESS_FILE:
-            case ERROR_INVALID_PARAMETER:
-                if (STAT(_path.wide, &st)) {
-                    result = 0;
-                }
-                else {
-                    result = S_ISDIR(st.st_mode);
-                }
-                break;
-            default:
-                result = 0;
-            }
-        }
+    else if (_path.wide) {
+        result = _testFileTypeByName(_path.wide, PY_IFDIR);
     }
     Py_END_ALLOW_THREADS
 
     path_cleanup(&_path);
-    if (result) {
-        Py_RETURN_TRUE;
-    }
-    Py_RETURN_FALSE;
+    return result;
 }
 
 
 /*[clinic input]
-os._path_isfile
+os._path_isfile -> bool
 
-    path: 'O'
+    path: object
 
 Test whether a path is a regular file
 
 [clinic start generated code]*/
 
-static PyObject *
+static int
 os__path_isfile_impl(PyObject *module, PyObject *path)
-/*[clinic end generated code: output=2394ed7c4b5cfd85 input=de22d74960ade365]*/
+/*[clinic end generated code: output=b40d620efe5a896f input=54b428a310debaea]*/
 {
-    HANDLE hfile;
-    BOOL close_file = TRUE;
-    FILE_BASIC_INFO info;
     path_t _path = PATH_T_INITIALIZE("isfile", "path", 0, 1);
-    int result;
-    BOOL slow_path = TRUE;
-    FILE_STAT_BASIC_INFORMATION statInfo;
+    BOOL result = FALSE;
 
     if (!path_converter(path, &_path)) {
         path_cleanup(&_path);
         if (PyErr_ExceptionMatches(PyExc_ValueError)) {
             PyErr_Clear();
-            Py_RETURN_FALSE;
+            return FALSE;
         }
-        return NULL;
+        return -1;
     }
 
     Py_BEGIN_ALLOW_THREADS
-    if (_path.wide) {
-        if (_Py_GetFileInformationByName(_path.wide, FileStatBasicByNameInfo,
-                                         &statInfo, sizeof(statInfo))) {
-            if (!(statInfo.FileAttributes & FILE_ATTRIBUTE_REPARSE_POINT)) {
-                slow_path = FALSE;
-                result = !(statInfo.FileAttributes & FILE_ATTRIBUTE_DIRECTORY);
-            } else if (statInfo.FileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
-                slow_path = FALSE;
-                result = 0;
-            }
-        } else if (_Py_GetFileInformationByName_ErrorIsTrustworthy(GetLastError())) {
-                    slow_path = FALSE;
-                    result = 0;
+    if (_path.fd != -1) {
+        HANDLE hfile = _Py_get_osfhandle_noraise(_path.fd);
+        if (hfile != INVALID_HANDLE_VALUE) {
+            result = _testFileTypeByHandle(hfile, PY_IFREG, TRUE);
         }
     }
-    if (slow_path) {
-        if (_path.fd != -1) {
-            hfile = _Py_get_osfhandle_noraise(_path.fd);
-            close_file = FALSE;
-        }
-        else {
-            hfile = CreateFileW(_path.wide, FILE_READ_ATTRIBUTES, 0, NULL,
-                                OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL);
-        }
-        if (hfile != INVALID_HANDLE_VALUE) {
-            if (GetFileInformationByHandleEx(hfile, FileBasicInfo, &info,
-                                            sizeof(info)))
-            {
-                result = !(info.FileAttributes & FILE_ATTRIBUTE_DIRECTORY);
-            }
-            else {
-                result = 0;
-            }
-            if (close_file) {
-                CloseHandle(hfile);
-            }
-        }
-        else {
-            STRUCT_STAT st;
-            switch (GetLastError()) {
-            case ERROR_ACCESS_DENIED:
-            case ERROR_SHARING_VIOLATION:
-            case ERROR_CANT_ACCESS_FILE:
-            case ERROR_INVALID_PARAMETER:
-                if (STAT(_path.wide, &st)) {
-                    result = 0;
-                }
-                else {
-                    result = S_ISREG(st.st_mode);
-                }
-                break;
-            default:
-                result = 0;
-            }
-        }
+    else if (_path.wide) {
+        result = _testFileTypeByName(_path.wide, PY_IFREG);
     }
     Py_END_ALLOW_THREADS
 
+
     path_cleanup(&_path);
-    if (result) {
-        Py_RETURN_TRUE;
-    }
-    Py_RETURN_FALSE;
+    return result;
 }
 
 
-static PyObject *
+static int
 nt_exists(PyObject *path, int follow_symlinks)
 {
     path_t _path = PATH_T_INITIALIZE("exists", "path", 0, 1);
     HANDLE hfile;
-    BOOL traverse = follow_symlinks;
-    int result = 0;
+    BOOL traverse = follow_symlinks, result = FALSE;
 
     if (!path_converter(path, &_path)) {
         path_cleanup(&_path);
         if (PyErr_ExceptionMatches(PyExc_ValueError)) {
             PyErr_Clear();
-            Py_RETURN_FALSE;
+            return FALSE;
         }
-        return NULL;
+        return -1;
     }
 
     Py_BEGIN_ALLOW_THREADS
@@ -5393,15 +5432,12 @@ nt_exists(PyObject *path, int follow_symlinks)
     Py_END_ALLOW_THREADS
 
     path_cleanup(&_path);
-    if (result) {
-        Py_RETURN_TRUE;
-    }
-    Py_RETURN_FALSE;
+    return result;
 }
 
 
 /*[clinic input]
-os._path_exists
+os._path_exists -> bool
 
     path: object
     /
@@ -5410,16 +5446,16 @@ Test whether a path exists.  Returns False for broken symbolic links.
 
 [clinic start generated code]*/
 
-static PyObject *
-os__path_exists(PyObject *module, PyObject *path)
-/*[clinic end generated code: output=617b7575ba0644bc input=242708cabb67c407]*/
+static int
+os__path_exists_impl(PyObject *module, PyObject *path)
+/*[clinic end generated code: output=8f784b3abf9f8588 input=2777da15bc4ba5a3]*/
 {
     return nt_exists(path, 1);
 }
 
 
 /*[clinic input]
-os._path_lexists
+os._path_lexists -> bool
 
     path: object
     /
@@ -5428,111 +5464,101 @@ Test whether a path exists.  Returns True for broken symbolic links.
 
 [clinic start generated code]*/
 
-static PyObject *
-os__path_lexists(PyObject *module, PyObject *path)
-/*[clinic end generated code: output=c7c89aa6d6e341df input=536ed4b0a7d4f723]*/
+static int
+os__path_lexists_impl(PyObject *module, PyObject *path)
+/*[clinic end generated code: output=fec4a91cf4ffccf1 input=8843d4d6d4e7c779]*/
 {
     return nt_exists(path, 0);
 }
 
 
 /*[clinic input]
-os._path_islink
+os._path_islink -> bool
 
-    path: 'O'
+    path: object
 
 Test whether a path is a symbolic link
 
 [clinic start generated code]*/
 
-static PyObject *
+static int
 os__path_islink_impl(PyObject *module, PyObject *path)
-/*[clinic end generated code: output=6d8640b1a390c054 input=38a3cb937ccf59bf]*/
+/*[clinic end generated code: output=9d0cf8e4c640dfe6 input=b71fed60b9b2cd73]*/
 {
-    HANDLE hfile;
-    BOOL close_file = TRUE;
-    FILE_ATTRIBUTE_TAG_INFO info;
     path_t _path = PATH_T_INITIALIZE("islink", "path", 0, 1);
-    int result;
-    BOOL slow_path = TRUE;
-    FILE_STAT_BASIC_INFORMATION statInfo;
+    BOOL result = FALSE;
 
     if (!path_converter(path, &_path)) {
         path_cleanup(&_path);
         if (PyErr_ExceptionMatches(PyExc_ValueError)) {
             PyErr_Clear();
-            Py_RETURN_FALSE;
+            return FALSE;
         }
-        return NULL;
+        return -1;
     }
 
     Py_BEGIN_ALLOW_THREADS
-    if (_path.wide) {
-        if (_Py_GetFileInformationByName(_path.wide, FileStatBasicByNameInfo,
-                                         &statInfo, sizeof(statInfo))) {
-            slow_path = FALSE;
-            if (statInfo.FileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) {
-                result = (statInfo.ReparseTag == IO_REPARSE_TAG_SYMLINK);
-            }
-            else {
-                result = 0;
-            }
-        } else if (_Py_GetFileInformationByName_ErrorIsTrustworthy(GetLastError())) {
-                    slow_path = FALSE;
-                    result = 0;
+    if (_path.fd != -1) {
+        HANDLE hfile = _Py_get_osfhandle_noraise(_path.fd);
+        if (hfile != INVALID_HANDLE_VALUE) {
+            result = _testFileTypeByHandle(hfile, PY_IFLNK, TRUE);
         }
     }
-    if (slow_path) {
-        if (_path.fd != -1) {
-            hfile = _Py_get_osfhandle_noraise(_path.fd);
-            close_file = FALSE;
-        }
-        else {
-            hfile = CreateFileW(_path.wide, FILE_READ_ATTRIBUTES, 0, NULL,
-                                OPEN_EXISTING,
-                                FILE_FLAG_OPEN_REPARSE_POINT | FILE_FLAG_BACKUP_SEMANTICS,
-                                NULL);
-        }
-        if (hfile != INVALID_HANDLE_VALUE) {
-            if (GetFileInformationByHandleEx(hfile, FileAttributeTagInfo, &info,
-                                            sizeof(info)))
-            {
-                result = (info.ReparseTag == IO_REPARSE_TAG_SYMLINK);
-            }
-            else {
-                result = 0;
-            }
-            if (close_file) {
-                CloseHandle(hfile);
-            }
-        }
-        else {
-            STRUCT_STAT st;
-            switch (GetLastError()) {
-            case ERROR_ACCESS_DENIED:
-            case ERROR_SHARING_VIOLATION:
-            case ERROR_CANT_ACCESS_FILE:
-            case ERROR_INVALID_PARAMETER:
-                if (LSTAT(_path.wide, &st)) {
-                    result = 0;
-                }
-                else {
-                    result = S_ISLNK(st.st_mode);
-                }
-                break;
-            default:
-                result = 0;
-            }
-        }
+    else if (_path.wide) {
+        result = _testFileTypeByName(_path.wide, PY_IFLNK);
     }
     Py_END_ALLOW_THREADS
 
     path_cleanup(&_path);
-    if (result) {
-        Py_RETURN_TRUE;
-    }
-    Py_RETURN_FALSE;
+    return result;
 }
+
+
+/*[clinic input]
+os._path_isjunction -> bool
+
+    path: object
+
+Test whether a path is a junction
+
+[clinic start generated code]*/
+
+static int
+os__path_isjunction_impl(PyObject *module, PyObject *path)
+/*[clinic end generated code: output=f1d51682a077654d input=103ccedcdb714f11]*/
+{
+    path_t _path = PATH_T_INITIALIZE("isjunction", "path", 0, 1);
+    BOOL result = FALSE;
+
+    if (!path_converter(path, &_path)) {
+        path_cleanup(&_path);
+        if (PyErr_ExceptionMatches(PyExc_ValueError)) {
+            PyErr_Clear();
+            return FALSE;
+        }
+        return -1;
+    }
+
+    Py_BEGIN_ALLOW_THREADS
+    if (_path.fd != -1) {
+        HANDLE hfile = _Py_get_osfhandle_noraise(_path.fd);
+        if (hfile != INVALID_HANDLE_VALUE) {
+            result = _testFileTypeByHandle(hfile, PY_IFMNT, TRUE);
+        }
+    }
+    else if (_path.wide) {
+        result = _testFileTypeByName(_path.wide, PY_IFMNT);
+    }
+    Py_END_ALLOW_THREADS
+
+    path_cleanup(&_path);
+    return result;
+}
+
+#undef PY_IFREG
+#undef PY_IFDIR
+#undef PY_IFLNK
+#undef PY_IFMNT
 
 #endif /* MS_WINDOWS */
 
@@ -5570,7 +5596,7 @@ os__path_splitroot_ex_impl(PyObject *module, PyObject *path)
     if (tail == NULL) {
         goto exit;
     }
-    result = Py_BuildValue("(OOO)", drv, root, tail);
+    result = PyTuple_Pack(3, drv, root, tail);
 exit:
     PyMem_Free(buffer);
     Py_XDECREF(drv);
@@ -5609,6 +5635,146 @@ os__path_normpath_impl(PyObject *module, PyObject *path)
     return result;
 }
 
+#ifdef MS_WINDOWS
+
+/* We centralise SECURITY_ATTRIBUTE initialization based around
+templates that will probably mostly match common POSIX mode settings.
+The _Py_SECURITY_ATTRIBUTE_DATA structure contains temporary data, as
+a constructed SECURITY_ATTRIBUTE structure typically refers to memory
+that has to be alive while it's being used.
+
+Typical use will look like:
+    SECURITY_ATTRIBUTES *pSecAttr = NULL;
+    struct _Py_SECURITY_ATTRIBUTE_DATA secAttrData;
+    int error, error2;
+
+    Py_BEGIN_ALLOW_THREADS
+    switch (mode) {
+    case 0x1C0: // 0o700
+        error = initializeMkdir700SecurityAttributes(&pSecAttr, &secAttrData);
+        break;
+    ...
+    default:
+        error = initializeDefaultSecurityAttributes(&pSecAttr, &secAttrData);
+        break;
+    }
+
+    if (!error) {
+        // do operation, passing pSecAttr
+    }
+
+    // Unconditionally clear secAttrData.
+    error2 = clearSecurityAttributes(&pSecAttr, &secAttrData);
+    if (!error) {
+        error = error2;
+    }
+    Py_END_ALLOW_THREADS
+
+    if (error) {
+        PyErr_SetFromWindowsErr(error);
+        return NULL;
+    }
+*/
+
+struct _Py_SECURITY_ATTRIBUTE_DATA {
+    SECURITY_ATTRIBUTES securityAttributes;
+    PACL acl;
+    SECURITY_DESCRIPTOR sd;
+    EXPLICIT_ACCESS_W ea[4];
+    char sid[64];
+};
+
+static int
+initializeDefaultSecurityAttributes(
+    PSECURITY_ATTRIBUTES *securityAttributes,
+    struct _Py_SECURITY_ATTRIBUTE_DATA *data
+) {
+    assert(securityAttributes);
+    assert(data);
+    *securityAttributes = NULL;
+    memset(data, 0, sizeof(*data));
+    return 0;
+}
+
+static int
+initializeMkdir700SecurityAttributes(
+    PSECURITY_ATTRIBUTES *securityAttributes,
+    struct _Py_SECURITY_ATTRIBUTE_DATA *data
+) {
+    assert(securityAttributes);
+    assert(data);
+    *securityAttributes = NULL;
+    memset(data, 0, sizeof(*data));
+
+    if (!InitializeSecurityDescriptor(&data->sd, SECURITY_DESCRIPTOR_REVISION)
+        || !SetSecurityDescriptorGroup(&data->sd, NULL, TRUE)) {
+        return GetLastError();
+    }
+
+    int use_alias = 0;
+    DWORD cbSid = sizeof(data->sid);
+    if (!CreateWellKnownSid(WinCreatorOwnerRightsSid, NULL, (PSID)data->sid, &cbSid)) {
+        use_alias = 1;
+    }
+
+    data->securityAttributes.nLength = sizeof(SECURITY_ATTRIBUTES);
+    data->ea[0].grfAccessPermissions = GENERIC_ALL;
+    data->ea[0].grfAccessMode = SET_ACCESS;
+    data->ea[0].grfInheritance = SUB_CONTAINERS_AND_OBJECTS_INHERIT;
+    if (use_alias) {
+        data->ea[0].Trustee.TrusteeForm = TRUSTEE_IS_NAME;
+        data->ea[0].Trustee.TrusteeType = TRUSTEE_IS_ALIAS;
+        data->ea[0].Trustee.ptstrName = L"CURRENT_USER";
+    } else {
+        data->ea[0].Trustee.TrusteeForm = TRUSTEE_IS_SID;
+        data->ea[0].Trustee.TrusteeType = TRUSTEE_IS_WELL_KNOWN_GROUP;
+        data->ea[0].Trustee.ptstrName = (LPWCH)(SID*)data->sid;
+    }
+
+    data->ea[1].grfAccessPermissions = GENERIC_ALL;
+    data->ea[1].grfAccessMode = SET_ACCESS;
+    data->ea[1].grfInheritance = SUB_CONTAINERS_AND_OBJECTS_INHERIT;
+    data->ea[1].Trustee.TrusteeForm = TRUSTEE_IS_NAME;
+    data->ea[1].Trustee.TrusteeType = TRUSTEE_IS_ALIAS;
+    data->ea[1].Trustee.ptstrName = L"SYSTEM";
+
+    data->ea[2].grfAccessPermissions = GENERIC_ALL;
+    data->ea[2].grfAccessMode = SET_ACCESS;
+    data->ea[2].grfInheritance = SUB_CONTAINERS_AND_OBJECTS_INHERIT;
+    data->ea[2].Trustee.TrusteeForm = TRUSTEE_IS_NAME;
+    data->ea[2].Trustee.TrusteeType = TRUSTEE_IS_ALIAS;
+    data->ea[2].Trustee.ptstrName = L"ADMINISTRATORS";
+
+    int r = SetEntriesInAclW(3, data->ea, NULL, &data->acl);
+    if (r) {
+        return r;
+    }
+    if (!SetSecurityDescriptorDacl(&data->sd, TRUE, data->acl, FALSE)) {
+        return GetLastError();
+    }
+    data->securityAttributes.lpSecurityDescriptor = &data->sd;
+    *securityAttributes = &data->securityAttributes;
+    return 0;
+}
+
+static int
+clearSecurityAttributes(
+    PSECURITY_ATTRIBUTES *securityAttributes,
+    struct _Py_SECURITY_ATTRIBUTE_DATA *data
+) {
+    assert(securityAttributes);
+    assert(data);
+    *securityAttributes = NULL;
+    if (data->acl) {
+        if (LocalFree((void *)data->acl)) {
+            return GetLastError();
+        }
+    }
+    return 0;
+}
+
+#endif
+
 /*[clinic input]
 os.mkdir
 
@@ -5638,6 +5804,12 @@ os_mkdir_impl(PyObject *module, path_t *path, int mode, int dir_fd)
 /*[clinic end generated code: output=a70446903abe821f input=a61722e1576fab03]*/
 {
     int result;
+#ifdef MS_WINDOWS
+    int error = 0;
+    int pathError = 0;
+    SECURITY_ATTRIBUTES *pSecAttr = NULL;
+    struct _Py_SECURITY_ATTRIBUTE_DATA secAttrData;
+#endif
 #ifdef HAVE_MKDIRAT
     int mkdirat_unavailable = 0;
 #endif
@@ -5649,11 +5821,30 @@ os_mkdir_impl(PyObject *module, path_t *path, int mode, int dir_fd)
 
 #ifdef MS_WINDOWS
     Py_BEGIN_ALLOW_THREADS
-    result = CreateDirectoryW(path->wide, NULL);
+    switch (mode) {
+    case 0x1C0: // 0o700
+        error = initializeMkdir700SecurityAttributes(&pSecAttr, &secAttrData);
+        break;
+    default:
+        error = initializeDefaultSecurityAttributes(&pSecAttr, &secAttrData);
+        break;
+    }
+    if (!error) {
+        result = CreateDirectoryW(path->wide, pSecAttr);
+        error = clearSecurityAttributes(&pSecAttr, &secAttrData);
+    } else {
+        // Ignore error from "clear" - we have a more interesting one already
+        clearSecurityAttributes(&pSecAttr, &secAttrData);
+    }
     Py_END_ALLOW_THREADS
 
-    if (!result)
+    if (error) {
+        PyErr_SetFromWindowsErr(error);
+        return NULL;
+    }
+    if (!result) {
         return path_error(path);
+    }
 #else
     Py_BEGIN_ALLOW_THREADS
 #if HAVE_MKDIRAT
@@ -16956,6 +17147,7 @@ static PyMethodDef posix_methods[] = {
     OS__PATH_ISDIR_METHODDEF
     OS__PATH_ISFILE_METHODDEF
     OS__PATH_ISLINK_METHODDEF
+    OS__PATH_ISJUNCTION_METHODDEF
     OS__PATH_EXISTS_METHODDEF
     OS__PATH_LEXISTS_METHODDEF
 
@@ -17975,6 +18167,7 @@ posixmodule_exec(PyObject *m)
 static PyModuleDef_Slot posixmodile_slots[] = {
     {Py_mod_exec, posixmodule_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
 };
 

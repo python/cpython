@@ -2023,7 +2023,7 @@ PyDoc_STRVAR(os__path_isdir__doc__,
 #define OS__PATH_ISDIR_METHODDEF    \
     {"_path_isdir", _PyCFunction_CAST(os__path_isdir), METH_FASTCALL|METH_KEYWORDS, os__path_isdir__doc__},
 
-static PyObject *
+static int
 os__path_isdir_impl(PyObject *module, PyObject *s);
 
 static PyObject *
@@ -2057,13 +2057,18 @@ os__path_isdir(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
     #undef KWTUPLE
     PyObject *argsbuf[1];
     PyObject *s;
+    int _return_value;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
     if (!args) {
         goto exit;
     }
     s = args[0];
-    return_value = os__path_isdir_impl(module, s);
+    _return_value = os__path_isdir_impl(module, s);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyBool_FromLong((long)_return_value);
 
 exit:
     return return_value;
@@ -2082,7 +2087,7 @@ PyDoc_STRVAR(os__path_isfile__doc__,
 #define OS__PATH_ISFILE_METHODDEF    \
     {"_path_isfile", _PyCFunction_CAST(os__path_isfile), METH_FASTCALL|METH_KEYWORDS, os__path_isfile__doc__},
 
-static PyObject *
+static int
 os__path_isfile_impl(PyObject *module, PyObject *path);
 
 static PyObject *
@@ -2116,13 +2121,18 @@ os__path_isfile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
     #undef KWTUPLE
     PyObject *argsbuf[1];
     PyObject *path;
+    int _return_value;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
     if (!args) {
         goto exit;
     }
     path = args[0];
-    return_value = os__path_isfile_impl(module, path);
+    _return_value = os__path_isfile_impl(module, path);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyBool_FromLong((long)_return_value);
 
 exit:
     return return_value;
@@ -2141,6 +2151,25 @@ PyDoc_STRVAR(os__path_exists__doc__,
 #define OS__PATH_EXISTS_METHODDEF    \
     {"_path_exists", (PyCFunction)os__path_exists, METH_O, os__path_exists__doc__},
 
+static int
+os__path_exists_impl(PyObject *module, PyObject *path);
+
+static PyObject *
+os__path_exists(PyObject *module, PyObject *path)
+{
+    PyObject *return_value = NULL;
+    int _return_value;
+
+    _return_value = os__path_exists_impl(module, path);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyBool_FromLong((long)_return_value);
+
+exit:
+    return return_value;
+}
+
 #endif /* defined(MS_WINDOWS) */
 
 #if defined(MS_WINDOWS)
@@ -2153,6 +2182,25 @@ PyDoc_STRVAR(os__path_lexists__doc__,
 
 #define OS__PATH_LEXISTS_METHODDEF    \
     {"_path_lexists", (PyCFunction)os__path_lexists, METH_O, os__path_lexists__doc__},
+
+static int
+os__path_lexists_impl(PyObject *module, PyObject *path);
+
+static PyObject *
+os__path_lexists(PyObject *module, PyObject *path)
+{
+    PyObject *return_value = NULL;
+    int _return_value;
+
+    _return_value = os__path_lexists_impl(module, path);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyBool_FromLong((long)_return_value);
+
+exit:
+    return return_value;
+}
 
 #endif /* defined(MS_WINDOWS) */
 
@@ -2167,7 +2215,7 @@ PyDoc_STRVAR(os__path_islink__doc__,
 #define OS__PATH_ISLINK_METHODDEF    \
     {"_path_islink", _PyCFunction_CAST(os__path_islink), METH_FASTCALL|METH_KEYWORDS, os__path_islink__doc__},
 
-static PyObject *
+static int
 os__path_islink_impl(PyObject *module, PyObject *path);
 
 static PyObject *
@@ -2201,13 +2249,82 @@ os__path_islink(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
     #undef KWTUPLE
     PyObject *argsbuf[1];
     PyObject *path;
+    int _return_value;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
     if (!args) {
         goto exit;
     }
     path = args[0];
-    return_value = os__path_islink_impl(module, path);
+    _return_value = os__path_islink_impl(module, path);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyBool_FromLong((long)_return_value);
+
+exit:
+    return return_value;
+}
+
+#endif /* defined(MS_WINDOWS) */
+
+#if defined(MS_WINDOWS)
+
+PyDoc_STRVAR(os__path_isjunction__doc__,
+"_path_isjunction($module, /, path)\n"
+"--\n"
+"\n"
+"Test whether a path is a junction");
+
+#define OS__PATH_ISJUNCTION_METHODDEF    \
+    {"_path_isjunction", _PyCFunction_CAST(os__path_isjunction), METH_FASTCALL|METH_KEYWORDS, os__path_isjunction__doc__},
+
+static int
+os__path_isjunction_impl(PyObject *module, PyObject *path);
+
+static PyObject *
+os__path_isjunction(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(path), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"path", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "_path_isjunction",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    PyObject *path;
+    int _return_value;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    path = args[0];
+    _return_value = os__path_isjunction_impl(module, path);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyBool_FromLong((long)_return_value);
 
 exit:
     return return_value;
@@ -12084,6 +12201,10 @@ os__supports_virtual_terminal(PyObject *module, PyObject *Py_UNUSED(ignored))
     #define OS__PATH_ISLINK_METHODDEF
 #endif /* !defined(OS__PATH_ISLINK_METHODDEF) */
 
+#ifndef OS__PATH_ISJUNCTION_METHODDEF
+    #define OS__PATH_ISJUNCTION_METHODDEF
+#endif /* !defined(OS__PATH_ISJUNCTION_METHODDEF) */
+
 #ifndef OS_NICE_METHODDEF
     #define OS_NICE_METHODDEF
 #endif /* !defined(OS_NICE_METHODDEF) */
@@ -12631,4 +12752,4 @@ os__supports_virtual_terminal(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF
     #define OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF
 #endif /* !defined(OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF) */
-/*[clinic end generated code: output=b97f5f5319f45e29 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=131721546fb798da input=a9049054013a1b77]*/
