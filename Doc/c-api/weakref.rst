@@ -98,7 +98,7 @@ as much as it can.
    been attempted.
 
 
-.. c:function:: void PyUnstable_Weakref_ClearWeakRefsExceptCallbacks(PyObject *object)
+.. c:function:: void PyUnstable_Object_ClearWeakRefsExceptCallbacks(PyObject *object)
 
    Clears the weakrefs for *object* without calling the callbacks.
 
