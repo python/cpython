@@ -70,3 +70,4 @@ jobs:
       with:
         name: ${{ inputs.tsan_logs_artifact_name }}
         path: tsan_log.*
+        if-no-files-found: ignore
