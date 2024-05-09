@@ -3411,7 +3411,113 @@ class TestSlots(unittest.TestCase):
         class B(A):
             pass
 
+        self.assertEqual(B.__slots__, ())
         B()
+
+    def test_dataclass_derived_generic(self):
+        T = typing.TypeVar('T')
+
+        @dataclass(slots=True, weakref_slot=True)
+        class A(typing.Generic[T]):
+            pass
+        self.assertEqual(A.__slots__, ('__weakref__',))
+        self.assertTrue(A.__weakref__)
+        A()
+
+        @dataclass(slots=True, weakref_slot=True)
+        class B[T2]:
+            pass
+        self.assertEqual(B.__slots__, ('__weakref__',))
+        self.assertTrue(B.__weakref__)
+        B()
+
+    def test_dataclass_derived_generic_from_base(self):
+        T = typing.TypeVar('T')
+
+        class RawBase: ...
+
+        @dataclass(slots=True, weakref_slot=True)
+        class C1(typing.Generic[T], RawBase):
+            pass
+        self.assertEqual(C1.__slots__, ())
+        self.assertTrue(C1.__weakref__)
+        C1()
+        @dataclass(slots=True, weakref_slot=True)
+        class C2(RawBase, typing.Generic[T]):
+            pass
+        self.assertEqual(C2.__slots__, ())
+        self.assertTrue(C2.__weakref__)
+        C2()
+
+        @dataclass(slots=True, weakref_slot=True)
+        class D[T2](RawBase):
+            pass
+        self.assertEqual(D.__slots__, ())
+        self.assertTrue(D.__weakref__)
+        D()
+
+    def test_dataclass_derived_generic_from_slotted_base(self):
+        T = typing.TypeVar('T')
+
+        class WithSlots:
+            __slots__ = ('a', 'b')
+
+        @dataclass(slots=True, weakref_slot=True)
+        class E1(WithSlots, Generic[T]):
+            pass
+        self.assertEqual(E1.__slots__, ('__weakref__',))
+        self.assertTrue(E1.__weakref__)
+        E1()
+        @dataclass(slots=True, weakref_slot=True)
+        class E2(Generic[T], WithSlots):
+            pass
+        self.assertEqual(E2.__slots__, ('__weakref__',))
+        self.assertTrue(E2.__weakref__)
+        E2()
+
+        @dataclass(slots=True, weakref_slot=True)
+        class F[T2](WithSlots):
+            pass
+        self.assertEqual(F.__slots__, ('__weakref__',))
+        self.assertTrue(F.__weakref__)
+        F()
+
+    def test_dataclass_derived_generic_from_slotted_base(self):
+        T = typing.TypeVar('T')
+
+        class WithWeakrefSlot:
+            __slots__ = ('__weakref__',)
+
+        @dataclass(slots=True, weakref_slot=True)
+        class G1(WithWeakrefSlot, Generic[T]):
+            pass
+        self.assertEqual(G1.__slots__, ())
+        self.assertTrue(G1.__weakref__)
+        G1()
+        @dataclass(slots=True, weakref_slot=True)
+        class G2(Generic[T], WithWeakrefSlot):
+            pass
+        self.assertEqual(G2.__slots__, ())
+        self.assertTrue(G2.__weakref__)
+        G2()
+
+        @dataclass(slots=True, weakref_slot=True)
+        class H[T2](WithWeakrefSlot):
+            pass
+        self.assertEqual(H.__slots__, ())
+        self.assertTrue(H.__weakref__)
+        H()
+
+    def test_dataclass_slot_dict(self):
+        class WithDictSlot:
+            __slots__ = ('__dict__',)
+
+        @dataclass(slots=True)
+        class A(WithDictSlot): ...
+
+        self.assertEqual(A.__slots__, ())
+        self.assertEqual(A().__dict__, {})
+        A()
 
 
 class TestDescriptors(unittest.TestCase):
