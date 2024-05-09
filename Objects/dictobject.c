@@ -5396,6 +5396,7 @@ static int
 dictiter_iternext_threadsafe(PyDictObject *d, PyObject *self,
                              PyObject **out_key, PyObject **out_value)
 {
+    int res;
     dictiterobject *di = (dictiterobject *)self;
     Py_ssize_t i;
     PyDictKeysObject *k;
@@ -5493,7 +5494,7 @@ fail:
 
 try_locked:
     Py_BEGIN_CRITICAL_SECTION(d);
-    int res = dictiter_iternextitem_lock_held(d, self, out_key, out_value);
+    res = dictiter_iternextitem_lock_held(d, self, out_key, out_value);
     Py_END_CRITICAL_SECTION();
     return res;
 }
