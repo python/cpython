@@ -242,9 +242,13 @@ def _dec_str_to_int_inner(s):
             hi, lo = divmod(n, pow256[w2][0])
         else:
             p256, recip = pow256[w2]
-            # The integer part will have about half the digits of n. So
-            # only need that much precision, plus some guard digits.
-            ctx.prec = (n.adjusted() >> 1) + 8
+            # The integer part will have a number of digits about equal
+            # to the difference between the log10s of `n` and `pow256`
+            # (which, since these are integers, is roughly approximated
+            # by `.adjusted()`). That's the working precision we need,
+            # but add some guard digits to protect against the "about"
+            # and "roughly" uncertainties.
+            ctx.prec = max(n.adjusted() - p256.adjusted(), 0) + 8
             hi = +n * +recip # unary `+` chops back to ctx.prec digits
             ctx.prec = decimal.MAX_PREC
             hi = hi.to_integral_value() # lose the fractional digits
