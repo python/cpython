@@ -101,6 +101,15 @@ Deprecated
 Removed
 =======
 
+email
+-----
+
+* The *isdst* parameter has been removed from :func:`email.utils.localtime`.
+  (Contributed by Hugo van Kemenade in :gh:`118798`.)
+
+Others
+------
+
 * Using :data:`NotImplemented` in a boolean context will now raise a :exc:`TypeError`.
   It had previously raised a :exc:`DeprecationWarning` since Python 3.9. (Contributed
   by Jelle Zijlstra in :gh:`118767`.)
