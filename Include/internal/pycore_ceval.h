@@ -134,7 +134,7 @@ extern void _PyEval_FiniGIL(PyInterpreterState *interp);
 extern void _PyEval_AcquireLock(PyThreadState *tstate);
 
 extern void _PyEval_ReleaseLock(PyInterpreterState *, PyThreadState *,
-                                int thread_dying);
+                                int final_release);
 
 #ifdef Py_GIL_DISABLED
 // Returns 0 or 1 if the GIL for the given thread's interpreter is disabled or

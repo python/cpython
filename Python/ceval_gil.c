@@ -206,19 +206,19 @@ static void recreate_gil(struct _gil_runtime_state *gil)
 #endif
 
 static void
-drop_gil(PyInterpreterState *interp, PyThreadState *tstate, int thread_dying)
+drop_gil(PyInterpreterState *interp, PyThreadState *tstate, int final_release)
 {
     struct _ceval_state *ceval = &interp->ceval;
-    /* If thread_dying is true, the caller is indicating that we're releasing
+    /* If final_release is true, the caller is indicating that we're releasing
        the GIL for the last time in this thread.  This is particularly
        relevant when the current thread state is finalizing or its
        interpreter is finalizing (either may be in an inconsistent
        state).  In that case the current thread will definitely
        never try to acquire the GIL again. */
     // XXX It may be more correct to check tstate->_status.finalizing.
-    // XXX assert(thread_dying || !tstate->_status.cleared);
+    // XXX assert(final_release || !tstate->_status.cleared);
 
-    assert(thread_dying || tstate != NULL);
+    assert(final_release || tstate != NULL);
     struct _gil_runtime_state *gil = ceval->gil;
 #ifdef Py_GIL_DISABLED
     // Check if we have the GIL before dropping it. tstate will be NULL if
@@ -232,7 +232,7 @@ drop_gil(PyInterpreterState *interp, PyThreadState *tstate, int thread_dying)
         Py_FatalError("drop_gil: GIL is not locked");
     }
 
-    if (!thread_dying) {
+    if (!final_release) {
         /* Sub-interpreter support: threads might have been switched
            under our feet using PyThreadState_Swap(). Fix the GIL last
            holder variable so that our heuristics work. */
@@ -252,10 +252,10 @@ drop_gil(PyInterpreterState *interp, PyThreadState *tstate, int thread_dying)
     /* We might be releasing the GIL for the last time in this thread.  In that
        case there's a possible race with tstate->interp getting deleted after
        gil->mutex is unlocked and before the following code runs, leading to a
-       crash.  We can use thread_dying to indicate the thread is done with the
+       crash.  We can use final_release to indicate the thread is done with the
        GIL, and that's the only time we might delete the interpreter.  See
        https://github.com/python/cpython/issues/104341. */
-    if (!thread_dying &&
+    if (!final_release &&
         _Py_eval_breaker_bit_is_set(tstate, _PY_GIL_DROP_REQUEST_BIT)) {
         MUTEX_LOCK(gil->switch_mutex);
         /* Not switched yet => wait */
@@ -582,11 +582,11 @@ _PyEval_AcquireLock(PyThreadState *tstate)
 void
 _PyEval_ReleaseLock(PyInterpreterState *interp,
                     PyThreadState *tstate,
-                    int thread_dying)
+                    int final_release)
 {
     assert(tstate != NULL);
     assert(tstate->interp == interp);
-    drop_gil(interp, tstate, thread_dying);
+    drop_gil(interp, tstate, final_release);
 }
 
 void
