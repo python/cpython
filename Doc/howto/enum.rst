@@ -1116,7 +1116,7 @@ are comprised of a single bit::
 ``Flag`` and ``IntFlag`` minutia
 """"""""""""""""""""""""""""""""
 
-Using the following snippet for our examples::
+Using the following snippets for our examples::
 
     >>> class Color(IntFlag):
     ...     BLACK = 0
