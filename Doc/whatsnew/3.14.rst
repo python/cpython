@@ -101,6 +101,13 @@ Deprecated
 Removed
 =======
 
+argparse
+--------
+
+* The *type*, *choices*, and *metavar* parameters
+  of :class:`!argparse.BooleanOptionalAction` are removed.
+  They were deprecated since 3.12.
+
 email
 -----
 
