@@ -362,12 +362,18 @@ static PyMethodDef wmi_functions[] = {
     { NULL, NULL, 0, NULL }
 };
 
+static PyModuleDef_Slot wmi_slots[] = {
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
+    {0, NULL},
+};
+
 static PyModuleDef wmi_def = {
     PyModuleDef_HEAD_INIT,
     "_wmi",
-    NULL,   // doc
-    0,      // m_size
-    wmi_functions
+    NULL,          // doc
+    0,             // m_size
+    wmi_functions, // m_methods
+    wmi_slots,     // m_slots
 };
 
 extern "C" {

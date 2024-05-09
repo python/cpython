@@ -1,5 +1,5 @@
-:mod:`code` --- Interpreter base classes
-========================================
+:mod:`!code` --- Interpreter base classes
+=========================================
 
 .. module:: code
    :synopsis: Facilities to implement read-eval-print loops.
@@ -27,7 +27,7 @@ build applications which provide an interactive interpreter prompt.
 
    Closely emulate the behavior of the interactive Python interpreter. This class
    builds on :class:`InteractiveInterpreter` and adds prompting using the familiar
-   ``sys.ps1`` and ``sys.ps2``, and input buffering. If *local_exit* is True,
+   ``sys.ps1`` and ``sys.ps2``, and input buffering. If *local_exit* is true,
    ``exit()`` and ``quit()`` in the console will not raise :exc:`SystemExit`, but
    instead return to the calling code.
 

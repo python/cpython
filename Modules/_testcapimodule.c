@@ -3936,7 +3936,7 @@ PyInit__testcapi(void)
     if (m == NULL)
         return NULL;
 #ifdef Py_GIL_DISABLED
-    PyModule_ExperimentalSetGIL(m, Py_MOD_GIL_NOT_USED);
+    PyUnstable_Module_SetGIL(m, Py_MOD_GIL_NOT_USED);
 #endif
 
     Py_SET_TYPE(&_HashInheritanceTester_Type, &PyType_Type);
@@ -4133,6 +4133,9 @@ PyInit__testcapi(void)
         return NULL;
     }
     if (_PyTestCapi_Init_Time(m) < 0) {
+        return NULL;
+    }
+    if (_PyTestCapi_Init_Monitoring(m) < 0) {
         return NULL;
     }
     if (_PyTestCapi_Init_Object(m) < 0) {

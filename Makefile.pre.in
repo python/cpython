@@ -488,6 +488,7 @@ PYTHON_OBJS=	\
 		Python/fileutils.o \
 		Python/suggestions.o \
 		Python/perf_trampoline.o \
+		Python/perf_jit_trampoline.o \
 		Python/$(DYNLOADFILE) \
 		$(LIBOBJS) \
 		$(MACHDEP_OBJS) \
@@ -1022,6 +1023,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/methodobject.h \
 		$(srcdir)/Include/modsupport.h \
 		$(srcdir)/Include/moduleobject.h \
+		$(srcdir)/Include/monitoring.h \
 		$(srcdir)/Include/object.h \
 		$(srcdir)/Include/objimpl.h \
 		$(srcdir)/Include/opcode.h \
@@ -1091,6 +1093,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/cpython/longobject.h \
 		$(srcdir)/Include/cpython/memoryobject.h \
 		$(srcdir)/Include/cpython/methodobject.h \
+		$(srcdir)/Include/cpython/monitoring.h \
 		$(srcdir)/Include/cpython/object.h \
 		$(srcdir)/Include/cpython/objimpl.h \
 		$(srcdir)/Include/cpython/odictobject.h \
@@ -2037,7 +2040,7 @@ testuniversal: all
 # a full Xcode install that has an iPhone SE (3rd edition) simulator available.
 # This must be run *after* a `make install` has completed the build. The
 # `--with-framework-name` argument *cannot* be used when configuring the build.
-XCFOLDER=iOSTestbed.$(MULTIARCH).$(shell date +%s)
+XCFOLDER:=iOSTestbed.$(MULTIARCH).$(shell date +%s)
 XCRESULT=$(XCFOLDER)/$(MULTIARCH).xcresult
 .PHONY: testios
 testios:
@@ -2064,7 +2067,7 @@ testios:
 
 	# Run the test suite for the Xcode project, targeting the iOS simulator.
 	# If the suite fails, touch a file in the test folder as a marker
-	if ! xcodebuild test -project $(XCFOLDER)/iOSTestbed.xcodeproj -scheme "iOSTestbed" -destination "platform=iOS Simulator,name=iPhone SE (3rd Generation)" -resultBundlePath $(XCRESULT) ; then \
+	if ! xcodebuild test -project $(XCFOLDER)/iOSTestbed.xcodeproj -scheme "iOSTestbed" -destination "platform=iOS Simulator,name=iPhone SE (3rd Generation)" -resultBundlePath $(XCRESULT) -derivedDataPath $(XCFOLDER)/DerivedData ; then \
 	 	touch $(XCFOLDER)/failed; \
 	fi
 
@@ -2336,6 +2339,7 @@ LIBSUBDIRS=	asyncio \
 		xmlrpc \
 		zipfile zipfile/_path \
 		zoneinfo \
+		_pyrepl \
 		__phello__
 TESTSUBDIRS=	idlelib/idle_test \
 		test \
@@ -2479,7 +2483,8 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/typinganndata \
 		test/wheeldata \
 		test/xmltestdata \
-		test/xmltestdata/c14n-20
+		test/xmltestdata/c14n-20 \
+		test/zipimport_data
 
 COMPILEALL_OPTS=-j0
 

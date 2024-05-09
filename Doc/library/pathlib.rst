@@ -1,6 +1,5 @@
-
-:mod:`pathlib` --- Object-oriented filesystem paths
-===================================================
+:mod:`!pathlib` --- Object-oriented filesystem paths
+====================================================
 
 .. module:: pathlib
    :synopsis: Object-oriented filesystem paths
@@ -628,8 +627,8 @@ Pure paths provide the following methods and properties:
           raise ValueError(error_message.format(str(self), str(formatted)))
       ValueError: '/etc/passwd' is not in the subpath of '/usr' OR one path is relative and the other is absolute.
 
-   When *walk_up* is False (the default), the path must start with *other*.
-   When the argument is True, ``..`` entries may be added to form the
+   When *walk_up* is false (the default), the path must start with *other*.
+   When the argument is true, ``..`` entries may be added to form the
    relative path. In all other cases, such as the paths referencing
    different drives, :exc:`ValueError` is raised.::
 
