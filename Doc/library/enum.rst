@@ -1,5 +1,5 @@
-:mod:`enum` --- Support for enumerations
-========================================
+:mod:`!enum` --- Support for enumerations
+=========================================
 
 .. module:: enum
    :synopsis: Implementation of an enumeration class.
@@ -170,7 +170,7 @@ Data Types
    final *enum*, as well as creating the enum members, properly handling
    duplicates, providing iteration over the enum class, etc.
 
-   .. method:: EnumType.__call__(cls, value, names=None, \*, module=None, qualname=None, type=None, start=1, boundary=None)
+   .. method:: EnumType.__call__(cls, value, names=None, *, module=None, qualname=None, type=None, start=1, boundary=None)
 
       This method is called in two different ways:
 
@@ -279,6 +279,8 @@ Data Types
          >>> Color.RED.value
          1
 
+      Value of the member, can be set in :meth:`~Enum.__new__`.
+
       .. note:: Enum member values
 
          Member values can be anything: :class:`int`, :class:`str`, etc.  If
@@ -286,13 +288,18 @@ Data Types
          appropriate value will be chosen for you.  See :class:`auto` for the
          details.
 
+         While mutable/unhashable values, such as :class:`dict`, :class:`list` or
+         a mutable :class:`~dataclasses.dataclass`, can be used, they will have a
+         quadratic performance impact during creation relative to the
+         total number of mutable/unhashable values in the enum.
+
    .. attribute:: Enum._name_
 
       Name of the member.
 
    .. attribute:: Enum._value_
 
-      Value of the member, can be set in :meth:`~object.__new__`.
+      Value of the member, can be set in :meth:`~Enum.__new__`.
 
    .. attribute:: Enum._order_
 
@@ -350,7 +357,7 @@ Data Types
          >>> PowersOfThree.SECOND.value
          9
 
-   .. method:: Enum.__init__(self, \*args, \**kwds)
+   .. method:: Enum.__init__(self, *args, **kwds)
 
       By default, does nothing.  If multiple values are given in the member
       assignment, those values become separate arguments to ``__init__``; e.g.
@@ -361,7 +368,7 @@ Data Types
 
       ``Weekday.__init__()`` would be called as ``Weekday.__init__(self, 1, 'Mon')``
 
-   .. method:: Enum.__init_subclass__(cls, \**kwds)
+   .. method:: Enum.__init_subclass__(cls, **kwds)
 
       A *classmethod* that is used to further configure subsequent subclasses.
       By default, does nothing.
@@ -388,17 +395,22 @@ Data Types
          >>> Build('deBUG')
          <Build.DEBUG: 'debug'>
 
-   .. method:: Enum.__new__(cls, \*args, \**kwds)
+   .. method:: Enum.__new__(cls, *args, **kwds)
 
       By default, doesn't exist.  If specified, either in the enum class
       definition or in a mixin class (such as ``int``), all values given
       in the member assignment will be passed; e.g.
 
          >>> from enum import Enum
-         >>> class MyIntEnum(Enum):
-         ...     SEVENTEEN = '1a', 16
+         >>> class MyIntEnum(int, Enum):
+         ...     TWENTYSIX = '1a', 16
 
-      results in the call ``int('1a', 16)`` and a value of ``17`` for the member.
+      results in the call ``int('1a', 16)`` and a value of ``26`` for the member.
+
+      .. note::
+
+         When writing a custom ``__new__``, do not use ``super().__new__`` --
+         call the appropriate ``__new__`` instead.
 
    .. method:: Enum.__repr__(self)
 
@@ -817,7 +829,7 @@ Supported ``__dunder__`` names
 :attr:`~EnumType.__members__` is a read-only ordered mapping of ``member_name``:``member``
 items.  It is only available on the class.
 
-:meth:`~object.__new__`, if specified, must create and return the enum members;
+:meth:`~Enum.__new__`, if specified, must create and return the enum members;
 it is also a very good idea to set the member's :attr:`!_value_` appropriately.
 Once all the members are created it is no longer used.
 
@@ -849,9 +861,15 @@ Supported ``_sunder_`` names
      For :class:`Flag` classes the next value chosen will be the next highest
      power-of-two.
 
+- While ``_sunder_`` names are generally reserved for the further development
+  of the :class:`Enum` class and can not be used, some are explicitly allowed:
+
+  - ``_repr_*`` (e.g. ``_repr_html_``), as used in `IPython's rich display`_
+
 .. versionadded:: 3.6 ``_missing_``, ``_order_``, ``_generate_next_value_``
 .. versionadded:: 3.7 ``_ignore_``
-.. versionadded:: 3.13 ``_add_alias_``, ``_add_value_alias_``
+.. versionadded:: 3.13 ``_add_alias_``, ``_add_value_alias_``, ``_repr_*``
+.. _`IPython's rich display`: https://ipython.readthedocs.io/en/stable/config/integrating.html#rich-display
 
 ---------------
 

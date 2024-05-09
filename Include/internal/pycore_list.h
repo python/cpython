@@ -10,12 +10,12 @@ extern "C" {
 
 #include "pycore_freelist.h"  // _PyFreeListState
 
-extern PyObject* _PyList_Extend(PyListObject *, PyObject *);
+PyAPI_FUNC(PyObject*) _PyList_Extend(PyListObject *, PyObject *);
 extern void _PyList_DebugMallocStats(FILE *out);
 
 #define _PyList_ITEMS(op) _Py_RVALUE(_PyList_CAST(op)->ob_item)
 
-extern int
+PyAPI_FUNC(int)
 _PyList_AppendTakeRefListResize(PyListObject *self, PyObject *newitem);
 
 // In free-threaded build: self should be locked by the caller, if it should be thread-safe.
@@ -28,7 +28,11 @@ _PyList_AppendTakeRef(PyListObject *self, PyObject *newitem)
     Py_ssize_t allocated = self->allocated;
     assert((size_t)len + 1 < PY_SSIZE_T_MAX);
     if (allocated > len) {
+#ifdef Py_GIL_DISABLED
+        _Py_atomic_store_ptr_release(&self->ob_item[len], newitem);
+#else
         PyList_SET_ITEM(self, len, newitem);
+#endif
         Py_SET_SIZE(self, len + 1);
         return 0;
     }
@@ -54,7 +58,7 @@ typedef struct {
     PyListObject *it_seq; /* Set to NULL when iterator is exhausted */
 } _PyListIterObject;
 
-extern PyObject *_PyList_FromArraySteal(PyObject *const *src, Py_ssize_t n);
+PyAPI_FUNC(PyObject *)_PyList_FromArraySteal(PyObject *const *src, Py_ssize_t n);
 
 #ifdef __cplusplus
 }

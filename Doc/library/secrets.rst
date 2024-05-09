@@ -1,5 +1,5 @@
-:mod:`secrets` --- Generate secure random numbers for managing secrets
-======================================================================
+:mod:`!secrets` --- Generate secure random numbers for managing secrets
+=======================================================================
 
 .. module:: secrets
    :synopsis: Generate secure random numbers for managing secrets.
@@ -155,7 +155,7 @@ Generate an eight-character alphanumeric password:
 .. note::
 
    Applications should not
-   `store passwords in a recoverable format <https://cwe.mitre.org/data/definitions/257.html>`_,
+   :cwe:`store passwords in a recoverable format <257>`,
    whether plain text or encrypted.  They should be salted and hashed
    using a cryptographically strong one-way (irreversible) hash function.
 

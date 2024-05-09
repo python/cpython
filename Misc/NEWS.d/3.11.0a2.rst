@@ -331,8 +331,8 @@ underlying SQLite API signals memory error. Patch by Erlend E. Aasland.
 .. nonce: 4MQt4r
 .. section: Library
 
-pprint.pprint() now handles underscore_numbers correctly. Previously it was
-always setting it to False.
+:func:`pprint.pprint` now handles *underscore_numbers* correctly.
+Previously it was always setting it to ``False``.
 
 ..
 

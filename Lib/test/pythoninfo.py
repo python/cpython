@@ -179,6 +179,9 @@ def collect_platform(info_add):
             info_add(f'platform.freedesktop_os_release[{key}]',
                      os_release[key])
 
+    if sys.platform == 'android':
+        call_func(info_add, 'platform.android_ver', platform, 'android_ver')
+
 
 def collect_locale(info_add):
     import locale
@@ -287,6 +290,7 @@ def collect_os(info_add):
         "HOMEDRIVE",
         "HOMEPATH",
         "IDLESTARTUP",
+        "IPHONEOS_DEPLOYMENT_TARGET",
         "LANG",
         "LDFLAGS",
         "LDSHARED",
@@ -509,6 +513,7 @@ def collect_sysconfig(info_add):
         'MACHDEP',
         'MULTIARCH',
         'OPT',
+        'PGO_PROF_USE_FLAG',
         'PY_CFLAGS',
         'PY_CFLAGS_NODIST',
         'PY_CORE_LDFLAGS',
@@ -520,6 +525,7 @@ def collect_sysconfig(info_add):
         'Py_GIL_DISABLED',
         'SHELL',
         'SOABI',
+        'TEST_MODULES',
         'abs_builddir',
         'abs_srcdir',
         'prefix',

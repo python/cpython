@@ -40,7 +40,24 @@ PyAPI_FUNC(PyObject *) PyLong_GetInfo(void);
 #if !defined(SIZEOF_PID_T) || SIZEOF_PID_T == SIZEOF_INT
 #define _Py_PARSE_PID "i"
 #define PyLong_FromPid PyLong_FromLong
-#define PyLong_AsPid PyLong_AsLong
+# if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030d0000
+#   define PyLong_AsPid PyLong_AsInt
+# elif SIZEOF_INT == SIZEOF_LONG
+#   define PyLong_AsPid PyLong_AsLong
+# else
+static inline int
+PyLong_AsPid(PyObject *obj)
+{
+    int overflow;
+    long result = PyLong_AsLongAndOverflow(obj, &overflow);
+    if (overflow || result > INT_MAX || result < INT_MIN) {
+        PyErr_SetString(PyExc_OverflowError,
+                        "Python int too large to convert to C int");
+        return -1;
+    }
+    return (int)result;
+}
+# endif
 #elif SIZEOF_PID_T == SIZEOF_LONG
 #define _Py_PARSE_PID "l"
 #define PyLong_FromPid PyLong_FromLong
