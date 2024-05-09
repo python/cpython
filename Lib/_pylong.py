@@ -230,7 +230,7 @@ if 1:
     del defaultdict
 
     def _dec_str_to_int_inner(s):
-        BYTELIM = 200
+        BYTELIM = 512
         D = decimal.Decimal
         result = bytearray()
 

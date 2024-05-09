@@ -919,5 +919,15 @@ class PyLongModuleTests(unittest.TestCase):
             self.assertEqual(n, int(sn))
             bits <<= 1
 
+    @support.requires_resource('cpu')
+    def test_pylong_roundtrip_huge(self):
+        # k blocks of 1234567890
+        k = 1_000_000 # so 10 million digits in all
+        tentoten = 10**10
+        n = 1234567890 * ((tentoten**k - 1) // (tentoten - 1))
+        sn = "1234567890" * k
+        self.assertEqual(n, int(sn))
+        self.assertEqual(sn, str(n))
+
 if __name__ == "__main__":
     unittest.main()
