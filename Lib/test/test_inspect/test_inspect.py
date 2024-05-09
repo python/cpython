@@ -768,6 +768,7 @@ class TestRetrievingSourceCode(GetSourceBase):
             inspect.getfile(list.append)
         self.assertIn('expected, got', str(e_append.exception))
 
+    @suppress_immortalization()
     def test_getfile_class_without_module(self):
         class CM(type):
             @property
