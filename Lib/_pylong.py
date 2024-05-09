@@ -297,7 +297,7 @@ def _dec_str_to_int_inner(s):
     # trillions of bytes (unles they're just trying to "break things").
     if w.bit_length() >= 46:
         # "Only" had < 53 - 46 = 7 bits to spare in IEEE-754 double.
-        # XXX I can't test this - don't have 339 terabytes of RAM to
+        # XXX I can't test this - don't have 169 terabytes of RAM to
         # build a string long enough to trigger this.
         raise ValueError(f"cannot convert string of len {len(s)} to int")
     with decimal.localcontext(_unbounded_dec_context) as ctx:
