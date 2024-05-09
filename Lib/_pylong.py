@@ -273,7 +273,7 @@ if 1:
                     # If the assert fails, chances are decent we're
                     # sooooo far off it may seem to run forever
                     # otherwise - the error analysis was fatally flawed
-                    # in this case..
+                    # in this case.
                     assert count < 10, (count, w, str(n))
                     lo -= p256
                     hi += 1
