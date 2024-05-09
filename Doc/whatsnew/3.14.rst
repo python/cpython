@@ -101,6 +101,13 @@ Deprecated
 Removed
 =======
 
+argparse
+--------
+
+* The *type*, *choices*, and *metavar* parameters
+  of :class:`!argparse.BooleanOptionalAction` are removed.
+  They were deprecated since 3.12.
+
 email
 -----
 
@@ -117,10 +124,6 @@ Others
 * :class:`!typing.ByteString` and :class:`!collections.abc.ByteString`
   are removed. They had previously raised a :exc:`DeprecationWarning`
   since Python 3.12.
-
-* The *type*, *choices*, and *metavar* parameters
-  of :class:`!argparse.BooleanOptionalAction` are removed.
-  They were deprecated since 3.12.
 
 * :mod:`itertools` support for copy, deepcopy, and pickle operations.
   These had previously raised a :exc:`DeprecationWarning` since Python 3.12.
