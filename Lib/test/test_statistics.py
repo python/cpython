@@ -2446,6 +2446,7 @@ class TestKDE(unittest.TestCase):
                 for x in xarr:
                     self.assertAlmostEqual(invcdf(cdf(x)), x, places=5)
 
+    @support.requires_resource('cpu')
     def test_kde_random(self):
         kde_random = statistics.kde_random
         StatisticsError = statistics.StatisticsError
