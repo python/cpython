@@ -205,19 +205,6 @@ static void recreate_gil(struct _gil_runtime_state *gil)
 }
 #endif
 
-static inline void
-drop_gil_impl(PyThreadState *tstate, struct _gil_runtime_state *gil)
-{
-    MUTEX_LOCK(gil->mutex);
-    _Py_ANNOTATE_RWLOCK_RELEASED(&gil->locked, /*is_write=*/1);
-    _Py_atomic_store_int_relaxed(&gil->locked, 0);
-    if (tstate != NULL) {
-        tstate->_status.holds_gil = 0;
-    }
-    COND_SIGNAL(gil->cond);
-    MUTEX_UNLOCK(gil->mutex);
-}
-
 static void
 drop_gil(PyInterpreterState *interp, PyThreadState *tstate, int thread_dying)
 {
@@ -252,7 +239,14 @@ drop_gil(PyInterpreterState *interp, PyThreadState *tstate, int thread_dying)
         _Py_atomic_store_ptr_relaxed(&gil->last_holder, tstate);
     }
 
-    drop_gil_impl(tstate, gil);
+    MUTEX_LOCK(gil->mutex);
+    _Py_ANNOTATE_RWLOCK_RELEASED(&gil->locked, /*is_write=*/1);
+    _Py_atomic_store_int_relaxed(&gil->locked, 0);
+    if (tstate != NULL) {
+        tstate->_status.holds_gil = 0;
+    }
+    COND_SIGNAL(gil->cond);
+    MUTEX_UNLOCK(gil->mutex);
 
 #ifdef FORCE_SWITCHING
     /* We might be releasing the GIL for the last time in this thread.  In that
@@ -375,7 +369,6 @@ take_gil(PyThreadState *tstate)
     MUTEX_LOCK(gil->switch_mutex);
 #endif
     /* We now hold the GIL */
-    tstate->_status.holds_gil = 1;
     _Py_atomic_store_int_relaxed(&gil->locked, 1);
     _Py_ANNOTATE_RWLOCK_ACQUIRED(&gil->locked, /*is_write=*/1);
 
@@ -405,6 +398,7 @@ take_gil(PyThreadState *tstate)
     }
     assert(_PyThreadState_CheckConsistency(tstate));
 
+    tstate->_status.holds_gil = 1;
     _Py_unset_eval_breaker_bit(tstate, _PY_GIL_DROP_REQUEST_BIT);
     update_eval_breaker_for_thread(interp, tstate);
 
@@ -1149,7 +1143,7 @@ _PyEval_DisableGIL(PyThreadState *tstate)
         //
         // Drop the GIL, which will wake up any threads waiting in take_gil()
         // and let them resume execution without the GIL.
-        drop_gil_impl(tstate, gil);
+        drop_gil(tstate->interp, tstate, 0);
         return 1;
     }
     return 0;
