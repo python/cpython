@@ -32,7 +32,17 @@ def openpty():
     except (AttributeError, OSError):
         pass
     master_fd, slave_name = _open_terminal()
-    slave_fd = slave_open(slave_name)
+
+    slave_fd = os.open(slave_name, os.O_RDWR)
+    try:
+        from fcntl import ioctl, I_PUSH
+    except ImportError:
+         return master_fd, slave_fd
+    try:
+        ioctl(result, I_PUSH, "ptem")
+        ioctl(result, I_PUSH, "ldterm")
+    except OSError:
+        pass
     return master_fd, slave_fd
 
 def _open_terminal():

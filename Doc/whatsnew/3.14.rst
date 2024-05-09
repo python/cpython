@@ -101,6 +101,21 @@ Deprecated
 Removed
 =======
 
+email
+-----
+
+* The *isdst* parameter has been removed from :func:`email.utils.localtime`.
+  (Contributed by Hugo van Kemenade in :gh:`118798`.)
+
+pty
+___
+
+* Remove deprecated ``pty.master_open`` and ``pty.slave_open``.
+  They had previously raised a :exc:`DeprecationWarning` since Python 3.12.
+
+Others
+------
+
 * Using :data:`NotImplemented` in a boolean context will now raise a :exc:`TypeError`.
   It had previously raised a :exc:`DeprecationWarning` since Python 3.9. (Contributed
   by Jelle Zijlstra in :gh:`118767`.)
@@ -109,8 +124,10 @@ Removed
   are removed. They had previously raised a :exc:`DeprecationWarning`
   since Python 3.12.
 
-* Remove deprecated ``pty.master_open`` and ``pty.slave_open``.
-  They had previously raised a :exc:`DeprecationWarning` since Python 3.12.
+* :mod:`itertools` support for copy, deepcopy, and pickle operations.
+  These had previously raised a :exc:`DeprecationWarning` since Python 3.12.
+  (Contributed by Raymond Hettinger in :gh:`101588`.)
+
 
 Porting to Python 3.14
 ======================
