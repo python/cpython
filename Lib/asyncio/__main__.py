@@ -108,7 +108,7 @@ if __name__ == '__main__':
     try:
         import readline  # NoQA
     except ImportError:
-        pass
+        readline = None
 
     interactive_hook = getattr(sys, "__interactivehook__", None)
 
@@ -122,8 +122,9 @@ if __name__ == '__main__':
         except:
             pass
         else:
-            completer = rlcompleter.Completer(console.locals)
-            readline.set_completer(completer.complete)
+            if readline is not None:
+                completer = rlcompleter.Completer(console.locals)
+                readline.set_completer(completer.complete)
 
     repl_thread = REPLThread()
     repl_thread.daemon = True
