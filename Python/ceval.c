@@ -1214,7 +1214,7 @@ missing_arguments(PyThreadState *tstate, PyCodeObject *co,
         end = start + co->co_kwonlyargcount;
     }
     for (i = start; i < end; i++) {
-        if (PyStackRef_To_PyObject_Borrow(localsplus[i]) == NULL) {
+        if (PyStackRef_IsNull(localsplus[i])) {
             PyObject *raw = PyTuple_GET_ITEM(co->co_localsplusnames, i);
             PyObject *name = PyObject_Repr(raw);
             if (name == NULL) {
@@ -1439,7 +1439,7 @@ initialize_locals(PyThreadState *tstate, PyFunctionObject *func,
         if (co->co_flags & CO_VARARGS) {
             i++;
         }
-        assert(PyStackRef_To_PyObject_Borrow(localsplus[i]) == NULL);
+        assert(PyStackRef_IsNull(localsplus[i]));
         localsplus[i] = PyObject_To_StackRef_Borrow(kwdict);
     }
     else {
@@ -1455,7 +1455,7 @@ initialize_locals(PyThreadState *tstate, PyFunctionObject *func,
         n = argcount;
     }
     for (j = 0; j < n; j++) {
-        assert(PyStackRef_To_PyObject_Borrow(localsplus[j]) == NULL);
+        assert(PyStackRef_IsNull(localsplus[j]));
         localsplus[j] = args[j];
     }
 
@@ -1597,7 +1597,7 @@ initialize_locals(PyThreadState *tstate, PyFunctionObject *func,
         Py_ssize_t m = co->co_argcount - defcount;
         Py_ssize_t missing = 0;
         for (i = argcount; i < m; i++) {
-            if (PyStackRef_To_PyObject_Borrow(localsplus[i]) == NULL) {
+            if (PyStackRef_IsNull(localsplus[i])) {
                 missing++;
             }
         }

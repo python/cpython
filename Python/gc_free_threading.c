@@ -306,7 +306,7 @@ gc_visit_stackref(_PyStackRef ref)
     // being dead already.
     if (PyStackRef_IsDeferred(ref)) {
         PyObject *obj = PyStackRef_To_PyObject_Borrow(ref);
-        if (!_Py_IsImmortal(obj)) {
+        if (obj != NULL && !_Py_IsImmortal(obj)) {
             gc_add_refs(obj, 1);
         }
     }
@@ -391,8 +391,8 @@ process_delayed_frees(PyInterpreterState *interp)
 }
 
 // Subtract an incoming reference from the computed "gc_refs" refcount.
-int
-_Py_visit_decref(PyObject *op, void *arg)
+static int
+visit_decref(PyObject *op, void *arg)
 {
     if (_PyObject_GC_IS_TRACKED(op) && !_Py_IsImmortal(op)) {
         // If update_refs hasn't reached this object yet, mark it
@@ -459,7 +459,7 @@ update_refs(const mi_heap_t *heap, const mi_heap_area_t *area,
     // Subtract internal references from ob_tid. Objects with ob_tid > 0
     // are directly reachable from outside containers, and so can't be
     // collected.
-    Py_TYPE(op)->tp_traverse(op, _Py_visit_decref, NULL);
+    Py_TYPE(op)->tp_traverse(op, visit_decref, NULL);
     return true;
 }
 
@@ -886,8 +886,8 @@ show_stats_each_generations(GCState *gcstate)
 }
 
 // Traversal callback for handle_resurrected_objects.
-int
-_Py_visit_decref_unreachable(PyObject *op, void *data)
+static int
+visit_decref_unreachable(PyObject *op, void *data)
 {
     if (gc_is_unreachable(op) && _PyObject_GC_IS_TRACKED(op)) {
         op->ob_ref_local -= 1;
@@ -934,7 +934,7 @@ handle_resurrected_objects(struct collection_state *state)
 
         traverseproc traverse = Py_TYPE(op)->tp_traverse;
         (void) traverse(op,
-            (visitproc)_Py_visit_decref_unreachable,
+            (visitproc)visit_decref_unreachable,
             NULL);
     }
 
