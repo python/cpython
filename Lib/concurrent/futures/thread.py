@@ -124,7 +124,7 @@ class ThreadPoolExecutor(_base.Executor):
     _counter = itertools.count().__next__
 
     def __init__(self, max_workers=None, thread_name_prefix='',
-                 initializer=None, initargs=()):
+                 initializer=None, fifo_queue=True, initargs=()):
         """Initializes a new ThreadPoolExecutor instance.
 
         Args:
@@ -132,6 +132,7 @@ class ThreadPoolExecutor(_base.Executor):
                 execute the given calls.
             thread_name_prefix: An optional name prefix to give our threads.
             initializer: A callable used to initialize worker threads.
+            fifo_queue: Whether using a FIFO or LIFO queue. Default if FIFO.
             initargs: A tuple of arguments to pass to the initializer.
         """
         if max_workers is None:
@@ -150,7 +151,7 @@ class ThreadPoolExecutor(_base.Executor):
             raise TypeError("initializer must be a callable")
 
         self._max_workers = max_workers
-        self._work_queue = queue.SimpleQueue()
+        self._work_queue = queue.SimpleQueue() if fifo_queue else queue.LifoQueue()
         self._idle_semaphore = threading.Semaphore(0)
         self._threads = set()
         self._broken = False
