@@ -225,6 +225,7 @@ def _dec_str_to_int_inner(s):
     result = bytearray()
 
     def inner(n, w):
+        #assert n < D256 ** w # required, but too expensive to check
         if w <= BYTELIM:
             # XXX Stefan Pochmann discovered that, for 1024-bit ints,
             # `int(Decimal)` took 2.5x longer than `int(str(Decimal))`.
@@ -274,7 +275,28 @@ def _dec_str_to_int_inner(s):
         inner(hi, w - w2)
         inner(lo, w2)
 
-    w = int(len(s) * _LOG_10_BASE_256) + 1
+    # How many base 256 digits are needed?. Mathematically, exactly
+    # floor(log256(int(s))) + 1. There is no cheap way to compute this.
+    # But we can get an upper buond, and that's necessary for our error
+    # analysis to make sense. int(s) < 10**len(s), so the log needed is
+    # < log256(10**len(s)) = len(s) * log256(10). However, using
+    # finite-precision floating point for this, it's possible that the
+    # computed value is a little less than the true value. If the true
+    # value is at - or a little higher than - an integer, we can get an
+    # off-by-1 error too low. So we add 2 instead of 1 if chopping lost
+    # a fraction > 0.9.
+    log_ub = len(s) * _LOG_10_BASE_256
+    log_ub_as_int = int(log_ub)
+    w = log_ub_as_int + 1 + (log_ub - log_ub_as_int > 9.9)
+    # And what if we'vv plain exhausted the limits of HW floats? We
+    # could compute the log to any desired precision using `decimal`,
+    # but it's not plausible that anyone will pass a string requiring
+    # trillions of bytes (unles they're just trying to "break things").
+    if w.bit_length() >= 43:
+        # "Only" had < 53 - 43 = 10 bits to spare in IEEE-754 double.
+        # XXX I can't test this - don't have 21 terabytes of RAM to
+        # build a string long enough to trigger this.
+        raise ValueError(f"cannot convert string of len {len(s)} to int")
     with decimal.localcontext(_unbounded_dec_context) as ctx:
         D256 = D(256)
         pow256 = compute_powers(w, D256, BYTELIM)
