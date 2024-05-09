@@ -1,5 +1,5 @@
-:mod:`argparse` --- Parser for command-line options, arguments and sub-commands
-===============================================================================
+:mod:`!argparse` --- Parser for command-line options, arguments and sub-commands
+================================================================================
 
 .. module:: argparse
    :synopsis: Command-line option and argument parsing library.
