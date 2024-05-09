@@ -1126,6 +1126,11 @@ Using the following snippet for our examples::
     ...     PURPLE = RED | BLUE
     ...     WHITE = RED | GREEN | BLUE
     ...
+    >>> class Perm(IntFlag):
+    ...     R = 4
+    ...     W = 2
+    ...     X = 1
+    ...
 
 the following are true:
 
@@ -1149,6 +1154,8 @@ the following are true:
 
     >>> (Color.RED | Color.GREEN).name
     'RED|GREEN'
+    >>> repr(Perm.R & Perm.W).name)
+    'None'
 
 - multi-bit flags, aka aliases, can be returned from operations::
 
