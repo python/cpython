@@ -1355,6 +1355,10 @@ class GCTogglingTests(unittest.TestCase):
         junk = []
         i = 0
         detector = GC_Detector()
+        if Py_GIL_DISABLED:
+            # The free-threaded build doesn't have multiple generations, so
+            # just trigger a GC manually.
+            gc.collect()
         while not detector.gc_happened:
             i += 1
             if i > 10000:
@@ -1423,6 +1427,10 @@ class GCTogglingTests(unittest.TestCase):
         detector = GC_Detector()
         junk = []
         i = 0
+        if Py_GIL_DISABLED:
+            # The free-threaded build doesn't have multiple generations, so
+            # just trigger a GC manually.
+            gc.collect()
         while not detector.gc_happened:
             i += 1
             if i > 10000:
