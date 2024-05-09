@@ -5594,7 +5594,7 @@ os_mkdir_impl(PyObject *module, path_t *path, int mode, int dir_fd)
         // inheritable (OICI) entries that allow (A) full control (FA) to
         // SYSTEM (SY), Administrators (BA), and the owner (OW).
         if (!ConvertStringSecurityDescriptorToSecurityDescriptorW(
-            L"D:PAI(A;OICI;FA;;;SY)(A;OICI;FA;;;BA)(A;OICI;FA;;;OW)",
+            L"D:P(A;OICI;FA;;;SY)(A;OICI;FA;;;BA)(A;OICI;FA;;;OW)",
             SDDL_REVISION_1,
             &secAttr.lpSecurityDescriptor,
             &sdSize
@@ -5604,7 +5604,10 @@ os_mkdir_impl(PyObject *module, path_t *path, int mode, int dir_fd)
     }
     if (!error) {
         result = CreateDirectoryW(path->wide, pSecAttr);
-        if (LocalFree(secAttr.lpSecurityDescriptor)) {
+        if (secAttr.lpSecurityDescriptor &&
+            // uncommonly, LocalFree returns non-zero on error, but still uses
+            // GetLastError() to see what the error code is
+            LocalFree(secAttr.lpSecurityDescriptor)) {
             error = GetLastError();
         }
     }
