@@ -2126,7 +2126,7 @@ class BuiltinTest(unittest.TestCase):
             self.assertRaises(TypeError, tp, a=1, b=2)
 
     def test_bool_notimplemented(self):
-        # Issue #35712: NotImplemented is a sentinel value that should never
+        # GH-79893: NotImplemented is a sentinel value that should never
         # be evaluated in a boolean context (virtually all such use cases
         # are a result of accidental misuse implementing rich comparison
         # operations in terms of one another).
