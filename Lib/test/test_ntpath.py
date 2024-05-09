@@ -1097,8 +1097,12 @@ class TestNtpath(NtpathTestCase):
 
     @unittest.skipUnless(hasattr(os, 'pipe'), "need os.pipe()")
     def test_isfile_pipe(self):
-        pr, _ = os.pipe()
-        self.assertFalse(ntpath.isfile(pr))
+        pr, pw = os.pipe()
+        try:
+            self.assertFalse(ntpath.isfile(pr))
+        finally:
+            os.close(pr)
+            os.close(pw)
 
     @unittest.skipIf(sys.platform != 'win32', "windows only")
     def test_con_device(self):
