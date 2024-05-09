@@ -133,21 +133,38 @@ class CAPITest(unittest.TestCase):
         # Test PyTuple_GetSlice()
         getslice = _testlimitedcapi.tuple_getslice
 
-        tup = (1, 2, 3)
-
         # empty
+        tup = (1, 2, 3)
         self.assertEqual(getslice(tup, PY_SSIZE_T_MIN, 0), ())
         self.assertEqual(getslice(tup, -1, 0), ())
         self.assertEqual(getslice(tup, 3, PY_SSIZE_T_MAX), ())
+        self.assertEqual(getslice(tup, 0, 0), ())
+        self.assertEqual(getslice(tup, 3, 0), ())
+        tup = TupleSubclass((1, 2, 3))
+        self.assertEqual(getslice(tup, PY_SSIZE_T_MIN, 0), ())
+        self.assertEqual(getslice(tup, -1, 0), ())
+        self.assertEqual(getslice(tup, 3, PY_SSIZE_T_MAX), ())
+        self.assertEqual(getslice(tup, 0, 0), ())
+        self.assertEqual(getslice(tup, 3, 0), ())
 
         # slice
+        tup = (1, 2, 3)
+        self.assertEqual(getslice(tup, 1, 3), (2, 3))
+        tup = TupleSubclass((1, 2, 3))
         self.assertEqual(getslice(tup, 1, 3), (2, 3))
 
         # whole
+        tup = (1, 2, 3)
+        self.assertEqual(getslice(tup, 0, 3), tup)
+        self.assertEqual(getslice(tup, 0, 100), tup)
+        self.assertEqual(getslice(tup, -100, 100), tup)
+        tup = TupleSubclass((1, 2, 3))
         self.assertEqual(getslice(tup, 0, 3), tup)
         self.assertEqual(getslice(tup, 0, 100), tup)
         self.assertEqual(getslice(tup, -100, 100), tup)
 
+        self.assertRaises(SystemError, getslice, [1, 2, 3], 0, 1)
+        self.assertRaises(SystemError, getslice, 42, 0, 1)
         # CRASHES getslice(NULL, 0, 0)
 
     def test_tuple_setitem(self):
@@ -162,6 +179,8 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(IndexError, setitem, tup, -1, 1)
         self.assertRaises(IndexError, setitem, tup, len(tup), 1)
         self.assertRaises(IndexError, setitem, tup, PY_SSIZE_T_MAX, 1)
+        self.assertRaises(SystemError, setitem, [1], 0, 1)
+        self.assertRaises(SystemError, setitem, 42, 0, 1)
 
         # CRASHES setitem(NULL, 1, 5)
 
