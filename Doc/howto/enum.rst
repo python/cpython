@@ -1154,8 +1154,8 @@ the following are true:
 
     >>> (Color.RED | Color.GREEN).name
     'RED|GREEN'
-    >>> repr(Perm.R & Perm.W).name)
-    'None'
+    >>> (Perm.R & Perm.W).name is None
+    True
 
 - multi-bit flags, aka aliases, can be returned from operations::
 
