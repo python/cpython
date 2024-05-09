@@ -24,7 +24,7 @@ framelocalsproxy_getval(_PyInterpreterFrame *frame, PyCodeObject *co, int i)
     _PyStackRef *fast = _PyFrame_GetLocalsArray(frame);
     _PyLocals_Kind kind = _PyLocals_GetKind(co->co_localspluskinds, i);
 
-    PyObject *value = PyStackRef_To_PyObject_Steal(fast[i]);
+    PyObject *value = PyStackRef_To_PyObject_Borrow(fast[i]);
     PyObject *cell = NULL;
 
     if (value == NULL) {
@@ -156,21 +156,21 @@ framelocalsproxy_setitem(PyObject *self, PyObject *key, PyObject *value)
             if (kind == CO_FAST_FREE) {
                 // The cell was set when the frame was created from
                 // the function's closure.
-                assert(oldvalue.bits != 0 && PyCell_Check(PyStackRef_To_PyObject_Steal(oldvalue)));
-                cell = PyStackRef_To_PyObject_Steal(oldvalue);
+                assert(oldvalue.bits != 0 && PyCell_Check(PyStackRef_To_PyObject_Borrow(oldvalue)));
+                cell = PyStackRef_To_PyObject_Borrow(oldvalue);
             } else if (kind & CO_FAST_CELL && oldvalue.bits != 0) {
-                PyObject *as_obj = PyStackRef_To_PyObject_Steal(oldvalue);
+                PyObject *as_obj = PyStackRef_To_PyObject_Borrow(oldvalue);
                 if (PyCell_Check(as_obj)) {
                     cell = as_obj;
                 }
             }
             if (cell != NULL) {
-                oldvalue = PyObject_To_StackRef_Steal(PyCell_GET(cell));
-                if (value != PyStackRef_To_PyObject_Steal(oldvalue)) {
+                oldvalue = PyObject_To_StackRef_Borrow(PyCell_GET(cell));
+                if (value != PyStackRef_To_PyObject_Borrow(oldvalue)) {
                     PyCell_SET(cell, Py_XNewRef(value));
-                    PyStackRef_XDECREF(oldvalue);
+                    PyStackRef_DECREF(oldvalue);
                 }
-            } else if (value != PyStackRef_To_PyObject_Steal(oldvalue)) {
+            } else if (value != PyStackRef_To_PyObject_Borrow(oldvalue)) {
                 PyStackRef_XSETREF(fast[i], PyObject_To_StackRef_New(value));
             }
             return 0;
@@ -1518,13 +1518,13 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno, void *Py_UNUSED(ignore
     while (start_stack > best_stack) {
         if (top_of_stack(start_stack) == Except) {
             /* Pop exception stack as well as the evaluation stack */
-            PyObject *exc = PyStackRef_To_PyObject_Steal(_PyFrame_StackPop(f->f_frame));
+            PyObject *exc = PyStackRef_To_PyObject_Borrow(_PyFrame_StackPop(f->f_frame));
             assert(PyExceptionInstance_Check(exc) || exc == Py_None);
             PyThreadState *tstate = _PyThreadState_GET();
             Py_XSETREF(tstate->exc_info->exc_value, exc == Py_None ? NULL : exc);
         }
         else {
-            PyStackRef_XDECREF(_PyFrame_StackPop(f->f_frame));
+            PyStackRef_DECREF(_PyFrame_StackPop(f->f_frame));
         }
         start_stack = pop_value(start_stack);
     }
@@ -1880,7 +1880,7 @@ frame_get_var(_PyInterpreterFrame *frame, PyCodeObject *co, int i,
         return 0;
     }
 
-    PyObject *value = PyStackRef_To_PyObject_Steal(frame->localsplus[i]);
+    PyObject *value = PyStackRef_To_PyObject_Borrow(frame->localsplus[i]);
     if (frame->stacktop) {
         if (kind & CO_FAST_FREE) {
             // The cell was set by COPY_FREE_VARS.

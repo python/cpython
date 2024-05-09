@@ -85,7 +85,7 @@ static inline _PyStackRef *_PyFrame_Stackbase(_PyInterpreterFrame *f) {
 
 static inline _PyStackRef _PyFrame_StackPeek(_PyInterpreterFrame *f) {
     assert(f->stacktop > _PyFrame_GetCode(f)->co_nlocalsplus);
-    assert(PyStackRef_To_PyObject_Steal(f->localsplus[f->stacktop-1]) != NULL);
+    assert(PyStackRef_To_PyObject_Borrow(f->localsplus[f->stacktop-1]) != NULL);
     return f->localsplus[f->stacktop-1];
 }
 
@@ -121,15 +121,6 @@ static inline void _PyFrame_Copy(_PyInterpreterFrame *src, _PyInterpreterFrame *
     // Don't leave a dangling pointer to the old frame when creating generators
     // and coroutines:
     dest->previous = NULL;
-#ifdef Py_GIL_DISABLED
-    if (PyCode_Check(dest->f_executable)) {
-        PyCodeObject *co = (PyCodeObject *) dest->f_executable;
-        for (int i = src->stacktop;
-             i < co->co_nlocalsplus + co->co_stacksize; i++) {
-            dest->localsplus[i] = Py_STACKREF_NULL;
-        }
-    }
-#endif
 }
 
 /* Consumes reference to func and locals.
@@ -155,16 +146,6 @@ _PyFrame_Initialize(
     for (int i = null_locals_from; i < code->co_nlocalsplus; i++) {
         frame->localsplus[i] = Py_STACKREF_NULL;
     }
-
-#ifdef Py_GIL_DISABLED
-    // On GIL disabled, we walk the entire stack in GC. Since stacktop
-    // is not always in sync with the real stack pointer, we have
-    // no choice but to traverse the entire stack.
-    // This just makes sure we don't pass the GC invalid stack values.
-    for (int i = code->co_nlocalsplus; i < code->co_nlocalsplus + code->co_stacksize; i++) {
-        frame->localsplus[i] = Py_STACKREF_NULL;
-    }
-#endif
 }
 
 /* Gets the pointer to the locals array
@@ -324,12 +305,6 @@ _PyFrame_PushTrampolineUnchecked(PyThreadState *tstate, PyCodeObject *code, int 
     frame->instr_ptr = _PyCode_CODE(code);
     frame->owner = FRAME_OWNED_BY_THREAD;
     frame->return_offset = 0;
-#ifdef Py_GIL_DISABLED
-    assert(code->co_nlocalsplus == 0);
-    for (int i = 0; i < code->co_stacksize; i++) {
-        frame->localsplus[i] = Py_STACKREF_NULL;
-    }
-#endif
     return frame;
 }
 

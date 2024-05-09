@@ -125,7 +125,7 @@ class Stack:
         self.defined: set[str] = set()
 
     def pop(self, var: StackItem, should_untag: bool = True) -> tuple[str, ...]:
-        untag = "PyStackRef_To_PyObject_Steal" if should_untag else ""
+        untag = "PyStackRef_To_PyObject_Borrow" if should_untag else ""
         self.top_offset.pop(var)
         if not var.peek:
             self.peek_offset.pop(var)
@@ -166,7 +166,7 @@ class Stack:
                     if popped.peek:
                         res.append(f"{var.name}_stackref = {popped.name}_stackref;\n")
                     else:
-                        res.append(f"{var.name}_stackref = PyObject_To_StackRef_Steal({popped.name});\n")
+                        res.append(f"{var.name}_stackref = PyObject_To_StackRef_Borrow({popped.name});\n")
                 return tuple(res)
         self.base_offset.pop(var)
         if var.name in UNUSED:
@@ -220,7 +220,7 @@ class Stack:
                             continue
                         elif var.condition != "1":
                             out.emit(f"if ({var.condition}) ")
-                    tag = "PyObject_To_StackRef_Steal" if should_tag and type.strip() != "_PyStackRef" else ""
+                    tag = "PyObject_To_StackRef_Borrow" if should_tag and type.strip() != "_PyStackRef" else ""
                     out.emit(
                         f"stack_pointer[{self.base_offset.to_c()}] = {tag}({cast}{var.name});\n"
                     )

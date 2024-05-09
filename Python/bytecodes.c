@@ -231,7 +231,7 @@ dummy_func(
 
         replicate(8) pure inst(LOAD_FAST, (-- value: _PyStackRef)) {
             value = GETLOCAL(oparg);
-            assert(PyStackRef_To_PyObject_Steal(value) != NULL);
+            assert(PyStackRef_To_PyObject_Borrow(value) != NULL);
             PyStackRef_INCREF(value);
         }
 
@@ -543,7 +543,7 @@ dummy_func(
         tier1 op(_BINARY_OP_INPLACE_ADD_UNICODE, (left, right --)) {
             assert(next_instr->op.code == STORE_FAST);
             _PyStackRef *target_local = &GETLOCAL(next_instr->op.arg);
-            DEOPT_IF(PyStackRef_To_PyObject_Steal(*target_local) != left);
+            DEOPT_IF(PyStackRef_To_PyObject_Borrow(*target_local) != left);
             STAT_INC(BINARY_OP, hit);
             /* Handle `left = left + right` or `left += right` for str.
              *
@@ -558,11 +558,11 @@ dummy_func(
              */
             assert(Py_REFCNT(left) >= 2);
             _Py_DECREF_NO_DEALLOC(left);
-            PyObject *temp = PyStackRef_To_PyObject_Steal(*target_local);
+            PyObject *temp = PyStackRef_To_PyObject_Borrow(*target_local);
             PyUnicode_Append(&temp, right);
-            *target_local = PyObject_To_StackRef_Steal(temp);
+            *target_local = PyObject_To_StackRef_Borrow(temp);
             _Py_DECREF_SPECIALIZED(right, _PyUnicode_ExactDealloc);
-            ERROR_IF(PyStackRef_To_PyObject_Steal(*target_local) == NULL, error);
+            ERROR_IF(PyStackRef_To_PyObject_Borrow(*target_local) == NULL, error);
             // The STORE_FAST is already done.
             assert(next_instr->op.code == STORE_FAST);
             SKIP_OVER(1);
@@ -607,7 +607,7 @@ dummy_func(
                 res = NULL;
             }
             else {
-                res = PyObject_GetItem(PyStackRef_To_PyObject_Steal(container), slice);
+                res = PyObject_GetItem(PyStackRef_To_PyObject_Borrow(container), slice);
                 Py_DECREF(slice);
             }
             PyStackRef_DECREF(container);
@@ -621,7 +621,7 @@ dummy_func(
                 err = 1;
             }
             else {
-                err = PyObject_SetItem(PyStackRef_To_PyObject_Steal(container), slice, PyStackRef_To_PyObject_New(v));
+                err = PyObject_SetItem(PyStackRef_To_PyObject_Borrow(container), slice, PyStackRef_To_PyObject_New(v));
                 Py_DECREF(slice);
             }
             PyStackRef_DECREF(v);
@@ -730,8 +730,8 @@ dummy_func(
             #if ENABLE_SPECIALIZATION
             if (ADAPTIVE_COUNTER_TRIGGERS(counter)) {
                 next_instr = this_instr;
-                _Py_Specialize_StoreSubscr(PyStackRef_To_PyObject_Steal(container),
-                                           PyStackRef_To_PyObject_Steal(sub), next_instr);
+                _Py_Specialize_StoreSubscr(PyStackRef_To_PyObject_Borrow(container),
+                                           PyStackRef_To_PyObject_Borrow(sub), next_instr);
                 DISPATCH_SAME_OPARG();
             }
             STAT_INC(STORE_SUBSCR, deferred);
@@ -741,7 +741,7 @@ dummy_func(
 
         op(_STORE_SUBSCR, (v: _PyStackRef, container: _PyStackRef, sub: _PyStackRef -- )) {
             /* container[sub] = v */
-            int err = PyObject_SetItem(PyStackRef_To_PyObject_Steal(container), PyStackRef_To_PyObject_New(sub), PyStackRef_To_PyObject_New(v));
+            int err = PyObject_SetItem(PyStackRef_To_PyObject_Borrow(container), PyStackRef_To_PyObject_New(sub), PyStackRef_To_PyObject_New(v));
             DECREF_INPUTS();
             ERROR_IF(err, error);
         }
@@ -894,7 +894,7 @@ dummy_func(
             _PyInterpreterFrame *dying = frame;
             frame = tstate->current_frame = dying->previous;
             _PyEval_FrameClearAndPop(tstate, dying);
-            _PyFrame_StackPush(frame, PyObject_To_StackRef_Steal(retval));
+            _PyFrame_StackPush(frame, PyObject_To_StackRef_Borrow(retval));
             LOAD_IP(frame->return_offset);
             goto resume_frame;
         }
@@ -1146,7 +1146,7 @@ dummy_func(
         tier1 inst(RERAISE, (values[oparg], exc -- values[oparg])) {
             assert(oparg >= 0 && oparg <= 2);
             if (oparg) {
-                PyObject *lasti = PyStackRef_To_PyObject_Steal(values[0]);
+                PyObject *lasti = PyStackRef_To_PyObject_Borrow(values[0]);
                 if (PyLong_Check(lasti)) {
                     frame->instr_ptr = _PyCode_CODE(_PyFrame_GetCode(frame)) + PyLong_AsLong(lasti);
                     assert(!_PyErr_Occurred(tstate));
@@ -1538,7 +1538,7 @@ dummy_func(
             _LOAD_GLOBAL_BUILTINS;
 
         inst(DELETE_FAST, (--)) {
-            PyObject *v = PyStackRef_To_PyObject_Steal(GETLOCAL(oparg));
+            PyObject *v = PyStackRef_To_PyObject_Borrow(GETLOCAL(oparg));
             if (v == NULL) {
                 _PyEval_FormatExcCheckArg(tstate, PyExc_UnboundLocalError,
                     UNBOUNDLOCAL_ERROR_MSG,
@@ -1552,16 +1552,16 @@ dummy_func(
         inst(MAKE_CELL, (--)) {
             // "initial" is probably NULL but not if it's an arg (or set
             // via PyFrame_LocalsToFast() before MAKE_CELL has run).
-            PyObject *initial = PyStackRef_To_PyObject_Steal(GETLOCAL(oparg));
+            PyObject *initial = PyStackRef_To_PyObject_Borrow(GETLOCAL(oparg));
             PyObject *cell = PyCell_New(initial);
             if (cell == NULL) {
                 ERROR_NO_POP();
             }
-            SETLOCAL(oparg, PyObject_To_StackRef_Steal(cell));
+            SETLOCAL(oparg, PyObject_To_StackRef_Borrow(cell));
         }
 
         inst(DELETE_DEREF, (--)) {
-            PyObject *cell = PyStackRef_To_PyObject_Steal(GETLOCAL(oparg));
+            PyObject *cell = PyStackRef_To_PyObject_Borrow(GETLOCAL(oparg));
             // Can't use ERROR_IF here.
             // Fortunately we don't need its superpower.
             PyObject *oldobj = PyCell_SwapTakeRef((PyCellObject *)cell, NULL);
@@ -1569,7 +1569,7 @@ dummy_func(
                 _PyEval_FormatExcUnbound(tstate, _PyFrame_GetCode(frame), oparg);
                 ERROR_NO_POP();
             }
-            PyStackRef_DECREF(PyObject_To_StackRef_Steal(oldobj));
+            PyStackRef_DECREF(PyObject_To_StackRef_Borrow(oldobj));
         }
 
         inst(LOAD_FROM_DICT_OR_DEREF, (class_dict -- value)) {
@@ -1581,7 +1581,7 @@ dummy_func(
                 ERROR_NO_POP();
             }
             if (!value) {
-                PyCellObject *cell = (PyCellObject *)PyStackRef_To_PyObject_Steal(GETLOCAL(oparg));
+                PyCellObject *cell = (PyCellObject *)PyStackRef_To_PyObject_Borrow(GETLOCAL(oparg));
                 value = PyCell_GetRef(cell);
                 if (value == NULL) {
                     _PyEval_FormatExcUnbound(tstate, _PyFrame_GetCode(frame), oparg);
@@ -1592,7 +1592,7 @@ dummy_func(
         }
 
         inst(LOAD_DEREF, ( -- value)) {
-            PyCellObject *cell = (PyCellObject *)PyStackRef_To_PyObject_Steal(GETLOCAL(oparg));
+            PyCellObject *cell = (PyCellObject *)PyStackRef_To_PyObject_Borrow(GETLOCAL(oparg));
             value = PyCell_GetRef(cell);
             if (value == NULL) {
                 _PyEval_FormatExcUnbound(tstate, _PyFrame_GetCode(frame), oparg);
@@ -1601,7 +1601,7 @@ dummy_func(
         }
 
         inst(STORE_DEREF, (v: _PyStackRef --)) {
-            PyCellObject *cell = (PyCellObject *)PyStackRef_To_PyObject_Steal(GETLOCAL(oparg));
+            PyCellObject *cell = (PyCellObject *)PyStackRef_To_PyObject_Borrow(GETLOCAL(oparg));
             PyCell_SetTakeRef(cell, PyStackRef_To_PyObject_New(v));
         }
 
@@ -1886,17 +1886,17 @@ dummy_func(
             #endif  /* ENABLE_SPECIALIZATION */
         }
 
-        op(_LOAD_ATTR, (owner -- attr: _PyStackRef *, self_or_null if (oparg & 1))) {
+        op(_LOAD_ATTR, (owner -- attr, self_or_null if (oparg & 1))) {
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg >> 1);
             if (oparg & 1) {
                 /* Designed to work in tandem with CALL, pushes two values. */
-                *attr = Py_STACKREF_NULL;
-                if (_PyObject_GetMethodStackRef(owner, name, attr)) {
+                attr = NULL;
+                if (_PyObject_GetMethod(owner, name, &attr)) {
                     /* We can bypass temporary bound method object.
                        meth is unbound method and obj is self.
                        meth | self | arg1 | ... | argN
                      */
-                    assert(PyStackRef_To_PyObject_Steal(*attr) != NULL);  // No errors on this branch
+                    assert(attr != NULL);  // No errors on this branch
                     self_or_null = owner;  // Transfer ownership
                 }
                 else {
@@ -1907,15 +1907,15 @@ dummy_func(
                        meth | NULL | arg1 | ... | argN
                     */
                     DECREF_INPUTS();
-                    ERROR_IF(PyStackRef_To_PyObject_Steal(*attr) == NULL, error);
+                    ERROR_IF(attr == NULL, error);
                     self_or_null = NULL;
                 }
             }
             else {
                 /* Classic, pushes one value. */
-                *attr = PyObject_To_StackRef_Steal(PyObject_GetAttr(owner, name));
+                attr = PyObject_GetAttr(owner, name);
                 DECREF_INPUTS();
-                ERROR_IF(PyStackRef_To_PyObject_Steal(*attr) == NULL, error);
+                ERROR_IF(attr == NULL, error);
             }
         }
 
@@ -2150,7 +2150,7 @@ dummy_func(
                 DEOPT_IF(ep->me_key != name);
                 old_value = ep->me_value;
                 DEOPT_IF(old_value == NULL);
-                new_version = _PyDict_NotifyEvent(tstate->interp, PyDict_EVENT_MODIFIED, dict, name, PyStackRef_To_PyObject_Steal(value));
+                new_version = _PyDict_NotifyEvent(tstate->interp, PyDict_EVENT_MODIFIED, dict, name, PyStackRef_To_PyObject_Borrow(value));
                 ep->me_value = PyStackRef_To_PyObject_New(value);
             }
             else {
@@ -2158,13 +2158,13 @@ dummy_func(
                 DEOPT_IF(ep->me_key != name);
                 old_value = ep->me_value;
                 DEOPT_IF(old_value == NULL);
-                new_version = _PyDict_NotifyEvent(tstate->interp, PyDict_EVENT_MODIFIED, dict, name, PyStackRef_To_PyObject_Steal(value));
+                new_version = _PyDict_NotifyEvent(tstate->interp, PyDict_EVENT_MODIFIED, dict, name, PyStackRef_To_PyObject_Borrow(value));
                 ep->me_value = PyStackRef_To_PyObject_New(value);
             }
             Py_DECREF(old_value);
             STAT_INC(STORE_ATTR, hit);
             /* Ensure dict is GC tracked if it needs to be */
-            if (!_PyObject_GC_IS_TRACKED(dict) && _PyObject_GC_MAY_BE_TRACKED(PyStackRef_To_PyObject_Steal(value))) {
+            if (!_PyObject_GC_IS_TRACKED(dict) && _PyObject_GC_MAY_BE_TRACKED(PyStackRef_To_PyObject_Borrow(value))) {
                 _PyObject_GC_TRACK(dict);
             }
             /* PEP 509 */
@@ -2211,7 +2211,7 @@ dummy_func(
             ERROR_IF(res == NULL, error);
             if (oparg & 16) {
                 int res_bool = PyObject_IsTrue(res);
-                PyStackRef_DECREF(PyObject_To_StackRef_Steal(res));
+                PyStackRef_DECREF(PyObject_To_StackRef_Borrow(res));
                 ERROR_IF(res_bool < 0, error);
                 res = res_bool ? Py_True : Py_False;
             }
@@ -2633,10 +2633,10 @@ dummy_func(
         inst(INSTRUMENTED_FOR_ITER, (unused/1 -- )) {
             _Py_CODEUNIT *target;
             _PyStackRef iter_stackref = TOP();
-            PyObject *iter = PyStackRef_To_PyObject_Steal(iter_stackref);
+            PyObject *iter = PyStackRef_To_PyObject_Borrow(iter_stackref);
             PyObject *next = (*Py_TYPE(iter)->tp_iternext)(iter);
             if (next != NULL) {
-                PUSH(PyObject_To_StackRef_Steal(next));
+                PUSH(PyObject_To_StackRef_Borrow(next));
                 target = next_instr;
             }
             else {
@@ -2801,7 +2801,7 @@ dummy_func(
             DEOPT_IF(gen->gi_frame_state >= FRAME_EXECUTING);
             STAT_INC(FOR_ITER, hit);
             gen_frame = (_PyInterpreterFrame *)gen->gi_iframe;
-            _PyFrame_StackPush(gen_frame, PyObject_To_StackRef_Steal(Py_None));
+            _PyFrame_StackPush(gen_frame, PyObject_To_StackRef_Borrow(Py_None));
             gen->gi_frame_state = FRAME_EXECUTING;
             gen->gi_exc_state.previous_item = tstate->exc_info;
             tstate->exc_info = &gen->gi_exc_state;
@@ -2826,7 +2826,7 @@ dummy_func(
                 }
                 ERROR_NO_POP();
             }
-            _PyStackRef enter_stackref = PyObject_To_StackRef_Steal(enter);
+            _PyStackRef enter_stackref = PyObject_To_StackRef_Borrow(enter);
             exit = _PyObject_LookupSpecial(mgr, &_Py_ID(__aexit__));
             if (exit == NULL) {
                 if (!_PyErr_Occurred(tstate)) {
@@ -2843,7 +2843,7 @@ dummy_func(
             res = PyObject_CallNoArgs(enter);
             PyStackRef_DECREF(enter_stackref);
             if (res == NULL) {
-                PyStackRef_DECREF(PyObject_To_StackRef_Steal(exit));
+                PyStackRef_DECREF(PyObject_To_StackRef_Borrow(exit));
                 ERROR_IF(true, error);
             }
         }
@@ -2853,7 +2853,7 @@ dummy_func(
              * value returned from calling its __enter__
              */
             PyObject *enter = _PyObject_LookupSpecial(mgr, &_Py_ID(__enter__));
-            _PyStackRef enter_stackref = PyObject_To_StackRef_Steal(enter);
+            _PyStackRef enter_stackref = PyObject_To_StackRef_Borrow(enter);
             if (enter == NULL) {
                 if (!_PyErr_Occurred(tstate)) {
                     _PyErr_Format(tstate, PyExc_TypeError,
@@ -2879,7 +2879,7 @@ dummy_func(
             res = PyObject_CallNoArgs(enter);
             PyStackRef_DECREF(enter_stackref);
             if (res == NULL) {
-                PyStackRef_DECREF(PyObject_To_StackRef_Steal(exit));
+                PyStackRef_DECREF(PyObject_To_StackRef_Borrow(exit));
                 ERROR_IF(true, error);
             }
         }
@@ -3038,11 +3038,11 @@ dummy_func(
             _LOAD_ATTR_METHOD_LAZY_DICT;
 
         inst(INSTRUMENTED_CALL, (unused/3 -- )) {
-            int is_meth = PyStackRef_To_PyObject_Steal(PEEK(oparg + 1)) != NULL;
+            int is_meth = PyStackRef_To_PyObject_Borrow(PEEK(oparg + 1)) != NULL;
             int total_args = oparg + is_meth;
-            PyObject *function = PyStackRef_To_PyObject_Steal(PEEK(oparg + 2));
+            PyObject *function = PyStackRef_To_PyObject_Borrow(PEEK(oparg + 2));
             PyObject *arg = total_args == 0 ?
-                &_PyInstrumentation_MISSING : PyStackRef_To_PyObject_Steal(PEEK(total_args));
+                &_PyInstrumentation_MISSING : PyStackRef_To_PyObject_Borrow(PEEK(total_args));
             int err = _Py_call_instrumentation_2args(
                     tstate, PY_MONITORING_EVENT_CALL,
                     frame, this_instr, function, arg);
@@ -3135,7 +3135,7 @@ dummy_func(
                 NULL);
             if (opcode == INSTRUMENTED_CALL) {
                 PyObject *arg = total_args == 0 ?
-                    &_PyInstrumentation_MISSING : PyStackRef_To_PyObject_Steal(args[0]);
+                    &_PyInstrumentation_MISSING : PyStackRef_To_PyObject_Borrow(args[0]);
                 if (res == NULL) {
                     _Py_call_instrumentation_exc2(
                         tstate, PY_MONITORING_EVENT_C_RAISE,
@@ -3272,8 +3272,8 @@ dummy_func(
             STAT_INC(CALL, hit);
             stack_pointer[-1 - oparg] = PyObject_To_StackRef_New(((PyMethodObject *)callable)->im_self);  // Patch stack as it is used by _INIT_CALL_PY_EXACT_ARGS
             stack_pointer[-2 - oparg] = PyObject_To_StackRef_New(((PyMethodObject *)callable)->im_func);  // This is used by CALL, upon deoptimization
-            self = PyStackRef_To_PyObject_Steal(stack_pointer[-1 - oparg]);
-            func = PyStackRef_To_PyObject_Steal(stack_pointer[-2 - oparg]);
+            self = PyStackRef_To_PyObject_Borrow(stack_pointer[-1 - oparg]);
+            func = PyStackRef_To_PyObject_Borrow(stack_pointer[-2 - oparg]);
             PyStackRef_DECREF(callable_stackref);
         }
 
@@ -3412,11 +3412,11 @@ dummy_func(
             assert(_PyCode_CODE((PyCodeObject *)shim->f_executable)[0].op.code == EXIT_INIT_CHECK);
             /* Push self onto stack of shim */
             Py_INCREF(self);
-            shim->localsplus[0] = PyObject_To_StackRef_Steal(self);
+            shim->localsplus[0] = PyObject_To_StackRef_Borrow(self);
             Py_INCREF(init);
             _PyInterpreterFrame *init_frame = _PyFrame_PushUnchecked(tstate, init, oparg+1);
             /* Copy self followed by args to __init__ frame */
-            init_frame->localsplus[0] = PyObject_To_StackRef_Steal(self);
+            init_frame->localsplus[0] = PyObject_To_StackRef_Borrow(self);
             for (int i = 0; i < oparg; i++) {
                 init_frame->localsplus[i+1] = args[i];
             }
@@ -3486,7 +3486,7 @@ dummy_func(
             PyCFunction cfunc = PyCFunction_GET_FUNCTION(callable);
             _PyStackRef arg = args[0];
             _Py_EnterRecursiveCallTstateUnchecked(tstate);
-            res = _PyCFunction_TrampolineCall(cfunc, PyCFunction_GET_SELF(callable), PyStackRef_To_PyObject_Steal(arg));
+            res = _PyCFunction_TrampolineCall(cfunc, PyCFunction_GET_SELF(callable), PyStackRef_To_PyObject_Borrow(arg));
             _Py_LeaveRecursiveCallTstate(tstate);
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
 
@@ -3579,7 +3579,7 @@ dummy_func(
             DEOPT_IF(callable != interp->callable_cache.len);
             STAT_INC(CALL, hit);
             _PyStackRef arg_stackref = args[0];
-            PyObject *arg = PyStackRef_To_PyObject_Steal(arg_stackref);
+            PyObject *arg = PyStackRef_To_PyObject_Borrow(arg_stackref);
             Py_ssize_t len_i = PyObject_Length(arg);
             if (len_i < 0) {
                 ERROR_NO_POP();
@@ -3606,7 +3606,7 @@ dummy_func(
             STAT_INC(CALL, hit);
             _PyStackRef cls_stackref = args[1];
             _PyStackRef inst_stackref = args[0];
-            int retval = PyObject_IsInstance(PyStackRef_To_PyObject_Steal(inst_stackref), PyStackRef_To_PyObject_Steal(cls_stackref));
+            int retval = PyObject_IsInstance(PyStackRef_To_PyObject_Borrow(inst_stackref), PyStackRef_To_PyObject_Borrow(cls_stackref));
             if (retval < 0) {
                 ERROR_NO_POP();
             }
@@ -3655,8 +3655,8 @@ dummy_func(
             DEOPT_IF(tstate->c_recursion_remaining <= 0);
             _PyStackRef arg_stackref = args[1];
             _PyStackRef self_stackref = args[0];
-            PyObject *self = PyStackRef_To_PyObject_Steal(self_stackref);
-            PyObject *arg = PyStackRef_To_PyObject_Steal(arg_stackref);
+            PyObject *self = PyStackRef_To_PyObject_Borrow(self_stackref);
+            PyObject *arg = PyStackRef_To_PyObject_Borrow(arg_stackref);
             DEOPT_IF(!Py_IS_TYPE(self, method->d_common.d_type));
             STAT_INC(CALL, hit);
             PyCFunction cfunc = meth->ml_meth;
@@ -3687,7 +3687,7 @@ dummy_func(
             PyMethodDef *meth = method->d_method;
             DEOPT_IF(meth->ml_flags != (METH_FASTCALL|METH_KEYWORDS));
             PyTypeObject *d_type = method->d_common.d_type;
-            PyObject *self = PyStackRef_To_PyObject_Steal(args[0]);
+            PyObject *self = PyStackRef_To_PyObject_Borrow(args[0]);
             DEOPT_IF(!Py_IS_TYPE(self, d_type));
             STAT_INC(CALL, hit);
             int nargs = total_args - 1;
@@ -3724,7 +3724,7 @@ dummy_func(
             DEOPT_IF(!Py_IS_TYPE(method, &PyMethodDescr_Type));
             PyMethodDef *meth = method->d_method;
             _PyStackRef self_stackref = args[0];
-            PyObject *self = PyStackRef_To_PyObject_Steal(self_stackref);
+            PyObject *self = PyStackRef_To_PyObject_Borrow(self_stackref);
             DEOPT_IF(!Py_IS_TYPE(self, method->d_common.d_type));
             DEOPT_IF(meth->ml_flags != METH_NOARGS);
             // CPython promises to check all non-vectorcall function calls.
@@ -3757,7 +3757,7 @@ dummy_func(
             DEOPT_IF(!Py_IS_TYPE(method, &PyMethodDescr_Type));
             PyMethodDef *meth = method->d_method;
             DEOPT_IF(meth->ml_flags != METH_FASTCALL);
-            PyObject *self = PyStackRef_To_PyObject_Steal(args[0]);
+            PyObject *self = PyStackRef_To_PyObject_Borrow(args[0]);
             DEOPT_IF(!Py_IS_TYPE(self, method->d_common.d_type));
             STAT_INC(CALL, hit);
             PyCFunctionFast cfunc =
@@ -3783,11 +3783,11 @@ dummy_func(
             _CHECK_PERIODIC;
 
         inst(INSTRUMENTED_CALL_KW, ( -- )) {
-            int is_meth = PyStackRef_To_PyObject_Steal(PEEK(oparg + 2)) != NULL;
+            int is_meth = PyStackRef_To_PyObject_Borrow(PEEK(oparg + 2)) != NULL;
             int total_args = oparg + is_meth;
-            PyObject *function = PyStackRef_To_PyObject_Steal(PEEK(oparg + 3));
+            PyObject *function = PyStackRef_To_PyObject_Borrow(PEEK(oparg + 3));
             PyObject *arg = total_args == 0 ? &_PyInstrumentation_MISSING
-                                            : PyStackRef_To_PyObject_Steal(PEEK(total_args + 1));
+                                            : PyStackRef_To_PyObject_Borrow(PEEK(total_args + 1));
             int err = _Py_call_instrumentation_2args(
                     tstate, PY_MONITORING_EVENT_CALL,
                     frame, this_instr, function, arg);
@@ -3844,7 +3844,7 @@ dummy_func(
                 kwnames);
             if (opcode == INSTRUMENTED_CALL_KW) {
                 PyObject *arg = total_args == 0 ?
-                    &_PyInstrumentation_MISSING : PyStackRef_To_PyObject_Steal(args[0]);
+                    &_PyInstrumentation_MISSING : PyStackRef_To_PyObject_Borrow(args[0]);
                 if (res == NULL) {
                     _Py_call_instrumentation_exc2(
                         tstate, PY_MONITORING_EVENT_C_RAISE,
@@ -3885,7 +3885,7 @@ dummy_func(
                 if (tuple == NULL) {
                     ERROR_NO_POP();
                 }
-                PyStackRef_SETREF(callargs_stackref, PyObject_To_StackRef_Steal(tuple));
+                PyStackRef_SETREF(callargs_stackref, PyObject_To_StackRef_Borrow(tuple));
                 callargs = tuple;
             }
             assert(PyTuple_CheckExact(callargs));
@@ -3939,7 +3939,7 @@ dummy_func(
                 result = PyObject_Call(func, callargs, kwargs);
             }
             DECREF_INPUTS();
-            assert(PyStackRef_To_PyObject_Steal(PEEK(2 + (oparg & 1))) == NULL);
+            assert(PyStackRef_To_PyObject_Borrow(PEEK(2 + (oparg & 1))) == NULL);
             ERROR_IF(result == NULL, error);
             CHECK_EVAL_BREAKER();
         }
@@ -4102,7 +4102,7 @@ dummy_func(
         }
 
         inst(INSTRUMENTED_POP_JUMP_IF_TRUE, (unused/1 -- )) {
-            PyObject *cond = PyStackRef_To_PyObject_Steal(POP());
+            PyObject *cond = PyStackRef_To_PyObject_Borrow(POP());
             assert(PyBool_Check(cond));
             int flag = Py_IsTrue(cond);
             int offset = flag * oparg;
@@ -4113,7 +4113,7 @@ dummy_func(
         }
 
         inst(INSTRUMENTED_POP_JUMP_IF_FALSE, (unused/1 -- )) {
-            PyObject *cond = PyStackRef_To_PyObject_Steal(POP());
+            PyObject *cond = PyStackRef_To_PyObject_Borrow(POP());
             assert(PyBool_Check(cond));
             int flag = Py_IsFalse(cond);
             int offset = flag * oparg;
@@ -4125,7 +4125,7 @@ dummy_func(
 
         inst(INSTRUMENTED_POP_JUMP_IF_NONE, (unused/1 -- )) {
             _PyStackRef value_stackref = POP();
-            PyObject *value = PyStackRef_To_PyObject_Steal(value_stackref);
+            PyObject *value = PyStackRef_To_PyObject_Borrow(value_stackref);
             int flag = Py_IsNone(value);
             int offset;
             if (flag) {
@@ -4143,7 +4143,7 @@ dummy_func(
 
         inst(INSTRUMENTED_POP_JUMP_IF_NOT_NONE, (unused/1 -- )) {
             _PyStackRef value_stackref = POP();
-            PyObject *value = PyStackRef_To_PyObject_Steal(value_stackref);
+            PyObject *value = PyStackRef_To_PyObject_Borrow(value_stackref);
             int offset;
             int nflag = Py_IsNone(value);
             if (nflag) {

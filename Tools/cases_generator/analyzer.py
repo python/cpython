@@ -352,11 +352,11 @@ def has_error_without_pop(op: parser.InstDef) -> bool:
 
 
 NON_ESCAPING_FUNCTIONS = (
-    "PyObject_To_StackRef_Steal",
-    "PyStackRef_To_PyObject_Steal",
+    "PyObject_To_StackRef_Borrow",
+    "PyStackRef_To_PyObject_Borrow",
     "PyStackRef_To_PyObject_New",
     "PyStackRef_DECREF",
-    "PyStackRef_XDECREF",
+    "PyStackRef_DECREF",
     "PyStackRef_INCREF",
     "PyStackRef_NewRef",
     "PyStackRef_XNewRef",

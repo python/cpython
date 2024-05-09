@@ -139,7 +139,7 @@ def replace_decrefs(
             if var.condition == "1":
                 out.emit(f"PyStackRef_DECREF({var.name}{stackref});\n")
             elif var.condition != "0":
-                out.emit(f"PyStackRef_XDECREF({var.name}{stackref});\n")
+                out.emit(f"PyStackRef_DECREF({var.name}{stackref});\n")
         else:
             out.emit(f"(void){var.name};\n")
             out.emit(f"PyStackRef_DECREF({var.name}{stackref});\n")

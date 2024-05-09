@@ -9756,17 +9756,12 @@ _PyUnicode_JoinStackRef_Slow(PyObject *separator, _PyStackRef const *tagged, Py_
 PyObject *
 _PyUnicode_JoinStackRef(PyObject *separator, _PyStackRef const *items_tagged, Py_ssize_t seqlen)
 {
-#if defined(Py_GIL_DISABLED)
     PyObject *args[MAX_UNTAG_SCRATCH];
     if (seqlen > MAX_UNTAG_SCRATCH) {
         return _PyUnicode_JoinStackRef_Slow(separator, items_tagged, seqlen);
     }
     _Py_untag_stack_borrowed(args, items_tagged, seqlen);
     return _PyUnicode_JoinArray(separator, args, seqlen);
-#else
-    (void)_PyUnicode_JoinStackRef_Slow;
-    return _PyUnicode_JoinArray(separator, (PyObject **)items_tagged, seqlen);
-#endif
 }
 
 void
