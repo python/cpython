@@ -103,6 +103,10 @@ class itertools.pairwise "pairwiseobject *" "clinic_state()->pairwise_type"
         return NULL;                                                          \
     }
 
+PyDoc_STRVAR(reduce_doc, "Return state information for pickling.");
+
+PyDoc_STRVAR(setstate_doc, "Set state information for unpickling.");
+
 /* batched object ************************************************************/
 
 typedef struct {
@@ -554,57 +558,6 @@ groupby_next(groupbyobject *gbo)
     return r;
 }
 
-static PyObject *
-groupby_reduce(groupbyobject *lz, PyObject *Py_UNUSED(ignored))
-{
-    /* reduce as a 'new' call with an optional 'setstate' if groupby
-     * has started
-     */
-    ITERTOOL_PICKLE_DEPRECATION;
-    PyObject *value;
-    if (lz->tgtkey && lz->currkey && lz->currvalue)
-        value = Py_BuildValue("O(OO)(OOO)", Py_TYPE(lz),
-            lz->it, lz->keyfunc, lz->currkey, lz->currvalue, lz->tgtkey);
-    else
-        value = Py_BuildValue("O(OO)", Py_TYPE(lz),
-            lz->it, lz->keyfunc);
-
-    return value;
-}
-
-PyDoc_STRVAR(reduce_doc, "Return state information for pickling.");
-
-static PyObject *
-groupby_setstate(groupbyobject *lz, PyObject *state)
-{
-    ITERTOOL_PICKLE_DEPRECATION;
-    PyObject *currkey, *currvalue, *tgtkey;
-    if (!PyTuple_Check(state)) {
-        PyErr_SetString(PyExc_TypeError, "state is not a tuple");
-        return NULL;
-    }
-    if (!PyArg_ParseTuple(state, "OOO", &currkey, &currvalue, &tgtkey)) {
-        return NULL;
-    }
-    Py_INCREF(currkey);
-    Py_XSETREF(lz->currkey, currkey);
-    Py_INCREF(currvalue);
-    Py_XSETREF(lz->currvalue, currvalue);
-    Py_INCREF(tgtkey);
-    Py_XSETREF(lz->tgtkey, tgtkey);
-    Py_RETURN_NONE;
-}
-
-PyDoc_STRVAR(setstate_doc, "Set state information for unpickling.");
-
-static PyMethodDef groupby_methods[] = {
-    {"__reduce__",      (PyCFunction)groupby_reduce,      METH_NOARGS,
-     reduce_doc},
-    {"__setstate__",    (PyCFunction)groupby_setstate,    METH_O,
-     setstate_doc},
-    {NULL,              NULL}           /* sentinel */
-};
-
 static PyType_Slot groupby_slots[] = {
     {Py_tp_dealloc, groupby_dealloc},
     {Py_tp_getattro, PyObject_GenericGetAttr},
@@ -612,7 +565,6 @@ static PyType_Slot groupby_slots[] = {
     {Py_tp_traverse, groupby_traverse},
     {Py_tp_iter, PyObject_SelfIter},
     {Py_tp_iternext, groupby_next},
-    {Py_tp_methods, groupby_methods},
     {Py_tp_new, itertools_groupby},
     {Py_tp_free, PyObject_GC_Del},
     {0, NULL},
@@ -713,29 +665,12 @@ _grouper_next(_grouperobject *igo)
     return r;
 }
 
-static PyObject *
-_grouper_reduce(_grouperobject *lz, PyObject *Py_UNUSED(ignored))
-{
-    ITERTOOL_PICKLE_DEPRECATION;
-    if (((groupbyobject *)lz->parent)->currgrouper != lz) {
-        return Py_BuildValue("N(())", _PyEval_GetBuiltin(&_Py_ID(iter)));
-    }
-    return Py_BuildValue("O(OO)", Py_TYPE(lz), lz->parent, lz->tgtkey);
-}
-
-static PyMethodDef _grouper_methods[] = {
-    {"__reduce__",      (PyCFunction)_grouper_reduce,      METH_NOARGS,
-     reduce_doc},
-    {NULL,              NULL}   /* sentinel */
-};
-
 static PyType_Slot _grouper_slots[] = {
     {Py_tp_dealloc, _grouper_dealloc},
     {Py_tp_getattro, PyObject_GenericGetAttr},
     {Py_tp_traverse, _grouper_traverse},
     {Py_tp_iter, PyObject_SelfIter},
     {Py_tp_iternext, _grouper_next},
-    {Py_tp_methods, _grouper_methods},
     {Py_tp_new, itertools__grouper},
     {Py_tp_free, PyObject_GC_Del},
     {0, NULL},

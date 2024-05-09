@@ -812,7 +812,6 @@ class TestBasicOps(unittest.TestCase):
         self.assertRaises(TypeError, cycle('').__setstate__, ())
         self.assertRaises(TypeError, cycle('').__setstate__, ([],))
 
-    @pickle_deprecated
     def test_groupby(self):
         # Check whether it accepts arguments correctly
         self.assertEqual([], list(groupby([])))
@@ -831,15 +830,6 @@ class TestBasicOps(unittest.TestCase):
                 dup.append(elem)
         self.assertEqual(s, dup)
 
-        # Check normal pickled
-        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
-            dup = []
-            for k, g in pickle.loads(pickle.dumps(groupby(s, testR), proto)):
-                for elem in g:
-                    self.assertEqual(k, elem[0])
-                    dup.append(elem)
-            self.assertEqual(s, dup)
-
         # Check nested case
         dup = []
         for k, g in groupby(s, testR):
@@ -849,18 +839,6 @@ class TestBasicOps(unittest.TestCase):
                     self.assertEqual(ik, elem[2])
                     dup.append(elem)
         self.assertEqual(s, dup)
-
-        # Check nested and pickled
-        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
-            dup = []
-            for k, g in pickle.loads(pickle.dumps(groupby(s, testR), proto)):
-                for ik, ig in pickle.loads(pickle.dumps(groupby(g, testR2), proto)):
-                    for elem in ig:
-                        self.assertEqual(k, elem[0])
-                        self.assertEqual(ik, elem[2])
-                        dup.append(elem)
-            self.assertEqual(s, dup)
-
 
         # Check case where inner iterator is not used
         keys = [k for k, g in groupby(s, testR)]
@@ -880,13 +858,6 @@ class TestBasicOps(unittest.TestCase):
         self.assertEqual(next(g3), ('A', 5))
         list(it)  # exhaust the groupby iterator
         self.assertEqual(list(g3), [])
-
-        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
-            it = groupby(s, testR)
-            _, g = next(it)
-            next(it)
-            next(it)
-            self.assertEqual(list(pickle.loads(pickle.dumps(g, proto))), [])
 
         # Exercise pipes and filters style
         s = 'abracadabra'
