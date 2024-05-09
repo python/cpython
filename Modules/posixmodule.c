@@ -5107,25 +5107,25 @@ _testFileTypeByHandle(HANDLE hfile, int refFileType, BOOL diskOnly)
         return FALSE;
     }
 
-    FILE_ATTRIBUTE_TAG_INFO atInfo;
-    FILE_BASIC_INFO baInfo;
     DWORD attributes, reparseTag;
     if ((refFileType == PY_IFLNK || refFileType == PY_IFMNT)) {
-        if (!GetFileInformationByHandleEx(hfile, FileAttributeTagInfo, &atInfo,
-                                          sizeof(atInfo)))
+        FILE_ATTRIBUTE_TAG_INFO info;
+        if (!GetFileInformationByHandleEx(hfile, FileAttributeTagInfo, &info,
+                                          sizeof(info)))
         {
             return FALSE;
         }
-        attributes = atInfo.FileAttributes;
-        reparseTag = atInfo.ReparseTag;
+        attributes = info.FileAttributes;
+        reparseTag = info.ReparseTag;
     }
     else {
-        if (!GetFileInformationByHandleEx(hfile, FileBasicInfo, &baInfo,
-                                          sizeof(baInfo)))
+        FILE_BASIC_INFO info;
+        if (!GetFileInformationByHandleEx(hfile, FileBasicInfo, &info,
+                                          sizeof(info)))
         {
             return FALSE;
         }
-        attributes = baInfo.FileAttributes;
+        attributes = info.FileAttributes;
         reparseTag = 0;
     }
 
