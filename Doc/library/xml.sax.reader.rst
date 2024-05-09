@@ -1,5 +1,5 @@
-:mod:`xml.sax.xmlreader` --- Interface for XML parsers
-======================================================
+:mod:`!xml.sax.xmlreader` --- Interface for XML parsers
+=======================================================
 
 .. module:: xml.sax.xmlreader
    :synopsis: Interface which SAX-compliant XML parsers must implement.

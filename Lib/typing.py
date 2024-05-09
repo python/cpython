@@ -64,7 +64,6 @@ __all__ = [
 
     # ABCs (from collections.abc).
     'AbstractSet',  # collections.abc.Set.
-    'ByteString',
     'Container',
     'ContextManager',
     'Hashable',
@@ -257,7 +256,7 @@ def _type_repr(obj):
     return repr(obj)
 
 
-def _collect_parameters(args):
+def _collect_parameters(args, *, enforce_default_ordering: bool = True):
     """Collect all type variables and parameter specifications in args
     in order of first appearance (lexicographic order).
 
@@ -286,15 +285,16 @@ def _collect_parameters(args):
                         parameters.append(collected)
         elif hasattr(t, '__typing_subst__'):
             if t not in parameters:
-                if type_var_tuple_encountered and t.has_default():
-                    raise TypeError('Type parameter with a default'
-                                    ' follows TypeVarTuple')
+                if enforce_default_ordering:
+                    if type_var_tuple_encountered and t.has_default():
+                        raise TypeError('Type parameter with a default'
+                                        ' follows TypeVarTuple')
 
-                if t.has_default():
-                    default_encountered = True
-                elif default_encountered:
-                    raise TypeError(f'Type parameter {t!r} without a default'
-                                    ' follows type parameter with a default')
+                    if t.has_default():
+                        default_encountered = True
+                    elif default_encountered:
+                        raise TypeError(f'Type parameter {t!r} without a default'
+                                        ' follows type parameter with a default')
 
                 parameters.append(t)
         else:
@@ -1416,7 +1416,11 @@ class _GenericAlias(_BaseGenericAlias, _root=True):
             args = (args,)
         self.__args__ = tuple(... if a is _TypingEllipsis else
                               a for a in args)
-        self.__parameters__ = _collect_parameters(args)
+        enforce_default_ordering = origin in (Generic, Protocol)
+        self.__parameters__ = _collect_parameters(
+            args,
+            enforce_default_ordering=enforce_default_ordering,
+        )
         if not name:
             self.__module__ = origin.__module__
 
@@ -1663,21 +1667,6 @@ class _SpecialGenericAlias(_NotIterable, _BaseGenericAlias, _root=True):
 
     def __ror__(self, left):
         return Union[left, self]
-
-
-class _DeprecatedGenericAlias(_SpecialGenericAlias, _root=True):
-    def __init__(
-        self, origin, nparams, *, removal_version, inst=True, name=None
-    ):
-        super().__init__(origin, nparams, inst=inst, name=name)
-        self._removal_version = removal_version
-
-    def __instancecheck__(self, inst):
-        import warnings
-        warnings._deprecated(
-            f"{self.__module__}.{self._name}", remove=self._removal_version
-        )
-        return super().__instancecheck__(inst)
 
 
 class _CallableGenericAlias(_NotIterable, _GenericAlias, _root=True):
@@ -2823,9 +2812,6 @@ Mapping = _alias(collections.abc.Mapping, 2)
 MutableMapping = _alias(collections.abc.MutableMapping, 2)
 Sequence = _alias(collections.abc.Sequence, 1)
 MutableSequence = _alias(collections.abc.MutableSequence, 1)
-ByteString = _DeprecatedGenericAlias(
-    collections.abc.ByteString, 0, removal_version=(3, 14)  # Not generic.
-)
 # Tuple accepts variable number of parameters.
 Tuple = _TupleType(tuple, -1, inst=False, name='Tuple')
 Tuple.__doc__ = \

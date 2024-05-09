@@ -1,7 +1,0 @@
-Change how to use the tier 2 interpreter. Instead of running Python with
-``-X uops`` or setting the environment variable ``PYTHON_UOPS=1``, this
-choice is now made at build time by configuring with
-``--enable-experimental-jit=interpreter``.
-
-**Beware!** This changes the environment variable to enable or disable
-micro-ops to ``PYTHON_JIT``. The old ``PYTHON_UOPS`` is no longer used.
