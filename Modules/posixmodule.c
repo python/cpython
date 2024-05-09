@@ -5107,26 +5107,34 @@ _testFileTypeByHandle(HANDLE hfile, int refFileType, BOOL diskOnly)
         return FALSE;
     }
 
-    FILE_INFO_BY_HANDLE_CLASS FileInformationClass;
-    LPVOID info;
-    if (refFileType == PY_IFLNK || refFileType == PY_IFMNT) {
-        FileInformationClass = FileAttributeTagInfo;
+    FILE_ATTRIBUTE_TAG_INFO atInfo;
+    FILE_BASIC_INFO baInfo;
+    DWORD attributes, reparseTag;
+    if ((refFileType == PY_IFLNK || refFileType == PY_IFMNT)) {
+        if (!GetFileInformationByHandleEx(hfile, FileAttributeTagInfo, &atInfo,
+                                          sizeof(atInfo)))
+        {
+            return FALSE;
+        }
+        attributes = atInfo.FileAttributes;
+        reparseTag = atInfo.ReparseTag;
     }
     else {
-        FileInformationClass = FileBasicInfo;
-    }
-    if (!GetFileInformationByHandleEx(hfile, FileInformationClass, &info,
-                                      sizeof(info)))
-    {
-        return FALSE;
+        if (!GetFileInformationByHandleEx(hfile, FileBasicInfo, &baInfo,
+                                          sizeof(baInfo)))
+        {
+            return FALSE;
+        }
+        attributes = baInfo.FileAttributes;
+        reparseTag = 0;
     }
 
-    if (info.FileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) {
+    if (attributes & FILE_ATTRIBUTE_REPARSE_POINT) {
         if (refFileType == PY_IFLNK) {
-            return info.ReparseTag == IO_REPARSE_TAG_SYMLINK;
+            return reparseTag == IO_REPARSE_TAG_SYMLINK;
         }
         if (refFileType == PY_IFMNT) {
-            return info.ReparseTag == IO_REPARSE_TAG_MOUNT_POINT;
+            return reparseTag == IO_REPARSE_TAG_MOUNT_POINT;
         }
         // Non-surrogate reparse points aren't supported by handle. Just
         // return False. Supporting them requires querying and opening the
@@ -5134,10 +5142,10 @@ _testFileTypeByHandle(HANDLE hfile, int refFileType, BOOL diskOnly)
     }
     else if (refFileType == PY_IFREG) {
         return ((fileDevType == FILE_TYPE_DISK) &&
-                !(info.FileAttributes & FILE_ATTRIBUTE_DIRECTORY));
+                !(attributes & FILE_ATTRIBUTE_DIRECTORY));
     }
     else if (refFileType == PY_IFDIR) {
-        return info.FileAttributes & FILE_ATTRIBUTE_DIRECTORY;
+        return attributes & FILE_ATTRIBUTE_DIRECTORY;
     }
 
     return FALSE;
