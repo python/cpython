@@ -210,110 +210,91 @@ def _str_to_int_inner(s):
     w5pow = compute_powers(len(s), 5, DIGLIM)
     return inner(0, len(s))
 
+# Asymptotically faster version, using the C decimal module. See
+# comments at the end of the file. This uses decimal arithmetic to
+# convert from base 10 to base 256. The latter is just a string of
+# bytes, which CPython can convert very efficiently to a Python int.
 
-if 1:
-    import math
-    _LOG_10_BASE_256 = math.log(10, 256)
-    del  math
-    # Asymptotically faster version, using the C decimal module. Unused
-    # for now. See comments at the end of the file. This basically uses
-    # decimal arithmetic to convert from base 10 to base 256. The latter
-    # is just a string of bytes, which CPython can convert very
-    # efficiently to a Python int.
+import math
+_LOG_10_BASE_256 = math.log(10, 256)
+del  math
 
-    # _spread is for testing, mapping how often `n` quotient correction
-    # steps are needed t0 a count of how many times that was needed.
-    # Usually no corrections are needed, and I haven't seen it need more
-    # than 1.
-    from collections import defaultdict
-    _spread = defaultdict(int)
-    del defaultdict
+def _dec_str_to_int_inner(s):
+    BYTELIM = 512
+    D = decimal.Decimal
+    result = bytearray()
 
-    def _dec_str_to_int_inner(s):
-        BYTELIM = 512
-        D = decimal.Decimal
-        result = bytearray()
-
-        def inner(n, w):
-            if w <= BYTELIM:
-                # XXX Stefan Pochmann discovered that, for 1024-bit
-                # ints, `int(Decimal)` took 2.5x longer than
-                # `int(str(Decimal))`. So simplify this code to the
-                # former if/when that gets repaired.
-                result.extend(int(str(n)).to_bytes(w)) # big-endian default
-                return
-            w2 = w >> 1
-            if 0:
-                # This is maximally clear, but "too slow". `decimal`
-                # division is asymptotically fast, but we have no way to
-                # tell it to reuse the high-precision reciprocal it
-                # computes for pow256[w2], so it has to recompute it
-                # over & over & over again :-(
-                hi, lo = divmod(n, pow256[w2][0])
-            else:
-                p256, recip = pow256[w2]
-                # The integer part will have about half the digits of n.
-                # So only need that much precision, plus some guard
-                # digits.
-                ctx.prec = (n.adjusted() >> 1) + 8
-                hi = +n * +recip # unary `+` chops back to ctx.prec digits
-                ctx.prec = decimal.MAX_PREC
-                hi = hi.to_integral_value() # lose the fractional digits
-                lo = n - hi * p256
-                # Because we've been uniformly rounding down, `hi` is a
-                # lower bound on the correct quotient.
-                assert lo >= 0
-                # Adjust quotient up if needed. It usually isn't. In
-                # random testing, the loop body entered about one in 100
-                # thousand cases. I never saw it need more than one
-                # iteration.
-                count = 0
-                while lo >= p256:
-                    count += 1
-                    # If the assert fails, chances are decent we're
-                    # sooooo far off it may seem to run forever
-                    # otherwise - the error analysis was fatally flawed
-                    # in this case.
-                    assert count < 10, (count, w, str(n))
-                    lo -= p256
-                    hi += 1
-                _spread[count] += 1
-                if count >= 2:
-                    print("HUH! count", count)
-                    input("MORE")
-                # The assert should always succeed, but way too slow to
-                # keep enabled.
-                #assert hi, lo == divmod(n, pow256[w2][0])
-            inner(hi, w - w2)
-            inner(lo, w2)
-
-        w = int(len(s) * _LOG_10_BASE_256) + 1
-        with decimal.localcontext(_unbounded_dec_context) as ctx:
-            D256 = D(256)
-            pow256 = compute_powers(w, D256, BYTELIM)
-            rpow256 = compute_powers(w, 1 / D256, BYTELIM)
-            # We're going to do inexact, chopped arithmetic, multiplying
-            # by an approximation to the reciprocal of 256**i. We chop
-            # to get a lower bound on the true integer quotient. Our
-            # approximation is a lower bound, the multiply is chopped
-            # too, and to_integral_value() is also chopped.
-            ctx.traps[decimal.Inexact] = 0
-            ctx.rounding = decimal.ROUND_DOWN
-            for k, v in pow256.items():
-                # No need to save more precision in the reciprocal than
-                # the power of 256 has, plus some guard digits to absorb
-                # most relevant rounding errors. This is highly
-                # signficant: 1/2**i has the same number of significant
-                # decimal digits as 5**i, generally over twice the
-                # number in 2**i,
-                ctx.prec = v.adjusted() + 8
-                # The unary "+" chope the reciprocal back to that
-                # precision.
-                pow256[k] = v, +rpow256[k]
-            del rpow256 # exact reciprocals no longer needed
+    def inner(n, w):
+        if w <= BYTELIM:
+            # XXX Stefan Pochmann discovered that, for 1024-bit ints,
+            # `int(Decimal)` took 2.5x longer than `int(str(Decimal))`.
+            # So simplify this code to the former if/when that gets
+            # repaired.
+            result.extend(int(str(n)).to_bytes(w)) # big-endian default
+            return
+        w2 = w >> 1
+        if 0:
+            # This is maximally clear, but "too slow". `decimal`
+            # division is asymptotically fast, but we have no way to
+            # tell it to reuse the high-precision reciprocal it computes
+            # for pow256[w2], so it has to recompute it over & over &
+            # over again :-(
+            hi, lo = divmod(n, pow256[w2][0])
+        else:
+            p256, recip = pow256[w2]
+            # The integer part will have about half the digits of n. So
+            # only need that much precision, plus some guard digits.
+            ctx.prec = (n.adjusted() >> 1) + 8
+            hi = +n * +recip # unary `+` chops back to ctx.prec digits
             ctx.prec = decimal.MAX_PREC
-            inner(D(s), w)
-        return int.from_bytes(result)
+            hi = hi.to_integral_value() # lose the fractional digits
+            lo = n - hi * p256
+            # Because we've been uniformly rounding down, `hi` is a
+            # lower bound on the correct quotient.
+            assert lo >= 0
+            # Adjust quotient up if needed. It usually isn't. In random
+            # testing, the loop body entered about one in 100 thousand
+            # cases. I never saw it need more than one iteration.
+            count = 0
+            while lo >= p256:
+                count += 1
+                # If the assert fails, chances are decent we're sooooo
+                # far off it may seem to run forever otherwise - the
+                # error analysis was fatally flawed in this case.
+                assert count < 10, (count, w, str(n))
+                lo -= p256
+                hi += 1
+            # The assert should always succeed, but way too slow to keep
+            # enabled.
+            #assert hi, lo == divmod(n, pow256[w2][0])
+        inner(hi, w - w2)
+        inner(lo, w2)
+
+    w = int(len(s) * _LOG_10_BASE_256) + 1
+    with decimal.localcontext(_unbounded_dec_context) as ctx:
+        D256 = D(256)
+        pow256 = compute_powers(w, D256, BYTELIM)
+        rpow256 = compute_powers(w, 1 / D256, BYTELIM)
+        # We're going to do inexact, chopped arithmetic, multiplying by
+        # an approximation to the reciprocal of 256**i. We chop to get a
+        # lower bound on the true integer quotient. Our approximation is
+        # a lower bound, the multiply is chopped too, and
+        # to_integral_value() is also chopped.
+        ctx.traps[decimal.Inexact] = 0
+        ctx.rounding = decimal.ROUND_DOWN
+        for k, v in pow256.items():
+            # No need to save more precision in the reciprocal than the
+            # power of 256 has, plus some guard digits to absorb most
+            # relevant rounding errors. This is highly signficant:
+            # 1/2**i has the same number of significant decimal digits
+            # as 5**i, generally over twice the number in 2**i,
+            ctx.prec = v.adjusted() + 8
+            # The unary "+" chope the reciprocal back to that precision.
+            pow256[k] = v, +rpow256[k]
+        del rpow256 # exact reciprocals no longer needed
+        ctx.prec = decimal.MAX_PREC
+        inner(D(s), w)
+    return int.from_bytes(result)
 
 def int_from_string(s):
     """Asymptotically fast version of PyLong_FromString(), conversion
@@ -323,7 +304,10 @@ def int_from_string(s):
     # and underscores, and stripped leading whitespace.  The input can still
     # contain underscores and have trailing whitespace.
     s = s.rstrip().replace('_', '')
-    return _str_to_int_inner(s)
+    func = _str_to_int_inner
+    if len(s) >= 3_500_000 and _decimal is not None:
+        func = _dec_str_to_int_inner
+    return func(s)
 
 def str_to_int(s):
     """Asymptotically fast version of decimal string to 'int' conversion."""
