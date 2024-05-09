@@ -318,19 +318,19 @@ _PyUOpPrint(const _PyUOpInstruction *uop)
         printf("%s", name);
     }
     switch(uop->format) {
-        case UOP_FORMAT_TARGET:
+        case _Py_UOP_FORMAT_TARGET:
             printf(" (%d, target=%d, operand=%#" PRIx64,
                 uop->oparg,
                 uop->target,
                 (uint64_t)uop->operand);
             break;
-        case UOP_FORMAT_JUMP:
+        case _Py_UOP_FORMAT_JUMP:
             printf(" (%d, jump_target=%d, operand=%#" PRIx64,
                 uop->oparg,
                 uop->jump_target,
                 (uint64_t)uop->operand);
             break;
-        case UOP_FORMAT_EXIT:
+        case _Py_UOP_FORMAT_EXIT:
             printf(" (%d, exit_index=%d, operand=%#" PRIx64,
                 uop->oparg,
                 uop->exit_index,
@@ -500,7 +500,7 @@ add_to_trace(
     uint32_t target)
 {
     trace[trace_length].opcode = opcode;
-    trace[trace_length].format = UOP_FORMAT_TARGET;
+    trace[trace_length].format = _Py_UOP_FORMAT_TARGET;
     trace[trace_length].target = target;
     trace[trace_length].oparg = oparg;
     trace[trace_length].operand = operand;
@@ -988,7 +988,7 @@ static void make_exit(_PyUOpInstruction *inst, int opcode, int target)
     inst->opcode = opcode;
     inst->oparg = 0;
     inst->operand = 0;
-    inst->format = UOP_FORMAT_TARGET;
+    inst->format = _Py_UOP_FORMAT_TARGET;
     inst->target = target;
 }
 
@@ -1019,7 +1019,7 @@ prepare_for_execution(_PyUOpInstruction *buffer, int length)
     for (int i = 0; i < length; i++) {
         _PyUOpInstruction *inst = &buffer[i];
         int opcode = inst->opcode;
-        int32_t target = (int32_t)uop_get_target(inst);
+        int32_t target = (int32_t)_Py_uop_get_target(inst);
         if (_PyUop_Flags[opcode] & (HAS_EXIT_FLAG | HAS_DEOPT_FLAG)) {
             uint16_t exit_op = (_PyUop_Flags[opcode] & HAS_EXIT_FLAG) ?
                 _EXIT_TRACE : _DEOPT;
@@ -1039,7 +1039,7 @@ prepare_for_execution(_PyUOpInstruction *buffer, int length)
                 next_spare++;
             }
             buffer[i].jump_target = current_jump;
-            buffer[i].format = UOP_FORMAT_JUMP;
+            buffer[i].format = _Py_UOP_FORMAT_JUMP;
         }
         if (_PyUop_Flags[opcode] & HAS_ERROR_FLAG) {
             int popped = (_PyUop_Flags[opcode] & HAS_ERROR_NO_POP_FLAG) ?
@@ -1054,8 +1054,8 @@ prepare_for_execution(_PyUOpInstruction *buffer, int length)
                 next_spare++;
             }
             buffer[i].error_target = current_error;
-            if (buffer[i].format == UOP_FORMAT_TARGET) {
-                buffer[i].format = UOP_FORMAT_JUMP;
+            if (buffer[i].format == _Py_UOP_FORMAT_TARGET) {
+                buffer[i].format = _Py_UOP_FORMAT_JUMP;
                 buffer[i].jump_target = 0;
             }
         }
@@ -1109,22 +1109,22 @@ sanity_check(_PyExecutorObject *executor)
         CHECK(opcode <= MAX_UOP_ID);
         CHECK(_PyOpcode_uop_name[opcode] != NULL);
         switch(inst->format) {
-            case UOP_FORMAT_TARGET:
+            case _Py_UOP_FORMAT_TARGET:
                 CHECK(target_unused(opcode));
                 break;
-            case UOP_FORMAT_EXIT:
+            case _Py_UOP_FORMAT_EXIT:
                 CHECK(opcode == _EXIT_TRACE);
                 CHECK(inst->exit_index < executor->exit_count);
                 break;
-            case UOP_FORMAT_JUMP:
+            case _Py_UOP_FORMAT_JUMP:
                 CHECK(inst->jump_target < executor->code_size);
                 break;
-            case UOP_FORMAT_UNUSED:
+            case _Py_UOP_FORMAT_UNUSED:
                 CHECK(0);
                 break;
         }
         if (_PyUop_Flags[opcode] & HAS_ERROR_FLAG) {
-            CHECK(inst->format == UOP_FORMAT_JUMP);
+            CHECK(inst->format == _Py_UOP_FORMAT_JUMP);
             CHECK(inst->error_target < executor->code_size);
         }
         if (opcode == _JUMP_TO_TOP || opcode == _EXIT_TRACE || opcode == _COLD_EXIT) {
@@ -1142,7 +1142,7 @@ sanity_check(_PyExecutorObject *executor)
             opcode == _EXIT_TRACE ||
             opcode == _ERROR_POP_N);
         if (opcode == _EXIT_TRACE) {
-            CHECK(inst->format == UOP_FORMAT_EXIT);
+            CHECK(inst->format == _Py_UOP_FORMAT_EXIT);
         }
     }
 }
@@ -1182,7 +1182,7 @@ make_executor_from_uops(_PyUOpInstruction *buffer, int length, const _PyBloomFil
         if (opcode == _EXIT_TRACE) {
             executor->exits[next_exit].target = buffer[i].target;
             dest->exit_index = next_exit;
-            dest->format = UOP_FORMAT_EXIT;
+            dest->format = _Py_UOP_FORMAT_EXIT;
             next_exit--;
         }
         if (opcode == _DYNAMIC_EXIT) {
@@ -1237,7 +1237,7 @@ init_cold_exit_executor(_PyExecutorObject *executor, int oparg)
     inst->oparg = oparg;
     executor->vm_data.valid = true;
     executor->vm_data.linked = false;
-    for (int i = 0; i < BLOOM_FILTER_WORDS; i++) {
+    for (int i = 0; i < _Py_BLOOM_FILTER_WORDS; i++) {
         assert(executor->vm_data.bloom.bits[i] == 0);
     }
 #ifdef Py_DEBUG
@@ -1400,10 +1400,10 @@ counter_optimize(
     }
     _Py_CODEUNIT *target = instr + 1 + _PyOpcode_Caches[JUMP_BACKWARD] - oparg;
     _PyUOpInstruction buffer[4] = {
-        { .opcode = _START_EXECUTOR, .jump_target = 3, .format=UOP_FORMAT_JUMP },
+        { .opcode = _START_EXECUTOR, .jump_target = 3, .format=_Py_UOP_FORMAT_JUMP },
         { .opcode = _LOAD_CONST_INLINE_BORROW, .operand = (uintptr_t)self },
         { .opcode = _INTERNAL_INCREMENT_OPT_COUNTER },
-        { .opcode = _EXIT_TRACE, .target = (uint32_t)(target - _PyCode_CODE(code)), .format=UOP_FORMAT_TARGET }
+        { .opcode = _EXIT_TRACE, .target = (uint32_t)(target - _PyCode_CODE(code)), .format=_Py_UOP_FORMAT_TARGET }
     };
     _PyExecutorObject *executor = make_executor_from_uops(buffer, 4, &EMPTY_FILTER);
     if (executor == NULL) {
@@ -1505,7 +1505,7 @@ address_to_hash(void *ptr) {
 void
 _Py_BloomFilter_Init(_PyBloomFilter *bloom)
 {
-    for (int i = 0; i < BLOOM_FILTER_WORDS; i++) {
+    for (int i = 0; i < _Py_BLOOM_FILTER_WORDS; i++) {
         bloom->bits[i] = 0;
     }
 }
@@ -1530,7 +1530,7 @@ _Py_BloomFilter_Add(_PyBloomFilter *bloom, void *ptr)
 static bool
 bloom_filter_may_contain(_PyBloomFilter *bloom, _PyBloomFilter *hashes)
 {
-    for (int i = 0; i < BLOOM_FILTER_WORDS; i++) {
+    for (int i = 0; i < _Py_BLOOM_FILTER_WORDS; i++) {
         if ((bloom->bits[i] & hashes->bits[i]) != hashes->bits[i]) {
             return false;
         }
@@ -1591,7 +1591,7 @@ void
 _Py_ExecutorInit(_PyExecutorObject *executor, const _PyBloomFilter *dependency_set)
 {
     executor->vm_data.valid = true;
-    for (int i = 0; i < BLOOM_FILTER_WORDS; i++) {
+    for (int i = 0; i < _Py_BLOOM_FILTER_WORDS; i++) {
         executor->vm_data.bloom.bits[i] = dependency_set->bits[i];
     }
     link_executor(executor);
