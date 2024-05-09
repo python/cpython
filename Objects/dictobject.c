@@ -5491,10 +5491,9 @@ fail:
     Py_DECREF(d);
     return -1;
 
-    int res;
 try_locked:
     Py_BEGIN_CRITICAL_SECTION(d);
-    res = dictiter_iternextitem_lock_held(d, self, out_key, out_value);
+    int res = dictiter_iternextitem_lock_held(d, self, out_key, out_value);
     Py_END_CRITICAL_SECTION();
     return res;
 }
