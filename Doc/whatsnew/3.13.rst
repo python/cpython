@@ -521,8 +521,10 @@ ast
 
   If an optional field on an AST node is not included as an argument when
   constructing an instance, the field will now be set to ``None``. Similarly,
-  if a list field is omitted, that field will now be set to an empty list.
-  (Previously, in both cases, the attribute would be missing on the newly
+  if a list field is omitted, that field will now be set to an empty list,
+  and if a :class:`!ast.expr_context` field is omitted, it defaults to
+  :class:`Load() <ast.Load>`.
+  (Previously, in all cases, the attribute would be missing on the newly
   constructed AST node instance.)
 
   If other arguments are omitted, a :exc:`DeprecationWarning` is emitted.
@@ -534,7 +536,7 @@ ast
   unless the class opts in to the new behavior by setting the attribute
   :attr:`ast.AST._field_types`.
 
-  (Contributed by Jelle Zijlstra in :gh:`105858` and :gh:`117486`.)
+  (Contributed by Jelle Zijlstra in :gh:`105858`, :gh:`117486`, and :gh:`118851`.)
 
 * :func:`ast.parse` now accepts an optional argument *optimize*
   which is passed on to the :func:`compile` built-in. This makes it
