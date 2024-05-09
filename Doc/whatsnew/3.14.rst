@@ -122,6 +122,9 @@ Others
   These had previously raised a :exc:`DeprecationWarning` since Python 3.12.
   (Contributed by Raymond Hettinger in :gh:`101588`.)
 
+* Remove deprecated ``Quoter`` class from :mod:`urllib.parse`.
+  It had previously raised a :exc:`DeprecationWarning` since Python 3.11.
+
 
 Porting to Python 3.14
 ======================
