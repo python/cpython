@@ -215,9 +215,12 @@ def _str_to_int_inner(s):
 # convert from base 10 to base 256. The latter is just a string of
 # bytes, which CPython can convert very efficiently to a Python int.
 
-import math
-_LOG_10_BASE_256 = math.log(10, 256)
-del  math
+# log of 10 to base 256 with best-possible 53-bit precision. Obtained
+# via:
+#    from mpmath import mp
+#    mp.prec = 1000
+#    print(float(mp.log(10, 256)).hex())
+_LOG_10_BASE_256 = float.fromhex('0x1.a934f0979a371p-2') # about 0.415
 
 def _dec_str_to_int_inner(s):
     BYTELIM = 512
@@ -292,9 +295,9 @@ def _dec_str_to_int_inner(s):
     # could compute the log to any desired precision using `decimal`,
     # but it's not plausible that anyone will pass a string requiring
     # trillions of bytes (unles they're just trying to "break things").
-    if w.bit_length() >= 43:
-        # "Only" had < 53 - 43 = 10 bits to spare in IEEE-754 double.
-        # XXX I can't test this - don't have 21 terabytes of RAM to
+    if w.bit_length() >= 46:
+        # "Only" had < 53 - 46 = 7 bits to spare in IEEE-754 double.
+        # XXX I can't test this - don't have 339 terabytes of RAM to
         # build a string long enough to trigger this.
         raise ValueError(f"cannot convert string of len {len(s)} to int")
     with decimal.localcontext(_unbounded_dec_context) as ctx:
