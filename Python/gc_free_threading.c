@@ -298,45 +298,6 @@ gc_visit_heaps(PyInterpreterState *interp, mi_block_visit_fun *visitor,
     return err;
 }
 
-static inline void
-gc_visit_stackref(_PyStackRef ref)
-{
-    // Note: we MUST check that it has deferred bit set before checking the rest.
-    // Otherwise we might read into invalid memory due to non-deferred references
-    // being dead already.
-    if (PyStackRef_IsDeferred(ref)) {
-        PyObject *obj = PyStackRef_To_PyObject_Borrow(ref);
-        if (obj != NULL && !_Py_IsImmortal(obj)) {
-            gc_add_refs(obj, 1);
-        }
-    }
-}
-
-static inline void
-gc_visit_frame(_PyInterpreterFrame *frame)
-{
-    PyCodeObject *co = (PyCodeObject *)frame->f_executable;
-    for (int i = 0; i < co->co_nlocalsplus + co->co_stacksize; i++) {
-        gc_visit_stackref(frame->localsplus[i]);
-    }
-}
-
-static void
-gc_visit_thread_stacks(PyInterpreterState *interp)
-{
-    HEAD_LOCK(&_PyRuntime);
-    for (PyThreadState *p = interp->threads.head; p != NULL; p = p->next) {
-        _PyInterpreterFrame *curr_frame = p->current_frame;
-        while (curr_frame != NULL) {
-            // f_executable could be Py_None for the entry frame.
-            if (PyCode_Check(curr_frame->f_executable)) {
-                gc_visit_frame(curr_frame);
-            }
-            curr_frame = curr_frame->previous;
-        }
-    }
-    HEAD_UNLOCK(&_PyRuntime);
-}
 
 static void
 merge_queued_objects(_PyThreadStateImpl *tstate, struct collection_state *state)
@@ -595,8 +556,6 @@ deduce_unreachable_heap(PyInterpreterState *interp,
     // reference count difference (stored in `ob_tid`) is non-negative.
     gc_visit_heaps(interp, &validate_gc_objects, &state->base);
 #endif
-
-    gc_visit_thread_stacks(interp);
 
     // Transitively mark reachable objects by clearing the
     // _PyGC_BITS_UNREACHABLE flag.
