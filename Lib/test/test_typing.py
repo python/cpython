@@ -668,6 +668,23 @@ class TypeParameterDefaultsTests(BaseTestCase):
         with self.assertRaises(TypeError):
             class Y(Generic[*Ts_default, T]): ...
 
+    def test_allow_default_after_non_default_in_alias(self):
+        T_default = TypeVar('T_default', default=int)
+        T = TypeVar('T')
+        Ts = TypeVarTuple('Ts')
+
+        a1 = Callable[[T_default], T]
+        self.assertEqual(a1.__args__, (T_default, T))
+
+        a2 = dict[T_default, T]
+        self.assertEqual(a2.__args__, (T_default, T))
+
+        a3 = typing.Dict[T_default, T]
+        self.assertEqual(a3.__args__, (T_default, T))
+
+        a4 = Callable[*Ts, T]
+        self.assertEqual(a4.__args__, (*Ts, T))
+
     def test_paramspec_specialization(self):
         T = TypeVar("T")
         P = ParamSpec('P', default=[str, int])
@@ -7111,16 +7128,6 @@ class CollectionsAbcTests(BaseTestCase):
         self.assertIsInstance([], typing.MutableSequence)
         self.assertNotIsInstance((), typing.MutableSequence)
 
-    def test_bytestring(self):
-        with self.assertWarns(DeprecationWarning):
-            self.assertIsInstance(b'', typing.ByteString)
-        with self.assertWarns(DeprecationWarning):
-            self.assertIsInstance(bytearray(b''), typing.ByteString)
-        with self.assertWarns(DeprecationWarning):
-            class Foo(typing.ByteString): ...
-        with self.assertWarns(DeprecationWarning):
-            class Bar(typing.ByteString, typing.Awaitable): ...
-
     def test_list(self):
         self.assertIsSubclass(list, typing.List)
 
@@ -9934,7 +9941,6 @@ class SpecialAttrsTests(BaseTestCase):
             typing.AsyncIterable: 'AsyncIterable',
             typing.AsyncIterator: 'AsyncIterator',
             typing.Awaitable: 'Awaitable',
-            typing.ByteString: 'ByteString',
             typing.Callable: 'Callable',
             typing.ChainMap: 'ChainMap',
             typing.Collection: 'Collection',
