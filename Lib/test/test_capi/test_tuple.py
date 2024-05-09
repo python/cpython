@@ -112,6 +112,7 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(IndexError, getitem, tup, -1)
         self.assertRaises(IndexError, getitem, tup, len(tup))
         self.assertRaises(IndexError, getitem, tup, PY_SSIZE_T_MAX)
+        self.assertRaises(SystemError, getitem, [1, 2, 3], 1)
         self.assertRaises(SystemError, getitem, 42, 1)
 
         # CRASHES getitem(NULL, 1)
