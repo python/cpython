@@ -1,5 +1,5 @@
-:mod:`email.policy`: Policy Objects
------------------------------------
+:mod:`!email.policy`: Policy Objects
+------------------------------------
 
 .. module:: email.policy
    :synopsis: Controlling the parsing and generating of messages

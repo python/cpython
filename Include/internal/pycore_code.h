@@ -8,6 +8,8 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
+#include "pycore_lock.h"        // PyMutex
+
 
 // We hide some of the newer PyCodeObject fields behind macros.
 // This helps with backporting certain changes to 3.12.
@@ -16,6 +18,14 @@ extern "C" {
 #define _PyCode_HAS_INSTRUMENTATION(CODE) \
     (CODE->_co_instrumentation_version > 0)
 
+struct _py_code_state {
+    PyMutex mutex;
+    // Interned constants from code objects. Used by the free-threaded build.
+    struct _Py_hashtable_t *constants;
+};
+
+extern PyStatus _PyCode_Init(PyInterpreterState *interp);
+extern void _PyCode_Fini(PyInterpreterState *interp);
 
 #define CODE_MAX_WATCHERS 8
 
@@ -31,7 +41,7 @@ extern "C" {
 #define CACHE_ENTRIES(cache) (sizeof(cache)/sizeof(_Py_CODEUNIT))
 
 typedef struct {
-    uint16_t counter;
+    _Py_BackoffCounter counter;
     uint16_t module_keys_version;
     uint16_t builtin_keys_version;
     uint16_t index;
@@ -40,46 +50,49 @@ typedef struct {
 #define INLINE_CACHE_ENTRIES_LOAD_GLOBAL CACHE_ENTRIES(_PyLoadGlobalCache)
 
 typedef struct {
-    uint16_t counter;
+    _Py_BackoffCounter counter;
 } _PyBinaryOpCache;
 
 #define INLINE_CACHE_ENTRIES_BINARY_OP CACHE_ENTRIES(_PyBinaryOpCache)
 
 typedef struct {
-    uint16_t counter;
+    _Py_BackoffCounter counter;
 } _PyUnpackSequenceCache;
 
 #define INLINE_CACHE_ENTRIES_UNPACK_SEQUENCE \
     CACHE_ENTRIES(_PyUnpackSequenceCache)
 
 typedef struct {
-    uint16_t counter;
+    _Py_BackoffCounter counter;
 } _PyCompareOpCache;
 
 #define INLINE_CACHE_ENTRIES_COMPARE_OP CACHE_ENTRIES(_PyCompareOpCache)
 
 typedef struct {
-    uint16_t counter;
+    _Py_BackoffCounter counter;
 } _PyBinarySubscrCache;
 
 #define INLINE_CACHE_ENTRIES_BINARY_SUBSCR CACHE_ENTRIES(_PyBinarySubscrCache)
 
 typedef struct {
-    uint16_t counter;
+    _Py_BackoffCounter counter;
 } _PySuperAttrCache;
 
 #define INLINE_CACHE_ENTRIES_LOAD_SUPER_ATTR CACHE_ENTRIES(_PySuperAttrCache)
 
 typedef struct {
-    uint16_t counter;
+    _Py_BackoffCounter counter;
     uint16_t version[2];
     uint16_t index;
 } _PyAttrCache;
 
 typedef struct {
-    uint16_t counter;
+    _Py_BackoffCounter counter;
     uint16_t type_version[2];
-    uint16_t keys_version[2];
+    union {
+        uint16_t keys_version[2];
+        uint16_t dict_offset;
+    };
     uint16_t descr[4];
 } _PyLoadMethodCache;
 
@@ -90,39 +103,39 @@ typedef struct {
 #define INLINE_CACHE_ENTRIES_STORE_ATTR CACHE_ENTRIES(_PyAttrCache)
 
 typedef struct {
-    uint16_t counter;
+    _Py_BackoffCounter counter;
     uint16_t func_version[2];
 } _PyCallCache;
 
 #define INLINE_CACHE_ENTRIES_CALL CACHE_ENTRIES(_PyCallCache)
 
 typedef struct {
-    uint16_t counter;
+    _Py_BackoffCounter counter;
 } _PyStoreSubscrCache;
 
 #define INLINE_CACHE_ENTRIES_STORE_SUBSCR CACHE_ENTRIES(_PyStoreSubscrCache)
 
 typedef struct {
-    uint16_t counter;
+    _Py_BackoffCounter counter;
 } _PyForIterCache;
 
 #define INLINE_CACHE_ENTRIES_FOR_ITER CACHE_ENTRIES(_PyForIterCache)
 
 typedef struct {
-    uint16_t counter;
+    _Py_BackoffCounter counter;
 } _PySendCache;
 
 #define INLINE_CACHE_ENTRIES_SEND CACHE_ENTRIES(_PySendCache)
 
 typedef struct {
-    uint16_t counter;
+    _Py_BackoffCounter counter;
     uint16_t version[2];
 } _PyToBoolCache;
 
 #define INLINE_CACHE_ENTRIES_TO_BOOL CACHE_ENTRIES(_PyToBoolCache)
 
 typedef struct {
-    uint16_t counter;
+    _Py_BackoffCounter counter;
 } _PyContainsOpCache;
 
 #define INLINE_CACHE_ENTRIES_CONTAINS_OP CACHE_ENTRIES(_PyContainsOpCache)
@@ -285,11 +298,6 @@ extern void _Py_Specialize_Send(PyObject *receiver, _Py_CODEUNIT *instr);
 extern void _Py_Specialize_ToBool(PyObject *value, _Py_CODEUNIT *instr);
 extern void _Py_Specialize_ContainsOp(PyObject *value, _Py_CODEUNIT *instr);
 
-/* Finalizer function for static codeobjects used in deepfreeze.py */
-extern void _PyStaticCode_Fini(PyCodeObject *co);
-/* Function to intern strings of codeobjects and quicken the bytecode */
-extern int _PyStaticCode_Init(PyCodeObject *co);
-
 #ifdef Py_STATS
 
 #include "pycore_bitutils.h"  // _Py_bit_length
@@ -307,7 +315,15 @@ extern int _PyStaticCode_Init(PyCodeObject *co);
 #define GC_STAT_ADD(gen, name, n) do { if (_Py_stats) _Py_stats->gc_stats[(gen)].name += (n); } while (0)
 #define OPT_STAT_INC(name) do { if (_Py_stats) _Py_stats->optimization_stats.name++; } while (0)
 #define UOP_STAT_INC(opname, name) do { if (_Py_stats) { assert(opname < 512); _Py_stats->optimization_stats.opcode[opname].name++; } } while (0)
+#define UOP_PAIR_INC(uopcode, lastuop)                                              \
+    do {                                                                            \
+        if (lastuop && _Py_stats) {                                                 \
+            _Py_stats->optimization_stats.opcode[lastuop].pair_count[uopcode]++;    \
+        }                                                                           \
+        lastuop = uopcode;                                                          \
+    } while (0)
 #define OPT_UNSUPPORTED_OPCODE(opname) do { if (_Py_stats) _Py_stats->optimization_stats.unsupported_opcode[opname]++; } while (0)
+#define OPT_ERROR_IN_OPCODE(opname) do { if (_Py_stats) _Py_stats->optimization_stats.error_in_opcode[opname]++; } while (0)
 #define OPT_HIST(length, name) \
     do { \
         if (_Py_stats) { \
@@ -333,7 +349,9 @@ PyAPI_FUNC(PyObject*) _Py_GetSpecializationStats(void);
 #define GC_STAT_ADD(gen, name, n) ((void)0)
 #define OPT_STAT_INC(name) ((void)0)
 #define UOP_STAT_INC(opname, name) ((void)0)
+#define UOP_PAIR_INC(uopcode, lastuop) ((void)0)
 #define OPT_UNSUPPORTED_OPCODE(opname) ((void)0)
+#define OPT_ERROR_IN_OPCODE(opname) ((void)0)
 #define OPT_HIST(length, name) ((void)0)
 #define RARE_EVENT_STAT_INC(name) ((void)0)
 #endif  // !Py_STATS
@@ -446,18 +464,14 @@ write_location_entry_start(uint8_t *ptr, int code, int length)
 
 /** Counters
  * The first 16-bit value in each inline cache is a counter.
- * When counting misses, the counter is treated as a simple unsigned value.
  *
  * When counting executions until the next specialization attempt,
  * exponential backoff is used to reduce the number of specialization failures.
- * The high 12 bits store the counter, the low 4 bits store the backoff exponent.
- * On a specialization failure, the backoff exponent is incremented and the
- * counter set to (2**backoff - 1).
- * Backoff == 6 -> starting counter == 63, backoff == 10 -> starting counter == 1023.
+ * See pycore_backoff.h for more details.
+ * On a specialization failure, the backoff counter is restarted.
  */
 
-/* With a 16-bit counter, we have 12 bits for the counter value, and 4 bits for the backoff */
-#define ADAPTIVE_BACKOFF_BITS 4
+#include "pycore_backoff.h"
 
 // A value of 1 means that we attempt to specialize the *second* time each
 // instruction is executed. Executing twice is a much better indicator of
@@ -475,36 +489,30 @@ write_location_entry_start(uint8_t *ptr, int code, int length)
 #define ADAPTIVE_COOLDOWN_VALUE 52
 #define ADAPTIVE_COOLDOWN_BACKOFF 0
 
-#define MAX_BACKOFF_VALUE (16 - ADAPTIVE_BACKOFF_BITS)
+// Can't assert this in pycore_backoff.h because of header order dependencies
+static_assert(COLD_EXIT_INITIAL_VALUE > ADAPTIVE_COOLDOWN_VALUE,
+    "Cold exit value should be larger than adaptive cooldown value");
 
-
-static inline uint16_t
+static inline _Py_BackoffCounter
 adaptive_counter_bits(uint16_t value, uint16_t backoff) {
-    return ((value << ADAPTIVE_BACKOFF_BITS)
-            | (backoff & ((1 << ADAPTIVE_BACKOFF_BITS) - 1)));
+    return make_backoff_counter(value, backoff);
 }
 
-static inline uint16_t
+static inline _Py_BackoffCounter
 adaptive_counter_warmup(void) {
     return adaptive_counter_bits(ADAPTIVE_WARMUP_VALUE,
                                  ADAPTIVE_WARMUP_BACKOFF);
 }
 
-static inline uint16_t
+static inline _Py_BackoffCounter
 adaptive_counter_cooldown(void) {
     return adaptive_counter_bits(ADAPTIVE_COOLDOWN_VALUE,
                                  ADAPTIVE_COOLDOWN_BACKOFF);
 }
 
-static inline uint16_t
-adaptive_counter_backoff(uint16_t counter) {
-    uint16_t backoff = counter & ((1 << ADAPTIVE_BACKOFF_BITS) - 1);
-    backoff++;
-    if (backoff > MAX_BACKOFF_VALUE) {
-        backoff = MAX_BACKOFF_VALUE;
-    }
-    uint16_t value = (uint16_t)(1 << backoff) - 1;
-    return adaptive_counter_bits(value, backoff);
+static inline _Py_BackoffCounter
+adaptive_counter_backoff(_Py_BackoffCounter counter) {
+    return restart_backoff_counter(counter);
 }
 
 

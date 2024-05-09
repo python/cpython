@@ -1072,6 +1072,30 @@ class UrlParseTestCase(unittest.TestCase):
                 result_bytes = urllib.parse.parse_qsl(orig, separator=b';')
                 self.assertEqual(result_bytes, expect, "Error parsing %r" % orig)
 
+    def test_parse_qsl_bytes(self):
+        self.assertEqual(urllib.parse.parse_qsl(b'a=b'), [(b'a', b'b')])
+        self.assertEqual(urllib.parse.parse_qsl(bytearray(b'a=b')), [(b'a', b'b')])
+        self.assertEqual(urllib.parse.parse_qsl(memoryview(b'a=b')), [(b'a', b'b')])
+
+    def test_parse_qsl_false_value(self):
+        kwargs = dict(keep_blank_values=True, strict_parsing=True)
+        for x in '', b'', None, 0, 0.0, [], {}, memoryview(b''):
+            self.assertEqual(urllib.parse.parse_qsl(x, **kwargs), [])
+            self.assertRaises(ValueError, urllib.parse.parse_qsl, x, separator=1)
+
+    def test_parse_qsl_errors(self):
+        self.assertRaises(TypeError, urllib.parse.parse_qsl, list(b'a=b'))
+        self.assertRaises(TypeError, urllib.parse.parse_qsl, iter(b'a=b'))
+        self.assertRaises(TypeError, urllib.parse.parse_qsl, 1)
+        self.assertRaises(TypeError, urllib.parse.parse_qsl, object())
+
+        for separator in '', b'', None, 0, 1, 0.0, 1.5:
+            with self.assertRaises(ValueError):
+                urllib.parse.parse_qsl('a=b', separator=separator)
+        with self.assertRaises(UnicodeEncodeError):
+            urllib.parse.parse_qsl(b'a=b', separator='\xa6')
+        with self.assertRaises(UnicodeDecodeError):
+            urllib.parse.parse_qsl('a=b', separator=b'\xa6')
 
     def test_urlencode_sequences(self):
         # Other tests incidentally urlencode things; test non-covered cases:

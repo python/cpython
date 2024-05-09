@@ -22,13 +22,13 @@ extern int _PyImport_SetModuleString(const char *name, PyObject* module);
 extern void _PyImport_AcquireLock(PyInterpreterState *interp);
 extern int _PyImport_ReleaseLock(PyInterpreterState *interp);
 
+// This is used exclusively for the sys and builtins modules:
 extern int _PyImport_FixupBuiltin(
+    PyThreadState *tstate,
     PyObject *mod,
     const char *name,            /* UTF-8 encoded string */
     PyObject *modules
     );
-extern int _PyImport_FixupExtensionObject(PyObject*, PyObject *,
-                                          PyObject *, PyObject *);
 
 // Export for many shared extensions, like '_json'
 PyAPI_FUNC(PyObject*) _PyImport_GetModuleAttr(PyObject *, PyObject *);
@@ -52,7 +52,7 @@ struct _import_runtime_state {
            Only legacy (single-phase init) extension modules are added
            and only if they support multiple initialization (m_size >- 0)
            or are imported in the main interpreter.
-           This is initialized lazily in _PyImport_FixupExtensionObject().
+           This is initialized lazily in fix_up_extension() in import.c.
            Modules are added there and looked up in _imp.find_extension(). */
         _Py_hashtable_t *hashtable;
     } extensions;
@@ -205,6 +205,19 @@ extern int _PyImport_CheckSubinterpIncompatibleExtensionAllowed(
 
 // Export for '_testinternalcapi' shared extension
 PyAPI_FUNC(int) _PyImport_ClearExtension(PyObject *name, PyObject *filename);
+
+#ifdef Py_GIL_DISABLED
+// Assuming that the GIL is enabled from a call to
+// _PyEval_EnableGILTransient(), resolve the transient request depending on the
+// state of the module argument:
+// - If module is NULL or a PyModuleObject with md_gil == Py_MOD_GIL_NOT_USED,
+//   call _PyEval_DisableGIL().
+// - Otherwise, call _PyEval_EnableGILPermanent(). If the GIL was not already
+//   enabled permanently, issue a warning referencing the module's name.
+//
+// This function may raise an exception.
+extern int _PyImport_CheckGILForModule(PyObject *module, PyObject *module_name);
+#endif
 
 #ifdef __cplusplus
 }

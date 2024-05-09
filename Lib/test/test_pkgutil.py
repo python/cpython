@@ -12,6 +12,9 @@ import tempfile
 import shutil
 import zipfile
 
+from test.support.import_helper import DirsOnSysPath
+from test.test_importlib.util import uncache
+
 # Note: pkgutil.walk_packages is currently tested in test_runpy. This is
 # a hack to get a major issue resolved for 3.3b2. Longer term, it should
 # be moved back here, perhaps by factoring out the helper code for
@@ -317,6 +320,38 @@ class PkgutilTests(unittest.TestCase):
             with self.subTest(s=s):
                 with self.assertRaises(exc):
                     pkgutil.resolve_name(s)
+
+    def test_name_resolution_import_rebinding(self):
+        # The same data is also used for testing import in test_import and
+        # mock.patch in test_unittest.
+        path = os.path.join(os.path.dirname(__file__), 'test_import', 'data')
+        with uncache('package3', 'package3.submodule'), DirsOnSysPath(path):
+            self.assertEqual(pkgutil.resolve_name('package3.submodule.attr'), 'submodule')
+        with uncache('package3', 'package3.submodule'), DirsOnSysPath(path):
+            self.assertEqual(pkgutil.resolve_name('package3.submodule:attr'), 'submodule')
+        with uncache('package3', 'package3.submodule'), DirsOnSysPath(path):
+            self.assertEqual(pkgutil.resolve_name('package3:submodule.attr'), 'rebound')
+            self.assertEqual(pkgutil.resolve_name('package3.submodule.attr'), 'submodule')
+            self.assertEqual(pkgutil.resolve_name('package3:submodule.attr'), 'rebound')
+        with uncache('package3', 'package3.submodule'), DirsOnSysPath(path):
+            self.assertEqual(pkgutil.resolve_name('package3:submodule.attr'), 'rebound')
+            self.assertEqual(pkgutil.resolve_name('package3.submodule:attr'), 'submodule')
+            self.assertEqual(pkgutil.resolve_name('package3:submodule.attr'), 'rebound')
+
+    def test_name_resolution_import_rebinding2(self):
+        path = os.path.join(os.path.dirname(__file__), 'test_import', 'data')
+        with uncache('package4', 'package4.submodule'), DirsOnSysPath(path):
+            self.assertEqual(pkgutil.resolve_name('package4.submodule.attr'), 'submodule')
+        with uncache('package4', 'package4.submodule'), DirsOnSysPath(path):
+            self.assertEqual(pkgutil.resolve_name('package4.submodule:attr'), 'submodule')
+        with uncache('package4', 'package4.submodule'), DirsOnSysPath(path):
+            self.assertEqual(pkgutil.resolve_name('package4:submodule.attr'), 'origin')
+            self.assertEqual(pkgutil.resolve_name('package4.submodule.attr'), 'submodule')
+            self.assertEqual(pkgutil.resolve_name('package4:submodule.attr'), 'submodule')
+        with uncache('package4', 'package4.submodule'), DirsOnSysPath(path):
+            self.assertEqual(pkgutil.resolve_name('package4:submodule.attr'), 'origin')
+            self.assertEqual(pkgutil.resolve_name('package4.submodule:attr'), 'submodule')
+            self.assertEqual(pkgutil.resolve_name('package4:submodule.attr'), 'submodule')
 
 
 class PkgutilPEP302Tests(unittest.TestCase):

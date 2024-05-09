@@ -7,6 +7,7 @@ from . import common as _common
 FILES_WITHOUT_INTERNAL_CAPI = frozenset((
     # Modules/
     '_testcapimodule.c',
+    '_testlimitedcapi.c',
     '_testclinic_limited.c',
     'xxlimited.c',
     'xxlimited_35.c',

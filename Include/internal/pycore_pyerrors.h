@@ -167,9 +167,6 @@ void _PyErr_FormatNote(const char *format, ...);
 
 Py_DEPRECATED(3.12) extern void _PyErr_ChainExceptions(PyObject *, PyObject *, PyObject *);
 
-// Export for '_zoneinfo' shared extension
-PyAPI_FUNC(void) _PyErr_ChainExceptions1(PyObject *);
-
 #ifdef __cplusplus
 }
 #endif
