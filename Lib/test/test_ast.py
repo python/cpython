@@ -3039,15 +3039,15 @@ class ASTConstructorTests(unittest.TestCase):
     def test_expr_context(self):
         name = ast.Name("x")
         self.assertEqual(name.id, "x")
-        self.assertEqual(name.ctx, ast.Load())
+        self.assertIsInstance(name.ctx, ast.Load)
 
         name2 = ast.Name("x", ast.Store())
         self.assertEqual(name2.id, "x")
-        self.assertEqual(name2.ctx, ast.Store())
+        self.assertIsInstance(name2.ctx, ast.Store)
 
         name3 = ast.Name("x", ctx=ast.Del())
         self.assertEqual(name3.id, "x")
-        self.assertEqual(name3.ctx, ast.Del())
+        self.assertIsInstance(name3.ctx, ast.Del)
 
         with self.assertWarnsRegex(DeprecationWarning,
                                    r"Name\.__init__ missing 1 required positional argument: 'id'"):

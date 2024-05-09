@@ -1034,8 +1034,8 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
                 if (PyErr_WarnFormat(
                     PyExc_DeprecationWarning, 1,
                     "%.400s.__init__ missing 1 required positional argument: '%U'. "
-                    "This will become an error in Python 3.15. %R",
-                    Py_TYPE(self)->tp_name, name, type
+                    "This will become an error in Python 3.15.",
+                    Py_TYPE(self)->tp_name, name
                 ) < 0) {
                     goto set_remaining_cleanup;
                 }
