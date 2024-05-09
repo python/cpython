@@ -174,6 +174,9 @@ for more details.
    it currently evaluates as true, it will emit a :exc:`DeprecationWarning`.
    It will raise a :exc:`TypeError` in a future version of Python.
 
+.. versionchanged:: 3.14
+   Evaluating :data:`NotImplemented` in a boolean context now raises a :exc:`TypeError`.
+
 
 Ellipsis
 --------
