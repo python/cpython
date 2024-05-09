@@ -109,6 +109,11 @@ Removed
   are removed. They had previously raised a :exc:`DeprecationWarning`
   since Python 3.12.
 
+* :mod:`itertools` support for copy, deepcopy, and pickle operations.
+  These had previously raised a :exc:`DeprecationWarning` since Python 3.12.
+  (Contributed by Raymond Hettinger in :gh:`101588`.)
+
+
 Porting to Python 3.14
 ======================
 
