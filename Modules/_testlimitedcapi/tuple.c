@@ -25,18 +25,19 @@ tuple_new(PyObject* Py_UNUSED(module), PyObject *len)
 static PyObject *
 tuple_pack(PyObject *Py_UNUSED(module), PyObject *args)
 {
-    Py_ssize_t size = PyLong_AsSize_t(PyTuple_GetItem(args, 0));
-    if (size == 1) {
-        PyObject *arg1 = PyTuple_GetItem(args, 1);
-        NULLABLE(arg1);
-        return PyTuple_Pack(1, arg1);
+    PyObject *arg1 = NULL, *arg2 = NULL;
+    Py_ssize_t size;
+
+    if (!PyArg_ParseTuple(args, "n|OO", &size, &arg1, &arg2)) {
+        return NULL;
     }
-    else if (size == 2) {
-        PyObject *arg1 = PyTuple_GetItem(args, 1);
-        PyObject *arg2 = PyTuple_GetItem(args, 2);
+    if (arg1) {
         NULLABLE(arg1);
-        NULLABLE(arg2);
-        return PyTuple_Pack(2, arg1, arg2);
+        if (arg2) {
+            NULLABLE(arg2);
+            return PyTuple_Pack(size, arg1, arg2);
+        }
+        return PyTuple_Pack(size, arg1);
     }
     return PyTuple_Pack(size);
 }

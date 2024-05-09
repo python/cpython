@@ -74,6 +74,7 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(MemoryError, pack, PY_SSIZE_T_MAX)
 
         # CRASHES pack(1, NULL)
+        # CRASHES pack(2, 1)
 
     def test_tuple_size(self):
         # Test PyTuple_Size()
