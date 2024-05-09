@@ -64,6 +64,8 @@ jobs:
       run: make pythoninfo
     - name: Tests
       run: ./python -m test --tsan -j4
+    - name: Display TSAN logs
+      run: find ${GITHUB_WORKSPACE} -name 'tsan_log.*' | xargs head -n 1000
     - name: Archive TSAN logs
       if: always()
       uses: actions/upload-artifact@v4
