@@ -109,6 +109,9 @@ Removed
   are removed. They had previously raised a :exc:`DeprecationWarning`
   since Python 3.12.
 
+* Remove deprecated ``pty.master_open`` and ``pty.slave_open``.
+  They had previously raised a :exc:`DeprecationWarning` since Python 3.12.
+
 Porting to Python 3.14
 ======================
 

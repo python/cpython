@@ -35,25 +35,6 @@ def openpty():
     slave_fd = slave_open(slave_name)
     return master_fd, slave_fd
 
-def master_open():
-    """master_open() -> (master_fd, slave_name)
-    Open a pty master and return the fd, and the filename of the slave end.
-    Deprecated, use openpty() instead."""
-
-    import warnings
-    warnings.warn("Use pty.openpty() instead.", DeprecationWarning, stacklevel=2)  # Remove API in 3.14
-
-    try:
-        master_fd, slave_fd = os.openpty()
-    except (AttributeError, OSError):
-        pass
-    else:
-        slave_name = os.ttyname(slave_fd)
-        os.close(slave_fd)
-        return master_fd, slave_name
-
-    return _open_terminal()
-
 def _open_terminal():
     """Open pty master and return (master_fd, tty_name)."""
     for x in 'pqrstuvwxyzPQRST':
@@ -66,26 +47,6 @@ def _open_terminal():
             return (fd, '/dev/tty' + x + y)
     raise OSError('out of pty devices')
 
-def slave_open(tty_name):
-    """slave_open(tty_name) -> slave_fd
-    Open the pty slave and acquire the controlling terminal, returning
-    opened filedescriptor.
-    Deprecated, use openpty() instead."""
-
-    import warnings
-    warnings.warn("Use pty.openpty() instead.", DeprecationWarning, stacklevel=2)  # Remove API in 3.14
-
-    result = os.open(tty_name, os.O_RDWR)
-    try:
-        from fcntl import ioctl, I_PUSH
-    except ImportError:
-        return result
-    try:
-        ioctl(result, I_PUSH, "ptem")
-        ioctl(result, I_PUSH, "ldterm")
-    except OSError:
-        pass
-    return result
 
 def fork():
     """fork() -> (pid, master_fd)
