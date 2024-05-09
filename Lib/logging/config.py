@@ -725,16 +725,20 @@ class DictConfigurator(BaseConfigurator):
 
     def _configure_queue_handler(self, klass, **kwargs):
         if 'queue' in kwargs:
-            q = kwargs['queue']
+            q = kwargs.pop('queue')
         else:
             q = queue.Queue()  # unbounded
         rhl = kwargs.get('respect_handler_level', False)
         if 'listener' in kwargs:
-            lklass = kwargs['listener']
+            lklass = kwargs.pop('listener')
         else:
             lklass = logging.handlers.QueueListener
-        listener = lklass(q, *kwargs.get('handlers', []), respect_handler_level=rhl)
-        handler = klass(q)
+        if 'handlers' in kwargs:
+            handlers = kwargs.pop('handlers')
+        else:
+            handlers = []
+        listener = lklass(q, *handlers, respect_handler_level=rhl)
+        handler = klass(q, **kwargs)
         handler.listener = listener
         return handler
 
