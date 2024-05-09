@@ -194,7 +194,7 @@ class TestInteractiveInterpreter(unittest.TestCase):
         self.assertEqual(p.returncode, 0)
         expected = "(30, None, [\'def foo(x):\\n\', \'    return x + 1\\n\', \'\\n\'], \'<stdin>\')"
         self.assertIn(expected, output, expected)
-    
+
     def test_asyncio_repl_is_ok(self):
         assert_python_ok("-m", "asyncio")
 
