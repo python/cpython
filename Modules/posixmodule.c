@@ -5108,13 +5108,12 @@ _testFileTypeByHandle(HANDLE hfile, int refFileType, BOOL diskOnly)
     }
 
     FILE_INFO_BY_HANDLE_CLASS FileInformationClass;
+    LPVOID info;
     if (refFileType == PY_IFLNK || refFileType == PY_IFMNT) {
         FileInformationClass = FileAttributeTagInfo;
-        FILE_ATTRIBUTE_TAG_INFO info;
     }
     else {
         FileInformationClass = FileBasicInfo;
-        FILE_BASIC_INFO info;
     }
     if (!GetFileInformationByHandleEx(hfile, FileInformationClass, &info,
                                       sizeof(info)))
