@@ -3226,9 +3226,8 @@ class Win32NtTests(unittest.TestCase):
             self.skipTest("Unable to create inaccessible file")
 
         def cleanup():
-            # Give delete permission. We are the file owner, so we can do this
-            # even though we removed all permissions earlier.
-            subprocess.check_output([ICACLS, filename, "/grant", "Everyone:(D)"],
+            # Give delete permission to the owner (us)
+            subprocess.check_output([ICACLS, filename, "/grant", "*WD:(D)"],
                                     stderr=subprocess.STDOUT)
             os.unlink(filename)
 
