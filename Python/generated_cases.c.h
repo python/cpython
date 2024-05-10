@@ -6748,6 +6748,7 @@
              */
             PyObject *exc, *tb;
             PyObject *val_o = PyStackRef_To_PyObject_Borrow(val);
+            PyObject *exit_func_o = PyStackRef_To_PyObject_Borrow(exit_func);
             assert(val_o && PyExceptionInstance_Check(val_o));
             exc = PyExceptionInstance_Class(val_o);
             tb = PyException_GetTraceback(val_o);
@@ -6760,7 +6761,7 @@
             assert(PyLong_Check(PyStackRef_To_PyObject_Borrow(lasti)));
             (void)lasti; // Shut up compiler warning if asserts are off
             _PyStackRef stack[4] = {Py_STACKREF_NULL, PyObject_To_StackRef_Steal(exc), val, PyObject_To_StackRef_Steal(tb)};
-            res = PyObject_Vectorcall_StackRef(PyStackRef_To_PyObject_Borrow(exit_func), stack + 1,
+            res = PyObject_Vectorcall_StackRef(exit_func_o, stack + 1,
                 3 | PY_VECTORCALL_ARGUMENTS_OFFSET, NULL);
             if (res == NULL) goto error;
             stack_pointer[0] = PyObject_To_StackRef_Steal((PyObject *)res);

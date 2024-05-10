@@ -3132,7 +3132,7 @@ dummy_func(
             res = PyObject_To_StackRef_Steal(res_o);
         }
 
-        inst(WITH_EXCEPT_START, (exit_func: PyObject *, lasti, unused, val -- exit_func, lasti, unused, val, res: PyObject *)) {
+        inst(WITH_EXCEPT_START, (exit_func, lasti, unused, val -- exit_func, lasti, unused, val, res: PyObject *)) {
             /* At the top of the stack are 4 values:
                - val: TOP = exc_info()
                - unused: SECOND = previous exception
@@ -3144,6 +3144,7 @@ dummy_func(
             PyObject *exc, *tb;
 
             PyObject *val_o = PyStackRef_To_PyObject_Borrow(val);
+            PyObject *exit_func_o = PyStackRef_To_PyObject_Borrow(exit_func);
 
             assert(val_o && PyExceptionInstance_Check(val_o));
             exc = PyExceptionInstance_Class(val_o);
@@ -3157,7 +3158,7 @@ dummy_func(
             assert(PyLong_Check(PyStackRef_To_PyObject_Borrow(lasti)));
             (void)lasti; // Shut up compiler warning if asserts are off
             _PyStackRef stack[4] = {Py_STACKREF_NULL, PyObject_To_StackRef_Steal(exc), val, PyObject_To_StackRef_Steal(tb)};
-            res = PyObject_Vectorcall_StackRef(PyStackRef_To_PyObject_Borrow(exit_func), stack + 1,
+            res = PyObject_Vectorcall_StackRef(exit_func_o, stack + 1,
                     3 | PY_VECTORCALL_ARGUMENTS_OFFSET, NULL);
             ERROR_IF(res == NULL, error);
         }
@@ -4526,29 +4527,37 @@ dummy_func(
         ///////// Tier-2 only opcodes /////////
 
         op (_GUARD_IS_TRUE_POP, (flag -- )) {
+            PyObject *flag_o = PyStackRef_To_PyObject_Borrow(flag);
+
             SYNC_SP();
-            EXIT_IF(!Py_IsTrue(flag));
-            assert(Py_IsTrue(flag));
+            EXIT_IF(!Py_IsTrue(flag_o));
+            assert(Py_IsTrue(flag_o));
         }
 
         op (_GUARD_IS_FALSE_POP, (flag -- )) {
+            PyObject *flag_o = PyStackRef_To_PyObject_Borrow(flag);
+
             SYNC_SP();
-            EXIT_IF(!Py_IsFalse(flag));
-            assert(Py_IsFalse(flag));
+            EXIT_IF(!Py_IsFalse(flag_o));
+            assert(Py_IsFalse(flag_o));
         }
 
         op (_GUARD_IS_NONE_POP, (val -- )) {
+            PyObject *val_o = PyStackRef_To_PyObject_Borrow(val);
+
             SYNC_SP();
-            if (!Py_IsNone(val)) {
-                PyStackRef_DECREF(val_stackref);
+            if (!Py_IsNone(val_o)) {
+                PyStackRef_DECREF(val);
                 EXIT_IF(1);
             }
         }
 
         op (_GUARD_IS_NOT_NONE_POP, (val -- )) {
+            PyObject *val_o = PyStackRef_To_PyObject_Borrow(val);
+
             SYNC_SP();
-            EXIT_IF(Py_IsNone(val));
-            PyStackRef_DECREF(val_stackref);
+            EXIT_IF(Py_IsNone(val_o));
+            PyStackRef_DECREF(val);
         }
 
         op(_JUMP_TO_TOP, (--)) {
@@ -4585,25 +4594,25 @@ dummy_func(
         }
 
         tier2 pure op(_LOAD_CONST_INLINE, (ptr/4 -- value)) {
-            value = Py_NewRef(ptr);
+            value = PyObject_To_StackRef_New(ptr);
         }
 
         tier2 pure op(_LOAD_CONST_INLINE_BORROW, (ptr/4 -- value)) {
-            value = ptr;
+            value = PyObject_To_StackRef_Borrow(ptr);
         }
 
         tier2 pure op (_POP_TOP_LOAD_CONST_INLINE_BORROW, (ptr/4, pop -- value)) {
             DECREF_INPUTS();
-            value = ptr;
+            value = PyObject_To_StackRef_Borrow(ptr);
         }
 
         tier2 pure op(_LOAD_CONST_INLINE_WITH_NULL, (ptr/4 -- value, null)) {
-            value = Py_NewRef(ptr);
+            value = PyObject_To_StackRef_New(ptr);
             null = Py_STACKREF_NULL;
         }
 
         tier2 pure op(_LOAD_CONST_INLINE_BORROW_WITH_NULL, (ptr/4 -- value, null)) {
-            value = ptr;
+            value = PyObject_To_StackRef_Borrow(ptr);
             null = Py_STACKREF_NULL;
         }
 
@@ -4614,7 +4623,7 @@ dummy_func(
 
         /* Internal -- for testing executors */
         op(_INTERNAL_INCREMENT_OPT_COUNTER, (opt --)) {
-            _PyCounterOptimizerObject *exe = (_PyCounterOptimizerObject *)opt;
+            _PyCounterOptimizerObject *exe = (_PyCounterOptimizerObject *)PyStackRef_To_PyObject_Borrow(opt);
             exe->count++;
         }
 
