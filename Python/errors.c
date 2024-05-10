@@ -263,7 +263,7 @@ _PyErr_SetKeyError(PyObject *arg)
         return;
     }
 
-    _PyErr_SetRaisedException(tstate, exc);
+    _PyErr_SetObject(tstate, (PyObject*)Py_TYPE(exc), exc);
 }
 
 void
