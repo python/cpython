@@ -35,6 +35,35 @@ struct _Py_UopsSymbol {
     PyObject *const_val;  // Owned reference (!)
 };
 
+#define UOP_FORMAT_TARGET 0
+#define UOP_FORMAT_EXIT 1
+#define UOP_FORMAT_JUMP 2
+#define UOP_FORMAT_UNUSED 3
+
+static inline uint32_t uop_get_target(const _PyUOpInstruction *inst)
+{
+    assert(inst->format == UOP_FORMAT_TARGET);
+    return inst->target;
+}
+
+static inline uint16_t uop_get_exit_index(const _PyUOpInstruction *inst)
+{
+    assert(inst->format == UOP_FORMAT_EXIT);
+    return inst->exit_index;
+}
+
+static inline uint16_t uop_get_jump_target(const _PyUOpInstruction *inst)
+{
+    assert(inst->format == UOP_FORMAT_JUMP);
+    return inst->jump_target;
+}
+
+static inline uint16_t uop_get_error_target(const _PyUOpInstruction *inst)
+{
+    assert(inst->format != UOP_FORMAT_TARGET);
+    return inst->error_target;
+}
+
 // Holds locals, stack, locals, stack ... co_consts (in that order)
 #define MAX_ABSTRACT_INTERP_SIZE 4096
 
