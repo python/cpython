@@ -10236,7 +10236,7 @@ class NoDefaultTests(BaseTestCase):
     def test_constructor(self):
         self.assertIs(NoDefault, type(NoDefault)())
         with self.assertRaises(TypeError):
-            NoDefault(1)
+            type(NoDefault)(1)
 
     def test_repr(self):
         self.assertEqual(repr(NoDefault), 'typing.NoDefault')
@@ -10244,6 +10244,16 @@ class NoDefaultTests(BaseTestCase):
     def test_no_call(self):
         with self.assertRaises(TypeError):
             NoDefault()
+
+    def test_no_attributes(self):
+        with self.assertRaises(AttributeError):
+            NoDefault.foo = 3
+        with self.assertRaises(AttributeError):
+            NoDefault.foo
+
+        # TypeError is consistent with the behavior of NoneType
+        with self.assertRaises(TypeError):
+            type(NoDefault).foo = 3
 
 
 class AllTests(BaseTestCase):
