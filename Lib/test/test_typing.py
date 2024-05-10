@@ -45,7 +45,7 @@ import typing
 import weakref
 import types
 
-from test.support import captured_stderr, cpython_only, infinite_recursion
+from test.support import captured_stderr, cpython_only, infinite_recursion, requires_docstrings
 from test.typinganndata import ann_module695, mod_generics_cache, _typed_dict_helper
 
 
@@ -7128,16 +7128,6 @@ class CollectionsAbcTests(BaseTestCase):
         self.assertIsInstance([], typing.MutableSequence)
         self.assertNotIsInstance((), typing.MutableSequence)
 
-    def test_bytestring(self):
-        with self.assertWarns(DeprecationWarning):
-            self.assertIsInstance(b'', typing.ByteString)
-        with self.assertWarns(DeprecationWarning):
-            self.assertIsInstance(bytearray(b''), typing.ByteString)
-        with self.assertWarns(DeprecationWarning):
-            class Foo(typing.ByteString): ...
-        with self.assertWarns(DeprecationWarning):
-            class Bar(typing.ByteString, typing.Awaitable): ...
-
     def test_list(self):
         self.assertIsSubclass(list, typing.List)
 
@@ -9951,7 +9941,6 @@ class SpecialAttrsTests(BaseTestCase):
             typing.AsyncIterable: 'AsyncIterable',
             typing.AsyncIterator: 'AsyncIterator',
             typing.Awaitable: 'Awaitable',
-            typing.ByteString: 'ByteString',
             typing.Callable: 'Callable',
             typing.ChainMap: 'ChainMap',
             typing.Collection: 'Collection',
@@ -10247,14 +10236,33 @@ class NoDefaultTests(BaseTestCase):
     def test_constructor(self):
         self.assertIs(NoDefault, type(NoDefault)())
         with self.assertRaises(TypeError):
-            NoDefault(1)
+            type(NoDefault)(1)
 
     def test_repr(self):
         self.assertEqual(repr(NoDefault), 'typing.NoDefault')
 
+    @requires_docstrings
+    def test_doc(self):
+        self.assertIsInstance(NoDefault.__doc__, str)
+
+    def test_class(self):
+        self.assertIs(NoDefault.__class__, type(NoDefault))
+
     def test_no_call(self):
         with self.assertRaises(TypeError):
             NoDefault()
+
+    def test_no_attributes(self):
+        with self.assertRaises(AttributeError):
+            NoDefault.foo = 3
+        with self.assertRaises(AttributeError):
+            NoDefault.foo
+
+        # TypeError is consistent with the behavior of NoneType
+        with self.assertRaises(TypeError):
+            type(NoDefault).foo = 3
+        with self.assertRaises(AttributeError):
+            type(NoDefault).foo
 
 
 class AllTests(BaseTestCase):
