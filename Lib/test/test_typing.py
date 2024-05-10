@@ -45,7 +45,7 @@ import typing
 import weakref
 import types
 
-from test.support import captured_stderr, cpython_only, infinite_recursion, requires_docstrings
+from test.support import captured_stderr, cpython_only, infinite_recursion, requires_docstrings, import_helper
 from test.typinganndata import ann_module695, mod_generics_cache, _typed_dict_helper
 
 
@@ -6325,6 +6325,8 @@ class ForwardRefTests(BaseTestCase):
         self.assertEqual(X | "x", Union[X, "x"])
         self.assertEqual("x" | X, Union["x", X])
 
+
+class InternalsTests(BaseTestCase):
     def test_deprecation_for_no_type_params_passed_to__evaluate(self):
         with self.assertWarnsRegex(
             DeprecationWarning,
@@ -6348,6 +6350,15 @@ class ForwardRefTests(BaseTestCase):
         ) as cm:
             self.assertIs(f._evaluate(globals(), {}, recursive_guard=frozenset()), int)
 
+        self.assertEqual(cm.filename, __file__)
+
+    def test_collect_parameters(self):
+        typing = import_helper.import_fresh_module("typing")
+        with self.assertWarnsRegex(
+            DeprecationWarning,
+            "The private _collect_parameters function is deprecated"
+        ) as cm:
+            typing._collect_parameters
         self.assertEqual(cm.filename, __file__)
 
 
