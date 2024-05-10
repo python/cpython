@@ -245,7 +245,7 @@ class up(MotionCommand):
             x, y = r.pos2xy()
             new_y = y - 1
 
-            if new_y < 0:
+            if r.bol() == 0:
                 if r.historyi > 0:
                     r.select_item(r.historyi - 1)
                     return
