@@ -3425,7 +3425,7 @@
                 prev_exc = PyObject_To_StackRef_Steal(Py_None);
             }
             assert(PyExceptionInstance_Check(PyStackRef_To_PyObject_Borrow(new_exc)));
-            exc_info->exc_value = Py_NewRef(PyStackRef_To_PyObject_New(new_exc));
+            exc_info->exc_value = Py_NewRef(PyStackRef_To_PyObject_Borrow(new_exc));
             stack_pointer[-1] = prev_exc;
             stack_pointer[0] = new_exc;
             stack_pointer += 1;

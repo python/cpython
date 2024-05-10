@@ -3189,7 +3189,7 @@ dummy_func(
                 prev_exc = PyObject_To_StackRef_Steal(Py_None);
             }
             assert(PyExceptionInstance_Check(PyStackRef_To_PyObject_Borrow(new_exc)));
-            exc_info->exc_value = Py_NewRef(PyStackRef_To_PyObject_New(new_exc));
+            exc_info->exc_value = Py_NewRef(PyStackRef_To_PyObject_Borrow(new_exc));
         }
 
         op(_GUARD_DORV_VALUES_INST_ATTR_FROM_DICT, (owner -- owner)) {
