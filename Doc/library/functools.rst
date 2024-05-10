@@ -492,8 +492,8 @@ The :mod:`functools` module defines the following functions:
      ...     print(arg.real, arg.imag)
      ...
 
-   For code that dispatches on a collections type, e.g. ``list``, but wants
-   to typehint the items of the collection, e.g. ``list[int]``, then the
+   For code that dispatches on a collections type (e.g., ``list``), but wants
+   to typehint the items of the collection (e.g., ``list[int]``), then the
    dispatch type should be passed explicitly to the decorator itself with the
    typehint going into the function definition::
 
@@ -508,9 +508,9 @@ The :mod:`functools` module defines the following functions:
 
       At runtime the function will dispatch on an instance of a list regardless
       of the type contained within the list i.e. ``[1,2,3]`` will be
-      dispatched the same as ``["foo", "bar", "baz"]``. The annontation
+      dispatched the same as ``["foo", "bar", "baz"]``. The annotation
       provided in this example is for static type checkers only and has no
-      runtime application.
+      runtime impact.
 
    To enable registering :term:`lambdas<lambda>` and pre-existing functions,
    the :func:`register` attribute can also be used in a functional form::
