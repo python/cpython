@@ -264,6 +264,7 @@ _PyErr_SetKeyError(PyObject *arg)
     }
 
     _PyErr_SetObject(tstate, (PyObject*)Py_TYPE(exc), exc);
+    Py_DECREF(exc);
 }
 
 void
