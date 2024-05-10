@@ -10241,6 +10241,12 @@ class NoDefaultTests(BaseTestCase):
     def test_repr(self):
         self.assertEqual(repr(NoDefault), 'typing.NoDefault')
 
+    def test_doc(self):
+        self.assertIsInstance(NoDefault.__doc__, str)
+
+    def test_class(self):
+        self.assertIs(NoDefault.__class__, type(NoDefault))
+
     def test_no_call(self):
         with self.assertRaises(TypeError):
             NoDefault()
