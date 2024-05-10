@@ -100,7 +100,7 @@ MAX_OUTPUT_LEN=1024
 
 hexdigits = "0123456789abcdef"
 
-USED_TAGS = 0b01
+USED_TAGS = 0b11
 
 ENCODING = locale.getpreferredencoding()
 
