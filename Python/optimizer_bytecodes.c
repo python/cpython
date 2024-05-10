@@ -72,7 +72,9 @@ dummy_func(void) {
     op(_LOAD_FAST_CHECK, (-- value)) {
         value = GETLOCAL(oparg);
         // We guarantee this will error - just bail and don't optimize it.
-        ctx->done = true;
+        if (sym_is_null(value)) {
+            ctx->done = true;
+        }
     }
 
     op(_LOAD_FAST, (-- value)) {

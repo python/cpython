@@ -17,7 +17,9 @@
             _Py_UopsSymbol *value;
             value = GETLOCAL(oparg);
             // We guarantee this will error - just bail and don't optimize it.
-            ctx->done = true;
+            if (sym_is_null(value)) {
+                ctx->done = true;
+            }
             stack_pointer[0] = value;
             stack_pointer += 1;
             break;
