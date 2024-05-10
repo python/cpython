@@ -274,7 +274,7 @@ extern void _PyCode_Clear_Executors(PyCodeObject *code);
 
 /* Specialization functions */
 
-extern void _Py_Specialize_LoadSuperAttr(PyObject *global_super, PyObject *cls,
+extern void _Py_Specialize_LoadSuperAttr(_PyStackRef global_super, _PyStackRef cls,
                                          _Py_CODEUNIT *instr, int load_method);
 extern void _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr,
                                     PyObject *name);
@@ -294,9 +294,9 @@ extern void _Py_Specialize_CompareOp(PyObject *lhs, PyObject *rhs,
                                      _Py_CODEUNIT *instr, int oparg);
 extern void _Py_Specialize_UnpackSequence(PyObject *seq, _Py_CODEUNIT *instr,
                                           int oparg);
-extern void _Py_Specialize_ForIter(PyObject *iter, _Py_CODEUNIT *instr, int oparg);
+extern void _Py_Specialize_ForIter(_PyStackRef iter, _Py_CODEUNIT *instr, int oparg);
 extern void _Py_Specialize_Send(PyObject *receiver, _Py_CODEUNIT *instr);
-extern void _Py_Specialize_ToBool(PyObject *value, _Py_CODEUNIT *instr);
+extern void _Py_Specialize_ToBool(_PyStackRef value, _Py_CODEUNIT *instr);
 extern void _Py_Specialize_ContainsOp(PyObject *value, _Py_CODEUNIT *instr);
 
 #ifdef Py_STATS

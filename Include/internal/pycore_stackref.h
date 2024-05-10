@@ -46,8 +46,18 @@ PyStackRef_To_PyObject_Borrow(_PyStackRef tagged)
     return cleared;
 }
 
+// Gets a void * from a _PyStackRef
+// Functionally same as PyStackRef_To_PyObject_Borrow, but distinguishes
+// when something is a real PyObject or arbitrary pointer.
+static inline void *
+PyStackRef_To_PyPtr_Borrow(_PyStackRef tagged)
+{
+    PyObject *cleared = ((PyObject *)((tagged).bits & (~Py_TAG)));
+    return cleared;
+}
 
-// Converts a PyObject * to a PyStackRef, stealing the reference.
+
+// Converts a PyObject * to a PyStackRef, borrowing the reference.
 static inline _PyStackRef
 _PyObject_To_StackRef_Borrow(PyObject *obj)
 {
@@ -57,6 +67,26 @@ _PyObject_To_StackRef_Borrow(PyObject *obj)
     return ((_PyStackRef){.bits = ((uintptr_t)(obj)) | tag});
 }
 #define PyObject_To_StackRef_Borrow(obj) _PyObject_To_StackRef_Borrow(_PyObject_CAST(obj))
+
+// Steals the reference, invalidating the old one.
+// For now, behaves the same as borrow, but will be changed in a future PR.
+// TODO in gh-117139.
+static inline _PyStackRef
+_PyObject_To_StackRef_Steal(PyObject *obj)
+{
+    return PyObject_To_StackRef_Borrow(obj);
+}
+#define PyObject_To_StackRef_Steal(obj) _PyObject_To_StackRef_Steal(_PyObject_CAST(obj))
+
+// Same as _PyObject_To_StackRef_Steal but safe for arbitrary pointers as well.
+static inline _PyStackRef
+_PyPtr_To_StackRef_Steal(void *obj)
+{
+    assert(((uintptr_t)obj & Py_TAG) == 0);
+    return ((_PyStackRef){.bits = ((uintptr_t)(obj)) | Py_TAG_PTR});
+}
+#define PyPtr_To_StackRef_Steal(obj) _PyPtr_To_StackRef_Steal(obj)
+
 
 // Converts a PyObject * to a PyStackRef, with a new reference
 static inline _PyStackRef
@@ -76,7 +106,8 @@ PyObject_To_StackRef_New(PyObject *obj)
 #define PyObject_To_StackRef_New(obj) PyObject_To_StackRef_New(_PyObject_CAST(obj))
 
 
-// Converts a PyStackRef back to a PyObject *.
+// Converts a PyStackRef back to a PyObject *, converting deferred references
+// to new references.
 static inline PyObject *
 PyStackRef_To_PyObject_New(_PyStackRef tagged)
 {
@@ -125,7 +156,7 @@ _Py_untag_stack_steal(PyObject **dst, const _PyStackRef *src, size_t length)
     do { \
         _PyStackRef *_tmp_op_ptr = &(op); \
         _PyStackRef _tmp_old_op = (*_tmp_op_ptr); \
-        if (_tmp_old_op.bits != Py_STACKREF_NULL.bits) { \
+        if (!PyStackRef_IsNull(_tmp_old_op)) { \
             *_tmp_op_ptr = Py_STACKREF_NULL; \
             PyStackRef_DECREF(_tmp_old_op); \
         } \

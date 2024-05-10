@@ -679,7 +679,10 @@ specialize_module_load_attr(
 /* Attribute specialization */
 
 void
-_Py_Specialize_LoadSuperAttr(PyObject *global_super, PyObject *cls, _Py_CODEUNIT *instr, int load_method) {
+_Py_Specialize_LoadSuperAttr(_PyStackRef global_super_st, _PyStackRef cls_st, _Py_CODEUNIT *instr, int load_method) {
+    PyObject *global_super = PyStackRef_To_PyObject_Borrow(global_super_st);
+    PyObject *cls = PyStackRef_To_PyObject_Borrow(cls_st);
+
     assert(ENABLE_SPECIALIZATION);
     assert(_PyOpcode_Caches[LOAD_SUPER_ATTR] == INLINE_CACHE_ENTRIES_LOAD_SUPER_ATTR);
     _PySuperAttrCache *cache = (_PySuperAttrCache *)(instr + 1);
@@ -2337,12 +2340,12 @@ int
 #endif   // Py_STATS
 
 void
-_Py_Specialize_ForIter(PyObject *iter, _Py_CODEUNIT *instr, int oparg)
+_Py_Specialize_ForIter(_PyStackRef iter, _Py_CODEUNIT *instr, int oparg)
 {
     assert(ENABLE_SPECIALIZATION);
     assert(_PyOpcode_Caches[FOR_ITER] == INLINE_CACHE_ENTRIES_FOR_ITER);
     _PyForIterCache *cache = (_PyForIterCache *)(instr + 1);
-    PyTypeObject *tp = Py_TYPE(iter);
+    PyTypeObject *tp = Py_TYPE(PyStackRef_To_PyObject_Borrow(iter));
     if (tp == &PyListIter_Type) {
         instr->op.code = FOR_ITER_LIST;
         goto success;
@@ -2406,11 +2409,12 @@ success:
 }
 
 void
-_Py_Specialize_ToBool(PyObject *value, _Py_CODEUNIT *instr)
+_Py_Specialize_ToBool(_PyStackRef value_o, _Py_CODEUNIT *instr)
 {
     assert(ENABLE_SPECIALIZATION);
     assert(_PyOpcode_Caches[TO_BOOL] == INLINE_CACHE_ENTRIES_TO_BOOL);
     _PyToBoolCache *cache = (_PyToBoolCache *)(instr + 1);
+    PyObject *value = PyStackRef_To_PyObject_Borrow(value_o);
     if (PyBool_Check(value)) {
         instr->op.code = TO_BOOL_BOOL;
         goto success;

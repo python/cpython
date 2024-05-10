@@ -125,7 +125,7 @@ class Stack:
         self.defined: set[str] = set()
 
     def pop(self, var: StackItem, should_untag: bool = True) -> tuple[str, ...]:
-        untag = "PyStackRef_To_PyObject_Borrow" if should_untag else ""
+        untag = "PyObject_To_StackRef_Steal" if should_untag else ""
         self.top_offset.pop(var)
         if not var.peek:
             self.peek_offset.pop(var)
@@ -146,48 +146,29 @@ class Stack:
                         f"{var.name} = {indirect}stack_pointer[{self.top_offset.to_c()}];\n",
                     )
                 else:
-                    type = var.type or ""
-                    if type.strip() != "_PyStackRef":
-                        return (
-                            f"{var.name}_stackref = stack_pointer[{self.top_offset.to_c()}];\n",
-                            f"{var.name} = {untag}({var.name}_stackref);\n",
-                        )
-                    else:
-                        return (
-                            f"{var.name} = stack_pointer[{self.top_offset.to_c()}];\n",
-                        )
+                    return (
+                        f"{var.name} = stack_pointer[{self.top_offset.to_c()}];\n",
+                    )
             elif var.name in UNUSED:
                 return ("", )
             else:
                 self.defined.add(var.name)
                 res = [f"{var.name} = {popped.name};\n"]
-                if not var.type:
-                    # If it's a peek, pass the stackref through directly so we don't lose information.
-                    if popped.peek:
-                        res.append(f"{var.name}_stackref = {popped.name}_stackref;\n")
-                    else:
-                        res.append(f"{var.name}_stackref = PyObject_To_StackRef_Borrow({popped.name});\n")
                 return tuple(res)
         self.base_offset.pop(var)
         if var.name in UNUSED:
             return ("", )
         else:
             self.defined.add(var.name)
-        cast = f"({var.type})" if (not indirect and var.type and var.type.strip() != "_PyStackRef") else ""
+        cast = f"({var.type})" if (not indirect and var.type and var.type.strip() != "PyObject *") else ""
         if indirect:
             assign: tuple[str, ...] = (
                 f"{var.name} = {indirect}stack_pointer[{self.base_offset.to_c()}];",
             )
         else:
-            if (var.type or "").strip() != "_PyStackRef":
-                assign = (
-                    f"{var.name}_stackref = stack_pointer[{self.base_offset.to_c()}];\n",
-                    f"{var.name} = {cast}{untag}({var.name}_stackref);\n",
-                )
-            else:
-                assign = (
-                    f"{var.name} = stack_pointer[{self.base_offset.to_c()}];\n",
-                )
+            assign = (
+                f"{var.name} = stack_pointer[{self.base_offset.to_c()}];\n",
+            )
         if var.condition:
             if var.condition == "1":
                 return (*assign, "\n")
@@ -220,10 +201,15 @@ class Stack:
                             continue
                         elif var.condition != "1":
                             out.emit(f"if ({var.condition}) ")
-                    tag = "PyObject_To_StackRef_Borrow" if should_tag and type.strip() != "_PyStackRef" else ""
-                    out.emit(
-                        f"stack_pointer[{self.base_offset.to_c()}] = {tag}({cast}{var.name});\n"
-                    )
+                    tag = "PyObject_To_StackRef_Steal" if should_tag and type.strip() else ""
+                    if tag:
+                        out.emit(
+                            f"stack_pointer[{self.base_offset.to_c()}] = {tag}({cast}{var.name});\n"
+                        )
+                    else:
+                        out.emit(
+                            f"stack_pointer[{self.base_offset.to_c()}] = {cast}{var.name};\n"
+                        )
             self.base_offset.push(var)
         if self.base_offset.to_c() != self.top_offset.to_c():
             print("base", self.base_offset.to_c(), "top", self.top_offset.to_c())

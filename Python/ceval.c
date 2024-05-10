@@ -2086,7 +2086,7 @@ _PyEval_ExceptionGroupMatch(PyObject* exc_value, PyObject *match_type,
 */
 
 int
-_PyEval_UnpackIterableStackRef(PyThreadState *tstate, PyObject *v,
+_PyEval_UnpackIterableStackRef(PyThreadState *tstate, _PyStackRef v_stackref,
                        int argcnt, int argcntafter, _PyStackRef *sp)
 {
     int i = 0, j = 0;
@@ -2095,6 +2095,7 @@ _PyEval_UnpackIterableStackRef(PyThreadState *tstate, PyObject *v,
     PyObject *w;
     PyObject *l = NULL; /* variable list */
 
+    PyObject *v = PyStackRef_To_PyObject_Borrow(v_stackref);
     assert(v != NULL);
 
     it = PyObject_GetIter(v);

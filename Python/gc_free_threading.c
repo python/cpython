@@ -610,18 +610,6 @@ clear_weakrefs(struct collection_state *state)
 {
     PyObject *op;
     WORKSTACK_FOR_EACH(&state->unreachable, op) {
-        if (PyGen_CheckExact(op) || PyCoro_CheckExact(op) ||
-            PyAsyncGen_CheckExact(op))
-        {
-            // Ensure any non-refcounted pointers to cyclic trash are converted
-            // to refcounted pointers. This prevents bugs where the generator is
-            // freed after its function object.
-            PyGenObject *gen = (PyGenObject *)op;
-            _PyInterpreterFrame *frame = (_PyInterpreterFrame *)(gen->gi_iframe);
-            for (int i = 0; i < frame->stacktop; i++) {
-                gc_visit_stackref(frame->localsplus[i]);
-            }
-        }
         if (PyWeakref_Check(op)) {
             // Clear weakrefs that are themselves unreachable to ensure their
             // callbacks will not be executed later from a `tp_clear()`
