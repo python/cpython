@@ -1183,7 +1183,7 @@ Deprecated
   replaced by :data:`calendar.JANUARY` and :data:`calendar.FEBRUARY`.
   (Contributed by Prince Roshan in :gh:`103636`.)
 
-* :mod:`collections.abc`: Deprecated :class:`collections.abc.ByteString`.
+* :mod:`collections.abc`: Deprecated :class:`!collections.abc.ByteString`.
   Prefer :class:`Sequence` or :class:`collections.abc.Buffer`.
   For use in typing, prefer a union, like ``bytes | bytearray``, or :class:`collections.abc.Buffer`.
   (Contributed by Shantanu Jain in :gh:`91896`.)
@@ -1293,7 +1293,7 @@ Deprecated
     :class:`collections.abc.Hashable` and :class:`collections.abc.Sized` respectively, are
     deprecated. (:gh:`94309`.)
 
-  * :class:`typing.ByteString`, deprecated since Python 3.9, now causes a
+  * :class:`!typing.ByteString`, deprecated since Python 3.9, now causes a
     :exc:`DeprecationWarning` to be emitted when it is used.
     (Contributed by Alex Waygood in :gh:`91896`.)
 
