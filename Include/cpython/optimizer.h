@@ -14,10 +14,10 @@ typedef struct _PyExecutorLinkListNode {
 
 /* Bloom filter with m = 256
  * https://en.wikipedia.org/wiki/Bloom_filter */
-#define BLOOM_FILTER_WORDS 8
+#define _Py_BLOOM_FILTER_WORDS 8
 
-typedef struct _bloom_filter {
-    uint32_t bits[BLOOM_FILTER_WORDS];
+typedef struct {
+    uint32_t bits[_Py_BLOOM_FILTER_WORDS];
 } _PyBloomFilter;
 
 typedef struct {
@@ -30,11 +30,6 @@ typedef struct {
     _PyExecutorLinkListNode links;
     PyCodeObject *code;  // Weak (NULL if no corresponding ENTER_EXECUTOR).
 } _PyVMData;
-
-#define UOP_FORMAT_TARGET 0
-#define UOP_FORMAT_EXIT 1
-#define UOP_FORMAT_JUMP 2
-#define UOP_FORMAT_UNUSED 3
 
 /* Depending on the format,
  * the 32 bits between the oparg and operand are:
@@ -64,31 +59,7 @@ typedef struct {
     uint64_t operand;  // A cache entry
 } _PyUOpInstruction;
 
-static inline uint32_t uop_get_target(const _PyUOpInstruction *inst)
-{
-    assert(inst->format == UOP_FORMAT_TARGET);
-    return inst->target;
-}
-
-static inline uint16_t uop_get_exit_index(const _PyUOpInstruction *inst)
-{
-    assert(inst->format == UOP_FORMAT_EXIT);
-    return inst->exit_index;
-}
-
-static inline uint16_t uop_get_jump_target(const _PyUOpInstruction *inst)
-{
-    assert(inst->format == UOP_FORMAT_JUMP);
-    return inst->jump_target;
-}
-
-static inline uint16_t uop_get_error_target(const _PyUOpInstruction *inst)
-{
-    assert(inst->format != UOP_FORMAT_TARGET);
-    return inst->error_target;
-}
-
-typedef struct _exit_data {
+typedef struct {
     uint32_t target;
     _Py_BackoffCounter temperature;
     const struct _PyExecutorObject *executor;
@@ -109,14 +80,14 @@ typedef struct _PyExecutorObject {
 typedef struct _PyOptimizerObject _PyOptimizerObject;
 
 /* Should return > 0 if a new executor is created. O if no executor is produced and < 0 if an error occurred. */
-typedef int (*optimize_func)(
+typedef int (*_Py_optimize_func)(
     _PyOptimizerObject* self, struct _PyInterpreterFrame *frame,
     _Py_CODEUNIT *instr, _PyExecutorObject **exec_ptr,
     int curr_stackentries);
 
 struct _PyOptimizerObject {
     PyObject_HEAD
-    optimize_func optimize;
+    _Py_optimize_func optimize;
     /* Data needed by the optimizer goes here, but is opaque to the VM */
 };
 
