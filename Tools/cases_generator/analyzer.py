@@ -362,6 +362,7 @@ NON_ESCAPING_FUNCTIONS = (
     "PyStackRef_XNewRef",
     "PyStackRef_CLEAR",
     "PyStackRef_SETREF",
+    "PyStackRef_IsNull",
     "PyStackRef_XSETREF",
     "PyObject_To_StackRef_New",
     "Py_INCREF",
