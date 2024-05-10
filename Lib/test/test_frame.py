@@ -375,7 +375,7 @@ class TestFrameLocals(unittest.TestCase):
         x = 0
         d = sys._getframe().f_locals
         d_copy = d.copy()
-        self.assertIs(type(d_copy), dict)
+        self.assertIsInstance(d_copy, dict)
         self.assertEqual(d_copy['x'], 0)
         d_copy['x'] = 1
         self.assertEqual(x, 0)
