@@ -3272,9 +3272,6 @@ class Signature:
                 # before reaching the last parameter before *args.
                 continue
 
-            if param.kind == _POSITIONAL_ONLY:
-                continue
-
             param_name = param.name
             try:
                 arg_val = kwargs.pop(param_name)
