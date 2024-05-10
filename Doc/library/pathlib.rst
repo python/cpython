@@ -888,9 +888,12 @@ call fails (for example because the path doesn't exist).
 
 .. versionchanged:: 3.14
 
-   The methods given above now return ``False`` instead of raising an
+   The methods given above now return ``False`` instead of raising any
    :exc:`OSError` exception from the operating system. In previous versions,
    some kinds of :exc:`OSError` exception are raised, and others suppressed.
+   The new behaviour is consistent with :func:`os.path.exists`,
+   :func:`os.path.isdir`, etc. Use :meth:`~Path.stat` to retrieve the file
+   status without suppressing exceptions.
 
 
 .. classmethod:: Path.cwd()
