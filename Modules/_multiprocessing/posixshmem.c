@@ -32,6 +32,7 @@ module _posixshmem
 /*[clinic input]
 _posixshmem.shm_open -> int
     path: unicode
+    /
     flags: int
     mode: int = 0o777
 
@@ -44,7 +45,7 @@ Open a shared memory object.  Returns a file descriptor (integer).
 static int
 _posixshmem_shm_open_impl(PyObject *module, PyObject *path, int flags,
                           int mode)
-/*[clinic end generated code: output=8d110171a4fa20df input=e83b58fa802fac25]*/
+/*[clinic end generated code: output=8d110171a4fa20df input=0585935e1d3c8050]*/
 {
     int fd;
     int async_err = 0;
@@ -77,6 +78,7 @@ _posixshmem_shm_open_impl(PyObject *module, PyObject *path, int flags,
 /*[clinic input]
 _posixshmem.shm_unlink
     path: unicode
+    /
 
 Remove a shared memory object (similar to unlink()).
 
@@ -88,7 +90,7 @@ region.
 
 static PyObject *
 _posixshmem_shm_unlink_impl(PyObject *module, PyObject *path)
-/*[clinic end generated code: output=42f8b23d134b9ff5 input=8dc0f87143e3b300]*/
+/*[clinic end generated code: output=42f8b23d134b9ff5 input=298369d013dcad63]*/
 {
     int rv;
     int async_err = 0;
