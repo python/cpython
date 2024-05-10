@@ -6354,7 +6354,10 @@ class InternalsTests(BaseTestCase):
 
     def test_collect_parameters(self):
         typing = import_helper.import_fresh_module("typing")
-        with self.assertWarns(DeprecationWarning) as cm:
+        with self.assertWarnsRegex(
+            DeprecationWarning,
+            "The private _collect_parameters function is deprecated"
+        ) as cm:
             typing._collect_parameters
         self.assertEqual(cm.filename, __file__)
 
