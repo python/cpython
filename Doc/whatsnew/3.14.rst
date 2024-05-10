@@ -86,6 +86,12 @@ New Modules
 Improved Modules
 ================
 
+sqlite3
+-------
+
+Disallow using a sequence of params with named placeholders.
+(Contributed by Erlend E. Aasland in :gh:`118928` and :gh:`101693`.)
+
 
 Optimizations
 =============
