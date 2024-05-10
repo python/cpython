@@ -136,6 +136,12 @@ pathlib
   :meth:`~pathlib.PurePath.is_relative_to`. In previous versions, any such
   arguments are joined onto *other*.
 
+sqlite3
+-------
+
+* Remove :data:`~sqlite3.version` and :data:`~sqlite3.version_info` from
+  :mod:`sqlite3`. (Contributed by Hugo van Kemenade in :gh:`118924`.)
+
 typing
 ------
 

@@ -553,7 +553,7 @@ Module constants
    .. deprecated-removed:: 3.12 3.14
       This constant used to reflect the version number of the ``pysqlite``
       package, a third-party library which used to upstream changes to
-      :mod:`!sqlite3`. Today, it carries no meaning or practical value.
+      :mod:`!sqlite3`. Before removal, it carried no meaning or practical value.
 
 .. data:: version_info
 
@@ -563,7 +563,7 @@ Module constants
    .. deprecated-removed:: 3.12 3.14
       This constant used to reflect the version number of the ``pysqlite``
       package, a third-party library which used to upstream changes to
-      :mod:`!sqlite3`. Today, it carries no meaning or practical value.
+      :mod:`!sqlite3`. Before removal, it carried no meaning or practical value.
 
 .. _sqlite3-dbconfig-constants:
 
