@@ -45,7 +45,7 @@ import typing
 import weakref
 import types
 
-from test.support import captured_stderr, cpython_only, infinite_recursion, requires_docstrings
+from test.support import captured_stderr, cpython_only, infinite_recursion, requires_docstrings, import_helper
 from test.typinganndata import ann_module695, mod_generics_cache, _typed_dict_helper
 
 
@@ -6353,8 +6353,9 @@ class InternalsTests(BaseTestCase):
         self.assertEqual(cm.filename, __file__)
 
     def test_collect_parameters(self):
+        typing = import_helper.import_fresh_module("typing")
         with self.assertWarns(DeprecationWarning):
-            from typing import _collect_parameters
+            typing._collect_parameters
 
 
 @lru_cache()
