@@ -805,8 +805,7 @@ dummy_func(
             #if ENABLE_SPECIALIZATION
             if (ADAPTIVE_COUNTER_TRIGGERS(counter)) {
                 next_instr = this_instr;
-                _Py_Specialize_StoreSubscr(PyStackRef_To_PyObject_Borrow(container),
-                                           PyStackRef_To_PyObject_Borrow(sub), next_instr);
+                _Py_Specialize_StoreSubscr(container, sub, next_instr);
                 DISPATCH_SAME_OPARG();
             }
             STAT_INC(STORE_SUBSCR, deferred);
@@ -3334,7 +3333,7 @@ dummy_func(
             #if ENABLE_SPECIALIZATION
             if (ADAPTIVE_COUNTER_TRIGGERS(counter)) {
                 next_instr = this_instr;
-                _Py_Specialize_Call(callable, next_instr, oparg + (self_or_null != NULL));
+                _Py_Specialize_Call(callable, next_instr, oparg + !PyStackRef_IsNull(self_or_null));
                 DISPATCH_SAME_OPARG();
             }
             STAT_INC(CALL, deferred);

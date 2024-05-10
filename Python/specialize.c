@@ -888,8 +888,10 @@ static int specialize_attr_loadclassattr(PyObject* owner, _Py_CODEUNIT* instr, P
 static int specialize_class_load_attr(PyObject* owner, _Py_CODEUNIT* instr, PyObject* name);
 
 void
-_Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name)
+_Py_Specialize_LoadAttr(_PyStackRef owner_st, _Py_CODEUNIT *instr, PyObject *name)
 {
+    PyObject *owner = PyStackRef_To_PyObject_Borrow(owner_st);
+
     assert(ENABLE_SPECIALIZATION);
     assert(_PyOpcode_Caches[LOAD_ATTR] == INLINE_CACHE_ENTRIES_LOAD_ATTR);
     _PyAttrCache *cache = (_PyAttrCache *)(instr + 1);
@@ -1084,8 +1086,10 @@ success:
 }
 
 void
-_Py_Specialize_StoreAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name)
+_Py_Specialize_StoreAttr(_PyStackRef owner_st, _Py_CODEUNIT *instr, PyObject *name)
 {
+    PyObject *owner = PyStackRef_To_PyObject_Borrow(owner_st);
+
     assert(ENABLE_SPECIALIZATION);
     assert(_PyOpcode_Caches[STORE_ATTR] == INLINE_CACHE_ENTRIES_STORE_ATTR);
     _PyAttrCache *cache = (_PyAttrCache *)(instr + 1);
@@ -1524,8 +1528,11 @@ type_get_version(PyTypeObject *t, int opcode)
 
 void
 _Py_Specialize_BinarySubscr(
-     PyObject *container, PyObject *sub, _Py_CODEUNIT *instr)
+     _PyStackRef container_st, _PyStackRef sub_st, _Py_CODEUNIT *instr)
 {
+    PyObject *container = PyStackRef_To_PyObject_Borrow(container_st);
+    PyObject *sub = PyStackRef_To_PyObject_Borrow(sub_st);
+
     assert(ENABLE_SPECIALIZATION);
     assert(_PyOpcode_Caches[BINARY_SUBSCR] ==
            INLINE_CACHE_ENTRIES_BINARY_SUBSCR);
@@ -1624,8 +1631,11 @@ success:
 }
 
 void
-_Py_Specialize_StoreSubscr(PyObject *container, PyObject *sub, _Py_CODEUNIT *instr)
+_Py_Specialize_StoreSubscr(_PyStackRef container_st, _PyStackRef sub_st, _Py_CODEUNIT *instr)
 {
+    PyObject *container = PyStackRef_To_PyObject_Borrow(container_st);
+    PyObject *sub = PyStackRef_To_PyObject_Borrow(sub_st);
+
     assert(ENABLE_SPECIALIZATION);
     _PyStoreSubscrCache *cache = (_PyStoreSubscrCache *)(instr + 1);
     PyTypeObject *container_type = Py_TYPE(container);
@@ -1942,8 +1952,10 @@ specialize_c_call(PyObject *callable, _Py_CODEUNIT *instr, int nargs)
 }
 
 void
-_Py_Specialize_Call(PyObject *callable, _Py_CODEUNIT *instr, int nargs)
+_Py_Specialize_Call(_PyStackRef callable_st, _Py_CODEUNIT *instr, int nargs)
 {
+    PyObject *callable = PyStackRef_To_PyObject_Borrow(callable_st);
+
     assert(ENABLE_SPECIALIZATION);
     assert(_PyOpcode_Caches[CALL] == INLINE_CACHE_ENTRIES_CALL);
     assert(_Py_OPCODE(*instr) != INSTRUMENTED_CALL);
@@ -2059,9 +2071,11 @@ binary_op_fail_kind(int oparg, PyObject *lhs, PyObject *rhs)
 #endif   // Py_STATS
 
 void
-_Py_Specialize_BinaryOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
+_Py_Specialize_BinaryOp(_PyStackRef lhs_st, _PyStackRef rhs_st, _Py_CODEUNIT *instr,
                         int oparg, _PyStackRef *locals)
 {
+    PyObject *lhs = PyStackRef_To_PyObject_Borrow(lhs_st);
+    PyObject *rhs = PyStackRef_To_PyObject_Borrow(rhs_st);
     assert(ENABLE_SPECIALIZATION);
     assert(_PyOpcode_Caches[BINARY_OP] == INLINE_CACHE_ENTRIES_BINARY_OP);
     _PyBinaryOpCache *cache = (_PyBinaryOpCache *)(instr + 1);
@@ -2166,9 +2180,12 @@ compare_op_fail_kind(PyObject *lhs, PyObject *rhs)
 #endif   // Py_STATS
 
 void
-_Py_Specialize_CompareOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
+_Py_Specialize_CompareOp(_PyStackRef lhs_st, _PyStackRef rhs_st, _Py_CODEUNIT *instr,
                          int oparg)
 {
+    PyObject *lhs = PyStackRef_To_PyObject_Borrow(lhs_st);
+    PyObject *rhs = PyStackRef_To_PyObject_Borrow(rhs_st);
+
     assert(ENABLE_SPECIALIZATION);
     assert(_PyOpcode_Caches[COMPARE_OP] == INLINE_CACHE_ENTRIES_COMPARE_OP);
     // All of these specializations compute boolean values, so they're all valid
@@ -2229,8 +2246,10 @@ unpack_sequence_fail_kind(PyObject *seq)
 #endif   // Py_STATS
 
 void
-_Py_Specialize_UnpackSequence(PyObject *seq, _Py_CODEUNIT *instr, int oparg)
+_Py_Specialize_UnpackSequence(_PyStackRef seq_st, _Py_CODEUNIT *instr, int oparg)
 {
+    PyObject *seq = PyStackRef_To_PyObject_Borrow(seq_st);
+
     assert(ENABLE_SPECIALIZATION);
     assert(_PyOpcode_Caches[UNPACK_SEQUENCE] ==
            INLINE_CACHE_ENTRIES_UNPACK_SEQUENCE);
@@ -2382,8 +2401,10 @@ success:
 }
 
 void
-_Py_Specialize_Send(PyObject *receiver, _Py_CODEUNIT *instr)
+_Py_Specialize_Send(_PyStackRef receiver_st, _Py_CODEUNIT *instr)
 {
+    PyObject *receiver = PyStackRef_To_PyObject_Borrow(receiver_st);
+
     assert(ENABLE_SPECIALIZATION);
     assert(_PyOpcode_Caches[SEND] == INLINE_CACHE_ENTRIES_SEND);
     _PySendCache *cache = (_PySendCache *)(instr + 1);
@@ -2524,8 +2545,10 @@ static int containsop_fail_kind(PyObject *value) {
 #endif   // Py_STATS
 
 void
-_Py_Specialize_ContainsOp(PyObject *value, _Py_CODEUNIT *instr)
+_Py_Specialize_ContainsOp(_PyStackRef value_st, _Py_CODEUNIT *instr)
 {
+    PyObject *value = PyStackRef_To_PyObject_Borrow(value_st);
+
     assert(ENABLE_SPECIALIZATION);
     assert(_PyOpcode_Caches[CONTAINS_OP] == INLINE_CACHE_ENTRIES_COMPARE_OP);
     _PyContainsOpCache *cache = (_PyContainsOpCache  *)(instr + 1);
