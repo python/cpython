@@ -1,0 +1,2 @@
+Avoid crashing in :mod:`mmap` on Windows when the mapped memory is inaccessible
+due to file system errors or access violations.
