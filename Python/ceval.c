@@ -1055,14 +1055,14 @@ jump_to_error_target:
                _PyOpcode_OpName[frame->instr_ptr->op.code]);
     }
 #endif
-    assert (next_uop[-1].format == _Py_UOP_FORMAT_JUMP);
-    uint16_t target = _Py_uop_get_error_target(&next_uop[-1]);
+    assert (next_uop[-1].format == UOP_FORMAT_JUMP);
+    uint16_t target = uop_get_error_target(&next_uop[-1]);
     next_uop = current_executor->trace + target;
     goto tier2_dispatch;
 
 error_tier_two:
     OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
-    assert(next_uop[-1].format == _Py_UOP_FORMAT_TARGET);
+    assert(next_uop[-1].format == UOP_FORMAT_TARGET);
     frame->return_offset = 0;  // Don't leave this random
     _PyFrame_SetStackPointer(frame, stack_pointer);
     Py_DECREF(current_executor);
@@ -1070,8 +1070,8 @@ error_tier_two:
     goto resume_with_error;
 
 jump_to_jump_target:
-    assert(next_uop[-1].format == _Py_UOP_FORMAT_JUMP);
-    target = _Py_uop_get_jump_target(&next_uop[-1]);
+    assert(next_uop[-1].format == UOP_FORMAT_JUMP);
+    target = uop_get_jump_target(&next_uop[-1]);
     next_uop = current_executor->trace + target;
     goto tier2_dispatch;
 
@@ -1079,7 +1079,7 @@ exit_to_tier1_dynamic:
     next_instr = frame->instr_ptr;
     goto goto_to_tier1;
 exit_to_tier1:
-    assert(next_uop[-1].format == _Py_UOP_FORMAT_TARGET);
+    assert(next_uop[-1].format == UOP_FORMAT_TARGET);
     next_instr = next_uop[-1].target + _PyCode_CODE(_PyFrame_GetCode(frame));
 goto_to_tier1:
 #ifdef Py_DEBUG
@@ -1096,7 +1096,7 @@ goto_to_tier1:
     DISPATCH();
 
 exit_to_trace:
-    assert(next_uop[-1].format == _Py_UOP_FORMAT_EXIT);
+    assert(next_uop[-1].format == UOP_FORMAT_EXIT);
     OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
     uint32_t exit_index = next_uop[-1].exit_index;
     assert(exit_index < current_executor->exit_count);

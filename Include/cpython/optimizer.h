@@ -31,19 +31,14 @@ typedef struct {
     PyCodeObject *code;  // Weak (NULL if no corresponding ENTER_EXECUTOR).
 } _PyVMData;
 
-#define _Py_UOP_FORMAT_TARGET 0
-#define _Py_UOP_FORMAT_EXIT 1
-#define _Py_UOP_FORMAT_JUMP 2
-#define _Py_UOP_FORMAT_UNUSED 3
-
 /* Depending on the format,
  * the 32 bits between the oparg and operand are:
- * _Py_UOP_FORMAT_TARGET:
+ * UOP_FORMAT_TARGET:
  *    uint32_t target;
- * _Py_UOP_FORMAT_EXIT
+ * UOP_FORMAT_EXIT
  *    uint16_t exit_index;
  *    uint16_t error_target;
- * _Py_UOP_FORMAT_JUMP
+ * UOP_FORMAT_JUMP
  *    uint16_t jump_target;
  *    uint16_t error_target;
  */
@@ -63,30 +58,6 @@ typedef struct {
     };
     uint64_t operand;  // A cache entry
 } _PyUOpInstruction;
-
-static inline uint32_t _Py_uop_get_target(const _PyUOpInstruction *inst)
-{
-    assert(inst->format == _Py_UOP_FORMAT_TARGET);
-    return inst->target;
-}
-
-static inline uint16_t _Py_uop_get_exit_index(const _PyUOpInstruction *inst)
-{
-    assert(inst->format == _Py_UOP_FORMAT_EXIT);
-    return inst->exit_index;
-}
-
-static inline uint16_t _Py_uop_get_jump_target(const _PyUOpInstruction *inst)
-{
-    assert(inst->format == _Py_UOP_FORMAT_JUMP);
-    return inst->jump_target;
-}
-
-static inline uint16_t _Py_uop_get_error_target(const _PyUOpInstruction *inst)
-{
-    assert(inst->format != _Py_UOP_FORMAT_TARGET);
-    return inst->error_target;
-}
 
 typedef struct {
     uint32_t target;
