@@ -226,6 +226,19 @@ def _dec_str_to_int_inner(s):
     BYTELIM = 512
     D = decimal.Decimal
     result = bytearray()
+    # We only want the integer part of divisions, so don't need to build
+    # the full multiplication tree. But using _just_ the number of
+    # digits expected in the integer part ignores too much. What's left
+    # out can have a very significant effect on the quotient. So we use
+    # GUARD additional digits. Exact analysis of this eluded me. 8 is
+    # more than enough so no more than 1 correction step was ever needed
+    # for all inputs tried through 2.5 billion digita. So,
+    # empirically, "good enough". Toward this end, testing on inputs
+    # with just "9" digits is most effective. If this is too small for
+    # some input much larger than ever tried, a different path detects
+    # that and usss divmod() instead (which ignores nothing, so is exact
+    # from the start - but also much slower).
+    GUARD = 8 # must be > 0 to avoid setting `decimal` precision to 9
 
     def inner(n, w):
         #assert n < D256 ** w # required, but too expensive to check
@@ -250,9 +263,7 @@ def _dec_str_to_int_inner(s):
             # to the difference between the log10s of `n` and `pow256`
             # (which, since these are integers, is roughly approximated
             # by `.adjusted()`). That's the working precision we need,
-            # but add some guard digits to protect against the "about"
-            # and "roughly" uncertainties.
-            ctx.prec = max(n.adjusted() - p256.adjusted(), 0) + 8
+            ctx.prec = max(n.adjusted() - p256.adjusted(), 0) + GUARD
             hi = +n * +recip # unary `+` chops back to ctx.prec digits
             ctx.prec = decimal.MAX_PREC
             hi = hi.to_integral_value() # lose the fractional digits
@@ -261,18 +272,17 @@ def _dec_str_to_int_inner(s):
             # lower bound on the correct quotient.
             assert lo >= 0
             # Adjust quotient up if needed. It usually isn't. In random
-            # testing, the loop body entered about one in 100 thousand
-            # cases. I never saw it need more than one iteration.
-            count = 0
-            while lo >= p256:
-                count += 1
-                # If the assert fails, chances are decent we're sooooo
-                # far off it may seem to run forever otherwise - the
-                # error analysis was fatally flawed in this case.
-                assert count < 10, (count, w, len(s),
-                                    n.adjusted(), p256.adjusted())
+            # testing on inputs through 2.5 billion digit strings, the
+            # test triggered about one in 100 thousand cases.
+            if lo >= p256:
                 lo -= p256
                 hi += 1
+                if lo >= p256:
+                    # Complete correction via an exact computation.
+                    # XXX we have no input that takes this branch
+                    # It's only been tested by reducing GUARD a lot.
+                    hi2, lo = divmod(lo, p256)
+                    hi += hi2
             # The assert should always succeed, but way too slow to keep
             # enabled.
             #assert hi, lo == divmod(n, pow256[w2][0])
@@ -318,7 +328,7 @@ def _dec_str_to_int_inner(s):
             # relevant rounding errors. This is highly signficant:
             # 1/2**i has the same number of significant decimal digits
             # as 5**i, generally over twice the number in 2**i,
-            ctx.prec = v.adjusted() + 8
+            ctx.prec = v.adjusted() + GUARD
             # The unary "+" chope the reciprocal back to that precision.
             pow256[k] = v, +rpow256[k]
         del rpow256 # exact reciprocals no longer needed
