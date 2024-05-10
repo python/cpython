@@ -1747,7 +1747,7 @@
             if (cell == NULL) {
                 JUMP_TO_ERROR();
             }
-            SETLOCAL(oparg, PyObject_To_StackRef_Borrow(cell));
+            SETLOCAL(oparg, PyObject_To_StackRef_Steal(cell));
             break;
         }
 
@@ -1761,7 +1761,7 @@
                 _PyEval_FormatExcUnbound(tstate, _PyFrame_GetCode(frame), oparg);
                 JUMP_TO_ERROR();
             }
-            PyStackRef_DECREF(PyObject_To_StackRef_Borrow(oldobj));
+            PyStackRef_DECREF(PyObject_To_StackRef_Steal(oldobj));
             break;
         }
 
@@ -3171,7 +3171,7 @@
             }
             STAT_INC(FOR_ITER, hit);
             _PyInterpreterFrame *gen_frame_o = (_PyInterpreterFrame *)(_PyInterpreterFrame *)gen->gi_iframe;
-            _PyFrame_StackPush(gen_frame_o, PyObject_To_StackRef_Borrow(Py_None));
+            _PyFrame_StackPush(gen_frame_o, PyObject_To_StackRef_Steal(Py_None));
             gen->gi_frame_state = FRAME_EXECUTING;
             gen->gi_exc_state.previous_item = tstate->exc_info;
             tstate->exc_info = &gen->gi_exc_state;
@@ -4819,7 +4819,7 @@
         case _LOAD_CONST_INLINE_BORROW: {
             _PyStackRef value;
             PyObject *ptr = (PyObject *)CURRENT_OPERAND();
-            value = PyObject_To_StackRef_Borrow(ptr);
+            value = PyObject_To_StackRef_Steal(ptr);
             stack_pointer[0] = value;
             stack_pointer += 1;
             break;
@@ -4832,7 +4832,7 @@
 
             PyObject *ptr = (PyObject *)CURRENT_OPERAND();
             PyStackRef_DECREF(pop);
-            value = PyObject_To_StackRef_Borrow(ptr);
+            value = PyObject_To_StackRef_Steal(ptr);
             stack_pointer[-1] = value;
             break;
         }
@@ -4853,7 +4853,7 @@
             _PyStackRef value;
             _PyStackRef null;
             PyObject *ptr = (PyObject *)CURRENT_OPERAND();
-            value = PyObject_To_StackRef_Borrow(ptr);
+            value = PyObject_To_StackRef_Steal(ptr);
             null = Py_STACKREF_NULL;
             stack_pointer[0] = value;
             stack_pointer[1] = null;

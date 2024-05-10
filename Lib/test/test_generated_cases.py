@@ -169,7 +169,7 @@ class TestGeneratedCases(unittest.TestCase):
             INSTRUCTION_STATS(OP);
             PyObject *res;
             spam();
-            stack_pointer[0] = PyObject_To_StackRef_Borrow(res);
+            stack_pointer[0] = PyObject_To_StackRef_Steal(res);
             stack_pointer += 1;
             DISPATCH();
         }
@@ -191,7 +191,7 @@ class TestGeneratedCases(unittest.TestCase):
             PyObject *res;
             value = PyStackRef_To_PyObject_Borrow(stack_pointer[-1]);
             spam();
-            stack_pointer[-1] = PyObject_To_StackRef_Borrow(res);
+            stack_pointer[-1] = PyObject_To_StackRef_Steal(res);
             DISPATCH();
         }
     """
@@ -214,7 +214,7 @@ class TestGeneratedCases(unittest.TestCase):
             right = PyStackRef_To_PyObject_Borrow(stack_pointer[-1]);
             left = PyStackRef_To_PyObject_Borrow(stack_pointer[-2]);
             spam();
-            stack_pointer[-2] = PyObject_To_StackRef_Borrow(res);
+            stack_pointer[-2] = PyObject_To_StackRef_Steal(res);
             stack_pointer += -1;
             DISPATCH();
         }
@@ -238,7 +238,7 @@ class TestGeneratedCases(unittest.TestCase):
             right = PyStackRef_To_PyObject_Borrow(stack_pointer[-1]);
             left = PyStackRef_To_PyObject_Borrow(stack_pointer[-2]);
             spam();
-            stack_pointer[-1] = PyObject_To_StackRef_Borrow(result);
+            stack_pointer[-1] = PyObject_To_StackRef_Steal(result);
             DISPATCH();
         }
     """
@@ -263,7 +263,7 @@ class TestGeneratedCases(unittest.TestCase):
             PyObject *arg;
             PyObject *rest;
             arg = PyStackRef_To_PyObject_Borrow(stack_pointer[-1]);
-            stack_pointer[-1] = PyObject_To_StackRef_Borrow(rest);
+            stack_pointer[-1] = PyObject_To_StackRef_Steal(rest);
             DISPATCH();
         }
 
@@ -276,7 +276,7 @@ class TestGeneratedCases(unittest.TestCase):
             PyObject *res;
             arg = PyStackRef_To_PyObject_Borrow(stack_pointer[-1]);
             DEOPT_IF(xxx, OP1);
-            stack_pointer[-1] = PyObject_To_StackRef_Borrow(res);
+            stack_pointer[-1] = PyObject_To_StackRef_Steal(res);
             CHECK_EVAL_BREAKER();
             DISPATCH();
         }
@@ -335,7 +335,7 @@ class TestGeneratedCases(unittest.TestCase):
             right = PyStackRef_To_PyObject_Borrow(stack_pointer[-1]);
             left = PyStackRef_To_PyObject_Borrow(stack_pointer[-2]);
             if (cond) goto pop_2_label;
-            stack_pointer[-2] = PyObject_To_StackRef_Borrow(res);
+            stack_pointer[-2] = PyObject_To_StackRef_Steal(res);
             stack_pointer += -1;
             DISPATCH();
         }
@@ -423,7 +423,7 @@ class TestGeneratedCases(unittest.TestCase):
                 (void)extra;
                 res = op2(arg2, left, right);
             }
-            stack_pointer[-3] = PyObject_To_StackRef_Borrow(res);
+            stack_pointer[-3] = PyObject_To_StackRef_Steal(res);
             stack_pointer += -2;
             DISPATCH();
         }
@@ -457,7 +457,7 @@ class TestGeneratedCases(unittest.TestCase):
             left = PyStackRef_To_PyObject_Borrow(stack_pointer[-2]);
             arg2 = PyStackRef_To_PyObject_Borrow(stack_pointer[-3]);
             res = op3(arg2, left, right);
-            stack_pointer[-3] = PyObject_To_StackRef_Borrow(res);
+            stack_pointer[-3] = PyObject_To_StackRef_Steal(res);
             stack_pointer += -2;
             DISPATCH();
         }
@@ -562,8 +562,8 @@ class TestGeneratedCases(unittest.TestCase):
             PyObject *above;
             values = &stack_pointer[-1];
             spam(values, oparg);
-            stack_pointer[-2] = PyObject_To_StackRef_Borrow(below);
-            stack_pointer[-1 + oparg*3] = PyObject_To_StackRef_Borrow(above);
+            stack_pointer[-2] = PyObject_To_StackRef_Steal(below);
+            stack_pointer[-1 + oparg*3] = PyObject_To_StackRef_Steal(above);
             stack_pointer += oparg*3;
             DISPATCH();
         }
@@ -585,7 +585,7 @@ class TestGeneratedCases(unittest.TestCase):
             PyObject *above;
             values = &stack_pointer[-oparg];
             spam(values, oparg);
-            stack_pointer[0] = PyObject_To_StackRef_Borrow(above);
+            stack_pointer[0] = PyObject_To_StackRef_Steal(above);
             stack_pointer += 1;
             DISPATCH();
         }
@@ -636,9 +636,9 @@ class TestGeneratedCases(unittest.TestCase):
             if ((oparg & 1) == 1) { input = PyStackRef_To_PyObject_Borrow(stack_pointer[-1 - (((oparg & 1) == 1) ? 1 : 0)]); }
             aa = PyStackRef_To_PyObject_Borrow(stack_pointer[-2 - (((oparg & 1) == 1) ? 1 : 0)]);
             output = spam(oparg, input);
-            stack_pointer[-2 - (((oparg & 1) == 1) ? 1 : 0)] = PyObject_To_StackRef_Borrow(xx);
-            if (oparg & 2) stack_pointer[-1 - (((oparg & 1) == 1) ? 1 : 0)] = PyObject_To_StackRef_Borrow(output);
-            stack_pointer[-1 - (((oparg & 1) == 1) ? 1 : 0) + ((oparg & 2) ? 1 : 0)] = PyObject_To_StackRef_Borrow(zz);
+            stack_pointer[-2 - (((oparg & 1) == 1) ? 1 : 0)] = PyObject_To_StackRef_Steal(xx);
+            if (oparg & 2) stack_pointer[-1 - (((oparg & 1) == 1) ? 1 : 0)] = PyObject_To_StackRef_Steal(output);
+            stack_pointer[-1 - (((oparg & 1) == 1) ? 1 : 0) + ((oparg & 2) ? 1 : 0)] = PyObject_To_StackRef_Steal(zz);
             stack_pointer += -(((oparg & 1) == 1) ? 1 : 0) + ((oparg & 2) ? 1 : 0);
             DISPATCH();
         }
@@ -677,9 +677,9 @@ class TestGeneratedCases(unittest.TestCase):
             {
                 # Body of B
             }
-            stack_pointer[-3] = PyObject_To_StackRef_Borrow(deep);
-            if (oparg) stack_pointer[-2] = PyObject_To_StackRef_Borrow(extra);
-            stack_pointer[-2 + ((oparg) ? 1 : 0)] = PyObject_To_StackRef_Borrow(res);
+            stack_pointer[-3] = PyObject_To_StackRef_Steal(deep);
+            if (oparg) stack_pointer[-2] = PyObject_To_StackRef_Steal(extra);
+            stack_pointer[-2 + ((oparg) ? 1 : 0)] = PyObject_To_StackRef_Steal(res);
             stack_pointer += -1 + ((oparg) ? 1 : 0);
             DISPATCH();
         }
@@ -711,8 +711,8 @@ class TestGeneratedCases(unittest.TestCase):
             {
                 val2 = spam();
             }
-            stack_pointer[0] = PyObject_To_StackRef_Borrow(val1);
-            stack_pointer[1] = PyObject_To_StackRef_Borrow(val2);
+            stack_pointer[0] = PyObject_To_StackRef_Steal(val1);
+            stack_pointer[1] = PyObject_To_StackRef_Steal(val2);
             stack_pointer += 2;
             DISPATCH();
         }

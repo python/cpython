@@ -46,25 +46,14 @@ PyStackRef_To_PyObject_Borrow(_PyStackRef tagged)
     return cleared;
 }
 
-
-// Converts a PyObject * to a PyStackRef, borrowing the reference.
+// Converts a PyObject * to a PyStackRef, stealing the reference
 static inline _PyStackRef
-_PyObject_To_StackRef_Borrow(PyObject *obj)
+_PyObject_To_StackRef_Steal(PyObject *obj)
 {
     // Make sure we don't take an already tagged value.
     assert(((uintptr_t)obj & Py_TAG) == 0);
     int tag = (obj == NULL || _Py_IsImmortal(obj)) ? (Py_TAG_DEFERRED) : Py_TAG_PTR;
     return ((_PyStackRef){.bits = ((uintptr_t)(obj)) | tag});
-}
-#define PyObject_To_StackRef_Borrow(obj) _PyObject_To_StackRef_Borrow(_PyObject_CAST(obj))
-
-// Steals the reference, invalidating the old one.
-// For now, behaves the same as borrow, but will be changed in a future PR.
-// TODO in gh-117139.
-static inline _PyStackRef
-_PyObject_To_StackRef_Steal(PyObject *obj)
-{
-    return PyObject_To_StackRef_Borrow(obj);
 }
 #define PyObject_To_StackRef_Steal(obj) _PyObject_To_StackRef_Steal(_PyObject_CAST(obj))
 

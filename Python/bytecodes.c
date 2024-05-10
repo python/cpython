@@ -610,7 +610,7 @@ dummy_func(
             _Py_DECREF_NO_DEALLOC(left_o);
             PyObject *temp = PyStackRef_To_PyObject_Borrow(*target_local);
             PyUnicode_Append(&temp, right_o);
-            *target_local = PyObject_To_StackRef_Borrow(temp);
+            *target_local = PyObject_To_StackRef_Steal(temp);
             _Py_DECREF_SPECIALIZED(right_o, _PyUnicode_ExactDealloc);
             ERROR_IF(PyStackRef_IsNull(*target_local), error);
             // The STORE_FAST is already done.
@@ -979,7 +979,7 @@ dummy_func(
             _PyInterpreterFrame *dying = frame;
             frame = tstate->current_frame = dying->previous;
             _PyEval_FrameClearAndPop(tstate, dying);
-            _PyFrame_StackPush(frame, PyObject_To_StackRef_Borrow(retval));
+            _PyFrame_StackPush(frame, PyObject_To_StackRef_Steal(retval));
             LOAD_IP(frame->return_offset);
             goto resume_frame;
         }
@@ -1675,7 +1675,7 @@ dummy_func(
             if (cell == NULL) {
                 ERROR_NO_POP();
             }
-            SETLOCAL(oparg, PyObject_To_StackRef_Borrow(cell));
+            SETLOCAL(oparg, PyObject_To_StackRef_Steal(cell));
         }
 
         inst(DELETE_DEREF, (--)) {
@@ -1687,7 +1687,7 @@ dummy_func(
                 _PyEval_FormatExcUnbound(tstate, _PyFrame_GetCode(frame), oparg);
                 ERROR_NO_POP();
             }
-            PyStackRef_DECREF(PyObject_To_StackRef_Borrow(oldobj));
+            PyStackRef_DECREF(PyObject_To_StackRef_Steal(oldobj));
         }
 
         inst(LOAD_FROM_DICT_OR_DEREF, (class_dict_st -- value: PyObject *)) {
@@ -2867,7 +2867,7 @@ dummy_func(
             PyObject *iter = PyStackRef_To_PyObject_Borrow(iter_stackref);
             PyObject *next = (*Py_TYPE(iter)->tp_iternext)(iter);
             if (next != NULL) {
-                PUSH(PyObject_To_StackRef_Borrow(next));
+                PUSH(PyObject_To_StackRef_Steal(next));
                 target = next_instr;
             }
             else {
@@ -3038,7 +3038,7 @@ dummy_func(
             DEOPT_IF(gen->gi_frame_state >= FRAME_EXECUTING);
             STAT_INC(FOR_ITER, hit);
             _PyInterpreterFrame *gen_frame_o = (_PyInterpreterFrame *)(_PyInterpreterFrame *)gen->gi_iframe;
-            _PyFrame_StackPush(gen_frame_o, PyObject_To_StackRef_Borrow(Py_None));
+            _PyFrame_StackPush(gen_frame_o, PyObject_To_StackRef_Steal(Py_None));
             gen->gi_frame_state = FRAME_EXECUTING;
             gen->gi_exc_state.previous_item = tstate->exc_info;
             tstate->exc_info = &gen->gi_exc_state;
@@ -3699,11 +3699,11 @@ dummy_func(
             assert(_PyCode_CODE((PyCodeObject *)shim->f_executable)[0].op.code == EXIT_INIT_CHECK);
             /* Push self onto stack of shim */
             Py_INCREF(self);
-            shim->localsplus[0] = PyObject_To_StackRef_Borrow(self);
+            shim->localsplus[0] = PyObject_To_StackRef_Steal(self);
             Py_INCREF(init);
             _PyInterpreterFrame *init_frame = _PyFrame_PushUnchecked(tstate, init, oparg+1);
             /* Copy self followed by args to __init__ frame */
-            init_frame->localsplus[0] = PyObject_To_StackRef_Borrow(self);
+            init_frame->localsplus[0] = PyObject_To_StackRef_Steal(self);
             for (int i = 0; i < oparg; i++) {
                 init_frame->localsplus[i+1] = args[i];
             }
@@ -4216,7 +4216,7 @@ dummy_func(
                 if (tuple == NULL) {
                     ERROR_NO_POP();
                 }
-                PyStackRef_SETREF(callargs_st, PyObject_To_StackRef_Borrow(tuple));
+                PyStackRef_SETREF(callargs_st, PyObject_To_StackRef_Steal(tuple));
                 callargs = tuple;
             }
             assert(PyTuple_CheckExact(callargs));
@@ -4598,12 +4598,12 @@ dummy_func(
         }
 
         tier2 pure op(_LOAD_CONST_INLINE_BORROW, (ptr/4 -- value)) {
-            value = PyObject_To_StackRef_Borrow(ptr);
+            value = PyObject_To_StackRef_Steal(ptr);
         }
 
         tier2 pure op (_POP_TOP_LOAD_CONST_INLINE_BORROW, (ptr/4, pop -- value)) {
             DECREF_INPUTS();
-            value = PyObject_To_StackRef_Borrow(ptr);
+            value = PyObject_To_StackRef_Steal(ptr);
         }
 
         tier2 pure op(_LOAD_CONST_INLINE_WITH_NULL, (ptr/4 -- value, null)) {
@@ -4612,7 +4612,7 @@ dummy_func(
         }
 
         tier2 pure op(_LOAD_CONST_INLINE_BORROW_WITH_NULL, (ptr/4 -- value, null)) {
-            value = PyObject_To_StackRef_Borrow(ptr);
+            value = PyObject_To_StackRef_Steal(ptr);
             null = Py_STACKREF_NULL;
         }
 

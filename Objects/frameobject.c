@@ -165,7 +165,7 @@ framelocalsproxy_setitem(PyObject *self, PyObject *key, PyObject *value)
                 }
             }
             if (cell != NULL) {
-                oldvalue = PyObject_To_StackRef_Borrow(PyCell_GET(cell));
+                oldvalue = PyObject_To_StackRef_Steal(PyCell_GET(cell));
                 if (value != PyStackRef_To_PyObject_Borrow(oldvalue)) {
                     PyCell_SET(cell, Py_XNewRef(value));
                     PyStackRef_DECREF(oldvalue);

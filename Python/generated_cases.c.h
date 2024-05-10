@@ -307,7 +307,7 @@
                 _Py_DECREF_NO_DEALLOC(left_o);
                 PyObject *temp = PyStackRef_To_PyObject_Borrow(*target_local);
                 PyUnicode_Append(&temp, right_o);
-                *target_local = PyObject_To_StackRef_Borrow(temp);
+                *target_local = PyObject_To_StackRef_Steal(temp);
                 _Py_DECREF_SPECIALIZED(right_o, _PyUnicode_ExactDealloc);
                 if (PyStackRef_IsNull(*target_local)) goto pop_2_error;
                 // The STORE_FAST is already done.
@@ -1023,11 +1023,11 @@
             assert(_PyCode_CODE((PyCodeObject *)shim->f_executable)[0].op.code == EXIT_INIT_CHECK);
             /* Push self onto stack of shim */
             Py_INCREF(self);
-            shim->localsplus[0] = PyObject_To_StackRef_Borrow(self);
+            shim->localsplus[0] = PyObject_To_StackRef_Steal(self);
             Py_INCREF(init);
             _PyInterpreterFrame *init_frame = _PyFrame_PushUnchecked(tstate, init, oparg+1);
             /* Copy self followed by args to __init__ frame */
-            init_frame->localsplus[0] = PyObject_To_StackRef_Borrow(self);
+            init_frame->localsplus[0] = PyObject_To_StackRef_Steal(self);
             for (int i = 0; i < oparg; i++) {
                 init_frame->localsplus[i+1] = args[i];
             }
@@ -1479,7 +1479,7 @@
                 if (tuple == NULL) {
                     goto error;
                 }
-                PyStackRef_SETREF(callargs_st, PyObject_To_StackRef_Borrow(tuple));
+                PyStackRef_SETREF(callargs_st, PyObject_To_StackRef_Steal(tuple));
                 callargs = tuple;
             }
             assert(PyTuple_CheckExact(callargs));
@@ -2803,7 +2803,7 @@
                 _PyEval_FormatExcUnbound(tstate, _PyFrame_GetCode(frame), oparg);
                 goto error;
             }
-            PyStackRef_DECREF(PyObject_To_StackRef_Borrow(oldobj));
+            PyStackRef_DECREF(PyObject_To_StackRef_Steal(oldobj));
             DISPATCH();
         }
 
@@ -3177,7 +3177,7 @@
                 DEOPT_IF(gen->gi_frame_state >= FRAME_EXECUTING, FOR_ITER);
                 STAT_INC(FOR_ITER, hit);
                 _PyInterpreterFrame *gen_frame_o = (_PyInterpreterFrame *)(_PyInterpreterFrame *)gen->gi_iframe;
-                _PyFrame_StackPush(gen_frame_o, PyObject_To_StackRef_Borrow(Py_None));
+                _PyFrame_StackPush(gen_frame_o, PyObject_To_StackRef_Steal(Py_None));
                 gen->gi_frame_state = FRAME_EXECUTING;
                 gen->gi_exc_state.previous_item = tstate->exc_info;
                 tstate->exc_info = &gen->gi_exc_state;
@@ -3691,7 +3691,7 @@
             PyObject *iter = PyStackRef_To_PyObject_Borrow(iter_stackref);
             PyObject *next = (*Py_TYPE(iter)->tp_iternext)(iter);
             if (next != NULL) {
-                PUSH(PyObject_To_StackRef_Borrow(next));
+                PUSH(PyObject_To_StackRef_Steal(next));
                 target = next_instr;
             }
             else {
@@ -3895,7 +3895,7 @@
             _PyInterpreterFrame *dying = frame;
             frame = tstate->current_frame = dying->previous;
             _PyEval_FrameClearAndPop(tstate, dying);
-            _PyFrame_StackPush(frame, PyObject_To_StackRef_Borrow(retval));
+            _PyFrame_StackPush(frame, PyObject_To_StackRef_Steal(retval));
             LOAD_IP(frame->return_offset);
             goto resume_frame;
         }
@@ -5217,7 +5217,7 @@
             if (cell == NULL) {
                 goto error;
             }
-            SETLOCAL(oparg, PyObject_To_StackRef_Borrow(cell));
+            SETLOCAL(oparg, PyObject_To_StackRef_Steal(cell));
             DISPATCH();
         }
 
