@@ -46,16 +46,6 @@ PyStackRef_To_PyObject_Borrow(_PyStackRef tagged)
     return cleared;
 }
 
-// Gets a void * from a _PyStackRef
-// Functionally same as PyStackRef_To_PyObject_Borrow, but distinguishes
-// when something is a real PyObject or arbitrary pointer.
-static inline void *
-PyStackRef_To_PyPtr_Borrow(_PyStackRef tagged)
-{
-    PyObject *cleared = ((PyObject *)((tagged).bits & (~Py_TAG)));
-    return cleared;
-}
-
 
 // Converts a PyObject * to a PyStackRef, borrowing the reference.
 static inline _PyStackRef
@@ -77,16 +67,6 @@ _PyObject_To_StackRef_Steal(PyObject *obj)
     return PyObject_To_StackRef_Borrow(obj);
 }
 #define PyObject_To_StackRef_Steal(obj) _PyObject_To_StackRef_Steal(_PyObject_CAST(obj))
-
-// Same as _PyObject_To_StackRef_Steal but safe for arbitrary pointers as well.
-static inline _PyStackRef
-_PyPtr_To_StackRef_Steal(void *obj)
-{
-    assert(((uintptr_t)obj & Py_TAG) == 0);
-    return ((_PyStackRef){.bits = ((uintptr_t)(obj)) | Py_TAG_PTR});
-}
-#define PyPtr_To_StackRef_Steal(obj) _PyPtr_To_StackRef_Steal(obj)
-
 
 // Converts a PyObject * to a PyStackRef, with a new reference
 static inline _PyStackRef

@@ -3044,7 +3044,7 @@ dummy_func(
             tstate->exc_info = &gen->gi_exc_state;
             // oparg is the return offset from the next instruction.
             frame->return_offset = (uint16_t)(1 + INLINE_CACHE_ENTRIES_FOR_ITER + oparg);
-            gen_frame = PyPtr_To_StackRef_Steal(gen_frame_o);
+            gen_frame = (_PyStackRef) { .bits = (uintptr_t)gen_frame_o };
         }
 
         macro(FOR_ITER_GEN) =
@@ -3445,7 +3445,7 @@ dummy_func(
             if (new_frame_o == NULL) {
                 ERROR_NO_POP();
             }
-            new_frame = PyPtr_To_StackRef_Steal(new_frame_o);
+            new_frame = (_PyStackRef) { .bits = (uintptr_t)new_frame_o };
         }
 
         op(_CHECK_FUNCTION_VERSION, (func_version/2, callable, unused, unused[oparg] -- callable, unused, unused[oparg])) {
@@ -3581,13 +3581,13 @@ dummy_func(
             for (int i = 0; i < oparg; i++) {
                 first_non_self_local[i] = args[i];
             }
-            new_frame = PyPtr_To_StackRef_Steal(new_frame_o);
+            new_frame = (_PyStackRef) { .bits = (uintptr_t)new_frame_o };
         }
 
         op(_PUSH_FRAME, (new_frame -- )) {
             // Write it out explicitly because it's subtly different.
             // Eventually this should be the only occurrence of this code.
-            _PyInterpreterFrame *new_frame_o = (_PyInterpreterFrame *)PyStackRef_To_PyPtr_Borrow(new_frame);
+            _PyInterpreterFrame *new_frame_o = (_PyInterpreterFrame *)new_frame.bits;
             assert(tstate->interp->eval_frame == NULL);
             SYNC_SP();
             _PyFrame_SetStackPointer(frame, stack_pointer);

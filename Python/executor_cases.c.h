@@ -3177,7 +3177,7 @@
             tstate->exc_info = &gen->gi_exc_state;
             // oparg is the return offset from the next instruction.
             frame->return_offset = (uint16_t)(1 + INLINE_CACHE_ENTRIES_FOR_ITER + oparg);
-            gen_frame = PyPtr_To_StackRef_Steal(gen_frame_o);
+            gen_frame = (_PyStackRef) { .bits = (uintptr_t)gen_frame_o };
             stack_pointer[0] = gen_frame;
             stack_pointer += 1;
             break;
@@ -3428,7 +3428,7 @@
             if (new_frame_o == NULL) {
                 JUMP_TO_ERROR();
             }
-            new_frame = PyPtr_To_StackRef_Steal(new_frame_o);
+            new_frame = (_PyStackRef) { .bits = (uintptr_t)new_frame_o };
             stack_pointer[0] = new_frame;
             stack_pointer += 1;
             break;
@@ -3676,7 +3676,7 @@
             for (int i = 0; i < oparg; i++) {
                 first_non_self_local[i] = args[i];
             }
-            new_frame = PyPtr_To_StackRef_Steal(new_frame_o);
+            new_frame = (_PyStackRef) { .bits = (uintptr_t)new_frame_o };
             stack_pointer[-2 - oparg] = new_frame;
             stack_pointer += -1 - oparg;
             break;
@@ -3704,7 +3704,7 @@
             for (int i = 0; i < oparg; i++) {
                 first_non_self_local[i] = args[i];
             }
-            new_frame = PyPtr_To_StackRef_Steal(new_frame_o);
+            new_frame = (_PyStackRef) { .bits = (uintptr_t)new_frame_o };
             stack_pointer[-2 - oparg] = new_frame;
             stack_pointer += -1 - oparg;
             break;
@@ -3732,7 +3732,7 @@
             for (int i = 0; i < oparg; i++) {
                 first_non_self_local[i] = args[i];
             }
-            new_frame = PyPtr_To_StackRef_Steal(new_frame_o);
+            new_frame = (_PyStackRef) { .bits = (uintptr_t)new_frame_o };
             stack_pointer[-2 - oparg] = new_frame;
             stack_pointer += -1 - oparg;
             break;
@@ -3760,7 +3760,7 @@
             for (int i = 0; i < oparg; i++) {
                 first_non_self_local[i] = args[i];
             }
-            new_frame = PyPtr_To_StackRef_Steal(new_frame_o);
+            new_frame = (_PyStackRef) { .bits = (uintptr_t)new_frame_o };
             stack_pointer[-2 - oparg] = new_frame;
             stack_pointer += -1 - oparg;
             break;
@@ -3788,7 +3788,7 @@
             for (int i = 0; i < oparg; i++) {
                 first_non_self_local[i] = args[i];
             }
-            new_frame = PyPtr_To_StackRef_Steal(new_frame_o);
+            new_frame = (_PyStackRef) { .bits = (uintptr_t)new_frame_o };
             stack_pointer[-2 - oparg] = new_frame;
             stack_pointer += -1 - oparg;
             break;
@@ -3815,7 +3815,7 @@
             for (int i = 0; i < oparg; i++) {
                 first_non_self_local[i] = args[i];
             }
-            new_frame = PyPtr_To_StackRef_Steal(new_frame_o);
+            new_frame = (_PyStackRef) { .bits = (uintptr_t)new_frame_o };
             stack_pointer[-2 - oparg] = new_frame;
             stack_pointer += -1 - oparg;
             break;
@@ -3827,7 +3827,7 @@
 
             // Write it out explicitly because it's subtly different.
             // Eventually this should be the only occurrence of this code.
-            _PyInterpreterFrame *new_frame_o = (_PyInterpreterFrame *)PyStackRef_To_PyPtr_Borrow(new_frame);
+            _PyInterpreterFrame *new_frame_o = (_PyInterpreterFrame *)new_frame.bits;
             assert(tstate->interp->eval_frame == NULL);
             stack_pointer += -1;
             _PyFrame_SetStackPointer(frame, stack_pointer);
