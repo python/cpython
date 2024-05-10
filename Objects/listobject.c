@@ -192,6 +192,7 @@ list_preallocate_exact(PyListObject *self, Py_ssize_t size)
         return -1;
     }
     items = array->ob_item;
+    memset(items, 0, size * sizeof(PyObject *));
 #else
     items = PyMem_New(PyObject*, size);
     if (items == NULL) {
@@ -199,7 +200,7 @@ list_preallocate_exact(PyListObject *self, Py_ssize_t size)
         return -1;
     }
 #endif
-    self->ob_item = items;
+    FT_ATOMIC_STORE_PTR_RELEASE(self->ob_item, items);
     self->allocated = size;
     return 0;
 }

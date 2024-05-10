@@ -231,20 +231,21 @@ _Py_qsbr_register(_PyThreadStateImpl *tstate, PyInterpreterState *interp,
 }
 
 void
-_Py_qsbr_unregister(_PyThreadStateImpl *tstate)
+_Py_qsbr_unregister(PyThreadState *tstate)
 {
-    struct _qsbr_shared *shared = tstate->qsbr->shared;
+    struct _qsbr_shared *shared = &tstate->interp->qsbr;
+    struct _PyThreadStateImpl *tstate_imp = (_PyThreadStateImpl*) tstate;
 
     PyMutex_Lock(&shared->mutex);
     // NOTE: we must load (or reload) the thread state's qbsr inside the mutex
     // because the array may have been resized (changing tstate->qsbr) while
     // we waited to acquire the mutex.
-    struct _qsbr_thread_state *qsbr = tstate->qsbr;
+    struct _qsbr_thread_state *qsbr = tstate_imp->qsbr;
 
     assert(qsbr->seq == 0 && "thread state must be detached");
-    assert(qsbr->allocated && qsbr->tstate == (PyThreadState *)tstate);
+    assert(qsbr->allocated && qsbr->tstate == tstate);
 
-    tstate->qsbr = NULL;
+    tstate_imp->qsbr = NULL;
     qsbr->tstate = NULL;
     qsbr->allocated = false;
     qsbr->freelist_next = shared->freelist;
