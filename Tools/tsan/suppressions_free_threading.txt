@@ -38,7 +38,6 @@ race_top:_PyParkingLot_Park
 race_top:_PyType_HasFeature
 race_top:assign_version_tag
 race_top:gc_restore_tid
-race_top:initialize_new_array
 race_top:insertdict
 race_top:lookup_tp_dict
 race_top:mi_heap_visit_pages
