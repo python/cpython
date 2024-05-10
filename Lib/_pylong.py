@@ -269,7 +269,8 @@ def _dec_str_to_int_inner(s):
                 # If the assert fails, chances are decent we're sooooo
                 # far off it may seem to run forever otherwise - the
                 # error analysis was fatally flawed in this case.
-                assert count < 10, (count, w, str(n))
+                assert count < 10, (count, w, len(s),
+                                    n.adjusted(), p256.adjusted())
                 lo -= p256
                 hi += 1
             # The assert should always succeed, but way too slow to keep
@@ -290,7 +291,7 @@ def _dec_str_to_int_inner(s):
     # a fraction > 0.9.
     log_ub = len(s) * _LOG_10_BASE_256
     log_ub_as_int = int(log_ub)
-    w = log_ub_as_int + 1 + (log_ub - log_ub_as_int > 9.9)
+    w = log_ub_as_int + 1 + (log_ub - log_ub_as_int > 0.9)
     # And what if we'vv plain exhausted the limits of HW floats? We
     # could compute the log to any desired precision using `decimal`,
     # but it's not plausible that anyone will pass a string requiring
