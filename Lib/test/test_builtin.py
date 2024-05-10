@@ -2138,6 +2138,22 @@ class BuiltinTest(unittest.TestCase):
         with self.assertRaisesRegex(TypeError, msg):
             not NotImplemented
 
+    def test_not_implemented(self):
+        self.assertIs(type(NotImplemented), NotImplemented.__class__)
+        self.assertIs(type(NotImplemented).__class__, type)
+
+        # Missing instance attributes:
+        with self.assertRaises(AttributeError):
+            NotImplemented.prop
+        with self.assertRaises(AttributeError):
+            NotImplemented.prop = 1
+
+        # Missing class attributes:
+        with self.assertRaises(AttributeError):
+            type(NotImplemented).prop
+        with self.assertRaises(TypeError):
+            type(NotImplemented).prop = 1
+
 
 class TestBreakpoint(unittest.TestCase):
     def setUp(self):
