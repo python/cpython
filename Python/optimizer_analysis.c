@@ -406,7 +406,7 @@ optimize_uops(
     ctx->contradiction = false;
 
     _PyUOpInstruction *this_instr = NULL;
-    for(int i = 0; !ctx->done; i++) {
+    for (int i = 0; !ctx->done; i++) {
         assert(i < trace_len);
         this_instr = &trace[i];
 
