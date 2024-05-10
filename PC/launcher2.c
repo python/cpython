@@ -2681,6 +2681,11 @@ process(int argc, wchar_t ** argv)
     DWORD len = GetEnvironmentVariableW(L"PYLAUNCHER_LIMIT_TO_COMPANY", NULL, 0);
     if (len > 1) {
         wchar_t *limitToCompany = allocSearchInfoBuffer(&search, len);
+        if (!limitToCompany) {
+            exitCode = RC_NO_MEMORY;
+            winerror(0, L"Failed to allocate internal buffer");
+            goto abort;
+        }
         search.limitToCompany = limitToCompany;
         if (0 == GetEnvironmentVariableW(L"PYLAUNCHER_LIMIT_TO_COMPANY", limitToCompany, len)) {
             exitCode = RC_INTERNAL_ERROR;
