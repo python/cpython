@@ -946,7 +946,8 @@
             _Py_UopsSymbol *null = NULL;
             owner = stack_pointer[-1];
             uint16_t index = (uint16_t)this_instr->operand;
-            _LOAD_ATTR_NOT_NULL
+            attr = sym_new_not_null(ctx);
+            null = sym_new_null(ctx);
             (void)index;
             (void)owner;
             stack_pointer[-1] = attr;
@@ -994,7 +995,7 @@
                 PyObject *res = convert_global_to_const(this_instr, dict);
                 if (res != NULL) {
                     this_instr[-1].opcode = _POP_TOP;
-                    OUT_OF_SPACE_IF_NULL(attr = sym_new_const(ctx, res));
+                    attr = sym_new_const(ctx, res);
                 }
             }
             if (attr == NULL) {
@@ -1017,7 +1018,8 @@
             _Py_UopsSymbol *null = NULL;
             owner = stack_pointer[-1];
             uint16_t hint = (uint16_t)this_instr->operand;
-            _LOAD_ATTR_NOT_NULL
+            attr = sym_new_not_null(ctx);
+            null = sym_new_null(ctx);
             (void)hint;
             (void)owner;
             stack_pointer[-1] = attr;
@@ -1032,7 +1034,8 @@
             _Py_UopsSymbol *null = NULL;
             owner = stack_pointer[-1];
             uint16_t index = (uint16_t)this_instr->operand;
-            _LOAD_ATTR_NOT_NULL
+            attr = sym_new_not_null(ctx);
+            null = sym_new_null(ctx);
             (void)index;
             (void)owner;
             stack_pointer[-1] = attr;
@@ -1051,7 +1054,8 @@
             _Py_UopsSymbol *null = NULL;
             owner = stack_pointer[-1];
             PyObject *descr = (PyObject *)this_instr->operand;
-            _LOAD_ATTR_NOT_NULL
+            attr = sym_new_not_null(ctx);
+            null = sym_new_null(ctx);
             (void)descr;
             (void)owner;
             stack_pointer[-1] = attr;

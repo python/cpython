@@ -297,15 +297,6 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
     INST->oparg = ARG;            \
     INST->operand = OPERAND;
 
-#define OUT_OF_SPACE_IF_NULL(EXPR) (EXPR)
-
-#define _LOAD_ATTR_NOT_NULL \
-    do {                    \
-    OUT_OF_SPACE_IF_NULL(attr = _Py_uop_sym_new_not_null(ctx)); \
-    OUT_OF_SPACE_IF_NULL(null = _Py_uop_sym_new_null(ctx)); \
-    } while (0);
-
-
 /* Shortened forms for convenience, used in optimizer_bytecodes.c */
 #define sym_is_not_null _Py_uop_sym_is_not_null
 #define sym_is_const _Py_uop_sym_is_const

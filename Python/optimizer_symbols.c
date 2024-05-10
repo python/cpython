@@ -143,7 +143,6 @@ _Py_uop_sym_set_type(_Py_UOpsContext *ctx, _Py_UopsSymbol *sym, PyTypeObject *ty
     if (sym->typ != NULL) {
         if (sym->typ != typ) {
             sym_set_bottom(ctx, sym);
-            ctx->contradiction = true;
             return;
         }
     }

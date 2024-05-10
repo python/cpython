@@ -419,7 +419,8 @@ dummy_func(void) {
     }
 
     op(_LOAD_ATTR_INSTANCE_VALUE, (index/1, owner -- attr, null if (oparg & 1))) {
-        _LOAD_ATTR_NOT_NULL
+        attr = sym_new_not_null(ctx);
+        null = sym_new_null(ctx);
         (void)index;
         (void)owner;
     }
@@ -462,7 +463,7 @@ dummy_func(void) {
             PyObject *res = convert_global_to_const(this_instr, dict);
             if (res != NULL) {
                 this_instr[-1].opcode = _POP_TOP;
-                OUT_OF_SPACE_IF_NULL(attr = sym_new_const(ctx, res));
+                attr = sym_new_const(ctx, res);
             }
         }
         if (attr == NULL) {
@@ -472,19 +473,22 @@ dummy_func(void) {
     }
 
     op(_LOAD_ATTR_WITH_HINT, (hint/1, owner -- attr, null if (oparg & 1))) {
-        _LOAD_ATTR_NOT_NULL
+        attr = sym_new_not_null(ctx);
+        null = sym_new_null(ctx);
         (void)hint;
         (void)owner;
     }
 
     op(_LOAD_ATTR_SLOT, (index/1, owner -- attr, null if (oparg & 1))) {
-        _LOAD_ATTR_NOT_NULL
+        attr = sym_new_not_null(ctx);
+        null = sym_new_null(ctx);
         (void)index;
         (void)owner;
     }
 
     op(_LOAD_ATTR_CLASS, (descr/4, owner -- attr, null if (oparg & 1))) {
-        _LOAD_ATTR_NOT_NULL
+        attr = sym_new_not_null(ctx);
+        null = sym_new_null(ctx);
         (void)descr;
         (void)owner;
     }
