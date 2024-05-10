@@ -1794,7 +1794,7 @@ tstate_delete_common(PyThreadState *tstate)
     HEAD_UNLOCK(runtime);
 
 #ifdef Py_GIL_DISABLED
-    _Py_qsbr_unregister((_PyThreadStateImpl *)tstate);
+    _Py_qsbr_unregister(tstate);
 #endif
 
     // XXX Unbind in PyThreadState_Clear(), or earlier
