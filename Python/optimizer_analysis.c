@@ -440,7 +440,7 @@ optimize_uops(
         DPRINTF(1, "Out of space in abstract interpreter\n");
     }
     if (ctx->contradiction) {
-        // Attempted to push a "bottom" (contradition) symbol onto the stack.
+        // Attempted to push a "bottom" (contradiction) symbol onto the stack.
         // This means that the abstract interpreter has hit unreachable code.
         // We *could* generate an _EXIT_TRACE or _FATAL_ERROR here, but hitting
         // bottom indicates type instability, so we are probably better off
