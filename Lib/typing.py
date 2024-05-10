@@ -3778,7 +3778,7 @@ def __getattr__(attr):
             " removed in a future version of Python. Any use of private functions"
             " is discouraged and may break in the future."
         )
-        warnings.warn(depr_message, category=DeprecationWarning, stacklevel=1)
+        warnings.warn(depr_message, category=DeprecationWarning, stacklevel=2)
         obj = _collect_type_parameters
     else:
         raise AttributeError(f"module {__name__!r} has no attribute {attr!r}")

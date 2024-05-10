@@ -6354,8 +6354,9 @@ class InternalsTests(BaseTestCase):
 
     def test_collect_parameters(self):
         typing = import_helper.import_fresh_module("typing")
-        with self.assertWarns(DeprecationWarning):
+        with self.assertWarns(DeprecationWarning) as cm:
             typing._collect_parameters
+        self.assertEqual(cm.filename, __file__)
 
 
 @lru_cache()
