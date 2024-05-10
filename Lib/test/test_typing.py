@@ -6325,6 +6325,8 @@ class ForwardRefTests(BaseTestCase):
         self.assertEqual(X | "x", Union[X, "x"])
         self.assertEqual("x" | X, Union["x", X])
 
+
+class InternalsTests(BaseTestCase):
     def test_deprecation_for_no_type_params_passed_to__evaluate(self):
         with self.assertWarnsRegex(
             DeprecationWarning,
@@ -6349,6 +6351,10 @@ class ForwardRefTests(BaseTestCase):
             self.assertIs(f._evaluate(globals(), {}, recursive_guard=frozenset()), int)
 
         self.assertEqual(cm.filename, __file__)
+
+    def test_collect_parameters(self):
+        with self.assertWarns(DeprecationWarning):
+            from typing import _collect_parameters
 
 
 @lru_cache()
