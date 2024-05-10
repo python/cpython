@@ -33,8 +33,6 @@ race_top:_mi_heap_delayed_free_partial
 race_top:_PyEval_EvalFrameDefault
 race_top:_PyImport_AcquireLock
 race_top:_PyImport_ReleaseLock
-race_top:_PyInterpreterState_SetNotRunningMain
-race_top:_PyInterpreterState_IsRunningMain
 # https://gist.github.com/mpage/0a24eb2dd458441ededb498e9b0e5de8
 race_top:_PyParkingLot_Park
 race_top:_PyType_HasFeature
