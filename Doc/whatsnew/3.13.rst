@@ -796,6 +796,9 @@ mmap
 * :class:`mmap.mmap` now has a *trackfd* parameter on Unix; if it is ``False``,
   the file descriptor specified by *fileno* will not be duplicated.
   (Contributed by Zackery Spytz and Petr Viktorin in :gh:`78502`.)
+* :class:`mmap.mmap` is now protected from crashing on Windows when the mapped memory
+  is inaccessible due to file system errors or access violations.
+  (Contributed by Jannis Weigend in :gh:`118209`.)
 
 opcode
 ------
