@@ -34,7 +34,7 @@ try:
 except ImportError:
     ThreadPoolExecutor = None
 
-from test.support import cpython_only, import_helper
+from test.support import cpython_only, import_helper, suppress_immortalization
 from test.support import MISSING_C_DOCSTRINGS, ALWAYS_EQ
 from test.support.import_helper import DirsOnSysPath, ready_to_import
 from test.support.os_helper import TESTFN, temp_cwd
@@ -768,6 +768,7 @@ class TestRetrievingSourceCode(GetSourceBase):
             inspect.getfile(list.append)
         self.assertIn('expected, got', str(e_append.exception))
 
+    @suppress_immortalization()
     def test_getfile_class_without_module(self):
         class CM(type):
             @property
@@ -2430,6 +2431,7 @@ class TestGetattrStatic(unittest.TestCase):
 
         self.assertFalse(test.called)
 
+    @suppress_immortalization()
     def test_cache_does_not_cause_classes_to_persist(self):
         # regression test for gh-118013:
         # check that the internal _shadowed_dict cache does not cause

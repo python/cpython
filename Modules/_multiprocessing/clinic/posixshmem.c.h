@@ -5,7 +5,7 @@ preserve
 #if defined(HAVE_SHM_OPEN)
 
 PyDoc_STRVAR(_posixshmem_shm_open__doc__,
-"shm_open($module, /, path, flags, mode=511)\n"
+"shm_open($module, path, /, flags, mode=511)\n"
 "--\n"
 "\n"
 "Open a shared memory object.  Returns a file descriptor (integer).");
@@ -21,7 +21,7 @@ static PyObject *
 _posixshmem_shm_open(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"path", "flags", "mode", NULL};
+    static char *_keywords[] = {"", "flags", "mode", NULL};
     PyObject *path;
     int flags;
     int mode = 511;
@@ -45,7 +45,7 @@ exit:
 #if defined(HAVE_SHM_UNLINK)
 
 PyDoc_STRVAR(_posixshmem_shm_unlink__doc__,
-"shm_unlink($module, /, path)\n"
+"shm_unlink($module, path, /)\n"
 "--\n"
 "\n"
 "Remove a shared memory object (similar to unlink()).\n"
@@ -55,21 +55,22 @@ PyDoc_STRVAR(_posixshmem_shm_unlink__doc__,
 "region.");
 
 #define _POSIXSHMEM_SHM_UNLINK_METHODDEF    \
-    {"shm_unlink", (PyCFunction)(void(*)(void))_posixshmem_shm_unlink, METH_VARARGS|METH_KEYWORDS, _posixshmem_shm_unlink__doc__},
+    {"shm_unlink", (PyCFunction)_posixshmem_shm_unlink, METH_O, _posixshmem_shm_unlink__doc__},
 
 static PyObject *
 _posixshmem_shm_unlink_impl(PyObject *module, PyObject *path);
 
 static PyObject *
-_posixshmem_shm_unlink(PyObject *module, PyObject *args, PyObject *kwargs)
+_posixshmem_shm_unlink(PyObject *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"path", NULL};
     PyObject *path;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "U:shm_unlink", _keywords,
-        &path))
+    if (!PyUnicode_Check(arg)) {
+        PyErr_Format(PyExc_TypeError, "shm_unlink() argument must be str, not %T", arg);
         goto exit;
+    }
+    path = arg;
     return_value = _posixshmem_shm_unlink_impl(module, path);
 
 exit:
@@ -85,4 +86,4 @@ exit:
 #ifndef _POSIXSHMEM_SHM_UNLINK_METHODDEF
     #define _POSIXSHMEM_SHM_UNLINK_METHODDEF
 #endif /* !defined(_POSIXSHMEM_SHM_UNLINK_METHODDEF) */
-/*[clinic end generated code: output=be0661dbed83ea23 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=649877fc45a65129 input=a9049054013a1b77]*/
