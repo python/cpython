@@ -638,6 +638,23 @@ framelocalsproxy_setdefault(PyObject* self, PyObject *const *args, Py_ssize_t na
 }
 
 static PyObject*
+framelocalsproxy_copy(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    PyObject* result = PyDict_New();
+
+    if (result == NULL) {
+        return NULL;
+    }
+
+    if (PyDict_Update(result, self) < 0) {
+        Py_DECREF(result);
+        return NULL;
+    }
+
+    return result;
+}
+
+static PyObject*
 framelocalsproxy_reversed(PyObject *self, void *Py_UNUSED(ignored))
 {
     PyObject *result = framelocalsproxy_keys(self, NULL);
@@ -676,6 +693,8 @@ static PyMethodDef framelocalsproxy_methods[] = {
     {"update",        framelocalsproxy_update,            METH_O,
      NULL},
     {"__reversed__", _PyCFunction_CAST(framelocalsproxy_reversed),       METH_NOARGS,
+     NULL},
+    {"copy",         _PyCFunction_CAST(framelocalsproxy_copy),           METH_NOARGS,
      NULL},
     {"keys",         _PyCFunction_CAST(framelocalsproxy_keys),           METH_NOARGS,
      NULL},
