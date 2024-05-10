@@ -1636,7 +1636,7 @@ Pending Removal in Python 3.14
 
 * :mod:`sqlite3`:
 
-  * :data:`~sqlite3.version` and :data:`~sqlite3.version_info`.
+  * :data:`!version` and :data:`!version_info`.
 
   * :meth:`~sqlite3.Cursor.execute` and :meth:`~sqlite3.Cursor.executemany`
     if :ref:`named placeholders <sqlite3-placeholders>` are used and

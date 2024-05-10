@@ -3498,7 +3498,7 @@ Illia Volochii.
 .. nonce: tjfu9L
 .. section: Library
 
-Deprecate :data:`sqlite3.version` and :data:`sqlite3.version_info`.
+Deprecate :data:`!version` and :data:`!version_info`.
 
 ..
 
