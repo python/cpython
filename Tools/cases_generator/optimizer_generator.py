@@ -38,7 +38,7 @@ def validate_uop(override: Uop, uop: Uop) -> None:
 def type_name(var: StackItem, tagged: bool=False) -> str:
     if var.is_array():
         return f"_Py_UopsSymbol **"
-    if var.type and var.type.strip() != "_PyStackRef" and not tagged:
+    if var.type and var.type.strip() != "PyObject *" and not tagged:
         return var.type
     return f"_Py_UopsSymbol *"
 
@@ -50,12 +50,8 @@ def declare_variables(uop: Uop, out: CWriter, skip_inputs: bool) -> None:
             if var.name not in variables:
                 variables.add(var.name)
                 if var.condition:
-                    if not var.is_array():
-                        out.emit(f"{type_name(var, tagged=True)}{var.name}_stackref = NULL;\n")
                     out.emit(f"{type_name(var)}{var.name} = NULL;\n")
                 else:
-                    if not var.is_array():
-                        out.emit(f"{type_name(var, tagged=True)}{var.name}_stackref;\n")
                     out.emit(f"{type_name(var)}{var.name};\n")
     for var in uop.stack.outputs:
         if var.peek:
