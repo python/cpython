@@ -45,7 +45,7 @@ import typing
 import weakref
 import types
 
-from test.support import captured_stderr, cpython_only, infinite_recursion
+from test.support import captured_stderr, cpython_only, infinite_recursion, requires_docstrings
 from test.typinganndata import ann_module695, mod_generics_cache, _typed_dict_helper
 
 
@@ -10241,6 +10241,7 @@ class NoDefaultTests(BaseTestCase):
     def test_repr(self):
         self.assertEqual(repr(NoDefault), 'typing.NoDefault')
 
+    @requires_docstrings
     def test_doc(self):
         self.assertIsInstance(NoDefault.__doc__, str)
 
@@ -10260,6 +10261,8 @@ class NoDefaultTests(BaseTestCase):
         # TypeError is consistent with the behavior of NoneType
         with self.assertRaises(TypeError):
             type(NoDefault).foo = 3
+        with self.assertRaises(AttributeError):
+            type(NoDefault).foo
 
 
 class AllTests(BaseTestCase):
