@@ -51,16 +51,28 @@ tuple_set_item(PyObject *Py_UNUSED(module), PyObject *args)
 static PyObject *
 tuple_resize(PyObject *Py_UNUSED(module), PyObject *args)
 {
+    PyObject *tup;
     Py_ssize_t newsize;
-    if (!PyArg_ParseTuple(args, "n", &newsize)) {
+    int new = 1;
+    if (!PyArg_ParseTuple(args, "nO|p", &newsize, &tup, &new)) {
         return NULL;
     }
-    PyObject *obj = PyTuple_New(0);
-    int r = _PyTuple_Resize(&obj, newsize);
+    if (new) {
+        Py_ssize_t size = PyTuple_Size(tup);
+        PyObject *newtup = PyTuple_New(size);
+        for (Py_ssize_t n = 0; n < size; n++) {
+            PyTuple_SetItem(newtup, n, Py_XNewRef(PyTuple_GetItem(tup, n)));
+        }
+        tup = newtup;
+    }
+    else {
+        Py_XINCREF(tup);
+    }
+    int r = _PyTuple_Resize(&tup, newsize);
     if (r == -1) {
         return NULL;
     }
-    return obj;
+    return tup;
 }
 
 

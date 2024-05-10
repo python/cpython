@@ -166,6 +166,7 @@ class CAPITest(unittest.TestCase):
 
         self.assertRaises(SystemError, getslice, [1, 2, 3], 0, 1)
         self.assertRaises(SystemError, getslice, 42, 0, 1)
+
         # CRASHES getslice(NULL, 0, 0)
 
     def test_tuple_setitem(self):
@@ -196,11 +197,29 @@ class CAPITest(unittest.TestCase):
     def test_tuple_resize(self):
         # Test PyTuple_Resize()
         resize = _testcapi.tuple_resize
-        size = _testlimitedcapi.tuple_size
-        tup = resize(0)
-        self.assertEqual(size(tup), 0)
-        tup = resize(2)
-        self.assertEqual(size(tup), 2)
-        self.assertRaises(MemoryError, resize, PY_SSIZE_T_MAX)
-        self.assertRaises(SystemError, resize, -1)
-        self.assertRaises(SystemError, resize, PY_SSIZE_T_MIN)
+
+        a = ()
+        b = resize(0, a)
+        self.assertEqual(b, a)
+        b = resize(2, a)
+        self.assertEqual(len(b), 2)
+
+        a = (1, 2, 3)
+        b = resize(3, a)
+        self.assertEqual(b, a)
+        b = resize(2, a)
+        self.assertEqual(b, a[:2])
+        b = resize(5, a)
+        self.assertEqual(len(b), 5)
+        self.assertEqual(b[:3], a)
+
+        a = ()
+        self.assertRaises(MemoryError, resize, PY_SSIZE_T_MAX, a)
+        self.assertRaises(SystemError, resize, -1, a)
+        self.assertRaises(SystemError, resize, PY_SSIZE_T_MIN, a)
+        # refcount > 1
+        a = (1, 2, 3)
+        self.assertRaises(SystemError, resize, 2, a, False)
+        # non-tuple
+        a = [1, 2, 3]
+        self.assertRaises(SystemError, resize, 2, a)
