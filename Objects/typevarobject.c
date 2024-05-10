@@ -73,7 +73,7 @@ NoDefault_reduce(PyObject *op, PyObject *Py_UNUSED(ignored))
     return PyUnicode_FromString("NoDefault");
 }
 
-static PyMethodDef notimplemented_methods[] = {
+static PyMethodDef nodefault_methods[] = {
     {"__reduce__", NoDefault_reduce, METH_NOARGS, NULL},
     {NULL, NULL}
 };
@@ -98,7 +98,7 @@ nodefault_dealloc(PyObject *nodefault)
     _Py_SetImmortal(nodefault);
 }
 
-PyDoc_STRVAR(notimplemented_doc,
+PyDoc_STRVAR(nodefault_doc,
 "NoDefaultType()\n"
 "--\n\n"
 "The type of the NoDefault singleton.");
@@ -109,8 +109,8 @@ PyTypeObject _PyNoDefault_Type = {
     .tp_dealloc = nodefault_dealloc,
     .tp_repr = NoDefault_repr,
     .tp_flags = Py_TPFLAGS_DEFAULT,
-    .tp_doc = notimplemented_doc,
-    .tp_methods = notimplemented_methods,
+    .tp_doc = nodefault_doc,
+    .tp_methods = nodefault_methods,
     .tp_new = nodefault_new,
 };
 
