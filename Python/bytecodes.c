@@ -231,7 +231,7 @@ dummy_func(
 
         replicate(8) pure inst(LOAD_FAST, (-- value)) {
             value = GETLOCAL(oparg);
-            assert(!PyStackRef_IsNull(value));
+            assert(PyStackRef_To_PyObject_Borrow(value) != NULL);
             PyStackRef_INCREF(value);
         }
 

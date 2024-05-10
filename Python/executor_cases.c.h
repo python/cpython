@@ -54,7 +54,7 @@
             oparg = 0;
             assert(oparg == CURRENT_OPARG());
             value = GETLOCAL(oparg);
-            assert(!PyStackRef_IsNull(value));
+            assert(PyStackRef_To_PyObject_Borrow(value) != NULL);
             PyStackRef_INCREF(value);
             stack_pointer[0] = value;
             stack_pointer += 1;
@@ -66,7 +66,7 @@
             oparg = 1;
             assert(oparg == CURRENT_OPARG());
             value = GETLOCAL(oparg);
-            assert(!PyStackRef_IsNull(value));
+            assert(PyStackRef_To_PyObject_Borrow(value) != NULL);
             PyStackRef_INCREF(value);
             stack_pointer[0] = value;
             stack_pointer += 1;
@@ -78,7 +78,7 @@
             oparg = 2;
             assert(oparg == CURRENT_OPARG());
             value = GETLOCAL(oparg);
-            assert(!PyStackRef_IsNull(value));
+            assert(PyStackRef_To_PyObject_Borrow(value) != NULL);
             PyStackRef_INCREF(value);
             stack_pointer[0] = value;
             stack_pointer += 1;
@@ -90,7 +90,7 @@
             oparg = 3;
             assert(oparg == CURRENT_OPARG());
             value = GETLOCAL(oparg);
-            assert(!PyStackRef_IsNull(value));
+            assert(PyStackRef_To_PyObject_Borrow(value) != NULL);
             PyStackRef_INCREF(value);
             stack_pointer[0] = value;
             stack_pointer += 1;
@@ -102,7 +102,7 @@
             oparg = 4;
             assert(oparg == CURRENT_OPARG());
             value = GETLOCAL(oparg);
-            assert(!PyStackRef_IsNull(value));
+            assert(PyStackRef_To_PyObject_Borrow(value) != NULL);
             PyStackRef_INCREF(value);
             stack_pointer[0] = value;
             stack_pointer += 1;
@@ -114,7 +114,7 @@
             oparg = 5;
             assert(oparg == CURRENT_OPARG());
             value = GETLOCAL(oparg);
-            assert(!PyStackRef_IsNull(value));
+            assert(PyStackRef_To_PyObject_Borrow(value) != NULL);
             PyStackRef_INCREF(value);
             stack_pointer[0] = value;
             stack_pointer += 1;
@@ -126,7 +126,7 @@
             oparg = 6;
             assert(oparg == CURRENT_OPARG());
             value = GETLOCAL(oparg);
-            assert(!PyStackRef_IsNull(value));
+            assert(PyStackRef_To_PyObject_Borrow(value) != NULL);
             PyStackRef_INCREF(value);
             stack_pointer[0] = value;
             stack_pointer += 1;
@@ -138,7 +138,7 @@
             oparg = 7;
             assert(oparg == CURRENT_OPARG());
             value = GETLOCAL(oparg);
-            assert(!PyStackRef_IsNull(value));
+            assert(PyStackRef_To_PyObject_Borrow(value) != NULL);
             PyStackRef_INCREF(value);
             stack_pointer[0] = value;
             stack_pointer += 1;
@@ -149,7 +149,7 @@
             _PyStackRef value;
             oparg = CURRENT_OPARG();
             value = GETLOCAL(oparg);
-            assert(!PyStackRef_IsNull(value));
+            assert(PyStackRef_To_PyObject_Borrow(value) != NULL);
             PyStackRef_INCREF(value);
             stack_pointer[0] = value;
             stack_pointer += 1;

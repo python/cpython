@@ -53,8 +53,7 @@ _PyObject_To_StackRef_Borrow(PyObject *obj)
 {
     // Make sure we don't take an already tagged value.
     assert(((uintptr_t)obj & Py_TAG) == 0);
-    int tag = obj == NULL ? Py_TAG_DEFERRED : Py_TAG_PTR;
-    return ((_PyStackRef){.bits = ((uintptr_t)(obj)) | tag});
+    return ((_PyStackRef){.bits = ((uintptr_t)(obj)) | Py_TAG_PTR});
 }
 #define PyObject_To_StackRef_Borrow(obj) _PyObject_To_StackRef_Borrow(_PyObject_CAST(obj))
 

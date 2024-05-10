@@ -4723,7 +4723,7 @@
             INSTRUCTION_STATS(LOAD_FAST);
             _PyStackRef value;
             value = GETLOCAL(oparg);
-            assert(!PyStackRef_IsNull(value));
+            assert(PyStackRef_To_PyObject_Borrow(value) != NULL);
             PyStackRef_INCREF(value);
             stack_pointer[0] = value;
             stack_pointer += 1;
