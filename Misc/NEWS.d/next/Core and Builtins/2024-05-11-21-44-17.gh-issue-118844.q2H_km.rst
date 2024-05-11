@@ -1,0 +1,1 @@
+Added `pycore_critical_section.h` to `jit.c` to fix builds with `--disable-gil` & `--enable-experimental-jit` failures on MacOS
