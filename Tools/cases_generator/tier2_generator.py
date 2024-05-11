@@ -34,8 +34,7 @@ DEFAULT_OUTPUT = ROOT / "Python/executor_cases.c.h"
 
 
 def declare_variable(
-    var: StackItem, uop: Uop, variables: set[str], out: CWriter,
-    dir_out: bool = False
+    var: StackItem, uop: Uop, variables: set[str], out: CWriter
 ) -> None:
     if var.name in variables:
         return
@@ -56,7 +55,7 @@ def declare_variables(uop: Uop, out: CWriter) -> None:
     for var in reversed(uop.stack.inputs):
         declare_variable(var, uop, variables, out)
     for var in uop.stack.outputs:
-        declare_variable(var, uop, variables, out, dir_out=True)
+        declare_variable(var, uop, variables, out)
 
 
 def tier2_replace_error(

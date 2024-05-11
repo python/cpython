@@ -14,7 +14,6 @@
 #include "pycore_tstate.h"        // _PyThreadStateImpl
 #include "pycore_weakref.h"       // _PyWeakref_ClearRef()
 #include "pydtrace.h"
-#include "pycore_stackref.h"
 
 #ifdef Py_GIL_DISABLED
 
@@ -297,7 +296,6 @@ gc_visit_heaps(PyInterpreterState *interp, mi_block_visit_fun *visitor,
     HEAD_UNLOCK(&_PyRuntime);
     return err;
 }
-
 
 static void
 merge_queued_objects(_PyThreadStateImpl *tstate, struct collection_state *state)

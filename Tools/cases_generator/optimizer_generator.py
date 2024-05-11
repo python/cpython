@@ -35,10 +35,10 @@ def validate_uop(override: Uop, uop: Uop) -> None:
     pass
 
 
-def type_name(var: StackItem, tagged: bool=False) -> str:
+def type_name(var: StackItem) -> str:
     if var.is_array():
         return f"_Py_UopsSymbol **"
-    if var.type and var.type.strip() != "PyObject *" and not tagged:
+    if var.type and var.type.strip() != "PyObject *":
         return var.type
     return f"_Py_UopsSymbol *"
 
@@ -104,7 +104,7 @@ def write_uop(
         is_override = override is not None
         out.start_line()
         for var in reversed(prototype.stack.inputs):
-            res = stack.pop(var, should_untag=False)
+            res = stack.pop(var)
             if not skip_inputs:
                 for line in res:
                     out.emit(line)

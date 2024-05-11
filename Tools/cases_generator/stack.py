@@ -124,8 +124,7 @@ class Stack:
         self.variables: list[StackItem] = []
         self.defined: set[str] = set()
 
-    def pop(self, var: StackItem, should_untag: bool = True) -> tuple[str, ...]:
-        untag = "PyObject_To_StackRef_Steal" if should_untag else ""
+    def pop(self, var: StackItem) -> tuple[str, ...]:
         self.top_offset.pop(var)
         if not var.peek:
             self.peek_offset.pop(var)
