@@ -951,7 +951,7 @@ class PyLongModuleTests(unittest.TestCase):
 
     @unittest.skipUnless(_pylong, "pylong module required")
     def test_whitebox_dec_str_to_int_inner_monster(self):
-        # I don't think anyone has enough RAM o build a string long enough
+        # I don't think anyone has enough RAM to build a string long enough
         # for this function to complain. So lie about the string length.
 
         class LyingStr(str):
