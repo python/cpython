@@ -929,5 +929,25 @@ class PyLongModuleTests(unittest.TestCase):
         self.assertEqual(n, int(sn))
         self.assertEqual(sn, str(n))
 
+    @support.requires_resource('cpu')
+    @unittest.skipUnless(_pylong, "_pylong module required")
+    def test_whitebox_dec_str_to_int_inner_failsafe(self):
+        # The number of "guard digits" used in _dec_str_to_int_inner may not
+        # be adequate for very large inputs, but we haven't yet found an
+        # input for which the default of 8 isn't. So normal tests can't reach
+        # its "oops! not good enough" block. Here we test a contrived input
+        # which _does_ reach that block, provided the number of guard digits
+        # is reduced to 3.
+        sn = "9" * 4000000
+        n = 10**len(sn) - 1
+        orig_spread = _pylong._spread.copy()
+        _pylong._spread.clear()
+        try:
+            self.assertEqual(n, _pylong._dec_str_to_int_inner(sn, GUARD=3))
+            self.assertIn(999, _pylong._spread)
+        finally:
+            _pylong._spread.clear()
+            _pylong._spread.update(orig_spread)
+
 if __name__ == "__main__":
     unittest.main()

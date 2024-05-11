@@ -210,6 +210,7 @@ def _str_to_int_inner(s):
     w5pow = compute_powers(len(s), 5, DIGLIM)
     return inner(0, len(s))
 
+
 # Asymptotically faster version, using the C decimal module. See
 # comments at the end of the file. This uses decimal arithmetic to
 # convert from base 10 to base 256. The latter is just a string of
@@ -222,7 +223,16 @@ def _str_to_int_inner(s):
 #    print(float(mp.log(10, 256)).hex())
 _LOG_10_BASE_256 = float.fromhex('0x1.a934f0979a371p-2') # about 0.415
 
-def _dec_str_to_int_inner(s):
+# _apread is for internal testing. It maps a key to the number of times
+# that condition obtained in _dec_str_to_int_inner:
+#     key 0 - quotient guess was right
+#     key 1 - quotient had to be boosted by 1, one time
+#     key 999 - one adjustment wasn't enough, so fell back to divmod
+from collections import defaultdict
+_spread = defaultdict(int)
+del defaultdict
+
+def _dec_str_to_int_inner(s, GUARD=8):
     BYTELIM = 512
     D = decimal.Decimal
     result = bytearray()
@@ -238,7 +248,7 @@ def _dec_str_to_int_inner(s):
     # some input much larger than ever tried, a different path detects
     # that and usss divmod() instead (which ignores nothing, so is exact
     # from the start - but also much slower).
-    GUARD = 8 # must be > 0 to avoid setting `decimal` precision to 9
+    assert GUARD > 0 # if 0, `decimal` can blow up - .prec 0 not allowed
 
     def inner(n, w):
         #assert n < D256 ** w # required, but too expensive to check
@@ -274,15 +284,19 @@ def _dec_str_to_int_inner(s):
             # Adjust quotient up if needed. It usually isn't. In random
             # testing on inputs through 2.5 billion digit strings, the
             # test triggered about one in 100 thousand cases.
+            count = 0
             if lo >= p256:
+                count = 1
                 lo -= p256
                 hi += 1
                 if lo >= p256:
+                    count = 999
                     # Complete correction via an exact computation.
                     # XXX we have no input that takes this branch
-                    # It's only been tested by reducing GUARD a lot.
+                    # It's only tested by reducing GUARD a lot.
                     hi2, lo = divmod(lo, p256)
                     hi += hi2
+            _spread[count] += 1
             # The assert should always succeed, but way too slow to keep
             # enabled.
             #assert hi, lo == divmod(n, pow256[w2][0])
