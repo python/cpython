@@ -568,7 +568,7 @@ def int_divmod(a, b):
 # reciprocal approximation to be too narrow.
 #
 # But since this is just a sketch of a proof ;-), the code uses the
-# emprically tested 8 instead of 5. 3 digits more or less makes no
+# empirically tested 8 instead of 5. 3 digits more or less makes no
 # practical difference to speed - these ints are huge. And while
 # increasing GUARD above 5 may not be necessary, every increase cuts the
 # percentage of cases that need a correction at all.
