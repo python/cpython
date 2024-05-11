@@ -30,7 +30,7 @@ from .reader import Reader
 # types
 Command = commands.Command
 if False:
-    from .types import Callback, SimpleContextManager, KeySpec, CommandName
+    from .types import KeySpec, CommandName
 
 
 def prefix(wordlist: list[str], j: int = 0) -> str:
@@ -258,10 +258,14 @@ class CompletingReader(Reader):
     def calc_screen(self) -> list[str]:
         screen = super().calc_screen()
         if self.cmpltn_menu_vis:
-            ly = self.lxy[1]
+            ly = self.lxy[1] + 1
             screen[ly:ly] = self.cmpltn_menu
-            self.screeninfo[ly:ly] = [(0, [])]*len(self.cmpltn_menu)
-            self.cxy = self.cxy[0], self.cxy[1] + len(self.cmpltn_menu)
+            # This is a horrible hack. If we're not in the middle
+            # of multiline edit, don't append to screeninfo
+            # since that screws up the position calculation
+            # in pos2xy function.
+            if self.pos != len(self.buffer):
+                self.screeninfo[ly:ly] = [(0, [])]*len(self.cmpltn_menu)
         return screen
 
     def finish(self) -> None:

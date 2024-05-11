@@ -617,6 +617,7 @@ class TestPyReplCompleter(TestCase):
         events = itertools.chain(
             code_to_events(code),
             [
+                Event(evt="key", data="down", raw=bytearray(b"\x1bOB")),
                 Event(evt='key', data='up', raw=bytearray(b'\x1bOA')),
                 Event(evt="key", data="down", raw=bytearray(b"\x1bOB")),
             ],
