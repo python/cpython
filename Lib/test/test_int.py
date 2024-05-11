@@ -968,7 +968,7 @@ class PyLongModuleTests(unittest.TestCase):
         # So a random stab at worming around that.
         L = len(liar)
         self.assertRaisesRegex(ValueError,
-            f"^cannot convert string of len {len(liar)} to int$",
+            f"^cannot convert string of len {L} to int$",
             _pylong._dec_str_to_int_inner,
             liar)
 
