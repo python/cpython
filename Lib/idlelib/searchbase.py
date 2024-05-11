@@ -2,6 +2,7 @@
 
 from tkinter import Toplevel
 from tkinter.ttk import Frame, Entry, Label, Button, Checkbutton, Radiobutton
+from tkinter.simpledialog import _setup_dialog
 
 
 class SearchDialogBase:
@@ -33,6 +34,7 @@ class SearchDialogBase:
         '''Initialize root, engine, and top attributes.
 
         top (level widget): set in create_widgets() called from open().
+        frame: container for all widgets in dialog.
         text (Text searched): set in open(), only used in subclasses().
         ent (ry): created in make_entry() called from create_entry().
         row (of grid): 0 in create_widgets(), +1 in make_entry/frame().
@@ -82,11 +84,16 @@ class SearchDialogBase:
         top.protocol("WM_DELETE_WINDOW", self.close)
         top.wm_title(self.title)
         top.wm_iconname(self.icon)
+        _setup_dialog(top)
         self.top = top
+        self.frame = Frame(top, padding="5px")
+        self.frame.grid(sticky="nwes")
+        top.grid_columnconfigure(0, weight=100)
+        top.grid_rowconfigure(0, weight=100)
 
         self.row = 0
-        self.top.grid_columnconfigure(0, pad=2, weight=0)
-        self.top.grid_columnconfigure(1, pad=2, minsize=100, weight=100)
+        self.frame.grid_columnconfigure(0, pad=2, weight=0)
+        self.frame.grid_columnconfigure(1, pad=2, minsize=100, weight=100)
 
         self.create_entries()  # row 0 (and maybe 1), cols 0, 1
         self.create_option_buttons()  # next row, cols 0, 1
@@ -99,9 +106,9 @@ class SearchDialogBase:
         entry - gridded labeled Entry for text entry.
         label - Label widget, returned for testing.
         '''
-        label = Label(self.top, text=label_text)
+        label = Label(self.frame, text=label_text)
         label.grid(row=self.row, column=0, sticky="nw")
-        entry = Entry(self.top, textvariable=var, exportselection=0)
+        entry = Entry(self.frame, textvariable=var, exportselection=0)
         entry.grid(row=self.row, column=1, sticky="nwe")
         self.row = self.row + 1
         return entry, label
@@ -117,11 +124,11 @@ class SearchDialogBase:
         label - Label widget, returned for testing.
         '''
         if labeltext:
-            label = Label(self.top, text=labeltext)
+            label = Label(self.frame, text=labeltext)
             label.grid(row=self.row, column=0, sticky="nw")
         else:
             label = ''
-        frame = Frame(self.top)
+        frame = Frame(self.frame)
         frame.grid(row=self.row, column=1, columnspan=1, sticky="nwe")
         self.row = self.row + 1
         return frame, label
@@ -171,7 +178,7 @@ class SearchDialogBase:
 
     def create_command_buttons(self):
         "Place buttons in vertical command frame gridded on right."
-        f = self.buttonframe = Frame(self.top)
+        f = self.buttonframe = Frame(self.frame)
         f.grid(row=0,column=2,padx=2,pady=2,ipadx=2,ipady=2)
 
         b = self.make_button("Close", self.close)

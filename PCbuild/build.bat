@@ -33,8 +33,12 @@ echo.  -k  Attempt to kill any running Pythons before building (usually done
 echo.      automatically by the pythoncore project)
 echo.  --pgo          Build with Profile-Guided Optimization.  This flag
 echo.                 overrides -c and -d
+echo.  --disable-gil  Enable experimental support for running without the GIL.
 echo.  --test-marker  Enable the test marker within the build.
-echo.  --regen        Regenerate all opcodes, grammar and tokens
+echo.  --regen        Regenerate all opcodes, grammar and tokens.
+echo.  --experimental-jit          Enable the experimental just-in-time compiler.
+echo.  --experimental-jit-off      Ditto but off by default (PYTHON_JIT=1 enables).
+echo.  --experimental-jit-interpreter  Enable the experimental Tier 2 interpreter.
 echo.
 echo.Available flags to avoid building certain modules.
 echo.These flags have no effect if '-e' is not given:
@@ -46,7 +50,7 @@ echo.Available arguments:
 echo.  -c Release ^| Debug ^| PGInstrument ^| PGUpdate
 echo.     Set the configuration (default: Release)
 echo.  -p x64 ^| Win32 ^| ARM ^| ARM64
-echo.     Set the platform (default: Win32)
+echo.     Set the platform (default: x64)
 echo.  -t Build ^| Rebuild ^| Clean ^| CleanAll
 echo.     Set the target manually
 echo.  --pgo-job  The job to use for PGO training; implies --pgo
@@ -55,7 +59,7 @@ exit /b 127
 
 :Run
 setlocal
-set platf=Win32
+set platf=x64
 set conf=Release
 set target=Build
 set dir=%~dp0
@@ -64,6 +68,7 @@ set verbose=/nologo /v:m /clp:summary
 set kill=
 set do_pgo=
 set pgo_job=-m test --pgo
+set UseTIER2=
 
 :CheckOpts
 if "%~1"=="-h" goto Usage
@@ -80,9 +85,14 @@ if "%~1"=="-q" (set verbose=/v:q /nologo /clp:summary) & shift & goto CheckOpts
 if "%~1"=="-k" (set kill=true) & shift & goto CheckOpts
 if "%~1"=="--pgo" (set do_pgo=true) & shift & goto CheckOpts
 if "%~1"=="--pgo-job" (set do_pgo=true) & (set pgo_job=%~2) & shift & shift & goto CheckOpts
+if "%~1"=="--disable-gil" (set UseDisableGil=true) & shift & goto CheckOpts
 if "%~1"=="--test-marker" (set UseTestMarker=true) & shift & goto CheckOpts
 if "%~1"=="-V" shift & goto Version
 if "%~1"=="--regen" (set Regen=true) & shift & goto CheckOpts
+if "%~1"=="--experimental-jit" (set UseJIT=true) & (set UseTIER2=1) & shift & goto CheckOpts
+if "%~1"=="--experimental-jit-off" (set UseJIT=true) & (set UseTIER2=3) & shift & goto CheckOpts
+if "%~1"=="--experimental-jit-interpreter" (set UseTIER2=4) & shift & goto CheckOpts
+if "%~1"=="--experimental-jit-interpreter-off" (set UseTIER2=6) & shift & goto CheckOpts
 rem These use the actual property names used by MSBuild.  We could just let
 rem them in through the environment, but we specify them on the command line
 rem anyway for visibility so set defaults after this
@@ -116,8 +126,14 @@ rem Setup the environment
 call "%dir%find_msbuild.bat" %MSBUILD%
 if ERRORLEVEL 1 (echo Cannot locate MSBuild.exe on PATH or as MSBUILD variable & exit /b 2)
 
+call "%dir%find_python.bat" %PYTHON%
+if ERRORLEVEL 1 (echo Cannot locate python.exe on PATH or as PYTHON variable & exit /b 3)
+set PythonForBuild=%PYTHON%
+
 if "%kill%"=="true" call :Kill
-if ERRORLEVEL 1 exit /B 3
+if ERRORLEVEL 1 exit /B %ERRORLEVEL%
+
+if "%regen%"=="true" goto :Regen
 
 if "%do_pgo%"=="true" (
     set conf=PGInstrument
@@ -147,6 +163,15 @@ echo on
 @echo off
 exit /B %ERRORLEVEL%
 
+:Regen
+echo on
+%MSBUILD% "%dir%\pythoncore.vcxproj" /t:Regen %verbose%^
+ /p:Configuration=%conf% /p:Platform=%platf%^
+ /p:ForceRegen=true
+
+@echo off
+exit /B %ERRORLEVEL%
+
 :Build
 rem Call on MSBuild to do the work, echo the command.
 rem Passing %1-9 is not the preferred option, but argument parsing in
@@ -157,16 +182,11 @@ echo on
  /p:IncludeExternals=%IncludeExternals%^
  /p:IncludeCTypes=%IncludeCTypes%^
  /p:IncludeSSL=%IncludeSSL% /p:IncludeTkinter=%IncludeTkinter%^
+ /p:DisableGil=%UseDisableGil%^
  /p:UseTestMarker=%UseTestMarker% %GITProperty%^
+ /p:UseJIT=%UseJIT%^
+ /p:UseTIER2=%UseTIER2%^
  %1 %2 %3 %4 %5 %6 %7 %8 %9
-
-@if not ERRORLEVEL 1 @if "%Regen%"=="true" (
-    %MSBUILD% "%dir%regen.vcxproj" /t:%target% %parallel% %verbose%^
-     /p:IncludeExternals=%IncludeExternals%^
-     /p:Configuration=%conf% /p:Platform=%platf%^
-     /p:UseTestMarker=%UseTestMarker% %GITProperty%^
-     %1 %2 %3 %4 %5 %6 %7 %8 %9
-)
 
 @echo off
 exit /b %ERRORLEVEL%

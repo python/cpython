@@ -1,13 +1,17 @@
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
 #include <Python.h>
 #include <ffi.h>
 #ifdef MS_WIN32
-#include <windows.h>
+#  include <windows.h>
 #else
-#include <sys/mman.h>
-#include <unistd.h>
-# if !defined(MAP_ANONYMOUS) && defined(MAP_ANON)
-#  define MAP_ANONYMOUS MAP_ANON
-# endif
+#  include <sys/mman.h>
+#  include <unistd.h>             // sysconf()
+#  if !defined(MAP_ANONYMOUS) && defined(MAP_ANON)
+#    define MAP_ANONYMOUS MAP_ANON
+#  endif
 #endif
 #include "ctypes.h"
 
@@ -19,6 +23,7 @@
 #define BLOCKSIZE _pagesize
 
 /* #define MALLOC_CLOSURE_DEBUG */ /* enable for some debugging output */
+
 
 /******************************************************************/
 
@@ -89,16 +94,43 @@ static void more_core(void)
 /******************************************************************/
 
 /* put the item back into the free list */
-void ffi_closure_free(void *p)
+void Py_ffi_closure_free(void *p)
 {
+#ifdef HAVE_FFI_CLOSURE_ALLOC
+#ifdef USING_APPLE_OS_LIBFFI
+# ifdef HAVE_BUILTIN_AVAILABLE
+    if (__builtin_available(macos 10.15, ios 13, watchos 6, tvos 13, *)) {
+#  else
+    if (ffi_closure_free != NULL) {
+#  endif
+#endif
+        ffi_closure_free(p);
+        return;
+#ifdef USING_APPLE_OS_LIBFFI
+    }
+#endif
+#endif
     ITEM *item = (ITEM *)p;
     item->next = free_list;
     free_list = item;
 }
 
 /* return one item from the free list, allocating more if needed */
-void *ffi_closure_alloc(size_t ignored, void** codeloc)
+void *Py_ffi_closure_alloc(size_t size, void** codeloc)
 {
+#ifdef HAVE_FFI_CLOSURE_ALLOC
+#ifdef USING_APPLE_OS_LIBFFI
+# ifdef HAVE_BUILTIN_AVAILABLE
+    if (__builtin_available(macos 10.15, ios 13, watchos 6, tvos 13, *)) {
+# else
+    if (ffi_closure_alloc != NULL) {
+#  endif
+#endif
+        return ffi_closure_alloc(size, codeloc);
+#ifdef USING_APPLE_OS_LIBFFI
+    }
+#endif
+#endif
     ITEM *item;
     if (!free_list)
         more_core();

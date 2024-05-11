@@ -22,5 +22,5 @@ We recommend the following resources for porting extension modules to Python 3:
 
 .. _Migrating C extensions: http://python3porting.com/cextensions.html
 .. _Porting guide: https://py3c.readthedocs.io/en/latest/guide.html
-.. _Cython: http://cython.org/
+.. _Cython: https://cython.org/
 .. _CFFI: https://cffi.readthedocs.io/en/latest/

@@ -125,7 +125,7 @@ request_queue = queue.Queue(0)
 response_queue = queue.Queue(0)
 
 
-class SocketIO(object):
+class SocketIO:
 
     nextseq = 0
 
@@ -158,8 +158,8 @@ class SocketIO(object):
             s = s + " " + str(a)
         print(s, file=sys.__stderr__)
 
-    def register(self, oid, object):
-        self.objtable[oid] = object
+    def register(self, oid, object_):
+        self.objtable[oid] = object_
 
     def unregister(self, oid):
         try:
@@ -174,7 +174,7 @@ class SocketIO(object):
         except TypeError:
             return ("ERROR", "Bad request format")
         if oid not in self.objtable:
-            return ("ERROR", "Unknown object id: %r" % (oid,))
+            return ("ERROR", f"Unknown object id: {oid!r}")
         obj = self.objtable[oid]
         if methodname == "__methods__":
             methods = {}
@@ -185,7 +185,7 @@ class SocketIO(object):
             _getattributes(obj, attributes)
             return ("OK", attributes)
         if not hasattr(obj, methodname):
-            return ("ERROR", "Unsupported method name: %r" % (methodname,))
+            return ("ERROR", f"Unsupported method name: {methodname!r}")
         method = getattr(obj, methodname)
         try:
             if how == 'CALL':
@@ -307,7 +307,7 @@ class SocketIO(object):
         self.debug("_getresponse:myseq:", myseq)
         if threading.current_thread() is self.sockthread:
             # this thread does all reading of requests or responses
-            while 1:
+            while True:
                 response = self.pollresponse(myseq, wait)
                 if response is not None:
                     return response
@@ -417,7 +417,7 @@ class SocketIO(object):
         self.responses and notify the owning thread.
 
         """
-        while 1:
+        while True:
             # send queued response if there is one available
             try:
                 qmsg = response_queue.get(0)
@@ -486,7 +486,7 @@ class SocketIO(object):
 
 #----------------- end class SocketIO --------------------
 
-class RemoteObject(object):
+class RemoteObject:
     # Token mix-in class
     pass
 
@@ -497,7 +497,7 @@ def remoteref(obj):
     return RemoteProxy(oid)
 
 
-class RemoteProxy(object):
+class RemoteProxy:
 
     def __init__(self, oid):
         self.oid = oid
@@ -547,7 +547,7 @@ class RPCClient(SocketIO):
         return RPCProxy(self, oid)
 
 
-class RPCProxy(object):
+class RPCProxy:
 
     __methods = None
     __attributes = None
@@ -596,7 +596,7 @@ def _getattributes(obj, attributes):
             attributes[name] = 1
 
 
-class MethodProxy(object):
+class MethodProxy:
 
     def __init__(self, sockio, oid, name):
         self.sockio = sockio

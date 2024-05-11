@@ -15,7 +15,7 @@ class AutoCompleteWindowTest(unittest.TestCase):
         cls.root = Tk()
         cls.root.withdraw()
         cls.text = Text(cls.root)
-        cls.acw = acw.AutoCompleteWindow(cls.text)
+        cls.acw = acw.AutoCompleteWindow(cls.text, tags=None)
 
     @classmethod
     def tearDownClass(cls):

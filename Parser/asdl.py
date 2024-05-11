@@ -33,8 +33,7 @@ __all__ = [
 # See the EBNF at the top of the file to understand the logical connection
 # between the various node types.
 
-builtin_types = {'identifier', 'string', 'bytes', 'int', 'object', 'singleton',
-                 'constant'}
+builtin_types = {'identifier', 'string', 'int', 'constant'}
 
 class AST:
     def __repr__(self):
@@ -205,7 +204,7 @@ def check(mod):
 
 def parse(filename):
     """Parse ASDL from the given file and return a Module node describing it."""
-    with open(filename) as f:
+    with open(filename, encoding="utf-8") as f:
         parser = ASDLParser()
         return parser.parse(f.read())
 

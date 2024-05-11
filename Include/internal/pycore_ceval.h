@@ -8,111 +8,292 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
+#include "dynamic_annotations.h" // _Py_ANNOTATE_RWLOCK_CREATE
+
+#include "pycore_interp.h"        // PyInterpreterState.eval_frame
+#include "pycore_pystate.h"       // _PyThreadState_GET()
+
 /* Forward declarations */
 struct pyruntimestate;
 struct _ceval_runtime_state;
-struct _frame;
 
-#include "pycore_pystate.h"   /* PyInterpreterState.eval_frame */
+// Export for '_lsprof' shared extension
+PyAPI_FUNC(int) _PyEval_SetProfile(PyThreadState *tstate, Py_tracefunc func, PyObject *arg);
+
+extern int _PyEval_SetTrace(PyThreadState *tstate, Py_tracefunc func, PyObject *arg);
+
+extern int _PyEval_SetOpcodeTrace(PyFrameObject *f, bool enable);
+
+// Helper to look up a builtin object
+// Export for 'array' shared extension
+PyAPI_FUNC(PyObject*) _PyEval_GetBuiltin(PyObject *);
+
+extern PyObject* _PyEval_GetBuiltinId(_Py_Identifier *);
+
+extern void _PyEval_SetSwitchInterval(unsigned long microseconds);
+extern unsigned long _PyEval_GetSwitchInterval(void);
+
+// Export for '_queue' shared extension
+PyAPI_FUNC(int) _PyEval_MakePendingCalls(PyThreadState *);
+
+#ifndef Py_DEFAULT_RECURSION_LIMIT
+#  define Py_DEFAULT_RECURSION_LIMIT 1000
+#endif
 
 extern void _Py_FinishPendingCalls(PyThreadState *tstate);
-extern void _PyEval_InitRuntimeState(struct _ceval_runtime_state *);
-extern void _PyEval_InitState(struct _ceval_state *);
-extern void _PyEval_FiniThreads(PyThreadState *tstate);
-PyAPI_FUNC(void) _PyEval_SignalReceived(PyThreadState *tstate);
-PyAPI_FUNC(int) _PyEval_AddPendingCall(
-    PyThreadState *tstate,
-    int (*func)(void *),
-    void *arg);
-PyAPI_FUNC(void) _PyEval_SignalAsyncExc(PyThreadState *tstate);
-PyAPI_FUNC(void) _PyEval_ReInitThreads(
-    struct pyruntimestate *runtime);
-PyAPI_FUNC(void) _PyEval_SetCoroutineOriginTrackingDepth(
-    PyThreadState *tstate,
-    int new_depth);
+extern void _PyEval_InitState(PyInterpreterState *);
+extern void _PyEval_SignalReceived(void);
 
-/* Private function */
-void _PyEval_Fini(void);
+// bitwise flags:
+#define _Py_PENDING_MAINTHREADONLY 1
+#define _Py_PENDING_RAWFREE 2
+
+typedef int _Py_add_pending_call_result;
+#define _Py_ADD_PENDING_SUCCESS 0
+#define _Py_ADD_PENDING_FULL -1
+
+// Export for '_testinternalcapi' shared extension
+PyAPI_FUNC(_Py_add_pending_call_result) _PyEval_AddPendingCall(
+    PyInterpreterState *interp,
+    _Py_pending_call_func func,
+    void *arg,
+    int flags);
+
+#ifdef HAVE_FORK
+extern PyStatus _PyEval_ReInitThreads(PyThreadState *tstate);
+#endif
+
+// Used by sys.call_tracing()
+extern PyObject* _PyEval_CallTracing(PyObject *func, PyObject *args);
+
+// Used by sys.get_asyncgen_hooks()
+extern PyObject* _PyEval_GetAsyncGenFirstiter(void);
+extern PyObject* _PyEval_GetAsyncGenFinalizer(void);
+
+// Used by sys.set_asyncgen_hooks()
+extern int _PyEval_SetAsyncGenFirstiter(PyObject *);
+extern int _PyEval_SetAsyncGenFinalizer(PyObject *);
+
+// Used by sys.get_coroutine_origin_tracking_depth()
+// and sys.set_coroutine_origin_tracking_depth()
+extern int _PyEval_GetCoroutineOriginTrackingDepth(void);
+extern int _PyEval_SetCoroutineOriginTrackingDepth(int depth);
+
+extern void _PyEval_Fini(void);
+
+
+extern PyObject* _PyEval_GetBuiltins(PyThreadState *tstate);
+extern PyObject* _PyEval_BuiltinsFromGlobals(
+    PyThreadState *tstate,
+    PyObject *globals);
+
+// Trampoline API
+
+typedef struct {
+    // Callback to initialize the trampoline state
+    void* (*init_state)(void);
+    // Callback to register every trampoline being created
+    void (*write_state)(void* state, const void *code_addr,
+                        unsigned int code_size, PyCodeObject* code);
+    // Callback to free the trampoline state
+    int (*free_state)(void* state);
+} _PyPerf_Callbacks;
+
+extern int _PyPerfTrampoline_SetCallbacks(_PyPerf_Callbacks *);
+extern void _PyPerfTrampoline_GetCallbacks(_PyPerf_Callbacks *);
+extern int _PyPerfTrampoline_Init(int activate);
+extern int _PyPerfTrampoline_Fini(void);
+extern void _PyPerfTrampoline_FreeArenas(void);
+extern int _PyIsPerfTrampolineActive(void);
+extern PyStatus _PyPerfTrampoline_AfterFork_Child(void);
+#ifdef PY_HAVE_PERF_TRAMPOLINE
+extern _PyPerf_Callbacks _Py_perfmap_callbacks;
+extern _PyPerf_Callbacks _Py_perfmap_jit_callbacks;
+#endif
 
 static inline PyObject*
-_PyEval_EvalFrame(PyThreadState *tstate, struct _frame *f, int throwflag)
+_PyEval_EvalFrame(PyThreadState *tstate, struct _PyInterpreterFrame *frame, int throwflag)
 {
-    return tstate->interp->eval_frame(tstate, f, throwflag);
+    EVAL_CALL_STAT_INC(EVAL_CALL_TOTAL);
+    if (tstate->interp->eval_frame == NULL) {
+        return _PyEval_EvalFrameDefault(tstate, frame, throwflag);
+    }
+    return tstate->interp->eval_frame(tstate, frame, throwflag);
 }
 
-extern PyObject *_PyEval_EvalCode(
-    PyThreadState *tstate,
-    PyObject *_co, PyObject *globals, PyObject *locals,
-    PyObject *const *args, Py_ssize_t argcount,
-    PyObject *const *kwnames, PyObject *const *kwargs,
-    Py_ssize_t kwcount, int kwstep,
-    PyObject *const *defs, Py_ssize_t defcount,
-    PyObject *kwdefs, PyObject *closure,
-    PyObject *name, PyObject *qualname);
+extern PyObject*
+_PyEval_Vector(PyThreadState *tstate,
+            PyFunctionObject *func, PyObject *locals,
+            PyObject* const* args, size_t argcount,
+            PyObject *kwnames);
 
-extern int _PyEval_ThreadsInitialized(_PyRuntimeState *runtime);
-extern PyStatus _PyEval_InitThreads(PyThreadState *tstate);
+extern int _PyEval_ThreadsInitialized(void);
+extern void _PyEval_InitGIL(PyThreadState *tstate, int own_gil);
+extern void _PyEval_FiniGIL(PyInterpreterState *interp);
 
-extern void _PyEval_ReleaseLock(PyThreadState *tstate);
+// Acquire the GIL and return 1. In free-threaded builds, this function may
+// return 0 to indicate that the GIL was disabled and therefore not acquired.
+extern int _PyEval_AcquireLock(PyThreadState *tstate);
+
+extern void _PyEval_ReleaseLock(PyInterpreterState *, PyThreadState *);
+
+#ifdef Py_GIL_DISABLED
+// Returns 0 or 1 if the GIL for the given thread's interpreter is disabled or
+// enabled, respectively.
+//
+// The enabled state of the GIL will not change while one or more threads are
+// attached.
+static inline int
+_PyEval_IsGILEnabled(PyThreadState *tstate)
+{
+    return tstate->interp->ceval.gil->enabled != 0;
+}
+
+// Enable or disable the GIL used by the interpreter that owns tstate, which
+// must be the current thread. This may affect other interpreters, if the GIL
+// is shared. All three functions will be no-ops (and return 0) if the
+// interpreter's `enable_gil' config is not _PyConfig_GIL_DEFAULT.
+//
+// Every call to _PyEval_EnableGILTransient() must be paired with exactly one
+// call to either _PyEval_EnableGILPermanent() or
+// _PyEval_DisableGIL(). _PyEval_EnableGILPermanent() and _PyEval_DisableGIL()
+// must only be called while the GIL is enabled from a call to
+// _PyEval_EnableGILTransient().
+//
+// _PyEval_EnableGILTransient() returns 1 if it enabled the GIL, or 0 if the
+// GIL was already enabled, whether transiently or permanently. The caller will
+// hold the GIL upon return.
+//
+// _PyEval_EnableGILPermanent() returns 1 if it permanently enabled the GIL
+// (which must already be enabled), or 0 if it was already permanently
+// enabled. Once _PyEval_EnableGILPermanent() has been called once, all
+// subsequent calls to any of the three functions will be no-ops.
+//
+// _PyEval_DisableGIL() returns 1 if it disabled the GIL, or 0 if the GIL was
+// kept enabled because of another request, whether transient or permanent.
+//
+// All three functions must be called by an attached thread (this implies that
+// if the GIL is enabled, the current thread must hold it).
+extern int _PyEval_EnableGILTransient(PyThreadState *tstate);
+extern int _PyEval_EnableGILPermanent(PyThreadState *tstate);
+extern int _PyEval_DisableGIL(PyThreadState *state);
+#endif
+
+extern void _PyEval_DeactivateOpCache(void);
 
 
 /* --- _Py_EnterRecursiveCall() ----------------------------------------- */
 
-PyAPI_DATA(int) _Py_CheckRecursionLimit;
-
 #ifdef USE_STACKCHECK
 /* With USE_STACKCHECK macro defined, trigger stack checks in
-   _Py_CheckRecursiveCall() on every 64th call to Py_EnterRecursiveCall. */
+   _Py_CheckRecursiveCall() on every 64th call to _Py_EnterRecursiveCall. */
 static inline int _Py_MakeRecCheck(PyThreadState *tstate)  {
-    return (++tstate->recursion_depth > _Py_CheckRecursionLimit
-            || ++tstate->stackcheck_counter > 64);
+    return (tstate->c_recursion_remaining-- < 0
+            || (tstate->c_recursion_remaining & 63) == 0);
 }
 #else
 static inline int _Py_MakeRecCheck(PyThreadState *tstate) {
-    return (++tstate->recursion_depth > _Py_CheckRecursionLimit);
+    return tstate->c_recursion_remaining-- < 0;
 }
 #endif
 
+// Export for '_json' shared extension, used via _Py_EnterRecursiveCall()
+// static inline function.
 PyAPI_FUNC(int) _Py_CheckRecursiveCall(
     PyThreadState *tstate,
     const char *where);
 
-static inline int _Py_EnterRecursiveCall(PyThreadState *tstate,
-                                         const char *where) {
+int _Py_CheckRecursiveCallPy(
+    PyThreadState *tstate);
+
+static inline int _Py_EnterRecursiveCallTstate(PyThreadState *tstate,
+                                               const char *where) {
     return (_Py_MakeRecCheck(tstate) && _Py_CheckRecursiveCall(tstate, where));
 }
 
-static inline int _Py_EnterRecursiveCall_inline(const char *where) {
-    PyThreadState *tstate = PyThreadState_GET();
-    return _Py_EnterRecursiveCall(tstate, where);
+static inline void _Py_EnterRecursiveCallTstateUnchecked(PyThreadState *tstate)  {
+    assert(tstate->c_recursion_remaining > 0);
+    tstate->c_recursion_remaining--;
 }
 
-#define Py_EnterRecursiveCall(where) _Py_EnterRecursiveCall_inline(where)
-
-
-/* Compute the "lower-water mark" for a recursion limit. When
- * Py_LeaveRecursiveCall() is called with a recursion depth below this mark,
- * the overflowed flag is reset to 0. */
-#define _Py_RecursionLimitLowerWaterMark(limit) \
-    (((limit) > 200) \
-        ? ((limit) - 50) \
-        : (3 * ((limit) >> 2)))
-
-#define _Py_MakeEndRecCheck(x) \
-    (--(x) < _Py_RecursionLimitLowerWaterMark(_Py_CheckRecursionLimit))
-
-static inline void _Py_LeaveRecursiveCall(PyThreadState *tstate)  {
-    if (_Py_MakeEndRecCheck(tstate->recursion_depth)) {
-        tstate->overflowed = 0;
-    }
+static inline int _Py_EnterRecursiveCall(const char *where) {
+    PyThreadState *tstate = _PyThreadState_GET();
+    return _Py_EnterRecursiveCallTstate(tstate, where);
 }
 
-static inline void _Py_LeaveRecursiveCall_inline(void)  {
-    PyThreadState *tstate = PyThreadState_GET();
-    _Py_LeaveRecursiveCall(tstate);
+static inline void _Py_LeaveRecursiveCallTstate(PyThreadState *tstate)  {
+    tstate->c_recursion_remaining++;
 }
 
-#define Py_LeaveRecursiveCall() _Py_LeaveRecursiveCall_inline()
+static inline void _Py_LeaveRecursiveCall(void)  {
+    PyThreadState *tstate = _PyThreadState_GET();
+    _Py_LeaveRecursiveCallTstate(tstate);
+}
+
+extern struct _PyInterpreterFrame* _PyEval_GetFrame(void);
+
+PyAPI_FUNC(PyObject *)_Py_MakeCoro(PyFunctionObject *func);
+
+/* Handle signals, pending calls, GIL drop request
+   and asynchronous exception */
+PyAPI_FUNC(int) _Py_HandlePending(PyThreadState *tstate);
+
+extern PyObject * _PyEval_GetFrameLocals(void);
+
+typedef PyObject *(*conversion_func)(PyObject *);
+
+PyAPI_DATA(const binaryfunc) _PyEval_BinaryOps[];
+PyAPI_DATA(const conversion_func) _PyEval_ConversionFuncs[];
+
+PyAPI_FUNC(int) _PyEval_CheckExceptStarTypeValid(PyThreadState *tstate, PyObject* right);
+PyAPI_FUNC(int) _PyEval_CheckExceptTypeValid(PyThreadState *tstate, PyObject* right);
+PyAPI_FUNC(int) _PyEval_ExceptionGroupMatch(PyObject* exc_value, PyObject *match_type, PyObject **match, PyObject **rest);
+PyAPI_FUNC(void) _PyEval_FormatAwaitableError(PyThreadState *tstate, PyTypeObject *type, int oparg);
+PyAPI_FUNC(void) _PyEval_FormatExcCheckArg(PyThreadState *tstate, PyObject *exc, const char *format_str, PyObject *obj);
+PyAPI_FUNC(void) _PyEval_FormatExcUnbound(PyThreadState *tstate, PyCodeObject *co, int oparg);
+PyAPI_FUNC(void) _PyEval_FormatKwargsError(PyThreadState *tstate, PyObject *func, PyObject *kwargs);
+PyAPI_FUNC(PyObject *)_PyEval_MatchClass(PyThreadState *tstate, PyObject *subject, PyObject *type, Py_ssize_t nargs, PyObject *kwargs);
+PyAPI_FUNC(PyObject *)_PyEval_MatchKeys(PyThreadState *tstate, PyObject *map, PyObject *keys);
+PyAPI_FUNC(int) _PyEval_UnpackIterable(PyThreadState *tstate, PyObject *v, int argcnt, int argcntafter, PyObject **sp);
+PyAPI_FUNC(void) _PyEval_FrameClearAndPop(PyThreadState *tstate, _PyInterpreterFrame *frame);
+
+
+/* Bits that can be set in PyThreadState.eval_breaker */
+#define _PY_GIL_DROP_REQUEST_BIT (1U << 0)
+#define _PY_SIGNALS_PENDING_BIT (1U << 1)
+#define _PY_CALLS_TO_DO_BIT (1U << 2)
+#define _PY_ASYNC_EXCEPTION_BIT (1U << 3)
+#define _PY_GC_SCHEDULED_BIT (1U << 4)
+#define _PY_EVAL_PLEASE_STOP_BIT (1U << 5)
+#define _PY_EVAL_EXPLICIT_MERGE_BIT (1U << 6)
+
+/* Reserve a few bits for future use */
+#define _PY_EVAL_EVENTS_BITS 8
+#define _PY_EVAL_EVENTS_MASK ((1 << _PY_EVAL_EVENTS_BITS)-1)
+
+static inline void
+_Py_set_eval_breaker_bit(PyThreadState *tstate, uintptr_t bit)
+{
+    _Py_atomic_or_uintptr(&tstate->eval_breaker, bit);
+}
+
+static inline void
+_Py_unset_eval_breaker_bit(PyThreadState *tstate, uintptr_t bit)
+{
+    _Py_atomic_and_uintptr(&tstate->eval_breaker, ~bit);
+}
+
+static inline int
+_Py_eval_breaker_bit_is_set(PyThreadState *tstate, uintptr_t bit)
+{
+    uintptr_t b = _Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker);
+    return (b & bit) != 0;
+}
+
+// Free-threaded builds use these functions to set or unset a bit on all
+// threads in the given interpreter.
+void _Py_set_eval_breaker_bit_all(PyInterpreterState *interp, uintptr_t bit);
+void _Py_unset_eval_breaker_bit_all(PyInterpreterState *interp, uintptr_t bit);
 
 
 #ifdef __cplusplus

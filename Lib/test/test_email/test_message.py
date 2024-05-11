@@ -433,7 +433,7 @@ class TestEmailMessageBase:
                 --===
                 Content-Type: text/plain
 
-                Your message has bounced, ser.
+                Your message has bounced, sir.
 
                 --===
                 Content-Type: message/rfc822
@@ -487,10 +487,14 @@ class TestEmailMessageBase:
         self.assertEqual(list(m.iter_attachments()), attachments)
 
     def message_as_iter_parts(self, body_parts, attachments, parts, msg):
+        def _is_multipart_msg(msg):
+            return 'Content-Type: multipart' in msg
+
         m = self._str_msg(msg)
         allparts = list(m.walk())
         parts = [allparts[n] for n in parts]
-        self.assertEqual(list(m.iter_parts()), parts)
+        iter_parts = list(m.iter_parts()) if _is_multipart_msg(msg) else []
+        self.assertEqual(iter_parts, parts)
 
     class _TestContentManager:
         def get_content(self, msg, *args, **kw):
@@ -692,14 +696,16 @@ class TestEmailMessageBase:
             self.assertIsNone(part['Content-Disposition'])
 
     class _TestSetRaisingContentManager:
+        class CustomError(Exception):
+            pass
         def set_content(self, msg, content, *args, **kw):
-            raise Exception('test')
+            raise self.CustomError('test')
 
     def test_default_content_manager_for_add_comes_from_policy(self):
         cm = self._TestSetRaisingContentManager()
         m = self.message(policy=self.policy.clone(content_manager=cm))
         for method in ('add_related', 'add_alternative', 'add_attachment'):
-            with self.assertRaises(Exception) as ar:
+            with self.assertRaises(self._TestSetRaisingContentManager.CustomError) as ar:
                 getattr(m, method)('')
             self.assertEqual(str(ar.exception), 'test')
 
@@ -742,6 +748,35 @@ class TestEmailMessageBase:
         self.assertEqual(len(list(m.iter_attachments())), 2)
         self.assertEqual(m.get_payload(), orig)
 
+    get_payload_surrogate_params = {
+
+        'good_surrogateescape': (
+            "String that can be encod\udcc3\udcabd with surrogateescape",
+            b'String that can be encod\xc3\xabd with surrogateescape'
+            ),
+
+        'string_with_utf8': (
+            "String with utf-8 charactër",
+            b'String with utf-8 charact\xebr'
+            ),
+
+        'surrogate_and_utf8': (
+            "String that cannot be ëncod\udcc3\udcabd with surrogateescape",
+             b'String that cannot be \xebncod\\udcc3\\udcabd with surrogateescape'
+            ),
+
+        'out_of_range_surrogate': (
+            "String with \udfff cannot be encoded with surrogateescape",
+             b'String with \\udfff cannot be encoded with surrogateescape'
+            ),
+    }
+
+    def get_payload_surrogate_as_gh_94606(self, msg, expected):
+        """test for GH issue 94606"""
+        m = self._str_msg(msg)
+        payload = m.get_payload(decode=True)
+        self.assertEqual(expected, payload)
+
 
 class TestEmailMessage(TestEmailMessageBase, TestEmailBase):
     message = EmailMessage
@@ -774,6 +809,13 @@ class TestEmailMessage(TestEmailMessageBase, TestEmailBase):
                          1)
         self.assertEqual(len(m.as_string(maxheaderlen=34).strip().splitlines()),
                          6)
+
+    def test_as_string_unixform(self):
+        m = self._str_msg('test')
+        m.set_unixfrom('From foo@bar Thu Jan  1 00:00:00 1970')
+        self.assertEqual(m.as_string(unixfrom=True),
+                        'From foo@bar Thu Jan  1 00:00:00 1970\n\ntest')
+        self.assertEqual(m.as_string(unixfrom=False), '\ntest')
 
     def test_str_defaults_to_policy_max_line_length(self):
         m = self._str_msg('Subject: long line' + ' ab'*50 + '\n\n')
@@ -915,6 +957,34 @@ class TestEmailMessage(TestEmailMessageBase, TestEmailBase):
                          b'123456789 123456789 123456789 123456789 '
                          b'123456789-123456789\n 123456789 Hello '
                          b'=?utf-8?q?W=C3=B6rld!?= 123456789 123456789\n\n')
+
+    def test_get_body_malformed(self):
+        """test for bpo-42892"""
+        msg = textwrap.dedent("""\
+            Message-ID: <674392CA.4347091@email.au>
+            Date: Wed, 08 Nov 2017 08:50:22 +0700
+            From: Foo Bar <email@email.au>
+            MIME-Version: 1.0
+            To: email@email.com <email@email.com>
+            Subject: Python Email
+            Content-Type: multipart/mixed;
+            boundary="------------879045806563892972123996"
+            X-Global-filter:Messagescannedforspamandviruses:passedalltests
+
+            This is a multi-part message in MIME format.
+            --------------879045806563892972123996
+            Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+            Content-Transfer-Encoding: 7bit
+
+            Your message is ready to be sent with the following file or link
+            attachments:
+            XU89 - 08.11.2017
+            """)
+        m = self._str_msg(msg)
+        # In bpo-42892, this would raise
+        # AttributeError: 'str' object has no attribute 'is_attachment'
+        m.get_body()
+
 
 class TestMIMEPart(TestEmailMessageBase, TestEmailBase):
     # Doing the full test run here may seem a bit redundant, since the two
