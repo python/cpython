@@ -86,12 +86,6 @@ New Modules
 Improved Modules
 ================
 
-sqlite3
--------
-
-Disallow using a sequence of params with named placeholders.
-(Contributed by Erlend E. Aasland in :gh:`118928` and :gh:`101693`.)
-
 
 Optimizations
 =============
@@ -147,6 +141,11 @@ sqlite3
 
 * Remove :data:`!version` and :data:`!version_info` from :mod:`sqlite3`.
   (Contributed by Hugo van Kemenade in :gh:`118924`.)
+
+* Disallow using a sequence of params with named placeholders.
+  This had previously raised a :exc:`DeprecationWarning` since Python 3.12;
+  it will now raise a :exc:`sqlite3.ProgrammingError`.
+  (Contributed by Erlend E. Aasland in :gh:`118928` and :gh:`101693`.)
 
 typing
 ------
