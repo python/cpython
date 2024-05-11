@@ -313,7 +313,11 @@ def _dec_str_to_int_inner(s, GUARD=8):
     # value is at - or a little higher than - an integer, we can get an
     # off-by-1 error too low. So we add 2 instead of 1 if chopping lost
     # a fraction > 0.9.
-    log_ub = len(s) * _LOG_10_BASE_256
+
+    # The "WASI" test platfrom can complain about `len(s)` if it's too
+    # large to fit in its idea of "an index-sized integer".
+    lenS = s.__len__()
+    log_ub = lenS * _LOG_10_BASE_256
     log_ub_as_int = int(log_ub)
     w = log_ub_as_int + 1 + (log_ub - log_ub_as_int > 0.9)
     # And what if we'vv plain exhausted the limits of HW floats? We
@@ -322,9 +326,7 @@ def _dec_str_to_int_inner(s, GUARD=8):
     # trillions of bytes (unles they're just trying to "break things").
     if w.bit_length() >= 46:
         # "Only" had < 53 - 46 = 7 bits to spare in IEEE-754 double.
-        # embedding `len(s)` in the f-sring failed on some test
-        # platform (WASI)
-        raise ValueError(f"cannot convert string of len {s.__len__()} to int")
+        raise ValueError(f"cannot convert string of len {lenS} to int")
     with decimal.localcontext(_unbounded_dec_context) as ctx:
         D256 = D(256)
         pow256 = compute_powers(w, D256, BYTELIM)
