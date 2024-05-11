@@ -180,18 +180,18 @@ class _Target(typing.Generic[_S, _R]):
         await _llvm.run("clang", args_o, echo=self.verbose)
         return await self._parse(o)
 
-    async def _build_stencils(self) -> dict[str, _stencils.StencilGroup]:
+    async def _build_stencils(
+        self, work: pathlib.Path
+    ) -> dict[str, _stencils.StencilGroup]:
         generated_cases = PYTHON_EXECUTOR_CASES_C_H.read_text()
         opnames = sorted(re.findall(r"\n {8}case (\w+): \{\n", generated_cases))
         tasks = []
-        with tempfile.TemporaryDirectory() as tempdir:
-            work = pathlib.Path(tempdir).resolve()
-            async with asyncio.TaskGroup() as group:
-                coro = self._compile("trampoline", TOOLS_JIT / "trampoline.c", work)
-                tasks.append(group.create_task(coro, name="trampoline"))
-                for opname in opnames:
-                    coro = self._compile(opname, TOOLS_JIT_TEMPLATE_C, work)
-                    tasks.append(group.create_task(coro, name=opname))
+        async with asyncio.TaskGroup() as group:
+            coro = self._compile("trampoline", TOOLS_JIT / "trampoline.c", work)
+            tasks.append(group.create_task(coro, name="trampoline"))
+            for opname in opnames:
+                coro = self._compile(opname, TOOLS_JIT_TEMPLATE_C, work)
+                tasks.append(group.create_task(coro, name=opname))
         return {task.get_name(): task.result() for task in tasks}
 
     def build(
@@ -211,14 +211,18 @@ class _Target(typing.Generic[_S, _R]):
             and jit_stencils.read_text().startswith(digest)
         ):
             return
-        stencil_groups = asyncio.run(self._build_stencils())
-        with jit_stencils.open("w") as file:
-            file.write(digest)
-            if comment:
-                file.write(f"// {comment}\n\n")
-            file.write("")
-            for line in _writer.dump(stencil_groups):
-                file.write(f"{line}\n")
+        with tempfile.TemporaryDirectory() as tempdir:
+            work = pathlib.Path(tempdir).resolve()
+            stencil_groups = asyncio.run(self._build_stencils(work))
+            new_jit_stencils = work / "jit_stencils.h"
+            with new_jit_stencils.open("w") as file:
+                file.write(digest)
+                if comment:
+                    file.write(f"// {comment}\n\n")
+                file.write("")
+                for line in _writer.dump(stencil_groups):
+                    file.write(f"{line}\n")
+            new_jit_stencils.replace(jit_stencils)
 
 
 class _COFF(
