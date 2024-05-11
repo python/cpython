@@ -223,7 +223,7 @@ def _str_to_int_inner(s):
 #    print(float(mp.log(10, 256)).hex())
 _LOG_10_BASE_256 = float.fromhex('0x1.a934f0979a371p-2') # about 0.415
 
-# _apread is for internal testing. It maps a key to the number of times
+# _spread is for internal testing. It maps a key to the number of times
 # that condition obtained in _dec_str_to_int_inner:
 #     key 0 - quotient guess was right
 #     key 1 - quotient had to be boosted by 1, one time
