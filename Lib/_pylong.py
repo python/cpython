@@ -223,7 +223,7 @@ def _str_to_int_inner(s):
 #    print(float(mp.log(10, 256)).hex())
 _LOG_10_BASE_256 = float.fromhex('0x1.a934f0979a371p-2') # about 0.415
 
-# _apread is for internal testing. It maps a key to the number of times
+# _spread is for internal testing. It maps a key to the number of times
 # that condition obtained in _dec_str_to_int_inner:
 #     key 0 - quotient guess was right
 #     key 1 - quotient had to be boosted by 1, one time
@@ -295,7 +295,7 @@ def _dec_str_to_int_inner(s, *, GUARD=8):
 
     # How many base 256 digits are needed?. Mathematically, exactly
     # floor(log256(int(s))) + 1. There is no cheap way to compute this.
-    # But we can get an upper buond, and that's necessary for our error
+    # But we can get an upper bound, and that's necessary for our error
     # analysis to make sense. int(s) < 10**len(s), so the log needed is
     # < log256(10**len(s)) = len(s) * log256(10). However, using
     # finite-precision floating point for this, it's possible that the
@@ -310,7 +310,7 @@ def _dec_str_to_int_inner(s, *, GUARD=8):
     log_ub = lenS * _LOG_10_BASE_256
     log_ub_as_int = int(log_ub)
     w = log_ub_as_int + 1 + (log_ub - log_ub_as_int > 0.9)
-    # And what if we'vv plain exhausted the limits of HW floats? We
+    # And what if we have plain exhausted the limits of HW floats? We
     # could compute the log to any desired precision using `decimal`,
     # but it's not plausible that anyone will pass a string requiring
     # trillions of bytes (unles they're just trying to "break things").
