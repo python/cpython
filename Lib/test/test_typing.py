@@ -45,7 +45,7 @@ import typing
 import weakref
 import types
 
-from test.support import captured_stderr, cpython_only, infinite_recursion
+from test.support import captured_stderr, cpython_only, infinite_recursion, requires_docstrings, import_helper
 from test.typinganndata import ann_module695, mod_generics_cache, _typed_dict_helper
 
 
@@ -6325,6 +6325,8 @@ class ForwardRefTests(BaseTestCase):
         self.assertEqual(X | "x", Union[X, "x"])
         self.assertEqual("x" | X, Union["x", X])
 
+
+class InternalsTests(BaseTestCase):
     def test_deprecation_for_no_type_params_passed_to__evaluate(self):
         with self.assertWarnsRegex(
             DeprecationWarning,
@@ -6348,6 +6350,15 @@ class ForwardRefTests(BaseTestCase):
         ) as cm:
             self.assertIs(f._evaluate(globals(), {}, recursive_guard=frozenset()), int)
 
+        self.assertEqual(cm.filename, __file__)
+
+    def test_collect_parameters(self):
+        typing = import_helper.import_fresh_module("typing")
+        with self.assertWarnsRegex(
+            DeprecationWarning,
+            "The private _collect_parameters function is deprecated"
+        ) as cm:
+            typing._collect_parameters
         self.assertEqual(cm.filename, __file__)
 
 
@@ -10236,14 +10247,33 @@ class NoDefaultTests(BaseTestCase):
     def test_constructor(self):
         self.assertIs(NoDefault, type(NoDefault)())
         with self.assertRaises(TypeError):
-            NoDefault(1)
+            type(NoDefault)(1)
 
     def test_repr(self):
         self.assertEqual(repr(NoDefault), 'typing.NoDefault')
 
+    @requires_docstrings
+    def test_doc(self):
+        self.assertIsInstance(NoDefault.__doc__, str)
+
+    def test_class(self):
+        self.assertIs(NoDefault.__class__, type(NoDefault))
+
     def test_no_call(self):
         with self.assertRaises(TypeError):
             NoDefault()
+
+    def test_no_attributes(self):
+        with self.assertRaises(AttributeError):
+            NoDefault.foo = 3
+        with self.assertRaises(AttributeError):
+            NoDefault.foo
+
+        # TypeError is consistent with the behavior of NoneType
+        with self.assertRaises(TypeError):
+            type(NoDefault).foo = 3
+        with self.assertRaises(AttributeError):
+            type(NoDefault).foo
 
 
 class AllTests(BaseTestCase):
