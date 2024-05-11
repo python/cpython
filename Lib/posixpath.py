@@ -77,13 +77,11 @@ def join(a, *p):
     sep = _get_sep(a)
     path = a
     try:
-        if not p:
-            path[:0] + sep  #23780: Ensure compatible data type even if p is null.
         for b in p:
             b = os.fspath(b)
-            if b.startswith(sep):
+            if b.startswith(sep) or not path:
                 path = b
-            elif not path or path.endswith(sep):
+            elif path.endswith(sep):
                 path += b
             else:
                 path += sep + b
@@ -136,33 +134,53 @@ def splitdrive(p):
     return p[:0], p
 
 
-def splitroot(p):
-    """Split a pathname into drive, root and tail. On Posix, drive is always
-    empty; the root may be empty, a single slash, or two slashes. The tail
-    contains anything after the root. For example:
+try:
+    from posix import _path_splitroot_ex
+except ImportError:
+    def splitroot(p):
+        """Split a pathname into drive, root and tail. On Posix, drive is always
+        empty; the root may be empty, a single slash, or two slashes. The tail
+        contains anything after the root. For example:
 
-        splitroot('foo/bar') == ('', '', 'foo/bar')
-        splitroot('/foo/bar') == ('', '/', 'foo/bar')
-        splitroot('//foo/bar') == ('', '//', 'foo/bar')
-        splitroot('///foo/bar') == ('', '/', '//foo/bar')
-    """
-    p = os.fspath(p)
-    if isinstance(p, bytes):
-        sep = b'/'
-        empty = b''
-    else:
-        sep = '/'
-        empty = ''
-    if p[:1] != sep:
-        # Relative path, e.g.: 'foo'
-        return empty, empty, p
-    elif p[1:2] != sep or p[2:3] == sep:
-        # Absolute path, e.g.: '/foo', '///foo', '////foo', etc.
-        return empty, sep, p[1:]
-    else:
-        # Precisely two leading slashes, e.g.: '//foo'. Implementation defined per POSIX, see
-        # https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap04.html#tag_04_13
-        return empty, p[:2], p[2:]
+            splitroot('foo/bar') == ('', '', 'foo/bar')
+            splitroot('/foo/bar') == ('', '/', 'foo/bar')
+            splitroot('//foo/bar') == ('', '//', 'foo/bar')
+            splitroot('///foo/bar') == ('', '/', '//foo/bar')
+        """
+        p = os.fspath(p)
+        if isinstance(p, bytes):
+            sep = b'/'
+            empty = b''
+        else:
+            sep = '/'
+            empty = ''
+        if p[:1] != sep:
+            # Relative path, e.g.: 'foo'
+            return empty, empty, p
+        elif p[1:2] != sep or p[2:3] == sep:
+            # Absolute path, e.g.: '/foo', '///foo', '////foo', etc.
+            return empty, sep, p[1:]
+        else:
+            # Precisely two leading slashes, e.g.: '//foo'. Implementation defined per POSIX, see
+            # https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap04.html#tag_04_13
+            return empty, p[:2], p[2:]
+else:
+    def splitroot(p):
+        """Split a pathname into drive, root and tail. On Posix, drive is always
+        empty; the root may be empty, a single slash, or two slashes. The tail
+        contains anything after the root. For example:
+
+            splitroot('foo/bar') == ('', '', 'foo/bar')
+            splitroot('/foo/bar') == ('', '/', 'foo/bar')
+            splitroot('//foo/bar') == ('', '//', 'foo/bar')
+            splitroot('///foo/bar') == ('', '/', '//foo/bar')
+        """
+        p = os.fspath(p)
+        if isinstance(p, bytes):
+            # Optimisation: the drive is always empty
+            _, root, tail = _path_splitroot_ex(os.fsdecode(p))
+            return b'', os.fsencode(root), os.fsencode(tail)
+        return _path_splitroot_ex(p)
 
 
 # Return the tail (basename) part of a path, same as split(path)[1].
@@ -208,11 +226,14 @@ def ismount(path):
         parent = join(path, b'..')
     else:
         parent = join(path, '..')
-    parent = realpath(parent)
     try:
         s2 = os.lstat(parent)
-    except (OSError, ValueError):
-        return False
+    except OSError:
+        parent = realpath(parent)
+        try:
+            s2 = os.lstat(parent)
+        except OSError:
+            return False
 
     # path/.. on a different device as path or the same i-node as path
     return s1.st_dev != s2.st_dev or s1.st_ino == s2.st_ino
@@ -264,7 +285,7 @@ def expanduser(path):
             return path
         name = path[1:i]
         if isinstance(name, bytes):
-            name = name.decode('ascii')
+            name = os.fsdecode(name)
         try:
             pwent = pwd.getpwnam(name)
         except KeyError:
@@ -277,11 +298,8 @@ def expanduser(path):
         return path
     if isinstance(path, bytes):
         userhome = os.fsencode(userhome)
-        root = b'/'
-    else:
-        root = '/'
-    userhome = userhome.rstrip(root)
-    return (userhome + path[i:]) or root
+    userhome = userhome.rstrip(sep)
+    return (userhome + path[i:]) or sep
 
 
 # Expand paths containing shell variable substitutions.
@@ -511,15 +529,17 @@ def relpath(path, start=None):
         start = os.fspath(start)
 
     try:
-        start_list = [x for x in abspath(start).split(sep) if x]
-        path_list = [x for x in abspath(path).split(sep) if x]
+        start_tail = abspath(start).lstrip(sep)
+        path_tail = abspath(path).lstrip(sep)
+        start_list = start_tail.split(sep) if start_tail else []
+        path_list = path_tail.split(sep) if path_tail else []
         # Work out how much of the filepath is shared by start and path.
         i = len(commonprefix([start_list, path_list]))
 
         rel_list = [pardir] * (len(start_list)-i) + path_list[i:]
         if not rel_list:
             return curdir
-        return join(*rel_list)
+        return sep.join(rel_list)
     except (TypeError, AttributeError, BytesWarning, DeprecationWarning):
         genericpath._check_arg_types('relpath', path, start)
         raise
@@ -549,7 +569,7 @@ def commonpath(paths):
         split_paths = [path.split(sep) for path in paths]
 
         try:
-            isabs, = set(p[:1] == sep for p in paths)
+            isabs, = {p.startswith(sep) for p in paths}
         except ValueError:
             raise ValueError("Can't mix absolute and relative paths") from None
 

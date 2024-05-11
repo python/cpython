@@ -325,6 +325,7 @@ PyAPI_FUNC(int) _PyXI_HasCapturedException(_PyXI_session *session);
 // Export for _testinternalcapi shared extension
 PyAPI_FUNC(PyInterpreterState *) _PyXI_NewInterpreter(
     PyInterpreterConfig *config,
+    long *maybe_whence,
     PyThreadState **p_tstate,
     PyThreadState **p_save_tstate);
 PyAPI_FUNC(void) _PyXI_EndInterpreter(

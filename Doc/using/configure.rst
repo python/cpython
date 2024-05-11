@@ -389,6 +389,17 @@ Options for third-party dependencies
    C compiler and linker flags for ``libffi``, used by :mod:`ctypes` module,
    overriding ``pkg-config``.
 
+.. option:: LIBMPDEC_CFLAGS
+.. option:: LIBMPDEC_LIBS
+
+   C compiler and linker flags for ``libmpdec``, used by :mod:`decimal` module,
+   overriding ``pkg-config``.
+
+   .. note::
+
+      These environment variables have no effect unless
+      :option:`--with-system-libmpdec` is specified.
+
 .. option:: LIBLZMA_CFLAGS
 .. option:: LIBLZMA_LIBS
 
@@ -517,6 +528,15 @@ also be used to improve performance.
    Disable also semantic interposition in libpython if ``--enable-shared`` and
    GCC is used: add ``-fno-semantic-interposition`` to the compiler and linker
    flags.
+
+   .. note::
+
+      During the build, you may encounter compiler warnings about
+      profile data not being available for some source files.
+      These warnings are harmless, as only a subset of the code is exercised
+      during profile data acquisition.
+      To disable these warnings on Clang, manually suppress them by adding
+      ``-Wno-profile-instr-unprofiled`` to :envvar:`CFLAGS`.
 
    .. versionadded:: 3.6
 
@@ -784,10 +804,19 @@ Libraries options
 
 .. option:: --with-system-libmpdec
 
-   Build the ``_decimal`` extension module using an installed ``mpdec``
-   library, see the :mod:`decimal` module (default is no).
+   Build the ``_decimal`` extension module using an installed ``mpdecimal``
+   library, see the :mod:`decimal` module (default is yes).
 
    .. versionadded:: 3.3
+
+   .. versionchanged:: 3.13
+      Default to using the installed ``mpdecimal`` library.
+
+   .. deprecated-removed:: 3.13 3.15
+      A copy of the ``mpdecimal`` library sources will no longer be distributed
+      with Python 3.15.
+
+   .. seealso:: :option:`LIBMPDEC_CFLAGS` and :option:`LIBMPDEC_LIBS`.
 
 .. option:: --with-readline=readline|editline
 

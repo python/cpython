@@ -114,6 +114,10 @@ extern PyTypeObject _PyExc_MemoryError;
         .autoTSSkey = Py_tss_NEEDS_INIT, \
         .parser = _parser_runtime_state_INIT, \
         .ceval = { \
+            .pending_mainthread = { \
+                .max = MAXPENDINGCALLS_MAIN, \
+                .maxloop = MAXPENDINGCALLSLOOP_MAIN, \
+            }, \
             .perf = _PyEval_RUNTIME_PERF_INIT, \
         }, \
         .gilstate = { \
@@ -124,6 +128,10 @@ extern PyTypeObject _PyExc_MemoryError;
         }, \
         .faulthandler = _faulthandler_runtime_state_INIT, \
         .tracemalloc = _tracemalloc_runtime_state_INIT, \
+        .ref_tracer = { \
+            .tracer_func = NULL, \
+            .tracer_data = NULL, \
+        }, \
         .stoptheworld = { \
             .is_global = 1, \
         }, \
@@ -166,6 +174,10 @@ extern PyTypeObject _PyExc_MemoryError;
         .imports = IMPORTS_INIT, \
         .ceval = { \
             .recursion_limit = Py_DEFAULT_RECURSION_LIMIT, \
+            .pending = { \
+                .max = MAXPENDINGCALLS, \
+                .maxloop = MAXPENDINGCALLSLOOP, \
+            }, \
         }, \
         .gc = { \
             .enabled = 1, \

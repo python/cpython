@@ -14,6 +14,7 @@ extern "C" {
 #include "pycore_atexit.h"        // struct atexit_state
 #include "pycore_ceval_state.h"   // struct _ceval_state
 #include "pycore_code.h"          // struct callable_cache
+#include "pycore_codecs.h"        // struct codecs_state
 #include "pycore_context.h"       // struct _Py_context_state
 #include "pycore_crossinterp.h"   // struct _xidregistry
 #include "pycore_dict_state.h"    // struct _Py_dict_state
@@ -109,7 +110,8 @@ struct _is {
 #define _PyInterpreterState_WHENCE_LEGACY_CAPI 2
 #define _PyInterpreterState_WHENCE_CAPI 3
 #define _PyInterpreterState_WHENCE_XI 4
-#define _PyInterpreterState_WHENCE_MAX 4
+#define _PyInterpreterState_WHENCE_STDLIB 5
+#define _PyInterpreterState_WHENCE_MAX 5
     long _whence;
 
     /* Has been initialized to a safe state.
@@ -181,10 +183,7 @@ struct _is {
      possible to facilitate out-of-process observability
      tools. */
 
-    PyObject *codec_search_path;
-    PyObject *codec_search_cache;
-    PyObject *codec_error_registry;
-    int codecs_initialized;
+    struct codecs_state codecs;
 
     PyConfig config;
     unsigned long feature_flags;
@@ -246,6 +245,7 @@ struct _is {
     struct _Py_long_state long_state;
     struct _dtoa_state dtoa;
     struct _py_func_state func_state;
+    struct _py_code_state code_state;
 
     struct _Py_dict_state dict_state;
     struct _Py_exc_state exc_state;
@@ -315,6 +315,8 @@ PyAPI_FUNC(PyInterpreterState *) _PyInterpreterState_LookUpIDObject(PyObject *);
 PyAPI_FUNC(int) _PyInterpreterState_IDInitref(PyInterpreterState *);
 PyAPI_FUNC(int) _PyInterpreterState_IDIncref(PyInterpreterState *);
 PyAPI_FUNC(void) _PyInterpreterState_IDDecref(PyInterpreterState *);
+
+PyAPI_FUNC(int) _PyInterpreterState_IsReady(PyInterpreterState *interp);
 
 PyAPI_FUNC(long) _PyInterpreterState_GetWhence(PyInterpreterState *interp);
 extern void _PyInterpreterState_SetWhence(

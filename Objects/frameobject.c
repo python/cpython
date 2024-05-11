@@ -16,11 +16,738 @@
 
 #define OFF(x) offsetof(PyFrameObject, x)
 
+
+// Returns borrowed reference or NULL
+static PyObject *
+framelocalsproxy_getval(_PyInterpreterFrame *frame, PyCodeObject *co, int i)
+{
+    PyObject **fast = _PyFrame_GetLocalsArray(frame);
+    _PyLocals_Kind kind = _PyLocals_GetKind(co->co_localspluskinds, i);
+
+    PyObject *value = fast[i];
+    PyObject *cell = NULL;
+
+    if (value == NULL) {
+        return NULL;
+    }
+
+    if (kind == CO_FAST_FREE || kind & CO_FAST_CELL) {
+        // The cell was set when the frame was created from
+        // the function's closure.
+        assert(PyCell_Check(value));
+        cell = value;
+    }
+
+    if (cell != NULL) {
+        value = PyCell_GET(cell);
+    }
+
+    if (value == NULL) {
+        return NULL;
+    }
+
+    return value;
+}
+
+static int
+framelocalsproxy_getkeyindex(PyFrameObject *frame, PyObject* key, bool read)
+{
+    /*
+     * Returns the fast locals index of the key
+     *   - if read == true, returns the index if the value is not NULL
+     *   - if read == false, returns the index if the value is not hidden
+     */
+
+    assert(PyUnicode_CheckExact(key));
+
+    PyCodeObject *co = _PyFrame_GetCode(frame->f_frame);
+    int found_key = false;
+
+    // We do 2 loops here because it's highly possible the key is interned
+    // and we can do a pointer comparison.
+    for (int i = 0; i < co->co_nlocalsplus; i++) {
+        PyObject *name = PyTuple_GET_ITEM(co->co_localsplusnames, i);
+        if (name == key) {
+            found_key = true;
+            if (read) {
+                if (framelocalsproxy_getval(frame->f_frame, co, i) != NULL) {
+                    return i;
+                }
+            } else {
+                if (!(_PyLocals_GetKind(co->co_localspluskinds, i) & CO_FAST_HIDDEN)) {
+                    return i;
+                }
+            }
+        }
+    }
+
+    if (!found_key) {
+        // This is unlikely, but we need to make sure. This means the key
+        // is not interned.
+        for (int i = 0; i < co->co_nlocalsplus; i++) {
+            PyObject *name = PyTuple_GET_ITEM(co->co_localsplusnames, i);
+            if (_PyUnicode_EQ(name, key)) {
+                if (read) {
+                    if (framelocalsproxy_getval(frame->f_frame, co, i) != NULL) {
+                        return i;
+                    }
+                } else {
+                    if (!(_PyLocals_GetKind(co->co_localspluskinds, i) & CO_FAST_HIDDEN)) {
+                        return i;
+                    }
+                }
+            }
+        }
+    }
+
+    return -1;
+}
+
+static PyObject *
+framelocalsproxy_getitem(PyObject *self, PyObject *key)
+{
+    PyFrameObject* frame = ((PyFrameLocalsProxyObject*)self)->frame;
+    PyCodeObject* co = _PyFrame_GetCode(frame->f_frame);
+
+    if (PyUnicode_CheckExact(key)) {
+        int i = framelocalsproxy_getkeyindex(frame, key, true);
+        if (i >= 0) {
+            PyObject *value = framelocalsproxy_getval(frame->f_frame, co, i);
+            assert(value != NULL);
+            return Py_NewRef(value);
+        }
+    }
+
+    // Okay not in the fast locals, try extra locals
+
+    PyObject *extra = frame->f_extra_locals;
+    if (extra != NULL) {
+        PyObject *value = PyDict_GetItem(extra, key);
+        if (value != NULL) {
+            return Py_NewRef(value);
+        }
+    }
+
+    PyErr_Format(PyExc_KeyError, "local variable '%R' is not defined", key);
+    return NULL;
+}
+
+static int
+framelocalsproxy_setitem(PyObject *self, PyObject *key, PyObject *value)
+{
+    /* Merge locals into fast locals */
+    PyFrameObject* frame = ((PyFrameLocalsProxyObject*)self)->frame;
+    PyObject** fast = _PyFrame_GetLocalsArray(frame->f_frame);
+    PyCodeObject* co = _PyFrame_GetCode(frame->f_frame);
+
+    if (value == NULL) {
+        PyErr_SetString(PyExc_TypeError, "cannot remove variables from FrameLocalsProxy");
+        return -1;
+    }
+
+    if (PyUnicode_CheckExact(key)) {
+        int i = framelocalsproxy_getkeyindex(frame, key, false);
+        if (i >= 0) {
+            _Py_Executors_InvalidateDependency(PyInterpreterState_Get(), co, 1);
+
+            _PyLocals_Kind kind = _PyLocals_GetKind(co->co_localspluskinds, i);
+            PyObject *oldvalue = fast[i];
+            PyObject *cell = NULL;
+            if (kind == CO_FAST_FREE) {
+                // The cell was set when the frame was created from
+                // the function's closure.
+                assert(oldvalue != NULL && PyCell_Check(oldvalue));
+                cell = oldvalue;
+            } else if (kind & CO_FAST_CELL && oldvalue != NULL) {
+                if (PyCell_Check(oldvalue)) {
+                    cell = oldvalue;
+                }
+            }
+            if (cell != NULL) {
+                oldvalue = PyCell_GET(cell);
+                if (value != oldvalue) {
+                    PyCell_SET(cell, Py_XNewRef(value));
+                    Py_XDECREF(oldvalue);
+                }
+            } else if (value != oldvalue) {
+                Py_XSETREF(fast[i], Py_NewRef(value));
+            }
+            return 0;
+        }
+    }
+
+    // Okay not in the fast locals, try extra locals
+
+    PyObject *extra = frame->f_extra_locals;
+
+    if (extra == NULL) {
+        extra = PyDict_New();
+        if (extra == NULL) {
+            return -1;
+        }
+        frame->f_extra_locals = extra;
+    }
+
+    assert(PyDict_Check(extra));
+
+    return PyDict_SetItem(extra, key, value);
+}
+
+static int
+framelocalsproxy_merge(PyObject* self, PyObject* other)
+{
+    if (!PyDict_Check(other) && !PyFrameLocalsProxy_Check(other)) {
+        return -1;
+    }
+
+    PyObject *keys = PyMapping_Keys(other);
+    if (keys == NULL) {
+        return -1;
+    }
+
+    PyObject *iter = PyObject_GetIter(keys);
+    Py_DECREF(keys);
+    if (iter == NULL) {
+        return -1;
+    }
+
+    PyObject *key = NULL;
+    PyObject *value = NULL;
+
+    while ((key = PyIter_Next(iter)) != NULL) {
+        value = PyObject_GetItem(other, key);
+        if (value == NULL) {
+            Py_DECREF(key);
+            Py_DECREF(iter);
+            return -1;
+        }
+
+        if (framelocalsproxy_setitem(self, key, value) < 0) {
+            Py_DECREF(key);
+            Py_DECREF(value);
+            Py_DECREF(iter);
+            return -1;
+        }
+
+        Py_DECREF(key);
+        Py_DECREF(value);
+    }
+
+    Py_DECREF(iter);
+
+    return 0;
+}
+
+static PyObject *
+framelocalsproxy_keys(PyObject *self, void *Py_UNUSED(ignored))
+{
+    PyFrameObject *frame = ((PyFrameLocalsProxyObject*)self)->frame;
+    PyCodeObject *co = _PyFrame_GetCode(frame->f_frame);
+    PyObject *names = PyList_New(0);
+    if (names == NULL) {
+        return NULL;
+    }
+
+    for (int i = 0; i < co->co_nlocalsplus; i++) {
+        PyObject *val = framelocalsproxy_getval(frame->f_frame, co, i);
+        if (val) {
+            PyObject *name = PyTuple_GET_ITEM(co->co_localsplusnames, i);
+            if (PyList_Append(names, name) < 0) {
+                Py_DECREF(names);
+                return NULL;
+            }
+        }
+    }
+
+    // Iterate through the extra locals
+    if (frame->f_extra_locals) {
+        assert(PyDict_Check(frame->f_extra_locals));
+
+        Py_ssize_t i = 0;
+        PyObject *key = NULL;
+        PyObject *value = NULL;
+
+        while (PyDict_Next(frame->f_extra_locals, &i, &key, &value)) {
+            if (PyList_Append(names, key) < 0) {
+                Py_DECREF(names);
+                return NULL;
+            }
+        }
+    }
+
+    return names;
+}
+
+static void
+framelocalsproxy_dealloc(PyObject *self)
+{
+    PyObject_GC_UnTrack(self);
+    Py_CLEAR(((PyFrameLocalsProxyObject*)self)->frame);
+    Py_TYPE(self)->tp_free(self);
+}
+
+static PyObject *
+framelocalsproxy_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+    PyFrameLocalsProxyObject *self = (PyFrameLocalsProxyObject *)type->tp_alloc(type, 0);
+    if (self == NULL) {
+        return NULL;
+    }
+
+    PyFrameObject *frame = (PyFrameObject*)PyTuple_GET_ITEM(args, 0);
+    assert(PyFrame_Check(frame));
+
+    ((PyFrameLocalsProxyObject*)self)->frame = (PyFrameObject*)Py_NewRef(frame);
+
+    return (PyObject *)self;
+}
+
+static int
+framelocalsproxy_tp_clear(PyObject *self)
+{
+    Py_CLEAR(((PyFrameLocalsProxyObject*)self)->frame);
+    return 0;
+}
+
+static int
+framelocalsproxy_visit(PyObject *self, visitproc visit, void *arg)
+{
+    Py_VISIT(((PyFrameLocalsProxyObject*)self)->frame);
+    return 0;
+}
+
+static PyObject *
+framelocalsproxy_iter(PyObject *self)
+{
+    PyObject* keys = framelocalsproxy_keys(self, NULL);
+    if (keys == NULL) {
+        return NULL;
+    }
+
+    PyObject* iter = PyObject_GetIter(keys);
+    Py_XDECREF(keys);
+
+    return iter;
+}
+
+static PyObject *
+framelocalsproxy_richcompare(PyObject *self, PyObject *other, int op)
+{
+    if (PyFrameLocalsProxy_Check(other)) {
+        bool result = ((PyFrameLocalsProxyObject*)self)->frame == ((PyFrameLocalsProxyObject*)other)->frame;
+        if (op == Py_EQ) {
+            return PyBool_FromLong(result);
+        } else if (op == Py_NE) {
+            return PyBool_FromLong(!result);
+        }
+    } else if (PyDict_Check(other)) {
+        PyObject *dct = PyDict_New();
+        if (dct == NULL) {
+            return NULL;
+        }
+
+        if (PyDict_Update(dct, self) < 0) {
+            Py_DECREF(dct);
+            return NULL;
+        }
+
+        PyObject *result = PyObject_RichCompare(dct, other, op);
+        Py_DECREF(dct);
+        return result;
+    }
+
+    Py_RETURN_NOTIMPLEMENTED;
+}
+
+static PyObject *
+framelocalsproxy_repr(PyObject *self)
+{
+    int i = Py_ReprEnter(self);
+    if (i != 0) {
+        return i > 0 ? PyUnicode_FromString("{...}") : NULL;
+    }
+
+    PyObject *dct = PyDict_New();
+    if (dct == NULL) {
+        Py_ReprLeave(self);
+        return NULL;
+    }
+
+    if (PyDict_Update(dct, self) < 0) {
+        Py_DECREF(dct);
+        Py_ReprLeave(self);
+        return NULL;
+    }
+
+    PyObject *repr = PyObject_Repr(dct);
+    Py_DECREF(dct);
+
+    Py_ReprLeave(self);
+
+    return repr;
+}
+
+static PyObject*
+framelocalsproxy_or(PyObject *self, PyObject *other)
+{
+    if (!PyDict_Check(other) && !PyFrameLocalsProxy_Check(other)) {
+        Py_RETURN_NOTIMPLEMENTED;
+    }
+
+    PyObject *result = PyDict_New();
+    if (result == NULL) {
+        return NULL;
+    }
+
+    if (PyDict_Update(result, self) < 0) {
+        Py_DECREF(result);
+        return NULL;
+    }
+
+    if (PyDict_Update(result, other) < 0) {
+        Py_DECREF(result);
+        return NULL;
+    }
+
+    return result;
+}
+
+static PyObject*
+framelocalsproxy_inplace_or(PyObject *self, PyObject *other)
+{
+    if (!PyDict_Check(other) && !PyFrameLocalsProxy_Check(other)) {
+        Py_RETURN_NOTIMPLEMENTED;
+    }
+
+    if (framelocalsproxy_merge(self, other) < 0) {
+        Py_RETURN_NOTIMPLEMENTED;
+    }
+
+    return Py_NewRef(self);
+}
+
+static PyObject*
+framelocalsproxy_values(PyObject *self, void *Py_UNUSED(ignored))
+{
+    PyFrameObject *frame = ((PyFrameLocalsProxyObject*)self)->frame;
+    PyCodeObject *co = _PyFrame_GetCode(frame->f_frame);
+    PyObject *values = PyList_New(0);
+    if (values == NULL) {
+        return NULL;
+    }
+
+    for (int i = 0; i < co->co_nlocalsplus; i++) {
+        PyObject *value = framelocalsproxy_getval(frame->f_frame, co, i);
+        if (value) {
+            if (PyList_Append(values, value) < 0) {
+                Py_DECREF(values);
+                return NULL;
+            }
+        }
+    }
+
+    // Iterate through the extra locals
+    if (frame->f_extra_locals) {
+        Py_ssize_t j = 0;
+        PyObject *key = NULL;
+        PyObject *value = NULL;
+        while (PyDict_Next(frame->f_extra_locals, &j, &key, &value)) {
+            if (PyList_Append(values, value) < 0) {
+                Py_DECREF(values);
+                return NULL;
+            }
+        }
+    }
+
+    return values;
+}
+
+static PyObject *
+framelocalsproxy_items(PyObject *self, void *Py_UNUSED(ignored))
+{
+    PyFrameObject *frame = ((PyFrameLocalsProxyObject*)self)->frame;
+    PyCodeObject *co = _PyFrame_GetCode(frame->f_frame);
+    PyObject *items = PyList_New(0);
+    if (items == NULL) {
+        return NULL;
+    }
+
+    for (int i = 0; i < co->co_nlocalsplus; i++) {
+        PyObject *name = PyTuple_GET_ITEM(co->co_localsplusnames, i);
+        PyObject *value = framelocalsproxy_getval(frame->f_frame, co, i);
+
+        if (value) {
+            PyObject *pair = PyTuple_Pack(2, name, value);
+            if (pair == NULL) {
+                Py_DECREF(items);
+                return NULL;
+            }
+
+            if (PyList_Append(items, pair) < 0) {
+                Py_DECREF(items);
+                Py_DECREF(pair);
+                return NULL;
+            }
+
+            Py_DECREF(pair);
+        }
+    }
+
+    // Iterate through the extra locals
+    if (frame->f_extra_locals) {
+        Py_ssize_t j = 0;
+        PyObject *key = NULL;
+        PyObject *value = NULL;
+        while (PyDict_Next(frame->f_extra_locals, &j, &key, &value)) {
+            PyObject *pair = PyTuple_Pack(2, key, value);
+            if (pair == NULL) {
+                Py_DECREF(items);
+                return NULL;
+            }
+
+            if (PyList_Append(items, pair) < 0) {
+                Py_DECREF(items);
+                Py_DECREF(pair);
+                return NULL;
+            }
+
+            Py_DECREF(pair);
+        }
+    }
+
+    return items;
+}
+
+static Py_ssize_t
+framelocalsproxy_length(PyObject *self)
+{
+    PyFrameObject *frame = ((PyFrameLocalsProxyObject*)self)->frame;
+    PyCodeObject *co = _PyFrame_GetCode(frame->f_frame);
+    Py_ssize_t size = 0;
+
+    if (frame->f_extra_locals != NULL) {
+        assert(PyDict_Check(frame->f_extra_locals));
+        size += PyDict_Size(frame->f_extra_locals);
+    }
+
+    for (int i = 0; i < co->co_nlocalsplus; i++) {
+        if (framelocalsproxy_getval(frame->f_frame, co, i) != NULL) {
+            size++;
+        }
+    }
+    return size;
+}
+
+static int
+framelocalsproxy_contains(PyObject *self, PyObject *key)
+{
+    PyFrameObject *frame = ((PyFrameLocalsProxyObject*)self)->frame;
+
+    if (PyUnicode_CheckExact(key)) {
+        int i = framelocalsproxy_getkeyindex(frame, key, true);
+        if (i >= 0) {
+            return 1;
+        }
+    }
+
+    PyObject *extra = ((PyFrameObject*)frame)->f_extra_locals;
+    if (extra != NULL) {
+        return PyDict_Contains(extra, key);
+    }
+
+    return 0;
+}
+
+static PyObject* framelocalsproxy___contains__(PyObject *self, PyObject *key)
+{
+    int result = framelocalsproxy_contains(self, key);
+    if (result < 0) {
+        return NULL;
+    }
+    return PyBool_FromLong(result);
+}
+
+static PyObject*
+framelocalsproxy_update(PyObject *self, PyObject *other)
+{
+    if (framelocalsproxy_merge(self, other) < 0) {
+        PyErr_SetString(PyExc_TypeError, "update() argument must be dict or another FrameLocalsProxy");
+        return NULL;
+    }
+
+    Py_RETURN_NONE;
+}
+
+static PyObject*
+framelocalsproxy_get(PyObject* self, PyObject *const *args, Py_ssize_t nargs)
+{
+    if (nargs < 1 || nargs > 2) {
+        PyErr_SetString(PyExc_TypeError, "get expected 1 or 2 arguments");
+        return NULL;
+    }
+
+    PyObject *key = args[0];
+    PyObject *default_value = Py_None;
+
+    if (nargs == 2) {
+        default_value = args[1];
+    }
+
+    PyObject *result = framelocalsproxy_getitem(self, key);
+
+    if (result == NULL) {
+        if (PyErr_ExceptionMatches(PyExc_KeyError)) {
+            PyErr_Clear();
+            return Py_XNewRef(default_value);
+        }
+        return NULL;
+    }
+
+    return result;
+}
+
+static PyObject*
+framelocalsproxy_setdefault(PyObject* self, PyObject *const *args, Py_ssize_t nargs)
+{
+    if (nargs < 1 || nargs > 2) {
+        PyErr_SetString(PyExc_TypeError, "setdefault expected 1 or 2 arguments");
+        return NULL;
+    }
+
+    PyObject *key = args[0];
+    PyObject *default_value = Py_None;
+
+    if (nargs == 2) {
+        default_value = args[1];
+    }
+
+    PyObject *result = framelocalsproxy_getitem(self, key);
+
+    if (result == NULL) {
+        if (PyErr_ExceptionMatches(PyExc_KeyError)) {
+            PyErr_Clear();
+            if (framelocalsproxy_setitem(self, key, default_value) < 0) {
+                return NULL;
+            }
+            return Py_XNewRef(default_value);
+        }
+        return NULL;
+    }
+
+    return result;
+}
+
+static PyObject*
+framelocalsproxy_copy(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    PyObject* result = PyDict_New();
+
+    if (result == NULL) {
+        return NULL;
+    }
+
+    if (PyDict_Update(result, self) < 0) {
+        Py_DECREF(result);
+        return NULL;
+    }
+
+    return result;
+}
+
+static PyObject*
+framelocalsproxy_reversed(PyObject *self, void *Py_UNUSED(ignored))
+{
+    PyObject *result = framelocalsproxy_keys(self, NULL);
+
+    if (result == NULL) {
+        return NULL;
+    }
+
+    if (PyList_Reverse(result) < 0) {
+        Py_DECREF(result);
+        return NULL;
+    }
+    return result;
+}
+
+static PyNumberMethods framelocalsproxy_as_number = {
+    .nb_or = framelocalsproxy_or,
+    .nb_inplace_or = framelocalsproxy_inplace_or,
+};
+
+static PySequenceMethods framelocalsproxy_as_sequence = {
+    .sq_contains = framelocalsproxy_contains,
+};
+
+static PyMappingMethods framelocalsproxy_as_mapping = {
+    framelocalsproxy_length, // mp_length
+    framelocalsproxy_getitem, // mp_subscript
+    framelocalsproxy_setitem, // mp_ass_subscript
+};
+
+static PyMethodDef framelocalsproxy_methods[] = {
+    {"__contains__",  framelocalsproxy___contains__,      METH_O | METH_COEXIST,
+     NULL},
+    {"__getitem__",   framelocalsproxy_getitem,           METH_O | METH_COEXIST,
+     NULL},
+    {"update",        framelocalsproxy_update,            METH_O,
+     NULL},
+    {"__reversed__", _PyCFunction_CAST(framelocalsproxy_reversed),       METH_NOARGS,
+     NULL},
+    {"copy",         _PyCFunction_CAST(framelocalsproxy_copy),           METH_NOARGS,
+     NULL},
+    {"keys",         _PyCFunction_CAST(framelocalsproxy_keys),           METH_NOARGS,
+     NULL},
+    {"values",       _PyCFunction_CAST(framelocalsproxy_values),         METH_NOARGS,
+     NULL},
+    {"items",        _PyCFunction_CAST(framelocalsproxy_items),          METH_NOARGS,
+     NULL},
+    {"get",          _PyCFunction_CAST(framelocalsproxy_get),            METH_FASTCALL,
+     NULL},
+    {"setdefault",   _PyCFunction_CAST(framelocalsproxy_setdefault),     METH_FASTCALL,
+     NULL},
+    {NULL,            NULL}   /* sentinel */
+};
+
+PyTypeObject PyFrameLocalsProxy_Type = {
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    .tp_name = "FrameLocalsProxy",
+    .tp_basicsize = sizeof(PyFrameLocalsProxyObject),
+    .tp_dealloc = (destructor)framelocalsproxy_dealloc,
+    .tp_repr = &framelocalsproxy_repr,
+    .tp_as_number = &framelocalsproxy_as_number,
+    .tp_as_sequence = &framelocalsproxy_as_sequence,
+    .tp_as_mapping = &framelocalsproxy_as_mapping,
+    .tp_getattro = PyObject_GenericGetAttr,
+    .tp_setattro = PyObject_GenericSetAttr,
+    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
+    .tp_traverse = framelocalsproxy_visit,
+    .tp_clear = framelocalsproxy_tp_clear,
+    .tp_richcompare = framelocalsproxy_richcompare,
+    .tp_iter = framelocalsproxy_iter,
+    .tp_methods = framelocalsproxy_methods,
+    .tp_alloc = PyType_GenericAlloc,
+    .tp_new = framelocalsproxy_new,
+    .tp_free = PyObject_GC_Del,
+};
+
+PyObject *
+_PyFrameLocalsProxy_New(PyFrameObject *frame)
+{
+    PyObject* args = PyTuple_Pack(1, frame);
+    if (args == NULL) {
+        return NULL;
+    }
+
+    PyObject* proxy = (PyObject*)framelocalsproxy_new(&PyFrameLocalsProxy_Type, args, NULL);
+    Py_DECREF(args);
+    return proxy;
+}
+
 static PyMemberDef frame_memberlist[] = {
     {"f_trace_lines",   Py_T_BOOL,         OFF(f_trace_lines), 0},
     {NULL}      /* Sentinel */
 };
-
 
 static PyObject *
 frame_getlocals(PyFrameObject *f, void *closure)
@@ -30,23 +757,43 @@ frame_getlocals(PyFrameObject *f, void *closure)
         return NULL;
     }
     assert(!_PyFrame_IsIncomplete(f->f_frame));
-    PyObject *locals = _PyFrame_GetLocals(f->f_frame, 1);
-    if (locals) {
-        f->f_fast_as_locals = 1;
+
+    PyCodeObject *co = _PyFrame_GetCode(f->f_frame);
+
+    if (!(co->co_flags & CO_OPTIMIZED) && !_PyFrame_HasHiddenLocals(f->f_frame)) {
+        if (f->f_frame->f_locals == NULL) {
+            // We found cases when f_locals is NULL for non-optimized code.
+            // We fill the f_locals with an empty dict to avoid crash until
+            // we find the root cause.
+            f->f_frame->f_locals = PyDict_New();
+            if (f->f_frame->f_locals == NULL) {
+                return NULL;
+            }
+        }
+        return Py_NewRef(f->f_frame->f_locals);
     }
-    return locals;
+
+    return _PyFrameLocalsProxy_New(f);
 }
 
 int
 PyFrame_GetLineNumber(PyFrameObject *f)
 {
     assert(f != NULL);
-    if (f->f_lineno != 0) {
+    if (f->f_lineno == -1) {
+        // We should calculate it once. If we can't get the line number,
+        // set f->f_lineno to 0.
+        f->f_lineno = PyUnstable_InterpreterFrame_GetLine(f->f_frame);
+        if (f->f_lineno < 0) {
+            f->f_lineno = 0;
+            return -1;
+        }
+    }
+
+    if (f->f_lineno > 0) {
         return f->f_lineno;
     }
-    else {
-        return PyUnstable_InterpreterFrame_GetLine(f->f_frame);
-    }
+    return PyUnstable_InterpreterFrame_GetLine(f->f_frame);
 }
 
 static PyObject *
@@ -304,11 +1051,6 @@ mark_stacks(PyCodeObject *code_obj, int len)
         stacks[i] = UNINITIALIZED;
     }
     stacks[0] = EMPTY_STACK;
-    if (code_obj->co_flags & (CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR))
-    {
-        // Generators get sent None while starting:
-        stacks[0] = push_value(stacks[0], Object);
-    }
     int todo = 1;
     while (todo) {
         todo = 0;
@@ -590,20 +1332,6 @@ first_line_not_before(int *lines, int len, int line)
         return -1;
     }
     return result;
-}
-
-static bool
-frame_is_cleared(PyFrameObject *frame)
-{
-    assert(!_PyFrame_IsIncomplete(frame->f_frame));
-    if (frame->f_frame->stacktop == 0) {
-        return true;
-    }
-    if (frame->f_frame->owner == FRAME_OWNED_BY_GENERATOR) {
-        PyGenObject *gen = _PyFrame_GetGenerator(frame->f_frame);
-        return gen->gi_frame_state == FRAME_CLEARED;
-    }
-    return false;
 }
 
 static bool frame_is_suspended(PyFrameObject *frame)
@@ -897,6 +1625,7 @@ frame_dealloc(PyFrameObject *f)
     }
     Py_CLEAR(f->f_back);
     Py_CLEAR(f->f_trace);
+    Py_CLEAR(f->f_extra_locals);
     PyObject_GC_Del(f);
     Py_XDECREF(co);
     Py_TRASHCAN_END;
@@ -907,6 +1636,7 @@ frame_traverse(PyFrameObject *f, visitproc visit, void *arg)
 {
     Py_VISIT(f->f_back);
     Py_VISIT(f->f_trace);
+    Py_VISIT(f->f_extra_locals);
     if (f->f_frame->owner != FRAME_OWNED_BY_FRAME_OBJECT) {
         return 0;
     }
@@ -918,6 +1648,7 @@ static int
 frame_tp_clear(PyFrameObject *f)
 {
     Py_CLEAR(f->f_trace);
+    Py_CLEAR(f->f_extra_locals);
 
     /* locals and stack */
     PyObject **locals = _PyFrame_GetLocalsArray(f->f_frame);
@@ -1053,8 +1784,8 @@ _PyFrame_New_NoTrack(PyCodeObject *code)
     f->f_trace = NULL;
     f->f_trace_lines = 1;
     f->f_trace_opcodes = 0;
-    f->f_fast_as_locals = 0;
     f->f_lineno = 0;
+    f->f_extra_locals = NULL;
     return f;
 }
 
@@ -1201,103 +1932,54 @@ frame_get_var(_PyInterpreterFrame *frame, PyCodeObject *co, int i,
 }
 
 
-PyObject *
-_PyFrame_GetLocals(_PyInterpreterFrame *frame, int include_hidden)
+bool
+_PyFrame_HasHiddenLocals(_PyInterpreterFrame *frame)
 {
-    /* Merge fast locals into f->f_locals */
-    PyObject *locals = frame->f_locals;
-    if (locals == NULL) {
-        locals = frame->f_locals = PyDict_New();
-        if (locals == NULL) {
-            return NULL;
-        }
-    }
-    PyObject *hidden = NULL;
+    /*
+     * This function returns if there are hidden locals introduced by PEP 709,
+     * which are the isolated fast locals for inline comprehensions
+     */
+    PyCodeObject* co = _PyFrame_GetCode(frame);
 
-    /* If include_hidden, "hidden" fast locals (from inlined comprehensions in
-       module/class scopes) will be included in the returned dict, but not in
-       frame->f_locals; the returned dict will be a modified copy. Non-hidden
-       locals will still be updated in frame->f_locals. */
-    if (include_hidden) {
-        hidden = PyDict_New();
-        if (hidden == NULL) {
-            return NULL;
-        }
-    }
-
-    frame_init_get_vars(frame);
-
-    PyCodeObject *co = _PyFrame_GetCode(frame);
     for (int i = 0; i < co->co_nlocalsplus; i++) {
-        PyObject *value;  // borrowed reference
-        if (!frame_get_var(frame, co, i, &value)) {
-            continue;
-        }
-
-        PyObject *name = PyTuple_GET_ITEM(co->co_localsplusnames, i);
         _PyLocals_Kind kind = _PyLocals_GetKind(co->co_localspluskinds, i);
+
         if (kind & CO_FAST_HIDDEN) {
-            if (include_hidden && value != NULL) {
-                if (PyObject_SetItem(hidden, name, value) != 0) {
-                    goto error;
-                }
-            }
-            continue;
-        }
-        if (value == NULL) {
-            if (PyObject_DelItem(locals, name) != 0) {
-                if (PyErr_ExceptionMatches(PyExc_KeyError)) {
-                    PyErr_Clear();
-                }
-                else {
-                    goto error;
-                }
-            }
-        }
-        else {
-            if (PyObject_SetItem(locals, name, value) != 0) {
-                goto error;
+            PyObject* value = framelocalsproxy_getval(frame, co, i);
+
+            if (value != NULL) {
+                return true;
             }
         }
     }
 
-    if (include_hidden && PyDict_Size(hidden)) {
-        PyObject *innerlocals = PyDict_New();
-        if (innerlocals == NULL) {
-            goto error;
-        }
-        if (PyDict_Merge(innerlocals, locals, 1) != 0) {
-            Py_DECREF(innerlocals);
-            goto error;
-        }
-        if (PyDict_Merge(innerlocals, hidden, 1) != 0) {
-            Py_DECREF(innerlocals);
-            goto error;
-        }
-        locals = innerlocals;
-    }
-    else {
-        Py_INCREF(locals);
-    }
-    Py_CLEAR(hidden);
-
-    return locals;
-
-  error:
-    Py_XDECREF(hidden);
-    return NULL;
+    return false;
 }
 
 
-int
-_PyFrame_FastToLocalsWithError(_PyInterpreterFrame *frame)
+PyObject *
+_PyFrame_GetLocals(_PyInterpreterFrame *frame)
 {
-    PyObject *locals = _PyFrame_GetLocals(frame, 0);
-    if (locals == NULL) {
-        return -1;
+    // We should try to avoid creating the FrameObject if possible.
+    // So we check if the frame is a module or class level scope
+    PyCodeObject *co = _PyFrame_GetCode(frame);
+
+    if (!(co->co_flags & CO_OPTIMIZED) && !_PyFrame_HasHiddenLocals(frame)) {
+        if (frame->f_locals == NULL) {
+            // We found cases when f_locals is NULL for non-optimized code.
+            // We fill the f_locals with an empty dict to avoid crash until
+            // we find the root cause.
+            frame->f_locals = PyDict_New();
+            if (frame->f_locals == NULL) {
+                return NULL;
+            }
+        }
+        return Py_NewRef(frame->f_locals);
     }
-    Py_DECREF(locals);
-    return 0;
+
+    PyFrameObject* f = _PyFrame_GetFrameObject(frame);
+
+    return _PyFrameLocalsProxy_New(f);
 }
 
 
@@ -1351,112 +2033,19 @@ PyFrame_GetVarString(PyFrameObject *frame, const char *name)
 int
 PyFrame_FastToLocalsWithError(PyFrameObject *f)
 {
-    if (f == NULL) {
-        PyErr_BadInternalCall();
-        return -1;
-    }
-    assert(!_PyFrame_IsIncomplete(f->f_frame));
-    int err = _PyFrame_FastToLocalsWithError(f->f_frame);
-    if (err == 0) {
-        f->f_fast_as_locals = 1;
-    }
-    return err;
+    return 0;
 }
 
 void
 PyFrame_FastToLocals(PyFrameObject *f)
 {
-    int res;
-    assert(!_PyFrame_IsIncomplete(f->f_frame));
-    assert(!PyErr_Occurred());
-
-    res = PyFrame_FastToLocalsWithError(f);
-    if (res < 0)
-        PyErr_Clear();
-}
-
-void
-_PyFrame_LocalsToFast(_PyInterpreterFrame *frame, int clear)
-{
-    /* Merge locals into fast locals */
-    PyObject *locals;
-    PyObject **fast;
-    PyCodeObject *co;
-    locals = frame->f_locals;
-    if (locals == NULL) {
-        return;
-    }
-    fast = _PyFrame_GetLocalsArray(frame);
-    co = _PyFrame_GetCode(frame);
-
-    PyObject *exc = PyErr_GetRaisedException();
-    for (int i = 0; i < co->co_nlocalsplus; i++) {
-        _PyLocals_Kind kind = _PyLocals_GetKind(co->co_localspluskinds, i);
-
-        /* Same test as in PyFrame_FastToLocals() above. */
-        if (kind & CO_FAST_FREE && !(co->co_flags & CO_OPTIMIZED)) {
-            continue;
-        }
-        PyObject *name = PyTuple_GET_ITEM(co->co_localsplusnames, i);
-        PyObject *value = PyObject_GetItem(locals, name);
-        /* We only care about NULLs if clear is true. */
-        if (value == NULL) {
-            PyErr_Clear();
-            if (!clear) {
-                continue;
-            }
-        }
-        PyObject *oldvalue = fast[i];
-        PyObject *cell = NULL;
-        if (kind == CO_FAST_FREE) {
-            // The cell was set when the frame was created from
-            // the function's closure.
-            assert(oldvalue != NULL && PyCell_Check(oldvalue));
-            cell = oldvalue;
-        }
-        else if (kind & CO_FAST_CELL && oldvalue != NULL) {
-            /* Same test as in PyFrame_FastToLocals() above. */
-            if (PyCell_Check(oldvalue) &&
-                    _PyFrame_OpAlreadyRan(frame, MAKE_CELL, i)) {
-                // (likely) MAKE_CELL must have executed already.
-                cell = oldvalue;
-            }
-            // (unlikely) Otherwise, it must have been set to some
-            // initial value by an earlier call to PyFrame_LocalsToFast().
-        }
-        if (cell != NULL) {
-            oldvalue = PyCell_GET(cell);
-            if (value != oldvalue) {
-                PyCell_SET(cell, Py_XNewRef(value));
-                Py_XDECREF(oldvalue);
-            }
-        }
-        else if (value != oldvalue) {
-            if (value == NULL) {
-                // Probably can't delete this, since the compiler's flow
-                // analysis may have already "proven" that it exists here:
-                const char *e = "assigning None to unbound local %R";
-                if (PyErr_WarnFormat(PyExc_RuntimeWarning, 0, e, name)) {
-                    // It's okay if frame_obj is NULL, just try anyways:
-                    PyErr_WriteUnraisable((PyObject *)frame->frame_obj);
-                }
-                value = Py_NewRef(Py_None);
-            }
-            Py_XSETREF(fast[i], Py_NewRef(value));
-        }
-        Py_XDECREF(value);
-    }
-    PyErr_SetRaisedException(exc);
+    return;
 }
 
 void
 PyFrame_LocalsToFast(PyFrameObject *f, int clear)
 {
-    assert(!_PyFrame_IsIncomplete(f->f_frame));
-    if (f && f->f_fast_as_locals && !frame_is_cleared(f)) {
-        _PyFrame_LocalsToFast(f->f_frame, clear);
-        f->f_fast_as_locals = 0;
-    }
+    return;
 }
 
 int

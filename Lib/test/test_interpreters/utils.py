@@ -17,10 +17,13 @@ import unittest
 import warnings
 
 from test import support
-from test.support import os_helper
-from test.support import import_helper
 
-_interpreters = import_helper.import_module('_xxsubinterpreters')
+# We would use test.support.import_helper.import_module(),
+# but the indirect import of test.support.os_helper causes refleaks.
+try:
+    import _interpreters
+except ImportError as exc:
+    raise unittest.SkipTest(str(exc))
 from test.support import interpreters
 
 
@@ -399,6 +402,7 @@ class TestBase(unittest.TestCase):
     def temp_dir(self):
         tempdir = tempfile.mkdtemp()
         tempdir = os.path.realpath(tempdir)
+        from test.support import os_helper
         self.addCleanup(lambda: os_helper.rmtree(tempdir))
         return tempdir
 
@@ -509,6 +513,14 @@ class TestBase(unittest.TestCase):
         else:
             return text
 
+    def interp_exists(self, interpid):
+        try:
+            _interpreters.whence(interpid)
+        except _interpreters.InterpreterNotFoundError:
+            return False
+        else:
+            return True
+
     @requires_test_modules
     @contextlib.contextmanager
     def interpreter_from_capi(self, config=None, whence=None):
@@ -545,7 +557,12 @@ class TestBase(unittest.TestCase):
     @contextlib.contextmanager
     def interpreter_obj_from_capi(self, config='legacy'):
         with self.interpreter_from_capi(config) as interpid:
-            yield interpreters.Interpreter(interpid), interpid
+            interp = interpreters.Interpreter(
+                interpid,
+                _whence=_interpreters.WHENCE_CAPI,
+                _ownsref=False,
+            )
+            yield interp, interpid
 
     @contextlib.contextmanager
     def capturing(self, script):

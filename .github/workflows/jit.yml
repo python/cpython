@@ -12,6 +12,9 @@ on:
       - 'Python/optimizer*.c'
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
   cancel-in-progress: true
@@ -20,7 +23,7 @@ jobs:
   jit:
     name: ${{ matrix.target }} (${{ matrix.debug && 'Debug' || 'Release' }})
     runs-on: ${{ matrix.runner }}
-    timeout-minutes: 75
+    timeout-minutes: 90
     strategy:
       fail-fast: false
       matrix:
@@ -38,7 +41,7 @@ jobs:
           - true
           - false
         llvm:
-          - 16
+          - 18
         include:
           - target: i686-pc-windows-msvc/msvc
             architecture: Win32
@@ -72,14 +75,10 @@ jobs:
             architecture: aarch64
             runner: ubuntu-latest
             compiler: gcc
-            # These fail because of emulation, not because of the JIT:
-            exclude: test_unix_events test_init test_process_pool test_shutdown test_multiprocessing_fork test_cmd_line test_faulthandler test_os test_perf_profiler test_posix test_signal test_socket test_subprocess test_threading test_venv test_external_inspection
           - target: aarch64-unknown-linux-gnu/clang
             architecture: aarch64
             runner: ubuntu-latest
             compiler: clang
-            # These fail because of emulation, not because of the JIT:
-            exclude: test_unix_events test_init test_process_pool test_shutdown test_multiprocessing_fork test_cmd_line test_faulthandler test_os test_perf_profiler test_posix test_signal test_socket test_subprocess test_threading test_venv test_external_inspection
     env:
       CC: ${{ matrix.compiler }}
     steps:
@@ -91,37 +90,43 @@ jobs:
       - name: Native Windows
         if: runner.os == 'Windows' && matrix.architecture != 'ARM64'
         run: |
+          choco upgrade llvm -y
           choco install llvm --allow-downgrade --no-progress --version ${{ matrix.llvm }}
           ./PCbuild/build.bat --experimental-jit ${{ matrix.debug && '-d' || '--pgo' }} -p ${{ matrix.architecture }}
-          ./PCbuild/rt.bat ${{ matrix.debug && '-d' }} -p ${{ matrix.architecture }} -q --exclude ${{ matrix.exclude }} --multiprocess 0 --timeout 4500 --verbose2 --verbose3
+          ./PCbuild/rt.bat ${{ matrix.debug && '-d' || '' }} -p ${{ matrix.architecture }} -q --multiprocess 0 --timeout 4500 --verbose2 --verbose3
 
       # No PGO or tests (yet):
       - name: Emulated Windows
         if: runner.os == 'Windows' && matrix.architecture == 'ARM64'
         run: |
+          choco upgrade llvm -y
           choco install llvm --allow-downgrade --no-progress --version ${{ matrix.llvm }}
           ./PCbuild/build.bat --experimental-jit ${{ matrix.debug && '-d' || '' }} -p ${{ matrix.architecture }}
 
       - name: Native macOS
         if: runner.os == 'macOS'
         run: |
+          brew update
           brew install llvm@${{ matrix.llvm }}
           SDKROOT="$(xcrun --show-sdk-path)" \
             ./configure --enable-experimental-jit ${{ matrix.debug && '--with-pydebug' || '--enable-optimizations --with-lto' }}
           make all --jobs 4
-          ./python.exe -m test --exclude ${{ matrix.exclude }} --multiprocess 0 --timeout 4500 --verbose2 --verbose3
+          ./python.exe -m test --multiprocess 0 --timeout 4500 --verbose2 --verbose3
 
+      # --with-lto has been removed temporarily as a result of an open issue in LLVM 18 (see https://github.com/llvm/llvm-project/issues/87553)
       - name: Native Linux
         if: runner.os == 'Linux' && matrix.architecture == 'x86_64'
         run: |
           sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)" ./llvm.sh ${{ matrix.llvm }}
           export PATH="$(llvm-config-${{ matrix.llvm }} --bindir):$PATH"
-          ./configure --enable-experimental-jit ${{ matrix.debug && '--with-pydebug' || '--enable-optimizations --with-lto' }}
+          ./configure --enable-experimental-jit ${{ matrix.debug && '--with-pydebug' || '--enable-optimizations' }}
           make all --jobs 4
-          ./python -m test --exclude ${{ matrix.exclude }} --multiprocess 0 --timeout 4500 --verbose2 --verbose3
+          ./python -m test --multiprocess 0 --timeout 4500 --verbose2 --verbose3
 
+      # --with-lto has been removed temporarily as a result of an open issue in LLVM 18 (see https://github.com/llvm/llvm-project/issues/87553)
       - name: Emulated Linux
         if: runner.os == 'Linux' && matrix.architecture != 'x86_64'
+        # The --ignorefile on ./python -m test is used to exclude tests known to fail when running on an emulated Linux.
         run: |
           sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)" ./llvm.sh ${{ matrix.llvm }}
           export PATH="$(llvm-config-${{ matrix.llvm }} --bindir):$PATH"
@@ -136,6 +141,6 @@ jobs:
           CC="${{ matrix.compiler == 'clang' && 'clang --target=$HOST' || '$HOST-gcc' }}" \
             CPP="$CC --preprocess" \
             HOSTRUNNER=qemu-${{ matrix.architecture }} \
-            ./configure --enable-experimental-jit ${{ matrix.debug && '--with-pydebug' || '--enable-optimizations --with-lto' }} --build=x86_64-linux-gnu --host="$HOST" --with-build-python=../build/bin/python3 --with-pkg-config=no ac_cv_buggy_getaddrinfo=no ac_cv_file__dev_ptc=no ac_cv_file__dev_ptmx=yes
+            ./configure --enable-experimental-jit ${{ matrix.debug && '--with-pydebug' || '--enable-optimizations ' }} --build=x86_64-linux-gnu --host="$HOST" --with-build-python=../build/bin/python3 --with-pkg-config=no ac_cv_buggy_getaddrinfo=no ac_cv_file__dev_ptc=no ac_cv_file__dev_ptmx=yes
           make all --jobs 4
-          ./python -m test --exclude ${{ matrix.exclude }} --multiprocess 0 --timeout 4500 --verbose2 --verbose3
+          ./python -m test --ignorefile=Tools/jit/ignore-tests-emulated-linux.txt --multiprocess 0 --timeout 4500 --verbose2 --verbose3

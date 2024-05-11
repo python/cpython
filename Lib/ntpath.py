@@ -108,8 +108,6 @@ def join(path, *paths):
         seps = '\\/'
         colon_seps = ':\\/'
     try:
-        if not paths:
-            path[:0] + sep  #23780: Ensure compatible data type even if p is null.
         result_drive, result_root, result_path = splitroot(path)
         for p in paths:
             p_drive, p_root, p_path = splitroot(p)
@@ -169,56 +167,76 @@ def splitdrive(p):
     return drive, root + tail
 
 
-def splitroot(p):
-    """Split a pathname into drive, root and tail. The drive is defined
-    exactly as in splitdrive(). On Windows, the root may be a single path
-    separator or an empty string. The tail contains anything after the root.
-    For example:
+try:
+    from nt import _path_splitroot_ex
+except ImportError:
+    def splitroot(p):
+        """Split a pathname into drive, root and tail. The drive is defined
+        exactly as in splitdrive(). On Windows, the root may be a single path
+        separator or an empty string. The tail contains anything after the root.
+        For example:
 
-        splitroot('//server/share/') == ('//server/share', '/', '')
-        splitroot('C:/Users/Barney') == ('C:', '/', 'Users/Barney')
-        splitroot('C:///spam///ham') == ('C:', '/', '//spam///ham')
-        splitroot('Windows/notepad') == ('', '', 'Windows/notepad')
-    """
-    p = os.fspath(p)
-    if isinstance(p, bytes):
-        sep = b'\\'
-        altsep = b'/'
-        colon = b':'
-        unc_prefix = b'\\\\?\\UNC\\'
-        empty = b''
-    else:
-        sep = '\\'
-        altsep = '/'
-        colon = ':'
-        unc_prefix = '\\\\?\\UNC\\'
-        empty = ''
-    normp = p.replace(altsep, sep)
-    if normp[:1] == sep:
-        if normp[1:2] == sep:
-            # UNC drives, e.g. \\server\share or \\?\UNC\server\share
-            # Device drives, e.g. \\.\device or \\?\device
-            start = 8 if normp[:8].upper() == unc_prefix else 2
-            index = normp.find(sep, start)
-            if index == -1:
-                return p, empty, empty
-            index2 = normp.find(sep, index + 1)
-            if index2 == -1:
-                return p, empty, empty
-            return p[:index2], p[index2:index2 + 1], p[index2 + 1:]
+            splitroot('//server/share/') == ('//server/share', '/', '')
+            splitroot('C:/Users/Barney') == ('C:', '/', 'Users/Barney')
+            splitroot('C:///spam///ham') == ('C:', '/', '//spam///ham')
+            splitroot('Windows/notepad') == ('', '', 'Windows/notepad')
+        """
+        p = os.fspath(p)
+        if isinstance(p, bytes):
+            sep = b'\\'
+            altsep = b'/'
+            colon = b':'
+            unc_prefix = b'\\\\?\\UNC\\'
+            empty = b''
         else:
-            # Relative path with root, e.g. \Windows
-            return empty, p[:1], p[1:]
-    elif normp[1:2] == colon:
-        if normp[2:3] == sep:
-            # Absolute drive-letter path, e.g. X:\Windows
-            return p[:2], p[2:3], p[3:]
+            sep = '\\'
+            altsep = '/'
+            colon = ':'
+            unc_prefix = '\\\\?\\UNC\\'
+            empty = ''
+        normp = p.replace(altsep, sep)
+        if normp[:1] == sep:
+            if normp[1:2] == sep:
+                # UNC drives, e.g. \\server\share or \\?\UNC\server\share
+                # Device drives, e.g. \\.\device or \\?\device
+                start = 8 if normp[:8].upper() == unc_prefix else 2
+                index = normp.find(sep, start)
+                if index == -1:
+                    return p, empty, empty
+                index2 = normp.find(sep, index + 1)
+                if index2 == -1:
+                    return p, empty, empty
+                return p[:index2], p[index2:index2 + 1], p[index2 + 1:]
+            else:
+                # Relative path with root, e.g. \Windows
+                return empty, p[:1], p[1:]
+        elif normp[1:2] == colon:
+            if normp[2:3] == sep:
+                # Absolute drive-letter path, e.g. X:\Windows
+                return p[:2], p[2:3], p[3:]
+            else:
+                # Relative path with drive, e.g. X:Windows
+                return p[:2], empty, p[2:]
         else:
-            # Relative path with drive, e.g. X:Windows
-            return p[:2], empty, p[2:]
-    else:
-        # Relative path, e.g. Windows
-        return empty, empty, p
+            # Relative path, e.g. Windows
+            return empty, empty, p
+else:
+    def splitroot(p):
+        """Split a pathname into drive, root and tail. The drive is defined
+        exactly as in splitdrive(). On Windows, the root may be a single path
+        separator or an empty string. The tail contains anything after the root.
+        For example:
+
+            splitroot('//server/share/') == ('//server/share', '/', '')
+            splitroot('C:/Users/Barney') == ('C:', '/', 'Users/Barney')
+            splitroot('C:///spam///ham') == ('C:', '/', '//spam///ham')
+            splitroot('Windows/notepad') == ('', '', 'Windows/notepad')
+        """
+        p = os.fspath(p)
+        if isinstance(p, bytes):
+            drive, root, tail = _path_splitroot_ex(os.fsdecode(p))
+            return os.fsencode(drive), os.fsencode(root), os.fsencode(tail)
+        return _path_splitroot_ex(p)
 
 
 # Split a path in head (everything up to the last '/') and tail (the
@@ -787,6 +805,9 @@ supports_unicode_filenames = True
 def relpath(path, start=None):
     """Return a relative version of a path"""
     path = os.fspath(path)
+    if not path:
+        raise ValueError("no path specified")
+
     if isinstance(path, bytes):
         sep = b'\\'
         curdir = b'.'
@@ -798,22 +819,20 @@ def relpath(path, start=None):
 
     if start is None:
         start = curdir
+    else:
+        start = os.fspath(start)
 
-    if not path:
-        raise ValueError("no path specified")
-
-    start = os.fspath(start)
     try:
-        start_abs = abspath(normpath(start))
-        path_abs = abspath(normpath(path))
+        start_abs = abspath(start)
+        path_abs = abspath(path)
         start_drive, _, start_rest = splitroot(start_abs)
         path_drive, _, path_rest = splitroot(path_abs)
         if normcase(start_drive) != normcase(path_drive):
             raise ValueError("path is on mount %r, start on mount %r" % (
                 path_drive, start_drive))
 
-        start_list = [x for x in start_rest.split(sep) if x]
-        path_list = [x for x in path_rest.split(sep) if x]
+        start_list = start_rest.split(sep) if start_rest else []
+        path_list = path_rest.split(sep) if path_rest else []
         # Work out how much of the filepath is shared by start and path.
         i = 0
         for e1, e2 in zip(start_list, path_list):
@@ -824,7 +843,7 @@ def relpath(path, start=None):
         rel_list = [pardir] * (len(start_list)-i) + path_list[i:]
         if not rel_list:
             return curdir
-        return join(*rel_list)
+        return sep.join(rel_list)
     except (TypeError, ValueError, AttributeError, BytesWarning, DeprecationWarning):
         genericpath._check_arg_types('relpath', path, start)
         raise
