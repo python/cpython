@@ -794,6 +794,8 @@ class DummyPurePathTest(unittest.TestCase):
         self.assertEqual(P('/a/trailing.dot.').suffix, '.')
         self.assertEqual(P('a/..d.o.t..').suffix, '.')
         self.assertEqual(P('a/inn.er..dots').suffix, '.dots')
+        self.assertEqual(P('photo').suffix, '')
+        self.assertEqual(P('photo.jpg').suffix, '.jpg')
 
     @needs_windows
     def test_suffix_windows(self):
@@ -835,6 +837,8 @@ class DummyPurePathTest(unittest.TestCase):
         self.assertEqual(P('/a/trailing.dot.').suffixes, ['.dot', '.'])
         self.assertEqual(P('a/..d.o.t..').suffixes, ['.o', '.t', '.', '.'])
         self.assertEqual(P('a/inn.er..dots').suffixes, ['.er', '.', '.dots'])
+        self.assertEqual(P('photo').suffixes, [])
+        self.assertEqual(P('photo.jpg').suffixes, ['.jpg'])
 
     @needs_windows
     def test_suffixes_windows(self):
@@ -873,6 +877,8 @@ class DummyPurePathTest(unittest.TestCase):
         self.assertEqual(P('a/trailing.dot.').stem, 'trailing.dot')
         self.assertEqual(P('a/..d.o.t..').stem, '..d.o.t.')
         self.assertEqual(P('a/inn.er..dots').stem, 'inn.er.')
+        self.assertEqual(P('photo').stem, 'photo')
+        self.assertEqual(P('photo.jpg').stem, 'photo')
 
     @needs_windows
     def test_stem_windows(self):
@@ -887,6 +893,7 @@ class DummyPurePathTest(unittest.TestCase):
         self.assertEqual(P('c:a/.hg.rc').stem, '.hg')
         self.assertEqual(P('c:a/b.tar.gz').stem, 'b.tar')
         self.assertEqual(P('c:a/trailing.dot.').stem, 'trailing.dot')
+
     def test_with_name_common(self):
         P = self.cls
         self.assertEqual(P('a/b').with_name('d.xml'), P('a/d.xml'))

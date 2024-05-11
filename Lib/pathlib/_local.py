@@ -367,10 +367,11 @@ class PurePath(PurePathBase):
         """The final path component, minus its last suffix."""
         name = self.name
         i = name.rfind('.')
-        if name[:i].strip('.'):
-            return name[:i]
-        else:
-            return name
+        if i != -1:
+            stem = name[:i]
+            if stem.strip('.'):
+                return stem
+        return name
 
     @property
     def suffix(self):
@@ -379,12 +380,11 @@ class PurePath(PurePathBase):
 
         This includes the leading period. For example: '.txt'
         """
-        name = self.name
+        name = self.name.lstrip('.')
         i = name.rfind('.')
-        if name[:i].strip('.'):
+        if i != -1:
             return name[i:]
-        else:
-            return ''
+        return ''
 
     @property
     def suffixes(self):
