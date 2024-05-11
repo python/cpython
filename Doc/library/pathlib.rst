@@ -449,6 +449,10 @@ Pure paths provide the following methods and properties:
 
    This is commonly called the file extension.
 
+   .. versionchanged:: 3.14
+
+      A single dot ("``.``") is considered a valid suffix.
+
 .. attribute:: PurePath.suffixes
 
    A list of the path's suffixes, often called file extensions::
@@ -459,6 +463,10 @@ Pure paths provide the following methods and properties:
       ['.tar', '.gz']
       >>> PurePosixPath('my/library').suffixes
       []
+
+   .. versionchanged:: 3.14
+
+      A single dot ("``.``") is considered a valid suffix.
 
 
 .. attribute:: PurePath.stem
@@ -712,6 +720,11 @@ Pure paths provide the following methods and properties:
       >>> p = PureWindowsPath('README.txt')
       >>> p.with_suffix('')
       PureWindowsPath('README')
+
+   .. versionchanged:: 3.14
+
+      A single dot ("``.``") is considered a valid suffix. In previous
+      versions, :exc:`ValueError` is raised if a single dot is supplied.
 
 
 .. method:: PurePath.with_segments(*pathsegments)
