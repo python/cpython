@@ -34,9 +34,7 @@ import os
 
 # types
 if False:
-    from .reader import Reader
     from .historical_reader import HistoricalReader
-    from .console import Event
 
 
 class Command:
