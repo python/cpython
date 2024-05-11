@@ -145,6 +145,7 @@ from operator import itemgetter
 from collections import Counter, namedtuple, defaultdict
 
 _SQRT2 = sqrt(2.0)
+_SQRT1_2 = sqrt(0.5)
 _random = random
 
 # === Exceptions ===
@@ -919,9 +920,9 @@ def kde(data, h, kernel='normal', *, cumulative=False):
 
         case 'normal' | 'gauss':
             sqrt2pi = sqrt(2 * pi)
-            sqrt2 = sqrt(2)
+            sqrt1_2 = sqrt(0.5)
             K = lambda t: exp(-1/2 * t * t) / sqrt2pi
-            W = lambda t: 1/2 * (1.0 + erf(t / sqrt2))
+            W = lambda t: 0.5 * (1.0 + erf(t * sqrt1_2))
             support = None
 
         case 'logistic':
@@ -1533,7 +1534,7 @@ class NormalDist:
         "Cumulative distribution function.  P(X <= x)"
         if not self._sigma:
             raise StatisticsError('cdf() not defined when sigma is zero')
-        return 0.5 * (1.0 + erf((x - self._mu) / (self._sigma * _SQRT2)))
+        return 0.5 * (1.0 + erf(((x - self._mu) * _SQRT1_2) / self._sigma))
 
     def inv_cdf(self, p):
         """Inverse cumulative distribution function.  x : P(X <= x) = p
