@@ -86,6 +86,22 @@ New Modules
 Improved Modules
 ================
 
+tarfile
+-------
+
+* The default value of parameter *filter* of
+  :meth:`tarfile.TarFile.extract` and :meth:`tarfile.TarFile.extractall`
+  is now ``'data'`` to filter extracted tar archives and reject files or
+  modify their metadata by default.
+  The previous default was deprecated since Python 3.12.
+
+shutil
+------
+
+* The default value of parameter *filter* of :func:`shutil.unpack_archive`
+  is now ``'data'`` to filter extracted tar archives and reject files or
+  modify their metadata by default.
+  The previous default was deprecated since Python 3.12.
 
 Optimizations
 =============
