@@ -932,12 +932,12 @@ class PyLongModuleTests(unittest.TestCase):
     @support.requires_resource('cpu')
     @unittest.skipUnless(_pylong, "_pylong module required")
     def test_whitebox_dec_str_to_int_inner_failsafe(self):
-        # The number of "guard digits" used in _dec_str_to_int_inner may not
-        # be adequate for very large inputs, but we haven't yet found an
-        # input for which the default of 8 isn't. So normal tests can't reach
-        # its "oops! not good enough" block. Here we test a contrived input
-        # which _does_ reach that block, provided the number of guard digits
-        # is reduced to 3.
+        # While I believe the number of GUARD digits in this function is
+        # always enough so that no more than one correction step is ever
+        # needed, the code has a "failsafe" path that takes over if I'm
+        # wrong about that. We have no input that reaches that block.
+        # Here we test a contrived input that _does_ reach that block,
+        # provided the number of guard digits is reduced to 3.
         sn = "9" * 4000000
         n = 10**len(sn) - 1
         orig_spread = _pylong._spread.copy()

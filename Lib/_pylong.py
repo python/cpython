@@ -232,22 +232,11 @@ from collections import defaultdict
 _spread = defaultdict(int)
 del defaultdict
 
-def _dec_str_to_int_inner(s, GUARD=8):
+def _dec_str_to_int_inner(s, *, GUARD=8):
     BYTELIM = 512
     D = decimal.Decimal
     result = bytearray()
-    # We only want the integer part of divisions, so don't need to build
-    # the full multiplication tree. But using _just_ the number of
-    # digits expected in the integer part ignores too much. What's left
-    # out can have a very significant effect on the quotient. So we use
-    # GUARD additional digits. Exact analysis of this eluded me. 8 is
-    # more than enough so no more than 1 correction step was ever needed
-    # for all inputs tried through 2.5 billion digita. So,
-    # empirically, "good enough". Toward this end, testing on inputs
-    # with just "9" digits is most effective. If this is too small for
-    # some input much larger than ever tried, a different path detects
-    # that and usss divmod() instead (which ignores nothing, so is exact
-    # from the start - but also much slower).
+    # See notes at end of file for discussion of GUARD.
     assert GUARD > 0 # if 0, `decimal` can blow up - .prec 0 not allowed
 
     def inner(n, w):
@@ -290,10 +279,11 @@ def _dec_str_to_int_inner(s, GUARD=8):
                 lo -= p256
                 hi += 1
                 if lo >= p256:
+                    # Complete correction via an exact computation. I
+                    # believe it's not possible to get here provided
+                    # GUARD >= 5. It's tested by reducing GUARD below
+                    # that.
                     count = 999
-                    # Complete correction via an exact computation.
-                    # XXX we have no input that takes this branch
-                    # It's only tested by reducing GUARD a lot.
                     hi2, lo = divmod(lo, p256)
                     hi += hi2
             _spread[count] += 1
@@ -523,3 +513,62 @@ def int_divmod(a, b):
 #
 # I revisited tha code, and found ways to improve and simplify it. The
 # crossover point is at about 3.4 million digits now.
+#
+# GUARD digits
+# ------------
+# We only want the integer part of divisions, so don't need to build
+# the full multiplication tree. But using _just_ the number of
+# digits expected in the integer part ignores too much. What's left
+# out can have a very significant effect on the quotient. So we use
+# GUARD additional digits.
+#
+# The default 8 is more than enough so no more than 1 correction step
+# was ever needed for all inputs tried through 2.5 billion digita. In
+# fact, I believe 5 guard digis are always enougn - but the proof is
+# very involved, so better safe than sorry.
+#
+# Short course:
+#
+# If prec is the decimal precision in effect, and we're rounding down,
+# the result of an operation is exactly equal to the infinitely precise
+# result times 1-e for some real e with 0 <= e < 10**(1-prec). We have
+# 3 operations: chopping n back to prec digits, likewise for 1/256**w2,
+# and also for their product.
+#
+# So the computed product is exactly equal to the true product times
+# (1-e1)*(1-e2)*(1-e3); since the e's are all very small, an excellent
+# approximation to the second factor is 1-(e1+e2+e3) (the 2nd and 3rd
+# order terms in the expanded product are too tiny to matter). If
+# they're all as large as possible, that's 1 - 3*10**(1-prec). This,
+# BTW, is all bog-standard FP error analysis.
+#
+# That implies the computed product is within 1 of the true product
+# provided prec >= log10(true_product) + 1.47712125.
+#
+# Here are telegraphic details, rephrasing the initial condition in
+# equivalent ways, step by step:
+#
+# prod - prod * (1 - 3*10**(1-prec)) <= 1
+# prod - prod + prod * 3*10**(1-prec)) <= 1
+# prod * 3*10**(1-prec)) <= 1
+# 10**(log10(prod)) * 3*10**(1-prec)) <= 1
+# 3*10**(1-prec+log10(prod))) <= 1
+# 10**(1-prec+log10(prod))) <= 1/3
+# 1-prec+log10(prod) <= log10(1/3) = -0.47712125
+# -prec <= -1.47712125 - log10(prod)
+# prec >= log10(prod) + 1.47712125
+#
+# n.adjusted() - p256.adjusted() is s crude integer approximation to
+# log10(true_product) - but prec is necessarily an int too, so adding a
+# few guard digita is always enough to compensate for that.
+#
+# Also skipping why cutting the reciprocal to p256.adjusted() + GUARD
+# digits to begin with is good enough. The precondition n < 256**w is
+# needed to establish that the true product can't be too large for the
+# reciprocal approximation to be too narrow.
+#
+# But since this is just a sketch of a proof ;-), the code uses the
+# emprically tested 8 instead of 5. 3 digits more or less makes no
+# practical difference to speed - these ints are huge. And while
+# increasing GUARD above 5 may not be necessary, every increase cuts the
+# percentage of cases that need a correction at all.
