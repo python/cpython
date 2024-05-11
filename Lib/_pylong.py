@@ -281,7 +281,7 @@ def _dec_str_to_int_inner(s, *, GUARD=8):
                 if lo >= p256:
                     # Complete correction via an exact computation. I
                     # believe it's not possible to get here provided
-                    # GUARD >= 5. It's tested by reducing GUARD below
+                    # GUARD >= 3. It's tested by reducing GUARD below
                     # that.
                     count = 999
                     hi2, lo = divmod(lo, p256)
@@ -329,12 +329,12 @@ def _dec_str_to_int_inner(s, *, GUARD=8):
         ctx.traps[decimal.Inexact] = 0
         ctx.rounding = decimal.ROUND_DOWN
         for k, v in pow256.items():
-            # No need to save more precision in the reciprocal than the
-            # power of 256 has, plus some guard digits to absorb most
-            # relevant rounding errors. This is highly signficant:
+            # No need to save much more precision in the reciprocal than
+            # the power of 256 has, plus some guard digits to absorb
+            # most relevant rounding errors. This is highly signficant:
             # 1/2**i has the same number of significant decimal digits
             # as 5**i, generally over twice the number in 2**i,
-            ctx.prec = v.adjusted() + GUARD
+            ctx.prec = v.adjusted() + GUARD + 2
             # The unary "+" chope the reciprocal back to that precision.
             pow256[k] = v, +rpow256[k]
         del rpow256 # exact reciprocals no longer needed
@@ -559,16 +559,32 @@ def int_divmod(a, b):
 # prec >= log10(prod) + 1.47712125
 #
 # n.adjusted() - p256.adjusted() is s crude integer approximation to
-# log10(true_product) - but prec is necessarily an int too, so adding a
-# few guard digita is always enough to compensate for that.
+# log10(true_product) - but prec is necessarily an int too, and via
+# tedious case analysis it can be shown that the "crude xpproaximation"
+# is always an upper bouns on what's needed (it's either spot on, or
+# one larger than necessary).
 #
 # Also skipping why cutting the reciprocal to p256.adjusted() + GUARD
 # digits to begin with is good enough. The precondition n < 256**w is
 # needed to establish that the true product can't be too large for the
-# reciprocal approximation to be too narrow.
+# reciprocal approximation to be too narrow. But read on for more ;-)
 #
 # But since this is just a sketch of a proof ;-), the code uses the
 # empirically tested 8 instead of 5. 3 digits more or less makes no
 # practical difference to speed - these ints are huge. And while
 # increasing GUARD above 5 may not be necessary, every increase cuts the
 # percentage of cases that need a correction at all.
+#
+# LATER: doing this analysis pointed out an error: our division isn't
+# exactly "balanced", in that when `w` is odd the integer part of
+# n/256**w2 can be larger than 256**w2. The code used enough working
+# precision in the multiply then, but the precommputed reciprocal
+# approximation didn't have that many good digits to give. This was
+# repaired by retaining 2 more digits in the reciprocal.
+#
+# After that, I believe GUARD=3 should be enough. Which was "the
+# obvious" conclusion I leaped to after deriving `prec >= log10(prod) +
+# 1.47712125` (adding the fractional part of the log to 1.47 ... could
+# push that over 2, and then the ceiling is needed to get an integer >=
+# to that). But, at that time, I knew GUARDs of 3 and 4 "didn't work".
+

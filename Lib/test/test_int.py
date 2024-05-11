@@ -937,13 +937,13 @@ class PyLongModuleTests(unittest.TestCase):
         # needed, the code has a "failsafe" path that takes over if I'm
         # wrong about that. We have no input that reaches that block.
         # Here we test a contrived input that _does_ reach that block,
-        # provided the number of guard digits is reduced to 3.
-        sn = "9" * 4000000
-        n = 10**len(sn) - 1
+        # provided the number of guard digits is reduced to 1.
+        sn = "6" * (4000000 - 1)
+        n = (10**len(sn) - 1) // 9 * 6
         orig_spread = _pylong._spread.copy()
         _pylong._spread.clear()
         try:
-            self.assertEqual(n, _pylong._dec_str_to_int_inner(sn, GUARD=3))
+            self.assertEqual(n, _pylong._dec_str_to_int_inner(sn, GUARD=1))
             self.assertIn(999, _pylong._spread)
         finally:
             _pylong._spread.clear()
