@@ -949,5 +949,23 @@ class PyLongModuleTests(unittest.TestCase):
             _pylong._spread.clear()
             _pylong._spread.update(orig_spread)
 
+    @unittest.skipUnless(_pylong, "pylong module required")
+    def test_whitebox_dec_str_to_int_inner_monster(self):
+        # I don't think anyone has enough RAM o build a string long enough
+        # for this function to complain. So lie about the string length.
+
+        class LyingStr(str):
+            def __len__(self):
+                return int((1 << 47) / _pylong._LOG_10_BASE_256)
+
+        liar = LyingStr("42")
+        # We have to pass the liar directly to the complaining function. If we
+        # just try `int(liar)`, earlier layers will replace it with plain old
+        # "43".
+        self.assertRaisesRegex(ValueError,
+            f"^cannot convert string of len {len(liar)} to int$",
+            _pylong._dec_str_to_int_inner,
+            liar)
+
 if __name__ == "__main__":
     unittest.main()
