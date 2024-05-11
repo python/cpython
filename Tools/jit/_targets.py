@@ -218,7 +218,6 @@ class _Target(typing.Generic[_S, _R]):
                 file.write(digest)
                 if comment:
                     file.write(f"// {comment}\n\n")
-                file.write("")
                 for line in _writer.dump(stencil_groups):
                     file.write(f"{line}\n")
             jit_stencils_new.replace(jit_stencils)
