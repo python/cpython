@@ -323,9 +323,8 @@ def _dec_str_to_int_inner(s, GUARD=8):
     if w.bit_length() >= 46:
         # "Only" had < 53 - 46 = 7 bits to spare in IEEE-754 double.
         # embedding `len(s)` in the f-sring failed on some test
-        # platforms - don't know why
-        L = len(s)
-        raise ValueError(f"cannot convert string of len {L} to int")
+        # platform (WASI)
+        raise ValueError(f"cannot convert string of len {s.__len__()} to int")
     with decimal.localcontext(_unbounded_dec_context) as ctx:
         D256 = D(256)
         pow256 = compute_powers(w, D256, BYTELIM)

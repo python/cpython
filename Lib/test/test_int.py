@@ -966,9 +966,8 @@ class PyLongModuleTests(unittest.TestCase):
         # (don't know what that is):
         # OverflowError: cannot fit 'int' into an index-sized integer
         # So a random stab at worming around that.
-        L = len(liar)
         self.assertRaisesRegex(ValueError,
-            f"^cannot convert string of len {L} to int$",
+            f"^cannot convert string of len {liar.__len__()} to int$",
             _pylong._dec_str_to_int_inner,
             liar)
 
