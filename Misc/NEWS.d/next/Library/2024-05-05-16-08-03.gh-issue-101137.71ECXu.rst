@@ -1,1 +1,0 @@
-Mime type ``text/x-rst`` is now supported by :mod:`mimetypes`.

@@ -1,5 +1,5 @@
-:mod:`logging` --- Logging facility for Python
-==============================================
+:mod:`!logging` --- Logging facility for Python
+===============================================
 
 .. module:: logging
    :synopsis: Flexible event logging system for applications.
@@ -1204,7 +1204,7 @@ functions.
    most programs will want to carefully and explicitly control the logging
    configuration, and should therefore prefer creating a module-level logger and
    calling :meth:`Logger.debug` (or other level-specific methods) on it, as
-   described at the beginnning of this documentation.
+   described at the beginning of this documentation.
 
 
 .. function:: info(msg, *args, **kwargs)

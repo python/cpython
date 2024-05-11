@@ -42,6 +42,7 @@
     </style>
 {{ super() }}
 
+{%- if not embedded %}
 <meta name="readthedocs-addons-api-version" content="1">
 <script type="text/javascript">
  function onSwitch(event) {
@@ -127,4 +128,5 @@
    }
  });
 </script>
+{%- endif %}
 {% endblock %}

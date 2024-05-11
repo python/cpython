@@ -638,6 +638,23 @@ framelocalsproxy_setdefault(PyObject* self, PyObject *const *args, Py_ssize_t na
 }
 
 static PyObject*
+framelocalsproxy_copy(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    PyObject* result = PyDict_New();
+
+    if (result == NULL) {
+        return NULL;
+    }
+
+    if (PyDict_Update(result, self) < 0) {
+        Py_DECREF(result);
+        return NULL;
+    }
+
+    return result;
+}
+
+static PyObject*
 framelocalsproxy_reversed(PyObject *self, void *Py_UNUSED(ignored))
 {
     PyObject *result = framelocalsproxy_keys(self, NULL);
@@ -676,6 +693,8 @@ static PyMethodDef framelocalsproxy_methods[] = {
     {"update",        framelocalsproxy_update,            METH_O,
      NULL},
     {"__reversed__", _PyCFunction_CAST(framelocalsproxy_reversed),       METH_NOARGS,
+     NULL},
+    {"copy",         _PyCFunction_CAST(framelocalsproxy_copy),           METH_NOARGS,
      NULL},
     {"keys",         _PyCFunction_CAST(framelocalsproxy_keys),           METH_NOARGS,
      NULL},
@@ -742,6 +761,15 @@ frame_getlocals(PyFrameObject *f, void *closure)
     PyCodeObject *co = _PyFrame_GetCode(f->f_frame);
 
     if (!(co->co_flags & CO_OPTIMIZED) && !_PyFrame_HasHiddenLocals(f->f_frame)) {
+        if (f->f_frame->f_locals == NULL) {
+            // We found cases when f_locals is NULL for non-optimized code.
+            // We fill the f_locals with an empty dict to avoid crash until
+            // we find the root cause.
+            f->f_frame->f_locals = PyDict_New();
+            if (f->f_frame->f_locals == NULL) {
+                return NULL;
+            }
+        }
         return Py_NewRef(f->f_frame->f_locals);
     }
 
@@ -1937,6 +1965,15 @@ _PyFrame_GetLocals(_PyInterpreterFrame *frame)
     PyCodeObject *co = _PyFrame_GetCode(frame);
 
     if (!(co->co_flags & CO_OPTIMIZED) && !_PyFrame_HasHiddenLocals(frame)) {
+        if (frame->f_locals == NULL) {
+            // We found cases when f_locals is NULL for non-optimized code.
+            // We fill the f_locals with an empty dict to avoid crash until
+            // we find the root cause.
+            frame->f_locals = PyDict_New();
+            if (frame->f_locals == NULL) {
+                return NULL;
+            }
+        }
         return Py_NewRef(frame->f_locals);
     }
 
