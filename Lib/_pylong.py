@@ -524,7 +524,7 @@ def int_divmod(a, b):
 #
 # The default 8 is more than enough so no more than 1 correction step
 # was ever needed for all inputs tried through 2.5 billion digita. In
-# fact, I believe 5 guard digis are always enougn - but the proof is
+# fact, I believe 5 guard digits are always enough - but the proof is
 # very involved, so better safe than sorry.
 #
 # Short course:
