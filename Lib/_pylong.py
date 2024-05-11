@@ -511,7 +511,7 @@ def int_divmod(a, b):
 # by a cached reciprocal approximation instead, fixing up errors
 # afterwards. This reduced the crossover point significantly,
 #
-# I revisited tha code, and found ways to improve and simplify it. The
+# I revisited the code, and found ways to improve and simplify it. The
 # crossover point is at about 3.4 million digits now.
 #
 # GUARD digits
