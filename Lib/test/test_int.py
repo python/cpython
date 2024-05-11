@@ -962,6 +962,11 @@ class PyLongModuleTests(unittest.TestCase):
         # We have to pass the liar directly to the complaining function. If we
         # just try `int(liar)`, earlier layers will replace it with plain old
         # "43".
+        # Embedding `len(liar)` into the f-string failed on the WASI testbot
+        # (don't know what that is):
+        # OverflowError: cannot fit 'int' into an index-sized integer
+        # So a random stab at worming around that.
+        L = len(liar)
         self.assertRaisesRegex(ValueError,
             f"^cannot convert string of len {len(liar)} to int$",
             _pylong._dec_str_to_int_inner,
