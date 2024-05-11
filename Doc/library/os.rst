@@ -2644,7 +2644,7 @@ features:
    to the file is not made available until the original file is no longer in use.
 
    .. audit-event:: os.remove path,dir_fd os.remove
-                    os.unlink path,dir_fd os.unlink
+                    os.remove path,dir_fd os.unlink
 
    .. versionchanged:: 3.3
       Added the *dir_fd* parameter.
