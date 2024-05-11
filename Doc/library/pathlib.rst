@@ -582,6 +582,10 @@ Pure paths provide the following methods and properties:
       >>> PurePath('a/b.py').match(pattern)
       True
 
+   .. note::
+      The recursive wildcard "``**``" isn't supported by this method (it acts
+      like non-recursive "``*``".)
+
    .. versionchanged:: 3.12
       Accepts an object implementing the :class:`os.PathLike` interface.
 
