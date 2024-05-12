@@ -44,6 +44,8 @@ printing space-separated values. There are several ways to format output.
      >>> yes_votes = 42_572_654
      >>> no_votes = 43_132_495
      >>> percentage = yes_votes / (yes_votes + no_votes)
+     >>> # Print yes_votes padded with spaces and a negative sign only for negative numbers
+     >>> # Also print percentage multiplied by 100, with 2 decimal places and followed by a percent sign:
      >>> '{:-9} YES votes  {:2.2%}'.format(yes_votes, percentage)
      ' 42572654 YES votes  49.67%'
 
