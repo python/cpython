@@ -1,0 +1,2 @@
+Fixes random.choices undefined behavior when some weights are not finite or
+negative.
