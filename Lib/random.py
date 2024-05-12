@@ -468,7 +468,7 @@ class Random(_random.Random):
             if weights is None:
                 floor = _floor
                 n += 0.0    # convert to float for a small speed improvement
-                return [population[floor(random() * n)] for i in _repeat(None, k)]
+                return [population[floor(random() * n)] for _ in _repeat(None, k)]
             try:
                 cum_weights = list(_accumulate(weights))
             except TypeError:
@@ -490,7 +490,7 @@ class Random(_random.Random):
         bisect = _bisect
         hi = n - 1
         return [population[bisect(cum_weights, random() * total, 0, hi)]
-                for i in _repeat(None, k)]
+                for _ in _repeat(None, k)]
 
 
     ## -------------------- real-valued distributions  -------------------
