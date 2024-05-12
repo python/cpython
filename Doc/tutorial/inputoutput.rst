@@ -199,7 +199,12 @@ notation. ::
    Jack: 4098; Sjoerd: 4127; Dcab: 8637678
 
 This is particularly useful in combination with the built-in function
-:func:`vars`, which returns a dictionary containing all local variables.
+:func:`vars`, which returns a dictionary containing all local variables. ::
+
+   >>> table = {k: str(v) for k, v in vars().items()}
+   >>> message = " ".join([f'{k}: ' + '{' + k +'};' for k in table.keys()])
+   >>> print(message.format(**table))
+   __name__: __main__; __doc__: None; __package__: None; __loader__: <class '_frozen_importlib.BuiltinImporter'>; __spec__: None; __annotations__: {}; __builtins__: <module 'builtins' (built-in)>;
 
 As an example, the following lines produce a tidily aligned
 set of columns giving integers and their squares and cubes::
