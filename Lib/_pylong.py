@@ -324,7 +324,7 @@ def _dec_str_to_int_inner(s, *, GUARD=8):
         # We're going to do inexact, chopped arithmetic, multiplying by
         # an approximation to the reciprocal of 256**i. We chop to get a
         # lower bound on the true integer quotient. Our approximation is
-        # a lower bound, the multiply is chopped too, and
+        # a lower bound, the multiplication is chopped too, and
         # to_integral_value() is also chopped.
         ctx.traps[decimal.Inexact] = 0
         ctx.rounding = decimal.ROUND_DOWN
