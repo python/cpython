@@ -566,9 +566,9 @@ def int_divmod(a, b):
 # log10(9), It also giver 0 for 1E20/9E20 (`.adjusted()` doesn't look at
 # the digits at all - it just gives the power-of-10 exponent of the most
 # significnt digit, whatever it may be). But in that case it's the
-# ceiling of the true log 10 (which is a bit larger than -1). So "it's
-# close", but since it may be as bad as (but no worse than) 1 too
-# small, we have to assume the worst: 1 too small.
+# ceiling of the true log10 (which is a bit larger than -1). So "it's
+# close", but since it may be as bad as (but no worse than) 1 too small,
+# we have to assume the worst: 1 too small.
 #
 # Also skipping why cutting the reciprocal to p256.adjusted() + GUARD
 # digits to begin with is good enough. The precondition n < 256**w is
