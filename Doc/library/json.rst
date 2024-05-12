@@ -214,14 +214,17 @@ Basic Usage
    .. versionchanged:: 3.6
       All optional parameters are now :ref:`keyword-only <keyword-only_parameter>`.
 
+   .. versionchanged:: 3.14
+      Added support for ``allow_nan='null'``. Passing any string value
+      other than ``'null'`` for ``allow_nan`` now raises a
+      :warning:`DeprecationWarning`.
+
    .. note::
 
       Unlike :mod:`pickle` and :mod:`marshal`, JSON is not a framed protocol,
       so trying to serialize multiple objects with repeated calls to
       :func:`dump` using the same *fp* will result in an invalid JSON file.
 
-   .. versionchanged:: 3.13
-      Added support for ``allow_nan='null'``.
 
 .. function:: dumps(obj, *, skipkeys=False, ensure_ascii=True, \
                     check_circular=True, allow_nan=True, cls=None, \
@@ -498,8 +501,10 @@ Encoders and Decoders
    .. versionchanged:: 3.6
       All parameters are now :ref:`keyword-only <keyword-only_parameter>`.
 
-   .. versionchanged:: 3.13
-      Added support for ``allow_nan='null'``.
+   .. versionchanged:: 3.14
+      Added support for ``allow_nan='null'``. Passing any string value
+      other than ``'null'`` for ``allow_nan`` now raises a
+      :warning:`DeprecationWarning`.
 
    .. method:: default(o)
 

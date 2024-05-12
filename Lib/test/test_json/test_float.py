@@ -55,6 +55,10 @@ class TestFloat:
         res = self.loads(out)
         self.assertEqual(res, [-1.3, 1e100, None, 1234, -0.0, None])
 
+    def test_allow_nan_string_deprecation(self):
+        with self.assertWarns(DeprecationWarning):
+            self.dumps(2.3, allow_nan="true")
+
     def test_allow_nan_non_boolean(self):
         # check that exception gets propagated as expected
         with self.assertRaises(TypeError):
