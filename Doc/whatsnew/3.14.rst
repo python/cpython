@@ -90,7 +90,7 @@ json
 ----
 
 * Add support for ``allow_nan='as_null'`` when encoding to JSON. This converts
-  floating-point infinities and NaNs to a JSON ``null``, for compatibility
+  floating-point infinities and NaNs to a JSON ``null``, for alignment
   with ECMAScript's ``JSON.stringify``.
   (Contributed by Mark Dickinson in :gh:`115246`.)
 
