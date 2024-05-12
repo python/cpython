@@ -14617,6 +14617,56 @@ unicode_new_impl(PyTypeObject *type, PyObject *x, const char *encoding,
     return unicode;
 }
 
+static const char *
+arg_as_utf8(PyObject *obj, const char *name)
+{
+    if (!PyUnicode_Check(obj)) {
+        PyErr_Format(PyExc_TypeError,
+                     "str() argument '%s' must be str, not %T",
+                     name, obj);
+        return NULL;
+    }
+    return _PyUnicode_AsUTF8NoNUL(obj);
+}
+
+static PyObject *
+unicode_vectorcall(PyObject *type, PyObject *const *args,
+                   size_t nargsf, PyObject *kwnames)
+{
+    assert(Py_Is(_PyType_CAST(type), &PyUnicode_Type));
+
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+    if (kwnames != NULL && PyTuple_GET_SIZE(kwnames) != 0) {
+        // Fallback to unicode_new()
+        PyObject *tuple = _PyTuple_FromArray(args, nargs);
+        if (tuple == NULL) {
+            return NULL;
+        }
+        PyObject *dict = _PyStack_AsDict(args + nargs, kwnames);
+        if (dict == NULL) {
+            Py_DECREF(tuple);
+            return NULL;
+        }
+        PyObject *ret = unicode_new(_PyType_CAST(type), tuple, dict);
+        Py_DECREF(tuple);
+        Py_DECREF(dict);
+        return ret;
+    }
+    if (!_PyArg_CheckPositional("str", nargs, 0, 3)) {
+        return NULL;
+    }
+    if (nargs == 0) {
+        return unicode_get_empty();
+    }
+    PyObject *object = args[0];
+    if (nargs == 1) {
+        return PyObject_Str(object);
+    }
+    const char *encoding = arg_as_utf8(args[1], "encoding");
+    const char *errors = (nargs == 3) ? arg_as_utf8(args[2], "errors") : NULL;
+    return PyUnicode_FromEncodedObject(object, encoding, errors);
+}
+
 static PyObject *
 unicode_subtype_new(PyTypeObject *type, PyObject *unicode)
 {
@@ -14758,6 +14808,7 @@ PyTypeObject PyUnicode_Type = {
     0,                            /* tp_alloc */
     unicode_new,                  /* tp_new */
     PyObject_Del,                 /* tp_free */
+    .tp_vectorcall = unicode_vectorcall,
 };
 
 /* Initialize the Unicode implementation */
@@ -15390,7 +15441,11 @@ init_fs_encoding(PyThreadState *tstate)
 PyStatus
 _PyUnicode_InitEncodings(PyThreadState *tstate)
 {
-    PyStatus status = init_fs_encoding(tstate);
+    PyStatus status = _PyCodec_InitRegistry(tstate->interp);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+    status = init_fs_encoding(tstate);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
@@ -15486,6 +15541,7 @@ static PyMethodDef _string_methods[] = {
 
 static PyModuleDef_Slot module_slots[] = {
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
 };
 

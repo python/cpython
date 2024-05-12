@@ -8,6 +8,7 @@ import unittest
 from pathlib._abc import UnsupportedOperation, ParserBase, PurePathBase, PathBase
 import posixpath
 
+from test.support import is_wasi
 from test.support.os_helper import TESTFN
 
 
@@ -1429,10 +1430,10 @@ class DummyPath(PathBase):
         return "{}({!r})".format(self.__class__.__name__, self.as_posix())
 
     def stat(self, *, follow_symlinks=True):
-        if follow_symlinks:
-            path = str(self.resolve())
+        if follow_symlinks or self.name in ('', '.', '..'):
+            path = str(self.resolve(strict=True))
         else:
-            path = str(self.parent.resolve() / self.name)
+            path = str(self.parent.resolve(strict=True) / self.name)
         if path in self._files:
             st_mode = stat.S_IFREG
         elif path in self._directories:
@@ -1741,8 +1742,9 @@ class DummyPathTest(DummyPurePathTest):
     def test_glob_posix(self):
         P = self.cls
         p = P(self.base)
+        q = p / "FILEa"
         given = set(p.glob("FILEa"))
-        expect = set()
+        expect = {q} if q.exists() else set()
         self.assertEqual(given, expect)
         self.assertEqual(set(p.glob("FILEa*")), set())
 
@@ -1753,8 +1755,6 @@ class DummyPathTest(DummyPurePathTest):
         self.assertEqual(set(p.glob("FILEa")), { P(self.base, "fileA") })
         self.assertEqual(set(p.glob("*a\\")), { P(self.base, "dirA/") })
         self.assertEqual(set(p.glob("F*a")), { P(self.base, "fileA") })
-        self.assertEqual(set(map(str, p.glob("FILEa"))), {f"{p}\\fileA"})
-        self.assertEqual(set(map(str, p.glob("F*a"))), {f"{p}\\fileA"})
 
     def test_glob_empty_pattern(self):
         P = self.cls
@@ -1857,8 +1857,9 @@ class DummyPathTest(DummyPurePathTest):
     def test_rglob_posix(self):
         P = self.cls
         p = P(self.base, "dirC")
+        q = p / "dirD" / "FILEd"
         given = set(p.rglob("FILEd"))
-        expect = set()
+        expect = {q} if q.exists() else set()
         self.assertEqual(given, expect)
         self.assertEqual(set(p.rglob("FILEd*")), set())
 
@@ -1868,7 +1869,6 @@ class DummyPathTest(DummyPurePathTest):
         p = P(self.base, "dirC")
         self.assertEqual(set(p.rglob("FILEd")), { P(self.base, "dirC/dirD/fileD") })
         self.assertEqual(set(p.rglob("*\\")), { P(self.base, "dirC/dirD/") })
-        self.assertEqual(set(map(str, p.rglob("FILEd"))), {f"{p}\\dirD\\fileD"})
 
     @needs_symlinks
     def test_rglob_recurse_symlinks_common(self):
@@ -1921,6 +1921,8 @@ class DummyPathTest(DummyPurePathTest):
                   }
         self.assertEqual(given, {p / x for x in expect})
 
+    # See https://github.com/WebAssembly/wasi-filesystem/issues/26
+    @unittest.skipIf(is_wasi, "WASI resolution of '..' parts doesn't match POSIX")
     def test_glob_dotdot(self):
         # ".." is not special in globs.
         P = self.cls
@@ -1931,7 +1933,11 @@ class DummyPathTest(DummyPurePathTest):
         self.assertEqual(set(p.glob("dirA/../file*")), { P(self.base, "dirA/../fileA") })
         self.assertEqual(set(p.glob("dirA/../file*/..")), set())
         self.assertEqual(set(p.glob("../xyzzy")), set())
-        self.assertEqual(set(p.glob("xyzzy/..")), set())
+        if self.cls.parser is posixpath:
+            self.assertEqual(set(p.glob("xyzzy/..")), set())
+        else:
+            # ".." segments are normalized first on Windows, so this path is stat()able.
+            self.assertEqual(set(p.glob("xyzzy/..")), { P(self.base, "xyzzy", "..") })
         self.assertEqual(set(p.glob("/".join([".."] * 50))), { P(self.base, *[".."] * 50)})
 
     @needs_symlinks

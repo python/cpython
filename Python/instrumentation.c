@@ -6,6 +6,7 @@
 #include "pycore_call.h"
 #include "pycore_ceval.h"         // _PY_EVAL_EVENTS_BITS
 #include "pycore_code.h"          // _PyCode_Clear_Executors()
+#include "pycore_critical_section.h"
 #include "pycore_frame.h"
 #include "pycore_interp.h"
 #include "pycore_long.h"
@@ -13,11 +14,42 @@
 #include "pycore_namespace.h"
 #include "pycore_object.h"
 #include "pycore_opcode_metadata.h" // IS_VALID_OPCODE, _PyOpcode_Caches
+#include "pycore_pyatomic_ft_wrappers.h" // FT_ATOMIC_STORE_UINTPTR_RELEASE
 #include "pycore_pyerrors.h"
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 
 /* Uncomment this to dump debugging output when assertions fail */
 // #define INSTRUMENT_DEBUG 1
+
+#if defined(Py_DEBUG) && defined(Py_GIL_DISABLED)
+
+#define ASSERT_WORLD_STOPPED_OR_LOCKED(obj)                         \
+    if (!_PyInterpreterState_GET()->stoptheworld.world_stopped) {   \
+        _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(obj);             \
+    }
+#define ASSERT_WORLD_STOPPED() assert(_PyInterpreterState_GET()->stoptheworld.world_stopped);
+
+#else
+
+#define ASSERT_WORLD_STOPPED_OR_LOCKED(obj)
+#define ASSERT_WORLD_STOPPED()
+
+#endif
+
+#ifdef Py_GIL_DISABLED
+
+#define LOCK_CODE(code)                                             \
+    assert(!_PyInterpreterState_GET()->stoptheworld.world_stopped); \
+    Py_BEGIN_CRITICAL_SECTION(code)
+
+#define UNLOCK_CODE()   Py_END_CRITICAL_SECTION()
+
+#else
+
+#define LOCK_CODE(code)
+#define UNLOCK_CODE()
+
+#endif
 
 PyObject _PyInstrumentation_DISABLE = _PyObject_HEAD_INIT(&PyBaseObject_Type);
 
@@ -236,14 +268,15 @@ get_events(_Py_GlobalMonitors *m, int tool_id)
  * 8 bit value.
  * if line_delta == -128:
  *     line = None # represented as -1
- * elif line_delta == -127:
+ * elif line_delta == -127 or line_delta == -126:
  *     line = PyCode_Addr2Line(code, offset * sizeof(_Py_CODEUNIT));
  * else:
  *     line = first_line  + (offset >> OFFSET_SHIFT) + line_delta;
  */
 
 #define NO_LINE -128
-#define COMPUTED_LINE -127
+#define COMPUTED_LINE_LINENO_CHANGE -127
+#define COMPUTED_LINE -126
 
 #define OFFSET_SHIFT 4
 
@@ -270,7 +303,7 @@ compute_line(PyCodeObject *code, int offset, int8_t line_delta)
 
         return -1;
     }
-    assert(line_delta == COMPUTED_LINE);
+    assert(line_delta == COMPUTED_LINE || line_delta == COMPUTED_LINE_LINENO_CHANGE);
     /* Look it up */
     return PyCode_Addr2Line(code, offset * sizeof(_Py_CODEUNIT));
 }
@@ -278,6 +311,8 @@ compute_line(PyCodeObject *code, int offset, int8_t line_delta)
 int
 _PyInstruction_GetLength(PyCodeObject *code, int offset)
 {
+    ASSERT_WORLD_STOPPED_OR_LOCKED(code);
+
     int opcode = _PyCode_CODE(code)[offset].op.code;
     assert(opcode != 0);
     assert(opcode != RESERVED);
@@ -449,6 +484,8 @@ valid_opcode(int opcode)
 static void
 sanity_check_instrumentation(PyCodeObject *code)
 {
+    ASSERT_WORLD_STOPPED_OR_LOCKED(code);
+
     _PyCoMonitoringData *data = code->_co_monitoring;
     if (data == NULL) {
         return;
@@ -477,10 +514,6 @@ sanity_check_instrumentation(PyCodeObject *code)
             opcode = data->per_instruction_opcodes[i];
             if (!is_instrumented(opcode)) {
                 CHECK(_PyOpcode_Deopt[opcode] == opcode);
-            }
-            if (data->per_instruction_tools) {
-                uint8_t tools = active_monitors.tools[PY_MONITORING_EVENT_INSTRUCTION];
-                CHECK((tools & data->per_instruction_tools[i]) == data->per_instruction_tools[i]);
             }
         }
         if (opcode == INSTRUMENTED_LINE) {
@@ -588,9 +621,10 @@ de_instrument(PyCodeObject *code, int i, int event)
         return;
     }
     CHECK(_PyOpcode_Deopt[deinstrumented] == deinstrumented);
-    *opcode_ptr = deinstrumented;
+    FT_ATOMIC_STORE_UINT8_RELAXED(*opcode_ptr, deinstrumented);
     if (_PyOpcode_Caches[deinstrumented]) {
-        instr[1].counter = adaptive_counter_warmup();
+        FT_ATOMIC_STORE_UINT16_RELAXED(instr[1].counter.as_counter,
+                                       adaptive_counter_warmup().as_counter);
     }
 }
 
@@ -638,8 +672,6 @@ de_instrument_per_instruction(PyCodeObject *code, int i)
     }
     assert(*opcode_ptr != INSTRUMENTED_INSTRUCTION);
     assert(instr->op.code != INSTRUMENTED_INSTRUCTION);
-    /* Keep things clean for sanity check */
-    code->_co_monitoring->per_instruction_opcodes[i] = 0;
 }
 
 
@@ -665,8 +697,10 @@ instrument(PyCodeObject *code, int i)
         int deopt = _PyOpcode_Deopt[opcode];
         int instrumented = INSTRUMENTED_OPCODES[deopt];
         assert(instrumented);
-        *opcode_ptr = instrumented;
+        FT_ATOMIC_STORE_UINT8_RELAXED(*opcode_ptr, instrumented);
         if (_PyOpcode_Caches[deopt]) {
+          FT_ATOMIC_STORE_UINT16_RELAXED(instr[1].counter.as_counter,
+                                         adaptive_counter_warmup().as_counter);
             instr[1].counter = adaptive_counter_warmup();
         }
     }
@@ -718,6 +752,7 @@ instrument_per_instruction(PyCodeObject *code, int i)
 static void
 remove_tools(PyCodeObject * code, int offset, int event, int tools)
 {
+    ASSERT_WORLD_STOPPED_OR_LOCKED(code);
     assert(event != PY_MONITORING_EVENT_LINE);
     assert(event != PY_MONITORING_EVENT_INSTRUCTION);
     assert(PY_MONITORING_IS_INSTRUMENTED_EVENT(event));
@@ -752,6 +787,8 @@ tools_is_subset_for_event(PyCodeObject * code, int event, int tools)
 static void
 remove_line_tools(PyCodeObject * code, int offset, int tools)
 {
+    ASSERT_WORLD_STOPPED_OR_LOCKED(code);
+
     assert(code->_co_monitoring);
     if (code->_co_monitoring->line_tools)
     {
@@ -774,6 +811,7 @@ remove_line_tools(PyCodeObject * code, int offset, int tools)
 static void
 add_tools(PyCodeObject * code, int offset, int event, int tools)
 {
+    ASSERT_WORLD_STOPPED_OR_LOCKED(code);
     assert(event != PY_MONITORING_EVENT_LINE);
     assert(event != PY_MONITORING_EVENT_INSTRUCTION);
     assert(PY_MONITORING_IS_INSTRUMENTED_EVENT(event));
@@ -794,6 +832,8 @@ add_tools(PyCodeObject * code, int offset, int event, int tools)
 static void
 add_line_tools(PyCodeObject * code, int offset, int tools)
 {
+    ASSERT_WORLD_STOPPED_OR_LOCKED(code);
+
     assert(tools_is_subset_for_event(code, PY_MONITORING_EVENT_LINE, tools));
     assert(code->_co_monitoring);
     if (code->_co_monitoring->line_tools) {
@@ -810,6 +850,8 @@ add_line_tools(PyCodeObject * code, int offset, int tools)
 static void
 add_per_instruction_tools(PyCodeObject * code, int offset, int tools)
 {
+    ASSERT_WORLD_STOPPED_OR_LOCKED(code);
+
     assert(tools_is_subset_for_event(code, PY_MONITORING_EVENT_INSTRUCTION, tools));
     assert(code->_co_monitoring);
     if (code->_co_monitoring->per_instruction_tools) {
@@ -826,6 +868,8 @@ add_per_instruction_tools(PyCodeObject * code, int offset, int tools)
 static void
 remove_per_instruction_tools(PyCodeObject * code, int offset, int tools)
 {
+    ASSERT_WORLD_STOPPED_OR_LOCKED(code);
+
     assert(code->_co_monitoring);
     if (code->_co_monitoring->per_instruction_tools) {
         uint8_t *toolsptr = &code->_co_monitoring->per_instruction_tools[offset];
@@ -941,6 +985,7 @@ set_global_version(PyThreadState *tstate, uint32_t version)
 static bool
 is_version_up_to_date(PyCodeObject *code, PyInterpreterState *interp)
 {
+    ASSERT_WORLD_STOPPED_OR_LOCKED(code);
     return global_version(interp) == code->_co_instrumentation_version;
 }
 
@@ -948,11 +993,24 @@ is_version_up_to_date(PyCodeObject *code, PyInterpreterState *interp)
 static bool
 instrumentation_cross_checks(PyInterpreterState *interp, PyCodeObject *code)
 {
+    ASSERT_WORLD_STOPPED_OR_LOCKED(code);
     _Py_LocalMonitors expected = local_union(
         interp->monitors,
         code->_co_monitoring->local_monitors);
     return monitors_equals(code->_co_monitoring->active_monitors, expected);
 }
+
+static int
+debug_check_sanity(PyInterpreterState *interp, PyCodeObject *code)
+{
+    int res;
+    LOCK_CODE(code);
+    res = is_version_up_to_date(code, interp) &&
+          instrumentation_cross_checks(interp, code);
+    UNLOCK_CODE();
+    return res;
+}
+
 #endif
 
 static inline uint8_t
@@ -967,8 +1025,7 @@ get_tools_for_instruction(PyCodeObject *code, PyInterpreterState *interp, int i,
         event = PY_MONITORING_EVENT_CALL;
     }
     if (PY_MONITORING_IS_INSTRUMENTED_EVENT(event)) {
-        CHECK(is_version_up_to_date(code, interp));
-        CHECK(instrumentation_cross_checks(interp, code));
+        CHECK(debug_check_sanity(interp, code));
         if (code->_co_monitoring->tools) {
             tools = code->_co_monitoring->tools[i];
         }
@@ -1056,7 +1113,9 @@ call_instrumentation_vector(
                 break;
             }
             else {
+                LOCK_CODE(code);
                 remove_tools(code, offset, event, 1 << tool);
+                UNLOCK_CODE();
             }
         }
     }
@@ -1164,31 +1223,37 @@ int
 _Py_call_instrumentation_line(PyThreadState *tstate, _PyInterpreterFrame* frame, _Py_CODEUNIT *instr, _Py_CODEUNIT *prev)
 {
     PyCodeObject *code = _PyFrame_GetCode(frame);
-    assert(is_version_up_to_date(code, tstate->interp));
-    assert(instrumentation_cross_checks(tstate->interp, code));
+    assert(tstate->tracing == 0);
+    assert(debug_check_sanity(tstate->interp, code));
     int i = (int)(instr - _PyCode_CODE(code));
 
     _PyCoMonitoringData *monitoring = code->_co_monitoring;
     _PyCoLineInstrumentationData *line_data = &monitoring->lines[i];
-    if (tstate->tracing) {
-        goto done;
-    }
     PyInterpreterState *interp = tstate->interp;
     int8_t line_delta = line_data->line_delta;
-    int line = compute_line(code, i, line_delta);
-    assert(line >= 0);
-    assert(prev != NULL);
-    int prev_index = (int)(prev - _PyCode_CODE(code));
-    int prev_line = _Py_Instrumentation_GetLine(code, prev_index);
-    if (prev_line == line) {
-        int prev_opcode = _PyCode_CODE(code)[prev_index].op.code;
-        /* RESUME and INSTRUMENTED_RESUME are needed for the operation of
-         * instrumentation, so must never be hidden by an INSTRUMENTED_LINE.
-         */
-        if (prev_opcode != RESUME && prev_opcode != INSTRUMENTED_RESUME) {
-            goto done;
+    int line = 0;
+
+    if (line_delta == COMPUTED_LINE_LINENO_CHANGE) {
+        // We know the line number must have changed, don't need to calculate
+        // the line number for now because we might not need it.
+        line = -1;
+    } else {
+        line = compute_line(code, i, line_delta);
+        assert(line >= 0);
+        assert(prev != NULL);
+        int prev_index = (int)(prev - _PyCode_CODE(code));
+        int prev_line = _Py_Instrumentation_GetLine(code, prev_index);
+        if (prev_line == line) {
+            int prev_opcode = _PyCode_CODE(code)[prev_index].op.code;
+            /* RESUME and INSTRUMENTED_RESUME are needed for the operation of
+             * instrumentation, so must never be hidden by an INSTRUMENTED_LINE.
+             */
+            if (prev_opcode != RESUME && prev_opcode != INSTRUMENTED_RESUME) {
+                goto done;
+            }
         }
     }
+
     uint8_t tools = code->_co_monitoring->line_tools != NULL ?
         code->_co_monitoring->line_tools[i] :
         (interp->monitors.tools[PY_MONITORING_EVENT_LINE] |
@@ -1210,6 +1275,12 @@ _Py_call_instrumentation_line(PyThreadState *tstate, _PyInterpreterFrame* frame,
                 tstate->tracing++;
                 /* Call c_tracefunc directly, having set the line number. */
                 Py_INCREF(frame_obj);
+                if (line == -1 && line_delta > COMPUTED_LINE) {
+                    /* Only assign f_lineno if it's easy to calculate, otherwise
+                     * do lazy calculation by setting the f_lineno to 0.
+                     */
+                    line = compute_line(code, i, line_delta);
+                }
                 frame_obj->f_lineno = line;
                 int err = tstate->c_tracefunc(tstate->c_traceobj, frame_obj, PyTrace_LINE, Py_None);
                 frame_obj->f_lineno = 0;
@@ -1225,6 +1296,11 @@ _Py_call_instrumentation_line(PyThreadState *tstate, _PyInterpreterFrame* frame,
     }
     if (tools == 0) {
         goto done;
+    }
+
+    if (line == -1) {
+        /* Need to calculate the line number now for monitoring events */
+        line = compute_line(code, i, line_delta);
     }
     PyObject *line_obj = PyLong_FromLong(line);
     if (line_obj == NULL) {
@@ -1249,7 +1325,9 @@ _Py_call_instrumentation_line(PyThreadState *tstate, _PyInterpreterFrame* frame,
         }
         else {
             /* DISABLE  */
+            LOCK_CODE(code);
             remove_line_tools(code, i, 1 << tool);
+            UNLOCK_CODE();
         }
     } while (tools);
     Py_DECREF(line_obj);
@@ -1266,8 +1344,7 @@ int
 _Py_call_instrumentation_instruction(PyThreadState *tstate, _PyInterpreterFrame* frame, _Py_CODEUNIT *instr)
 {
     PyCodeObject *code = _PyFrame_GetCode(frame);
-    assert(is_version_up_to_date(code, tstate->interp));
-    assert(instrumentation_cross_checks(tstate->interp, code));
+    assert(debug_check_sanity(tstate->interp, code));
     int offset = (int)(instr - _PyCode_CODE(code));
     _PyCoMonitoringData *instrumentation_data = code->_co_monitoring;
     assert(instrumentation_data->per_instruction_opcodes);
@@ -1305,7 +1382,9 @@ _Py_call_instrumentation_instruction(PyThreadState *tstate, _PyInterpreterFrame*
         }
         else {
             /* DISABLE  */
+            LOCK_CODE(code);
             remove_per_instruction_tools(code, offset, 1 << tool);
+            UNLOCK_CODE();
         }
     }
     Py_DECREF(offset_obj);
@@ -1320,15 +1399,18 @@ _PyMonitoring_RegisterCallback(int tool_id, int event_id, PyObject *obj)
     PyInterpreterState *is = _PyInterpreterState_GET();
     assert(0 <= tool_id && tool_id < PY_MONITORING_TOOL_IDS);
     assert(0 <= event_id && event_id < _PY_MONITORING_EVENTS);
-    PyObject *callback = is->monitoring_callables[tool_id][event_id];
-    is->monitoring_callables[tool_id][event_id] = Py_XNewRef(obj);
+    PyObject *callback = _Py_atomic_exchange_ptr(&is->monitoring_callables[tool_id][event_id],
+                                                 Py_XNewRef(obj));
+
     return callback;
 }
 
 static void
 initialize_tools(PyCodeObject *code)
 {
+    ASSERT_WORLD_STOPPED_OR_LOCKED(code);
     uint8_t* tools = code->_co_monitoring->tools;
+
     assert(tools != NULL);
     int code_len = (int)Py_SIZE(code);
     for (int i = 0; i < code_len; i++) {
@@ -1384,7 +1466,9 @@ initialize_tools(PyCodeObject *code)
 static void
 initialize_lines(PyCodeObject *code)
 {
+    ASSERT_WORLD_STOPPED_OR_LOCKED(code);
     _PyCoLineInstrumentationData *line_data = code->_co_monitoring->lines;
+
     assert(line_data != NULL);
     int code_len = (int)Py_SIZE(code);
     PyCodeAddressRange range;
@@ -1418,6 +1502,13 @@ initialize_lines(PyCodeObject *code)
                  */
                 if (line != current_line && line >= 0) {
                     line_data[i].original_opcode = opcode;
+                    if (line_data[i].line_delta == COMPUTED_LINE) {
+                        /* Label this line as a line with a line number change
+                         * which could help the monitoring callback to quickly
+                         * identify the line number change.
+                         */
+                        line_data[i].line_delta = COMPUTED_LINE_LINENO_CHANGE;
+                    }
                 }
                 else {
                     line_data[i].original_opcode = 0;
@@ -1470,6 +1561,11 @@ initialize_lines(PyCodeObject *code)
         assert(target >= 0);
         if (line_data[target].line_delta != NO_LINE) {
             line_data[target].original_opcode = _Py_GetBaseOpcode(code, target);
+            if (line_data[target].line_delta == COMPUTED_LINE_LINENO_CHANGE) {
+                // If the line is a jump target, we are not sure if the line
+                // number changes, so we set it to COMPUTED_LINE.
+                line_data[target].line_delta = COMPUTED_LINE;
+            }
         }
     }
     /* Scan exception table */
@@ -1501,7 +1597,9 @@ initialize_lines(PyCodeObject *code)
 static void
 initialize_line_tools(PyCodeObject *code, _Py_LocalMonitors *all_events)
 {
+    ASSERT_WORLD_STOPPED_OR_LOCKED(code);
     uint8_t *line_tools = code->_co_monitoring->line_tools;
+
     assert(line_tools != NULL);
     int code_len = (int)Py_SIZE(code);
     for (int i = 0; i < code_len; i++) {
@@ -1512,6 +1610,7 @@ initialize_line_tools(PyCodeObject *code, _Py_LocalMonitors *all_events)
 static int
 allocate_instrumentation_data(PyCodeObject *code)
 {
+    ASSERT_WORLD_STOPPED_OR_LOCKED(code);
 
     if (code->_co_monitoring == NULL) {
         code->_co_monitoring = PyMem_Malloc(sizeof(_PyCoMonitoringData));
@@ -1533,6 +1632,8 @@ allocate_instrumentation_data(PyCodeObject *code)
 static int
 update_instrumentation_data(PyCodeObject *code, PyInterpreterState *interp)
 {
+    ASSERT_WORLD_STOPPED_OR_LOCKED(code);
+
     int code_len = (int)Py_SIZE(code);
     if (allocate_instrumentation_data(code)) {
         return -1;
@@ -1574,9 +1675,11 @@ update_instrumentation_data(PyCodeObject *code, PyInterpreterState *interp)
                 PyErr_NoMemory();
                 return -1;
             }
-            /* This may not be necessary, as we can initialize this memory lazily, but it helps catch errors. */
+            // Initialize all of the instructions so if local events change while another thread is executing
+            // we know what the original opcode was.
             for (int i = 0; i < code_len; i++) {
-                code->_co_monitoring->per_instruction_opcodes[i] = 0;
+                int opcode = _PyCode_CODE(code)[i].op.code;
+                code->_co_monitoring->per_instruction_opcodes[i] = _PyOpcode_Deopt[opcode];
             }
         }
         if (multitools && code->_co_monitoring->per_instruction_tools == NULL) {
@@ -1585,7 +1688,6 @@ update_instrumentation_data(PyCodeObject *code, PyInterpreterState *interp)
                 PyErr_NoMemory();
                 return -1;
             }
-            /* This may not be necessary, as we can initialize this memory lazily, but it helps catch errors. */
             for (int i = 0; i < code_len; i++) {
                 code->_co_monitoring->per_instruction_tools[i] = 0;
             }
@@ -1594,20 +1696,17 @@ update_instrumentation_data(PyCodeObject *code, PyInterpreterState *interp)
     return 0;
 }
 
-int
-_Py_Instrument(PyCodeObject *code, PyInterpreterState *interp)
+static int
+force_instrument_lock_held(PyCodeObject *code, PyInterpreterState *interp)
 {
-    if (is_version_up_to_date(code, interp)) {
-        assert(
-            interp->ceval.instrumentation_version == 0 ||
-            instrumentation_cross_checks(interp, code)
-        );
-        return 0;
-    }
+    ASSERT_WORLD_STOPPED_OR_LOCKED(code);
+
+#ifdef _Py_TIER2
     if (code->co_executors != NULL) {
         _PyCode_Clear_Executors(code);
     }
     _Py_Executors_InvalidateDependency(interp, code, 1);
+#endif
     int code_len = (int)Py_SIZE(code);
     /* Exit early to avoid creating instrumentation
      * data for potential statically allocated code
@@ -1636,12 +1735,8 @@ _Py_Instrument(PyCodeObject *code, PyInterpreterState *interp)
         assert(monitors_are_empty(monitors_and(new_events, removed_events)));
     }
     code->_co_monitoring->active_monitors = active_events;
-    code->_co_instrumentation_version = global_version(interp);
     if (monitors_are_empty(new_events) && monitors_are_empty(removed_events)) {
-#ifdef INSTRUMENT_DEBUG
-        sanity_check_instrumentation(code);
-#endif
-        return 0;
+        goto done;
     }
     /* Insert instrumentation */
     for (int i = code->_co_firsttraceable; i < code_len; i+= _PyInstruction_GetLength(code, i)) {
@@ -1672,7 +1767,6 @@ _Py_Instrument(PyCodeObject *code, PyInterpreterState *interp)
 
     // GH-103845: We need to remove both the line and instruction instrumentation before
     // adding new ones, otherwise we may remove the newly added instrumentation.
-
     uint8_t removed_line_tools = removed_events.tools[PY_MONITORING_EVENT_LINE];
     uint8_t removed_per_instruction_tools = removed_events.tools[PY_MONITORING_EVENT_INSTRUCTION];
 
@@ -1680,9 +1774,7 @@ _Py_Instrument(PyCodeObject *code, PyInterpreterState *interp)
         _PyCoLineInstrumentationData *line_data = code->_co_monitoring->lines;
         for (int i = code->_co_firsttraceable; i < code_len;) {
             if (line_data[i].original_opcode) {
-                if (removed_line_tools) {
-                    remove_line_tools(code, i, removed_line_tools);
-                }
+                remove_line_tools(code, i, removed_line_tools);
             }
             i += _PyInstruction_GetLength(code, i);
         }
@@ -1694,15 +1786,14 @@ _Py_Instrument(PyCodeObject *code, PyInterpreterState *interp)
                 i += _PyInstruction_GetLength(code, i);
                 continue;
             }
-            if (removed_per_instruction_tools) {
-                remove_per_instruction_tools(code, i, removed_per_instruction_tools);
-            }
+            remove_per_instruction_tools(code, i, removed_per_instruction_tools);
             i += _PyInstruction_GetLength(code, i);
         }
     }
 #ifdef INSTRUMENT_DEBUG
     sanity_check_instrumentation(code);
 #endif
+
     uint8_t new_line_tools = new_events.tools[PY_MONITORING_EVENT_LINE];
     uint8_t new_per_instruction_tools = new_events.tools[PY_MONITORING_EVENT_INSTRUCTION];
 
@@ -1710,9 +1801,7 @@ _Py_Instrument(PyCodeObject *code, PyInterpreterState *interp)
         _PyCoLineInstrumentationData *line_data = code->_co_monitoring->lines;
         for (int i = code->_co_firsttraceable; i < code_len;) {
             if (line_data[i].original_opcode) {
-                if (new_line_tools) {
-                    add_line_tools(code, i, new_line_tools);
-                }
+                add_line_tools(code, i, new_line_tools);
             }
             i += _PyInstruction_GetLength(code, i);
         }
@@ -1724,16 +1813,45 @@ _Py_Instrument(PyCodeObject *code, PyInterpreterState *interp)
                 i += _PyInstruction_GetLength(code, i);
                 continue;
             }
-            if (new_per_instruction_tools) {
-                add_per_instruction_tools(code, i, new_per_instruction_tools);
-            }
+            add_per_instruction_tools(code, i, new_per_instruction_tools);
             i += _PyInstruction_GetLength(code, i);
         }
     }
+
+done:
+    FT_ATOMIC_STORE_UINTPTR_RELEASE(code->_co_instrumentation_version,
+                                    global_version(interp));
+
 #ifdef INSTRUMENT_DEBUG
     sanity_check_instrumentation(code);
 #endif
     return 0;
+}
+
+static int
+instrument_lock_held(PyCodeObject *code, PyInterpreterState *interp)
+{
+    ASSERT_WORLD_STOPPED_OR_LOCKED(code);
+
+    if (is_version_up_to_date(code, interp)) {
+        assert(
+            interp->ceval.instrumentation_version == 0 ||
+            instrumentation_cross_checks(interp, code)
+        );
+        return 0;
+    }
+
+    return force_instrument_lock_held(code, interp);
+}
+
+int
+_Py_Instrument(PyCodeObject *code, PyInterpreterState *interp)
+{
+    int res;
+    LOCK_CODE(code);
+    res = instrument_lock_held(code, interp);
+    UNLOCK_CODE();
+    return res;
 }
 
 #define C_RETURN_EVENTS \
@@ -1746,6 +1864,8 @@ _Py_Instrument(PyCodeObject *code, PyInterpreterState *interp)
 
 static int
 instrument_all_executing_code_objects(PyInterpreterState *interp) {
+    ASSERT_WORLD_STOPPED();
+
     _PyRuntimeState *runtime = &_PyRuntime;
     HEAD_LOCK(runtime);
     PyThreadState* ts = PyInterpreterState_ThreadHead(interp);
@@ -1754,7 +1874,7 @@ instrument_all_executing_code_objects(PyInterpreterState *interp) {
         _PyInterpreterFrame *frame = ts->current_frame;
         while (frame) {
             if (frame->owner != FRAME_OWNED_BY_CSTACK) {
-                if (_Py_Instrument(_PyFrame_GetCode(frame), interp)) {
+                if (instrument_lock_held(_PyFrame_GetCode(frame), interp)) {
                     return -1;
                 }
             }
@@ -1817,19 +1937,29 @@ _PyMonitoring_SetEvents(int tool_id, _PyMonitoringEventSet events)
     if (check_tool(interp, tool_id)) {
         return -1;
     }
+
+    int res;
+    _PyEval_StopTheWorld(interp);
     uint32_t existing_events = get_events(&interp->monitors, tool_id);
     if (existing_events == events) {
-        return 0;
+        res = 0;
+        goto done;
     }
     set_events(&interp->monitors, tool_id, events);
     uint32_t new_version = global_version(interp) + MONITORING_VERSION_INCREMENT;
     if (new_version == 0) {
         PyErr_Format(PyExc_OverflowError, "events set too many times");
-        return -1;
+        res = -1;
+        goto done;
     }
     set_global_version(tstate, new_version);
+#ifdef _Py_TIER2
     _Py_Executors_InvalidateAll(interp, 1);
-    return instrument_all_executing_code_objects(interp);
+#endif
+    res = instrument_all_executing_code_objects(interp);
+done:
+    _PyEval_StartTheWorld(interp);
+    return res;
 }
 
 int
@@ -1845,24 +1975,27 @@ _PyMonitoring_SetLocalEvents(PyCodeObject *code, int tool_id, _PyMonitoringEvent
     if (check_tool(interp, tool_id)) {
         return -1;
     }
+
+    int res;
+    LOCK_CODE(code);
     if (allocate_instrumentation_data(code)) {
-        return -1;
+        res = -1;
+        goto done;
     }
+
     _Py_LocalMonitors *local = &code->_co_monitoring->local_monitors;
     uint32_t existing_events = get_local_events(local, tool_id);
     if (existing_events == events) {
-        return 0;
+        res = 0;
+        goto done;
     }
     set_local_events(local, tool_id, events);
-    if (is_version_up_to_date(code, interp)) {
-        /* Force instrumentation update */
-        code->_co_instrumentation_version -= MONITORING_VERSION_INCREMENT;
-    }
-    _Py_Executors_InvalidateDependency(interp, code, 1);
-    if (_Py_Instrument(code, interp)) {
-        return -1;
-    }
-    return 0;
+
+    res = force_instrument_lock_held(code, interp);
+
+done:
+    UNLOCK_CODE();
+    return res;
 }
 
 int
@@ -2158,15 +2291,21 @@ monitoring_restart_events_impl(PyObject *module)
      */
     PyThreadState *tstate = _PyThreadState_GET();
     PyInterpreterState *interp = tstate->interp;
+
+    _PyEval_StopTheWorld(interp);
     uint32_t restart_version = global_version(interp) + MONITORING_VERSION_INCREMENT;
     uint32_t new_version = restart_version + MONITORING_VERSION_INCREMENT;
     if (new_version <= MONITORING_VERSION_INCREMENT) {
+        _PyEval_StartTheWorld(interp);
         PyErr_Format(PyExc_OverflowError, "events set too many times");
         return NULL;
     }
     interp->last_restart_version = restart_version;
     set_global_version(tstate, new_version);
-    if (instrument_all_executing_code_objects(interp)) {
+    int res = instrument_all_executing_code_objects(interp);
+    _PyEval_StartTheWorld(interp);
+
+    if (res) {
         return NULL;
     }
     Py_RETURN_NONE;
@@ -2283,4 +2422,305 @@ PyObject *_Py_CreateMonitoringObject(void)
 error:
     Py_DECREF(mod);
     return NULL;
+}
+
+
+static int
+capi_call_instrumentation(PyMonitoringState *state, PyObject *codelike, int32_t offset,
+                          PyObject **args, Py_ssize_t nargs, int event)
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+    PyInterpreterState *interp = tstate->interp;
+
+    uint8_t tools = state->active;
+    assert(args[1] == NULL);
+    args[1] = codelike;
+    if (offset < 0) {
+        PyErr_SetString(PyExc_ValueError, "offset must be non-negative");
+        return -1;
+    }
+    PyObject *offset_obj = PyLong_FromLong(offset);
+    if (offset_obj == NULL) {
+        return -1;
+    }
+    assert(args[2] == NULL);
+    args[2] = offset_obj;
+    Py_ssize_t nargsf = nargs | PY_VECTORCALL_ARGUMENTS_OFFSET;
+    PyObject **callargs = &args[1];
+    int err = 0;
+
+    while (tools) {
+        int tool = most_significant_bit(tools);
+        assert(tool >= 0 && tool < 8);
+        assert(tools & (1 << tool));
+        tools ^= (1 << tool);
+        int res = call_one_instrument(interp, tstate, callargs, nargsf, tool, event);
+        if (res == 0) {
+            /* Nothing to do */
+        }
+        else if (res < 0) {
+            /* error */
+            err = -1;
+            break;
+        }
+        else {
+            /* DISABLE */
+            if (!PY_MONITORING_IS_INSTRUMENTED_EVENT(event)) {
+                PyErr_Format(PyExc_ValueError,
+                             "Cannot disable %s events. Callback removed.",
+                             event_names[event]);
+                /* Clear tool to prevent infinite loop */
+                Py_CLEAR(interp->monitoring_callables[tool][event]);
+                err = -1;
+                break;
+            }
+            else {
+                state->active &= ~(1 << tool);
+            }
+        }
+    }
+    return err;
+}
+
+int
+PyMonitoring_EnterScope(PyMonitoringState *state_array, uint64_t *version,
+                         const uint8_t *event_types, Py_ssize_t length)
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    if (global_version(interp) == *version) {
+        return 0;
+    }
+
+    _Py_GlobalMonitors *m = &interp->monitors;
+    for (Py_ssize_t i = 0; i < length; i++) {
+        int event = event_types[i];
+        state_array[i].active = m->tools[event];
+    }
+    *version = global_version(interp);
+    return 0;
+}
+
+int
+PyMonitoring_ExitScope(void)
+{
+    return 0;
+}
+
+int
+_PyMonitoring_FirePyStartEvent(PyMonitoringState *state, PyObject *codelike, int32_t offset)
+{
+    assert(state->active);
+    PyObject *args[3] = { NULL, NULL, NULL };
+    return capi_call_instrumentation(state, codelike, offset, args, 2,
+                                     PY_MONITORING_EVENT_PY_START);
+}
+
+int
+_PyMonitoring_FirePyResumeEvent(PyMonitoringState *state, PyObject *codelike, int32_t offset)
+{
+    assert(state->active);
+    PyObject *args[3] = { NULL, NULL, NULL };
+    return capi_call_instrumentation(state, codelike, offset, args, 2,
+                                     PY_MONITORING_EVENT_PY_RESUME);
+}
+
+
+
+int
+_PyMonitoring_FirePyReturnEvent(PyMonitoringState *state, PyObject *codelike, int32_t offset,
+                                PyObject* retval)
+{
+    assert(state->active);
+    PyObject *args[4] = { NULL, NULL, NULL, retval };
+    return capi_call_instrumentation(state, codelike, offset, args, 3,
+                                     PY_MONITORING_EVENT_PY_RETURN);
+}
+
+int
+_PyMonitoring_FirePyYieldEvent(PyMonitoringState *state, PyObject *codelike, int32_t offset,
+                               PyObject* retval)
+{
+    assert(state->active);
+    PyObject *args[4] = { NULL, NULL, NULL, retval };
+    return capi_call_instrumentation(state, codelike, offset, args, 3,
+                                     PY_MONITORING_EVENT_PY_YIELD);
+}
+
+int
+_PyMonitoring_FireCallEvent(PyMonitoringState *state, PyObject *codelike, int32_t offset,
+                            PyObject* callable, PyObject *arg0)
+{
+    assert(state->active);
+    PyObject *args[5] = { NULL, NULL, NULL, callable, arg0 };
+    return capi_call_instrumentation(state, codelike, offset, args, 4,
+                                     PY_MONITORING_EVENT_CALL);
+}
+
+int
+_PyMonitoring_FireLineEvent(PyMonitoringState *state, PyObject *codelike, int32_t offset,
+                            int lineno)
+{
+    assert(state->active);
+    PyObject *lno = PyLong_FromLong(lineno);
+    if (lno == NULL) {
+        return -1;
+    }
+    PyObject *args[4] = { NULL, NULL, NULL, lno };
+    int res= capi_call_instrumentation(state, codelike, offset, args, 3,
+                                       PY_MONITORING_EVENT_LINE);
+    Py_DECREF(lno);
+    return res;
+}
+
+int
+_PyMonitoring_FireJumpEvent(PyMonitoringState *state, PyObject *codelike, int32_t offset,
+                            PyObject *target_offset)
+{
+    assert(state->active);
+    PyObject *args[4] = { NULL, NULL, NULL, target_offset };
+    return capi_call_instrumentation(state, codelike, offset, args, 3,
+                                     PY_MONITORING_EVENT_JUMP);
+}
+
+int
+_PyMonitoring_FireBranchEvent(PyMonitoringState *state, PyObject *codelike, int32_t offset,
+                              PyObject *target_offset)
+{
+    assert(state->active);
+    PyObject *args[4] = { NULL, NULL, NULL, target_offset };
+    return capi_call_instrumentation(state, codelike, offset, args, 3,
+                                     PY_MONITORING_EVENT_BRANCH);
+}
+
+int
+_PyMonitoring_FireCReturnEvent(PyMonitoringState *state, PyObject *codelike, int32_t offset,
+                               PyObject *retval)
+{
+    assert(state->active);
+    PyObject *args[4] = { NULL, NULL, NULL, retval };
+    return capi_call_instrumentation(state, codelike, offset, args, 3,
+                                     PY_MONITORING_EVENT_C_RETURN);
+}
+
+static inline int
+exception_event_setup(PyObject **exc, int event) {
+    *exc = PyErr_GetRaisedException();
+    if (*exc == NULL) {
+        PyErr_Format(PyExc_ValueError,
+                     "Firing event %d with no exception set",
+                     event);
+        return -1;
+    }
+    return 0;
+}
+
+
+static inline int
+exception_event_teardown(int err, PyObject *exc) {
+    if (err == 0) {
+        PyErr_SetRaisedException(exc);
+    }
+    else {
+        assert(PyErr_Occurred());
+        Py_DECREF(exc);
+    }
+    return err;
+}
+
+int
+_PyMonitoring_FirePyThrowEvent(PyMonitoringState *state, PyObject *codelike, int32_t offset)
+{
+    int event = PY_MONITORING_EVENT_PY_THROW;
+    assert(state->active);
+    PyObject *exc;
+    if (exception_event_setup(&exc, event) < 0) {
+        return -1;
+    }
+    PyObject *args[4] = { NULL, NULL, NULL, exc };
+    int err = capi_call_instrumentation(state, codelike, offset, args, 3, event);
+    return exception_event_teardown(err, exc);
+}
+
+int
+_PyMonitoring_FireRaiseEvent(PyMonitoringState *state, PyObject *codelike, int32_t offset)
+{
+    int event = PY_MONITORING_EVENT_RAISE;
+    assert(state->active);
+    PyObject *exc;
+    if (exception_event_setup(&exc, event) < 0) {
+        return -1;
+    }
+    PyObject *args[4] = { NULL, NULL, NULL, exc };
+    int err = capi_call_instrumentation(state, codelike, offset, args, 3, event);
+    return exception_event_teardown(err, exc);
+}
+
+int
+_PyMonitoring_FireCRaiseEvent(PyMonitoringState *state, PyObject *codelike, int32_t offset)
+{
+    int event = PY_MONITORING_EVENT_C_RAISE;
+    assert(state->active);
+    PyObject *exc;
+    if (exception_event_setup(&exc, event) < 0) {
+        return -1;
+    }
+    PyObject *args[4] = { NULL, NULL, NULL, exc };
+    int err = capi_call_instrumentation(state, codelike, offset, args, 3, event);
+    return exception_event_teardown(err, exc);
+}
+
+int
+_PyMonitoring_FireReraiseEvent(PyMonitoringState *state, PyObject *codelike, int32_t offset)
+{
+    int event = PY_MONITORING_EVENT_RERAISE;
+    assert(state->active);
+    PyObject *exc;
+    if (exception_event_setup(&exc, event) < 0) {
+        return -1;
+    }
+    PyObject *args[4] = { NULL, NULL, NULL, exc };
+    int err = capi_call_instrumentation(state, codelike, offset, args, 3, event);
+    return exception_event_teardown(err, exc);
+}
+
+int
+_PyMonitoring_FireExceptionHandledEvent(PyMonitoringState *state, PyObject *codelike, int32_t offset)
+{
+    int event = PY_MONITORING_EVENT_EXCEPTION_HANDLED;
+    assert(state->active);
+    PyObject *exc;
+    if (exception_event_setup(&exc, event) < 0) {
+        return -1;
+    }
+    PyObject *args[4] = { NULL, NULL, NULL, exc };
+    int err = capi_call_instrumentation(state, codelike, offset, args, 3, event);
+    return exception_event_teardown(err, exc);
+}
+
+int
+_PyMonitoring_FirePyUnwindEvent(PyMonitoringState *state, PyObject *codelike, int32_t offset)
+{
+    int event = PY_MONITORING_EVENT_PY_UNWIND;
+    assert(state->active);
+    PyObject *exc;
+    if (exception_event_setup(&exc, event) < 0) {
+        return -1;
+    }
+    PyObject *args[4] = { NULL, NULL, NULL, exc };
+    int err = capi_call_instrumentation(state, codelike, offset, args, 3, event);
+    return exception_event_teardown(err, exc);
+}
+
+int
+_PyMonitoring_FireStopIterationEvent(PyMonitoringState *state, PyObject *codelike, int32_t offset)
+{
+    int event = PY_MONITORING_EVENT_STOP_ITERATION;
+    assert(state->active);
+    PyObject *exc;
+    if (exception_event_setup(&exc, event) < 0) {
+        return -1;
+    }
+    PyObject *args[4] = { NULL, NULL, NULL, exc };
+    int err = capi_call_instrumentation(state, codelike, offset, args, 3, event);
+    return exception_event_teardown(err, exc);
 }
