@@ -1949,7 +1949,7 @@ class TestBufferProtocol(unittest.TestCase):
                     except Exception as e:
                         numpy_err = e.__class__
 
-                    if 0:
+                    if 0: # https://github.com/numpy/numpy/issues/2503
                         self.assertTrue(numpy_err)
 
     def test_ndarray_random_slice_assign(self):
