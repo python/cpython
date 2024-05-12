@@ -290,12 +290,14 @@ class TestBasicOps:
             choices(data, cum_weights=[None]*4, k=5)                     # non-numeric cum_weights
         with self.assertRaises(TypeError):
             choices(data, range(4), cum_weights=range(4), k=5)           # both weights and cum_weights
-        for weights in [
-                [15, 10, 25, 30],                                                 # integer cum_weights
-                [15.1, 10.2, 25.2, 30.3],                                         # float cum_weights
+        for cum_weights in [
+                [15, 20, 25, 30],                                                 # integer cum_weights
+                [15.1, 20.2, 25.2, 30.3],                                         # float cum_weights
                 [Fraction(1, 3), Fraction(2, 6), Fraction(3, 6), Fraction(4, 6)], # fractional cum_weights
         ]:
-            self.assertTrue(set(choices(data, cum_weights=weights, k=5)) <= set(data))
+            self.assertTrue(
+                set(choices(data, cum_weights=cum_weights, k=5)) <= set(data)
+            )
 
         # Test weight focused on a single element of the population
         self.assertEqual(choices('abcd', [1, 0, 0, 0]), ['a'])
@@ -339,6 +341,44 @@ class TestBasicOps:
             self.gen.choices('AB', [0.0, float('nan')])
         with self.assertRaises(ValueError):
             self.gen.choices('AB', [float('-inf'), float('inf')])
+
+    def test_choices_infinite_weight(self):
+        with self.assertRaises(ValueError):
+            self.gen.choices('ABC', [float('-inf'), 3, 5])
+        with self.assertRaises(ValueError):
+            self.gen.choices('ABC', cum_weights=[-float('inf'), 3, 5])
+        with self.assertRaises(ValueError):
+            self.gen.choices('ABC', [float('inf'), 3, 5])
+        with self.assertRaises(ValueError):
+            self.gen.choices('ABC', cum_weights=[float('inf'), 3, 5])
+        with self.assertRaises(ValueError):
+            self.gen.choices('ABC', [float('nan'), 3, 5])
+        with self.assertRaises(ValueError):
+            self.gen.choices('ABC', cum_weights=[3, -float('nan'), 5])
+        with self.assertRaises(ValueError):
+            self.gen.choices('ABC', [float('-inf'), float('inf'), 5])
+        with self.assertRaises(ValueError):
+            self.gen.choices('ABC', cum_weights=[float('inf'), float('inf'), 5])
+
+    def test_choices_negative_weight(self):
+        with self.assertRaises(ValueError):
+            self.gen.choices('ABC', [-3, 1, 1])
+        with self.assertRaises(ValueError):
+            self.gen.choices('ABC', [3, -1, 1])
+        with self.assertRaises(ValueError):
+            self.gen.choices('ABC', cum_weights=[3, -2, 5])
+        with self.assertRaises(ValueError):
+            self.gen.choices('ABC', cum_weights=[3, 2, 5])
+        with self.assertRaises(ValueError):
+            self.gen.choices('ABC', cum_weights=[-1, 2, 5])
+
+    def test_choices_ok_weights(self):
+        self.gen.choices('ABC', [3, 1, 1])
+        self.gen.choices('ABC', [0, 0, 1])
+        self.gen.choices('ABC', [1, 0, 0])
+        self.gen.choices('ABC', cum_weights=[0, 0.0, 3])
+        self.gen.choices('ABC', cum_weights=[3, 3.0, 3])
+        self.gen.choices('ABC', cum_weights=[0.0, 0.0, 0.01])
 
     def test_gauss(self):
         # Ensure that the seed() method initializes all the hidden state.  In

@@ -487,8 +487,11 @@ class Random(_random.Random):
         total = cum_weights[-1] + 0.0   # convert to float
         if total <= 0.0:
             raise ValueError('Total of weights must be greater than zero')
-        if not _isfinite(total):
-            raise ValueError('Total of weights must be finite')
+        for i in range(n):
+            if not _isfinite(cum_weights[i]):
+                raise ValueError('Every weight must be finite')
+            if cum_weights[i] < (0.0 if i == 0 else cum_weights[i - 1]):
+                raise ValueError(f'Every weight must be non-negative')
         bisect = _bisect
         hi = n - 1
         return [population[bisect(cum_weights, random() * total, 0, hi)]
