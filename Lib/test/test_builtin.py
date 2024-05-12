@@ -2125,19 +2125,18 @@ class BuiltinTest(unittest.TestCase):
             self.assertRaises(TypeError, tp, 1, 2)
             self.assertRaises(TypeError, tp, a=1, b=2)
 
-    def test_warning_notimplemented(self):
-        # Issue #35712: NotImplemented is a sentinel value that should never
+    def test_bool_notimplemented(self):
+        # GH-79893: NotImplemented is a sentinel value that should never
         # be evaluated in a boolean context (virtually all such use cases
         # are a result of accidental misuse implementing rich comparison
         # operations in terms of one another).
-        # For the time being, it will continue to evaluate as a true value, but
-        # issue a deprecation warning (with the eventual intent to make it
-        # a TypeError).
-        self.assertWarns(DeprecationWarning, bool, NotImplemented)
-        with self.assertWarns(DeprecationWarning):
-            self.assertTrue(NotImplemented)
-        with self.assertWarns(DeprecationWarning):
-            self.assertFalse(not NotImplemented)
+        msg = "NotImplemented should not be used in a boolean context"
+        self.assertRaisesRegex(TypeError, msg, bool, NotImplemented)
+        with self.assertRaisesRegex(TypeError, msg):
+            if NotImplemented:
+                pass
+        with self.assertRaisesRegex(TypeError, msg):
+            not NotImplemented
 
 
 class TestBreakpoint(unittest.TestCase):

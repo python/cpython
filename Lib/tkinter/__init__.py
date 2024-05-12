@@ -40,7 +40,7 @@ TclError = _tkinter.TclError
 from tkinter.constants import *
 import re
 
-wantobjects = 1
+wantobjects = 2
 _debug = False  # set to True to print executed Tcl/Tk commands
 
 TkVersion = float(_tkinter.TK_VERSION)
@@ -1762,7 +1762,10 @@ class Misc:
         try:
             e.type = EventType(T)
         except ValueError:
-            e.type = T
+            try:
+                e.type = EventType(str(T))  # can be int
+            except ValueError:
+                e.type = T
         try:
             e.widget = self._nametowidget(W)
         except KeyError:
