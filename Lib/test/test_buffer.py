@@ -1995,7 +1995,7 @@ class TestBufferProtocol(unittest.TestCase):
 
                 if numpy_array:
                     if 0 in lshape or 0 in rshape:
-                        continue
+                        continue # https://github.com/numpy/numpy/issues/2503
 
                     zl = numpy_array_from_structure(litems, fmt, tl)
                     zr = numpy_array_from_structure(ritems, fmt, tr)
