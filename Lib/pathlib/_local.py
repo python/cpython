@@ -369,7 +369,8 @@ class PurePath(PurePathBase):
         i = name.rfind('.')
         if i != -1:
             stem = name[:i]
-            if stem.strip('.'):
+            # Stem must contain at least one non-dot character.
+            if stem.lstrip('.'):
                 return stem
         return name
 
