@@ -179,7 +179,7 @@ Basic Usage
    then NaNs and infinities are converted to non-quote-delimited strings
    ``NaN``, ``Infinity`` and ``-Infinity`` in the JSON output. Note that this
    represents an extension of the JSON specification, and that the generated
-   output may not be accepted as valid JSON by third party JSON parsers.
+   output may not be accepted as valid JSON by third-party JSON parsers.
 
    If *indent* is a non-negative integer or string, then JSON array elements and
    object members will be pretty-printed with that indent level.  An indent level
@@ -216,7 +216,7 @@ Basic Usage
 
    .. versionchanged:: 3.14
       Added support for ``allow_nan='as_null'``. Passing any string value
-      other than ``'as_null'`` for ``allow_nan`` now triggers a
+      other than ``'as_null'`` for *allow_nan* now triggers a
       :warning:`DeprecationWarning`.
 
    .. note::
@@ -469,7 +469,7 @@ Encoders and Decoders
    then NaNs and infinities are converted to non-quote-delimited strings
    ``NaN``, ``Infinity`` and ``-Infinity`` in the JSON output. Note that this
    represents an extension of the JSON specification, and that the generated
-   output may not be accepted as valid JSON by third party JSON parsers.
+   output may not be accepted as valid JSON by third-party JSON parsers.
 
    If *sort_keys* is true (default: ``False``), then the output of dictionaries
    will be sorted by key; this is useful for regression tests to ensure that

@@ -149,7 +149,6 @@ class JSONEncoder(object):
         self.skipkeys = skipkeys
         self.ensure_ascii = ensure_ascii
         self.check_circular = check_circular
-
         if isinstance(allow_nan, str) and allow_nan != 'as_null':
             warnings.warn(
                 "in the future, allow_nan will no longer accept strings "
@@ -157,7 +156,6 @@ class JSONEncoder(object):
                 DeprecationWarning,
                 stacklevel=3,
             )
-
         self.allow_nan = allow_nan
         self.sort_keys = sort_keys
         self.indent = indent
@@ -248,7 +246,6 @@ class JSONEncoder(object):
 
             if allow_nan == 'as_null':
                 return 'null'
-
             elif not allow_nan:
                 raise ValueError(
                     "Out of range float values are not JSON compliant: " +
