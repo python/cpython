@@ -594,3 +594,26 @@ def int_divmod(a, b):
 # 1.47712125` (adding the fractional part of the log to 1.47 ... could
 # push that over 2, and then the ceiling is needed to get an integer >=
 # to that). But, at that time, I knew GUARDs of 3 and 4 "didn't work".
+#
+# On Computing Reciprocals
+# ------------------------
+# The code computes all the powers of 256 needed, and all those of
+# 1/256. These are exact, but the reciprocals have over twice as many
+# significant digts as needed. So in another pass we cut the exact
+# reciprocals back, and then throw away the exact valuea.
+#
+# This "wastes" a lot of RAM for the duration. We could instead not
+# compute any exact reciprocals, and simply precompute 1/pow256 with the
+# desired final precisions directly.
+#
+# But it's a real tradeoff: turns out explicit division, despite that
+# it's to smaller precision, is significantly slower than computing
+# exact powers of 1/256 (which requires no division, except for the
+# initial 1/256) and then chopping them back.
+#
+# I judged that's more desirable for smaller inputs to run faster than
+# to incease the size of the largest string a given box's RAM can
+# handle, so picked the division-free method.
+#
+# Note this is all about startup cost - it doesn't affect the speed of
+# `inner()` either way. Computing the powers needed isn't cheap.
