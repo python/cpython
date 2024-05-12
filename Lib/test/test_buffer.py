@@ -1917,7 +1917,7 @@ class TestBufferProtocol(unittest.TestCase):
                 if numpy_array:
                     shape = t[3]
                     if 0 in shape:
-                        continue
+                        continue # https://github.com/numpy/numpy/issues/2503
                     z = numpy_array_from_structure(items, fmt, t)
                     self.verify(x, obj=None,
                                 itemsize=z.itemsize, fmt=fmt, readonly=False,
