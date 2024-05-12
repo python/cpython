@@ -380,7 +380,7 @@ loops that truncate the stream.
               saved.append(element)
           while saved:
               for element in saved:
-                    yield element
+                  yield element
 
    Note, this member of the toolkit may require significant auxiliary storage
    (depending on the length of the iterable).
@@ -615,10 +615,10 @@ loops that truncate the stream.
    This function is roughly equivalent to the following code, except that the
    actual implementation does not build up intermediate results in memory::
 
-       def product(*args, repeat=1):
+       def product(*iterables, repeat=1):
            # product('ABCD', 'xy') → Ax Ay Bx By Cx Cy Dx Dy
            # product(range(2), repeat=3) → 000 001 010 011 100 101 110 111
-           pools = [tuple(pool) for pool in args] * repeat
+           pools = [tuple(pool) for pool in iterables] * repeat
            result = [[]]
            for pool in pools:
                result = [x+[y] for x in result for y in pool]
@@ -735,9 +735,9 @@ loops that truncate the stream.
    iterables are of uneven length, missing values are filled-in with *fillvalue*.
    Iteration continues until the longest iterable is exhausted.  Roughly equivalent to::
 
-      def zip_longest(*args, fillvalue=None):
+      def zip_longest(*iterables, fillvalue=None):
           # zip_longest('ABCD', 'xy', fillvalue='-') → Ax By C- D-
-          iterators = [iter(it) for it in args]
+          iterators = [iter(it) for it in iterables]
           num_active = len(iterators)
           if not num_active:
               return
