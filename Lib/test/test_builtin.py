@@ -2146,15 +2146,15 @@ class BuiltinTest(unittest.TestCase):
 
                 # Missing instance attributes:
                 with self.assertRaises(AttributeError):
-                    singleton.prop
-                with self.assertRaises(AttributeError):
                     singleton.prop = 1
+                with self.assertRaises(AttributeError):
+                    singleton.prop
 
                 # Missing class attributes:
-                with self.assertRaises(AttributeError):
-                    type(singleton).prop
                 with self.assertRaises(TypeError):
                     type(singleton).prop = 1
+                with self.assertRaises(AttributeError):
+                    type(singleton).prop
 
 
 class TestBreakpoint(unittest.TestCase):
