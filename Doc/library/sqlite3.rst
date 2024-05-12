@@ -449,6 +449,10 @@ Module functions
 
    Construct a :class:`~sqlite3.Timestamp` from the given number of seconds since the epoch, converted to local time.
 
+.. function:: Binary(object)
+
+   Construct a BLOB as a :class:`memoryview` from a :term:`bytes-like object`.
+
 .. _sqlite3-module-constants:
 
 Module constants
