@@ -173,13 +173,13 @@ Basic Usage
    If *allow_nan* is false (default: ``True``), then it will be a
    :exc:`ValueError` to serialize out of range :class:`float` values (``nan``,
    ``inf``, ``-inf``) in strict compliance with the JSON specification. If
-   *allow_nan* is the string ``'null'``, NaNs and infinities will be converted
-   to a JSON ``null``, matching the behavior of JavaScript's
-   ``JSON.stringify``. If *allow_nan* is true but not equal to ``'null'`` then
-   NaNs and infinities are converted to non-quote-delimited strings ``NaN``,
-   ``Infinity`` and ``-Infinity`` in the JSON output. Note that this represents
-   an extension of the JSON specification, and is not compliant with standard
-   JSON.
+   *allow_nan* is the string ``'as_null'``, NaNs and infinities will be
+   converted to a JSON ``null``, matching the behavior of JavaScript's
+   ``JSON.stringify``. If *allow_nan* is true but not equal to ``'as_null'``
+   then NaNs and infinities are converted to non-quote-delimited strings
+   ``NaN``, ``Infinity`` and ``-Infinity`` in the JSON output. Note that this
+   represents an extension of the JSON specification, and is not compliant with
+   standard JSON.
 
    If *indent* is a non-negative integer or string, then JSON array elements and
    object members will be pretty-printed with that indent level.  An indent level
@@ -215,8 +215,8 @@ Basic Usage
       All optional parameters are now :ref:`keyword-only <keyword-only_parameter>`.
 
    .. versionchanged:: 3.14
-      Added support for ``allow_nan='null'``. Passing any string value
-      other than ``'null'`` for ``allow_nan`` now raises a
+      Added support for ``allow_nan='as_null'``. Passing any string value
+      other than ``'as_null'`` for ``allow_nan`` now raises a
       :warning:`DeprecationWarning`.
 
    .. note::
@@ -461,15 +461,15 @@ Encoders and Decoders
    prevent an infinite recursion (which would cause a :exc:`RecursionError`).
    Otherwise, no such check takes place.
 
-   If *allow_nan* is the string ``'null'``, then NaNs and infinities are
+   If *allow_nan* is the string ``'as_null'``, then NaNs and infinities are
    encoded as JSON ``null`` values. This matches the behavior of JavaScript's
-   ``JSON.stringify``. If *allow_nan* is true but not equal to ``'null'``, then
-   ``NaN``, ``Infinity``, and ``-Infinity`` will be encoded as corresponding
-   non-quote-delimited strings in the JSON output. This is the default
-   behavior. This behavior represents an extension of the JSON specification,
-   but is consistent with some JavaScript based encoders and decoders (as well
-   as Python's own decoder).  If *allow_nan* is false, it will be a
-   :exc:`ValueError` to encode such floats.
+   ``JSON.stringify``. If *allow_nan* is true but not equal to ``'as_null'``,
+   then ``NaN``, ``Infinity``, and ``-Infinity`` will be encoded as
+   corresponding non-quote-delimited strings in the JSON output. This is the
+   default behavior. This behavior represents an extension of the JSON
+   specification, but is consistent with some JavaScript based encoders and
+   decoders (as well as Python's own decoder).  If *allow_nan* is false, it
+   will be a :exc:`ValueError` to encode such floats.
 
    If *sort_keys* is true (default: ``False``), then the output of dictionaries
    will be sorted by key; this is useful for regression tests to ensure that
@@ -502,8 +502,8 @@ Encoders and Decoders
       All parameters are now :ref:`keyword-only <keyword-only_parameter>`.
 
    .. versionchanged:: 3.14
-      Added support for ``allow_nan='null'``. Passing any string value
-      other than ``'null'`` for ``allow_nan`` now raises a
+      Added support for ``allow_nan='as_null'``. Passing any string value
+      other than ``'as_null'`` for *allow_nan* now raises a
       :warning:`DeprecationWarning`.
 
    .. method:: default(o)

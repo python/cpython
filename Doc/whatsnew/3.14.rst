@@ -86,6 +86,14 @@ New Modules
 Improved Modules
 ================
 
+json
+----
+
+* Add support for ``allow_nan='as_null'`` when encoding to JSON. This converts
+  floating-point infinities and NaNs to a JSON ``null``, for compatibility
+  with ECMAScript's ``JSON.stringify``.
+  (Contributed by Mark Dickinson in :gh:`115246`.)
+
 
 Optimizations
 =============
@@ -181,4 +189,3 @@ Deprecated
 
 Removed
 -------
-

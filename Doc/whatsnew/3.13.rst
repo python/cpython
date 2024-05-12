@@ -761,14 +761,6 @@ itertools
   than the specified batch size.
   (Contributed by Raymond Hettinger in :gh:`113202`.)
 
-json
-----
-
-* Add support for ``allow_nan='null'`` when encoding to JSON. This converts
-  floating-point infinities and NaNs to a JSON ``null``, for compatibility
-  with ECMAScript's ``JSON.stringify``.
-  (Contributed by Mark Dickinson in :gh:`115246`.)
-
 marshal
 -------
 

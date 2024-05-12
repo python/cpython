@@ -1229,7 +1229,8 @@ encoder_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     //   0 to disallow nans and infinities
     //   1 to convert nans and infinities into corresponding JSON strings
     //   2 to convert nans and infinities to a JSON null
-    if (PyUnicode_Check(allow_nan_obj) && _PyUnicode_Equal(allow_nan_obj, &_Py_ID(null))) {
+    if (PyUnicode_Check(allow_nan_obj) &&
+            _PyUnicode_Equal(allow_nan_obj, &_Py_ID(as_null))) {
         allow_nan = 2;
     } else {
         allow_nan = PyObject_IsTrue(allow_nan_obj);

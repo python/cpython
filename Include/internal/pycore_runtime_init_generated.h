@@ -798,6 +798,7 @@ extern "C" {
     INIT_ID(arguments), \
     INIT_ID(argv), \
     INIT_ID(as_integer_ratio), \
+    INIT_ID(as_null), \
     INIT_ID(asend), \
     INIT_ID(ast), \
     INIT_ID(athrow), \

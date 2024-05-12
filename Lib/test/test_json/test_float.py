@@ -35,29 +35,29 @@ class TestFloat:
             self.assertRaisesRegex(ValueError, msg, self.dumps, [val], allow_nan=False)
 
     def test_allow_nan_null(self):
-        # when allow_nan is "null", infinities and NaNs are converted to "null"
+        # when allow_nan is 'as_null', infinities and NaNs convert to 'null'
         for val in [float('inf'), float('-inf'), float('nan')]:
             with self.subTest(val=val):
-                out = self.dumps([val], allow_nan="null")
+                out = self.dumps([val], allow_nan='as_null')
                 res = self.loads(out)
                 self.assertEqual(res, [None])
 
         # and finite values are treated as normal
         for val in [1.25, -23, -0.0, 0.0]:
             with self.subTest(val=val):
-                out = self.dumps([val], allow_nan="null")
+                out = self.dumps([val], allow_nan='as_null')
                 res = self.loads(out)
                 self.assertEqual(res, [val])
 
         # testing a mixture
         vals = [-1.3, 1e100, -math.inf, 1234, -0.0, math.nan]
-        out = self.dumps(vals, allow_nan="null")
+        out = self.dumps(vals, allow_nan='as_null')
         res = self.loads(out)
         self.assertEqual(res, [-1.3, 1e100, None, 1234, -0.0, None])
 
     def test_allow_nan_string_deprecation(self):
         with self.assertWarns(DeprecationWarning):
-            self.dumps(2.3, allow_nan="true")
+            self.dumps(2.3, allow_nan='true')
 
     def test_allow_nan_non_boolean(self):
         # check that exception gets propagated as expected

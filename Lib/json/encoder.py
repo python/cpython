@@ -150,10 +150,10 @@ class JSONEncoder(object):
         self.ensure_ascii = ensure_ascii
         self.check_circular = check_circular
 
-        if isinstance(allow_nan, str) and allow_nan != "null":
+        if isinstance(allow_nan, str) and allow_nan != 'as_null':
             warnings.warn(
                 "in the future, allow_nan will no longer accept strings "
-                "other than 'null'. Use a boolean instead.",
+                "other than 'as_null'. Use a boolean instead.",
                 DeprecationWarning,
                 stacklevel=3,
             )
@@ -246,7 +246,7 @@ class JSONEncoder(object):
             else:
                 return _repr(o)
 
-            if allow_nan == 'null':
+            if allow_nan == 'as_null':
                 return 'null'
 
             elif not allow_nan:
