@@ -424,6 +424,17 @@ Module functions
    Note: *typename* and the name of the type in your query are matched
    case-insensitively.
 
+.. function:: Date(year, month, day, /, tzinfo=None, *, fold=0)
+
+   Construct a date instance as :class:`datetime.date`.
+
+.. function:: Time(hour, minute, second, /, tzinfo=None, *, fold=0)
+
+   Construct a time instance as :class:`datetime.time`.
+
+.. function:: Timestamp(year, month, day, /, hour=0, minute=0, second=0, tzinfo=None, *, fold=0)
+
+   Construct a time stamp instance as :class:`datetime.datetime`.
 
 .. _sqlite3-module-constants:
 
