@@ -291,6 +291,7 @@ def _dec_str_to_int_inner(s, *, GUARD=8):
             # enabled.
             #assert hi, lo == divmod(n, pow256[w2][0])
         inner(hi, w - w2)
+        del hi # at top levels, can free a lot of RAM "early"
         inner(lo, w2)
 
     # How many base 256 digits are needed?. Mathematically, exactly
