@@ -585,7 +585,7 @@ def int_divmod(a, b):
 # LATER: doing this analysis pointed out an error: our division isn't
 # exactly "balanced", in that when `w` is odd the integer part of
 # n/256**w2 can be larger than 256**w2. The code used enough working
-# precision in the multiply then, but the precommputed reciprocal
+# precision in the multiply then, but the precomputed reciprocal
 # approximation didn't have that many good digits to give. This was
 # repaired by retaining 2 more digits in the reciprocal.
 #
@@ -599,7 +599,7 @@ def int_divmod(a, b):
 # ------------------------
 # The code computes all the powers of 256 needed, and all those of
 # 1/256. These are exact, but the reciprocals have over twice as many
-# significant digts as needed. So in another pass we cut the exact
+# significant digits as needed. So in another pass we cut the exact
 # reciprocals back, and then throw away the exact valuea.
 #
 # This "wastes" a lot of RAM for the duration. We could instead not
