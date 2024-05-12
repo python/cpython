@@ -11,7 +11,7 @@
 void
 _PyGC_ClearAllFreeLists(PyInterpreterState *interp)
 {
-    _PyObject_ClearFreeLists(&interp->freelist_state, 0);
+    _PyObject_ClearFreeLists(&interp->object_state.freelists, 0);
 }
 
 #endif

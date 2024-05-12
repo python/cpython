@@ -57,6 +57,11 @@ static PyMethodDef ellipsis_methods[] = {
     {NULL, NULL}
 };
 
+PyDoc_STRVAR(ellipsis_doc,
+"ellipsis()\n"
+"--\n\n"
+"The type of the Ellipsis singleton.");
+
 PyTypeObject PyEllipsis_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "ellipsis",                         /* tp_name */
@@ -78,7 +83,7 @@ PyTypeObject PyEllipsis_Type = {
     0,                                  /* tp_setattro */
     0,                                  /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT,                 /* tp_flags */
-    0,                                  /* tp_doc */
+    ellipsis_doc,                       /* tp_doc */
     0,                                  /* tp_traverse */
     0,                                  /* tp_clear */
     0,                                  /* tp_richcompare */
@@ -103,15 +108,15 @@ PyObject _Py_EllipsisObject = _PyObject_HEAD_INIT(&PyEllipsis_Type);
 
 /* Slice object implementation */
 
-void _PySlice_ClearFreeList(_PyFreeListState *state, int is_finalization)
+void _PySlice_ClearFreeList(struct _Py_object_freelists *freelists, int is_finalization)
 {
     if (!is_finalization) {
         return;
     }
 #ifdef WITH_FREELISTS
-    PySliceObject *obj = state->slices.slice_cache;
+    PySliceObject *obj = freelists->slices.slice_cache;
     if (obj != NULL) {
-        state->slices.slice_cache = NULL;
+        freelists->slices.slice_cache = NULL;
         PyObject_GC_Del(obj);
     }
 #endif
@@ -127,10 +132,10 @@ _PyBuildSlice_Consume2(PyObject *start, PyObject *stop, PyObject *step)
     assert(start != NULL && stop != NULL && step != NULL);
     PySliceObject *obj;
 #ifdef WITH_FREELISTS
-    _PyFreeListState *state = _PyFreeListState_GET();
-    if (state->slices.slice_cache != NULL) {
-        obj = state->slices.slice_cache;
-        state->slices.slice_cache = NULL;
+    struct _Py_object_freelists *freelists = _Py_object_freelists_GET();
+    if (freelists->slices.slice_cache != NULL) {
+        obj = freelists->slices.slice_cache;
+        freelists->slices.slice_cache = NULL;
         _Py_NewReference((PyObject *)obj);
     }
     else
@@ -365,9 +370,9 @@ slice_dealloc(PySliceObject *r)
     Py_DECREF(r->start);
     Py_DECREF(r->stop);
 #ifdef WITH_FREELISTS
-    _PyFreeListState *state = _PyFreeListState_GET();
-    if (state->slices.slice_cache == NULL) {
-        state->slices.slice_cache = r;
+    struct _Py_object_freelists *freelists = _Py_object_freelists_GET();
+    if (freelists->slices.slice_cache == NULL) {
+        freelists->slices.slice_cache = r;
     }
     else
 #endif

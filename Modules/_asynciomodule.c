@@ -1601,11 +1601,25 @@ static void
 FutureIter_dealloc(futureiterobject *it)
 {
     PyTypeObject *tp = Py_TYPE(it);
-    asyncio_state *state = get_asyncio_state_by_def((PyObject *)it);
+
+    // FutureIter is a heap type so any subclass must also be a heap type.
+    assert(_PyType_HasFeature(tp, Py_TPFLAGS_HEAPTYPE));
+
+    PyObject *module = ((PyHeapTypeObject*)tp)->ht_module;
+    asyncio_state *state = NULL;
+
     PyObject_GC_UnTrack(it);
     tp->tp_clear((PyObject *)it);
 
-    if (state->fi_freelist_len < FI_FREELIST_MAXLEN) {
+    // GH-115874: We can't use PyType_GetModuleByDef here as the type might have
+    // already been cleared, which is also why we must check if ht_module != NULL.
+    // Due to this restriction, subclasses that belong to a different module
+    // will not be able to use the free list.
+    if (module && _PyModule_GetDef(module) == &_asynciomodule) {
+        state = get_asyncio_state(module);
+    }
+
+    if (state && state->fi_freelist_len < FI_FREELIST_MAXLEN) {
         state->fi_freelist_len++;
         it->future = (FutureObj*) state->fi_freelist;
         state->fi_freelist = it;
@@ -2045,12 +2059,22 @@ static PyObject *
 swap_current_task(asyncio_state *state, PyObject *loop, PyObject *task)
 {
     PyObject *prev_task;
+
+    if (task == Py_None) {
+        if (PyDict_Pop(state->current_tasks, loop, &prev_task) < 0) {
+            return NULL;
+        }
+        if (prev_task == NULL) {
+            Py_RETURN_NONE;
+        }
+        return prev_task;
+    }
+
     Py_hash_t hash;
     hash = PyObject_Hash(loop);
     if (hash == -1) {
         return NULL;
     }
-
     prev_task = _PyDict_GetItem_KnownHash(state->current_tasks, loop, hash);
     if (prev_task == NULL) {
         if (PyErr_Occurred()) {
@@ -2059,22 +2083,12 @@ swap_current_task(asyncio_state *state, PyObject *loop, PyObject *task)
         prev_task = Py_None;
     }
     Py_INCREF(prev_task);
-
-    if (task == Py_None) {
-        if (_PyDict_DelItem_KnownHash(state->current_tasks, loop, hash) == -1) {
-            goto error;
-        }
-    } else {
-        if (_PyDict_SetItem_KnownHash(state->current_tasks, loop, task, hash) == -1) {
-            goto error;
-        }
+    if (_PyDict_SetItem_KnownHash(state->current_tasks, loop, task, hash) == -1) {
+        Py_DECREF(prev_task);
+        return NULL;
     }
 
     return prev_task;
-
-error:
-    Py_DECREF(prev_task);
-    return NULL;
 }
 
 /* ----- Task */
@@ -2393,6 +2407,9 @@ _asyncio_Task_uncancel_impl(TaskObj *self)
 {
     if (self->task_num_cancels_requested > 0) {
         self->task_num_cancels_requested -= 1;
+        if (self->task_num_cancels_requested == 0) {
+            self->task_must_cancel = 0;
+        }
     }
     return PyLong_FromLong(self->task_num_cancels_requested);
 }
@@ -3778,6 +3795,7 @@ module_exec(PyObject *mod)
 static struct PyModuleDef_Slot module_slots[] = {
     {Py_mod_exec, module_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL},
 };
 

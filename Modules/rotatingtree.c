@@ -1,3 +1,9 @@
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
+#include "Python.h"
+#include "pycore_lock.h"
 #include "rotatingtree.h"
 
 #define KEY_LOWER_THAN(key1, key2)  ((char*)(key1) < (char*)(key2))
@@ -10,17 +16,20 @@
 
 static unsigned int random_value = 1;
 static unsigned int random_stream = 0;
+static PyMutex random_mutex = {0};
 
 static int
 randombits(int bits)
 {
     int result;
+    PyMutex_Lock(&random_mutex);
     if (random_stream < (1U << bits)) {
         random_value *= 1082527;
         random_stream = random_value;
     }
     result = random_stream & ((1<<bits)-1);
     random_stream >>= bits;
+    PyMutex_Unlock(&random_mutex);
     return result;
 }
 

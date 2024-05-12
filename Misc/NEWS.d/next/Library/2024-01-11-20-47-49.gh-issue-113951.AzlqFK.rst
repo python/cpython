@@ -1,7 +1,0 @@
-Fix the behavior of ``tag_unbind()`` methods of :class:`tkinter.Text` and
-:class:`tkinter.Canvas` classes with three arguments. Previously,
-``widget.tag_unbind(tag, sequence, funcid)`` destroyed the current binding
-for *sequence*, leaving *sequence* unbound, and deleted the *funcid*
-command. Now it removes only *funcid* from the binding for *sequence*,
-keeping other commands, and deletes the *funcid* command. It leaves
-*sequence* unbound only if *funcid* was the last bound command.

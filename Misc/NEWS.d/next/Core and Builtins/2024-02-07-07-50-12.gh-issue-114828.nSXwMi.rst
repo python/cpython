@@ -1,2 +1,0 @@
-Fix compilation crashes in uncommon code examples using :func:`super` inside
-a comprehension in a class body.

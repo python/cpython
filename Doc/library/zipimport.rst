@@ -1,5 +1,5 @@
-:mod:`zipimport` --- Import modules from Zip archives
-=====================================================
+:mod:`!zipimport` --- Import modules from Zip archives
+======================================================
 
 .. module:: zipimport
    :synopsis: Support for importing Python modules from ZIP archives.
@@ -29,6 +29,9 @@ Any files may be present in the ZIP archive, but importers are only invoked for
 :file:`.py` files, Python will not attempt to modify the archive by adding the
 corresponding :file:`.pyc` file, meaning that if a ZIP archive
 doesn't contain :file:`.pyc` files, importing may be rather slow.
+
+.. versionchanged:: 3.13
+   ZIP64 is supported
 
 .. versionchanged:: 3.8
    Previously, ZIP archives with an archive comment were not supported.

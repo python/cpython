@@ -469,6 +469,25 @@ PyDoc_STRVAR(gc_is_tracked__doc__,
 #define GC_IS_TRACKED_METHODDEF    \
     {"is_tracked", (PyCFunction)gc_is_tracked, METH_O, gc_is_tracked__doc__},
 
+static int
+gc_is_tracked_impl(PyObject *module, PyObject *obj);
+
+static PyObject *
+gc_is_tracked(PyObject *module, PyObject *obj)
+{
+    PyObject *return_value = NULL;
+    int _return_value;
+
+    _return_value = gc_is_tracked_impl(module, obj);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyBool_FromLong((long)_return_value);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(gc_is_finalized__doc__,
 "is_finalized($module, obj, /)\n"
 "--\n"
@@ -477,6 +496,25 @@ PyDoc_STRVAR(gc_is_finalized__doc__,
 
 #define GC_IS_FINALIZED_METHODDEF    \
     {"is_finalized", (PyCFunction)gc_is_finalized, METH_O, gc_is_finalized__doc__},
+
+static int
+gc_is_finalized_impl(PyObject *module, PyObject *obj);
+
+static PyObject *
+gc_is_finalized(PyObject *module, PyObject *obj)
+{
+    PyObject *return_value = NULL;
+    int _return_value;
+
+    _return_value = gc_is_finalized_impl(module, obj);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyBool_FromLong((long)_return_value);
+
+exit:
+    return return_value;
+}
 
 PyDoc_STRVAR(gc_freeze__doc__,
 "freeze($module, /)\n"
@@ -547,4 +585,4 @@ gc_get_freeze_count(PyObject *module, PyObject *Py_UNUSED(ignored))
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=258f92524c1141fc input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0a7e91917adcb937 input=a9049054013a1b77]*/
