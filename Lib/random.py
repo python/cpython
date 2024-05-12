@@ -464,6 +464,8 @@ class Random(_random.Random):
         """
         random = self.random
         n = len(population)
+        if n == 0:
+            raise IndexError('Cannot choose from an empty population')
         if cum_weights is None:
             if weights is None:
                 floor = _floor
