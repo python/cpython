@@ -436,6 +436,19 @@ Module functions
 
    Construct a time stamp instance as :class:`datetime.datetime`.
 
+.. function:: DateFromTicks([secs])
+
+   Construct a :class:`~sqlite3.Date` instance from the given number of seconds since the epoch, converted to local time.
+   (see the documentation of the standard Python :mod:`time` module and its :func:`~time.localtime` function for details).
+
+.. function:: TimeFromTicks([secs])
+
+   Constructs a :class:`~sqlite3.Time` instance from the given number of seconds since the epoch, converted to local time.
+
+.. function:: TimestampFromTicks([secs])
+
+   Construct a :class:`~sqlite3.Timestamp` from the given number of seconds since the epoch, converted to local time.
+
 .. _sqlite3-module-constants:
 
 Module constants
