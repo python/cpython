@@ -217,7 +217,7 @@ Basic Usage
    .. versionchanged:: 3.14
       Added support for ``allow_nan='as_null'``. Passing any string value
       other than ``'as_null'`` for *allow_nan* now triggers a
-      :warning:`DeprecationWarning`.
+      :exc:`DeprecationWarning`.
 
    .. note::
 
@@ -504,7 +504,7 @@ Encoders and Decoders
    .. versionchanged:: 3.14
       Added support for ``allow_nan='as_null'``. Passing any string value
       other than ``'as_null'`` for *allow_nan* now triggers a
-      :warning:`DeprecationWarning`.
+      :exc:`DeprecationWarning`.
 
    .. method:: default(o)
 
