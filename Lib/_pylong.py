@@ -565,7 +565,7 @@ def int_divmod(a, b):
 # exxmple, in 8E20 / 1E20, it gives 20 - 20 = 0, which is the floor of
 # log10(9), It also giver 0 for 1E20/9E20 (`.adjusted()` doesn't look at
 # the digits at all - it just gives the power-of-10 exponent of the most
-# significnt digit, whatever it may be). But in that case it's the
+# significant digit, whatever it may be). But in that case it's the
 # ceiling of the true log10 (which is a bit larger than -1). So "it's
 # close", but since it may be as bad as (but no worse than) 1 too small,
 # we have to assume the worst: 1 too small.
