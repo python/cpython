@@ -611,8 +611,8 @@ def int_divmod(a, b):
 # exact powers of 1/256 (which requires no division, except for the
 # initial 1/256) and then chopping them back.
 #
-# I judged that's more desirable for smaller inputs to run faster than
-# to incease the size of the largest string a given box's RAM can
+# I judged that it's more desirable for smaller inputs to run faster
+# than to incease the size of the largest string a given box's RAM can
 # handle, so picked the division-free method.
 #
 # Note this is all about startup cost - it doesn't affect the speed of
