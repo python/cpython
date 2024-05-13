@@ -2014,6 +2014,70 @@ exit:
 
 #if defined(MS_WINDOWS)
 
+PyDoc_STRVAR(os__path_exists__doc__,
+"_path_exists($module, path, /)\n"
+"--\n"
+"\n"
+"Test whether a path exists.  Returns False for broken symbolic links.");
+
+#define OS__PATH_EXISTS_METHODDEF    \
+    {"_path_exists", (PyCFunction)os__path_exists, METH_O, os__path_exists__doc__},
+
+static int
+os__path_exists_impl(PyObject *module, PyObject *path);
+
+static PyObject *
+os__path_exists(PyObject *module, PyObject *path)
+{
+    PyObject *return_value = NULL;
+    int _return_value;
+
+    _return_value = os__path_exists_impl(module, path);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyBool_FromLong((long)_return_value);
+
+exit:
+    return return_value;
+}
+
+#endif /* defined(MS_WINDOWS) */
+
+#if defined(MS_WINDOWS)
+
+PyDoc_STRVAR(os__path_lexists__doc__,
+"_path_lexists($module, path, /)\n"
+"--\n"
+"\n"
+"Test whether a path exists.  Returns True for broken symbolic links.");
+
+#define OS__PATH_LEXISTS_METHODDEF    \
+    {"_path_lexists", (PyCFunction)os__path_lexists, METH_O, os__path_lexists__doc__},
+
+static int
+os__path_lexists_impl(PyObject *module, PyObject *path);
+
+static PyObject *
+os__path_lexists(PyObject *module, PyObject *path)
+{
+    PyObject *return_value = NULL;
+    int _return_value;
+
+    _return_value = os__path_lexists_impl(module, path);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyBool_FromLong((long)_return_value);
+
+exit:
+    return return_value;
+}
+
+#endif /* defined(MS_WINDOWS) */
+
+#if defined(MS_WINDOWS)
+
 PyDoc_STRVAR(os__path_isdir__doc__,
 "_path_isdir($module, /, s)\n"
 "--\n"
@@ -2129,70 +2193,6 @@ os__path_isfile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
     }
     path = args[0];
     _return_value = os__path_isfile_impl(module, path);
-    if ((_return_value == -1) && PyErr_Occurred()) {
-        goto exit;
-    }
-    return_value = PyBool_FromLong((long)_return_value);
-
-exit:
-    return return_value;
-}
-
-#endif /* defined(MS_WINDOWS) */
-
-#if defined(MS_WINDOWS)
-
-PyDoc_STRVAR(os__path_exists__doc__,
-"_path_exists($module, path, /)\n"
-"--\n"
-"\n"
-"Test whether a path exists.  Returns False for broken symbolic links.");
-
-#define OS__PATH_EXISTS_METHODDEF    \
-    {"_path_exists", (PyCFunction)os__path_exists, METH_O, os__path_exists__doc__},
-
-static int
-os__path_exists_impl(PyObject *module, PyObject *path);
-
-static PyObject *
-os__path_exists(PyObject *module, PyObject *path)
-{
-    PyObject *return_value = NULL;
-    int _return_value;
-
-    _return_value = os__path_exists_impl(module, path);
-    if ((_return_value == -1) && PyErr_Occurred()) {
-        goto exit;
-    }
-    return_value = PyBool_FromLong((long)_return_value);
-
-exit:
-    return return_value;
-}
-
-#endif /* defined(MS_WINDOWS) */
-
-#if defined(MS_WINDOWS)
-
-PyDoc_STRVAR(os__path_lexists__doc__,
-"_path_lexists($module, path, /)\n"
-"--\n"
-"\n"
-"Test whether a path exists.  Returns True for broken symbolic links.");
-
-#define OS__PATH_LEXISTS_METHODDEF    \
-    {"_path_lexists", (PyCFunction)os__path_lexists, METH_O, os__path_lexists__doc__},
-
-static int
-os__path_lexists_impl(PyObject *module, PyObject *path);
-
-static PyObject *
-os__path_lexists(PyObject *module, PyObject *path)
-{
-    PyObject *return_value = NULL;
-    int _return_value;
-
-    _return_value = os__path_lexists_impl(module, path);
     if ((_return_value == -1) && PyErr_Occurred()) {
         goto exit;
     }
@@ -12181,14 +12181,6 @@ os__supports_virtual_terminal(PyObject *module, PyObject *Py_UNUSED(ignored))
     #define OS__PATH_SPLITROOT_METHODDEF
 #endif /* !defined(OS__PATH_SPLITROOT_METHODDEF) */
 
-#ifndef OS__PATH_ISDIR_METHODDEF
-    #define OS__PATH_ISDIR_METHODDEF
-#endif /* !defined(OS__PATH_ISDIR_METHODDEF) */
-
-#ifndef OS__PATH_ISFILE_METHODDEF
-    #define OS__PATH_ISFILE_METHODDEF
-#endif /* !defined(OS__PATH_ISFILE_METHODDEF) */
-
 #ifndef OS__PATH_EXISTS_METHODDEF
     #define OS__PATH_EXISTS_METHODDEF
 #endif /* !defined(OS__PATH_EXISTS_METHODDEF) */
@@ -12196,6 +12188,14 @@ os__supports_virtual_terminal(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef OS__PATH_LEXISTS_METHODDEF
     #define OS__PATH_LEXISTS_METHODDEF
 #endif /* !defined(OS__PATH_LEXISTS_METHODDEF) */
+
+#ifndef OS__PATH_ISDIR_METHODDEF
+    #define OS__PATH_ISDIR_METHODDEF
+#endif /* !defined(OS__PATH_ISDIR_METHODDEF) */
+
+#ifndef OS__PATH_ISFILE_METHODDEF
+    #define OS__PATH_ISFILE_METHODDEF
+#endif /* !defined(OS__PATH_ISFILE_METHODDEF) */
 
 #ifndef OS__PATH_ISLINK_METHODDEF
     #define OS__PATH_ISLINK_METHODDEF
@@ -12752,4 +12752,4 @@ os__supports_virtual_terminal(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF
     #define OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF
 #endif /* !defined(OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF) */
-/*[clinic end generated code: output=131721546fb798da input=a9049054013a1b77]*/
+/*[clinic end generated code: output=75cdd3771c019da1 input=a9049054013a1b77]*/
