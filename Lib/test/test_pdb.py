@@ -929,10 +929,10 @@ def test_pdb_return_to_different_file():
     ...     'continue',
     ... ]):
     ...    test_function()
-    > <doctest test.test_pdb.test_pdb_return_to_different_file[2]>(2)test_function()
-    -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    > <doctest test.test_pdb.test_pdb_return_to_different_file[2]>(3)test_function()
+    -> pprint.pprint(A())
     (Pdb) b A.__repr__
-    Breakpoint 1 at <doctest test.test_pdb.test_pdb_return_to_different_file[1]>:3
+    Breakpoint 1 at <doctest test.test_pdb.test_pdb_return_to_different_file[1]>:2
     (Pdb) continue
     > <doctest test.test_pdb.test_pdb_return_to_different_file[1]>(3)__repr__()
     -> return 'A'
