@@ -5088,27 +5088,30 @@ os__path_splitroot_impl(PyObject *module, path_t *path)
 }
 
 
-#define PY_IFREG 1
-#define PY_IFDIR 2
-#define PY_IFLNK 3
-#define PY_IFMNT 4
+#define PY_IFREG  1 // Regular file
+#define PY_IFDIR  2 // Directory
+#define PY_IFLNK  4 // Symlink
+#define PY_IFMNT  8 // Mount Point (junction)
+#define PY_IFLRP 16 // Link Reparse Point (name-surrogate, symlink, junction)
+#define PY_IFRRP 32 // Regular Reparse Point
 
 static BOOL
-_testFileTypeByHandle(HANDLE hfile, int refFileType, BOOL diskOnly)
+_testFileTypeByHandle(HANDLE hfile, int testedType, BOOL diskOnly)
 {
-    assert(refFileType == PY_IFREG || refFileType == PY_IFDIR ||
-           refFileType == PY_IFLNK || refFileType == PY_IFMNT);
+    assert(testedType == PY_IFREG || testedType == PY_IFDIR ||
+           testedType == PY_IFLNK || testedType == PY_IFMNT ||
+           testedType == PY_IFLRP || testedType == PY_IFRRP);
 
     DWORD fileDevType = GetFileType(hfile);
-    if ((fileDevType == FILE_TYPE_CHAR) ||
-        (fileDevType != FILE_TYPE_DISK && diskOnly) ||
-        (fileDevType == FILE_TYPE_UNKNOWN && GetLastError() != 0))
+    if ((fileDevType == FILE_TYPE_UNKNOWN && GetLastError()) ||
+        (fileDevType == FILE_TYPE_CHAR) ||
+        (diskOnly && fileDevType != FILE_TYPE_DISK))
     {
         return FALSE;
     }
 
     DWORD attributes, reparseTag;
-    if ((refFileType == PY_IFLNK || refFileType == PY_IFMNT)) {
+    if ((testedType != PY_IFREG && testedType != PY_IFDIR)) {
         FILE_ATTRIBUTE_TAG_INFO info;
         if (!GetFileInformationByHandleEx(hfile, FileAttributeTagInfo, &info,
                                           sizeof(info)))
@@ -5130,21 +5133,22 @@ _testFileTypeByHandle(HANDLE hfile, int refFileType, BOOL diskOnly)
     }
 
     if (attributes & FILE_ATTRIBUTE_REPARSE_POINT) {
-        if (refFileType == PY_IFLNK) {
+        switch (testedType) {
+        case PY_IFLNK:
             return reparseTag == IO_REPARSE_TAG_SYMLINK;
-        }
-        if (refFileType == PY_IFMNT) {
+        case PY_IFMNT:
             return reparseTag == IO_REPARSE_TAG_MOUNT_POINT;
+        case PY_IFLRP:
+            return IsReparseTagNameSurrogate(reparseTag);
+        case PY_IFRRP:
+            return reparseTag && !IsReparseTagNameSurrogate(reparseTag);
         }
-        // Non-surrogate reparse points aren't supported by handle. Just
-        // return False. Supporting them requires querying and opening the
-        // final path with reparsing enabled.
     }
-    else if (refFileType == PY_IFREG) {
+    else if (testedType == PY_IFREG) {
         return ((fileDevType == FILE_TYPE_DISK) &&
                 !(attributes & FILE_ATTRIBUTE_DIRECTORY));
     }
-    else if (refFileType == PY_IFDIR) {
+    else if (testedType == PY_IFDIR) {
         return attributes & FILE_ATTRIBUTE_DIRECTORY;
     }
 
@@ -5152,38 +5156,47 @@ _testFileTypeByHandle(HANDLE hfile, int refFileType, BOOL diskOnly)
 }
 
 static BOOL
-_testFileTypeByName(LPCWSTR path, int refFileType)
+_testFileTypeByName(LPCWSTR path, int testedType)
 {
-    assert(refFileType == PY_IFREG || refFileType == PY_IFDIR ||
-           refFileType == PY_IFLNK || refFileType == PY_IFMNT);
+    assert(testedType == PY_IFREG || testedType == PY_IFDIR ||
+           testedType == PY_IFLNK || testedType == PY_IFMNT ||
+           testedType == PY_IFLRP || testedType == PY_IFRRP);
 
     FILE_STAT_BASIC_INFORMATION info;
     if (_Py_GetFileInformationByName(path, FileStatBasicByNameInfo, &info,
                                      sizeof(info)))
     {
         if (info.FileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) {
-            if (refFileType == PY_IFLNK) {
+            switch(testedType) {
+            case PY_IFREG:
+                if (info.FileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
+                    return FALSE;
+                }
+                break;
+            case PY_IFDIR:
+                if (!(info.FileAttributes & FILE_ATTRIBUTE_DIRECTORY)) {
+                    return FALSE;
+                }
+                break;
+            case PY_IFLNK:
                 return info.ReparseTag == IO_REPARSE_TAG_SYMLINK;
-            }
-            if (refFileType == PY_IFMNT) {
+            case PY_IFMNT:
                 return info.ReparseTag == IO_REPARSE_TAG_MOUNT_POINT;
-            }
-            if ((refFileType == PY_IFREG) &&
-                (info.FileAttributes & FILE_ATTRIBUTE_DIRECTORY) ||
-                (refFileType == PY_IFDIR) &&
-                !(info.FileAttributes & FILE_ATTRIBUTE_DIRECTORY))
-            {
-                return FALSE;
+            case PY_IFLRP:
+                return IsReparseTagNameSurrogate(info.ReparseTag);
+            case PY_IFRRP:
+                return (info.ReparseTag &&
+                        !IsReparseTagNameSurrogate(info.ReparseTag));
             }
         }
-        else if (refFileType == PY_IFLNK || refFileType == PY_IFMNT) {
-            return FALSE;
-        }
-        else if (refFileType == PY_IFREG) {
+        else if (testedType == PY_IFREG) {
             return !(info.FileAttributes & FILE_ATTRIBUTE_DIRECTORY);
         }
-        else if (refFileType == PY_IFDIR) {
+        else if (testedType == PY_IFDIR) {
             return info.FileAttributes & FILE_ATTRIBUTE_DIRECTORY;
+        }
+        else {
+            return FALSE;
         }
     }
     else if (_Py_GetFileInformationByName_ErrorIsTrustworthy(
@@ -5193,40 +5206,43 @@ _testFileTypeByName(LPCWSTR path, int refFileType)
     }
 
     DWORD flags = FILE_FLAG_BACKUP_SEMANTICS;
-    if (refFileType == PY_IFLNK || refFileType == PY_IFMNT) {
+    if (testedType != PY_IFREG && testedType != PY_IFDIR) {
         flags |= FILE_FLAG_OPEN_REPARSE_POINT;
     }
     HANDLE hfile = CreateFileW(path, FILE_READ_ATTRIBUTES, 0, NULL,
                                OPEN_EXISTING, flags, NULL);
     if (hfile != INVALID_HANDLE_VALUE) {
-        BOOL result = _testFileTypeByHandle(hfile, refFileType, FALSE);
+        BOOL result = _testFileTypeByHandle(hfile, testedType, FALSE);
         CloseHandle(hfile);
         return result;
     }
 
-    int rc;
-    STRUCT_STAT st;
     switch (GetLastError()) {
     case ERROR_ACCESS_DENIED:
     case ERROR_SHARING_VIOLATION:
     case ERROR_CANT_ACCESS_FILE:
     case ERROR_INVALID_PARAMETER:
-        if (refFileType == PY_IFREG || refFileType == PY_IFDIR) {
-            rc = STAT(path, &st);
+        STRUCT_STAT st;
+        if (testedType == PY_IFREG) {
+            return !STAT(path, &st) && S_ISREG(st.st_mode);
         }
-        else {
-            rc = LSTAT(path, &st);
+        if (testedType == PY_IFDIR) {
+            return !STAT(path, &st) && S_ISDIR(st.st_mode);
         }
-        if (!rc) {
-            switch (refFileType) {
-            case PY_IFREG:
-                return S_ISREG(st.st_mode);
-            case PY_IFDIR:
-                return S_ISDIR(st.st_mode);
+        if (!LSTAT(path, &st)) {
+            switch (testedType) {
             case PY_IFLNK:
-                return S_ISLNK(st.st_mode);
+                return st.st_reparse_tag == IO_REPARSE_TAG_SYMLINK;
             case PY_IFMNT:
                 return st.st_reparse_tag == IO_REPARSE_TAG_MOUNT_POINT;
+            case PY_IFLRP:
+                return IsReparseTagNameSurrogate(st.st_reparse_tag);
+            case PY_IFRRP:
+                // This cannot be implemented generally, except a reparse
+                // point that is not handled by the system, such as
+                // IO_REPARSE_TAG_APPEXECLINK.
+                return (st.st_reparse_tag &&
+                        !IsReparseTagNameSurrogate(st.st_reparse_tag));
             }
         }
     }
@@ -5235,199 +5251,120 @@ _testFileTypeByName(LPCWSTR path, int refFileType)
 }
 
 
-/*[clinic input]
-os._path_isdir -> bool
-
-    s: object
-
-Return true if the pathname refers to an existing directory.
-
-[clinic start generated code]*/
-
-static int
-os__path_isdir_impl(PyObject *module, PyObject *s)
-/*[clinic end generated code: output=cdcdf654d78788cc input=19c64a44650e17b7]*/
+static BOOL
+_testFileExistsByName(LPCWSTR path, BOOL followLinks)
 {
-    path_t _path = PATH_T_INITIALIZE("isdir", "s", 0, 1);
-    BOOL result = FALSE;
-
-    if (!path_converter(s, &_path)) {
-        path_cleanup(&_path);
-        if (PyErr_ExceptionMatches(PyExc_ValueError)) {
-            PyErr_Clear();
-            return FALSE;
-        }
-        return -1;
-    }
-
-    Py_BEGIN_ALLOW_THREADS
-    if (_path.fd != -1) {
-        HANDLE hfile = _Py_get_osfhandle_noraise(_path.fd);
-        if (hfile != INVALID_HANDLE_VALUE) {
-            result = _testFileTypeByHandle(hfile, PY_IFDIR, TRUE);
-        }
-    }
-    else if (_path.wide) {
-        result = _testFileTypeByName(_path.wide, PY_IFDIR);
-    }
-    Py_END_ALLOW_THREADS
-
-    path_cleanup(&_path);
-    return result;
-}
-
-
-/*[clinic input]
-os._path_isfile -> bool
-
-    path: object
-
-Test whether a path is a regular file
-
-[clinic start generated code]*/
-
-static int
-os__path_isfile_impl(PyObject *module, PyObject *path)
-/*[clinic end generated code: output=b40d620efe5a896f input=54b428a310debaea]*/
-{
-    path_t _path = PATH_T_INITIALIZE("isfile", "path", 0, 1);
-    BOOL result = FALSE;
-
-    if (!path_converter(path, &_path)) {
-        path_cleanup(&_path);
-        if (PyErr_ExceptionMatches(PyExc_ValueError)) {
-            PyErr_Clear();
-            return FALSE;
-        }
-        return -1;
-    }
-
-    Py_BEGIN_ALLOW_THREADS
-    if (_path.fd != -1) {
-        HANDLE hfile = _Py_get_osfhandle_noraise(_path.fd);
-        if (hfile != INVALID_HANDLE_VALUE) {
-            result = _testFileTypeByHandle(hfile, PY_IFREG, TRUE);
-        }
-    }
-    else if (_path.wide) {
-        result = _testFileTypeByName(_path.wide, PY_IFREG);
-    }
-    Py_END_ALLOW_THREADS
-
-
-    path_cleanup(&_path);
-    return result;
-}
-
-
-static int
-nt_exists(PyObject *path, int follow_symlinks)
-{
-    path_t _path = PATH_T_INITIALIZE("exists", "path", 0, 1);
-    HANDLE hfile;
-    BOOL traverse = follow_symlinks, result = FALSE;
-
-    if (!path_converter(path, &_path)) {
-        path_cleanup(&_path);
-        if (PyErr_ExceptionMatches(PyExc_ValueError)) {
-            PyErr_Clear();
-            return FALSE;
-        }
-        return -1;
-    }
-
-    Py_BEGIN_ALLOW_THREADS
-    if (_path.fd != -1) {
-        hfile = _Py_get_osfhandle_noraise(_path.fd);
-        if (hfile != INVALID_HANDLE_VALUE) {
-            result = 1;
-        }
-    }
-    else if (_path.wide) {
-        BOOL slow_path = TRUE;
-        FILE_STAT_BASIC_INFORMATION statInfo;
-        if (_Py_GetFileInformationByName(_path.wide, FileStatBasicByNameInfo,
-                &statInfo, sizeof(statInfo)))
+    FILE_STAT_BASIC_INFORMATION info;
+    if (_Py_GetFileInformationByName(path, FileStatBasicByNameInfo, &info,
+                                     sizeof(info)))
+    {
+        if (!(info.FileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) ||
+            !followLinks && IsReparseTagNameSurrogate(info.ReparseTag))
         {
-            if (!(statInfo.FileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) ||
-                !follow_symlinks &&
-                IsReparseTagNameSurrogate(statInfo.ReparseTag))
-            {
-                slow_path = FALSE;
-                result = 1;
-            }
-            else {
-                // reparse point but not name-surrogate
-                traverse = TRUE;
-            }
+            return TRUE;
         }
-        else if (_Py_GetFileInformationByName_ErrorIsTrustworthy(
-                        GetLastError()))
-        {
-            slow_path = FALSE;
+    }
+    else if (_Py_GetFileInformationByName_ErrorIsTrustworthy(
+                    GetLastError()))
+    {
+        return FALSE;
+    }
+
+    DWORD flags = FILE_FLAG_BACKUP_SEMANTICS;
+    if (!followLinks) {
+        flags |= FILE_FLAG_OPEN_REPARSE_POINT;
+    }
+    HANDLE hfile = CreateFileW(path, FILE_READ_ATTRIBUTES, 0, NULL,
+                               OPEN_EXISTING, flags, NULL);
+    if (hfile != INVALID_HANDLE_VALUE) {
+        if (followLinks) {
+            CloseHandle(hfile);
+            return TRUE;
         }
-        if (slow_path) {
-            BOOL traverse = follow_symlinks;
-            if (!traverse) {
-                hfile = CreateFileW(_path.wide, FILE_READ_ATTRIBUTES, 0, NULL,
-                            OPEN_EXISTING, FILE_FLAG_OPEN_REPARSE_POINT |
+        // Regular Reparse Points (PY_IFRRP) have to be traversed.
+        BOOL result = _testFileTypeByHandle(hfile, PY_IFRRP, FALSE);
+        CloseHandle(hfile);
+        if (!result) {
+            return TRUE;
+        }
+        hfile = CreateFileW(path, FILE_READ_ATTRIBUTES, 0, NULL, OPEN_EXISTING,
                             FILE_FLAG_BACKUP_SEMANTICS, NULL);
-                if (hfile != INVALID_HANDLE_VALUE) {
-                    FILE_ATTRIBUTE_TAG_INFO info;
-                    if (GetFileInformationByHandleEx(hfile,
-                            FileAttributeTagInfo, &info, sizeof(info)))
-                    {
-                        if (!(info.FileAttributes &
-                                FILE_ATTRIBUTE_REPARSE_POINT) ||
-                            IsReparseTagNameSurrogate(info.ReparseTag))
-                        {
-                            result = 1;
-                        }
-                        else {
-                            // reparse point but not name-surrogate
-                            traverse = TRUE;
-                        }
-                    }
-                    else {
-                        // device or legacy filesystem
-                        result = 1;
-                    }
-                    CloseHandle(hfile);
-                }
-                else {
-                    STRUCT_STAT st;
-                    switch (GetLastError()) {
-                    case ERROR_ACCESS_DENIED:
-                    case ERROR_SHARING_VIOLATION:
-                    case ERROR_CANT_ACCESS_FILE:
-                    case ERROR_INVALID_PARAMETER:
-                        if (!LSTAT(_path.wide, &st)) {
-                            result = 1;
-                        }
-                    }
-                }
-            }
-            if (traverse) {
-                hfile = CreateFileW(_path.wide, FILE_READ_ATTRIBUTES, 0, NULL,
-                            OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL);
-                if (hfile != INVALID_HANDLE_VALUE) {
-                    CloseHandle(hfile);
-                    result = 1;
-                }
-                else {
-                    STRUCT_STAT st;
-                    switch (GetLastError()) {
-                    case ERROR_ACCESS_DENIED:
-                    case ERROR_SHARING_VIOLATION:
-                    case ERROR_CANT_ACCESS_FILE:
-                    case ERROR_INVALID_PARAMETER:
-                        if (!STAT(_path.wide, &st)) {
-                            result = 1;
-                        }
-                    }
-                }
+        if (hfile != INVALID_HANDLE_VALUE) {
+            CloseHandle(hfile);
+            return TRUE;
+        }
+    }
+
+    switch (GetLastError()) {
+    case ERROR_ACCESS_DENIED:
+    case ERROR_SHARING_VIOLATION:
+    case ERROR_CANT_ACCESS_FILE:
+    case ERROR_INVALID_PARAMETER:
+        STRUCT_STAT st;
+        if (followLinks) {
+            return !STAT(path, &st);
+        }
+        return !LSTAT(path, &st);
+    }
+
+    return FALSE;
+}
+
+
+static int
+_testFileExists(path_t *path, BOOL followLinks)
+{
+    BOOL result = FALSE;
+    if (!path_converter(path, &_path)) {
+        path_cleanup(&_path);
+        if (PyErr_ExceptionMatches(PyExc_ValueError)) {
+            PyErr_Clear();
+            return FALSE;
+        }
+        return -1;
+    }
+
+    Py_BEGIN_ALLOW_THREADS
+    if (path->fd != -1) {
+        HANDLE hfile = _Py_get_osfhandle_noraise(path->fd);
+        if (hfile != INVALID_HANDLE_VALUE) {
+            if (GetFileType(hfile) != FILE_TYPE_UNKNOWN || !GetLastError()) {
+                result = TRUE;
             }
         }
+    }
+    else if (path->wide) {
+        result = _testFileExistsByName(path->wide, followLinks);
+    }
+    Py_END_ALLOW_THREADS
+
+    path_cleanup(&_path);
+    return result;
+}
+
+
+static int
+_testFileType(path_t *path, int testedType)
+{
+    BOOL result = FALSE;
+    if (!path_converter(path, &_path)) {
+        path_cleanup(&_path);
+        if (PyErr_ExceptionMatches(PyExc_ValueError)) {
+            PyErr_Clear();
+            return FALSE;
+        }
+        return -1;
+    }
+
+    Py_BEGIN_ALLOW_THREADS
+    if (path->fd != -1) {
+        HANDLE hfile = _Py_get_osfhandle_noraise(path->fd);
+        if (hfile != INVALID_HANDLE_VALUE) {
+            result = _testFileTypeByHandle(hfile, testedType, TRUE);
+        }
+    }
+    else if (path->wide) {
+        result = _testFileTypeByName(path->wide, testedType);
     }
     Py_END_ALLOW_THREADS
 
@@ -5450,7 +5387,8 @@ static int
 os__path_exists_impl(PyObject *module, PyObject *path)
 /*[clinic end generated code: output=8f784b3abf9f8588 input=2777da15bc4ba5a3]*/
 {
-    return nt_exists(path, 1);
+    path_t _path = PATH_T_INITIALIZE("_path_exists", "path", 0, 1);
+    return _testFileExists(&_path, TRUE);
 }
 
 
@@ -5468,7 +5406,44 @@ static int
 os__path_lexists_impl(PyObject *module, PyObject *path)
 /*[clinic end generated code: output=fec4a91cf4ffccf1 input=8843d4d6d4e7c779]*/
 {
-    return nt_exists(path, 0);
+    path_t _path = PATH_T_INITIALIZE("_path_lexists", "path", 0, 1);
+    return _testFileExists(&_path, FALSE);
+}
+
+
+/*[clinic input]
+os._path_isdir -> bool
+
+    s: object
+
+Return true if the pathname refers to an existing directory.
+
+[clinic start generated code]*/
+
+static int
+os__path_isdir_impl(PyObject *module, PyObject *s)
+/*[clinic end generated code: output=cdcdf654d78788cc input=19c64a44650e17b7]*/
+{
+    path_t _path = PATH_T_INITIALIZE("_path_isdir", "s", 0, 1);
+    return _testFileType(&_path, PY_IFDIR);
+}
+
+
+/*[clinic input]
+os._path_isfile -> bool
+
+    path: object
+
+Test whether a path is a regular file
+
+[clinic start generated code]*/
+
+static int
+os__path_isfile_impl(PyObject *module, PyObject *path)
+/*[clinic end generated code: output=b40d620efe5a896f input=54b428a310debaea]*/
+{
+    path_t _path = PATH_T_INITIALIZE("_path_isfile", "path", 0, 1);
+    return _testFileType(&_path, PY_IFREG);
 }
 
 
@@ -5485,32 +5460,8 @@ static int
 os__path_islink_impl(PyObject *module, PyObject *path)
 /*[clinic end generated code: output=9d0cf8e4c640dfe6 input=b71fed60b9b2cd73]*/
 {
-    path_t _path = PATH_T_INITIALIZE("islink", "path", 0, 1);
-    BOOL result = FALSE;
-
-    if (!path_converter(path, &_path)) {
-        path_cleanup(&_path);
-        if (PyErr_ExceptionMatches(PyExc_ValueError)) {
-            PyErr_Clear();
-            return FALSE;
-        }
-        return -1;
-    }
-
-    Py_BEGIN_ALLOW_THREADS
-    if (_path.fd != -1) {
-        HANDLE hfile = _Py_get_osfhandle_noraise(_path.fd);
-        if (hfile != INVALID_HANDLE_VALUE) {
-            result = _testFileTypeByHandle(hfile, PY_IFLNK, TRUE);
-        }
-    }
-    else if (_path.wide) {
-        result = _testFileTypeByName(_path.wide, PY_IFLNK);
-    }
-    Py_END_ALLOW_THREADS
-
-    path_cleanup(&_path);
-    return result;
+    path_t _path = PATH_T_INITIALIZE("_path_islink", "path", 0, 1);
+    return _testFileType(&_path, PY_IFLNK);
 }
 
 
@@ -5527,38 +5478,16 @@ static int
 os__path_isjunction_impl(PyObject *module, PyObject *path)
 /*[clinic end generated code: output=f1d51682a077654d input=103ccedcdb714f11]*/
 {
-    path_t _path = PATH_T_INITIALIZE("isjunction", "path", 0, 1);
-    BOOL result = FALSE;
-
-    if (!path_converter(path, &_path)) {
-        path_cleanup(&_path);
-        if (PyErr_ExceptionMatches(PyExc_ValueError)) {
-            PyErr_Clear();
-            return FALSE;
-        }
-        return -1;
-    }
-
-    Py_BEGIN_ALLOW_THREADS
-    if (_path.fd != -1) {
-        HANDLE hfile = _Py_get_osfhandle_noraise(_path.fd);
-        if (hfile != INVALID_HANDLE_VALUE) {
-            result = _testFileTypeByHandle(hfile, PY_IFMNT, TRUE);
-        }
-    }
-    else if (_path.wide) {
-        result = _testFileTypeByName(_path.wide, PY_IFMNT);
-    }
-    Py_END_ALLOW_THREADS
-
-    path_cleanup(&_path);
-    return result;
+    path_t _path = PATH_T_INITIALIZE("_path_isjunction", "path", 0, 1);
+    return _testFileType(&_path, PY_IFMNT);
 }
 
 #undef PY_IFREG
 #undef PY_IFDIR
 #undef PY_IFLNK
 #undef PY_IFMNT
+#undef PY_IFLRP
+#undef PY_IFRRP
 
 #endif /* MS_WINDOWS */
 
