@@ -5207,7 +5207,8 @@ _testFileTypeByName(LPCWSTR path, int testedType)
             rc = LSTAT(path, &st);
         }
         if (!rc) {
-            return _testFileType(st.FileAttributes, st.ReparseTag, testedType);
+            return _testFileType(st.st_file_attributes, st.st_reparse_tag,
+                                 testedType);
         }
     }
 
