@@ -5095,8 +5095,8 @@ os__path_splitroot_impl(PyObject *module, path_t *path)
 #define PY_IFLRP 16 // Link Reparse Point (name-surrogate, symlink, junction)
 #define PY_IFRRP 32 // Regular Reparse Point
 
-static inline BOOL
-_testFileType(DWORD attributes, DWORD reparseTag, int testedType)
+static BOOL
+_testInfo(DWORD attributes, DWORD reparseTag, int testedType)
 {
     if (testedType == PY_IFREG) {
         return attributes && !(attributes & FILE_ATTRIBUTE_DIRECTORY);
@@ -5131,29 +5131,16 @@ _testFileTypeByHandle(HANDLE hfile, int testedType, BOOL diskOnly)
         return FALSE;
     }
 
-    DWORD attributes, reparseTag;
     if ((testedType != PY_IFREG && testedType != PY_IFDIR)) {
         FILE_ATTRIBUTE_TAG_INFO info;
-        if (!GetFileInformationByHandleEx(hfile, FileAttributeTagInfo, &info,
-                                          sizeof(info)))
-        {
-            return FALSE;
-        }
-        attributes = info.FileAttributes;
-        reparseTag = info.ReparseTag;
+        return GetFileInformationByHandleEx(hfile, FileAttributeTagInfo, &info,
+                                            sizeof(info)) &&
+               _testInfo(info.FileAttributes, info.ReparseTag, testedType);
     }
-    else {
-        FILE_BASIC_INFO info;
-        if (!GetFileInformationByHandleEx(hfile, FileBasicInfo, &info,
-                                          sizeof(info)))
-        {
-            return FALSE;
-        }
-        attributes = info.FileAttributes;
-        reparseTag = 0;
-    }
-
-    return _testFileType(attributes, reparseTag, testedType);
+    FILE_BASIC_INFO info;
+    return GetFileInformationByHandleEx(hfile, FileBasicInfo, &info,
+                                        sizeof(info)) &&
+           _testInfo(info.FileAttributes, 0, testedType);
 }
 
 static BOOL
@@ -5167,8 +5154,8 @@ _testFileTypeByName(LPCWSTR path, int testedType)
     if (_Py_GetFileInformationByName(path, FileStatBasicByNameInfo, &info,
                                      sizeof(info)))
     {
-        BOOL result = _testFileType(info.FileAttributes, info.ReparseTag,
-                                    testedType);
+        BOOL result = _testInfo(info.FileAttributes, info.ReparseTag,
+                                testedType);
         if (!result || testedType != PY_IFREG || testedType != PY_IFDIR ||
             !(info.FileAttributes & FILE_ATTRIBUTE_REPARSE_POINT))
         {
@@ -5207,8 +5194,8 @@ _testFileTypeByName(LPCWSTR path, int testedType)
             rc = LSTAT(path, &st);
         }
         if (!rc) {
-            return _testFileType(st.st_file_attributes, st.st_reparse_tag,
-                                 testedType);
+            return _testInfo(st.st_file_attributes, st.st_reparse_tag,
+                             testedType);
         }
     }
 
