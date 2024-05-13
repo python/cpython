@@ -5128,11 +5128,10 @@ _testFileTypeByHandle(HANDLE hfile, int testedType, BOOL diskOnly)
            testedType == PY_IFLNK || testedType == PY_IFMNT ||
            testedType == PY_IFLRP || testedType == PY_IFRRP);
 
-    if (diskOnly && GetFileType(hfile) != FILE_TYPE_DISK) {
+    BOOL diskDevice = GetFileType(hfile) == FILE_TYPE_DISK;
+    if (diskOnly && !diskDevice) {
         return FALSE;
     }
-
-    BOOL diskDevice = GetFileType(hfile) == FILE_TYPE_DISK;
     if (testedType != PY_IFREG && testedType != PY_IFDIR) {
         FILE_ATTRIBUTE_TAG_INFO info;
         return GetFileInformationByHandleEx(hfile, FileAttributeTagInfo, &info,
