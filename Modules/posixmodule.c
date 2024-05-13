@@ -5312,11 +5312,11 @@ _testFileExistsByName(LPCWSTR path, BOOL followLinks)
 
 
 static int
-_testFileExists(path_t *path, BOOL followLinks)
+_testFileExists(path_t *_path, PyObject *path, BOOL followLinks)
 {
     BOOL result = FALSE;
-    if (!path_converter(path, &_path)) {
-        path_cleanup(&_path);
+    if (!path_converter(path, _path)) {
+        path_cleanup(_path);
         if (PyErr_ExceptionMatches(PyExc_ValueError)) {
             PyErr_Clear();
             return FALSE;
@@ -5325,30 +5325,30 @@ _testFileExists(path_t *path, BOOL followLinks)
     }
 
     Py_BEGIN_ALLOW_THREADS
-    if (path->fd != -1) {
-        HANDLE hfile = _Py_get_osfhandle_noraise(path->fd);
+    if (_path->fd != -1) {
+        HANDLE hfile = _Py_get_osfhandle_noraise(_path->fd);
         if (hfile != INVALID_HANDLE_VALUE) {
             if (GetFileType(hfile) != FILE_TYPE_UNKNOWN || !GetLastError()) {
                 result = TRUE;
             }
         }
     }
-    else if (path->wide) {
-        result = _testFileExistsByName(path->wide, followLinks);
+    else if (_path->wide) {
+        result = _testFileExistsByName(_path->wide, followLinks);
     }
     Py_END_ALLOW_THREADS
 
-    path_cleanup(&_path);
+    path_cleanup(_path);
     return result;
 }
 
 
 static int
-_testFileType(path_t *path, int testedType)
+_testFileType(path_t *_path, PyObject *path, int testedType)
 {
     BOOL result = FALSE;
-    if (!path_converter(path, &_path)) {
-        path_cleanup(&_path);
+    if (!path_converter(path, _path)) {
+        path_cleanup(_path);
         if (PyErr_ExceptionMatches(PyExc_ValueError)) {
             PyErr_Clear();
             return FALSE;
@@ -5357,18 +5357,18 @@ _testFileType(path_t *path, int testedType)
     }
 
     Py_BEGIN_ALLOW_THREADS
-    if (path->fd != -1) {
-        HANDLE hfile = _Py_get_osfhandle_noraise(path->fd);
+    if (_path->fd != -1) {
+        HANDLE hfile = _Py_get_osfhandle_noraise(_path->fd);
         if (hfile != INVALID_HANDLE_VALUE) {
             result = _testFileTypeByHandle(hfile, testedType, TRUE);
         }
     }
-    else if (path->wide) {
-        result = _testFileTypeByName(path->wide, testedType);
+    else if (_path->wide) {
+        result = _testFileTypeByName(_path->wide, testedType);
     }
     Py_END_ALLOW_THREADS
 
-    path_cleanup(&_path);
+    path_cleanup(_path);
     return result;
 }
 
@@ -5388,7 +5388,7 @@ os__path_exists_impl(PyObject *module, PyObject *path)
 /*[clinic end generated code: output=8f784b3abf9f8588 input=2777da15bc4ba5a3]*/
 {
     path_t _path = PATH_T_INITIALIZE("_path_exists", "path", 0, 1);
-    return _testFileExists(&_path, TRUE);
+    return _testFileExists(&_path, path, TRUE);
 }
 
 
@@ -5407,7 +5407,7 @@ os__path_lexists_impl(PyObject *module, PyObject *path)
 /*[clinic end generated code: output=fec4a91cf4ffccf1 input=8843d4d6d4e7c779]*/
 {
     path_t _path = PATH_T_INITIALIZE("_path_lexists", "path", 0, 1);
-    return _testFileExists(&_path, FALSE);
+    return _testFileExists(&_path, path, FALSE);
 }
 
 
@@ -5425,7 +5425,7 @@ os__path_isdir_impl(PyObject *module, PyObject *s)
 /*[clinic end generated code: output=cdcdf654d78788cc input=19c64a44650e17b7]*/
 {
     path_t _path = PATH_T_INITIALIZE("_path_isdir", "s", 0, 1);
-    return _testFileType(&_path, PY_IFDIR);
+    return _testFileType(&_path, path, PY_IFDIR);
 }
 
 
@@ -5443,7 +5443,7 @@ os__path_isfile_impl(PyObject *module, PyObject *path)
 /*[clinic end generated code: output=b40d620efe5a896f input=54b428a310debaea]*/
 {
     path_t _path = PATH_T_INITIALIZE("_path_isfile", "path", 0, 1);
-    return _testFileType(&_path, PY_IFREG);
+    return _testFileType(&_path, path, PY_IFREG);
 }
 
 
@@ -5461,7 +5461,7 @@ os__path_islink_impl(PyObject *module, PyObject *path)
 /*[clinic end generated code: output=9d0cf8e4c640dfe6 input=b71fed60b9b2cd73]*/
 {
     path_t _path = PATH_T_INITIALIZE("_path_islink", "path", 0, 1);
-    return _testFileType(&_path, PY_IFLNK);
+    return _testFileType(&_path, path, PY_IFLNK);
 }
 
 
@@ -5479,7 +5479,7 @@ os__path_isjunction_impl(PyObject *module, PyObject *path)
 /*[clinic end generated code: output=f1d51682a077654d input=103ccedcdb714f11]*/
 {
     path_t _path = PATH_T_INITIALIZE("_path_isjunction", "path", 0, 1);
-    return _testFileType(&_path, PY_IFMNT);
+    return _testFileType(&_path, path, PY_IFMNT);
 }
 
 #undef PY_IFREG
