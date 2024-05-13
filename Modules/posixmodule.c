@@ -5225,7 +5225,7 @@ _testFileTypeByName(LPCWSTR path, int testedType)
             return !STAT(path, &st) && S_ISDIR(st.st_mode);
         }
         return (!LSTAT(path, &st) &&
-                _testReparseTag(st.st_reparse_tag, testedType))
+                _testReparseTag(st.st_reparse_tag, testedType));
     }
 
     return FALSE;
