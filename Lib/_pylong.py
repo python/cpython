@@ -257,13 +257,13 @@ def _dec_str_to_int_inner(s, *, GUARD=8):
             # over again :-(
             hi, lo = divmod(n, pow256[w2][0])
         else:
-            p256, recip = pow256[w2]
+            p256 = pow256[w2]
             # The integer part will have a number of digits about equal
             # to the difference between the log10s of `n` and `pow256`
             # (which, since these are integers, is roughly approximated
             # by `.adjusted()`). That's the working precision we need,
             ctx.prec = max(n.adjusted() - p256.adjusted(), 0) + GUARD
-            hi = +n * +recip # unary `+` chops back to ctx.prec digits
+            hi = +n * +recip[w2] # unary `+` chops to ctx.prec digits
             ctx.prec = decimal.MAX_PREC
             hi = hi.to_integral_value() # lose the fractional digits
             lo = n - hi * p256
@@ -321,7 +321,7 @@ def _dec_str_to_int_inner(s, *, GUARD=8):
     with decimal.localcontext(_unbounded_dec_context) as ctx:
         D256 = D(256)
         pow256 = compute_powers(w, D256, BYTELIM)
-        rpow256 = compute_powers(w, 1 / D256, BYTELIM)
+        recip = compute_powers(w, 1 / D256, BYTELIM)
         # We're going to do inexact, chopped arithmetic, multiplying by
         # an approximation to the reciprocal of 256**i. We chop to get a
         # lower bound on the true integer quotient. Our approximation is
@@ -329,16 +329,6 @@ def _dec_str_to_int_inner(s, *, GUARD=8):
         # to_integral_value() is also chopped.
         ctx.traps[decimal.Inexact] = 0
         ctx.rounding = decimal.ROUND_DOWN
-        for k, v in pow256.items():
-            # No need to save much more precision in the reciprocal than
-            # the power of 256 has, plus some guard digits to absorb
-            # most relevant rounding errors. This is highly signficant:
-            # 1/2**i has the same number of significant decimal digits
-            # as 5**i, generally over twice the number in 2**i,
-            ctx.prec = v.adjusted() + GUARD + 2
-            # The unary "+" chope the reciprocal back to that precision.
-            pow256[k] = v, +rpow256[k]
-        del rpow256 # exact reciprocals no longer needed
         ctx.prec = decimal.MAX_PREC
         inner(D(s), w)
     return int.from_bytes(result)
@@ -525,7 +515,7 @@ def int_divmod(a, b):
 #
 # The default 8 is more than enough so no more than 1 correction step
 # was ever needed for all inputs tried through 2.5 billion digita. In
-# fact, I believe 5 guard digits are always enough - but the proof is
+# fact, I believe 3 guard digits are always enough - but the proof is
 # very involved, so better safe than sorry.
 #
 # Short course:
@@ -571,49 +561,38 @@ def int_divmod(a, b):
 # close", but since it may be as bad as (but no worse than) 1 too small,
 # we have to assume the worst: 1 too small.
 #
-# Also skipping why cutting the reciprocal to p256.adjusted() + GUARD
-# digits to begin with is good enough. The precondition n < 256**w is
-# needed to establish that the true product can't be too large for the
-# reciprocal approximation to be too narrow. But read on for more ;-)
-#
 # But since this is just a sketch of a proof ;-), the code uses the
-# empirically tested 8 instead of 5. 3 digits more or less makes no
+# empirically tested 8 instead of 3. 5 digits more or less makes no
 # practical difference to speed - these ints are huge. And while
-# increasing GUARD above 5 may not be necessary, every increase cuts the
+# increasing GUARD above 3 may not be necessary, every increase cuts the
 # percentage of cases that need a correction at all.
-#
-# LATER: doing this analysis pointed out an error: our division isn't
-# exactly "balanced", in that when `w` is odd the integer part of
-# n/256**w2 can be larger than 256**w2. The code used enough working
-# precision in the multiply then, but the precomputed reciprocal
-# approximation didn't have that many good digits to give. This was
-# repaired by retaining 2 more digits in the reciprocal.
-#
-# After that, I believe GUARD=3 should be enough. Which was "the
-# obvious" conclusion I leaped to after deriving `prec >= log10(prod) +
-# 1.47712125` (adding the fractional part of the log to 1.47 ... could
-# push that over 2, and then the ceiling is needed to get an integer >=
-# to that). But, at that time, I knew GUARDs of 3 and 4 "didn't work".
 #
 # On Computing Reciprocals
 # ------------------------
-# The code computes all the powers of 256 needed, and all those of
-# 1/256. These are exact, but the reciprocals have over twice as many
-# significant digits as needed. So in another pass we cut the exact
-# reciprocals back, and then throw away the exact valuea.
+# In general, the exact reciprocals we compute have over twice as many
+# significant digts as needed. 1/256**i has the same number of
+# significant decimal digits as 5**i. It's a significant waste of RAM
+# to store all those unneded digits.
 #
-# This "wastes" a lot of RAM for the duration. We could instead not
-# compute any exact reciprocals, and simply precompute 1/pow256 with the
-# desired final precisions directly.
+# So earlier versions of this code rounded them back to shorter values,
+# based on the corresponding p256.adjusted(). But this burned me
+# multiple times - rarer and rarer cases kept poppigg up where not
+# enough digits were retained. In the end, I ran out of bad cases, but
+# was unable to complete a proof, with reasonable effort, that
+# `p256.adjusted() + GUARD + 2" was in fact always enough.
 #
-# But it's a real tradeoff: turns out explicit division, despite that
-# it's to smaller precision, is significantly slower than computing
-# exact powers of 1/256 (which requires no division, except for the
-# initial 1/256) and then chopping them back.
+# Since it proved hard to out-think, and was a bug magnet, I tossed that
+# code.
 #
-# I judged that it's more desirable for smaller inputs to run faster
-# than to incease the size of the largest string a given box's RAM can
-# handle, so picked the division-free method.
+# If someone wants to improve this, have at it ;-) Then in the main
+# result, we have 4 chopped operations instead of 3, so change the "3"
+# near the start to "4". In the end, the constant addend gets a litle
+# bigger (1 - log10(1/4)), but not enough to matter to any conclusion.
 #
-# Note this is all about startup cost - it doesn't affect the speed of
-# `inner()` either way. Computing the powers needed isn't cheap.
+# The hard part is that chopping back to a shorter width then first
+# occurs _outside_ of `inner`. We can't know then what `prec` `inner()`
+# will need. You have to pick, for each value of `w2`, the largest
+# possible value `prec` can become when `inner()` is working on `w2`.
+#
+# Here's a hint: x.adjusted() is the exact mathematical value of
+# floor(log10(abs(x))). And, no, that's not much of a help ;-)
