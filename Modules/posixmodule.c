@@ -5201,9 +5201,8 @@ _testFileTypeByName(LPCWSTR path, int testedType)
             rc = LSTAT(path, &st);
         }
         if (!rc) {
-            BOOL diskDevice = GetFileType(hfile) == FILE_TYPE_DISK;
             return _testInfo(st.st_file_attributes, st.st_reparse_tag,
-                             diskDevice, testedType);
+                             st.st_mode & S_IFREG, testedType);
         }
     }
 
