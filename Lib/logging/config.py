@@ -728,7 +728,12 @@ class DictConfigurator(BaseConfigurator):
             q = kwargs.pop('queue')
         else:
             q = queue.Queue()  # unbounded
-        rhl = kwargs.get('respect_handler_level', False)
+
+        if 'respect_handler_level' in kwargs:
+            rhl = kwargs.pop('respect_handler_level')
+        else:
+            rhl = False
+
         if 'listener' in kwargs:
             lklass = kwargs.pop('listener')
         else:
