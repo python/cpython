@@ -329,7 +329,6 @@ def _dec_str_to_int_inner(s, *, GUARD=8):
         # to_integral_value() is also chopped.
         ctx.traps[decimal.Inexact] = 0
         ctx.rounding = decimal.ROUND_DOWN
-        ctx.prec = decimal.MAX_PREC
         inner(D(s), w)
     return int.from_bytes(result)
 
