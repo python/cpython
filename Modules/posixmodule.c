@@ -5096,10 +5096,11 @@ os__path_splitroot_impl(PyObject *module, path_t *path)
 #define PY_IFRRP 32 // Regular Reparse Point
 
 static BOOL
-_testInfo(DWORD attributes, DWORD reparseTag, int testedType)
+_testInfo(DWORD attributes, DWORD reparseTag, BOOL diskDevice, int testedType)
 {
     if (testedType == PY_IFREG) {
-        return attributes && !(attributes & FILE_ATTRIBUTE_DIRECTORY);
+        return diskDevice && attributes &&
+               !(attributes & FILE_ATTRIBUTE_DIRECTORY);
     }
     if (testedType == PY_IFDIR) {
         return attributes & FILE_ATTRIBUTE_DIRECTORY;
@@ -5131,16 +5132,18 @@ _testFileTypeByHandle(HANDLE hfile, int testedType, BOOL diskOnly)
         return FALSE;
     }
 
+    BOOL diskDevice = GetFileType(hfile) == FILE_TYPE_DISK;
     if (testedType != PY_IFREG && testedType != PY_IFDIR) {
         FILE_ATTRIBUTE_TAG_INFO info;
         return GetFileInformationByHandleEx(hfile, FileAttributeTagInfo, &info,
                                             sizeof(info)) &&
-               _testInfo(info.FileAttributes, info.ReparseTag, testedType);
+               _testInfo(info.FileAttributes, info.ReparseTag, diskDevice,
+                         testedType);
     }
     FILE_BASIC_INFO info;
     return GetFileInformationByHandleEx(hfile, FileBasicInfo, &info,
                                         sizeof(info)) &&
-           _testInfo(info.FileAttributes, 0, testedType);
+           _testInfo(info.FileAttributes, 0, diskDevice, testedType);
 }
 
 static BOOL
@@ -5154,8 +5157,11 @@ _testFileTypeByName(LPCWSTR path, int testedType)
     if (_Py_GetFileInformationByName(path, FileStatBasicByNameInfo, &info,
                                      sizeof(info)))
     {
+        BOOL diskDevice = info.DeviceType == FILE_DEVICE_DISK ||
+                          info.DeviceType == FILE_DEVICE_VIRTUAL_DISK ||
+                          info.DeviceType == FILE_DEVICE_CD_ROM;
         BOOL result = _testInfo(info.FileAttributes, info.ReparseTag,
-                                testedType);
+                                diskDevice, testedType);
         if (!result || (testedType != PY_IFREG && testedType != PY_IFDIR) ||
             !(info.FileAttributes & FILE_ATTRIBUTE_REPARSE_POINT))
         {
@@ -5196,8 +5202,9 @@ _testFileTypeByName(LPCWSTR path, int testedType)
             rc = LSTAT(path, &st);
         }
         if (!rc) {
+            BOOL diskDevice = GetFileType(hfile) == FILE_TYPE_DISK;
             return _testInfo(st.st_file_attributes, st.st_reparse_tag,
-                             testedType);
+                             diskDevice, testedType);
         }
     }
 
