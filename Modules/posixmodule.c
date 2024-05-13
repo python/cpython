@@ -5131,7 +5131,7 @@ _testFileTypeByHandle(HANDLE hfile, int testedType, BOOL diskOnly)
         return FALSE;
     }
 
-    if ((testedType != PY_IFREG && testedType != PY_IFDIR)) {
+    if (testedType != PY_IFREG && testedType != PY_IFDIR) {
         FILE_ATTRIBUTE_TAG_INFO info;
         return GetFileInformationByHandleEx(hfile, FileAttributeTagInfo, &info,
                                             sizeof(info)) &&
@@ -5156,7 +5156,7 @@ _testFileTypeByName(LPCWSTR path, int testedType)
     {
         BOOL result = _testInfo(info.FileAttributes, info.ReparseTag,
                                 testedType);
-        if (!result || testedType != PY_IFREG || testedType != PY_IFDIR ||
+        if (!result || (testedType != PY_IFREG && testedType != PY_IFDIR) ||
             !(info.FileAttributes & FILE_ATTRIBUTE_REPARSE_POINT))
         {
             return result;
@@ -5191,6 +5191,8 @@ _testFileTypeByName(LPCWSTR path, int testedType)
             rc = STAT(path, &st);
         }
         else {
+            // PY_IFRRP is not generally supported in this case, except for
+            // unhandled reparse points such as IO_REPARSE_TAG_APPEXECLINK.
             rc = LSTAT(path, &st);
         }
         if (!rc) {
@@ -5252,7 +5254,8 @@ _testFileExistsByName(LPCWSTR path, BOOL followLinks)
     case ERROR_SHARING_VIOLATION:
     case ERROR_CANT_ACCESS_FILE:
     case ERROR_INVALID_PARAMETER:
-        return followLinks ? !STAT(path, NULL): !LSTAT(path, NULL);
+        STRUCT_STAT _st;
+        return followLinks ? !STAT(path, &_st): !LSTAT(path, &_st);
     }
 
     return FALSE;
