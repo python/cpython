@@ -7434,7 +7434,6 @@ class CollectionsAbcTests(BaseTestCase):
                 pass
 
         async def g(): yield 0
-        g = g()
 
         self.assertIsSubclass(G, typing.AsyncGenerator)
         self.assertIsSubclass(G, typing.AsyncIterable)
