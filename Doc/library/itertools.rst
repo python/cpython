@@ -942,13 +942,11 @@ and :term:`generators <generator>` which incur interpreter overhead.
        # iter_index('AABCADEAF', 'A') → 0 1 4 7
        seq_index = getattr(iterable, 'index', None)
        if seq_index is None:
-           # Path for general iterables
            iterator = islice(iterable, start, stop)
            for i, element in enumerate(iterator, start):
                if element is value or element == value:
                    yield i
        else:
-           # Path for sequences with an index() method
            stop = len(iterable) if stop is None else stop
            i = start
            try:
