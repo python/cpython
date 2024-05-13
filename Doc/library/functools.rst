@@ -644,8 +644,9 @@ The :mod:`functools` module defines the following functions:
    attributes of the wrapper function are updated with the corresponding attributes
    from the original function. The default values for these arguments are the
    module level constants ``WRAPPER_ASSIGNMENTS`` (which assigns to the wrapper
-   function's ``__module__``, ``__name__``, ``__qualname__``, ``__annotations__``
-   and ``__doc__``, the documentation string) and ``WRAPPER_UPDATES`` (which
+   function's ``__module__``, ``__name__``, ``__qualname__``, ``__annotations__``,
+   ``__type_params__``, and ``__doc__``, the documentation string)
+   and ``WRAPPER_UPDATES`` (which
    updates the wrapper function's ``__dict__``, i.e. the instance dictionary).
 
    To allow access to the original function for introspection and other purposes
@@ -674,6 +675,9 @@ The :mod:`functools` module defines the following functions:
       The ``__wrapped__`` attribute now always refers to the wrapped
       function, even if that function defined a ``__wrapped__`` attribute.
       (see :issue:`17482`)
+
+   .. versionchanged:: 3.12
+      The ``__type_params__`` attribute is now copied by default.
 
 
 .. decorator:: wraps(wrapped, assigned=WRAPPER_ASSIGNMENTS, updated=WRAPPER_UPDATES)
