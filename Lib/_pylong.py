@@ -257,13 +257,13 @@ def _dec_str_to_int_inner(s, *, GUARD=8):
             # over again :-(
             hi, lo = divmod(n, pow256[w2][0])
         else:
-            p256 = pow256[w2]
+            p256, recip = pow256[w2]
             # The integer part will have a number of digits about equal
             # to the difference between the log10s of `n` and `pow256`
             # (which, since these are integers, is roughly approximated
             # by `.adjusted()`). That's the working precision we need,
             ctx.prec = max(n.adjusted() - p256.adjusted(), 0) + GUARD
-            hi = +n * +recip[w2] # unary `+` chops to ctx.prec digits
+            hi = +n * +recip # unary `+` chops back to ctx.prec digits
             ctx.prec = decimal.MAX_PREC
             hi = hi.to_integral_value() # lose the fractional digits
             lo = n - hi * p256
@@ -321,7 +321,7 @@ def _dec_str_to_int_inner(s, *, GUARD=8):
     with decimal.localcontext(_unbounded_dec_context) as ctx:
         D256 = D(256)
         pow256 = compute_powers(w, D256, BYTELIM)
-        recip = compute_powers(w, 1 / D256, BYTELIM)
+        rpow256 = compute_powers(w, 1 / D256, BYTELIM)
         # We're going to do inexact, chopped arithmetic, multiplying by
         # an approximation to the reciprocal of 256**i. We chop to get a
         # lower bound on the true integer quotient. Our approximation is
@@ -329,6 +329,17 @@ def _dec_str_to_int_inner(s, *, GUARD=8):
         # to_integral_value() is also chopped.
         ctx.traps[decimal.Inexact] = 0
         ctx.rounding = decimal.ROUND_DOWN
+        for k, v in pow256.items():
+            # No need to save much more precision in the reciprocal than
+            # the power of 256 has, plus some guard digits to absorb
+            # most relevant rounding errors. This is highly signficant:
+            # 1/2**i has the same number of significant decimal digits
+            # as 5**i, generally over twice the number in 2**i,
+            ctx.prec = v.adjusted() + GUARD + 4
+            # The unary "+" chope the reciprocal back to that precision.
+            pow256[k] = v, +rpow256[k]
+        del rpow256 # exact reciprocals no longer needed
+        ctx.prec = decimal.MAX_PREC
         inner(D(s), w)
     return int.from_bytes(result)
 
@@ -521,32 +532,38 @@ def int_divmod(a, b):
 #
 # If prec is the decimal precision in effect, and we're rounding down,
 # the result of an operation is exactly equal to the infinitely precise
-# result times 1-e for some real e with 0 <= e < 10**(1-prec). We have
-# 3 operations: chopping n back to prec digits, likewise for 1/256**w2,
-# and also for their product.
+# result times 1-e for some real e with 0 <= e < 10**(1-prec). In
+#
+#     ctx.prec = max(n.adjusted() - p256.adjusted(), 0) + GUARD
+#     hi = +n * +recip # unary `+` chops to ctx.prec digits
+#
+# we have 3 visible chopped operationa, but there's also a 4th:
+# precomuting `recip`, chopped back from the exact reciprocal as part of
+# setup.
 #
 # So the computed product is exactly equal to the true product times
-# (1-e1)*(1-e2)*(1-e3); since the e's are all very small, an excellent
-# approximation to the second factor is 1-(e1+e2+e3) (the 2nd and 3rd
-# order terms in the expanded product are too tiny to matter). If
-# they're all as large as possible, that's 1 - 3*10**(1-prec). This,
-# BTW, is all bog-standard FP error analysis.
+# (1-e1)*(1-e2)*(1-e3)*(1-e4); since the e's are all very small, an
+# excellent approximation to the second factor is 1-(e1+e2+e3+e4) (the
+# 2nd and higher order terms 3rd in the expanded product are too tiny to
+# matter). If they're all as large as possible, that's
+#
+# 1 - 4*10**(1-prec). This, BTW, is all bog-standard FP error analysis.
 #
 # That implies the computed product is within 1 of the true product
-# provided prec >= log10(true_product) + 1.47712125.
+# provided prec >= log10(true_product) + 1.602.
 #
 # Here are telegraphic details, rephrasing the initial condition in
 # equivalent ways, step by step:
 #
-# prod - prod * (1 - 3*10**(1-prec)) <= 1
-# prod - prod + prod * 3*10**(1-prec)) <= 1
-# prod * 3*10**(1-prec)) <= 1
-# 10**(log10(prod)) * 3*10**(1-prec)) <= 1
-# 3*10**(1-prec+log10(prod))) <= 1
-# 10**(1-prec+log10(prod))) <= 1/3
-# 1-prec+log10(prod) <= log10(1/3) = -0.47712125
-# -prec <= -1.47712125 - log10(prod)
-# prec >= log10(prod) + 1.47712125
+# prod - prod * (1 - 4*10**(1-prec)) <= 1
+# prod - prod + prod * 4*10**(1-prec)) <= 1
+# prod * 4*10**(1-prec)) <= 1
+# 10**(log10(prod)) * 4*10**(1-prec)) <= 1
+# 4*10**(1-prec+log10(prod))) <= 1
+# 10**(1-prec+log10(prod))) <= 1/4
+# 1-prec+log10(prod) <= log10(1/4) = -0.602
+# -prec <= -1.602 - log10(prod)
+# prec >= log10(prod) + 1.602
 #
 # n.adjusted() - p256.adjusted() is s crude integer approximation to
 # log10(true_product) - but prec is necessarily an int too, and via
@@ -573,25 +590,53 @@ def int_divmod(a, b):
 # significant decimal digits as 5**i. It's a significant waste of RAM
 # to store all those unneded digits.
 #
-# So earlier versions of this code rounded them back to shorter values,
-# based on the corresponding p256.adjusted(). But this burned me
-# multiple times - rarer and rarer cases kept poppigg up where not
-# enough digits were retained. In the end, I ran out of bad cases, but
-# was unable to complete a proof, with reasonable effort, that
-# `p256.adjusted() + GUARD + 2" was in fact always enough.
+# So we cut exact repicroals back to the least precision that can
+# be needed so that the error analysis above is valid,
 #
-# Since it proved hard to out-think, and was a bug magnet, I tossed that
-# code.
+# [Note: turns out it's very significantly faster to do it this way than
+# to compute  1 / 256**i  directly to the desired precision, because the
+# power method doesn't require division.]
 #
-# If someone wants to improve this, have at it ;-) Then in the main
-# result, we have 4 chopped operations instead of 3, so change the "3"
-# near the start to "4". In the end, the constant addend gets a litle
-# bigger (1 - log10(1/4)), but not enough to matter to any conclusion.
+# The hard part is that chopping back to a shorter width occurs
+# _outside_ of `inner`. We can't know then what `prec` `inner()` will
+# need. We have to pick, for each value of `w2`, the largest possible
+# value `prec` can become when `inner()` is working on `w2`.
 #
-# The hard part is that chopping back to a shorter width then first
-# occurs _outside_ of `inner`. We can't know then what `prec` `inner()`
-# will need. You have to pick, for each value of `w2`, the largest
-# possible value `prec` can become when `inner()` is working on `w2`.
+# This is the `prec` inner() uses:
+#     max(n.adjusted() - p256.adjusted(), 0) + GUARD
+# and what setup uses (renaming its `v` to `p256` - same thing):
+#     p256.adjusted() + GUARD + 4
 #
-# Here's a hint: x.adjusted() is the exact mathematical value of
-# floor(log10(abs(x))). And, no, that's not much of a help ;-)
+# We need that the second is always at least as large as the first,
+# which is the same as requiring
+#
+#     n.adjusted() - 2 * p256.adjusted() <= 4
+#
+# Which is true, but tedious to show. At a high level, the worst cases
+# are when `w` is odd and `n` large. Then `w2` is less than half `w`.
+# p234 ia 256**w2, and the largest `n` can be ia 256**w - 1. Forget the
+# -1, call it 256**w. Which is in turn p256**2 * 256. If it weren't for
+# the "* 256", n and p256**2 would be the same, but multiplying by 256
+# tacks on another 2 or digits. That's the heart of why the "+4" is
+# needed.
+#
+# If you want to work out the remaining details, start with the smallest
+# "worst case" `w`, which is 5:
+#
+# >>> n = D256**5
+# >>< n
+# Decimal('1099511627776')
+# >>> n.adjusted()
+# 12
+# >>> p = D256**2
+# >>> p
+# Decimal('65536')
+# >>> p.adjusted()
+# 4
+#
+# n.adjusted() - 2 * p256.adjusted() is then 12 - 2*4 = 4, hugging the
+# bound.
+#
+# Note: 4 is a rigorous upper bound on what's needed, but even more
+# tedious analysis may show that 3, or even 2, are enough. I never
+# saw a failure at 2, but did at 1.
