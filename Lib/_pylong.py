@@ -544,7 +544,7 @@ def int_divmod(a, b):
 # So the computed product is exactly equal to the true product times
 # (1-e1)*(1-e2)*(1-e3)*(1-e4); since the e's are all very small, an
 # excellent approximation to the second factor is 1-(e1+e2+e3+e4) (the
-# 2nd and higher order terms 3rd in the expanded product are too tiny to
+# 2nd and higher order terms in the expanded product are too tiny to
 # matter). If they're all as large as possible, that's
 #
 # 1 - 4*10**(1-prec). This, BTW, is all bog-standard FP error analysis.
@@ -617,7 +617,7 @@ def int_divmod(a, b):
 # p234 ia 256**w2, and the largest `n` can be ia 256**w - 1. Forget the
 # -1, call it 256**w. Which is in turn p256**2 * 256. If it weren't for
 # the "* 256", n and p256**2 would be the same, but multiplying by 256
-# tacks on another 2 or digits. That's the heart of why the "+4" is
+# tacks on another 2 or 3 digits. That's the heart of why the "+4" is
 # needed.
 #
 # If you want to work out the remaining details, start with the smallest
