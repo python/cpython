@@ -1077,11 +1077,9 @@ call fails (for example because the path doesn't exist).
 
 .. method:: Path.is_dir(*, follow_symlinks=True)
 
-   Return ``True`` if the path points to a directory, ``False`` if it points
-   to another kind of file.
-
-   ``False`` is also returned if the path doesn't exist, or is a broken
-   symlink, or is inaccessible for any other reason.
+   Return ``True`` if the path points to an accessible directory, ``False``
+   otherwise. Use :meth:`Path.exists` to test if a path is accessible without
+   checking its type.
 
    This method normally follows symlinks; to exclude symlinks to directories,
    add the argument ``follow_symlinks=False``.
@@ -1092,11 +1090,9 @@ call fails (for example because the path doesn't exist).
 
 .. method:: Path.is_file(*, follow_symlinks=True)
 
-   Return ``True`` if the path points to a regular file, ``False`` if it
-   points to another kind of file.
-
-   ``False`` is also returned if the path doesn't exist, or is a broken
-   symlink, or is inaccessible for any other reason.
+   Return ``True`` if the path points to an accessible regular file, ``False``
+   otherwise. Use :meth:`Path.exists` to test if a path is accessible without
+   checking its type.
 
    This method normally follows symlinks; to exclude symlinks, add the
    argument ``follow_symlinks=False``.
@@ -1132,46 +1128,37 @@ call fails (for example because the path doesn't exist).
 
 .. method:: Path.is_symlink()
 
-   Return ``True`` if the path points to a symbolic link, ``False`` otherwise.
-
-   ``False`` is also returned if the path doesn't exist or is inaccessible for
-   any other reason.
+   Return ``True`` if the path points to an accessible symbolic link,
+   ``False`` otherwise. Use :meth:`Path.exists` to test if a path is
+   accessible without checking its type.
 
 
 .. method:: Path.is_socket()
 
-   Return ``True`` if the path points to a Unix socket (or a symbolic link
-   pointing to a Unix socket), ``False`` if it points to another kind of file.
-
-   ``False`` is also returned if the path doesn't exist or is a broken symlink;
-   other errors (such as permission errors) are propagated.
+   Return ``True`` if the path points to an accessible Unix socket, ``False``
+   otherwise. Use :meth:`Path.exists` to test if a path is accessible without
+   checking its type.
 
 
 .. method:: Path.is_fifo()
 
-   Return ``True`` if the path points to a FIFO (or a symbolic link
-   pointing to a FIFO), ``False`` if it points to another kind of file.
-
-   ``False`` is also returned if the path doesn't exist, or is a broken
-   symlink, or is inaccessible for any other reason.
+   Return ``True`` if the path points to an accessible FIFO, ``False``
+   otherwise. Use :meth:`Path.exists` to test if a path is accessible without
+   checking its type.
 
 
 .. method:: Path.is_block_device()
 
-   Return ``True`` if the path points to a block device (or a symbolic link
-   pointing to a block device), ``False`` if it points to another kind of file.
-
-   ``False`` is also returned if the path doesn't exist, or is a broken
-   symlink, or is inaccessible for any other reason.
+   Return ``True`` if the path points to an accessible block device, ``False``
+   otherwise. Use :meth:`Path.exists` to test if a path is accessible without
+   checking its type.
 
 
 .. method:: Path.is_char_device()
 
-   Return ``True`` if the path points to a character device (or a symbolic link
-   pointing to a character device), ``False`` if it points to another kind of file.
-
-   ``False`` is also returned if the path doesn't exist, or is a broken
-   symlink, or is inaccessible for any other reason.
+   Return ``True`` if the path points to an accessible character device,
+   ``False`` otherwise. Use :meth:`Path.exists` to test if a path is
+   accessible without checking its type.
 
 
 .. method:: Path.iterdir()
