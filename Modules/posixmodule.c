@@ -5414,15 +5414,15 @@ os__path_lexists_impl(PyObject *module, PyObject *path)
 /*[clinic input]
 os._path_isdir -> bool
 
-    s: object
+    s as path: object
 
 Return true if the pathname refers to an existing directory.
 
 [clinic start generated code]*/
 
 static int
-os__path_isdir_impl(PyObject *module, PyObject *s)
-/*[clinic end generated code: output=cdcdf654d78788cc input=19c64a44650e17b7]*/
+os__path_isdir_impl(PyObject *module, PyObject *path)
+/*[clinic end generated code: output=0504fd403f369701 input=2cb54dd97eb970f7]*/
 {
     path_t _path = PATH_T_INITIALIZE("_path_isdir", "s", 0, 1);
     return _testFileType(&_path, path, PY_IFDIR);

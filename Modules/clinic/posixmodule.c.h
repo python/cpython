@@ -2088,7 +2088,7 @@ PyDoc_STRVAR(os__path_isdir__doc__,
     {"_path_isdir", _PyCFunction_CAST(os__path_isdir), METH_FASTCALL|METH_KEYWORDS, os__path_isdir__doc__},
 
 static int
-os__path_isdir_impl(PyObject *module, PyObject *s);
+os__path_isdir_impl(PyObject *module, PyObject *path);
 
 static PyObject *
 os__path_isdir(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -2120,15 +2120,15 @@ os__path_isdir(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
-    PyObject *s;
+    PyObject *path;
     int _return_value;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
     if (!args) {
         goto exit;
     }
-    s = args[0];
-    _return_value = os__path_isdir_impl(module, s);
+    path = args[0];
+    _return_value = os__path_isdir_impl(module, path);
     if ((_return_value == -1) && PyErr_Occurred()) {
         goto exit;
     }
@@ -12752,4 +12752,4 @@ os__supports_virtual_terminal(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF
     #define OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF
 #endif /* !defined(OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF) */
-/*[clinic end generated code: output=75cdd3771c019da1 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=af5074c4ce4b19f1 input=a9049054013a1b77]*/
