@@ -5102,7 +5102,7 @@ _testInfo(DWORD attributes, DWORD reparseTag, BOOL diskDevice, int testedType)
     case PY_IFREG:
         return diskDevice && attributes &&
                !(attributes & FILE_ATTRIBUTE_DIRECTORY);
-    case PY_IFDIR:    
+    case PY_IFDIR:
         return attributes & FILE_ATTRIBUTE_DIRECTORY;
     case PY_IFLNK:
         return (attributes & FILE_ATTRIBUTE_REPARSE_POINT) &&
