@@ -5095,6 +5095,22 @@ os__path_splitroot_impl(PyObject *module, path_t *path)
 #define PY_IFLRP 16 // Link Reparse Point (name-surrogate, symlink, junction)
 #define PY_IFRRP 32 // Regular Reparse Point
 
+static inline BOOL
+_testReparseTag(DWORD reparseTag, int testedType)
+{
+    switch (testedType) {
+    case PY_IFLNK:
+        return reparseTag == IO_REPARSE_TAG_SYMLINK;
+    case PY_IFMNT:
+        return reparseTag == IO_REPARSE_TAG_MOUNT_POINT;
+    case PY_IFLRP:
+        return IsReparseTagNameSurrogate(reparseTag);
+    case PY_IFRRP:
+        return reparseTag && !IsReparseTagNameSurrogate(reparseTag);
+    }
+    return FALSE
+}
+
 static BOOL
 _testFileTypeByHandle(HANDLE hfile, int testedType, BOOL diskOnly)
 {
@@ -5133,16 +5149,7 @@ _testFileTypeByHandle(HANDLE hfile, int testedType, BOOL diskOnly)
     }
 
     if (attributes & FILE_ATTRIBUTE_REPARSE_POINT) {
-        switch (testedType) {
-        case PY_IFLNK:
-            return reparseTag == IO_REPARSE_TAG_SYMLINK;
-        case PY_IFMNT:
-            return reparseTag == IO_REPARSE_TAG_MOUNT_POINT;
-        case PY_IFLRP:
-            return IsReparseTagNameSurrogate(reparseTag);
-        case PY_IFRRP:
-            return reparseTag && !IsReparseTagNameSurrogate(reparseTag);
-        }
+        return _testReparseTag(reparseTag, testedType);
     }
     else if (testedType == PY_IFREG) {
         return ((fileDevType == FILE_TYPE_DISK) &&
@@ -5167,26 +5174,18 @@ _testFileTypeByName(LPCWSTR path, int testedType)
                                      sizeof(info)))
     {
         if (info.FileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) {
-            switch(testedType) {
-            case PY_IFREG:
+            if (testedType == PY_IFREG) {
                 if (info.FileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
                     return FALSE;
                 }
-                break;
-            case PY_IFDIR:
+            }
+            else if (testedType == PY_IFDIR) {
                 if (!(info.FileAttributes & FILE_ATTRIBUTE_DIRECTORY)) {
                     return FALSE;
                 }
-                break;
-            case PY_IFLNK:
-                return info.ReparseTag == IO_REPARSE_TAG_SYMLINK;
-            case PY_IFMNT:
-                return info.ReparseTag == IO_REPARSE_TAG_MOUNT_POINT;
-            case PY_IFLRP:
-                return IsReparseTagNameSurrogate(info.ReparseTag);
-            case PY_IFRRP:
-                return (info.ReparseTag &&
-                        !IsReparseTagNameSurrogate(info.ReparseTag));
+            }
+            else {
+                return _testReparseTag(info.ReparseTag, testedType);
             }
         }
         else if (testedType == PY_IFREG) {
@@ -5229,22 +5228,8 @@ _testFileTypeByName(LPCWSTR path, int testedType)
         if (testedType == PY_IFDIR) {
             return !STAT(path, &st) && S_ISDIR(st.st_mode);
         }
-        if (!LSTAT(path, &st)) {
-            switch (testedType) {
-            case PY_IFLNK:
-                return st.st_reparse_tag == IO_REPARSE_TAG_SYMLINK;
-            case PY_IFMNT:
-                return st.st_reparse_tag == IO_REPARSE_TAG_MOUNT_POINT;
-            case PY_IFLRP:
-                return IsReparseTagNameSurrogate(st.st_reparse_tag);
-            case PY_IFRRP:
-                // This cannot be implemented generally, except a reparse
-                // point that is not handled by the system, such as
-                // IO_REPARSE_TAG_APPEXECLINK.
-                return (st.st_reparse_tag &&
-                        !IsReparseTagNameSurrogate(st.st_reparse_tag));
-            }
-        }
+        return (!LSTAT(path, &st) &&
+                _testReparseTag(st.st_reparse_tag, testedType))
     }
 
     return FALSE;
