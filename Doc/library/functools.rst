@@ -647,7 +647,7 @@ The :mod:`functools` module defines the following functions:
    from the original function. The default values for these arguments are the
    module level constants ``WRAPPER_ASSIGNMENTS`` (which assigns to the wrapper
    function's ``__module__``, ``__name__``, ``__qualname__``, ``__annotations__``,
-   ``__doc__``, and ``__type_params__``, the documentation string)
+   ``__type_params__``, and ``__doc__``, the documentation string)
    and ``WRAPPER_UPDATES`` (which
    updates the wrapper function's ``__dict__``, i.e. the instance dictionary).
 
