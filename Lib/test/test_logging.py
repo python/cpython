@@ -3976,7 +3976,8 @@ class ConfigDictTest(BaseTest):
         }
         logging.config.dictConfig(config)
 
-    def test_118868(self):
+    # gh-118868: check if kwargs are passed to logging QueueHandler
+    def test_kwargs_passing(self):
         class CustomQueueHandler(logging.handlers.QueueHandler):
             def __init__(self, *args, **kwargs):
                 super().__init__(queue.Queue())
