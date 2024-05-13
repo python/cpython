@@ -5264,11 +5264,7 @@ _testFileExistsByName(LPCWSTR path, BOOL followLinks)
     case ERROR_SHARING_VIOLATION:
     case ERROR_CANT_ACCESS_FILE:
     case ERROR_INVALID_PARAMETER:
-        STRUCT_STAT st;
-        if (followLinks) {
-            return !STAT(path, &st);
-        }
-        return !LSTAT(path, &st);
+        return followLinks ? !STAT(path, NULL): !LSTAT(path, NULL);
     }
 
     return FALSE;
