@@ -122,15 +122,15 @@ loops that truncate the stream.
             # accumulate([1,2,3,4,5]) → 1 3 6 10 15
             # accumulate([1,2,3,4,5], initial=100) → 100 101 103 106 110 115
             # accumulate([1,2,3,4,5], operator.mul) → 1 2 6 24 120
-            it = iter(iterable)
+            iterator = iter(iterable)
             total = initial
             if initial is None:
                 try:
-                    total = next(it)
+                    total = next(iterator)
                 except StopIteration:
                     return
             yield total
-            for element in it:
+            for element in iterator:
                 total = func(total, element)
                 yield total
 
@@ -741,9 +741,9 @@ loops that truncate the stream.
               return
           while True:
               values = []
-              for i, it in enumerate(iterators):
+              for i, iterator in enumerate(iterators):
                   try:
-                      value = next(it)
+                      value = next(iterator)
                   except StopIteration:
                       num_active -= 1
                       if not num_active:
