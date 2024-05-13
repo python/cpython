@@ -205,6 +205,19 @@ static void recreate_gil(struct _gil_runtime_state *gil)
 }
 #endif
 
+static inline void
+drop_gil_impl(PyThreadState *tstate, struct _gil_runtime_state *gil)
+{
+    MUTEX_LOCK(gil->mutex);
+    _Py_ANNOTATE_RWLOCK_RELEASED(&gil->locked, /*is_write=*/1);
+    _Py_atomic_store_int_relaxed(&gil->locked, 0);
+    if (tstate != NULL) {
+        tstate->_status.holds_gil = 0;
+    }
+    COND_SIGNAL(gil->cond);
+    MUTEX_UNLOCK(gil->mutex);
+}
+
 static void
 drop_gil(PyInterpreterState *interp, PyThreadState *tstate, int final_release)
 {
@@ -239,14 +252,7 @@ drop_gil(PyInterpreterState *interp, PyThreadState *tstate, int final_release)
         _Py_atomic_store_ptr_relaxed(&gil->last_holder, tstate);
     }
 
-    MUTEX_LOCK(gil->mutex);
-    _Py_ANNOTATE_RWLOCK_RELEASED(&gil->locked, /*is_write=*/1);
-    _Py_atomic_store_int_relaxed(&gil->locked, 0);
-    if (tstate != NULL) {
-        tstate->_status.holds_gil = 0;
-    }
-    COND_SIGNAL(gil->cond);
-    MUTEX_UNLOCK(gil->mutex);
+    drop_gil_impl(tstate, gil);
 
 #ifdef FORCE_SWITCHING
     /* We might be releasing the GIL for the last time in this thread.  In that
@@ -1143,7 +1149,12 @@ _PyEval_DisableGIL(PyThreadState *tstate)
         //
         // Drop the GIL, which will wake up any threads waiting in take_gil()
         // and let them resume execution without the GIL.
-        drop_gil(tstate->interp, tstate, 0);
+        drop_gil_impl(tstate, gil);
+
+        // If another thread asked us to drop the GIL, they should be
+        // free-threading by now. Remove any such request so we have a clean
+        // slate if/when the GIL is enabled again.
+        _Py_unset_eval_breaker_bit(tstate, _PY_GIL_DROP_REQUEST_BIT);
         return 1;
     }
     return 0;
