@@ -218,9 +218,8 @@ loops that truncate the stream.
 
       def chain(*iterables):
           # chain('ABC', 'DEF') → A B C D E F
-          for it in iterables:
-              for element in it:
-                  yield element
+          for iterable in iterables:
+              yield from iterable
 
 
 .. classmethod:: chain.from_iterable(iterable)
