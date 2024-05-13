@@ -5108,7 +5108,7 @@ _testReparseTag(DWORD reparseTag, int testedType)
     case PY_IFRRP:
         return reparseTag && !IsReparseTagNameSurrogate(reparseTag);
     }
-    return FALSE
+    return FALSE;
 }
 
 static BOOL
@@ -5118,11 +5118,7 @@ _testFileTypeByHandle(HANDLE hfile, int testedType, BOOL diskOnly)
            testedType == PY_IFLNK || testedType == PY_IFMNT ||
            testedType == PY_IFLRP || testedType == PY_IFRRP);
 
-    DWORD fileDevType = GetFileType(hfile);
-    if ((fileDevType == FILE_TYPE_UNKNOWN && GetLastError()) ||
-        (fileDevType == FILE_TYPE_CHAR) ||
-        (diskOnly && fileDevType != FILE_TYPE_DISK))
-    {
+    if (diskOnly && GetFileType(hfile) != FILE_TYPE_DISK) {
         return FALSE;
     }
 
@@ -5152,8 +5148,7 @@ _testFileTypeByHandle(HANDLE hfile, int testedType, BOOL diskOnly)
         return _testReparseTag(reparseTag, testedType);
     }
     else if (testedType == PY_IFREG) {
-        return ((fileDevType == FILE_TYPE_DISK) &&
-                !(attributes & FILE_ATTRIBUTE_DIRECTORY));
+        return attributes && !(attributes & FILE_ATTRIBUTE_DIRECTORY);
     }
     else if (testedType == PY_IFDIR) {
         return attributes & FILE_ATTRIBUTE_DIRECTORY;
@@ -5189,7 +5184,8 @@ _testFileTypeByName(LPCWSTR path, int testedType)
             }
         }
         else if (testedType == PY_IFREG) {
-            return !(info.FileAttributes & FILE_ATTRIBUTE_DIRECTORY);
+            return (info.FileAttributes && !(info.FileAttributes &
+                    FILE_ATTRIBUTE_DIRECTORY));
         }
         else if (testedType == PY_IFDIR) {
             return info.FileAttributes & FILE_ATTRIBUTE_DIRECTORY;
