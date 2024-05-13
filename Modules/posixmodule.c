@@ -5096,18 +5096,27 @@ os__path_splitroot_impl(PyObject *module, path_t *path)
 #define PY_IFRRP 32 // Regular Reparse Point
 
 static inline BOOL
-_testReparseTag(DWORD reparseTag, int testedType)
+_testFileType(DWORD attributes, DWORD reparseTag, int testedType)
 {
-    switch (testedType) {
-    case PY_IFLNK:
-        return reparseTag == IO_REPARSE_TAG_SYMLINK;
-    case PY_IFMNT:
-        return reparseTag == IO_REPARSE_TAG_MOUNT_POINT;
-    case PY_IFLRP:
-        return IsReparseTagNameSurrogate(reparseTag);
-    case PY_IFRRP:
-        return reparseTag && !IsReparseTagNameSurrogate(reparseTag);
+    if (testedType == PY_IFREG) {
+        return attributes && !(attributes & FILE_ATTRIBUTE_DIRECTORY);
     }
+    if (testedType == PY_IFDIR) {
+        return attributes & FILE_ATTRIBUTE_DIRECTORY;
+    }
+    if (attributes & FILE_ATTRIBUTE_REPARSE_POINT) {
+        switch (testedType) {
+        case PY_IFLNK:
+            return reparseTag == IO_REPARSE_TAG_SYMLINK;
+        case PY_IFMNT:
+            return reparseTag == IO_REPARSE_TAG_MOUNT_POINT;
+        case PY_IFLRP:
+            return IsReparseTagNameSurrogate(reparseTag);
+        case PY_IFRRP:
+            return reparseTag && !IsReparseTagNameSurrogate(reparseTag);
+        }
+    }
+
     return FALSE;
 }
 
@@ -5144,17 +5153,7 @@ _testFileTypeByHandle(HANDLE hfile, int testedType, BOOL diskOnly)
         reparseTag = 0;
     }
 
-    if (attributes & FILE_ATTRIBUTE_REPARSE_POINT) {
-        return _testReparseTag(reparseTag, testedType);
-    }
-    else if (testedType == PY_IFREG) {
-        return attributes && !(attributes & FILE_ATTRIBUTE_DIRECTORY);
-    }
-    else if (testedType == PY_IFDIR) {
-        return attributes & FILE_ATTRIBUTE_DIRECTORY;
-    }
-
-    return FALSE;
+    return _testFileType(attributes, reparseTag, testedType);
 }
 
 static BOOL
@@ -5168,30 +5167,12 @@ _testFileTypeByName(LPCWSTR path, int testedType)
     if (_Py_GetFileInformationByName(path, FileStatBasicByNameInfo, &info,
                                      sizeof(info)))
     {
-        if (info.FileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) {
-            if (testedType == PY_IFREG) {
-                if (info.FileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
-                    return FALSE;
-                }
-            }
-            else if (testedType == PY_IFDIR) {
-                if (!(info.FileAttributes & FILE_ATTRIBUTE_DIRECTORY)) {
-                    return FALSE;
-                }
-            }
-            else {
-                return _testReparseTag(info.ReparseTag, testedType);
-            }
-        }
-        else if (testedType == PY_IFREG) {
-            return (info.FileAttributes && !(info.FileAttributes &
-                    FILE_ATTRIBUTE_DIRECTORY));
-        }
-        else if (testedType == PY_IFDIR) {
-            return info.FileAttributes & FILE_ATTRIBUTE_DIRECTORY;
-        }
-        else {
-            return FALSE;
+        BOOL result = _testFileType(info.FileAttributes, info.ReparseTag,
+                                    testedType);
+        if (!result || testedType != PY_IFREG || testedType != PY_IFDIR ||
+            !(info.FileAttributes & FILE_ATTRIBUTE_REPARSE_POINT))
+        {
+            return result;
         }
     }
     else if (_Py_GetFileInformationByName_ErrorIsTrustworthy(
@@ -5217,15 +5198,17 @@ _testFileTypeByName(LPCWSTR path, int testedType)
     case ERROR_SHARING_VIOLATION:
     case ERROR_CANT_ACCESS_FILE:
     case ERROR_INVALID_PARAMETER:
+        int rc;
         STRUCT_STAT st;
-        if (testedType == PY_IFREG) {
-            return !STAT(path, &st) && S_ISREG(st.st_mode);
+        if (testedType == PY_IFREG || testedType == PY_IFDIR) {
+            rc = STAT(path, &st);
         }
-        if (testedType == PY_IFDIR) {
-            return !STAT(path, &st) && S_ISDIR(st.st_mode);
+        else {
+            rc = LSTAT(path, &st);
         }
-        return (!LSTAT(path, &st) &&
-                _testReparseTag(st.st_reparse_tag, testedType));
+        if (!rc) {
+            return _testFileType(st.FileAttributes, st.ReparseTag, testedType);
+        }
     }
 
     return FALSE;
