@@ -904,6 +904,58 @@ def test_post_mortem():
     """
 
 
+def test_pdb_return_to_different_file():
+    """When pdb returns to a different file, it should not skip if f_trace is
+       not already set
+
+    >>> import pprint
+
+    >>> class A:
+    ...    def __repr__(self):
+    ...        return 'A'
+
+    >>> def test_function():
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    ...     pprint.pprint(A())
+
+    >>> reset_Breakpoint()
+    >>> with PdbTestInput([  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+    ...     'b A.__repr__',
+    ...     'continue',
+    ...     'return',
+    ...     'next',
+    ...     'return',
+    ...     'return',
+    ...     'continue',
+    ... ]):
+    ...    test_function()
+    > <doctest test.test_pdb.test_pdb_return_to_different_file[2]>(3)test_function()
+    -> pprint.pprint(A())
+    (Pdb) b A.__repr__
+    Breakpoint 1 at <doctest test.test_pdb.test_pdb_return_to_different_file[1]>:2
+    (Pdb) continue
+    > <doctest test.test_pdb.test_pdb_return_to_different_file[1]>(3)__repr__()
+    -> return 'A'
+    (Pdb) return
+    --Return--
+    > <doctest test.test_pdb.test_pdb_return_to_different_file[1]>(3)__repr__()->'A'
+    -> return 'A'
+    (Pdb) next
+    > ...pprint.py..._safe_repr()
+    -> return rep,...
+    (Pdb) return
+    --Return--
+    > ...pprint.py..._safe_repr()->('A'...)
+    -> return rep,...
+    (Pdb) return
+    --Return--
+    > ...pprint.py...format()->('A'...)
+    -> return...
+    (Pdb) continue
+    A
+    """
+
+
 def test_pdb_skip_modules():
     """This illustrates the simple case of module skipping.
 
