@@ -104,15 +104,29 @@ Removed
 argparse
 --------
 
-* The *type*, *choices*, and *metavar* parameters
-  of :class:`!argparse.BooleanOptionalAction` are removed.
+* Remove the *type*, *choices*, and *metavar* parameters
+  of :class:`!argparse.BooleanOptionalAction`.
   They were deprecated since 3.12.
+
+collections.abc
+---------------
+
+* Remove :class:`!collections.abc.ByteString`. It had previously raised a
+  :exc:`DeprecationWarning` since Python 3.12.
+
 
 email
 -----
 
-* The *isdst* parameter has been removed from :func:`email.utils.localtime`.
+* Remove the *isdst* parameter from :func:`email.utils.localtime`.
   (Contributed by Hugo van Kemenade in :gh:`118798`.)
+
+itertools
+---------
+
+* Remove :mod:`itertools` support for copy, deepcopy, and pickle operations.
+  These had previously raised a :exc:`DeprecationWarning` since Python 3.12.
+  (Contributed by Raymond Hettinger in :gh:`101588`.)
 
 pathlib
 -------
@@ -122,20 +136,24 @@ pathlib
   :meth:`~pathlib.PurePath.is_relative_to`. In previous versions, any such
   arguments are joined onto *other*.
 
+sqlite3
+-------
+
+* Remove :data:`!version` and :data:`!version_info` from :mod:`sqlite3`.
+  (Contributed by Hugo van Kemenade in :gh:`118924`.)
+
+typing
+------
+
+* Remove :class:`!typing.ByteString`. It had previously raised a
+  :exc:`DeprecationWarning` since Python 3.12.
+
 Others
 ------
 
 * Using :data:`NotImplemented` in a boolean context will now raise a :exc:`TypeError`.
   It had previously raised a :exc:`DeprecationWarning` since Python 3.9. (Contributed
   by Jelle Zijlstra in :gh:`118767`.)
-
-* :class:`!typing.ByteString` and :class:`!collections.abc.ByteString`
-  are removed. They had previously raised a :exc:`DeprecationWarning`
-  since Python 3.12.
-
-* :mod:`itertools` support for copy, deepcopy, and pickle operations.
-  These had previously raised a :exc:`DeprecationWarning` since Python 3.12.
-  (Contributed by Raymond Hettinger in :gh:`101588`.)
 
 
 Porting to Python 3.14
