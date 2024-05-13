@@ -5095,27 +5095,27 @@ os__path_splitroot_impl(PyObject *module, path_t *path)
 #define PY_IFLRP 16 // Link Reparse Point (name-surrogate, symlink, junction)
 #define PY_IFRRP 32 // Regular Reparse Point
 
-static BOOL
+static inline BOOL
 _testInfo(DWORD attributes, DWORD reparseTag, BOOL diskDevice, int testedType)
 {
-    if (testedType == PY_IFREG) {
+    switch (testedType) {
+    case PY_IFREG:
         return diskDevice && attributes &&
                !(attributes & FILE_ATTRIBUTE_DIRECTORY);
-    }
-    if (testedType == PY_IFDIR) {
+    case PY_IFDIR:    
         return attributes & FILE_ATTRIBUTE_DIRECTORY;
-    }
-    if (attributes & FILE_ATTRIBUTE_REPARSE_POINT) {
-        switch (testedType) {
-        case PY_IFLNK:
-            return reparseTag == IO_REPARSE_TAG_SYMLINK;
-        case PY_IFMNT:
-            return reparseTag == IO_REPARSE_TAG_MOUNT_POINT;
-        case PY_IFLRP:
-            return IsReparseTagNameSurrogate(reparseTag);
-        case PY_IFRRP:
-            return reparseTag && !IsReparseTagNameSurrogate(reparseTag);
-        }
+    case PY_IFLNK:
+        return (attributes & FILE_ATTRIBUTE_REPARSE_POINT) &&
+               reparseTag == IO_REPARSE_TAG_SYMLINK;
+    case PY_IFMNT:
+        return (attributes & FILE_ATTRIBUTE_REPARSE_POINT) &&
+               reparseTag == IO_REPARSE_TAG_MOUNT_POINT;
+    case PY_IFLRP:
+        return (attributes & FILE_ATTRIBUTE_REPARSE_POINT) &&
+               IsReparseTagNameSurrogate(reparseTag);
+    case PY_IFRRP:
+        return (attributes & FILE_ATTRIBUTE_REPARSE_POINT) &&
+               reparseTag && !IsReparseTagNameSurrogate(reparseTag);
     }
 
     return FALSE;
