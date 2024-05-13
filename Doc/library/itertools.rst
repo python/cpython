@@ -800,6 +800,7 @@ and :term:`generators <generator>` which incur interpreter overhead.
 .. testcode::
 
    import collections
+   import contextlib
    import functools
    import math
    import operator
@@ -949,23 +950,19 @@ and :term:`generators <generator>` which incur interpreter overhead.
        else:
            stop = len(iterable) if stop is None else stop
            i = start
-           try:
+           with contextlib.suppress(ValueError):
                while True:
                    yield (i := seq_index(value, i, stop))
                    i += 1
-           except ValueError:
-               pass
 
    def iter_except(func, exception, first=None):
        "Convert a call-until-exception interface to an iterator interface."
        # iter_except(d.popitem, KeyError) → non-blocking dictionary iterator
-       try:
+       with contextlib.suppress(exception):
            if first is not None:
                yield first()
            while True:
                yield func()
-       except exception:
-           pass
 
 
 The following recipes have a more mathematical flavor:
