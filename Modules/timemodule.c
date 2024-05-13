@@ -481,7 +481,18 @@ tmtotuple(time_module_state *state, struct tm *p
     if (v == NULL)
         return NULL;
 
-#define SET(i,val) PyStructSequence_SET_ITEM(v, i, PyLong_FromLong((long) val))
+#define SET_ITEM(INDEX, CALL)                       \
+    do {                                            \
+        PyObject *obj = (CALL);                     \
+        if (obj == NULL) {                          \
+            Py_DECREF(v);                           \
+            return NULL;                            \
+        }                                           \
+        PyStructSequence_SET_ITEM(v, (INDEX), obj); \
+    } while (0)
+
+#define SET(INDEX, VAL) \
+    SET_ITEM((INDEX), PyLong_FromLong((long) (VAL)))
 
     SET(0, p->tm_year + 1900);
     SET(1, p->tm_mon + 1);         /* Want January == 1 */
@@ -493,19 +504,15 @@ tmtotuple(time_module_state *state, struct tm *p
     SET(7, p->tm_yday + 1);        /* Want January, 1 == 1 */
     SET(8, p->tm_isdst);
 #ifdef HAVE_STRUCT_TM_TM_ZONE
-    PyStructSequence_SET_ITEM(v, 9,
-        PyUnicode_DecodeLocale(p->tm_zone, "surrogateescape"));
+    SET_ITEM(9, PyUnicode_DecodeLocale(p->tm_zone, "surrogateescape"));
     SET(10, p->tm_gmtoff);
 #else
-    PyStructSequence_SET_ITEM(v, 9,
-        PyUnicode_DecodeLocale(zone, "surrogateescape"));
-    PyStructSequence_SET_ITEM(v, 10, _PyLong_FromTime_t(gmtoff));
+    SET_ITEM(9, PyUnicode_DecodeLocale(zone, "surrogateescape"));
+    SET_ITEM(10, _PyLong_FromTime_t(gmtoff));
 #endif /* HAVE_STRUCT_TM_TM_ZONE */
+
 #undef SET
-    if (PyErr_Occurred()) {
-        Py_XDECREF(v);
-        return NULL;
-    }
+#undef SET_ITEM
 
     return v;
 }
