@@ -349,6 +349,7 @@ class _ELF(
             assert section_type in {
                 "SHT_GROUP",
                 "SHT_LLVM_ADDRSIG",
+                "SHT_NOTE",
                 "SHT_NULL",
                 "SHT_STRTAB",
                 "SHT_SYMTAB",
