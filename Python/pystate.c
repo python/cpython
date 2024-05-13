@@ -1038,6 +1038,17 @@ _PyInterpreterState_DeleteExceptMain(_PyRuntimeState *runtime)
 }
 #endif
 
+static inline void
+set_main_thread(PyInterpreterState *interp, PyThreadState *tstate)
+{
+    _Py_atomic_store_ptr_relaxed(&interp->threads.main, tstate);
+}
+
+static inline PyThreadState *
+get_main_thread(PyInterpreterState *interp)
+{
+    return _Py_atomic_load_ptr_relaxed(&interp->threads.main);
+}
 
 int
 _PyInterpreterState_SetRunningMain(PyInterpreterState *interp)
@@ -1052,21 +1063,22 @@ _PyInterpreterState_SetRunningMain(PyInterpreterState *interp)
                         "current tstate has wrong interpreter");
         return -1;
     }
-    interp->threads.main = tstate;
+    set_main_thread(interp, tstate);
+
     return 0;
 }
 
 void
 _PyInterpreterState_SetNotRunningMain(PyInterpreterState *interp)
 {
-    assert(interp->threads.main == current_fast_get());
-    interp->threads.main = NULL;
+    assert(get_main_thread(interp) == current_fast_get());
+    set_main_thread(interp, NULL);
 }
 
 int
 _PyInterpreterState_IsRunningMain(PyInterpreterState *interp)
 {
-    if (interp->threads.main != NULL) {
+    if (get_main_thread(interp) != NULL) {
         return 1;
     }
     // Embedders might not know to call _PyInterpreterState_SetRunningMain(),
@@ -1082,18 +1094,15 @@ int
 _PyThreadState_IsRunningMain(PyThreadState *tstate)
 {
     PyInterpreterState *interp = tstate->interp;
-    if (interp->threads.main != NULL) {
-        return tstate == interp->threads.main;
-    }
     // See the note in _PyInterpreterState_IsRunningMain() about
     // possible false negatives here for embedders.
-    return 0;
+    return get_main_thread(interp) == tstate;
 }
 
 int
 _PyInterpreterState_FailIfRunningMain(PyInterpreterState *interp)
 {
-    if (interp->threads.main != NULL) {
+    if (get_main_thread(interp) != NULL) {
         PyErr_SetString(PyExc_InterpreterError,
                         "interpreter already running");
         return -1;
@@ -1105,8 +1114,8 @@ void
 _PyInterpreterState_ReinitRunningMain(PyThreadState *tstate)
 {
     PyInterpreterState *interp = tstate->interp;
-    if (interp->threads.main != tstate) {
-        interp->threads.main = NULL;
+    if (get_main_thread(interp) != tstate) {
+        set_main_thread(interp, NULL);
     }
 }
 
@@ -1785,7 +1794,7 @@ tstate_delete_common(PyThreadState *tstate)
     HEAD_UNLOCK(runtime);
 
 #ifdef Py_GIL_DISABLED
-    _Py_qsbr_unregister((_PyThreadStateImpl *)tstate);
+    _Py_qsbr_unregister(tstate);
 #endif
 
     // XXX Unbind in PyThreadState_Clear(), or earlier
