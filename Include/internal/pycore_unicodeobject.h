@@ -31,7 +31,7 @@ PyAPI_FUNC(int) _PyUnicode_CheckConsistency(
     PyObject *op,
     int check_content);
 
-extern void _PyUnicode_ExactDealloc(PyObject *op);
+PyAPI_FUNC(void) _PyUnicode_ExactDealloc(PyObject *op);
 extern Py_ssize_t _PyUnicode_InternedSize(void);
 
 // Get a copy of a Unicode string.
@@ -202,7 +202,7 @@ PyAPI_FUNC(PyObject*) _PyUnicode_TransformDecimalAndSpaceToASCII(
 
 /* --- Methods & Slots ---------------------------------------------------- */
 
-extern PyObject* _PyUnicode_JoinArray(
+PyAPI_FUNC(PyObject*) _PyUnicode_JoinArray(
     PyObject *separator,
     PyObject *const *items,
     Py_ssize_t seqlen

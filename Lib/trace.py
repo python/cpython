@@ -265,8 +265,7 @@ class CoverageResults:
                 modulename = _modname(filename)
             else:
                 dir = coverdir
-                if not os.path.exists(dir):
-                    os.makedirs(dir)
+                os.makedirs(dir, exist_ok=True)
                 modulename = _fullmodname(filename)
 
             # If desired, get a list of the line numbers which represent
@@ -566,8 +565,12 @@ class Trace:
             if self.start_time:
                 print('%.2f' % (_time() - self.start_time), end=' ')
             bname = os.path.basename(filename)
-            print("%s(%d): %s" % (bname, lineno,
-                                  linecache.getline(filename, lineno)), end='')
+            line = linecache.getline(filename, lineno)
+            print("%s(%d)" % (bname, lineno), end='')
+            if line:
+                print(": ", line, end='')
+            else:
+                print()
         return self.localtrace
 
     def localtrace_trace(self, frame, why, arg):
@@ -579,8 +582,12 @@ class Trace:
             if self.start_time:
                 print('%.2f' % (_time() - self.start_time), end=' ')
             bname = os.path.basename(filename)
-            print("%s(%d): %s" % (bname, lineno,
-                                  linecache.getline(filename, lineno)), end='')
+            line = linecache.getline(filename, lineno)
+            print("%s(%d)" % (bname, lineno), end='')
+            if line:
+                print(": ", line, end='')
+            else:
+                print()
         return self.localtrace
 
     def localtrace_count(self, frame, why, arg):

@@ -487,7 +487,13 @@ def test_wmi_exec_query():
             print(event, args[0])
 
     sys.addaudithook(hook)
-    _wmi.exec_query("SELECT * FROM Win32_OperatingSystem")
+    try:
+        _wmi.exec_query("SELECT * FROM Win32_OperatingSystem")
+    except WindowsError as e:
+        # gh-112278: WMI may be slow response when first called, but we still
+        # get the audit event, so just ignore the timeout
+        if e.winerror != 258:
+            raise
 
 def test_syslog():
     import syslog

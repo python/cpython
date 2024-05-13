@@ -1,2 +1,0 @@
-The :program:`freeze` tool doesn't work with framework builds of Python.
-Document this and bail out early when running the tool with such a build.

@@ -668,7 +668,7 @@ _multibytecodec_MultibyteStreamWriter_reset_impl(MultibyteStreamWriterObject *se
 static PyObject *
 _multibytecodec_MultibyteStreamWriter_reset(MultibyteStreamWriterObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    if (nargs) {
+    if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "reset() takes no arguments");
         return NULL;
     }
@@ -682,4 +682,4 @@ PyDoc_STRVAR(_multibytecodec___create_codec__doc__,
 
 #define _MULTIBYTECODEC___CREATE_CODEC_METHODDEF    \
     {"__create_codec", (PyCFunction)_multibytecodec___create_codec, METH_O, _multibytecodec___create_codec__doc__},
-/*[clinic end generated code: output=219a363662d2fbff input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ee767a6d93c7108a input=a9049054013a1b77]*/
