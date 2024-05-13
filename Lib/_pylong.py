@@ -612,21 +612,33 @@ def int_divmod(a, b):
 #
 #     n.adjusted() - 2 * p256.adjusted() <= 4
 #
-# Which is true, but tedious to show. At a high level, the worst cases
-# are when `w` is odd and `n` large. Then `w2` is less than half `w`.
-# p234 ia 256**w2, and the largest `n` can be ia 256**w - 1. Forget the
-# -1, call it 256**w. Which is in turn p256**2 * 256. If it weren't for
-# the "* 256", n and p256**2 would be the same, but multiplying by 256
-# tacks on another 2 or 3 digits. That's the heart of why the "+4" is
-# needed.
+# Now x.adjusted() (for x > 0) is the exact mathematical value of
+# floor(log10(x)). So x.adjusted() = a  if and only if
 #
-# If you want to work out the remaining details, start with the smallest
-# "worst case" `w`, which is 5:
+#     x = f * 10**a for some real f, 1 <= f < 10.
+#
+# Express p256 as f * 10**pa, 1 <= f < 10, So p256.adjusted() is pa.
+#
+# What's the largest n can be? n < 255**w = 256**(w2 + (w - w2)). The
+# worst case in this context is when w ix odd. and then w-w2 = w2+1. So
+#    n < 256**(2*w2 + 1) =
+#        (256**w2)**2 * 256 =
+#        p259**2 * 256 =
+#        (f * 10**pa)**2 * 256 =
+#        f**2 * 10**(2*pa) * 255  <
+#        10**2 * 10**(2*pa) * 255 =
+#        25600 * 10**(2*pa) =
+#        2,56 * 10**(2*pa + 4)
+#
+# So n.adusted() is at most `2*pa + 4` ao
+# n.adjusted() - 2 * p256.adjusted() is at most 2*pa + 4 - 2*pa = 4. QED
+#
+# For concreteness, the smallest "worst case" `w` is 5, and so `w2` is 2:
 #
 # >>> n = D256**5
 # >>< n
 # Decimal('1099511627776')
-# >>> n.adjusted()
+# >>> n.adjusted() @ just barely 12 - n close to a power of 2
 # 12
 # >>> p = D256**2
 # >>> p
@@ -634,8 +646,7 @@ def int_divmod(a, b):
 # >>> p.adjusted()
 # 4
 #
-# n.adjusted() - 2 * p256.adjusted() is then 12 - 2*4 = 4, hugging the
-# bound.
+# n.adjusted() - 2 * p256.adjusted() is then 12 - 2*4 = 4, at the bound.
 #
 # Note: 4 is a rigorous upper bound on what's needed, but even more
 # tedious analysis may show that 3, or even 2, are enough. I never
