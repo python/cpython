@@ -521,8 +521,10 @@ ast
 
   If an optional field on an AST node is not included as an argument when
   constructing an instance, the field will now be set to ``None``. Similarly,
-  if a list field is omitted, that field will now be set to an empty list.
-  (Previously, in both cases, the attribute would be missing on the newly
+  if a list field is omitted, that field will now be set to an empty list,
+  and if a :class:`!ast.expr_context` field is omitted, it defaults to
+  :class:`Load() <ast.Load>`.
+  (Previously, in all cases, the attribute would be missing on the newly
   constructed AST node instance.)
 
   If other arguments are omitted, a :exc:`DeprecationWarning` is emitted.
@@ -534,7 +536,7 @@ ast
   unless the class opts in to the new behavior by setting the attribute
   :attr:`ast.AST._field_types`.
 
-  (Contributed by Jelle Zijlstra in :gh:`105858` and :gh:`117486`.)
+  (Contributed by Jelle Zijlstra in :gh:`105858`, :gh:`117486`, and :gh:`118851`.)
 
 * :func:`ast.parse` now accepts an optional argument *optimize*
   which is passed on to the :func:`compile` built-in. This makes it
@@ -794,6 +796,9 @@ mmap
 * :class:`mmap.mmap` now has a *trackfd* parameter on Unix; if it is ``False``,
   the file descriptor specified by *fileno* will not be duplicated.
   (Contributed by Zackery Spytz and Petr Viktorin in :gh:`78502`.)
+* :class:`mmap.mmap` is now protected from crashing on Windows when the mapped memory
+  is inaccessible due to file system errors or access violations.
+  (Contributed by Jannis Weigend in :gh:`118209`.)
 
 opcode
 ------
@@ -1573,7 +1578,7 @@ Pending Removal in Python 3.14
   Use :class:`ast.Constant` instead.
   (Contributed by Serhiy Storchaka in :gh:`90953`.)
 
-* :mod:`collections.abc`: Deprecated :class:`~collections.abc.ByteString`.
+* :mod:`collections.abc`: Deprecated :class:`!collections.abc.ByteString`.
   Prefer :class:`!Sequence` or :class:`~collections.abc.Buffer`.
   For use in typing, prefer a union, like ``bytes | bytearray``,
   or :class:`collections.abc.Buffer`.
@@ -1631,7 +1636,7 @@ Pending Removal in Python 3.14
 
 * :mod:`sqlite3`:
 
-  * :data:`~sqlite3.version` and :data:`~sqlite3.version_info`.
+  * :data:`!version` and :data:`!version_info`.
 
   * :meth:`~sqlite3.Cursor.execute` and :meth:`~sqlite3.Cursor.executemany`
     if :ref:`named placeholders <sqlite3-placeholders>` are used and
@@ -1647,7 +1652,7 @@ Pending Removal in Python 3.14
   May be removed in 3.14.
   (Contributed by Nikita Sobolev in :gh:`101866`.)
 
-* :mod:`typing`: :class:`~typing.ByteString`, deprecated since Python 3.9,
+* :mod:`typing`: :class:`!typing.ByteString`, deprecated since Python 3.9,
   now causes a :exc:`DeprecationWarning` to be emitted when it is used.
 
 * :mod:`urllib`:

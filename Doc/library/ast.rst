@@ -1,5 +1,5 @@
-:mod:`ast` --- Abstract Syntax Trees
-====================================
+:mod:`!ast` --- Abstract Syntax Trees
+=====================================
 
 .. module:: ast
    :synopsis: Abstract Syntax Tree classes and manipulation.
@@ -120,7 +120,8 @@ Node classes
 
    If a field that is optional in the grammar is omitted from the constructor,
    it defaults to ``None``. If a list field is omitted, it defaults to the empty
-   list. If any other field is omitted, a :exc:`DeprecationWarning` is raised
+   list. If a field of type :class:`!ast.expr_context` is omitted, it defaults to
+   :class:`Load() <ast.Load>`. If any other field is omitted, a :exc:`DeprecationWarning` is raised
    and the AST node will not have this field. In Python 3.15, this condition will
    raise an error.
 
@@ -596,8 +597,7 @@ Expressions
    * ``keywords`` holds a list of :class:`.keyword` objects representing
      arguments passed by keyword.
 
-   When creating a ``Call`` node, ``args`` and ``keywords`` are required, but
-   they can be empty lists.
+   The ``args`` and ``keywords`` arguments are optional and default to empty lists.
 
    .. doctest::
 
