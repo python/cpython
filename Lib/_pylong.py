@@ -562,8 +562,7 @@ def int_divmod(a, b):
 #     hi = +n * +recip # unary `+` chops to ctx.prec digits
 #
 # we have 3 visible chopped operationa, but there's also a 4th:
-# precomuting `recip`, chopped back from the exact reciprocal as part of
-# setup.
+# precomuting a truncatrd `recip` as part of setup.
 #
 # So the computed product is exactly equal to the true product times
 # (1-e1)*(1-e2)*(1-e3)*(1-e4); since the e's are all very small, an
