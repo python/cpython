@@ -961,6 +961,8 @@ call fails (for example because the path doesn't exist).
 .. method:: Path.exists(*, follow_symlinks=True)
 
    Return ``True`` if the path points to an existing file or directory.
+   ``False`` will be returned if the path is invalid, inaccessible or missing.
+   Use :meth:`Path.stat` to distinguish between these cases.
 
    This method normally follows symlinks; to check if a symlink exists, add
    the argument ``follow_symlinks=False``.
@@ -1079,7 +1081,7 @@ call fails (for example because the path doesn't exist).
 
    Return ``True`` if the path points to a directory. ``False`` will be
    returned if the path is invalid, inaccessible or missing, or if it points
-   to something other than a directory. Use :meth:`Path.exists` to distinguish
+   to something other than a directory. Use :meth:`Path.stat` to distinguish
    between these cases.
 
    This method normally follows symlinks; to exclude symlinks to directories,
@@ -1093,7 +1095,7 @@ call fails (for example because the path doesn't exist).
 
    Return ``True`` if the path points to a regular file. ``False`` will be
    returned if the path is invalid, inaccessible or missing, or if it points
-   to something other than a regular file. Use :meth:`Path.exists` to
+   to something other than a regular file. Use :meth:`Path.stat` to
    distinguish between these cases.
 
    This method normally follows symlinks; to exclude symlinks, add the
@@ -1133,14 +1135,14 @@ call fails (for example because the path doesn't exist).
    Return ``True`` if the path points to a symbolic link, even if that symlink
    is broken. ``False`` will be returned if the path is invalid, inaccessible
    or missing, or if it points to something other than a symbolic link. Use
-   :meth:`Path.exists` to distinguish between these cases.
+   :meth:`Path.stat` to distinguish between these cases.
 
 
 .. method:: Path.is_socket()
 
    Return ``True`` if the path points to a Unix socket. ``False`` will be
    returned if the path is invalid, inaccessible or missing, or if it points
-   to something other than a Unix socket. Use :meth:`Path.exists` to
+   to something other than a Unix socket. Use :meth:`Path.stat` to
    distinguish between these cases.
 
 
@@ -1148,7 +1150,7 @@ call fails (for example because the path doesn't exist).
 
    Return ``True`` if the path points to a FIFO. ``False`` will be returned if
    the path is invalid, inaccessible or missing, or if it points to something
-   other than a FIFO. Use :meth:`Path.exists` to distinguish between these
+   other than a FIFO. Use :meth:`Path.stat` to distinguish between these
    cases.
 
 
@@ -1156,7 +1158,7 @@ call fails (for example because the path doesn't exist).
 
    Return ``True`` if the path points to a block device. ``False`` will be
    returned if the path is invalid, inaccessible or missing, or if it points
-   to something other than a block device. Use :meth:`Path.exists` to
+   to something other than a block device. Use :meth:`Path.stat` to
    distinguish between these cases.
 
 
@@ -1164,7 +1166,7 @@ call fails (for example because the path doesn't exist).
 
    Return ``True`` if the path points to a character device. ``False`` will be
    returned if the path is invalid, inaccessible or missing, or if it points
-   to something other than a character device. Use :meth:`Path.exists` to
+   to something other than a character device. Use :meth:`Path.stat` to
    distinguish between these cases.
 
 
