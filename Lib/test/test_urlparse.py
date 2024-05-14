@@ -189,6 +189,9 @@ class UrlParseTestCase(unittest.TestCase):
             ('////path/to/file',
              ('', '', '//path/to/file', '', '', ''),
              ('', '', '//path/to/file', '', '')),
+            ('/////path/to/file',
+             ('', '', '///path/to/file', '', '', ''),
+             ('', '', '///path/to/file', '', '')),
             ('scheme:path/to/file',
              ('scheme', '', 'path/to/file', '', '', ''),
              ('scheme', '', 'path/to/file', '', '')),
@@ -201,6 +204,9 @@ class UrlParseTestCase(unittest.TestCase):
             ('scheme:////path/to/file',
              ('scheme', '', '//path/to/file', '', '', ''),
              ('scheme', '', '//path/to/file', '', '')),
+            ('scheme://///path/to/file',
+             ('scheme', '', '///path/to/file', '', '', ''),
+             ('scheme', '', '///path/to/file', '', '')),
             ('file:///tmp/junk.txt',
              ('file', '', '/tmp/junk.txt', '', '', ''),
              ('file', '', '/tmp/junk.txt', '', '')),
@@ -236,12 +242,23 @@ class UrlParseTestCase(unittest.TestCase):
               'action=download-manifest&url=https://example.com/app', ''),
              ('itms-services', '', '',
               'action=download-manifest&url=https://example.com/app', '')),
+            ('+scheme:path/to/file',
+             ('', '', '+scheme:path/to/file', '', '', ''),
+             ('', '', '+scheme:path/to/file', '', '')),
+            ('sch_me:path/to/file',
+             ('', '', 'sch_me:path/to/file', '', '', ''),
+             ('', '', 'sch_me:path/to/file', '', '')),
             ]
         def _encode(t):
             return (t[0].encode('ascii'),
                     tuple(x.encode('ascii') for x in t[1]),
                     tuple(x.encode('ascii') for x in t[2]))
         bytes_cases = [_encode(x) for x in str_cases]
+        str_cases += [
+            ('schème:path/to/file',
+             ('', '', 'schème:path/to/file', '', '', ''),
+             ('', '', 'schème:path/to/file', '', '')),
+            ]
         for url, parsed, split in str_cases + bytes_cases:
             self.checkRoundtrips(url, parsed, split)
 
