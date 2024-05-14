@@ -515,6 +515,32 @@ def int_divmod(a, b):
 # I revisited the code, and found ways to improve and simplify it. The
 # crossover point is at about 3.4 million digits now.
 #
+# About .adjusted()
+# -----------------
+# Restrict to Decimal values x > 0. We don't use negative numbers in the
+# code, and I don't want to have to keep typing, e.g., "absolute value".
+#
+# For convenience, I'll use `x.a` to mean `x.adjusted()`. x.a doesn't
+# look at the digits of x, but instead returns an integer giving x's
+# order of magnitude. These are equivalent:
+#
+# - x.a is the power-of-10 exponent of x's most significant digit.
+# - x.a = the infinitely precise floor(log10(x))
+# - x can be written in this form, where f is a real with 1 <= f < 10:
+#    x = f * 10**x.a
+#
+# Observation; if x is an integer, len(str(x)) = x.a + 1.
+#
+# Lemma 1: ceiling(log10(x/y)) <= x.a - y.a + 1
+#
+# To see that, write x = f * 10**x.a and y = g * 10**y.a, where f and g
+# are in [1, 10). Then x/y = f/g * 10**(x.a - y.a), where 1/10 < f/g <
+# 10. If 1 <= f/g, (x/y).a is x.a-y.a. Else multiply f/g by 10 to bring
+# it back into [1, 10], and subtract 1 from the exponent to compensate.
+# Then (x/y).a is x.a-y.a-1. So the largest (x/y).a can be is x.a-y.a.
+# Since that's the floor of log10(x/y). the ceiling is at most 1 larger
+# (with equalify iff f/g = 1 exactly).
+#
 # GUARD digits
 # ------------
 # We only want the integer part of divisions, so don't need to build
@@ -565,17 +591,11 @@ def int_divmod(a, b):
 # -prec <= -1.602 - log10(prod)
 # prec >= log10(prod) + 1.602
 #
-# n.adjusted() - p256.adjusted() is s crude integer approximation to
-# log10(true_product) - but prec is necessarily an int too, and via
-# tedious case analysis it can be shown that the "crude xpproximation"
-# is never smaller than the floor of the true ratio's log10. For
-# exxmple, in 8E20 / 1E20, it gives 20 - 20 = 0, which is the floor of
-# log10(9), It also giver 0 for 1E20/9E20 (`.adjusted()` doesn't look at
-# the digits at all - it just gives the power-of-10 exponent of the most
-# significant digit, whatever it may be). But in that case it's the
-# ceiling of the true log10 (which is a bit larger than -1). So "it's
-# close", but since it may be as bad as (but no worse than) 1 too small,
-# we have to assume the worst: 1 too small.
+# The true product is the same as the true ratio n/p256. By Lemma 1
+# above, n.a - p256.a + 1 is an upper bound on the ceiling of
+# log10(prod). Then 2 is the ceiling of 1.602. so n.a - p256.a + 3 is an
+# upper bound on the right hand side of the inequality. Any prec >= that
+# will work.
 #
 # But since this is just a sketch of a proof ;-), the code uses the
 # empirically tested 8 instead of 3. 5 digits more or less makes no
@@ -603,21 +623,16 @@ def int_divmod(a, b):
 # value `prec` can become when `inner()` is working on `w2`.
 #
 # This is the `prec` inner() uses:
-#     max(n.adjusted() - p256.adjusted(), 0) + GUARD
+#     max(n.a - p256.a, 0) + GUARD
 # and what setup uses (renaming its `v` to `p256` - same thing):
-#     p256.adjusted() + GUARD + 4
+#     p256.a + GUARD + 4
 #
 # We need that the second is always at least as large as the first,
 # which is the same as requiring
 #
-#     n.adjusted() - 2 * p256.adjusted() <= 4
+#     n.a - 2 * p256.a <= 4
 #
-# Now x.adjusted() (for x > 0) is the exact mathematical value of
-# floor(log10(x)). So x.adjusted() = a  if and only if
-#
-#     x = f * 10**a for some real f, 1 <= f < 10.
-#
-# Express p256 as f * 10**pa, 1 <= f < 10, So p256.adjusted() is pa.
+# Express p256 as f * 10**pa, 1 <= f < 10, and pa = p256.a.
 #
 # What's the largest n can be? n < 255**w = 256**(w2 + (w - w2)). The
 # worst case in this context is when w ix odd. and then w-w2 = w2+1. So
@@ -630,10 +645,11 @@ def int_divmod(a, b):
 #        25600 * 10**(2*pa) =
 #        2.56 * 10**(2*pa + 4)
 #
-# So n.adusted() is at most `2*pa + 4` ao
-# n.adjusted() - 2 * p256.adjusted() is at most 2*pa + 4 - 2*pa = 4. QED
+# So n.a is at most `2*pa + 4`, ao n.a - 2 * p256.a is at most 2*pa + 4
+# - 2*pa = 4. QED
 #
-# For concreteness, the smallest "worst case" `w` is 5, and so `w2` is 2:
+# For concreteness, the smallest "worst case" `w` is 5, and so w2 is
+# 2:
 #
 # >>> n = D256**5
 # >>< n
