@@ -502,11 +502,45 @@ class Path(PathBase, PurePath):
         """
         return os.stat(self, follow_symlinks=follow_symlinks)
 
+    def exists(self, *, follow_symlinks=True):
+        """
+        Whether this path exists.
+
+        This method normally follows symlinks; to check whether a symlink exists,
+        add the argument follow_symlinks=False.
+        """
+        if follow_symlinks:
+            return os.path.exists(self)
+        return os.path.lexists(self)
+
+    def is_dir(self, *, follow_symlinks=True):
+        """
+        Whether this path is a directory.
+        """
+        if follow_symlinks:
+            return os.path.isdir(self)
+        return PathBase.is_dir(self, follow_symlinks=follow_symlinks)
+
+    def is_file(self, *, follow_symlinks=True):
+        """
+        Whether this path is a regular file (also True for symlinks pointing
+        to regular files).
+        """
+        if follow_symlinks:
+            return os.path.isfile(self)
+        return PathBase.is_file(self, follow_symlinks=follow_symlinks)
+
     def is_mount(self):
         """
         Check if this path is a mount point
         """
         return os.path.ismount(self)
+
+    def is_symlink(self):
+        """
+        Whether this path is a symbolic link.
+        """
+        return os.path.islink(self)
 
     def is_junction(self):
         """
