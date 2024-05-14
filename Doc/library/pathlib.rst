@@ -873,7 +873,7 @@ Methods
 ^^^^^^^
 
 Concrete paths provide the following methods in addition to pure paths
-methods.  Many of these methods can raise an :exc:`OSError` if a system
+methods.  Some of these methods can raise an :exc:`OSError` if a system
 call fails (for example because the path doesn't exist).
 
 .. versionchanged:: 3.8
@@ -884,6 +884,15 @@ call fails (for example because the path doesn't exist).
    :meth:`~Path.is_fifo()`, :meth:`~Path.is_socket()` now return ``False``
    instead of raising an exception for paths that contain characters
    unrepresentable at the OS level.
+
+.. versionchanged:: 3.14
+
+   The methods given above now return ``False`` instead of raising any
+   :exc:`OSError` exception from the operating system. In previous versions,
+   some kinds of :exc:`OSError` exception are raised, and others suppressed.
+   The new behaviour is consistent with :func:`os.path.exists`,
+   :func:`os.path.isdir`, etc. Use :meth:`~Path.stat` to retrieve the file
+   status without suppressing exceptions.
 
 
 .. classmethod:: Path.cwd()
@@ -951,6 +960,8 @@ call fails (for example because the path doesn't exist).
 .. method:: Path.exists(*, follow_symlinks=True)
 
    Return ``True`` if the path points to an existing file or directory.
+   ``False`` will be returned if the path is invalid, inaccessible or missing.
+   Use :meth:`Path.stat` to distinguish between these cases.
 
    This method normally follows symlinks; to check if a symlink exists, add
    the argument ``follow_symlinks=False``.
@@ -1067,11 +1078,10 @@ call fails (for example because the path doesn't exist).
 
 .. method:: Path.is_dir(*, follow_symlinks=True)
 
-   Return ``True`` if the path points to a directory, ``False`` if it points
-   to another kind of file.
-
-   ``False`` is also returned if the path doesn't exist or is a broken symlink;
-   other errors (such as permission errors) are propagated.
+   Return ``True`` if the path points to a directory. ``False`` will be
+   returned if the path is invalid, inaccessible or missing, or if it points
+   to something other than a directory. Use :meth:`Path.stat` to distinguish
+   between these cases.
 
    This method normally follows symlinks; to exclude symlinks to directories,
    add the argument ``follow_symlinks=False``.
@@ -1082,11 +1092,10 @@ call fails (for example because the path doesn't exist).
 
 .. method:: Path.is_file(*, follow_symlinks=True)
 
-   Return ``True`` if the path points to a regular file, ``False`` if it
-   points to another kind of file.
-
-   ``False`` is also returned if the path doesn't exist or is a broken symlink;
-   other errors (such as permission errors) are propagated.
+   Return ``True`` if the path points to a regular file. ``False`` will be
+   returned if the path is invalid, inaccessible or missing, or if it points
+   to something other than a regular file. Use :meth:`Path.stat` to
+   distinguish between these cases.
 
    This method normally follows symlinks; to exclude symlinks, add the
    argument ``follow_symlinks=False``.
@@ -1122,46 +1131,42 @@ call fails (for example because the path doesn't exist).
 
 .. method:: Path.is_symlink()
 
-   Return ``True`` if the path points to a symbolic link, ``False`` otherwise.
-
-   ``False`` is also returned if the path doesn't exist; other errors (such
-   as permission errors) are propagated.
+   Return ``True`` if the path points to a symbolic link, even if that symlink
+   is broken. ``False`` will be returned if the path is invalid, inaccessible
+   or missing, or if it points to something other than a symbolic link. Use
+   :meth:`Path.stat` to distinguish between these cases.
 
 
 .. method:: Path.is_socket()
 
-   Return ``True`` if the path points to a Unix socket (or a symbolic link
-   pointing to a Unix socket), ``False`` if it points to another kind of file.
-
-   ``False`` is also returned if the path doesn't exist or is a broken symlink;
-   other errors (such as permission errors) are propagated.
+   Return ``True`` if the path points to a Unix socket. ``False`` will be
+   returned if the path is invalid, inaccessible or missing, or if it points
+   to something other than a Unix socket. Use :meth:`Path.stat` to
+   distinguish between these cases.
 
 
 .. method:: Path.is_fifo()
 
-   Return ``True`` if the path points to a FIFO (or a symbolic link
-   pointing to a FIFO), ``False`` if it points to another kind of file.
-
-   ``False`` is also returned if the path doesn't exist or is a broken symlink;
-   other errors (such as permission errors) are propagated.
+   Return ``True`` if the path points to a FIFO. ``False`` will be returned if
+   the path is invalid, inaccessible or missing, or if it points to something
+   other than a FIFO. Use :meth:`Path.stat` to distinguish between these
+   cases.
 
 
 .. method:: Path.is_block_device()
 
-   Return ``True`` if the path points to a block device (or a symbolic link
-   pointing to a block device), ``False`` if it points to another kind of file.
-
-   ``False`` is also returned if the path doesn't exist or is a broken symlink;
-   other errors (such as permission errors) are propagated.
+   Return ``True`` if the path points to a block device. ``False`` will be
+   returned if the path is invalid, inaccessible or missing, or if it points
+   to something other than a block device. Use :meth:`Path.stat` to
+   distinguish between these cases.
 
 
 .. method:: Path.is_char_device()
 
-   Return ``True`` if the path points to a character device (or a symbolic link
-   pointing to a character device), ``False`` if it points to another kind of file.
-
-   ``False`` is also returned if the path doesn't exist or is a broken symlink;
-   other errors (such as permission errors) are propagated.
+   Return ``True`` if the path points to a character device. ``False`` will be
+   returned if the path is invalid, inaccessible or missing, or if it points
+   to something other than a character device. Use :meth:`Path.stat` to
+   distinguish between these cases.
 
 
 .. method:: Path.iterdir()
