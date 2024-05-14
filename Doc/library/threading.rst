@@ -1,5 +1,5 @@
-:mod:`threading` --- Thread-based parallelism
-=============================================
+:mod:`!threading` --- Thread-based parallelism
+==============================================
 
 .. module:: threading
    :synopsis: Thread-based parallelism.
@@ -363,11 +363,11 @@ since it is impossible to detect the termination of alien threads.
    base class constructor (``Thread.__init__()``) before doing anything else to
    the thread.
 
+   .. versionchanged:: 3.3
+      Added the *daemon* parameter.
+
    .. versionchanged:: 3.10
       Use the *target* name if *name* argument is omitted.
-
-   .. versionchanged:: 3.3
-      Added the *daemon* argument.
 
    .. method:: start()
 

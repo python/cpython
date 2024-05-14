@@ -1,5 +1,5 @@
-:mod:`datetime` --- Basic date and time types
-=============================================
+:mod:`!datetime` --- Basic date and time types
+==============================================
 
 .. module:: datetime
    :synopsis: Basic date and time types.
@@ -37,7 +37,7 @@ on efficient attribute extraction for output formatting and manipulation.
    Package `dateutil <https://dateutil.readthedocs.io/en/stable/>`_
       Third-party library with expanded time zone and parsing support.
 
-   Package `DateType <https://pypi.org/project/datetype/>`_
+   Package :pypi:`DateType`
       Third-party library that introduces distinct static types to e.g. allow
       :term:`static type checkers <static type checker>`
       to differentiate between naive and aware datetimes.
@@ -85,13 +85,13 @@ The :mod:`!datetime` module exports the following constants:
 .. data:: MINYEAR
 
    The smallest year number allowed in a :class:`date` or :class:`.datetime` object.
-   :const:`MINYEAR` is ``1``.
+   :const:`MINYEAR` is 1.
 
 
 .. data:: MAXYEAR
 
    The largest year number allowed in a :class:`date` or :class:`.datetime` object.
-   :const:`MAXYEAR` is ``9999``.
+   :const:`MAXYEAR` is 9999.
 
 .. attribute:: UTC
 
@@ -207,7 +207,7 @@ A :class:`timedelta` object represents a duration, the difference between two
 
 .. class:: timedelta(days=0, seconds=0, microseconds=0, milliseconds=0, minutes=0, hours=0, weeks=0)
 
-   All arguments are optional and default to ``0``. Arguments may be integers
+   All arguments are optional and default to 0. Arguments may be integers
    or floats, and may be positive or negative.
 
    Only *days*, *seconds* and *microseconds* are stored internally.
@@ -280,7 +280,7 @@ Class attributes:
    The smallest possible difference between non-equal :class:`timedelta` objects,
    ``timedelta(microseconds=1)``.
 
-Note that, because of normalization, ``timedelta.max`` > ``-timedelta.min``.
+Note that, because of normalization, ``timedelta.max`` is greater than ``-timedelta.min``.
 ``-timedelta.max`` is not representable as a :class:`timedelta` object.
 
 Instance attributes (read-only):
@@ -302,26 +302,27 @@ Supported operations:
 +--------------------------------+-----------------------------------------------+
 | Operation                      | Result                                        |
 +================================+===============================================+
-| ``t1 = t2 + t3``               | Sum of *t2* and *t3*. Afterwards *t1*-*t2* == |
-|                                | *t3* and *t1*-*t3* == *t2* are true. (1)      |
+| ``t1 = t2 + t3``               | Sum of ``t2`` and ``t3``.                     |
+|                                | Afterwards ``t1 - t2 == t3`` and              |
+|                                | ``t1 - t3 == t2`` are true. (1)               |
 +--------------------------------+-----------------------------------------------+
-| ``t1 = t2 - t3``               | Difference of *t2* and *t3*. Afterwards *t1*  |
-|                                | == *t2* - *t3* and *t2* == *t1* + *t3* are    |
+| ``t1 = t2 - t3``               | Difference of ``t2``  and ``t3``. Afterwards  |
+|                                | ``t1 == t2 - t3`` and ``t2 == t1 + t3`` are   |
 |                                | true. (1)(6)                                  |
 +--------------------------------+-----------------------------------------------+
 | ``t1 = t2 * i or t1 = i * t2`` | Delta multiplied by an integer.               |
-|                                | Afterwards *t1* // i == *t2* is true,         |
+|                                | Afterwards ``t1 // i == t2`` is true,         |
 |                                | provided ``i != 0``.                          |
 +--------------------------------+-----------------------------------------------+
-|                                | In general, *t1* \* i == *t1* \* (i-1) + *t1* |
+|                                | In general, ``t1  * i == t1 * (i-1) + t1``    |
 |                                | is true. (1)                                  |
 +--------------------------------+-----------------------------------------------+
 | ``t1 = t2 * f or t1 = f * t2`` | Delta multiplied by a float. The result is    |
 |                                | rounded to the nearest multiple of            |
 |                                | timedelta.resolution using round-half-to-even.|
 +--------------------------------+-----------------------------------------------+
-| ``f = t2 / t3``                | Division (3) of overall duration *t2* by      |
-|                                | interval unit *t3*. Returns a :class:`float`  |
+| ``f = t2 / t3``                | Division (3) of overall duration ``t2`` by    |
+|                                | interval unit ``t3``. Returns a :class:`float`|
 |                                | object.                                       |
 +--------------------------------+-----------------------------------------------+
 | ``t1 = t2 / f or t1 = t2 / i`` | Delta divided by a float or an int. The result|
@@ -343,13 +344,12 @@ Supported operations:
 | ``+t1``                        | Returns a :class:`timedelta` object with the  |
 |                                | same value. (2)                               |
 +--------------------------------+-----------------------------------------------+
-| ``-t1``                        | equivalent to                                 |
-|                                | :class:`timedelta`\ (-*t1.days*,              |
-|                                | -*t1.seconds*, -*t1.microseconds*),           |
-|                                | and to *t1*\* -1. (1)(4)                      |
+| ``-t1``                        | Equivalent to ``timedelta(-t1.days,           |
+|                                | -t1.seconds*, -t1.microseconds)``,            |
+|                                | and to ``t1 * -1``. (1)(4)                    |
 +--------------------------------+-----------------------------------------------+
-| ``abs(t)``                     | equivalent to +\ *t* when ``t.days >= 0``,    |
-|                                | and to -*t* when ``t.days < 0``. (2)          |
+| ``abs(t)``                     | Equivalent to ``+t`` when ``t.days >= 0``,    |
+|                                | and to ``-t`` when ``t.days < 0``. (2)        |
 +--------------------------------+-----------------------------------------------+
 | ``str(t)``                     | Returns a string in the form                  |
 |                                | ``[D day[s], ][H]H:MM:SS[.UUUUUU]``, where D  |
@@ -370,10 +370,10 @@ Notes:
    This is exact and cannot overflow.
 
 (3)
-   Division by 0 raises :exc:`ZeroDivisionError`.
+   Division by zero raises :exc:`ZeroDivisionError`.
 
 (4)
-   -*timedelta.max* is not representable as a :class:`timedelta` object.
+   ``-timedelta.max`` is not representable as a :class:`timedelta` object.
 
 (5)
    String representations of :class:`timedelta` objects are normalized
@@ -583,10 +583,10 @@ Supported operations:
 +-------------------------------+----------------------------------------------+
 | Operation                     | Result                                       |
 +===============================+==============================================+
-| ``date2 = date1 + timedelta`` | *date2* will be ``timedelta.days`` days      |
-|                               | after *date1*. (1)                           |
+| ``date2 = date1 + timedelta`` | ``date2`` will be ``timedelta.days`` days    |
+|                               | after ``date1``. (1)                         |
 +-------------------------------+----------------------------------------------+
-| ``date2 = date1 - timedelta`` | Computes *date2* such that ``date2 +         |
+| ``date2 = date1 - timedelta`` | Computes ``date2`` such that ``date2 +       |
 |                               | timedelta == date1``. (2)                    |
 +-------------------------------+----------------------------------------------+
 | ``timedelta = date1 - date2`` | \(3)                                         |
@@ -613,8 +613,8 @@ Notes:
    ``timedelta.seconds`` and ``timedelta.microseconds`` are ignored.
 
 (3)
-   This is exact, and cannot overflow. timedelta.seconds and
-   timedelta.microseconds are 0, and date2 + timedelta == date1 after.
+   This is exact, and cannot overflow. ``timedelta.seconds`` and
+   ``timedelta.microseconds`` are 0, and ``date2 + timedelta == date1`` after.
 
 (4)
    :class:`date` objects are equal if they represent the same date.
@@ -635,7 +635,7 @@ Notes:
 .. versionchanged:: 3.13
    Comparison between :class:`.datetime` object and an instance of
    the :class:`date` subclass that is not a :class:`!datetime` subclass
-   no longer coverts the latter to :class:`!date`, ignoring the time part
+   no longer converts the latter to :class:`!date`, ignoring the time part
    and the time zone.
    The default behavior can be changed by overriding the special comparison
    methods in subclasses.
@@ -671,7 +671,7 @@ Instance methods:
      time.struct_time((d.year, d.month, d.day, 0, 0, 0, d.weekday(), yday, -1))
 
    where ``yday = d.toordinal() - date(d.year, 1, 1).toordinal() + 1``
-   is the day number within the current year starting with ``1`` for January 1st.
+   is the day number within the current year starting with 1 for January 1st.
 
 
 .. method:: date.toordinal()
@@ -991,8 +991,8 @@ Other constructors, all class methods:
 .. classmethod:: datetime.fromordinal(ordinal)
 
    Return the :class:`.datetime` corresponding to the proleptic Gregorian ordinal,
-   where January 1 of year 1 has ordinal 1. :exc:`ValueError` is raised unless ``1
-   <= ordinal <= datetime.max.toordinal()``. The hour, minute, second and
+   where January 1 of year 1 has ordinal 1. :exc:`ValueError` is raised unless
+   ``1 <= ordinal <= datetime.max.toordinal()``. The hour, minute, second and
    microsecond of the result are all 0, and :attr:`.tzinfo` is ``None``.
 
 
@@ -1079,6 +1079,24 @@ Other constructors, all class methods:
    time tuple.  See also :ref:`strftime-strptime-behavior` and
    :meth:`datetime.fromisoformat`.
 
+   .. versionchanged:: 3.13
+
+      If *format* specifies a day of month without a year a
+      :exc:`DeprecationWarning` is now emitted.  This is to avoid a quadrennial
+      leap year bug in code seeking to parse only a month and day as the
+      default year used in absence of one in the format is not a leap year.
+      Such *format* values may raise an error as of Python 3.15.  The
+      workaround is to always include a year in your *format*.  If parsing
+      *date_string* values that do not have a year, explicitly add a year that
+      is a leap year before parsing:
+
+      .. doctest::
+
+         >>> from datetime import datetime
+         >>> date_string = "02/29"
+         >>> when = datetime.strptime(f"{date_string};1984", "%m/%d;%Y")  # Avoids leap year bug.
+         >>> when.strftime("%B %d")  # doctest: +SKIP
+         'February 29'
 
 
 Class attributes:
@@ -1149,8 +1167,8 @@ Instance attributes (read-only):
    In ``[0, 1]``. Used to disambiguate wall times during a repeated interval. (A
    repeated interval occurs when clocks are rolled back at the end of daylight saving
    time or when the UTC offset for the current zone is decreased for political reasons.)
-   The value 0 (1) represents the earlier (later) of the two moments with the same wall
-   time representation.
+   The values 0 and 1 represent, respectively, the earlier and later of the two
+   moments with the same wall time representation.
 
    .. versionadded:: 3.6
 
@@ -1175,16 +1193,16 @@ Supported operations:
 +---------------------------------------+--------------------------------+
 
 (1)
-   datetime2 is a duration of timedelta removed from datetime1, moving forward in
-   time if ``timedelta.days`` > 0, or backward if ``timedelta.days`` < 0. The
+   ``datetime2`` is a duration of ``timedelta`` removed from ``datetime1``, moving forward in
+   time if ``timedelta.days > 0``, or backward if ``timedelta.days < 0``. The
    result has the same :attr:`~.datetime.tzinfo` attribute as the input datetime, and
-   datetime2 - datetime1 == timedelta after. :exc:`OverflowError` is raised if
-   datetime2.year would be smaller than :const:`MINYEAR` or larger than
+   ``datetime2 - datetime1 == timedelta`` after. :exc:`OverflowError` is raised if
+   ``datetime2.year`` would be smaller than :const:`MINYEAR` or larger than
    :const:`MAXYEAR`. Note that no time zone adjustments are done even if the
    input is an aware object.
 
 (2)
-   Computes the datetime2 such that datetime2 + timedelta == datetime1. As for
+   Computes the ``datetime2`` such that ``datetime2 + timedelta == datetime1``. As for
    addition, the result has the same :attr:`~.datetime.tzinfo` attribute as the input
    datetime, and no time zone adjustments are done even if the input is aware.
 
@@ -1209,6 +1227,9 @@ Supported operations:
 
    Naive and aware :class:`!datetime` objects are never equal.
 
+   If both comparands are aware, and have the same :attr:`!tzinfo` attribute,
+   the :attr:`!tzinfo` and :attr:`~.datetime.fold` attributes are ignored and
+   the base datetimes are compared.
    If both comparands are aware and have different :attr:`~.datetime.tzinfo`
    attributes, the comparison acts as comparands were first converted to UTC
    datetimes except that the implementation never overflows.
@@ -1222,6 +1243,9 @@ Supported operations:
    Order comparison between naive and aware :class:`.datetime` objects
    raises :exc:`TypeError`.
 
+   If both comparands are aware, and have the same :attr:`!tzinfo` attribute,
+   the :attr:`!tzinfo` and :attr:`~.datetime.fold` attributes are ignored and
+   the base datetimes are compared.
    If both comparands are aware and have different :attr:`~.datetime.tzinfo`
    attributes, the comparison acts as comparands were first converted to UTC
    datetimes except that the implementation never overflows.
@@ -1233,7 +1257,7 @@ Supported operations:
 .. versionchanged:: 3.13
    Comparison between :class:`.datetime` object and an instance of
    the :class:`date` subclass that is not a :class:`!datetime` subclass
-   no longer coverts the latter to :class:`!date`, ignoring the time part
+   no longer converts the latter to :class:`!date`, ignoring the time part
    and the time zone.
    The default behavior can be changed by overriding the special comparison
    methods in subclasses.
@@ -1363,12 +1387,12 @@ Instance methods:
                        d.weekday(), yday, dst))
 
    where ``yday = d.toordinal() - date(d.year, 1, 1).toordinal() + 1``
-   is the day number within the current year starting with ``1`` for January
+   is the day number within the current year starting with 1 for January
    1st. The :attr:`~time.struct_time.tm_isdst` flag of the result is set according to the
    :meth:`dst` method: :attr:`.tzinfo` is ``None`` or :meth:`dst` returns
    ``None``, :attr:`!tm_isdst` is set to ``-1``; else if :meth:`dst` returns a
-   non-zero value, :attr:`!tm_isdst` is set to ``1``; else :attr:`!tm_isdst` is
-   set to ``0``.
+   non-zero value, :attr:`!tm_isdst` is set to 1; else :attr:`!tm_isdst` is
+   set to 0.
 
 
 .. method:: datetime.utctimetuple()
@@ -1380,7 +1404,7 @@ Instance methods:
    If *d* is aware, *d* is normalized to UTC time, by subtracting
    ``d.utcoffset()``, and a :class:`time.struct_time` for the
    normalized time is returned. :attr:`!tm_isdst` is forced to 0. Note
-   that an :exc:`OverflowError` may be raised if *d*.year was
+   that an :exc:`OverflowError` may be raised if ``d.year`` was
    ``MINYEAR`` or ``MAXYEAR`` and UTC adjustment spills over a year
    boundary.
 
@@ -1711,7 +1735,7 @@ day, and subject to adjustment via a :class:`tzinfo` object.
    * ``fold in [0, 1]``.
 
    If an argument outside those ranges is given, :exc:`ValueError` is raised. All
-   default to ``0`` except *tzinfo*, which defaults to :const:`None`.
+   default to 0 except *tzinfo*, which defaults to ``None``.
 
 Class attributes:
 
@@ -1766,8 +1790,8 @@ Instance attributes (read-only):
    In ``[0, 1]``. Used to disambiguate wall times during a repeated interval. (A
    repeated interval occurs when clocks are rolled back at the end of daylight saving
    time or when the UTC offset for the current zone is decreased for political reasons.)
-   The value 0 (1) represents the earlier (later) of the two moments with the same wall
-   time representation.
+   The values 0 and 1 represent, respectively, the earlier and later of the two
+   moments with the same wall time representation.
 
    .. versionadded:: 3.6
 
@@ -1778,8 +1802,8 @@ Naive and aware :class:`!time` objects are never equal.
 Order comparison between naive and aware :class:`!time` objects raises
 :exc:`TypeError`.
 
-If both comparands are aware, and have
-the same :attr:`~.time.tzinfo` attribute, the common :attr:`!tzinfo` attribute is
+If both comparands are aware, and have the same :attr:`~.time.tzinfo`
+attribute, the :attr:`!tzinfo` and :attr:`!fold` attributes are
 ignored and the base times are compared. If both comparands are aware and
 have different :attr:`!tzinfo` attributes, the comparands are first adjusted by
 subtracting their UTC offsets (obtained from ``self.utcoffset()``).
@@ -2059,7 +2083,7 @@ Examples of working with a :class:`.time` object::
    ``tz.utcoffset(dt) - tz.dst(dt)``
 
    must return the same result for every :class:`.datetime` *dt* with ``dt.tzinfo ==
-   tz``  For sane :class:`tzinfo` subclasses, this expression yields the time
+   tz``. For sane :class:`tzinfo` subclasses, this expression yields the time
    zone's "standard offset", which should not depend on the date or the time, but
    only on geographic location. The implementation of :meth:`datetime.astimezone`
    relies on this, but cannot detect violations; it's the programmer's
@@ -2096,7 +2120,7 @@ Examples of working with a :class:`.time` object::
    Return the time zone name corresponding to the :class:`.datetime` object *dt*, as
    a string. Nothing about string names is defined by the :mod:`!datetime` module,
    and there's no requirement that it mean anything in particular. For example,
-   "GMT", "UTC", "-500", "-5:00", "EDT", "US/Eastern", "America/New York" are all
+   ``"GMT"``, ``"UTC"``, ``"-500"``, ``"-5:00"``, ``"EDT"``, ``"US/Eastern"``, ``"America/New York"`` are all
    valid replies. Return ``None`` if a string name isn't known. Note that this is
    a method rather than a fixed string primarily because some :class:`tzinfo`
    subclasses will wish to return different names depending on the specific value
@@ -2537,11 +2561,11 @@ information, which are supported in ``datetime.strptime`` but are discarded by
 
 For :class:`.time` objects, the format codes for year, month, and day should not
 be used, as :class:`!time` objects have no such values. If they're used anyway,
-``1900`` is substituted for the year, and ``1`` for the month and day.
+1900 is substituted for the year, and 1 for the month and day.
 
 For :class:`date` objects, the format codes for hours, minutes, seconds, and
 microseconds should not be used, as :class:`date` objects have no such
-values. If they're used anyway, ``0`` is substituted for them.
+values. If they're used anyway, 0 is substituted for them.
 
 For the same reason, handling of format strings containing Unicode code points
 that can't be represented in the charset of the current locale is also
@@ -2651,6 +2675,25 @@ Notes:
    for  formats ``%d``, ``%m``, ``%H``, ``%I``, ``%M``, ``%S``, ``%j``, ``%U``,
    ``%W``, and ``%V``. Format ``%y`` does require a leading zero.
 
+(10)
+   When parsing a month and day using :meth:`~.datetime.strptime`, always
+   include a year in the format.  If the value you need to parse lacks a year,
+   append an explicit dummy leap year.  Otherwise your code will raise an
+   exception when it encounters leap day because the default year used by the
+   parser is not a leap year.  Users run into this bug every four years...
+
+   .. doctest::
+
+      >>> month_day = "02/29"
+      >>> datetime.strptime(f"{month_day};1984", "%m/%d;%Y")  # No leap year bug.
+      datetime.datetime(1984, 2, 29, 0, 0)
+
+   .. deprecated-removed:: 3.13 3.15
+      :meth:`~.datetime.strptime` calls using a format string containing
+      a day of month without a year now emit a
+      :exc:`DeprecationWarning`. In 3.15 or later we may change this into
+      an error or change the default year to a leap year. See :gh:`70647`.
+
 .. rubric:: Footnotes
 
 .. [#] If, that is, we ignore the effects of Relativity
@@ -2665,4 +2708,4 @@ Notes:
        <https://web.archive.org/web/20220531051136/https://webspace.science.uu.nl/~gent0113/calendar/isocalendar.htm>`_
        for a good explanation.
 
-.. [#] Passing ``datetime.strptime('Feb 29', '%b %d')`` will fail since ``1900`` is not a leap year.
+.. [#] Passing ``datetime.strptime('Feb 29', '%b %d')`` will fail since 1900 is not a leap year.

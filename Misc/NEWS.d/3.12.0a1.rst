@@ -29,8 +29,7 @@ process. This was a potential privilege escalation. Filesystem based socket
 permissions restrict this to the *forkserver* process user as was the
 default in Python 3.8 and earlier.
 
-This prevents Linux `CVE-2022-42919
-<https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2022-42919>`_.
+This prevents Linux :cve:`2022-42919`.
 
 ..
 
@@ -3200,9 +3199,8 @@ Remove the :func:`ssl.wrap_socket` function, deprecated in Python 3.7:
 instead, create a :class:`ssl.SSLContext` object and call its
 :class:`ssl.SSLContext.wrap_socket` method. Any package that still uses
 :func:`ssl.wrap_socket` is broken and insecure. The function neither sends a
-SNI TLS extension nor validates server hostname. Code is subject to `CWE-295
-<https://cwe.mitre.org/data/definitions/295.html>`_: Improper Certificate
-Validation. Patch by Victor Stinner.
+SNI TLS extension nor validates server hostname. Code is subject to :cwe:`295`
+Improper Certificate Validation. Patch by Victor Stinner.
 
 ..
 
@@ -3500,7 +3498,7 @@ Illia Volochii.
 .. nonce: tjfu9L
 .. section: Library
 
-Deprecate :data:`sqlite3.version` and :data:`sqlite3.version_info`.
+Deprecate :data:`!version` and :data:`!version_info`.
 
 ..
 
@@ -3563,8 +3561,8 @@ with :func:`os.pidfd_open` in non-blocking mode. Patch by Kumar Aditya.
 .. nonce: mkYl5q
 .. section: Library
 
-Implement Enum __contains__ that returns True or False to replace the
-deprecated behaviour that would sometimes raise a TypeError.
+Implement ``Enum.__contains__`` that returns ``True`` or ``False`` to replace the
+deprecated behaviour that would sometimes raise a :exc:`TypeError`.
 
 ..
 
@@ -3731,7 +3729,7 @@ In a very special case, the email package tried to append the nonexistent
 .. nonce: e6uKxj
 .. section: Library
 
-Fix :func:`ast.unparse` when ``ImportFrom.level`` is None
+Fix :func:`ast.unparse` when ``ImportFrom.level`` is ``None``
 
 ..
 
@@ -3793,7 +3791,7 @@ the :c:type:`time_t` type in C.
 .. section: Library
 
 Fixed crash resulting from calling bisect.insort() or bisect.insort_left()
-with the key argument not equal to None.
+with the key argument not equal to ``None``.
 
 ..
 
@@ -4082,7 +4080,7 @@ replacement strings containing group references by 2--3 times.
 .. section: Library
 
 Fix findtext in the xml module to only give an empty string when the text
-attribute is set to None.
+attribute is set to ``None``.
 
 ..
 
@@ -4404,8 +4402,7 @@ Remove extra row
 .. section: Documentation
 
 Deprecated tools ``make suspicious`` and ``rstlint.py`` are now removed.
-They have been replaced by `spinx-lint
-<https://pypi.org/project/sphinx-lint/>`_.
+They have been replaced by :pypi:`sphinx-lint`.
 
 ..
 

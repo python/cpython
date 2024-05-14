@@ -3,6 +3,7 @@ import asyncio
 import code
 import concurrent.futures
 import inspect
+import site
 import sys
 import threading
 import types
@@ -107,7 +108,23 @@ if __name__ == '__main__':
     try:
         import readline  # NoQA
     except ImportError:
-        pass
+        readline = None
+
+    interactive_hook = getattr(sys, "__interactivehook__", None)
+
+    if interactive_hook is not None:
+        interactive_hook()
+
+    if interactive_hook is site.register_readline:
+        # Fix the completer function to use the interactive console locals
+        try:
+            import rlcompleter
+        except:
+            pass
+        else:
+            if readline is not None:
+                completer = rlcompleter.Completer(console.locals)
+                readline.set_completer(completer.complete)
 
     repl_thread = REPLThread()
     repl_thread.daemon = True

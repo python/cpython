@@ -1,5 +1,5 @@
-:mod:`xml.parsers.expat` --- Fast XML parsing using Expat
-=========================================================
+:mod:`!xml.parsers.expat` --- Fast XML parsing using Expat
+==========================================================
 
 .. module:: xml.parsers.expat
    :synopsis: An interface to the Expat non-validating XML parser.
@@ -210,12 +210,17 @@ XMLParser Objects
    by default until a sufficient amount of input is reached.
    Due to this delay, registered handlers may — depending of the sizing of
    input chunks pushed to Expat — no longer be called right after pushing new
-   input to the parser.  Where immediate feedback and taking over responsiblity
+   input to the parser.  Where immediate feedback and taking over responsibility
    of protecting against denial of service from large tokens are both wanted,
    calling ``SetReparseDeferralEnabled(False)`` disables reparse deferral
    for the current Expat parser instance, temporarily or altogether.
    Calling ``SetReparseDeferralEnabled(True)`` allows re-enabling reparse
    deferral.
+
+   Note that :meth:`SetReparseDeferralEnabled` has been backported to some
+   prior releases of CPython as a security fix.  Check for availability of
+   :meth:`SetReparseDeferralEnabled` using :func:`hasattr` if used in code
+   running across a variety of Python versions.
 
    .. versionadded:: 3.13
 

@@ -54,6 +54,7 @@ FLAGS = [
     "PURE",
     "PASSTHROUGH",
     "OPARG_AND_1",
+    "ERROR_NO_POP",
 ]
 
 

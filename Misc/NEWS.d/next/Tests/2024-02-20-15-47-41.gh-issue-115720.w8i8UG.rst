@@ -1,2 +1,0 @@
-Leak tests (``-R``, ``--huntrleaks``) now show a summary of the number of
-leaks found in each iteration.
