@@ -3,7 +3,8 @@ import unittest.mock
 from test import support
 from test.support import (verbose, refcount_test,
                           cpython_only, requires_subprocess,
-                          requires_gil_enabled)
+                          requires_gil_enabled, suppress_immortalization,
+                          Py_GIL_DISABLED)
 from test.support.import_helper import import_module
 from test.support.os_helper import temp_dir, TESTFN, unlink
 from test.support.script_helper import assert_python_ok, make_script
@@ -109,6 +110,7 @@ class GCTests(unittest.TestCase):
         del l
         self.assertEqual(gc.collect(), 2)
 
+    @suppress_immortalization()
     def test_class(self):
         class A:
             pass
@@ -117,6 +119,7 @@ class GCTests(unittest.TestCase):
         del A
         self.assertNotEqual(gc.collect(), 0)
 
+    @suppress_immortalization()
     def test_newstyleclass(self):
         class A(object):
             pass
@@ -133,6 +136,7 @@ class GCTests(unittest.TestCase):
         del a
         self.assertNotEqual(gc.collect(), 0)
 
+    @suppress_immortalization()
     def test_newinstance(self):
         class A(object):
             pass
@@ -219,6 +223,7 @@ class GCTests(unittest.TestCase):
             self.fail("didn't find obj in garbage (finalizer)")
         gc.garbage.remove(obj)
 
+    @suppress_immortalization()
     def test_function(self):
         # Tricky: f -> d -> f, code should call d.clear() after the exec to
         # break the cycle.
@@ -561,6 +566,7 @@ class GCTests(unittest.TestCase):
 
         self.assertEqual(gc.get_referents(1, 'a', 4j), [])
 
+    @suppress_immortalization()
     def test_is_tracked(self):
         # Atomic built-in types are not tracked, user-defined objects and
         # mutable containers are.
@@ -598,7 +604,9 @@ class GCTests(unittest.TestCase):
         class UserIntSlots(int):
             __slots__ = ()
 
-        self.assertTrue(gc.is_tracked(gc))
+        if not Py_GIL_DISABLED:
+            # gh-117783: modules may be immortalized in free-threaded build
+            self.assertTrue(gc.is_tracked(gc))
         self.assertTrue(gc.is_tracked(UserClass))
         self.assertTrue(gc.is_tracked(UserClass()))
         self.assertTrue(gc.is_tracked(UserInt()))
@@ -1347,6 +1355,10 @@ class GCTogglingTests(unittest.TestCase):
         junk = []
         i = 0
         detector = GC_Detector()
+        if Py_GIL_DISABLED:
+            # The free-threaded build doesn't have multiple generations, so
+            # just trigger a GC manually.
+            gc.collect()
         while not detector.gc_happened:
             i += 1
             if i > 10000:
@@ -1415,6 +1427,10 @@ class GCTogglingTests(unittest.TestCase):
         detector = GC_Detector()
         junk = []
         i = 0
+        if Py_GIL_DISABLED:
+            # The free-threaded build doesn't have multiple generations, so
+            # just trigger a GC manually.
+            gc.collect()
         while not detector.gc_happened:
             i += 1
             if i > 10000:

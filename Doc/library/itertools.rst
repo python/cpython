@@ -122,15 +122,15 @@ loops that truncate the stream.
             # accumulate([1,2,3,4,5]) → 1 3 6 10 15
             # accumulate([1,2,3,4,5], initial=100) → 100 101 103 106 110 115
             # accumulate([1,2,3,4,5], operator.mul) → 1 2 6 24 120
-            it = iter(iterable)
+            iterator = iter(iterable)
             total = initial
             if initial is None:
                 try:
-                    total = next(it)
+                    total = next(iterator)
                 except StopIteration:
                     return
             yield total
-            for element in it:
+            for element in iterator:
                 total = func(total, element)
                 yield total
 
@@ -218,9 +218,8 @@ loops that truncate the stream.
 
       def chain(*iterables):
           # chain('ABC', 'DEF') → A B C D E F
-          for it in iterables:
-              for element in it:
-                  yield element
+          for iterable in iterables:
+              yield from iterable
 
 
 .. classmethod:: chain.from_iterable(iterable)
@@ -230,9 +229,8 @@ loops that truncate the stream.
 
       def from_iterable(iterables):
           # chain.from_iterable(['ABC', 'DEF']) → A B C D E F
-          for it in iterables:
-              for element in it:
-                  yield element
+          for iterable in iterables:
+              yield from iterable
 
 
 .. function:: combinations(iterable, r)
@@ -380,7 +378,7 @@ loops that truncate the stream.
               saved.append(element)
           while saved:
               for element in saved:
-                    yield element
+                  yield element
 
    Note, this member of the toolkit may require significant auxiliary storage
    (depending on the length of the iterable).
@@ -615,10 +613,10 @@ loops that truncate the stream.
    This function is roughly equivalent to the following code, except that the
    actual implementation does not build up intermediate results in memory::
 
-       def product(*args, repeat=1):
+       def product(*iterables, repeat=1):
            # product('ABCD', 'xy') → Ax Ay Bx By Cx Cy Dx Dy
            # product(range(2), repeat=3) → 000 001 010 011 100 101 110 111
-           pools = [tuple(pool) for pool in args] * repeat
+           pools = [tuple(pool) for pool in iterables] * repeat
            result = [[]]
            for pool in pools:
                result = [x+[y] for x in result for y in pool]
@@ -696,24 +694,22 @@ loops that truncate the stream.
 
    Return *n* independent iterators from a single iterable.
 
-   The following Python code helps explain what *tee* does (although the actual
-   implementation is more complex and uses only a single underlying
-   :abbr:`FIFO (first-in, first-out)` queue)::
+   Roughly equivalent to::
 
         def tee(iterable, n=2):
-            it = iter(iterable)
-            deques = [collections.deque() for i in range(n)]
-            def gen(mydeque):
-                while True:
-                    if not mydeque:             # when the local deque is empty
-                        try:
-                            newval = next(it)   # fetch a new value and
-                        except StopIteration:
-                            return
-                        for d in deques:        # load it to all the deques
-                            d.append(newval)
-                    yield mydeque.popleft()
-            return tuple(gen(d) for d in deques)
+            iterator = iter(iterable)
+            empty_link = [None, None]  # Singly linked list: [value, link]
+            return tuple(_tee(iterator, empty_link) for _ in range(n))
+
+        def _tee(iterator, link):
+            while True:
+                if link[1] is None:
+                    try:
+                        link[:] = [next(iterator), [None, None]]
+                    except StopIteration:
+                        return
+                value, link = link
+                yield value
 
    Once a :func:`tee` has been created, the original *iterable* should not be
    used anywhere else; otherwise, the *iterable* could get advanced without
@@ -735,17 +731,17 @@ loops that truncate the stream.
    iterables are of uneven length, missing values are filled-in with *fillvalue*.
    Iteration continues until the longest iterable is exhausted.  Roughly equivalent to::
 
-      def zip_longest(*args, fillvalue=None):
+      def zip_longest(*iterables, fillvalue=None):
           # zip_longest('ABCD', 'xy', fillvalue='-') → Ax By C- D-
-          iterators = [iter(it) for it in args]
+          iterators = [iter(it) for it in iterables]
           num_active = len(iterators)
           if not num_active:
               return
           while True:
               values = []
-              for i, it in enumerate(iterators):
+              for i, iterator in enumerate(iterators):
                   try:
-                      value = next(it)
+                      value = next(iterator)
                   except StopIteration:
                       num_active -= 1
                       if not num_active:
@@ -800,6 +796,7 @@ and :term:`generators <generator>` which incur interpreter overhead.
 .. testcode::
 
    import collections
+   import contextlib
    import functools
    import math
    import operator
@@ -942,32 +939,26 @@ and :term:`generators <generator>` which incur interpreter overhead.
        # iter_index('AABCADEAF', 'A') → 0 1 4 7
        seq_index = getattr(iterable, 'index', None)
        if seq_index is None:
-           # Path for general iterables
            iterator = islice(iterable, start, stop)
            for i, element in enumerate(iterator, start):
                if element is value or element == value:
                    yield i
        else:
-           # Path for sequences with an index() method
            stop = len(iterable) if stop is None else stop
            i = start
-           try:
+           with contextlib.suppress(ValueError):
                while True:
                    yield (i := seq_index(value, i, stop))
                    i += 1
-           except ValueError:
-               pass
 
    def iter_except(func, exception, first=None):
        "Convert a call-until-exception interface to an iterator interface."
        # iter_except(d.popitem, KeyError) → non-blocking dictionary iterator
-       try:
+       with contextlib.suppress(exception):
            if first is not None:
                yield first()
            while True:
                yield func()
-       except exception:
-           pass
 
 
 The following recipes have a more mathematical flavor:

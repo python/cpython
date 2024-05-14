@@ -93,7 +93,9 @@ typedef struct ty_arena {
 } ty_arena;
 
 struct _Py_UOpsContext {
-    PyObject_HEAD
+    char done;
+    char out_of_space;
+    bool contradiction;
     // The current "executing" frame.
     _Py_UOpsAbstractFrame *frame;
     _Py_UOpsAbstractFrame frames[MAX_ABSTRACT_FRAME_DEPTH];
@@ -121,16 +123,16 @@ extern _Py_UopsSymbol *_Py_uop_sym_new_const(_Py_UOpsContext *ctx, PyObject *con
 extern _Py_UopsSymbol *_Py_uop_sym_new_null(_Py_UOpsContext *ctx);
 extern bool _Py_uop_sym_has_type(_Py_UopsSymbol *sym);
 extern bool _Py_uop_sym_matches_type(_Py_UopsSymbol *sym, PyTypeObject *typ);
-extern bool _Py_uop_sym_set_null(_Py_UopsSymbol *sym);
-extern bool _Py_uop_sym_set_non_null(_Py_UopsSymbol *sym);
-extern bool _Py_uop_sym_set_type(_Py_UopsSymbol *sym, PyTypeObject *typ);
-extern bool _Py_uop_sym_set_const(_Py_UopsSymbol *sym, PyObject *const_val);
+extern void _Py_uop_sym_set_null(_Py_UOpsContext *ctx, _Py_UopsSymbol *sym);
+extern void _Py_uop_sym_set_non_null(_Py_UOpsContext *ctx, _Py_UopsSymbol *sym);
+extern void _Py_uop_sym_set_type(_Py_UOpsContext *ctx, _Py_UopsSymbol *sym, PyTypeObject *typ);
+extern void _Py_uop_sym_set_const(_Py_UOpsContext *ctx, _Py_UopsSymbol *sym, PyObject *const_val);
 extern bool _Py_uop_sym_is_bottom(_Py_UopsSymbol *sym);
 extern int _Py_uop_sym_truthiness(_Py_UopsSymbol *sym);
 extern PyTypeObject *_Py_uop_sym_get_type(_Py_UopsSymbol *sym);
 
 
-extern int _Py_uop_abstractcontext_init(_Py_UOpsContext *ctx);
+extern void _Py_uop_abstractcontext_init(_Py_UOpsContext *ctx);
 extern void _Py_uop_abstractcontext_fini(_Py_UOpsContext *ctx);
 
 extern _Py_UOpsAbstractFrame *_Py_uop_frame_new(
