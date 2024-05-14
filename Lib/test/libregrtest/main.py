@@ -123,6 +123,7 @@ class Regrtest:
         self.coverage: bool = ns.trace
         self.coverage_dir: StrPath | None = ns.coverdir
         self.tmp_dir: StrPath | None = ns.tempdir
+        self.duration_filename: StrPath | None = ns.durationpath
 
         # Randomize
         self.randomize: bool = ns.randomize
@@ -445,6 +446,9 @@ class Regrtest:
         if self.junit_filename:
             self.results.write_junit(self.junit_filename)
 
+        if self.duration_filename:
+            self.results.write_duration(self.duration_filename)
+
     def display_summary(self):
         duration = time.perf_counter() - self.logger.start_time
         filtered = bool(self.match_tests)
@@ -484,6 +488,7 @@ class Regrtest:
             python_cmd=self.python_cmd,
             randomize=self.randomize,
             random_seed=self.random_seed,
+            with_duration=(self.duration_filename is not None),
         )
 
     def _run_tests(self, selected: TestTuple, tests: TestList | None) -> int:
@@ -691,14 +696,22 @@ class Regrtest:
 
         self._execute_python(cmd, environ)
 
+    def normalize_path(self, filename: StrPath) -> StrPath:
+        if not os.path.isabs(filename):
+            return os.path.abspath(filename)
+        return filename
+
     def _init(self):
         # Set sys.stdout encoder error handler to backslashreplace,
         # similar to sys.stderr error handler, to avoid UnicodeEncodeError
         # when printing a traceback or any other non-encodable character.
         sys.stdout.reconfigure(errors="backslashreplace")
 
-        if self.junit_filename and not os.path.isabs(self.junit_filename):
-            self.junit_filename = os.path.abspath(self.junit_filename)
+        if self.junit_filename:
+            self.junit_filename = self.normalize_path(self.junit_filename)
+
+        if self.duration_filename:
+            self.duration_filename = self.normalize_path(self.duration_filename)
 
         strip_py_suffix(self.cmdline_args)
 

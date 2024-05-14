@@ -100,6 +100,7 @@ class RunTests:
     python_cmd: tuple[str, ...] | None
     randomize: bool
     random_seed: int | str
+    with_duration: bool
 
     def copy(self, **override) -> 'RunTests':
         state = dataclasses.asdict(self)

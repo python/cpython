@@ -192,6 +192,12 @@ class TestResults:
             for s in ET.tostringlist(root):
                 f.write(s)
 
+    def write_duration(self, filename: StrPath):
+        self.test_times.sort(reverse=True)
+        with open(filename, 'w') as f:
+            for test_time, test in self.test_times:
+                f.write(f"{test}: {format_duration(test_time)}\n")
+
     def display_result(self, tests: TestTuple, quiet: bool, print_slowest: bool):
         if print_slowest:
             self.test_times.sort(reverse=True)

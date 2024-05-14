@@ -252,6 +252,9 @@ def _create_parser():
                        help='no output unless one or more tests fail')
     group.add_argument('-o', '--slowest', action='store_true', dest='print_slow',
                        help='print the slowest 10 tests')
+    group.add_argument('--duration', dest="durationpath", metavar='DURATION_FILE',
+                       help='writes information about the duration '
+                        'of the tests to a file')
     group.add_argument('--header', action='store_true',
                        help='print header with interpreter info')
 
