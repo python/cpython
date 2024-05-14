@@ -23,7 +23,7 @@ sudo ./llvm.sh 18
 
 Install LLVM 18 on Fedora Linux 40 or newer:
 
-```
+```sh
 sudo dnf install 'clang(major) = 18' 'llvm(major) = 18'
 ```
 
