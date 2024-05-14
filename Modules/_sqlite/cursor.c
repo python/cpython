@@ -673,7 +673,8 @@ bind_parameters(pysqlite_state *state, pysqlite_Statement *self,
                 PyErr_Format(state->ProgrammingError,
                         "Binding %d ('%s') is a named parameter, but you "
                         "supplied a sequence which requires nameless (qmark) "
-                        "placeholders.", i+1, name);
+                        "placeholders.",
+                        i+1, name);
             }
 
             if (PyTuple_CheckExact(parameters)) {
