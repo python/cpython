@@ -143,6 +143,7 @@ pydoc-topics: build
 
 .PHONY: gettext
 gettext: BUILDER = gettext
+gettext: SPHINXOPTS += '-d build/doctrees-gettext'
 gettext: build
 
 .PHONY: htmlview
