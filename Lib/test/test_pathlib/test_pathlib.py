@@ -1108,6 +1108,10 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
         self.assertTrue(R.is_mount())
         self.assertFalse((R / '\udfff').is_mount())
 
+    def test_passing_kwargs_errors(self):
+        with self.assertRaises(TypeError):
+            self.cls(foo="bar")
+
     def setUpWalk(self):
         super().setUpWalk()
         sub21_path= self.sub2_path / "SUB21"
