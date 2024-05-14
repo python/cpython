@@ -973,9 +973,15 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
     Py_ssize_t size = PySet_Size(remaining_fields);
     PyObject *field_types = NULL, *remaining_list = NULL;
     if (size > 0) {
-        if (!PyObject_GetOptionalAttr((PyObject*)Py_TYPE(self), &_Py_ID(_field_types),
-                                      &field_types)) {
+        if (PyObject_GetOptionalAttr((PyObject*)Py_TYPE(self), &_Py_ID(_field_types),
+                                     &field_types) < 0) {
             res = -1;
+            goto cleanup;
+        }
+        if (field_types == NULL) {
+            // Probably a user-defined subclass of AST that lacks _field_types.
+            // This will continue to work as it did before 3.13; i.e., attributes
+            // that are not passed in simply do not exist on the instance.
             goto cleanup;
         }
         remaining_list = PySequence_List(remaining_fields);
@@ -986,12 +992,21 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
             PyObject *name = PyList_GET_ITEM(remaining_list, i);
             PyObject *type = PyDict_GetItemWithError(field_types, name);
             if (!type) {
-                if (!PyErr_Occurred()) {
-                    PyErr_SetObject(PyExc_KeyError, name);
+                if (PyErr_Occurred()) {
+                    goto set_remaining_cleanup;
                 }
-                goto set_remaining_cleanup;
+                else {
+                    if (PyErr_WarnFormat(
+                        PyExc_DeprecationWarning, 1,
+                        "Field '%U' is missing from %.400s._field_types. "
+                        "This will become an error in Python 3.15.",
+                        name, Py_TYPE(self)->tp_name
+                    ) < 0) {
+                        goto set_remaining_cleanup;
+                    }
+                }
             }
-            if (_PyUnion_Check(type)) {
+            else if (_PyUnion_Check(type)) {
                 // optional field
                 // do nothing, we'll have set a None default on the class
             }
@@ -1007,6 +1022,13 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
                     goto set_remaining_cleanup;
                 }
             }
+            else if (type == state->expr_context_type) {
+                // special case for expr_context: default to Load()
+                res = PyObject_SetAttr(self, name, state->Load_singleton);
+                if (res < 0) {
+                    goto set_remaining_cleanup;
+                }
+            }
             else {
                 // simple field (e.g., identifier)
                 if (PyErr_WarnFormat(
@@ -1015,8 +1037,7 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
                     "This will become an error in Python 3.15.",
                     Py_TYPE(self)->tp_name, name
                 ) < 0) {
-                    res = -1;
-                    goto cleanup;
+                    goto set_remaining_cleanup;
                 }
             }
         }
@@ -1432,6 +1453,7 @@ class ASTModuleVisitor(PickleVisitor):
 static PyModuleDef_Slot astmodule_slots[] = {
     {Py_mod_exec, astmodule_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
 };
 

@@ -1001,6 +1001,12 @@ class CAPITest(unittest.TestCase):
         self.assertTrue(number_check(0.5))
         self.assertFalse(number_check("1 + 1j"))
 
+    def test_object_generichash(self):
+        # Test PyObject_GenericHash()
+        generichash = _testcapi.object_generichash
+        for obj in object(), 1, 'string', []:
+            self.assertEqual(generichash(obj), object.__hash__(obj))
+
 
 if __name__ == "__main__":
     unittest.main()

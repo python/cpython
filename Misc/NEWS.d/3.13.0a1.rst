@@ -8,9 +8,7 @@ Fixed an issue where instances of :class:`ssl.SSLSocket` were vulnerable to
 a bypass of the TLS handshake and included protections (like certificate
 verification) and treating sent unencrypted data as if it were
 post-handshake TLS encrypted data.  Security issue reported as
-`CVE-2023-40217
-<https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2023-40217>`_ by Aapo
-Oksman. Patch by Gregory P. Smith.
+:cve:`2023-40217` by Aapo Oksman. Patch by Gregory P. Smith.
 
 ..
 
@@ -3438,7 +3436,8 @@ added support for this decorator. Patch by Alex Waygood.
 .. nonce: C1ahtk
 .. section: Library
 
-Make pydoc.doc catch bad module ImportError when output stream is not None.
+Make :func:`pydoc.doc` catch bad module :exc:`ImportError`
+when output stream is not ``None``.
 
 ..
 
@@ -4184,8 +4183,7 @@ Hugo van Kemenade.
 .. section: Library
 
 :pep:`594`: Remove the :mod:`!spwd` module, deprecated in Python 3.11: the
-`python-pam project <https://pypi.org/project/python-pam/>`_ can be used
-instead. Patch by Victor Stinner.
+:pypi:`python-pam` project can be used instead. Patch by Victor Stinner.
 
 ..
 

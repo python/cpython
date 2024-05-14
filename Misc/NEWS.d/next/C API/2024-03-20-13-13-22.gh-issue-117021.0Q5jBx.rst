@@ -1,2 +1,0 @@
-Fix integer overflow in :c:func:`PyLong_AsPid` on non-Windows 64-bit
-platforms.

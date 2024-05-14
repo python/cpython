@@ -1,5 +1,5 @@
-:mod:`urllib.parse` --- Parse URLs into components
-==================================================
+:mod:`!urllib.parse` --- Parse URLs into components
+===================================================
 
 .. module:: urllib.parse
    :synopsis: Parse URLs into or assemble them from components.
@@ -30,6 +30,11 @@ Resource Locators. It supports the following URL schemes: ``file``, ``ftp``,
 The :mod:`urllib.parse` module defines functions that fall into two broad
 categories: URL parsing and URL quoting. These are covered in detail in
 the following sections.
+
+This module's functions use the deprecated term ``netloc`` (or ``net_loc``),
+which was introduced in :rfc:`1808`. However, this term has been obsoleted by
+:rfc:`3986`, which introduced the term ``authority`` as its replacement.
+The use of ``netloc`` is continued for backward compatibility.
 
 URL Parsing
 -----------

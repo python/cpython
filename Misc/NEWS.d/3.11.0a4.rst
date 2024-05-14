@@ -7,7 +7,7 @@
 :c:func:`Py_EndInterpreter` now explicitly untracks all objects currently
 tracked by the GC. Previously, if an object was used later by another
 interpreter, calling :c:func:`PyObject_GC_UnTrack` on the object crashed if
-the previous or the next object of the :c:type:`PyGC_Head` structure became
+the previous or the next object of the :c:type:`!PyGC_Head` structure became
 a dangling pointer. Patch by Victor Stinner.
 
 ..
