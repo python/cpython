@@ -2,6 +2,8 @@
 preserve
 [clinic start generated code]*/
 
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
+
 PyDoc_STRVAR(unicodedata_UCD_decimal__doc__,
 "decimal($self, chr, default=<unrepresentable>, /)\n"
 "--\n"
@@ -31,9 +33,6 @@ unicodedata_UCD_decimal(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     }
     if (!PyUnicode_Check(args[0])) {
         _PyArg_BadArgument("decimal", "argument 1", "a unicode character", args[0]);
-        goto exit;
-    }
-    if (PyUnicode_READY(args[0])) {
         goto exit;
     }
     if (PyUnicode_GET_LENGTH(args[0]) != 1) {
@@ -80,9 +79,6 @@ unicodedata_UCD_digit(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     }
     if (!PyUnicode_Check(args[0])) {
         _PyArg_BadArgument("digit", "argument 1", "a unicode character", args[0]);
-        goto exit;
-    }
-    if (PyUnicode_READY(args[0])) {
         goto exit;
     }
     if (PyUnicode_GET_LENGTH(args[0]) != 1) {
@@ -132,9 +128,6 @@ unicodedata_UCD_numeric(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
         _PyArg_BadArgument("numeric", "argument 1", "a unicode character", args[0]);
         goto exit;
     }
-    if (PyUnicode_READY(args[0])) {
-        goto exit;
-    }
     if (PyUnicode_GET_LENGTH(args[0]) != 1) {
         _PyArg_BadArgument("numeric", "argument 1", "a unicode character", args[0]);
         goto exit;
@@ -173,9 +166,6 @@ unicodedata_UCD_category(PyObject *self, PyObject *arg)
         _PyArg_BadArgument("category", "argument", "a unicode character", arg);
         goto exit;
     }
-    if (PyUnicode_READY(arg)) {
-        goto exit;
-    }
     if (PyUnicode_GET_LENGTH(arg) != 1) {
         _PyArg_BadArgument("category", "argument", "a unicode character", arg);
         goto exit;
@@ -209,9 +199,6 @@ unicodedata_UCD_bidirectional(PyObject *self, PyObject *arg)
 
     if (!PyUnicode_Check(arg)) {
         _PyArg_BadArgument("bidirectional", "argument", "a unicode character", arg);
-        goto exit;
-    }
-    if (PyUnicode_READY(arg)) {
         goto exit;
     }
     if (PyUnicode_GET_LENGTH(arg) != 1) {
@@ -248,9 +235,6 @@ unicodedata_UCD_combining(PyObject *self, PyObject *arg)
 
     if (!PyUnicode_Check(arg)) {
         _PyArg_BadArgument("combining", "argument", "a unicode character", arg);
-        goto exit;
-    }
-    if (PyUnicode_READY(arg)) {
         goto exit;
     }
     if (PyUnicode_GET_LENGTH(arg) != 1) {
@@ -294,9 +278,6 @@ unicodedata_UCD_mirrored(PyObject *self, PyObject *arg)
         _PyArg_BadArgument("mirrored", "argument", "a unicode character", arg);
         goto exit;
     }
-    if (PyUnicode_READY(arg)) {
-        goto exit;
-    }
     if (PyUnicode_GET_LENGTH(arg) != 1) {
         _PyArg_BadArgument("mirrored", "argument", "a unicode character", arg);
         goto exit;
@@ -334,9 +315,6 @@ unicodedata_UCD_east_asian_width(PyObject *self, PyObject *arg)
         _PyArg_BadArgument("east_asian_width", "argument", "a unicode character", arg);
         goto exit;
     }
-    if (PyUnicode_READY(arg)) {
-        goto exit;
-    }
     if (PyUnicode_GET_LENGTH(arg) != 1) {
         _PyArg_BadArgument("east_asian_width", "argument", "a unicode character", arg);
         goto exit;
@@ -370,9 +348,6 @@ unicodedata_UCD_decomposition(PyObject *self, PyObject *arg)
 
     if (!PyUnicode_Check(arg)) {
         _PyArg_BadArgument("decomposition", "argument", "a unicode character", arg);
-        goto exit;
-    }
-    if (PyUnicode_READY(arg)) {
         goto exit;
     }
     if (PyUnicode_GET_LENGTH(arg) != 1) {
@@ -415,15 +390,9 @@ unicodedata_UCD_is_normalized(PyObject *self, PyObject *const *args, Py_ssize_t 
         _PyArg_BadArgument("is_normalized", "argument 1", "str", args[0]);
         goto exit;
     }
-    if (PyUnicode_READY(args[0]) == -1) {
-        goto exit;
-    }
     form = args[0];
     if (!PyUnicode_Check(args[1])) {
         _PyArg_BadArgument("is_normalized", "argument 2", "str", args[1]);
-        goto exit;
-    }
-    if (PyUnicode_READY(args[1]) == -1) {
         goto exit;
     }
     input = args[1];
@@ -462,15 +431,9 @@ unicodedata_UCD_normalize(PyObject *self, PyObject *const *args, Py_ssize_t narg
         _PyArg_BadArgument("normalize", "argument 1", "str", args[0]);
         goto exit;
     }
-    if (PyUnicode_READY(args[0]) == -1) {
-        goto exit;
-    }
     form = args[0];
     if (!PyUnicode_Check(args[1])) {
         _PyArg_BadArgument("normalize", "argument 2", "str", args[1]);
-        goto exit;
-    }
-    if (PyUnicode_READY(args[1]) == -1) {
         goto exit;
     }
     input = args[1];
@@ -507,9 +470,6 @@ unicodedata_UCD_name(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     }
     if (!PyUnicode_Check(args[0])) {
         _PyArg_BadArgument("name", "argument 1", "a unicode character", args[0]);
-        goto exit;
-    }
-    if (PyUnicode_READY(args[0])) {
         goto exit;
     }
     if (PyUnicode_GET_LENGTH(args[0]) != 1) {
@@ -559,4 +519,4 @@ unicodedata_UCD_lookup(PyObject *self, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=78d7a7ae57014502 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ea30f89007b2bfff input=a9049054013a1b77]*/

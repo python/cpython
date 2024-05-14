@@ -1,3 +1,0 @@
-Fix :exc:`re.error` raised in :mod:`fnmatch` if the pattern contains a
-character range with upper bound lower than lower bound (e.g. ``[c-a]``).
-Now such ranges are interpreted as empty ranges.

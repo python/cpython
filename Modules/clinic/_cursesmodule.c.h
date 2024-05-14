@@ -2,6 +2,12 @@
 preserve
 [clinic start generated code]*/
 
+#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
+#endif
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
+
 PyDoc_STRVAR(_curses_window_addch__doc__,
 "addch([y, x,] ch, [attr=_curses.A_NORMAL])\n"
 "Paint the character.\n"
@@ -702,11 +708,11 @@ _curses_window_enclose(PyCursesWindowObject *self, PyObject *const *args, Py_ssi
     if (!_PyArg_CheckPositional("enclose", nargs, 2, 2)) {
         goto exit;
     }
-    y = _PyLong_AsInt(args[0]);
+    y = PyLong_AsInt(args[0]);
     if (y == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    x = _PyLong_AsInt(args[1]);
+    x = PyLong_AsInt(args[1]);
     if (x == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -1258,7 +1264,7 @@ _curses_window_is_linetouched(PyCursesWindowObject *self, PyObject *arg)
     PyObject *return_value = NULL;
     int line;
 
-    line = _PyLong_AsInt(arg);
+    line = PyLong_AsInt(arg);
     if (line == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -1502,11 +1508,11 @@ _curses_window_redrawln(PyCursesWindowObject *self, PyObject *const *args, Py_ss
     if (!_PyArg_CheckPositional("redrawln", nargs, 2, 2)) {
         goto exit;
     }
-    beg = _PyLong_AsInt(args[0]);
+    beg = PyLong_AsInt(args[0]);
     if (beg == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    num = _PyLong_AsInt(args[1]);
+    num = PyLong_AsInt(args[1]);
     if (num == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -1601,11 +1607,11 @@ _curses_window_setscrreg(PyCursesWindowObject *self, PyObject *const *args, Py_s
     if (!_PyArg_CheckPositional("setscrreg", nargs, 2, 2)) {
         goto exit;
     }
-    top = _PyLong_AsInt(args[0]);
+    top = PyLong_AsInt(args[0]);
     if (top == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    bottom = _PyLong_AsInt(args[1]);
+    bottom = PyLong_AsInt(args[1]);
     if (bottom == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -1742,7 +1748,7 @@ _curses_window_touchline(PyCursesWindowObject *self, PyObject *args)
             }
             break;
         case 3:
-            if (!PyArg_ParseTuple(args, "iii:touchline", &start, &count, &changed)) {
+            if (!PyArg_ParseTuple(args, "iip:touchline", &start, &count, &changed)) {
                 goto exit;
             }
             group_right_1 = 1;
@@ -1935,8 +1941,8 @@ _curses_cbreak(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 1) {
         goto skip_optional;
     }
-    flag = _PyLong_AsInt(args[0]);
-    if (flag == -1 && PyErr_Occurred()) {
+    flag = PyObject_IsTrue(args[0]);
+    if (flag < 0) {
         goto exit;
     }
 skip_optional:
@@ -2003,7 +2009,7 @@ _curses_color_pair(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int pair_number;
 
-    pair_number = _PyLong_AsInt(arg);
+    pair_number = PyLong_AsInt(arg);
     if (pair_number == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -2039,7 +2045,7 @@ _curses_curs_set(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int visibility;
 
-    visibility = _PyLong_AsInt(arg);
+    visibility = PyLong_AsInt(arg);
     if (visibility == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -2114,7 +2120,7 @@ _curses_delay_output(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int ms;
 
-    ms = _PyLong_AsInt(arg);
+    ms = PyLong_AsInt(arg);
     if (ms == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -2171,8 +2177,8 @@ _curses_echo(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 1) {
         goto skip_optional;
     }
-    flag = _PyLong_AsInt(args[0]);
-    if (flag == -1 && PyErr_Occurred()) {
+    flag = PyObject_IsTrue(args[0]);
+    if (flag < 0) {
         goto exit;
     }
 skip_optional:
@@ -2357,15 +2363,15 @@ _curses_ungetmouse(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
             id = (short) ival;
         }
     }
-    x = _PyLong_AsInt(args[1]);
+    x = PyLong_AsInt(args[1]);
     if (x == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    y = _PyLong_AsInt(args[2]);
+    y = PyLong_AsInt(args[2]);
     if (y == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    z = _PyLong_AsInt(args[3]);
+    z = PyLong_AsInt(args[3]);
     if (z == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -2519,7 +2525,7 @@ _curses_has_key(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int key;
 
-    key = _PyLong_AsInt(arg);
+    key = PyLong_AsInt(arg);
     if (key == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -2678,8 +2684,31 @@ static PyObject *
 _curses_setupterm(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 2
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(term), &_Py_ID(fd), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
     static const char * const _keywords[] = {"term", "fd", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "setupterm", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "setupterm",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     const char *term = NULL;
@@ -2715,7 +2744,7 @@ _curses_setupterm(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyO
             goto skip_optional_pos;
         }
     }
-    fd = _PyLong_AsInt(args[1]);
+    fd = PyLong_AsInt(args[1]);
     if (fd == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -2779,7 +2808,7 @@ _curses_set_escdelay(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int ms;
 
-    ms = _PyLong_AsInt(arg);
+    ms = PyLong_AsInt(arg);
     if (ms == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -2842,7 +2871,7 @@ _curses_set_tabsize(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int size;
 
-    size = _PyLong_AsInt(arg);
+    size = PyLong_AsInt(arg);
     if (size == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -2871,8 +2900,8 @@ _curses_intrflush(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int flag;
 
-    flag = _PyLong_AsInt(arg);
-    if (flag == -1 && PyErr_Occurred()) {
+    flag = PyObject_IsTrue(arg);
+    if (flag < 0) {
         goto exit;
     }
     return_value = _curses_intrflush_impl(module, flag);
@@ -2928,11 +2957,11 @@ _curses_is_term_resized(PyObject *module, PyObject *const *args, Py_ssize_t narg
     if (!_PyArg_CheckPositional("is_term_resized", nargs, 2, 2)) {
         goto exit;
     }
-    nlines = _PyLong_AsInt(args[0]);
+    nlines = PyLong_AsInt(args[0]);
     if (nlines == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    ncols = _PyLong_AsInt(args[1]);
+    ncols = PyLong_AsInt(args[1]);
     if (ncols == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -2965,7 +2994,7 @@ _curses_keyname(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int key;
 
-    key = _PyLong_AsInt(arg);
+    key = PyLong_AsInt(arg);
     if (key == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -3035,8 +3064,8 @@ _curses_meta(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int yes;
 
-    yes = _PyLong_AsInt(arg);
-    if (yes == -1 && PyErr_Occurred()) {
+    yes = PyObject_IsTrue(arg);
+    if (yes < 0) {
         goto exit;
     }
     return_value = _curses_meta_impl(module, yes);
@@ -3072,7 +3101,7 @@ _curses_mouseinterval(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int interval;
 
-    interval = _PyLong_AsInt(arg);
+    interval = PyLong_AsInt(arg);
     if (interval == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -3134,7 +3163,7 @@ PyDoc_STRVAR(_curses_napms__doc__,
 #define _CURSES_NAPMS_METHODDEF    \
     {"napms", (PyCFunction)_curses_napms, METH_O, _curses_napms__doc__},
 
-static PyObject *
+static int
 _curses_napms_impl(PyObject *module, int ms);
 
 static PyObject *
@@ -3142,12 +3171,17 @@ _curses_napms(PyObject *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
     int ms;
+    int _return_value;
 
-    ms = _PyLong_AsInt(arg);
+    ms = PyLong_AsInt(arg);
     if (ms == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    return_value = _curses_napms_impl(module, ms);
+    _return_value = _curses_napms_impl(module, ms);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyLong_FromLong((long)_return_value);
 
 exit:
     return return_value;
@@ -3180,11 +3214,11 @@ _curses_newpad(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (!_PyArg_CheckPositional("newpad", nargs, 2, 2)) {
         goto exit;
     }
-    nlines = _PyLong_AsInt(args[0]);
+    nlines = PyLong_AsInt(args[0]);
     if (nlines == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    ncols = _PyLong_AsInt(args[1]);
+    ncols = PyLong_AsInt(args[1]);
     if (ncols == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -3279,8 +3313,8 @@ _curses_nl(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 1) {
         goto skip_optional;
     }
-    flag = _PyLong_AsInt(args[0]);
-    if (flag == -1 && PyErr_Occurred()) {
+    flag = PyObject_IsTrue(args[0]);
+    if (flag < 0) {
         goto exit;
     }
 skip_optional:
@@ -3442,7 +3476,7 @@ _curses_pair_number(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int attr;
 
-    attr = _PyLong_AsInt(arg);
+    attr = PyLong_AsInt(arg);
     if (attr == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -3511,8 +3545,8 @@ _curses_qiflush(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 1) {
         goto skip_optional;
     }
-    flag = _PyLong_AsInt(args[0]);
-    if (flag == -1 && PyErr_Occurred()) {
+    flag = PyObject_IsTrue(args[0]);
+    if (flag < 0) {
         goto exit;
     }
 skip_optional:
@@ -3574,8 +3608,8 @@ _curses_raw(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 1) {
         goto skip_optional;
     }
-    flag = _PyLong_AsInt(args[0]);
-    if (flag == -1 && PyErr_Occurred()) {
+    flag = PyObject_IsTrue(args[0]);
+    if (flag < 0) {
         goto exit;
     }
 skip_optional:
@@ -3671,11 +3705,11 @@ _curses_resizeterm(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (!_PyArg_CheckPositional("resizeterm", nargs, 2, 2)) {
         goto exit;
     }
-    nlines = _PyLong_AsInt(args[0]);
+    nlines = PyLong_AsInt(args[0]);
     if (nlines == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    ncols = _PyLong_AsInt(args[1]);
+    ncols = PyLong_AsInt(args[1]);
     if (ncols == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -3722,11 +3756,11 @@ _curses_resize_term(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (!_PyArg_CheckPositional("resize_term", nargs, 2, 2)) {
         goto exit;
     }
-    nlines = _PyLong_AsInt(args[0]);
+    nlines = PyLong_AsInt(args[0]);
     if (nlines == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    ncols = _PyLong_AsInt(args[1]);
+    ncols = PyLong_AsInt(args[1]);
     if (ncols == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -3787,11 +3821,11 @@ _curses_setsyx(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (!_PyArg_CheckPositional("setsyx", nargs, 2, 2)) {
         goto exit;
     }
-    y = _PyLong_AsInt(args[0]);
+    y = PyLong_AsInt(args[0]);
     if (y == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    x = _PyLong_AsInt(args[1]);
+    x = PyLong_AsInt(args[1]);
     if (x == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -4060,7 +4094,7 @@ _curses_typeahead(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int fd;
 
-    fd = _PyLong_AsInt(arg);
+    fd = PyLong_AsInt(arg);
     if (fd == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -4135,8 +4169,8 @@ _curses_use_env(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int flag;
 
-    flag = _PyLong_AsInt(arg);
-    if (flag == -1 && PyErr_Occurred()) {
+    flag = PyObject_IsTrue(arg);
+    if (flag < 0) {
         goto exit;
     }
     return_value = _curses_use_env_impl(module, flag);
@@ -4284,4 +4318,4 @@ _curses_has_extended_color_support(PyObject *module, PyObject *Py_UNUSED(ignored
 #ifndef _CURSES_USE_DEFAULT_COLORS_METHODDEF
     #define _CURSES_USE_DEFAULT_COLORS_METHODDEF
 #endif /* !defined(_CURSES_USE_DEFAULT_COLORS_METHODDEF) */
-/*[clinic end generated code: output=1e2a8a160a0fe811 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=96887782374f070a input=a9049054013a1b77]*/

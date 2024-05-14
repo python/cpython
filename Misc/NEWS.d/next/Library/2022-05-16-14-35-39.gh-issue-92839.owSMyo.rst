@@ -1,1 +1,0 @@
-Fixed crash resulting from calling bisect.insort() or bisect.insort_left() with the key argument not equal to None.

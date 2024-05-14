@@ -28,14 +28,10 @@ extern PyTypeObject _PyHamtKeys_Type;
 extern PyTypeObject _PyHamtValues_Type;
 extern PyTypeObject _PyHamtItems_Type;
 
-/* runtime lifecycle */
-
-void _PyHamt_Fini(PyInterpreterState *);
-
 
 /* other API */
 
-#define PyHamt_Check(o) Py_IS_TYPE(o, &_PyHamt_Type)
+#define PyHamt_Check(o) Py_IS_TYPE((o), &_PyHamt_Type)
 
 
 /* Abstract tree node. */
@@ -51,6 +47,13 @@ typedef struct {
     PyObject *h_weakreflist;
     Py_ssize_t h_count;
 } PyHamtObject;
+
+
+typedef struct {
+    PyObject_VAR_HEAD
+    uint32_t b_bitmap;
+    PyObject *b_array[1];
+} PyHamtNode_Bitmap;
 
 
 /* A struct to hold the state of depth-first traverse of the tree.

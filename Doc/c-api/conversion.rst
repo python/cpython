@@ -28,7 +28,8 @@ not.
 The wrappers ensure that ``str[size-1]`` is always ``'\0'`` upon return. They
 never write more than *size* bytes (including the trailing ``'\0'``) into str.
 Both functions require that ``str != NULL``, ``size > 0``, ``format != NULL``
-and ``size < INT_MAX``.
+and ``size < INT_MAX``. Note that this means there is no equivalent to the C99
+``n = snprintf(NULL, 0, ...)`` which would determine the necessary buffer size.
 
 The return value (*rv*) for these functions should be interpreted as follows:
 
@@ -47,9 +48,45 @@ The return value (*rv*) for these functions should be interpreted as follows:
 
 The following functions provide locale-independent string to number conversions.
 
+.. c:function:: unsigned long PyOS_strtoul(const char *str, char **ptr, int base)
+
+   Convert the initial part of the string in ``str`` to an :c:expr:`unsigned
+   long` value according to the given ``base``, which must be between ``2`` and
+   ``36`` inclusive, or be the special value ``0``.
+
+   Leading white space and case of characters are ignored.  If ``base`` is zero
+   it looks for a leading ``0b``, ``0o`` or ``0x`` to tell which base.  If
+   these are absent it defaults to ``10``.  Base must be 0 or between 2 and 36
+   (inclusive).  If ``ptr`` is non-``NULL`` it will contain a pointer to the
+   end of the scan.
+
+   If the converted value falls out of range of corresponding return type,
+   range error occurs (:c:data:`errno` is set to :c:macro:`!ERANGE`) and
+   :c:macro:`!ULONG_MAX` is returned.  If no conversion can be performed, ``0``
+   is returned.
+
+   See also the Unix man page :manpage:`strtoul(3)`.
+
+   .. versionadded:: 3.2
+
+
+.. c:function:: long PyOS_strtol(const char *str, char **ptr, int base)
+
+   Convert the initial part of the string in ``str`` to an :c:expr:`long` value
+   according to the given ``base``, which must be between ``2`` and ``36``
+   inclusive, or be the special value ``0``.
+
+   Same as :c:func:`PyOS_strtoul`, but return a :c:expr:`long` value instead
+   and :c:macro:`LONG_MAX` on overflows.
+
+   See also the Unix man page :manpage:`strtol(3)`.
+
+   .. versionadded:: 3.2
+
+
 .. c:function:: double PyOS_string_to_double(const char *s, char **endptr, PyObject *overflow_exception)
 
-   Convert a string ``s`` to a :c:type:`double`, raising a Python
+   Convert a string ``s`` to a :c:expr:`double`, raising a Python
    exception on failure.  The set of accepted strings corresponds to
    the set of strings accepted by Python's :func:`float` constructor,
    except that ``s`` must not have leading or trailing whitespace.
@@ -83,7 +120,7 @@ The following functions provide locale-independent string to number conversions.
 
 .. c:function:: char* PyOS_double_to_string(double val, char format_code, int precision, int flags, int *ptype)
 
-   Convert a :c:type:`double` *val* to a string using supplied
+   Convert a :c:expr:`double` *val* to a string using supplied
    *format_code*, *precision*, and *flags*.
 
    *format_code* must be one of ``'e'``, ``'E'``, ``'f'``, ``'F'``,
@@ -118,10 +155,10 @@ The following functions provide locale-independent string to number conversions.
 .. c:function:: int PyOS_stricmp(const char *s1, const char *s2)
 
    Case insensitive comparison of strings. The function works almost
-   identically to :c:func:`strcmp` except that it ignores the case.
+   identically to :c:func:`!strcmp` except that it ignores the case.
 
 
 .. c:function:: int PyOS_strnicmp(const char *s1, const char *s2, Py_ssize_t  size)
 
    Case insensitive comparison of strings. The function works almost
-   identically to :c:func:`strncmp` except that it ignores the case.
+   identically to :c:func:`!strncmp` except that it ignores the case.

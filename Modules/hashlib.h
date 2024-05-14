@@ -1,5 +1,7 @@
 /* Common code for use by all hashlib related modules. */
 
+#include "pycore_lock.h"        // PyMutex
+
 /*
  * Given a PyObject* obj, fill in the Py_buffer* viewp with the result
  * of PyObject_GetBuffer.  Sets an exception and issues the erraction
@@ -37,23 +39,40 @@
  * LEAVE_HASHLIB block or explicitly acquire and release the lock inside
  * a PY_BEGIN / END_ALLOW_THREADS block if they wish to release the GIL for
  * an operation.
+ *
+ * These only drop the GIL if the lock acquisition itself is likely to
+ * block. Thus the non-blocking acquire gating the GIL release for a
+ * blocking lock acquisition. The intent of these macros is to surround
+ * the assumed always "fast" operations that you aren't releasing the
+ * GIL around.  Otherwise use code similar to what you see in hash
+ * function update() methods.
  */
 
 #include "pythread.h"
 #define ENTER_HASHLIB(obj) \
-    if ((obj)->lock) { \
-        if (!PyThread_acquire_lock((obj)->lock, 0)) { \
-            Py_BEGIN_ALLOW_THREADS \
-            PyThread_acquire_lock((obj)->lock, 1); \
-            Py_END_ALLOW_THREADS \
-        } \
+    if ((obj)->use_mutex) { \
+        PyMutex_Lock(&(obj)->mutex); \
     }
 #define LEAVE_HASHLIB(obj) \
-    if ((obj)->lock) { \
-        PyThread_release_lock((obj)->lock); \
+    if ((obj)->use_mutex) { \
+        PyMutex_Unlock(&(obj)->mutex); \
     }
 
-/* TODO(gps): We should probably make this a module or EVPobject attribute
+#ifdef Py_GIL_DISABLED
+#define HASHLIB_INIT_MUTEX(obj) \
+    do { \
+        (obj)->mutex = (PyMutex){0}; \
+        (obj)->use_mutex = true; \
+    } while (0)
+#else
+#define HASHLIB_INIT_MUTEX(obj) \
+    do { \
+        (obj)->mutex = (PyMutex){0}; \
+        (obj)->use_mutex = false; \
+    } while (0)
+#endif
+
+/* TODO(gpshead): We should make this a module or class attribute
  * to allow the user to optimize based on the platform they're using. */
 #define HASHLIB_GIL_MINSIZE 2048
 

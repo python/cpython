@@ -22,9 +22,11 @@ if 'pthread_sigmask' in _globals:
 
 
 def _int_to_enum(value, enum_klass):
-    """Convert a numeric value to an IntEnum member.
-    If it's not a known member, return the numeric value itself.
+    """Convert a possible numeric value to an IntEnum member.
+    If it's not a known member, return the value itself.
     """
+    if not isinstance(value, int):
+        return value
     try:
         return enum_klass(value)
     except ValueError:

@@ -5,12 +5,23 @@
 
 #include "patchlevel.h"
 
+static int initialized = 0;
+static char version[250];
+
+void _Py_InitVersion(void)
+{
+    if (initialized) {
+        return;
+    }
+    initialized = 1;
+    PyOS_snprintf(version, sizeof(version), "%.80s (%.80s) %.80s",
+                  PY_VERSION, Py_GetBuildInfo(), Py_GetCompiler());
+}
+
 const char *
 Py_GetVersion(void)
 {
-    static char version[250];
-    PyOS_snprintf(version, sizeof(version), "%.80s (%.80s) %.80s",
-                  PY_VERSION, Py_GetBuildInfo(), Py_GetCompiler());
+    _Py_InitVersion();
     return version;
 }
 
