@@ -1398,6 +1398,23 @@ call fails (for example because the path doesn't exist).
       available. In previous versions, :exc:`NotImplementedError` was raised.
 
 
+.. method:: Path.copy(target, *, follow_symlinks=True)
+
+   Copy this file and its metadata to the file or directory *target*. If
+   *target* specifies a directory, the file will be copied into *target* using
+   this file's :attr:`~PurePath.name`. If *target* specifies a file that
+   already exists, it will be replaced. Returns the path to the newly created
+   file.
+
+   If *follow_symlinks* is false, and this file is a symbolic link, *target*
+   will be created as a symbolic link. If *follow_symlinks* is true and this
+   file is a symbolic link, *target* will be a copy of the symlink target.
+
+   This method calls :func:`shutil.copy2` internally.
+
+   .. versionadded:: 3.14
+
+
 .. method:: Path.rename(target)
 
    Rename this file or directory to the given *target*, and return a new Path

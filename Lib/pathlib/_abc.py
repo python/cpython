@@ -14,6 +14,7 @@ resemble pathlib's PurePath and Path respectively.
 import functools
 from glob import _Globber, _no_recurse_symlinks
 from errno import ENOTDIR, ELOOP
+from shutil import copyfileobj
 from stat import S_ISDIR, S_ISLNK, S_ISREG, S_ISSOCK, S_ISBLK, S_ISCHR, S_ISFIFO
 
 
@@ -539,6 +540,14 @@ class PathBase(PurePathBase):
         return (st.st_ino == other_st.st_ino and
                 st.st_dev == other_st.st_dev)
 
+    def _samefile_safe(self, other_path):
+        """Like samefile(), but returns False rather than raising OSError.
+        """
+        try:
+            return self.samefile(other_path)
+        except (OSError, ValueError):
+            return False
+
     def open(self, mode='r', buffering=-1, encoding=None,
              errors=None, newline=None):
         """
@@ -756,6 +765,32 @@ class PathBase(PurePathBase):
         Create a new directory at this given path.
         """
         raise UnsupportedOperation(self._unsupported_msg('mkdir()'))
+
+    def copy(self, target, follow_symlinks=True):
+        """
+        Copy this file and its metadata to the given target. Returns the path
+        of the new file.
+
+        If this file is a symlink and *follow_symlinks* is true (the default),
+        the symlink's target is copied. Otherwise, the symlink is recreated at
+        the target.
+        """
+        if not isinstance(target, PathBase):
+            target = self.with_segments(target)
+        if target.is_dir():
+            target /= self.name
+        if self._samefile_safe(target):
+            raise OSError(f"{self!r} and {target!r} are the same file")
+        if not follow_symlinks and self.is_symlink():
+            target.symlink_to(self.readlink())
+            return target
+
+        with self.open('rb') as f_source:
+            with target.open('wb') as f_target:
+                copyfileobj(f_source, f_target)
+
+        # FIXME: how do we copy metadata between PathBase instances?
+        return target
 
     def rename(self, target):
         """

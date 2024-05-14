@@ -86,6 +86,13 @@ New Modules
 Improved Modules
 ================
 
+pathlib
+-------
+
+* Add :meth:`pathlib.Path.copy`, which copies a file to a target file or
+  directory, like :func:`shutil.copy2`.
+  (Contributed by Barney Gale in :gh:`73991`.)
+
 
 Optimizations
 =============

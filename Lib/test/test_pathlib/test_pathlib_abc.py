@@ -1678,6 +1678,47 @@ class DummyPathTest(DummyPurePathTest):
         self.assertEqual((p / 'fileA').read_bytes(),
                           b'abcde' + os_linesep_byte + b'fghlk' + os_linesep_byte + b'\rmnopq')
 
+    def test_copy(self):
+        base = self.cls(self.base)
+        source = base / 'fileA'
+        target = source.copy(base / 'copyA')
+        self.assertTrue(target.exists())
+        self.assertEqual(source.stat().st_mode, target.stat().st_mode)
+        self.assertEqual(source.read_text(), target.read_text())
+
+    @needs_symlinks
+    def test_copy_follow_symlinks_true(self):
+        base = self.cls(self.base)
+        source = base / 'linkA'
+        target = source.copy(base / 'copyA')
+        self.assertTrue(target.exists())
+        self.assertFalse(target.is_symlink())
+        self.assertEqual(source.read_text(), target.read_text())
+
+    @needs_symlinks
+    def test_copy_follow_symlinks_false(self):
+        base = self.cls(self.base)
+        source = base / 'linkA'
+        target = source.copy(base / 'copyA', follow_symlinks=False)
+        self.assertTrue(target.exists())
+        self.assertTrue(target.is_symlink())
+        self.assertEqual(source.readlink(), target.readlink())
+
+    def test_copy_return_value(self):
+        base = self.cls(self.base)
+        source = base / 'fileA'
+        self.assertEqual(source.copy(base / 'dirA'), base / 'dirA' / 'fileA')
+        self.assertEqual(source.copy(base / 'dirA' / 'copyA'), base / 'dirA' / 'copyA')
+
+    def test_copy_dir(self):
+        base = self.cls(self.base)
+        source = base / 'dirA'
+        target = base / 'copyA'
+        with self.assertRaises(OSError):
+            source.copy(target)
+        with self.assertRaises(OSError):
+            source.copy(target / 'does_not_exist/')
+
     def test_iterdir(self):
         P = self.cls
         p = P(self.base)
