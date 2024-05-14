@@ -321,7 +321,6 @@ def _dec_str_to_int_inner(s, *, GUARD=8):
     with decimal.localcontext(_unbounded_dec_context) as ctx:
         D256 = D(256)
         pow256 = compute_powers(w, D256, BYTELIM)
-        rpow256 = compute_powers(w, 1 / D256, BYTELIM)
         # We're going to do inexact, chopped arithmetic, multiplying by
         # an approximation to the reciprocal of 256**i. We chop to get a
         # lower bound on the true integer quotient. Our approximation is
@@ -329,6 +328,7 @@ def _dec_str_to_int_inner(s, *, GUARD=8):
         # to_integral_value() is also chopped.
         ctx.traps[decimal.Inexact] = 0
         ctx.rounding = decimal.ROUND_DOWN
+        rD256 = 1 / D256
         for k, v in pow256.items():
             # No need to save much more precision in the reciprocal than
             # the power of 256 has, plus some guard digits to absorb
@@ -336,9 +336,7 @@ def _dec_str_to_int_inner(s, *, GUARD=8):
             # 1/2**i has the same number of significant decimal digits
             # as 5**i, generally over twice the number in 2**i,
             ctx.prec = v.adjusted() + GUARD + 4
-            # The unary "+" chope the reciprocal back to that precision.
-            pow256[k] = v, +rpow256[k]
-        del rpow256 # exact reciprocals no longer needed
+            pow256[k] = v, rD256**k
         ctx.prec = decimal.MAX_PREC
         inner(D(s), w)
     return int.from_bytes(result)
@@ -605,18 +603,6 @@ def int_divmod(a, b):
 #
 # On Computing Reciprocals
 # ------------------------
-# In general, the exact reciprocals we compute have over twice as many
-# significant digts as needed. 1/256**i has the same number of
-# significant decimal digits as 5**i. It's a significant waste of RAM
-# to store all those unneded digits.
-#
-# So we cut exact repicroals back to the least precision that can
-# be needed so that the error analysis above is valid,
-#
-# [Note: turns out it's very significantly faster to do it this way than
-# to compute  1 / 256**i  directly to the desired precision, because the
-# power method doesn't require division.]
-#
 # The hard part is that chopping back to a shorter width occurs
 # _outside_ of `inner`. We can't know then what `prec` `inner()` will
 # need. We have to pick, for each value of `w2`, the largest possible
