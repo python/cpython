@@ -168,6 +168,7 @@ def randrange_fmt(mode, char, obj):
     if char == 'c':
         x = bytes([x])
         if obj == 'numpy' and x == b'\x00':
+            # https://github.com/numpy/numpy/issues/2518
             x = b'\x01'
     if char == '?':
         x = bool(x)
