@@ -539,7 +539,7 @@ def int_divmod(a, b):
 # it back into [1, 10], and subtract 1 from the exponent to compensate.
 # Then (x/y).a is x.a-y.a-1. So the largest (x/y).a can be is x.a-y.a.
 # Since that's the floor of log10(x/y). the ceiling is at most 1 larger
-# (with equalify iff f/g = 1 exactly).
+# (with equality iff f/g = 1 exactly).
 #
 # GUARD digits
 # ------------
