@@ -483,13 +483,6 @@ class Path(PathBase, PurePath):
     def _unsupported_msg(cls, attribute):
         return f"{cls.__name__}.{attribute} is unsupported on this system"
 
-    def __init__(self, *args, **kwargs):
-        if kwargs:
-            msg = ("support for supplying keyword arguments to pathlib.PurePath "
-                   "is deprecated and scheduled for removal in Python {remove}")
-            warnings._deprecated("pathlib.PurePath(**kwargs)", msg, remove=(3, 14))
-        super().__init__(*args)
-
     def __new__(cls, *args, **kwargs):
         if cls is Path:
             cls = WindowsPath if os.name == 'nt' else PosixPath
