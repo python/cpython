@@ -694,24 +694,22 @@ loops that truncate the stream.
 
    Return *n* independent iterators from a single iterable.
 
-   The following Python code helps explain what *tee* does (although the actual
-   implementation is more complex and uses only a single underlying
-   :abbr:`FIFO (first-in, first-out)` queue)::
+   Roughly equivalent to::
 
         def tee(iterable, n=2):
-            it = iter(iterable)
-            deques = [collections.deque() for i in range(n)]
-            def gen(mydeque):
-                while True:
-                    if not mydeque:             # when the local deque is empty
-                        try:
-                            newval = next(it)   # fetch a new value and
-                        except StopIteration:
-                            return
-                        for d in deques:        # load it to all the deques
-                            d.append(newval)
-                    yield mydeque.popleft()
-            return tuple(gen(d) for d in deques)
+            iterator = iter(iterable)
+            empty_link = [None, None]  # Singly linked list: [value, link]
+            return tuple(_tee(iterator, empty_link) for _ in range(n))
+
+        def _tee(iterator, link):
+            while True:
+                if link[1] is None:
+                    try:
+                        link[:] = [next(iterator), [None, None]]
+                    except StopIteration:
+                        break
+                value, link = link
+                yield value
 
    Once a :func:`tee` has been created, the original *iterable* should not be
    used anywhere else; otherwise, the *iterable* could get advanced without
