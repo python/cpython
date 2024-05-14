@@ -707,7 +707,7 @@ loops that truncate the stream.
                     try:
                         link[:] = [next(iterator), [None, None]]
                     except StopIteration:
-                        break
+                        return
                 value, link = link
                 yield value
 
