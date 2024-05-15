@@ -104,6 +104,9 @@ New typing features:
 * :pep:`696`: Type parameters (:data:`typing.TypeVar`, :data:`typing.ParamSpec`,
   and :data:`typing.TypeVarTuple`) now support defaults.
 
+* :pep:`702`: Support for marking deprecations in the type system using the
+  new :func:`warnings.deprecated` decorator.
+
 * :pep:`742`: :data:`typing.TypeIs` was added, providing more intuitive
   type narrowing behavior.
 
@@ -521,8 +524,10 @@ ast
 
   If an optional field on an AST node is not included as an argument when
   constructing an instance, the field will now be set to ``None``. Similarly,
-  if a list field is omitted, that field will now be set to an empty list.
-  (Previously, in both cases, the attribute would be missing on the newly
+  if a list field is omitted, that field will now be set to an empty list,
+  and if a :class:`!ast.expr_context` field is omitted, it defaults to
+  :class:`Load() <ast.Load>`.
+  (Previously, in all cases, the attribute would be missing on the newly
   constructed AST node instance.)
 
   If other arguments are omitted, a :exc:`DeprecationWarning` is emitted.
@@ -534,7 +539,7 @@ ast
   unless the class opts in to the new behavior by setting the attribute
   :attr:`ast.AST._field_types`.
 
-  (Contributed by Jelle Zijlstra in :gh:`105858` and :gh:`117486`.)
+  (Contributed by Jelle Zijlstra in :gh:`105858`, :gh:`117486`, and :gh:`118851`.)
 
 * :func:`ast.parse` now accepts an optional argument *optimize*
   which is passed on to the :func:`compile` built-in. This makes it
@@ -794,6 +799,9 @@ mmap
 * :class:`mmap.mmap` now has a *trackfd* parameter on Unix; if it is ``False``,
   the file descriptor specified by *fileno* will not be duplicated.
   (Contributed by Zackery Spytz and Petr Viktorin in :gh:`78502`.)
+* :class:`mmap.mmap` is now protected from crashing on Windows when the mapped memory
+  is inaccessible due to file system errors or access violations.
+  (Contributed by Jannis Weigend in :gh:`118209`.)
 
 opcode
 ------
@@ -846,6 +854,12 @@ os
   use in ``file_actions=`` on platforms that support
   :c:func:`!posix_spawn_file_actions_addclosefrom_np`.
   (Contributed by Jakub Kulik in :gh:`113117`.)
+
+* :func:`os.mkdir` and :func:`os.makedirs` on Windows now support passing a
+  *mode* value of ``0o700`` to apply access control to the new directory. This
+  implicitly affects :func:`tempfile.mkdtemp` and is a mitigation for
+  :cve:`2024-4030`. Other values for *mode* continue to be ignored.
+  (Contributed by Steve Dower in :gh:`118486`.)
 
 os.path
 -------
@@ -988,6 +1002,14 @@ sys
 * Add the :func:`sys._is_interned` function to test if the string was interned.
   This function is not guaranteed to exist in all implementations of Python.
   (Contributed by Serhiy Storchaka in :gh:`78573`.)
+
+tempfile
+--------
+
+* On Windows, the default mode ``0o700`` used by :func:`tempfile.mkdtemp` now
+  limits access to the new directory due to changes to :func:`os.mkdir`. This
+  is a mitigation for :cve:`2024-4030`.
+  (Contributed by Steve Dower in :gh:`118486`.)
 
 time
 ----
@@ -1559,7 +1581,7 @@ Pending Removal in Python 3.14
   Use :class:`ast.Constant` instead.
   (Contributed by Serhiy Storchaka in :gh:`90953`.)
 
-* :mod:`collections.abc`: Deprecated :class:`~collections.abc.ByteString`.
+* :mod:`collections.abc`: Deprecated :class:`!collections.abc.ByteString`.
   Prefer :class:`!Sequence` or :class:`~collections.abc.Buffer`.
   For use in typing, prefer a union, like ``bytes | bytearray``,
   or :class:`collections.abc.Buffer`.
@@ -1617,7 +1639,7 @@ Pending Removal in Python 3.14
 
 * :mod:`sqlite3`:
 
-  * :data:`~sqlite3.version` and :data:`~sqlite3.version_info`.
+  * :data:`!version` and :data:`!version_info`.
 
   * :meth:`~sqlite3.Cursor.execute` and :meth:`~sqlite3.Cursor.executemany`
     if :ref:`named placeholders <sqlite3-placeholders>` are used and
@@ -1633,7 +1655,7 @@ Pending Removal in Python 3.14
   May be removed in 3.14.
   (Contributed by Nikita Sobolev in :gh:`101866`.)
 
-* :mod:`typing`: :class:`~typing.ByteString`, deprecated since Python 3.9,
+* :mod:`typing`: :class:`!typing.ByteString`, deprecated since Python 3.9,
   now causes a :exc:`DeprecationWarning` to be emitted when it is used.
 
 * :mod:`urllib`:

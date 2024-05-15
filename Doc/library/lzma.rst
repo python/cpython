@@ -1,5 +1,5 @@
-:mod:`lzma` --- Compression using the LZMA algorithm
-====================================================
+:mod:`!lzma` --- Compression using the LZMA algorithm
+=====================================================
 
 .. module:: lzma
    :synopsis: A Python wrapper for the liblzma compression library.
