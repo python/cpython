@@ -83,12 +83,12 @@ def compute_powers(w, base, more_than, *, need_hi=False):
             if n-1 in d:
                 result = d[n-1] * base # cheap!
             elif lo in d:
-                    # Multiplying a bigint by itself is about twice as
-                    # fast in CPython provided it's the same object.
-                    result = d[lo] * d[lo] # same object
-                    if hi != lo:
-                        assert 2 * lo + 1 == n
-                        result *= base
+                # Multiplying a bigint by itself is about twice as fast
+                # in CPython provided it's the same object.
+                result = d[lo] * d[lo] # same object
+                if hi != lo:
+                    assert 2 * lo + 1 == n
+                    result *= base
             elif n <= more_than: # rare
                 result = base ** n
             else:
