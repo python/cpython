@@ -543,7 +543,7 @@ class EventTest(AbstractTkTest, unittest.TestCase):
         events = []
         f.bind('<FocusIn>', events.append)
 
-        f.focus()
+        f.focus_force()
         self.root.update()
         self.assertEqual(len(events), 1, events)
         e = events[0]
