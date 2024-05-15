@@ -54,7 +54,6 @@ except ImportError:
 def compute_powers(w, base, more_than, *, need_hi=False, show=False):
     seen = set()
     need = set()
-    maybe_not_needed = set()
     ws = {w}
     while ws:
         w = ws.pop() # any element is fine to use next
