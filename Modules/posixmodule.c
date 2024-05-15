@@ -5364,7 +5364,7 @@ os_mkdir_impl(PyObject *module, path_t *path, int mode, int dir_fd)
     if (mode == 0700 /* 0o700 */) {
         ULONG sdSize;
         pSecAttr = &secAttr;
-        // Set a discreationary ACL (D) that is protected (P) and includes
+        // Set a discretionary ACL (D) that is protected (P) and includes
         // inheritable (OICI) entries that allow (A) full control (FA) to
         // SYSTEM (SY), Administrators (BA), and the owner (OW).
         if (!ConvertStringSecurityDescriptorToSecurityDescriptorW(

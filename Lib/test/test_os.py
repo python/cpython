@@ -1800,21 +1800,14 @@ class MakedirTests(unittest.TestCase):
     @unittest.skipUnless(os.name == 'nt', "requires Windows")
     def test_win32_mkdir_700(self):
         base = os_helper.TESTFN
-        path1 = os.path.join(os_helper.TESTFN, 'dir1')
-        path2 = os.path.join(os_helper.TESTFN, 'dir2')
-        # mode=0o700 is special-cased to override ACLs on Windows
-        # There's no way to know exactly how the ACLs will look, so we'll
-        # check that they are different from a regularly created directory.
-        os.mkdir(path1, mode=0o700)
-        os.mkdir(path2, mode=0o777)
-
-        out1 = subprocess.check_output(["icacls.exe", path1], encoding="oem")
-        out2 = subprocess.check_output(["icacls.exe", path2], encoding="oem")
-        os.rmdir(path1)
-        os.rmdir(path2)
-        out1 = out1.replace(path1, "<PATH>")
-        out2 = out2.replace(path2, "<PATH>")
-        self.assertNotEqual(out1, out2)
+        path = os.path.abspath(os.path.join(os_helper.TESTFN, 'dir'))
+        os.mkdir(path, mode=0o700)
+        out = subprocess.check_output(["cacls.exe", path, "/s"], encoding="oem")
+        os.rmdir(path)
+        self.assertEqual(
+            out.strip(),
+            f'{path} "D:P(A;OICI;FA;;;SY)(A;OICI;FA;;;BA)(A;OICI;FA;;;OW)"',
+        )
 
     def tearDown(self):
         path = os.path.join(os_helper.TESTFN, 'dir1', 'dir2', 'dir3',
