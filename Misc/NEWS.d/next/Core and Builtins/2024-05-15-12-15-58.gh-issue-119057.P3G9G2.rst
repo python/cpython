@@ -1,0 +1,2 @@
+Improve error message when using ``// 0`` from "integer division or modulo
+by zero" to "integer floor division by zero" which better represents the division.
