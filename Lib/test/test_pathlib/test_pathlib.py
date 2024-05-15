@@ -832,12 +832,12 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
     def test_copy_follow_symlinks_false(self):
         base = self.cls(self.base)
         source = base / 'linkA'
-        source_stat = source.stat()
-        source_lstat = source.lstat()
         if hasattr(os, 'lchmod'):
             os.lchmod(source, stat.S_IRWXU | stat.S_IRWXO)
         if hasattr(os, 'lchflags') and hasattr(stat, 'UF_NODUMP'):
             os.lchflags(source, stat.UF_NODUMP)
+        source_stat = source.stat()
+        source_lstat = source.lstat()
         target = source.copy(base / 'copyA', follow_symlinks=False)
         target_lstat = target.lstat()
         self.assertTrue(target.exists())

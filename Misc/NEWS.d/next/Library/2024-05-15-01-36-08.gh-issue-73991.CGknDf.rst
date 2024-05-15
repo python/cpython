@@ -1,0 +1,2 @@
+Add :meth:`pathlib.Path.copy`, which copies a file to a target file or
+directory, like :func:`shutil.copy2`.
