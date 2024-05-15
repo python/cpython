@@ -11,12 +11,13 @@ hexdigits -- a string containing all ASCII hexadecimal digits
 octdigits -- a string containing all ASCII octal digits
 punctuation -- a string containing all ASCII punctuation characters
 printable -- a string containing all ASCII characters considered printable
+visible -- a string containing all ASCII non-blank characters
 
 """
 
 __all__ = ["ascii_letters", "ascii_lowercase", "ascii_uppercase", "capwords",
            "digits", "hexdigits", "octdigits", "printable", "punctuation",
-           "whitespace", "Formatter", "Template"]
+           "visible", "whitespace", "Formatter", "Template"]
 
 import _string
 
@@ -30,6 +31,7 @@ hexdigits = digits + 'abcdef' + 'ABCDEF'
 octdigits = '01234567'
 punctuation = r"""!"#$%&'()*+,-./:;<=>?@[\]^_`{|}~"""
 printable = digits + ascii_letters + punctuation + whitespace
+visible = digits + ascii_letters + punctuation
 
 # Functions which aren't available as string methods.
 
