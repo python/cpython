@@ -194,7 +194,7 @@ class TestResults:
 
     def write_duration(self, filename: StrPath):
         self.test_times.sort(reverse=True)
-        with open(filename, 'w') as f:
+        with open(filename, 'w', enconding='utf8') as f:
             for test_time, test in self.test_times:
                 f.write(f"{test}: {format_duration(test_time)}\n")
 
