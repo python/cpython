@@ -1651,7 +1651,7 @@ the old limit is returned
 
 static PyObject *
 _csv_field_size_limit_impl(PyObject *module, PyObject *new_limit)
-/*[clinic end generated code: output=f2799ecd908e250b input=3e49d42e37a7d449]*/
+/*[clinic end generated code: output=f2799ecd908e250b input=cec70e9226406435]*/
 {
     _csvstate *module_state = get_csv_state(module);
     long old_limit = FT_ATOMIC_LOAD_LONG(module_state->field_limit);
