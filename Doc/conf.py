@@ -358,6 +358,8 @@ htmlhelp_basename = 'python' + release.replace('.', '')
 # Split the index
 html_split_index = True
 
+# Split pot files one per reST file
+gettext_compact = False
 
 # Options for LaTeX output
 # ------------------------
