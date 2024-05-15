@@ -6350,10 +6350,10 @@ class TestZeroCopySendfile(_ZeroCopyFileTest, unittest.TestCase):
 
 @unittest.skipIf(not MACOS, 'macOS only')
 class TestZeroCopyMACOS(_ZeroCopyFileTest, unittest.TestCase):
-    PATCHPOINT = "posix._fcopyfile"
+    PATCHPOINT = "os._fcopyfile"
 
     def zerocopy_fun(self, src, dst):
-        return os._fastcopy_fcopyfile(src, dst, _COPYFILE_DATA)
+        return os._fastcopy_fcopyfile(src, dst, os._COPYFILE_DATA)
 
 
 if __name__ == "__main__":

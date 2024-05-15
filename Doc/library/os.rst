@@ -53,14 +53,6 @@ Notes on the availability of these functions:
    An alias for the built-in :exc:`OSError` exception.
 
 
-.. exception:: SameFileError
-
-   This exception is raised if source and destination in :func:`copyfile`
-   are the same file.
-
-   .. versionadded:: 3.14
-
-
 .. data:: name
 
    The name of the operating system dependent module imported.  The following
@@ -3893,6 +3885,14 @@ instead of 64 KiB) and a :func:`memoryview`-based variant of
 If the fast-copy operation fails and no data was written in the destination
 file then shutil will silently fallback on using less efficient
 :func:`copyfileobj` function internally.
+
+
+.. exception:: SameFileError
+
+   This exception is raised if source and destination in :func:`copyfile`
+   are the same file.
+
+   .. versionadded:: 3.14
 
 
 .. function:: copyfileobj(fsrc, fdst[, length])
