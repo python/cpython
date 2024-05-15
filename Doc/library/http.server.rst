@@ -1,5 +1,5 @@
-:mod:`http.server` --- HTTP servers
-===================================
+:mod:`!http.server` --- HTTP servers
+====================================
 
 .. module:: http.server
    :synopsis: HTTP server and request handlers.

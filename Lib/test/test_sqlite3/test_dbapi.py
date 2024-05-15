@@ -28,6 +28,7 @@ import sys
 import threading
 import unittest
 import urllib.parse
+import warnings
 
 from test.support import (
     SHORT_TIMEOUT, check_disallow_instantiation, requires_subprocess,
@@ -46,17 +47,6 @@ class ModuleTests(unittest.TestCase):
     def test_api_level(self):
         self.assertEqual(sqlite.apilevel, "2.0",
                          "apilevel is %s, should be 2.0" % sqlite.apilevel)
-
-    def test_deprecated_version(self):
-        msg = "deprecated and will be removed in Python 3.14"
-        for attr in "version", "version_info":
-            with self.subTest(attr=attr):
-                with self.assertWarnsRegex(DeprecationWarning, msg) as cm:
-                    getattr(sqlite, attr)
-                self.assertEqual(cm.filename,  __file__)
-                with self.assertWarnsRegex(DeprecationWarning, msg) as cm:
-                    getattr(sqlite.dbapi2, attr)
-                self.assertEqual(cm.filename,  __file__)
 
     def test_thread_safety(self):
         self.assertIn(sqlite.threadsafety, {0, 1, 3},
@@ -589,6 +579,11 @@ class ConnectionTests(unittest.TestCase):
             del cx
             gc_collect()
 
+    def test_connection_signature(self):
+        from inspect import signature
+        sig = signature(self.cx)
+        self.assertEqual(str(sig), "(sql, /)")
+
 
 class UninitialisedConnectionTests(unittest.TestCase):
     def setUp(self):
@@ -883,9 +878,21 @@ class CursorTests(unittest.TestCase):
         msg = "Binding.*is a named parameter"
         for query, params in dataset:
             with self.subTest(query=query, params=params):
-                with self.assertWarnsRegex(DeprecationWarning, msg) as cm:
+                with self.assertRaisesRegex(sqlite.ProgrammingError, msg) as cm:
                     self.cu.execute(query, params)
-                self.assertEqual(cm.filename,  __file__)
+
+    def test_execute_indexed_nameless_params(self):
+        # See gh-117995: "'?1' is considered a named placeholder"
+        for query, params, expected in (
+            ("select ?1, ?2", (1, 2), (1, 2)),
+            ("select ?2, ?1", (1, 2), (2, 1)),
+        ):
+            with self.subTest(query=query, params=params):
+                with warnings.catch_warnings():
+                    warnings.simplefilter("error", DeprecationWarning)
+                    cu = self.cu.execute(query, params)
+                    actual, = cu.fetchall()
+                    self.assertEqual(actual, expected)
 
     def test_execute_too_many_params(self):
         category = sqlite.SQLITE_LIMIT_VARIABLE_NUMBER
