@@ -3304,7 +3304,7 @@ failed:
 }
 
 static PyObject *
-test_warn(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
+function_set_warning(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
 {
     if (PyErr_WarnEx(PyExc_RuntimeWarning, "Testing PyErr_WarnEx", 2)) {
         return NULL;
@@ -3453,7 +3453,7 @@ static PyMethodDef TestMethods[] = {
     {"function_set_closure", function_set_closure, METH_VARARGS, NULL},
     {"check_pyimport_addmodule", check_pyimport_addmodule, METH_VARARGS},
     {"test_weakref_capi", test_weakref_capi, METH_NOARGS},
-    {"test_warn", test_warn, METH_NOARGS},
+    {"function_set_warning", function_set_warning, METH_NOARGS},
     {NULL, NULL} /* sentinel */
 };
 

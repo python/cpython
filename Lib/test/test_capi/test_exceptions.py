@@ -74,7 +74,7 @@ class Test_Exceptions(unittest.TestCase):
             import _testcapi
 
             def foo():
-                _testcapi.test_warn()
+                _testcapi.function_set_warning()
 
             foo()  # line 6
 
