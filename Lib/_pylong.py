@@ -351,7 +351,7 @@ def _dec_str_to_int_inner(s, *, GUARD=8):
             # 1/2**i has the same number of significant decimal digits
             # as 5**i, generally over twice the number in 2**i,
             ctx.prec = v.adjusted() + GUARD + 1
-            # The unary "+" chope the reciprocal back to that precision.
+            # The unary "+" chops the reciprocal back to that precision.
             pow256[k] = v, +rpow256[k]
         del rpow256 # exact reciprocals no longer needed
         ctx.prec = decimal.MAX_PREC
