@@ -373,6 +373,9 @@ static inline void
 _Py_atomic_store_int(int *obj, int value);
 
 static inline void
+_Py_atomic_store_long(long *obj, long value);
+
+static inline void
 _Py_atomic_store_int8(int8_t *obj, int8_t value);
 
 static inline void

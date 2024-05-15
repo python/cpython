@@ -374,6 +374,10 @@ _Py_atomic_store_int(int *obj, int value)
 { __atomic_store_n(obj, value, __ATOMIC_SEQ_CST); }
 
 static inline void
+_Py_atomic_store_long(long *obj, long value)
+{ __atomic_store_n(obj, value, __ATOMIC_SEQ_CST); }
+
+static inline void
 _Py_atomic_store_int8(int8_t *obj, int8_t value)
 { __atomic_store_n(obj, value, __ATOMIC_SEQ_CST); }
 

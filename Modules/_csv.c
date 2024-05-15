@@ -1637,7 +1637,6 @@ _csv_get_dialect_impl(PyObject *module, PyObject *name)
 }
 
 /*[clinic input]
-@critical_section
 _csv.field_size_limit
 
     new_limit: object = NULL
@@ -1655,18 +1654,18 @@ _csv_field_size_limit_impl(PyObject *module, PyObject *new_limit)
 /*[clinic end generated code: output=f2799ecd908e250b input=3e49d42e37a7d449]*/
 {
     _csvstate *module_state = get_csv_state(module);
-    long old_limit = module_state->field_limit;
+    long old_limit = FT_ATOMIC_LOAD_LONG(module_state->field_limit);
     if (new_limit != NULL) {
         if (!PyLong_CheckExact(new_limit)) {
             PyErr_Format(PyExc_TypeError,
                          "limit must be an integer");
             return NULL;
         }
-        module_state->field_limit = PyLong_AsLong(new_limit);
-        if (module_state->field_limit == -1 && PyErr_Occurred()) {
-            module_state->field_limit = old_limit;
+        long new_limit_value = PyLong_AsLong(new_limit);
+        if (new_limit_value == -1 && PyErr_Occurred()) {
             return NULL;
         }
+        FT_ATOMIC_STORE_LONG(module_state->field_limit, new_limit_value);
     }
     return PyLong_FromLong(old_limit);
 }

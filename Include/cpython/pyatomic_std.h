@@ -645,6 +645,13 @@ _Py_atomic_store_int(int *obj, int value)
 }
 
 static inline void
+_Py_atomic_store_long(long *obj, long value)
+{
+    _Py_USING_STD;
+    atomic_store((_Atomic(long)*)obj, value);
+}
+
+static inline void
 _Py_atomic_store_int8(int8_t *obj, int8_t value)
 {
     _Py_USING_STD;
