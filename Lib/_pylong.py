@@ -45,12 +45,16 @@ except ImportError:
 #
 # and `mycache[lo]` replaces `base**lo` in the inner function.
 #
+# If an algorithm wants the powers of ceiling(w/2) instead of the floor,
+# pass keyword argument `need_hi=True` instead.
+#
 # While this does give minor speedups (a few percent at best), the primary
 # intent is to simplify the functions using this, by eliminating the need for
 # them to craft their own ad-hoc caching schemes.
-def compute_powers(w, base, more_than, show=False):
+def compute_powers(w, base, more_than, *, need_hi=False, show=False):
     seen = set()
     need = set()
+    maybe_not_needed = set()
     ws = {w}
     while ws:
         w = ws.pop() # any element is fine to use next
@@ -58,11 +62,13 @@ def compute_powers(w, base, more_than, show=False):
             continue
         seen.add(w)
         lo = w >> 1
-        # only _need_ lo here; some other path may, or may not, need hi
-        need.add(lo)
-        ws.add(lo)
-        if w & 1:
-            ws.add(lo + 1)
+        hi = w - lo
+        # only _need_ one here; the other may, or may not, be needed
+        which = hi if need_hi else lo
+        need.add(which)
+        ws.add(which)
+        if lo != hi:
+            ws.add(w - which)
 
     d = {}
     if not need:
@@ -72,6 +78,7 @@ def compute_powers(w, base, more_than, show=False):
     if show:
         print("pow at", first)
     d[first] = base ** first
+    last = first
     for this in it:
         if this - 1 in d:
             if show:
@@ -80,18 +87,25 @@ def compute_powers(w, base, more_than, show=False):
         else:
             lo = this >> 1
             hi = this - lo
-            assert lo in d
-            if show:
-                print("square at", this)
-            # Multiplying a bigint by itself (same object!) is about twice
-            # as fast in CPython.
-            sq = d[lo] * d[lo]
-            if hi != lo:
-                assert hi == lo + 1
+            if lo in d:
                 if show:
-                    print("    and * base")
-                sq *= base
-            d[this] = sq
+                    print("square at", this)
+                # Multiplying a bigint by itself is about twice as fast
+                # in CPython provided it's the same object.
+                sq = d[lo] * d[lo] # same object
+                if lo != hi:
+                    assert this == 2 * lo + 1
+                    if show:
+                        print("    and * base")
+                    sq *= base
+                d[this] = sq
+            else:
+                assert need_hi
+                diff = this - last
+                if show:
+                    print(last, "*", diff, "at", this)
+                d[this] = d[last] * (d[diff] if diff in d else base ** diff)
+        last = this
     return d
 
 _unbounded_dec_context = decimal.getcontext().copy()
@@ -248,7 +262,8 @@ def _dec_str_to_int_inner(s, *, GUARD=8):
             # repaired.
             result.extend(int(str(n)).to_bytes(w)) # big-endian default
             return
-        w2 = w >> 1
+        w1 = w >> 1
+        w2 = w - w1
         if 0:
             # This is maximally clear, but "too slow". `decimal`
             # division is asymptotically fast, but we have no way to
@@ -290,7 +305,7 @@ def _dec_str_to_int_inner(s, *, GUARD=8):
             # The assert should always succeed, but way too slow to keep
             # enabled.
             #assert hi, lo == divmod(n, pow256[w2][0])
-        inner(hi, w - w2)
+        inner(hi, w1)
         del hi # at top levels, can free a lot of RAM "early"
         inner(lo, w2)
 
@@ -320,8 +335,8 @@ def _dec_str_to_int_inner(s, *, GUARD=8):
         raise ValueError(f"cannot convert string of len {lenS} to int")
     with decimal.localcontext(_unbounded_dec_context) as ctx:
         D256 = D(256)
-        pow256 = compute_powers(w, D256, BYTELIM)
-        rpow256 = compute_powers(w, 1 / D256, BYTELIM)
+        pow256 = compute_powers(w, D256, BYTELIM, need_hi=True)
+        rpow256 = compute_powers(w, 1 / D256, BYTELIM, need_hi=True)
         # We're going to do inexact, chopped arithmetic, multiplying by
         # an approximation to the reciprocal of 256**i. We chop to get a
         # lower bound on the true integer quotient. Our approximation is
@@ -335,7 +350,7 @@ def _dec_str_to_int_inner(s, *, GUARD=8):
             # most relevant rounding errors. This is highly signficant:
             # 1/2**i has the same number of significant decimal digits
             # as 5**i, generally over twice the number in 2**i,
-            ctx.prec = v.adjusted() + GUARD + 4
+            ctx.prec = v.adjusted() + GUARD + 1
             # The unary "+" chope the reciprocal back to that precision.
             pow256[k] = v, +rpow256[k]
         del rpow256 # exact reciprocals no longer needed
@@ -531,15 +546,22 @@ def int_divmod(a, b):
 #
 # Observation; if x is an integer, len(str(x)) = x.a + 1.
 #
-# Lemma 1: ceiling(log10(x/y)) <= x.a - y.a + 1
+# Lemma 1: (x * y).a = x.a + y.a, or one larger
 #
-# To see that, write x = f * 10**x.a and y = g * 10**y.a, where f and g
-# are in [1, 10). Then x/y = f/g * 10**(x.a - y.a), where 1/10 < f/g <
-# 10. If 1 <= f/g, (x/y).a is x.a-y.a. Else multiply f/g by 10 to bring
-# it back into [1, 10], and subtract 1 from the exponent to compensate.
-# Then (x/y).a is x.a-y.a-1. So the largest (x/y).a can be is x.a-y.a.
-# Since that's the floor of log10(x/y). the ceiling is at most 1 larger
-# (with equality iff f/g = 1 exactly).
+# Proof: Write x = f * 10**x.a and y = g * 10**y.a, where f and g are in
+# [1, 10). Then x*y = f*g * 10**(x.a + y.a), where 1 <= f*g < 100. If
+# f*g < 10, (x*y).a is x.a+y.a. Else divide f*g by 10 to bring it back
+# into [1, 10], and add 1 to the exponent to compensate. Then (x*y).a is
+# x.a+y.a-1.
+#
+# Lemma 2: ceiling(log10(x/y)) <= x.a - y.a + 1
+#
+# Peood: Express x and y is in Lemma 1. Then x/y = f/g * 10**(x.a -
+# y.a), where 1/10 < f/g < 10. If 1 <= f/g, (x/y).a is x.a-y.a. Else
+# multiply f/g by 10 to bring it back into [1, 10], and subtract 1 from
+# the exponent to compensate. Then (x/y).a is x.a-y.a-1. So the largest
+# (x/y).a can be is x.a-y.a. Since that's the floor of log10(x/y). the
+# ceiling is at most 1 larger (with equality iff f/g = 1 exactly).
 #
 # GUARD digits
 # ------------
@@ -590,7 +612,7 @@ def int_divmod(a, b):
 # -prec <= -1.602 - log10(prod)
 # prec >= log10(prod) + 1.602
 #
-# The true product is the same as the true ratio n/p256. By Lemma 1
+# The true product is the same as the true ratio n/p256. By Lemma 2
 # above, n.a - p256.a + 1 is an upper bound on the ceiling of
 # log10(prod). Then 2 is the ceiling of 1.602. so n.a - p256.a + 3 is an
 # upper bound on the right hand side of the inequality. Any prec >= that
@@ -628,55 +650,24 @@ def int_divmod(a, b):
 # This is the `prec` inner() uses:
 #     max(n.a - p256.a, 0) + GUARD
 # and what setup uses (renaming its `v` to `p256` - same thing):
-#     p256.a + GUARD + 4
+#     p256.a + GUARD + 1
 #
 # We need that the second is always at least as large as the first,
 # which is the same as requiring
 #
-#     n.a - 2 * p256.a <= 4
-#
-# Express p256 as f * 10**pa, 1 <= f < 10, and pa = p256.a.
+#     n.a - 2 * p256.a <= 1
 #
 # What's the largest n can be? n < 255**w = 256**(w2 + (w - w2)). The
-# worst case in this context is when w ix odd. and then w-w2 = w2+1. So
-#    n < 256**(2*w2 + 1) =
-#        (256**w2)**2 * 256 =
-#        p259**2 * 256 =
-#        (f * 10**pa)**2 * 256 =
-#        f**2 * 10**(2*pa) * 256  <
-#        10**2 * 10**(2*pa) * 256 =
-#        25600 * 10**(2*pa) =
-#        2.56 * 10**(2*pa + 4)
+# worst case in this context is when w ix even. and then w = 2*w2, ao
+# n < 256**(2*w2) = (256**w2)**2 = p256**2. By Lemma 1, then, n.a
+# is at most p256.a + p256.a + 1.
 #
-# So n.a is at most `2*pa + 4`, ao n.a - 2 * p256.a is at most 2*pa + 4
-# - 2*pa = 4. QED
+# So the most n.a - 2 * p256.a can be is
+# p256.a + p256.a + 1 - 2 * p256.a = 1. QES
 #
-# For concreteness, the smallest "worst case" `w` is 5, and so w2 is
-# 2:
-#
-# >>> n = D256**5
-# >>< n
-# Decimal('1099511627776')
-# >>> n.adjusted() @ just barely 12 - n close to a power of 2
-# 12
-# >>> p = D256**2
-# >>> p
-# Decimal('65536')
-# >>> p.adjusted()
-# 4
-#
-# n.adjusted() - 2 * p256.adjusted() is then 12 - 2*4 = 4, at the bound.
-#
-# Note: 4 is a rigorous upper bound on what's needed, but even more
-# tedious analysis may show that 3, or even 2, are enough. I never
-# saw a failure at 2, but did at 1.
-#
-# Note: this is the only part of the proof where the target base (256)
-# matters. It shows up because it directly determines how badly an
-# unbalanced split can hurt. The larger the target base, the higher "4"
-# may need to become. If we split on the ceiling of w/2 instead, odd `w`
-# would become the best cases, even `w` the worst, and the same kind of
-# proof would see the output base effectively "cancel out". "4" could be
-# replaced by "1" regardless of base. So it would be more elegant that
-# way. Alas, splitting on the ceiling could make other parts messier (in
-# particular, `compute_powers()` would have to change to do more work).
+# Note: an earlier version of the code split on floor(e/2) instead of on
+# the ceiiing. Thw worst case then is odd `w`, and a more involved proof
+# was needed to show that adding 4 (instead of 1) may be neceasary.
+# Basically because, in that cass, n may be up to 256 times larger than
+# p256**2. Curiously enough, by splitting  on the ceiling instead,
+# nothing in any proof here actually depends on the output base (256).
