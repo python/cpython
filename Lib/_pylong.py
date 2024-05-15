@@ -555,7 +555,7 @@ def int_divmod(a, b):
 #
 # Lemma 2: ceiling(log10(x/y)) <= x.a - y.a + 1
 #
-# Peood: Express x and y is in Lemma 1. Then x/y = f/g * 10**(x.a -
+# Peood: Express x and y as in Lemma 1. Then x/y = f/g * 10**(x.a -
 # y.a), where 1/10 < f/g < 10. If 1 <= f/g, (x/y).a is x.a-y.a. Else
 # multiply f/g by 10 to bring it back into [1, 10], and subtract 1 from
 # the exponent to compensate. Then (x/y).a is x.a-y.a-1. So the largest
