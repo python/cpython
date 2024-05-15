@@ -46,12 +46,12 @@ except ImportError:
 # and `mycache[lo]` replaces `base**lo` in the inner function.
 #
 # If an algorithm wants the powers of ceiling(w/2) instead of the floor,
-# pass keyword argument `need_hi=True` instead.
+# pass keyword argument `need_hi=True`.
 #
-# While this does give minor speedups (a few percent at best), the primary
-# intent is to simplify the functions using this, by eliminating the need for
-# them to craft their own ad-hoc caching schemes.
-def compute_powers(w, base, more_than, *, need_hi=False, show=False):
+# While this does give minor speedups (a few percent at best), the
+# primary intent is to simplify the functions using this, by eliminating
+# the need for them to craft their own ad-hoc caching schemes.
+def compute_powers(w, base, more_than, *, need_hi=False):
     seen = set()
     need = set()
     ws = {w}
@@ -69,42 +69,41 @@ def compute_powers(w, base, more_than, *, need_hi=False, show=False):
         if lo != hi:
             ws.add(w - which)
 
+    # powbase() knows how to compute powers efficiently. When `need` is
+    # processed in sorted order, and need_hi is False, powbase won't
+    # actually recurse: it always finds the predecossor it wants already
+    # in the cache (`d`). But when need_hi is True, it may need to
+    # recurse to find powers of predecessora that weren't themselves
+    # needed.
     d = {}
-    if not need:
-        return d
-    it = iter(sorted(need))
-    first = next(it)
-    if show:
-        print("pow at", first)
-    d[first] = base ** first
-    last = first
-    for this in it:
-        if this - 1 in d:
-            if show:
-                print("* base at", this)
-            d[this] = d[this - 1] * base # cheap
-        else:
-            lo = this >> 1
-            hi = this - lo
-            if lo in d:
-                if show:
-                    print("square at", this)
-                # Multiplying a bigint by itself is about twice as fast
-                # in CPython provided it's the same object.
-                sq = d[lo] * d[lo] # same object
-                if lo != hi:
-                    assert this == 2 * lo + 1
-                    if show:
-                        print("    and * base")
-                    sq *= base
-                d[this] = sq
+    def powbase(n):
+        if (result := d.get(n)) is None:
+            lo = n >> 1
+            hi = n - lo
+            if n-1 in d:
+                result = d[n-1] * base # cheap!
+            elif lo in d:
+                    # Multiplying a bigint by itself is about twice as
+                    # fast in CPython provided it's the same object.
+                    result = d[lo] * d[lo] # same object
+                    if hi != lo:
+                        assert 2 * lo + 1 == n
+                        result *= base
+            elif n <= more_than: # rare
+                result = base ** n
             else:
                 assert need_hi
-                diff = this - last
-                if show:
-                    print(last, "*", diff, "at", this)
-                d[this] = d[last] * (d[diff] if diff in d else base ** diff)
-        last = this
+                result = powbase(lo) * powbase(hi)
+            d[n] = result
+        return result
+
+    for n in sorted(need):
+        powbase(n)
+    if need_hi:
+        for n in d.keys() - need:
+            del d[n]
+    else:
+        assert d.keys() == need
     return d
 
 _unbounded_dec_context = decimal.getcontext().copy()
