@@ -3,11 +3,12 @@ import os
 import re
 import sys
 import unittest
+import textwrap
 
 from test import support
 from test.support import import_helper
 from test.support.os_helper import TESTFN, TESTFN_UNDECODABLE
-from test.support.script_helper import assert_python_failure
+from test.support.script_helper import assert_python_failure, assert_python_ok
 from test.support.testcase import ExceptionIsLikeMixin
 
 from .test_misc import decode_stderr
@@ -67,6 +68,28 @@ class Test_Exceptions(unittest.TestCase):
             self.assertSequenceEqual(new_sys_exc_info, new_exc_info)
         else:
             self.assertTrue(False)
+
+    def test_warn_with_stacklevel(self):
+        code = textwrap.dedent('''\
+            import _testcapi
+
+            def foo():
+                _testcapi.test_warn()
+
+            foo()  # line 6
+
+
+            foo()  # line 9
+        ''')
+        proc = assert_python_ok("-c", code)
+        warnings = proc.err.splitlines()
+        self.assertEqual(len(warnings), 4)
+        self.assertTrue(
+            warnings[1].startswith(b"  foo()  # line 6")
+        )
+        self.assertTrue(
+            warnings[3].startswith(b"  foo()  # line 9")
+        )
 
 
 class Test_FatalError(unittest.TestCase):
