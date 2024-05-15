@@ -3,6 +3,7 @@ import ntpath
 import operator
 import os
 import posixpath
+import shutil
 import sys
 import warnings
 from glob import _StringGlobber
@@ -773,6 +774,24 @@ class Path(PathBase, PurePath):
         Remove this directory.  The directory must be empty.
         """
         os.rmdir(self)
+
+    def rmtree(self, ignore_errors=False, on_error=None):
+        """
+        Recursively delete this directory tree.
+
+        If *ignore_errors* is true, exceptions raised from scanning the tree
+        and removing files and directories are ignored. Otherwise, if
+        *on_error* is set, it will be called to handle the error. If neither
+        *ignore_errors* nor *on_error* are set, exceptions are propagated to
+        the caller.
+        """
+        if on_error is None:
+            onexc = None
+        else:
+            def onexc(function, path, excinfo):
+                on_error(excinfo)
+        shutil.rmtree(self, ignore_errors=ignore_errors, onexc=onexc)
+    rmtree.avoids_symlink_attacks = shutil.rmtree.avoids_symlink_attacks
 
     def rename(self, target):
         """

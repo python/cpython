@@ -807,6 +807,44 @@ class PathBase(PurePathBase):
         """
         raise UnsupportedOperation(self._unsupported_msg('rmdir()'))
 
+    def rmtree(self, ignore_errors=False, on_error=None):
+        """
+        Recursively delete this directory tree.
+
+        If *ignore_errors* is true, exceptions raised from scanning the tree
+        and removing files and directories are ignored. Otherwise, if
+        *on_error* is set, it will be called to handle the error. If neither
+        *ignore_errors* nor *on_error* are set, exceptions are propagated to
+        the caller.
+        """
+        if ignore_errors:
+            def on_error(error):
+                pass
+        elif on_error is None:
+            def on_error(error):
+                raise
+
+        try:
+            if self.is_symlink():
+                raise OSError("Cannot call rmtree on a symbolic link")
+        except OSError as error:
+            on_error(error)
+            return
+
+        walker = self.walk(top_down=False, follow_symlinks=False, on_error=on_error)
+        for dirpath, _, filenames in walker:
+            for filename in filenames:
+                filepath = dirpath / filename
+                try:
+                    filepath.unlink()
+                except OSError as error:
+                    on_error(error)
+            try:
+                dirpath.rmdir()
+            except OSError as error:
+                on_error(error)
+    rmtree.avoids_symlink_attacks = False
+
     def owner(self, *, follow_symlinks=True):
         """
         Return the login name of the file owner.

@@ -1478,7 +1478,7 @@ class DummyPath(PathBase):
         if path in self._files:
             raise NotADirectoryError(errno.ENOTDIR, "Not a directory", path)
         elif path in self._directories:
-            return (self / name for name in self._directories[path])
+            return iter([self / name for name in self._directories[path]])
         else:
             raise FileNotFoundError(errno.ENOENT, "File not found", path)
 
@@ -1498,6 +1498,37 @@ class DummyPath(PathBase):
                 raise FileNotFoundError(errno.ENOENT, "File not found", str(self.parent)) from None
             self.parent.mkdir(parents=True, exist_ok=True)
             self.mkdir(mode, parents=False, exist_ok=exist_ok)
+
+    def unlink(self, missing_ok=False):
+        path_obj = self.parent.resolve(strict=True) / self.name
+        path = str(path_obj)
+        name = path_obj.name
+        parent = str(path_obj.parent)
+        if path in self._directories:
+            raise IsADirectoryError(errno.EISDIR, "Is a directory", path)
+        elif path in self._files:
+            self._directories[parent].remove(name)
+            del self._files[path]
+        elif path in self._symlinks:
+            self._directories[parent].remove(name)
+            del self._symlinks[path]
+        elif not missing_ok:
+            raise FileNotFoundError(errno.ENOENT, "File not found", path)
+
+    def rmdir(self):
+        path_obj = self.parent.resolve(strict=True) / self.name
+        path = str(path_obj)
+        if path in self._files or path in self._symlinks:
+            raise NotADirectoryError(errno.ENOTDIR, "Not a directory", path)
+        elif path not in self._directories:
+            raise FileNotFoundError(errno.ENOENT, "File not found", path)
+        elif self._directories[path]:
+            raise OSError(errno.ENOTEMPTY, "Directory not empty", path)
+        else:
+            name = path_obj.name
+            parent = str(path_obj.parent)
+            self._directories[parent].remove(name)
+            del self._directories[path]
 
 
 class DummyPathTest(DummyPurePathTest):
@@ -2464,6 +2495,89 @@ class DummyPathTest(DummyPurePathTest):
                 break
         else:
             self.fail("symlink not found")
+
+    def test_unlink(self):
+        p = self.cls(self.base) / 'fileA'
+        p.unlink()
+        self.assertFileNotFound(p.stat)
+        self.assertFileNotFound(p.unlink)
+
+    def test_unlink_missing_ok(self):
+        p = self.cls(self.base) / 'fileAAA'
+        self.assertFileNotFound(p.unlink)
+        p.unlink(missing_ok=True)
+
+    def test_rmdir(self):
+        p = self.cls(self.base) / 'dirA'
+        for q in p.iterdir():
+            q.unlink()
+        p.rmdir()
+        self.assertFileNotFound(p.stat)
+        self.assertFileNotFound(p.unlink)
+
+    def test_rmtree(self):
+        base = self.cls(self.base)
+        base.joinpath('dirA').rmtree()
+        self.assertRaises(FileNotFoundError, base.joinpath('dirA').stat)
+        self.assertRaises(FileNotFoundError, base.joinpath('dirA', 'linkC').lstat)
+        base.joinpath('dirB').rmtree()
+        self.assertRaises(FileNotFoundError, base.joinpath('dirB').stat)
+        self.assertRaises(FileNotFoundError, base.joinpath('dirB', 'fileB').stat)
+        self.assertRaises(FileNotFoundError, base.joinpath('dirB', 'linkD').lstat)
+        base.joinpath('dirC').rmtree()
+        self.assertRaises(FileNotFoundError, base.joinpath('dirC').stat)
+        self.assertRaises(FileNotFoundError, base.joinpath('dirC', 'dirD').stat)
+        self.assertRaises(FileNotFoundError, base.joinpath('dirC', 'dirD', 'fileD').stat)
+        self.assertRaises(FileNotFoundError, base.joinpath('dirC', 'fileC').stat)
+        self.assertRaises(FileNotFoundError, base.joinpath('dirC', 'novel.txt').stat)
+
+    def test_rmtree_errors(self):
+        base = self.cls(self.base)
+
+        # missing file
+        p = base / 'nonexist'
+        self.assertRaises(FileNotFoundError, p.rmtree)
+        p.rmtree(ignore_errors=True)
+
+        # existing file
+        p = base / 'fileA'
+        self.assertRaises(NotADirectoryError, p.rmtree)
+        self.assertTrue(p.exists())
+        p.rmtree(ignore_errors=True)
+        self.assertTrue(p.exists())
+
+    def test_rmtree_on_error(self):
+        errors = []
+        base = self.cls(self.base)
+        p = base / 'fileA'
+        p.rmtree(on_error=errors.append)
+        self.assertIsInstance(errors[0], NotADirectoryError)
+        self.assertEqual(errors[0].filename, str(p))
+
+    @needs_symlinks
+    def test_rmtree_symlink(self):
+        base = self.cls(self.base)
+        link = base / 'linkB'
+        target = link.resolve()
+        self.assertRaises(OSError, link.rmtree)
+        self.assertTrue(link.exists(follow_symlinks=False))
+        self.assertTrue(target.exists())
+        errors = []
+        link.rmtree(on_error=errors.append)
+        self.assertEqual(len(errors), 1)
+        self.assertIsInstance(errors[0], OSError)
+
+    @needs_symlinks
+    def test_rmtree_inner_symlink(self):
+        base = self.cls(self.base)
+        folder = base / 'dirA'
+        link = folder / 'linkC'
+        target = link.resolve()
+
+        folder.rmtree()
+        self.assertRaises(FileNotFoundError, folder.stat)
+        self.assertRaises(FileNotFoundError, link.lstat)
+        target.stat()
 
 
 class DummyPathWithSymlinks(DummyPath):

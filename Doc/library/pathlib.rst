@@ -1486,6 +1486,45 @@ call fails (for example because the path doesn't exist).
    Remove this directory.  The directory must be empty.
 
 
+.. method:: Path.rmtree(ignore_errors=False, on_error=None)
+
+   Delete this entire directory tree. The path must not refer to a symlink.
+
+   If *ignore_errors* is true, errors resulting from failed removals will be
+   ignored. If *ignore_errors* is false or omitted, and a function is given to
+   *on_error*, it will be called each time an exception is raised. If neither
+   *ignore_errors* nor *on_error* are supplied, exceptions are propagated to
+   the caller.
+
+   .. note::
+
+      On platforms that support the necessary fd-based functions a symlink
+      attack resistant version of :meth:`~Path.rmtree` is used by default. On
+      other platforms, the :func:`~Path.rmtree` implementation is susceptible
+      to a symlink attack: given proper timing and circumstances, attackers
+      can manipulate symlinks on the filesystem to delete files they wouldn't
+      be able to access otherwise.  Applications can use the
+      :data:`Path.rmtree.avoids_symlink_attacks` function attribute to
+      determine which case applies.
+
+   If the optional argument *on_error* is specified, it should be a callable;
+   it will be called with one argument, an :exc:`OSError` instance. The
+   callable can handle the error to continue the deletion process or re-raise
+   it to stop. Note that the filename is available as the ``filename``
+   attribute of the exception object.
+
+   This method calls :func:`shutil.rmtree` internally.
+
+   .. attribute:: Path.rmtree.avoids_symlink_attacks
+
+      Indicates whether the current platform and implementation provides a
+      symlink attack resistant version of :meth:`~Path.rmtree`.  Currently
+      this is only true for platforms supporting fd-based directory access
+      functions.
+
+   .. versionadded:: 3.14
+
+
 .. method:: Path.samefile(other_path)
 
    Return whether this path points to the same file as *other_path*, which

@@ -774,6 +774,7 @@ def rmtree(path, ignore_errors=False, onerror=None, *, onexc=None, dir_fd=None):
                     exc_info = type(exc), exc, exc.__traceback__
                 return onerror(func, path, exc_info)
 
+    path = os.fspath(path)
     if _use_fd_functions:
         # While the unsafe rmtree works fine on bytes, the fd based does not.
         if isinstance(path, bytes):
