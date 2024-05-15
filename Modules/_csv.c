@@ -1655,7 +1655,7 @@ _csv_field_size_limit_impl(PyObject *module, PyObject *new_limit)
 /*[clinic end generated code: output=f2799ecd908e250b input=3e49d42e37a7d449]*/
 {
     _csvstate *module_state = get_csv_state(module);
-    int32_t old_limit = module_state->field_limit;
+    long old_limit = module_state->field_limit;
     if (new_limit != NULL) {
         if (!PyLong_CheckExact(new_limit)) {
             PyErr_Format(PyExc_TypeError,
