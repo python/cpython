@@ -89,6 +89,29 @@ class _GiveupOnFastCopy(Exception):
     file copy when fast-copy functions fail to do so.
     """
 
+def _fastcopy(fsrc, fdst, file_size=0):
+    # macOS
+    if _HAS_FCOPYFILE:
+        try:
+            _fastcopy_fcopyfile(fsrc, fdst, posix._COPYFILE_DATA)
+            return
+        except _GiveupOnFastCopy:
+            pass
+    # Linux
+    elif _USE_CP_SENDFILE:
+        try:
+            _fastcopy_sendfile(fsrc, fdst)
+            return
+        except _GiveupOnFastCopy:
+            pass
+    # Windows, see:
+    # https://github.com/python/cpython/pull/7160#discussion_r195405230
+    elif _WINDOWS and file_size > 0:
+        _copyfileobj_readinto(fsrc, fdst, min(file_size, COPY_BUFSIZE))
+        return
+
+    copyfileobj(fsrc, fdst)
+
 def _fastcopy_fcopyfile(fsrc, fdst, flags):
     """Copy a regular file content or metadata by using high-performance
     fcopyfile(3) syscall (macOS).
@@ -260,27 +283,7 @@ def copyfile(src, dst, *, follow_symlinks=True):
         with open(src, 'rb') as fsrc:
             try:
                 with open(dst, 'wb') as fdst:
-                    # macOS
-                    if _HAS_FCOPYFILE:
-                        try:
-                            _fastcopy_fcopyfile(fsrc, fdst, posix._COPYFILE_DATA)
-                            return dst
-                        except _GiveupOnFastCopy:
-                            pass
-                    # Linux
-                    elif _USE_CP_SENDFILE:
-                        try:
-                            _fastcopy_sendfile(fsrc, fdst)
-                            return dst
-                        except _GiveupOnFastCopy:
-                            pass
-                    # Windows, see:
-                    # https://github.com/python/cpython/pull/7160#discussion_r195405230
-                    elif _WINDOWS and file_size > 0:
-                        _copyfileobj_readinto(fsrc, fdst, min(file_size, COPY_BUFSIZE))
-                        return dst
-
-                    copyfileobj(fsrc, fdst)
+                    _fastcopy(fsrc, fdst, file_size)
 
             # Issue 43219, raise a less confusing exception
             except IsADirectoryError as e:

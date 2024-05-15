@@ -14,7 +14,7 @@ resemble pathlib's PurePath and Path respectively.
 import functools
 from glob import _Globber, _no_recurse_symlinks
 from errno import ENOTDIR, ELOOP
-from shutil import copyfileobj
+from shutil import _fastcopy
 from stat import S_ISDIR, S_ISLNK, S_ISREG, S_ISSOCK, S_ISBLK, S_ISCHR, S_ISFIFO
 
 
@@ -787,7 +787,7 @@ class PathBase(PurePathBase):
 
         with self.open('rb') as f_source:
             with target.open('wb') as f_target:
-                copyfileobj(f_source, f_target)
+                _fastcopy(f_source, f_target)
 
         # FIXME: how do we copy metadata between PathBase instances?
         return target
