@@ -271,8 +271,8 @@ def _dec_str_to_int_inner(s, *, GUARD=8):
             # lower bound on the correct quotient.
             assert lo >= 0
             # Adjust quotient up if needed. It usually isn't. In random
-            # testing on inputs through 2.5 billion digit strings, the
-            # test triggered about one in 100 thousand cases.
+            # testing on inputs through 5 billion digit strings, the
+            # test triggered once in about 200 thousand tries.
             count = 0
             if lo >= p256:
                 count = 1
@@ -337,6 +337,16 @@ def _dec_str_to_int_inner(s, *, GUARD=8):
             # as 5**i, generally over twice the number in 2**i,
             ctx.prec = v.adjusted() + GUARD + 4
             pow256[k] = v, rD256**k
+            # Note: it's faster to use compute_powers(rD256, ...) at the
+            # start to conpute exact reciprocals, chop them back in this
+            # loop, then throw them away. Despite that it creates over
+            # twice as many significant digits overall, the function is
+            # much smarter about _how_ to compute the collection of
+            # powers needed than repeated `**k` (the function uses `**`
+            # only for the smallest power needed). But the larger the
+            # input, the less this fine-tuning matters to overall time -
+            # our goal is better asymptotics, not peak speed in all
+            # cases.
         ctx.prec = decimal.MAX_PREC
         inner(D(s), w)
     return int.from_bytes(result)
@@ -652,3 +662,13 @@ def int_divmod(a, b):
 # Note: 4 is a rigorous upper bound on what's needed, but even more
 # tedious analysis may show that 3, or even 2, are enough. I never
 # saw a failure at 2, but did at 1.
+#
+# Note: this is the only part of the proof where the target base (256)
+# matters. It shows up because it directly determines how badly an
+# unbalanced split can hurt. The larger the target base, the higher "4"
+# may need to become. If we split on the ceiling of w/2 instead, odd `w`
+# would become the best cases, even `w` the worst, and the same kind of
+# proof would see the output base effectively "cancel out". "4" could be
+# replaced by "1" regardless of base. So it would be more elegant that
+# way. Alas, splitting on the ceiling could make other parts messier (in
+# particular, `compute_powers()` would have to change to do more work).
