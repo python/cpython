@@ -764,6 +764,8 @@ class Path(PathBase, PurePath):
         if not isinstance(target, PathBase):
             target = self.with_segments(target)
         if isinstance(target, Path):
+            # The source and target are *local* paths, so use shutil.copy2()
+            # to efficiently copy data and metadata using available OS APIs.
             target = shutil.copy2(self, target, follow_symlinks=follow_symlinks)
             return self.with_segments(target)
         return PathBase.copy(self, target, follow_symlinks=follow_symlinks)
