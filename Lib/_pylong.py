@@ -662,7 +662,7 @@ def int_divmod(a, b):
 # is at most p256.a + p256.a + 1.
 #
 # So the most n.a - 2 * p256.a can be is
-# p256.a + p256.a + 1 - 2 * p256.a = 1. QES
+# p256.a + p256.a + 1 - 2 * p256.a = 1. QED
 #
 # Note: an earlier version of the code split on floor(e/2) instead of on
 # the ceiiing. Thw worst case then is odd `w`, and a more involved proof
