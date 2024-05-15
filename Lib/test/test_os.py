@@ -5966,6 +5966,95 @@ class TestCopyFile(_CopyTest, unittest.TestCase):
         self.assertTrue(srcfile._raised)
 
 
+class TestCopy(_CopyTest, unittest.TestCase):
+    @unittest.skipUnless(hasattr(os, 'utime'), 'requires os.utime')
+    def test_copy(self):
+        # Ensure that the copied file exists and has the same mode and
+        # modification time bits.
+        fname = 'test.txt'
+        tmpdir = self.mkdtemp()
+        write_file((tmpdir, fname), 'xxx')
+        file1 = os.path.join(tmpdir, fname)
+        tmpdir2 = self.mkdtemp()
+        file2 = os.path.join(tmpdir2, fname)
+        os.copy(file1, file2)
+        self.assertTrue(os.path.exists(file2))
+        file1_stat = os.stat(file1)
+        file2_stat = os.stat(file2)
+        self.assertEqual(file1_stat.st_mode, file2_stat.st_mode)
+        for attr in 'st_atime', 'st_mtime':
+            # The modification times may be truncated in the new file.
+            self.assertLessEqual(getattr(file1_stat, attr),
+                                 getattr(file2_stat, attr) + 1)
+        if hasattr(os, 'chflags') and hasattr(file1_stat, 'st_flags'):
+            self.assertEqual(getattr(file1_stat, 'st_flags'),
+                             getattr(file2_stat, 'st_flags'))
+
+    @os_helper.skip_unless_symlink
+    def test_copy_symlinks(self):
+        tmp_dir = self.mkdtemp()
+        src = os.path.join(tmp_dir, 'foo')
+        dst = os.path.join(tmp_dir, 'bar')
+        src_link = os.path.join(tmp_dir, 'baz')
+        write_file(src, 'foo')
+        os.symlink(src, src_link)
+        if hasattr(os, 'lchmod'):
+            os.lchmod(src_link, stat.S_IRWXU | stat.S_IRWXO)
+        if hasattr(os, 'lchflags') and hasattr(stat, 'UF_NODUMP'):
+            os.lchflags(src_link, stat.UF_NODUMP)
+        src_stat = os.stat(src)
+        src_link_stat = os.lstat(src_link)
+        # follow
+        os.copy(src_link, dst, follow_symlinks=True)
+        self.assertFalse(os.path.islink(dst))
+        self.assertEqual(read_file(src), read_file(dst))
+        os.remove(dst)
+        # don't follow
+        os.copy(src_link, dst, follow_symlinks=False)
+        self.assertTrue(os.path.islink(dst))
+        self.assertEqual(os.readlink(dst), os.readlink(src_link))
+        dst_stat = os.lstat(dst)
+        if os.utime in os.supports_follow_symlinks:
+            for attr in 'st_atime', 'st_mtime':
+                # The modification times may be truncated in the new file.
+                self.assertLessEqual(getattr(src_link_stat, attr),
+                                     getattr(dst_stat, attr) + 1)
+        if hasattr(os, 'lchmod'):
+            self.assertEqual(src_link_stat.st_mode, dst_stat.st_mode)
+            self.assertNotEqual(src_stat.st_mode, dst_stat.st_mode)
+        if hasattr(os, 'lchflags') and hasattr(src_link_stat, 'st_flags'):
+            self.assertEqual(src_link_stat.st_flags, dst_stat.st_flags)
+
+    @os_helper.skip_unless_xattr
+    def test_copy_xattr(self):
+        tmp_dir = self.mkdtemp()
+        src = os.path.join(tmp_dir, 'foo')
+        dst = os.path.join(tmp_dir, 'bar')
+        write_file(src, 'foo')
+        os.setxattr(src, 'user.foo', b'42')
+        os.copy(src, dst)
+        self.assertEqual(
+                os.getxattr(src, 'user.foo'),
+                os.getxattr(dst, 'user.foo'))
+        os.remove(dst)
+
+    def test_copy_dir(self):
+        src_dir = self.mkdtemp()
+        src_file = os.path.join(src_dir, 'foo')
+        dir2 = self.mkdtemp()
+        dst = os.path.join(src_dir, 'does_not_exist/')
+        write_file(src_file, 'foo')
+        if sys.platform == "win32":
+            err = PermissionError
+        else:
+            err = IsADirectoryError
+        self.assertRaises(err, os.copy, dir2, src_dir)
+
+        # raise *err* because of src rather than FileNotFoundError because of dst
+        self.assertRaises(err, os.copy, dir2, dst)
+        os.copy(src_file, os.path.join(dir2, 'bar'))     # should not raise exceptions
+
+
 class TestCopyFileObj(unittest.TestCase):
     FILESIZE = 2 * 1024 * 1024
 

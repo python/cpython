@@ -66,6 +66,7 @@ if 'posix' in _names:
     except ImportError:
         pass
 
+    _winapi = None
     import posix
     __all__.extend(_get_exports_list(posix))
     del posix
@@ -81,6 +82,7 @@ elif 'nt' in _names:
         pass
     import ntpath as path
 
+    import _winapi
     import nt
     __all__.extend(_get_exports_list(nt))
     del nt
@@ -1498,4 +1500,38 @@ def copystat(src, dst, *, follow_symlinks=True):
             else:
                 raise
 
-__all__.extend(["copyfileobj", "copyfile", "copymode", "copystat"])
+def copy(src, dst, *, follow_symlinks=True):
+    """Copy data and metadata.
+
+    Metadata is copied with copystat(). Please see the copystat function
+    for more information.
+
+    If follow_symlinks is false, symlinks won't be followed. This
+    resembles GNU's "cp -P src dst".
+    """
+    if hasattr(_winapi, "CopyFile2"):
+        src_ = fsdecode(src)
+        dst_ = fsdecode(dst)
+        flags = _winapi.COPY_FILE_ALLOW_DECRYPTED_DESTINATION # for compat
+        if not follow_symlinks:
+            flags |= _winapi.COPY_FILE_COPY_SYMLINK
+        try:
+            _winapi.CopyFile2(src_, dst_, flags)
+            return
+        except OSError as exc:
+            if (exc.winerror == _winapi.ERROR_PRIVILEGE_NOT_HELD
+                and not follow_symlinks):
+                # Likely encountered a symlink we aren't allowed to create.
+                # Fall back on the old code
+                pass
+            elif exc.winerror == _winapi.ERROR_ACCESS_DENIED:
+                # Possibly encountered a hidden or readonly file we can't
+                # overwrite. Fall back on old code
+                pass
+            else:
+                raise
+
+    copyfile(src, dst, follow_symlinks=follow_symlinks)
+    copystat(src, dst, follow_symlinks=follow_symlinks)
+
+__all__.extend(["copyfileobj", "copyfile", "copymode", "copystat", "copy"])

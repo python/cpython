@@ -57,8 +57,7 @@ Directory and files operations
 
    .. versionchanged:: 3.8
       Platform-specific fast-copy syscalls may be used internally in order to
-      copy the file more efficiently. See
-      :ref:`shutil-platform-dependent-efficient-copy-operations` section.
+      copy the file more efficiently. See :ref:`os-copying-files`.
 
 .. exception:: SameFileError
 
@@ -110,13 +109,13 @@ Directory and files operations
 
    .. versionchanged:: 3.8
       Platform-specific fast-copy syscalls may be used internally in order to
-      copy the file more efficiently. See
-      :ref:`shutil-platform-dependent-efficient-copy-operations` section.
+      copy the file more efficiently. See :ref:`os-copying-files`.
 
 .. function:: copy2(src, dst, *, follow_symlinks=True)
 
    Identical to :func:`~shutil.copy` except that :func:`copy2`
-   also attempts to preserve file metadata.
+   also attempts to preserve file metadata. Identical to
+   :func:`os.copy` except that *dst* may be a directory.
 
    When *follow_symlinks* is false, and *src* is a symbolic
    link, :func:`copy2` attempts to copy all metadata from the
@@ -142,8 +141,7 @@ Directory and files operations
 
    .. versionchanged:: 3.8
       Platform-specific fast-copy syscalls may be used internally in order to
-      copy the file more efficiently. See
-      :ref:`shutil-platform-dependent-efficient-copy-operations` section.
+      copy the file more efficiently. See :ref:`os-copying-files`.
 
 .. function:: ignore_patterns(*patterns)
 
@@ -212,8 +210,7 @@ Directory and files operations
 
    .. versionchanged:: 3.8
       Platform-specific fast-copy syscalls may be used internally in order to
-      copy the file more efficiently. See
-      :ref:`shutil-platform-dependent-efficient-copy-operations` section.
+      copy the file more efficiently. See :ref:`os-copying-files`.
 
    .. versionchanged:: 3.8
       Added the *dirs_exist_ok* parameter.
@@ -321,8 +318,7 @@ Directory and files operations
 
    .. versionchanged:: 3.8
       Platform-specific fast-copy syscalls may be used internally in order to
-      copy the file more efficiently. See
-      :ref:`shutil-platform-dependent-efficient-copy-operations` section.
+      copy the file more efficiently. See :ref:`os-copying-files`.
 
    .. versionchanged:: 3.9
       Accepts a :term:`path-like object` for both *src* and *dst*.
@@ -428,32 +424,6 @@ Directory and files operations
    operation. For :func:`copytree`, the exception argument is a list of 3-tuples
    (*srcname*, *dstname*, *exception*).
 
-.. _shutil-platform-dependent-efficient-copy-operations:
-
-Platform-dependent efficient copy operations
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Starting from Python 3.8, all functions involving a file copy
-(:func:`copyfile`, :func:`~shutil.copy`, :func:`copy2`,
-:func:`copytree`, and :func:`move`) may use
-platform-specific "fast-copy" syscalls in order to copy the file more
-efficiently (see :issue:`33671`).
-"fast-copy" means that the copying operation occurs within the kernel, avoiding
-the use of userspace buffers in Python as in "``outfd.write(infd.read())``".
-
-On macOS `fcopyfile`_ is used to copy the file content (not metadata).
-
-On Linux :func:`os.sendfile` is used.
-
-On Windows :func:`shutil.copyfile` uses a bigger default buffer size (1 MiB
-instead of 64 KiB) and a :func:`memoryview`-based variant of
-:func:`shutil.copyfileobj` is used.
-
-If the fast-copy operation fails and no data was written in the destination
-file then shutil will silently fallback on using less efficient
-:func:`copyfileobj` function internally.
-
-.. versionchanged:: 3.8
 
 .. _shutil-copytree-example:
 

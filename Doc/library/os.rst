@@ -2192,104 +2192,6 @@ features:
       Accepts a :term:`path-like object`.
 
 
-.. function:: copyfileobj(fsrc, fdst[, length])
-
-   Copy the contents of the :term:`file-like object <file object>` *fsrc* to
-   the file-like object *fdst*. The integer *length*, if given, is the buffer
-   size. In particular, a negative *length* value means to copy the data
-   without looping over the source data in chunks; by default the data is read
-   in chunks to avoid uncontrolled memory consumption. Note that if the
-   current file position of the *fsrc* object is not 0, only the contents from
-   the current file position to the end of the file will be copied.
-
-   .. versionadded:: 3.14
-
-
-.. function:: copyfile(src, dst, *, follow_symlinks=True)
-
-   Copy the contents (no metadata) of the file named *src* to a file named
-   *dst* and return *dst* in the most efficient way possible.
-   *src* and *dst* are :term:`path-like objects <path-like object>` or path
-   names given as strings.
-
-   *dst* must be the complete target file name; look at :func:`shutil.copy`
-   for a copy that accepts a target directory path.  If *src* and *dst*
-   specify the same file, :exc:`SameFileError` is raised.
-
-   The destination location must be writable; otherwise, an :exc:`OSError`
-   exception will be raised. If *dst* already exists, it will be replaced.
-   Special files such as character or block devices and pipes cannot be
-   copied with this function.
-
-   If *follow_symlinks* is false and *src* is a symbolic link,
-   a new symbolic link will be created instead of copying the
-   file *src* points to.
-
-   .. audit-event:: os.copyfile src,dst os.copyfile
-
-   .. versionadded:: 3.14
-
-
-.. function:: copymode(src, dst, *, follow_symlinks=True)
-
-   Copy the permission bits from *src* to *dst*. The file contents, owner, and
-   group are unaffected. *src* and *dst* are
-   :term:`path-like objects <path-like object>` or path names given as
-   strings. If *follow_symlinks* is false, and both *src* and *dst* are
-   symbolic links, :func:`copymode` will attempt to modify the mode of *dst*
-   itself (rather than the file it points to).  This functionality is not
-   available on every platform; please see :func:`copystat` for more
-   information.  If :func:`copymode` cannot modify symbolic links on the local
-   platform, and it is asked to do so, it will do nothing and return.
-
-   .. audit-event:: os.copymode src,dst os.copymode
-
-   .. versionadded:: 3.14
-
-
-.. function:: copystat(src, dst, *, follow_symlinks=True)
-
-   Copy the permission bits, last access time, last modification time, and
-   flags from *src* to *dst*. On Linux, :func:`copystat` also copies the
-   "extended attributes" where possible. The file contents, owner, and group
-   are unaffected. *src* and *dst* are
-   :term:`path-like objects <path-like object>` or path names given as
-   strings.
-
-   If *follow_symlinks* is false, and *src* and *dst* both refer to symbolic
-   links, :func:`copystat` will operate on the symbolic links themselves
-   rather than the files the symbolic links refer to—reading the information
-   from the *src* symbolic link, and writing the information to the *dst*
-   symbolic link.
-
-   .. note::
-
-      Not all platforms provide the ability to examine and modify symbolic
-      links. Python itself can tell you what functionality is locally
-      available.
-
-      * If ``os.chmod in os.supports_follow_symlinks`` is ``True``,
-        :func:`copystat` can modify the permission bits of a symbolic link.
-
-      * If ``os.utime in os.supports_follow_symlinks`` is ``True``,
-        :func:`copystat` can modify the last access and modification times of
-        a symbolic link.
-
-      * If ``os.chflags in os.supports_follow_symlinks`` is ``True``,
-        :func:`copystat` can modify the flags of a symbolic link.
-        (``os.chflags`` is not available on all platforms.)
-
-      On platforms where some or all of this functionality is unavailable,
-      when asked to modify a symbolic link, :func:`copystat` will copy
-      everything it can. :func:`copystat` never returns failure.
-
-      Please see :data:`supports_follow_symlinks` for more information.
-
-   .. audit-event:: os.copystat src,dst os.copystat
-
-   .. versionadded:: 3.14
-
-
 .. function:: fchdir(fd)
 
    Change the current working directory to the directory represented by the file
@@ -3966,6 +3868,150 @@ features:
    .. availability:: Linux >= 2.6.30
 
    .. versionadded:: 3.10
+
+
+.. _os-copying-files:
+
+Copying Files
+~~~~~~~~~~~~~
+
+Functions involving a file copy (:func:`copyfile` and :func:`copy`) may use
+platform-specific "fast-copy" syscalls in order to copy the file more
+efficiently (see :issue:`33671`).
+"fast-copy" means that the copying operation occurs within the kernel, avoiding
+the use of userspace buffers in Python as in "``outfd.write(infd.read())``".
+
+On macOS `fcopyfile <http://www.manpagez.com/man/3/copyfile/>`_ is used to
+copy the file content (not metadata).
+
+On Linux :func:`os.sendfile` is used.
+
+On Windows :func:`copyfile` uses a bigger default buffer size (1 MiB
+instead of 64 KiB) and a :func:`memoryview`-based variant of
+:func:`copyfileobj` is used.
+
+If the fast-copy operation fails and no data was written in the destination
+file then shutil will silently fallback on using less efficient
+:func:`copyfileobj` function internally.
+
+
+.. function:: copyfileobj(fsrc, fdst[, length])
+
+   Copy the contents of the :term:`file-like object <file object>` *fsrc* to
+   the file-like object *fdst*. The integer *length*, if given, is the buffer
+   size. In particular, a negative *length* value means to copy the data
+   without looping over the source data in chunks; by default the data is read
+   in chunks to avoid uncontrolled memory consumption. Note that if the
+   current file position of the *fsrc* object is not 0, only the contents from
+   the current file position to the end of the file will be copied.
+
+   .. versionadded:: 3.14
+
+
+.. function:: copyfile(src, dst, *, follow_symlinks=True)
+
+   Copy the contents (no metadata) of the file named *src* to a file named
+   *dst* and return *dst* in the most efficient way possible.
+   *src* and *dst* are :term:`path-like objects <path-like object>` or path
+   names given as strings.
+
+   *dst* must be the complete target file name; look at :func:`shutil.copy`
+   for a copy that accepts a target directory path.  If *src* and *dst*
+   specify the same file, :exc:`SameFileError` is raised.
+
+   The destination location must be writable; otherwise, an :exc:`OSError`
+   exception will be raised. If *dst* already exists, it will be replaced.
+   Special files such as character or block devices and pipes cannot be
+   copied with this function.
+
+   If *follow_symlinks* is false and *src* is a symbolic link,
+   a new symbolic link will be created instead of copying the
+   file *src* points to.
+
+   .. audit-event:: os.copyfile src,dst os.copyfile
+
+   .. versionadded:: 3.14
+
+
+.. function:: copymode(src, dst, *, follow_symlinks=True)
+
+   Copy the permission bits from *src* to *dst*. The file contents, owner, and
+   group are unaffected. *src* and *dst* are
+   :term:`path-like objects <path-like object>` or path names given as
+   strings. If *follow_symlinks* is false, and both *src* and *dst* are
+   symbolic links, :func:`copymode` will attempt to modify the mode of *dst*
+   itself (rather than the file it points to).  This functionality is not
+   available on every platform; please see :func:`copystat` for more
+   information.  If :func:`copymode` cannot modify symbolic links on the local
+   platform, and it is asked to do so, it will do nothing and return.
+
+   .. audit-event:: os.copymode src,dst os.copymode
+
+   .. versionadded:: 3.14
+
+
+.. function:: copystat(src, dst, *, follow_symlinks=True)
+
+   Copy the permission bits, last access time, last modification time, and
+   flags from *src* to *dst*. On Linux, :func:`copystat` also copies the
+   "extended attributes" where possible. The file contents, owner, and group
+   are unaffected. *src* and *dst* are
+   :term:`path-like objects <path-like object>` or path names given as
+   strings.
+
+   If *follow_symlinks* is false, and *src* and *dst* both refer to symbolic
+   links, :func:`copystat` will operate on the symbolic links themselves
+   rather than the files the symbolic links refer to—reading the information
+   from the *src* symbolic link, and writing the information to the *dst*
+   symbolic link.
+
+   .. note::
+
+      Not all platforms provide the ability to examine and modify symbolic
+      links. Python itself can tell you what functionality is locally
+      available.
+
+      * If ``os.chmod in os.supports_follow_symlinks`` is ``True``,
+        :func:`copystat` can modify the permission bits of a symbolic link.
+
+      * If ``os.utime in os.supports_follow_symlinks`` is ``True``,
+        :func:`copystat` can modify the last access and modification times of
+        a symbolic link.
+
+      * If ``os.chflags in os.supports_follow_symlinks`` is ``True``,
+        :func:`copystat` can modify the flags of a symbolic link.
+        (``os.chflags`` is not available on all platforms.)
+
+      On platforms where some or all of this functionality is unavailable,
+      when asked to modify a symbolic link, :func:`copystat` will copy
+      everything it can. :func:`copystat` never returns failure.
+
+      Please see :data:`supports_follow_symlinks` for more information.
+
+   .. audit-event:: os.copystat src,dst os.copystat
+
+   .. versionadded:: 3.14
+
+
+.. function:: copy(src, dst, *, follow_symlinks=True)
+
+   Copies the file *src* to the file *dst*. *src* and *dst* should be
+   :term:`path-like objects <path-like object>` or strings. If *dst* specifies
+   a file that already exists, it will be replaced.
+
+   When *follow_symlinks* is false, and *src* is a symbolic link, :func:`copy`
+   attempts to copy all metadata from the *src* symbolic link to the newly
+   created *dst* symbolic link. However, this functionality is not available
+   on all platforms. On platforms where some or all of this functionality is
+   unavailable, :func:`copy` will preserve all the metadata it can;
+   :func:`copy` never raises an exception because it cannot preserve file
+   metadata.
+
+   :func:`copy` uses :func:`copystat` to copy the file metadata. Please see
+   :func:`copystat` for more information about platform support for modifying
+   symbolic link metadata.
+
+   .. versionadded:: 3.14
 
 
 Timer File Descriptors
