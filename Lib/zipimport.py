@@ -1,11 +1,9 @@
 """zipimport provides support for importing Python modules from Zip archives.
 
-This module exports three objects:
+This module exports two objects:
 - zipimporter: a class; its constructor takes a path to a Zip archive.
 - ZipImportError: exception raised by zipimporter objects. It's a
   subclass of ImportError, so it can be caught as ImportError, too.
-- _zip_directory_cache: a dict, mapping archive paths to zip directory
-  info dicts, as used in zipimporter._files.
 
 It is usually not needed to use the zipimport module explicitly; it is
 used by the builtin import mechanism for sys.path items that are paths
