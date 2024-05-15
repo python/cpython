@@ -551,7 +551,7 @@ def int_divmod(a, b):
 # [1, 10). Then x*y = f*g * 10**(x.a + y.a), where 1 <= f*g < 100. If
 # f*g < 10, (x*y).a is x.a+y.a. Else divide f*g by 10 to bring it back
 # into [1, 10], and add 1 to the exponent to compensate. Then (x*y).a is
-# x.a+y.a-1.
+# x.a+y.a+1.
 #
 # Lemma 2: ceiling(log10(x/y)) <= x.a - y.a + 1
 #
