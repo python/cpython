@@ -482,6 +482,11 @@ class ParseArgsTestCase(unittest.TestCase):
         self.assertEqual(regrtest.hunt_refleak.runs, 12)
         self.assertIsNone(regrtest.junit_filename)
 
+    def test_duration(self):
+        args = ['--duration', 'output']
+        regrtest = self.create_regrtest(args)
+        self.assertIsNotNone(regrtest.duration_filename)
+
 
 @dataclasses.dataclass(slots=True)
 class Rerun:
