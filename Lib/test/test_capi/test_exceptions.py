@@ -106,7 +106,9 @@ class Test_Exceptions(unittest.TestCase):
         warnings = proc.err.splitlines()
         # Due to the finalization of the interpreter, the source will be ommited
         # because the ``warnings`` module cannot be imported at this time
-        self.assertEqual(warnings, [b'<string>:7: RuntimeWarning: Testing PyErr_WarnEx'])
+        self.assertEqual(warnings, [
+            b'<string>:7: RuntimeWarning: Testing PyErr_WarnEx',
+        ])
 
 
 class Test_FatalError(unittest.TestCase):
