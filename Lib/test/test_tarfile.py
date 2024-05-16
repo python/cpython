@@ -568,21 +568,6 @@ class MiscReadTestBase(CommonReadTest):
             with tarfile.open(fileobj=fobj, mode=self.mode) as tar:
                 self.assertIsNone(tar.name)
 
-    def _test_name(self, tarname):
-        if tarname is None:
-            tarname = self.tarname
-        expected = os.path.abspath(tarname)
-        tarname = os_helper.FakePath(tarname)
-        with tarfile.open(tarname, mode=self.mode) as tar:
-            self.assertEqual(tar.name, expected)
-        with self.taropen(tarname) as tar:
-            self.assertEqual(tar.name, expected)
-        with tarfile.TarFile.open(tarname, mode=self.mode) as tar:
-            self.assertEqual(tar.name, expected)
-        if self.suffix == '':
-            with tarfile.TarFile(tarname, mode='r') as tar:
-                self.assertEqual(tar.name, expected)
-
     def test_bytes_name_attribute(self):
         tarname = os.fsencode(self.tarname)
         with open(tarname, 'rb') as fobj:
