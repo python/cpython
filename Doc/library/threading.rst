@@ -1,5 +1,5 @@
-:mod:`threading` --- Thread-based parallelism
-=============================================
+:mod:`!threading` --- Thread-based parallelism
+==============================================
 
 .. module:: threading
    :synopsis: Thread-based parallelism.
