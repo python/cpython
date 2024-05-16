@@ -662,7 +662,7 @@ def int_divmod(a, b):
 # (1/256)**i directly to the desired precision - no material division
 # there, but `compute_powers()` is much smarter about _how_ to compute
 # all the powers needed than repeated applications of `**` - that
-# function invokes `**` for only the smallest power needed.]
+# function invokes `**` for at most the few smallest powers needed.]
 #
 # The hard part is that chopping back to a shorter width occurs
 # _outside_ of `inner`. We can't know then what `prec` `inner()` will
