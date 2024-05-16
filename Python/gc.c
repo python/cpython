@@ -1513,7 +1513,6 @@ gc_collect_region(PyThreadState *tstate,
     if (untrack & UNTRACK_DICTS) {
         untrack_dicts(from);
     }
-    
     /* Move reachable objects to next generation. */
     validate_consistent_old_space(to);
     if (from != to) {
