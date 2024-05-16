@@ -971,5 +971,32 @@ class PyLongModuleTests(unittest.TestCase):
             _pylong._dec_str_to_int_inner,
             liar)
 
+    @unittest.skipUnless(_pylong, "_pylong module required")
+    def test_pylong_compute_powers(self):
+        # Basic sanity tests. See end of _pylong.py for manual heavy tests.
+        def consumer(w, base, limir, need_hi):
+            seen = set()
+            need = set()
+            def inner(w):
+                if w <= limit or w in seen:
+                    return
+                seen.add(w)
+                lo = w >> 1
+                hi = w - lo
+                need.add(hi if need_hi else lo)
+                inner(lo)
+                inner(hi)
+            inner(w)
+            d = _pylong.compute_powers(w, base, limir, need_hi=need_hi)
+            self.assertEqual(d.keys(), need)
+            for k, v in d.items():
+                self.assertEqual(v, base ** k)
+
+        for base in 2, 5:
+            for need_hi in False, True:
+                for limit in 1, 11:
+                    for w in range(250, 550):
+                        consumer(w, base, limit, need_hi)
+
 if __name__ == "__main__":
     unittest.main()
