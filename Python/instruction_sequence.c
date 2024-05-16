@@ -20,6 +20,8 @@ typedef _Py_SourceLocation location;
 #define INITIAL_INSTR_SEQUENCE_SIZE 100
 #define INITIAL_INSTR_SEQUENCE_LABELS_MAP_SIZE 10
 
+#include "clinic/instruction_sequence.c.h"
+
 #undef SUCCESS
 #undef ERROR
 #define SUCCESS 0
@@ -171,8 +173,6 @@ PyInstructionSequence_Fini(instr_sequence *seq) {
 class InstructionSequenceType "_PyInstructionSequence *" "&_PyInstructionSequence_Type"
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=589963e07480390f]*/
-
-#include "clinic/instruction_sequence.c.h"
 
 static _PyInstructionSequence*
 inst_seq_create(void)

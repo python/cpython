@@ -622,6 +622,7 @@ extern "C" {
     INIT_ID(__eq__), \
     INIT_ID(__exit__), \
     INIT_ID(__file__), \
+    INIT_ID(__firstlineno__), \
     INIT_ID(__float__), \
     INIT_ID(__floordiv__), \
     INIT_ID(__format__), \
@@ -979,6 +980,7 @@ extern "C" {
     INIT_ID(h), \
     INIT_ID(handle), \
     INIT_ID(handle_seq), \
+    INIT_ID(has_location), \
     INIT_ID(hash_name), \
     INIT_ID(header), \
     INIT_ID(headers), \

@@ -26,7 +26,7 @@ __all__ = [
     "Error", "TestFailed", "TestDidNotRun", "ResourceDenied",
     # io
     "record_original_stdout", "get_original_stdout", "captured_stdout",
-    "captured_stdin", "captured_stderr",
+    "captured_stdin", "captured_stderr", "captured_output",
     # unittest
     "is_resource_enabled", "requires", "requires_freebsd_version",
     "requires_gil_enabled", "requires_linux_version", "requires_mac_ver",
@@ -59,6 +59,7 @@ __all__ = [
     "Py_DEBUG", "exceeds_recursion_limit", "get_c_recursion_limit",
     "skip_on_s390x",
     "without_optimizer",
+    "force_not_colorized"
     ]
 
 
@@ -514,6 +515,34 @@ def has_no_debug_ranges():
 
 def requires_debug_ranges(reason='requires co_positions / debug_ranges'):
     return unittest.skipIf(has_no_debug_ranges(), reason)
+
+@contextlib.contextmanager
+def suppress_immortalization(suppress=True):
+    """Suppress immortalization of deferred objects."""
+    try:
+        import _testinternalcapi
+    except ImportError:
+        yield
+        return
+
+    if not suppress:
+        yield
+        return
+
+    old_values = _testinternalcapi.set_immortalize_deferred(False)
+    try:
+        yield
+    finally:
+        _testinternalcapi.set_immortalize_deferred(*old_values)
+
+def skip_if_suppress_immortalization():
+    try:
+        import _testinternalcapi
+    except ImportError:
+        return
+    return unittest.skipUnless(_testinternalcapi.get_immortalize_deferred(),
+                                "requires immortalization of deferred objects")
+
 
 MS_WINDOWS = (sys.platform == 'win32')
 
@@ -1180,8 +1209,9 @@ def requires_limited_api(test):
     return test
 
 
-TEST_MODULES_ENABLED = sysconfig.get_config_var('TEST_MODULES') == 'yes'
-
+# Windows build doesn't support --disable-test-modules feature, so there's no
+# 'TEST_MODULES' var in config
+TEST_MODULES_ENABLED = (sysconfig.get_config_var('TEST_MODULES') or 'yes') == 'yes'
 
 def requires_specialization(test):
     return unittest.skipUnless(
@@ -2518,17 +2548,17 @@ Py_TRACE_REFS = hasattr(sys, 'getobjects')
 # Decorator to disable optimizer while a function run
 def without_optimizer(func):
     try:
-        import _testinternalcapi
+        from _testinternalcapi import get_optimizer, set_optimizer
     except ImportError:
         return func
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
-        save_opt = _testinternalcapi.get_optimizer()
+        save_opt = get_optimizer()
         try:
-            _testinternalcapi.set_optimizer(None)
+            set_optimizer(None)
             return func(*args, **kwargs)
         finally:
-            _testinternalcapi.set_optimizer(save_opt)
+            set_optimizer(save_opt)
     return wrapper
 
 
@@ -2557,3 +2587,23 @@ def copy_python_src_ignore(path, names):
             'build',
         }
     return ignored
+
+
+def force_not_colorized(func):
+    """Force the terminal not to be colorized."""
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        import _colorize
+        original_fn = _colorize.can_colorize
+        variables = {"PYTHON_COLORS": None, "FORCE_COLOR": None}
+        try:
+            for key in variables:
+                variables[key] = os.environ.pop(key, None)
+            _colorize.can_colorize = lambda: False
+            return func(*args, **kwargs)
+        finally:
+            _colorize.can_colorize = original_fn
+            for key, value in variables.items():
+                if value is not None:
+                    os.environ[key] = value
+    return wrapper

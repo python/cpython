@@ -22,6 +22,7 @@ jobs:
       HOMEBREW_NO_INSTALL_CLEANUP: 1
       HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK: 1
       PYTHONSTRICTEXTENSIONBUILD: 1
+      TERM: linux
     strategy:
       fail-fast: false
       matrix:
@@ -49,7 +50,7 @@ jobs:
           --prefix=/opt/python-dev \
           --with-openssl="$(brew --prefix openssl@3.0)"
     - name: Build CPython
-      run: make -j4
+      run: make -j8
     - name: Display build info
       run: make pythoninfo
     - name: Tests

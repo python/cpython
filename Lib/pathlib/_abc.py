@@ -12,59 +12,17 @@ resemble pathlib's PurePath and Path respectively.
 """
 
 import functools
-import glob
-import operator
-from errno import ENOENT, ENOTDIR, EBADF, ELOOP, EINVAL
+from glob import _Globber, _no_recurse_symlinks
+from errno import ENOTDIR, ELOOP
 from stat import S_ISDIR, S_ISLNK, S_ISREG, S_ISSOCK, S_ISBLK, S_ISCHR, S_ISFIFO
 
-#
-# Internals
-#
 
-_WINERROR_NOT_READY = 21  # drive exists but is not accessible
-_WINERROR_INVALID_NAME = 123  # fix for bpo-35306
-_WINERROR_CANT_RESOLVE_FILENAME = 1921  # broken symlink pointing to itself
-
-# EBADF - guard against macOS `stat` throwing EBADF
-_IGNORED_ERRNOS = (ENOENT, ENOTDIR, EBADF, ELOOP)
-
-_IGNORED_WINERRORS = (
-    _WINERROR_NOT_READY,
-    _WINERROR_INVALID_NAME,
-    _WINERROR_CANT_RESOLVE_FILENAME)
-
-def _ignore_error(exception):
-    return (getattr(exception, 'errno', None) in _IGNORED_ERRNOS or
-            getattr(exception, 'winerror', None) in _IGNORED_WINERRORS)
+__all__ = ["UnsupportedOperation"]
 
 
 @functools.cache
 def _is_case_sensitive(parser):
     return parser.normcase('Aa') == 'Aa'
-
-
-class Globber(glob._Globber):
-    lstat = operator.methodcaller('lstat')
-    add_slash = operator.methodcaller('joinpath', '')
-
-    @staticmethod
-    def scandir(path):
-        # Emulate os.scandir(), which returns an object that can be used as a
-        # context manager. This method is called by walk() and glob().
-        from contextlib import nullcontext
-        return nullcontext(path.iterdir())
-
-    @staticmethod
-    def concat_path(path, text):
-        """Appends text to the given path.
-        """
-        return path.with_segments(path._raw_path + text)
-
-    @staticmethod
-    def parse_entry(entry):
-        """Returns the path of an entry yielded from scandir().
-        """
-        return entry
 
 
 class UnsupportedOperation(NotImplementedError):
@@ -140,7 +98,7 @@ class PurePathBase:
         '_resolving',
     )
     parser = ParserBase()
-    _globber = Globber
+    _globber = _Globber
 
     def __init__(self, path, *paths):
         self._raw_path = self.parser.join(path, *paths) if paths else path
@@ -472,12 +430,7 @@ class PathBase(PurePathBase):
         """
         try:
             self.stat(follow_symlinks=follow_symlinks)
-        except OSError as e:
-            if not _ignore_error(e):
-                raise
-            return False
-        except ValueError:
-            # Non-encodable path
+        except (OSError, ValueError):
             return False
         return True
 
@@ -487,14 +440,7 @@ class PathBase(PurePathBase):
         """
         try:
             return S_ISDIR(self.stat(follow_symlinks=follow_symlinks).st_mode)
-        except OSError as e:
-            if not _ignore_error(e):
-                raise
-            # Path doesn't exist or is a broken symlink
-            # (see http://web.archive.org/web/20200623061726/https://bitbucket.org/pitrou/pathlib/issues/12/ )
-            return False
-        except ValueError:
-            # Non-encodable path
+        except (OSError, ValueError):
             return False
 
     def is_file(self, *, follow_symlinks=True):
@@ -504,14 +450,7 @@ class PathBase(PurePathBase):
         """
         try:
             return S_ISREG(self.stat(follow_symlinks=follow_symlinks).st_mode)
-        except OSError as e:
-            if not _ignore_error(e):
-                raise
-            # Path doesn't exist or is a broken symlink
-            # (see http://web.archive.org/web/20200623061726/https://bitbucket.org/pitrou/pathlib/issues/12/ )
-            return False
-        except ValueError:
-            # Non-encodable path
+        except (OSError, ValueError):
             return False
 
     def is_mount(self):
@@ -540,13 +479,7 @@ class PathBase(PurePathBase):
         """
         try:
             return S_ISLNK(self.lstat().st_mode)
-        except OSError as e:
-            if not _ignore_error(e):
-                raise
-            # Path doesn't exist
-            return False
-        except ValueError:
-            # Non-encodable path
+        except (OSError, ValueError):
             return False
 
     def is_junction(self):
@@ -564,14 +497,7 @@ class PathBase(PurePathBase):
         """
         try:
             return S_ISBLK(self.stat().st_mode)
-        except OSError as e:
-            if not _ignore_error(e):
-                raise
-            # Path doesn't exist or is a broken symlink
-            # (see http://web.archive.org/web/20200623061726/https://bitbucket.org/pitrou/pathlib/issues/12/ )
-            return False
-        except ValueError:
-            # Non-encodable path
+        except (OSError, ValueError):
             return False
 
     def is_char_device(self):
@@ -580,14 +506,7 @@ class PathBase(PurePathBase):
         """
         try:
             return S_ISCHR(self.stat().st_mode)
-        except OSError as e:
-            if not _ignore_error(e):
-                raise
-            # Path doesn't exist or is a broken symlink
-            # (see http://web.archive.org/web/20200623061726/https://bitbucket.org/pitrou/pathlib/issues/12/ )
-            return False
-        except ValueError:
-            # Non-encodable path
+        except (OSError, ValueError):
             return False
 
     def is_fifo(self):
@@ -596,14 +515,7 @@ class PathBase(PurePathBase):
         """
         try:
             return S_ISFIFO(self.stat().st_mode)
-        except OSError as e:
-            if not _ignore_error(e):
-                raise
-            # Path doesn't exist or is a broken symlink
-            # (see http://web.archive.org/web/20200623061726/https://bitbucket.org/pitrou/pathlib/issues/12/ )
-            return False
-        except ValueError:
-            # Non-encodable path
+        except (OSError, ValueError):
             return False
 
     def is_socket(self):
@@ -612,14 +524,7 @@ class PathBase(PurePathBase):
         """
         try:
             return S_ISSOCK(self.stat().st_mode)
-        except OSError as e:
-            if not _ignore_error(e):
-                raise
-            # Path doesn't exist or is a broken symlink
-            # (see http://web.archive.org/web/20200623061726/https://bitbucket.org/pitrou/pathlib/issues/12/ )
-            return False
-        except ValueError:
-            # Non-encodable path
+        except (OSError, ValueError):
             return False
 
     def samefile(self, other_path):
@@ -637,7 +542,7 @@ class PathBase(PurePathBase):
     def open(self, mode='r', buffering=-1, encoding=None,
              errors=None, newline=None):
         """
-        Open the file pointed by this path and return a file object, as
+        Open the file pointed to by this path and return a file object, as
         the built-in open() function does.
         """
         raise UnsupportedOperation(self._unsupported_msg('open()'))
@@ -692,7 +597,7 @@ class PathBase(PurePathBase):
             # know the case sensitivity of the underlying filesystem, so we
             # must use scandir() for everything, including non-wildcard parts.
             case_pedantic = True
-        recursive = True if recurse_symlinks else glob._no_recurse_symlinks
+        recursive = True if recurse_symlinks else _no_recurse_symlinks
         globber = self._globber(self.parser.sep, case_sensitive, case_pedantic, recursive)
         return globber.selector(parts)
 

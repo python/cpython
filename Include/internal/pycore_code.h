@@ -8,6 +8,8 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
+#include "pycore_lock.h"        // PyMutex
+
 
 // We hide some of the newer PyCodeObject fields behind macros.
 // This helps with backporting certain changes to 3.12.
@@ -16,6 +18,14 @@ extern "C" {
 #define _PyCode_HAS_INSTRUMENTATION(CODE) \
     (CODE->_co_instrumentation_version > 0)
 
+struct _py_code_state {
+    PyMutex mutex;
+    // Interned constants from code objects. Used by the free-threaded build.
+    struct _Py_hashtable_t *constants;
+};
+
+extern PyStatus _PyCode_Init(PyInterpreterState *interp);
+extern void _PyCode_Fini(PyInterpreterState *interp);
 
 #define CODE_MAX_WATCHERS 8
 
@@ -287,11 +297,6 @@ extern void _Py_Specialize_ForIter(PyObject *iter, _Py_CODEUNIT *instr, int opar
 extern void _Py_Specialize_Send(PyObject *receiver, _Py_CODEUNIT *instr);
 extern void _Py_Specialize_ToBool(PyObject *value, _Py_CODEUNIT *instr);
 extern void _Py_Specialize_ContainsOp(PyObject *value, _Py_CODEUNIT *instr);
-
-/* Finalizer function for static codeobjects used in deepfreeze.py */
-extern void _PyStaticCode_Fini(PyCodeObject *co);
-/* Function to intern strings of codeobjects and quicken the bytecode */
-extern int _PyStaticCode_Init(PyCodeObject *co);
 
 #ifdef Py_STATS
 
