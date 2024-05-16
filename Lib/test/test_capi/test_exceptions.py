@@ -83,14 +83,12 @@ class Test_Exceptions(unittest.TestCase):
         ''')
         proc = assert_python_ok("-c", code)
         warnings = proc.err.splitlines()
-        expected = [
+        self.assertEqual(warnings, [
             b'<string>:6: RuntimeWarning: Testing PyErr_WarnEx',
             b'  foo()  # line 6',
             b'<string>:9: RuntimeWarning: Testing PyErr_WarnEx',
-            b'  foo()  # line 9'
-        ]
-        self.assertEqual(len(warnings), 4)
-        self.assertEqual(warnings, expected)
+            b'  foo()  # line 9',
+        ])
 
     def test_warn_during_finalization(self):
         code = textwrap.dedent('''\
