@@ -12,6 +12,8 @@ import tempfile
 import shutil
 import zipfile
 
+from test.support.os_helper import FakePath
+
 # Note: pkgutil.walk_packages is currently tested in test_runpy. This is
 # a hack to get a major issue resolved for 3.3b2. Longer term, it should
 # be moved back here, perhaps by factoring out the helper code for
@@ -118,7 +120,7 @@ class PkgutilTests(unittest.TestCase):
 
             # make sure iter_modules accepts Path objects
             names = []
-            for moduleinfo in pkgutil.iter_modules([Path(zip_file)]):
+            for moduleinfo in pkgutil.iter_modules([FakePath(zip_file)]):
                 self.assertIsInstance(moduleinfo, pkgutil.ModuleInfo)
                 names.append(moduleinfo.name)
             self.assertEqual(names, [pkg])
