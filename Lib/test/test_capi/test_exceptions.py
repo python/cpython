@@ -91,6 +91,23 @@ class Test_Exceptions(unittest.TestCase):
             warnings[3].startswith(b"  foo()  # line 9")
         )
 
+    def test_warn_during_finalization(self):
+        code = textwrap.dedent('''\
+            import _testcapi
+
+            class Foo:
+                def __del__(self):
+                    _testcapi.function_set_warning()
+
+            ref = Foo()
+        ''')
+        proc = assert_python_ok("-c", code)
+        warnings = proc.err.splitlines()
+        # Due to the finalization of the interpreter, the source will be ommited
+        # because the ``warnings`` module cannot be imported at this time
+        self.assertEqual(len(warnings), 1)
+        self.assertEqual(warnings[0], b'<sys>:0: RuntimeWarning: Testing PyErr_WarnEx')
+
 
 class Test_FatalError(unittest.TestCase):
 
