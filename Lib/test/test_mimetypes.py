@@ -1,7 +1,6 @@
 import io
 import mimetypes
 import os
-import pathlib
 import sys
 import unittest.mock
 
@@ -75,10 +74,18 @@ class MimeTypesTestCase(unittest.TestCase):
 
         with os_helper.temp_dir() as directory:
             data = "x-application/x-unittest pyunit\n"
-            file = pathlib.Path(directory, "sample.mimetype")
-            file.write_text(data, encoding="utf-8")
+            file = os.path.join(directory, "sample.mimetype")
+            with open(file, 'w', encoding="utf-8") as f:
+                f.write(data)
             mime_dict = mimetypes.read_mime_types(file)
             eq(mime_dict[".pyunit"], "x-application/x-unittest")
+
+            data = "x-application/x-unittest2 pyunit2\n"
+            file = os.path.join(directory, "sample2.mimetype")
+            with open(file, 'w', encoding="utf-8") as f:
+                f.write(data)
+            mime_dict = mimetypes.read_mime_types(os_helper.FakePath(file))
+            eq(mime_dict[".pyunit2"], "x-application/x-unittest2")
 
         # bpo-41048: read_mime_types should read the rule file with 'utf-8' encoding.
         # Not with locale encoding. _bootlocale has been imported because io.open(...)
@@ -241,10 +248,10 @@ class MimeTypesTestCase(unittest.TestCase):
 
     def test_path_like_ob(self):
         filename = "LICENSE.txt"
-        filepath = pathlib.Path(filename)
-        filepath_with_abs_dir = pathlib.Path('/dir/'+filename)
-        filepath_relative = pathlib.Path('../dir/'+filename)
-        path_dir = pathlib.Path('./')
+        filepath = os_helper.FakePath(filename)
+        filepath_with_abs_dir = os_helper.FakePath('/dir/'+filename)
+        filepath_relative = os_helper.FakePath('../dir/'+filename)
+        path_dir = os_helper.FakePath('./')
 
         expected = self.db.guess_type(filename)
 

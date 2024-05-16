@@ -662,15 +662,15 @@ class HandlerTest(BaseTest):
         self.assertFalse(h.shouldFlush(r))
         h.close()
 
-    def test_path_objects(self):
+    def test_pathlike_objects(self):
         """
-        Test that Path objects are accepted as filename arguments to handlers.
+        Test that path-like objects are accepted as filename arguments to handlers.
 
         See Issue #27493.
         """
         fn = make_temp_file()
         os.unlink(fn)
-        pfn = pathlib.Path(fn)
+        pfn = os_helper.FakePath(fn)
         cases = (
                     (logging.FileHandler, (pfn, 'w')),
                     (logging.handlers.RotatingFileHandler, (pfn, 'a')),

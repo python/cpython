@@ -23,7 +23,7 @@ from test.support import (captured_stdout, captured_stderr,
                           requires_venv_with_pip, TEST_HOME_DIR,
                           requires_resource, copy_python_src_ignore)
 from test.support.os_helper import (can_symlink, EnvironmentVarGuard, rmtree,
-                                    TESTFN)
+                                    TESTFN, FakePath)
 import unittest
 import venv
 from unittest.mock import patch, Mock
@@ -112,12 +112,12 @@ class BasicTest(BaseTest):
         self.run_with_capture(venv.create, self.env_dir)
         self._check_output_of_default_create()
 
-    def test_defaults_with_pathlib_path(self):
+    def test_defaults_with_pathlike(self):
         """
-        Test the create function with default arguments and a pathlib.Path path.
+        Test the create function with default arguments and a path-like path.
         """
         rmtree(self.env_dir)
-        self.run_with_capture(venv.create, pathlib.Path(self.env_dir))
+        self.run_with_capture(venv.create, FakePath(self.env_dir))
         self._check_output_of_default_create()
 
     def _check_output_of_default_create(self):
@@ -537,7 +537,7 @@ class BasicTest(BaseTest):
         rmtree(self.env_dir)
         bad_itempath = self.env_dir + os.pathsep
         self.assertRaises(ValueError, venv.create, bad_itempath)
-        self.assertRaises(ValueError, venv.create, pathlib.Path(bad_itempath))
+        self.assertRaises(ValueError, venv.create, FakePath(bad_itempath))
 
     @unittest.skipIf(os.name == 'nt', 'not relevant on Windows')
     @requireVenvCreate

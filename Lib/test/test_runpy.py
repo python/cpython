@@ -14,7 +14,7 @@ import unittest
 import warnings
 from test.support import no_tracing, verbose, requires_subprocess, requires_resource
 from test.support.import_helper import forget, make_legacy_pyc, unload
-from test.support.os_helper import create_empty_file, temp_dir
+from test.support.os_helper import create_empty_file, temp_dir, FakePath
 from test.support.script_helper import make_script, make_zip_script
 
 
@@ -656,11 +656,10 @@ class RunPathTestCase(unittest.TestCase, CodeExecutionMixin):
             self._check_script(script_name, "<run_path>", script_name,
                                script_name, expect_spec=False)
 
-    def test_basic_script_with_path_object(self):
+    def test_basic_script_with_pathlike_object(self):
         with temp_dir() as script_dir:
             mod_name = 'script'
-            script_name = pathlib.Path(self._make_test_script(script_dir,
-                                                              mod_name))
+            script_name = FakePath(self._make_test_script(script_dir, mod_name))
             self._check_script(script_name, "<run_path>", script_name,
                                script_name, expect_spec=False)
 
