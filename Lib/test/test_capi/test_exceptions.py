@@ -95,8 +95,10 @@ class Test_Exceptions(unittest.TestCase):
             import _testcapi
 
             class Foo:
-                def __del__(self):
+                def foo(self):
                     _testcapi.function_set_warning()
+                def __del__(self):
+                    self.foo()
 
             ref = Foo()
         ''')
@@ -104,8 +106,7 @@ class Test_Exceptions(unittest.TestCase):
         warnings = proc.err.splitlines()
         # Due to the finalization of the interpreter, the source will be ommited
         # because the ``warnings`` module cannot be imported at this time
-        self.assertEqual(len(warnings), 1)
-        self.assertEqual(warnings[0], b'<sys>:0: RuntimeWarning: Testing PyErr_WarnEx')
+        self.assertEqual(warnings, [b'<string>:7: RuntimeWarning: Testing PyErr_WarnEx'])
 
 
 class Test_FatalError(unittest.TestCase):
