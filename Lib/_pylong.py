@@ -51,7 +51,10 @@ except ImportError:
 # While this does give minor speedups (a few percent at best), the
 # primary intent is to simplify the functions using this, by eliminating
 # the need for them to craft their own ad-hoc caching schemes.
-def compute_powers(w, base, more_than, *, need_hi=False):
+#
+# See code near end of file for a block of code that can be enabled to
+# run millions of tests.
+def compute_powers(w, base, more_than, *, need_hi=False, show=False):
     seen = set()
     need = set()
     ws = {w}
@@ -69,41 +72,62 @@ def compute_powers(w, base, more_than, *, need_hi=False):
         if lo != hi:
             ws.add(w - which)
 
-    # powbase() knows how to compute powers efficiently. When `need` is
-    # processed in sorted order, and need_hi is False, powbase won't
-    # actually recurse: it always finds the predecossor it wants already
-    # in the cache (`d`). But when need_hi is True, it may need to
-    # recurse to find powers of predecessora that weren't themselves
-    # needed.
-    d = {}
-    def powbase(n):
-        if (result := d.get(n)) is None:
-            lo = n >> 1
-            hi = n - lo
-            if n-1 in d:
-                result = d[n-1] * base # cheap!
-            elif lo in d:
-                # Multiplying a bigint by itself is about twice as fast
-                # in CPython provided it's the same object.
-                result = d[lo] * d[lo] # same object
-                if hi != lo:
-                    assert 2 * lo + 1 == n
-                    result *= base
-            elif n <= more_than: # rare
-                result = base ** n
-            else:
-                assert need_hi
-                result = powbase(lo) * powbase(hi)
-            d[n] = result
-        return result
+    # `need` is the set of exponents needed. To compute them all
+    # efficiently, possibly add other exponents to `extra`. The goal is
+    # to ensure that each exponent can be gotten from a smaller one via
+    # multiplying by the base, squaring it, or squaring and then
+    # multiplying by the base.
+    #
+    # If need_hi is False, this is already the case (w can always be
+    # gotten from w >> 1 via one of the squaring strategies). But we do
+    # the work anyway, just in case ;-)
+    #
+    # Note that speed is irrelevant. These loops are working on little
+    # ints (exponents) and go around O(log w) times. The total cost is
+    # insignificant compared to just one of the bigint multiplies.
+    cands = need.copy()
+    extra = set()
+    while cands:
+        w = max(cands)
+        cands.remove(w)
+        lo = w >> 1
+        if lo > more_than and w-1 not in cands and lo not in cands:
+            extra.add(lo)
+            cands.add(lo)
+    assert need_hi or not extra
 
-    for n in sorted(need):
-        powbase(n)
-    if need_hi:
-        for n in d.keys() - need:
+    d = {}
+    for n in sorted(need | extra):
+        lo = n >> 1
+        hi = n - lo
+        if n-1 in d:
+            if show:
+                print("* base", end="")
+            result = d[n-1] * base # cheap!
+        elif lo in d:
+            # Multiplying a bigint by itself is about twice as fast
+            # in CPython provided it's the same object.
+            if show:
+                print("square", end="")
+            result = d[lo] * d[lo] # same object
+            if hi != lo:
+                if show:
+                    print(" * base", end="")
+                assert 2 * lo + 1 == n
+                result *= base
+        else: # rare
+            if show:
+                print("pow", end='')
+            result = base ** n
+        if show:
+            print(" at", n, "needed" if n in need else "extra")
+        d[n] = result
+
+    assert need <= d.keys()
+    if excess := d.keys() - need:
+        assert need_hi
+        for n in excess:
             del d[n]
-    else:
-        assert d.keys() == need
     return d
 
 _unbounded_dec_context = decimal.getcontext().copy()
@@ -669,3 +693,31 @@ def int_divmod(a, b):
 # Basically because, in that cass, n may be up to 256 times larger than
 # p256**2. Curiously enough, by splitting  on the ceiling instead,
 # nothing in any proof here actually depends on the output base (256).
+
+# Enable for brute-force testing of compute_powers(). This takes about a
+# minute, because it tries millions of cases.
+if 0:
+    def consumer(w, limir, need_hi):
+        seen = set()
+        need = set()
+        def inner(w):
+            if w <= limit:
+                return
+            if w in seen:
+                return
+            seen.add(w)
+            lo = w >> 1
+            hi = w - lo
+            need.add(hi if need_hi else lo)
+            inner(lo)
+            inner(hi)
+        inner(w)
+        exp = compute_powers(w, 1, limir, need_hi=need_hi)
+        assert exp.keys() == need
+
+    from itertools import chain
+    for need_hi in (False, True):
+        for limit in (1, 10, 100, 1_000, 10_000, 100_000):
+            for w in chain(range(1, 100_000),
+                           (10**i for i in range(5, 30))):
+                consumer(w, limit, need_hi)
