@@ -651,7 +651,7 @@ def int_divmod(a, b):
 # In general, the exact reciprocals we compute have over twice as many
 # significant digts as needed. 1/256**i has the same number of
 # significant decimal digits as 5**i. It's a significant waste of RAM
-# to store all those unneded digits.
+# to store all those unneeded digits.
 #
 # So we cut exact repicroals back to the least precision that can
 # be needed so that the error analysis above is valid,
