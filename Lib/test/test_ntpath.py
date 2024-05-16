@@ -1108,8 +1108,13 @@ class TestNtpath(NtpathTestCase):
     def test_isfile_named_pipe(self):
         import _winapi
         named_pipe = f'//./PIPE/python_isfile_test_{os.getpid()}'
-        _winapi.CreateNamedPipe(named_pipe, _winapi.PIPE_ACCESS_INBOUND, 0, 1, 0, 0, 0, 0)
-        self.assertFalse(ntpath.isfile(named_pipe))
+        h = _winapi.CreateNamedPipe(named_pipe,
+                                    _winapi.PIPE_ACCESS_INBOUND,
+                                    0, 1, 0, 0, 0, 0)
+        try:
+            self.assertFalse(ntpath.isfile(named_pipe))
+        finally:
+            _winapi.CloseHandle(h)
 
     @unittest.skipIf(sys.platform != 'win32', "windows only")
     def test_con_device(self):
