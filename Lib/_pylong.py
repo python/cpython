@@ -691,7 +691,7 @@ def int_divmod(a, b):
 # the ceiiing. Thw worst case then is odd `w`, and a more involved proof
 # was needed to show that adding 4 (instead of 1) may be neceasary.
 # Basically because, in that cass, n may be up to 256 times larger than
-# p256**2. Curiously enough, by splitting  on the ceiling instead,
+# p256**2. Curiously enough, by splitting on the ceiling instead,
 # nothing in any proof here actually depends on the output base (256).
 
 # Enable for brute-force testing of compute_powers(). This takes about a
