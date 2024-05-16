@@ -366,7 +366,7 @@ class CommonReadTest(ReadTest):
         self.assertFalse(tarfile.is_tarfile(tmpname))
 
         # is_tarfile works on path-like objects
-        self.assertFalse(tarfile.is_tarfile(pathlib.Path(tmpname)))
+        self.assertFalse(tarfile.is_tarfile(os_helper.FakePath(tmpname)))
 
         # is_tarfile works on file objects
         with open(tmpname, "rb") as fobj:
@@ -380,7 +380,7 @@ class CommonReadTest(ReadTest):
         self.assertTrue(tarfile.is_tarfile(self.tarname))
 
         # is_tarfile works on path-like objects
-        self.assertTrue(tarfile.is_tarfile(pathlib.Path(self.tarname)))
+        self.assertTrue(tarfile.is_tarfile(os_helper.FakePath(self.tarname)))
 
         # is_tarfile works on file objects
         with open(self.tarname, "rb") as fobj:
@@ -558,21 +558,23 @@ class MiscReadTestBase(CommonReadTest):
                 self.assertIsInstance(tar.name, bytes)
                 self.assertEqual(tar.name, os.path.abspath(fobj.name))
 
-    def test_pathlike_name(self):
-        tarname = pathlib.Path(self.tarname)
+    def test_pathlike_name(self, tarname=None):
+        if tarname is None:
+            tarname = self.tarname
+        expected = os.path.abspath(tarname)
+        tarname = os_helper.FakePath(tarname)
         with tarfile.open(tarname, mode=self.mode) as tar:
-            self.assertIsInstance(tar.name, str)
-            self.assertEqual(tar.name, os.path.abspath(os.fspath(tarname)))
+            self.assertEqual(tar.name, expected)
         with self.taropen(tarname) as tar:
-            self.assertIsInstance(tar.name, str)
-            self.assertEqual(tar.name, os.path.abspath(os.fspath(tarname)))
+            self.assertEqual(tar.name, expected)
         with tarfile.TarFile.open(tarname, mode=self.mode) as tar:
-            self.assertIsInstance(tar.name, str)
-            self.assertEqual(tar.name, os.path.abspath(os.fspath(tarname)))
+            self.assertEqual(tar.name, expected)
         if self.suffix == '':
             with tarfile.TarFile(tarname, mode='r') as tar:
-                self.assertIsInstance(tar.name, str)
-                self.assertEqual(tar.name, os.path.abspath(os.fspath(tarname)))
+                self.assertEqual(tar.name, expected)
+
+    def test_pathlike_bytes_name(self):
+        self.test_pathlike_name(os.fsencode(self.tarname))
 
     def test_illegal_mode_arg(self):
         with open(tmpname, 'wb'):
@@ -743,24 +745,24 @@ class MiscReadTestBase(CommonReadTest):
             # check that the stacklevel of the deprecation warning is correct:
             self.assertEqual(cm.filename, __file__)
 
-    def test_extractall_pathlike_name(self):
-        DIR = pathlib.Path(TEMPDIR) / "extractall"
+    def test_extractall_pathlike_dir(self):
+        DIR = os.path.join(TEMPDIR, "extractall")
         with os_helper.temp_dir(DIR), \
              tarfile.open(tarname, encoding="iso8859-1") as tar:
             directories = [t for t in tar if t.isdir()]
-            tar.extractall(DIR, directories, filter='fully_trusted')
+            tar.extractall(os_helper.FakePath(DIR), directories, filter='fully_trusted')
             for tarinfo in directories:
-                path = DIR / tarinfo.name
+                path = os.path.join(DIR, tarinfo.name)
                 self.assertEqual(os.path.getmtime(path), tarinfo.mtime)
 
-    def test_extract_pathlike_name(self):
+    def test_extract_pathlike_dir(self):
         dirtype = "ustar/dirtype"
-        DIR = pathlib.Path(TEMPDIR) / "extractall"
+        DIR = os.path.join(TEMPDIR, "extractall")
         with os_helper.temp_dir(DIR), \
              tarfile.open(tarname, encoding="iso8859-1") as tar:
             tarinfo = tar.getmember(dirtype)
-            tar.extract(tarinfo, path=DIR, filter='fully_trusted')
-            extracted = DIR / dirtype
+            tar.extract(tarinfo, path=os_helper.FakePath(DIR), filter='fully_trusted')
+            extracted = os.path.join(DIR, dirtype)
             self.assertEqual(os.path.getmtime(extracted), tarinfo.mtime)
 
     def test_init_close_fobj(self):
@@ -1359,11 +1361,11 @@ class WriteTest(WriteTestBase, unittest.TestCase):
 
     def test_gettarinfo_pathlike_name(self):
         with tarfile.open(tmpname, self.mode) as tar:
-            path = pathlib.Path(TEMPDIR) / "file"
+            path = os.path.join(TEMPDIR, "file")
             with open(path, "wb") as fobj:
                 fobj.write(b"aaa")
-            tarinfo = tar.gettarinfo(path)
-            tarinfo2 = tar.gettarinfo(os.fspath(path))
+            tarinfo = tar.gettarinfo(os_helper.FakePath(path))
+            tarinfo2 = tar.gettarinfo(path)
             self.assertIsInstance(tarinfo.name, str)
             self.assertEqual(tarinfo.name, tarinfo2.name)
             self.assertEqual(tarinfo.size, 3)
@@ -1910,10 +1912,10 @@ class CreateTest(WriteTestBase, unittest.TestCase):
         self.assertIn("spameggs42", names[0])
 
     def test_create_pathlike_name(self):
-        with tarfile.open(pathlib.Path(tmpname), self.mode) as tobj:
+        with tarfile.open(os_helper.FakePath(tmpname), self.mode) as tobj:
             self.assertIsInstance(tobj.name, str)
             self.assertEqual(tobj.name, os.path.abspath(tmpname))
-            tobj.add(pathlib.Path(self.file_path))
+            tobj.add(os_helper.FakePath(self.file_path))
             names = tobj.getnames()
         self.assertEqual(len(names), 1)
         self.assertIn('spameggs42', names[0])
@@ -1924,10 +1926,10 @@ class CreateTest(WriteTestBase, unittest.TestCase):
         self.assertIn('spameggs42', names[0])
 
     def test_create_taropen_pathlike_name(self):
-        with self.taropen(pathlib.Path(tmpname), "x") as tobj:
+        with self.taropen(os_helper.FakePath(tmpname), "x") as tobj:
             self.assertIsInstance(tobj.name, str)
             self.assertEqual(tobj.name, os.path.abspath(tmpname))
-            tobj.add(pathlib.Path(self.file_path))
+            tobj.add(os_helper.FakePath(self.file_path))
             names = tobj.getnames()
         self.assertEqual(len(names), 1)
         self.assertIn('spameggs42', names[0])

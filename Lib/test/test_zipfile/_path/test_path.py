@@ -12,7 +12,7 @@ from ._itertools import Counter
 
 from ._test_params import parameterize, Invoked
 
-from test.support.os_helper import temp_dir
+from test.support.os_helper import temp_dir, FakePath
 
 
 class jaraco:
@@ -271,13 +271,13 @@ class TestPath(unittest.TestCase):
         zipfile.Path should be constructable from a path-like object
         """
         zipfile_ondisk = self.zipfile_ondisk(alpharep)
-        pathlike = pathlib.Path(str(zipfile_ondisk))
+        pathlike = FakePath(str(zipfile_ondisk))
         zipfile.Path(pathlike)
 
     @pass_alpharep
     def test_traverse_pathlike(self, alpharep):
         root = zipfile.Path(alpharep)
-        root / pathlib.Path("a")
+        root / FakePath("a")
 
     @pass_alpharep
     def test_parent(self, alpharep):
@@ -546,12 +546,12 @@ class TestPath(unittest.TestCase):
         ['alpharep', 'path_type', 'subpath'],
         itertools.product(
             alpharep_generators,
-            [str, pathlib.Path],
+            [str, FakePath],
             ['', 'b/'],
         ),
     )
     def test_pickle(self, alpharep, path_type, subpath):
-        zipfile_ondisk = path_type(self.zipfile_ondisk(alpharep))
+        zipfile_ondisk = path_type(str(self.zipfile_ondisk(alpharep)))
 
         saved_1 = pickle.dumps(zipfile.Path(zipfile_ondisk, at=subpath))
         restored_1 = pickle.loads(saved_1)
