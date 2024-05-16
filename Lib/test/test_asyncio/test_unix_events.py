@@ -6,7 +6,6 @@ import io
 import multiprocessing
 from multiprocessing.util import _cleanup_tests as multiprocessing_cleanup_tests
 import os
-import pathlib
 import signal
 import socket
 import stat
@@ -304,20 +303,20 @@ class SelectorEventLoopUnixSocketTests(test_utils.TestCase):
             self.loop.run_until_complete(srv.wait_closed())
 
     @socket_helper.skip_unless_bind_unix_socket
-    def test_create_unix_server_pathlib(self):
+    def test_create_unix_server_pathlike(self):
         with test_utils.unix_socket_path() as path:
-            path = pathlib.Path(path)
+            path = os_helper.FakePath(path)
             srv_coro = self.loop.create_unix_server(lambda: None, path)
             srv = self.loop.run_until_complete(srv_coro)
             srv.close()
             self.loop.run_until_complete(srv.wait_closed())
 
-    def test_create_unix_connection_pathlib(self):
+    def test_create_unix_connection_pathlike(self):
         with test_utils.unix_socket_path() as path:
-            path = pathlib.Path(path)
+            path = os_helper.FakePath(path)
             coro = self.loop.create_unix_connection(lambda: None, path)
             with self.assertRaises(FileNotFoundError):
-                # If pathlib.Path wasn't supported, the exception would be
+                # If path-like object weren't supported, the exception would be
                 # different.
                 self.loop.run_until_complete(coro)
 

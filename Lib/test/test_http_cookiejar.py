@@ -9,7 +9,6 @@ from test.support import warnings_helper
 import time
 import unittest
 import urllib.request
-import pathlib
 
 from http.cookiejar import (time2isoz, http2time, iso2time, time2netscape,
      parse_ns_headers, join_header_words, split_header_words, Cookie,
@@ -337,9 +336,9 @@ class FileCookieJarTests(unittest.TestCase):
         self.assertEqual(c.filename, filename)
 
     def test_constructor_with_path_like(self):
-        filename = pathlib.Path(os_helper.TESTFN)
-        c = LWPCookieJar(filename)
-        self.assertEqual(c.filename, os.fspath(filename))
+        filename = os_helper.TESTFN
+        c = LWPCookieJar(os_helper.FakePath(filename))
+        self.assertEqual(c.filename, filename)
 
     def test_constructor_with_none(self):
         c = LWPCookieJar(None)
