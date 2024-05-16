@@ -3103,17 +3103,13 @@ static PyObject *long_long(PyObject *v);
 
 static int
 long_divrem(PyLongObject *a, PyLongObject *b,
-            PyLongObject **pdiv, PyLongObject **prem, int divonly)
+            PyLongObject **pdiv, PyLongObject **prem)
 {
     Py_ssize_t size_a = _PyLong_DigitCount(a), size_b = _PyLong_DigitCount(b);
     PyLongObject *z;
 
     if (size_b == 0) {
-        PyErr_SetString(
-            PyExc_ZeroDivisionError,
-            divonly ?
-                "integer floor division by zero" :
-                "integer division or modulo by zero");
+        PyErr_SetString(PyExc_ZeroDivisionError, "division by zero");
         return -1;
     }
     if (size_a < size_b ||
@@ -3176,7 +3172,7 @@ long_rem(PyLongObject *a, PyLongObject *b, PyLongObject **prem)
 
     if (size_b == 0) {
         PyErr_SetString(PyExc_ZeroDivisionError,
-                        "integer modulo by zero");
+                        "division by zero");
         return -1;
     }
     if (size_a < size_b ||
@@ -4370,7 +4366,7 @@ l_divmod(PyLongObject *v, PyLongObject *w,
         return pylong_int_divmod(v, w, pdiv, pmod);
     }
 #endif
-    if (long_divrem(v, w, &div, &mod, pmod == NULL) < 0)
+    if (long_divrem(v, w, &div, &mod) < 0)
         return -1;
     if ((_PyLong_IsNegative(mod) && _PyLong_IsPositive(w)) ||
         (_PyLong_IsPositive(mod) && _PyLong_IsNegative(w))) {
@@ -5981,7 +5977,7 @@ _PyLong_DivmodNear(PyObject *a, PyObject *b)
     /* Do a and b have different signs?  If so, quotient is negative. */
     quo_is_neg = (_PyLong_IsNegative((PyLongObject *)a)) != (_PyLong_IsNegative((PyLongObject *)b));
 
-    if (long_divrem((PyLongObject*)a, (PyLongObject*)b, &quo, &rem, 0) < 0)
+    if (long_divrem((PyLongObject*)a, (PyLongObject*)b, &quo, &rem) < 0)
         goto error;
 
     /* compare twice the remainder with the divisor, to see

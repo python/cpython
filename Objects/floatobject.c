@@ -623,7 +623,7 @@ float_div(PyObject *v, PyObject *w)
     CONVERT_TO_DOUBLE(w, b);
     if (b == 0.0) {
         PyErr_SetString(PyExc_ZeroDivisionError,
-                        "float division by zero");
+                        "division by zero");
         return NULL;
     }
     a = a / b;
@@ -639,7 +639,7 @@ float_rem(PyObject *v, PyObject *w)
     CONVERT_TO_DOUBLE(w, wx);
     if (wx == 0.0) {
         PyErr_SetString(PyExc_ZeroDivisionError,
-                        "float modulo by zero");
+                        "division by zero");
         return NULL;
     }
     mod = fmod(vx, wx);
@@ -704,7 +704,7 @@ float_divmod(PyObject *v, PyObject *w)
     CONVERT_TO_DOUBLE(v, vx);
     CONVERT_TO_DOUBLE(w, wx);
     if (wx == 0.0) {
-        PyErr_SetString(PyExc_ZeroDivisionError, "float divmod()");
+        PyErr_SetString(PyExc_ZeroDivisionError, "division by zero");
         return NULL;
     }
     _float_div_mod(vx, wx, &floordiv, &mod);
@@ -719,7 +719,7 @@ float_floor_div(PyObject *v, PyObject *w)
     CONVERT_TO_DOUBLE(v, vx);
     CONVERT_TO_DOUBLE(w, wx);
     if (wx == 0.0) {
-        PyErr_SetString(PyExc_ZeroDivisionError, "float floor division by zero");
+        PyErr_SetString(PyExc_ZeroDivisionError, "division by zero");
         return NULL;
     }
     _float_div_mod(vx, wx, &floordiv, &mod);
@@ -788,8 +788,7 @@ float_pow(PyObject *v, PyObject *w, PyObject *z)
         int iw_is_odd = DOUBLE_IS_ODD_INTEGER(iw);
         if (iw < 0.0) {
             PyErr_SetString(PyExc_ZeroDivisionError,
-                            "0.0 cannot be raised to a "
-                            "negative power");
+                            "zero to a negative power");
             return NULL;
         }
         /* use correct sign if iw is odd */

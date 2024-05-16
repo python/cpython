@@ -1,2 +1,4 @@
-Improve error message when using ``// 0`` from "integer division or modulo
-by zero" to "integer floor division by zero" which better represents the division.
+Improve :exc:`ZeroDivisionError` error message.
+Now, all error messages are harmonized: all ``/``, ``//``, and ``%``
+operations just use "division by zero" message.
+And ``0 ** -1`` operation uses "zero to a negative power".

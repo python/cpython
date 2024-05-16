@@ -664,8 +664,13 @@ class BuiltinTest(unittest.TestCase):
         self.assertRaises(TypeError, divmod)
         self.assertRaisesRegex(
             ZeroDivisionError,
-            "integer division or modulo by zero",
+            "division by zero",
             divmod, 1, 0,
+        )
+        self.assertRaisesRegex(
+            ZeroDivisionError,
+            "division by zero",
+            divmod, 0.0, 0,
         )
 
     def test_eval(self):
