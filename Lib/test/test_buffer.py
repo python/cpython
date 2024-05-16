@@ -130,10 +130,10 @@ if struct:
     for fmt in fmtdict['@']:
         fmtdict['@'][fmt] = native_type_range(fmt)
 
-# Format codes suppported by the memoryview object
+# Format codes supported by the memoryview object
 MEMORYVIEW = NATIVE.copy()
 
-# Format codes suppported by array.array
+# Format codes supported by array.array
 ARRAY = NATIVE.copy()
 for k in NATIVE:
     if not k in "bBhHiIlLfd":
@@ -168,7 +168,7 @@ def randrange_fmt(mode, char, obj):
     if char == 'c':
         x = bytes([x])
         if obj == 'numpy' and x == b'\x00':
-            # http://projects.scipy.org/numpy/ticket/1925
+            # https://github.com/numpy/numpy/issues/2518
             x = b'\x01'
     if char == '?':
         x = bool(x)
@@ -1918,7 +1918,7 @@ class TestBufferProtocol(unittest.TestCase):
                 if numpy_array:
                     shape = t[3]
                     if 0 in shape:
-                        continue # http://projects.scipy.org/numpy/ticket/1910
+                        continue # https://github.com/numpy/numpy/issues/2503
                     z = numpy_array_from_structure(items, fmt, t)
                     self.verify(x, obj=None,
                                 itemsize=z.itemsize, fmt=fmt, readonly=False,
@@ -1950,7 +1950,7 @@ class TestBufferProtocol(unittest.TestCase):
                     except Exception as e:
                         numpy_err = e.__class__
 
-                    if 0: # http://projects.scipy.org/numpy/ticket/1910
+                    if 0: # https://github.com/numpy/numpy/issues/2503
                         self.assertTrue(numpy_err)
 
     def test_ndarray_random_slice_assign(self):
@@ -1996,7 +1996,7 @@ class TestBufferProtocol(unittest.TestCase):
 
                 if numpy_array:
                     if 0 in lshape or 0 in rshape:
-                        continue # http://projects.scipy.org/numpy/ticket/1910
+                        continue # https://github.com/numpy/numpy/issues/2503
 
                     zl = numpy_array_from_structure(litems, fmt, tl)
                     zr = numpy_array_from_structure(ritems, fmt, tr)
