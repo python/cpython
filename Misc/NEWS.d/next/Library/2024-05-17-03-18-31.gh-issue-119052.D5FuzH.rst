@@ -1,2 +1,0 @@
-Fixed mkdir method of zipfile.ZipFile when ZipInfo object passed in with no CRC 
-attribute
