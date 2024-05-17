@@ -18,7 +18,7 @@ class IoThreadingTestCase(unittest.TestCase):
                 for i in range(NUM_THREADS):
                     executor.submit(looping_print_to_file, f, i)
 
-            executor.shutdown(wait=True)
+                executor.shutdown(wait=True)
 
         with open('test_io_threading.out', 'r') as f:
             lines = set(x.rstrip() for x in f.readlines() if ',' in x)
