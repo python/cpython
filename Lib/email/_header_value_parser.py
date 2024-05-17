@@ -2859,7 +2859,6 @@ def _refold_parse_tree(parse_tree, *, policy):
                 # (e.g. a ListSeparator).
                 last_ew = None
                 want_encoding = False
-                pass
         if len(tstr) <= maxlen - len(lines[-1]):
             lines[-1] += tstr
             continue
