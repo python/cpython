@@ -51,12 +51,17 @@ Py_GetBuildInfo(void)
     const char *revision = _Py_gitversion();
     const char *sep = *revision ? ":" : "";
     const char *gitid = _Py_gitidentifier();
+#ifdef Py_GIL_DISABLED
+    const char *build = "free-threading";
+#else
+    const char *build = "default";
+#endif
     if (!(*gitid)) {
         gitid = "main";
     }
     PyOS_snprintf(buildinfo, sizeof(buildinfo),
-                  "%s%s%s, %.20s, %.9s", gitid, sep, revision,
-                  DATE, TIME);
+                  "%s%s%s, %.20s, %.9s, %s", gitid, sep, revision,
+                  DATE, TIME, build);
     return buildinfo;
 }
 
