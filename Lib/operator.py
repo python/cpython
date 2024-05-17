@@ -243,7 +243,7 @@ class attrgetter:
     """
     __slots__ = ('_attrs', '_call')
 
-    def __init__(self, attr, *attrs):
+    def __init__(self, attr, /, *attrs):
         if not attrs:
             if not isinstance(attr, str):
                 raise TypeError('attribute name must be a string')
@@ -261,7 +261,7 @@ class attrgetter:
                 return tuple(getter(obj) for getter in getters)
             self._call = func
 
-    def __call__(self, obj):
+    def __call__(self, obj, /):
         return self._call(obj)
 
     def __repr__(self):
@@ -280,7 +280,7 @@ class itemgetter:
     """
     __slots__ = ('_items', '_call')
 
-    def __init__(self, item, *items):
+    def __init__(self, item, /, *items):
         if not items:
             self._items = (item,)
             def func(obj):
@@ -292,7 +292,7 @@ class itemgetter:
                 return tuple(obj[i] for i in items)
             self._call = func
 
-    def __call__(self, obj):
+    def __call__(self, obj, /):
         return self._call(obj)
 
     def __repr__(self):
@@ -319,7 +319,7 @@ class methodcaller:
         self._args = args
         self._kwargs = kwargs
 
-    def __call__(self, obj):
+    def __call__(self, obj, /):
         return getattr(obj, self._name)(*self._args, **self._kwargs)
 
     def __repr__(self):

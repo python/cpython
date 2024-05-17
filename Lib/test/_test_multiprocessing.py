@@ -22,7 +22,6 @@ import logging
 import subprocess
 import struct
 import operator
-import pathlib
 import pickle
 import weakref
 import warnings
@@ -324,8 +323,9 @@ class _TestProcess(BaseTestCase):
             self.skipTest(f'test not appropriate for {self.TYPE}')
         paths = [
             sys.executable,               # str
-            sys.executable.encode(),      # bytes
-            pathlib.Path(sys.executable)  # os.PathLike
+            os.fsencode(sys.executable),  # bytes
+            os_helper.FakePath(sys.executable),  # os.PathLike
+            os_helper.FakePath(os.fsencode(sys.executable)),  # os.PathLike bytes
         ]
         for path in paths:
             self.set_executable(path)
@@ -2812,8 +2812,8 @@ class _TestPool(BaseTestCase):
         self.pool.map(identity, objs)
 
         del objs
-        gc.collect()  # For PyPy or other GCs.
         time.sleep(DELTA)  # let threaded cleanup code run
+        support.gc_collect()  # For PyPy or other GCs.
         self.assertEqual(set(wr() for wr in refs), {None})
         # With a process pool, copies of the objects are returned, check
         # they were released too.
@@ -3513,15 +3513,20 @@ class _TestListener(BaseTestCase):
             client = self.connection.Client(addr, authkey=authkey)
             client.send(1729)
 
-        key = b""
+        key = b''
 
         with self.connection.Listener(authkey=key) as listener:
-            threading.Thread(target=run, args=(listener.address, key)).start()
-            with listener.accept() as d:
-                self.assertEqual(d.recv(), 1729)
+            thread = threading.Thread(target=run, args=(listener.address, key))
+            thread.start()
+            try:
+                with listener.accept() as d:
+                    self.assertEqual(d.recv(), 1729)
+            finally:
+                thread.join()
 
         if self.TYPE == 'processes':
-            self.assertRaises(OSError, listener.accept)
+            with self.assertRaises(OSError):
+                listener.accept()
 
     @unittest.skipUnless(util.abstract_sockets_supported,
                          "test needs abstract socket support")
@@ -4657,7 +4662,7 @@ class _TestFinalize(BaseTestCase):
         old_interval = sys.getswitchinterval()
         old_threshold = gc.get_threshold()
         try:
-            sys.setswitchinterval(1e-6)
+            support.setswitchinterval(1e-6)
             gc.set_threshold(5, 5, 5)
             threads = [threading.Thread(target=run_finalizers),
                        threading.Thread(target=make_finalizers)]
@@ -6154,6 +6159,29 @@ class TestNamedResource(unittest.TestCase):
         # on error, err = 'UserWarning: resource_tracker: There appear to
         # be 1 leaked semaphore objects to clean up at shutdown'
         self.assertFalse(err, msg=err.decode('utf-8'))
+
+
+class _TestAtExit(BaseTestCase):
+
+    ALLOWED_TYPES = ('processes',)
+
+    @classmethod
+    def _write_file_at_exit(self, output_path):
+        import atexit
+        def exit_handler():
+            with open(output_path, 'w') as f:
+                f.write("deadbeef")
+        atexit.register(exit_handler)
+
+    def test_atexit(self):
+        # gh-83856
+        with os_helper.temp_dir() as temp_dir:
+            output_path = os.path.join(temp_dir, 'output.txt')
+            p = self.Process(target=self._write_file_at_exit, args=(output_path,))
+            p.start()
+            p.join()
+            with open(output_path) as f:
+                self.assertEqual(f.read(), 'deadbeef')
 
 
 class MiscTestCase(unittest.TestCase):

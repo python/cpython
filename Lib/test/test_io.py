@@ -40,7 +40,7 @@ from test import support
 from test.support.script_helper import (
     assert_python_ok, assert_python_failure, run_python_until_end)
 from test.support import (
-    import_helper, is_apple, os_helper, skip_if_sanitizer, threading_helper, warnings_helper
+    import_helper, is_apple, os_helper, threading_helper, warnings_helper,
 )
 from test.support.os_helper import FakePath
 
@@ -1160,7 +1160,7 @@ class APIMismatchTest(unittest.TestCase):
     def test_RawIOBase_io_in_pyio_match(self):
         """Test that pyio RawIOBase class has all c RawIOBase methods"""
         mismatch = support.detect_api_mismatch(pyio.RawIOBase, io.RawIOBase,
-                                               ignore=('__weakref__',))
+                                               ignore=('__weakref__', '__static_attributes__'))
         self.assertEqual(mismatch, set(), msg='Python RawIOBase does not have all C RawIOBase methods')
 
     def test_RawIOBase_pyio_in_io_match(self):
@@ -1697,19 +1697,6 @@ class BufferedReaderTest(unittest.TestCase, CommonBufferedTests):
 class CBufferedReaderTest(BufferedReaderTest, SizeofTest):
     tp = io.BufferedReader
 
-    @skip_if_sanitizer(memory=True, address=True, thread=True,
-                       reason="sanitizer defaults to crashing "
-                       "instead of returning NULL for malloc failure.")
-    def test_constructor(self):
-        BufferedReaderTest.test_constructor(self)
-        # The allocation can succeed on 32-bit builds, e.g. with more
-        # than 2 GiB RAM and a 64-bit kernel.
-        if sys.maxsize > 0x7FFFFFFF:
-            rawio = self.MockRawIO()
-            bufio = self.tp(rawio)
-            self.assertRaises((OverflowError, MemoryError, ValueError),
-                bufio.__init__, rawio, sys.maxsize)
-
     def test_initialization(self):
         rawio = self.MockRawIO([b"abc"])
         bufio = self.tp(rawio)
@@ -2064,19 +2051,6 @@ class BufferedWriterTest(unittest.TestCase, CommonBufferedTests):
 
 class CBufferedWriterTest(BufferedWriterTest, SizeofTest):
     tp = io.BufferedWriter
-
-    @skip_if_sanitizer(memory=True, address=True, thread=True,
-                       reason="sanitizer defaults to crashing "
-                       "instead of returning NULL for malloc failure.")
-    def test_constructor(self):
-        BufferedWriterTest.test_constructor(self)
-        # The allocation can succeed on 32-bit builds, e.g. with more
-        # than 2 GiB RAM and a 64-bit kernel.
-        if sys.maxsize > 0x7FFFFFFF:
-            rawio = self.MockRawIO()
-            bufio = self.tp(rawio)
-            self.assertRaises((OverflowError, MemoryError, ValueError),
-                bufio.__init__, rawio, sys.maxsize)
 
     def test_initialization(self):
         rawio = self.MockRawIO()
@@ -2586,19 +2560,6 @@ class BufferedRandomTest(BufferedReaderTest, BufferedWriterTest):
 
 class CBufferedRandomTest(BufferedRandomTest, SizeofTest):
     tp = io.BufferedRandom
-
-    @skip_if_sanitizer(memory=True, address=True, thread=True,
-                       reason="sanitizer defaults to crashing "
-                       "instead of returning NULL for malloc failure.")
-    def test_constructor(self):
-        BufferedRandomTest.test_constructor(self)
-        # The allocation can succeed on 32-bit builds, e.g. with more
-        # than 2 GiB RAM and a 64-bit kernel.
-        if sys.maxsize > 0x7FFFFFFF:
-            rawio = self.MockRawIO()
-            bufio = self.tp(rawio)
-            self.assertRaises((OverflowError, MemoryError, ValueError),
-                bufio.__init__, rawio, sys.maxsize)
 
     def test_garbage_collection(self):
         CBufferedReaderTest.test_garbage_collection(self)

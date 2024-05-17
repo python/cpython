@@ -15,7 +15,13 @@
 #    include <sys/mman.h>
 #endif
 
-#ifdef __APPLE__
+#if defined(__APPLE__)
+#  include <TargetConditionals.h>
+// Older macOS SDKs do not define TARGET_OS_OSX
+#  if !defined(TARGET_OS_OSX)
+#     define TARGET_OS_OSX 1
+#  endif
+#  if TARGET_OS_OSX
 #    include <libproc.h>
 #    include <mach-o/fat.h>
 #    include <mach-o/loader.h>
@@ -26,6 +32,7 @@
 #    include <sys/mman.h>
 #    include <sys/proc.h>
 #    include <sys/sysctl.h>
+#  endif
 #endif
 
 #include <errno.h>
@@ -50,7 +57,7 @@
 #    define HAVE_PROCESS_VM_READV 0
 #endif
 
-#ifdef __APPLE__
+#if defined(__APPLE__) && TARGET_OS_OSX
 static void*
 analyze_macho64(mach_port_t proc_ref, void* base, void* map)
 {
@@ -373,7 +380,7 @@ read_memory(pid_t pid, void* remote_address, size_t len, void* dst)
         result += read;
     } while ((size_t)read != local[0].iov_len);
     total_bytes_read = result;
-#elif defined(__APPLE__)
+#elif defined(__APPLE__) && TARGET_OS_OSX
     ssize_t result = -1;
     kern_return_t kr = mach_vm_read_overwrite(
             pid_to_task(pid),
@@ -429,7 +436,7 @@ get_py_runtime(pid_t pid)
 {
 #if defined(__linux__)
     return get_py_runtime_linux(pid);
-#elif defined(__APPLE__)
+#elif defined(__APPLE__) && TARGET_OS_OSX
     return get_py_runtime_macos(pid);
 #else
     return NULL;
@@ -546,12 +553,12 @@ get_stack_trace(PyObject* self, PyObject* args)
     if (bytes_read == -1) {
         return NULL;
     }
-    off_t thread_state_list_head = local_debug_offsets.runtime_state.interpreters_head;
+    off_t interpreter_state_list_head = local_debug_offsets.runtime_state.interpreters_head;
 
     void* address_of_interpreter_state;
     bytes_read = read_memory(
             pid,
-            (void*)(runtime_start_address + thread_state_list_head),
+            (void*)(runtime_start_address + interpreter_state_list_head),
             sizeof(void*),
             &address_of_interpreter_state);
     if (bytes_read == -1) {
@@ -620,6 +627,12 @@ PyMODINIT_FUNC
 PyInit__testexternalinspection(void)
 {
     PyObject* mod = PyModule_Create(&module);
+    if (mod == NULL) {
+        return NULL;
+    }
+#ifdef Py_GIL_DISABLED
+    PyUnstable_Module_SetGIL(mod, Py_MOD_GIL_NOT_USED);
+#endif
     int rc = PyModule_AddIntConstant(mod, "PROCESS_VM_READV_SUPPORTED", HAVE_PROCESS_VM_READV);
     if (rc < 0) {
         Py_DECREF(mod);

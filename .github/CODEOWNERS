@@ -119,7 +119,7 @@ Python/dynload_*.c            @ericsnowcurrently
 Lib/test/test_module/         @ericsnowcurrently
 Doc/c-api/module.rst          @ericsnowcurrently
 **/*importlib/resources/*     @jaraco @warsaw @FFY00
-**/importlib/metadata/*       @jaraco @warsaw
+**/*importlib/metadata/*       @jaraco @warsaw
 
 # Dates and times
 **/*datetime*                 @pganssle @abalkin
@@ -242,6 +242,18 @@ Doc/howto/clinic.rst          @erlend-aasland
 Lib/test/support/interpreters/  @ericsnowcurrently
 Modules/_xx*interp*module.c   @ericsnowcurrently
 Lib/test/test_interpreters/   @ericsnowcurrently
+
+# Android
+**/*Android*                  @mhsmith
+**/*android*                  @mhsmith
+
+# iOS (but not termios)
+**/iOS*                       @freakboy3742
+**/ios*                       @freakboy3742
+**/*_iOS*                     @freakboy3742
+**/*_ios*                     @freakboy3742
+**/*-iOS*                     @freakboy3742
+**/*-ios*                     @freakboy3742
 
 # WebAssembly
 /Tools/wasm/                  @brettcannon

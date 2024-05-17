@@ -1,3 +1,0 @@
-Fix :func:`inspect.unwrap` for types with the ``__wrapper__`` data
-descriptor. Fix :meth:`inspect.Signature.from_callable` for builtins
-:func:`classmethod` and :func:`staticmethod`.

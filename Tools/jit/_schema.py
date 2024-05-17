@@ -1,19 +1,27 @@
 """Schema for the JSON produced by llvm-readobj --elf-output-style=JSON."""
+
 import typing
 
 HoleKind: typing.TypeAlias = typing.Literal[
+    "ARM64_RELOC_BRANCH26",
     "ARM64_RELOC_GOT_LOAD_PAGE21",
     "ARM64_RELOC_GOT_LOAD_PAGEOFF12",
     "ARM64_RELOC_PAGE21",
     "ARM64_RELOC_PAGEOFF12",
     "ARM64_RELOC_UNSIGNED",
     "IMAGE_REL_AMD64_REL32",
+    "IMAGE_REL_ARM64_BRANCH26",
+    "IMAGE_REL_ARM64_PAGEBASE_REL21",
+    "IMAGE_REL_ARM64_PAGEOFFSET_12A",
+    "IMAGE_REL_ARM64_PAGEOFFSET_12L",
     "IMAGE_REL_I386_DIR32",
     "IMAGE_REL_I386_REL32",
     "R_AARCH64_ABS64",
     "R_AARCH64_ADR_GOT_PAGE",
+    "R_AARCH64_ADR_PREL_PG_HI21",
     "R_AARCH64_CALL26",
     "R_AARCH64_JUMP26",
+    "R_AARCH64_ADD_ABS_LO12_NC",
     "R_AARCH64_LD64_GOT_LO12_NC",
     "R_AARCH64_MOVW_UABS_G0_NC",
     "R_AARCH64_MOVW_UABS_G1_NC",
@@ -64,12 +72,12 @@ class _COFFSymbol(typing.TypedDict):
 
 
 class _ELFSymbol(typing.TypedDict):
-    Name: dict[typing.Literal["Value"], str]
+    Name: dict[typing.Literal["Name"], str]
     Value: int
 
 
 class _MachOSymbol(typing.TypedDict):
-    Name: dict[typing.Literal["Value"], str]
+    Name: dict[typing.Literal["Name"], str]
     Value: int
 
 
@@ -95,7 +103,7 @@ class ELFSection(typing.TypedDict):
     Relocations: list[dict[typing.Literal["Relocation"], ELFRelocation]]
     SectionData: dict[typing.Literal["Bytes"], list[int]]
     Symbols: list[dict[typing.Literal["Symbol"], _ELFSymbol]]
-    Type: dict[typing.Literal["Value"], str]
+    Type: dict[typing.Literal["Name"], str]
 
 
 class MachOSection(typing.TypedDict):
