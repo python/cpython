@@ -33,8 +33,11 @@ import code
 from types import ModuleType
 
 from .readline import _get_reader, multiline_input
-from .unix_console import _error
 
+try:
+    from .unix_console import _error
+except ModuleNotFoundError:
+    _error = OSError
 
 def check() -> str:
     """Returns the error message if there is a problem initializing the state."""
@@ -82,8 +85,11 @@ def run_multiline_interactive_console(
     mainmodule: ModuleType | None= None, future_flags: int = 0
 ) -> None:
     import __main__
-    from .readline import _setup
-    _setup()
+    try:
+        from .readline import _setup
+        _setup()
+    except ImportError:
+        pass
 
     mainmodule = mainmodule or __main__
     console = InteractiveColoredConsole(mainmodule.__dict__, filename="<stdin>")

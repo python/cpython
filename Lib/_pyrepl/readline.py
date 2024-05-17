@@ -31,13 +31,19 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 import os
-import readline
+try:
+    import readline
+except ImportError:
+    readline = None
 from site import gethistoryfile   # type: ignore[attr-defined]
 import sys
 
 from . import commands, historical_reader
 from .completing_reader import CompletingReader
-from .unix_console import UnixConsole, _error
+try:
+    from .unix_console import UnixConsole as Console, _error
+except:
+    from .windows_console import WindowsConsole as Console, _error
 
 ENCODING = sys.getdefaultencoding() or "latin1"
 
@@ -81,7 +87,7 @@ __all__ = [
 
 @dataclass
 class ReadlineConfig:
-    readline_completer: Completer | None = readline.get_completer()
+    readline_completer: Completer | None = readline.get_completer() if readline is not None else None
     completer_delims: frozenset[str] = frozenset(" \t\n`~!@#$%^&*()-=+[{]}\\|;:'\",<>/?")
 
 
@@ -274,7 +280,7 @@ class _ReadlineWrapper:
 
     def get_reader(self) -> ReadlineAlikeReader:
         if self.reader is None:
-            console = UnixConsole(self.f_in, self.f_out, encoding=ENCODING)
+            console = Console(self.f_in, self.f_out, encoding=ENCODING)
             self.reader = ReadlineAlikeReader(console=console, config=self.config)
         return self.reader
 
