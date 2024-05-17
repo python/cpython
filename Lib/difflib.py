@@ -915,12 +915,24 @@ class Differ:
         cruncher = SequenceMatcher(self.charjunk)
         eqi, eqj = None, None   # 1st indices of equal lines (if any)
 
+        max_len_a = max(map(len, a))
+        max_len_b = max(map(len, b))
+        # twice epsilon can be safely added to distinguish equal ratios
+        # given ratios are 2 * integer / (len_i + len_j)
+        # the smallest possible non-zero difference between two arbitrary
+        # ratios is no less than twice the epsilon
+        epsilon = 0.99 / (max_len_a + max_len_b) ** 2
+        # we use sub-epsilon weights to promote otherwise equal ratios
+        # that split sequences closer to their midpoints
+        # this way, we balance the recursion tree in degenerate cases
+
         # search for the pair that matches best without being identical
         # (identical lines must be junk lines, & we don't want to synch up
         # on junk -- unless we have to)
         for j in range(blo, bhi):
             bj = b[j]
             cruncher.set_seq2(bj)
+            weight_b = min(j - blo, bhi - 1 - j) / (bhi - blo)
             for i in range(alo, ahi):
                 ai = a[i]
                 if ai == bj:
@@ -928,16 +940,18 @@ class Differ:
                         eqi, eqj = i, j
                     continue
                 cruncher.set_seq1(ai)
+                weight_ab = weight_b + min(i - alo, ahi - 1 - i) / (ahi - alo)
+                weight_ab *= epsilon
                 # computing similarity is expensive, so use the quick
                 # upper bounds first -- have seen this speed up messy
                 # compares by a factor of 3.
                 # note that ratio() is only expensive to compute the first
                 # time it's called on a sequence pair; the expensive part
                 # of the computation is cached by cruncher
-                if cruncher.real_quick_ratio() > best_ratio and \
-                      cruncher.quick_ratio() > best_ratio and \
-                      cruncher.ratio() > best_ratio:
-                    best_ratio, best_i, best_j = cruncher.ratio(), i, j
+                if cruncher.real_quick_ratio() + weight_ab > best_ratio and \
+                      cruncher.quick_ratio() + weight_ab > best_ratio and \
+                      cruncher.ratio() + weight_ab > best_ratio:
+                    best_ratio, best_i, best_j = cruncher.ratio() + weight_ab, i, j
         if best_ratio < cutoff:
             # no non-identical "pretty close" pair
             if eqi is None:
