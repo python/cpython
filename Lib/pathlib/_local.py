@@ -483,13 +483,6 @@ class Path(PathBase, PurePath):
     def _unsupported_msg(cls, attribute):
         return f"{cls.__name__}.{attribute} is unsupported on this system"
 
-    def __init__(self, *args, **kwargs):
-        if kwargs:
-            msg = ("support for supplying keyword arguments to pathlib.PurePath "
-                   "is deprecated and scheduled for removal in Python {remove}")
-            warnings._deprecated("pathlib.PurePath(**kwargs)", msg, remove=(3, 14))
-        super().__init__(*args)
-
     def __new__(cls, *args, **kwargs):
         if cls is Path:
             cls = WindowsPath if os.name == 'nt' else PosixPath
@@ -502,11 +495,45 @@ class Path(PathBase, PurePath):
         """
         return os.stat(self, follow_symlinks=follow_symlinks)
 
+    def exists(self, *, follow_symlinks=True):
+        """
+        Whether this path exists.
+
+        This method normally follows symlinks; to check whether a symlink exists,
+        add the argument follow_symlinks=False.
+        """
+        if follow_symlinks:
+            return os.path.exists(self)
+        return os.path.lexists(self)
+
+    def is_dir(self, *, follow_symlinks=True):
+        """
+        Whether this path is a directory.
+        """
+        if follow_symlinks:
+            return os.path.isdir(self)
+        return PathBase.is_dir(self, follow_symlinks=follow_symlinks)
+
+    def is_file(self, *, follow_symlinks=True):
+        """
+        Whether this path is a regular file (also True for symlinks pointing
+        to regular files).
+        """
+        if follow_symlinks:
+            return os.path.isfile(self)
+        return PathBase.is_file(self, follow_symlinks=follow_symlinks)
+
     def is_mount(self):
         """
         Check if this path is a mount point
         """
         return os.path.ismount(self)
+
+    def is_symlink(self):
+        """
+        Whether this path is a symbolic link.
+        """
+        return os.path.islink(self)
 
     def is_junction(self):
         """
