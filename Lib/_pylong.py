@@ -351,7 +351,7 @@ def _dec_str_to_int_inner(s, *, GUARD=8):
     # And what if we've plain exhausted the limits of HW floats? We
     # could compute the log to any desired precision using `decimal`,
     # but it's not plausible that anyone will pass a string requiring
-    # trillions of bytes (unles they're just trying to "break things").
+    # trillions of bytes (unless they're just trying to "break things").
     if w.bit_length() >= 46:
         # "Only" had < 53 - 46 = 7 bits to spare in IEEE-754 double.
         raise ValueError(f"cannot convert string of len {lenS} to int")
@@ -369,7 +369,7 @@ def _dec_str_to_int_inner(s, *, GUARD=8):
         for k, v in pow256.items():
             # No need to save much more precision in the reciprocal than
             # the power of 256 has, plus some guard digits to absorb
-            # most relevant rounding errors. This is highly signficant:
+            # most relevant rounding errors. This is highly significant:
             # 1/2**i has the same number of significant decimal digits
             # as 5**i, generally over twice the number in 2**i,
             ctx.prec = v.adjusted() + GUARD + 1
@@ -578,7 +578,7 @@ def int_divmod(a, b):
 #
 # Lemma 2: ceiling(log10(x/y)) <= x.a - y.a + 1
 #
-# Peood: Express x and y as in Lemma 1. Then x/y = f/g * 10**(x.a -
+# Proof: Express x and y as in Lemma 1. Then x/y = f/g * 10**(x.a -
 # y.a), where 1/10 < f/g < 10. If 1 <= f/g, (x/y).a is x.a-y.a. Else
 # multiply f/g by 10 to bring it back into [1, 10], and subtract 1 from
 # the exponent to compensate. Then (x/y).a is x.a-y.a-1. So the largest
@@ -608,7 +608,7 @@ def int_divmod(a, b):
 #     hi = +n * +recip # unary `+` chops to ctx.prec digits
 #
 # we have 3 visible chopped operationa, but there's also a 4th:
-# precomuting a truncatrd `recip` as part of setup.
+# precomuting a truncated `recip` as part of setup.
 #
 # So the computed product is exactly equal to the true product times
 # (1-e1)*(1-e2)*(1-e3)*(1-e4); since the e's are all very small, an
@@ -649,11 +649,11 @@ def int_divmod(a, b):
 # On Computing Reciprocals
 # ------------------------
 # In general, the exact reciprocals we compute have over twice as many
-# significant digts as needed. 1/256**i has the same number of
+# significant digits as needed. 1/256**i has the same number of
 # significant decimal digits as 5**i. It's a significant waste of RAM
 # to store all those unneeded digits.
 #
-# So we cut exact repicroals back to the least precision that can
+# So we cut exact reciprocals back to the least precision that can
 # be needed so that the error analysis above is valid,
 #
 # [Note: turns out it's very significantly faster to do it this way than
@@ -688,9 +688,9 @@ def int_divmod(a, b):
 # p256.a + p256.a + 1 - 2 * p256.a = 1. QED
 #
 # Note: an earlier version of the code split on floor(e/2) instead of on
-# the ceiiing. Thw worst case then is odd `w`, and a more involved proof
+# the ceiling. The worst case then is odd `w`, and a more involved proof
 # was needed to show that adding 4 (instead of 1) may be neceasary.
-# Basically because, in that cass, n may be up to 256 times larger than
+# Basically because, in that case, n may be up to 256 times larger than
 # p256**2. Curiously enough, by splitting on the ceiling instead,
 # nothing in any proof here actually depends on the output base (256).
 
