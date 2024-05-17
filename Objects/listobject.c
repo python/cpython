@@ -660,8 +660,13 @@ list_item(PyObject *aa, Py_ssize_t i)
     PyObject **ob_item = _Py_atomic_load_ptr(&a->ob_item);
     item = _Py_atomic_load_ptr(&ob_item[i]);
     if (item && _Py_TryIncrefCompare(&ob_item[i], item)) {
+        if (ob_item != _Py_atomic_load_ptr(&a->ob_item)) {
+            Py_DECREF(item);
+            goto retry;
+        }
         return item;
     }
+retry:
 #endif
     Py_BEGIN_CRITICAL_SECTION(a);
 #ifdef Py_GIL_DISABLED
