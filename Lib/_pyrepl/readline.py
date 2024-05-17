@@ -48,6 +48,9 @@ from collections.abc import Callable, Collection
 from .types import Callback, Completer, KeySpec, CommandName
 
 
+MoreLinesCallable = Callable[[str], bool]
+
+
 __all__ = [
     "add_history",
     "clear_history",
@@ -94,7 +97,7 @@ class ReadlineAlikeReader(historical_reader.HistoricalReader, CompletingReader):
 
     # Instance fields
     config: ReadlineConfig
-    more_lines: Callable[[str], bool] | None = None
+    more_lines: MoreLinesCallable | None = None
 
     def __post_init__(self) -> None:
         super().__post_init__()
@@ -287,7 +290,7 @@ class _ReadlineWrapper:
         reader.ps1 = str(prompt)
         return reader.readline(startup_hook=self.startup_hook)
 
-    def multiline_input(self, more_lines, ps1, ps2):
+    def multiline_input(self, more_lines: MoreLinesCallable, ps1: str, ps2: str) -> tuple[str, bool]:
         """Read an input on possibly multiple lines, asking for more
         lines as long as 'more_lines(unicodetext)' returns an object whose
         boolean value is true.

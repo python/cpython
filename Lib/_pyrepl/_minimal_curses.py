@@ -17,7 +17,7 @@ class error(Exception):
     pass
 
 
-def _find_clib():
+def _find_clib() -> str:
     trylibs = ["ncursesw", "ncurses", "curses"]
 
     for lib in trylibs:

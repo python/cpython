@@ -40,9 +40,13 @@ from .unix_eventqueue import EventQueue
 from .utils import wlen
 
 
+TYPE_CHECKING = False
+
 # types
-if False:
-    from typing import IO
+if TYPE_CHECKING:
+    from typing import IO, Literal, overload
+else:
+    overload = lambda func: None
 
 
 class InvalidTerminal(RuntimeError):
@@ -157,7 +161,13 @@ class UnixConsole(Console):
         curses.setupterm(term or None, self.output_fd)
         self.term = term
 
-        def _my_getstr(cap, optional=0):
+        @overload
+        def _my_getstr(cap: str, optional: Literal[False] = False) -> bytes: ...
+
+        @overload
+        def _my_getstr(cap: str, optional: bool) -> bytes | None: ...
+
+        def _my_getstr(cap: str, optional: bool = False) -> bytes | None:
             r = curses.tigetstr(cap)
             if not optional and r is None:
                 raise InvalidTerminal(
@@ -672,18 +682,18 @@ class UnixConsole(Console):
         elif dy < 0:
             self.__write_code(self._cuu, -dy)
 
-    def __move_x_hpa(self, x):
+    def __move_x_hpa(self, x: int) -> None:
         if x != self.__posxy[0]:
             self.__write_code(self._hpa, x)
 
-    def __move_x_cub1_cuf1(self, x):
+    def __move_x_cub1_cuf1(self, x: int) -> None:
         dx = x - self.__posxy[0]
         if dx > 0:
             self.__write_code(self._cuf1 * dx)
         elif dx < 0:
             self.__write_code(self._cub1 * (-dx))
 
-    def __move_x_cub_cuf(self, x):
+    def __move_x_cub_cuf(self, x: int) -> None:
         dx = x - self.__posxy[0]
         if dx > 0:
             self.__write_code(self._cuf, dx)
