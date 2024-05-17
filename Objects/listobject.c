@@ -658,7 +658,7 @@ list_item(PyObject *aa, Py_ssize_t i)
     PyObject *item;
 #ifdef Py_GIL_DISABLED
     PyObject **ob_item = _Py_atomic_load_ptr(&a->ob_item);
-    item =  _Py_atomic_load_ptr(&ob_item[i]);
+    item = _Py_atomic_load_ptr(&ob_item[i]);
     if (item && _Py_TryIncrefCompare(&ob_item[i], item)) {
         return item;
     }
