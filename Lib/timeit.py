@@ -60,6 +60,7 @@ dummy_src_name = "<timeit-src>"
 default_number = 1000000
 default_repeat = 5
 default_timer = time.perf_counter
+units = {"nsec": 1e-9, "usec": 1e-6, "msec": 1e-3, "sec": 1.0}
 
 _globals = globals
 
@@ -243,81 +244,15 @@ def repeat(stmt="pass", setup="pass", timer=default_timer,
     return Timer(stmt, setup, timer, globals).repeat(repeat, number)
 
 
-def main(args=None, *, _wrap_timer=None):
-    """Main program, used when run as a script.
-
-    The optional 'args' argument specifies the command line to be parsed,
-    defaulting to sys.argv[1:].
-
-    The return value is an exit code to be passed to sys.exit(); it
-    may be None to indicate success.
-
-    When an exception happens during timing, a traceback is printed to
-    stderr and the return value is 1.  Exceptions at other times
-    (including the template compilation) are not caught.
-
-    '_wrap_timer' is an internal interface used for unit testing.  If it
-    is not None, it must be a callable that accepts a timer function
-    and returns another timer function (used for unit testing).
-    """
-    if args is None:
-        args = sys.argv[1:]
-    import getopt
-    try:
-        opts, args = getopt.getopt(args, "n:u:s:r:pvh",
-                                   ["number=", "setup=", "repeat=",
-                                    "process", "verbose", "unit=", "help"])
-    except getopt.error as err:
-        print(err)
-        print("use -h/--help for command line help")
-        return 2
-
-    timer = default_timer
-    stmt = "\n".join(args) or "pass"
-    number = 0  # auto-determine
-    setup = []
-    repeat = default_repeat
-    verbose = 0
-    time_unit = None
-    units = {"nsec": 1e-9, "usec": 1e-6, "msec": 1e-3, "sec": 1.0}
+def run(stmt="pass", setup="pass", timer=default_timer,
+        repeat=default_repeat, number=None,
+        time_unit=None, verbose=False):
     precision = 3
-    for o, a in opts:
-        if o in ("-n", "--number"):
-            number = int(a)
-        if o in ("-s", "--setup"):
-            setup.append(a)
-        if o in ("-u", "--unit"):
-            if a in units:
-                time_unit = a
-            else:
-                print("Unrecognized unit. Please select nsec, usec, msec, or sec.",
-                      file=sys.stderr)
-                return 2
-        if o in ("-r", "--repeat"):
-            repeat = int(a)
-            if repeat <= 0:
-                repeat = 1
-        if o in ("-p", "--process"):
-            timer = time.process_time
-        if o in ("-v", "--verbose"):
-            if verbose:
-                precision += 1
-            verbose += 1
-        if o in ("-h", "--help"):
-            print(__doc__, end=' ')
-            return 0
-    setup = "\n".join(setup) or "pass"
-
-    # Include the current directory, so that local imports work (sys.path
-    # contains the directory of this script, rather than the current
-    # directory)
-    import os
-    sys.path.insert(0, os.curdir)
-    if _wrap_timer is not None:
-        timer = _wrap_timer(timer)
+    if verbose:
+        precision += 1
 
     t = Timer(stmt, setup, timer)
-    if number == 0:
+    if number == None:
         # determine number so that 0.2 <= total time < 2.0
         callback = None
         if verbose:
@@ -326,20 +261,13 @@ def main(args=None, *, _wrap_timer=None):
                 plural = (number != 1)
                 print(msg.format(num=number, s='s' if plural else '',
                                  secs=time_taken, prec=precision))
-        try:
-            number, _ = t.autorange(callback)
-        except:
-            t.print_exc()
-            return 1
+
+        number, _ = t.autorange(callback)
 
         if verbose:
             print()
 
-    try:
-        raw_timings = t.repeat(repeat, number)
-    except:
-        t.print_exc()
-        return 1
+    raw_timings = t.repeat(repeat, number)
 
     def format_time(dt):
         unit = time_unit
@@ -374,8 +302,83 @@ def main(args=None, *, _wrap_timer=None):
                                "slower than the best time (%s)."
                                % (format_time(worst), format_time(best)),
                                UserWarning, '', 0)
-    return None
 
+
+def main(args=None, *, _wrap_timer=None):
+    """Main program, used when run as a script.
+
+    The optional 'args' argument specifies the command line to be parsed,
+    defaulting to sys.argv[1:].
+
+    The return value is an exit code to be passed to sys.exit(); it
+    may be None to indicate success.
+
+    When an exception happens during timing, a traceback is printed to
+    stderr and the return value is 1.  Exceptions at other times
+    (including the template compilation) are not caught.
+
+    '_wrap_timer' is an internal interface used for unit testing.  If it
+    is not None, it must be a callable that accepts a timer function
+    and returns another timer function (used for unit testing).
+    """
+    if args is None:
+        args = sys.argv[1:]
+    import getopt
+    try:
+        opts, args = getopt.getopt(args, "n:u:s:r:pvh",
+                                   ["number=", "setup=", "repeat=",
+                                    "process", "verbose", "unit=", "help"])
+    except getopt.error as err:
+        print(err)
+        print("use -h/--help for command line help")
+        return 2
+
+    timer = default_timer
+    stmt = "\n".join(args) or "pass"
+    number = None  # auto-determine
+    setup = []
+    repeat = default_repeat
+    verbose = 0
+    time_unit = None
+    for o, a in opts:
+        if o in ("-n", "--number"):
+            number = int(a)
+        if o in ("-s", "--setup"):
+            setup.append(a)
+        if o in ("-u", "--unit"):
+            if a in units:
+                time_unit = a
+            else:
+                print("Unrecognized unit. Please select nsec, usec, msec, or sec.",
+                      file=sys.stderr)
+                return 2
+        if o in ("-r", "--repeat"):
+            repeat = int(a)
+            if repeat <= 0:
+                repeat = 1
+        if o in ("-p", "--process"):
+            timer = time.process_time
+        if o in ("-v", "--verbose"):
+            verbose += 1
+        if o in ("-h", "--help"):
+            print(__doc__, end=' ')
+            return 0
+    setup = "\n".join(setup) or "pass"
+
+    # Include the current directory, so that local imports work (sys.path
+    # contains the directory of this script, rather than the current
+    # directory)
+    import os
+    sys.path.insert(0, os.curdir)
+    if _wrap_timer is not None:
+        timer = _wrap_timer(timer)
+
+    try:
+        run(stmt, setup, timer, repeat, number, time_unit, bool(verbose))
+        return 0
+    except Exception:
+        timer.print_exc()
+        return 1
 
 if __name__ == "__main__":
     sys.exit(main())
