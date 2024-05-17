@@ -917,13 +917,13 @@ class Differ:
 
         max_len_a = max(map(len, a))
         max_len_b = max(map(len, b))
-        # twice epsilon can be safely added to distinguish equal ratios
-        # given ratios are 2 * integer / (len_i + len_j)
+        # twice the epsilon can be safely added to distinguish otherwise
+        # equal ratios. given ratios are 2 * integer / (len_i + len_j)
         # the smallest possible non-zero difference between two arbitrary
         # ratios is no less than twice the epsilon
         epsilon = 0.99 / (max_len_a + max_len_b) ** 2
-        # we use sub-epsilon weights to promote otherwise equal ratios
-        # that split sequences closer to their midpoints
+        # we use sub-epsilon weights to promote i, j that split the
+        # input range more equally.
         # this way, we balance the recursion tree in degenerate cases
 
         # search for the pair that matches best without being identical
