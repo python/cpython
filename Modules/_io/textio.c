@@ -1729,6 +1729,10 @@ _io_TextIOWrapper_write_impl(textio *self, PyObject *text)
             Py_DECREF(b);
             return NULL;
         }
+        // The assumption that self won't have been modified from another
+        // thread between the flush above and the assignment below is
+        // incorrect.
+        assert(self->pending_bytes == NULL);
         self->pending_bytes = b;
     }
     else if (!PyList_CheckExact(self->pending_bytes)) {
