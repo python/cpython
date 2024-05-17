@@ -3230,6 +3230,15 @@ test_atexit(PyObject *self, PyObject *Py_UNUSED(args))
 
 static PyObject *test_buildvalue_issue38913(PyObject *, PyObject *);
 
+static PyObject *
+function_set_warning(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
+{
+    if (PyErr_WarnEx(PyExc_RuntimeWarning, "Testing PyErr_WarnEx", 2)) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
 static PyMethodDef TestMethods[] = {
     {"set_errno",               set_errno,                       METH_VARARGS},
     {"test_config",             test_config,                     METH_NOARGS},
@@ -3369,6 +3378,7 @@ static PyMethodDef TestMethods[] = {
     {"function_get_kw_defaults", function_get_kw_defaults, METH_O, NULL},
     {"function_set_kw_defaults", function_set_kw_defaults, METH_VARARGS, NULL},
     {"test_atexit", test_atexit, METH_NOARGS},
+    {"function_set_warning", function_set_warning, METH_NOARGS},
     {NULL, NULL} /* sentinel */
 };
 
