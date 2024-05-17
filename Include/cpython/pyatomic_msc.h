@@ -360,7 +360,7 @@ _Py_atomic_exchange_long(long *obj, long value)
 {
     _Py_atomic_ASSERT_ARG_TYPE(int32_t);
     return (int)_Py_atomic_exchange_int32((int32_t *)obj,
-                                           (int32_t)value);
+                                          (int32_t)value);
 }
 
 static inline unsigned int

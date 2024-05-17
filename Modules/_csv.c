@@ -14,7 +14,7 @@ module instead.
 #endif
 
 #include "Python.h"
-#include "pycore_pyatomic_ft_wrappers.h"  // FT_ATOMIC_LOAD_LONG
+#include "pycore_pyatomic_ft_wrappers.h"
 
 #include <stddef.h>               // offsetof()
 #include <stdbool.h>
