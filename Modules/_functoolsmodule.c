@@ -212,7 +212,6 @@ partial_vectorcall(partialobject *pto, PyObject *const *args,
          * to using partial_call() instead. */
         pto->vectorcall = NULL;
         return _PyObject_MakeTpCall(tstate, (PyObject *)pto, args, nargs, kwnames);
-        // return partial_vectorcall_fallback(tstate, pto, args, nargsf, kwnames);
     }
 
     Py_ssize_t nargs_total = nargs;
@@ -297,9 +296,17 @@ partial_call(partialobject *pto, PyObject *args, PyObject *kwargs)
     assert(PyTuple_Check(pto->args));
     assert(PyDict_Check(pto->kw));
 
+    /* pto->kw is mutable, so need to check every time
+     * if kwds are empty to switch to more efficient vectorcall */
+    Py_ssize_t pto_nkwargs = PyDict_GET_SIZE(pto->kw);
+    if ((pto_nkwargs == 0) & pto->can_vcall){
+        pto->vectorcall = (vectorcallfunc)partial_vectorcall;
+        return PyObject_Call((PyObject *)pto, args, kwargs);
+    }
+
     /* Merge keywords */
     PyObject *kwargs2;
-    if (PyDict_GET_SIZE(pto->kw) == 0) {
+    if (pto_nkwargs == 0) {
         /* kwargs can be NULL */
         kwargs2 = Py_XNewRef(kwargs);
     }
