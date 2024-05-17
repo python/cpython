@@ -594,7 +594,7 @@ def int_divmod(a, b):
 # GUARD additional digits.
 #
 # The default 8 is more than enough so no more than 1 correction step
-# was ever needed for all inputs tried through 2.5 billion digita. In
+# was ever needed for all inputs tried through 2.5 billion digits. In
 # fact, I believe 3 guard digits are always enough - but the proof is
 # very involved, so better safe than sorry.
 #
@@ -608,7 +608,7 @@ def int_divmod(a, b):
 #     hi = +n * +recip # unary `+` chops to ctx.prec digits
 #
 # we have 3 visible chopped operationa, but there's also a 4th:
-# precomuting a truncated `recip` as part of setup.
+# precomputing a truncated `recip` as part of setup.
 #
 # So the computed product is exactly equal to the true product times
 # (1-e1)*(1-e2)*(1-e3)*(1-e4); since the e's are all very small, an
@@ -680,7 +680,7 @@ def int_divmod(a, b):
 #     n.a - 2 * p256.a <= 1
 #
 # What's the largest n can be? n < 255**w = 256**(w2 + (w - w2)). The
-# worst case in this context is when w ix even. and then w = 2*w2, ao
+# worst case in this context is when w ix even. and then w = 2*w2, so
 # n < 256**(2*w2) = (256**w2)**2 = p256**2. By Lemma 1, then, n.a
 # is at most p256.a + p256.a + 1.
 #
@@ -689,7 +689,7 @@ def int_divmod(a, b):
 #
 # Note: an earlier version of the code split on floor(e/2) instead of on
 # the ceiling. The worst case then is odd `w`, and a more involved proof
-# was needed to show that adding 4 (instead of 1) may be neceasary.
+# was needed to show that adding 4 (instead of 1) may be necessary.
 # Basically because, in that case, n may be up to 256 times larger than
 # p256**2. Curiously enough, by splitting on the ceiling instead,
 # nothing in any proof here actually depends on the output base (256).
