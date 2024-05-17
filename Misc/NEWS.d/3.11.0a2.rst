@@ -34,7 +34,7 @@ module but frozen modules are disabled.
 .. nonce: veL4lJ
 .. section: Core and Builtins
 
-Specialize simple calls to Python functions (no starargs, keyowrd dict, or
+Specialize simple calls to Python functions (no starargs, keyword dict, or
 closure)
 
 ..

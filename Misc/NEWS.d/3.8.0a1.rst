@@ -6282,7 +6282,7 @@ Add documentation about the new command line interface of the gzip module.
 .. nonce: YO9CYm
 .. section: Documentation
 
-chm document displays non-ASCII charaters properly on some MBCS Windows
+chm document displays non-ASCII characters properly on some MBCS Windows
 systems.
 
 ..
