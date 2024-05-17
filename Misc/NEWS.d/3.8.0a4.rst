@@ -600,7 +600,7 @@ exceptions.
 .. nonce: 9sjd38
 .. section: Library
 
-Add time module support and fix test_time faiures for VxWorks.
+Add time module support and fix test_time failures for VxWorks.
 
 ..
 
@@ -843,7 +843,7 @@ Using the code of the ``Tools/scripts/serve.py`` script as an example in the
 .. nonce: nF1pP1
 .. section: Documentation
 
-Added Documention for  PyInterpreterState_Main().
+Added documentation for PyInterpreterState_Main().
 
 ..
 
