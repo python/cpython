@@ -171,7 +171,11 @@ on a per-module basis in Python 3.7 using a :mod:`__future__` import::
 
     from __future__ import annotations
 
-It will become the default in Python 3.10.
+It was previously scheduled to become mandatory in Python 3.10, but the
+Python Steering Council twice decided to delay the change until 3.13
+(`announcement for Python 3.10 <https://mail.python.org/archives/list/python-dev@python.org/message/CLVXXPQ2T2LQ5MP2Y53VVQFCXYWQJHKZ/>`__;
+`announcement for Python 3.11 <https://mail.python.org/archives/list/python-dev@python.org/message/VIZEBX5EYMSYIJNDBF6DMUMZOCWHARSO/>`__).
+See also :pep:`563` and :pep:`649`.
 
 .. seealso::
 
