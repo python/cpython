@@ -131,6 +131,7 @@ nitpick_ignore = [
     ('c:func', 'vsnprintf'),
     # Standard C types
     ('c:type', 'FILE'),
+    ('c:type', 'int32_t'),
     ('c:type', 'int64_t'),
     ('c:type', 'intmax_t'),
     ('c:type', 'off_t'),
@@ -298,8 +299,8 @@ smartquotes_excludes = {
     'languages': ['ja', 'fr', 'zh_TW', 'zh_CN'], 'builders': ['man', 'text'],
 }
 
-# Avoid a warning with Sphinx >= 2.0
-master_doc = 'contents'
+# Avoid a warning with Sphinx >= 4.0
+root_doc = 'contents'
 
 # Allow translation of index directives
 gettext_additional_targets = [
@@ -373,6 +374,8 @@ htmlhelp_basename = 'python' + release.replace('.', '')
 # Split the index
 html_split_index = True
 
+# Split pot files one per reST file
+gettext_compact = False
 
 # Options for LaTeX output
 # ------------------------
@@ -433,6 +436,10 @@ latex_appendices = ['glossary', 'about', 'license', 'copyright']
 
 epub_author = 'Python Documentation Authors'
 epub_publisher = 'Python Software Foundation'
+
+# index pages are not valid xhtml
+# https://github.com/sphinx-doc/sphinx/issues/12359
+epub_use_index = False
 
 # Options for the coverage checker
 # --------------------------------
