@@ -106,7 +106,7 @@ def collect_sys(info_add):
     copy_attributes(info_add, sys, 'sys.%s', attributes)
 
     for func in (
-        '_is_gil_disabled',
+        '_is_gil_enabled',
         'getandroidapilevel',
         'getrecursionlimit',
         'getwindowsversion',
