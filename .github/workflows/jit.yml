@@ -2,16 +2,20 @@ name: JIT
 on:
   pull_request:
     paths:
-      - '**jit**.c'
-      - '**jit**.py'
+      - '**jit**'
       - 'Python/bytecodes.c'
       - 'Python/optimizer*.c'
+      - '!Python/perf_jit_trampoline.c'
+      - '!Tools/jit/README.md'
+      - '!Tools/jit/mypy.ini'
   push:
     paths:
-      - '**jit**.c'
-      - '**jit**.py'
+      - '**jit**'
       - 'Python/bytecodes.c'
       - 'Python/optimizer*.c'
+      - '!Python/perf_jit_trampoline.c'
+      - '!Tools/jit/README.md'
+      - '!Tools/jit/mypy.ini'
   workflow_dispatch:
 
 permissions:
