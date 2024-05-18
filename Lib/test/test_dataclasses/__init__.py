@@ -4100,12 +4100,16 @@ class TestMakeDataclass(unittest.TestCase):
                     )
 
     def test_cannot_be_pickled(self):
-        for klass in [WrongNameMakeDataclass, WrongModuleMakeDataclass]:
+        klass_error_type_pairs = [
+            (WrongNameMakeDataclass, pickle.PicklingError),
+            (WrongModuleMakeDataclass, ModuleNotFoundError),
+        ]
+        for klass, error_type in klass_error_type_pairs:
             for proto in range(pickle.HIGHEST_PROTOCOL + 1):
                 with self.subTest(proto=proto):
-                    with self.assertRaises(pickle.PickleError):
+                    with self.assertRaises(error_type):
                         pickle.dumps(klass, proto)
-                    with self.assertRaises(pickle.PickleError):
+                    with self.assertRaises(error_type):
                         pickle.dumps(klass(1), proto)
 
     def test_invalid_type_specification(self):
