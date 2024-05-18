@@ -46,10 +46,10 @@ typedef struct {
     PyObject *fn;
     PyObject *args;
     PyObject *kw;
-    PyObject *dict;         /* __dict__ */
-    PyObject *weakreflist;  /* List of weak references */
+    PyObject *dict;        /* __dict__ */
+    PyObject *weakreflist; /* List of weak references */
     vectorcallfunc vectorcall;
-    Py_ssize_t can_vcall;   /* Cache whether function allows vector call */
+    Py_ssize_t can_vcall;  /* Cache whether function allows vector call */
 } partialobject;
 
 static void partial_setvectorcall(partialobject *pto);
