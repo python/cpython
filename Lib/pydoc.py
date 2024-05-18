@@ -76,6 +76,18 @@ from collections import deque
 from reprlib import Repr
 from traceback import format_exception_only
 
+from _pyrepl.pager import (get_pager, plain, escape_less, pipe_pager,
+                           plain_pager, tempfile_pager, tty_pager)
+
+
+# --------------------------------------------------------- old names
+
+getpager = get_pager
+pipepager = pipe_pager
+plainpager = plain_pager
+tempfilepager = tempfile_pager
+ttypager = tty_pager
+
 
 # --------------------------------------------------------- common routines
 
@@ -314,7 +326,7 @@ def visiblename(name, all=None, obj=None):
                 '__date__', '__doc__', '__file__', '__spec__',
                 '__loader__', '__module__', '__name__', '__package__',
                 '__path__', '__qualname__', '__slots__', '__version__',
-                '__static_attributes__'}:
+                '__static_attributes__', '__firstlineno__'}:
         return 0
     # Private names are hidden, but special names are displayed.
     if name.startswith('__') and name.endswith('__'): return 1
@@ -1640,152 +1652,8 @@ class _PlainTextDoc(TextDoc):
 def pager(text, title=''):
     """The first time this is called, determine what kind of pager to use."""
     global pager
-    pager = getpager()
+    pager = get_pager()
     pager(text, title)
-
-def getpager():
-    """Decide what method to use for paging through text."""
-    if not hasattr(sys.stdin, "isatty"):
-        return plainpager
-    if not hasattr(sys.stdout, "isatty"):
-        return plainpager
-    if not sys.stdin.isatty() or not sys.stdout.isatty():
-        return plainpager
-    if sys.platform == "emscripten":
-        return plainpager
-    use_pager = os.environ.get('MANPAGER') or os.environ.get('PAGER')
-    if use_pager:
-        if sys.platform == 'win32': # pipes completely broken in Windows
-            return lambda text, title='': tempfilepager(plain(text), use_pager)
-        elif os.environ.get('TERM') in ('dumb', 'emacs'):
-            return lambda text, title='': pipepager(plain(text), use_pager, title)
-        else:
-            return lambda text, title='': pipepager(text, use_pager, title)
-    if os.environ.get('TERM') in ('dumb', 'emacs'):
-        return plainpager
-    if sys.platform == 'win32':
-        return lambda text, title='': tempfilepager(plain(text), 'more <')
-    if hasattr(os, 'system') and os.system('(less) 2>/dev/null') == 0:
-        return lambda text, title='': pipepager(text, 'less', title)
-
-    import tempfile
-    (fd, filename) = tempfile.mkstemp()
-    os.close(fd)
-    try:
-        if hasattr(os, 'system') and os.system('more "%s"' % filename) == 0:
-            return lambda text, title='': pipepager(text, 'more', title)
-        else:
-            return ttypager
-    finally:
-        os.unlink(filename)
-
-def plain(text):
-    """Remove boldface formatting from text."""
-    return re.sub('.\b', '', text)
-
-def escape_less(s):
-    return re.sub(r'([?:.%\\])', r'\\\1', s)
-
-def pipepager(text, cmd, title=''):
-    """Page through text by feeding it to another program."""
-    import subprocess
-    env = os.environ.copy()
-    if title:
-        title += ' '
-    esc_title = escape_less(title)
-    prompt_string = (
-        f' {esc_title}' +
-        '?ltline %lt?L/%L.'
-        ':byte %bB?s/%s.'
-        '.'
-        '?e (END):?pB %pB\\%..'
-        ' (press h for help or q to quit)')
-    env['LESS'] = '-RmPm{0}$PM{0}$'.format(prompt_string)
-    proc = subprocess.Popen(cmd, shell=True, stdin=subprocess.PIPE,
-                            errors='backslashreplace', env=env)
-    try:
-        with proc.stdin as pipe:
-            try:
-                pipe.write(text)
-            except KeyboardInterrupt:
-                # We've hereby abandoned whatever text hasn't been written,
-                # but the pager is still in control of the terminal.
-                pass
-    except OSError:
-        pass # Ignore broken pipes caused by quitting the pager program.
-    while True:
-        try:
-            proc.wait()
-            break
-        except KeyboardInterrupt:
-            # Ignore ctl-c like the pager itself does.  Otherwise the pager is
-            # left running and the terminal is in raw mode and unusable.
-            pass
-
-def tempfilepager(text, cmd, title=''):
-    """Page through text by invoking a program on a temporary file."""
-    import tempfile
-    with tempfile.TemporaryDirectory() as tempdir:
-        filename = os.path.join(tempdir, 'pydoc.out')
-        with open(filename, 'w', errors='backslashreplace',
-                  encoding=os.device_encoding(0) if
-                  sys.platform == 'win32' else None
-                  ) as file:
-            file.write(text)
-        os.system(cmd + ' "' + filename + '"')
-
-def _escape_stdout(text):
-    # Escape non-encodable characters to avoid encoding errors later
-    encoding = getattr(sys.stdout, 'encoding', None) or 'utf-8'
-    return text.encode(encoding, 'backslashreplace').decode(encoding)
-
-def ttypager(text, title=''):
-    """Page through text on a text terminal."""
-    lines = plain(_escape_stdout(text)).split('\n')
-    try:
-        import tty
-        fd = sys.stdin.fileno()
-        old = tty.tcgetattr(fd)
-        tty.setcbreak(fd)
-        getchar = lambda: sys.stdin.read(1)
-    except (ImportError, AttributeError, io.UnsupportedOperation):
-        tty = None
-        getchar = lambda: sys.stdin.readline()[:-1][:1]
-
-    try:
-        try:
-            h = int(os.environ.get('LINES', 0))
-        except ValueError:
-            h = 0
-        if h <= 1:
-            h = 25
-        r = inc = h - 1
-        sys.stdout.write('\n'.join(lines[:inc]) + '\n')
-        while lines[r:]:
-            sys.stdout.write('-- more --')
-            sys.stdout.flush()
-            c = getchar()
-
-            if c in ('q', 'Q'):
-                sys.stdout.write('\r          \r')
-                break
-            elif c in ('\r', '\n'):
-                sys.stdout.write('\r          \r' + lines[r] + '\n')
-                r = r + 1
-                continue
-            if c in ('b', 'B', '\x1b'):
-                r = r - inc - inc
-                if r < 0: r = 0
-            sys.stdout.write('\n' + '\n'.join(lines[r:r+inc]) + '\n')
-            r = r + inc
-
-    finally:
-        if tty:
-            tty.tcsetattr(fd, tty.TCSAFLUSH, old)
-
-def plainpager(text, title=''):
-    """Simply print unformatted text.  This is the ultimate fallback."""
-    sys.stdout.write(plain(_escape_stdout(text)))
 
 def describe(thing):
     """Produce a short description of the given thing."""

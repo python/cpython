@@ -976,7 +976,7 @@ count_exits(_PyUOpInstruction *buffer, int length)
     int exit_count = 0;
     for (int i = 0; i < length; i++) {
         int opcode = buffer[i].opcode;
-        if (opcode == _SIDE_EXIT || opcode == _DYNAMIC_EXIT) {
+        if (opcode == _EXIT_TRACE || opcode == _DYNAMIC_EXIT) {
             exit_count++;
         }
     }
@@ -987,6 +987,7 @@ static void make_exit(_PyUOpInstruction *inst, int opcode, int target)
 {
     inst->opcode = opcode;
     inst->oparg = 0;
+    inst->operand = 0;
     inst->format = UOP_FORMAT_TARGET;
     inst->target = target;
 }
@@ -1021,7 +1022,7 @@ prepare_for_execution(_PyUOpInstruction *buffer, int length)
         int32_t target = (int32_t)uop_get_target(inst);
         if (_PyUop_Flags[opcode] & (HAS_EXIT_FLAG | HAS_DEOPT_FLAG)) {
             uint16_t exit_op = (_PyUop_Flags[opcode] & HAS_EXIT_FLAG) ?
-                _SIDE_EXIT : _DEOPT;
+                _EXIT_TRACE : _DEOPT;
             int32_t jump_target = target;
             if (is_for_iter_test[opcode]) {
                 /* Target the POP_TOP immediately after the END_FOR,
@@ -1112,7 +1113,7 @@ sanity_check(_PyExecutorObject *executor)
                 CHECK(target_unused(opcode));
                 break;
             case UOP_FORMAT_EXIT:
-                CHECK(opcode == _SIDE_EXIT);
+                CHECK(opcode == _EXIT_TRACE);
                 CHECK(inst->exit_index < executor->exit_count);
                 break;
             case UOP_FORMAT_JUMP:
@@ -1138,9 +1139,9 @@ sanity_check(_PyExecutorObject *executor)
         uint16_t opcode = inst->opcode;
         CHECK(
             opcode == _DEOPT ||
-            opcode == _SIDE_EXIT ||
+            opcode == _EXIT_TRACE ||
             opcode == _ERROR_POP_N);
-        if (opcode == _SIDE_EXIT) {
+        if (opcode == _EXIT_TRACE) {
             CHECK(inst->format == UOP_FORMAT_EXIT);
         }
     }
@@ -1178,7 +1179,7 @@ make_executor_from_uops(_PyUOpInstruction *buffer, int length, const _PyBloomFil
         dest--;
         *dest = buffer[i];
         assert(opcode != _POP_JUMP_IF_FALSE && opcode != _POP_JUMP_IF_TRUE);
-        if (opcode == _SIDE_EXIT) {
+        if (opcode == _EXIT_TRACE) {
             executor->exits[next_exit].target = buffer[i].target;
             dest->exit_index = next_exit;
             dest->format = UOP_FORMAT_EXIT;
@@ -1236,7 +1237,7 @@ init_cold_exit_executor(_PyExecutorObject *executor, int oparg)
     inst->oparg = oparg;
     executor->vm_data.valid = true;
     executor->vm_data.linked = false;
-    for (int i = 0; i < BLOOM_FILTER_WORDS; i++) {
+    for (int i = 0; i < _Py_BLOOM_FILTER_WORDS; i++) {
         assert(executor->vm_data.bloom.bits[i] == 0);
     }
 #ifdef Py_DEBUG
@@ -1398,14 +1399,13 @@ counter_optimize(
         return 0;
     }
     _Py_CODEUNIT *target = instr + 1 + _PyOpcode_Caches[JUMP_BACKWARD] - oparg;
-    _PyUOpInstruction buffer[5] = {
-        { .opcode = _START_EXECUTOR, .jump_target = 4, .format=UOP_FORMAT_JUMP },
+    _PyUOpInstruction buffer[4] = {
+        { .opcode = _START_EXECUTOR, .jump_target = 3, .format=UOP_FORMAT_JUMP },
         { .opcode = _LOAD_CONST_INLINE_BORROW, .operand = (uintptr_t)self },
         { .opcode = _INTERNAL_INCREMENT_OPT_COUNTER },
-        { .opcode = _EXIT_TRACE, .jump_target = 4, .format=UOP_FORMAT_JUMP },
-        { .opcode = _SIDE_EXIT, .target = (uint32_t)(target - _PyCode_CODE(code)), .format=UOP_FORMAT_TARGET }
+        { .opcode = _EXIT_TRACE, .target = (uint32_t)(target - _PyCode_CODE(code)), .format=UOP_FORMAT_TARGET }
     };
-    _PyExecutorObject *executor = make_executor_from_uops(buffer, 5, &EMPTY_FILTER);
+    _PyExecutorObject *executor = make_executor_from_uops(buffer, 4, &EMPTY_FILTER);
     if (executor == NULL) {
         return -1;
     }
@@ -1505,7 +1505,7 @@ address_to_hash(void *ptr) {
 void
 _Py_BloomFilter_Init(_PyBloomFilter *bloom)
 {
-    for (int i = 0; i < BLOOM_FILTER_WORDS; i++) {
+    for (int i = 0; i < _Py_BLOOM_FILTER_WORDS; i++) {
         bloom->bits[i] = 0;
     }
 }
@@ -1530,7 +1530,7 @@ _Py_BloomFilter_Add(_PyBloomFilter *bloom, void *ptr)
 static bool
 bloom_filter_may_contain(_PyBloomFilter *bloom, _PyBloomFilter *hashes)
 {
-    for (int i = 0; i < BLOOM_FILTER_WORDS; i++) {
+    for (int i = 0; i < _Py_BLOOM_FILTER_WORDS; i++) {
         if ((bloom->bits[i] & hashes->bits[i]) != hashes->bits[i]) {
             return false;
         }
@@ -1591,7 +1591,7 @@ void
 _Py_ExecutorInit(_PyExecutorObject *executor, const _PyBloomFilter *dependency_set)
 {
     executor->vm_data.valid = true;
-    for (int i = 0; i < BLOOM_FILTER_WORDS; i++) {
+    for (int i = 0; i < _Py_BLOOM_FILTER_WORDS; i++) {
         executor->vm_data.bloom.bits[i] = dependency_set->bits[i];
     }
     link_executor(executor);

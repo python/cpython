@@ -154,13 +154,20 @@ class _Target(typing.Generic[_S, _R]):
             args_ll = args + [
                 # -fomit-frame-pointer is necessary because the GHC calling
                 # convention uses RBP to pass arguments:
-                "-S", "-emit-llvm", "-fomit-frame-pointer", "-o", f"{ll}", f"{c}"
+                "-S",
+                "-emit-llvm",
+                "-fomit-frame-pointer",
+                "-o",
+                f"{ll}",
+                f"{c}",
             ]
             await _llvm.run("clang", args_ll, echo=self.verbose)
             ir = ll.read_text()
             # This handles declarations, definitions, and calls to named symbols
             # starting with "_JIT_":
-            ir = re.sub(r"(((noalias|nonnull|noundef) )*ptr @_JIT_\w+\()", r"ghccc \1", ir)
+            ir = re.sub(
+                r"(((noalias|nonnull|noundef) )*ptr @_JIT_\w+\()", r"ghccc \1", ir
+            )
             # This handles calls to anonymous callees, since anything with
             # "musttail" needs to use the same calling convention:
             ir = ir.replace("musttail call", "musttail call ghccc")
@@ -205,13 +212,18 @@ class _Target(typing.Generic[_S, _R]):
         ):
             return
         stencil_groups = asyncio.run(self._build_stencils())
-        with jit_stencils.open("w") as file:
-            file.write(digest)
-            if comment:
-                file.write(f"// {comment}\n\n")
-            file.write("")
-            for line in _writer.dump(stencil_groups):
-                file.write(f"{line}\n")
+        jit_stencils_new = out / "jit_stencils.h.new"
+        try:
+            with jit_stencils_new.open("w") as file:
+                file.write(digest)
+                if comment:
+                    file.write(f"// {comment}\n")
+                file.write("\n")
+                for line in _writer.dump(stencil_groups):
+                    file.write(f"{line}\n")
+            jit_stencils_new.replace(jit_stencils)
+        finally:
+            jit_stencils_new.unlink(missing_ok=True)
 
 
 class _COFF(
@@ -342,6 +354,7 @@ class _ELF(
             assert section_type in {
                 "SHT_GROUP",
                 "SHT_LLVM_ADDRSIG",
+                "SHT_NOTE",
                 "SHT_NULL",
                 "SHT_STRTAB",
                 "SHT_SYMTAB",

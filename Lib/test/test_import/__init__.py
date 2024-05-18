@@ -2454,10 +2454,6 @@ class SinglephaseInitTests(unittest.TestCase):
         # Start fresh.
         cls.clean_up()
 
-    @classmethod
-    def tearDownClass(cls):
-        restore__testsinglephase()
-
     def tearDown(self):
         # Clean up the module.
         self.clean_up()
@@ -3014,20 +3010,20 @@ class SinglephaseInitTests(unittest.TestCase):
         #  * alive in 0 interpreters
         #  * module def in _PyRuntime.imports.extensions
         #  * mod init func ran for the first time (since reset)
-        #  * m_copy is NULL (claered when the interpreter was destroyed)
+        #  * m_copy is still set (owned by main interpreter)
         #  * module's global state was initialized, not reset
 
         # Use a subinterpreter that sticks around.
         loaded_interp1 = self.import_in_subinterp(interpid1)
         self.check_common(loaded_interp1)
-        self.check_semi_fresh(loaded_interp1, loaded_main, base)
+        self.check_copied(loaded_interp1, base)
 
         # At this point:
         #  * alive in 1 interpreter (interp1)
         #  * module def still in _PyRuntime.imports.extensions
-        #  * mod init func ran for the second time (since reset)
-        #  * m_copy was copied from interp1 (was NULL)
-        #  * module's global state was updated, not reset
+        #  * mod init func did not run again
+        #  * m_copy was not changed
+        #  * module's global state was not touched
 
         # Use a subinterpreter while the previous one is still alive.
         loaded_interp2 = self.import_in_subinterp(interpid2)
@@ -3038,8 +3034,8 @@ class SinglephaseInitTests(unittest.TestCase):
         #  * alive in 2 interpreters (interp1, interp2)
         #  * module def still in _PyRuntime.imports.extensions
         #  * mod init func did not run again
-        #  * m_copy was copied from interp2 (was from interp1)
-        #  * module's global state was updated, not reset
+        #  * m_copy was not changed
+        #  * module's global state was not touched
 
     @requires_subinterpreters
     def test_basic_multiple_interpreters_reset_each(self):

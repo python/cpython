@@ -854,6 +854,11 @@ pycore_interp_init(PyThreadState *tstate)
         return status;
     }
 
+    status = _PyCode_Init(interp);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
     status = _PyDtoa_Init(interp);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
@@ -1210,7 +1215,14 @@ init_interp_main(PyThreadState *tstate)
 
 #ifdef PY_HAVE_PERF_TRAMPOLINE
         if (config->perf_profiling) {
-            if (_PyPerfTrampoline_SetCallbacks(&_Py_perfmap_callbacks) < 0 ||
+            _PyPerf_Callbacks *cur_cb;
+            if (config->perf_profiling == 1) {
+                cur_cb = &_Py_perfmap_callbacks;
+            }
+            else {
+                cur_cb = &_Py_perfmap_jit_callbacks;
+            }
+            if (_PyPerfTrampoline_SetCallbacks(cur_cb) < 0 ||
                     _PyPerfTrampoline_Init(config->perf_profiling) < 0) {
                 return _PyStatus_ERR("can't initialize the perf trampoline");
             }
@@ -1819,6 +1831,8 @@ finalize_interp_types(PyInterpreterState *interp)
     _PyTypes_FiniTypes(interp);
 
     _PyTypes_Fini(interp);
+
+    _PyCode_Fini(interp);
 
     // Call _PyUnicode_ClearInterned() before _PyDict_Fini() since it uses
     // a dict internally.
