@@ -660,6 +660,24 @@ class PosixPathTest(unittest.TestCase):
             safe_rmdir(ABSTFN + "/k")
             safe_rmdir(ABSTFN)
 
+    @skip_if_ABSTFN_contains_backslash
+    def test_realpath_null_byte(self):
+        path_with_null_byte = ABSTFN + "/\x00"
+        try:
+            os.mkdir(ABSTFN)
+            self.assertEqual(realpath(path_with_null_byte), path_with_null_byte)
+        finally:
+            safe_rmdir(ABSTFN)
+
+    @skip_if_ABSTFN_contains_backslash
+    def test_realpath_raises_value_error_on_null_byte_in_strict_mode(self):
+        path_with_null_byte = ABSTFN + "/\x00"
+        try:
+            os.mkdir(ABSTFN)
+            self.assertRaises(ValueError, realpath, path_with_null_byte, strict=True)
+        finally:
+            safe_rmdir(ABSTFN)
+
     def test_relpath(self):
         (real_getcwd, os.getcwd) = (os.getcwd, lambda: r"/home/user/bar")
         try:
