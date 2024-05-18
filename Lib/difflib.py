@@ -930,7 +930,6 @@ class Differ:
                 weight += alen
             elif j > blen / 2:
                 weight -= alen
-            weight = min(j - blo, bhi - 1 - j) * (ahi - alo - 1)
             for i in range(alo, ahi):
                 ai = a[i]
                 if ai == bj:
