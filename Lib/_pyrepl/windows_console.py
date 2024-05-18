@@ -284,8 +284,8 @@ class WindowsConsole(Console):
 
         self.screen = screen
         trace(f"Writing {self.screen} {cx} {cy}")
-        #self.move_cursor(cx, cy)
         self.flushoutput()
+        self.move_cursor(cx, cy)
 
     def __hide_cursor(self):
         info = CONSOLE_CURSOR_INFO()
@@ -412,15 +412,15 @@ class WindowsConsole(Console):
                 size = info.srWindow.Right - info.srWindow.Left + 1 - info.dwCursorPosition.X
                 if not FillConsoleOutputCharacter(OutHandle, b' ',  size, info.dwCursorPosition, DWORD()):
                     raise ctypes.WinError(ctypes.GetLastError())
-
+            #os.write(self.output_fd, newline[x_pos:].encode(self.encoding, "replace"))
             self.__write(newline[x_pos:])
             self.__posxy = wlen(newline), y
 
-        if "\x1b" in newline:
+        #if "\x1b" in newline:
             # ANSI escape characters are present, so we can't assume
             # anything about the position of the cursor.  Moving the cursor
             # to the left margin should work to get to a known position.
-            self.move_cursor(0, y)
+        #    self.move_cursor(0, y)
 
     def prepare(self) -> None:
         self.screen = []
@@ -440,9 +440,9 @@ class WindowsConsole(Console):
     def restore(self) -> None: ...
 
     def __move_relative(self, x, y):
-        trace('move relative', x, y)
+        trace('move relative {} {}', x, y)
         cur_x, cur_y = self.get_abs_position(x, y)
-        trace('move is', cur_x, cur_y)
+        trace('move is {} {}', cur_x, cur_y)
         self.__move_absolute(cur_x, cur_y)
 
     def get_abs_position(self, x: int, y: int) -> tuple[int, int]:
