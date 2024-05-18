@@ -22,6 +22,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from _pyrepl.console import Event, Console
+from .trace import trace
 import ctypes
 from ctypes.wintypes import _COORD, WORD, SMALL_RECT, BOOL, HANDLE, CHAR, DWORD, WCHAR
 from ctypes import Structure, POINTER, Union
@@ -74,12 +75,6 @@ SetConsoleCursorPosition.use_last_error = True
 FillConsoleOutputCharacter = windll.kernel32.FillConsoleOutputCharacterW
 FillConsoleOutputCharacter.argtypes = [HANDLE, CHAR, DWORD, _COORD, POINTER(DWORD)]
 FillConsoleOutputCharacter.restype = BOOL
-
-LOG = open('out.txt', 'w+')
-
-def log(*args):
-    LOG.write(" ".join((str(x) for x in args)) + "\n")
-    LOG.flush()
 
 class Char(Union):
     _fields_ = [
@@ -136,6 +131,27 @@ VK_MAP: dict[int, str] = {
     0x26: "up", # VK_UP
     0x27: "right", # VK_RIGHT
     0x28: "down", # VK_DOWN
+    0x2E: "delete", # VK_DELETE
+    0x70: "f1", # VK_F1
+    0x71: "f2", # VK_F2
+    0x72: "f3", # VK_F3
+    0x73: "f4", # VK_F4
+    0x74: "f5", # VK_F5
+    0x75: "f6", # VK_F6
+    0x76: "f7", # VK_F7
+    0x77: "f8", # VK_F8
+    0x78: "f9", # VK_F9
+    0x79: "f10", # VK_F10
+    0x7A: "f11", # VK_F11
+    0x7B: "f12", # VK_F12
+    0x7C: "f13", # VK_F13
+    0x7D: "f14", # VK_F14
+    0x7E: "f15", # VK_F15
+    0x7F: "f16", # VK_F16
+    0x79: "f17", # VK_F17
+    0x80: "f18", # VK_F18
+    0x81: "f19", # VK_F19
+    0x82: "f20", # VK_F20
 }
 
 class _error(Exception):
@@ -174,10 +190,10 @@ class WindowsConsole(Console):
         - c_xy (tuple): Cursor position (x, y) on the screen.
         """
         cx, cy = c_xy
-        log('Refresh', c_xy, self.screen_xy, self.__posxy)
+        trace('!!Refresh {}', screen)
         if not self.__gone_tall:
             while len(self.screen) < min(len(screen), self.height):
-                log('extend')
+                trace('extend')
                 self.__hide_cursor()
                 self.__move(0, len(self.screen) - 1)
                 self.__write("\n")
@@ -209,11 +225,11 @@ class WindowsConsole(Console):
         newscr = screen[offset : offset + height]
 
         # use hardware scrolling if we have it.
-        log('offsets', old_offset, offset)
+        trace('offsets', old_offset, offset)
         if old_offset > offset:
-            log('old_offset > offset')
+            trace('old_offset > offset')
         elif old_offset < offset:
-            log('old_offset < offset')
+            trace('old_offset < offset')
         if False:
             if old_offset > offset and self._ri:
                 self.__hide_cursor()
@@ -232,7 +248,7 @@ class WindowsConsole(Console):
                     oldscr.pop(0)
                     oldscr.append("")
 
-        log('new offset', offset, px)
+        trace('new offset', offset, px)
         self.__offset = offset
 
         for (
@@ -245,7 +261,7 @@ class WindowsConsole(Console):
 
         y = len(newscr)
         while y < len(oldscr):
-            log('need to erase', y)
+            trace('need to erase', y)
             self.__hide_cursor()
             self.__move(0, y)
             self.__posxy = 0, y
@@ -255,7 +271,7 @@ class WindowsConsole(Console):
         self.__show_cursor()
 
         self.screen = screen
-        log(f"Writing {self.screen} {cx} {cy}")
+        trace(f"Writing {self.screen} {cx} {cy}")
         #self.move_cursor(cx, cy)
         self.flushoutput()
 
@@ -286,7 +302,7 @@ class WindowsConsole(Console):
             raise ctypes.WinError(ctypes.GetLastError())
         x += info.dwCursorPosition.X
         y += info.dwCursorPosition.Y
-        log('..', x, y)
+        trace('..', x, y)
         self.move_cursor(x, y)
 
     @property
@@ -329,7 +345,7 @@ class WindowsConsole(Console):
                 x_pos = px_pos
                 x_coord = px_coord
             character_width = wlen(newline[x_pos])
-            log('sinle char', x_coord, y, px_coord)
+            trace('sinle char', x_coord, y, px_coord)
             self.__move(x_coord, y)
 #            self.__write_code(self.ich1)
             self.__write(newline[x_pos])
@@ -362,7 +378,7 @@ class WindowsConsole(Console):
             self.__posxy = character_width + 1, y
 
         else:
-            log("Rewrite all", x_coord, len(oldline))
+            trace("Rewrite all", x_coord, len(oldline))
             self.__hide_cursor()
             self.__move(x_coord, y)
             if wlen(oldline) > wlen(newline):
@@ -401,13 +417,13 @@ class WindowsConsole(Console):
     def restore(self) -> None: ...
 
     def __move_relative(self, x, y):
-        log('move relative', x, y)
+        trace('move relative', x, y)
         cur_x, cur_y = self.screen_xy
         dx = x - self.__posxy[0]
         dy = y - self.__posxy[1]
         cur_x += dx
         cur_y += dy
-        log('move is', cur_x, cur_y)
+        trace('move is', cur_x, cur_y)
         self.__move_absolute(cur_x, cur_y)
 
     def __move_absolute(self, x, y):
@@ -419,7 +435,7 @@ class WindowsConsole(Console):
             raise ctypes.WinError(ctypes.GetLastError())
 
     def move_cursor(self, x: int, y: int) -> None:
-        log(f'move to {x} {y}')
+        trace(f'move to {x} {y}')
 
         if x < 0 or y < 0:
             raise ValueError(f"Bad cussor position {x}, {y}")
@@ -463,9 +479,11 @@ class WindowsConsole(Console):
     #        self.push_char(key)
             if rec.Event.KeyEvent.uChar.Char == b'\r':
                 return Event(evt="key", data="\n", raw="\n")     
-            log('virtual key code', rec.Event.KeyEvent.wVirtualKeyCode, rec.Event.KeyEvent.uChar.Char)
+            trace('virtual key code', rec.Event.KeyEvent.wVirtualKeyCode, rec.Event.KeyEvent.uChar.Char)
             if rec.Event.KeyEvent.wVirtualKeyCode == 8:
                 return Event(evt="key", data="backspace", raw=rec.Event.KeyEvent.uChar.Char)
+            if rec.Event.KeyEvent.wVirtualKeyCode == 27:
+                return Event(evt="key", data="escape", raw=rec.Event.KeyEvent.uChar.Char)
             if rec.Event.KeyEvent.uChar.Char == b'\x00':
                 code = VK_MAP.get(rec.Event.KeyEvent.wVirtualKeyCode)
                 if code:
@@ -478,7 +496,7 @@ class WindowsConsole(Console):
         """
         Push a character to the console event queue.
         """
-        log(f'put_char {char}')
+        trace(f'put_char {char}')
 
     def beep(self) -> None: ...
 
@@ -494,7 +512,12 @@ class WindowsConsole(Console):
     def finish(self) -> None:
         """Move the cursor to the end of the display and otherwise get
         ready for end.  XXX could be merged with restore?  Hmm."""
-        ...
+        y = len(self.screen) - 1
+        while y >= 0 and not self.screen[y]:
+            y -= 1
+        self.__move(0, min(y, self.height + self.__offset - 1))
+        self.__write("\r\n")
+        self.flushoutput()
 
     def flushoutput(self) -> None:
         """Flush all output to the screen (assuming there's some
@@ -520,4 +543,4 @@ class WindowsConsole(Console):
         ...
 
     def repaint(self) -> None:
-        log('repaint')
+        trace('repaint')
