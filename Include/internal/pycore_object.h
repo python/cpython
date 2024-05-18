@@ -80,7 +80,7 @@ static inline void _Py_SetImmortal(PyObject *op)
 static inline void _Py_ClearImmortal(PyObject *op)
 {
     if (op) {
-        assert(op->ob_refcnt == _Py_IMMORTAL_REFCNT);
+        assert(_Py_IsImmortal(op));
         op->ob_refcnt = 1;
         Py_DECREF(op);
     }
