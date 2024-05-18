@@ -489,7 +489,7 @@ symbolic links encountered in the path."""
         rest.append(newpath)
         rest.append(None)
         # Push the unresolved symlink target parts onto the stack.
-        rest.extend(reversed(target_parts))
+        rest.extend(target_parts[::-1])
         part_count += len(target_parts)
 
     return path
