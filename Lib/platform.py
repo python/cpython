@@ -1154,11 +1154,12 @@ def _sys_version(sys_version=None):
         return result
 
     sys_version_parser = re.compile(
-        r'([\w.+]+)\s*'  # "version<space>"
-        r'\(#?([^,]+)'  # "(#buildno"
-        r'(?:,\s*([\w ]*)'  # ", builddate"
-        r'(?:,\s*([\w :]*))?)?\)\s*'  # ", buildtime)<space>"
-        r'\[([^\]]+)\]?', re.ASCII)  # "[compiler]"
+        r'([\w.+]+)\s*' # "version<space>"
+        r'\(#?([^,]+)' # "(#buildno"
+        r'(?:,\s*([\w ]*)' # ", buildate"
+        r'(?:,\s*([\w :]*))?)' # ", buildtime"
+        r'(?:,\s*(free-threading|default))?\)\s*' # ",'free-threading'|'default)<space>'"
+        r'\[([^\]]+)\]?', re.ASCII) #"[compiler]"
 
     if sys.platform.startswith('java'):
         # Jython
@@ -1195,7 +1196,7 @@ def _sys_version(sys_version=None):
             raise ValueError(
                 'failed to parse CPython sys.version: %s' %
                 repr(sys_version))
-        version, buildno, builddate, buildtime, compiler = \
+        version, buildno, builddate, buildtime, _, compiler = \
               match.groups()
         name = 'CPython'
         if builddate is None:
