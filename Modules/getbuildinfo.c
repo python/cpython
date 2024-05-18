@@ -54,16 +54,9 @@ Py_GetBuildInfo(void)
     if (!(*gitid)) {
         gitid = "main";
     }
-#ifdef Py_GIL_DISABLED
-    const char *build = "free-threading";
-    PyOS_snprintf(buildinfo, sizeof(buildinfo),
-                  "%s%s%s, %.20s, %.9s, %s", gitid, sep, revision,
-                  DATE, TIME, build);
-#else
     PyOS_snprintf(buildinfo, sizeof(buildinfo),
                   "%s%s%s, %.20s, %.9s", gitid, sep, revision,
                   DATE, TIME);
-#endif
     return buildinfo;
 }
 
