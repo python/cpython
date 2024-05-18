@@ -2845,9 +2845,12 @@ class AbstractPickleTests:
             class Nested(str):
                 pass
 
+        # simulate a module created with PyModule_Create containing a function
+        global c_module
         c_module = types.ModuleType("c_module")
         def c_function():
             return None
+        c_function.__qualname__ = c_function.__name__ = "c_function"
         c_function.__module__ = f"{__name__}.{c_module.__name__}"
         c_module.c_function = c_function
 

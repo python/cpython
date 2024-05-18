@@ -3585,20 +3585,20 @@ fix_imports(PickleState *st, PyObject **module_name, PyObject **global_name)
 }
 
 PyObject*
-import_module_from_string(PyObject *module_name)
+import_module_from_string(PickleState *st, PyObject *module_name)
 {
     PyObject *split_module_name = PyUnicode_RSplit(module_name,
                                                    PyUnicode_FromString("."),
                                                    1);
     if (split_module_name == NULL) {
-        PyErr_Format(PyExc_RuntimeError,
+        PyErr_Format(st->PicklingError,
                      "Failed to split module name %R", module_name);
         return NULL;
     }
 
     module_name = PySequence_Fast_GET_ITEM(split_module_name, 0);
     if (module_name == NULL) {
-        PyErr_Format(PyExc_RuntimeError, "Failed to get module name from %R",
+        PyErr_Format(st->PicklingError, "Failed to get module name from %R",
                      split_module_name);
         return NULL;
     }
@@ -3606,7 +3606,7 @@ import_module_from_string(PyObject *module_name)
     PyObject *fromlist = PySequence_GetSlice(split_module_name, 1,
                                              PySequence_Fast_GET_SIZE(split_module_name));
     if (fromlist == NULL) {
-        PyErr_Format(PyExc_RuntimeError, "Failed to get fromlist from %R",
+        PyErr_Format(st->PicklingError, "Failed to get fromlist from %R",
                      split_module_name);
         return NULL;
     }
@@ -3614,7 +3614,7 @@ import_module_from_string(PyObject *module_name)
     PyObject *module = PyImport_ImportModuleLevelObject(module_name, NULL,
                                                         NULL, fromlist, 0);
     if (module == NULL) {
-        PyErr_Format(PyExc_ModuleNotFoundError, "Import of module %R failed",
+        PyErr_Format(st->PicklingError, "Import of module %R failed",
                      module_name);
         return NULL;
     }
@@ -3624,15 +3624,14 @@ import_module_from_string(PyObject *module_name)
         assert(fromlist_size == 1);
         PyObject *submodule_name = PySequence_Fast_GET_ITEM(fromlist, 0);
         if (submodule_name == NULL) {
-            PyErr_Format(PyExc_RuntimeError, "Failed to get submodule name from %R",
-                         fromlist);
+            PyErr_Format(st->PicklingError,
+                         "Failed to get submodule name from %R", fromlist);
             return NULL;
         }
         module = PyObject_GetAttr(module, submodule_name);
         if (module == NULL) {
-            PyErr_Format(PyExc_ModuleNotFoundError,
-                         "Attribute lookup %R on %R failed", submodule_name,
-                         module_name);
+            PyErr_Format(st->PicklingError, "Attribute lookup %R on %R failed",
+                         submodule_name, module_name);
             return NULL;
         }
     }
@@ -3676,7 +3675,7 @@ save_global(PickleState *st, PicklerObject *self, PyObject *obj,
     if (module_name == NULL)
         goto error;
 
-    module = import_module_from_string(module_name);
+    module = import_module_from_string(st, module_name);
     if (module == NULL) {
         goto error;
     }
@@ -7027,10 +7026,10 @@ _pickle_Unpickler_find_class_impl(UnpicklerObject *self, PyTypeObject *cls,
     /* Try to map the old names used in Python 2.x to the new ones used in
        Python 3.x.  We do this only with old pickle protocols and when the
        user has not disabled the feature. */
+    PickleState *st = _Pickle_GetStateByClass(cls);
     if (self->proto < 3 && self->fix_imports) {
         PyObject *key;
         PyObject *item;
-        PickleState *st = _Pickle_GetStateByClass(cls);
 
         /* Check if the global (i.e., a function or a class) was renamed
            or moved to another module. */
@@ -7083,7 +7082,7 @@ _pickle_Unpickler_find_class_impl(UnpicklerObject *self, PyTypeObject *cls,
      * we don't use PyImport_GetModule here, because it can return partially-
      * initialised modules, which then cause the getattribute to fail.
      */
-    module = import_module_from_string(module_name);
+    module = import_module_from_string(st, module_name);
     if (module == NULL) {
         return NULL;
     }
