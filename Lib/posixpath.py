@@ -472,7 +472,7 @@ symbolic links encountered in the path."""
         try:
             st_mode = os.lstat(newpath).st_mode
             if not stat.S_ISLNK(st_mode):
-                if part_count and not stat.S_ISDIR(st_mode):
+                if strict and part_count and not stat.S_ISDIR(st_mode):
                     raise NotADirectoryError(errno.ENOTDIR, "Not a directory", newpath)
                 path = newpath
                 continue
@@ -483,7 +483,10 @@ symbolic links encountered in the path."""
                     # use cached value
                     continue
                 # The symlink is not resolved, so we must have a symlink loop.
-                raise OSError(errno.ELOOP, "Symlink loop", newpath)
+                if strict:
+                    raise OSError(errno.ELOOP, "Symlink loop", newpath)
+                path = newpath
+                continue
             target = os.readlink(newpath)
         except OSError:
             if strict:
