@@ -478,7 +478,11 @@ symbolic links encountered in the path."""
                     # use cached value
                     continue
                 # The symlink is not resolved, so we must have a symlink loop.
-                os.stat(newpath)  # raise OSError(errno.ELOOP)
+                if strict:
+                    # Raise OSError(errno.ELOOP)
+                    os.stat(newpath)
+                path = newpath
+                continue
             target = os.readlink(newpath)
         except OSError:
             if strict:
