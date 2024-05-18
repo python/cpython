@@ -1,3 +1,4 @@
+import os
 import sys
 import warnings
 from inspect import isabstract
@@ -21,6 +22,32 @@ except ImportError:
         registry_weakrefs = set(weakref.ref(obj) for obj in cls._abc_registry)
         return (registry_weakrefs, cls._abc_cache,
                 cls._abc_negative_cache, cls._abc_negative_cache_version)
+
+
+def save_support_xml(filename):
+    if support.junit_xml_list is None:
+        return
+
+    with open(filename, 'x', encoding='ascii') as fp:
+        for elem in support.junit_xml_list:
+            print(elem, file=fp)
+    support.junit_xml_list = None
+
+
+def restore_support_xml(filename):
+    try:
+        fp = open(filename, 'r', encoding='ascii')
+    except FileNotFoundError:
+        return
+
+    xml_list = []
+    with fp:
+        for line in fp:
+            line = line.rstrip()
+            xml_list.append(line)
+    os.unlink(filename)
+
+    support.junit_xml_list = xml_list
 
 
 def runtest_refleak(test_name, test_func,
@@ -95,7 +122,8 @@ def runtest_refleak(test_name, test_func,
         numbers = numbers[:warmups] + ':' + numbers[warmups:]
         print(numbers, file=sys.stderr, flush=True)
 
-    results = None
+    xml_filename = 'refleak-xml.tmp'
+    result = None
     dash_R_cleanup(fs, ps, pic, zdc, abcs)
     support.gc_collect()
 
@@ -103,10 +131,11 @@ def runtest_refleak(test_name, test_func,
         current = refleak_helper._hunting_for_refleaks
         refleak_helper._hunting_for_refleaks = True
         try:
-            results = test_func()
+            result = test_func()
         finally:
             refleak_helper._hunting_for_refleaks = current
 
+        save_support_xml(xml_filename)
         dash_R_cleanup(fs, ps, pic, zdc, abcs)
         support.gc_collect()
 
@@ -144,6 +173,8 @@ def runtest_refleak(test_name, test_func,
         rc_before = rc_after
         fd_before = fd_after
         interned_before = interned_after
+
+        restore_support_xml(xml_filename)
 
     if not quiet:
         print(file=sys.stderr)
@@ -189,7 +220,7 @@ def runtest_refleak(test_name, test_func,
                 failed = True
             else:
                 print(' (this is fine)', file=sys.stderr, flush=True)
-    return (failed, results)
+    return (failed, result)
 
 
 def dash_R_cleanup(fs, ps, pic, zdc, abcs):
