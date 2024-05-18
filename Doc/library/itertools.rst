@@ -698,8 +698,8 @@ loops that truncate the stream.
 
         def tee(iterable, n=2):
             iterator = iter(iterable)
-            initial_link = [None, None]  # node: [data, link]
-            return tuple(_tee(iterator, initial_link) for _ in range(n))
+            shared_link = [None, None]  # node: [data, link]
+            return tuple(_tee(iterator, shared_link) for _ in range(n))
 
         def _tee(iterator, link):
             try:
