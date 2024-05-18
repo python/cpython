@@ -661,17 +661,61 @@ class PosixPathTest(unittest.TestCase):
             safe_rmdir(ABSTFN)
 
     @skip_if_ABSTFN_contains_backslash
-    def test_realpath_strict_nondir(self):
+    def test_realpath_nonterminal_file(self):
         try:
             with open(ABSTFN, 'w') as f:
                 f.write('test_posixpath wuz ere')
+            self.assertEqual(realpath(ABSTFN, strict=False), ABSTFN)
             self.assertEqual(realpath(ABSTFN, strict=True), ABSTFN)
-            with self.assertRaises(NotADirectoryError):
-                realpath(ABSTFN + "/", strict=True)
-            with self.assertRaises(NotADirectoryError):
-                realpath(ABSTFN + "/.", strict=True)
-            with self.assertRaises(NotADirectoryError):
-                realpath(ABSTFN + "/subdir", strict=True)
+            self.assertEqual(realpath(ABSTFN + "/", strict=False), ABSTFN)
+            self.assertRaises(NotADirectoryError, realpath, ABSTFN + "/", strict=True)
+            self.assertEqual(realpath(ABSTFN + "/.", strict=False), ABSTFN)
+            self.assertRaises(NotADirectoryError, realpath, ABSTFN + "/.", strict=True)
+            self.assertEqual(realpath(ABSTFN + "/..", strict=False), dirname(ABSTFN))
+            self.assertRaises(NotADirectoryError, realpath, ABSTFN + "/..", strict=True)
+            self.assertEqual(realpath(ABSTFN + "/subdir", strict=False), ABSTFN + "/subdir")
+            self.assertRaises(NotADirectoryError, realpath, ABSTFN + "/subdir", strict=True)
+        finally:
+            os_helper.unlink(ABSTFN)
+
+    @os_helper.skip_unless_symlink
+    @skip_if_ABSTFN_contains_backslash
+    def test_realpath_nonterminal_symlink_to_file(self):
+        try:
+            with open(ABSTFN + "1", 'w') as f:
+                f.write('test_posixpath wuz ere')
+            os.symlink(ABSTFN + "1", ABSTFN)
+            self.assertEqual(realpath(ABSTFN, strict=False), ABSTFN + "1")
+            self.assertEqual(realpath(ABSTFN, strict=True), ABSTFN + "1")
+            self.assertEqual(realpath(ABSTFN + "/", strict=False), ABSTFN + "1")
+            self.assertRaises(NotADirectoryError, realpath, ABSTFN + "/", strict=True)
+            self.assertEqual(realpath(ABSTFN + "/.", strict=False), ABSTFN + "1")
+            self.assertRaises(NotADirectoryError, realpath, ABSTFN + "/.", strict=True)
+            self.assertEqual(realpath(ABSTFN + "/..", strict=False), dirname(ABSTFN))
+            self.assertRaises(NotADirectoryError, realpath, ABSTFN + "/..", strict=True)
+            self.assertEqual(realpath(ABSTFN + "/subdir", strict=False), ABSTFN + "1/subdir")
+            self.assertRaises(NotADirectoryError, realpath, ABSTFN + "/subdir", strict=True)
+        finally:
+            os_helper.unlink(ABSTFN)
+
+    @os_helper.skip_unless_symlink
+    @skip_if_ABSTFN_contains_backslash
+    def test_realpath_nonterminal_symlink_to_symlinks_to_file(self):
+        try:
+            with open(ABSTFN + "2", 'w') as f:
+                f.write('test_posixpath wuz ere')
+            os.symlink(ABSTFN + "2", ABSTFN + "1")
+            os.symlink(ABSTFN + "1", ABSTFN)
+            self.assertEqual(realpath(ABSTFN, strict=False), ABSTFN + "2")
+            self.assertEqual(realpath(ABSTFN, strict=True), ABSTFN + "2")
+            self.assertEqual(realpath(ABSTFN + "/", strict=False), ABSTFN + "2")
+            self.assertRaises(NotADirectoryError, realpath, ABSTFN + "/", strict=True)
+            self.assertEqual(realpath(ABSTFN + "/.", strict=False), ABSTFN + "2")
+            self.assertRaises(NotADirectoryError, realpath, ABSTFN + "/.", strict=True)
+            self.assertEqual(realpath(ABSTFN + "/..", strict=False), dirname(ABSTFN))
+            self.assertRaises(NotADirectoryError, realpath, ABSTFN + "/..", strict=True)
+            self.assertEqual(realpath(ABSTFN + "/subdir", strict=False), ABSTFN + "2/subdir")
+            self.assertRaises(NotADirectoryError, realpath, ABSTFN + "/subdir", strict=True)
         finally:
             os_helper.unlink(ABSTFN)
 
