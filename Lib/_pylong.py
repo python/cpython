@@ -717,7 +717,7 @@ if 0:
 
     from itertools import chain
     for need_hi in (False, True):
-        for limit in (1, 10, 100, 1_000, 10_000, 100_000):
+        for limit in (0, 1, 10, 100, 1_000, 10_000, 100_000):
             for w in chain(range(1, 100_000),
                            (10**i for i in range(5, 30))):
                 consumer(w, limit, need_hi)
