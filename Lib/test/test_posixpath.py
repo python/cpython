@@ -668,6 +668,9 @@ class PosixPathTest(unittest.TestCase):
             os.symlink(ABSTFN+"1", ABSTFN)
             os.chmod(ABSTFN, 0o000, follow_symlinks=False)
             self.assertEqual(realpath(ABSTFN), ABSTFN)
+            self.assertEqual(realpath(ABSTFN + '/foo'), ABSTFN + '/foo')
+            self.assertEqual(realpath(ABSTFN + '/../foo'), dirname(ABSTFN) + '/foo')
+            self.assertEqual(realpath(ABSTFN + '/foo/..'), ABSTFN)
             with self.assertRaises(PermissionError):
                 realpath(ABSTFN, strict=True)
         finally:
