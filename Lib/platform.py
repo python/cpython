@@ -1191,7 +1191,7 @@ def _sys_version(sys_version=None):
         # CPython
         cpython_sys_version_parser = re.compile(
             r'([\w.+]+)\s*'  # "version<space>"
-            r'(free-threading)?\s*' # "free-threading<space>"
+            r'(?:free-threading)?\s*' # "free-threading<space>"
             r'\(#?([^,]+)'  # "(#buildno"
             r'(?:,\s*([\w ]*)'  # ", builddate"
             r'(?:,\s*([\w :]*))?)?\)\s*'  # ", buildtime)<space>"
@@ -1201,7 +1201,7 @@ def _sys_version(sys_version=None):
             raise ValueError(
                 'failed to parse CPython sys.version: %s' %
                 repr(sys_version))
-        version, _, buildno, builddate, buildtime, compiler = \
+        version, buildno, builddate, buildtime, compiler = \
               match.groups()
         name = 'CPython'
         if builddate is None:
