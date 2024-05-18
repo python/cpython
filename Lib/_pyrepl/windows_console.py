@@ -91,7 +91,7 @@ class KeyEvent(ctypes.Structure):
     _fields_ = [
         ("bKeyDown", BOOL),
         ("wRepeatCount", WORD),
-        ("wVirtualeyCode", WORD),
+        ("wVirtualKeyCode", WORD),
         ("wVirtualScanCode", WORD),
         ("uChar", Char),
         ("dwControlKeyState", DWORD),
@@ -128,6 +128,15 @@ ReadConsoleInput.restype = BOOL
 
 OutHandle = GetStdHandle(STD_OUTPUT_HANDLE)
 InHandle = GetStdHandle(STD_INPUT_HANDLE)
+
+VK_MAP: dict[int, str] = {
+    0x23: "end", # VK_END
+    0x24: "home", # VK_HOME
+    0x25: "left", # VK_LEFT
+    0x26: "up", # VK_UP
+    0x27: "right", # VK_RIGHT
+    0x28: "down", # VK_DOWN
+}
 
 class _error(Exception):
     pass
@@ -436,7 +445,7 @@ class WindowsConsole(Console):
         while True:
             if not ReadConsoleInput(InHandle, rec, 1, read):
                 raise ctypes.WinError(ctypes.GetLastError())
-            if read.value == 0 or rec.Event.KeyEvent.uChar.Char == b'\x00':
+            if read.value == 0:
                 if block:
                     continue
                 return None
@@ -446,10 +455,15 @@ class WindowsConsole(Console):
     #        self.push_char(key)
             if rec.Event.KeyEvent.uChar.Char == b'\r':
                 return Event(evt="key", data="\n", raw="\n")     
-            log('virtual key code', rec.Event.KeyEvent.wVirtualeyCode, rec.Event.KeyEvent.uChar.Char)
-            if rec.Event.KeyEvent.wVirtualeyCode == 8:
+            log('virtual key code', rec.Event.KeyEvent.wVirtualKeyCode, rec.Event.KeyEvent.uChar.Char)
+            if rec.Event.KeyEvent.wVirtualKeyCode == 8:
                 return Event(evt="key", data="backspace", raw=rec.Event.KeyEvent.uChar.Char)
-            #print(key, rec.Event.KeyEvent.wVirtualeyCode)
+            if rec.Event.KeyEvent.uChar.Char == b'\x00':
+                code = VK_MAP.get(rec.Event.KeyEvent.wVirtualKeyCode)
+                if code:
+                    return Event(evt="key", data=code, raw=rec.Event.KeyEvent.uChar.Char) 
+                continue
+            #print(key, rec.Event.KeyEvent.wVirtualKeyCode)
             return Event(evt="key", data=key, raw=rec.Event.KeyEvent.uChar.Char)
 
     def push_char(self, char: int | bytes) -> None:
