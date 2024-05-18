@@ -1158,7 +1158,7 @@ def _sys_version(sys_version=None):
         r'\(#?([^,]+)' # "(#buildno"
         r'(?:,\s*([\w ]*)' # ", buildate"
         r'(?:,\s*([\w :]*))?)' # ", buildtime"
-        r'(?:,\s*(free-threading|default))?\)\s*' # ",'free-threading'|'default)<space>'"
+        r'(?:,\s*(free-threading))?\)*\s*' # ",'free-threading')<space>'"
         r'\[([^\]]+)\]?', re.ASCII) #"[compiler]"
 
     if sys.platform.startswith('java'):
