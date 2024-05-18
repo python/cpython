@@ -351,7 +351,11 @@ list_item_impl(PyListObject *self, Py_ssize_t idx)
     if (!valid_index(idx, size)) {
         goto exit;
     }
+#ifdef Py_GIL_DISABLED
+    item = _Py_NewRefWithLock(self->ob_item[idx]);
+#else
     item = Py_NewRef(self->ob_item[idx]);
+#endif
 exit:
     Py_END_CRITICAL_SECTION();
     return item;
@@ -655,28 +659,11 @@ list_item(PyObject *aa, Py_ssize_t i)
         PyErr_SetObject(PyExc_IndexError, &_Py_STR(list_err));
         return NULL;
     }
-    PyObject *item;
 #ifdef Py_GIL_DISABLED
-    PyObject **ob_item = _Py_atomic_load_ptr(&a->ob_item);
-    item = _Py_atomic_load_ptr(&ob_item[i]);
-    if (item && _Py_TryIncrefCompare(&ob_item[i], item)) {
-        if (ob_item != _Py_atomic_load_ptr(&a->ob_item)) {
-            Py_DECREF(item);
-            goto retry;
-        }
-        return item;
-    }
-retry:
+    return list_get_item_ref(a, i);
+#else
+    return Py_NewRef(a->ob_item[i]);
 #endif
-    Py_BEGIN_CRITICAL_SECTION(a);
-#ifdef Py_GIL_DISABLED
-    if (!_Py_IsOwnedByCurrentThread((PyObject *)a) && !_PyObject_GC_IS_SHARED(a)) {
-        _PyObject_GC_SET_SHARED(a);
-    }
-#endif
-    item = Py_NewRef(a->ob_item[i]);
-    Py_END_CRITICAL_SECTION();
-    return item;
 }
 
 static PyObject *
