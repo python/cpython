@@ -1,0 +1,2 @@
+python -VV now display whether it is the free-threaded or not. Patch By
+Donghee Na.
