@@ -2845,6 +2845,12 @@ class AbstractPickleTests:
             class Nested(str):
                 pass
 
+        c_module = types.ModuleType("c_module")
+        def c_function():
+            return None
+        c_function.__module__ = f"{__name__}.{c_module.__name__}"
+        c_module.c_function = c_function
+
         c_methods = (
             # bound built-in method
             ("abcd".index, ("c",)),
@@ -2867,6 +2873,8 @@ class AbstractPickleTests:
             (Subclass.count, (Subclass([1,2,2]), 2)),
             (Subclass.Nested("sweet").count, ("e",)),
             (Subclass.Nested.count, (Subclass.Nested("sweet"), "e")),
+            # bpo-43367: pickling C-module attributes
+            (c_module.c_function, ()),
         )
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
             for method, args in c_methods:
