@@ -1022,13 +1022,6 @@ static PyObject *
 call_trampoline(PyThreadState *tstate, PyObject* callback,
                 PyFrameObject *frame, int what, PyObject *arg)
 {
-    /* Discard any previous modifications the frame's fast locals */
-    if (frame->f_fast_as_locals) {
-        if (PyFrame_FastToLocalsWithError(frame) < 0) {
-            return NULL;
-        }
-    }
-
     /* call the Python-level function */
     if (arg == NULL) {
         arg = Py_None;
@@ -1036,7 +1029,6 @@ call_trampoline(PyThreadState *tstate, PyObject* callback,
     PyObject *args[3] = {(PyObject *)frame, whatstrings[what], arg};
     PyObject *result = _PyObject_VectorcallTstate(tstate, callback, args, 3, NULL);
 
-    PyFrame_LocalsToFast(frame, 1);
     return result;
 }
 
@@ -1407,12 +1399,6 @@ sys_set_asyncgen_hooks(PyObject *self, PyObject *args, PyObject *kw)
                          Py_TYPE(finalizer)->tp_name);
             return NULL;
         }
-        if (_PyEval_SetAsyncGenFinalizer(finalizer) < 0) {
-            return NULL;
-        }
-    }
-    else if (finalizer == Py_None && _PyEval_SetAsyncGenFinalizer(NULL) < 0) {
-        return NULL;
     }
 
     if (firstiter && firstiter != Py_None) {
@@ -1422,15 +1408,33 @@ sys_set_asyncgen_hooks(PyObject *self, PyObject *args, PyObject *kw)
                          Py_TYPE(firstiter)->tp_name);
             return NULL;
         }
-        if (_PyEval_SetAsyncGenFirstiter(firstiter) < 0) {
+    }
+
+    PyObject *cur_finalizer = _PyEval_GetAsyncGenFinalizer();
+
+    if (finalizer && finalizer != Py_None) {
+        if (_PyEval_SetAsyncGenFinalizer(finalizer) < 0) {
             return NULL;
         }
     }
-    else if (firstiter == Py_None && _PyEval_SetAsyncGenFirstiter(NULL) < 0) {
+    else if (finalizer == Py_None && _PyEval_SetAsyncGenFinalizer(NULL) < 0) {
         return NULL;
     }
 
+    if (firstiter && firstiter != Py_None) {
+        if (_PyEval_SetAsyncGenFirstiter(firstiter) < 0) {
+            goto error;
+        }
+    }
+    else if (firstiter == Py_None && _PyEval_SetAsyncGenFirstiter(NULL) < 0) {
+        goto error;
+    }
+
     Py_RETURN_NONE;
+
+error:
+    _PyEval_SetAsyncGenFinalizer(cur_finalizer);
+    return NULL;
 }
 
 PyDoc_STRVAR(set_asyncgen_hooks_doc,
@@ -2290,6 +2294,16 @@ sys_activate_stack_trampoline_impl(PyObject *module, const char *backend)
                 return NULL;
             }
         }
+        else if (strcmp(backend, "perf_jit") == 0) {
+            _PyPerf_Callbacks cur_cb;
+            _PyPerfTrampoline_GetCallbacks(&cur_cb);
+            if (cur_cb.write_state != _Py_perfmap_jit_callbacks.write_state) {
+                if (_PyPerfTrampoline_SetCallbacks(&_Py_perfmap_jit_callbacks) < 0 ) {
+                    PyErr_SetString(PyExc_ValueError, "can't activate perf jit trampoline");
+                    return NULL;
+                }
+            }
+        }
     }
     else {
         PyErr_Format(PyExc_ValueError, "invalid backend: %s", backend);
@@ -2392,6 +2406,39 @@ sys__get_cpu_count_config_impl(PyObject *module)
     const PyConfig *config = _Py_GetConfig();
     return config->cpu_count;
 }
+
+/*[clinic input]
+sys._baserepl
+
+Private function for getting the base REPL
+[clinic start generated code]*/
+
+static PyObject *
+sys__baserepl_impl(PyObject *module)
+/*[clinic end generated code: output=f19a36375ebe0a45 input=ade0ebb9fab56f3c]*/
+{
+    PyCompilerFlags cf = _PyCompilerFlags_INIT;
+    PyRun_AnyFileExFlags(stdin, "<stdin>", 0, &cf);
+    Py_RETURN_NONE;
+}
+
+/*[clinic input]
+sys._is_gil_enabled -> bool
+
+Return True if the GIL is currently enabled and False otherwise.
+[clinic start generated code]*/
+
+static int
+sys__is_gil_enabled_impl(PyObject *module)
+/*[clinic end generated code: output=57732cf53f5b9120 input=7e9c47f15a00e809]*/
+{
+#ifdef Py_GIL_DISABLED
+    return _PyEval_IsGILEnabled(_PyThreadState_GET());
+#else
+    return 1;
+#endif
+}
+
 
 static PerfMapState perf_map_state;
 
@@ -2496,10 +2543,6 @@ close_and_release:
     return 0;
 }
 
-#ifdef __cplusplus
-}
-#endif
-
 
 static PyMethodDef sys_methods[] = {
     /* Might as well keep this in alphabetic order */
@@ -2562,6 +2605,7 @@ static PyMethodDef sys_methods[] = {
     SYS_UNRAISABLEHOOK_METHODDEF
     SYS_GET_INT_MAX_STR_DIGITS_METHODDEF
     SYS_SET_INT_MAX_STR_DIGITS_METHODDEF
+    SYS__BASEREPL_METHODDEF
 #ifdef Py_STATS
     SYS__STATS_ON_METHODDEF
     SYS__STATS_OFF_METHODDEF
@@ -2569,6 +2613,7 @@ static PyMethodDef sys_methods[] = {
     SYS__STATS_DUMP_METHODDEF
 #endif
     SYS__GET_CPU_COUNT_CONFIG_METHODDEF
+    SYS__IS_GIL_ENABLED_METHODDEF
     {NULL, NULL}  // sentinel
 };
 
@@ -3740,6 +3785,9 @@ _PySys_Create(PyThreadState *tstate, PyObject **sysmod_p)
     if (sysmod == NULL) {
         return _PyStatus_ERR("failed to create a module object");
     }
+#ifdef Py_GIL_DISABLED
+    PyUnstable_Module_SetGIL(sysmod, Py_MOD_GIL_NOT_USED);
+#endif
 
     PyObject *sysdict = PyModule_GetDict(sysmod);
     if (sysdict == NULL) {

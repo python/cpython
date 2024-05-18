@@ -48,14 +48,14 @@
       "checksums": [
         {
           "algorithm": "SHA256",
-          "checksumValue": "93118043651ffa33dcaaab445bae4f8929fca25d2d749079b78e97f220c3d8b1"
+          "checksumValue": "338fac3fb8cdd60f406b6326431338756f58a8af94229ffd9bf1e7c2b1ad71ca"
         }
       ],
-      "downloadLocation": "https://github.com/python/cpython-source-deps/archive/refs/tags/mpdecimal-2.5.1.tar.gz",
+      "downloadLocation": "https://github.com/python/cpython-source-deps/archive/refs/tags/mpdecimal-4.0.0.tar.gz",
       "externalRefs": [
         {
           "referenceCategory": "SECURITY",
-          "referenceLocator": "cpe:2.3:a:bytereef:mpdecimal:2.5.1:*:*:*:*:*:*:*",
+          "referenceLocator": "cpe:2.3:a:bytereef:mpdecimal:4.0.0:*:*:*:*:*:*:*",
           "referenceType": "cpe23Type"
         }
       ],
@@ -63,7 +63,7 @@
       "name": "mpdecimal",
       "originator": "Organization: bytereef.org",
       "primaryPackagePurpose": "SOURCE",
-      "versionInfo": "2.5.1"
+      "versionInfo": "4.0.0"
     },
     {
       "SPDXID": "SPDXRef-PACKAGE-openssl",

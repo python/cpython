@@ -1,4 +1,5 @@
 """Schema for the JSON produced by llvm-readobj --elf-output-style=JSON."""
+
 import typing
 
 HoleKind: typing.TypeAlias = typing.Literal[

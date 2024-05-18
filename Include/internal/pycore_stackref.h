@@ -114,7 +114,7 @@ _Py_untag_stack_steal(PyObject **dst, const _PyStackRef *src, size_t length)
 
 #define PyStackRef_XSETREF(dst, src) \
     do { \
-        _PyStackRef *_tmp_dst_ptr = &(dst) \
+        _PyStackRef *_tmp_dst_ptr = &(dst); \
         _PyStackRef _tmp_old_dst = (*_tmp_dst_ptr); \
         *_tmp_dst_ptr = (src); \
         PyStackRef_XDECREF(_tmp_old_dst); \

@@ -1,4 +1,5 @@
 """Target-specific code generation, parsing, and processing."""
+
 import asyncio
 import dataclasses
 import hashlib
@@ -40,8 +41,8 @@ class _Target(typing.Generic[_S, _R]):
     args: typing.Sequence[str] = ()
     ghccc: bool = False
     prefix: str = ""
+    stable: bool = False
     debug: bool = False
-    force: bool = False
     verbose: bool = False
 
     def _compute_digest(self, out: pathlib.Path) -> str:
@@ -153,13 +154,20 @@ class _Target(typing.Generic[_S, _R]):
             args_ll = args + [
                 # -fomit-frame-pointer is necessary because the GHC calling
                 # convention uses RBP to pass arguments:
-                "-S", "-emit-llvm", "-fomit-frame-pointer", "-o", f"{ll}", f"{c}"
+                "-S",
+                "-emit-llvm",
+                "-fomit-frame-pointer",
+                "-o",
+                f"{ll}",
+                f"{c}",
             ]
             await _llvm.run("clang", args_ll, echo=self.verbose)
             ir = ll.read_text()
             # This handles declarations, definitions, and calls to named symbols
             # starting with "_JIT_":
-            ir = re.sub(r"(((noalias|nonnull|noundef) )*ptr @_JIT_\w+\()", r"ghccc \1", ir)
+            ir = re.sub(
+                r"(((noalias|nonnull|noundef) )*ptr @_JIT_\w+\()", r"ghccc \1", ir
+            )
             # This handles calls to anonymous callees, since anything with
             # "musttail" needs to use the same calling convention:
             ir = ir.replace("musttail call", "musttail call ghccc")
@@ -186,24 +194,36 @@ class _Target(typing.Generic[_S, _R]):
                     tasks.append(group.create_task(coro, name=opname))
         return {task.get_name(): task.result() for task in tasks}
 
-    def build(self, out: pathlib.Path, *, comment: str = "") -> None:
+    def build(
+        self, out: pathlib.Path, *, comment: str = "", force: bool = False
+    ) -> None:
         """Build jit_stencils.h in the given directory."""
+        if not self.stable:
+            warning = f"JIT support for {self.triple} is still experimental!"
+            request = "Please report any issues you encounter.".center(len(warning))
+            outline = "=" * len(warning)
+            print("\n".join(["", outline, warning, request, outline, ""]))
         digest = f"// {self._compute_digest(out)}\n"
         jit_stencils = out / "jit_stencils.h"
         if (
-            not self.force
+            not force
             and jit_stencils.exists()
             and jit_stencils.read_text().startswith(digest)
         ):
             return
         stencil_groups = asyncio.run(self._build_stencils())
-        with jit_stencils.open("w") as file:
-            file.write(digest)
-            if comment:
-                file.write(f"// {comment}\n\n")
-            file.write("")
-            for line in _writer.dump(stencil_groups):
-                file.write(f"{line}\n")
+        jit_stencils_new = out / "jit_stencils.h.new"
+        try:
+            with jit_stencils_new.open("w") as file:
+                file.write(digest)
+                if comment:
+                    file.write(f"// {comment}\n")
+                file.write("\n")
+                for line in _writer.dump(stencil_groups):
+                    file.write(f"{line}\n")
+            jit_stencils_new.replace(jit_stencils)
+        finally:
+            jit_stencils_new.unlink(missing_ok=True)
 
 
 class _COFF(
@@ -334,6 +354,7 @@ class _ELF(
             assert section_type in {
                 "SHT_GROUP",
                 "SHT_LLVM_ADDRSIG",
+                "SHT_NOTE",
                 "SHT_NULL",
                 "SHT_STRTAB",
                 "SHT_SYMTAB",
@@ -450,9 +471,7 @@ class _MachO(
             } | {
                 "Offset": offset,
                 "Symbol": {"Name": s},
-                "Type": {
-                    "Name": "X86_64_RELOC_BRANCH" | "X86_64_RELOC_SIGNED" as kind
-                },
+                "Type": {"Name": "X86_64_RELOC_BRANCH" | "X86_64_RELOC_SIGNED" as kind},
             }:
                 offset += base
                 s = s.removeprefix(self.prefix)
@@ -481,23 +500,26 @@ class _MachO(
 def get_target(host: str) -> _COFF | _ELF | _MachO:
     """Build a _Target for the given host "triple" and options."""
     # ghccc currently crashes Clang when combined with musttail on aarch64. :(
+    target: _COFF | _ELF | _MachO
     if re.fullmatch(r"aarch64-apple-darwin.*", host):
-        return _MachO(host, alignment=8, prefix="_")
-    if re.fullmatch(r"aarch64-pc-windows-msvc", host):
+        target = _MachO(host, alignment=8, prefix="_")
+    elif re.fullmatch(r"aarch64-pc-windows-msvc", host):
         args = ["-fms-runtime-lib=dll"]
-        return _COFF(host, alignment=8, args=args)
-    if re.fullmatch(r"aarch64-.*-linux-gnu", host):
+        target = _COFF(host, alignment=8, args=args)
+    elif re.fullmatch(r"aarch64-.*-linux-gnu", host):
         args = ["-fpic"]
-        return _ELF(host, alignment=8, args=args)
-    if re.fullmatch(r"i686-pc-windows-msvc", host):
+        target = _ELF(host, alignment=8, args=args)
+    elif re.fullmatch(r"i686-pc-windows-msvc", host):
         args = ["-DPy_NO_ENABLE_SHARED"]
-        return _COFF(host, args=args, ghccc=True, prefix="_")
-    if re.fullmatch(r"x86_64-apple-darwin.*", host):
-        return _MachO(host, ghccc=True, prefix="_")
-    if re.fullmatch(r"x86_64-pc-windows-msvc", host):
+        target = _COFF(host, args=args, ghccc=True, prefix="_")
+    elif re.fullmatch(r"x86_64-apple-darwin.*", host):
+        target = _MachO(host, ghccc=True, prefix="_")
+    elif re.fullmatch(r"x86_64-pc-windows-msvc", host):
         args = ["-fms-runtime-lib=dll"]
-        return _COFF(host, args=args, ghccc=True)
-    if re.fullmatch(r"x86_64-.*-linux-gnu", host):
+        target = _COFF(host, args=args, ghccc=True)
+    elif re.fullmatch(r"x86_64-.*-linux-gnu", host):
         args = ["-fpic"]
-        return _ELF(host, args=args, ghccc=True)
-    raise ValueError(host)
+        target = _ELF(host, args=args, ghccc=True)
+    else:
+        raise ValueError(host)
+    return target
