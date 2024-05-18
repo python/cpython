@@ -22,7 +22,6 @@ defpath = '/bin:/usr/bin'
 altsep = None
 devnull = '/dev/null'
 
-import errno
 import os
 import sys
 import stat
