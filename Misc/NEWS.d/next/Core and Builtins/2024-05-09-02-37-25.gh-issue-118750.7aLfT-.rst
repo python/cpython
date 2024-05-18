@@ -1,1 +1,1 @@
-If the C version of the ``decimal`` module is available, ``int(str)`` now uses it to supply an asymptotically much faster conversion. However, this only applies if the string contains over about 3.5 million digits.
+If the C version of the ``decimal`` module is available, ``int(str)`` now uses it to supply an asymptotically much faster conversion. However, this only applies if the string contains over about 3 million digits.
