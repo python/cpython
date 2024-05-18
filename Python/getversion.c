@@ -6,7 +6,7 @@
 #include "patchlevel.h"
 
 static int initialized = 0;
-static char version[250];
+static char version[300];
 
 void _Py_InitVersion(void)
 {
