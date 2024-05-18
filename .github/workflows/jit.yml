@@ -6,8 +6,8 @@ on:
       - 'Python/bytecodes.c'
       - 'Python/optimizer*.c'
       - '!Python/perf_jit_trampoline.c'
-      - '!Tools/jit/README.md'
-      - '!Tools/jit/mypy.ini'
+      - '!**/*.md'
+      - '!**/*.ini'
   push:
     paths:
       - '**jit**'
