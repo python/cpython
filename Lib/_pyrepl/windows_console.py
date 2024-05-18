@@ -362,10 +362,18 @@ class WindowsConsole(Console):
             self.__posxy = character_width + 1, y
 
         else:
+            log("Rewrite all", x_coord, len(oldline))
             self.__hide_cursor()
             self.__move(x_coord, y)
-#            if wlen(oldline) > wlen(newline):
-#                self.__write_code(self._el)
+            if wlen(oldline) > wlen(newline):
+                info = CONSOLE_SCREEN_BUFFER_INFO()
+                if not GetConsoleScreenBufferInfo(OutHandle, info):
+                    raise ctypes.WinError(ctypes.GetLastError())
+
+                size = info.srWindow.Right - info.srWindow.Left + 1 - info.dwCursorPosition.X
+                if not FillConsoleOutputCharacter(OutHandle, b' ',  size, info.dwCursorPosition, DWORD()):
+                    raise ctypes.WinError(ctypes.GetLastError())
+
             self.__write(newline[x_pos:])
             self.__posxy = wlen(newline), y
 
