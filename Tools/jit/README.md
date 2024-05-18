@@ -3,8 +3,6 @@ The JIT Compiler
 
 This version of CPython can be built with an experimental just-in-time compiler. While most everything you already know about building and using CPython is unchanged, you will probably need to install a compatible version of LLVM first.
 
-TEST
-
 ## Installing LLVM
 
 The JIT compiler does not require end users to install any third-party dependencies, but part of it must be *built* using LLVM[^why-llvm]. You are *not* required to build the rest of CPython using LLVM, or even the same version of LLVM (in fact, this is uncommon).
