@@ -911,28 +911,26 @@ class Differ:
 
         # don't synch up unless the lines have a similarity score of at
         # least cutoff; best_ratio tracks the best score seen so far
-        best_ratio, cutoff = 0.74, 0.75
+        best_ratio, cutoff = (0.74, 0), 0.75
         cruncher = SequenceMatcher(self.charjunk)
         eqi, eqj = None, None   # 1st indices of equal lines (if any)
-
-        max_len_a = max(map(len, a))
-        max_len_b = max(map(len, b))
-        # twice the epsilon can be safely added to distinguish otherwise
-        # equal ratios. given ratios are 2 * integer / (len_i + len_j)
-        # the smallest possible non-zero difference between two arbitrary
-        # ratios is no less than twice the epsilon
-        epsilon = 0.99 / (max_len_a + max_len_b) ** 2
-        # we use sub-epsilon weights to promote i, j that split the
-        # input range more equally.
-        # this way, we balance the recursion tree in degenerate cases
 
         # search for the pair that matches best without being identical
         # (identical lines must be junk lines, & we don't want to synch up
         # on junk -- unless we have to)
+        alen = alo + ahi - 1
+        blen = blo + bhi - 1
+        # weight is used to balance the recursion by prioritizing
+        # i and j in the middle of their ranges
+        weight = 0
         for j in range(blo, bhi):
             bj = b[j]
             cruncher.set_seq2(bj)
-            weight_b = min(j - blo, bhi - 1 - j) / (bhi - blo)
+            if j < blen / 2:
+                weight += alen
+            elif j > blen / 2:
+                weight -= alen
+            weight = min(j - blo, bhi - 1 - j) * (ahi - alo - 1)
             for i in range(alo, ahi):
                 ai = a[i]
                 if ai == bj:
@@ -940,18 +938,22 @@ class Differ:
                         eqi, eqj = i, j
                     continue
                 cruncher.set_seq1(ai)
-                weight_ab = weight_b + min(i - alo, ahi - 1 - i) / (ahi - alo)
-                weight_ab *= epsilon
+                if i < alen / 2:
+                    weight += blen
+                elif i > alen / 2:
+                    weight -= blen
                 # computing similarity is expensive, so use the quick
                 # upper bounds first -- have seen this speed up messy
                 # compares by a factor of 3.
                 # note that ratio() is only expensive to compute the first
                 # time it's called on a sequence pair; the expensive part
                 # of the computation is cached by cruncher
-                if cruncher.real_quick_ratio() + weight_ab > best_ratio and \
-                      cruncher.quick_ratio() + weight_ab > best_ratio and \
-                      cruncher.ratio() + weight_ab > best_ratio:
-                    best_ratio, best_i, best_j = cruncher.ratio() + weight_ab, i, j
+                if (cruncher.real_quick_ratio(), weight) > best_ratio and \
+                      (cruncher.quick_ratio(), weight) > best_ratio and \
+                      (cruncher.ratio(), weight) > best_ratio:
+                    best_ratio, best_i, best_j = (cruncher.ratio(), weight), i, j
+        # assert weight == 0, weight
+        best_ratio, _ = best_ratio
         if best_ratio < cutoff:
             # no non-identical "pretty close" pair
             if eqi is None:
