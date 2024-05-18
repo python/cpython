@@ -690,18 +690,19 @@ loops that truncate the stream.
 
         def tee(iterable, n=2):
             iterator = iter(iterable)
-            empty_link = [None, None]  # Singly linked list: [value, link]
-            return tuple(_tee(iterator, empty_link) for _ in range(n))
+            shared_link = [None, None]
+            return tuple(_tee(iterator, shared_link) for _ in range(n))
 
         def _tee(iterator, link):
-            while True:
-                if link[1] is None:
-                    try:
-                        link[:] = [next(iterator), [None, None]]
-                    except StopIteration:
-                        return
-                value, link = link
-                yield value
+            try:
+                while True:
+                    if link[1] is None:
+                        link[0] = next(iterator)
+                        link[1] = [None, None]
+                    value, link = link
+                    yield value
+            except StopIteration:
+                return
 
    Once a :func:`tee` has been created, the original *iterable* should not be
    used anywhere else; otherwise, the *iterable* could get advanced without
