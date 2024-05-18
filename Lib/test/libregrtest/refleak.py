@@ -28,23 +28,21 @@ def save_support_xml(filename):
     if support.junit_xml_list is None:
         return
 
-    with open(filename, 'x', encoding='ascii') as fp:
-        for elem in support.junit_xml_list:
-            print(elem, file=fp)
+    import pickle
+    with open(filename, 'xb') as fp:
+        pickle.dump(support.junit_xml_list, fp)
     support.junit_xml_list = None
 
 
 def restore_support_xml(filename):
     try:
-        fp = open(filename, 'r', encoding='ascii')
+        fp = open(filename, 'rb')
     except FileNotFoundError:
         return
 
-    xml_list = []
+    import pickle
     with fp:
-        for line in fp:
-            line = line.rstrip()
-            xml_list.append(line)
+        xml_list = pickle.load(fp)
     os.unlink(filename)
 
     support.junit_xml_list = xml_list
