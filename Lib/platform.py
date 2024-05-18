@@ -1153,14 +1153,6 @@ def _sys_version(sys_version=None):
     if result is not None:
         return result
 
-    sys_version_parser = re.compile(
-        r'([\w.+]+)\s*'  # "version<space>"
-        r'(free-threading)?\s*'
-        r'\(#?([^,]+)'  # "(#buildno"
-        r'(?:,\s*([\w ]*)'  # ", builddate"
-        r'(?:,\s*([\w :]*))?)?\)\s*'  # ", buildtime)<space>"
-        r'\[([^\]]+)\]?', re.ASCII)  # "[compiler]"
-
     if sys.platform.startswith('java'):
         # Jython
         jython_sys_version_parser = re.compile(
