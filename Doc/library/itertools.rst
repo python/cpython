@@ -705,7 +705,8 @@ loops that truncate the stream.
             try:
                 while True:
                     if link[1] is None:
-                        link[:] = [next(iterator), [None, None]]
+                        link[0] = next(iterator)
+                        link[1] = [None, None]
                     value, link = link
                     yield value
             except StopIteration:
