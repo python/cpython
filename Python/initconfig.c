@@ -2596,12 +2596,12 @@ config_parse_cmdline(PyConfig *config, PyWideStringList *warnoptions,
     } while (1);
 
     if (print_version) {
+        const char *version;
+        version = (print_version >= 2) ? Py_GetVersion() : PY_VERSION;
 #ifdef Py_GIL_DISABLED
-        printf("Python %s (free-threading)\n",
-                (print_version >= 2) ? Py_GetVersion() : PY_VERSION);
+        printf("Python %s free-threading\n", version);
 #else
-        printf("Python %s\n",
-                (print_version >= 2) ? Py_GetVersion() : PY_VERSION);
+        printf("Python %s\n", version);
 #endif
         return _PyStatus_EXIT(0);
     }
