@@ -20,6 +20,22 @@ collections of files.  In particular, functions are provided  which support file
 copying and removal. For operations on individual files, see also the
 :mod:`os` module.
 
+Many of the functions in this module correspond to common Unix shell commands,
+such as ``cp``, ``mv``, ``rm``, ``du``, ``chown``, and ``which``, and it's
+this correspondence that provides the module's name. Despite its origin as a
+collection of shell utilities, the :mod:`shutil` module may be useful in
+situations far removed from Unix shells.
+
+
+.. _shutil-platform-dependent-efficient-copy-operations:
+
+Copying files
+-------------
+
+This module provides several functions for copying files. Many common use
+cases are served by :func:`shutil.copy2`, which to copies a file while
+conserving as much metadata as possible.
+
 .. warning::
 
    Even the higher-level file copying functions (:func:`shutil.copy`,
@@ -31,11 +47,23 @@ copying and removal. For operations on individual files, see also the
    not be correct. On Windows, file owners, ACLs and alternate data streams
    are not copied.
 
+.. versionchanged:: 3.8
 
-.. _file-operations:
+   All functions involving a file copy (:func:`copyfile`,
+   :func:`~shutil.copy`, :func:`copy2`, :func:`copytree`, and :func:`move`)
+   may use platform-specific "fast-copy" syscalls in order to copy the file
+   more efficiently (see :issue:`33671`). "fast-copy" means that the copying
+   operation occurs within the kernel, avoiding the use of userspace buffers
+   in Python as in "``outfd.write(infd.read())``".
 
-Directory and files operations
-------------------------------
+   On macOS `fcopyfile`_ is used to copy the file content (not metadata). On
+   Linux :func:`os.sendfile` is used. On Windows :func:`shutil.copyfile` uses
+   a bigger default buffer size (1 MiB instead of 64 KiB) and a
+   :func:`memoryview`-based variant of :func:`shutil.copyfileobj`. If the
+   fast-copy operation fails and no data was written in the destination file
+   then shutil will silently fallback on using less efficient
+   :func:`copyfileobj` function internally.
+
 
 .. function:: copyfileobj(fsrc, fdst[, length])
 
@@ -219,11 +247,21 @@ Directory and files operations
       copy the file more efficiently. See
       :ref:`shutil-platform-dependent-efficient-copy-operations` section.
 
+
+Recursively copying, moving and removing
+----------------------------------------
+
 .. function:: ignore_patterns(*patterns)
 
    This factory function creates a function that can be used as a callable for
    :func:`copytree`\'s *ignore* argument, ignoring files and directories that
-   match one of the glob-style *patterns* provided.  See the example below.
+   match one of the glob-style *patterns* provided. For example, this snippet
+   will copy everything except ``.pyc`` files and files or directories whose
+   name starts with ``tmp``::
+
+      from shutil import copytree, ignore_patterns
+
+      copytree(source, destination, ignore=ignore_patterns('*.pyc', 'tmp*'))
 
 
 .. function:: copytree(src, dst, symlinks=False, ignore=None, \
@@ -258,6 +296,17 @@ Directory and files operations
    in its second argument); these names will then be ignored in the copy
    process.  :func:`ignore_patterns` can be used to create such a callable that
    ignores names based on glob-style patterns.
+
+   For example, this snippet uses the *ignore* argument to add a logging call::
+
+      from shutil import copytree
+      import logging
+
+      def _logpath(path, names):
+          logging.info('Working in %s', path)
+          return []   # nothing will be ignored
+
+      copytree(source, destination, ignore=_logpath)
 
    If exception(s) occur, an :exc:`Error` is raised with a list of reasons.
 
@@ -323,6 +372,21 @@ Directory and files operations
    *path*, will be the path name passed to *function*.  The third parameter,
    *excinfo*, is the exception that was raised. Exceptions raised by *onexc*
    will not be caught.
+
+   The following example shows how to remove a directory tree on Windows where
+   some of the files have their read-only bit set. It uses the *onexc*
+   callback to clear the readonly bit and reattempt the remove. Any subsequent
+   failure will propagate. ::
+
+       import os, stat
+       import shutil
+
+       def remove_readonly(func, path, _):
+           "Clear the readonly bit and reattempt the removal"
+           os.chmod(path, stat.S_IWRITE)
+           func(path)
+
+       shutil.rmtree(directory, onexc=remove_readonly)
 
    The deprecated *onerror* is similar to *onexc*, except that the third
    parameter it receives is the tuple returned from :func:`sys.exc_info`.
@@ -401,6 +465,10 @@ Directory and files operations
    .. versionchanged:: 3.9
       Accepts a :term:`path-like object` for both *src* and *dst*.
 
+
+Querying disk usage
+-------------------
+
 .. function:: disk_usage(path)
 
    Return disk usage statistics about the given path as a :term:`named tuple`
@@ -421,6 +489,10 @@ Directory and files operations
 
    .. availability:: Unix, Windows.
 
+
+Changing file ownership
+-----------------------
+
 .. function:: chown(path, user=None, group=None, *, dir_fd=None, \
                     follow_symlinks=True)
 
@@ -440,6 +512,9 @@ Directory and files operations
    .. versionchanged:: 3.13
       Added *dir_fd* and *follow_symlinks* parameters.
 
+
+Finding executables
+-------------------
 
 .. function:: which(cmd, mode=os.F_OK | os.X_OK, path=None)
 
@@ -502,78 +577,6 @@ Directory and files operations
    operation. For :func:`copytree`, the exception argument is a list of 3-tuples
    (*srcname*, *dstname*, *exception*).
 
-.. _shutil-platform-dependent-efficient-copy-operations:
-
-Platform-dependent efficient copy operations
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Starting from Python 3.8, all functions involving a file copy
-(:func:`copyfile`, :func:`~shutil.copy`, :func:`copy2`,
-:func:`copytree`, and :func:`move`) may use
-platform-specific "fast-copy" syscalls in order to copy the file more
-efficiently (see :issue:`33671`).
-"fast-copy" means that the copying operation occurs within the kernel, avoiding
-the use of userspace buffers in Python as in "``outfd.write(infd.read())``".
-
-On macOS `fcopyfile`_ is used to copy the file content (not metadata).
-
-On Linux :func:`os.sendfile` is used.
-
-On Windows :func:`shutil.copyfile` uses a bigger default buffer size (1 MiB
-instead of 64 KiB) and a :func:`memoryview`-based variant of
-:func:`shutil.copyfileobj` is used.
-
-If the fast-copy operation fails and no data was written in the destination
-file then shutil will silently fallback on using less efficient
-:func:`copyfileobj` function internally.
-
-.. versionchanged:: 3.8
-
-.. _shutil-copytree-example:
-
-copytree example
-~~~~~~~~~~~~~~~~
-
-An example that uses the :func:`ignore_patterns` helper::
-
-   from shutil import copytree, ignore_patterns
-
-   copytree(source, destination, ignore=ignore_patterns('*.pyc', 'tmp*'))
-
-This will copy everything except ``.pyc`` files and files or directories whose
-name starts with ``tmp``.
-
-Another example that uses the *ignore* argument to add a logging call::
-
-   from shutil import copytree
-   import logging
-
-   def _logpath(path, names):
-       logging.info('Working in %s', path)
-       return []   # nothing will be ignored
-
-   copytree(source, destination, ignore=_logpath)
-
-
-.. _shutil-rmtree-example:
-
-rmtree example
-~~~~~~~~~~~~~~
-
-This example shows how to remove a directory tree on Windows where some
-of the files have their read-only bit set. It uses the onexc callback
-to clear the readonly bit and reattempt the remove. Any subsequent failure
-will propagate. ::
-
-    import os, stat
-    import shutil
-
-    def remove_readonly(func, path, _):
-        "Clear the readonly bit and reattempt the removal"
-        os.chmod(path, stat.S_IWRITE)
-        func(path)
-
-    shutil.rmtree(directory, onexc=remove_readonly)
 
 .. _archiving-operations:
 
