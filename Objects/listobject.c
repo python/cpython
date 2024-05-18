@@ -659,11 +659,17 @@ list_item(PyObject *aa, Py_ssize_t i)
         PyErr_SetObject(PyExc_IndexError, &_Py_STR(list_err));
         return NULL;
     }
+    PyObject *item;
 #ifdef Py_GIL_DISABLED
-    return list_get_item_ref(a, i);
+    item = list_get_item_ref(a, i);
+    if (item == NULL) {
+        PyErr_SetObject(PyExc_IndexError, &_Py_STR(list_err));
+        return NULL;
+    }
 #else
-    return Py_NewRef(a->ob_item[i]);
+    item = Py_NewRef(a->ob_item[i]);
 #endif
+    return item;
 }
 
 static PyObject *
