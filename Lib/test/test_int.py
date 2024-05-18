@@ -938,8 +938,8 @@ class PyLongModuleTests(unittest.TestCase):
         # wrong about that. We have no input that reaches that block.
         # Here we test a contrived input that _does_ reach that block,
         # provided the number of guard digits is reduced to 1.
-        sn = "6" * (4000000 - 1)
-        n = (10**len(sn) - 1) // 9 * 6
+        sn = "9" * 2000156
+        n = 10**len(sn) - 1
         orig_spread = _pylong._spread.copy()
         _pylong._spread.clear()
         try:

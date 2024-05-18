@@ -269,7 +269,12 @@ _spread = defaultdict(int)
 del defaultdict
 
 def _dec_str_to_int_inner(s, *, GUARD=8):
-    BYTELIM = 512
+    # Yes, BYTELIM is "large". Large enough that CPython will usually
+    # use the Karatsuba _str_to_int_inner to convert the string. This
+    # allowed reducing the cutoff for calling _this_ function from 3.5M
+    # to 2M digits. We could almost certainly do even better by
+    # fine-tuning this and/or using a larger output base than 256.
+    BYTELIM = 100_000
     D = decimal.Decimal
     result = bytearray()
     # See notes at end of file for discussion of GUARD.
@@ -389,7 +394,7 @@ def int_from_string(s):
     # contain underscores and have trailing whitespace.
     s = s.rstrip().replace('_', '')
     func = _str_to_int_inner
-    if len(s) >= 3_500_000 and _decimal is not None:
+    if len(s) >= 2_000_000 and _decimal is not None:
         func = _dec_str_to_int_inner
     return func(s)
 
