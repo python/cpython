@@ -118,10 +118,6 @@ class CConverter(metaclass=CConverterAutoRegister):
     # the variable when passing it into the _impl function?
     impl_by_reference = False
 
-    # Should Argument Clinic add a '&' before the name of
-    # the variable when passing it into PyArg_ParseTuple (AndKeywords)?
-    parse_by_reference = True
-
     #############################################################
     #############################################################
     ## You shouldn't need to read anything below this point to ##
@@ -328,8 +324,7 @@ class CConverter(metaclass=CConverterAutoRegister):
         elif self.subclass_of:
             args.append(self.subclass_of)
 
-        s = ("&" if self.parse_by_reference else "") + self.parser_name
-        args.append(s)
+        args.append(f"&{self.parser_name}")
 
         if self.length:
             args.append(f"&{self.length_name}")
