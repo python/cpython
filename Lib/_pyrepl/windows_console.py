@@ -46,6 +46,12 @@ class CONSOLE_CURSOR_INFO(Structure):
         ('bVisible', BOOL),
     ]
 
+class CHAR_INFO(Structure):
+    _fields_ = [
+        ('UnicodeChar', WCHAR),
+        ('Attributes', WORD),
+    ]
+
 STD_INPUT_HANDLE = -10
 STD_OUTPUT_HANDLE = -11
 GetStdHandle = windll.kernel32.GetStdHandle
@@ -73,8 +79,14 @@ SetConsoleCursorPosition.restype = BOOL
 SetConsoleCursorPosition.use_last_error = True
 
 FillConsoleOutputCharacter = windll.kernel32.FillConsoleOutputCharacterW
+FillConsoleOutputCharacter.use_last_error = True
 FillConsoleOutputCharacter.argtypes = [HANDLE, CHAR, DWORD, _COORD, POINTER(DWORD)]
 FillConsoleOutputCharacter.restype = BOOL
+
+ScrollConsoleScreenBuffer = windll.kernel32.ScrollConsoleScreenBufferW
+ScrollConsoleScreenBuffer.use_last_error = True
+ScrollConsoleScreenBuffer.argtypes = [HANDLE, POINTER(SMALL_RECT), POINTER(SMALL_RECT), _COORD, POINTER(CHAR_INFO)]
+ScrollConsoleScreenBuffer.rettype = BOOL
 
 class Char(Union):
     _fields_ = [
@@ -336,7 +348,7 @@ class WindowsConsole(Console):
             x_pos += 1
 
         # if we need to insert a single character right after the first detected change
-        if oldline[x_pos:] == newline[x_pos + 1 :]: # and self.ich1:
+        if oldline[x_pos:] == newline[x_pos + 1 :]:
             if (
                 y == self.__posxy[1]
                 and x_coord > self.__posxy[0]
@@ -345,9 +357,20 @@ class WindowsConsole(Console):
                 x_pos = px_pos
                 x_coord = px_coord
             character_width = wlen(newline[x_pos])
-            trace('sinle char', x_coord, y, px_coord)
+
+            ins_x, ins_y = self.get_abs_position(x_coord + 1, y)
+            ins_x -= 1
+            scroll_rect = SMALL_RECT()
+            scroll_rect.Top = scroll_rect.Bottom = ins_y
+            scroll_rect.Left = ins_x
+            scroll_rect.Right = self.getheightwidth()[1] - 1
+            destination_origin = _COORD(X = scroll_rect.Left + 1, Y = scroll_rect.Top)
+            fill_info = CHAR_INFO()
+            fill_info.UnicodeChar = ' '
+
+            if not ScrollConsoleScreenBuffer(OutHandle, scroll_rect, None, destination_origin, fill_info):
+                raise ctypes.WinError(ctypes.GetLastError())
             self.__move(x_coord, y)
-#            self.__write_code(self.ich1)
             self.__write(newline[x_pos])
             self.__posxy = x_coord + character_width, y
 
@@ -418,13 +441,17 @@ class WindowsConsole(Console):
 
     def __move_relative(self, x, y):
         trace('move relative', x, y)
+        cur_x, cur_y = self.get_abs_position(x, y)
+        trace('move is', cur_x, cur_y)
+        self.__move_absolute(cur_x, cur_y)
+
+    def get_abs_position(self, x: int, y: int) -> tuple[int, int]:
         cur_x, cur_y = self.screen_xy
         dx = x - self.__posxy[0]
         dy = y - self.__posxy[1]
         cur_x += dx
         cur_y += dy
-        trace('move is', cur_x, cur_y)
-        self.__move_absolute(cur_x, cur_y)
+        return cur_x, cur_y
 
     def __move_absolute(self, x, y):
         assert 0 <= y - self.__offset < self.height, y - self.__offset
