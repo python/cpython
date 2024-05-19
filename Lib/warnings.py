@@ -58,15 +58,16 @@ def _formatwarnmsg_impl(msg):
         # catch Exception, not only ImportError and RecursionError.
         except Exception:
             # don't suggest to enable tracemalloc if it's not available
-            tracing = True
+            suggest_tracemalloc = False
             tb = None
         else:
-            tracing = tracemalloc.is_tracing()
             try:
+                suggest_tracemalloc = not tracemalloc.is_tracing()
                 tb = tracemalloc.get_object_traceback(msg.source)
             except Exception:
                 # When a warning is logged during Python shutdown, tracemalloc
                 # and the import machinery don't work anymore
+                suggest_tracemalloc = False
                 tb = None
 
         if tb is not None:
@@ -85,7 +86,7 @@ def _formatwarnmsg_impl(msg):
                 if line:
                     line = line.strip()
                     s += '    %s\n' % line
-        elif not tracing:
+        elif suggest_tracemalloc:
             s += (f'{category}: Enable tracemalloc to get the object '
                   f'allocation traceback\n')
     return s
@@ -331,8 +332,8 @@ def warn(message, category=None, stacklevel=1, source=None,
                     raise ValueError
     except ValueError:
         globals = sys.__dict__
-        filename = "sys"
-        lineno = 1
+        filename = "<sys>"
+        lineno = 0
     else:
         globals = frame.f_globals
         filename = frame.f_code.co_filename

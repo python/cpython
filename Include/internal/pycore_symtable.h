@@ -29,6 +29,29 @@ typedef enum _comprehension_type {
     SetComprehension = 3,
     GeneratorExpression = 4 } _Py_comprehension_ty;
 
+/* source location information */
+typedef struct {
+    int lineno;
+    int end_lineno;
+    int col_offset;
+    int end_col_offset;
+} _Py_SourceLocation;
+
+#define SRC_LOCATION_FROM_AST(n) \
+    (_Py_SourceLocation){ \
+               .lineno = (n)->lineno, \
+               .end_lineno = (n)->end_lineno, \
+               .col_offset = (n)->col_offset, \
+               .end_col_offset = (n)->end_col_offset }
+
+static const _Py_SourceLocation NO_LOCATION = {-1, -1, -1, -1};
+
+/* __future__ information */
+typedef struct {
+    int ff_features;                    /* flags set by future statements */
+    _Py_SourceLocation ff_location;     /* location of last future statement */
+} _PyFutureFeatures;
+
 struct _symtable_entry;
 
 struct symtable {
@@ -44,7 +67,7 @@ struct symtable {
                                        consistency with the corresponding
                                        compiler structure */
     PyObject *st_private;           /* name of current class or NULL */
-    PyFutureFeatures *st_future;    /* module's future features that affect
+    _PyFutureFeatures *st_future;   /* module's future features that affect
                                        the symbol table */
     int recursion_depth;            /* current recursion depth */
     int recursion_limit;            /* recursion limit */
@@ -100,7 +123,7 @@ extern int _PyST_IsFunctionLike(PySTEntryObject *);
 extern struct symtable* _PySymtable_Build(
     struct _mod *mod,
     PyObject *filename,
-    PyFutureFeatures *future);
+    _PyFutureFeatures *future);
 extern PySTEntryObject* _PySymtable_Lookup(struct symtable *, void *);
 
 extern void _PySymtable_Free(struct symtable *);
@@ -109,18 +132,18 @@ extern PyObject* _Py_Mangle(PyObject *p, PyObject *name);
 
 /* Flags for def-use information */
 
-#define DEF_GLOBAL 1           /* global stmt */
-#define DEF_LOCAL 2            /* assignment in code block */
-#define DEF_PARAM 2<<1         /* formal parameter */
-#define DEF_NONLOCAL 2<<2      /* nonlocal stmt */
-#define USE 2<<3               /* name is used */
-#define DEF_FREE 2<<4          /* name used but not defined in nested block */
-#define DEF_FREE_CLASS 2<<5    /* free variable from class's method */
-#define DEF_IMPORT 2<<6        /* assignment occurred via import */
-#define DEF_ANNOT 2<<7         /* this name is annotated */
-#define DEF_COMP_ITER 2<<8     /* this name is a comprehension iteration variable */
-#define DEF_TYPE_PARAM 2<<9    /* this name is a type parameter */
-#define DEF_COMP_CELL 2<<10    /* this name is a cell in an inlined comprehension */
+#define DEF_GLOBAL 1             /* global stmt */
+#define DEF_LOCAL 2              /* assignment in code block */
+#define DEF_PARAM (2<<1)         /* formal parameter */
+#define DEF_NONLOCAL (2<<2)      /* nonlocal stmt */
+#define USE (2<<3)               /* name is used */
+#define DEF_FREE (2<<4)          /* name used but not defined in nested block */
+#define DEF_FREE_CLASS (2<<5)    /* free variable from class's method */
+#define DEF_IMPORT (2<<6)        /* assignment occurred via import */
+#define DEF_ANNOT (2<<7)         /* this name is annotated */
+#define DEF_COMP_ITER (2<<8)     /* this name is a comprehension iteration variable */
+#define DEF_TYPE_PARAM (2<<9)    /* this name is a type parameter */
+#define DEF_COMP_CELL (2<<10)    /* this name is a cell in an inlined comprehension */
 
 #define DEF_BOUND (DEF_LOCAL | DEF_PARAM | DEF_IMPORT)
 
@@ -150,7 +173,7 @@ extern struct symtable* _Py_SymtableStringObjectFlags(
 int _PyFuture_FromAST(
     struct _mod * mod,
     PyObject *filename,
-    PyFutureFeatures* futures);
+    _PyFutureFeatures* futures);
 
 #ifdef __cplusplus
 }
