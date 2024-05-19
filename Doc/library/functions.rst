@@ -82,6 +82,12 @@ are always available.  They are listed here in alphabetical order.
                   return False
           return True
 
+   .. note::
+
+      This isn't efficient for comprehensions::
+
+         all(value >= 0 for value in values)
+
 
 .. awaitablefunction:: anext(async_iterator)
                        anext(async_iterator, default)
@@ -110,6 +116,11 @@ are always available.  They are listed here in alphabetical order.
                   return True
           return False
 
+   .. note::
+
+      This isn't efficient for comprehensions::
+
+         any(value < 0 for value in values)
 
 .. function:: ascii(object)
 
