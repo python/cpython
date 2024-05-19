@@ -14,8 +14,8 @@ on:
       - 'Python/bytecodes.c'
       - 'Python/optimizer*.c'
       - '!Python/perf_jit_trampoline.c'
-      - '!**/*/README.md'
-      - '!**/*/mypy.ini'
+      - '!**/*.md'
+      - '!**/*.ini'
   workflow_dispatch:
 
 permissions:
