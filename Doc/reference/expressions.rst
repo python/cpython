@@ -1921,17 +1921,19 @@ Following is an example of right to left conditional_expression evaluation examp
    .. code-block:: python
 
        'foo' if 1 else 'bar' if 0 else 'baz'
-    ' foo'
+       'foo'
 
 In the following lines, expressions will be evaluated in the arithmetic order of
-their suffixes::
+their suffixes:
 
-   expr1, expr2, expr3, expr4
-   (expr1, expr2, expr3, expr4)
-   {expr1: expr2, expr3: expr4}
-   expr1 + expr2 * (expr3 - expr4)
-   expr1(expr2, expr3, *expr4, **expr5)
-   expr3, expr4 = expr1, expr2
+   .. code-block:: python
+
+      expr1, expr2, expr3, expr4
+      (expr1, expr2, expr3, expr4)
+      {expr1: expr2, expr3: expr4}
+      expr1 + expr2 * (expr3 - expr4)
+      expr1(expr2, expr3, *expr4, **expr5)
+      expr3, expr4 = expr1, expr2
 
 
 .. _operator-summary:
