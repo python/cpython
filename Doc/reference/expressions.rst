@@ -1906,7 +1906,7 @@ Evaluation order
 .. index:: pair: evaluation; order
 
 Python evaluates expressions from left to right (except for conditional_expression).
-Notice that while evaluating an assignment, the right-hand side is evaluated before 
+Notice that while evaluating an assignment, the right-hand side is evaluated before
 the left-hand side.
 
 Examples for left to right:
