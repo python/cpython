@@ -225,15 +225,13 @@ class PurePathBase:
         string, remove the suffix from the path.
         """
         stem = self.stem
-        if not suffix:
-            return self.with_name(stem)
-        elif not stem:
+        if not stem:
             # If the stem is empty, we can't make the suffix non-empty.
             raise ValueError(f"{self!r} has an empty name")
-        elif suffix.startswith('.') and len(suffix) > 1:
-            return self.with_name(stem + suffix)
-        else:
+        elif suffix and not (suffix.startswith('.') and len(suffix) > 1):
             raise ValueError(f"Invalid suffix {suffix!r}")
+        else:
+            return self.with_name(stem + suffix)
 
     def relative_to(self, other, *, walk_up=False):
         """Return the relative path to another path identified by the passed
