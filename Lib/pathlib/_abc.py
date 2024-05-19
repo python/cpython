@@ -684,7 +684,6 @@ class PathBase(PurePathBase):
                 path = self.with_segments(path_str)
                 path._resolving = True
                 return str(path.readlink())
-
         else:
             # If the user has *not* overridden the `readlink()` method, then
             # symlinks are unsupported and (in non-strict mode) we can improve

@@ -483,7 +483,7 @@ def _realpath(filename, strict=False, sep=sep, curdir=curdir, pardir=pardir,
                 link_count += 1
                 if link_count > maxlinks:
                     if strict:
-                        raise OSError(errno.ELOOP, "Too many symbolic links in path", newpath)
+                        raise OSError(errno.ELOOP, "Too many levels of symbolic links", newpath)
                     path = newpath
                     continue
             elif newpath in seen:
@@ -494,7 +494,7 @@ def _realpath(filename, strict=False, sep=sep, curdir=curdir, pardir=pardir,
                     continue
                 # The symlink is not resolved, so we must have a symlink loop.
                 if strict:
-                    raise OSError(errno.ELOOP, "Symlink loop", newpath)
+                    raise OSError(errno.ELOOP, "Too many levels of symbolic links", newpath)
                 path = newpath
                 continue
             target = readlink(newpath)
