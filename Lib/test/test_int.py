@@ -12,6 +12,11 @@ try:
 except ImportError:
     _pylong = None
 
+try:
+    import _decimal
+except ImportError:
+    _decimal = None
+
 L = [
         ('0', 0),
         ('1', 1),
@@ -920,6 +925,7 @@ class PyLongModuleTests(unittest.TestCase):
             bits <<= 1
 
     @support.requires_resource('cpu')
+    @unittest.skipUnless(_decimal, "C _decimal module required")
     def test_pylong_roundtrip_huge(self):
         # k blocks of 1234567890
         k = 1_000_000 # so 10 million digits in all
@@ -931,6 +937,7 @@ class PyLongModuleTests(unittest.TestCase):
 
     @support.requires_resource('cpu')
     @unittest.skipUnless(_pylong, "_pylong module required")
+    @unittest.skipUnless(_decimal, "C _decimal module required")
     def test_whitebox_dec_str_to_int_inner_failsafe(self):
         # While I believe the number of GUARD digits in this function is
         # always enough so that no more than one correction step is ever
@@ -950,6 +957,7 @@ class PyLongModuleTests(unittest.TestCase):
             _pylong._spread.update(orig_spread)
 
     @unittest.skipUnless(_pylong, "pylong module required")
+    @unittest.skipUnless(_decimal, "C _decimal module required")
     def test_whitebox_dec_str_to_int_inner_monster(self):
         # I don't think anyone has enough RAM to build a string long enough
         # for this function to complain. So lie about the string length.
