@@ -435,8 +435,8 @@ symbolic links encountered in the path."""
         getcwd = os.getcwd
     return _realpath(filename, strict, sep, curdir, pardir, getcwd)
 
-def _realpath(filename, strict, sep=sep, curdir=curdir, pardir=pardir,
-              getcwd=os.getcwd, lstat=os.lstat, readlink=os.readlink, maxlinks=-1):
+def _realpath(filename, strict=False, sep=sep, curdir=curdir, pardir=pardir,
+              getcwd=os.getcwd, lstat=os.lstat, readlink=os.readlink, maxlinks=None):
     # The stack of unresolved path parts. When popped, a special value of None
     # indicates that a symlink target has been resolved, and that the original
     # symlink path can be retrieved by popping again. The [::-1] slice is a
@@ -479,7 +479,7 @@ def _realpath(filename, strict, sep=sep, curdir=curdir, pardir=pardir,
             if not stat.S_ISLNK(st.st_mode):
                 path = newpath
                 continue
-            elif maxlinks != -1:
+            elif maxlinks is not None:
                 link_count += 1
                 if link_count > maxlinks:
                     if strict:
@@ -507,7 +507,7 @@ def _realpath(filename, strict, sep=sep, curdir=curdir, pardir=pardir,
         if target.startswith(sep):
             # Symlink target is absolute; reset resolved path.
             path = sep
-        if maxlinks == -1:
+        if maxlinks is None:
             # Mark this symlink as seen but not fully resolved.
             seen[newpath] = None
             # Push the symlink path onto the stack, and signal its specialness
