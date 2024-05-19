@@ -2,6 +2,10 @@ import asyncio
 import unittest
 from asyncio.staggered import staggered_race
 
+from test import support
+
+support.requires_working_socket(module=True)
+
 
 def tearDownModule():
     asyncio.set_event_loop_policy(None)
