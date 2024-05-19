@@ -114,12 +114,11 @@ language using this mechanism:
    attribute on :class:`_Feature` instances.
 
 .. [1]
-   ``from __future__ import annotations`` was previously scheduled to
-   become mandatory in Python 3.10, but the Python Steering Council
-   twice decided to delay the change
+   ``from __future__ import annotations`` was previously scheduled to become mandatory in
+   Python 3.10, but the Python Steering Council decided to delay the change until 3.14
    (`announcement for Python 3.10 <https://mail.python.org/archives/list/python-dev@python.org/message/CLVXXPQ2T2LQ5MP2Y53VVQFCXYWQJHKZ/>`__;
    `announcement for Python 3.11 <https://mail.python.org/archives/list/python-dev@python.org/message/VIZEBX5EYMSYIJNDBF6DMUMZOCWHARSO/>`__).
-   No final decision has been made yet. See also :pep:`563` and :pep:`649`.
+   See also :pep:`563` and :pep:`649`.
 
 
 .. seealso::
