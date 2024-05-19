@@ -87,7 +87,7 @@ static OPCODE_FUNC_PTR_TYPE opcode_funcs[256];
 #  define DISPATCH_GOTO() goto *opcode_targets[opcode]
 #elif USE_TAIL_CALLS
 #  define DISPATCH_GOTO() OPCODE_FUNC_PTR_TYPE next = opcode_funcs[opcode]; \
-                          return next(tstate, frame, stack_pointer, next_instr, opcode, oparg, state)
+                          __attribute__((musttail)) return next(tstate, frame, stack_pointer, next_instr, opcode, oparg, state)
 #else
 #  define TARGET(op) case op: TARGET_##op:
 #  define DISPATCH_GOTO() goto dispatch_opcode
@@ -142,11 +142,11 @@ do { \
         (NEW_FRAME)->previous = frame;                  \
         frame = tstate->current_frame = (NEW_FRAME);     \
         CALL_STAT_INC(inlined_py_calls);                \
-        goto start_frame;                               \
+        CEVAL_GOTO(start_frame);                               \
     } while (0)
 
 // Use this instead of 'goto error' so Tier 2 can go to a different label
-#define GOTO_ERROR(LABEL) goto LABEL
+#define GOTO_ERROR(LABEL) CEVAL_GOTO(LABEL)
 
 #define CHECK_EVAL_BREAKER() \
     _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY(); \
@@ -282,7 +282,9 @@ GETITEM(PyObject *v, Py_ssize_t i) {
                                      Py_XDECREF(tmp); } while (0)
 
 #if USE_TAIL_CALLS
-#  define GO_TO_INSTRUCTION(op) exit(42069);
+#  define GO_TO_INSTRUCTION(OP, SUB) OPCODE_FUNC_PTR_TYPE next = opcode_funcs[OP]; \
+                                     next_instr -= SUB; \
+                                     return next(tstate, frame, stack_pointer, next_instr, opcode, oparg, state)
 #else
 #  define GO_TO_INSTRUCTION(op) goto PREDICT_ID(op)
 #endif
@@ -301,12 +303,12 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 #define UPDATE_MISS_STATS(INSTNAME) ((void)0)
 #endif
 
-#define DEOPT_IF(COND, INSTNAME)                            \
+#define DEOPT_IF(COND, INSTNAME, SUB)                            \
     if ((COND)) {                                           \
         /* This is only a single jump on release builds! */ \
         UPDATE_MISS_STATS((INSTNAME));                      \
         assert(_PyOpcode_Deopt[opcode] == (INSTNAME));      \
-        GO_TO_INSTRUCTION(INSTNAME);                        \
+        GO_TO_INSTRUCTION(INSTNAME, SUB);                        \
     }
 
 
@@ -385,7 +387,7 @@ do { \
         stack_pointer = _PyFrame_GetStackPointer(frame); \
         if (next_instr == NULL) { \
             next_instr = (dest)+1; \
-            goto error; \
+            CEVAL_GOTO(error); \
         } \
     } \
 } while (0);

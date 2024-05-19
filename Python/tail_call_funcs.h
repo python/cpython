@@ -28,8 +28,7 @@ const uintptr_t resume_frame = 8;
     oparg = s.oparg;\
 }
 
-#define goto STORE_RET_STATE return
-#define return return (uintptr_t)
+#define CEVAL_GOTO(X) do { STORE_RET_STATE return (uintptr_t)X; } while(0)
 
 #include "generated_cases.c.h"
 
@@ -40,7 +39,7 @@ uintptr_t FUNC_unknown_opcode(PyThreadState *tstate, _PyInterpreterFrame *frame,
                     _PyFrame_GetCode(frame)->co_filename,
                     PyUnstable_InterpreterFrame_GetLine(frame),
                     opcode);
-    goto error;
+    CEVAL_GOTO(error);
 }
 
 uintptr_t FUNC_INSTRUMENTED_LINE(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObject **stack_pointer, _Py_CODEUNIT *next_instr, int opcode, int oparg, ret_state *state) {
@@ -57,7 +56,7 @@ uintptr_t FUNC_INSTRUMENTED_LINE(PyThreadState *tstate, _PyInterpreterFrame *fra
         stack_pointer = _PyFrame_GetStackPointer(frame);
         if (original_opcode < 0) {
             next_instr = here+1;
-            goto error;
+            CEVAL_GOTO(error);
         }
         next_instr = frame->instr_ptr;
         if (next_instr != here) {
@@ -81,7 +80,6 @@ uintptr_t FUNC_INSTRUMENTED_LINE(PyThreadState *tstate, _PyInterpreterFrame *fra
 #undef DISPATCH_GOTO
 #define DISPATCH_GOTO() OPCODE_FUNC_PTR_TYPE next = opcode_funcs[opcode]; \
                         uintptr_t res = next(tstate, frame, stack_pointer, next_instr, opcode, oparg, &s); \
-                        printf("Here %d\n", res);\
                         RESTORE_RET_STATE;\
                         switch(res) {\
                         case pop_1_error: goto pop_1_error;\

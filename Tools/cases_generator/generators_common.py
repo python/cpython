@@ -66,7 +66,9 @@ def replace_deopt(
     assert inst is not None
     assert inst.family is not None
     out.emit(inst.family.name)
-    out.emit(");\n")
+    out.emit(", ")
+    out.emit(inst.family.size)
+    out.emit("+1);\n")
 
 
 def replace_error(
@@ -92,10 +94,11 @@ def replace_error(
         offset = None
         out.emit(f"{{ stack_pointer += {c_offset}; ")
         close = "; }\n"
-    out.emit("goto ")
+    out.emit("CEVAL_GOTO(")
     if offset:
         out.emit(f"pop_{offset}_")
     out.emit(label)
+    out.emit(")")
     out.emit(close)
 
 
@@ -110,7 +113,7 @@ def replace_error_no_pop(
     next(tkn_iter)  # LPAREN
     next(tkn_iter)  # RPAREN
     next(tkn_iter)  # Semi colon
-    out.emit_at("goto error;", tkn)
+    out.emit_at("CEVAL_GOTO(error);", tkn)
 
 
 def replace_decrefs(
@@ -169,6 +172,23 @@ def replace_check_eval_breaker(
     if not uop.properties.ends_with_eval_breaker:
         out.emit_at("CHECK_EVAL_BREAKER();", tkn)
 
+def replace_go_to_instruction(
+    out: CWriter,
+    tkn: Token,
+    tkn_iter: Iterator[Token],
+    uop: Uop,
+    unused: Stack,
+    inst: Instruction | None,
+) -> None:
+    out.emit_at("GO_TO_INSTRUCTION", tkn)
+    out.emit(next(tkn_iter))
+    emit_to(out, tkn_iter, "RPAREN")
+    next(tkn_iter)  # Semi colon
+    out.emit(", ")
+    # TODO: This assumes that the instruction being GO_TOed is the same size as
+    # the current instruction, this may not be true
+    out.emit(str(inst.size))
+    out.emit(");\n")
 
 REPLACEMENT_FUNCTIONS = {
     "EXIT_IF": replace_deopt,
@@ -178,6 +198,7 @@ REPLACEMENT_FUNCTIONS = {
     "DECREF_INPUTS": replace_decrefs,
     "CHECK_EVAL_BREAKER": replace_check_eval_breaker,
     "SYNC_SP": replace_sync_sp,
+    "GO_TO_INSTRUCTION": replace_go_to_instruction,
 }
 
 ReplacementFunctionType = Callable[

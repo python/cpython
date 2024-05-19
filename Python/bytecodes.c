@@ -806,7 +806,7 @@ dummy_func(
                 if (do_raise(tstate, exc, cause)) {
                     assert(oparg == 0);
                     monitor_reraise(tstate, frame, this_instr);
-                    goto exception_unwind;
+                    CEVAL_GOTO(exception_unwind);
                 }
                 break;
             default:
@@ -824,7 +824,7 @@ dummy_func(
             tstate->current_frame = frame->previous;
             assert(!_PyErr_Occurred(tstate));
             tstate->c_recursion_remaining += PY_EVAL_C_STACK_UNITS;
-            return retval;
+            return (uintptr_t) retval;
         }
 
         // The stack effect here is ambiguous.
@@ -868,7 +868,7 @@ dummy_func(
             _PyEval_FrameClearAndPop(tstate, dying);
             _PyFrame_StackPush(frame, retval);
             LOAD_IP(frame->return_offset);
-            goto resume_frame;
+            CEVAL_GOTO(resume_frame);
         }
 
         macro(RETURN_CONST) =
@@ -892,7 +892,7 @@ dummy_func(
             _PyEval_FrameClearAndPop(tstate, dying);
             _PyFrame_StackPush(frame, retval);
             LOAD_IP(frame->return_offset);
-            goto resume_frame;
+            CEVAL_GOTO(resume_frame);
         }
 
         inst(GET_AITER, (obj -- iter)) {
@@ -1095,7 +1095,7 @@ dummy_func(
             /* We don't know which of these is relevant here, so keep them equal */
             assert(INLINE_CACHE_ENTRIES_SEND == INLINE_CACHE_ENTRIES_FOR_ITER);
             LOAD_IP(1 + INLINE_CACHE_ENTRIES_SEND);
-            goto resume_frame;
+            CEVAL_GOTO(resume_frame);
         }
 
         inst(YIELD_VALUE, (retval -- value)) {
@@ -1157,7 +1157,7 @@ dummy_func(
             Py_INCREF(exc);
             _PyErr_SetRaisedException(tstate, exc);
             monitor_reraise(tstate, frame, this_instr);
-            goto exception_unwind;
+            CEVAL_GOTO(exception_unwind);
         }
 
         tier1 inst(END_ASYNC_FOR, (awaitable, exc -- )) {
@@ -1169,7 +1169,7 @@ dummy_func(
                 Py_INCREF(exc);
                 _PyErr_SetRaisedException(tstate, exc);
                 monitor_reraise(tstate, frame, this_instr);
-                goto exception_unwind;
+                CEVAL_GOTO(exception_unwind);
             }
         }
 
@@ -1184,7 +1184,7 @@ dummy_func(
             else {
                 _PyErr_SetRaisedException(tstate, Py_NewRef(exc_value));
                 monitor_reraise(tstate, frame, this_instr);
-                goto exception_unwind;
+                CEVAL_GOTO(exception_unwind);
             }
         }
 
@@ -3422,7 +3422,7 @@ dummy_func(
              * We don't check recursion depth here,
              * as it will be checked after start_frame */
             tstate->py_recursion_remaining--;
-            goto start_frame;
+            CEVAL_GOTO(start_frame);
         }
 
         inst(EXIT_INIT_CHECK, (should_be_none -- )) {
@@ -3615,7 +3615,7 @@ dummy_func(
             DEOPT_IF(!PyList_Check(self));
             STAT_INC(CALL, hit);
             if (_PyList_AppendTakeRef((PyListObject *)self, arg) < 0) {
-                goto pop_1_error;  // Since arg is DECREF'ed already
+                CEVAL_GOTO(pop_1_error);  // Since arg is DECREF'ed already
             }
             Py_DECREF(self);
             Py_DECREF(callable);
