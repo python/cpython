@@ -452,6 +452,9 @@ def _realpath(filename, strict, sep=sep, curdir=curdir, pardir=pardir,
     # used both to detect symlink loops and to speed up repeated traversals of
     # the same links.
     seen = {}
+
+    # Number of symlinks traversed. When the number of traversals is limited
+    # by *maxlinks*, this is used instead of *seen* to detect symlink loops.
     link_count = 0
 
     while rest:
@@ -476,7 +479,7 @@ def _realpath(filename, strict, sep=sep, curdir=curdir, pardir=pardir,
             if not stat.S_ISLNK(st.st_mode):
                 path = newpath
                 continue
-            if maxlinks != -1:
+            elif maxlinks != -1:
                 link_count += 1
                 if link_count > maxlinks:
                     if strict:
@@ -507,9 +510,9 @@ def _realpath(filename, strict, sep=sep, curdir=curdir, pardir=pardir,
         if maxlinks == -1:
             # Mark this symlink as seen but not fully resolved.
             seen[newpath] = None
-            # Push the symlink path onto the stack, and signal its specialness by
-            # also pushing None. When these entries are popped, we'll record the
-            # fully-resolved symlink target in the 'seen' mapping.
+            # Push the symlink path onto the stack, and signal its specialness
+            # by also pushing None. When these entries are popped, we'll
+            # record the fully-resolved symlink target in the 'seen' mapping.
             rest.append(newpath)
             rest.append(None)
         # Push the unresolved symlink target parts onto the stack.
