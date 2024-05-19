@@ -685,7 +685,7 @@ class PosixPathTest(unittest.TestCase):
             os.mkdir(ABSTFN)
             os.symlink('.', f'{ABSTFN}/1')
             for i in range(1, depth):
-                os.symlink(f'{i}'), f'{ABSTFN}/{i + 1}')
+                os.symlink(f'{i}', f'{ABSTFN}/{i + 1}')
             self.assertEqual(realpath(f'{ABSTFN}/{depth}'), ABSTFN)
             with self.assertRaises(OSError):
                 realpath(f'{ABSTFN}/{depth}', strict=True)
