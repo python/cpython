@@ -361,39 +361,23 @@ def walk(top, topdown=True, onerror=None, followlinks=False):
         # minor reason when (say) a thousand readable directories are still
         # left to visit.
         try:
-            scandir_it = scandir(top)
-        except OSError as error:
-            if onerror is not None:
-                onerror(error)
-            continue
-
-        cont = False
-        with scandir_it:
-            while True:
-                try:
+            with scandir(top) as entries:
+                for entry in entries:
                     try:
-                        entry = next(scandir_it)
-                    except StopIteration:
-                        break
-                except OSError as error:
-                    if onerror is not None:
-                        onerror(error)
-                    cont = True
-                    break
+                        is_dir = entry.is_dir()
+                    except OSError:
+                        # If is_dir() raises an OSError, consider the entry not to
+                        # be a directory, same behaviour as os.path.isdir().
+                        is_dir = False
 
-                try:
-                    is_dir = entry.is_dir()
-                except OSError:
-                    # If is_dir() raises an OSError, consider the entry not to
-                    # be a directory, same behaviour as os.path.isdir().
-                    is_dir = False
+                    if is_dir:
+                        dirs.append(entry.name)
+                    else:
+                        nondirs.append(entry.name)
+                        continue
+                    if topdown:
+                        continue
 
-                if is_dir:
-                    dirs.append(entry.name)
-                else:
-                    nondirs.append(entry.name)
-
-                if not topdown and is_dir:
                     # Bottom-up: traverse into sub-directory, but exclude
                     # symlinks to directories if followlinks is False
                     if followlinks:
@@ -410,21 +394,25 @@ def walk(top, topdown=True, onerror=None, followlinks=False):
 
                     if walk_into:
                         walk_dirs.append(entry.path)
-        if cont:
+        except OSError as error:
+            if onerror is not None:
+                onerror(error)
             continue
 
         if topdown:
             # Yield before sub-directory traversal if going top down
             yield top, dirs, nondirs
-            # Traverse into sub-directories
-            for dirname in reversed(dirs):
-                new_path = join(top, dirname)
-                # bpo-23605: os.path.islink() is used instead of caching
-                # entry.is_symlink() result during the loop on os.scandir() because
-                # the caller can replace the directory entry during the "yield"
-                # above.
-                if followlinks or not islink(new_path):
-                    stack.append(new_path)
+            if dirs:
+                # Traverse into sub-directories
+                prefix = join(top, top[:0])
+                for dirname in reversed(dirs):
+                    new_path = prefix + dirname
+                    # bpo-23605: os.path.islink() is used instead of caching
+                    # entry.is_symlink() result during the loop on os.scandir() because
+                    # the caller can replace the directory entry during the "yield"
+                    # above.
+                    if followlinks or not islink(new_path):
+                        stack.append(new_path)
         else:
             # Yield after sub-directory traversal if going bottom up
             stack.append((top, dirs, nondirs))
