@@ -122,6 +122,7 @@ are always available.  They are listed here in alphabetical order.
 
          any(value < 0 for value in values)
 
+
 .. function:: ascii(object)
 
    As :func:`repr`, return a string containing a printable representation of an
