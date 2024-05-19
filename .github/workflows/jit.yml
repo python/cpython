@@ -5,11 +5,17 @@ on:
       - '**jit**'
       - 'Python/bytecodes.c'
       - 'Python/optimizer*.c'
+      - '!Python/perf_jit_trampoline.c'
+      - '!**/*.md'
+      - '!**/*.ini'
   push:
     paths:
       - '**jit**'
       - 'Python/bytecodes.c'
       - 'Python/optimizer*.c'
+      - '!Python/perf_jit_trampoline.c'
+      - '!**/*.md'
+      - '!**/*.ini'
   workflow_dispatch:
 
 permissions:
