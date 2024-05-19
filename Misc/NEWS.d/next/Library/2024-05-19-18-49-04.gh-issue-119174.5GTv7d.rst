@@ -1,0 +1,2 @@
+Fix high DPI causes turtledemo(turtle-graphics examples) windows blurry
+Patch by Wulian233
