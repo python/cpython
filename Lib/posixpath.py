@@ -476,11 +476,14 @@ def _realpath(filename, strict, sep=sep, curdir=curdir, pardir=pardir,
             if not stat.S_ISLNK(st.st_mode):
                 path = newpath
                 continue
-            if strict and maxlinks != -1:
+            if maxlinks != -1:
                 link_count += 1
                 if link_count > maxlinks:
-                    raise OSError(errno.ELOOP, "Too many symbolic links in path", newpath)
-            if newpath in seen:
+                    if strict:
+                        raise OSError(errno.ELOOP, "Too many symbolic links in path", newpath)
+                    path = newpath
+                    continue
+            elif newpath in seen:
                 # Already seen this path
                 path = seen[newpath]
                 if path is not None:
@@ -498,15 +501,17 @@ def _realpath(filename, strict, sep=sep, curdir=curdir, pardir=pardir,
             path = newpath
             continue
         # Resolve the symbolic link
-        seen[newpath] = None # not resolved symlink
         if target.startswith(sep):
             # Symlink target is absolute; reset resolved path.
             path = sep
-        # Push the symlink path onto the stack, and signal its specialness by
-        # also pushing None. When these entries are popped, we'll record the
-        # fully-resolved symlink target in the 'seen' mapping.
-        rest.append(newpath)
-        rest.append(None)
+        if maxlinks == -1:
+            # Mark this symlink as seen but not fully resolved.
+            seen[newpath] = None
+            # Push the symlink path onto the stack, and signal its specialness by
+            # also pushing None. When these entries are popped, we'll record the
+            # fully-resolved symlink target in the 'seen' mapping.
+            rest.append(newpath)
+            rest.append(None)
         # Push the unresolved symlink target parts onto the stack.
         rest.extend(target.split(sep)[::-1])
 
