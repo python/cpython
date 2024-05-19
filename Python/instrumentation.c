@@ -893,7 +893,7 @@ remove_per_instruction_tools(PyCodeObject * code, int offset, int tools)
 static int
 call_one_instrument(
     PyInterpreterState *interp, PyThreadState *tstate, PyObject **args,
-    Py_ssize_t nargsf, int8_t tool, int event)
+    size_t nargsf, int8_t tool, int event)
 {
     assert(0 <= tool && tool < 8);
     assert(tstate->tracing == 0);
@@ -1084,7 +1084,7 @@ call_instrumentation_vector(
     args[2] = offset_obj;
     PyInterpreterState *interp = tstate->interp;
     uint8_t tools = get_tools_for_instruction(code, interp, offset, event);
-    Py_ssize_t nargsf = nargs | PY_VECTORCALL_ARGUMENTS_OFFSET;
+    size_t nargsf = (size_t) nargs | PY_VECTORCALL_ARGUMENTS_OFFSET;
     PyObject **callargs = &args[1];
     int err = 0;
     while (tools) {
@@ -2439,13 +2439,15 @@ capi_call_instrumentation(PyMonitoringState *state, PyObject *codelike, int32_t 
         PyErr_SetString(PyExc_ValueError, "offset must be non-negative");
         return -1;
     }
-    PyObject *offset_obj = PyLong_FromLong(offset);
-    if (offset_obj == NULL) {
-        return -1;
+    if (nargs > 2) {
+        PyObject *offset_obj = PyLong_FromLong(offset);
+        if (offset_obj == NULL) {
+            return -1;
+        }
+        assert(args[2] == NULL);
+        args[2] = offset_obj;
     }
-    assert(args[2] == NULL);
-    args[2] = offset_obj;
-    Py_ssize_t nargsf = nargs | PY_VECTORCALL_ARGUMENTS_OFFSET;
+    size_t nargsf = (size_t) nargs | PY_VECTORCALL_ARGUMENTS_OFFSET;
     PyObject **callargs = &args[1];
     int err = 0;
 
@@ -2565,8 +2567,8 @@ _PyMonitoring_FireLineEvent(PyMonitoringState *state, PyObject *codelike, int32_
     if (lno == NULL) {
         return -1;
     }
-    PyObject *args[4] = { NULL, NULL, NULL, lno };
-    int res= capi_call_instrumentation(state, codelike, offset, args, 3,
+    PyObject *args[3] = { NULL, NULL, lno };
+    int res= capi_call_instrumentation(state, codelike, offset, args, 2,
                                        PY_MONITORING_EVENT_LINE);
     Py_DECREF(lno);
     return res;
