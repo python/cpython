@@ -573,7 +573,6 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(mode)
         STRUCT_FOR_ID(module)
         STRUCT_FOR_ID(module_globals)
-        STRUCT_FOR_ID(modules)
         STRUCT_FOR_ID(month)
         STRUCT_FOR_ID(mro)
         STRUCT_FOR_ID(msg)
