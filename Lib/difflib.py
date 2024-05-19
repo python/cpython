@@ -911,16 +911,26 @@ class Differ:
 
         # don't synch up unless the lines have a similarity score of at
         # least cutoff; best_ratio tracks the best score seen so far
-        best_ratio, cutoff = 0.74, 0.75
+        # best_ratio is a tuple storing the best .ratio() seen so far, and
+        # a measure of how far the indices are from their index range
+        # midpoints. The latter is used to resolve ratio ties. Favoring
+        # indices near the midpoints tends to cut the ranges in half. Else,
+        # if there are many pairs with the best ratio, recursion can grow
+        # very deep, and runtime becomes cubic. See:
+        # https://github.com/python/cpython/issues/119105
+        best_ratio, cutoff = (0.74, 0), 0.75
         cruncher = SequenceMatcher(self.charjunk)
         eqi, eqj = None, None   # 1st indices of equal lines (if any)
 
         # search for the pair that matches best without being identical
         # (identical lines must be junk lines, & we don't want to synch up
         # on junk -- unless we have to)
+        amid = (alo + ahi - 1) / 2
+        bmid = (blo + bhi - 1) / 2
         for j in range(blo, bhi):
             bj = b[j]
             cruncher.set_seq2(bj)
+            weight_j = - abs(j - bmid)
             for i in range(alo, ahi):
                 ai = a[i]
                 if ai == bj:
@@ -928,16 +938,20 @@ class Differ:
                         eqi, eqj = i, j
                     continue
                 cruncher.set_seq1(ai)
+                # weight is used to balance the recursion by prioritizing
+                # i and j in the middle of their ranges
+                weight = weight_j - abs(i - amid)
                 # computing similarity is expensive, so use the quick
                 # upper bounds first -- have seen this speed up messy
                 # compares by a factor of 3.
                 # note that ratio() is only expensive to compute the first
                 # time it's called on a sequence pair; the expensive part
                 # of the computation is cached by cruncher
-                if cruncher.real_quick_ratio() > best_ratio and \
-                      cruncher.quick_ratio() > best_ratio and \
-                      cruncher.ratio() > best_ratio:
-                    best_ratio, best_i, best_j = cruncher.ratio(), i, j
+                if (cruncher.real_quick_ratio(), weight) > best_ratio and \
+                      (cruncher.quick_ratio(), weight) > best_ratio and \
+                      (cruncher.ratio(), weight) > best_ratio:
+                    best_ratio, best_i, best_j = (cruncher.ratio(), weight), i, j
+        best_ratio, _ = best_ratio
         if best_ratio < cutoff:
             # no non-identical "pretty close" pair
             if eqi is None:
