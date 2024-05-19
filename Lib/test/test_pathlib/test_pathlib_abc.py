@@ -1016,6 +1016,7 @@ class DummyPurePathTest(unittest.TestCase):
         self.assertRaises(ValueError, P('c:a/b').with_suffix, 'c\\d')
         self.assertRaises(ValueError, P('c:a/b').with_suffix, '.c/d')
         self.assertRaises(ValueError, P('c:a/b').with_suffix, '.c\\d')
+        self.assertRaises(TypeError, P('c:a/b').with_suffix, None)
 
     def test_with_suffix_empty(self):
         P = self.cls
@@ -1023,7 +1024,7 @@ class DummyPurePathTest(unittest.TestCase):
         self.assertRaises(ValueError, P('').with_suffix, '.gz')
         self.assertRaises(ValueError, P('/').with_suffix, '.gz')
 
-    def test_with_suffix_seps(self):
+    def test_with_suffix_invalid(self):
         P = self.cls
         # Invalid suffix.
         self.assertRaises(ValueError, P('a/b').with_suffix, 'gz')
@@ -1033,6 +1034,7 @@ class DummyPurePathTest(unittest.TestCase):
         self.assertRaises(ValueError, P('a/b').with_suffix, '.c/.d')
         self.assertRaises(ValueError, P('a/b').with_suffix, './.d')
         self.assertRaises(ValueError, P('a/b').with_suffix, '.d/.')
+        self.assertRaises(TypeError, P('a/b').with_suffix, None)
 
     def test_relative_to_common(self):
         P = self.cls

@@ -1727,6 +1727,9 @@ class Misc:
             except (ValueError, TclError):
                 return s
 
+        if any(isinstance(s, tuple) for s in args):
+            args = [s[0] if isinstance(s, tuple) and len(s) == 1 else s
+                    for s in args]
         nsign, b, f, h, k, s, t, w, x, y, A, E, K, N, W, T, X, Y, D = args
         # Missing: (a, c, d, m, o, v, B, R)
         e = Event()
