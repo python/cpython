@@ -96,7 +96,6 @@ from turtledemo import __doc__ as about_turtledemo
 
 import turtle
 
-
 demo_dir = os.path.dirname(os.path.abspath(__file__))
 darwin = sys.platform == 'darwin'
 win32 = sys.platform == 'win32'
