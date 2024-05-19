@@ -1,1 +1,0 @@
-difflib.Differ is faster for some class of diffs
