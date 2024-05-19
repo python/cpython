@@ -1084,6 +1084,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(mode));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(module));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(module_globals));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(modules));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(month));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(mro));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(msg));

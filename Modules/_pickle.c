@@ -1923,9 +1923,10 @@ whichmodule(PyObject *global, PyObject *dotted_path)
     assert(module_name == NULL);
 
     /* Fallback on walking sys.modules */
-    modules = PyImport_GetModuleDict();
+    PyThreadState *tstate = _PyThreadState_GET();
+    modules = _PySys_GetAttr(tstate, &_Py_ID(modules));
     if (modules == NULL) {
-        PyErr_SetString(PyExc_RuntimeError, "Unable to get sys.modules");
+        PyErr_SetString(PyExc_RuntimeError, "unable to get sys.modules");
         return NULL;
     }
     if (PyDict_CheckExact(modules)) {

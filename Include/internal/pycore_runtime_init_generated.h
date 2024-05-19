@@ -1082,6 +1082,7 @@ extern "C" {
     INIT_ID(mode), \
     INIT_ID(module), \
     INIT_ID(module_globals), \
+    INIT_ID(modules), \
     INIT_ID(month), \
     INIT_ID(mro), \
     INIT_ID(msg), \
