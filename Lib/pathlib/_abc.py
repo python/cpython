@@ -689,11 +689,11 @@ class PathBase(PurePathBase):
             # If the user has *not* overridden the `readlink()` method, then
             # symlinks are unsupported and (in non-strict mode) we can improve
             # performance by not calling `path.lstat()`.
-            def lstat(path_str):
-                raise OSError("Symlinks are unsupported.")
+            def skip(path_str):
+                # This exception will be internally consumed by `_realpath()`.
+                raise OSError("Operation skipped.")
 
-            def readlink(path_str):
-                raise OSError("Symlinks are unsupported.")
+            lstat = readlink = skip
 
         return self.with_segments(posixpath._realpath(
             str(self), strict, self.parser.sep,
