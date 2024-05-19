@@ -663,6 +663,7 @@ class PosixPathTest(unittest.TestCase):
     @os_helper.skip_unless_symlink
     @skip_if_ABSTFN_contains_backslash
     @unittest.skipIf(os.chmod not in os.supports_follow_symlinks, "Can't set symlink permissions")
+    @unittest.skipIf(sys.platform != "darwin", "only macOS requires read permission to readlink()")
     def test_realpath_unreadable_symlink(self):
         try:
             os.symlink(ABSTFN+"1", ABSTFN)
