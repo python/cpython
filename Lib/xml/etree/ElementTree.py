@@ -35,7 +35,7 @@
 
 #---------------------------------------------------------------------
 # Licensed to PSF under a Contributor Agreement.
-# See http://www.python.org/psf/license for licensing details.
+# See https://www.python.org/psf/license for licensing details.
 #
 # ElementTree
 # Copyright (c) 1999-2008 by Fredrik Lundh.  All rights reserved.
@@ -99,6 +99,7 @@ import io
 import collections
 import collections.abc
 import contextlib
+import weakref
 
 from . import ElementPath
 
@@ -188,19 +189,6 @@ class Element:
         """
         return self.__class__(tag, attrib)
 
-    def copy(self):
-        """Return copy of current element.
-
-        This creates a shallow copy. Subelements will be shared with the
-        original tree.
-
-        """
-        warnings.warn(
-            "elem.copy() is deprecated. Use copy.copy(elem) instead.",
-            DeprecationWarning
-            )
-        return self.__copy__()
-
     def __copy__(self):
         elem = self.makeelement(self.tag, self.attrib)
         elem.text = self.text
@@ -213,9 +201,10 @@ class Element:
 
     def __bool__(self):
         warnings.warn(
-            "The behavior of this method will change in future versions.  "
+            "Testing an element's truth value will raise an exception in "
+            "future versions.  "
             "Use specific 'len(elem)' or 'elem is not None' test instead.",
-            FutureWarning, stacklevel=2
+            DeprecationWarning, stacklevel=2
             )
         return len(self._children) != 0 # emulate old behaviour, for now
 
@@ -579,10 +568,7 @@ class ElementTree:
                     # it with chunks.
                     self._root = parser._parse_whole(source)
                     return self._root
-            while True:
-                data = source.read(65536)
-                if not data:
-                    break
+            while data := source.read(65536):
                 parser.feed(data)
             self._root = parser.close()
             return self._root
@@ -728,16 +714,11 @@ class ElementTree:
                 encoding = "utf-8"
             else:
                 encoding = "us-ascii"
-        enc_lower = encoding.lower()
-        with _get_writer(file_or_filename, enc_lower) as write:
+        with _get_writer(file_or_filename, encoding) as (write, declared_encoding):
             if method == "xml" and (xml_declaration or
                     (xml_declaration is None and
-                     enc_lower not in ("utf-8", "us-ascii", "unicode"))):
-                declared_encoding = encoding
-                if enc_lower == "unicode":
-                    # Retrieve the default encoding for the xml declaration
-                    import locale
-                    declared_encoding = locale.getpreferredencoding()
+                     encoding.lower() != "unicode" and
+                     declared_encoding.lower() not in ("utf-8", "us-ascii"))):
                 write("<?xml version='1.0' encoding='%s'?>\n" % (
                     declared_encoding,))
             if method == "text":
@@ -762,19 +743,17 @@ def _get_writer(file_or_filename, encoding):
         write = file_or_filename.write
     except AttributeError:
         # file_or_filename is a file name
-        if encoding == "unicode":
-            file = open(file_or_filename, "w")
-        else:
-            file = open(file_or_filename, "w", encoding=encoding,
-                        errors="xmlcharrefreplace")
-        with file:
-            yield file.write
+        if encoding.lower() == "unicode":
+            encoding="utf-8"
+        with open(file_or_filename, "w", encoding=encoding,
+                  errors="xmlcharrefreplace") as file:
+            yield file.write, encoding
     else:
         # file_or_filename is a file-like object
         # encoding determines if it is a text or binary writer
-        if encoding == "unicode":
+        if encoding.lower() == "unicode":
             # use a text writer as is
-            yield write
+            yield write, getattr(file_or_filename, "encoding", None) or "utf-8"
         else:
             # wrap a binary writer with TextIOWrapper
             with contextlib.ExitStack() as stack:
@@ -805,7 +784,7 @@ def _get_writer(file_or_filename, encoding):
                 # Keep the original file open when the TextIOWrapper is
                 # destroyed
                 stack.callback(file.detach)
-                yield file.write
+                yield file.write, encoding
 
 def _namespaces(elem, default_namespace=None):
     # identify namespaces used in this tree
@@ -918,13 +897,9 @@ def _serialize_xml(write, elem, qnames, namespaces,
     if elem.tail:
         write(_escape_cdata(elem.tail))
 
-HTML_EMPTY = ("area", "base", "basefont", "br", "col", "frame", "hr",
-              "img", "input", "isindex", "link", "meta", "param")
-
-try:
-    HTML_EMPTY = set(HTML_EMPTY)
-except NameError:
-    pass
+HTML_EMPTY = {"area", "base", "basefont", "br", "col", "embed", "frame", "hr",
+              "img", "input", "isindex", "link", "meta", "param", "source",
+              "track", "wbr"}
 
 def _serialize_html(write, elem, qnames, namespaces, **kwargs):
     tag = elem.tag
@@ -1248,7 +1223,14 @@ def iterparse(source, events=None, parser=None):
     # Use the internal, undocumented _parser argument for now; When the
     # parser argument of iterparse is removed, this can be killed.
     pullparser = XMLPullParser(events=events, _parser=parser)
-    def iterator():
+
+    if not hasattr(source, "read"):
+        source = open(source, "rb")
+        close_source = True
+    else:
+        close_source = False
+
+    def iterator(source):
         try:
             while True:
                 yield from pullparser.read_events()
@@ -1259,22 +1241,30 @@ def iterparse(source, events=None, parser=None):
                 pullparser.feed(data)
             root = pullparser._close_and_return_root()
             yield from pullparser.read_events()
-            it.root = root
+            it = wr()
+            if it is not None:
+                it.root = root
         finally:
             if close_source:
                 source.close()
 
+    gen = iterator(source)
     class IterParseIterator(collections.abc.Iterator):
-        __next__ = iterator().__next__
+        __next__ = gen.__next__
+        def close(self):
+            if close_source:
+                source.close()
+            gen.close()
+
+        def __del__(self):
+            # TODO: Emit a ResourceWarning if it was not explicitly closed.
+            # (When the close() method will be supported in all maintained Python versions.)
+            if close_source:
+                source.close()
+
     it = IterParseIterator()
     it.root = None
-    del iterator, IterParseIterator
-
-    close_source = False
-    if not hasattr(source, "read"):
-        source = open(source, "rb")
-        close_source = True
-
+    wr = weakref.ref(it)
     return it
 
 
@@ -1283,7 +1273,7 @@ class XMLPullParser:
     def __init__(self, events=None, *, _parser=None):
         # The _parser argument is for internal use only and must not be relied
         # upon in user code. It will be removed in a future release.
-        # See http://bugs.python.org/issue17741 for more details.
+        # See https://bugs.python.org/issue17741 for more details.
 
         self._events_queue = collections.deque()
         self._parser = _parser or XMLParser(target=TreeBuilder())
@@ -1329,6 +1319,11 @@ class XMLPullParser:
                 raise event
             else:
                 yield event
+
+    def flush(self):
+        if self._parser is None:
+            raise ValueError("flush() called after end of stream")
+        self._parser.flush()
 
 
 def XML(text, parser=None):
@@ -1736,6 +1731,15 @@ class XMLParser:
             del self.parser, self._parser
             del self.target, self._target
 
+    def flush(self):
+        was_enabled = self.parser.GetReparseDeferralEnabled()
+        try:
+            self.parser.SetReparseDeferralEnabled(False)
+            self.parser.Parse(b"", False)
+        except self._error as v:
+            self._raiseerror(v)
+        finally:
+            self.parser.SetReparseDeferralEnabled(was_enabled)
 
 # --------------------------------------------------------------------
 # C14N 2.0

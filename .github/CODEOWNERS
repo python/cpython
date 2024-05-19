@@ -4,31 +4,88 @@
 # It uses the same pattern rule for gitignore file
 # https://git-scm.com/docs/gitignore#_pattern_format
 
+# GitHub
+.github/**                    @ezio-melotti @hugovk
+
+# pre-commit
+.pre-commit-config.yaml       @hugovk @AlexWaygood
+.ruff.toml                    @hugovk @AlexWaygood
+
+# Build system
+configure*                    @erlend-aasland @corona10
+
 # asyncio
-**/*asyncio*                  @1st1 @asvetlov
+**/*asyncio*                  @1st1 @asvetlov @gvanrossum @kumaraditya303 @willingc
 
 # Core
 **/*context*                  @1st1
-**/*genobject*                @1st1 @markshannon
+**/*genobject*                @markshannon
 **/*hamt*                     @1st1
+**/*jit*                      @brandtbucher
 Objects/set*                  @rhettinger
 Objects/dict*                 @methane @markshannon
+Objects/typevarobject.c       @JelleZijlstra
 Objects/type*                 @markshannon
 Objects/codeobject.c          @markshannon
 Objects/frameobject.c         @markshannon
 Objects/call.c                @markshannon
-Python/ceval.c                @markshannon
-Python/compile.c              @markshannon
+Python/ceval*.c               @markshannon @gvanrossum
+Python/ceval*.h               @markshannon @gvanrossum
+Python/compile.c              @markshannon @iritkatriel
+Python/assemble.c             @markshannon @iritkatriel
+Python/flowgraph.c            @markshannon @iritkatriel
 Python/ast_opt.c              @isidentical
+Python/bytecodes.c            @markshannon @gvanrossum
+Python/optimizer*.c           @markshannon @gvanrossum
+Python/optimizer_analysis.c   @Fidget-Spinner
+Python/optimizer_bytecodes.c  @Fidget-Spinner
+Lib/test/test_patma.py        @brandtbucher
+Lib/test/test_type_*.py       @JelleZijlstra
+Lib/test/test_capi/test_misc.py  @markshannon @gvanrossum
+Tools/c-analyzer/             @ericsnowcurrently
+
+# dbm
+**/*dbm*                      @corona10 @erlend-aasland @serhiy-storchaka
+
+# runtime state/lifecycle
+**/*pylifecycle*              @ericsnowcurrently
+**/*pystate*                  @ericsnowcurrently
+**/*preconfig*                @ericsnowcurrently
+**/*initconfig*               @ericsnowcurrently
+**/*pathconfig*               @ericsnowcurrently
+**/*sysmodule*                @ericsnowcurrently
+**/*bltinmodule*              @ericsnowcurrently
+**/*gil*                      @ericsnowcurrently
+Include/internal/pycore_runtime.h   @ericsnowcurrently
+Include/internal/pycore_interp.h    @ericsnowcurrently
+Include/internal/pycore_tstate.h    @ericsnowcurrently
+Include/internal/pycore_*_state.h   @ericsnowcurrently
+Include/internal/pycore_*_init.h    @ericsnowcurrently
+Include/internal/pycore_atexit.h    @ericsnowcurrently
+Include/internal/pycore_freelist.h  @ericsnowcurrently
+Include/internal/pycore_global_objects.h  @ericsnowcurrently
+Include/internal/pycore_obmalloc.h  @ericsnowcurrently
+Include/internal/pycore_pymem.h     @ericsnowcurrently
+Modules/main.c                @ericsnowcurrently
+Programs/_bootstrap_python.c  @ericsnowcurrently
+Programs/python.c             @ericsnowcurrently
+Tools/build/generate_global_objects.py  @ericsnowcurrently
+
+# Exceptions
+Lib/traceback.py              @iritkatriel
+Lib/test/test_except*.py      @iritkatriel
+Lib/test/test_traceback.py    @iritkatriel
+Objects/exceptions.c          @iritkatriel
+Python/traceback.c            @iritkatriel
 
 # Hashing
-**/*hashlib*                  @python/crypto-team @tiran
-**/*pyhash*                   @python/crypto-team @tiran
-**/*sha*                      @python/crypto-team @tiran
-**/*md5*                      @python/crypto-team @tiran
-**/*blake*                    @python/crypto-team @tiran
-/Modules/_blake2/**           @python/crypto-team @tiran
-/Modules/_sha3/**             @python/crypto-team @tiran
+**/*hashlib*                  @gpshead @tiran
+**/*pyhash*                   @gpshead @tiran
+**/sha*                       @gpshead @tiran
+Modules/md5*                  @gpshead @tiran
+**/*blake*                    @gpshead @tiran
+Modules/_blake2/**            @gpshead @tiran
+Modules/_hacl/**              @gpshead
 
 # logging
 **/*logging*                  @vsajip
@@ -43,21 +100,26 @@ Python/ast_opt.c              @isidentical
 /Lib/html/                    @ezio-melotti
 /Lib/_markupbase.py           @ezio-melotti
 /Lib/test/test_html*.py       @ezio-melotti
+/Tools/build/parse_html5_entities.py   @ezio-melotti
 
 # Import (including importlib).
-# Ignoring importlib.h so as to not get flagged on
-# all pull requests that change the emitted
-# bytecode.
-**/*import*.c                 @brettcannon @encukou @ericsnowcurrently @ncoghlan @warsaw
-**/*import*.py                @brettcannon @encukou @ericsnowcurrently @ncoghlan @warsaw
-
-
-# SSL
-**/*ssl*                      @python/crypto-team @tiran
-**/*.pem                      @python/crypto-team @tiran
-
-# CSPRNG
-Python/bootstrap_hash.c       @python/crypto-team @tiran
+**/*import*                   @brettcannon @ericsnowcurrently @ncoghlan @warsaw
+/Python/import.c              @kumaraditya303
+Python/dynload_*.c            @ericsnowcurrently
+**/*freeze*                   @ericsnowcurrently
+**/*frozen*                   @ericsnowcurrently
+**/*modsupport*               @ericsnowcurrently
+**/*modulefinder*             @ericsnowcurrently
+**/*moduleobject*             @ericsnowcurrently
+**/*multiphase*               @ericsnowcurrently
+**/*pkgutil*                  @ericsnowcurrently
+**/*pythonrun*                @ericsnowcurrently
+**/*runpy*                    @ericsnowcurrently
+**/*singlephase*              @ericsnowcurrently
+Lib/test/test_module/         @ericsnowcurrently
+Doc/c-api/module.rst          @ericsnowcurrently
+**/*importlib/resources/*     @jaraco @warsaw @FFY00
+**/*importlib/metadata/*       @jaraco @warsaw
 
 # Dates and times
 **/*datetime*                 @pganssle @abalkin
@@ -66,7 +128,7 @@ Doc/library/time.rst          @pganssle @abalkin
 Lib/test/test_time.py         @pganssle @abalkin
 Modules/timemodule.c          @pganssle @abalkin
 Python/pytime.c               @pganssle @abalkin
-Include/pytime.h              @pganssle @abalkin
+Include/internal/pycore_time.h  @pganssle @abalkin
 
 # Email and related
 **/*mail*                     @python/email-team
@@ -84,6 +146,11 @@ Include/pytime.h              @pganssle @abalkin
 /Tools/peg_generator/         @pablogsal @lysnikolaou
 /Lib/test/test_peg_generator/ @pablogsal @lysnikolaou
 /Grammar/python.gram          @pablogsal @lysnikolaou
+/Lib/tokenize.py              @pablogsal @lysnikolaou
+/Lib/test/test_tokenize.py    @pablogsal @lysnikolaou
+
+# Code generator
+/Tools/cases_generator/        @gvanrossum
 
 # AST
 Python/ast.c                  @isidentical
@@ -93,15 +160,24 @@ Lib/ast.py                    @isidentical
 
 # Mock
 /Lib/unittest/mock.py         @cjw296
-/Lib/unittest/test/testmock/* @cjw296
+/Lib/test/test_unittest/testmock/* @cjw296
+
+# multiprocessing
+**/*multiprocessing*          @gpshead
 
 # SQLite 3
-**/*sqlite*                   @berkerpeksag
+**/*sqlite*                   @berkerpeksag @erlend-aasland
 
 # subprocess
 /Lib/subprocess.py            @gpshead
 /Lib/test/test_subprocess.py  @gpshead
 /Modules/*subprocess*         @gpshead
+
+# Limited C API & stable ABI
+Tools/build/stable_abi.py     @encukou
+Misc/stable_abi.toml          @encukou
+Doc/data/*.abi                @encukou
+Doc/c-api/stable.rst          @encukou
 
 # Windows
 /PC/                          @python/windows-team
@@ -122,16 +198,16 @@ Lib/ast.py                    @isidentical
 **/*bisect*                   @rhettinger
 **/*heapq*                    @rhettinger
 **/*functools*                @rhettinger
-**/*decimal*                  @rhettinger @skrah
+**/*decimal*                  @rhettinger
 
 **/*dataclasses*              @ericvsmith
 
+**/*ensurepip*                @pfmoore @pradyunsg
+
 **/*idlelib*                  @terryjreedy
 
-**/*typing*                   @gvanrossum @ilevkivskyi
+**/*typing*                   @JelleZijlstra @AlexWaygood
 
-**/*asyncore                  @giampaolo
-**/*asynchat                  @giampaolo
 **/*ftplib                    @giampaolo
 **/*shutil                    @giampaolo
 
@@ -139,6 +215,54 @@ Lib/ast.py                    @isidentical
 **/*cgi*                      @ethanfurman
 **/*tarfile*                  @ethanfurman
 
+**/*tomllib*                  @encukou @hauntsaninja
+
+**/*sysconfig*                @FFY00
+
+**/*cjkcodecs*                @corona10
+
 # macOS
 /Mac/                         @python/macos-team
 **/*osx_support*              @python/macos-team
+
+# pathlib
+**/*pathlib*                  @barneygale
+
+# zipfile.Path
+**/*zipfile/_path/*           @jaraco
+
+# Argument Clinic
+/Tools/clinic/**              @erlend-aasland
+/Lib/test/test_clinic.py      @erlend-aasland
+Doc/howto/clinic.rst          @erlend-aasland
+
+# Subinterpreters
+**/*interpreteridobject.*     @ericsnowcurrently
+**/*crossinterp*              @ericsnowcurrently
+Lib/test/support/interpreters/  @ericsnowcurrently
+Modules/_xx*interp*module.c   @ericsnowcurrently
+Lib/test/test_interpreters/   @ericsnowcurrently
+
+# Android
+**/*Android*                  @mhsmith
+**/*android*                  @mhsmith
+
+# iOS (but not termios)
+**/iOS*                       @freakboy3742
+**/ios*                       @freakboy3742
+**/*_iOS*                     @freakboy3742
+**/*_ios*                     @freakboy3742
+**/*-iOS*                     @freakboy3742
+**/*-ios*                     @freakboy3742
+
+# WebAssembly
+/Tools/wasm/                  @brettcannon
+
+# SBOM
+/Misc/externals.spdx.json     @sethmlarson
+/Misc/sbom.spdx.json          @sethmlarson
+/Tools/build/generate_sbom.py @sethmlarson
+
+# Config Parser
+Lib/configparser.py           @jaraco
+Lib/test/test_configparser.py @jaraco

@@ -28,6 +28,7 @@ simple statements is:
               : | `future_stmt`
               : | `global_stmt`
               : | `nonlocal_stmt`
+              : | `type_stmt`
 
 
 .. _exprstmts:
@@ -53,8 +54,8 @@ An expression statement evaluates the expression list (which may be a single
 expression).
 
 .. index::
-   builtin: repr
-   object: None
+   pair: built-in function; repr
+   pair: object; None
    pair: string; conversion
    single: output
    pair: standard; output
@@ -76,7 +77,7 @@ Assignment statements
    pair: assignment; statement
    pair: binding; name
    pair: rebinding; name
-   object: mutable
+   pair: object; mutable
    pair: attribute; assignment
 
 Assignment statements are used to (re)bind names to values and to modify
@@ -124,9 +125,7 @@ square brackets, is recursively defined as follows.
 * If the target list is a single target with no trailing comma,
   optionally in parentheses, the object is assigned to that target.
 
-* Else: The object must be an iterable with the same number of
-  items as there are targets in the target list, and the items are assigned,
-  from left to right, to the corresponding targets.
+* Else:
 
   * If the target list contains one target prefixed with an asterisk, called a
     "starred" target: The object must be an iterable with at least as many items
@@ -187,7 +186,7 @@ Assignment of an object to a single target is recursively defined as follows.
 
   .. index::
      pair: subscription; assignment
-     object: mutable
+     pair: object; mutable
 
 * If the target is a subscription: The primary expression in the reference is
   evaluated.  It should yield either a mutable sequence object (such as a list)
@@ -195,8 +194,8 @@ Assignment of an object to a single target is recursively defined as follows.
   evaluated.
 
   .. index::
-     object: sequence
-     object: list
+     pair: object; sequence
+     pair: object; list
 
   If the primary is a mutable sequence object (such as a list), the subscript
   must yield an integer.  If it is negative, the sequence's length is added to
@@ -206,16 +205,16 @@ Assignment of an object to a single target is recursively defined as follows.
   raised (assignment to a subscripted sequence cannot add new items to a list).
 
   .. index::
-     object: mapping
-     object: dictionary
+     pair: object; mapping
+     pair: object; dictionary
 
   If the primary is a mapping object (such as a dictionary), the subscript must
   have a type compatible with the mapping's key type, and the mapping is then
-  asked to create a key/datum pair which maps the subscript to the assigned
+  asked to create a key/value pair which maps the subscript to the assigned
   object.  This can either replace an existing key/value pair with the same key
   value, or insert a new key/value pair (if no key with the same value existed).
 
-  For user-defined objects, the :meth:`__setitem__` method is called with
+  For user-defined objects, the :meth:`~object.__setitem__` method is called with
   appropriate arguments.
 
   .. index:: pair: slicing; assignment
@@ -332,7 +331,7 @@ statement, of a variable or attribute annotation and an optional assignment stat
    annotated_assignment_stmt: `augtarget` ":" `expression`
                             : ["=" (`starred_expression` | `yield_expression`)]
 
-The difference from normal :ref:`assignment` is that only single target is allowed.
+The difference from normal :ref:`assignment` is that only a single target is allowed.
 
 For simple names as assignment targets, if in class or module scope,
 the annotations are evaluated and stored in a special class or module
@@ -352,7 +351,7 @@ If the right hand side is present, an annotated
 assignment performs the actual assignment before evaluating annotations
 (where applicable). If the right hand side is not present for an expression
 target, then the interpreter evaluates the target except for the last
-:meth:`__setitem__` or :meth:`__setattr__` call.
+:meth:`~object.__setitem__` or :meth:`~object.__setattr__` call.
 
 .. seealso::
 
@@ -367,8 +366,8 @@ target, then the interpreter evaluates the target except for the last
       IDEs.
 
 .. versionchanged:: 3.8
-   Now annotated assignments allow same expressions in the right hand side as
-   the regular assignments. Previously, some expressions (like un-parenthesized
+   Now annotated assignments allow the same expressions in the right hand side as
+   regular assignments. Previously, some expressions (like un-parenthesized
    tuple expressions) caused a syntax error.
 
 
@@ -378,7 +377,7 @@ The :keyword:`!assert` statement
 ================================
 
 .. index::
-   ! statement: assert
+   ! pair: statement; assert
    pair: debugging; assertions
    single: , (comma); expression list
 
@@ -400,7 +399,7 @@ The extended form, ``assert expression1, expression2``, is equivalent to ::
 
 .. index::
    single: __debug__
-   exception: AssertionError
+   pair: exception; AssertionError
 
 These equivalences assume that :const:`__debug__` and :exc:`AssertionError` refer to
 the built-in variables with those names.  In the current implementation, the
@@ -421,7 +420,7 @@ The :keyword:`!pass` statement
 ==============================
 
 .. index::
-   statement: pass
+   pair: statement; pass
    pair: null; operation
            pair: null; operation
 
@@ -443,7 +442,7 @@ The :keyword:`!del` statement
 =============================
 
 .. index::
-   ! statement: del
+   ! pair: statement; del
    pair: deletion; target
    triple: deletion; target; list
 
@@ -456,7 +455,7 @@ Rather than spelling it out in full details, here are some hints.
 Deletion of a target list recursively deletes each target, from left to right.
 
 .. index::
-   statement: global
+   pair: statement; global
    pair: unbinding; name
 
 Deletion of a name removes the binding of that name from the local or global
@@ -482,7 +481,7 @@ The :keyword:`!return` statement
 ================================
 
 .. index::
-   ! statement: return
+   ! pair: statement; return
    pair: function; definition
    pair: class; definition
 
@@ -497,7 +496,7 @@ If an expression list is present, it is evaluated, else ``None`` is substituted.
 :keyword:`return` leaves the current function call with the expression list (or
 ``None``) as return value.
 
-.. index:: keyword: finally
+.. index:: pair: keyword; finally
 
 When :keyword:`return` passes control out of a :keyword:`try` statement with a
 :keyword:`finally` clause, that :keyword:`!finally` clause is executed before
@@ -519,11 +518,11 @@ The :keyword:`!yield` statement
 ===============================
 
 .. index::
-   statement: yield
+   pair: statement; yield
    single: generator; function
    single: generator; iterator
    single: function; generator
-   exception: StopIteration
+   pair: exception; StopIteration
 
 .. productionlist:: python-grammar
    yield_stmt: `yield_expression`
@@ -555,7 +554,7 @@ The :keyword:`!raise` statement
 ===============================
 
 .. index::
-   ! statement: raise
+   ! pair: statement; raise
    single: exception
    pair: raising; exception
    single: __traceback__ (exception attribute)
@@ -563,10 +562,10 @@ The :keyword:`!raise` statement
 .. productionlist:: python-grammar
    raise_stmt: "raise" [`expression` ["from" `expression`]]
 
-If no expressions are present, :keyword:`raise` re-raises the last exception
-that was active in the current scope.  If no exception is active in the current
-scope, a :exc:`RuntimeError` exception is raised indicating that this is an
-error.
+If no expressions are present, :keyword:`raise` re-raises the
+exception that is currently being handled, which is also known as the *active exception*.
+If there isn't currently an active exception, a :exc:`RuntimeError` exception is raised
+indicating that this is an error.
 
 Otherwise, :keyword:`raise` evaluates the first expression as the exception
 object.  It must be either a subclass or an instance of :class:`BaseException`.
@@ -576,13 +575,13 @@ instantiating the class with no arguments.
 The :dfn:`type` of the exception is the exception instance's class, the
 :dfn:`value` is the instance itself.
 
-.. index:: object: traceback
+.. index:: pair: object; traceback
 
 A traceback object is normally created automatically when an exception is raised
-and attached to it as the :attr:`__traceback__` attribute, which is writable.
+and attached to it as the :attr:`~BaseException.__traceback__` attribute.
 You can create an exception and set your own traceback in one step using the
-:meth:`with_traceback` exception method (which returns the same exception
-instance, with its traceback set to its argument), like so::
+:meth:`~BaseException.with_traceback` exception method (which returns the
+same exception instance, with its traceback set to its argument), like so::
 
    raise Exception("foo occurred").with_traceback(tracebackobj)
 
@@ -593,11 +592,13 @@ instance, with its traceback set to its argument), like so::
 The ``from`` clause is used for exception chaining: if given, the second
 *expression* must be another exception class or instance. If the second
 expression is an exception instance, it will be attached to the raised
-exception as the :attr:`__cause__` attribute (which is writable). If the
+exception as the :attr:`~BaseException.__cause__` attribute (which is writable). If the
 expression is an exception class, the class will be instantiated and the
 resulting exception instance will be attached to the raised exception as the
-:attr:`__cause__` attribute. If the raised exception is not handled, both
-exceptions will be printed::
+:attr:`!__cause__` attribute. If the raised exception is not handled, both
+exceptions will be printed:
+
+.. code-block:: pycon
 
    >>> try:
    ...     print(1 / 0)
@@ -606,17 +607,24 @@ exceptions will be printed::
    ...
    Traceback (most recent call last):
      File "<stdin>", line 2, in <module>
+       print(1 / 0)
+             ~~^~~
    ZeroDivisionError: division by zero
 
    The above exception was the direct cause of the following exception:
 
    Traceback (most recent call last):
      File "<stdin>", line 4, in <module>
+       raise RuntimeError("Something bad happened") from exc
    RuntimeError: Something bad happened
 
-A similar mechanism works implicitly if an exception is raised inside an
-exception handler or a :keyword:`finally` clause: the previous exception is then
-attached as the new exception's :attr:`__context__` attribute::
+A similar mechanism works implicitly if a new exception is raised when
+an exception is already being handled.  An exception may be handled
+when an :keyword:`except` or :keyword:`finally` clause, or a
+:keyword:`with` statement, is used.  The previous exception is then
+attached as the new exception's :attr:`~BaseException.__context__` attribute:
+
+.. code-block:: pycon
 
    >>> try:
    ...     print(1 / 0)
@@ -625,16 +633,21 @@ attached as the new exception's :attr:`__context__` attribute::
    ...
    Traceback (most recent call last):
      File "<stdin>", line 2, in <module>
+       print(1 / 0)
+             ~~^~~
    ZeroDivisionError: division by zero
 
    During handling of the above exception, another exception occurred:
 
    Traceback (most recent call last):
      File "<stdin>", line 4, in <module>
+       raise RuntimeError("Something bad happened")
    RuntimeError: Something bad happened
 
 Exception chaining can be explicitly suppressed by specifying :const:`None` in
-the ``from`` clause::
+the ``from`` clause:
+
+.. doctest::
 
    >>> try:
    ...     print(1 / 0)
@@ -651,9 +664,14 @@ and information about handling exceptions is in section :ref:`try`.
 .. versionchanged:: 3.3
     :const:`None` is now permitted as ``Y`` in ``raise X from Y``.
 
-.. versionadded:: 3.3
-    The ``__suppress_context__`` attribute to suppress automatic display of the
-    exception context.
+    Added the :attr:`~BaseException.__suppress_context__` attribute to suppress
+    automatic display of the exception context.
+
+.. versionchanged:: 3.11
+    If the traceback of the active exception is modified in an :keyword:`except`
+    clause, a subsequent ``raise`` statement re-raises the exception with the
+    modified traceback. Previously, the exception was re-raised with the
+    traceback it had when it was caught.
 
 .. _break:
 
@@ -661,9 +679,9 @@ The :keyword:`!break` statement
 ===============================
 
 .. index::
-   ! statement: break
-   statement: for
-   statement: while
+   ! pair: statement; break
+   pair: statement; for
+   pair: statement; while
    pair: loop; statement
 
 .. productionlist:: python-grammar
@@ -673,7 +691,7 @@ The :keyword:`!break` statement
 :keyword:`while` loop, but not nested in a function or class definition within
 that loop.
 
-.. index:: keyword: else
+.. index:: pair: keyword; else
            pair: loop control; target
 
 It terminates the nearest enclosing loop, skipping the optional :keyword:`!else`
@@ -682,7 +700,7 @@ clause if the loop has one.
 If a :keyword:`for` loop is terminated by :keyword:`break`, the loop control
 target keeps its current value.
 
-.. index:: keyword: finally
+.. index:: pair: keyword; finally
 
 When :keyword:`break` passes control out of a :keyword:`try` statement with a
 :keyword:`finally` clause, that :keyword:`!finally` clause is executed before
@@ -695,11 +713,11 @@ The :keyword:`!continue` statement
 ==================================
 
 .. index::
-   ! statement: continue
-   statement: for
-   statement: while
+   ! pair: statement; continue
+   pair: statement; for
+   pair: statement; while
    pair: loop; statement
-   keyword: finally
+   pair: keyword; finally
 
 .. productionlist:: python-grammar
    continue_stmt: "continue"
@@ -720,12 +738,12 @@ The :keyword:`!import` statement
 ================================
 
 .. index::
-   ! statement: import
+   ! pair: statement; import
    single: module; importing
    pair: name; binding
-   keyword: from
-   keyword: as
-   exception: ImportError
+   pair: keyword; from
+   pair: keyword; as
+   pair: exception; ImportError
    single: , (comma); import statement
 
 .. productionlist:: python-grammar
@@ -750,7 +768,7 @@ commas) the two steps are carried out separately for each clause, just
 as though the clauses had been separated out into individual import
 statements.
 
-The details of the first step, finding and loading modules are described in
+The details of the first step, finding and loading modules, are described in
 greater detail in the section on the :ref:`import system <importsystem>`,
 which also describes the various types of packages and modules that can
 be imported, as well as all the hooks that can be used to customize
@@ -795,9 +813,9 @@ The :keyword:`from` form uses a slightly more complex process:
 Examples::
 
    import foo                 # foo imported and bound locally
-   import foo.bar.baz         # foo.bar.baz imported, foo bound locally
-   import foo.bar.baz as fbb  # foo.bar.baz imported and bound as fbb
-   from foo.bar import baz    # foo.bar.baz imported and bound as baz
+   import foo.bar.baz         # foo, foo.bar, and foo.bar.baz imported, foo bound locally
+   import foo.bar.baz as fbb  # foo, foo.bar, and foo.bar.baz imported, foo.bar.baz bound as fbb
+   from foo.bar import baz    # foo, foo.bar, and foo.bar.baz imported, foo.bar.baz bound as baz
    from foo import attr       # foo imported and foo.attr bound as attr
 
 .. index:: single: * (asterisk); import statement
@@ -913,7 +931,7 @@ That is not a future statement; it's an ordinary import statement with no
 special semantics or syntax restrictions.
 
 Code compiled by calls to the built-in functions :func:`exec` and :func:`compile`
-that occur in a module :mod:`M` containing a future statement will, by default,
+that occur in a module :mod:`!M` containing a future statement will, by default,
 use the new syntax or semantics associated with the future statement.  This can
 be controlled by optional arguments to :func:`compile` --- see the documentation
 of that function for details.
@@ -936,7 +954,7 @@ The :keyword:`!global` statement
 ================================
 
 .. index::
-   ! statement: global
+   ! pair: statement; global
    triple: global; name; binding
    single: , (comma); identifier list
 
@@ -964,9 +982,9 @@ annotation.
    them or silently change the meaning of the program.
 
 .. index::
-   builtin: exec
-   builtin: eval
-   builtin: compile
+   pair: built-in function; exec
+   pair: built-in function; eval
+   pair: built-in function; compile
 
 **Programmer's note:** :keyword:`global` is a directive to the parser.  It
 applies only to code parsed at the same time as the :keyword:`!global` statement.
@@ -982,35 +1000,76 @@ call.  The same applies to the :func:`eval` and :func:`compile` functions.
 The :keyword:`!nonlocal` statement
 ==================================
 
-.. index:: statement: nonlocal
+.. index:: pair: statement; nonlocal
    single: , (comma); identifier list
 
 .. productionlist:: python-grammar
    nonlocal_stmt: "nonlocal" `identifier` ("," `identifier`)*
 
-.. XXX add when implemented
-                : ["=" (`target_list` "=")+ starred_expression]
-                : | "nonlocal" identifier augop expression_list
+When the definition of a function or class is nested (enclosed) within
+the definitions of other functions, its nonlocal scopes are the local
+scopes of the enclosing functions. The :keyword:`nonlocal` statement
+causes the listed identifiers to refer to names previously bound in
+nonlocal scopes. It allows encapsulated code to rebind such nonlocal
+identifiers.  If a name is bound in more than one nonlocal scope, the
+nearest binding is used. If a name is not bound in any nonlocal scope,
+or if there is no nonlocal scope, a :exc:`SyntaxError` is raised.
 
-The :keyword:`nonlocal` statement causes the listed identifiers to refer to
-previously bound variables in the nearest enclosing scope excluding globals.
-This is important because the default behavior for binding is to search the
-local namespace first.  The statement allows encapsulated code to rebind
-variables outside of the local scope besides the global (module) scope.
-
-.. XXX not implemented
-   The :keyword:`nonlocal` statement may prepend an assignment or augmented
-   assignment, but not an expression.
-
-Names listed in a :keyword:`nonlocal` statement, unlike those listed in a
-:keyword:`global` statement, must refer to pre-existing bindings in an
-enclosing scope (the scope in which a new binding should be created cannot
-be determined unambiguously).
-
-Names listed in a :keyword:`nonlocal` statement must not collide with
-pre-existing bindings in the local scope.
+The nonlocal statement applies to the entire scope of a function or
+class body. A :exc:`SyntaxError` is raised if a variable is used or
+assigned to prior to its nonlocal declaration in the scope.
 
 .. seealso::
 
    :pep:`3104` - Access to Names in Outer Scopes
       The specification for the :keyword:`nonlocal` statement.
+
+**Programmer's note:** :keyword:`nonlocal` is a directive to the parser
+and applies only to code parsed along with it.  See the note for the
+:keyword:`global` statement.
+
+
+.. _type:
+
+The :keyword:`!type` statement
+==============================
+
+.. index:: pair: statement; type
+
+.. productionlist:: python-grammar
+   type_stmt: 'type' `identifier` [`type_params`] "=" `expression`
+
+The :keyword:`!type` statement declares a type alias, which is an instance
+of :class:`typing.TypeAliasType`.
+
+For example, the following statement creates a type alias::
+
+   type Point = tuple[float, float]
+
+This code is roughly equivalent to::
+
+   annotation-def VALUE_OF_Point():
+       return tuple[float, float]
+   Point = typing.TypeAliasType("Point", VALUE_OF_Point())
+
+``annotation-def`` indicates an :ref:`annotation scope <annotation-scopes>`, which behaves
+mostly like a function, but with several small differences.
+
+The value of the
+type alias is evaluated in the annotation scope. It is not evaluated when the
+type alias is created, but only when the value is accessed through the type alias's
+:attr:`!__value__` attribute (see :ref:`lazy-evaluation`).
+This allows the type alias to refer to names that are not yet defined.
+
+Type aliases may be made generic by adding a :ref:`type parameter list <type-params>`
+after the name. See :ref:`generic-type-aliases` for more.
+
+:keyword:`!type` is a :ref:`soft keyword <soft-keywords>`.
+
+.. versionadded:: 3.12
+
+.. seealso::
+
+   :pep:`695` - Type Parameter Syntax
+      Introduced the :keyword:`!type` statement and syntax for
+      generic classes and functions.

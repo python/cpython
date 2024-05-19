@@ -45,6 +45,7 @@
 :Editor: Raymond Hettinger
 
 This article explains the new features in Python 3.8, compared to 3.7.
+Python 3.8 was released on October 14, 2019.
 For full details, see the :ref:`changelog <changelog>`.
 
 .. testsetup::
@@ -121,8 +122,8 @@ Positional-only parameters
 There is a new function parameter syntax ``/`` to indicate that some
 function parameters must be specified positionally and cannot be used as
 keyword arguments.  This is the same notation shown by ``help()`` for C
-functions annotated with Larry Hastings' `Argument Clinic
-<https://docs.python.org/3/howto/clinic.html>`_ tool.
+functions annotated with Larry Hastings'
+`Argument Clinic <https://devguide.python.org/development-tools/clinic/>`__ tool.
 
 In the following example, parameters *a* and *b* are positional-only,
 while *c* or *d* can be positional or keyword, and *e* or *f* are
@@ -249,6 +250,7 @@ Android and Cygwin, whose cases are handled by the script);
 this change is backward incompatible on purpose.
 (Contributed by Victor Stinner in :issue:`36721`.)
 
+.. _bpo-36817-whatsnew:
 
 f-strings support ``=`` for self-documenting expressions and debugging
 ----------------------------------------------------------------------
@@ -402,7 +404,7 @@ Other Language Changes
   or :meth:`~object.__complex__` is not available.
   (Contributed by Serhiy Storchaka in :issue:`20092`.)
 
-* Added support of ``\N{name}`` escapes in :mod:`regular expressions <re>`::
+* Added support of :samp:`\\N\\{{name}\\}` escapes in :mod:`regular expressions <re>`::
 
     >>> notice = 'Copyright © 2019'
     >>> copyright_year_pattern = re.compile(r'\N{copyright sign}\s*(\d{4})')
@@ -752,8 +754,8 @@ datetime
 --------
 
 Added new alternate constructors :meth:`datetime.date.fromisocalendar` and
-:meth:`datetime.datetime.fromisocalendar`, which construct :class:`date` and
-:class:`datetime` objects respectively from ISO year, week number, and weekday;
+:meth:`datetime.datetime.fromisocalendar`, which construct :class:`~datetime.date` and
+:class:`~datetime.datetime` objects respectively from ISO year, week number, and weekday;
 these are the inverse of each class's ``isocalendar`` method.
 (Contributed by Paul Ganssle in :issue:`36004`.)
 
@@ -945,7 +947,7 @@ This made it difficult to update, experiment with, or teach the various
 logging configuration options using the interactive prompt or a Jupyter
 notebook.
 
-(Suggested by Raymond Hettinger, implemented by Dong-hee Na, and
+(Suggested by Raymond Hettinger, implemented by Donghee Na, and
 reviewed by Vinay Sajip in :issue:`33897`.)
 
 
@@ -1084,9 +1086,12 @@ pathlib
 contain characters unrepresentable at the OS level.
 (Contributed by Serhiy Storchaka in :issue:`33721`.)
 
-Added :meth:`pathlib.Path.link_to()` which creates a hard link pointing
+Added :meth:`!pathlib.Path.link_to()` which creates a hard link pointing
 to a path.
 (Contributed by Joannah Nanjekye in :issue:`26978`)
+Note that ``link_to`` was deprecated in 3.10 and removed in 3.12 in
+favor of a ``hardlink_to`` method added in 3.10 which matches the
+semantics of the existing ``symlink_to`` method.
 
 
 pickle
@@ -1300,7 +1305,7 @@ Zackery Spytz in :issue:`25451`.)
 time
 ----
 
-Added new clock :data:`~time.CLOCK_UPTIME_RAW` for macOS 10.12.
+Added new clock :const:`~time.CLOCK_UPTIME_RAW` for macOS 10.12.
 (Contributed by Joannah Nanjekye in :issue:`35702`.)
 
 
@@ -1346,7 +1351,7 @@ unicodedata
 -----------
 
 The :mod:`unicodedata` module has been upgraded to use the `Unicode 12.1.0
-<http://blog.unicode.org/2019/05/unicode-12-1-en.html>`_ release.
+<https://blog.unicode.org/2019/05/unicode-12-1-en.html>`_ release.
 
 New function :func:`~unicodedata.is_normalized` can be used to verify a string
 is in a specific normal form, often much faster than by actually normalizing
@@ -1490,7 +1495,7 @@ Optimizations
   first introduced in Python 3.4.  It offers better performance and smaller
   size compared to Protocol 3 available since Python 3.0.
 
-* Removed one ``Py_ssize_t`` member from ``PyGC_Head``.  All GC tracked
+* Removed one :c:type:`Py_ssize_t` member from ``PyGC_Head``.  All GC tracked
   objects (e.g. tuple, list, dict) size is reduced 4 or 8 bytes.
   (Contributed by Inada Naoki in :issue:`33597`.)
 
@@ -1569,12 +1574,12 @@ Build and C API Changes
   * :c:func:`Py_INCREF`, :c:func:`Py_DECREF`
   * :c:func:`Py_XINCREF`, :c:func:`Py_XDECREF`
   * :c:func:`PyObject_INIT`, :c:func:`PyObject_INIT_VAR`
-  * Private functions: :c:func:`_PyObject_GC_TRACK`,
-    :c:func:`_PyObject_GC_UNTRACK`, :c:func:`_Py_Dealloc`
+  * Private functions: :c:func:`!_PyObject_GC_TRACK`,
+    :c:func:`!_PyObject_GC_UNTRACK`, :c:func:`!_Py_Dealloc`
 
   (Contributed by Victor Stinner in :issue:`35059`.)
 
-* The :c:func:`PyByteArray_Init` and :c:func:`PyByteArray_Fini` functions have
+* The :c:func:`!PyByteArray_Init` and :c:func:`!PyByteArray_Fini` functions have
   been removed. They did nothing since Python 2.7.4 and Python 3.2.0, were
   excluded from the limited API (stable ABI), and were not documented.
   (Contributed by Victor Stinner in :issue:`35713`.)
@@ -1618,12 +1623,12 @@ Build and C API Changes
   allocation or deallocation may need to be adjusted.
   (Contributed by Eddie Elizondo in :issue:`35810`.)
 
-* The new function :c:func:`PyCode_NewWithPosOnlyArgs` allows to create
-  code objects like :c:func:`PyCode_New`, but with an extra *posonlyargcount*
+* The new function :c:func:`!PyCode_NewWithPosOnlyArgs` allows to create
+  code objects like :c:func:`!PyCode_New`, but with an extra *posonlyargcount*
   parameter for indicating the number of positional-only arguments.
   (Contributed by Pablo Galindo in :issue:`37221`.)
 
-* :c:func:`Py_SetPath` now sets :data:`sys.executable` to the program full
+* :c:func:`!Py_SetPath` now sets :data:`sys.executable` to the program full
   path (:c:func:`Py_GetProgramFullPath`) rather than to the program name
   (:c:func:`Py_GetProgramName`).
   (Contributed by Victor Stinner in :issue:`38234`.)
@@ -1648,7 +1653,7 @@ Deprecated
   deprecated and will be prohibited in Python 3.9.
   (Contributed by Elvis Pranskevichus in :issue:`34075`.)
 
-* The :meth:`__getitem__` methods of :class:`xml.dom.pulldom.DOMEventStream`,
+* The :meth:`~object.__getitem__` methods of :class:`xml.dom.pulldom.DOMEventStream`,
   :class:`wsgiref.util.FileWrapper` and :class:`fileinput.FileInput` have been
   deprecated.
 
@@ -1709,7 +1714,7 @@ Deprecated
 
 * The :meth:`~threading.Thread.isAlive()` method of :class:`threading.Thread`
   has been deprecated.
-  (Contributed by Dong-hee Na in :issue:`35283`.)
+  (Contributed by Donghee Na in :issue:`35283`.)
 
 * Many builtin and extension functions that take integer arguments will
   now emit a deprecation warning for :class:`~decimal.Decimal`\ s,
@@ -1769,7 +1774,7 @@ The following features and APIs have been removed from Python 3.8:
   to help eliminate confusion as to what Python interpreter the ``pyvenv``
   script is tied to. (Contributed by Brett Cannon in :issue:`25427`.)
 
-* ``parse_qs``, ``parse_qsl``, and ``escape`` are removed from the :mod:`cgi`
+* ``parse_qs``, ``parse_qsl``, and ``escape`` are removed from the :mod:`!cgi`
   module.  They are deprecated in Python 3.2 or older. They should be imported
   from the ``urllib.parse`` and ``html`` modules instead.
 
@@ -1834,18 +1839,18 @@ Changes in Python behavior
   classes will affect their string representation.
   (Contributed by Serhiy Storchaka in :issue:`36793`.)
 
-* On AIX, :attr:`sys.platform` doesn't contain the major version anymore.
+* On AIX, :data:`sys.platform` doesn't contain the major version anymore.
   It is always ``'aix'``, instead of ``'aix3'`` .. ``'aix7'``.  Since
   older Python versions include the version number, so it is recommended to
   always use ``sys.platform.startswith('aix')``.
   (Contributed by M. Felt in :issue:`36588`.)
 
-* :c:func:`PyEval_AcquireLock` and :c:func:`PyEval_AcquireThread` now
+* :c:func:`!PyEval_AcquireLock` and :c:func:`!PyEval_AcquireThread` now
   terminate the current thread if called while the interpreter is
   finalizing, making them consistent with :c:func:`PyEval_RestoreThread`,
   :c:func:`Py_END_ALLOW_THREADS`, and :c:func:`PyGILState_Ensure`. If this
-  behavior is not desired, guard the call by checking :c:func:`_Py_IsFinalizing`
-  or :c:func:`sys.is_finalizing`.
+  behavior is not desired, guard the call by checking :c:func:`!_Py_IsFinalizing`
+  or :func:`sys.is_finalizing`.
   (Contributed by Joannah Nanjekye in :issue:`36475`.)
 
 
@@ -2004,17 +2009,19 @@ Changes in the Python API
   ``replace()`` method of :class:`types.CodeType` can be used to make the code
   future-proof.
 
+* The parameter ``digestmod`` for :func:`hmac.new` no longer uses the MD5 digest
+  by default.
 
 Changes in the C API
 --------------------
 
-* The :c:type:`PyCompilerFlags` structure got a new *cf_feature_version*
+* The :c:struct:`PyCompilerFlags` structure got a new *cf_feature_version*
   field. It should be initialized to ``PY_MINOR_VERSION``. The field is ignored
   by default, and is used if and only if ``PyCF_ONLY_AST`` flag is set in
   *cf_flags*.
   (Contributed by Guido van Rossum in :issue:`35766`.)
 
-* The :c:func:`PyEval_ReInitThreads` function has been removed from the C API.
+* The :c:func:`!PyEval_ReInitThreads` function has been removed from the C API.
   It should not be called explicitly: use :c:func:`PyOS_AfterFork_Child`
   instead.
   (Contributed by Victor Stinner in :issue:`36728`.)
@@ -2054,8 +2061,8 @@ Changes in the C API
 
   * Remove :c:macro:`Py_INCREF` on the type object after allocating an
     instance - if any.
-    This may happen after calling :c:func:`PyObject_New`,
-    :c:func:`PyObject_NewVar`, :c:func:`PyObject_GC_New`,
+    This may happen after calling :c:macro:`PyObject_New`,
+    :c:macro:`PyObject_NewVar`, :c:func:`PyObject_GC_New`,
     :c:func:`PyObject_GC_NewVar`, or any other custom allocator that uses
     :c:func:`PyObject_Init` or :c:func:`PyObject_INIT`.
 
@@ -2109,12 +2116,12 @@ Changes in the C API
   extension types across feature releases, anymore.  A :c:type:`PyTypeObject`
   exported by a third-party extension module is supposed to have all the
   slots expected in the current Python version, including
-  :c:member:`~PyTypeObject.tp_finalize` (:const:`Py_TPFLAGS_HAVE_FINALIZE`
+  :c:member:`~PyTypeObject.tp_finalize` (:c:macro:`Py_TPFLAGS_HAVE_FINALIZE`
   is not checked anymore before reading :c:member:`~PyTypeObject.tp_finalize`).
 
   (Contributed by Antoine Pitrou in :issue:`32388`.)
 
-* The functions :c:func:`PyNode_AddChild` and :c:func:`PyParser_AddToken` now accept
+* The functions :c:func:`!PyNode_AddChild` and :c:func:`!PyParser_AddToken` now accept
   two additional ``int`` arguments *end_lineno* and *end_col_offset*.
 
 * The :file:`libpython38.a` file to allow MinGW tools to link directly against
@@ -2222,7 +2229,7 @@ The benchmarks were measured on an
 `Intel® Core™ i7-4960HQ processor
 <https://ark.intel.com/content/www/us/en/ark/products/76088/intel-core-i7-4960hq-processor-6m-cache-up-to-3-80-ghz.html>`_
 running the macOS 64-bit builds found at
-`python.org <https://www.python.org/downloads/mac-osx/>`_.
+`python.org <https://www.python.org/downloads/macos/>`_.
 The benchmark script displays timings in nanoseconds.
 
 
@@ -2236,6 +2243,21 @@ details, see the documentation for ``loop.create_datagram_endpoint()``.
 (Contributed by Kyle Stanley, Antoine Pitrou, and Yury Selivanov in
 :issue:`37228`.)
 
+Notable changes in Python 3.8.2
+===============================
+
+Fixed a regression with the ``ignore`` callback of :func:`shutil.copytree`.
+The argument types are now str and List[str] again.
+(Contributed by Manuel Barkhau and Giampaolo Rodola in :gh:`83571`.)
+
+Notable changes in Python 3.8.3
+===============================
+
+The constant values of future flags in the :mod:`__future__` module
+are updated in order to prevent collision with compiler flags. Previously
+``PyCF_ALLOW_TOP_LEVEL_AWAIT`` was clashing with ``CO_FUTURE_DIVISION``.
+(Contributed by Batuhan Taskaya in :gh:`83743`)
+
 Notable changes in Python 3.8.8
 ===============================
 
@@ -2244,7 +2266,95 @@ query parameter separators in :func:`urllib.parse.parse_qs` and
 :func:`urllib.parse.parse_qsl`.  Due to security concerns, and to conform with
 newer W3C recommendations, this has been changed to allow only a single
 separator key, with ``&`` as the default.  This change also affects
-:func:`cgi.parse` and :func:`cgi.parse_multipart` as they use the affected
+:func:`!cgi.parse` and :func:`!cgi.parse_multipart` as they use the affected
 functions internally. For more details, please see their respective
 documentation.
 (Contributed by Adam Goldschmidt, Senthil Kumaran and Ken Jin in :issue:`42967`.)
+
+Notable changes in Python 3.8.9
+===============================
+
+A security fix alters the :class:`ftplib.FTP` behavior to not trust the
+IPv4 address sent from the remote server when setting up a passive data
+channel.  We reuse the ftp server IP address instead.  For unusual code
+requiring the old behavior, set a ``trust_server_pasv_ipv4_address``
+attribute on your FTP instance to ``True``.  (See :gh:`87451`)
+
+Notable changes in Python 3.8.10
+================================
+
+macOS 11.0 (Big Sur) and Apple Silicon Mac support
+--------------------------------------------------
+
+As of 3.8.10, Python now supports building and running on macOS 11
+(Big Sur) and on Apple Silicon Macs (based on the ``ARM64`` architecture).
+A new universal build variant, ``universal2``, is now available to natively
+support both ``ARM64`` and ``Intel 64`` in one set of executables.
+Note that support for "weaklinking", building binaries targeted for newer
+versions of macOS that will also run correctly on older versions by
+testing at runtime for missing features, is not included in this backport
+from Python 3.9; to support a range of macOS versions, continue to target
+for and build on the oldest version in the range.
+
+(Originally contributed by Ronald Oussoren and Lawrence D'Anna in :gh:`85272`,
+with fixes by FX Coudert and Eli Rykoff, and backported to 3.8 by Maxime Bélanger
+and Ned Deily)
+
+Notable changes in Python 3.8.10
+================================
+
+urllib.parse
+------------
+
+The presence of newline or tab characters in parts of a URL allows for some
+forms of attacks. Following the WHATWG specification that updates :rfc:`3986`,
+ASCII newline ``\n``, ``\r`` and tab ``\t`` characters are stripped from the
+URL by the parser in :mod:`urllib.parse` preventing such attacks. The removal
+characters are controlled by a new module level variable
+``urllib.parse._UNSAFE_URL_BYTES_TO_REMOVE``. (See :issue:`43882`)
+
+
+Notable changes in Python 3.8.12
+================================
+
+Changes in the Python API
+-------------------------
+
+Starting with Python 3.8.12 the :mod:`ipaddress` module no longer accepts
+any leading zeros in IPv4 address strings. Leading zeros are ambiguous and
+interpreted as octal notation by some libraries. For example the legacy
+function :func:`socket.inet_aton` treats leading zeros as octal notation.
+glibc implementation of modern :func:`~socket.inet_pton` does not accept
+any leading zeros.
+
+(Originally contributed by Christian Heimes in :issue:`36384`, and backported
+to 3.8 by Achraf Merzouki.)
+
+Notable security feature in 3.8.14
+==================================
+
+Converting between :class:`int` and :class:`str` in bases other than 2
+(binary), 4, 8 (octal), 16 (hexadecimal), or 32 such as base 10 (decimal)
+now raises a :exc:`ValueError` if the number of digits in string form is
+above a limit to avoid potential denial of service attacks due to the
+algorithmic complexity. This is a mitigation for :cve:`2020-10735`.
+This limit can be configured or disabled by environment variable, command
+line flag, or :mod:`sys` APIs. See the :ref:`integer string conversion
+length limitation <int_max_str_digits>` documentation.  The default limit
+is 4300 digits in string form.
+
+Notable changes in 3.8.17
+=========================
+
+tarfile
+-------
+
+* The extraction methods in :mod:`tarfile`, and :func:`shutil.unpack_archive`,
+  have a new a *filter* argument that allows limiting tar features than may be
+  surprising or dangerous, such as creating files outside the destination
+  directory.
+  See :ref:`tarfile-extraction-filter` for details.
+  In Python 3.12, use without the *filter* argument will show a
+  :exc:`DeprecationWarning`.
+  In Python 3.14, the default will switch to ``'data'``.
+  (Contributed by Petr Viktorin in :pep:`706`.)

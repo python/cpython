@@ -2,12 +2,19 @@
 
 /* much code borrowed from mathmodule.c */
 
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
 #include "Python.h"
-#include "pycore_dtoa.h"
-#include "_math.h"
+#include "pycore_complexobject.h" // _Py_c_neg()
+#include "pycore_pymath.h"        // _PY_SHORT_FLOAT_REPR
 /* we need DBL_MAX, DBL_MIN, DBL_EPSILON, DBL_MANT_DIG and FLT_RADIX from
    float.h.  We assume that FLT_RADIX is either 2 or 16. */
 #include <float.h>
+
+/* For _Py_log1p with workarounds for buggy handling of zeros. */
+#include "_math.h"
 
 #include "clinic/cmathmodule.c.h"
 /*[clinic input]
@@ -81,53 +88,6 @@ else {
 #endif
 #define CM_SCALE_DOWN (-(CM_SCALE_UP+1)/2)
 
-/* Constants cmath.inf, cmath.infj, cmath.nan, cmath.nanj.
-   cmath.nan and cmath.nanj are defined only when either
-   PY_NO_SHORT_FLOAT_REPR is *not* defined (which should be
-   the most common situation on machines using an IEEE 754
-   representation), or Py_NAN is defined. */
-
-static double
-m_inf(void)
-{
-#ifndef PY_NO_SHORT_FLOAT_REPR
-    return _Py_dg_infinity(0);
-#else
-    return Py_HUGE_VAL;
-#endif
-}
-
-static Py_complex
-c_infj(void)
-{
-    Py_complex r;
-    r.real = 0.0;
-    r.imag = m_inf();
-    return r;
-}
-
-#if !defined(PY_NO_SHORT_FLOAT_REPR) || defined(Py_NAN)
-
-static double
-m_nan(void)
-{
-#ifndef PY_NO_SHORT_FLOAT_REPR
-    return _Py_dg_stdnan(0);
-#else
-    return Py_NAN;
-#endif
-}
-
-static Py_complex
-c_nanj(void)
-{
-    Py_complex r;
-    r.real = 0.0;
-    r.imag = m_nan();
-    return r;
-}
-
-#endif
 
 /* forward declarations */
 static Py_complex cmath_asinh_impl(PyObject *, Py_complex);
@@ -242,7 +202,7 @@ cmath_acos_impl(PyObject *module, Py_complex z)
         s2.imag = z.imag;
         s2 = cmath_sqrt_impl(module, s2);
         r.real = 2.*atan2(s1.real, s2.real);
-        r.imag = m_asinh(s2.real*s1.imag - s2.imag*s1.real);
+        r.imag = asinh(s2.real*s1.imag - s2.imag*s1.real);
     }
     errno = 0;
     return r;
@@ -276,7 +236,7 @@ cmath_acosh_impl(PyObject *module, Py_complex z)
         s2.real = z.real + 1.;
         s2.imag = z.imag;
         s2 = cmath_sqrt_impl(module, s2);
-        r.real = m_asinh(s1.real*s2.real + s1.imag*s2.imag);
+        r.real = asinh(s1.real*s2.real + s1.imag*s2.imag);
         r.imag = 2.*atan2(s1.imag, s2.real);
     }
     errno = 0;
@@ -336,7 +296,7 @@ cmath_asinh_impl(PyObject *module, Py_complex z)
         s2.real = 1.-z.imag;
         s2.imag = z.real;
         s2 = cmath_sqrt_impl(module, s2);
-        r.real = m_asinh(s1.real*s2.imag-s2.real*s1.imag);
+        r.real = asinh(s1.real*s2.imag-s2.real*s1.imag);
         r.imag = atan2(z.imag, s1.real*s2.real-s1.imag*s2.imag);
     }
     errno = 0;
@@ -822,7 +782,7 @@ cmath_sqrt_impl(PyObject *module, Py_complex z)
     ax = fabs(z.real);
     ay = fabs(z.imag);
 
-    if (ax < DBL_MIN && ay < DBL_MIN && (ax > 0. || ay > 0.)) {
+    if (ax < DBL_MIN && ay < DBL_MIN) {
         /* here we catch cases where hypot(ax, ay) is subnormal */
         ax = ldexp(ax, CM_SCALE_UP);
         s = ldexp(sqrt(ax + hypot(ax, ldexp(ay, CM_SCALE_UP))),
@@ -950,12 +910,12 @@ cmath.log
 
 log(z[, base]) -> the logarithm of z to the given base.
 
-If the base not specified, returns the natural logarithm (base e) of z.
+If the base is not specified, returns the natural logarithm (base e) of z.
 [clinic start generated code]*/
 
 static PyObject *
 cmath_log_impl(PyObject *module, Py_complex x, PyObject *y_obj)
-/*[clinic end generated code: output=4effdb7d258e0d94 input=230ed3a71ecd000a]*/
+/*[clinic end generated code: output=4effdb7d258e0d94 input=e1f81d4fcfd26497]*/
 {
     Py_complex y;
 
@@ -1006,7 +966,7 @@ cmath_phase_impl(PyObject *module, Py_complex z)
     double phi;
 
     errno = 0;
-    phi = c_atan2(z);
+    phi = c_atan2(z); /* should not cause any exception */
     if (errno != 0)
         return math_error();
     else
@@ -1257,33 +1217,31 @@ static PyMethodDef cmath_methods[] = {
 static int
 cmath_exec(PyObject *mod)
 {
-    if (PyModule_AddObject(mod, "pi", PyFloat_FromDouble(Py_MATH_PI)) < 0) {
+    if (PyModule_Add(mod, "pi", PyFloat_FromDouble(Py_MATH_PI)) < 0) {
         return -1;
     }
-    if (PyModule_AddObject(mod, "e", PyFloat_FromDouble(Py_MATH_E)) < 0) {
+    if (PyModule_Add(mod, "e", PyFloat_FromDouble(Py_MATH_E)) < 0) {
         return -1;
     }
     // 2pi
-    if (PyModule_AddObject(mod, "tau", PyFloat_FromDouble(Py_MATH_TAU)) < 0) {
+    if (PyModule_Add(mod, "tau", PyFloat_FromDouble(Py_MATH_TAU)) < 0) {
         return -1;
     }
-    if (PyModule_AddObject(mod, "inf", PyFloat_FromDouble(m_inf())) < 0) {
+    if (PyModule_Add(mod, "inf", PyFloat_FromDouble(Py_INFINITY)) < 0) {
         return -1;
     }
 
-    if (PyModule_AddObject(mod, "infj",
-                           PyComplex_FromCComplex(c_infj())) < 0) {
+    Py_complex infj = {0.0, Py_INFINITY};
+    if (PyModule_Add(mod, "infj", PyComplex_FromCComplex(infj)) < 0) {
         return -1;
     }
-#if !defined(PY_NO_SHORT_FLOAT_REPR) || defined(Py_NAN)
-    if (PyModule_AddObject(mod, "nan", PyFloat_FromDouble(m_nan())) < 0) {
+    if (PyModule_Add(mod, "nan", PyFloat_FromDouble(fabs(Py_NAN))) < 0) {
         return -1;
     }
-    if (PyModule_AddObject(mod, "nanj",
-                           PyComplex_FromCComplex(c_nanj())) < 0) {
+    Py_complex nanj = {0.0, fabs(Py_NAN)};
+    if (PyModule_Add(mod, "nanj", PyComplex_FromCComplex(nanj)) < 0) {
         return -1;
     }
-#endif
 
     /* initialize special value tables */
 
@@ -1404,6 +1362,8 @@ cmath_exec(PyObject *mod)
 
 static PyModuleDef_Slot cmath_slots[] = {
     {Py_mod_exec, cmath_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
 };
 

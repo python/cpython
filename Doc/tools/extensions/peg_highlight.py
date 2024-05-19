@@ -1,5 +1,5 @@
 from pygments.lexer import RegexLexer, bygroups, include
-from pygments.token import Comment, Generic, Keyword, Name, Operator, Punctuation, Text
+from pygments.token import Comment, Keyword, Name, Operator, Punctuation, Text
 
 from sphinx.highlighting import lexers
 
@@ -16,6 +16,7 @@ class PEGLexer(RegexLexer):
         - Rule types
         - Rule options
         - Rules named `invalid_*` or `incorrect_*`
+        - Rules with `RAISE_SYNTAX_ERROR`
     """
 
     name = "PEG"
@@ -56,9 +57,10 @@ class PEGLexer(RegexLexer):
             (_name + _text_ws + r"(\[[\w\d_\*]+?\])" + _text_ws + "(=)", bygroups(None, None, None, None, None),),
         ],
         "invalids": [
-            (r"^(\s+\|\s+invalid_\w+\s*\n)", bygroups(None)),
-            (r"^(\s+\|\s+incorrect_\w+\s*\n)", bygroups(None)),
+            (r"^(\s+\|\s+.*invalid_\w+.*\n)", bygroups(None)),
+            (r"^(\s+\|\s+.*incorrect_\w+.*\n)", bygroups(None)),
             (r"^(#.*invalid syntax.*(?:.|\n)*)", bygroups(None),),
+            (r"^(\s+\|\s+.*\{[^}]*RAISE_SYNTAX_ERROR[^}]*\})\n", bygroups(None)),
         ],
         "root": [
             include("invalids"),

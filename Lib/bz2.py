@@ -17,7 +17,7 @@ import _compression
 from _bz2 import BZ2Compressor, BZ2Decompressor
 
 
-_MODE_CLOSED   = 0
+# Value 0 no longer used
 _MODE_READ     = 1
 # Value 2 no longer used
 _MODE_WRITE    = 3
@@ -54,7 +54,7 @@ class BZ2File(_compression.BaseStream):
         """
         self._fp = None
         self._closefp = False
-        self._mode = _MODE_CLOSED
+        self._mode = None
 
         if not (1 <= compresslevel <= 9):
             raise ValueError("compresslevel must be between 1 and 9")
@@ -100,7 +100,7 @@ class BZ2File(_compression.BaseStream):
         May be called more than once without error. Once the file is
         closed, any other operation on it will raise a ValueError.
         """
-        if self._mode == _MODE_CLOSED:
+        if self.closed:
             return
         try:
             if self._mode == _MODE_READ:
@@ -115,13 +115,21 @@ class BZ2File(_compression.BaseStream):
             finally:
                 self._fp = None
                 self._closefp = False
-                self._mode = _MODE_CLOSED
                 self._buffer = None
 
     @property
     def closed(self):
         """True if this file is closed."""
-        return self._mode == _MODE_CLOSED
+        return self._fp is None
+
+    @property
+    def name(self):
+        self._check_not_closed()
+        return self._fp.name
+
+    @property
+    def mode(self):
+        return 'wb' if self._mode == _MODE_WRITE else 'rb'
 
     def fileno(self):
         """Return the file descriptor for the underlying file."""
@@ -197,10 +205,6 @@ class BZ2File(_compression.BaseStream):
         self._check_can_read()
         return self._buffer.readline(size)
 
-    def __iter__(self):
-        self._check_can_read()
-        return self._buffer.__iter__()
-
     def readlines(self, size=-1):
         """Read a list of lines of uncompressed bytes from the file.
 
@@ -219,14 +223,22 @@ class BZ2File(_compression.BaseStream):
         """Write a byte string to the file.
 
         Returns the number of uncompressed bytes written, which is
-        always len(data). Note that due to buffering, the file on disk
-        may not reflect the data written until close() is called.
+        always the length of data in bytes. Note that due to buffering,
+        the file on disk may not reflect the data written until close()
+        is called.
         """
         self._check_can_write()
+        if isinstance(data, (bytes, bytearray)):
+            length = len(data)
+        else:
+            # accept any data that supports the buffer protocol
+            data = memoryview(data)
+            length = data.nbytes
+
         compressed = self._compressor.compress(data)
         self._fp.write(compressed)
-        self._pos += len(data)
-        return len(data)
+        self._pos += length
+        return length
 
     def writelines(self, seq):
         """Write a sequence of byte strings to the file.

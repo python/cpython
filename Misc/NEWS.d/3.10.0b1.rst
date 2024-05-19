@@ -88,7 +88,7 @@ Add new audit event ``glob.glob/2`` to incorporate the new *root_dir* and
 :mod:`ipaddress` module no longer accepts any leading zeros in IPv4 address
 strings. Leading zeros are ambiguous and interpreted as octal notation by
 some libraries. For example the legacy function :func:`socket.inet_aton`
-treats leading zeros as octal notatation. glibc implementation of modern
+treats leading zeros as octal notation. glibc implementation of modern
 :func:`~socket.inet_pton` does not accept any leading zeros. For a while the
 :mod:`ipaddress` module used to accept ambiguous leading zeros.
 
@@ -276,7 +276,7 @@ cause any runtime effects with ``from __future__ import annotations``.
 .. nonce: 0Ik1AM
 .. section: Core and Builtins
 
-:exc:`SyntaxError` exceptions raised by the intepreter will highlight the
+:exc:`SyntaxError` exceptions raised by the interpreter will highlight the
 full error range of the expression that consistutes the syntax error itself,
 instead of just where the problem is detected. Patch by Pablo Galindo.
 
@@ -516,7 +516,7 @@ encoding.
 .. section: Library
 
 Removed an unnecessary list comprehension before looping from
-:func:`urllib.parse.parse_qsl`.  Patch by Christoph Zwerschke and Dong-hee
+:func:`urllib.parse.parse_qsl`.  Patch by Christoph Zwerschke and Donghee
 Na.
 
 ..
@@ -547,7 +547,7 @@ enum or one of its members' value.
 .. nonce: ejjsyR
 .. section: Library
 
-For backwards compatbility with previous minor versions of Python, if
+For backwards compatibility with previous minor versions of Python, if
 :func:`typing.get_type_hints` receives no namespace dictionary arguments,
 :func:`typing.get_type_hints` will search through the global then local
 namespaces during evaluation of stringized type annotations (string forward
@@ -720,9 +720,9 @@ now raise ``TypeError`` during substitution.
 .. nonce: xT9QjF
 .. section: Library
 
-The :mod:`multiprocessing` ``Server`` class now explicitly catchs
+The :mod:`multiprocessing` ``Server`` class now explicitly catches
 :exc:`SystemExit` and closes the client connection in this case. It happens
-when the ``Server.serve_client()`` method reachs the end of file (EOF).
+when the ``Server.serve_client()`` method reaches the end of file (EOF).
 
 ..
 
@@ -871,7 +871,7 @@ assert_called_once_with) will unconditionally pass.
 .. nonce: -1XPDH
 .. section: Library
 
-Add :data:`ssl.OP_IGNORE_UNEXPECTED_EOF` constants (OpenSSL 3.0.0)
+Add :const:`ssl.OP_IGNORE_UNEXPECTED_EOF` constants (OpenSSL 3.0.0)
 
 ..
 
@@ -941,7 +941,7 @@ result from ``entry_points()`` as deprecated.
 
 ..
 
-.. bpo: 47383
+.. gh: 47383
 .. date: 2021-04-08-19-32-26
 .. nonce: YI1hdL
 .. section: Library
@@ -1001,7 +1001,7 @@ some :mod:`dataclasses`.
 
 Fix :mod:`sqlite3` regression for zero-sized blobs with converters, where
 ``b""`` was returned instead of ``None``. The regression was introduced by
-GH-24723. Patch by Erlend E. Aasland.
+PR 24723. Patch by Erlend E. Aasland.
 
 ..
 
@@ -1132,7 +1132,7 @@ preferred "user", "home", and "prefix" (default) scheme names.
 .. section: Library
 
 Improve :meth:`sqlite3.Connection.backup` error handling. The error message
-for non-existant target database names is now ``unknown database <database
+for non-existent target database names is now ``unknown database <database
 name>`` instead of ``SQL logic error``. Patch by Erlend E. Aasland.
 
 ..
@@ -1142,7 +1142,7 @@ name>`` instead of ``SQL logic error``. Patch by Erlend E. Aasland.
 .. nonce: GK9a0l
 .. section: Library
 
-Install schemes in :mod:`distutils.command.install` are now loaded from
+Install schemes in ``distutils.command.install`` are now loaded from
 :mod:`sysconfig`.
 
 ..
@@ -1152,7 +1152,7 @@ Install schemes in :mod:`distutils.command.install` are now loaded from
 .. nonce: SenEje
 .. section: Library
 
-:mod:`distutils.sysconfig` has been merged to :mod:`sysconfig`.
+``distutils.sysconfig`` has been merged to :mod:`sysconfig`.
 
 ..
 
@@ -1181,8 +1181,8 @@ Lewis Gaul.
 .. nonce: NzLVaR
 .. section: Library
 
-Add `pathlib.Path.hardlink_to()` method that supersedes `link_to()`. The new
-method has the same argument order as `symlink_to()`.
+Add ``pathlib.Path.hardlink_to()`` method that supersedes ``link_to()``. The new
+method has the same argument order as ``symlink_to()``.
 
 ..
 
@@ -1375,8 +1375,8 @@ Add "Annotations Best Practices" document as a new HOWTO.
 .. nonce: K5aSl1
 .. section: Documentation
 
-Document the new :const:`Py_TPFLAGS_MAPPING` and
-:const:`Py_TPFLAGS_SEQUENCE` type flags.
+Document the new :c:macro:`Py_TPFLAGS_MAPPING` and
+:c:macro:`Py_TPFLAGS_SEQUENCE` type flags.
 
 ..
 
@@ -1673,7 +1673,8 @@ zips together prompts from the sidebar with lines from the selected text.
 .. nonce: 3EFl1H
 .. section: IDLE
 
-Fix reference leak in test_squeezer. Patch by Pablo Galindo
+Fix reference leak in test_sidebar and test_squeezer.
+Patches by Terry Jan Reedy and Pablo Galindo
 
 ..
 
@@ -1710,7 +1711,7 @@ IDLE's shell now shows prompts in a separate side-bar.
 .. nonce: wvWt23
 .. section: C API
 
-Add a new :c:data:`Py_TPFLAGS_DISALLOW_INSTANTIATION` type flag to disallow
+Add a new :c:macro:`Py_TPFLAGS_DISALLOW_INSTANTIATION` type flag to disallow
 creating type instances. Patch by Victor Stinner.
 
 ..
@@ -1758,7 +1759,7 @@ module.
 .. nonce: Co3YhZ
 .. section: C API
 
-Introduce :const:`Py_TPFLAGS_IMMUTABLETYPE` flag for immutable type objects,
+Introduce :c:macro:`Py_TPFLAGS_IMMUTABLETYPE` flag for immutable type objects,
 and modify :c:func:`PyType_Ready` to set it for static types. Patch by
 Erlend E. Aasland.
 

@@ -5,7 +5,11 @@
  * See the xxlimited module for an extension module template.
  */
 
-#define Py_LIMITED_API 0x03050000
+// Test the limited C API version 3.5
+#include "pyconfig.h"   // Py_GIL_DISABLED
+#ifndef Py_GIL_DISABLED
+#  define Py_LIMITED_API 0x03050000
+#endif
 
 #include "Python.h"
 
@@ -43,6 +47,13 @@ Xxo_traverse(XxoObject *self, visitproc visit, void *arg)
     return 0;
 }
 
+static int
+Xxo_clear(XxoObject *self)
+{
+    Py_CLEAR(self->x_attr);
+    return 0;
+}
+
 static void
 Xxo_finalize(XxoObject *self)
 {
@@ -57,11 +68,9 @@ Xxo_demo(XxoObject *self, PyObject *args)
         return NULL;
     /* Test availability of fast type checks */
     if (o != NULL && PyUnicode_Check(o)) {
-        Py_INCREF(o);
-        return o;
+        return Py_NewRef(o);
     }
-    Py_INCREF(Py_None);
-    return Py_None;
+    return Py_NewRef(Py_None);
 }
 
 static PyMethodDef Xxo_methods[] = {
@@ -76,8 +85,7 @@ Xxo_getattro(XxoObject *self, PyObject *name)
     if (self->x_attr != NULL) {
         PyObject *v = PyDict_GetItemWithError(self->x_attr, name);
         if (v != NULL) {
-            Py_INCREF(v);
-            return v;
+            return Py_NewRef(v);
         }
         else if (PyErr_Occurred()) {
             return NULL;
@@ -108,6 +116,7 @@ Xxo_setattr(XxoObject *self, const char *name, PyObject *v)
 static PyType_Slot Xxo_Type_slots[] = {
     {Py_tp_doc, "The Xxo type"},
     {Py_tp_traverse, Xxo_traverse},
+    {Py_tp_clear, Xxo_clear},
     {Py_tp_finalize, Xxo_finalize},
     {Py_tp_getattro, Xxo_getattro},
     {Py_tp_setattr, Xxo_setattr},
@@ -116,7 +125,7 @@ static PyType_Slot Xxo_Type_slots[] = {
 };
 
 static PyType_Spec Xxo_Type_spec = {
-    "xxlimited.Xxo",
+    "xxlimited_35.Xxo",
     sizeof(XxoObject),
     0,
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
@@ -168,8 +177,7 @@ xx_roj(PyObject *self, PyObject *args)
     long b;
     if (!PyArg_ParseTuple(args, "O#:roj", &a, &b))
         return NULL;
-    Py_INCREF(Py_None);
-    return Py_None;
+    return Py_NewRef(Py_None);
 }
 
 
@@ -181,7 +189,7 @@ static PyType_Slot Str_Type_slots[] = {
 };
 
 static PyType_Spec Str_Type_spec = {
-    "xxlimited.Str",
+    "xxlimited_35.Str",
     0,
     0,
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
@@ -204,7 +212,7 @@ static PyType_Slot Null_Type_slots[] = {
 };
 
 static PyType_Spec Null_Type_spec = {
-    "xxlimited.Null",
+    "xxlimited_35.Null",
     0,               /* basicsize */
     0,               /* itemsize */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
@@ -240,45 +248,59 @@ xx_modexec(PyObject *m)
     Null_Type_slots[1].pfunc = PyType_GenericNew;
     Str_Type_slots[0].pfunc = &PyUnicode_Type;
 
-    Xxo_Type = PyType_FromSpec(&Xxo_Type_spec);
-    if (Xxo_Type == NULL)
-        goto fail;
-
     /* Add some symbolic constants to the module */
     if (ErrorObject == NULL) {
-        ErrorObject = PyErr_NewException("xxlimited.error", NULL, NULL);
-        if (ErrorObject == NULL)
-            goto fail;
+        ErrorObject = PyErr_NewException("xxlimited_35.error", NULL, NULL);
+        if (ErrorObject == NULL) {
+            return -1;
+        }
     }
     Py_INCREF(ErrorObject);
-    PyModule_AddObject(m, "error", ErrorObject);
+    if (PyModule_AddObject(m, "error", ErrorObject) < 0) {
+        Py_DECREF(ErrorObject);
+        return -1;
+    }
 
     /* Add Xxo */
-    o = PyType_FromSpec(&Xxo_Type_spec);
-    if (o == NULL)
-        goto fail;
-    PyModule_AddObject(m, "Xxo", o);
+    Xxo_Type = PyType_FromSpec(&Xxo_Type_spec);
+    if (Xxo_Type == NULL) {
+        return -1;
+    }
+    if (PyModule_AddObject(m, "Xxo", Xxo_Type) < 0) {
+        Py_DECREF(Xxo_Type);
+        return -1;
+    }
 
     /* Add Str */
     o = PyType_FromSpec(&Str_Type_spec);
-    if (o == NULL)
-        goto fail;
-    PyModule_AddObject(m, "Str", o);
+    if (o == NULL) {
+        return -1;
+    }
+    if (PyModule_AddObject(m, "Str", o) < 0) {
+        Py_DECREF(o);
+        return -1;
+    }
 
     /* Add Null */
     o = PyType_FromSpec(&Null_Type_spec);
-    if (o == NULL)
-        goto fail;
-    PyModule_AddObject(m, "Null", o);
+    if (o == NULL) {
+        return -1;
+    }
+    if (PyModule_AddObject(m, "Null", o) < 0) {
+        Py_DECREF(o);
+        return -1;
+    }
+
     return 0;
- fail:
-    Py_XDECREF(m);
-    return -1;
 }
 
 
 static PyModuleDef_Slot xx_slots[] = {
     {Py_mod_exec, xx_modexec},
+#ifdef Py_GIL_DISABLED
+    // These definitions are in the limited API, but not until 3.13.
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
+#endif
     {0, NULL}
 };
 

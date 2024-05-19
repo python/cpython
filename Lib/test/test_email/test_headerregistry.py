@@ -714,6 +714,18 @@ class TestContentTypeHeader(TestHeaderBase):
             " charset*=unknown-8bit''utf-8%E2%80%9D\n",
             ),
 
+        'rfc2231_nonascii_in_charset_of_charset_parameter_value': (
+            "text/plain; charset*=utf-8”''utf-8%E2%80%9D",
+            'text/plain',
+            'text',
+            'plain',
+            {'charset': 'utf-8”'},
+            [],
+            'text/plain; charset="utf-8”"',
+            "Content-Type: text/plain;"
+            " charset*=utf-8''utf-8%E2%80%9D\n",
+            ),
+
         'rfc2231_encoded_then_unencoded_segments': (
             ('application/x-foo;'
                 '\tname*0*="us-ascii\'en-us\'My";'
@@ -1224,6 +1236,26 @@ class TestAddressHeader(TestHeaderBase):
             'foo',
             'example.com',
             None),
+
+        'name_ending_with_dot_without_space':
+            ('John X.<jxd@example.com>',
+             [errors.ObsoleteHeaderDefect],
+             '"John X." <jxd@example.com>',
+             'John X.',
+             'jxd@example.com',
+             'jxd',
+             'example.com',
+             None),
+
+        'name_starting_with_dot':
+            ('. Doe <jxd@example.com>',
+             [errors.InvalidHeaderDefect, errors.ObsoleteHeaderDefect],
+             '". Doe" <jxd@example.com>',
+             '. Doe',
+             'jxd@example.com',
+             'jxd',
+             'example.com',
+             None),
 
         }
 

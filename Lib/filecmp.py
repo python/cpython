@@ -36,8 +36,9 @@ def cmp(f1, f2, shallow=True):
 
     f2 -- Second file name
 
-    shallow -- Just check stat signature (do not read the files).
-               defaults to True.
+    shallow -- treat files as identical if their stat signatures (type, size,
+               mtime) are identical. Otherwise, files are considered different
+               if their sizes or contents differ.  [default: True]
 
     Return value:
 
@@ -87,12 +88,15 @@ def _do_cmp(f1, f2):
 class dircmp:
     """A class that manages the comparison of 2 directories.
 
-    dircmp(a, b, ignore=None, hide=None)
+    dircmp(a, b, ignore=None, hide=None, shallow=True)
       A and B are directories.
       IGNORE is a list of names to ignore,
         defaults to DEFAULT_IGNORES.
       HIDE is a list of names to hide,
         defaults to [os.curdir, os.pardir].
+      SHALLOW specifies whether to just check the stat signature (do not read
+        the files).
+        defaults to True.
 
     High level usage:
       x = dircmp(dir1, dir2)
@@ -120,7 +124,7 @@ class dircmp:
        in common_dirs.
      """
 
-    def __init__(self, a, b, ignore=None, hide=None): # Initialize
+    def __init__(self, a, b, ignore=None, hide=None, shallow=True): # Initialize
         self.left = a
         self.right = b
         if hide is None:
@@ -131,6 +135,7 @@ class dircmp:
             self.ignore = DEFAULT_IGNORES
         else:
             self.ignore = ignore
+        self.shallow = shallow
 
     def phase0(self): # Compare everything except common subdirectories
         self.left_list = _filter(os.listdir(self.left),
@@ -156,17 +161,17 @@ class dircmp:
             a_path = os.path.join(self.left, x)
             b_path = os.path.join(self.right, x)
 
-            ok = 1
+            ok = True
             try:
                 a_stat = os.stat(a_path)
             except OSError:
                 # print('Can\'t stat', a_path, ':', why.args[1])
-                ok = 0
+                ok = False
             try:
                 b_stat = os.stat(b_path)
             except OSError:
                 # print('Can\'t stat', b_path, ':', why.args[1])
-                ok = 0
+                ok = False
 
             if ok:
                 a_type = stat.S_IFMT(a_stat.st_mode)
@@ -183,7 +188,7 @@ class dircmp:
                 self.common_funny.append(x)
 
     def phase3(self): # Find out differences between common files
-        xx = cmpfiles(self.left, self.right, self.common_files)
+        xx = cmpfiles(self.left, self.right, self.common_files, self.shallow)
         self.same_files, self.diff_files, self.funny_files = xx
 
     def phase4(self): # Find out differences between common subdirectories
@@ -195,7 +200,8 @@ class dircmp:
         for x in self.common_dirs:
             a_x = os.path.join(self.left, x)
             b_x = os.path.join(self.right, x)
-            self.subdirs[x]  = self.__class__(a_x, b_x, self.ignore, self.hide)
+            self.subdirs[x]  = self.__class__(a_x, b_x, self.ignore, self.hide,
+                                              self.shallow)
 
     def phase4_closure(self): # Recursively call phase4() on subdirectories
         self.phase4()
@@ -241,7 +247,7 @@ class dircmp:
 
     methodmap = dict(subdirs=phase4,
                      same_files=phase3, diff_files=phase3, funny_files=phase3,
-                     common_dirs = phase2, common_files=phase2, common_funny=phase2,
+                     common_dirs=phase2, common_files=phase2, common_funny=phase2,
                      common=phase1, left_only=phase1, right_only=phase1,
                      left_list=phase0, right_list=phase0)
 

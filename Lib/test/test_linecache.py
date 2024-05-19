@@ -5,6 +5,7 @@ import unittest
 import os.path
 import tempfile
 import tokenize
+from importlib.machinery import ModuleSpec
 from test import support
 from test.support import os_helper
 
@@ -73,16 +74,18 @@ class GetLineTestsBadData(TempFile):
     # file_byte_string = b'Bad data goes here'
 
     def test_getline(self):
-        self.assertRaises((SyntaxError, UnicodeDecodeError),
-                          linecache.getline, self.file_name, 1)
+        self.assertEqual(linecache.getline(self.file_name, 1), '')
 
     def test_getlines(self):
-        self.assertRaises((SyntaxError, UnicodeDecodeError),
-                          linecache.getlines, self.file_name)
+        self.assertEqual(linecache.getlines(self.file_name), [])
 
 
 class EmptyFile(GetLineTestsGoodData, unittest.TestCase):
     file_list = []
+
+    def test_getlines(self):
+        lines = linecache.getlines(self.file_name)
+        self.assertEqual(lines, ['\n'])
 
 
 class SingleEmptyLine(GetLineTestsGoodData, unittest.TestCase):
@@ -92,9 +95,21 @@ class SingleEmptyLine(GetLineTestsGoodData, unittest.TestCase):
 class GoodUnicode(GetLineTestsGoodData, unittest.TestCase):
     file_list = ['á\n', 'b\n', 'abcdef\n', 'ááááá\n']
 
+class BadUnicode_NoDeclaration(GetLineTestsBadData, unittest.TestCase):
+    file_byte_string = b'\n\x80abc'
 
-class BadUnicode(GetLineTestsBadData, unittest.TestCase):
-    file_byte_string = b'\x80abc'
+class BadUnicode_WithDeclaration(GetLineTestsBadData, unittest.TestCase):
+    file_byte_string = b'# coding=utf-8\n\x80abc'
+
+
+class FakeLoader:
+    def get_source(self, fullname):
+        return f'source for {fullname}'
+
+
+class NoSourceLoader:
+    def get_source(self, fullname):
+        return None
 
 
 class LineCacheTests(unittest.TestCase):
@@ -237,6 +252,75 @@ class LineCacheTests(unittest.TestCase):
             lines3 = linecache.getlines(FILENAME)
         self.assertEqual(lines3, [])
         self.assertEqual(linecache.getlines(FILENAME), lines)
+
+    def test_loader(self):
+        filename = 'scheme://path'
+
+        for loader in (None, object(), NoSourceLoader()):
+            linecache.clearcache()
+            module_globals = {'__name__': 'a.b.c', '__loader__': loader}
+            self.assertEqual(linecache.getlines(filename, module_globals), [])
+
+        linecache.clearcache()
+        module_globals = {'__name__': 'a.b.c', '__loader__': FakeLoader()}
+        self.assertEqual(linecache.getlines(filename, module_globals),
+                         ['source for a.b.c\n'])
+
+        for spec in (None, object(), ModuleSpec('', FakeLoader())):
+            linecache.clearcache()
+            module_globals = {'__name__': 'a.b.c', '__loader__': FakeLoader(),
+                              '__spec__': spec}
+            self.assertEqual(linecache.getlines(filename, module_globals),
+                             ['source for a.b.c\n'])
+
+        linecache.clearcache()
+        spec = ModuleSpec('x.y.z', FakeLoader())
+        module_globals = {'__name__': 'a.b.c', '__loader__': spec.loader,
+                          '__spec__': spec}
+        self.assertEqual(linecache.getlines(filename, module_globals),
+                         ['source for x.y.z\n'])
+
+
+class LineCacheInvalidationTests(unittest.TestCase):
+    def setUp(self):
+        super().setUp()
+        linecache.clearcache()
+        self.deleted_file = os_helper.TESTFN + '.1'
+        self.modified_file = os_helper.TESTFN + '.2'
+        self.unchanged_file = os_helper.TESTFN + '.3'
+
+        for fname in (self.deleted_file,
+                      self.modified_file,
+                      self.unchanged_file):
+            self.addCleanup(os_helper.unlink, fname)
+            with open(fname, 'w', encoding='utf-8') as source:
+                source.write(f'print("I am {fname}")')
+
+            self.assertNotIn(fname, linecache.cache)
+            linecache.getlines(fname)
+            self.assertIn(fname, linecache.cache)
+
+        os.remove(self.deleted_file)
+        with open(self.modified_file, 'w', encoding='utf-8') as source:
+            source.write('print("was modified")')
+
+    def test_checkcache_for_deleted_file(self):
+        linecache.checkcache(self.deleted_file)
+        self.assertNotIn(self.deleted_file, linecache.cache)
+        self.assertIn(self.modified_file, linecache.cache)
+        self.assertIn(self.unchanged_file, linecache.cache)
+
+    def test_checkcache_for_modified_file(self):
+        linecache.checkcache(self.modified_file)
+        self.assertIn(self.deleted_file, linecache.cache)
+        self.assertNotIn(self.modified_file, linecache.cache)
+        self.assertIn(self.unchanged_file, linecache.cache)
+
+    def test_checkcache_with_no_parameter(self):
+        linecache.checkcache()
+        self.assertNotIn(self.deleted_file, linecache.cache)
+        self.assertNotIn(self.modified_file, linecache.cache)
+        self.assertIn(self.unchanged_file, linecache.cache)
 
 
 if __name__ == "__main__":

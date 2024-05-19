@@ -19,12 +19,13 @@ from xml.sax.xmlreader import InputSource, AttributesImpl, AttributesNSImpl
 from io import BytesIO, StringIO
 import codecs
 import os.path
+import pyexpat
 import shutil
 import sys
 from urllib.error import URLError
 import urllib.request
 from test.support import os_helper
-from test.support import findfile, run_unittest
+from test.support import findfile
 from test.support.os_helper import FakePath, TESTFN
 
 
@@ -1214,6 +1215,56 @@ class ExpatReaderTest(XmlTestBase):
 
         self.assertEqual(result.getvalue(), start + b"<doc>text</doc>")
 
+    @unittest.skipIf(pyexpat.version_info < (2, 6, 0),
+                     f'Expat {pyexpat.version_info} does not '
+                     'support reparse deferral')
+    def test_flush_reparse_deferral_enabled(self):
+        result = BytesIO()
+        xmlgen = XMLGenerator(result)
+        parser = create_parser()
+        parser.setContentHandler(xmlgen)
+
+        for chunk in ("<doc", ">"):
+            parser.feed(chunk)
+
+        self.assertEqual(result.getvalue(), start)  # i.e. no elements started
+        self.assertTrue(parser._parser.GetReparseDeferralEnabled())
+
+        parser.flush()
+
+        self.assertTrue(parser._parser.GetReparseDeferralEnabled())
+        self.assertEqual(result.getvalue(), start + b"<doc>")
+
+        parser.feed("</doc>")
+        parser.close()
+
+        self.assertEqual(result.getvalue(), start + b"<doc></doc>")
+
+    def test_flush_reparse_deferral_disabled(self):
+        result = BytesIO()
+        xmlgen = XMLGenerator(result)
+        parser = create_parser()
+        parser.setContentHandler(xmlgen)
+
+        for chunk in ("<doc", ">"):
+            parser.feed(chunk)
+
+        if pyexpat.version_info >= (2, 6, 0):
+            parser._parser.SetReparseDeferralEnabled(False)
+            self.assertEqual(result.getvalue(), start)  # i.e. no elements started
+
+        self.assertFalse(parser._parser.GetReparseDeferralEnabled())
+
+        parser.flush()
+
+        self.assertFalse(parser._parser.GetReparseDeferralEnabled())
+        self.assertEqual(result.getvalue(), start + b"<doc>")
+
+        parser.feed("</doc>")
+        parser.close()
+
+        self.assertEqual(result.getvalue(), start + b"<doc></doc>")
+
     # ===== Locator support
 
     def test_expat_locator_noinfo(self):
@@ -1506,22 +1557,5 @@ class CDATAHandlerTest(unittest.TestCase):
         self.assertEqual(self.char_index, 2)
 
 
-def test_main():
-    run_unittest(MakeParserTest,
-                 ParseTest,
-                 SaxutilsTest,
-                 PrepareInputSourceTest,
-                 StringXmlgenTest,
-                 BytesXmlgenTest,
-                 WriterXmlgenTest,
-                 StreamWriterXmlgenTest,
-                 StreamReaderWriterXmlgenTest,
-                 ExpatReaderTest,
-                 ErrorReportingTest,
-                 XmlReaderTest,
-                 LexicalHandlerTest,
-                 CDATAHandlerTest)
-
-
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

@@ -3,11 +3,19 @@
 
 /* Windows users:  read Python's PCbuild\readme.txt */
 
-#define PY_SSIZE_T_CLEAN
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
 
 #include "Python.h"
-#include "structmember.h"         // PyMemberDef
+
 #include "zlib.h"
+#include "stdbool.h"
+#include <stddef.h>               // offsetof()
+
+#if defined(ZLIB_VERNUM) && ZLIB_VERNUM < 0x1221
+#error "At least zlib version 1.2.2.1 is required"
+#endif
 
 // Blocks output buffer wrappers
 #include "pycore_blocks_output_buffer.h"
@@ -26,28 +34,6 @@ OutputBuffer_InitAndGrow(_BlocksOutputBuffer *buffer, Py_ssize_t max_length,
 
     allocated = _BlocksOutputBuffer_InitAndGrow(
                     buffer, max_length, (void**) next_out);
-    *avail_out = (uint32_t) allocated;
-    return allocated;
-}
-
-/* On success, return value >= 0
-   On failure, return -1 */
-static inline Py_ssize_t
-OutputBuffer_InitWithSize(_BlocksOutputBuffer *buffer, Py_ssize_t init_size,
-                          Bytef **next_out, uint32_t *avail_out)
-{
-    Py_ssize_t allocated;
-
-    if (init_size >= 0 &&  // ensure (size_t) cast is safe
-        (size_t)init_size > UINT32_MAX)
-    {
-        /* In 32-bit build, never reach this conditional branch.
-           The maximum block size accepted by zlib is UINT32_MAX. */
-        init_size = UINT32_MAX;
-    }
-
-    allocated = _BlocksOutputBuffer_InitWithSize(
-                    buffer, init_size, (void**) next_out);
     *avail_out = (uint32_t) allocated;
     return allocated;
 }
@@ -84,6 +70,106 @@ OutputBuffer_OnError(_BlocksOutputBuffer *buffer)
     _BlocksOutputBuffer_OnError(buffer);
 }
 
+/* The max buffer size accepted by zlib is UINT32_MAX, the initial buffer size
+   `init_size` may > it in 64-bit build. These wrapper functions maintain an
+   UINT32_MAX sliding window for the first block:
+    1. OutputBuffer_WindowInitWithSize()
+    2. OutputBuffer_WindowGrow()
+    3. OutputBuffer_WindowFinish()
+    4. OutputBuffer_WindowOnError()
+
+   ==== is the sliding window:
+    1. ====------
+           ^ next_posi, left_bytes is 6
+    2. ----====--
+               ^ next_posi, left_bytes is 2
+    3. --------==
+                 ^ next_posi, left_bytes is 0  */
+typedef struct {
+    Py_ssize_t left_bytes;
+    Bytef *next_posi;
+} _Uint32Window;
+
+/* Initialize the buffer with an initial buffer size.
+
+   On success, return value >= 0
+   On failure, return value < 0 */
+static inline Py_ssize_t
+OutputBuffer_WindowInitWithSize(_BlocksOutputBuffer *buffer, _Uint32Window *window,
+                                Py_ssize_t init_size,
+                                Bytef **next_out, uint32_t *avail_out)
+{
+    Py_ssize_t allocated = _BlocksOutputBuffer_InitWithSize(
+                               buffer, init_size, (void**) next_out);
+
+    if (allocated >= 0) {
+        // the UINT32_MAX sliding window
+        Py_ssize_t window_size = Py_MIN((size_t)allocated, UINT32_MAX);
+        *avail_out = (uint32_t) window_size;
+
+        window->left_bytes = allocated - window_size;
+        window->next_posi = *next_out + window_size;
+    }
+    return allocated;
+}
+
+/* Grow the buffer.
+
+   On success, return value >= 0
+   On failure, return value < 0 */
+static inline Py_ssize_t
+OutputBuffer_WindowGrow(_BlocksOutputBuffer *buffer, _Uint32Window *window,
+                        Bytef **next_out, uint32_t *avail_out)
+{
+    Py_ssize_t allocated;
+
+    /* ensure no gaps in the data.
+       if inlined, this check could be optimized away.*/
+    if (*avail_out != 0) {
+        PyErr_SetString(PyExc_SystemError,
+                        "*avail_out != 0 in OutputBuffer_WindowGrow().");
+        return -1;
+    }
+
+    // slide the UINT32_MAX sliding window
+    if (window->left_bytes > 0) {
+        Py_ssize_t window_size = Py_MIN((size_t)window->left_bytes, UINT32_MAX);
+
+        *next_out = window->next_posi;
+        *avail_out = (uint32_t) window_size;
+
+        window->left_bytes -= window_size;
+        window->next_posi += window_size;
+
+        return window_size;
+    }
+    assert(window->left_bytes == 0);
+
+    // only the first block may > UINT32_MAX
+    allocated = _BlocksOutputBuffer_Grow(
+                    buffer, (void**) next_out, (Py_ssize_t) *avail_out);
+    *avail_out = (uint32_t) allocated;
+    return allocated;
+}
+
+/* Finish the buffer.
+
+   On success, return a bytes object
+   On failure, return NULL */
+static inline PyObject *
+OutputBuffer_WindowFinish(_BlocksOutputBuffer *buffer, _Uint32Window *window,
+                          uint32_t avail_out)
+{
+    Py_ssize_t real_avail_out = (Py_ssize_t) avail_out + window->left_bytes;
+    return _BlocksOutputBuffer_Finish(buffer, real_avail_out);
+}
+
+static inline void
+OutputBuffer_WindowOnError(_BlocksOutputBuffer *buffer, _Uint32Window *window)
+{
+    _BlocksOutputBuffer_OnError(buffer);
+}
+
 
 #define ENTER_ZLIB(obj) do {                      \
     if (!PyThread_acquire_lock((obj)->lock, 0)) { \
@@ -93,9 +179,6 @@ OutputBuffer_OnError(_BlocksOutputBuffer *buffer)
     } } while (0)
 #define LEAVE_ZLIB(obj) PyThread_release_lock((obj)->lock);
 
-#if defined(ZLIB_VERNUM) && ZLIB_VERNUM >= 0x1221
-#  define AT_LEAST_ZLIB_1_2_2_1
-#endif
 
 /* The following parameters are copied from zutil.h, version 0.95 */
 #define DEFLATED   8
@@ -107,12 +190,14 @@ OutputBuffer_OnError(_BlocksOutputBuffer *buffer)
 
 /* Initial buffer size. */
 #define DEF_BUF_SIZE (16*1024)
+#define DEF_MAX_INITIAL_BUF_SIZE (16 * 1024 * 1024)
 
 static PyModuleDef zlibmodule;
 
 typedef struct {
     PyTypeObject *Comptype;
     PyTypeObject *Decomptype;
+    PyTypeObject *ZlibDecompressorType;
     PyObject *ZlibError;
 } zlibstate;
 
@@ -131,7 +216,7 @@ typedef struct
     PyObject *unused_data;
     PyObject *unconsumed_tail;
     char eof;
-    int is_initialised;
+    bool is_initialised;
     PyObject *zdict;
     PyThread_type_lock lock;
 } compobject;
@@ -232,15 +317,17 @@ zlib.compress
     /
     level: int(c_default="Z_DEFAULT_COMPRESSION") = Z_DEFAULT_COMPRESSION
         Compression level, in 0-9 or -1.
+    wbits: int(c_default="MAX_WBITS") = MAX_WBITS
+        The window buffer size and container format.
 
 Returns a bytes object containing compressed data.
 [clinic start generated code]*/
 
 static PyObject *
-zlib_compress_impl(PyObject *module, Py_buffer *data, int level)
-/*[clinic end generated code: output=d80906d73f6294c8 input=638d54b6315dbed3]*/
+zlib_compress_impl(PyObject *module, Py_buffer *data, int level, int wbits)
+/*[clinic end generated code: output=46bd152fadd66df2 input=c4d06ee5782a7e3f]*/
 {
-    PyObject *RetVal;
+    PyObject *return_value;
     int flush;
     z_stream zst;
     _BlocksOutputBuffer buffer = {.list = NULL};
@@ -258,7 +345,8 @@ zlib_compress_impl(PyObject *module, Py_buffer *data, int level)
     zst.zalloc = PyZlib_Malloc;
     zst.zfree = PyZlib_Free;
     zst.next_in = ibuf;
-    int err = deflateInit(&zst, level);
+    int err = deflateInit2(&zst, level, DEFLATED, wbits, DEF_MEM_LEVEL,
+                           Z_DEFAULT_STRATEGY);
 
     switch (err) {
     case Z_OK:
@@ -306,11 +394,11 @@ zlib_compress_impl(PyObject *module, Py_buffer *data, int level)
 
     err = deflateEnd(&zst);
     if (err == Z_OK) {
-        RetVal = OutputBuffer_Finish(&buffer, zst.avail_out);
-        if (RetVal == NULL) {
+        return_value = OutputBuffer_Finish(&buffer, zst.avail_out);
+        if (return_value == NULL) {
             goto error;
         }
-        return RetVal;
+        return return_value;
     }
     else
         zlib_error(state, zst, err, "while finishing compression");
@@ -338,12 +426,13 @@ zlib_decompress_impl(PyObject *module, Py_buffer *data, int wbits,
                      Py_ssize_t bufsize)
 /*[clinic end generated code: output=77c7e35111dc8c42 input=a9ac17beff1f893f]*/
 {
-    PyObject *RetVal;
+    PyObject *return_value;
     Byte *ibuf;
     Py_ssize_t ibuflen;
     int err, flush;
     z_stream zst;
     _BlocksOutputBuffer buffer = {.list = NULL};
+    _Uint32Window window;  // output buffer's UINT32_MAX sliding window
 
     zlibstate *state = get_zlib_state(module);
 
@@ -354,7 +443,8 @@ zlib_decompress_impl(PyObject *module, Py_buffer *data, int wbits,
         bufsize = 1;
     }
 
-    if (OutputBuffer_InitWithSize(&buffer, bufsize, &zst.next_out, &zst.avail_out) < 0) {
+    if (OutputBuffer_WindowInitWithSize(&buffer, &window, bufsize,
+                                        &zst.next_out, &zst.avail_out) < 0) {
         goto error;
     }
 
@@ -387,7 +477,8 @@ zlib_decompress_impl(PyObject *module, Py_buffer *data, int wbits,
 
         do {
             if (zst.avail_out == 0) {
-                if (OutputBuffer_Grow(&buffer, &zst.next_out, &zst.avail_out) < 0) {
+                if (OutputBuffer_WindowGrow(&buffer, &window,
+                                            &zst.next_out, &zst.avail_out) < 0) {
                     inflateEnd(&zst);
                     goto error;
                 }
@@ -430,13 +521,13 @@ zlib_decompress_impl(PyObject *module, Py_buffer *data, int wbits,
         goto error;
     }
 
-    RetVal = OutputBuffer_Finish(&buffer, zst.avail_out);
-    if (RetVal != NULL) {
-        return RetVal;
+    return_value = OutputBuffer_WindowFinish(&buffer, &window, zst.avail_out);
+    if (return_value != NULL) {
+        return return_value;
     }
 
  error:
-    OutputBuffer_OnError(&buffer);
+    OutputBuffer_WindowOnError(&buffer, &window);
     return NULL;
 }
 
@@ -583,26 +674,17 @@ zlib_decompressobj_impl(PyObject *module, int wbits, PyObject *zdict)
     self->zst.next_in = NULL;
     self->zst.avail_in = 0;
     if (zdict != NULL) {
-        Py_INCREF(zdict);
-        self->zdict = zdict;
+        self->zdict = Py_NewRef(zdict);
     }
     int err = inflateInit2(&self->zst, wbits);
     switch (err) {
     case Z_OK:
         self->is_initialised = 1;
         if (self->zdict != NULL && wbits < 0) {
-#ifdef AT_LEAST_ZLIB_1_2_2_1
             if (set_inflate_zdict(state, self) < 0) {
                 Py_DECREF(self);
                 return NULL;
             }
-#else
-            PyErr_Format(state->ZlibError,
-                         "zlib version %s does not allow raw inflate with dictionary",
-                         ZLIB_VERSION);
-            Py_DECREF(self);
-            return NULL;
-#endif
         }
         return (PyObject *)self;
     case Z_STREAM_ERROR:
@@ -669,7 +751,7 @@ zlib_Compress_compress_impl(compobject *self, PyTypeObject *cls,
                             Py_buffer *data)
 /*[clinic end generated code: output=6731b3f0ff357ca6 input=04d00f65ab01d260]*/
 {
-    PyObject *RetVal;
+    PyObject *return_value;
     int err;
     _BlocksOutputBuffer buffer = {.list = NULL};
     zlibstate *state = PyType_GetModuleState(cls);
@@ -707,17 +789,17 @@ zlib_Compress_compress_impl(compobject *self, PyTypeObject *cls,
 
     } while (ibuflen != 0);
 
-    RetVal = OutputBuffer_Finish(&buffer, self->zst.avail_out);
-    if (RetVal != NULL) {
+    return_value = OutputBuffer_Finish(&buffer, self->zst.avail_out);
+    if (return_value != NULL) {
         goto success;
     }
 
  error:
     OutputBuffer_OnError(&buffer);
-    RetVal = NULL;
+    return_value = NULL;
  success:
     LEAVE_ZLIB(self);
-    return RetVal;
+    return return_value;
 }
 
 /* Helper for objdecompress() and flush(). Saves any unconsumed input data in
@@ -791,7 +873,7 @@ zlib_Decompress_decompress_impl(compobject *self, PyTypeObject *cls,
 {
     int err = Z_OK;
     Py_ssize_t ibuflen;
-    PyObject *RetVal;
+    PyObject *return_value;
     _BlocksOutputBuffer buffer = {.list = NULL};
 
     PyObject *module = PyType_GetModule(cls);
@@ -869,17 +951,17 @@ zlib_Decompress_decompress_impl(compobject *self, PyTypeObject *cls,
         goto abort;
     }
 
-    RetVal = OutputBuffer_Finish(&buffer, self->zst.avail_out);
-    if (RetVal != NULL) {
+    return_value = OutputBuffer_Finish(&buffer, self->zst.avail_out);
+    if (return_value != NULL) {
         goto success;
     }
 
  abort:
     OutputBuffer_OnError(&buffer);
-    RetVal = NULL;
+    return_value = NULL;
  success:
     LEAVE_ZLIB(self);
-    return RetVal;
+    return return_value;
 }
 
 /*[clinic input]
@@ -901,7 +983,7 @@ zlib_Compress_flush_impl(compobject *self, PyTypeObject *cls, int mode)
 /*[clinic end generated code: output=c7efd13efd62add2 input=286146e29442eb6c]*/
 {
     int err;
-    PyObject *RetVal;
+    PyObject *return_value;
     _BlocksOutputBuffer buffer = {.list = NULL};
 
     zlibstate *state = PyType_GetModuleState(cls);
@@ -958,17 +1040,17 @@ zlib_Compress_flush_impl(compobject *self, PyTypeObject *cls, int mode)
         goto error;
     }
 
-    RetVal = OutputBuffer_Finish(&buffer, self->zst.avail_out);
-    if (RetVal != NULL) {
+    return_value = OutputBuffer_Finish(&buffer, self->zst.avail_out);
+    if (return_value != NULL) {
         goto success;
     }
 
 error:
     OutputBuffer_OnError(&buffer);
-    RetVal = NULL;
+    return_value = NULL;
 success:
     LEAVE_ZLIB(self);
-    return RetVal;
+    return return_value;
 }
 
 #ifdef HAVE_ZLIB_COPY
@@ -987,14 +1069,14 @@ zlib_Compress_copy_impl(compobject *self, PyTypeObject *cls)
 {
     zlibstate *state = PyType_GetModuleState(cls);
 
-    compobject *retval = newcompobject(state->Comptype);
-    if (!retval) return NULL;
+    compobject *return_value = newcompobject(state->Comptype);
+    if (!return_value) return NULL;
 
     /* Copy the zstream state
      * We use ENTER_ZLIB / LEAVE_ZLIB to make this thread-safe
      */
     ENTER_ZLIB(self);
-    int err = deflateCopy(&retval->zst, &self->zst);
+    int err = deflateCopy(&return_value->zst, &self->zst);
     switch (err) {
     case Z_OK:
         break;
@@ -1009,23 +1091,20 @@ zlib_Compress_copy_impl(compobject *self, PyTypeObject *cls)
         zlib_error(state, self->zst, err, "while copying compression object");
         goto error;
     }
-    Py_INCREF(self->unused_data);
-    Py_XSETREF(retval->unused_data, self->unused_data);
-    Py_INCREF(self->unconsumed_tail);
-    Py_XSETREF(retval->unconsumed_tail, self->unconsumed_tail);
-    Py_XINCREF(self->zdict);
-    Py_XSETREF(retval->zdict, self->zdict);
-    retval->eof = self->eof;
+    Py_XSETREF(return_value->unused_data, Py_NewRef(self->unused_data));
+    Py_XSETREF(return_value->unconsumed_tail, Py_NewRef(self->unconsumed_tail));
+    Py_XSETREF(return_value->zdict, Py_XNewRef(self->zdict));
+    return_value->eof = self->eof;
 
     /* Mark it as being initialized */
-    retval->is_initialised = 1;
+    return_value->is_initialised = 1;
 
     LEAVE_ZLIB(self);
-    return (PyObject *)retval;
+    return (PyObject *)return_value;
 
 error:
     LEAVE_ZLIB(self);
-    Py_XDECREF(retval);
+    Py_XDECREF(return_value);
     return NULL;
 }
 
@@ -1074,14 +1153,14 @@ zlib_Decompress_copy_impl(compobject *self, PyTypeObject *cls)
 {
     zlibstate *state = PyType_GetModuleState(cls);
 
-    compobject *retval = newcompobject(state->Decomptype);
-    if (!retval) return NULL;
+    compobject *return_value = newcompobject(state->Decomptype);
+    if (!return_value) return NULL;
 
     /* Copy the zstream state
      * We use ENTER_ZLIB / LEAVE_ZLIB to make this thread-safe
      */
     ENTER_ZLIB(self);
-    int err = inflateCopy(&retval->zst, &self->zst);
+    int err = inflateCopy(&return_value->zst, &self->zst);
     switch (err) {
     case Z_OK:
         break;
@@ -1097,23 +1176,20 @@ zlib_Decompress_copy_impl(compobject *self, PyTypeObject *cls)
         goto error;
     }
 
-    Py_INCREF(self->unused_data);
-    Py_XSETREF(retval->unused_data, self->unused_data);
-    Py_INCREF(self->unconsumed_tail);
-    Py_XSETREF(retval->unconsumed_tail, self->unconsumed_tail);
-    Py_XINCREF(self->zdict);
-    Py_XSETREF(retval->zdict, self->zdict);
-    retval->eof = self->eof;
+    Py_XSETREF(return_value->unused_data, Py_NewRef(self->unused_data));
+    Py_XSETREF(return_value->unconsumed_tail, Py_NewRef(self->unconsumed_tail));
+    Py_XSETREF(return_value->zdict, Py_XNewRef(self->zdict));
+    return_value->eof = self->eof;
 
     /* Mark it as being initialized */
-    retval->is_initialised = 1;
+    return_value->is_initialised = 1;
 
     LEAVE_ZLIB(self);
-    return (PyObject *)retval;
+    return (PyObject *)return_value;
 
 error:
     LEAVE_ZLIB(self);
-    Py_XDECREF(retval);
+    Py_XDECREF(return_value);
     return NULL;
 }
 
@@ -1168,9 +1244,10 @@ zlib_Decompress_flush_impl(compobject *self, PyTypeObject *cls,
 {
     int err, flush;
     Py_buffer data;
-    PyObject *RetVal;
+    PyObject *return_value;
     Py_ssize_t ibuflen;
     _BlocksOutputBuffer buffer = {.list = NULL};
+    _Uint32Window window;  // output buffer's UINT32_MAX sliding window
 
     PyObject *module = PyType_GetModule(cls);
     if (module == NULL) {
@@ -1184,16 +1261,18 @@ zlib_Decompress_flush_impl(compobject *self, PyTypeObject *cls,
         return NULL;
     }
 
+    ENTER_ZLIB(self);
+
     if (PyObject_GetBuffer(self->unconsumed_tail, &data, PyBUF_SIMPLE) == -1) {
+        LEAVE_ZLIB(self);
         return NULL;
     }
-
-    ENTER_ZLIB(self);
 
     self->zst.next_in = data.buf;
     ibuflen = data.len;
 
-    if (OutputBuffer_InitWithSize(&buffer, length, &self->zst.next_out, &self->zst.avail_out) < 0) {
+    if (OutputBuffer_WindowInitWithSize(&buffer, &window, length,
+                                        &self->zst.next_out, &self->zst.avail_out) < 0) {
         goto abort;
     }
 
@@ -1203,7 +1282,8 @@ zlib_Decompress_flush_impl(compobject *self, PyTypeObject *cls,
 
         do {
             if (self->zst.avail_out == 0) {
-                if (OutputBuffer_Grow(&buffer, &self->zst.next_out, &self->zst.avail_out) < 0) {
+                if (OutputBuffer_WindowGrow(&buffer, &window,
+                                            &self->zst.next_out, &self->zst.avail_out) < 0) {
                     goto abort;
                 }
             }
@@ -1218,13 +1298,6 @@ zlib_Decompress_flush_impl(compobject *self, PyTypeObject *cls,
             case Z_STREAM_END:
                 break;
             default:
-                if (err == Z_NEED_DICT && self->zdict != NULL) {
-                    if (set_inflate_zdict(state, self) < 0) {
-                        goto abort;
-                    }
-                    else
-                        break;
-                }
                 goto save;
             }
 
@@ -1248,18 +1321,460 @@ zlib_Decompress_flush_impl(compobject *self, PyTypeObject *cls,
         }
     }
 
-    RetVal = OutputBuffer_Finish(&buffer, self->zst.avail_out);
-    if (RetVal != NULL) {
+    return_value = OutputBuffer_WindowFinish(&buffer, &window, self->zst.avail_out);
+    if (return_value != NULL) {
         goto success;
     }
 
  abort:
-    OutputBuffer_OnError(&buffer);
-    RetVal = NULL;
+    OutputBuffer_WindowOnError(&buffer, &window);
+    return_value = NULL;
  success:
     PyBuffer_Release(&data);
     LEAVE_ZLIB(self);
-    return RetVal;
+    return return_value;
+}
+
+
+typedef struct {
+    PyObject_HEAD
+    z_stream zst;
+    PyObject *zdict;
+    PyThread_type_lock lock;
+    PyObject *unused_data;
+    uint8_t *input_buffer;
+    Py_ssize_t input_buffer_size;
+    /* zst>avail_in is only 32 bit, so we store the true length
+       separately. Conversion and looping is encapsulated in
+       decompress_buf() */
+    Py_ssize_t avail_in_real;
+    bool is_initialised;
+    char eof;           /* Py_T_BOOL expects a char */
+    char needs_input;
+} ZlibDecompressor;
+
+/*[clinic input]
+class zlib.ZlibDecompressor "ZlibDecompressor *" "&ZlibDecompressorType"
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=0658178ab94645df]*/
+
+static void
+ZlibDecompressor_dealloc(ZlibDecompressor *self)
+{
+    PyObject *type = (PyObject *)Py_TYPE(self);
+    PyThread_free_lock(self->lock);
+    if (self->is_initialised) {
+        inflateEnd(&self->zst);
+    }
+    PyMem_Free(self->input_buffer);
+    Py_CLEAR(self->unused_data);
+    Py_CLEAR(self->zdict);
+    PyObject_Free(self);
+    Py_DECREF(type);
+}
+
+static int
+set_inflate_zdict_ZlibDecompressor(zlibstate *state, ZlibDecompressor *self)
+{
+    Py_buffer zdict_buf;
+    if (PyObject_GetBuffer(self->zdict, &zdict_buf, PyBUF_SIMPLE) == -1) {
+        return -1;
+    }
+    if ((size_t)zdict_buf.len > UINT_MAX) {
+        PyErr_SetString(PyExc_OverflowError,
+                        "zdict length does not fit in an unsigned int");
+        PyBuffer_Release(&zdict_buf);
+        return -1;
+    }
+    int err;
+    err = inflateSetDictionary(&self->zst,
+                               zdict_buf.buf, (unsigned int)zdict_buf.len);
+    PyBuffer_Release(&zdict_buf);
+    if (err != Z_OK) {
+        zlib_error(state, self->zst, err, "while setting zdict");
+        return -1;
+    }
+    return 0;
+}
+
+static Py_ssize_t
+arrange_output_buffer_with_maximum(uint32_t *avail_out,
+                                   uint8_t **next_out,
+                                   PyObject **buffer,
+                                   Py_ssize_t length,
+                                   Py_ssize_t max_length)
+{
+    Py_ssize_t occupied;
+
+    if (*buffer == NULL) {
+        if (!(*buffer = PyBytes_FromStringAndSize(NULL, length)))
+            return -1;
+        occupied = 0;
+    }
+    else {
+        occupied = *next_out - (uint8_t *)PyBytes_AS_STRING(*buffer);
+
+        if (length == occupied) {
+            Py_ssize_t new_length;
+            assert(length <= max_length);
+            /* can not scale the buffer over max_length */
+            if (length == max_length)
+                return -2;
+            if (length <= (max_length >> 1))
+                new_length = length << 1;
+            else
+                new_length = max_length;
+            if (_PyBytes_Resize(buffer, new_length) < 0)
+                return -1;
+            length = new_length;
+        }
+    }
+
+    *avail_out = (uint32_t)Py_MIN((size_t)(length - occupied), UINT32_MAX);
+    *next_out = (uint8_t *)PyBytes_AS_STRING(*buffer) + occupied;
+
+    return length;
+}
+
+/* Decompress data of length self->avail_in_real in self->state.next_in. The
+   output buffer is allocated dynamically and returned. If the max_length is
+   of sufficiently low size, max_length is allocated immediately. At most
+   max_length bytes are returned, so some of the input may not be consumed.
+   self->state.next_in and self->avail_in_real are updated to reflect the
+   consumed input. */
+static PyObject*
+decompress_buf(ZlibDecompressor *self, Py_ssize_t max_length)
+{
+    /* data_size is strictly positive, but because we repeatedly have to
+       compare against max_length and PyBytes_GET_SIZE we declare it as
+       signed */
+    PyObject *return_value = NULL;
+    Py_ssize_t hard_limit;
+    Py_ssize_t obuflen;
+    zlibstate *state = PyType_GetModuleState(Py_TYPE(self));
+
+    int err = Z_OK;
+
+    /* When sys.maxsize is passed as default use DEF_BUF_SIZE as start buffer.
+       In this particular case the data may not necessarily be very big, so
+       it is better to grow dynamically.*/
+    if ((max_length < 0) || max_length == PY_SSIZE_T_MAX) {
+        hard_limit = PY_SSIZE_T_MAX;
+        obuflen = DEF_BUF_SIZE;
+    } else {
+        /* Assume that decompressor is used in file decompression with a fixed
+           block size of max_length. In that case we will reach max_length almost
+           always (except at the end of the file). So it makes sense to allocate
+           max_length. */
+        hard_limit = max_length;
+        obuflen = max_length;
+        if (obuflen > DEF_MAX_INITIAL_BUF_SIZE){
+            // Safeguard against memory overflow.
+            obuflen = DEF_MAX_INITIAL_BUF_SIZE;
+        }
+    }
+
+    do {
+        arrange_input_buffer(&(self->zst), &(self->avail_in_real));
+
+        do {
+            obuflen = arrange_output_buffer_with_maximum(&(self->zst.avail_out),
+                                                        &(self->zst.next_out),
+                                                        &return_value,
+                                                        obuflen,
+                                                        hard_limit);
+            if (obuflen == -1){
+                PyErr_SetString(PyExc_MemoryError,
+                                "Insufficient memory for buffer allocation");
+                goto error;
+            }
+            else if (obuflen == -2) {
+                break;
+            }
+            Py_BEGIN_ALLOW_THREADS
+            err = inflate(&self->zst, Z_SYNC_FLUSH);
+            Py_END_ALLOW_THREADS
+            switch (err) {
+            case Z_OK:            /* fall through */
+            case Z_BUF_ERROR:     /* fall through */
+            case Z_STREAM_END:
+                break;
+            default:
+                if (err == Z_NEED_DICT) {
+                    goto error;
+                }
+                else {
+                    break;
+                }
+            }
+        } while (self->zst.avail_out == 0);
+    } while(err != Z_STREAM_END && self->avail_in_real != 0);
+
+    if (err == Z_STREAM_END) {
+        self->eof = 1;
+        self->is_initialised = 0;
+        /* Unlike the Decompress object we call inflateEnd here as there are no
+           backwards compatibility issues */
+        err = inflateEnd(&self->zst);
+        if (err != Z_OK) {
+            zlib_error(state, self->zst, err, "while finishing decompression");
+            goto error;
+        }
+    } else if (err != Z_OK && err != Z_BUF_ERROR) {
+        zlib_error(state, self->zst, err, "while decompressing data");
+        goto error;
+    }
+
+    self->avail_in_real += self->zst.avail_in;
+
+    if (_PyBytes_Resize(&return_value, self->zst.next_out -
+                        (uint8_t *)PyBytes_AS_STRING(return_value)) != 0) {
+        goto error;
+    }
+
+    goto success;
+error:
+    Py_CLEAR(return_value);
+success:
+    return return_value;
+}
+
+
+static PyObject *
+decompress(ZlibDecompressor *self, uint8_t *data,
+           size_t len, Py_ssize_t max_length)
+{
+    bool input_buffer_in_use;
+    PyObject *result;
+
+    /* Prepend unconsumed input if necessary */
+    if (self->zst.next_in != NULL) {
+        size_t avail_now, avail_total;
+
+        /* Number of bytes we can append to input buffer */
+        avail_now = (self->input_buffer + self->input_buffer_size)
+            - (self->zst.next_in + self->avail_in_real);
+
+        /* Number of bytes we can append if we move existing
+           contents to beginning of buffer (overwriting
+           consumed input) */
+        avail_total = self->input_buffer_size - self->avail_in_real;
+
+        if (avail_total < len) {
+            size_t offset = self->zst.next_in - self->input_buffer;
+            uint8_t *tmp;
+            size_t new_size = self->input_buffer_size + len - avail_now;
+
+            /* Assign to temporary variable first, so we don't
+               lose address of allocated buffer if realloc fails */
+            tmp = PyMem_Realloc(self->input_buffer, new_size);
+            if (tmp == NULL) {
+                PyErr_SetNone(PyExc_MemoryError);
+                return NULL;
+            }
+            self->input_buffer = tmp;
+            self->input_buffer_size = new_size;
+
+            self->zst.next_in = self->input_buffer + offset;
+        }
+        else if (avail_now < len) {
+            memmove(self->input_buffer, self->zst.next_in,
+                    self->avail_in_real);
+            self->zst.next_in = self->input_buffer;
+        }
+        memcpy((void*)(self->zst.next_in + self->avail_in_real), data, len);
+        self->avail_in_real += len;
+        input_buffer_in_use = 1;
+    }
+    else {
+        self->zst.next_in = data;
+        self->avail_in_real = len;
+        input_buffer_in_use = 0;
+    }
+
+    result = decompress_buf(self, max_length);
+    if(result == NULL) {
+        self->zst.next_in = NULL;
+        return NULL;
+    }
+
+    if (self->eof) {
+        self->needs_input = 0;
+
+        if (self->avail_in_real > 0) {
+            PyObject *unused_data = PyBytes_FromStringAndSize(
+                (char *)self->zst.next_in, self->avail_in_real);
+            if (unused_data == NULL) {
+                goto error;
+            }
+            Py_XSETREF(self->unused_data, unused_data);
+        }
+    }
+    else if (self->avail_in_real == 0) {
+        self->zst.next_in = NULL;
+        self->needs_input = 1;
+    }
+    else {
+        self->needs_input = 0;
+
+        /* If we did not use the input buffer, we now have
+           to copy the tail from the caller's buffer into the
+           input buffer */
+        if (!input_buffer_in_use) {
+
+            /* Discard buffer if it's too small
+               (resizing it may needlessly copy the current contents) */
+            if (self->input_buffer != NULL &&
+                self->input_buffer_size < self->avail_in_real) {
+                PyMem_Free(self->input_buffer);
+                self->input_buffer = NULL;
+            }
+
+            /* Allocate if necessary */
+            if (self->input_buffer == NULL) {
+                self->input_buffer = PyMem_Malloc(self->avail_in_real);
+                if (self->input_buffer == NULL) {
+                    PyErr_SetNone(PyExc_MemoryError);
+                    goto error;
+                }
+                self->input_buffer_size = self->avail_in_real;
+            }
+
+            /* Copy tail */
+            memcpy(self->input_buffer, self->zst.next_in, self->avail_in_real);
+            self->zst.next_in = self->input_buffer;
+        }
+    }
+    return result;
+
+error:
+    Py_XDECREF(result);
+    return NULL;
+}
+
+/*[clinic input]
+zlib.ZlibDecompressor.decompress
+
+    data: Py_buffer
+    max_length: Py_ssize_t=-1
+
+Decompress *data*, returning uncompressed data as bytes.
+
+If *max_length* is nonnegative, returns at most *max_length* bytes of
+decompressed data. If this limit is reached and further output can be
+produced, *self.needs_input* will be set to ``False``. In this case, the next
+call to *decompress()* may provide *data* as b'' to obtain more of the output.
+
+If all of the input data was decompressed and returned (either because this
+was less than *max_length* bytes, or because *max_length* was negative),
+*self.needs_input* will be set to True.
+
+Attempting to decompress data after the end of stream is reached raises an
+EOFError.  Any data found after the end of the stream is ignored and saved in
+the unused_data attribute.
+[clinic start generated code]*/
+
+static PyObject *
+zlib_ZlibDecompressor_decompress_impl(ZlibDecompressor *self,
+                                      Py_buffer *data, Py_ssize_t max_length)
+/*[clinic end generated code: output=990d32787b775f85 input=0b29d99715250b96]*/
+
+{
+    PyObject *result = NULL;
+
+    ENTER_ZLIB(self);
+    if (self->eof) {
+        PyErr_SetString(PyExc_EOFError, "End of stream already reached");
+    }
+    else {
+        result = decompress(self, data->buf, data->len, max_length);
+    }
+    LEAVE_ZLIB(self);
+    return result;
+}
+
+PyDoc_STRVAR(ZlibDecompressor__new____doc__,
+"_ZlibDecompressor(wbits=15, zdict=b\'\')\n"
+"--\n"
+"\n"
+"Create a decompressor object for decompressing data incrementally.\n"
+"\n"
+"  wbits = 15\n"
+"  zdict\n"
+"     The predefined compression dictionary. This is a sequence of bytes\n"
+"     (such as a bytes object) containing subsequences that are expected\n"
+"     to occur frequently in the data that is to be compressed. Those\n"
+"     subsequences that are expected to be most common should come at the\n"
+"     end of the dictionary. This must be the same dictionary as used by the\n"
+"     compressor that produced the input data.\n"
+"\n");
+
+static PyObject *
+ZlibDecompressor__new__(PyTypeObject *cls,
+                        PyObject *args,
+                        PyObject *kwargs)
+{
+    static char *keywords[] = {"wbits", "zdict", NULL};
+    static const char * const format = "|iO:_ZlibDecompressor";
+    int wbits = MAX_WBITS;
+    PyObject *zdict = NULL;
+    zlibstate *state = PyType_GetModuleState(cls);
+
+    if (!PyArg_ParseTupleAndKeywords(
+            args, kwargs, format, keywords, &wbits, &zdict)) {
+        return NULL;
+    }
+    ZlibDecompressor *self = PyObject_New(ZlibDecompressor, cls);
+    if (self == NULL) {
+        return NULL;
+    }
+    self->eof = 0;
+    self->needs_input = 1;
+    self->avail_in_real = 0;
+    self->input_buffer = NULL;
+    self->input_buffer_size = 0;
+    self->zdict = Py_XNewRef(zdict);
+    self->zst.opaque = NULL;
+    self->zst.zalloc = PyZlib_Malloc;
+    self->zst.zfree = PyZlib_Free;
+    self->zst.next_in = NULL;
+    self->zst.avail_in = 0;
+    self->unused_data = PyBytes_FromStringAndSize(NULL, 0);
+    if (self->unused_data == NULL) {
+        Py_CLEAR(self);
+        return NULL;
+    }
+    self->lock = PyThread_allocate_lock();
+    if (self->lock == NULL) {
+        Py_DECREF(self);
+        PyErr_SetString(PyExc_MemoryError, "Unable to allocate lock");
+        return NULL;
+    }
+    int err = inflateInit2(&(self->zst), wbits);
+    switch (err) {
+        case Z_OK:
+        self->is_initialised = 1;
+        if (self->zdict != NULL && wbits < 0) {
+            if (set_inflate_zdict_ZlibDecompressor(state, self) < 0) {
+                Py_DECREF(self);
+                return NULL;
+            }
+        }
+        return (PyObject *)self;
+    case Z_STREAM_ERROR:
+        Py_DECREF(self);
+        PyErr_SetString(PyExc_ValueError, "Invalid initialization option");
+        return NULL;
+    case Z_MEM_ERROR:
+        Py_DECREF(self);
+        PyErr_SetString(PyExc_MemoryError,
+                        "Can't allocate memory for decompression object");
+        return NULL;
+    default:
+        zlib_error(state, self->zst, err, "while creating decompression object");
+        Py_DECREF(self);
+        return NULL;
+    }
 }
 
 #include "clinic/zlibmodule.c.h"
@@ -1284,13 +1799,38 @@ static PyMethodDef Decomp_methods[] =
     {NULL, NULL}
 };
 
+static PyMethodDef ZlibDecompressor_methods[] = {
+    ZLIB_ZLIBDECOMPRESSOR_DECOMPRESS_METHODDEF
+    {NULL}
+};
+
 #define COMP_OFF(x) offsetof(compobject, x)
 static PyMemberDef Decomp_members[] = {
-    {"unused_data",     T_OBJECT, COMP_OFF(unused_data), READONLY},
-    {"unconsumed_tail", T_OBJECT, COMP_OFF(unconsumed_tail), READONLY},
-    {"eof",             T_BOOL,   COMP_OFF(eof), READONLY},
+    {"unused_data",     _Py_T_OBJECT, COMP_OFF(unused_data), Py_READONLY},
+    {"unconsumed_tail", _Py_T_OBJECT, COMP_OFF(unconsumed_tail), Py_READONLY},
+    {"eof",             Py_T_BOOL,   COMP_OFF(eof), Py_READONLY},
     {NULL},
 };
+
+PyDoc_STRVAR(ZlibDecompressor_eof__doc__,
+"True if the end-of-stream marker has been reached.");
+
+PyDoc_STRVAR(ZlibDecompressor_unused_data__doc__,
+"Data found after the end of the compressed stream.");
+
+PyDoc_STRVAR(ZlibDecompressor_needs_input_doc,
+"True if more input is needed before more decompressed data can be produced.");
+
+static PyMemberDef ZlibDecompressor_members[] = {
+    {"eof", Py_T_BOOL, offsetof(ZlibDecompressor, eof),
+     Py_READONLY, ZlibDecompressor_eof__doc__},
+    {"unused_data", Py_T_OBJECT_EX, offsetof(ZlibDecompressor, unused_data),
+     Py_READONLY, ZlibDecompressor_unused_data__doc__},
+    {"needs_input", Py_T_BOOL, offsetof(ZlibDecompressor, needs_input), Py_READONLY,
+     ZlibDecompressor_needs_input_doc},
+    {NULL},
+};
+
 
 /*[clinic input]
 zlib.adler32
@@ -1332,7 +1872,7 @@ zlib_adler32_impl(PyObject *module, Py_buffer *data, unsigned int value)
 }
 
 /*[clinic input]
-zlib.crc32
+zlib.crc32 -> unsigned_int
 
     data: Py_buffer
     value: unsigned_int(bitwise=True) = 0
@@ -1344,12 +1884,10 @@ Compute a CRC-32 checksum of data.
 The returned checksum is an integer.
 [clinic start generated code]*/
 
-static PyObject *
+static unsigned int
 zlib_crc32_impl(PyObject *module, Py_buffer *data, unsigned int value)
-/*[clinic end generated code: output=63499fa20af7ea25 input=26c3ed430fa00b4c]*/
+/*[clinic end generated code: output=b217562e4fe6d6a6 input=1229cb2fb5ea948a]*/
 {
-    int signed_val;
-
     /* Releasing the GIL for very small buffers is inefficient
        and may lower performance */
     if (data->len > 1024*5) {
@@ -1358,18 +1896,26 @@ zlib_crc32_impl(PyObject *module, Py_buffer *data, unsigned int value)
 
         Py_BEGIN_ALLOW_THREADS
         /* Avoid truncation of length for very large buffers. crc32() takes
-           length as an unsigned int, which may be narrower than Py_ssize_t. */
-        while ((size_t)len > UINT_MAX) {
-            value = crc32(value, buf, UINT_MAX);
-            buf += (size_t) UINT_MAX;
-            len -= (size_t) UINT_MAX;
+           length as an unsigned int, which may be narrower than Py_ssize_t.
+           We further limit size due to bugs in Apple's macOS zlib.
+           See https://github.com/python/cpython/issues/105967.
+         */
+#define ZLIB_CRC_CHUNK_SIZE 0x40000000
+#if ZLIB_CRC_CHUNK_SIZE > INT_MAX
+# error "unsupported less than 32-bit platform?"
+#endif
+        while ((size_t)len > ZLIB_CRC_CHUNK_SIZE) {
+            value = crc32(value, buf, ZLIB_CRC_CHUNK_SIZE);
+            buf += (size_t) ZLIB_CRC_CHUNK_SIZE;
+            len -= (size_t) ZLIB_CRC_CHUNK_SIZE;
         }
-        signed_val = crc32(value, buf, (unsigned int)len);
+#undef ZLIB_CRC_CHUNK_SIZE
+        value = crc32(value, buf, (unsigned int)len);
         Py_END_ALLOW_THREADS
     } else {
-        signed_val = crc32(value, data->buf, (unsigned int)data->len);
+        value = crc32(value, data->buf, (unsigned int)data->len);
     }
-    return PyLong_FromUnsignedLong(signed_val & 0xffffffffU);
+    return value;
 }
 
 
@@ -1411,6 +1957,25 @@ static PyType_Spec Decomptype_spec = {
     .slots = Decomptype_slots,
 };
 
+static PyType_Slot ZlibDecompressor_type_slots[] = {
+    {Py_tp_dealloc, ZlibDecompressor_dealloc},
+    {Py_tp_members, ZlibDecompressor_members},
+    {Py_tp_new, ZlibDecompressor__new__},
+    {Py_tp_doc, (char *)ZlibDecompressor__new____doc__},
+    {Py_tp_methods, ZlibDecompressor_methods},
+    {0, 0},
+};
+
+static PyType_Spec ZlibDecompressor_type_spec = {
+    .name = "zlib._ZlibDecompressor",
+    .basicsize = sizeof(ZlibDecompressor),
+    // Calling PyType_GetModuleState() on a subclass is not safe.
+    // ZlibDecompressor_type_spec does not have Py_TPFLAGS_BASETYPE flag
+    // which prevents to create a subclass.
+    // So calling PyType_GetModuleState() in this file is always safe.
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE),
+    .slots = ZlibDecompressor_type_slots,
+};
 PyDoc_STRVAR(zlib_module_documentation,
 "The functions in this module allow compression and decompression using the\n"
 "zlib library, which is based on GNU zip.\n"
@@ -1420,7 +1985,7 @@ PyDoc_STRVAR(zlib_module_documentation,
 "compressobj([level[, ...]]) -- Return a compressor object.\n"
 "crc32(string[, start]) -- Compute a CRC-32 checksum.\n"
 "decompress(string,[wbits],[bufsize]) -- Decompresses a compressed string.\n"
-"decompressobj([wbits[, zdict]]]) -- Return a decompressor object.\n"
+"decompressobj([wbits[, zdict]]) -- Return a decompressor object.\n"
 "\n"
 "'wbits' is window buffer size and container format.\n"
 "Compressor objects support compress() and flush() methods; decompressor\n"
@@ -1432,6 +1997,7 @@ zlib_clear(PyObject *mod)
     zlibstate *state = get_zlib_state(mod);
     Py_CLEAR(state->Comptype);
     Py_CLEAR(state->Decomptype);
+    Py_CLEAR(state->ZlibDecompressorType);
     Py_CLEAR(state->ZlibError);
     return 0;
 }
@@ -1442,6 +2008,7 @@ zlib_traverse(PyObject *mod, visitproc visit, void *arg)
     zlibstate *state = get_zlib_state(mod);
     Py_VISIT(state->Comptype);
     Py_VISIT(state->Decomptype);
+    Py_VISIT(state->ZlibDecompressorType);
     Py_VISIT(state->ZlibError);
     return 0;
 }
@@ -1469,14 +2036,18 @@ zlib_exec(PyObject *mod)
         return -1;
     }
 
-    state->ZlibError = PyErr_NewException("zlib.error", NULL, NULL);
-    if (state->ZlibError == NULL) {
+    state->ZlibDecompressorType = (PyTypeObject *)PyType_FromModuleAndSpec(
+        mod, &ZlibDecompressor_type_spec, NULL);
+    if (state->ZlibDecompressorType == NULL) {
         return -1;
     }
 
-    Py_INCREF(state->ZlibError);
-    if (PyModule_AddObject(mod, "error", state->ZlibError) < 0) {
-        Py_DECREF(state->ZlibError);
+    state->ZlibError = PyErr_NewException("zlib.error", NULL, NULL);
+    if (PyModule_AddObjectRef(mod, "error", state->ZlibError) < 0) {
+        return -1;
+    }
+    if (PyModule_AddObjectRef(mod, "_ZlibDecompressor",
+                              (PyObject *)state->ZlibDecompressorType) < 0) {
         return -1;
     }
 
@@ -1518,26 +2089,14 @@ zlib_exec(PyObject *mod)
 #ifdef Z_TREES // 1.2.3.4, only for inflate
     ZLIB_ADD_INT_MACRO(Z_TREES);
 #endif
-    PyObject *ver = PyUnicode_FromString(ZLIB_VERSION);
-    if (ver == NULL) {
+    if (PyModule_Add(mod, "ZLIB_VERSION",
+                     PyUnicode_FromString(ZLIB_VERSION)) < 0) {
         return -1;
     }
-
-    if (PyModule_AddObject(mod, "ZLIB_VERSION", ver) < 0) {
-        Py_DECREF(ver);
+    if (PyModule_Add(mod, "ZLIB_RUNTIME_VERSION",
+                     PyUnicode_FromString(zlibVersion())) < 0) {
         return -1;
     }
-
-    ver = PyUnicode_FromString(zlibVersion());
-    if (ver == NULL) {
-        return -1;
-    }
-
-    if (PyModule_AddObject(mod, "ZLIB_RUNTIME_VERSION", ver) < 0) {
-        Py_DECREF(ver);
-        return -1;
-    }
-
     if (PyModule_AddStringConstant(mod, "__version__", "1.0") < 0) {
         return -1;
     }
@@ -1546,6 +2105,8 @@ zlib_exec(PyObject *mod)
 
 static PyModuleDef_Slot zlib_slots[] = {
     {Py_mod_exec, zlib_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
 };
 

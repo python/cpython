@@ -2,6 +2,12 @@
 preserve
 [clinic start generated code]*/
 
+#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
+#endif
+#include "pycore_modsupport.h"    // _PyArg_BadArgument()
+
 PyDoc_STRVAR(complex_conjugate__doc__,
 "conjugate($self, /)\n"
 "--\n"
@@ -59,14 +65,29 @@ complex___format__(PyComplexObject *self, PyObject *arg)
         _PyArg_BadArgument("__format__", "argument", "str", arg);
         goto exit;
     }
-    if (PyUnicode_READY(arg) == -1) {
-        goto exit;
-    }
     format_spec = arg;
     return_value = complex___format___impl(self, format_spec);
 
 exit:
     return return_value;
+}
+
+PyDoc_STRVAR(complex___complex____doc__,
+"__complex__($self, /)\n"
+"--\n"
+"\n"
+"Convert this value to exact type complex.");
+
+#define COMPLEX___COMPLEX___METHODDEF    \
+    {"__complex__", (PyCFunction)complex___complex__, METH_NOARGS, complex___complex____doc__},
+
+static PyObject *
+complex___complex___impl(PyComplexObject *self);
+
+static PyObject *
+complex___complex__(PyComplexObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return complex___complex___impl(self);
 }
 
 PyDoc_STRVAR(complex_new__doc__,
@@ -84,8 +105,31 @@ static PyObject *
 complex_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 2
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(real), &_Py_ID(imag), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
     static const char * const _keywords[] = {"real", "imag", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "complex", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "complex",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
     PyObject *argsbuf[2];
     PyObject * const *fastargs;
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
@@ -113,4 +157,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=056cac3226d94967 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=04e6261649967b30 input=a9049054013a1b77]*/

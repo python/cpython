@@ -4,6 +4,7 @@ import random
 import os
 import time
 import pickle
+import shlex
 import warnings
 import test.support
 
@@ -110,6 +111,21 @@ class TestBasicOps:
             choice([])
         self.assertEqual(choice([50]), 50)
         self.assertIn(choice([25, 75]), [25, 75])
+
+    def test_choice_with_numpy(self):
+        # Accommodation for NumPy arrays which have disabled __bool__().
+        # See: https://github.com/python/cpython/issues/100805
+        choice = self.gen.choice
+
+        class NA(list):
+            "Simulate numpy.array() behavior"
+            def __bool__(self):
+                raise RuntimeError
+
+        with self.assertRaises(IndexError):
+            choice(NA([]))
+        self.assertEqual(choice(NA([50])), 50)
+        self.assertIn(choice(NA([25, 75])), [25, 75])
 
     def test_sample(self):
         # For the entire allowable range of 0 <= k <= N, validate that
@@ -374,23 +390,6 @@ class TestBasicOps:
             restoredseq = [newgen.random() for i in range(10)]
             self.assertEqual(origseq, restoredseq)
 
-    @test.support.cpython_only
-    def test_bug_41052(self):
-        # _random.Random should not be allowed to serialization
-        import _random
-        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
-            r = _random.Random()
-            self.assertRaises(TypeError, pickle.dumps, r, proto)
-
-    @test.support.cpython_only
-    def test_bug_42008(self):
-        # _random.Random should call seed with first element of arg tuple
-        import _random
-        r1 = _random.Random()
-        r1.seed(8675309)
-        r2 = _random.Random(8675309)
-        self.assertEqual(r1.random(), r2.random())
-
     def test_bug_1727780(self):
         # verify that version-2-pickles can be loaded
         # fine, whether they are created on 32-bit or 64-bit
@@ -425,6 +424,10 @@ class TestBasicOps:
         self.assertRaises(TypeError, self.gen.randbytes, 1, 2)
         self.assertRaises(ValueError, self.gen.randbytes, -1)
         self.assertRaises(TypeError, self.gen.randbytes, 1.0)
+
+    def test_mu_sigma_default_args(self):
+        self.assertIsInstance(self.gen.normalvariate(), float)
+        self.assertIsInstance(self.gen.gauss(), float)
 
 
 try:
@@ -498,50 +501,44 @@ class SystemRandom_TestBasicOps(TestBasicOps, unittest.TestCase):
         self.assertEqual(rint, 0)
 
     def test_randrange_errors(self):
-        raises = partial(self.assertRaises, ValueError, self.gen.randrange)
-        # Empty range
-        raises(3, 3)
-        raises(-721)
-        raises(0, 100, -12)
-        # Non-integer start/stop
-        self.assertWarns(DeprecationWarning, raises, 3.14159)
-        self.assertWarns(DeprecationWarning, self.gen.randrange, 3.0)
-        self.assertWarns(DeprecationWarning, self.gen.randrange, Fraction(3, 1))
-        self.assertWarns(DeprecationWarning, raises, '3')
-        self.assertWarns(DeprecationWarning, raises, 0, 2.71828)
-        self.assertWarns(DeprecationWarning, self.gen.randrange, 0, 2.0)
-        self.assertWarns(DeprecationWarning, self.gen.randrange, 0, Fraction(2, 1))
-        self.assertWarns(DeprecationWarning, raises, 0, '2')
-        # Zero and non-integer step
-        raises(0, 42, 0)
-        self.assertWarns(DeprecationWarning, raises, 0, 42, 0.0)
-        self.assertWarns(DeprecationWarning, raises, 0, 0, 0.0)
-        self.assertWarns(DeprecationWarning, raises, 0, 42, 3.14159)
-        self.assertWarns(DeprecationWarning, self.gen.randrange, 0, 42, 3.0)
-        self.assertWarns(DeprecationWarning, self.gen.randrange, 0, 42, Fraction(3, 1))
-        self.assertWarns(DeprecationWarning, raises, 0, 42, '3')
-        self.assertWarns(DeprecationWarning, self.gen.randrange, 0, 42, 1.0)
-        self.assertWarns(DeprecationWarning, raises, 0, 0, 1.0)
+        raises_value_error = partial(self.assertRaises, ValueError, self.gen.randrange)
+        raises_type_error = partial(self.assertRaises, TypeError, self.gen.randrange)
 
-    def test_randrange_argument_handling(self):
-        randrange = self.gen.randrange
-        with self.assertWarns(DeprecationWarning):
-            randrange(10.0, 20, 2)
-        with self.assertWarns(DeprecationWarning):
-            randrange(10, 20.0, 2)
-        with self.assertWarns(DeprecationWarning):
-            randrange(10, 20, 1.0)
-        with self.assertWarns(DeprecationWarning):
-            randrange(10, 20, 2.0)
-        with self.assertWarns(DeprecationWarning):
-            with self.assertRaises(ValueError):
-                randrange(10.5)
-        with self.assertWarns(DeprecationWarning):
-            with self.assertRaises(ValueError):
-                randrange(10, 20.5)
-        with self.assertWarns(DeprecationWarning):
-            with self.assertRaises(ValueError):
-                randrange(10, 20, 1.5)
+        # Empty range
+        raises_value_error(3, 3)
+        raises_value_error(-721)
+        raises_value_error(0, 100, -12)
+
+        # Zero step
+        raises_value_error(0, 42, 0)
+        raises_type_error(0, 42, 0.0)
+        raises_type_error(0, 0, 0.0)
+
+        # Non-integer stop
+        raises_type_error(3.14159)
+        raises_type_error(3.0)
+        raises_type_error(Fraction(3, 1))
+        raises_type_error('3')
+        raises_type_error(0, 2.71827)
+        raises_type_error(0, 2.0)
+        raises_type_error(0, Fraction(2, 1))
+        raises_type_error(0, '2')
+        raises_type_error(0, 2.71827, 2)
+
+        # Non-integer start
+        raises_type_error(2.71827, 5)
+        raises_type_error(2.0, 5)
+        raises_type_error(Fraction(2, 1), 5)
+        raises_type_error('2', 5)
+        raises_type_error(2.71827, 5, 2)
+
+        # Non-integer step
+        raises_type_error(0, 42, 3.14159)
+        raises_type_error(0, 42, 3.0)
+        raises_type_error(0, 42, Fraction(3, 1))
+        raises_type_error(0, 42, '3')
+        raises_type_error(0, 42, 1.0)
+        raises_type_error(0, 0, 1.0)
 
     def test_randrange_step(self):
         # bpo-42772: When stop is None, the step argument was being ignored.
@@ -571,6 +568,25 @@ class SystemRandom_TestBasicOps(TestBasicOps, unittest.TestCase):
             k = int(1.00001 + _log(n, 2))
             self.assertEqual(k, numbits)        # note the stronger assertion
             self.assertTrue(2**k > n > 2**(k-1))   # note the stronger assertion
+
+
+class TestRawMersenneTwister(unittest.TestCase):
+    @test.support.cpython_only
+    def test_bug_41052(self):
+        # _random.Random should not be allowed to serialization
+        import _random
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            r = _random.Random()
+            self.assertRaises(TypeError, pickle.dumps, r, proto)
+
+    @test.support.cpython_only
+    def test_bug_42008(self):
+        # _random.Random should call seed with first element of arg tuple
+        import _random
+        r1 = _random.Random()
+        r1.seed(8675309)
+        r2 = _random.Random(8675309)
+        self.assertEqual(r1.random(), r2.random())
 
 
 class MersenneTwister_TestBasicOps(TestBasicOps, unittest.TestCase):
@@ -820,10 +836,6 @@ class MersenneTwister_TestBasicOps(TestBasicOps, unittest.TestCase):
                 maxsize+1, maxsize=maxsize
             )
         self.gen._randbelow_without_getrandbits(5640, maxsize=maxsize)
-        # issue 33203: test that _randbelow returns zero on
-        # n == 0 also in its getrandbits-independent branch.
-        x = self.gen._randbelow_without_getrandbits(0, maxsize=maxsize)
-        self.assertEqual(x, 0)
 
         # This might be going too far to test a single line, but because of our
         # noble aim of achieving 100% test coverage we need to write a case in
@@ -992,6 +1004,7 @@ class TestDistributions(unittest.TestCase):
         g.random = x[:].pop; g.uniform(1,10)
         g.random = x[:].pop; g.paretovariate(1.0)
         g.random = x[:].pop; g.expovariate(1.0)
+        g.random = x[:].pop; g.expovariate()
         g.random = x[:].pop; g.weibullvariate(1.0, 1.0)
         g.random = x[:].pop; g.vonmisesvariate(1.0, 1.0)
         g.random = x[:].pop; g.normalvariate(0.0, 1.0)
@@ -1049,12 +1062,72 @@ class TestDistributions(unittest.TestCase):
                 (g.lognormvariate, (0.0, 0.0), 1.0),
                 (g.lognormvariate, (-float('inf'), 0.0), 0.0),
                 (g.normalvariate, (10.0, 0.0), 10.0),
+                (g.binomialvariate, (0, 0.5), 0),
+                (g.binomialvariate, (10, 0.0), 0),
+                (g.binomialvariate, (10, 1.0), 10),
                 (g.paretovariate, (float('inf'),), 1.0),
                 (g.weibullvariate, (10.0, float('inf')), 10.0),
                 (g.weibullvariate, (0.0, 10.0), 0.0),
             ]:
             for i in range(N):
                 self.assertEqual(variate(*args), expected)
+
+    def test_binomialvariate(self):
+        B = random.binomialvariate
+
+        # Cover all the code paths
+        with self.assertRaises(ValueError):
+            B(n=-1)                            # Negative n
+        with self.assertRaises(ValueError):
+            B(n=1, p=-0.5)                     # Negative p
+        with self.assertRaises(ValueError):
+            B(n=1, p=1.5)                      # p > 1.0
+        self.assertEqual(B(0, 0.5), 0)         # n == 0
+        self.assertEqual(B(10, 0.0), 0)        # p == 0.0
+        self.assertEqual(B(10, 1.0), 10)       # p == 1.0
+        self.assertTrue(B(1, 0.3) in {0, 1})   # n == 1 fast path
+        self.assertTrue(B(1, 0.9) in {0, 1})   # n == 1 fast path
+        self.assertTrue(B(1, 0.0) in {0})      # n == 1 fast path
+        self.assertTrue(B(1, 1.0) in {1})      # n == 1 fast path
+
+        # BG method very small p
+        self.assertEqual(B(5, 1e-18), 0)
+
+        # BG method p <= 0.5 and n*p=1.25
+        self.assertTrue(B(5, 0.25) in set(range(6)))
+
+        # BG method p >= 0.5 and n*(1-p)=1.25
+        self.assertTrue(B(5, 0.75) in set(range(6)))
+
+        # BTRS method p <= 0.5 and n*p=25
+        self.assertTrue(B(100, 0.25) in set(range(101)))
+
+        # BTRS method p > 0.5 and n*(1-p)=25
+        self.assertTrue(B(100, 0.75) in set(range(101)))
+
+        # Statistical tests chosen such that they are
+        # exceedingly unlikely to ever fail for correct code.
+
+        # BG code path
+        # Expected dist: [31641, 42188, 21094, 4688, 391]
+        c = Counter(B(4, 0.25) for i in range(100_000))
+        self.assertTrue(29_641 <= c[0] <= 33_641, c)
+        self.assertTrue(40_188 <= c[1] <= 44_188)
+        self.assertTrue(19_094 <= c[2] <= 23_094)
+        self.assertTrue(2_688  <= c[3] <= 6_688)
+        self.assertEqual(set(c), {0, 1, 2, 3, 4})
+
+        # BTRS code path
+        # Sum of c[20], c[21], c[22], c[23], c[24] expected to be 36,214
+        c = Counter(B(100, 0.25) for i in range(100_000))
+        self.assertTrue(34_214 <= c[20]+c[21]+c[22]+c[23]+c[24] <= 38_214)
+        self.assertTrue(set(c) <= set(range(101)))
+        self.assertEqual(c.total(), 100_000)
+
+        # Demonstrate the BTRS works for huge values of n
+        self.assertTrue(19_000_000 <= B(100_000_000, 0.2) <= 21_000_000)
+        self.assertTrue(89_000_000 <= B(100_000_000, 0.9) <= 91_000_000)
+
 
     def test_von_mises_range(self):
         # Issue 17149: von mises variates were not consistently in the
@@ -1301,7 +1374,7 @@ class TestModule(unittest.TestCase):
         # tests validity but not completeness of the __all__ list
         self.assertTrue(set(random.__all__) <= set(dir(random)))
 
-    @unittest.skipUnless(hasattr(os, "fork"), "fork() required")
+    @test.support.requires_fork()
     def test_after_fork(self):
         # Test the global Random instance gets reseeded in child
         r, w = os.pipe()
@@ -1323,6 +1396,48 @@ class TestModule(unittest.TestCase):
             self.assertNotEqual(val, child_val)
 
             support.wait_process(pid, exitcode=0)
+
+
+class CommandLineTest(unittest.TestCase):
+    def test_parse_args(self):
+        args, help_text = random._parse_args(shlex.split("--choice a b c"))
+        self.assertEqual(args.choice, ["a", "b", "c"])
+        self.assertTrue(help_text.startswith("usage: "))
+
+        args, help_text = random._parse_args(shlex.split("--integer 5"))
+        self.assertEqual(args.integer, 5)
+        self.assertTrue(help_text.startswith("usage: "))
+
+        args, help_text = random._parse_args(shlex.split("--float 2.5"))
+        self.assertEqual(args.float, 2.5)
+        self.assertTrue(help_text.startswith("usage: "))
+
+        args, help_text = random._parse_args(shlex.split("a b c"))
+        self.assertEqual(args.input, ["a", "b", "c"])
+        self.assertTrue(help_text.startswith("usage: "))
+
+        args, help_text = random._parse_args(shlex.split("5"))
+        self.assertEqual(args.input, ["5"])
+        self.assertTrue(help_text.startswith("usage: "))
+
+        args, help_text = random._parse_args(shlex.split("2.5"))
+        self.assertEqual(args.input, ["2.5"])
+        self.assertTrue(help_text.startswith("usage: "))
+
+    def test_main(self):
+        for command, expected in [
+            ("--choice a b c", "b"),
+            ('"a b c"', "b"),
+            ("a b c", "b"),
+            ("--choice 'a a' 'b b' 'c c'", "b b"),
+            ("'a a' 'b b' 'c c'", "b b"),
+            ("--integer 5", 4),
+            ("5", 4),
+            ("--float 2.5", 2.266632777287572),
+            ("2.5", 2.266632777287572),
+        ]:
+            random.seed(0)
+            self.assertEqual(random.main(shlex.split(command)), expected)
 
 
 if __name__ == "__main__":

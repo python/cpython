@@ -6,10 +6,8 @@ import re
 import signal
 import subprocess
 import sys
-import sysconfig
 from test import support
-from test.support import os_helper
-from test.support import script_helper, is_android
+from test.support import os_helper, script_helper, is_android, MS_WINDOWS
 import tempfile
 import unittest
 from textwrap import dedent
@@ -19,18 +17,10 @@ try:
 except ImportError:
     _testcapi = None
 
+if not support.has_subprocess_support:
+    raise unittest.SkipTest("test module requires subprocess")
+
 TIMEOUT = 0.5
-MS_WINDOWS = (os.name == 'nt')
-_cflags = sysconfig.get_config_var('CFLAGS') or ''
-_config_args = sysconfig.get_config_var('CONFIG_ARGS') or ''
-UB_SANITIZER = (
-    '-fsanitize=undefined' in _cflags or
-    '--with-undefined-behavior-sanitizer' in _config_args
-)
-MEMORY_SANITIZER = (
-    '-fsanitize=memory' in _cflags or
-    '--with-memory-sanitizer' in _config_args
-)
 
 
 def expected_traceback(lineno1, lineno2, header, min_count=1):
@@ -43,7 +33,7 @@ def expected_traceback(lineno1, lineno2, header, min_count=1):
         return '^' + regex + '$'
 
 def skip_segfault_on_android(test):
-    # Issue #32138: Raising SIGSEGV on Android may not cause a crash.
+    # gh-76319: Raising SIGSEGV on Android may not cause a crash.
     return unittest.skipIf(is_android,
                            'raising SIGSEGV on Android is unreliable')(test)
 
@@ -56,6 +46,7 @@ def temporary_filename():
         os_helper.unlink(filename)
 
 class FaultHandlerTests(unittest.TestCase):
+
     def get_output(self, code, filename=None, fd=None):
         """
         Run the specified code in Python (in a new child process) and read the
@@ -70,8 +61,16 @@ class FaultHandlerTests(unittest.TestCase):
         pass_fds = []
         if fd is not None:
             pass_fds.append(fd)
+        env = dict(os.environ)
+
+        # Sanitizers must not handle SIGSEGV (ex: for test_enable_fd())
+        option = 'handle_segv=0'
+        support.set_sanitizer_env_var(env, option)
+
         with support.SuppressCrashReport():
-            process = script_helper.spawn_python('-c', code, pass_fds=pass_fds)
+            process = script_helper.spawn_python('-c', code,
+                                                 pass_fds=pass_fds,
+                                                 env=env)
             with process:
                 output, stderr = process.communicate()
                 exitcode = process.wait()
@@ -89,10 +88,12 @@ class FaultHandlerTests(unittest.TestCase):
             output = output.decode('ascii', 'backslashreplace')
         return output.splitlines(), exitcode
 
-    def check_error(self, code, line_number, fatal_error, *,
+    def check_error(self, code, lineno, fatal_error, *,
                     filename=None, all_threads=True, other_regex=None,
                     fd=None, know_current_thread=True,
-                    py_fatal_error=False):
+                    py_fatal_error=False,
+                    garbage_collecting=False,
+                    function='<module>'):
         """
         Check that the fault handler for fatal errors is enabled and check the
         traceback from the child process output.
@@ -106,20 +107,21 @@ class FaultHandlerTests(unittest.TestCase):
                 header = 'Thread 0x[0-9a-f]+'
         else:
             header = 'Stack'
-        regex = r"""
-            (?m)^{fatal_error}
-
-            {header} \(most recent call first\):
-              File "<string>", line {lineno} in <module>
-            """
+        regex = [f'^{fatal_error}']
         if py_fatal_error:
-            fatal_error += "\nPython runtime state: initialized"
-        regex = dedent(regex).format(
-            lineno=line_number,
-            fatal_error=fatal_error,
-            header=header).strip()
+            regex.append("Python runtime state: initialized")
+        regex.append('')
+        regex.append(fr'{header} \(most recent call first\):')
+        if garbage_collecting:
+            regex.append('  Garbage-collecting')
+        regex.append(fr'  File "<string>", line {lineno} in {function}')
+        regex = '\n'.join(regex)
+
         if other_regex:
-            regex += '|' + other_regex
+            regex = f'(?:{regex}|{other_regex})'
+
+        # Enable MULTILINE flag
+        regex = f'(?m){regex}'
         output, exitcode = self.get_output(code, filename=filename, fd=fd)
         output = '\n'.join(output)
         self.assertRegex(output, regex)
@@ -167,6 +169,42 @@ class FaultHandlerTests(unittest.TestCase):
             """,
             3,
             'Segmentation fault')
+
+    @skip_segfault_on_android
+    def test_gc(self):
+        # bpo-44466: Detect if the GC is running
+        self.check_fatal_error("""
+            import faulthandler
+            import gc
+            import sys
+
+            faulthandler.enable()
+
+            class RefCycle:
+                def __del__(self):
+                    faulthandler._sigsegv()
+
+            # create a reference cycle which triggers a fatal
+            # error in a destructor
+            a = RefCycle()
+            b = RefCycle()
+            a.b = b
+            b.a = a
+
+            # Delete the objects, not the cycle
+            a = None
+            b = None
+
+            # Break the reference cycle: call __del__()
+            gc.collect()
+
+            # Should not reach this line
+            print("exit", file=sys.stderr)
+            """,
+            9,
+            'Segmentation fault',
+            function='__del__',
+            garbage_collecting=True)
 
     def test_fatal_error_c_thread(self):
         self.check_fatal_error("""
@@ -228,6 +266,7 @@ class FaultHandlerTests(unittest.TestCase):
             5,
             'Illegal instruction')
 
+    @unittest.skipIf(_testcapi is None, 'need _testcapi')
     def check_fatal_error_func(self, release_gil):
         # Test that Py_FatalError() dumps a traceback
         with support.SuppressCrashReport():
@@ -237,7 +276,7 @@ class FaultHandlerTests(unittest.TestCase):
                 """,
                 2,
                 'xyz',
-                func='test_fatal_error',
+                func='_testcapi_fatal_error_impl',
                 py_fatal_error=True)
 
     def test_fatal_error(self):
@@ -271,8 +310,6 @@ class FaultHandlerTests(unittest.TestCase):
             3,
             'Segmentation fault')
 
-    @unittest.skipIf(UB_SANITIZER or MEMORY_SANITIZER,
-                     "sanitizer builds change crashing process output.")
     @skip_segfault_on_android
     def test_enable_file(self):
         with temporary_filename() as filename:
@@ -288,8 +325,6 @@ class FaultHandlerTests(unittest.TestCase):
 
     @unittest.skipIf(sys.platform == "win32",
                      "subprocess doesn't support pass_fds on Windows")
-    @unittest.skipIf(UB_SANITIZER or MEMORY_SANITIZER,
-                     "sanitizer builds change crashing process output.")
     @skip_segfault_on_android
     def test_enable_fd(self):
         with tempfile.TemporaryFile('wb+') as fp:
@@ -372,6 +407,7 @@ class FaultHandlerTests(unittest.TestCase):
         finally:
             sys.stderr = orig_stderr
 
+    @support.requires_subprocess()
     def test_disabled_by_default(self):
         # By default, the module should be disabled
         code = "import faulthandler; print(faulthandler.is_enabled())"
@@ -380,6 +416,7 @@ class FaultHandlerTests(unittest.TestCase):
         output = subprocess.check_output(args)
         self.assertEqual(output.rstrip(), b"False")
 
+    @support.requires_subprocess()
     def test_sys_xoptions(self):
         # Test python -X faulthandler
         code = "import faulthandler; print(faulthandler.is_enabled())"
@@ -392,6 +429,7 @@ class FaultHandlerTests(unittest.TestCase):
         output = subprocess.check_output(args, env=env)
         self.assertEqual(output.rstrip(), b"True")
 
+    @support.requires_subprocess()
     def test_env_var(self):
         # empty env var
         code = "import faulthandler; print(faulthandler.is_enabled())"
@@ -537,10 +575,12 @@ class FaultHandlerTests(unittest.TestCase):
             lineno = 8
         else:
             lineno = 10
+        # When the traceback is dumped, the waiter thread may be in the
+        # `self.running.set()` call or in `self.stop.wait()`.
         regex = r"""
             ^Thread 0x[0-9a-f]+ \(most recent call first\):
             (?:  File ".*threading.py", line [0-9]+ in [_a-z]+
-            ){{1,3}}  File "<string>", line 23 in run
+            ){{1,3}}  File "<string>", line (?:22|23) in run
               File ".*threading.py", line [0-9]+ in _bootstrap_inner
               File ".*threading.py", line [0-9]+ in _bootstrap
 
@@ -640,6 +680,7 @@ class FaultHandlerTests(unittest.TestCase):
         with tempfile.TemporaryFile('wb+') as fp:
             self.check_dump_traceback_later(fd=fp.fileno())
 
+    @support.requires_resource('walltime')
     def test_dump_traceback_later_twice(self):
         self.check_dump_traceback_later(loops=2)
 

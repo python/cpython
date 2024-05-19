@@ -1,4 +1,3 @@
-
 /* Use this file as a template to start implementing a module that
    also declares object types. All occurrences of 'Xxo' should be changed
    to something reasonable for your objects. After that, all other
@@ -20,6 +19,7 @@
           def __init__(self):
               # In the C class, "_x_attr" is not accessible from Python code
               self._x_attr = {}
+              self._x_exports = 0
 
           def __getattr__(self, name):
               return self._x_attr[name]
@@ -29,6 +29,13 @@
 
           def __delattr__(self, name):
               del self._x_attr[name]
+
+          @property
+          def x_exports(self):
+              """Return the number of times an internal buffer is exported."""
+              # Each Xxo instance has a 10-byte buffer that can be
+              # accessed via the buffer interface (e.g. `memoryview`).
+              return self._x_exports
 
           def demo(o, /):
               if isinstance(o, str):
@@ -55,9 +62,16 @@
           pass
    */
 
-#define Py_LIMITED_API 0x030a0000
+// Need limited C API version 3.13 for Py_mod_gil
+#include "pyconfig.h"   // Py_GIL_DISABLED
+#ifndef Py_GIL_DISABLED
+#  define Py_LIMITED_API 0x030d0000
+#endif
 
 #include "Python.h"
+#include <string.h>
+
+#define BUFSIZE 10
 
 // Module state
 typedef struct {
@@ -71,7 +85,9 @@ typedef struct {
 // Instance state
 typedef struct {
     PyObject_HEAD
-    PyObject            *x_attr;        /* Attributes dictionary */
+    PyObject            *x_attr;           /* Attributes dictionary */
+    char                x_buffer[BUFSIZE]; /* buffer for Py_buffer */
+    Py_ssize_t          x_exports;         /* how many buffer are exported */
 } XxoObject;
 
 // XXX: no good way to do this yet
@@ -90,31 +106,43 @@ newXxoObject(PyObject *module)
         return NULL;
     }
     self->x_attr = NULL;
+    memset(self->x_buffer, 0, BUFSIZE);
+    self->x_exports = 0;
     return self;
 }
 
 /* Xxo finalization */
 
 static int
-Xxo_traverse(XxoObject *self, visitproc visit, void *arg)
+Xxo_traverse(PyObject *self_obj, visitproc visit, void *arg)
 {
     // Visit the type
-    Py_VISIT(Py_TYPE(self));
+    Py_VISIT(Py_TYPE(self_obj));
 
     // Visit the attribute dict
+    XxoObject *self = (XxoObject *)self_obj;
     Py_VISIT(self->x_attr);
     return 0;
 }
 
-static void
-Xxo_finalize(XxoObject *self)
+static int
+Xxo_clear(XxoObject *self)
 {
+    Py_CLEAR(self->x_attr);
+    return 0;
+}
+
+static void
+Xxo_finalize(PyObject *self_obj)
+{
+    XxoObject *self = (XxoObject *)self_obj;
     Py_CLEAR(self->x_attr);
 }
 
 static void
-Xxo_dealloc(XxoObject *self)
+Xxo_dealloc(PyObject *self)
 {
+    PyObject_GC_UnTrack(self);
     Xxo_finalize(self);
     PyTypeObject *tp = Py_TYPE(self);
     freefunc free = PyType_GetSlot(tp, Py_tp_free);
@@ -131,8 +159,7 @@ Xxo_getattro(XxoObject *self, PyObject *name)
     if (self->x_attr != NULL) {
         PyObject *v = PyDict_GetItemWithError(self->x_attr, name);
         if (v != NULL) {
-            Py_INCREF(v);
-            return v;
+            return Py_NewRef(v);
         }
         else if (PyErr_Occurred()) {
             return NULL;
@@ -186,39 +213,72 @@ Xxo_demo(XxoObject *self, PyTypeObject *defining_class,
 
     /* Test if the argument is "str" */
     if (PyUnicode_Check(o)) {
-        Py_INCREF(o);
-        return o;
+        return Py_NewRef(o);
     }
 
     /* test if the argument is of the Xxo class */
     if (PyObject_TypeCheck(o, defining_class)) {
-        Py_INCREF(o);
-        return o;
+        return Py_NewRef(o);
     }
 
-    Py_INCREF(Py_None);
-    return Py_None;
+    return Py_NewRef(Py_None);
 }
 
 static PyMethodDef Xxo_methods[] = {
-    {"demo",            (PyCFunction)(void(*)(void))Xxo_demo,
+    {"demo",            _PyCFunction_CAST(Xxo_demo),
      METH_METHOD | METH_FASTCALL | METH_KEYWORDS, PyDoc_STR("demo(o) -> o")},
     {NULL,              NULL}           /* sentinel */
 };
+
+/* Xxo buffer interface */
+
+static int
+Xxo_getbuffer(XxoObject *self, Py_buffer *view, int flags)
+{
+    int res = PyBuffer_FillInfo(view, (PyObject*)self,
+                               (void *)self->x_buffer, BUFSIZE,
+                               0, flags);
+    if (res == 0) {
+        self->x_exports++;
+    }
+    return res;
+}
+
+static void
+Xxo_releasebuffer(XxoObject *self, Py_buffer *view)
+{
+    self->x_exports--;
+}
+
+static PyObject *
+Xxo_get_x_exports(XxoObject *self, void *c)
+{
+    return PyLong_FromSsize_t(self->x_exports);
+}
 
 /* Xxo type definition */
 
 PyDoc_STRVAR(Xxo_doc,
              "A class that explicitly stores attributes in an internal dict");
 
+static PyGetSetDef Xxo_getsetlist[] = {
+    {"x_exports", (getter) Xxo_get_x_exports, NULL, NULL},
+    {NULL},
+};
+
+
 static PyType_Slot Xxo_Type_slots[] = {
     {Py_tp_doc, (char *)Xxo_doc},
     {Py_tp_traverse, Xxo_traverse},
+    {Py_tp_clear, Xxo_clear},
     {Py_tp_finalize, Xxo_finalize},
     {Py_tp_dealloc, Xxo_dealloc},
     {Py_tp_getattro, Xxo_getattro},
     {Py_tp_setattro, Xxo_setattro},
     {Py_tp_methods, Xxo_methods},
+    {Py_bf_getbuffer, Xxo_getbuffer},
+    {Py_bf_releasebuffer, Xxo_releasebuffer},
+    {Py_tp_getset, Xxo_getsetlist},
     {0, 0},  /* sentinel */
 };
 
@@ -334,6 +394,8 @@ xx_modexec(PyObject *m)
 
 static PyModuleDef_Slot xx_slots[] = {
     {Py_mod_exec, xx_modexec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
 };
 

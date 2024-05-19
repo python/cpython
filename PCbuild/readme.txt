@@ -1,7 +1,7 @@
 Quick Start Guide
 -----------------
 
-1.  Install Microsoft Visual Studio 2017 with Python workload and
+1.  Install Microsoft Visual Studio 2017 or later with Python workload and
     Python native development component.
 1a. Optionally install Python 3.6 or later.  If not installed,
     get_externals.bat (via build.bat) will download and use Python via
@@ -13,12 +13,10 @@ Quick Start Guide
 Building Python using Microsoft Visual C++
 ------------------------------------------
 
-This directory is used to build CPython for Microsoft Windows NT version
-6.0 or higher (Windows Vista, Windows Server 2008, or later) on 32 and 64
+This directory is used to build CPython for Microsoft Windows on 32- and 64-
 bit platforms.  Using this directory requires an installation of
-Microsoft Visual Studio 2017 (MSVC 14.1) with the *Python workload* and
-its optional *Python native development* component selected. (For
-command-line builds, Visual Studio 2015 may also be used.)
+Microsoft Visual Studio (MSVC) with the *Python workload* and
+its optional *Python native development* component selected.
 
 Building from the command line is recommended in order to obtain any
 external dependencies. To build, simply run the "build.bat" script without
@@ -105,7 +103,7 @@ pythonw
     Prompt window
 pylauncher
     py.exe, the Python Launcher for Windows, see
-        http://docs.python.org/3/using/windows.html#launcher
+        https://docs.python.org/3/using/windows.html#launcher
 pywlauncher
     pyw.exe, a variant of py.exe that doesn't open a Command Prompt
     window
@@ -115,9 +113,10 @@ _testembed
 
 These are miscellaneous sub-projects that don't really fit the other
 categories:
-_freeze_importlib
-    _freeze_importlib.exe, used to regenerate Python\importlib.h after
-    changes have been made to Lib\importlib\_bootstrap.py
+_freeze_module
+    _freeze_module.exe, used to regenerate frozen modules in Python
+    after changes have been made to the corresponding source files
+    (e.g. Lib\importlib\_bootstrap.py).
 pyshellext
     pyshellext.dll, the shell extension deployed with the launcher
 python3dll
@@ -132,27 +131,31 @@ xxlimited_35
 The following sub-projects are for individual modules of the standard
 library which are implemented in C; each one builds a DLL (renamed to
 .pyd) of the same name as the project:
-_asyncio
-_ctypes
-_ctypes_test
-_zoneinfo
-_decimal
-_elementtree
-_hashlib
-_msi
-_multiprocessing
-_overlapped
-_socket
-_testbuffer
-_testcapi
-_testconsole
-_testimportmultiple
-_testmultiphase
-_tkinter
-pyexpat
-select
-unicodedata
-winsound
+ * _asyncio
+ * _ctypes
+ * _ctypes_test
+ * _zoneinfo
+ * _decimal
+ * _elementtree
+ * _hashlib
+ * _multiprocessing
+ * _overlapped
+ * _socket
+ * _testbuffer
+ * _testcapi
+ * _testlimitedcapi
+ * _testinternalcapi
+ * _testclinic
+ * _testclinic_limited
+ * _testconsole
+ * _testimportmultiple
+ * _testmultiphase
+ * _testsinglephase
+ * _tkinter
+ * pyexpat
+ * select
+ * unicodedata
+ * winsound
 
 The following Python-controlled sub-projects wrap external projects.
 Note that these external libraries are not necessary for a working
@@ -161,20 +164,20 @@ interpreter, but they do implement several major features.  See the
 about getting the source for building these libraries.  The sub-projects
 are:
 _bz2
-    Python wrapper for version 1.0.6 of the libbzip2 compression library
+    Python wrapper for version 1.0.8 of the libbzip2 compression library
     Homepage:
         http://www.bzip.org/
 _lzma
     Python wrapper for version 5.2.2 of the liblzma compression library
     Homepage:
-        http://tukaani.org/xz/
+        https://tukaani.org/xz/
 _ssl
-    Python wrapper for version 1.1.1k of the OpenSSL secure sockets
+    Python wrapper for version 3.0 of the OpenSSL secure sockets
     library, which is downloaded from our binaries repository at
     https://github.com/python/cpython-bin-deps.
 
     Homepage:
-        http://www.openssl.org/
+        https://www.openssl.org/
 
     Building OpenSSL requires Perl on your path, and can be performed by
     running PCbuild\prepare_ssl.bat. This will retrieve the version of
@@ -188,16 +191,16 @@ _ssl
     again when building.
 
 _sqlite3
-    Wraps SQLite 3.35.5, which is itself built by sqlite3.vcxproj
+    Wraps SQLite 3.45.3, which is itself built by sqlite3.vcxproj
     Homepage:
-        http://www.sqlite.org/
+        https://www.sqlite.org/
 _tkinter
     Wraps version 8.6.6 of the Tk windowing system, which is downloaded
     from our binaries repository at
     https://github.com/python/cpython-bin-deps.
 
     Homepage:
-        http://www.tcl.tk/
+        https://www.tcl.tk/
 
     Building Tcl and Tk can be performed by running
     PCbuild\prepare_tcltk.bat. This will retrieve the version of the
@@ -225,12 +228,18 @@ directory.  This script extracts all the external sub-projects from
 and
     https://github.com/python/cpython-bin-deps
 via a Python script called "get_external.py", located in this directory.
-If Python 3.6 or later is not available via the "py.exe" launcher, the
-path or command to use for Python can be provided in the PYTHON_FOR_BUILD
-environment variable, or get_externals.bat will download the latest
-version of NuGet and use it to download the latest "pythonx86" package
-for use with get_external.py.  Everything downloaded by these scripts is
-stored in ..\externals (relative to this directory).
+Everything downloaded by these scripts is stored in ..\externals
+(relative to this directory), or the path specified by the EXTERNALS_DIR
+environment variable.
+
+The path or command to use for Python can be provided with the
+PYTHON_FOR_BUILD environment variable. If this is not set, an active
+virtual environment will be used. If none is active, and HOST_PYTHON is
+set to a recent enough version or "py.exe" is able to find a recent
+enough version, those will be used. If all else fails, a copy of Python
+will be downloaded from NuGet and extracted to the externals directory.
+This will then be used for later builds (see PCbuild/find_python.bat
+for the full logic).
 
 It is also possible to download sources from each project's homepage,
 though you may have to change folder names or pass the names to MSBuild
@@ -251,12 +260,14 @@ against a profiling library and contain extra debug information. The
 PGUpdate configuration takes the profiling data and generates optimized
 binaries.
 
-The build_pgo.bat script automates the creation of optimized binaries.
-It creates the PGI files, runs the unit test suite or PyBench with the
-PGI python, and finally creates the optimized files.
+The build.bat script has an argument `--pgo` that automate the creation
+of optimized binaries.
+It creates the PGI files, runs the unit test suite with the PGI python,
+and finally creates the optimized files.
+You can customize the job for profiling with `--pgo-job <job>` option.
 
 See
-    http://msdn.microsoft.com/en-us/library/e7k32f4k(VS.140).aspx
+    https://docs.microsoft.com/en-us/cpp/build/profile-guided-optimizations
 for more on this topic.
 
 
@@ -283,10 +294,40 @@ The property files used are:
  * python (versions, directories and build names)
  * pyproject (base settings for all projects)
  * openssl (used by projects dependent upon OpenSSL)
- * tcltk (used by _tkinter, tcl, tk and tix projects)
+ * tcltk (used by _tkinter, tcl, and tk projects)
 
 The pyproject property file defines all of the build settings for each
 project, with some projects overriding certain specific values. The GUI
 doesn't always reflect the correct settings and may confuse the user
 with false information, especially for settings that automatically adapt
 for different configurations.
+
+Add a new project
+-----------------
+
+For example, add a new _testclinic_limited project to build a new
+_testclinic_limited extension, the file Modules/_testclinic_limited.c:
+
+* In PCbuild/, copy _testclinic.vcxproj to _testclinic_limited.vcxproj,
+  replace RootNamespace value with `_testclinic_limited`, replace
+  `_asyncio.c` with `_testclinic_limited.c`.
+* In PCbuild/, copy _testclinic.vcxproj.filters to
+  _testclinic_limited.vcxproj.filters, edit the list of files in the new file.
+* Open Visual Studio, open PCbuild\pcbuild.sln solution, add the
+  PCbuild\_testclinic_limited.vcxproj project to the solution ("add existing
+  project).
+* Add a dependency on the python project to the new _testclinic_limited
+  project.
+* Save and exit Visual Studio.
+* Add `;_testclinic_limited` to `<TestModules Include="...">` in
+  PCbuild\pcbuild.proj.
+* Update "exts" in Tools\msi\lib\lib_files.wxs file or in
+  Tools\msi\test\test_files.wxs file (for tests).
+* PC\layout\main.py needs updating if you add a test-only extension whose name
+  doesn't start with "_test".
+* Add the extension to PCbuild\readme.txt (this file).
+* Build Python from scratch (clean the solution) to check that the new project
+  is built successfully.
+* Ensure the new .vcxproj and .vcxproj.filters files are added to your commit,
+  as well as the changes to pcbuild.sln, pcbuild.proj and any other modified
+  files.

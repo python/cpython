@@ -3,7 +3,6 @@
 
 from test.support import check_syntax_error
 from test.support import import_helper
-from test.support.warnings_helper import check_syntax_warning
 import inspect
 import unittest
 import sys
@@ -13,10 +12,9 @@ from sys import *
 
 # different import patterns to check that __annotations__ does not interfere
 # with import machinery
-import test.ann_module as ann_module
+import test.typinganndata.ann_module as ann_module
 import typing
-from collections import ChainMap
-from test import ann_module2
+from test.typinganndata import ann_module2
 import test
 
 # These are shared with test_tokenize and other test modules.
@@ -104,6 +102,7 @@ INVALID_UNDERSCORE_LITERALS = [
 class TokenTests(unittest.TestCase):
 
     from test.support import check_syntax_error
+    from test.support.warnings_helper import check_syntax_warning
 
     def test_backslash(self):
         # Backslash means line continuation:
@@ -165,7 +164,7 @@ class TokenTests(unittest.TestCase):
         x = 3.14
         x = 314.
         x = 0.314
-        # XXX x = 000.314
+        x = 000.314
         x = .314
         x = 3e14
         x = 3E14
@@ -177,8 +176,10 @@ class TokenTests(unittest.TestCase):
 
     def test_float_exponent_tokenization(self):
         # See issue 21642.
-        self.assertEqual(1 if 1else 0, 1)
-        self.assertEqual(1 if 0else 0, 0)
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', SyntaxWarning)
+            self.assertEqual(eval("1 if 1else 0"), 1)
+            self.assertEqual(eval("1 if 0else 0"), 0)
         self.assertRaises(SyntaxError, eval, "0 if 1Else 0")
 
     def test_underscore_literals(self):
@@ -210,6 +211,46 @@ class TokenTests(unittest.TestCase):
         check("1.2_", "invalid decimal literal")
         check("1e2_", "invalid decimal literal")
         check("1e+", "invalid decimal literal")
+
+    def test_end_of_numerical_literals(self):
+        def check(test, error=False):
+            with self.subTest(expr=test):
+                if error:
+                    with warnings.catch_warnings(record=True) as w:
+                        with self.assertRaisesRegex(SyntaxError,
+                                    r'invalid \w+ literal'):
+                            compile(test, "<testcase>", "eval")
+                    self.assertEqual(w,  [])
+                else:
+                    self.check_syntax_warning(test,
+                            errtext=r'invalid \w+ literal')
+
+        for num in "0xf", "0o7", "0b1", "9", "0", "1.", "1e3", "1j":
+            compile(num, "<testcase>", "eval")
+            check(f"{num}and x", error=(num == "0xf"))
+            check(f"{num}or x", error=(num == "0"))
+            check(f"{num}in x")
+            check(f"{num}not in x")
+            check(f"{num}if x else y")
+            check(f"x if {num}else y", error=(num == "0xf"))
+            check(f"[{num}for x in ()]")
+            check(f"{num}spam", error=True)
+
+            # gh-88943: Invalid non-ASCII character following a numerical literal.
+            with self.assertRaisesRegex(SyntaxError, r"invalid character '⁄' \(U\+2044\)"):
+                compile(f"{num}⁄7", "<testcase>", "eval")
+
+            with self.assertWarnsRegex(SyntaxWarning, r'invalid \w+ literal'):
+                compile(f"{num}is x", "<testcase>", "eval")
+            with warnings.catch_warnings():
+                warnings.simplefilter('error', SyntaxWarning)
+                with self.assertRaisesRegex(SyntaxError,
+                            r'invalid \w+ literal'):
+                    compile(f"{num}is x", "<testcase>", "eval")
+
+        check("[0x1ffor x in ()]")
+        check("[0x1for x in ()]")
+        check("[0xfor x in ()]")
 
     def test_string_literals(self):
         x = ''; y = ""; self.assertTrue(len(x) == 0 and x == y)
@@ -313,6 +354,11 @@ class GrammarTests(unittest.TestCase):
         check_syntax_error(self, "x: int: str")
         check_syntax_error(self, "def f():\n"
                                  "    nonlocal x: int\n")
+        check_syntax_error(self, "def f():\n"
+                                 "    global x: int\n")
+        check_syntax_error(self, "x: int = y = 1")
+        check_syntax_error(self, "z = w: int = 1")
+        check_syntax_error(self, "x: int = y: int = 1")
         # AST pass
         check_syntax_error(self, "[x, 0]: int\n")
         check_syntax_error(self, "f(): int\n")
@@ -325,6 +371,12 @@ class GrammarTests(unittest.TestCase):
                                  "    global x\n")
         check_syntax_error(self, "def f():\n"
                                  "    global x\n"
+                                 "    x: int\n")
+        check_syntax_error(self, "def f():\n"
+                                 "    x: int\n"
+                                 "    nonlocal x\n")
+        check_syntax_error(self, "def f():\n"
+                                 "    nonlocal x\n"
                                  "    x: int\n")
 
     def test_var_annot_basic_semantics(self):
@@ -373,6 +425,28 @@ class GrammarTests(unittest.TestCase):
                 x: int
                 x.y: list = []
 
+    def test_annotations_inheritance(self):
+        # Check that annotations are not inherited by derived classes
+        class A:
+            attr: int
+        class B(A):
+            pass
+        class C(A):
+            attr: str
+        class D:
+            attr2: int
+        class E(A, D):
+            pass
+        class F(C, A):
+            pass
+        self.assertEqual(A.__annotations__, {"attr": int})
+        self.assertEqual(B.__annotations__, {})
+        self.assertEqual(C.__annotations__, {"attr" : str})
+        self.assertEqual(D.__annotations__, {"attr2" : int})
+        self.assertEqual(E.__annotations__, {})
+        self.assertEqual(F.__annotations__, {})
+
+
     def test_var_annot_metaclass_semantics(self):
         class CMeta(type):
             @classmethod
@@ -385,7 +459,7 @@ class GrammarTests(unittest.TestCase):
     def test_var_annot_module_semantics(self):
         self.assertEqual(test.__annotations__, {})
         self.assertEqual(ann_module.__annotations__,
-                     {1: 2, 'x': int, 'y': str, 'f': typing.Tuple[int, int]})
+                     {1: 2, 'x': int, 'y': str, 'f': typing.Tuple[int, int], 'u': int | float})
         self.assertEqual(ann_module.M.__annotations__,
                               {'123': 123, 'o': type})
         self.assertEqual(ann_module2.__annotations__, {})
@@ -393,7 +467,7 @@ class GrammarTests(unittest.TestCase):
     def test_var_annot_in_module(self):
         # check that functions fail the same way when executed
         # outside of module where they were defined
-        ann_module3 = import_helper.import_fresh_module("test.ann_module3")
+        ann_module3 = import_helper.import_fresh_module("test.typinganndata.ann_module3")
         with self.assertRaises(NameError):
             ann_module3.f_bad_ann()
         with self.assertRaises(NameError):
@@ -1306,6 +1380,12 @@ class GrammarTests(unittest.TestCase):
             result.append(x)
         self.assertEqual(result, [1, 2, 3])
 
+        result = []
+        a = b = c = [1, 2, 3]
+        for x in *a, *b, *c:
+            result.append(x)
+        self.assertEqual(result, 3 * a)
+
     def test_try(self):
         ### try_stmt: 'try' ':' suite (except_clause ':' suite)+ ['else' ':' suite]
         ###         | 'try' ':' suite 'finally' ':' suite
@@ -1330,6 +1410,30 @@ class GrammarTests(unittest.TestCase):
         with self.assertRaises(SyntaxError):
             compile("try:\n    pass\nexcept Exception as a.b:\n    pass", "?", "exec")
             compile("try:\n    pass\nexcept Exception as a[b]:\n    pass", "?", "exec")
+
+    def test_try_star(self):
+        ### try_stmt: 'try': suite (except_star_clause : suite) + ['else' ':' suite]
+        ### except_star_clause: 'except*' expr ['as' NAME]
+        try:
+            1/0
+        except* ZeroDivisionError:
+            pass
+        else:
+            pass
+        try: 1/0
+        except* EOFError: pass
+        except* ZeroDivisionError as msg: pass
+        else: pass
+        try: 1/0
+        except* (EOFError, TypeError, ZeroDivisionError): pass
+        try: 1/0
+        except* (EOFError, TypeError, ZeroDivisionError) as msg: pass
+        try: pass
+        finally: pass
+        with self.assertRaises(SyntaxError):
+            compile("try:\n    pass\nexcept* Exception as a.b:\n    pass", "?", "exec")
+            compile("try:\n    pass\nexcept* Exception as a[b]:\n    pass", "?", "exec")
+            compile("try:\n    pass\nexcept*:\n    pass", "?", "exec")
 
     def test_suite(self):
         # simple_stmt | NEWLINE INDENT NEWLINE* (stmt NEWLINE*)+ DEDENT
@@ -1375,14 +1479,22 @@ class GrammarTests(unittest.TestCase):
         if 1 < 1 > 1 == 1 >= 1 <= 1 != 1 in 1 not in x is x is not x: pass
 
     def test_comparison_is_literal(self):
-        def check(test, msg='"is" with a literal'):
+        def check(test, msg):
             self.check_syntax_warning(test, msg)
 
-        check('x is 1')
-        check('x is "thing"')
-        check('1 is x')
-        check('x is y is 1')
-        check('x is not 1', '"is not" with a literal')
+        check('x is 1', '"is" with \'int\' literal')
+        check('x is "thing"', '"is" with \'str\' literal')
+        check('1 is x', '"is" with \'int\' literal')
+        check('x is y is 1', '"is" with \'int\' literal')
+        check('x is not 1', '"is not" with \'int\' literal')
+        check('x is not (1, 2)', '"is not" with \'tuple\' literal')
+        check('(1, 2) is not x', '"is not" with \'tuple\' literal')
+
+        check('None is 1', '"is" with \'int\' literal')
+        check('1 is None', '"is" with \'int\' literal')
+
+        check('x == 3 is y', '"is" with \'int\' literal')
+        check('x == "thing" is y', '"is" with \'str\' literal')
 
         with warnings.catch_warnings():
             warnings.simplefilter('error', SyntaxWarning)
@@ -1390,6 +1502,10 @@ class GrammarTests(unittest.TestCase):
             compile('x is False', '<testcase>', 'exec')
             compile('x is True', '<testcase>', 'exec')
             compile('x is ...', '<testcase>', 'exec')
+            compile('None is x', '<testcase>', 'exec')
+            compile('False is x', '<testcase>', 'exec')
+            compile('True is x', '<testcase>', 'exec')
+            compile('... is x', '<testcase>', 'exec')
 
     def test_warn_missed_comma(self):
         def check(test):
@@ -1520,7 +1636,7 @@ class GrammarTests(unittest.TestCase):
         s = a[-5:]
         s = a[:-1]
         s = a[-4:-3]
-        # A rough test of SF bug 1333982.  http://python.org/sf/1333982
+        # A rough test of SF bug 1333982.  https://bugs.python.org/issue1333982
         # The testing here is fairly incomplete.
         # Test cases should include: commas with 1 and 2 colons
         d = {}

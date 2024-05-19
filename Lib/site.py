@@ -74,6 +74,7 @@ import os
 import builtins
 import _sitebuiltins
 import io
+import stat
 
 # Prefixes for site-packages; add additional prefixes like /usr/local here
 PREFIXES = [sys.prefix, sys.exec_prefix]
@@ -168,37 +169,54 @@ def addpackage(sitedir, name, known_paths):
     else:
         reset = False
     fullname = os.path.join(sitedir, name)
-    _trace(f"Processing .pth file: {fullname!r}")
     try:
-        # locale encoding is not ideal especially on Windows. But we have used
-        # it for a long time. setuptools uses the locale encoding too.
-        f = io.TextIOWrapper(io.open_code(fullname), encoding="locale")
+        st = os.lstat(fullname)
     except OSError:
         return
-    with f:
-        for n, line in enumerate(f):
-            if line.startswith("#"):
+    if ((getattr(st, 'st_flags', 0) & stat.UF_HIDDEN) or
+        (getattr(st, 'st_file_attributes', 0) & stat.FILE_ATTRIBUTE_HIDDEN)):
+        _trace(f"Skipping hidden .pth file: {fullname!r}")
+        return
+    _trace(f"Processing .pth file: {fullname!r}")
+    try:
+        with io.open_code(fullname) as f:
+            pth_content = f.read()
+    except OSError:
+        return
+
+    try:
+        pth_content = pth_content.decode()
+    except UnicodeDecodeError:
+        # Fallback to locale encoding for backward compatibility.
+        # We will deprecate this fallback in the future.
+        import locale
+        pth_content = pth_content.decode(locale.getencoding())
+        _trace(f"Cannot read {fullname!r} as UTF-8. "
+               f"Using fallback encoding {locale.getencoding()!r}")
+
+    for n, line in enumerate(pth_content.splitlines(), 1):
+        if line.startswith("#"):
+            continue
+        if line.strip() == "":
+            continue
+        try:
+            if line.startswith(("import ", "import\t")):
+                exec(line)
                 continue
-            if line.strip() == "":
-                continue
-            try:
-                if line.startswith(("import ", "import\t")):
-                    exec(line)
-                    continue
-                line = line.rstrip()
-                dir, dircase = makepath(sitedir, line)
-                if not dircase in known_paths and os.path.exists(dir):
-                    sys.path.append(dir)
-                    known_paths.add(dircase)
-            except Exception:
-                print("Error processing line {:d} of {}:\n".format(n+1, fullname),
-                      file=sys.stderr)
-                import traceback
-                for record in traceback.format_exception(*sys.exc_info()):
-                    for line in record.splitlines():
-                        print('  '+line, file=sys.stderr)
-                print("\nRemainder of file ignored", file=sys.stderr)
-                break
+            line = line.rstrip()
+            dir, dircase = makepath(sitedir, line)
+            if dircase not in known_paths and os.path.exists(dir):
+                sys.path.append(dir)
+                known_paths.add(dircase)
+        except Exception as exc:
+            print(f"Error processing line {n:d} of {fullname}:\n",
+                  file=sys.stderr)
+            import traceback
+            for record in traceback.format_exception(exc):
+                for line in record.splitlines():
+                    print('  '+line, file=sys.stderr)
+            print("\nRemainder of file ignored", file=sys.stderr)
+            break
     if reset:
         known_paths = None
     return known_paths
@@ -221,7 +239,8 @@ def addsitedir(sitedir, known_paths=None):
         names = os.listdir(sitedir)
     except OSError:
         return
-    names = [name for name in names if name.endswith(".pth")]
+    names = [name for name in names
+             if name.endswith(".pth") and not name.startswith(".")]
     for name in sorted(names):
         addpackage(sitedir, name, known_paths)
     if reset:
@@ -260,14 +279,18 @@ def check_enableusersite():
 #
 # See https://bugs.python.org/issue29585
 
+# Copy of sysconfig._get_implementation()
+def _get_implementation():
+    return 'Python'
+
 # Copy of sysconfig._getuserbase()
 def _getuserbase():
     env_base = os.environ.get("PYTHONUSERBASE", None)
     if env_base:
         return env_base
 
-    # VxWorks has no home directories
-    if sys.platform == "vxworks":
+    # Emscripten, iOS, tvOS, VxWorks, WASI, and watchOS have no home directories
+    if sys.platform in {"emscripten", "ios", "tvos", "vxworks", "wasi", "watchos"}:
         return None
 
     def joinuser(*args):
@@ -275,7 +298,7 @@ def _getuserbase():
 
     if os.name == "nt":
         base = os.environ.get("APPDATA") or "~"
-        return joinuser(base, "Python")
+        return joinuser(base, _get_implementation())
 
     if sys.platform == "darwin" and sys._framework:
         return joinuser("~", "Library", sys._framework,
@@ -288,12 +311,14 @@ def _getuserbase():
 def _get_path(userbase):
     version = sys.version_info
 
+    implementation = _get_implementation()
+    implementation_lower = implementation.lower()
     if os.name == 'nt':
         ver_nodot = sys.winver.replace('.', '')
-        return f'{userbase}\\Python{ver_nodot}\\site-packages'
+        return f'{userbase}\\{implementation}{ver_nodot}\\site-packages'
 
     if sys.platform == 'darwin' and sys._framework:
-        return f'{userbase}/lib/python/site-packages'
+        return f'{userbase}/lib/{implementation_lower}/site-packages'
 
     return f'{userbase}/lib/python{version[0]}.{version[1]}/site-packages'
 
@@ -361,22 +386,21 @@ def getsitepackages(prefixes=None):
             continue
         seen.add(prefix)
 
-        libdirs = [sys.platlibdir]
-        if sys.platlibdir != "lib":
-            libdirs.append("lib")
-
+        implementation = _get_implementation().lower()
+        ver = sys.version_info
         if os.sep == '/':
+            libdirs = [sys.platlibdir]
+            if sys.platlibdir != "lib":
+                libdirs.append("lib")
+
             for libdir in libdirs:
                 path = os.path.join(prefix, libdir,
-                                    "python%d.%d" % sys.version_info[:2],
+                                    f"{implementation}{ver[0]}.{ver[1]}",
                                     "site-packages")
                 sitepackages.append(path)
         else:
             sitepackages.append(prefix)
-
-            for libdir in libdirs:
-                path = os.path.join(prefix, libdir, "site-packages")
-                sitepackages.append(path)
+            sitepackages.append(os.path.join(prefix, "Lib", "site-packages"))
     return sitepackages
 
 def addsitepackages(known_paths, prefixes=None):
@@ -407,19 +431,16 @@ def setquit():
 def setcopyright():
     """Set 'copyright' and 'credits' in builtins"""
     builtins.copyright = _sitebuiltins._Printer("copyright", sys.copyright)
-    if sys.platform[:4] == 'java':
-        builtins.credits = _sitebuiltins._Printer(
-            "credits",
-            "Jython is maintained by the Jython developers (www.jython.org).")
-    else:
-        builtins.credits = _sitebuiltins._Printer("credits", """\
+    builtins.credits = _sitebuiltins._Printer("credits", """\
     Thanks to CWI, CNRI, BeOpen.com, Zope Corporation and a cast of thousands
     for supporting Python development.  See www.python.org for more information.""")
     files, dirs = [], []
     # Not all modules are required to have a __file__ attribute.  See
     # PEP 420 for more details.
-    if hasattr(os, '__file__'):
+    here = getattr(sys, '_stdlib_dir', None)
+    if not here and hasattr(os, '__file__'):
         here = os.path.dirname(os.__file__)
+    if here:
         files.extend(["LICENSE.txt", "LICENSE"])
         dirs.extend([os.path.join(here, os.pardir), here, os.curdir])
     builtins.license = _sitebuiltins._Printer(
@@ -431,64 +452,89 @@ def setcopyright():
 def sethelper():
     builtins.help = _sitebuiltins._Helper()
 
+
+def gethistoryfile():
+    """Check if the PYTHON_HISTORY environment variable is set and define
+    it as the .python_history file.  If PYTHON_HISTORY is not set, use the
+    default .python_history file.
+    """
+    if not sys.flags.ignore_environment:
+        history = os.environ.get("PYTHON_HISTORY")
+        if history:
+            return history
+    return os.path.join(os.path.expanduser('~'),
+        '.python_history')
+
+
 def enablerlcompleter():
     """Enable default readline configuration on interactive prompts, by
     registering a sys.__interactivehook__.
+    """
+    sys.__interactivehook__ = register_readline
+
+
+def register_readline():
+    """Configure readline completion on interactive prompts.
 
     If the readline module can be imported, the hook will set the Tab key
     as completion key and register ~/.python_history as history file.
     This can be overridden in the sitecustomize or usercustomize module,
     or in a PYTHONSTARTUP file.
     """
-    def register_readline():
-        import atexit
-        try:
-            import readline
-            import rlcompleter
-        except ImportError:
-            return
+    import atexit
+    try:
+        import readline
+        import rlcompleter
+        import _pyrepl.readline
+        import _pyrepl.unix_console
+    except ImportError:
+        return
 
-        # Reading the initialization (config) file may not be enough to set a
-        # completion key, so we set one first and then read the file.
-        readline_doc = getattr(readline, '__doc__', '')
-        if readline_doc is not None and 'libedit' in readline_doc:
-            readline.parse_and_bind('bind ^I rl_complete')
-        else:
-            readline.parse_and_bind('tab: complete')
+    # Reading the initialization (config) file may not be enough to set a
+    # completion key, so we set one first and then read the file.
+    if readline.backend == 'editline':
+        readline.parse_and_bind('bind ^I rl_complete')
+    else:
+        readline.parse_and_bind('tab: complete')
 
+    try:
+        readline.read_init_file()
+    except OSError:
+        # An OSError here could have many causes, but the most likely one
+        # is that there's no .inputrc file (or .editrc file in the case of
+        # Mac OS X + libedit) in the expected location.  In that case, we
+        # want to ignore the exception.
+        pass
+
+    if readline.get_current_history_length() == 0:
+        # If no history was loaded, default to .python_history,
+        # or PYTHON_HISTORY.
+        # The guard is necessary to avoid doubling history size at
+        # each interpreter exit when readline was already configured
+        # through a PYTHONSTARTUP hook, see:
+        # http://bugs.python.org/issue5845#msg198636
+        history = gethistoryfile()
         try:
-            readline.read_init_file()
-        except OSError:
-            # An OSError here could have many causes, but the most likely one
-            # is that there's no .inputrc file (or .editrc file in the case of
-            # Mac OS X + libedit) in the expected location.  In that case, we
-            # want to ignore the exception.
+            if os.getenv("PYTHON_BASIC_REPL"):
+                readline.read_history_file(history)
+            else:
+                _pyrepl.readline.read_history_file(history)
+        except (OSError,* _pyrepl.unix_console._error):
             pass
 
-        if readline.get_current_history_length() == 0:
-            # If no history was loaded, default to .python_history.
-            # The guard is necessary to avoid doubling history size at
-            # each interpreter exit when readline was already configured
-            # through a PYTHONSTARTUP hook, see:
-            # http://bugs.python.org/issue5845#msg198636
-            history = os.path.join(os.path.expanduser('~'),
-                                   '.python_history')
+        def write_history():
             try:
-                readline.read_history_file(history)
-            except OSError:
+                if os.getenv("PYTHON_BASIC_REPL"):
+                    readline.write_history_file(history)
+                else:
+                    _pyrepl.readline.write_history_file(history)
+            except (FileNotFoundError, PermissionError):
+                # home directory does not exist or is not writable
+                # https://bugs.python.org/issue19891
                 pass
 
-            def write_history():
-                try:
-                    readline.write_history_file(history)
-                except OSError:
-                    # bpo-19891, bpo-41193: Home directory does not exist
-                    # or is not writable, or the filesystem is read-only.
-                    pass
+        atexit.register(write_history)
 
-            atexit.register(write_history)
-
-    sys.__interactivehook__ = register_readline
 
 def venv(known_paths):
     global PREFIXES, ENABLE_USER_SITE
@@ -498,20 +544,23 @@ def venv(known_paths):
         executable = sys._base_executable = os.environ['__PYVENV_LAUNCHER__']
     else:
         executable = sys.executable
-    exe_dir, _ = os.path.split(os.path.abspath(executable))
+    exe_dir = os.path.dirname(os.path.abspath(executable))
     site_prefix = os.path.dirname(exe_dir)
     sys._home = None
     conf_basename = 'pyvenv.cfg'
-    candidate_confs = [
-        conffile for conffile in (
-            os.path.join(exe_dir, conf_basename),
-            os.path.join(site_prefix, conf_basename)
+    candidate_conf = next(
+        (
+            conffile for conffile in (
+                os.path.join(exe_dir, conf_basename),
+                os.path.join(site_prefix, conf_basename)
             )
-        if os.path.isfile(conffile)
-        ]
+            if os.path.isfile(conffile)
+        ),
+        None
+    )
 
-    if candidate_confs:
-        virtual_conf = candidate_confs[0]
+    if candidate_conf:
+        virtual_conf = candidate_conf
         system_site = "true"
         # Issue 25185: Use UTF-8, as that's what the venv module uses when
         # writing the file.

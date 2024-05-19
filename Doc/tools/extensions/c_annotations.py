@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
     c_annotations.py
     ~~~~~~~~~~~~~~~~
@@ -24,6 +23,7 @@ from docutils import nodes
 from docutils.parsers.rst import directives
 from docutils.parsers.rst import Directive
 from docutils.statemachine import StringList
+from sphinx.locale import _ as sphinx_gettext
 import csv
 
 from sphinx import addnodes
@@ -32,10 +32,10 @@ from sphinx.domains.c import CObject
 
 REST_ROLE_MAP = {
     'function': 'func',
-    'var': 'data',
-    'type': 'type',
     'macro': 'macro',
+    'member': 'member',
     'type': 'type',
+    'var': 'data',
 }
 
 
@@ -50,7 +50,7 @@ class RCEntry:
 class Annotations:
     def __init__(self, refcount_filename, stable_abi_file):
         self.refcount_data = {}
-        with open(refcount_filename, 'r') as fp:
+        with open(refcount_filename, encoding='utf8') as fp:
             for line in fp:
                 line = line.strip()
                 if line[:1] in ("", "#"):
@@ -58,7 +58,7 @@ class Annotations:
                     continue
                 parts = line.split(":", 4)
                 if len(parts) != 5:
-                    raise ValueError("Wrong field count in %r" % line)
+                    raise ValueError(f"Wrong field count in {line!r}")
                 function, type, arg, refcount, comment = parts
                 # Get the entry, creating it if needed:
                 try:
@@ -78,14 +78,13 @@ class Annotations:
                     entry.result_refs = refcount
 
         self.stable_abi_data = {}
-        with open(stable_abi_file, 'r') as fp:
+        with open(stable_abi_file, encoding='utf8') as fp:
             for record in csv.DictReader(fp):
-                role = record['role']
                 name = record['name']
                 self.stable_abi_data[name] = record
 
     def add_annotations(self, app, doctree):
-        for node in doctree.traverse(addnodes.desc_content):
+        for node in doctree.findall(addnodes.desc_content):
             par = node.parent
             if par['domain'] != 'c':
                 continue
@@ -100,6 +99,12 @@ class Annotations:
             # Stable ABI annotation. These have two forms:
             #   Part of the [Stable ABI](link).
             #   Part of the [Stable ABI](link) since version X.Y.
+            # For structs, there's some more info in the message:
+            #   Part of the [Limited API](link) (as an opaque struct).
+            #   Part of the [Stable ABI](link) (including all members).
+            #   Part of the [Limited API](link) (Only some members are part
+            #       of the stable ABI.).
+            # ... all of which can have "since version X.Y" appended.
             record = self.stable_abi_data.get(name)
             if record:
                 if record['role'] != objtype:
@@ -107,22 +112,51 @@ class Annotations:
                         f"Object type mismatch in limited API annotation "
                         f"for {name}: {record['role']!r} != {objtype!r}")
                 stable_added = record['added']
-                message = ' Part of the '
+                message = sphinx_gettext('Part of the')
+                message = message.center(len(message) + 2)
                 emph_node = nodes.emphasis(message, message,
                                            classes=['stableabi'])
                 ref_node = addnodes.pending_xref(
                     'Stable ABI', refdomain="std", reftarget='stable',
                     reftype='ref', refexplicit="False")
-                ref_node += nodes.Text('Stable ABI')
+                struct_abi_kind = record['struct_abi_kind']
+                if struct_abi_kind in {'opaque', 'members'}:
+                    ref_node += nodes.Text(sphinx_gettext('Limited API'))
+                else:
+                    ref_node += nodes.Text(sphinx_gettext('Stable ABI'))
                 emph_node += ref_node
+                if struct_abi_kind == 'opaque':
+                    emph_node += nodes.Text(' ' + sphinx_gettext('(as an opaque struct)'))
+                elif struct_abi_kind == 'full-abi':
+                    emph_node += nodes.Text(' ' + sphinx_gettext('(including all members)'))
                 if record['ifdef_note']:
                     emph_node += nodes.Text(' ' + record['ifdef_note'])
                 if stable_added == '3.2':
                     # Stable ABI was introduced in 3.2.
-                    emph_node += nodes.Text('.')
+                    pass
                 else:
-                    emph_node += nodes.Text(f' since version {stable_added}.')
+                    emph_node += nodes.Text(' ' + sphinx_gettext('since version %s') % stable_added)
+                emph_node += nodes.Text('.')
+                if struct_abi_kind == 'members':
+                    emph_node += nodes.Text(
+                        ' ' + sphinx_gettext('(Only some members are part of the stable ABI.)'))
                 node.insert(0, emph_node)
+
+            # Unstable API annotation.
+            if name.startswith('PyUnstable'):
+                warn_node = nodes.admonition(
+                    classes=['unstable-c-api', 'warning'])
+                message = sphinx_gettext('This is') + ' '
+                emph_node = nodes.emphasis(message, message)
+                ref_node = addnodes.pending_xref(
+                    'Unstable API', refdomain="std",
+                    reftarget='unstable-c-api',
+                    reftype='ref', refexplicit="False")
+                ref_node += nodes.Text(sphinx_gettext('Unstable API'))
+                emph_node += ref_node
+                emph_node += nodes.Text(sphinx_gettext('. It may change without warning in minor releases.'))
+                warn_node += emph_node
+                node.insert(0, warn_node)
 
             # Return value annotation
             if objtype != 'function':
@@ -132,13 +166,17 @@ class Annotations:
                 continue
             elif not entry.result_type.endswith("Object*"):
                 continue
+            classes = ['refcount']
             if entry.result_refs is None:
-                rc = 'Return value: Always NULL.'
+                rc = sphinx_gettext('Return value: Always NULL.')
+                classes.append('return_null')
             elif entry.result_refs:
-                rc = 'Return value: New reference.'
+                rc = sphinx_gettext('Return value: New reference.')
+                classes.append('return_new_ref')
             else:
-                rc = 'Return value: Borrowed reference.'
-            node.insert(0, nodes.emphasis(rc, rc, classes=['refcount']))
+                rc = sphinx_gettext('Return value: Borrowed reference.')
+                classes.append('return_borrowed_ref')
+            node.insert(0, nodes.emphasis(rc, rc, classes=classes))
 
 
 def init_annotations(app):
@@ -180,6 +218,7 @@ def setup(app):
         'stableabi': directives.flag,
     }
     old_handle_signature = CObject.handle_signature
+
     def new_handle_signature(self, sig, signode):
         signode.parent['stableabi'] = 'stableabi' in self.options
         return old_handle_signature(self, sig, signode)

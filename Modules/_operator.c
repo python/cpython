@@ -1,5 +1,9 @@
 #include "Python.h"
+#include "pycore_modsupport.h"    // _PyArg_NoKwnames()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
+#include "pycore_runtime.h"       // _Py_ID()
+
+
 #include "clinic/_operator.c.h"
 
 typedef struct {
@@ -507,12 +511,12 @@ _operator_indexOf_impl(PyObject *module, PyObject *a, PyObject *b)
 /*[clinic input]
 _operator.countOf = _operator.indexOf
 
-Return the number of times b occurs in a.
+Return the number of items in a which are, or which equal, b.
 [clinic start generated code]*/
 
 static Py_ssize_t
 _operator_countOf_impl(PyObject *module, PyObject *a, PyObject *b)
-/*[clinic end generated code: output=9e1623197daf3382 input=0c3a2656add252db]*/
+/*[clinic end generated code: output=9e1623197daf3382 input=93ea57f170f3f0bb]*/
 {
     return PySequence_Count(a, b);
 }
@@ -704,10 +708,8 @@ static PyObject *
 _operator_is__impl(PyObject *module, PyObject *a, PyObject *b)
 /*[clinic end generated code: output=bcd47a402e482e1d input=5fa9b97df03c427f]*/
 {
-    PyObject *result;
-    result = (a == b) ? Py_True : Py_False;
-    Py_INCREF(result);
-    return result;
+    PyObject *result = Py_Is(a, b) ? Py_True : Py_False;
+    return Py_NewRef(result);
 }
 
 /*[clinic input]
@@ -722,8 +724,7 @@ _operator_is_not_impl(PyObject *module, PyObject *a, PyObject *b)
 {
     PyObject *result;
     result = (a != b) ? Py_True : Py_False;
-    Py_INCREF(result);
-    return result;
+    return Py_NewRef(result);
 }
 
 /* compare_digest **********************************************************/
@@ -731,9 +732,9 @@ _operator_is_not_impl(PyObject *module, PyObject *a, PyObject *b)
 /*
  * timing safe compare
  *
- * Returns 1 of the strings are equal.
+ * Returns 1 if the strings are equal.
  * In case of len(a) != len(b) the function tries to keep the timing
- * dependent on the length of b. CPU cache locally may still alter timing
+ * dependent on the length of b. CPU cache locality may still alter timing
  * a bit.
  */
 static int
@@ -824,9 +825,6 @@ _operator__compare_digest_impl(PyObject *module, PyObject *a, PyObject *b)
 
     /* ASCII unicode string */
     if(PyUnicode_Check(a) && PyUnicode_Check(b)) {
-        if (PyUnicode_READY(a) == -1 || PyUnicode_READY(b) == -1) {
-            return NULL;
-        }
         if (!PyUnicode_IS_ASCII(a) || !PyUnicode_IS_ASCII(b)) {
             PyErr_SetString(PyExc_TypeError,
                             "comparing strings with non-ASCII characters is "
@@ -839,7 +837,7 @@ _operator__compare_digest_impl(PyObject *module, PyObject *a, PyObject *b)
                     PyUnicode_GET_LENGTH(a),
                     PyUnicode_GET_LENGTH(b));
     }
-    /* fallback to buffer interface for bytes, bytesarray and other */
+    /* fallback to buffer interface for bytes, bytearray and other */
     else {
         Py_buffer view_a;
         Py_buffer view_b;
@@ -884,6 +882,27 @@ _operator__compare_digest_impl(PyObject *module, PyObject *a, PyObject *b)
     }
 
     return PyBool_FromLong(rc);
+}
+
+PyDoc_STRVAR(_operator_call__doc__,
+"call($module, obj, /, *args, **kwargs)\n"
+"--\n"
+"\n"
+"Same as obj(*args, **kwargs).");
+
+#define _OPERATOR_CALL_METHODDEF    \
+    {"call", _PyCFunction_CAST(_operator_call), METH_FASTCALL | METH_KEYWORDS, _operator_call__doc__},
+
+static PyObject *
+_operator_call(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    if (!_PyArg_CheckPositional("call", nargs, 1, PY_SSIZE_T_MAX)) {
+        return NULL;
+    }
+    return PyObject_Vectorcall(
+            args[0],
+            &args[1], (PyVectorcall_NARGS(nargs) - 1) | PY_VECTORCALL_ARGUMENTS_OFFSET,
+            kwnames);
 }
 
 /* operator methods **********************************************************/
@@ -942,8 +961,21 @@ static struct PyMethodDef operator_methods[] = {
     _OPERATOR_GE_METHODDEF
     _OPERATOR__COMPARE_DIGEST_METHODDEF
     _OPERATOR_LENGTH_HINT_METHODDEF
+    _OPERATOR_CALL_METHODDEF
     {NULL,              NULL}           /* sentinel */
 
+};
+
+
+static PyObject *
+text_signature(PyObject *self, void *Py_UNUSED(ignored))
+{
+    return PyUnicode_FromString("(obj, /)");
+}
+
+static PyGetSetDef common_getset[] = {
+    {"__text_signature__", text_signature, (setter)NULL},
+    {NULL}
 };
 
 /* itemgetter object **********************************************************/
@@ -953,7 +985,14 @@ typedef struct {
     Py_ssize_t nitems;
     PyObject *item;
     Py_ssize_t index; // -1 unless *item* is a single non-negative integer index
+    vectorcallfunc vectorcall;
 } itemgetterobject;
+
+// Forward declarations
+static PyObject *
+itemgetter_vectorcall(PyObject *, PyObject *const *, size_t, PyObject *);
+static PyObject *
+itemgetter_call_impl(itemgetterobject *, PyObject *);
 
 /* AC 3.5: treats first argument as an iterable, otherwise uses *args */
 static PyObject *
@@ -974,15 +1013,14 @@ itemgetter_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     } else {
         item = args;
     }
-    _operator_state *state = PyType_GetModuleState(type);
+    _operator_state *state = _PyType_GetModuleState(type);
     /* create itemgetterobject structure */
     ig = PyObject_GC_New(itemgetterobject, (PyTypeObject *) state->itemgetter_type);
     if (ig == NULL) {
         return NULL;
     }
 
-    Py_INCREF(item);
-    ig->item = item;
+    ig->item = Py_NewRef(item);
     ig->nitems = nitems;
     ig->index = -1;
     if (PyLong_CheckExact(item)) {
@@ -1000,8 +1038,16 @@ itemgetter_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         }
     }
 
+    ig->vectorcall = (vectorcallfunc)itemgetter_vectorcall;
     PyObject_GC_Track(ig);
     return (PyObject *)ig;
+}
+
+static int
+itemgetter_clear(itemgetterobject *ig)
+{
+    Py_CLEAR(ig->item);
+    return 0;
 }
 
 static void
@@ -1009,7 +1055,7 @@ itemgetter_dealloc(itemgetterobject *ig)
 {
     PyTypeObject *tp = Py_TYPE(ig);
     PyObject_GC_UnTrack(ig);
-    Py_XDECREF(ig->item);
+    (void)itemgetter_clear(ig);
     tp->tp_free(ig);
     Py_DECREF(tp);
 }
@@ -1017,6 +1063,7 @@ itemgetter_dealloc(itemgetterobject *ig)
 static int
 itemgetter_traverse(itemgetterobject *ig, visitproc visit, void *arg)
 {
+    Py_VISIT(Py_TYPE(ig));
     Py_VISIT(ig->item);
     return 0;
 }
@@ -1024,24 +1071,40 @@ itemgetter_traverse(itemgetterobject *ig, visitproc visit, void *arg)
 static PyObject *
 itemgetter_call(itemgetterobject *ig, PyObject *args, PyObject *kw)
 {
-    PyObject *obj, *result;
-    Py_ssize_t i, nitems=ig->nitems;
-
     assert(PyTuple_CheckExact(args));
     if (!_PyArg_NoKeywords("itemgetter", kw))
         return NULL;
     if (!_PyArg_CheckPositional("itemgetter", PyTuple_GET_SIZE(args), 1, 1))
         return NULL;
+    return itemgetter_call_impl(ig, PyTuple_GET_ITEM(args, 0));
+}
 
-    obj = PyTuple_GET_ITEM(args, 0);
+static PyObject *
+itemgetter_vectorcall(PyObject *ig, PyObject *const *args,
+                      size_t nargsf, PyObject *kwnames)
+{
+    if (!_PyArg_NoKwnames("itemgetter", kwnames)) {
+        return NULL;
+    }
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+    if (!_PyArg_CheckPositional("itemgetter", nargs, 1, 1)) {
+        return NULL;
+    }
+    return itemgetter_call_impl((itemgetterobject *)ig, args[0]);
+}
+
+static PyObject *
+itemgetter_call_impl(itemgetterobject *ig, PyObject *obj)
+{
+    PyObject *result;
+    Py_ssize_t i, nitems=ig->nitems;
     if (nitems == 1) {
         if (ig->index >= 0
             && PyTuple_CheckExact(obj)
             && ig->index < PyTuple_GET_SIZE(obj))
         {
             result = PyTuple_GET_ITEM(obj, ig->index);
-            Py_INCREF(result);
-            return result;
+            return Py_NewRef(result);
         }
         return PyObject_GetItem(obj, ig->item);
     }
@@ -1101,9 +1164,13 @@ static PyMethodDef itemgetter_methods[] = {
     {NULL}
 };
 
+static PyMemberDef itemgetter_members[] = {
+    {"__vectorcalloffset__", Py_T_PYSSIZET, offsetof(itemgetterobject, vectorcall), Py_READONLY},
+    {NULL} /* Sentinel */
+};
+
 PyDoc_STRVAR(itemgetter_doc,
-"itemgetter(item, ...) --> itemgetter object\n\
-\n\
+"itemgetter(item, /, *items)\n--\n\n\
 Return a callable object that fetches the given item(s) from its operand.\n\
 After f = itemgetter(2), the call f(r) returns r[2].\n\
 After g = itemgetter(2, 5, 3), the call g(r) returns (r[2], r[5], r[3])");
@@ -1113,7 +1180,10 @@ static PyType_Slot itemgetter_type_slots[] = {
     {Py_tp_dealloc, itemgetter_dealloc},
     {Py_tp_call, itemgetter_call},
     {Py_tp_traverse, itemgetter_traverse},
+    {Py_tp_clear, itemgetter_clear},
     {Py_tp_methods, itemgetter_methods},
+    {Py_tp_members, itemgetter_members},
+    {Py_tp_getset, common_getset},
     {Py_tp_new, itemgetter_new},
     {Py_tp_getattro, PyObject_GenericGetAttr},
     {Py_tp_repr, itemgetter_repr},
@@ -1124,7 +1194,8 @@ static PyType_Spec itemgetter_type_spec = {
     .name = "operator.itemgetter",
     .basicsize = sizeof(itemgetterobject),
     .itemsize = 0,
-    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
+              Py_TPFLAGS_IMMUTABLETYPE | Py_TPFLAGS_HAVE_VECTORCALL),
     .slots = itemgetter_type_slots,
 };
 
@@ -1134,7 +1205,14 @@ typedef struct {
     PyObject_HEAD
     Py_ssize_t nattrs;
     PyObject *attr;
+    vectorcallfunc vectorcall;
 } attrgetterobject;
+
+// Forward declarations
+static PyObject *
+attrgetter_vectorcall(PyObject *, PyObject *const *, size_t, PyObject *);
+static PyObject *
+attrgetter_call_impl(attrgetterobject *, PyObject *);
 
 /* AC 3.5: treats first argument as an iterable, otherwise uses *args */
 static PyObject *
@@ -1160,9 +1238,6 @@ attrgetter_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     /* prepare attr while checking args */
     for (idx = 0; idx < nattrs; ++idx) {
         PyObject *item = PyTuple_GET_ITEM(args, idx);
-        Py_ssize_t item_len;
-        const void *data;
-        unsigned int kind;
         int dot_count;
 
         if (!PyUnicode_Check(item)) {
@@ -1171,15 +1246,11 @@ attrgetter_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
             Py_DECREF(attr);
             return NULL;
         }
-        if (PyUnicode_READY(item)) {
-            Py_DECREF(attr);
-            return NULL;
-        }
-        item_len = PyUnicode_GET_LENGTH(item);
-        kind = PyUnicode_KIND(item);
-        data = PyUnicode_DATA(item);
+        Py_ssize_t item_len = PyUnicode_GET_LENGTH(item);
+        int kind = PyUnicode_KIND(item);
+        const void *data = PyUnicode_DATA(item);
 
-        /* check whethere the string is dotted */
+        /* check whether the string is dotted */
         dot_count = 0;
         for (char_idx = 0; char_idx < item_len; ++char_idx) {
             if (PyUnicode_READ(kind, data, char_idx) == '.')
@@ -1235,7 +1306,7 @@ attrgetter_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         }
     }
 
-    _operator_state *state = PyType_GetModuleState(type);
+    _operator_state *state = _PyType_GetModuleState(type);
     /* create attrgetterobject structure */
     ag = PyObject_GC_New(attrgetterobject, (PyTypeObject *)state->attrgetter_type);
     if (ag == NULL) {
@@ -1245,9 +1316,17 @@ attrgetter_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
     ag->attr = attr;
     ag->nattrs = nattrs;
+    ag->vectorcall = (vectorcallfunc)attrgetter_vectorcall;
 
     PyObject_GC_Track(ag);
     return (PyObject *)ag;
+}
+
+static int
+attrgetter_clear(attrgetterobject *ag)
+{
+    Py_CLEAR(ag->attr);
+    return 0;
 }
 
 static void
@@ -1255,7 +1334,7 @@ attrgetter_dealloc(attrgetterobject *ag)
 {
     PyTypeObject *tp = Py_TYPE(ag);
     PyObject_GC_UnTrack(ag);
-    Py_XDECREF(ag->attr);
+    (void)attrgetter_clear(ag);
     tp->tp_free(ag);
     Py_DECREF(tp);
 }
@@ -1264,6 +1343,7 @@ static int
 attrgetter_traverse(attrgetterobject *ag, visitproc visit, void *arg)
 {
     Py_VISIT(ag->attr);
+    Py_VISIT(Py_TYPE(ag));
     return 0;
 }
 
@@ -1303,16 +1383,36 @@ dotted_getattr(PyObject *obj, PyObject *attr)
 static PyObject *
 attrgetter_call(attrgetterobject *ag, PyObject *args, PyObject *kw)
 {
-    PyObject *obj, *result;
-    Py_ssize_t i, nattrs=ag->nattrs;
-
     if (!_PyArg_NoKeywords("attrgetter", kw))
         return NULL;
     if (!_PyArg_CheckPositional("attrgetter", PyTuple_GET_SIZE(args), 1, 1))
         return NULL;
-    obj = PyTuple_GET_ITEM(args, 0);
-    if (ag->nattrs == 1) /* ag->attr is always a tuple */
+    return attrgetter_call_impl(ag, PyTuple_GET_ITEM(args, 0));
+}
+
+static PyObject *
+attrgetter_vectorcall(PyObject *ag, PyObject *const *args, size_t nargsf, PyObject *kwnames)
+{
+    if (!_PyArg_NoKwnames("attrgetter", kwnames)) {
+        return NULL;
+    }
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+    if (!_PyArg_CheckPositional("attrgetter", nargs, 1, 1)) {
+        return NULL;
+    }
+    return attrgetter_call_impl((attrgetterobject *)ag, args[0]);
+}
+
+static PyObject *
+attrgetter_call_impl(attrgetterobject *ag, PyObject *obj)
+{
+    PyObject *result;
+    Py_ssize_t i, nattrs=ag->nattrs;
+
+    if (ag->nattrs == 1) {
+        /* ag->attr is always a tuple */
         return dotted_getattr(obj, PyTuple_GET_ITEM(ag->attr, 0));
+    }
 
     assert(PyTuple_Check(ag->attr));
     assert(PyTuple_GET_SIZE(ag->attr) == nattrs);
@@ -1345,8 +1445,7 @@ dotjoinattr(PyObject *attr, PyObject **attrsep)
         }
         return PyUnicode_Join(*attrsep, attr);
     } else {
-        Py_INCREF(attr);
-        return attr;
+        return Py_NewRef(attr);
     }
 }
 
@@ -1421,9 +1520,13 @@ static PyMethodDef attrgetter_methods[] = {
     {NULL}
 };
 
+static PyMemberDef attrgetter_members[] = {
+    {"__vectorcalloffset__", Py_T_PYSSIZET, offsetof(attrgetterobject, vectorcall), Py_READONLY},
+    {NULL} /* Sentinel*/
+};
+
 PyDoc_STRVAR(attrgetter_doc,
-"attrgetter(attr, ...) --> attrgetter object\n\
-\n\
+"attrgetter(attr, /, *attrs)\n--\n\n\
 Return a callable object that fetches the given attribute(s) from its operand.\n\
 After f = attrgetter('name'), the call f(r) returns r.name.\n\
 After g = attrgetter('name', 'date'), the call g(r) returns (r.name, r.date).\n\
@@ -1435,7 +1538,10 @@ static PyType_Slot attrgetter_type_slots[] = {
     {Py_tp_dealloc, attrgetter_dealloc},
     {Py_tp_call, attrgetter_call},
     {Py_tp_traverse, attrgetter_traverse},
+    {Py_tp_clear, attrgetter_clear},
     {Py_tp_methods, attrgetter_methods},
+    {Py_tp_members, attrgetter_members},
+    {Py_tp_getset, common_getset},
     {Py_tp_new, attrgetter_new},
     {Py_tp_getattro, PyObject_GenericGetAttr},
     {Py_tp_repr, attrgetter_repr},
@@ -1446,7 +1552,8 @@ static PyType_Spec attrgetter_type_spec = {
     .name = "operator.attrgetter",
     .basicsize = sizeof(attrgetterobject),
     .itemsize = 0,
-    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
+              Py_TPFLAGS_IMMUTABLETYPE | Py_TPFLAGS_HAVE_VECTORCALL),
     .slots = attrgetter_type_slots,
 };
 
@@ -1456,9 +1563,76 @@ static PyType_Spec attrgetter_type_spec = {
 typedef struct {
     PyObject_HEAD
     PyObject *name;
-    PyObject *args;
+    PyObject *xargs; // reference to arguments passed in constructor
     PyObject *kwds;
+    PyObject **vectorcall_args;  /* Borrowed references */
+    PyObject *vectorcall_kwnames;
+    vectorcallfunc vectorcall;
 } methodcallerobject;
+
+static int _methodcaller_initialize_vectorcall(methodcallerobject* mc)
+{
+    PyObject* args = mc->xargs;
+    PyObject* kwds = mc->kwds;
+
+    Py_ssize_t nargs = PyTuple_GET_SIZE(args);
+    assert(nargs > 0);
+    mc->vectorcall_args = PyMem_Calloc(
+        nargs + (kwds ? PyDict_Size(kwds) : 0),
+        sizeof(PyObject*));
+    if (!mc->vectorcall_args) {
+        PyErr_NoMemory();
+        return -1;
+    }
+    /* The first item of vectorcall_args will be filled with obj later */
+    if (nargs > 1) {
+        memcpy(mc->vectorcall_args, PySequence_Fast_ITEMS(args),
+            nargs * sizeof(PyObject*));
+    }
+    if (kwds) {
+        const Py_ssize_t nkwds = PyDict_Size(kwds);
+
+        mc->vectorcall_kwnames = PyTuple_New(nkwds);
+        if (!mc->vectorcall_kwnames) {
+            return -1;
+        }
+        Py_ssize_t i = 0, ppos = 0;
+        PyObject* key, * value;
+        while (PyDict_Next(kwds, &ppos, &key, &value)) {
+            PyTuple_SET_ITEM(mc->vectorcall_kwnames, i, Py_NewRef(key));
+            mc->vectorcall_args[nargs + i] = value; // borrowed reference
+            ++i;
+        }
+    }
+    else {
+        mc->vectorcall_kwnames = NULL;
+    }
+    return 1;
+}
+
+
+static PyObject *
+methodcaller_vectorcall(
+        methodcallerobject *mc, PyObject *const *args, size_t nargsf, PyObject* kwnames)
+{
+    if (!_PyArg_CheckPositional("methodcaller", PyVectorcall_NARGS(nargsf), 1, 1)
+        || !_PyArg_NoKwnames("methodcaller", kwnames)) {
+        return NULL;
+    }
+    if (mc->vectorcall_args == NULL) {
+        if (_methodcaller_initialize_vectorcall(mc) < 0) {
+            return NULL;
+        }
+    }
+
+    assert(mc->vectorcall_args != 0);
+    mc->vectorcall_args[0] = args[0];
+    return PyObject_VectorcallMethod(
+            mc->name, mc->vectorcall_args,
+            (PyTuple_GET_SIZE(mc->xargs)) | PY_VECTORCALL_ARGUMENTS_OFFSET,
+            mc->vectorcall_kwnames);
+}
+
 
 /* AC 3.5: variable number of arguments, not currently support by AC */
 static PyObject *
@@ -1480,29 +1654,39 @@ methodcaller_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    _operator_state *state = PyType_GetModuleState(type);
+    _operator_state *state = _PyType_GetModuleState(type);
     /* create methodcallerobject structure */
     mc = PyObject_GC_New(methodcallerobject, (PyTypeObject *)state->methodcaller_type);
     if (mc == NULL) {
         return NULL;
     }
 
-    name = PyTuple_GET_ITEM(args, 0);
     Py_INCREF(name);
     PyUnicode_InternInPlace(&name);
     mc->name = name;
 
-    Py_XINCREF(kwds);
-    mc->kwds = kwds;
+    mc->xargs = Py_XNewRef(args); // allows us to use borrowed references
+    mc->kwds = Py_XNewRef(kwds);
+    mc->vectorcall_args = 0;
 
-    mc->args = PyTuple_GetSlice(args, 1, PyTuple_GET_SIZE(args));
-    if (mc->args == NULL) {
-        Py_DECREF(mc);
-        return NULL;
-    }
+
+    mc->vectorcall = (vectorcallfunc)methodcaller_vectorcall;
 
     PyObject_GC_Track(mc);
     return (PyObject *)mc;
+}
+
+static void
+methodcaller_clear(methodcallerobject *mc)
+{
+    Py_CLEAR(mc->name);
+    Py_CLEAR(mc->xargs);
+    Py_CLEAR(mc->kwds);
+    if (mc->vectorcall_args != NULL) {
+        PyMem_Free(mc->vectorcall_args);
+        mc->vectorcall_args = 0;
+        Py_CLEAR(mc->vectorcall_kwnames);
+    }
 }
 
 static void
@@ -1510,9 +1694,7 @@ methodcaller_dealloc(methodcallerobject *mc)
 {
     PyTypeObject *tp = Py_TYPE(mc);
     PyObject_GC_UnTrack(mc);
-    Py_XDECREF(mc->name);
-    Py_XDECREF(mc->args);
-    Py_XDECREF(mc->kwds);
+    methodcaller_clear(mc);
     tp->tp_free(mc);
     Py_DECREF(tp);
 }
@@ -1520,8 +1702,10 @@ methodcaller_dealloc(methodcallerobject *mc)
 static int
 methodcaller_traverse(methodcallerobject *mc, visitproc visit, void *arg)
 {
-    Py_VISIT(mc->args);
+    Py_VISIT(mc->name);
+    Py_VISIT(mc->xargs);
     Py_VISIT(mc->kwds);
+    Py_VISIT(Py_TYPE(mc));
     return 0;
 }
 
@@ -1538,7 +1722,16 @@ methodcaller_call(methodcallerobject *mc, PyObject *args, PyObject *kw)
     method = PyObject_GetAttr(obj, mc->name);
     if (method == NULL)
         return NULL;
-    result = PyObject_Call(method, mc->args, mc->kwds);
+
+
+    PyObject *cargs = PyTuple_GetSlice(mc->xargs, 1, PyTuple_GET_SIZE(mc->xargs));
+    if (cargs == NULL) {
+        Py_DECREF(method);
+        return NULL;
+    }
+
+    result = PyObject_Call(method, cargs, mc->kwds);
+    Py_DECREF(cargs);
     Py_DECREF(method);
     return result;
 }
@@ -1556,7 +1749,7 @@ methodcaller_repr(methodcallerobject *mc)
     }
 
     numkwdargs = mc->kwds != NULL ? PyDict_GET_SIZE(mc->kwds) : 0;
-    numposargs = PyTuple_GET_SIZE(mc->args);
+    numposargs = PyTuple_GET_SIZE(mc->xargs) - 1;
     numtotalargs = numposargs + numkwdargs;
 
     if (numtotalargs == 0) {
@@ -1572,7 +1765,7 @@ methodcaller_repr(methodcallerobject *mc)
     }
 
     for (i = 0; i < numposargs; ++i) {
-        PyObject *onerepr = PyObject_Repr(PyTuple_GET_ITEM(mc->args, i));
+        PyObject *onerepr = PyObject_Repr(PyTuple_GET_ITEM(mc->xargs, i+1));
         if (onerepr == NULL)
             goto done;
         PyTuple_SET_ITEM(argreprs, i, onerepr);
@@ -1622,34 +1815,25 @@ done:
 static PyObject *
 methodcaller_reduce(methodcallerobject *mc, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *newargs;
     if (!mc->kwds || PyDict_GET_SIZE(mc->kwds) == 0) {
         Py_ssize_t i;
-        Py_ssize_t callargcount = PyTuple_GET_SIZE(mc->args);
-        newargs = PyTuple_New(1 + callargcount);
+        Py_ssize_t newarg_size = PyTuple_GET_SIZE(mc->xargs);
+        PyObject *newargs = PyTuple_New(newarg_size);
         if (newargs == NULL)
             return NULL;
-        Py_INCREF(mc->name);
-        PyTuple_SET_ITEM(newargs, 0, mc->name);
-        for (i = 0; i < callargcount; ++i) {
-            PyObject *arg = PyTuple_GET_ITEM(mc->args, i);
-            Py_INCREF(arg);
-            PyTuple_SET_ITEM(newargs, i + 1, arg);
+        PyTuple_SET_ITEM(newargs, 0, Py_NewRef(mc->name));
+        for (i = 1; i < newarg_size; ++i) {
+            PyObject *arg = PyTuple_GET_ITEM(mc->xargs, i);
+            PyTuple_SET_ITEM(newargs, i, Py_NewRef(arg));
         }
         return Py_BuildValue("ON", Py_TYPE(mc), newargs);
     }
     else {
-        PyObject *functools;
         PyObject *partial;
         PyObject *constructor;
         PyObject *newargs[2];
 
-        _Py_IDENTIFIER(partial);
-        functools = PyImport_ImportModule("functools");
-        if (!functools)
-            return NULL;
-        partial = _PyObject_GetAttrId(functools, &PyId_partial);
-        Py_DECREF(functools);
+        partial = _PyImport_GetModuleAttrString("functools", "partial");
         if (!partial)
             return NULL;
 
@@ -1658,7 +1842,12 @@ methodcaller_reduce(methodcallerobject *mc, PyObject *Py_UNUSED(ignored))
         constructor = PyObject_VectorcallDict(partial, newargs, 2, mc->kwds);
 
         Py_DECREF(partial);
-        return Py_BuildValue("NO", constructor, mc->args);
+        PyObject *args = PyTuple_GetSlice(mc->xargs, 1, PyTuple_GET_SIZE(mc->xargs));
+        if (!args) {
+            Py_DECREF(constructor);
+            return NULL;
+        }
+        return Py_BuildValue("NO", constructor, args);
     }
 }
 
@@ -1667,9 +1856,14 @@ static PyMethodDef methodcaller_methods[] = {
      reduce_doc},
     {NULL}
 };
+
+static PyMemberDef methodcaller_members[] = {
+    {"__vectorcalloffset__", Py_T_PYSSIZET, offsetof(methodcallerobject, vectorcall), Py_READONLY},
+    {NULL}
+};
+
 PyDoc_STRVAR(methodcaller_doc,
-"methodcaller(name, ...) --> methodcaller object\n\
-\n\
+"methodcaller(name, /, *args, **kwargs)\n--\n\n\
 Return a callable object that calls the given method on its operand.\n\
 After f = methodcaller('name'), the call f(r) returns r.name().\n\
 After g = methodcaller('name', 'date', foo=1), the call g(r) returns\n\
@@ -1680,7 +1874,10 @@ static PyType_Slot methodcaller_type_slots[] = {
     {Py_tp_dealloc, methodcaller_dealloc},
     {Py_tp_call, methodcaller_call},
     {Py_tp_traverse, methodcaller_traverse},
+    {Py_tp_clear, methodcaller_clear},
     {Py_tp_methods, methodcaller_methods},
+    {Py_tp_members, methodcaller_members},
+    {Py_tp_getset, common_getset},
     {Py_tp_new, methodcaller_new},
     {Py_tp_getattro, PyObject_GenericGetAttr},
     {Py_tp_repr, methodcaller_repr},
@@ -1691,7 +1888,8 @@ static PyType_Spec methodcaller_type_spec = {
     .name = "operator.methodcaller",
     .basicsize = sizeof(methodcallerobject),
     .itemsize = 0,
-    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
+              Py_TPFLAGS_HAVE_VECTORCALL | Py_TPFLAGS_IMMUTABLETYPE),
     .slots = methodcaller_type_slots,
 };
 
@@ -1729,6 +1927,8 @@ operator_exec(PyObject *module)
 
 static struct PyModuleDef_Slot operator_slots[] = {
     {Py_mod_exec, operator_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
 };
 

@@ -75,8 +75,12 @@ class ProactorSocketTransportTests(test_utils.TestCase):
         called_buf = bytearray(self.buffer_size)
         called_buf[:len(buf)] = buf
         self.loop._proactor.recv_into.assert_called_with(self.sock, called_buf)
-        self.protocol.data_received.assert_called_with(bytearray(buf))
+        self.protocol.data_received.assert_called_with(buf)
+        # assert_called_with maps bytearray and bytes to the same thing so check manually
+        # regression test for https://github.com/python/cpython/issues/99941
+        self.assertIsInstance(self.protocol.data_received.call_args.args[0], bytes)
 
+    @unittest.skipIf(sys.flags.optimize, "Assertions are disabled in optimized mode")
     def test_loop_reading_no_data(self):
         res = self.loop.create_future()
         res.set_result(0)
@@ -241,6 +245,14 @@ class ProactorSocketTransportTests(test_utils.TestCase):
         test_utils.run_briefly(self.loop)
         self.assertFalse(self.protocol.connection_lost.called)
 
+    def test_close_invalid_sockobj(self):
+        tr = self.socket_transport()
+        self.sock.fileno.return_value = -1
+        tr.close()
+        test_utils.run_briefly(self.loop)
+        self.protocol.connection_lost.assert_called_with(None)
+        self.assertFalse(self.sock.shutdown.called)
+
     @mock.patch('asyncio.base_events.logger')
     def test_fatal_error(self, m_logging):
         tr = self.socket_transport()
@@ -281,7 +293,33 @@ class ProactorSocketTransportTests(test_utils.TestCase):
         tr._closing = True
         tr._force_close(None)
         test_utils.run_briefly(self.loop)
+        # See https://github.com/python/cpython/issues/89237
+        # `protocol.connection_lost` should be called even if
+        # the transport was closed forcefully otherwise
+        # the resources held by protocol will never be freed
+        # and waiters will never be notified leading to hang.
+        self.assertTrue(self.protocol.connection_lost.called)
+
+    def test_force_close_protocol_connection_lost_once(self):
+        tr = self.socket_transport()
         self.assertFalse(self.protocol.connection_lost.called)
+        tr._closing = True
+        # Calling _force_close twice should not call
+        # protocol.connection_lost twice
+        tr._force_close(None)
+        tr._force_close(None)
+        test_utils.run_briefly(self.loop)
+        self.assertEqual(1, self.protocol.connection_lost.call_count)
+
+    def test_close_protocol_connection_lost_once(self):
+        tr = self.socket_transport()
+        self.assertFalse(self.protocol.connection_lost.called)
+        # Calling close twice should not call
+        # protocol.connection_lost twice
+        tr.close()
+        tr.close()
+        test_utils.run_briefly(self.loop)
+        self.assertEqual(1, self.protocol.connection_lost.call_count)
 
     def test_fatal_error_2(self):
         tr = self.socket_transport()
@@ -409,6 +447,19 @@ class ProactorSocketTransportTests(test_utils.TestCase):
 
         self.assertFalse(tr.is_reading())
 
+    def test_pause_reading_connection_made(self):
+        tr = self.socket_transport()
+        self.protocol.connection_made.side_effect = lambda _: tr.pause_reading()
+        test_utils.run_briefly(self.loop)
+        self.assertFalse(tr.is_reading())
+        self.loop.assert_no_reader(7)
+
+        tr.resume_reading()
+        self.assertTrue(tr.is_reading())
+
+        tr.close()
+        self.assertFalse(tr.is_reading())
+
 
     def pause_writing_transport(self, high):
         tr = self.socket_transport()
@@ -534,11 +585,10 @@ class ProactorDatagramTransportTests(test_utils.TestCase):
 
     def test_sendto_no_data(self):
         transport = self.datagram_transport()
-        transport._buffer.append((b'data', ('0.0.0.0', 12345)))
-        transport.sendto(b'', ())
-        self.assertFalse(self.sock.sendto.called)
-        self.assertEqual(
-            [(b'data', ('0.0.0.0', 12345))], list(transport._buffer))
+        transport.sendto(b'', ('0.0.0.0', 1234))
+        self.assertTrue(self.proactor.sendto.called)
+        self.proactor.sendto.assert_called_with(
+            self.sock, b'', addr=('0.0.0.0', 1234))
 
     def test_sendto_buffer(self):
         transport = self.datagram_transport()
@@ -574,6 +624,19 @@ class ProactorDatagramTransportTests(test_utils.TestCase):
         self.assertEqual(
             [(b'data1', ('0.0.0.0', 12345)),
              (b'data2', ('0.0.0.0', 12345))],
+            list(transport._buffer))
+        self.assertIsInstance(transport._buffer[1][0], bytes)
+
+    def test_sendto_buffer_nodata(self):
+        data2 = b''
+        transport = self.datagram_transport()
+        transport._buffer.append((b'data1', ('0.0.0.0', 12345)))
+        transport._write_fut = object()
+        transport.sendto(data2, ('0.0.0.0', 12345))
+        self.assertFalse(self.proactor.sendto.called)
+        self.assertEqual(
+            [(b'data1', ('0.0.0.0', 12345)),
+             (b'', ('0.0.0.0', 12345))],
             list(transport._buffer))
         self.assertIsInstance(transport._buffer[1][0], bytes)
 
@@ -838,6 +901,7 @@ class BaseProactorEventLoopTests(test_utils.TestCase):
     def test_make_datagram_transport(self):
         tr = self.datagram_transport()
         self.assertIsInstance(tr, _ProactorDatagramTransport)
+        self.assertIsInstance(tr, asyncio.DatagramTransport)
         close_transport(tr)
 
     def test_datagram_loop_writing(self):
@@ -869,6 +933,7 @@ class BaseProactorEventLoopTests(test_utils.TestCase):
         self.protocol.datagram_received.assert_called_with(b'data', ('127.0.0.1', 12068))
         close_transport(tr)
 
+    @unittest.skipIf(sys.flags.optimize, "Assertions are disabled in optimized mode")
     def test_datagram_loop_reading_no_data(self):
         res = self.loop.create_future()
         res.set_result((b'', ('127.0.0.1', 12068)))

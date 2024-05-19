@@ -94,7 +94,7 @@ for two inputs:
 >>> correlation(x, y)  #doctest: +ELLIPSIS
 0.31622776601...
 >>> linear_regression(x, y)  #doctest:
-LinearRegression(intercept=1.5, slope=0.1)
+LinearRegression(slope=0.1, intercept=1.5)
 
 
 Exceptions
@@ -112,6 +112,8 @@ __all__ = [
     'fmean',
     'geometric_mean',
     'harmonic_mean',
+    'kde',
+    'kde_random',
     'linear_regression',
     'mean',
     'median',
@@ -130,14 +132,20 @@ __all__ = [
 import math
 import numbers
 import random
+import sys
 
 from fractions import Fraction
 from decimal import Decimal
-from itertools import groupby, repeat
+from itertools import count, groupby, repeat
 from bisect import bisect_left, bisect_right
-from math import hypot, sqrt, fabs, exp, erf, tau, log, fsum
+from math import hypot, sqrt, fabs, exp, erf, tau, log, fsum, sumprod
+from math import isfinite, isinf, pi, cos, sin, tan, cosh, asin, atan, acos
+from functools import reduce
 from operator import itemgetter
-from collections import Counter, namedtuple
+from collections import Counter, namedtuple, defaultdict
+
+_SQRT2 = sqrt(2.0)
+_random = random
 
 # === Exceptions ===
 
@@ -147,21 +155,17 @@ class StatisticsError(ValueError):
 
 # === Private utilities ===
 
-def _sum(data, start=0):
-    """_sum(data [, start]) -> (type, sum, count)
+def _sum(data):
+    """_sum(data) -> (type, sum, count)
 
     Return a high-precision sum of the given numeric data as a fraction,
     together with the type to be converted to and the count of items.
 
-    If optional argument ``start`` is given, it is added to the total.
-    If ``data`` is empty, ``start`` (defaulting to 0) is returned.
-
-
     Examples
     --------
 
-    >>> _sum([3, 2.25, 4.5, -0.5, 1.0], 0.75)
-    (<class 'float'>, Fraction(11, 1), 5)
+    >>> _sum([3, 2.25, 4.5, -0.5, 0.25])
+    (<class 'float'>, Fraction(19, 2), 5)
 
     Some sources of round-off error will be avoided:
 
@@ -184,12 +188,12 @@ def _sum(data, start=0):
     allowed.
     """
     count = 0
-    n, d = _exact_ratio(start)
-    partials = {d: n}
+    types = set()
+    types_add = types.add
+    partials = {}
     partials_get = partials.get
-    T = _coerce(int, type(start))
     for typ, values in groupby(data, type):
-        T = _coerce(T, typ)  # or raise TypeError
+        types_add(typ)
         for n, d in map(_exact_ratio, values):
             count += 1
             partials[d] = partials_get(d, 0) + n
@@ -200,9 +204,50 @@ def _sum(data, start=0):
         assert not _isfinite(total)
     else:
         # Sum all the partial sums using builtin sum.
-        # FIXME is this faster if we sum them in order of the denominator?
-        total = sum(Fraction(n, d) for d, n in sorted(partials.items()))
+        total = sum(Fraction(n, d) for d, n in partials.items())
+    T = reduce(_coerce, types, int)  # or raise TypeError
     return (T, total, count)
+
+
+def _ss(data, c=None):
+    """Return the exact mean and sum of square deviations of sequence data.
+
+    Calculations are done in a single pass, allowing the input to be an iterator.
+
+    If given *c* is used the mean; otherwise, it is calculated from the data.
+    Use the *c* argument with care, as it can lead to garbage results.
+
+    """
+    if c is not None:
+        T, ssd, count = _sum((d := x - c) * d for x in data)
+        return (T, ssd, c, count)
+    count = 0
+    types = set()
+    types_add = types.add
+    sx_partials = defaultdict(int)
+    sxx_partials = defaultdict(int)
+    for typ, values in groupby(data, type):
+        types_add(typ)
+        for n, d in map(_exact_ratio, values):
+            count += 1
+            sx_partials[d] += n
+            sxx_partials[d] += n * n
+    if not count:
+        ssd = c = Fraction(0)
+    elif None in sx_partials:
+        # The sum will be a NAN or INF. We can ignore all the finite
+        # partials, and just look at this special one.
+        ssd = c = sx_partials[None]
+        assert not _isfinite(ssd)
+    else:
+        sx = sum(Fraction(n, d) for d, n in sx_partials.items())
+        sxx = sum(Fraction(n, d*d) for d, n in sxx_partials.items())
+        # This formula has poor numeric properties for floats,
+        # but with fractions it is exact.
+        ssd = (count * sxx - sx * sx) / count
+        c = sx / count
+    T = reduce(_coerce, types, int)  # or raise TypeError
+    return (T, ssd, c, count)
 
 
 def _isfinite(x):
@@ -251,28 +296,42 @@ def _exact_ratio(x):
 
     x is expected to be an int, Fraction, Decimal or float.
     """
+
+    # XXX We should revisit whether using fractions to accumulate exact
+    # ratios is the right way to go.
+
+    # The integer ratios for binary floats can have numerators or
+    # denominators with over 300 decimal digits.  The problem is more
+    # acute with decimal floats where the default decimal context
+    # supports a huge range of exponents from Emin=-999999 to
+    # Emax=999999.  When expanded with as_integer_ratio(), numbers like
+    # Decimal('3.14E+5000') and Decimal('3.14E-5000') have large
+    # numerators or denominators that will slow computation.
+
+    # When the integer ratios are accumulated as fractions, the size
+    # grows to cover the full range from the smallest magnitude to the
+    # largest.  For example, Fraction(3.14E+300) + Fraction(3.14E-300),
+    # has a 616 digit numerator.  Likewise,
+    # Fraction(Decimal('3.14E+5000')) + Fraction(Decimal('3.14E-5000'))
+    # has 10,003 digit numerator.
+
+    # This doesn't seem to have been problem in practice, but it is a
+    # potential pitfall.
+
     try:
-        # Optimise the common case of floats. We expect that the most often
-        # used numeric type will be builtin floats, so try to make this as
-        # fast as possible.
-        if type(x) is float or type(x) is Decimal:
-            return x.as_integer_ratio()
-        try:
-            # x may be an int, Fraction, or Integral ABC.
-            return (x.numerator, x.denominator)
-        except AttributeError:
-            try:
-                # x may be a float or Decimal subclass.
-                return x.as_integer_ratio()
-            except AttributeError:
-                # Just give up?
-                pass
+        return x.as_integer_ratio()
+    except AttributeError:
+        pass
     except (OverflowError, ValueError):
         # float NAN or INF.
         assert not _isfinite(x)
         return (x, None)
-    msg = "can't convert type '{}' to numerator/denominator"
-    raise TypeError(msg.format(type(x).__name__))
+    try:
+        # x may be an Integral ABC.
+        return (x.numerator, x.denominator)
+    except AttributeError:
+        msg = f"can't convert type '{type(x).__name__}' to numerator/denominator"
+        raise TypeError(msg)
 
 
 def _convert(value, T):
@@ -293,28 +352,119 @@ def _convert(value, T):
             raise
 
 
-def _find_lteq(a, x):
-    'Locate the leftmost value exactly equal to x'
-    i = bisect_left(a, x)
-    if i != len(a) and a[i] == x:
-        return i
-    raise ValueError
-
-
-def _find_rteq(a, l, x):
-    'Locate the rightmost value exactly equal to x'
-    i = bisect_right(a, x, lo=l)
-    if i != (len(a) + 1) and a[i - 1] == x:
-        return i - 1
-    raise ValueError
-
-
 def _fail_neg(values, errmsg='negative value'):
     """Iterate over values, failing if any are less than zero."""
     for x in values:
         if x < 0:
             raise StatisticsError(errmsg)
         yield x
+
+
+def _rank(data, /, *, key=None, reverse=False, ties='average', start=1) -> list[float]:
+    """Rank order a dataset. The lowest value has rank 1.
+
+    Ties are averaged so that equal values receive the same rank:
+
+        >>> data = [31, 56, 31, 25, 75, 18]
+        >>> _rank(data)
+        [3.5, 5.0, 3.5, 2.0, 6.0, 1.0]
+
+    The operation is idempotent:
+
+        >>> _rank([3.5, 5.0, 3.5, 2.0, 6.0, 1.0])
+        [3.5, 5.0, 3.5, 2.0, 6.0, 1.0]
+
+    It is possible to rank the data in reverse order so that the
+    highest value has rank 1.  Also, a key-function can extract
+    the field to be ranked:
+
+        >>> goals = [('eagles', 45), ('bears', 48), ('lions', 44)]
+        >>> _rank(goals, key=itemgetter(1), reverse=True)
+        [2.0, 1.0, 3.0]
+
+    Ranks are conventionally numbered starting from one; however,
+    setting *start* to zero allows the ranks to be used as array indices:
+
+        >>> prize = ['Gold', 'Silver', 'Bronze', 'Certificate']
+        >>> scores = [8.1, 7.3, 9.4, 8.3]
+        >>> [prize[int(i)] for i in _rank(scores, start=0, reverse=True)]
+        ['Bronze', 'Certificate', 'Gold', 'Silver']
+
+    """
+    # If this function becomes public at some point, more thought
+    # needs to be given to the signature.  A list of ints is
+    # plausible when ties is "min" or "max".  When ties is "average",
+    # either list[float] or list[Fraction] is plausible.
+
+    # Default handling of ties matches scipy.stats.mstats.spearmanr.
+    if ties != 'average':
+        raise ValueError(f'Unknown tie resolution method: {ties!r}')
+    if key is not None:
+        data = map(key, data)
+    val_pos = sorted(zip(data, count()), reverse=reverse)
+    i = start - 1
+    result = [0] * len(val_pos)
+    for _, g in groupby(val_pos, key=itemgetter(0)):
+        group = list(g)
+        size = len(group)
+        rank = i + (size + 1) / 2
+        for value, orig_pos in group:
+            result[orig_pos] = rank
+        i += size
+    return result
+
+
+def _integer_sqrt_of_frac_rto(n: int, m: int) -> int:
+    """Square root of n/m, rounded to the nearest integer using round-to-odd."""
+    # Reference: https://www.lri.fr/~melquion/doc/05-imacs17_1-expose.pdf
+    a = math.isqrt(n // m)
+    return a | (a*a*m != n)
+
+
+# For 53 bit precision floats, the bit width used in
+# _float_sqrt_of_frac() is 109.
+_sqrt_bit_width: int = 2 * sys.float_info.mant_dig + 3
+
+
+def _float_sqrt_of_frac(n: int, m: int) -> float:
+    """Square root of n/m as a float, correctly rounded."""
+    # See principle and proof sketch at: https://bugs.python.org/msg407078
+    q = (n.bit_length() - m.bit_length() - _sqrt_bit_width) // 2
+    if q >= 0:
+        numerator = _integer_sqrt_of_frac_rto(n, m << 2 * q) << q
+        denominator = 1
+    else:
+        numerator = _integer_sqrt_of_frac_rto(n << -2 * q, m)
+        denominator = 1 << -q
+    return numerator / denominator   # Convert to float
+
+
+def _decimal_sqrt_of_frac(n: int, m: int) -> Decimal:
+    """Square root of n/m as a Decimal, correctly rounded."""
+    # Premise:  For decimal, computing (n/m).sqrt() can be off
+    #           by 1 ulp from the correctly rounded result.
+    # Method:   Check the result, moving up or down a step if needed.
+    if n <= 0:
+        if not n:
+            return Decimal('0.0')
+        n, m = -n, -m
+
+    root = (Decimal(n) / Decimal(m)).sqrt()
+    nr, dr = root.as_integer_ratio()
+
+    plus = root.next_plus()
+    np, dp = plus.as_integer_ratio()
+    # test: n / m > ((root + plus) / 2) ** 2
+    if 4 * n * (dr*dp)**2 > m * (dr*np + dp*nr)**2:
+        return plus
+
+    minus = root.next_minus()
+    nm, dm = minus.as_integer_ratio()
+    # test: n / m < ((root + minus) / 2) ** 2
+    if 4 * n * (dr*dm)**2 < m * (dr*nm + dm*nr)**2:
+        return minus
+
+    return root
 
 
 # === Measures of central tendency (averages) ===
@@ -335,17 +485,13 @@ def mean(data):
 
     If ``data`` is empty, StatisticsError will be raised.
     """
-    if iter(data) is data:
-        data = list(data)
-    n = len(data)
+    T, total, n = _sum(data)
     if n < 1:
         raise StatisticsError('mean requires at least one data point')
-    T, total, count = _sum(data)
-    assert count == n
     return _convert(total / n, T)
 
 
-def fmean(data):
+def fmean(data, weights=None):
     """Convert data to floats and compute the arithmetic mean.
 
     This runs faster than the mean() function and it always returns a float.
@@ -354,29 +500,40 @@ def fmean(data):
     >>> fmean([3.5, 4.0, 5.25])
     4.25
     """
-    try:
-        n = len(data)
-    except TypeError:
-        # Handle iterators that do not define __len__().
-        n = 0
-        def count(iterable):
-            nonlocal n
-            for n, x in enumerate(iterable, start=1):
-                yield x
-        total = fsum(count(data))
-    else:
+    if weights is None:
+        try:
+            n = len(data)
+        except TypeError:
+            # Handle iterators that do not define __len__().
+            n = 0
+            def count(iterable):
+                nonlocal n
+                for n, x in enumerate(iterable, start=1):
+                    yield x
+            data = count(data)
         total = fsum(data)
-    try:
+        if not n:
+            raise StatisticsError('fmean requires at least one data point')
         return total / n
-    except ZeroDivisionError:
-        raise StatisticsError('fmean requires at least one data point') from None
+    if not isinstance(weights, (list, tuple)):
+        weights = list(weights)
+    try:
+        num = sumprod(data, weights)
+    except ValueError:
+        raise StatisticsError('data and weights must be the same length')
+    den = fsum(weights)
+    if not den:
+        raise StatisticsError('sum of weights must be non-zero')
+    return num / den
 
 
 def geometric_mean(data):
     """Convert data to floats and compute the geometric mean.
 
-    Raises a StatisticsError if the input dataset is empty,
-    if it contains a zero, or if it contains a negative value.
+    Raises a StatisticsError if the input dataset is empty
+    or if it contains a negative value.
+
+    Returns zero if the product of inputs is zero.
 
     No special efforts are made to achieve exact results.
     (However, this may change in the future.)
@@ -384,11 +541,25 @@ def geometric_mean(data):
     >>> round(geometric_mean([54, 24, 36]), 9)
     36.0
     """
-    try:
-        return exp(fmean(map(log, data)))
-    except ValueError:
-        raise StatisticsError('geometric mean requires a non-empty dataset '
-                              ' containing positive numbers') from None
+    n = 0
+    found_zero = False
+    def count_positive(iterable):
+        nonlocal n, found_zero
+        for n, x in enumerate(iterable, start=1):
+            if x > 0.0 or math.isnan(x):
+                yield x
+            elif x == 0.0:
+                found_zero = True
+            else:
+                raise StatisticsError('No negative inputs allowed', x)
+    total = fsum(map(log, count_positive(data)))
+    if not n:
+        raise StatisticsError('Must have a non-empty dataset')
+    if math.isnan(total):
+        return math.nan
+    if found_zero:
+        return math.nan if total == math.inf else 0.0
+    return exp(total / n)
 
 
 def harmonic_mean(data, weights=None):
@@ -512,58 +683,75 @@ def median_high(data):
     return data[n // 2]
 
 
-def median_grouped(data, interval=1):
-    """Return the 50th percentile (median) of grouped continuous data.
+def median_grouped(data, interval=1.0):
+    """Estimates the median for numeric data binned around the midpoints
+    of consecutive, fixed-width intervals.
 
-    >>> median_grouped([1, 2, 2, 3, 4, 4, 4, 4, 4, 5])
-    3.7
-    >>> median_grouped([52, 52, 53, 54])
-    52.5
+    The *data* can be any iterable of numeric data with each value being
+    exactly the midpoint of a bin.  At least one value must be present.
 
-    This calculates the median as the 50th percentile, and should be
-    used when your data is continuous and grouped. In the above example,
-    the values 1, 2, 3, etc. actually represent the midpoint of classes
-    0.5-1.5, 1.5-2.5, 2.5-3.5, etc. The middle value falls somewhere in
-    class 3.5-4.5, and interpolation is used to estimate it.
+    The *interval* is width of each bin.
 
-    Optional argument ``interval`` represents the class interval, and
-    defaults to 1. Changing the class interval naturally will change the
-    interpolated 50th percentile value:
+    For example, demographic information may have been summarized into
+    consecutive ten-year age groups with each group being represented
+    by the 5-year midpoints of the intervals:
 
-    >>> median_grouped([1, 3, 3, 5, 7], interval=1)
-    3.25
-    >>> median_grouped([1, 3, 3, 5, 7], interval=2)
-    3.5
+        >>> demographics = Counter({
+        ...    25: 172,   # 20 to 30 years old
+        ...    35: 484,   # 30 to 40 years old
+        ...    45: 387,   # 40 to 50 years old
+        ...    55:  22,   # 50 to 60 years old
+        ...    65:   6,   # 60 to 70 years old
+        ... })
 
-    This function does not check whether the data points are at least
-    ``interval`` apart.
+    The 50th percentile (median) is the 536th person out of the 1071
+    member cohort.  That person is in the 30 to 40 year old age group.
+
+    The regular median() function would assume that everyone in the
+    tricenarian age group was exactly 35 years old.  A more tenable
+    assumption is that the 484 members of that age group are evenly
+    distributed between 30 and 40.  For that, we use median_grouped().
+
+        >>> data = list(demographics.elements())
+        >>> median(data)
+        35
+        >>> round(median_grouped(data, interval=10), 1)
+        37.5
+
+    The caller is responsible for making sure the data points are separated
+    by exact multiples of *interval*.  This is essential for getting a
+    correct result.  The function does not check this precondition.
+
+    Inputs may be any numeric type that can be coerced to a float during
+    the interpolation step.
+
     """
     data = sorted(data)
     n = len(data)
-    if n == 0:
+    if not n:
         raise StatisticsError("no median for empty data")
-    elif n == 1:
-        return data[0]
-    # Find the value at the midpoint. Remember this corresponds to the
-    # centre of the class interval.
-    x = data[n // 2]
-    for obj in (x, interval):
-        if isinstance(obj, (str, bytes)):
-            raise TypeError('expected number but got %r' % obj)
-    try:
-        L = x - interval / 2  # The lower limit of the median interval.
-    except TypeError:
-        # Mixed type. For now we just coerce to float.
-        L = float(x) - float(interval) / 2
 
-    # Uses bisection search to search for x in data with log(n) time complexity
-    # Find the position of leftmost occurrence of x in data
-    l1 = _find_lteq(data, x)
-    # Find the position of rightmost occurrence of x in data[l1...len(data)]
-    # Assuming always l1 <= l2
-    l2 = _find_rteq(data, l1, x)
-    cf = l1
-    f = l2 - l1 + 1
+    # Find the value at the midpoint. Remember this corresponds to the
+    # midpoint of the class interval.
+    x = data[n // 2]
+
+    # Using O(log n) bisection, find where all the x values occur in the data.
+    # All x will lie within data[i:j].
+    i = bisect_left(data, x)
+    j = bisect_right(data, x, lo=i)
+
+    # Coerce to floats, raising a TypeError if not possible
+    try:
+        interval = float(interval)
+        x = float(x)
+    except ValueError:
+        raise TypeError(f'Value cannot be converted to a float')
+
+    # Interpolate the median using the formula found at:
+    # https://www.cuemath.com/data/median-of-grouped-data/
+    L = x - interval / 2.0    # Lower limit of the median interval
+    cf = i                    # Cumulative frequency of the preceding interval
+    f = j - i                 # Number of elements in the median internal
     return L + interval * (n / 2 - cf) / f
 
 
@@ -610,9 +798,223 @@ def multimode(data):
     >>> multimode('')
     []
     """
-    counts = Counter(iter(data)).most_common()
-    maxcount, mode_items = next(groupby(counts, key=itemgetter(1)), (0, []))
-    return list(map(itemgetter(0), mode_items))
+    counts = Counter(iter(data))
+    if not counts:
+        return []
+    maxcount = max(counts.values())
+    return [value for value, count in counts.items() if count == maxcount]
+
+
+def kde(data, h, kernel='normal', *, cumulative=False):
+    """Kernel Density Estimation:  Create a continuous probability density
+    function or cumulative distribution function from discrete samples.
+
+    The basic idea is to smooth the data using a kernel function
+    to help draw inferences about a population from a sample.
+
+    The degree of smoothing is controlled by the scaling parameter h
+    which is called the bandwidth.  Smaller values emphasize local
+    features while larger values give smoother results.
+
+    The kernel determines the relative weights of the sample data
+    points.  Generally, the choice of kernel shape does not matter
+    as much as the more influential bandwidth smoothing parameter.
+
+    Kernels that give some weight to every sample point:
+
+       normal (gauss)
+       logistic
+       sigmoid
+
+    Kernels that only give weight to sample points within
+    the bandwidth:
+
+       rectangular (uniform)
+       triangular
+       parabolic (epanechnikov)
+       quartic (biweight)
+       triweight
+       cosine
+
+    If *cumulative* is true, will return a cumulative distribution function.
+
+    A StatisticsError will be raised if the data sequence is empty.
+
+    Example
+    -------
+
+    Given a sample of six data points, construct a continuous
+    function that estimates the underlying probability density:
+
+        >>> sample = [-2.1, -1.3, -0.4, 1.9, 5.1, 6.2]
+        >>> f_hat = kde(sample, h=1.5)
+
+    Compute the area under the curve:
+
+        >>> area = sum(f_hat(x) for x in range(-20, 20))
+        >>> round(area, 4)
+        1.0
+
+    Plot the estimated probability density function at
+    evenly spaced points from -6 to 10:
+
+        >>> for x in range(-6, 11):
+        ...     density = f_hat(x)
+        ...     plot = ' ' * int(density * 400) + 'x'
+        ...     print(f'{x:2}: {density:.3f} {plot}')
+        ...
+        -6: 0.002 x
+        -5: 0.009    x
+        -4: 0.031             x
+        -3: 0.070                             x
+        -2: 0.111                                             x
+        -1: 0.125                                                   x
+         0: 0.110                                            x
+         1: 0.086                                   x
+         2: 0.068                            x
+         3: 0.059                        x
+         4: 0.066                           x
+         5: 0.082                                 x
+         6: 0.082                                 x
+         7: 0.058                        x
+         8: 0.028            x
+         9: 0.009    x
+        10: 0.002 x
+
+    Estimate P(4.5 < X <= 7.5), the probability that a new sample value
+    will be between 4.5 and 7.5:
+
+        >>> cdf = kde(sample, h=1.5, cumulative=True)
+        >>> round(cdf(7.5) - cdf(4.5), 2)
+        0.22
+
+    References
+    ----------
+
+    Kernel density estimation and its application:
+    https://www.itm-conferences.org/articles/itmconf/pdf/2018/08/itmconf_sam2018_00037.pdf
+
+    Kernel functions in common use:
+    https://en.wikipedia.org/wiki/Kernel_(statistics)#kernel_functions_in_common_use
+
+    Interactive graphical demonstration and exploration:
+    https://demonstrations.wolfram.com/KernelDensityEstimation/
+
+    Kernel estimation of cumulative distribution function of a random variable with bounded support
+    https://www.econstor.eu/bitstream/10419/207829/1/10.21307_stattrans-2016-037.pdf
+
+    """
+
+    n = len(data)
+    if not n:
+        raise StatisticsError('Empty data sequence')
+
+    if not isinstance(data[0], (int, float)):
+        raise TypeError('Data sequence must contain ints or floats')
+
+    if h <= 0.0:
+        raise StatisticsError(f'Bandwidth h must be positive, not {h=!r}')
+
+    match kernel:
+
+        case 'normal' | 'gauss':
+            sqrt2pi = sqrt(2 * pi)
+            sqrt2 = sqrt(2)
+            K = lambda t: exp(-1/2 * t * t) / sqrt2pi
+            W = lambda t: 1/2 * (1.0 + erf(t / sqrt2))
+            support = None
+
+        case 'logistic':
+            # 1.0 / (exp(t) + 2.0 + exp(-t))
+            K = lambda t: 1/2 / (1.0 + cosh(t))
+            W = lambda t: 1.0 - 1.0 / (exp(t) + 1.0)
+            support = None
+
+        case 'sigmoid':
+            # (2/pi) / (exp(t) + exp(-t))
+            c1 = 1 / pi
+            c2 = 2 / pi
+            K = lambda t: c1 / cosh(t)
+            W = lambda t: c2 * atan(exp(t))
+            support = None
+
+        case 'rectangular' | 'uniform':
+            K = lambda t: 1/2
+            W = lambda t: 1/2 * t + 1/2
+            support = 1.0
+
+        case 'triangular':
+            K = lambda t: 1.0 - abs(t)
+            W = lambda t: t*t * (1/2 if t < 0.0 else -1/2) + t + 1/2
+            support = 1.0
+
+        case 'parabolic' | 'epanechnikov':
+            K = lambda t: 3/4 * (1.0 - t * t)
+            W = lambda t: -1/4 * t**3 + 3/4 * t + 1/2
+            support = 1.0
+
+        case 'quartic' | 'biweight':
+            K = lambda t: 15/16 * (1.0 - t * t) ** 2
+            W = lambda t: 3/16 * t**5 - 5/8 * t**3 + 15/16 * t + 1/2
+            support = 1.0
+
+        case 'triweight':
+            K = lambda t: 35/32 * (1.0 - t * t) ** 3
+            W = lambda t: 35/32 * (-1/7*t**7 + 3/5*t**5 - t**3 + t) + 1/2
+            support = 1.0
+
+        case 'cosine':
+            c1 = pi / 4
+            c2 = pi / 2
+            K = lambda t: c1 * cos(c2 * t)
+            W = lambda t: 1/2 * sin(c2 * t) + 1/2
+            support = 1.0
+
+        case _:
+            raise StatisticsError(f'Unknown kernel name: {kernel!r}')
+
+    if support is None:
+
+        def pdf(x):
+            n = len(data)
+            return sum(K((x - x_i) / h) for x_i in data) / (n * h)
+
+        def cdf(x):
+            n = len(data)
+            return sum(W((x - x_i) / h) for x_i in data) / n
+
+    else:
+
+        sample = sorted(data)
+        bandwidth = h * support
+
+        def pdf(x):
+            nonlocal n, sample
+            if len(data) != n:
+                sample = sorted(data)
+                n = len(data)
+            i = bisect_left(sample, x - bandwidth)
+            j = bisect_right(sample, x + bandwidth)
+            supported = sample[i : j]
+            return sum(K((x - x_i) / h) for x_i in supported) / (n * h)
+
+        def cdf(x):
+            nonlocal n, sample
+            if len(data) != n:
+                sample = sorted(data)
+                n = len(data)
+            i = bisect_left(sample, x - bandwidth)
+            j = bisect_right(sample, x + bandwidth)
+            supported = sample[i : j]
+            return sum((W((x - x_i) / h) for x_i in supported), i) / n
+
+    if cumulative:
+        cdf.__doc__ = f'CDF estimate with {h=!r} and {kernel=!r}'
+        return cdf
+
+    else:
+        pdf.__doc__ = f'PDF estimate with {h=!r} and {kernel=!r}'
+        return pdf
 
 
 # Notes on methods for computing quantiles
@@ -673,7 +1075,10 @@ def quantiles(data, *, n=4, method='exclusive'):
     data = sorted(data)
     ld = len(data)
     if ld < 2:
-        raise StatisticsError('must have at least two data points')
+        if ld == 1:
+            return data * (n - 1)
+        raise StatisticsError('must have at least one data point')
+
     if method == 'inclusive':
         m = ld - 1
         result = []
@@ -682,6 +1087,7 @@ def quantiles(data, *, n=4, method='exclusive'):
             interpolated = (data[j] * (n - delta) + data[j + 1] * delta) / n
             result.append(interpolated)
         return result
+
     if method == 'exclusive':
         m = ld + 1
         result = []
@@ -692,6 +1098,7 @@ def quantiles(data, *, n=4, method='exclusive'):
             interpolated = (data[j - 1] * (n - delta) + data[j] * delta) / n
             result.append(interpolated)
         return result
+
     raise ValueError(f'Unknown method: {method!r}')
 
 
@@ -699,35 +1106,6 @@ def quantiles(data, *, n=4, method='exclusive'):
 
 # See http://mathworld.wolfram.com/Variance.html
 #     http://mathworld.wolfram.com/SampleVariance.html
-#     http://en.wikipedia.org/wiki/Algorithms_for_calculating_variance
-#
-# Under no circumstances use the so-called "computational formula for
-# variance", as that is only suitable for hand calculations with a small
-# amount of low-precision data. It has terrible numeric properties.
-#
-# See a comparison of three computational methods here:
-# http://www.johndcook.com/blog/2008/09/26/comparing-three-methods-of-computing-standard-deviation/
-
-def _ss(data, c=None):
-    """Return sum of square deviations of sequence data.
-
-    If ``c`` is None, the mean is calculated in one pass, and the deviations
-    from the mean are calculated in a second pass. Otherwise, deviations are
-    calculated from ``c`` as given. Use the second case with care, as it can
-    lead to garbage results.
-    """
-    if c is not None:
-        T, total, count = _sum((x-c)**2 for x in data)
-        return (T, total)
-    c = mean(data)
-    T, total, count = _sum((x-c)**2 for x in data)
-    # The following sum should mathematically equal zero, but due to rounding
-    # error may not.
-    U, total2, count2 = _sum((x - c) for x in data)
-    assert T == U and count == count2
-    total -= total2 ** 2 / len(data)
-    assert not total < 0, 'negative sum of square deviations: %f' % total
-    return (T, total)
 
 
 def variance(data, xbar=None):
@@ -768,12 +1146,9 @@ def variance(data, xbar=None):
     Fraction(67, 108)
 
     """
-    if iter(data) is data:
-        data = list(data)
-    n = len(data)
+    T, ss, c, n = _ss(data, xbar)
     if n < 2:
         raise StatisticsError('variance requires at least two data points')
-    T, ss = _ss(data, xbar)
     return _convert(ss / (n - 1), T)
 
 
@@ -812,12 +1187,9 @@ def pvariance(data, mu=None):
     Fraction(13, 72)
 
     """
-    if iter(data) is data:
-        data = list(data)
-    n = len(data)
+    T, ss, c, n = _ss(data, mu)
     if n < 1:
         raise StatisticsError('pvariance requires at least one data point')
-    T, ss = _ss(data, mu)
     return _convert(ss / n, T)
 
 
@@ -830,11 +1202,13 @@ def stdev(data, xbar=None):
     1.0810874155219827
 
     """
-    var = variance(data, xbar)
-    try:
-        return var.sqrt()
-    except AttributeError:
-        return math.sqrt(var)
+    T, ss, c, n = _ss(data, xbar)
+    if n < 2:
+        raise StatisticsError('stdev requires at least two data points')
+    mss = ss / (n - 1)
+    if issubclass(T, Decimal):
+        return _decimal_sqrt_of_frac(mss.numerator, mss.denominator)
+    return _float_sqrt_of_frac(mss.numerator, mss.denominator)
 
 
 def pstdev(data, mu=None):
@@ -846,11 +1220,47 @@ def pstdev(data, mu=None):
     0.986893273527251
 
     """
-    var = pvariance(data, mu)
+    T, ss, c, n = _ss(data, mu)
+    if n < 1:
+        raise StatisticsError('pstdev requires at least one data point')
+    mss = ss / n
+    if issubclass(T, Decimal):
+        return _decimal_sqrt_of_frac(mss.numerator, mss.denominator)
+    return _float_sqrt_of_frac(mss.numerator, mss.denominator)
+
+
+def _mean_stdev(data):
+    """In one pass, compute the mean and sample standard deviation as floats."""
+    T, ss, xbar, n = _ss(data)
+    if n < 2:
+        raise StatisticsError('stdev requires at least two data points')
+    mss = ss / (n - 1)
     try:
-        return var.sqrt()
+        return float(xbar), _float_sqrt_of_frac(mss.numerator, mss.denominator)
     except AttributeError:
-        return math.sqrt(var)
+        # Handle Nans and Infs gracefully
+        return float(xbar), float(xbar) / float(ss)
+
+def _sqrtprod(x: float, y: float) -> float:
+    "Return sqrt(x * y) computed with improved accuracy and without overflow/underflow."
+    h = sqrt(x * y)
+    if not isfinite(h):
+        if isinf(h) and not isinf(x) and not isinf(y):
+            # Finite inputs overflowed, so scale down, and recompute.
+            scale = 2.0 ** -512  # sqrt(1 / sys.float_info.max)
+            return _sqrtprod(scale * x, scale * y) / scale
+        return h
+    if not h:
+        if x and y:
+            # Non-zero inputs underflowed, so scale up, and recompute.
+            # Scale:  1 / sqrt(sys.float_info.min * sys.float_info.epsilon)
+            scale = 2.0 ** 537
+            return _sqrtprod(scale * x, scale * y) / scale
+        return h
+    # Improve accuracy with a differential correction.
+    # https://www.wolframalpha.com/input/?i=Maclaurin+series+sqrt%28h**2+%2B+x%29+at+x%3D0
+    d = sumprod((x, h), (y, -h))
+    return h + d / (2.0 * h)
 
 
 # === Statistics for relations between two inputs ===
@@ -884,18 +1294,16 @@ def covariance(x, y, /):
         raise StatisticsError('covariance requires at least two data points')
     xbar = fsum(x) / n
     ybar = fsum(y) / n
-    sxy = fsum((xi - xbar) * (yi - ybar) for xi, yi in zip(x, y))
+    sxy = sumprod((xi - xbar for xi in x), (yi - ybar for yi in y))
     return sxy / (n - 1)
 
 
-def correlation(x, y, /):
+def correlation(x, y, /, *, method='linear'):
     """Pearson's correlation coefficient
 
     Return the Pearson's correlation coefficient for two inputs. Pearson's
-    correlation coefficient *r* takes values between -1 and +1. It measures the
-    strength and direction of the linear relationship, where +1 means very
-    strong, positive linear relationship, -1 very strong, negative linear
-    relationship, and 0 no linear relationship.
+    correlation coefficient *r* takes values between -1 and +1. It measures
+    the strength and direction of a linear relationship.
 
     >>> x = [1, 2, 3, 4, 5, 6, 7, 8, 9]
     >>> y = [9, 8, 7, 6, 5, 4, 3, 2, 1]
@@ -904,67 +1312,99 @@ def correlation(x, y, /):
     >>> correlation(x, y)
     -1.0
 
+    If *method* is "ranked", computes Spearman's rank correlation coefficient
+    for two inputs.  The data is replaced by ranks.  Ties are averaged
+    so that equal values receive the same rank.  The resulting coefficient
+    measures the strength of a monotonic relationship.
+
+    Spearman's rank correlation coefficient is appropriate for ordinal
+    data or for continuous data that doesn't meet the linear proportion
+    requirement for Pearson's correlation coefficient.
     """
     n = len(x)
     if len(y) != n:
         raise StatisticsError('correlation requires that both inputs have same number of data points')
     if n < 2:
         raise StatisticsError('correlation requires at least two data points')
-    xbar = fsum(x) / n
-    ybar = fsum(y) / n
-    sxy = fsum((xi - xbar) * (yi - ybar) for xi, yi in zip(x, y))
-    s2x = fsum((xi - xbar) ** 2.0 for xi in x)
-    s2y = fsum((yi - ybar) ** 2.0 for yi in y)
+    if method not in {'linear', 'ranked'}:
+        raise ValueError(f'Unknown method: {method!r}')
+    if method == 'ranked':
+        start = (n - 1) / -2            # Center rankings around zero
+        x = _rank(x, start=start)
+        y = _rank(y, start=start)
+    else:
+        xbar = fsum(x) / n
+        ybar = fsum(y) / n
+        x = [xi - xbar for xi in x]
+        y = [yi - ybar for yi in y]
+    sxy = sumprod(x, y)
+    sxx = sumprod(x, x)
+    syy = sumprod(y, y)
     try:
-        return sxy / sqrt(s2x * s2y)
+        return sxy / _sqrtprod(sxx, syy)
     except ZeroDivisionError:
         raise StatisticsError('at least one of the inputs is constant')
 
 
-LinearRegression = namedtuple('LinearRegression', ['intercept', 'slope'])
+LinearRegression = namedtuple('LinearRegression', ('slope', 'intercept'))
 
 
-def linear_regression(regressor, dependent_variable, /):
-    """Intercept and slope for simple linear regression
+def linear_regression(x, y, /, *, proportional=False):
+    """Slope and intercept for simple linear regression.
 
-    Return the intercept and slope of simple linear regression
+    Return the slope and intercept of simple linear regression
     parameters estimated using ordinary least squares. Simple linear
-    regression describes relationship between *regressor* and
-    *dependent variable* in terms of linear function:
+    regression describes relationship between an independent variable
+    *x* and a dependent variable *y* in terms of a linear function:
 
-        dependent_variable = intercept + slope * regressor + noise
+        y = slope * x + intercept + noise
 
-    where *intercept* and *slope* are the regression parameters that are
+    where *slope* and *intercept* are the regression parameters that are
     estimated, and noise represents the variability of the data that was
     not explained by the linear regression (it is equal to the
-    difference between predicted and actual values of dependent
+    difference between predicted and actual values of the dependent
     variable).
 
     The parameters are returned as a named tuple.
 
-    >>> regressor = [1, 2, 3, 4, 5]
+    >>> x = [1, 2, 3, 4, 5]
     >>> noise = NormalDist().samples(5, seed=42)
-    >>> dependent_variable = [2 + 3 * regressor[i] + noise[i] for i in range(5)]
-    >>> linear_regression(regressor, dependent_variable)  #doctest: +ELLIPSIS
-    LinearRegression(intercept=1.75684970486..., slope=3.09078914170...)
+    >>> y = [3 * x[i] + 2 + noise[i] for i in range(5)]
+    >>> linear_regression(x, y)  #doctest: +ELLIPSIS
+    LinearRegression(slope=3.17495..., intercept=1.00925...)
+
+    If *proportional* is true, the independent variable *x* and the
+    dependent variable *y* are assumed to be directly proportional.
+    The data is fit to a line passing through the origin.
+
+    Since the *intercept* will always be 0.0, the underlying linear
+    function simplifies to:
+
+        y = slope * x + noise
+
+    >>> y = [3 * x[i] + noise[i] for i in range(5)]
+    >>> linear_regression(x, y, proportional=True)  #doctest: +ELLIPSIS
+    LinearRegression(slope=2.90475..., intercept=0.0)
 
     """
-    n = len(regressor)
-    if len(dependent_variable) != n:
+    n = len(x)
+    if len(y) != n:
         raise StatisticsError('linear regression requires that both inputs have same number of data points')
     if n < 2:
         raise StatisticsError('linear regression requires at least two data points')
-    x, y = regressor, dependent_variable
-    xbar = fsum(x) / n
-    ybar = fsum(y) / n
-    sxy = fsum((xi - xbar) * (yi - ybar) for xi, yi in zip(x, y))
-    s2x = fsum((xi - xbar) ** 2.0 for xi in x)
+    if not proportional:
+        xbar = fsum(x) / n
+        ybar = fsum(y) / n
+        x = [xi - xbar for xi in x]  # List because used three times below
+        y = (yi - ybar for yi in y)  # Generator because only used once below
+    sxy = sumprod(x, y) + 0.0        # Add zero to coerce result to a float
+    sxx = sumprod(x, x)
     try:
-        slope = sxy / s2x   # equivalent to:  covariance(x, y) / variance(x)
+        slope = sxy / sxx   # equivalent to:  covariance(x, y) / variance(x)
     except ZeroDivisionError:
-        raise StatisticsError('regressor is constant')
-    intercept = ybar - slope * xbar
-    return LinearRegression(intercept=intercept, slope=slope)
+        raise StatisticsError('x is constant')
+    intercept = 0.0 if proportional else ybar - slope * xbar
+    return LinearRegression(slope=slope, intercept=intercept)
 
 
 ## Normal Distribution #####################################################
@@ -1071,29 +1511,29 @@ class NormalDist:
     @classmethod
     def from_samples(cls, data):
         "Make a normal distribution instance from sample data."
-        if not isinstance(data, (list, tuple)):
-            data = list(data)
-        xbar = fmean(data)
-        return cls(xbar, stdev(data, xbar))
+        return cls(*_mean_stdev(data))
 
     def samples(self, n, *, seed=None):
         "Generate *n* samples for a given mean and standard deviation."
-        gauss = random.gauss if seed is None else random.Random(seed).gauss
-        mu, sigma = self._mu, self._sigma
-        return [gauss(mu, sigma) for i in range(n)]
+        rnd = random.random if seed is None else random.Random(seed).random
+        inv_cdf = _normal_dist_inv_cdf
+        mu = self._mu
+        sigma = self._sigma
+        return [inv_cdf(rnd(), mu, sigma) for _ in repeat(None, n)]
 
     def pdf(self, x):
         "Probability density function.  P(x <= X < x+dx) / dx"
-        variance = self._sigma ** 2.0
+        variance = self._sigma * self._sigma
         if not variance:
             raise StatisticsError('pdf() not defined when sigma is zero')
-        return exp((x - self._mu)**2.0 / (-2.0*variance)) / sqrt(tau*variance)
+        diff = x - self._mu
+        return exp(diff * diff / (-2.0 * variance)) / sqrt(tau * variance)
 
     def cdf(self, x):
         "Cumulative distribution function.  P(X <= x)"
         if not self._sigma:
             raise StatisticsError('cdf() not defined when sigma is zero')
-        return 0.5 * (1.0 + erf((x - self._mu) / (self._sigma * sqrt(2.0))))
+        return 0.5 * (1.0 + erf((x - self._mu) / (self._sigma * _SQRT2)))
 
     def inv_cdf(self, p):
         """Inverse cumulative distribution function.  x : P(X <= x) = p
@@ -1107,8 +1547,6 @@ class NormalDist:
         """
         if p <= 0.0 or p >= 1.0:
             raise StatisticsError('p must be in the range 0.0 < p < 1.0')
-        if self._sigma <= 0.0:
-            raise StatisticsError('cdf() not defined when sigma at or below zero')
         return _normal_dist_inv_cdf(p, self._mu, self._sigma)
 
     def quantiles(self, n=4):
@@ -1149,9 +1587,9 @@ class NormalDist:
         dv = Y_var - X_var
         dm = fabs(Y._mu - X._mu)
         if not dv:
-            return 1.0 - erf(dm / (2.0 * X._sigma * sqrt(2.0)))
+            return 1.0 - erf(dm / (2.0 * X._sigma * _SQRT2))
         a = X._mu * Y_var - Y._mu * X_var
-        b = X._sigma * Y._sigma * sqrt(dm**2.0 + dv * log(Y_var / X_var))
+        b = X._sigma * Y._sigma * sqrt(dm * dm + dv * log(Y_var / X_var))
         x1 = (a + b) / dv
         x2 = (a - b) / dv
         return 1.0 - (fabs(Y.cdf(x1) - X.cdf(x1)) + fabs(Y.cdf(x2) - X.cdf(x2)))
@@ -1194,7 +1632,7 @@ class NormalDist:
     @property
     def variance(self):
         "Square of the standard deviation."
-        return self._sigma ** 2.0
+        return self._sigma * self._sigma
 
     def __add__(x1, x2):
         """Add a constant or another NormalDist instance.
@@ -1268,3 +1706,102 @@ class NormalDist:
 
     def __repr__(self):
         return f'{type(self).__name__}(mu={self._mu!r}, sigma={self._sigma!r})'
+
+    def __getstate__(self):
+        return self._mu, self._sigma
+
+    def __setstate__(self, state):
+        self._mu, self._sigma = state
+
+
+## kde_random() ##############################################################
+
+def _newton_raphson(f_inv_estimate, f, f_prime, tolerance=1e-12):
+    def f_inv(y):
+        "Return x such that f(x) ≈ y within the specified tolerance."
+        x = f_inv_estimate(y)
+        while abs(diff := f(x) - y) > tolerance:
+            x -= diff / f_prime(x)
+        return x
+    return f_inv
+
+def _quartic_invcdf_estimate(p):
+    sign, p = (1.0, p) if p <= 1/2 else (-1.0, 1.0 - p)
+    x = (2.0 * p) ** 0.4258865685331 - 1.0
+    if p >= 0.004 < 0.499:
+        x += 0.026818732 * sin(7.101753784 * p + 2.73230839482953)
+    return x * sign
+
+_quartic_invcdf = _newton_raphson(
+    f_inv_estimate = _quartic_invcdf_estimate,
+    f = lambda t: 3/16 * t**5 - 5/8 * t**3 + 15/16 * t + 1/2,
+    f_prime = lambda t: 15/16 * (1.0 - t * t) ** 2)
+
+def _triweight_invcdf_estimate(p):
+    sign, p = (1.0, p) if p <= 1/2 else (-1.0, 1.0 - p)
+    x = (2.0 * p) ** 0.3400218741872791 - 1.0
+    return x * sign
+
+_triweight_invcdf = _newton_raphson(
+    f_inv_estimate = _triweight_invcdf_estimate,
+    f = lambda t: 35/32 * (-1/7*t**7 + 3/5*t**5 - t**3 + t) + 1/2,
+    f_prime = lambda t: 35/32 * (1.0 - t * t) ** 3)
+
+_kernel_invcdfs = {
+    'normal': NormalDist().inv_cdf,
+    'logistic': lambda p: log(p / (1 - p)),
+    'sigmoid': lambda p: log(tan(p * pi/2)),
+    'rectangular': lambda p: 2*p - 1,
+    'parabolic': lambda p: 2 * cos((acos(2*p-1) + pi) / 3),
+    'quartic': _quartic_invcdf,
+    'triweight': _triweight_invcdf,
+    'triangular': lambda p: sqrt(2*p) - 1 if p < 1/2 else 1 - sqrt(2 - 2*p),
+    'cosine': lambda p: 2 * asin(2*p - 1) / pi,
+}
+_kernel_invcdfs['gauss'] = _kernel_invcdfs['normal']
+_kernel_invcdfs['uniform'] = _kernel_invcdfs['rectangular']
+_kernel_invcdfs['epanechnikov'] = _kernel_invcdfs['parabolic']
+_kernel_invcdfs['biweight'] = _kernel_invcdfs['quartic']
+
+def kde_random(data, h, kernel='normal', *, seed=None):
+    """Return a function that makes a random selection from the estimated
+    probability density function created by kde(data, h, kernel).
+
+    Providing a *seed* allows reproducible selections within a single
+    thread.  The seed may be an integer, float, str, or bytes.
+
+    A StatisticsError will be raised if the *data* sequence is empty.
+
+    Example:
+
+    >>> data = [-2.1, -1.3, -0.4, 1.9, 5.1, 6.2]
+    >>> rand = kde_random(data, h=1.5, seed=8675309)
+    >>> new_selections = [rand() for i in range(10)]
+    >>> [round(x, 1) for x in new_selections]
+    [0.7, 6.2, 1.2, 6.9, 7.0, 1.8, 2.5, -0.5, -1.8, 5.6]
+
+    """
+    n = len(data)
+    if not n:
+        raise StatisticsError('Empty data sequence')
+
+    if not isinstance(data[0], (int, float)):
+        raise TypeError('Data sequence must contain ints or floats')
+
+    if h <= 0.0:
+        raise StatisticsError(f'Bandwidth h must be positive, not {h=!r}')
+
+    kernel_invcdf = _kernel_invcdfs.get(kernel)
+    if kernel_invcdf is None:
+        raise StatisticsError(f'Unknown kernel name: {kernel!r}')
+
+    prng = _random.Random(seed)
+    random = prng.random
+    choice = prng.choice
+
+    def rand():
+        return choice(data) + h * kernel_invcdf(random())
+
+    rand.__doc__ = f'Random KDE selection with {h=!r} and {kernel=!r}'
+
+    return rand

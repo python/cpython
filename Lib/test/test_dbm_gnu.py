@@ -3,7 +3,7 @@ from test.support import import_helper, cpython_only
 gdbm = import_helper.import_module("dbm.gnu") #skip if not supported
 import unittest
 import os
-from test.support.os_helper import TESTFN, TESTFN_NONASCII, unlink
+from test.support.os_helper import TESTFN, TESTFN_NONASCII, unlink, FakePath
 
 
 filename = TESTFN
@@ -31,8 +31,7 @@ class TestGdbm(unittest.TestCase):
     def test_disallow_instantiation(self):
         # Ensure that the type disallows instantiation (bpo-43916)
         self.g = gdbm.open(filename, 'c')
-        tp = type(self.g)
-        self.assertRaises(TypeError, tp)
+        support.check_disallow_instantiation(self, type(self.g))
 
     def test_key_methods(self):
         self.g = gdbm.open(filename, 'c')
@@ -119,6 +118,20 @@ class TestGdbm(unittest.TestCase):
         self.assertEqual(str(cm.exception),
                          "GDBM object has already been closed")
 
+    def test_bool_empty(self):
+        with gdbm.open(filename, 'c') as db:
+            self.assertFalse(bool(db))
+
+    def test_bool_not_empty(self):
+        with gdbm.open(filename, 'c') as db:
+            db['a'] = 'b'
+            self.assertTrue(bool(db))
+
+    def test_bool_on_closed_db_raises(self):
+        with gdbm.open(filename, 'c') as db:
+            db['a'] = 'b'
+        self.assertRaises(gdbm.error, bool, db)
+
     def test_bytes(self):
         with gdbm.open(filename, 'c') as db:
             db[b'bytes key \xbd'] = b'bytes value \xbd'
@@ -169,6 +182,29 @@ class TestGdbm(unittest.TestCase):
             gdbm.open(nonexisting_file)
         self.assertIn(nonexisting_file, str(cm.exception))
         self.assertEqual(cm.exception.filename, nonexisting_file)
+
+    def test_open_with_pathlib_path(self):
+        gdbm.open(FakePath(filename), "c").close()
+
+    def test_open_with_bytes_path(self):
+        gdbm.open(os.fsencode(filename), "c").close()
+
+    def test_open_with_pathlib_bytes_path(self):
+        gdbm.open(FakePath(os.fsencode(filename)), "c").close()
+
+    def test_clear(self):
+        kvs = [('foo', 'bar'), ('1234', '5678')]
+        with gdbm.open(filename, 'c') as db:
+            for k, v in kvs:
+                db[k] = v
+                self.assertIn(k, db)
+            self.assertEqual(len(db), len(kvs))
+
+            db.clear()
+            for k, v in kvs:
+                self.assertNotIn(k, db)
+            self.assertEqual(len(db), 0)
+
 
 
 if __name__ == '__main__':

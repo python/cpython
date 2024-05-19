@@ -6,15 +6,15 @@
 
 __all__ = ['Message', 'EmailMessage']
 
+import binascii
 import re
-import uu
 import quopri
 from io import BytesIO, StringIO
 
 # Intrapackage imports
 from email import utils
 from email import errors
-from email._policybase import Policy, compat32
+from email._policybase import compat32
 from email import charset as _charset
 from email._encoded_words import decode_b
 Charset = _charset.Charset
@@ -35,7 +35,7 @@ def _splitparam(param):
     if not sep:
         return a.strip(), None
     return a.strip(), b.strip()
-
+
 def _formatparam(param, value=None, quote=True):
     """Convenience function to format and return a key=value pair.
 
@@ -101,7 +101,37 @@ def _unquotevalue(value):
         return utils.unquote(value)
 
 
-
+def _decode_uu(encoded):
+    """Decode uuencoded data."""
+    decoded_lines = []
+    encoded_lines_iter = iter(encoded.splitlines())
+    for line in encoded_lines_iter:
+        if line.startswith(b"begin "):
+            mode, _, path = line.removeprefix(b"begin ").partition(b" ")
+            try:
+                int(mode, base=8)
+            except ValueError:
+                continue
+            else:
+                break
+    else:
+        raise ValueError("`begin` line not found")
+    for line in encoded_lines_iter:
+        if not line:
+            raise ValueError("Truncated input")
+        elif line.strip(b' \t\r\n\f') == b'end':
+            break
+        try:
+            decoded_line = binascii.a2b_uu(line)
+        except binascii.Error:
+            # Workaround for broken uuencoders by /Fredrik Lundh
+            nbytes = (((line[0]-32) & 63) * 4 + 5) // 3
+            decoded_line = binascii.a2b_uu(line[:nbytes])
+        decoded_lines.append(decoded_line)
+
+    return b''.join(decoded_lines)
+
+
 class Message:
     """Basic message object.
 
@@ -259,25 +289,26 @@ class Message:
         # cte might be a Header, so for now stringify it.
         cte = str(self.get('content-transfer-encoding', '')).lower()
         # payload may be bytes here.
-        if isinstance(payload, str):
-            if utils._has_surrogates(payload):
-                bpayload = payload.encode('ascii', 'surrogateescape')
-                if not decode:
+        if not decode:
+            if isinstance(payload, str) and utils._has_surrogates(payload):
+                try:
+                    bpayload = payload.encode('ascii', 'surrogateescape')
                     try:
-                        payload = bpayload.decode(self.get_param('charset', 'ascii'), 'replace')
+                        payload = bpayload.decode(self.get_content_charset('ascii'), 'replace')
                     except LookupError:
                         payload = bpayload.decode('ascii', 'replace')
-            elif decode:
-                try:
-                    bpayload = payload.encode('ascii')
-                except UnicodeError:
-                    # This won't happen for RFC compliant messages (messages
-                    # containing only ASCII code points in the unicode input).
-                    # If it does happen, turn the string into bytes in a way
-                    # guaranteed not to fail.
-                    bpayload = payload.encode('raw-unicode-escape')
-        if not decode:
+                except UnicodeEncodeError:
+                    pass
             return payload
+        if isinstance(payload, str):
+            try:
+                bpayload = payload.encode('ascii', 'surrogateescape')
+            except UnicodeEncodeError:
+                # This won't happen for RFC compliant messages (messages
+                # containing only ASCII code points in the unicode input).
+                # If it does happen, turn the string into bytes in a way
+                # guaranteed not to fail.
+                bpayload = payload.encode('raw-unicode-escape')
         if cte == 'quoted-printable':
             return quopri.decodestring(bpayload)
         elif cte == 'base64':
@@ -288,13 +319,10 @@ class Message:
                 self.policy.handle_defect(self, defect)
             return value
         elif cte in ('x-uuencode', 'uuencode', 'uue', 'x-uue'):
-            in_file = BytesIO(bpayload)
-            out_file = BytesIO()
             try:
-                uu.decode(in_file, out_file, quiet=True)
-                return out_file.getvalue()
-            except uu.Error:
-                # Some decoding problem
+                return _decode_uu(bpayload)
+            except ValueError:
+                # Some decoding problem.
                 return bpayload
         if isinstance(payload, str):
             return bpayload
@@ -312,7 +340,7 @@ class Message:
                 return
             if not isinstance(charset, Charset):
                 charset = Charset(charset)
-            payload = payload.encode(charset.output_charset)
+            payload = payload.encode(charset.output_charset, 'surrogateescape')
         if hasattr(payload, 'decode'):
             self._payload = payload.decode('ascii', 'surrogateescape')
         else:
@@ -421,7 +449,11 @@ class Message:
         self._headers = newheaders
 
     def __contains__(self, name):
-        return name.lower() in [k.lower() for k, v in self._headers]
+        name_lower = name.lower()
+        for k, v in self._headers:
+            if name_lower == k.lower():
+                return True
+        return False
 
     def __iter__(self):
         for field, value in self._headers:
@@ -948,7 +980,7 @@ class MIMEPart(Message):
         if policy is None:
             from email.policy import default
             policy = default
-        Message.__init__(self, policy)
+        super().__init__(policy)
 
 
     def as_string(self, unixfrom=False, maxheaderlen=None, policy=None):
@@ -965,7 +997,7 @@ class MIMEPart(Message):
         policy = self.policy if policy is None else policy
         if maxheaderlen is None:
             maxheaderlen = policy.max_line_length
-        return super().as_string(maxheaderlen=maxheaderlen, policy=policy)
+        return super().as_string(unixfrom, maxheaderlen, policy)
 
     def __str__(self):
         return self.as_string(policy=self.policy.clone(utf8=True))
@@ -982,7 +1014,7 @@ class MIMEPart(Message):
             if subtype in preferencelist:
                 yield (preferencelist.index(subtype), part)
             return
-        if maintype != 'multipart':
+        if maintype != 'multipart' or not self.is_multipart():
             return
         if subtype != 'related':
             for subpart in part.iter_parts():
@@ -1087,7 +1119,7 @@ class MIMEPart(Message):
 
         Return an empty iterator for a non-multipart.
         """
-        if self.get_content_maintype() == 'multipart':
+        if self.is_multipart():
             yield from self.get_payload()
 
     def get_content(self, *args, content_manager=None, **kw):

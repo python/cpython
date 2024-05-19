@@ -1,8 +1,8 @@
 import os
 import base64
-import contextlib
 import gettext
 import unittest
+from functools import partial
 
 from test import support
 from test.support import os_helper
@@ -116,8 +116,16 @@ UMOFILE = os.path.join(LOCALEDIR, 'ugettext.mo')
 MMOFILE = os.path.join(LOCALEDIR, 'metadata.mo')
 
 
+def reset_gettext():
+    gettext._localedirs.clear()
+    gettext._current_domain = 'messages'
+    gettext._translations.clear()
+
+
 class GettextBaseTest(unittest.TestCase):
-    def setUp(self):
+    @classmethod
+    def setUpClass(cls):
+        cls.addClassCleanup(os_helper.rmtree, os.path.split(LOCALEDIR)[0])
         if not os.path.isdir(LOCALEDIR):
             os.makedirs(LOCALEDIR)
         with open(MOFILE, 'wb') as fp:
@@ -130,14 +138,13 @@ class GettextBaseTest(unittest.TestCase):
             fp.write(base64.decodebytes(UMO_DATA))
         with open(MMOFILE, 'wb') as fp:
             fp.write(base64.decodebytes(MMO_DATA))
-        self.env = os_helper.EnvironmentVarGuard()
-        self.env['LANGUAGE'] = 'xx'
-        gettext._translations.clear()
 
-    def tearDown(self):
-        self.env.__exit__()
-        del self.env
-        os_helper.rmtree(os.path.split(LOCALEDIR)[0])
+    def setUp(self):
+        self.env = self.enterContext(os_helper.EnvironmentVarGuard())
+        self.env['LANGUAGE'] = 'xx'
+        reset_gettext()
+        self.addCleanup(reset_gettext)
+
 
 GNU_MO_DATA_ISSUE_17898 = b'''\
 3hIElQAAAAABAAAAHAAAACQAAAAAAAAAAAAAAAAAAAAsAAAAggAAAC0AAAAAUGx1cmFsLUZvcm1z
@@ -204,6 +211,7 @@ trggrkg zrffntr pngnybt yvoenel.''')
 
     def test_the_alternative_interface(self):
         eq = self.assertEqual
+        neq = self.assertNotEqual
         # test the alternative interface
         with open(self.mofile, 'rb') as fp:
             t = gettext.GNUTranslations(fp)
@@ -215,12 +223,13 @@ trggrkg zrffntr pngnybt yvoenel.''')
         eq(_('mullusk'), 'bacon')
         # Test installation of other methods
         import builtins
-        t.install(names=["gettext", "lgettext"])
+        t.install(names=["gettext", "ngettext"])
         eq(_, t.gettext)
         eq(builtins.gettext, t.gettext)
-        eq(lgettext, t.lgettext)
+        eq(ngettext, t.ngettext)
+        neq(pgettext, t.pgettext)
         del builtins.gettext
-        del builtins.lgettext
+        del builtins.ngettext
 
 
 class GettextTestCase2(GettextBaseTest):
@@ -311,47 +320,139 @@ fhccbeg sbe lbhe Clguba cebtenzf ol cebivqvat na vagresnpr gb gur TAH
 trggrkg zrffntr pngnybt yvoenel.''')
 
 
-class PluralFormsTestCase(GettextBaseTest):
+class PluralFormsTests:
+
+    def _test_plural_forms(self, ngettext, gettext,
+                           singular, plural, tsingular, tplural,
+                           numbers_only=True):
+        x = ngettext(singular, plural, 1)
+        self.assertEqual(x, tsingular)
+        x = ngettext(singular, plural, 2)
+        self.assertEqual(x, tplural)
+        x = gettext(singular)
+        self.assertEqual(x, tsingular)
+
+        lineno = self._test_plural_forms.__code__.co_firstlineno + 12
+        with self.assertWarns(DeprecationWarning) as cm:
+            x = ngettext(singular, plural, 1.0)
+        self.assertEqual(cm.filename, __file__)
+        self.assertEqual(cm.lineno, lineno)
+        self.assertEqual(x, tsingular)
+        with self.assertWarns(DeprecationWarning) as cm:
+            x = ngettext(singular, plural, 1.1)
+        self.assertEqual(cm.filename, __file__)
+        self.assertEqual(cm.lineno, lineno + 5)
+        self.assertEqual(x, tplural)
+
+        if numbers_only:
+            with self.assertRaises(TypeError):
+                ngettext(singular, plural, None)
+        else:
+            with self.assertWarns(DeprecationWarning) as cm:
+                x = ngettext(singular, plural, None)
+            self.assertEqual(x, tplural)
+
+    def test_plural_forms(self):
+        self._test_plural_forms(
+            self.ngettext, self.gettext,
+            'There is %s file', 'There are %s files',
+            'Hay %s fichero', 'Hay %s ficheros')
+        self._test_plural_forms(
+            self.ngettext, self.gettext,
+            '%d file deleted', '%d files deleted',
+            '%d file deleted', '%d files deleted')
+
+    def test_plural_context_forms(self):
+        ngettext = partial(self.npgettext, 'With context')
+        gettext = partial(self.pgettext, 'With context')
+        self._test_plural_forms(
+            ngettext, gettext,
+            'There is %s file', 'There are %s files',
+            'Hay %s fichero (context)', 'Hay %s ficheros (context)')
+        self._test_plural_forms(
+            ngettext, gettext,
+            '%d file deleted', '%d files deleted',
+            '%d file deleted', '%d files deleted')
+
+    def test_plural_wrong_context_forms(self):
+        self._test_plural_forms(
+            partial(self.npgettext, 'Unknown context'),
+            partial(self.pgettext, 'Unknown context'),
+            'There is %s file', 'There are %s files',
+            'There is %s file', 'There are %s files')
+
+
+class GNUTranslationsPluralFormsTestCase(PluralFormsTests, GettextBaseTest):
     def setUp(self):
         GettextBaseTest.setUp(self)
-        self.mofile = MOFILE
+        # Set up the bindings
+        gettext.bindtextdomain('gettext', os.curdir)
+        gettext.textdomain('gettext')
 
-    def test_plural_forms1(self):
-        eq = self.assertEqual
-        x = gettext.ngettext('There is %s file', 'There are %s files', 1)
-        eq(x, 'Hay %s fichero')
-        x = gettext.ngettext('There is %s file', 'There are %s files', 2)
-        eq(x, 'Hay %s ficheros')
+        self.gettext = gettext.gettext
+        self.ngettext = gettext.ngettext
+        self.pgettext = gettext.pgettext
+        self.npgettext = gettext.npgettext
 
-    def test_plural_context_forms1(self):
-        eq = self.assertEqual
-        x = gettext.npgettext('With context',
-                              'There is %s file', 'There are %s files', 1)
-        eq(x, 'Hay %s fichero (context)')
-        x = gettext.npgettext('With context',
-                              'There is %s file', 'There are %s files', 2)
-        eq(x, 'Hay %s ficheros (context)')
 
-    def test_plural_forms2(self):
-        eq = self.assertEqual
-        with open(self.mofile, 'rb') as fp:
+class GNUTranslationsWithDomainPluralFormsTestCase(PluralFormsTests, GettextBaseTest):
+    def setUp(self):
+        GettextBaseTest.setUp(self)
+        # Set up the bindings
+        gettext.bindtextdomain('gettext', os.curdir)
+
+        self.gettext = partial(gettext.dgettext, 'gettext')
+        self.ngettext = partial(gettext.dngettext, 'gettext')
+        self.pgettext = partial(gettext.dpgettext, 'gettext')
+        self.npgettext = partial(gettext.dnpgettext, 'gettext')
+
+    def test_plural_forms_wrong_domain(self):
+        self._test_plural_forms(
+            partial(gettext.dngettext, 'unknown'),
+            partial(gettext.dgettext, 'unknown'),
+            'There is %s file', 'There are %s files',
+            'There is %s file', 'There are %s files',
+            numbers_only=False)
+
+    def test_plural_context_forms_wrong_domain(self):
+        self._test_plural_forms(
+            partial(gettext.dnpgettext, 'unknown', 'With context'),
+            partial(gettext.dpgettext, 'unknown', 'With context'),
+            'There is %s file', 'There are %s files',
+            'There is %s file', 'There are %s files',
+            numbers_only=False)
+
+
+class GNUTranslationsClassPluralFormsTestCase(PluralFormsTests, GettextBaseTest):
+    def setUp(self):
+        GettextBaseTest.setUp(self)
+        with open(MOFILE, 'rb') as fp:
             t = gettext.GNUTranslations(fp)
-        x = t.ngettext('There is %s file', 'There are %s files', 1)
-        eq(x, 'Hay %s fichero')
-        x = t.ngettext('There is %s file', 'There are %s files', 2)
-        eq(x, 'Hay %s ficheros')
 
-    def test_plural_context_forms2(self):
-        eq = self.assertEqual
-        with open(self.mofile, 'rb') as fp:
-            t = gettext.GNUTranslations(fp)
-        x = t.npgettext('With context',
-                        'There is %s file', 'There are %s files', 1)
-        eq(x, 'Hay %s fichero (context)')
-        x = t.npgettext('With context',
-                        'There is %s file', 'There are %s files', 2)
-        eq(x, 'Hay %s ficheros (context)')
+        self.gettext = t.gettext
+        self.ngettext = t.ngettext
+        self.pgettext = t.pgettext
+        self.npgettext = t.npgettext
 
+    def test_plural_forms_null_translations(self):
+        t = gettext.NullTranslations()
+        self._test_plural_forms(
+            t.ngettext, t.gettext,
+            'There is %s file', 'There are %s files',
+            'There is %s file', 'There are %s files',
+            numbers_only=False)
+
+    def test_plural_context_forms_null_translations(self):
+        t = gettext.NullTranslations()
+        self._test_plural_forms(
+            partial(t.npgettext, 'With context'),
+            partial(t.pgettext, 'With context'),
+            'There is %s file', 'There are %s files',
+            'There is %s file', 'There are %s files',
+            numbers_only=False)
+
+
+class PluralFormsInternalTestCase:
     # Examples from http://www.gnu.org/software/gettext/manual/gettext.html
 
     def test_ja(self):
@@ -502,180 +603,6 @@ class PluralFormsTestCase(GettextBaseTest):
         self.assertRaises(TypeError, f, object())
 
 
-class LGettextTestCase(GettextBaseTest):
-    def setUp(self):
-        GettextBaseTest.setUp(self)
-        self.mofile = MOFILE
-
-    @contextlib.contextmanager
-    def assertDeprecated(self, name):
-        with self.assertWarnsRegex(DeprecationWarning,
-                                   fr'^{name}\(\) is deprecated'):
-            yield
-
-    def test_lgettext(self):
-        lgettext = gettext.lgettext
-        ldgettext = gettext.ldgettext
-        with self.assertDeprecated('lgettext'):
-            self.assertEqual(lgettext('mullusk'), b'bacon')
-        with self.assertDeprecated('lgettext'):
-            self.assertEqual(lgettext('spam'), b'spam')
-        with self.assertDeprecated('ldgettext'):
-            self.assertEqual(ldgettext('gettext', 'mullusk'), b'bacon')
-        with self.assertDeprecated('ldgettext'):
-            self.assertEqual(ldgettext('gettext', 'spam'), b'spam')
-
-    def test_lgettext_2(self):
-        with open(self.mofile, 'rb') as fp:
-            t = gettext.GNUTranslations(fp)
-        lgettext = t.lgettext
-        with self.assertDeprecated('lgettext'):
-            self.assertEqual(lgettext('mullusk'), b'bacon')
-        with self.assertDeprecated('lgettext'):
-            self.assertEqual(lgettext('spam'), b'spam')
-
-    def test_lgettext_bind_textdomain_codeset(self):
-        lgettext = gettext.lgettext
-        ldgettext = gettext.ldgettext
-        with self.assertDeprecated('bind_textdomain_codeset'):
-            saved_codeset = gettext.bind_textdomain_codeset('gettext')
-        try:
-            with self.assertDeprecated('bind_textdomain_codeset'):
-                gettext.bind_textdomain_codeset('gettext', 'utf-16')
-            with self.assertDeprecated('lgettext'):
-                self.assertEqual(lgettext('mullusk'), 'bacon'.encode('utf-16'))
-            with self.assertDeprecated('lgettext'):
-                self.assertEqual(lgettext('spam'), 'spam'.encode('utf-16'))
-            with self.assertDeprecated('ldgettext'):
-                self.assertEqual(ldgettext('gettext', 'mullusk'), 'bacon'.encode('utf-16'))
-            with self.assertDeprecated('ldgettext'):
-                self.assertEqual(ldgettext('gettext', 'spam'), 'spam'.encode('utf-16'))
-        finally:
-            del gettext._localecodesets['gettext']
-            with self.assertDeprecated('bind_textdomain_codeset'):
-                gettext.bind_textdomain_codeset('gettext', saved_codeset)
-
-    def test_lgettext_output_encoding(self):
-        with open(self.mofile, 'rb') as fp:
-            t = gettext.GNUTranslations(fp)
-        lgettext = t.lgettext
-        with self.assertDeprecated('set_output_charset'):
-            t.set_output_charset('utf-16')
-        with self.assertDeprecated('lgettext'):
-            self.assertEqual(lgettext('mullusk'), 'bacon'.encode('utf-16'))
-        with self.assertDeprecated('lgettext'):
-            self.assertEqual(lgettext('spam'), 'spam'.encode('utf-16'))
-
-    def test_lngettext(self):
-        lngettext = gettext.lngettext
-        ldngettext = gettext.ldngettext
-        with self.assertDeprecated('lngettext'):
-            x = lngettext('There is %s file', 'There are %s files', 1)
-        self.assertEqual(x, b'Hay %s fichero')
-        with self.assertDeprecated('lngettext'):
-            x = lngettext('There is %s file', 'There are %s files', 2)
-        self.assertEqual(x, b'Hay %s ficheros')
-        with self.assertDeprecated('lngettext'):
-            x = lngettext('There is %s directory', 'There are %s directories', 1)
-        self.assertEqual(x, b'There is %s directory')
-        with self.assertDeprecated('lngettext'):
-            x = lngettext('There is %s directory', 'There are %s directories', 2)
-        self.assertEqual(x, b'There are %s directories')
-        with self.assertDeprecated('ldngettext'):
-            x = ldngettext('gettext', 'There is %s file', 'There are %s files', 1)
-        self.assertEqual(x, b'Hay %s fichero')
-        with self.assertDeprecated('ldngettext'):
-            x = ldngettext('gettext', 'There is %s file', 'There are %s files', 2)
-        self.assertEqual(x, b'Hay %s ficheros')
-        with self.assertDeprecated('ldngettext'):
-            x = ldngettext('gettext', 'There is %s directory', 'There are %s directories', 1)
-        self.assertEqual(x, b'There is %s directory')
-        with self.assertDeprecated('ldngettext'):
-            x = ldngettext('gettext', 'There is %s directory', 'There are %s directories', 2)
-        self.assertEqual(x, b'There are %s directories')
-
-    def test_lngettext_2(self):
-        with open(self.mofile, 'rb') as fp:
-            t = gettext.GNUTranslations(fp)
-        lngettext = t.lngettext
-        with self.assertDeprecated('lngettext'):
-            x = lngettext('There is %s file', 'There are %s files', 1)
-        self.assertEqual(x, b'Hay %s fichero')
-        with self.assertDeprecated('lngettext'):
-            x = lngettext('There is %s file', 'There are %s files', 2)
-        self.assertEqual(x, b'Hay %s ficheros')
-        with self.assertDeprecated('lngettext'):
-            x = lngettext('There is %s directory', 'There are %s directories', 1)
-        self.assertEqual(x, b'There is %s directory')
-        with self.assertDeprecated('lngettext'):
-            x = lngettext('There is %s directory', 'There are %s directories', 2)
-        self.assertEqual(x, b'There are %s directories')
-
-    def test_lngettext_bind_textdomain_codeset(self):
-        lngettext = gettext.lngettext
-        ldngettext = gettext.ldngettext
-        with self.assertDeprecated('bind_textdomain_codeset'):
-            saved_codeset = gettext.bind_textdomain_codeset('gettext')
-        try:
-            with self.assertDeprecated('bind_textdomain_codeset'):
-                gettext.bind_textdomain_codeset('gettext', 'utf-16')
-            with self.assertDeprecated('lngettext'):
-                x = lngettext('There is %s file', 'There are %s files', 1)
-            self.assertEqual(x, 'Hay %s fichero'.encode('utf-16'))
-            with self.assertDeprecated('lngettext'):
-                x = lngettext('There is %s file', 'There are %s files', 2)
-            self.assertEqual(x, 'Hay %s ficheros'.encode('utf-16'))
-            with self.assertDeprecated('lngettext'):
-                x = lngettext('There is %s directory', 'There are %s directories', 1)
-            self.assertEqual(x, 'There is %s directory'.encode('utf-16'))
-            with self.assertDeprecated('lngettext'):
-                x = lngettext('There is %s directory', 'There are %s directories', 2)
-            self.assertEqual(x, 'There are %s directories'.encode('utf-16'))
-            with self.assertDeprecated('ldngettext'):
-                x = ldngettext('gettext', 'There is %s file', 'There are %s files', 1)
-            self.assertEqual(x, 'Hay %s fichero'.encode('utf-16'))
-            with self.assertDeprecated('ldngettext'):
-                x = ldngettext('gettext', 'There is %s file', 'There are %s files', 2)
-            self.assertEqual(x, 'Hay %s ficheros'.encode('utf-16'))
-            with self.assertDeprecated('ldngettext'):
-                x = ldngettext('gettext', 'There is %s directory', 'There are %s directories', 1)
-            self.assertEqual(x, 'There is %s directory'.encode('utf-16'))
-            with self.assertDeprecated('ldngettext'):
-                x = ldngettext('gettext', 'There is %s directory', 'There are %s directories', 2)
-            self.assertEqual(x, 'There are %s directories'.encode('utf-16'))
-        finally:
-            del gettext._localecodesets['gettext']
-            with self.assertDeprecated('bind_textdomain_codeset'):
-                gettext.bind_textdomain_codeset('gettext', saved_codeset)
-
-    def test_lngettext_output_encoding(self):
-        with open(self.mofile, 'rb') as fp:
-            t = gettext.GNUTranslations(fp)
-        lngettext = t.lngettext
-        with self.assertDeprecated('set_output_charset'):
-            t.set_output_charset('utf-16')
-        with self.assertDeprecated('lngettext'):
-            x = lngettext('There is %s file', 'There are %s files', 1)
-        self.assertEqual(x, 'Hay %s fichero'.encode('utf-16'))
-        with self.assertDeprecated('lngettext'):
-            x = lngettext('There is %s file', 'There are %s files', 2)
-        self.assertEqual(x, 'Hay %s ficheros'.encode('utf-16'))
-        with self.assertDeprecated('lngettext'):
-            x = lngettext('There is %s directory', 'There are %s directories', 1)
-        self.assertEqual(x, 'There is %s directory'.encode('utf-16'))
-        with self.assertDeprecated('lngettext'):
-            x = lngettext('There is %s directory', 'There are %s directories', 2)
-        self.assertEqual(x, 'There are %s directories'.encode('utf-16'))
-
-    def test_output_encoding(self):
-        with open(self.mofile, 'rb') as fp:
-            t = gettext.GNUTranslations(fp)
-        with self.assertDeprecated('set_output_charset'):
-            t.set_output_charset('utf-16')
-        with self.assertDeprecated('output_charset'):
-            self.assertEqual(t.output_charset(), 'utf-16')
-
-
 class GNUTranslationParsingTest(GettextBaseTest):
     def test_plural_form_error_issue17898(self):
         with open(MOFILE, 'wb') as fp:
@@ -806,16 +733,6 @@ class GettextCacheTestCase(GettextBaseTest):
 
         self.assertEqual(len(gettext._translations), 2)
         self.assertEqual(t.__class__, DummyGNUTranslations)
-
-        # Test deprecated parameter codeset
-        with self.assertWarnsRegex(DeprecationWarning, 'parameter codeset'):
-            t = gettext.translation('gettext', self.localedir,
-                                    class_=DummyGNUTranslations,
-                                    codeset='utf-16')
-        self.assertEqual(len(gettext._translations), 2)
-        self.assertEqual(t.__class__, DummyGNUTranslations)
-        with self.assertWarns(DeprecationWarning):
-            self.assertEqual(t.output_charset(), 'utf-16')
 
 
 class MiscTestCase(unittest.TestCase):

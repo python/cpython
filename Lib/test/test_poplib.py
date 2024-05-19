@@ -4,18 +4,22 @@
 # a real test suite
 
 import poplib
-import asyncore
-import asynchat
 import socket
 import os
 import errno
 import threading
 
+import unittest
 from unittest import TestCase, skipUnless
 from test import support as test_support
 from test.support import hashlib_helper
 from test.support import socket_helper
 from test.support import threading_helper
+from test.support import asynchat
+from test.support import asyncore
+
+
+test_support.requires_working_socket(module=True)
 
 HOST = socket_helper.HOST
 PORT = 0
@@ -25,8 +29,8 @@ if hasattr(poplib, 'POP3_SSL'):
     import ssl
 
     SUPPORTS_SSL = True
-    CERTFILE = os.path.join(os.path.dirname(__file__) or os.curdir, "keycert3.pem")
-    CAFILE = os.path.join(os.path.dirname(__file__) or os.curdir, "pycacert.pem")
+    CERTFILE = os.path.join(os.path.dirname(__file__) or os.curdir, "certdata", "keycert3.pem")
+    CAFILE = os.path.join(os.path.dirname(__file__) or os.curdir, "certdata", "pycacert.pem")
 
 requires_ssl = skipUnless(SUPPORTS_SSL, 'SSL not supported')
 
@@ -313,11 +317,11 @@ class TestPOP3Class(TestCase):
     def test_rpop(self):
         self.assertOK(self.client.rpop('foo'))
 
-    @hashlib_helper.requires_hashdigest('md5')
+    @hashlib_helper.requires_hashdigest('md5', openssl=True)
     def test_apop_normal(self):
         self.assertOK(self.client.apop('foo', 'dummypassword'))
 
-    @hashlib_helper.requires_hashdigest('md5')
+    @hashlib_helper.requires_hashdigest('md5', openssl=True)
     def test_apop_REDOS(self):
         # Replace welcome with very long evil welcome.
         # NB The upper bound on welcome length is currently 2048.
@@ -418,13 +422,6 @@ class TestPOP3_SSLClass(TestPOP3Class):
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
         ctx.check_hostname = False
         ctx.verify_mode = ssl.CERT_NONE
-        self.assertRaises(ValueError, poplib.POP3_SSL, self.server.host,
-                            self.server.port, keyfile=CERTFILE, context=ctx)
-        self.assertRaises(ValueError, poplib.POP3_SSL, self.server.host,
-                            self.server.port, certfile=CERTFILE, context=ctx)
-        self.assertRaises(ValueError, poplib.POP3_SSL, self.server.host,
-                            self.server.port, keyfile=CERTFILE,
-                            certfile=CERTFILE, context=ctx)
 
         self.client.quit()
         self.client = poplib.POP3_SSL(self.server.host, self.server.port,
@@ -534,15 +531,10 @@ class TestTimeouts(TestCase):
             poplib.POP3(HOST, self.port, timeout=0)
 
 
-def test_main():
-    tests = [TestPOP3Class, TestTimeouts,
-             TestPOP3_SSLClass, TestPOP3_TLSClass]
+def setUpModule():
     thread_info = threading_helper.threading_setup()
-    try:
-        test_support.run_unittest(*tests)
-    finally:
-        threading_helper.threading_cleanup(*thread_info)
+    unittest.addModuleCleanup(threading_helper.threading_cleanup, *thread_info)
 
 
 if __name__ == '__main__':
-    test_main()
+    unittest.main()

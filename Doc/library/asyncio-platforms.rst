@@ -37,7 +37,7 @@ All event loops on Windows do not support the following methods:
 
 * :meth:`loop.create_unix_connection` and
   :meth:`loop.create_unix_server` are not supported.
-  The :data:`socket.AF_UNIX` socket family is specific to Unix.
+  The :const:`socket.AF_UNIX` socket family is specific to Unix.
 
 * :meth:`loop.add_signal_handler` and
   :meth:`loop.remove_signal_handler` are not supported.
@@ -63,7 +63,7 @@ All event loops on Windows do not support the following methods:
   methods are not supported.
 
 The resolution of the monotonic clock on Windows is usually around 15.6
-msec.  The best resolution is 0.5 msec. The resolution depends on the
+milliseconds.  The best resolution is 0.5 milliseconds. The resolution depends on the
 hardware (availability of `HPET
 <https://en.wikipedia.org/wiki/High_Precision_Event_Timer>`_) and on the
 Windows configuration.

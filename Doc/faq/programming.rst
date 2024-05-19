@@ -25,8 +25,9 @@ Reference Manual <pdb>`. You can also write your own debugger by using the code
 for pdb as an example.
 
 The IDLE interactive development environment, which is part of the standard
-Python distribution (normally available as Tools/scripts/idle), includes a
-graphical debugger.
+Python distribution (normally available as
+`Tools/scripts/idle3 <https://github.com/python/cpython/blob/main/Tools/scripts/idle3>`_),
+includes a graphical debugger.
 
 PythonWin is a Python IDE that includes a GUI debugger based on pdb.  The
 PythonWin debugger colors breakpoints and has quite a few cool features such as
@@ -35,7 +36,7 @@ debugging non-PythonWin programs.  PythonWin is available as part of
 as a part of the
 `ActivePython <https://www.activestate.com/products/python/>`_ distribution.
 
-`Eric <http://eric-ide.python-projects.org/>`_ is an IDE built on PyQt
+`Eric <https://eric-ide.python-projects.org/>`_ is an IDE built on PyQt
 and the Scintilla editing component.
 
 `trepan3k <https://github.com/rocky/python3-trepan/>`_ is a gdb-like debugger.
@@ -56,15 +57,17 @@ Are there tools to help find bugs or perform static analysis?
 
 Yes.
 
-`Pylint <https://www.pylint.org/>`_ and
+`Pylint <https://pylint.pycqa.org/en/latest/index.html>`_ and
 `Pyflakes <https://github.com/PyCQA/pyflakes>`_ do basic checking that will
 help you catch bugs sooner.
 
-Static type checkers such as `Mypy <http://mypy-lang.org/>`_,
+Static type checkers such as `Mypy <https://mypy-lang.org/>`_,
 `Pyre <https://pyre-check.org/>`_, and
 `Pytype <https://github.com/google/pytype>`_ can check type hints in Python
 source code.
 
+
+.. _faq-create-standalone-binary:
 
 How can I create a stand-alone binary from a Python script?
 -----------------------------------------------------------
@@ -76,7 +79,8 @@ set of modules required by a program and bind these modules together with a
 Python binary to produce a single executable.
 
 One is to use the freeze tool, which is included in the Python source tree as
-``Tools/freeze``. It converts Python byte code to C arrays; a C compiler you can
+`Tools/freeze <https://github.com/python/cpython/tree/main/Tools/freeze>`_.
+It converts Python byte code to C arrays; with a C compiler you can
 embed all your modules into a new program, which is then linked with the
 standard Python modules.
 
@@ -89,14 +93,15 @@ only contains those built-in modules which are actually used in the program.  It
 then compiles the generated C code and links it with the rest of the Python
 interpreter to form a self-contained binary which acts exactly like your script.
 
-Obviously, freeze requires a C compiler.  There are several other utilities
-which don't:
+The following packages can help with the creation of console and GUI
+executables:
 
-* `py2exe <http://www.py2exe.org/>`_ for Windows binaries
-* `py2app <https://github.com/ronaldoussoren/py2app>`_ for Mac OS X binaries
-* `cx_Freeze <https://cx-freeze.readthedocs.io/en/latest/>`_ for cross-platform
-  binaries
-
+* `Nuitka <https://nuitka.net/>`_ (Cross-platform)
+* `PyInstaller <https://pyinstaller.org/>`_ (Cross-platform)
+* `PyOxidizer <https://pyoxidizer.readthedocs.io/en/stable/>`_ (Cross-platform)
+* `cx_Freeze <https://marcelotduarte.github.io/cx_Freeze/>`_ (Cross-platform)
+* `py2app <https://github.com/ronaldoussoren/py2app>`_ (macOS only)
+* `py2exe <https://www.py2exe.org/>`_ (Windows only)
 
 Are there coding standards or a style guide for Python programs?
 ----------------------------------------------------------------
@@ -108,10 +113,12 @@ Yes.  The coding style required for standard library modules is documented as
 Core Language
 =============
 
+.. _faq-unboundlocalerror:
+
 Why am I getting an UnboundLocalError when the variable has a value?
 --------------------------------------------------------------------
 
-It can be a surprise to get the UnboundLocalError in previously working
+It can be a surprise to get the :exc:`UnboundLocalError` in previously working
 code when it is modified by adding an assignment statement somewhere in
 the body of a function.
 
@@ -120,6 +127,7 @@ This code:
    >>> x = 10
    >>> def bar():
    ...     print(x)
+   ...
    >>> bar()
    10
 
@@ -130,7 +138,7 @@ works, but this code:
    ...     print(x)
    ...     x += 1
 
-results in an UnboundLocalError:
+results in an :exc:`!UnboundLocalError`:
 
    >>> foo()
    Traceback (most recent call last):
@@ -152,6 +160,7 @@ global:
    ...     global x
    ...     print(x)
    ...     x += 1
+   ...
    >>> foobar()
    10
 
@@ -173,6 +182,7 @@ keyword:
    ...        x += 1
    ...    bar()
    ...    print(x)
+   ...
    >>> foo()
    10
    11
@@ -270,7 +280,7 @@ main.py::
    import mod
    print(config.x)
 
-Note that using a module is also the basis for implementing the Singleton design
+Note that using a module is also the basis for implementing the singleton design
 pattern, for the same reason.
 
 
@@ -288,10 +298,10 @@ using multiple imports per line uses less screen space.
 
 It's good practice if you import modules in the following order:
 
-1. standard library modules -- e.g. ``sys``, ``os``, ``getopt``, ``re``
+1. standard library modules -- e.g. :mod:`sys`, :mod:`os`, :mod:`argparse`, :mod:`re`
 2. third-party library modules (anything installed in Python's site-packages
-   directory) -- e.g. mx.DateTime, ZODB, PIL.Image, etc.
-3. locally-developed modules
+   directory) -- e.g. :mod:`!dateutil`, :mod:`!requests`, :mod:`!PIL.Image`
+3. locally developed modules
 
 It is sometimes necessary to move imports to a function or class to avoid
 problems with circular imports.  Gordon McMillan says:
@@ -406,8 +416,9 @@ What is the difference between arguments and parameters?
 
 :term:`Parameters <parameter>` are defined by the names that appear in a
 function definition, whereas :term:`arguments <argument>` are the values
-actually passed to a function when calling it.  Parameters define what types of
-arguments a function can accept.  For example, given the function definition::
+actually passed to a function when calling it.  Parameters define what
+:term:`kind of arguments <parameter>` a function can accept.  For
+example, given the function definition::
 
    def func(foo, bar=None, **kwargs):
        pass
@@ -443,7 +454,7 @@ There are two factors that produce this result:
    (the list), and both ``x`` and ``y`` refer to it.
 2) Lists are :term:`mutable`, which means that you can change their content.
 
-After the call to :meth:`~list.append`, the content of the mutable object has
+After the call to :meth:`!append`, the content of the mutable object has
 changed from ``[]`` to ``[10]``.  Since both the variables refer to the same
 object, using either name accesses the modified value ``[10]``.
 
@@ -467,7 +478,7 @@ object ``x`` refers to).  After this assignment we have two objects (the ints
 
 Some operations (for example ``y.append(10)`` and ``y.sort()``) mutate the
 object, whereas superficially similar operations (for example ``y = y + [10]``
-and ``sorted(y)``) create a new object.  In general in Python (and in all cases
+and :func:`sorted(y) <sorted>`) create a new object.  In general in Python (and in all cases
 in the standard library) a method that mutates an object will return ``None``
 to help avoid getting the two types of operations confused.  So if you
 mistakenly write ``y.sort()`` thinking it will give you a sorted copy of ``y``,
@@ -640,7 +651,7 @@ Sequences can be copied by slicing::
 How can I find the methods or attributes of an object?
 ------------------------------------------------------
 
-For an instance x of a user-defined class, ``dir(x)`` returns an alphabetized
+For an instance ``x`` of a user-defined class, :func:`dir(x) <dir>` returns an alphabetized
 list of the names containing the instance attributes and methods and attributes
 defined by its class.
 
@@ -665,9 +676,9 @@ callable. Consider the following code::
    <__main__.A object at 0x16D07CC>
 
 Arguably the class has a name: even though it is bound to two names and invoked
-through the name B the created instance is still reported as an instance of
-class A.  However, it is impossible to say whether the instance's name is a or
-b, since both names are bound to the same value.
+through the name ``B`` the created instance is still reported as an instance of
+class ``A``.  However, it is impossible to say whether the instance's name is ``a`` or
+``b``, since both names are bound to the same value.
 
 Generally speaking it should not be necessary for your code to "know the names"
 of particular values. Unless you are deliberately writing introspective
@@ -731,7 +742,7 @@ Is it possible to write obfuscated one-liners in Python?
 --------------------------------------------------------
 
 Yes.  Usually this is done by nesting :keyword:`lambda` within
-:keyword:`!lambda`.  See the following three examples, due to Ulf Bartelt::
+:keyword:`!lambda`.  See the following three examples, slightly adapted from Ulf Bartelt::
 
    from functools import reduce
 
@@ -744,7 +755,7 @@ Yes.  Usually this is done by nesting :keyword:`lambda` within
    f(x,f), range(10))))
 
    # Mandelbrot set
-   print((lambda Ru,Ro,Iu,Io,IM,Sx,Sy:reduce(lambda x,y:x+y,map(lambda y,
+   print((lambda Ru,Ro,Iu,Io,IM,Sx,Sy:reduce(lambda x,y:x+'\n'+y,map(lambda y,
    Iu=Iu,Io=Io,Ru=Ru,Ro=Ro,Sy=Sy,L=lambda yc,Iu=Iu,Io=Io,Ru=Ru,Ro=Ro,i=IM,
    Sx=Sx,Sy=Sy:reduce(lambda x,y:x+y,map(lambda x,xc=Ru,yc=yc,Ru=Ru,Ro=Ro,
    i=i,Sx=Sx,F=lambda xc,yc,x,y,k,f=lambda xc,yc,x,y,k,f:(k<=0)or (x*x+y*y
@@ -767,7 +778,7 @@ What does the slash(/) in the parameter list of a function mean?
 
 A slash in the argument list of a function denotes that the parameters prior to
 it are positional-only.  Positional-only parameters are the ones without an
-externally-usable name.  Upon calling a function that accepts positional-only
+externally usable name.  Upon calling a function that accepts positional-only
 parameters, arguments are mapped to parameters based solely on their position.
 For example, :func:`divmod` is a function that accepts positional-only
 parameters. Its documentation looks like this::
@@ -833,6 +844,27 @@ ago?  ``-190 % 12 == 2`` is useful; ``-190 % 12 == -10`` is a bug waiting to
 bite.
 
 
+How do I get int literal attribute instead of SyntaxError?
+----------------------------------------------------------
+
+Trying to lookup an ``int`` literal attribute in the normal manner gives
+a :exc:`SyntaxError` because the period is seen as a decimal point::
+
+   >>> 1.__class__
+     File "<stdin>", line 1
+     1.__class__
+      ^
+   SyntaxError: invalid decimal literal
+
+The solution is to separate the literal from the period
+with either a space or parentheses.
+
+   >>> 1 .__class__
+   <class 'int'>
+   >>> (1).__class__
+   <class 'int'>
+
+
 How do I convert a string to a number?
 --------------------------------------
 
@@ -862,7 +894,7 @@ leading '0' in a decimal number (except '0').
 How do I convert a number to a string?
 --------------------------------------
 
-To convert, e.g., the number 144 to the string '144', use the built-in type
+To convert, e.g., the number ``144`` to the string ``'144'``, use the built-in type
 constructor :func:`str`.  If you want a hexadecimal or octal representation, use
 the built-in functions :func:`hex` or :func:`oct`.  For fancy formatting, see
 the :ref:`f-strings` and :ref:`formatstrings` sections,
@@ -892,12 +924,12 @@ module::
    'Hello, there!'
 
    >>> import array
-   >>> a = array.array('u', s)
+   >>> a = array.array('w', s)
    >>> print(a)
-   array('u', 'Hello, world')
+   array('w', 'Hello, world')
    >>> a[0] = 'y'
    >>> print(a)
-   array('u', 'yello, world')
+   array('w', 'yello, world')
    >>> a.tounicode()
    'yello, world'
 
@@ -981,11 +1013,11 @@ Not as such.
 For simple input parsing, the easiest approach is usually to split the line into
 whitespace-delimited words using the :meth:`~str.split` method of string objects
 and then convert decimal strings to numeric values using :func:`int` or
-:func:`float`.  ``split()`` supports an optional "sep" parameter which is useful
+:func:`float`.  :meth:`!split()` supports an optional "sep" parameter which is useful
 if the line uses something other than whitespace as a separator.
 
 For more complicated input parsing, regular expressions are more powerful
-than C's :c:func:`sscanf` and better suited for the task.
+than C's ``sscanf`` and better suited for the task.
 
 
 What does 'UnicodeDecodeError' or 'UnicodeEncodeError' error  mean?
@@ -993,6 +1025,46 @@ What does 'UnicodeDecodeError' or 'UnicodeEncodeError' error  mean?
 
 See the :ref:`unicode-howto`.
 
+
+.. _faq-programming-raw-string-backslash:
+
+Can I end a raw string with an odd number of backslashes?
+---------------------------------------------------------
+
+A raw string ending with an odd number of backslashes will escape the string's quote::
+
+   >>> r'C:\this\will\not\work\'
+     File "<stdin>", line 1
+       r'C:\this\will\not\work\'
+            ^
+   SyntaxError: unterminated string literal (detected at line 1)
+
+There are several workarounds for this. One is to use regular strings and double
+the backslashes::
+
+   >>> 'C:\\this\\will\\work\\'
+   'C:\\this\\will\\work\\'
+
+Another is to concatenate a regular string containing an escaped backslash to the
+raw string::
+
+   >>> r'C:\this\will\work' '\\'
+   'C:\\this\\will\\work\\'
+
+It is also possible to use :func:`os.path.join` to append a backslash on Windows::
+
+   >>> os.path.join(r'C:\this\will\work', '')
+   'C:\\this\\will\\work\\'
+
+Note that while a backslash will "escape" a quote for the purposes of
+determining where the raw string ends, no escaping occurs when interpreting the
+value of the raw string. That is, the backslash remains present in the value of
+the raw string::
+
+   >>> r'backslash\'preserved'
+   "backslash\\'preserved"
+
+Also see the specification in the :ref:`language reference <strings>`.
 
 Performance
 ===========
@@ -1041,7 +1113,7 @@ performance levels:
   detrimental to readability).
 
 If you have reached the limit of what pure Python can allow, there are tools
-to take you further away.  For example, `Cython <http://cython.org>`_ can
+to take you further away.  For example, `Cython <https://cython.org>`_ can
 compile a slightly modified version of Python code into a C extension, and
 can be used on many different platforms.  Cython can take advantage of
 compilation (and optional type annotations) to make your code significantly
@@ -1181,15 +1253,16 @@ difference is that a Python list can contain objects of many different types.
 
 The ``array`` module also provides methods for creating arrays of fixed types
 with compact representations, but they are slower to index than lists.  Also
-note that NumPy and other third party packages define array-like structures with
+note that `NumPy <https://numpy.org/>`_
+and other third party packages define array-like structures with
 various characteristics as well.
 
-To get Lisp-style linked lists, you can emulate cons cells using tuples::
+To get Lisp-style linked lists, you can emulate *cons cells* using tuples::
 
    lisp_list = ("like",  ("this",  ("example", None) ) )
 
 If mutability is desired, you could use lists instead of tuples.  Here the
-analogue of lisp car is ``lisp_list[0]`` and the analogue of cdr is
+analogue of a Lisp *car* is ``lisp_list[0]`` and the analogue of *cdr* is
 ``lisp_list[1]``.  Only do this if you're sure you really need to, because it's
 usually a lot slower than using Python lists.
 
@@ -1245,15 +1318,27 @@ use a list comprehension::
    A = [[None] * w for i in range(h)]
 
 Or, you can use an extension that provides a matrix datatype; `NumPy
-<http://www.numpy.org/>`_ is the best known.
+<https://numpy.org/>`_ is the best known.
 
 
-How do I apply a method to a sequence of objects?
--------------------------------------------------
+How do I apply a method or function to a sequence of objects?
+-------------------------------------------------------------
 
-Use a list comprehension::
+To call a method or function and accumulate the return values is a list,
+a :term:`list comprehension` is an elegant solution::
 
    result = [obj.method() for obj in mylist]
+
+   result = [function(obj) for obj in mylist]
+
+To just run the method or function without saving the return values,
+a plain :keyword:`for` loop will suffice::
+
+   for obj in mylist:
+       obj.method()
+
+   for obj in mylist:
+       function(obj)
 
 .. _faq-augmented-assignment-tuple-error:
 
@@ -1309,11 +1394,12 @@ that even though there was an error, the append worked::
     ['foo', 'item']
 
 To see why this happens, you need to know that (a) if an object implements an
-``__iadd__`` magic method, it gets called when the ``+=`` augmented assignment
+:meth:`~object.__iadd__` magic method, it gets called when the ``+=`` augmented
+assignment
 is executed, and its return value is what gets used in the assignment statement;
-and (b) for lists, ``__iadd__`` is equivalent to calling ``extend`` on the list
+and (b) for lists, :meth:`!__iadd__` is equivalent to calling :meth:`!extend` on the list
 and returning the list.  That's why we say that for lists, ``+=`` is a
-"shorthand" for ``list.extend``::
+"shorthand" for :meth:`!list.extend`::
 
     >>> a_list = []
     >>> a_list += [1]
@@ -1338,7 +1424,7 @@ Thus, in our tuple example what is happening is equivalent to::
      ...
    TypeError: 'tuple' object does not support item assignment
 
-The ``__iadd__`` succeeds, and thus the list is extended, but even though
+The :meth:`!__iadd__` succeeds, and thus the list is extended, but even though
 ``result`` points to the same object that ``a_tuple[0]`` already points to,
 that final assignment still results in an error, because tuples are immutable.
 
@@ -1415,7 +1501,8 @@ See also :ref:`why-self`.
 How do I check if an object is an instance of a given class or of a subclass of it?
 -----------------------------------------------------------------------------------
 
-Use the built-in function ``isinstance(obj, cls)``.  You can check if an object
+Use the built-in function :func:`isinstance(obj, cls) <isinstance>`.  You can
+check if an object
 is an instance of any of a number of classes by providing a tuple instead of a
 single class, e.g. ``isinstance(obj, (class1, class2, ...))``, and can also
 check whether an object is one of Python's built-in types, e.g.
@@ -1512,13 +1599,13 @@ Here the ``UpperOut`` class redefines the ``write()`` method to convert the
 argument string to uppercase before calling the underlying
 ``self._outfile.write()`` method.  All other methods are delegated to the
 underlying ``self._outfile`` object.  The delegation is accomplished via the
-``__getattr__`` method; consult :ref:`the language reference <attribute-access>`
+:meth:`~object.__getattr__` method; consult :ref:`the language reference <attribute-access>`
 for more information about controlling attribute access.
 
 Note that for more general cases delegation can get trickier. When attributes
-must be set as well as retrieved, the class must define a :meth:`__setattr__`
+must be set as well as retrieved, the class must define a :meth:`~object.__setattr__`
 method too, and it must do so carefully.  The basic implementation of
-:meth:`__setattr__` is roughly equivalent to the following::
+:meth:`!__setattr__` is roughly equivalent to the following::
 
    class X:
        ...
@@ -1526,7 +1613,8 @@ method too, and it must do so carefully.  The basic implementation of
            self.__dict__[name] = value
        ...
 
-Most :meth:`__setattr__` implementations must modify ``self.__dict__`` to store
+Most :meth:`!__setattr__` implementations must modify
+:meth:`self.__dict__ <object.__dict__>` to store
 local state for self without causing an infinite recursion.
 
 
@@ -1664,17 +1752,17 @@ My class defines __del__ but it is not called when I delete the object.
 
 There are several possible reasons for this.
 
-The del statement does not necessarily call :meth:`__del__` -- it simply
+The :keyword:`del` statement does not necessarily call :meth:`~object.__del__` -- it simply
 decrements the object's reference count, and if this reaches zero
-:meth:`__del__` is called.
+:meth:`!__del__` is called.
 
 If your data structures contain circular links (e.g. a tree where each child has
 a parent reference and each parent has a list of children) the reference counts
 will never go back to zero.  Once in a while Python runs an algorithm to detect
 such cycles, but the garbage collector might run some time after the last
-reference to your data structure vanishes, so your :meth:`__del__` method may be
+reference to your data structure vanishes, so your :meth:`!__del__` method may be
 called at an inconvenient and random time. This is inconvenient if you're trying
-to reproduce a problem. Worse, the order in which object's :meth:`__del__`
+to reproduce a problem. Worse, the order in which object's :meth:`!__del__`
 methods are executed is arbitrary.  You can run :func:`gc.collect` to force a
 collection, but there *are* pathological cases where objects will never be
 collected.
@@ -1682,7 +1770,7 @@ collected.
 Despite the cycle collector, it's still a good idea to define an explicit
 ``close()`` method on objects to be called whenever you're done with them.  The
 ``close()`` method can then remove attributes that refer to subobjects.  Don't
-call :meth:`__del__` directly -- :meth:`__del__` should call ``close()`` and
+call :meth:`!__del__` directly -- :meth:`!__del__` should call ``close()`` and
 ``close()`` should make sure that it can be called more than once for the same
 object.
 
@@ -1699,7 +1787,7 @@ and sibling references (if they need them!).
    Normally, calling :func:`sys.exc_clear` will take care of this by clearing
    the last recorded exception.
 
-Finally, if your :meth:`__del__` method raises an exception, a warning message
+Finally, if your :meth:`!__del__` method raises an exception, a warning message
 is printed to :data:`sys.stderr`.
 
 
@@ -1795,7 +1883,7 @@ for ``None``.  This reads like plain English in code and avoids confusion with
 other objects that may have boolean values that evaluate to false.
 
 2) Detecting optional arguments can be tricky when ``None`` is a valid input
-value.  In those situations, you can create an singleton sentinel object
+value.  In those situations, you can create a singleton sentinel object
 guaranteed to be distinct from other objects.  For example, here is how
 to implement a method that behaves like :meth:`dict.pop`::
 
@@ -1815,13 +1903,143 @@ identity tests.  This prevents the code from being confused by objects such as
 ``float('NaN')`` that are not equal to themselves.
 
 For example, here is the implementation of
-:meth:`collections.abc.Sequence.__contains__`::
+:meth:`!collections.abc.Sequence.__contains__`::
 
     def __contains__(self, value):
         for v in self:
             if v is value or v == value:
                 return True
         return False
+
+
+How can a subclass control what data is stored in an immutable instance?
+------------------------------------------------------------------------
+
+When subclassing an immutable type, override the :meth:`~object.__new__` method
+instead of the :meth:`~object.__init__` method.  The latter only runs *after* an
+instance is created, which is too late to alter data in an immutable
+instance.
+
+All of these immutable classes have a different signature than their
+parent class:
+
+.. testcode::
+
+    from datetime import date
+
+    class FirstOfMonthDate(date):
+        "Always choose the first day of the month"
+        def __new__(cls, year, month, day):
+            return super().__new__(cls, year, month, 1)
+
+    class NamedInt(int):
+        "Allow text names for some numbers"
+        xlat = {'zero': 0, 'one': 1, 'ten': 10}
+        def __new__(cls, value):
+            value = cls.xlat.get(value, value)
+            return super().__new__(cls, value)
+
+    class TitleStr(str):
+        "Convert str to name suitable for a URL path"
+        def __new__(cls, s):
+            s = s.lower().replace(' ', '-')
+            s = ''.join([c for c in s if c.isalnum() or c == '-'])
+            return super().__new__(cls, s)
+
+The classes can be used like this:
+
+.. doctest::
+
+    >>> FirstOfMonthDate(2012, 2, 14)
+    FirstOfMonthDate(2012, 2, 1)
+    >>> NamedInt('ten')
+    10
+    >>> NamedInt(20)
+    20
+    >>> TitleStr('Blog: Why Python Rocks')
+    'blog-why-python-rocks'
+
+
+.. _faq-cache-method-calls:
+
+How do I cache method calls?
+----------------------------
+
+The two principal tools for caching methods are
+:func:`functools.cached_property` and :func:`functools.lru_cache`.  The
+former stores results at the instance level and the latter at the class
+level.
+
+The *cached_property* approach only works with methods that do not take
+any arguments.  It does not create a reference to the instance.  The
+cached method result will be kept only as long as the instance is alive.
+
+The advantage is that when an instance is no longer used, the cached
+method result will be released right away.  The disadvantage is that if
+instances accumulate, so too will the accumulated method results.  They
+can grow without bound.
+
+The *lru_cache* approach works with methods that have :term:`hashable`
+arguments.  It creates a reference to the instance unless special
+efforts are made to pass in weak references.
+
+The advantage of the least recently used algorithm is that the cache is
+bounded by the specified *maxsize*.  The disadvantage is that instances
+are kept alive until they age out of the cache or until the cache is
+cleared.
+
+This example shows the various techniques::
+
+    class Weather:
+        "Lookup weather information on a government website"
+
+        def __init__(self, station_id):
+            self._station_id = station_id
+            # The _station_id is private and immutable
+
+        def current_temperature(self):
+            "Latest hourly observation"
+            # Do not cache this because old results
+            # can be out of date.
+
+        @cached_property
+        def location(self):
+            "Return the longitude/latitude coordinates of the station"
+            # Result only depends on the station_id
+
+        @lru_cache(maxsize=20)
+        def historic_rainfall(self, date, units='mm'):
+            "Rainfall on a given date"
+            # Depends on the station_id, date, and units.
+
+The above example assumes that the *station_id* never changes.  If the
+relevant instance attributes are mutable, the *cached_property* approach
+can't be made to work because it cannot detect changes to the
+attributes.
+
+To make the *lru_cache* approach work when the *station_id* is mutable,
+the class needs to define the :meth:`~object.__eq__` and :meth:`~object.__hash__`
+methods so that the cache can detect relevant attribute updates::
+
+    class Weather:
+        "Example with a mutable station identifier"
+
+        def __init__(self, station_id):
+            self.station_id = station_id
+
+        def change_station(self, station_id):
+            self.station_id = station_id
+
+        def __eq__(self, other):
+            return self.station_id == other.station_id
+
+        def __hash__(self):
+            return hash(self.station_id)
+
+        @lru_cache(maxsize=20)
+        def historic_rainfall(self, date, units='cm'):
+            'Rainfall on a given date'
+            # Depends on the station_id, date, and units.
 
 
 Modules
@@ -1940,7 +2158,7 @@ Jim Roskind suggests performing steps in the following order in each module:
 * ``import`` statements
 * active code (including globals that are initialized from imported values).
 
-van Rossum doesn't like this approach much because the imports appear in a
+Van Rossum doesn't like this approach much because the imports appear in a
 strange place, but it does work.
 
 Matthias Urlichs recommends restructuring your code so that the recursive import

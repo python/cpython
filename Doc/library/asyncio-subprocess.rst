@@ -68,12 +68,15 @@ Creating Subprocesses
 
    The *limit* argument sets the buffer limit for :class:`StreamReader`
    wrappers for :attr:`Process.stdout` and :attr:`Process.stderr`
-   (if :attr:`subprocess.PIPE` is passed to *stdout* and *stderr* arguments).
+   (if :const:`subprocess.PIPE` is passed to *stdout* and *stderr* arguments).
 
    Return a :class:`~asyncio.subprocess.Process` instance.
 
    See the documentation of :meth:`loop.subprocess_exec` for other
    parameters.
+
+   .. versionchanged:: 3.10
+      Removed the *loop* parameter.
 
 
 .. coroutinefunction:: create_subprocess_shell(cmd, stdin=None, \
@@ -83,7 +86,7 @@ Creating Subprocesses
 
    The *limit* argument sets the buffer limit for :class:`StreamReader`
    wrappers for :attr:`Process.stdout` and :attr:`Process.stderr`
-   (if :attr:`subprocess.PIPE` is passed to *stdout* and *stderr* arguments).
+   (if :const:`subprocess.PIPE` is passed to *stdout* and *stderr* arguments).
 
    Return a :class:`~asyncio.subprocess.Process` instance.
 
@@ -98,6 +101,9 @@ Creating Subprocesses
       vulnerabilities. The :func:`shlex.quote` function can be used to properly
       escape whitespace and special shell characters in strings that are going
       to be used to construct shell commands.
+
+   .. versionchanged:: 3.10
+      Removed the *loop* parameter.
 
 .. note::
 
@@ -118,6 +124,7 @@ Constants
 =========
 
 .. data:: asyncio.subprocess.PIPE
+   :module:
 
    Can be passed to the *stdin*, *stdout* or *stderr* parameters.
 
@@ -131,11 +138,13 @@ Constants
    attributes will point to :class:`StreamReader` instances.
 
 .. data:: asyncio.subprocess.STDOUT
+   :module:
 
    Special value that can be used as the *stderr* argument and indicates
    that standard error should be redirected into standard output.
 
 .. data:: asyncio.subprocess.DEVNULL
+   :module:
 
    Special value that can be used as the *stdin*, *stdout* or *stderr* argument
    to process creation functions.  It indicates that the special file
@@ -151,6 +160,7 @@ wrapper that allows communicating with subprocesses and watching for
 their completion.
 
 .. class:: asyncio.subprocess.Process
+   :module:
 
    An object that wraps OS processes created by the
    :func:`create_subprocess_exec` and :func:`create_subprocess_shell`
@@ -165,7 +175,7 @@ their completion.
 
    * the :meth:`~asyncio.subprocess.Process.communicate` and
      :meth:`~asyncio.subprocess.Process.wait` methods don't have a
-     *timeout* parameter: use the :func:`wait_for` function;
+     *timeout* parameter: use the :func:`~asyncio.wait_for` function;
 
    * the :meth:`Process.wait() <asyncio.subprocess.Process.wait>` method
      is asynchronous, whereas :meth:`subprocess.Popen.wait` method
@@ -197,8 +207,9 @@ their completion.
       Interact with process:
 
       1. send data to *stdin* (if *input* is not ``None``);
-      2. read data from *stdout* and *stderr*, until EOF is reached;
-      3. wait for process to terminate.
+      2. closes *stdin*;
+      3. read data from *stdout* and *stderr*, until EOF is reached;
+      4. wait for process to terminate.
 
       The optional *input* argument is the data (:class:`bytes` object)
       that will be sent to the child process.
@@ -219,13 +230,17 @@ their completion.
       Note, that the data read is buffered in memory, so do not use
       this method if the data size is large or unlimited.
 
+      .. versionchanged:: 3.12
+
+         *stdin* gets closed when `input=None` too.
+
    .. method:: send_signal(signal)
 
       Sends the signal *signal* to the child process.
 
       .. note::
 
-         On Windows, :py:data:`SIGTERM` is an alias for :meth:`terminate`.
+         On Windows, :py:const:`~signal.SIGTERM` is an alias for :meth:`terminate`.
          ``CTRL_C_EVENT`` and ``CTRL_BREAK_EVENT`` can be sent to processes
          started with a *creationflags* parameter which includes
          ``CREATE_NEW_PROCESS_GROUP``.
@@ -234,10 +249,10 @@ their completion.
 
       Stop the child process.
 
-      On POSIX systems this method sends :py:data:`signal.SIGTERM` to the
+      On POSIX systems this method sends :py:const:`~signal.SIGTERM` to the
       child process.
 
-      On Windows the Win32 API function :c:func:`TerminateProcess` is
+      On Windows the Win32 API function :c:func:`!TerminateProcess` is
       called to stop the child process.
 
    .. method:: kill()
@@ -269,7 +284,7 @@ their completion.
       Use the :meth:`communicate` method rather than
       :attr:`process.stdin.write() <stdin>`,
       :attr:`await process.stdout.read() <stdout>` or
-      :attr:`await process.stderr.read <stderr>`.
+      :attr:`await process.stderr.read() <stderr>`.
       This avoids deadlocks due to streams pausing reading or writing
       and blocking the child process.
 

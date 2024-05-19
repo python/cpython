@@ -168,7 +168,7 @@ Sanad Zaki Rizvi.
 
 Idle editor default font. Switch from Courier to platform-sensitive
 TkFixedFont.  This should not affect current customized font selections.  If
-there is a problem, edit $HOME/.idlerc/config-main.cfg and remove 'fontxxx'
+there is a problem, edit $HOME/.idlerc/config-main.cfg and remove ':samp:`font{xxx}`'
 entries from [Editor Window].  Patch by Mark Roseman.
 
 ..

@@ -2,13 +2,14 @@ from importlib import _bootstrap_external
 from test.support import os_helper
 import unittest
 import sys
-from .. import util
+from test.test_importlib import util
 
 importlib = util.import_importlib('importlib')
 machinery = util.import_importlib('importlib.machinery')
 
 
-@unittest.skipIf(util.EXTENSIONS.filename is None, '_testcapi not available')
+@unittest.skipIf(util.EXTENSIONS is None or util.EXTENSIONS.filename is None,
+                 'dynamic loading not supported or test module not available')
 @util.case_insensitive_tests
 class ExtensionModuleCaseSensitivityTest(util.CASEOKTestBase):
 

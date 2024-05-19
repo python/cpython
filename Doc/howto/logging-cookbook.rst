@@ -7,7 +7,8 @@ Logging Cookbook
 :Author: Vinay Sajip <vinay_sajip at red-dove dot com>
 
 This page contains a number of recipes related to logging, which have been found
-useful in the past.
+useful in the past. For links to tutorial and reference information, please see
+:ref:`cookbook-ref-links`.
 
 .. currentmodule:: logging
 
@@ -218,7 +219,7 @@ messages should not. Here's how you can achieve this::
    logging.basicConfig(level=logging.DEBUG,
                        format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
                        datefmt='%m-%d %H:%M',
-                       filename='/temp/myapp.log',
+                       filename='/tmp/myapp.log',
                        filemode='w')
    # define a Handler which writes INFO messages or higher to the sys.stderr
    console = logging.StreamHandler()
@@ -268,6 +269,220 @@ are sent to both destinations.
 
 This example uses console and file handlers, but you can use any number and
 combination of handlers you choose.
+
+Note that the above choice of log filename ``/tmp/myapp.log`` implies use of a
+standard location for temporary files on POSIX systems. On Windows, you may need to
+choose a different directory name for the log - just ensure that the directory exists
+and that you have the permissions to create and update files in it.
+
+
+.. _custom-level-handling:
+
+Custom handling of levels
+-------------------------
+
+Sometimes, you might want to do something slightly different from the standard
+handling of levels in handlers, where all levels above a threshold get
+processed by a handler. To do this, you need to use filters. Let's look at a
+scenario where you want to arrange things as follows:
+
+* Send messages of severity ``INFO`` and ``WARNING`` to ``sys.stdout``
+* Send messages of severity ``ERROR`` and above to ``sys.stderr``
+* Send messages of severity ``DEBUG`` and above to file ``app.log``
+
+Suppose you configure logging with the following JSON:
+
+.. code-block:: json
+
+    {
+        "version": 1,
+        "disable_existing_loggers": false,
+        "formatters": {
+            "simple": {
+                "format": "%(levelname)-8s - %(message)s"
+            }
+        },
+        "handlers": {
+            "stdout": {
+                "class": "logging.StreamHandler",
+                "level": "INFO",
+                "formatter": "simple",
+                "stream": "ext://sys.stdout"
+            },
+            "stderr": {
+                "class": "logging.StreamHandler",
+                "level": "ERROR",
+                "formatter": "simple",
+                "stream": "ext://sys.stderr"
+            },
+            "file": {
+                "class": "logging.FileHandler",
+                "formatter": "simple",
+                "filename": "app.log",
+                "mode": "w"
+            }
+        },
+        "root": {
+            "level": "DEBUG",
+            "handlers": [
+                "stderr",
+                "stdout",
+                "file"
+            ]
+        }
+    }
+
+This configuration does *almost* what we want, except that ``sys.stdout`` would show messages
+of severity ``ERROR`` and only events of this severity and higher will be tracked
+as well as ``INFO`` and ``WARNING`` messages. To prevent this, we can set up a filter which
+excludes those messages and add it to the relevant handler. This can be configured by
+adding a ``filters`` section parallel to ``formatters`` and ``handlers``:
+
+.. code-block:: json
+
+    {
+        "filters": {
+            "warnings_and_below": {
+                "()" : "__main__.filter_maker",
+                "level": "WARNING"
+            }
+        }
+    }
+
+and changing the section on the ``stdout`` handler to add it:
+
+.. code-block:: json
+
+    {
+        "stdout": {
+            "class": "logging.StreamHandler",
+            "level": "INFO",
+            "formatter": "simple",
+            "stream": "ext://sys.stdout",
+            "filters": ["warnings_and_below"]
+        }
+    }
+
+A filter is just a function, so we can define the ``filter_maker`` (a factory
+function) as follows:
+
+.. code-block:: python
+
+    def filter_maker(level):
+        level = getattr(logging, level)
+
+        def filter(record):
+            return record.levelno <= level
+
+        return filter
+
+This converts the string argument passed in to a numeric level, and returns a
+function which only returns ``True`` if the level of the passed in record is
+at or below the specified level. Note that in this example I have defined the
+``filter_maker`` in a test script ``main.py`` that I run from the command line,
+so its module will be ``__main__`` - hence the ``__main__.filter_maker`` in the
+filter configuration. You will need to change that if you define it in a
+different module.
+
+With the filter added, we can run ``main.py``, which in full is:
+
+.. code-block:: python
+
+    import json
+    import logging
+    import logging.config
+
+    CONFIG = '''
+    {
+        "version": 1,
+        "disable_existing_loggers": false,
+        "formatters": {
+            "simple": {
+                "format": "%(levelname)-8s - %(message)s"
+            }
+        },
+        "filters": {
+            "warnings_and_below": {
+                "()" : "__main__.filter_maker",
+                "level": "WARNING"
+            }
+        },
+        "handlers": {
+            "stdout": {
+                "class": "logging.StreamHandler",
+                "level": "INFO",
+                "formatter": "simple",
+                "stream": "ext://sys.stdout",
+                "filters": ["warnings_and_below"]
+            },
+            "stderr": {
+                "class": "logging.StreamHandler",
+                "level": "ERROR",
+                "formatter": "simple",
+                "stream": "ext://sys.stderr"
+            },
+            "file": {
+                "class": "logging.FileHandler",
+                "formatter": "simple",
+                "filename": "app.log",
+                "mode": "w"
+            }
+        },
+        "root": {
+            "level": "DEBUG",
+            "handlers": [
+                "stderr",
+                "stdout",
+                "file"
+            ]
+        }
+    }
+    '''
+
+    def filter_maker(level):
+        level = getattr(logging, level)
+
+        def filter(record):
+            return record.levelno <= level
+
+        return filter
+
+    logging.config.dictConfig(json.loads(CONFIG))
+    logging.debug('A DEBUG message')
+    logging.info('An INFO message')
+    logging.warning('A WARNING message')
+    logging.error('An ERROR message')
+    logging.critical('A CRITICAL message')
+
+And after running it like this:
+
+.. code-block:: shell
+
+    python main.py 2>stderr.log >stdout.log
+
+We can see the results are as expected:
+
+.. code-block:: shell
+
+    $ more *.log
+    ::::::::::::::
+    app.log
+    ::::::::::::::
+    DEBUG    - A DEBUG message
+    INFO     - An INFO message
+    WARNING  - A WARNING message
+    ERROR    - An ERROR message
+    CRITICAL - A CRITICAL message
+    ::::::::::::::
+    stderr.log
+    ::::::::::::::
+    ERROR    - An ERROR message
+    CRITICAL - A CRITICAL message
+    ::::::::::::::
+    stdout.log
+    ::::::::::::::
+    INFO     - An INFO message
+    WARNING  - A WARNING message
 
 
 Configuration server example
@@ -326,13 +541,15 @@ configuration::
     print('complete')
 
 
+.. _blocking-handlers:
+
 Dealing with handlers that block
 --------------------------------
 
 .. currentmodule:: logging.handlers
 
 Sometimes you have to get your logging handlers to do their work without
-blocking the thread you're logging from. This is common in Web applications,
+blocking the thread you're logging from. This is common in web applications,
 though of course it also occurs in other scenarios.
 
 A common culprit which demonstrates sluggish behaviour is the
@@ -390,6 +607,14 @@ which, when run, will produce:
 .. code-block:: none
 
     MainThread: Look out!
+
+.. note:: Although the earlier discussion wasn't specifically talking about
+   async code, but rather about slow logging handlers, it should be noted that
+   when logging from async code, network and even file handlers could lead to
+   problems (blocking the event loop) because some logging is done from
+   :mod:`asyncio` internals. It might be best, if any async code is used in an
+   application, to use the above approach for logging, so that any blocking code
+   runs only in the ``QueueListener`` thread.
 
 .. versionchanged:: 3.5
    Prior to Python 3.5, the :class:`QueueListener` always passed every message
@@ -536,10 +761,81 @@ printed on the console; on the server side, you should see something like:
 
 Note that there are some security issues with pickle in some scenarios. If
 these affect you, you can use an alternative serialization scheme by overriding
-the :meth:`~handlers.SocketHandler.makePickle` method and implementing your
+the :meth:`~SocketHandler.makePickle` method and implementing your
 alternative there, as well as adapting the above script to use your alternative
 serialization.
 
+
+Running a logging socket listener in production
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. _socket-listener-gist: https://gist.github.com/vsajip/4b227eeec43817465ca835ca66f75e2b
+
+To run a logging listener in production, you may need to use a
+process-management tool such as `Supervisor <http://supervisord.org/>`_.
+`Here is a Gist <socket-listener-gist_>`__
+which provides the bare-bones files to run the above functionality using
+Supervisor. It consists of the following files:
+
++-------------------------+----------------------------------------------------+
+| File                    | Purpose                                            |
++=========================+====================================================+
+| :file:`prepare.sh`      | A Bash script to prepare the environment for       |
+|                         | testing                                            |
++-------------------------+----------------------------------------------------+
+| :file:`supervisor.conf` | The Supervisor configuration file, which has       |
+|                         | entries for the listener and a multi-process web   |
+|                         | application                                        |
++-------------------------+----------------------------------------------------+
+| :file:`ensure_app.sh`   | A Bash script to ensure that Supervisor is running |
+|                         | with the above configuration                       |
++-------------------------+----------------------------------------------------+
+| :file:`log_listener.py` | The socket listener program which receives log     |
+|                         | events and records them to a file                  |
++-------------------------+----------------------------------------------------+
+| :file:`main.py`         | A simple web application which performs logging    |
+|                         | via a socket connected to the listener             |
++-------------------------+----------------------------------------------------+
+| :file:`webapp.json`     | A JSON configuration file for the web application  |
++-------------------------+----------------------------------------------------+
+| :file:`client.py`       | A Python script to exercise the web application    |
++-------------------------+----------------------------------------------------+
+
+The web application uses `Gunicorn <https://gunicorn.org/>`_, which is a
+popular web application server that starts multiple worker processes to handle
+requests. This example setup shows how the workers can write to the same log file
+without conflicting with one another --- they all go through the socket listener.
+
+To test these files, do the following in a POSIX environment:
+
+#. Download `the Gist <socket-listener-gist_>`__
+   as a ZIP archive using the :guilabel:`Download ZIP` button.
+
+#. Unzip the above files from the archive into a scratch directory.
+
+#. In the scratch directory, run ``bash prepare.sh`` to get things ready.
+   This creates a :file:`run` subdirectory to contain Supervisor-related and
+   log files, and a :file:`venv` subdirectory to contain a virtual environment
+   into which ``bottle``, ``gunicorn`` and ``supervisor`` are installed.
+
+#. Run ``bash ensure_app.sh`` to ensure that Supervisor is running with
+   the above configuration.
+
+#. Run ``venv/bin/python client.py`` to exercise the web application,
+   which will lead to records being written to the log.
+
+#. Inspect the log files in the :file:`run` subdirectory. You should see the
+   most recent log lines in files matching the pattern :file:`app.log*`. They won't be in
+   any particular order, since they have been handled concurrently by different
+   worker processes in a non-deterministic way.
+
+#. You can shut down the listener and the web application by running
+   ``venv/bin/supervisorctl -c supervisor.conf shutdown``.
+
+You may need to tweak the configuration files in the unlikely event that the
+configured ports clash with something else in your test environment.
+
+.. currentmodule:: logging
 
 .. _context-info:
 
@@ -702,6 +998,254 @@ which, when run, produces something like:
     2010-09-06 22:38:15,301 d.e.f DEBUG    IP: 123.231.231.123 User: fred     A message at DEBUG level with 2 parameters
     2010-09-06 22:38:15,301 d.e.f INFO     IP: 123.231.231.123 User: fred     A message at INFO level with 2 parameters
 
+Use of ``contextvars``
+----------------------
+
+Since Python 3.7, the :mod:`contextvars` module has provided context-local storage
+which works for both :mod:`threading` and :mod:`asyncio` processing needs. This type
+of storage may thus be generally preferable to thread-locals. The following example
+shows how, in a multi-threaded environment, logs can populated with contextual
+information such as, for example, request attributes handled by web applications.
+
+For the purposes of illustration, say that you have different web applications, each
+independent of the other but running in the same Python process and using a library
+common to them. How can each of these applications have their own log, where all
+logging messages from the library (and other request processing code) are directed to
+the appropriate application's log file, while including in the log additional
+contextual information such as client IP, HTTP request method and client username?
+
+Let's assume that the library can be simulated by the following code:
+
+.. code-block:: python
+
+    # webapplib.py
+    import logging
+    import time
+
+    logger = logging.getLogger(__name__)
+
+    def useful():
+        # Just a representative event logged from the library
+        logger.debug('Hello from webapplib!')
+        # Just sleep for a bit so other threads get to run
+        time.sleep(0.01)
+
+We can simulate the multiple web applications by means of two simple classes,
+``Request`` and ``WebApp``. These simulate how real threaded web applications work -
+each request is handled by a thread:
+
+.. code-block:: python
+
+    # main.py
+    import argparse
+    from contextvars import ContextVar
+    import logging
+    import os
+    from random import choice
+    import threading
+    import webapplib
+
+    logger = logging.getLogger(__name__)
+    root = logging.getLogger()
+    root.setLevel(logging.DEBUG)
+
+    class Request:
+        """
+        A simple dummy request class which just holds dummy HTTP request method,
+        client IP address and client username
+        """
+        def __init__(self, method, ip, user):
+            self.method = method
+            self.ip = ip
+            self.user = user
+
+    # A dummy set of requests which will be used in the simulation - we'll just pick
+    # from this list randomly. Note that all GET requests are from 192.168.2.XXX
+    # addresses, whereas POST requests are from 192.16.3.XXX addresses. Three users
+    # are represented in the sample requests.
+
+    REQUESTS = [
+        Request('GET', '192.168.2.20', 'jim'),
+        Request('POST', '192.168.3.20', 'fred'),
+        Request('GET', '192.168.2.21', 'sheila'),
+        Request('POST', '192.168.3.21', 'jim'),
+        Request('GET', '192.168.2.22', 'fred'),
+        Request('POST', '192.168.3.22', 'sheila'),
+    ]
+
+    # Note that the format string includes references to request context information
+    # such as HTTP method, client IP and username
+
+    formatter = logging.Formatter('%(threadName)-11s %(appName)s %(name)-9s %(user)-6s %(ip)s %(method)-4s %(message)s')
+
+    # Create our context variables. These will be filled at the start of request
+    # processing, and used in the logging that happens during that processing
+
+    ctx_request = ContextVar('request')
+    ctx_appname = ContextVar('appname')
+
+    class InjectingFilter(logging.Filter):
+        """
+        A filter which injects context-specific information into logs and ensures
+        that only information for a specific webapp is included in its log
+        """
+        def __init__(self, app):
+            self.app = app
+
+        def filter(self, record):
+            request = ctx_request.get()
+            record.method = request.method
+            record.ip = request.ip
+            record.user = request.user
+            record.appName = appName = ctx_appname.get()
+            return appName == self.app.name
+
+    class WebApp:
+        """
+        A dummy web application class which has its own handler and filter for a
+        webapp-specific log.
+        """
+        def __init__(self, name):
+            self.name = name
+            handler = logging.FileHandler(name + '.log', 'w')
+            f = InjectingFilter(self)
+            handler.setFormatter(formatter)
+            handler.addFilter(f)
+            root.addHandler(handler)
+            self.num_requests = 0
+
+        def process_request(self, request):
+            """
+            This is the dummy method for processing a request. It's called on a
+            different thread for every request. We store the context information into
+            the context vars before doing anything else.
+            """
+            ctx_request.set(request)
+            ctx_appname.set(self.name)
+            self.num_requests += 1
+            logger.debug('Request processing started')
+            webapplib.useful()
+            logger.debug('Request processing finished')
+
+    def main():
+        fn = os.path.splitext(os.path.basename(__file__))[0]
+        adhf = argparse.ArgumentDefaultsHelpFormatter
+        ap = argparse.ArgumentParser(formatter_class=adhf, prog=fn,
+                                     description='Simulate a couple of web '
+                                                 'applications handling some '
+                                                 'requests, showing how request '
+                                                 'context can be used to '
+                                                 'populate logs')
+        aa = ap.add_argument
+        aa('--count', '-c', type=int, default=100, help='How many requests to simulate')
+        options = ap.parse_args()
+
+        # Create the dummy webapps and put them in a list which we can use to select
+        # from randomly
+        app1 = WebApp('app1')
+        app2 = WebApp('app2')
+        apps = [app1, app2]
+        threads = []
+        # Add a common handler which will capture all events
+        handler = logging.FileHandler('app.log', 'w')
+        handler.setFormatter(formatter)
+        root.addHandler(handler)
+
+        # Generate calls to process requests
+        for i in range(options.count):
+            try:
+                # Pick an app at random and a request for it to process
+                app = choice(apps)
+                request = choice(REQUESTS)
+                # Process the request in its own thread
+                t = threading.Thread(target=app.process_request, args=(request,))
+                threads.append(t)
+                t.start()
+            except KeyboardInterrupt:
+                break
+
+        # Wait for the threads to terminate
+        for t in threads:
+            t.join()
+
+        for app in apps:
+            print('%s processed %s requests' % (app.name, app.num_requests))
+
+    if __name__ == '__main__':
+        main()
+
+If you run the above, you should find that roughly half the requests go
+into :file:`app1.log` and the rest into :file:`app2.log`, and the all the requests are
+logged to :file:`app.log`. Each webapp-specific log will contain only log entries for
+only that webapp, and the request information will be displayed consistently in the
+log (i.e. the information in each dummy request will always appear together in a log
+line). This is illustrated by the following shell output:
+
+.. code-block:: shell
+
+    ~/logging-contextual-webapp$ python main.py
+    app1 processed 51 requests
+    app2 processed 49 requests
+    ~/logging-contextual-webapp$ wc -l *.log
+      153 app1.log
+      147 app2.log
+      300 app.log
+      600 total
+    ~/logging-contextual-webapp$ head -3 app1.log
+    Thread-3 (process_request) app1 __main__  jim    192.168.3.21 POST Request processing started
+    Thread-3 (process_request) app1 webapplib jim    192.168.3.21 POST Hello from webapplib!
+    Thread-5 (process_request) app1 __main__  jim    192.168.3.21 POST Request processing started
+    ~/logging-contextual-webapp$ head -3 app2.log
+    Thread-1 (process_request) app2 __main__  sheila 192.168.2.21 GET  Request processing started
+    Thread-1 (process_request) app2 webapplib sheila 192.168.2.21 GET  Hello from webapplib!
+    Thread-2 (process_request) app2 __main__  jim    192.168.2.20 GET  Request processing started
+    ~/logging-contextual-webapp$ head app.log
+    Thread-1 (process_request) app2 __main__  sheila 192.168.2.21 GET  Request processing started
+    Thread-1 (process_request) app2 webapplib sheila 192.168.2.21 GET  Hello from webapplib!
+    Thread-2 (process_request) app2 __main__  jim    192.168.2.20 GET  Request processing started
+    Thread-3 (process_request) app1 __main__  jim    192.168.3.21 POST Request processing started
+    Thread-2 (process_request) app2 webapplib jim    192.168.2.20 GET  Hello from webapplib!
+    Thread-3 (process_request) app1 webapplib jim    192.168.3.21 POST Hello from webapplib!
+    Thread-4 (process_request) app2 __main__  fred   192.168.2.22 GET  Request processing started
+    Thread-5 (process_request) app1 __main__  jim    192.168.3.21 POST Request processing started
+    Thread-4 (process_request) app2 webapplib fred   192.168.2.22 GET  Hello from webapplib!
+    Thread-6 (process_request) app1 __main__  jim    192.168.3.21 POST Request processing started
+    ~/logging-contextual-webapp$ grep app1 app1.log | wc -l
+    153
+    ~/logging-contextual-webapp$ grep app2 app2.log | wc -l
+    147
+    ~/logging-contextual-webapp$ grep app1 app.log | wc -l
+    153
+    ~/logging-contextual-webapp$ grep app2 app.log | wc -l
+    147
+
+
+Imparting contextual information in handlers
+--------------------------------------------
+
+Each :class:`~Handler` has its own chain of filters.
+If you want to add contextual information to a :class:`LogRecord` without leaking
+it to other handlers, you can use a filter that returns
+a new :class:`~LogRecord` instead of modifying it in-place, as shown in the following script::
+
+    import copy
+    import logging
+
+    def filter(record: logging.LogRecord):
+        record = copy.copy(record)
+        record.user = 'jim'
+        return record
+
+    if __name__ == '__main__':
+        logger = logging.getLogger()
+        logger.setLevel(logging.INFO)
+        handler = logging.StreamHandler()
+        formatter = logging.Formatter('%(message)s from %(user)-8s')
+        handler.setFormatter(formatter)
+        handler.addFilter(filter)
+        logger.addHandler(handler)
+
+        logger.info('A log message')
 
 .. _multiple-processes:
 
@@ -982,6 +1526,17 @@ to this (remembering to first import :mod:`concurrent.futures`)::
         for i in range(10):
             executor.submit(worker_process, queue, worker_configurer)
 
+Deploying Web applications using Gunicorn and uWSGI
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+When deploying Web applications using `Gunicorn <https://gunicorn.org/>`_ or `uWSGI
+<https://uwsgi-docs.readthedocs.io/en/latest/>`_ (or similar), multiple worker
+processes are created to handle client requests. In such environments, avoid creating
+file-based handlers directly in your web application. Instead, use a
+:class:`SocketHandler` to log from the web application to a listener in a separate
+process. This can be set up using a process management tool such as Supervisor - see
+`Running a logging socket listener in production`_ for more details.
+
 
 Using file rotation
 -------------------
@@ -993,7 +1548,7 @@ Sometimes you want to let a log file grow to a certain size, then open a new
 file and log to that. You may want to keep a certain number of these files, and
 when that many files have been created, rotate the files so that the number of
 files and the size of the files both remain bounded. For this usage pattern, the
-logging package provides a :class:`~handlers.RotatingFileHandler`::
+logging package provides a :class:`RotatingFileHandler`::
 
    import glob
    import logging
@@ -1040,6 +1595,8 @@ and each time it reaches the size limit it is renamed with the suffix
 
 Obviously this example sets the log length much too small as an extreme
 example.  You would want to set *maxBytes* to an appropriate value.
+
+.. currentmodule:: logging
 
 .. _format-styles:
 
@@ -1171,7 +1728,7 @@ when (and if) the logged message is actually about to be output to a log by a
 handler. So the only slightly unusual thing which might trip you up is that the
 parentheses go around the format string and the arguments, not just the format
 string. That's because the __ notation is just syntax sugar for a constructor
-call to one of the XXXMessage classes.
+call to one of the :samp:`{XXX}Message` classes.
 
 If you prefer, you can use a :class:`LoggerAdapter` to achieve a similar effect
 to the above, as in the following example::
@@ -1187,13 +1744,11 @@ to the above, as in the following example::
             return self.fmt.format(*self.args)
 
     class StyleAdapter(logging.LoggerAdapter):
-        def __init__(self, logger, extra=None):
-            super().__init__(logger, extra or {})
-
-        def log(self, level, msg, /, *args, **kwargs):
+        def log(self, level, msg, /, *args, stacklevel=1, **kwargs):
             if self.isEnabledFor(level):
                 msg, kwargs = self.process(msg, kwargs)
-                self.logger._log(level, Message(msg, args), (), **kwargs)
+                self.logger.log(level, Message(msg, args), **kwargs,
+                                stacklevel=stacklevel+1)
 
     logger = StyleAdapter(logging.getLogger(__name__))
 
@@ -1205,7 +1760,7 @@ to the above, as in the following example::
         main()
 
 The above script should log the message ``Hello, world!`` when run with
-Python 3.2 or later.
+Python 3.8 or later.
 
 
 .. currentmodule:: logging
@@ -1287,11 +1842,15 @@ However, it should be borne in mind that each link in the chain adds run-time
 overhead to all logging operations, and the technique should only be used when
 the use of a :class:`Filter` does not provide the desired result.
 
+.. currentmodule:: logging.handlers
 
 .. _zeromq-handlers:
 
-Subclassing QueueHandler - a ZeroMQ example
--------------------------------------------
+Subclassing QueueHandler and QueueListener- a ZeroMQ example
+------------------------------------------------------------
+
+Subclass ``QueueHandler``
+^^^^^^^^^^^^^^^^^^^^^^^^^
 
 You can use a :class:`QueueHandler` subclass to send messages to other kinds
 of queues, for example a ZeroMQ 'publish' socket. In the example below,the
@@ -1329,8 +1888,8 @@ data needed by the handler to create the socket::
             self.queue.close()
 
 
-Subclassing QueueListener - a ZeroMQ example
---------------------------------------------
+Subclass ``QueueListener``
+^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 You can also subclass :class:`QueueListener` to get messages from other kinds
 of queues, for example a ZeroMQ 'subscribe' socket. Here's an example::
@@ -1347,21 +1906,192 @@ of queues, for example a ZeroMQ 'subscribe' socket. Here's an example::
             msg = self.queue.recv_json()
             return logging.makeLogRecord(msg)
 
+.. _pynng-handlers:
 
-.. seealso::
+Subclassing QueueHandler and QueueListener- a ``pynng`` example
+---------------------------------------------------------------
 
-   Module :mod:`logging`
-      API reference for the logging module.
+In a similar way to the above section, we can implement a listener and handler
+using :pypi:`pynng`, which is a Python binding to
+`NNG <https://nng.nanomsg.org/>`_, billed as a spiritual successor to ZeroMQ.
+The following snippets illustrate -- you can test them in an environment which has
+``pynng`` installed. Just for variety, we present the listener first.
 
-   Module :mod:`logging.config`
-      Configuration API for the logging module.
 
-   Module :mod:`logging.handlers`
-      Useful handlers included with the logging module.
+Subclass ``QueueListener``
+^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-   :ref:`A basic logging tutorial <logging-basic-tutorial>`
+.. code-block:: python
 
-   :ref:`A more advanced logging tutorial <logging-advanced-tutorial>`
+    # listener.py
+    import json
+    import logging
+    import logging.handlers
+
+    import pynng
+
+    DEFAULT_ADDR = "tcp://localhost:13232"
+
+    interrupted = False
+
+    class NNGSocketListener(logging.handlers.QueueListener):
+
+        def __init__(self, uri, /, *handlers, **kwargs):
+            # Have a timeout for interruptability, and open a
+            # subscriber socket
+            socket = pynng.Sub0(listen=uri, recv_timeout=500)
+            # The b'' subscription matches all topics
+            topics = kwargs.pop('topics', None) or b''
+            socket.subscribe(topics)
+            # We treat the socket as a queue
+            super().__init__(socket, *handlers, **kwargs)
+
+        def dequeue(self, block):
+            data = None
+            # Keep looping while not interrupted and no data received over the
+            # socket
+            while not interrupted:
+                try:
+                    data = self.queue.recv(block=block)
+                    break
+                except pynng.Timeout:
+                    pass
+                except pynng.Closed:  # sometimes happens when you hit Ctrl-C
+                    break
+            if data is None:
+                return None
+            # Get the logging event sent from a publisher
+            event = json.loads(data.decode('utf-8'))
+            return logging.makeLogRecord(event)
+
+        def enqueue_sentinel(self):
+            # Not used in this implementation, as the socket isn't really a
+            # queue
+            pass
+
+    logging.getLogger('pynng').propagate = False
+    listener = NNGSocketListener(DEFAULT_ADDR, logging.StreamHandler(), topics=b'')
+    listener.start()
+    print('Press Ctrl-C to stop.')
+    try:
+        while True:
+            pass
+    except KeyboardInterrupt:
+        interrupted = True
+    finally:
+        listener.stop()
+
+
+Subclass ``QueueHandler``
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. currentmodule:: logging
+
+.. code-block:: python
+
+    # sender.py
+    import json
+    import logging
+    import logging.handlers
+    import time
+    import random
+
+    import pynng
+
+    DEFAULT_ADDR = "tcp://localhost:13232"
+
+    class NNGSocketHandler(logging.handlers.QueueHandler):
+
+        def __init__(self, uri):
+            socket = pynng.Pub0(dial=uri, send_timeout=500)
+            super().__init__(socket)
+
+        def enqueue(self, record):
+            # Send the record as UTF-8 encoded JSON
+            d = dict(record.__dict__)
+            data = json.dumps(d)
+            self.queue.send(data.encode('utf-8'))
+
+        def close(self):
+            self.queue.close()
+
+    logging.getLogger('pynng').propagate = False
+    handler = NNGSocketHandler(DEFAULT_ADDR)
+    # Make sure the process ID is in the output
+    logging.basicConfig(level=logging.DEBUG,
+                        handlers=[logging.StreamHandler(), handler],
+                        format='%(levelname)-8s %(name)10s %(process)6s %(message)s')
+    levels = (logging.DEBUG, logging.INFO, logging.WARNING, logging.ERROR,
+              logging.CRITICAL)
+    logger_names = ('myapp', 'myapp.lib1', 'myapp.lib2')
+    msgno = 1
+    while True:
+        # Just randomly select some loggers and levels and log away
+        level = random.choice(levels)
+        logger = logging.getLogger(random.choice(logger_names))
+        logger.log(level, 'Message no. %5d' % msgno)
+        msgno += 1
+        delay = random.random() * 2 + 0.5
+        time.sleep(delay)
+
+You can run the above two snippets in separate command shells. If we run the
+listener in one shell and run the sender in two separate shells, we should see
+something like the following. In the first sender shell:
+
+.. code-block:: console
+
+    $ python sender.py
+    DEBUG         myapp    613 Message no.     1
+    WARNING  myapp.lib2    613 Message no.     2
+    CRITICAL myapp.lib2    613 Message no.     3
+    WARNING  myapp.lib2    613 Message no.     4
+    CRITICAL myapp.lib1    613 Message no.     5
+    DEBUG         myapp    613 Message no.     6
+    CRITICAL myapp.lib1    613 Message no.     7
+    INFO     myapp.lib1    613 Message no.     8
+    (and so on)
+
+In the second sender shell:
+
+.. code-block:: console
+
+    $ python sender.py
+    INFO     myapp.lib2    657 Message no.     1
+    CRITICAL myapp.lib2    657 Message no.     2
+    CRITICAL      myapp    657 Message no.     3
+    CRITICAL myapp.lib1    657 Message no.     4
+    INFO     myapp.lib1    657 Message no.     5
+    WARNING  myapp.lib2    657 Message no.     6
+    CRITICAL      myapp    657 Message no.     7
+    DEBUG    myapp.lib1    657 Message no.     8
+    (and so on)
+
+In the listener shell:
+
+.. code-block:: console
+
+    $ python listener.py
+    Press Ctrl-C to stop.
+    DEBUG         myapp    613 Message no.     1
+    WARNING  myapp.lib2    613 Message no.     2
+    INFO     myapp.lib2    657 Message no.     1
+    CRITICAL myapp.lib2    613 Message no.     3
+    CRITICAL myapp.lib2    657 Message no.     2
+    CRITICAL      myapp    657 Message no.     3
+    WARNING  myapp.lib2    613 Message no.     4
+    CRITICAL myapp.lib1    613 Message no.     5
+    CRITICAL myapp.lib1    657 Message no.     4
+    INFO     myapp.lib1    657 Message no.     5
+    DEBUG         myapp    613 Message no.     6
+    WARNING  myapp.lib2    657 Message no.     6
+    CRITICAL      myapp    657 Message no.     7
+    CRITICAL myapp.lib1    613 Message no.     7
+    INFO     myapp.lib1    613 Message no.     8
+    DEBUG    myapp.lib1    657 Message no.     8
+    (and so on)
+
+As you can see, the logging from the two sender processes is interleaved in the
+listener's output.
 
 
 An example dictionary-based configuration
@@ -1373,30 +2103,28 @@ This dictionary is passed to :func:`~config.dictConfig` to put the configuration
 
     LOGGING = {
         'version': 1,
-        'disable_existing_loggers': True,
+        'disable_existing_loggers': False,
         'formatters': {
             'verbose': {
-                'format': '%(levelname)s %(asctime)s %(module)s %(process)d %(thread)d %(message)s'
+                'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
+                'style': '{',
             },
             'simple': {
-                'format': '%(levelname)s %(message)s'
+                'format': '{levelname} {message}',
+                'style': '{',
             },
         },
         'filters': {
             'special': {
                 '()': 'project.logging.SpecialFilter',
                 'foo': 'bar',
-            }
+            },
         },
         'handlers': {
-            'null': {
-                'level':'DEBUG',
-                'class':'django.utils.log.NullHandler',
-            },
-            'console':{
-                'level':'DEBUG',
-                'class':'logging.StreamHandler',
-                'formatter': 'simple'
+            'console': {
+                'level': 'INFO',
+                'class': 'logging.StreamHandler',
+                'formatter': 'simple',
             },
             'mail_admins': {
                 'level': 'ERROR',
@@ -1406,9 +2134,8 @@ This dictionary is passed to :func:`~config.dictConfig` to put the configuration
         },
         'loggers': {
             'django': {
-                'handlers':['null'],
+                'handlers': ['console'],
                 'propagate': True,
-                'level':'INFO',
             },
             'django.request': {
                 'handlers': ['mail_admins'],
@@ -1433,26 +2160,47 @@ Using a rotator and namer to customize log rotation processing
 --------------------------------------------------------------
 
 An example of how you can define a namer and rotator is given in the following
-snippet, which shows zlib-based compression of the log file::
+runnable script, which shows gzip compression of the log file::
+
+    import gzip
+    import logging
+    import logging.handlers
+    import os
+    import shutil
 
     def namer(name):
         return name + ".gz"
 
     def rotator(source, dest):
-        with open(source, "rb") as sf:
-            data = sf.read()
-            compressed = zlib.compress(data, 9)
-            with open(dest, "wb") as df:
-                df.write(compressed)
+        with open(source, 'rb') as f_in:
+            with gzip.open(dest, 'wb') as f_out:
+                shutil.copyfileobj(f_in, f_out)
         os.remove(source)
 
-    rh = logging.handlers.RotatingFileHandler(...)
+
+    rh = logging.handlers.RotatingFileHandler('rotated.log', maxBytes=128, backupCount=5)
     rh.rotator = rotator
     rh.namer = namer
 
-These are not "true" .gz files, as they are bare compressed data, with no
-"container" such as you’d find in an actual gzip file. This snippet is just
-for illustration purposes.
+    root = logging.getLogger()
+    root.setLevel(logging.INFO)
+    root.addHandler(rh)
+    f = logging.Formatter('%(asctime)s %(message)s')
+    rh.setFormatter(f)
+    for i in range(1000):
+        root.info(f'Message no. {i + 1}')
+
+After running this, you will see six new files, five of which are compressed:
+
+.. code-block:: shell-session
+
+    $ ls rotated.log*
+    rotated.log       rotated.log.2.gz  rotated.log.4.gz
+    rotated.log.1.gz  rotated.log.3.gz  rotated.log.5.gz
+    $ zcat rotated.log.1.gz
+    2023-01-20 02:28:17,767 Message no. 996
+    2023-01-20 02:28:17,767 Message no. 997
+    2023-01-20 02:28:17,767 Message no. 998
 
 A more elaborate multiprocessing example
 ----------------------------------------
@@ -1766,22 +2514,15 @@ Python used.
 If you need more specialised processing, you can use a custom JSON encoder,
 as in the following complete example::
 
-    from __future__ import unicode_literals
-
     import json
     import logging
 
-    # This next bit is to ensure the script runs unchanged on 2.x and 3.x
-    try:
-        unicode
-    except NameError:
-        unicode = str
 
     class Encoder(json.JSONEncoder):
         def default(self, o):
             if isinstance(o, set):
                 return tuple(o)
-            elif isinstance(o, unicode):
+            elif isinstance(o, str):
                 return o.encode('unicode_escape').decode('ascii')
             return super().default(o)
 
@@ -1975,7 +2716,7 @@ should be logged, or the ``extra`` keyword parameter to indicate additional
 contextual information to be added to the log). So you cannot directly make
 logging calls using :meth:`str.format` or :class:`string.Template` syntax,
 because internally the logging package uses %-formatting to merge the format
-string and the variable arguments. There would no changing this while preserving
+string and the variable arguments. There would be no changing this while preserving
 backward compatibility, since all logging calls which are out there in existing
 code will be using %-format strings.
 
@@ -2070,7 +2811,7 @@ when (and if) the logged message is actually about to be output to a log by a
 handler. So the only slightly unusual thing which might trip you up is that the
 parentheses go around the format string and the arguments, not just the format
 string. That’s because the __ notation is just syntax sugar for a constructor
-call to one of the ``XXXMessage`` classes shown above.
+call to one of the :samp:`{XXX}Message` classes shown above.
 
 
 .. _filters-dictconfig:
@@ -2409,13 +3150,95 @@ You can of course use the conventional means of decoration::
         ...
 
 
+.. _buffered-smtp:
+
+Sending logging messages to email, with buffering
+-------------------------------------------------
+
+To illustrate how you can send log messages via email, so that a set number of
+messages are sent per email, you can subclass
+:class:`~logging.handlers.BufferingHandler`. In the following  example, which you can
+adapt to suit your specific needs, a simple test harness is provided which allows you
+to run the script with command line arguments specifying what you typically need to
+send things via SMTP. (Run the downloaded script with the ``-h`` argument to see the
+required and optional arguments.)
+
+.. code-block:: python
+
+    import logging
+    import logging.handlers
+    import smtplib
+
+    class BufferingSMTPHandler(logging.handlers.BufferingHandler):
+        def __init__(self, mailhost, port, username, password, fromaddr, toaddrs,
+                     subject, capacity):
+            logging.handlers.BufferingHandler.__init__(self, capacity)
+            self.mailhost = mailhost
+            self.mailport = port
+            self.username = username
+            self.password = password
+            self.fromaddr = fromaddr
+            if isinstance(toaddrs, str):
+                toaddrs = [toaddrs]
+            self.toaddrs = toaddrs
+            self.subject = subject
+            self.setFormatter(logging.Formatter("%(asctime)s %(levelname)-5s %(message)s"))
+
+        def flush(self):
+            if len(self.buffer) > 0:
+                try:
+                    smtp = smtplib.SMTP(self.mailhost, self.mailport)
+                    smtp.starttls()
+                    smtp.login(self.username, self.password)
+                    msg = "From: %s\r\nTo: %s\r\nSubject: %s\r\n\r\n" % (self.fromaddr, ','.join(self.toaddrs), self.subject)
+                    for record in self.buffer:
+                        s = self.format(record)
+                        msg = msg + s + "\r\n"
+                    smtp.sendmail(self.fromaddr, self.toaddrs, msg)
+                    smtp.quit()
+                except Exception:
+                    if logging.raiseExceptions:
+                        raise
+                self.buffer = []
+
+    if __name__ == '__main__':
+        import argparse
+
+        ap = argparse.ArgumentParser()
+        aa = ap.add_argument
+        aa('host', metavar='HOST', help='SMTP server')
+        aa('--port', '-p', type=int, default=587, help='SMTP port')
+        aa('user', metavar='USER', help='SMTP username')
+        aa('password', metavar='PASSWORD', help='SMTP password')
+        aa('to', metavar='TO', help='Addressee for emails')
+        aa('sender', metavar='SENDER', help='Sender email address')
+        aa('--subject', '-s',
+           default='Test Logging email from Python logging module (buffering)',
+           help='Subject of email')
+        options = ap.parse_args()
+        logger = logging.getLogger()
+        logger.setLevel(logging.DEBUG)
+        h = BufferingSMTPHandler(options.host, options.port, options.user,
+                                 options.password, options.sender,
+                                 options.to, options.subject, 10)
+        logger.addHandler(h)
+        for i in range(102):
+            logger.info("Info index = %d", i)
+        h.flush()
+        h.close()
+
+If you run this script and your SMTP server is correctly set up, you should find that
+it sends eleven emails to the addressee you specify. The first ten emails will each
+have ten log messages, and the eleventh will have two messages. That makes up 102
+messages as specified in the script.
+
 .. _utc-formatting:
 
 Formatting times using UTC (GMT) via configuration
 --------------------------------------------------
 
 Sometimes you want to format times using UTC, which can be done using a class
-such as `UTCFormatter`, shown below::
+such as ``UTCFormatter``, shown below::
 
     import logging
     import time
@@ -2752,9 +3575,8 @@ A Qt GUI for logging
 
 A question that comes up from time to time is about how to log to a GUI
 application. The `Qt <https://www.qt.io/>`_ framework is a popular
-cross-platform UI framework with Python bindings using `PySide2
-<https://pypi.org/project/PySide2/>`_ or `PyQt5
-<https://pypi.org/project/PyQt5/>`_ libraries.
+cross-platform UI framework with Python bindings using :pypi:`PySide2`
+or :pypi:`PyQt5` libraries.
 
 The following example shows how to log to a Qt GUI. This introduces a simple
 ``QtHandler`` class which takes a callable, which should be a slot in the main
@@ -2767,9 +3589,10 @@ The worker thread is implemented using Qt's ``QThread`` class rather than the
 :mod:`threading` module, as there are circumstances where one has to use
 ``QThread``, which offers better integration with other ``Qt`` components.
 
-The code should work with recent releases of either ``PySide2`` or ``PyQt5``.
-You should be able to adapt the approach to earlier versions of Qt. Please
-refer to the comments in the code snippet for more detailed information.
+The code should work with recent releases of any of ``PySide6``, ``PyQt6``,
+``PySide2`` or ``PyQt5``. You should be able to adapt the approach to earlier
+versions of Qt. Please refer to the comments in the code snippet for more
+detailed information.
 
 .. code-block:: python3
 
@@ -2779,16 +3602,25 @@ refer to the comments in the code snippet for more detailed information.
     import sys
     import time
 
-    # Deal with minor differences between PySide2 and PyQt5
+    # Deal with minor differences between different Qt packages
     try:
-        from PySide2 import QtCore, QtGui, QtWidgets
+        from PySide6 import QtCore, QtGui, QtWidgets
         Signal = QtCore.Signal
         Slot = QtCore.Slot
     except ImportError:
-        from PyQt5 import QtCore, QtGui, QtWidgets
-        Signal = QtCore.pyqtSignal
-        Slot = QtCore.pyqtSlot
-
+        try:
+            from PyQt6 import QtCore, QtGui, QtWidgets
+            Signal = QtCore.pyqtSignal
+            Slot = QtCore.pyqtSlot
+        except ImportError:
+            try:
+                from PySide2 import QtCore, QtGui, QtWidgets
+                Signal = QtCore.Signal
+                Slot = QtCore.Slot
+            except ImportError:
+                from PyQt5 import QtCore, QtGui, QtWidgets
+                Signal = QtCore.pyqtSignal
+                Slot = QtCore.pyqtSlot
 
     logger = logging.getLogger(__name__)
 
@@ -2860,8 +3692,14 @@ refer to the comments in the code snippet for more detailed information.
             while not QtCore.QThread.currentThread().isInterruptionRequested():
                 delay = 0.5 + random.random() * 2
                 time.sleep(delay)
-                level = random.choice(LEVELS)
-                logger.log(level, 'Message after delay of %3.1f: %d', delay, i, extra=extra)
+                try:
+                    if random.random() < 0.1:
+                        raise ValueError('Exception raised: %d' % i)
+                    else:
+                        level = random.choice(LEVELS)
+                        logger.log(level, 'Message after delay of %3.1f: %d', delay, i, extra=extra)
+                except ValueError as e:
+                    logger.exception('Failed: %s', e, extra=extra)
                 i += 1
 
     #
@@ -2888,7 +3726,10 @@ refer to the comments in the code snippet for more detailed information.
             self.textedit = te = QtWidgets.QPlainTextEdit(self)
             # Set whatever the default monospace font is for the platform
             f = QtGui.QFont('nosuchfont')
-            f.setStyleHint(f.Monospace)
+            if hasattr(f, 'Monospace'):
+                f.setStyleHint(f.Monospace)
+            else:
+                f.setStyleHint(f.StyleHint.Monospace)  # for Qt6
             te.setFont(f)
             te.setReadOnly(True)
             PB = QtWidgets.QPushButton
@@ -2975,7 +3816,339 @@ refer to the comments in the code snippet for more detailed information.
         app = QtWidgets.QApplication(sys.argv)
         example = Window(app)
         example.show()
-        sys.exit(app.exec_())
+        if hasattr(app, 'exec'):
+            rc = app.exec()
+        else:
+            rc = app.exec_()
+        sys.exit(rc)
 
     if __name__=='__main__':
         main()
+
+Logging to syslog with RFC5424 support
+--------------------------------------
+
+Although :rfc:`5424` dates from 2009, most syslog servers are configured by default to
+use the older :rfc:`3164`, which hails from 2001. When ``logging`` was added to Python
+in 2003, it supported the earlier (and only existing) protocol at the time. Since
+RFC5424 came out, as there has not been widespread deployment of it in syslog
+servers, the :class:`~logging.handlers.SysLogHandler` functionality has not been
+updated.
+
+RFC 5424 contains some useful features such as support for structured data, and if you
+need to be able to log to a syslog server with support for it, you can do so with a
+subclassed handler which looks something like this::
+
+    import datetime
+    import logging.handlers
+    import re
+    import socket
+    import time
+
+    class SysLogHandler5424(logging.handlers.SysLogHandler):
+
+        tz_offset = re.compile(r'([+-]\d{2})(\d{2})$')
+        escaped = re.compile(r'([\]"\\])')
+
+        def __init__(self, *args, **kwargs):
+            self.msgid = kwargs.pop('msgid', None)
+            self.appname = kwargs.pop('appname', None)
+            super().__init__(*args, **kwargs)
+
+        def format(self, record):
+            version = 1
+            asctime = datetime.datetime.fromtimestamp(record.created).isoformat()
+            m = self.tz_offset.match(time.strftime('%z'))
+            has_offset = False
+            if m and time.timezone:
+                hrs, mins = m.groups()
+                if int(hrs) or int(mins):
+                    has_offset = True
+            if not has_offset:
+                asctime += 'Z'
+            else:
+                asctime += f'{hrs}:{mins}'
+            try:
+                hostname = socket.gethostname()
+            except Exception:
+                hostname = '-'
+            appname = self.appname or '-'
+            procid = record.process
+            msgid = '-'
+            msg = super().format(record)
+            sdata = '-'
+            if hasattr(record, 'structured_data'):
+                sd = record.structured_data
+                # This should be a dict where the keys are SD-ID and the value is a
+                # dict mapping PARAM-NAME to PARAM-VALUE (refer to the RFC for what these
+                # mean)
+                # There's no error checking here - it's purely for illustration, and you
+                # can adapt this code for use in production environments
+                parts = []
+
+                def replacer(m):
+                    g = m.groups()
+                    return '\\' + g[0]
+
+                for sdid, dv in sd.items():
+                    part = f'[{sdid}'
+                    for k, v in dv.items():
+                        s = str(v)
+                        s = self.escaped.sub(replacer, s)
+                        part += f' {k}="{s}"'
+                    part += ']'
+                    parts.append(part)
+                sdata = ''.join(parts)
+            return f'{version} {asctime} {hostname} {appname} {procid} {msgid} {sdata} {msg}'
+
+You'll need to be familiar with RFC 5424 to fully understand the above code, and it
+may be that you have slightly different needs (e.g. for how you pass structural data
+to the log). Nevertheless, the above should be adaptable to your speciric needs. With
+the above handler, you'd pass structured data using something like this::
+
+    sd = {
+        'foo@12345': {'bar': 'baz', 'baz': 'bozz', 'fizz': r'buzz'},
+        'foo@54321': {'rab': 'baz', 'zab': 'bozz', 'zzif': r'buzz'}
+    }
+    extra = {'structured_data': sd}
+    i = 1
+    logger.debug('Message %d', i, extra=extra)
+
+How to treat a logger like an output stream
+-------------------------------------------
+
+Sometimes, you need to interface to a third-party API which expects a file-like
+object to write to, but you want to direct the API's output to a logger. You
+can do this using a class which wraps a logger with a file-like API.
+Here's a short script illustrating such a class:
+
+.. code-block:: python
+
+    import logging
+
+    class LoggerWriter:
+        def __init__(self, logger, level):
+            self.logger = logger
+            self.level = level
+
+        def write(self, message):
+            if message != '\n':  # avoid printing bare newlines, if you like
+                self.logger.log(self.level, message)
+
+        def flush(self):
+            # doesn't actually do anything, but might be expected of a file-like
+            # object - so optional depending on your situation
+            pass
+
+        def close(self):
+            # doesn't actually do anything, but might be expected of a file-like
+            # object - so optional depending on your situation. You might want
+            # to set a flag so that later calls to write raise an exception
+            pass
+
+    def main():
+        logging.basicConfig(level=logging.DEBUG)
+        logger = logging.getLogger('demo')
+        info_fp = LoggerWriter(logger, logging.INFO)
+        debug_fp = LoggerWriter(logger, logging.DEBUG)
+        print('An INFO message', file=info_fp)
+        print('A DEBUG message', file=debug_fp)
+
+    if __name__ == "__main__":
+        main()
+
+When this script is run, it prints
+
+.. code-block:: text
+
+    INFO:demo:An INFO message
+    DEBUG:demo:A DEBUG message
+
+You could also use ``LoggerWriter`` to redirect ``sys.stdout`` and
+``sys.stderr`` by doing something like this:
+
+.. code-block:: python
+
+    import sys
+
+    sys.stdout = LoggerWriter(logger, logging.INFO)
+    sys.stderr = LoggerWriter(logger, logging.WARNING)
+
+You should do this *after* configuring logging for your needs. In the above
+example, the :func:`~logging.basicConfig` call does this (using the
+``sys.stderr`` value *before* it is overwritten by a ``LoggerWriter``
+instance). Then, you'd get this kind of result:
+
+.. code-block:: pycon
+
+    >>> print('Foo')
+    INFO:demo:Foo
+    >>> print('Bar', file=sys.stderr)
+    WARNING:demo:Bar
+    >>>
+
+Of course, the examples above show output according to the format used by
+:func:`~logging.basicConfig`, but you can use a different formatter when you
+configure logging.
+
+Note that with the above scheme, you are somewhat at the mercy of buffering and
+the sequence of write calls which you are intercepting. For example, with the
+definition of ``LoggerWriter`` above, if you have the snippet
+
+.. code-block:: python
+
+    sys.stderr = LoggerWriter(logger, logging.WARNING)
+    1 / 0
+
+then running the script results in
+
+.. code-block:: text
+
+    WARNING:demo:Traceback (most recent call last):
+
+    WARNING:demo:  File "/home/runner/cookbook-loggerwriter/test.py", line 53, in <module>
+
+    WARNING:demo:
+    WARNING:demo:main()
+    WARNING:demo:  File "/home/runner/cookbook-loggerwriter/test.py", line 49, in main
+
+    WARNING:demo:
+    WARNING:demo:1 / 0
+    WARNING:demo:ZeroDivisionError
+    WARNING:demo::
+    WARNING:demo:division by zero
+
+As you can see, this output isn't ideal. That's because the underlying code
+which writes to ``sys.stderr`` makes multiple writes, each of which results in a
+separate logged line (for example, the last three lines above). To get around
+this problem, you need to buffer things and only output log lines when newlines
+are seen. Let's use a slghtly better implementation of ``LoggerWriter``:
+
+.. code-block:: python
+
+    class BufferingLoggerWriter(LoggerWriter):
+        def __init__(self, logger, level):
+            super().__init__(logger, level)
+            self.buffer = ''
+
+        def write(self, message):
+            if '\n' not in message:
+                self.buffer += message
+            else:
+                parts = message.split('\n')
+                if self.buffer:
+                    s = self.buffer + parts.pop(0)
+                    self.logger.log(self.level, s)
+                self.buffer = parts.pop()
+                for part in parts:
+                    self.logger.log(self.level, part)
+
+This just buffers up stuff until a newline is seen, and then logs complete
+lines. With this approach, you get better output:
+
+.. code-block:: text
+
+    WARNING:demo:Traceback (most recent call last):
+    WARNING:demo:  File "/home/runner/cookbook-loggerwriter/main.py", line 55, in <module>
+    WARNING:demo:    main()
+    WARNING:demo:  File "/home/runner/cookbook-loggerwriter/main.py", line 52, in main
+    WARNING:demo:    1/0
+    WARNING:demo:ZeroDivisionError: division by zero
+
+
+.. patterns-to-avoid:
+
+Patterns to avoid
+-----------------
+
+Although the preceding sections have described ways of doing things you might
+need to do or deal with, it is worth mentioning some usage patterns which are
+*unhelpful*, and which should therefore be avoided in most cases. The following
+sections are in no particular order.
+
+Opening the same log file multiple times
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+On Windows, you will generally not be able to open the same file multiple times
+as this will lead to a "file is in use by another process" error. However, on
+POSIX platforms you'll not get any errors if you open the same file multiple
+times. This could be done accidentally, for example by:
+
+* Adding a file handler more than once which references the same file (e.g. by
+  a copy/paste/forget-to-change error).
+
+* Opening two files that look different, as they have different names, but are
+  the same because one is a symbolic link to the other.
+
+* Forking a process, following which both parent and child have a reference to
+  the same file. This might be through use of the :mod:`multiprocessing` module,
+  for example.
+
+Opening a file multiple times might *appear* to work most of the time, but can
+lead to a number of problems in practice:
+
+* Logging output can be garbled because multiple threads or processes try to
+  write to the same file. Although logging guards against concurrent use of the
+  same handler instance by multiple threads, there is no such protection if
+  concurrent writes are attempted by two different threads using two different
+  handler instances which happen to point to the same file.
+
+* An attempt to delete a file (e.g. during file rotation) silently fails,
+  because there is another reference pointing to it. This can lead to confusion
+  and wasted debugging time - log entries end up in unexpected places, or are
+  lost altogether. Or a file that was supposed to be moved remains in place,
+  and grows in size unexpectedly despite size-based rotation being supposedly
+  in place.
+
+Use the techniques outlined in :ref:`multiple-processes` to circumvent such
+issues.
+
+Using loggers as attributes in a class or passing them as parameters
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+While there might be unusual cases where you'll need to do this, in general
+there is no point because loggers are singletons. Code can always access a
+given logger instance by name using ``logging.getLogger(name)``, so passing
+instances around and holding them as instance attributes is pointless. Note
+that in other languages such as Java and C#, loggers are often static class
+attributes. However, this pattern doesn't make sense in Python, where the
+module (and not the class) is the unit of software decomposition.
+
+Adding handlers other than :class:`~logging.NullHandler` to a logger in a library
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Configuring logging by adding handlers, formatters and filters is the
+responsibility of the application developer, not the library developer. If you
+are maintaining a library, ensure that you don't add handlers to any of your
+loggers other than a :class:`~logging.NullHandler` instance.
+
+Creating a lot of loggers
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Loggers are singletons that are never freed during a script execution, and so
+creating lots of loggers will use up memory which can't then be freed. Rather
+than create a logger per e.g. file processed or network connection made, use
+the :ref:`existing mechanisms <context-info>` for passing contextual
+information into your logs and restrict the loggers created to those describing
+areas within your application (generally modules, but occasionally slightly
+more fine-grained than that).
+
+.. _cookbook-ref-links:
+
+Other resources
+---------------
+
+.. seealso::
+
+   Module :mod:`logging`
+      API reference for the logging module.
+
+   Module :mod:`logging.config`
+      Configuration API for the logging module.
+
+   Module :mod:`logging.handlers`
+      Useful handlers included with the logging module.
+
+   :ref:`Basic Tutorial <logging-basic-tutorial>`
+
+   :ref:`Advanced Tutorial <logging-advanced-tutorial>`

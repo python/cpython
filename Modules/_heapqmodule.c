@@ -6,6 +6,10 @@ annotated by François Pinard, and converted to C by Raymond Hettinger.
 
 */
 
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
 #include "Python.h"
 #include "pycore_list.h"          // _PyList_ITEMS()
 
@@ -193,8 +197,7 @@ heapreplace_internal(PyObject *heap, PyObject *item, int siftup_func(PyListObjec
     }
 
     returnitem = PyList_GET_ITEM(heap, 0);
-    Py_INCREF(item);
-    PyList_SET_ITEM(heap, 0, item);
+    PyList_SET_ITEM(heap, 0, Py_NewRef(item));
     if (siftup_func((PyListObject *)heap, 0)) {
         Py_DECREF(returnitem);
         return NULL;
@@ -249,8 +252,7 @@ _heapq_heappushpop_impl(PyObject *module, PyObject *heap, PyObject *item)
     int cmp;
 
     if (PyList_GET_SIZE(heap) == 0) {
-        Py_INCREF(item);
-        return item;
+        return Py_NewRef(item);
     }
 
     PyObject* top = PyList_GET_ITEM(heap, 0);
@@ -260,8 +262,7 @@ _heapq_heappushpop_impl(PyObject *module, PyObject *heap, PyObject *item)
     if (cmp < 0)
         return NULL;
     if (cmp == 0) {
-        Py_INCREF(item);
-        return item;
+        return Py_NewRef(item);
     }
 
     if (PyList_GET_SIZE(heap) == 0) {
@@ -270,8 +271,7 @@ _heapq_heappushpop_impl(PyObject *module, PyObject *heap, PyObject *item)
     }
 
     returnitem = PyList_GET_ITEM(heap, 0);
-    Py_INCREF(item);
-    PyList_SET_ITEM(heap, 0, item);
+    PyList_SET_ITEM(heap, 0, Py_NewRef(item));
     if (siftup((PyListObject *)heap, 0)) {
         Py_DECREF(returnitem);
         return NULL;
@@ -406,8 +406,7 @@ siftdown_max(PyListObject *heap, Py_ssize_t startpos, Py_ssize_t pos)
     newitem = arr[pos];
     while (pos > startpos) {
         parentpos = (pos - 1) >> 1;
-        parent = arr[parentpos];
-        Py_INCREF(parent);
+        parent = Py_NewRef(arr[parentpos]);
         Py_INCREF(newitem);
         cmp = PyObject_RichCompareBool(parent, newitem, Py_LT);
         Py_DECREF(parent);
@@ -673,9 +672,7 @@ From all times, sorting has always been a Great Art! :-)\n");
 static int
 heapq_exec(PyObject *m)
 {
-    PyObject *about = PyUnicode_FromString(__about__);
-    if (PyModule_AddObject(m, "__about__", about) < 0) {
-        Py_DECREF(about);
+    if (PyModule_Add(m, "__about__", PyUnicode_FromString(__about__)) < 0) {
         return -1;
     }
     return 0;
@@ -683,6 +680,8 @@ heapq_exec(PyObject *m)
 
 static struct PyModuleDef_Slot heapq_slots[] = {
     {Py_mod_exec, heapq_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
 };
 

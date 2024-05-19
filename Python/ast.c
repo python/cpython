@@ -15,15 +15,40 @@ struct validator {
 };
 
 static int validate_stmts(struct validator *, asdl_stmt_seq *);
-static int validate_exprs(struct validator *, asdl_expr_seq*, expr_context_ty, int);
+static int validate_exprs(struct validator *, asdl_expr_seq *, expr_context_ty, int);
+static int validate_patterns(struct validator *, asdl_pattern_seq *, int);
+static int validate_type_params(struct validator *, asdl_type_param_seq *);
 static int _validate_nonempty_seq(asdl_seq *, const char *, const char *);
 static int validate_stmt(struct validator *, stmt_ty);
 static int validate_expr(struct validator *, expr_ty, expr_context_ty);
-static int validate_pattern(struct validator *, pattern_ty);
+static int validate_pattern(struct validator *, pattern_ty, int);
+static int validate_typeparam(struct validator *, type_param_ty);
+
+#define VALIDATE_POSITIONS(node) \
+    if (node->lineno > node->end_lineno) { \
+        PyErr_Format(PyExc_ValueError, \
+                     "AST node line range (%d, %d) is not valid", \
+                     node->lineno, node->end_lineno); \
+        return 0; \
+    } \
+    if ((node->lineno < 0 && node->end_lineno != node->lineno) || \
+        (node->col_offset < 0 && node->col_offset != node->end_col_offset)) { \
+        PyErr_Format(PyExc_ValueError, \
+                     "AST node column range (%d, %d) for line range (%d, %d) is not valid", \
+                     node->col_offset, node->end_col_offset, node->lineno, node->end_lineno); \
+        return 0; \
+    } \
+    if (node->lineno == node->end_lineno && node->col_offset > node->end_col_offset) { \
+        PyErr_Format(PyExc_ValueError, \
+                     "line %d, column %d-%d is not a valid range", \
+                     node->lineno, node->col_offset, node->end_col_offset); \
+        return 0; \
+    }
 
 static int
 validate_name(PyObject *name)
 {
+    assert(!PyErr_Occurred());
     assert(PyUnicode_Check(name));
     static const char * const forbidden[] = {
         "None",
@@ -33,7 +58,7 @@ validate_name(PyObject *name)
     };
     for (int i = 0; forbidden[i] != NULL; i++) {
         if (_PyUnicode_EqualToASCIIString(name, forbidden[i])) {
-            PyErr_Format(PyExc_ValueError, "Name node can't be used with '%s' constant", forbidden[i]);
+            PyErr_Format(PyExc_ValueError, "identifier field can't represent '%s' constant", forbidden[i]);
             return 0;
         }
     }
@@ -43,12 +68,12 @@ validate_name(PyObject *name)
 static int
 validate_comprehension(struct validator *state, asdl_comprehension_seq *gens)
 {
-    Py_ssize_t i;
+    assert(!PyErr_Occurred());
     if (!asdl_seq_LEN(gens)) {
         PyErr_SetString(PyExc_ValueError, "comprehension with no generators");
         return 0;
     }
-    for (i = 0; i < asdl_seq_LEN(gens); i++) {
+    for (Py_ssize_t i = 0; i < asdl_seq_LEN(gens); i++) {
         comprehension_ty comp = asdl_seq_GET(gens, i);
         if (!validate_expr(state, comp->target, Store) ||
             !validate_expr(state, comp->iter, Load) ||
@@ -61,8 +86,8 @@ validate_comprehension(struct validator *state, asdl_comprehension_seq *gens)
 static int
 validate_keywords(struct validator *state, asdl_keyword_seq *keywords)
 {
-    Py_ssize_t i;
-    for (i = 0; i < asdl_seq_LEN(keywords); i++)
+    assert(!PyErr_Occurred());
+    for (Py_ssize_t i = 0; i < asdl_seq_LEN(keywords); i++)
         if (!validate_expr(state, (asdl_seq_GET(keywords, i))->value, Load))
             return 0;
     return 1;
@@ -71,9 +96,10 @@ validate_keywords(struct validator *state, asdl_keyword_seq *keywords)
 static int
 validate_args(struct validator *state, asdl_arg_seq *args)
 {
-    Py_ssize_t i;
-    for (i = 0; i < asdl_seq_LEN(args); i++) {
+    assert(!PyErr_Occurred());
+    for (Py_ssize_t i = 0; i < asdl_seq_LEN(args); i++) {
         arg_ty arg = asdl_seq_GET(args, i);
+        VALIDATE_POSITIONS(arg);
         if (arg->annotation && !validate_expr(state, arg->annotation, Load))
             return 0;
     }
@@ -98,6 +124,7 @@ expr_context_name(expr_context_ty ctx)
 static int
 validate_arguments(struct validator *state, arguments_ty args)
 {
+    assert(!PyErr_Occurred());
     if (!validate_args(state, args->posonlyargs) || !validate_args(state, args->args)) {
         return 0;
     }
@@ -126,6 +153,7 @@ validate_arguments(struct validator *state, arguments_ty args)
 static int
 validate_constant(struct validator *state, PyObject *value)
 {
+    assert(!PyErr_Occurred());
     if (value == Py_None || value == Py_Ellipsis)
         return 1;
 
@@ -182,6 +210,8 @@ validate_constant(struct validator *state, PyObject *value)
 static int
 validate_expr(struct validator *state, expr_ty exp, expr_context_ty ctx)
 {
+    assert(!PyErr_Occurred());
+    VALIDATE_POSITIONS(exp);
     int ret = -1;
     if (++state->recursion_depth > state->recursion_limit) {
         PyErr_SetString(PyExc_RecursionError,
@@ -351,6 +381,11 @@ validate_expr(struct validator *state, expr_ty exp, expr_context_ty ctx)
         ret = validate_exprs(state, exp->v.Tuple.elts, ctx, 0);
         break;
     case NamedExpr_kind:
+        if (exp->v.NamedExpr.target->kind != Name_kind) {
+            PyErr_SetString(PyExc_TypeError,
+                            "NamedExpr target must be a Name");
+            return 0;
+        }
         ret = validate_expr(state, exp->v.NamedExpr.value, Load);
         break;
     /* This last case doesn't have any checking. */
@@ -441,6 +476,7 @@ ensure_literal_complex(expr_ty exp)
 static int
 validate_pattern_match_value(struct validator *state, expr_ty exp)
 {
+    assert(!PyErr_Occurred());
     if (!validate_expr(state, exp, Load)) {
         return 0;
     }
@@ -448,6 +484,21 @@ validate_pattern_match_value(struct validator *state, expr_ty exp)
     switch (exp->kind)
     {
         case Constant_kind:
+            /* Ellipsis and immutable sequences are not allowed.
+               For True, False and None, MatchSingleton() should
+               be used */
+            if (!validate_expr(state, exp, Load)) {
+                return 0;
+            }
+            PyObject *literal = exp->v.Constant.value;
+            if (PyLong_CheckExact(literal) || PyFloat_CheckExact(literal) ||
+                PyBytes_CheckExact(literal) || PyComplex_CheckExact(literal) ||
+                PyUnicode_CheckExact(literal)) {
+                return 1;
+            }
+            PyErr_SetString(PyExc_ValueError,
+                            "unexpected constant inside of a literal pattern");
+            return 0;
         case Attribute_kind:
             // Constants and attribute lookups are always permitted
             return 1;
@@ -465,91 +516,172 @@ validate_pattern_match_value(struct validator *state, expr_ty exp)
                 return 1;
             }
             break;
+        case JoinedStr_kind:
+            // Handled in the later stages
+            return 1;
         default:
             break;
     }
-    PyErr_SetString(PyExc_SyntaxError,
-        "patterns may only match literals and attribute lookups");
+    PyErr_SetString(PyExc_ValueError,
+                    "patterns may only match literals and attribute lookups");
     return 0;
 }
 
 static int
-validate_pattern(struct validator *state, pattern_ty p)
+validate_capture(PyObject *name)
 {
+    assert(!PyErr_Occurred());
+    if (_PyUnicode_EqualToASCIIString(name, "_")) {
+        PyErr_Format(PyExc_ValueError, "can't capture name '_' in patterns");
+        return 0;
+    }
+    return validate_name(name);
+}
+
+static int
+validate_pattern(struct validator *state, pattern_ty p, int star_ok)
+{
+    assert(!PyErr_Occurred());
+    VALIDATE_POSITIONS(p);
     int ret = -1;
     if (++state->recursion_depth > state->recursion_limit) {
         PyErr_SetString(PyExc_RecursionError,
                         "maximum recursion depth exceeded during compilation");
         return 0;
     }
-    // Coming soon: https://bugs.python.org/issue43897 (thanks Batuhan)!
-    // TODO: Ensure no subnodes use "_" as an ordinary identifier
     switch (p->kind) {
         case MatchValue_kind:
             ret = validate_pattern_match_value(state, p->v.MatchValue.value);
             break;
         case MatchSingleton_kind:
-            // TODO: Check constant is specifically None, True, or False
-            ret = validate_constant(state, p->v.MatchSingleton.value);
+            ret = p->v.MatchSingleton.value == Py_None || PyBool_Check(p->v.MatchSingleton.value);
+            if (!ret) {
+                PyErr_SetString(PyExc_ValueError,
+                                "MatchSingleton can only contain True, False and None");
+            }
             break;
         case MatchSequence_kind:
-            // TODO: Validate all subpatterns
-            // return validate_patterns(state, p->v.MatchSequence.patterns);
-            ret = 1;
+            ret = validate_patterns(state, p->v.MatchSequence.patterns, /*star_ok=*/1);
             break;
         case MatchMapping_kind:
-            // TODO: check "rest" target name is valid
             if (asdl_seq_LEN(p->v.MatchMapping.keys) != asdl_seq_LEN(p->v.MatchMapping.patterns)) {
                 PyErr_SetString(PyExc_ValueError,
                                 "MatchMapping doesn't have the same number of keys as patterns");
-                return 0;
+                ret = 0;
+                break;
             }
-            // null_ok=0 for key expressions, as rest-of-mapping is captured in "rest"
-            // TODO: replace with more restrictive expression validator, as per MatchValue above
-            if (!validate_exprs(state, p->v.MatchMapping.keys, Load, /*null_ok=*/ 0)) {
-                return 0;
+
+            if (p->v.MatchMapping.rest && !validate_capture(p->v.MatchMapping.rest)) {
+                ret = 0;
+                break;
             }
-            // TODO: Validate all subpatterns
-            // ret = validate_patterns(state, p->v.MatchMapping.patterns);
-            ret = 1;
+
+            asdl_expr_seq *keys = p->v.MatchMapping.keys;
+            for (Py_ssize_t i = 0; i < asdl_seq_LEN(keys); i++) {
+                expr_ty key = asdl_seq_GET(keys, i);
+                if (key->kind == Constant_kind) {
+                    PyObject *literal = key->v.Constant.value;
+                    if (literal == Py_None || PyBool_Check(literal)) {
+                        /* validate_pattern_match_value will ensure the key
+                           doesn't contain True, False and None but it is
+                           syntactically valid, so we will pass those on in
+                           a special case. */
+                        continue;
+                    }
+                }
+                if (!validate_pattern_match_value(state, key)) {
+                    ret = 0;
+                    break;
+                }
+            }
+            if (ret == 0) {
+                break;
+            }
+            ret = validate_patterns(state, p->v.MatchMapping.patterns, /*star_ok=*/0);
             break;
         case MatchClass_kind:
             if (asdl_seq_LEN(p->v.MatchClass.kwd_attrs) != asdl_seq_LEN(p->v.MatchClass.kwd_patterns)) {
                 PyErr_SetString(PyExc_ValueError,
                                 "MatchClass doesn't have the same number of keyword attributes as patterns");
-                return 0;
+                ret = 0;
+                break;
             }
-            // TODO: Restrict cls lookup to being a name or attribute
             if (!validate_expr(state, p->v.MatchClass.cls, Load)) {
-                return 0;
+                ret = 0;
+                break;
             }
-            // TODO: Validate all subpatterns
-            // return validate_patterns(state, p->v.MatchClass.patterns) &&
-            //        validate_patterns(state, p->v.MatchClass.kwd_patterns);
-            ret = 1;
+
+            expr_ty cls = p->v.MatchClass.cls;
+            while (1) {
+                if (cls->kind == Name_kind) {
+                    break;
+                }
+                else if (cls->kind == Attribute_kind) {
+                    cls = cls->v.Attribute.value;
+                    continue;
+                }
+                else {
+                    PyErr_SetString(PyExc_ValueError,
+                                    "MatchClass cls field can only contain Name or Attribute nodes.");
+                    ret = 0;
+                    break;
+                }
+            }
+            if (ret == 0) {
+                break;
+            }
+
+            for (Py_ssize_t i = 0; i < asdl_seq_LEN(p->v.MatchClass.kwd_attrs); i++) {
+                PyObject *identifier = asdl_seq_GET(p->v.MatchClass.kwd_attrs, i);
+                if (!validate_name(identifier)) {
+                    ret = 0;
+                    break;
+                }
+            }
+            if (ret == 0) {
+                break;
+            }
+
+            if (!validate_patterns(state, p->v.MatchClass.patterns, /*star_ok=*/0)) {
+                ret = 0;
+                break;
+            }
+
+            ret = validate_patterns(state, p->v.MatchClass.kwd_patterns, /*star_ok=*/0);
             break;
         case MatchStar_kind:
-            // TODO: check target name is valid
-            ret = 1;
+            if (!star_ok) {
+                PyErr_SetString(PyExc_ValueError, "can't use MatchStar here");
+                ret = 0;
+                break;
+            }
+            ret = p->v.MatchStar.name == NULL || validate_capture(p->v.MatchStar.name);
             break;
         case MatchAs_kind:
-            // TODO: check target name is valid
+            if (p->v.MatchAs.name && !validate_capture(p->v.MatchAs.name)) {
+                ret = 0;
+                break;
+            }
             if (p->v.MatchAs.pattern == NULL) {
                 ret = 1;
             }
             else if (p->v.MatchAs.name == NULL) {
                 PyErr_SetString(PyExc_ValueError,
                                 "MatchAs must specify a target name if a pattern is given");
-                return 0;
+                ret = 0;
             }
             else {
-                ret = validate_pattern(state, p->v.MatchAs.pattern);
+                ret = validate_pattern(state, p->v.MatchAs.pattern, /*star_ok=*/0);
             }
             break;
         case MatchOr_kind:
-            // TODO: Validate all subpatterns
-            // return validate_patterns(state, p->v.MatchOr.patterns);
-            ret = 1;
+            if (asdl_seq_LEN(p->v.MatchOr.patterns) < 2) {
+                PyErr_SetString(PyExc_ValueError,
+                                "MatchOr requires at least 2 patterns");
+                ret = 0;
+                break;
+            }
+            ret = validate_patterns(state, p->v.MatchOr.patterns, /*star_ok=*/0);
             break;
     // No default case, so the compiler will emit a warning if new pattern
     // kinds are added without being handled here
@@ -575,6 +707,7 @@ _validate_nonempty_seq(asdl_seq *seq, const char *what, const char *owner)
 static int
 validate_assignlist(struct validator *state, asdl_expr_seq *targets, expr_context_ty ctx)
 {
+    assert(!PyErr_Occurred());
     return validate_nonempty_seq(targets, "targets", ctx == Del ? "Delete" : "Assign") &&
         validate_exprs(state, targets, ctx, 0);
 }
@@ -582,14 +715,16 @@ validate_assignlist(struct validator *state, asdl_expr_seq *targets, expr_contex
 static int
 validate_body(struct validator *state, asdl_stmt_seq *body, const char *owner)
 {
+    assert(!PyErr_Occurred());
     return validate_nonempty_seq(body, "body", owner) && validate_stmts(state, body);
 }
 
 static int
 validate_stmt(struct validator *state, stmt_ty stmt)
 {
+    assert(!PyErr_Occurred());
+    VALIDATE_POSITIONS(stmt);
     int ret = -1;
-    Py_ssize_t i;
     if (++state->recursion_depth > state->recursion_limit) {
         PyErr_SetString(PyExc_RecursionError,
                         "maximum recursion depth exceeded during compilation");
@@ -598,6 +733,7 @@ validate_stmt(struct validator *state, stmt_ty stmt)
     switch (stmt->kind) {
     case FunctionDef_kind:
         ret = validate_body(state, stmt->v.FunctionDef.body, "FunctionDef") &&
+            validate_type_params(state, stmt->v.FunctionDef.type_params) &&
             validate_arguments(state, stmt->v.FunctionDef.args) &&
             validate_exprs(state, stmt->v.FunctionDef.decorator_list, Load, 0) &&
             (!stmt->v.FunctionDef.returns ||
@@ -605,6 +741,7 @@ validate_stmt(struct validator *state, stmt_ty stmt)
         break;
     case ClassDef_kind:
         ret = validate_body(state, stmt->v.ClassDef.body, "ClassDef") &&
+            validate_type_params(state, stmt->v.ClassDef.type_params) &&
             validate_exprs(state, stmt->v.ClassDef.bases, Load, 0) &&
             validate_keywords(state, stmt->v.ClassDef.keywords) &&
             validate_exprs(state, stmt->v.ClassDef.decorator_list, Load, 0);
@@ -635,6 +772,16 @@ validate_stmt(struct validator *state, stmt_ty stmt)
                 validate_expr(state, stmt->v.AnnAssign.value, Load)) &&
                validate_expr(state, stmt->v.AnnAssign.annotation, Load);
         break;
+    case TypeAlias_kind:
+        if (stmt->v.TypeAlias.name->kind != Name_kind) {
+            PyErr_SetString(PyExc_TypeError,
+                            "TypeAlias with non-Name name");
+            return 0;
+        }
+        ret = validate_expr(state, stmt->v.TypeAlias.name, Store) &&
+            validate_type_params(state, stmt->v.TypeAlias.type_params) &&
+            validate_expr(state, stmt->v.TypeAlias.value, Load);
+        break;
     case For_kind:
         ret = validate_expr(state, stmt->v.For.target, Store) &&
             validate_expr(state, stmt->v.For.iter, Load) &&
@@ -660,7 +807,7 @@ validate_stmt(struct validator *state, stmt_ty stmt)
     case With_kind:
         if (!validate_nonempty_seq(stmt->v.With.items, "items", "With"))
             return 0;
-        for (i = 0; i < asdl_seq_LEN(stmt->v.With.items); i++) {
+        for (Py_ssize_t i = 0; i < asdl_seq_LEN(stmt->v.With.items); i++) {
             withitem_ty item = asdl_seq_GET(stmt->v.With.items, i);
             if (!validate_expr(state, item->context_expr, Load) ||
                 (item->optional_vars && !validate_expr(state, item->optional_vars, Store)))
@@ -671,7 +818,7 @@ validate_stmt(struct validator *state, stmt_ty stmt)
     case AsyncWith_kind:
         if (!validate_nonempty_seq(stmt->v.AsyncWith.items, "items", "AsyncWith"))
             return 0;
-        for (i = 0; i < asdl_seq_LEN(stmt->v.AsyncWith.items); i++) {
+        for (Py_ssize_t i = 0; i < asdl_seq_LEN(stmt->v.AsyncWith.items); i++) {
             withitem_ty item = asdl_seq_GET(stmt->v.AsyncWith.items, i);
             if (!validate_expr(state, item->context_expr, Load) ||
                 (item->optional_vars && !validate_expr(state, item->optional_vars, Store)))
@@ -684,9 +831,9 @@ validate_stmt(struct validator *state, stmt_ty stmt)
             || !validate_nonempty_seq(stmt->v.Match.cases, "cases", "Match")) {
             return 0;
         }
-        for (i = 0; i < asdl_seq_LEN(stmt->v.Match.cases); i++) {
+        for (Py_ssize_t i = 0; i < asdl_seq_LEN(stmt->v.Match.cases); i++) {
             match_case_ty m = asdl_seq_GET(stmt->v.Match.cases, i);
-            if (!validate_pattern(state, m->pattern)
+            if (!validate_pattern(state, m->pattern, /*star_ok=*/0)
                 || (m->guard && !validate_expr(state, m->guard, Load))
                 || !validate_body(state, m->body, "match_case")) {
                 return 0;
@@ -719,8 +866,9 @@ validate_stmt(struct validator *state, stmt_ty stmt)
             PyErr_SetString(PyExc_ValueError, "Try has orelse but no except handlers");
             return 0;
         }
-        for (i = 0; i < asdl_seq_LEN(stmt->v.Try.handlers); i++) {
+        for (Py_ssize_t i = 0; i < asdl_seq_LEN(stmt->v.Try.handlers); i++) {
             excepthandler_ty handler = asdl_seq_GET(stmt->v.Try.handlers, i);
+            VALIDATE_POSITIONS(handler);
             if ((handler->v.ExceptHandler.type &&
                  !validate_expr(state, handler->v.ExceptHandler.type, Load)) ||
                 !validate_body(state, handler->v.ExceptHandler.body, "ExceptHandler"))
@@ -730,6 +878,31 @@ validate_stmt(struct validator *state, stmt_ty stmt)
                 validate_stmts(state, stmt->v.Try.finalbody)) &&
             (!asdl_seq_LEN(stmt->v.Try.orelse) ||
              validate_stmts(state, stmt->v.Try.orelse));
+        break;
+    case TryStar_kind:
+        if (!validate_body(state, stmt->v.TryStar.body, "TryStar"))
+            return 0;
+        if (!asdl_seq_LEN(stmt->v.TryStar.handlers) &&
+            !asdl_seq_LEN(stmt->v.TryStar.finalbody)) {
+            PyErr_SetString(PyExc_ValueError, "TryStar has neither except handlers nor finalbody");
+            return 0;
+        }
+        if (!asdl_seq_LEN(stmt->v.TryStar.handlers) &&
+            asdl_seq_LEN(stmt->v.TryStar.orelse)) {
+            PyErr_SetString(PyExc_ValueError, "TryStar has orelse but no except handlers");
+            return 0;
+        }
+        for (Py_ssize_t i = 0; i < asdl_seq_LEN(stmt->v.TryStar.handlers); i++) {
+            excepthandler_ty handler = asdl_seq_GET(stmt->v.TryStar.handlers, i);
+            if ((handler->v.ExceptHandler.type &&
+                 !validate_expr(state, handler->v.ExceptHandler.type, Load)) ||
+                !validate_body(state, handler->v.ExceptHandler.body, "ExceptHandler"))
+                return 0;
+        }
+        ret = (!asdl_seq_LEN(stmt->v.TryStar.finalbody) ||
+                validate_stmts(state, stmt->v.TryStar.finalbody)) &&
+            (!asdl_seq_LEN(stmt->v.TryStar.orelse) ||
+             validate_stmts(state, stmt->v.TryStar.orelse));
         break;
     case Assert_kind:
         ret = validate_expr(state, stmt->v.Assert.test, Load) &&
@@ -756,6 +929,7 @@ validate_stmt(struct validator *state, stmt_ty stmt)
         break;
     case AsyncFunctionDef_kind:
         ret = validate_body(state, stmt->v.AsyncFunctionDef.body, "AsyncFunctionDef") &&
+            validate_type_params(state, stmt->v.AsyncFunctionDef.type_params) &&
             validate_arguments(state, stmt->v.AsyncFunctionDef.args) &&
             validate_exprs(state, stmt->v.AsyncFunctionDef.decorator_list, Load, 0) &&
             (!stmt->v.AsyncFunctionDef.returns ||
@@ -779,8 +953,8 @@ validate_stmt(struct validator *state, stmt_ty stmt)
 static int
 validate_stmts(struct validator *state, asdl_stmt_seq *seq)
 {
-    Py_ssize_t i;
-    for (i = 0; i < asdl_seq_LEN(seq); i++) {
+    assert(!PyErr_Occurred());
+    for (Py_ssize_t i = 0; i < asdl_seq_LEN(seq); i++) {
         stmt_ty stmt = asdl_seq_GET(seq, i);
         if (stmt) {
             if (!validate_stmt(state, stmt))
@@ -798,8 +972,8 @@ validate_stmts(struct validator *state, asdl_stmt_seq *seq)
 static int
 validate_exprs(struct validator *state, asdl_expr_seq *exprs, expr_context_ty ctx, int null_ok)
 {
-    Py_ssize_t i;
-    for (i = 0; i < asdl_seq_LEN(exprs); i++) {
+    assert(!PyErr_Occurred());
+    for (Py_ssize_t i = 0; i < asdl_seq_LEN(exprs); i++) {
         expr_ty expr = asdl_seq_GET(exprs, i);
         if (expr) {
             if (!validate_expr(state, expr, ctx))
@@ -815,16 +989,67 @@ validate_exprs(struct validator *state, asdl_expr_seq *exprs, expr_context_ty ct
     return 1;
 }
 
-/* See comments in symtable.c. */
-#define COMPILER_STACK_FRAME_SCALE 3
+static int
+validate_patterns(struct validator *state, asdl_pattern_seq *patterns, int star_ok)
+{
+    assert(!PyErr_Occurred());
+    for (Py_ssize_t i = 0; i < asdl_seq_LEN(patterns); i++) {
+        pattern_ty pattern = asdl_seq_GET(patterns, i);
+        if (!validate_pattern(state, pattern, star_ok)) {
+            return 0;
+        }
+    }
+    return 1;
+}
+
+static int
+validate_typeparam(struct validator *state, type_param_ty tp)
+{
+    VALIDATE_POSITIONS(tp);
+    int ret = -1;
+    switch (tp->kind) {
+        case TypeVar_kind:
+            ret = validate_name(tp->v.TypeVar.name) &&
+                (!tp->v.TypeVar.bound ||
+                 validate_expr(state, tp->v.TypeVar.bound, Load)) &&
+                (!tp->v.TypeVar.default_value ||
+                 validate_expr(state, tp->v.TypeVar.default_value, Load));
+            break;
+        case ParamSpec_kind:
+            ret = validate_name(tp->v.ParamSpec.name) &&
+                (!tp->v.ParamSpec.default_value ||
+                 validate_expr(state, tp->v.ParamSpec.default_value, Load));
+            break;
+        case TypeVarTuple_kind:
+            ret = validate_name(tp->v.TypeVarTuple.name) &&
+                (!tp->v.TypeVarTuple.default_value ||
+                 validate_expr(state, tp->v.TypeVarTuple.default_value, Load));
+            break;
+    }
+    return ret;
+}
+
+static int
+validate_type_params(struct validator *state, asdl_type_param_seq *tps)
+{
+    Py_ssize_t i;
+    for (i = 0; i < asdl_seq_LEN(tps); i++) {
+        type_param_ty tp = asdl_seq_GET(tps, i);
+        if (tp) {
+            if (!validate_typeparam(state, tp))
+                return 0;
+        }
+    }
+    return 1;
+}
 
 int
 _PyAST_Validate(mod_ty mod)
 {
+    assert(!PyErr_Occurred());
     int res = -1;
     struct validator state;
     PyThreadState *tstate;
-    int recursion_limit = Py_GetRecursionLimit();
     int starting_recursion_depth;
 
     /* Setup recursion depth check counters */
@@ -833,11 +1058,10 @@ _PyAST_Validate(mod_ty mod)
         return 0;
     }
     /* Be careful here to prevent overflow. */
-    starting_recursion_depth = (tstate->recursion_depth < INT_MAX / COMPILER_STACK_FRAME_SCALE) ?
-        tstate->recursion_depth * COMPILER_STACK_FRAME_SCALE : tstate->recursion_depth;
+    int recursion_depth = Py_C_RECURSION_LIMIT - tstate->c_recursion_remaining;
+    starting_recursion_depth = recursion_depth;
     state.recursion_depth = starting_recursion_depth;
-    state.recursion_limit = (recursion_limit < INT_MAX / COMPILER_STACK_FRAME_SCALE) ?
-        recursion_limit * COMPILER_STACK_FRAME_SCALE : recursion_limit;
+    state.recursion_limit = Py_C_RECURSION_LIMIT;
 
     switch (mod->kind) {
     case Module_kind:

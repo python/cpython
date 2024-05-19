@@ -1,10 +1,11 @@
 #include "Python.h"
-#include "pycore_ast.h"           // identifier, stmt_ty
-#include "pycore_compile.h"       // _Py_Mangle(), _PyFuture_FromAST()
+#include "pycore_ast.h"           // stmt_ty
 #include "pycore_parser.h"        // _PyParser_ASTFromString()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_symtable.h"      // PySTEntryObject
-#include "structmember.h"         // PyMemberDef
+
+// Set this to 1 to dump all symtables to stdout for debugging
+#define _PY_DUMP_SYMTABLE 0
 
 /* error strings used for warnings */
 #define GLOBAL_PARAM \
@@ -36,6 +37,15 @@
 #define NAMED_EXPR_COMP_IN_CLASS \
 "assignment expression within a comprehension cannot be used in a class body"
 
+#define NAMED_EXPR_COMP_IN_TYPEVAR_BOUND \
+"assignment expression within a comprehension cannot be used in a TypeVar bound"
+
+#define NAMED_EXPR_COMP_IN_TYPEALIAS \
+"assignment expression within a comprehension cannot be used in a type alias"
+
+#define NAMED_EXPR_COMP_IN_TYPEPARAM \
+"assignment expression within a comprehension cannot be used within the definition of a generic"
+
 #define NAMED_EXPR_COMP_CONFLICT \
 "assignment expression cannot rebind comprehension iteration variable '%U'"
 
@@ -46,8 +56,26 @@
 "assignment expression cannot be used in a comprehension iterable expression"
 
 #define ANNOTATION_NOT_ALLOWED \
-"'%s' can not be used within an annotation"
+"%s cannot be used within an annotation"
 
+#define TYPEVAR_BOUND_NOT_ALLOWED \
+"%s cannot be used within a TypeVar bound"
+
+#define TYPEALIAS_NOT_ALLOWED \
+"%s cannot be used within a type alias"
+
+#define TYPEPARAM_NOT_ALLOWED \
+"%s cannot be used within the definition of a generic"
+
+#define DUPLICATE_TYPE_PARAM \
+"duplicate type parameter '%U'"
+
+
+#define LOCATION(x) \
+ (x)->lineno, (x)->col_offset, (x)->end_lineno, (x)->end_col_offset
+
+#define ST_LOCATION(x) \
+ (x)->ste_lineno, (x)->ste_col_offset, (x)->ste_end_lineno, (x)->ste_end_col_offset
 
 static PySTEntryObject *
 ste_new(struct symtable *st, identifier name, _Py_block_ty block,
@@ -68,8 +96,7 @@ ste_new(struct symtable *st, identifier name, _Py_block_ty block,
     ste->ste_table = st;
     ste->ste_id = k; /* ste owns reference to k */
 
-    Py_INCREF(name);
-    ste->ste_name = name;
+    ste->ste_name = Py_NewRef(name);
 
     ste->ste_symbols = NULL;
     ste->ste_varnames = NULL;
@@ -91,16 +118,19 @@ ste_new(struct symtable *st, identifier name, _Py_block_ty block,
 
     if (st->st_cur != NULL &&
         (st->st_cur->ste_nested ||
-         st->st_cur->ste_type == FunctionBlock))
+         _PyST_IsFunctionLike(st->st_cur)))
         ste->ste_nested = 1;
     ste->ste_child_free = 0;
     ste->ste_generator = 0;
     ste->ste_coroutine = 0;
-    ste->ste_comprehension = 0;
+    ste->ste_comprehension = NoComprehension;
     ste->ste_returns_value = 0;
     ste->ste_needs_class_closure = 0;
+    ste->ste_comp_inlined = 0;
     ste->ste_comp_iter_target = 0;
+    ste->ste_can_see_class_scope = 0;
     ste->ste_comp_iter_expr = 0;
+    ste->ste_needs_classdict = 0;
 
     ste->ste_symbols = PyDict_New();
     ste->ste_varnames = PyList_New(0);
@@ -122,9 +152,8 @@ ste_new(struct symtable *st, identifier name, _Py_block_ty block,
 static PyObject *
 ste_repr(PySTEntryObject *ste)
 {
-    return PyUnicode_FromFormat("<symtable entry %U(%ld), line %d>",
-                                ste->ste_name,
-                                PyLong_AS_LONG(ste->ste_id), ste->ste_lineno);
+    return PyUnicode_FromFormat("<symtable entry %U(%R), line %d>",
+                                ste->ste_name, ste->ste_id, ste->ste_lineno);
 }
 
 static void
@@ -143,14 +172,14 @@ ste_dealloc(PySTEntryObject *ste)
 #define OFF(x) offsetof(PySTEntryObject, x)
 
 static PyMemberDef ste_memberlist[] = {
-    {"id",       T_OBJECT, OFF(ste_id), READONLY},
-    {"name",     T_OBJECT, OFF(ste_name), READONLY},
-    {"symbols",  T_OBJECT, OFF(ste_symbols), READONLY},
-    {"varnames", T_OBJECT, OFF(ste_varnames), READONLY},
-    {"children", T_OBJECT, OFF(ste_children), READONLY},
-    {"nested",   T_INT,    OFF(ste_nested), READONLY},
-    {"type",     T_INT,    OFF(ste_type), READONLY},
-    {"lineno",   T_INT,    OFF(ste_lineno), READONLY},
+    {"id",       _Py_T_OBJECT, OFF(ste_id), Py_READONLY},
+    {"name",     _Py_T_OBJECT, OFF(ste_name), Py_READONLY},
+    {"symbols",  _Py_T_OBJECT, OFF(ste_symbols), Py_READONLY},
+    {"varnames", _Py_T_OBJECT, OFF(ste_varnames), Py_READONLY},
+    {"children", _Py_T_OBJECT, OFF(ste_children), Py_READONLY},
+    {"nested",   Py_T_INT,    OFF(ste_nested), Py_READONLY},
+    {"type",     Py_T_INT,    OFF(ste_type), Py_READONLY},
+    {"lineno",   Py_T_INT,    OFF(ste_lineno), Py_READONLY},
     {NULL}
 };
 
@@ -203,6 +232,7 @@ static int symtable_enter_block(struct symtable *st, identifier name,
 static int symtable_exit_block(struct symtable *st);
 static int symtable_visit_stmt(struct symtable *st, stmt_ty s);
 static int symtable_visit_expr(struct symtable *st, expr_ty s);
+static int symtable_visit_type_param(struct symtable *st, type_param_ty s);
 static int symtable_visit_genexp(struct symtable *st, expr_ty s);
 static int symtable_visit_listcomp(struct symtable *st, expr_ty s);
 static int symtable_visit_setcomp(struct symtable *st, expr_ty s);
@@ -221,14 +251,111 @@ static int symtable_visit_withitem(struct symtable *st, withitem_ty item);
 static int symtable_visit_match_case(struct symtable *st, match_case_ty m);
 static int symtable_visit_pattern(struct symtable *st, pattern_ty s);
 static int symtable_raise_if_annotation_block(struct symtable *st, const char *, expr_ty);
+static int symtable_raise_if_comprehension_block(struct symtable *st, expr_ty);
 
+/* For debugging purposes only */
+#if _PY_DUMP_SYMTABLE
+static void _dump_symtable(PySTEntryObject* ste, PyObject* prefix)
+{
+    const char *blocktype = "";
+    switch (ste->ste_type) {
+        case FunctionBlock: blocktype = "FunctionBlock"; break;
+        case ClassBlock: blocktype = "ClassBlock"; break;
+        case ModuleBlock: blocktype = "ModuleBlock"; break;
+        case AnnotationBlock: blocktype = "AnnotationBlock"; break;
+        case TypeVarBoundBlock: blocktype = "TypeVarBoundBlock"; break;
+        case TypeAliasBlock: blocktype = "TypeAliasBlock"; break;
+        case TypeParamBlock: blocktype = "TypeParamBlock"; break;
+    }
+    const char *comptype = "";
+    switch (ste->ste_comprehension) {
+        case ListComprehension: comptype = " ListComprehension"; break;
+        case DictComprehension: comptype = " DictComprehension"; break;
+        case SetComprehension: comptype = " SetComprehension"; break;
+        case GeneratorExpression: comptype = " GeneratorExpression"; break;
+        case NoComprehension: break;
+    }
+    PyObject* msg = PyUnicode_FromFormat(
+        (
+            "%U=== Symtable for %U ===\n"
+            "%U%s%s\n"
+            "%U%s%s%s%s%s%s%s%s%s%s%s%s%s\n"
+            "%Ulineno: %d col_offset: %d\n"
+            "%U--- Symbols ---\n"
+        ),
+        prefix,
+        ste->ste_name,
+        prefix,
+        blocktype,
+        comptype,
+        prefix,
+        ste->ste_nested ? " nested" : "",
+        ste->ste_free ? " free" : "",
+        ste->ste_child_free ? " child_free" : "",
+        ste->ste_generator ? " generator" : "",
+        ste->ste_coroutine ? " coroutine" : "",
+        ste->ste_varargs ? " varargs" : "",
+        ste->ste_varkeywords ? " varkeywords" : "",
+        ste->ste_returns_value ? " returns_value" : "",
+        ste->ste_needs_class_closure ? " needs_class_closure" : "",
+        ste->ste_needs_classdict ? " needs_classdict" : "",
+        ste->ste_comp_inlined ? " comp_inlined" : "",
+        ste->ste_comp_iter_target ? " comp_iter_target" : "",
+        ste->ste_can_see_class_scope ? " can_see_class_scope" : "",
+        prefix,
+        ste->ste_lineno,
+        ste->ste_col_offset,
+        prefix
+    );
+    assert(msg != NULL);
+    printf("%s", PyUnicode_AsUTF8(msg));
+    Py_DECREF(msg);
+    PyObject *name, *value;
+    Py_ssize_t pos = 0;
+    while (PyDict_Next(ste->ste_symbols, &pos, &name, &value)) {
+        int scope = _PyST_GetScope(ste, name);
+        long flags = _PyST_GetSymbol(ste, name);
+        printf("%s  %s: ", PyUnicode_AsUTF8(prefix), PyUnicode_AsUTF8(name));
+        if (flags & DEF_GLOBAL) printf(" DEF_GLOBAL");
+        if (flags & DEF_LOCAL) printf(" DEF_LOCAL");
+        if (flags & DEF_PARAM) printf(" DEF_PARAM");
+        if (flags & DEF_NONLOCAL) printf(" DEF_NONLOCAL");
+        if (flags & USE) printf(" USE");
+        if (flags & DEF_FREE) printf(" DEF_FREE");
+        if (flags & DEF_FREE_CLASS) printf(" DEF_FREE_CLASS");
+        if (flags & DEF_IMPORT) printf(" DEF_IMPORT");
+        if (flags & DEF_ANNOT) printf(" DEF_ANNOT");
+        if (flags & DEF_COMP_ITER) printf(" DEF_COMP_ITER");
+        if (flags & DEF_TYPE_PARAM) printf(" DEF_TYPE_PARAM");
+        if (flags & DEF_COMP_CELL) printf(" DEF_COMP_CELL");
+        switch (scope) {
+            case LOCAL: printf(" LOCAL"); break;
+            case GLOBAL_EXPLICIT: printf(" GLOBAL_EXPLICIT"); break;
+            case GLOBAL_IMPLICIT: printf(" GLOBAL_IMPLICIT"); break;
+            case FREE: printf(" FREE"); break;
+            case CELL: printf(" CELL"); break;
+        }
+        printf("\n");
+    }
+    printf("%s--- Children ---\n", PyUnicode_AsUTF8(prefix));
+    PyObject *new_prefix = PyUnicode_FromFormat("  %U", prefix);
+    assert(new_prefix != NULL);
+    for (Py_ssize_t i = 0; i < PyList_GET_SIZE(ste->ste_children); i++) {
+        PyObject *child = PyList_GetItem(ste->ste_children, i);
+        assert(child != NULL && PySTEntry_Check(child));
+        _dump_symtable((PySTEntryObject *)child, new_prefix);
+    }
+    Py_DECREF(new_prefix);
+}
 
-static identifier top = NULL, lambda = NULL, genexpr = NULL,
-    listcomp = NULL, setcomp = NULL, dictcomp = NULL,
-    __class__ = NULL, _annotation = NULL;
-
-#define GET_IDENTIFIER(VAR) \
-    ((VAR) ? (VAR) : ((VAR) = PyUnicode_InternFromString(# VAR)))
+static void dump_symtable(PySTEntryObject* ste)
+{
+    PyObject *empty = PyUnicode_FromString("");
+    assert(empty != NULL);
+    _dump_symtable(ste, empty);
+    Py_DECREF(empty);
+}
+#endif
 
 #define DUPLICATE_ARGUMENT \
 "duplicate argument '%U' in function definition"
@@ -259,26 +386,13 @@ symtable_new(void)
     return NULL;
 }
 
-/* When compiling the use of C stack is probably going to be a lot
-   lighter than when executing Python code but still can overflow
-   and causing a Python crash if not checked (e.g. eval("()"*300000)).
-   Using the current recursion limit for the compiler seems too
-   restrictive (it caused at least one test to fail) so a factor is
-   used to allow deeper recursion when compiling an expression.
-
-   Using a scaling factor means this should automatically adjust when
-   the recursion limit is adjusted for small or large C stack allocations.
-*/
-#define COMPILER_STACK_FRAME_SCALE 3
-
 struct symtable *
-_PySymtable_Build(mod_ty mod, PyObject *filename, PyFutureFeatures *future)
+_PySymtable_Build(mod_ty mod, PyObject *filename, _PyFutureFeatures *future)
 {
     struct symtable *st = symtable_new();
     asdl_stmt_seq *seq;
     int i;
     PyThreadState *tstate;
-    int recursion_limit = Py_GetRecursionLimit();
     int starting_recursion_depth;
 
     if (st == NULL)
@@ -287,8 +401,7 @@ _PySymtable_Build(mod_ty mod, PyObject *filename, PyFutureFeatures *future)
         _PySymtable_Free(st);
         return NULL;
     }
-    Py_INCREF(filename);
-    st->st_filename = filename;
+    st->st_filename = Py_NewRef(filename);
     st->st_future = future;
 
     /* Setup recursion depth check counters */
@@ -298,15 +411,13 @@ _PySymtable_Build(mod_ty mod, PyObject *filename, PyFutureFeatures *future)
         return NULL;
     }
     /* Be careful here to prevent overflow. */
-    starting_recursion_depth = (tstate->recursion_depth < INT_MAX / COMPILER_STACK_FRAME_SCALE) ?
-        tstate->recursion_depth * COMPILER_STACK_FRAME_SCALE : tstate->recursion_depth;
+    int recursion_depth = Py_C_RECURSION_LIMIT - tstate->c_recursion_remaining;
+    starting_recursion_depth = recursion_depth;
     st->recursion_depth = starting_recursion_depth;
-    st->recursion_limit = (recursion_limit < INT_MAX / COMPILER_STACK_FRAME_SCALE) ?
-        recursion_limit * COMPILER_STACK_FRAME_SCALE : recursion_limit;
+    st->recursion_limit = Py_C_RECURSION_LIMIT;
 
     /* Make the initial symbol information gathering pass */
-    if (!GET_IDENTIFIER(top) ||
-        !symtable_enter_block(st, top, ModuleBlock, (void *)mod, 0, 0, 0, 0)) {
+    if (!symtable_enter_block(st, &_Py_ID(top), ModuleBlock, (void *)mod, 0, 0, 0, 0)) {
         _PySymtable_Free(st);
         return NULL;
     }
@@ -349,8 +460,12 @@ _PySymtable_Build(mod_ty mod, PyObject *filename, PyFutureFeatures *future)
         return NULL;
     }
     /* Make the second symbol analysis pass */
-    if (symtable_analyze(st))
+    if (symtable_analyze(st)) {
+#if _PY_DUMP_SYMTABLE
+        dump_symtable(st->st_top);
+#endif
         return st;
+    }
     _PySymtable_Free(st);
     return NULL;
  error:
@@ -370,28 +485,24 @@ _PySymtable_Free(struct symtable *st)
 }
 
 PySTEntryObject *
-PySymtable_Lookup(struct symtable *st, void *key)
+_PySymtable_Lookup(struct symtable *st, void *key)
 {
     PyObject *k, *v;
 
     k = PyLong_FromVoidPtr(key);
     if (k == NULL)
         return NULL;
-    v = PyDict_GetItemWithError(st->st_blocks, k);
-    if (v) {
-        assert(PySTEntry_Check(v));
-        Py_INCREF(v);
-    }
-    else if (!PyErr_Occurred()) {
+    if (PyDict_GetItemRef(st->st_blocks, k, &v) == 0) {
         PyErr_SetString(PyExc_KeyError,
                         "unknown symbol table entry");
     }
-
     Py_DECREF(k);
+
+    assert(v == NULL || PySTEntry_Check(v));
     return (PySTEntryObject *)v;
 }
 
-static long
+long
 _PyST_GetSymbol(PySTEntryObject *ste, PyObject *name)
 {
     PyObject *v = PyDict_GetItemWithError(ste->ste_symbols, name);
@@ -406,6 +517,15 @@ _PyST_GetScope(PySTEntryObject *ste, PyObject *name)
 {
     long symbol = _PyST_GetSymbol(ste, name);
     return (symbol >> SCOPE_OFFSET) & SCOPE_MASK;
+}
+
+int
+_PyST_IsFunctionLike(PySTEntryObject *ste)
+{
+    return ste->ste_type == FunctionBlock
+        || ste->ste_type == TypeVarBoundBlock
+        || ste->ste_type == TypeAliasBlock
+        || ste->ste_type == TypeParamBlock;
 }
 
 static int
@@ -500,8 +620,9 @@ error_at_directive(PySTEntryObject *ste, PyObject *name)
 static int
 analyze_name(PySTEntryObject *ste, PyObject *scopes, PyObject *name, long flags,
              PyObject *bound, PyObject *local, PyObject *free,
-             PyObject *global)
+             PyObject *global, PyObject *type_params, PySTEntryObject *class_entry)
 {
+    int contains;
     if (flags & DEF_GLOBAL) {
         if (flags & DEF_NONLOCAL) {
             PyErr_Format(PyExc_SyntaxError,
@@ -522,11 +643,25 @@ analyze_name(PySTEntryObject *ste, PyObject *scopes, PyObject *name, long flags,
                          "nonlocal declaration not allowed at module level");
             return error_at_directive(ste, name);
         }
-        if (!PySet_Contains(bound, name)) {
+        contains = PySet_Contains(bound, name);
+        if (contains < 0) {
+            return 0;
+        }
+        if (!contains) {
             PyErr_Format(PyExc_SyntaxError,
                          "no binding for nonlocal '%U' found",
                          name);
 
+            return error_at_directive(ste, name);
+        }
+        contains = PySet_Contains(type_params, name);
+        if (contains < 0) {
+            return 0;
+        }
+        if (contains) {
+            PyErr_Format(PyExc_SyntaxError,
+                         "nonlocal binding not allowed for type parameter '%U'",
+                         name);
             return error_at_directive(ste, name);
         }
         SET_SCOPE(scopes, name, FREE);
@@ -539,28 +674,154 @@ analyze_name(PySTEntryObject *ste, PyObject *scopes, PyObject *name, long flags,
             return 0;
         if (PySet_Discard(global, name) < 0)
             return 0;
+        if (flags & DEF_TYPE_PARAM) {
+            if (PySet_Add(type_params, name) < 0)
+                return 0;
+        }
+        else {
+            if (PySet_Discard(type_params, name) < 0)
+                return 0;
+        }
         return 1;
+    }
+    // If we were passed class_entry (i.e., we're in an ste_can_see_class_scope scope)
+    // and the bound name is in that set, then the name is potentially bound both by
+    // the immediately enclosing class namespace, and also by an outer function namespace.
+    // In that case, we want the runtime name resolution to look at only the class
+    // namespace and the globals (not the namespace providing the bound).
+    // Similarly, if the name is explicitly global in the class namespace (through the
+    // global statement), we want to also treat it as a global in this scope.
+    if (class_entry != NULL) {
+        long class_flags = _PyST_GetSymbol(class_entry, name);
+        if (class_flags & DEF_GLOBAL) {
+            SET_SCOPE(scopes, name, GLOBAL_EXPLICIT);
+            return 1;
+        }
+        else if (class_flags & DEF_BOUND && !(class_flags & DEF_NONLOCAL)) {
+            SET_SCOPE(scopes, name, GLOBAL_IMPLICIT);
+            return 1;
+        }
     }
     /* If an enclosing block has a binding for this name, it
        is a free variable rather than a global variable.
        Note that having a non-NULL bound implies that the block
        is nested.
     */
-    if (bound && PySet_Contains(bound, name)) {
-        SET_SCOPE(scopes, name, FREE);
-        ste->ste_free = 1;
-        return PySet_Add(free, name) >= 0;
+    if (bound) {
+        contains = PySet_Contains(bound, name);
+        if (contains < 0) {
+            return 0;
+        }
+        if (contains) {
+            SET_SCOPE(scopes, name, FREE);
+            ste->ste_free = 1;
+            return PySet_Add(free, name) >= 0;
+        }
     }
     /* If a parent has a global statement, then call it global
        explicit?  It could also be global implicit.
      */
-    if (global && PySet_Contains(global, name)) {
-        SET_SCOPE(scopes, name, GLOBAL_IMPLICIT);
-        return 1;
+    if (global) {
+        contains = PySet_Contains(global, name);
+        if (contains < 0) {
+            return 0;
+        }
+        if (contains) {
+            SET_SCOPE(scopes, name, GLOBAL_IMPLICIT);
+            return 1;
+        }
     }
     if (ste->ste_nested)
         ste->ste_free = 1;
     SET_SCOPE(scopes, name, GLOBAL_IMPLICIT);
+    return 1;
+}
+
+static int
+is_free_in_any_child(PySTEntryObject *entry, PyObject *key)
+{
+    for (Py_ssize_t i = 0; i < PyList_GET_SIZE(entry->ste_children); i++) {
+        PySTEntryObject *child_ste = (PySTEntryObject *)PyList_GET_ITEM(
+            entry->ste_children, i);
+        long scope = _PyST_GetScope(child_ste, key);
+        if (scope == FREE) {
+            return 1;
+        }
+    }
+    return 0;
+}
+
+static int
+inline_comprehension(PySTEntryObject *ste, PySTEntryObject *comp,
+                     PyObject *scopes, PyObject *comp_free,
+                     PyObject *inlined_cells)
+{
+    PyObject *k, *v;
+    Py_ssize_t pos = 0;
+    int remove_dunder_class = 0;
+
+    while (PyDict_Next(comp->ste_symbols, &pos, &k, &v)) {
+        // skip comprehension parameter
+        long comp_flags = PyLong_AS_LONG(v);
+        if (comp_flags & DEF_PARAM) {
+            assert(_PyUnicode_EqualToASCIIString(k, ".0"));
+            continue;
+        }
+        int scope = (comp_flags >> SCOPE_OFFSET) & SCOPE_MASK;
+        int only_flags = comp_flags & ((1 << SCOPE_OFFSET) - 1);
+        if (scope == CELL || only_flags & DEF_COMP_CELL) {
+            if (PySet_Add(inlined_cells, k) < 0) {
+                return 0;
+            }
+        }
+        PyObject *existing = PyDict_GetItemWithError(ste->ste_symbols, k);
+        if (existing == NULL && PyErr_Occurred()) {
+            return 0;
+        }
+        if (!existing) {
+            // name does not exist in scope, copy from comprehension
+            assert(scope != FREE || PySet_Contains(comp_free, k) == 1);
+            if (scope == FREE && ste->ste_type == ClassBlock &&
+                _PyUnicode_EqualToASCIIString(k, "__class__")) {
+                // if __class__ is unbound in the enclosing class scope and free
+                // in the comprehension scope, it needs special handling; just
+                // letting it be marked as free in class scope will break due to
+                // drop_class_free
+                scope = GLOBAL_IMPLICIT;
+                only_flags &= ~DEF_FREE;
+                if (PySet_Discard(comp_free, k) < 0) {
+                    return 0;
+                }
+                remove_dunder_class = 1;
+            }
+            PyObject *v_flags = PyLong_FromLong(only_flags);
+            if (v_flags == NULL) {
+                return 0;
+            }
+            int ok = PyDict_SetItem(ste->ste_symbols, k, v_flags);
+            Py_DECREF(v_flags);
+            if (ok < 0) {
+                return 0;
+            }
+            SET_SCOPE(scopes, k, scope);
+        }
+        else {
+            if (PyLong_AsLong(existing) & DEF_BOUND) {
+                // free vars in comprehension that are locals in outer scope can
+                // now simply be locals, unless they are free in comp children,
+                // or if the outer scope is a class block
+                if (!is_free_in_any_child(comp, k) && ste->ste_type != ClassBlock) {
+                    if (PySet_Discard(comp_free, k) < 0) {
+                        return 0;
+                    }
+                }
+            }
+        }
+    }
+    comp->ste_free = PySet_Size(comp_free) > 0;
+    if (remove_dunder_class && PyDict_DelItemString(comp->ste_symbols, "__class__") < 0) {
+        return 0;
+    }
     return 1;
 }
 
@@ -575,7 +836,7 @@ analyze_name(PySTEntryObject *ste, PyObject *scopes, PyObject *name, long flags,
 */
 
 static int
-analyze_cells(PyObject *scopes, PyObject *free)
+analyze_cells(PyObject *scopes, PyObject *free, PyObject *inlined_cells)
 {
     PyObject *name, *v, *v_cell;
     int success = 0;
@@ -590,8 +851,19 @@ analyze_cells(PyObject *scopes, PyObject *free)
         scope = PyLong_AS_LONG(v);
         if (scope != LOCAL)
             continue;
-        if (!PySet_Contains(free, name))
-            continue;
+        int contains = PySet_Contains(free, name);
+        if (contains < 0) {
+            goto error;
+        }
+        if (!contains) {
+            contains = PySet_Contains(inlined_cells, name);
+            if (contains < 0) {
+                goto error;
+            }
+            if (!contains) {
+                continue;
+            }
+        }
         /* Replace LOCAL with CELL for this name, and remove
            from free. It is safe to replace the value of name
            in the dict, because it will not cause a resize.
@@ -611,13 +883,16 @@ static int
 drop_class_free(PySTEntryObject *ste, PyObject *free)
 {
     int res;
-    if (!GET_IDENTIFIER(__class__))
-        return 0;
-    res = PySet_Discard(free, __class__);
+    res = PySet_Discard(free, &_Py_ID(__class__));
     if (res < 0)
         return 0;
     if (res)
         ste->ste_needs_class_closure = 1;
+    res = PySet_Discard(free, &_Py_ID(__classdict__));
+    if (res < 0)
+        return 0;
+    if (res)
+        ste->ste_needs_classdict = 1;
     return 1;
 }
 
@@ -627,7 +902,8 @@ drop_class_free(PySTEntryObject *ste, PyObject *free)
 */
 static int
 update_symbols(PyObject *symbols, PyObject *scopes,
-               PyObject *bound, PyObject *free, int classflag)
+               PyObject *bound, PyObject *free,
+               PyObject *inlined_cells, int classflag)
 {
     PyObject *name = NULL, *itr = NULL;
     PyObject *v = NULL, *v_scope = NULL, *v_new = NULL, *v_free = NULL;
@@ -638,6 +914,13 @@ update_symbols(PyObject *symbols, PyObject *scopes,
         long scope, flags;
         assert(PyLong_Check(v));
         flags = PyLong_AS_LONG(v);
+        int contains = PySet_Contains(inlined_cells, name);
+        if (contains < 0) {
+            return 0;
+        }
+        if (contains) {
+            flags |= DEF_COMP_CELL;
+        }
         v_scope = PyDict_GetItemWithError(scopes, name);
         assert(v_scope && PyLong_Check(v_scope));
         scope = PyLong_AS_LONG(v_scope);
@@ -672,8 +955,7 @@ update_symbols(PyObject *symbols, PyObject *scopes,
                the class that has the same name as a local
                or global in the class scope.
             */
-            if  (classflag &&
-                 PyLong_AS_LONG(v) & (DEF_BOUND | DEF_GLOBAL)) {
+            if  (classflag) {
                 long flags = PyLong_AS_LONG(v) | DEF_FREE_CLASS;
                 v_new = PyLong_FromLong(flags);
                 if (!v_new) {
@@ -693,9 +975,15 @@ update_symbols(PyObject *symbols, PyObject *scopes,
             goto error;
         }
         /* Handle global symbol */
-        if (bound && !PySet_Contains(bound, name)) {
-            Py_DECREF(name);
-            continue;       /* it's a global */
+        if (bound) {
+            int contains = PySet_Contains(bound, name);
+            if (contains < 0) {
+                goto error;
+            }
+            if (!contains) {
+                Py_DECREF(name);
+                continue;       /* it's a global */
+            }
         }
         /* Propagate new free symbol up the lexical stack */
         if (PyDict_SetItem(symbols, name, v_free) < 0) {
@@ -703,6 +991,12 @@ update_symbols(PyObject *symbols, PyObject *scopes,
         }
         Py_DECREF(name);
     }
+
+    /* Check if loop ended because of exception in PyIter_Next */
+    if (PyErr_Occurred()) {
+        goto error;
+    }
+
     Py_DECREF(itr);
     Py_DECREF(v_free);
     return 1;
@@ -735,17 +1029,19 @@ error:
 
 static int
 analyze_child_block(PySTEntryObject *entry, PyObject *bound, PyObject *free,
-                    PyObject *global, PyObject* child_free);
+                    PyObject *global, PyObject *type_params,
+                    PySTEntryObject *class_entry, PyObject **child_free);
 
 static int
 analyze_block(PySTEntryObject *ste, PyObject *bound, PyObject *free,
-              PyObject *global)
+              PyObject *global, PyObject *type_params,
+              PySTEntryObject *class_entry)
 {
     PyObject *name, *v, *local = NULL, *scopes = NULL, *newbound = NULL;
-    PyObject *newglobal = NULL, *newfree = NULL, *allfree = NULL;
+    PyObject *newglobal = NULL, *newfree = NULL, *inlined_cells = NULL;
     PyObject *temp;
-    int i, success = 0;
-    Py_ssize_t pos = 0;
+    int success = 0;
+    Py_ssize_t i, pos = 0;
 
     local = PySet_New(NULL);  /* collect new names bound in block */
     if (!local)
@@ -754,8 +1050,8 @@ analyze_block(PySTEntryObject *ste, PyObject *bound, PyObject *free,
     if (!scopes)
         goto error;
 
-    /* Allocate new global and bound variable dictionaries.  These
-       dictionaries hold the names visible in nested blocks.  For
+    /* Allocate new global, bound and free variable sets.  These
+       sets hold the names visible in nested blocks.  For
        ClassBlocks, the bound and global names are initialized
        before analyzing names, because class bindings aren't
        visible in methods.  For other blocks, they are initialized
@@ -773,6 +1069,9 @@ analyze_block(PySTEntryObject *ste, PyObject *bound, PyObject *free,
         goto error;
     newbound = PySet_New(NULL);
     if (!newbound)
+        goto error;
+    inlined_cells = PySet_New(NULL);
+    if (!inlined_cells)
         goto error;
 
     /* Class namespace has no effect on names visible in
@@ -798,14 +1097,14 @@ analyze_block(PySTEntryObject *ste, PyObject *bound, PyObject *free,
     while (PyDict_Next(ste->ste_symbols, &pos, &name, &v)) {
         long flags = PyLong_AS_LONG(v);
         if (!analyze_name(ste, scopes, name, flags,
-                          bound, local, free, global))
+                          bound, local, free, global, type_params, class_entry))
             goto error;
     }
 
     /* Populate global and bound sets to be passed to children. */
     if (ste->ste_type != ClassBlock) {
         /* Add function locals to bound set */
-        if (ste->ste_type == FunctionBlock) {
+        if (_PyST_IsFunctionLike(ste)) {
             temp = PyNumber_InPlaceOr(newbound, local);
             if (!temp)
                 goto error;
@@ -825,10 +1124,10 @@ analyze_block(PySTEntryObject *ste, PyObject *bound, PyObject *free,
         Py_DECREF(temp);
     }
     else {
-        /* Special-case __class__ */
-        if (!GET_IDENTIFIER(__class__))
+        /* Special-case __class__ and __classdict__ */
+        if (PySet_Add(newbound, &_Py_ID(__class__)) < 0)
             goto error;
-        if (PySet_Add(newbound, __class__) < 0)
+        if (PySet_Add(newbound, &_Py_ID(__classdict__)) < 0)
             goto error;
     }
 
@@ -836,37 +1135,76 @@ analyze_block(PySTEntryObject *ste, PyObject *bound, PyObject *free,
 
        newbound, newglobal now contain the names visible in
        nested blocks.  The free variables in the children will
-       be collected in allfree.
+       be added to newfree.
     */
-    allfree = PySet_New(NULL);
-    if (!allfree)
-        goto error;
     for (i = 0; i < PyList_GET_SIZE(ste->ste_children); ++i) {
+        PyObject *child_free = NULL;
         PyObject *c = PyList_GET_ITEM(ste->ste_children, i);
         PySTEntryObject* entry;
         assert(c && PySTEntry_Check(c));
         entry = (PySTEntryObject*)c;
+
+        PySTEntryObject *new_class_entry = NULL;
+        if (entry->ste_can_see_class_scope) {
+            if (ste->ste_type == ClassBlock) {
+                new_class_entry = ste;
+            }
+            else if (class_entry) {
+                new_class_entry = class_entry;
+            }
+        }
+
+        // we inline all non-generator-expression comprehensions,
+        // except those in annotation scopes that are nested in classes
+        int inline_comp =
+            entry->ste_comprehension &&
+            !entry->ste_generator &&
+            !ste->ste_can_see_class_scope;
+
         if (!analyze_child_block(entry, newbound, newfree, newglobal,
-                                 allfree))
+                                 type_params, new_class_entry, &child_free))
+        {
             goto error;
+        }
+        if (inline_comp) {
+            if (!inline_comprehension(ste, entry, scopes, child_free, inlined_cells)) {
+                Py_DECREF(child_free);
+                goto error;
+            }
+            entry->ste_comp_inlined = 1;
+        }
+        temp = PyNumber_InPlaceOr(newfree, child_free);
+        Py_DECREF(child_free);
+        if (!temp)
+            goto error;
+        Py_DECREF(temp);
         /* Check if any children have free variables */
         if (entry->ste_free || entry->ste_child_free)
             ste->ste_child_free = 1;
     }
 
-    temp = PyNumber_InPlaceOr(newfree, allfree);
-    if (!temp)
-        goto error;
-    Py_DECREF(temp);
+    /* Splice children of inlined comprehensions into our children list */
+    for (i = PyList_GET_SIZE(ste->ste_children) - 1; i >= 0; --i) {
+        PyObject* c = PyList_GET_ITEM(ste->ste_children, i);
+        PySTEntryObject* entry;
+        assert(c && PySTEntry_Check(c));
+        entry = (PySTEntryObject*)c;
+        if (entry->ste_comp_inlined &&
+            PyList_SetSlice(ste->ste_children, i, i + 1,
+                            entry->ste_children) < 0)
+        {
+            goto error;
+        }
+    }
 
     /* Check if any local variables must be converted to cell variables */
-    if (ste->ste_type == FunctionBlock && !analyze_cells(scopes, newfree))
+    if (_PyST_IsFunctionLike(ste) && !analyze_cells(scopes, newfree, inlined_cells))
         goto error;
     else if (ste->ste_type == ClassBlock && !drop_class_free(ste, newfree))
         goto error;
     /* Records the results of the analysis in the symbol table entry */
-    if (!update_symbols(ste->ste_symbols, scopes, bound, newfree,
-                        ste->ste_type == ClassBlock))
+    if (!update_symbols(ste->ste_symbols, scopes, bound, newfree, inlined_cells,
+                        (ste->ste_type == ClassBlock) || ste->ste_can_see_class_scope))
         goto error;
 
     temp = PyNumber_InPlaceOr(free, newfree);
@@ -880,7 +1218,7 @@ analyze_block(PySTEntryObject *ste, PyObject *bound, PyObject *free,
     Py_XDECREF(newbound);
     Py_XDECREF(newglobal);
     Py_XDECREF(newfree);
-    Py_XDECREF(allfree);
+    Py_XDECREF(inlined_cells);
     if (!success)
         assert(PyErr_Occurred());
     return success;
@@ -888,16 +1226,17 @@ analyze_block(PySTEntryObject *ste, PyObject *bound, PyObject *free,
 
 static int
 analyze_child_block(PySTEntryObject *entry, PyObject *bound, PyObject *free,
-                    PyObject *global, PyObject* child_free)
+                    PyObject *global, PyObject *type_params,
+                    PySTEntryObject *class_entry, PyObject** child_free)
 {
     PyObject *temp_bound = NULL, *temp_global = NULL, *temp_free = NULL;
-    PyObject *temp;
+    PyObject *temp_type_params = NULL;
 
-    /* Copy the bound and global dictionaries.
+    /* Copy the bound/global/free sets.
 
-       These dictionaries are used by all blocks enclosed by the
+       These sets are used by all blocks enclosed by the
        current block.  The analyze_block() call modifies these
-       dictionaries.
+       sets.
 
     */
     temp_bound = PySet_New(bound);
@@ -909,28 +1248,30 @@ analyze_child_block(PySTEntryObject *entry, PyObject *bound, PyObject *free,
     temp_global = PySet_New(global);
     if (!temp_global)
         goto error;
+    temp_type_params = PySet_New(type_params);
+    if (!temp_type_params)
+        goto error;
 
-    if (!analyze_block(entry, temp_bound, temp_free, temp_global))
+    if (!analyze_block(entry, temp_bound, temp_free, temp_global,
+                       temp_type_params, class_entry))
         goto error;
-    temp = PyNumber_InPlaceOr(child_free, temp_free);
-    if (!temp)
-        goto error;
-    Py_DECREF(temp);
+    *child_free = temp_free;
     Py_DECREF(temp_bound);
-    Py_DECREF(temp_free);
     Py_DECREF(temp_global);
+    Py_DECREF(temp_type_params);
     return 1;
  error:
     Py_XDECREF(temp_bound);
     Py_XDECREF(temp_free);
     Py_XDECREF(temp_global);
+    Py_XDECREF(temp_type_params);
     return 0;
 }
 
 static int
 symtable_analyze(struct symtable *st)
 {
-    PyObject *free, *global;
+    PyObject *free, *global, *type_params;
     int r;
 
     free = PySet_New(NULL);
@@ -941,9 +1282,16 @@ symtable_analyze(struct symtable *st)
         Py_DECREF(free);
         return 0;
     }
-    r = analyze_block(st->st_top, NULL, free, global);
+    type_params = PySet_New(NULL);
+    if (!type_params) {
+        Py_DECREF(free);
+        Py_DECREF(global);
+        return 0;
+    }
+    r = analyze_block(st->st_top, NULL, free, global, type_params, NULL);
     Py_DECREF(free);
     Py_DECREF(global);
+    Py_DECREF(type_params);
     return r;
 }
 
@@ -1013,18 +1361,25 @@ symtable_enter_block(struct symtable *st, identifier name, _Py_block_ty block,
 }
 
 static long
-symtable_lookup(struct symtable *st, PyObject *name)
+symtable_lookup_entry(struct symtable *st, PySTEntryObject *ste, PyObject *name)
 {
     PyObject *mangled = _Py_Mangle(st->st_private, name);
     if (!mangled)
         return 0;
-    long ret = _PyST_GetSymbol(st->st_cur, mangled);
+    long ret = _PyST_GetSymbol(ste, mangled);
     Py_DECREF(mangled);
     return ret;
 }
 
+static long
+symtable_lookup(struct symtable *st, PyObject *name)
+{
+    return symtable_lookup_entry(st, st->st_cur, name);
+}
+
 static int
-symtable_add_def_helper(struct symtable *st, PyObject *name, int flag, struct _symtable_entry *ste)
+symtable_add_def_helper(struct symtable *st, PyObject *name, int flag, struct _symtable_entry *ste,
+                        int lineno, int col_offset, int end_lineno, int end_col_offset)
 {
     PyObject *o;
     PyObject *dict;
@@ -1041,10 +1396,15 @@ symtable_add_def_helper(struct symtable *st, PyObject *name, int flag, struct _s
             /* Is it better to use 'mangled' or 'name' here? */
             PyErr_Format(PyExc_SyntaxError, DUPLICATE_ARGUMENT, name);
             PyErr_RangedSyntaxLocationObject(st->st_filename,
-                                             ste->ste_lineno,
-                                             ste->ste_col_offset + 1,
-                                             ste->ste_end_lineno,
-                                             ste->ste_end_col_offset + 1);
+                                             lineno, col_offset + 1,
+                                             end_lineno, end_col_offset + 1);
+            goto error;
+        }
+        if ((flag & DEF_TYPE_PARAM) && (val & DEF_TYPE_PARAM)) {
+            PyErr_Format(PyExc_SyntaxError, DUPLICATE_TYPE_PARAM, name);
+            PyErr_RangedSyntaxLocationObject(st->st_filename,
+                                             lineno, col_offset + 1,
+                                             end_lineno, end_col_offset + 1);
             goto error;
         }
         val |= flag;
@@ -1065,10 +1425,8 @@ symtable_add_def_helper(struct symtable *st, PyObject *name, int flag, struct _s
             PyErr_Format(PyExc_SyntaxError,
                 NAMED_EXPR_COMP_INNER_LOOP_CONFLICT, name);
             PyErr_RangedSyntaxLocationObject(st->st_filename,
-                                             ste->ste_lineno,
-                                             ste->ste_col_offset + 1,
-                                             ste->ste_end_lineno,
-                                             ste->ste_end_col_offset + 1);
+                                             lineno, col_offset + 1,
+                                             end_lineno, end_col_offset + 1);
             goto error;
         }
         val |= DEF_COMP_ITER;
@@ -1113,8 +1471,70 @@ error:
 }
 
 static int
-symtable_add_def(struct symtable *st, PyObject *name, int flag) {
-    return symtable_add_def_helper(st, name, flag, st->st_cur);
+symtable_add_def(struct symtable *st, PyObject *name, int flag,
+                 int lineno, int col_offset, int end_lineno, int end_col_offset)
+{
+    return symtable_add_def_helper(st, name, flag, st->st_cur,
+                        lineno, col_offset, end_lineno, end_col_offset);
+}
+
+static int
+symtable_enter_type_param_block(struct symtable *st, identifier name,
+                               void *ast, int has_defaults, int has_kwdefaults,
+                               enum _stmt_kind kind,
+                               int lineno, int col_offset,
+                               int end_lineno, int end_col_offset)
+{
+    _Py_block_ty current_type = st->st_cur->ste_type;
+    if(!symtable_enter_block(st, name, TypeParamBlock, ast, lineno,
+                             col_offset, end_lineno, end_col_offset)) {
+        return 0;
+    }
+    if (current_type == ClassBlock) {
+        st->st_cur->ste_can_see_class_scope = 1;
+        if (!symtable_add_def(st, &_Py_ID(__classdict__), USE, lineno, col_offset, end_lineno, end_col_offset)) {
+            return 0;
+        }
+    }
+    if (kind == ClassDef_kind) {
+        _Py_DECLARE_STR(type_params, ".type_params");
+        // It gets "set" when we create the type params tuple and
+        // "used" when we build up the bases.
+        if (!symtable_add_def(st, &_Py_STR(type_params), DEF_LOCAL,
+                              lineno, col_offset, end_lineno, end_col_offset)) {
+            return 0;
+        }
+        if (!symtable_add_def(st, &_Py_STR(type_params), USE,
+                              lineno, col_offset, end_lineno, end_col_offset)) {
+            return 0;
+        }
+        st->st_private = name;
+        // This is used for setting the generic base
+        _Py_DECLARE_STR(generic_base, ".generic_base");
+        if (!symtable_add_def(st, &_Py_STR(generic_base), DEF_LOCAL,
+                              lineno, col_offset, end_lineno, end_col_offset)) {
+            return 0;
+        }
+        if (!symtable_add_def(st, &_Py_STR(generic_base), USE,
+                              lineno, col_offset, end_lineno, end_col_offset)) {
+            return 0;
+        }
+    }
+    if (has_defaults) {
+        _Py_DECLARE_STR(defaults, ".defaults");
+        if (!symtable_add_def(st, &_Py_STR(defaults), DEF_PARAM,
+                              lineno, col_offset, end_lineno, end_col_offset)) {
+            return 0;
+        }
+    }
+    if (has_kwdefaults) {
+        _Py_DECLARE_STR(kwdefaults, ".kwdefaults");
+        if (!symtable_add_def(st, &_Py_STR(kwdefaults), DEF_PARAM,
+                              lineno, col_offset, end_lineno, end_col_offset)) {
+            return 0;
+        }
+    }
+    return 1;
 }
 
 /* VISIT, VISIT_SEQ and VIST_SEQ_TAIL take an ASDL type as their second argument.
@@ -1188,6 +1608,17 @@ symtable_record_directive(struct symtable *st, identifier name, int lineno,
     return res == 0;
 }
 
+static int
+has_kwonlydefaults(asdl_arg_seq *kwonlyargs, asdl_expr_seq *kw_defaults)
+{
+    for (int i = 0; i < asdl_seq_LEN(kwonlyargs); i++) {
+        expr_ty default_ = asdl_seq_GET(kw_defaults, i);
+        if (default_) {
+            return 1;
+        }
+    }
+    return 0;
+}
 
 static int
 symtable_visit_stmt(struct symtable *st, stmt_ty s)
@@ -1199,45 +1630,117 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
     }
     switch (s->kind) {
     case FunctionDef_kind:
-        if (!symtable_add_def(st, s->v.FunctionDef.name, DEF_LOCAL))
+        if (!symtable_add_def(st, s->v.FunctionDef.name, DEF_LOCAL, LOCATION(s)))
             VISIT_QUIT(st, 0);
         if (s->v.FunctionDef.args->defaults)
             VISIT_SEQ(st, expr, s->v.FunctionDef.args->defaults);
         if (s->v.FunctionDef.args->kw_defaults)
             VISIT_SEQ_WITH_NULL(st, expr, s->v.FunctionDef.args->kw_defaults);
+        if (s->v.FunctionDef.decorator_list)
+            VISIT_SEQ(st, expr, s->v.FunctionDef.decorator_list);
+        if (asdl_seq_LEN(s->v.FunctionDef.type_params) > 0) {
+            if (!symtable_enter_type_param_block(
+                    st, s->v.FunctionDef.name,
+                    (void *)s->v.FunctionDef.type_params,
+                    s->v.FunctionDef.args->defaults != NULL,
+                    has_kwonlydefaults(s->v.FunctionDef.args->kwonlyargs,
+                                       s->v.FunctionDef.args->kw_defaults),
+                    s->kind,
+                    LOCATION(s))) {
+                VISIT_QUIT(st, 0);
+            }
+            VISIT_SEQ(st, type_param, s->v.FunctionDef.type_params);
+        }
         if (!symtable_visit_annotations(st, s, s->v.FunctionDef.args,
                                         s->v.FunctionDef.returns))
             VISIT_QUIT(st, 0);
-        if (s->v.FunctionDef.decorator_list)
-            VISIT_SEQ(st, expr, s->v.FunctionDef.decorator_list);
         if (!symtable_enter_block(st, s->v.FunctionDef.name,
                                   FunctionBlock, (void *)s,
-                                  s->lineno, s->col_offset,
-                                  s->end_lineno, s->end_col_offset))
+                                  LOCATION(s)))
             VISIT_QUIT(st, 0);
         VISIT(st, arguments, s->v.FunctionDef.args);
         VISIT_SEQ(st, stmt, s->v.FunctionDef.body);
         if (!symtable_exit_block(st))
             VISIT_QUIT(st, 0);
+        if (asdl_seq_LEN(s->v.FunctionDef.type_params) > 0) {
+            if (!symtable_exit_block(st))
+                VISIT_QUIT(st, 0);
+        }
         break;
     case ClassDef_kind: {
         PyObject *tmp;
-        if (!symtable_add_def(st, s->v.ClassDef.name, DEF_LOCAL))
+        if (!symtable_add_def(st, s->v.ClassDef.name, DEF_LOCAL, LOCATION(s)))
             VISIT_QUIT(st, 0);
-        VISIT_SEQ(st, expr, s->v.ClassDef.bases);
-        VISIT_SEQ(st, keyword, s->v.ClassDef.keywords);
         if (s->v.ClassDef.decorator_list)
             VISIT_SEQ(st, expr, s->v.ClassDef.decorator_list);
+        if (asdl_seq_LEN(s->v.ClassDef.type_params) > 0) {
+            if (!symtable_enter_type_param_block(st, s->v.ClassDef.name,
+                                                (void *)s->v.ClassDef.type_params,
+                                                false, false, s->kind,
+                                                LOCATION(s))) {
+                VISIT_QUIT(st, 0);
+            }
+            VISIT_SEQ(st, type_param, s->v.ClassDef.type_params);
+        }
+        VISIT_SEQ(st, expr, s->v.ClassDef.bases);
+        VISIT_SEQ(st, keyword, s->v.ClassDef.keywords);
         if (!symtable_enter_block(st, s->v.ClassDef.name, ClassBlock,
                                   (void *)s, s->lineno, s->col_offset,
                                   s->end_lineno, s->end_col_offset))
             VISIT_QUIT(st, 0);
         tmp = st->st_private;
         st->st_private = s->v.ClassDef.name;
+        if (asdl_seq_LEN(s->v.ClassDef.type_params) > 0) {
+            if (!symtable_add_def(st, &_Py_ID(__type_params__),
+                                  DEF_LOCAL, LOCATION(s))) {
+                VISIT_QUIT(st, 0);
+            }
+            _Py_DECLARE_STR(type_params, ".type_params");
+            if (!symtable_add_def(st, &_Py_STR(type_params),
+                                  USE, LOCATION(s))) {
+                VISIT_QUIT(st, 0);
+            }
+        }
         VISIT_SEQ(st, stmt, s->v.ClassDef.body);
         st->st_private = tmp;
         if (!symtable_exit_block(st))
             VISIT_QUIT(st, 0);
+        if (asdl_seq_LEN(s->v.ClassDef.type_params) > 0) {
+            if (!symtable_exit_block(st))
+                VISIT_QUIT(st, 0);
+        }
+        break;
+    }
+    case TypeAlias_kind: {
+        VISIT(st, expr, s->v.TypeAlias.name);
+        assert(s->v.TypeAlias.name->kind == Name_kind);
+        PyObject *name = s->v.TypeAlias.name->v.Name.id;
+        int is_in_class = st->st_cur->ste_type == ClassBlock;
+        int is_generic = asdl_seq_LEN(s->v.TypeAlias.type_params) > 0;
+        if (is_generic) {
+            if (!symtable_enter_type_param_block(
+                    st, name,
+                    (void *)s->v.TypeAlias.type_params,
+                    false, false, s->kind,
+                    LOCATION(s))) {
+                VISIT_QUIT(st, 0);
+            }
+            VISIT_SEQ(st, type_param, s->v.TypeAlias.type_params);
+        }
+        if (!symtable_enter_block(st, name, TypeAliasBlock,
+                                  (void *)s, LOCATION(s)))
+            VISIT_QUIT(st, 0);
+        st->st_cur->ste_can_see_class_scope = is_in_class;
+        if (is_in_class && !symtable_add_def(st, &_Py_ID(__classdict__), USE, LOCATION(s->v.TypeAlias.value))) {
+            VISIT_QUIT(st, 0);
+        }
+        VISIT(st, expr, s->v.TypeAlias.value);
+        if (!symtable_exit_block(st))
+            VISIT_QUIT(st, 0);
+        if (is_generic) {
+            if (!symtable_exit_block(st))
+                VISIT_QUIT(st, 0);
+        }
         break;
     }
     case Return_kind:
@@ -1275,12 +1778,12 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
             }
             if (s->v.AnnAssign.simple &&
                 !symtable_add_def(st, e_name->v.Name.id,
-                                  DEF_ANNOT | DEF_LOCAL)) {
+                                  DEF_ANNOT | DEF_LOCAL, LOCATION(e_name))) {
                 VISIT_QUIT(st, 0);
             }
             else {
                 if (s->v.AnnAssign.value
-                    && !symtable_add_def(st, e_name->v.Name.id, DEF_LOCAL)) {
+                    && !symtable_add_def(st, e_name->v.Name.id, DEF_LOCAL, LOCATION(e_name))) {
                     VISIT_QUIT(st, 0);
                 }
             }
@@ -1334,9 +1837,15 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
         break;
     case Try_kind:
         VISIT_SEQ(st, stmt, s->v.Try.body);
-        VISIT_SEQ(st, stmt, s->v.Try.orelse);
         VISIT_SEQ(st, excepthandler, s->v.Try.handlers);
+        VISIT_SEQ(st, stmt, s->v.Try.orelse);
         VISIT_SEQ(st, stmt, s->v.Try.finalbody);
+        break;
+    case TryStar_kind:
+        VISIT_SEQ(st, stmt, s->v.TryStar.body);
+        VISIT_SEQ(st, excepthandler, s->v.TryStar.handlers);
+        VISIT_SEQ(st, stmt, s->v.TryStar.orelse);
+        VISIT_SEQ(st, stmt, s->v.TryStar.finalbody);
         break;
     case Assert_kind:
         VISIT(st, expr, s->v.Assert.test);
@@ -1377,7 +1886,7 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
                                                  s->end_col_offset + 1);
                 VISIT_QUIT(st, 0);
             }
-            if (!symtable_add_def(st, name, DEF_GLOBAL))
+            if (!symtable_add_def(st, name, DEF_GLOBAL, LOCATION(s)))
                 VISIT_QUIT(st, 0);
             if (!symtable_record_directive(st, name, s->lineno, s->col_offset,
                                            s->end_lineno, s->end_col_offset))
@@ -1412,7 +1921,7 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
                                                  s->end_col_offset + 1);
                 VISIT_QUIT(st, 0);
             }
-            if (!symtable_add_def(st, name, DEF_NONLOCAL))
+            if (!symtable_add_def(st, name, DEF_NONLOCAL, LOCATION(s)))
                 VISIT_QUIT(st, 0);
             if (!symtable_record_directive(st, name, s->lineno, s->col_offset,
                                            s->end_lineno, s->end_col_offset))
@@ -1433,18 +1942,31 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
         VISIT_SEQ(st, stmt, s->v.With.body);
         break;
     case AsyncFunctionDef_kind:
-        if (!symtable_add_def(st, s->v.AsyncFunctionDef.name, DEF_LOCAL))
+        if (!symtable_add_def(st, s->v.AsyncFunctionDef.name, DEF_LOCAL, LOCATION(s)))
             VISIT_QUIT(st, 0);
         if (s->v.AsyncFunctionDef.args->defaults)
             VISIT_SEQ(st, expr, s->v.AsyncFunctionDef.args->defaults);
         if (s->v.AsyncFunctionDef.args->kw_defaults)
             VISIT_SEQ_WITH_NULL(st, expr,
                                 s->v.AsyncFunctionDef.args->kw_defaults);
+        if (s->v.AsyncFunctionDef.decorator_list)
+            VISIT_SEQ(st, expr, s->v.AsyncFunctionDef.decorator_list);
+        if (asdl_seq_LEN(s->v.AsyncFunctionDef.type_params) > 0) {
+            if (!symtable_enter_type_param_block(
+                    st, s->v.AsyncFunctionDef.name,
+                    (void *)s->v.AsyncFunctionDef.type_params,
+                    s->v.AsyncFunctionDef.args->defaults != NULL,
+                    has_kwonlydefaults(s->v.AsyncFunctionDef.args->kwonlyargs,
+                                       s->v.AsyncFunctionDef.args->kw_defaults),
+                    s->kind,
+                    LOCATION(s))) {
+                VISIT_QUIT(st, 0);
+            }
+            VISIT_SEQ(st, type_param, s->v.AsyncFunctionDef.type_params);
+        }
         if (!symtable_visit_annotations(st, s, s->v.AsyncFunctionDef.args,
                                         s->v.AsyncFunctionDef.returns))
             VISIT_QUIT(st, 0);
-        if (s->v.AsyncFunctionDef.decorator_list)
-            VISIT_SEQ(st, expr, s->v.AsyncFunctionDef.decorator_list);
         if (!symtable_enter_block(st, s->v.AsyncFunctionDef.name,
                                   FunctionBlock, (void *)s,
                                   s->lineno, s->col_offset,
@@ -1455,6 +1977,10 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
         VISIT_SEQ(st, stmt, s->v.AsyncFunctionDef.body);
         if (!symtable_exit_block(st))
             VISIT_QUIT(st, 0);
+        if (asdl_seq_LEN(s->v.AsyncFunctionDef.type_params) > 0) {
+            if (!symtable_exit_block(st))
+                VISIT_QUIT(st, 0);
+        }
         break;
     case AsyncWith_kind:
         VISIT_SEQ(st, withitem, s->v.AsyncWith.items);
@@ -1491,8 +2017,9 @@ symtable_extend_namedexpr_scope(struct symtable *st, expr_ty e)
          * binding conflict with iteration variables, otherwise skip it
          */
         if (ste->ste_comprehension) {
-            long target_in_scope = _PyST_GetSymbol(ste, target_name);
-            if (target_in_scope & DEF_COMP_ITER) {
+            long target_in_scope = symtable_lookup_entry(st, ste, target_name);
+            if ((target_in_scope & DEF_COMP_ITER) &&
+                (target_in_scope & DEF_LOCAL)) {
                 PyErr_Format(PyExc_SyntaxError, NAMED_EXPR_COMP_CONFLICT, target_name);
                 PyErr_RangedSyntaxLocationObject(st->st_filename,
                                                   e->lineno,
@@ -1506,33 +2033,49 @@ symtable_extend_namedexpr_scope(struct symtable *st, expr_ty e)
 
         /* If we find a FunctionBlock entry, add as GLOBAL/LOCAL or NONLOCAL/LOCAL */
         if (ste->ste_type == FunctionBlock) {
-            long target_in_scope = _PyST_GetSymbol(ste, target_name);
+            long target_in_scope = symtable_lookup_entry(st, ste, target_name);
             if (target_in_scope & DEF_GLOBAL) {
-                if (!symtable_add_def(st, target_name, DEF_GLOBAL))
+                if (!symtable_add_def(st, target_name, DEF_GLOBAL, LOCATION(e)))
                     VISIT_QUIT(st, 0);
             } else {
-                if (!symtable_add_def(st, target_name, DEF_NONLOCAL))
+                if (!symtable_add_def(st, target_name, DEF_NONLOCAL, LOCATION(e)))
                     VISIT_QUIT(st, 0);
             }
-            if (!symtable_record_directive(st, target_name, e->lineno, e->col_offset,
-                                           e->end_lineno, e->end_col_offset))
+            if (!symtable_record_directive(st, target_name, LOCATION(e)))
                 VISIT_QUIT(st, 0);
 
-            return symtable_add_def_helper(st, target_name, DEF_LOCAL, ste);
+            return symtable_add_def_helper(st, target_name, DEF_LOCAL, ste, LOCATION(e));
         }
         /* If we find a ModuleBlock entry, add as GLOBAL */
         if (ste->ste_type == ModuleBlock) {
-            if (!symtable_add_def(st, target_name, DEF_GLOBAL))
+            if (!symtable_add_def(st, target_name, DEF_GLOBAL, LOCATION(e)))
                 VISIT_QUIT(st, 0);
-            if (!symtable_record_directive(st, target_name, e->lineno, e->col_offset,
-                                           e->end_lineno, e->end_col_offset))
+            if (!symtable_record_directive(st, target_name, LOCATION(e)))
                 VISIT_QUIT(st, 0);
 
-            return symtable_add_def_helper(st, target_name, DEF_GLOBAL, ste);
+            return symtable_add_def_helper(st, target_name, DEF_GLOBAL, ste, LOCATION(e));
         }
-        /* Disallow usage in ClassBlock */
-        if (ste->ste_type == ClassBlock) {
-            PyErr_Format(PyExc_SyntaxError, NAMED_EXPR_COMP_IN_CLASS);
+        /* Disallow usage in ClassBlock and type scopes */
+        if (ste->ste_type == ClassBlock ||
+            ste->ste_type == TypeParamBlock ||
+            ste->ste_type == TypeAliasBlock ||
+            ste->ste_type == TypeVarBoundBlock) {
+            switch (ste->ste_type) {
+                case ClassBlock:
+                    PyErr_Format(PyExc_SyntaxError, NAMED_EXPR_COMP_IN_CLASS);
+                    break;
+                case TypeParamBlock:
+                    PyErr_Format(PyExc_SyntaxError, NAMED_EXPR_COMP_IN_TYPEPARAM);
+                    break;
+                case TypeAliasBlock:
+                    PyErr_Format(PyExc_SyntaxError, NAMED_EXPR_COMP_IN_TYPEALIAS);
+                    break;
+                case TypeVarBoundBlock:
+                    PyErr_Format(PyExc_SyntaxError, NAMED_EXPR_COMP_IN_TYPEVAR_BOUND);
+                    break;
+                default:
+                    Py_UNREACHABLE();
+            }
             PyErr_RangedSyntaxLocationObject(st->st_filename,
                                               e->lineno,
                                               e->col_offset + 1,
@@ -1542,10 +2085,10 @@ symtable_extend_namedexpr_scope(struct symtable *st, expr_ty e)
         }
     }
 
-    /* We should always find either a FunctionBlock, ModuleBlock or ClassBlock
+    /* We should always find either a function-like block, ModuleBlock or ClassBlock
        and should never fall to this case
     */
-    assert(0);
+    Py_UNREACHABLE();
     return 0;
 }
 
@@ -1599,13 +2142,11 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
         VISIT(st, expr, e->v.UnaryOp.operand);
         break;
     case Lambda_kind: {
-        if (!GET_IDENTIFIER(lambda))
-            VISIT_QUIT(st, 0);
         if (e->v.Lambda.args->defaults)
             VISIT_SEQ(st, expr, e->v.Lambda.args->defaults);
         if (e->v.Lambda.args->kw_defaults)
             VISIT_SEQ_WITH_NULL(st, expr, e->v.Lambda.args->kw_defaults);
-        if (!symtable_enter_block(st, lambda,
+        if (!symtable_enter_block(st, &_Py_ID(lambda),
                                   FunctionBlock, (void *)e,
                                   e->lineno, e->col_offset,
                                   e->end_lineno, e->end_col_offset))
@@ -1651,6 +2192,9 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
         if (e->v.Yield.value)
             VISIT(st, expr, e->v.Yield.value);
         st->st_cur->ste_generator = 1;
+        if (st->st_cur->ste_comprehension) {
+            return symtable_raise_if_comprehension_block(st, e);
+        }
         break;
     case YieldFrom_kind:
         if (!symtable_raise_if_annotation_block(st, "yield expression", e)) {
@@ -1658,6 +2202,9 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
         }
         VISIT(st, expr, e->v.YieldFrom.value);
         st->st_cur->ste_generator = 1;
+        if (st->st_cur->ste_comprehension) {
+            return symtable_raise_if_comprehension_block(st, e);
+        }
         break;
     case Await_kind:
         if (!symtable_raise_if_annotation_block(st, "await expression", e)) {
@@ -1707,14 +2254,13 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
         break;
     case Name_kind:
         if (!symtable_add_def(st, e->v.Name.id,
-                              e->v.Name.ctx == Load ? USE : DEF_LOCAL))
+                              e->v.Name.ctx == Load ? USE : DEF_LOCAL, LOCATION(e)))
             VISIT_QUIT(st, 0);
         /* Special-case super: it counts as a use of __class__ */
         if (e->v.Name.ctx == Load &&
-            st->st_cur->ste_type == FunctionBlock &&
+            _PyST_IsFunctionLike(st->st_cur) &&
             _PyUnicode_EqualToASCIIString(e->v.Name.id, "super")) {
-            if (!GET_IDENTIFIER(__class__) ||
-                !symtable_add_def(st, __class__, USE))
+            if (!symtable_add_def(st, &_Py_ID(__class__), USE, LOCATION(e)))
                 VISIT_QUIT(st, 0);
         }
         break;
@@ -1724,6 +2270,74 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
         break;
     case Tuple_kind:
         VISIT_SEQ(st, expr, e->v.Tuple.elts);
+        break;
+    }
+    VISIT_QUIT(st, 1);
+}
+
+static int
+symtable_visit_type_param_bound_or_default(struct symtable *st, expr_ty e, identifier name, void *key)
+{
+    if (e) {
+        int is_in_class = st->st_cur->ste_can_see_class_scope;
+        if (!symtable_enter_block(st, name, TypeVarBoundBlock, key, LOCATION(e)))
+            return 0;
+        st->st_cur->ste_can_see_class_scope = is_in_class;
+        if (is_in_class && !symtable_add_def(st, &_Py_ID(__classdict__), USE, LOCATION(e))) {
+            VISIT_QUIT(st, 0);
+        }
+        VISIT(st, expr, e);
+        if (!symtable_exit_block(st))
+            return 0;
+    }
+    return 1;
+}
+
+static int
+symtable_visit_type_param(struct symtable *st, type_param_ty tp)
+{
+    if (++st->recursion_depth > st->recursion_limit) {
+        PyErr_SetString(PyExc_RecursionError,
+                        "maximum recursion depth exceeded during compilation");
+        VISIT_QUIT(st, 0);
+    }
+    switch(tp->kind) {
+    case TypeVar_kind:
+        if (!symtable_add_def(st, tp->v.TypeVar.name, DEF_TYPE_PARAM | DEF_LOCAL, LOCATION(tp)))
+            VISIT_QUIT(st, 0);
+
+        // We must use a different key for the bound and default. The obvious choice would be to
+        // use the .bound and .default_value pointers, but that fails when the expression immediately
+        // inside the bound or default is a comprehension: we would reuse the same key for
+        // the comprehension scope. Therefore, use the address + 1 as the second key.
+        // The only requirement for the key is that it is unique and it matches the logic in
+        // compile.c where the scope is retrieved.
+        if (!symtable_visit_type_param_bound_or_default(st, tp->v.TypeVar.bound, tp->v.TypeVar.name,
+                                                        (void *)tp)) {
+            VISIT_QUIT(st, 0);
+        }
+        if (!symtable_visit_type_param_bound_or_default(st, tp->v.TypeVar.default_value, tp->v.TypeVar.name,
+                                                        (void *)((uintptr_t)tp + 1))) {
+            VISIT_QUIT(st, 0);
+        }
+        break;
+    case TypeVarTuple_kind:
+        if (!symtable_add_def(st, tp->v.TypeVarTuple.name, DEF_TYPE_PARAM | DEF_LOCAL, LOCATION(tp))) {
+            VISIT_QUIT(st, 0);
+        }
+        if (!symtable_visit_type_param_bound_or_default(st, tp->v.TypeVarTuple.default_value, tp->v.TypeVarTuple.name,
+                                                        (void *)tp)) {
+            VISIT_QUIT(st, 0);
+        }
+        break;
+    case ParamSpec_kind:
+        if (!symtable_add_def(st, tp->v.ParamSpec.name, DEF_TYPE_PARAM | DEF_LOCAL, LOCATION(tp))) {
+            VISIT_QUIT(st, 0);
+        }
+        if (!symtable_visit_type_param_bound_or_default(st, tp->v.ParamSpec.default_value, tp->v.ParamSpec.name,
+                                                        (void *)tp)) {
+            VISIT_QUIT(st, 0);
+        }
         break;
     }
     VISIT_QUIT(st, 1);
@@ -1749,14 +2363,14 @@ symtable_visit_pattern(struct symtable *st, pattern_ty p)
         break;
     case MatchStar_kind:
         if (p->v.MatchStar.name) {
-            symtable_add_def(st, p->v.MatchStar.name, DEF_LOCAL);
+            symtable_add_def(st, p->v.MatchStar.name, DEF_LOCAL, LOCATION(p));
         }
         break;
     case MatchMapping_kind:
         VISIT_SEQ(st, expr, p->v.MatchMapping.keys);
         VISIT_SEQ(st, pattern, p->v.MatchMapping.patterns);
         if (p->v.MatchMapping.rest) {
-            symtable_add_def(st, p->v.MatchMapping.rest, DEF_LOCAL);
+            symtable_add_def(st, p->v.MatchMapping.rest, DEF_LOCAL, LOCATION(p));
         }
         break;
     case MatchClass_kind:
@@ -1769,7 +2383,7 @@ symtable_visit_pattern(struct symtable *st, pattern_ty p)
             VISIT(st, pattern, p->v.MatchAs.pattern);
         }
         if (p->v.MatchAs.name) {
-            symtable_add_def(st, p->v.MatchAs.name, DEF_LOCAL);
+            symtable_add_def(st, p->v.MatchAs.name, DEF_LOCAL, LOCATION(p));
         }
         break;
     case MatchOr_kind:
@@ -1785,7 +2399,7 @@ symtable_implicit_arg(struct symtable *st, int pos)
     PyObject *id = PyUnicode_FromFormat(".%d", pos);
     if (id == NULL)
         return 0;
-    if (!symtable_add_def(st, id, DEF_PARAM)) {
+    if (!symtable_add_def(st, id, DEF_PARAM, ST_LOCATION(st->st_cur))) {
         Py_DECREF(id);
         return 0;
     }
@@ -1803,7 +2417,7 @@ symtable_visit_params(struct symtable *st, asdl_arg_seq *args)
 
     for (i = 0; i < asdl_seq_LEN(args); i++) {
         arg_ty arg = (arg_ty)asdl_seq_GET(args, i);
-        if (!symtable_add_def(st, arg->arg, DEF_PARAM))
+        if (!symtable_add_def(st, arg->arg, DEF_PARAM, LOCATION(arg)))
             return 0;
     }
 
@@ -1815,7 +2429,7 @@ symtable_visit_annotation(struct symtable *st, expr_ty annotation)
 {
     int future_annotations = st->st_future->ff_features & CO_FUTURE_ANNOTATIONS;
     if (future_annotations &&
-        !symtable_enter_block(st, GET_IDENTIFIER(_annotation), AnnotationBlock,
+        !symtable_enter_block(st, &_Py_ID(_annotation), AnnotationBlock,
                               (void *)annotation, annotation->lineno,
                               annotation->col_offset, annotation->end_lineno,
                               annotation->end_col_offset)) {
@@ -1850,7 +2464,7 @@ symtable_visit_annotations(struct symtable *st, stmt_ty o, arguments_ty a, expr_
 {
     int future_annotations = st->st_future->ff_features & CO_FUTURE_ANNOTATIONS;
     if (future_annotations &&
-        !symtable_enter_block(st, GET_IDENTIFIER(_annotation), AnnotationBlock,
+        !symtable_enter_block(st, &_Py_ID(_annotation), AnnotationBlock,
                               (void *)o, o->lineno, o->col_offset, o->end_lineno,
                               o->end_col_offset)) {
         VISIT_QUIT(st, 0);
@@ -1887,12 +2501,12 @@ symtable_visit_arguments(struct symtable *st, arguments_ty a)
     if (a->kwonlyargs && !symtable_visit_params(st, a->kwonlyargs))
         return 0;
     if (a->vararg) {
-        if (!symtable_add_def(st, a->vararg->arg, DEF_PARAM))
+        if (!symtable_add_def(st, a->vararg->arg, DEF_PARAM, LOCATION(a->vararg)))
             return 0;
         st->st_cur->ste_varargs = 1;
     }
     if (a->kwarg) {
-        if (!symtable_add_def(st, a->kwarg->arg, DEF_PARAM))
+        if (!symtable_add_def(st, a->kwarg->arg, DEF_PARAM, LOCATION(a->kwarg)))
             return 0;
         st->st_cur->ste_varkeywords = 1;
     }
@@ -1906,7 +2520,7 @@ symtable_visit_excepthandler(struct symtable *st, excepthandler_ty eh)
     if (eh->v.ExceptHandler.type)
         VISIT(st, expr, eh->v.ExceptHandler.type);
     if (eh->v.ExceptHandler.name)
-        if (!symtable_add_def(st, eh->v.ExceptHandler.name, DEF_LOCAL))
+        if (!symtable_add_def(st, eh->v.ExceptHandler.name, DEF_LOCAL, LOCATION(eh)))
             return 0;
     VISIT_SEQ(st, stmt, eh->v.ExceptHandler.body);
     return 1;
@@ -1950,20 +2564,19 @@ symtable_visit_alias(struct symtable *st, alias_ty a)
             return 0;
     }
     else {
-        store_name = name;
-        Py_INCREF(store_name);
+        store_name = Py_NewRef(name);
     }
     if (!_PyUnicode_EqualToASCIIString(name, "*")) {
-        int r = symtable_add_def(st, store_name, DEF_IMPORT);
+        int r = symtable_add_def(st, store_name, DEF_IMPORT, LOCATION(a));
         Py_DECREF(store_name);
         return r;
     }
     else {
         if (st->st_cur->ste_type != ModuleBlock) {
-            int lineno = st->st_cur->ste_lineno;
-            int col_offset = st->st_cur->ste_col_offset;
-            int end_lineno = st->st_cur->ste_end_lineno;
-            int end_col_offset = st->st_cur->ste_end_col_offset;
+            int lineno = a->lineno;
+            int col_offset = a->col_offset;
+            int end_lineno = a->end_lineno;
+            int end_col_offset = a->end_col_offset;
             PyErr_SetString(PyExc_SyntaxError, IMPORT_STAR_WARNING);
             PyErr_RangedSyntaxLocationObject(st->st_filename,
                                              lineno, col_offset + 1,
@@ -2021,10 +2634,23 @@ symtable_handle_comprehension(struct symtable *st, expr_ty e,
                               e->end_lineno, e->end_col_offset)) {
         return 0;
     }
+    switch(e->kind) {
+        case ListComp_kind:
+            st->st_cur->ste_comprehension = ListComprehension;
+            break;
+        case SetComp_kind:
+            st->st_cur->ste_comprehension = SetComprehension;
+            break;
+        case DictComp_kind:
+            st->st_cur->ste_comprehension = DictComprehension;
+            break;
+        default:
+            st->st_cur->ste_comprehension = GeneratorExpression;
+            break;
+    }
     if (outermost->is_async) {
         st->st_cur->ste_coroutine = 1;
     }
-    st->st_cur->ste_comprehension = 1;
 
     /* Outermost iter is received as an argument */
     if (!symtable_implicit_arg(st, 0)) {
@@ -2041,28 +2667,21 @@ symtable_handle_comprehension(struct symtable *st, expr_ty e,
     if (value)
         VISIT(st, expr, value);
     VISIT(st, expr, elt);
-    if (st->st_cur->ste_generator) {
-        PyErr_SetString(PyExc_SyntaxError,
-            (e->kind == ListComp_kind) ? "'yield' inside list comprehension" :
-            (e->kind == SetComp_kind) ? "'yield' inside set comprehension" :
-            (e->kind == DictComp_kind) ? "'yield' inside dict comprehension" :
-            "'yield' inside generator expression");
-        PyErr_RangedSyntaxLocationObject(st->st_filename,
-                                         st->st_cur->ste_lineno,
-                                         st->st_cur->ste_col_offset + 1,
-                                         st->st_cur->ste_end_lineno,
-                                         st->st_cur->ste_end_col_offset + 1);
-        symtable_exit_block(st);
+    st->st_cur->ste_generator = is_generator;
+    int is_async = st->st_cur->ste_coroutine && !is_generator;
+    if (!symtable_exit_block(st)) {
         return 0;
     }
-    st->st_cur->ste_generator = is_generator;
-    return symtable_exit_block(st);
+    if (is_async) {
+        st->st_cur->ste_coroutine = 1;
+    }
+    return 1;
 }
 
 static int
 symtable_visit_genexp(struct symtable *st, expr_ty e)
 {
-    return symtable_handle_comprehension(st, e, GET_IDENTIFIER(genexpr),
+    return symtable_handle_comprehension(st, e, &_Py_ID(genexpr),
                                          e->v.GeneratorExp.generators,
                                          e->v.GeneratorExp.elt, NULL);
 }
@@ -2070,7 +2689,7 @@ symtable_visit_genexp(struct symtable *st, expr_ty e)
 static int
 symtable_visit_listcomp(struct symtable *st, expr_ty e)
 {
-    return symtable_handle_comprehension(st, e, GET_IDENTIFIER(listcomp),
+    return symtable_handle_comprehension(st, e, &_Py_ID(listcomp),
                                          e->v.ListComp.generators,
                                          e->v.ListComp.elt, NULL);
 }
@@ -2078,7 +2697,7 @@ symtable_visit_listcomp(struct symtable *st, expr_ty e)
 static int
 symtable_visit_setcomp(struct symtable *st, expr_ty e)
 {
-    return symtable_handle_comprehension(st, e, GET_IDENTIFIER(setcomp),
+    return symtable_handle_comprehension(st, e, &_Py_ID(setcomp),
                                          e->v.SetComp.generators,
                                          e->v.SetComp.elt, NULL);
 }
@@ -2086,7 +2705,7 @@ symtable_visit_setcomp(struct symtable *st, expr_ty e)
 static int
 symtable_visit_dictcomp(struct symtable *st, expr_ty e)
 {
-    return symtable_handle_comprehension(st, e, GET_IDENTIFIER(dictcomp),
+    return symtable_handle_comprehension(st, e, &_Py_ID(dictcomp),
                                          e->v.DictComp.generators,
                                          e->v.DictComp.key,
                                          e->v.DictComp.value);
@@ -2095,17 +2714,38 @@ symtable_visit_dictcomp(struct symtable *st, expr_ty e)
 static int
 symtable_raise_if_annotation_block(struct symtable *st, const char *name, expr_ty e)
 {
-    if (st->st_cur->ste_type != AnnotationBlock) {
+    enum _block_type type = st->st_cur->ste_type;
+    if (type == AnnotationBlock)
+        PyErr_Format(PyExc_SyntaxError, ANNOTATION_NOT_ALLOWED, name);
+    else if (type == TypeVarBoundBlock)
+        PyErr_Format(PyExc_SyntaxError, TYPEVAR_BOUND_NOT_ALLOWED, name);
+    else if (type == TypeAliasBlock)
+        PyErr_Format(PyExc_SyntaxError, TYPEALIAS_NOT_ALLOWED, name);
+    else if (type == TypeParamBlock)
+        PyErr_Format(PyExc_SyntaxError, TYPEPARAM_NOT_ALLOWED, name);
+    else
         return 1;
-    }
 
-    PyErr_Format(PyExc_SyntaxError, ANNOTATION_NOT_ALLOWED, name);
     PyErr_RangedSyntaxLocationObject(st->st_filename,
                                      e->lineno,
                                      e->col_offset + 1,
                                      e->end_lineno,
                                      e->end_col_offset + 1);
     return 0;
+}
+
+static int
+symtable_raise_if_comprehension_block(struct symtable *st, expr_ty e) {
+    _Py_comprehension_ty type = st->st_cur->ste_comprehension;
+    PyErr_SetString(PyExc_SyntaxError,
+            (type == ListComprehension) ? "'yield' inside list comprehension" :
+            (type == SetComprehension) ? "'yield' inside set comprehension" :
+            (type == DictComprehension) ? "'yield' inside dict comprehension" :
+            "'yield' inside generator expression");
+    PyErr_RangedSyntaxLocationObject(st->st_filename,
+                                     e->lineno, e->col_offset + 1,
+                                     e->end_lineno, e->end_col_offset + 1);
+    VISIT_QUIT(st, 0);
 }
 
 struct symtable *
@@ -2125,14 +2765,78 @@ _Py_SymtableStringObjectFlags(const char *str, PyObject *filename,
         _PyArena_Free(arena);
         return NULL;
     }
-    PyFutureFeatures *future = _PyFuture_FromAST(mod, filename);
-    if (future == NULL) {
+    _PyFutureFeatures future;
+    if (!_PyFuture_FromAST(mod, filename, &future)) {
         _PyArena_Free(arena);
         return NULL;
     }
-    future->ff_features |= flags->cf_flags;
-    st = _PySymtable_Build(mod, filename, future);
-    PyObject_Free((void *)future);
+    future.ff_features |= flags->cf_flags;
+    st = _PySymtable_Build(mod, filename, &future);
     _PyArena_Free(arena);
     return st;
+}
+
+PyObject *
+_Py_Mangle(PyObject *privateobj, PyObject *ident)
+{
+    /* Name mangling: __private becomes _classname__private.
+       This is independent from how the name is used. */
+    if (privateobj == NULL || !PyUnicode_Check(privateobj) ||
+        PyUnicode_READ_CHAR(ident, 0) != '_' ||
+        PyUnicode_READ_CHAR(ident, 1) != '_') {
+        return Py_NewRef(ident);
+    }
+    size_t nlen = PyUnicode_GET_LENGTH(ident);
+    size_t plen = PyUnicode_GET_LENGTH(privateobj);
+    /* Don't mangle __id__ or names with dots.
+
+       The only time a name with a dot can occur is when
+       we are compiling an import statement that has a
+       package name.
+
+       TODO(jhylton): Decide whether we want to support
+       mangling of the module name, e.g. __M.X.
+    */
+    if ((PyUnicode_READ_CHAR(ident, nlen-1) == '_' &&
+         PyUnicode_READ_CHAR(ident, nlen-2) == '_') ||
+        PyUnicode_FindChar(ident, '.', 0, nlen, 1) != -1) {
+        return Py_NewRef(ident); /* Don't mangle __whatever__ */
+    }
+    /* Strip leading underscores from class name */
+    size_t ipriv = 0;
+    while (PyUnicode_READ_CHAR(privateobj, ipriv) == '_') {
+        ipriv++;
+    }
+    if (ipriv == plen) {
+        return Py_NewRef(ident); /* Don't mangle if class is just underscores */
+    }
+    plen -= ipriv;
+
+    if (plen + nlen >= PY_SSIZE_T_MAX - 1) {
+        PyErr_SetString(PyExc_OverflowError,
+                        "private identifier too large to be mangled");
+        return NULL;
+    }
+
+    Py_UCS4 maxchar = PyUnicode_MAX_CHAR_VALUE(ident);
+    if (PyUnicode_MAX_CHAR_VALUE(privateobj) > maxchar) {
+        maxchar = PyUnicode_MAX_CHAR_VALUE(privateobj);
+    }
+
+    PyObject *result = PyUnicode_New(1 + nlen + plen, maxchar);
+    if (!result) {
+        return NULL;
+    }
+    /* ident = "_" + priv[ipriv:] + ident # i.e. 1+plen+nlen bytes */
+    PyUnicode_WRITE(PyUnicode_KIND(result), PyUnicode_DATA(result), 0, '_');
+    if (PyUnicode_CopyCharacters(result, 1, privateobj, ipriv, plen) < 0) {
+        Py_DECREF(result);
+        return NULL;
+    }
+    if (PyUnicode_CopyCharacters(result, plen+1, ident, 0, nlen) < 0) {
+        Py_DECREF(result);
+        return NULL;
+    }
+    assert(_PyUnicode_CheckConsistency(result, 1));
+    return result;
 }

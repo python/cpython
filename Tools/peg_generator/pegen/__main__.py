@@ -10,10 +10,12 @@ import sys
 import time
 import token
 import traceback
-
 from typing import Tuple
 
-from pegen.build import Grammar, Parser, Tokenizer, ParserGenerator
+from pegen.grammar import Grammar
+from pegen.parser import Parser
+from pegen.parser_generator import ParserGenerator
+from pegen.tokenizer import Tokenizer
 from pegen.validator import validate_grammar
 
 
@@ -100,7 +102,9 @@ c_parser.add_argument(
     "--optimized", action="store_true", help="Compile the extension in optimized mode"
 )
 c_parser.add_argument(
-    "--skip-actions", action="store_true", help="Suppress code emission for rule actions",
+    "--skip-actions",
+    action="store_true",
+    help="Suppress code emission for rule actions",
 )
 
 python_parser = subparsers.add_parser("python", help="Generate Python code")
@@ -114,7 +118,9 @@ python_parser.add_argument(
     help="Where to write the generated parser",
 )
 python_parser.add_argument(
-    "--skip-actions", action="store_true", help="Suppress code emission for rule actions",
+    "--skip-actions",
+    action="store_true",
+    help="Suppress code emission for rule actions",
 )
 
 

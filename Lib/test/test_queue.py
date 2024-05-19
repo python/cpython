@@ -2,13 +2,17 @@
 # to ensure the Queue locks remain stable.
 import itertools
 import random
+import sys
 import threading
 import time
 import unittest
 import weakref
+from test.support import gc_collect
 from test.support import import_helper
 from test.support import threading_helper
 
+# queue module depends on threading primitives
+threading_helper.requires_working_threading(module=True)
 
 py_queue = import_helper.import_fresh_module('queue', blocked=['_queue'])
 c_queue = import_helper.import_fresh_module('queue', fresh=['_queue'])
@@ -238,6 +242,418 @@ class BaseQueueTestMixin(BlockingTestMixin):
         with self.assertRaises(self.queue.Full):
             q.put_nowait(4)
 
+    def test_shutdown_empty(self):
+        q = self.type2test()
+        q.shutdown()
+        with self.assertRaises(self.queue.ShutDown):
+            q.put("data")
+        with self.assertRaises(self.queue.ShutDown):
+            q.get()
+
+    def test_shutdown_nonempty(self):
+        q = self.type2test()
+        q.put("data")
+        q.shutdown()
+        q.get()
+        with self.assertRaises(self.queue.ShutDown):
+            q.get()
+
+    def test_shutdown_immediate(self):
+        q = self.type2test()
+        q.put("data")
+        q.shutdown(immediate=True)
+        with self.assertRaises(self.queue.ShutDown):
+            q.get()
+
+    def test_shutdown_allowed_transitions(self):
+        # allowed transitions would be from alive via shutdown to immediate
+        q = self.type2test()
+        self.assertFalse(q.is_shutdown)
+
+        q.shutdown()
+        self.assertTrue(q.is_shutdown)
+
+        q.shutdown(immediate=True)
+        self.assertTrue(q.is_shutdown)
+
+        q.shutdown(immediate=False)
+
+    def _shutdown_all_methods_in_one_thread(self, immediate):
+        q = self.type2test(2)
+        q.put("L")
+        q.put_nowait("O")
+        q.shutdown(immediate)
+
+        with self.assertRaises(self.queue.ShutDown):
+            q.put("E")
+        with self.assertRaises(self.queue.ShutDown):
+            q.put_nowait("W")
+        if immediate:
+            with self.assertRaises(self.queue.ShutDown):
+                q.get()
+            with self.assertRaises(self.queue.ShutDown):
+                q.get_nowait()
+            with self.assertRaises(ValueError):
+                q.task_done()
+            q.join()
+        else:
+            self.assertIn(q.get(), "LO")
+            q.task_done()
+            self.assertIn(q.get(), "LO")
+            q.task_done()
+            q.join()
+            # on shutdown(immediate=False)
+            # when queue is empty, should raise ShutDown Exception
+            with self.assertRaises(self.queue.ShutDown):
+                q.get() # p.get(True)
+            with self.assertRaises(self.queue.ShutDown):
+                q.get_nowait() # p.get(False)
+            with self.assertRaises(self.queue.ShutDown):
+                q.get(True, 1.0)
+
+    def test_shutdown_all_methods_in_one_thread(self):
+        return self._shutdown_all_methods_in_one_thread(False)
+
+    def test_shutdown_immediate_all_methods_in_one_thread(self):
+        return self._shutdown_all_methods_in_one_thread(True)
+
+    def _write_msg_thread(self, q, n, results,
+                            i_when_exec_shutdown, event_shutdown,
+                            barrier_start):
+        # All `write_msg_threads`
+        # put several items into the queue.
+        for i in range(0, i_when_exec_shutdown//2):
+            q.put((i, 'LOYD'))
+        # Wait for the barrier to be complete.
+        barrier_start.wait()
+
+        for i in range(i_when_exec_shutdown//2, n):
+            try:
+                q.put((i, "YDLO"))
+            except self.queue.ShutDown:
+                results.append(False)
+                break
+
+            # Trigger queue shutdown.
+            if i == i_when_exec_shutdown:
+                # Only one thread should call shutdown().
+                if not event_shutdown.is_set():
+                    event_shutdown.set()
+                    results.append(True)
+
+    def _read_msg_thread(self, q, results, barrier_start):
+        # Get at least one item.
+        q.get(True)
+        q.task_done()
+        # Wait for the barrier to be complete.
+        barrier_start.wait()
+        while True:
+            try:
+                q.get(False)
+                q.task_done()
+            except self.queue.ShutDown:
+                results.append(True)
+                break
+            except self.queue.Empty:
+                pass
+
+    def _shutdown_thread(self, q, results, event_end, immediate):
+        event_end.wait()
+        q.shutdown(immediate)
+        results.append(q.qsize() == 0)
+
+    def _join_thread(self, q, barrier_start):
+        # Wait for the barrier to be complete.
+        barrier_start.wait()
+        q.join()
+
+    def _shutdown_all_methods_in_many_threads(self, immediate):
+        # Run a 'multi-producers/consumers queue' use case,
+        # with enough items into the queue.
+        # When shutdown, all running threads will be joined.
+        q = self.type2test()
+        ps = []
+        res_puts = []
+        res_gets = []
+        res_shutdown = []
+        write_threads = 4
+        read_threads = 6
+        join_threads = 2
+        nb_msgs = 1024*64
+        nb_msgs_w = nb_msgs // write_threads
+        when_exec_shutdown = nb_msgs_w // 2
+        # Use of a Barrier to ensure that
+        # - all write threads put all their items into the queue,
+        # - all read thread get at least one item from the queue,
+        #   and keep on running until shutdown.
+        # The join thread is started only when shutdown is immediate.
+        nparties = write_threads + read_threads
+        if immediate:
+            nparties += join_threads
+        barrier_start = threading.Barrier(nparties)
+        ev_exec_shutdown = threading.Event()
+        lprocs = [
+            (self._write_msg_thread, write_threads, (q, nb_msgs_w, res_puts,
+                                            when_exec_shutdown, ev_exec_shutdown,
+                                            barrier_start)),
+            (self._read_msg_thread, read_threads, (q, res_gets, barrier_start)),
+            (self._shutdown_thread, 1, (q, res_shutdown, ev_exec_shutdown, immediate)),
+            ]
+        if immediate:
+            lprocs.append((self._join_thread, join_threads, (q, barrier_start)))
+        # start all threads.
+        for func, n, args in lprocs:
+            for i in range(n):
+                ps.append(threading.Thread(target=func, args=args))
+                ps[-1].start()
+        for thread in ps:
+            thread.join()
+
+        self.assertTrue(True in res_puts)
+        self.assertEqual(res_gets.count(True), read_threads)
+        if immediate:
+            self.assertListEqual(res_shutdown, [True])
+            self.assertTrue(q.empty())
+
+    def test_shutdown_all_methods_in_many_threads(self):
+        return self._shutdown_all_methods_in_many_threads(False)
+
+    def test_shutdown_immediate_all_methods_in_many_threads(self):
+        return self._shutdown_all_methods_in_many_threads(True)
+
+    def _get(self, q, go, results, shutdown=False):
+        go.wait()
+        try:
+            msg = q.get()
+            results.append(not shutdown)
+            return not shutdown
+        except self.queue.ShutDown:
+            results.append(shutdown)
+            return shutdown
+
+    def _get_shutdown(self, q, go, results):
+        return self._get(q, go, results, True)
+
+    def _get_task_done(self, q, go, results):
+        go.wait()
+        try:
+            msg = q.get()
+            q.task_done()
+            results.append(True)
+            return msg
+        except self.queue.ShutDown:
+            results.append(False)
+            return False
+
+    def _put(self, q, msg, go, results, shutdown=False):
+        go.wait()
+        try:
+            q.put(msg)
+            results.append(not shutdown)
+            return not shutdown
+        except self.queue.ShutDown:
+            results.append(shutdown)
+            return shutdown
+
+    def _put_shutdown(self, q, msg, go, results):
+        return self._put(q, msg, go, results, True)
+
+    def _join(self, q, results, shutdown=False):
+        try:
+            q.join()
+            results.append(not shutdown)
+            return not shutdown
+        except self.queue.ShutDown:
+            results.append(shutdown)
+            return shutdown
+
+    def _join_shutdown(self, q, results):
+        return self._join(q, results, True)
+
+    def _shutdown_get(self, immediate):
+        q = self.type2test(2)
+        results = []
+        go = threading.Event()
+        q.put("Y")
+        q.put("D")
+        # queue full
+
+        if immediate:
+            thrds = (
+                (self._get_shutdown, (q, go, results)),
+                (self._get_shutdown, (q, go, results)),
+            )
+        else:
+            thrds = (
+                # on shutdown(immediate=False)
+                # one of these threads shoud raise Shutdown
+                (self._get, (q, go, results)),
+                (self._get, (q, go, results)),
+                (self._get, (q, go, results)),
+            )
+        threads = []
+        for func, params in thrds:
+            threads.append(threading.Thread(target=func, args=params))
+            threads[-1].start()
+        q.shutdown(immediate)
+        go.set()
+        for t in threads:
+            t.join()
+        if immediate:
+            self.assertListEqual(results, [True, True])
+        else:
+            self.assertListEqual(sorted(results), [False] + [True]*(len(thrds)-1))
+
+    def test_shutdown_get(self):
+        return self._shutdown_get(False)
+
+    def test_shutdown_immediate_get(self):
+        return self._shutdown_get(True)
+
+    def _shutdown_put(self, immediate):
+        q = self.type2test(2)
+        results = []
+        go = threading.Event()
+        q.put("Y")
+        q.put("D")
+        # queue fulled
+
+        thrds = (
+            (self._put_shutdown, (q, "E", go, results)),
+            (self._put_shutdown, (q, "W", go, results)),
+        )
+        threads = []
+        for func, params in thrds:
+            threads.append(threading.Thread(target=func, args=params))
+            threads[-1].start()
+        q.shutdown()
+        go.set()
+        for t in threads:
+            t.join()
+
+        self.assertEqual(results, [True]*len(thrds))
+
+    def test_shutdown_put(self):
+        return self._shutdown_put(False)
+
+    def test_shutdown_immediate_put(self):
+        return self._shutdown_put(True)
+
+    def _shutdown_join(self, immediate):
+        q = self.type2test()
+        results = []
+        q.put("Y")
+        go = threading.Event()
+        nb = q.qsize()
+
+        thrds = (
+            (self._join, (q, results)),
+            (self._join, (q, results)),
+        )
+        threads = []
+        for func, params in thrds:
+            threads.append(threading.Thread(target=func, args=params))
+            threads[-1].start()
+        if not immediate:
+            res = []
+            for i in range(nb):
+                threads.append(threading.Thread(target=self._get_task_done, args=(q, go, res)))
+                threads[-1].start()
+        q.shutdown(immediate)
+        go.set()
+        for t in threads:
+            t.join()
+
+        self.assertEqual(results, [True]*len(thrds))
+
+    def test_shutdown_immediate_join(self):
+        return self._shutdown_join(True)
+
+    def test_shutdown_join(self):
+        return self._shutdown_join(False)
+
+    def _shutdown_put_join(self, immediate):
+        q = self.type2test(2)
+        results = []
+        go = threading.Event()
+        q.put("Y")
+        # queue not fulled
+
+        thrds = (
+            (self._put_shutdown, (q, "E", go, results)),
+            (self._join, (q, results)),
+        )
+        threads = []
+        for func, params in thrds:
+            threads.append(threading.Thread(target=func, args=params))
+            threads[-1].start()
+        self.assertEqual(q.unfinished_tasks, 1)
+
+        q.shutdown(immediate)
+        go.set()
+
+        if immediate:
+            with self.assertRaises(self.queue.ShutDown):
+                q.get_nowait()
+        else:
+            result = q.get()
+            self.assertEqual(result, "Y")
+            q.task_done()
+
+        for t in threads:
+            t.join()
+
+        self.assertEqual(results, [True]*len(thrds))
+
+    def test_shutdown_immediate_put_join(self):
+        return self._shutdown_put_join(True)
+
+    def test_shutdown_put_join(self):
+        return self._shutdown_put_join(False)
+
+    def test_shutdown_get_task_done_join(self):
+        q = self.type2test(2)
+        results = []
+        go = threading.Event()
+        q.put("Y")
+        q.put("D")
+        self.assertEqual(q.unfinished_tasks, q.qsize())
+
+        thrds = (
+            (self._get_task_done, (q, go, results)),
+            (self._get_task_done, (q, go, results)),
+            (self._join, (q, results)),
+            (self._join, (q, results)),
+        )
+        threads = []
+        for func, params in thrds:
+            threads.append(threading.Thread(target=func, args=params))
+            threads[-1].start()
+        go.set()
+        q.shutdown(False)
+        for t in threads:
+            t.join()
+
+        self.assertEqual(results, [True]*len(thrds))
+
+    def test_shutdown_pending_get(self):
+        def get():
+            try:
+                results.append(q.get())
+            except Exception as e:
+                results.append(e)
+
+        q = self.type2test()
+        results = []
+        get_thread = threading.Thread(target=get)
+        get_thread.start()
+        q.shutdown(immediate=False)
+        get_thread.join(timeout=10.0)
+        self.assertFalse(get_thread.is_alive())
+        self.assertEqual(len(results), 1)
+        self.assertIsInstance(results[0], self.queue.ShutDown)
+
+
 class QueueTest(BaseQueueTestMixin):
 
     def setUp(self):
@@ -287,6 +703,7 @@ class CPriorityQueueTest(PriorityQueueTest, unittest.TestCase):
 
 # A Queue subclass that can provoke failure at a moment's notice :)
 class FailingQueueException(Exception): pass
+
 
 class FailingQueueTest(BlockingTestMixin):
 
@@ -419,11 +836,12 @@ class BaseSimpleQueueTest:
     def setUp(self):
         self.q = self.type2test()
 
-    def feed(self, q, seq, rnd):
+    def feed(self, q, seq, rnd, sentinel):
         while True:
             try:
                 val = seq.pop()
             except IndexError:
+                q.put(sentinel)
                 return
             q.put(val)
             if rnd.random() > 0.5:
@@ -462,11 +880,10 @@ class BaseSimpleQueueTest:
                 return
             results.append(val)
 
-    def run_threads(self, n_feeders, n_consumers, q, inputs,
-                    feed_func, consume_func):
+    def run_threads(self, n_threads, q, inputs, feed_func, consume_func):
         results = []
         sentinel = None
-        seq = inputs + [sentinel] * n_consumers
+        seq = inputs.copy()
         seq.reverse()
         rnd = random.Random(42)
 
@@ -480,11 +897,11 @@ class BaseSimpleQueueTest:
             return wrapper
 
         feeders = [threading.Thread(target=log_exceptions(feed_func),
-                                    args=(q, seq, rnd))
-                   for i in range(n_feeders)]
+                                    args=(q, seq, rnd, sentinel))
+                   for i in range(n_threads)]
         consumers = [threading.Thread(target=log_exceptions(consume_func),
                                       args=(q, results, sentinel))
-                     for i in range(n_consumers)]
+                     for i in range(n_threads)]
 
         with threading_helper.start_threads(feeders + consumers):
             pass
@@ -542,7 +959,7 @@ class BaseSimpleQueueTest:
         # Test a pair of concurrent put() and get()
         q = self.q
         inputs = list(range(100))
-        results = self.run_threads(1, 1, q, inputs, self.feed, self.consume)
+        results = self.run_threads(1, q, inputs, self.feed, self.consume)
 
         # One producer, one consumer => results appended in well-defined order
         self.assertEqual(results, inputs)
@@ -552,7 +969,7 @@ class BaseSimpleQueueTest:
         N = 50
         q = self.q
         inputs = list(range(10000))
-        results = self.run_threads(N, N, q, inputs, self.feed, self.consume)
+        results = self.run_threads(N, q, inputs, self.feed, self.consume)
 
         # Multiple consumers without synchronization append the
         # results in random order
@@ -563,7 +980,7 @@ class BaseSimpleQueueTest:
         N = 50
         q = self.q
         inputs = list(range(10000))
-        results = self.run_threads(N, N, q, inputs,
+        results = self.run_threads(N, q, inputs,
                                    self.feed, self.consume_nonblock)
 
         self.assertEqual(sorted(results), inputs)
@@ -573,7 +990,7 @@ class BaseSimpleQueueTest:
         N = 50
         q = self.q
         inputs = list(range(1000))
-        results = self.run_threads(N, N, q, inputs,
+        results = self.run_threads(N, q, inputs,
                                    self.feed, self.consume_timeout)
 
         self.assertEqual(sorted(results), inputs)
@@ -590,6 +1007,7 @@ class BaseSimpleQueueTest:
             q.put(C())
         for i in range(N):
             wr = weakref.ref(q.get())
+            gc_collect()  # For PyPy or other GCs.
             self.assertIsNone(wr())
 
 

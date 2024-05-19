@@ -4,18 +4,17 @@ import errno
 import os
 import re
 import stat
+import string
 import sys
 import time
 import unittest
 import warnings
 
+from test import support
+
 
 # Filename used for testing
-if os.name == 'java':
-    # Jython disallows @ in module names
-    TESTFN_ASCII = '$test'
-else:
-    TESTFN_ASCII = '@test'
+TESTFN_ASCII = '@test'
 
 # Disambiguate TESTFN for parallel testing, while letting it remain a valid
 # module name.
@@ -23,8 +22,8 @@ TESTFN_ASCII = "{}_{}_tmp".format(TESTFN_ASCII, os.getpid())
 
 # TESTFN_UNICODE is a non-ascii filename
 TESTFN_UNICODE = TESTFN_ASCII + "-\xe0\xf2\u0258\u0141\u011f"
-if sys.platform == 'darwin':
-    # In Mac OS X's VFS API file names are, by definition, canonically
+if support.is_apple:
+    # On Apple's VFS API file names are, by definition, canonically
     # decomposed Unicode, encoded using UTF-8. See QA1173:
     # http://developer.apple.com/mac/library/qa/qa2001/qa1173.html
     import unicodedata
@@ -49,8 +48,8 @@ if os.name == 'nt':
                   'encoding (%s). Unicode filename tests may not be effective'
                   % (TESTFN_UNENCODABLE, sys.getfilesystemencoding()))
             TESTFN_UNENCODABLE = None
-# Mac OS X denies unencodable filenames (invalid utf-8)
-elif sys.platform != 'darwin':
+# Apple and Emscripten deny unencodable filenames (invalid utf-8)
+elif not support.is_apple and sys.platform not in {"emscripten", "wasi"}:
     try:
         # ascii and utf-8 cannot encode the byte 0xff
         b'\xff'.decode(sys.getfilesystemencoding())
@@ -141,6 +140,11 @@ for name in (
     try:
         name.decode(sys.getfilesystemencoding())
     except UnicodeDecodeError:
+        try:
+            name.decode(sys.getfilesystemencoding(),
+                        sys.getfilesystemencodeerrors())
+        except UnicodeDecodeError:
+            continue
         TESTFN_UNDECODABLE = os.fsencode(TESTFN_ASCII) + name
         break
 
@@ -171,9 +175,13 @@ def can_symlink():
     global _can_symlink
     if _can_symlink is not None:
         return _can_symlink
-    symlink_path = TESTFN + "can_symlink"
+    # WASI / wasmtime prevents symlinks with absolute paths, see man
+    # openat2(2) RESOLVE_BENEATH. Almost all symlink tests use absolute
+    # paths. Skip symlink tests on WASI for now.
+    src = os.path.abspath(TESTFN)
+    symlink_path = src + "can_symlink"
     try:
-        os.symlink(TESTFN, symlink_path)
+        os.symlink(src, symlink_path)
         can = True
     except (OSError, NotImplementedError, AttributeError):
         can = False
@@ -187,6 +195,23 @@ def skip_unless_symlink(test):
     """Skip decorator for tests that require functional symlink"""
     ok = can_symlink()
     msg = "Requires functional symlink implementation"
+    return test if ok else unittest.skip(msg)(test)
+
+
+_can_hardlink = None
+
+def can_hardlink():
+    global _can_hardlink
+    if _can_hardlink is None:
+        # Android blocks hard links using SELinux
+        # (https://stackoverflow.com/q/32365690).
+        _can_hardlink = hasattr(os, "link") and not support.is_android
+    return _can_hardlink
+
+
+def skip_unless_hardlink(test):
+    ok = can_hardlink()
+    msg = "requires hardlink support"
     return test if ok else unittest.skip(msg)(test)
 
 
@@ -230,6 +255,88 @@ def skip_unless_xattr(test):
     """Skip decorator for tests that require functional extended attributes"""
     ok = can_xattr()
     msg = "no non-broken extended attribute support"
+    return test if ok else unittest.skip(msg)(test)
+
+
+_can_chmod = None
+
+def can_chmod():
+    global _can_chmod
+    if _can_chmod is not None:
+        return _can_chmod
+    if not hasattr(os, "chmod"):
+        _can_chmod = False
+        return _can_chmod
+    try:
+        with open(TESTFN, "wb") as f:
+            try:
+                os.chmod(TESTFN, 0o555)
+                mode1 = os.stat(TESTFN).st_mode
+                os.chmod(TESTFN, 0o777)
+                mode2 = os.stat(TESTFN).st_mode
+            except OSError as e:
+                can = False
+            else:
+                can = stat.S_IMODE(mode1) != stat.S_IMODE(mode2)
+    finally:
+        unlink(TESTFN)
+    _can_chmod = can
+    return can
+
+
+def skip_unless_working_chmod(test):
+    """Skip tests that require working os.chmod()
+
+    WASI SDK 15.0 cannot change file mode bits.
+    """
+    ok = can_chmod()
+    msg = "requires working os.chmod()"
+    return test if ok else unittest.skip(msg)(test)
+
+
+# Check whether the current effective user has the capability to override
+# DAC (discretionary access control). Typically user root is able to
+# bypass file read, write, and execute permission checks. The capability
+# is independent of the effective user. See capabilities(7).
+_can_dac_override = None
+
+def can_dac_override():
+    global _can_dac_override
+
+    if not can_chmod():
+        _can_dac_override = False
+    if _can_dac_override is not None:
+        return _can_dac_override
+
+    try:
+        with open(TESTFN, "wb") as f:
+            os.chmod(TESTFN, 0o400)
+            try:
+                with open(TESTFN, "wb"):
+                    pass
+            except OSError:
+                _can_dac_override = False
+            else:
+                _can_dac_override = True
+    finally:
+        try:
+            os.chmod(TESTFN, 0o700)
+        except OSError:
+            pass
+        unlink(TESTFN)
+
+    return _can_dac_override
+
+
+def skip_if_dac_override(test):
+    ok = not can_dac_override()
+    msg = "incompatible with CAP_DAC_OVERRIDE"
+    return test if ok else unittest.skip(msg)(test)
+
+
+def skip_unless_dac_override(test):
+    ok = can_dac_override()
+    msg = "requires CAP_DAC_OVERRIDE"
     return test if ok else unittest.skip(msg)(test)
 
 
@@ -455,6 +562,20 @@ def create_empty_file(filename):
     os.close(fd)
 
 
+@contextlib.contextmanager
+def open_dir_fd(path):
+    """Open a file descriptor to a directory."""
+    assert os.path.isdir(path)
+    flags = os.O_RDONLY
+    if hasattr(os, "O_DIRECTORY"):
+        flags |= os.O_DIRECTORY
+    dir_fd = os.open(path, flags)
+    try:
+        yield dir_fd
+    finally:
+        os.close(dir_fd)
+
+
 def fs_is_case_insensitive(directory):
     """Detects if the file system for the specified directory
     is case-insensitive."""
@@ -471,7 +592,7 @@ def fs_is_case_insensitive(directory):
 
 
 class FakePath:
-    """Simple implementing of the path protocol.
+    """Simple implementation of the path protocol.
     """
     def __init__(self, path):
         self.path = path
@@ -491,11 +612,18 @@ class FakePath:
 def fd_count():
     """Count the number of open file descriptors.
     """
-    if sys.platform.startswith(('linux', 'freebsd')):
+    if sys.platform.startswith(('linux', 'android', 'freebsd', 'emscripten')):
+        fd_path = "/proc/self/fd"
+    elif sys.platform == "darwin":
+        fd_path = "/dev/fd"
+    else:
+        fd_path = None
+
+    if fd_path is not None:
         try:
-            names = os.listdir("/proc/self/fd")
+            names = os.listdir(fd_path)
             # Subtract one because listdir() internally opens a file
-            # descriptor to list the content of the /proc/self/fd/ directory.
+            # descriptor to list the content of the directory.
             return len(names) - 1
         except FileNotFoundError:
             pass
@@ -504,7 +632,8 @@ def fd_count():
     if hasattr(os, 'sysconf'):
         try:
             MAXFD = os.sysconf("SC_OPEN_MAX")
-        except OSError:
+        except (OSError, ValueError):
+            # gh-118201: ValueError is raised intermittently on iOS
             pass
 
     old_modes = None
@@ -557,6 +686,11 @@ if hasattr(os, "umask"):
             yield
         finally:
             os.umask(oldmask)
+else:
+    @contextlib.contextmanager
+    def temp_umask(umask):
+        """no-op on platforms without umask()"""
+        yield
 
 
 class EnvironmentVarGuard(collections.abc.MutableMapping):
@@ -599,6 +733,10 @@ class EnvironmentVarGuard(collections.abc.MutableMapping):
     def unset(self, envvar):
         del self[envvar]
 
+    def copy(self):
+        # We do what os.environ.copy() does.
+        return dict(self)
+
     def __enter__(self):
         return self
 
@@ -610,3 +748,40 @@ class EnvironmentVarGuard(collections.abc.MutableMapping):
             else:
                 self._environ[k] = v
         os.environ = self._environ
+
+
+try:
+    if support.MS_WINDOWS:
+        import ctypes
+        kernel32 = ctypes.WinDLL('kernel32', use_last_error=True)
+
+        ERROR_FILE_NOT_FOUND = 2
+        DDD_REMOVE_DEFINITION = 2
+        DDD_EXACT_MATCH_ON_REMOVE = 4
+        DDD_NO_BROADCAST_SYSTEM = 8
+    else:
+        raise AttributeError
+except (ImportError, AttributeError):
+    def subst_drive(path):
+        raise unittest.SkipTest('ctypes or kernel32 is not available')
+else:
+    @contextlib.contextmanager
+    def subst_drive(path):
+        """Temporarily yield a substitute drive for a given path."""
+        for c in reversed(string.ascii_uppercase):
+            drive = f'{c}:'
+            if (not kernel32.QueryDosDeviceW(drive, None, 0) and
+                    ctypes.get_last_error() == ERROR_FILE_NOT_FOUND):
+                break
+        else:
+            raise unittest.SkipTest('no available logical drive')
+        if not kernel32.DefineDosDeviceW(
+                DDD_NO_BROADCAST_SYSTEM, drive, path):
+            raise ctypes.WinError(ctypes.get_last_error())
+        try:
+            yield drive
+        finally:
+            if not kernel32.DefineDosDeviceW(
+                    DDD_REMOVE_DEFINITION | DDD_EXACT_MATCH_ON_REMOVE,
+                    drive, path):
+                raise ctypes.WinError(ctypes.get_last_error())

@@ -57,9 +57,9 @@ import importlib
 import linecache
 from contextlib import contextmanager
 from itertools import islice, repeat
-import test.support
 from test.support import import_helper
 from test.support import os_helper
+from test.support import patch_list
 
 
 class BdbException(Exception): pass
@@ -228,6 +228,10 @@ class Tracer(Bdb):
         self.process_event('exception', frame)
         self.next_set_method()
 
+    def user_opcode(self, frame):
+        self.process_event('opcode', frame)
+        self.next_set_method()
+
     def do_clear(self, arg):
         # The temporary breakpoints are deleted in user_line().
         bp_list = [self.currentbp]
@@ -366,7 +370,7 @@ class Tracer(Bdb):
         set_method = getattr(self, 'set_' + set_type)
 
         # The following set methods give back control to the tracer.
-        if set_type in ('step', 'continue', 'quit'):
+        if set_type in ('step', 'stepinstr', 'continue', 'quit'):
             set_method()
             return
         elif set_type in ('next', 'return'):
@@ -433,8 +437,9 @@ class TracerRun():
         not_empty = ''
         if self.tracer.set_list:
             not_empty += 'All paired tuples have not been processed, '
-            not_empty += ('the last one was number %d' %
+            not_empty += ('the last one was number %d\n' %
                           self.tracer.expect_set_no)
+            not_empty += repr(self.tracer.set_list)
 
         # Make a BdbNotExpectedError a unittest failure.
         if type_ is not None and issubclass(BdbNotExpectedError, type_):
@@ -609,6 +614,15 @@ class StateTestCase(BaseTestCase):
                 with TracerRun(self) as tracer:
                     tracer.runcall(tfunc_main)
 
+    def test_stepinstr(self):
+        self.expect_set = [
+            ('line',   2, 'tfunc_main'),  ('stepinstr', ),
+            ('opcode', 2, 'tfunc_main'),  ('next', ),
+            ('line',   3, 'tfunc_main'),  ('quit', ),
+        ]
+        with TracerRun(self) as tracer:
+            tracer.runcall(tfunc_main)
+
     def test_next(self):
         self.expect_set = [
             ('line', 2, 'tfunc_main'),   ('step', ),
@@ -714,9 +728,18 @@ class StateTestCase(BaseTestCase):
         with TracerRun(self) as tracer:
             tracer.runcall(tfunc_main)
 
+    @patch_list(sys.meta_path)
     def test_skip(self):
         # Check that tracing is skipped over the import statement in
         # 'tfunc_import()'.
+
+        # Remove all but the standard importers.
+        sys.meta_path[:] = (
+            item
+            for item in sys.meta_path
+            if item.__module__.startswith('_frozen_importlib')
+        )
+
         code = """
             def main():
                 lno = 3
@@ -1193,13 +1216,13 @@ class IssuesTestCase(BaseTestCase):
             with TracerRun(self) as tracer:
                 tracer.runcall(tfunc_import)
 
-def test_main():
-    test.support.run_unittest(
-        StateTestCase,
-        RunTestCase,
-        BreakpointTestCase,
-        IssuesTestCase,
-    )
+
+class TestRegressions(unittest.TestCase):
+    def test_format_stack_entry_no_lineno(self):
+        # See gh-101517
+        self.assertIn('Warning: lineno is None',
+                      Bdb().format_stack_entry((sys._getframe(), None)))
+
 
 if __name__ == "__main__":
-    test_main()
+    unittest.main()
