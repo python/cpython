@@ -37,7 +37,7 @@ def load_tests(loader, tests, pattern):
             @classmethod
             def setUpClass(cls_, module=module):
                 cls_._save_sys_modules = sys.modules.copy()
-                sys.modules['test'].datetimetester = module  # for pickle tests
+                sys.modules[TESTS] = module  # for pickle tests
                 sys.modules['datetime'] = module.datetime_module
                 if hasattr(module, '_pydatetime'):
                     sys.modules['_pydatetime'] = module._pydatetime

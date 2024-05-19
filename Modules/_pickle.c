@@ -1923,10 +1923,9 @@ whichmodule(PyObject *global, PyObject *dotted_path)
     assert(module_name == NULL);
 
     /* Fallback on walking sys.modules */
-    PyThreadState *tstate = _PyThreadState_GET();
-    modules = _PySys_GetAttr(tstate, &_Py_ID(modules));
+    modules = PyImport_GetModuleDict();
     if (modules == NULL) {
-        PyErr_SetString(PyExc_RuntimeError, "unable to get sys.modules");
+        PyErr_SetString(PyExc_RuntimeError, "Unable to get sys.modules");
         return NULL;
     }
     if (PyDict_CheckExact(modules)) {
@@ -3591,14 +3590,16 @@ import_module_from_string(PickleState *st, PyObject *module_name)
                                                    PyUnicode_FromString("."),
                                                    1);
     if (split_module_name == NULL) {
-        PyErr_Format(st->PicklingError,
-                     "Failed to split module name %R", module_name);
+        PyErr_Format(PyExc_RuntimeError, "Failed to split module name %R",
+                     module_name);
         return NULL;
     }
 
-    module_name = PySequence_Fast_GET_ITEM(split_module_name, 0);
-    if (module_name == NULL) {
-        PyErr_Format(st->PicklingError, "Failed to get module name from %R",
+    PyObject *parent_module_name = PySequence_Fast_GET_ITEM(split_module_name,
+                                                            0);
+    if (parent_module_name == NULL) {
+        PyErr_Format(PyExc_RuntimeError,
+                     "Failed to get parent module name from %R",
                      split_module_name);
         return NULL;
     }
@@ -3606,36 +3607,41 @@ import_module_from_string(PickleState *st, PyObject *module_name)
     PyObject *fromlist = PySequence_GetSlice(split_module_name, 1,
                                              PySequence_Fast_GET_SIZE(split_module_name));
     if (fromlist == NULL) {
-        PyErr_Format(st->PicklingError, "Failed to get fromlist from %R",
+        PyErr_Format(PyExc_RuntimeError, "Failed to get fromlist from %R",
                      split_module_name);
         return NULL;
     }
 
-    PyObject *module = PyImport_ImportModuleLevelObject(module_name, NULL,
-                                                        NULL, fromlist, 0);
-    if (module == NULL) {
+    PyObject *parent_module = PyImport_ImportModuleLevelObject(parent_module_name,
+                                                               NULL, NULL,
+                                                               fromlist, 0);
+    if (parent_module == NULL) {
         PyErr_Format(st->PicklingError, "Import of module %R failed",
-                     module_name);
+                     parent_module_name);
         return NULL;
     }
 
     Py_ssize_t fromlist_size = PySequence_Fast_GET_SIZE(fromlist);
-    if (fromlist_size > 0) {
-        assert(fromlist_size == 1);
-        PyObject *submodule_name = PySequence_Fast_GET_ITEM(fromlist, 0);
-        if (submodule_name == NULL) {
-            PyErr_Format(st->PicklingError,
-                         "Failed to get submodule name from %R", fromlist);
+    if (fromlist_size == 0) {
+        return parent_module;
+    }
+    assert(fromlist_size == 1);
+
+    PyObject *module = PyImport_GetModule(module_name);
+    if (module == NULL) {
+        PyObject *child_module_name = PySequence_Fast_GET_ITEM(fromlist, 0);
+        if (child_module_name == NULL) {
+            PyErr_Format(PyExc_RuntimeError, "Failed to get item from %R",
+                         fromlist);
             return NULL;
         }
-        module = PyObject_GetAttr(module, submodule_name);
+        module = PyObject_GetAttr(parent_module, child_module_name);
         if (module == NULL) {
             PyErr_Format(st->PicklingError, "Attribute lookup %R on %R failed",
-                         submodule_name, module_name);
+                         child_module_name, parent_module_name);
             return NULL;
         }
     }
-
     return module;
 }
 

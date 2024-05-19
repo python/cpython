@@ -356,12 +356,13 @@ def import_module_from_string(module_name):
     >>> import_module_from_string('collections.abc)
     <module 'collections.abc' from '...'>
     """
-    module_name, *fromlist = module_name.rsplit(".", 1)
-    module = __import__(module_name, fromlist=fromlist, level=0)
-    if fromlist:
-        assert len(fromlist) == 1
-        module = getattr(module, fromlist[0])
-    return module
+    parent_module_name, *fromlist = module_name.rsplit(".", 1)
+    parent_module = __import__(parent_module_name, fromlist=fromlist, level=0)
+    if not fromlist:
+        return parent_module
+    assert len(fromlist) == 1
+    return (sys.modules[module_name] if module_name in sys.modules
+            else getattr(parent_module, fromlist[0]))
 
 def encode_long(x):
     r"""Encode a long to a two's complement little-endian binary string.
