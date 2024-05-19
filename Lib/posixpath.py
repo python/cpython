@@ -22,6 +22,7 @@ defpath = '/bin:/usr/bin'
 altsep = None
 devnull = '/dev/null'
 
+import errno
 import os
 import sys
 import stat
@@ -432,7 +433,10 @@ symbolic links encountered in the path."""
         curdir = '.'
         pardir = '..'
         getcwd = os.getcwd
+    return _realpath(filename, strict, sep, curdir, pardir, getcwd)
 
+def _realpath(filename, strict, sep=sep, curdir=curdir, pardir=pardir,
+              getcwd=os.getcwd, lstat=os.lstat, readlink=os.readlink, maxlinks=-1):
     # The stack of unresolved path parts. When popped, a special value of None
     # indicates that a symlink target has been resolved, and that the original
     # symlink path can be retrieved by popping again. The [::-1] slice is a
@@ -448,6 +452,7 @@ symbolic links encountered in the path."""
     # used both to detect symlink loops and to speed up repeated traversals of
     # the same links.
     seen = {}
+    link_count = 0
 
     while rest:
         name = rest.pop()
@@ -467,10 +472,14 @@ symbolic links encountered in the path."""
         else:
             newpath = path + sep + name
         try:
-            st = os.lstat(newpath)
+            st = lstat(newpath)
             if not stat.S_ISLNK(st.st_mode):
                 path = newpath
                 continue
+            if strict and maxlinks != -1:
+                link_count += 1
+                if link_count > maxlinks:
+                    raise OSError(errno.ELOOP, "Too many symbolic links in path", newpath)
             if newpath in seen:
                 # Already seen this path
                 path = seen[newpath]
@@ -479,11 +488,10 @@ symbolic links encountered in the path."""
                     continue
                 # The symlink is not resolved, so we must have a symlink loop.
                 if strict:
-                    # Raise OSError(errno.ELOOP)
-                    os.stat(newpath)
+                    raise OSError(errno.ELOOP, "Symlink loop", newpath)
                 path = newpath
                 continue
-            target = os.readlink(newpath)
+            target = readlink(newpath)
         except OSError:
             if strict:
                 raise
