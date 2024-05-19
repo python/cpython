@@ -911,6 +911,13 @@ class Differ:
 
         # don't synch up unless the lines have a similarity score of at
         # least cutoff; best_ratio tracks the best score seen so far
+        # best_ratio is a tuple storing the best .ratio() seen so far, and
+        # a measure of how far the indices are from their index range
+        # midpoints. The latter is used to resolve ratio ties. Favoring
+        # indices near the midpoints tends to cut the ranges in half. Else,
+        # if there are many pairs with the best ratio, recursion can grow
+        # very deep, and runtime becomes cubic. See:
+        # https://github.com/python/cpython/issues/119105
         best_ratio, cutoff = (0.74, 0), 0.75
         cruncher = SequenceMatcher(self.charjunk)
         eqi, eqj = None, None   # 1st indices of equal lines (if any)
