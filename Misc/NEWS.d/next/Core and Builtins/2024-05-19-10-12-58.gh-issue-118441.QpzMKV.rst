@@ -1,0 +1,1 @@
+:func:`os.path.realpath` now raises :exc:`OSError` when *strict* mode is enabled and a path with too many symlinks is supplied.
