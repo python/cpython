@@ -449,6 +449,9 @@ symbolic links encountered in the path."""
     # the same links.
     seen = {}
 
+    # How many symlinks can still be read (excluding caching)
+    remaining_symlinks = 40  # TODO: use limit set by OS
+
     while rest:
         name = rest.pop()
         if name is None:
@@ -483,7 +486,10 @@ symbolic links encountered in the path."""
                     os.stat(newpath)
                 path = newpath
                 continue
+            if remaining_symlinks <= 0 and strict:
+                raise OSError(errno.ELOOP, "Too many symbolic links", newpath)
             target = os.readlink(newpath)
+            remaining_symlinks -= 1
         except OSError:
             if strict:
                 raise
