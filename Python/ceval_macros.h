@@ -70,9 +70,24 @@
 #define INSTRUCTION_STATS(op) ((void)0)
 #endif
 
+typedef struct {
+    PyThreadState *tstate;
+    _PyInterpreterFrame *frame;
+    PyObject **stack_pointer;
+    _Py_CODEUNIT *next_instr;
+    int opcode;
+    int oparg;
+} ret_state;
+
+typedef uintptr_t (*OPCODE_FUNC_PTR_TYPE)(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObject **stack_pointer, _Py_CODEUNIT *next_instr, int opcode, int oparg, ret_state *state);
+static OPCODE_FUNC_PTR_TYPE opcode_funcs[256];
+
 #if USE_COMPUTED_GOTOS
 #  define TARGET(op) TARGET_##op:
 #  define DISPATCH_GOTO() goto *opcode_targets[opcode]
+#elif USE_TAIL_CALLS
+#  define DISPATCH_GOTO() OPCODE_FUNC_PTR_TYPE next = opcode_funcs[opcode]; \
+                          return next(tstate, frame, stack_pointer, next_instr, opcode, oparg, state)
 #else
 #  define TARGET(op) case op: TARGET_##op:
 #  define DISPATCH_GOTO() goto dispatch_opcode
@@ -266,7 +281,11 @@ GETITEM(PyObject *v, Py_ssize_t i) {
                                      GETLOCAL(i) = value; \
                                      Py_XDECREF(tmp); } while (0)
 
-#define GO_TO_INSTRUCTION(op) goto PREDICT_ID(op)
+#if USE_TAIL_CALLS
+#  define GO_TO_INSTRUCTION(op) exit(42069);
+#else
+#  define GO_TO_INSTRUCTION(op) goto PREDICT_ID(op)
+#endif
 
 #ifdef Py_STATS
 #define UPDATE_MISS_STATS(INSTNAME)                              \

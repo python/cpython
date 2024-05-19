@@ -1953,6 +1953,8 @@ Python/compile.o Python/assemble.o Python/flowgraph.o Python/instruction_sequenc
 
 Python/ceval.o: \
 		$(srcdir)/Python/ceval_macros.h \
+		$(srcdir)/Python/tail_call_funcs.h \
+		$(srcdir)/Python/opcode_funcs.h \
 		$(srcdir)/Python/condvar.h \
 		$(srcdir)/Python/generated_cases.c.h \
 		$(srcdir)/Python/executor_cases.c.h \

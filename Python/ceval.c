@@ -2,6 +2,9 @@
 
 #define _PY_INTERPRETER
 
+#define USE_COMPUTED_GOTOS 0
+#define USE_TAIL_CALLS 1
+
 #include "Python.h"
 #include "pycore_abstract.h"      // _PyIndex_Check()
 #include "pycore_backoff.h"
@@ -684,6 +687,11 @@ extern void _PyUOpPrint(const _PyUOpInstruction *uop);
 /* This setting is reversed below following _PyEval_EvalFrameDefault */
 #endif
 
+#if USE_TAIL_CALLS
+#include "tail_call_funcs.h"
+#include "opcode_funcs.h"
+#endif
+
 PyObject* _Py_HOT_FUNCTION
 _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int throwflag)
 {
@@ -780,9 +788,14 @@ resume_frame:
     assert(!_PyErr_Occurred(tstate));
 #endif
 
+#if USE_TAIL_CALLS
+    ret_state s;
+#endif
+
     DISPATCH();
 
     {
+#if !USE_TAIL_CALLS
     /* Start instructions */
 #if !USE_COMPUTED_GOTOS
     dispatch_opcode:
@@ -849,6 +862,7 @@ resume_frame:
             goto error;
 
         } /* End instructions */
+#endif
 
         /* This should never be reached. Every opcode should end with DISPATCH()
            or goto error. */
