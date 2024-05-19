@@ -918,18 +918,12 @@ class Differ:
         # search for the pair that matches best without being identical
         # (identical lines must be junk lines, & we don't want to synch up
         # on junk -- unless we have to)
-        alen = alo + ahi - 1
-        blen = blo + bhi - 1
-        # weight is used to balance the recursion by prioritizing
-        # i and j in the middle of their ranges
-        weight = 0
+        amid = (alo + ahi - 1) / 2
+        bmid = (blo + bhi - 1) / 2
         for j in range(blo, bhi):
             bj = b[j]
             cruncher.set_seq2(bj)
-            if j < blen / 2:
-                weight += alen
-            elif j > blen / 2:
-                weight -= alen
+            weight_j = - abs(j - bmid)
             for i in range(alo, ahi):
                 ai = a[i]
                 if ai == bj:
@@ -937,10 +931,9 @@ class Differ:
                         eqi, eqj = i, j
                     continue
                 cruncher.set_seq1(ai)
-                if i < alen / 2:
-                    weight += blen
-                elif i > alen / 2:
-                    weight -= blen
+                # weight is used to balance the recursion by prioritizing
+                # i and j in the middle of their ranges
+                weight = weight_j - abs(i - amid)
                 # computing similarity is expensive, so use the quick
                 # upper bounds first -- have seen this speed up messy
                 # compares by a factor of 3.
@@ -951,7 +944,6 @@ class Differ:
                       (cruncher.quick_ratio(), weight) > best_ratio and \
                       (cruncher.ratio(), weight) > best_ratio:
                     best_ratio, best_i, best_j = (cruncher.ratio(), weight), i, j
-        # assert weight == 0, weight
         best_ratio, _ = best_ratio
         if best_ratio < cutoff:
             # no non-identical "pretty close" pair
