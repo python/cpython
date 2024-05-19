@@ -6,28 +6,19 @@ import pickle
 import sys
 import unittest
 import zipfile
+import zipfile._path
 
 from ._functools import compose
 from ._itertools import Counter
 
 from ._test_params import parameterize, Invoked
 
-from test.support.os_helper import temp_dir
+from test.support.os_helper import temp_dir, FakePath
 
 
 class jaraco:
     class itertools:
         Counter = Counter
-
-
-def add_dirs(zf):
-    """
-    Given a writable zip file zf, inject directory entries for
-    any directories implied by the presence of children.
-    """
-    for name in zipfile.CompleteDirs._implied_dirs(zf.namelist()):
-        zf.writestr(name, b"")
-    return zf
 
 
 def build_alpharep_fixture():
@@ -76,7 +67,7 @@ def build_alpharep_fixture():
 
 alpharep_generators = [
     Invoked.wrap(build_alpharep_fixture),
-    Invoked.wrap(compose(add_dirs, build_alpharep_fixture)),
+    Invoked.wrap(compose(zipfile._path.CompleteDirs.inject, build_alpharep_fixture)),
 ]
 
 pass_alpharep = parameterize(['alpharep'], alpharep_generators)
@@ -210,11 +201,12 @@ class TestPath(unittest.TestCase):
         with zf.joinpath('file.txt').open('w', encoding="utf-8") as strm:
             strm.write('text file')
 
-    def test_open_extant_directory(self):
+    @pass_alpharep
+    def test_open_extant_directory(self, alpharep):
         """
         Attempting to open a directory raises IsADirectoryError.
         """
-        zf = zipfile.Path(add_dirs(build_alpharep_fixture()))
+        zf = zipfile.Path(alpharep)
         with self.assertRaises(IsADirectoryError):
             zf.joinpath('b').open()
 
@@ -226,11 +218,12 @@ class TestPath(unittest.TestCase):
         with self.assertRaises(ValueError):
             root.joinpath('a.txt').open('rb', 'utf-8')
 
-    def test_open_missing_directory(self):
+    @pass_alpharep
+    def test_open_missing_directory(self, alpharep):
         """
         Attempting to open a missing directory raises FileNotFoundError.
         """
-        zf = zipfile.Path(add_dirs(build_alpharep_fixture()))
+        zf = zipfile.Path(alpharep)
         with self.assertRaises(FileNotFoundError):
             zf.joinpath('z').open()
 
@@ -271,13 +264,13 @@ class TestPath(unittest.TestCase):
         zipfile.Path should be constructable from a path-like object
         """
         zipfile_ondisk = self.zipfile_ondisk(alpharep)
-        pathlike = pathlib.Path(str(zipfile_ondisk))
+        pathlike = FakePath(str(zipfile_ondisk))
         zipfile.Path(pathlike)
 
     @pass_alpharep
     def test_traverse_pathlike(self, alpharep):
         root = zipfile.Path(alpharep)
-        root / pathlib.Path("a")
+        root / FakePath("a")
 
     @pass_alpharep
     def test_parent(self, alpharep):
@@ -546,12 +539,12 @@ class TestPath(unittest.TestCase):
         ['alpharep', 'path_type', 'subpath'],
         itertools.product(
             alpharep_generators,
-            [str, pathlib.Path],
+            [str, FakePath],
             ['', 'b/'],
         ),
     )
     def test_pickle(self, alpharep, path_type, subpath):
-        zipfile_ondisk = path_type(self.zipfile_ondisk(alpharep))
+        zipfile_ondisk = path_type(str(self.zipfile_ondisk(alpharep)))
 
         saved_1 = pickle.dumps(zipfile.Path(zipfile_ondisk, at=subpath))
         restored_1 = pickle.loads(saved_1)

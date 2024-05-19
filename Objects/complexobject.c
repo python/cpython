@@ -256,26 +256,51 @@ PyComplex_FromDoubles(double real, double imag)
     return PyComplex_FromCComplex(c);
 }
 
+static PyObject * try_complex_special_method(PyObject *);
+
 double
 PyComplex_RealAsDouble(PyObject *op)
 {
+    double real = -1.0;
+
     if (PyComplex_Check(op)) {
-        return ((PyComplexObject *)op)->cval.real;
+        real = ((PyComplexObject *)op)->cval.real;
     }
     else {
-        return PyFloat_AsDouble(op);
+        PyObject* newop = try_complex_special_method(op);
+        if (newop) {
+            real = ((PyComplexObject *)newop)->cval.real;
+            Py_DECREF(newop);
+        } else if (!PyErr_Occurred()) {
+            real = PyFloat_AsDouble(op);
+        }
     }
+
+    return real;
 }
 
 double
 PyComplex_ImagAsDouble(PyObject *op)
 {
+    double imag = -1.0;
+
     if (PyComplex_Check(op)) {
-        return ((PyComplexObject *)op)->cval.imag;
+        imag = ((PyComplexObject *)op)->cval.imag;
     }
     else {
-        return 0.0;
+        PyObject* newop = try_complex_special_method(op);
+        if (newop) {
+            imag = ((PyComplexObject *)newop)->cval.imag;
+            Py_DECREF(newop);
+        } else if (!PyErr_Occurred()) {
+            PyFloat_AsDouble(op);
+            if (!PyErr_Occurred()) {
+                imag = 0.0;
+            }
+        }
     }
+
+    return imag;
 }
 
 static PyObject *

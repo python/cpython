@@ -8,6 +8,7 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
+#include "pycore_lock.h"          // PyMutex
 #include "pycore_fileutils.h"     // _Py_error_handler
 #include "pycore_identifier.h"    // _Py_Identifier
 #include "pycore_ucnhash.h"       // _PyUnicode_Name_CAPI
@@ -30,7 +31,7 @@ PyAPI_FUNC(int) _PyUnicode_CheckConsistency(
     PyObject *op,
     int check_content);
 
-extern void _PyUnicode_ExactDealloc(PyObject *op);
+PyAPI_FUNC(void) _PyUnicode_ExactDealloc(PyObject *op);
 extern Py_ssize_t _PyUnicode_InternedSize(void);
 
 // Get a copy of a Unicode string.
@@ -201,7 +202,7 @@ PyAPI_FUNC(PyObject*) _PyUnicode_TransformDecimalAndSpaceToASCII(
 
 /* --- Methods & Slots ---------------------------------------------------- */
 
-extern PyObject* _PyUnicode_JoinArray(
+PyAPI_FUNC(PyObject*) _PyUnicode_JoinArray(
     PyObject *separator,
     PyObject *const *items,
     Py_ssize_t seqlen
@@ -277,7 +278,7 @@ extern PyTypeObject _PyUnicodeASCIIIter_Type;
 /* --- Other API ---------------------------------------------------------- */
 
 struct _Py_unicode_runtime_ids {
-    PyThread_type_lock lock;
+    PyMutex mutex;
     // next_index value must be preserved when Py_Initialize()/Py_Finalize()
     // is called multiple times: see _PyUnicode_FromId() implementation.
     Py_ssize_t next_index;

@@ -19,12 +19,8 @@ _PyPegen_interactive_exit(Parser *p)
 }
 
 Py_ssize_t
-_PyPegen_byte_offset_to_character_offset(PyObject *line, Py_ssize_t col_offset)
+_PyPegen_byte_offset_to_character_offset_raw(const char* str, Py_ssize_t col_offset)
 {
-    const char *str = PyUnicode_AsUTF8(line);
-    if (!str) {
-        return -1;
-    }
     Py_ssize_t len = strlen(str);
     if (col_offset > len + 1) {
         col_offset = len + 1;
@@ -37,6 +33,16 @@ _PyPegen_byte_offset_to_character_offset(PyObject *line, Py_ssize_t col_offset)
     Py_ssize_t size = PyUnicode_GET_LENGTH(text);
     Py_DECREF(text);
     return size;
+}
+
+Py_ssize_t
+_PyPegen_byte_offset_to_character_offset(PyObject *line, Py_ssize_t col_offset)
+{
+    const char *str = PyUnicode_AsUTF8(line);
+    if (!str) {
+        return -1;
+    }
+    return _PyPegen_byte_offset_to_character_offset_raw(str, col_offset);
 }
 
 // Here, mark is the start of the node, while p->mark is the end.
@@ -838,7 +844,7 @@ _PyPegen_run_parser(Parser *p)
     if (res == NULL) {
         if ((p->flags & PyPARSE_ALLOW_INCOMPLETE_INPUT) &&  _is_end_of_source(p)) {
             PyErr_Clear();
-            return RAISE_SYNTAX_ERROR("incomplete input");
+            return _PyPegen_raise_error(p, PyExc_IncompleteInputError, 0, "incomplete input");
         }
         if (PyErr_Occurred() && !PyErr_ExceptionMatches(PyExc_SyntaxError)) {
             return NULL;
