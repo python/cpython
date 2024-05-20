@@ -4,7 +4,6 @@
 #include "Python.h"
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
 #include "pycore_pylifecycle.h"   // _PyArg_Fini
-#include "pycore_pyerrors.h"      // _Py_CalculateSuggestions()
 #include "pycore_interp.h"        // _getargs_runtime_state
 
 #include <ctype.h>
