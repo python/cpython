@@ -266,6 +266,9 @@ class AsyncGenTest(unittest.TestCase):
                                     'async generator.*StopIteration'):
             to_list(gen())
 
+    def test_async_sync_aiter(self):
+        self.compare_generators(iter([1, 2, 3]), aiter([1, 2, 3]))
+
     def test_async_gen_exception_07(self):
         def sync_gen():
             try:
