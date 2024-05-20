@@ -1,0 +1,2 @@
+Fix an error where incorrect bindings in :mod:`sqlite3` queries could lead
+to a crash. Patch by Erlend E. Aasland.
