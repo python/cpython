@@ -52,7 +52,9 @@ static inline int get_lltrace(void) {
 static _Py_UopsSymbol NO_SPACE_SYMBOL = {
     .flags = IS_NULL | NOT_NULL | NO_SPACE,
     .typ = NULL,
-    .const_val = NULL
+    .const_val = NULL,
+    .typ_version = 0,
+    .typ_version_offset = 0,
 };
 
 _Py_UopsSymbol *
@@ -76,7 +78,8 @@ sym_new(_Py_UOpsContext *ctx)
     self->flags = 0;
     self->typ = NULL;
     self->const_val = NULL;
-    self->typ_version =
+    self->typ_version = 0;
+    self->typ_version_offset = 0;
 
     return self;
 }
@@ -151,6 +154,12 @@ _Py_uop_sym_set_type(_Py_UOpsContext *ctx, _Py_UopsSymbol *sym, PyTypeObject *ty
         sym_set_flag(sym, NOT_NULL);
         sym->typ = typ;
     }
+}
+
+void
+_Py_uop_sym_set_type_version(_Py_UopsContext *ctx, _Py_UopsSymbol *sym, int32_t version)
+{
+    sym->typ_version = version;
 }
 
 void
@@ -257,6 +266,12 @@ _Py_uop_sym_get_type(_Py_UopsSymbol *sym)
     return sym->typ;
 }
 
+int32_t
+_Py_uop_sym_get_type_version(_Py_UopsSymbol *sym)
+{
+    return sym->typ_version;
+}
+
 bool
 _Py_uop_sym_has_type(_Py_UopsSymbol *sym)
 {
@@ -272,6 +287,13 @@ _Py_uop_sym_matches_type(_Py_UopsSymbol *sym, PyTypeObject *typ)
     assert(typ != NULL && PyType_Check(typ));
     return _Py_uop_sym_get_type(sym) == typ;
 }
+
+bool
+_Py_uop_sym_matches_type_version(_Py_UopsSymbol *sym, int32_t version)
+{
+    return _Py_uop_sym_get_type_version(sym) == version;
+}
+
 
 int
 _Py_uop_sym_truthiness(_Py_UopsSymbol *sym)
