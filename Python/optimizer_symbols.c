@@ -157,7 +157,7 @@ _Py_uop_sym_set_type(_Py_UOpsContext *ctx, _Py_UopsSymbol *sym, PyTypeObject *ty
 }
 
 void
-_Py_uop_sym_set_type_version(_Py_UopsContext *ctx, _Py_UopsSymbol *sym, int32_t version)
+_Py_uop_sym_set_type_version(_Py_UOpsContext *ctx, _Py_UopsSymbol *sym, int32_t version)
 {
     sym->typ_version = version;
 }
