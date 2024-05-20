@@ -378,10 +378,11 @@ Historically, the semantics for mutating the return value of :func:`locals` have
 been left to individual Python implementations to define.
 
 Through :pep:`667`, Python 3.13 standardises the historical behaviour of CPython
-for most code execution scopes, but changes optimised scopes (functions,
-generators, coroutines, comprehensions, and generator expressions) to explicitly
-return independent snapshots of the currently assigned local variables, included
-locally referenced nonlocal variables captured in closures.
+for most code execution scopes, but changes
+:term:`optimised scopes <optimised scope>` (functions, generators, coroutines,
+comprehensions, and generator expressions) to explicitly return independent
+snapshots of the currently assigned local variables, including locally
+referenced nonlocal variables captured in closures.
 
 To ensure debuggers and similar tools can reliably update local variables in
 scopes affected by this change, :attr:`FrameType.f_locals <frame.f_locals>` now
@@ -391,8 +392,6 @@ updated shared  ``dict`` instance with undefined runtime semantics.
 
 See :pep:`667` for more details, including related C API changes and
 deprecations.
-
-.. todo: Add notes to porting guide
 
 
 Other Language Changes

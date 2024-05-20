@@ -1080,14 +1080,14 @@ are always available.  They are listed here in alphabetical order.
     deleting local variables will immediately affect the contents of the
     returned mapping object.
 
-    At function scope (including for generators and coroutines), each call to
-    ``locals()`` instead returns a fresh dictionary containing the current
-    bindings of the function's local variables and any nonlocal cell references.
-    In this case, name binding changes made via the returned dict are *not*
-    written back to the corresponding local variables or nonlocal cell
-    references, and binding, rebinding, or deleting local variables and nonlocal
-    cell references does *not* affect the contents of previously returned
-    dictionaries.
+    In an :term:`optimised scope` (including functions, generators, and
+    coroutines), each call to ``locals()`` instead returns a fresh dictionary
+    containing the current bindings of the function's local variables and any
+    nonlocal cell references. In this case, name binding changes made via the
+    returned dict are *not* written back to the corresponding local variables
+    or nonlocal cell references, and assigning, reassigning, or deleting local
+    variables and nonlocal cell references does *not* affect the contents
+    of previously returned dictionaries.
 
     Calling ``locals()`` as part of a comprehension in a function, generator, or
     coroutine is equivalent to calling it in the containing scope, except that
@@ -1097,7 +1097,6 @@ are always available.  They are listed here in alphabetical order.
 
     Calling ``locals()`` as part of a generator expression is equivalent to
     calling it in a nested generator function.
-
 
    .. versionchanged:: 3.13
       As part of :pep:`667`, the semantics of mutating the mapping object
