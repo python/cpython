@@ -43,6 +43,10 @@ struct _Py_long_state {
     int max_str_digits;
 };
 
+struct _getargs_runtime_state {
+    struct _PyArg_Parser *static_parsers;
+};
+
 // Support for stop-the-world events. This exists in both the PyRuntime struct
 // for global pauses and in each PyInterpreterState for per-interpreter pauses.
 struct _stoptheworld_state {
@@ -211,6 +215,7 @@ struct _is {
     PyObject *after_forkers_child;
 #endif
 
+    struct _getargs_runtime_state getargs;
     struct _warnings_runtime_state warnings;
     struct atexit_state atexit;
     struct _stoptheworld_state stoptheworld;

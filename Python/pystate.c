@@ -864,6 +864,8 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
     _PyWarnings_Fini(interp);
     _PyAtExit_Fini(interp);
 
+    _PyArg_Fini(interp);
+
     // All Python types must be destroyed before the last GC collection. Python
     // types create a reference cycle to themselves in their in their
     // PyTypeObject.tp_mro member (the tuple contains the type).

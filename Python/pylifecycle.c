@@ -879,6 +879,8 @@ pycore_interp_init(PyThreadState *tstate)
         return _PyStatus_ERR("can't initialize warnings");
     }
 
+    _PyArg_InitState(interp);
+
     status = _PyAtExit_Init(interp);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
@@ -1875,7 +1877,6 @@ finalize_interp_clear(PyThreadState *tstate)
 
     if (is_main_interp) {
         _Py_HashRandomization_Fini();
-        _PyArg_Fini();
         _Py_ClearFileSystemEncoding();
         _PyPerfTrampoline_Fini();
         _PyPerfTrampoline_FreeArenas();

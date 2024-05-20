@@ -9,6 +9,7 @@
 #include "pycore_pylifecycle.h"   // _PyArg_Fini
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
 #include "pycore_pyerrors.h"      // _Py_CalculateSuggestions()
+#include "pycore_interp.h"        // _getargs_runtime_state
 
 /* Export Stable ABIs (abi only) */
 PyAPI_FUNC(int) _PyArg_Parse_SizeT(PyObject *, const char *, ...);
@@ -1966,10 +1967,11 @@ _parser_init(void *arg)
     parser->is_kwtuple_owned = owned;
 
     assert(parser->next == NULL);
-    parser->next = _Py_atomic_load_ptr(&_PyRuntime.getargs.static_parsers);
+    PyInterpreterState *interp = PyInterpreterState_Get();
+    parser->next = _Py_atomic_load_ptr(&interp->getargs.static_parsers);
     do {
         // compare-exchange updates parser->next on failure
-    } while (_Py_atomic_compare_exchange_ptr(&_PyRuntime.getargs.static_parsers,
+    } while (_Py_atomic_compare_exchange_ptr(&interp->getargs.static_parsers,
                                              &parser->next, parser));
     return 0;
 }
@@ -2878,14 +2880,20 @@ _PyArg_NoKwnames(const char *funcname, PyObject *kwnames)
 }
 
 void
-_PyArg_Fini(void)
+_PyArg_InitState(PyInterpreterState *interp)
 {
-    struct _PyArg_Parser *tmp, *s = _PyRuntime.getargs.static_parsers;
+    interp->getargs.static_parsers = NULL;
+}
+
+void
+_PyArg_Fini(PyInterpreterState *interp)
+{
+    struct _PyArg_Parser *tmp, *s = interp->getargs.static_parsers;
     while (s) {
         tmp = s->next;
         s->next = NULL;
         parser_clear(s);
         s = tmp;
     }
-    _PyRuntime.getargs.static_parsers = NULL;
+    interp->getargs.static_parsers = NULL;
 }
