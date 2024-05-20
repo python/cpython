@@ -618,10 +618,10 @@ class TestPyReplCompleter(TestCase):
         events = itertools.chain(
             code_to_events(code),
             [
-                Event(evt='key', data='up', raw=bytearray(b'\x1bOA')),
+                Event(evt="key", data="up", raw=bytearray(b"\x1bOA")),
                 Event(evt="key", data="down", raw=bytearray(b"\x1bOB")),
             ],
-            code_to_events("\n")
+            code_to_events("\n"),
         )
         reader = self.prepare_reader(events, namespace=namespace)
         output = multiline_input(reader, namespace)
@@ -1018,10 +1018,12 @@ class TestReader(TestCase):
         self.assertEqual(reader.pos, 9)
 
     def test_up_arrow_after_ctrl_r(self):
-        events = iter([
-            Event(evt='key', data='\x12', raw=bytearray(b'\x12')),
-            Event(evt='key', data='up', raw=bytearray(b'\x1bOA')),
-        ])
+        events = iter(
+            [
+                Event(evt="key", data="\x12", raw=bytearray(b"\x12")),
+                Event(evt="key", data="up", raw=bytearray(b"\x1bOA")),
+            ]
+        )
 
         reader, _ = handle_all_events(events)
         self.assert_screen_equals(reader, "")
@@ -1124,6 +1126,7 @@ class KeymapTranslatorTests(unittest.TestCase):
         translator.get()
         self.assertTrue(translator.empty())
 
+
 class TestParseKeys(unittest.TestCase):
     def test_single_character(self):
         self.assertEqual(parse_keys("a"), ["a"])
@@ -1195,5 +1198,5 @@ class TestCompileKeymap(unittest.TestCase):
         self.assertEqual(result, {b"a": {b"b": {b"c": "action"}}})
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()
