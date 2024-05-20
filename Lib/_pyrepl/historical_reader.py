@@ -335,10 +335,21 @@ class HistoricalReader(Reader):
     def finish(self) -> None:
         super().finish()
         ret = self.get_unicode()
+        remove: set[int] = set()
         for i, t in self.transient_history.items():
             if i < len(self.history) and i != self.historyi:
                 self.history[i] = t
-        if ret and should_auto_add_history:
+                # look either side of the current index
+                for k in (i - 1, i + 1):
+                    # dedupe repeated history entries
+                    if 0 <= k < len(self.history) and t == self.history[k]:
+                        remove.add(i)
+                        break
+        for i in sorted(remove, reverse=True):
+            del self.history[i]
+            if i < self.historyi:
+                self.historyi -= 1
+        if ret and ret != self.history[-1] and should_auto_add_history:
             self.history.append(ret)
 
 
