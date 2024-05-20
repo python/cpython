@@ -1170,12 +1170,6 @@ class AST_Tests(unittest.TestCase):
         self.assertTrue(ast.compare(a, b, compare_types=False))
         self.assertFalse(ast.compare(a, b, compare_types=True))
 
-        a, b = parse("1", "2")
-        self.assertTrue(ast.compare(a, b, compare_fields=False, compare_attributes=False))
-        self.assertTrue(ast.compare(a, b, compare_fields=False, compare_attributes=True))
-        self.assertFalse(ast.compare(a, b, compare_fields=True, compare_attributes=False))
-        self.assertFalse(ast.compare(a, b, compare_fields=True, compare_attributes=True))
-
     def test_positional_only_feature_version(self):
         ast.parse('def foo(x, /): ...', feature_version=(3, 8))
         ast.parse('def bar(x=1, /): ...', feature_version=(3, 8))

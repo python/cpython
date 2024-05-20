@@ -407,15 +407,23 @@ def compare(
     /,
     *,
     compare_types=True,
-    compare_fields=True,
     compare_attributes=False,
 ):
-    """
-    Compares recursively given two ast nodes. If *compare_types* is False, the
-    field values won't be checked whether they belong to same type or not. If
-    *compare_fields* is True, members of `_fields` attribute on both node's type
-    will be checked. If *compare_attributes* is True, members of `_attributes`
-    attribute on both node's will be compared.
+    """Compares recursively given two ast nodes.
+
+    There are two options that control how the comparison is done.
+
+    compare_types affects how Constant values are compared. If
+    compare_types is True (default), then Constant values must have
+    the same type and value to be equal. If compare_type is False,
+    then Constant values will compare equal if the type Python objects
+    are equal regardless of type, e.g. 1.0 == 1.
+
+    compare_attributes affects whether AST attributes are considered
+    in the comparison. If compare_attributes is False (default), then
+    attributes are ignored. Otherwise they must all be equal. This
+    option is useful to look for asts that are structurally equal but
+    might differ in whitespace or similar details.
     """
 
     def _compare(a, b):
@@ -427,7 +435,6 @@ def compare(
                 a,
                 b,
                 compare_attributes=compare_attributes,
-                compare_fields=compare_fields,
                 compare_types=compare_types,
             )
         elif isinstance(a, list):
@@ -471,7 +478,7 @@ def compare(
         return False
     # a and b are guaranteed to have the same type, so they must also
     # have identical values for _fields and _attributes.
-    if compare_fields and not _compare_fields():
+    if not _compare_fields():
         return False
     if compare_attributes and not _compare_attributes():
         return False
