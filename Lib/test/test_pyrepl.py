@@ -607,6 +607,30 @@ class TestPyReplCompleter(TestCase):
         output = multiline_input(reader, namespace)
         self.assertEqual(output, "python")
 
+    def test_updown_arrow_with_completion_menu(self):
+        """Up arrow in the middle of unfinished tab completion when the menu is displayed
+        should work and trigger going back in history. Down arrow should subsequently
+        get us back to the incomplete command."""
+        code = "import os\nos.\t\t"
+        namespace = {"os": os}
+
+        events = itertools.chain(
+            code_to_events(code),
+            [
+                Event(evt='key', data='up', raw=bytearray(b'\x1bOA')),
+                Event(evt="key", data="down", raw=bytearray(b"\x1bOB")),
+            ],
+            code_to_events("\n")
+        )
+        reader = self.prepare_reader(events, namespace=namespace)
+        output = multiline_input(reader, namespace)
+        # This is the first line, nothing to see here
+        self.assertEqual(output, "import os")
+        # This is the second line. We pressed up and down arrows
+        # so we should end up where we were when we initiated tab completion.
+        output = multiline_input(reader, namespace)
+        self.assertEqual(output, "os.")
+
 
 @patch("_pyrepl.curses.tigetstr", lambda x: b"")
 class TestUnivEventQueue(TestCase):
@@ -1000,7 +1024,6 @@ class TestReader(TestCase):
 
         reader, _ = handle_all_events(events)
         self.assert_screen_equals(reader, "")
-
 
 if __name__ == '__main__':
     unittest.main()
