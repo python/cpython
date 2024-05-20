@@ -590,6 +590,26 @@ class TestBasicOps(unittest.TestCase):
         self.assertEqual(type(next(c)), int)
         self.assertEqual(type(next(c)), float)
 
+    def test_count_threading(self, step=1):
+        # this test verifies multithreading consistency, which is
+        # mostly for testing builds without GIL, but nice to test anyway
+        count_to = 10_000
+        num_threads = 10
+        c = count(step=step)
+        def counting_thread():
+            for i in range(count_to):
+                next(c)
+        threads = []
+        for i in range(num_threads):
+            thread = threading.Thread(target=counting_thread)
+            thread.start()
+            threads.append(thread)
+        [thread.join() for thread in threads]
+        self.assertEqual(next(c), count_to * num_threads * step)
+
+    def test_count_with_stride_threading(self):
+        self.test_count_threading(5)
+
     def test_cycle(self):
         self.assertEqual(take(10, cycle('abc')), list('abcabcabca'))
         self.assertEqual(list(cycle('')), [])
