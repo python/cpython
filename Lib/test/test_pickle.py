@@ -290,7 +290,7 @@ if has_c_implementation:
             data = lambda n: (b'((lp' + str(n).encode() + b'\n' +
                               b'g' + str(n).encode() + b'\nt.')
             self.assertEqual(self.loads(data(100000)), ([],)*2) # self-testing
-            for idx in [10**6, 10**9, 10**12]:
+            for idx in [10**6, 10**9, min(sys.maxsize, 10**12)]:
                 with self.assertRaisesRegex(pickle.UnpicklingError,
                                             'too sparse memo indices'):
                     self.loads(data(idx))
