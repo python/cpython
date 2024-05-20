@@ -670,7 +670,7 @@ bind_parameters(pysqlite_state *state, pysqlite_Statement *self,
         for (i = 0; i < num_params; i++) {
             const char *name = sqlite3_bind_parameter_name(self->st, i+1);
             if (name != NULL && name[0] != '?') {
-                PyErr_Format(state->ProgrammingError,
+                return PyErr_Format(state->ProgrammingError,
                         "Binding %d ('%s') is a named parameter, but you "
                         "supplied a sequence which requires nameless (qmark) "
                         "placeholders.",
