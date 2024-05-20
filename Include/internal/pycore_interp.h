@@ -179,7 +179,6 @@ struct _is {
     PyObject *after_forkers_child;
 #endif
 
-    struct _getargs_runtime_state getargs;
     struct _warnings_runtime_state warnings;
     struct atexit_state atexit;
 
@@ -235,6 +234,8 @@ struct _is {
 
    /* the initial PyInterpreterState.threads.head */
     PyThreadState _initial_thread;
+
+    struct _getargs_runtime_state getargs;
 };
 
 
