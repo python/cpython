@@ -1828,6 +1828,9 @@ compiler_make_closure(struct compiler *c, location loc,
     if (flags & MAKE_FUNCTION_DEFAULTS) {
         ADDOP_I(c, loc, SET_FUNCTION_ATTRIBUTE, MAKE_FUNCTION_DEFAULTS);
     }
+    if (flags & MAKE_FUNCTION_ANNOTATE) {
+        ADDOP_I(c, loc, SET_FUNCTION_ATTRIBUTE, MAKE_FUNCTION_ANNOTATE);
+    }
     return SUCCESS;
 }
 
@@ -1982,9 +1985,10 @@ compiler_visit_annotations(struct compiler *c, location loc,
     /* Push arg annotation names and values.
        The expressions are evaluated out-of-order wrt the source code.
 
-       Return -1 on error, 0 if no annotations pushed, 1 if a annotations is pushed.
+       Return -1 on error, or a combination of flags to add to the function.
        */
     Py_ssize_t annotations_len = 0;
+    int future_annotations = c->c_future.ff_features & CO_FUTURE_ANNOTATIONS;
 
     RETURN_IF_ERROR(
         compiler_visit_argannotations(c, args->args, &annotations_len, loc));
@@ -2012,7 +2016,7 @@ compiler_visit_annotations(struct compiler *c, location loc,
 
     if (annotations_len) {
         ADDOP_I(c, loc, BUILD_TUPLE, annotations_len);
-        return 1;
+        return MAKE_FUNCTION_ANNOTATIONS;
     }
 
     return 0;
@@ -2413,9 +2417,7 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
         }
         return ERROR;
     }
-    if (annotations > 0) {
-        funcflags |= MAKE_FUNCTION_ANNOTATIONS;
-    }
+    funcflags |= annotations;
 
     if (compiler_function_body(c, s, is_async, funcflags, firstlineno) < 0) {
         if (is_generic) {
