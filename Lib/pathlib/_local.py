@@ -4,7 +4,6 @@ import operator
 import os
 import posixpath
 import sys
-import warnings
 from glob import _StringGlobber
 from itertools import chain
 from _collections_abc import Sequence
@@ -362,7 +361,7 @@ class PurePath(PurePathBase):
         tail[-1] = name
         return self._from_parsed_parts(self.drive, self.root, tail)
 
-    def relative_to(self, other, /, *_deprecated, walk_up=False):
+    def relative_to(self, other, *, walk_up=False):
         """Return the relative path to another path identified by the passed
         arguments.  If the operation is not possible (because this is not
         related to the other path), raise ValueError.
@@ -370,13 +369,7 @@ class PurePath(PurePathBase):
         The *walk_up* parameter controls whether `..` may be used to resolve
         the path.
         """
-        if _deprecated:
-            msg = ("support for supplying more than one positional argument "
-                   "to pathlib.PurePath.relative_to() is deprecated and "
-                   "scheduled for removal in Python 3.14")
-            warnings.warn(msg, DeprecationWarning, stacklevel=2)
-            other = self.with_segments(other, *_deprecated)
-        elif not isinstance(other, PurePath):
+        if not isinstance(other, PurePath):
             other = self.with_segments(other)
         for step, path in enumerate(chain([other], other.parents)):
             if path == self or path in self.parents:
@@ -390,16 +383,10 @@ class PurePath(PurePathBase):
         parts = ['..'] * step + self._tail[len(path._tail):]
         return self._from_parsed_parts('', '', parts)
 
-    def is_relative_to(self, other, /, *_deprecated):
+    def is_relative_to(self, other):
         """Return True if the path is relative to another path or False.
         """
-        if _deprecated:
-            msg = ("support for supplying more than one argument to "
-                   "pathlib.PurePath.is_relative_to() is deprecated and "
-                   "scheduled for removal in Python 3.14")
-            warnings.warn(msg, DeprecationWarning, stacklevel=2)
-            other = self.with_segments(other, *_deprecated)
-        elif not isinstance(other, PurePath):
+        if not isinstance(other, PurePath):
             other = self.with_segments(other)
         return other == self or other in self.parents
 
@@ -417,6 +404,7 @@ class PurePath(PurePathBase):
     def is_reserved(self):
         """Return True if the path contains one of the special names reserved
         by the system, if any."""
+        import warnings
         msg = ("pathlib.PurePath.is_reserved() is deprecated and scheduled "
                "for removal in Python 3.15. Use os.path.isreserved() to "
                "detect reserved paths on Windows.")
@@ -495,13 +483,6 @@ class Path(PathBase, PurePath):
     def _unsupported_msg(cls, attribute):
         return f"{cls.__name__}.{attribute} is unsupported on this system"
 
-    def __init__(self, *args, **kwargs):
-        if kwargs:
-            msg = ("support for supplying keyword arguments to pathlib.PurePath "
-                   "is deprecated and scheduled for removal in Python {remove}")
-            warnings._deprecated("pathlib.PurePath(**kwargs)", msg, remove=(3, 14))
-        super().__init__(*args)
-
     def __new__(cls, *args, **kwargs):
         if cls is Path:
             cls = WindowsPath if os.name == 'nt' else PosixPath
@@ -514,11 +495,45 @@ class Path(PathBase, PurePath):
         """
         return os.stat(self, follow_symlinks=follow_symlinks)
 
+    def exists(self, *, follow_symlinks=True):
+        """
+        Whether this path exists.
+
+        This method normally follows symlinks; to check whether a symlink exists,
+        add the argument follow_symlinks=False.
+        """
+        if follow_symlinks:
+            return os.path.exists(self)
+        return os.path.lexists(self)
+
+    def is_dir(self, *, follow_symlinks=True):
+        """
+        Whether this path is a directory.
+        """
+        if follow_symlinks:
+            return os.path.isdir(self)
+        return PathBase.is_dir(self, follow_symlinks=follow_symlinks)
+
+    def is_file(self, *, follow_symlinks=True):
+        """
+        Whether this path is a regular file (also True for symlinks pointing
+        to regular files).
+        """
+        if follow_symlinks:
+            return os.path.isfile(self)
+        return PathBase.is_file(self, follow_symlinks=follow_symlinks)
+
     def is_mount(self):
         """
         Check if this path is a mount point
         """
         return os.path.ismount(self)
+
+    def is_symlink(self):
+        """
+        Whether this path is a symbolic link.
+        """
+        return os.path.islink(self)
 
     def is_junction(self):
         """

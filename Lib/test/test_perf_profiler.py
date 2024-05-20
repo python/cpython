@@ -479,22 +479,28 @@ class TestPerfProfiler(unittest.TestCase, TestPerfProfilerMixin):
             if f"py::foo_fork:{script}" in line or f"py::bar_fork:{script}" in line:
                 self.assertIn(line, child_perf_file_contents)
 
-def _is_kernel_version_at_least(major, minor):
+
+def _is_perf_vesion_at_least(major, minor):
+    # The output of perf --version looks like "perf version 6.7-3" but
+    # it can also be perf version "perf version 5.15.143"
     try:
-        with open("/proc/version") as f:
-            version = f.readline().split()[2]
-    except FileNotFoundError:
+        output = subprocess.check_output(["perf", "--version"], text=True)
+    except (subprocess.CalledProcessError, FileNotFoundError):
         return False
+    version = output.split()[2]
+    version = version.split("-")[0]
     version = version.split(".")
-    return int(version[0]) > major or (int(version[0]) == major and int(version[1]) >= minor)
+    version = tuple(map(int, version))
+    return version >= (major, minor)
+
 
 @unittest.skipUnless(perf_command_works(), "perf command doesn't work")
-@unittest.skipUnless(_is_kernel_version_at_least(6, 6), "perf command may not work due to a perf bug")
+@unittest.skipUnless(_is_perf_vesion_at_least(6, 6), "perf command may not work due to a perf bug")
 class TestPerfProfilerWithDwarf(unittest.TestCase, TestPerfProfilerMixin):
     def run_perf(self, script_dir, script, activate_trampoline=True):
         if activate_trampoline:
             return run_perf(
-                script_dir, sys.executable, "-Xperfjit", script, use_jit=True
+                script_dir, sys.executable, "-Xperf_jit", script, use_jit=True
             )
         return run_perf(script_dir, sys.executable, script, use_jit=True)
 

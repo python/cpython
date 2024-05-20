@@ -1780,7 +1780,7 @@ without the dedicated syntax, as documented below.
 
 .. _typevartuple:
 
-.. class:: TypeVarTuple(name, default=typing.NoDefault)
+.. class:: TypeVarTuple(name, *, default=typing.NoDefault)
 
    Type variable tuple. A specialized form of :ref:`type variable <typevar>`
    that enables *variadic* generics.
@@ -2498,7 +2498,7 @@ types.
 
       This attribute reflects *only* the value of the ``total`` argument
       to the current ``TypedDict`` class, not whether the class is semantically
-      total. For example, a ``TypedDict`` with ``__total__`` set to True may
+      total. For example, a ``TypedDict`` with ``__total__`` set to ``True`` may
       have keys marked with :data:`NotRequired`, or it may inherit from another
       ``TypedDict`` with ``total=False``. Therefore, it is generally better to use
       :attr:`__required_keys__` and :attr:`__optional_keys__` for introspection.
@@ -2546,7 +2546,7 @@ types.
          ``__required_keys__`` and ``__optional_keys__`` rely on may not work
          properly, and the values of the attributes may be incorrect.
 
-   Support for :data:`ReadOnly` is reflected in the following attributes::
+   Support for :data:`ReadOnly` is reflected in the following attributes:
 
    .. attribute:: __readonly_keys__
 
@@ -3502,14 +3502,6 @@ Aliases to container ABCs in :mod:`collections.abc`
       :class:`collections.abc.Set` now supports subscripting (``[]``).
       See :pep:`585` and :ref:`types-genericalias`.
 
-.. class:: ByteString(Sequence[int])
-
-   This type represents the types :class:`bytes`, :class:`bytearray`,
-   and :class:`memoryview` of byte sequences.
-
-   .. deprecated-removed:: 3.9 3.14
-      Prefer :class:`collections.abc.Buffer`, or a union like ``bytes | bytearray | memoryview``.
-
 .. class:: Collection(Sized, Iterable[T_co], Container[T_co])
 
    Deprecated alias to :class:`collections.abc.Collection`.
@@ -3819,9 +3811,14 @@ Aliases to other ABCs in :mod:`collections.abc`
 Aliases to :mod:`contextlib` ABCs
 """""""""""""""""""""""""""""""""
 
-.. class:: ContextManager(Generic[T_co])
+.. class:: ContextManager(Generic[T_co, ExitT_co])
 
    Deprecated alias to :class:`contextlib.AbstractContextManager`.
+
+   The first type parameter, ``T_co``, represents the type returned by
+   the :meth:`~object.__enter__` method. The optional second type parameter, ``ExitT_co``,
+   which defaults to ``bool | None``, represents the type returned by the
+   :meth:`~object.__exit__` method.
 
    .. versionadded:: 3.5.4
 
@@ -3830,9 +3827,17 @@ Aliases to :mod:`contextlib` ABCs
       now supports subscripting (``[]``).
       See :pep:`585` and :ref:`types-genericalias`.
 
-.. class:: AsyncContextManager(Generic[T_co])
+   .. versionchanged:: 3.13
+      Added the optional second type parameter, ``ExitT_co``.
+
+.. class:: AsyncContextManager(Generic[T_co, AExitT_co])
 
    Deprecated alias to :class:`contextlib.AbstractAsyncContextManager`.
+
+   The first type parameter, ``T_co``, represents the type returned by
+   the :meth:`~object.__aenter__` method. The optional second type parameter, ``AExitT_co``,
+   which defaults to ``bool | None``, represents the type returned by the
+   :meth:`~object.__aexit__` method.
 
    .. versionadded:: 3.6.2
 
@@ -3840,6 +3845,9 @@ Aliases to :mod:`contextlib` ABCs
       :class:`contextlib.AbstractAsyncContextManager`
       now supports subscripting (``[]``).
       See :pep:`585` and :ref:`types-genericalias`.
+
+   .. versionchanged:: 3.13
+      Added the optional second type parameter, ``AExitT_co``.
 
 Deprecation Timeline of Major Features
 ======================================
@@ -3859,10 +3867,6 @@ convenience. This is subject to change, and not all deprecations are listed.
      - 3.9
      - Undecided (see :ref:`deprecated-aliases` for more information)
      - :pep:`585`
-   * - :class:`typing.ByteString`
-     - 3.9
-     - 3.14
-     - :gh:`91896`
    * - :data:`typing.Text`
      - 3.11
      - Undecided

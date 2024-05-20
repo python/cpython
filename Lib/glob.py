@@ -340,7 +340,7 @@ class _Globber:
 
     # Low-level methods
 
-    lstat = operator.methodcaller('lstat')
+    lexists = operator.methodcaller('exists', follow_symlinks=False)
     add_slash = operator.methodcaller('joinpath', '')
 
     @staticmethod
@@ -516,12 +516,8 @@ class _Globber:
             # Optimization: this path is already known to exist, e.g. because
             # it was returned from os.scandir(), so we skip calling lstat().
             yield path
-        else:
-            try:
-                self.lstat(path)
-                yield path
-            except OSError:
-                pass
+        elif self.lexists(path):
+            yield path
 
     @classmethod
     def walk(cls, root, top_down, on_error, follow_symlinks):
@@ -562,7 +558,7 @@ class _Globber:
 
 
 class _StringGlobber(_Globber):
-    lstat = staticmethod(os.lstat)
+    lexists = staticmethod(os.path.lexists)
     scandir = staticmethod(os.scandir)
     parse_entry = operator.attrgetter('path')
     concat_path = operator.add

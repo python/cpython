@@ -298,11 +298,8 @@ def expanduser(path):
         return path
     if isinstance(path, bytes):
         userhome = os.fsencode(userhome)
-        root = b'/'
-    else:
-        root = '/'
-    userhome = userhome.rstrip(root)
-    return (userhome + path[i:]) or root
+    userhome = userhome.rstrip(sep)
+    return (userhome + path[i:]) or sep
 
 
 # Expand paths containing shell variable substitutions.
@@ -474,26 +471,26 @@ symbolic links encountered in the path."""
             if not stat.S_ISLNK(st.st_mode):
                 path = newpath
                 continue
+            if newpath in seen:
+                # Already seen this path
+                path = seen[newpath]
+                if path is not None:
+                    # use cached value
+                    continue
+                # The symlink is not resolved, so we must have a symlink loop.
+                if strict:
+                    # Raise OSError(errno.ELOOP)
+                    os.stat(newpath)
+                path = newpath
+                continue
+            target = os.readlink(newpath)
         except OSError:
             if strict:
                 raise
             path = newpath
             continue
         # Resolve the symbolic link
-        if newpath in seen:
-            # Already seen this path
-            path = seen[newpath]
-            if path is not None:
-                # use cached value
-                continue
-            # The symlink is not resolved, so we must have a symlink loop.
-            if strict:
-                # Raise OSError(errno.ELOOP)
-                os.stat(newpath)
-            path = newpath
-            continue
         seen[newpath] = None # not resolved symlink
-        target = os.readlink(newpath)
         if target.startswith(sep):
             # Symlink target is absolute; reset resolved path.
             path = sep

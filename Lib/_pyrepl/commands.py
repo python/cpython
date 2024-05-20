@@ -34,9 +34,7 @@ import os
 
 # types
 if False:
-    from .reader import Reader
     from .historical_reader import HistoricalReader
-    from .console import Event
 
 
 class Command:
@@ -245,7 +243,7 @@ class up(MotionCommand):
             x, y = r.pos2xy()
             new_y = y - 1
 
-            if new_y < 0:
+            if r.bol() == 0:
                 if r.historyi > 0:
                     r.select_item(r.historyi - 1)
                     return
@@ -460,5 +458,18 @@ class show_history(Command):
 class paste_mode(Command):
 
     def do(self) -> None:
+        if not self.reader.paste_mode:
+            self.reader.was_paste_mode_activated = True
         self.reader.paste_mode = not self.reader.paste_mode
+        self.reader.dirty = True
+
+
+class enable_bracketed_paste(Command):
+    def do(self) -> None:
+        self.reader.paste_mode = True
+        self.reader.was_paste_mode_activated = True
+
+class disable_bracketed_paste(Command):
+    def do(self) -> None:
+        self.reader.paste_mode = False
         self.reader.dirty = True
