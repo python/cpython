@@ -1780,7 +1780,7 @@ without the dedicated syntax, as documented below.
 
 .. _typevartuple:
 
-.. class:: TypeVarTuple(name, default=typing.NoDefault)
+.. class:: TypeVarTuple(name, *, default=typing.NoDefault)
 
    Type variable tuple. A specialized form of :ref:`type variable <typevar>`
    that enables *variadic* generics.
