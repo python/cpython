@@ -122,6 +122,8 @@ available.  Consult `the Python Package Index <https://pypi.org>`_ to
 find packages of interest to you.
 
 
+.. _faq-version-numbering-scheme:
+
 How does the Python version numbering scheme work?
 --------------------------------------------------
 
