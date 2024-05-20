@@ -131,6 +131,7 @@ ste_new(struct symtable *st, identifier name, _Py_block_ty block,
     ste->ste_can_see_class_scope = 0;
     ste->ste_comp_iter_expr = 0;
     ste->ste_needs_classdict = 0;
+    ste->ste_annotation_block = NULL;
 
     ste->ste_symbols = PyDict_New();
     ste->ste_varnames = PyList_New(0);
@@ -166,6 +167,7 @@ ste_dealloc(PySTEntryObject *ste)
     Py_XDECREF(ste->ste_varnames);
     Py_XDECREF(ste->ste_children);
     Py_XDECREF(ste->ste_directives);
+    Py_XDECREF(ste->ste_annotation_block);
     PyObject_Free(ste);
 }
 
@@ -1360,6 +1362,35 @@ symtable_enter_block(struct symtable *st, identifier name, _Py_block_ty block,
     return 1;
 }
 
+static int
+symtable_reenter_block(struct symtable *st, PySTEntryObject* ste)
+{
+    PySTEntryObject *prev = NULL;
+
+    if (PyList_Append(st->st_stack, (PyObject *)ste) < 0) {
+        Py_DECREF(ste);
+        return 0;
+    }
+    prev = st->st_cur;
+    /* bpo-37757: For now, disallow *all* assignment expressions in the
+     * outermost iterator expression of a comprehension, even those inside
+     * a nested comprehension or a lambda expression.
+     */
+    if (prev) {
+        ste->ste_comp_iter_expr = prev->ste_comp_iter_expr;
+    }
+    /* The entry is owned by the stack. Borrow it for st_cur. */
+    Py_DECREF(ste);
+    st->st_cur = ste;
+
+    if (prev) {
+        if (PyList_Append(prev->ste_children, (PyObject *)ste) < 0) {
+            return 0;
+        }
+    }
+    return 1;
+}
+
 static long
 symtable_lookup_entry(struct symtable *st, PySTEntryObject *ste, PyObject *name)
 {
@@ -1666,6 +1697,7 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
             if (!symtable_exit_block(st))
                 VISIT_QUIT(st, 0);
         }
+        Py_CLEAR(st->st_cur->ste_annotation_block);
         break;
     case ClassDef_kind: {
         PyObject *tmp;
@@ -1981,6 +2013,7 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
             if (!symtable_exit_block(st))
                 VISIT_QUIT(st, 0);
         }
+        Py_CLEAR(st->st_cur->ste_annotation_block);
         break;
     case AsyncWith_kind:
         VISIT_SEQ(st, withitem, s->v.AsyncWith.items);
@@ -2435,8 +2468,26 @@ symtable_visit_annotation(struct symtable *st, expr_ty annotation)
                               annotation->end_col_offset)) {
         VISIT_QUIT(st, 0);
     }
+    else {
+        if (st->st_cur->ste_annotation_block == NULL) {
+            struct _symtable_entry *st_parent = st->st_cur;
+            if (!symtable_enter_block(st, &_Py_ID(_annotation), AnnotationBlock,
+                                      (void *)annotation, annotation->lineno,
+                                      annotation->col_offset, annotation->end_lineno,
+                                      annotation->end_col_offset)) {
+                VISIT_QUIT(st, 0);
+            }
+            st_parent->ste_annotation_block =
+                (struct _symtable_entry *)Py_NewRef(st->st_cur);
+        }
+        else {
+            if (!symtable_reenter_block(st, st->st_cur->ste_annotation_block)) {
+                VISIT_QUIT(st, 0);
+            }
+        }
+    }
     VISIT(st, expr, annotation);
-    if (future_annotations && !symtable_exit_block(st)) {
+    if (!symtable_exit_block(st)) {
         VISIT_QUIT(st, 0);
     }
     return 1;
