@@ -1153,17 +1153,16 @@ def _sys_version(sys_version=None):
     if result is not None:
         return result
 
-    sys_version_parser = re.compile(
-        r'([\w.+]+)\s*'  # "version<space>"
-        r'\(#?([^,]+)'  # "(#buildno"
-        r'(?:,\s*([\w ]*)'  # ", builddate"
-        r'(?:,\s*([\w :]*))?)?\)\s*'  # ", buildtime)<space>"
-        r'\[([^\]]+)\]?', re.ASCII)  # "[compiler]"
-
     if sys.platform.startswith('java'):
         # Jython
+        jython_sys_version_parser = re.compile(
+            r'([\w.+]+)\s*'  # "version<space>"
+            r'\(#?([^,]+)'  # "(#buildno"
+            r'(?:,\s*([\w ]*)'  # ", builddate"
+            r'(?:,\s*([\w :]*))?)?\)\s*'  # ", buildtime)<space>"
+            r'\[([^\]]+)\]?', re.ASCII)  # "[compiler]"
         name = 'Jython'
-        match = sys_version_parser.match(sys_version)
+        match = jython_sys_version_parser.match(sys_version)
         if match is None:
             raise ValueError(
                 'failed to parse Jython sys.version: %s' %
@@ -1190,7 +1189,14 @@ def _sys_version(sys_version=None):
 
     else:
         # CPython
-        match = sys_version_parser.match(sys_version)
+        cpython_sys_version_parser = re.compile(
+            r'([\w.+]+)\s*'  # "version<space>"
+            r'(?:experimental free-threading build\s+)?' # "free-threading-build<space>"
+            r'\(#?([^,]+)'  # "(#buildno"
+            r'(?:,\s*([\w ]*)'  # ", builddate"
+            r'(?:,\s*([\w :]*))?)?\)\s*'  # ", buildtime)<space>"
+            r'\[([^\]]+)\]?', re.ASCII)  # "[compiler]"
+        match = cpython_sys_version_parser.match(sys_version)
         if match is None:
             raise ValueError(
                 'failed to parse CPython sys.version: %s' %
