@@ -171,7 +171,7 @@ class Reader:
       * console:
         Hopefully encapsulates the OS dependent stuff.
       * pos:
-        A 0-based index into `buffer' for where the insertion point
+        A 0-based index into 'buffer' for where the insertion point
         is.
       * screeninfo:
         Ahem.  This list contains some info needed to move the
@@ -179,7 +179,7 @@ class Reader:
       * cxy, lxy:
         the position of the insertion point in screen ...
       * syntax_table:
-        Dictionary mapping characters to `syntax class'; read the
+        Dictionary mapping characters to 'syntax class'; read the
         emacs docs to see what this means :-)
       * commands:
         Dictionary mapping command names to command classes.
@@ -431,7 +431,7 @@ class Reader:
 
     def get_arg(self, default: int = 1) -> int:
         """Return any prefix argument that the user has supplied,
-        returning `default' if there is None.  Defaults to 1.
+        returning 'default' if there is None.  Defaults to 1.
         """
         if self.arg is None:
             return default
@@ -440,7 +440,7 @@ class Reader:
 
     def get_prompt(self, lineno: int, cursor_on_line: bool) -> str:
         """Return what should be in the left-hand margin for line
-        `lineno'."""
+        'lineno'."""
         if self.arg is not None and cursor_on_line:
             prompt = "(arg: %s) " % self.arg
         elif self.paste_mode:
