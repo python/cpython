@@ -1344,13 +1344,8 @@ class TestUopsOptimization(unittest.TestCase):
         class Foo:
             attr = 1
 
-        breakpoint()
-
         res, ex = self._run_with_optimizer(thing, Foo())
         opnames = list(iter_opnames(ex))
-        for i in iter_opnames(ex):
-            print(i)
-
         self.assertIsNotNone(ex)
         self.assertEqual(res, 200)
         guard_type_version_count = opnames.count("_GUARD_TYPE_VERSION")
@@ -1371,12 +1366,8 @@ class TestUopsOptimization(unittest.TestCase):
         class Foo:
             attr = 1
 
-        breakpoint()
-
         res, ex = self._run_with_optimizer(thing, Foo())
         opnames = list(iter_opnames(ex))
-        for i in iter_opnames(ex):
-            print(i)
 
         self.assertIsNotNone(ex)
         self.assertEqual(res, 200)
