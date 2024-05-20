@@ -1,0 +1,1 @@
+Fix autocompletion bug in new repl
