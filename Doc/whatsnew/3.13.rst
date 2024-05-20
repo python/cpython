@@ -379,14 +379,15 @@ been left to individual Python implementations to define.
 
 Through :pep:`667`, Python 3.13 standardises the historical behaviour of CPython
 for most code execution scopes, but changes optimised scopes (functions,
-generators, coroutines, comprehensions, generator expressions) to explicitly
-return independent snapshots of the currently assigned local and nonlocal
-name references.
+generators, coroutines, comprehensions, and generator expressions) to explicitly
+return independent snapshots of the currently assigned local variables, included
+locally referenced nonlocal variables captured in closures.
 
 To ensure debuggers and similar tools can reliably update local variables in
-affected scopes, :attr:`FrameType.f_locals <frame.f_locals>` now returns a
-write-through proxy to the frame's local and locally reference nonlocal
-variables rather than a ``dict`` with unclear runtime semantics.
+scopes affected by this change, :attr:`FrameType.f_locals <frame.f_locals>` now
+returns a write-through proxy to the frame's local and locally referenced
+nonlocal variables in these scopes, rather than returning an inconsistently
+updated shared  ``dict`` instance with undefined runtime semantics.
 
 See :pep:`667` for more details, including related C API changes and
 deprecations.
