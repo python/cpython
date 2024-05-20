@@ -1,0 +1,3 @@
+This fixes a situation where raising a class with rpow in the class calling
+the exponent operator to raise it to the power of that class to not cast it
+as a float.
