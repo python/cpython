@@ -1151,7 +1151,7 @@ class AbstractUnpickleTests:
     def test_truncated_large_binstring(self):
         data = lambda size: b'T' + struct.pack('<I', size) + b'.' * 5
         self.assertEqual(self.loads(data(4)), '....') # self-testing
-        for size in self.itersize(1 << 10, (1 << 31) - 1):
+        for size in self.itersize(1 << 10, min(sys.maxsize - 5, (1 << 31) - 1)):
             self._test_truncated_data(data(size))
         self._test_truncated_data(data(1 << 31),
             (pickle.UnpicklingError, 'truncated|exceeds|negative byte count'))
@@ -1159,7 +1159,7 @@ class AbstractUnpickleTests:
     def test_truncated_large_binunicode(self):
         data = lambda size: b'X' + struct.pack('<I', size) + b'.' * 5
         self.assertEqual(self.loads(data(4)), '....') # self-testing
-        for size in self.itersize(1 << 10, min(sys.maxsize, 1 << 31)):
+        for size in self.itersize(1 << 10, min(sys.maxsize - 5, (1 << 32) - 1)):
             self._test_truncated_data(data(size))
 
     def test_truncated_large_binbytes(self):
@@ -1171,7 +1171,7 @@ class AbstractUnpickleTests:
     def test_truncated_large_long4(self):
         data = lambda size: b'\x8b' + struct.pack('<I', size) + b'.' * 5
         self.assertEqual(self.loads(data(4)), 0x2e2e2e2e) # self-testing
-        for size in self.itersize(1 << 10, (1 << 31) - 1):
+        for size in self.itersize(1 << 10, min(sys.maxsize - 5, (1 << 31) - 1)):
             self._test_truncated_data(data(size))
         self._test_truncated_data(data(1 << 31),
             (pickle.UnpicklingError, 'LONG pickle has negative byte count'))

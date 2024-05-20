@@ -66,7 +66,7 @@ class PyUnpicklerTests(AbstractUnpickleTests, unittest.TestCase):
     def test_too_large_long_binput(self):
         data = lambda n: (b'(]r' + struct.pack('<I', n) +
                           b'j' + struct.pack('<I', n) + b't.')
-        for idx in self.itersize(1 << 17, 1 << 31):
+        for idx in self.itersize(1 << 17, min(sys.maxsize, (1 << 32) - 1)):
             self.assertEqual(self.loads(data(idx)), ([],)*2)
 
 
@@ -300,7 +300,7 @@ if has_c_implementation:
             data = lambda n: (b'(]r' + struct.pack('<I', n) +
                               b'j' + struct.pack('<I', n) + b't.')
             self.assertEqual(self.loads(data(1 << 16)), ([],)*2) # self-testing
-            for idx in self.itersize(1 << 20, 1 << 31):
+            for idx in self.itersize(1 << 20, min(sys.maxsize, (1 << 32) - 1)):
                 with self.assertRaisesRegex(pickle.UnpicklingError,
                                             'too sparse memo indices'):
                     self.loads(data(idx))
