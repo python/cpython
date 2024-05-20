@@ -1938,8 +1938,11 @@ class TestCApiEventGeneration(MonitoringTestBase, unittest.TestCase):
             ( 1, E.RAISE, capi.fire_event_raise, ValueError(2)),
             ( 1, E.EXCEPTION_HANDLED, capi.fire_event_exception_handled, ValueError(5)),
             ( 1, E.PY_UNWIND, capi.fire_event_py_unwind, ValueError(6)),
-            ( 1, E.STOP_ITERATION, capi.fire_event_stop_iteration, ValueError(7)),
+            ( 1, E.STOP_ITERATION, capi.fire_event_stop_iteration, 7),
+            ( 1, E.STOP_ITERATION, capi.fire_event_stop_iteration, StopIteration(8)),
         ]
+
+        self.EXPECT_RAISED_EXCEPTION = [E.PY_THROW, E.RAISE, E.EXCEPTION_HANDLED, E.PY_UNWIND]
 
 
     def check_event_count(self, event, func, args, expected):
@@ -1987,8 +1990,9 @@ class TestCApiEventGeneration(MonitoringTestBase, unittest.TestCase):
 
     def test_missing_exception(self):
         for _, event, function, *args in self.cases:
-            if not (args and isinstance(args[-1], BaseException)):
+            if event not in self.EXPECT_RAISED_EXCEPTION:
                 continue
+            assert args and isinstance(args[-1], BaseException)
             offset = 0
             self.codelike = _testcapi.CodeLike(1)
             with self.subTest(function.__name__):
