@@ -23,7 +23,8 @@ from _pyrepl.console import Console, Event
 from _pyrepl.readline import ReadlineAlikeReader, ReadlineConfig
 from _pyrepl.simple_interact import _strip_final_indent
 from _pyrepl.unix_eventqueue import EventQueue
-from _pyrepl.simple_interact import InteractiveColoredConsole
+from _pyrepl.input import KeymapTranslator
+from _pyrepl.keymap import parse_keys, compile_keymap
 
 
 def more_lines(unicodetext, namespace=None):
@@ -617,10 +618,10 @@ class TestPyReplCompleter(TestCase):
         events = itertools.chain(
             code_to_events(code),
             [
-                Event(evt='key', data='up', raw=bytearray(b'\x1bOA')),
+                Event(evt="key", data="up", raw=bytearray(b"\x1bOA")),
                 Event(evt="key", data="down", raw=bytearray(b"\x1bOB")),
             ],
-            code_to_events("\n")
+            code_to_events("\n"),
         )
         reader = self.prepare_reader(events, namespace=namespace)
         output = multiline_input(reader, namespace)
@@ -1017,13 +1018,185 @@ class TestReader(TestCase):
         self.assertEqual(reader.pos, 9)
 
     def test_up_arrow_after_ctrl_r(self):
-        events = iter([
-            Event(evt='key', data='\x12', raw=bytearray(b'\x12')),
-            Event(evt='key', data='up', raw=bytearray(b'\x1bOA')),
-        ])
+        events = iter(
+            [
+                Event(evt="key", data="\x12", raw=bytearray(b"\x12")),
+                Event(evt="key", data="up", raw=bytearray(b"\x1bOA")),
+            ]
+        )
 
         reader, _ = handle_all_events(events)
         self.assert_screen_equals(reader, "")
 
-if __name__ == '__main__':
+
+class KeymapTranslatorTests(unittest.TestCase):
+    def test_push_single_key(self):
+        keymap = [("a", "command_a")]
+        translator = KeymapTranslator(keymap)
+        evt = Event("key", "a")
+        translator.push(evt)
+        result = translator.get()
+        self.assertEqual(result, ("command_a", ["a"]))
+
+    def test_push_multiple_keys(self):
+        keymap = [("ab", "command_ab")]
+        translator = KeymapTranslator(keymap)
+        evt1 = Event("key", "a")
+        evt2 = Event("key", "b")
+        translator.push(evt1)
+        translator.push(evt2)
+        result = translator.get()
+        self.assertEqual(result, ("command_ab", ["a", "b"]))
+
+    def test_push_invalid_key(self):
+        keymap = [("a", "command_a")]
+        translator = KeymapTranslator(keymap)
+        evt = Event("key", "b")
+        translator.push(evt)
+        result = translator.get()
+        self.assertEqual(result, (None, ["b"]))
+
+    def test_push_invalid_key_with_stack(self):
+        keymap = [("ab", "command_ab")]
+        translator = KeymapTranslator(keymap)
+        evt1 = Event("key", "a")
+        evt2 = Event("key", "c")
+        translator.push(evt1)
+        translator.push(evt2)
+        result = translator.get()
+        self.assertEqual(result, (None, ["a", "c"]))
+
+    def test_push_character_key(self):
+        keymap = [("a", "command_a")]
+        translator = KeymapTranslator(keymap)
+        evt = Event("key", "a")
+        translator.push(evt)
+        result = translator.get()
+        self.assertEqual(result, ("command_a", ["a"]))
+
+    def test_push_character_key_with_stack(self):
+        keymap = [("ab", "command_ab")]
+        translator = KeymapTranslator(keymap)
+        evt1 = Event("key", "a")
+        evt2 = Event("key", "b")
+        evt3 = Event("key", "c")
+        translator.push(evt1)
+        translator.push(evt2)
+        translator.push(evt3)
+        result = translator.get()
+        self.assertEqual(result, ("command_ab", ["a", "b"]))
+
+    def test_push_transition_key(self):
+        keymap = [("a", {"b": "command_ab"})]
+        translator = KeymapTranslator(keymap)
+        evt1 = Event("key", "a")
+        evt2 = Event("key", "b")
+        translator.push(evt1)
+        translator.push(evt2)
+        result = translator.get()
+        self.assertEqual(result, ("command_ab", ["a", "b"]))
+
+    def test_push_transition_key_interrupted(self):
+        keymap = [("a", {"b": "command_ab"})]
+        translator = KeymapTranslator(keymap)
+        evt1 = Event("key", "a")
+        evt2 = Event("key", "c")
+        evt3 = Event("key", "b")
+        translator.push(evt1)
+        translator.push(evt2)
+        translator.push(evt3)
+        result = translator.get()
+        self.assertEqual(result, (None, ["a", "c"]))
+
+    def test_push_invalid_key_with_unicode_category(self):
+        keymap = [("a", "command_a")]
+        translator = KeymapTranslator(keymap)
+        evt = Event("key", "\u0003")  # Control character
+        translator.push(evt)
+        result = translator.get()
+        self.assertEqual(result, (None, ["\u0003"]))
+
+    def test_empty(self):
+        keymap = [("a", "command_a")]
+        translator = KeymapTranslator(keymap)
+        self.assertTrue(translator.empty())
+        evt = Event("key", "a")
+        translator.push(evt)
+        self.assertFalse(translator.empty())
+        translator.get()
+        self.assertTrue(translator.empty())
+
+
+class TestParseKeys(unittest.TestCase):
+    def test_single_character(self):
+        self.assertEqual(parse_keys("a"), ["a"])
+        self.assertEqual(parse_keys("b"), ["b"])
+        self.assertEqual(parse_keys("1"), ["1"])
+
+    def test_escape_sequences(self):
+        self.assertEqual(parse_keys("\\n"), ["\n"])
+        self.assertEqual(parse_keys("\\t"), ["\t"])
+        self.assertEqual(parse_keys("\\\\"), ["\\"])
+        self.assertEqual(parse_keys("\\'"), ["'"])
+        self.assertEqual(parse_keys('\\"'), ['"'])
+
+    def test_control_sequences(self):
+        self.assertEqual(parse_keys("\\C-a"), ["\x01"])
+        self.assertEqual(parse_keys("\\C-b"), ["\x02"])
+        self.assertEqual(parse_keys("\\C-c"), ["\x03"])
+
+    def test_meta_sequences(self):
+        self.assertEqual(parse_keys("\\M-a"), ["\033", "a"])
+        self.assertEqual(parse_keys("\\M-b"), ["\033", "b"])
+        self.assertEqual(parse_keys("\\M-c"), ["\033", "c"])
+
+    def test_keynames(self):
+        self.assertEqual(parse_keys("\\<up>"), ["up"])
+        self.assertEqual(parse_keys("\\<down>"), ["down"])
+        self.assertEqual(parse_keys("\\<left>"), ["left"])
+        self.assertEqual(parse_keys("\\<right>"), ["right"])
+
+    def test_combinations(self):
+        self.assertEqual(parse_keys("\\C-a\\n\\<up>"), ["\x01", "\n", "up"])
+        self.assertEqual(parse_keys("\\M-a\\t\\<down>"), ["\033", "a", "\t", "down"])
+
+
+class TestCompileKeymap(unittest.TestCase):
+    def test_empty_keymap(self):
+        keymap = {}
+        result = compile_keymap(keymap)
+        self.assertEqual(result, {})
+
+    def test_single_keymap(self):
+        keymap = {b"a": "action"}
+        result = compile_keymap(keymap)
+        self.assertEqual(result, {b"a": "action"})
+
+    def test_nested_keymap(self):
+        keymap = {b"a": {b"b": "action"}}
+        result = compile_keymap(keymap)
+        self.assertEqual(result, {b"a": {b"b": "action"}})
+
+    def test_empty_value(self):
+        keymap = {b"a": {b"": "action"}}
+        result = compile_keymap(keymap)
+        self.assertEqual(result, {b"a": {b"": "action"}})
+
+    def test_multiple_empty_values(self):
+        keymap = {b"a": {b"": "action1", b"b": "action2"}}
+        result = compile_keymap(keymap)
+        self.assertEqual(result, {b"a": {b"": "action1", b"b": "action2"}})
+
+    def test_multiple_keymaps(self):
+        keymap = {b"a": {b"b": "action1", b"c": "action2"}}
+        result = compile_keymap(keymap)
+        self.assertEqual(result, {b"a": {b"b": "action1", b"c": "action2"}})
+
+    def test_nested_multiple_keymaps(self):
+        keymap = {b"a": {b"b": {b"c": "action"}}}
+        result = compile_keymap(keymap)
+        self.assertEqual(result, {b"a": {b"b": {b"c": "action"}}})
+
+
+if __name__ == "__main__":
     unittest.main()
