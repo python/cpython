@@ -14618,6 +14618,8 @@ fi
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $with_system_libmpdec" >&5
 printf "%s\n" "$with_system_libmpdec" >&6; }
 
+
+
 if test "x$with_system_libmpdec" = xyes
 then :
 
@@ -14697,8 +14699,10 @@ printf "%s\n" "yes" >&6; }
 fi
 else $as_nop
   LIBMPDEC_CFLAGS="-I\$(srcdir)/Modules/_decimal/libmpdec"
-   LIBMPDEC_LIBS="-lm \$(LIBMPDEC_A)"
-   LIBMPDEC_INTERNAL="\$(LIBMPDEC_HEADERS) \$(LIBMPDEC_A)"
+          LIBMPDEC_LIBS="-lm \$(LIBMPDEC_A)"
+          LIBMPDEC_INTERNAL="\$(LIBMPDEC_HEADERS) \$(LIBMPDEC_A)"
+          have_mpdec=yes
+          with_system_libmpdec=no
 fi
 
 if test "x$with_system_libmpdec" = xyes
@@ -14745,15 +14749,19 @@ LIBS=$save_LIBS
 
 
 else $as_nop
-  have_mpdec=yes
-   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: WARNING: the bundled copy of libmpdecimal is scheduled for removal in Python 3.15; consider using a system installed mpdecimal library." >&5
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: WARNING: the bundled copy of libmpdecimal is scheduled for removal in Python 3.15; consider using a system installed mpdecimal library." >&5
 printf "%s\n" "$as_me: WARNING: the bundled copy of libmpdecimal is scheduled for removal in Python 3.15; consider using a system installed mpdecimal library." >&2;}
 fi
 
 if test "$with_system_libmpdec" = "yes" && test "$have_mpdec" = "no"
 then :
-  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: WARNING: no system libmpdecimal found; unable to build _decimal" >&5
-printf "%s\n" "$as_me: WARNING: no system libmpdecimal found; unable to build _decimal" >&2;}
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: WARNING: no system libmpdecimal found; falling back to bundled libmpdecimal (deprecated and scheduled for removal in Python 3.15)" >&5
+printf "%s\n" "$as_me: WARNING: no system libmpdecimal found; falling back to bundled libmpdecimal (deprecated and scheduled for removal in Python 3.15)" >&2;}
+       LIBMPDEC_CFLAGS="-I\$(srcdir)/Modules/_decimal/libmpdec"
+          LIBMPDEC_LIBS="-lm \$(LIBMPDEC_A)"
+          LIBMPDEC_INTERNAL="\$(LIBMPDEC_HEADERS) \$(LIBMPDEC_A)"
+          have_mpdec=yes
+          with_system_libmpdec=no
 fi
 
 # Disable forced inlining in debug builds, see GH-94847
