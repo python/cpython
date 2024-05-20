@@ -204,7 +204,7 @@ notation. ::
    Jack: 4098; Sjoerd: 4127; Dcab: 8637678
 
 This is particularly useful in combination with the built-in function
-:func:`vars`, which returns a dictionary containing all local variables. ::
+:func:`vars`, which returns a dictionary containing all local variables::
 
    >>> table = {k: str(v) for k, v in vars().items()}
    >>> message = " ".join([f'{k}: ' + '{' + k +'};' for k in table.keys()])
