@@ -214,7 +214,7 @@ class UnixConsole(Console):
         """
         self.encoding = encoding
 
-    def refresh(self, screen, c_xy):
+    def refresh(self, screen: list[str], c_xy: tuple[int, int]) -> None:
         """
         Refresh the console screen.
 
@@ -293,7 +293,7 @@ class UnixConsole(Console):
 
         self.__show_cursor()
 
-        self.screen = screen
+        self.screen = screen.copy()
         self.move_cursor(cx, cy)
         self.flushoutput()
 

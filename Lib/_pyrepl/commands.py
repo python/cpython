@@ -359,6 +359,7 @@ class self_insert(EditCommand):
     def do(self) -> None:
         r = self.reader
         r.insert(self.event * r.get_arg())
+        r.calc_screen = r.append_to_screen
 
 
 class insert_nl(EditCommand):
