@@ -1071,6 +1071,7 @@ class AST_Tests(unittest.TestCase):
         expressions[0] = f"expr = {ast.expr.__subclasses__()[0].__doc__}"
         self.assertCountEqual(ast.expr.__doc__.split("\n"), expressions)
 
+    def test_compare_basics(self):
         self.assertTrue(ast.compare(ast.parse("x = 10"), ast.parse("x = 10")))
         self.assertFalse(ast.compare(ast.parse("x = 10"), ast.parse("")))
         self.assertFalse(ast.compare(ast.parse("x = 10"), ast.parse("x")))

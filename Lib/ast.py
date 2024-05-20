@@ -419,9 +419,10 @@ def compare(
     """
 
     def _compare(a, b):
-        if compare_types and type(a) is not type(b):
-            return False
-        elif isinstance(a, AST):
+        # Compare two fields on an AST object, which may themselves be
+        # AST objects, lists of AST objects, or primitive ASDL types
+        # like identifiers and constants.
+        if isinstance(a, AST):
             return compare(
                 a,
                 b,
@@ -430,6 +431,8 @@ def compare(
                 compare_types=compare_types,
             )
         elif isinstance(a, list):
+            # If a field is repeated, then both objects will represent
+            # the value as a list.
             if len(a) != len(b):
                 return False
             for a_item, b_item in zip(a, b):
@@ -438,14 +441,15 @@ def compare(
             else:
                 return True
         else:
+            # The only case where the type comparison matters is
+            # Constant() notes that could have different objects with
+            # the same value, e.g. Constant(1) and Constant(1.0).
+            if compare_types and type(a) is not type(b):
+                return False
             return a == b
 
-    def _compare_member(member):
-        for field in getattr(a, member):
-            if not hasattr(a, field) and not hasattr(b, field):
-                continue
-            if not (hasattr(a, field) and hasattr(b, field)):
-                return False
+    def _compare_fields():
+        for field in a._fields:
             a_field = getattr(a, field)
             b_field = getattr(b, field)
             if not _compare(a_field, b_field):
@@ -453,11 +457,23 @@ def compare(
         else:
             return True
 
+    def _compare_attributes():
+        # Attributes are always strings.
+        for attr in a._attributes:
+            a_attr = getattr(a, attr)
+            b_attr = getattr(b, attr)
+            if a_attr != b_attr:
+                return False
+        else:
+            return True
+
     if type(a) is not type(b):
         return False
-    if compare_fields and not _compare_member("_fields"):
+    # a and b are guaranteed to have the same type, so they must also
+    # have identical values for _fields and _attributes.
+    if compare_fields and not _compare_fields():
         return False
-    if compare_attributes and not _compare_member("_attributes"):
+    if compare_attributes and not _compare_attributes():
         return False
     return True
 
