@@ -217,7 +217,7 @@ class TestSetupAnnotations(unittest.TestCase):
 
 class AnnotateTests(unittest.TestCase):
     """See PEP 649."""
-    def test_manual_annotate_function(self):
+    def test_manual_annotate(self):
         def f():
             pass
         mod = types.ModuleType("mod")
@@ -232,7 +232,7 @@ class AnnotateTests(unittest.TestCase):
         self.assertEqual(f.__annotations__, {})
         self.assertIs(f.__annotate__, None)
 
-        with self.assertRaises(TypeError):
+        with self.assertRaisesRegex(TypeError, "__annotate__ must be callable or None"):
             f.__annotate__ = 42
         f.__annotate__ = lambda: 42
         with self.assertRaisesRegex(TypeError, r"takes 0 positional arguments but 1 was given"):

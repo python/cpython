@@ -1220,10 +1220,13 @@ module_get_annotations(PyModuleObject *m, void *Py_UNUSED(ignored))
             PyObject *one = _PyLong_GetOne();
             annotations = _PyObject_CallOneArg(annotate, one);
             if (annotations == NULL) {
+                Py_DECREF(annotate);
+                Py_DECREF(dict);
                 return NULL;
             }
             if (!PyDict_Check(annotations)) {
                 PyErr_SetString(PyExc_TypeError, "__annotate__ returned a non-dict");
+                Py_DECREF(annotate);
                 Py_DECREF(annotations);
                 Py_DECREF(dict);
                 return NULL;
@@ -1232,6 +1235,7 @@ module_get_annotations(PyModuleObject *m, void *Py_UNUSED(ignored))
         else {
             annotations = PyDict_New();
         }
+        Py_XDECREF(annotate);
         if (annotations) {
             int result = PyDict_SetItem(
                     dict, &_Py_ID(__annotations__), annotations);

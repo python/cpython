@@ -816,7 +816,7 @@ func_set_annotate(PyFunctionObject *op, PyObject *value, void *Py_UNUSED(ignored
     }
     else {
         PyErr_SetString(PyExc_TypeError,
-            "__annotate__ must be set to a callable object or None");
+            "__annotate__ must be callable or None");
         return -1;
     }
 }

@@ -1764,17 +1764,20 @@ type_get_annotations(PyTypeObject *type, void *context)
             PyObject *one = _PyLong_GetOne();
             annotations = _PyObject_CallOneArg(annotate, one);
             if (annotations == NULL) {
+                Py_DECREF(annotate);
                 return NULL;
             }
             if (!PyDict_Check(annotations)) {
                 PyErr_SetString(PyExc_TypeError, "__annotate__ returned a non-dict");
                 Py_DECREF(annotations);
+                Py_DECREF(annotate);
                 return NULL;
             }
         }
         else {
             annotations = PyDict_New();
         }
+        Py_DECREF(annotate);
         if (annotations) {
             int result = PyDict_SetItem(
                     dict, &_Py_ID(__annotations__), annotations);
