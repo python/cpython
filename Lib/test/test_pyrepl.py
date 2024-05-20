@@ -1,7 +1,6 @@
 import itertools
 import os
 import rlcompleter
-import sys
 import tempfile
 import unittest
 from code import InteractiveConsole
@@ -17,7 +16,6 @@ from test.support.import_helper import import_module
 # option.  Additionally, we need to attempt to import curses and readline.
 requires("curses")
 curses = import_module("curses")
-readline = import_module("readline")
 
 from _pyrepl.console import Console, Event
 from _pyrepl.readline import ReadlineAlikeReader, ReadlineConfig
