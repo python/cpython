@@ -1,0 +1,2 @@
+Add ``copy`` and ``clear`` methods support to
+``multiprocessing.manager.ListProxy``.

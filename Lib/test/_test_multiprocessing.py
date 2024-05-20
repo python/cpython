@@ -2314,6 +2314,13 @@ class _TestContainers(BaseTestCase):
         a.append('hello')
         self.assertEqual(f[0][:], [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 'hello'])
 
+        e2 = e.copy()
+        self.assertEqual([element[:] for element in e],
+                         [element[:] for element in e2])
+
+        e2.clear()
+        self.assertEqual(e2[:], [])
+
     def test_list_iter(self):
         a = self.list(list(range(10)))
         it = iter(a)
