@@ -1,0 +1,2 @@
+This fixes an issue with ``functools.update_wrapper`` where it was not
+returning a tuple for ``__type_params__`` as expected.

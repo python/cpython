@@ -1743,7 +1743,7 @@ static PyObject *
 type_get_type_params(PyTypeObject *type, void *context)
 {
     PyObject *params;
-    if (PyDict_GetItemRef(lookup_tp_dict(type), &_Py_ID(__type_params__), &params) == 0) {
+    if (type == &PyType_Type || PyDict_GetItemRef(lookup_tp_dict(type), &_Py_ID(__type_params__), &params) == 0) {
         return PyTuple_New(0);
     }
     return params;
