@@ -86,7 +86,12 @@ FillConsoleOutputCharacter.restype = BOOL
 ScrollConsoleScreenBuffer = windll.kernel32.ScrollConsoleScreenBufferW
 ScrollConsoleScreenBuffer.use_last_error = True
 ScrollConsoleScreenBuffer.argtypes = [HANDLE, POINTER(SMALL_RECT), POINTER(SMALL_RECT), _COORD, POINTER(CHAR_INFO)]
-ScrollConsoleScreenBuffer.rettype = BOOL
+ScrollConsoleScreenBuffer.restype = BOOL
+
+SetConsoleMode = windll.kernel32.SetConsoleMode
+SetConsoleMode.use_last_error = True
+SetConsoleMode.argtypes = [HANDLE, DWORD]
+SetConsoleMode.restype = BOOL
 
 class Char(Union):
     _fields_ = [
@@ -180,6 +185,7 @@ class WindowsConsole(Console):
         term: str = "",
         encoding: str = "",
     ):
+        SetConsoleMode(OutHandle, 0x0004 | 0x0001)
         self.encoding = encoding or sys.getdefaultencoding()
 
         if isinstance(f_in, int):
@@ -415,11 +421,13 @@ class WindowsConsole(Console):
             self.__posxy = wlen(newline), y
 
 
-        #if "\x1b" in newline:
+        if "\x1b" in newline:
             # ANSI escape characters are present, so we can't assume
             # anything about the position of the cursor.  Moving the cursor
             # to the left margin should work to get to a known position.
-        #    self.move_cursor(0, y)
+            _, cur_y = self.get_abs_position(0, y)
+            self.__move_absolute(0, cur_y)
+            self.__posxy = 0, y
 
     def erase_to_end(self):
         info = CONSOLE_SCREEN_BUFFER_INFO()
