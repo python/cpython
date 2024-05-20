@@ -57,6 +57,7 @@ extern "C" {
 #define MAKE_FUNCTION_KWDEFAULTS  0x02
 #define MAKE_FUNCTION_ANNOTATIONS 0x04
 #define MAKE_FUNCTION_CLOSURE     0x08
+#define MAKE_FUNCTION_ANNOTATE    0x10
 
 /* Values used in the oparg for RESUME */
 #define RESUME_AT_FUNC_START 0
