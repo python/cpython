@@ -584,10 +584,17 @@ can be overridden by the local file.
 
 .. pdbcommand:: interact
 
-   Start an interactive interpreter (using the :mod:`code` module) whose global
-   and local namespaces correspond to the global and local namespaces in the
+   Start an interactive interpreter (using the :mod:`code` module) in a new
+   global namespace initialised from the local and global namespaces for the
    current scope. Use ``exit()`` or ``quit()`` to exit the interpreter and
    return to the debugger.
+
+   .. note::
+
+      As ``interact`` creates a new dedicated namespace for code execution,
+      assignments to variables will not affect the original namespaces.
+      However, modifications to any referenced mutable objects will be reflected
+      in the original namespaces as usual.
 
    .. versionadded:: 3.2
 
@@ -598,11 +605,6 @@ can be overridden by the local file.
    .. versionchanged:: 3.13
       :pdbcmd:`interact` directs its output to the debugger's
       output channel rather than :data:`sys.stderr`.
-
-   .. versionchanged:: 3.13
-      The implementation of :pep:`667` means that name assignments made via the
-      interactive console will directly affect the active scope, even when
-      running inside a function, generator, or coroutine.
 
 .. _debugger-aliases:
 
