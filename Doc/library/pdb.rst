@@ -126,7 +126,7 @@ The typical usage to inspect a crashed program is::
 .. versionchanged:: 3.13
    The implementation of :pep:`667` means that name assignments made via ``pdb``
    will consistently and directly affect the active scope, even when running
-   inside a function, generator, or coroutine.
+   inside an :term:`optimised scope`.
 
 
 The module defines the following functions; each enters the debugger in a
