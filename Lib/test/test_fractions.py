@@ -1314,6 +1314,33 @@ class FractionTest(unittest.TestCase):
                     self.assertEqual(float(format(f, fmt2)), float(rhs))
                     self.assertEqual(float(format(-f, fmt2)), float('-' + rhs))
 
+    def test_complex_handling(self):
+        # See issue gh-102840 for more details.
+
+        a = F(1, 2)
+        b = 1j
+        message = "unsupported operand type(s) for %s: '%s' and '%s'"
+        # test forward
+        self.assertRaisesMessage(TypeError,
+                                 message % ("%", "Fraction", "complex"),
+                                 operator.mod, a, b)
+        self.assertRaisesMessage(TypeError,
+                                 message % ("//", "Fraction", "complex"),
+                                 operator.floordiv, a, b)
+        self.assertRaisesMessage(TypeError,
+                                 message % ("divmod()", "Fraction", "complex"),
+                                 divmod, a, b)
+        # test reverse
+        self.assertRaisesMessage(TypeError,
+                                 message % ("%", "complex", "Fraction"),
+                                 operator.mod, b, a)
+        self.assertRaisesMessage(TypeError,
+                                 message % ("//", "complex", "Fraction"),
+                                 operator.floordiv, b, a)
+        self.assertRaisesMessage(TypeError,
+                                 message % ("divmod()", "complex", "Fraction"),
+                                 divmod, b, a)
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -6,7 +6,6 @@ preserve
 #  include "pycore_gc.h"          // PyGC_Head
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
-#include "pycore_abstract.h"      // _PyNumber_Index()
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 
 PyDoc_STRVAR(_ssl__SSLSocket_do_handshake__doc__,
@@ -1664,4 +1663,4 @@ exit:
 #ifndef _SSL_ENUM_CRLS_METHODDEF
     #define _SSL_ENUM_CRLS_METHODDEF
 #endif /* !defined(_SSL_ENUM_CRLS_METHODDEF) */
-/*[clinic end generated code: output=fd1c3378fbba5240 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=28a22f2b09d631cb input=a9049054013a1b77]*/

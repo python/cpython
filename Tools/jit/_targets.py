@@ -1,4 +1,5 @@
 """Target-specific code generation, parsing, and processing."""
+
 import asyncio
 import dataclasses
 import hashlib
@@ -37,16 +38,17 @@ class _Target(typing.Generic[_S, _R]):
     triple: str
     _: dataclasses.KW_ONLY
     alignment: int = 1
+    args: typing.Sequence[str] = ()
+    ghccc: bool = False
     prefix: str = ""
+    stable: bool = False
     debug: bool = False
-    force: bool = False
     verbose: bool = False
 
     def _compute_digest(self, out: pathlib.Path) -> str:
         hasher = hashlib.sha256()
         hasher.update(self.triple.encode())
-        hasher.update(self.alignment.to_bytes())
-        hasher.update(self.prefix.encode())
+        hasher.update(self.debug.to_bytes())
         # These dependencies are also reflected in _JITSources in regen.targets:
         hasher.update(PYTHON_EXECUTOR_CASES_C_H.read_bytes())
         hasher.update((out / "pyconfig.h").read_bytes())
@@ -85,11 +87,15 @@ class _Target(typing.Generic[_S, _R]):
         sections: list[dict[typing.Literal["Section"], _S]] = json.loads(output)
         for wrapped_section in sections:
             self._handle_section(wrapped_section["Section"], group)
-        assert group.symbols["_JIT_ENTRY"] == (_stencils.HoleValue.CODE, 0)
+        # The trampoline's entry point is just named "_ENTRY", since on some
+        # platforms we later assume that any function starting with "_JIT_" uses
+        # the GHC calling convention:
+        entry_symbol = "_JIT_ENTRY" if "_JIT_ENTRY" in group.symbols else "_ENTRY"
+        assert group.symbols[entry_symbol] == (_stencils.HoleValue.CODE, 0)
         if group.data.body:
             line = f"0: {str(bytes(group.data.body)).removeprefix('b')}"
             group.data.disassembly.append(line)
-        group.process_relocations()
+        group.process_relocations(alignment=self.alignment)
         return group
 
     def _handle_section(self, section: _S, group: _stencils.StencilGroup) -> None:
@@ -103,10 +109,13 @@ class _Target(typing.Generic[_S, _R]):
     async def _compile(
         self, opname: str, c: pathlib.Path, tempdir: pathlib.Path
     ) -> _stencils.StencilGroup:
+        # "Compile" the trampoline to an empty stencil group if it's not needed:
+        if opname == "trampoline" and not self.ghccc:
+            return _stencils.StencilGroup()
         o = tempdir / f"{opname}.o"
         args = [
             f"--target={self.triple}",
-            "-DPy_BUILD_CORE",
+            "-DPy_BUILD_CORE_MODULE",
             "-D_DEBUG" if self.debug else "-DNDEBUG",
             f"-D_JIT_OPCODE={opname}",
             "-D_PyJIT_ACTIVE",
@@ -118,26 +127,57 @@ class _Target(typing.Generic[_S, _R]):
             f"-I{CPYTHON / 'Python'}",
             "-O3",
             "-c",
+            # This debug info isn't necessary, and bloats out the JIT'ed code.
+            # We *may* be able to re-enable this, process it, and JIT it for a
+            # nicer debugging experience... but that needs a lot more research:
             "-fno-asynchronous-unwind-tables",
-            # SET_FUNCTION_ATTRIBUTE on 32-bit Windows debug builds:
-            "-fno-jump-tables",
-            # Position-independent code adds indirection to every load and jump:
-            "-fno-pic",
-            # Don't make calls to weird stack-smashing canaries:
+            # Don't call built-in functions that we can't find or patch:
+            "-fno-builtin",
+            # Emit relaxable 64-bit calls/jumps, so we don't have to worry about
+            # about emitting in-range trampolines for out-of-range targets.
+            # We can probably remove this and emit trampolines in the future:
+            "-fno-plt",
+            # Don't call stack-smashing canaries that we can't find or patch:
             "-fno-stack-protector",
-            # We have three options for code model:
-            # - "small": the default, assumes that code and data reside in the
-            #   lowest 2GB of memory (128MB on aarch64)
-            # - "medium": assumes that code resides in the lowest 2GB of memory,
-            #   and makes no assumptions about data (not available on aarch64)
-            # - "large": makes no assumptions about either code or data
-            "-mcmodel=large",
-            "-o",
-            f"{o}",
             "-std=c11",
-            f"{c}",
+            *self.args,
         ]
-        await _llvm.run("clang", args, echo=self.verbose)
+        if self.ghccc:
+            # This is a bit of an ugly workaround, but it makes the code much
+            # smaller and faster, so it's worth it. We want to use the GHC
+            # calling convention, but Clang doesn't support it. So, we *first*
+            # compile the code to LLVM IR, perform some text replacements on the
+            # IR to change the calling convention(!), and then compile *that*.
+            # Once we have access to Clang 19, we can get rid of this and use
+            # __attribute__((preserve_none)) directly in the C code instead:
+            ll = tempdir / f"{opname}.ll"
+            args_ll = args + [
+                # -fomit-frame-pointer is necessary because the GHC calling
+                # convention uses RBP to pass arguments:
+                "-S",
+                "-emit-llvm",
+                "-fomit-frame-pointer",
+                "-o",
+                f"{ll}",
+                f"{c}",
+            ]
+            await _llvm.run("clang", args_ll, echo=self.verbose)
+            ir = ll.read_text()
+            # This handles declarations, definitions, and calls to named symbols
+            # starting with "_JIT_":
+            ir = re.sub(
+                r"(((noalias|nonnull|noundef) )*ptr @_JIT_\w+\()", r"ghccc \1", ir
+            )
+            # This handles calls to anonymous callees, since anything with
+            # "musttail" needs to use the same calling convention:
+            ir = ir.replace("musttail call", "musttail call ghccc")
+            # Sometimes *both* replacements happen at the same site, so fix it:
+            ir = ir.replace("ghccc ghccc", "ghccc")
+            ll.write_text(ir)
+            args_o = args + ["-Wno-unused-command-line-argument", "-o", f"{o}", f"{ll}"]
+        else:
+            args_o = args + ["-o", f"{o}", f"{c}"]
+        await _llvm.run("clang", args_o, echo=self.verbose)
         return await self._parse(o)
 
     async def _build_stencils(self) -> dict[str, _stencils.StencilGroup]:
@@ -147,29 +187,43 @@ class _Target(typing.Generic[_S, _R]):
         with tempfile.TemporaryDirectory() as tempdir:
             work = pathlib.Path(tempdir).resolve()
             async with asyncio.TaskGroup() as group:
+                coro = self._compile("trampoline", TOOLS_JIT / "trampoline.c", work)
+                tasks.append(group.create_task(coro, name="trampoline"))
                 for opname in opnames:
                     coro = self._compile(opname, TOOLS_JIT_TEMPLATE_C, work)
                     tasks.append(group.create_task(coro, name=opname))
         return {task.get_name(): task.result() for task in tasks}
 
-    def build(self, out: pathlib.Path, *, comment: str = "") -> None:
+    def build(
+        self, out: pathlib.Path, *, comment: str = "", force: bool = False
+    ) -> None:
         """Build jit_stencils.h in the given directory."""
+        if not self.stable:
+            warning = f"JIT support for {self.triple} is still experimental!"
+            request = "Please report any issues you encounter.".center(len(warning))
+            outline = "=" * len(warning)
+            print("\n".join(["", outline, warning, request, outline, ""]))
         digest = f"// {self._compute_digest(out)}\n"
         jit_stencils = out / "jit_stencils.h"
         if (
-            not self.force
+            not force
             and jit_stencils.exists()
             and jit_stencils.read_text().startswith(digest)
         ):
             return
         stencil_groups = asyncio.run(self._build_stencils())
-        with jit_stencils.open("w") as file:
-            file.write(digest)
-            if comment:
-                file.write(f"// {comment}\n")
-            file.write("")
-            for line in _writer.dump(stencil_groups):
-                file.write(f"{line}\n")
+        jit_stencils_new = out / "jit_stencils.h.new"
+        try:
+            with jit_stencils_new.open("w") as file:
+                file.write(digest)
+                if comment:
+                    file.write(f"// {comment}\n")
+                file.write("\n")
+                for line in _writer.dump(stencil_groups):
+                    file.write(f"{line}\n")
+            jit_stencils_new.replace(jit_stencils)
+        finally:
+            jit_stencils_new.unlink(missing_ok=True)
 
 
 class _COFF(
@@ -200,11 +254,20 @@ class _COFF(
             offset = base + symbol["Value"]
             name = symbol["Name"]
             name = name.removeprefix(self.prefix)
-            group.symbols[name] = value, offset
+            if name not in group.symbols:
+                group.symbols[name] = value, offset
         for wrapped_relocation in section["Relocations"]:
             relocation = wrapped_relocation["Relocation"]
             hole = self._handle_relocation(base, relocation, stencil.body)
             stencil.holes.append(hole)
+
+    def _unwrap_dllimport(self, name: str) -> tuple[_stencils.HoleValue, str | None]:
+        if name.startswith("__imp_"):
+            name = name.removeprefix("__imp_")
+            name = name.removeprefix(self.prefix)
+            return _stencils.HoleValue.GOT, name
+        name = name.removeprefix(self.prefix)
+        return _stencils.symbol_to_value(name)
 
     def _handle_relocation(
         self, base: int, relocation: _schema.COFFRelocation, raw: bytes
@@ -213,21 +276,36 @@ class _COFF(
             case {
                 "Offset": offset,
                 "Symbol": s,
-                "Type": {"Value": "IMAGE_REL_AMD64_ADDR64" as kind},
+                "Type": {"Name": "IMAGE_REL_I386_DIR32" as kind},
             }:
                 offset += base
-                s = s.removeprefix(self.prefix)
-                value, symbol = _stencils.symbol_to_value(s)
-                addend = int.from_bytes(raw[offset : offset + 8], "little")
+                value, symbol = self._unwrap_dllimport(s)
+                addend = int.from_bytes(raw[offset : offset + 4], "little")
             case {
                 "Offset": offset,
                 "Symbol": s,
-                "Type": {"Value": "IMAGE_REL_I386_DIR32" as kind},
+                "Type": {
+                    "Name": "IMAGE_REL_AMD64_REL32" | "IMAGE_REL_I386_REL32" as kind
+                },
             }:
                 offset += base
-                s = s.removeprefix(self.prefix)
-                value, symbol = _stencils.symbol_to_value(s)
-                addend = int.from_bytes(raw[offset : offset + 4], "little")
+                value, symbol = self._unwrap_dllimport(s)
+                addend = (
+                    int.from_bytes(raw[offset : offset + 4], "little", signed=True) - 4
+                )
+            case {
+                "Offset": offset,
+                "Symbol": s,
+                "Type": {
+                    "Name": "IMAGE_REL_ARM64_BRANCH26"
+                    | "IMAGE_REL_ARM64_PAGEBASE_REL21"
+                    | "IMAGE_REL_ARM64_PAGEOFFSET_12A"
+                    | "IMAGE_REL_ARM64_PAGEOFFSET_12L" as kind
+                },
+            }:
+                offset += base
+                value, symbol = self._unwrap_dllimport(s)
+                addend = 0
             case _:
                 raise NotImplementedError(relocation)
         return _stencils.Hole(offset, kind, value, symbol, addend)
@@ -239,7 +317,7 @@ class _ELF(
     def _handle_section(
         self, section: _schema.ELFSection, group: _stencils.StencilGroup
     ) -> None:
-        section_type = section["Type"]["Value"]
+        section_type = section["Type"]["Name"]
         flags = {flag["Name"] for flag in section["Flags"]["Flags"]}
         if section_type == "SHT_RELA":
             assert "SHF_INFO_LINK" in flags, flags
@@ -267,7 +345,7 @@ class _ELF(
             for wrapped_symbol in section["Symbols"]:
                 symbol = wrapped_symbol["Symbol"]
                 offset = len(stencil.body) + symbol["Value"]
-                name = symbol["Name"]["Value"]
+                name = symbol["Name"]["Name"]
                 name = name.removeprefix(self.prefix)
                 group.symbols[name] = value, offset
             stencil.body.extend(section["SectionData"]["Bytes"])
@@ -276,6 +354,7 @@ class _ELF(
             assert section_type in {
                 "SHT_GROUP",
                 "SHT_LLVM_ADDRSIG",
+                "SHT_NOTE",
                 "SHT_NULL",
                 "SHT_STRTAB",
                 "SHT_SYMTAB",
@@ -284,12 +363,28 @@ class _ELF(
     def _handle_relocation(
         self, base: int, relocation: _schema.ELFRelocation, raw: bytes
     ) -> _stencils.Hole:
+        symbol: str | None
         match relocation:
             case {
                 "Addend": addend,
                 "Offset": offset,
-                "Symbol": {"Value": s},
-                "Type": {"Value": kind},
+                "Symbol": {"Name": s},
+                "Type": {
+                    "Name": "R_AARCH64_ADR_GOT_PAGE"
+                    | "R_AARCH64_LD64_GOT_LO12_NC"
+                    | "R_X86_64_GOTPCREL"
+                    | "R_X86_64_GOTPCRELX"
+                    | "R_X86_64_REX_GOTPCRELX" as kind
+                },
+            }:
+                offset += base
+                s = s.removeprefix(self.prefix)
+                value, symbol = _stencils.HoleValue.GOT, s
+            case {
+                "Addend": addend,
+                "Offset": offset,
+                "Symbol": {"Name": s},
+                "Type": {"Name": kind},
             }:
                 offset += base
                 s = s.removeprefix(self.prefix)
@@ -310,6 +405,8 @@ class _MachO(
         flags = {flag["Name"] for flag in section["Attributes"]["Flags"]}
         name = section["Name"]["Value"]
         name = name.removeprefix(self.prefix)
+        if "Debug" in flags:
+            return
         if "SomeInstructions" in flags:
             value = _stencils.HoleValue.CODE
             stencil = group.code
@@ -330,7 +427,7 @@ class _MachO(
         for wrapped_symbol in section["Symbols"]:
             symbol = wrapped_symbol["Symbol"]
             offset = symbol["Value"] - start_address
-            name = symbol["Name"]["Value"]
+            name = symbol["Name"]["Name"]
             name = name.removeprefix(self.prefix)
             group.symbols[name] = value, offset
         assert "Relocations" in section
@@ -346,9 +443,9 @@ class _MachO(
         match relocation:
             case {
                 "Offset": offset,
-                "Symbol": {"Value": s},
+                "Symbol": {"Name": s},
                 "Type": {
-                    "Value": "ARM64_RELOC_GOT_LOAD_PAGE21"
+                    "Name": "ARM64_RELOC_GOT_LOAD_PAGE21"
                     | "ARM64_RELOC_GOT_LOAD_PAGEOFF12" as kind
                 },
             }:
@@ -358,12 +455,38 @@ class _MachO(
                 addend = 0
             case {
                 "Offset": offset,
-                "Section": {"Value": s},
-                "Type": {"Value": kind},
+                "Symbol": {"Name": s},
+                "Type": {"Name": "X86_64_RELOC_GOT" | "X86_64_RELOC_GOT_LOAD" as kind},
+            }:
+                offset += base
+                s = s.removeprefix(self.prefix)
+                value, symbol = _stencils.HoleValue.GOT, s
+                addend = (
+                    int.from_bytes(raw[offset : offset + 4], "little", signed=True) - 4
+                )
+            case {
+                "Offset": offset,
+                "Section": {"Name": s},
+                "Type": {"Name": "X86_64_RELOC_SIGNED" as kind},
             } | {
                 "Offset": offset,
-                "Symbol": {"Value": s},
-                "Type": {"Value": kind},
+                "Symbol": {"Name": s},
+                "Type": {"Name": "X86_64_RELOC_BRANCH" | "X86_64_RELOC_SIGNED" as kind},
+            }:
+                offset += base
+                s = s.removeprefix(self.prefix)
+                value, symbol = _stencils.symbol_to_value(s)
+                addend = (
+                    int.from_bytes(raw[offset : offset + 4], "little", signed=True) - 4
+                )
+            case {
+                "Offset": offset,
+                "Section": {"Name": s},
+                "Type": {"Name": kind},
+            } | {
+                "Offset": offset,
+                "Symbol": {"Name": s},
+                "Type": {"Name": kind},
             }:
                 offset += base
                 s = s.removeprefix(self.prefix)
@@ -371,24 +494,32 @@ class _MachO(
                 addend = 0
             case _:
                 raise NotImplementedError(relocation)
-        # Turn Clang's weird __bzero calls into normal bzero calls:
-        if symbol == "__bzero":
-            symbol = "bzero"
         return _stencils.Hole(offset, kind, value, symbol, addend)
 
 
 def get_target(host: str) -> _COFF | _ELF | _MachO:
     """Build a _Target for the given host "triple" and options."""
+    # ghccc currently crashes Clang when combined with musttail on aarch64. :(
+    target: _COFF | _ELF | _MachO
     if re.fullmatch(r"aarch64-apple-darwin.*", host):
-        return _MachO(host, alignment=8, prefix="_")
-    if re.fullmatch(r"aarch64-.*-linux-gnu", host):
-        return _ELF(host, alignment=8)
-    if re.fullmatch(r"i686-pc-windows-msvc", host):
-        return _COFF(host, prefix="_")
-    if re.fullmatch(r"x86_64-apple-darwin.*", host):
-        return _MachO(host, prefix="_")
-    if re.fullmatch(r"x86_64-pc-windows-msvc", host):
-        return _COFF(host)
-    if re.fullmatch(r"x86_64-.*-linux-gnu", host):
-        return _ELF(host)
-    raise ValueError(host)
+        target = _MachO(host, alignment=8, prefix="_")
+    elif re.fullmatch(r"aarch64-pc-windows-msvc", host):
+        args = ["-fms-runtime-lib=dll"]
+        target = _COFF(host, alignment=8, args=args)
+    elif re.fullmatch(r"aarch64-.*-linux-gnu", host):
+        args = ["-fpic"]
+        target = _ELF(host, alignment=8, args=args)
+    elif re.fullmatch(r"i686-pc-windows-msvc", host):
+        args = ["-DPy_NO_ENABLE_SHARED"]
+        target = _COFF(host, args=args, ghccc=True, prefix="_")
+    elif re.fullmatch(r"x86_64-apple-darwin.*", host):
+        target = _MachO(host, ghccc=True, prefix="_")
+    elif re.fullmatch(r"x86_64-pc-windows-msvc", host):
+        args = ["-fms-runtime-lib=dll"]
+        target = _COFF(host, args=args, ghccc=True)
+    elif re.fullmatch(r"x86_64-.*-linux-gnu", host):
+        args = ["-fpic"]
+        target = _ELF(host, args=args, ghccc=True)
+    else:
+        raise ValueError(host)
+    return target

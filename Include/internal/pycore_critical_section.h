@@ -87,10 +87,13 @@ extern "C" {
 #define _Py_CRITICAL_SECTION_MASK           0x3
 
 #ifdef Py_GIL_DISABLED
-# define Py_BEGIN_CRITICAL_SECTION(op)                                  \
+# define Py_BEGIN_CRITICAL_SECTION_MUT(mutex)                           \
     {                                                                   \
         _PyCriticalSection _cs;                                         \
-        _PyCriticalSection_Begin(&_cs, &_PyObject_CAST(op)->ob_mutex)
+        _PyCriticalSection_Begin(&_cs, mutex)
+
+# define Py_BEGIN_CRITICAL_SECTION(op)                                  \
+        Py_BEGIN_CRITICAL_SECTION_MUT(&_PyObject_CAST(op)->ob_mutex)
 
 # define Py_END_CRITICAL_SECTION()                                      \
         _PyCriticalSection_End(&_cs);                                   \
@@ -129,6 +132,7 @@ extern "C" {
 
 #else  /* !Py_GIL_DISABLED */
 // The critical section APIs are no-ops with the GIL.
+# define Py_BEGIN_CRITICAL_SECTION_MUT(mut)
 # define Py_BEGIN_CRITICAL_SECTION(op)
 # define Py_END_CRITICAL_SECTION()
 # define Py_BEGIN_CRITICAL_SECTION2(a, b)
@@ -264,7 +268,8 @@ _PyCriticalSection_SuspendAll(PyThreadState *tstate);
 #ifdef Py_GIL_DISABLED
 
 static inline void
-_PyCriticalSection_AssertHeld(PyMutex *mutex) {
+_PyCriticalSection_AssertHeld(PyMutex *mutex)
+{
 #ifdef Py_DEBUG
     PyThreadState *tstate = _PyThreadState_GET();
     uintptr_t prev = tstate->critical_section;

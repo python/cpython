@@ -1,5 +1,5 @@
-:mod:`multiprocessing.shared_memory` --- Shared memory for direct access across processes
-=========================================================================================
+:mod:`!multiprocessing.shared_memory` --- Shared memory for direct access across processes
+==========================================================================================
 
 .. module:: multiprocessing.shared_memory
    :synopsis: Provides shared memory for direct access across processes.

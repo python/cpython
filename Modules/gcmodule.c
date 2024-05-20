@@ -196,6 +196,16 @@ gc_get_count_impl(PyObject *module)
 /*[clinic end generated code: output=354012e67b16398f input=a392794a08251751]*/
 {
     GCState *gcstate = get_gc_state();
+
+#ifdef Py_GIL_DISABLED
+    _PyThreadStateImpl *tstate = (_PyThreadStateImpl *)_PyThreadState_GET();
+    struct _gc_thread_state *gc = &tstate->gc;
+
+    // Flush the local allocation count to the global count
+    _Py_atomic_add_int(&gcstate->young.count, (int)gc->alloc_count);
+    gc->alloc_count = 0;
+#endif
+
     return Py_BuildValue("(iii)",
                          gcstate->young.count,
                          gcstate->old[gcstate->visited_space].count,
@@ -316,7 +326,7 @@ gc_get_objects_impl(PyObject *module, Py_ssize_t generation)
     }
 
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    return _PyGC_GetObjects(interp, generation);
+    return _PyGC_GetObjects(interp, (int)generation);
 }
 
 /*[clinic input]
@@ -368,7 +378,7 @@ error:
 
 
 /*[clinic input]
-gc.is_tracked
+gc.is_tracked -> bool
 
     obj: object
     /
@@ -378,21 +388,15 @@ Returns true if the object is tracked by the garbage collector.
 Simple atomic objects will return false.
 [clinic start generated code]*/
 
-static PyObject *
-gc_is_tracked(PyObject *module, PyObject *obj)
-/*[clinic end generated code: output=14f0103423b28e31 input=d83057f170ea2723]*/
+static int
+gc_is_tracked_impl(PyObject *module, PyObject *obj)
+/*[clinic end generated code: output=91c8d086b7f47a33 input=423b98ec680c3126]*/
 {
-    PyObject *result;
-
-    if (_PyObject_IS_GC(obj) && _PyObject_GC_IS_TRACKED(obj))
-        result = Py_True;
-    else
-        result = Py_False;
-    return Py_NewRef(result);
+    return PyObject_GC_IsTracked(obj);
 }
 
 /*[clinic input]
-gc.is_finalized
+gc.is_finalized -> bool
 
     obj: object
     /
@@ -400,14 +404,11 @@ gc.is_finalized
 Returns true if the object has been already finalized by the GC.
 [clinic start generated code]*/
 
-static PyObject *
-gc_is_finalized(PyObject *module, PyObject *obj)
-/*[clinic end generated code: output=e1516ac119a918ed input=201d0c58f69ae390]*/
+static int
+gc_is_finalized_impl(PyObject *module, PyObject *obj)
+/*[clinic end generated code: output=401ff5d6fc660429 input=ca4d111c8f8c4e3a]*/
 {
-    if (_PyObject_IS_GC(obj) && _PyGC_FINALIZED(obj)) {
-         Py_RETURN_TRUE;
-    }
-    Py_RETURN_FALSE;
+    return PyObject_GC_IsFinalized(obj);
 }
 
 /*[clinic input]
@@ -534,6 +535,7 @@ gcmodule_exec(PyObject *module)
 static PyModuleDef_Slot gcmodule_slots[] = {
     {Py_mod_exec, gcmodule_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
 };
 
