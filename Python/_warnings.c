@@ -569,10 +569,9 @@ call_show_warning(PyThreadState *tstate, PyObject *category,
     PyObject *show_fn, *msg, *res, *warnmsg_cls = NULL;
     PyInterpreterState *interp = tstate->interp;
 
-    /* If the source parameter is set, try to get the Python implementation.
-       The Python implementation is able to log the traceback where the source
+    /* The Python implementation is able to log the traceback where the source
        was allocated, whereas the C implementation doesn't. */
-    show_fn = GET_WARNINGS_ATTR(interp, _showwarnmsg, source != NULL);
+    show_fn = GET_WARNINGS_ATTR(interp, _showwarnmsg, 1);
     if (show_fn == NULL) {
         if (PyErr_Occurred())
             return -1;

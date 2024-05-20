@@ -131,6 +131,8 @@ itertools
 pathlib
 -------
 
+* Remove support for passing additional keyword arguments to
+  :class:`pathlib.Path`. In previous versions, any such arguments are ignored.
 * Remove support for passing additional positional arguments to
   :meth:`pathlib.PurePath.relative_to` and
   :meth:`~pathlib.PurePath.is_relative_to`. In previous versions, any such
@@ -141,6 +143,11 @@ sqlite3
 
 * Remove :data:`!version` and :data:`!version_info` from :mod:`sqlite3`.
   (Contributed by Hugo van Kemenade in :gh:`118924`.)
+
+* Disallow using a sequence of parameters with named placeholders.
+  This had previously raised a :exc:`DeprecationWarning` since Python 3.12;
+  it will now raise a :exc:`sqlite3.ProgrammingError`.
+  (Contributed by Erlend E. Aasland in :gh:`118928` and :gh:`101693`.)
 
 typing
 ------
