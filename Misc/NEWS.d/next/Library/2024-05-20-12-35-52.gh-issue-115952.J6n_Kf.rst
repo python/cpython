@@ -1,0 +1,3 @@
+Fix a vulnerability in the :mod:`pickle` module which allowed to consume
+arbitrary large amount of memory when loading a small data which does not
+even involve arbitrary code execution.
