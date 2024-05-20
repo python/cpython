@@ -326,7 +326,7 @@ gc_get_objects_impl(PyObject *module, Py_ssize_t generation)
     }
 
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    return _PyGC_GetObjects(interp, generation);
+    return _PyGC_GetObjects(interp, (int)generation);
 }
 
 /*[clinic input]
@@ -535,6 +535,7 @@ gcmodule_exec(PyObject *module)
 static PyModuleDef_Slot gcmodule_slots[] = {
     {Py_mod_exec, gcmodule_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
 };
 

@@ -636,6 +636,10 @@ class _FileInFile(object):
     def flush(self):
         pass
 
+    @property
+    def mode(self):
+        return 'rb'
+
     def readable(self):
         return True
 
@@ -2214,12 +2218,15 @@ class TarFile(object):
             self.addfile(tarinfo)
 
     def addfile(self, tarinfo, fileobj=None):
-        """Add the TarInfo object `tarinfo' to the archive. If `fileobj' is
-           given, it should be a binary file, and tarinfo.size bytes are read
-           from it and added to the archive. You can create TarInfo objects
-           directly, or by using gettarinfo().
+        """Add the TarInfo object `tarinfo' to the archive. If `tarinfo' represents
+           a non zero-size regular file, the `fileobj' argument should be a binary file,
+           and tarinfo.size bytes are read from it and added to the archive.
+           You can create TarInfo objects directly, or by using gettarinfo().
         """
         self._check("awx")
+
+        if fileobj is None and tarinfo.isreg() and tarinfo.size != 0:
+            raise ValueError("fileobj not provided for non zero-size regular file")
 
         tarinfo = copy.copy(tarinfo)
 
@@ -2247,7 +2254,7 @@ class TarFile(object):
                     'Python 3.14 will, by default, filter extracted tar '
                     + 'archives and reject files or modify their metadata. '
                     + 'Use the filter argument to control this behavior.',
-                    DeprecationWarning)
+                    DeprecationWarning, stacklevel=3)
                 return fully_trusted_filter
             if isinstance(filter, str):
                 raise TypeError(

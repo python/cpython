@@ -2651,6 +2651,24 @@ class StrTest(string_tests.StringLikeTest,
         proc = assert_python_failure('-X', 'dev', '-c', code)
         self.assertEqual(proc.rc, 10, proc)
 
+    def test_str_invalid_call(self):
+        check = lambda *a, **kw: self.assertRaises(TypeError, str, *a, **kw)
+
+        # too many args
+        check(1, "", "", 1)
+
+        # no such kw arg
+        check(test=1)
+
+        # 'encoding' must be str
+        check(1, encoding=1)
+        check(1, 1)
+
+        # 'errors' must be str
+        check(1, errors=1)
+        check(1, "", errors=1)
+        check(1, 1, 1)
+
 
 class StringModuleTest(unittest.TestCase):
     def test_formatter_parser(self):

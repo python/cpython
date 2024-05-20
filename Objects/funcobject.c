@@ -127,6 +127,9 @@ _PyFunction_FromConstructor(PyFrameConstructor *constr)
     op->func_typeparams = NULL;
     op->vectorcall = _PyFunction_Vectorcall;
     op->func_version = 0;
+    // NOTE: functions created via FrameConstructor do not use deferred
+    // reference counting because they are typically not part of cycles
+    // nor accessed by multiple threads.
     _PyObject_GC_TRACK(op);
     handle_func_event(PyFunction_EVENT_CREATE, op, NULL);
     return op;
@@ -202,6 +205,12 @@ PyFunction_NewWithQualName(PyObject *code, PyObject *globals, PyObject *qualname
     op->func_typeparams = NULL;
     op->vectorcall = _PyFunction_Vectorcall;
     op->func_version = 0;
+    if ((code_obj->co_flags & CO_NESTED) == 0) {
+        // Use deferred reference counting for top-level functions, but not
+        // nested functions because they are more likely to capture variables,
+        // which makes prompt deallocation more important.
+        _PyObject_SetDeferredRefcount((PyObject *)op);
+    }
     _PyObject_GC_TRACK(op);
     handle_func_event(PyFunction_EVENT_CREATE, op, NULL);
     return (PyObject *)op;
@@ -278,6 +287,7 @@ functions is running.
 void
 _PyFunction_SetVersion(PyFunctionObject *func, uint32_t version)
 {
+#ifndef Py_GIL_DISABLED
     PyInterpreterState *interp = _PyInterpreterState_GET();
     if (func->func_version != 0) {
         struct _func_version_cache_item *slot =
@@ -288,7 +298,9 @@ _PyFunction_SetVersion(PyFunctionObject *func, uint32_t version)
             // Leave slot->code alone, there may be use for it.
         }
     }
+#endif
     func->func_version = version;
+#ifndef Py_GIL_DISABLED
     if (version != 0) {
         struct _func_version_cache_item *slot =
             interp->func_state.func_version_cache
@@ -296,11 +308,13 @@ _PyFunction_SetVersion(PyFunctionObject *func, uint32_t version)
         slot->func = func;
         slot->code = func->func_code;
     }
+#endif
 }
 
 void
 _PyFunction_ClearCodeByVersion(uint32_t version)
 {
+#ifndef Py_GIL_DISABLED
     PyInterpreterState *interp = _PyInterpreterState_GET();
     struct _func_version_cache_item *slot =
         interp->func_state.func_version_cache
@@ -313,11 +327,15 @@ _PyFunction_ClearCodeByVersion(uint32_t version)
             slot->func = NULL;
         }
     }
+#endif
 }
 
 PyFunctionObject *
 _PyFunction_LookupByVersion(uint32_t version, PyObject **p_code)
 {
+#ifdef Py_GIL_DISABLED
+    return NULL;
+#else
     PyInterpreterState *interp = _PyInterpreterState_GET();
     struct _func_version_cache_item *slot =
         interp->func_state.func_version_cache
@@ -337,6 +355,7 @@ _PyFunction_LookupByVersion(uint32_t version, PyObject **p_code)
         return slot->func;
     }
     return NULL;
+#endif
 }
 
 uint32_t

@@ -269,7 +269,7 @@ Correctly compute end column offsets for multiline tokens in the
 .. nonce: 4ADN7i
 .. section: Core and Builtins
 
-Fix None.__ne__(None) returning NotImplemented instead of False
+Fix ``None.__ne__(None)`` returning ``NotImplemented`` instead of ``False``.
 
 ..
 
@@ -1551,7 +1551,7 @@ optional *strict* parameter to these two functions: use ``strict=False`` to
 get the old behavior, accept malformed inputs. ``getattr(email.utils,
 'supports_strict_parsing', False)`` can be use to check if the *strict*
 paramater is available. Patch by Thomas Dwyer and Victor Stinner to improve
-the CVE-2023-27043 fix.
+the :cve:`2023-27043` fix.
 
 ..
 
