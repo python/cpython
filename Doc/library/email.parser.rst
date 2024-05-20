@@ -1,5 +1,5 @@
-:mod:`email.parser`: Parsing email messages
--------------------------------------------
+:mod:`!email.parser`: Parsing email messages
+--------------------------------------------
 
 .. module:: email.parser
    :synopsis: Parse flat text email messages to produce a message object structure.
@@ -39,9 +39,9 @@ returns the root object when you close the parser.
 Note that the parser can be extended in limited ways, and of course you can
 implement your own parser completely from scratch.  All of the logic that
 connects the :mod:`email` package's bundled parser and the
-:class:`~email.message.EmailMessage` class is embodied in the :mod:`policy`
+:class:`~email.message.EmailMessage` class is embodied in the :class:`~email.policy.Policy`
 class, so a custom parser can create message object trees any way it finds
-necessary by implementing custom versions of the appropriate :mod:`policy`
+necessary by implementing custom versions of the appropriate :class:`!Policy`
 methods.
 
 

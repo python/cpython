@@ -4,6 +4,8 @@
   Curses Programming with Python
 **********************************
 
+.. currentmodule:: curses
+
 :Author: A.M. Kuchling, Eric S. Raymond
 :Release: 2.04
 
@@ -41,7 +43,7 @@ appearance---and the curses library will figure out what control codes
 need to be sent to the terminal to produce the right output.  curses
 doesn't provide many user-interface concepts such as buttons, checkboxes,
 or dialogs; if you need such features, consider a user interface library such as
-`Urwid <https://pypi.org/project/urwid/>`_.
+:pypi:`Urwid`.
 
 The curses library was originally written for BSD Unix; the later System V
 versions of Unix from AT&T added many enhancements and new functions. BSD curses
@@ -54,8 +56,7 @@ versions of curses carried by some proprietary Unixes may not support
 everything, though.
 
 The Windows version of Python doesn't include the :mod:`curses`
-module.  A ported version called `UniCurses
-<https://pypi.org/project/UniCurses>`_ is available.
+module.  A ported version called :pypi:`UniCurses` is available.
 
 
 The Python curses module
@@ -65,7 +66,7 @@ The Python module is a fairly simple wrapper over the C functions provided by
 curses; if you're already familiar with curses programming in C, it's really
 easy to transfer that knowledge to Python.  The biggest difference is that the
 Python interface makes things simpler by merging different C functions such as
-:c:func:`addstr`, :c:func:`mvaddstr`, and :c:func:`mvwaddstr` into a single
+:c:func:`!addstr`, :c:func:`!mvaddstr`, and :c:func:`!mvwaddstr` into a single
 :meth:`~curses.window.addstr` method.  You'll see this covered in more
 detail later.
 
@@ -82,7 +83,7 @@ Before doing anything, curses must be initialized.  This is done by
 calling the :func:`~curses.initscr` function, which will determine the
 terminal type, send any required setup codes to the terminal, and
 create various internal data structures.  If successful,
-:func:`initscr` returns a window object representing the entire
+:func:`!initscr` returns a window object representing the entire
 screen; this is usually called ``stdscr`` after the name of the
 corresponding C variable. ::
 
@@ -151,8 +152,8 @@ importing the :func:`curses.wrapper` function and using it like this::
 
 The :func:`~curses.wrapper` function takes a callable object and does the
 initializations described above, also initializing colors if color
-support is present.  :func:`wrapper` then runs your provided callable.
-Once the callable returns, :func:`wrapper` will restore the original
+support is present.  :func:`!wrapper` then runs your provided callable.
+Once the callable returns, :func:`!wrapper` will restore the original
 state of the terminal.  The callable is called inside a
 :keyword:`try`...\ :keyword:`except` that catches exceptions, restores
 the state of the terminal, and then re-raises the exception.  Therefore
@@ -200,7 +201,7 @@ This is because curses was originally written with slow 300-baud
 terminal connections in mind; with these terminals, minimizing the
 time required to redraw the screen was very important.  Instead curses
 accumulates changes to the screen and displays them in the most
-efficient manner when you call :meth:`refresh`.  For example, if your
+efficient manner when you call :meth:`!refresh`.  For example, if your
 program displays some text in a window and then clears the window,
 there's no need to send the original text because they're never
 visible.
@@ -210,7 +211,7 @@ really complicate programming with curses much. Most programs go into a flurry
 of activity, and then pause waiting for a keypress or some other action on the
 part of the user.  All you have to do is to be sure that the screen has been
 redrawn before pausing to wait for user input, by first calling
-``stdscr.refresh()`` or the :meth:`refresh` method of some other relevant
+:meth:`!stdscr.refresh` or the :meth:`!refresh` method of some other relevant
 window.
 
 A pad is a special case of a window; it can be larger than the actual display
@@ -234,7 +235,7 @@ displayed.  ::
    #          : filled with pad content.
    pad.refresh( 0,0, 5,5, 20,75)
 
-The :meth:`refresh` call displays a section of the pad in the rectangle
+The :meth:`!refresh` call displays a section of the pad in the rectangle
 extending from coordinate (5,5) to coordinate (20,75) on the screen; the upper
 left corner of the displayed section is coordinate (0,0) on the pad.  Beyond
 that difference, pads are exactly like ordinary windows and support the same
@@ -242,7 +243,7 @@ methods.
 
 If you have multiple windows and pads on screen there is a more
 efficient way to update the screen and prevent annoying screen flicker
-as each part of the screen gets updated.  :meth:`refresh` actually
+as each part of the screen gets updated.  :meth:`!refresh` actually
 does two things:
 
 1) Calls the :meth:`~curses.window.noutrefresh` method of each window
@@ -251,8 +252,8 @@ does two things:
 2) Calls the function :func:`~curses.doupdate` function to change the
    physical screen to match the desired state recorded in the data structure.
 
-Instead you can call :meth:`noutrefresh` on a number of windows to
-update the data structure, and then call :func:`doupdate` to update
+Instead you can call :meth:`!noutrefresh` on a number of windows to
+update the data structure, and then call :func:`!doupdate` to update
 the screen.
 
 
@@ -261,11 +262,11 @@ Displaying Text
 
 From a C programmer's point of view, curses may sometimes look like a
 twisty maze of functions, all subtly different.  For example,
-:c:func:`addstr` displays a string at the current cursor location in
-the ``stdscr`` window, while :c:func:`mvaddstr` moves to a given y,x
-coordinate first before displaying the string. :c:func:`waddstr` is just
-like :c:func:`addstr`, but allows specifying a window to use instead of
-using ``stdscr`` by default. :c:func:`mvwaddstr` allows specifying both
+:c:func:`!addstr` displays a string at the current cursor location in
+the ``stdscr`` window, while :c:func:`!mvaddstr` moves to a given y,x
+coordinate first before displaying the string. :c:func:`!waddstr` is just
+like :c:func:`!addstr`, but allows specifying a window to use instead of
+using ``stdscr`` by default. :c:func:`!mvwaddstr` allows specifying both
 a window and a coordinate.
 
 Fortunately the Python interface hides all these details.  ``stdscr``
@@ -298,7 +299,7 @@ the next subsection.
 The :meth:`~curses.window.addstr` method takes a Python string or
 bytestring as the value to be displayed.  The contents of bytestrings
 are sent to the terminal as-is.  Strings are encoded to bytes using
-the value of the window's :attr:`encoding` attribute; this defaults to
+the value of the window's :attr:`~window.encoding` attribute; this defaults to
 the default system encoding as returned by :func:`locale.getencoding`.
 
 The :meth:`~curses.window.addch` methods take a character, which can be
@@ -427,8 +428,7 @@ User Input
 
 The C curses library offers only very simple input mechanisms. Python's
 :mod:`curses` module adds a basic text-input widget.  (Other libraries
-such as `Urwid <https://pypi.org/project/urwid/>`_ have more extensive
-collections of widgets.)
+such as :pypi:`Urwid` have more extensive collections of widgets.)
 
 There are two methods for getting input from a window:
 
@@ -444,15 +444,15 @@ There are two methods for getting input from a window:
 
 It's possible to not wait for the user using the
 :meth:`~curses.window.nodelay` window method. After ``nodelay(True)``,
-:meth:`getch` and :meth:`getkey` for the window become
-non-blocking. To signal that no input is ready, :meth:`getch` returns
-``curses.ERR`` (a value of -1) and :meth:`getkey` raises an exception.
+:meth:`!getch` and :meth:`!getkey` for the window become
+non-blocking. To signal that no input is ready, :meth:`!getch` returns
+``curses.ERR`` (a value of -1) and :meth:`!getkey` raises an exception.
 There's also a :func:`~curses.halfdelay` function, which can be used to (in
-effect) set a timer on each :meth:`getch`; if no input becomes
+effect) set a timer on each :meth:`!getch`; if no input becomes
 available within a specified delay (measured in tenths of a second),
 curses raises an exception.
 
-The :meth:`getch` method returns an integer; if it's between 0 and 255, it
+The :meth:`!getch` method returns an integer; if it's between 0 and 255, it
 represents the ASCII code of the key pressed.  Values greater than 255 are
 special keys such as Page Up, Home, or the cursor keys. You can compare the
 value returned to constants such as :const:`curses.KEY_PPAGE`,
@@ -525,7 +525,7 @@ If you're in doubt about the detailed behavior of the curses
 functions, consult the manual pages for your curses implementation,
 whether it's ncurses or a proprietary Unix vendor's.  The manual pages
 will document any quirks, and provide complete lists of all the
-functions, attributes, and :const:`ACS_\*` characters available to
+functions, attributes, and :ref:`ACS_\* <curses-acs-codes>` characters available to
 you.
 
 Because the curses API is so large, some functions aren't supported in

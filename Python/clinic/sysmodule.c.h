@@ -3,10 +3,10 @@ preserve
 [clinic start generated code]*/
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
 #endif
-
+#include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 PyDoc_STRVAR(sys_addaudithook__doc__,
 "addaudithook($module, /, hook)\n"
@@ -282,9 +282,6 @@ sys_intern(PyObject *module, PyObject *arg)
         _PyArg_BadArgument("intern", "argument", "str", arg);
         goto exit;
     }
-    if (PyUnicode_READY(arg) == -1) {
-        goto exit;
-    }
     s = arg;
     return_value = sys_intern_impl(module, s);
 
@@ -292,8 +289,54 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(sys__is_interned__doc__,
+"_is_interned($module, string, /)\n"
+"--\n"
+"\n"
+"Return True if the given string is \"interned\".");
+
+#define SYS__IS_INTERNED_METHODDEF    \
+    {"_is_interned", (PyCFunction)sys__is_interned, METH_O, sys__is_interned__doc__},
+
+static int
+sys__is_interned_impl(PyObject *module, PyObject *string);
+
+static PyObject *
+sys__is_interned(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    PyObject *string;
+    int _return_value;
+
+    if (!PyUnicode_Check(arg)) {
+        _PyArg_BadArgument("_is_interned", "argument", "str", arg);
+        goto exit;
+    }
+    string = arg;
+    _return_value = sys__is_interned_impl(module, string);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyBool_FromLong((long)_return_value);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(sys_settrace__doc__,
+"settrace($module, function, /)\n"
+"--\n"
+"\n"
+"Set the global debug tracing function.\n"
+"\n"
+"It will be called on each function call.  See the debugger chapter\n"
+"in the library manual.");
+
+#define SYS_SETTRACE_METHODDEF    \
+    {"settrace", (PyCFunction)sys_settrace, METH_O, sys_settrace__doc__},
+
 PyDoc_STRVAR(sys__settraceallthreads__doc__,
-"_settraceallthreads($module, arg, /)\n"
+"_settraceallthreads($module, function, /)\n"
 "--\n"
 "\n"
 "Set the global debug tracing function in all running threads belonging to the current interpreter.\n"
@@ -324,14 +367,26 @@ sys_gettrace(PyObject *module, PyObject *Py_UNUSED(ignored))
     return sys_gettrace_impl(module);
 }
 
+PyDoc_STRVAR(sys_setprofile__doc__,
+"setprofile($module, function, /)\n"
+"--\n"
+"\n"
+"Set the profiling function.\n"
+"\n"
+"It will be called on each function call and return.  See the profiler\n"
+"chapter in the library manual.");
+
+#define SYS_SETPROFILE_METHODDEF    \
+    {"setprofile", (PyCFunction)sys_setprofile, METH_O, sys_setprofile__doc__},
+
 PyDoc_STRVAR(sys__setprofileallthreads__doc__,
-"_setprofileallthreads($module, arg, /)\n"
+"_setprofileallthreads($module, function, /)\n"
 "--\n"
 "\n"
 "Set the profiling function in all running threads belonging to the current interpreter.\n"
 "\n"
-"It will be called on each function call and return.  See the profiler chapter\n"
-"in the library manual.");
+"It will be called on each function call and return.  See the profiler\n"
+"chapter in the library manual.");
 
 #define SYS__SETPROFILEALLTHREADS_METHODDEF    \
     {"_setprofileallthreads", (PyCFunction)sys__setprofileallthreads, METH_O, sys__setprofileallthreads__doc__},
@@ -447,7 +502,7 @@ sys_setrecursionlimit(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int new_limit;
 
-    new_limit = _PyLong_AsInt(arg);
+    new_limit = PyLong_AsInt(arg);
     if (new_limit == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -510,7 +565,7 @@ sys_set_coroutine_origin_tracking_depth(PyObject *module, PyObject *const *args,
     if (!args) {
         goto exit;
     }
-    depth = _PyLong_AsInt(args[0]);
+    depth = PyLong_AsInt(args[0]);
     if (depth == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -678,7 +733,7 @@ sys_setdlopenflags(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int new_val;
 
-    new_val = _PyLong_AsInt(arg);
+    new_val = PyLong_AsInt(arg);
     if (new_val == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -733,7 +788,7 @@ sys_mdebug(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int flag;
 
-    flag = _PyLong_AsInt(arg);
+    flag = PyLong_AsInt(arg);
     if (flag == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -811,7 +866,7 @@ sys_set_int_max_str_digits(PyObject *module, PyObject *const *args, Py_ssize_t n
     if (!args) {
         goto exit;
     }
-    maxdigits = _PyLong_AsInt(args[0]);
+    maxdigits = PyLong_AsInt(args[0]);
     if (maxdigits == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -912,6 +967,34 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(sys_getunicodeinternedsize__doc__,
+"getunicodeinternedsize($module, /)\n"
+"--\n"
+"\n"
+"Return the number of elements of the unicode interned dictionary");
+
+#define SYS_GETUNICODEINTERNEDSIZE_METHODDEF    \
+    {"getunicodeinternedsize", (PyCFunction)sys_getunicodeinternedsize, METH_NOARGS, sys_getunicodeinternedsize__doc__},
+
+static Py_ssize_t
+sys_getunicodeinternedsize_impl(PyObject *module);
+
+static PyObject *
+sys_getunicodeinternedsize(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    PyObject *return_value = NULL;
+    Py_ssize_t _return_value;
+
+    _return_value = sys_getunicodeinternedsize_impl(module);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyLong_FromSsize_t(_return_value);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(sys__getframe__doc__,
 "_getframe($module, depth=0, /)\n"
 "--\n"
@@ -944,7 +1027,7 @@ sys__getframe(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 1) {
         goto skip_optional;
     }
-    depth = _PyLong_AsInt(args[0]);
+    depth = PyLong_AsInt(args[0]);
     if (depth == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -1072,6 +1155,24 @@ sys__clear_type_cache(PyObject *module, PyObject *Py_UNUSED(ignored))
     return sys__clear_type_cache_impl(module);
 }
 
+PyDoc_STRVAR(sys__clear_internal_caches__doc__,
+"_clear_internal_caches($module, /)\n"
+"--\n"
+"\n"
+"Clear all internal performance-related caches.");
+
+#define SYS__CLEAR_INTERNAL_CACHES_METHODDEF    \
+    {"_clear_internal_caches", (PyCFunction)sys__clear_internal_caches, METH_NOARGS, sys__clear_internal_caches__doc__},
+
+static PyObject *
+sys__clear_internal_caches_impl(PyObject *module);
+
+static PyObject *
+sys__clear_internal_caches(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return sys__clear_internal_caches_impl(module);
+}
+
 PyDoc_STRVAR(sys_is_finalizing__doc__,
 "is_finalizing($module, /)\n"
 "--\n"
@@ -1096,7 +1197,7 @@ PyDoc_STRVAR(sys__stats_on__doc__,
 "_stats_on($module, /)\n"
 "--\n"
 "\n"
-"Turns on stats gathering (stats gathering is on by default).");
+"Turns on stats gathering (stats gathering is off by default).");
 
 #define SYS__STATS_ON_METHODDEF    \
     {"_stats_on", (PyCFunction)sys__stats_on, METH_NOARGS, sys__stats_on__doc__},
@@ -1118,7 +1219,7 @@ PyDoc_STRVAR(sys__stats_off__doc__,
 "_stats_off($module, /)\n"
 "--\n"
 "\n"
-"Turns off stats gathering (stats gathering is on by default).");
+"Turns off stats gathering (stats gathering is off by default).");
 
 #define SYS__STATS_OFF_METHODDEF    \
     {"_stats_off", (PyCFunction)sys__stats_off, METH_NOARGS, sys__stats_off__doc__},
@@ -1162,18 +1263,30 @@ PyDoc_STRVAR(sys__stats_dump__doc__,
 "_stats_dump($module, /)\n"
 "--\n"
 "\n"
-"Dump stats to file, and clears the stats.");
+"Dump stats to file, and clears the stats.\n"
+"\n"
+"Return False if no statistics were not dumped because stats gathering was off.");
 
 #define SYS__STATS_DUMP_METHODDEF    \
     {"_stats_dump", (PyCFunction)sys__stats_dump, METH_NOARGS, sys__stats_dump__doc__},
 
-static PyObject *
+static int
 sys__stats_dump_impl(PyObject *module);
 
 static PyObject *
 sys__stats_dump(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
-    return sys__stats_dump_impl(module);
+    PyObject *return_value = NULL;
+    int _return_value;
+
+    _return_value = sys__stats_dump_impl(module);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyBool_FromLong((long)_return_value);
+
+exit:
+    return return_value;
 }
 
 #endif /* defined(Py_STATS) */
@@ -1333,12 +1446,86 @@ sys__getframemodulename(PyObject *module, PyObject *const *args, Py_ssize_t narg
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    depth = _PyLong_AsInt(args[0]);
+    depth = PyLong_AsInt(args[0]);
     if (depth == -1 && PyErr_Occurred()) {
         goto exit;
     }
 skip_optional_pos:
     return_value = sys__getframemodulename_impl(module, depth);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(sys__get_cpu_count_config__doc__,
+"_get_cpu_count_config($module, /)\n"
+"--\n"
+"\n"
+"Private function for getting PyConfig.cpu_count");
+
+#define SYS__GET_CPU_COUNT_CONFIG_METHODDEF    \
+    {"_get_cpu_count_config", (PyCFunction)sys__get_cpu_count_config, METH_NOARGS, sys__get_cpu_count_config__doc__},
+
+static int
+sys__get_cpu_count_config_impl(PyObject *module);
+
+static PyObject *
+sys__get_cpu_count_config(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    PyObject *return_value = NULL;
+    int _return_value;
+
+    _return_value = sys__get_cpu_count_config_impl(module);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyLong_FromLong((long)_return_value);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(sys__baserepl__doc__,
+"_baserepl($module, /)\n"
+"--\n"
+"\n"
+"Private function for getting the base REPL");
+
+#define SYS__BASEREPL_METHODDEF    \
+    {"_baserepl", (PyCFunction)sys__baserepl, METH_NOARGS, sys__baserepl__doc__},
+
+static PyObject *
+sys__baserepl_impl(PyObject *module);
+
+static PyObject *
+sys__baserepl(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return sys__baserepl_impl(module);
+}
+
+PyDoc_STRVAR(sys__is_gil_enabled__doc__,
+"_is_gil_enabled($module, /)\n"
+"--\n"
+"\n"
+"Return True if the GIL is currently enabled and False otherwise.");
+
+#define SYS__IS_GIL_ENABLED_METHODDEF    \
+    {"_is_gil_enabled", (PyCFunction)sys__is_gil_enabled, METH_NOARGS, sys__is_gil_enabled__doc__},
+
+static int
+sys__is_gil_enabled_impl(PyObject *module);
+
+static PyObject *
+sys__is_gil_enabled(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    PyObject *return_value = NULL;
+    int _return_value;
+
+    _return_value = sys__is_gil_enabled_impl(module);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyBool_FromLong((long)_return_value);
 
 exit:
     return return_value;
@@ -1387,4 +1574,4 @@ exit:
 #ifndef SYS_GETANDROIDAPILEVEL_METHODDEF
     #define SYS_GETANDROIDAPILEVEL_METHODDEF
 #endif /* !defined(SYS_GETANDROIDAPILEVEL_METHODDEF) */
-/*[clinic end generated code: output=5c761f14326ced54 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ef7c35945443d300 input=a9049054013a1b77]*/

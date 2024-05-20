@@ -1,5 +1,5 @@
-:mod:`email.generator`: Generating MIME documents
--------------------------------------------------
+:mod:`!email.generator`: Generating MIME documents
+--------------------------------------------------
 
 .. module:: email.generator
    :synopsis: Generate flat text email messages from a message structure.
@@ -10,8 +10,8 @@
 
 One of the most common tasks is to generate the flat (serialized) version of
 the email message represented by a message object structure.  You will need to
-do this if you want to send your message via :meth:`smtplib.SMTP.sendmail` or
-the :mod:`nntplib` module, or print the message on the console.  Taking a
+do this if you want to send your message via :meth:`smtplib.SMTP.sendmail`,
+or print the message on the console.  Taking a
 message object structure and producing a serialized representation is the job
 of the generator classes.
 
@@ -274,9 +274,9 @@ in with information about the part.
 .. rubric:: Footnotes
 
 .. [#] This statement assumes that you use the appropriate setting for
-       ``unixfrom``, and that there are no :mod:`policy` settings calling for
+       ``unixfrom``, and that there are no :mod:`email.policy` settings calling for
        automatic adjustments (for example,
-       :attr:`~email.policy.Policy.refold_source` must be ``none``, which is
+       :attr:`~email.policy.EmailPolicy.refold_source` must be ``none``, which is
        *not* the default).  It is also not 100% true, since if the message
        does not conform to the RFC standards occasionally information about the
        exact original text is lost during parsing error recovery.  It is a goal

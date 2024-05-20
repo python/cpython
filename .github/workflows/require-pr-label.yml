@@ -1,0 +1,23 @@
+name: Check labels
+
+on:
+  pull_request:
+    types: [opened, reopened, labeled, unlabeled, synchronize]
+
+permissions:
+  issues: write
+  pull-requests: write
+
+jobs:
+  label:
+    name: DO-NOT-MERGE / unresolved review
+    if: github.repository_owner == 'python'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: mheap/github-action-required-labels@v5
+        with:
+          mode: exactly
+          count: 0
+          labels: "DO-NOT-MERGE, awaiting changes, awaiting change review"
