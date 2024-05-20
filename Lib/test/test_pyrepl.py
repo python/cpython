@@ -638,8 +638,8 @@ class TestPyReplCompleter(TestCase):
         class Dummy:
             @property
             def test_func(self):
-                import sys
-                sys.stderr.write("warnings\n")
+                import warnings
+                warnings.warn("warnings\n")
                 return None
 
         dummy = Dummy()
@@ -648,7 +648,7 @@ class TestPyReplCompleter(TestCase):
         reader = self.prepare_reader(events, namespace)
         mock_get_reader.return_value = reader
         output = readline_multiline_input(more_lines, ">>>", "...")
-        self.assertEqual(output[0], "dummy.test_func.")
+        self.assertEqual(output[0], "dummy.test_func.__")
         self.assertEqual(mock_stderr.getvalue(), "")
 
 
