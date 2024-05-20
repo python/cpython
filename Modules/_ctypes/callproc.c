@@ -1191,6 +1191,7 @@ PyObject *_ctypes_callproc(ctypes_state *st,
     void **avalues;
     PyObject *retval = NULL;
 
+    // Both call_function and call_cdeclfunction call us:
     if (PySys_Audit("ctypes.call_function", "nO",
                     (Py_ssize_t)pProc, argtuple) < 0) {
         return NULL;
@@ -1679,10 +1680,6 @@ call_cdeclfunction(PyObject *self, PyObject *args)
                           &_parse_voidp, &func,
                           &PyTuple_Type, &arguments))
         return NULL;
-    if (PySys_Audit("ctypes.call_function", "nO",
-                    (Py_ssize_t)func, arguments) < 0) {
-        return NULL;
-    }
 
     ctypes_state *st = get_module_state(self);
     result = _ctypes_callproc(st,
