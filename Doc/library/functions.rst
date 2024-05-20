@@ -612,9 +612,9 @@ are always available.  They are listed here in alphabetical order.
 
    .. note::
 
-      You probably should always pass a globals argument and never a locals
-      argument. If exec gets two separate objects as *globals* and *locals*, the
-      code will be executed as if it were embedded in a class definition.
+      Most users should just pass a *globals* argument and never *locals*.
+      If exec gets two separate objects as *globals* and *locals*, the code
+      will be executed as if it were embedded in a class definition.
 
    If the *globals* dictionary does not contain a value for the key
    ``__builtins__``, a reference to the dictionary of the built-in module
