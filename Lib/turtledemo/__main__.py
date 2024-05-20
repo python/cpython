@@ -92,14 +92,15 @@ from tkinter import *
 from idlelib.colorizer import ColorDelegator, color_config
 from idlelib.percolator import Percolator
 from idlelib.textview import view_text
+import turtle
 from turtledemo import __doc__ as about_turtledemo
 
-import turtle
+if sys.platform == 'win32':
+    from idlelib.util import fix_win_hidpi
+    fix_win_hidpi()
 
 demo_dir = os.path.dirname(os.path.abspath(__file__))
 darwin = sys.platform == 'darwin'
-win32 = sys.platform == 'win32'
-
 STARTUP = 1
 READY = 2
 RUNNING = 3
@@ -131,15 +132,6 @@ class DemoWindow(object):
         self.root = root = turtle._root = Tk()
         root.title('Python turtle-graphics examples')
         root.wm_protocol("WM_DELETE_WINDOW", self._destroy)
-
-        # See https://learn.microsoft.com/en-us/windows/win32/api/shellscalingapi/ne-shellscalingapi-process_dpi_awareness
-        if win32:
-            try:
-                import ctypes
-                PROCESS_SYSTEM_DPI_AWARE = 1  # Int required.
-                ctypes.OleDLL('shcore').SetProcessDpiAwareness(PROCESS_SYSTEM_DPI_AWARE)
-            except (ImportError, AttributeError, OSError):
-                pass
 
         if darwin:
             import subprocess
