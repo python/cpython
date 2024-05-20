@@ -9276,7 +9276,7 @@ tailmatch(PyObject *self,
                         PyUnicode_READ(kind_sub, data_sub, end_sub);
 
     if (match_last) {
-        if (end_sub==0) {
+        if (end_sub == 0) {
             return 1;
         }
         /* If both are of the same kind, memcmp is sufficient */
