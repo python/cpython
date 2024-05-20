@@ -205,7 +205,7 @@ class WindowsConsole(Console):
         trace('!!Refresh {}', screen)
         if not self.__gone_tall:
             while len(self.screen) < min(len(screen), self.height):
-                trace('extend')
+                cur_x, cur_y = self.get_abs_position(0, len(self.screen) - 1)
                 self.__hide_cursor()
                 self.__move(0, len(self.screen) - 1)
                 self.__write("\n")
@@ -237,7 +237,7 @@ class WindowsConsole(Console):
         newscr = screen[offset : offset + height]
 
         # use hardware scrolling if we have it.
-        trace('offsets', old_offset, offset)
+        trace('offsets {} {}', old_offset, offset)
         if old_offset > offset:
             trace('old_offset > offset')
         elif old_offset < offset:
@@ -260,7 +260,7 @@ class WindowsConsole(Console):
                     oldscr.pop(0)
                     oldscr.append("")
 
-        trace('new offset', offset, px)
+        trace('new offset {} {}', offset, px)
         self.__offset = offset
 
         for (
@@ -277,7 +277,7 @@ class WindowsConsole(Console):
             self.__hide_cursor()
             self.__move(0, y)
             self.__posxy = 0, y
-#            self.__write_code(self._el)
+            self.erase_to_end()
             y += 1
 
         self.__show_cursor()
@@ -306,7 +306,8 @@ class WindowsConsole(Console):
              raise ctypes.WinError(ctypes.GetLastError())
 
     def __write(self, text):
-        self.__buffer.append((text, 0))
+        os.write(self.output_fd, text.encode(self.encoding, "replace"))
+        #self.__buffer.append((text, 0))
 
     def __move(self, x, y):
         info = CONSOLE_SCREEN_BUFFER_INFO()
@@ -349,6 +350,7 @@ class WindowsConsole(Console):
 
         # if we need to insert a single character right after the first detected change
         if oldline[x_pos:] == newline[x_pos + 1 :]:
+            trace('insert single')
             if (
                 y == self.__posxy[1]
                 and x_coord > self.__posxy[0]
@@ -376,6 +378,7 @@ class WindowsConsole(Console):
 
         # if it's a single character change in the middle of the line
         elif x_coord < minlen and oldline[x_pos + 1 :] == newline[x_pos + 1 :] and wlen(oldline[x_pos]) == wlen(newline[x_pos]):
+            trace('char change')
             character_width = wlen(newline[x_pos])
             self.__move(x_coord, y)
             self.__write(newline[x_pos])
@@ -389,6 +392,7 @@ class WindowsConsole(Console):
             and x_coord < wlen(newline) - 2
             and newline[x_pos + 1 : -1] == oldline[x_pos:-2]
         ):
+            trace('last char')
             self.__hide_cursor()
             self.__move(self.width - 2, y)
             self.__posxy = self.width - 2, y
@@ -401,20 +405,15 @@ class WindowsConsole(Console):
             self.__posxy = character_width + 1, y
 
         else:
-            trace("Rewrite all", x_coord, len(oldline))
+            trace("Rewrite all {!r} {} {} {} {} {}", newline, x_coord, len(oldline), y, wlen(newline), self.__posxy)
             self.__hide_cursor()
             self.__move(x_coord, y)
             if wlen(oldline) > wlen(newline):
-                info = CONSOLE_SCREEN_BUFFER_INFO()
-                if not GetConsoleScreenBufferInfo(OutHandle, info):
-                    raise ctypes.WinError(ctypes.GetLastError())
-
-                size = info.srWindow.Right - info.srWindow.Left + 1 - info.dwCursorPosition.X
-                if not FillConsoleOutputCharacter(OutHandle, b' ',  size, info.dwCursorPosition, DWORD()):
-                    raise ctypes.WinError(ctypes.GetLastError())
+                self.erase_to_end()
             #os.write(self.output_fd, newline[x_pos:].encode(self.encoding, "replace"))
             self.__write(newline[x_pos:])
             self.__posxy = wlen(newline), y
+
 
         #if "\x1b" in newline:
             # ANSI escape characters are present, so we can't assume
@@ -422,17 +421,26 @@ class WindowsConsole(Console):
             # to the left margin should work to get to a known position.
         #    self.move_cursor(0, y)
 
+    def erase_to_end(self):
+        info = CONSOLE_SCREEN_BUFFER_INFO()
+        if not GetConsoleScreenBufferInfo(OutHandle, info):
+            raise ctypes.WinError(ctypes.GetLastError())
+
+        size = info.srWindow.Right - info.srWindow.Left + 1 - info.dwCursorPosition.X
+        if not FillConsoleOutputCharacter(OutHandle, b' ',  size, info.dwCursorPosition, DWORD()):
+            raise ctypes.WinError(ctypes.GetLastError())
+
     def prepare(self) -> None:
         self.screen = []
         self.height, self.width = self.getheightwidth()
 
-        self.__buffer = []
+        #self.__buffer = []
 
         info = CONSOLE_SCREEN_BUFFER_INFO()
         if not GetConsoleScreenBufferInfo(OutHandle, info):
             raise ctypes.WinError(ctypes.GetLastError())
 
-        self.__posxy = 0, 0 #info.dwCursorPosition.X, info.dwCursorPosition.Y
+        self.__posxy = 0, 0
         self.__gone_tall = 0
         self.__move = self.__move_relative
         self.__offset = 0
@@ -440,7 +448,7 @@ class WindowsConsole(Console):
     def restore(self) -> None: ...
 
     def __move_relative(self, x, y):
-        trace('move relative {} {}', x, y)
+        trace('move relative {} {} {} {}', x, y, self.__posxy, self.screen_xy)
         cur_x, cur_y = self.get_abs_position(x, y)
         trace('move is {} {}', cur_x, cur_y)
         self.__move_absolute(cur_x, cur_y)
@@ -454,7 +462,6 @@ class WindowsConsole(Console):
         return cur_x, cur_y
 
     def __move_absolute(self, x, y):
-        assert 0 <= y - self.__offset < self.height, y - self.__offset
         cord = _COORD()
         cord.X = x
         cord.Y = y
@@ -549,12 +556,13 @@ class WindowsConsole(Console):
     def flushoutput(self) -> None:
         """Flush all output to the screen (assuming there's some
         buffering going on somewhere)."""
-        for text, iscode in self.__buffer:
-            if iscode:
-                self.__tputs(text)
-            else:
-                os.write(self.output_fd, text.encode(self.encoding, "replace"))
-        del self.__buffer[:]
+        if False:
+            for text, iscode in self.__buffer:
+                if iscode:
+                    self.__tputs(text)
+                else:
+                    os.write(self.output_fd, text.encode(self.encoding, "replace"))
+            del self.__buffer[:]
 
     def forgetinput(self) -> None:
         """Forget all pending, but not yet processed input."""
