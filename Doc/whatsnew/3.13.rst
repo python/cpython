@@ -397,7 +397,6 @@ disabled with the :envvar:`PYTHON_GIL` environment variable or the
 pip 24.1b1 or newer is required to install packages with C extensions in the
 free-threaded build.
 
-
 Other Language Changes
 ======================
 
