@@ -18,8 +18,8 @@ class StaggeredTests(unittest.IsolatedAsyncioTestCase):
             delay=None,
         )
 
-        self.assertEqual(winner, None)
-        self.assertEqual(index, None)
+        self.assertIs(winner, None)
+        self.assertIs(index, None)
         self.assertEqual(excs, [])
 
     async def test_one_successful(self):
@@ -56,7 +56,7 @@ class StaggeredTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(index, 1)
         self.assertEqual(len(excs), 2)
         self.assertIsInstance(excs[0], ValueError)
-        self.assertEqual(excs[1], None)
+        self.assertIs(excs[1], None)
 
     async def test_first_timeout_second_successful(self):
         async def coro(index):
@@ -76,7 +76,7 @@ class StaggeredTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(index, 1)
         self.assertEqual(len(excs), 2)
         self.assertIsInstance(excs[0], asyncio.CancelledError)
-        self.assertEqual(excs[1], None)
+        self.assertIs(excs[1], None)
 
     async def test_none_successful(self):
         async def coro(index):
@@ -90,8 +90,8 @@ class StaggeredTests(unittest.IsolatedAsyncioTestCase):
             delay=None,
         )
 
-        self.assertEqual(winner, None)
-        self.assertEqual(index, None)
+        self.assertIs(winner, None)
+        self.assertIs(index, None)
         self.assertEqual(len(excs), 2)
         self.assertIsInstance(excs[0], ValueError)
         self.assertIsInstance(excs[1], ValueError)
