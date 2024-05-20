@@ -692,9 +692,12 @@ def patch_pairindextypes(app, _env) -> None:
 
 
 class PyDecoratorRole(PyXRefRole):
-    def process_link(self, *args, **kwds):
-        title, target = super().process_link(*args, **kwds)
-        return f"@{title}", target
+    class inner(nodes.literal):
+        def __init__(self, raw, text, *args, **kwds):
+            super().__init__(raw, f"@{text}", *args, **kwds)
+
+    def __init__(self, *args, **kwds):
+        super().__init__(*args, innernodeclass=PyDecoratorRole.inner, **kwds)
 
 
 def setup(app):
