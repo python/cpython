@@ -297,12 +297,15 @@ class _ReadlineWrapper:
         """
         reader = self.get_reader()
         saved = reader.more_lines
+        original_stderr = sys.stderr
+        sys.stderr = None
         try:
             reader.more_lines = more_lines
             reader.ps1 = reader.ps2 = ps1
             reader.ps3 = reader.ps4 = ps2
             return reader.readline(), reader.was_paste_mode_activated
         finally:
+            sys.stderr = original_stderr
             reader.more_lines = saved
             reader.paste_mode = False
             reader.was_paste_mode_activated = False
