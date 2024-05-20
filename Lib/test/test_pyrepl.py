@@ -22,7 +22,7 @@ curses = import_module("curses")
 readline = import_module("readline")
 
 from _pyrepl.console import Console, Event
-from _pyrepl.readline import ReadlineAlikeReader, ReadlineConfig, _ReadlineWrapper
+from _pyrepl.readline import ReadlineAlikeReader, ReadlineConfig
 from _pyrepl.simple_interact import _strip_final_indent
 from _pyrepl.unix_eventqueue import EventQueue
 from _pyrepl.input import KeymapTranslator
@@ -279,7 +279,7 @@ class TestCursorPosition(TestCase):
 
         # fmt: off
         code = (
-            f"{for_loop}\n"
+           f"{for_loop}\n"
             "  ' 可口可乐; 可口可樂'"
         )
         # fmt: on
@@ -302,7 +302,7 @@ class TestCursorPosition(TestCase):
 
         # fmt: off
         code = (
-            f"{for_loop}\n"
+           f"{for_loop}\n"
             "  ' 可口可乐; 可口可樂'"
         )
         # fmt: on
@@ -349,8 +349,8 @@ class TestCursorPosition(TestCase):
         code = (
             f"{first_line}\n"
             f"{second_line}\n"
-            "  h\n"
-            "  hel"
+             "  h\n"
+             "  hel"
         )
         # fmt: on
 
@@ -382,7 +382,7 @@ class TestCursorPosition(TestCase):
             "for _ in _:\n"
             "  hello\n"
             "  h\n"
-            f"{last_line}"
+           f"{last_line}"
         )
         # fmt: on
 
@@ -654,6 +654,7 @@ class TestPyReplCompleter(TestCase):
 
         self.assertEqual(output[0], "dummy.test_func.")
         self.assertEqual(f.getvalue(), "")
+
 
 @patch("_pyrepl.curses.tigetstr", lambda x: b"")
 class TestUnivEventQueue(TestCase):
@@ -930,24 +931,24 @@ class TestReader(TestCase):
     def test_calc_screen_wrap_simple(self):
         events = code_to_events(10 * "a")
         reader, _ = handle_events_narrow_console(events)
-        self.assert_screen_equals(reader, f"{9 * "a"}\\\na")
+        self.assert_screen_equals(reader, f"{9*"a"}\\\na")
 
     def test_calc_screen_wrap_wide_characters(self):
         events = code_to_events(8 * "a" + "樂")
         reader, _ = handle_events_narrow_console(events)
-        self.assert_screen_equals(reader, f"{8 * "a"}\\\n樂")
+        self.assert_screen_equals(reader, f"{8*"a"}\\\n樂")
 
     def test_calc_screen_wrap_three_lines(self):
         events = code_to_events(20 * "a")
         reader, _ = handle_events_narrow_console(events)
-        self.assert_screen_equals(reader, f"{9 * "a"}\\\n{9 * "a"}\\\naa")
+        self.assert_screen_equals(reader, f"{9*"a"}\\\n{9*"a"}\\\naa")
 
     def test_calc_screen_wrap_three_lines_mixed_character(self):
         # fmt: off
         code = (
             "def f():\n"
-            f"  {8 * "a"}\n"
-            f"  {5 * "樂"}"
+           f"  {8*"a"}\n"
+           f"  {5*"樂"}"
         )
         # fmt: on
 
@@ -957,9 +958,9 @@ class TestReader(TestCase):
         # fmt: off
         self.assert_screen_equals(reader, (
             "def f():\n"
-            f"  {7 * "a"}\\\n"
+           f"  {7*"a"}\\\n"
             "a\n"
-            f"  {3 * "樂"}\\\n"
+           f"  {3*"樂"}\\\n"
             "樂樂"
         ))
         # fmt: on
@@ -992,7 +993,7 @@ class TestReader(TestCase):
             ],
         )
         reader, _ = handle_events_narrow_console(events)
-        self.assert_screen_equals(reader, f"{9 * "a"}\\\na")
+        self.assert_screen_equals(reader, f"{9*"a"}\\\na")
 
     def test_setpos_for_xy_simple(self):
         events = code_to_events("11+11")
