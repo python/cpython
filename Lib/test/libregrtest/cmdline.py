@@ -513,15 +513,6 @@ def _parse_args(args, **kwargs):
               "--huntrleaks without -jN option",
               file=sys.stderr)
 
-    if ns.huntrleaks and ns.xmlpath:
-        # The XML data is written into a file outside runtest_refleak(), so
-        # it looks like a leak but it's not. Simply disable XML output when
-        # hunting for reference leaks (gh-83434).
-        ns.xmlpath = None
-        print("WARNING: Disable --junit-xml because it's incompatible "
-              "with --huntrleaks",
-              file=sys.stderr)
-
     if ns.forever:
         # --forever implies --failfast
         ns.failfast = True
