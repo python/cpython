@@ -113,6 +113,13 @@ dummy_func(void) {
         sym_set_type(right, &PyLong_Type);
     }
 
+    op(_GUARD_TYPE_VERSION, (type_version/2, owner -- owner)) {
+        if (sym_matches_type_version(owner, type_version)) {
+            REPLACE_OP(this_instr, _NOP, 0, 0);
+        }
+        sym_set_type_version(owner, type_version);
+    }
+
     op(_GUARD_BOTH_FLOAT, (left, right -- left, right)) {
         if (sym_matches_type(left, &PyFloat_Type)) {
             if (sym_matches_type(right, &PyFloat_Type)) {
