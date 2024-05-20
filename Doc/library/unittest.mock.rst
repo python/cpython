@@ -2585,12 +2585,12 @@ called incorrectly.
 Before I explain how auto-speccing works, here's why it is needed.
 
 :class:`Mock` is a very powerful and flexible object, but it suffers from a flaw which
-is general to mocking. If you refactor some of your code, rename members and so on, any 
-tests for code that is still using the *old api* but uses mocks instead of the real 
-objects will still pass. This means your tests can all pass even though your code is 
+is general to mocking. If you refactor some of your code, rename members and so on, any
+tests for code that is still using the *old api* but uses mocks instead of the real
+objects will still pass. This means your tests can all pass even though your code is
 broken.
 
-.. versionchanged:: 3.5 
+.. versionchanged:: 3.5
 
     Before 3.5, tests with a typo in the word assert would silently pass when they should
     raise an error. You can still achieve this behavior by passing ``unsafe=True`` to Mock.
