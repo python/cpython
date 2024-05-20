@@ -123,6 +123,11 @@ The typical usage to inspect a crashed program is::
    0
    (Pdb)
 
+.. versionchanged:: 3.13
+   The implementation of :pep:`667` means that name assignments made via `pdb`
+   will consistently and directly affect the active scope, even when running
+   inside a function, generator, or coroutine.
+
 
 The module defines the following functions; each enters the debugger in a
 slightly different way:
@@ -580,17 +585,9 @@ can be overridden by the local file.
 .. pdbcommand:: interact
 
    Start an interactive interpreter (using the :mod:`code` module) whose global
-   namespace contains all the (global and local) names found in the current
-   scope. Use ``exit()`` or ``quit()`` to exit the interpreter and return to
-   the debugger.
-
-   .. note::
-
-      Because interact creates a new global namespace with the current global
-      and local namespace for execution, assignment to variables will not
-      affect the original namespaces.
-      However, modification to the mutable objects will be reflected in the
-      original namespaces.
+   and local namespaces correspond to the global and local namespaces in the
+   current scope. Use ``exit()`` or ``quit()`` to exit the interpreter and
+   return to the debugger.
 
    .. versionadded:: 3.2
 
@@ -601,6 +598,11 @@ can be overridden by the local file.
    .. versionchanged:: 3.13
       :pdbcmd:`interact` directs its output to the debugger's
       output channel rather than :data:`sys.stderr`.
+
+   .. versionchanged:: 3.13
+      The implementation of :pep:`667` means that name assignments made via the
+      interactive console will directly affect the active scope, even when
+      running inside a function, generator, or coroutine.
 
 .. _debugger-aliases:
 

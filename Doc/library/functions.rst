@@ -543,18 +543,19 @@ are always available.  They are listed here in alphabetical order.
 
    The *expression* argument is parsed and evaluated as a Python expression
    (technically speaking, a condition list) using the *globals* and *locals*
-   dictionaries as global and local namespace.  If the *globals* dictionary is
+   mappings as global and local namespace.  If the *globals* dictionary is
    present and does not contain a value for the key ``__builtins__``, a
    reference to the dictionary of the built-in module :mod:`builtins` is
    inserted under that key before *expression* is parsed.  That way you can
    control what builtins are available to the executed code by inserting your
    own ``__builtins__`` dictionary into *globals* before passing it to
-   :func:`eval`.  If the *locals* dictionary is omitted it defaults to the
-   *globals* dictionary.  If both dictionaries are omitted, the expression is
+   :func:`eval`.  If the *locals* mapping is omitted it defaults to the
+   *globals* dictionary.  If both mappings are omitted, the expression is
    executed with the *globals* and *locals* in the environment where
-   :func:`eval` is called.  Note, *eval()* does not have access to the
+   :func:`eval` is called.  Note, *eval()* will only have access to the
    :term:`nested scopes <nested scope>` (non-locals) in the enclosing
-   environment.
+   environment if they are already referenced in the scope that is calling
+   :func:`eval` (e.g. via a :keyword:`nonlocal` statement).
 
    Example:
 
@@ -587,6 +588,11 @@ are always available.  They are listed here in alphabetical order.
 
       The *globals* and *locals* arguments can now be passed as keywords.
 
+   .. versionchanged:: 3.13
+
+      The semantics of the default *locals* namespace have been adjusted as
+      described for the :func:`locals` builtin.
+
 .. index:: pair: built-in function; exec
 
 .. function:: exec(source, /, globals=None, locals=None, *, closure=None)
@@ -608,9 +614,9 @@ are always available.  They are listed here in alphabetical order.
    will be used for both the global and the local variables.  If *globals* and
    *locals* are given, they are used for the global and local variables,
    respectively.  If provided, *locals* can be any mapping object.  Remember
-   that at the module level, globals and locals are the same dictionary. If exec
-   gets two separate objects as *globals* and *locals*, the code will be
-   executed as if it were embedded in a class definition.
+   that at the module level, globals and locals are the same dictionary. If
+   ``exec`` gets two separate objects as *globals* and *locals*, the code will
+   be executed as if it were embedded in a class definition.
 
    If the *globals* dictionary does not contain a value for the key
    ``__builtins__``, a reference to the dictionary of the built-in module
@@ -631,7 +637,7 @@ are always available.  They are listed here in alphabetical order.
    .. note::
 
       The built-in functions :func:`globals` and :func:`locals` return the current
-      global and local dictionary, respectively, which may be useful to pass around
+      global and local namespace, respectively, which may be useful to pass around
       for use as the second and third argument to :func:`exec`.
 
    .. note::
@@ -646,6 +652,11 @@ are always available.  They are listed here in alphabetical order.
    .. versionchanged:: 3.13
 
       The *globals* and *locals* arguments can now be passed as keywords.
+
+   .. versionchanged:: 3.13
+
+      The semantics of the default *locals* namespace have been adjusted as
+      described for the :func:`locals` builtin.
 
 
 .. function:: filter(function, iterable)
@@ -1063,10 +1074,10 @@ are always available.  They are listed here in alphabetical order.
 
     In all of the above cases, each call to ``locals()`` in a given frame of
     execution will return the *same* mapping object. Changes made through
-    the mapping object returned from ``locals()`` will be visible as bound,
-    rebound, or deleted local variables, and binding, rebinding, or deleting
-    local variables will immediately affect the contents of the returned mapping
-    object.
+    the mapping object returned from ``locals()`` will be visible as assigned,
+    reassigned, or deleted local variables, and assigning, reassigning, or
+    deleting local variables will immediately affect the contents of the
+    returned mapping object.
 
     At function scope (including for generators and coroutines), each call to
     ``locals()`` instead returns a fresh dictionary containing the current
@@ -1077,15 +1088,56 @@ are always available.  They are listed here in alphabetical order.
     cell references does *not* affect the contents of previously returned
     dictionaries.
 
-   .. versionchanged:: 3.13
-      In previous versions, the semantics of mutating the mapping object
-      returned from this function were formally undefined. In CPython
-      specifically, the mapping returned at function scope could be
-      implicitly refreshed by other operations, such as calling ``locals()``
-      again. Obtaining the legacy CPython behaviour now requires explicit
-      calls to update the initially returned dictionary with the results
-      of subsequent calls to ``locals()``.
+    Calling ``locals()`` as part of a comprehension in a function, generator, or
+    coroutine is equivalent to calling it in the containing scope, except that
+    the comprehension's initialised iteration variables will be included. In
+    other scopes, it behaves as if the comprehension were running as a nested
+    function.
 
+    Calling ``locals()`` as part of a generator expression is equivalent to
+    calling it in a nested generator function.
+
+
+   .. versionchanged:: 3.13
+      As part of :pep:`667`, the semantics of mutating the mapping object
+      returned from this function are now formally defined. The behavior in
+      functions, generators, coroutines, comprehensions, and generator
+      expressions is now as described above. Aside from being defined, the
+      behaviour in other scopes remains unchanged from previous versions.
+
+   .. versionchanged:: 3.13
+      As part of :pep:`667`, the mapping returned when called in a function,
+      generator, coroutine, comprehension or generator expression is an
+      independent snapshot of the currently assigned local and locally
+      referenced nonlocal variables. In CPython specifically, the mapping
+      returned in these scopes could previously be implicitly refreshed by other
+      operations, such as calling ``locals()`` again. Obtaining the legacy
+      CPython behaviour now requires explicit calls to update the initially
+      returned dictionary with the results of subsequent calls to ``locals()``.
+
+   .. versionchanged:: 3.13
+      As part of :pep:`667`, calling `locals()` in a comprehension at module
+      or class scope (including via `exec` or `eval`) once more behaves as if
+      the comprehension were running as an independent nested function (i.e.
+      the local variables from the containing scope are not included).
+
+   .. versionchanged:: 3.12
+      As part of :pep:`709`, calling `locals()` in a comprehension at module
+      or class scope (including via `exec` or `eval`) produces an independent
+      snapshot of the containing scope with the comprehension iteration
+      variable(s) included.
+
+   .. versionchanged:: 3.12
+      As part of :pep:`709`, calling `locals()` in a comprehension as part of a
+      function, generator, or coroutine returns the same `locals()` reference
+      as calls in the containing scope.
+
+   ..
+      Possible simplification: change the 3.12 note to just "Changes to
+      behavior in comprehensions as described in :pep:`709`", and do somethine
+      similar for 3.13 and :pep:`667`. While the draft change notes are
+      comprehensive, they're also almost entirely in the "Who is really going
+      to care?" category.
 
 .. function:: map(function, iterable, *iterables)
 
@@ -1971,13 +2023,17 @@ are always available.  They are listed here in alphabetical order.
    :attr:`~object.__dict__` attributes (for example, classes use a
    :class:`types.MappingProxyType` to prevent direct dictionary updates).
 
-   Without an argument, :func:`vars` acts like :func:`locals`.  Note, the
-   locals dictionary is only useful for reads since updates to the locals
-   dictionary are ignored.
+   Without an argument, :func:`vars` acts like :func:`locals`.
 
    A :exc:`TypeError` exception is raised if an object is specified but
    it doesn't have a :attr:`~object.__dict__` attribute (for example, if
    its class defines the :attr:`~object.__slots__` attribute).
+
+   .. versionchanged:: 3.13
+
+      The semantics of calling this function without an argument have been
+      adjusted as described for the :func:`locals` builtin.
+
 
 .. function:: zip(*iterables, strict=False)
 

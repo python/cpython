@@ -94,10 +94,10 @@ Interpreter improvements:
   Performance improvements are modest -- we expect to be improving this
   over the next few releases.
 
-* :pep:`667`: :attr:`FrameType.f_locals <frame.f_locals>` when used in
-  a function now returns a write-through proxy to the frame's locals,
-  rather than a ``dict``. See the PEP for corresponding C API changes
-  and deprecations.
+* :pep:`667`: The `func:`locals` builtin now has defined semantics when mutating
+  the returned mapping. Python debuggers and similar tools may now more reliably
+  update local variables in optimised frames even during concurrent code
+  execution.
 
 New typing features:
 
@@ -369,6 +369,30 @@ disabled with the :envvar:`PYTHON_GIL` environment variable or the
 
 pip 24.1b1 or newer is required to install packages with C extensions in the
 free-threaded build.
+
+
+Defined mutation semantics for ``locals()``
+-------------------------------------------
+
+Historically, the semantics for mutating the return value of :func:`locals` have
+been left to individual Python implementations to define.
+
+Through :pep:`667`, Python 3.13 standardises the historical behaviour of CPython
+for most code execution scopes, but changes optimised scopes (functions,
+generators, coroutines, comprehensions, generator expressions) to explicitly
+return independent snapshots of the currently assigned local and nonlocal
+name references.
+
+To ensure debuggers and similar tools can reliably update local variables in
+affected scopes, :attr:`FrameType.f_locals <frame.f_locals>` now returns a
+write-through proxy to the frame's local and locally reference nonlocal
+variables rather than a ``dict`` with unclear runtime semantics.
+
+See :pep:`667` for more details, including related C API changes and
+deprecations.
+
+.. todo: Add notes to porting guide
+
 
 Other Language Changes
 ======================

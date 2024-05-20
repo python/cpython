@@ -25,7 +25,7 @@ class InteractiveInterpreter:
     def __init__(self, locals=None):
         """Constructor.
 
-        The optional 'locals' argument specifies the dictionary in
+        The optional 'locals' argument specifies the mapping in
         which code will be executed; it defaults to a newly created
         dictionary with key "__name__" set to "__console__" and key
         "__doc__" set to None.
