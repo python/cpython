@@ -1,2 +1,2 @@
-Fix TypeError in :func:`email.Message.get_payload` when the charset is :rfc:`2231`
-encoded.
+Fix TypeError in :func:`email.message.Message.get_payload` when the charset is
+:rfc:`2231` encoded.

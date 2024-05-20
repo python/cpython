@@ -1,2 +1,2 @@
-Fix a bug where :func:`sqlite3.iterdump` could fail if a custom :attr:`row
+Fix a bug where :func:`!sqlite3.iterdump` could fail if a custom :attr:`row
 factory <sqlite3.Connection.row_factory>` was used. Patch by Erlend Aasland.
