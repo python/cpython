@@ -418,7 +418,6 @@ optimize_uops(
         _Py_UopsSymbol **stack_pointer = ctx->frame->stack_pointer;
 
         if (_PyUop_Flags[opcode] & HAS_ESCAPES_FLAG) {
-            printf("opcode: %d ", opcode);
             ctx->latest_escape_offset = i; // i is the offset we're looping on
         }
 

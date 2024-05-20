@@ -116,7 +116,6 @@ dummy_func(void) {
     }
 
     op(_GUARD_TYPE_VERSION, (type_version/2, owner -- owner)) {
-        printf("%d %d %d\n", type_version, owner->typ_version, owner->typ_version_offset);
         if (sym_matches_type_version(owner, type_version, ctx->latest_escape_offset)) {
             REPLACE_OP(this_instr, _NOP, 0, 0);
         }
@@ -712,7 +711,6 @@ dummy_func(void) {
     }
 
     op(_ITER_NEXT_RANGE, (iter -- iter, next)) {
-        printf("ciao");
        next = sym_new_type(ctx, &PyLong_Type);
        (void)iter;
     }
