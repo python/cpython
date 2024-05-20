@@ -5,11 +5,17 @@ on:
       - '**jit**'
       - 'Python/bytecodes.c'
       - 'Python/optimizer*.c'
+      - '!Python/perf_jit_trampoline.c'
+      - '!**/*.md'
+      - '!**/*.ini'
   push:
     paths:
       - '**jit**'
       - 'Python/bytecodes.c'
       - 'Python/optimizer*.c'
+      - '!Python/perf_jit_trampoline.c'
+      - '!**/*.md'
+      - '!**/*.ini'
   workflow_dispatch:
 
 permissions:
@@ -23,7 +29,7 @@ jobs:
   jit:
     name: ${{ matrix.target }} (${{ matrix.debug && 'Debug' || 'Release' }})
     runs-on: ${{ matrix.runner }}
-    timeout-minutes: 75
+    timeout-minutes: 90
     strategy:
       fail-fast: false
       matrix:

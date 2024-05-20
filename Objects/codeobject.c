@@ -5,6 +5,8 @@
 
 #include "pycore_code.h"          // _PyCodeConstructor
 #include "pycore_frame.h"         // FRAME_SPECIALS_SIZE
+#include "pycore_hashtable.h"     // _Py_hashtable_t
+#include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_interp.h"        // PyInterpreterState.co_extra_freefuncs
 #include "pycore_object.h"        // _PyObject_SetDeferredRefcount
 #include "pycore_opcode_metadata.h" // _PyOpcode_Deopt, _PyOpcode_Caches
@@ -100,10 +102,20 @@ PyCode_ClearWatcher(int watcher_id)
  * generic helpers
  ******************/
 
-/* all_name_chars(s): true iff s matches [a-zA-Z0-9_]* */
 static int
-all_name_chars(PyObject *o)
+should_intern_string(PyObject *o)
 {
+#ifdef Py_GIL_DISABLED
+    // The free-threaded build interns (and immortalizes) all string constants
+    // unless we've disabled immortalizing objects that use deferred reference
+    // counting.
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    if (interp->gc.immortalize.enable_on_thread_created) {
+        return 1;
+    }
+#endif
+
+    // compute if s matches [a-zA-Z0-9_]
     const unsigned char *s, *e;
 
     if (!PyUnicode_IS_ASCII(o))
@@ -117,6 +129,10 @@ all_name_chars(PyObject *o)
     }
     return 1;
 }
+
+#ifdef Py_GIL_DISABLED
+static PyObject *intern_one_constant(PyObject *op);
+#endif
 
 static int
 intern_strings(PyObject *tuple)
@@ -135,14 +151,16 @@ intern_strings(PyObject *tuple)
     return 0;
 }
 
-/* Intern selected string constants */
+/* Intern constants. In the default build, this interns selected string
+   constants. In the free-threaded build, this also interns non-string
+   constants. */
 static int
-intern_string_constants(PyObject *tuple, int *modified)
+intern_constants(PyObject *tuple, int *modified)
 {
     for (Py_ssize_t i = PyTuple_GET_SIZE(tuple); --i >= 0; ) {
         PyObject *v = PyTuple_GET_ITEM(tuple, i);
         if (PyUnicode_CheckExact(v)) {
-            if (all_name_chars(v)) {
+            if (should_intern_string(v)) {
                 PyObject *w = v;
                 PyUnicode_InternInPlace(&v);
                 if (w != v) {
@@ -154,7 +172,7 @@ intern_string_constants(PyObject *tuple, int *modified)
             }
         }
         else if (PyTuple_CheckExact(v)) {
-            if (intern_string_constants(v, NULL) < 0) {
+            if (intern_constants(v, NULL) < 0) {
                 return -1;
             }
         }
@@ -165,7 +183,7 @@ intern_string_constants(PyObject *tuple, int *modified)
                 return -1;
             }
             int tmp_modified = 0;
-            if (intern_string_constants(tmp, &tmp_modified) < 0) {
+            if (intern_constants(tmp, &tmp_modified) < 0) {
                 Py_DECREF(tmp);
                 return -1;
             }
@@ -184,6 +202,59 @@ intern_string_constants(PyObject *tuple, int *modified)
             }
             Py_DECREF(tmp);
         }
+#ifdef Py_GIL_DISABLED
+        else if (PySlice_Check(v)) {
+            PySliceObject *slice = (PySliceObject *)v;
+            PyObject *tmp = PyTuple_New(3);
+            if (tmp == NULL) {
+                return -1;
+            }
+            PyTuple_SET_ITEM(tmp, 0, Py_NewRef(slice->start));
+            PyTuple_SET_ITEM(tmp, 1, Py_NewRef(slice->stop));
+            PyTuple_SET_ITEM(tmp, 2, Py_NewRef(slice->step));
+            int tmp_modified = 0;
+            if (intern_constants(tmp, &tmp_modified) < 0) {
+                Py_DECREF(tmp);
+                return -1;
+            }
+            if (tmp_modified) {
+                v = PySlice_New(PyTuple_GET_ITEM(tmp, 0),
+                                PyTuple_GET_ITEM(tmp, 1),
+                                PyTuple_GET_ITEM(tmp, 2));
+                if (v == NULL) {
+                    Py_DECREF(tmp);
+                    return -1;
+                }
+                PyTuple_SET_ITEM(tuple, i, v);
+                Py_DECREF(slice);
+                if (modified) {
+                    *modified = 1;
+                }
+            }
+            Py_DECREF(tmp);
+        }
+
+        // Intern non-string consants in the free-threaded build, but only if
+        // we are also immortalizing objects that use deferred reference
+        // counting.
+        PyThreadState *tstate = PyThreadState_GET();
+        if (!_Py_IsImmortal(v) && !PyCode_Check(v) &&
+            !PyUnicode_CheckExact(v) &&
+            tstate->interp->gc.immortalize.enable_on_thread_created)
+        {
+            PyObject *interned = intern_one_constant(v);
+            if (interned == NULL) {
+                return -1;
+            }
+            else if (interned != v) {
+                PyTuple_SET_ITEM(tuple, i, interned);
+                Py_SETREF(v, interned);
+                if (modified) {
+                    *modified = 1;
+                }
+            }
+        }
+#endif
     }
     return 0;
 }
@@ -390,11 +461,9 @@ init_code(PyCodeObject *co, struct _PyCodeConstructor *con)
     co->co_filename = Py_NewRef(con->filename);
     co->co_name = Py_NewRef(con->name);
     co->co_qualname = Py_NewRef(con->qualname);
-#ifdef Py_GIL_DISABLED
     PyUnicode_InternInPlace(&co->co_filename);
     PyUnicode_InternInPlace(&co->co_name);
     PyUnicode_InternInPlace(&co->co_qualname);
-#endif
     co->co_flags = con->flags;
 
     co->co_firstlineno = con->firstlineno;
@@ -542,18 +611,41 @@ remove_column_info(PyObject *locations)
     return res;
 }
 
+static int
+intern_code_constants(struct _PyCodeConstructor *con)
+{
+#ifdef Py_GIL_DISABLED
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    struct _py_code_state *state = &interp->code_state;
+    PyMutex_Lock(&state->mutex);
+#endif
+    if (intern_strings(con->names) < 0) {
+        goto error;
+    }
+    if (intern_constants(con->consts, NULL) < 0) {
+        goto error;
+    }
+    if (intern_strings(con->localsplusnames) < 0) {
+        goto error;
+    }
+#ifdef Py_GIL_DISABLED
+    PyMutex_Unlock(&state->mutex);
+#endif
+    return 0;
+
+error:
+#ifdef Py_GIL_DISABLED
+    PyMutex_Unlock(&state->mutex);
+#endif
+    return -1;
+}
+
 /* The caller is responsible for ensuring that the given data is valid. */
 
 PyCodeObject *
 _PyCode_New(struct _PyCodeConstructor *con)
 {
-    if (intern_strings(con->names) < 0) {
-        return NULL;
-    }
-    if (intern_string_constants(con->consts, NULL) < 0) {
-        return NULL;
-    }
-    if (intern_strings(con->localsplusnames) < 0) {
+    if (intern_code_constants(con) < 0) {
         return NULL;
     }
 
@@ -2398,4 +2490,184 @@ _PyCode_ConstantKey(PyObject *op)
         Py_DECREF(obj_id);
     }
     return key;
+}
+
+#ifdef Py_GIL_DISABLED
+static PyObject *
+intern_one_constant(PyObject *op)
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    _Py_hashtable_t *consts = interp->code_state.constants;
+
+    assert(!PyUnicode_CheckExact(op));  // strings are interned separately
+
+    _Py_hashtable_entry_t *entry = _Py_hashtable_get_entry(consts, op);
+    if (entry == NULL) {
+        if (_Py_hashtable_set(consts, op, op) != 0) {
+            return NULL;
+        }
+
+#ifdef Py_REF_DEBUG
+        Py_ssize_t refcnt = Py_REFCNT(op);
+        if (refcnt != 1) {
+            // Adjust the reftotal to account for the fact that we only
+            // restore a single reference in _PyCode_Fini.
+            _Py_AddRefTotal(_PyThreadState_GET(), -(refcnt - 1));
+        }
+#endif
+
+        _Py_SetImmortal(op);
+        return op;
+    }
+
+    assert(_Py_IsImmortal(entry->value));
+    return (PyObject *)entry->value;
+}
+
+static int
+compare_constants(const void *key1, const void *key2) {
+    PyObject *op1 = (PyObject *)key1;
+    PyObject *op2 = (PyObject *)key2;
+    if (op1 == op2) {
+        return 1;
+    }
+    if (Py_TYPE(op1) != Py_TYPE(op2)) {
+        return 0;
+    }
+    // We compare container contents by identity because we have already
+    // internalized the items.
+    if (PyTuple_CheckExact(op1)) {
+        Py_ssize_t size = PyTuple_GET_SIZE(op1);
+        if (size != PyTuple_GET_SIZE(op2)) {
+            return 0;
+        }
+        for (Py_ssize_t i = 0; i < size; i++) {
+            if (PyTuple_GET_ITEM(op1, i) != PyTuple_GET_ITEM(op2, i)) {
+                return 0;
+            }
+        }
+        return 1;
+    }
+    else if (PyFrozenSet_CheckExact(op1)) {
+        if (PySet_GET_SIZE(op1) != PySet_GET_SIZE(op2)) {
+            return 0;
+        }
+        Py_ssize_t pos1 = 0, pos2 = 0;
+        PyObject *obj1, *obj2;
+        Py_hash_t hash1, hash2;
+        while ((_PySet_NextEntry(op1, &pos1, &obj1, &hash1)) &&
+               (_PySet_NextEntry(op2, &pos2, &obj2, &hash2)))
+        {
+            if (obj1 != obj2) {
+                return 0;
+            }
+        }
+        return 1;
+    }
+    else if (PySlice_Check(op1)) {
+        PySliceObject *s1 = (PySliceObject *)op1;
+        PySliceObject *s2 = (PySliceObject *)op2;
+        return (s1->start == s2->start &&
+                s1->stop  == s2->stop  &&
+                s1->step  == s2->step);
+    }
+    else if (PyBytes_CheckExact(op1) || PyLong_CheckExact(op1)) {
+        return PyObject_RichCompareBool(op1, op2, Py_EQ);
+    }
+    else if (PyFloat_CheckExact(op1)) {
+        // Ensure that, for example, +0.0 and -0.0 are distinct
+        double f1 = PyFloat_AS_DOUBLE(op1);
+        double f2 = PyFloat_AS_DOUBLE(op2);
+        return memcmp(&f1, &f2, sizeof(double)) == 0;
+    }
+    else if (PyComplex_CheckExact(op1)) {
+        Py_complex c1 = ((PyComplexObject *)op1)->cval;
+        Py_complex c2 = ((PyComplexObject *)op2)->cval;
+        return memcmp(&c1, &c2, sizeof(Py_complex)) == 0;
+    }
+    _Py_FatalErrorFormat("unexpected type in compare_constants: %s",
+                         Py_TYPE(op1)->tp_name);
+    return 0;
+}
+
+static Py_uhash_t
+hash_const(const void *key)
+{
+    PyObject *op = (PyObject *)key;
+    if (PySlice_Check(op)) {
+        PySliceObject *s = (PySliceObject *)op;
+        PyObject *data[3] = { s->start, s->stop, s->step };
+        return _Py_HashBytes(&data, sizeof(data));
+    }
+    else if (PyTuple_CheckExact(op)) {
+        Py_ssize_t size = PyTuple_GET_SIZE(op);
+        PyObject **data = _PyTuple_ITEMS(op);
+        return _Py_HashBytes(data, sizeof(PyObject *) * size);
+    }
+    Py_hash_t h = PyObject_Hash(op);
+    if (h == -1) {
+        // This should never happen: all the constants we support have
+        // infallible hash functions.
+        Py_FatalError("code: hash failed");
+    }
+    return (Py_uhash_t)h;
+}
+
+static int
+clear_containers(_Py_hashtable_t *ht, const void *key, const void *value,
+                 void *user_data)
+{
+    // First clear containers to avoid recursive deallocation later on in
+    // destroy_key.
+    PyObject *op = (PyObject *)key;
+    if (PyTuple_CheckExact(op)) {
+        for (Py_ssize_t i = 0; i < PyTuple_GET_SIZE(op); i++) {
+            Py_CLEAR(_PyTuple_ITEMS(op)[i]);
+        }
+    }
+    else if (PySlice_Check(op)) {
+        PySliceObject *slice = (PySliceObject *)op;
+        Py_SETREF(slice->start, Py_None);
+        Py_SETREF(slice->stop, Py_None);
+        Py_SETREF(slice->step, Py_None);
+    }
+    else if (PyFrozenSet_CheckExact(op)) {
+        _PySet_ClearInternal((PySetObject *)op);
+    }
+    return 0;
+}
+
+static void
+destroy_key(void *key)
+{
+    _Py_ClearImmortal(key);
+}
+#endif
+
+PyStatus
+_PyCode_Init(PyInterpreterState *interp)
+{
+#ifdef Py_GIL_DISABLED
+    struct _py_code_state *state = &interp->code_state;
+    state->constants = _Py_hashtable_new_full(&hash_const, &compare_constants,
+                                              &destroy_key, NULL, NULL);
+    if (state->constants == NULL) {
+        return _PyStatus_NO_MEMORY();
+    }
+#endif
+    return _PyStatus_OK();
+}
+
+void
+_PyCode_Fini(PyInterpreterState *interp)
+{
+#ifdef Py_GIL_DISABLED
+    // Free interned constants
+    struct _py_code_state *state = &interp->code_state;
+    if (state->constants) {
+        _Py_hashtable_foreach(state->constants, &clear_containers, NULL);
+        _Py_hashtable_destroy(state->constants);
+        state->constants = NULL;
+    }
+#endif
 }

@@ -866,7 +866,20 @@ builtin_compile_impl(PyObject *module, PyObject *source, PyObject *filename,
     if (str == NULL)
         goto error;
 
+#ifdef Py_GIL_DISABLED
+    // gh-118527: Disable immortalization of code constants for explicit
+    // compile() calls to get consistent frozen outputs between the default
+    // and free-threaded builds.
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    int old_value = interp->gc.immortalize.enable_on_thread_created;
+    interp->gc.immortalize.enable_on_thread_created = 0;
+#endif
+
     result = Py_CompileStringObject(str, filename, start[compile_mode], &cf, optimize);
+
+#ifdef Py_GIL_DISABLED
+    interp->gc.immortalize.enable_on_thread_created = old_value;
+#endif
 
     Py_XDECREF(source_copy);
     goto finally;
@@ -3125,7 +3138,7 @@ _PyBuiltin_Init(PyInterpreterState *interp)
     if (mod == NULL)
         return NULL;
 #ifdef Py_GIL_DISABLED
-    PyModule_ExperimentalSetGIL(mod, Py_MOD_GIL_NOT_USED);
+    PyUnstable_Module_SetGIL(mod, Py_MOD_GIL_NOT_USED);
 #endif
     dict = PyModule_GetDict(mod);
 

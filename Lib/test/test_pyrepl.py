@@ -15,9 +15,9 @@ from test.support.import_helper import import_module
 # Optionally test pyrepl.  This currently requires that the
 # 'curses' resource be given on the regrtest command line using the -u
 # option.  Additionally, we need to attempt to import curses and readline.
-requires('curses')
-curses = import_module('curses')
-readline = import_module('readline')
+requires("curses")
+curses = import_module("curses")
+readline = import_module("readline")
 
 from _pyrepl.console import Console, Event
 from _pyrepl.readline import ReadlineAlikeReader, ReadlineConfig
@@ -580,13 +580,18 @@ class TestPyReplCompleter(TestCase):
         self.assertEqual(output, "os.getenv")
 
     def test_completion_with_many_options(self):
-        events = code_to_events("os.\t\tO_AS\t\n")
+        # Test with something that initially displays many options
+        # and then complete from one of them. The first time tab is
+        # pressed, the options are displayed (which corresponds to
+        # when the repl shows [ not unique ]) and the second completes
+        # from one of them.
+        events = code_to_events("os.\t\tO_AP\t\n")
 
         namespace = {"os": os}
         reader = self.prepare_reader(events, namespace)
 
         output = multiline_input(reader, namespace)
-        self.assertEqual(output, "os.O_ASYNC")
+        self.assertEqual(output, "os.O_APPEND")
 
     def test_empty_namespace_completion(self):
         events = code_to_events("os.geten\t\n")
@@ -602,6 +607,30 @@ class TestPyReplCompleter(TestCase):
         reader = self.prepare_reader(events, namespace)
         output = multiline_input(reader, namespace)
         self.assertEqual(output, "python")
+
+    def test_updown_arrow_with_completion_menu(self):
+        """Up arrow in the middle of unfinished tab completion when the menu is displayed
+        should work and trigger going back in history. Down arrow should subsequently
+        get us back to the incomplete command."""
+        code = "import os\nos.\t\t"
+        namespace = {"os": os}
+
+        events = itertools.chain(
+            code_to_events(code),
+            [
+                Event(evt='key', data='up', raw=bytearray(b'\x1bOA')),
+                Event(evt="key", data="down", raw=bytearray(b"\x1bOB")),
+            ],
+            code_to_events("\n")
+        )
+        reader = self.prepare_reader(events, namespace=namespace)
+        output = multiline_input(reader, namespace)
+        # This is the first line, nothing to see here
+        self.assertEqual(output, "import os")
+        # This is the second line. We pressed up and down arrows
+        # so we should end up where we were when we initiated tab completion.
+        output = multiline_input(reader, namespace)
+        self.assertEqual(output, "os.")
 
 
 @patch("_pyrepl.curses.tigetstr", lambda x: b"")
@@ -814,6 +843,61 @@ class TestPasteEvent(TestCase):
         output = multiline_input(reader)
         self.assertEqual(output, output_code)
 
+    def test_bracketed_paste(self):
+        """Test that bracketed paste using \x1b[200~ and \x1b[201~ works."""
+        # fmt: off
+        input_code = (
+            'def a():\n'
+            '  for x in range(10):\n'
+            '\n'
+            '    if x%2:\n'
+            '      print(x)\n'
+            '\n'
+            '    else:\n'
+            '      pass\n'
+        )
+
+        output_code = (
+            'def a():\n'
+            '  for x in range(10):\n'
+            '\n'
+            '    if x%2:\n'
+            '      print(x)\n'
+            '\n'
+            '    else:\n'
+            '      pass\n'
+        )
+        # fmt: on
+
+        paste_start = "\x1b[200~"
+        paste_end = "\x1b[201~"
+
+        events = itertools.chain(
+            code_to_events(paste_start),
+            code_to_events(input_code),
+            code_to_events(paste_end),
+            code_to_events("\n"),
+        )
+        reader = self.prepare_reader(events)
+        output = multiline_input(reader)
+        self.assertEqual(output, output_code)
+
+    def test_bracketed_paste_single_line(self):
+        input_code = "oneline"
+
+        paste_start = "\x1b[200~"
+        paste_end = "\x1b[201~"
+
+        events = itertools.chain(
+            code_to_events(paste_start),
+            code_to_events(input_code),
+            code_to_events(paste_end),
+            code_to_events("\n"),
+        )
+        reader = self.prepare_reader(events)
+        output = multiline_input(reader)
+        self.assertEqual(output, input_code)
+
 
 class TestReader(TestCase):
     def assert_screen_equals(self, reader, expected):
@@ -932,6 +1016,16 @@ class TestReader(TestCase):
         reader, _ = handle_events_narrow_console(events)
         reader.setpos_from_xy(0, 1)
         self.assertEqual(reader.pos, 9)
+
+    def test_up_arrow_after_ctrl_r(self):
+        events = iter([
+            Event(evt='key', data='\x12', raw=bytearray(b'\x12')),
+            Event(evt='key', data='up', raw=bytearray(b'\x1bOA')),
+        ])
+
+        reader, _ = handle_all_events(events)
+        self.assert_screen_equals(reader, "")
+
 
 class KeymapTranslatorTests(unittest.TestCase):
     def test_push_single_key(self):
@@ -1101,5 +1195,5 @@ class TestCompileKeymap(unittest.TestCase):
         self.assertEqual(result, {b"a": {b"b": {b"c": "action"}}})
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     unittest.main()

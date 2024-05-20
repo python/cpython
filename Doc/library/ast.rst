@@ -1,5 +1,5 @@
-:mod:`ast` --- Abstract Syntax Trees
-====================================
+:mod:`!ast` --- Abstract Syntax Trees
+=====================================
 
 .. module:: ast
    :synopsis: Abstract Syntax Tree classes and manipulation.
@@ -61,7 +61,7 @@ Node classes
 
    .. attribute:: _fields
 
-      Each concrete class has an attribute :attr:`_fields` which gives the names
+      Each concrete class has an attribute :attr:`!_fields` which gives the names
       of all child nodes.
 
       Each instance of a concrete class has one attribute for each child node,
@@ -73,6 +73,18 @@ Node classes
       zero-or-more values (marked with an asterisk), the values are represented
       as Python lists.  All possible attributes must be present and have valid
       values when compiling an AST with :func:`compile`.
+
+   .. attribute:: _field_types
+
+      The :attr:`!_field_types` attribute on each concrete class is a dictionary
+      mapping field names (as also listed in :attr:`_fields`) to their types.
+
+      .. doctest::
+
+           >>> ast.TypeVar._field_types
+           {'name': <class 'str'>, 'bound': ast.expr | None, 'default_value': ast.expr | None}
+
+      .. versionadded:: 3.13
 
    .. attribute:: lineno
                   col_offset
@@ -108,7 +120,8 @@ Node classes
 
    If a field that is optional in the grammar is omitted from the constructor,
    it defaults to ``None``. If a list field is omitted, it defaults to the empty
-   list. If any other field is omitted, a :exc:`DeprecationWarning` is raised
+   list. If a field of type :class:`!ast.expr_context` is omitted, it defaults to
+   :class:`Load() <ast.Load>`. If any other field is omitted, a :exc:`DeprecationWarning` is raised
    and the AST node will not have this field. In Python 3.15, this condition will
    raise an error.
 
@@ -584,8 +597,7 @@ Expressions
    * ``keywords`` holds a list of :class:`.keyword` objects representing
      arguments passed by keyword.
 
-   When creating a ``Call`` node, ``args`` and ``keywords`` are required, but
-   they can be empty lists.
+   The ``args`` and ``keywords`` arguments are optional and default to empty lists.
 
    .. doctest::
 

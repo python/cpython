@@ -278,7 +278,7 @@ Module contents
      generated equality and comparison methods (:meth:`~object.__eq__`,
      :meth:`~object.__gt__`, et al.).
 
-   - *metadata*: This can be a mapping or None. None is treated as
+   - *metadata*: This can be a mapping or ``None``. ``None`` is treated as
      an empty dict.  This value is wrapped in
      :func:`~types.MappingProxyType` to make it read-only, and exposed
      on the :class:`Field` object. It is not used at all by Data
@@ -615,7 +615,8 @@ methods will raise a :exc:`FrozenInstanceError` when invoked.
 
 There is a tiny performance penalty when using ``frozen=True``:
 :meth:`~object.__init__` cannot use simple assignment to initialize fields, and
-must use :meth:`!__setattr__`.
+must use :meth:`!object.__setattr__`.
+.. Make sure to not remove "object" from "object.__setattr__" in the above markup
 
 .. _dataclasses-inheritance:
 

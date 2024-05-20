@@ -3036,7 +3036,24 @@ class ASTConstructorTests(unittest.TestCase):
         self.assertEqual(node.name, 'foo')
         self.assertEqual(node.decorator_list, [])
 
-    def test_custom_subclass(self):
+    def test_expr_context(self):
+        name = ast.Name("x")
+        self.assertEqual(name.id, "x")
+        self.assertIsInstance(name.ctx, ast.Load)
+
+        name2 = ast.Name("x", ast.Store())
+        self.assertEqual(name2.id, "x")
+        self.assertIsInstance(name2.ctx, ast.Store)
+
+        name3 = ast.Name("x", ctx=ast.Del())
+        self.assertEqual(name3.id, "x")
+        self.assertIsInstance(name3.ctx, ast.Del)
+
+        with self.assertWarnsRegex(DeprecationWarning,
+                                   r"Name\.__init__ missing 1 required positional argument: 'id'"):
+            name3 = ast.Name()
+
+    def test_custom_subclass_with_no_fields(self):
         class NoInit(ast.AST):
             pass
 
@@ -3044,17 +3061,17 @@ class ASTConstructorTests(unittest.TestCase):
         self.assertIsInstance(obj, NoInit)
         self.assertEqual(obj.__dict__, {})
 
+    def test_fields_but_no_field_types(self):
         class Fields(ast.AST):
             _fields = ('a',)
 
-        with self.assertWarnsRegex(DeprecationWarning,
-                                   r"Fields provides _fields but not _field_types."):
-            obj = Fields()
+        obj = Fields()
         with self.assertRaises(AttributeError):
             obj.a
         obj = Fields(a=1)
         self.assertEqual(obj.a, 1)
 
+    def test_fields_and_types(self):
         class FieldsAndTypes(ast.AST):
             _fields = ('a',)
             _field_types = {'a': int | None}
@@ -3065,6 +3082,7 @@ class ASTConstructorTests(unittest.TestCase):
         obj = FieldsAndTypes(a=1)
         self.assertEqual(obj.a, 1)
 
+    def test_fields_and_types_no_default(self):
         class FieldsAndTypesNoDefault(ast.AST):
             _fields = ('a',)
             _field_types = {'a': int}
@@ -3076,6 +3094,38 @@ class ASTConstructorTests(unittest.TestCase):
             obj.a
         obj = FieldsAndTypesNoDefault(a=1)
         self.assertEqual(obj.a, 1)
+
+    def test_incomplete_field_types(self):
+        class MoreFieldsThanTypes(ast.AST):
+            _fields = ('a', 'b')
+            _field_types = {'a': int | None}
+            a: int | None = None
+            b: int | None = None
+
+        with self.assertWarnsRegex(
+            DeprecationWarning,
+            r"Field 'b' is missing from MoreFieldsThanTypes\._field_types"
+        ):
+            obj = MoreFieldsThanTypes()
+        self.assertIs(obj.a, None)
+        self.assertIs(obj.b, None)
+
+        obj = MoreFieldsThanTypes(a=1, b=2)
+        self.assertEqual(obj.a, 1)
+        self.assertEqual(obj.b, 2)
+
+    def test_complete_field_types(self):
+        class _AllFieldTypes(ast.AST):
+            _fields = ('a', 'b')
+            _field_types = {'a': int | None, 'b': list[str]}
+            # This must be set explicitly
+            a: int | None = None
+            # This will add an implicit empty list default
+            b: list[str]
+
+        obj = _AllFieldTypes()
+        self.assertIs(obj.a, None)
+        self.assertEqual(obj.b, [])
 
 
 @support.cpython_only

@@ -1,5 +1,5 @@
-:mod:`textwrap` --- Text wrapping and filling
-=============================================
+:mod:`!textwrap` --- Text wrapping and filling
+==============================================
 
 .. module:: textwrap
    :synopsis: Text wrapping and filling

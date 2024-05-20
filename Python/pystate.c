@@ -404,6 +404,7 @@ _Py_COMP_DIAG_POP
         &(runtime)->audit_hooks.mutex, \
         &(runtime)->allocators.mutex, \
         &(runtime)->_main_interpreter.types.mutex, \
+        &(runtime)->_main_interpreter.code_state.mutex, \
     }
 
 static void
@@ -1037,6 +1038,17 @@ _PyInterpreterState_DeleteExceptMain(_PyRuntimeState *runtime)
 }
 #endif
 
+static inline void
+set_main_thread(PyInterpreterState *interp, PyThreadState *tstate)
+{
+    _Py_atomic_store_ptr_relaxed(&interp->threads.main, tstate);
+}
+
+static inline PyThreadState *
+get_main_thread(PyInterpreterState *interp)
+{
+    return _Py_atomic_load_ptr_relaxed(&interp->threads.main);
+}
 
 int
 _PyInterpreterState_SetRunningMain(PyInterpreterState *interp)
@@ -1051,21 +1063,22 @@ _PyInterpreterState_SetRunningMain(PyInterpreterState *interp)
                         "current tstate has wrong interpreter");
         return -1;
     }
-    interp->threads.main = tstate;
+    set_main_thread(interp, tstate);
+
     return 0;
 }
 
 void
 _PyInterpreterState_SetNotRunningMain(PyInterpreterState *interp)
 {
-    assert(interp->threads.main == current_fast_get());
-    interp->threads.main = NULL;
+    assert(get_main_thread(interp) == current_fast_get());
+    set_main_thread(interp, NULL);
 }
 
 int
 _PyInterpreterState_IsRunningMain(PyInterpreterState *interp)
 {
-    if (interp->threads.main != NULL) {
+    if (get_main_thread(interp) != NULL) {
         return 1;
     }
     // Embedders might not know to call _PyInterpreterState_SetRunningMain(),
@@ -1081,18 +1094,15 @@ int
 _PyThreadState_IsRunningMain(PyThreadState *tstate)
 {
     PyInterpreterState *interp = tstate->interp;
-    if (interp->threads.main != NULL) {
-        return tstate == interp->threads.main;
-    }
     // See the note in _PyInterpreterState_IsRunningMain() about
     // possible false negatives here for embedders.
-    return 0;
+    return get_main_thread(interp) == tstate;
 }
 
 int
 _PyInterpreterState_FailIfRunningMain(PyInterpreterState *interp)
 {
-    if (interp->threads.main != NULL) {
+    if (get_main_thread(interp) != NULL) {
         PyErr_SetString(PyExc_InterpreterError,
                         "interpreter already running");
         return -1;
@@ -1104,8 +1114,8 @@ void
 _PyInterpreterState_ReinitRunningMain(PyThreadState *tstate)
 {
     PyInterpreterState *interp = tstate->interp;
-    if (interp->threads.main != tstate) {
-        interp->threads.main = NULL;
+    if (get_main_thread(interp) != tstate) {
+        set_main_thread(interp, NULL);
     }
 }
 
@@ -1487,6 +1497,7 @@ init_threadstate(_PyThreadStateImpl *_tstate,
     tstate->datastack_limit = NULL;
     tstate->what_event = -1;
     tstate->previous_executor = NULL;
+    tstate->dict_global_version = 0;
 
     tstate->delete_later = NULL;
 
@@ -1783,7 +1794,7 @@ tstate_delete_common(PyThreadState *tstate)
     HEAD_UNLOCK(runtime);
 
 #ifdef Py_GIL_DISABLED
-    _Py_qsbr_unregister((_PyThreadStateImpl *)tstate);
+    _Py_qsbr_unregister(tstate);
 #endif
 
     // XXX Unbind in PyThreadState_Clear(), or earlier
@@ -2055,19 +2066,36 @@ _PyThreadState_Attach(PyThreadState *tstate)
         Py_FatalError("non-NULL old thread state");
     }
 
-    _PyEval_AcquireLock(tstate);
 
-    // XXX assert(tstate_is_alive(tstate));
-    current_fast_set(&_PyRuntime, tstate);
-    tstate_activate(tstate);
+    while (1) {
+        int acquired_gil = _PyEval_AcquireLock(tstate);
 
-    if (!tstate_try_attach(tstate)) {
-        tstate_wait_attach(tstate);
-    }
+        // XXX assert(tstate_is_alive(tstate));
+        current_fast_set(&_PyRuntime, tstate);
+        tstate_activate(tstate);
+
+        if (!tstate_try_attach(tstate)) {
+            tstate_wait_attach(tstate);
+        }
 
 #ifdef Py_GIL_DISABLED
-    _Py_qsbr_attach(((_PyThreadStateImpl *)tstate)->qsbr);
+        if (_PyEval_IsGILEnabled(tstate) != acquired_gil) {
+            // The GIL was enabled between our call to _PyEval_AcquireLock()
+            // and when we attached (the GIL can't go from enabled to disabled
+            // here because only a thread holding the GIL can disable
+            // it). Detach and try again.
+            assert(!acquired_gil);
+            tstate_set_detached(tstate, _Py_THREAD_DETACHED);
+            tstate_deactivate(tstate);
+            current_fast_clear(&_PyRuntime);
+            continue;
+        }
+        _Py_qsbr_attach(((_PyThreadStateImpl *)tstate)->qsbr);
+#else
+        (void)acquired_gil;
 #endif
+        break;
+    }
 
     // Resume previous critical section. This acquires the lock(s) from the
     // top-most critical section.

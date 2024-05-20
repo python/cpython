@@ -174,8 +174,8 @@ static const uint8_t DwarfDataRel = 0x30;
 typedef struct {
     unsigned char version;
     unsigned char eh_frame_ptr_enc;
-    unsigned char	fde_count_enc;
-    unsigned char	table_enc;
+    unsigned char fde_count_enc;
+    unsigned char table_enc;
     int32_t eh_frame_ptr;
     int32_t eh_fde_count;
     int32_t from;
@@ -292,7 +292,7 @@ static void* perf_map_jit_init(void) {
     }
     perf_jit_map_state.code_id = 0;
 
-    // trampoline_api.code_padding = PERF_JIT_CODE_PADDING;
+    trampoline_api.code_padding = PERF_JIT_CODE_PADDING;
     return &perf_jit_map_state;
 }
 
