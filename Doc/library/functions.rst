@@ -1098,46 +1098,17 @@ are always available.  They are listed here in alphabetical order.
     Calling ``locals()`` as part of a generator expression is equivalent to
     calling it in a nested generator function.
 
-   .. versionchanged:: 3.13
-      As part of :pep:`667`, the semantics of mutating the mapping object
-      returned from this function are now formally defined. The behavior in
-      functions, generators, coroutines, comprehensions, and generator
-      expressions is now as described above. Aside from being defined, the
-      behaviour in other scopes remains unchanged from previous versions.
-
-   .. versionchanged:: 3.13
-      As part of :pep:`667`, the mapping returned when called in a function,
-      generator, coroutine, comprehension or generator expression is an
-      independent snapshot of the currently assigned local and locally
-      referenced nonlocal variables. In CPython specifically, the mapping
-      returned in these scopes could previously be implicitly refreshed by other
-      operations, such as calling ``locals()`` again. Obtaining the legacy
-      CPython behaviour now requires explicit calls to update the initially
-      returned dictionary with the results of subsequent calls to ``locals()``.
-
-   .. versionchanged:: 3.13
-      As part of :pep:`667`, calling ``locals()`` in a comprehension at module
-      or class scope (including via ``exec`` or ``eval``) once more behaves as if
-      the comprehension were running as an independent nested function (i.e.
-      the local variables from the containing scope are not included).
-
    .. versionchanged:: 3.12
-      As part of :pep:`709`, calling ``locals()`` in a comprehension at module
-      or class scope (including via ``exec`` or ``eval``) produces an independent
-      snapshot of the containing scope with the comprehension iteration
-      variable(s) included.
+      The behaviour of ``locals()`` in a comprehension has been updated as
+      described in :pep:`709`.
 
-   .. versionchanged:: 3.12
-      As part of :pep:`709`, calling ``locals()`` in a comprehension as part of a
-      function, generator, or coroutine returns the same ``locals()`` reference
-      as calls in the containing scope.
+   .. versionchanged:: 3.13
+      As part of :pep:`667`, the semantics of mutating the mapping objects
+      returned from this function are now defined. The behavior in
+      :term:`optimised scopes <optimised scope>` is now as described above.
+      Aside from being defined, the behaviour in other scopes remains
+      unchanged from previous versions.
 
-   ..
-      Possible simplification: change the 3.12 note to just "Changes to
-      behavior in comprehensions as described in :pep:`709`", and do somethine
-      similar for 3.13 and :pep:`667`. While the draft change notes are
-      comprehensive, they're also almost entirely in the "Who is really going
-      to care?" category.
 
 .. function:: map(function, iterable, *iterables)
 
