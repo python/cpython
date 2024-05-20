@@ -92,37 +92,51 @@ class DummyFraction(fractions.Fraction):
 def _components(r):
     return (r.numerator, r.denominator)
 
-def is_eq(a, b):
+def typed_approx_eq(a, b):
     return type(a) == type(b) and (a == b or math.isclose(a, b))
 
-class One:
+class Symbolic:
+    """Simple non-numeric class for testing mixed arithmetic.
+    It is not Integral, Rational, Real or Complex, and cannot be conveted
+    to int, float or complex. but it supports some arithmetic operations.
+    """
+    def __init__(self, value):
+        self.value = value
     def __mul__(self, other):
         if isinstance(other, F):
             return NotImplemented
-        return other
+        return self.__class__(f'{self} * {other}')
     def __rmul__(self, other):
-        return other
+        return self.__class__(f'{other} * {self}')
     def __truediv__(self, other):
         if isinstance(other, F):
             return NotImplemented
-        return 1 / other
+        return self.__class__(f'{self} / {other}')
     def __rtruediv__(self, other):
-        return other
+        return self.__class__(f'{other} / {self}')
     def __mod__(self, other):
         if isinstance(other, F):
             return NotImplemented
-        return 1 % other
+        return self.__class__(f'{self} % {other}')
     def __rmod__(self, other):
-        return other % 1
+        return self.__class__(f'{other} % {self}')
     def __pow__(self, other):
         if isinstance(other, F):
             return NotImplemented
-        return self
+        return self.__class__(f'{self} ** {other}')
     def __rpow__(self, other):
-        return other
-One = One()
+        return self.__class__(f'{other} ** {self}')
+    def __eq__(self, other):
+        if other.__class__ != self.__class__:
+            return NotImplemented
+        return self.value == other.value
+    def __str__(self):
+        return f'{self.value}'
+    def __repr__(self):
+        return f'{self.__class__.__name__}({self.value!r})'
 
 class Rat:
+    """Simple Rational class for testing mixed arithmetic."""
     def __init__(self, n, d):
         self.numerator = n
         self.denominator = d
@@ -163,13 +177,14 @@ class Rat:
     def __eq__(self, other):
         if self.__class__ != other.__class__:
             return NotImplemented
-        return (is_eq(self.numerator, other.numerator) and
-                is_eq(self.denominator, other.denominator))
+        return (typed_approx_eq(self.numerator, other.numerator) and
+                typed_approx_eq(self.denominator, other.denominator))
     def __repr__(self):
         return f'{self.__class__.__name__}({self.numerator!r}, {self.denominator!r})'
 numbers.Rational.register(Rat)
 
 class Root:
+    """Simple Real class for testing mixed arithmetic."""
     def __init__(self, v, n=F(2)):
         self.base = v
         self.degree = n
@@ -194,12 +209,13 @@ class Root:
     def __eq__(self, other):
         if self.__class__ != other.__class__:
             return NotImplemented
-        return is_eq(self.base, other.base) and is_eq(self.degree, other.degree)
+        return typed_approx_eq(self.base, other.base) and typed_approx_eq(self.degree, other.degree)
     def __repr__(self):
         return f'{self.__class__.__name__}({self.base!r}, {self.degree!r})'
 numbers.Real.register(Root)
 
 class Polar:
+    """Simple Complex class for testing mixed arithmetic."""
     def __init__(self, r, phi):
         self.r = r
         self.phi = phi
@@ -222,12 +238,13 @@ class Polar:
     def __eq__(self, other):
         if self.__class__ != other.__class__:
             return NotImplemented
-        return is_eq(self.r, other.r) and is_eq(self.phi, other.phi)
+        return typed_approx_eq(self.r, other.r) and typed_approx_eq(self.phi, other.phi)
     def __repr__(self):
         return f'{self.__class__.__name__}({self.r!r}, {self.phi!r})'
 numbers.Complex.register(Polar)
 
 class Rect:
+    """Other simple Complex class for testing mixed arithmetic."""
     def __init__(self, x, y):
         self.x = x
         self.y = y
@@ -251,7 +268,7 @@ class Rect:
     def __eq__(self, other):
         if self.__class__ != other.__class__:
             return NotImplemented
-        return is_eq(self.x, other.x) and is_eq(self.y, other.y)
+        return typed_approx_eq(self.x, other.x) and typed_approx_eq(self.y, other.y)
     def __repr__(self):
         return f'{self.__class__.__name__}({self.x!r}, {self.y!r})'
 numbers.Complex.register(Rect)
@@ -780,8 +797,8 @@ class FractionTest(unittest.TestCase):
         self.assertRaises(TypeError, operator.mul, Polar(4, 2), F(3, 2))
         self.assertTypedEquals(Rect(4, 3) * F(3, 2), 6.0 + 4.5j)
 
-        self.assertTypedEquals(F(3, 2) * One, F(3, 2))
-        self.assertRaises(TypeError, operator.mul, One, F(3, 2))
+        self.assertEqual(F(3, 2) * Symbolic('X'), Symbolic('3/2 * X'))
+        self.assertRaises(TypeError, operator.mul, Symbolic('X'), F(3, 2))
 
     def testMixedDivision(self):
         self.assertTypedEquals(F(1, 10), F(1, 10) / 1)
@@ -805,8 +822,8 @@ class FractionTest(unittest.TestCase):
         self.assertRaises(TypeError, operator.truediv, Polar(4, 2), F(2, 3))
         self.assertTypedEquals(Rect(4, 3) / F(2, 3), 6.0 + 4.5j)
 
-        self.assertTypedEquals(F(3, 2) / One, F(3, 2))
-        self.assertRaises(TypeError, operator.truediv, One, F(2, 3))
+        self.assertEqual(F(3, 2) / Symbolic('X'), Symbolic('3/2 / X'))
+        self.assertRaises(TypeError, operator.truediv, Symbolic('X'), F(2, 3))
 
     def testMixedIntegerDivision(self):
         self.assertTypedEquals(0, F(1, 10) // 1)
@@ -844,8 +861,8 @@ class FractionTest(unittest.TestCase):
         self.assertRaises(TypeError, operator.mod, F(3, 2), Polar(4, 2))
         self.assertRaises(TypeError, operator.mod, Rect(4, 3), F(2, 3))
 
-        self.assertTypedEquals(F(3, 2) % One, F(1, 2))
-        self.assertRaises(TypeError, operator.mod, One, F(2, 3))
+        self.assertEqual(F(3, 2) % Symbolic('X'), Symbolic('3/2 % X'))
+        self.assertRaises(TypeError, operator.mod, Symbolic('X'), F(2, 3))
 
     def testMixedPower(self):
         # ** has more interesting conversion rules.
@@ -890,8 +907,8 @@ class FractionTest(unittest.TestCase):
         self.assertTypedEquals(Polar(4, 2) ** F(-3, 1), Polar(0.015625, -6))
         self.assertTypedEquals(Polar(4, 2) ** F(-3, 2), Polar(0.125, -3.0))
 
-        self.assertTypedEquals(F(3, 2) ** One, 1.5)
-        self.assertTypedEquals(One ** F(3, 2), One)
+        self.assertTypedEquals(F(3, 2) ** Symbolic('X'), Symbolic('1.5 ** X'))
+        self.assertTypedEquals(Symbolic('X') ** F(3, 2), Symbolic('X ** 1.5'))
 
     def testMixingWithDecimal(self):
         # Decimal refuses mixed arithmetic (but not mixed comparisons)
