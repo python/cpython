@@ -9286,9 +9286,9 @@ tailmatch(PyObject *self,
         }
         /* otherwise we have to compare each character by first accessing it */
         else {
-            /* We do not need to compare 0 and len(substring)-1 because
-               the if statement above ensured already that they are equal
-               when we end up here. */
+            /* We do not need to compare len(substring)-1 because the if
+               statement above ensured already that they are equal when we
+               end up here. */
             for (i = 0; i < end_sub; ++i) {
                 if (PyUnicode_READ(kind_self, data_self, offset + i) !=
                     PyUnicode_READ(kind_sub, data_sub, i))
