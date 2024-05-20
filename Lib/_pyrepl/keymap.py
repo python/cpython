@@ -187,7 +187,7 @@ def _parse_key1(key, s):
     return ret, s
 
 
-def parse_keys(key):
+def parse_keys(key: str) -> list[str]:
     s = 0
     r = []
     while s < len(key):
