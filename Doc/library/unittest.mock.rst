@@ -420,7 +420,7 @@ the *new_callable* argument to :func:`patch`.
         parameter as ``True``. Child mocks and the return value mock
         (if any) are reset as well.
 
-        .. note:: *return_value*, and :attr:`side_effect` are keyword-only
+        .. note:: :attr:`return_value`, and :attr:`side_effect` are keyword-only
                   arguments.
 
 
