@@ -409,15 +409,15 @@ def compare(
     compare_types=True,
     compare_attributes=False,
 ):
-    """Compares recursively given two ast nodes.
+    """Recursively compares two ast nodes.
 
     There are two options that control how the comparison is done.
 
-    compare_types affects how Constant values are compared. If
-    compare_types is True (default), then Constant values must have
+    compare_types affects how Constant objects are compared. If
+    compare_types is True (default), then Constant objects must have
     the same type and value to be equal. If compare_type is False,
-    then Constant values will compare equal if the type Python objects
-    are equal regardless of type, e.g. 1.0 == 1.
+    then Constant objects must only have the same value,
+    e.g. Constant(1.0) equals Constant(1).
 
     compare_attributes affects whether AST attributes are considered
     in the comparison. If compare_attributes is False (default), then
