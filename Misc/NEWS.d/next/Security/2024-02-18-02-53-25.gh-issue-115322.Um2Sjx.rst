@@ -1,1 +1,3 @@
-Several extension modules now raise audit events on previously uncovered code paths that could lead to file system access, C function calling and external binary execution.
+The underlying extension modules behind :mod:`subprocess` and :mod:`ctypes` now
+raise audit events on previously uncovered code paths that could lead to file
+system access related to C function calling and external binary execution.
