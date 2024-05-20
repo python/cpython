@@ -614,7 +614,8 @@ methods will raise a :exc:`FrozenInstanceError` when invoked.
 There is a tiny performance penalty when using ``frozen=True``:
 :meth:`~object.__init__` cannot use simple assignment to initialize fields, and
 must use :meth:`!object.__setattr__`.
-.. Make sure to not remove "object" from "object.__setattr__" in the above markup
+
+.. Make sure to not remove "object" from "object.__setattr__" in the above markup!
 
 .. _dataclasses-inheritance:
 
