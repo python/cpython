@@ -2177,16 +2177,6 @@ Changes in the Python API
   returned by :meth:`zipfile.ZipFile.open` was changed from ``'r'`` to ``'rb'``.
   (Contributed by Serhiy Storchaka in :gh:`115961`.)
 
-* Callbacks registered in the :mod:`tkinter` module now take arguments as
-  various Python objects (``int``, ``float``, ``bytes``, ``tuple``),
-  not just ``str``.
-  To restore the previous behavior set :mod:`!tkinter` module global
-  :data:`!wantobject` to ``1`` before creating the
-  :class:`!Tk` object or call the :meth:`!wantobject`
-  method of the :class:`!Tk` object with argument ``1``.
-  Calling it with argument ``2`` restores the current default behavior.
-  (Contributed by Serhiy Storchaka in :gh:`66410`.)
-
 
 Changes in the C API
 --------------------
