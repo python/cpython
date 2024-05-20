@@ -860,7 +860,12 @@ the :ref:`relativeimports` section.
 :func:`importlib.import_module` is provided to support applications that
 determine dynamically the modules to be loaded.
 
-.. audit-event:: import module,filename,sys.path,sys.meta_path,sys.path_hooks import
+.. audit-event:: import module_name,filename,sys.path,sys.meta_path,sys.path_hooks import
+.. audit-event:: import.complete module_name,module import
+
+The ``import`` audit event may be raised twice, when an extension module
+is imported. In all cases ``import.complete`` audit event is matched by an
+``import`` audit event with ``filename=None``.
 
 .. _future:
 
