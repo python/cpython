@@ -281,6 +281,41 @@ class TestBytesGenerator(TestGeneratorBase, TestEmailBase):
     ioclass = io.BytesIO
     typ = lambda self, x: x.encode('ascii')
 
+    def test_defaults_handle_spaces_between_encoded_words_when_folded(self):
+        source = ("Уведомление о принятии в работу обращения для"
+                  " подключения услуги")
+        expected = ('Subject: =?utf-8?b?0KPQstC10LTQvtC80LvQtdC90LjQtSDQviDQv9GA0LjQvdGP0YLQuNC4?=\n'
+                    ' =?utf-8?b?INCyINGA0LDQsdC+0YLRgyDQvtCx0YDQsNGJ0LXQvdC40Y8g0LTQu9GPINC/0L4=?=\n'
+                    ' =?utf-8?b?0LTQutC70Y7Rh9C10L3QuNGPINGD0YHQu9GD0LPQuA==?=\n\n').encode('ascii')
+        msg = EmailMessage()
+        msg['Subject'] = source
+        s = io.BytesIO()
+        g = BytesGenerator(s)
+        g.flatten(msg)
+        self.assertEqual(s.getvalue(), expected)
+
+    def test_defaults_handle_spaces_at_start_of_subject(self):
+        source = " Уведомление"
+        expected = b"Subject:  =?utf-8?b?0KPQstC10LTQvtC80LvQtdC90LjQtQ==?=\n\n"
+        msg = EmailMessage()
+        msg['Subject'] = source
+        s = io.BytesIO()
+        g = BytesGenerator(s)
+        g.flatten(msg)
+        self.assertEqual(s.getvalue(), expected)
+
+    def test_defaults_handle_spaces_at_start_of_continuation_line(self):
+        source = " ф ффффффффффффффффффф ф ф"
+        expected = (b"Subject:  "
+                    b"=?utf-8?b?0YQg0YTRhNGE0YTRhNGE0YTRhNGE0YTRhNGE0YTRhNGE0YTRhNGE0YQ=?=\n"
+                    b" =?utf-8?b?INGEINGE?=\n\n")
+        msg = EmailMessage()
+        msg['Subject'] = source
+        s = io.BytesIO()
+        g = BytesGenerator(s)
+        g.flatten(msg)
+        self.assertEqual(s.getvalue(), expected)
+
     def test_cte_type_7bit_handles_unknown_8bit(self):
         source = ("Subject: Maintenant je vous présente mon "
                  "collègue\n\n").encode('utf-8')
