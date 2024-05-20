@@ -1063,14 +1063,15 @@ are always available.  They are listed here in alphabetical order.
     variable names as the keys, and their currently bound references as the
     values.
 
-    At module scope, as well as when using ``exec()`` or ``eval()`` with a
-    single namespace, this function returns the same namespace as ``globals()``.
+    At module scope, as well as when using :func:`exec` or :func:`eval` with
+    a single namespace, this function returns the same namespace as
+    :func:`globals`.
 
     At class scope, it returns the namespace that will be passed to the
     metaclass constructor.
 
     When using ``exec()`` or ``eval()`` with separate local and global
-    namespaces, it returns the local namespace passed in to the function call.
+    arguments, it returns the local namespace passed in to the function call.
 
     In all of the above cases, each call to ``locals()`` in a given frame of
     execution will return the *same* mapping object. Changes made through
@@ -1116,20 +1117,20 @@ are always available.  They are listed here in alphabetical order.
       returned dictionary with the results of subsequent calls to ``locals()``.
 
    .. versionchanged:: 3.13
-      As part of :pep:`667`, calling `locals()` in a comprehension at module
-      or class scope (including via `exec` or `eval`) once more behaves as if
+      As part of :pep:`667`, calling ``locals()`` in a comprehension at module
+      or class scope (including via ``exec`` or ``eval``) once more behaves as if
       the comprehension were running as an independent nested function (i.e.
       the local variables from the containing scope are not included).
 
    .. versionchanged:: 3.12
-      As part of :pep:`709`, calling `locals()` in a comprehension at module
-      or class scope (including via `exec` or `eval`) produces an independent
+      As part of :pep:`709`, calling ``locals()`` in a comprehension at module
+      or class scope (including via ``exec`` or ``eval``) produces an independent
       snapshot of the containing scope with the comprehension iteration
       variable(s) included.
 
    .. versionchanged:: 3.12
-      As part of :pep:`709`, calling `locals()` in a comprehension as part of a
-      function, generator, or coroutine returns the same `locals()` reference
+      As part of :pep:`709`, calling ``locals()`` in a comprehension as part of a
+      function, generator, or coroutine returns the same ``locals()`` reference
       as calls in the containing scope.
 
    ..
