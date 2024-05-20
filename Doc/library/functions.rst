@@ -604,9 +604,13 @@ are always available.  They are listed here in alphabetical order.
    will be used for both the global and the local variables.  If *globals* and
    *locals* are given, they are used for the global and local variables,
    respectively.  If provided, *locals* can be any mapping object.  Remember
-   that at the module level, globals and locals are the same dictionary. If exec
-   gets two separate objects as *globals* and *locals*, the code will be
-   executed as if it were embedded in a class definition.
+   that at the module level, globals and locals are the same dictionary.
+
+   .. note::
+
+      Most users should just pass a *globals* argument and never *locals*.
+      If exec gets two separate objects as *globals* and *locals*, the code
+      will be executed as if it were embedded in a class definition.
 
    If the *globals* dictionary does not contain a value for the key
    ``__builtins__``, a reference to the dictionary of the built-in module
