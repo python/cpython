@@ -125,9 +125,11 @@ extern _Py_UopsSymbol *_Py_uop_sym_new_const(_Py_UOpsContext *ctx, PyObject *con
 extern _Py_UopsSymbol *_Py_uop_sym_new_null(_Py_UOpsContext *ctx);
 extern bool _Py_uop_sym_has_type(_Py_UopsSymbol *sym);
 extern bool _Py_uop_sym_matches_type(_Py_UopsSymbol *sym, PyTypeObject *typ);
+extern bool _Py_uop_sym_matches_type_version(_Py_UopsSymbol *sym, int32_t version);
 extern void _Py_uop_sym_set_null(_Py_UOpsContext *ctx, _Py_UopsSymbol *sym);
 extern void _Py_uop_sym_set_non_null(_Py_UOpsContext *ctx, _Py_UopsSymbol *sym);
 extern void _Py_uop_sym_set_type(_Py_UOpsContext *ctx, _Py_UopsSymbol *sym, PyTypeObject *typ);
+extern void _Py_uop_sym_set_type_version(_Py_UOpsContext *ctx, _Py_UopsSymbol *sym, int32_t version);
 extern void _Py_uop_sym_set_const(_Py_UOpsContext *ctx, _Py_UopsSymbol *sym, PyObject *const_val);
 extern bool _Py_uop_sym_is_bottom(_Py_UopsSymbol *sym);
 extern int _Py_uop_sym_truthiness(_Py_UopsSymbol *sym);
