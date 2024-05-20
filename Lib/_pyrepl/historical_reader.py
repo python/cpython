@@ -21,13 +21,14 @@ from __future__ import annotations
 
 from contextlib import contextmanager
 from dataclasses import dataclass, field
+from typing import TYPE_CHECKING
 
 from . import commands, input
 from .reader import Reader
 
 
-if False:
-    from .types import Callback, SimpleContextManager, KeySpec, CommandName
+if TYPE_CHECKING:
+    from .types import SimpleContextManager, KeySpec, CommandName
 
 
 isearch_keymap: tuple[tuple[KeySpec, CommandName], ...] = tuple(

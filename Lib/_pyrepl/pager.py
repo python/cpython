@@ -4,11 +4,11 @@ import io
 import os
 import re
 import sys
+from typing import TYPE_CHECKING
 
 
-# types
-if False:
-    from typing import Protocol, Any
+if TYPE_CHECKING:
+    from typing import Protocol
     class Pager(Protocol):
         def __call__(self, text: str, title: str = "") -> None:
             ...

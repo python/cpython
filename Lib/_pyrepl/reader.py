@@ -21,20 +21,19 @@
 
 from __future__ import annotations
 
+import unicodedata
 from contextlib import contextmanager
 from dataclasses import dataclass, field, fields
-import unicodedata
 from _colorize import can_colorize, ANSIColors  # type: ignore[import-not-found]
-
+from typing import TYPE_CHECKING
 
 from . import commands, console, input
 from .utils import ANSI_ESCAPE_SEQUENCE, wlen
 from .trace import trace
 
 
-# types
 Command = commands.Command
-if False:
+if TYPE_CHECKING:
     from .types import Callback, SimpleContextManager, KeySpec, CommandName
 
 

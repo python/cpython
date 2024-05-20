@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 import os
+from typing import TYPE_CHECKING
 
-# types
-if False:
+if TYPE_CHECKING:
     from typing import IO
 
 

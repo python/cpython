@@ -20,7 +20,9 @@
 # CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 from __future__ import annotations
+
 import os
+from typing import TYPE_CHECKING
 
 # Categories of actions:
 #  killing
@@ -32,8 +34,7 @@ import os
 # [completion]
 
 
-# types
-if False:
+if TYPE_CHECKING:
     from .historical_reader import HistoricalReader
 
 
