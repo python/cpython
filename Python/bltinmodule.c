@@ -2570,6 +2570,8 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
         Py_INCREF(result);
     }
 
+    // This is helpful for development and tweaking the optimization:
+#if 1
     /* Fast addition by keeping temporary sums in C instead of new Python objects.
        Assumes all inputs are the same type.  If the assumption fails, default
        to the more general routine.
@@ -2690,6 +2692,7 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
             }
         }
     }
+#endif
 
     for(;;) {
         item = PyIter_Next(iter);
