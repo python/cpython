@@ -2879,12 +2879,12 @@ def _refold_parse_tree(parse_tree, *, policy):
                 # out to start with an encoded word.
                 lines.append(newline + tstr)
 
-                leading_whitespace = []
+                whitespace_accumulator = []
                 for char in lines[-1]:
                     if char not in WSP:
                         break
-                    leading_whitespace.append(char)
-                leading_whitespace = ''.join(leading_whitespace)
+                    whitespace_accumulator.append(char)
+                leading_whitespace = ''.join(whitespace_accumulator)
                 last_ew = None
                 continue
         if not hasattr(part, 'encode'):
