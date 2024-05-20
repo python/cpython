@@ -1,0 +1,2 @@
+Remove undocumented ``SLOW_SUM`` C-level flag check in :func:`sum` builtin
+function.
