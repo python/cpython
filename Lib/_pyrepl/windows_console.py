@@ -19,6 +19,9 @@
 
 from __future__ import annotations
 
+import os
+import sys
+
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from _pyrepl.console import Event, Console
@@ -27,7 +30,7 @@ import ctypes
 from ctypes.wintypes import _COORD, WORD, SMALL_RECT, BOOL, HANDLE, CHAR, DWORD, WCHAR
 from ctypes import Structure, POINTER, Union
 from ctypes import windll
-import os
+
 if False:
     from typing import IO
 
@@ -171,6 +174,9 @@ VK_MAP: dict[int, str] = {
     0x82: "f20", # VK_F20
 }
 
+ENABLE_PROCESSED_OUTPUT = 0x01
+ENABLE_VIRTUAL_TERMINAL_PROCESSING = 0x04
+
 class _error(Exception):
     pass
 
@@ -185,7 +191,8 @@ class WindowsConsole(Console):
         term: str = "",
         encoding: str = "",
     ):
-        SetConsoleMode(OutHandle, 0x0004 | 0x0001)
+        
+        SetConsoleMode(OutHandle, ENABLE_PROCESSED_OUTPUT | ENABLE_VIRTUAL_TERMINAL_PROCESSING)
         self.encoding = encoding or sys.getdefaultencoding()
 
         if isinstance(f_in, int):
