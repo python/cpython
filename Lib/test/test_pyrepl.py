@@ -1,9 +1,7 @@
 import itertools
-
 import io
 import os
 import rlcompleter
-import sys
 import tempfile
 import unittest
 from code import InteractiveConsole
