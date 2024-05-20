@@ -4373,10 +4373,12 @@ _ssl__SSLContext_set_ecdh_curve(PySSLContext *self, PyObject *name)
 /*[clinic end generated code: output=23022c196e40d7d2 input=c2bafb6f6e34726b]*/
 {
     PyObject *name_bytes;
-    int nid;
+
     if (!PyUnicode_FSConverter(name, &name_bytes))
         return NULL;
     assert(PyBytes_Check(name_bytes));
+#if OPENSSL_VERSION_MAJOR < 3
+    int nid;
     nid = OBJ_sn2nid(PyBytes_AS_STRING(name_bytes));
     Py_DECREF(name_bytes);
     if (nid == 0) {
@@ -4384,7 +4386,6 @@ _ssl__SSLContext_set_ecdh_curve(PySSLContext *self, PyObject *name)
                      "unknown elliptic curve name %R", name);
         return NULL;
     }
-#if OPENSSL_VERSION_MAJOR < 3
     EC_KEY *key = EC_KEY_new_by_curve_name(nid);
     if (key == NULL) {
         _setSSLError(get_state_ctx(self), NULL, 0, __FILE__, __LINE__);
@@ -4393,7 +4394,9 @@ _ssl__SSLContext_set_ecdh_curve(PySSLContext *self, PyObject *name)
     SSL_CTX_set_tmp_ecdh(self->ctx, key);
     EC_KEY_free(key);
 #else
-    if (!SSL_CTX_set1_groups(self->ctx, &nid, 1)) {
+    int res = SSL_CTX_set1_groups_list(self->ctx, PyBytes_AS_STRING(name_bytes));
+    Py_DECREF(name_bytes);
+    if (!res) {
         _setSSLError(get_state_ctx(self), NULL, 0, __FILE__, __LINE__);
         return NULL;
     }
