@@ -935,6 +935,14 @@
         }
 
         case _GUARD_TYPE_VERSION: {
+            _Py_UopsSymbol *owner;
+            owner = stack_pointer[-1];
+            uint32_t type_version = (uint32_t)this_instr->operand;
+            printf("%d %d %d\n", type_version, owner->typ_version, owner->typ_version_offset);
+            if (sym_matches_type_version(owner, type_version, ctx->latest_escape_offset)) {
+                REPLACE_OP(this_instr, _NOP, 0, 0);
+            }
+            sym_set_type_version(owner, type_version, i);
             break;
         }
 
@@ -1335,6 +1343,7 @@
             _Py_UopsSymbol *iter;
             _Py_UopsSymbol *next;
             iter = stack_pointer[-1];
+            printf("ciao");
             next = sym_new_type(ctx, &PyLong_Type);
             (void)iter;
             stack_pointer[0] = next;

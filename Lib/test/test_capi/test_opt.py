@@ -1356,6 +1356,33 @@ class TestUopsOptimization(unittest.TestCase):
         guard_type_version_count = opnames.count("_GUARD_TYPE_VERSION")
         self.assertEqual(guard_type_version_count, 1)
 
+    def test_guard_type_version_not_removed(self):
+        def fn():
+            pass
+
+        def thing(a):
+            x = 0
+            for _ in range(100):
+                x += a.attr
+                fn()
+                x += a.attr
+            return x
+
+        class Foo:
+            attr = 1
+
+        breakpoint()
+
+        res, ex = self._run_with_optimizer(thing, Foo())
+        opnames = list(iter_opnames(ex))
+        for i in iter_opnames(ex):
+            print(i)
+
+        self.assertIsNotNone(ex)
+        self.assertEqual(res, 200)
+        guard_type_version_count = opnames.count("_GUARD_TYPE_VERSION")
+        self.assertEqual(guard_type_version_count, 2)
+
 
 if __name__ == "__main__":
     unittest.main()

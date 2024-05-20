@@ -157,9 +157,10 @@ _Py_uop_sym_set_type(_Py_UOpsContext *ctx, _Py_UopsSymbol *sym, PyTypeObject *ty
 }
 
 void
-_Py_uop_sym_set_type_version(_Py_UOpsContext *ctx, _Py_UopsSymbol *sym, int32_t version)
+_Py_uop_sym_set_type_version(_Py_UOpsContext *ctx, _Py_UopsSymbol *sym, int32_t version, int offset)
 {
     sym->typ_version = version;
+    sym->typ_version_offset = offset;
 }
 
 void
@@ -272,6 +273,12 @@ _Py_uop_sym_get_type_version(_Py_UopsSymbol *sym)
     return sym->typ_version;
 }
 
+int
+_Py_uop_sym_get_type_version_offset(_Py_UopsSymbol *sym)
+{
+    return sym->typ_version_offset;
+}
+
 bool
 _Py_uop_sym_has_type(_Py_UopsSymbol *sym)
 {
@@ -289,9 +296,10 @@ _Py_uop_sym_matches_type(_Py_UopsSymbol *sym, PyTypeObject *typ)
 }
 
 bool
-_Py_uop_sym_matches_type_version(_Py_UopsSymbol *sym, int32_t version)
+_Py_uop_sym_matches_type_version(_Py_UopsSymbol *sym, int32_t version, int offset)
 {
-    return _Py_uop_sym_get_type_version(sym) == version;
+    return _Py_uop_sym_get_type_version(sym) == version
+        && _Py_uop_sym_get_type_version_offset(sym) > offset;
 }
 
 
