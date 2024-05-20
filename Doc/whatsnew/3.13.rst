@@ -104,6 +104,9 @@ New typing features:
 * :pep:`696`: Type parameters (:data:`typing.TypeVar`, :data:`typing.ParamSpec`,
   and :data:`typing.TypeVarTuple`) now support defaults.
 
+* :pep:`702`: Support for marking deprecations in the type system using the
+  new :func:`warnings.deprecated` decorator.
+
 * :pep:`742`: :data:`typing.TypeIs` was added, providing more intuitive
   type narrowing behavior.
 
@@ -2173,16 +2176,6 @@ Changes in the Python API
   The value of the :attr:`!mode` attribute of the readable file-like object
   returned by :meth:`zipfile.ZipFile.open` was changed from ``'r'`` to ``'rb'``.
   (Contributed by Serhiy Storchaka in :gh:`115961`.)
-
-* Callbacks registered in the :mod:`tkinter` module now take arguments as
-  various Python objects (``int``, ``float``, ``bytes``, ``tuple``),
-  not just ``str``.
-  To restore the previous behavior set :mod:`!tkinter` module global
-  :data:`!wantobject` to ``1`` before creating the
-  :class:`!Tk` object or call the :meth:`!wantobject`
-  method of the :class:`!Tk` object with argument ``1``.
-  Calling it with argument ``2`` restores the current default behavior.
-  (Contributed by Serhiy Storchaka in :gh:`66410`.)
 
 
 Changes in the C API

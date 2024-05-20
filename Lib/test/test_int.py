@@ -12,6 +12,11 @@ try:
 except ImportError:
     _pylong = None
 
+try:
+    import _decimal
+except ImportError:
+    _decimal = None
+
 L = [
         ('0', 0),
         ('1', 1),
@@ -918,6 +923,88 @@ class PyLongModuleTests(unittest.TestCase):
             self.assertFalse(sn.startswith('0'))
             self.assertEqual(n, int(sn))
             bits <<= 1
+
+    @support.requires_resource('cpu')
+    @unittest.skipUnless(_decimal, "C _decimal module required")
+    def test_pylong_roundtrip_huge(self):
+        # k blocks of 1234567890
+        k = 1_000_000 # so 10 million digits in all
+        tentoten = 10**10
+        n = 1234567890 * ((tentoten**k - 1) // (tentoten - 1))
+        sn = "1234567890" * k
+        self.assertEqual(n, int(sn))
+        self.assertEqual(sn, str(n))
+
+    @support.requires_resource('cpu')
+    @unittest.skipUnless(_pylong, "_pylong module required")
+    @unittest.skipUnless(_decimal, "C _decimal module required")
+    def test_whitebox_dec_str_to_int_inner_failsafe(self):
+        # While I believe the number of GUARD digits in this function is
+        # always enough so that no more than one correction step is ever
+        # needed, the code has a "failsafe" path that takes over if I'm
+        # wrong about that. We have no input that reaches that block.
+        # Here we test a contrived input that _does_ reach that block,
+        # provided the number of guard digits is reduced to 1.
+        sn = "9" * 2000156
+        n = 10**len(sn) - 1
+        orig_spread = _pylong._spread.copy()
+        _pylong._spread.clear()
+        try:
+            self.assertEqual(n, _pylong._dec_str_to_int_inner(sn, GUARD=1))
+            self.assertIn(999, _pylong._spread)
+        finally:
+            _pylong._spread.clear()
+            _pylong._spread.update(orig_spread)
+
+    @unittest.skipUnless(_pylong, "pylong module required")
+    @unittest.skipUnless(_decimal, "C _decimal module required")
+    def test_whitebox_dec_str_to_int_inner_monster(self):
+        # I don't think anyone has enough RAM to build a string long enough
+        # for this function to complain. So lie about the string length.
+
+        class LyingStr(str):
+            def __len__(self):
+                return int((1 << 47) / _pylong._LOG_10_BASE_256)
+
+        liar = LyingStr("42")
+        # We have to pass the liar directly to the complaining function. If we
+        # just try `int(liar)`, earlier layers will replace it with plain old
+        # "43".
+        # Embedding `len(liar)` into the f-string failed on the WASI testbot
+        # (don't know what that is):
+        # OverflowError: cannot fit 'int' into an index-sized integer
+        # So a random stab at worming around that.
+        self.assertRaisesRegex(ValueError,
+            f"^cannot convert string of len {liar.__len__()} to int$",
+            _pylong._dec_str_to_int_inner,
+            liar)
+
+    @unittest.skipUnless(_pylong, "_pylong module required")
+    def test_pylong_compute_powers(self):
+        # Basic sanity tests. See end of _pylong.py for manual heavy tests.
+        def consumer(w, base, limit, need_hi):
+            seen = set()
+            need = set()
+            def inner(w):
+                if w <= limit or w in seen:
+                    return
+                seen.add(w)
+                lo = w >> 1
+                hi = w - lo
+                need.add(hi if need_hi else lo)
+                inner(lo)
+                inner(hi)
+            inner(w)
+            d = _pylong.compute_powers(w, base, limit, need_hi=need_hi)
+            self.assertEqual(d.keys(), need)
+            for k, v in d.items():
+                self.assertEqual(v, base ** k)
+
+        for base in 2, 5:
+            for need_hi in False, True:
+                for limit in 1, 11:
+                    for w in range(250, 550):
+                        consumer(w, base, limit, need_hi)
 
 if __name__ == "__main__":
     unittest.main()
