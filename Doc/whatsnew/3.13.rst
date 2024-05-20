@@ -2215,6 +2215,24 @@ Changes in the Python API
   Calling it with argument ``2`` restores the current default behavior.
   (Contributed by Serhiy Storchaka in :gh:`66410`.)
 
+* Calling :func:`locals` in an :term:`optimised scope` now produces an
+  independent snapshot on each call, and hence no longer implicitly updates
+  previously returned references. Obtaining the legacy CPython behaviour now
+  requires explicit calls to update the initially returned dictionary with the
+  results of subsequent calls to ``locals()``. (Changed as part of :pep:`667`.)
+
+* Calling :func:`locals` from a comprehension at module or class scope
+  (including via ``exec`` or ``eval``) once more behaves as if the comprehension
+  were running as an independent nested function (i.e. the local variables from
+  the containing scope are not included). In Python 3.12, this had changed
+  to include the local variables from the containing scope when implementing
+  :pep:`709`. (Changed as part of :pep:`667`.)
+
+* Accessing :attr:`FrameType.f_locals <frame.f_locals>` in an
+  :term:`optimised scope` now returns a write-through proxy rather than a
+  snapshot that gets updated at ill-specified times. If a snapshot is desired,
+  it must be created explicitly with ``dict`` or the proxy's ``.copy()`` method.
+  (Changed as part of :pep:`667`.)
 
 Changes in the C API
 --------------------
