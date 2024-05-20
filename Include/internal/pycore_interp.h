@@ -39,6 +39,10 @@ struct _Py_long_state {
     int max_str_digits;
 };
 
+struct _getargs_runtime_state {
+    struct _PyArg_Parser *static_parsers;
+};
+
 
 /* cross-interpreter data registry */
 
@@ -175,6 +179,7 @@ struct _is {
     PyObject *after_forkers_child;
 #endif
 
+    struct _getargs_runtime_state getargs;
     struct _warnings_runtime_state warnings;
     struct atexit_state atexit;
 

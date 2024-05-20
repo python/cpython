@@ -380,12 +380,11 @@ _Py_COMP_DIAG_IGNORE_DEPR_DECLS
 static const _PyRuntimeState initial = _PyRuntimeState_INIT(_PyRuntime);
 _Py_COMP_DIAG_POP
 
-#define NUMLOCKS 9
+#define NUMLOCKS 8
 #define LOCKS_INIT(runtime) \
     { \
         &(runtime)->interpreters.mutex, \
         &(runtime)->xidregistry.mutex, \
-        &(runtime)->getargs.mutex, \
         &(runtime)->unicode_state.ids.lock, \
         &(runtime)->imports.extensions.mutex, \
         &(runtime)->ceval.pending_mainthread.lock, \
@@ -886,6 +885,8 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
     _PyAST_Fini(interp);
     _PyWarnings_Fini(interp);
     _PyAtExit_Fini(interp);
+
+    _PyArg_Fini(interp);
 
     // All Python types must be destroyed before the last GC collection. Python
     // types create a reference cycle to themselves in their in their

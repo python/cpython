@@ -4,6 +4,8 @@
 #include "Python.h"
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
 #include "pycore_pylifecycle.h"   // _PyArg_Fini
+#include "pycore_pyerrors.h"      // _Py_CalculateSuggestions()
+#include "pycore_interp.h"        // _getargs_runtime_state
 
 #include <ctype.h>
 #include <float.h>
@@ -2021,8 +2023,9 @@ _parser_init(struct _PyArg_Parser *parser)
     parser->initialized = owned ? 1 : -1;
 
     assert(parser->next == NULL);
-    parser->next = _PyRuntime.getargs.static_parsers;
-    _PyRuntime.getargs.static_parsers = parser;
+    PyInterpreterState *interp = PyInterpreterState_Get();
+    parser->next = interp->getargs.static_parsers;
+    interp->getargs.static_parsers = parser;
     return 1;
 }
 
@@ -2035,16 +2038,7 @@ parser_init(struct _PyArg_Parser *parser)
         assert(parser->kwtuple != NULL);
         return 1;
     }
-    PyThread_acquire_lock(_PyRuntime.getargs.mutex, WAIT_LOCK);
-    // Check again if another thread initialized the parser
-    // while we were waiting for the lock.
-    if (*((volatile int *)&parser->initialized)) {
-        assert(parser->kwtuple != NULL);
-        PyThread_release_lock(_PyRuntime.getargs.mutex);
-        return 1;
-    }
     int ret = _parser_init(parser);
-    PyThread_release_lock(_PyRuntime.getargs.mutex);
     return ret;
 }
 
@@ -2943,16 +2937,22 @@ _PyArg_NoKwnames(const char *funcname, PyObject *kwnames)
 }
 
 void
-_PyArg_Fini(void)
+_PyArg_InitState(PyInterpreterState *interp)
 {
-    struct _PyArg_Parser *tmp, *s = _PyRuntime.getargs.static_parsers;
+    interp->getargs.static_parsers = NULL;
+}
+
+void
+_PyArg_Fini(PyInterpreterState *interp)
+{
+    struct _PyArg_Parser *tmp, *s = interp->getargs.static_parsers;
     while (s) {
         tmp = s->next;
         s->next = NULL;
         parser_clear(s);
         s = tmp;
     }
-    _PyRuntime.getargs.static_parsers = NULL;
+    interp->getargs.static_parsers = NULL;
 }
 
 #ifdef __cplusplus
