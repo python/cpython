@@ -20,7 +20,7 @@ curses = import_module("curses")
 readline = import_module("readline")
 
 from _pyrepl.console import Console, Event
-from _pyrepl.readline import ReadlineAlikeReader, ReadlineConfig
+from _pyrepl.readline import ReadlineAlikeReader, ReadlineConfig, multiline_input as readline_multiline_input
 from _pyrepl.simple_interact import _strip_final_indent
 from _pyrepl.unix_eventqueue import EventQueue
 from _pyrepl.input import KeymapTranslator
@@ -633,7 +633,8 @@ class TestPyReplCompleter(TestCase):
         self.assertEqual(output, "os.")
 
     @patch("_pyrepl.readline._ReadlineWrapper.get_reader")
-    def test_completion_with_warnings(self, mock_get_reader):
+    @patch("sys.stderr", new_callable=io.StringIO)
+    def test_completion_with_warnings(self, mock_stderr, mock_get_reader):
         class Dummy:
             @property
             def test_func(self):
@@ -645,13 +646,10 @@ class TestPyReplCompleter(TestCase):
         events = code_to_events("dummy.test_func.\t\n\n")
         namespace = {"dummy": dummy}
         reader = self.prepare_reader(events, namespace)
-        from _pyrepl.readline import multiline_input as readline_multiline_input
-        with patch("_pyrepl.readline._ReadlineWrapper.get_reader", lambda _: reader), \
-                patch("sys.stderr", new_callable=io.StringIO) as f:
-            output = readline_multiline_input(more_lines, ">>>", "...")
-
+        mock_get_reader.return_value = reader
+        output = readline_multiline_input(more_lines, ">>>", "...")
         self.assertEqual(output[0], "dummy.test_func.")
-        self.assertEqual(f.getvalue(), "")
+        self.assertEqual(mock_stderr.getvalue(), "")
 
 
 @patch("_pyrepl.curses.tigetstr", lambda x: b"")
