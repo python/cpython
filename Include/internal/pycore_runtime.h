@@ -27,6 +27,14 @@ extern "C" {
 #include "pycore_typeobject.h"      // struct types_runtime_state
 #include "pycore_unicodeobject.h"   // struct _Py_unicode_runtime_ids
 
+/* The following struct is moved to interpreter state in 3.13+.
+   We're keeping it here for ABI compat.
+   See also: https://github.com/python/cpython/pull/119194. */
+struct _UNUSED_getargs_runtime_state {
+    PyThread_type_lock mutex;
+    struct _PyArg_Parser *static_parsers;
+};
+
 /* GIL state */
 
 struct _gilstate_runtime_state {
@@ -130,6 +138,7 @@ typedef struct pyruntimestate {
     struct _import_runtime_state imports;
     struct _ceval_runtime_state ceval;
     struct _gilstate_runtime_state gilstate;
+    struct _UNUSED_getargs_runtime_state _UNUSED_gilstate;
     struct _fileutils_state fileutils;
     struct _faulthandler_runtime_state faulthandler;
     struct _tracemalloc_runtime_state tracemalloc;
