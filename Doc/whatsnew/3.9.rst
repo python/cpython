@@ -1,3 +1,4 @@
+
 ****************************
   What's New In Python 3.9
 ****************************
@@ -335,9 +336,6 @@ that would produce an equivalent :class:`ast.AST` object when parsed.
 
 Added docstrings to AST nodes that contains the ASDL signature used to
 construct that node. (Contributed by Batuhan Taskaya in :issue:`39638`.)
-
-Added :func:`ast.compare` for comparing 2 AST node.
-(Contributed by Batuhan Taskaya in :issue:`15987`)
 
 asyncio
 -------

@@ -1,2 +1,3 @@
-Implemented :func:`ast.compare` for comparing 2 AST node. Patch by Batuhan
-Taskaya.
+Implemented :func:`ast.compare` for comparing two AST nodes. Patch by Batuhan
+Taskaya with some help from Jeremy Hylton.
+
