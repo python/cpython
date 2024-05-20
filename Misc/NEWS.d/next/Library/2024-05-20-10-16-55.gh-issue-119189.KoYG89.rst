@@ -1,0 +1,2 @@
+Fixes a bug where fractions will not be casted into float when given as
+argument to __rpow__
