@@ -1883,15 +1883,8 @@ frame_get_var(_PyInterpreterFrame *frame, PyCodeObject *co, int i,
         else if (kind & CO_FAST_CELL) {
             if (value != NULL) {
                 if (PyCell_Check(value)) {
-                    if (!_PyFrame_IsIncomplete(frame)) {
-                        // (likely) MAKE_CELL must have executed already.
-                        value = PyCell_GET(value);
-                    }
-                    else {
-                        // (unlikely) MAKE_CELL may not have run, to be on the
-                        // safe side, pretend that the cell variable is not set.
-                        value = NULL;
-                    }
+                    assert(!_PyFrame_IsIncomplete(frame));
+                    value = PyCell_GET(value);
                 }
                 // (likely) Otherwise it is an arg (kind & CO_FAST_LOCAL),
                 // with the initial value set when the frame was created...
