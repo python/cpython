@@ -86,6 +86,11 @@ FillConsoleOutputCharacter.use_last_error = True
 FillConsoleOutputCharacter.argtypes = [HANDLE, CHAR, DWORD, _COORD, POINTER(DWORD)]
 FillConsoleOutputCharacter.restype = BOOL
 
+FillConsoleOutputAttribute = windll.kernel32.FillConsoleOutputAttribute
+FillConsoleOutputAttribute.use_last_error = True
+FillConsoleOutputAttribute.argtypes = [HANDLE, WORD, DWORD, _COORD, POINTER(DWORD)]
+FillConsoleOutputAttribute.restype = BOOL
+
 ScrollConsoleScreenBuffer = windll.kernel32.ScrollConsoleScreenBufferW
 ScrollConsoleScreenBuffer.use_last_error = True
 ScrollConsoleScreenBuffer.argtypes = [HANDLE, POINTER(SMALL_RECT), POINTER(SMALL_RECT), _COORD, POINTER(CHAR_INFO)]
@@ -99,7 +104,7 @@ SetConsoleMode.restype = BOOL
 class Char(Union):
     _fields_ = [
         ("UnicodeChar",WCHAR),
-        ("Char", CHAR), 
+        ("Char", CHAR),
     ]
 
 class KeyEvent(ctypes.Structure):
@@ -191,7 +196,7 @@ class WindowsConsole(Console):
         term: str = "",
         encoding: str = "",
     ):
-        
+
         SetConsoleMode(OutHandle, ENABLE_PROCESSED_OUTPUT | ENABLE_VIRTUAL_TERMINAL_PROCESSING)
         self.encoding = encoding or sys.getdefaultencoding()
 
@@ -466,12 +471,13 @@ class WindowsConsole(Console):
         trace(f'move_cursor {x} {y}')
 
         if x < 0 or y < 0:
-            raise ValueError(f"Bad cussor position {x}, {y}")
+            raise ValueError(f"Bad cursor position {x}, {y}")
 
         self.__move_relative(x, y)
         self.__posxy = x, y
 
-    def set_cursor_vis(self, visible: bool) -> None: 
+
+    def set_cursor_vis(self, visible: bool) -> None:
         if visible:
             self.__show_cursor()
         else:
@@ -483,9 +489,9 @@ class WindowsConsole(Console):
         info = CONSOLE_SCREEN_BUFFER_INFO()
         if not GetConsoleScreenBufferInfo(OutHandle, info):
             raise ctypes.WinError(ctypes.GetLastError())
-        return (info.srWindow.Bottom - info.srWindow.Top + 1, 
+        return (info.srWindow.Bottom - info.srWindow.Top + 1,
                 info.srWindow.Right - info.srWindow.Left + 1)
-    
+
     def get_event(self, block: bool = True) -> Event | None:
         """Return an Event instance.  Returns None if |block| is false
         and there is no event pending, otherwise waits for the
@@ -546,6 +552,13 @@ class WindowsConsole(Console):
         size = info.dwSize.X * info.dwSize.Y
         if not FillConsoleOutputCharacter(OutHandle, b' ',  size, _COORD(), DWORD()):
             raise ctypes.WinError(ctypes.GetLastError())
+        if not FillConsoleOutputAttribute(OutHandle, 0,  size, _COORD(), DWORD()):
+            raise ctypes.WinError(ctypes.GetLastError())
+        y = info.srWindow.Bottom - info.srWindow.Top + 1
+        self.__move_absolute(0, y - info.dwSize.Y)
+        self.__posxy = 0, 0
+        self.screen = [""]
+
 
     def finish(self) -> None:
         """Move the cursor to the end of the display and otherwise get
