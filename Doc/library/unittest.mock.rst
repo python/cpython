@@ -410,13 +410,13 @@ the *new_callable* argument to :func:`patch`.
 
         This can be useful where you want to make a series of assertions that
         reuse the same object. Note that :meth:`reset_mock` *doesn't* clear the
-        return value, :attr:`side_effect` or any child attributes you have
+        :attr:`return_value`, :attr:`side_effect` or any child attributes you have
         set using normal assignment by default. In case you want to reset
-        *return_value* or :attr:`side_effect`, then pass the corresponding
+        :attr:`return_value` or :attr:`side_effect`, then pass the corresponding
         parameter as ``True``. Child mocks and the return value mock
         (if any) are reset as well.
 
-        .. note:: *return_value*, and :attr:`side_effect` are keyword-only
+        .. note:: *return_value*, and *side_effect* are keyword-only
                   arguments.
 
 
