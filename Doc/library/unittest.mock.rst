@@ -2592,9 +2592,8 @@ broken.
 
 .. versionchanged:: 3.5 
 
-    Before 3.5, Mocks suffered from an additional flaw where tests with a typo in 
-    the word assert would silently pass when they should raise an error. You can still 
-    achieve this behavior by passing ``unsafe=True`` to the Mock class.
+    Before 3.5, tests with a typo in the word assert would silently pass when they should
+    raise an error. You can still achieve this behavior by passing ``unsafe=True`` to Mock.
 
 Note that this is another reason why you need integration tests as well as
 unit tests. Testing everything in isolation is all fine and dandy, but if you
