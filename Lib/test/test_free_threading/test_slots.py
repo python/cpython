@@ -5,39 +5,37 @@ from unittest import TestCase
 
 class Spam:
     __slots__ = [
-        "cheese",
-        "eric",
+        "eggs",
     ]
 
     def __init__(self):
-        self.cheese = 0
-        self.eric = ""
+        self.eggs = 0
 
 
-spam = Spam()
-
-
-def writer():
-    for _ in range(1_000):
-        spam.eric = "idle"
-        spam.cheese += 1
-
-
-def reader():
-    spam.eric
-    spam.cheese
+def run_in_threads(targets):
+    """A decorator to run some functions in separate threads"""
+    threads = [
+        threading.Thread(target=target)
+        for target in targets
+    ]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join()
 
 
 @threading_helper.requires_working_threading()
 class TestList(TestCase):
 
-    def test_slots(self):
-        threads = [threading.Thread(target=writer), *[
-            threading.Thread(target=reader)
-            for _ in range(3)
-        ]]
+    def test_str(self):
+        spam = Spam()
 
-        for thread in threads:
-            thread.start()
-        for thread in threads:
-            thread.join()
+        def writer():
+            for _ in range(1_000):
+                spam.eggs = str(int(spam.eggs) + 1)
+
+        def reader():
+            for _ in range(1_000):
+                spam.eggs
+
+        run_in_threads([writer, reader, reader, reader])

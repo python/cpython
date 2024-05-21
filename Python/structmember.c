@@ -4,6 +4,7 @@
 #include "Python.h"
 #include "pycore_abstract.h"      // _PyNumber_Index()
 #include "pycore_long.h"          // _PyLong_IsNegative()
+#include "pycore_pyatomic_ft_wrappers.h"
 
 
 PyObject *
@@ -75,7 +76,7 @@ PyMember_GetOne(const char *obj_addr, PyMemberDef *l)
         Py_INCREF(v);
         break;
     case Py_T_OBJECT_EX:
-        v = *(PyObject **)addr;
+        v = FT_ATOMIC_LOAD_PTR(*addr);
         if (v == NULL) {
             PyObject *obj = (PyObject *)obj_addr;
             PyTypeObject *tp = Py_TYPE(obj);
@@ -281,8 +282,7 @@ PyMember_SetOne(char *addr, PyMemberDef *l, PyObject *v)
         break;
     case _Py_T_OBJECT:
     case Py_T_OBJECT_EX:
-        oldv = *(PyObject **)addr;
-        *(PyObject **)addr = Py_XNewRef(v);
+        oldv = FT_ATOMIC_EXCHANGE_PTR(addr, Py_XNewRef(v));
         Py_XDECREF(oldv);
         break;
     case Py_T_CHAR: {
