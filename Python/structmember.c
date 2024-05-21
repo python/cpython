@@ -298,9 +298,14 @@ PyMember_SetOne(char *addr, PyMemberDef *l, PyObject *v)
         break;
     case _Py_T_OBJECT:
     case Py_T_OBJECT_EX:
+#ifndef Py_GIL_DISABLED
+        oldv = *(PyObject **)addr;
+        *(PyObject **)addr = Py_XNewRef(v);
+#else
         _PyObject_SetMaybeWeakref(v);  // without setting _Py_REF_MAYBE_WEAKREF,
         // we may get an infinite loop in PyMember_GetOne
         oldv = FT_ATOMIC_EXCHANGE_PTR(addr, Py_XNewRef(v));
+#endif
         Py_XDECREF(oldv);
         break;
     case Py_T_CHAR: {
