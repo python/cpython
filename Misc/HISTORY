@@ -15056,7 +15056,7 @@ Tests
 -----
 
 - Issue #5354: New test support function import_fresh_module() makes
-  it easy to import both normal and optimized versions of modules.
+  it easy to import both normal and optimised versions of modules.
   test_heapq and test_warnings have been adjusted to use it, tests for
   other modules with both C and Python implementations in the stdlib
   can be adjusted to use it over time.

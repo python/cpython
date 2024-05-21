@@ -91,7 +91,7 @@ singleton is destroyed by mistake. Patch by Victor Stinner.
 .. nonce: ZFgFSj
 .. section: Core and Builtins
 
-sum() was further optimized for summing up single digit integers.
+sum() was further optimised for summing up single digit integers.
 
 ..
 
