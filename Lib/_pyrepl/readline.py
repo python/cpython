@@ -223,7 +223,7 @@ class maybe_accept(commands.Command):
         if "\n" in r.buffer[r.pos :] or (
             r.more_lines is not None and r.more_lines(text)
         ):
-            def _whitespace_before_pos():
+            def _newline_before_pos():
                 before_idx = r.pos - 1
                 while before_idx > 0 and text[before_idx].isspace():
                     before_idx -= 1
@@ -232,7 +232,7 @@ class maybe_accept(commands.Command):
             # if there's already a new line before the cursor then
             # even if the cursor is followed by whitespace, we assume
             # the user is trying to terminate the block
-            if _whitespace_before_pos() and text[r.pos:].isspace():
+            if _newline_before_pos() and text[r.pos:].isspace():
                 self.finish = True
             else:
                 #

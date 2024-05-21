@@ -175,4 +175,4 @@ class TestReader(TestCase):
             "  "    # HistoricalReader will trim trailing whitespace
         )
         self.assert_screen_equals(reader, expected)
-        self.assertEqual(reader.finished, True)
+        self.assertTrue(reader.finished)
