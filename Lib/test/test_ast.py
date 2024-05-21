@@ -7,7 +7,6 @@ import random
 import re
 import sys
 import textwrap
-import tokenize
 import types
 import unittest
 import warnings
@@ -1126,23 +1125,6 @@ class AST_Tests(unittest.TestCase):
     def test_compare_fieldless(self):
         self.assertTrue(ast.compare(ast.Add(), ast.Add()))
         self.assertFalse(ast.compare(ast.Sub(), ast.Add()))
-
-    def test_compare_stdlib(self):
-        if support.is_resource_enabled("cpu"):
-            files = STDLIB_FILES
-        else:
-            files = random.sample(STDLIB_FILES, 10)
-
-        for module in files:
-            with self.subTest(module):
-                fn = os.path.join(STDLIB, module)
-                with tokenize.open(fn) as fp:
-                    source = fp.read()
-                a = ast.parse(source, fn)
-                b = ast.parse(source, fn)
-                self.assertTrue(
-                    ast.compare(a, b), f"{ast.dump(a)} != {ast.dump(b)}"
-                )
 
     def test_compare_tests(self):
         for mode, sources in (
@@ -2298,6 +2280,9 @@ class ASTValidatorTests(unittest.TestCase):
                     source = fp.read()
                 mod = ast.parse(source, fn)
                 compile(mod, fn, "exec")
+                mod2 = ast.parse(source, fn)
+                self.assertTrue(ast.compare(mod, mod2))
+                self.assertTrue(False)
 
     constant_1 = ast.Constant(1)
     pattern_1 = ast.MatchValue(constant_1)
