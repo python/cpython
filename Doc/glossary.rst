@@ -894,7 +894,9 @@ Glossary
       compiler when the code is compiled, allowing optimization of read and
       write access to these names. The local namespaces for functions,
       generators, coroutines, comprehensions, and generator expressions are
-      optimized in this fashion.
+      optimized in this fashion. Note: most interpreter optimizations are
+      applied to all scopes, only those relying on a known set of local
+      and nonlocal variable names are restricted to optimized scopes.
 
    package
       A Python :term:`module` which can contain submodules or recursively,
