@@ -37,15 +37,22 @@ printing space-separated values. There are several ways to format output.
 * The :meth:`str.format` method of strings requires more manual
   effort.  You'll still use ``{`` and ``}`` to mark where a variable
   will be substituted and can provide detailed formatting directives,
-  but you'll also need to provide the information to be formatted.
+  but you'll also need to provide the information to be formatted. In the following code
+  block there are two examples of how to format variables:
+
 
   ::
 
      >>> yes_votes = 42_572_654
-     >>> no_votes = 43_132_495
-     >>> percentage = yes_votes / (yes_votes + no_votes)
+     >>> total_votes = 85_705_149
+     >>> percentage = yes_votes / total_votes
      >>> '{:-9} YES votes  {:2.2%}'.format(yes_votes, percentage)
      ' 42572654 YES votes  49.67%'
+
+  Notice how the ``yes_votes`` are padded with spaces and a negative sign only for negative numbers.
+  The example also prints ``percentage`` multiplied by 100, with 2 decimal
+  places and followed by a percent sign (see :ref:`formatspec` for details).
+
 
 * Finally, you can do all the string handling yourself by using string slicing and
   concatenation operations to create any layout you can imagine.  The
@@ -197,7 +204,12 @@ notation. ::
    Jack: 4098; Sjoerd: 4127; Dcab: 8637678
 
 This is particularly useful in combination with the built-in function
-:func:`vars`, which returns a dictionary containing all local variables.
+:func:`vars`, which returns a dictionary containing all local variables::
+
+   >>> table = {k: str(v) for k, v in vars().items()}
+   >>> message = " ".join([f'{k}: ' + '{' + k +'};' for k in table.keys()])
+   >>> print(message.format(**table))
+   __name__: __main__; __doc__: None; __package__: None; __loader__: ...
 
 As an example, the following lines produce a tidily aligned
 set of columns giving integers and their squares and cubes::
