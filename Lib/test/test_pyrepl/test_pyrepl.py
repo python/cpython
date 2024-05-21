@@ -1,12 +1,15 @@
 import itertools
+import io
 import os
 import rlcompleter
-import unittest
 from unittest import TestCase
+from unittest.mock import patch
 
-from .support import FakeConsole, handle_all_events, handle_events_narrow_console, multiline_input, code_to_events
+from .support import FakeConsole, handle_all_events, handle_events_narrow_console
+from .support import more_lines, multiline_input, code_to_events
 from _pyrepl.console import Event
 from _pyrepl.readline import ReadlineAlikeReader, ReadlineConfig
+from _pyrepl.readline import multiline_input as readline_multiline_input
 
 
 class TestCursorPosition(TestCase):
@@ -475,6 +478,25 @@ class TestPyReplCompleter(TestCase):
         output = multiline_input(reader, namespace)
         self.assertEqual(output, "os.")
 
+    @patch("_pyrepl.readline._ReadlineWrapper.get_reader")
+    @patch("sys.stderr", new_callable=io.StringIO)
+    def test_completion_with_warnings(self, mock_stderr, mock_get_reader):
+        class Dummy:
+            @property
+            def test_func(self):
+                import warnings
+                warnings.warn("warnings\n")
+                return None
+
+        dummy = Dummy()
+        events = code_to_events("dummy.test_func.\t\n\n")
+        namespace = {"dummy": dummy}
+        reader = self.prepare_reader(events, namespace)
+        mock_get_reader.return_value = reader
+        output = readline_multiline_input(more_lines, ">>>", "...")
+        self.assertEqual(output[0], "dummy.test_func.__")
+        self.assertEqual(mock_stderr.getvalue(), "")
+
 
 class TestPasteEvent(TestCase):
     def prepare_reader(self, events):
@@ -633,7 +655,3 @@ class TestPasteEvent(TestCase):
         reader = self.prepare_reader(events)
         output = multiline_input(reader)
         self.assertEqual(output, input_code)
-
-
-if __name__ == "__main__":
-    unittest.main()
