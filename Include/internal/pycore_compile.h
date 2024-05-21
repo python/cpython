@@ -88,6 +88,7 @@ PyAPI_FUNC(int) _PyCompile_OpcodeHasExc(int opcode);
 PyAPI_FUNC(PyObject*) _PyCompile_GetUnaryIntrinsicName(int index);
 PyAPI_FUNC(PyObject*) _PyCompile_GetBinaryIntrinsicName(int index);
 PyAPI_FUNC(PyObject *) _PyCompile_GetCommonConstantsList(void);
+PyAPI_FUNC(void) _PyCompile_SetCommonConstant(int index, PyObject *constant);
 
 /* Access compiler internals for unit testing */
 

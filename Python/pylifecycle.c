@@ -5,6 +5,7 @@
 #include "pycore_call.h"          // _PyObject_CallMethod()
 #include "pycore_ceval.h"         // _PyEval_FiniGIL()
 #include "pycore_codecs.h"        // _PyCodec_Lookup()
+#include "pycore_compile.h"       // _PyCompile_SetCommonConstant()
 #include "pycore_context.h"       // _PyContext_Init()
 #include "pycore_dict.h"          // _PyDict_Fini()
 #include "pycore_exceptions.h"    // _PyExc_InitTypes()
@@ -17,6 +18,7 @@
 #include "pycore_list.h"          // _PyList_Fini()
 #include "pycore_long.h"          // _PyLong_InitTypes()
 #include "pycore_object.h"        // _PyDebug_PrintTotalRefs()
+#include "pycore_opcode_utils.h"  // CONSTANT_ASSERTIONERROR etc.
 #include "pycore_pathconfig.h"    // _PyPathConfig_UpdateGlobal()
 #include "pycore_pyerrors.h"      // _PyErr_Occurred()
 #include "pycore_pylifecycle.h"   // _PyErr_Print()
@@ -825,6 +827,9 @@ pycore_init_builtins(PyThreadState *tstate)
         goto error;
     }
     Py_DECREF(bimod);
+
+    _PyCompile_SetCommonConstant(CONSTANT_ASSERTIONERROR, PyExc_AssertionError);
+    _PyCompile_SetCommonConstant(CONSTANT_NOTIMPLEMENTEDERROR, PyExc_NotImplementedError);
 
     if (_PyImport_InitDefaultImportFunc(interp) < 0) {
         goto error;

@@ -4249,7 +4249,7 @@
             next_instr += 1;
             INSTRUCTION_STATS(LOAD_COMMON_CONSTANT);
             PyObject *value;
-            value = Py_NewRef(*common_constants[oparg]);
+            value = Py_NewRef(common_constants[oparg]);
             stack_pointer[0] = value;
             stack_pointer += 1;
             DISPATCH();

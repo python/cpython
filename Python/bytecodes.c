@@ -1189,7 +1189,7 @@ dummy_func(
         }
 
         inst(LOAD_COMMON_CONSTANT, ( -- value)) {
-            value = Py_NewRef(*common_constants[oparg]);
+            value = Py_NewRef(common_constants[oparg]);
         }
 
         inst(LOAD_BUILD_CLASS, ( -- bc)) {

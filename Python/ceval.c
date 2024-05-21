@@ -2991,6 +2991,13 @@ void Py_LeaveRecursiveCall(void)
     _Py_LeaveRecursiveCall();
 }
 
+void
+_PyCompile_SetCommonConstant(int index, PyObject *constant)
+{
+    assert(index >= 0 && index < NUM_COMMON_CONSTANTS);
+    common_constants[index] = constant;
+}
+
 PyObject *
 _PyCompile_GetCommonConstantsList(void)
 {
@@ -2999,7 +3006,7 @@ _PyCompile_GetCommonConstantsList(void)
         return NULL;
     }
     for (int i = 0; i < NUM_COMMON_CONSTANTS; i++) {
-        PyList_SET_ITEM(lst, i, Py_NewRef(*common_constants[i]));
+        PyList_SET_ITEM(lst, i, Py_NewRef(common_constants[i]));
     }
     return lst;
 }

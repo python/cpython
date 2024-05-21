@@ -448,7 +448,4 @@ do { \
 #define EXIT_TO_TIER1() goto exit_to_tier1
 #define EXIT_TO_TIER1_DYNAMIC() goto exit_to_tier1_dynamic;
 
-static PyObject **common_constants[NUM_COMMON_CONSTANTS] = {
-    [CONSTANT_ASSERTIONERROR] = &PyExc_AssertionError,
-    [CONSTANT_NOTIMPLEMENTEDERROR] = &PyExc_NotImplementedError,
-};
+static PyObject *common_constants[NUM_COMMON_CONSTANTS];
