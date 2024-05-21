@@ -55,7 +55,7 @@ FLAGS = [
     "PASSTHROUGH",
     "OPARG_AND_1",
     "ERROR_NO_POP",
-    "OPERAND"
+    "OPERAND",
 ]
 
 
