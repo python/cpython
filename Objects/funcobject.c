@@ -529,8 +529,8 @@ func_get_annotation_dict(PyFunctionObject *op)
             return op->func_annotations;
         }
         if (!PyDict_Check(ann_dict)) {
-            PyErr_SetString(PyExc_TypeError,
-                            "__annotate__ returned a non-dict");
+            PyErr_Format(PyExc_TypeError, "__annotate__ returned non-dict of type '%.100s'",
+                         Py_TYPE(ann_dict)->tp_name);
             Py_DECREF(ann_dict);
             return NULL;
         }
