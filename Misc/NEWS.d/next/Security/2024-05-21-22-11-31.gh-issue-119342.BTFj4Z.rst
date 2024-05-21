@@ -1,0 +1,2 @@
+Fix OOM vulnerability in :mod:`plistlib`, when reading a specially prepared
+small Plist file could cause consuming an arbitrary amount of memory.
