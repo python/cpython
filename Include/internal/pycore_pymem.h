@@ -119,6 +119,9 @@ extern int _PyMem_DebugEnabled(void);
 // Enqueue a pointer to be freed possibly after some delay.
 extern void _PyMem_FreeDelayed(void *ptr);
 
+// Enqueue an object to be freed possibly after some delay
+extern void _PyObject_FreeDelayed(void *ptr);
+
 // Periodically process delayed free requests.
 extern void _PyMem_ProcessDelayed(PyThreadState *tstate);
 

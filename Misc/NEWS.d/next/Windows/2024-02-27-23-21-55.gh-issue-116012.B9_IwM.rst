@@ -1,1 +1,0 @@
-Ensure the value of ``GetLastError()`` is preserved across GIL operations.

@@ -136,7 +136,7 @@ extern "C" {
 // - MCGEN_EVENTSETINFORMATION
 // - MCGEN_EVENTWRITETRANSFER
 //
-// If the the macro is undefined, the MC implementation will default to the
+// If the macro is undefined, the MC implementation will default to the
 // corresponding ETW APIs. For example, if the MCGEN_EVENTREGISTER macro is
 // undefined, the EventRegister[MyProviderName] macro will use EventRegister
 // in user mode and will use EtwRegister in kernel mode.

@@ -232,6 +232,46 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
         with self.assertRaises(tkinter.TclError):
             root.tk.call('after', 'info', idle1)
 
+    def test_after_info(self):
+        root = self.root
+
+        # No events.
+        self.assertEqual(root.after_info(), ())
+
+        # Add timer.
+        timer = root.after(1, lambda: 'break')
+
+        # With no parameter, it returns a tuple of the event handler ids.
+        self.assertEqual(root.after_info(), (timer, ))
+        root.after_cancel(timer)
+
+        timer1 = root.after(5000, lambda: 'break')
+        timer2 = root.after(5000, lambda: 'break')
+        idle1 = root.after_idle(lambda: 'break')
+        # Only contains new events and not 'timer'.
+        self.assertEqual(root.after_info(), (idle1, timer2, timer1))
+
+        # With a parameter returns a tuple of (script, type).
+        timer1_info = root.after_info(timer1)
+        self.assertEqual(len(timer1_info), 2)
+        self.assertEqual(timer1_info[1], 'timer')
+        idle1_info = root.after_info(idle1)
+        self.assertEqual(len(idle1_info), 2)
+        self.assertEqual(idle1_info[1], 'idle')
+
+        root.after_cancel(timer1)
+        with self.assertRaises(tkinter.TclError):
+            root.after_info(timer1)
+        root.after_cancel(timer2)
+        with self.assertRaises(tkinter.TclError):
+            root.after_info(timer2)
+        root.after_cancel(idle1)
+        with self.assertRaises(tkinter.TclError):
+            root.after_info(idle1)
+
+        # No events.
+        self.assertEqual(root.after_info(), ())
+
     def test_clipboard(self):
         root = self.root
         root.clipboard_clear()
@@ -490,6 +530,284 @@ class WmTest(AbstractTkTest, unittest.TestCase):
         w.wm_attributes(alpha=1.0)
         self.assertEqual(w.wm_attributes('alpha'),
                          1.0 if self.wantobjects else '1.0')
+
+
+class EventTest(AbstractTkTest, unittest.TestCase):
+
+    def test_focus(self):
+        f = tkinter.Frame(self.root, width=150, height=100)
+        f.pack()
+        self.root.wait_visibility()  # needed on Windows
+        self.root.update_idletasks()
+
+        events = []
+        f.bind('<FocusIn>', events.append)
+
+        f.focus_force()
+        self.root.update()
+        self.assertEqual(len(events), 1, events)
+        e = events[0]
+        self.assertIs(e.type, tkinter.EventType.FocusIn)
+        self.assertIs(e.widget, f)
+        self.assertIsInstance(e.serial, int)
+        self.assertEqual(e.time, '??')
+        self.assertIs(e.send_event, False)
+        self.assertFalse(hasattr(e, 'focus'))
+        self.assertEqual(e.num, '??')
+        self.assertEqual(e.state, '??')
+        self.assertEqual(e.char, '??')
+        self.assertEqual(e.keycode, '??')
+        self.assertEqual(e.keysym, '??')
+        self.assertEqual(e.keysym_num, '??')
+        self.assertEqual(e.width, '??')
+        self.assertEqual(e.height, '??')
+        self.assertEqual(e.x, '??')
+        self.assertEqual(e.y, '??')
+        self.assertEqual(e.x_root, '??')
+        self.assertEqual(e.y_root, '??')
+        self.assertEqual(e.delta, 0)
+        self.assertEqual(repr(e), '<FocusIn event>')
+
+    def test_configure(self):
+        f = tkinter.Frame(self.root, width=150, height=100)
+        f.pack()
+        self.root.wait_visibility()  # needed on Windows
+        self.root.update_idletasks()
+
+        events = []
+        f.bind('<Configure>', events.append)
+
+        f.configure(height=120, borderwidth=10)
+        self.assertEqual(len(events), 1, events)
+        e = events[0]
+        self.assertIs(e.type, tkinter.EventType.Configure)
+        self.assertIs(e.widget, f)
+        self.assertIsInstance(e.serial, int)
+        self.assertEqual(e.time, '??')
+        self.assertIs(e.send_event, False)
+        self.assertFalse(hasattr(e, 'focus'))
+        self.assertEqual(e.num, '??')
+        self.assertEqual(e.state, '??')
+        self.assertEqual(e.char, '??')
+        self.assertEqual(e.keycode, '??')
+        self.assertEqual(e.keysym, '??')
+        self.assertEqual(e.keysym_num, '??')
+        self.assertEqual(e.width, 150)
+        self.assertEqual(e.height, 100)
+        self.assertEqual(e.x, 0)
+        self.assertEqual(e.y, 0)
+        self.assertEqual(e.x_root, '??')
+        self.assertEqual(e.y_root, '??')
+        self.assertEqual(e.delta, 0)
+        self.assertEqual(repr(e), '<Configure event x=0 y=0 width=150 height=100>')
+
+    def test_event_generate_key_press(self):
+        f = tkinter.Frame(self.root, width=150, height=100)
+        f.pack()
+        self.root.wait_visibility()  # needed on Windows
+        self.root.update_idletasks()
+
+        events = []
+        f.bind('<KeyPress>', events.append)
+        f.focus_force()
+
+        f.event_generate('<Alt-z>')
+        self.assertEqual(len(events), 1, events)
+        e = events[0]
+        self.assertIs(e.type, tkinter.EventType.KeyPress)
+        self.assertIs(e.widget, f)
+        self.assertIsInstance(e.serial, int)
+        self.assertEqual(e.time, 0)
+        self.assertIs(e.send_event, False)
+        self.assertFalse(hasattr(e, 'focus'))
+        self.assertEqual(e.num, '??')
+        self.assertIsInstance(e.state, int)
+        self.assertNotEqual(e.state, 0)
+        self.assertEqual(e.char, 'z')
+        self.assertIsInstance(e.keycode, int)
+        self.assertNotEqual(e.keycode, 0)
+        self.assertEqual(e.keysym, 'z')
+        self.assertEqual(e.keysym_num, ord('z'))
+        self.assertEqual(e.width, '??')
+        self.assertEqual(e.height, '??')
+        self.assertEqual(e.x, -1 - f.winfo_rootx())
+        self.assertEqual(e.y, -1 - f.winfo_rooty())
+        self.assertEqual(e.x_root, -1)
+        self.assertEqual(e.y_root, -1)
+        self.assertEqual(e.delta, 0)
+        self.assertEqual(repr(e),
+            f"<KeyPress event state={e.state:#x} "
+            f"keysym=z keycode={e.keycode} char='z' x={e.x} y={e.y}>")
+
+    def test_event_generate_enter(self):
+        f = tkinter.Frame(self.root, width=150, height=100)
+        f.pack()
+        self.root.wait_visibility()  # needed on Windows
+        self.root.update_idletasks()
+
+        events = []
+        f.bind('<Enter>', events.append)
+
+        f.event_generate('<Enter>', x=100, y=50)
+        self.assertEqual(len(events), 1, events)
+        e = events[0]
+        self.assertIs(e.type, tkinter.EventType.Enter)
+        self.assertIs(e.widget, f)
+        self.assertIsInstance(e.serial, int)
+        self.assertEqual(e.time, 0)
+        self.assertIs(e.send_event, False)
+        self.assertIs(e.focus, False)
+        self.assertEqual(e.num, '??')
+        self.assertEqual(e.state, 0)
+        self.assertEqual(e.char, '??')
+        self.assertEqual(e.keycode, '??')
+        self.assertEqual(e.keysym, '??')
+        self.assertEqual(e.keysym_num, '??')
+        self.assertEqual(e.width, '??')
+        self.assertEqual(e.height, '??')
+        self.assertEqual(e.x, 100)
+        self.assertEqual(e.y, 50)
+        self.assertEqual(e.x_root, 100 + f.winfo_rootx())
+        self.assertEqual(e.y_root, 50 + f.winfo_rooty())
+        self.assertEqual(e.delta, 0)
+        self.assertEqual(repr(e), '<Enter event focus=False x=100 y=50>')
+
+    def test_event_generate_button_press(self):
+        f = tkinter.Frame(self.root, width=150, height=100)
+        f.pack()
+        self.root.wait_visibility()  # needed on Windows
+        self.root.update_idletasks()
+
+        events = []
+        f.bind('<ButtonPress>', events.append)
+        f.focus_force()
+
+        f.event_generate('<Button-1>', x=100, y=50)
+        self.assertEqual(len(events), 1, events)
+        e = events[0]
+        self.assertIs(e.type, tkinter.EventType.ButtonPress)
+        self.assertIs(e.widget, f)
+        self.assertIsInstance(e.serial, int)
+        self.assertEqual(e.time, 0)
+        self.assertIs(e.send_event, False)
+        self.assertFalse(hasattr(e, 'focus'))
+        self.assertEqual(e.num, 1)
+        self.assertEqual(e.state, 0)
+        self.assertEqual(e.char, '??')
+        self.assertEqual(e.keycode, '??')
+        self.assertEqual(e.keysym, '??')
+        self.assertEqual(e.keysym_num, '??')
+        self.assertEqual(e.width, '??')
+        self.assertEqual(e.height, '??')
+        self.assertEqual(e.x, 100)
+        self.assertEqual(e.y, 50)
+        self.assertEqual(e.x_root, f.winfo_rootx() + 100)
+        self.assertEqual(e.y_root, f.winfo_rooty() + 50)
+        self.assertEqual(e.delta, 0)
+        self.assertEqual(repr(e), '<ButtonPress event num=1 x=100 y=50>')
+
+    def test_event_generate_motion(self):
+        f = tkinter.Frame(self.root, width=150, height=100)
+        f.pack()
+        self.root.wait_visibility()  # needed on Windows
+        self.root.update_idletasks()
+
+        events = []
+        f.bind('<Motion>', events.append)
+        f.focus_force()
+
+        f.event_generate('<B1-Motion>', x=100, y=50)
+        self.assertEqual(len(events), 1, events)
+        e = events[0]
+        self.assertIs(e.type, tkinter.EventType.Motion)
+        self.assertIs(e.widget, f)
+        self.assertIsInstance(e.serial, int)
+        self.assertEqual(e.time, 0)
+        self.assertIs(e.send_event, False)
+        self.assertFalse(hasattr(e, 'focus'))
+        self.assertEqual(e.num, '??')
+        self.assertEqual(e.state, 0x100)
+        self.assertEqual(e.char, '??')
+        self.assertEqual(e.keycode, '??')
+        self.assertEqual(e.keysym, '??')
+        self.assertEqual(e.keysym_num, '??')
+        self.assertEqual(e.width, '??')
+        self.assertEqual(e.height, '??')
+        self.assertEqual(e.x, 100)
+        self.assertEqual(e.y, 50)
+        self.assertEqual(e.x_root, f.winfo_rootx() + 100)
+        self.assertEqual(e.y_root, f.winfo_rooty() + 50)
+        self.assertEqual(e.delta, 0)
+        self.assertEqual(repr(e), '<Motion event state=Button1 x=100 y=50>')
+
+    def test_event_generate_mouse_wheel(self):
+        f = tkinter.Frame(self.root, width=150, height=100)
+        f.pack()
+        self.root.wait_visibility()  # needed on Windows
+        self.root.update_idletasks()
+
+        events = []
+        f.bind('<MouseWheel>', events.append)
+        f.focus_force()
+
+        f.event_generate('<MouseWheel>', x=100, y=50, delta=-5)
+        self.assertEqual(len(events), 1, events)
+        e = events[0]
+        self.assertIs(e.type, tkinter.EventType.MouseWheel)
+        self.assertIs(e.widget, f)
+        self.assertIsInstance(e.serial, int)
+        self.assertIs(e.send_event, False)
+        self.assertFalse(hasattr(e, 'focus'))
+        self.assertEqual(e.time, 0)
+        self.assertEqual(e.num, '??')
+        self.assertEqual(e.state, 0)
+        self.assertEqual(e.char, '??')
+        self.assertEqual(e.keycode, '??')
+        self.assertEqual(e.keysym, '??')
+        self.assertEqual(e.keysym_num, '??')
+        self.assertEqual(e.width, '??')
+        self.assertEqual(e.height, '??')
+        self.assertEqual(e.x, 100)
+        self.assertEqual(e.y, 50)
+        self.assertEqual(e.x_root, f.winfo_rootx() + 100)
+        self.assertEqual(e.y_root, f.winfo_rooty() + 50)
+        self.assertEqual(e.delta, -5)
+        self.assertEqual(repr(e), '<MouseWheel event delta=-5 x=100 y=50>')
+
+    def test_generate_event_virtual_event(self):
+        f = tkinter.Frame(self.root, width=150, height=100)
+        f.pack()
+        self.root.wait_visibility()  # needed on Windows
+        self.root.update_idletasks()
+
+        events = []
+        f.bind('<<Spam>>', events.append)
+        f.focus_force()
+
+        f.event_generate('<<Spam>>', x=50)
+        self.assertEqual(len(events), 1, events)
+        e = events[0]
+        self.assertIs(e.type, tkinter.EventType.VirtualEvent)
+        self.assertIs(e.widget, f)
+        self.assertIsInstance(e.serial, int)
+        self.assertEqual(e.time, 0)
+        self.assertIs(e.send_event, False)
+        self.assertFalse(hasattr(e, 'focus'))
+        self.assertEqual(e.num, '??')
+        self.assertEqual(e.state, 0)
+        self.assertEqual(e.char, '??')
+        self.assertEqual(e.keycode, '??')
+        self.assertEqual(e.keysym, '??')
+        self.assertEqual(e.keysym_num, '??')
+        self.assertEqual(e.width, '??')
+        self.assertEqual(e.height, '??')
+        self.assertEqual(e.x, 50)
+        self.assertEqual(e.y, 0)
+        self.assertEqual(e.x_root, f.winfo_rootx() + 50)
+        self.assertEqual(e.y_root, -1)
+        self.assertEqual(e.delta, 0)
+        self.assertEqual(repr(e),
+            f"<VirtualEvent event x=50 y=0>")
 
 
 class BindTest(AbstractTkTest, unittest.TestCase):

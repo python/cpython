@@ -228,7 +228,7 @@ cross-interpreter API.  Patch by Anthony Shaw.
 .. nonce: ageUWQ
 .. section: Core and Builtins
 
-Add support for sharing of True and False between interpreters using the
+Add support for sharing of ``True`` and ``False`` between interpreters using the
 cross-interpreter API.  Patch by Anthony Shaw.
 
 ..
@@ -1354,8 +1354,8 @@ crash encountered after the first :meth:`tkinter.Tk` instance is destroyed.
 .. section: IDLE
 
 Add docstrings to the IDLE debugger module. Fix two bugs: initialize
-Idb.botframe (should be in Bdb); in Idb.in_rpc_code, check whether
-prev_frame is None before trying to use it. Greatly expand test_debugger.
+``Idb.botframe`` (should be in Bdb); in ``Idb.in_rpc_code``, check whether
+``prev_frame`` is ``None`` before trying to use it. Greatly expand test_debugger.
 
 ..
 
