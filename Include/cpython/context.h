@@ -27,6 +27,43 @@ PyAPI_FUNC(PyObject *) PyContext_CopyCurrent(void);
 PyAPI_FUNC(int) PyContext_Enter(PyObject *);
 PyAPI_FUNC(int) PyContext_Exit(PyObject *);
 
+#define PY_FOREACH_CONTEXT_EVENT(V) \
+   V(ENTER)                      \
+   V(EXIT)
+
+typedef enum {
+   #define PY_DEF_EVENT(op) PY_CONTEXT_EVENT_##op,
+   PY_FOREACH_CONTEXT_EVENT(PY_DEF_EVENT)
+   #undef PY_DEF_EVENT
+} PyContextEvent;
+
+/*
+ * A Callback to clue in non-python contexts impls about a
+ * change in the active python context.
+ *
+ * The callback is invoked with the event and a reference to =
+ * the context after its entered and before its exited.
+ *
+ * if the callback returns with an exception set, it must return -1. Otherwise
+ * it should return 0
+ */
+typedef int (*PyContext_WatchCallback)(PyContextEvent, PyContext *);
+
+/*
+ * Register a per-interpreter callback that will be invoked for context object
+ * enter/exit events.
+ *
+ * Returns a handle that may be passed to PyContext_ClearWatcher on success,
+ * or -1 and sets and error if no more handles are available.
+ */
+PyAPI_FUNC(int) PyContext_AddWatcher(PyContext_WatchCallback callback);
+
+/*
+ * Clear the watcher associated with the watcher_id handle.
+ *
+ * Returns 0 on success or -1 if no watcher exists for the provided id.
+ */
+PyAPI_FUNC(int) PyContext_ClearWatcher(int watcher_id);
 
 /* Create a new context variable.
 
