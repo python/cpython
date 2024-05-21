@@ -63,7 +63,7 @@ class HierarchyTest(unittest.TestCase):
         +-- InterruptedError                                            EINTR
         +-- IsADirectoryError                                          EISDIR
         +-- NotADirectoryError                                        ENOTDIR
-        +-- PermissionError                                     EACCES, EPERM
+        +-- PermissionError                        EACCES, EPERM, ENOTCAPABLE
         +-- ProcessLookupError                                          ESRCH
         +-- TimeoutError                                            ETIMEDOUT
     """
@@ -75,6 +75,8 @@ class HierarchyTest(unittest.TestCase):
                 continue
             excname, _, errnames = line.partition(' ')
             for errname in filter(None, errnames.strip().split(', ')):
+                if errname == "ENOTCAPABLE" and not hasattr(errno, errname):
+                    continue
                 _map[getattr(errno, errname)] = getattr(builtins, excname)
         return _map
     _map = _make_map(_pep_map)
@@ -91,7 +93,7 @@ class HierarchyTest(unittest.TestCase):
         othercodes = set(errno.errorcode) - set(self._map)
         for errcode in othercodes:
             e = OSError(errcode, "Some message")
-            self.assertIs(type(e), OSError)
+            self.assertIs(type(e), OSError, repr(e))
 
     def test_try_except(self):
         filename = "some_hopefully_non_existing_file"

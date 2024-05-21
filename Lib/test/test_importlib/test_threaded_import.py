@@ -13,11 +13,11 @@ import time
 import shutil
 import threading
 import unittest
-from unittest import mock
+from test import support
 from test.support import verbose
-from test.support.import_helper import forget
+from test.support.import_helper import forget, mock_register_at_fork
 from test.support.os_helper import (TESTFN, unlink, rmtree)
-from test.support import script_helper, threading_helper
+from test.support import script_helper, threading_helper, requires_gil_enabled
 
 threading_helper.requires_working_threading(module=True)
 
@@ -40,12 +40,6 @@ def task(N, done, done_tasks, errors):
         finished = len(done_tasks) == N
         if finished:
             done.set()
-
-def mock_register_at_fork(func):
-    # bpo-30599: Mock os.register_at_fork() when importing the random module,
-    # since this function doesn't allow to unregister callbacks and would leak
-    # memory.
-    return mock.patch('os.register_at_fork', create=True)(func)
 
 # Create a circular import structure: A -> C -> B -> D -> A
 # NOTE: `time` is already loaded and therefore doesn't threaten to deadlock.
@@ -244,7 +238,8 @@ class ThreadedImportTests(unittest.TestCase):
         self.addCleanup(forget, TESTFN)
         self.addCleanup(rmtree, '__pycache__')
         importlib.invalidate_caches()
-        __import__(TESTFN)
+        with threading_helper.wait_threads_exit():
+            __import__(TESTFN)
         del sys.modules[TESTFN]
 
     def test_concurrent_futures_circular_import(self):
@@ -253,6 +248,9 @@ class ThreadedImportTests(unittest.TestCase):
                           'partial', 'cfimport.py')
         script_helper.assert_python_ok(fn)
 
+    # gh-118727 and gh-118729: pool_in_threads.py may crash in free-threaded
+    # builds, which can hang the Tsan test so temporarily skip it for now.
+    @requires_gil_enabled("gh-118727: test may crash in free-threaded builds")
     def test_multiprocessing_pool_circular_import(self):
         # Regression test for bpo-41567
         fn = os.path.join(os.path.dirname(__file__),
@@ -266,10 +264,10 @@ def setUpModule():
     try:
         old_switchinterval = sys.getswitchinterval()
         unittest.addModuleCleanup(sys.setswitchinterval, old_switchinterval)
-        sys.setswitchinterval(1e-5)
+        support.setswitchinterval(1e-5)
     except AttributeError:
         pass
 
 
 if __name__ == "__main__":
-    unittets.main()
+    unittest.main()

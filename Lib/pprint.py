@@ -128,6 +128,9 @@ class PrettyPrinter:
         sort_dicts
             If true, dict keys are sorted.
 
+        underscore_numbers
+            If true, digit groups are separated with underscores.
+
         """
         indent = int(indent)
         width = int(width)
@@ -637,19 +640,6 @@ def _recursion(object):
             % (type(object).__name__, id(object)))
 
 
-def _perfcheck(object=None):
-    import time
-    if object is None:
-        object = [("string", (1, 2), [3, 4], {5: 6, 7: 8})] * 100000
-    p = PrettyPrinter()
-    t1 = time.perf_counter()
-    p._safe_repr(object, {}, None, 0, True)
-    t2 = time.perf_counter()
-    p.pformat(object)
-    t3 = time.perf_counter()
-    print("_safe_repr:", t2 - t1)
-    print("pformat:", t3 - t2)
-
 def _wrap_bytes_repr(object, width, allowance):
     current = b''
     last = len(object) // 4 * 4
@@ -666,6 +656,3 @@ def _wrap_bytes_repr(object, width, allowance):
             current = candidate
     if current:
         yield repr(current)
-
-if __name__ == "__main__":
-    _perfcheck()

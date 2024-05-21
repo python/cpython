@@ -25,12 +25,15 @@ class IsolatedAsyncioTestCase(TestCase):
     # them inside the same task.
 
     # Note: the test case modifies event loop policy if the policy was not instantiated
-    # yet.
+    # yet, unless loop_factory=asyncio.EventLoop is set.
     # asyncio.get_event_loop_policy() creates a default policy on demand but never
     # returns None
     # I believe this is not an issue in user level tests but python itself for testing
     # should reset a policy in every test module
     # by calling asyncio.set_event_loop_policy(None) in tearDownModule()
+    # or set loop_factory=asyncio.EventLoop
+
+    loop_factory = None
 
     def __init__(self, methodName='runTest'):
         super().__init__(methodName)
@@ -58,13 +61,37 @@ class IsolatedAsyncioTestCase(TestCase):
         # 3. Regular "def func()" that returns awaitable object
         self.addCleanup(*(func, *args), **kwargs)
 
+    async def enterAsyncContext(self, cm):
+        """Enters the supplied asynchronous context manager.
+
+        If successful, also adds its __aexit__ method as a cleanup
+        function and returns the result of the __aenter__ method.
+        """
+        # We look up the special methods on the type to match the with
+        # statement.
+        cls = type(cm)
+        try:
+            enter = cls.__aenter__
+            exit = cls.__aexit__
+        except AttributeError:
+            raise TypeError(f"'{cls.__module__}.{cls.__qualname__}' object does "
+                            f"not support the asynchronous context manager protocol"
+                           ) from None
+        result = await enter(cm)
+        self.addAsyncCleanup(exit, cm, None, None, None)
+        return result
+
     def _callSetUp(self):
+        # Force loop to be initialized and set as the current loop
+        # so that setUp functions can use get_event_loop() and get the
+        # correct loop instance.
+        self._asyncioRunner.get_loop()
         self._asyncioTestContext.run(self.setUp)
         self._callAsync(self.asyncSetUp)
 
     def _callTestMethod(self, method):
         if self._callMaybeAsync(method) is not None:
-            warnings.warn(f'It is deprecated to return a value!=None from a '
+            warnings.warn(f'It is deprecated to return a value that is not None from a '
                           f'test case ({method})', DeprecationWarning, stacklevel=4)
 
     def _callTearDown(self):
@@ -94,7 +121,7 @@ class IsolatedAsyncioTestCase(TestCase):
 
     def _setupAsyncioRunner(self):
         assert self._asyncioRunner is None, 'asyncio runner is already initialized'
-        runner = asyncio.Runner(debug=True)
+        runner = asyncio.Runner(debug=True, loop_factory=self.loop_factory)
         self._asyncioRunner = runner
 
     def _tearDownAsyncioRunner(self):

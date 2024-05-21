@@ -96,6 +96,24 @@ class ListTest(list_tests.CommonTest):
         self.assertRaises((MemoryError, OverflowError), mul, lst, n)
         self.assertRaises((MemoryError, OverflowError), imul, lst, n)
 
+    def test_empty_slice(self):
+        x = []
+        x[:] = x
+        self.assertEqual(x, [])
+
+    def test_list_resize_overflow(self):
+        # gh-97616: test new_allocated * sizeof(PyObject*) overflow
+        # check in list_resize()
+        lst = [0] * 65
+        del lst[1:]
+        self.assertEqual(len(lst), 1)
+
+        size = sys.maxsize
+        with self.assertRaises((MemoryError, OverflowError)):
+            lst * size
+        with self.assertRaises((MemoryError, OverflowError)):
+            lst *= size
+
     def test_repr_large(self):
         # Check the repr of large list objects
         def check(n):

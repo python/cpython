@@ -1248,6 +1248,15 @@ class ListTest(unittest.TestCase):
         self.assertEqual(l[-10:], [5] * 10)
 
 
+class DictTest(unittest.TestCase):
+
+    @bigmemtest(size=357913941, memuse=160)
+    def test_dict(self, size):
+        # https://github.com/python/cpython/issues/102701
+        d = dict.fromkeys(range(size))
+        d[size] = 1
+
+
 if __name__ == '__main__':
     if len(sys.argv) > 1:
         support.set_memlimit(sys.argv[1])

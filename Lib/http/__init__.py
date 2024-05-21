@@ -1,6 +1,6 @@
-from enum import IntEnum, _simple_enum
+from enum import StrEnum, IntEnum, _simple_enum
 
-__all__ = ['HTTPStatus']
+__all__ = ['HTTPStatus', 'HTTPMethod']
 
 
 @_simple_enum(IntEnum)
@@ -9,7 +9,7 @@ class HTTPStatus:
 
     Status codes from the following RFCs are all observed:
 
-        * RFC 7231: Hypertext Transfer Protocol (HTTP/1.1), obsoletes 2616
+        * RFC 9110: HTTP Semantics, obsoletes 7231, which obsoleted 2616
         * RFC 6585: Additional HTTP Status Codes
         * RFC 3229: Delta encoding in HTTP
         * RFC 4918: HTTP Extensions for WebDAV, obsoletes 2518
@@ -26,10 +26,29 @@ class HTTPStatus:
     def __new__(cls, value, phrase, description=''):
         obj = int.__new__(cls, value)
         obj._value_ = value
-
         obj.phrase = phrase
         obj.description = description
         return obj
+
+    @property
+    def is_informational(self):
+        return 100 <= self <= 199
+
+    @property
+    def is_success(self):
+        return 200 <= self <= 299
+
+    @property
+    def is_redirection(self):
+        return 300 <= self <= 399
+
+    @property
+    def is_client_error(self):
+        return 400 <= self <= 499
+
+    @property
+    def is_server_error(self):
+        return 500 <= self <= 599
 
     # informational
     CONTINUE = 100, 'Continue', 'Request received, please continue'
@@ -95,22 +114,25 @@ class HTTPStatus:
         'Client must specify Content-Length')
     PRECONDITION_FAILED = (412, 'Precondition Failed',
         'Precondition in headers is false')
-    REQUEST_ENTITY_TOO_LARGE = (413, 'Request Entity Too Large',
-        'Entity is too large')
-    REQUEST_URI_TOO_LONG = (414, 'Request-URI Too Long',
+    CONTENT_TOO_LARGE = (413, 'Content Too Large',
+        'Content is too large')
+    REQUEST_ENTITY_TOO_LARGE = CONTENT_TOO_LARGE
+    URI_TOO_LONG = (414, 'URI Too Long',
         'URI is too long')
+    REQUEST_URI_TOO_LONG = URI_TOO_LONG
     UNSUPPORTED_MEDIA_TYPE = (415, 'Unsupported Media Type',
         'Entity body in unsupported format')
-    REQUESTED_RANGE_NOT_SATISFIABLE = (416,
-        'Requested Range Not Satisfiable',
+    RANGE_NOT_SATISFIABLE = (416, 'Range Not Satisfiable',
         'Cannot satisfy request range')
+    REQUESTED_RANGE_NOT_SATISFIABLE = RANGE_NOT_SATISFIABLE
     EXPECTATION_FAILED = (417, 'Expectation Failed',
         'Expect condition could not be satisfied')
     IM_A_TEAPOT = (418, 'I\'m a Teapot',
         'Server refuses to brew coffee because it is a teapot.')
     MISDIRECTED_REQUEST = (421, 'Misdirected Request',
         'Server is not able to produce a response')
-    UNPROCESSABLE_ENTITY = 422, 'Unprocessable Entity'
+    UNPROCESSABLE_CONTENT = 422, 'Unprocessable Content'
+    UNPROCESSABLE_ENTITY = UNPROCESSABLE_CONTENT
     LOCKED = 423, 'Locked'
     FAILED_DEPENDENCY = 424, 'Failed Dependency'
     TOO_EARLY = 425, 'Too Early'
@@ -149,3 +171,32 @@ class HTTPStatus:
     NETWORK_AUTHENTICATION_REQUIRED = (511,
         'Network Authentication Required',
         'The client needs to authenticate to gain network access')
+
+
+@_simple_enum(StrEnum)
+class HTTPMethod:
+    """HTTP methods and descriptions
+
+    Methods from the following RFCs are all observed:
+
+        * RFF 9110: HTTP Semantics, obsoletes 7231, which obsoleted 2616
+        * RFC 5789: PATCH Method for HTTP
+    """
+    def __new__(cls, value, description):
+        obj = str.__new__(cls, value)
+        obj._value_ = value
+        obj.description = description
+        return obj
+
+    def __repr__(self):
+        return "<%s.%s>" % (self.__class__.__name__, self._name_)
+
+    CONNECT = 'CONNECT', 'Establish a connection to the server.'
+    DELETE = 'DELETE', 'Remove the target.'
+    GET = 'GET', 'Retrieve the target.'
+    HEAD = 'HEAD', 'Same as GET, but only retrieve the status line and header section.'
+    OPTIONS = 'OPTIONS', 'Describe the communication options for the target.'
+    PATCH = 'PATCH', 'Apply partial modifications to a target.'
+    POST = 'POST', 'Perform target-specific processing with the request payload.'
+    PUT = 'PUT', 'Replace the target with the request payload.'
+    TRACE = 'TRACE', 'Perform a message loop-back test along the path to the target.'

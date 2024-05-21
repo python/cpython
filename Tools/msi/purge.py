@@ -10,7 +10,7 @@ __version__ = '1.0.0'
 import re
 import sys
 
-from urllib.request import *
+from urllib.request import Request, urlopen
 
 VERSION_RE = re.compile(r'(\d+\.\d+\.\d+)([A-Za-z_]+\d+)?$')
 
