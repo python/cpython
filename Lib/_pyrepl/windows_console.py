@@ -524,22 +524,20 @@ class WindowsConsole(Console):
                 return None
             if rec.EventType != KEY_EVENT or not rec.Event.KeyEvent.bKeyDown:
                 return False
-            key = chr(rec.Event.KeyEvent.uChar.Char[0])
-    #        self.push_char(key)
-            if rec.Event.KeyEvent.uChar.Char == b'\r':
-                return Event(evt="key", data="\n", raw="\n")     
-            trace('virtual key code', rec.Event.KeyEvent.wVirtualKeyCode, rec.Event.KeyEvent.uChar.Char)
+            key = rec.Event.KeyEvent.uChar.UnicodeChar
+            if rec.Event.KeyEvent.uChar.UnicodeChar == '\r':
+                return Event(evt="key", data="\n", raw="\n")
             if rec.Event.KeyEvent.wVirtualKeyCode == 8:
-                return Event(evt="key", data="backspace", raw=rec.Event.KeyEvent.uChar.Char)
+                return Event(evt="key", data="backspace", raw=rec.Event.KeyEvent.uChar.UnicodeChar)
             if rec.Event.KeyEvent.wVirtualKeyCode == 27:
-                return Event(evt="key", data="escape", raw=rec.Event.KeyEvent.uChar.Char)
-            if rec.Event.KeyEvent.uChar.Char == b'\x00':
+                return Event(evt="key", data="escape", raw=rec.Event.KeyEvent.uChar.UnicodeChar)
+            if rec.Event.KeyEvent.uChar.UnicodeChar == '\x00':
                 code = VK_MAP.get(rec.Event.KeyEvent.wVirtualKeyCode)
                 if code:
-                    return Event(evt="key", data=code, raw=rec.Event.KeyEvent.uChar.Char) 
+                    return Event(evt="key", data=code, raw=rec.Event.KeyEvent.uChar.UnicodeChar) 
                 continue
             #print(key, rec.Event.KeyEvent.wVirtualKeyCode)
-            return Event(evt="key", data=key, raw=rec.Event.KeyEvent.uChar.Char)
+            return Event(evt="key", data=key, raw=rec.Event.KeyEvent.uChar.UnicodeChar)
 
     def push_char(self, char: int | bytes) -> None:
         """
