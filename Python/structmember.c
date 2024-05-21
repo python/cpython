@@ -77,6 +77,7 @@ PyMember_GetOne(const char *obj_addr, PyMemberDef *l)
         Py_INCREF(v);
         break;
     case Py_T_OBJECT_EX:
+#ifndef Py_GIL_DISABLED
         v = FT_ATOMIC_LOAD_PTR(*addr);
         if (v == NULL) {
             PyObject *obj = (PyObject *)obj_addr;
@@ -86,6 +87,19 @@ PyMember_GetOne(const char *obj_addr, PyMemberDef *l)
                          tp->tp_name, l->name);
         }
         Py_XINCREF(v);
+#else
+        do {
+            v = FT_ATOMIC_LOAD_PTR(*addr);
+            if (v == NULL) {
+                PyObject * obj = (PyObject *) obj_addr;
+                PyTypeObject *tp = Py_TYPE(obj);
+                PyErr_Format(PyExc_AttributeError,
+                             "'%.200s' object has no attribute '%s'",
+                             tp->tp_name, l->name);
+                break;
+            }
+        } while (!_Py_TryIncref(v));  // if refcount == 0: retry
+#endif
         break;
     case Py_T_LONGLONG:
         v = PyLong_FromLongLong(*(long long *)addr);
