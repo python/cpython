@@ -408,7 +408,7 @@ def compare(
     *,
     compare_attributes=False,
 ):
-    """Recursively compares two ast nodes.
+    """Recursively compares two ASTs.
 
     compare_attributes affects whether AST attributes are considered
     in the comparison. If compare_attributes is False (default), then
