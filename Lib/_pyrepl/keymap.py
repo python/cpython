@@ -108,14 +108,14 @@ class KeySpecError(Exception):
 def parse_keys(keys: str) -> list[str]:
     """Parse keys in keyspec format to a sequence of keys."""
     s = 0
-    r = []
+    r: list[str] = []
     while s < len(keys):
         k, s = _parse_single_key_sequence(keys, s)
         r.extend(k)
     return r
 
 
-def _parse_single_key_sequence(key: str, s: int) -> tuple[str, int]:
+def _parse_single_key_sequence(key: str, s: int) -> tuple[list[str], int]:
     ctrl = 0
     meta = 0
     ret = ""
@@ -150,11 +150,11 @@ def _parse_single_key_sequence(key: str, s: int) -> tuple[str, int]:
                 meta = 1
                 s += 3
             elif c.isdigit():
-                n = key[s + 1: s + 4]
+                n = key[s + 1 : s + 4]
                 ret = chr(int(n, 8))
                 s += 4
             elif c == "x":
-                n = key[s + 2: s + 4]
+                n = key[s + 2 : s + 4]
                 ret = chr(int(n, 16))
                 s += 4
             elif c == "<":
@@ -164,7 +164,7 @@ def _parse_single_key_sequence(key: str, s: int) -> tuple[str, int]:
                         "unterminated \\< starting at char %d of %s"
                         % (s + 1, repr(key))
                     )
-                ret = key[s + 2: t].lower()
+                ret = key[s + 2 : t].lower()
                 if ret not in _keynames:
                     raise KeySpecError(
                         "unrecognised keyname `%s' at char %d of %s"
@@ -187,11 +187,11 @@ def _parse_single_key_sequence(key: str, s: int) -> tuple[str, int]:
             ret = f"ctrl {ret}"
         else:
             raise KeySpecError("\\C- followed by invalid key")
+
+    result = [ret], s
     if meta:
-        ret = ["\033", ret]
-    else:
-        ret = [ret]
-    return ret, s
+        result[0].insert(0, "\033")
+    return result
 
 
 def compile_keymap(keymap, empty=b""):
