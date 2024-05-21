@@ -447,5 +447,3 @@ do { \
 #define EXIT_TO_TRACE() goto exit_to_trace
 #define EXIT_TO_TIER1() goto exit_to_tier1
 #define EXIT_TO_TIER1_DYNAMIC() goto exit_to_tier1_dynamic;
-
-static PyObject *common_constants[NUM_COMMON_CONSTANTS];

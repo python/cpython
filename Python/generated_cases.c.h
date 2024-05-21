@@ -4249,7 +4249,19 @@
             next_instr += 1;
             INSTRUCTION_STATS(LOAD_COMMON_CONSTANT);
             PyObject *value;
-            value = Py_NewRef(common_constants[oparg]);
+            // Keep in sync with _common_constants in opcode.py
+            switch(oparg) {
+                case CONSTANT_ASSERTIONERROR:
+                value = PyExc_AssertionError;
+                break;
+                case CONSTANT_NOTIMPLEMENTEDERROR:
+                value = PyExc_NotImplementedError;
+                break;
+                default:
+                _PyErr_SetString(tstate, PyExc_SystemError,
+                                 "bad LOAD_COMMON_CONSTANT oparg");
+                goto error;
+            }
             stack_pointer[0] = value;
             stack_pointer += 1;
             DISPATCH();
