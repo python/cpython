@@ -146,6 +146,7 @@ jobs:
           ./python -m test --ignorefile=Tools/jit/ignore-tests-emulated-linux.txt --multiprocess 0 --timeout 4500 --verbose2 --verbose3
 
   jit-with-disabled-gil:
+    name: Free-Threaded (Debug)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
