@@ -7,6 +7,7 @@
 
 #include "pycore_lock.h"        // PyMutex
 #include "pycore_pystate.h"     // _PyThreadState_GET()
+#include "listobject.h"         // PyList_CheckExact
 #include <stdint.h>
 
 #ifdef __cplusplus
@@ -108,6 +109,25 @@ extern "C" {
         _PyCriticalSection2_End(&_cs2);                                 \
     }
 
+// Specialized version of critical section locking called to safely use
+// PySequence_Fast APIs under nogil
+// For performance, the argument *to* PySequence_Fast is provided to the
+// macro, not the *result* of PySequence_Fast (which would require an extra
+// test to determine if the lock must be held)
+# define Py_BEGIN_CRITICAL_SECTION_SEQUENCE_FAST(original)            	\
+    {                                                                   \
+        PyObject *_orig_seq = _PyObject_CAST(original);                 \
+        const bool _should_lock_cs = PyList_CheckExact(_orig_seq);      \
+        _PyCriticalSection _cs;                                         \
+        if (_should_lock_cs)                                            \
+            _PyCriticalSection_Begin(&_cs,                              \
+                                     &_orig_seq->ob_mutex)  \
+
+# define Py_END_CRITICAL_SECTION_SEQUENCE_FAST()                        \
+        if (_should_lock_cs)                                            \
+            _PyCriticalSection_End(&_cs);                               \
+    }
+
 // Asserts that the mutex is locked.  The mutex must be held by the
 // top-most critical section otherwise there's the possibility
 // that the mutex would be swalled out in some code paths.
@@ -137,6 +157,8 @@ extern "C" {
 # define Py_END_CRITICAL_SECTION()
 # define Py_BEGIN_CRITICAL_SECTION2(a, b)
 # define Py_END_CRITICAL_SECTION2()
+# define Py_BEGIN_CRITICAL_SECTION_SEQUENCE_FAST(original)
+# define Py_END_CRITICAL_SECTION_SEQUENCE_FAST()
 # define _Py_CRITICAL_SECTION_ASSERT_MUTEX_LOCKED(mutex)
 # define _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(op)
 #endif  /* !Py_GIL_DISABLED */
