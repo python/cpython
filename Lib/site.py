@@ -523,8 +523,9 @@ def register_readline():
             pass
 
         def write_history():
+            from _pyrepl.__main__ import CAN_USE_PYREPL
             try:
-                if os.getenv("PYTHON_BASIC_REPL"):
+                if os.getenv("PYTHON_BASIC_REPL") or not CAN_USE_PYREPL:
                     readline.write_history_file(history)
                 else:
                     _pyrepl.readline.write_history_file(history)
