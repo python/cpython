@@ -7,7 +7,7 @@ from _pyrepl.unix_eventqueue import EventQueue
 
 
 @patch("_pyrepl.curses.tigetstr", lambda x: b"")
-class TestUnivEventQueue(unittest.TestCase):
+class TestUnixEventQueue(unittest.TestCase):
     def setUp(self):
         self.file = tempfile.TemporaryFile()
 
