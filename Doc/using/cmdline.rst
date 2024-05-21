@@ -616,7 +616,8 @@ Miscellaneous options
 
    * :samp:`-X gil={0,1}` forces the GIL to be disabled or enabled,
      respectively. Only available in builds configured with
-     :option:`--disable-gil`. See also :envvar:`PYTHON_GIL`.
+     :option:`--disable-gil`. See also :envvar:`PYTHON_GIL` and
+     :ref:`free-threaded-cpython`.
 
      .. versionadded:: 3.13
 
@@ -1206,7 +1207,7 @@ conflict.
    forced on. Setting it to ``0`` forces the GIL off.
 
    See also the :option:`-X gil <-X>` command-line option, which takes
-   precedence over this variable.
+   precedence over this variable, and :ref:`free-threaded-cpython`.
 
    Needs Python configured with the :option:`--disable-gil` build option.
 
