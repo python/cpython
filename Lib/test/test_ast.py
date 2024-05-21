@@ -1168,7 +1168,7 @@ class AST_Tests(unittest.TestCase):
                     ast.compare(a, b), f"{ast.dump(a)} != {ast.dump(b)}"
                 )
 
-    def test_compare_options(self):
+    def test_compare_attributes_option(self):
         def parse(a, b):
             return ast.parse(a), ast.parse(b)
 
