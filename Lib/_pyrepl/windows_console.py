@@ -389,34 +389,6 @@ class WindowsConsole(Console):
             self.__write(newline[x_pos])
             self.__posxy = x_coord + character_width, y
 
-        # if it's a single character change in the middle of the line
-        elif x_coord < minlen and oldline[x_pos + 1 :] == newline[x_pos + 1 :] and wlen(oldline[x_pos]) == wlen(newline[x_pos]):
-            trace('char change')
-            character_width = wlen(newline[x_pos])
-            self.__move(x_coord, y)
-            self.__write(newline[x_pos])
-            self.__posxy = x_coord + character_width, y
-
-        # if this is the last character to fit in the line and we edit in the middle of the line
-        elif (
-#            self.dch1
-#            and self.ich1 and
-            wlen(newline) == self.width
-            and x_coord < wlen(newline) - 2
-            and newline[x_pos + 1 : -1] == oldline[x_pos:-2]
-        ):
-            trace('last char')
-            self.__hide_cursor()
-            self.__move(self.width - 2, y)
-            self.__posxy = self.width - 2, y
-#            self.__write_code(self.dch1)
-
-            character_width = wlen(newline[x_pos])
-            self.__move(x_coord, y)
-#            self.__write_code(self.ich1)
-            self.__write(newline[x_pos])
-            self.__posxy = character_width + 1, y
-
         else:
             trace("Rewrite all {!r} {} {} {} {} {}", newline, x_coord, len(oldline), y, wlen(newline), self.__posxy)
             self.__hide_cursor()
@@ -492,7 +464,6 @@ class WindowsConsole(Console):
         self.__move(x, y)
         self.__posxy = x, y
         self.flushoutput()
-        
 
     def set_cursor_vis(self, visible: bool) -> None: 
         if visible:
@@ -513,30 +484,44 @@ class WindowsConsole(Console):
         """Return an Event instance.  Returns None if |block| is false
         and there is no event pending, otherwise waits for the
         completion of an event."""
-        rec = INPUT_RECORD()
-        read = DWORD()
         while True:
+            rec = INPUT_RECORD()
+            read = DWORD()
             if not ReadConsoleInput(InHandle, rec, 1, read):
                 raise ctypes.WinError(ctypes.GetLastError())
+            
             if read.value == 0:
                 if block:
                     continue
                 return None
+            
             if rec.EventType != KEY_EVENT or not rec.Event.KeyEvent.bKeyDown:
-                return False
+                # Only process keys and keydown events
+                if block:
+                    continue
+                return None
+            
             key = rec.Event.KeyEvent.uChar.UnicodeChar
+            
             if rec.Event.KeyEvent.uChar.UnicodeChar == '\r':
+                # Make enter make unix-like
                 return Event(evt="key", data="\n", raw="\n")
-            if rec.Event.KeyEvent.wVirtualKeyCode == 8:
+            elif rec.Event.KeyEvent.wVirtualKeyCode == 8:
+                # Turn backspace directly into the command
                 return Event(evt="key", data="backspace", raw=rec.Event.KeyEvent.uChar.UnicodeChar)
-            if rec.Event.KeyEvent.wVirtualKeyCode == 27:
+            elif rec.Event.KeyEvent.wVirtualKeyCode == 27:
+                # Turn escape directly into the command
                 return Event(evt="key", data="escape", raw=rec.Event.KeyEvent.uChar.UnicodeChar)
-            if rec.Event.KeyEvent.uChar.UnicodeChar == '\x00':
+            elif rec.Event.KeyEvent.uChar.UnicodeChar == '\x00':
+                # Handle special keys like arrow keys and translate them into the appropriate command
                 code = VK_MAP.get(rec.Event.KeyEvent.wVirtualKeyCode)
                 if code:
                     return Event(evt="key", data=code, raw=rec.Event.KeyEvent.uChar.UnicodeChar) 
-                continue
-            #print(key, rec.Event.KeyEvent.wVirtualKeyCode)
+                if block:
+                    continue
+
+                return None
+
             return Event(evt="key", data=key, raw=rec.Event.KeyEvent.uChar.UnicodeChar)
 
     def push_char(self, char: int | bytes) -> None:
@@ -564,19 +549,12 @@ class WindowsConsole(Console):
             y -= 1
         self.__move(0, min(y, self.height + self.__offset - 1))
         self.__write("\r\n")
-        self.flushoutput()
 
     def flushoutput(self) -> None:
         """Flush all output to the screen (assuming there's some
         buffering going on somewhere)."""
-        if False:
-            for text, iscode in self.__buffer:
-                if iscode:
-                    self.__tputs(text)
-                else:
-                    os.write(self.output_fd, text.encode(self.encoding, "replace"))
-            del self.__buffer[:]
-
+        pass
+    
     def forgetinput(self) -> None:
         """Forget all pending, but not yet processed input."""
         ...
