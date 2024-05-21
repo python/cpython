@@ -2784,11 +2784,15 @@ def _refold_parse_tree(parse_tree, *, policy):
     # max_line_length 0/None means no limit, ie: infinitely long.
     maxlen = policy.max_line_length or sys.maxsize
     encoding = 'utf-8' if policy.utf8 else 'us-ascii'
-    lines = ['']
-    last_ew = None
+    lines = ['']  # Folded lines to be output
+    leading_whitespace = ''  # When we have whitespace between two encoded
+                             # words, we may need to encode the whitespace
+                             # at the beginning of the second word.
+    last_ew = None  # Points to the last encoded character if there's an ew on
+                    # the line
     last_charset = None
     wrap_as_ew_blocked = 0
-    want_encoding = False
+    want_encoding = False  # This is set to True if we need to encode this part
     end_ew_not_allowed = Terminal('', 'wrap_as_ew_blocked')
     parts = list(parse_tree)
     while parts:
@@ -2812,10 +2816,12 @@ def _refold_parse_tree(parse_tree, *, policy):
                 # 'charset' property on the policy.
                 charset = 'utf-8'
             want_encoding = True
+
         if part.token_type == 'mime-parameters':
             # Mime parameter folding (using RFC2231) is extra special.
             _fold_mime_parameters(part, lines, maxlen, encoding)
             continue
+
         if want_encoding and not wrap_as_ew_blocked:
             if not part.as_ew_allowed:
                 want_encoding = False
@@ -2847,21 +2853,38 @@ def _refold_parse_tree(parse_tree, *, policy):
                      last_charset == 'utf-8' and charset != 'us-ascii')):
                     last_ew = None
                 last_ew = _fold_as_ew(tstr, lines, maxlen, last_ew,
-                                      part.ew_combine_allowed, charset)
+                                      part.ew_combine_allowed, charset, leading_whitespace)
+                # This whitespace has been added to the lines in _fold_as_ew()
+                # so clear it now.
+                leading_whitespace = ''
                 last_charset = charset
             want_encoding = False
             continue
+
         if len(tstr) <= maxlen - len(lines[-1]):
             lines[-1] += tstr
             continue
+
         # This part is too long to fit.  The RFC wants us to break at
         # "major syntactic breaks", so unless we don't consider this
         # to be one, check if it will fit on the next line by itself.
+        leading_whitespace = ''
         if (part.syntactic_break and
                 len(tstr) + 1 <= maxlen):
             newline = _steal_trailing_WSP_if_exists(lines)
             if newline or part.startswith_fws():
+                # We're going to fold the data onto a new line here.  Due to
+                # the way encoded strings handle continuation lines, we need to
+                # be prepared to encode any whitespace if the next line turns
+                # out to start with an encoded word.
                 lines.append(newline + tstr)
+
+                whitespace_accumulator = []
+                for char in lines[-1]:
+                    if char not in WSP:
+                        break
+                    whitespace_accumulator.append(char)
+                leading_whitespace = ''.join(whitespace_accumulator)
                 last_ew = None
                 continue
         if not hasattr(part, 'encode'):
@@ -2885,9 +2908,10 @@ def _refold_parse_tree(parse_tree, *, policy):
         else:
             # We can't fold it onto the next line either...
             lines[-1] += tstr
+
     return policy.linesep.join(lines) + policy.linesep
 
-def _fold_as_ew(to_encode, lines, maxlen, last_ew, ew_combine_allowed, charset):
+def _fold_as_ew(to_encode, lines, maxlen, last_ew, ew_combine_allowed, charset, leading_whitespace):
     """Fold string to_encode into lines as encoded word, combining if allowed.
     Return the new value for last_ew, or None if ew_combine_allowed is False.
 
@@ -2902,7 +2926,7 @@ def _fold_as_ew(to_encode, lines, maxlen, last_ew, ew_combine_allowed, charset):
         to_encode = str(
             get_unstructured(lines[-1][last_ew:] + to_encode))
         lines[-1] = lines[-1][:last_ew]
-    if to_encode[0] in WSP:
+    elif to_encode[0] in WSP:
         # We're joining this to non-encoded text, so don't encode
         # the leading blank.
         leading_wsp = to_encode[0]
@@ -2910,6 +2934,7 @@ def _fold_as_ew(to_encode, lines, maxlen, last_ew, ew_combine_allowed, charset):
         if (len(lines[-1]) == maxlen):
             lines.append(_steal_trailing_WSP_if_exists(lines))
         lines[-1] += leading_wsp
+
     trailing_wsp = ''
     if to_encode[-1] in WSP:
         # Likewise for the trailing space.
@@ -2929,10 +2954,19 @@ def _fold_as_ew(to_encode, lines, maxlen, last_ew, ew_combine_allowed, charset):
 
     while to_encode:
         remaining_space = maxlen - len(lines[-1])
-        text_space = remaining_space - chrome_len
+        text_space = remaining_space - chrome_len - len(leading_whitespace)
         if text_space <= 0:
             lines.append(' ')
             continue
+
+        # If we are at the start of a continuation line, prepend whitespace
+        # (we only want to do this when the line starts with an encoded word
+        # but if we're folding in this helper function, then we know that we
+        # are going to be writing out an encoded word.)
+        if len(lines) > 1 and len(lines[-1]) == 1 and leading_whitespace:
+            encoded_word = _ew.encode(leading_whitespace, charset=encode_as)
+            lines[-1] += encoded_word
+            leading_whitespace = ''
 
         to_encode_word = to_encode[:text_space]
         encoded_word = _ew.encode(to_encode_word, charset=encode_as)
