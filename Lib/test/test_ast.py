@@ -1173,6 +1173,7 @@ class AST_Tests(unittest.TestCase):
             return ast.parse(a), ast.parse(b)
 
         a, b = parse("2 + 2", "2+2")
+        self.assertTrue(ast.compare(a, b))
         self.assertTrue(ast.compare(a, b, compare_attributes=False))
         self.assertFalse(ast.compare(a, b, compare_attributes=True))
 
