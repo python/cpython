@@ -112,7 +112,7 @@ struct types_state {
     PyMutex mutex;
 
     // Borrowed references to type objects whose
-    // func_version % TYPE_VERSION_CACHE_SIZE
+    // tp_version_tag % TYPE_VERSION_CACHE_SIZE
     // once was equal to the index in the table.
     // They are cleared when the type object is deallocated.
     PyTypeObject* type_version_cache[TYPE_VERSION_CACHE_SIZE];
