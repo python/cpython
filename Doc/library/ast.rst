@@ -2472,22 +2472,16 @@ effects on the compilation of a program:
    .. versionadded:: 3.8
 
 
-.. function:: compare(a, b, /, *, compare_types=True, compare_attributes=False)
+.. function:: compare(a, b, /, *, compare_attributes=False)
 
-   Recursively compares two ast nodes.
-
-   There are two options that control how the comparison is done. If
-   *compare_types* is ``True`` (default), then Constant objects must
-   have the same type and value to be equal. If *compare_types* is
-   ``False``, then Constant objects must only have the same values,
-   e.g. Constant(1.0) equals Constant(1).
-
+   Recursively compares two ASTs.
 
    *compare_attributes* affects whether AST attributes are considered
    in the comparison. If compare_attributes is ``False`` (default), then
    attributes are ignored. Otherwise they must all be equal. This
    option is useful to look for asts that are structurally equal but
    might differ in whitespace or similar details.
+
    .. versionadded:: 3.14
 
 
