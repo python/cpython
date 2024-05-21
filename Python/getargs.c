@@ -1947,6 +1947,8 @@ _parser_init(void *arg)
     int owned;
     PyObject *kwtuple = parser->kwtuple;
     if (kwtuple == NULL) {
+        // XXX This potentially leaks an object outside the lifetime
+        // of the current interpreter.
         kwtuple = new_kwtuple(keywords, len, pos);
         if (kwtuple == NULL) {
             return -1;
