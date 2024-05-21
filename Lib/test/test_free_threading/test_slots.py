@@ -8,8 +8,8 @@ class Spam:
         "eggs",
     ]
 
-    def __init__(self):
-        self.eggs = 0
+    def __init__(self, initial_value):
+        self.eggs = initial_value
 
 
 def run_in_threads(targets):
@@ -25,10 +25,10 @@ def run_in_threads(targets):
 
 
 @threading_helper.requires_working_threading()
-class TestList(TestCase):
+class TestSlots(TestCase):
 
     def test_str(self):
-        spam = Spam()
+        spam = Spam("0")
 
         def writer():
             for _ in range(1_000):
@@ -39,3 +39,17 @@ class TestList(TestCase):
                 spam.eggs
 
         run_in_threads([writer, reader, reader, reader])
+
+    # this segfaults
+    # def test_int(self):
+    #     spam = Spam(1)
+    #
+    #     def writer():
+    #         for _ in range(1_000_000):
+    #             spam.eggs += 1
+    #
+    #     def reader():
+    #         for _ in range(1_000_000):
+    #             spam.eggs
+    #
+    #     run_in_threads([writer, writer, reader, reader])
