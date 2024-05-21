@@ -101,7 +101,7 @@ Context object management functions:
    current context for the current thread.  Returns ``0`` on success,
    and ``-1`` on error.
 
-.. c:function:: int PyContext_AddWatcher(PyCode_WatchCallback callback)
+.. c:function:: int PyContext_AddWatcher(PyContext_WatchCallback callback)
 
    Register *callback* as a context object watcher for the current interpreter.
    Return an ID which may be passed to :c:func:`PyContext_ClearWatcher`.
@@ -120,6 +120,7 @@ Context object management functions:
    .. versionadded:: 3.14
 
 .. c:type:: PyContextEvent
+
    Enumeration of possible context object watcher events:
    - ``PY_CONTEXT_EVENT_ENTER``
    - ``PY_CONTEXT_EVENT_EXIT``
@@ -127,6 +128,7 @@ Context object management functions:
    .. versionadded:: 3.14
 
 .. c:type:: int (*PyContecxt_WatchCallback)(PyContextEvent event, PyContext* ctx)
+
    Type of a context object watcher callback function.
    If *event* is ``PY_CONTEXT_EVENT_ENTER``, then the callback is invoked
    after `ctx` has been set as the current context for the current thread.
