@@ -42,6 +42,7 @@ from collections import deque
 
 # types
 if False:
+    from .console import Event
     from .types import EventTuple
 
 
@@ -77,7 +78,7 @@ class KeymapTranslator(InputTranslator):
         self.results = deque()
         self.stack = []
 
-    def push(self, evt):
+    def push(self, evt: Event):
         if self.verbose:
             print("pushed", evt.data, end="")
         key = evt.data
