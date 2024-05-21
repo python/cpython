@@ -1407,6 +1407,29 @@ class TestUopsOptimization(unittest.TestCase):
         guard_type_version_count = opnames.count("_GUARD_TYPE_VERSION")
         self.assertEqual(guard_type_version_count, 2)
 
+    def test_guard_type_version_executor_invalidated(self):
+        """
+        Verify that the executor is invalided on a type change.
+        """
+
+        def thing(a):
+            x = 0
+            for i in range(100):
+                x += a.attr
+                x += a.attr
+            return x
+
+        class Foo:
+            attr = 1
+
+        res, ex = self._run_with_optimizer(thing, Foo())
+        self.assertEqual(res, 200)
+        self.assertIsNotNone(ex)
+        self.assertEqual(list(iter_opnames(ex)).count("_GUARD_TYPE_VERSION"), 1)
+        self.assertTrue(ex.is_valid())
+        Foo.attr = 0
+        self.assertFalse(ex.is_valid())
+
 
 if __name__ == "__main__":
     unittest.main()
