@@ -5,6 +5,7 @@
 #include "pycore_abstract.h"      // _PyNumber_Index()
 #include "pycore_long.h"          // _PyLong_IsNegative()
 #include "pycore_pyatomic_ft_wrappers.h"
+#include "pycore_object.h"
 
 
 PyObject *
@@ -93,6 +94,7 @@ PyMember_GetOne(const char *obj_addr, PyMemberDef *l)
         v = PyLong_FromUnsignedLongLong(*(unsigned long long *)addr);
         break;
     case _Py_T_NONE:
+        // doesn't require free-threading code path
         v = Py_NewRef(Py_None);
         break;
     default:
@@ -282,6 +284,7 @@ PyMember_SetOne(char *addr, PyMemberDef *l, PyObject *v)
         break;
     case _Py_T_OBJECT:
     case Py_T_OBJECT_EX:
+        _PyObject_SetMaybeWeakref(v);
         oldv = FT_ATOMIC_EXCHANGE_PTR(addr, Py_XNewRef(v));
         Py_XDECREF(oldv);
         break;
