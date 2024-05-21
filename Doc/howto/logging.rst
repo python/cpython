@@ -1,3 +1,5 @@
+.. _logging-howto:
+
 =============
 Logging HOWTO
 =============
