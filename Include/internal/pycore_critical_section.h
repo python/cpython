@@ -109,11 +109,11 @@ extern "C" {
         _PyCriticalSection2_End(&_cs2);                                 \
     }
 
-// Specialized version of critical section locking called to safely use
-// PySequence_Fast APIs under nogil
-// For performance, the argument *to* PySequence_Fast is provided to the
-// macro, not the *result* of PySequence_Fast (which would require an extra
-// test to determine if the lock must be held)
+// Specialized version of critical section locking to safely use
+// PySequence_Fast APIs without the GIL. For performance, the argument *to*
+// PySequence_Fast() is provided to the macro, not the *result* of
+// PySequence_Fast(), which would require an extra test to determine if the
+// lock must be acquired.
 # define Py_BEGIN_CRITICAL_SECTION_SEQUENCE_FAST(original)              \
     {                                                                   \
         PyObject *_orig_seq = _PyObject_CAST(original);                 \
