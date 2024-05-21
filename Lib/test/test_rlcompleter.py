@@ -168,5 +168,12 @@ class TestRlcompleter(unittest.TestCase):
         self.assertEqual(completer.complete('Ellipsis', 0), 'Ellipsis()')
         self.assertIsNone(completer.complete('Ellipsis', 1))
 
+    def test_square_brackets(self):
+        completer = rlcompleter.Completer({'element_one': 1, 'element_two': 2, 'word': 'complete'})
+        self.assertEqual(completer.complete('word[eleme', 0), 'word[element_one')
+        self.assertEqual(completer.complete('word[eleme', 1), 'word[element_two')
+        self.assertIsNone(completer.complete('word[eleme', 2))
+        self.assertEqual(completer.complete('"complete"[elem', 0), '"complete"[element_one')
+
 if __name__ == '__main__':
     unittest.main()
