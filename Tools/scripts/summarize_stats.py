@@ -133,7 +133,7 @@ def _get_uop_flags_from_file(
         #pattern = fr"\s+\[(?P<name>[_A-Z0-9]+)\] =(?P<flags>(\s({'|'.join(f for f in flag_names + ('0',))})(\s\|)?)+).?"
         for line in spec_src:
             if line.startswith("    [_"):
-                if name :=  re.search("\[[_A-Z0-9]+\]", line):
+                if name :=  re.search(r"\[[_A-Z0-9]+\]", line):
                     uop = name.group().strip("[]")
                     possible_flags = [f.strip() for f in line.strip().split("=")[1].strip(", ").split("|")]
                     if all(f.removeprefix("HAS_") in flag_names for f in possible_flags):
@@ -777,7 +777,7 @@ def opcode_input_overlap(
 
     results = (
         flag_compatible(
-            "HAS_ARG_FLAG",
+            "HAS_OPARG_AND_1_FLAG",
         ),
         flag_compatible(
             "HAS_OPERAND_FLAG",
@@ -787,10 +787,8 @@ def opcode_input_overlap(
     result_names = ("Oparg", "Operand", "Target")
 
     if results.count(False) == 0:
-        return "No Overlap"
-    if results.count(False) == 1:
-        return f"Single overlap: {result_names[results.index(False)]}"
-    return f"Multiple Overlaps: {','.join(result_names[r] for r in range(3) if not results[r])}"
+        return "No Conflict"
+    return f"Conflict. Both Use: {','.join(result_names[r] for r in range(3) if not results[r])}"
 
 
 def pair_count_section(prefix: str, title=None, compat_data=False) -> Section:
@@ -1508,6 +1506,19 @@ def main():
 
     output_stats(args.inputs, json_output=args.json_output)
 
+""" TESTS (Run with pytest) """
+
+def test_opcode_input_overlap():    
+    opcode_flags = {
+        'CODE_ONE': ['HAS_OPARG_AND_1_FLAG', 'HAS_OPERAND_FLAG', 'HAS_JUMP_FLAG'],
+        'CODE_TWO': ['HAS_OPERAND_FLAG', 'HAS_JUMP_FLAG'],
+        'CODE_THREE': ['HAS_EXIT_FLAG'],
+        'CODE_FOUR': ['HAS_PURE_FLAG']
+    }
+    assert opcode_input_overlap(opcode_flags, 'CODE_ONE', 'CODE_TWO') == 'Conflict. Both Use: Operand,Target'
+    assert opcode_input_overlap(opcode_flags, 'CODE_ONE', 'CODE_THREE') == 'Conflict. Both Use: Target'
+    assert opcode_input_overlap(opcode_flags, 'CODE_ONE', 'CODE_FOUR') == 'No Conflict'
+    
 
 if __name__ == "__main__":
     main()
