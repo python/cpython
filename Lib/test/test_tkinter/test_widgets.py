@@ -659,8 +659,9 @@ class TextTest(AbstractWidgetTest, unittest.TestCase):
     def test_configure_tabs(self):
         widget = self.create()
         self.checkParam(widget, 'tabs', (10.2, 20.7, '1i', '2i'))
-        self.checkParam(widget, 'tabs', '10.2 20.7 1i 2i',
-                    expected=((10.2, 20.7, '1i', '2i') or ('10.2', '20.7', '1i', '2i')))
+        if get_tk_patchlevel(self.root) >= (8, 6, 14):
+            self.checkParam(widget, 'tabs', '10.2 20.7 1i 2i',
+                        expected=(10.2, 20.7, '1i', '2i'))
         self.checkParam(widget, 'tabs', '2c left 4c 6c center',
                         expected=('2c', 'left', '4c', '6c', 'center'))
         self.checkInvalidParam(widget, 'tabs', 'spam',
