@@ -273,6 +273,11 @@ except ImportError:
 ### partial() argument application
 ################################################################################
 
+
+class Placeholder:
+    """placeholder for partial arguments"""
+
+
 # Purely functional, no descriptor behaviour
 class partial:
     """New function with partial application of the given arguments
@@ -285,8 +290,33 @@ class partial:
         if not callable(func):
             raise TypeError("the first argument must be callable")
 
+        np = 0
+        nargs = len(args)
+        if args:
+            while nargs and args[nargs-1] is Placeholder:
+                nargs -= 1
+            args = args[:nargs]
+            np = args.count(Placeholder)
         if isinstance(func, partial):
-            args = func.args + args
+            pargs = func.args
+            pnp = func.np
+            if pnp and args:
+                all_args = list(pargs)
+                nargs = len(args)
+                j, pos = 0, 0
+                end = nargs if nargs < pnp else pnp
+                while j < end:
+                    pos = all_args.index(Placeholder, pos)
+                    all_args[pos] = args[j]
+                    j += 1
+                    pos += 1
+                if pnp < nargs:
+                    all_args.extend(args[pnp:])
+                np += pnp - end
+                args = tuple(all_args)
+            else:
+                np += pnp
+                args = func.args + args
             keywords = {**func.keywords, **keywords}
             func = func.func
 
@@ -295,11 +325,25 @@ class partial:
         self.func = func
         self.args = args
         self.keywords = keywords
+        self.np = np
         return self
 
     def __call__(self, /, *args, **keywords):
-        keywords = {**self.keywords, **keywords}
-        return self.func(*self.args, *args, **keywords)
+        if np := self.np:
+            if len(args) < np:
+                raise ValueError("unfilled placeholders in 'partial' call")
+            f_args = list(self.args)
+            j, pos = 0, 0
+            while j < np:
+                pos = f_args.index(Placeholder, pos)
+                f_args[pos] = args[j]
+                j += 1
+                pos += 1
+            keywords = {**self.keywords, **keywords}
+            return self.func(*f_args, *args[np:], **keywords)
+        else:
+            keywords = {**self.keywords, **keywords}
+            return self.func(*self.args, *args, **keywords)
 
     @recursive_repr()
     def __repr__(self):
@@ -340,7 +384,7 @@ class partial:
         self.keywords = kwds
 
 try:
-    from _functools import partial
+    from _functools import partial, Placeholder
 except ImportError:
     pass
 
