@@ -427,14 +427,14 @@ The available slot types are:
    This slot is ignored by Python builds not configured with
    :option:`--disable-gil`.  Otherwise, it determines whether or not importing
    this module will cause the GIL to be automatically enabled. See
-   :envvar:`PYTHON_GIL` and :option:`-X gil <-X>` for more detail.
+   :ref:`free-threaded-cpython` for more detail.
 
    Multiple ``Py_mod_gil`` slots may not be specified in one module definition.
 
    If ``Py_mod_gil`` is not specified, the import machinery defaults to
    ``Py_MOD_GIL_USED``.
 
-   .. versionadded: 3.13
+   .. versionadded:: 3.13
 
 See :PEP:`489` for more details on multi-phase initialization.
 
