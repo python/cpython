@@ -404,7 +404,8 @@ The extended form, ``assert expression1, expression2``, is equivalent to ::
 These equivalences assume that :const:`__debug__` and :exc:`AssertionError` refer to
 the built-in variables with those names.  In the current implementation, the
 built-in variable :const:`__debug__` is ``True`` under normal circumstances,
-``False`` when optimization is requested (command line option :option:`-O` or environment variable :envvar:`PYTHONOPTIMIZE`).  The current
+``False`` when optimization is requested (command line option :option:`-O`
+or environment variable :envvar:`PYTHONOPTIMIZE`).  The current
 code generator emits no code for an assert statement when optimization is
 requested at compile time.  Note that it is unnecessary to include the source
 code for the expression that failed in the error message; it will be displayed
