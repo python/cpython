@@ -1,2 +1,2 @@
-Fix an unraisable exception in :meth:`telnetlib.Telnet.__del__` when the
+Fix an unraisable exception in :meth:`!telnetlib.Telnet.__del__` when the
 ``__init__()`` method was not called.
