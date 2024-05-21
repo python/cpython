@@ -1,5 +1,5 @@
-:mod:`datetime` --- Basic date and time types
-=============================================
+:mod:`!datetime` --- Basic date and time types
+==============================================
 
 .. module:: datetime
    :synopsis: Basic date and time types.
@@ -635,7 +635,7 @@ Notes:
 .. versionchanged:: 3.13
    Comparison between :class:`.datetime` object and an instance of
    the :class:`date` subclass that is not a :class:`!datetime` subclass
-   no longer coverts the latter to :class:`!date`, ignoring the time part
+   no longer converts the latter to :class:`!date`, ignoring the time part
    and the time zone.
    The default behavior can be changed by overriding the special comparison
    methods in subclasses.
@@ -1257,7 +1257,7 @@ Supported operations:
 .. versionchanged:: 3.13
    Comparison between :class:`.datetime` object and an instance of
    the :class:`date` subclass that is not a :class:`!datetime` subclass
-   no longer coverts the latter to :class:`!date`, ignoring the time part
+   no longer converts the latter to :class:`!date`, ignoring the time part
    and the time zone.
    The default behavior can be changed by overriding the special comparison
    methods in subclasses.
@@ -1735,7 +1735,7 @@ day, and subject to adjustment via a :class:`tzinfo` object.
    * ``fold in [0, 1]``.
 
    If an argument outside those ranges is given, :exc:`ValueError` is raised. All
-   default to 0 except *tzinfo*, which defaults to :const:`None`.
+   default to 0 except *tzinfo*, which defaults to ``None``.
 
 Class attributes:
 

@@ -2561,6 +2561,12 @@ set_autocommit(pysqlite_Connection *self, PyObject *val, void *Py_UNUSED(ctx))
     return 0;
 }
 
+static PyObject *
+get_sig(PyObject *self, void *Py_UNUSED(ctx))
+{
+    return PyUnicode_FromString("(sql, /)");
+}
+
 
 static const char connection_doc[] =
 PyDoc_STR("SQLite database connection object.");
@@ -2570,6 +2576,7 @@ static PyGetSetDef connection_getset[] = {
     {"total_changes",  (getter)pysqlite_connection_get_total_changes, (setter)0},
     {"in_transaction",  (getter)pysqlite_connection_get_in_transaction, (setter)0},
     {"autocommit",  (getter)get_autocommit, (setter)set_autocommit},
+    {"__text_signature__", get_sig, (setter)0},
     {NULL}
 };
 

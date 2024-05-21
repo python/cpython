@@ -1,11 +1,9 @@
 """zipimport provides support for importing Python modules from Zip archives.
 
-This module exports three objects:
+This module exports two objects:
 - zipimporter: a class; its constructor takes a path to a Zip archive.
 - ZipImportError: exception raised by zipimporter objects. It's a
   subclass of ImportError, so it can be caught as ImportError, too.
-- _zip_directory_cache: a dict, mapping archive paths to zip directory
-  info dicts, as used in zipimporter._files.
 
 It is usually not needed to use the zipimport module explicitly; it is
 used by the builtin import mechanism for sys.path items that are paths
@@ -517,8 +515,9 @@ def _read_directory(archive):
                             num_extra_values = (len(extra_data) - 4) // 8
                             if num_extra_values > 3:
                                 raise ZipImportError(f"can't read header extra: {archive!r}", path=archive)
-                            values = struct.unpack_from(f"<{min(num_extra_values, 3)}Q",
-                                                        extra_data, offset=4)
+                            import struct
+                            values = list(struct.unpack_from(f"<{min(num_extra_values, 3)}Q",
+                                                             extra_data, offset=4))
 
                             # N.b. Here be dragons: the ordering of these is different than
                             # the header fields, and it's really easy to get it wrong since
