@@ -329,6 +329,8 @@ class partial:
         return self
 
     def __call__(self, /, *args, **keywords):
+        if not hasattr(self, 'np'):
+            self.np = self.args.count(Placeholder)
         if np := self.np:
             if len(args) < np:
                 raise ValueError("unfilled placeholders in 'partial' call")
