@@ -22,8 +22,6 @@
 from __future__ import annotations
 import os
 
-from .utils import CalcScreen
-
 # Categories of actions:
 #  killing
 #  yanking
@@ -363,7 +361,7 @@ class self_insert(EditCommand):
         text = self.event * r.get_arg()
         r.insert(text)
         if len(text) == 1 and r.pos == len(r.buffer):
-            r.calc_screen_method = CalcScreen.CALC_APPEND_SCREEN
+            r.calc_screen = r.append_to_screen
 
 
 class insert_nl(EditCommand):
