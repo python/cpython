@@ -2900,7 +2900,6 @@ _PyArg_Fini(void)
     struct _PyArg_Parser *tmp, *s = _PyRuntime.getargs.static_parsers;
     while (s) {
         tmp = s->next;
-        //assert(tmp != s);
         s->next = NULL;
         parser_clear(s);
         s = tmp;
