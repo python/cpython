@@ -1092,7 +1092,7 @@ class AST_Tests(unittest.TestCase):
         self.assertFalse(ast.compare(b, a))
 
         b._fields = a._fields
-        b.spam = "Spam"
+        b.spam = a.spam
         self.assertTrue(ast.compare(a, b))
         self.assertTrue(ast.compare(b, a))
 
