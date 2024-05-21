@@ -7,7 +7,6 @@
 
 #include "pycore_lock.h"        // PyMutex
 #include "pycore_pystate.h"     // _PyThreadState_GET()
-#include "listobject.h"         // PyList_CheckExact
 #include <stdint.h>
 
 #ifdef __cplusplus
