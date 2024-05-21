@@ -27,7 +27,7 @@ from dataclasses import dataclass, field
 from _pyrepl.console import Event, Console
 from .trace import trace
 import ctypes
-from ctypes.wintypes import _COORD, WORD, SMALL_RECT, BOOL, HANDLE, CHAR, DWORD, WCHAR
+from ctypes.wintypes import _COORD, WORD, SMALL_RECT, BOOL, HANDLE, CHAR, DWORD, WCHAR, SHORT
 from ctypes import Structure, POINTER, Union
 from ctypes import windll
 
@@ -215,22 +215,17 @@ class WindowsConsole(Console):
         - c_xy (tuple): Cursor position (x, y) on the screen.
         """
         cx, cy = c_xy
-        trace('!!Refresh {}', screen)
-        if not self.__gone_tall:
-            while len(self.screen) < min(len(screen), self.height):
-                cur_x, cur_y = self.get_abs_position(0, len(self.screen) - 1)
-                self.__hide_cursor()
-                self.__move(0, len(self.screen) - 1)
-                self.__write("\n")
-                self.__posxy = 0, len(self.screen)
-                self.screen.append("")
-        else:
-            while len(self.screen) < len(screen):
-                self.screen.append("")
 
-        if len(screen) > self.height:
-            self.__gone_tall = 1
-            self.__move = self.__move_absolute
+        trace('!!Refresh {}', screen)
+        while len(self.screen) < min(len(screen), self.height):
+            trace("...")
+            cur_x, cur_y = self.get_abs_position(0, len(self.screen) - 1)
+            self.__hide_cursor()
+            self.__move_relative(0, len(self.screen) - 1)
+            self.__write("\n")
+            self.__posxy = 0, len(self.screen)
+            self.screen.append("")
+
 
         px, py = self.__posxy
         old_offset = offset = self.__offset
@@ -242,36 +237,35 @@ class WindowsConsole(Console):
             offset = cy
         elif cy >= offset + height:
             offset = cy - height + 1
+            scroll_lines = offset - old_offset
+
+            trace(f'adj offset {cy} {height} {offset} {old_offset}')
+            # Scrolling the buffer as the current input is greater than the visible
+            # portion of the window.  We need to scroll the visible portion and the
+            # entire history
+            info = CONSOLE_SCREEN_BUFFER_INFO()
+            if not GetConsoleScreenBufferInfo(OutHandle, info):
+                raise ctypes.WinError(ctypes.GetLastError())
+            
+            bottom = info.srWindow.Bottom
+
+            trace("Scrolling {} {} {} {} {}", scroll_lines, info.srWindow.Bottom, self.height, len(screen) - self.height, self.__posxy)
+            self.scroll(scroll_lines, bottom)
+            self.__posxy = self.__posxy[0], self.__posxy[1] + scroll_lines
+            self.__offset += scroll_lines
+            
+            for i in range(scroll_lines):
+                self.screen.append("")
+            
         elif offset > 0 and len(screen) < offset + height:
+            trace("Adding extra line")
             offset = max(len(screen) - height, 0)
-            screen.append("")
+            #screen.append("")
 
         oldscr = self.screen[old_offset : old_offset + height]
         newscr = screen[offset : offset + height]
-
-        # use hardware scrolling if we have it.
-        trace('offsets {} {}', old_offset, offset)
-        if old_offset > offset:
-            trace('old_offset > offset')
-        elif old_offset < offset:
-            trace('old_offset < offset')
-        if False:
-            if old_offset > offset and self._ri:
-                self.__hide_cursor()
-                self.__write_code(self._cup, 0, 0)
-                self.__posxy = 0, old_offset
-                for i in range(old_offset - offset):
-                    self.__write_code(self._ri)
-                    oldscr.pop(-1)
-                    oldscr.insert(0, "")
-            elif old_offset < offset and self._ind:
-                self.__hide_cursor()
-                self.__write_code(self._cup, self.height - 1, 0)
-                self.__posxy = 0, old_offset + self.height - 1
-                for i in range(offset - old_offset):
-                    self.__write_code(self._ind)
-                    oldscr.pop(0)
-                    oldscr.append("")
+        trace('old screen {}', oldscr)
+        trace('new screen {}', newscr)
 
         trace('new offset {} {}', offset, px)
         self.__offset = offset
@@ -286,9 +280,8 @@ class WindowsConsole(Console):
 
         y = len(newscr)
         while y < len(oldscr):
-            trace('need to erase', y)
             self.__hide_cursor()
-            self.__move(0, y)
+            self.__move_relative(0, y)
             self.__posxy = 0, y
             self.erase_to_end()
             y += 1
@@ -296,9 +289,22 @@ class WindowsConsole(Console):
         self.__show_cursor()
 
         self.screen = screen
-        trace(f"Writing {self.screen} {cx} {cy}")
-        self.flushoutput()
+        trace("Done and moving")
         self.move_cursor(cx, cy)
+
+    def scroll(self, top: int, bottom: int, left: int | None = None, right: int | None = None):
+        scroll_rect = SMALL_RECT()
+        scroll_rect.Top =  SHORT(top)
+        scroll_rect.Bottom = SHORT(bottom)
+        scroll_rect.Left = SHORT(0 if left is None else left)
+        scroll_rect.Right = SHORT(self.getheightwidth()[1] - 1 if right is None else right)
+        trace(f"Scrolling {scroll_rect.Top} {scroll_rect.Bottom}")
+        destination_origin = _COORD()
+        fill_info = CHAR_INFO()
+        fill_info.UnicodeChar = ' '
+
+        if not ScrollConsoleScreenBuffer(OutHandle, scroll_rect, None, destination_origin, fill_info):
+            raise ctypes.WinError(ctypes.GetLastError())
 
     def __hide_cursor(self):
         info = CONSOLE_CURSOR_INFO()
@@ -338,7 +344,7 @@ class WindowsConsole(Console):
             raise ctypes.WinError(ctypes.GetLastError())
         return info.dwCursorPosition.X, info.dwCursorPosition.Y
 
-    def __write_changed_line(self, y, oldline, newline, px_coord):
+    def __write_changed_line(self, y: int, oldline: str, newline: str, px_coord):
         # this is frustrating; there's no reason to test (say)
         # self.dch1 inside the loop -- but alternative ways of
         # structuring this function are equally painful (I'm trying to
@@ -376,7 +382,7 @@ class WindowsConsole(Console):
             ins_x, ins_y = self.get_abs_position(x_coord + 1, y)
             ins_x -= 1
             scroll_rect = SMALL_RECT()
-            scroll_rect.Top = scroll_rect.Bottom = ins_y
+            scroll_rect.Top = scroll_rect.Bottom = SHORT(ins_y)
             scroll_rect.Left = ins_x
             scroll_rect.Right = self.getheightwidth()[1] - 1
             destination_origin = _COORD(X = scroll_rect.Left + 1, Y = scroll_rect.Top)
@@ -385,14 +391,15 @@ class WindowsConsole(Console):
 
             if not ScrollConsoleScreenBuffer(OutHandle, scroll_rect, None, destination_origin, fill_info):
                 raise ctypes.WinError(ctypes.GetLastError())
-            self.__move(x_coord, y)
+
+            self.__move_relative(x_coord, y)
             self.__write(newline[x_pos])
             self.__posxy = x_coord + character_width, y
 
         else:
             trace("Rewrite all {!r} {} {} {} {} {}", newline, x_coord, len(oldline), y, wlen(newline), self.__posxy)
             self.__hide_cursor()
-            self.__move(x_coord, y)
+            self.__move_relative(x_coord, y)
             if wlen(oldline) > wlen(newline):
                 self.erase_to_end()
             #os.write(self.output_fd, newline[x_pos:].encode(self.encoding, "replace"))
@@ -421,24 +428,15 @@ class WindowsConsole(Console):
         self.screen = []
         self.height, self.width = self.getheightwidth()
 
-        #self.__buffer = []
-
         info = CONSOLE_SCREEN_BUFFER_INFO()
         if not GetConsoleScreenBufferInfo(OutHandle, info):
             raise ctypes.WinError(ctypes.GetLastError())
 
         self.__posxy = 0, 0
         self.__gone_tall = 0
-        self.__move = self.__move_relative
         self.__offset = 0
 
     def restore(self) -> None: ...
-
-    def __move_relative(self, x, y):
-        trace('move relative {} {} {} {}', x, y, self.__posxy, self.screen_xy)
-        cur_x, cur_y = self.get_abs_position(x, y)
-        trace('move is {} {}', cur_x, cur_y)
-        self.__move_absolute(cur_x, cur_y)
 
     def get_abs_position(self, x: int, y: int) -> tuple[int, int]:
         cur_x, cur_y = self.screen_xy
@@ -448,7 +446,16 @@ class WindowsConsole(Console):
         cur_y += dy
         return cur_x, cur_y
 
+    def __move_relative(self, x, y):
+        trace('move relative {} {} {} {}', x, y, self.__posxy, self.screen_xy)
+        cur_x, cur_y = self.get_abs_position(x, y)
+        trace('move is {} {}', cur_x, cur_y)
+        self.__move_absolute(cur_x, cur_y)
+
     def __move_absolute(self, x, y):
+        """Moves to an absolute location in the screen buffer"""
+        if y < 0:
+            trace(f"Negative offset: {self.__posxy} {self.screen_xy}")
         cord = _COORD()
         cord.X = x
         cord.Y = y
@@ -456,14 +463,13 @@ class WindowsConsole(Console):
             raise ctypes.WinError(ctypes.GetLastError())
 
     def move_cursor(self, x: int, y: int) -> None:
-        trace(f'move to {x} {y}')
+        trace(f'move_cursor {x} {y}')
 
         if x < 0 or y < 0:
             raise ValueError(f"Bad cussor position {x}, {y}")
 
-        self.__move(x, y)
+        self.__move_relative(x, y)
         self.__posxy = x, y
-        self.flushoutput()
 
     def set_cursor_vis(self, visible: bool) -> None: 
         if visible:
@@ -547,12 +553,14 @@ class WindowsConsole(Console):
         y = len(self.screen) - 1
         while y >= 0 and not self.screen[y]:
             y -= 1
-        self.__move(0, min(y, self.height + self.__offset - 1))
+        self.__move_relative(0, min(y, self.height + self.__offset - 1))
         self.__write("\r\n")
 
     def flushoutput(self) -> None:
         """Flush all output to the screen (assuming there's some
-        buffering going on somewhere)."""
+        buffering going on somewhere).
+        
+        All output on Windows is unbuffered so this is a nop"""
         pass
     
     def forgetinput(self) -> None:
