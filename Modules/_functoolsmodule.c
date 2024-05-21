@@ -156,7 +156,8 @@ partial_new(PyTypeObject *type, PyObject *args, PyObject *kw)
         if (nnargs > 0){
             for (Py_ssize_t i=0; i < nnargs; i++){
                 item = PyTuple_GET_ITEM(nargs, i);
-                nnp += Py_Is(item, (PyObject *) &placeholder_type);
+                if (Py_Is(item, (PyObject *) &placeholder_type))
+                    nnp++;
             }
         }
     }
