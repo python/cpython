@@ -620,9 +620,9 @@ are always available.  They are listed here in alphabetical order.
 
       When ``exec`` gets two separate objects as *globals* and *locals*, the
       code will be executed as if it were embedded in a class definition. This
-      means functions defined in the executed code will not be able to access
-      variables assigned at the top level (as the "top level" variables are
-      treated as class variables in a class definition).
+      means functions and classes defined in the executed code will not be able
+      to access variables assigned at the top level (as the "top level"
+      variables are treated as class variables in a class definition).
       Passing a :class:`collections.ChainMap` instance as *globals* allows name
       lookups to be chained across multiple mappings without triggering this
       behaviour. Values assigned to top-level names in the executed code can be
