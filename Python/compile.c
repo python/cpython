@@ -142,6 +142,15 @@ typedef _PyInstructionSequence instr_sequence;
 #define INITIAL_INSTR_SEQUENCE_SIZE 100
 #define INITIAL_INSTR_SEQUENCE_LABELS_MAP_SIZE 10
 
+static const int compare_masks[] = {
+    [Py_LT] = COMPARISON_LESS_THAN,
+    [Py_LE] = COMPARISON_LESS_THAN | COMPARISON_EQUALS,
+    [Py_EQ] = COMPARISON_EQUALS,
+    [Py_NE] = COMPARISON_NOT_EQUALS,
+    [Py_GT] = COMPARISON_GREATER_THAN,
+    [Py_GE] = COMPARISON_GREATER_THAN | COMPARISON_EQUALS,
+};
+
 /*
  * Resize the array if index is out of range.
  *
@@ -1996,6 +2005,7 @@ compiler_visit_annotations(struct compiler *c, location loc,
         return ERROR;
     }
     assert(ste != NULL);
+    NEW_JUMP_TARGET_LABEL(c, raise_notimp);
 
     if (!future_annotations && ste->ste_annotations_used) {
         PyObject *annotations_name = PyUnicode_FromFormat("<annotations of %U>", ste->ste_name);
@@ -2010,10 +2020,10 @@ compiler_visit_annotations(struct compiler *c, location loc,
         Py_DECREF(annotations_name);
         c->u->u_metadata.u_posonlyargcount = 1;
         _Py_DECLARE_STR(format, ".format");
-        // RETURN_IF_ERROR(compiler_nameop(c, loc, &_Py_STR(format), Load));
-        // ADDOP(c, loc, POP_TOP);
-        // ADDOP_LOAD_CONST(c, loc, _PyLong_GetOne());
-        // TODO: emit "if .format != 1: raise NotImplementedError()"
+        ADDOP_I(c, loc, LOAD_FAST, 0);
+        ADDOP_LOAD_CONST(c, loc, _PyLong_GetOne());
+        ADDOP_I(c, loc, COMPARE_OP, (Py_EQ << 5) | compare_masks[Py_EQ]);
+        ADDOP_JUMP(c, loc, POP_JUMP_IF_FALSE, raise_notimp);
     }
 
     RETURN_IF_ERROR(
@@ -2049,6 +2059,9 @@ compiler_visit_annotations(struct compiler *c, location loc,
         if (ste->ste_annotations_used) {
             ADDOP_I(c, loc, BUILD_MAP, annotations_len);
             ADDOP_IN_SCOPE(c, loc, RETURN_VALUE);
+            USE_LABEL(c, raise_notimp);
+            ADDOP_IN_SCOPE(c, loc, LOAD_ASSERTION_ERROR);
+            ADDOP_I(c, loc, RAISE_VARARGS, 1);
             PyCodeObject *co = optimize_and_assemble(c, 1);
             compiler_exit_scope(c);
             if (co == NULL) {
@@ -2884,15 +2897,6 @@ check_compare(struct compiler *c, expr_ty e)
     }
     return SUCCESS;
 }
-
-static const int compare_masks[] = {
-    [Py_LT] = COMPARISON_LESS_THAN,
-    [Py_LE] = COMPARISON_LESS_THAN | COMPARISON_EQUALS,
-    [Py_EQ] = COMPARISON_EQUALS,
-    [Py_NE] = COMPARISON_NOT_EQUALS,
-    [Py_GT] = COMPARISON_GREATER_THAN,
-    [Py_GE] = COMPARISON_GREATER_THAN | COMPARISON_EQUALS,
-};
 
 static int compiler_addcompare(struct compiler *c, location loc,
                                cmpop_ty op)
