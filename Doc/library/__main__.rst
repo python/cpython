@@ -251,7 +251,6 @@ attribute will include the package's path if imported::
     >>> asyncio.__main__.__name__
     'asyncio.__main__'
 
-
 This won't work for ``__main__.py`` files in the root directory of a
 ``.zip`` file though.  Hence, for consistency, a minimal ``__main__.py``
 without a ``__name__`` check is preferred.
