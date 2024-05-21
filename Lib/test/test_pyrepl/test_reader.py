@@ -133,4 +133,3 @@ class TestReader(TestCase):
 
         reader, _ = handle_all_events(events)
         self.assert_screen_equals(reader, "")
-
