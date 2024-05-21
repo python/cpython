@@ -2622,7 +2622,7 @@ exception_event_teardown(int err, PyObject *exc) {
     }
     else {
         assert(PyErr_Occurred());
-        Py_DECREF(exc);
+        Py_XDECREF(exc);
     }
     return err;
 }

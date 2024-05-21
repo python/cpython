@@ -1945,15 +1945,21 @@ class TestCApiEventGeneration(MonitoringTestBase, unittest.TestCase):
         self.EXPECT_RAISED_EXCEPTION = [E.PY_THROW, E.RAISE, E.EXCEPTION_HANDLED, E.PY_UNWIND]
 
 
-    def check_event_count(self, event, func, args, expected):
+    def check_event_count(self, event, func, args, expected, callback_raises=None):
         class Counter:
-            def __init__(self):
+            def __init__(self, callback_raises):
+                self.callback_raises = callback_raises
                 self.count = 0
+
             def __call__(self, *args):
                 self.count += 1
+                if self.callback_raises:
+                    exc = self.callback_raises
+                    self.callback_raises = None
+                    raise exc
 
         try:
-            counter = Counter()
+            counter = Counter(callback_raises)
             sys.monitoring.register_callback(TEST_TOOL, event, counter)
             if event == E.C_RETURN or event == E.C_RAISE:
                 sys.monitoring.set_events(TEST_TOOL, E.CALL)
@@ -2000,6 +2006,17 @@ class TestCApiEventGeneration(MonitoringTestBase, unittest.TestCase):
                 evt = int(math.log2(event))
                 expected = ValueError(f"Firing event {evt} with no exception set")
                 self.check_event_count(event, function, args_, expected)
+
+    def test_fire_event_failing_callback(self):
+        for expected, event, function, *args in self.cases:
+            offset = 0
+            self.codelike = _testcapi.CodeLike(1)
+            with self.subTest(function.__name__):
+                args_ = (self.codelike, offset) + tuple(args)
+                exc = OSError(42)
+                with self.assertRaises(type(exc)):
+                    self.check_event_count(event, function, args_, expected,
+                                           callback_raises=exc)
 
 
     CANNOT_DISABLE = { E.PY_THROW, E.RAISE, E.RERAISE,
