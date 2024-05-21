@@ -3721,7 +3721,7 @@ import_find_and_load(PyThreadState *tstate, PyObject *abs_name)
 
         accumulated = accumulated_copy + cum;
     }
-    if (_PySys_Audit(tstate, "import.complete", "OO", abs_name,
+    if (_PySys_Audit(tstate, "import/module", "OO", abs_name,
                      mod ? mod : Py_None) < 0) {
         return NULL;
     }
