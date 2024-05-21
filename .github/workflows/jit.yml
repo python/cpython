@@ -160,4 +160,4 @@ jobs:
           make all --jobs 4
       - name: Run tests
         run: |
-          ./python -m test --multiprocess 0 --timeout 4500 --verbose2 --verbose3      
+          ./python -m test --multiprocess 0 --timeout 4500 --verbose2 --verbose3
