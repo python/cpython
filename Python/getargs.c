@@ -1971,8 +1971,8 @@ _parser_init(void *arg)
     parser->next = _Py_atomic_load_ptr(&_PyRuntime.getargs.static_parsers);
     do {
         // compare-exchange updates parser->next on failure
-    } while (_Py_atomic_compare_exchange_ptr(&_PyRuntime.getargs.static_parsers,
-                                             &parser->next, parser));
+    } while (!_Py_atomic_compare_exchange_ptr(&_PyRuntime.getargs.static_parsers,
+                                              &parser->next, parser));
     return 0;
 }
 
@@ -2885,6 +2885,7 @@ _PyArg_Fini(void)
     struct _PyArg_Parser *tmp, *s = _PyRuntime.getargs.static_parsers;
     while (s) {
         tmp = s->next;
+        //assert(tmp != s);
         s->next = NULL;
         parser_clear(s);
         s = tmp;
