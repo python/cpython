@@ -3,7 +3,6 @@ import builtins
 import dis
 import enum
 import os
-import random
 import re
 import sys
 import textwrap
@@ -2282,7 +2281,6 @@ class ASTValidatorTests(unittest.TestCase):
                 compile(mod, fn, "exec")
                 mod2 = ast.parse(source, fn)
                 self.assertTrue(ast.compare(mod, mod2))
-                self.assertTrue(False)
 
     constant_1 = ast.Constant(1)
     pattern_1 = ast.MatchValue(constant_1)
