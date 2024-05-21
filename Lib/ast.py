@@ -454,7 +454,7 @@ def compare(
     def _compare_attributes(a, b):
         if a._attributes != b._attributes:
             return False
-        # Attributes are always strings.
+        # Attributes are always ints.
         for attr in a._attributes:
             a_attr = getattr(a, attr)
             b_attr = getattr(b, attr)
