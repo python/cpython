@@ -152,7 +152,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - name: Build with JIT and GIL disabled
+      - name: Build with JIT enabled and GIL disabled
         run: |
           sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)" ./llvm.sh 18
           export PATH="$(llvm-config-18 --bindir):$PATH"
